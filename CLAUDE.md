@@ -1,14 +1,14 @@
-# 프로젝트: {프로젝트명}
+# 프로젝트: 메이플 루틴 (Maple Routine)
 
 ## 기술 스택
-- {프레임워크 (예: Next.js 15)}
-- {언어 (예: TypeScript strict mode)}
-- {스타일링 (예: Tailwind CSS)}
+- Vite + React SPA ([[ADR-002]]), Capacitor로 Android/iOS 하이브리드 앱 패키징 ([[ADR-001]])
+- TypeScript
+- Tailwind CSS
 
 ## 아키텍처 규칙
-- CRITICAL: {절대 지켜야 할 규칙 1 (예: 모든 API 로직은 app/api/ 라우트 핸들러에서만 처리)}
-- CRITICAL: {절대 지켜야 할 규칙 2 (예: 클라이언트 컴포넌트에서 직접 외부 API를 호출하지 말 것)}
-- {일반 규칙 (예: 컴포넌트는 components/ 폴더에, 타입은 types/ 폴더에 분리)}
+- CRITICAL: `features/*` 코드에서 로컬 저장소·네이티브 API(알림, 사냥 타이머 상시 알림 등)에 직접 접근하지 말 것. 반드시 `storage/`·`native/` 어댑터 레이어를 거칠 것 ([[ADR-003]], [[ADR-005]])
+- CRITICAL: 게임 레퍼런스 수치 데이터(보스 목록·결정 가격·드랍 테이블, `src/data/`)는 AI가 임의로 추정해 하드코딩하지 말 것. 반드시 사용자(도메인 전문가) 확인을 거쳐 반영할 것 ([[ADR-006]])
+- 화면은 `app/`, 기능별 상태·로직은 `features/`, 공용 UI는 `components/`, 타입은 `types/`, 범용 유틸은 `lib/`에 분리
 
 ## 개발 프로세스
 - CRITICAL: 새 기능 구현 시 반드시 테스트를 먼저 작성하고, 테스트가 통과하는 구현을 작성할 것 (TDD)
