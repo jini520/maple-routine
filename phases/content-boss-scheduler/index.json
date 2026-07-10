@@ -7,7 +7,8 @@
       "name": "content-scheduler-store",
       "status": "completed",
       "started_at": "2026-07-11T07:17:29+0900",
-      "summary": "src/features/content-scheduler/store.ts 신규 작성 — daily/weekly-scheduler와 동일한 refresh(ocids) 패턴으로 schedule-sync를 통해 dailyContents·weeklyContents를 하나의 ContentCharacterView로 병합해 노출, 기존 daily/weekly-scheduler와 app/daily·app/weekly는 미변경"
+      "summary": "src/features/content-scheduler/store.ts 신규 작성 — daily/weekly-scheduler와 동일한 refresh(ocids) 패턴으로 schedule-sync를 통해 dailyContents·weeklyContents를 하나의 ContentCharacterView로 병합해 노출, 기존 daily/weekly-scheduler와 app/daily·app/weekly는 미변경",
+      "completed_at": "2026-07-11T07:19:16+0900"
     },
     {
       "step": 1,
