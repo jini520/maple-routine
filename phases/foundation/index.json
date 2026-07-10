@@ -16,7 +16,7 @@
       "status": "completed",
       "started_at": "2026-07-11T02:43:19+0900",
       "summary": "@capacitor/preferences 설치, src/storage/{keys,api-key,scheduler-cache,index}.ts 추가 — getAuthConfig/setApiKey/setSelectedAccountId/clearAuthConfig(apiKey·selectedAccountId 저장, 손상/미저장 시 null, 쓰기 실패 전파)와 getCachedSchedulerState/setCachedSchedulerState/clearCachedSchedulerState(ocid별 schedulerCache:{ocid} 키, JSON 직렬화, 손상된 JSON은 null로 폴백) 구현, 단위 테스트로 round-trip·null 폴백·쓰기 실패 전파 검증",
-      "completed_at": "2026-07-11T02:52:00+0900"
+      "completed_at": "2026-07-11T02:48:53+0900"
     },
     {
       "step": 2,
