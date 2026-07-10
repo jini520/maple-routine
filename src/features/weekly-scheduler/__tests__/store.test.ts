@@ -1,19 +1,25 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CharacterScheduleSync } from '../../schedule-sync/schedule-sync'
-import type { BossContent, WeeklyContent } from '../../../types'
+import type { BossContent, MapleCharacter, WeeklyContent } from '../../../types'
 
-const { syncAllSchedulesMock } = vi.hoisted(() => ({
-  syncAllSchedulesMock: vi.fn(),
+const { getRegisteredCharactersMock, syncSchedulesMock } = vi.hoisted(() => ({
+  getRegisteredCharactersMock: vi.fn(),
+  syncSchedulesMock: vi.fn(),
 }))
 
 vi.mock('../../schedule-sync/schedule-sync', () => ({
-  syncAllSchedules: syncAllSchedulesMock,
+  getRegisteredCharacters: getRegisteredCharactersMock,
+  syncSchedules: syncSchedulesMock,
 }))
 
 import { useWeeklySchedulerStore } from '../store'
 
 function weeklyContent(name: string): WeeklyContent {
   return { name, kind: 'contents', isRegistered: true, nowCount: 1, maxCount: 3 }
+}
+
+function character(ocid: string): MapleCharacter {
+  return { ocid, name: `캐릭터-${ocid}`, world: '베라', jobClass: '렌', level: 200 }
 }
 
 function bossContent(overrides: Partial<BossContent> = {}): BossContent {
@@ -52,6 +58,7 @@ function syncResult(overrides: Partial<CharacterScheduleSync> = {}): CharacterSc
 
 beforeEach(() => {
   useWeeklySchedulerStore.setState({ status: 'idle', characters: [], error: null })
+  getRegisteredCharactersMock.mockResolvedValue([character('ocid-1'), character('ocid-2')])
 })
 
 afterEach(() => {
@@ -67,7 +74,7 @@ describe('useWeeklySchedulerStore', () => {
   })
 
   it('모든 캐릭터가 성공하면 status: loaded이고 weeklyContents·bosses·클리어 카운트가 그대로 반영된다', async () => {
-    syncAllSchedulesMock.mockResolvedValue([syncResult({ ocid: 'ocid-1', characterName: '캐릭터1' })])
+    syncSchedulesMock.mockResolvedValue([syncResult({ ocid: 'ocid-1', characterName: '캐릭터1' })])
 
     await useWeeklySchedulerStore.getState().refresh()
 
@@ -100,7 +107,7 @@ describe('useWeeklySchedulerStore', () => {
   })
 
   it('참조 테이블에 없는 보스 콘텐츠는 matchedBossName: null로 반영되고 전체 동기화는 실패하지 않는다', async () => {
-    syncAllSchedulesMock.mockResolvedValue([
+    syncSchedulesMock.mockResolvedValue([
       syncResult({ state: { ...syncResult().state!, bossContents: [bossContent({ name: '알 수 없는 콘텐츠' })] } }),
     ])
 
@@ -122,7 +129,7 @@ describe('useWeeklySchedulerStore', () => {
   })
 
   it('state가 null인 캐릭터는 weeklyContents·bosses를 빈 배열로, 클리어 카운트를 null로 채운다', async () => {
-    syncAllSchedulesMock.mockResolvedValue([
+    syncSchedulesMock.mockResolvedValue([
       syncResult({ state: null, syncedAt: null, isStale: true, error: { kind: 'network' } }),
     ])
 
@@ -146,7 +153,7 @@ describe('useWeeklySchedulerStore', () => {
   })
 
   it('일부 캐릭터만 에러/isStale이 있어도 전체 status는 loaded로 유지되고 그 캐릭터에만 에러가 반영된다', async () => {
-    syncAllSchedulesMock.mockResolvedValue([
+    syncSchedulesMock.mockResolvedValue([
       syncResult({ ocid: 'ocid-1', characterName: '캐릭터1' }),
       syncResult({
         ocid: 'ocid-2',
@@ -169,8 +176,8 @@ describe('useWeeklySchedulerStore', () => {
     expect(state.characters[1].error).toEqual({ kind: 'invalidApiKey' })
   })
 
-  it('syncAllSchedules() 자체가 throw하면 status: error가 되고 characters는 비어있는 상태를 유지한다', async () => {
-    syncAllSchedulesMock.mockRejectedValue(new Error('온보딩이 완료되지 않았습니다'))
+  it('syncSchedules() 자체가 throw하면 status: error가 되고 characters는 비어있는 상태를 유지한다', async () => {
+    syncSchedulesMock.mockRejectedValue(new Error('온보딩이 완료되지 않았습니다'))
 
     await useWeeklySchedulerStore.getState().refresh()
 
@@ -180,9 +187,21 @@ describe('useWeeklySchedulerStore', () => {
     expect(state.characters).toEqual([])
   })
 
+  it('getRegisteredCharacters() 자체가 throw하면 status: error가 되고 syncSchedules는 호출되지 않는다', async () => {
+    getRegisteredCharactersMock.mockRejectedValue(new Error('온보딩이 완료되지 않았습니다'))
+
+    await useWeeklySchedulerStore.getState().refresh()
+
+    const state = useWeeklySchedulerStore.getState()
+    expect(state.status).toBe('error')
+    expect(state.error).toEqual({ kind: 'network' })
+    expect(state.characters).toEqual([])
+    expect(syncSchedulesMock).not.toHaveBeenCalled()
+  })
+
   it('refresh 시작 시 status를 loading으로 바꾼다', async () => {
     let resolveSync: (value: CharacterScheduleSync[]) => void = () => {}
-    syncAllSchedulesMock.mockImplementation(
+    syncSchedulesMock.mockImplementation(
       () =>
         new Promise<CharacterScheduleSync[]>((resolve) => {
           resolveSync = resolve

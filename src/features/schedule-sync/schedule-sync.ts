@@ -72,13 +72,21 @@ async function buildFallbackResult(
 // ADR-008: 키 무효(401/403)·rate limit(429)은 모든 캐릭터에 동일하게 적용되는 전역 실패라
 // 첫 캐릭터에서 발생하면 이후 캐릭터는 API를 더 호출하지 않고 캐시 폴백만 수행한다.
 // 그 외 네트워크 실패는 캐릭터마다 독립적으로 처리해 다음 캐릭터 조회를 막지 않는다.
-export async function syncAllSchedules(): Promise<CharacterScheduleSync[]> {
+//
+// ocids로 지정된 캐릭터만 동기화한다 — 계정의 전체 캐릭터를 대상으로 순차 호출하면
+// 추적 대상이 아닌 캐릭터까지 불필요하게 호출하게 되어 로딩이 느려진다.
+export async function syncSchedules(ocids: string[]): Promise<CharacterScheduleSync[]> {
+  if (ocids.length === 0) {
+    return []
+  }
+
   const { apiKey, characters } = await resolveRegisteredCharacters()
+  const targetCharacters = characters.filter((character) => ocids.includes(character.ocid))
 
   const results: CharacterScheduleSync[] = []
   let globalError: ScheduleSyncError | null = null
 
-  for (const character of characters) {
+  for (const character of targetCharacters) {
     if (globalError !== null) {
       results.push(await buildFallbackResult(character, globalError))
       continue
