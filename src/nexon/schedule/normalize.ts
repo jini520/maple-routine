@@ -1,16 +1,14 @@
 import type {
   BossContent,
   DailyContent,
-  MapleAccount,
   NexonBossContentWire,
-  NexonCharacterListResponse,
   NexonDailyContentWire,
   NexonRawDifficulty,
   NexonSchedulerCharacterStateWire,
   NexonWeeklyContentWire,
   SchedulerCharacterState,
   WeeklyContent,
-} from '../types'
+} from '../../types'
 
 const DIFFICULTY_MAP: Record<NexonRawDifficulty, BossContent['difficulty']> = {
   easy: '이지',
@@ -18,19 +16,6 @@ const DIFFICULTY_MAP: Record<NexonRawDifficulty, BossContent['difficulty']> = {
   hard: '하드',
   chaos: '카오스',
   extreme: '익스트림',
-}
-
-export function normalizeCharacterList(wire: NexonCharacterListResponse): MapleAccount[] {
-  return wire.account_list.map((account) => ({
-    accountId: account.account_id,
-    characters: account.character_list.map((character) => ({
-      ocid: character.ocid,
-      name: character.character_name,
-      world: character.world_name,
-      jobClass: character.character_class,
-      level: character.character_level,
-    })),
-  }))
 }
 
 function normalizeDailyContent(wire: NexonDailyContentWire): DailyContent {

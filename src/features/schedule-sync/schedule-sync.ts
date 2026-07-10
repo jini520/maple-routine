@@ -1,5 +1,6 @@
-import { fetchCharacterList, fetchSchedulerCharacterState } from '../../nexon/client'
+import { fetchCharacterList } from '../../nexon/character'
 import { NexonAuthError, NexonRateLimitError } from '../../nexon/errors'
+import { fetchSchedulerCharacterState } from '../../nexon/schedule'
 import { getAuthConfig } from '../../storage/api-key'
 import { getCachedSchedulerState, setCachedSchedulerState } from '../../storage/scheduler-cache'
 import type { MapleCharacter, SchedulerCharacterState } from '../../types'
