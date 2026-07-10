@@ -13,7 +13,10 @@
     {
       "step": 1,
       "name": "daily-scheduler",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-07-11T04:04:20+0900",
+      "summary": "features/daily-scheduler/store.ts에 syncAllSchedules() 결과를 읽기 전용 DailyCharacterView[]로 매핑하는 Zustand 스토어 추가(캐릭터별 error/isStale은 개별 항목에만 반영, syncAllSchedules() 자체가 throw할 때만 전체 status: 'error').",
+      "completed_at": "2026-07-11T04:06:00+0900"
     },
     {
       "step": 2,
