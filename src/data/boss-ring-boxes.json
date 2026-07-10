@@ -1,0 +1,151 @@
+{
+  "updatedAt": "2026-07-09",
+  "source": "사용자 제공 확률표(2026-07-09). 게임산업법 시행령이 정하는 방식에 따라 반올림 표기.",
+  "note": "레벨/아이템 확률표는 실제 획득 결과를 확률로 자동 추정하는 데 쓰지 않는다 — 사용자가 실제로 나온 레벨·반지를 직접 선택해 기록하기 위한 후보 목록 용도([[ADR-010]]). 어느 보스+난이도가 어떤 박스를 드랍하는지는 item-drop-table.json의 consumable 카테고리(note: 교환 불가)에 이미 반영되어 있어 이 파일에서 중복 관리하지 않는다. '혼돈의 칠흑 장신구 상자'·'메이린의 칠흑 장신구 상자'는 item-drop-table.json에 존재하지만 이 파일이 다루는 '보스 반지 상자' 계열과는 다른 아이템이라 아직 미반영(내용물 확률표 미제공).",
+  "boxes": [
+    {
+      "name": "녹옥의 보스 반지 상자",
+      "levelProbabilities": [
+        { "level": 1, "probabilityPercent": 50 },
+        { "level": 2, "probabilityPercent": 41 },
+        { "level": 3, "probabilityPercent": 9 }
+      ],
+      "itemProbabilities": [
+        { "name": "리스트레인트 링", "probabilityPercent": 2.11268, "priceMeso": null },
+        { "name": "컨티뉴어스 링", "probabilityPercent": 2.11268, "priceMeso": null },
+        { "name": "웨폰퍼프 - S링", "probabilityPercent": 2.81690, "priceMeso": null },
+        { "name": "웨폰퍼프 - I링", "probabilityPercent": 2.81690, "priceMeso": null },
+        { "name": "웨폰퍼프 - L링", "probabilityPercent": 2.81690, "priceMeso": null },
+        { "name": "웨폰퍼프 - D링", "probabilityPercent": 2.81690, "priceMeso": null },
+        { "name": "얼티메이덤 링", "probabilityPercent": 2.81690, "priceMeso": null },
+        { "name": "리스크테이커 링", "probabilityPercent": 2.81690, "priceMeso": null },
+        { "name": "링 오브 썸", "probabilityPercent": 2.81690, "priceMeso": null },
+        { "name": "크리데미지 링", "probabilityPercent": 2.81690, "priceMeso": null },
+        { "name": "크라이시스 - HM링", "probabilityPercent": 2.81690, "priceMeso": null },
+        { "name": "버든리프트 링", "probabilityPercent": 3.52113, "priceMeso": null },
+        { "name": "오버패스 링", "probabilityPercent": 3.52113, "priceMeso": null },
+        { "name": "레벨퍼프 - S링", "probabilityPercent": 3.52113, "priceMeso": null },
+        { "name": "레벨퍼프 - I링", "probabilityPercent": 3.52113, "priceMeso": null },
+        { "name": "레벨퍼프 - L링", "probabilityPercent": 3.52113, "priceMeso": null },
+        { "name": "레벨퍼프 - D링", "probabilityPercent": 3.52113, "priceMeso": null },
+        { "name": "헬스컷 링", "probabilityPercent": 3.52113, "priceMeso": null },
+        { "name": "크리디펜스 링", "probabilityPercent": 3.52113, "priceMeso": null },
+        { "name": "리밋 링", "probabilityPercent": 3.52113, "priceMeso": null },
+        { "name": "듀라빌리티 링", "probabilityPercent": 3.52113, "priceMeso": null },
+        { "name": "리커버디펜스 링", "probabilityPercent": 3.52113, "priceMeso": null },
+        { "name": "실드스와프 링", "probabilityPercent": 3.52113, "priceMeso": null },
+        { "name": "마나컷 링", "probabilityPercent": 3.52113, "priceMeso": null },
+        { "name": "크라이시스 - H링", "probabilityPercent": 3.52113, "priceMeso": null },
+        { "name": "크라이시스 - M링", "probabilityPercent": 3.52113, "priceMeso": null },
+        { "name": "크리쉬프트 링", "probabilityPercent": 3.52113, "priceMeso": null },
+        { "name": "스탠스쉬프트 링", "probabilityPercent": 3.52113, "priceMeso": null },
+        { "name": "리커버스텐스 링", "probabilityPercent": 3.52113, "priceMeso": null },
+        { "name": "스위프트 링", "probabilityPercent": 3.52113, "priceMeso": null },
+        { "name": "리플렉티브 링", "probabilityPercent": 3.52113, "priceMeso": null }
+      ]
+    },
+    {
+      "name": "홍옥의 보스 반지 상자",
+      "levelProbabilities": [
+        { "level": 1, "probabilityPercent": 40 },
+        { "level": 2, "probabilityPercent": 30 },
+        { "level": 3, "probabilityPercent": 20 },
+        { "level": 4, "probabilityPercent": 10 }
+      ],
+      "itemProbabilities": [
+        { "name": "리스트레인트 링", "probabilityPercent": 6.92308, "priceMeso": null },
+        { "name": "컨티뉴어스 링", "probabilityPercent": 6.92308, "priceMeso": null },
+        { "name": "웨폰퍼프 - S링", "probabilityPercent": 6.15385, "priceMeso": null },
+        { "name": "웨폰퍼프 - I링", "probabilityPercent": 6.15385, "priceMeso": null },
+        { "name": "웨폰퍼프 - L링", "probabilityPercent": 6.15385, "priceMeso": null },
+        { "name": "웨폰퍼프 - D링", "probabilityPercent": 6.15385, "priceMeso": null },
+        { "name": "얼티메이덤 링", "probabilityPercent": 6.15385, "priceMeso": null },
+        { "name": "리스크테이커 링", "probabilityPercent": 6.15385, "priceMeso": null },
+        { "name": "링 오브 썸", "probabilityPercent": 6.15385, "priceMeso": null },
+        { "name": "크리데미지 링", "probabilityPercent": 6.15385, "priceMeso": null },
+        { "name": "크라이시스 - HM링", "probabilityPercent": 6.15385, "priceMeso": null },
+        { "name": "버든리프트 링", "probabilityPercent": 1.53846, "priceMeso": null },
+        { "name": "오버패스 링", "probabilityPercent": 1.53846, "priceMeso": null },
+        { "name": "레벨퍼프 - S링", "probabilityPercent": 1.53846, "priceMeso": null },
+        { "name": "레벨퍼프 - I링", "probabilityPercent": 1.53846, "priceMeso": null },
+        { "name": "레벨퍼프 - L링", "probabilityPercent": 1.53846, "priceMeso": null },
+        { "name": "레벨퍼프 - D링", "probabilityPercent": 1.53846, "priceMeso": null },
+        { "name": "헬스컷 링", "probabilityPercent": 1.53846, "priceMeso": null },
+        { "name": "크리디펜스 링", "probabilityPercent": 1.53846, "priceMeso": null },
+        { "name": "리밋 링", "probabilityPercent": 1.53846, "priceMeso": null },
+        { "name": "듀라빌리티 링", "probabilityPercent": 1.53846, "priceMeso": null },
+        { "name": "리커버디펜스 링", "probabilityPercent": 1.53846, "priceMeso": null },
+        { "name": "실드스와프 링", "probabilityPercent": 1.53846, "priceMeso": null },
+        { "name": "마나컷 링", "probabilityPercent": 1.53846, "priceMeso": null },
+        { "name": "크라이시스 - H링", "probabilityPercent": 1.53846, "priceMeso": null },
+        { "name": "크라이시스 - M링", "probabilityPercent": 1.53846, "priceMeso": null },
+        { "name": "크리쉬프트 링", "probabilityPercent": 1.53846, "priceMeso": null },
+        { "name": "스탠스쉬프트 링", "probabilityPercent": 1.53846, "priceMeso": null },
+        { "name": "리커버스텐스 링", "probabilityPercent": 1.53846, "priceMeso": null },
+        { "name": "스위프트 링", "probabilityPercent": 1.53846, "priceMeso": null },
+        { "name": "리플렉티브 링", "probabilityPercent": 1.53846, "priceMeso": null }
+      ]
+    },
+    {
+      "name": "흑옥의 보스 반지 상자",
+      "levelProbabilities": [
+        { "level": 1, "probabilityPercent": 25 },
+        { "level": 2, "probabilityPercent": 25 },
+        { "level": 3, "probabilityPercent": 30 },
+        { "level": 4, "probabilityPercent": 20 }
+      ],
+      "itemProbabilities": [
+        { "name": "리스트레인트 링", "probabilityPercent": 12.50000, "priceMeso": null },
+        { "name": "컨티뉴어스 링", "probabilityPercent": 12.50000, "priceMeso": null },
+        { "name": "웨폰퍼프 - S링", "probabilityPercent": 8.33333, "priceMeso": null },
+        { "name": "웨폰퍼프 - I링", "probabilityPercent": 8.33333, "priceMeso": null },
+        { "name": "웨폰퍼프 - L링", "probabilityPercent": 8.33333, "priceMeso": null },
+        { "name": "웨폰퍼프 - D링", "probabilityPercent": 8.33333, "priceMeso": null },
+        { "name": "얼티메이덤 링", "probabilityPercent": 8.33333, "priceMeso": null },
+        { "name": "리스크테이커 링", "probabilityPercent": 8.33333, "priceMeso": null },
+        { "name": "링 오브 썸", "probabilityPercent": 8.33333, "priceMeso": null },
+        { "name": "크리데미지 링", "probabilityPercent": 8.33333, "priceMeso": null },
+        { "name": "크라이시스 - HM링", "probabilityPercent": 8.33333, "priceMeso": null }
+      ]
+    },
+    {
+      "name": "백옥의 보스 반지 상자",
+      "levelProbabilities": [
+        { "level": 3, "probabilityPercent": 65 },
+        { "level": 4, "probabilityPercent": 35 }
+      ],
+      "itemProbabilities": [
+        { "name": "리스트레인트 링", "probabilityPercent": 14.28571, "priceMeso": null },
+        { "name": "컨티뉴어스 링", "probabilityPercent": 14.28571, "priceMeso": null },
+        { "name": "웨폰퍼프 - S링", "probabilityPercent": 7.93651, "priceMeso": null },
+        { "name": "웨폰퍼프 - I링", "probabilityPercent": 7.93651, "priceMeso": null },
+        { "name": "웨폰퍼프 - L링", "probabilityPercent": 7.93651, "priceMeso": null },
+        { "name": "웨폰퍼프 - D링", "probabilityPercent": 7.93651, "priceMeso": null },
+        { "name": "얼티메이덤 링", "probabilityPercent": 7.93651, "priceMeso": null },
+        { "name": "리스크테이커 링", "probabilityPercent": 7.93651, "priceMeso": null },
+        { "name": "링 오브 썸", "probabilityPercent": 7.93651, "priceMeso": null },
+        { "name": "크리데미지 링", "probabilityPercent": 7.93651, "priceMeso": null },
+        { "name": "크라이시스 - HM링", "probabilityPercent": 7.93651, "priceMeso": null }
+      ]
+    },
+    {
+      "name": "생명의 보스 반지 상자",
+      "levelProbabilities": [
+        { "level": 3, "probabilityPercent": 30 },
+        { "level": 4, "probabilityPercent": 70 }
+      ],
+      "itemProbabilities": [
+        { "name": "리스트레인트 링", "probabilityPercent": 14.51613, "priceMeso": null },
+        { "name": "컨티뉴어스 링", "probabilityPercent": 14.51613, "priceMeso": null },
+        { "name": "웨폰퍼프 - S링", "probabilityPercent": 8.06452, "priceMeso": null },
+        { "name": "웨폰퍼프 - I링", "probabilityPercent": 8.06452, "priceMeso": null },
+        { "name": "웨폰퍼프 - L링", "probabilityPercent": 8.06452, "priceMeso": null },
+        { "name": "웨폰퍼프 - D링", "probabilityPercent": 8.06452, "priceMeso": null },
+        { "name": "리스크테이커 링", "probabilityPercent": 8.06452, "priceMeso": null },
+        { "name": "링 오브 썸", "probabilityPercent": 8.06452, "priceMeso": null },
+        { "name": "크리데미지 링", "probabilityPercent": 8.06452, "priceMeso": null },
+        { "name": "생명의 연마석", "probabilityPercent": 14.51613, "priceMeso": null }
+      ]
+    }
+  ]
+}
