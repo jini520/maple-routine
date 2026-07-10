@@ -1,0 +1,89 @@
+{
+  "updatedAt": "2026-07-09",
+  "source": "사용자 제공 시세표. 보스별 상세 보상 정보에 다른 금액이 함께 제공되었으나, 사용자가 이 시세표 값을 정답으로 확정하고 갱신일은 의미가 없다고 확인함.",
+  "priceBasis": "1인(솔로) 기준 정가. 대부분 '강력한 힘의 결정' 판매가 기준이나, 메이린(이벤트 주간 보스)은 결정이 아닌 황금 메소 주머니 총 가치(1개 = 1000만 메소) 기준 — 개별 entry의 note 참고. 파티원 수별 실수령액은 partySizeScaling 참고.",
+  "partySizeScaling": {
+    "formula": "floor(priceMeso / partySize)",
+    "description": "정가(priceMeso)를 파티원 수(n)로 나눈 뒤 소수점 이하를 버린 값이 파티원 1인당 결정 가격",
+    "minPartySize": 1,
+    "defaultMaxPartySize": 6,
+    "note": "보스 입장 가능 인원은 기본 1~6인이나, 일부 보스는 예외로 각 entry의 maxPartySize가 defaultMaxPartySize를 덮어씀(사용자 확인, 2026-07-09): 스우 익스트림 2인, 최초의 대적자·찬란한 흉성·림보·발드릭스·유피테르 3인, 메이린 1인"
+  },
+  "prices": [
+    { "boss": "자쿰", "difficulty": "카오스", "priceMeso": 8080000, "asOf": "2026-06-25" },
+    { "boss": "매그너스", "difficulty": "하드", "priceMeso": 8560000, "asOf": "2026-06-25" },
+    { "boss": "파풀라투스", "difficulty": "카오스", "priceMeso": 13100000, "asOf": "2026-06-25" },
+    { "boss": "반반", "difficulty": "카오스", "priceMeso": 8150000, "asOf": "2026-06-25" },
+    { "boss": "피에르", "difficulty": "카오스", "priceMeso": 8170000, "asOf": "2026-06-25" },
+    { "boss": "블러디 퀸", "difficulty": "카오스", "priceMeso": 8140000, "asOf": "2026-06-25" },
+    { "boss": "벨룸", "difficulty": "카오스", "priceMeso": 9280000, "asOf": "2026-06-25" },
+
+    { "boss": "스우", "difficulty": "노멀", "priceMeso": 16700000, "asOf": "2026-06-25" },
+    { "boss": "스우", "difficulty": "하드", "priceMeso": 51500000, "asOf": "2026-06-25" },
+    { "boss": "스우", "difficulty": "익스트림", "priceMeso": 574000000, "asOf": "2026-06-25", "maxPartySize": 2 },
+
+    { "boss": "데미안", "difficulty": "노멀", "priceMeso": 17500000, "asOf": "2026-06-25" },
+    { "boss": "데미안", "difficulty": "하드", "priceMeso": 48900000, "asOf": "2026-06-25" },
+
+    { "boss": "가디언 엔젤 슬라임", "difficulty": "노멀", "priceMeso": 25500000, "asOf": "2026-06-25" },
+    { "boss": "가디언 엔젤 슬라임", "difficulty": "카오스", "priceMeso": 75100000, "asOf": "2026-06-25" },
+
+    { "boss": "루시드", "difficulty": "이지", "priceMeso": 29800000, "asOf": "2026-06-25" },
+    { "boss": "루시드", "difficulty": "노멀", "priceMeso": 35600000, "asOf": "2026-06-25" },
+    { "boss": "루시드", "difficulty": "하드", "priceMeso": 62900000, "asOf": "2026-06-25" },
+
+    { "boss": "윌", "difficulty": "이지", "priceMeso": 32300000, "asOf": "2026-06-25" },
+    { "boss": "윌", "difficulty": "노멀", "priceMeso": 41100000, "asOf": "2026-06-25" },
+    { "boss": "윌", "difficulty": "하드", "priceMeso": 77100000, "asOf": "2026-06-25" },
+
+    { "boss": "더스크", "difficulty": "노멀", "priceMeso": 44000000, "asOf": "2026-06-25" },
+    { "boss": "더스크", "difficulty": "카오스", "priceMeso": 69800000, "asOf": "2026-06-25" },
+
+    { "boss": "진 힐라", "difficulty": "노멀", "priceMeso": 71200000, "asOf": "2026-06-25" },
+    { "boss": "진 힐라", "difficulty": "하드", "priceMeso": 106000000, "asOf": "2026-06-25" },
+
+    { "boss": "듄켈", "difficulty": "노멀", "priceMeso": 47500000, "asOf": "2026-06-25" },
+    { "boss": "듄켈", "difficulty": "하드", "priceMeso": 94400000, "asOf": "2026-06-25" },
+
+    { "boss": "선택받은 세렌", "difficulty": "노멀", "priceMeso": 239000000, "asOf": "2026-06-25" },
+    { "boss": "선택받은 세렌", "difficulty": "하드", "priceMeso": 356000000, "asOf": "2026-06-25" },
+    { "boss": "선택받은 세렌", "difficulty": "익스트림", "priceMeso": 2835000000, "asOf": "2026-06-25" },
+
+    { "boss": "감시자 칼로스", "difficulty": "이지", "priceMeso": 280000000, "asOf": "2026-06-25" },
+    { "boss": "감시자 칼로스", "difficulty": "노멀", "priceMeso": 505000000, "asOf": "2026-06-25" },
+    { "boss": "감시자 칼로스", "difficulty": "카오스", "priceMeso": 1273000000, "asOf": "2026-06-25" },
+    { "boss": "감시자 칼로스", "difficulty": "익스트림", "priceMeso": 4104000000, "asOf": "2026-06-25" },
+
+    { "boss": "최초의 대적자", "difficulty": "이지", "priceMeso": 308000000, "asOf": "2026-06-25", "maxPartySize": 3 },
+    { "boss": "최초의 대적자", "difficulty": "노멀", "priceMeso": 560000000, "asOf": "2026-06-25", "maxPartySize": 3 },
+    { "boss": "최초의 대적자", "difficulty": "하드", "priceMeso": 1435000000, "asOf": "2026-06-25", "maxPartySize": 3 },
+    { "boss": "최초의 대적자", "difficulty": "익스트림", "priceMeso": 4712000000, "asOf": "2026-06-25", "maxPartySize": 3 },
+
+    { "boss": "카링", "difficulty": "이지", "priceMeso": 377000000, "asOf": "2026-06-25" },
+    { "boss": "카링", "difficulty": "노멀", "priceMeso": 678000000, "asOf": "2026-06-25" },
+    { "boss": "카링", "difficulty": "하드", "priceMeso": 1739000000, "asOf": "2026-06-25" },
+    { "boss": "카링", "difficulty": "익스트림", "priceMeso": 5387000000, "asOf": "2026-06-25" },
+
+    { "boss": "찬란한 흉성", "difficulty": "노멀", "priceMeso": 625000000, "asOf": "2026-06-25", "maxPartySize": 3 },
+    { "boss": "찬란한 흉성", "difficulty": "하드", "priceMeso": 2678000000, "asOf": "2026-06-25", "maxPartySize": 3 },
+
+    { "boss": "벨로나", "difficulty": "이지", "priceMeso": null, "status": "unreleased", "note": "아직 출시되지 않은 보스" },
+    { "boss": "벨로나", "difficulty": "노멀", "priceMeso": null, "status": "unreleased", "note": "아직 출시되지 않은 보스" },
+    { "boss": "벨로나", "difficulty": "하드", "priceMeso": null, "status": "unreleased", "note": "아직 출시되지 않은 보스" },
+
+    { "boss": "림보", "difficulty": "노멀", "priceMeso": 1026000000, "asOf": "2026-06-25", "maxPartySize": 3 },
+    { "boss": "림보", "difficulty": "하드", "priceMeso": 2385000000, "asOf": "2026-06-25", "maxPartySize": 3 },
+
+    { "boss": "발드릭스", "difficulty": "노멀", "priceMeso": 1368000000, "asOf": "2026-06-25", "maxPartySize": 3 },
+    { "boss": "발드릭스", "difficulty": "하드", "priceMeso": 3078000000, "asOf": "2026-06-25", "maxPartySize": 3 },
+
+    { "boss": "유피테르", "difficulty": "노멀", "priceMeso": 1615000000, "asOf": "2026-06-25", "maxPartySize": 3 },
+    { "boss": "유피테르", "difficulty": "하드", "priceMeso": 4845000000, "asOf": "2026-06-25", "maxPartySize": 3 },
+
+    { "boss": "메이린", "difficulty": "노멀", "priceMeso": 300000000, "asOf": "2026-07-09", "maxPartySize": 1, "note": "강력한 힘의 결정이 아닌 황금 메소 주머니(30개 × 1000만 메소) 총 가치 기준" },
+    { "boss": "메이린", "difficulty": "하드", "priceMeso": 600000000, "asOf": "2026-07-09", "maxPartySize": 1, "note": "강력한 힘의 결정이 아닌 황금 메소 주머니(60개 × 1000만 메소) 총 가치 기준" },
+
+    { "boss": "검은마법사", "difficulty": "하드", "priceMeso": 665000000, "asOf": "2026-07-01" },
+    { "boss": "검은마법사", "difficulty": "익스트림", "priceMeso": 8740000000, "asOf": "2026-07-01" }
+  ]
+}
