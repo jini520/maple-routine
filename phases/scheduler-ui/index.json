@@ -21,7 +21,10 @@
     {
       "step": 2,
       "name": "daily-screen",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-07-11T04:21:22+0900",
+      "summary": "src/features/schedule-sync/format.ts에 formatScheduleSyncError/formatSyncedAt(n분 전·n시간 전·방금 전·동기화 기록 없음) 추가; src/app/daily/DailyScreen.tsx가 useDailySchedulerStore만 구독해 마운트 시 refresh 1회 호출, 상단 새로고침 버튼 상시 노출, 캐릭터별로 isStale이면 에러 문구+동기화 시각을, dailyContents가 비어있고 isStale이 아니면 게임 미등록 빈 상태 안내를 구분 표시; App.tsx는 이미 DailyScreen을 연결 중이라 변경 없음, App.test.tsx의 placeholder 텍스트 검증 2건을 daily-scheduler store 모킹 + '일간 스케줄러' heading 검증으로 갱신.",
+      "completed_at": "2026-07-11T04:30:00+0900"
     },
     {
       "step": 3,

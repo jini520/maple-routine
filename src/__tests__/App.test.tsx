@@ -5,12 +5,18 @@ import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AppShell } from '../App'
 import { useOnboardingStore } from '../features/onboarding/store'
+import { useDailySchedulerStore } from '../features/daily-scheduler/store'
 
 vi.mock('../features/onboarding/store', () => ({
   useOnboardingStore: vi.fn(),
 }))
 
+vi.mock('../features/daily-scheduler/store', () => ({
+  useDailySchedulerStore: vi.fn(),
+}))
+
 const mockedUseOnboardingStore = vi.mocked(useOnboardingStore)
+const mockedUseDailySchedulerStore = vi.mocked(useDailySchedulerStore)
 
 function mockStore(overrides: Partial<ReturnType<typeof useOnboardingStore>>): void {
   mockedUseOnboardingStore.mockReturnValue({
@@ -25,6 +31,13 @@ function mockStore(overrides: Partial<ReturnType<typeof useOnboardingStore>>): v
     ...overrides,
   })
 }
+
+mockedUseDailySchedulerStore.mockReturnValue({
+  status: 'idle',
+  characters: [],
+  error: null,
+  refresh: vi.fn(),
+})
 
 function renderAt(path: string): void {
   render(
@@ -70,7 +83,7 @@ describe('AppShell', () => {
 
     renderAt('/onboarding')
 
-    expect(screen.getByText(/일간 화면 준비 중/)).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '일간 스케줄러' })).toBeInTheDocument()
   })
 
   it('status가 completed일 때 내비게이션(일간/주간 링크)이 보인다', () => {
@@ -103,6 +116,6 @@ describe('AppShell', () => {
 
     renderAt('/')
 
-    expect(screen.getByText(/일간 화면 준비 중/)).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '일간 스케줄러' })).toBeInTheDocument()
   })
 })
