@@ -1,0 +1,19 @@
+{
+  "project": "메이플 루틴 (Maple Routine)",
+  "phase": "onboarding",
+  "steps": [
+    {
+      "step": 0,
+      "name": "onboarding-state",
+      "status": "completed",
+      "started_at": "2026-07-11T03:07:52+0900",
+      "summary": "src/features/onboarding/state.ts에 순수 온보딩 리듀서(onboardingReducer)와 OnboardingState/OnboardingStatus/OnboardingError/OnboardingEvent 타입 작성 — API_KEY_VERIFIED 시 계정 1개면 자동 completed, 그 외는 selectingAccount로 전이하는 규칙 포함 7가지 상태 전이 전부 구현, 테스트 9건 추가"
+    },
+    {
+      "step": 1,
+      "name": "onboarding-store",
+      "status": "pending"
+    }
+  ],
+  "created_at": "2026-07-11T03:07:52+0900"
+}
