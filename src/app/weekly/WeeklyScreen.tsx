@@ -6,6 +6,8 @@ import { CharacterTrackingPicker } from '../../components/CharacterTrackingPicke
 import { getTrackedCharacterOcids, setTrackedCharacterOcids } from '../../storage/character-selection'
 import { useWeeklySchedulerStore } from '../../features/weekly-scheduler/store'
 import { formatScheduleSyncError, formatSyncedAt } from '../../features/schedule-sync/format'
+import { getRegisteredCharacters } from '../../features/schedule-sync/schedule-sync'
+import type { MapleCharacter } from '../../types'
 
 function StatusDot(props: { filled: boolean; label: string }): React.JSX.Element {
   return (
@@ -27,26 +29,34 @@ export function WeeklyScreen(): React.JSX.Element {
   const { status, characters, error, refresh } = useWeeklySchedulerStore()
   const [selectedOcid, setSelectedOcid] = useState<string | null>(null)
   const [trackedOcids, setTrackedOcids] = useState<string[] | null>(null)
+  const [roster, setRoster] = useState<MapleCharacter[]>([])
   const [isPickerOpen, setIsPickerOpen] = useState(false)
-
-  useEffect(() => {
-    refresh(trackedOcids ?? [])
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
 
   useEffect(() => {
     getTrackedCharacterOcids('weekly').then(setTrackedOcids)
   }, [])
 
-  const visibleCharacters =
-    trackedOcids === null ? [] : characters.filter((character) => trackedOcids.includes(character.ocid))
+  useEffect(() => {
+    getRegisteredCharacters()
+      .then(setRoster)
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    if (trackedOcids !== null) {
+      refresh(trackedOcids)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trackedOcids])
+
+  const isEmpty = trackedOcids === null || trackedOcids.length === 0
 
   const effectiveSelectedOcid =
-    selectedOcid !== null && visibleCharacters.some((character) => character.ocid === selectedOcid)
+    selectedOcid !== null && characters.some((character) => character.ocid === selectedOcid)
       ? selectedOcid
-      : (visibleCharacters[0]?.ocid ?? null)
+      : (characters[0]?.ocid ?? null)
 
-  const selected = visibleCharacters.find((character) => character.ocid === effectiveSelectedOcid) ?? null
+  const selected = characters.find((character) => character.ocid === effectiveSelectedOcid) ?? null
 
   const registeredWeeklyContents =
     selected !== null ? selected.weeklyContents.filter((content) => content.isRegistered) : []
@@ -75,14 +85,14 @@ export function WeeklyScreen(): React.JSX.Element {
 
   const trackingPicker = isPickerOpen && (
     <CharacterTrackingPicker
-      allCharacters={characters}
+      allCharacters={roster.map((character) => ({ ocid: character.ocid, characterName: character.name }))}
       trackedOcids={trackedOcids ?? []}
       onSave={handleSaveTracking}
       onClose={() => setIsPickerOpen(false)}
     />
   )
 
-  if (visibleCharacters.length === 0) {
+  if (isEmpty) {
     return (
       <div className="p-4 space-y-4">
         <div className="flex items-center justify-between">
@@ -141,7 +151,7 @@ export function WeeklyScreen(): React.JSX.Element {
       {status === 'loaded' && selected !== null && (
         <>
           <CharacterSelectDropdown
-            characters={visibleCharacters}
+            characters={characters}
             selectedOcid={selected.ocid}
             onSelect={setSelectedOcid}
           />
