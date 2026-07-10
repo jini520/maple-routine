@@ -1,0 +1,8 @@
+{
+  "project": "메이플 루틴 (Maple Routine)",
+  "phase": "nexon-native-restructure",
+  "steps": [
+    { "step": 0, "name": "nexon-restructure", "status": "pending" },
+    { "step": 1, "name": "native-restructure", "status": "pending" }
+  ]
+}
