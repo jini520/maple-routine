@@ -66,7 +66,7 @@ Feature 단위 구조. 각 `features/*` 폴더가 해당 기능의 상태와 로
   → storage/에 "마지막 동기화 결과 캐시" + 동기화 시각으로 저장
   → boss_contents에서 새로 complete_flag: true로 바뀐 보스가 있어도 features/boss-profit에 별도 안내(배지 등)를 표시하지 않는다 — 사용자가 화면에 직접 들어와 파티원 수를 입력한다(확정, 2026-07-09, 자동 유도 UI 없음)
   → features/daily-scheduler, features/weekly-scheduler가 캐시를 읽어 읽기 전용으로 표시(완전 읽기 전용, 앱 내 수동 체크 없음 — 확정, [[ADR-007]])
-  → features/boss-profit, features/item-drop도 같은 캐시에서 "등록된 주간 보스 목록"만 읽기 전용으로 구독한다([[ADR-011]]) — 이 목록 자체는 편집 불가, 사용자가 남기는 기록(파티원 수·아이템 획득)만 별도로 storage/에 쓴다
+  → features/item-drop은 같은 캐시에서 "등록된(`registration_flag: true`) 주간 보스 목록"만 읽기 전용으로 구독한다([[ADR-011]]). **정정(2026-07-11)**: ~~features/boss-profit도 동일하게 "등록된 주간 보스 목록"을 구독~~ — features/boss-profit은 등록 여부가 아니라 **처치된(`complete_flag: true`) 보스만** 구독·표시하고, 수익 계산도 처치된 보스만을 대상으로 한다(등록만 하고 아직 안 잡은 보스는 수익 계산기에 나타나지 않음 — `docs/PRD.md` "4. 주간 보스 수익 계산기" 참고, 사용자 확정). 두 feature 모두 이 목록 자체는 편집 불가하고, 사용자가 남기는 기록(파티원 수·아이템 획득)만 별도로 storage/에 쓴다
 
 [알림 발송 판단 — 실시간 재확인, [[ADR-004]] 확정 2026-07-09]
 알림 예정 시각 도달
