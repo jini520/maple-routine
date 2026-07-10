@@ -16,7 +16,7 @@
       "status": "completed",
       "started_at": "2026-07-11T06:41:49+0900",
       "summary": "daily/weekly-scheduler store의 refresh()를 refresh(ocids: string[])로 바꿔 syncSchedules(ocids)에 그대로 전달하고(빈 배열이면 syncSchedules 호출 없이 즉시 loaded/빈 배열 상태로), 더 이상 store가 직접 getRegisteredCharacters를 호출하지 않도록 정리 — DailyScreen/WeeklyScreen의 refresh() 호출부는 컴파일 통과를 위해 trackedOcids를 인자로 전달하도록 최소 수정",
-      "completed_at": "2026-07-11T06:52:00+0900"
+      "completed_at": "2026-07-11T06:46:12+0900"
     },
     {
       "step": 2,
