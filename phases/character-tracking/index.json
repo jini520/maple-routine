@@ -16,7 +16,7 @@
       "status": "completed",
       "started_at": "2026-07-11T05:46:38+0900",
       "summary": "src/components/CharacterSelectDropdown(네이티브 select 기반 캐릭터 전환)·CharacterTrackingPicker(체크박스+로컬 상태, 저장 클릭 시에만 onSave 호출하는 오버레이 모달) 신규 작성, 테스트 9개 포함 전체 226개 통과",
-      "completed_at": "2026-07-11T05:48:30+0900"
+      "completed_at": "2026-07-11T05:48:05+0900"
     },
     {
       "step": 2,
