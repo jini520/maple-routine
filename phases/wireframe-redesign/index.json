@@ -40,7 +40,7 @@
       "status": "completed",
       "started_at": "2026-07-11T05:06:41+0900",
       "summary": "BossPortrait를 rounded-full + object-cover로 변경(플레이스홀더는 '?' 기호 + title/aria-label), WeeklyScreen을 DailyScreen과 동일한 칩 탭 골격으로 재구성 — 주간 퀘스트/주간 보스 섹션 제목 아래 항목을 체크 아이콘(StatusDot, role=img aria-label)+한 줄 텍스트로 압축, 보스는 20px 원형 초상화 추가, isComplete로 완료/미완료 체크 구분, isRegistered:false 항목은 텍스트색을 옅게(#B7A490) 표시, weeklyBossClearCount/LimitCount 둘 다 있을 때만 n/12 배지 노출",
-      "completed_at": "2026-07-11T05:12:20+0900"
+      "completed_at": "2026-07-11T05:13:11+0900"
     }
   ],
   "created_at": "2026-07-11T04:56:17+0900"
