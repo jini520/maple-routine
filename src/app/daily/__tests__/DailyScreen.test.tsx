@@ -366,7 +366,7 @@ describe('DailyScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: '저장' }))
 
     await waitFor(() => {
-      expect(mockedSetTrackedCharacterOcids).toHaveBeenCalledWith('daily', ['ocid-1', 'ocid-2'])
+      expect(mockedSetTrackedCharacterOcids).toHaveBeenCalledWith('content', ['ocid-1', 'ocid-2'])
     })
     await waitFor(() => {
       expect(refresh).toHaveBeenLastCalledWith(['ocid-1', 'ocid-2'])

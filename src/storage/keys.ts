@@ -7,6 +7,6 @@ export function schedulerCacheKey(ocid: string): string {
   return `schedulerCache:${ocid}`
 }
 
-export function trackedCharactersKey(kind: 'daily' | 'weekly'): string {
+export function trackedCharactersKey(kind: 'content' | 'boss'): string {
   return `trackedCharacters:${kind}`
 }
