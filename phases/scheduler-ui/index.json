@@ -8,7 +8,7 @@
       "status": "completed",
       "started_at": "2026-07-11T04:15:53+0900",
       "summary": "src/lib/boss-icons.ts에 import.meta.glob으로 assets/bosses/*.png를 미리 매핑해 portraitSlug+난이도 접두사(이지→easy 등)로 조회하는 getBossPortraitUrl 추가, src/components/BossPortrait/BossPortrait.tsx가 이를 써서 이미지가 있으면 <img>, 없으면(slug null 또는 해당 난이도 파일 없음) label 텍스트 플레이스홀더를 렌더링.",
-      "completed_at": "2026-07-11T04:18:11+0900"
+      "completed_at": "2026-07-11T04:18:47+0900"
     },
     {
       "step": 1,
