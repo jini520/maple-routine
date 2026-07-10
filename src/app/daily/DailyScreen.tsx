@@ -1,26 +1,47 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useDailySchedulerStore } from '../../features/daily-scheduler/store'
 import { formatScheduleSyncError, formatSyncedAt } from '../../features/schedule-sync/format'
+import { CharacterChipTabs } from '../../components/CharacterChipTabs/CharacterChipTabs'
 
 export function DailyScreen(): React.JSX.Element {
   const { status, characters, error, refresh } = useDailySchedulerStore()
+  const [selectedOcid, setSelectedOcid] = useState<string | null>(null)
 
   useEffect(() => {
     refresh()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  const effectiveSelectedOcid =
+    selectedOcid !== null && characters.some((character) => character.ocid === selectedOcid)
+      ? selectedOcid
+      : (characters[0]?.ocid ?? null)
+
+  const selected = characters.find((character) => character.ocid === effectiveSelectedOcid) ?? null
+
   return (
     <div className="p-4 space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-[#2B1B10]">일간 스케줄러</h1>
-        <button
-          type="button"
-          onClick={() => refresh()}
-          className="rounded-full bg-[#FF7033] text-[#2B1206] font-semibold hover:bg-[#E6652E] px-4 py-2 text-sm"
-        >
-          새로고침
-        </button>
+      <h1 className="text-lg font-semibold text-[#2B1B10]">일간 스케줄러</h1>
+
+      <div className="space-y-1">
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-[#8A7362]">
+            {selected !== null ? formatSyncedAt(selected.syncedAt) : ''}
+          </p>
+          <button
+            type="button"
+            onClick={() => refresh()}
+            className="rounded-full bg-[#FF7033] text-[#2B1206] font-semibold hover:bg-[#E6652E] px-4 py-2 text-sm"
+          >
+            새로고침
+          </button>
+        </div>
+
+        {selected !== null && selected.isStale && (
+          <p className="text-sm text-[#B91C1C]">
+            {selected.error !== null ? formatScheduleSyncError(selected.error) : ''}
+          </p>
+        )}
       </div>
 
       {(status === 'idle' || status === 'loading') && (
@@ -33,41 +54,49 @@ export function DailyScreen(): React.JSX.Element {
         </p>
       )}
 
-      {status === 'loaded' && (
-        <ul className="space-y-4">
-          {characters.map((character) => (
-            <li
-              key={character.ocid}
-              className="rounded-[14px] bg-white border border-[#F0DFD1] p-4 space-y-2"
-            >
-              <h2 className="text-sm font-medium text-[#2B1B10]">{character.characterName}</h2>
+      {status === 'loaded' && selected !== null && (
+        <>
+          <CharacterChipTabs
+            characters={characters}
+            selectedOcid={selected.ocid}
+            onSelect={setSelectedOcid}
+          />
 
-              {character.isStale && (
-                <p className="text-sm text-[#B91C1C]">
-                  {character.error !== null ? formatScheduleSyncError(character.error) : ''} ·{' '}
-                  {formatSyncedAt(character.syncedAt)}
-                </p>
-              )}
+          {selected.dailyContents.length === 0 && !selected.isStale && (
+            <div className="rounded-[14px] border border-dashed border-[#F0DFD1] p-4 text-sm text-[#8A7362]">
+              표시할 항목이 없습니다 — 게임에서 스케줄러에 등록해주세요
+            </div>
+          )}
 
-              {character.dailyContents.length === 0 && !character.isStale && (
-                <p className="text-sm text-[#8A7362]">
-                  표시할 항목이 없습니다 — 게임에서 스케줄러에 등록해주세요
-                </p>
-              )}
-
-              {character.dailyContents.length > 0 && (
-                <ul className="space-y-1">
-                  {character.dailyContents.map((content) => (
-                    <li key={content.name} className="text-sm text-[#5B4636]">
-                      {content.name} · {content.isRegistered ? '등록됨' : '미등록'} ·{' '}
-                      {content.nowCount}/{content.maxCount}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </li>
-          ))}
-        </ul>
+          {selected.dailyContents.length > 0 && (
+            <ul className="space-y-3">
+              {selected.dailyContents.map((content) => (
+                <li
+                  key={content.name}
+                  className="rounded-[14px] bg-white border border-[#F0DFD1] p-4 space-y-2"
+                >
+                  <p className="text-sm text-[#5B4636]">
+                    {content.name} · {content.nowCount}/{content.maxCount}
+                  </p>
+                  {content.maxCount > 0 && (
+                    <div
+                      role="progressbar"
+                      aria-valuenow={content.nowCount}
+                      aria-valuemin={0}
+                      aria-valuemax={content.maxCount}
+                      className="h-1.5 w-full rounded-full bg-[#F7EDE3] overflow-hidden"
+                    >
+                      <div
+                        className="h-1.5 rounded-full bg-[#FF7033]"
+                        style={{ width: `${Math.min((content.nowCount / content.maxCount) * 100, 100)}%` }}
+                      />
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
       )}
     </div>
   )
