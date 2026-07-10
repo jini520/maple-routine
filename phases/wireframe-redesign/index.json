@@ -7,7 +7,8 @@
       "name": "character-chip-tabs",
       "status": "completed",
       "started_at": "2026-07-11T04:56:17+0900",
-      "summary": "src/components/CharacterChipTabs/CharacterChipTabs.tsx 추가 — 캐릭터별 pill 칩 탭(gap-1.5), 활성 칩은 border-[#FFC9A8]/bg-[#FFE9DB]/text-[#C2410C], 비활성은 border-[#F0DFD1]/text-[#B7A490], aria-pressed로 활성 상태 표시, 클릭 시 onSelect(ocid) 호출"
+      "summary": "src/components/CharacterChipTabs/CharacterChipTabs.tsx 추가 — 캐릭터별 pill 칩 탭(gap-1.5), 활성 칩은 border-[#FFC9A8]/bg-[#FFE9DB]/text-[#C2410C], 비활성은 border-[#F0DFD1]/text-[#B7A490], aria-pressed로 활성 상태 표시, 클릭 시 onSelect(ocid) 호출",
+      "completed_at": "2026-07-11T04:57:39+0900"
     },
     {
       "step": 1,
