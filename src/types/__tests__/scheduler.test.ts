@@ -106,19 +106,19 @@ describe('wire 타입 샘플 객체 (Nexon API 원본 응답 그대로)', () => 
   it('NexonCharacterListResponse 샘플이 snake_case account_list 구조를 반영한다', () => {
     const characterSummary: NexonCharacterSummary = {
       ocid: '50119a0...',
-      characterName: '내옆에최성일',
-      worldName: '베라',
-      characterClass: '아크메이지(썬,콜)',
-      characterLevel: 211,
+      character_name: '내옆에최성일',
+      world_name: '베라',
+      character_class: '아크메이지(썬,콜)',
+      character_level: 211,
     }
     const accountSummary: NexonAccountSummary = {
-      accountId: 'da9b2f2...',
-      characterList: [characterSummary],
+      account_id: 'da9b2f2...',
+      character_list: [characterSummary],
     }
     const response: NexonCharacterListResponse = {
-      accountList: [accountSummary],
+      account_list: [accountSummary],
     }
-    expect(response.accountList).toHaveLength(1)
+    expect(response.account_list).toHaveLength(1)
   })
 
   it('NexonDailyContentWire 샘플이 registration_flag 문자열 리터럴을 갖는다', () => {

@@ -1,18 +1,18 @@
 export interface NexonCharacterSummary {
   ocid: string
-  characterName: string
-  worldName: string
-  characterClass: string
-  characterLevel: number
+  character_name: string
+  world_name: string
+  character_class: string
+  character_level: number
 }
 
 export interface NexonAccountSummary {
-  accountId: string
-  characterList: NexonCharacterSummary[]
+  account_id: string
+  character_list: NexonCharacterSummary[]
 }
 
 export interface NexonCharacterListResponse {
-  accountList: NexonAccountSummary[]
+  account_list: NexonAccountSummary[]
 }
 
 export type NexonRawDifficulty = 'easy' | 'normal' | 'hard' | 'chaos' | 'extreme'
