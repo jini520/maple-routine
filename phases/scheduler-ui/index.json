@@ -16,7 +16,7 @@
       "status": "completed",
       "started_at": "2026-07-11T04:18:47+0900",
       "summary": "react-router-dom 도입해 src/App.tsx에 AppShell(라우터 미포함, 테스트용 export)과 BrowserRouter로 감싼 App(default export)을 분리; /, /onboarding, /daily, /weekly 라우트와 status 기반 리다이렉트, completed일 때만 보이는 일간/주간 내비게이션 추가; restoreFromStorage 호출을 OnboardingScreen에서 AppShell로 이동(앱 전체에서 1회만 호출); placeholder src/app/daily/DailyScreen.tsx, src/app/weekly/WeeklyScreen.tsx 생성; src/__tests__/App.test.tsx 신규 작성.",
-      "completed_at": "2026-07-11T04:30:00+0900"
+      "completed_at": "2026-07-11T04:21:22+0900"
     },
     {
       "step": 2,
