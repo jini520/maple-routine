@@ -6,3 +6,7 @@ export const STORAGE_KEYS = {
 export function schedulerCacheKey(ocid: string): string {
   return `schedulerCache:${ocid}`
 }
+
+export function trackedCharactersKey(kind: 'daily' | 'weekly'): string {
+  return `trackedCharacters:${kind}`
+}
