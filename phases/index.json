@@ -32,7 +32,8 @@
     },
     {
       "dir": "character-tracking",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-07-11T05:56:59+0900"
     }
   ]
 }
