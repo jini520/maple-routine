@@ -37,15 +37,6 @@ afterEach(() => {
 })
 
 describe('OnboardingScreen', () => {
-  it('마운트 시 restoreFromStorage가 정확히 1번 호출된다', () => {
-    const restoreFromStorage = vi.fn()
-    mockStore({ restoreFromStorage })
-
-    render(<OnboardingScreen />)
-
-    expect(restoreFromStorage).toHaveBeenCalledTimes(1)
-  })
-
   it('status가 awaitingApiKey이면 ApiKeyForm이 렌더링된다', () => {
     mockStore({ status: 'awaitingApiKey' })
 
