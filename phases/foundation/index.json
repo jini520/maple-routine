@@ -21,7 +21,10 @@
     {
       "step": 2,
       "name": "nexon-api-client",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-07-11T02:48:53+0900",
+      "summary": "src/nexon/{errors,normalize,client}.ts 추가 — NexonApiError/NexonAuthError(401·403)/NexonRateLimitError(429)/NexonNetworkError(네트워크·5xx·JSON 파싱 실패) 에러 타입, wire→domain 정규화(registration_flag·complete_flag 문자열→boolean, difficulty 영↔한글 매핑, bossDaily 필터링 후 weekly/monthly 변환), fetchCharacterList/fetchSchedulerCharacterState/fetchSchedulerStatesForCharacters(순차 호출, 401/429는 즉시 전파·그 외 실패는 해당 캐릭터만 스킵) 구현. 부수적으로 Step 0의 NexonCharacterListResponse 계열 wire 타입이 camelCase로 잘못 정의되어 있던 걸(ADR-007 실측 API는 snake_case) snake_case로 수정하고 관련 테스트도 함께 갱신",
+      "completed_at": "2026-07-11T03:05:00+0900"
     },
     {
       "step": 3,
