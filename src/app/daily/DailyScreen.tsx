@@ -2,34 +2,44 @@ import { useEffect, useState } from 'react'
 import { RefreshCw } from 'lucide-react'
 import { useDailySchedulerStore } from '../../features/daily-scheduler/store'
 import { formatScheduleSyncError, formatSyncedAt } from '../../features/schedule-sync/format'
+import { getRegisteredCharacters } from '../../features/schedule-sync/schedule-sync'
 import { CharacterSelectDropdown } from '../../components/CharacterSelectDropdown/CharacterSelectDropdown'
 import { CharacterTrackingPicker } from '../../components/CharacterTrackingPicker/CharacterTrackingPicker'
 import { getTrackedCharacterOcids, setTrackedCharacterOcids } from '../../storage/character-selection'
+import type { MapleCharacter } from '../../types'
 
 export function DailyScreen(): React.JSX.Element {
   const { status, characters, error, refresh } = useDailySchedulerStore()
   const [selectedOcid, setSelectedOcid] = useState<string | null>(null)
   const [trackedOcids, setTrackedOcids] = useState<string[] | null>(null)
+  const [roster, setRoster] = useState<MapleCharacter[]>([])
   const [isPickerOpen, setIsPickerOpen] = useState(false)
-
-  useEffect(() => {
-    refresh(trackedOcids ?? [])
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
 
   useEffect(() => {
     getTrackedCharacterOcids('daily').then(setTrackedOcids)
   }, [])
 
-  const visibleCharacters =
-    trackedOcids === null ? [] : characters.filter((character) => trackedOcids.includes(character.ocid))
+  useEffect(() => {
+    getRegisteredCharacters()
+      .then(setRoster)
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    if (trackedOcids !== null) {
+      refresh(trackedOcids)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trackedOcids])
+
+  const isEmpty = trackedOcids === null || trackedOcids.length === 0
 
   const effectiveSelectedOcid =
-    selectedOcid !== null && visibleCharacters.some((character) => character.ocid === selectedOcid)
+    selectedOcid !== null && characters.some((character) => character.ocid === selectedOcid)
       ? selectedOcid
-      : (visibleCharacters[0]?.ocid ?? null)
+      : (characters[0]?.ocid ?? null)
 
-  const selected = visibleCharacters.find((character) => character.ocid === effectiveSelectedOcid) ?? null
+  const selected = characters.find((character) => character.ocid === effectiveSelectedOcid) ?? null
 
   const registeredContents = selected !== null ? selected.dailyContents.filter((content) => content.isRegistered) : []
 
@@ -51,14 +61,14 @@ export function DailyScreen(): React.JSX.Element {
 
   const trackingPicker = isPickerOpen && (
     <CharacterTrackingPicker
-      allCharacters={characters}
+      allCharacters={roster.map((character) => ({ ocid: character.ocid, characterName: character.name }))}
       trackedOcids={trackedOcids ?? []}
       onSave={handleSaveTracking}
       onClose={() => setIsPickerOpen(false)}
     />
   )
 
-  if (visibleCharacters.length === 0) {
+  if (isEmpty) {
     return (
       <div className="p-4 space-y-4">
         <div className="flex items-center justify-between">
@@ -117,7 +127,7 @@ export function DailyScreen(): React.JSX.Element {
       {status === 'loaded' && selected !== null && (
         <>
           <CharacterSelectDropdown
-            characters={visibleCharacters}
+            characters={characters}
             selectedOcid={selected.ocid}
             onSelect={setSelectedOcid}
           />

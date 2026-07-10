@@ -21,7 +21,10 @@
     {
       "step": 2,
       "name": "daily-screen-scoped-fetch",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-07-11T06:46:12+0900",
+      "summary": "DailyScreen이 getRegisteredCharacters()로 roster(전체 캐릭터 후보)를 별도 조회해 CharacterTrackingPicker에 전달하고, trackedOcids가 로드된 뒤에만 refresh(trackedOcids)를 호출하도록 변경 — characters.filter 기반 visibleCharacters 제거하고 스토어의 characters를 그대로 표시, 빈 상태 판정은 trackedOcids 기준으로 전환",
+      "completed_at": "2026-07-11T06:49:48+0900"
     },
     {
       "step": 3,
