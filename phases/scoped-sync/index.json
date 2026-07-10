@@ -1,0 +1,10 @@
+{
+  "project": "메이플 루틴 (Maple Routine)",
+  "phase": "scoped-sync",
+  "steps": [
+    { "step": 0, "name": "schedule-sync-scoped", "status": "pending" },
+    { "step": 1, "name": "scoped-refresh-stores", "status": "pending" },
+    { "step": 2, "name": "daily-screen-scoped-fetch", "status": "pending" },
+    { "step": 3, "name": "weekly-screen-scoped-fetch", "status": "pending" }
+  ]
+}

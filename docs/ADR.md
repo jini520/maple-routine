@@ -21,6 +21,7 @@
 **결정**: 별도 서버/DB 없이 기기 로컬 저장소(Capacitor SQLite 또는 Preferences)에 모든 데이터를 저장한다. 사용자가 openapi.nexon.com에서 개인적으로 발급받은 Nexon API 키도 이 로컬 저장소에 저장하고, 앱이 이 키로 Nexon Open API를 직접 호출한다([[ADR-007]]).
 **이유**: 로그인·서버 인프라 없이도 개인 기록 관리라는 핵심 가치를 제공할 수 있어 MVP 범위를 최소화할 수 있다.
 **트레이드오프**: 기기 변경/앱 삭제 시 데이터가 유실될 수 있고 멀티 디바이스 동기화가 불가능하다. 추후 백업(export/import) 또는 클라우드 동기화로 확장 가능하도록 저장소 접근을 `storage/` 레이어로 추상화해둔다.
+**확정 — SQLite vs Preferences 하이브리드 채택 (2026-07-11)**: 단순 key-value 데이터(Nexon API 키, 선택된 계정, 일간/주간 화면의 추적 캐릭터 목록, 스케줄 동기화 캐시)는 `@capacitor/preferences`로 충분해 그대로 쓴다. 반면 앞으로 만들 보스 수익 기록(캐릭터+보스+난이도+주차 unique key로 upsert, [[ADR-008]] 멱등성 요구사항)과 물욕템 드랍 히스토리(날짜 범위로 "이번 주/월간 추이" 조회, PRD 핵심 기능 4)는 실제 쿼리(WHERE/날짜 범위/upsert)가 필요해 Preferences로는 비효율적이다 — 이 두 기능을 구현하는 시점에 `@capacitor-community/sqlite`를 도입하는 **하이브리드**로 확정한다. 지금 당장 기존 Preferences 기반 저장소를 SQLite로 전면 마이그레이션하지 않는다. SQLite 도입 시 웹 환경 테스트를 위한 `jeep-sqlite` 폴리필도 함께 검토해야 한다.
 **검토했다가 기각한 대안**: Nexon Open ID(OAuth 로그인) 연동 시 authorization code → access token 교환에 서버가 필요해 이 ADR을 일시 수정하는 방향으로 검토했었다. 하지만 Nexon Open ID는 "메이플스토리 파트너스" 승인이 필요한 제한된 기능이고(사용자 미신청 상태), 실측 결과 스케줄러 Open API가 개인 API 키 + ocid만으로 호출 가능함이 확인되어([[ADR-007]]) 이 대안은 기각하고 원래 결정을 유지한다 (2026-07-09).
 
 ### ADR-004: 서버 푸시 없이 로컬 알림만 사용
