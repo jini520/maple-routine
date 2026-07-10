@@ -16,7 +16,7 @@
       "status": "completed",
       "started_at": "2026-07-11T07:19:17+0900",
       "summary": "src/features/boss-scheduler/store.ts 신규 작성 — weekly-scheduler와 동일한 refresh(ocids) 패턴으로 schedule-sync를 통해 bossContents를 matchBossContent의 cycle 필드로 weeklyBosses/monthlyBosses로 분리해 BossCharacterView로 노출, 기존 weekly-scheduler와 app/weekly는 미변경",
-      "completed_at": "2026-07-11T07:21:00+0900"
+      "completed_at": "2026-07-11T07:20:46+0900"
     },
     {
       "step": 2,
