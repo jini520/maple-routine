@@ -1,6 +1,12 @@
+/// <reference types="node" />
+import { existsSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import bossRingBoxes from '../boss-ring-boxes.json'
 import itemDropTable from '../item-drop-table.json'
+
+const ringsDir = join(dirname(fileURLToPath(import.meta.url)), '../../assets/items/rings')
 
 function sum(values: number[]): number {
   return values.reduce((total, value) => total + value, 0)
@@ -49,5 +55,19 @@ describe('보스 반지 상자 확률 데이터 정합성', () => {
 
     const missing = [...referenced].filter((name) => !catalogNames.has(name))
     expect(missing).toEqual([])
+  })
+
+  it('iconFile이 지정된 항목은 실제로 src/assets/items/rings/에 파일이 존재한다', () => {
+    const missingFiles: string[] = []
+
+    for (const box of bossRingBoxes.boxes) {
+      for (const item of box.itemProbabilities) {
+        if (item.iconFile && !existsSync(join(ringsDir, item.iconFile))) {
+          missingFiles.push(`${item.name} -> ${item.iconFile}`)
+        }
+      }
+    }
+
+    expect(missingFiles).toEqual([])
   })
 })
