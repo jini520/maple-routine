@@ -37,7 +37,8 @@
     },
     {
       "dir": "nexon-native-restructure",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-07-11T06:33:42+0900"
     },
     {
       "dir": "scoped-sync",
