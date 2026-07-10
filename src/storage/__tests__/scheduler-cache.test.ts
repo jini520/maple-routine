@@ -5,6 +5,7 @@ import {
   clearCachedSchedulerState,
   getCachedSchedulerState,
   setCachedSchedulerState,
+  type CachedSchedulerEntry,
 } from '../scheduler-cache'
 
 vi.mock('@capacitor/preferences', () => {
@@ -37,6 +38,11 @@ const sampleState: SchedulerCharacterState = {
   weeklyBossClearLimitCount: 0,
 }
 
+const sampleEntry: CachedSchedulerEntry = {
+  state: sampleState,
+  syncedAt: '2026-07-09T00:05:00.000Z',
+}
+
 beforeEach(async () => {
   vi.mocked(Preferences.get).mockClear()
   vi.mocked(Preferences.set).mockClear()
@@ -46,8 +52,8 @@ beforeEach(async () => {
 
 describe('round-trip', () => {
   it('setCachedSchedulerState 후 getCachedSchedulerState로 저장한 값을 그대로 읽는다', async () => {
-    await setCachedSchedulerState('ocid-1', sampleState)
-    await expect(getCachedSchedulerState('ocid-1')).resolves.toEqual(sampleState)
+    await setCachedSchedulerState('ocid-1', sampleEntry)
+    await expect(getCachedSchedulerState('ocid-1')).resolves.toEqual(sampleEntry)
   })
 })
 
@@ -57,7 +63,7 @@ describe('저장된 값이 없는 경우', () => {
   })
 
   it('clearCachedSchedulerState 이후에는 null을 반환한다', async () => {
-    await setCachedSchedulerState('ocid-1', sampleState)
+    await setCachedSchedulerState('ocid-1', sampleEntry)
     await clearCachedSchedulerState('ocid-1')
     await expect(getCachedSchedulerState('ocid-1')).resolves.toBeNull()
   })
@@ -73,6 +79,6 @@ describe('손상된 JSON', () => {
 describe('쓰기 실패 전파', () => {
   it('Preferences.set이 reject되면 setCachedSchedulerState도 에러를 그대로 전파한다', async () => {
     vi.mocked(Preferences.set).mockRejectedValueOnce(new Error('disk full'))
-    await expect(setCachedSchedulerState('ocid-1', sampleState)).rejects.toThrow('disk full')
+    await expect(setCachedSchedulerState('ocid-1', sampleEntry)).rejects.toThrow('disk full')
   })
 })
