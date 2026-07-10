@@ -62,7 +62,7 @@ Feature 단위 구조. 각 `features/*` 폴더가 해당 기능의 상태와 로
   → 실패 시([[ADR-008]]) 에러 유형별로 분기하고 마지막 캐시를 그대로 표시, 여기서 흐름 중단
   → 응답의 daily_contents/weekly_contents/boss_contents를 파싱(필드 단위 방어적 파싱, [[ADR-008]])
   → boss_contents 중 cycle이 bossWeekly/bossMonthly인 것만 사용(bossDaily는 무시)
-  → src/data/ 참조 테이블로 보스명·난이도 표기 정규화(영↔한글, 양쪽 공백 제거 후 비교, apiAlias 예외 매핑). 매핑 안 되는 항목은 원문 그대로 "알 수 없는 콘텐츠"로 표시
+  → src/data/ 참조 테이블로 보스명·난이도 표기 정규화(영↔한글, 양쪽 공백 제거 후 비교, apiAlias 예외 매핑). 매핑 안 되는 항목은 원문 그대로 "알 수 없는 콘텐츠"로 표시. **정정(2026-07-11)**: ~~이 정규화를 nexon/이 전부 수행~~ — 난이도 영↔한글 변환은 `nexon/normalize.ts`가 담당하지만, 보스명 매칭(양쪽 공백 제거 비교, apiAlias 예외)은 `nexon/`이 아니라 `lib/boss-matching`이 담당하고 그 결과를 `features/weekly-scheduler`가 소비한다 — `nexon/`이 `src/data/`를 몰라야 독립적으로 테스트 가능하다는 레이어 분리 원칙 유지
   → storage/에 "마지막 동기화 결과 캐시" + 동기화 시각으로 저장
   → boss_contents에서 새로 complete_flag: true로 바뀐 보스가 있어도 features/boss-profit에 별도 안내(배지 등)를 표시하지 않는다 — 사용자가 화면에 직접 들어와 파티원 수를 입력한다(확정, 2026-07-09, 자동 유도 UI 없음)
   → features/daily-scheduler, features/weekly-scheduler가 캐시를 읽어 읽기 전용으로 표시(완전 읽기 전용, 앱 내 수동 체크 없음 — 확정, [[ADR-007]])
