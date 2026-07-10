@@ -21,7 +21,10 @@
     {
       "step": 2,
       "name": "onboarding-redesign",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-07-11T04:59:38+0900",
+      "summary": "ApiKeyForm에 점선 테두리 샘플 이미지 자리표시자(입력 필드·설명 문구보다 앞) 추가, AccountSelectionList를 카드 클릭→하이라이트→'계속하기' 클릭 시 확정되는 2단계 흐름으로 변경(원형 아바타 플레이스홀더 + 2줄 텍스트 카드 레이아웃 포함)",
+      "completed_at": "2026-07-11T05:02:00+0900"
     },
     {
       "step": 3,

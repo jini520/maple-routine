@@ -47,4 +47,10 @@ describe('ApiKeyForm', () => {
     const link = screen.getByRole('link')
     expect(link).toHaveAttribute('href', expect.stringContaining('openapi.nexon.com'))
   })
+
+  it('API 키 발급 화면 예시 샘플 이미지 자리표시자를 렌더링한다', () => {
+    render(<ApiKeyForm isSubmitting={false} errorMessage={null} onSubmit={vi.fn()} />)
+
+    expect(screen.getByText(/API 키 발급 화면 예시/)).toBeInTheDocument()
+  })
 })
