@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { RefreshCw } from 'lucide-react'
 import { useDailySchedulerStore } from '../../features/daily-scheduler/store'
 import { formatScheduleSyncError, formatSyncedAt } from '../../features/schedule-sync/format'
 import { CharacterChipTabs } from '../../components/CharacterChipTabs/CharacterChipTabs'
@@ -31,8 +32,9 @@ export function DailyScreen(): React.JSX.Element {
           <button
             type="button"
             onClick={() => refresh()}
-            className="rounded-full bg-[#FF7033] text-[#2B1206] font-semibold hover:bg-[#E6652E] px-4 py-2 text-sm"
+            className="flex items-center gap-1.5 rounded-full bg-[#FF7033] text-[#2B1206] font-semibold hover:bg-[#E6652E] px-4 py-2 text-sm"
           >
+            <RefreshCw className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
             새로고침
           </button>
         </div>
