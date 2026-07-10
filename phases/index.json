@@ -22,7 +22,8 @@
     },
     {
       "dir": "scheduler-ui",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-07-11T04:28:11+0900"
     }
   ]
 }
