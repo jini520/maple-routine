@@ -1,14 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CharacterScheduleSync } from '../../schedule-sync/schedule-sync'
-import type { DailyContent, MapleCharacter } from '../../../types'
+import type { DailyContent } from '../../../types'
 
-const { getRegisteredCharactersMock, syncSchedulesMock } = vi.hoisted(() => ({
-  getRegisteredCharactersMock: vi.fn(),
+const { syncSchedulesMock } = vi.hoisted(() => ({
   syncSchedulesMock: vi.fn(),
 }))
 
 vi.mock('../../schedule-sync/schedule-sync', () => ({
-  getRegisteredCharacters: getRegisteredCharactersMock,
   syncSchedules: syncSchedulesMock,
 }))
 
@@ -16,10 +14,6 @@ import { useDailySchedulerStore } from '../store'
 
 function dailyContent(name: string): DailyContent {
   return { name, isRegistered: true, nowCount: 1, maxCount: 3 }
-}
-
-function character(ocid: string): MapleCharacter {
-  return { ocid, name: `캐릭터-${ocid}`, world: '베라', jobClass: '렌', level: 200 }
 }
 
 function syncResult(overrides: Partial<CharacterScheduleSync> = {}): CharacterScheduleSync {
@@ -47,7 +41,6 @@ function syncResult(overrides: Partial<CharacterScheduleSync> = {}): CharacterSc
 
 beforeEach(() => {
   useDailySchedulerStore.setState({ status: 'idle', characters: [], error: null })
-  getRegisteredCharactersMock.mockResolvedValue([character('ocid-1'), character('ocid-2')])
 })
 
 afterEach(() => {
@@ -60,6 +53,24 @@ describe('useDailySchedulerStore', () => {
     expect(state.status).toBe('idle')
     expect(state.characters).toEqual([])
     expect(state.error).toBeNull()
+  })
+
+  it('refresh([])는 syncSchedules를 호출하지 않고 곧바로 loaded/빈 배열 상태가 된다', async () => {
+    await useDailySchedulerStore.getState().refresh([])
+
+    const state = useDailySchedulerStore.getState()
+    expect(syncSchedulesMock).not.toHaveBeenCalled()
+    expect(state.status).toBe('loaded')
+    expect(state.characters).toEqual([])
+    expect(state.error).toBeNull()
+  })
+
+  it('refresh(ocids)는 syncSchedules(ocids)를 정확히 그 인자로 호출한다', async () => {
+    syncSchedulesMock.mockResolvedValue([syncResult()])
+
+    await useDailySchedulerStore.getState().refresh(['ocid-1'])
+
+    expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1'])
   })
 
   it('모든 캐릭터가 성공하면 status: loaded이고 각 캐릭터의 dailyContents가 그대로 반영된다', async () => {
@@ -83,7 +94,7 @@ describe('useDailySchedulerStore', () => {
       }),
     ])
 
-    await useDailySchedulerStore.getState().refresh()
+    await useDailySchedulerStore.getState().refresh(['ocid-1', 'ocid-2'])
 
     const state = useDailySchedulerStore.getState()
     expect(state.status).toBe('loaded')
@@ -113,7 +124,7 @@ describe('useDailySchedulerStore', () => {
       syncResult({ state: null, syncedAt: null, isStale: true, error: { kind: 'network' } }),
     ])
 
-    await useDailySchedulerStore.getState().refresh()
+    await useDailySchedulerStore.getState().refresh(['ocid-1'])
 
     const state = useDailySchedulerStore.getState()
     expect(state.status).toBe('loaded')
@@ -142,7 +153,7 @@ describe('useDailySchedulerStore', () => {
       }),
     ])
 
-    await useDailySchedulerStore.getState().refresh()
+    await useDailySchedulerStore.getState().refresh(['ocid-1', 'ocid-2'])
 
     const state = useDailySchedulerStore.getState()
     expect(state.status).toBe('loaded')
@@ -156,24 +167,12 @@ describe('useDailySchedulerStore', () => {
   it('syncSchedules() 자체가 throw하면 status: error가 되고 characters는 비어있는 상태를 유지한다', async () => {
     syncSchedulesMock.mockRejectedValue(new Error('온보딩이 완료되지 않았습니다'))
 
-    await useDailySchedulerStore.getState().refresh()
+    await useDailySchedulerStore.getState().refresh(['ocid-1'])
 
     const state = useDailySchedulerStore.getState()
     expect(state.status).toBe('error')
     expect(state.error).toEqual({ kind: 'network' })
     expect(state.characters).toEqual([])
-  })
-
-  it('getRegisteredCharacters() 자체가 throw하면 status: error가 되고 syncSchedules는 호출되지 않는다', async () => {
-    getRegisteredCharactersMock.mockRejectedValue(new Error('온보딩이 완료되지 않았습니다'))
-
-    await useDailySchedulerStore.getState().refresh()
-
-    const state = useDailySchedulerStore.getState()
-    expect(state.status).toBe('error')
-    expect(state.error).toEqual({ kind: 'network' })
-    expect(state.characters).toEqual([])
-    expect(syncSchedulesMock).not.toHaveBeenCalled()
   })
 
   it('refresh 시작 시 status를 loading으로 바꾼다', async () => {
@@ -185,7 +184,7 @@ describe('useDailySchedulerStore', () => {
         }),
     )
 
-    const promise = useDailySchedulerStore.getState().refresh()
+    const promise = useDailySchedulerStore.getState().refresh(['ocid-1'])
 
     await vi.waitFor(() => expect(useDailySchedulerStore.getState().status).toBe('loading'))
     resolveSync([])

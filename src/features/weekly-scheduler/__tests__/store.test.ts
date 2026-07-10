@@ -1,14 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CharacterScheduleSync } from '../../schedule-sync/schedule-sync'
-import type { BossContent, MapleCharacter, WeeklyContent } from '../../../types'
+import type { BossContent, WeeklyContent } from '../../../types'
 
-const { getRegisteredCharactersMock, syncSchedulesMock } = vi.hoisted(() => ({
-  getRegisteredCharactersMock: vi.fn(),
+const { syncSchedulesMock } = vi.hoisted(() => ({
   syncSchedulesMock: vi.fn(),
 }))
 
 vi.mock('../../schedule-sync/schedule-sync', () => ({
-  getRegisteredCharacters: getRegisteredCharactersMock,
   syncSchedules: syncSchedulesMock,
 }))
 
@@ -16,10 +14,6 @@ import { useWeeklySchedulerStore } from '../store'
 
 function weeklyContent(name: string): WeeklyContent {
   return { name, kind: 'contents', isRegistered: true, nowCount: 1, maxCount: 3 }
-}
-
-function character(ocid: string): MapleCharacter {
-  return { ocid, name: `캐릭터-${ocid}`, world: '베라', jobClass: '렌', level: 200 }
 }
 
 function bossContent(overrides: Partial<BossContent> = {}): BossContent {
@@ -58,7 +52,6 @@ function syncResult(overrides: Partial<CharacterScheduleSync> = {}): CharacterSc
 
 beforeEach(() => {
   useWeeklySchedulerStore.setState({ status: 'idle', characters: [], error: null })
-  getRegisteredCharactersMock.mockResolvedValue([character('ocid-1'), character('ocid-2')])
 })
 
 afterEach(() => {
@@ -73,10 +66,28 @@ describe('useWeeklySchedulerStore', () => {
     expect(state.error).toBeNull()
   })
 
+  it('refresh([])는 syncSchedules를 호출하지 않고 곧바로 loaded/빈 배열 상태가 된다', async () => {
+    await useWeeklySchedulerStore.getState().refresh([])
+
+    const state = useWeeklySchedulerStore.getState()
+    expect(syncSchedulesMock).not.toHaveBeenCalled()
+    expect(state.status).toBe('loaded')
+    expect(state.characters).toEqual([])
+    expect(state.error).toBeNull()
+  })
+
+  it('refresh(ocids)는 syncSchedules(ocids)를 정확히 그 인자로 호출한다', async () => {
+    syncSchedulesMock.mockResolvedValue([syncResult()])
+
+    await useWeeklySchedulerStore.getState().refresh(['ocid-1'])
+
+    expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1'])
+  })
+
   it('모든 캐릭터가 성공하면 status: loaded이고 weeklyContents·bosses·클리어 카운트가 그대로 반영된다', async () => {
     syncSchedulesMock.mockResolvedValue([syncResult({ ocid: 'ocid-1', characterName: '캐릭터1' })])
 
-    await useWeeklySchedulerStore.getState().refresh()
+    await useWeeklySchedulerStore.getState().refresh(['ocid-1'])
 
     const state = useWeeklySchedulerStore.getState()
     expect(state.status).toBe('loaded')
@@ -111,7 +122,7 @@ describe('useWeeklySchedulerStore', () => {
       syncResult({ state: { ...syncResult().state!, bossContents: [bossContent({ name: '알 수 없는 콘텐츠' })] } }),
     ])
 
-    await useWeeklySchedulerStore.getState().refresh()
+    await useWeeklySchedulerStore.getState().refresh(['ocid-1'])
 
     const state = useWeeklySchedulerStore.getState()
     expect(state.status).toBe('loaded')
@@ -133,7 +144,7 @@ describe('useWeeklySchedulerStore', () => {
       syncResult({ state: null, syncedAt: null, isStale: true, error: { kind: 'network' } }),
     ])
 
-    await useWeeklySchedulerStore.getState().refresh()
+    await useWeeklySchedulerStore.getState().refresh(['ocid-1'])
 
     const state = useWeeklySchedulerStore.getState()
     expect(state.status).toBe('loaded')
@@ -165,7 +176,7 @@ describe('useWeeklySchedulerStore', () => {
       }),
     ])
 
-    await useWeeklySchedulerStore.getState().refresh()
+    await useWeeklySchedulerStore.getState().refresh(['ocid-1', 'ocid-2'])
 
     const state = useWeeklySchedulerStore.getState()
     expect(state.status).toBe('loaded')
@@ -179,24 +190,12 @@ describe('useWeeklySchedulerStore', () => {
   it('syncSchedules() 자체가 throw하면 status: error가 되고 characters는 비어있는 상태를 유지한다', async () => {
     syncSchedulesMock.mockRejectedValue(new Error('온보딩이 완료되지 않았습니다'))
 
-    await useWeeklySchedulerStore.getState().refresh()
+    await useWeeklySchedulerStore.getState().refresh(['ocid-1'])
 
     const state = useWeeklySchedulerStore.getState()
     expect(state.status).toBe('error')
     expect(state.error).toEqual({ kind: 'network' })
     expect(state.characters).toEqual([])
-  })
-
-  it('getRegisteredCharacters() 자체가 throw하면 status: error가 되고 syncSchedules는 호출되지 않는다', async () => {
-    getRegisteredCharactersMock.mockRejectedValue(new Error('온보딩이 완료되지 않았습니다'))
-
-    await useWeeklySchedulerStore.getState().refresh()
-
-    const state = useWeeklySchedulerStore.getState()
-    expect(state.status).toBe('error')
-    expect(state.error).toEqual({ kind: 'network' })
-    expect(state.characters).toEqual([])
-    expect(syncSchedulesMock).not.toHaveBeenCalled()
   })
 
   it('refresh 시작 시 status를 loading으로 바꾼다', async () => {
@@ -208,7 +207,7 @@ describe('useWeeklySchedulerStore', () => {
         }),
     )
 
-    const promise = useWeeklySchedulerStore.getState().refresh()
+    const promise = useWeeklySchedulerStore.getState().refresh(['ocid-1'])
 
     await vi.waitFor(() => expect(useWeeklySchedulerStore.getState().status).toBe('loading'))
     resolveSync([])

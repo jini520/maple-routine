@@ -30,7 +30,7 @@ export function WeeklyScreen(): React.JSX.Element {
   const [isPickerOpen, setIsPickerOpen] = useState(false)
 
   useEffect(() => {
-    refresh()
+    refresh(trackedOcids ?? [])
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -113,7 +113,7 @@ export function WeeklyScreen(): React.JSX.Element {
           </p>
           <button
             type="button"
-            onClick={() => refresh()}
+            onClick={() => refresh(trackedOcids ?? [])}
             aria-label="새로고침"
             className="p-2 text-[#C2410C] hover:text-[#E6652E]"
           >
