@@ -14,6 +14,10 @@
       "dir": "onboarding-ui",
       "status": "completed",
       "completed_at": "2026-07-11T03:42:10+0900"
+    },
+    {
+      "dir": "scheduler",
+      "status": "pending"
     }
   ]
 }
