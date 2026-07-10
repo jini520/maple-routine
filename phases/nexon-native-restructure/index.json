@@ -7,7 +7,8 @@
       "name": "nexon-restructure",
       "status": "completed",
       "started_at": "2026-07-11T06:29:35+0900",
-      "summary": "src/nexon/client.ts·normalize.ts를 character/(client·normalize·index)·schedule/(client·normalize·index)로 분리하고 공용 requestJson을 http.ts로 뽑았다; 관련 테스트를 character/__tests__·schedule/__tests__로 이동, schedule-sync.ts·onboarding/store.ts의 import 경로 갱신"
+      "summary": "src/nexon/client.ts·normalize.ts를 character/(client·normalize·index)·schedule/(client·normalize·index)로 분리하고 공용 requestJson을 http.ts로 뽑았다; 관련 테스트를 character/__tests__·schedule/__tests__로 이동, schedule-sync.ts·onboarding/store.ts의 import 경로 갱신",
+      "completed_at": "2026-07-11T06:32:44+0900"
     },
     {
       "step": 1,
