@@ -77,7 +77,41 @@ describe('WeeklyScreen', () => {
     expect(screen.getByText('API 키가 유효하지 않습니다')).toBeInTheDocument()
   })
 
-  it('캐릭터가 isStale이면 그 캐릭터 영역에 에러 문구와 동기화 시각이 보인다', () => {
+  it('캐릭터가 여러 명이면 칩 탭이 캐릭터 수만큼 렌더링되고, 다른 칩을 클릭하면 그 캐릭터의 내용으로 화면이 바뀐다', () => {
+    mockStore({
+      status: 'loaded',
+      characters: [
+        character({
+          ocid: 'ocid-1',
+          characterName: '낟낟',
+          weeklyContents: [
+            { name: '에픽 던전 : 악몽선경', kind: 'contents', isRegistered: true, nowCount: 5, maxCount: 0 },
+          ],
+        }),
+        character({
+          ocid: 'ocid-2',
+          characterName: '내옆에최성일',
+          weeklyContents: [
+            { name: '[메이플 유니온] 주간 드래곤 퇴치', kind: 'quest', isRegistered: false, nowCount: 0, maxCount: 0 },
+          ],
+        }),
+      ],
+    })
+
+    render(<WeeklyScreen />)
+
+    expect(screen.getByRole('button', { name: '낟낟' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '내옆에최성일' })).toBeInTheDocument()
+    expect(screen.getByText(/에픽 던전 : 악몽선경/)).toBeInTheDocument()
+    expect(screen.queryByText(/주간 드래곤 퇴치/)).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: '내옆에최성일' }))
+
+    expect(screen.getByText(/주간 드래곤 퇴치/)).toBeInTheDocument()
+    expect(screen.queryByText(/에픽 던전 : 악몽선경/)).not.toBeInTheDocument()
+  })
+
+  it('선택된 캐릭터가 isStale이면 상단에 에러 안내와 동기화 시각이 보인다', () => {
     mockStore({
       status: 'loaded',
       characters: [
@@ -92,7 +126,6 @@ describe('WeeklyScreen', () => {
 
     render(<WeeklyScreen />)
 
-    expect(screen.getByText('낟낟')).toBeInTheDocument()
     expect(screen.getByText(/네트워크 오류가 발생했습니다/)).toBeInTheDocument()
     expect(screen.getByText(/동기화 기록 없음/)).toBeInTheDocument()
   })
@@ -109,7 +142,7 @@ describe('WeeklyScreen', () => {
     expect(screen.queryByText(/네트워크 오류가 발생했습니다/)).not.toBeInTheDocument()
   })
 
-  it('weeklyContents가 있으면 이름/등록 여부/진행도를 보여준다', () => {
+  it('weeklyContents가 있으면 이름과 진행도를 보여준다', () => {
     mockStore({
       status: 'loaded',
       characters: [
@@ -127,7 +160,7 @@ describe('WeeklyScreen', () => {
     expect(screen.getByText(/5\/0/)).toBeInTheDocument()
   })
 
-  it('보스는 matchedBossName이 있으면 그 이름을, null이면 apiName을 라벨로 보여준다', () => {
+  it('보스는 matchedBossName이 있으면 그 이름을, null이면 apiName을 라벨로 보여주고 난이도를 함께 표시한다', () => {
     mockStore({
       status: 'loaded',
       characters: [
@@ -158,8 +191,69 @@ describe('WeeklyScreen', () => {
 
     render(<WeeklyScreen />)
 
-    expect(screen.getAllByText(/검은마법사/).length).toBeGreaterThan(0)
-    expect(screen.getAllByText(/알수없는보스/).length).toBeGreaterThan(0)
+    expect(screen.getByText(/검은마법사 · 익스트림/)).toBeInTheDocument()
+    expect(screen.getByText(/알수없는보스 · 노멀/)).toBeInTheDocument()
+  })
+
+  it('isComplete: true인 보스는 완료 아이콘, false인 보스는 미완료 아이콘으로 구분된다', () => {
+    mockStore({
+      status: 'loaded',
+      characters: [
+        character({
+          bosses: [
+            {
+              apiName: '보스A',
+              difficulty: '노멀',
+              cycle: 'weekly',
+              isRegistered: true,
+              isComplete: true,
+              matchedBossName: null,
+              portraitSlug: null,
+            },
+            {
+              apiName: '보스B',
+              difficulty: '하드',
+              cycle: 'weekly',
+              isRegistered: true,
+              isComplete: false,
+              matchedBossName: null,
+              portraitSlug: null,
+            },
+          ],
+        }),
+      ],
+    })
+
+    render(<WeeklyScreen />)
+
+    expect(screen.getByRole('img', { name: '완료' })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: '미완료' })).toBeInTheDocument()
+  })
+
+  it('isRegistered: false인 보스 항목은 흐린 텍스트색이 적용된다', () => {
+    mockStore({
+      status: 'loaded',
+      characters: [
+        character({
+          bosses: [
+            {
+              apiName: '자쿰',
+              difficulty: '카오스',
+              cycle: 'weekly',
+              isRegistered: false,
+              isComplete: false,
+              matchedBossName: null,
+              portraitSlug: null,
+            },
+          ],
+        }),
+      ],
+    })
+
+    render(<WeeklyScreen />)
+
+    const label = screen.getByText(/자쿰 · 카오스/)
+    expect(label.className).toContain('#B7A490')
   })
 
   it('weeklyBossClearCount/weeklyBossClearLimitCount가 둘 다 있으면 n/12 형태 텍스트가 보인다', () => {

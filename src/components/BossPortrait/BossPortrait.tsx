@@ -12,11 +12,15 @@ export function BossPortrait(props: BossPortraitProps): React.JSX.Element {
 
   if (url === null) {
     return (
-      <div className="flex items-center justify-center text-center rounded-[14px] bg-gray-200 text-gray-500 text-xs p-2">
-        {props.label}
+      <div
+        title={props.label}
+        aria-label={props.label}
+        className="flex h-full w-full items-center justify-center rounded-full bg-gray-200 text-xs text-gray-500"
+      >
+        ?
       </div>
     )
   }
 
-  return <img src={url} alt={props.label} className="rounded-[14px]" />
+  return <img src={url} alt={props.label} className="h-full w-full rounded-full object-cover" />
 }
