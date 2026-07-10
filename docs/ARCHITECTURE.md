@@ -58,7 +58,7 @@ Feature 단위 구조. 각 `features/*` 폴더가 해당 기능의 상태와 로
   → 이후 설정 화면에서 계정을 다시 선택(변경)할 수 있음(확정)
 
 이후 동기화 (앱 실행/포그라운드 복귀/새로고침 버튼):
-  → nexon/schedule이 저장된 API 키 + 캐릭터별 ocid로 GET /maplestory/v1/scheduler/character-state 호출
+  → nexon/schedule이 저장된 API 키 + 캐릭터별 ocid로 GET /maplestory/v1/scheduler/character-state 호출. **정정(2026-07-11, [[ADR-012]])**: ~~계정의 전체 캐릭터를 대상으로 호출~~ — 일간/주간 화면에서 사용자가 "캐릭터 관리"로 고른 추적 대상 캐릭터에 대해서만 호출한다(계정에 캐릭터가 많으면 전체 순차 호출이 느려지므로). 캐릭터 후보 목록 자체(이름만 필요, "캐릭터 관리" 피커용)는 `nexon/character`의 `GET /maplestory/v1/character/list` 호출로 별도 조회하고 스케줄 동기화와는 분리한다
   → 실패 시([[ADR-008]]) 에러 유형별로 분기하고 마지막 캐시를 그대로 표시, 여기서 흐름 중단
   → 응답의 daily_contents/weekly_contents/boss_contents를 파싱(필드 단위 방어적 파싱, [[ADR-008]])
   → boss_contents 중 cycle이 bossWeekly/bossMonthly인 것만 사용(bossDaily는 무시)
