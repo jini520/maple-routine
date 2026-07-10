@@ -19,7 +19,7 @@ const {
   clearAuthConfigMock: vi.fn(),
 }))
 
-vi.mock('../../../nexon/client', () => ({
+vi.mock('../../../nexon/character', () => ({
   fetchCharacterList: fetchCharacterListMock,
 }))
 

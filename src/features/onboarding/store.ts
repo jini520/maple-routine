@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { fetchCharacterList } from '../../nexon/client'
+import { fetchCharacterList } from '../../nexon/character'
 import { NexonAuthError, NexonRateLimitError } from '../../nexon/errors'
 import { clearAuthConfig, getAuthConfig, setApiKey, setSelectedAccountId } from '../../storage/api-key'
 import { initialOnboardingState, onboardingReducer, type OnboardingError, type OnboardingState } from './state'

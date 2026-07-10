@@ -16,8 +16,11 @@ const { getCachedSchedulerStateMock, setCachedSchedulerStateMock } = vi.hoisted(
   setCachedSchedulerStateMock: vi.fn(),
 }))
 
-vi.mock('../../../nexon/client', () => ({
+vi.mock('../../../nexon/character', () => ({
   fetchCharacterList: fetchCharacterListMock,
+}))
+
+vi.mock('../../../nexon/schedule', () => ({
   fetchSchedulerCharacterState: fetchSchedulerCharacterStateMock,
 }))
 
