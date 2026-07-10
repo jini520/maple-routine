@@ -42,7 +42,8 @@
     },
     {
       "dir": "scoped-sync",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-07-11T06:53:01+0900"
     }
   ]
 }
