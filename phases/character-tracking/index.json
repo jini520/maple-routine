@@ -21,7 +21,10 @@
     {
       "step": 2,
       "name": "daily-screen-tracking",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-07-11T05:48:05+0900",
+      "summary": "DailyScreen이 storage/character-selection의 daily 추적 목록을 구독해 미선택 시 빈 상태(캐릭터 관리 버튼만)로 전환, CharacterChipTabs를 CharacterSelectDropdown으로 교체(추적 캐릭터만 옵션), isRegistered:true 콘텐츠만 필터링해 표시, CharacterTrackingPicker로 추적 목록 저장",
+      "completed_at": "2026-07-11T05:53:00+0900"
     },
     {
       "step": 3,
