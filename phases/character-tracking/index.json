@@ -7,7 +7,8 @@
       "name": "storage-character-selection",
       "status": "completed",
       "started_at": "2026-07-11T05:44:56+0900",
-      "summary": "src/storage/character-selection.ts 신규 작성 — getTrackedCharacterOcids/setTrackedCharacterOcids/clearTrackedCharacterOcids로 daily/weekly 독립 추적 목록을 Preferences에 저장(trackedCharactersKey), null(미설정)과 []( 전부 해제) 구분, 손상된 JSON은 null 반환, 쓰기 실패는 전파"
+      "summary": "src/storage/character-selection.ts 신규 작성 — getTrackedCharacterOcids/setTrackedCharacterOcids/clearTrackedCharacterOcids로 daily/weekly 독립 추적 목록을 Preferences에 저장(trackedCharactersKey), null(미설정)과 []( 전부 해제) 구분, 손상된 JSON은 null 반환, 쓰기 실패는 전파",
+      "completed_at": "2026-07-11T05:46:38+0900"
     },
     {
       "step": 1,
