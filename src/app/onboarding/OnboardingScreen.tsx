@@ -1,16 +1,10 @@
-import { useEffect } from 'react'
 import { useOnboardingStore } from '../../features/onboarding/store'
 import { ApiKeyForm } from './ApiKeyForm'
 import { AccountSelectionList } from './AccountSelectionList'
 import { formatOnboardingError } from './error-message'
 
 export function OnboardingScreen(): React.JSX.Element {
-  const { status, accounts, error, restoreFromStorage, submitApiKey, selectAccount } = useOnboardingStore()
-
-  useEffect(() => {
-    restoreFromStorage()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  const { status, accounts, error, submitApiKey, selectAccount } = useOnboardingStore()
 
   switch (status) {
     case 'awaitingApiKey':
