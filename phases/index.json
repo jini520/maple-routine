@@ -27,7 +27,8 @@
     },
     {
       "dir": "wireframe-redesign",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-07-11T05:13:11+0900"
     }
   ]
 }
