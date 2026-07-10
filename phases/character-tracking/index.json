@@ -40,7 +40,7 @@
       "status": "completed",
       "started_at": "2026-07-11T05:56:11+0900",
       "summary": "docs/ARCHITECTURE.md 데이터 흐름 섹션 정정 — features/item-drop은 '등록된(registration_flag: true) 주간 보스 목록'을, features/boss-profit은 '처치된(complete_flag: true) 보스만' 구독·표시하도록 기능별로 명확히 구분(코드 변경 없음)",
-      "completed_at": "2026-07-11T05:58:00+0900"
+      "completed_at": "2026-07-11T05:56:59+0900"
     }
   ],
   "created_at": "2026-07-11T05:44:56+0900"
