@@ -32,7 +32,7 @@
       "status": "completed",
       "started_at": "2026-07-11T06:50:15+0900",
       "summary": "WeeklyScreen이 DailyScreen과 동일한 구조로 전환 — getRegisteredCharacters()로 roster(전체 후보)를 별도 조회해 CharacterTrackingPicker에 전달하고, trackedOcids가 로드된 뒤에만 refresh(trackedOcids)를 호출 — characters.filter 기반 visibleCharacters 제거하고 스토어의 characters를 그대로 표시, 빈 상태 판정은 trackedOcids 기준으로 전환",
-      "completed_at": "2026-07-11T06:54:00+0900"
+      "completed_at": "2026-07-11T06:53:01+0900"
     }
   ],
   "created_at": "2026-07-11T06:36:18+0900"
