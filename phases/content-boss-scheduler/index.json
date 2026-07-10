@@ -40,7 +40,7 @@
       "status": "completed",
       "started_at": "2026-07-11T07:26:03+0900",
       "summary": "src/app/boss-scheduler/BossScreen.tsx 신규 작성 — useBossSchedulerStore + trackedCharacterOcids('boss')로 WeeklyScreen의 주간 보스 섹션(StatusDot·BossPortrait·n/12 배지) UI를 재사용하고, 화면 내 로컬 탭(주간/월간)으로 weeklyBosses·monthlyBosses를 전환 표시. n/12 배지는 주간 탭에만 렌더링(월간은 12마리 제한과 무관). app/weekly·App.tsx는 미변경",
-      "completed_at": "2026-07-11T07:29:00+0900"
+      "completed_at": "2026-07-11T07:28:42+0900"
     },
     {
       "step": 5,
