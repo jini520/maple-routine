@@ -55,7 +55,7 @@ export function WeeklyScreen(): React.JSX.Element {
             type="button"
             onClick={() => refresh()}
             aria-label="새로고침"
-            className="rounded-full bg-[#FF7033] text-[#2B1206] hover:bg-[#E6652E] p-2"
+            className="p-2 text-[#C2410C] hover:text-[#E6652E]"
           >
             <RefreshCw className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
           </button>
