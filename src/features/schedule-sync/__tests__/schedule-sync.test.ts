@@ -33,7 +33,7 @@ vi.mock('../../../storage/scheduler-cache', () => ({
   setCachedSchedulerState: setCachedSchedulerStateMock,
 }))
 
-import { getRegisteredCharacters, syncAllSchedules } from '../schedule-sync'
+import { getRegisteredCharacters, syncSchedules } from '../schedule-sync'
 
 function character(ocid: string): MapleCharacter {
   return {
@@ -109,7 +109,47 @@ describe('getRegisteredCharacters', () => {
   })
 })
 
-describe('syncAllSchedules', () => {
+describe('syncSchedules', () => {
+  it('ocids가 빈 배열이면 fetchCharacterList를 호출하지 않고 빈 배열을 반환한다', async () => {
+    const results = await syncSchedules([])
+
+    expect(results).toEqual([])
+    expect(fetchCharacterListMock).not.toHaveBeenCalled()
+    expect(fetchSchedulerCharacterStateMock).not.toHaveBeenCalled()
+  })
+
+  it('계정에 캐릭터가 5명 있어도 ocids로 지정한 2명에 대해서만 스케줄 API를 호출한다', async () => {
+    const characters = [
+      character('ocid-1'),
+      character('ocid-2'),
+      character('ocid-3'),
+      character('ocid-4'),
+      character('ocid-5'),
+    ]
+    fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+    fetchSchedulerCharacterStateMock
+      .mockResolvedValueOnce(schedulerState('캐릭터2'))
+      .mockResolvedValueOnce(schedulerState('캐릭터4'))
+
+    const results = await syncSchedules(['ocid-2', 'ocid-4'])
+
+    expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(2)
+    expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(1, 'key-1', 'ocid-2')
+    expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-4')
+    expect(results.map((r) => r.ocid)).toEqual(['ocid-2', 'ocid-4'])
+  })
+
+  it('ocids에 있지만 실제 계정 캐릭터 목록에는 없는 ocid는 조용히 결과에서 빠진다', async () => {
+    const characters = [character('ocid-1'), character('ocid-2')]
+    fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+    fetchSchedulerCharacterStateMock.mockResolvedValueOnce(schedulerState('캐릭터1'))
+
+    const results = await syncSchedules(['ocid-1', 'ocid-does-not-exist'])
+
+    expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1)
+    expect(results.map((r) => r.ocid)).toEqual(['ocid-1'])
+  })
+
   it('모든 캐릭터가 성공하면 캐시를 갱신하고 isStale: false로 채워진 결과를 반환한다', async () => {
     const characters = [character('ocid-1'), character('ocid-2')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
@@ -117,7 +157,7 @@ describe('syncAllSchedules', () => {
       .mockResolvedValueOnce(schedulerState('캐릭터1'))
       .mockResolvedValueOnce(schedulerState('캐릭터2'))
 
-    const results = await syncAllSchedules()
+    const results = await syncSchedules(['ocid-1', 'ocid-2'])
 
     expect(results).toEqual([
       {
@@ -159,7 +199,7 @@ describe('syncAllSchedules', () => {
         }),
     )
 
-    const promise = syncAllSchedules()
+    const promise = syncSchedules(['ocid-1', 'ocid-2', 'ocid-3'])
 
     await vi.waitFor(() => expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1))
     expect(resolvers).toHaveLength(1)
@@ -184,7 +224,7 @@ describe('syncAllSchedules', () => {
       syncedAt: '2026-07-10T00:00:00.000Z',
     })
 
-    const results = await syncAllSchedules()
+    const results = await syncSchedules(['ocid-1'])
 
     expect(results).toEqual([
       {
@@ -205,7 +245,7 @@ describe('syncAllSchedules', () => {
     fetchSchedulerCharacterStateMock.mockRejectedValue(new NexonNetworkError('timeout'))
     getCachedSchedulerStateMock.mockResolvedValue(null)
 
-    const results = await syncAllSchedules()
+    const results = await syncSchedules(['ocid-1'])
 
     expect(results).toEqual([
       {
@@ -226,7 +266,7 @@ describe('syncAllSchedules', () => {
       .mockRejectedValueOnce(new NexonNetworkError('timeout'))
       .mockResolvedValueOnce(schedulerState('캐릭터2'))
 
-    const results = await syncAllSchedules()
+    const results = await syncSchedules(['ocid-1', 'ocid-2'])
 
     expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(2)
     expect(results[0].error).toEqual({ kind: 'network' })
@@ -246,7 +286,7 @@ describe('syncAllSchedules', () => {
     fetchSchedulerCharacterStateMock.mockRejectedValueOnce(new NexonAuthError('invalid'))
     getCachedSchedulerStateMock.mockResolvedValue(null)
 
-    const results = await syncAllSchedules()
+    const results = await syncSchedules(['ocid-1', 'ocid-2', 'ocid-3'])
 
     expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1)
     expect(getCachedSchedulerStateMock).toHaveBeenCalledTimes(3)
@@ -262,7 +302,7 @@ describe('syncAllSchedules', () => {
     fetchSchedulerCharacterStateMock.mockRejectedValueOnce(new NexonRateLimitError('rate limited'))
     getCachedSchedulerStateMock.mockResolvedValue(null)
 
-    const results = await syncAllSchedules()
+    const results = await syncSchedules(['ocid-1', 'ocid-2'])
 
     expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1)
     for (const result of results) {
@@ -279,7 +319,7 @@ describe('syncAllSchedules', () => {
       .mockRejectedValueOnce(new NexonAuthError('invalid'))
     getCachedSchedulerStateMock.mockResolvedValue(null)
 
-    const results = await syncAllSchedules()
+    const results = await syncSchedules(['ocid-1', 'ocid-2', 'ocid-3'])
 
     expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(2)
     expect(results[0].isStale).toBe(false)
