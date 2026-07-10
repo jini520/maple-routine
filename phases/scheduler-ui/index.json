@@ -32,7 +32,7 @@
       "status": "completed",
       "started_at": "2026-07-11T04:25:04+0900",
       "summary": "src/app/weekly/WeeklyScreen.tsx가 useWeeklySchedulerStore를 구독해 DailyScreen과 동일한 마운트 시 refresh/새로고침 버튼/isStale 안내/빈 상태 패턴을 따르고, weeklyContents(퀘스트) 목록과 bosses(MatchedBoss, 난이도별 그대로) 목록을 BossPortrait로 렌더링하며 matchedBossName이 null이면 apiName으로 폴백, weeklyBossClearCount·weeklyBossClearLimitCount가 둘 다 있을 때만 n/12 카운터를 표시; formatScheduleSyncError/formatSyncedAt은 기존 걸 재사용; src/app/weekly/__tests__/WeeklyScreen.test.tsx 신규 작성(TDD); App.tsx는 이미 WeeklyScreen을 연결 중이라 변경 없음.",
-      "completed_at": "2026-07-11T04:31:00+0900"
+      "completed_at": "2026-07-11T04:28:11+0900"
     }
   ],
   "created_at": "2026-07-11T04:15:53+0900"
