@@ -1,22 +1,22 @@
 # 아키텍처
 
-> 이 문서는 `docs/ADR.md`를 전제로 작성되었습니다. Capacitor / Vite+React / 로컬 저장 전용 / 백그라운드 상시 알림 모두 확정. 일간/주간 진행 상태는 Nexon Open API로 동기화하되, 사용자 개인이 발급받은 API 키를 기기에 저장해 직접 호출하는 방식이라 백엔드는 필요 없음([[ADR-007]] 신규 — 2026-07-09). 에러 핸들링·복원력 정책은 [[ADR-008]] 참고. 직업 기반 테마 시스템은 뼈대만 확정([[ADR-009]], 컬러 값 미정). 별도 공개 웹 서비스 제공은 보류(MVP 범위 밖)이며, 이 문서는 Capacitor 앱(WebView) 기준으로만 작성되었습니다.
+> 이 문서는 `docs/ADR.md`를 전제로 작성되었습니다. Capacitor / Vite+React / 로컬 저장 전용 / 백그라운드 상시 알림 모두 확정. 일간/주간 진행 상태는 Nexon Open API로 동기화하되, 사용자 개인이 발급받은 API 키를 기기에 저장해 직접 호출하는 방식이라 백엔드는 필요 없음([[ADR-007]] 신규 — 2026-07-09). 에러 핸들링·복원력 정책은 [[ADR-008]] 참고. 직업 기반 테마 시스템은 뼈대만 확정([[ADR-009]], 컬러 값 미정). 최상위 화면 구조는 "일간/주간 스케줄러"(리셋 주기 기준)에서 "컨텐츠/보스 스케줄러"(콘텐츠 종류 기준)로 개편됨([[ADR-013]], 2026-07-11). 별도 공개 웹 서비스 제공은 보류(MVP 범위 밖)이며, 이 문서는 Capacitor 앱(WebView) 기준으로만 작성되었습니다.
 
 ## 디렉토리 구조
 ```
 src/
 ├── app/                    # 라우트별 화면 (React Router)
 │   ├── onboarding/          # API 키 입력 + 계정(메이플 ID) 선택 화면
-│   ├── daily/              # 일간 스케줄러 화면
-│   ├── weekly/             # 주간 스케줄러 화면 (퀘스트 + 보스)
+│   ├── content-scheduler/  # 컨텐츠 스케줄러 화면 — 일간 탭(daily_contents) + 주간 탭(weekly_contents), 월간 탭 없음 ([[ADR-013]])
+│   ├── boss-scheduler/     # 보스 스케줄러 화면 — 주간 탭(cycle: bossWeekly) + 월간 탭(cycle: bossMonthly), 일간 탭 없음([[ADR-007]] bossDaily 무시 정책 유지, [[ADR-013]])
 │   ├── hunting-timer/      # 사냥 타이머 화면
 │   ├── boss-profit/        # 주간 보스 수익 계산기 화면
 │   ├── item-drop/          # 물욕 아이템 드랍 현황 화면
 │   └── settings/            # API 키 재입력, 계정(메이플 ID) 변경, opt-in 크래시 리포팅 토글
 ├── features/                # 기능별 도메인 로직 (UI 상태 + 비즈니스 로직)
 │   ├── onboarding/           # API 키 입력 → 계정 목록 조회 → 계정 선택 흐름
-│   ├── daily-scheduler/
-│   ├── weekly-scheduler/
+│   ├── content-scheduler/    # 일간 콘텐츠 + 주간 콘텐츠 상태 ([[ADR-013]], 기존 daily-scheduler/weekly-scheduler 통합)
+│   ├── boss-scheduler/       # 주간 보스 + 월간 보스 상태, cycle별 분리 ([[ADR-013]])
 │   ├── hunting-timer/
 │   ├── boss-profit/
 │   └── item-drop/
@@ -43,9 +43,9 @@ src/
 ```
 
 ## 패턴
-Feature 단위 구조. 각 `features/*` 폴더가 해당 기능의 상태와 로직을 소유하고, `storage/`·`native/`·`nexon/`은 외부 의존성(로컬 저장소, 네이티브 API, Nexon Open API)을 격리하는 공용 어댑터 레이어로 둔다. 이렇게 분리해두면 (1) feature 코드가 Capacitor API나 Nexon API 응답 형식을 직접 알 필요가 없어 테스트가 쉬워지고, (2) 추후 [[ADR-003]]이 바뀌거나 Nexon API 스펙이 바뀌더라도 해당 어댑터 내부 구현만 교체하면 된다. `daily-scheduler`·`weekly-scheduler`는 로컬에 쓰기 위한 상태를 직접 소유하지 않고 `nexon/schedule`이 반환하는 동기화 캐시를 읽기 전용으로 구독한다.
+Feature 단위 구조. 각 `features/*` 폴더가 해당 기능의 상태와 로직을 소유하고, `storage/`·`native/`·`nexon/`은 외부 의존성(로컬 저장소, 네이티브 API, Nexon Open API)을 격리하는 공용 어댑터 레이어로 둔다. 이렇게 분리해두면 (1) feature 코드가 Capacitor API나 Nexon API 응답 형식을 직접 알 필요가 없어 테스트가 쉬워지고, (2) 추후 [[ADR-003]]이 바뀌거나 Nexon API 스펙이 바뀌더라도 해당 어댑터 내부 구현만 교체하면 된다. `content-scheduler`·`boss-scheduler`는 로컬에 쓰기 위한 상태를 직접 소유하지 않고 `nexon/schedule`이 반환하는 동기화 캐시를 읽기 전용으로 구독한다(기존 `daily-scheduler`/`weekly-scheduler`를 [[ADR-013]]으로 통합·재편, 2026-07-11). `boss-scheduler`는 캐시의 `bossContents`를 `cycle`(weekly/monthly)로 분리해 화면 내 주간/월간 탭 각각에 전달한다.
 
-`hunting-timer`는 온전히 `storage/`에 직접 쓰는 독립 feature다. `boss-profit`·`item-drop`은 혼합 패턴이다 — **보스 목록**은 `daily-scheduler`·`weekly-scheduler`와 동일하게 `nexon/schedule`의 동기화 캐시를 읽기 전용으로 구독하고([[ADR-007]], [[ADR-011]]), **그 위에 사용자가 남기는 기록**(파티원 수, 아이템 획득·컨테이너 결과, 수익 계산 결과)은 `storage/`에 직접 쓴다. 즉 "무엇을 기록할 수 있는지"는 Nexon API 동기화 데이터가 결정하고, "실제로 기록한 값"은 완전히 로컬 소유다.
+`hunting-timer`는 온전히 `storage/`에 직접 쓰는 독립 feature다. `boss-profit`·`item-drop`은 혼합 패턴이다 — **보스 목록**은 `content-scheduler`·`boss-scheduler`와 동일하게 `nexon/schedule`의 동기화 캐시를 읽기 전용으로 구독하고([[ADR-007]], [[ADR-011]]), **그 위에 사용자가 남기는 기록**(파티원 수, 아이템 획득·컨테이너 결과, 수익 계산 결과)은 `storage/`에 직접 쓴다. 즉 "무엇을 기록할 수 있는지"는 Nexon API 동기화 데이터가 결정하고, "실제로 기록한 값"은 완전히 로컬 소유다.
 
 ## 데이터 흐름
 ```
@@ -54,18 +54,18 @@ Feature 단위 구조. 각 `features/*` 폴더가 해당 기능의 상태와 로
   → storage/의 보안 영역(Keychain/Keystore 또는 암호화된 Preferences)에 저장
   → nexon/character가 GET /maplestory/v1/character/list 호출
   → 응답의 account_list가 2개 이상이면 "어느 메이플 ID를 쓸지" 선택 화면 표시(features/onboarding). 각 계정은 character_list 중 최고 레벨 캐릭터의 닉네임+직업+레벨로 표기(예: "낟낟 · 렌 Lv.293") — account_id 해시는 노출 안 함
-  → storage/에는 apiKey와 선택된 accountId만 저장한다. **정정(2026-07-11)**: ~~선택된 계정의 character_list를 storage/에 캐싱~~ — 캐릭터명·직업·레벨이 언제든 바뀔 수 있어(개명, 전직, 레벨업) 캐싱하지 않기로 변경. 캐릭터 목록이 필요한 화면(일간/주간 스케줄러 등)은 그때마다 nexon/character를 다시 호출해 조회한다
+  → storage/에는 apiKey와 선택된 accountId만 저장한다. **정정(2026-07-11)**: ~~선택된 계정의 character_list를 storage/에 캐싱~~ — 캐릭터명·직업·레벨이 언제든 바뀔 수 있어(개명, 전직, 레벨업) 캐싱하지 않기로 변경. 캐릭터 목록이 필요한 화면(컨텐츠/보스 스케줄러 등)은 그때마다 nexon/character를 다시 호출해 조회한다
   → 이후 설정 화면에서 계정을 다시 선택(변경)할 수 있음(확정)
 
 이후 동기화 (앱 실행/포그라운드 복귀/새로고침 버튼):
-  → nexon/schedule이 저장된 API 키 + 캐릭터별 ocid로 GET /maplestory/v1/scheduler/character-state 호출. **정정(2026-07-11, [[ADR-012]])**: ~~계정의 전체 캐릭터를 대상으로 호출~~ — 일간/주간 화면에서 사용자가 "캐릭터 관리"로 고른 추적 대상 캐릭터에 대해서만 호출한다(계정에 캐릭터가 많으면 전체 순차 호출이 느려지므로). 캐릭터 후보 목록 자체(이름만 필요, "캐릭터 관리" 피커용)는 `nexon/character`의 `GET /maplestory/v1/character/list` 호출로 별도 조회하고 스케줄 동기화와는 분리한다
+  → nexon/schedule이 저장된 API 키 + 캐릭터별 ocid로 GET /maplestory/v1/scheduler/character-state 호출. **정정(2026-07-11, [[ADR-012]])**: ~~계정의 전체 캐릭터를 대상으로 호출~~ — 화면에서 사용자가 "캐릭터 관리"로 고른 추적 대상 캐릭터에 대해서만 호출한다(계정에 캐릭터가 많으면 전체 순차 호출이 느려지므로). 캐릭터 후보 목록 자체(이름만 필요, "캐릭터 관리" 피커용)는 `nexon/character`의 `GET /maplestory/v1/character/list` 호출로 별도 조회하고 스케줄 동기화와는 분리한다. **정정(2026-07-11, [[ADR-013]])**: ~~추적 목록이 일간/주간 화면별로 독립(`trackedCharacters:daily`/`trackedCharacters:weekly`)~~ — 화면이 컨텐츠/보스로 재편되며 추적 목록도 `trackedCharacters:content`/`trackedCharacters:boss`로 바뀐다. 앱이 새 키를 처음 쓰는 시점에 기존 `daily` 값은 `content`로, 기존 `weekly` 값은 `content`·`boss` 양쪽으로 1회 복사하는 마이그레이션을 거친다([[ADR-013]] 참고)
   → 실패 시([[ADR-008]]) 에러 유형별로 분기하고 마지막 캐시를 그대로 표시, 여기서 흐름 중단
   → 응답의 daily_contents/weekly_contents/boss_contents를 파싱(필드 단위 방어적 파싱, [[ADR-008]])
-  → boss_contents 중 cycle이 bossWeekly/bossMonthly인 것만 사용(bossDaily는 무시)
-  → src/data/ 참조 테이블로 보스명·난이도 표기 정규화(영↔한글, 양쪽 공백 제거 후 비교, apiAlias 예외 매핑). 매핑 안 되는 항목은 원문 그대로 "알 수 없는 콘텐츠"로 표시. **정정(2026-07-11)**: ~~이 정규화를 nexon/이 전부 수행~~ — 난이도 영↔한글 변환은 `nexon/normalize.ts`가 담당하지만, 보스명 매칭(양쪽 공백 제거 비교, apiAlias 예외)은 `nexon/`이 아니라 `lib/boss-matching`이 담당하고 그 결과를 `features/weekly-scheduler`가 소비한다 — `nexon/`이 `src/data/`를 몰라야 독립적으로 테스트 가능하다는 레이어 분리 원칙 유지
+  → boss_contents 중 cycle이 bossWeekly/bossMonthly인 것만 사용(bossDaily는 무시, [[ADR-013]]에서도 이 정책 재확인 — 보스 스케줄러에 일간 탭을 두지 않음)
+  → src/data/ 참조 테이블로 보스명·난이도 표기 정규화(영↔한글, 양쪽 공백 제거 후 비교, apiAlias 예외 매핑). 매핑 안 되는 항목은 원문 그대로 "알 수 없는 콘텐츠"로 표시. **정정(2026-07-11)**: ~~이 정규화를 nexon/이 전부 수행~~ — 난이도 영↔한글 변환은 `nexon/normalize.ts`가 담당하지만, 보스명 매칭(양쪽 공백 제거 비교, apiAlias 예외)은 `nexon/`이 아니라 `lib/boss-matching`이 담당하고 그 결과를 `features/boss-scheduler`가 소비한다(**정정(2026-07-11, [[ADR-013]])**: ~~features/weekly-scheduler가 소비~~) — `nexon/`이 `src/data/`를 몰라야 독립적으로 테스트 가능하다는 레이어 분리 원칙 유지
   → storage/에 "마지막 동기화 결과 캐시" + 동기화 시각으로 저장
   → boss_contents에서 새로 complete_flag: true로 바뀐 보스가 있어도 features/boss-profit에 별도 안내(배지 등)를 표시하지 않는다 — 사용자가 화면에 직접 들어와 파티원 수를 입력한다(확정, 2026-07-09, 자동 유도 UI 없음)
-  → features/daily-scheduler, features/weekly-scheduler가 캐시를 읽어 읽기 전용으로 표시(완전 읽기 전용, 앱 내 수동 체크 없음 — 확정, [[ADR-007]])
+  → features/content-scheduler(일간 탭: dailyContents, 주간 탭: weeklyContents), features/boss-scheduler(주간 탭: cycle=weekly인 bossContents, 월간 탭: cycle=monthly인 bossContents)가 캐시를 읽어 읽기 전용으로 표시(완전 읽기 전용, 앱 내 수동 체크 없음 — 확정, [[ADR-007]]. 화면 재편은 [[ADR-013]], 2026-07-11 — 기존 features/daily-scheduler·features/weekly-scheduler를 대체)
   → features/item-drop은 같은 캐시에서 "등록된(`registration_flag: true`) 주간 보스 목록"만 읽기 전용으로 구독한다([[ADR-011]]). **정정(2026-07-11)**: ~~features/boss-profit도 동일하게 "등록된 주간 보스 목록"을 구독~~ — features/boss-profit은 등록 여부가 아니라 **처치된(`complete_flag: true`) 보스만** 구독·표시하고, 수익 계산도 처치된 보스만을 대상으로 한다(등록만 하고 아직 안 잡은 보스는 수익 계산기에 나타나지 않음 — `docs/PRD.md` "4. 주간 보스 수익 계산기" 참고, 사용자 확정). 두 feature 모두 이 목록 자체는 편집 불가하고, 사용자가 남기는 기록(파티원 수·아이템 획득)만 별도로 storage/에 쓴다
 
 [알림 발송 판단 — 실시간 재확인, [[ADR-004]] 확정 2026-07-09]

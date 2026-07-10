@@ -44,6 +44,10 @@
       "dir": "scoped-sync",
       "status": "completed",
       "completed_at": "2026-07-11T06:53:01+0900"
+    },
+    {
+      "dir": "content-boss-scheduler",
+      "status": "pending"
     }
   ]
 }
