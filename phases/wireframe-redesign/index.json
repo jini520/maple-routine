@@ -13,7 +13,10 @@
     {
       "step": 1,
       "name": "bottom-tab-bar",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-07-11T04:57:39+0900",
+      "summary": "src/App.tsx의 상단 텍스트 nav를 하단 고정 탭바(BottomTabBar)로 교체 — 일간/주간 2개 탭만 NavLink로 렌더링, 사각형 테두리 아이콘 플레이스홀더 + 라벨 세로 배치, 활성 탭은 NavLink의 isActive로 text-[#C2410C] 적용(aria-current=page), 비활성은 text-[#B7A490], 라우트 가드 로직은 그대로 유지하고 콘텐츠 영역에 pb-16 여백 추가",
+      "completed_at": "2026-07-11T05:03:00+0900"
     },
     {
       "step": 2,
