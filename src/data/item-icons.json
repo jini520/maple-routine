@@ -1,0 +1,70 @@
+{
+  "updatedAt": "2026-07-11",
+  "source": "src/assets/items/의 기존 파일명(사용자 제공, 영문 내부 코드명 스타일)을 item-drop-table.json의 실제 보상 데이터와 대조해 매칭([[ADR-011]]). 파일명 자체는 바꾸지 않고 그대로 쓴다 — 이 파일은 '한글 아이템명 → 기존 파일명' 매핑 전용.",
+  "note": "확신도가 높은 매칭 + 사용자가 2026-07-11에 직접 확인해준 매칭을 반영했다. '익셉셔널 해머'는 슬롯(눈장식/훈장/귀고리/얼굴장식/벨트)에 따라 아이콘이 달라 iconFile 대신 iconFileBySlot을 쓴다. '솔 에르다의 기운'(가칭 sole_10/sole_200/향후 sole_500)은 수량 구간별로 아이콘이 갈리는 것으로 보이나 정확한 구간 기준이 아직 확정 안 돼 매핑을 보류했다(사용자가 추후 정리 예정). 그 외 후보가 여러 개라 확정 못 한 파일은 여기 넣지 않는다.",
+  "items": [
+    { "name": "홍옥의 보스 반지 상자", "iconFile": "boss_ring_box_red.png" },
+    { "name": "흑옥의 보스 반지 상자", "iconFile": "boss_ring_box_black.png" },
+    { "name": "백옥의 보스 반지 상자", "iconFile": "boss_ring_box_white.png" },
+    { "name": "생명의 보스 반지 상자", "iconFile": "boss_ring_box_life.png" },
+    { "name": "녹옥의 보스 반지 상자", "iconFile": "boss_ring_box_green.png", "note": "임시 빈 이미지 — 실제 아이콘 파일 필요(2026-07-11)" },
+
+    { "name": "거대한 공포", "iconFile": "dark_boss_ring.png", "note": "칠흑의 보스 세트, 반지" },
+    { "name": "고통의 근원", "iconFile": "dark_boss_pendant.png", "note": "칠흑의 보스 세트, 펜던트" },
+    { "name": "루즈 컨트롤 머신 마크", "iconFile": "dark_boss_face_acc.png", "note": "칠흑의 보스 세트, 얼굴장식" },
+    { "name": "마력이 깃든 안대", "iconFile": "dark_boss_eye_acc.png", "note": "칠흑의 보스 세트, 눈장식" },
+    { "name": "몽환의 벨트", "iconFile": "dark_boss_belt.png", "note": "칠흑의 보스 세트, 벨트" },
+    { "name": "커맨더 포스 이어링", "iconFile": "dark_boss_earring.png", "note": "칠흑의 보스 세트, 귀고리" },
+    { "name": "컴플리트 언더컨트롤", "iconFile": "dark_boss_complete_heart.png", "note": "칠흑의 보스 세트, 기계심장" },
+    { "name": "혼돈의 칠흑 장신구 상자", "iconFile": "dark_boss_box.png", "note": "추정 매칭 — 사용자 확인 요청됨" },
+    { "name": "미트라의 분노 선택 상자", "iconFile": "dark_boss_emblem.png", "note": "칠흑의 보스 세트, 슬롯 '엠블렘'과 파일명 일치로 확정(사용자 확인, 2026-07-11)" },
+    { "name": "저주받은 마도서 선택 상자", "iconFile": "dark_boss_pocket.png", "note": "칠흑의 보스 세트, 슬롯 '포켓 아이템'과 파일명 일치로 확정(사용자 확인, 2026-07-11)" },
+
+    { "name": "불멸의 유산", "iconFile": "bright_boss_merit.png", "note": "광휘의 보스 세트, 훈장" },
+    { "name": "죽음의 맹세", "iconFile": "bright_boss_pendant.png", "note": "광휘의 보스 세트, 펜던트" },
+    { "name": "근원의 속삭임", "iconFile": "bright_boss_ring.png", "note": "광휘의 보스 세트, 반지(림보 하드 드랍, 사용자 확인 2026-07-11)" },
+    { "name": "황홀한 악몽", "iconFile": "bright_boss_ring2.png", "note": "광휘의 보스 세트, 반지(찬란한 흉성 하드 드랍, 사용자 확인 2026-07-11)" },
+    { "name": "오만의 원죄", "iconFile": "bright_boss_face_acc.png", "note": "유피테르 하드 드랍. 슬롯이 '미상'이었는데 이 매칭으로 '얼굴장식' 확정(사용자 확인 2026-07-11, item-drop-table.json도 갱신함)" },
+
+    { "name": "데이브레이크 펜던트", "iconFile": "dawn_boss_pendant.png", "note": "여명의 보스 세트, 펜던트" },
+    { "name": "에스텔라 이어링", "iconFile": "dawn_boss_earring.png", "note": "여명의 보스 세트, 귀고리" },
+    { "name": "트와일라이트 마크", "iconFile": "dawn_boss_face_acc.png", "note": "여명의 보스 세트, 얼굴장식" },
+    { "name": "가디언 엔젤 링", "iconFile": "dawn_boss_ring.png", "note": "여명의 보스 세트, 반지" },
+
+    { "name": "의지의 에테르넬 방어구 상자", "iconFile": "box_eternel_kalos.png", "note": "감시자 칼로스 드랍" },
+    { "name": "고대의 에테르넬 방어구 상자", "iconFile": "box_eternel_adversary.png", "note": "최초의 대적자 드랍" },
+    { "name": "흉수의 에테르넬 방어구 상자", "iconFile": "box_eternel_kaling.png", "note": "카링 드랍" },
+    { "name": "환상의 에테르넬 방어구 상자", "iconFile": "box_eternel_maleficStar.png", "note": "찬란한 흉성 드랍" },
+    { "name": "욕망의 에테르넬 방어구 상자", "iconFile": "box_eternel_limbo.png", "note": "림보 드랍" },
+    { "name": "맹세의 에테르넬 방어구 상자", "iconFile": "box_eternel_bardrix.png", "note": "발드릭스 드랍" },
+    { "name": "갈망의 에테르넬 방어구 상자", "iconFile": "box_eternel_jupiter.png", "note": "유피테르 드랍" },
+
+    { "name": "왜곡된 욕망의 결정", "iconFile": "frag_eternel_limbo.png", "note": "림보 전용 fixed 보상(사용자 확인 2026-07-11)" },
+    { "name": "영원한 충성의 흔적", "iconFile": "frag_eternel_bardrix.png", "note": "발드릭스 전용 fixed 보상(사용자 확인 2026-07-11)" },
+    { "name": "뒤틀린 갈망의 편린", "iconFile": "frag_eternel_jupiter.png", "note": "유피테르 전용 fixed 보상(사용자 확인 2026-07-11)" },
+
+    {
+      "name": "익셉셔널 해머",
+      "iconFileBySlot": {
+        "눈장식": "except_eye_acc.png",
+        "훈장": "except_merit.png",
+        "귀고리": "except_earring.png",
+        "얼굴장식": "except_face_acc.png",
+        "벨트": "except_belt.png"
+      },
+      "note": "슬롯에 따라 아이콘이 다름(사용자 확인 2026-07-11). 얼굴장식(익스트림 세렌)·벨트(익스트림 검은마법사) 슬롯 변형은 item-drop-table.json에 해당 보스+난이도 엔트리가 아직 없어 아이콘 매핑만 미리 반영, 보상 데이터는 추후 추가 필요"
+    },
+
+    { "name": "생명의 연마석", "iconFile": "whetstone_life.png" },
+    { "name": "신념의 연마석", "iconFile": "whetstone_faith.png" },
+    { "name": "에리온의 조각", "iconFile": "erion_piece.png" },
+
+    { "name": "창세의 뱃지", "iconFile": "dark_boss_badge.png", "note": "칠흑의 보스 세트, 슬롯 '뱃지'와 파일명 일치로 확정(사용자 확인, 2026-07-11)" },
+
+    { "name": "파풀라투스 마크", "iconFile": "papulatus_mark.png", "note": "임시 빈 이미지 — 실제 아이콘 파일 필요(2026-07-11)" },
+    { "name": "루인 포스실드", "iconFile": "ruin_force_shield.png", "note": "임시 빈 이미지 — 실제 아이콘 파일 필요(2026-07-11)" },
+    { "name": "메이린의 에테르넬 방어구 상자", "iconFile": "box_eternel_maerin.png", "note": "임시 빈 이미지 — 실제 아이콘 파일 필요(2026-07-11)" },
+    { "name": "운명의 에테르넬 방어구 상자", "iconFile": "box_eternel_destiny.png", "note": "임시 빈 이미지 — 실제 아이콘 파일 필요(2026-07-11)" },
+    { "name": "메이린의 칠흑 장신구 상자", "iconFile": "dark_boss_box_maerin.png", "note": "혼돈의 칠흑 장신구 상자와 별개의 전용 이미지가 있음(사용자 확인, 2026-07-11) — 실제 파일은 추후 사용자가 채울 예정, 지금은 임시 빈 이미지" }
+  ]
+}
