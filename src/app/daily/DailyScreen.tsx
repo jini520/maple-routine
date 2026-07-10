@@ -32,10 +32,10 @@ export function DailyScreen(): React.JSX.Element {
           <button
             type="button"
             onClick={() => refresh()}
-            className="flex items-center gap-1.5 rounded-full bg-[#FF7033] text-[#2B1206] font-semibold hover:bg-[#E6652E] px-4 py-2 text-sm"
+            aria-label="새로고침"
+            className="rounded-full bg-[#FF7033] text-[#2B1206] hover:bg-[#E6652E] p-2"
           >
             <RefreshCw className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
-            새로고침
           </button>
         </div>
 
