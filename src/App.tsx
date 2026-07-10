@@ -1,9 +1,35 @@
 import { useEffect } from 'react'
-import { BrowserRouter, Link, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, NavLink, Route, Routes } from 'react-router-dom'
 import { useOnboardingStore } from './features/onboarding/store'
 import { OnboardingScreen } from './app/onboarding/OnboardingScreen'
 import { DailyScreen } from './app/daily/DailyScreen'
 import { WeeklyScreen } from './app/weekly/WeeklyScreen'
+
+const TAB_ITEMS = [
+  { to: '/daily', label: '일간' },
+  { to: '/weekly', label: '주간' },
+] as const
+
+function BottomTabBar(): React.JSX.Element {
+  return (
+    <nav className="fixed inset-x-0 bottom-0 flex justify-around border-t border-[#F0DFD1] bg-white">
+      {TAB_ITEMS.map((tab) => (
+        <NavLink
+          key={tab.to}
+          to={tab.to}
+          className={({ isActive }) =>
+            isActive
+              ? 'flex flex-1 flex-col items-center gap-1 py-2 text-xs font-medium text-[#C2410C]'
+              : 'flex flex-1 flex-col items-center gap-1 py-2 text-xs font-medium text-[#B7A490]'
+          }
+        >
+          <span className="h-5 w-5 rounded-[4px] border border-current" aria-hidden="true" />
+          {tab.label}
+        </NavLink>
+      ))}
+    </nav>
+  )
+}
 
 // AppShell은 라우터와 분리해 MemoryRouter로도 테스트할 수 있게 한다.
 export function AppShell(): React.JSX.Element {
@@ -18,27 +44,24 @@ export function AppShell(): React.JSX.Element {
 
   return (
     <div className="min-h-screen bg-neutral-950 text-white">
-      {isCompleted && (
-        <nav className="flex gap-4 p-4">
-          <Link to="/daily">일간</Link>
-          <Link to="/weekly">주간</Link>
-        </nav>
-      )}
-      <Routes>
-        <Route path="/" element={<Navigate to={isCompleted ? '/daily' : '/onboarding'} replace />} />
-        <Route
-          path="/onboarding"
-          element={isCompleted ? <Navigate to="/daily" replace /> : <OnboardingScreen />}
-        />
-        <Route
-          path="/daily"
-          element={isCompleted ? <DailyScreen /> : <Navigate to="/onboarding" replace />}
-        />
-        <Route
-          path="/weekly"
-          element={isCompleted ? <WeeklyScreen /> : <Navigate to="/onboarding" replace />}
-        />
-      </Routes>
+      <div className={isCompleted ? 'pb-16' : undefined}>
+        <Routes>
+          <Route path="/" element={<Navigate to={isCompleted ? '/daily' : '/onboarding'} replace />} />
+          <Route
+            path="/onboarding"
+            element={isCompleted ? <Navigate to="/daily" replace /> : <OnboardingScreen />}
+          />
+          <Route
+            path="/daily"
+            element={isCompleted ? <DailyScreen /> : <Navigate to="/onboarding" replace />}
+          />
+          <Route
+            path="/weekly"
+            element={isCompleted ? <WeeklyScreen /> : <Navigate to="/onboarding" replace />}
+          />
+        </Routes>
+      </div>
+      {isCompleted && <BottomTabBar />}
     </div>
   )
 }
