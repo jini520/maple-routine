@@ -2,27 +2,85 @@ import { useEffect, useState } from 'react'
 import { RefreshCw } from 'lucide-react'
 import { useDailySchedulerStore } from '../../features/daily-scheduler/store'
 import { formatScheduleSyncError, formatSyncedAt } from '../../features/schedule-sync/format'
-import { CharacterChipTabs } from '../../components/CharacterChipTabs/CharacterChipTabs'
+import { CharacterSelectDropdown } from '../../components/CharacterSelectDropdown/CharacterSelectDropdown'
+import { CharacterTrackingPicker } from '../../components/CharacterTrackingPicker/CharacterTrackingPicker'
+import { getTrackedCharacterOcids, setTrackedCharacterOcids } from '../../storage/character-selection'
 
 export function DailyScreen(): React.JSX.Element {
   const { status, characters, error, refresh } = useDailySchedulerStore()
   const [selectedOcid, setSelectedOcid] = useState<string | null>(null)
+  const [trackedOcids, setTrackedOcids] = useState<string[] | null>(null)
+  const [isPickerOpen, setIsPickerOpen] = useState(false)
 
   useEffect(() => {
     refresh()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const effectiveSelectedOcid =
-    selectedOcid !== null && characters.some((character) => character.ocid === selectedOcid)
-      ? selectedOcid
-      : (characters[0]?.ocid ?? null)
+  useEffect(() => {
+    getTrackedCharacterOcids('daily').then(setTrackedOcids)
+  }, [])
 
-  const selected = characters.find((character) => character.ocid === effectiveSelectedOcid) ?? null
+  const visibleCharacters =
+    trackedOcids === null ? [] : characters.filter((character) => trackedOcids.includes(character.ocid))
+
+  const effectiveSelectedOcid =
+    selectedOcid !== null && visibleCharacters.some((character) => character.ocid === selectedOcid)
+      ? selectedOcid
+      : (visibleCharacters[0]?.ocid ?? null)
+
+  const selected = visibleCharacters.find((character) => character.ocid === effectiveSelectedOcid) ?? null
+
+  const registeredContents = selected !== null ? selected.dailyContents.filter((content) => content.isRegistered) : []
+
+  async function handleSaveTracking(ocids: string[]): Promise<void> {
+    await setTrackedCharacterOcids('daily', ocids)
+    setTrackedOcids(ocids)
+    setIsPickerOpen(false)
+  }
+
+  const characterManageButton = (
+    <button
+      type="button"
+      onClick={() => setIsPickerOpen(true)}
+      className="text-sm font-medium text-[#8A7362] hover:text-[#5B4636]"
+    >
+      캐릭터 관리
+    </button>
+  )
+
+  const trackingPicker = isPickerOpen && (
+    <CharacterTrackingPicker
+      allCharacters={characters}
+      trackedOcids={trackedOcids ?? []}
+      onSave={handleSaveTracking}
+      onClose={() => setIsPickerOpen(false)}
+    />
+  )
+
+  if (visibleCharacters.length === 0) {
+    return (
+      <div className="p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-lg font-semibold text-[#2B1B10]">일간 스케줄러</h1>
+          {characterManageButton}
+        </div>
+
+        <div className="rounded-[14px] border border-dashed border-[#F0DFD1] p-4 text-sm text-[#8A7362]">
+          표시할 캐릭터가 없습니다 — 캐릭터를 선택해주세요
+        </div>
+
+        {trackingPicker}
+      </div>
+    )
+  }
 
   return (
     <div className="p-4 space-y-4">
-      <h1 className="text-lg font-semibold text-[#2B1B10]">일간 스케줄러</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-lg font-semibold text-[#2B1B10]">일간 스케줄러</h1>
+        {characterManageButton}
+      </div>
 
       <div className="space-y-1">
         <div className="flex items-center justify-between">
@@ -58,21 +116,21 @@ export function DailyScreen(): React.JSX.Element {
 
       {status === 'loaded' && selected !== null && (
         <>
-          <CharacterChipTabs
-            characters={characters}
+          <CharacterSelectDropdown
+            characters={visibleCharacters}
             selectedOcid={selected.ocid}
             onSelect={setSelectedOcid}
           />
 
-          {selected.dailyContents.length === 0 && !selected.isStale && (
+          {registeredContents.length === 0 && !selected.isStale && (
             <div className="rounded-[14px] border border-dashed border-[#F0DFD1] p-4 text-sm text-[#8A7362]">
               표시할 항목이 없습니다 — 게임에서 스케줄러에 등록해주세요
             </div>
           )}
 
-          {selected.dailyContents.length > 0 && (
+          {registeredContents.length > 0 && (
             <ul className="space-y-3">
-              {selected.dailyContents.map((content) => (
+              {registeredContents.map((content) => (
                 <li
                   key={content.name}
                   className="rounded-[14px] bg-white border border-[#F0DFD1] p-4 space-y-2"
@@ -100,6 +158,8 @@ export function DailyScreen(): React.JSX.Element {
           )}
         </>
       )}
+
+      {trackingPicker}
     </div>
   )
 }
