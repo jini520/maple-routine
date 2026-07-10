@@ -7,7 +7,8 @@
       "name": "core-types",
       "status": "completed",
       "started_at": "2026-07-11T02:41:25+0900",
-      "summary": "src/types/{nexon-wire,scheduler,character,auth,index}.ts 추가 — wire 타입(NexonCharacterListResponse, NexonSchedulerCharacterStateWire 등)과 domain 타입(BOSS_DIFFICULTIES, BOSS_CYCLES, SchedulerCharacterState, MapleAccount, NexonAuthConfig 등) 분리 정의, scheduler.test.ts로 검증"
+      "summary": "src/types/{nexon-wire,scheduler,character,auth,index}.ts 추가 — wire 타입(NexonCharacterListResponse, NexonSchedulerCharacterStateWire 등)과 domain 타입(BOSS_DIFFICULTIES, BOSS_CYCLES, SchedulerCharacterState, MapleAccount, NexonAuthConfig 등) 분리 정의, scheduler.test.ts로 검증",
+      "completed_at": "2026-07-11T02:43:19+0900"
     },
     {
       "step": 1,
