@@ -19,6 +19,10 @@
       "dir": "scheduler",
       "status": "completed",
       "completed_at": "2026-07-11T04:09:57+0900"
+    },
+    {
+      "dir": "scheduler-ui",
+      "status": "pending"
     }
   ]
 }
