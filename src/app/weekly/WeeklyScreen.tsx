@@ -33,7 +33,7 @@ export function WeeklyScreen(): React.JSX.Element {
   const [isPickerOpen, setIsPickerOpen] = useState(false)
 
   useEffect(() => {
-    getTrackedCharacterOcids('weekly').then(setTrackedOcids)
+    getTrackedCharacterOcids('boss').then(setTrackedOcids)
   }, [])
 
   useEffect(() => {
@@ -68,7 +68,7 @@ export function WeeklyScreen(): React.JSX.Element {
       (selected.weeklyBossClearCount !== null && selected.weeklyBossClearLimitCount !== null))
 
   async function handleSaveTracking(ocids: string[]): Promise<void> {
-    await setTrackedCharacterOcids('weekly', ocids)
+    await setTrackedCharacterOcids('boss', ocids)
     setTrackedOcids(ocids)
     setIsPickerOpen(false)
   }

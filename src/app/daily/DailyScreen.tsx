@@ -16,7 +16,7 @@ export function DailyScreen(): React.JSX.Element {
   const [isPickerOpen, setIsPickerOpen] = useState(false)
 
   useEffect(() => {
-    getTrackedCharacterOcids('daily').then(setTrackedOcids)
+    getTrackedCharacterOcids('content').then(setTrackedOcids)
   }, [])
 
   useEffect(() => {
@@ -44,7 +44,7 @@ export function DailyScreen(): React.JSX.Element {
   const registeredContents = selected !== null ? selected.dailyContents.filter((content) => content.isRegistered) : []
 
   async function handleSaveTracking(ocids: string[]): Promise<void> {
-    await setTrackedCharacterOcids('daily', ocids)
+    await setTrackedCharacterOcids('content', ocids)
     setTrackedOcids(ocids)
     setIsPickerOpen(false)
   }
