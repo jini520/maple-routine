@@ -1,14 +1,14 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Navigate, NavLink, Route, Routes } from 'react-router-dom'
-import { CalendarCheck, CalendarRange } from 'lucide-react'
+import { ListChecks, Swords } from 'lucide-react'
 import { useOnboardingStore } from './features/onboarding/store'
 import { OnboardingScreen } from './app/onboarding/OnboardingScreen'
-import { DailyScreen } from './app/daily/DailyScreen'
-import { WeeklyScreen } from './app/weekly/WeeklyScreen'
+import { ContentScreen } from './app/content-scheduler/ContentScreen'
+import { BossScreen } from './app/boss-scheduler/BossScreen'
 
 const TAB_ITEMS = [
-  { to: '/daily', label: '일간', Icon: CalendarCheck },
-  { to: '/weekly', label: '주간', Icon: CalendarRange },
+  { to: '/content', label: '컨텐츠', Icon: ListChecks },
+  { to: '/boss', label: '보스', Icon: Swords },
 ] as const
 
 function BottomTabBar(): React.JSX.Element {
@@ -47,18 +47,18 @@ export function AppShell(): React.JSX.Element {
     <div className="min-h-screen bg-[#FFF9F4] text-[#2B1B10]">
       <div className={isCompleted ? 'pb-16' : undefined}>
         <Routes>
-          <Route path="/" element={<Navigate to={isCompleted ? '/daily' : '/onboarding'} replace />} />
+          <Route path="/" element={<Navigate to={isCompleted ? '/content' : '/onboarding'} replace />} />
           <Route
             path="/onboarding"
-            element={isCompleted ? <Navigate to="/daily" replace /> : <OnboardingScreen />}
+            element={isCompleted ? <Navigate to="/content" replace /> : <OnboardingScreen />}
           />
           <Route
-            path="/daily"
-            element={isCompleted ? <DailyScreen /> : <Navigate to="/onboarding" replace />}
+            path="/content"
+            element={isCompleted ? <ContentScreen /> : <Navigate to="/onboarding" replace />}
           />
           <Route
-            path="/weekly"
-            element={isCompleted ? <WeeklyScreen /> : <Navigate to="/onboarding" replace />}
+            path="/boss"
+            element={isCompleted ? <BossScreen /> : <Navigate to="/onboarding" replace />}
           />
         </Routes>
       </div>
