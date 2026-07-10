@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { RefreshCw } from 'lucide-react'
 import { BossPortrait } from '../../components/BossPortrait/BossPortrait'
-import { CharacterChipTabs } from '../../components/CharacterChipTabs/CharacterChipTabs'
+import { CharacterSelectDropdown } from '../../components/CharacterSelectDropdown/CharacterSelectDropdown'
+import { CharacterTrackingPicker } from '../../components/CharacterTrackingPicker/CharacterTrackingPicker'
+import { getTrackedCharacterOcids, setTrackedCharacterOcids } from '../../storage/character-selection'
 import { useWeeklySchedulerStore } from '../../features/weekly-scheduler/store'
 import { formatScheduleSyncError, formatSyncedAt } from '../../features/schedule-sync/format'
 
@@ -24,27 +26,85 @@ function StatusDot(props: { filled: boolean; label: string }): React.JSX.Element
 export function WeeklyScreen(): React.JSX.Element {
   const { status, characters, error, refresh } = useWeeklySchedulerStore()
   const [selectedOcid, setSelectedOcid] = useState<string | null>(null)
+  const [trackedOcids, setTrackedOcids] = useState<string[] | null>(null)
+  const [isPickerOpen, setIsPickerOpen] = useState(false)
 
   useEffect(() => {
     refresh()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const effectiveSelectedOcid =
-    selectedOcid !== null && characters.some((character) => character.ocid === selectedOcid)
-      ? selectedOcid
-      : (characters[0]?.ocid ?? null)
+  useEffect(() => {
+    getTrackedCharacterOcids('weekly').then(setTrackedOcids)
+  }, [])
 
-  const selected = characters.find((character) => character.ocid === effectiveSelectedOcid) ?? null
+  const visibleCharacters =
+    trackedOcids === null ? [] : characters.filter((character) => trackedOcids.includes(character.ocid))
+
+  const effectiveSelectedOcid =
+    selectedOcid !== null && visibleCharacters.some((character) => character.ocid === selectedOcid)
+      ? selectedOcid
+      : (visibleCharacters[0]?.ocid ?? null)
+
+  const selected = visibleCharacters.find((character) => character.ocid === effectiveSelectedOcid) ?? null
+
+  const registeredWeeklyContents =
+    selected !== null ? selected.weeklyContents.filter((content) => content.isRegistered) : []
+  const registeredBosses = selected !== null ? selected.bosses.filter((boss) => boss.isRegistered) : []
 
   const showBossSection =
     selected !== null &&
-    (selected.bosses.length > 0 ||
+    (registeredBosses.length > 0 ||
       (selected.weeklyBossClearCount !== null && selected.weeklyBossClearLimitCount !== null))
+
+  async function handleSaveTracking(ocids: string[]): Promise<void> {
+    await setTrackedCharacterOcids('weekly', ocids)
+    setTrackedOcids(ocids)
+    setIsPickerOpen(false)
+  }
+
+  const characterManageButton = (
+    <button
+      type="button"
+      onClick={() => setIsPickerOpen(true)}
+      className="text-sm font-medium text-[#8A7362] hover:text-[#5B4636]"
+    >
+      캐릭터 관리
+    </button>
+  )
+
+  const trackingPicker = isPickerOpen && (
+    <CharacterTrackingPicker
+      allCharacters={characters}
+      trackedOcids={trackedOcids ?? []}
+      onSave={handleSaveTracking}
+      onClose={() => setIsPickerOpen(false)}
+    />
+  )
+
+  if (visibleCharacters.length === 0) {
+    return (
+      <div className="p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-lg font-semibold text-[#2B1B10]">주간 스케줄러</h1>
+          {characterManageButton}
+        </div>
+
+        <div className="rounded-[14px] border border-dashed border-[#F0DFD1] p-4 text-sm text-[#8A7362]">
+          표시할 캐릭터가 없습니다 — 캐릭터를 선택해주세요
+        </div>
+
+        {trackingPicker}
+      </div>
+    )
+  }
 
   return (
     <div className="p-4 space-y-4">
-      <h1 className="text-lg font-semibold text-[#2B1B10]">주간 스케줄러</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-lg font-semibold text-[#2B1B10]">주간 스케줄러</h1>
+        {characterManageButton}
+      </div>
 
       <div className="space-y-1">
         <div className="flex items-center justify-between">
@@ -80,30 +140,25 @@ export function WeeklyScreen(): React.JSX.Element {
 
       {status === 'loaded' && selected !== null && (
         <>
-          <CharacterChipTabs
-            characters={characters}
+          <CharacterSelectDropdown
+            characters={visibleCharacters}
             selectedOcid={selected.ocid}
             onSelect={setSelectedOcid}
           />
 
-          {selected.weeklyContents.length === 0 && selected.bosses.length === 0 && !selected.isStale && (
+          {registeredWeeklyContents.length === 0 && registeredBosses.length === 0 && !selected.isStale && (
             <div className="rounded-[14px] border border-dashed border-[#F0DFD1] p-4 text-sm text-[#8A7362]">
               표시할 항목이 없습니다 — 게임에서 스케줄러에 등록해주세요
             </div>
           )}
 
-          {selected.weeklyContents.length > 0 && (
+          {registeredWeeklyContents.length > 0 && (
             <section className="space-y-2">
               <h2 className="text-sm font-semibold text-[#2B1B10]">주간 퀘스트</h2>
               <ul className="rounded-[14px] bg-white border border-[#F0DFD1] p-4 space-y-2">
-                {selected.weeklyContents.map((content) => (
+                {registeredWeeklyContents.map((content) => (
                   <li key={content.name} className="flex items-center gap-2">
-                    <StatusDot filled={content.isRegistered} label={content.isRegistered ? '등록됨' : '미등록'} />
-                    <span
-                      className={
-                        content.isRegistered ? 'text-sm text-[#5B4636]' : 'text-sm text-[#B7A490]'
-                      }
-                    >
+                    <span className="text-sm text-[#5B4636]">
                       {content.name} · {content.nowCount}/{content.maxCount}
                     </span>
                   </li>
@@ -123,9 +178,9 @@ export function WeeklyScreen(): React.JSX.Element {
                 )}
               </div>
 
-              {selected.bosses.length > 0 && (
+              {registeredBosses.length > 0 && (
                 <ul className="rounded-[14px] bg-white border border-[#F0DFD1] p-4 space-y-2">
-                  {selected.bosses.map((boss) => (
+                  {registeredBosses.map((boss) => (
                     <li key={`${boss.apiName}-${boss.difficulty}`} className="flex items-center gap-2">
                       <StatusDot filled={boss.isComplete} label={boss.isComplete ? '완료' : '미완료'} />
                       <div className="h-5 w-5 shrink-0">
@@ -135,11 +190,7 @@ export function WeeklyScreen(): React.JSX.Element {
                           label={boss.matchedBossName ?? boss.apiName}
                         />
                       </div>
-                      <span
-                        className={
-                          boss.isRegistered ? 'text-sm text-[#5B4636]' : 'text-sm text-[#B7A490]'
-                        }
-                      >
+                      <span className="text-sm text-[#5B4636]">
                         {boss.matchedBossName ?? boss.apiName} · {boss.difficulty}
                       </span>
                     </li>
@@ -150,6 +201,8 @@ export function WeeklyScreen(): React.JSX.Element {
           )}
         </>
       )}
+
+      {trackingPicker}
     </div>
   )
 }
