@@ -42,6 +42,9 @@ mockedUseContentSchedulerStore.mockReturnValue({
   status: 'idle',
   characters: [],
   error: null,
+  trackedOcids: null,
+  loadTrackedOcids: vi.fn(),
+  saveTrackedOcids: vi.fn(),
   refresh: vi.fn(),
 })
 
@@ -49,6 +52,9 @@ mockedUseBossSchedulerStore.mockReturnValue({
   status: 'idle',
   characters: [],
   error: null,
+  trackedOcids: null,
+  loadTrackedOcids: vi.fn(),
+  saveTrackedOcids: vi.fn(),
   refresh: vi.fn(),
 })
 
