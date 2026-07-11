@@ -7,7 +7,8 @@
       "name": "latest-party-size-query",
       "status": "completed",
       "started_at": "2026-07-11T23:06:24+0900",
-      "summary": "src/storage/boss-profit.ts에 getLatestPartySize(ocid, boss, difficulty) 추가 — period_key 무관하게 recorded_at DESC LIMIT 1로 최근 party_size 조회, 기록 없으면 null 반환"
+      "summary": "src/storage/boss-profit.ts에 getLatestPartySize(ocid, boss, difficulty) 추가 — period_key 무관하게 recorded_at DESC LIMIT 1로 최근 party_size 조회, 기록 없으면 null 반환",
+      "completed_at": "2026-07-11T23:07:33+0900"
     },
     {
       "step": 1,
