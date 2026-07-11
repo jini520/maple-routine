@@ -57,7 +57,8 @@
     },
     {
       "dir": "boss-profit-autorecord-layout",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-07-11T23:13:19+0900"
     }
   ]
 }
