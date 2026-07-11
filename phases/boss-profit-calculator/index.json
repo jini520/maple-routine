@@ -37,7 +37,10 @@
     {
       "step": 4,
       "name": "boss-profit-screen",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-07-11T17:58:10+0900",
+      "summary": "src/app/boss-profit/BossProfitScreen.tsx 추가 — 추적 캐릭터 처치 보스를 이번 주/이번 달 섹션으로 합산 표시(캐릭터 선택 UI 없음), 파티원 수 입력 시 store.setPartySize 호출·검증 실패는 인풋 하단 에러로 표시, 가격 미확정 배지·stale 안내·섹션별 합계 렌더링",
+      "completed_at": "2026-07-11T18:03:00+0900"
     },
     {
       "step": 5,
