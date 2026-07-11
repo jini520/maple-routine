@@ -54,6 +54,21 @@ function rowToRecord(row: Record<string, unknown>): BossProfitRecord {
   }
 }
 
+export async function getLatestPartySize(
+  ocid: string,
+  boss: string,
+  difficulty: string,
+): Promise<number | null> {
+  const db = await getBossProfitDb()
+  const { values } = await db.query(
+    `SELECT * FROM boss_profit_records WHERE ocid = ? AND boss = ? AND difficulty = ? ORDER BY recorded_at DESC LIMIT 1`,
+    [ocid, boss, difficulty],
+  )
+
+  const row = values?.[0]
+  return row === undefined ? null : (row.party_size as number)
+}
+
 export async function getBossProfitRecords(
   ocids: string[],
   periodKeys: string[],
