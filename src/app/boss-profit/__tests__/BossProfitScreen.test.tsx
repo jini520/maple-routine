@@ -145,6 +145,7 @@ describe('BossProfitScreen', () => {
     })
 
     render(<BossProfitScreen />)
+    fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
 
     expect(screen.getByText(/이번 주 합계.*5,000,000 메소/)).toBeInTheDocument()
     expect(screen.getByText(/이번 달 합계.*5,000,000 메소/)).toBeInTheDocument()
@@ -160,6 +161,7 @@ describe('BossProfitScreen', () => {
     })
 
     render(<BossProfitScreen />)
+    fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
 
     expect(screen.getByText('가격 미확정')).toBeInTheDocument()
   })
@@ -172,6 +174,7 @@ describe('BossProfitScreen', () => {
     })
 
     render(<BossProfitScreen />)
+    fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
 
     expect(screen.getByText('파티원 수를 입력해주세요')).toBeInTheDocument()
   })
@@ -184,8 +187,9 @@ describe('BossProfitScreen', () => {
     })
 
     render(<BossProfitScreen />)
+    fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
 
-    expect(screen.getByText('5,000,000 메소')).toBeInTheDocument()
+    expect(screen.getByRole('listitem')).toHaveTextContent('5,000,000 메소')
   })
 
   it('파티원 수 입력 후 blur하면 setPartySize가 호출된다', async () => {
@@ -194,6 +198,7 @@ describe('BossProfitScreen', () => {
     mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [targetRow], setPartySize })
 
     render(<BossProfitScreen />)
+    fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
     const input = screen.getByRole('spinbutton', { name: /낟낟 자쿰 카오스 파티원 수/ })
     fireEvent.change(input, { target: { value: '3' } })
     fireEvent.blur(input)
@@ -212,11 +217,110 @@ describe('BossProfitScreen', () => {
     mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [targetRow], setPartySize })
 
     render(<BossProfitScreen />)
+    fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
     const input = screen.getByRole('spinbutton', { name: /낟낟 자쿰 카오스 파티원 수/ })
     fireEvent.change(input, { target: { value: '99' } })
     fireEvent.blur(input)
 
     expect(await screen.findByText('파티원 수는 1 이상 6 이하의 정수여야 합니다')).toBeInTheDocument()
     expect(screen.getByRole('spinbutton', { name: /낟낟 자쿰 카오스 파티원 수/ })).toBeInTheDocument()
+  })
+
+  it('상단 합계가 여러 캐릭터의 이번 주 payoutMeso만 합산해 보여주고 월간 보스는 제외한다', () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1', 'ocid-2'],
+      rows: [
+        row({ ocid: 'ocid-1', characterName: '낟낟', periodLabel: '이번 주', priceMeso: 10_000_000, partySize: 2, payoutMeso: 5_000_000 }),
+        row({
+          ocid: 'ocid-2',
+          characterName: '내옆에최성일',
+          boss: '루시드',
+          periodLabel: '이번 주',
+          priceMeso: 6_000_000,
+          partySize: 2,
+          payoutMeso: 3_000_000,
+        }),
+        row({
+          ocid: 'ocid-1',
+          characterName: '낟낟',
+          boss: '검은마법사',
+          difficulty: '익스트림',
+          cycle: 'monthly',
+          periodKey: '2026-07',
+          periodLabel: '이번 달',
+          priceMeso: 20_000_000,
+          partySize: 4,
+          payoutMeso: 5_000_000,
+        }),
+      ],
+    })
+
+    render(<BossProfitScreen />)
+
+    expect(screen.getByText(/이번 주 총 수익/)).toBeInTheDocument()
+    expect(screen.getByText('8,000,000 메소')).toBeInTheDocument()
+  })
+
+  it('rows가 비어있으면 상단 합계 카드 없이 기존 빈 상태 문구만 보인다', () => {
+    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [] })
+
+    render(<BossProfitScreen />)
+
+    expect(screen.getByText('아직 처치한 보스가 없습니다')).toBeInTheDocument()
+    expect(screen.queryByText(/이번 주 총 수익/)).not.toBeInTheDocument()
+  })
+
+  it('캐릭터별 드롭다운은 기본 상태에서 접혀 있어 보스 행이 보이지 않는다', () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row({ priceMeso: 10_000_000, partySize: 2, payoutMeso: 5_000_000 })],
+    })
+
+    render(<BossProfitScreen />)
+
+    expect(screen.queryByText(/낟낟 · 자쿰 · 카오스/)).not.toBeInTheDocument()
+  })
+
+  it('드롭다운 헤더를 클릭하면 펼쳐지고 다시 클릭하면 접힌다', () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row({ priceMeso: 10_000_000, partySize: 2, payoutMeso: 5_000_000 })],
+    })
+
+    render(<BossProfitScreen />)
+    const header = screen.getByRole('button', { name: /낟낟/ })
+
+    fireEvent.click(header)
+    expect(screen.getByText(/낟낟 · 자쿰 · 카오스/)).toBeInTheDocument()
+
+    fireEvent.click(header)
+    expect(screen.queryByText(/낟낟 · 자쿰 · 카오스/)).not.toBeInTheDocument()
+  })
+
+  it('드롭다운 헤더에 그 캐릭터의 이번 주 소계만 표시되고 다른 캐릭터 수익이 섞이지 않는다', () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1', 'ocid-2'],
+      rows: [
+        row({ ocid: 'ocid-1', characterName: '낟낟', periodLabel: '이번 주', priceMeso: 10_000_000, partySize: 2, payoutMeso: 5_000_000 }),
+        row({
+          ocid: 'ocid-2',
+          characterName: '내옆에최성일',
+          boss: '루시드',
+          periodLabel: '이번 주',
+          priceMeso: 6_000_000,
+          partySize: 2,
+          payoutMeso: 3_000_000,
+        }),
+      ],
+    })
+
+    render(<BossProfitScreen />)
+
+    expect(screen.getByRole('button', { name: '낟낟 · 5,000,000 메소' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '내옆에최성일 · 3,000,000 메소' })).toBeInTheDocument()
   })
 })
