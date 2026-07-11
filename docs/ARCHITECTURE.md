@@ -78,6 +78,11 @@ Feature 단위 구조. 각 `features/*` 폴더가 해당 기능의 상태와 로
   → (iOS 플랫폼 제약) BGAppRefreshTask/BGProcessingTask는 OS가 정확한 실행 시각을 보장하지 않음 — 사용자가 지정한 알림 시각과 실제 재확인 시각 사이에 오차가 있을 수 있음(베스트 에포트, 알려진 한계)
 
 [보스 수익 계산기 / 물욕 아이템 드랍 — 보스 목록은 Nexon 동기화 캐시 구독, 기록 자체는 로컬 전용. [[ADR-010]]·[[ADR-011]]으로 확장]
+보스 수익 계산기 진입
+  → features/boss-profit이 위 동기화 캐시에서 **처치된(`complete_flag: true`) 보스**만 cycle 무관(weekly+monthly 모두 — 검은마법사 포함)하게 구독해 **보스 목록**으로 표시(등록 여부는 무관, line 69 참고)
+  → 추적 대상 캐릭터는 boss-scheduler(핵심 기능 2)와 동일하게 `trackedCharacters:boss`를 재사용한다(이 화면 전용의 별도 캐릭터 추적 UI 없음, 확정 2026-07-11)
+  → 보스별로 `boss-crystal-prices.json`에서 정가를 조회해 `partySizeScaling.formula`(`floor(priceMeso / partySize)`)로 수익 계산, `priceMeso`가 없는 보스(벨로나)는 "가격 미확정"으로 표시
+
 물욕 아이템 드랍 진입
   → features/item-drop이 위 동기화 캐시에서 `cycle: bossWeekly` + `registration_flag: true`인 보스만 이름 기준으로 중복 제거해 **보스 목록**으로 표시(난이도 표기 없음, [[ADR-011]])
   → 보스 선택 시 `item-drop-table.json`에서 그 보스 이름과 일치하는 모든 난이도 엔트리를 합쳐 아이템 후보를 구성(이름 기준 중복 제거, 난이도 무관)
@@ -87,6 +92,7 @@ Feature 단위 구조. 각 `features/*` 폴더가 해당 기능의 상태와 로
   → features/* 컴포넌트 (React state 갱신)
   → storage/ 레이어 (로컬 DB 읽기·쓰기 — 컨테이너 아이템은 선택된 결과까지 함께 저장)
   → 보스 수익 계산기는 결정 판매 수익 + 물욕템 환산 가치(`priceMeso` 확정된 항목만 합산, 미확정 항목은 "가격 미확정"으로 별도 표시)를 이번 주/월간 탭으로 표시
+  → **확정(2026-07-11) — 1차 구현 범위**: 물욕템 환산 가치 합산·"이번 주 / 월간 추이" 탭·히스토리 차트는 물욕 아이템 드랍(핵심 기능 5) 구현 이후 후속 작업으로 미룬다. 1차 구현은 결정 판매 수익 계산 + "이번 주" 표시까지만 다룬다
   → UI 반영
 
 [사냥 타이머]
