@@ -1,14 +1,16 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Navigate, NavLink, Route, Routes } from 'react-router-dom'
-import { ListChecks, Swords } from 'lucide-react'
+import { Coins, ListChecks, Swords } from 'lucide-react'
 import { useOnboardingStore } from './features/onboarding/store'
 import { OnboardingScreen } from './app/onboarding/OnboardingScreen'
 import { ContentScreen } from './app/content-scheduler/ContentScreen'
 import { BossScreen } from './app/boss-scheduler/BossScreen'
+import { BossProfitScreen } from './app/boss-profit/BossProfitScreen'
 
 const TAB_ITEMS = [
   { to: '/content', label: '컨텐츠', Icon: ListChecks },
   { to: '/boss', label: '보스', Icon: Swords },
+  { to: '/profit', label: '수익', Icon: Coins },
 ] as const
 
 function BottomTabBar(): React.JSX.Element {
@@ -59,6 +61,10 @@ export function AppShell(): React.JSX.Element {
           <Route
             path="/boss"
             element={isCompleted ? <BossScreen /> : <Navigate to="/onboarding" replace />}
+          />
+          <Route
+            path="/profit"
+            element={isCompleted ? <BossProfitScreen /> : <Navigate to="/onboarding" replace />}
           />
         </Routes>
       </div>
