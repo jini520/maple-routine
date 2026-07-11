@@ -7,7 +7,8 @@
       "name": "sqlite-setup",
       "status": "completed",
       "started_at": "2026-07-11T17:42:30+0900",
-      "summary": "@capacitor-community/sqlite + jeep-sqlite(웹 폴리필) 도입, src/storage/sqlite/db.ts에 getBossProfitDb() 싱글턴 커넥션과 boss_profit_records 테이블 생성 추가, public/assets/sql-wasm.wasm 정적 자산 배치"
+      "summary": "@capacitor-community/sqlite + jeep-sqlite(웹 폴리필) 도입, src/storage/sqlite/db.ts에 getBossProfitDb() 싱글턴 커넥션과 boss_profit_records 테이블 생성 추가, public/assets/sql-wasm.wasm 정적 자산 배치",
+      "completed_at": "2026-07-11T17:48:55+0900"
     },
     {
       "step": 1,
