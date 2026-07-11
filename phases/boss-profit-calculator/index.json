@@ -32,7 +32,7 @@
       "status": "completed",
       "started_at": "2026-07-11T17:53:53+0900",
       "summary": "src/features/boss-profit/store.ts에 useBossProfitStore 추가 — nexon/schedule 캐시에서 처치된(isComplete) weekly+monthly 보스만 전 캐릭터 평탄화해 rows로 구성, boss-crystal-prices.json 조회로 priceMeso/maxPartySize 산출, getBossProfitRecords로 저장된 파티원 수 복원(멱등성), setPartySize가 1~maxPartySize 정수 검증 후 upsertBossProfitRecord 호출",
-      "completed_at": "2026-07-11T17:58:40+0900"
+      "completed_at": "2026-07-11T17:58:10+0900"
     },
     {
       "step": 4,
