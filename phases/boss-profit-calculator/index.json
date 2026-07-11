@@ -13,7 +13,10 @@
     {
       "step": 1,
       "name": "period-lib",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-07-11T17:48:56+0900",
+      "summary": "src/lib/reset-clock.ts에 KST 기준 주간 리셋(목요일 00:00) 계산 함수, src/lib/boss-profit-period.ts에 cycle별(weekly/monthly) 보스 수익 기간 키·라벨 계산 함수 추가(월간은 PRD #36 미확인으로 매월 1일 00:00 KST 가정치)",
+      "completed_at": "2026-07-11T17:56:00+0900"
     },
     {
       "step": 2,
