@@ -21,7 +21,10 @@
     {
       "step": 2,
       "name": "boss-profit-storage",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-07-11T17:52:03+0900",
+      "summary": "src/storage/boss-profit.ts에 boss_profit_records 테이블 CRUD 어댑터 추가 — upsertBossProfitRecord(ON CONFLICT(ocid, boss, difficulty, period_key) DO UPDATE로 멱등성 보장), getBossProfitRecords(ocid IN + period_key IN 조회, 빈 배열 입력 시 DB 미호출)",
+      "completed_at": "2026-07-11T17:54:00+0900"
     },
     {
       "step": 3,
