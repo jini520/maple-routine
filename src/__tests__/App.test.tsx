@@ -7,6 +7,7 @@ import { AppShell } from '../App'
 import { useOnboardingStore } from '../features/onboarding/store'
 import { useContentSchedulerStore } from '../features/content-scheduler/store'
 import { useBossSchedulerStore } from '../features/boss-scheduler/store'
+import { useBossProfitStore } from '../features/boss-profit/store'
 
 vi.mock('../features/onboarding/store', () => ({
   useOnboardingStore: vi.fn(),
@@ -20,9 +21,14 @@ vi.mock('../features/boss-scheduler/store', () => ({
   useBossSchedulerStore: vi.fn(),
 }))
 
+vi.mock('../features/boss-profit/store', () => ({
+  useBossProfitStore: vi.fn(),
+}))
+
 const mockedUseOnboardingStore = vi.mocked(useOnboardingStore)
 const mockedUseContentSchedulerStore = vi.mocked(useContentSchedulerStore)
 const mockedUseBossSchedulerStore = vi.mocked(useBossSchedulerStore)
+const mockedUseBossProfitStore = vi.mocked(useBossProfitStore)
 
 function mockStore(overrides: Partial<ReturnType<typeof useOnboardingStore>>): void {
   mockedUseOnboardingStore.mockReturnValue({
@@ -56,6 +62,17 @@ mockedUseBossSchedulerStore.mockReturnValue({
   loadTrackedOcids: vi.fn(),
   saveTrackedOcids: vi.fn(),
   refresh: vi.fn(),
+})
+
+mockedUseBossProfitStore.mockReturnValue({
+  status: 'idle',
+  rows: [],
+  error: null,
+  staleCharacterNames: [],
+  trackedOcids: null,
+  loadTrackedOcids: vi.fn(),
+  refresh: vi.fn(),
+  setPartySize: vi.fn(),
 })
 
 function renderAt(path: string): void {
@@ -97,6 +114,22 @@ describe('AppShell', () => {
     expect(screen.getByLabelText(/API 키/)).toBeInTheDocument()
   })
 
+  it('status가 completed가 아닐 때 /profit으로 접근하면 온보딩으로 리다이렉트된다', () => {
+    mockStore({ status: 'awaitingApiKey' })
+
+    renderAt('/profit')
+
+    expect(screen.getByLabelText(/API 키/)).toBeInTheDocument()
+  })
+
+  it('status가 completed일 때 /profit으로 접근하면 보스 수익 계산기 화면이 보인다', () => {
+    mockStore({ status: 'completed', selectedAccountId: 'account-1' })
+
+    renderAt('/profit')
+
+    expect(screen.getByRole('heading', { name: '주간 보스 수익 계산기' })).toBeInTheDocument()
+  })
+
   it('status가 completed일 때 /onboarding으로 접근하면 /content로 리다이렉트된다', () => {
     mockStore({ status: 'completed', selectedAccountId: 'account-1' })
 
@@ -105,13 +138,14 @@ describe('AppShell', () => {
     expect(screen.getByRole('heading', { name: '컨텐츠 스케줄러' })).toBeInTheDocument()
   })
 
-  it('status가 completed일 때 하단 탭바(컨텐츠/보스 탭)가 보인다', () => {
+  it('status가 completed일 때 하단 탭바(컨텐츠/보스/수익 탭)가 보인다', () => {
     mockStore({ status: 'completed', selectedAccountId: 'account-1' })
 
     renderAt('/content')
 
     expect(screen.getByRole('link', { name: '컨텐츠' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: '보스' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: '수익' })).toBeInTheDocument()
   })
 
   it('status가 completed가 아닐 때는 탭바가 렌더링되지 않는다', () => {
@@ -121,6 +155,7 @@ describe('AppShell', () => {
 
     expect(screen.queryByRole('link', { name: '컨텐츠' })).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: '보스' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: '수익' })).not.toBeInTheDocument()
   })
 
   it('status가 completed이고 현재 경로가 /content이면 "컨텐츠" 탭이 활성 스타일이다', () => {
@@ -141,13 +176,22 @@ describe('AppShell', () => {
     expect(screen.getByRole('link', { name: '컨텐츠' })).not.toHaveAttribute('aria-current')
   })
 
-  it('탭바에 "타이머"/"수익"/"드랍" 텍스트가 없다', () => {
+  it('status가 completed이고 현재 경로가 /profit이면 "수익" 탭이 활성 스타일이다', () => {
+    mockStore({ status: 'completed', selectedAccountId: 'account-1' })
+
+    renderAt('/profit')
+
+    expect(screen.getByRole('link', { name: '수익' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('link', { name: '컨텐츠' })).not.toHaveAttribute('aria-current')
+    expect(screen.getByRole('link', { name: '보스' })).not.toHaveAttribute('aria-current')
+  })
+
+  it('탭바에 "타이머"/"드랍" 텍스트가 없다', () => {
     mockStore({ status: 'completed', selectedAccountId: 'account-1' })
 
     renderAt('/content')
 
     expect(screen.queryByText('타이머')).not.toBeInTheDocument()
-    expect(screen.queryByText('수익')).not.toBeInTheDocument()
     expect(screen.queryByText('드랍')).not.toBeInTheDocument()
   })
 

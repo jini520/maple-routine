@@ -45,7 +45,10 @@
     {
       "step": 5,
       "name": "app-routing-cutover",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-07-11T18:02:29+0900",
+      "summary": "src/App.tsx에 세 번째 탭('수익', Coins 아이콘)과 /profit 라우트(BossProfitScreen, isCompleted 분기) 추가, src/__tests__/App.test.tsx에 useBossProfitStore 모킹·3탭 노출/활성 스타일/리다이렉트 테스트 추가",
+      "completed_at": "2026-07-11T18:07:00+0900"
     }
   ],
   "created_at": "2026-07-11T17:42:30+0900"
