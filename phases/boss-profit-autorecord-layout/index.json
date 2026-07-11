@@ -1,0 +1,9 @@
+{
+  "project": "메이플 루틴 (Maple Routine)",
+  "phase": "boss-profit-autorecord-layout",
+  "steps": [
+    { "step": 0, "name": "latest-party-size-query", "status": "pending" },
+    { "step": 1, "name": "auto-record-on-refresh", "status": "pending" },
+    { "step": 2, "name": "character-dropdown-layout", "status": "pending" }
+  ]
+}

@@ -54,6 +54,10 @@
       "dir": "boss-profit-calculator",
       "status": "completed",
       "completed_at": "2026-07-11T18:05:09+0900"
+    },
+    {
+      "dir": "boss-profit-autorecord-layout",
+      "status": "pending"
     }
   ]
 }

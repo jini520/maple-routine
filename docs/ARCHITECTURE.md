@@ -1,6 +1,6 @@
 # 아키텍처
 
-> 이 문서는 `docs/ADR.md`를 전제로 작성되었습니다. Capacitor / Vite+React / 로컬 저장 전용 / 백그라운드 상시 알림 모두 확정. 일간/주간 진행 상태는 Nexon Open API로 동기화하되, 사용자 개인이 발급받은 API 키를 기기에 저장해 직접 호출하는 방식이라 백엔드는 필요 없음([[ADR-007]] 신규 — 2026-07-09). 에러 핸들링·복원력 정책은 [[ADR-008]] 참고. 직업 기반 테마 시스템은 뼈대만 확정([[ADR-009]], 컬러 값 미정). 최상위 화면 구조는 "일간/주간 스케줄러"(리셋 주기 기준)에서 "컨텐츠/보스 스케줄러"(콘텐츠 종류 기준)로 개편됨([[ADR-013]], 2026-07-11). 별도 공개 웹 서비스 제공은 보류(MVP 범위 밖)이며, 이 문서는 Capacitor 앱(WebView) 기준으로만 작성되었습니다.
+> 이 문서는 `docs/ADR.md`를 전제로 작성되었습니다. Capacitor / Vite+React / 로컬 저장 전용 / 백그라운드 상시 알림 모두 확정. 일간/주간 진행 상태는 Nexon Open API로 동기화하되, 사용자 개인이 발급받은 API 키를 기기에 저장해 직접 호출하는 방식이라 백엔드는 필요 없음([[ADR-007]] 신규 — 2026-07-09). 에러 핸들링·복원력 정책은 [[ADR-008]] 참고. 직업 기반 테마 시스템은 뼈대만 확정([[ADR-009]], 컬러 값 미정). 최상위 화면 구조는 "일간/주간 스케줄러"(리셋 주기 기준)에서 "컨텐츠/보스 스케줄러"(콘텐츠 종류 기준)로 개편됨([[ADR-013]], 2026-07-11). 보스 수익 계산기는 완료 감지 시 파티원 수를 자동 기록하고 캐릭터별 드롭다운 레이아웃을 쓰도록 확장됨([[ADR-014]], 2026-07-11). 별도 공개 웹 서비스 제공은 보류(MVP 범위 밖)이며, 이 문서는 Capacitor 앱(WebView) 기준으로만 작성되었습니다.
 
 ## 디렉토리 구조
 ```
@@ -64,7 +64,7 @@ Feature 단위 구조. 각 `features/*` 폴더가 해당 기능의 상태와 로
   → boss_contents 중 cycle이 bossWeekly/bossMonthly인 것만 사용(bossDaily는 무시, [[ADR-013]]에서도 이 정책 재확인 — 보스 스케줄러에 일간 탭을 두지 않음)
   → src/data/ 참조 테이블로 보스명·난이도 표기 정규화(영↔한글, 양쪽 공백 제거 후 비교, apiAlias 예외 매핑). 매핑 안 되는 항목은 원문 그대로 "알 수 없는 콘텐츠"로 표시. **정정(2026-07-11)**: ~~이 정규화를 nexon/이 전부 수행~~ — 난이도 영↔한글 변환은 `nexon/normalize.ts`가 담당하지만, 보스명 매칭(양쪽 공백 제거 비교, apiAlias 예외)은 `nexon/`이 아니라 `lib/boss-matching`이 담당하고 그 결과를 `features/boss-scheduler`가 소비한다(**정정(2026-07-11, [[ADR-013]])**: ~~features/weekly-scheduler가 소비~~) — `nexon/`이 `src/data/`를 몰라야 독립적으로 테스트 가능하다는 레이어 분리 원칙 유지
   → storage/에 "마지막 동기화 결과 캐시" + 동기화 시각으로 저장
-  → boss_contents에서 새로 complete_flag: true로 바뀐 보스가 있어도 features/boss-profit에 별도 안내(배지 등)를 표시하지 않는다 — 사용자가 화면에 직접 들어와 파티원 수를 입력한다(확정, 2026-07-09, 자동 유도 UI 없음)
+  → boss_contents에서 새로 complete_flag: true로 바뀐 보스가 있어도 features/boss-profit에 별도 안내(배지 등)를 표시하지 않는다(확정, 2026-07-09, 자동 유도 UI 없음 — 이 부분은 [[ADR-014]] 이후에도 유지). **정정(2026-07-11, [[ADR-014]])**: ~~사용자가 화면에 직접 들어와 파티원 수를 입력한다~~ → 화면에 들어오지 않아도 수익 기록 자체는 자동 생성된다(아래 "보스 수익 계산기" 흐름 참고), 사용자는 값을 확인/수정하고 싶을 때만 화면에 들어온다
   → features/content-scheduler(일간 탭: dailyContents, 주간 탭: weeklyContents), features/boss-scheduler(주간 탭: cycle=weekly인 bossContents, 월간 탭: cycle=monthly인 bossContents)가 캐시를 읽어 읽기 전용으로 표시(완전 읽기 전용, 앱 내 수동 체크 없음 — 확정, [[ADR-007]]. 화면 재편은 [[ADR-013]], 2026-07-11 — 기존 features/daily-scheduler·features/weekly-scheduler를 대체)
   → features/item-drop은 같은 캐시에서 "등록된(`registration_flag: true`) 주간 보스 목록"만 읽기 전용으로 구독한다([[ADR-011]]). **정정(2026-07-11)**: ~~features/boss-profit도 동일하게 "등록된 주간 보스 목록"을 구독~~ — features/boss-profit은 등록 여부가 아니라 **처치된(`complete_flag: true`) 보스만** 구독·표시하고, 수익 계산도 처치된 보스만을 대상으로 한다(등록만 하고 아직 안 잡은 보스는 수익 계산기에 나타나지 않음 — `docs/PRD.md` "4. 주간 보스 수익 계산기" 참고, 사용자 확정). 두 feature 모두 이 목록 자체는 편집 불가하고, 사용자가 남기는 기록(파티원 수·아이템 획득)만 별도로 storage/에 쓴다
 
@@ -82,6 +82,8 @@ Feature 단위 구조. 각 `features/*` 폴더가 해당 기능의 상태와 로
   → features/boss-profit이 위 동기화 캐시에서 **처치된(`complete_flag: true`) 보스**만 cycle 무관(weekly+monthly 모두 — 검은마법사 포함)하게 구독해 **보스 목록**으로 표시(등록 여부는 무관, line 69 참고)
   → 추적 대상 캐릭터는 boss-scheduler(핵심 기능 2)와 동일하게 `trackedCharacters:boss`를 재사용한다(이 화면 전용의 별도 캐릭터 추적 UI 없음, 확정 2026-07-11)
   → 보스별로 `boss-crystal-prices.json`에서 정가를 조회해 `partySizeScaling.formula`(`floor(priceMeso / partySize)`)로 수익 계산, `priceMeso`가 없는 보스(벨로나)는 "가격 미확정"으로 표시
+  → **자동 기록 ([[ADR-014]], 2026-07-11 신규)**: 아직 로컬 기록이 없는 (ocid, boss, difficulty, periodKey) 조합을 만나면, `storage/boss-profit`에서 같은 (ocid, boss, difficulty)의 `period_key` 조건 없이 가장 최근 `recorded_at` 레코드 1건을 조회해 그 `party_size`를 기본값으로 쓰고(없으면 1), 그 값으로 즉시 `boss_profit_records`에 upsert한다 — 사용자가 화면에 들어오는 것과 무관하게 동기화 시점에 바로 반영됨
+  → **화면 레이아웃 ([[ADR-014]])**: features/boss-profit은 캐릭터별로 그룹핑한 뒤 각 그룹의 "이번 주"(cycle: weekly) 합계를 계산해 드롭다운 헤더에 노출하고, 전체 캐릭터의 "이번 주" 합계를 화면 최상단에 별도로 표시한다. 월간 보스(검은마법사) 합계는 상단 총합에 포함하지 않고 각 캐릭터 드롭다운 내부에서 "이번 달" 구분으로만 표시
 
 물욕 아이템 드랍 진입
   → features/item-drop이 위 동기화 캐시에서 `cycle: bossWeekly` + `registration_flag: true`인 보스만 이름 기준으로 중복 제거해 **보스 목록**으로 표시(난이도 표기 없음, [[ADR-011]])
@@ -188,6 +190,8 @@ Feature 단위 구조. 각 `features/*` 폴더가 해당 기능의 상태와 로
 - `nexon/client` 큐잉 로직: 여러 캐릭터를 동기화할 때 초당 5건(개발 단계) 이내로 순차 호출되는지, 429 응답 시 지수 백오프가 다음 허용 시각을 정확히 계산하는지 검증하는 단위 테스트
 - 라우트 가드: 온보딩(API 키 등록)이 완료되지 않은 상태로 일간/주간/타이머 등 다른 화면에 진입 시 온보딩으로 리다이렉트되는지 검증하는 테스트
 - 보스 수익 계산 포뮬러: `floor(priceMeso / partySize)`의 단위 테스트 — 파티원 1명(솔로), 최대 인원, 0/음수 등 잘못된 입력
+- 파티원 수 자동 기록([[ADR-014]]): 같은 (ocid, boss, difficulty) 조합의 과거 기록이 있을 때 `period_key` 무관하게 가장 최근 값을 기본값으로 쓰는지, 과거 기록이 전혀 없을 때 1로 기록되는지, 사용자가 값을 수정한 뒤 다음 주 새 완료 건에 그 값이 이어지는지 검증하는 단위 테스트를 기능 구현 시 추가
+- 캐릭터별 드롭다운 합계([[ADR-014]]): 캐릭터별 "이번 주" 소계와 화면 상단 전체 합계가 각 캐릭터 소계의 합과 일치하는지, 월간 보스 수익이 상단 합계에서 제외되는지 검증하는 단위 테스트를 기능 구현 시 추가
 - 물욕템 환산 수익 합산([[ADR-010]]): `priceMeso`가 `null`인 항목은 합계에서 제외하고 "가격 미확정"으로 별도 집계되는지, 컨테이너 아이템(보스 반지 상자)은 선택된 결과(레벨·반지명)까지 함께 저장되는지 검증하는 단위 테스트를 기능 구현 시 추가
 - 데이터 정합성: 기존 `src/data/__tests__/data-consistency.test.ts`·`boss-ring-boxes.test.ts`에 더해, 참조 테이블에서 보스가 제거된 뒤에도 과거 기록 조회가 죽지 않는지 검증하는 테스트를 기능 구현 시 추가
 - 알림 스케줄링: 64개 한도 초과 시나리오를 모킹해 우선순위 정책대로 예약되는지 검증하는 단위 테스트
