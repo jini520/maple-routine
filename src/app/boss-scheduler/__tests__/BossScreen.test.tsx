@@ -5,7 +5,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { BossScreen } from '../BossScreen'
 import { useBossSchedulerStore, type BossCharacterView } from '../../../features/boss-scheduler/store'
 import { getRegisteredCharacters } from '../../../features/schedule-sync/schedule-sync'
-import { getTrackedCharacterOcids, setTrackedCharacterOcids } from '../../../storage/character-selection'
 import type { MapleCharacter } from '../../../types'
 
 vi.mock('../../../features/boss-scheduler/store', () => ({
@@ -16,28 +15,20 @@ vi.mock('../../../features/schedule-sync/schedule-sync', () => ({
   getRegisteredCharacters: vi.fn(),
 }))
 
-vi.mock('../../../storage/character-selection', () => ({
-  getTrackedCharacterOcids: vi.fn(),
-  setTrackedCharacterOcids: vi.fn(),
-}))
-
 const mockedUseBossSchedulerStore = vi.mocked(useBossSchedulerStore)
 const mockedGetRegisteredCharacters = vi.mocked(getRegisteredCharacters)
-const mockedGetTrackedCharacterOcids = vi.mocked(getTrackedCharacterOcids)
-const mockedSetTrackedCharacterOcids = vi.mocked(setTrackedCharacterOcids)
 
 function mockStore(overrides: Partial<ReturnType<typeof useBossSchedulerStore>>): void {
   mockedUseBossSchedulerStore.mockReturnValue({
     status: 'idle',
     characters: [],
     error: null,
+    trackedOcids: null,
+    loadTrackedOcids: vi.fn(),
+    saveTrackedOcids: vi.fn(),
     refresh: vi.fn(),
     ...overrides,
   })
-}
-
-function mockTracked(ocids: string[] | null): void {
-  mockedGetTrackedCharacterOcids.mockResolvedValue(ocids)
 }
 
 function character(overrides: Partial<BossCharacterView> = {}): BossCharacterView {
@@ -79,6 +70,7 @@ describe('BossScreen', () => {
   it('추적 목록이 null이면 빈 상태 안내만 보인다', async () => {
     mockStore({
       status: 'loaded',
+      trackedOcids: null,
       characters: [
         character({
           ocid: 'ocid-1',
@@ -96,7 +88,6 @@ describe('BossScreen', () => {
         }),
       ],
     })
-    mockTracked(null)
 
     render(<BossScreen />)
 
@@ -104,21 +95,25 @@ describe('BossScreen', () => {
     expect(screen.queryByText(/자쿰/)).not.toBeInTheDocument()
   })
 
-  it('추적 목록이 로드되면 그 배열 그대로 refresh가 호출된다', async () => {
-    const refresh = vi.fn()
-    mockStore({ status: 'loaded', characters: [character({ ocid: 'ocid-1' })], refresh })
-    mockTracked(['ocid-1', 'ocid-2'])
+  it('마운트 시 loadTrackedOcids가 호출된다', async () => {
+    const loadTrackedOcids = vi.fn()
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [character({ ocid: 'ocid-1' })],
+      loadTrackedOcids,
+    })
 
     render(<BossScreen />)
     await screen.findByRole('combobox')
 
-    expect(refresh).toHaveBeenCalledTimes(1)
-    expect(refresh).toHaveBeenCalledWith(['ocid-1', 'ocid-2'])
+    expect(loadTrackedOcids).toHaveBeenCalledTimes(1)
   })
 
   it('기본 탭은 주간이고, weeklyBosses 중 등록된 것만 보이며 n/12 배지가 표시된다', async () => {
     mockStore({
       status: 'loaded',
+      trackedOcids: ['ocid-1'],
       characters: [
         character({
           ocid: 'ocid-1',
@@ -158,7 +153,6 @@ describe('BossScreen', () => {
         }),
       ],
     })
-    mockTracked(['ocid-1'])
 
     render(<BossScreen />)
     await screen.findByRole('combobox')
@@ -172,6 +166,7 @@ describe('BossScreen', () => {
   it('"월간" 탭으로 전환하면 monthlyBosses 중 등록된 것만 보이고, n/12 배지는 렌더링되지 않는다', async () => {
     mockStore({
       status: 'loaded',
+      trackedOcids: ['ocid-1'],
       characters: [
         character({
           ocid: 'ocid-1',
@@ -211,7 +206,6 @@ describe('BossScreen', () => {
         }),
       ],
     })
-    mockTracked(['ocid-1'])
 
     render(<BossScreen />)
     await screen.findByRole('combobox')
@@ -227,6 +221,7 @@ describe('BossScreen', () => {
   it('탭을 전환해도 선택된 캐릭터(드롭다운 상태)가 유지된다', async () => {
     mockStore({
       status: 'loaded',
+      trackedOcids: ['ocid-1', 'ocid-2'],
       characters: [
         character({
           ocid: 'ocid-1',
@@ -260,7 +255,6 @@ describe('BossScreen', () => {
         }),
       ],
     })
-    mockTracked(['ocid-1', 'ocid-2'])
 
     render(<BossScreen />)
     const dropdown = await screen.findByRole('combobox')
@@ -275,19 +269,18 @@ describe('BossScreen', () => {
     expect(screen.queryByText(/자쿰/)).not.toBeInTheDocument()
   })
 
-  it('캐릭터 관리 피커로 저장하면 setTrackedCharacterOcids가 boss로 호출된다', async () => {
-    const refresh = vi.fn()
+  it('캐릭터 관리 피커로 저장하면 saveTrackedOcids가 호출된다', async () => {
+    const saveTrackedOcids = vi.fn().mockResolvedValue(undefined)
     mockStore({
       status: 'loaded',
+      trackedOcids: ['ocid-1'],
       characters: [character({ ocid: 'ocid-1', characterName: '낟낟' })],
-      refresh,
+      saveTrackedOcids,
     })
-    mockTracked(['ocid-1'])
     mockedGetRegisteredCharacters.mockResolvedValue([
       mapleCharacter({ ocid: 'ocid-1', name: '낟낟' }),
       mapleCharacter({ ocid: 'ocid-2', name: '내옆에최성일' }),
     ])
-    mockedSetTrackedCharacterOcids.mockResolvedValue(undefined)
 
     render(<BossScreen />)
     await screen.findByRole('combobox')
@@ -297,16 +290,12 @@ describe('BossScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: '저장' }))
 
     await waitFor(() => {
-      expect(mockedSetTrackedCharacterOcids).toHaveBeenCalledWith('boss', ['ocid-1', 'ocid-2'])
-    })
-    await waitFor(() => {
-      expect(refresh).toHaveBeenLastCalledWith(['ocid-1', 'ocid-2'])
+      expect(saveTrackedOcids).toHaveBeenCalledWith(['ocid-1', 'ocid-2'])
     })
   })
 
   it('status가 loading이면 로딩 표시를 보여준다', async () => {
-    mockStore({ status: 'loading', characters: [character({ ocid: 'ocid-1' })] })
-    mockTracked(['ocid-1'])
+    mockStore({ status: 'loading', trackedOcids: ['ocid-1'], characters: [character({ ocid: 'ocid-1' })] })
 
     render(<BossScreen />)
 
@@ -316,32 +305,37 @@ describe('BossScreen', () => {
   it('status가 error이면 에러 문구를 보여준다', async () => {
     mockStore({
       status: 'error',
+      trackedOcids: ['ocid-1'],
       error: { kind: 'invalidApiKey' },
       characters: [character({ ocid: 'ocid-1' })],
     })
-    mockTracked(['ocid-1'])
 
     render(<BossScreen />)
 
     expect(await screen.findByText('API 키가 유효하지 않습니다')).toBeInTheDocument()
   })
 
-  it('새로고침 버튼을 클릭하면 refresh가 다시 호출된다', async () => {
+  it('새로고침 버튼을 클릭하면 refresh가 호출된다', async () => {
     const refresh = vi.fn()
-    mockStore({ status: 'loaded', characters: [character({ ocid: 'ocid-1' })], refresh })
-    mockTracked(['ocid-1'])
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [character({ ocid: 'ocid-1' })],
+      refresh,
+    })
 
     render(<BossScreen />)
     await screen.findByRole('combobox')
     fireEvent.click(screen.getByRole('button', { name: '새로고침' }))
 
-    expect(refresh).toHaveBeenCalledTimes(2)
-    expect(refresh).toHaveBeenLastCalledWith(['ocid-1'])
+    expect(refresh).toHaveBeenCalledTimes(1)
+    expect(refresh).toHaveBeenCalledWith(['ocid-1'])
   })
 
   it('주간 탭에서 등록된 보스가 없고 isStale이 false면 그 탭에만 빈 상태 안내가 보인다', async () => {
     mockStore({
       status: 'loaded',
+      trackedOcids: ['ocid-1'],
       characters: [
         character({
           ocid: 'ocid-1',
@@ -361,7 +355,6 @@ describe('BossScreen', () => {
         }),
       ],
     })
-    mockTracked(['ocid-1'])
 
     render(<BossScreen />)
     await screen.findByRole('combobox')

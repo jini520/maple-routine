@@ -5,21 +5,21 @@ import { formatScheduleSyncError, formatSyncedAt } from '../../features/schedule
 import { getRegisteredCharacters } from '../../features/schedule-sync/schedule-sync'
 import { CharacterSelectDropdown } from '../../components/CharacterSelectDropdown/CharacterSelectDropdown'
 import { CharacterTrackingPicker } from '../../components/CharacterTrackingPicker/CharacterTrackingPicker'
-import { getTrackedCharacterOcids, setTrackedCharacterOcids } from '../../storage/character-selection'
 import type { MapleCharacter } from '../../types'
 
 type ContentTab = 'daily' | 'weekly'
 
 export function ContentScreen(): React.JSX.Element {
-  const { status, characters, error, refresh } = useContentSchedulerStore()
+  const { status, characters, error, trackedOcids, loadTrackedOcids, saveTrackedOcids, refresh } =
+    useContentSchedulerStore()
   const [activeTab, setActiveTab] = useState<ContentTab>('daily')
   const [selectedOcid, setSelectedOcid] = useState<string | null>(null)
-  const [trackedOcids, setTrackedOcids] = useState<string[] | null>(null)
   const [roster, setRoster] = useState<MapleCharacter[]>([])
   const [isPickerOpen, setIsPickerOpen] = useState(false)
 
   useEffect(() => {
-    getTrackedCharacterOcids('content').then(setTrackedOcids)
+    loadTrackedOcids()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -27,13 +27,6 @@ export function ContentScreen(): React.JSX.Element {
       .then(setRoster)
       .catch(() => {})
   }, [])
-
-  useEffect(() => {
-    if (trackedOcids !== null) {
-      refresh(trackedOcids)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trackedOcids])
 
   const isEmpty = trackedOcids === null || trackedOcids.length === 0
 
@@ -50,8 +43,7 @@ export function ContentScreen(): React.JSX.Element {
     selected !== null ? selected.weeklyContents.filter((content) => content.isRegistered) : []
 
   async function handleSaveTracking(ocids: string[]): Promise<void> {
-    await setTrackedCharacterOcids('content', ocids)
-    setTrackedOcids(ocids)
+    await saveTrackedOcids(ocids)
     setIsPickerOpen(false)
   }
 

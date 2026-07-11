@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { syncSchedules, type ScheduleSyncError } from '../schedule-sync/schedule-sync'
+import { getTrackedCharacterOcids, setTrackedCharacterOcids } from '../../storage/character-selection'
 import type { DailyContent, WeeklyContent } from '../../types'
 
 export interface ContentCharacterView {
@@ -18,9 +19,12 @@ export interface ContentSchedulerState {
   status: ContentSchedulerStatus
   characters: ContentCharacterView[]
   error: ScheduleSyncError | null
+  trackedOcids: string[] | null
 }
 
 export interface ContentSchedulerStore extends ContentSchedulerState {
+  loadTrackedOcids(): Promise<void>
+  saveTrackedOcids(ocids: string[]): Promise<void>
   refresh(ocids: string[]): Promise<void>
 }
 
@@ -28,10 +32,25 @@ const initialState: ContentSchedulerState = {
   status: 'idle',
   characters: [],
   error: null,
+  trackedOcids: null,
 }
 
-export const useContentSchedulerStore = create<ContentSchedulerStore>()((set) => ({
+export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, get) => ({
   ...initialState,
+
+  async loadTrackedOcids() {
+    const ocids = await getTrackedCharacterOcids('content')
+    set({ trackedOcids: ocids })
+    if (ocids !== null) {
+      await get().refresh(ocids)
+    }
+  },
+
+  async saveTrackedOcids(ocids) {
+    await setTrackedCharacterOcids('content', ocids)
+    set({ trackedOcids: ocids })
+    await get().refresh(ocids)
+  },
 
   async refresh(ocids) {
     if (ocids.length === 0) {

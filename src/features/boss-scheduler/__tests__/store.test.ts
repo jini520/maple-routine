@@ -2,12 +2,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CharacterScheduleSync } from '../../schedule-sync/schedule-sync'
 import type { BossContent } from '../../../types'
 
-const { syncSchedulesMock } = vi.hoisted(() => ({
+const { syncSchedulesMock, getTrackedCharacterOcidsMock, setTrackedCharacterOcidsMock } = vi.hoisted(() => ({
   syncSchedulesMock: vi.fn(),
+  getTrackedCharacterOcidsMock: vi.fn(),
+  setTrackedCharacterOcidsMock: vi.fn(),
 }))
 
 vi.mock('../../schedule-sync/schedule-sync', () => ({
   syncSchedules: syncSchedulesMock,
+}))
+
+vi.mock('../../../storage/character-selection', () => ({
+  getTrackedCharacterOcids: getTrackedCharacterOcidsMock,
+  setTrackedCharacterOcids: setTrackedCharacterOcidsMock,
 }))
 
 import { useBossSchedulerStore } from '../store'
@@ -47,7 +54,7 @@ function syncResult(overrides: Partial<CharacterScheduleSync> = {}): CharacterSc
 }
 
 beforeEach(() => {
-  useBossSchedulerStore.setState({ status: 'idle', characters: [], error: null })
+  useBossSchedulerStore.setState({ status: 'idle', characters: [], error: null, trackedOcids: null })
 })
 
 afterEach(() => {
@@ -212,5 +219,46 @@ describe('useBossSchedulerStore', () => {
     await promise
 
     expect(useBossSchedulerStore.getState().status).toBe('loaded')
+  })
+
+  describe('추적 목록', () => {
+    it('loadTrackedOcids는 storage에서 조회한 값을 trackedOcids 상태에 반영한다', async () => {
+      getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
+      syncSchedulesMock.mockResolvedValue([syncResult()])
+
+      await useBossSchedulerStore.getState().loadTrackedOcids()
+
+      expect(getTrackedCharacterOcidsMock).toHaveBeenCalledWith('boss')
+      expect(useBossSchedulerStore.getState().trackedOcids).toEqual(['ocid-1'])
+    })
+
+    it('loadTrackedOcids는 조회된 목록이 null이 아니면 그 목록으로 refresh를 호출한다', async () => {
+      getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
+      syncSchedulesMock.mockResolvedValue([syncResult()])
+
+      await useBossSchedulerStore.getState().loadTrackedOcids()
+
+      expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1'])
+    })
+
+    it('loadTrackedOcids는 조회된 목록이 null이면 refresh를 호출하지 않는다', async () => {
+      getTrackedCharacterOcidsMock.mockResolvedValue(null)
+
+      await useBossSchedulerStore.getState().loadTrackedOcids()
+
+      expect(syncSchedulesMock).not.toHaveBeenCalled()
+      expect(useBossSchedulerStore.getState().trackedOcids).toBeNull()
+    })
+
+    it('saveTrackedOcids는 storage에 저장하고 trackedOcids 상태를 갱신한 뒤 그 목록으로 refresh를 호출한다', async () => {
+      setTrackedCharacterOcidsMock.mockResolvedValue(undefined)
+      syncSchedulesMock.mockResolvedValue([syncResult()])
+
+      await useBossSchedulerStore.getState().saveTrackedOcids(['ocid-1', 'ocid-2'])
+
+      expect(setTrackedCharacterOcidsMock).toHaveBeenCalledWith('boss', ['ocid-1', 'ocid-2'])
+      expect(useBossSchedulerStore.getState().trackedOcids).toEqual(['ocid-1', 'ocid-2'])
+      expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1', 'ocid-2'])
+    })
   })
 })

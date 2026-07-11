@@ -3,7 +3,6 @@ import { RefreshCw } from 'lucide-react'
 import { BossPortrait } from '../../components/BossPortrait/BossPortrait'
 import { CharacterSelectDropdown } from '../../components/CharacterSelectDropdown/CharacterSelectDropdown'
 import { CharacterTrackingPicker } from '../../components/CharacterTrackingPicker/CharacterTrackingPicker'
-import { getTrackedCharacterOcids, setTrackedCharacterOcids } from '../../storage/character-selection'
 import { useBossSchedulerStore } from '../../features/boss-scheduler/store'
 import { formatScheduleSyncError, formatSyncedAt } from '../../features/schedule-sync/format'
 import { getRegisteredCharacters } from '../../features/schedule-sync/schedule-sync'
@@ -51,15 +50,16 @@ function BossList(props: { bosses: MatchedBoss[] }): React.JSX.Element {
 }
 
 export function BossScreen(): React.JSX.Element {
-  const { status, characters, error, refresh } = useBossSchedulerStore()
+  const { status, characters, error, trackedOcids, loadTrackedOcids, saveTrackedOcids, refresh } =
+    useBossSchedulerStore()
   const [activeTab, setActiveTab] = useState<BossTab>('weekly')
   const [selectedOcid, setSelectedOcid] = useState<string | null>(null)
-  const [trackedOcids, setTrackedOcids] = useState<string[] | null>(null)
   const [roster, setRoster] = useState<MapleCharacter[]>([])
   const [isPickerOpen, setIsPickerOpen] = useState(false)
 
   useEffect(() => {
-    getTrackedCharacterOcids('boss').then(setTrackedOcids)
+    loadTrackedOcids()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -67,13 +67,6 @@ export function BossScreen(): React.JSX.Element {
       .then(setRoster)
       .catch(() => {})
   }, [])
-
-  useEffect(() => {
-    if (trackedOcids !== null) {
-      refresh(trackedOcids)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trackedOcids])
 
   const isEmpty = trackedOcids === null || trackedOcids.length === 0
 
@@ -90,8 +83,7 @@ export function BossScreen(): React.JSX.Element {
     selected !== null ? selected.monthlyBosses.filter((boss) => boss.isRegistered) : []
 
   async function handleSaveTracking(ocids: string[]): Promise<void> {
-    await setTrackedCharacterOcids('boss', ocids)
-    setTrackedOcids(ocids)
+    await saveTrackedOcids(ocids)
     setIsPickerOpen(false)
   }
 

@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { matchBossContent, type MatchedBoss } from '../../lib/boss-matching'
 import { syncSchedules, type ScheduleSyncError } from '../schedule-sync/schedule-sync'
+import { getTrackedCharacterOcids, setTrackedCharacterOcids } from '../../storage/character-selection'
 
 export interface BossCharacterView {
   ocid: string
@@ -20,9 +21,12 @@ export interface BossSchedulerState {
   status: BossSchedulerStatus
   characters: BossCharacterView[]
   error: ScheduleSyncError | null
+  trackedOcids: string[] | null
 }
 
 export interface BossSchedulerStore extends BossSchedulerState {
+  loadTrackedOcids(): Promise<void>
+  saveTrackedOcids(ocids: string[]): Promise<void>
   refresh(ocids: string[]): Promise<void>
 }
 
@@ -30,10 +34,25 @@ const initialState: BossSchedulerState = {
   status: 'idle',
   characters: [],
   error: null,
+  trackedOcids: null,
 }
 
-export const useBossSchedulerStore = create<BossSchedulerStore>()((set) => ({
+export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => ({
   ...initialState,
+
+  async loadTrackedOcids() {
+    const ocids = await getTrackedCharacterOcids('boss')
+    set({ trackedOcids: ocids })
+    if (ocids !== null) {
+      await get().refresh(ocids)
+    }
+  },
+
+  async saveTrackedOcids(ocids) {
+    await setTrackedCharacterOcids('boss', ocids)
+    set({ trackedOcids: ocids })
+    await get().refresh(ocids)
+  },
 
   async refresh(ocids) {
     if (ocids.length === 0) {
