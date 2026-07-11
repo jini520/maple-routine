@@ -2,7 +2,11 @@ import { create } from 'zustand'
 import bossCrystalPricesData from '../../data/boss-crystal-prices.json'
 import { matchBossContent } from '../../lib/boss-matching'
 import { getCurrentBossProfitPeriod } from '../../lib/boss-profit-period'
-import { getBossProfitRecords, upsertBossProfitRecord } from '../../storage/boss-profit'
+import {
+  getBossProfitRecords,
+  getLatestPartySize,
+  upsertBossProfitRecord,
+} from '../../storage/boss-profit'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
 import type { BossCycle, BossDifficulty } from '../../types'
 import { syncSchedules, type ScheduleSyncError } from '../schedule-sync/schedule-sync'
@@ -152,7 +156,34 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
       return { ...row, partySize: record.partySize, payoutMeso: record.payoutMeso }
     })
 
-    set({ status: 'loaded', rows: mergedRows, error: null, staleCharacterNames })
+    // ADR-014: 기록이 없는 완료 보스는 화면 진입 전에도 즉시 기본 파티원 수로 자동 기록한다.
+    const autoRecordedRows = await Promise.all(
+      mergedRows.map(async (row) => {
+        if (row.partySize !== null || row.priceMeso === null) {
+          return row
+        }
+
+        const latestPartySize = await getLatestPartySize(row.ocid, row.boss, row.difficulty)
+        const partySize = latestPartySize ?? 1
+        const payoutMeso = Math.floor(row.priceMeso / partySize)
+
+        await upsertBossProfitRecord({
+          ocid: row.ocid,
+          boss: row.boss,
+          difficulty: row.difficulty,
+          cycle: row.cycle,
+          periodKey: row.periodKey,
+          partySize,
+          priceMeso: row.priceMeso,
+          payoutMeso,
+          recordedAt: now.toISOString(),
+        })
+
+        return { ...row, partySize, payoutMeso }
+      }),
+    )
+
+    set({ status: 'loaded', rows: autoRecordedRows, error: null, staleCharacterNames })
   },
 
   async setPartySize(rowKey, partySize) {

@@ -8,11 +8,13 @@ const {
   getTrackedCharacterOcidsMock,
   getBossProfitRecordsMock,
   upsertBossProfitRecordMock,
+  getLatestPartySizeMock,
 } = vi.hoisted(() => ({
   syncSchedulesMock: vi.fn(),
   getTrackedCharacterOcidsMock: vi.fn(),
   getBossProfitRecordsMock: vi.fn(),
   upsertBossProfitRecordMock: vi.fn(),
+  getLatestPartySizeMock: vi.fn(),
 }))
 
 vi.mock('../../schedule-sync/schedule-sync', () => ({
@@ -26,6 +28,7 @@ vi.mock('../../../storage/character-selection', () => ({
 vi.mock('../../../storage/boss-profit', () => ({
   getBossProfitRecords: getBossProfitRecordsMock,
   upsertBossProfitRecord: upsertBossProfitRecordMock,
+  getLatestPartySize: getLatestPartySizeMock,
 }))
 
 import { useBossProfitStore } from '../store'
@@ -74,6 +77,7 @@ beforeEach(() => {
   })
   getBossProfitRecordsMock.mockResolvedValue([])
   upsertBossProfitRecordMock.mockResolvedValue(undefined)
+  getLatestPartySizeMock.mockResolvedValue(null)
 })
 
 afterEach(() => {
@@ -211,6 +215,100 @@ describe('useBossProfitStore', () => {
     expect(row.payoutMeso).toBe(2020000)
   })
 
+  describe('자동 파티원 수 기록 (ADR-014)', () => {
+    it('기록이 전혀 없는 새 완료 보스는 partySize 1로 자동 기록된다', async () => {
+      getLatestPartySizeMock.mockResolvedValue(null)
+      syncSchedulesMock.mockResolvedValue([syncResult()]) // 자쿰 카오스, priceMeso 8080000
+
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+
+      expect(getLatestPartySizeMock).toHaveBeenCalledWith('ocid-1', '자쿰', '카오스')
+      expect(upsertBossProfitRecordMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ocid: 'ocid-1',
+          boss: '자쿰',
+          difficulty: '카오스',
+          partySize: 1,
+          priceMeso: 8080000,
+          payoutMeso: 8080000,
+        }),
+      )
+      const row = useBossProfitStore.getState().rows[0]
+      expect(row.partySize).toBe(1)
+      expect(row.payoutMeso).toBe(8080000)
+    })
+
+    it('과거 기록이 있으면 그 값을 기본 파티원 수로 이어 쓴다', async () => {
+      getLatestPartySizeMock.mockResolvedValue(4)
+      syncSchedulesMock.mockResolvedValue([syncResult()]) // 자쿰 카오스, priceMeso 8080000
+
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+
+      expect(upsertBossProfitRecordMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ocid: 'ocid-1',
+          boss: '자쿰',
+          difficulty: '카오스',
+          partySize: 4,
+          priceMeso: 8080000,
+          payoutMeso: 2020000,
+        }),
+      )
+      const row = useBossProfitStore.getState().rows[0]
+      expect(row.partySize).toBe(4)
+      expect(row.payoutMeso).toBe(2020000)
+    })
+
+    it('이미 저장된 기록이 있는 조합은 자동 기록 로직을 건드리지 않는다', async () => {
+      syncSchedulesMock.mockResolvedValue([syncResult()]) // 자쿰 카오스, priceMeso 8080000
+
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+      const periodKey = useBossProfitStore.getState().rows[0].periodKey
+
+      const record: BossProfitRecord = {
+        ocid: 'ocid-1',
+        boss: '자쿰',
+        difficulty: '카오스',
+        cycle: 'weekly',
+        periodKey,
+        partySize: 4,
+        priceMeso: 8080000,
+        payoutMeso: 2020000,
+        recordedAt: '2026-07-09T00:00:00.000Z',
+      }
+      getBossProfitRecordsMock.mockResolvedValue([record])
+      getLatestPartySizeMock.mockClear()
+      upsertBossProfitRecordMock.mockClear()
+
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+
+      expect(getLatestPartySizeMock).not.toHaveBeenCalled()
+      expect(upsertBossProfitRecordMock).not.toHaveBeenCalled()
+      const row = useBossProfitStore.getState().rows[0]
+      expect(row.partySize).toBe(4)
+      expect(row.payoutMeso).toBe(2020000)
+    })
+
+    it('priceMeso가 null인 보스는 자동 기록 대상이 아니다', async () => {
+      syncSchedulesMock.mockResolvedValue([
+        syncResult({
+          state: {
+            ...syncResult().state!,
+            bossContents: [bossContent({ name: '벨로나', difficulty: '이지', isComplete: true })],
+          },
+        }),
+      ])
+
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+
+      expect(getLatestPartySizeMock).not.toHaveBeenCalled()
+      expect(upsertBossProfitRecordMock).not.toHaveBeenCalled()
+      const row = useBossProfitStore.getState().rows[0]
+      expect(row.partySize).toBeNull()
+      expect(row.payoutMeso).toBeNull()
+    })
+  })
+
   describe('setPartySize', () => {
     async function seedRow(overrides: Partial<BossContent> = {}) {
       syncSchedulesMock.mockResolvedValue([
@@ -222,6 +320,8 @@ describe('useBossProfitStore', () => {
         }),
       ])
       await useBossProfitStore.getState().refresh(['ocid-1'])
+      // refresh 자체의 자동 기록(ADR-014) 호출 이력을 지워, 아래 테스트들이 setPartySize 호출만 검증하게 한다.
+      upsertBossProfitRecordMock.mockClear()
       return useBossProfitStore.getState().rows[0]
     }
 
