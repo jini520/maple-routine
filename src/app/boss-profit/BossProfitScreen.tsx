@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { RefreshCw } from 'lucide-react'
+import { ChevronDown, ChevronUp, RefreshCw } from 'lucide-react'
 import { BossPortrait } from '../../components/BossPortrait/BossPortrait'
 import weeklyBossesData from '../../data/weekly-bosses.json'
 import { useBossProfitStore, type BossProfitRow, type BossProfitStore } from '../../features/boss-profit/store'
@@ -116,6 +116,78 @@ function BossProfitSection(props: {
   )
 }
 
+interface CharacterGroup {
+  ocid: string
+  characterName: string
+  rows: BossProfitRow[]
+}
+
+function groupRowsByCharacter(rows: BossProfitRow[]): CharacterGroup[] {
+  const groups: CharacterGroup[] = []
+  const indexByOcid = new Map<string, number>()
+
+  for (const row of rows) {
+    const existingIndex = indexByOcid.get(row.ocid)
+    if (existingIndex === undefined) {
+      indexByOcid.set(row.ocid, groups.length)
+      groups.push({ ocid: row.ocid, characterName: row.characterName, rows: [row] })
+    } else {
+      groups[existingIndex].rows.push(row)
+    }
+  }
+
+  return groups
+}
+
+function CharacterAccordion(props: {
+  group: CharacterGroup
+  setPartySize: BossProfitStore['setPartySize']
+}): React.JSX.Element {
+  const [isExpanded, setIsExpanded] = useState(false)
+  const { group } = props
+
+  const weeklyTotal = group.rows
+    .filter((row) => row.periodLabel === '이번 주')
+    .reduce((sum, row) => sum + (row.payoutMeso ?? 0), 0)
+
+  const sections = PERIOD_ORDER.map((label) => ({
+    label,
+    rows: group.rows.filter((row) => row.periodLabel === label),
+  })).filter((section) => section.rows.length > 0)
+
+  return (
+    <div className="space-y-2">
+      <button
+        type="button"
+        onClick={() => setIsExpanded((prev) => !prev)}
+        className="flex w-full items-center justify-between rounded-[14px] bg-white border border-[#F0DFD1] p-4"
+      >
+        <span className="text-sm font-semibold text-[#2B1B10]">
+          {group.characterName} · {weeklyTotal.toLocaleString()} 메소
+        </span>
+        {isExpanded ? (
+          <ChevronUp className="h-4 w-4 text-[#8A7362]" strokeWidth={2} aria-hidden="true" />
+        ) : (
+          <ChevronDown className="h-4 w-4 text-[#8A7362]" strokeWidth={2} aria-hidden="true" />
+        )}
+      </button>
+
+      {isExpanded && (
+        <div className="space-y-4">
+          {sections.map((section) => (
+            <BossProfitSection
+              key={section.label}
+              label={section.label}
+              rows={section.rows}
+              setPartySize={props.setPartySize}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function BossProfitScreen(): React.JSX.Element {
   const { status, rows, error, staleCharacterNames, trackedOcids, loadTrackedOcids, refresh, setPartySize } =
     useBossProfitStore()
@@ -139,10 +211,10 @@ export function BossProfitScreen(): React.JSX.Element {
     )
   }
 
-  const sections = PERIOD_ORDER.map((label) => ({
-    label,
-    rows: rows.filter((row) => row.periodLabel === label),
-  })).filter((section) => section.rows.length > 0)
+  const weeklyTotalMeso = rows
+    .filter((row) => row.periodLabel === '이번 주')
+    .reduce((sum, row) => sum + (row.payoutMeso ?? 0), 0)
+  const characterGroups = groupRowsByCharacter(rows)
 
   return (
     <div className="p-4 space-y-4">
@@ -176,9 +248,16 @@ export function BossProfitScreen(): React.JSX.Element {
         </div>
       )}
 
+      {status === 'loaded' && rows.length > 0 && (
+        <div className="rounded-[14px] bg-white border border-[#F0DFD1] shadow-[0_1px_2px_rgba(43,27,16,0.04),0_4px_12px_rgba(255,112,51,0.06)] p-6 text-center">
+          <p className="text-sm text-[#8A7362]">이번 주 총 수익</p>
+          <p className="text-lg font-semibold text-[#2B1B10]">{weeklyTotalMeso.toLocaleString()} 메소</p>
+        </div>
+      )}
+
       {status === 'loaded' &&
-        sections.map((section) => (
-          <BossProfitSection key={section.label} label={section.label} rows={section.rows} setPartySize={setPartySize} />
+        characterGroups.map((group) => (
+          <CharacterAccordion key={group.ocid} group={group} setPartySize={setPartySize} />
         ))}
     </div>
   )
