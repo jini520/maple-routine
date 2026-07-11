@@ -52,7 +52,8 @@
     },
     {
       "dir": "boss-profit-calculator",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-07-11T18:05:09+0900"
     }
   ]
 }
