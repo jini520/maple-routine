@@ -125,7 +125,7 @@ describe('BossProfitScreen', () => {
     expect(screen.getByText(/일부 캐릭터 동기화 실패: 낟낟/)).toBeInTheDocument()
   })
 
-  it('rows를 이번 주/이번 달 섹션으로 분리해 렌더링하고 각 섹션 합계를 보여준다', () => {
+  it('월간 보스(이번 달) 행은 섹션 자체가 렌더링되지 않고, 섹션 타이틀에 합계 문구가 없다', () => {
     mockStore({
       status: 'loaded',
       trackedOcids: ['ocid-1'],
@@ -147,10 +147,35 @@ describe('BossProfitScreen', () => {
     render(<BossProfitScreen />)
     fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
 
-    expect(screen.getByText(/이번 주 합계.*5,000,000 메소/)).toBeInTheDocument()
-    expect(screen.getByText(/이번 달 합계.*5,000,000 메소/)).toBeInTheDocument()
+    expect(screen.queryByText(/이번 주 합계/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/이번 달/)).not.toBeInTheDocument()
     expect(screen.getByText(/낟낟 · 자쿰 · 카오스/)).toBeInTheDocument()
-    expect(screen.getByText(/낟낟 · 검은마법사 · 익스트림/)).toBeInTheDocument()
+    expect(screen.queryByText(/낟낟 · 검은마법사 · 익스트림/)).not.toBeInTheDocument()
+  })
+
+  it('월간 보스 행만 있는 캐릭터는 드롭다운을 펼쳐도 보스 행이 보이지 않는다', () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [
+        row({
+          boss: '검은마법사',
+          difficulty: '익스트림',
+          cycle: 'monthly',
+          periodKey: '2026-07',
+          periodLabel: '이번 달',
+          priceMeso: 20_000_000,
+          partySize: 4,
+          payoutMeso: 5_000_000,
+        }),
+      ],
+    })
+
+    render(<BossProfitScreen />)
+    fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
+
+    expect(screen.queryByText(/낟낟 · 검은마법사 · 익스트림/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/이번 달/)).not.toBeInTheDocument()
   })
 
   it('priceMeso가 null이면 가격 미확정 배지를 보여준다', () => {
