@@ -11,6 +11,14 @@ export function characterBasicCacheKey(ocid: string): string {
   return `characterBasicCache:${ocid}`
 }
 
+export function characterBasicCacheIndexKey(): string {
+  return 'characterBasicCache:index'
+}
+
 export function trackedCharactersKey(kind: 'content' | 'boss'): string {
   return `trackedCharacters:${kind}`
+}
+
+export function lastSelectedCharacterKey(kind: 'content' | 'boss'): string {
+  return `lastSelectedCharacter:${kind}`
 }

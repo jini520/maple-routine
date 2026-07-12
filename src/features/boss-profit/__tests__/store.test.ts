@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CharacterScheduleSync } from '../../schedule-sync/schedule-sync'
 import type { BossContent } from '../../../types'
 import type { BossProfitRecord } from '../../../storage/boss-profit'
+import type { CachedSchedulerEntry } from '../../../storage/scheduler-cache'
 
 const {
   syncSchedulesMock,
@@ -9,12 +10,14 @@ const {
   getBossProfitRecordsMock,
   upsertBossProfitRecordMock,
   getLatestPartySizeMock,
+  getCachedSchedulerStateMock,
 } = vi.hoisted(() => ({
   syncSchedulesMock: vi.fn(),
   getTrackedCharacterOcidsMock: vi.fn(),
   getBossProfitRecordsMock: vi.fn(),
   upsertBossProfitRecordMock: vi.fn(),
   getLatestPartySizeMock: vi.fn(),
+  getCachedSchedulerStateMock: vi.fn(),
 }))
 
 vi.mock('../../schedule-sync/schedule-sync', () => ({
@@ -29,6 +32,10 @@ vi.mock('../../../storage/boss-profit', () => ({
   getBossProfitRecords: getBossProfitRecordsMock,
   upsertBossProfitRecord: upsertBossProfitRecordMock,
   getLatestPartySize: getLatestPartySizeMock,
+}))
+
+vi.mock('../../../storage/scheduler-cache', () => ({
+  getCachedSchedulerState: getCachedSchedulerStateMock,
 }))
 
 import { useBossProfitStore } from '../store'
@@ -78,6 +85,7 @@ beforeEach(() => {
   getBossProfitRecordsMock.mockResolvedValue([])
   upsertBossProfitRecordMock.mockResolvedValue(undefined)
   getLatestPartySizeMock.mockResolvedValue(null)
+  getCachedSchedulerStateMock.mockResolvedValue(null)
 })
 
 afterEach(() => {
@@ -433,6 +441,139 @@ describe('useBossProfitStore', () => {
 
       expect(syncSchedulesMock).not.toHaveBeenCalled()
       expect(useBossProfitStore.getState().trackedOcids).toBeNull()
+    })
+  })
+
+  describe('캐시 우선 표시 (ADR-017)', () => {
+    function cachedEntry(overrides: Partial<CachedSchedulerEntry['state']> = {}): CachedSchedulerEntry {
+      return {
+        state: {
+          asOf: '2026-07-09T00:00+09:00',
+          characterName: '캐시캐릭터',
+          world: '베라',
+          level: 200,
+          jobClass: '렌',
+          dailyContents: [],
+          weeklyContents: [],
+          bossContents: [bossContent()],
+          weeklyBossClearCount: 3,
+          weeklyBossClearLimitCount: 12,
+          ...overrides,
+        },
+        syncedAt: '2026-07-10T00:00:00.000Z',
+      }
+    }
+
+    function flushMicrotasks() {
+      return new Promise((resolve) => setTimeout(resolve, 0))
+    }
+
+    it('syncSchedules가 아직 끝나지 않아도 캐시된 완료 보스로 rows를 먼저 채우고, 캐시 단계에서는 자동 기록(upsert) 관련 함수를 호출하지 않는다', async () => {
+      getCachedSchedulerStateMock.mockResolvedValue(cachedEntry())
+
+      let resolveSync!: (value: CharacterScheduleSync[]) => void
+      const pending = new Promise<CharacterScheduleSync[]>((resolve) => {
+        resolveSync = resolve
+      })
+      syncSchedulesMock.mockReturnValue(pending)
+
+      const refreshPromise = useBossProfitStore.getState().refresh(['ocid-1'])
+      await flushMicrotasks()
+
+      const midState = useBossProfitStore.getState()
+      expect(midState.status).toBe('loading')
+      expect(midState.rows).toHaveLength(1)
+      expect(midState.rows[0].boss).toBe('자쿰')
+      expect(midState.rows[0].ocid).toBe('ocid-1')
+      expect(midState.rows[0].characterName).toBe('캐시캐릭터')
+      expect(midState.rows[0].partySize).toBeNull()
+      expect(midState.rows[0].payoutMeso).toBeNull()
+      // 캐시 단계도 기존 기록 유무를 확인하려고 getBossProfitRecords는 호출한다(읽기 전용) —
+      // 다만 자동 기록(upsert)·최근 파티원 수 조회는 재검증 이후에만 수행한다.
+      expect(getBossProfitRecordsMock).toHaveBeenCalled()
+      expect(getLatestPartySizeMock).not.toHaveBeenCalled()
+      expect(upsertBossProfitRecordMock).not.toHaveBeenCalled()
+
+      resolveSync(
+        [syncResult()], // 자쿰 카오스, priceMeso 8080000
+      )
+      await refreshPromise
+
+      const finalState = useBossProfitStore.getState()
+      expect(finalState.status).toBe('loaded')
+      expect(finalState.rows).toHaveLength(1)
+      expect(finalState.rows[0].partySize).toBe(1)
+      expect(finalState.rows[0].payoutMeso).toBe(8080000)
+      expect(getLatestPartySizeMock).toHaveBeenCalledWith('ocid-1', '자쿰', '카오스')
+      expect(upsertBossProfitRecordMock).toHaveBeenCalled()
+    })
+
+    it('캐시 단계에서도 이미 저장된 기록이 있으면 partySize/payoutMeso가 즉시 반영된다(0메소로 잠깐 보이는 깜빡임 방지)', async () => {
+      // 실제 periodKey 계산값을 얻기 위해 먼저 한 번 정상적으로 refresh한다.
+      syncSchedulesMock.mockResolvedValue([syncResult()]) // 자쿰 카오스, priceMeso 8080000
+      getCachedSchedulerStateMock.mockResolvedValue(null)
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+      const periodKey = useBossProfitStore.getState().rows[0].periodKey
+
+      const record: BossProfitRecord = {
+        ocid: 'ocid-1',
+        boss: '자쿰',
+        difficulty: '카오스',
+        cycle: 'weekly',
+        periodKey,
+        partySize: 2,
+        priceMeso: 8080000,
+        payoutMeso: 4040000,
+        recordedAt: '2026-07-10T00:00:00.000Z',
+      }
+      vi.clearAllMocks() // 위 준비용 refresh에서 쌓인 호출 기록(자동 기록 포함)을 지운다
+      getBossProfitRecordsMock.mockResolvedValue([record])
+      getCachedSchedulerStateMock.mockResolvedValue(cachedEntry())
+
+      const pending = new Promise<CharacterScheduleSync[]>(() => {
+        // 의도적으로 resolve하지 않음 — 캐시 단계 직후 상태만 확인
+      })
+      syncSchedulesMock.mockReturnValue(pending)
+
+      void useBossProfitStore.getState().refresh(['ocid-1'])
+      await flushMicrotasks()
+
+      const midState = useBossProfitStore.getState()
+      expect(midState.rows).toHaveLength(1)
+      expect(midState.rows[0].partySize).toBe(2)
+      expect(midState.rows[0].payoutMeso).toBe(4040000)
+      expect(getLatestPartySizeMock).not.toHaveBeenCalled()
+      expect(upsertBossProfitRecordMock).not.toHaveBeenCalled()
+    })
+
+    it('캐시가 없는 ocid는 캐시 단계 rows에 포함되지 않는다', async () => {
+      getCachedSchedulerStateMock.mockResolvedValue(null)
+
+      const pending = new Promise<CharacterScheduleSync[]>(() => {
+        // 의도적으로 resolve하지 않음 — 캐시 단계 직후 상태만 확인
+      })
+      syncSchedulesMock.mockReturnValue(pending)
+
+      void useBossProfitStore.getState().refresh(['ocid-1'])
+      await flushMicrotasks()
+
+      const midState = useBossProfitStore.getState()
+      expect(midState.status).toBe('loading')
+      expect(midState.rows).toEqual([])
+    })
+
+    it('캐시의 미처치 보스는 캐시 단계 rows에서 제외된다', async () => {
+      getCachedSchedulerStateMock.mockResolvedValue(
+        cachedEntry({ bossContents: [bossContent({ isComplete: false })] }),
+      )
+
+      const pending = new Promise<CharacterScheduleSync[]>(() => {})
+      syncSchedulesMock.mockReturnValue(pending)
+
+      void useBossProfitStore.getState().refresh(['ocid-1'])
+      await flushMicrotasks()
+
+      expect(useBossProfitStore.getState().rows).toEqual([])
     })
   })
 })

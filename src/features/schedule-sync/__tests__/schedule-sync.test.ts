@@ -17,10 +17,12 @@ const { getCachedSchedulerStateMock, setCachedSchedulerStateMock } = vi.hoisted(
   setCachedSchedulerStateMock: vi.fn(),
 }))
 
-const { getCachedCharacterBasicMock, setCachedCharacterBasicMock } = vi.hoisted(() => ({
-  getCachedCharacterBasicMock: vi.fn(),
-  setCachedCharacterBasicMock: vi.fn(),
-}))
+const { getCachedCharacterBasicMock, setCachedCharacterBasicMock, getAllCachedCharacterBasicOcidsMock } =
+  vi.hoisted(() => ({
+    getCachedCharacterBasicMock: vi.fn(),
+    setCachedCharacterBasicMock: vi.fn(),
+    getAllCachedCharacterBasicOcidsMock: vi.fn(),
+  }))
 
 vi.mock('../../../nexon/character', () => ({
   fetchCharacterList: fetchCharacterListMock,
@@ -43,6 +45,7 @@ vi.mock('../../../storage/scheduler-cache', () => ({
 vi.mock('../../../storage/character-basic-cache', () => ({
   getCachedCharacterBasic: getCachedCharacterBasicMock,
   setCachedCharacterBasic: setCachedCharacterBasicMock,
+  getAllCachedCharacterBasicOcids: getAllCachedCharacterBasicOcidsMock,
 }))
 
 import { getCharacterPickerRoster, getRegisteredCharacters, syncSchedules } from '../schedule-sync'
@@ -100,6 +103,7 @@ beforeEach(() => {
   setCachedSchedulerStateMock.mockResolvedValue(undefined)
   getCachedCharacterBasicMock.mockResolvedValue(null)
   setCachedCharacterBasicMock.mockResolvedValue(undefined)
+  getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
 })
 
 afterEach(() => {
@@ -359,6 +363,86 @@ describe('syncSchedules', () => {
 })
 
 describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신)', () => {
+  describe('ADR-017 결정 6: 캐싱된 전체 캐릭터 stub으로 character/list 대기 중에도 즉시 표시', () => {
+    it('character-basic-cache 인덱스에 캐시가 있으면 character/list 응답 전에 stub 목록으로 먼저 onUpdate한다', async () => {
+      fetchCharacterListMock.mockImplementation(() => new Promise(() => {})) // 절대 resolve 안 함
+      getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1'])
+      getCachedCharacterBasicMock.mockImplementation(async (ocid: string) =>
+        ocid === 'ocid-1'
+          ? { profile: basicProfile({ name: '캐싱된캐릭', level: 180 }), cachedAt: '2026-07-11T00:00:00.000Z' }
+          : null,
+      )
+
+      const onUpdate = vi.fn()
+      void getCharacterPickerRoster(onUpdate)
+
+      await vi.waitFor(() => expect(onUpdate).toHaveBeenCalled())
+      expect(onUpdate).toHaveBeenCalledWith([
+        { ocid: 'ocid-1', name: '캐싱된캐릭', level: 180, imageUrl: basicProfile({ name: '캐싱된캐릭', level: 180 }).imageUrl },
+      ])
+      expect(fetchCharacterListMock).toHaveBeenCalled()
+    })
+
+    it('추적 여부와 무관하게 인덱스에 있는 모든 ocid가 stub 목록에 포함된다', async () => {
+      fetchCharacterListMock.mockImplementation(() => new Promise(() => {}))
+      getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1', 'ocid-2'])
+      getCachedCharacterBasicMock.mockImplementation(async (ocid: string) => ({
+        profile: basicProfile({ name: `캐릭-${ocid}`, level: 100 }),
+        cachedAt: '2026-07-11T00:00:00.000Z',
+      }))
+
+      const onUpdate = vi.fn()
+      void getCharacterPickerRoster(onUpdate)
+
+      await vi.waitFor(() => expect(onUpdate).toHaveBeenCalled())
+      const stub = onUpdate.mock.calls[0][0] as Array<{ ocid: string }>
+      expect(stub.map((entry) => entry.ocid).sort()).toEqual(['ocid-1', 'ocid-2'])
+    })
+
+    it('인덱스상 캐시된 캐릭터의 access_flag가 false면 stub 목록에서 제외된다', async () => {
+      fetchCharacterListMock.mockImplementation(() => new Promise(() => {}))
+      getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1'])
+      getCachedCharacterBasicMock.mockResolvedValue({
+        profile: { ...basicProfile({ name: '비공개', level: 999 }), accessFlag: false },
+        cachedAt: '2026-07-11T00:00:00.000Z',
+      })
+
+      const onUpdate = vi.fn()
+      void getCharacterPickerRoster(onUpdate)
+
+      await vi.waitFor(() => expect(getCachedCharacterBasicMock).toHaveBeenCalled())
+      expect(onUpdate).not.toHaveBeenCalled()
+    })
+
+    it('인덱스가 비어있으면 stub 단계에서 onUpdate를 호출하지 않고 곧바로 character/list를 기다린다', async () => {
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', [])])
+      getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
+
+      await getCharacterPickerRoster(vi.fn())
+
+      expect(getCachedCharacterBasicMock).not.toHaveBeenCalled()
+    })
+
+    it('character/list 응답이 도착하면 stub 목록이 계정 전체 후보 목록으로 교체된다', async () => {
+      const characters = [character('ocid-1'), character('ocid-2')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+      getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1'])
+      getCachedCharacterBasicMock.mockImplementation(async (ocid: string) =>
+        ocid === 'ocid-1'
+          ? { profile: basicProfile({ name: '캐싱된캐릭', level: 180 }), cachedAt: '2026-07-11T00:00:00.000Z' }
+          : null,
+      )
+      fetchCharacterBasicMock.mockImplementation(() => new Promise(() => {}))
+
+      const onUpdate = vi.fn()
+      void getCharacterPickerRoster(onUpdate)
+
+      await vi.waitFor(() => expect(onUpdate.mock.calls.length).toBeGreaterThanOrEqual(2))
+      const afterCharacterList = onUpdate.mock.calls.at(-1)?.[0] as Array<{ ocid: string }>
+      expect(afterCharacterList.map((entry) => entry.ocid).sort()).toEqual(['ocid-1', 'ocid-2'])
+    })
+  })
+
   it('계정에 캐릭터가 없으면 character/basic을 호출하지 않고 onUpdate([])를 한 번 호출한다', async () => {
     fetchCharacterListMock.mockResolvedValue([account('acc-1', [])])
     const onUpdate = vi.fn()

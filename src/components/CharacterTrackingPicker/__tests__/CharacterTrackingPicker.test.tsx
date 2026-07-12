@@ -17,6 +17,15 @@ const entries: CharacterPickerEntry[] = [
 ]
 
 describe('CharacterTrackingPicker', () => {
+  it('제목과 설명을 보여준다', () => {
+    render(
+      <CharacterTrackingPicker entries={entries} trackedOcids={[]} onSave={vi.fn()} onClose={vi.fn()} />,
+    )
+
+    expect(screen.getByRole('heading', { name: '캐릭터 관리' })).toBeInTheDocument()
+    expect(screen.getByText('체크한 캐릭터만 스케줄러 목록에 표시됩니다.')).toBeInTheDocument()
+  })
+
   it('trackedOcids에 포함된 캐릭터가 초기에 선택(즐겨찾기) 상태로 표시된다', () => {
     render(
       <CharacterTrackingPicker

@@ -59,6 +59,11 @@
       "dir": "boss-profit-autorecord-layout",
       "status": "completed",
       "completed_at": "2026-07-11T23:13:19+0900"
+    },
+    {
+      "dir": "boss-profit-cache-order-fix",
+      "status": "completed",
+      "completed_at": "2026-07-12T19:35:10+0900"
     }
   ]
 }

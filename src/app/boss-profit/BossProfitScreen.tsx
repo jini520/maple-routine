@@ -5,7 +5,7 @@ import weeklyBossesData from '../../data/weekly-bosses.json'
 import { useBossProfitStore, type BossProfitRow, type BossProfitStore } from '../../features/boss-profit/store'
 import { formatScheduleSyncError } from '../../features/schedule-sync/format'
 
-const PERIOD_ORDER = ['이번 주', '이번 달'] as const
+const PERIOD_ORDER = ['이번 주'] as const
 
 interface BossReferenceEntry {
   boss: string
@@ -95,18 +95,11 @@ function BossProfitRowItem(props: BossProfitRowItemProps): React.JSX.Element {
 }
 
 function BossProfitSection(props: {
-  label: string
   rows: BossProfitRow[]
   setPartySize: BossProfitStore['setPartySize']
 }): React.JSX.Element {
-  const total = props.rows.reduce((sum, row) => sum + (row.payoutMeso ?? 0), 0)
-
   return (
     <section className="space-y-2">
-      <h2 className="text-sm font-semibold text-text">
-        {props.label} 합계 {total.toLocaleString()} 메소
-      </h2>
-
       <ul className="space-y-2">
         {props.rows.map((row) => (
           <BossProfitRowItem key={rowKey(row)} row={row} setPartySize={props.setPartySize} />
@@ -175,12 +168,7 @@ function CharacterAccordion(props: {
       {isExpanded && (
         <div className="space-y-4">
           {sections.map((section) => (
-            <BossProfitSection
-              key={section.label}
-              label={section.label}
-              rows={section.rows}
-              setPartySize={props.setPartySize}
-            />
+            <BossProfitSection key={section.label} rows={section.rows} setPartySize={props.setPartySize} />
           ))}
         </div>
       )}
@@ -236,7 +224,11 @@ export function BossProfitScreen(): React.JSX.Element {
         </p>
       )}
 
-      {(status === 'idle' || status === 'loading') && <p className="text-sm text-text-muted">불러오는 중...</p>}
+      {/* ADR-017: 캐시된 rows가 있으면 재검증(status: 'loading') 중에도 계속 보여준다 —
+          "불러오는 중"은 보여줄 데이터가 아예 없을 때만 표시한다. */}
+      {(status === 'idle' || status === 'loading') && rows.length === 0 && (
+        <p className="text-sm text-text-muted">불러오는 중...</p>
+      )}
 
       {status === 'error' && (
         <p className="text-sm text-error">{error !== null ? formatScheduleSyncError(error) : '오류가 발생했습니다'}</p>
@@ -248,14 +240,14 @@ export function BossProfitScreen(): React.JSX.Element {
         </div>
       )}
 
-      {status === 'loaded' && rows.length > 0 && (
+      {rows.length > 0 && (
         <div className="rounded-[14px] bg-surface border border-border shadow-[0_1px_2px_rgba(0,0,0,0.3),0_4px_12px_rgba(153,117,179,0.18)] p-6 text-center">
           <p className="text-sm text-text-muted">이번 주 총 수익</p>
           <p className="text-lg font-semibold text-text">{weeklyTotalMeso.toLocaleString()} 메소</p>
         </div>
       )}
 
-      {status === 'loaded' &&
+      {rows.length > 0 &&
         characterGroups.map((group) => (
           <CharacterAccordion key={group.ocid} group={group} setPartySize={setPartySize} />
         ))}
