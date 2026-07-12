@@ -1,8 +1,15 @@
 import { create } from 'zustand'
 import { matchBossContent, type MatchedBoss } from '../../lib/boss-matching'
 import { syncSchedules, type ScheduleSyncError } from '../schedule-sync/schedule-sync'
-import { getTrackedCharacterOcids, setTrackedCharacterOcids } from '../../storage/character-selection'
+import {
+  getLastSelectedCharacter,
+  getTrackedCharacterOcids,
+  setLastSelectedCharacter,
+  setTrackedCharacterOcids,
+} from '../../storage/character-selection'
+import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getCachedSchedulerState } from '../../storage/scheduler-cache'
+import { compareByName } from '../onboarding/representative-character'
 
 export interface BossCharacterView {
   ocid: string
@@ -23,12 +30,14 @@ export interface BossSchedulerState {
   characters: BossCharacterView[]
   error: ScheduleSyncError | null
   trackedOcids: string[] | null
+  selectedOcid: string | null
 }
 
 export interface BossSchedulerStore extends BossSchedulerState {
   loadTrackedOcids(): Promise<void>
   saveTrackedOcids(ocids: string[]): Promise<void>
   refresh(ocids: string[]): Promise<void>
+  selectCharacter(ocid: string): Promise<void>
 }
 
 const initialState: BossSchedulerState = {
@@ -36,14 +45,43 @@ const initialState: BossSchedulerState = {
   characters: [],
   error: null,
   trackedOcids: null,
+  selectedOcid: null,
+}
+
+// ADR-017 결정 2: 캐시 단계(trackedOcids 저장 순서)와 동기화 단계(계정 전체 캐릭터
+// 목록에서 필터링한 순서)가 서로 달라 생기던 불일치를 없애기 위해, character-basic-cache의
+// level을 병합해 레벨 내림차순(동레벨이면 compareByName)으로 통일한다. 레벨 캐시가 없는
+// 캐릭터는 맨 뒤로 보낸다.
+async function sortByCachedLevel(views: BossCharacterView[]): Promise<BossCharacterView[]> {
+  const withLevel = await Promise.all(
+    views.map(async (view) => {
+      const cached = await getCachedCharacterBasic(view.ocid)
+      return { view, level: cached?.profile.level ?? null }
+    }),
+  )
+
+  return withLevel
+    .sort((a, b) => {
+      if (a.level === null && b.level === null) {
+        return compareByName(a.view.characterName, b.view.characterName)
+      }
+      if (a.level === null) return 1
+      if (b.level === null) return -1
+      if (b.level !== a.level) return b.level - a.level
+      return compareByName(a.view.characterName, b.view.characterName)
+    })
+    .map((entry) => entry.view)
 }
 
 export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => ({
   ...initialState,
 
   async loadTrackedOcids() {
-    const ocids = await getTrackedCharacterOcids('boss')
-    set({ trackedOcids: ocids })
+    const [ocids, selectedOcid] = await Promise.all([
+      getTrackedCharacterOcids('boss'),
+      getLastSelectedCharacter('boss'),
+    ])
+    set({ trackedOcids: ocids, selectedOcid })
     if (ocids !== null) {
       await get().refresh(ocids)
     }
@@ -86,7 +124,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
       )
     ).filter((view): view is BossCharacterView => view !== null)
 
-    set({ status: 'loading', characters: cachedCharacters })
+    set({ status: 'loading', characters: await sortByCachedLevel(cachedCharacters) })
 
     let results: Awaited<ReturnType<typeof syncSchedules>>
     try {
@@ -113,6 +151,11 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
       }
     })
 
-    set({ status: 'loaded', characters, error: null })
+    set({ status: 'loaded', characters: await sortByCachedLevel(characters), error: null })
+  },
+
+  async selectCharacter(ocid) {
+    set({ selectedOcid: ocid })
+    await setLastSelectedCharacter('boss', ocid)
   },
 }))
