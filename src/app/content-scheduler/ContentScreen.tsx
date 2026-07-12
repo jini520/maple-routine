@@ -10,10 +10,18 @@ import type { CharacterPickerEntry } from '../../types'
 type ContentTab = 'daily' | 'weekly'
 
 export function ContentScreen(): React.JSX.Element {
-  const { status, characters, error, trackedOcids, loadTrackedOcids, saveTrackedOcids, refresh } =
-    useContentSchedulerStore()
+  const {
+    status,
+    characters,
+    error,
+    trackedOcids,
+    selectedOcid,
+    loadTrackedOcids,
+    saveTrackedOcids,
+    refresh,
+    selectCharacter,
+  } = useContentSchedulerStore()
   const [activeTab, setActiveTab] = useState<ContentTab>('daily')
-  const [selectedOcid, setSelectedOcid] = useState<string | null>(null)
   const [roster, setRoster] = useState<CharacterPickerEntry[]>([])
   const [isPickerOpen, setIsPickerOpen] = useState(false)
 
@@ -138,7 +146,9 @@ export function ContentScreen(): React.JSX.Element {
           <CharacterSelectDropdown
             characters={characters}
             selectedOcid={selected.ocid}
-            onSelect={setSelectedOcid}
+            onSelect={(ocid) => {
+              void selectCharacter(ocid)
+            }}
           />
 
           <div className="flex items-center gap-4">
