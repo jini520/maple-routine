@@ -1,5 +1,5 @@
 import { Preferences } from '@capacitor/preferences'
-import { trackedCharactersKey } from './keys'
+import { lastSelectedCharacterKey, trackedCharactersKey } from './keys'
 
 export type SchedulerKind = 'content' | 'boss'
 
@@ -61,4 +61,17 @@ export async function setTrackedCharacterOcids(
 
 export async function clearTrackedCharacterOcids(kind: SchedulerKind): Promise<void> {
   await Preferences.remove({ key: trackedCharactersKey(kind) })
+}
+
+export async function getLastSelectedCharacter(kind: SchedulerKind): Promise<string | null> {
+  const { value } = await Preferences.get({ key: lastSelectedCharacterKey(kind) })
+  return value
+}
+
+export async function setLastSelectedCharacter(kind: SchedulerKind, ocid: string): Promise<void> {
+  await Preferences.set({ key: lastSelectedCharacterKey(kind), value: ocid })
+}
+
+export async function clearLastSelectedCharacter(kind: SchedulerKind): Promise<void> {
+  await Preferences.remove({ key: lastSelectedCharacterKey(kind) })
 }

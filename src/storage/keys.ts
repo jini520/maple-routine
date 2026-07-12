@@ -14,3 +14,7 @@ export function characterBasicCacheKey(ocid: string): string {
 export function trackedCharactersKey(kind: 'content' | 'boss'): string {
   return `trackedCharacters:${kind}`
 }
+
+export function lastSelectedCharacterKey(kind: 'content' | 'boss'): string {
+  return `lastSelectedCharacter:${kind}`
+}
