@@ -7,7 +7,8 @@
       "name": "theme-data-storage",
       "status": "completed",
       "started_at": "2026-07-12T22:54:49+0900",
-      "summary": "레테/렌 13토큰 테마 데이터(job-themes.json)와 storage/theme.ts(Preferences 기반 getTheme/setTheme, 유효하지 않은 값은 null) 추가"
+      "summary": "레테/렌 13토큰 테마 데이터(job-themes.json)와 storage/theme.ts(Preferences 기반 getTheme/setTheme, 유효하지 않은 값은 null) 추가",
+      "completed_at": "2026-07-12T22:58:00+0900"
     },
     {
       "step": 1,
