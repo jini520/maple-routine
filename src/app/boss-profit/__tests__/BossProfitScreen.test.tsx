@@ -86,6 +86,20 @@ describe('BossProfitScreen', () => {
     expect(screen.getByText(/불러오는 중/)).toBeInTheDocument()
   })
 
+  it('ADR-017: status가 loading이어도 캐시된 rows가 있으면 로딩 표시 대신 목록을 계속 보여준다', () => {
+    mockStore({
+      status: 'loading',
+      trackedOcids: ['ocid-1'],
+      rows: [row({ priceMeso: 10_000_000, partySize: 2, payoutMeso: 5_000_000 })],
+    })
+
+    render(<BossProfitScreen />)
+
+    expect(screen.queryByText(/불러오는 중/)).not.toBeInTheDocument()
+    expect(screen.getByText(/이번 주 총 수익/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /낟낟/ })).toBeInTheDocument()
+  })
+
   it('status가 error이면 에러 문구를 보여준다', () => {
     mockStore({ status: 'error', trackedOcids: ['ocid-1'], error: { kind: 'invalidApiKey' }, rows: [] })
 

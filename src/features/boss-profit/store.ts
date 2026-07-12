@@ -85,6 +85,25 @@ function buildBossProfitRow(
   }
 }
 
+function mergeRecordsIntoRows(
+  rows: BossProfitRow[],
+  records: Awaited<ReturnType<typeof getBossProfitRecords>>,
+): BossProfitRow[] {
+  return rows.map((row) => {
+    const record = records.find(
+      (candidate) =>
+        candidate.ocid === row.ocid &&
+        candidate.boss === row.boss &&
+        candidate.difficulty === row.difficulty &&
+        candidate.periodKey === row.periodKey,
+    )
+    if (record === undefined) {
+      return row
+    }
+    return { ...row, partySize: record.partySize, payoutMeso: record.payoutMeso }
+  })
+}
+
 function matchesRowKey(row: BossProfitRow, key: BossProfitRowKey): boolean {
   return (
     row.ocid === key.ocid &&
@@ -123,8 +142,11 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     const now = new Date()
 
     // ADR-017 결정 1: 캐시 우선 표시 — 재검증(syncSchedules) 전에 마지막으로 성공한
-    // 스케줄 캐시가 있으면 완료된 보스만 걸러 화면을 먼저 채운다. 이 단계는 화면을
-    // 비워두지 않는 용도일 뿐이라 boss_profit_records 조회/기록은 하지 않는다.
+    // 스케줄 캐시가 있으면 완료된 보스만 걸러 화면을 먼저 채운다. 이미 저장된 기록이
+    // 있으면 함께 조회해 partySize/payoutMeso도 바로 보여준다(단순 읽기이므로 안전) —
+    // 다만 기록이 없는 조합에 대한 자동 기록(upsert)은 이 단계에서 하지 않는다. 낡은
+    // 캐시를 기준으로 잘못된 파티원 수를 기록해버리는 걸 막기 위해, 자동 기록은 지금처럼
+    // 실제 재검증(syncSchedules) 이후에만 수행한다.
     const cachedRows = (
       await Promise.all(
         ocids.map(async (ocid): Promise<BossProfitRow[]> => {
@@ -141,7 +163,16 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
       )
     ).flat()
 
-    set({ status: 'loading', rows: cachedRows, error: null, staleCharacterNames: [] })
+    const cachedPeriodKeys = Array.from(new Set(cachedRows.map((row) => row.periodKey)))
+    const cachedRecords =
+      cachedRows.length > 0 ? await getBossProfitRecords(ocids, cachedPeriodKeys) : []
+
+    set({
+      status: 'loading',
+      rows: mergeRecordsIntoRows(cachedRows, cachedRecords),
+      error: null,
+      staleCharacterNames: [],
+    })
 
     let results: Awaited<ReturnType<typeof syncSchedules>>
     try {
@@ -171,20 +202,7 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
 
     const periodKeys = Array.from(new Set(rows.map((row) => row.periodKey)))
     const records = await getBossProfitRecords(ocids, periodKeys)
-
-    const mergedRows = rows.map((row) => {
-      const record = records.find(
-        (candidate) =>
-          candidate.ocid === row.ocid &&
-          candidate.boss === row.boss &&
-          candidate.difficulty === row.difficulty &&
-          candidate.periodKey === row.periodKey,
-      )
-      if (record === undefined) {
-        return row
-      }
-      return { ...row, partySize: record.partySize, payoutMeso: record.payoutMeso }
-    })
+    const mergedRows = mergeRecordsIntoRows(rows, records)
 
     // ADR-014: 기록이 없는 완료 보스는 화면 진입 전에도 즉시 기본 파티원 수로 자동 기록한다.
     // upsertBossProfitRecord는 단일 공유 SQLite 커넥션에 자체 트랜잭션을 열므로,
