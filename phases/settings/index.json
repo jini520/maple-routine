@@ -32,7 +32,7 @@
       "status": "completed",
       "started_at": "2026-07-12T23:01:03+0900",
       "summary": "features/settings/store.ts 신규 — changeApiKey/refreshAccounts/selectAccount/disconnect/reset을 갖춘 Zustand 스토어, onboarding/prefetch·storage/api-key·nexon/character를 재사용하며 useOnboardingStore는 disconnect()에서만 참조",
-      "completed_at": "2026-07-12T23:03:00+0900"
+      "completed_at": "2026-07-12T23:03:37+0900"
     },
     {
       "step": 4,
