@@ -39,7 +39,6 @@ const KNOWN_MISSING_DROP_ENTRIES = new Set([
   key('피에르', '카오스'),
   key('블러디 퀸', '카오스'),
   key('벨룸', '카오스'),
-  key('선택받은 세렌', '익스트림'),
   key('벨로나', '이지'),
   key('벨로나', '노멀'),
   key('벨로나', '하드'),

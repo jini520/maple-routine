@@ -1,0 +1,40 @@
+{
+  "project": "메이플 루틴 (Maple Routine)",
+  "phase": "scheduler-ui",
+  "steps": [
+    {
+      "step": 0,
+      "name": "boss-portrait",
+      "status": "completed",
+      "started_at": "2026-07-11T04:15:53+0900",
+      "summary": "src/lib/boss-icons.ts에 import.meta.glob으로 assets/bosses/*.png를 미리 매핑해 portraitSlug+난이도 접두사(이지→easy 등)로 조회하는 getBossPortraitUrl 추가, src/components/BossPortrait/BossPortrait.tsx가 이를 써서 이미지가 있으면 <img>, 없으면(slug null 또는 해당 난이도 파일 없음) label 텍스트 플레이스홀더를 렌더링.",
+      "completed_at": "2026-07-11T04:18:47+0900"
+    },
+    {
+      "step": 1,
+      "name": "app-shell",
+      "status": "completed",
+      "started_at": "2026-07-11T04:18:47+0900",
+      "summary": "react-router-dom 도입해 src/App.tsx에 AppShell(라우터 미포함, 테스트용 export)과 BrowserRouter로 감싼 App(default export)을 분리; /, /onboarding, /daily, /weekly 라우트와 status 기반 리다이렉트, completed일 때만 보이는 일간/주간 내비게이션 추가; restoreFromStorage 호출을 OnboardingScreen에서 AppShell로 이동(앱 전체에서 1회만 호출); placeholder src/app/daily/DailyScreen.tsx, src/app/weekly/WeeklyScreen.tsx 생성; src/__tests__/App.test.tsx 신규 작성.",
+      "completed_at": "2026-07-11T04:21:22+0900"
+    },
+    {
+      "step": 2,
+      "name": "daily-screen",
+      "status": "completed",
+      "started_at": "2026-07-11T04:21:22+0900",
+      "summary": "src/features/schedule-sync/format.ts에 formatScheduleSyncError/formatSyncedAt(n분 전·n시간 전·방금 전·동기화 기록 없음) 추가; src/app/daily/DailyScreen.tsx가 useDailySchedulerStore만 구독해 마운트 시 refresh 1회 호출, 상단 새로고침 버튼 상시 노출, 캐릭터별로 isStale이면 에러 문구+동기화 시각을, dailyContents가 비어있고 isStale이 아니면 게임 미등록 빈 상태 안내를 구분 표시; App.tsx는 이미 DailyScreen을 연결 중이라 변경 없음, App.test.tsx의 placeholder 텍스트 검증 2건을 daily-scheduler store 모킹 + '일간 스케줄러' heading 검증으로 갱신.",
+      "completed_at": "2026-07-11T04:25:04+0900"
+    },
+    {
+      "step": 3,
+      "name": "weekly-screen",
+      "status": "completed",
+      "started_at": "2026-07-11T04:25:04+0900",
+      "summary": "src/app/weekly/WeeklyScreen.tsx가 useWeeklySchedulerStore를 구독해 DailyScreen과 동일한 마운트 시 refresh/새로고침 버튼/isStale 안내/빈 상태 패턴을 따르고, weeklyContents(퀘스트) 목록과 bosses(MatchedBoss, 난이도별 그대로) 목록을 BossPortrait로 렌더링하며 matchedBossName이 null이면 apiName으로 폴백, weeklyBossClearCount·weeklyBossClearLimitCount가 둘 다 있을 때만 n/12 카운터를 표시; formatScheduleSyncError/formatSyncedAt은 기존 걸 재사용; src/app/weekly/__tests__/WeeklyScreen.test.tsx 신규 작성(TDD); App.tsx는 이미 WeeklyScreen을 연결 중이라 변경 없음.",
+      "completed_at": "2026-07-11T04:28:11+0900"
+    }
+  ],
+  "created_at": "2026-07-11T04:15:53+0900",
+  "completed_at": "2026-07-11T04:28:11+0900"
+}

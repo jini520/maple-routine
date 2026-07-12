@@ -1,0 +1,64 @@
+{
+  "phases": [
+    {
+      "dir": "foundation",
+      "status": "completed",
+      "completed_at": "2026-07-11T02:57:28+0900"
+    },
+    {
+      "dir": "onboarding",
+      "status": "completed",
+      "completed_at": "2026-07-11T03:12:42+0900"
+    },
+    {
+      "dir": "onboarding-ui",
+      "status": "completed",
+      "completed_at": "2026-07-11T03:42:10+0900"
+    },
+    {
+      "dir": "scheduler",
+      "status": "completed",
+      "completed_at": "2026-07-11T04:09:57+0900"
+    },
+    {
+      "dir": "scheduler-ui",
+      "status": "completed",
+      "completed_at": "2026-07-11T04:28:11+0900"
+    },
+    {
+      "dir": "wireframe-redesign",
+      "status": "completed",
+      "completed_at": "2026-07-11T05:13:11+0900"
+    },
+    {
+      "dir": "character-tracking",
+      "status": "completed",
+      "completed_at": "2026-07-11T05:56:59+0900"
+    },
+    {
+      "dir": "nexon-native-restructure",
+      "status": "completed",
+      "completed_at": "2026-07-11T06:33:42+0900"
+    },
+    {
+      "dir": "scoped-sync",
+      "status": "completed",
+      "completed_at": "2026-07-11T06:53:01+0900"
+    },
+    {
+      "dir": "content-boss-scheduler",
+      "status": "completed",
+      "completed_at": "2026-07-11T07:30:54+0900"
+    },
+    {
+      "dir": "boss-profit-calculator",
+      "status": "completed",
+      "completed_at": "2026-07-11T18:05:09+0900"
+    },
+    {
+      "dir": "boss-profit-autorecord-layout",
+      "status": "completed",
+      "completed_at": "2026-07-11T23:13:19+0900"
+    }
+  ]
+}

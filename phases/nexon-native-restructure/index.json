@@ -1,0 +1,24 @@
+{
+  "project": "메이플 루틴 (Maple Routine)",
+  "phase": "nexon-native-restructure",
+  "steps": [
+    {
+      "step": 0,
+      "name": "nexon-restructure",
+      "status": "completed",
+      "started_at": "2026-07-11T06:29:35+0900",
+      "summary": "src/nexon/client.ts·normalize.ts를 character/(client·normalize·index)·schedule/(client·normalize·index)로 분리하고 공용 requestJson을 http.ts로 뽑았다; 관련 테스트를 character/__tests__·schedule/__tests__로 이동, schedule-sync.ts·onboarding/store.ts의 import 경로 갱신",
+      "completed_at": "2026-07-11T06:32:44+0900"
+    },
+    {
+      "step": 1,
+      "name": "native-restructure",
+      "status": "completed",
+      "started_at": "2026-07-11T06:32:44+0900",
+      "summary": "src/native/hunting-timer.ts·hunting-timer.web.ts를 native/hunting-timer/ 하위로 이동, 관련 테스트를 hunting-timer/__tests__/로 이동; notifications.ts는 루트에 그대로 유지",
+      "completed_at": "2026-07-11T06:33:42+0900"
+    }
+  ],
+  "created_at": "2026-07-11T06:29:35+0900",
+  "completed_at": "2026-07-11T06:33:42+0900"
+}

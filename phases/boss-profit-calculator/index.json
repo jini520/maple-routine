@@ -1,0 +1,56 @@
+{
+  "project": "메이플 루틴 (Maple Routine)",
+  "phase": "boss-profit-calculator",
+  "steps": [
+    {
+      "step": 0,
+      "name": "sqlite-setup",
+      "status": "completed",
+      "started_at": "2026-07-11T17:42:30+0900",
+      "summary": "@capacitor-community/sqlite + jeep-sqlite(웹 폴리필) 도입, src/storage/sqlite/db.ts에 getBossProfitDb() 싱글턴 커넥션과 boss_profit_records 테이블 생성 추가, public/assets/sql-wasm.wasm 정적 자산 배치",
+      "completed_at": "2026-07-11T17:48:55+0900"
+    },
+    {
+      "step": 1,
+      "name": "period-lib",
+      "status": "completed",
+      "started_at": "2026-07-11T17:48:56+0900",
+      "summary": "src/lib/reset-clock.ts에 KST 기준 주간 리셋(목요일 00:00) 계산 함수, src/lib/boss-profit-period.ts에 cycle별(weekly/monthly) 보스 수익 기간 키·라벨 계산 함수 추가(월간은 PRD #36 미확인으로 매월 1일 00:00 KST 가정치)",
+      "completed_at": "2026-07-11T17:52:02+0900"
+    },
+    {
+      "step": 2,
+      "name": "boss-profit-storage",
+      "status": "completed",
+      "started_at": "2026-07-11T17:52:03+0900",
+      "summary": "src/storage/boss-profit.ts에 boss_profit_records 테이블 CRUD 어댑터 추가 — upsertBossProfitRecord(ON CONFLICT(ocid, boss, difficulty, period_key) DO UPDATE로 멱등성 보장), getBossProfitRecords(ocid IN + period_key IN 조회, 빈 배열 입력 시 DB 미호출)",
+      "completed_at": "2026-07-11T17:53:53+0900"
+    },
+    {
+      "step": 3,
+      "name": "boss-profit-store",
+      "status": "completed",
+      "started_at": "2026-07-11T17:53:53+0900",
+      "summary": "src/features/boss-profit/store.ts에 useBossProfitStore 추가 — nexon/schedule 캐시에서 처치된(isComplete) weekly+monthly 보스만 전 캐릭터 평탄화해 rows로 구성, boss-crystal-prices.json 조회로 priceMeso/maxPartySize 산출, getBossProfitRecords로 저장된 파티원 수 복원(멱등성), setPartySize가 1~maxPartySize 정수 검증 후 upsertBossProfitRecord 호출",
+      "completed_at": "2026-07-11T17:58:10+0900"
+    },
+    {
+      "step": 4,
+      "name": "boss-profit-screen",
+      "status": "completed",
+      "started_at": "2026-07-11T17:58:10+0900",
+      "summary": "src/app/boss-profit/BossProfitScreen.tsx 추가 — 추적 캐릭터 처치 보스를 이번 주/이번 달 섹션으로 합산 표시(캐릭터 선택 UI 없음), 파티원 수 입력 시 store.setPartySize 호출·검증 실패는 인풋 하단 에러로 표시, 가격 미확정 배지·stale 안내·섹션별 합계 렌더링",
+      "completed_at": "2026-07-11T18:02:29+0900"
+    },
+    {
+      "step": 5,
+      "name": "app-routing-cutover",
+      "status": "completed",
+      "started_at": "2026-07-11T18:02:29+0900",
+      "summary": "src/App.tsx에 세 번째 탭('수익', Coins 아이콘)과 /profit 라우트(BossProfitScreen, isCompleted 분기) 추가, src/__tests__/App.test.tsx에 useBossProfitStore 모킹·3탭 노출/활성 스타일/리다이렉트 테스트 추가",
+      "completed_at": "2026-07-11T18:05:09+0900"
+    }
+  ],
+  "created_at": "2026-07-11T17:42:30+0900",
+  "completed_at": "2026-07-11T18:05:09+0900"
+}

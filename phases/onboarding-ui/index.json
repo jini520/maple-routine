@@ -1,0 +1,24 @@
+{
+  "project": "메이플 루틴 (Maple Routine)",
+  "phase": "onboarding-ui",
+  "steps": [
+    {
+      "step": 0,
+      "name": "onboarding-components",
+      "status": "completed",
+      "started_at": "2026-07-11T03:34:41+0900",
+      "summary": "pickRepresentativeCharacter(레벨 내림차순, 동률 시 한글>알파벳>숫자 그룹) 순수 함수와 순수 프레젠테이션 컴포넌트 ApiKeyForm/AccountSelectionList, formatOnboardingError 헬퍼 추가 — 스토어/nexon/storage 미의존, jsdom은 두 컴포넌트 테스트 파일에만 국소 적용",
+      "completed_at": "2026-07-11T03:40:21+0900"
+    },
+    {
+      "step": 1,
+      "name": "onboarding-screen",
+      "status": "completed",
+      "started_at": "2026-07-11T03:40:21+0900",
+      "summary": "src/app/onboarding/OnboardingScreen.tsx 추가 — useOnboardingStore 구독 후 status 5분기 렌더링(awaitingApiKey/verifyingApiKey/selectingAccount/completed/error, error는 accounts.length로 ApiKeyForm·AccountSelectionList 재분기), 마운트 시 1회만 restoreFromStorage 호출. App.tsx가 placeholder 대신 이를 렌더링하도록 교체, 이전 step 컴포넌트는 무수정 재사용",
+      "completed_at": "2026-07-11T03:42:10+0900"
+    }
+  ],
+  "created_at": "2026-07-11T03:34:41+0900",
+  "completed_at": "2026-07-11T03:42:10+0900"
+}

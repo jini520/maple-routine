@@ -1,0 +1,32 @@
+{
+  "project": "메이플 루틴 (Maple Routine)",
+  "phase": "boss-profit-autorecord-layout",
+  "steps": [
+    {
+      "step": 0,
+      "name": "latest-party-size-query",
+      "status": "completed",
+      "started_at": "2026-07-11T23:06:24+0900",
+      "summary": "src/storage/boss-profit.ts에 getLatestPartySize(ocid, boss, difficulty) 추가 — period_key 무관하게 recorded_at DESC LIMIT 1로 최근 party_size 조회, 기록 없으면 null 반환",
+      "completed_at": "2026-07-11T23:07:33+0900"
+    },
+    {
+      "step": 1,
+      "name": "auto-record-on-refresh",
+      "status": "completed",
+      "started_at": "2026-07-11T23:07:33+0900",
+      "summary": "features/boss-profit/store.ts의 refresh()가 기존 기록 병합 후, partySize가 null이면서 priceMeso가 확정된 행에 대해 getLatestPartySize로 기본값(없으면 1)을 조회해 upsertBossProfitRecord로 즉시 자동 기록하도록 확장",
+      "completed_at": "2026-07-11T23:09:51+0900"
+    },
+    {
+      "step": 2,
+      "name": "character-dropdown-layout",
+      "status": "completed",
+      "started_at": "2026-07-11T23:09:52+0900",
+      "summary": "BossProfitScreen을 상단 '이번 주' 총 수익 카드 + 캐릭터별 아코디언(기본 접힘, ChevronDown/Up 토글) 레이아웃으로 재구성 — BossProfitRowItem/BossProfitSection은 그대로 재사용",
+      "completed_at": "2026-07-11T23:13:19+0900"
+    }
+  ],
+  "created_at": "2026-07-11T23:06:24+0900",
+  "completed_at": "2026-07-11T23:13:19+0900"
+}
