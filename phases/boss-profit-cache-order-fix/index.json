@@ -24,7 +24,7 @@
       "status": "completed",
       "started_at": "2026-07-12T19:27:23+0900",
       "summary": "features/content-scheduler/store.ts에 selectedOcid 상태·selectCharacter 액션·sortByCachedLevel(레벨 내림차순, 동레벨은 compareByName) 추가해 캐시/실시간 단계 캐릭터 순서 통일 및 lastSelectedCharacter:content 저장, ContentScreen.tsx는 로컬 selectedOcid state를 제거하고 store 값을 사용하도록 변경, 테스트 6건 추가",
-      "completed_at": "2026-07-12T19:31:00+0900"
+      "completed_at": "2026-07-12T19:30:55+0900"
     },
     {
       "step": 3,
