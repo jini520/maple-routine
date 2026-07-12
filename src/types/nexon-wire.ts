@@ -15,6 +15,13 @@ export interface NexonCharacterListResponse {
   account_list: NexonAccountSummary[]
 }
 
+export interface NexonCharacterBasicResponse {
+  character_name: string
+  character_level: number
+  character_image: string
+  access_flag: 'true' | 'false'
+}
+
 export type NexonRawDifficulty = 'easy' | 'normal' | 'hard' | 'chaos' | 'extreme'
 export type NexonRawBossCycle = 'bossDaily' | 'bossWeekly' | 'bossMonthly'
 

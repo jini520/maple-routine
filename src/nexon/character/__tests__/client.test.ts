@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { NexonCharacterListResponse } from '../../../types'
-import { fetchCharacterList } from '../client'
+import type { NexonCharacterBasicResponse, NexonCharacterListResponse } from '../../../types'
+import { fetchCharacterBasic, fetchCharacterList } from '../client'
 import { NexonAuthError, NexonNetworkError, NexonRateLimitError } from '../../errors'
 
 function jsonResponse(status: number, body: unknown): Response {
@@ -70,6 +70,45 @@ describe('fetchCharacterList', () => {
         headers: { 'x-nxopen-api-key': 'test-api-key' },
       }),
     )
+  })
+})
+
+const characterBasicFixture: NexonCharacterBasicResponse = {
+  character_name: '낟낟',
+  character_level: 293,
+  character_image: 'https://open.api.nexon.com/static/maplestory/character/look/abc?wmotion=W02',
+  access_flag: 'true',
+}
+
+describe('fetchCharacterBasic', () => {
+  it('ocid를 쿼리로 붙여 호출하고 정상 응답을 CharacterBasicProfile로 변환해 반환한다', async () => {
+    const fetchMock = vi.fn(async () => jsonResponse(200, characterBasicFixture))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const result = await fetchCharacterBasic('test-api-key', 'ocid-1')
+
+    expect(result).toEqual({
+      name: '낟낟',
+      level: 293,
+      imageUrl: 'https://open.api.nexon.com/static/maplestory/character/look/abc?wmotion=W02',
+      accessFlag: true,
+    })
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://open.api.nexon.com/maplestory/v1/character/basic?ocid=ocid-1',
+      expect.objectContaining({
+        headers: { 'x-nxopen-api-key': 'test-api-key' },
+      }),
+    )
+  })
+
+  it('401 응답이면 NexonAuthError를 던진다', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => jsonResponse(401, {})))
+    await expect(fetchCharacterBasic('test-api-key', 'ocid-1')).rejects.toThrow(NexonAuthError)
+  })
+
+  it('429 응답이면 NexonRateLimitError를 던진다', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => jsonResponse(429, { error: { name: 'OPENAPI00007' } })))
+    await expect(fetchCharacterBasic('test-api-key', 'ocid-1')).rejects.toThrow(NexonRateLimitError)
   })
 })
 

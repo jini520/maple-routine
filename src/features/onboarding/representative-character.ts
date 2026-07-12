@@ -10,7 +10,7 @@ function classifyName(name: string): NameGroup {
   return 3
 }
 
-function compareByName(a: string, b: string): number {
+export function compareByName(a: string, b: string): number {
   const groupA = classifyName(a)
   const groupB = classifyName(b)
   if (groupA !== groupB) return groupA - groupB

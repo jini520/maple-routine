@@ -1,6 +1,6 @@
 # 아키텍처
 
-> 이 문서는 `docs/ADR.md`를 전제로 작성되었습니다. Capacitor / Vite+React / 로컬 저장 전용 / 백그라운드 상시 알림 모두 확정. 일간/주간 진행 상태는 Nexon Open API로 동기화하되, 사용자 개인이 발급받은 API 키를 기기에 저장해 직접 호출하는 방식이라 백엔드는 필요 없음([[ADR-007]] 신규 — 2026-07-09). 에러 핸들링·복원력 정책은 [[ADR-008]] 참고. 직업 기반 테마 시스템은 뼈대만 확정([[ADR-009]], 컬러 값 미정). 최상위 화면 구조는 "일간/주간 스케줄러"(리셋 주기 기준)에서 "컨텐츠/보스 스케줄러"(콘텐츠 종류 기준)로 개편됨([[ADR-013]], 2026-07-11). 보스 수익 계산기는 완료 감지 시 파티원 수를 자동 기록하고 캐릭터별 드롭다운 레이아웃을 쓰도록 확장됨([[ADR-014]], 2026-07-11). 별도 공개 웹 서비스 제공은 보류(MVP 범위 밖)이며, 이 문서는 Capacitor 앱(WebView) 기준으로만 작성되었습니다.
+> 이 문서는 `docs/ADR.md`를 전제로 작성되었습니다. Capacitor / Vite+React / 로컬 저장 전용 / 백그라운드 상시 알림 모두 확정. 일간/주간 진행 상태는 Nexon Open API로 동기화하되, 사용자 개인이 발급받은 API 키를 기기에 저장해 직접 호출하는 방식이라 백엔드는 필요 없음([[ADR-007]] 신규 — 2026-07-09). 에러 핸들링·복원력 정책은 [[ADR-008]] 참고. 직업 기반 테마 시스템은 뼈대만 확정([[ADR-009]], 컬러 값 미정). 최상위 화면 구조는 "일간/주간 스케줄러"(리셋 주기 기준)에서 "컨텐츠/보스 스케줄러"(콘텐츠 종류 기준)로 개편됨([[ADR-013]], 2026-07-11). 보스 수익 계산기는 완료 감지 시 파티원 수를 자동 기록하고 캐릭터별 드롭다운 레이아웃을 쓰도록 확장됨([[ADR-014]], 2026-07-11). "캐릭터 관리" 피커는 레벨순 정렬 + 캐릭터 이미지 카드형 그리드로 개선되고 `character/basic` API 병렬 조회가 추가됨([[ADR-015]], 2026-07-12). 별도 공개 웹 서비스 제공은 보류(MVP 범위 밖)이며, 이 문서는 Capacitor 앱(WebView) 기준으로만 작성되었습니다.
 
 ## 디렉토리 구조
 ```
@@ -20,16 +20,17 @@ src/
 │   ├── hunting-timer/
 │   ├── boss-profit/
 │   └── item-drop/
-├── data/                    # 게임 레퍼런스 데이터 (보스 목록, 결정 가격표, 드랍 테이블, 보스 반지 상자 확률표) — 버전 명시. job-themes.json(직업별 테마 컬러, [[ADR-009]])은 뼈대만 확정, 컬러 값 미작성
+├── data/                    # 게임 레퍼런스 데이터 (보스 목록, 결정 가격표, 드랍 테이블, 보스 반지 상자 확률표) — 버전 명시. job-themes.json(테마별 13토큰 컬러, [[ADR-009]])은 "레테"·"렌" 값 확정, 다중 테마 전환 기능 착수 전까지 파일 생성 보류(현재는 `src/index.css`에 렌 값 정적 반영)
 ├── nexon/                   # Nexon Open API 클라이언트 ([[ADR-007]]) — 사용자 개인 API 키로 직접 호출, 서버 없음
-│   ├── character/            # GET /maplestory/v1/character/list로 계정 소속 캐릭터 목록 자동 조회(수동 등록 폼 없음)
+│   ├── character/            # GET /maplestory/v1/character/list로 계정 소속 캐릭터 목록 자동 조회(수동 등록 폼 없음). GET /maplestory/v1/character/basic(ocid별, [[ADR-015]])로 "캐릭터 관리" 피커의 캐릭터 이미지(`character_image`)·`access_flag`를 병렬 조회
 │   └── schedule/             # 스케줄러 Open API 호출 + src/data/ 참조 테이블과의 매핑(난이도 영↔한글, 보스명 정규화, cycle 기반 bossDaily 필터링)
 ├── storage/                 # 로컬 저장소 접근 레이어 (SQLite/Preferences 어댑터, Nexon API 키·동기화 캐시 포함)
 ├── native/                  # Capacitor 플러그인 래퍼 + 커스텀 네이티브 플러그인 JS 인터페이스
 │   ├── hunting-timer/       # 상시 알림(Android Chronometer / iOS Live Activity) 커스텀 플러그인 래퍼
 │   └── notification-sync/   # 알림 발송 직전 백그라운드에서 Nexon API 재확인 후 조건부 발송 (WorkManager / BGAppRefreshTask, [[ADR-004]])
 ├── components/              # 공용 UI 컴포넌트
-│   └── BossPortrait/         # 보스 초상화 표시 공용 컴포넌트([[ADR-011]]) — feature 2(주간 스케줄러)·4(보스 수익 계산기)·5(물욕 아이템)가 보스를 나타낼 때 공통으로 씀. lib/boss-icons로 이미지 조회, 없으면 플레이스홀더
+│   ├── BossPortrait/         # 보스 초상화 표시 공용 컴포넌트([[ADR-011]]) — feature 2(주간 스케줄러)·4(보스 수익 계산기)·5(물욕 아이템)가 보스를 나타낼 때 공통으로 씀. lib/boss-icons로 이미지 조회, 없으면 플레이스홀더
+│   └── CharacterTrackingPicker/  # "캐릭터 관리" 피커([[ADR-012]]) — 레벨 내림차순 정렬 + 캐릭터 이미지 카드형 그리드([[ADR-015]]). 컨텐츠/보스 스케줄러 화면이 동일 컴포넌트 공유
 ├── assets/
 │   ├── items/                # 물욕템 아이콘 이미지([[ADR-011]]) — 사용자가 직접 추가한 기존 파일 그대로 사용(영문 내부 코드명 스타일, 예: dark_boss_ring.png). src/data/item-icons.json이 한글 아이템명↔파일명 매핑 테이블
 │   │   └── rings/             # 특수 스킬 반지 전용 서브폴더([[ADR-011]]) — GMS 영문명으로 파일명 정리 완료(예: Ring_of_Restraint.png). boss-ring-boxes.json의 iconFile 필드가 매핑 테이블
@@ -54,11 +55,13 @@ Feature 단위 구조. 각 `features/*` 폴더가 해당 기능의 상태와 로
   → storage/의 보안 영역(Keychain/Keystore 또는 암호화된 Preferences)에 저장
   → nexon/character가 GET /maplestory/v1/character/list 호출
   → 응답의 account_list가 2개 이상이면 "어느 메이플 ID를 쓸지" 선택 화면 표시(features/onboarding). 각 계정은 character_list 중 최고 레벨 캐릭터의 닉네임+직업+레벨로 표기(예: "낟낟 · 렌 Lv.293") — account_id 해시는 노출 안 함
-  → storage/에는 apiKey와 선택된 accountId만 저장한다. **정정(2026-07-11)**: ~~선택된 계정의 character_list를 storage/에 캐싱~~ — 캐릭터명·직업·레벨이 언제든 바뀔 수 있어(개명, 전직, 레벨업) 캐싱하지 않기로 변경. 캐릭터 목록이 필요한 화면(컨텐츠/보스 스케줄러 등)은 그때마다 nexon/character를 다시 호출해 조회한다
+  → storage/에는 apiKey와 선택된 accountId만 저장한다. **정정(2026-07-11)**: ~~선택된 계정의 character_list를 storage/에 캐싱~~ — 캐릭터명·직업·레벨이 언제든 바뀔 수 있어(개명, 전직, 레벨업) 캐싱하지 않기로 변경. 캐릭터 목록이 필요한 화면(컨텐츠/보스 스케줄러 등)은 그때마다 nexon/character를 다시 호출해 조회한다. **재정정(2026-07-12, [[ADR-016]])**: 위 "캐싱하지 않음"은 여전히 유효하다(매번 재검증) — 다만 캐릭터별 `character/basic`·스케줄 응답 자체는 [[ADR-016]]의 캐시(즉시 표시용, 항상 재검증)에 저장하고, 계정이 확정되는 즉시 전체 캐릭터에 대해 진행률 표시와 함께 예열한다(아래 참고).
   → 이후 설정 화면에서 계정을 다시 선택(변경)할 수 있음(확정)
+  → **[[ADR-016]] 신규(2026-07-12) — 온보딩 완료 직전 전체 캐릭터 데이터 예열**: 계정이 확정되면(단일 계정 자동 확정 또는 다중 계정 중 선택) `OnboardingStatus`에 추가된 `'prefetching'` 상태로 전환해 진행률 바를 표시한다. 이 계정의 전체 캐릭터(추적 대상 여부 무관) 각각에 대해 `character/basic` → (`access_flag: true`인 경우만) `scheduler/character-state` 순서의 독립 파이프라인을 병렬로 실행하고, 하나가 끝날 때마다(`Promise.all`로 뭉쳐 기다리지 않고) 그 즉시 `storage/character-basic-cache`·`storage/scheduler-cache`에 기록하며 진행률을 갱신한다. 개별 캐릭터 실패는 그 캐릭터만 캐시 없이 넘어가고 전체를 막지 않는다. 전체가 끝나야 `'completed'`로 전환된다.
 
 이후 동기화 (앱 실행/포그라운드 복귀/새로고침 버튼):
-  → nexon/schedule이 저장된 API 키 + 캐릭터별 ocid로 GET /maplestory/v1/scheduler/character-state 호출. **정정(2026-07-11, [[ADR-012]])**: ~~계정의 전체 캐릭터를 대상으로 호출~~ — 화면에서 사용자가 "캐릭터 관리"로 고른 추적 대상 캐릭터에 대해서만 호출한다(계정에 캐릭터가 많으면 전체 순차 호출이 느려지므로). 캐릭터 후보 목록 자체(이름만 필요, "캐릭터 관리" 피커용)는 `nexon/character`의 `GET /maplestory/v1/character/list` 호출로 별도 조회하고 스케줄 동기화와는 분리한다. **정정(2026-07-11, [[ADR-013]])**: ~~추적 목록이 일간/주간 화면별로 독립(`trackedCharacters:daily`/`trackedCharacters:weekly`)~~ — 화면이 컨텐츠/보스로 재편되며 추적 목록도 `trackedCharacters:content`/`trackedCharacters:boss`로 바뀐다. 앱이 새 키를 처음 쓰는 시점에 기존 `daily` 값은 `content`로, 기존 `weekly` 값은 `content`·`boss` 양쪽으로 1회 복사하는 마이그레이션을 거친다([[ADR-013]] 참고)
+  → **([[ADR-016]] 신규, 2026-07-12) 캐시 우선 표시**: `features/content-scheduler`·`features/boss-scheduler`의 `refresh()`는 실제 API 재호출 *전에* 각 ocid의 `storage/scheduler-cache` 값이 있으면 그걸로 먼저 `characters`를 채워 화면에 그린다(`status: 'loading'`이어도 이미 있는 `characters`는 계속 보여준다 — 로딩 중엔 목록 자체를 안 그리던 기존 동작에서 정정). 그 다음은 아래와 동일하게 항상 재검증한다.
+  → nexon/schedule이 저장된 API 키 + 캐릭터별 ocid로 GET /maplestory/v1/scheduler/character-state 호출. **정정(2026-07-11, [[ADR-012]])**: ~~계정의 전체 캐릭터를 대상으로 호출~~ — 화면에서 사용자가 "캐릭터 관리"로 고른 추적 대상 캐릭터에 대해서만 호출한다(계정에 캐릭터가 많으면 전체 순차 호출이 느려지므로). 캐릭터 후보 목록 자체("캐릭터 관리" 피커용)는 `nexon/character`의 `GET /maplestory/v1/character/list` 호출로 별도 조회하고 스케줄 동기화와는 분리한다. **정정(2026-07-12, [[ADR-015]])**: ~~이름만 필요~~ — 피커가 이미지 카드형으로 바뀌면서 `character/list`로 얻은 ocid 전체에 대해 `GET /maplestory/v1/character/basic`을 병렬 호출해 이미지(`character_image`)·`access_flag`까지 함께 조회한다. `access_flag: "false"`인 캐릭터는 후보 목록에서 제외하고, 나머지는 레벨 내림차순으로 정렬해 보여준다. **정정(2026-07-11, [[ADR-013]])**: ~~추적 목록이 일간/주간 화면별로 독립(`trackedCharacters:daily`/`trackedCharacters:weekly`)~~ — 화면이 컨텐츠/보스로 재편되며 추적 목록도 `trackedCharacters:content`/`trackedCharacters:boss`로 바뀐다. 앱이 새 키를 처음 쓰는 시점에 기존 `daily` 값은 `content`로, 기존 `weekly` 값은 `content`·`boss` 양쪽으로 1회 복사하는 마이그레이션을 거친다([[ADR-013]] 참고)
   → 실패 시([[ADR-008]]) 에러 유형별로 분기하고 마지막 캐시를 그대로 표시, 여기서 흐름 중단
   → 응답의 daily_contents/weekly_contents/boss_contents를 파싱(필드 단위 방어적 파싱, [[ADR-008]])
   → boss_contents 중 cycle이 bossWeekly/bossMonthly인 것만 사용(bossDaily는 무시, [[ADR-013]]에서도 이 정책 재확인 — 보스 스케줄러에 일간 탭을 두지 않음)
@@ -111,7 +114,13 @@ Feature 단위 구조. 각 `features/*` 폴더가 해당 기능의 상태와 로
 - 영속 데이터(Nexon API 키, 동기화 캐시, 보스 처치/수익 기록, 드랍 히스토리, 선택된 테마)는 `storage/`에 저장하고, 앱 시작 시 로드해 클라이언트 상태로 hydration.
 
 ## 테마 시스템 ([[ADR-009]])
-직업 고유 컬러 기반 다중 테마 지원 예정 — 현재는 뼈대만 확정된 상태다. `src/data/job-themes.json` 참조 테이블([[ADR-006]] CRITICAL 규칙 적용, 컬러 값 미정)에서 선택된 테마의 Primary 값을 읽어 CSS 커스텀 프로퍼티(예: `--color-primary`)로 `:root`에 주입하고, `features/*`·`components/`는 Tailwind 유틸리티에서 이 변수를 참조한다(`bg-[var(--color-primary)]`). 선택된 테마 자체는 위 "상태 관리"와 동일하게 Zustand + `storage/` 영속화로 관리한다. 색상 파생 공식·대비 기준 등 세부 규칙은 `docs/UI_GUIDE.md` 참고. 테마 단위(직업 대분류/세부 전직), 전환 UX(수동/자동), 실제 컬러 값은 모두 미정.
+직업 고유 컬러 기반 다중 테마 지원 예정. **정정(2026-07-12)**: Primary 하나만 파생 공식으로 확장하는 방식은 폐기, 테마마다 13개 시맨틱 토큰(`bg`/`surface`/`surface-2`/`border`/`border-strong`/`primary`/`primary-hover`/`primary-text`/`secondary`/`info-tint`/`error`/`text`/`text-muted`/`text-disabled`)을 값으로 직접 갖는다. 현재 "레테"(다크)·"렌"(라이트, 2026-07-12 재수정) 2개 테마의 실제 컬러 값이 확정됐다(값은 `docs/UI_GUIDE.md` "테마 시스템" 표 참고, `src/data/job-themes.json` 반영은 구현 단계에서 진행).
+
+**구현 범위 축소(2026-07-12)**: 런타임 전환 기능은 당장 만들지 않는다 — "렌" 13토큰 값을 `src/index.css`의 `@theme` 블록에 정적으로 반영해 활성 팔레트를 레테→렌으로 교체하는 것까지만 이번 범위다. 아래는 전환 기능이 실제로 필요해질 때의 목표 설계이며 현재 미구현이다: Tailwind v4 `@theme` 블록이 기본 테마 값을 정의하고, `:root[data-theme="..."] { --color-*: ...; }`로 오버라이드. Tailwind v4 유틸리티(`bg-primary`, `text-text` 등)는 이미 `var(--color-*)`를 참조하므로 `features/*`·`components/` 코드 변경 없이 `data-theme` 속성 전환만으로 테마가 바뀐다. 선택된 테마는 위 "상태 관리"와 동일하게 Zustand(`src/features/theme/store.ts`) + `storage/`(`src/storage/theme.ts`, 기존 `api-key.ts` 등과 같은 `Preferences` 기반 어댑터 패턴) 영속화로 관리하고, `AppShell`의 `restoreFromStorage` 흐름과 같은 위치에서 앱 시작 시 hydration하는 구조를 제안.
+
+기존 `--color-gold`/`--color-gold-bright`/`--color-magenta`/`--color-neutral-warm` 토큰은 13토큰 스키마에 없어 폐기하고 사용처를 마이그레이션한다(`gold`→`secondary`, `magenta`→`error`, `neutral-warm`→`text-muted` 통합, `gold-bright`는 미사용 확인 후 폐기) — 상세는 [[ADR-009]] 2026-07-12 정정 참고. 이 마이그레이션은 정적 교체 범위에 포함되어 지금 진행한다.
+
+테마 이름과 실제 직업(전직) 매핑, 테마 단위(대분류/세부 전직)는 여전히 미정.
 
 ## 네이티브 연동 ([[ADR-001]])
 - `@capacitor/local-notifications`: 일간/주간 미완료 알림 예약 ([[ADR-004]])
@@ -150,6 +159,7 @@ Feature 단위 구조. 각 `features/*` 폴더가 해당 기능의 상태와 로
 | 401/403 (키 무효) | `nexon/schedule` 응답 인터셉터 | 캐시 유지, 전역 상태(Zustand)에 `apiKeyInvalid: true` 세팅 → 설정 화면 진입 유도 배너. 무효 키로 자동 재시도 금지 |
 | 429 (rate limit, 에러 코드 `OPENAPI00007`) | 공통 HTTP 클라이언트 응답 인터셉터 | 지수 백오프로 다음 허용 시각 저장, 그 전까지 새로고침 버튼 disabled 처리. 평소엔 초당 5건 큐잉으로 애초에 429를 거의 안 만나야 정상 |
 | 캐릭터 목록 조회 실패(`character/list`) | `nexon/character` 호출 wrapper | API 키 입력 직후 실패하면 "캐릭터 목록을 가져오지 못했습니다" 표시 + 재시도 버튼(키 자체가 무효라면 401/403 처리로 귀결) |
+| 개별 캐릭터 `character/basic` 조회 실패(캐릭터 관리 피커, [[ADR-015]]) | `nexon/character` 병렬 호출 개별 실패 | 그 캐릭터만 이름/레벨(`character/list` 값)로 플레이스홀더 이미지와 함께 표시. 401/403/429처럼 전역 실패면 `syncSchedules`와 동일하게 피커 전체를 에러 상태로 표시(개별 폴백과 구분) |
 | 응답 스키마 불일치 | `nexon/schedule` 파서 | 항목 단위 try/catch, 실패한 항목만 "표시 불가"로 스킵, 나머지는 정상 반영 |
 | 응답이 JSON이 아님(WAF/CDN 차단 페이지 등) | `nexon/client` 공통 HTTP 클라이언트 | JSON 파싱 자체를 try/catch, 네트워크 실패와 동일하게 마지막 캐시 유지로 처리 |
 | 매핑 테이블에 없는 보스명/콘텐츠명 | `nexon/schedule` 정규화 로직 | 원문 그대로 "알 수 없는 콘텐츠"로 표시(크래시 금지) |
@@ -187,6 +197,7 @@ Feature 단위 구조. 각 `features/*` 폴더가 해당 기능의 상태와 로
 - `nexon/schedule` 파싱/정규화: 실제 응답 예시(ADR-007 샘플)를 fixture로 사용한 단위 테스트 — 문자열 flag 파싱, 영↔한 난이도 매핑, 양방향 공백 정규화(공백이 API에 더 많은 경우·데이터에 더 많은 경우 둘 다), `apiAlias` 매핑(시즌 보스 메이린 등), `bossDaily` 필터링, 매핑 테이블에 없는 항목의 폴백 처리
 - `nexon/schedule` 에러 경로: 네트워크 실패·401·429·스키마 불일치·JSON 파싱 실패를 각각 모킹한 단위 테스트 (ADR-008 표의 각 행에 대응하는 테스트가 있어야 함)
 - `nexon/character`: `account_list`/`character_list`가 빈 배열인 경우, 동일 ocid 중복 응답 시 dedup 처리, 동률 레벨 계정 대표 캐릭터 선정(캐릭터명 기준 정렬 — 한글>알파벳>숫자) 각각의 단위 테스트
+- 캐릭터 관리 피커 정렬·필터링([[ADR-015]]): 레벨 내림차순 정렬(동률 시 기존 `compareByName` 기준 2차 정렬), `access_flag: "false"` 캐릭터가 후보 목록에서 제외되는지, `character/basic` 병렬 호출 중 일부만 실패해도 나머지 캐릭터는 정상 표시되는지 검증하는 단위 테스트를 기능 구현 시 추가
 - `nexon/client` 큐잉 로직: 여러 캐릭터를 동기화할 때 초당 5건(개발 단계) 이내로 순차 호출되는지, 429 응답 시 지수 백오프가 다음 허용 시각을 정확히 계산하는지 검증하는 단위 테스트
 - 라우트 가드: 온보딩(API 키 등록)이 완료되지 않은 상태로 일간/주간/타이머 등 다른 화면에 진입 시 온보딩으로 리다이렉트되는지 검증하는 테스트
 - 보스 수익 계산 포뮬러: `floor(priceMeso / partySize)`의 단위 테스트 — 파티원 1명(솔로), 최대 인원, 0/음수 등 잘못된 입력

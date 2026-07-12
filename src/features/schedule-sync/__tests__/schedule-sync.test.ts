@@ -2,8 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { MapleAccount, MapleCharacter, SchedulerCharacterState } from '../../../types'
 import { NexonAuthError, NexonNetworkError, NexonRateLimitError } from '../../../nexon/errors'
 
-const { fetchCharacterListMock, fetchSchedulerCharacterStateMock } = vi.hoisted(() => ({
+const { fetchCharacterListMock, fetchCharacterBasicMock, fetchSchedulerCharacterStateMock } = vi.hoisted(() => ({
   fetchCharacterListMock: vi.fn(),
+  fetchCharacterBasicMock: vi.fn(),
   fetchSchedulerCharacterStateMock: vi.fn(),
 }))
 
@@ -16,8 +17,14 @@ const { getCachedSchedulerStateMock, setCachedSchedulerStateMock } = vi.hoisted(
   setCachedSchedulerStateMock: vi.fn(),
 }))
 
+const { getCachedCharacterBasicMock, setCachedCharacterBasicMock } = vi.hoisted(() => ({
+  getCachedCharacterBasicMock: vi.fn(),
+  setCachedCharacterBasicMock: vi.fn(),
+}))
+
 vi.mock('../../../nexon/character', () => ({
   fetchCharacterList: fetchCharacterListMock,
+  fetchCharacterBasic: fetchCharacterBasicMock,
 }))
 
 vi.mock('../../../nexon/schedule', () => ({
@@ -33,7 +40,12 @@ vi.mock('../../../storage/scheduler-cache', () => ({
   setCachedSchedulerState: setCachedSchedulerStateMock,
 }))
 
-import { getRegisteredCharacters, syncSchedules } from '../schedule-sync'
+vi.mock('../../../storage/character-basic-cache', () => ({
+  getCachedCharacterBasic: getCachedCharacterBasicMock,
+  setCachedCharacterBasic: setCachedCharacterBasicMock,
+}))
+
+import { getCharacterPickerRoster, getRegisteredCharacters, syncSchedules } from '../schedule-sync'
 
 function character(ocid: string): MapleCharacter {
   return {
@@ -64,6 +76,20 @@ function schedulerState(characterName: string): SchedulerCharacterState {
   }
 }
 
+function basicProfile(overrides: { name: string; level: number; imageUrl?: string }): {
+  name: string
+  level: number
+  imageUrl: string
+  accessFlag: boolean
+} {
+  return {
+    name: overrides.name,
+    level: overrides.level,
+    imageUrl: overrides.imageUrl ?? `https://open.api.nexon.com/static/maplestory/character/look/${overrides.name}`,
+    accessFlag: true,
+  }
+}
+
 const NOW = '2026-07-11T00:00:00.000Z'
 
 beforeEach(() => {
@@ -72,6 +98,8 @@ beforeEach(() => {
   getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1', selectedAccountId: 'acc-1' })
   getCachedSchedulerStateMock.mockResolvedValue(null)
   setCachedSchedulerStateMock.mockResolvedValue(undefined)
+  getCachedCharacterBasicMock.mockResolvedValue(null)
+  setCachedCharacterBasicMock.mockResolvedValue(undefined)
 })
 
 afterEach(() => {
@@ -327,5 +355,180 @@ describe('syncSchedules', () => {
     expect(results[1].error).toEqual({ kind: 'invalidApiKey' })
     expect(results[2].error).toEqual({ kind: 'invalidApiKey' })
     expect(results[2].isStale).toBe(true)
+  })
+})
+
+describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신)', () => {
+  it('계정에 캐릭터가 없으면 character/basic을 호출하지 않고 onUpdate([])를 한 번 호출한다', async () => {
+    fetchCharacterListMock.mockResolvedValue([account('acc-1', [])])
+    const onUpdate = vi.fn()
+
+    await getCharacterPickerRoster(onUpdate)
+
+    expect(onUpdate).toHaveBeenCalledWith([])
+    expect(fetchCharacterBasicMock).not.toHaveBeenCalled()
+  })
+
+  it('캐시된 캐릭터는 character/basic 응답을 기다리지 않고 첫 onUpdate에 즉시 포함된다', async () => {
+    const characters = [character('ocid-1')]
+    fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+    getCachedCharacterBasicMock.mockResolvedValue({
+      profile: basicProfile({ name: '캐시캐릭', level: 150 }),
+      cachedAt: '2026-07-11T00:00:00.000Z',
+    })
+    fetchCharacterBasicMock.mockImplementation(() => new Promise(() => {})) // 절대 resolve 안 함
+
+    const onUpdate = vi.fn()
+    void getCharacterPickerRoster(onUpdate)
+
+    await vi.waitFor(() => expect(onUpdate).toHaveBeenCalled())
+    expect(onUpdate.mock.calls[0][0]).toEqual([
+      { ocid: 'ocid-1', name: '캐시캐릭', level: 150, imageUrl: basicProfile({ name: '캐시캐릭', level: 150 }).imageUrl },
+    ])
+  })
+
+  it('캐시가 없는 캐릭터는 character/list의 이름/레벨로 imageUrl: null인 채 첫 onUpdate에 포함된다', async () => {
+    const characters = [character('ocid-1')]
+    fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+    getCachedCharacterBasicMock.mockResolvedValue(null)
+    fetchCharacterBasicMock.mockImplementation(() => new Promise(() => {}))
+
+    const onUpdate = vi.fn()
+    void getCharacterPickerRoster(onUpdate)
+
+    await vi.waitFor(() => expect(onUpdate).toHaveBeenCalled())
+    expect(onUpdate.mock.calls[0][0]).toEqual([
+      { ocid: 'ocid-1', name: '캐릭터-ocid-1', level: 200, imageUrl: null },
+    ])
+  })
+
+  it('캐시상 access_flag가 false인 캐릭터는 첫 onUpdate에서부터 제외된다', async () => {
+    const characters = [character('ocid-1')]
+    fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+    getCachedCharacterBasicMock.mockResolvedValue({
+      profile: { ...basicProfile({ name: '비공개', level: 999 }), accessFlag: false },
+      cachedAt: '2026-07-11T00:00:00.000Z',
+    })
+    fetchCharacterBasicMock.mockImplementation(() => new Promise(() => {}))
+
+    const onUpdate = vi.fn()
+    void getCharacterPickerRoster(onUpdate)
+
+    await vi.waitFor(() => expect(onUpdate).toHaveBeenCalled())
+    expect(onUpdate.mock.calls[0][0]).toEqual([])
+  })
+
+  it('character/basic 응답이 도착하면 값을 갱신하고 캐시에 기록한다', async () => {
+    const characters = [character('ocid-1')]
+    fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+    fetchCharacterBasicMock.mockResolvedValue(basicProfile({ name: '최신캐릭', level: 293 }))
+
+    const onUpdate = vi.fn()
+    await getCharacterPickerRoster(onUpdate)
+
+    const last = onUpdate.mock.calls.at(-1)?.[0]
+    expect(last).toEqual([
+      { ocid: 'ocid-1', name: '최신캐릭', level: 293, imageUrl: basicProfile({ name: '최신캐릭', level: 293 }).imageUrl },
+    ])
+    expect(setCachedCharacterBasicMock).toHaveBeenCalledWith(
+      'ocid-1',
+      expect.objectContaining({ profile: basicProfile({ name: '최신캐릭', level: 293 }) }),
+    )
+  })
+
+  it('character/basic 응답이 access_flag: false면 이후 목록에서 제외된다', async () => {
+    const characters = [character('ocid-1')]
+    fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+    fetchCharacterBasicMock.mockResolvedValue({ ...basicProfile({ name: '숨김', level: 100 }), accessFlag: false })
+
+    const onUpdate = vi.fn()
+    await getCharacterPickerRoster(onUpdate)
+
+    const last = onUpdate.mock.calls.at(-1)?.[0]
+    expect(last).toEqual([])
+  })
+
+  it('character/basic을 Promise.all로 뭉치지 않고 하나씩 끝나는 대로 onUpdate한다', async () => {
+    const characters = [character('ocid-1'), character('ocid-2'), character('ocid-3')]
+    fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+    const resolvers: Array<(profile: ReturnType<typeof basicProfile>) => void> = []
+    fetchCharacterBasicMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolvers.push(resolve)
+        }),
+    )
+
+    const onUpdate = vi.fn()
+    const promise = getCharacterPickerRoster(onUpdate)
+
+    await vi.waitFor(() => expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(3))
+    const callsBeforeAnyResolve = onUpdate.mock.calls.length
+
+    resolvers[0](basicProfile({ name: '캐릭터1', level: 100 }))
+    await vi.waitFor(() => expect(onUpdate.mock.calls.length).toBeGreaterThan(callsBeforeAnyResolve))
+
+    resolvers[1](basicProfile({ name: '캐릭터2', level: 200 }))
+    resolvers[2](basicProfile({ name: '캐릭터3', level: 300 }))
+    await promise
+  })
+
+  it('개별 실패는 기존 값(캐시 또는 character/list)을 유지한 채 조용히 넘어간다', async () => {
+    const characters = [character('ocid-1')]
+    fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+    getCachedCharacterBasicMock.mockResolvedValue({
+      profile: basicProfile({ name: '캐시캐릭', level: 150 }),
+      cachedAt: '2026-07-11T00:00:00.000Z',
+    })
+    fetchCharacterBasicMock.mockRejectedValue(new NexonNetworkError('timeout'))
+
+    const onUpdate = vi.fn()
+    await getCharacterPickerRoster(onUpdate)
+
+    const last = onUpdate.mock.calls.at(-1)?.[0]
+    expect(last).toEqual([
+      { ocid: 'ocid-1', name: '캐시캐릭', level: 150, imageUrl: basicProfile({ name: '캐시캐릭', level: 150 }).imageUrl },
+    ])
+  })
+
+  it('한 캐릭터에서 401(NexonAuthError)이 발생하면 전체를 에러로 던진다', async () => {
+    const characters = [character('ocid-1'), character('ocid-2')]
+    fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+    fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) => {
+      if (ocid === 'ocid-1') throw new NexonAuthError('invalid')
+      return basicProfile({ name: '정상캐릭', level: 100 })
+    })
+
+    await expect(getCharacterPickerRoster(vi.fn())).rejects.toThrow(NexonAuthError)
+  })
+
+  it('한 캐릭터에서 429(NexonRateLimitError)가 발생하면 전체를 에러로 던진다', async () => {
+    const characters = [character('ocid-1'), character('ocid-2')]
+    fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+    fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) => {
+      if (ocid === 'ocid-1') throw new NexonRateLimitError('rate limited')
+      return basicProfile({ name: '정상캐릭', level: 100 })
+    })
+
+    await expect(getCharacterPickerRoster(vi.fn())).rejects.toThrow(NexonRateLimitError)
+  })
+
+  it('정렬은 레벨 내림차순이고, 동레벨이면 대표 캐릭터 비교 로직(한글 우선)으로 2차 정렬한다', async () => {
+    const characters = [character('ocid-1'), character('ocid-2'), character('ocid-3')]
+    fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+    fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) => {
+      const byOcid: Record<string, ReturnType<typeof basicProfile>> = {
+        'ocid-1': basicProfile({ name: 'Alpha', level: 200 }),
+        'ocid-2': basicProfile({ name: '한글캐릭', level: 200 }),
+        'ocid-3': basicProfile({ name: '최고레벨', level: 293 }),
+      }
+      return byOcid[ocid]
+    })
+
+    const onUpdate = vi.fn()
+    await getCharacterPickerRoster(onUpdate)
+
+    const last = onUpdate.mock.calls.at(-1)?.[0] as Array<{ name: string }>
+    expect(last.map((entry) => entry.name)).toEqual(['최고레벨', '한글캐릭', 'Alpha'])
   })
 })

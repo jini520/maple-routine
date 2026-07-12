@@ -33,6 +33,7 @@ describe('onboardingReducer', () => {
       accounts: [],
       selectedAccountId: 'acc-1',
       error: null,
+      prefetchProgress: null,
     })
   })
 
@@ -42,6 +43,7 @@ describe('onboardingReducer', () => {
       accounts: [],
       selectedAccountId: null,
       error: { kind: 'network' },
+      prefetchProgress: null,
     }
 
     const result = onboardingReducer(errored, { type: 'SUBMIT_API_KEY' })
@@ -51,10 +53,11 @@ describe('onboardingReducer', () => {
       accounts: [],
       selectedAccountId: null,
       error: null,
+      prefetchProgress: null,
     })
   })
 
-  it('API_KEY_VERIFIED — 계정이 정확히 1개면 선택 화면 없이 자동으로 completed된다', () => {
+  it('API_KEY_VERIFIED — 계정이 정확히 1개면 선택 화면 없이 prefetching으로 전이한다(ADR-016)', () => {
     const accounts = [account('acc-1')]
 
     const result = onboardingReducer(initialOnboardingState, {
@@ -63,10 +66,11 @@ describe('onboardingReducer', () => {
     })
 
     expect(result).toEqual<OnboardingState>({
-      status: 'completed',
+      status: 'prefetching',
       accounts,
       selectedAccountId: 'acc-1',
       error: null,
+      prefetchProgress: null,
     })
   })
 
@@ -81,6 +85,7 @@ describe('onboardingReducer', () => {
       accounts: [],
       selectedAccountId: null,
       error: null,
+      prefetchProgress: null,
     })
   })
 
@@ -97,6 +102,7 @@ describe('onboardingReducer', () => {
       accounts,
       selectedAccountId: null,
       error: null,
+      prefetchProgress: null,
     })
   })
 
@@ -106,6 +112,7 @@ describe('onboardingReducer', () => {
       accounts: [],
       selectedAccountId: null,
       error: null,
+      prefetchProgress: null,
     }
 
     const result = onboardingReducer(verifying, {
@@ -118,16 +125,18 @@ describe('onboardingReducer', () => {
       accounts: [],
       selectedAccountId: null,
       error: { kind: 'invalidApiKey' },
+      prefetchProgress: null,
     })
   })
 
-  it('SELECT_ACCOUNT — 선택한 계정으로 completed 전이하고 accounts는 유지한다', () => {
+  it('SELECT_ACCOUNT — 선택한 계정으로 prefetching 전이하고 accounts는 유지한다(ADR-016)', () => {
     const accounts = [account('acc-1'), account('acc-2')]
     const selecting: OnboardingState = {
       status: 'selectingAccount',
       accounts,
       selectedAccountId: null,
       error: null,
+      prefetchProgress: null,
     }
 
     const result = onboardingReducer(selecting, {
@@ -136,10 +145,11 @@ describe('onboardingReducer', () => {
     })
 
     expect(result).toEqual<OnboardingState>({
-      status: 'completed',
+      status: 'prefetching',
       accounts,
       selectedAccountId: 'acc-2',
       error: null,
+      prefetchProgress: null,
     })
   })
 
@@ -150,6 +160,7 @@ describe('onboardingReducer', () => {
       accounts,
       selectedAccountId: null,
       error: null,
+      prefetchProgress: null,
     }
 
     const result = onboardingReducer(selecting, {
@@ -162,6 +173,46 @@ describe('onboardingReducer', () => {
       accounts,
       selectedAccountId: null,
       error: { kind: 'storageWriteFailed' },
+      prefetchProgress: null,
+    })
+  })
+
+  it('PREFETCH_PROGRESS — prefetchProgress를 갱신하고 다른 필드는 유지한다', () => {
+    const prefetching: OnboardingState = {
+      status: 'prefetching',
+      accounts: [account('acc-1')],
+      selectedAccountId: 'acc-1',
+      error: null,
+      prefetchProgress: null,
+    }
+
+    const result = onboardingReducer(prefetching, {
+      type: 'PREFETCH_PROGRESS',
+      completed: 3,
+      total: 10,
+    })
+
+    expect(result).toEqual<OnboardingState>({
+      ...prefetching,
+      prefetchProgress: { completed: 3, total: 10 },
+    })
+  })
+
+  it('PREFETCH_FINISHED — completed로 전이하고 prefetchProgress를 지운다', () => {
+    const prefetching: OnboardingState = {
+      status: 'prefetching',
+      accounts: [account('acc-1')],
+      selectedAccountId: 'acc-1',
+      error: null,
+      prefetchProgress: { completed: 10, total: 10 },
+    }
+
+    const result = onboardingReducer(prefetching, { type: 'PREFETCH_FINISHED' })
+
+    expect(result).toEqual<OnboardingState>({
+      ...prefetching,
+      status: 'completed',
+      prefetchProgress: null,
     })
   })
 
@@ -171,6 +222,7 @@ describe('onboardingReducer', () => {
       accounts: [account('acc-1')],
       selectedAccountId: 'acc-1',
       error: null,
+      prefetchProgress: null,
     }
 
     const result = onboardingReducer(completed, { type: 'RESET' })

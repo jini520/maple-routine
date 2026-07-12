@@ -157,31 +157,33 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     })
 
     // ADR-014: 기록이 없는 완료 보스는 화면 진입 전에도 즉시 기본 파티원 수로 자동 기록한다.
-    const autoRecordedRows = await Promise.all(
-      mergedRows.map(async (row) => {
-        if (row.partySize !== null || row.priceMeso === null) {
-          return row
-        }
+    // upsertBossProfitRecord는 단일 공유 SQLite 커넥션에 자체 트랜잭션을 열므로,
+    // Promise.all로 동시 실행하면 트랜잭션이 겹쳐 에러가 난다 — 순차 실행으로 처리한다.
+    const autoRecordedRows: BossProfitRow[] = []
+    for (const row of mergedRows) {
+      if (row.partySize !== null || row.priceMeso === null) {
+        autoRecordedRows.push(row)
+        continue
+      }
 
-        const latestPartySize = await getLatestPartySize(row.ocid, row.boss, row.difficulty)
-        const partySize = latestPartySize ?? 1
-        const payoutMeso = Math.floor(row.priceMeso / partySize)
+      const latestPartySize = await getLatestPartySize(row.ocid, row.boss, row.difficulty)
+      const partySize = latestPartySize ?? 1
+      const payoutMeso = Math.floor(row.priceMeso / partySize)
 
-        await upsertBossProfitRecord({
-          ocid: row.ocid,
-          boss: row.boss,
-          difficulty: row.difficulty,
-          cycle: row.cycle,
-          periodKey: row.periodKey,
-          partySize,
-          priceMeso: row.priceMeso,
-          payoutMeso,
-          recordedAt: now.toISOString(),
-        })
+      await upsertBossProfitRecord({
+        ocid: row.ocid,
+        boss: row.boss,
+        difficulty: row.difficulty,
+        cycle: row.cycle,
+        periodKey: row.periodKey,
+        partySize,
+        priceMeso: row.priceMeso,
+        payoutMeso,
+        recordedAt: now.toISOString(),
+      })
 
-        return { ...row, partySize, payoutMeso }
-      }),
-    )
+      autoRecordedRows.push({ ...row, partySize, payoutMeso })
+    }
 
     set({ status: 'loaded', rows: autoRecordedRows, error: null, staleCharacterNames })
   },

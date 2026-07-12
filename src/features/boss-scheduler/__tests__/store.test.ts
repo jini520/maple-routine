@@ -8,6 +8,10 @@ const { syncSchedulesMock, getTrackedCharacterOcidsMock, setTrackedCharacterOcid
   setTrackedCharacterOcidsMock: vi.fn(),
 }))
 
+const { getCachedSchedulerStateMock } = vi.hoisted(() => ({
+  getCachedSchedulerStateMock: vi.fn(),
+}))
+
 vi.mock('../../schedule-sync/schedule-sync', () => ({
   syncSchedules: syncSchedulesMock,
 }))
@@ -15,6 +19,10 @@ vi.mock('../../schedule-sync/schedule-sync', () => ({
 vi.mock('../../../storage/character-selection', () => ({
   getTrackedCharacterOcids: getTrackedCharacterOcidsMock,
   setTrackedCharacterOcids: setTrackedCharacterOcidsMock,
+}))
+
+vi.mock('../../../storage/scheduler-cache', () => ({
+  getCachedSchedulerState: getCachedSchedulerStateMock,
 }))
 
 import { useBossSchedulerStore } from '../store'
@@ -55,6 +63,7 @@ function syncResult(overrides: Partial<CharacterScheduleSync> = {}): CharacterSc
 
 beforeEach(() => {
   useBossSchedulerStore.setState({ status: 'idle', characters: [], error: null, trackedOcids: null })
+  getCachedSchedulerStateMock.mockResolvedValue(null)
 })
 
 afterEach(() => {
@@ -201,6 +210,36 @@ describe('useBossSchedulerStore', () => {
     expect(state.status).toBe('error')
     expect(state.error).toEqual({ kind: 'network' })
     expect(state.characters).toEqual([])
+  })
+
+  it('ADR-016: 캐시된 값이 있으면 재검증 응답을 기다리지 않고 즉시 characters에 반영한다', async () => {
+    getCachedSchedulerStateMock.mockResolvedValue({
+      state: {
+        asOf: '2026-07-11T00:00+09:00',
+        characterName: '캐시된캐릭터',
+        world: '베라',
+        level: 200,
+        jobClass: '렌',
+        dailyContents: [],
+        weeklyContents: [],
+        bossContents: [bossContent()],
+        weeklyBossClearCount: 5,
+        weeklyBossClearLimitCount: 12,
+      },
+      syncedAt: '2026-07-11T00:00:00.000Z',
+    })
+    syncSchedulesMock.mockImplementation(() => new Promise(() => {})) // 절대 resolve 안 함(재검증 대기 중 상태 관찰용)
+
+    const promise = useBossSchedulerStore.getState().refresh(['ocid-1'])
+
+    await vi.waitFor(() => expect(useBossSchedulerStore.getState().status).toBe('loading'))
+    const state = useBossSchedulerStore.getState()
+    expect(state.characters[0].characterName).toBe('캐시된캐릭터')
+    expect(state.characters[0].isStale).toBe(true)
+    expect(state.characters[0].weeklyBossClearCount).toBe(5)
+    expect(state.characters[0].weeklyBosses).toHaveLength(1)
+
+    void promise // 이 테스트는 재검증이 끝나길 기다리지 않는다
   })
 
   it('refresh 시작 시 status를 loading으로 바꾼다', async () => {

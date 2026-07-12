@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { syncSchedules, type ScheduleSyncError } from '../schedule-sync/schedule-sync'
 import { getTrackedCharacterOcids, setTrackedCharacterOcids } from '../../storage/character-selection'
+import { getCachedSchedulerState } from '../../storage/scheduler-cache'
 import type { DailyContent, WeeklyContent } from '../../types'
 
 export interface ContentCharacterView {
@@ -58,7 +59,29 @@ export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, ge
       return
     }
 
-    set({ status: 'loading' })
+    // ADR-016: 캐시 우선 표시 — 재검증(fetch) 전에 마지막으로 성공한 캐시 값이 있으면
+    // 그 값으로 먼저 채워 화면이 비지 않게 한다. 재검증 응답이 오면 그대로 덮어쓴다.
+    const cachedCharacters = (
+      await Promise.all(
+        ocids.map(async (ocid): Promise<ContentCharacterView | null> => {
+          const cached = await getCachedSchedulerState(ocid)
+          if (cached === null) {
+            return null
+          }
+          return {
+            ocid,
+            characterName: cached.state.characterName,
+            dailyContents: cached.state.dailyContents,
+            weeklyContents: cached.state.weeklyContents,
+            isStale: true,
+            syncedAt: cached.syncedAt,
+            error: null,
+          }
+        }),
+      )
+    ).filter((view): view is ContentCharacterView => view !== null)
+
+    set({ status: 'loading', characters: cachedCharacters })
 
     let results: Awaited<ReturnType<typeof syncSchedules>>
     try {

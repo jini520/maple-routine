@@ -1,4 +1,9 @@
-import type { MapleAccount, NexonCharacterListResponse } from '../../types'
+import type {
+  CharacterBasicProfile,
+  MapleAccount,
+  NexonCharacterBasicResponse,
+  NexonCharacterListResponse,
+} from '../../types'
 
 export function normalizeCharacterList(wire: NexonCharacterListResponse): MapleAccount[] {
   return wire.account_list.map((account) => ({
@@ -11,4 +16,13 @@ export function normalizeCharacterList(wire: NexonCharacterListResponse): MapleA
       level: character.character_level,
     })),
   }))
+}
+
+export function normalizeCharacterBasic(wire: NexonCharacterBasicResponse): CharacterBasicProfile {
+  return {
+    name: wire.character_name,
+    level: wire.character_level,
+    imageUrl: wire.character_image,
+    accessFlag: wire.access_flag === 'true',
+  }
 }

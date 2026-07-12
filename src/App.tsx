@@ -15,15 +15,15 @@ const TAB_ITEMS = [
 
 function BottomTabBar(): React.JSX.Element {
   return (
-    <nav className="fixed inset-x-0 bottom-0 flex justify-around border-t border-[#F0DFD1] bg-white">
+    <nav className="fixed inset-x-0 bottom-0 flex justify-around border-t border-border bg-surface">
       {TAB_ITEMS.map((tab) => (
         <NavLink
           key={tab.to}
           to={tab.to}
           className={({ isActive }) =>
             isActive
-              ? 'flex flex-1 flex-col items-center gap-1 py-2 text-xs font-medium text-[#C2410C]'
-              : 'flex flex-1 flex-col items-center gap-1 py-2 text-xs font-medium text-[#B7A490]'
+              ? 'flex flex-1 flex-col items-center gap-1 py-2 text-xs font-medium text-primary'
+              : 'flex flex-1 flex-col items-center gap-1 py-2 text-xs font-medium text-text-muted'
           }
         >
           <tab.Icon className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
@@ -46,7 +46,7 @@ export function AppShell(): React.JSX.Element {
   const isCompleted = status === 'completed'
 
   return (
-    <div className="min-h-screen bg-[#FFF9F4] text-[#2B1B10]">
+    <div className="min-h-screen bg-bg text-text">
       <div className={isCompleted ? 'pb-16' : undefined}>
         <Routes>
           <Route path="/" element={<Navigate to={isCompleted ? '/content' : '/onboarding'} replace />} />

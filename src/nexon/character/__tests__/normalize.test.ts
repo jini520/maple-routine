@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { NexonCharacterListResponse } from '../../../types'
-import { normalizeCharacterList } from '../normalize'
+import type { NexonCharacterBasicResponse, NexonCharacterListResponse } from '../../../types'
+import { normalizeCharacterBasic, normalizeCharacterList } from '../normalize'
 
 describe('normalizeCharacterList', () => {
   it('snake_case wire 응답을 MapleAccount[] domain 타입으로 변환한다', () => {
@@ -63,5 +63,34 @@ describe('normalizeCharacterList', () => {
 
   it('account_list가 빈 배열이면 빈 배열을 반환한다', () => {
     expect(normalizeCharacterList({ account_list: [] })).toEqual([])
+  })
+})
+
+describe('normalizeCharacterBasic', () => {
+  it('snake_case wire 응답을 domain 타입으로 변환하고 access_flag 문자열을 boolean으로 바꾼다', () => {
+    const wire: NexonCharacterBasicResponse = {
+      character_name: '낟낟',
+      character_level: 293,
+      character_image: 'https://open.api.nexon.com/static/maplestory/character/look/abc?wmotion=W02',
+      access_flag: 'true',
+    }
+
+    expect(normalizeCharacterBasic(wire)).toEqual({
+      name: '낟낟',
+      level: 293,
+      imageUrl: 'https://open.api.nexon.com/static/maplestory/character/look/abc?wmotion=W02',
+      accessFlag: true,
+    })
+  })
+
+  it('access_flag가 "false" 문자열이면 accessFlag: false로 변환한다', () => {
+    const wire: NexonCharacterBasicResponse = {
+      character_name: '가려진부캐',
+      character_level: 220,
+      character_image: 'https://open.api.nexon.com/static/maplestory/character/look/def',
+      access_flag: 'false',
+    }
+
+    expect(normalizeCharacterBasic(wire).accessFlag).toBe(false)
   })
 })

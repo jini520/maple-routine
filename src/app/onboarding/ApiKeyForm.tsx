@@ -17,17 +17,17 @@ export function ApiKeyForm(props: ApiKeyFormProps): React.JSX.Element {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-[14px] bg-white border border-[#F0DFD1] p-6 space-y-4">
-      <div className="h-32 flex items-center justify-center rounded-[10px] border-2 border-dashed border-[#F0DFD1]">
-        <p className="text-sm text-[#B7A490]">API 키 발급 화면 예시</p>
+    <form onSubmit={handleSubmit} className="rounded-[14px] bg-surface border border-border p-6 space-y-4">
+      <div className="h-32 flex items-center justify-center rounded-[10px] border-2 border-dashed border-border">
+        <p className="text-sm text-text-muted">API 키 발급 화면 예시</p>
       </div>
 
-      <p className="text-sm text-[#8A7362]">
+      <p className="text-sm text-text-muted">
         <a
           href="https://openapi.nexon.com"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-[#C2410C] hover:text-[#E6652E] underline"
+          className="text-primary-text hover:text-primary-hover underline"
         >
           openapi.nexon.com
         </a>
@@ -35,7 +35,7 @@ export function ApiKeyForm(props: ApiKeyFormProps): React.JSX.Element {
       </p>
 
       <div className="space-y-1">
-        <label htmlFor="nexon-api-key" className="text-sm font-medium text-[#2B1B10]">
+        <label htmlFor="nexon-api-key" className="text-sm font-medium text-text">
           Nexon Open API 키
         </label>
         <input
@@ -44,16 +44,16 @@ export function ApiKeyForm(props: ApiKeyFormProps): React.JSX.Element {
           value={apiKey}
           onChange={(event) => setApiKey(event.target.value)}
           placeholder="발급받은 API 키를 입력하세요"
-          className="w-full rounded-[10px] bg-white border border-[#F0DFD1] px-4 py-3 text-[#2B1B10]"
+          className="w-full rounded-[10px] bg-surface border border-border px-4 py-3 text-text"
         />
       </div>
 
-      {props.errorMessage !== null && <p className="text-sm text-[#B91C1C]">{props.errorMessage}</p>}
+      {props.errorMessage !== null && <p className="text-sm text-error">{props.errorMessage}</p>}
 
       <button
         type="submit"
         disabled={props.isSubmitting || apiKey.trim().length === 0}
-        className="rounded-full bg-[#FF7033] text-[#2B1206] font-semibold hover:bg-[#E6652E] px-5 py-2.5 disabled:opacity-50"
+        className="rounded-full bg-primary text-bg font-semibold hover:bg-primary-hover px-5 py-2.5 disabled:opacity-50"
       >
         확인
       </button>
