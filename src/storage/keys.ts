@@ -1,6 +1,7 @@
 export const STORAGE_KEYS = {
   apiKey: 'apiKey',
   selectedAccountId: 'selectedAccountId',
+  theme: 'theme',
 } as const
 
 export function schedulerCacheKey(ocid: string): string {
