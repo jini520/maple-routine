@@ -1,16 +1,19 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Navigate, NavLink, Route, Routes } from 'react-router-dom'
-import { Coins, ListChecks, Swords } from 'lucide-react'
+import { Coins, ListChecks, Settings, Swords } from 'lucide-react'
 import { useOnboardingStore } from './features/onboarding/store'
+import { useThemeStore } from './features/theme/store'
 import { OnboardingScreen } from './app/onboarding/OnboardingScreen'
 import { ContentScreen } from './app/content-scheduler/ContentScreen'
 import { BossScreen } from './app/boss-scheduler/BossScreen'
 import { BossProfitScreen } from './app/boss-profit/BossProfitScreen'
+import { SettingsScreen } from './app/settings/SettingsScreen'
 
 const TAB_ITEMS = [
   { to: '/content', label: '컨텐츠', Icon: ListChecks },
   { to: '/boss', label: '보스', Icon: Swords },
   { to: '/profit', label: '수익', Icon: Coins },
+  { to: '/settings', label: '설정', Icon: Settings },
 ] as const
 
 function BottomTabBar(): React.JSX.Element {
@@ -37,9 +40,15 @@ function BottomTabBar(): React.JSX.Element {
 // AppShell은 라우터와 분리해 MemoryRouter로도 테스트할 수 있게 한다.
 export function AppShell(): React.JSX.Element {
   const { status, restoreFromStorage } = useOnboardingStore()
+  const { restoreFromStorage: restoreThemeFromStorage } = useThemeStore()
 
   useEffect(() => {
     restoreFromStorage()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    restoreThemeFromStorage()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -65,6 +74,10 @@ export function AppShell(): React.JSX.Element {
           <Route
             path="/profit"
             element={isCompleted ? <BossProfitScreen /> : <Navigate to="/onboarding" replace />}
+          />
+          <Route
+            path="/settings"
+            element={isCompleted ? <SettingsScreen /> : <Navigate to="/onboarding" replace />}
           />
         </Routes>
       </div>

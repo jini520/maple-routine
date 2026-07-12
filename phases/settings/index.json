@@ -1,0 +1,56 @@
+{
+  "project": "메이플 루틴 (Maple Routine)",
+  "phase": "settings",
+  "steps": [
+    {
+      "step": 0,
+      "name": "theme-data-storage",
+      "status": "completed",
+      "started_at": "2026-07-12T22:54:49+0900",
+      "summary": "레테/렌 13토큰 테마 데이터(job-themes.json)와 storage/theme.ts(Preferences 기반 getTheme/setTheme, 유효하지 않은 값은 null) 추가",
+      "completed_at": "2026-07-12T22:58:00+0900"
+    },
+    {
+      "step": 1,
+      "name": "theme-runtime",
+      "status": "completed",
+      "started_at": "2026-07-12T22:58:00+0900",
+      "summary": "src/index.css에 레테 :root[data-theme] 오버라이드 추가, features/theme/store.ts(Zustand, restoreFromStorage/selectTheme) 신규, App.tsx에서 앱 시작 시 테마 복원 호출 연결",
+      "completed_at": "2026-07-12T22:59:36+0900"
+    },
+    {
+      "step": 2,
+      "name": "settings-state",
+      "status": "completed",
+      "started_at": "2026-07-12T22:59:36+0900",
+      "summary": "features/settings/state.ts 신규 — idle에서 시작해 verifying/selectingAccount/prefetching/error를 거쳐 다시 idle로 순환하는 순수 리듀서(settingsReducer)와 단위 테스트 추가",
+      "completed_at": "2026-07-12T23:01:03+0900"
+    },
+    {
+      "step": 3,
+      "name": "settings-store",
+      "status": "completed",
+      "started_at": "2026-07-12T23:01:03+0900",
+      "summary": "features/settings/store.ts 신규 — changeApiKey/refreshAccounts/selectAccount/disconnect/reset을 갖춘 Zustand 스토어, onboarding/prefetch·storage/api-key·nexon/character를 재사용하며 useOnboardingStore는 disconnect()에서만 참조",
+      "completed_at": "2026-07-12T23:03:37+0900"
+    },
+    {
+      "step": 4,
+      "name": "settings-components",
+      "status": "completed",
+      "started_at": "2026-07-12T23:03:37+0900",
+      "summary": "src/app/settings/ThemeSelector.tsx(레테/렌 토글 카드)·DisconnectConfirm.tsx(오버레이 확인 모달) 신규 — 순수 프레젠테이션 컴포넌트, 단위 테스트 포함",
+      "completed_at": "2026-07-12T23:05:21+0900"
+    },
+    {
+      "step": 5,
+      "name": "settings-screen",
+      "status": "completed",
+      "started_at": "2026-07-12T23:05:21+0900",
+      "summary": "src/app/settings/SettingsScreen.tsx·error-message.ts 신규(계정/테마/연결해제 3섹션), App.tsx에 설정 탭·라우트 추가",
+      "completed_at": "2026-07-12T23:11:54+0900"
+    }
+  ],
+  "created_at": "2026-07-12T22:54:49+0900",
+  "completed_at": "2026-07-12T23:11:54+0900"
+}

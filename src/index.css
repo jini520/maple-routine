@@ -23,3 +23,21 @@
   --color-text-muted: #525475;
   --color-text-disabled: #8a8089;
 }
+
+/* 레테(다크) 테마 — 데이터 출처: src/data/job-themes.json, 값 근거는 docs/UI_GUIDE.md "테마 시스템" 표 (ADR-009) */
+:root[data-theme='레테'] {
+  --color-bg: #0c080f;
+  --color-surface: #1a1720;
+  --color-surface-2: #28232e;
+  --color-border: #37323e;
+  --color-border-strong: #54444e;
+  --color-primary: #9975b3;
+  --color-primary-hover: #85639f;
+  --color-primary-text: #61417b;
+  --color-secondary: #d1c093;
+  --color-info-tint: #c9d6f2;
+  --color-error: #d8608f;
+  --color-text: #e8dfec;
+  --color-text-muted: #b89cbd;
+  --color-text-disabled: #8a758d;
+}

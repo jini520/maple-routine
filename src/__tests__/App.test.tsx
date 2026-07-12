@@ -8,6 +8,8 @@ import { useOnboardingStore } from '../features/onboarding/store'
 import { useContentSchedulerStore } from '../features/content-scheduler/store'
 import { useBossSchedulerStore } from '../features/boss-scheduler/store'
 import { useBossProfitStore } from '../features/boss-profit/store'
+import { useSettingsStore } from '../features/settings/store'
+import { useThemeStore } from '../features/theme/store'
 
 vi.mock('../features/onboarding/store', () => ({
   useOnboardingStore: vi.fn(),
@@ -25,10 +27,20 @@ vi.mock('../features/boss-profit/store', () => ({
   useBossProfitStore: vi.fn(),
 }))
 
+vi.mock('../features/settings/store', () => ({
+  useSettingsStore: vi.fn(),
+}))
+
+vi.mock('../features/theme/store', () => ({
+  useThemeStore: vi.fn(),
+}))
+
 const mockedUseOnboardingStore = vi.mocked(useOnboardingStore)
 const mockedUseContentSchedulerStore = vi.mocked(useContentSchedulerStore)
 const mockedUseBossSchedulerStore = vi.mocked(useBossSchedulerStore)
 const mockedUseBossProfitStore = vi.mocked(useBossProfitStore)
+const mockedUseSettingsStore = vi.mocked(useSettingsStore)
+const mockedUseThemeStore = vi.mocked(useThemeStore)
 
 function mockStore(overrides: Partial<ReturnType<typeof useOnboardingStore>>): void {
   mockedUseOnboardingStore.mockReturnValue({
@@ -73,6 +85,24 @@ mockedUseBossProfitStore.mockReturnValue({
   loadTrackedOcids: vi.fn(),
   refresh: vi.fn(),
   setPartySize: vi.fn(),
+})
+
+mockedUseSettingsStore.mockReturnValue({
+  status: 'idle',
+  accounts: [],
+  error: null,
+  prefetchProgress: null,
+  changeApiKey: vi.fn(),
+  refreshAccounts: vi.fn(),
+  selectAccount: vi.fn(),
+  disconnect: vi.fn(),
+  reset: vi.fn(),
+})
+
+mockedUseThemeStore.mockReturnValue({
+  theme: '렌',
+  restoreFromStorage: vi.fn(),
+  selectTheme: vi.fn(),
 })
 
 function renderAt(path: string): void {
@@ -130,6 +160,22 @@ describe('AppShell', () => {
     expect(screen.getByRole('heading', { name: '주간 보스 수익 계산기' })).toBeInTheDocument()
   })
 
+  it('status가 completed가 아닐 때 /settings로 접근하면 온보딩으로 리다이렉트된다', () => {
+    mockStore({ status: 'awaitingApiKey' })
+
+    renderAt('/settings')
+
+    expect(screen.getByLabelText(/API 키/)).toBeInTheDocument()
+  })
+
+  it('status가 completed일 때 /settings로 접근하면 설정 화면이 보인다', () => {
+    mockStore({ status: 'completed', selectedAccountId: 'account-1' })
+
+    renderAt('/settings')
+
+    expect(screen.getByRole('heading', { name: '설정' })).toBeInTheDocument()
+  })
+
   it('status가 completed일 때 /onboarding으로 접근하면 /content로 리다이렉트된다', () => {
     mockStore({ status: 'completed', selectedAccountId: 'account-1' })
 
@@ -138,7 +184,7 @@ describe('AppShell', () => {
     expect(screen.getByRole('heading', { name: '컨텐츠 스케줄러' })).toBeInTheDocument()
   })
 
-  it('status가 completed일 때 하단 탭바(컨텐츠/보스/수익 탭)가 보인다', () => {
+  it('status가 completed일 때 하단 탭바(컨텐츠/보스/수익/설정 탭)가 보인다', () => {
     mockStore({ status: 'completed', selectedAccountId: 'account-1' })
 
     renderAt('/content')
@@ -146,6 +192,7 @@ describe('AppShell', () => {
     expect(screen.getByRole('link', { name: '컨텐츠' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: '보스' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: '수익' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: '설정' })).toBeInTheDocument()
   })
 
   it('status가 completed가 아닐 때는 탭바가 렌더링되지 않는다', () => {
@@ -156,6 +203,7 @@ describe('AppShell', () => {
     expect(screen.queryByRole('link', { name: '컨텐츠' })).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: '보스' })).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: '수익' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: '설정' })).not.toBeInTheDocument()
   })
 
   it('status가 completed이고 현재 경로가 /content이면 "컨텐츠" 탭이 활성 스타일이다', () => {

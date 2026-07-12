@@ -12,15 +12,17 @@ src/
 │   ├── hunting-timer/      # 사냥 타이머 화면
 │   ├── boss-profit/        # 주간 보스 수익 계산기 화면
 │   ├── item-drop/          # 물욕 아이템 드랍 현황 화면
-│   └── settings/            # API 키 재입력, 계정(메이플 ID) 변경, opt-in 크래시 리포팅 토글
+│   └── settings/            # API 키 재입력, 계정(메이플 ID) 변경, 연결 해제, 테마 선택(레테/렌). 크래시 리포팅 토글·알림 권한 재요청 안내·미예약 알림 개수 표시는 후속 task
 ├── features/                # 기능별 도메인 로직 (UI 상태 + 비즈니스 로직)
 │   ├── onboarding/           # API 키 입력 → 계정 목록 조회 → 계정 선택 흐름
 │   ├── content-scheduler/    # 일간 콘텐츠 + 주간 콘텐츠 상태 ([[ADR-013]], 기존 daily-scheduler/weekly-scheduler 통합)
 │   ├── boss-scheduler/       # 주간 보스 + 월간 보스 상태, cycle별 분리 ([[ADR-013]])
 │   ├── hunting-timer/
 │   ├── boss-profit/
-│   └── item-drop/
-├── data/                    # 게임 레퍼런스 데이터 (보스 목록, 결정 가격표, 드랍 테이블, 보스 반지 상자 확률표) — 버전 명시. job-themes.json(테마별 13토큰 컬러, [[ADR-009]])은 "레테"·"렌" 값 확정, 다중 테마 전환 기능 착수 전까지 파일 생성 보류(현재는 `src/index.css`에 렌 값 정적 반영)
+│   ├── item-drop/
+│   ├── settings/              # API 키·계정(메이플 ID) 변경, 연결 해제 (2026-07-12 정리 — 그동안 app/settings만 언급되고 이 폴더는 누락돼 있었음)
+│   └── theme/                 # 선택된 테마(레테/렌) 상태, storage/theme.ts로 영속화 ([[ADR-009]] 재개, 2026-07-12)
+├── data/                    # 게임 레퍼런스 데이터 (보스 목록, 결정 가격표, 드랍 테이블, 보스 반지 상자 확률표) — 버전 명시. job-themes.json(테마별 13토큰 컬러, [[ADR-009]])은 "레테"·"렌" 값 확정 — 설정 화면 task에서 파일로 반영(재개, 2026-07-12)
 ├── nexon/                   # Nexon Open API 클라이언트 ([[ADR-007]]) — 사용자 개인 API 키로 직접 호출, 서버 없음
 │   ├── character/            # GET /maplestory/v1/character/list로 계정 소속 캐릭터 목록 자동 조회(수동 등록 폼 없음). GET /maplestory/v1/character/basic(ocid별, [[ADR-015]])로 "캐릭터 관리" 피커의 캐릭터 이미지(`character_image`)·`access_flag`를 병렬 조회
 │   └── schedule/             # 스케줄러 Open API 호출 + src/data/ 참조 테이블과의 매핑(난이도 영↔한글, 보스명 정규화, cycle 기반 bossDaily 필터링)
@@ -30,7 +32,8 @@ src/
 │   └── notification-sync/   # 알림 발송 직전 백그라운드에서 Nexon API 재확인 후 조건부 발송 (WorkManager / BGAppRefreshTask, [[ADR-004]])
 ├── components/              # 공용 UI 컴포넌트
 │   ├── BossPortrait/         # 보스 초상화 표시 공용 컴포넌트([[ADR-011]]) — feature 2(주간 스케줄러)·4(보스 수익 계산기)·5(물욕 아이템)가 보스를 나타낼 때 공통으로 씀. lib/boss-icons로 이미지 조회, 없으면 플레이스홀더
-│   └── CharacterTrackingPicker/  # "캐릭터 관리" 피커([[ADR-012]]) — 레벨 내림차순 정렬 + 캐릭터 이미지 카드형 그리드([[ADR-015]]). 컨텐츠/보스 스케줄러 화면이 동일 컴포넌트 공유
+│   ├── CharacterTrackingPicker/  # "캐릭터 관리" 피커([[ADR-012]]) — 레벨 내림차순 정렬 + 캐릭터 이미지 카드형 그리드([[ADR-015]]). 컨텐츠/보스 스케줄러 화면이 동일 컴포넌트 공유
+│   └── Modal/                 # 오버레이 모달 공용 래퍼(2026-07-13) — CharacterTrackingPicker/DisconnectConfirm에 있던 오버레이 마크업을 공용화. `card` prop으로 카드 스타일 유무 전환(설정 화면의 ApiKeyModal/AccountModal이 card=false로 자체 카드형 컴포넌트를 그대로 담을 때 사용, `docs/UI_GUIDE.md` "설정 리스트 행 + 모달" 참고)
 ├── assets/
 │   ├── items/                # 물욕템 아이콘 이미지([[ADR-011]]) — 사용자가 직접 추가한 기존 파일 그대로 사용(영문 내부 코드명 스타일, 예: dark_boss_ring.png). src/data/item-icons.json이 한글 아이템명↔파일명 매핑 테이블
 │   │   └── rings/             # 특수 스킬 반지 전용 서브폴더([[ADR-011]]) — GMS 영문명으로 파일명 정리 완료(예: Ring_of_Restraint.png). boss-ring-boxes.json의 iconFile 필드가 매핑 테이블
@@ -108,6 +111,14 @@ Feature 단위 구조. 각 `features/*` 폴더가 해당 기능의 상태와 로
   → (Android) 커스텀 플러그인이 Foreground Service 시작 + Chronometer 알림 표시 + 주기 사운드 재생
   → (iOS) 커스텀 플러그인이 Live Activity 시작(경과 시간 표시) + 주기 사운드는 로컬 알림/오디오 세션으로 트리거
   → 타이머 정지 시 상시 알림/Live Activity 종료 및 예약 해제 ( [[ADR-005]] )
+
+[설정 화면 — 여러 화면 설명에 흩어져 있던 요구사항을 통합 정리, 2026-07-12. 진입 경로는 하단 탭바 4번째 탭(확정, 2026-07-12)]
+설정 화면 진입
+  → API 키 재입력/변경: storage/의 보안 영역에 새 키를 덮어쓰고 nexon/character로 재검증([[ADR-007]], [[ADR-003]])
+  → 계정(메이플 ID) 변경: API 키 재입력 없이, 저장된 키로 character/list를 다시 호출해 계정 선택 UI(`AccountSelectionList` 재사용)를 다시 보여주고, 선택된 accountId만 storage/에 갱신한다(확정, 2026-07-12). 캐릭터 관련 로컬 기록(보스 수익·드랍 히스토리)은 삭제하지 않음([[ADR-008]] 참조 무결성)
+  → 연결 해제(로그아웃, 확정, 2026-07-12): `storage/api-key.ts`의 `clearAuthConfig()`와 `features/onboarding`의 `RESET` 이벤트를 그대로 재사용해 온보딩 화면으로 되돌아간다 — 별도 신규 로직 없이 기존 두 조각을 연결하는 수준
+  → 테마 선택(재개, 2026-07-12, [[ADR-009]]): 레테/렌 중 선택하면 features/theme의 Zustand 스토어가 갱신되고 storage/theme.ts에 영속화, `:root[data-theme]` 오버라이드로 즉시 반영
+  → 다음 항목은 이번 task 범위 밖(후속 task로 미룸, 2026-07-12): 크래시 리포팅 opt-in 토글([[ADR-008]], `lib/error-reporting` 미구현), 알림 권한 재요청 안내, 미예약 알림 개수 표시([[ADR-004]] 64개 한도 우선순위 정책 자체가 미구현)
 ```
 
 ## 상태 관리
@@ -118,7 +129,9 @@ Feature 단위 구조. 각 `features/*` 폴더가 해당 기능의 상태와 로
 ## 테마 시스템 ([[ADR-009]])
 직업 고유 컬러 기반 다중 테마 지원 예정. **정정(2026-07-12)**: Primary 하나만 파생 공식으로 확장하는 방식은 폐기, 테마마다 13개 시맨틱 토큰(`bg`/`surface`/`surface-2`/`border`/`border-strong`/`primary`/`primary-hover`/`primary-text`/`secondary`/`info-tint`/`error`/`text`/`text-muted`/`text-disabled`)을 값으로 직접 갖는다. 현재 "레테"(다크)·"렌"(라이트, 2026-07-12 재수정) 2개 테마의 실제 컬러 값이 확정됐다(값은 `docs/UI_GUIDE.md` "테마 시스템" 표 참고, `src/data/job-themes.json` 반영은 구현 단계에서 진행).
 
-**구현 범위 축소(2026-07-12)**: 런타임 전환 기능은 당장 만들지 않는다 — "렌" 13토큰 값을 `src/index.css`의 `@theme` 블록에 정적으로 반영해 활성 팔레트를 레테→렌으로 교체하는 것까지만 이번 범위다. 아래는 전환 기능이 실제로 필요해질 때의 목표 설계이며 현재 미구현이다: Tailwind v4 `@theme` 블록이 기본 테마 값을 정의하고, `:root[data-theme="..."] { --color-*: ...; }`로 오버라이드. Tailwind v4 유틸리티(`bg-primary`, `text-text` 등)는 이미 `var(--color-*)`를 참조하므로 `features/*`·`components/` 코드 변경 없이 `data-theme` 속성 전환만으로 테마가 바뀐다. 선택된 테마는 위 "상태 관리"와 동일하게 Zustand(`src/features/theme/store.ts`) + `storage/`(`src/storage/theme.ts`, 기존 `api-key.ts` 등과 같은 `Preferences` 기반 어댑터 패턴) 영속화로 관리하고, `AppShell`의 `restoreFromStorage` 흐름과 같은 위치에서 앱 시작 시 hydration하는 구조를 제안.
+**구현 범위 축소(2026-07-12)**: 런타임 전환 기능은 당장 만들지 않는다 — "렌" 13토큰 값을 `src/index.css`의 `@theme` 블록에 정적으로 반영해 활성 팔레트를 레테→렌으로 교체하는 것까지만 이번 범위다. 아래는 전환 기능이 실제로 필요해질 때의 목표 설계다.
+
+**재개(2026-07-12, 설정 화면 task 범위 포함)**: 위 "구현 범위 축소"로 미뤄뒀던 런타임 전환 인프라를 이번에 구현한다. Tailwind v4 `@theme` 블록이 기본(레테) 테마 값을 정의하고, `:root[data-theme="..."] { --color-*: ...; }`로 오버라이드. Tailwind v4 유틸리티(`bg-primary`, `text-text` 등)는 이미 `var(--color-*)`를 참조하므로 `features/*`·`components/` 코드 변경 없이 `data-theme` 속성 전환만으로 테마가 바뀐다. 선택된 테마는 위 "상태 관리"와 동일하게 Zustand(`src/features/theme/store.ts`) + `storage/theme.ts`(기존 `api-key.ts`와 같은 `Preferences` 기반 어댑터 패턴) 영속화로 관리하고, `AppShell`의 `restoreFromStorage` 흐름과 같은 위치에서 앱 시작 시 hydration한다. 설정 화면에서는 레테/렌 두 값 중 하나를 고르는 최소 범위 선택 UI만 제공한다(직업 기반 자동 매핑은 여전히 미정이라 범위 밖).
 
 기존 `--color-gold`/`--color-gold-bright`/`--color-magenta`/`--color-neutral-warm` 토큰은 13토큰 스키마에 없어 폐기하고 사용처를 마이그레이션한다(`gold`→`secondary`, `magenta`→`error`, `neutral-warm`→`text-muted` 통합, `gold-bright`는 미사용 확인 후 폐기) — 상세는 [[ADR-009]] 2026-07-12 정정 참고. 이 마이그레이션은 정적 교체 범위에 포함되어 지금 진행한다.
 
@@ -140,7 +153,7 @@ Feature 단위 구조. 각 `features/*` 폴더가 해당 기능의 상태와 로
   - 보스명·난이도 표기를 `src/data/`의 참조 테이블과 매핑할 때: 난이도는 영문 소문자 ↔ 한글로 변환하고, 보스명은 **양쪽 문자열에서 공백을 전부 제거한 뒤 비교**한다(공백이 API 쪽에 더 있을 때도, 우리 데이터 쪽에 더 있을 때도 있어서 한쪽으로 가정하면 안 됨 — 예: API `검은 마법사` vs 데이터 `검은마법사`, 반대로 API `블러디퀸` vs 데이터 `블러디 퀸`). 공백 제거로도 못 잡는 예외(예: API `시즌 보스 메이린` ↔ 데이터 `메이린`)는 `weekly-bosses.json`의 `apiAlias` 필드로 명시적으로 매핑한다.
 - 이 레이어가 없으면 `features/daily-scheduler`·`features/weekly-scheduler`가 Nexon 응답의 원시 필드(`registration_flag`가 문자열인 점 등)를 직접 알아야 하므로, 격리 목적상 반드시 이 레이어를 거친다.
 - 별도 서버/프록시 없음 — API 키는 사용자 기기에만 저장되고, 호출도 기기에서 Nexon Open API로 직접 나간다 ([[ADR-003]]).
-- 이용약관에 따른 출처 표기 "NEXON Open API를 이용한 것임"은 앱 **footer**에 상시 노출한다(확정, 2026-07-09, [[ADR-007]] "이용약관 준수 사항").
+- 이용약관에 따른 출처 표기는 영문 원문 "Data based on NEXON Open API"를 **설정 화면 하단**(앱 버전·카피라이트와 함께)에 상시 노출한다(**정정, 2026-07-13** — 앱 전역 footer는 만들지 않음, [[ADR-007]] "이용약관 준수 사항" 참고).
 - **확정(2026-07-09)**: `character/list`는 API 키가 등록된 Nexon 계정 소속 캐릭터만 반환하며, 다른 Nexon 계정의 캐릭터는 반환하지 않는다. 다른 계정 캐릭터를 보려면 그 계정으로 발급받은 별도의 API 키가 필요하다.
 
 ## 게임 레퍼런스 데이터 ([[ADR-006]])
