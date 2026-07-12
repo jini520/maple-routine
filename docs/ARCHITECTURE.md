@@ -69,6 +69,7 @@ Feature 단위 구조. 각 `features/*` 폴더가 해당 기능의 상태와 로
   → storage/에 "마지막 동기화 결과 캐시" + 동기화 시각으로 저장
   → boss_contents에서 새로 complete_flag: true로 바뀐 보스가 있어도 features/boss-profit에 별도 안내(배지 등)를 표시하지 않는다(확정, 2026-07-09, 자동 유도 UI 없음 — 이 부분은 [[ADR-014]] 이후에도 유지). **정정(2026-07-11, [[ADR-014]])**: ~~사용자가 화면에 직접 들어와 파티원 수를 입력한다~~ → 화면에 들어오지 않아도 수익 기록 자체는 자동 생성된다(아래 "보스 수익 계산기" 흐름 참고), 사용자는 값을 확인/수정하고 싶을 때만 화면에 들어온다
   → features/content-scheduler(일간 탭: dailyContents, 주간 탭: weeklyContents), features/boss-scheduler(주간 탭: cycle=weekly인 bossContents, 월간 탭: cycle=monthly인 bossContents)가 캐시를 읽어 읽기 전용으로 표시(완전 읽기 전용, 앱 내 수동 체크 없음 — 확정, [[ADR-007]]. 화면 재편은 [[ADR-013]], 2026-07-11 — 기존 features/daily-scheduler·features/weekly-scheduler를 대체)
+  → **`CharacterSelectDropdown` 캐릭터 순서·초기 선택 (신규, 2026-07-12, [[ADR-017]])**: 드롭다운 순서는 `storage/character-basic-cache`의 `level`을 병합해 `CharacterTrackingPicker`([[ADR-015]])와 동일하게 레벨 내림차순(동레벨이면 `compareByName`)으로 정렬한다 — 캐시 단계(`trackedOcids` 저장 순서)와 동기화 단계(`syncSchedules`가 계정 전체 캐릭터 목록에서 필터링한 순서, line 64 참고)가 서로 달라 생기던 순서 불일치를 없앤다. 이와 별개로 컨텐츠/보스 스케줄러 둘 다 신규 키 `lastSelectedCharacter:content`/`lastSelectedCharacter:boss`(Preferences)에 사용자가 마지막으로 고른 ocid를 저장해두고, 화면 진입 시 `characters[0]` 폴백보다 이 값을 우선한다 — 정렬 통일만으로는 레벨 캐시가 아직 없는 캐릭터가 섞였을 때 순서가 잠깐 어긋날 수 있어, 두 단계 사이에서 보이는 캐릭터가 바뀌는 것처럼 보이던 버그를 직접적으로 막는 장치다. 실제로 보고된 증상은 보스 스케줄러뿐이지만 컨텐츠 스케줄러도 동일한 코드 패턴이라 같은 버그가 아직 드러나지 않았을 뿐일 수 있어, 증상 재현을 기다리지 않고 두 화면 모두에 선제 적용한다
   → features/item-drop은 같은 캐시에서 "등록된(`registration_flag: true`) 주간 보스 목록"만 읽기 전용으로 구독한다([[ADR-011]]). **정정(2026-07-11)**: ~~features/boss-profit도 동일하게 "등록된 주간 보스 목록"을 구독~~ — features/boss-profit은 등록 여부가 아니라 **처치된(`complete_flag: true`) 보스만** 구독·표시하고, 수익 계산도 처치된 보스만을 대상으로 한다(등록만 하고 아직 안 잡은 보스는 수익 계산기에 나타나지 않음 — `docs/PRD.md` "4. 주간 보스 수익 계산기" 참고, 사용자 확정). 두 feature 모두 이 목록 자체는 편집 불가하고, 사용자가 남기는 기록(파티원 수·아이템 획득)만 별도로 storage/에 쓴다
 
 [알림 발송 판단 — 실시간 재확인, [[ADR-004]] 확정 2026-07-09]
@@ -82,11 +83,12 @@ Feature 단위 구조. 각 `features/*` 폴더가 해당 기능의 상태와 로
 
 [보스 수익 계산기 / 물욕 아이템 드랍 — 보스 목록은 Nexon 동기화 캐시 구독, 기록 자체는 로컬 전용. [[ADR-010]]·[[ADR-011]]으로 확장]
 보스 수익 계산기 진입
-  → features/boss-profit이 위 동기화 캐시에서 **처치된(`complete_flag: true`) 보스**만 cycle 무관(weekly+monthly 모두 — 검은마법사 포함)하게 구독해 **보스 목록**으로 표시(등록 여부는 무관, line 69 참고)
+  → features/boss-profit이 위 동기화 캐시에서 **처치된(`complete_flag: true`) 보스**만 cycle 무관(weekly+monthly 모두 — 검은마법사 포함)하게 구독해 **보스 목록**으로 표시(등록 여부는 무관, line 69 참고). **정정(2026-07-12, [[ADR-017]])**: 구독 자체는 cycle 무관을 유지하되(월간 보스 기록은 계속 자동 생성·누적), 이 화면의 **표시**는 당분간 주간(cycle: weekly)으로 한정한다 — 월간 노출 방법(탭 등)은 미정
+  → **캐시 우선 표시(2026-07-12, [[ADR-017]])**: [[ADR-016]]과 동일하게 `syncSchedules` 재검증 전 `getCachedSchedulerState`로 화면을 먼저 채운다(컨텐츠/보스 스케줄러에만 있던 캐시를 이 화면까지 확장)
   → 추적 대상 캐릭터는 boss-scheduler(핵심 기능 2)와 동일하게 `trackedCharacters:boss`를 재사용한다(이 화면 전용의 별도 캐릭터 추적 UI 없음, 확정 2026-07-11)
   → 보스별로 `boss-crystal-prices.json`에서 정가를 조회해 `partySizeScaling.formula`(`floor(priceMeso / partySize)`)로 수익 계산, `priceMeso`가 없는 보스(벨로나)는 "가격 미확정"으로 표시
   → **자동 기록 ([[ADR-014]], 2026-07-11 신규)**: 아직 로컬 기록이 없는 (ocid, boss, difficulty, periodKey) 조합을 만나면, `storage/boss-profit`에서 같은 (ocid, boss, difficulty)의 `period_key` 조건 없이 가장 최근 `recorded_at` 레코드 1건을 조회해 그 `party_size`를 기본값으로 쓰고(없으면 1), 그 값으로 즉시 `boss_profit_records`에 upsert한다 — 사용자가 화면에 들어오는 것과 무관하게 동기화 시점에 바로 반영됨
-  → **화면 레이아웃 ([[ADR-014]])**: features/boss-profit은 캐릭터별로 그룹핑한 뒤 각 그룹의 "이번 주"(cycle: weekly) 합계를 계산해 드롭다운 헤더에 노출하고, 전체 캐릭터의 "이번 주" 합계를 화면 최상단에 별도로 표시한다. 월간 보스(검은마법사) 합계는 상단 총합에 포함하지 않고 각 캐릭터 드롭다운 내부에서 "이번 달" 구분으로만 표시
+  → **화면 레이아웃 ([[ADR-014]])**: features/boss-profit은 캐릭터별로 그룹핑한 뒤 각 그룹의 "이번 주"(cycle: weekly) 합계를 계산해 드롭다운 헤더에 노출하고, 전체 캐릭터의 "이번 주" 합계를 화면 최상단에 별도로 표시한다. ~~월간 보스(검은마법사) 합계는 상단 총합에 포함하지 않고 각 캐릭터 드롭다운 내부에서 "이번 달" 구분으로만 표시~~ → **정정(2026-07-12, [[ADR-017]])**: 아코디언을 펼쳤을 때 헤더의 합계와 그 안 섹션 타이틀("이번 주 합계 N 메소")이 같은 숫자를 중복 표시하고 있어 섹션 타이틀의 합계 문구는 제거(합계는 헤더에만 유지), 월간 보스 "이번 달" 구분 표시는 이 화면에서 당분간 제거
 
 물욕 아이템 드랍 진입
   → features/item-drop이 위 동기화 캐시에서 `cycle: bossWeekly` + `registration_flag: true`인 보스만 이름 기준으로 중복 제거해 **보스 목록**으로 표시(난이도 표기 없음, [[ADR-011]])
