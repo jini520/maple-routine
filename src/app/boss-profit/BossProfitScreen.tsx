@@ -224,7 +224,11 @@ export function BossProfitScreen(): React.JSX.Element {
         </p>
       )}
 
-      {(status === 'idle' || status === 'loading') && <p className="text-sm text-text-muted">불러오는 중...</p>}
+      {/* ADR-017: 캐시된 rows가 있으면 재검증(status: 'loading') 중에도 계속 보여준다 —
+          "불러오는 중"은 보여줄 데이터가 아예 없을 때만 표시한다. */}
+      {(status === 'idle' || status === 'loading') && rows.length === 0 && (
+        <p className="text-sm text-text-muted">불러오는 중...</p>
+      )}
 
       {status === 'error' && (
         <p className="text-sm text-error">{error !== null ? formatScheduleSyncError(error) : '오류가 발생했습니다'}</p>
@@ -236,14 +240,14 @@ export function BossProfitScreen(): React.JSX.Element {
         </div>
       )}
 
-      {status === 'loaded' && rows.length > 0 && (
+      {rows.length > 0 && (
         <div className="rounded-[14px] bg-surface border border-border shadow-[0_1px_2px_rgba(0,0,0,0.3),0_4px_12px_rgba(153,117,179,0.18)] p-6 text-center">
           <p className="text-sm text-text-muted">이번 주 총 수익</p>
           <p className="text-lg font-semibold text-text">{weeklyTotalMeso.toLocaleString()} 메소</p>
         </div>
       )}
 
-      {status === 'loaded' &&
+      {rows.length > 0 &&
         characterGroups.map((group) => (
           <CharacterAccordion key={group.ocid} group={group} setPartySize={setPartySize} />
         ))}
