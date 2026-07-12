@@ -1,0 +1,32 @@
+{
+  "project": "메이플 루틴 (Maple Routine)",
+  "phase": "scheduler",
+  "steps": [
+    {
+      "step": 0,
+      "name": "schedule-sync",
+      "status": "completed",
+      "started_at": "2026-07-11T03:59:36+0900",
+      "summary": "storage/scheduler-cache.ts를 {state, syncedAt} 형태(CachedSchedulerEntry)로 확장하고, features/schedule-sync/schedule-sync.ts에 getRegisteredCharacters·syncAllSchedules 공용 동기화 모듈을 추가(캐릭터 순차 조회, 401/403/429는 전역 실패로 이후 캐릭터 API 호출 중단 후 캐시 폴백, 그 외 네트워크 실패는 캐릭터별 독립 처리).",
+      "completed_at": "2026-07-11T04:04:20+0900"
+    },
+    {
+      "step": 1,
+      "name": "daily-scheduler",
+      "status": "completed",
+      "started_at": "2026-07-11T04:04:20+0900",
+      "summary": "features/daily-scheduler/store.ts에 syncAllSchedules() 결과를 읽기 전용 DailyCharacterView[]로 매핑하는 Zustand 스토어 추가(캐릭터별 error/isStale은 개별 항목에만 반영, syncAllSchedules() 자체가 throw할 때만 전체 status: 'error').",
+      "completed_at": "2026-07-11T04:06:04+0900"
+    },
+    {
+      "step": 2,
+      "name": "weekly-scheduler",
+      "status": "completed",
+      "started_at": "2026-07-11T04:06:04+0900",
+      "summary": "src/lib/boss-matching.ts에 API BossContent를 weekly-bosses.json(weekly/eventWeekly/monthly 전체)과 매칭하는 순수 함수 matchBossContent 추가(양쪽 공백 제거 비교 + apiAlias 예외, 매칭 실패는 matchedBossName: null로 원문 보존), features/weekly-scheduler/store.ts에 이를 활용한 Zustand 스토어 추가(daily-scheduler와 동일한 refresh 패턴, weeklyContents·bosses·weeklyBossClearCount/LimitCount 매핑). docs/ARCHITECTURE.md의 nexon/schedule 관련 서술도 정정.",
+      "completed_at": "2026-07-11T04:09:56+0900"
+    }
+  ],
+  "created_at": "2026-07-11T03:59:36+0900",
+  "completed_at": "2026-07-11T04:09:57+0900"
+}

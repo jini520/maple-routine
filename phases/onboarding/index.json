@@ -1,0 +1,24 @@
+{
+  "project": "메이플 루틴 (Maple Routine)",
+  "phase": "onboarding",
+  "steps": [
+    {
+      "step": 0,
+      "name": "onboarding-state",
+      "status": "completed",
+      "started_at": "2026-07-11T03:07:52+0900",
+      "summary": "src/features/onboarding/state.ts에 순수 온보딩 리듀서(onboardingReducer)와 OnboardingState/OnboardingStatus/OnboardingError/OnboardingEvent 타입 작성 — API_KEY_VERIFIED 시 계정 1개면 자동 completed, 그 외는 selectingAccount로 전이하는 규칙 포함 7가지 상태 전이 전부 구현, 테스트 9건 추가",
+      "completed_at": "2026-07-11T03:10:12+0900"
+    },
+    {
+      "step": 1,
+      "name": "onboarding-store",
+      "status": "completed",
+      "started_at": "2026-07-11T03:10:12+0900",
+      "summary": "src/features/onboarding/store.ts에 useOnboardingStore(Zustand) 작성 — restoreFromStorage/submitApiKey/selectAccount/reset이 전부 onboardingReducer를 거쳐 상태를 갱신하고, 계정 1개 자동완료 경로 포함 completed 전이 전마다 setSelectedAccountId 저장을 선행·실패 시 storageWriteFailed 에러로 전환. 테스트 15건 추가",
+      "completed_at": "2026-07-11T03:12:41+0900"
+    }
+  ],
+  "created_at": "2026-07-11T03:07:52+0900",
+  "completed_at": "2026-07-11T03:12:42+0900"
+}

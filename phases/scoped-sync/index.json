@@ -1,0 +1,40 @@
+{
+  "project": "메이플 루틴 (Maple Routine)",
+  "phase": "scoped-sync",
+  "steps": [
+    {
+      "step": 0,
+      "name": "schedule-sync-scoped",
+      "status": "completed",
+      "started_at": "2026-07-11T06:36:18+0900",
+      "summary": "syncAllSchedules()를 syncSchedules(ocids: string[])로 변경해 지정된 캐릭터만 스케줄 API를 호출하도록 하고(빈 배열이면 네트워크 호출 없이 [] 반환), daily/weekly-scheduler store가 새 시그니처에 맞춰 임시로 전체 등록 캐릭터를 전달하도록 갱신",
+      "completed_at": "2026-07-11T06:41:49+0900"
+    },
+    {
+      "step": 1,
+      "name": "scoped-refresh-stores",
+      "status": "completed",
+      "started_at": "2026-07-11T06:41:49+0900",
+      "summary": "daily/weekly-scheduler store의 refresh()를 refresh(ocids: string[])로 바꿔 syncSchedules(ocids)에 그대로 전달하고(빈 배열이면 syncSchedules 호출 없이 즉시 loaded/빈 배열 상태로), 더 이상 store가 직접 getRegisteredCharacters를 호출하지 않도록 정리 — DailyScreen/WeeklyScreen의 refresh() 호출부는 컴파일 통과를 위해 trackedOcids를 인자로 전달하도록 최소 수정",
+      "completed_at": "2026-07-11T06:46:12+0900"
+    },
+    {
+      "step": 2,
+      "name": "daily-screen-scoped-fetch",
+      "status": "completed",
+      "started_at": "2026-07-11T06:46:12+0900",
+      "summary": "DailyScreen이 getRegisteredCharacters()로 roster(전체 캐릭터 후보)를 별도 조회해 CharacterTrackingPicker에 전달하고, trackedOcids가 로드된 뒤에만 refresh(trackedOcids)를 호출하도록 변경 — characters.filter 기반 visibleCharacters 제거하고 스토어의 characters를 그대로 표시, 빈 상태 판정은 trackedOcids 기준으로 전환",
+      "completed_at": "2026-07-11T06:50:15+0900"
+    },
+    {
+      "step": 3,
+      "name": "weekly-screen-scoped-fetch",
+      "status": "completed",
+      "started_at": "2026-07-11T06:50:15+0900",
+      "summary": "WeeklyScreen이 DailyScreen과 동일한 구조로 전환 — getRegisteredCharacters()로 roster(전체 후보)를 별도 조회해 CharacterTrackingPicker에 전달하고, trackedOcids가 로드된 뒤에만 refresh(trackedOcids)를 호출 — characters.filter 기반 visibleCharacters 제거하고 스토어의 characters를 그대로 표시, 빈 상태 판정은 trackedOcids 기준으로 전환",
+      "completed_at": "2026-07-11T06:53:01+0900"
+    }
+  ],
+  "created_at": "2026-07-11T06:36:18+0900",
+  "completed_at": "2026-07-11T06:53:01+0900"
+}
