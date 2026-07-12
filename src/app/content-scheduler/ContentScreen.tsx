@@ -34,6 +34,9 @@ export function ContentScreen(): React.JSX.Element {
   // (마운트 시 매번 호출하면 화면에 들어오기만 해도 캐릭터 수만큼 병렬 호출이 발생함).
   // ADR-016: 캐시가 있으면 즉시 그 값으로 먼저 그리고, character/basic 응답이 하나씩
   // 도착하는 대로 patch한다(전체를 기다리지 않음).
+  // ADR-017 결정 6: character/list 응답을 기다리는 동안에도 character-basic-cache에 이미
+  // 있는 캐릭터(추적 여부 무관)는 즉시 먼저 보여줘, 피커를 열 때마다 짧게 비어 보이던 문제를
+  // 완화한다.
   useEffect(() => {
     if (!isPickerOpen) return
     let cancelled = false
