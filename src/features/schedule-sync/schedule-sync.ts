@@ -3,7 +3,11 @@ import { NexonAuthError, NexonRateLimitError } from '../../nexon/errors'
 import { fetchSchedulerCharacterState } from '../../nexon/schedule'
 import { compareByName } from '../onboarding/representative-character'
 import { getAuthConfig } from '../../storage/api-key'
-import { getCachedCharacterBasic, setCachedCharacterBasic } from '../../storage/character-basic-cache'
+import {
+  getAllCachedCharacterBasicOcids,
+  getCachedCharacterBasic,
+  setCachedCharacterBasic,
+} from '../../storage/character-basic-cache'
 import { getCachedSchedulerState, setCachedSchedulerState } from '../../storage/scheduler-cache'
 import type { CharacterPickerEntry, MapleCharacter, SchedulerCharacterState } from '../../types'
 
@@ -67,6 +71,38 @@ function sortPickerEntries(entries: CharacterPickerEntry[]): CharacterPickerEntr
 export async function getCharacterPickerRoster(
   onUpdate: (entries: CharacterPickerEntry[]) => void,
 ): Promise<void> {
+  // ADR-017 결정 6 (2026-07-12 재수정): character/list는 캐싱하지 않으므로(개명·전직·레벨업
+  // 정확성 우선, ADR 2026-07-11 정정) 이 함수가 열릴 때마다 그 네트워크 응답을 기다려야 한다.
+  // 그동안 character-basic-cache에 이미 있는 캐릭터는(추적 여부 무관 — 온보딩 예열이 계정
+  // 전체 캐릭터를 채워둔다, ADR-016) 전부 즉시 후보 목록에 채워, 피커를 열 때마다 아직
+  // 캐싱되지 않은 캐릭터를 뺀 나머지가 잠깐씩 비어 보이던 문제를 없앤다. character/list
+  // 응답이 도착하면(계정 전체 캐릭터 기준) 아래 기존 흐름이 그대로 이어져 최신 값으로
+  // 교체한다 — 그 사이 개명되거나 삭제된 캐릭터가 있었다면 여기서 바로잡힌다(이 stub
+  // 단계는 잠깐의 근사치일 뿐이다).
+  const cachedOcids = await getAllCachedCharacterBasicOcids()
+  if (cachedOcids.length > 0) {
+    const stubEntries = (
+      await Promise.all(
+        cachedOcids.map(async (ocid): Promise<CharacterPickerEntry | null> => {
+          const cached = await getCachedCharacterBasic(ocid)
+          if (cached === null || !cached.profile.accessFlag) {
+            return null
+          }
+          return {
+            ocid,
+            name: cached.profile.name,
+            level: cached.profile.level,
+            imageUrl: cached.profile.imageUrl,
+          }
+        }),
+      )
+    ).filter((entry): entry is CharacterPickerEntry => entry !== null)
+
+    if (stubEntries.length > 0) {
+      onUpdate(sortPickerEntries(stubEntries))
+    }
+  }
+
   const { apiKey, characters } = await resolveRegisteredCharacters()
   if (characters.length === 0) {
     onUpdate([])
