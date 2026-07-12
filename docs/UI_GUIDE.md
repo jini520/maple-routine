@@ -161,6 +161,8 @@ Text(다크):      text-neutral-500 hover:text-neutral-300
 ```
 후보 목록은 **즐겨찾기(선택)한 캐릭터가 먼저, 그다음 나머지** 순으로 정렬하고 각 그룹 내부는 레벨 내림차순이다([[ADR-015]]) — 즐겨찾기를 토글하면 그 즉시 재배치된다. `character/basic` 조회가 실패한 캐릭터는 이미지 대신 `BossPortrait`의 "?" 플레이스홀더와 동일한 방식으로 폴백하되, 이름·레벨은 그대로 표시해 선택은 계속 가능하다. 이미지 크롭에 `<img>`를 쓸 때는 Tailwind preflight의 `img { max-width: 100% }`가 확대 크기를 다시 눌러버리므로 `max-w-none`을 반드시 함께 준다(구현 중 발견한 버그, [[ADR-015]]).
 
+**모달 헤더 및 크기 — 확정, 2026-07-12**: 그리드 위에 제목(`h2`, `text-lg font-semibold text-text`, "캐릭터 관리")과 설명(`p`, `text-sm text-text-muted`, "체크한 캐릭터만 스케줄러 목록에 표시됩니다.")을 `mb-4 space-y-1`로 묶어 배치한다. 그리드의 세로 스크롤 한도는 `max-h-[60vh]`에서 `max-h-[70vh]`로 늘렸다 — 헤더가 추가돼 차지하는 공간만큼 그리드가 과도하게 좁아지지 않도록 하기 위함이다. 모달 바깥 컨테이너에는 `overflow-hidden`을 주지 않는다(그리드 내부의 `overflow-y-auto`만으로 스크롤을 처리하고, 헤더·버튼 영역이 실수로 잘리는 것을 방지).
+
 ### 온보딩 예열 진행률 바 — 확정, 2026-07-12, [[ADR-016]]
 컨텐츠 스케줄러의 일간 콘텐츠 진행률(`role="progressbar"` + `aria-valuenow`/`aria-valuemin`/`aria-valuemax`, track `h-1.5 w-full rounded-full bg-surface-2` + fill `h-1.5 rounded-full bg-primary`)과 동일한 시각 스타일을 그대로 재사용한다 — 새 색상/모양을 만들지 않는다. 진행률 위에 안내 문구(예: "캐릭터 정보를 준비하고 있어요 (18/45)")를 `text-sm text-text-muted`로 표시한다.
 
