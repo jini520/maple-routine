@@ -6,7 +6,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { SettingsScreen } from '../SettingsScreen'
 import { useSettingsStore } from '../../../features/settings/store'
 import { useThemeStore } from '../../../features/theme/store'
-import type { MapleAccount } from '../../../types'
 
 vi.mock('../../../features/settings/store', () => ({
   useSettingsStore: vi.fn(),
@@ -43,59 +42,70 @@ function mockThemeStore(overrides: Partial<ReturnType<typeof useThemeStore>>): v
   })
 }
 
-const ACCOUNTS: MapleAccount[] = [
-  {
-    accountId: 'account-1',
-    characters: [{ ocid: 'ocid-1', name: '낟낟', world: '엘리시움', jobClass: '렌', level: 293 }],
-  },
-  {
-    accountId: 'account-2',
-    characters: [{ ocid: 'ocid-2', name: '내옆에최성일', world: '베라', jobClass: '아크메이지(썬,콜)', level: 211 }],
-  },
-]
-
 afterEach(() => {
   cleanup()
   vi.clearAllMocks()
 })
 
 describe('SettingsScreen', () => {
-  it('status가 selectingAccount이면 계정 선택 목록이 렌더링된다', () => {
-    mockSettingsStore({ status: 'selectingAccount', accounts: ACCOUNTS })
+  it('API 키 재입력/계정 변경/테마/연결 해제 4개 행을 렌더링한다', () => {
+    mockSettingsStore({})
     mockThemeStore({})
 
     render(<SettingsScreen />)
 
-    expect(screen.getByText('사용할 메이플 ID를 선택해주세요.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /API 키 재입력/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /계정 변경/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /테마/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /연결 해제/ })).toBeInTheDocument()
   })
 
-  it('status가 prefetching이면 진행률 바가 렌더링된다', () => {
-    mockSettingsStore({ status: 'prefetching', prefetchProgress: { completed: 18, total: 45 } })
-    mockThemeStore({})
+  it('테마 행에 현재 테마 이름이 표시된다', () => {
+    mockSettingsStore({})
+    mockThemeStore({ theme: '레테' })
 
     render(<SettingsScreen />)
 
-    const progressBar = screen.getByRole('progressbar')
-    expect(progressBar).toHaveAttribute('aria-valuenow', '40')
-    expect(screen.getByText(/18\/45/)).toBeInTheDocument()
+    expect(within(screen.getByRole('button', { name: /테마/ })).getByText('레테')).toBeInTheDocument()
   })
 
-  it('status가 error이면 에러 메시지와 다시 시도 버튼이 렌더링되고, 클릭 시 reset이 호출된다', async () => {
-    const reset = vi.fn()
+  it('"API 키 재입력" 클릭 시 API 키 입력 모달이 열린다', async () => {
     const user = userEvent.setup()
-    mockSettingsStore({ status: 'error', error: { kind: 'invalidApiKey' }, reset })
+    mockSettingsStore({})
     mockThemeStore({})
 
     render(<SettingsScreen />)
+    await user.click(screen.getByRole('button', { name: /API 키 재입력/ }))
 
-    expect(screen.getByText('API 키가 유효하지 않습니다')).toBeInTheDocument()
-
-    await user.click(screen.getByRole('button', { name: '다시 시도' }))
-
-    expect(reset).toHaveBeenCalledTimes(1)
+    expect(screen.getByLabelText(/API 키/)).toBeInTheDocument()
   })
 
-  it('연결 해제 버튼 클릭 시 확인 모달이 열리고, 확인 클릭 시 disconnect가 호출된다', async () => {
+  it('"계정 변경" 클릭 시 계정 모달이 열리고 refreshAccounts가 호출된다', async () => {
+    const user = userEvent.setup()
+    const refreshAccounts = vi.fn()
+    mockSettingsStore({ refreshAccounts })
+    mockThemeStore({})
+
+    render(<SettingsScreen />)
+    await user.click(screen.getByRole('button', { name: /계정 변경/ }))
+
+    expect(refreshAccounts).toHaveBeenCalledTimes(1)
+    expect(screen.getByTestId('account-modal-overlay')).toBeInTheDocument()
+  })
+
+  it('"테마" 클릭 시 테마 선택 모달이 열린다', async () => {
+    const user = userEvent.setup()
+    mockSettingsStore({})
+    mockThemeStore({ theme: '렌' })
+
+    render(<SettingsScreen />)
+    await user.click(screen.getByRole('button', { name: /테마/ }))
+
+    expect(screen.getByTestId('theme-modal-overlay')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '레테' })).toBeInTheDocument()
+  })
+
+  it('"연결 해제" 클릭 시 확인 모달이 열리고, 확인 클릭 시 disconnect가 호출된다', async () => {
     const disconnect = vi.fn()
     const user = userEvent.setup()
     mockSettingsStore({ disconnect })
@@ -115,16 +125,14 @@ describe('SettingsScreen', () => {
     expect(disconnect).toHaveBeenCalledTimes(1)
   })
 
-  it('테마 버튼 클릭 시 selectTheme이 호출된다', async () => {
-    const selectTheme = vi.fn()
-    const user = userEvent.setup()
+  it('하단에 앱 버전·카피라이트·NEXON Open API 출처 문구를 표시한다', () => {
     mockSettingsStore({})
-    mockThemeStore({ theme: '렌', selectTheme })
+    mockThemeStore({})
 
     render(<SettingsScreen />)
 
-    await user.click(screen.getByRole('button', { name: '레테' }))
-
-    expect(selectTheme).toHaveBeenCalledWith('레테')
+    expect(screen.getByText(/^v\d+\.\d+\.\d+$/)).toBeInTheDocument()
+    expect(screen.getByText(/©\s*\d{4}\s*메이플 루틴/)).toBeInTheDocument()
+    expect(screen.getByText('Data based on NEXON Open API')).toBeInTheDocument()
   })
 })

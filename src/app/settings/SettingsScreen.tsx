@@ -1,133 +1,59 @@
 import { useState } from 'react'
+import packageJson from '../../../package.json'
 import { useSettingsStore } from '../../features/settings/store'
 import { useThemeStore } from '../../features/theme/store'
-import { ApiKeyForm } from '../onboarding/ApiKeyForm'
-import { AccountSelectionList } from '../onboarding/AccountSelectionList'
-import { ThemeSelector } from './ThemeSelector'
+import { SettingsRow } from './SettingsRow'
+import { ThemeSwatchDots } from './ThemeSwatchDots'
+import { ApiKeyModal } from './ApiKeyModal'
+import { AccountModal } from './AccountModal'
+import { ThemeModal } from './ThemeModal'
 import { DisconnectConfirm } from './DisconnectConfirm'
-import { formatSettingsError } from './error-message'
+
+type OpenModal = 'apiKey' | 'account' | 'theme' | null
 
 export function SettingsScreen(): React.JSX.Element {
-  const settingsStore = useSettingsStore()
-  const themeStore = useThemeStore()
-  const { status, accounts, error, prefetchProgress, changeApiKey, refreshAccounts, selectAccount, reset } =
-    settingsStore
+  const { disconnect } = useSettingsStore()
+  const { theme } = useThemeStore()
 
-  const [showApiKeyForm, setShowApiKeyForm] = useState(false)
+  const [openModal, setOpenModal] = useState<OpenModal>(null)
   const [isDisconnectOpen, setIsDisconnectOpen] = useState(false)
   const [isDisconnecting, setIsDisconnecting] = useState(false)
 
-  const isBusy = status === 'verifying'
-
-  async function handleApiKeySubmit(apiKey: string): Promise<void> {
-    setShowApiKeyForm(false)
-    await changeApiKey(apiKey)
-  }
-
   async function handleDisconnectConfirm(): Promise<void> {
     setIsDisconnecting(true)
-    await settingsStore.disconnect()
+    await disconnect()
   }
-
-  const percent =
-    prefetchProgress !== null && prefetchProgress.total > 0
-      ? Math.round((prefetchProgress.completed / prefetchProgress.total) * 100)
-      : 0
 
   return (
     <div className="p-4 space-y-4">
       <h1 className="text-lg font-semibold text-text">설정</h1>
 
-      <section className="rounded-[14px] bg-surface border border-border p-6 space-y-4">
-        <div className="space-y-1">
-          <h2 className="text-sm font-semibold text-text">계정</h2>
-          <p className="text-sm text-text-muted">API 키를 다시 입력하거나 사용할 메이플 ID를 변경할 수 있습니다.</p>
-        </div>
-
-        <div className="flex gap-4">
-          <button
-            type="button"
-            disabled={isBusy}
-            onClick={() => setShowApiKeyForm((prev) => !prev)}
-            className="text-sm font-medium text-text-muted hover:text-text disabled:opacity-50"
-          >
-            API 키 변경
-          </button>
-          <button
-            type="button"
-            disabled={isBusy}
-            onClick={() => refreshAccounts()}
-            className="text-sm font-medium text-text-muted hover:text-text disabled:opacity-50"
-          >
-            계정 변경
-          </button>
-        </div>
-
-        {status === 'idle' && showApiKeyForm && (
-          <ApiKeyForm isSubmitting={false} errorMessage={null} onSubmit={handleApiKeySubmit} />
-        )}
-
-        {status === 'verifying' && <p className="text-sm text-text-muted">캐릭터 목록을 확인하고 있어요...</p>}
-
-        {status === 'selectingAccount' && (
-          <AccountSelectionList
-            accounts={accounts}
-            isSubmitting={false}
-            errorMessage={null}
-            onSelect={selectAccount}
-          />
-        )}
-
-        {status === 'prefetching' && (
-          <div className="space-y-2">
-            <p className="text-sm text-text-muted">
-              캐릭터 정보를 준비하고 있어요
-              {prefetchProgress !== null ? ` (${prefetchProgress.completed}/${prefetchProgress.total})` : ''}
-            </p>
-            <div
-              role="progressbar"
-              aria-valuenow={percent}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              className="h-1.5 w-full overflow-hidden rounded-full bg-surface-2"
-            >
-              <div className="h-1.5 rounded-full bg-primary" style={{ width: `${percent}%` }} />
-            </div>
-          </div>
-        )}
-
-        {status === 'error' && (
-          <div className="space-y-2">
-            <p className="text-sm text-error">
-              {error !== null ? formatSettingsError(error) : '오류가 발생했습니다'}
-            </p>
-            <button
-              type="button"
-              onClick={() => reset()}
-              className="rounded-full bg-primary text-bg font-semibold hover:bg-primary-hover px-5 py-2.5 text-sm"
-            >
-              다시 시도
-            </button>
-          </div>
-        )}
-      </section>
-
-      <ThemeSelector theme={themeStore.theme} onSelect={themeStore.selectTheme} />
-
-      <section className="rounded-[14px] bg-surface border border-border p-6 space-y-4">
-        <div className="space-y-1">
-          <h2 className="text-sm font-semibold text-text">연결 해제</h2>
-          <p className="text-sm text-text-muted">API 키와 계정 연결을 해제하고 온보딩 화면으로 돌아갑니다.</p>
-        </div>
-
-        <button
-          type="button"
+      <div className="rounded-[14px] bg-surface border border-border px-6 divide-y divide-border">
+        <SettingsRow label="API 키 재입력" onClick={() => setOpenModal('apiKey')} />
+        <SettingsRow label="계정 변경" onClick={() => setOpenModal('account')} />
+        <SettingsRow
+          label="테마"
+          onClick={() => setOpenModal('theme')}
+          rightContent={
+            <span className="flex items-center gap-2">
+              <ThemeSwatchDots theme={theme} />
+              <span className="rounded-full border border-border px-3 py-1 text-xs font-medium text-text-muted">
+                {theme}
+              </span>
+            </span>
+          }
+        />
+        <SettingsRow
+          label="연결 해제"
           onClick={() => setIsDisconnectOpen(true)}
-          className="rounded-full border border-error px-5 py-2.5 text-sm font-semibold text-error hover:bg-error/10"
-        >
-          연결 해제
-        </button>
-      </section>
+          danger
+          showChevron={false}
+        />
+      </div>
+
+      {openModal === 'apiKey' && <ApiKeyModal onClose={() => setOpenModal(null)} />}
+      {openModal === 'account' && <AccountModal onClose={() => setOpenModal(null)} />}
+      {openModal === 'theme' && <ThemeModal onClose={() => setOpenModal(null)} />}
 
       <DisconnectConfirm
         isOpen={isDisconnectOpen}
@@ -137,6 +63,13 @@ export function SettingsScreen(): React.JSX.Element {
         }}
         onCancel={() => setIsDisconnectOpen(false)}
       />
+
+      {/* 이용약관 제6조④가 요구하는 출처 표기 — 문구를 의역하지 않고 원문 그대로 노출한다 */}
+      <div className="space-y-1 pt-4 text-center">
+        <p className="text-xs text-text-disabled">v{packageJson.version}</p>
+        <p className="text-xs text-text-disabled">© {new Date().getFullYear()} 메이플 루틴</p>
+        <p className="text-xs text-text-disabled">Data based on NEXON Open API</p>
+      </div>
     </div>
   )
 }

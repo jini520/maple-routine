@@ -32,7 +32,8 @@ src/
 │   └── notification-sync/   # 알림 발송 직전 백그라운드에서 Nexon API 재확인 후 조건부 발송 (WorkManager / BGAppRefreshTask, [[ADR-004]])
 ├── components/              # 공용 UI 컴포넌트
 │   ├── BossPortrait/         # 보스 초상화 표시 공용 컴포넌트([[ADR-011]]) — feature 2(주간 스케줄러)·4(보스 수익 계산기)·5(물욕 아이템)가 보스를 나타낼 때 공통으로 씀. lib/boss-icons로 이미지 조회, 없으면 플레이스홀더
-│   └── CharacterTrackingPicker/  # "캐릭터 관리" 피커([[ADR-012]]) — 레벨 내림차순 정렬 + 캐릭터 이미지 카드형 그리드([[ADR-015]]). 컨텐츠/보스 스케줄러 화면이 동일 컴포넌트 공유
+│   ├── CharacterTrackingPicker/  # "캐릭터 관리" 피커([[ADR-012]]) — 레벨 내림차순 정렬 + 캐릭터 이미지 카드형 그리드([[ADR-015]]). 컨텐츠/보스 스케줄러 화면이 동일 컴포넌트 공유
+│   └── Modal/                 # 오버레이 모달 공용 래퍼(2026-07-13) — CharacterTrackingPicker/DisconnectConfirm에 있던 오버레이 마크업을 공용화. `card` prop으로 카드 스타일 유무 전환(설정 화면의 ApiKeyModal/AccountModal이 card=false로 자체 카드형 컴포넌트를 그대로 담을 때 사용, `docs/UI_GUIDE.md` "설정 리스트 행 + 모달" 참고)
 ├── assets/
 │   ├── items/                # 물욕템 아이콘 이미지([[ADR-011]]) — 사용자가 직접 추가한 기존 파일 그대로 사용(영문 내부 코드명 스타일, 예: dark_boss_ring.png). src/data/item-icons.json이 한글 아이템명↔파일명 매핑 테이블
 │   │   └── rings/             # 특수 스킬 반지 전용 서브폴더([[ADR-011]]) — GMS 영문명으로 파일명 정리 완료(예: Ring_of_Restraint.png). boss-ring-boxes.json의 iconFile 필드가 매핑 테이블
@@ -152,7 +153,7 @@ Feature 단위 구조. 각 `features/*` 폴더가 해당 기능의 상태와 로
   - 보스명·난이도 표기를 `src/data/`의 참조 테이블과 매핑할 때: 난이도는 영문 소문자 ↔ 한글로 변환하고, 보스명은 **양쪽 문자열에서 공백을 전부 제거한 뒤 비교**한다(공백이 API 쪽에 더 있을 때도, 우리 데이터 쪽에 더 있을 때도 있어서 한쪽으로 가정하면 안 됨 — 예: API `검은 마법사` vs 데이터 `검은마법사`, 반대로 API `블러디퀸` vs 데이터 `블러디 퀸`). 공백 제거로도 못 잡는 예외(예: API `시즌 보스 메이린` ↔ 데이터 `메이린`)는 `weekly-bosses.json`의 `apiAlias` 필드로 명시적으로 매핑한다.
 - 이 레이어가 없으면 `features/daily-scheduler`·`features/weekly-scheduler`가 Nexon 응답의 원시 필드(`registration_flag`가 문자열인 점 등)를 직접 알아야 하므로, 격리 목적상 반드시 이 레이어를 거친다.
 - 별도 서버/프록시 없음 — API 키는 사용자 기기에만 저장되고, 호출도 기기에서 Nexon Open API로 직접 나간다 ([[ADR-003]]).
-- 이용약관에 따른 출처 표기 "NEXON Open API를 이용한 것임"은 앱 **footer**에 상시 노출한다(확정, 2026-07-09, [[ADR-007]] "이용약관 준수 사항").
+- 이용약관에 따른 출처 표기는 영문 원문 "Data based on NEXON Open API"를 **설정 화면 하단**(앱 버전·카피라이트와 함께)에 상시 노출한다(**정정, 2026-07-13** — 앱 전역 footer는 만들지 않음, [[ADR-007]] "이용약관 준수 사항" 참고).
 - **확정(2026-07-09)**: `character/list`는 API 키가 등록된 Nexon 계정 소속 캐릭터만 반환하며, 다른 Nexon 계정의 캐릭터는 반환하지 않는다. 다른 계정 캐릭터를 보려면 그 계정으로 발급받은 별도의 API 키가 필요하다.
 
 ## 게임 레퍼런스 데이터 ([[ADR-006]])
