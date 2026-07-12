@@ -40,7 +40,7 @@
       "status": "completed",
       "started_at": "2026-07-12T23:03:37+0900",
       "summary": "src/app/settings/ThemeSelector.tsx(레테/렌 토글 카드)·DisconnectConfirm.tsx(오버레이 확인 모달) 신규 — 순수 프레젠테이션 컴포넌트, 단위 테스트 포함",
-      "completed_at": "2026-07-12T23:08:00+0900"
+      "completed_at": "2026-07-12T23:05:21+0900"
     },
     {
       "step": 5,
