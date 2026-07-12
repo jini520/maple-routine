@@ -24,9 +24,11 @@ function mockStore(overrides: Partial<ReturnType<typeof useContentSchedulerStore
     characters: [],
     error: null,
     trackedOcids: null,
+    selectedOcid: null,
     loadTrackedOcids: vi.fn(),
     saveTrackedOcids: vi.fn(),
     refresh: vi.fn(),
+    selectCharacter: vi.fn(),
     ...overrides,
   })
 }
@@ -156,10 +158,31 @@ describe('ContentScreen', () => {
     expect(screen.queryByText(/몬스터파크/)).not.toBeInTheDocument()
   })
 
-  it('탭을 전환해도 선택된 캐릭터(드롭다운 상태)가 유지된다', async () => {
+  it('드롭다운에서 캐릭터를 바꾸면 store의 selectCharacter가 호출된다(ADR-017)', async () => {
+    const selectCharacter = vi.fn()
     mockStore({
       status: 'loaded',
       trackedOcids: ['ocid-1', 'ocid-2'],
+      selectedOcid: 'ocid-1',
+      characters: [
+        character({ ocid: 'ocid-1', characterName: '낟낟' }),
+        character({ ocid: 'ocid-2', characterName: '내옆에최성일' }),
+      ],
+      selectCharacter,
+    })
+
+    render(<ContentScreen />)
+    const dropdown = await screen.findByRole('combobox')
+    fireEvent.change(dropdown, { target: { value: 'ocid-2' } })
+
+    expect(selectCharacter).toHaveBeenCalledWith('ocid-2')
+  })
+
+  it('탭을 전환해도 store의 selectedOcid로 선택된 캐릭터가 유지된다', async () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1', 'ocid-2'],
+      selectedOcid: 'ocid-2',
       characters: [
         character({
           ocid: 'ocid-1',
@@ -175,8 +198,7 @@ describe('ContentScreen', () => {
     })
 
     render(<ContentScreen />)
-    const dropdown = await screen.findByRole('combobox')
-    fireEvent.change(dropdown, { target: { value: 'ocid-2' } })
+    await screen.findByRole('combobox')
     expect(screen.getByText(/레브 던전/)).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: '주간' }))
