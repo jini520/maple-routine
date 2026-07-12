@@ -1,0 +1,34 @@
+{
+  "레테": {
+    "bg": "#0C080F",
+    "surface": "#1A1720",
+    "surface2": "#28232E",
+    "border": "#37323E",
+    "borderStrong": "#54444E",
+    "primary": "#9975B3",
+    "primaryHover": "#85639F",
+    "primaryText": "#61417B",
+    "secondary": "#D1C093",
+    "infoTint": "#C9D6F2",
+    "error": "#D8608F",
+    "text": "#E8DFEC",
+    "textMuted": "#B89CBD",
+    "textDisabled": "#8A758D"
+  },
+  "렌": {
+    "bg": "#F6F5F5",
+    "surface": "#FFFFFF",
+    "surface2": "#E5E6E9",
+    "border": "#DBD3D6",
+    "borderStrong": "#C8C1C6",
+    "primary": "#DC171D",
+    "primaryHover": "#B33946",
+    "primaryText": "#803440",
+    "secondary": "#437B71",
+    "infoTint": "#C9EEF2",
+    "error": "#B91C1C",
+    "text": "#171721",
+    "textMuted": "#525475",
+    "textDisabled": "#8A8089"
+  }
+}
