@@ -13,7 +13,10 @@
     {
       "step": 1,
       "name": "boss-profit-cache-first",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-07-12T19:24:13+0900",
+      "summary": "features/boss-profit/store.ts의 refresh()에 syncSchedules 호출 전 getCachedSchedulerState 캐시 우선 표시 단계 추가(partySize/payoutMeso는 항상 null, boss_profit_records 미접근), 행 생성 로직을 buildBossProfitRow로 추출해 캐시/실시간 양쪽에서 재사용, 테스트 3건 추가",
+      "completed_at": "2026-07-12T19:27:00+0900"
     },
     {
       "step": 2,
