@@ -16,7 +16,7 @@
       "status": "completed",
       "started_at": "2026-07-12T22:58:00+0900",
       "summary": "src/index.css에 레테 :root[data-theme] 오버라이드 추가, features/theme/store.ts(Zustand, restoreFromStorage/selectTheme) 신규, App.tsx에서 앱 시작 시 테마 복원 호출 연결",
-      "completed_at": "2026-07-12T23:05:00+0900"
+      "completed_at": "2026-07-12T22:59:36+0900"
     },
     {
       "step": 2,
