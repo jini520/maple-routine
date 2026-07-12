@@ -54,7 +54,12 @@ export function CharacterTrackingPicker(props: CharacterTrackingPickerProps): Re
         onClick={(event) => event.stopPropagation()}
         className="w-full max-w-sm rounded-[14px] border border-border bg-surface p-6"
       >
-        <div className="grid max-h-[60vh] grid-cols-3 gap-2 overflow-y-auto">
+        <div className="mb-4 space-y-1">
+          <h2 className="text-lg font-semibold text-text">캐릭터 관리</h2>
+          <p className="text-sm text-text-muted">체크한 캐릭터만 스케줄러 목록에 표시됩니다.</p>
+        </div>
+
+        <div className="grid max-h-[70vh] grid-cols-3 gap-2 overflow-y-auto">
           {sortedEntries.map((entry) => {
             const isChecked = checkedOcids.includes(entry.ocid)
             return (
