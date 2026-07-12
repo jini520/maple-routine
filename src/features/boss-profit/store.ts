@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import bossCrystalPricesData from '../../data/boss-crystal-prices.json'
-import { matchBossContent } from '../../lib/boss-matching'
+import { matchBossContent, type MatchedBoss } from '../../lib/boss-matching'
 import { getCurrentBossProfitPeriod } from '../../lib/boss-profit-period'
 import {
   getBossProfitRecords,
@@ -8,6 +8,7 @@ import {
   upsertBossProfitRecord,
 } from '../../storage/boss-profit'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
+import { getCachedSchedulerState } from '../../storage/scheduler-cache'
 import type { BossCycle, BossDifficulty } from '../../types'
 import { syncSchedules, type ScheduleSyncError } from '../schedule-sync/schedule-sync'
 
@@ -57,6 +58,33 @@ function findPriceEntry(boss: string, difficulty: BossDifficulty): CrystalPriceE
   return CRYSTAL_PRICES.find((entry) => entry.boss === boss && entry.difficulty === difficulty)
 }
 
+function buildBossProfitRow(
+  ocid: string,
+  characterName: string,
+  boss: MatchedBoss,
+  now: Date,
+): BossProfitRow {
+  const bossName = boss.matchedBossName ?? boss.apiName
+  const period = getCurrentBossProfitPeriod(boss.cycle, now)
+  const priceEntry = findPriceEntry(bossName, boss.difficulty)
+  const priceMeso = priceEntry?.priceMeso ?? null
+  const maxPartySize = priceEntry?.maxPartySize ?? DEFAULT_MAX_PARTY_SIZE
+
+  return {
+    ocid,
+    characterName,
+    boss: bossName,
+    difficulty: boss.difficulty,
+    cycle: boss.cycle,
+    periodKey: period.periodKey,
+    periodLabel: period.label,
+    priceMeso,
+    maxPartySize,
+    partySize: null,
+    payoutMeso: null,
+  }
+}
+
 function matchesRowKey(row: BossProfitRow, key: BossProfitRowKey): boolean {
   return (
     row.ocid === key.ocid &&
@@ -92,7 +120,28 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
       return
     }
 
-    set({ status: 'loading' })
+    const now = new Date()
+
+    // ADR-017 결정 1: 캐시 우선 표시 — 재검증(syncSchedules) 전에 마지막으로 성공한
+    // 스케줄 캐시가 있으면 완료된 보스만 걸러 화면을 먼저 채운다. 이 단계는 화면을
+    // 비워두지 않는 용도일 뿐이라 boss_profit_records 조회/기록은 하지 않는다.
+    const cachedRows = (
+      await Promise.all(
+        ocids.map(async (ocid): Promise<BossProfitRow[]> => {
+          const cached = await getCachedSchedulerState(ocid)
+          if (cached === null) {
+            return []
+          }
+          const bosses = cached.state.bossContents.map(matchBossContent)
+          const completedBosses = bosses.filter((boss) => boss.isComplete)
+          return completedBosses.map((boss) =>
+            buildBossProfitRow(ocid, cached.state.characterName, boss, now),
+          )
+        }),
+      )
+    ).flat()
+
+    set({ status: 'loading', rows: cachedRows, error: null, staleCharacterNames: [] })
 
     let results: Awaited<ReturnType<typeof syncSchedules>>
     try {
@@ -104,7 +153,6 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
       return
     }
 
-    const now = new Date()
     const rows: BossProfitRow[] = []
     const staleCharacterNames: string[] = []
 
@@ -117,25 +165,7 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
       const completedBosses = bosses.filter((boss) => boss.isComplete)
 
       for (const boss of completedBosses) {
-        const bossName = boss.matchedBossName ?? boss.apiName
-        const period = getCurrentBossProfitPeriod(boss.cycle, now)
-        const priceEntry = findPriceEntry(bossName, boss.difficulty)
-        const priceMeso = priceEntry?.priceMeso ?? null
-        const maxPartySize = priceEntry?.maxPartySize ?? DEFAULT_MAX_PARTY_SIZE
-
-        rows.push({
-          ocid: result.ocid,
-          characterName: result.characterName,
-          boss: bossName,
-          difficulty: boss.difficulty,
-          cycle: boss.cycle,
-          periodKey: period.periodKey,
-          periodLabel: period.label,
-          priceMeso,
-          maxPartySize,
-          partySize: null,
-          payoutMeso: null,
-        })
+        rows.push(buildBossProfitRow(result.ocid, result.characterName, boss, now))
       }
     }
 
