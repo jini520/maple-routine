@@ -24,7 +24,7 @@
       "status": "completed",
       "started_at": "2026-07-12T22:59:36+0900",
       "summary": "features/settings/state.ts 신규 — idle에서 시작해 verifying/selectingAccount/prefetching/error를 거쳐 다시 idle로 순환하는 순수 리듀서(settingsReducer)와 단위 테스트 추가",
-      "completed_at": "2026-07-12T23:01:00+0900"
+      "completed_at": "2026-07-12T23:01:03+0900"
     },
     {
       "step": 3,
