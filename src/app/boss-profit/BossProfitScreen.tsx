@@ -5,7 +5,7 @@ import weeklyBossesData from '../../data/weekly-bosses.json'
 import { useBossProfitStore, type BossProfitRow, type BossProfitStore } from '../../features/boss-profit/store'
 import { formatScheduleSyncError } from '../../features/schedule-sync/format'
 
-const PERIOD_ORDER = ['이번 주', '이번 달'] as const
+const PERIOD_ORDER = ['이번 주'] as const
 
 interface BossReferenceEntry {
   boss: string
@@ -95,18 +95,11 @@ function BossProfitRowItem(props: BossProfitRowItemProps): React.JSX.Element {
 }
 
 function BossProfitSection(props: {
-  label: string
   rows: BossProfitRow[]
   setPartySize: BossProfitStore['setPartySize']
 }): React.JSX.Element {
-  const total = props.rows.reduce((sum, row) => sum + (row.payoutMeso ?? 0), 0)
-
   return (
     <section className="space-y-2">
-      <h2 className="text-sm font-semibold text-text">
-        {props.label} 합계 {total.toLocaleString()} 메소
-      </h2>
-
       <ul className="space-y-2">
         {props.rows.map((row) => (
           <BossProfitRowItem key={rowKey(row)} row={row} setPartySize={props.setPartySize} />
@@ -175,12 +168,7 @@ function CharacterAccordion(props: {
       {isExpanded && (
         <div className="space-y-4">
           {sections.map((section) => (
-            <BossProfitSection
-              key={section.label}
-              label={section.label}
-              rows={section.rows}
-              setPartySize={props.setPartySize}
-            />
+            <BossProfitSection key={section.label} rows={section.rows} setPartySize={props.setPartySize} />
           ))}
         </div>
       )}
