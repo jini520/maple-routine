@@ -7,7 +7,8 @@
       "name": "last-selected-character-storage",
       "status": "completed",
       "started_at": "2026-07-12T19:22:24+0900",
-      "summary": "storage/keys.ts에 lastSelectedCharacterKey 추가, storage/character-selection.ts에 getLastSelectedCharacter/setLastSelectedCharacter/clearLastSelectedCharacter 함수 추가 및 테스트 작성"
+      "summary": "storage/keys.ts에 lastSelectedCharacterKey 추가, storage/character-selection.ts에 getLastSelectedCharacter/setLastSelectedCharacter/clearLastSelectedCharacter 함수 추가 및 테스트 작성",
+      "completed_at": "2026-07-12T19:24:13+0900"
     },
     {
       "step": 1,
