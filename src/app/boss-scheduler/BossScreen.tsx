@@ -50,10 +50,18 @@ function BossList(props: { bosses: MatchedBoss[] }): React.JSX.Element {
 }
 
 export function BossScreen(): React.JSX.Element {
-  const { status, characters, error, trackedOcids, loadTrackedOcids, saveTrackedOcids, refresh } =
-    useBossSchedulerStore()
+  const {
+    status,
+    characters,
+    error,
+    trackedOcids,
+    selectedOcid,
+    loadTrackedOcids,
+    saveTrackedOcids,
+    refresh,
+    selectCharacter,
+  } = useBossSchedulerStore()
   const [activeTab, setActiveTab] = useState<BossTab>('weekly')
-  const [selectedOcid, setSelectedOcid] = useState<string | null>(null)
   const [roster, setRoster] = useState<CharacterPickerEntry[]>([])
   const [isPickerOpen, setIsPickerOpen] = useState(false)
 
@@ -178,7 +186,9 @@ export function BossScreen(): React.JSX.Element {
           <CharacterSelectDropdown
             characters={characters}
             selectedOcid={selected.ocid}
-            onSelect={setSelectedOcid}
+            onSelect={(ocid) => {
+              void selectCharacter(ocid)
+            }}
           />
 
           <div className="flex items-center gap-4">

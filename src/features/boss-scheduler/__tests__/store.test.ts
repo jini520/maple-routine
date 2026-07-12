@@ -2,14 +2,23 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CharacterScheduleSync } from '../../schedule-sync/schedule-sync'
 import type { BossContent } from '../../../types'
 
-const { syncSchedulesMock, getTrackedCharacterOcidsMock, setTrackedCharacterOcidsMock } = vi.hoisted(() => ({
+const {
+  syncSchedulesMock,
+  getTrackedCharacterOcidsMock,
+  setTrackedCharacterOcidsMock,
+  getLastSelectedCharacterMock,
+  setLastSelectedCharacterMock,
+} = vi.hoisted(() => ({
   syncSchedulesMock: vi.fn(),
   getTrackedCharacterOcidsMock: vi.fn(),
   setTrackedCharacterOcidsMock: vi.fn(),
+  getLastSelectedCharacterMock: vi.fn(),
+  setLastSelectedCharacterMock: vi.fn(),
 }))
 
-const { getCachedSchedulerStateMock } = vi.hoisted(() => ({
+const { getCachedSchedulerStateMock, getCachedCharacterBasicMock } = vi.hoisted(() => ({
   getCachedSchedulerStateMock: vi.fn(),
+  getCachedCharacterBasicMock: vi.fn(),
 }))
 
 vi.mock('../../schedule-sync/schedule-sync', () => ({
@@ -19,10 +28,16 @@ vi.mock('../../schedule-sync/schedule-sync', () => ({
 vi.mock('../../../storage/character-selection', () => ({
   getTrackedCharacterOcids: getTrackedCharacterOcidsMock,
   setTrackedCharacterOcids: setTrackedCharacterOcidsMock,
+  getLastSelectedCharacter: getLastSelectedCharacterMock,
+  setLastSelectedCharacter: setLastSelectedCharacterMock,
 }))
 
 vi.mock('../../../storage/scheduler-cache', () => ({
   getCachedSchedulerState: getCachedSchedulerStateMock,
+}))
+
+vi.mock('../../../storage/character-basic-cache', () => ({
+  getCachedCharacterBasic: getCachedCharacterBasicMock,
 }))
 
 import { useBossSchedulerStore } from '../store'
@@ -62,8 +77,16 @@ function syncResult(overrides: Partial<CharacterScheduleSync> = {}): CharacterSc
 }
 
 beforeEach(() => {
-  useBossSchedulerStore.setState({ status: 'idle', characters: [], error: null, trackedOcids: null })
+  useBossSchedulerStore.setState({
+    status: 'idle',
+    characters: [],
+    error: null,
+    trackedOcids: null,
+    selectedOcid: null,
+  })
   getCachedSchedulerStateMock.mockResolvedValue(null)
+  getCachedCharacterBasicMock.mockResolvedValue(null)
+  getLastSelectedCharacterMock.mockResolvedValue(null)
 })
 
 afterEach(() => {
@@ -298,6 +321,90 @@ describe('useBossSchedulerStore', () => {
       expect(setTrackedCharacterOcidsMock).toHaveBeenCalledWith('boss', ['ocid-1', 'ocid-2'])
       expect(useBossSchedulerStore.getState().trackedOcids).toEqual(['ocid-1', 'ocid-2'])
       expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1', 'ocid-2'])
+    })
+  })
+
+  describe('ADR-017: 캐릭터 순서 정렬 및 마지막 선택 캐릭터', () => {
+    it('실시간 동기화 결과의 캐릭터가 캐시된 레벨 기준 내림차순으로 정렬된다', async () => {
+      syncSchedulesMock.mockResolvedValue([
+        syncResult({ ocid: 'ocid-1', characterName: '레벨낮음' }),
+        syncResult({ ocid: 'ocid-2', characterName: '레벨높음' }),
+      ])
+      getCachedCharacterBasicMock.mockImplementation(async (ocid: string) => {
+        if (ocid === 'ocid-1') {
+          return { profile: { name: '레벨낮음', level: 100, imageUrl: '', accessFlag: true }, cachedAt: '' }
+        }
+        if (ocid === 'ocid-2') {
+          return { profile: { name: '레벨높음', level: 200, imageUrl: '', accessFlag: true }, cachedAt: '' }
+        }
+        return null
+      })
+
+      await useBossSchedulerStore.getState().refresh(['ocid-1', 'ocid-2'])
+
+      expect(useBossSchedulerStore.getState().characters.map((character) => character.ocid)).toEqual([
+        'ocid-2',
+        'ocid-1',
+      ])
+    })
+
+    it('동레벨인 캐릭터는 compareByName 순서로 정렬된다', async () => {
+      syncSchedulesMock.mockResolvedValue([
+        syncResult({ ocid: 'ocid-1', characterName: '알파벳Zebra' }),
+        syncResult({ ocid: 'ocid-2', characterName: '가나다캐릭터' }),
+      ])
+      getCachedCharacterBasicMock.mockResolvedValue({
+        profile: { name: '', level: 100, imageUrl: '', accessFlag: true },
+        cachedAt: '',
+      })
+
+      await useBossSchedulerStore.getState().refresh(['ocid-1', 'ocid-2'])
+
+      // compareByName: 한글 > 알파벳 순서라 '가나다캐릭터'(한글)가 먼저 온다
+      expect(useBossSchedulerStore.getState().characters.map((character) => character.ocid)).toEqual([
+        'ocid-2',
+        'ocid-1',
+      ])
+    })
+
+    it('레벨 캐시가 없는 캐릭터는 정렬 목록 맨 뒤로 간다', async () => {
+      syncSchedulesMock.mockResolvedValue([
+        syncResult({ ocid: 'ocid-1', characterName: '캐시없음' }),
+        syncResult({ ocid: 'ocid-2', characterName: '캐시있음' }),
+      ])
+      getCachedCharacterBasicMock.mockImplementation(async (ocid: string) => {
+        if (ocid === 'ocid-2') {
+          return { profile: { name: '캐시있음', level: 1, imageUrl: '', accessFlag: true }, cachedAt: '' }
+        }
+        return null
+      })
+
+      await useBossSchedulerStore.getState().refresh(['ocid-1', 'ocid-2'])
+
+      expect(useBossSchedulerStore.getState().characters.map((character) => character.ocid)).toEqual([
+        'ocid-2',
+        'ocid-1',
+      ])
+    })
+
+    it('loadTrackedOcids는 getLastSelectedCharacter("boss") 반환값으로 selectedOcid를 초기화한다', async () => {
+      getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
+      getLastSelectedCharacterMock.mockResolvedValue('ocid-1')
+      syncSchedulesMock.mockResolvedValue([syncResult()])
+
+      await useBossSchedulerStore.getState().loadTrackedOcids()
+
+      expect(getLastSelectedCharacterMock).toHaveBeenCalledWith('boss')
+      expect(useBossSchedulerStore.getState().selectedOcid).toBe('ocid-1')
+    })
+
+    it('selectCharacter(ocid)는 selectedOcid 상태를 갱신하고 setLastSelectedCharacter를 호출한다', async () => {
+      setLastSelectedCharacterMock.mockResolvedValue(undefined)
+
+      await useBossSchedulerStore.getState().selectCharacter('ocid-9')
+
+      expect(useBossSchedulerStore.getState().selectedOcid).toBe('ocid-9')
+      expect(setLastSelectedCharacterMock).toHaveBeenCalledWith('boss', 'ocid-9')
     })
   })
 })
