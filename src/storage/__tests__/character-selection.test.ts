@@ -1,8 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { Preferences } from '@capacitor/preferences'
 import {
+  clearLastSelectedCharacter,
   clearTrackedCharacterOcids,
+  getLastSelectedCharacter,
   getTrackedCharacterOcids,
+  setLastSelectedCharacter,
   setTrackedCharacterOcids,
 } from '../character-selection'
 
@@ -29,6 +32,8 @@ beforeEach(async () => {
   vi.mocked(Preferences.remove).mockClear()
   await clearTrackedCharacterOcids('content')
   await clearTrackedCharacterOcids('boss')
+  await clearLastSelectedCharacter('content')
+  await clearLastSelectedCharacter('boss')
   await Preferences.remove({ key: 'trackedCharacters:daily' })
   await Preferences.remove({ key: 'trackedCharacters:weekly' })
 })
@@ -133,5 +138,27 @@ describe('레거시 daily/weekly 마이그레이션', () => {
     await getTrackedCharacterOcids('content')
     await setTrackedCharacterOcids('content', [])
     await expect(getTrackedCharacterOcids('content')).resolves.toEqual([])
+  })
+})
+
+describe('마지막 선택 캐릭터', () => {
+  it('저장 전에는 null을 반환한다', async () => {
+    await expect(getLastSelectedCharacter('content')).resolves.toBeNull()
+  })
+
+  it('setLastSelectedCharacter 후 getLastSelectedCharacter로 저장한 ocid를 그대로 읽는다', async () => {
+    await setLastSelectedCharacter('content', 'ocid-1')
+    await expect(getLastSelectedCharacter('content')).resolves.toBe('ocid-1')
+  })
+
+  it('content와 boss는 서로 독립된 키를 쓴다', async () => {
+    await setLastSelectedCharacter('content', 'ocid-1')
+    await expect(getLastSelectedCharacter('boss')).resolves.toBeNull()
+  })
+
+  it('clearLastSelectedCharacter 호출 후 다시 null을 반환한다', async () => {
+    await setLastSelectedCharacter('content', 'ocid-1')
+    await clearLastSelectedCharacter('content')
+    await expect(getLastSelectedCharacter('content')).resolves.toBeNull()
   })
 })
