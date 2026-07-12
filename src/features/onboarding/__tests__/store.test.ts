@@ -19,6 +19,10 @@ const {
   clearAuthConfigMock: vi.fn(),
 }))
 
+const { prefetchAccountDataMock } = vi.hoisted(() => ({
+  prefetchAccountDataMock: vi.fn(),
+}))
+
 vi.mock('../../../nexon/character', () => ({
   fetchCharacterList: fetchCharacterListMock,
 }))
@@ -28,6 +32,10 @@ vi.mock('../../../storage/api-key', () => ({
   setApiKey: setApiKeyMock,
   setSelectedAccountId: setSelectedAccountIdMock,
   clearAuthConfig: clearAuthConfigMock,
+}))
+
+vi.mock('../prefetch', () => ({
+  prefetchAccountData: prefetchAccountDataMock,
 }))
 
 import { useOnboardingStore } from '../store'
@@ -52,6 +60,8 @@ beforeEach(() => {
   setApiKeyMock.mockResolvedValue(undefined)
   setSelectedAccountIdMock.mockResolvedValue(undefined)
   clearAuthConfigMock.mockResolvedValue(undefined)
+  prefetchAccountDataMock.mockResolvedValue(undefined)
+  getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1', selectedAccountId: null })
 })
 
 afterEach(() => {
@@ -175,6 +185,47 @@ describe('useOnboardingStore.submitApiKey', () => {
     expect(state.error).toEqual({ kind: 'network' })
   })
 
+  it('계정이 1개면 예열(prefetchAccountData)이 호출되고 완료 후 completed가 된다', async () => {
+    const accounts = [account('acc-1')]
+    fetchCharacterListMock.mockResolvedValue(accounts)
+
+    await useOnboardingStore.getState().submitApiKey('key-1')
+
+    expect(prefetchAccountDataMock).toHaveBeenCalledWith(
+      'key-1',
+      accounts[0].characters,
+      expect.any(Function),
+    )
+    expect(useOnboardingStore.getState().status).toBe('completed')
+  })
+
+  it('예열이 끝나기 전까지는 prefetching 상태이고 진행률이 반영된다', async () => {
+    const accounts = [account('acc-1')]
+    fetchCharacterListMock.mockResolvedValue(accounts)
+    const progressCallbacks: Array<(progress: { completed: number; total: number }) => void> = []
+    const resolvers: Array<() => void> = []
+    prefetchAccountDataMock.mockImplementation(
+      (_apiKey: string, _characters: unknown, onProgress: (p: { completed: number; total: number }) => void) => {
+        progressCallbacks.push(onProgress)
+        return new Promise<void>((resolve) => {
+          resolvers.push(resolve)
+        })
+      },
+    )
+
+    const promise = useOnboardingStore.getState().submitApiKey('key-1')
+
+    await vi.waitFor(() => expect(useOnboardingStore.getState().status).toBe('prefetching'))
+    progressCallbacks[0]({ completed: 1, total: 2 })
+    expect(useOnboardingStore.getState().prefetchProgress).toEqual({ completed: 1, total: 2 })
+
+    resolvers[0]()
+    await promise
+
+    expect(useOnboardingStore.getState().status).toBe('completed')
+    expect(useOnboardingStore.getState().prefetchProgress).toBeNull()
+  })
+
   it('계정 1개 자동완료 시 setSelectedAccountId가 실패하면 completed가 되지 않고 storageWriteFailed error가 된다', async () => {
     const accounts = [account('acc-1')]
     fetchCharacterListMock.mockResolvedValue(accounts)
@@ -189,18 +240,24 @@ describe('useOnboardingStore.submitApiKey', () => {
 })
 
 describe('useOnboardingStore.selectAccount', () => {
-  it('저장에 성공하면 completed 상태가 된다', async () => {
+  it('저장에 성공하면 예열을 거쳐 completed 상태가 된다', async () => {
     const accounts = [account('acc-1'), account('acc-2')]
     useOnboardingStore.setState({
       status: 'selectingAccount',
       accounts,
       selectedAccountId: null,
       error: null,
+      prefetchProgress: null,
     })
 
     await useOnboardingStore.getState().selectAccount('acc-2')
 
     expect(setSelectedAccountIdMock).toHaveBeenCalledWith('acc-2')
+    expect(prefetchAccountDataMock).toHaveBeenCalledWith(
+      'key-1',
+      accounts[1].characters,
+      expect.any(Function),
+    )
     const state = useOnboardingStore.getState()
     expect(state.status).toBe('completed')
     expect(state.selectedAccountId).toBe('acc-2')

@@ -5,8 +5,8 @@ import { CharacterSelectDropdown } from '../../components/CharacterSelectDropdow
 import { CharacterTrackingPicker } from '../../components/CharacterTrackingPicker/CharacterTrackingPicker'
 import { useBossSchedulerStore } from '../../features/boss-scheduler/store'
 import { formatScheduleSyncError, formatSyncedAt } from '../../features/schedule-sync/format'
-import { getRegisteredCharacters } from '../../features/schedule-sync/schedule-sync'
-import type { MapleCharacter } from '../../types'
+import { getCharacterPickerRoster } from '../../features/schedule-sync/schedule-sync'
+import type { CharacterPickerEntry } from '../../types'
 import type { MatchedBoss } from '../../lib/boss-matching'
 
 type BossTab = 'weekly' | 'monthly'
@@ -18,8 +18,8 @@ function StatusDot(props: { filled: boolean; label: string }): React.JSX.Element
       aria-label={props.label}
       className={
         props.filled
-          ? 'flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#15803D] text-[8px] text-white'
-          : 'h-4 w-4 shrink-0 rounded-full border border-[#F0DFD1]'
+          ? 'flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-secondary text-[8px] text-bg'
+          : 'h-4 w-4 shrink-0 rounded-full border border-border'
       }
     >
       {props.filled ? '✓' : ''}
@@ -29,7 +29,7 @@ function StatusDot(props: { filled: boolean; label: string }): React.JSX.Element
 
 function BossList(props: { bosses: MatchedBoss[] }): React.JSX.Element {
   return (
-    <ul className="rounded-[14px] bg-white border border-[#F0DFD1] p-4 space-y-2">
+    <ul className="rounded-[14px] bg-surface border border-border p-4 space-y-2">
       {props.bosses.map((boss) => (
         <li key={`${boss.apiName}-${boss.difficulty}`} className="flex items-center gap-2">
           <StatusDot filled={boss.isComplete} label={boss.isComplete ? '완료' : '미완료'} />
@@ -40,7 +40,7 @@ function BossList(props: { bosses: MatchedBoss[] }): React.JSX.Element {
               label={boss.matchedBossName ?? boss.apiName}
             />
           </div>
-          <span className="text-sm text-[#5B4636]">
+          <span className="text-sm text-text">
             {boss.matchedBossName ?? boss.apiName} · {boss.difficulty}
           </span>
         </li>
@@ -54,7 +54,7 @@ export function BossScreen(): React.JSX.Element {
     useBossSchedulerStore()
   const [activeTab, setActiveTab] = useState<BossTab>('weekly')
   const [selectedOcid, setSelectedOcid] = useState<string | null>(null)
-  const [roster, setRoster] = useState<MapleCharacter[]>([])
+  const [roster, setRoster] = useState<CharacterPickerEntry[]>([])
   const [isPickerOpen, setIsPickerOpen] = useState(false)
 
   useEffect(() => {
@@ -62,11 +62,20 @@ export function BossScreen(): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // ADR-015: 후보 목록에 이미지·access_flag가 필요해져 피커를 열 때만 조회한다
+  // (마운트 시 매번 호출하면 화면에 들어오기만 해도 캐릭터 수만큼 병렬 호출이 발생함).
+  // ADR-016: 캐시가 있으면 즉시 그 값으로 먼저 그리고, character/basic 응답이 하나씩
+  // 도착하는 대로 patch한다(전체를 기다리지 않음).
   useEffect(() => {
-    getRegisteredCharacters()
-      .then(setRoster)
-      .catch(() => {})
-  }, [])
+    if (!isPickerOpen) return
+    let cancelled = false
+    getCharacterPickerRoster((entries) => {
+      if (!cancelled) setRoster(entries)
+    }).catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [isPickerOpen])
 
   const isEmpty = trackedOcids === null || trackedOcids.length === 0
 
@@ -91,7 +100,7 @@ export function BossScreen(): React.JSX.Element {
     <button
       type="button"
       onClick={() => setIsPickerOpen(true)}
-      className="text-sm font-medium text-[#8A7362] hover:text-[#5B4636]"
+      className="text-sm font-medium text-text-muted hover:text-text"
     >
       캐릭터 관리
     </button>
@@ -99,7 +108,7 @@ export function BossScreen(): React.JSX.Element {
 
   const trackingPicker = isPickerOpen && (
     <CharacterTrackingPicker
-      allCharacters={roster.map((character) => ({ ocid: character.ocid, characterName: character.name }))}
+      entries={roster}
       trackedOcids={trackedOcids ?? []}
       onSave={handleSaveTracking}
       onClose={() => setIsPickerOpen(false)}
@@ -110,11 +119,11 @@ export function BossScreen(): React.JSX.Element {
     return (
       <div className="p-4 space-y-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-lg font-semibold text-[#2B1B10]">보스 스케줄러</h1>
+          <h1 className="text-lg font-semibold text-text">보스 스케줄러</h1>
           {characterManageButton}
         </div>
 
-        <div className="rounded-[14px] border border-dashed border-[#F0DFD1] p-4 text-sm text-[#8A7362]">
+        <div className="rounded-[14px] border border-dashed border-border p-4 text-sm text-text-muted">
           표시할 캐릭터가 없습니다 — 캐릭터를 선택해주세요
         </div>
 
@@ -126,43 +135,45 @@ export function BossScreen(): React.JSX.Element {
   return (
     <div className="p-4 space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-[#2B1B10]">보스 스케줄러</h1>
+        <h1 className="text-lg font-semibold text-text">보스 스케줄러</h1>
         {characterManageButton}
       </div>
 
       <div className="space-y-1">
         <div className="flex items-center justify-between">
-          <p className="text-sm text-[#8A7362]">
+          <p className="text-sm text-text-muted">
             {selected !== null ? formatSyncedAt(selected.syncedAt) : ''}
           </p>
           <button
             type="button"
             onClick={() => refresh(trackedOcids ?? [])}
             aria-label="새로고침"
-            className="p-2 text-[#C2410C] hover:text-[#E6652E]"
+            className="p-2 text-primary-text hover:text-primary-hover"
           >
             <RefreshCw className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
           </button>
         </div>
 
         {selected !== null && selected.isStale && (
-          <p className="text-sm text-[#B91C1C]">
+          <p className="text-sm text-error">
             {selected.error !== null ? formatScheduleSyncError(selected.error) : ''}
           </p>
         )}
       </div>
 
-      {(status === 'idle' || status === 'loading') && (
-        <p className="text-sm text-[#8A7362]">불러오는 중...</p>
-      )}
-
       {status === 'error' && (
-        <p className="text-sm text-[#B91C1C]">
+        <p className="text-sm text-error">
           {error !== null ? formatScheduleSyncError(error) : '오류가 발생했습니다'}
         </p>
       )}
 
-      {status === 'loaded' && selected !== null && (
+      {/* ADR-016: 캐시된 characters가 있으면 재검증(status: 'loading') 중에도 계속 보여준다 —
+          "불러오는 중"은 보여줄 데이터가 아예 없을 때만 표시한다. */}
+      {(status === 'idle' || status === 'loading') && characters.length === 0 && (
+        <p className="text-sm text-text-muted">불러오는 중...</p>
+      )}
+
+      {characters.length > 0 && selected !== null && (
         <>
           <CharacterSelectDropdown
             characters={characters}
@@ -176,8 +187,8 @@ export function BossScreen(): React.JSX.Element {
               onClick={() => setActiveTab('weekly')}
               className={
                 activeTab === 'weekly'
-                  ? 'text-sm font-semibold text-[#C2410C]'
-                  : 'text-sm font-medium text-[#8A7362]'
+                  ? 'text-sm font-semibold text-primary'
+                  : 'text-sm font-medium text-text-muted'
               }
             >
               주간
@@ -187,8 +198,8 @@ export function BossScreen(): React.JSX.Element {
               onClick={() => setActiveTab('monthly')}
               className={
                 activeTab === 'monthly'
-                  ? 'text-sm font-semibold text-[#C2410C]'
-                  : 'text-sm font-medium text-[#8A7362]'
+                  ? 'text-sm font-semibold text-primary'
+                  : 'text-sm font-medium text-text-muted'
               }
             >
               월간
@@ -198,7 +209,7 @@ export function BossScreen(): React.JSX.Element {
           {activeTab === 'weekly' && (
             <>
               {registeredWeeklyBosses.length === 0 && !selected.isStale && (
-                <div className="rounded-[14px] border border-dashed border-[#F0DFD1] p-4 text-sm text-[#8A7362]">
+                <div className="rounded-[14px] border border-dashed border-border p-4 text-sm text-text-muted">
                   표시할 항목이 없습니다 — 게임에서 스케줄러에 등록해주세요
                 </div>
               )}
@@ -207,7 +218,7 @@ export function BossScreen(): React.JSX.Element {
                 (selected.weeklyBossClearCount !== null && selected.weeklyBossClearLimitCount !== null)) && (
                 <section className="space-y-2">
                   {selected.weeklyBossClearCount !== null && selected.weeklyBossClearLimitCount !== null && (
-                    <span className="rounded-full bg-[#FFE9DB] px-2 py-0.5 text-xs font-medium text-[#C2410C]">
+                    <span className="rounded-full bg-primary/15 px-2 py-0.5 text-xs font-medium text-primary">
                       {selected.weeklyBossClearCount}/{selected.weeklyBossClearLimitCount}
                     </span>
                   )}
@@ -221,7 +232,7 @@ export function BossScreen(): React.JSX.Element {
           {activeTab === 'monthly' && (
             <>
               {registeredMonthlyBosses.length === 0 && !selected.isStale && (
-                <div className="rounded-[14px] border border-dashed border-[#F0DFD1] p-4 text-sm text-[#8A7362]">
+                <div className="rounded-[14px] border border-dashed border-border p-4 text-sm text-text-muted">
                   표시할 항목이 없습니다 — 게임에서 스케줄러에 등록해주세요
                 </div>
               )}

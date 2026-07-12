@@ -289,6 +289,34 @@ describe('useBossProfitStore', () => {
       expect(row.payoutMeso).toBe(2020000)
     })
 
+    it('자동 기록 대상 보스가 여러 개여도 upsert 호출이 겹치지 않는다(동일 SQLite 커넥션 트랜잭션 충돌 방지)', async () => {
+      let active = 0
+      let sawOverlap = false
+      upsertBossProfitRecordMock.mockImplementation(async () => {
+        active += 1
+        if (active > 1) sawOverlap = true
+        await new Promise((resolve) => setTimeout(resolve, 0))
+        active -= 1
+      })
+      getLatestPartySizeMock.mockResolvedValue(null)
+      syncSchedulesMock.mockResolvedValue([
+        syncResult({
+          state: {
+            ...syncResult().state!,
+            bossContents: [
+              bossContent({ name: '자쿰', difficulty: '카오스', isComplete: true }),
+              bossContent({ name: '스우', difficulty: '노멀', isComplete: true }),
+            ],
+          },
+        }),
+      ])
+
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+
+      expect(upsertBossProfitRecordMock).toHaveBeenCalledTimes(2)
+      expect(sawOverlap).toBe(false)
+    })
+
     it('priceMeso가 null인 보스는 자동 기록 대상이 아니다', async () => {
       syncSchedulesMock.mockResolvedValue([
         syncResult({

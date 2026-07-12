@@ -15,7 +15,7 @@ export function BossPortrait(props: BossPortraitProps): React.JSX.Element {
       <div
         title={props.label}
         aria-label={props.label}
-        className="flex h-full w-full items-center justify-center rounded-full bg-gray-200 text-xs text-gray-500"
+        className="flex h-full w-full items-center justify-center rounded-full bg-surface-2 text-xs text-text-muted"
       >
         ?
       </div>

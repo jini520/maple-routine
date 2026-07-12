@@ -51,18 +51,18 @@ function BossProfitRowItem(props: BossProfitRowItemProps): React.JSX.Element {
   }
 
   return (
-    <li className="flex items-center gap-3 rounded-[14px] bg-white border border-[#F0DFD1] p-4">
+    <li className="flex items-center gap-3 rounded-[14px] bg-surface border border-border p-4">
       <div className="h-10 w-10 shrink-0">
         <BossPortrait portraitSlug={findPortraitSlug(row.boss)} difficulty={row.difficulty} label={row.boss} />
       </div>
 
       <div className="flex-1 space-y-1">
-        <p className="text-sm text-[#5B4636]">
+        <p className="text-sm text-text">
           {row.characterName} · {row.boss} · {row.difficulty}
         </p>
 
         {row.priceMeso === null && (
-          <span className="inline-block rounded-full bg-[#FFE9DB] px-2 py-0.5 text-xs font-medium text-[#C2410C]">
+          <span className="inline-block rounded-full bg-primary/15 px-2 py-0.5 text-xs font-medium text-primary">
             가격 미확정
           </span>
         )}
@@ -77,18 +77,18 @@ function BossProfitRowItem(props: BossProfitRowItemProps): React.JSX.Element {
               onChange={(event) => setInputValue(event.target.value)}
               onBlur={handleBlur}
               aria-label={`${row.characterName} ${row.boss} ${row.difficulty} 파티원 수`}
-              className="w-16 rounded-[10px] border border-[#F0DFD1] px-2 py-1 text-sm text-[#2B1B10]"
+              className="w-16 rounded-[10px] border border-border px-2 py-1 text-sm text-text"
             />
 
-            {row.partySize === null && <span className="text-sm text-[#8A7362]">파티원 수를 입력해주세요</span>}
+            {row.partySize === null && <span className="text-sm text-text-muted">파티원 수를 입력해주세요</span>}
 
             {row.payoutMeso !== null && (
-              <span className="text-sm font-semibold text-[#2B1B10]">{row.payoutMeso.toLocaleString()} 메소</span>
+              <span className="text-sm font-semibold text-text">{row.payoutMeso.toLocaleString()} 메소</span>
             )}
           </div>
         )}
 
-        {inputError !== null && <p className="text-sm text-[#B91C1C]">{inputError}</p>}
+        {inputError !== null && <p className="text-sm text-error">{inputError}</p>}
       </div>
     </li>
   )
@@ -103,7 +103,7 @@ function BossProfitSection(props: {
 
   return (
     <section className="space-y-2">
-      <h2 className="text-sm font-semibold text-[#2B1B10]">
+      <h2 className="text-sm font-semibold text-text">
         {props.label} 합계 {total.toLocaleString()} 메소
       </h2>
 
@@ -160,15 +160,15 @@ function CharacterAccordion(props: {
       <button
         type="button"
         onClick={() => setIsExpanded((prev) => !prev)}
-        className="flex w-full items-center justify-between rounded-[14px] bg-white border border-[#F0DFD1] p-4"
+        className="flex w-full items-center justify-between rounded-[14px] bg-surface border border-border p-4"
       >
-        <span className="text-sm font-semibold text-[#2B1B10]">
+        <span className="text-sm font-semibold text-text">
           {group.characterName} · {weeklyTotal.toLocaleString()} 메소
         </span>
         {isExpanded ? (
-          <ChevronUp className="h-4 w-4 text-[#8A7362]" strokeWidth={2} aria-hidden="true" />
+          <ChevronUp className="h-4 w-4 text-text-muted" strokeWidth={2} aria-hidden="true" />
         ) : (
-          <ChevronDown className="h-4 w-4 text-[#8A7362]" strokeWidth={2} aria-hidden="true" />
+          <ChevronDown className="h-4 w-4 text-text-muted" strokeWidth={2} aria-hidden="true" />
         )}
       </button>
 
@@ -202,9 +202,9 @@ export function BossProfitScreen(): React.JSX.Element {
   if (isEmpty) {
     return (
       <div className="p-4 space-y-4">
-        <h1 className="text-lg font-semibold text-[#2B1B10]">주간 보스 수익 계산기</h1>
+        <h1 className="text-lg font-semibold text-text">주간 보스 수익 계산기</h1>
 
-        <div className="rounded-[14px] border border-dashed border-[#F0DFD1] p-4 text-sm text-[#8A7362]">
+        <div className="rounded-[14px] border border-dashed border-border p-4 text-sm text-text-muted">
           추적 중인 캐릭터가 없습니다 — 보스 스케줄러에서 캐릭터를 선택해주세요
         </div>
       </div>
@@ -219,39 +219,39 @@ export function BossProfitScreen(): React.JSX.Element {
   return (
     <div className="p-4 space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-[#2B1B10]">주간 보스 수익 계산기</h1>
+        <h1 className="text-lg font-semibold text-text">주간 보스 수익 계산기</h1>
         <button
           type="button"
           onClick={() => refresh(trackedOcids ?? [])}
           aria-label="새로고침"
-          className="p-2 text-[#C2410C] hover:text-[#E6652E]"
+          className="p-2 text-primary-text hover:text-primary-hover"
         >
           <RefreshCw className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
         </button>
       </div>
 
       {staleCharacterNames.length > 0 && (
-        <p className="text-sm text-[#B91C1C]">
+        <p className="text-sm text-error">
           일부 캐릭터 동기화 실패: {staleCharacterNames.join(', ')} — 마지막 동기화 결과를 표시 중입니다
         </p>
       )}
 
-      {(status === 'idle' || status === 'loading') && <p className="text-sm text-[#8A7362]">불러오는 중...</p>}
+      {(status === 'idle' || status === 'loading') && <p className="text-sm text-text-muted">불러오는 중...</p>}
 
       {status === 'error' && (
-        <p className="text-sm text-[#B91C1C]">{error !== null ? formatScheduleSyncError(error) : '오류가 발생했습니다'}</p>
+        <p className="text-sm text-error">{error !== null ? formatScheduleSyncError(error) : '오류가 발생했습니다'}</p>
       )}
 
       {status === 'loaded' && rows.length === 0 && (
-        <div className="rounded-[14px] border border-dashed border-[#F0DFD1] p-4 text-sm text-[#8A7362]">
+        <div className="rounded-[14px] border border-dashed border-border p-4 text-sm text-text-muted">
           아직 처치한 보스가 없습니다
         </div>
       )}
 
       {status === 'loaded' && rows.length > 0 && (
-        <div className="rounded-[14px] bg-white border border-[#F0DFD1] shadow-[0_1px_2px_rgba(43,27,16,0.04),0_4px_12px_rgba(255,112,51,0.06)] p-6 text-center">
-          <p className="text-sm text-[#8A7362]">이번 주 총 수익</p>
-          <p className="text-lg font-semibold text-[#2B1B10]">{weeklyTotalMeso.toLocaleString()} 메소</p>
+        <div className="rounded-[14px] bg-surface border border-border shadow-[0_1px_2px_rgba(0,0,0,0.3),0_4px_12px_rgba(153,117,179,0.18)] p-6 text-center">
+          <p className="text-sm text-text-muted">이번 주 총 수익</p>
+          <p className="text-lg font-semibold text-text">{weeklyTotalMeso.toLocaleString()} 메소</p>
         </div>
       )}
 

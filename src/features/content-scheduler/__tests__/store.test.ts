@@ -8,6 +8,10 @@ const { syncSchedulesMock, getTrackedCharacterOcidsMock, setTrackedCharacterOcid
   setTrackedCharacterOcidsMock: vi.fn(),
 }))
 
+const { getCachedSchedulerStateMock } = vi.hoisted(() => ({
+  getCachedSchedulerStateMock: vi.fn(),
+}))
+
 vi.mock('../../schedule-sync/schedule-sync', () => ({
   syncSchedules: syncSchedulesMock,
 }))
@@ -15,6 +19,10 @@ vi.mock('../../schedule-sync/schedule-sync', () => ({
 vi.mock('../../../storage/character-selection', () => ({
   getTrackedCharacterOcids: getTrackedCharacterOcidsMock,
   setTrackedCharacterOcids: setTrackedCharacterOcidsMock,
+}))
+
+vi.mock('../../../storage/scheduler-cache', () => ({
+  getCachedSchedulerState: getCachedSchedulerStateMock,
 }))
 
 import { useContentSchedulerStore } from '../store'
@@ -52,6 +60,7 @@ function syncResult(overrides: Partial<CharacterScheduleSync> = {}): CharacterSc
 
 beforeEach(() => {
   useContentSchedulerStore.setState({ status: 'idle', characters: [], error: null, trackedOcids: null })
+  getCachedSchedulerStateMock.mockResolvedValue(null)
 })
 
 afterEach(() => {
@@ -160,6 +169,68 @@ describe('useContentSchedulerStore', () => {
     expect(state.status).toBe('error')
     expect(state.error).toEqual({ kind: 'network' })
     expect(state.characters).toEqual([])
+  })
+
+  it('ADR-016: 캐시된 값이 있으면 재검증 응답을 기다리지 않고 즉시 characters에 반영한다', async () => {
+    getCachedSchedulerStateMock.mockResolvedValue({
+      state: {
+        asOf: '2026-07-11T00:00+09:00',
+        characterName: '캐시된캐릭터',
+        world: '베라',
+        level: 200,
+        jobClass: '렌',
+        dailyContents: [dailyContent('몬스터파크')],
+        weeklyContents: [],
+        bossContents: [],
+        weeklyBossClearCount: 0,
+        weeklyBossClearLimitCount: 0,
+      },
+      syncedAt: '2026-07-11T00:00:00.000Z',
+    })
+    syncSchedulesMock.mockImplementation(() => new Promise(() => {})) // 절대 resolve 안 함(재검증 대기 중 상태 관찰용)
+
+    const promise = useContentSchedulerStore.getState().refresh(['ocid-1'])
+
+    await vi.waitFor(() => expect(useContentSchedulerStore.getState().status).toBe('loading'))
+    expect(useContentSchedulerStore.getState().characters).toEqual([
+      {
+        ocid: 'ocid-1',
+        characterName: '캐시된캐릭터',
+        dailyContents: [dailyContent('몬스터파크')],
+        weeklyContents: [],
+        isStale: true,
+        syncedAt: '2026-07-11T00:00:00.000Z',
+        error: null,
+      },
+    ])
+
+    void promise // 이 테스트는 재검증이 끝나길 기다리지 않는다
+  })
+
+  it('ADR-016: 재검증 응답이 도착하면 캐시로 채운 값을 새 값으로 덮어쓴다', async () => {
+    getCachedSchedulerStateMock.mockResolvedValue({
+      state: {
+        asOf: '2026-07-11T00:00+09:00',
+        characterName: '오래된이름',
+        world: '베라',
+        level: 200,
+        jobClass: '렌',
+        dailyContents: [],
+        weeklyContents: [],
+        bossContents: [],
+        weeklyBossClearCount: 0,
+        weeklyBossClearLimitCount: 0,
+      },
+      syncedAt: '2026-07-10T00:00:00.000Z',
+    })
+    syncSchedulesMock.mockResolvedValue([syncResult({ ocid: 'ocid-1', characterName: '최신이름' })])
+
+    await useContentSchedulerStore.getState().refresh(['ocid-1'])
+
+    const state = useContentSchedulerStore.getState()
+    expect(state.status).toBe('loaded')
+    expect(state.characters[0].characterName).toBe('최신이름')
+    expect(state.characters[0].isStale).toBe(false)
   })
 
   it('refresh 시작 시 status를 loading으로 바꾼다', async () => {

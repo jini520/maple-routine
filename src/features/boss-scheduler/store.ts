@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { matchBossContent, type MatchedBoss } from '../../lib/boss-matching'
 import { syncSchedules, type ScheduleSyncError } from '../schedule-sync/schedule-sync'
 import { getTrackedCharacterOcids, setTrackedCharacterOcids } from '../../storage/character-selection'
+import { getCachedSchedulerState } from '../../storage/scheduler-cache'
 
 export interface BossCharacterView {
   ocid: string
@@ -60,7 +61,32 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
       return
     }
 
-    set({ status: 'loading' })
+    // ADR-016: 캐시 우선 표시 — 재검증(fetch) 전에 마지막으로 성공한 캐시 값이 있으면
+    // 그 값으로 먼저 채워 화면이 비지 않게 한다. 재검증 응답이 오면 그대로 덮어쓴다.
+    const cachedCharacters = (
+      await Promise.all(
+        ocids.map(async (ocid): Promise<BossCharacterView | null> => {
+          const cached = await getCachedSchedulerState(ocid)
+          if (cached === null) {
+            return null
+          }
+          const bosses = cached.state.bossContents.map(matchBossContent)
+          return {
+            ocid,
+            characterName: cached.state.characterName,
+            weeklyBosses: bosses.filter((boss) => boss.cycle === 'weekly'),
+            monthlyBosses: bosses.filter((boss) => boss.cycle === 'monthly'),
+            weeklyBossClearCount: cached.state.weeklyBossClearCount,
+            weeklyBossClearLimitCount: cached.state.weeklyBossClearLimitCount,
+            isStale: true,
+            syncedAt: cached.syncedAt,
+            error: null,
+          }
+        }),
+      )
+    ).filter((view): view is BossCharacterView => view !== null)
+
+    set({ status: 'loading', characters: cachedCharacters })
 
     let results: Awaited<ReturnType<typeof syncSchedules>>
     try {

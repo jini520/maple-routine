@@ -4,19 +4,19 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { BossScreen } from '../BossScreen'
 import { useBossSchedulerStore, type BossCharacterView } from '../../../features/boss-scheduler/store'
-import { getRegisteredCharacters } from '../../../features/schedule-sync/schedule-sync'
-import type { MapleCharacter } from '../../../types'
+import { getCharacterPickerRoster } from '../../../features/schedule-sync/schedule-sync'
+import type { CharacterPickerEntry } from '../../../types'
 
 vi.mock('../../../features/boss-scheduler/store', () => ({
   useBossSchedulerStore: vi.fn(),
 }))
 
 vi.mock('../../../features/schedule-sync/schedule-sync', () => ({
-  getRegisteredCharacters: vi.fn(),
+  getCharacterPickerRoster: vi.fn(),
 }))
 
 const mockedUseBossSchedulerStore = vi.mocked(useBossSchedulerStore)
-const mockedGetRegisteredCharacters = vi.mocked(getRegisteredCharacters)
+const mockedGetCharacterPickerRoster = vi.mocked(getCharacterPickerRoster)
 
 function mockStore(overrides: Partial<ReturnType<typeof useBossSchedulerStore>>): void {
   mockedUseBossSchedulerStore.mockReturnValue({
@@ -46,19 +46,20 @@ function character(overrides: Partial<BossCharacterView> = {}): BossCharacterVie
   }
 }
 
-function mapleCharacter(overrides: Partial<MapleCharacter> = {}): MapleCharacter {
+function pickerEntry(overrides: Partial<CharacterPickerEntry> = {}): CharacterPickerEntry {
   return {
     ocid: 'roster-ocid',
     name: '로스터캐릭터',
-    world: '엘리시움',
-    jobClass: '렌',
     level: 200,
+    imageUrl: null,
     ...overrides,
   }
 }
 
 beforeEach(() => {
-  mockedGetRegisteredCharacters.mockResolvedValue([])
+  mockedGetCharacterPickerRoster.mockImplementation(async (onUpdate) => {
+    onUpdate([])
+  })
 })
 
 afterEach(() => {
@@ -277,16 +278,18 @@ describe('BossScreen', () => {
       characters: [character({ ocid: 'ocid-1', characterName: '낟낟' })],
       saveTrackedOcids,
     })
-    mockedGetRegisteredCharacters.mockResolvedValue([
-      mapleCharacter({ ocid: 'ocid-1', name: '낟낟' }),
-      mapleCharacter({ ocid: 'ocid-2', name: '내옆에최성일' }),
-    ])
+    mockedGetCharacterPickerRoster.mockImplementation(async (onUpdate) => {
+      onUpdate([
+        pickerEntry({ ocid: 'ocid-1', name: '낟낟', level: 293 }),
+        pickerEntry({ ocid: 'ocid-2', name: '내옆에최성일', level: 211 }),
+      ])
+    })
 
     render(<BossScreen />)
     await screen.findByRole('combobox')
 
     fireEvent.click(screen.getByRole('button', { name: '캐릭터 관리' }))
-    fireEvent.click(await screen.findByRole('checkbox', { name: '내옆에최성일' }))
+    fireEvent.click(await screen.findByRole('button', { name: /내옆에최성일/ }))
     fireEvent.click(screen.getByRole('button', { name: '저장' }))
 
     await waitFor(() => {
@@ -294,12 +297,40 @@ describe('BossScreen', () => {
     })
   })
 
-  it('status가 loading이면 로딩 표시를 보여준다', async () => {
-    mockStore({ status: 'loading', trackedOcids: ['ocid-1'], characters: [character({ ocid: 'ocid-1' })] })
+  it('status가 loading이고 캐시된 characters도 없으면 로딩 표시를 보여준다', async () => {
+    mockStore({ status: 'loading', trackedOcids: ['ocid-1'], characters: [] })
 
     render(<BossScreen />)
 
     expect(await screen.findByText(/불러오는 중/)).toBeInTheDocument()
+  })
+
+  it('ADR-016: status가 loading이어도 캐시된 characters가 있으면 로딩 표시 대신 목록을 계속 보여준다', async () => {
+    mockStore({
+      status: 'loading',
+      trackedOcids: ['ocid-1'],
+      characters: [
+        character({
+          ocid: 'ocid-1',
+          weeklyBosses: [
+            {
+              apiName: '자쿰',
+              difficulty: '카오스',
+              cycle: 'weekly',
+              isRegistered: true,
+              isComplete: false,
+              matchedBossName: '자쿰',
+              portraitSlug: null,
+            },
+          ],
+        }),
+      ],
+    })
+
+    render(<BossScreen />)
+
+    expect(await screen.findByText(/자쿰/)).toBeInTheDocument()
+    expect(screen.queryByText(/불러오는 중/)).not.toBeInTheDocument()
   })
 
   it('status가 error이면 에러 문구를 보여준다', async () => {

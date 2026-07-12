@@ -23,6 +23,7 @@ function mockStore(overrides: Partial<ReturnType<typeof useOnboardingStore>>): v
     accounts: [],
     selectedAccountId: null,
     error: null,
+    prefetchProgress: null,
     restoreFromStorage: vi.fn(),
     submitApiKey: vi.fn(),
     selectAccount: vi.fn(),
@@ -52,6 +53,26 @@ describe('OnboardingScreen', () => {
 
     expect(screen.queryByLabelText(/API 키/)).not.toBeInTheDocument()
     expect(screen.getByText(/확인/)).toBeInTheDocument()
+  })
+
+  it('status가 prefetching이면 진행률 바와 문구가 렌더링된다', () => {
+    mockStore({ status: 'prefetching', prefetchProgress: { completed: 3, total: 10 } })
+
+    render(<OnboardingScreen />)
+
+    expect(screen.getByText(/캐릭터 정보를 준비하고 있어요/)).toBeInTheDocument()
+    expect(screen.getByText(/3\/10/)).toBeInTheDocument()
+    const bar = screen.getByRole('progressbar')
+    expect(bar).toHaveAttribute('aria-valuenow', '30')
+  })
+
+  it('status가 prefetching이고 진행률 정보가 아직 없으면 0%로 렌더링된다', () => {
+    mockStore({ status: 'prefetching', prefetchProgress: null })
+
+    render(<OnboardingScreen />)
+
+    const bar = screen.getByRole('progressbar')
+    expect(bar).toHaveAttribute('aria-valuenow', '0')
   })
 
   it('status가 selectingAccount이면 AccountSelectionList가 렌더링된다', () => {
