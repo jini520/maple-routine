@@ -13,7 +13,10 @@
     {
       "step": 1,
       "name": "boss-party-settings-storage",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-07-13T21:51:40+0900",
+      "summary": "storage/boss-party-settings.ts 신규 — setBossPartySize(upsert)/getBossPartySize(단건 조회, 없으면 null)/getBossPartySettings(벌크 조회) 구현, boss-profit.ts와 동일한 getBossProfitDb 재사용 패턴",
+      "completed_at": "2026-07-13T21:52:35+0900"
     },
     {
       "step": 2,
