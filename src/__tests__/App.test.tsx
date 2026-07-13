@@ -258,4 +258,36 @@ describe('AppShell', () => {
 
     expect(screen.getByRole('heading', { name: '컨텐츠 스케줄러' })).toBeInTheDocument()
   })
+
+  it('최상단 컨테이너에 top safe-area padding이 적용된다', () => {
+    mockStore({ status: 'awaitingApiKey' })
+
+    const { container } = render(
+      <MemoryRouter initialEntries={['/']}>
+        <AppShell />
+      </MemoryRouter>,
+    )
+
+    expect(container.firstChild).toHaveClass('pt-[env(safe-area-inset-top)]')
+  })
+
+  it('하단 탭바에 bottom safe-area padding이 적용된다', () => {
+    mockStore({ status: 'completed', selectedAccountId: 'account-1' })
+
+    renderAt('/content')
+
+    expect(screen.getByRole('navigation')).toHaveClass('pb-[env(safe-area-inset-bottom)]')
+  })
+
+  it('status가 completed일 때 컨텐츠 래퍼의 하단 padding이 탭바 높이와 safe-area를 함께 반영한다', () => {
+    mockStore({ status: 'completed', selectedAccountId: 'account-1' })
+
+    const { container } = render(
+      <MemoryRouter initialEntries={['/content']}>
+        <AppShell />
+      </MemoryRouter>,
+    )
+
+    expect(container.firstChild?.firstChild).toHaveClass('pb-[calc(4rem+env(safe-area-inset-bottom))]')
+  })
 })

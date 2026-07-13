@@ -101,6 +101,22 @@ describe('ContentScreen', () => {
     expect(loadTrackedOcids).toHaveBeenCalledTimes(1)
   })
 
+  it('sticky 헤더가 top-0으로 화면 최상단부터 덮어 스크롤 시 안전영역 뒤로 카드가 비치지 않는다', async () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [character({ ocid: 'ocid-1' })],
+    })
+
+    render(<ContentScreen />)
+    const heading = await screen.findByRole('heading', { name: '컨텐츠 스케줄러' })
+    const stickyEl = heading.closest('.sticky')
+
+    expect(stickyEl).toHaveClass('top-0')
+    expect(stickyEl).toHaveClass('pt-[calc(1rem+env(safe-area-inset-top))]')
+    expect(stickyEl?.parentElement).toHaveClass('-mt-[env(safe-area-inset-top)]')
+  })
+
   it('기본 탭은 일간이고 등록된 dailyContents만 보인다', async () => {
     mockStore({
       status: 'loaded',
