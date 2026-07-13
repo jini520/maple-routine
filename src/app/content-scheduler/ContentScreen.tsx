@@ -104,11 +104,14 @@ export function ContentScreen(): React.JSX.Element {
   }
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="space-y-4">
       {/* 제목~탭까지는 화면 상단에 고정하고 그 아래 컨텐츠 목록만 스크롤되게 한다 — sticky는
           페이지 스크롤 위에서 동작하므로 App.tsx의 레이아웃(높이 계산)을 건드릴 필요가 없다.
-          bg-bg로 뒤에서 스크롤되는 항목이 비치지 않게 막고, z-10으로 항상 위에 그려지게 한다. */}
-      <div className="sticky top-0 z-10 space-y-4 bg-bg pb-2">
+          bg-bg로 뒤에서 스크롤되는 항목이 비치지 않게 막고, z-10으로 항상 위에 그려지게 한다.
+          패딩(px-4 pt-4)은 바깥 컨테이너가 아니라 이 sticky 엘리먼트 자신에게 줘야 한다 —
+          바깥에 padding-top이 있으면 그만큼 스크롤해야 비로소 완전히 고정되는(그 전까지
+          조금씩 따라 움직이는) 문제가 생긴다. */}
+      <div className="sticky top-0 z-10 space-y-4 bg-bg px-4 pt-4 pb-2">
         <div className="flex items-center justify-between">
           <h1 className="text-lg font-semibold text-text">컨텐츠 스케줄러</h1>
           {characterManageButton}
@@ -189,7 +192,7 @@ export function ContentScreen(): React.JSX.Element {
       </div>
 
       {characters.length > 0 && selected !== null && (
-        <>
+        <div className="space-y-4 px-4 pb-4">
           {activeTab === 'daily' && (
             <>
               {registeredDailyContents.length === 0 && !selected.isStale && (
@@ -250,7 +253,7 @@ export function ContentScreen(): React.JSX.Element {
               )}
             </>
           )}
-        </>
+        </div>
       )}
 
       {trackingPicker}
