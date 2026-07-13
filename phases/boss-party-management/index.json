@@ -7,7 +7,8 @@
       "name": "sqlite-boss-party-settings",
       "status": "completed",
       "started_at": "2026-07-13T21:50:36+0900",
-      "summary": "storage/sqlite/db.ts에 boss_party_settings 테이블(ocid+boss+difficulty PK, party_size, updated_at) 생성 SQL을 추가하고 기존 boss_profit DB 커넥션에서 함께 실행되도록 연결, db.test.ts에 생성 검증 assertion 추가"
+      "summary": "storage/sqlite/db.ts에 boss_party_settings 테이블(ocid+boss+difficulty PK, party_size, updated_at) 생성 SQL을 추가하고 기존 boss_profit DB 커넥션에서 함께 실행되도록 연결, db.test.ts에 생성 검증 assertion 추가",
+      "completed_at": "2026-07-13T21:51:40+0900"
     },
     {
       "step": 1,
