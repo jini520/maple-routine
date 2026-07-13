@@ -214,15 +214,15 @@ rounded-full bg-white/20 text-[#E8DFEC] text-xs font-semibold px-2 py-1, flex it
 ```
 설정 안 함 또는 1인(솔로)이면 이 배지 자체를 렌더링하지 않는다 — 별도의 "솔로" 뱃지는 두지 않는다(빈 공간으로 솔로를 표현).
 
-**파티 관리 진입점 — 재정정, 2026-07-13, [[ADR-019]]**: 보스 카드에서 직접 설정하는 방식(카드 안 아이콘 버튼 → 단일 보스 모달)은 폐기했다. 대신 보스 스케줄러 화면 상단 "캐릭터 관리" 버튼 옆에 **"파티 관리" 버튼**을 추가한다(둘 다 같은 스타일 `text-sm font-medium text-text-muted hover:text-text`, 아이콘 없이 텍스트만 — 기존 "캐릭터 관리" 버튼과 동일한 톤). 탭하면 현재 선택된 캐릭터의 등록된 보스 전체(주간+월간 통합, 탭 구분 없이 하나의 드롭다운 옵션 목록)를 다루는 모달(`PartyManagementModal`)이 열린다. 보스 카드 자체에는 더 이상 진입 버튼이 없다 — 파티 배지(아래)만 표시한다.
+**파티 관리 진입점 — 재정정, 2026-07-13, [[ADR-019]]**: 보스 카드에서 직접 설정하는 방식(카드 안 아이콘 버튼 → 단일 보스 모달)은 폐기했다. 대신 보스 스케줄러 화면 상단 "캐릭터 관리" 버튼 옆에 **"파티 관리" 버튼**을 추가한다(둘 다 같은 스타일 `text-sm font-medium text-text-muted hover:text-text`, 아이콘 없이 텍스트만 — 기존 "캐릭터 관리" 버튼과 동일한 톤). 탭하면 모달(`PartyManagementModal`)이 열린다. 보스 카드 자체에는 더 이상 진입 버튼이 없다 — 파티 배지(아래)만 표시한다.
 
 **파티 관리 모달 — `PartyManagementModal`, `components/Modal/Modal` 재사용**: 전체 목록을 한 번에 나열하지 않고, **보스 드롭다운 → 난이도 뱃지 선택 → 파티원 수 입력** 3단 폼으로 한 번에 하나의 (보스, 난이도) 조합만 편집한다(**재정정, 2026-07-13** — 전체 목록 나열 방식에서 변경).
 ```
-보스: <select> — 등록된 보스명(주간+월간 통합, 중복 제거) 목록. 라벨 "보스"(text-xs font-medium text-text-muted), 인풋은 CharacterSelectDropdown과 동일한 톤(border-border bg-surface px-4 py-3 text-sm text-text, 다만 폭은 w-full)
-난이도: 라벨 "난이도" 아래 flex flex-wrap gap-2로 뱃지 버튼 나열 — 선택 가능한 난이도는 boss-crystal-prices.json에서 해당 보스명으로 조회(새 게임 데이터 아님, ADR-006). 각 버튼은 보스 카드와 동일한 DifficultyBadge(BossScreen.tsx에서 export)를 그대로 감싸 재사용 — 새 뱃지 스타일 신설 금지. 선택된 난이도: ring-2 ring-primary, 비선택: opacity-50 hover:opacity-80로 시각 구분
-파티원 수: **정정(2026-07-13)** — 자유 숫자 입력에서 -/+ 스테퍼로 변경. flex items-center gap-3 — 감소 버튼(h-9 w-9 rounded-full border border-border, lucide-react `Minus`) · 가운데 현재 값(w-8 text-center text-sm font-semibold) · 증가 버튼(동일 스타일, `Plus`). 라벨 "파티원 수 (최대 N인)"으로 상한을 항상 노출. 감소 버튼은 값이 1일 때, 증가 버튼은 값이 해당 (보스,난이도)의 maxPartySize일 때 disabled — 범위 밖 값 자체를 입력할 방법이 없다(자유 입력 후 저장 시점 검증 방식은 폐기). 저장 버튼(rounded-full bg-primary) 클릭 시 현재 값 그대로 store.setPartySize를 호출한다
+보스: <select> — 정정(2026-07-13) 캐릭터가 스케줄러에 등록한 보스가 아니라 항상 전체 보스 목록(weekly-bosses.json의 weekly+eventWeekly+monthly 전체, 중복 제거) — 아직 등록하지 않은 보스도 미리 설정해둘 수 있다. 라벨 "보스"(text-xs font-medium text-text-muted), 인풋은 CharacterSelectDropdown과 동일한 톤(border-border bg-surface px-4 py-3 text-sm text-text, 다만 폭은 w-full)
+난이도: 라벨 "난이도" 아래 flex flex-wrap gap-2로 뱃지 버튼 나열 — 선택 가능한 난이도는 boss-crystal-prices.json에서 해당 보스명으로 조회(새 게임 데이터 아님, ADR-006. 가격 데이터가 아직 없는 보스는 "이 보스는 아직 파티 설정을 지원하지 않습니다" 안내로 대체). 각 버튼은 보스 카드와 동일한 DifficultyBadge(BossScreen.tsx에서 export)를 그대로 감싸 재사용 — 새 뱃지 스타일 신설 금지. **정정(2026-07-13)** — 선택 표시에 쓰던 `ring-2 ring-primary` 테두리를 제거하고 투명도 차이만으로 구분한다: 선택된 난이도는 불투명(기본), 비선택은 opacity-40 hover:opacity-70(대비를 더 주기 위해 기존 50→40으로 낮춤)
+파티원 수: -/+ 스테퍼. flex items-center gap-3 — 감소 버튼(h-9 w-9 rounded-full border border-border, lucide-react `Minus`) · 가운데 현재 값(w-8 text-center text-sm font-semibold) · 증가 버튼(동일 스타일, `Plus`). 라벨 "파티원 수 (최대 N인)"으로 상한을 항상 노출. 감소 버튼은 값이 1일 때, 증가 버튼은 값이 해당 (보스,난이도)의 maxPartySize일 때 disabled — 범위 밖 값 자체를 입력할 방법이 없다. 저장 버튼(rounded-full bg-primary) 클릭 시 현재 값 그대로 store.setPartySize를 호출한다
 ```
-보스/난이도를 바꾸면 스테퍼 값이 그 조합의 저장된 값(1~maxPartySize로 clamp)으로 초기화된다(React `key` 리셋 관용구 — 이전 조합의 값이 새 조합에 남지 않음). 캐릭터가 실제로 등록해둔 난이도가 있으면 그 난이도가 기본 선택된다.
+보스/난이도를 바꾸면 스테퍼 값이 그 조합의 저장된 값(1~maxPartySize로 clamp)으로 초기화된다(React `key` 리셋 관용구 — 이전 조합의 값이 새 조합에 남지 않음). 난이도는 그 보스가 지원하는 첫 난이도(boss-crystal-prices.json 등록 순서)가 기본 선택된다.
 
 **난이도 뱃지**: 텍스트("· 하드") 대신 게임 내 난이도 뱃지와 같은 시각 언어(글로시 캡슐형)로 표시. 실제 게임 UI 스크린샷에서 픽셀 색을 추출한 근사값(1px 단위 재현 아님):
 ```

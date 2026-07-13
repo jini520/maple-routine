@@ -542,35 +542,12 @@ describe('BossScreen', () => {
       })
     })
 
-    it('보스 드롭다운에서 다른 보스를 고르면 그 보스가 지원하는 난이도 뱃지로 목록이 바뀌고, 등록된 난이도가 기본 선택된다', async () => {
+    it('보스 목록은 캐릭터가 스케줄러에 등록한 것과 무관하게 항상 전체 보스 목록이며, 보스를 바꾸면 그 보스가 지원하는 난이도 뱃지로 바뀌고 첫 난이도가 기본 선택된다', async () => {
       mockStore({
         status: 'loaded',
         trackedOcids: ['ocid-1'],
-        characters: [
-          character({
-            ocid: 'ocid-1',
-            weeklyBosses: [
-              {
-                apiName: '자쿰',
-                difficulty: '카오스',
-                cycle: 'weekly',
-                isRegistered: true,
-                isComplete: false,
-                matchedBossName: '자쿰',
-                portraitSlug: null,
-              },
-              {
-                apiName: '루시드',
-                difficulty: '하드',
-                cycle: 'weekly',
-                isRegistered: true,
-                isComplete: false,
-                matchedBossName: '루시드',
-                portraitSlug: null,
-              },
-            ],
-          }),
-        ],
+        // 이 캐릭터는 어떤 보스도 등록해두지 않았다 — 그래도 파티 관리 보스 목록은 비어있지 않아야 한다.
+        characters: [character({ ocid: 'ocid-1', weeklyBosses: [], monthlyBosses: [] })],
       })
 
       render(<BossScreen />)
@@ -579,15 +556,17 @@ describe('BossScreen', () => {
       fireEvent.click(screen.getByRole('button', { name: '파티 관리' }))
       await screen.findByRole('heading', { name: '파티 관리' })
 
+      // 전체 보스 목록의 첫 항목(자쿰)이 기본 선택되고, 자쿰은 카오스 하나만 지원한다.
+      expect(screen.getByLabelText('보스')).toHaveValue('자쿰')
       expect(screen.getByRole('button', { name: '카오스', pressed: true })).toBeInTheDocument()
       expect(screen.queryByRole('button', { name: '이지' })).not.toBeInTheDocument()
 
       fireEvent.change(screen.getByLabelText('보스'), { target: { value: '루시드' } })
 
-      // 루시드는 이지/노멀/하드를 지원하고, 이 캐릭터는 하드로 등록돼있어 하드가 기본 선택된다.
-      expect(screen.getByRole('button', { name: '하드', pressed: true })).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: '이지' })).toBeInTheDocument()
+      // 루시드는 이지/노멀/하드를 지원 — 첫 난이도(이지)가 기본 선택된다.
+      expect(screen.getByRole('button', { name: '이지', pressed: true })).toBeInTheDocument()
       expect(screen.getByRole('button', { name: '노멀' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: '하드' })).toBeInTheDocument()
       expect(screen.queryByRole('button', { name: '카오스' })).not.toBeInTheDocument()
     })
   })

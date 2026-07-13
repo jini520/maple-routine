@@ -86,7 +86,7 @@ Feature 단위 구조. 각 `features/*` 폴더가 해당 기능의 상태와 로
 
 [파티 관리 — 보스 스케줄러 화면 상단 "파티 관리" 버튼에서 설정(정정, 2026-07-13 — 카드 탭에서 변경), 완료 여부·주차와 무관한 상시 데이터. [[ADR-019]]]
 "파티 관리" 버튼 탭(캐릭터 관리 버튼 옆)
-  → 모달(`PartyManagementModal`) — 보스 드롭다운(등록된 보스, 주간+월간 통합) → 난이도 뱃지 선택(보스 카드와 동일한 DifficultyBadge 재사용, 선택지는 `boss-crystal-prices.json`에서 해당 보스명으로 조회) → 파티원 수 입력(1인~해당 (보스,난이도) `maxPartySize`, 새 게임 데이터 아님 — 기존 `boss-crystal-prices.json`의 검증 범위 그대로 재사용, [[ADR-006]]) → "저장" 클릭 시 검증 후 저장(재정정, 2026-07-13 — 전체 목록 나열 + 포커스 아웃 저장 방식에서 변경)
+  → 모달(`PartyManagementModal`) — 보스 드롭다운(캐릭터의 스케줄러 등록 여부와 무관한 전체 보스 목록, `weekly-bosses.json`의 weekly+eventWeekly+monthly, 정정 2026-07-13) → 난이도 뱃지 선택(보스 카드와 동일한 DifficultyBadge 재사용, 선택지는 `boss-crystal-prices.json`에서 해당 보스명으로 조회, 선택 표시는 정정 2026-07-13으로 테두리 없이 투명도 차이만) → 파티원 수 -/+ 스테퍼(1인~해당 (보스,난이도) `maxPartySize`, 새 게임 데이터 아님 — 기존 `boss-crystal-prices.json`의 검증 범위 그대로 재사용, [[ADR-006]], 경계에서 버튼 비활성화로 범위 밖 값 입력 자체를 차단) → "저장" 클릭 시 저장
   → storage/에 (ocid, boss, difficulty) 유니크 키로 `boss_party_settings` upsert(1로 저장하면 솔로 취급과 동일 — 별도 삭제 API 없이 1로 덮어써서 표현)
   → features/boss-scheduler가 이 값을 읽어 해당 보스 카드에 파티 배지("n인")를 즉시 반영. 설정이 없는 보스는 솔로로 표시(폴백 없이 바로 1 취급)
   → 같은 화면의 전체/솔로/파티 서브 필터는 이 값(설정 없음=솔로 포함)으로 현재 탭(주간/월간)의 보스 목록을 클라이언트 사이드에서 필터링한다 — 별도 API 재호출 없음
