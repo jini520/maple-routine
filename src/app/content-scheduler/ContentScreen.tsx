@@ -160,8 +160,8 @@ export function ContentScreen(): React.JSX.Element {
               onClick={() => setActiveTab('daily')}
               className={
                 activeTab === 'daily'
-                  ? 'text-sm font-semibold text-primary'
-                  : 'text-sm font-medium text-text-muted'
+                  ? 'rounded-full bg-primary/15 px-3 py-[5px] text-sm font-semibold text-primary'
+                  : 'px-3 text-sm font-medium text-text-muted'
               }
             >
               일간
@@ -171,8 +171,8 @@ export function ContentScreen(): React.JSX.Element {
               onClick={() => setActiveTab('weekly')}
               className={
                 activeTab === 'weekly'
-                  ? 'text-sm font-semibold text-primary'
-                  : 'text-sm font-medium text-text-muted'
+                  ? 'rounded-full bg-primary/15 px-3 py-[5px] text-sm font-semibold text-primary'
+                  : 'px-3 text-sm font-medium text-text-muted'
               }
             >
               주간
