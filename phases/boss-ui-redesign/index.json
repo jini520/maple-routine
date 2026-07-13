@@ -13,7 +13,8 @@
       "name": "boss-card-ui",
       "status": "completed",
       "started_at": "2026-07-13T17:08:07+0900",
-      "summary": "BossScreen.tsx의 주간/월간 탭에 배지 스타일 pill 적용(카운트 배지는 탭 행 오른쪽 끝으로 이동), StatusDot/BossList를 DifficultyBadge(난이도 5종 글로시 캡슐)/BossCard(80px 개별 카드, 보스별 크롭 설정 반영한 bleed 일러스트 + 오른쪽 완료 뱃지)로 교체. BossScreen.test.tsx를 새 마크업(난이도 텍스트·완료 뱃지 텍스트 기준 selector)에 맞게 갱신, build/lint/test 전부 통과."
+      "summary": "BossScreen.tsx의 주간/월간 탭에 배지 스타일 pill 적용(카운트 배지는 탭 행 오른쪽 끝으로 이동), StatusDot/BossList를 DifficultyBadge(난이도 5종 글로시 캡슐)/BossCard(80px 개별 카드, 보스별 크롭 설정 반영한 bleed 일러스트 + 오른쪽 완료 뱃지)로 교체. BossScreen.test.tsx를 새 마크업(난이도 텍스트·완료 뱃지 텍스트 기준 selector)에 맞게 갱신, build/lint/test 전부 통과.",
+      "completed_at": "2026-07-13T17:11:16+0900"
     },
     {
       "step": 2,
