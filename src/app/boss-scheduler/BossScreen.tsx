@@ -6,6 +6,7 @@ import { useBossSchedulerStore } from '../../features/boss-scheduler/store'
 import { formatScheduleSyncError, formatSyncedAt } from '../../features/schedule-sync/format'
 import { getCharacterPickerRoster } from '../../features/schedule-sync/schedule-sync'
 import { getBossPortraitCrop, getBossPortraitUrl } from '../../lib/boss-icons'
+import type { BossPortraitCrop } from '../../lib/boss-icons'
 import type { BossDifficulty, CharacterPickerEntry } from '../../types'
 import type { MatchedBoss } from '../../lib/boss-matching'
 
@@ -53,15 +54,20 @@ function DifficultyBadge(props: { difficulty: BossDifficulty }): React.JSX.Eleme
   )
 }
 
-function BossCard(props: { boss: MatchedBoss }): React.JSX.Element {
+export function BossCard(props: { boss: MatchedBoss; crop?: BossPortraitCrop }): React.JSX.Element {
   const { boss } = props
   const portraitUrl = getBossPortraitUrl(boss.portraitSlug)
-  const crop = getBossPortraitCrop(boss.portraitSlug)
+  const crop = props.crop ?? getBossPortraitCrop(boss.portraitSlug)
   const bossName = boss.matchedBossName ?? boss.apiName
   const maskImage = 'linear-gradient(90deg, #000 0%, #000 38%, transparent 76%)'
 
+  // 카드 배경/보더/보스명 텍스트는 앱 전역 테마(레테/렌)와 무관하게 항상 레테(다크) 배색을
+  // 고정으로 쓴다(사용자 지시, 2026-07-13) — 일러스트 bleed·페이드·text-shadow가 어두운 배경을
+  // 전제로 튜닝됐기 때문에 theme 토큰(bg-surface 등)을 쓰면 렌(라이트) 테마에서 대비가 깨진다.
+  // 완료 뱃지는 앱 전체에서 공유하는 "완료/성공" 의미 색(secondary)이라 여기서는 고정하지 않고
+  // theme 토큰을 그대로 써서 테마에 따라 계속 바뀌게 둔다.
   return (
-    <div className="relative h-20 overflow-hidden rounded-[14px] border border-border bg-surface">
+    <div className="relative h-20 overflow-hidden rounded-[14px] border border-[#37323E] bg-[#1A1720]">
       {portraitUrl !== null && (
         <div
           className="absolute inset-0"
@@ -81,7 +87,7 @@ function BossCard(props: { boss: MatchedBoss }): React.JSX.Element {
         <div className="flex items-center gap-2">
           <DifficultyBadge difficulty={boss.difficulty} />
           <span
-            className="text-sm font-medium text-text"
+            className="text-sm font-medium text-[#E8DFEC]"
             style={{ textShadow: '0 1px 3px rgba(0,0,0,.9), 0 0 10px rgba(0,0,0,.6)' }}
           >
             {bossName}
@@ -198,18 +204,30 @@ export function BossScreen(): React.JSX.Element {
       </div>
 
       <div className="space-y-1">
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-text-muted">
-            {selected !== null ? formatSyncedAt(selected.syncedAt) : ''}
-          </p>
-          <button
-            type="button"
-            onClick={() => refresh(trackedOcids ?? [])}
-            aria-label="새로고침"
-            className="p-2 text-primary-text hover:text-primary-hover"
-          >
-            <RefreshCw className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
-          </button>
+        <div className="flex items-center gap-3">
+          {characters.length > 0 && selected !== null && (
+            <CharacterSelectDropdown
+              characters={characters}
+              selectedOcid={selected.ocid}
+              onSelect={(ocid) => {
+                void selectCharacter(ocid)
+              }}
+            />
+          )}
+
+          <div className="ml-auto flex shrink-0 items-center gap-2">
+            <p className="text-sm text-text-muted whitespace-nowrap">
+              {selected !== null ? formatSyncedAt(selected.syncedAt) : ''}
+            </p>
+            <button
+              type="button"
+              onClick={() => refresh(trackedOcids ?? [])}
+              aria-label="새로고침"
+              className="p-2 text-primary-text hover:text-primary-hover"
+            >
+              <RefreshCw className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+            </button>
+          </div>
         </div>
 
         {selected !== null && selected.isStale && (
@@ -233,14 +251,6 @@ export function BossScreen(): React.JSX.Element {
 
       {characters.length > 0 && selected !== null && (
         <>
-          <CharacterSelectDropdown
-            characters={characters}
-            selectedOcid={selected.ocid}
-            onSelect={(ocid) => {
-              void selectCharacter(ocid)
-            }}
-          />
-
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
