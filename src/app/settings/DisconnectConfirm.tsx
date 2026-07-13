@@ -1,3 +1,5 @@
+import { useBodyScrollLock } from '../../lib/use-body-scroll-lock'
+
 export interface DisconnectConfirmProps {
   isOpen: boolean
   isDisconnecting: boolean
@@ -6,13 +8,14 @@ export interface DisconnectConfirmProps {
 }
 
 export function DisconnectConfirm(props: DisconnectConfirmProps): React.JSX.Element | null {
+  useBodyScrollLock(props.isOpen)
   if (!props.isOpen) return null
 
   return (
     <div
       data-testid="disconnect-confirm-overlay"
       onClick={props.onCancel}
-      className="fixed inset-0 flex items-center justify-center bg-bg/70"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-bg/70"
     >
       <div
         onClick={(event) => event.stopPropagation()}

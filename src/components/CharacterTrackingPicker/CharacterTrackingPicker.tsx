@@ -1,5 +1,6 @@
 import { Star } from 'lucide-react'
 import { useState } from 'react'
+import { useBodyScrollLock } from '../../lib/use-body-scroll-lock'
 import type { CharacterPickerEntry } from '../../types'
 
 export interface CharacterTrackingPickerProps {
@@ -36,6 +37,7 @@ function sortForDisplay(entries: CharacterPickerEntry[], checkedOcids: string[])
 }
 
 export function CharacterTrackingPicker(props: CharacterTrackingPickerProps): React.JSX.Element {
+  useBodyScrollLock()
   const [checkedOcids, setCheckedOcids] = useState<string[]>(props.trackedOcids)
 
   function toggle(ocid: string): void {
@@ -48,7 +50,7 @@ export function CharacterTrackingPicker(props: CharacterTrackingPickerProps): Re
     <div
       data-testid="character-tracking-picker-overlay"
       onClick={props.onClose}
-      className="fixed inset-0 flex items-center justify-center bg-bg/70"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-bg/70"
     >
       <div
         onClick={(event) => event.stopPropagation()}

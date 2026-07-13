@@ -8,6 +8,7 @@ import type { CharacterPickerEntry } from '../../../types'
 
 afterEach(() => {
   cleanup()
+  document.body.style.overflow = ''
 })
 
 const entries: CharacterPickerEntry[] = [
@@ -140,5 +141,17 @@ describe('CharacterTrackingPicker', () => {
     expect(buttons[0]).toHaveTextContent('낟낟')
     expect(buttons[1]).toHaveTextContent('내옆에최성일')
     expect(buttons[2]).toHaveTextContent('테스트캐릭터')
+  })
+
+  it('열려 있는 동안 뒷 페이지(body) 스크롤을 막는다', () => {
+    const { unmount } = render(
+      <CharacterTrackingPicker entries={entries} trackedOcids={[]} onSave={vi.fn()} onClose={vi.fn()} />,
+    )
+
+    expect(document.body.style.overflow).toBe('hidden')
+
+    unmount()
+
+    expect(document.body.style.overflow).toBe('')
   })
 })

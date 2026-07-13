@@ -1,3 +1,5 @@
+import { useBodyScrollLock } from '../../lib/use-body-scroll-lock'
+
 export interface ModalProps {
   onClose: () => void
   children: React.ReactNode
@@ -11,13 +13,14 @@ export interface ModalProps {
 // CharacterTrackingPicker/DisconnectConfirm에서 반복되던 오버레이 마크업을 공용화한 것 —
 // 새 컴포넌트(ApiKeyModal/AccountModal/ThemeModal)들이 공유한다.
 export function Modal(props: ModalProps): React.JSX.Element {
+  useBodyScrollLock()
   const showCard = props.card ?? true
 
   return (
     <div
       data-testid={props.testId}
       onClick={props.onClose}
-      className="fixed inset-0 flex items-center justify-center bg-bg/70"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-bg/70"
     >
       <div
         onClick={(event) => event.stopPropagation()}
