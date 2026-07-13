@@ -102,6 +102,22 @@ describe('BossScreen', () => {
     expect(screen.queryByText(/자쿰/)).not.toBeInTheDocument()
   })
 
+  it('sticky 헤더가 top-0으로 화면 최상단부터 덮어 스크롤 시 안전영역 뒤로 카드가 비치지 않는다', async () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [character({ ocid: 'ocid-1' })],
+    })
+
+    render(<BossScreen />)
+    const heading = await screen.findByRole('heading', { name: '보스 스케줄러' })
+    const stickyEl = heading.closest('.sticky')
+
+    expect(stickyEl).toHaveClass('top-0')
+    expect(stickyEl).toHaveClass('pt-[calc(1rem+env(safe-area-inset-top))]')
+    expect(stickyEl?.parentElement).toHaveClass('-mt-[env(safe-area-inset-top)]')
+  })
+
   it('마운트 시 loadTrackedOcids가 호출된다', async () => {
     const loadTrackedOcids = vi.fn()
     mockStore({

@@ -19,7 +19,7 @@ const TAB_ITEMS = [
 
 function BottomTabBar(): React.JSX.Element {
   return (
-    <nav className="fixed inset-x-0 bottom-0 flex justify-around border-t border-border bg-surface">
+    <nav className="fixed inset-x-0 bottom-0 flex justify-around border-t border-border bg-surface pb-[env(safe-area-inset-bottom)]">
       {TAB_ITEMS.map((tab) => (
         <NavLink
           key={tab.to}
@@ -56,8 +56,8 @@ export function AppShell(): React.JSX.Element {
   const isCompleted = status === 'completed'
 
   return (
-    <div className="min-h-screen bg-bg text-text">
-      <div className={isCompleted ? 'pb-16' : undefined}>
+    <div className="min-h-screen bg-bg text-text pt-[env(safe-area-inset-top)]">
+      <div className={isCompleted ? 'pb-[calc(4rem+env(safe-area-inset-bottom))]' : undefined}>
         <Routes>
           <Route path="/" element={<Navigate to={isCompleted ? '/content' : '/onboarding'} replace />} />
           <Route
