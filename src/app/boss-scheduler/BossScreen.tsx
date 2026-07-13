@@ -1,16 +1,25 @@
+import type { BossDifficulty, CharacterPickerEntry } from '../../types'
+import { RefreshCw, Users } from 'lucide-react'
+import { formatScheduleSyncError, formatSyncedAt } from '../../features/schedule-sync/format'
+import { getBossPortraitCrop, getBossPortraitUrl } from '../../lib/boss-icons'
+import { partySizeKey, useBossSchedulerStore } from '../../features/boss-scheduler/store'
 import { useEffect, useState } from 'react'
-import { RefreshCw } from 'lucide-react'
+
+import type { BossPortraitCrop } from '../../lib/boss-icons'
 import { CharacterSelectDropdown } from '../../components/CharacterSelectDropdown/CharacterSelectDropdown'
 import { CharacterTrackingPicker } from '../../components/CharacterTrackingPicker/CharacterTrackingPicker'
-import { useBossSchedulerStore } from '../../features/boss-scheduler/store'
-import { formatScheduleSyncError, formatSyncedAt } from '../../features/schedule-sync/format'
-import { getCharacterPickerRoster } from '../../features/schedule-sync/schedule-sync'
-import { getBossPortraitCrop, getBossPortraitUrl } from '../../lib/boss-icons'
-import type { BossPortraitCrop } from '../../lib/boss-icons'
-import type { BossDifficulty, CharacterPickerEntry } from '../../types'
 import type { MatchedBoss } from '../../lib/boss-matching'
+import { PartyManagementModal } from './PartyManagementModal'
+import { getCharacterPickerRoster } from '../../features/schedule-sync/schedule-sync'
 
 type BossTab = 'weekly' | 'monthly'
+type PartyFilter = 'all' | 'solo' | 'party'
+
+const PARTY_FILTER_LABELS: Record<PartyFilter, string> = {
+  all: '전체',
+  solo: '솔로',
+  party: '파티',
+}
 
 const DIFFICULTY_BADGE_STYLES: Record<BossDifficulty, React.CSSProperties> = {
   이지: {
@@ -43,7 +52,7 @@ const DIFFICULTY_BADGE_STYLES: Record<BossDifficulty, React.CSSProperties> = {
   },
 }
 
-function DifficultyBadge(props: { difficulty: BossDifficulty }): React.JSX.Element {
+export function DifficultyBadge(props: { difficulty: BossDifficulty }): React.JSX.Element {
   return (
     <span
       className="inline-flex items-center rounded-full text-[10px] font-extrabold tracking-[.03em]"
@@ -54,8 +63,12 @@ function DifficultyBadge(props: { difficulty: BossDifficulty }): React.JSX.Eleme
   )
 }
 
-export function BossCard(props: { boss: MatchedBoss; crop?: BossPortraitCrop }): React.JSX.Element {
-  const { boss } = props
+export function BossCard(props: {
+  boss: MatchedBoss
+  crop?: BossPortraitCrop
+  partySize?: number
+}): React.JSX.Element {
+  const { boss, partySize } = props
   const portraitUrl = getBossPortraitUrl(boss.portraitSlug)
   const crop = props.crop ?? getBossPortraitCrop(boss.portraitSlug)
   const bossName = boss.matchedBossName ?? boss.apiName
@@ -92,11 +105,19 @@ export function BossCard(props: { boss: MatchedBoss; crop?: BossPortraitCrop }):
           >
             {bossName}
           </span>
+          {partySize !== undefined && partySize > 1 && (
+            <span className="flex items-center gap-1 rounded-full bg-gray-200/20 px-2 py-1 text-xs font-semibold text-[#E8DFEC]">
+              <Users className="h-3 w-3" strokeWidth={2} aria-hidden="true" />
+              {partySize}인
+            </span>
+          )}
         </div>
 
-        {boss.isComplete && (
-          <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-bold text-bg">완료</span>
-        )}
+        <div className="flex items-center gap-1.5">
+          {boss.isComplete && (
+            <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-bold text-bg">완료</span>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -109,14 +130,21 @@ export function BossScreen(): React.JSX.Element {
     error,
     trackedOcids,
     selectedOcid,
+    partySizes,
     loadTrackedOcids,
     saveTrackedOcids,
     refresh,
     selectCharacter,
+    setPartySize,
   } = useBossSchedulerStore()
   const [activeTab, setActiveTab] = useState<BossTab>('weekly')
   const [roster, setRoster] = useState<CharacterPickerEntry[]>([])
   const [isPickerOpen, setIsPickerOpen] = useState(false)
+  const [isPartyManagementOpen, setIsPartyManagementOpen] = useState(false)
+  // ADR-019 결정 6: 주간/월간 탭은 서로 독립된 필터 상태를 갖는다(한 탭의 필터 변경이
+  // 다른 탭에 영향을 주지 않음).
+  const [weeklyFilter, setWeeklyFilter] = useState<PartyFilter>('all')
+  const [monthlyFilter, setMonthlyFilter] = useState<PartyFilter>('all')
 
   useEffect(() => {
     loadTrackedOcids()
@@ -155,6 +183,27 @@ export function BossScreen(): React.JSX.Element {
   const registeredMonthlyBosses =
     selected !== null ? selected.monthlyBosses.filter((boss) => boss.isRegistered) : []
 
+  function getPartySize(ocid: string, boss: MatchedBoss): number | undefined {
+    const bossName = boss.matchedBossName ?? boss.apiName
+    return partySizes[partySizeKey(ocid, bossName, boss.difficulty)]
+  }
+
+  // ADR-019 결정 3: boss_party_settings에 없는 조합은 솔로(1인) 취급 — 별도 API 재호출
+  // 없이 이미 로드된 partySizes 맵으로만 클라이언트 사이드 필터링한다.
+  function filterByPartySize(bosses: MatchedBoss[], ocid: string, filter: PartyFilter): MatchedBoss[] {
+    if (filter === 'all') return bosses
+    return bosses.filter((boss) => {
+      const size = getPartySize(ocid, boss) ?? 1
+      return filter === 'party' ? size >= 2 : size <= 1
+    })
+  }
+
+  const activeFilter = activeTab === 'weekly' ? weeklyFilter : monthlyFilter
+  const filteredWeeklyBosses =
+    selected !== null ? filterByPartySize(registeredWeeklyBosses, selected.ocid, weeklyFilter) : []
+  const filteredMonthlyBosses =
+    selected !== null ? filterByPartySize(registeredMonthlyBosses, selected.ocid, monthlyFilter) : []
+
   async function handleSaveTracking(ocids: string[]): Promise<void> {
     await saveTrackedOcids(ocids)
     setIsPickerOpen(false)
@@ -179,6 +228,33 @@ export function BossScreen(): React.JSX.Element {
     />
   )
 
+  const partyManageButton = (
+    <button
+      type="button"
+      onClick={() => setIsPartyManagementOpen(true)}
+      className="text-sm font-medium text-text-muted hover:text-text"
+    >
+      파티 관리
+    </button>
+  )
+
+  const partyManagementModal = isPartyManagementOpen && selected !== null && (
+    <PartyManagementModal
+      getRegisteredDifficulty={(bossName) =>
+        [...registeredWeeklyBosses, ...registeredMonthlyBosses].find(
+          (boss) => (boss.matchedBossName ?? boss.apiName) === bossName,
+        )?.difficulty ?? null
+      }
+      getPartySize={(bossName, difficulty) =>
+        partySizes[partySizeKey(selected.ocid, bossName, difficulty)] ?? 1
+      }
+      onSetPartySize={(bossName, difficulty, partySize) =>
+        setPartySize(selected.ocid, bossName, difficulty, partySize)
+      }
+      onClose={() => setIsPartyManagementOpen(false)}
+    />
+  )
+
   if (isEmpty) {
     return (
       <div className="p-4 space-y-4">
@@ -197,95 +273,143 @@ export function BossScreen(): React.JSX.Element {
   }
 
   return (
-    <div className="p-4 space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-text">보스 스케줄러</h1>
-        {characterManageButton}
-      </div>
-
-      <div className="space-y-1">
-        <div className="flex items-center gap-3">
-          {characters.length > 0 && selected !== null && (
-            <CharacterSelectDropdown
-              characters={characters}
-              selectedOcid={selected.ocid}
-              onSelect={(ocid) => {
-                void selectCharacter(ocid)
-              }}
-            />
-          )}
-
-          <div className="ml-auto flex shrink-0 items-center gap-2">
-            <p className="text-sm text-text-muted whitespace-nowrap">
-              {selected !== null ? formatSyncedAt(selected.syncedAt) : ''}
-            </p>
-            <button
-              type="button"
-              onClick={() => refresh(trackedOcids ?? [])}
-              aria-label="새로고침"
-              className="p-2 text-primary-text hover:text-primary-hover"
-            >
-              <RefreshCw className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
-            </button>
-          </div>
-        </div>
-
-        {selected !== null && selected.isStale && (
-          <p className="text-sm text-error">
-            {selected.error !== null ? formatScheduleSyncError(selected.error) : ''}
-          </p>
-        )}
-      </div>
-
-      {status === 'error' && (
-        <p className="text-sm text-error">
-          {error !== null ? formatScheduleSyncError(error) : '오류가 발생했습니다'}
-        </p>
-      )}
-
-      {/* ADR-016: 캐시된 characters가 있으면 재검증(status: 'loading') 중에도 계속 보여준다 —
-          "불러오는 중"은 보여줄 데이터가 아예 없을 때만 표시한다. */}
-      {(status === 'idle' || status === 'loading') && characters.length === 0 && (
-        <p className="text-sm text-text-muted">불러오는 중...</p>
-      )}
-
-      {characters.length > 0 && selected !== null && (
-        <>
+    <div className="space-y-4">
+      {/* 필터까지(제목~탭~솔로/파티 필터)는 화면 상단에 고정하고 그 아래 보스 목록만 스크롤되게
+          한다 — sticky는 페이지 스크롤 위에서 동작하므로 App.tsx의 레이아웃(높이 계산)을
+          건드릴 필요가 없다. bg-bg로 뒤에서 스크롤되는 카드가 비치지 않게 막고, z-10으로 항상
+          위에 그려지게 한다. 패딩(px-4 pt-4)은 바깥 컨테이너가 아니라 이 sticky 엘리먼트
+          자신에게 줘야 한다 — 바깥에 padding-top이 있으면 그만큼 스크롤해야 비로소 완전히
+          고정되는(그 전까지 조금씩 따라 움직이는) 문제가 생긴다. */}
+      <div className="sticky top-0 z-10 bg-bg px-4 pt-4 pb-2">
+        <div className="space-y-4">
           <div className="flex items-center justify-between">
+            <h1 className="text-lg font-semibold text-text">보스 스케줄러</h1>
             <div className="flex items-center gap-4">
-              <button
-                type="button"
-                onClick={() => setActiveTab('weekly')}
-                className={
-                  activeTab === 'weekly'
-                    ? 'rounded-full bg-primary/15 px-3 py-[5px] text-sm font-semibold text-primary'
-                    : 'px-3 text-sm font-medium text-text-muted'
-                }
-              >
-                주간
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('monthly')}
-                className={
-                  activeTab === 'monthly'
-                    ? 'rounded-full bg-primary/15 px-3 py-[5px] text-sm font-semibold text-primary'
-                    : 'px-3 text-sm font-medium text-text-muted'
-                }
-              >
-                월간
-              </button>
+              {selected !== null && partyManageButton}
+              {characterManageButton}
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <div className="flex items-center gap-3">
+              {characters.length > 0 && selected !== null && (
+                <CharacterSelectDropdown
+                  characters={characters}
+                  selectedOcid={selected.ocid}
+                  onSelect={(ocid) => {
+                    void selectCharacter(ocid)
+                  }}
+                />
+              )}
+
+              <div className="ml-auto flex shrink-0 items-center gap-2">
+                <p className="text-sm text-text-muted whitespace-nowrap">
+                  {selected !== null ? formatSyncedAt(selected.syncedAt) : ''}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => refresh(trackedOcids ?? [])}
+                  aria-label="새로고침"
+                  className="p-2 text-primary-text hover:text-primary-hover"
+                >
+                  <RefreshCw className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+                </button>
+              </div>
             </div>
 
-            {activeTab === 'weekly' &&
-              selected.weeklyBossClearCount !== null &&
-              selected.weeklyBossClearLimitCount !== null && (
-                <span className="rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary">
-                  {selected.weeklyBossClearCount}/{selected.weeklyBossClearLimitCount}
-                </span>
-              )}
+            {selected !== null && selected.isStale && (
+              <p className="text-sm text-error">
+                {selected.error !== null ? formatScheduleSyncError(selected.error) : ''}
+              </p>
+            )}
           </div>
 
+          {status === 'error' && (
+            <p className="text-sm text-error">
+              {error !== null ? formatScheduleSyncError(error) : '오류가 발생했습니다'}
+            </p>
+          )}
+
+          {/* ADR-016: 캐시된 characters가 있으면 재검증(status: 'loading') 중에도 계속 보여준다 —
+              "불러오는 중"은 보여줄 데이터가 아예 없을 때만 표시한다. */}
+          {(status === 'idle' || status === 'loading') && characters.length === 0 && (
+            <p className="text-sm text-text-muted">불러오는 중...</p>
+          )}
+
+          {characters.length > 0 && selected !== null && (
+            <>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('weekly')}
+                    className={
+                      activeTab === 'weekly'
+                        ? 'rounded-full bg-primary/15 px-3 py-[5px] text-sm font-semibold text-primary'
+                        : 'px-3 text-sm font-medium text-text-muted'
+                    }
+                  >
+                    주간
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('monthly')}
+                    className={
+                      activeTab === 'monthly'
+                        ? 'rounded-full bg-primary/15 px-3 py-[5px] text-sm font-semibold text-primary'
+                        : 'px-3 text-sm font-medium text-text-muted'
+                    }
+                  >
+                    월간
+                  </button>
+                </div>
+
+                {activeTab === 'weekly' &&
+                  selected.weeklyBossClearCount !== null &&
+                  selected.weeklyBossClearLimitCount !== null && (
+                    <span className="rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary">
+                      {selected.weeklyBossClearCount}/{selected.weeklyBossClearLimitCount}
+                    </span>
+                  )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                {(['all', 'solo', 'party'] as const).map((filter) => (
+                  <button
+                    key={filter}
+                    type="button"
+                    onClick={() =>
+                      activeTab === 'weekly' ? setWeeklyFilter(filter) : setMonthlyFilter(filter)
+                    }
+                    className={
+                      activeFilter === filter
+                        ? 'rounded-full bg-primary/15 px-3 py-1 text-xs font-semibold text-primary'
+                        : 'px-3 text-xs font-medium text-text-muted'
+                    }
+                  >
+                    {PARTY_FILTER_LABELS[filter]}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* 헤더 아래에 살짝 겹쳐 그라데이션+블러로 카드가 잘려 보이지 않고 자연스럽게
+            사라지도록 한다 — 배경(bg-bg → transparent)과 블러 강도를 같은 마스크로 함께
+            줄여서, 색만 옅어지고 블러는 그대로인 부자연스러운 경계가 생기지 않게 한다. */}
+        <div
+          className="pointer-events-none absolute inset-x-0 top-full h-8 bg-gradient-to-b from-bg to-transparent backdrop-blur-sm"
+          style={{
+            maskImage: 'linear-gradient(to bottom, black, transparent)',
+            WebkitMaskImage: 'linear-gradient(to bottom, black, transparent)',
+          }}
+          aria-hidden="true"
+        />
+      </div>
+
+      {characters.length > 0 && selected !== null && (
+        <div className="space-y-4 px-4 pb-4">
           {activeTab === 'weekly' && (
             <>
               {registeredWeeklyBosses.length === 0 && !selected.isStale && (
@@ -294,10 +418,20 @@ export function BossScreen(): React.JSX.Element {
                 </div>
               )}
 
-              {registeredWeeklyBosses.length > 0 && (
+              {registeredWeeklyBosses.length > 0 && filteredWeeklyBosses.length === 0 && (
+                <div className="rounded-[14px] border border-dashed border-border p-4 text-sm text-text-muted">
+                  이 조건에 해당하는 보스가 없습니다
+                </div>
+              )}
+
+              {filteredWeeklyBosses.length > 0 && (
                 <div className="space-y-2">
-                  {registeredWeeklyBosses.map((boss) => (
-                    <BossCard key={`${boss.apiName}-${boss.difficulty}`} boss={boss} />
+                  {filteredWeeklyBosses.map((boss) => (
+                    <BossCard
+                      key={`${boss.apiName}-${boss.difficulty}`}
+                      boss={boss}
+                      partySize={getPartySize(selected.ocid, boss)}
+                    />
                   ))}
                 </div>
               )}
@@ -312,19 +446,30 @@ export function BossScreen(): React.JSX.Element {
                 </div>
               )}
 
-              {registeredMonthlyBosses.length > 0 && (
+              {registeredMonthlyBosses.length > 0 && filteredMonthlyBosses.length === 0 && (
+                <div className="rounded-[14px] border border-dashed border-border p-4 text-sm text-text-muted">
+                  이 조건에 해당하는 보스가 없습니다
+                </div>
+              )}
+
+              {filteredMonthlyBosses.length > 0 && (
                 <div className="space-y-2">
-                  {registeredMonthlyBosses.map((boss) => (
-                    <BossCard key={`${boss.apiName}-${boss.difficulty}`} boss={boss} />
+                  {filteredMonthlyBosses.map((boss) => (
+                    <BossCard
+                      key={`${boss.apiName}-${boss.difficulty}`}
+                      boss={boss}
+                      partySize={getPartySize(selected.ocid, boss)}
+                    />
                   ))}
                 </div>
               )}
             </>
           )}
-        </>
+        </div>
       )}
 
       {trackingPicker}
+      {partyManagementModal}
     </div>
   )
 }

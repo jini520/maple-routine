@@ -19,6 +19,17 @@ const CREATE_BOSS_PROFIT_RECORDS_TABLE = `
   )
 `
 
+const CREATE_BOSS_PARTY_SETTINGS_TABLE = `
+  CREATE TABLE IF NOT EXISTS boss_party_settings (
+    ocid TEXT NOT NULL,
+    boss TEXT NOT NULL,
+    difficulty TEXT NOT NULL,
+    party_size INTEGER NOT NULL,
+    updated_at TEXT NOT NULL,
+    PRIMARY KEY (ocid, boss, difficulty)
+  )
+`
+
 let sqliteConnection: SQLiteConnection | null = null
 let dbPromise: Promise<SQLiteDBConnection> | null = null
 
@@ -43,6 +54,7 @@ async function openBossProfitDb(): Promise<SQLiteDBConnection> {
 
   await db.open()
   await db.execute(CREATE_BOSS_PROFIT_RECORDS_TABLE)
+  await db.execute(CREATE_BOSS_PARTY_SETTINGS_TABLE)
 
   return db
 }

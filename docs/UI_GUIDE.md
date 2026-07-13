@@ -172,6 +172,26 @@ Text(다크):      text-neutral-500 hover:text-neutral-300
 - **모달 컴포넌트(`components/Modal`)**: `CharacterTrackingPicker`/`DisconnectConfirm`에서 반복되던 오버레이(`fixed inset-0 flex items-center justify-center bg-bg/70` + 안쪽 카드 `onClick` 시 `stopPropagation`)를 공용화했다. 기본은 카드(`rounded-[14px] border border-border bg-surface p-6`)를 제공하지만, `card={false}`를 주면 위치 고정용 래퍼만 남기고 카드 스타일은 생략한다 — `ApiKeyForm`/`AccountSelectionList`처럼 이미 자체 카드를 가진 컴포넌트를 그대로 재사용할 때 카드-안-카드 중첩을 피하기 위함이다.
 - **테마 대표 컬러 점(`ThemeSwatchDots`)**: 테마의 `primary`/`secondary`/`error` 3개 토큰 값을 `h-4 w-4 rounded-full` 점으로 겹쳐(`-space-x-1`) 보여준다. 테마 행의 오른쪽 콘텐츠(점 3개 + 현재 테마 이름을 `rounded-full border border-border px-3 py-1 text-xs` 배지로)와 테마 모달 안의 선택지 각각에 재사용한다. `src/data/job-themes.json`을 직접 import해 값을 읽는다 — 활성화되지 않은 테마의 색도 미리보기로 보여줘야 해서 CSS 커스텀 프로퍼티(현재 활성 테마 값만 노출)로는 부족하기 때문이다.
 
+### 스크롤 영역 — 확정, 2026-07-13
+컨텐츠 스케줄러·보스 스케줄러 화면은 제목부터 탭(보스는 솔로/파티 서브 필터까지)을 화면 상단에 고정하고, 그 아래 목록(컨텐츠 리스트 / 보스 카드 목록)만 스크롤되게 한다. `position: sticky`로 구현한다 — 목록 영역을 별도 `overflow-y-auto` 컨테이너로 분리하고 높이를 계산(`calc(100dvh - ...)`)하는 방식 대신, 페이지 자체의 자연스러운 스크롤 위에서 헤더 블록만 `sticky top-0`으로 붙인다. `App.tsx`의 레이아웃(높이 모델)을 전혀 건드리지 않아도 되고, 다른 화면(보스 수익 계산기·설정 등)의 기존 페이지 스크롤 방식과도 충돌하지 않는다.
+```
+화면 루트: space-y-4 (패딩 없음 — 패딩은 아래 두 블록이 각자 갖는다)
+헤더 블록: sticky top-0 z-10 bg-bg px-4 pt-4 pb-2 (position 컨텍스트 + 배경 + 패딩만 담당)
+  ㄴ 콘텐츠 래퍼(space-y-4): 제목+관리 버튼 행, 캐릭터 드롭다운+새로고침 행, 상태/로딩 메시지, 탭 행, (보스 화면만) 솔로/파티 필터 행까지 전부 포함
+  ㄴ 페이드 오버레이: 아래 "헤더-목록 경계 페이드" 참고
+목록 블록: px-4 pb-4 space-y-4 — 화면 루트의 직계 자식(헤더 블록의 형제)
+```
+`bg-bg`는 뒤에서 스크롤되는 카드/리스트 항목이 헤더 밑으로 비쳐 보이지 않도록 막는 용도이고, `z-10`은 문서 순서상 헤더보다 나중에 그려지는 목록이 스크롤 시 헤더 위로 올라와 덮지 않도록 한다. 빈 목록 안내문("표시할 항목이 없습니다" 등)은 헤더가 아니라 목록 영역에 둔다 — 그 자체가 "목록이 있어야 할 자리의 내용"이기 때문이다.
+
+**정정(2026-07-13) — 패딩은 화면 루트가 아니라 헤더/목록 블록에 각각 줘야 한다**: 처음에는 화면 루트에 `p-4`를 주고 헤더를 그 자식으로 뒀는데, 그러면 루트의 `padding-top`(1rem)만큼 스크롤해야 헤더가 완전히 `top: 0`에 고정되고 그 전까지는 헤더가 스크롤을 따라 조금씩 움직이는 문제가 있었다(sticky 엘리먼트의 정지 위치는 조상의 padding이 아니라 자기 자신의 padding-box를 기준으로 계산되므로, padding이 sticky 엘리먼트보다 앞쪽 조상에 있으면 그만큼의 스크롤 거리 동안은 그냥 일반 흐름처럼 밀려 올라간다). 그래서 화면 루트에서 패딩을 완전히 빼고, 헤더 블록 자신에게 `px-4 pt-4`를, 목록 블록에 `px-4 pb-4`를 준다 — 헤더는 스크롤 시작과 동시에 정확히 `top: 0`에 고정된다.
+
+**헤더-목록 경계 페이드 — 확정, 2026-07-13**: sticky 헤더의 불투명 배경이 카드/리스트 항목을 스크롤 도중 한 프레임 만에 완전히 가려버려 경계가 딱 끊어져 보이는 문제가 있었다. 헤더 블록(콘텐츠 래퍼의 형제, `position: sticky`가 이미 포지셔닝 컨텍스트라 `relative` 불필요)에 페이드 오버레이를 추가한다:
+```
+pointer-events-none absolute inset-x-0 top-full h-8 bg-gradient-to-b from-bg to-transparent backdrop-blur-sm
+style: maskImage/WebkitMaskImage: linear-gradient(to bottom, black, transparent)
+```
+`top-full`로 헤더 바로 아래(헤더의 실제 콘텐츠 높이는 밀지 않음, absolute라 레이아웃에 관여하지 않음)에 32px 높이의 오버레이를 겹친다. **블러만으로는 부족하다** — 배경색(`bg-gradient-to-b from-bg to-transparent`)과 블러 강도(`backdrop-blur-sm`에 동일한 `mask-image` 그라데이션을 함께 적용)를 같은 그라데이션으로 동시에 옅어지게 해야, 색은 흐려지는데 블러는 그대로 남아 오히려 부자연스러운 경계가 생기는 걸 막을 수 있다(사용자 확인, 2026-07-13). `mask-image`는 Tailwind 유틸리티로 표현하기 애매해 인라인 스타일로 직접 준다 — 보스 카드 일러스트 페이드(`BossCard`)와 동일한 패턴.
+
 ### 탭 토글(주간/월간, 일간/주간 등) — 확정, 2026-07-13, [[ADR-018]]
 컨텐츠 스케줄러·보스 스케줄러의 캐릭터 드롭다운 아래 탭 전환 UI. **드롭다운·탭·(있다면) 카운트 배지를 별도 카드로 묶지 않는다** — 배경 위에 바로 놓는다(카드가 하나 더 늘어나는 걸 피하기 위해 카드로 묶는 안은 검토 후 기각, 2026-07-13).
 ```
@@ -201,18 +221,28 @@ Text(다크):      text-neutral-500 hover:text-neutral-300
 일러스트(있는 보스만): position absolute inset-0, background-size/position은 보스별 설정 값(src/data/boss-portrait-crops.json, 없으면 cover/center) — 블러 필터 없음(2026-07-13 확정, 흐리지 않고 선명하게), saturate(.85) brightness(.8)로 살짝 톤다운, opacity .65
   페이드: mask-image: linear-gradient(90deg, #000 0%, #000 38%, transparent 76%) — 왼쪽 38%까지 선명, 76%부터 완전 투명(카드 배경에 자연스럽게 녹아듦). 일러스트 없는 보스는 이 레이어 자체를 생략(플레이스홀더 배경색만)
 콘텐츠 행: flex items-center justify-between, padding 0 14px(좌우 동일 — 일러스트 위에 바로 얹히므로 별도 좌측 여백 없이 카드 가장자리에 붙임, 2026-07-13 확정)
-  왼쪽: 난이도 뱃지 + 보스명(순서: 뱃지 → 이름), 이름에는 text-shadow(0 1px 3px rgba(0,0,0,.9), 0 0 10px rgba(0,0,0,.6))로 일러스트 위에서도 대비 확보
-  오른쪽: flex items-center gap-1.5 — 파티 배지(설정된 경우)와 완료 배지(완료된 경우)를 이 순서로 나란히 배치. 둘 다 없으면 빈 공간(2026-07-13, [[ADR-019]] 반영 — 설계만·구현 전, 실제 화면 검증 전까지 잠정안)
+  왼쪽: 난이도 뱃지 + 보스명 + 파티 배지(설정된 경우, 순서: 뱃지 → 이름 → 파티 배지), 이름에는 text-shadow(0 1px 3px rgba(0,0,0,.9), 0 0 10px rgba(0,0,0,.6))로 일러스트 위에서도 대비 확보(**정정, 2026-07-13** — 파티 배지는 원래 오른쪽 완료 배지 옆이었으나 왼쪽으로 이동)
+  오른쪽: 완료 시에만 완료 배지, 미완료는 빈 공간([[ADR-019]] 반영)
 ```
 **완료 뱃지**: `rounded-full bg-secondary text-bg text-xs font-bold px-2.5 py-1`(테마 토큰, 카드 배경과 달리 고정하지 않음). 기존 `StatusDot`의 체크 완료 색이 이미 `bg-secondary`(레테 기준 #D1C093, 골드)였으므로 새 색을 만들지 않고 그대로 재사용한다. 왼쪽 체크 도형(`StatusDot`)은 제거.
 
 **파티 배지 — 확정, 2026-07-13, [[ADR-019]] (설계만·구현 전)**: 파티 인원이 2인 이상으로 설정된 보스 카드에만 표시. 카드 배경·보더·보스명과 마찬가지로 일러스트 위에 얹히는 카드 로컬 요소라 테마 토큰이 아니라 레테 고정 리터럴 값을 쓴다(완료 뱃지처럼 앱 전역 의미색이 아니므로 고정 대상).
 ```
-rounded-full bg-white/10 text-[#E8DFEC] text-xs font-semibold px-2 py-1, flex items-center gap-1
+rounded-full bg-white/20 text-[#E8DFEC] text-xs font-semibold px-2 py-1, flex items-center gap-1(**정정, 2026-07-13** — 왼쪽으로 이동 후 일러스트가 진한 구간 위에 얹혀 대비가 약해져 bg-white/10 → bg-white/20으로 상향)
 아이콘: lucide-react `Users`, size 12, strokeWidth 2
 텍스트: "n인"(예: "4인")
 ```
 설정 안 함 또는 1인(솔로)이면 이 배지 자체를 렌더링하지 않는다 — 별도의 "솔로" 뱃지는 두지 않는다(빈 공간으로 솔로를 표현).
+
+**파티 관리 진입점 — 재정정, 2026-07-13, [[ADR-019]]**: 보스 카드에서 직접 설정하는 방식(카드 안 아이콘 버튼 → 단일 보스 모달)은 폐기했다. 대신 보스 스케줄러 화면 상단 "캐릭터 관리" 버튼 옆에 **"파티 관리" 버튼**을 추가한다(둘 다 같은 스타일 `text-sm font-medium text-text-muted hover:text-text`, 아이콘 없이 텍스트만 — 기존 "캐릭터 관리" 버튼과 동일한 톤). 탭하면 모달(`PartyManagementModal`)이 열린다. 보스 카드 자체에는 더 이상 진입 버튼이 없다 — 파티 배지(아래)만 표시한다.
+
+**파티 관리 모달 — `PartyManagementModal`, `components/Modal/Modal` 재사용**: 전체 목록을 한 번에 나열하지 않고, **보스 드롭다운 → 난이도 뱃지 선택 → 파티원 수 입력** 3단 폼으로 한 번에 하나의 (보스, 난이도) 조합만 편집한다(**재정정, 2026-07-13** — 전체 목록 나열 방식에서 변경).
+```
+보스: <select> — 정정(2026-07-13) 캐릭터가 스케줄러에 등록한 보스가 아니라 항상 전체 보스 목록(weekly-bosses.json의 weekly+eventWeekly+monthly 전체, 중복 제거) — 아직 등록하지 않은 보스도 미리 설정해둘 수 있다. 라벨 "보스"(text-xs font-medium text-text-muted), 인풋은 CharacterSelectDropdown과 동일한 톤(border-border bg-surface px-4 py-3 text-sm text-text, 다만 폭은 w-full)
+난이도: 라벨 "난이도" 아래 flex flex-wrap gap-2로 뱃지 버튼 나열 — 선택 가능한 난이도는 boss-crystal-prices.json에서 해당 보스명으로 조회(새 게임 데이터 아님, ADR-006. 가격 데이터가 아직 없는 보스는 "이 보스는 아직 파티 설정을 지원하지 않습니다" 안내로 대체). 각 버튼은 보스 카드와 동일한 DifficultyBadge(BossScreen.tsx에서 export)를 그대로 감싸 재사용 — 새 뱃지 스타일 신설 금지. **정정(2026-07-13)** — 선택 표시에 쓰던 `ring-2 ring-primary` 테두리를 제거하고 투명도 차이만으로 구분한다: 선택된 난이도는 불투명(기본), 비선택은 opacity-40 hover:opacity-70(대비를 더 주기 위해 기존 50→40으로 낮춤)
+파티원 수: -/+ 스테퍼. flex items-center gap-3 — 감소 버튼(h-9 w-9 rounded-full border border-border, lucide-react `Minus`) · 가운데 현재 값(w-8 text-center text-sm font-semibold) · 증가 버튼(동일 스타일, `Plus`). 라벨 "파티원 수 (최대 N인)"으로 상한을 항상 노출. 감소 버튼은 값이 1일 때, 증가 버튼은 값이 해당 (보스,난이도)의 maxPartySize일 때 disabled — 범위 밖 값 자체를 입력할 방법이 없다. 저장 버튼(rounded-full bg-primary) 클릭 시 현재 값 그대로 store.setPartySize를 호출한다
+```
+보스/난이도를 바꾸면 스테퍼 값이 그 조합의 저장된 값(1~maxPartySize로 clamp)으로 초기화된다(React `key` 리셋 관용구 — 이전 조합의 값이 새 조합에 남지 않음). **정정(2026-07-13)**: 난이도 기본 선택은 그 보스가 캐릭터의 스케줄러에 등록돼있으면 등록된 난이도, 아니면 boss-crystal-prices.json 등록 순서상 첫 난이도다 — 보스 목록 자체는 등록 여부와 무관하게 항상 전체를 보여주지만, 난이도 기본값만큼은 실제로 플레이 중인 난이도를 우선한다.
 
 **난이도 뱃지**: 텍스트("· 하드") 대신 게임 내 난이도 뱃지와 같은 시각 언어(글로시 캡슐형)로 표시. 실제 게임 UI 스크린샷에서 픽셀 색을 추출한 근사값(1px 단위 재현 아님):
 ```
@@ -249,4 +279,4 @@ rounded-full bg-white/10 text-[#E8DFEC] text-xs font-semibold px-2 py-1, flex it
 - **라이브러리: `lucide-react`(확정, 2026-07-11)** — 새 아이콘이 필요하면 이 라이브러리에서만 가져온다. 다른 아이콘 라이브러리를 섞어 쓰지 않는다
 - `strokeWidth`: 하단 탭바 내비게이션 아이콘은 `1.5`, 새로고침 등 소형 액션 아이콘은 `2`
 - 아이콘 컨테이너(둥근 배경 박스)로 감싸지 않는다 — 강조색 아이콘을 배경 없이 단독으로 쓴다(원형 배경으로 감쌌다가 제거하고 이 방식으로 확정, 2026-07-11)
-- 현재 쓰이는 아이콘: 하단 탭바 `ListChecks`(컨텐츠)/`Swords`(보스, 활성 시 `#C2410C`·비활성 시 `#B7A490`, [[ADR-013]] 화면 개편에 따라 기존 `CalendarCheck`(일간)/`CalendarRange`(주간)에서 변경, 2026-07-11 — 제안 수준, 실제 적용 시 다른 조합으로 바뀔 수 있음), 새로고침 버튼 `RefreshCw`(`#C2410C`, 배경 없음), 보스 카드 파티 배지 `Users`(size 12, strokeWidth 2, [[ADR-019]], 설계만·구현 전)
+- 현재 쓰이는 아이콘: 하단 탭바 `ListChecks`(컨텐츠)/`Swords`(보스, 활성 시 `#C2410C`·비활성 시 `#B7A490`, [[ADR-013]] 화면 개편에 따라 기존 `CalendarCheck`(일간)/`CalendarRange`(주간)에서 변경, 2026-07-11 — 제안 수준, 실제 적용 시 다른 조합으로 바뀔 수 있음), 새로고침 버튼 `RefreshCw`(`#C2410C`, 배경 없음), 보스 카드 파티 배지 `Users`(size 12, strokeWidth 2, [[ADR-019]]), 파티 관리 모달 파티원 수 스테퍼 `Minus`/`Plus`(size 16, strokeWidth 2, [[ADR-019]])

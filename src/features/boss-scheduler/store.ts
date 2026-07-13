@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { getMaxPartySize } from '../../lib/boss-crystal-prices'
 import { matchBossContent, type MatchedBoss } from '../../lib/boss-matching'
 import { syncSchedules, type ScheduleSyncError } from '../schedule-sync/schedule-sync'
 import {
@@ -7,8 +8,10 @@ import {
   setLastSelectedCharacter,
   setTrackedCharacterOcids,
 } from '../../storage/character-selection'
+import { getBossPartySettings, setBossPartySize } from '../../storage/boss-party-settings'
 import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getCachedSchedulerState } from '../../storage/scheduler-cache'
+import type { BossDifficulty } from '../../types'
 import { compareByName } from '../onboarding/representative-character'
 
 export interface BossCharacterView {
@@ -31,6 +34,9 @@ export interface BossSchedulerState {
   error: ScheduleSyncError | null
   trackedOcids: string[] | null
   selectedOcid: string | null
+  // key: `${ocid}:${boss}:${difficulty}` (ADR-019 결정 3) — 맵에 키가 없으면 "미설정"(솔로)을
+  // 뜻한다. 이 store는 없는 키를 1로 채워 넣지 않는다 — 그 해석은 UI의 책임이다.
+  partySizes: Record<string, number>
 }
 
 export interface BossSchedulerStore extends BossSchedulerState {
@@ -38,6 +44,8 @@ export interface BossSchedulerStore extends BossSchedulerState {
   saveTrackedOcids(ocids: string[]): Promise<void>
   refresh(ocids: string[]): Promise<void>
   selectCharacter(ocid: string): Promise<void>
+  loadPartySizes(ocids: string[]): Promise<void>
+  setPartySize(ocid: string, boss: string, difficulty: string, partySize: number): Promise<void>
 }
 
 const initialState: BossSchedulerState = {
@@ -46,6 +54,11 @@ const initialState: BossSchedulerState = {
   error: null,
   trackedOcids: null,
   selectedOcid: null,
+  partySizes: {},
+}
+
+export function partySizeKey(ocid: string, boss: string, difficulty: string): string {
+  return `${ocid}:${boss}:${difficulty}`
 }
 
 // ADR-017 결정 2: 캐시 단계(trackedOcids 저장 순서)와 동기화 단계(계정 전체 캐릭터
@@ -95,7 +108,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
 
   async refresh(ocids) {
     if (ocids.length === 0) {
-      set({ status: 'loaded', characters: [], error: null })
+      set({ status: 'loaded', characters: [], error: null, partySizes: {} })
       return
     }
 
@@ -125,6 +138,10 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
     ).filter((view): view is BossCharacterView => view !== null)
 
     set({ status: 'loading', characters: await sortByCachedLevel(cachedCharacters) })
+
+    // ADR-019: 파티 설정은 완료 여부·주차와 무관한 상시 데이터라 스케줄 동기화(캐시 우선 표시 →
+    // 재검증)와 독립적이다 — 벌크 조회 한 번으로 충분하다.
+    await get().loadPartySizes(ocids)
 
     let results: Awaited<ReturnType<typeof syncSchedules>>
     try {
@@ -157,5 +174,32 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
   async selectCharacter(ocid) {
     set({ selectedOcid: ocid })
     await setLastSelectedCharacter('boss', ocid)
+  },
+
+  async loadPartySizes(ocids) {
+    if (ocids.length === 0) {
+      set({ partySizes: {} })
+      return
+    }
+
+    const settings = await getBossPartySettings(ocids)
+    const partySizes: Record<string, number> = {}
+    for (const setting of settings) {
+      partySizes[partySizeKey(setting.ocid, setting.boss, setting.difficulty)] = setting.partySize
+    }
+    set({ partySizes })
+  },
+
+  async setPartySize(ocid, boss, difficulty, partySize) {
+    const maxPartySize = getMaxPartySize(boss, difficulty as BossDifficulty)
+    if (!Number.isInteger(partySize) || partySize < 1 || partySize > maxPartySize) {
+      throw new Error(`setPartySize: 파티원 수는 1 이상 ${maxPartySize} 이하의 정수여야 합니다`)
+    }
+
+    await setBossPartySize(ocid, boss, difficulty, partySize, new Date().toISOString())
+
+    set({
+      partySizes: { ...get().partySizes, [partySizeKey(ocid, boss, difficulty)]: partySize },
+    })
   },
 }))

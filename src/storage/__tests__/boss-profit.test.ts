@@ -70,58 +70,6 @@ describe('upsertBossProfitRecord', () => {
   })
 })
 
-describe('getLatestPartySize', () => {
-  it('조회 결과가 없으면 null을 반환한다', async () => {
-    queryMock.mockResolvedValue({ values: [] })
-    const { getLatestPartySize } = await import('../boss-profit')
-
-    await expect(getLatestPartySize('ocid-1', '검은 마법사', '익스트림')).resolves.toBeNull()
-  })
-
-  it('조회 결과가 undefined여도 null을 반환한다', async () => {
-    queryMock.mockResolvedValue({ values: undefined })
-    const { getLatestPartySize } = await import('../boss-profit')
-
-    await expect(getLatestPartySize('ocid-1', '검은 마법사', '익스트림')).resolves.toBeNull()
-  })
-
-  it('조회 결과가 있으면 가장 최근 레코드의 party_size를 반환한다', async () => {
-    queryMock.mockResolvedValue({
-      values: [
-        {
-          ocid: 'ocid-1',
-          boss: '검은 마법사',
-          difficulty: '익스트림',
-          cycle: 'monthly',
-          period_key: '2026-07',
-          party_size: 3,
-          price_meso: 1_000_000,
-          payout_meso: 333_333,
-          recorded_at: '2026-07-09T00:05:00.000Z',
-        },
-      ],
-    })
-    const { getLatestPartySize } = await import('../boss-profit')
-
-    await expect(getLatestPartySize('ocid-1', '검은 마법사', '익스트림')).resolves.toBe(3)
-  })
-
-  it('period_key 조건 없이 recorded_at DESC LIMIT 1로 조회하고 ocid/boss/difficulty 순서로 바인딩한다', async () => {
-    queryMock.mockResolvedValue({ values: [] })
-    const { getLatestPartySize } = await import('../boss-profit')
-
-    await getLatestPartySize('ocid-1', '검은 마법사', '익스트림')
-
-    expect(queryMock).toHaveBeenCalledWith(
-      expect.stringContaining('ORDER BY recorded_at DESC LIMIT 1'),
-      ['ocid-1', '검은 마법사', '익스트림'],
-    )
-
-    const [sql] = queryMock.mock.calls[0]
-    expect(sql).not.toMatch(/period_key/)
-  })
-})
-
 describe('getBossProfitRecords', () => {
   it('ocids가 빈 배열이면 DB를 호출하지 않고 빈 배열을 반환한다', async () => {
     const { getBossProfitRecords } = await import('../boss-profit')

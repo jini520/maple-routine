@@ -2,11 +2,55 @@
   "project": "메이플 루틴",
   "phase": "boss-party-management",
   "steps": [
-    { "step": 0, "name": "sqlite-boss-party-settings", "status": "pending" },
-    { "step": 1, "name": "boss-party-settings-storage", "status": "pending" },
-    { "step": 2, "name": "boss-scheduler-party-store", "status": "pending" },
-    { "step": 3, "name": "boss-profit-party-default", "status": "pending" },
-    { "step": 4, "name": "boss-card-party-badge-modal", "status": "pending" },
-    { "step": 5, "name": "boss-scheduler-solo-party-filter", "status": "pending" }
-  ]
+    {
+      "step": 0,
+      "name": "sqlite-boss-party-settings",
+      "status": "completed",
+      "started_at": "2026-07-13T21:50:36+0900",
+      "summary": "storage/sqlite/db.ts에 boss_party_settings 테이블(ocid+boss+difficulty PK, party_size, updated_at) 생성 SQL을 추가하고 기존 boss_profit DB 커넥션에서 함께 실행되도록 연결, db.test.ts에 생성 검증 assertion 추가",
+      "completed_at": "2026-07-13T21:51:40+0900"
+    },
+    {
+      "step": 1,
+      "name": "boss-party-settings-storage",
+      "status": "completed",
+      "started_at": "2026-07-13T21:51:40+0900",
+      "summary": "storage/boss-party-settings.ts 신규 — setBossPartySize(upsert)/getBossPartySize(단건 조회, 없으면 null)/getBossPartySettings(벌크 조회) 구현, boss-profit.ts와 동일한 getBossProfitDb 재사용 패턴",
+      "completed_at": "2026-07-13T21:53:10+0900"
+    },
+    {
+      "step": 2,
+      "name": "boss-scheduler-party-store",
+      "status": "completed",
+      "started_at": "2026-07-13T21:53:10+0900",
+      "summary": "features/boss-scheduler/store.ts에 partySizes(맵, ocid:boss:difficulty 키)·loadPartySizes·setPartySize 추가(refresh 내에서 loadPartySizes 병행 호출), maxPartySize 조회 로직을 src/lib/boss-crystal-prices.ts로 추출해 boss-profit/store.ts도 함께 재사용하도록 리팩터링(동작 불변)",
+      "completed_at": "2026-07-13T21:57:48+0900"
+    },
+    {
+      "step": 3,
+      "name": "boss-profit-party-default",
+      "status": "completed",
+      "started_at": "2026-07-13T21:57:48+0900",
+      "summary": "features/boss-profit/store.ts의 자동 기록 기본 파티원 수 조회를 storage/boss-profit.ts의 getLatestPartySize(최근 기록값 이어받기, ADR-014)에서 storage/boss-party-settings.ts의 getBossPartySize(boss_party_settings 조회, ADR-019)로 교체, getLatestPartySize 함수·관련 테스트 삭제",
+      "completed_at": "2026-07-13T22:00:54+0900"
+    },
+    {
+      "step": 4,
+      "name": "boss-card-party-badge-modal",
+      "status": "completed",
+      "started_at": "2026-07-13T22:00:54+0900",
+      "summary": "BossCard에 파티 배지(2인 이상)와 카드 안 별도 진입 버튼(lucide-react SlidersHorizontal, size 16) 추가, PartySizeModal.tsx 신규(components/Modal 재사용, 저장 시 검증 후 store.setPartySize 호출), BossScreen에서 store의 partySizes/setPartySize 연결, docs/UI_GUIDE.md에 진입 버튼 스펙 기록",
+      "completed_at": "2026-07-13T22:07:30+0900"
+    },
+    {
+      "step": 5,
+      "name": "boss-scheduler-solo-party-filter",
+      "status": "completed",
+      "started_at": "2026-07-13T22:07:30+0900",
+      "summary": "BossScreen.tsx에 주간/월간 탭별 독립 상태(weeklyFilter/monthlyFilter)를 갖는 전체/솔로/파티 서브 필터 pill 행 추가, partySizes 맵만으로 클라이언트 사이드 필터링(미설정=1인=솔로), 필터로 인한 빈 결과와 등록된 보스 자체가 없는 빈 상태의 문구를 구분",
+      "completed_at": "2026-07-13T22:11:45+0900"
+    }
+  ],
+  "created_at": "2026-07-13T21:50:36+0900",
+  "completed_at": "2026-07-13T22:11:45+0900"
 }
