@@ -528,4 +528,143 @@ describe('BossScreen', () => {
       expect(setPartySize).not.toHaveBeenCalled()
     })
   })
+
+  describe('솔로/파티 서브 필터 (ADR-019)', () => {
+    function characterWithTwoBosses(overrides: Partial<BossCharacterView> = {}): BossCharacterView {
+      return character({
+        ocid: 'ocid-1',
+        weeklyBosses: [
+          {
+            apiName: '자쿰',
+            difficulty: '카오스',
+            cycle: 'weekly',
+            isRegistered: true,
+            isComplete: false,
+            matchedBossName: '자쿰',
+            portraitSlug: null,
+          },
+          {
+            apiName: '루시드',
+            difficulty: '하드',
+            cycle: 'weekly',
+            isRegistered: true,
+            isComplete: false,
+            matchedBossName: '루시드',
+            portraitSlug: null,
+          },
+        ],
+        monthlyBosses: [
+          {
+            apiName: '검은 마법사',
+            difficulty: '익스트림',
+            cycle: 'monthly',
+            isRegistered: true,
+            isComplete: false,
+            matchedBossName: '검은마법사',
+            portraitSlug: 'blackMage',
+          },
+        ],
+        ...overrides,
+      })
+    }
+
+    it('필터를 "파티"로 선택하면 파티원 2인 이상인 보스만 보인다', async () => {
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        characters: [characterWithTwoBosses()],
+        // 자쿰은 4인 파티, 루시드는 미설정(솔로 취급)
+        partySizes: { 'ocid-1:자쿰:카오스': 4 },
+      })
+
+      render(<BossScreen />)
+      await screen.findByRole('combobox')
+      fireEvent.click(screen.getByRole('button', { name: '파티' }))
+
+      expect(screen.getByText('자쿰')).toBeInTheDocument()
+      expect(screen.queryByText('루시드')).not.toBeInTheDocument()
+    })
+
+    it('필터를 "솔로"로 선택하면 미설정+1인 보스만 보인다', async () => {
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        characters: [characterWithTwoBosses()],
+        // 자쿰은 4인 파티, 루시드는 1인으로 명시 설정
+        partySizes: { 'ocid-1:자쿰:카오스': 4, 'ocid-1:루시드:하드': 1 },
+      })
+
+      render(<BossScreen />)
+      await screen.findByRole('combobox')
+      fireEvent.click(screen.getByRole('button', { name: '솔로' }))
+
+      expect(screen.getByText('루시드')).toBeInTheDocument()
+      expect(screen.queryByText('자쿰')).not.toBeInTheDocument()
+    })
+
+    it('주간 탭에서 필터를 바꾼 뒤 월간 탭으로 전환해도 월간 탭 필터는 "전체"로 유지된다', async () => {
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        characters: [characterWithTwoBosses()],
+        partySizes: { 'ocid-1:자쿰:카오스': 4 },
+      })
+
+      render(<BossScreen />)
+      await screen.findByRole('combobox')
+
+      fireEvent.click(screen.getByRole('button', { name: '파티' }))
+      expect(screen.queryByText('루시드')).not.toBeInTheDocument()
+
+      fireEvent.click(screen.getByRole('button', { name: '월간' }))
+      // 검은마법사는 파티 설정이 없어 솔로 취급이지만, 월간 탭 필터는 독립적으로 "전체"로
+      // 유지되어야 하므로 그대로 보여야 한다.
+      expect(screen.getByText('검은마법사')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: '전체' })).toHaveClass('bg-primary/15')
+
+      fireEvent.click(screen.getByRole('button', { name: '주간' }))
+      // 주간 탭으로 되돌아오면 이전에 선택한 "파티" 필터가 그대로 유지된다.
+      expect(screen.getByRole('button', { name: '파티' })).toHaveClass('bg-primary/15')
+      expect(screen.getByText('자쿰')).toBeInTheDocument()
+      expect(screen.queryByText('루시드')).not.toBeInTheDocument()
+    })
+
+    it('필터로 결과가 0개일 때와 등록된 보스 자체가 없을 때 서로 다른 빈 상태 문구가 보인다', async () => {
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        characters: [
+          character({
+            ocid: 'ocid-1',
+            weeklyBosses: [],
+            isStale: false,
+          }),
+        ],
+      })
+
+      render(<BossScreen />)
+      await screen.findByRole('combobox')
+
+      // 등록된 보스 자체가 없는 경우
+      expect(screen.getByText(/게임에서 스케줄러에 등록해주세요/)).toBeInTheDocument()
+      expect(screen.queryByText('이 조건에 해당하는 보스가 없습니다')).not.toBeInTheDocument()
+
+      cleanup()
+
+      // 등록된 보스는 있지만 필터 조건에 맞는 게 없는 경우
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        characters: [characterWithTwoBosses()],
+        partySizes: {},
+      })
+
+      render(<BossScreen />)
+      await screen.findByRole('combobox')
+      fireEvent.click(screen.getByRole('button', { name: '파티' }))
+
+      expect(screen.getByText('이 조건에 해당하는 보스가 없습니다')).toBeInTheDocument()
+      expect(screen.queryByText(/게임에서 스케줄러에 등록해주세요/)).not.toBeInTheDocument()
+    })
+  })
 })

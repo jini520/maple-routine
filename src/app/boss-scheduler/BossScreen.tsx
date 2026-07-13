@@ -13,6 +13,13 @@ import type { MatchedBoss } from '../../lib/boss-matching'
 import { PartySizeModal } from './PartySizeModal'
 
 type BossTab = 'weekly' | 'monthly'
+type PartyFilter = 'all' | 'solo' | 'party'
+
+const PARTY_FILTER_LABELS: Record<PartyFilter, string> = {
+  all: '전체',
+  solo: '솔로',
+  party: '파티',
+}
 
 const DIFFICULTY_BADGE_STYLES: Record<BossDifficulty, React.CSSProperties> = {
   이지: {
@@ -147,6 +154,10 @@ export function BossScreen(): React.JSX.Element {
   const [roster, setRoster] = useState<CharacterPickerEntry[]>([])
   const [isPickerOpen, setIsPickerOpen] = useState(false)
   const [partyModalTarget, setPartyModalTarget] = useState<MatchedBoss | null>(null)
+  // ADR-019 결정 6: 주간/월간 탭은 서로 독립된 필터 상태를 갖는다(한 탭의 필터 변경이
+  // 다른 탭에 영향을 주지 않음).
+  const [weeklyFilter, setWeeklyFilter] = useState<PartyFilter>('all')
+  const [monthlyFilter, setMonthlyFilter] = useState<PartyFilter>('all')
 
   useEffect(() => {
     loadTrackedOcids()
@@ -189,6 +200,22 @@ export function BossScreen(): React.JSX.Element {
     const bossName = boss.matchedBossName ?? boss.apiName
     return partySizes[partySizeKey(ocid, bossName, boss.difficulty)]
   }
+
+  // ADR-019 결정 3: boss_party_settings에 없는 조합은 솔로(1인) 취급 — 별도 API 재호출
+  // 없이 이미 로드된 partySizes 맵으로만 클라이언트 사이드 필터링한다.
+  function filterByPartySize(bosses: MatchedBoss[], ocid: string, filter: PartyFilter): MatchedBoss[] {
+    if (filter === 'all') return bosses
+    return bosses.filter((boss) => {
+      const size = getPartySize(ocid, boss) ?? 1
+      return filter === 'party' ? size >= 2 : size <= 1
+    })
+  }
+
+  const activeFilter = activeTab === 'weekly' ? weeklyFilter : monthlyFilter
+  const filteredWeeklyBosses =
+    selected !== null ? filterByPartySize(registeredWeeklyBosses, selected.ocid, weeklyFilter) : []
+  const filteredMonthlyBosses =
+    selected !== null ? filterByPartySize(registeredMonthlyBosses, selected.ocid, monthlyFilter) : []
 
   async function handleSaveTracking(ocids: string[]): Promise<void> {
     await saveTrackedOcids(ocids)
@@ -342,6 +369,25 @@ export function BossScreen(): React.JSX.Element {
               )}
           </div>
 
+          <div className="flex items-center gap-2">
+            {(['all', 'solo', 'party'] as const).map((filter) => (
+              <button
+                key={filter}
+                type="button"
+                onClick={() =>
+                  activeTab === 'weekly' ? setWeeklyFilter(filter) : setMonthlyFilter(filter)
+                }
+                className={
+                  activeFilter === filter
+                    ? 'rounded-full bg-primary/15 px-3 py-1 text-xs font-semibold text-primary'
+                    : 'px-3 text-xs font-medium text-text-muted'
+                }
+              >
+                {PARTY_FILTER_LABELS[filter]}
+              </button>
+            ))}
+          </div>
+
           {activeTab === 'weekly' && (
             <>
               {registeredWeeklyBosses.length === 0 && !selected.isStale && (
@@ -350,9 +396,15 @@ export function BossScreen(): React.JSX.Element {
                 </div>
               )}
 
-              {registeredWeeklyBosses.length > 0 && (
+              {registeredWeeklyBosses.length > 0 && filteredWeeklyBosses.length === 0 && (
+                <div className="rounded-[14px] border border-dashed border-border p-4 text-sm text-text-muted">
+                  이 조건에 해당하는 보스가 없습니다
+                </div>
+              )}
+
+              {filteredWeeklyBosses.length > 0 && (
                 <div className="space-y-2">
-                  {registeredWeeklyBosses.map((boss) => (
+                  {filteredWeeklyBosses.map((boss) => (
                     <BossCard
                       key={`${boss.apiName}-${boss.difficulty}`}
                       boss={boss}
@@ -373,9 +425,15 @@ export function BossScreen(): React.JSX.Element {
                 </div>
               )}
 
-              {registeredMonthlyBosses.length > 0 && (
+              {registeredMonthlyBosses.length > 0 && filteredMonthlyBosses.length === 0 && (
+                <div className="rounded-[14px] border border-dashed border-border p-4 text-sm text-text-muted">
+                  이 조건에 해당하는 보스가 없습니다
+                </div>
+              )}
+
+              {filteredMonthlyBosses.length > 0 && (
                 <div className="space-y-2">
-                  {registeredMonthlyBosses.map((boss) => (
+                  {filteredMonthlyBosses.map((boss) => (
                     <BossCard
                       key={`${boss.apiName}-${boss.difficulty}`}
                       boss={boss}
