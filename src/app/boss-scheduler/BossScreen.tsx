@@ -104,16 +104,15 @@ export function BossCard(props: {
           >
             {bossName}
           </span>
-        </div>
-
-        <div className="flex items-center gap-1.5">
           {partySize !== undefined && partySize > 1 && (
             <span className="flex items-center gap-1 rounded-full bg-white/10 px-2 py-1 text-xs font-semibold text-[#E8DFEC]">
               <Users className="h-3 w-3" strokeWidth={2} aria-hidden="true" />
               {partySize}인
             </span>
           )}
+        </div>
 
+        <div className="flex items-center gap-1.5">
           {boss.isComplete && (
             <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-bold text-bg">완료</span>
           )}

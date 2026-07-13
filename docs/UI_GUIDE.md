@@ -201,8 +201,8 @@ Text(다크):      text-neutral-500 hover:text-neutral-300
 일러스트(있는 보스만): position absolute inset-0, background-size/position은 보스별 설정 값(src/data/boss-portrait-crops.json, 없으면 cover/center) — 블러 필터 없음(2026-07-13 확정, 흐리지 않고 선명하게), saturate(.85) brightness(.8)로 살짝 톤다운, opacity .65
   페이드: mask-image: linear-gradient(90deg, #000 0%, #000 38%, transparent 76%) — 왼쪽 38%까지 선명, 76%부터 완전 투명(카드 배경에 자연스럽게 녹아듦). 일러스트 없는 보스는 이 레이어 자체를 생략(플레이스홀더 배경색만)
 콘텐츠 행: flex items-center justify-between, padding 0 14px(좌우 동일 — 일러스트 위에 바로 얹히므로 별도 좌측 여백 없이 카드 가장자리에 붙임, 2026-07-13 확정)
-  왼쪽: 난이도 뱃지 + 보스명(순서: 뱃지 → 이름), 이름에는 text-shadow(0 1px 3px rgba(0,0,0,.9), 0 0 10px rgba(0,0,0,.6))로 일러스트 위에서도 대비 확보
-  오른쪽: flex items-center gap-1.5 — 파티 배지(설정된 경우) → 완료 배지(완료된 경우)를 이 순서로 나란히 배치. 둘 다 없으면 빈 공간(2026-07-13, [[ADR-019]] 반영 — 설계만·구현 전, 실제 화면 검증 전까지 잠정안)
+  왼쪽: 난이도 뱃지 + 보스명 + 파티 배지(설정된 경우, 순서: 뱃지 → 이름 → 파티 배지), 이름에는 text-shadow(0 1px 3px rgba(0,0,0,.9), 0 0 10px rgba(0,0,0,.6))로 일러스트 위에서도 대비 확보(**정정, 2026-07-13** — 파티 배지는 원래 오른쪽 완료 배지 옆이었으나 왼쪽으로 이동)
+  오른쪽: 완료 시에만 완료 배지, 미완료는 빈 공간([[ADR-019]] 반영)
 ```
 **완료 뱃지**: `rounded-full bg-secondary text-bg text-xs font-bold px-2.5 py-1`(테마 토큰, 카드 배경과 달리 고정하지 않음). 기존 `StatusDot`의 체크 완료 색이 이미 `bg-secondary`(레테 기준 #D1C093, 골드)였으므로 새 색을 만들지 않고 그대로 재사용한다. 왼쪽 체크 도형(`StatusDot`)은 제거.
 
