@@ -32,7 +32,7 @@
       "status": "completed",
       "started_at": "2026-07-13T21:57:48+0900",
       "summary": "features/boss-profit/store.ts의 자동 기록 기본 파티원 수 조회를 storage/boss-profit.ts의 getLatestPartySize(최근 기록값 이어받기, ADR-014)에서 storage/boss-party-settings.ts의 getBossPartySize(boss_party_settings 조회, ADR-019)로 교체, getLatestPartySize 함수·관련 테스트 삭제",
-      "completed_at": "2026-07-13T22:03:00+0900"
+      "completed_at": "2026-07-13T22:00:54+0900"
     },
     {
       "step": 4,
