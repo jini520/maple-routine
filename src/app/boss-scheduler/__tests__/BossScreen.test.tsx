@@ -474,7 +474,7 @@ describe('BossScreen', () => {
       expect(screen.queryByText(/^\d+인$/)).not.toBeInTheDocument()
     })
 
-    it('진입 버튼 클릭 시 모달이 열리고, 저장하면 store의 setPartySize가 올바른 인자로 호출된다', async () => {
+    it('"파티 관리" 버튼 클릭 시 등록된 보스 목록(주간+월간 통합) 모달이 열리고, 값을 바꾸면 store의 setPartySize가 올바른 인자로 호출된다', async () => {
       const setPartySize = vi.fn().mockResolvedValue(undefined)
       mockStore({
         status: 'loaded',
@@ -486,12 +486,12 @@ describe('BossScreen', () => {
       render(<BossScreen />)
       await screen.findByRole('combobox')
 
-      fireEvent.click(screen.getByRole('button', { name: '자쿰 파티 인원 설정' }))
-      expect(await screen.findByText('파티 인원 설정')).toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: '파티 관리' }))
+      expect(await screen.findByRole('heading', { name: '파티 관리' })).toBeInTheDocument()
 
-      const input = screen.getByLabelText('파티원 수')
+      const input = screen.getByLabelText('자쿰 카오스 파티원 수')
       fireEvent.change(input, { target: { value: '4' } })
-      fireEvent.click(screen.getByRole('button', { name: '저장' }))
+      fireEvent.blur(input)
 
       await waitFor(() => {
         expect(setPartySize).toHaveBeenCalledWith('ocid-1', '자쿰', '카오스', 4)
@@ -510,21 +510,21 @@ describe('BossScreen', () => {
       render(<BossScreen />)
       await screen.findByRole('combobox')
 
-      fireEvent.click(screen.getByRole('button', { name: '자쿰 파티 인원 설정' }))
-      const input = await screen.findByLabelText('파티원 수')
+      fireEvent.click(screen.getByRole('button', { name: '파티 관리' }))
+      const input = await screen.findByLabelText('자쿰 카오스 파티원 수')
 
       fireEvent.change(input, { target: { value: '0' } })
-      fireEvent.click(screen.getByRole('button', { name: '저장' }))
+      fireEvent.blur(input)
       expect(await screen.findByText(/파티원 수는 1 이상/)).toBeInTheDocument()
       expect(setPartySize).not.toHaveBeenCalled()
 
       // 자쿰은 별도 maxPartySize 예외가 없어 기본값(6)이 상한이다
       fireEvent.change(input, { target: { value: '7' } })
-      fireEvent.click(screen.getByRole('button', { name: '저장' }))
+      fireEvent.blur(input)
       expect(setPartySize).not.toHaveBeenCalled()
 
       fireEvent.change(input, { target: { value: '1.5' } })
-      fireEvent.click(screen.getByRole('button', { name: '저장' }))
+      fireEvent.blur(input)
       expect(setPartySize).not.toHaveBeenCalled()
     })
   })

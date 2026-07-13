@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Cog, RefreshCw, Users } from 'lucide-react'
+import { RefreshCw, Users } from 'lucide-react'
 import { CharacterSelectDropdown } from '../../components/CharacterSelectDropdown/CharacterSelectDropdown'
 import { CharacterTrackingPicker } from '../../components/CharacterTrackingPicker/CharacterTrackingPicker'
 import { partySizeKey, useBossSchedulerStore } from '../../features/boss-scheduler/store'
@@ -7,10 +7,9 @@ import { formatScheduleSyncError, formatSyncedAt } from '../../features/schedule
 import { getCharacterPickerRoster } from '../../features/schedule-sync/schedule-sync'
 import { getBossPortraitCrop, getBossPortraitUrl } from '../../lib/boss-icons'
 import type { BossPortraitCrop } from '../../lib/boss-icons'
-import { getMaxPartySize } from '../../lib/boss-crystal-prices'
 import type { BossDifficulty, CharacterPickerEntry } from '../../types'
 import type { MatchedBoss } from '../../lib/boss-matching'
-import { PartySizeModal } from './PartySizeModal'
+import { PartyManagementModal } from './PartyManagementModal'
 
 type BossTab = 'weekly' | 'monthly'
 type PartyFilter = 'all' | 'solo' | 'party'
@@ -67,7 +66,6 @@ export function BossCard(props: {
   boss: MatchedBoss
   crop?: BossPortraitCrop
   partySize?: number
-  onOpenPartyModal?: () => void
 }): React.JSX.Element {
   const { boss, partySize } = props
   const portraitUrl = getBossPortraitUrl(boss.portraitSlug)
@@ -106,16 +104,6 @@ export function BossCard(props: {
           >
             {bossName}
           </span>
-          {props.onOpenPartyModal !== undefined && (
-            <button
-              type="button"
-              onClick={props.onOpenPartyModal}
-              aria-label={`${bossName} 파티 인원 설정`}
-              className="text-[#B89CBD] hover:text-[#E8DFEC]"
-            >
-              <Cog className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
-            </button>
-          )}
         </div>
 
         <div className="flex items-center gap-1.5">
@@ -152,7 +140,7 @@ export function BossScreen(): React.JSX.Element {
   const [activeTab, setActiveTab] = useState<BossTab>('weekly')
   const [roster, setRoster] = useState<CharacterPickerEntry[]>([])
   const [isPickerOpen, setIsPickerOpen] = useState(false)
-  const [partyModalTarget, setPartyModalTarget] = useState<MatchedBoss | null>(null)
+  const [isPartyManagementOpen, setIsPartyManagementOpen] = useState(false)
   // ADR-019 결정 6: 주간/월간 탭은 서로 독립된 필터 상태를 갖는다(한 탭의 필터 변경이
   // 다른 탭에 영향을 주지 않음).
   const [weeklyFilter, setWeeklyFilter] = useState<PartyFilter>('all')
@@ -240,24 +228,24 @@ export function BossScreen(): React.JSX.Element {
     />
   )
 
-  const partySizeModal = partyModalTarget !== null && selected !== null && (
-    <PartySizeModal
-      bossName={partyModalTarget.matchedBossName ?? partyModalTarget.apiName}
-      difficulty={partyModalTarget.difficulty}
-      currentPartySize={getPartySize(selected.ocid, partyModalTarget) ?? 1}
-      maxPartySize={getMaxPartySize(
-        partyModalTarget.matchedBossName ?? partyModalTarget.apiName,
-        partyModalTarget.difficulty,
-      )}
-      onSave={(partySize) =>
-        setPartySize(
-          selected.ocid,
-          partyModalTarget.matchedBossName ?? partyModalTarget.apiName,
-          partyModalTarget.difficulty,
-          partySize,
-        )
+  const partyManageButton = (
+    <button
+      type="button"
+      onClick={() => setIsPartyManagementOpen(true)}
+      className="text-sm font-medium text-text-muted hover:text-text"
+    >
+      파티 관리
+    </button>
+  )
+
+  const partyManagementModal = isPartyManagementOpen && selected !== null && (
+    <PartyManagementModal
+      bosses={[...registeredWeeklyBosses, ...registeredMonthlyBosses]}
+      getPartySize={(boss) => getPartySize(selected.ocid, boss) ?? 1}
+      onSetPartySize={(boss, partySize) =>
+        setPartySize(selected.ocid, boss.matchedBossName ?? boss.apiName, boss.difficulty, partySize)
       }
-      onClose={() => setPartyModalTarget(null)}
+      onClose={() => setIsPartyManagementOpen(false)}
     />
   )
 
@@ -282,7 +270,10 @@ export function BossScreen(): React.JSX.Element {
     <div className="p-4 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold text-text">보스 스케줄러</h1>
-        {characterManageButton}
+        <div className="flex items-center gap-4">
+          {selected !== null && partyManageButton}
+          {characterManageButton}
+        </div>
       </div>
 
       <div className="space-y-1">
@@ -408,7 +399,6 @@ export function BossScreen(): React.JSX.Element {
                       key={`${boss.apiName}-${boss.difficulty}`}
                       boss={boss}
                       partySize={getPartySize(selected.ocid, boss)}
-                      onOpenPartyModal={() => setPartyModalTarget(boss)}
                     />
                   ))}
                 </div>
@@ -437,7 +427,6 @@ export function BossScreen(): React.JSX.Element {
                       key={`${boss.apiName}-${boss.difficulty}`}
                       boss={boss}
                       partySize={getPartySize(selected.ocid, boss)}
-                      onOpenPartyModal={() => setPartyModalTarget(boss)}
                     />
                   ))}
                 </div>
@@ -448,7 +437,7 @@ export function BossScreen(): React.JSX.Element {
       )}
 
       {trackingPicker}
-      {partySizeModal}
+      {partyManagementModal}
     </div>
   )
 }
