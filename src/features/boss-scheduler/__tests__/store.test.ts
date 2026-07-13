@@ -21,6 +21,11 @@ const { getCachedSchedulerStateMock, getCachedCharacterBasicMock } = vi.hoisted(
   getCachedCharacterBasicMock: vi.fn(),
 }))
 
+const { getBossPartySettingsMock, setBossPartySizeMock } = vi.hoisted(() => ({
+  getBossPartySettingsMock: vi.fn(),
+  setBossPartySizeMock: vi.fn(),
+}))
+
 vi.mock('../../schedule-sync/schedule-sync', () => ({
   syncSchedules: syncSchedulesMock,
 }))
@@ -38,6 +43,11 @@ vi.mock('../../../storage/scheduler-cache', () => ({
 
 vi.mock('../../../storage/character-basic-cache', () => ({
   getCachedCharacterBasic: getCachedCharacterBasicMock,
+}))
+
+vi.mock('../../../storage/boss-party-settings', () => ({
+  getBossPartySettings: getBossPartySettingsMock,
+  setBossPartySize: setBossPartySizeMock,
 }))
 
 import { useBossSchedulerStore } from '../store'
@@ -83,10 +93,12 @@ beforeEach(() => {
     error: null,
     trackedOcids: null,
     selectedOcid: null,
+    partySizes: {},
   })
   getCachedSchedulerStateMock.mockResolvedValue(null)
   getCachedCharacterBasicMock.mockResolvedValue(null)
   getLastSelectedCharacterMock.mockResolvedValue(null)
+  getBossPartySettingsMock.mockResolvedValue([])
 })
 
 afterEach(() => {
@@ -405,6 +417,85 @@ describe('useBossSchedulerStore', () => {
 
       expect(useBossSchedulerStore.getState().selectedOcid).toBe('ocid-9')
       expect(setLastSelectedCharacterMock).toHaveBeenCalledWith('boss', 'ocid-9')
+    })
+  })
+
+  describe('ADR-019: 파티 관리', () => {
+    it('loadPartySizes([])는 getBossPartySettings를 호출하지 않고 partySizes를 빈 객체로 만든다', async () => {
+      useBossSchedulerStore.setState({ partySizes: { 'ocid-1:자쿰:카오스': 4 } })
+
+      await useBossSchedulerStore.getState().loadPartySizes([])
+
+      expect(getBossPartySettingsMock).not.toHaveBeenCalled()
+      expect(useBossSchedulerStore.getState().partySizes).toEqual({})
+    })
+
+    it('loadPartySizes(ocids)는 조회 결과를 `ocid:boss:difficulty` 키로 partySizes에 채운다', async () => {
+      getBossPartySettingsMock.mockResolvedValue([
+        { ocid: 'ocid-1', boss: '자쿰', difficulty: '카오스', partySize: 4, updatedAt: '2026-07-13T00:00:00.000Z' },
+      ])
+
+      await useBossSchedulerStore.getState().loadPartySizes(['ocid-1'])
+
+      expect(getBossPartySettingsMock).toHaveBeenCalledWith(['ocid-1'])
+      expect(useBossSchedulerStore.getState().partySizes).toEqual({ 'ocid-1:자쿰:카오스': 4 })
+    })
+
+    it('설정이 없는 보스는 partySizes 맵에 키 자체가 없다(1로 채우지 않음)', async () => {
+      getBossPartySettingsMock.mockResolvedValue([])
+
+      await useBossSchedulerStore.getState().loadPartySizes(['ocid-1'])
+
+      expect(useBossSchedulerStore.getState().partySizes).toEqual({})
+      expect(useBossSchedulerStore.getState().partySizes['ocid-1:자쿰:카오스']).toBeUndefined()
+    })
+
+    it('refresh(ocids)는 loadPartySizes를 통해 파티 설정을 함께 반영한다', async () => {
+      getBossPartySettingsMock.mockResolvedValue([
+        { ocid: 'ocid-1', boss: '자쿰', difficulty: '카오스', partySize: 3, updatedAt: '2026-07-13T00:00:00.000Z' },
+      ])
+      syncSchedulesMock.mockResolvedValue([syncResult()])
+
+      await useBossSchedulerStore.getState().refresh(['ocid-1'])
+
+      expect(getBossPartySettingsMock).toHaveBeenCalledWith(['ocid-1'])
+      expect(useBossSchedulerStore.getState().partySizes).toEqual({ 'ocid-1:자쿰:카오스': 3 })
+    })
+
+    it('setPartySize는 storage에 upsert하고 partySizes 상태를 즉시 갱신한다', async () => {
+      setBossPartySizeMock.mockResolvedValue(undefined)
+
+      await useBossSchedulerStore.getState().setPartySize('ocid-1', '자쿰', '카오스', 4)
+
+      expect(setBossPartySizeMock).toHaveBeenCalledWith(
+        'ocid-1',
+        '자쿰',
+        '카오스',
+        4,
+        expect.any(String),
+      )
+      expect(useBossSchedulerStore.getState().partySizes).toEqual({ 'ocid-1:자쿰:카오스': 4 })
+    })
+
+    it('setPartySize는 해당 보스의 maxPartySize를 초과하면 에러를 던지고 storage를 호출하지 않는다', async () => {
+      // 스우 익스트림은 boss-crystal-prices.json에서 maxPartySize: 2로 예외 지정되어 있다.
+      await expect(
+        useBossSchedulerStore.getState().setPartySize('ocid-1', '스우', '익스트림', 3),
+      ).rejects.toThrow()
+
+      expect(setBossPartySizeMock).not.toHaveBeenCalled()
+      expect(useBossSchedulerStore.getState().partySizes).toEqual({})
+    })
+
+    it('setPartySize는 1 미만이거나 정수가 아니면 에러를 던진다', async () => {
+      await expect(
+        useBossSchedulerStore.getState().setPartySize('ocid-1', '자쿰', '카오스', 0),
+      ).rejects.toThrow()
+      await expect(
+        useBossSchedulerStore.getState().setPartySize('ocid-1', '자쿰', '카오스', 1.5),
+      ).rejects.toThrow()
+
+      expect(setBossPartySizeMock).not.toHaveBeenCalled()
     })
   })
 })

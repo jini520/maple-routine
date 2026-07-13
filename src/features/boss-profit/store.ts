@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import bossCrystalPricesData from '../../data/boss-crystal-prices.json'
+import { DEFAULT_MAX_PARTY_SIZE, findPriceEntry } from '../../lib/boss-crystal-prices'
 import { matchBossContent, type MatchedBoss } from '../../lib/boss-matching'
 import { getCurrentBossProfitPeriod } from '../../lib/boss-profit-period'
 import {
@@ -42,20 +42,6 @@ export interface BossProfitStore extends BossProfitState {
   loadTrackedOcids(): Promise<void>
   refresh(ocids: string[]): Promise<void>
   setPartySize(row: BossProfitRowKey, partySize: number): Promise<void>
-}
-
-interface CrystalPriceEntry {
-  boss: string
-  difficulty: string
-  priceMeso: number | null
-  maxPartySize?: number
-}
-
-const CRYSTAL_PRICES = bossCrystalPricesData.prices as CrystalPriceEntry[]
-const DEFAULT_MAX_PARTY_SIZE = bossCrystalPricesData.partySizeScaling.defaultMaxPartySize
-
-function findPriceEntry(boss: string, difficulty: BossDifficulty): CrystalPriceEntry | undefined {
-  return CRYSTAL_PRICES.find((entry) => entry.boss === boss && entry.difficulty === difficulty)
 }
 
 function buildBossProfitRow(
