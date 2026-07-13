@@ -569,6 +569,44 @@ describe('BossScreen', () => {
       expect(screen.getByRole('button', { name: '하드' })).toBeInTheDocument()
       expect(screen.queryByRole('button', { name: '카오스' })).not.toBeInTheDocument()
     })
+
+    it('선택한 보스가 스케줄러에 등록돼있으면 그 등록된 난이도가 기본 선택된다(첫 난이도가 아니어도)', async () => {
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        characters: [
+          character({
+            ocid: 'ocid-1',
+            weeklyBosses: [
+              {
+                apiName: '루시드',
+                difficulty: '하드',
+                cycle: 'weekly',
+                isRegistered: true,
+                isComplete: false,
+                matchedBossName: '루시드',
+                portraitSlug: null,
+              },
+            ],
+          }),
+        ],
+      })
+
+      render(<BossScreen />)
+      await screen.findByRole('combobox')
+
+      fireEvent.click(screen.getByRole('button', { name: '파티 관리' }))
+      await screen.findByRole('heading', { name: '파티 관리' })
+
+      // 루시드는 이지/노멀/하드를 지원하지만(첫 난이도는 이지), 이 캐릭터가 하드로 등록해뒀으므로
+      // 하드가 기본 선택된다.
+      fireEvent.change(screen.getByLabelText('보스'), { target: { value: '루시드' } })
+      expect(screen.getByRole('button', { name: '하드', pressed: true })).toBeInTheDocument()
+
+      // 등록돼있지 않은 보스(자쿰)로 돌아가면 다시 첫 난이도(카오스, 유일한 옵션)로 돌아온다.
+      fireEvent.change(screen.getByLabelText('보스'), { target: { value: '자쿰' } })
+      expect(screen.getByRole('button', { name: '카오스', pressed: true })).toBeInTheDocument()
+    })
   })
 
   describe('솔로/파티 서브 필터 (ADR-019)', () => {

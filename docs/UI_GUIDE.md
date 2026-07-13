@@ -222,7 +222,7 @@ rounded-full bg-white/20 text-[#E8DFEC] text-xs font-semibold px-2 py-1, flex it
 난이도: 라벨 "난이도" 아래 flex flex-wrap gap-2로 뱃지 버튼 나열 — 선택 가능한 난이도는 boss-crystal-prices.json에서 해당 보스명으로 조회(새 게임 데이터 아님, ADR-006. 가격 데이터가 아직 없는 보스는 "이 보스는 아직 파티 설정을 지원하지 않습니다" 안내로 대체). 각 버튼은 보스 카드와 동일한 DifficultyBadge(BossScreen.tsx에서 export)를 그대로 감싸 재사용 — 새 뱃지 스타일 신설 금지. **정정(2026-07-13)** — 선택 표시에 쓰던 `ring-2 ring-primary` 테두리를 제거하고 투명도 차이만으로 구분한다: 선택된 난이도는 불투명(기본), 비선택은 opacity-40 hover:opacity-70(대비를 더 주기 위해 기존 50→40으로 낮춤)
 파티원 수: -/+ 스테퍼. flex items-center gap-3 — 감소 버튼(h-9 w-9 rounded-full border border-border, lucide-react `Minus`) · 가운데 현재 값(w-8 text-center text-sm font-semibold) · 증가 버튼(동일 스타일, `Plus`). 라벨 "파티원 수 (최대 N인)"으로 상한을 항상 노출. 감소 버튼은 값이 1일 때, 증가 버튼은 값이 해당 (보스,난이도)의 maxPartySize일 때 disabled — 범위 밖 값 자체를 입력할 방법이 없다. 저장 버튼(rounded-full bg-primary) 클릭 시 현재 값 그대로 store.setPartySize를 호출한다
 ```
-보스/난이도를 바꾸면 스테퍼 값이 그 조합의 저장된 값(1~maxPartySize로 clamp)으로 초기화된다(React `key` 리셋 관용구 — 이전 조합의 값이 새 조합에 남지 않음). 난이도는 그 보스가 지원하는 첫 난이도(boss-crystal-prices.json 등록 순서)가 기본 선택된다.
+보스/난이도를 바꾸면 스테퍼 값이 그 조합의 저장된 값(1~maxPartySize로 clamp)으로 초기화된다(React `key` 리셋 관용구 — 이전 조합의 값이 새 조합에 남지 않음). **정정(2026-07-13)**: 난이도 기본 선택은 그 보스가 캐릭터의 스케줄러에 등록돼있으면 등록된 난이도, 아니면 boss-crystal-prices.json 등록 순서상 첫 난이도다 — 보스 목록 자체는 등록 여부와 무관하게 항상 전체를 보여주지만, 난이도 기본값만큼은 실제로 플레이 중인 난이도를 우선한다.
 
 **난이도 뱃지**: 텍스트("· 하드") 대신 게임 내 난이도 뱃지와 같은 시각 언어(글로시 캡슐형)로 표시. 실제 게임 UI 스크린샷에서 픽셀 색을 추출한 근사값(1px 단위 재현 아님):
 ```

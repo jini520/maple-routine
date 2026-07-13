@@ -111,15 +111,22 @@ function PartySizeEditor(props: {
 }
 
 export interface PartyManagementModalProps {
+  // 보스가 캐릭터의 스케줄러에 등록돼있으면 그 난이도로 기본 선택하기 위한 조회(없으면 null) —
+  // 보스 드롭다운 목록 자체는 이 정보와 무관하게 항상 전체 보스다.
+  getRegisteredDifficulty: (bossName: string) => BossDifficulty | null
   getPartySize: (bossName: string, difficulty: BossDifficulty) => number // 미설정이면 1(솔로)
   onSetPartySize: (bossName: string, difficulty: BossDifficulty, partySize: number) => Promise<void>
   onClose: () => void
 }
 
 export function PartyManagementModal(props: PartyManagementModalProps): React.JSX.Element {
+  function defaultDifficultyFor(bossName: string): BossDifficulty | null {
+    return props.getRegisteredDifficulty(bossName) ?? getDifficultiesForBoss(bossName)[0] ?? null
+  }
+
   const [selectedBoss, setSelectedBoss] = useState(ALL_BOSS_NAMES[0] ?? '')
   const [selectedDifficulty, setSelectedDifficulty] = useState<BossDifficulty | null>(
-    getDifficultiesForBoss(ALL_BOSS_NAMES[0] ?? '')[0] ?? null,
+    defaultDifficultyFor(ALL_BOSS_NAMES[0] ?? ''),
   )
 
   const difficulties = getDifficultiesForBoss(selectedBoss)
@@ -127,7 +134,7 @@ export function PartyManagementModal(props: PartyManagementModalProps): React.JS
 
   function handleSelectBoss(bossName: string): void {
     setSelectedBoss(bossName)
-    setSelectedDifficulty(getDifficultiesForBoss(bossName)[0] ?? null)
+    setSelectedDifficulty(defaultDifficultyFor(bossName))
   }
 
   return (

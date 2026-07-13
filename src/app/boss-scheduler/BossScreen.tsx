@@ -240,6 +240,11 @@ export function BossScreen(): React.JSX.Element {
 
   const partyManagementModal = isPartyManagementOpen && selected !== null && (
     <PartyManagementModal
+      getRegisteredDifficulty={(bossName) =>
+        [...registeredWeeklyBosses, ...registeredMonthlyBosses].find(
+          (boss) => (boss.matchedBossName ?? boss.apiName) === bossName,
+        )?.difficulty ?? null
+      }
       getPartySize={(bossName, difficulty) =>
         partySizes[partySizeKey(selected.ocid, bossName, difficulty)] ?? 1
       }
