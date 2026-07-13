@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react'
-import { RefreshCw } from 'lucide-react'
+import { RefreshCw, SlidersHorizontal, Users } from 'lucide-react'
 import { CharacterSelectDropdown } from '../../components/CharacterSelectDropdown/CharacterSelectDropdown'
 import { CharacterTrackingPicker } from '../../components/CharacterTrackingPicker/CharacterTrackingPicker'
-import { useBossSchedulerStore } from '../../features/boss-scheduler/store'
+import { partySizeKey, useBossSchedulerStore } from '../../features/boss-scheduler/store'
 import { formatScheduleSyncError, formatSyncedAt } from '../../features/schedule-sync/format'
 import { getCharacterPickerRoster } from '../../features/schedule-sync/schedule-sync'
 import { getBossPortraitCrop, getBossPortraitUrl } from '../../lib/boss-icons'
 import type { BossPortraitCrop } from '../../lib/boss-icons'
+import { getMaxPartySize } from '../../lib/boss-crystal-prices'
 import type { BossDifficulty, CharacterPickerEntry } from '../../types'
 import type { MatchedBoss } from '../../lib/boss-matching'
+import { PartySizeModal } from './PartySizeModal'
 
 type BossTab = 'weekly' | 'monthly'
 
@@ -54,8 +56,13 @@ function DifficultyBadge(props: { difficulty: BossDifficulty }): React.JSX.Eleme
   )
 }
 
-export function BossCard(props: { boss: MatchedBoss; crop?: BossPortraitCrop }): React.JSX.Element {
-  const { boss } = props
+export function BossCard(props: {
+  boss: MatchedBoss
+  crop?: BossPortraitCrop
+  partySize?: number
+  onOpenPartyModal?: () => void
+}): React.JSX.Element {
+  const { boss, partySize } = props
   const portraitUrl = getBossPortraitUrl(boss.portraitSlug)
   const crop = props.crop ?? getBossPortraitCrop(boss.portraitSlug)
   const bossName = boss.matchedBossName ?? boss.apiName
@@ -94,9 +101,29 @@ export function BossCard(props: { boss: MatchedBoss; crop?: BossPortraitCrop }):
           </span>
         </div>
 
-        {boss.isComplete && (
-          <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-bold text-bg">완료</span>
-        )}
+        <div className="flex items-center gap-1.5">
+          {props.onOpenPartyModal !== undefined && (
+            <button
+              type="button"
+              onClick={props.onOpenPartyModal}
+              aria-label={`${bossName} 파티 인원 설정`}
+              className="text-[#B89CBD] hover:text-[#E8DFEC]"
+            >
+              <SlidersHorizontal className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+            </button>
+          )}
+
+          {partySize !== undefined && partySize > 1 && (
+            <span className="flex items-center gap-1 rounded-full bg-white/10 px-2 py-1 text-xs font-semibold text-[#E8DFEC]">
+              <Users className="h-3 w-3" strokeWidth={2} aria-hidden="true" />
+              {partySize}인
+            </span>
+          )}
+
+          {boss.isComplete && (
+            <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-bold text-bg">완료</span>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -109,14 +136,17 @@ export function BossScreen(): React.JSX.Element {
     error,
     trackedOcids,
     selectedOcid,
+    partySizes,
     loadTrackedOcids,
     saveTrackedOcids,
     refresh,
     selectCharacter,
+    setPartySize,
   } = useBossSchedulerStore()
   const [activeTab, setActiveTab] = useState<BossTab>('weekly')
   const [roster, setRoster] = useState<CharacterPickerEntry[]>([])
   const [isPickerOpen, setIsPickerOpen] = useState(false)
+  const [partyModalTarget, setPartyModalTarget] = useState<MatchedBoss | null>(null)
 
   useEffect(() => {
     loadTrackedOcids()
@@ -155,6 +185,11 @@ export function BossScreen(): React.JSX.Element {
   const registeredMonthlyBosses =
     selected !== null ? selected.monthlyBosses.filter((boss) => boss.isRegistered) : []
 
+  function getPartySize(ocid: string, boss: MatchedBoss): number | undefined {
+    const bossName = boss.matchedBossName ?? boss.apiName
+    return partySizes[partySizeKey(ocid, bossName, boss.difficulty)]
+  }
+
   async function handleSaveTracking(ocids: string[]): Promise<void> {
     await saveTrackedOcids(ocids)
     setIsPickerOpen(false)
@@ -176,6 +211,27 @@ export function BossScreen(): React.JSX.Element {
       trackedOcids={trackedOcids ?? []}
       onSave={handleSaveTracking}
       onClose={() => setIsPickerOpen(false)}
+    />
+  )
+
+  const partySizeModal = partyModalTarget !== null && selected !== null && (
+    <PartySizeModal
+      bossName={partyModalTarget.matchedBossName ?? partyModalTarget.apiName}
+      difficulty={partyModalTarget.difficulty}
+      currentPartySize={getPartySize(selected.ocid, partyModalTarget) ?? 1}
+      maxPartySize={getMaxPartySize(
+        partyModalTarget.matchedBossName ?? partyModalTarget.apiName,
+        partyModalTarget.difficulty,
+      )}
+      onSave={(partySize) =>
+        setPartySize(
+          selected.ocid,
+          partyModalTarget.matchedBossName ?? partyModalTarget.apiName,
+          partyModalTarget.difficulty,
+          partySize,
+        )
+      }
+      onClose={() => setPartyModalTarget(null)}
     />
   )
 
@@ -297,7 +353,12 @@ export function BossScreen(): React.JSX.Element {
               {registeredWeeklyBosses.length > 0 && (
                 <div className="space-y-2">
                   {registeredWeeklyBosses.map((boss) => (
-                    <BossCard key={`${boss.apiName}-${boss.difficulty}`} boss={boss} />
+                    <BossCard
+                      key={`${boss.apiName}-${boss.difficulty}`}
+                      boss={boss}
+                      partySize={getPartySize(selected.ocid, boss)}
+                      onOpenPartyModal={() => setPartyModalTarget(boss)}
+                    />
                   ))}
                 </div>
               )}
@@ -315,7 +376,12 @@ export function BossScreen(): React.JSX.Element {
               {registeredMonthlyBosses.length > 0 && (
                 <div className="space-y-2">
                   {registeredMonthlyBosses.map((boss) => (
-                    <BossCard key={`${boss.apiName}-${boss.difficulty}`} boss={boss} />
+                    <BossCard
+                      key={`${boss.apiName}-${boss.difficulty}`}
+                      boss={boss}
+                      partySize={getPartySize(selected.ocid, boss)}
+                      onOpenPartyModal={() => setPartyModalTarget(boss)}
+                    />
                   ))}
                 </div>
               )}
@@ -325,6 +391,7 @@ export function BossScreen(): React.JSX.Element {
       )}
 
       {trackingPicker}
+      {partySizeModal}
     </div>
   )
 }

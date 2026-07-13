@@ -37,7 +37,10 @@
     {
       "step": 4,
       "name": "boss-card-party-badge-modal",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-07-13T22:00:54+0900",
+      "summary": "BossCard에 파티 배지(2인 이상)와 카드 안 별도 진입 버튼(lucide-react SlidersHorizontal, size 16) 추가, PartySizeModal.tsx 신규(components/Modal 재사용, 저장 시 검증 후 store.setPartySize 호출), BossScreen에서 store의 partySizes/setPartySize 연결, docs/UI_GUIDE.md에 진입 버튼 스펙 기록",
+      "completed_at": "2026-07-13T22:12:40+0900"
     },
     {
       "step": 5,

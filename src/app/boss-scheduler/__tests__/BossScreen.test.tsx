@@ -9,6 +9,7 @@ import type { CharacterPickerEntry } from '../../../types'
 
 vi.mock('../../../features/boss-scheduler/store', () => ({
   useBossSchedulerStore: vi.fn(),
+  partySizeKey: (ocid: string, boss: string, difficulty: string) => `${ocid}:${boss}:${difficulty}`,
 }))
 
 vi.mock('../../../features/schedule-sync/schedule-sync', () => ({
@@ -25,10 +26,13 @@ function mockStore(overrides: Partial<ReturnType<typeof useBossSchedulerStore>>)
     error: null,
     trackedOcids: null,
     selectedOcid: null,
+    partySizes: {},
     loadTrackedOcids: vi.fn(),
     saveTrackedOcids: vi.fn(),
     refresh: vi.fn(),
     selectCharacter: vi.fn(),
+    loadPartySizes: vi.fn(),
+    setPartySize: vi.fn(),
     ...overrides,
   })
 }
@@ -421,5 +425,107 @@ describe('BossScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: '월간' }))
     expect(screen.queryByText(/게임에서 스케줄러에 등록해주세요/)).not.toBeInTheDocument()
     expect(screen.getByText(/검은마법사/)).toBeInTheDocument()
+  })
+
+  describe('파티 관리 (ADR-019)', () => {
+    function characterWithZakum(overrides: Partial<BossCharacterView> = {}): BossCharacterView {
+      return character({
+        ocid: 'ocid-1',
+        weeklyBosses: [
+          {
+            apiName: '자쿰',
+            difficulty: '카오스',
+            cycle: 'weekly',
+            isRegistered: true,
+            isComplete: false,
+            matchedBossName: '자쿰',
+            portraitSlug: null,
+          },
+        ],
+        ...overrides,
+      })
+    }
+
+    it('파티원 2인 이상 설정된 보스 카드에 "n인" 배지가 보인다', async () => {
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        characters: [characterWithZakum()],
+        partySizes: { 'ocid-1:자쿰:카오스': 4 },
+      })
+
+      render(<BossScreen />)
+      await screen.findByRole('combobox')
+
+      expect(screen.getByText('4인')).toBeInTheDocument()
+    })
+
+    it('1인/미설정 보스 카드에는 파티 배지가 없다', async () => {
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        characters: [characterWithZakum()],
+        partySizes: { 'ocid-1:자쿰:카오스': 1 },
+      })
+
+      render(<BossScreen />)
+      await screen.findByRole('combobox')
+
+      expect(screen.queryByText(/^\d+인$/)).not.toBeInTheDocument()
+    })
+
+    it('진입 버튼 클릭 시 모달이 열리고, 저장하면 store의 setPartySize가 올바른 인자로 호출된다', async () => {
+      const setPartySize = vi.fn().mockResolvedValue(undefined)
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        characters: [characterWithZakum()],
+        setPartySize,
+      })
+
+      render(<BossScreen />)
+      await screen.findByRole('combobox')
+
+      fireEvent.click(screen.getByRole('button', { name: '자쿰 파티 인원 설정' }))
+      expect(await screen.findByText('파티 인원 설정')).toBeInTheDocument()
+
+      const input = screen.getByLabelText('파티원 수')
+      fireEvent.change(input, { target: { value: '4' } })
+      fireEvent.click(screen.getByRole('button', { name: '저장' }))
+
+      await waitFor(() => {
+        expect(setPartySize).toHaveBeenCalledWith('ocid-1', '자쿰', '카오스', 4)
+      })
+    })
+
+    it('잘못된 값(0, 최대 초과, 소수) 입력 시 인라인 에러가 보이고 setPartySize가 호출되지 않는다', async () => {
+      const setPartySize = vi.fn()
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        characters: [characterWithZakum()],
+        setPartySize,
+      })
+
+      render(<BossScreen />)
+      await screen.findByRole('combobox')
+
+      fireEvent.click(screen.getByRole('button', { name: '자쿰 파티 인원 설정' }))
+      const input = await screen.findByLabelText('파티원 수')
+
+      fireEvent.change(input, { target: { value: '0' } })
+      fireEvent.click(screen.getByRole('button', { name: '저장' }))
+      expect(await screen.findByText(/파티원 수는 1 이상/)).toBeInTheDocument()
+      expect(setPartySize).not.toHaveBeenCalled()
+
+      // 자쿰은 별도 maxPartySize 예외가 없어 기본값(6)이 상한이다
+      fireEvent.change(input, { target: { value: '7' } })
+      fireEvent.click(screen.getByRole('button', { name: '저장' }))
+      expect(setPartySize).not.toHaveBeenCalled()
+
+      fireEvent.change(input, { target: { value: '1.5' } })
+      fireEvent.click(screen.getByRole('button', { name: '저장' }))
+      expect(setPartySize).not.toHaveBeenCalled()
+    })
   })
 })

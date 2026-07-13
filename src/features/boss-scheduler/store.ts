@@ -57,7 +57,7 @@ const initialState: BossSchedulerState = {
   partySizes: {},
 }
 
-function partySizeKey(ocid: string, boss: string, difficulty: string): string {
+export function partySizeKey(ocid: string, boss: string, difficulty: string): string {
   return `${ocid}:${boss}:${difficulty}`
 }
 
