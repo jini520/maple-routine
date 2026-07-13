@@ -7,6 +7,7 @@ import { DisconnectConfirm } from '../DisconnectConfirm'
 
 afterEach(() => {
   cleanup()
+  document.body.style.overflow = ''
 })
 
 describe('DisconnectConfirm', () => {
@@ -52,5 +53,17 @@ describe('DisconnectConfirm', () => {
     render(<DisconnectConfirm isOpen={true} isDisconnecting={true} onConfirm={vi.fn()} onCancel={vi.fn()} />)
 
     expect(screen.getByRole('button', { name: '해제하는 중...' })).toBeDisabled()
+  })
+
+  it('isOpen이 true면 뒷 페이지 스크롤을 막고, false가 되면 복원한다', () => {
+    const { rerender } = render(
+      <DisconnectConfirm isOpen={true} isDisconnecting={false} onConfirm={vi.fn()} onCancel={vi.fn()} />,
+    )
+
+    expect(document.body.style.overflow).toBe('hidden')
+
+    rerender(<DisconnectConfirm isOpen={false} isDisconnecting={false} onConfirm={vi.fn()} onCancel={vi.fn()} />)
+
+    expect(document.body.style.overflow).toBe('')
   })
 })

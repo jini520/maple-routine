@@ -7,6 +7,7 @@ import { Modal } from '../Modal'
 
 afterEach(() => {
   cleanup()
+  document.body.style.overflow = ''
 })
 
 describe('Modal', () => {
@@ -58,5 +59,19 @@ describe('Modal', () => {
     const wrapper = screen.getByText('모달 내용').parentElement
     expect(wrapper).toHaveClass('max-w-sm')
     expect(wrapper).not.toHaveClass('border')
+  })
+
+  it('열려 있는 동안 뒷 페이지(body) 스크롤을 막는다', () => {
+    const { unmount } = render(
+      <Modal onClose={vi.fn()}>
+        <p>모달 내용</p>
+      </Modal>,
+    )
+
+    expect(document.body.style.overflow).toBe('hidden')
+
+    unmount()
+
+    expect(document.body.style.overflow).toBe('')
   })
 })
