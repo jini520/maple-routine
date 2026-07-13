@@ -72,7 +72,8 @@
     },
     {
       "dir": "boss-ui-redesign",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-07-13T17:12:30+0900"
     }
   ]
 }
