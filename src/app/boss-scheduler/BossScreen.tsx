@@ -105,7 +105,7 @@ export function BossCard(props: {
             {bossName}
           </span>
           {partySize !== undefined && partySize > 1 && (
-            <span className="flex items-center gap-1 rounded-full bg-white/10 px-2 py-1 text-xs font-semibold text-[#E8DFEC]">
+            <span className="flex items-center gap-1 rounded-full bg-white/20 px-2 py-1 text-xs font-semibold text-[#E8DFEC]">
               <Users className="h-3 w-3" strokeWidth={2} aria-hidden="true" />
               {partySize}인
             </span>

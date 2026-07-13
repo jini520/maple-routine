@@ -208,7 +208,7 @@ Text(다크):      text-neutral-500 hover:text-neutral-300
 
 **파티 배지 — 확정, 2026-07-13, [[ADR-019]] (설계만·구현 전)**: 파티 인원이 2인 이상으로 설정된 보스 카드에만 표시. 카드 배경·보더·보스명과 마찬가지로 일러스트 위에 얹히는 카드 로컬 요소라 테마 토큰이 아니라 레테 고정 리터럴 값을 쓴다(완료 뱃지처럼 앱 전역 의미색이 아니므로 고정 대상).
 ```
-rounded-full bg-white/10 text-[#E8DFEC] text-xs font-semibold px-2 py-1, flex items-center gap-1
+rounded-full bg-white/20 text-[#E8DFEC] text-xs font-semibold px-2 py-1, flex items-center gap-1(**정정, 2026-07-13** — 왼쪽으로 이동 후 일러스트가 진한 구간 위에 얹혀 대비가 약해져 bg-white/10 → bg-white/20으로 상향)
 아이콘: lucide-react `Users`, size 12, strokeWidth 2
 텍스트: "n인"(예: "4인")
 ```
