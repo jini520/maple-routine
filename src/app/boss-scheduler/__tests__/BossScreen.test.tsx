@@ -474,7 +474,7 @@ describe('BossScreen', () => {
       expect(screen.queryByText(/^\d+인$/)).not.toBeInTheDocument()
     })
 
-    it('"파티 관리" 버튼 클릭 시 등록된 보스 목록(주간+월간 통합) 모달이 열리고, 값을 바꾸면 store의 setPartySize가 올바른 인자로 호출된다', async () => {
+    it('"파티 관리" 버튼 클릭 시 보스 드롭다운(기본값: 첫 보스)·등록된 난이도 뱃지·파티원 입력이 있는 모달이 열리고, 저장하면 store의 setPartySize가 올바른 인자로 호출된다', async () => {
       const setPartySize = vi.fn().mockResolvedValue(undefined)
       mockStore({
         status: 'loaded',
@@ -489,9 +489,13 @@ describe('BossScreen', () => {
       fireEvent.click(screen.getByRole('button', { name: '파티 관리' }))
       expect(await screen.findByRole('heading', { name: '파티 관리' })).toBeInTheDocument()
 
-      const input = screen.getByLabelText('자쿰 카오스 파티원 수')
+      // 등록된 보스가 하나(자쿰·카오스)뿐이라 드롭다운·난이도 뱃지 모두 자동 선택된다.
+      expect(screen.getByLabelText('보스')).toHaveValue('자쿰')
+      expect(screen.getByRole('button', { name: '카오스', pressed: true })).toBeInTheDocument()
+
+      const input = screen.getByLabelText('파티원 수')
       fireEvent.change(input, { target: { value: '4' } })
-      fireEvent.blur(input)
+      fireEvent.click(screen.getByRole('button', { name: '저장' }))
 
       await waitFor(() => {
         expect(setPartySize).toHaveBeenCalledWith('ocid-1', '자쿰', '카오스', 4)
@@ -511,21 +515,70 @@ describe('BossScreen', () => {
       await screen.findByRole('combobox')
 
       fireEvent.click(screen.getByRole('button', { name: '파티 관리' }))
-      const input = await screen.findByLabelText('자쿰 카오스 파티원 수')
+      const input = await screen.findByLabelText('파티원 수')
 
       fireEvent.change(input, { target: { value: '0' } })
-      fireEvent.blur(input)
+      fireEvent.click(screen.getByRole('button', { name: '저장' }))
       expect(await screen.findByText(/파티원 수는 1 이상/)).toBeInTheDocument()
       expect(setPartySize).not.toHaveBeenCalled()
 
       // 자쿰은 별도 maxPartySize 예외가 없어 기본값(6)이 상한이다
       fireEvent.change(input, { target: { value: '7' } })
-      fireEvent.blur(input)
+      fireEvent.click(screen.getByRole('button', { name: '저장' }))
       expect(setPartySize).not.toHaveBeenCalled()
 
       fireEvent.change(input, { target: { value: '1.5' } })
-      fireEvent.blur(input)
+      fireEvent.click(screen.getByRole('button', { name: '저장' }))
       expect(setPartySize).not.toHaveBeenCalled()
+    })
+
+    it('보스 드롭다운에서 다른 보스를 고르면 그 보스가 지원하는 난이도 뱃지로 목록이 바뀌고, 등록된 난이도가 기본 선택된다', async () => {
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        characters: [
+          character({
+            ocid: 'ocid-1',
+            weeklyBosses: [
+              {
+                apiName: '자쿰',
+                difficulty: '카오스',
+                cycle: 'weekly',
+                isRegistered: true,
+                isComplete: false,
+                matchedBossName: '자쿰',
+                portraitSlug: null,
+              },
+              {
+                apiName: '루시드',
+                difficulty: '하드',
+                cycle: 'weekly',
+                isRegistered: true,
+                isComplete: false,
+                matchedBossName: '루시드',
+                portraitSlug: null,
+              },
+            ],
+          }),
+        ],
+      })
+
+      render(<BossScreen />)
+      await screen.findByRole('combobox')
+
+      fireEvent.click(screen.getByRole('button', { name: '파티 관리' }))
+      await screen.findByRole('heading', { name: '파티 관리' })
+
+      expect(screen.getByRole('button', { name: '카오스', pressed: true })).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: '이지' })).not.toBeInTheDocument()
+
+      fireEvent.change(screen.getByLabelText('보스'), { target: { value: '루시드' } })
+
+      // 루시드는 이지/노멀/하드를 지원하고, 이 캐릭터는 하드로 등록돼있어 하드가 기본 선택된다.
+      expect(screen.getByRole('button', { name: '하드', pressed: true })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: '이지' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: '노멀' })).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: '카오스' })).not.toBeInTheDocument()
     })
   })
 

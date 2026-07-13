@@ -51,7 +51,7 @@ const DIFFICULTY_BADGE_STYLES: Record<BossDifficulty, React.CSSProperties> = {
   },
 }
 
-function DifficultyBadge(props: { difficulty: BossDifficulty }): React.JSX.Element {
+export function DifficultyBadge(props: { difficulty: BossDifficulty }): React.JSX.Element {
   return (
     <span
       className="inline-flex items-center rounded-full text-[10px] font-extrabold tracking-[.03em]"
@@ -241,9 +241,11 @@ export function BossScreen(): React.JSX.Element {
   const partyManagementModal = isPartyManagementOpen && selected !== null && (
     <PartyManagementModal
       bosses={[...registeredWeeklyBosses, ...registeredMonthlyBosses]}
-      getPartySize={(boss) => getPartySize(selected.ocid, boss) ?? 1}
-      onSetPartySize={(boss, partySize) =>
-        setPartySize(selected.ocid, boss.matchedBossName ?? boss.apiName, boss.difficulty, partySize)
+      getPartySize={(bossName, difficulty) =>
+        partySizes[partySizeKey(selected.ocid, bossName, difficulty)] ?? 1
+      }
+      onSetPartySize={(bossName, difficulty, partySize) =>
+        setPartySize(selected.ocid, bossName, difficulty, partySize)
       }
       onClose={() => setIsPartyManagementOpen(false)}
     />

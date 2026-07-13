@@ -214,14 +214,15 @@ rounded-full bg-white/10 text-[#E8DFEC] text-xs font-semibold px-2 py-1, flex it
 ```
 설정 안 함 또는 1인(솔로)이면 이 배지 자체를 렌더링하지 않는다 — 별도의 "솔로" 뱃지는 두지 않는다(빈 공간으로 솔로를 표현).
 
-**파티 관리 진입점 — 재정정, 2026-07-13, [[ADR-019]]**: 보스 카드에서 직접 설정하는 방식(카드 안 아이콘 버튼 → 단일 보스 모달)은 폐기했다. 대신 보스 스케줄러 화면 상단 "캐릭터 관리" 버튼 옆에 **"파티 관리" 버튼**을 추가한다(둘 다 같은 스타일 `text-sm font-medium text-text-muted hover:text-text`, 아이콘 없이 텍스트만 — 기존 "캐릭터 관리" 버튼과 동일한 톤). 탭하면 현재 선택된 캐릭터의 등록된 보스 전체(주간+월간 통합, 탭 구분 없이 한 목록, `PartyManagementModal`)를 보여주는 모달이 열린다. 보스 카드 자체에는 더 이상 진입 버튼이 없다 — 파티 배지(아래)만 표시한다.
+**파티 관리 진입점 — 재정정, 2026-07-13, [[ADR-019]]**: 보스 카드에서 직접 설정하는 방식(카드 안 아이콘 버튼 → 단일 보스 모달)은 폐기했다. 대신 보스 스케줄러 화면 상단 "캐릭터 관리" 버튼 옆에 **"파티 관리" 버튼**을 추가한다(둘 다 같은 스타일 `text-sm font-medium text-text-muted hover:text-text`, 아이콘 없이 텍스트만 — 기존 "캐릭터 관리" 버튼과 동일한 톤). 탭하면 현재 선택된 캐릭터의 등록된 보스 전체(주간+월간 통합, 탭 구분 없이 하나의 드롭다운 옵션 목록)를 다루는 모달(`PartyManagementModal`)이 열린다. 보스 카드 자체에는 더 이상 진입 버튼이 없다 — 파티 배지(아래)만 표시한다.
 
-**파티 관리 모달 — `PartyManagementModal`, `components/Modal/Modal` 재사용**: `CharacterTrackingPicker`와 달리 체크박스 일괄 선택이 아니라, 보스마다 독립적인 숫자 입력이라 `BossProfitScreen.tsx`의 파티원 수 입력 패턴(포커스 아웃 시 저장 + 인라인 에러)을 그대로 재사용한다.
+**파티 관리 모달 — `PartyManagementModal`, `components/Modal/Modal` 재사용**: 전체 목록을 한 번에 나열하지 않고, **보스 드롭다운 → 난이도 뱃지 선택 → 파티원 수 입력** 3단 폼으로 한 번에 하나의 (보스, 난이도) 조합만 편집한다(**재정정, 2026-07-13** — 전체 목록 나열 방식에서 변경).
 ```
-목록: max-h-[70vh] divide-y divide-border overflow-y-auto (보스 많을 때 모달 내부 스크롤)
-행: flex items-center justify-between gap-3 py-2.5 — 왼쪽 "보스명 · 난이도"(text-sm text-text) + 에러 시 그 아래 text-xs text-error, 오른쪽 숫자 입력(w-16, 기존 border-border 인풋 스타일)
-저장: blur 시 즉시 검증·저장(BossProfitScreen과 동일, 별도 "저장" 버튼 없음) — 잘못된 값(범위 밖·정수 아님)이면 인라인 에러만 보이고 store.setPartySize를 호출하지 않는다
+보스: <select> — 등록된 보스명(주간+월간 통합, 중복 제거) 목록. 라벨 "보스"(text-xs font-medium text-text-muted), 인풋은 CharacterSelectDropdown과 동일한 톤(border-border bg-surface px-4 py-3 text-sm text-text, 다만 폭은 w-full)
+난이도: 라벨 "난이도" 아래 flex flex-wrap gap-2로 뱃지 버튼 나열 — 선택 가능한 난이도는 boss-crystal-prices.json에서 해당 보스명으로 조회(새 게임 데이터 아님, ADR-006). 각 버튼은 보스 카드와 동일한 DifficultyBadge(BossScreen.tsx에서 export)를 그대로 감싸 재사용 — 새 뱃지 스타일 신설 금지. 선택된 난이도: ring-2 ring-primary, 비선택: opacity-50 hover:opacity-80로 시각 구분
+파티원 수: 기존 숫자 입력 패턴(border-border, w-full) — 저장 버튼(rounded-full bg-primary) 클릭 시 검증(1~해당 난이도 maxPartySize, 정수)하고 실패하면 인라인 에러만 표시, store.setPartySize를 호출하지 않는다
 ```
+보스/난이도를 바꾸면 입력값·에러 상태가 그 조합의 저장된 값으로 초기화된다(React `key` 리셋 관용구 — 이전 조합의 미저장 입력이 새 조합에 남지 않음). 캐릭터가 실제로 등록해둔 난이도가 있으면 그 난이도가 기본 선택된다.
 
 **난이도 뱃지**: 텍스트("· 하드") 대신 게임 내 난이도 뱃지와 같은 시각 언어(글로시 캡슐형)로 표시. 실제 게임 UI 스크린샷에서 픽셀 색을 추출한 근사값(1px 단위 재현 아님):
 ```
