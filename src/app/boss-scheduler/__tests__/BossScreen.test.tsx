@@ -160,7 +160,9 @@ describe('BossScreen', () => {
     render(<BossScreen />)
     await screen.findByRole('combobox')
 
-    expect(screen.getByText(/자쿰 · 카오스/)).toBeInTheDocument()
+    expect(screen.getByText('자쿰')).toBeInTheDocument()
+    expect(screen.getByText('카오스')).toBeInTheDocument()
+    expect(screen.queryByText('완료')).not.toBeInTheDocument()
     expect(screen.queryByText(/미등록보스/)).not.toBeInTheDocument()
     expect(screen.queryByText(/검은마법사/)).not.toBeInTheDocument()
     expect(screen.getByText(/3\/12/)).toBeInTheDocument()
@@ -214,7 +216,9 @@ describe('BossScreen', () => {
     await screen.findByRole('combobox')
     fireEvent.click(screen.getByRole('button', { name: '월간' }))
 
-    expect(screen.getByText(/검은마법사 · 익스트림/)).toBeInTheDocument()
+    expect(screen.getByText('검은마법사')).toBeInTheDocument()
+    expect(screen.getByText('익스트림')).toBeInTheDocument()
+    expect(screen.getByText('완료')).toBeInTheDocument()
     expect(screen.queryByText(/미등록월간보스/)).not.toBeInTheDocument()
     expect(screen.queryByText(/자쿰/)).not.toBeInTheDocument()
     expect(screen.queryByText(/3\/12/)).not.toBeInTheDocument()

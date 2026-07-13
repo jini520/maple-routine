@@ -1,50 +1,98 @@
 import { useEffect, useState } from 'react'
 import { RefreshCw } from 'lucide-react'
-import { BossPortrait } from '../../components/BossPortrait/BossPortrait'
 import { CharacterSelectDropdown } from '../../components/CharacterSelectDropdown/CharacterSelectDropdown'
 import { CharacterTrackingPicker } from '../../components/CharacterTrackingPicker/CharacterTrackingPicker'
 import { useBossSchedulerStore } from '../../features/boss-scheduler/store'
 import { formatScheduleSyncError, formatSyncedAt } from '../../features/schedule-sync/format'
 import { getCharacterPickerRoster } from '../../features/schedule-sync/schedule-sync'
-import type { CharacterPickerEntry } from '../../types'
+import { getBossPortraitCrop, getBossPortraitUrl } from '../../lib/boss-icons'
+import type { BossDifficulty, CharacterPickerEntry } from '../../types'
 import type { MatchedBoss } from '../../lib/boss-matching'
 
 type BossTab = 'weekly' | 'monthly'
 
-function StatusDot(props: { filled: boolean; label: string }): React.JSX.Element {
+const DIFFICULTY_BADGE_STYLES: Record<BossDifficulty, React.CSSProperties> = {
+  이지: {
+    background: 'linear-gradient(180deg,#aab4bc,#7d8891)',
+    border: '1px solid #67717a',
+    color: '#f5f6f7',
+    textShadow: '0 1px 1px rgba(0,0,0,.3)',
+  },
+  노멀: {
+    background: 'linear-gradient(180deg,#5cc2dd,#2b93b0)',
+    border: '1px solid #1f7690',
+    color: '#ffffff',
+    textShadow: '0 1px 1px rgba(0,0,0,.25)',
+  },
+  하드: {
+    background: 'linear-gradient(180deg,#e784a6,#c04b74)',
+    border: '1px solid #9c3a5c',
+    color: '#ffffff',
+    textShadow: '0 1px 1px rgba(0,0,0,.25)',
+  },
+  카오스: {
+    background: 'linear-gradient(180deg,#3c3c3c,#221f1f)',
+    border: '1px solid #caa87f',
+    color: '#f0d8b8',
+  },
+  익스트림: {
+    background: 'linear-gradient(180deg,#3c3c3c,#1c1414)',
+    border: '1.5px solid #ef5d78',
+    color: '#f4794f',
+  },
+}
+
+function DifficultyBadge(props: { difficulty: BossDifficulty }): React.JSX.Element {
   return (
     <span
-      role="img"
-      aria-label={props.label}
-      className={
-        props.filled
-          ? 'flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-secondary text-[8px] text-bg'
-          : 'h-4 w-4 shrink-0 rounded-full border border-border'
-      }
+      className="inline-flex items-center rounded-full text-[10px] font-extrabold tracking-[.03em]"
+      style={{ height: '20px', padding: '0 10px', ...DIFFICULTY_BADGE_STYLES[props.difficulty] }}
     >
-      {props.filled ? '✓' : ''}
+      {props.difficulty}
     </span>
   )
 }
 
-function BossList(props: { bosses: MatchedBoss[] }): React.JSX.Element {
+function BossCard(props: { boss: MatchedBoss }): React.JSX.Element {
+  const { boss } = props
+  const portraitUrl = getBossPortraitUrl(boss.portraitSlug)
+  const crop = getBossPortraitCrop(boss.portraitSlug)
+  const bossName = boss.matchedBossName ?? boss.apiName
+  const maskImage = 'linear-gradient(90deg, #000 0%, #000 38%, transparent 76%)'
+
   return (
-    <ul className="rounded-[14px] bg-surface border border-border p-4 space-y-2">
-      {props.bosses.map((boss) => (
-        <li key={`${boss.apiName}-${boss.difficulty}`} className="flex items-center gap-2">
-          <StatusDot filled={boss.isComplete} label={boss.isComplete ? '완료' : '미완료'} />
-          <div className="h-5 w-5 shrink-0">
-            <BossPortrait
-              portraitSlug={boss.portraitSlug}
-              label={boss.matchedBossName ?? boss.apiName}
-            />
-          </div>
-          <span className="text-sm text-text">
-            {boss.matchedBossName ?? boss.apiName} · {boss.difficulty}
+    <div className="relative h-20 overflow-hidden rounded-[14px] border border-border bg-surface">
+      {portraitUrl !== null && (
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url(${portraitUrl})`,
+            backgroundSize: crop.size,
+            backgroundPosition: crop.position,
+            filter: 'saturate(.85) brightness(.8)',
+            opacity: 0.65,
+            maskImage,
+            WebkitMaskImage: maskImage,
+          }}
+        />
+      )}
+
+      <div className="relative flex h-full items-center justify-between" style={{ padding: '0 14px' }}>
+        <div className="flex items-center gap-2">
+          <DifficultyBadge difficulty={boss.difficulty} />
+          <span
+            className="text-sm font-medium text-text"
+            style={{ textShadow: '0 1px 3px rgba(0,0,0,.9), 0 0 10px rgba(0,0,0,.6)' }}
+          >
+            {bossName}
           </span>
-        </li>
-      ))}
-    </ul>
+        </div>
+
+        {boss.isComplete && (
+          <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-bold text-bg">완료</span>
+        )}
+      </div>
+    </div>
   )
 }
 
@@ -193,29 +241,39 @@ export function BossScreen(): React.JSX.Element {
             }}
           />
 
-          <div className="flex items-center gap-4">
-            <button
-              type="button"
-              onClick={() => setActiveTab('weekly')}
-              className={
-                activeTab === 'weekly'
-                  ? 'text-sm font-semibold text-primary'
-                  : 'text-sm font-medium text-text-muted'
-              }
-            >
-              주간
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('monthly')}
-              className={
-                activeTab === 'monthly'
-                  ? 'text-sm font-semibold text-primary'
-                  : 'text-sm font-medium text-text-muted'
-              }
-            >
-              월간
-            </button>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                onClick={() => setActiveTab('weekly')}
+                className={
+                  activeTab === 'weekly'
+                    ? 'rounded-full bg-primary/15 px-3 py-[5px] text-sm font-semibold text-primary'
+                    : 'px-3 text-sm font-medium text-text-muted'
+                }
+              >
+                주간
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('monthly')}
+                className={
+                  activeTab === 'monthly'
+                    ? 'rounded-full bg-primary/15 px-3 py-[5px] text-sm font-semibold text-primary'
+                    : 'px-3 text-sm font-medium text-text-muted'
+                }
+              >
+                월간
+              </button>
+            </div>
+
+            {activeTab === 'weekly' &&
+              selected.weeklyBossClearCount !== null &&
+              selected.weeklyBossClearLimitCount !== null && (
+                <span className="rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary">
+                  {selected.weeklyBossClearCount}/{selected.weeklyBossClearLimitCount}
+                </span>
+              )}
           </div>
 
           {activeTab === 'weekly' && (
@@ -226,17 +284,12 @@ export function BossScreen(): React.JSX.Element {
                 </div>
               )}
 
-              {(registeredWeeklyBosses.length > 0 ||
-                (selected.weeklyBossClearCount !== null && selected.weeklyBossClearLimitCount !== null)) && (
-                <section className="space-y-2">
-                  {selected.weeklyBossClearCount !== null && selected.weeklyBossClearLimitCount !== null && (
-                    <span className="rounded-full bg-primary/15 px-2 py-0.5 text-xs font-medium text-primary">
-                      {selected.weeklyBossClearCount}/{selected.weeklyBossClearLimitCount}
-                    </span>
-                  )}
-
-                  {registeredWeeklyBosses.length > 0 && <BossList bosses={registeredWeeklyBosses} />}
-                </section>
+              {registeredWeeklyBosses.length > 0 && (
+                <div className="space-y-2">
+                  {registeredWeeklyBosses.map((boss) => (
+                    <BossCard key={`${boss.apiName}-${boss.difficulty}`} boss={boss} />
+                  ))}
+                </div>
               )}
             </>
           )}
@@ -249,7 +302,13 @@ export function BossScreen(): React.JSX.Element {
                 </div>
               )}
 
-              {registeredMonthlyBosses.length > 0 && <BossList bosses={registeredMonthlyBosses} />}
+              {registeredMonthlyBosses.length > 0 && (
+                <div className="space-y-2">
+                  {registeredMonthlyBosses.map((boss) => (
+                    <BossCard key={`${boss.apiName}-${boss.difficulty}`} boss={boss} />
+                  ))}
+                </div>
+              )}
             </>
           )}
         </>
