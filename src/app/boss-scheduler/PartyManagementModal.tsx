@@ -176,8 +176,8 @@ export function PartyManagementModal(props: PartyManagementModalProps): React.JS
                   aria-pressed={selectedDifficulty === difficulty}
                   className={
                     selectedDifficulty === difficulty
-                      ? 'rounded-full ring-2 ring-primary'
-                      : 'rounded-full opacity-50 hover:opacity-80'
+                      ? 'inline-flex rounded-full border-0 p-0 leading-none ring-2 ring-primary'
+                      : 'inline-flex rounded-full border-0 p-0 leading-none opacity-50 hover:opacity-80'
                   }
                 >
                   <DifficultyBadge difficulty={difficulty} />
