@@ -105,59 +105,62 @@ export function ContentScreen(): React.JSX.Element {
 
   return (
     <div className="p-4 space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-text">컨텐츠 스케줄러</h1>
-        {characterManageButton}
-      </div>
-
-      <div className="space-y-1">
-        <div className="flex items-center gap-3">
-          {characters.length > 0 && selected !== null && (
-            <CharacterSelectDropdown
-              characters={characters}
-              selectedOcid={selected.ocid}
-              onSelect={(ocid) => {
-                void selectCharacter(ocid)
-              }}
-            />
-          )}
-
-          <div className="ml-auto flex shrink-0 items-center gap-2">
-            <p className="text-sm text-text-muted whitespace-nowrap">
-              {selected !== null ? formatSyncedAt(selected.syncedAt) : ''}
-            </p>
-            <button
-              type="button"
-              onClick={() => refresh(trackedOcids ?? [])}
-              aria-label="새로고침"
-              className="p-2 text-primary-text hover:text-primary-hover"
-            >
-              <RefreshCw className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
-            </button>
-          </div>
+      {/* 제목~탭까지는 화면 상단에 고정하고 그 아래 컨텐츠 목록만 스크롤되게 한다 — sticky는
+          페이지 스크롤 위에서 동작하므로 App.tsx의 레이아웃(높이 계산)을 건드릴 필요가 없다.
+          bg-bg로 뒤에서 스크롤되는 항목이 비치지 않게 막고, z-10으로 항상 위에 그려지게 한다. */}
+      <div className="sticky top-0 z-10 space-y-4 bg-bg pb-2">
+        <div className="flex items-center justify-between">
+          <h1 className="text-lg font-semibold text-text">컨텐츠 스케줄러</h1>
+          {characterManageButton}
         </div>
 
-        {selected !== null && selected.isStale && (
+        <div className="space-y-1">
+          <div className="flex items-center gap-3">
+            {characters.length > 0 && selected !== null && (
+              <CharacterSelectDropdown
+                characters={characters}
+                selectedOcid={selected.ocid}
+                onSelect={(ocid) => {
+                  void selectCharacter(ocid)
+                }}
+              />
+            )}
+
+            <div className="ml-auto flex shrink-0 items-center gap-2">
+              <p className="text-sm text-text-muted whitespace-nowrap">
+                {selected !== null ? formatSyncedAt(selected.syncedAt) : ''}
+              </p>
+              <button
+                type="button"
+                onClick={() => refresh(trackedOcids ?? [])}
+                aria-label="새로고침"
+                className="p-2 text-primary-text hover:text-primary-hover"
+              >
+                <RefreshCw className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+
+          {selected !== null && selected.isStale && (
+            <p className="text-sm text-error">
+              {selected.error !== null ? formatScheduleSyncError(selected.error) : ''}
+            </p>
+          )}
+        </div>
+
+        {status === 'error' && (
           <p className="text-sm text-error">
-            {selected.error !== null ? formatScheduleSyncError(selected.error) : ''}
+            {error !== null ? formatScheduleSyncError(error) : '오류가 발생했습니다'}
           </p>
         )}
-      </div>
 
-      {status === 'error' && (
-        <p className="text-sm text-error">
-          {error !== null ? formatScheduleSyncError(error) : '오류가 발생했습니다'}
-        </p>
-      )}
+        {/* ADR-016: 캐시된 characters가 있으면 재검증(status: 'loading') 중에도 계속 보여준다 —
+            "불러오는 중"은 보여줄 데이터가 아예 없을 때만 표시한다. */}
+        {(status === 'idle' || status === 'loading') && characters.length === 0 && (
+          <p className="text-sm text-text-muted">불러오는 중...</p>
+        )}
 
-      {/* ADR-016: 캐시된 characters가 있으면 재검증(status: 'loading') 중에도 계속 보여준다 —
-          "불러오는 중"은 보여줄 데이터가 아예 없을 때만 표시한다. */}
-      {(status === 'idle' || status === 'loading') && characters.length === 0 && (
-        <p className="text-sm text-text-muted">불러오는 중...</p>
-      )}
-
-      {characters.length > 0 && selected !== null && (
-        <>
+        {characters.length > 0 && selected !== null && (
           <div className="flex items-center gap-4">
             <button
               type="button"
@@ -182,7 +185,11 @@ export function ContentScreen(): React.JSX.Element {
               주간
             </button>
           </div>
+        )}
+      </div>
 
+      {characters.length > 0 && selected !== null && (
+        <>
           {activeTab === 'daily' && (
             <>
               {registeredDailyContents.length === 0 && !selected.isStale && (

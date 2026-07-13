@@ -274,116 +274,126 @@ export function BossScreen(): React.JSX.Element {
 
   return (
     <div className="p-4 space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-text">보스 스케줄러</h1>
-        <div className="flex items-center gap-4">
-          {selected !== null && partyManageButton}
-          {characterManageButton}
-        </div>
-      </div>
-
-      <div className="space-y-1">
-        <div className="flex items-center gap-3">
-          {characters.length > 0 && selected !== null && (
-            <CharacterSelectDropdown
-              characters={characters}
-              selectedOcid={selected.ocid}
-              onSelect={(ocid) => {
-                void selectCharacter(ocid)
-              }}
-            />
-          )}
-
-          <div className="ml-auto flex shrink-0 items-center gap-2">
-            <p className="text-sm text-text-muted whitespace-nowrap">
-              {selected !== null ? formatSyncedAt(selected.syncedAt) : ''}
-            </p>
-            <button
-              type="button"
-              onClick={() => refresh(trackedOcids ?? [])}
-              aria-label="새로고침"
-              className="p-2 text-primary-text hover:text-primary-hover"
-            >
-              <RefreshCw className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
-            </button>
+      {/* 필터까지(제목~탭~솔로/파티 필터)는 화면 상단에 고정하고 그 아래 보스 목록만 스크롤되게
+          한다 — sticky는 페이지 스크롤 위에서 동작하므로 App.tsx의 레이아웃(높이 계산)을
+          건드릴 필요가 없다. bg-bg로 뒤에서 스크롤되는 카드가 비치지 않게 막고, z-10으로 항상
+          위에 그려지게 한다. */}
+      <div className="sticky top-0 z-10 space-y-4 bg-bg pb-2">
+        <div className="flex items-center justify-between">
+          <h1 className="text-lg font-semibold text-text">보스 스케줄러</h1>
+          <div className="flex items-center gap-4">
+            {selected !== null && partyManageButton}
+            {characterManageButton}
           </div>
         </div>
 
-        {selected !== null && selected.isStale && (
+        <div className="space-y-1">
+          <div className="flex items-center gap-3">
+            {characters.length > 0 && selected !== null && (
+              <CharacterSelectDropdown
+                characters={characters}
+                selectedOcid={selected.ocid}
+                onSelect={(ocid) => {
+                  void selectCharacter(ocid)
+                }}
+              />
+            )}
+
+            <div className="ml-auto flex shrink-0 items-center gap-2">
+              <p className="text-sm text-text-muted whitespace-nowrap">
+                {selected !== null ? formatSyncedAt(selected.syncedAt) : ''}
+              </p>
+              <button
+                type="button"
+                onClick={() => refresh(trackedOcids ?? [])}
+                aria-label="새로고침"
+                className="p-2 text-primary-text hover:text-primary-hover"
+              >
+                <RefreshCw className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+
+          {selected !== null && selected.isStale && (
+            <p className="text-sm text-error">
+              {selected.error !== null ? formatScheduleSyncError(selected.error) : ''}
+            </p>
+          )}
+        </div>
+
+        {status === 'error' && (
           <p className="text-sm text-error">
-            {selected.error !== null ? formatScheduleSyncError(selected.error) : ''}
+            {error !== null ? formatScheduleSyncError(error) : '오류가 발생했습니다'}
           </p>
+        )}
+
+        {/* ADR-016: 캐시된 characters가 있으면 재검증(status: 'loading') 중에도 계속 보여준다 —
+            "불러오는 중"은 보여줄 데이터가 아예 없을 때만 표시한다. */}
+        {(status === 'idle' || status === 'loading') && characters.length === 0 && (
+          <p className="text-sm text-text-muted">불러오는 중...</p>
+        )}
+
+        {characters.length > 0 && selected !== null && (
+          <>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('weekly')}
+                  className={
+                    activeTab === 'weekly'
+                      ? 'rounded-full bg-primary/15 px-3 py-[5px] text-sm font-semibold text-primary'
+                      : 'px-3 text-sm font-medium text-text-muted'
+                  }
+                >
+                  주간
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('monthly')}
+                  className={
+                    activeTab === 'monthly'
+                      ? 'rounded-full bg-primary/15 px-3 py-[5px] text-sm font-semibold text-primary'
+                      : 'px-3 text-sm font-medium text-text-muted'
+                  }
+                >
+                  월간
+                </button>
+              </div>
+
+              {activeTab === 'weekly' &&
+                selected.weeklyBossClearCount !== null &&
+                selected.weeklyBossClearLimitCount !== null && (
+                  <span className="rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary">
+                    {selected.weeklyBossClearCount}/{selected.weeklyBossClearLimitCount}
+                  </span>
+                )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              {(['all', 'solo', 'party'] as const).map((filter) => (
+                <button
+                  key={filter}
+                  type="button"
+                  onClick={() =>
+                    activeTab === 'weekly' ? setWeeklyFilter(filter) : setMonthlyFilter(filter)
+                  }
+                  className={
+                    activeFilter === filter
+                      ? 'rounded-full bg-primary/15 px-3 py-1 text-xs font-semibold text-primary'
+                      : 'px-3 text-xs font-medium text-text-muted'
+                  }
+                >
+                  {PARTY_FILTER_LABELS[filter]}
+                </button>
+              ))}
+            </div>
+          </>
         )}
       </div>
 
-      {status === 'error' && (
-        <p className="text-sm text-error">
-          {error !== null ? formatScheduleSyncError(error) : '오류가 발생했습니다'}
-        </p>
-      )}
-
-      {/* ADR-016: 캐시된 characters가 있으면 재검증(status: 'loading') 중에도 계속 보여준다 —
-          "불러오는 중"은 보여줄 데이터가 아예 없을 때만 표시한다. */}
-      {(status === 'idle' || status === 'loading') && characters.length === 0 && (
-        <p className="text-sm text-text-muted">불러오는 중...</p>
-      )}
-
       {characters.length > 0 && selected !== null && (
         <>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button
-                type="button"
-                onClick={() => setActiveTab('weekly')}
-                className={
-                  activeTab === 'weekly'
-                    ? 'rounded-full bg-primary/15 px-3 py-[5px] text-sm font-semibold text-primary'
-                    : 'px-3 text-sm font-medium text-text-muted'
-                }
-              >
-                주간
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('monthly')}
-                className={
-                  activeTab === 'monthly'
-                    ? 'rounded-full bg-primary/15 px-3 py-[5px] text-sm font-semibold text-primary'
-                    : 'px-3 text-sm font-medium text-text-muted'
-                }
-              >
-                월간
-              </button>
-            </div>
-
-            {activeTab === 'weekly' &&
-              selected.weeklyBossClearCount !== null &&
-              selected.weeklyBossClearLimitCount !== null && (
-                <span className="rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary">
-                  {selected.weeklyBossClearCount}/{selected.weeklyBossClearLimitCount}
-                </span>
-              )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            {(['all', 'solo', 'party'] as const).map((filter) => (
-              <button
-                key={filter}
-                type="button"
-                onClick={() =>
-                  activeTab === 'weekly' ? setWeeklyFilter(filter) : setMonthlyFilter(filter)
-                }
-                className={
-                  activeFilter === filter
-                    ? 'rounded-full bg-primary/15 px-3 py-1 text-xs font-semibold text-primary'
-                    : 'px-3 text-xs font-medium text-text-muted'
-                }
-              >
-                {PARTY_FILTER_LABELS[filter]}
-              </button>
-            ))}
-          </div>
-
           {activeTab === 'weekly' && (
             <>
               {registeredWeeklyBosses.length === 0 && !selected.isStale && (
