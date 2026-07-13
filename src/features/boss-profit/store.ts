@@ -2,11 +2,8 @@ import { create } from 'zustand'
 import { DEFAULT_MAX_PARTY_SIZE, findPriceEntry } from '../../lib/boss-crystal-prices'
 import { matchBossContent, type MatchedBoss } from '../../lib/boss-matching'
 import { getCurrentBossProfitPeriod } from '../../lib/boss-profit-period'
-import {
-  getBossProfitRecords,
-  getLatestPartySize,
-  upsertBossProfitRecord,
-} from '../../storage/boss-profit'
+import { getBossProfitRecords, upsertBossProfitRecord } from '../../storage/boss-profit'
+import { getBossPartySize } from '../../storage/boss-party-settings'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
 import { getCachedSchedulerState } from '../../storage/scheduler-cache'
 import type { BossCycle, BossDifficulty } from '../../types'
@@ -190,7 +187,8 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     const records = await getBossProfitRecords(ocids, periodKeys)
     const mergedRows = mergeRecordsIntoRows(rows, records)
 
-    // ADR-014: 기록이 없는 완료 보스는 화면 진입 전에도 즉시 기본 파티원 수로 자동 기록한다.
+    // ADR-014/ADR-019: 기록이 없는 완료 보스는 화면 진입 전에도 즉시 기본 파티원 수로 자동 기록한다.
+    // 기본값은 boss_party_settings(파티 관리) 조회 결과, 없으면 1(솔로)이다.
     // upsertBossProfitRecord는 단일 공유 SQLite 커넥션에 자체 트랜잭션을 열므로,
     // Promise.all로 동시 실행하면 트랜잭션이 겹쳐 에러가 난다 — 순차 실행으로 처리한다.
     const autoRecordedRows: BossProfitRow[] = []
@@ -200,8 +198,8 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
         continue
       }
 
-      const latestPartySize = await getLatestPartySize(row.ocid, row.boss, row.difficulty)
-      const partySize = latestPartySize ?? 1
+      const configuredPartySize = await getBossPartySize(row.ocid, row.boss, row.difficulty)
+      const partySize = configuredPartySize ?? 1
       const payoutMeso = Math.floor(row.priceMeso / partySize)
 
       await upsertBossProfitRecord({
