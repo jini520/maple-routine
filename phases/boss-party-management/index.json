@@ -1,0 +1,12 @@
+{
+  "project": "메이플 루틴",
+  "phase": "boss-party-management",
+  "steps": [
+    { "step": 0, "name": "sqlite-boss-party-settings", "status": "pending" },
+    { "step": 1, "name": "boss-party-settings-storage", "status": "pending" },
+    { "step": 2, "name": "boss-scheduler-party-store", "status": "pending" },
+    { "step": 3, "name": "boss-profit-party-default", "status": "pending" },
+    { "step": 4, "name": "boss-card-party-badge-modal", "status": "pending" },
+    { "step": 5, "name": "boss-scheduler-solo-party-filter", "status": "pending" }
+  ]
+}

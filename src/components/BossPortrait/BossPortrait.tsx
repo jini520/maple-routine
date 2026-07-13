@@ -1,14 +1,12 @@
 import { getBossPortraitUrl } from '../../lib/boss-icons'
-import type { BossDifficulty } from '../../types'
 
 export interface BossPortraitProps {
   portraitSlug: string | null
-  difficulty: BossDifficulty
   label: string
 }
 
 export function BossPortrait(props: BossPortraitProps): React.JSX.Element {
-  const url = getBossPortraitUrl(props.portraitSlug, props.difficulty)
+  const url = getBossPortraitUrl(props.portraitSlug)
 
   if (url === null) {
     return (

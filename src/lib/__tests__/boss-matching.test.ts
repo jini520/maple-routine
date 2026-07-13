@@ -24,7 +24,7 @@ describe('matchBossContent', () => {
       isRegistered: true,
       isComplete: false,
       matchedBossName: '자쿰',
-      portraitSlug: null,
+      portraitSlug: 'zakum',
     })
   })
 
@@ -44,7 +44,7 @@ describe('matchBossContent', () => {
     const result = matchBossContent(bossContent({ name: '블러디퀸' }))
 
     expect(result.matchedBossName).toBe('블러디 퀸')
-    expect(result.portraitSlug).toBeNull()
+    expect(result.portraitSlug).toBe('crimsonQueen')
   })
 
   it('apiAlias로 등록된 예외는 공백 제거로 못 잡아도 매칭된다 ("시즌 보스 메이린" -> "메이린")', () => {

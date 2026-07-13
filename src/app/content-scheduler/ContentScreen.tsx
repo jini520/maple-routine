@@ -111,18 +111,30 @@ export function ContentScreen(): React.JSX.Element {
       </div>
 
       <div className="space-y-1">
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-text-muted">
-            {selected !== null ? formatSyncedAt(selected.syncedAt) : ''}
-          </p>
-          <button
-            type="button"
-            onClick={() => refresh(trackedOcids ?? [])}
-            aria-label="새로고침"
-            className="p-2 text-primary-text hover:text-primary-hover"
-          >
-            <RefreshCw className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
-          </button>
+        <div className="flex items-center gap-3">
+          {characters.length > 0 && selected !== null && (
+            <CharacterSelectDropdown
+              characters={characters}
+              selectedOcid={selected.ocid}
+              onSelect={(ocid) => {
+                void selectCharacter(ocid)
+              }}
+            />
+          )}
+
+          <div className="ml-auto flex shrink-0 items-center gap-2">
+            <p className="text-sm text-text-muted whitespace-nowrap">
+              {selected !== null ? formatSyncedAt(selected.syncedAt) : ''}
+            </p>
+            <button
+              type="button"
+              onClick={() => refresh(trackedOcids ?? [])}
+              aria-label="새로고침"
+              className="p-2 text-primary-text hover:text-primary-hover"
+            >
+              <RefreshCw className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+            </button>
+          </div>
         </div>
 
         {selected !== null && selected.isStale && (
@@ -146,22 +158,14 @@ export function ContentScreen(): React.JSX.Element {
 
       {characters.length > 0 && selected !== null && (
         <>
-          <CharacterSelectDropdown
-            characters={characters}
-            selectedOcid={selected.ocid}
-            onSelect={(ocid) => {
-              void selectCharacter(ocid)
-            }}
-          />
-
           <div className="flex items-center gap-4">
             <button
               type="button"
               onClick={() => setActiveTab('daily')}
               className={
                 activeTab === 'daily'
-                  ? 'text-sm font-semibold text-primary'
-                  : 'text-sm font-medium text-text-muted'
+                  ? 'rounded-full bg-primary/15 px-3 py-[5px] text-sm font-semibold text-primary'
+                  : 'px-3 text-sm font-medium text-text-muted'
               }
             >
               일간
@@ -171,8 +175,8 @@ export function ContentScreen(): React.JSX.Element {
               onClick={() => setActiveTab('weekly')}
               className={
                 activeTab === 'weekly'
-                  ? 'text-sm font-semibold text-primary'
-                  : 'text-sm font-medium text-text-muted'
+                  ? 'rounded-full bg-primary/15 px-3 py-[5px] text-sm font-semibold text-primary'
+                  : 'px-3 text-sm font-medium text-text-muted'
               }
             >
               주간

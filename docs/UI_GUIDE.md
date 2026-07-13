@@ -172,6 +172,59 @@ Text(다크):      text-neutral-500 hover:text-neutral-300
 - **모달 컴포넌트(`components/Modal`)**: `CharacterTrackingPicker`/`DisconnectConfirm`에서 반복되던 오버레이(`fixed inset-0 flex items-center justify-center bg-bg/70` + 안쪽 카드 `onClick` 시 `stopPropagation`)를 공용화했다. 기본은 카드(`rounded-[14px] border border-border bg-surface p-6`)를 제공하지만, `card={false}`를 주면 위치 고정용 래퍼만 남기고 카드 스타일은 생략한다 — `ApiKeyForm`/`AccountSelectionList`처럼 이미 자체 카드를 가진 컴포넌트를 그대로 재사용할 때 카드-안-카드 중첩을 피하기 위함이다.
 - **테마 대표 컬러 점(`ThemeSwatchDots`)**: 테마의 `primary`/`secondary`/`error` 3개 토큰 값을 `h-4 w-4 rounded-full` 점으로 겹쳐(`-space-x-1`) 보여준다. 테마 행의 오른쪽 콘텐츠(점 3개 + 현재 테마 이름을 `rounded-full border border-border px-3 py-1 text-xs` 배지로)와 테마 모달 안의 선택지 각각에 재사용한다. `src/data/job-themes.json`을 직접 import해 값을 읽는다 — 활성화되지 않은 테마의 색도 미리보기로 보여줘야 해서 CSS 커스텀 프로퍼티(현재 활성 테마 값만 노출)로는 부족하기 때문이다.
 
+### 탭 토글(주간/월간, 일간/주간 등) — 확정, 2026-07-13, [[ADR-018]]
+컨텐츠 스케줄러·보스 스케줄러의 캐릭터 드롭다운 아래 탭 전환 UI. **드롭다운·탭·(있다면) 카운트 배지를 별도 카드로 묶지 않는다** — 배경 위에 바로 놓는다(카드가 하나 더 늘어나는 걸 피하기 위해 카드로 묶는 안은 검토 후 기각, 2026-07-13).
+```
+탭 행: flex items-center gap-4 (드롭다운 다음 줄)
+활성 탭: rounded-full bg-primary/15 text-primary px-3 py-[5px] text-sm font-semibold — 배지에 이미 쓰던 pill 스타일 그대로 재사용(새 스타일 신설 금지)
+비활성 탭: 배경 없음, text-sm font-medium text-text-muted, 좌우 패딩은 활성 탭과 동일(px-3)해서 탭 전환 시 다른 탭이 밀리지 않게 함
+카운트 배지(있는 화면만, 예: 보스 스케줄러 주간 탭의 n/12): 탭 행과 같은 줄, justify-between으로 오른쪽 끝에 배치 — "활성 탭 = 이 수치"라는 관계를 같은 행 배치로 표현. rounded-full bg-primary/15 text-primary text-xs font-semibold px-2.5 py-1 (기존 배지 스타일 그대로)
+```
+활성/비활성 색 차이(`text-primary` vs `text-text-muted`)만으로는 레테처럼 저채도 팔레트에서 구분이 약해서 배경 pill을 반드시 함께 쓴다 — 굵기(`font-semibold`/`font-medium`) 차이만으로 대체하지 않는다.
+
+### 솔로/파티 서브 필터 — 확정, 2026-07-13, [[ADR-019]] (설계만·구현 전)
+보스 스케줄러의 주간/월간 탭 행 바로 아래 한 줄 추가되는 필터. 위 탭 토글과 동일한 pill 스타일을 그대로 재사용하되(새 스타일 신설 금지), 탭보다 한 단계 낮은 위계임을 나타내기 위해 폰트 크기를 `text-xs`로 한 단계 줄인다.
+```
+필터 행: flex items-center gap-2 (탭 행 바로 다음 줄)
+활성 필터: rounded-full bg-primary/15 text-primary px-3 py-1 text-xs font-semibold
+비활성 필터: 배경 없음, text-xs font-medium text-text-muted, 좌우 패딩 동일(px-3)
+옵션: 전체 / 솔로 / 파티 (이 순서 고정)
+```
+필터는 현재 활성 탭(주간 또는 월간) 안에서만 적용된다. 두 탭의 필터 선택 상태는 서로 독립적으로 유지한다(예: 주간 탭에서 "파티"를 고른 상태로 월간 탭으로 전환해도 월간 탭은 그대로 "전체").
+
+### 보스 카드 — 확정, 2026-07-13, [[ADR-018]]
+보스 스케줄러의 보스 목록. 기존에는 보스 전체를 하나의 카드(`<ul>`)에 담고 왼쪽 체크 도형으로 완료 여부를 표시했으나, 보스별 독립 카드 + 일러스트 bleed 방식으로 바꾼다. **목록을 감싸는 상위 카드는 두지 않는다** — 카드끼리 `space-y-2`로 나열만 한다.
+
+**정정(2026-07-13) — 카드 배경/보더/보스명 텍스트만 앱 테마와 무관하게 레테(다크) 고정**: 일러스트 bleed·페이드·text-shadow가 어두운 배경을 전제로 튜닝되어, 렌(라이트) 테마에서 `bg-surface`/`border-border`/`text-text` 같은 테마 토큰을 쓰면 대비가 깨진다. 그래서 보스 카드(`BossScreen.tsx`의 `BossCard`)의 카드 배경·보더·보스명 텍스트만 레테 값을 리터럴 hex로 고정한다 — 앱이 렌 테마여도 이 세 값은 항상 다크로 보인다(각각 `#1A1720`/`#37323E`/`#E8DFEC`). 반면 **완료 뱃지는 앱 전체가 공유하는 "완료/성공" 의미 색(secondary)이라 고정하지 않고 테마 토큰(`bg-secondary`/`text-bg`) 그대로 유지** — 렌 테마에서는 완료 뱃지 색도 렌의 secondary(#437B71)로 바뀐다(정정, 2026-07-13).
+```
+카드: rounded-[14px] border border-[#37323E] bg-[#1A1720](레테 고정), height 80px, overflow-hidden, position relative
+일러스트(있는 보스만): position absolute inset-0, background-size/position은 보스별 설정 값(src/data/boss-portrait-crops.json, 없으면 cover/center) — 블러 필터 없음(2026-07-13 확정, 흐리지 않고 선명하게), saturate(.85) brightness(.8)로 살짝 톤다운, opacity .65
+  페이드: mask-image: linear-gradient(90deg, #000 0%, #000 38%, transparent 76%) — 왼쪽 38%까지 선명, 76%부터 완전 투명(카드 배경에 자연스럽게 녹아듦). 일러스트 없는 보스는 이 레이어 자체를 생략(플레이스홀더 배경색만)
+콘텐츠 행: flex items-center justify-between, padding 0 14px(좌우 동일 — 일러스트 위에 바로 얹히므로 별도 좌측 여백 없이 카드 가장자리에 붙임, 2026-07-13 확정)
+  왼쪽: 난이도 뱃지 + 보스명(순서: 뱃지 → 이름), 이름에는 text-shadow(0 1px 3px rgba(0,0,0,.9), 0 0 10px rgba(0,0,0,.6))로 일러스트 위에서도 대비 확보
+  오른쪽: flex items-center gap-1.5 — 파티 배지(설정된 경우)와 완료 배지(완료된 경우)를 이 순서로 나란히 배치. 둘 다 없으면 빈 공간(2026-07-13, [[ADR-019]] 반영 — 설계만·구현 전, 실제 화면 검증 전까지 잠정안)
+```
+**완료 뱃지**: `rounded-full bg-secondary text-bg text-xs font-bold px-2.5 py-1`(테마 토큰, 카드 배경과 달리 고정하지 않음). 기존 `StatusDot`의 체크 완료 색이 이미 `bg-secondary`(레테 기준 #D1C093, 골드)였으므로 새 색을 만들지 않고 그대로 재사용한다. 왼쪽 체크 도형(`StatusDot`)은 제거.
+
+**파티 배지 — 확정, 2026-07-13, [[ADR-019]] (설계만·구현 전)**: 파티 인원이 2인 이상으로 설정된 보스 카드에만 표시. 카드 배경·보더·보스명과 마찬가지로 일러스트 위에 얹히는 카드 로컬 요소라 테마 토큰이 아니라 레테 고정 리터럴 값을 쓴다(완료 뱃지처럼 앱 전역 의미색이 아니므로 고정 대상).
+```
+rounded-full bg-white/10 text-[#E8DFEC] text-xs font-semibold px-2 py-1, flex items-center gap-1
+아이콘: lucide-react `Users`, size 12, strokeWidth 2
+텍스트: "n인"(예: "4인")
+```
+설정 안 함 또는 1인(솔로)이면 이 배지 자체를 렌더링하지 않는다 — 별도의 "솔로" 뱃지는 두지 않는다(빈 공간으로 솔로를 표현).
+
+**난이도 뱃지**: 텍스트("· 하드") 대신 게임 내 난이도 뱃지와 같은 시각 언어(글로시 캡슐형)로 표시. 실제 게임 UI 스크린샷에서 픽셀 색을 추출한 근사값(1px 단위 재현 아님):
+```
+공통: rounded-full, height 20px, padding 0 10px, font-size 10px, font-weight 800, letter-spacing .03em
+이지    background: linear-gradient(180deg,#aab4bc,#7d8891)  border: 1px solid #67717a   color: #f5f6f7 (흰 텍스트, text-shadow 0 1px 1px rgba(0,0,0,.3))
+노멀    background: linear-gradient(180deg,#5cc2dd,#2b93b0)  border: 1px solid #1f7690   color: #ffffff (text-shadow 0 1px 1px rgba(0,0,0,.25))
+하드    background: linear-gradient(180deg,#e784a6,#c04b74)  border: 1px solid #9c3a5c   color: #ffffff (text-shadow 0 1px 1px rgba(0,0,0,.25))
+카오스  background: linear-gradient(180deg,#3c3c3c,#221f1f)  border: 1px solid #caa87f   color: #f0d8b8
+익스트림 background: linear-gradient(180deg,#3c3c3c,#1c1414) border: 1.5px solid #ef5d78 color: #f4794f
+```
+**보스별 일러스트 크기·위치**: 인물 구도가 보스마다 달라 고정값 하나로는 두상이 잘리거나 안 보이는 경우가 많다(카링·스우 두 예시만으로도 서로 다른 `background-size`가 필요했음, ADR-018 참고). `src/data/boss-portrait-crops.json`에서 `portraitSlug`별로 개별 지정 — 이 파일은 게임 데이터가 아니라 UI 표시 파라미터라 값은 AI가 임의로 채우지 않고 사용자가 이미지를 넣을 때마다 직접 조정한다. 세부 조회 로직은 `docs/ARCHITECTURE.md` 참고.
+
 ## 레이아웃
 - 전체 너비: 모바일 뷰포트 기준 단일 컬럼, 별도 max-width 제한 없음(Capacitor 하이브리드 앱이라 데스크톱 와이드 레이아웃은 고려하지 않음, 확정 2026-07-11)
 - 정렬: 좌측 정렬 기본
@@ -196,4 +249,4 @@ Text(다크):      text-neutral-500 hover:text-neutral-300
 - **라이브러리: `lucide-react`(확정, 2026-07-11)** — 새 아이콘이 필요하면 이 라이브러리에서만 가져온다. 다른 아이콘 라이브러리를 섞어 쓰지 않는다
 - `strokeWidth`: 하단 탭바 내비게이션 아이콘은 `1.5`, 새로고침 등 소형 액션 아이콘은 `2`
 - 아이콘 컨테이너(둥근 배경 박스)로 감싸지 않는다 — 강조색 아이콘을 배경 없이 단독으로 쓴다(원형 배경으로 감쌌다가 제거하고 이 방식으로 확정, 2026-07-11)
-- 현재 쓰이는 아이콘: 하단 탭바 `ListChecks`(컨텐츠)/`Swords`(보스, 활성 시 `#C2410C`·비활성 시 `#B7A490`, [[ADR-013]] 화면 개편에 따라 기존 `CalendarCheck`(일간)/`CalendarRange`(주간)에서 변경, 2026-07-11 — 제안 수준, 실제 적용 시 다른 조합으로 바뀔 수 있음), 새로고침 버튼 `RefreshCw`(`#C2410C`, 배경 없음)
+- 현재 쓰이는 아이콘: 하단 탭바 `ListChecks`(컨텐츠)/`Swords`(보스, 활성 시 `#C2410C`·비활성 시 `#B7A490`, [[ADR-013]] 화면 개편에 따라 기존 `CalendarCheck`(일간)/`CalendarRange`(주간)에서 변경, 2026-07-11 — 제안 수준, 실제 적용 시 다른 조합으로 바뀔 수 있음), 새로고침 버튼 `RefreshCw`(`#C2410C`, 배경 없음), 보스 카드 파티 배지 `Users`(size 12, strokeWidth 2, [[ADR-019]], 설계만·구현 전)
