@@ -1,14 +1,11 @@
-import type { BossDifficulty } from '../types'
+import cropsData from '../data/boss-portrait-crops.json'
 
-const DIFFICULTY_PREFIX: Record<BossDifficulty, string> = {
-  이지: 'easy',
-  노멀: 'normal',
-  하드: 'hard',
-  카오스: 'chaos',
-  익스트림: 'extreme',
+export interface BossPortraitCrop {
+  size: string
+  position: string
 }
 
-const bossPortraitModules = import.meta.glob('../assets/bosses/*.png', {
+const bossPortraitModules = import.meta.glob('../assets/bosses/*.webp', {
   eager: true,
   import: 'default',
 }) as Record<string, string>
@@ -17,9 +14,19 @@ const bossPortraitUrlsByFileName: Record<string, string> = Object.fromEntries(
   Object.entries(bossPortraitModules).map(([path, url]) => [path.slice(path.lastIndexOf('/') + 1), url]),
 )
 
-export function getBossPortraitUrl(portraitSlug: string | null, difficulty: BossDifficulty): string | null {
+const BOSS_PORTRAIT_CROPS = cropsData as Record<string, BossPortraitCrop>
+
+const DEFAULT_CROP: BossPortraitCrop = { size: 'cover', position: 'center' }
+
+export function getBossPortraitUrl(portraitSlug: string | null): string | null {
   if (portraitSlug === null) return null
 
-  const fileName = `${DIFFICULTY_PREFIX[difficulty]}_${portraitSlug}.png`
+  const fileName = `${portraitSlug}.webp`
   return bossPortraitUrlsByFileName[fileName] ?? null
+}
+
+export function getBossPortraitCrop(portraitSlug: string | null): BossPortraitCrop {
+  if (portraitSlug === null) return DEFAULT_CROP
+
+  return BOSS_PORTRAIT_CROPS[portraitSlug] ?? DEFAULT_CROP
 }

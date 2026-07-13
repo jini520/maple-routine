@@ -53,7 +53,7 @@ function BossProfitRowItem(props: BossProfitRowItemProps): React.JSX.Element {
   return (
     <li className="flex items-center gap-3 rounded-[14px] bg-surface border border-border p-4">
       <div className="h-10 w-10 shrink-0">
-        <BossPortrait portraitSlug={findPortraitSlug(row.boss)} difficulty={row.difficulty} label={row.boss} />
+        <BossPortrait portraitSlug={findPortraitSlug(row.boss)} label={row.boss} />
       </div>
 
       <div className="flex-1 space-y-1">

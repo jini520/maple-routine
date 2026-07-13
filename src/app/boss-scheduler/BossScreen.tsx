@@ -36,7 +36,6 @@ function BossList(props: { bosses: MatchedBoss[] }): React.JSX.Element {
           <div className="h-5 w-5 shrink-0">
             <BossPortrait
               portraitSlug={boss.portraitSlug}
-              difficulty={boss.difficulty}
               label={boss.matchedBossName ?? boss.apiName}
             />
           </div>

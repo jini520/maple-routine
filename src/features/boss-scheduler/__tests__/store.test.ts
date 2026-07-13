@@ -143,7 +143,7 @@ describe('useBossSchedulerStore', () => {
         isRegistered: true,
         isComplete: false,
         matchedBossName: '자쿰',
-        portraitSlug: null,
+        portraitSlug: 'zakum',
       },
     ])
     expect(state.characters[0].monthlyBosses).toEqual([

@@ -172,6 +172,39 @@ Text(다크):      text-neutral-500 hover:text-neutral-300
 - **모달 컴포넌트(`components/Modal`)**: `CharacterTrackingPicker`/`DisconnectConfirm`에서 반복되던 오버레이(`fixed inset-0 flex items-center justify-center bg-bg/70` + 안쪽 카드 `onClick` 시 `stopPropagation`)를 공용화했다. 기본은 카드(`rounded-[14px] border border-border bg-surface p-6`)를 제공하지만, `card={false}`를 주면 위치 고정용 래퍼만 남기고 카드 스타일은 생략한다 — `ApiKeyForm`/`AccountSelectionList`처럼 이미 자체 카드를 가진 컴포넌트를 그대로 재사용할 때 카드-안-카드 중첩을 피하기 위함이다.
 - **테마 대표 컬러 점(`ThemeSwatchDots`)**: 테마의 `primary`/`secondary`/`error` 3개 토큰 값을 `h-4 w-4 rounded-full` 점으로 겹쳐(`-space-x-1`) 보여준다. 테마 행의 오른쪽 콘텐츠(점 3개 + 현재 테마 이름을 `rounded-full border border-border px-3 py-1 text-xs` 배지로)와 테마 모달 안의 선택지 각각에 재사용한다. `src/data/job-themes.json`을 직접 import해 값을 읽는다 — 활성화되지 않은 테마의 색도 미리보기로 보여줘야 해서 CSS 커스텀 프로퍼티(현재 활성 테마 값만 노출)로는 부족하기 때문이다.
 
+### 탭 토글(주간/월간, 일간/주간 등) — 확정, 2026-07-13, [[ADR-018]]
+컨텐츠 스케줄러·보스 스케줄러의 캐릭터 드롭다운 아래 탭 전환 UI. **드롭다운·탭·(있다면) 카운트 배지를 별도 카드로 묶지 않는다** — 배경 위에 바로 놓는다(카드가 하나 더 늘어나는 걸 피하기 위해 카드로 묶는 안은 검토 후 기각, 2026-07-13).
+```
+탭 행: flex items-center gap-4 (드롭다운 다음 줄)
+활성 탭: rounded-full bg-primary/15 text-primary px-3 py-[5px] text-sm font-semibold — 배지에 이미 쓰던 pill 스타일 그대로 재사용(새 스타일 신설 금지)
+비활성 탭: 배경 없음, text-sm font-medium text-text-muted, 좌우 패딩은 활성 탭과 동일(px-3)해서 탭 전환 시 다른 탭이 밀리지 않게 함
+카운트 배지(있는 화면만, 예: 보스 스케줄러 주간 탭의 n/12): 탭 행과 같은 줄, justify-between으로 오른쪽 끝에 배치 — "활성 탭 = 이 수치"라는 관계를 같은 행 배치로 표현. rounded-full bg-primary/15 text-primary text-xs font-semibold px-2.5 py-1 (기존 배지 스타일 그대로)
+```
+활성/비활성 색 차이(`text-primary` vs `text-text-muted`)만으로는 레테처럼 저채도 팔레트에서 구분이 약해서 배경 pill을 반드시 함께 쓴다 — 굵기(`font-semibold`/`font-medium`) 차이만으로 대체하지 않는다.
+
+### 보스 카드 — 확정, 2026-07-13, [[ADR-018]]
+보스 스케줄러의 보스 목록. 기존에는 보스 전체를 하나의 카드(`<ul>`)에 담고 왼쪽 체크 도형으로 완료 여부를 표시했으나, 보스별 독립 카드 + 일러스트 bleed 방식으로 바꾼다. **목록을 감싸는 상위 카드는 두지 않는다** — 카드끼리 `space-y-2`로 나열만 한다.
+```
+카드: rounded-[14px] border border-border bg-surface, height 80px, overflow-hidden, position relative
+일러스트(있는 보스만): position absolute inset-0, background-size/position은 보스별 설정 값(src/data/boss-portrait-crops.json, 없으면 cover/center) — 블러 필터 없음(2026-07-13 확정, 흐리지 않고 선명하게), saturate(.85) brightness(.8)로 살짝 톤다운, opacity .65
+  페이드: mask-image: linear-gradient(90deg, #000 0%, #000 38%, transparent 76%) — 왼쪽 38%까지 선명, 76%부터 완전 투명(카드 배경에 자연스럽게 녹아듦). 일러스트 없는 보스는 이 레이어 자체를 생략(플레이스홀더 배경색만)
+콘텐츠 행: flex items-center justify-between, padding 0 14px(좌우 동일 — 일러스트 위에 바로 얹히므로 별도 좌측 여백 없이 카드 가장자리에 붙임, 2026-07-13 확정)
+  왼쪽: 난이도 뱃지 + 보스명(순서: 뱃지 → 이름), 이름에는 text-shadow(0 1px 3px rgba(0,0,0,.9), 0 0 10px rgba(0,0,0,.6))로 일러스트 위에서도 대비 확보
+  오른쪽: 완료 시에만 완료 뱃지, 미완료는 빈 공간
+```
+**완료 뱃지**: `rounded-full bg-secondary text-bg text-xs font-bold px-2.5 py-1`, 텍스트 "완료". 기존 `StatusDot`의 체크 완료 색이 이미 `bg-secondary`(레테 기준 #D1C093, 골드)였으므로 새 색을 만들지 않고 그대로 재사용한다. 왼쪽 체크 도형(`StatusDot`)은 제거.
+
+**난이도 뱃지**: 텍스트("· 하드") 대신 게임 내 난이도 뱃지와 같은 시각 언어(글로시 캡슐형)로 표시. 실제 게임 UI 스크린샷에서 픽셀 색을 추출한 근사값(1px 단위 재현 아님):
+```
+공통: rounded-full, height 20px, padding 0 10px, font-size 10px, font-weight 800, letter-spacing .03em
+이지    background: linear-gradient(180deg,#aab4bc,#7d8891)  border: 1px solid #67717a   color: #f5f6f7 (흰 텍스트, text-shadow 0 1px 1px rgba(0,0,0,.3))
+노멀    background: linear-gradient(180deg,#5cc2dd,#2b93b0)  border: 1px solid #1f7690   color: #ffffff (text-shadow 0 1px 1px rgba(0,0,0,.25))
+하드    background: linear-gradient(180deg,#e784a6,#c04b74)  border: 1px solid #9c3a5c   color: #ffffff (text-shadow 0 1px 1px rgba(0,0,0,.25))
+카오스  background: linear-gradient(180deg,#3c3c3c,#221f1f)  border: 1px solid #caa87f   color: #f0d8b8
+익스트림 background: linear-gradient(180deg,#3c3c3c,#1c1414) border: 1.5px solid #ef5d78 color: #f4794f
+```
+**보스별 일러스트 크기·위치**: 인물 구도가 보스마다 달라 고정값 하나로는 두상이 잘리거나 안 보이는 경우가 많다(카링·스우 두 예시만으로도 서로 다른 `background-size`가 필요했음, ADR-018 참고). `src/data/boss-portrait-crops.json`에서 `portraitSlug`별로 개별 지정 — 이 파일은 게임 데이터가 아니라 UI 표시 파라미터라 값은 AI가 임의로 채우지 않고 사용자가 이미지를 넣을 때마다 직접 조정한다. 세부 조회 로직은 `docs/ARCHITECTURE.md` 참고.
+
 ## 레이아웃
 - 전체 너비: 모바일 뷰포트 기준 단일 컬럼, 별도 max-width 제한 없음(Capacitor 하이브리드 앱이라 데스크톱 와이드 레이아웃은 고려하지 않음, 확정 2026-07-11)
 - 정렬: 좌측 정렬 기본

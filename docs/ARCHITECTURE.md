@@ -1,6 +1,6 @@
 # 아키텍처
 
-> 이 문서는 `docs/ADR.md`를 전제로 작성되었습니다. Capacitor / Vite+React / 로컬 저장 전용 / 백그라운드 상시 알림 모두 확정. 일간/주간 진행 상태는 Nexon Open API로 동기화하되, 사용자 개인이 발급받은 API 키를 기기에 저장해 직접 호출하는 방식이라 백엔드는 필요 없음([[ADR-007]] 신규 — 2026-07-09). 에러 핸들링·복원력 정책은 [[ADR-008]] 참고. 직업 기반 테마 시스템은 뼈대만 확정([[ADR-009]], 컬러 값 미정). 최상위 화면 구조는 "일간/주간 스케줄러"(리셋 주기 기준)에서 "컨텐츠/보스 스케줄러"(콘텐츠 종류 기준)로 개편됨([[ADR-013]], 2026-07-11). 보스 수익 계산기는 완료 감지 시 파티원 수를 자동 기록하고 캐릭터별 드롭다운 레이아웃을 쓰도록 확장됨([[ADR-014]], 2026-07-11). "캐릭터 관리" 피커는 레벨순 정렬 + 캐릭터 이미지 카드형 그리드로 개선되고 `character/basic` API 병렬 조회가 추가됨([[ADR-015]], 2026-07-12). 별도 공개 웹 서비스 제공은 보류(MVP 범위 밖)이며, 이 문서는 Capacitor 앱(WebView) 기준으로만 작성되었습니다.
+> 이 문서는 `docs/ADR.md`를 전제로 작성되었습니다. Capacitor / Vite+React / 로컬 저장 전용 / 백그라운드 상시 알림 모두 확정. 일간/주간 진행 상태는 Nexon Open API로 동기화하되, 사용자 개인이 발급받은 API 키를 기기에 저장해 직접 호출하는 방식이라 백엔드는 필요 없음([[ADR-007]] 신규 — 2026-07-09). 에러 핸들링·복원력 정책은 [[ADR-008]] 참고. 직업 기반 테마 시스템은 뼈대만 확정([[ADR-009]], 컬러 값 미정). 최상위 화면 구조는 "일간/주간 스케줄러"(리셋 주기 기준)에서 "컨텐츠/보스 스케줄러"(콘텐츠 종류 기준)로 개편됨([[ADR-013]], 2026-07-11). 보스 수익 계산기는 완료 감지 시 파티원 수를 자동 기록하고 캐릭터별 드롭다운 레이아웃을 쓰도록 확장됨([[ADR-014]], 2026-07-11). "캐릭터 관리" 피커는 레벨순 정렬 + 캐릭터 이미지 카드형 그리드로 개선되고 `character/basic` API 병렬 조회가 추가됨([[ADR-015]], 2026-07-12). 보스 스케줄러·컨텐츠 스케줄러의 탭 토글은 활성 상태에 배지와 동일한 pill 스타일을 재사용하고, 보스 목록은 개별 카드 나열(두상이 보이는 일러스트 bleed + 보스별 크롭 설정)로 개편됨([[ADR-018]], 2026-07-13, 설계만·구현 전). 별도 공개 웹 서비스 제공은 보류(MVP 범위 밖)이며, 이 문서는 Capacitor 앱(WebView) 기준으로만 작성되었습니다.
 
 ## 디렉토리 구조
 ```
@@ -31,17 +31,17 @@ src/
 │   ├── hunting-timer/       # 상시 알림(Android Chronometer / iOS Live Activity) 커스텀 플러그인 래퍼
 │   └── notification-sync/   # 알림 발송 직전 백그라운드에서 Nexon API 재확인 후 조건부 발송 (WorkManager / BGAppRefreshTask, [[ADR-004]])
 ├── components/              # 공용 UI 컴포넌트
-│   ├── BossPortrait/         # 보스 초상화 표시 공용 컴포넌트([[ADR-011]]) — feature 2(주간 스케줄러)·4(보스 수익 계산기)·5(물욕 아이템)가 보스를 나타낼 때 공통으로 씀. lib/boss-icons로 이미지 조회, 없으면 플레이스홀더
+│   ├── BossPortrait/         # 보스 초상화 표시 공용 컴포넌트([[ADR-011]]) — feature 2(주간 스케줄러)·4(보스 수익 계산기)·5(물욕 아이템)가 보스를 나타낼 때 공통으로 씀. lib/boss-icons로 이미지 조회, 없으면 플레이스홀더. 원형 `object-cover` 렌더링 그대로 유지([[ADR-018]]) — 보스 스케줄러의 새 보스 카드(개별 bleed 일러스트)는 이 컴포넌트를 쓰지 않고 `app/boss-scheduler/BossScreen.tsx` 안에 로컬 컴포넌트로 구현(기존 BossList/StatusDot과 동일한 위치)
 │   ├── CharacterTrackingPicker/  # "캐릭터 관리" 피커([[ADR-012]]) — 레벨 내림차순 정렬 + 캐릭터 이미지 카드형 그리드([[ADR-015]]). 컨텐츠/보스 스케줄러 화면이 동일 컴포넌트 공유
 │   └── Modal/                 # 오버레이 모달 공용 래퍼(2026-07-13) — CharacterTrackingPicker/DisconnectConfirm에 있던 오버레이 마크업을 공용화. `card` prop으로 카드 스타일 유무 전환(설정 화면의 ApiKeyModal/AccountModal이 card=false로 자체 카드형 컴포넌트를 그대로 담을 때 사용, `docs/UI_GUIDE.md` "설정 리스트 행 + 모달" 참고)
 ├── assets/
 │   ├── items/                # 물욕템 아이콘 이미지([[ADR-011]]) — 사용자가 직접 추가한 기존 파일 그대로 사용(영문 내부 코드명 스타일, 예: dark_boss_ring.png). src/data/item-icons.json이 한글 아이템명↔파일명 매핑 테이블
 │   │   └── rings/             # 특수 스킬 반지 전용 서브폴더([[ADR-011]]) — GMS 영문명으로 파일명 정리 완료(예: Ring_of_Restraint.png). boss-ring-boxes.json의 iconFile 필드가 매핑 테이블
-│   └── bosses/                # 보스 초상화 이미지([[ADR-011]]) — 사용자가 직접 추가한 기존 파일 그대로 사용(예: hard_verusHilla.png = {난이도접두사}_{portraitSlug}.png). weekly-bosses.json의 portraitSlug 필드가 매핑 테이블
+│   └── bosses/                # 보스 초상화 이미지([[ADR-011]], 파일명 컨벤션 정정 [[ADR-018]] 2026-07-13). 사용자가 직접 추가한 파일(예: kaling.webp = {portraitSlug}.webp) — 난이도별 파일이던 것을 보스당 1장(webp)으로 통합. weekly-bosses.json의 portraitSlug 필드가 매핑 테이블
 ├── lib/                     # 범용 유틸리티 (일간/주간 리셋 시각 계산, 포맷터 등)
 │   ├── reset-clock          # 일간 00:00 KST / 주간 목요일 00:00 KST 계산 — 기기 타임존과 무관하게 항상 KST 기준으로 환산(해외 로밍/타임존 변경 기기 대응, 엣지 케이스 참고)
 │   ├── item-icons           # 아이템명으로 src/data/item-icons.json(일반 아이템) 또는 boss-ring-boxes.json의 iconFile(반지, "링"으로 끝나는 이름은 items/rings/ 하위)을 조회([[ADR-011]]). 매핑 없는 항목은 플레이스홀더로 폴백 — 파일 경로를 계산하지 않고 매핑 테이블에서 조회하는 방식으로 변경됨(2026-07-11 정정)
-│   ├── boss-icons            # weekly-bosses.json의 portraitSlug + 난이도 접두사(이지→easy 등, [[ADR-011]])로 assets/bosses/ 파일명을 조합해 조회. portraitSlug 없으면 플레이스홀더로 폴백
+│   ├── boss-icons            # weekly-bosses.json의 portraitSlug로 assets/bosses/{portraitSlug}.webp를 조회(난이도 무관 — 정정 [[ADR-018]] 2026-07-13, `getBossPortraitUrl(portraitSlug)`에서 difficulty 파라미터 제거). portraitSlug 없으면 플레이스홀더로 폴백. `getBossPortraitCrop(portraitSlug)` 추가([[ADR-018]]) — data/boss-portrait-crops.json에서 `{ size, position }`(CSS background-size/position 값)을 조회, 매핑 없으면 `{ size: 'cover', position: 'center' }`로 폴백. 새 보스 카드 전용이며 위 BossPortrait 원형 렌더링에는 쓰이지 않음
 │   └── error-reporting       # 설정에서 opt-in 시에만 Sentry(또는 유사 서비스)로 익명 에러 전송, 개인 식별 정보 제외 ([[ADR-008]])
 └── types/                   # TypeScript 타입 정의
 ```
@@ -158,12 +158,15 @@ Feature 단위 구조. 각 `features/*` 폴더가 해당 기능의 상태와 로
 
 ## 게임 레퍼런스 데이터 ([[ADR-006]])
 `src/data/`에 여섯 파일로 구성되며, 사용자가 데이터를 확정해 반영. 앞의 세 파일은 보스명(`boss`)+난이도(`difficulty`)를 공통 키로 사용해 서로 조인한다.
-- `weekly-bosses.json`: 주간 보스(24종) + 이벤트 주간 보스(1종) + 월간 보스(1종)의 명단·난이도 구성. [[ADR-007]] 도입 이후 이 파일은 "앱 내 보스 선택 UI용 목록"이 아니라 "Nexon API 응답(`boss_contents[].content_name`/`difficulty`, 영문·공백 표기)을 우리 한글 표기와 매핑하기 위한 참조 테이블" 역할로 바뀐다 — `weeklyBossSelectionLimit`(12마리)도 UI 제약이 아니라 API 응답의 `weekly_boss_clear_limit_count`와 대조용 참고값이 된다. `eventWeekly`(시즌보스, 현재 메이린만)는 이 12마리 제한에서 예외이므로, "n/12" 같은 카운터 UI를 만들 때 `weekly` 섹션 보스만 분모·분자에 포함하고 `eventWeekly`는 별도 표시해야 한다(확정, 2026-07-09). 벨로나는 미출시 보스라 `status: "unreleased"`로 표시. 카이는 시즌이 종료된 레거시 보스라 목록에서 제외. 각 보스 항목의 `portraitSlug`([[ADR-011]])는 `assets/bosses/`의 초상화 파일명(`{난이도접두사}_{portraitSlug}.png`) 조회 키 — 아직 이미지 없는 보스는 필드 자체가 없음
+- `weekly-bosses.json`: 주간 보스(24종) + 이벤트 주간 보스(1종) + 월간 보스(1종)의 명단·난이도 구성. [[ADR-007]] 도입 이후 이 파일은 "앱 내 보스 선택 UI용 목록"이 아니라 "Nexon API 응답(`boss_contents[].content_name`/`difficulty`, 영문·공백 표기)을 우리 한글 표기와 매핑하기 위한 참조 테이블" 역할로 바뀐다 — `weeklyBossSelectionLimit`(12마리)도 UI 제약이 아니라 API 응답의 `weekly_boss_clear_limit_count`와 대조용 참고값이 된다. `eventWeekly`(시즌보스, 현재 메이린만)는 이 12마리 제한에서 예외이므로, "n/12" 같은 카운터 UI를 만들 때 `weekly` 섹션 보스만 분모·분자에 포함하고 `eventWeekly`는 별도 표시해야 한다(확정, 2026-07-09). 벨로나는 미출시 보스라 `status: "unreleased"`로 표시. 카이는 시즌이 종료된 레거시 보스라 목록에서 제외. 각 보스 항목의 `portraitSlug`([[ADR-011]])는 `assets/bosses/`의 초상화 파일명(`{portraitSlug}.webp`, 난이도 무관 — 정정 [[ADR-018]] 2026-07-13) 조회 키 — 아직 이미지 없는 보스(현재 벨로나만)는 필드 자체가 없음
 - `boss-crystal-prices.json`: 보스×난이도별 "강력한 힘의 결정" 정가(1인 기준). 파티원 1인당 실수령액은 `partySizeScaling.formula`(`floor(priceMeso / partySize)`)로 계산. 벨로나는 `priceMeso: null`. 메이린(이벤트 주간 보스)은 결정이 아닌 황금 메소 주머니 총 가치(1개=1000만 메소) 기준으로 채움 — 개별 entry의 `note` 참고
 - `item-drop-table.json`: 보스×난이도별 보상 전체(고정 보상/장비/소비 아이템/주문서/기타/최초 격파 카테고리)를 원본 그대로 보유. 물욕템 버튼 UI에 노출할 항목은 이 중 일부를 선별해 사용 — 선별은 코드가 임의로 하지 않고 사용자가 지정. 아이템별 시세(`priceMeso`, [[ADR-010]])는 아직 미반영 — 컨벤션만 정해두고 실제 값이 확정될 때 채움
 - `boss-ring-boxes.json`([[ADR-010]], [[ADR-011]]): `item-drop-table.json`의 `consumable` 카테고리에 이미 존재하는 "OO옥의 보스 반지 상자" 5종(녹옥/홍옥/흑옥/백옥/생명의)에 대해, 박스 이름을 키로 레벨별 확률표·반지별 확률표를 보유. 앞의 세 파일과 달리 `boss`/`difficulty`로 조인하지 않고 아이템 `name` 문자열로 `item-drop-table.json`과 연결한다. 확률은 실제 획득 결과를 추정하는 데 쓰지 않고, 사용자가 획득 기록 시 고를 후보 목록으로만 사용. 각 반지 항목의 `iconFile`은 `assets/items/rings/`의 GMS 영문 파일명(나무위키 확인, 컨티뉴어스 링만 사용자 지시로 직접 명명)
 - `accessory-boxes.json`([[ADR-010]], 신규): "혼돈의 칠흑 장신구 상자"·"메이린의 칠흑 장신구 상자"(이름만 다르고 후보 목록 동일 — 사용자 확인)의 후보 아이템 7종을 보유. `boss-ring-boxes.json`과 같은 조인 방식(아이템 `name` 문자열)을 쓰지만, 레벨 개념이 없고 개별 확률(%)도 게임 내에 공개되지 않아 후보 목록만 있고 확률 필드는 전부 `null`
 - `item-icons.json`([[ADR-011]], 신규): 일반 물욕템(반지 제외)의 "한글 아이템명 → `assets/items/`의 기존 파일명" 매핑 테이블. `item-drop-table.json`에 필드로 넣지 않는 이유는 같은 아이템이 여러 보스에 반복 등장해 중복이 심해지기 때문. 확신도 높은 매칭만 반영, 후보가 여럿이라 확정 못 한 파일은 사용자 확인 대기 중([[ADR-011]] 미확정 목록 참고)
+
+`src/data/`에는 위 여섯 파일 외에 UI 표시 전용 설정 파일도 하나 있다 — 게임 밸런스/수치 데이터가 아니므로 [[ADR-006]]("게임 데이터는 사용자 확인 후 반영")의 대상이 아니다:
+- `boss-portrait-crops.json`([[ADR-018]], 신규): 보스 스케줄러의 새 보스 카드에서 일러스트를 bleed 배치할 때 쓰는 보스별 크롭 값. `portraitSlug`를 키로 `{ size: string, position: string }`(CSS `background-size`/`background-position` 값 그대로) 매핑. 일러스트마다 인물 구도가 달라 값이 제각각이라(예: 카링 `size: "300% auto"`, 스우 `size: "190% auto"`) 하드코딩 대신 이 파일로 분리했다. 값은 AI가 임의로 채우지 않고 사용자가 각 일러스트를 넣을 때마다 직접 조정 — 매핑 없는 `portraitSlug`는 `{ size: "cover", position: "center" }`로 폴백(`lib/boss-icons.getBossPortraitCrop`). `BossPortrait`(원형, 보스 수익 계산기·물욕 아이템 화면)는 이 파일을 참조하지 않는다.
 
 ## 에러 핸들링 및 복원력 ([[ADR-008]])
 정책의 이유·트레이드오프는 ADR-008 참고. 이 섹션은 계층별 구현 지점을 정리한다.
