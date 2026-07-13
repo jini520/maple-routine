@@ -22,7 +22,7 @@
       "status": "completed",
       "started_at": "2026-07-13T17:11:17+0900",
       "summary": "ContentScreen.tsx의 일간/주간 탭 버튼 className을 BossScreen.tsx와 동일한 pill 스타일(활성: rounded-full bg-primary/15 px-3 py-[5px] text-sm font-semibold text-primary, 비활성: px-3 text-sm font-medium text-text-muted)로 교체. build/lint/test 전부 통과.",
-      "completed_at": "2026-07-13T17:12:05+0900"
+      "completed_at": "2026-07-13T17:12:30+0900"
     }
   ],
   "created_at": "2026-07-13T17:08:07+0900"
