@@ -1,15 +1,16 @@
-import { useEffect, useState } from 'react'
+import type { BossDifficulty, CharacterPickerEntry } from '../../types'
 import { RefreshCw, Users } from 'lucide-react'
+import { formatScheduleSyncError, formatSyncedAt } from '../../features/schedule-sync/format'
+import { getBossPortraitCrop, getBossPortraitUrl } from '../../lib/boss-icons'
+import { partySizeKey, useBossSchedulerStore } from '../../features/boss-scheduler/store'
+import { useEffect, useState } from 'react'
+
+import type { BossPortraitCrop } from '../../lib/boss-icons'
 import { CharacterSelectDropdown } from '../../components/CharacterSelectDropdown/CharacterSelectDropdown'
 import { CharacterTrackingPicker } from '../../components/CharacterTrackingPicker/CharacterTrackingPicker'
-import { partySizeKey, useBossSchedulerStore } from '../../features/boss-scheduler/store'
-import { formatScheduleSyncError, formatSyncedAt } from '../../features/schedule-sync/format'
-import { getCharacterPickerRoster } from '../../features/schedule-sync/schedule-sync'
-import { getBossPortraitCrop, getBossPortraitUrl } from '../../lib/boss-icons'
-import type { BossPortraitCrop } from '../../lib/boss-icons'
-import type { BossDifficulty, CharacterPickerEntry } from '../../types'
 import type { MatchedBoss } from '../../lib/boss-matching'
 import { PartyManagementModal } from './PartyManagementModal'
+import { getCharacterPickerRoster } from '../../features/schedule-sync/schedule-sync'
 
 type BossTab = 'weekly' | 'monthly'
 type PartyFilter = 'all' | 'solo' | 'party'
@@ -105,7 +106,7 @@ export function BossCard(props: {
             {bossName}
           </span>
           {partySize !== undefined && partySize > 1 && (
-            <span className="flex items-center gap-1 rounded-full bg-white/20 px-2 py-1 text-xs font-semibold text-[#E8DFEC]">
+            <span className="flex items-center gap-1 rounded-full bg-gray-200/20 px-2 py-1 text-xs font-semibold text-[#E8DFEC]">
               <Users className="h-3 w-3" strokeWidth={2} aria-hidden="true" />
               {partySize}인
             </span>

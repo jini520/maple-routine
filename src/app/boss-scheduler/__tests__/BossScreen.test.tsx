@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { BossScreen } from '../BossScreen'
 import { useBossSchedulerStore, type BossCharacterView } from '../../../features/boss-scheduler/store'
@@ -474,7 +474,7 @@ describe('BossScreen', () => {
       expect(screen.queryByText(/^\d+인$/)).not.toBeInTheDocument()
     })
 
-    it('"파티 관리" 버튼 클릭 시 보스 드롭다운(기본값: 첫 보스)·등록된 난이도 뱃지·파티원 입력이 있는 모달이 열리고, 저장하면 store의 setPartySize가 올바른 인자로 호출된다', async () => {
+    it('"파티 관리" 버튼 클릭 시 보스 드롭다운(기본값: 첫 보스)·등록된 난이도 뱃지·파티원 +/- 스테퍼가 있는 모달이 열리고, 증가시킨 뒤 저장하면 store의 setPartySize가 올바른 인자로 호출된다', async () => {
       const setPartySize = vi.fn().mockResolvedValue(undefined)
       mockStore({
         status: 'loaded',
@@ -493,8 +493,10 @@ describe('BossScreen', () => {
       expect(screen.getByLabelText('보스')).toHaveValue('자쿰')
       expect(screen.getByRole('button', { name: '카오스', pressed: true })).toBeInTheDocument()
 
-      const input = screen.getByLabelText('파티원 수')
-      fireEvent.change(input, { target: { value: '4' } })
+      const increment = screen.getByRole('button', { name: '파티원 수 증가' })
+      fireEvent.click(increment)
+      fireEvent.click(increment)
+      fireEvent.click(increment)
       fireEvent.click(screen.getByRole('button', { name: '저장' }))
 
       await waitFor(() => {
@@ -502,7 +504,7 @@ describe('BossScreen', () => {
       })
     })
 
-    it('잘못된 값(0, 최대 초과, 소수) 입력 시 인라인 에러가 보이고 setPartySize가 호출되지 않는다', async () => {
+    it('파티원 수는 1 미만·보스의 최대 인원 초과로 조정할 수 없다 — 경계에서 -/+ 버튼이 비활성화된다', async () => {
       const setPartySize = vi.fn()
       mockStore({
         status: 'loaded',
@@ -515,21 +517,29 @@ describe('BossScreen', () => {
       await screen.findByRole('combobox')
 
       fireEvent.click(screen.getByRole('button', { name: '파티 관리' }))
-      const input = await screen.findByLabelText('파티원 수')
+      const modal = within(await screen.findByTestId('party-management-modal-overlay'))
+      const decrement = modal.getByRole('button', { name: '파티원 수 감소' })
+      const increment = modal.getByRole('button', { name: '파티원 수 증가' })
 
-      fireEvent.change(input, { target: { value: '0' } })
-      fireEvent.click(screen.getByRole('button', { name: '저장' }))
-      expect(await screen.findByText(/파티원 수는 1 이상/)).toBeInTheDocument()
-      expect(setPartySize).not.toHaveBeenCalled()
+      // 초기값은 미설정(솔로) → 1이라 감소 버튼은 처음부터 비활성화돼있다.
+      expect(decrement).toBeDisabled()
+      expect(modal.getByText('1')).toBeInTheDocument()
 
-      // 자쿰은 별도 maxPartySize 예외가 없어 기본값(6)이 상한이다
-      fireEvent.change(input, { target: { value: '7' } })
-      fireEvent.click(screen.getByRole('button', { name: '저장' }))
-      expect(setPartySize).not.toHaveBeenCalled()
+      // 자쿰은 별도 maxPartySize 예외가 없어 기본값(6)이 상한이다 — 6까지 올리면 증가 버튼이 비활성화된다.
+      for (let i = 0; i < 6; i += 1) {
+        fireEvent.click(increment)
+      }
+      expect(modal.getByText('6')).toBeInTheDocument()
+      expect(increment).toBeDisabled()
 
-      fireEvent.change(input, { target: { value: '1.5' } })
-      fireEvent.click(screen.getByRole('button', { name: '저장' }))
-      expect(setPartySize).not.toHaveBeenCalled()
+      // 비활성화된 버튼을 눌러도 값은 그대로다.
+      fireEvent.click(increment)
+      expect(modal.getByText('6')).toBeInTheDocument()
+
+      fireEvent.click(modal.getByRole('button', { name: '저장' }))
+      await waitFor(() => {
+        expect(setPartySize).toHaveBeenCalledWith('ocid-1', '자쿰', '카오스', 6)
+      })
     })
 
     it('보스 드롭다운에서 다른 보스를 고르면 그 보스가 지원하는 난이도 뱃지로 목록이 바뀌고, 등록된 난이도가 기본 선택된다', async () => {

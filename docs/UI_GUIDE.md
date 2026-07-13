@@ -220,9 +220,9 @@ rounded-full bg-white/20 text-[#E8DFEC] text-xs font-semibold px-2 py-1, flex it
 ```
 보스: <select> — 등록된 보스명(주간+월간 통합, 중복 제거) 목록. 라벨 "보스"(text-xs font-medium text-text-muted), 인풋은 CharacterSelectDropdown과 동일한 톤(border-border bg-surface px-4 py-3 text-sm text-text, 다만 폭은 w-full)
 난이도: 라벨 "난이도" 아래 flex flex-wrap gap-2로 뱃지 버튼 나열 — 선택 가능한 난이도는 boss-crystal-prices.json에서 해당 보스명으로 조회(새 게임 데이터 아님, ADR-006). 각 버튼은 보스 카드와 동일한 DifficultyBadge(BossScreen.tsx에서 export)를 그대로 감싸 재사용 — 새 뱃지 스타일 신설 금지. 선택된 난이도: ring-2 ring-primary, 비선택: opacity-50 hover:opacity-80로 시각 구분
-파티원 수: 기존 숫자 입력 패턴(border-border, w-full) — 저장 버튼(rounded-full bg-primary) 클릭 시 검증(1~해당 난이도 maxPartySize, 정수)하고 실패하면 인라인 에러만 표시, store.setPartySize를 호출하지 않는다
+파티원 수: **정정(2026-07-13)** — 자유 숫자 입력에서 -/+ 스테퍼로 변경. flex items-center gap-3 — 감소 버튼(h-9 w-9 rounded-full border border-border, lucide-react `Minus`) · 가운데 현재 값(w-8 text-center text-sm font-semibold) · 증가 버튼(동일 스타일, `Plus`). 라벨 "파티원 수 (최대 N인)"으로 상한을 항상 노출. 감소 버튼은 값이 1일 때, 증가 버튼은 값이 해당 (보스,난이도)의 maxPartySize일 때 disabled — 범위 밖 값 자체를 입력할 방법이 없다(자유 입력 후 저장 시점 검증 방식은 폐기). 저장 버튼(rounded-full bg-primary) 클릭 시 현재 값 그대로 store.setPartySize를 호출한다
 ```
-보스/난이도를 바꾸면 입력값·에러 상태가 그 조합의 저장된 값으로 초기화된다(React `key` 리셋 관용구 — 이전 조합의 미저장 입력이 새 조합에 남지 않음). 캐릭터가 실제로 등록해둔 난이도가 있으면 그 난이도가 기본 선택된다.
+보스/난이도를 바꾸면 스테퍼 값이 그 조합의 저장된 값(1~maxPartySize로 clamp)으로 초기화된다(React `key` 리셋 관용구 — 이전 조합의 값이 새 조합에 남지 않음). 캐릭터가 실제로 등록해둔 난이도가 있으면 그 난이도가 기본 선택된다.
 
 **난이도 뱃지**: 텍스트("· 하드") 대신 게임 내 난이도 뱃지와 같은 시각 언어(글로시 캡슐형)로 표시. 실제 게임 UI 스크린샷에서 픽셀 색을 추출한 근사값(1px 단위 재현 아님):
 ```
@@ -259,4 +259,4 @@ rounded-full bg-white/20 text-[#E8DFEC] text-xs font-semibold px-2 py-1, flex it
 - **라이브러리: `lucide-react`(확정, 2026-07-11)** — 새 아이콘이 필요하면 이 라이브러리에서만 가져온다. 다른 아이콘 라이브러리를 섞어 쓰지 않는다
 - `strokeWidth`: 하단 탭바 내비게이션 아이콘은 `1.5`, 새로고침 등 소형 액션 아이콘은 `2`
 - 아이콘 컨테이너(둥근 배경 박스)로 감싸지 않는다 — 강조색 아이콘을 배경 없이 단독으로 쓴다(원형 배경으로 감쌌다가 제거하고 이 방식으로 확정, 2026-07-11)
-- 현재 쓰이는 아이콘: 하단 탭바 `ListChecks`(컨텐츠)/`Swords`(보스, 활성 시 `#C2410C`·비활성 시 `#B7A490`, [[ADR-013]] 화면 개편에 따라 기존 `CalendarCheck`(일간)/`CalendarRange`(주간)에서 변경, 2026-07-11 — 제안 수준, 실제 적용 시 다른 조합으로 바뀔 수 있음), 새로고침 버튼 `RefreshCw`(`#C2410C`, 배경 없음), 보스 카드 파티 배지 `Users`(size 12, strokeWidth 2, [[ADR-019]])
+- 현재 쓰이는 아이콘: 하단 탭바 `ListChecks`(컨텐츠)/`Swords`(보스, 활성 시 `#C2410C`·비활성 시 `#B7A490`, [[ADR-013]] 화면 개편에 따라 기존 `CalendarCheck`(일간)/`CalendarRange`(주간)에서 변경, 2026-07-11 — 제안 수준, 실제 적용 시 다른 조합으로 바뀔 수 있음), 새로고침 버튼 `RefreshCw`(`#C2410C`, 배경 없음), 보스 카드 파티 배지 `Users`(size 12, strokeWidth 2, [[ADR-019]]), 파티 관리 모달 파티원 수 스테퍼 `Minus`/`Plus`(size 16, strokeWidth 2, [[ADR-019]])

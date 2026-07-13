@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Minus, Plus } from 'lucide-react'
 import { Modal } from '../../components/Modal/Modal'
 import bossCrystalPricesData from '../../data/boss-crystal-prices.json'
 import { getMaxPartySize } from '../../lib/boss-crystal-prices'
@@ -32,30 +33,28 @@ function defaultDifficultyFor(bosses: MatchedBoss[], bossName: string): BossDiff
   return getDifficultiesForBoss(bossName)[0] ?? null
 }
 
-// 보스/난이도 선택이 바뀔 때마다 key로 리마운트시켜, 이전 선택의 입력값·에러가 새 선택에
-// 남아있지 않도록 한다(useEffect로 파생 state를 동기화하는 대신 React의 key 리셋 관용구 사용).
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value))
+}
+
+// 보스/난이도 선택이 바뀔 때마다 key로 리마운트시켜, 이전 선택의 값이 새 선택에 남아있지
+// 않도록 한다(useEffect로 파생 state를 동기화하는 대신 React의 key 리셋 관용구 사용).
+// -/+ 버튼이 1~maxPartySize 범위에서만 동작하도록 경계에서 비활성화해, 범위 밖 값 자체를
+// 입력할 수 없게 막는다(사용자 요청 — 자유 입력 후 저장 시점 검증 방식에서 변경).
 function PartySizeEditor(props: {
   maxPartySize: number
   initialValue: number
   onSave: (partySize: number) => Promise<void>
   onClose: () => void
 }): React.JSX.Element {
-  const [inputValue, setInputValue] = useState(String(props.initialValue))
+  const [value, setValue] = useState(() => clamp(props.initialValue, 1, props.maxPartySize))
   const [error, setError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
 
   async function handleSave(): Promise<void> {
-    const trimmed = inputValue.trim()
-    const partySize = Number(trimmed)
-
-    if (trimmed === '' || !Number.isInteger(partySize) || partySize < 1 || partySize > props.maxPartySize) {
-      setError(`파티원 수는 1 이상 ${props.maxPartySize} 이하의 정수여야 합니다`)
-      return
-    }
-
     setIsSaving(true)
     try {
-      await props.onSave(partySize)
+      await props.onSave(value)
       setError(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : '파티원 수를 확인해주세요')
@@ -67,18 +66,28 @@ function PartySizeEditor(props: {
   return (
     <>
       <div className="space-y-1">
-        <label htmlFor="party-management-size" className="text-xs font-medium text-text-muted">
-          파티원 수
-        </label>
-        <input
-          id="party-management-size"
-          type="number"
-          min={1}
-          max={props.maxPartySize}
-          value={inputValue}
-          onChange={(event) => setInputValue(event.target.value)}
-          className="w-full rounded-[10px] border border-border px-4 py-3 text-sm text-text"
-        />
+        <p className="text-xs font-medium text-text-muted">파티원 수 (최대 {props.maxPartySize}인)</p>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setValue((prev) => clamp(prev - 1, 1, props.maxPartySize))}
+            disabled={value <= 1}
+            aria-label="파티원 수 감소"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border text-text disabled:opacity-40"
+          >
+            <Minus className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+          </button>
+          <span className="w-8 text-center text-sm font-semibold text-text">{value}</span>
+          <button
+            type="button"
+            onClick={() => setValue((prev) => clamp(prev + 1, 1, props.maxPartySize))}
+            disabled={value >= props.maxPartySize}
+            aria-label="파티원 수 증가"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border text-text disabled:opacity-40"
+          >
+            <Plus className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+          </button>
+        </div>
         {error !== null && <p className="text-sm text-error">{error}</p>}
       </div>
 
