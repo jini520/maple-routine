@@ -1,5 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { checkForLiveUpdate, isNewerVersion, notifyLiveUpdateReady } from '../live-update'
+import {
+  checkForLiveUpdate,
+  isNewerVersion,
+  LIVE_UPDATE_MANIFEST_URL,
+  LIVE_UPDATE_MANIFEST_URL_BETA,
+  notifyLiveUpdateReady,
+  resolveLiveUpdateManifestUrl,
+} from '../live-update'
 
 const { getPlatformMock } = vi.hoisted(() => ({
   getPlatformMock: vi.fn(),
@@ -140,6 +147,20 @@ describe('checkForLiveUpdate', () => {
 
     await expect(checkForLiveUpdate(manifestUrl)).resolves.toBeUndefined()
     expect(nextMock).not.toHaveBeenCalled()
+  })
+})
+
+describe('resolveLiveUpdateManifestUrl', () => {
+  it("channel이 'beta'면 베타 매니페스트 URL을 반환한다", () => {
+    expect(resolveLiveUpdateManifestUrl('beta')).toBe(LIVE_UPDATE_MANIFEST_URL_BETA)
+  })
+
+  it('channel이 undefined면 프로덕션 매니페스트 URL을 반환한다', () => {
+    expect(resolveLiveUpdateManifestUrl(undefined)).toBe(LIVE_UPDATE_MANIFEST_URL)
+  })
+
+  it("channel이 'beta'가 아닌 다른 문자열이면 프로덕션 매니페스트 URL을 반환한다", () => {
+    expect(resolveLiveUpdateManifestUrl('production')).toBe(LIVE_UPDATE_MANIFEST_URL)
   })
 })
 

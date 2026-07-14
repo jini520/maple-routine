@@ -5,10 +5,18 @@ import { CapacitorUpdater } from '@capgo/capacitor-updater'
 export const LIVE_UPDATE_MANIFEST_URL =
   'https://github.com/jini520/maple-routine/releases/download/live-update-latest/latest.json'
 
+// 베타 채널은 별도 고정 릴리스 태그("live-update-beta")로 배포된다 — 빌드 시점 분리, 런타임 토글 없음(ADR-024).
+export const LIVE_UPDATE_MANIFEST_URL_BETA =
+  'https://github.com/jini520/maple-routine/releases/download/live-update-beta/latest.json'
+
 export interface LiveUpdateManifest {
   version: string
   url: string
   checksum: string
+}
+
+export function resolveLiveUpdateManifestUrl(channel: string | undefined): string {
+  return channel === 'beta' ? LIVE_UPDATE_MANIFEST_URL_BETA : LIVE_UPDATE_MANIFEST_URL
 }
 
 export function isNewerVersion(current: string, candidate: string): boolean {
