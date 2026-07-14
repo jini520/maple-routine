@@ -245,6 +245,64 @@ describe('useBossProfitStore', () => {
     expect(rows.map((row) => row.ocid).sort()).toEqual(['ocid-1', 'ocid-2'])
   })
 
+  it('캐릭터 순서는 레벨 내림차순으로 고정되며 ocids 인자·API 응답 순서와 무관하다', async () => {
+    getCachedCharacterBasicMock.mockImplementation(async (ocid: string) => ({
+      profile: {
+        name: `캐릭터-${ocid}`,
+        level: ocid === 'ocid-1' ? 100 : 250,
+        imageUrl: 'x',
+        accessFlag: true,
+      },
+      cachedAt: '2026-07-01T00:00:00.000Z',
+    }))
+    // syncSchedules는 낮은 레벨(ocid-1)을 먼저 반환하지만, 최종 rows는 레벨이 더 높은
+    // ocid-2가 먼저 와야 한다 — API 응답 순서를 그대로 따르지 않는다.
+    syncSchedulesMock.mockResolvedValue([
+      syncResult({ ocid: 'ocid-1', characterName: '캐릭터-ocid-1' }),
+      syncResult({
+        ocid: 'ocid-2',
+        characterName: '캐릭터-ocid-2',
+        state: {
+          ...syncResult().state!,
+          bossContents: [bossContent({ name: '스우', difficulty: '노멀', isComplete: true })],
+        },
+      }),
+    ])
+
+    await useBossProfitStore.getState().refresh(['ocid-1', 'ocid-2'])
+
+    expect(useBossProfitStore.getState().rows.map((row) => row.ocid)).toEqual(['ocid-2', 'ocid-1'])
+  })
+
+  it('캐시 우선 표시와 실시간 동기화 이후의 캐릭터 순서가 같다(응답 도착 후 순서가 바뀌지 않는다)', async () => {
+    getCachedCharacterBasicMock.mockImplementation(async (ocid: string) => ({
+      profile: {
+        name: `캐릭터-${ocid}`,
+        level: ocid === 'ocid-1' ? 100 : 250,
+        imageUrl: 'x',
+        accessFlag: true,
+      },
+      cachedAt: '2026-07-01T00:00:00.000Z',
+    }))
+    getCachedSchedulerStateMock.mockImplementation(async (ocid: string) => ({
+      state: {
+        ...syncResult().state!,
+        characterName: `캐릭터-${ocid}`,
+        bossContents: [bossContent({ isComplete: true })],
+      },
+      syncedAt: '2026-07-01T00:00:00.000Z',
+    }))
+
+    const pending = new Promise<CharacterScheduleSync[]>(() => {})
+    syncSchedulesMock.mockReturnValue(pending)
+
+    void useBossProfitStore.getState().refresh(['ocid-1', 'ocid-2'])
+    await vi.waitFor(() => expect(useBossProfitStore.getState().rows.length).toBe(2))
+
+    const cacheFirstOrder = useBossProfitStore.getState().rows.map((row) => row.ocid)
+    expect(cacheFirstOrder).toEqual(['ocid-2', 'ocid-1']) // 레벨 내림차순(ocid-2가 250으로 더 높음)
+  })
+
   it('특정 캐릭터의 동기화 결과가 isStale이면 staleCharacterNames에 그 캐릭터명이 포함된다', async () => {
     syncSchedulesMock.mockResolvedValue([syncResult({ characterName: '캐릭터1', isStale: true })])
 
@@ -819,6 +877,45 @@ describe('useBossProfitStore', () => {
       expect(fetchSchedulerCharacterStateMock).not.toHaveBeenCalled()
       expect(markPeriodCheckedMock).toHaveBeenCalledWith('ocid-1', 'weekly', targetPeriodKey, expect.any(String))
       expect(useBossProfitStore.getState().periodUnavailable).toBe(false)
+    })
+
+    it('먼저 시작된 느린 백필이 나중에 끝나도, 그 사이 시작된 더 최신 네비게이션 결과를 덮어쓰지 않는다', async () => {
+      syncSchedulesMock.mockResolvedValue([syncResult()]) // 자쿰 카오스, 이번 주
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+      const currentPeriodKey = useBossProfitStore.getState().periodKey
+
+      isPeriodCheckedMock.mockResolvedValue(false)
+      getBossProfitRecordsMock.mockResolvedValue([])
+
+      // 이전 주 이동(백필)을 pending 상태로 묶어둔다 — 아직 응답이 오지 않은 "느린" 요청.
+      let resolveSlowFetch!: (value: SchedulerCharacterState) => void
+      const slowFetch = new Promise<SchedulerCharacterState>((resolve) => {
+        resolveSlowFetch = resolve
+      })
+      fetchSchedulerCharacterStateMock.mockReturnValueOnce(slowFetch)
+
+      const firstNavigation = useBossProfitStore.getState().goToPreviousPeriod()
+      await vi.waitFor(() => expect(useBossProfitStore.getState().isPeriodLoading).toBe(true))
+
+      // 응답을 기다리는 동안 사용자가 곧바로 이번 주로 돌아온다 — 로컬 스냅샷에서 즉시 끝난다.
+      await useBossProfitStore.getState().goToNextPeriod()
+
+      expect(useBossProfitStore.getState().periodKey).toBe(currentPeriodKey)
+      expect(useBossProfitStore.getState().rows.map((row) => row.boss)).toEqual(['자쿰'])
+      expect(useBossProfitStore.getState().isPeriodLoading).toBe(false)
+
+      // 이제서야 먼저 시작됐던 "이전 주" 백필 응답이 뒤늦게 도착한다.
+      resolveSlowFetch(
+        schedulerState({
+          bossContents: [bossContent({ name: '스우', difficulty: '노멀', isComplete: true })],
+        }),
+      )
+      await firstNavigation
+
+      // 화면은 여전히 "이번 주"를 보여줘야 한다 — 뒤늦게 도착한 이전 주 응답에 덮어써지면 안 된다.
+      expect(useBossProfitStore.getState().periodKey).toBe(currentPeriodKey)
+      expect(useBossProfitStore.getState().rows.map((row) => row.boss)).toEqual(['자쿰'])
+      expect(useBossProfitStore.getState().isPeriodLoading).toBe(false)
     })
 
     it('goToNextPeriod: 이미 최신 기간이면 periodKey가 바뀌지 않고 아무 것도 호출하지 않는다', async () => {

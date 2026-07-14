@@ -19,6 +19,7 @@ import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
 import { getCachedSchedulerState } from '../../storage/scheduler-cache'
 import type { BossCycle, BossDifficulty } from '../../types'
+import { compareByName } from '../onboarding/representative-character'
 import { syncSchedules, type ScheduleSyncError } from '../schedule-sync/schedule-sync'
 
 export interface BossProfitRow {
@@ -81,6 +82,43 @@ interface LatestSyncSnapshot {
 }
 
 let latestSyncSnapshot: LatestSyncSnapshot | null = null
+
+// refresh()/setTab()/goToPreviousPeriod()/goToNextPeriod()는 전부 비동기라 여러 호출이 동시에
+// 진행 중일 수 있다(예: 사용자가 ‹ ›를 빠르게 연타). 나중에 시작된 호출이 먼저 끝나고, 먼저
+// 시작됐지만 느린(백필 등) 호출이 뒤늦게 끝나면 그 stale한 결과로 최신 화면을 덮어써버리는
+// 문제가 있었다. 액션을 시작할 때마다 이 카운터를 증가시켜 자신만의 세대(generation)를
+// 캡처해두고, set() 직전에 "여전히 최신 세대인지" 확인해 stale한 결과는 조용히 버린다.
+let requestGeneration = 0
+
+// ADR-017 결정 2와 동일한 원칙 — 캐시 단계(trackedOcids 저장 순서)와 동기화 단계(Nexon
+// character/list 응답 순서)가 서로 달라 캐릭터 목록 위치가 API 응답 이후 갑자기 바뀌어 보이던
+// 문제를 없앤다. 레벨 내림차순(동레벨이면 이름순)으로 항상 같은 순서를 계산해, 캐시 우선 표시
+// 단계부터 실시간 동기화·과거 기간 조회까지 전부 이 순서를 그대로 따르게 한다.
+async function getSortedOcids(ocids: string[]): Promise<string[]> {
+  const withProfile = await Promise.all(
+    ocids.map(async (ocid) => {
+      const cached = await getCachedCharacterBasic(ocid)
+      return { ocid, level: cached?.profile.level ?? null, name: cached?.profile.name ?? '' }
+    }),
+  )
+
+  return withProfile
+    .sort((a, b) => {
+      if (a.level === null && b.level === null) return compareByName(a.name, b.name)
+      if (a.level === null) return 1
+      if (b.level === null) return -1
+      if (b.level !== a.level) return b.level - a.level
+      return compareByName(a.name, b.name)
+    })
+    .map((entry) => entry.ocid)
+}
+
+// rows(보스 단위, 캐릭터당 여러 개)를 sortedOcids가 정한 캐릭터 순서로 재배열한다. Array#sort는
+// stable이라 같은 캐릭터 안에서의 보스 행 순서는 그대로 유지된다.
+function sortRowsByOcidOrder(rows: BossProfitRow[], sortedOcids: string[]): BossProfitRow[] {
+  const rank = new Map(sortedOcids.map((ocid, index) => [ocid, index]))
+  return [...rows].sort((a, b) => (rank.get(a.ocid) ?? Number.MAX_SAFE_INTEGER) - (rank.get(b.ocid) ?? Number.MAX_SAFE_INTEGER))
+}
 
 function buildBossProfitRow(
   ocid: string,
@@ -357,14 +395,23 @@ type BossProfitSetter = (partial: Partial<BossProfitState>) => void
 // "기간 로드" 규칙(ADR-023): 이동한 periodKey가 그 tab의 현재 기간이면 네트워크 호출 없이
 // 최근 refresh가 채워둔 스냅샷에서 슬라이스하고, 과거 기간이면 로컬 우선(이미 체크된 조합은
 // API 호출 없이 로컬 기록만 읽고, 체크 안 된 조합만 순차적으로 백필한다).
+//
+// generation은 호출한 쪽(setTab/goToPreviousPeriod/goToNextPeriod)이 periodKey를 동기적으로
+// 바꾸는 바로 그 순간 캡처한 requestGeneration 값이다 — 이 비동기 함수가 끝나기 전에 더 최신
+// 액션(연타 등)이 시작됐다면(requestGeneration이 그 사이 또 증가했다면) set()을 건너뛰어
+// stale한 응답이 최신 화면을 덮어쓰지 않게 한다.
 async function loadPeriod(
   set: BossProfitSetter,
   tab: BossCycle,
   periodKey: string,
   ocids: string[],
   now: Date,
+  generation: number,
 ): Promise<void> {
   const currentPeriodKey = getCurrentBossProfitPeriod(tab, now).periodKey
+  // buildWeeklySubtotalsForMonth의 캐릭터별 행 순서를 항상 동일하게 유지하기 위해 여기서도
+  // 같은 정렬 규칙을 적용한다(refresh()와 동일한 이유 — API 응답 순서에 좌우되지 않도록).
+  const sortedOcids = await getSortedOcids(ocids)
 
   if (periodKey === currentPeriodKey) {
     const rows =
@@ -372,13 +419,14 @@ async function loadPeriod(
     const weeklySubtotals =
       tab === 'monthly'
         ? await buildWeeklySubtotalsForMonth(
-            ocids,
+            sortedOcids,
             periodKey,
             latestSyncSnapshot?.rows ?? [],
             latestSyncSnapshot?.characterNames ?? new Map(),
             now,
           )
         : []
+    if (generation !== requestGeneration) return
     set({ rows, weeklySubtotals, isPeriodLoading: false, periodUnavailable: false })
     return
   }
@@ -395,6 +443,7 @@ async function loadPeriod(
   let periodUnavailable = false
 
   if (uncheckedTargets.length > 0) {
+    if (generation !== requestGeneration) return
     set({ isPeriodLoading: true, periodUnavailable: false })
     for (const target of uncheckedTargets) {
       const failed = await backfillTarget(target, now)
@@ -404,10 +453,11 @@ async function loadPeriod(
     }
   }
 
-  const rows = await buildRowsFromRecords(ocids, tab, periodKey, now)
+  const rows = sortRowsByOcidOrder(await buildRowsFromRecords(ocids, tab, periodKey, now), sortedOcids)
   const weeklySubtotals =
-    tab === 'monthly' ? await buildWeeklySubtotalsForMonth(ocids, periodKey, [], new Map(), now) : []
+    tab === 'monthly' ? await buildWeeklySubtotalsForMonth(sortedOcids, periodKey, [], new Map(), now) : []
 
+  if (generation !== requestGeneration) return
   set({ rows, weeklySubtotals, isPeriodLoading: false, periodUnavailable })
 }
 
@@ -436,12 +486,14 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
   },
 
   async refresh(ocids) {
+    const myGeneration = ++requestGeneration
     const tab = get().tab
     const now = new Date()
     const currentPeriodKey = getCurrentBossProfitPeriod(tab, now).periodKey
 
     if (ocids.length === 0) {
       latestSyncSnapshot = { ocids: [], rows: [], characterNames: new Map() }
+      if (myGeneration !== requestGeneration) return
       set({
         status: 'loaded',
         periodKey: currentPeriodKey,
@@ -454,6 +506,11 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
       })
       return
     }
+
+    // 캐시 우선 표시·실시간 동기화 양쪽에서 항상 같은 캐릭터 순서(레벨 내림차순, 동레벨은
+    // 이름순)를 쓰도록 미리 계산해둔다 — trackedOcids 저장 순서와 Nexon character/list 응답
+    // 순서가 달라 API 응답 이후 캐릭터 목록 위치가 바뀌어 보이던 문제를 없앤다.
+    const sortedOcids = await getSortedOcids(ocids)
 
     // ADR-017 결정 1: 캐시 우선 표시 — 재검증(syncSchedules) 전에 마지막으로 성공한
     // 스케줄 캐시가 있으면 완료된 보스만 걸러 화면을 먼저 채운다. 이미 저장된 기록이
@@ -480,7 +537,7 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     const cachedPeriodKeys = Array.from(new Set(cachedRows.map((row) => row.periodKey)))
     const cachedRecords =
       cachedRows.length > 0 ? await getBossProfitRecords(ocids, cachedPeriodKeys) : []
-    const cachedMergedRows = mergeRecordsIntoRows(cachedRows, cachedRecords)
+    const cachedMergedRows = sortRowsByOcidOrder(mergeRecordsIntoRows(cachedRows, cachedRecords), sortedOcids)
 
     // latestSyncSnapshot을 캐시 데이터로 즉시 채워둔다 — 이후 syncSchedules가 실패해도(네트워크
     // 등) 이 스냅샷이 null로 남지 않아야, 그 상태에서 tab 전환/기간 이동(loadPeriod)을 해도
@@ -488,6 +545,11 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     // 최신 데이터로 덮어쓴다.
     const cachedCharacterNames = new Map(cachedRows.map((row) => [row.ocid, row.characterName]))
     latestSyncSnapshot = { ocids: [...ocids], rows: cachedMergedRows, characterNames: cachedCharacterNames }
+
+    // 이 호출보다 나중에 시작된 refresh/setTab/goToXPeriod가 이미 있다면(연타 등) 이 시점의
+    // 캐시 우선 표시조차 화면에 반영하지 않는다 — 더 최신 액션이 이미 진행 중이므로 그 결과가
+    // 우선한다.
+    if (myGeneration !== requestGeneration) return
 
     set({
       status: 'loading',
@@ -506,7 +568,9 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     } catch {
       // syncSchedules 자체가 던지는 에러(온보딩 미완료 등)는
       // 캐릭터별 에러가 아니라 전체 조회 자체의 실패이므로 network로 취급한다.
-      set({ status: 'error', error: { kind: 'network' } })
+      if (myGeneration === requestGeneration) {
+        set({ status: 'error', error: { kind: 'network' } })
+      }
       return
     }
 
@@ -563,17 +627,20 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
       autoRecordedRows.push({ ...row, partySize, payoutMeso })
     }
 
-    latestSyncSnapshot = { ocids: [...ocids], rows: autoRecordedRows, characterNames }
+    const sortedRows = sortRowsByOcidOrder(autoRecordedRows, sortedOcids)
+    latestSyncSnapshot = { ocids: [...ocids], rows: sortedRows, characterNames }
 
     const weeklySubtotals =
       tab === 'monthly'
-        ? await buildWeeklySubtotalsForMonth(ocids, currentPeriodKey, autoRecordedRows, characterNames, now)
+        ? await buildWeeklySubtotalsForMonth(sortedOcids, currentPeriodKey, sortedRows, characterNames, now)
         : []
+
+    if (myGeneration !== requestGeneration) return
 
     set({
       status: 'loaded',
       periodKey: currentPeriodKey,
-      rows: filterRowsForTab(autoRecordedRows, tab, currentPeriodKey),
+      rows: filterRowsForTab(sortedRows, tab, currentPeriodKey),
       weeklySubtotals,
       isPeriodLoading: false,
       periodUnavailable: false,
@@ -583,20 +650,22 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
   },
 
   async setTab(tab) {
+    const myGeneration = ++requestGeneration
     const now = new Date()
     const periodKey = getCurrentBossProfitPeriod(tab, now).periodKey
     const ocids = latestSyncSnapshot?.ocids ?? get().trackedOcids ?? []
     set({ tab, periodKey })
-    await loadPeriod(set, tab, periodKey, ocids, now)
+    await loadPeriod(set, tab, periodKey, ocids, now, myGeneration)
   },
 
   async goToPreviousPeriod() {
+    const myGeneration = ++requestGeneration
     const { tab, periodKey } = get()
     const now = new Date()
     const newPeriodKey = getAdjacentPeriodKey(tab, periodKey, 'prev')
     const ocids = latestSyncSnapshot?.ocids ?? get().trackedOcids ?? []
     set({ periodKey: newPeriodKey })
-    await loadPeriod(set, tab, newPeriodKey, ocids, now)
+    await loadPeriod(set, tab, newPeriodKey, ocids, now, myGeneration)
   },
 
   async goToNextPeriod() {
@@ -605,10 +674,11 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     if (isLatestPeriod(tab, periodKey, now)) {
       return
     }
+    const myGeneration = ++requestGeneration
     const newPeriodKey = getAdjacentPeriodKey(tab, periodKey, 'next')
     const ocids = latestSyncSnapshot?.ocids ?? get().trackedOcids ?? []
     set({ periodKey: newPeriodKey })
-    await loadPeriod(set, tab, newPeriodKey, ocids, now)
+    await loadPeriod(set, tab, newPeriodKey, ocids, now, myGeneration)
   },
 
   async setPartySize(rowKey, partySize) {
