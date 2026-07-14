@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { BossProfitScreen } from '../BossProfitScreen'
 import {
@@ -448,6 +448,25 @@ describe('BossProfitScreen', () => {
     const upcomingLabel = screen.getByText('예정')
     const upcomingRow = upcomingLabel.closest('li')
     expect(upcomingRow).toHaveClass('opacity-40')
+  })
+
+  it('monthly 탭: MIN_SCHEDULER_DATE 이전이라 조회하지 않은 주는 "0메소"가 아니라 "데이터 없음"으로 흐리게 표시된다', () => {
+    mockStore({
+      status: 'loaded',
+      tab: 'monthly',
+      periodKey: '2026-07',
+      trackedOcids: ['ocid-1'],
+      rows: [],
+      weeklySubtotals: [subtotal({ periodKey: '2026-06-25', totalMeso: 0, state: 'unavailable' })],
+    })
+
+    render(<BossProfitScreen />)
+    fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
+
+    const unavailableLabel = screen.getByText('데이터 없음')
+    const unavailableRow = unavailableLabel.closest('li')
+    expect(unavailableRow).toHaveClass('opacity-40')
+    expect(within(unavailableRow as HTMLElement).queryByText(/메소/)).not.toBeInTheDocument()
   })
 
   it('monthly 탭: 월간 보스 기록이 없는 캐릭터도 주차별 합계만으로 그룹이 생성된다', () => {

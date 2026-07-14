@@ -72,7 +72,6 @@ import {
   getAdjacentPeriodKey,
   getBackfillQueryDate,
   getCurrentBossProfitPeriod,
-  getWeeklyPeriodKeysInMonth,
   MIN_SCHEDULER_DATE,
 } from '../../../lib/boss-profit-period'
 import { useBossProfitStore } from '../store'
@@ -878,43 +877,20 @@ describe('useBossProfitStore', () => {
       expect(fetchSchedulerCharacterStateMock).not.toHaveBeenCalled()
     })
 
-    it('goToPreviousPeriod: MIN_SCHEDULER_DATE 이전 기간을 포함한 monthly 백필은 그 기간만 API 호출 없이 체크 완료로 처리한다', async () => {
+    it('goToPreviousPeriod: 통째로 MIN_SCHEDULER_DATE 이전인 달로는 물리적으로 이동할 수 없다(monthly)', async () => {
       syncSchedulesMock.mockResolvedValue([syncResult()])
       await useBossProfitStore.getState().refresh(['ocid-1'])
       await useBossProfitStore.getState().setTab('monthly')
 
-      isPeriodCheckedMock.mockResolvedValue(false)
-      getBossProfitRecordsMock.mockResolvedValue([])
-      fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState())
+      const monthBefore = useBossProfitStore.getState().periodKey
+      fetchSchedulerCharacterStateMock.mockClear()
 
-      // "이번 달"에서 "지난 달"(2026-06, 부분적으로만 MIN_SCHEDULER_DATE 이후)로는 여전히
-      // 이동할 수 있어야 한다 — 그 달 전체가 조회 불가능한 게 아니라 앞쪽 몇 주만 그렇다.
+      // "이번 달"에서 "지난 달"로 가려고 하면, 그 달이 통째로 MIN_SCHEDULER_DATE 이전이면
+      // 아무 것도 하지 않아야 한다(periodKey 변경도, API 호출도 없음).
       await useBossProfitStore.getState().goToPreviousPeriod()
 
-      const monthPeriodKey = useBossProfitStore.getState().periodKey
-      const weekKeysInMonth = getWeeklyPeriodKeysInMonth(monthPeriodKey)
-      const unavailableWeekKeys = weekKeysInMonth.filter(
-        (key) => getBackfillQueryDate('weekly', key) < MIN_SCHEDULER_DATE,
-      )
-      const availableWeekKeys = weekKeysInMonth.filter(
-        (key) => getBackfillQueryDate('weekly', key) >= MIN_SCHEDULER_DATE,
-      )
-      expect(unavailableWeekKeys.length).toBeGreaterThan(0) // 이 테스트가 의미 있으려면 최소 1개는 있어야 한다
-
-      const calledDates = fetchSchedulerCharacterStateMock.mock.calls.map((call) => call[2])
-      for (const weekKey of unavailableWeekKeys) {
-        expect(calledDates).not.toContain(getBackfillQueryDate('weekly', weekKey))
-        expect(markPeriodCheckedMock).toHaveBeenCalledWith('ocid-1', 'weekly', weekKey, expect.any(String))
-      }
-      for (const weekKey of availableWeekKeys) {
-        expect(calledDates).toContain(getBackfillQueryDate('weekly', weekKey))
-      }
-
-      const unavailableSubtotals = useBossProfitStore
-        .getState()
-        .weeklySubtotals.filter((subtotal) => unavailableWeekKeys.includes(subtotal.periodKey))
-      expect(unavailableSubtotals.every((subtotal) => subtotal.state === 'unavailable')).toBe(true)
-      expect(unavailableSubtotals.every((subtotal) => subtotal.totalMeso === 0)).toBe(true)
+      expect(useBossProfitStore.getState().periodKey).toBe(monthBefore)
+      expect(fetchSchedulerCharacterStateMock).not.toHaveBeenCalled()
     })
 
     it('먼저 시작된 느린 백필이 나중에 끝나도, 그 사이 시작된 더 최신 네비게이션 결과를 덮어쓰지 않는다', async () => {

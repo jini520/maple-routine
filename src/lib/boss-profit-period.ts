@@ -4,11 +4,12 @@ import { getMostRecentWeeklyResetKst } from './reset-clock'
 const KST_OFFSET_MS = 9 * 60 * 60 * 1000
 
 /**
- * 스케줄러 API(`date` 파라미터)로 조회 가능한 최소 날짜(사용자 실측, 2026-07-14, ADR-023).
+ * 스케줄러 API(`date` 파라미터)로 조회 가능한 최소 날짜(사용자 재실측, 2026-07-14, ADR-023 —
+ * 처음 확인했던 '2026-06-25'는 잘못된 확인이었다).
  * 이 API 자체가 신규 도입돼 그 이전 데이터가 존재하지 않는 고정 하한선이다 — 오늘 날짜 기준으로
  * 매일 밀려나는 롤링 윈도우가 아니므로, 시간이 지나도 이 값을 다시 계산할 필요가 없다.
  */
-export const MIN_SCHEDULER_DATE = '2026-06-25'
+export const MIN_SCHEDULER_DATE = '2026-07-01'
 
 export interface BossProfitPeriod {
   periodKey: string // 저장/조회 시 unique key로 쓰이는 안정적인 문자열
@@ -178,9 +179,9 @@ export function getBackfillQueryDate(cycle: BossCycle, periodKey: string): strin
 /**
  * periodKey에서 한 단계 더 과거로 이동하면 MIN_SCHEDULER_DATE 이전이라 백필 자체가 불가능한
  * 기간에 도달하는지 확인한다. true면 이 기간에서 prev 방향 네비게이션 버튼을 비활성화해야 한다.
- * (weekly에 적용하면 2026-06-25 이전 주로 이동을 막고, monthly에 적용하면 그 달이 통째로
- * MIN_SCHEDULER_DATE 이전인 달 — 2026-05 이전 — 로 이동을 막는다. 이미 진입한 기간 자체가
- * 부분적으로만 조회 불가능한 경우(예: 2026-06월, 1~3주차만 데이터 없음)는 막지 않는다.)
+ * (weekly에 적용하면 MIN_SCHEDULER_DATE 이전 주로 이동을 막고, monthly에 적용하면 그 달이
+ * 통째로 MIN_SCHEDULER_DATE 이전인 달로 이동을 막는다. 이미 진입한 기간 자체가 부분적으로만
+ * 조회 불가능한 경우(예: 2026-07월 첫 며칠만 데이터 없음)는 막지 않는다.)
  */
 export function isEarliestNavigablePeriod(cycle: BossCycle, periodKey: string): boolean {
   const prevPeriodKey = getAdjacentPeriodKey(cycle, periodKey, 'prev')

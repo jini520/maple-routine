@@ -5,13 +5,14 @@ import {
   getBackfillQueryDate,
   getCurrentBossProfitPeriod,
   getWeeklyPeriodKeysInMonth,
+  isEarliestNavigablePeriod,
   isLatestPeriod,
   MIN_SCHEDULER_DATE,
 } from '../boss-profit-period'
 
 describe('MIN_SCHEDULER_DATE', () => {
-  it('사용자 실측(2026-07-14)으로 확인된 스케줄러 API 조회 가능 최소 날짜다', () => {
-    expect(MIN_SCHEDULER_DATE).toBe('2026-06-25')
+  it('사용자 재실측(2026-07-14)으로 확인된 스케줄러 API 조회 가능 최소 날짜다', () => {
+    expect(MIN_SCHEDULER_DATE).toBe('2026-07-01')
   })
 })
 
@@ -82,6 +83,24 @@ describe('isLatestPeriod', () => {
     const monthlyNow = new Date('2026-08-01T12:00:00+09:00') // 현재 달 periodKey: 2026-08
     expect(isLatestPeriod('monthly', '2026-08', monthlyNow)).toBe(true)
     expect(isLatestPeriod('monthly', '2026-07', monthlyNow)).toBe(false)
+  })
+})
+
+describe('isEarliestNavigablePeriod', () => {
+  it('weekly: MIN_SCHEDULER_DATE(2026-07-01)가 백필 조회일인 주(2026-06-25)에서는 true다 — 더 과거로 갈 수 없다', () => {
+    expect(isEarliestNavigablePeriod('weekly', '2026-06-25')).toBe(true)
+  })
+
+  it('weekly: 그보다 늦은 주(2026-07-02)에서는 false다 — 한 주 전(2026-06-25)까지는 갈 수 있다', () => {
+    expect(isEarliestNavigablePeriod('weekly', '2026-07-02')).toBe(false)
+  })
+
+  it('monthly: 이번 달(2026-07)에서는 true다 — 지난 달(2026-06)은 통째로 MIN_SCHEDULER_DATE 이전이라 갈 수 없다', () => {
+    expect(isEarliestNavigablePeriod('monthly', '2026-07')).toBe(true)
+  })
+
+  it('monthly: 다음 달(2026-08)에서는 false다 — 한 달 전(2026-07)까지는 갈 수 있다', () => {
+    expect(isEarliestNavigablePeriod('monthly', '2026-08')).toBe(false)
   })
 })
 
