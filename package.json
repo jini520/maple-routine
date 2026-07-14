@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "test": "vitest run",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "publish-live-update": "node scripts/publish-live-update.mjs"
   },
   "dependencies": {
     "@capacitor-community/sqlite": "^8.1.0",
@@ -17,6 +18,7 @@
     "@capacitor/ios": "^8.4.1",
     "@capacitor/local-notifications": "^8.2.0",
     "@capacitor/preferences": "^8.0.1",
+    "@capgo/capacitor-updater": "^8.51.0",
     "jeep-sqlite": "^2.8.0",
     "lucide-react": "^1.24.0",
     "react": "^19.2.7",
