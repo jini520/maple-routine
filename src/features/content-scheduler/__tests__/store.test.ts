@@ -43,7 +43,7 @@ vi.mock('../../../storage/character-basic-cache', () => ({
 import { useContentSchedulerStore } from '../store'
 
 function dailyContent(name: string): DailyContent {
-  return { name, isRegistered: true, nowCount: 1, maxCount: 3 }
+  return { name, kind: 'contents', isRegistered: true, nowCount: 1, maxCount: 3, questState: null }
 }
 
 function weeklyContent(name: string): WeeklyContent {

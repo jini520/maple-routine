@@ -6,9 +6,11 @@ export type BossCycle = (typeof BOSS_CYCLES)[number]
 
 export interface DailyContent {
   name: string
+  kind: 'contents' | 'quest'
   isRegistered: boolean
   nowCount: number
   maxCount: number
+  questState: 0 | 1 | 2 | null
 }
 
 export interface WeeklyContent {

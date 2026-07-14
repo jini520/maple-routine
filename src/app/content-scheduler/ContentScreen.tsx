@@ -5,9 +5,347 @@ import { formatScheduleSyncError, formatSyncedAt } from '../../features/schedule
 import { getCharacterPickerRoster } from '../../features/schedule-sync/schedule-sync'
 import { CharacterSelectDropdown } from '../../components/CharacterSelectDropdown/CharacterSelectDropdown'
 import { CharacterTrackingPicker } from '../../components/CharacterTrackingPicker/CharacterTrackingPicker'
-import type { CharacterPickerEntry } from '../../types'
+import { getDailyQuestBackgroundUrl, getDailyQuestRegionCrop } from '../../lib/daily-quest-backgrounds'
+import type { DailyQuestRegionCrop } from '../../lib/daily-quest-backgrounds'
+import { getDailyQuestRegionIconUrl } from '../../lib/daily-quest-icons'
+import { matchDailyQuestRegionSlug, stripDailyQuestPrefix } from '../../lib/daily-quest-matching'
+import { getBossPortraitCrop, getBossPortraitUrl } from '../../lib/boss-icons'
+import type { BossPortraitCrop } from '../../lib/boss-icons'
+import { matchWeeklyRegionalQuestSlug } from '../../lib/weekly-regional-quest-matching'
+import type { CharacterPickerEntry, DailyContent, WeeklyContent } from '../../types'
 
 type ContentTab = 'daily' | 'weekly'
+
+// "몬스터파크"만 배경+아이콘 카드로 확장한다 — 다른 kind: 'contents' 항목이 생기면 그때
+// 매핑 테이블로 일반화할지 재검토한다(현재는 인스턴스가 하나뿐이라 과설계 방지, ADR-020).
+const MONSTER_PARK_NAME = '몬스터파크'
+const MONSTER_PARK_BACKGROUND_SLUG = 'monsterPark'
+
+// 주간 탭 카테고리 분류 상수 (ADR-021)
+const EPIC_DUNGEON_PREFIX = '에픽 던전 : '
+const EPIC_DUNGEON_BACKGROUND_SLUGS: Record<string, string> = {
+  하이마운틴: 'ancientGodMitra',
+  '앵글러 컴퍼니': 'senya',
+  악몽선경: 'baekyeon',
+}
+
+const MU_LUNG_DOJO_NAME = '무릉도장'
+
+const GUILD_PREFIX = '[길드] '
+const GUILD_MISSION_POINTS_NAME = '[길드] 주간 미션 포인트'
+const GUILD_UNDERGROUND_WATERWAY_NAME = '[길드] 지하 수로'
+const GUILD_FLAG_RACE_NAME = '[길드] 플래그 레이스'
+const GUILD_BACKGROUND_SLUG = 'arcanus'
+
+const QUEST_STATE_LABELS: Record<0 | 1 | 2, string> = {
+  0: '시작 안함',
+  1: '진행 중',
+  2: '완료',
+}
+
+const QUEST_STATE_BADGE_CLASSES: Record<0 | 1 | 2, string> = {
+  0: 'bg-white/10 text-[#E8DFEC]/70',
+  1: 'bg-white/20 text-[#E8DFEC]',
+  2: 'bg-secondary text-bg',
+}
+
+export function QuestStateBadge(props: { questState: 0 | 1 | 2 }): React.JSX.Element {
+  const fontWeight = props.questState === 2 ? 'font-bold' : 'font-semibold'
+  return (
+    <span
+      className={`rounded-full px-2.5 py-1 text-xs ${fontWeight} ${QUEST_STATE_BADGE_CLASSES[props.questState]}`}
+    >
+      {QUEST_STATE_LABELS[props.questState]}
+    </span>
+  )
+}
+
+export function DailyQuestCard(props: {
+  content: DailyContent
+  crop?: DailyQuestRegionCrop
+}): React.JSX.Element {
+  const { content } = props
+  const displayName = stripDailyQuestPrefix(content.name)
+  const backgroundSlug = matchDailyQuestRegionSlug(displayName)
+  const backgroundUrl = getDailyQuestBackgroundUrl(backgroundSlug)
+  const iconUrl = getDailyQuestRegionIconUrl(backgroundSlug)
+  const crop = props.crop ?? getDailyQuestRegionCrop(backgroundSlug)
+  const maskImage = 'linear-gradient(90deg, #000 0%, #000 38%, transparent 76%)'
+
+  // 카드 배경/보더/이름 텍스트는 BossCard와 동일하게 앱 테마와 무관하게 레테(다크) 고정 배색을
+  // 쓴다 — 일러스트 bleed·페이드·text-shadow가 어두운 배경을 전제로 튜닝됐기 때문(ADR-018/020).
+  return (
+    <div className="relative h-20 overflow-hidden rounded-[14px] border border-[#37323E] bg-[#1A1720]">
+      {backgroundUrl !== null && (
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url(${backgroundUrl})`,
+            backgroundSize: crop.size,
+            backgroundPosition: crop.position,
+            filter: 'saturate(.85) brightness(.8)',
+            opacity: 0.65,
+            maskImage,
+            WebkitMaskImage: maskImage,
+          }}
+        />
+      )}
+
+      <div className="relative flex h-full items-center justify-between" style={{ padding: '0 14px' }}>
+        <div className="flex items-center gap-2">
+          {iconUrl !== null && (
+            <img src={iconUrl} alt="" className="h-6 w-6 shrink-0 object-contain" aria-hidden="true" />
+          )}
+          <span
+            className="text-sm font-medium text-[#E8DFEC]"
+            style={{ textShadow: '0 1px 3px rgba(0,0,0,.9), 0 0 10px rgba(0,0,0,.6)' }}
+          >
+            {displayName}
+          </span>
+        </div>
+
+        {content.questState !== null && <QuestStateBadge questState={content.questState} />}
+      </div>
+    </div>
+  )
+}
+
+export function MonsterParkCard(props: {
+  content: DailyContent
+  crop?: DailyQuestRegionCrop
+}): React.JSX.Element {
+  const { content } = props
+  const backgroundUrl = getDailyQuestBackgroundUrl(MONSTER_PARK_BACKGROUND_SLUG)
+  const iconUrl = getDailyQuestRegionIconUrl(MONSTER_PARK_BACKGROUND_SLUG)
+  const crop = props.crop ?? getDailyQuestRegionCrop(MONSTER_PARK_BACKGROUND_SLUG)
+  const maskImage = 'linear-gradient(90deg, #000 0%, #000 38%, transparent 76%)'
+  const progressPercent = content.maxCount > 0 ? Math.min((content.nowCount / content.maxCount) * 100, 100) : 0
+
+  return (
+    <div className="relative h-28 overflow-hidden rounded-[14px] border border-[#37323E] bg-[#1A1720]">
+      {backgroundUrl !== null && (
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url(${backgroundUrl})`,
+            backgroundSize: crop.size,
+            backgroundPosition: crop.position,
+            filter: 'saturate(.85) brightness(.8)',
+            opacity: 0.65,
+            maskImage,
+            WebkitMaskImage: maskImage,
+          }}
+        />
+      )}
+
+      <div className="relative flex h-full flex-col">
+        <div className="flex h-20 shrink-0 items-center justify-between" style={{ padding: '0 14px' }}>
+          <div className="flex items-center gap-2">
+            {iconUrl !== null && (
+              <img src={iconUrl} alt="" className="h-6 w-6 shrink-0 object-contain" aria-hidden="true" />
+            )}
+            <span
+              className="text-sm font-medium text-[#E8DFEC]"
+              style={{ textShadow: '0 1px 3px rgba(0,0,0,.9), 0 0 10px rgba(0,0,0,.6)' }}
+            >
+              {content.name}
+            </span>
+          </div>
+
+          <span className="rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary">
+            {content.nowCount}/{content.maxCount}
+          </span>
+        </div>
+
+        {content.maxCount > 0 && (
+          <div className="flex flex-1 items-start px-[14px] pt-0">
+            <div
+              role="progressbar"
+              aria-valuenow={content.nowCount}
+              aria-valuemin={0}
+              aria-valuemax={content.maxCount}
+              className="h-1.5 w-full overflow-hidden rounded-full bg-white/15"
+            >
+              <div className="h-1.5 rounded-full bg-white/80" style={{ width: `${progressPercent}%` }} />
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// 아르카누스 배경의 푸른 전기빛과 맞춘 색(2026-07-14, 사용자 지시) — 에픽 던전·길드 카드가 공유.
+function CategoryBadge(props: { label: string }): React.JSX.Element {
+  return (
+    <span className="rounded-full bg-[#4DD2FF]/20 px-2.5 py-1 text-xs font-semibold text-[#4DD2FF]">
+      {props.label}
+    </span>
+  )
+}
+
+const CARD_MASK_IMAGE = 'linear-gradient(90deg, #000 0%, #000 38%, transparent 76%)'
+const CARD_NAME_TEXT_SHADOW = '0 1px 3px rgba(0,0,0,.9), 0 0 10px rgba(0,0,0,.6)'
+
+export function EpicDungeonCard(props: {
+  content: WeeklyContent
+  crop?: BossPortraitCrop
+}): React.JSX.Element {
+  const { content } = props
+  const displayName = content.name.startsWith(EPIC_DUNGEON_PREFIX)
+    ? content.name.slice(EPIC_DUNGEON_PREFIX.length)
+    : content.name
+  const backgroundSlug = EPIC_DUNGEON_BACKGROUND_SLUGS[displayName] ?? null
+  const backgroundUrl = getBossPortraitUrl(backgroundSlug)
+  const crop = props.crop ?? getBossPortraitCrop(backgroundSlug)
+  const questState: 0 | 2 = content.nowCount > 0 ? 2 : 0
+
+  return (
+    <div className="relative h-20 overflow-hidden rounded-[14px] border border-[#37323E] bg-[#1A1720]">
+      {backgroundUrl !== null && (
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url(${backgroundUrl})`,
+            backgroundSize: crop.size,
+            backgroundPosition: crop.position,
+            filter: 'saturate(.85) brightness(.8)',
+            opacity: 0.65,
+            maskImage: CARD_MASK_IMAGE,
+            WebkitMaskImage: CARD_MASK_IMAGE,
+          }}
+        />
+      )}
+
+      <div className="relative flex h-full items-center justify-between" style={{ padding: '0 14px' }}>
+        <div className="flex items-center gap-2">
+          <CategoryBadge label="에픽 던전" />
+          <span className="text-sm font-medium text-[#E8DFEC]" style={{ textShadow: CARD_NAME_TEXT_SHADOW }}>
+            {displayName}
+          </span>
+        </div>
+
+        <QuestStateBadge questState={questState} />
+      </div>
+    </div>
+  )
+}
+
+export function WeeklyRegionalContentCard(props: {
+  content: WeeklyContent
+  crop?: DailyQuestRegionCrop
+}): React.JSX.Element {
+  const { content } = props
+  const backgroundSlug = matchWeeklyRegionalQuestSlug(content.name)
+  const backgroundUrl = getDailyQuestBackgroundUrl(backgroundSlug)
+  const iconUrl = getDailyQuestRegionIconUrl(backgroundSlug)
+  const crop = props.crop ?? getDailyQuestRegionCrop(backgroundSlug)
+  const questState: 0 | 2 = content.nowCount > 0 ? 2 : 0
+
+  return (
+    <div className="relative h-20 overflow-hidden rounded-[14px] border border-[#37323E] bg-[#1A1720]">
+      {backgroundUrl !== null && (
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url(${backgroundUrl})`,
+            backgroundSize: crop.size,
+            backgroundPosition: crop.position,
+            filter: 'saturate(.85) brightness(.8)',
+            opacity: 0.65,
+            maskImage: CARD_MASK_IMAGE,
+            WebkitMaskImage: CARD_MASK_IMAGE,
+          }}
+        />
+      )}
+
+      <div className="relative flex h-full items-center justify-between" style={{ padding: '0 14px' }}>
+        <div className="flex items-center gap-2">
+          {iconUrl !== null && (
+            <img src={iconUrl} alt="" className="h-6 w-6 shrink-0 object-contain" aria-hidden="true" />
+          )}
+          <span className="text-sm font-medium text-[#E8DFEC]" style={{ textShadow: CARD_NAME_TEXT_SHADOW }}>
+            {content.name}
+          </span>
+        </div>
+
+        <QuestStateBadge questState={questState} />
+      </div>
+    </div>
+  )
+}
+
+export function MuLungDojoCard(props: { content: WeeklyContent }): React.JSX.Element {
+  return (
+    <div
+      className="relative flex h-20 items-center overflow-hidden rounded-[14px] border border-[#37323E] bg-[#1A1720]"
+      style={{ padding: '0 14px' }}
+    >
+      <span className="text-sm font-medium text-[#E8DFEC]">{props.content.name}</span>
+    </div>
+  )
+}
+
+export function GuildContentCard(props: {
+  undergroundWaterway: WeeklyContent
+  missionPoints: WeeklyContent | null
+  flagRace: WeeklyContent | null
+  crop?: BossPortraitCrop
+}): React.JSX.Element {
+  const { undergroundWaterway, missionPoints, flagRace } = props
+  const displayName = undergroundWaterway.name.startsWith(GUILD_PREFIX)
+    ? undergroundWaterway.name.slice(GUILD_PREFIX.length)
+    : undergroundWaterway.name
+  const backgroundUrl = getBossPortraitUrl(GUILD_BACKGROUND_SLUG)
+  const crop = props.crop ?? getBossPortraitCrop(GUILD_BACKGROUND_SLUG)
+
+  return (
+    <div className="relative h-28 overflow-hidden rounded-[14px] border border-[#37323E] bg-[#1A1720]">
+      {backgroundUrl !== null && (
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url(${backgroundUrl})`,
+            backgroundSize: crop.size,
+            backgroundPosition: crop.position,
+            filter: 'saturate(.85) brightness(.8)',
+            opacity: 0.65,
+            maskImage: CARD_MASK_IMAGE,
+            WebkitMaskImage: CARD_MASK_IMAGE,
+          }}
+        />
+      )}
+
+      {/* 그리드 1열(뱃지)/2열(제목·하단 문구)로 나눠, 하단 문구의 시작 위치가 뱃지 너비와
+          무관하게 항상 "지하 수로" 제목과 같은 x좌표에서 시작하도록 한다. */}
+      <div
+        className="relative grid h-full"
+        style={{ gridTemplateColumns: 'auto 1fr', gridTemplateRows: '80px 1fr', padding: '0 14px', columnGap: '8px' }}
+      >
+        <div className="flex items-center" style={{ gridColumn: 1, gridRow: 1 }}>
+          <CategoryBadge label="길드" />
+        </div>
+
+        <div className="flex items-center justify-between" style={{ gridColumn: 2, gridRow: 1 }}>
+          <span className="text-sm font-medium text-[#E8DFEC]" style={{ textShadow: CARD_NAME_TEXT_SHADOW }}>
+            {displayName}
+          </span>
+          <span className="rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary">
+            {undergroundWaterway.nowCount}점
+          </span>
+        </div>
+
+        <div style={{ gridColumn: 1, gridRow: 2 }} />
+
+        <div className="flex items-start pt-0" style={{ gridColumn: 2, gridRow: 2 }}>
+          <p className="text-xs text-[#E8DFEC]/70">
+            주간 미션 포인트: {missionPoints?.nowCount ?? 0} · 플래그 레이스: {flagRace?.nowCount ?? 0}
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export function ContentScreen(): React.JSX.Element {
   const {
@@ -59,8 +397,27 @@ export function ContentScreen(): React.JSX.Element {
 
   const registeredDailyContents =
     selected !== null ? selected.dailyContents.filter((content) => content.isRegistered) : []
-  const registeredWeeklyContents =
-    selected !== null ? selected.weeklyContents.filter((content) => content.isRegistered) : []
+
+  const weeklyContents = selected !== null ? selected.weeklyContents : []
+  const guildMissionPoints = weeklyContents.find((content) => content.name === GUILD_MISSION_POINTS_NAME) ?? null
+  const guildUndergroundWaterway =
+    weeklyContents.find((content) => content.name === GUILD_UNDERGROUND_WATERWAY_NAME) ?? null
+  const guildFlagRace = weeklyContents.find((content) => content.name === GUILD_FLAG_RACE_NAME) ?? null
+
+  // 길드 서브 항목(미션 포인트·플래그 레이스) 둘 다 게임 내 스케줄러에 미등록이면 묶음 카드 대신
+  // 등록된 길드 항목(대개 지하 수로만)을 일반 카드로 표시한다 (ADR-021).
+  const showGuildCard =
+    guildUndergroundWaterway !== null &&
+    guildUndergroundWaterway.isRegistered &&
+    ((guildMissionPoints?.isRegistered ?? false) || (guildFlagRace?.isRegistered ?? false))
+
+  const registeredWeeklyContents = weeklyContents.filter((content) => {
+    if (!content.isRegistered) return false
+    if (showGuildCard && (content.name === GUILD_MISSION_POINTS_NAME || content.name === GUILD_FLAG_RACE_NAME)) {
+      return false
+    }
+    return true
+  })
 
   async function handleSaveTracking(ocids: string[]): Promise<void> {
     await saveTrackedOcids(ocids)
@@ -218,30 +575,48 @@ export function ContentScreen(): React.JSX.Element {
 
               {registeredDailyContents.length > 0 && (
                 <ul className="space-y-3">
-                  {registeredDailyContents.map((content) => (
-                    <li
-                      key={content.name}
-                      className="rounded-[14px] bg-surface border border-border p-4 space-y-2"
-                    >
-                      <p className="text-sm text-text">
-                        {content.name} · {content.nowCount}/{content.maxCount}
-                      </p>
-                      {content.maxCount > 0 && (
-                        <div
-                          role="progressbar"
-                          aria-valuenow={content.nowCount}
-                          aria-valuemin={0}
-                          aria-valuemax={content.maxCount}
-                          className="h-1.5 w-full rounded-full bg-surface-2 overflow-hidden"
-                        >
+                  {registeredDailyContents.map((content) => {
+                    if (content.kind === 'quest') {
+                      return (
+                        <li key={content.name}>
+                          <DailyQuestCard content={content} />
+                        </li>
+                      )
+                    }
+
+                    if (content.name === MONSTER_PARK_NAME) {
+                      return (
+                        <li key={content.name}>
+                          <MonsterParkCard content={content} />
+                        </li>
+                      )
+                    }
+
+                    return (
+                      <li
+                        key={content.name}
+                        className="rounded-[14px] bg-surface border border-border p-4 space-y-2"
+                      >
+                        <p className="text-sm text-text">
+                          {content.name} · {content.nowCount}/{content.maxCount}
+                        </p>
+                        {content.maxCount > 0 && (
                           <div
-                            className="h-1.5 rounded-full bg-primary"
-                            style={{ width: `${Math.min((content.nowCount / content.maxCount) * 100, 100)}%` }}
-                          />
-                        </div>
-                      )}
-                    </li>
-                  ))}
+                            role="progressbar"
+                            aria-valuenow={content.nowCount}
+                            aria-valuemin={0}
+                            aria-valuemax={content.maxCount}
+                            className="h-1.5 w-full rounded-full bg-surface-2 overflow-hidden"
+                          >
+                            <div
+                              className="h-1.5 rounded-full bg-primary"
+                              style={{ width: `${Math.min((content.nowCount / content.maxCount) * 100, 100)}%` }}
+                            />
+                          </div>
+                        )}
+                      </li>
+                    )
+                  })}
                 </ul>
               )}
             </>
@@ -256,14 +631,69 @@ export function ContentScreen(): React.JSX.Element {
               )}
 
               {registeredWeeklyContents.length > 0 && (
-                <ul className="rounded-[14px] bg-surface border border-border p-4 space-y-2">
-                  {registeredWeeklyContents.map((content) => (
-                    <li key={content.name} className="flex items-center gap-2">
-                      <span className="text-sm text-text">
-                        {content.name} · {content.nowCount}/{content.maxCount}
-                      </span>
-                    </li>
-                  ))}
+                <ul className="space-y-3">
+                  {registeredWeeklyContents.map((content) => {
+                    if (content.name === GUILD_UNDERGROUND_WATERWAY_NAME && showGuildCard) {
+                      return (
+                        <li key={content.name}>
+                          <GuildContentCard
+                            undergroundWaterway={content}
+                            missionPoints={guildMissionPoints}
+                            flagRace={guildFlagRace}
+                          />
+                        </li>
+                      )
+                    }
+
+                    if (content.name.startsWith(EPIC_DUNGEON_PREFIX)) {
+                      return (
+                        <li key={content.name}>
+                          <EpicDungeonCard content={content} />
+                        </li>
+                      )
+                    }
+
+                    if (matchWeeklyRegionalQuestSlug(content.name) !== null) {
+                      return (
+                        <li key={content.name}>
+                          <WeeklyRegionalContentCard content={content} />
+                        </li>
+                      )
+                    }
+
+                    if (content.name === MU_LUNG_DOJO_NAME) {
+                      return (
+                        <li key={content.name}>
+                          <MuLungDojoCard content={content} />
+                        </li>
+                      )
+                    }
+
+                    return (
+                      <li
+                        key={content.name}
+                        className="rounded-[14px] bg-surface border border-border p-4 space-y-2"
+                      >
+                        <p className="text-sm text-text">
+                          {content.name} · {content.nowCount}/{content.maxCount}
+                        </p>
+                        {content.maxCount > 0 && (
+                          <div
+                            role="progressbar"
+                            aria-valuenow={content.nowCount}
+                            aria-valuemin={0}
+                            aria-valuemax={content.maxCount}
+                            className="h-1.5 w-full rounded-full bg-surface-2 overflow-hidden"
+                          >
+                            <div
+                              className="h-1.5 rounded-full bg-primary"
+                              style={{ width: `${Math.min((content.nowCount / content.maxCount) * 100, 100)}%` }}
+                            />
+                          </div>
+                        )}
+                      </li>
+                    )
+                  })}
                 </ul>
               )}
             </>

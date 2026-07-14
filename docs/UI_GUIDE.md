@@ -255,7 +255,67 @@ rounded-full bg-white/20 text-[#E8DFEC] text-xs font-semibold px-2 py-1, flex it
 ```
 **보스별 일러스트 크기·위치**: 인물 구도가 보스마다 달라 고정값 하나로는 두상이 잘리거나 안 보이는 경우가 많다(카링·스우 두 예시만으로도 서로 다른 `background-size`가 필요했음, ADR-018 참고). `src/data/boss-portrait-crops.json`에서 `portraitSlug`별로 개별 지정 — 이 파일은 게임 데이터가 아니라 UI 표시 파라미터라 값은 AI가 임의로 채우지 않고 사용자가 이미지를 넣을 때마다 직접 조정한다. 세부 조회 로직은 `docs/ARCHITECTURE.md` 참고.
 
-## 레이아웃
+### 일일퀘스트 카드 — 확정, 2026-07-14, [[ADR-020]] (구현 전)
+
+컨텐츠 스케줄러 일간 탭에서 `kind: 'quest'`인 항목(지역별 반복 필드 퀘스트)에만 적용. `kind: 'contents'`인 항목은 아래 "몬스터파크 카드"(예외 하나)를 빼면 기존 "이름 · now/max + 진행률 바" 표시를 그대로 유지 — 이 섹션은 그 외 신규 퀘스트 카드만 다룬다. 카드 골격은 [[ADR-018]]의 보스 카드를 그대로 재사용한다(같은 상수·색값을 새로 정의하지 않음).
+
+```
+카드: rounded-[14px] border border-[#37323E] bg-[#1A1720](레테 고정, 보스 카드와 동일), height 80px, overflow-hidden, position relative
+일러스트(지역 매칭된 경우만): position absolute inset-0, background-size/position은 src/data/daily-quest-region-crops.json(없으면 cover/center) — saturate(.85) brightness(.8), opacity .65, mask-image: linear-gradient(90deg, #000 0%, #000 38%, transparent 76%) — 보스 카드와 완전히 동일한 값
+콘텐츠 행: flex items-center justify-between, padding 0 14px
+  왼쪽: 지역 아이콘(있는 경우만, h-6 w-6 object-contain) + 퀘스트명 — "[일일 퀘스트] " 접두어를 제거한 나머지 전체(예: "레헬른의 평온한 밤"), text-shadow는 보스명과 동일(0 1px 3px rgba(0,0,0,.9), 0 0 10px rgba(0,0,0,.6))
+  오른쪽: quest_state 3단 뱃지(아래) — 보스 카드는 미완료 시 빈 공간이었지만, 여기는 0/1/2 세 상태를 모두 뱃지로 구분해서 보여준다
+```
+
+**지역 아이콘(확정, 2026-07-14)**: `src/assets/maps/icons/{slug}.{png|webp}`(배경과 동일한 슬러그, 확장자는 파일마다 다를 수 있음)를 이름 왼쪽에 표시. 매칭되는 아이콘이 없으면 생략(이름만 표시).
+
+**quest_state 뱃지(확정, 2026-07-14)**:
+```
+완료(2):    rounded-full bg-secondary text-bg text-xs font-bold px-2.5 py-1, 문구 "완료" — 보스 카드 완료 뱃지와 동일 스타일 재사용
+진행 중(1): rounded-full bg-white/20 text-[#E8DFEC] text-xs font-semibold px-2.5 py-1, 문구 "진행 중" — 파티 배지와 같은 톤의 반투명 pill
+시작 안함(0): rounded-full bg-white/10 text-[#E8DFEC]/70 text-xs font-semibold px-2.5 py-1, 문구 "시작 안함"
+```
+
+**지역 배경 매칭**: `src/data/daily-quest-regions.json`(지역명 → 슬러그)과 `src/data/daily-quest-region-crops.json`(슬러그 → 크롭)을 통해 `src/assets/maps/{slug}.webp`를 조회(`lib/daily-quest-backgrounds.ts`, `boss-icons.ts`와 동일 패턴). 접두어를 제거한 퀘스트 표시명 전체가 아니라, 공백을 제거한 표시명이 공백 제거한 지역명으로 시작하는지(`startsWith`)로 매칭한다(예: "레헬른의평온한밤".startsWith("레헬른")). 매칭되지 않는 경우는 보스 카드가 `portraitUrl === null`일 때와 동일하게 일러스트 레이어 자체를 생략하고 카드 배경색만 표시한다. 세부 데이터 구조·매칭 로직은 `docs/ARCHITECTURE.md` 참고.
+
+**디버그 프리뷰**: `BossCardPreview.tsx`/`/debug/boss-cards`와 동일한 목적의 `/debug/quest-cards`(`DailyQuestCardPreview.tsx`)에서 방향키/줌 버튼으로 크롭 값을 조정하고 결과를 복사해 `daily-quest-region-crops.json`에 반영한다.
+
+### 몬스터파크 카드 — 확정, 2026-07-14, [[ADR-020]] (구현 전)
+
+일간 탭의 `kind: 'contents'` 항목 중 "몬스터파크" 하나에만 적용되는 예외 카드. 카드 배경(레테 고정)·bleed는 위 일일퀘스트 카드와 동일하되, 진행률 바를 담아야 해서 높이는 **112px**(`h-28`, 위 카드의 80px보다 큼 — 확정, 2026-07-14, 진행률 바가 답답해 보인다는 피드백 반영)로 키운다.
+
+```
+레이아웃(확정, 2026-07-14 — "이름·뱃지 위치는 다른 카드와 동일하게, 늘어난 높이만큼만 진행률 바 영역" 피드백 반영):
+  바깥 컨테이너: flex flex-col h-full(패딩 없음)
+  위 h-20(80px, shrink-0): 아이콘+이름(왼쪽) · 진행률 뱃지(오른쪽) — 다른 카드들과 완전히 같은 80px 행 위치
+  아래 flex-1: 진행률 바 영역, items-start + pt-0(행 바로 아래 여백 없이 붙여서 시작 — **정정, 2026-07-14**: pt-2→pt-3→pt-1→pt-0 순으로 조정된 최종값)
+진행률 뱃지(확정, 2026-07-14): rounded-full bg-primary/15 text-primary text-xs font-semibold px-2.5 py-1, 문구 "{nowCount}/{maxCount}" — 앱 전역 "카운트 배지"와 동일한 테마 토큰 스타일(위 탭 토글 섹션의 n/12 배지 참고, 카드 로컬 고정색 아님)
+진행률 바: maxCount > 0일 때만 표시. 기존 plain 카드의 진행률 바와 동일한 형태(role="progressbar")지만 색은 테마 토큰(bg-surface-2/bg-primary) 대신 레테 고정 배경 위에서 읽히도록 흰색 반투명으로 고정 — track bg-white/15, fill bg-white/80
+```
+
+이름·아이콘·배경은 "몬스터파크"로 고정(별도 매핑 테이블 없이 이름 직접 비교) — 다른 `kind: 'contents'` 항목이 생기면 그때 일반화 여부를 재검토한다. **이 "메인 행은 80px 고정 + 늘어난 높이는 하단 확장 영역" 레이아웃 원칙은 아래 "주간 콘텐츠 카드" 중 길드 카드에도 그대로 재사용된다.**
+
+### 주간 콘텐츠 카드 — 확정, 2026-07-14, [[ADR-021]] (구현 전)
+
+주간 탭도 일간 탭과 동일하게 카드화한다. 카드 골격(rounded-[14px], 레테 고정 배경/보더 `bg-[#1A1720]`/`border-[#37323E]`, 80px 기본 높이)은 위 카드들과 전부 동일하고, 카테고리별로 4가지 변형만 다르다.
+
+**① 에픽 던전 카드**: 보스 카드와 동일한 좌우 배치 — 왼쪽 `[카테고리 뱃지: "에픽 던전"] [던전명]`(접두어 "에픽 던전 : " 제거), 오른쪽에 `QuestStateBadge`(0→시작 안함, 완료는 2로 매핑 — 1/진행 중은 쓰지 않음). 배경은 던전별 전용 일러스트(`src/assets/bosses/`, `boss-icons.ts`로 조회) bleed, 나머지 시각 스펙(마스크·opacity·saturate 등)은 보스 카드와 완전히 동일. 높이 80px.
+
+**카테고리 뱃지("에픽 던전"/"길드")**: `rounded-full bg-[#4DD2FF]/20 text-[#4DD2FF] text-xs font-semibold px-2.5 py-1` — 카드 로컬 고정색. **정정(2026-07-14)**: ~~bg-white/20 text-[#E8DFEC](파티 배지와 같은 중립 톤)~~ → 길드 카드 배경(아르카누스)의 푸른 전기빛과 맞춘 파란색으로 변경(사용자 지시). 이름 앞에 배치.
+
+**② 주간 지역 퀘스트 카드**: 왼쪽 `[지역 아이콘] [콘텐츠명]`(접두어 없음, 일일퀘스트 카드와 동일한 아이콘+이름 배치), 오른쪽에 `QuestStateBadge`(0→시작 안함, 1→완료로 매핑). 배경·아이콘은 일일퀘스트 카드와 완전히 같은 지역 에셋 재사용. 높이 80px.
+
+**③ 무릉도장 카드**: 배경·뱃지 없음. 카드 껍데기(레테 고정 배경/보더, 80px)만 유지하고 이름 텍스트만 가운데(수직) 배치.
+
+**④ 길드 카드**: 위 몬스터파크 카드와 동일한 레이아웃 원칙(메인 행 80px 고정 + 늘어난 높이는 하단 확장 영역) 재사용. 높이 112px(`h-28`, 몬스터파크와 동일 — **정정, 2026-07-14**: 처음엔 두 줄로 나눠 128px(`h-32`)까지 키웠으나, 사용자 지시로 한 줄로 합치면서 몬스터파크와 같은 높이로 되돌림).
+```
+메인 행(80px, 다른 카드와 동일 위치): 왼쪽 [카테고리 뱃지: "길드"] ["지하 수로"] · 오른쪽 점수 뱃지
+점수 뱃지: rounded-full bg-primary/15 text-primary text-xs font-semibold px-2.5 py-1, 문구 "{nowCount}점" — 몬스터파크 진행률 뱃지와 동일한 테마 토큰
+하단 확장 영역: 한 줄 — "주간 미션 포인트: {nowCount} · 플래그 레이스: {nowCount}", text-xs text-[#E8DFEC]/70, items-start pt-0(**정정, 2026-07-14** — 몬스터파크 진행률 바와 동일한 값을 유지하며 pt-2→pt-3→pt-1→pt-0 순으로 함께 조정)
+**정렬(확정, 2026-07-14)**: 뱃지·제목·하단 문구를 flex로만 배치하면 하단 문구가 "길드" 뱃지 밑에서 시작해 "지하 수로" 제목과 왼쪽이 어긋난다. `grid-template-columns: auto 1fr`로 1열(뱃지)/2열(제목 행 + 하단 문구)을 나눠, 뱃지 너비와 무관하게 하단 문구가 항상 "지하 수로" 제목과 같은 x좌표에서 시작하게 한다(사용자 지시로 발견·수정).
+배경: arcanus(boss-icons.ts로 조회) bleed, 나머지는 다른 카드와 동일
+```
+**폴백**: "[길드] 주간 미션 포인트"·"[길드] 플래그 레이스" 둘 다 게임 내 미등록(`registration_flag: false`)이면 이 묶음 카드 대신, 등록된 길드 항목(대개 "[길드] 지하 수로"만)을 기존 plain 카드(테마 토큰 `bg-surface`/`border-border`, `이름 · now/max` 텍스트)로 그대로 표시한다 — 접두어 제거나 뱃지 변환도 하지 않는 완전한 기본형이다.
 - 전체 너비: 모바일 뷰포트 기준 단일 컬럼, 별도 max-width 제한 없음(Capacitor 하이브리드 앱이라 데스크톱 와이드 레이아웃은 고려하지 않음, 확정 2026-07-11)
 - 정렬: 좌측 정렬 기본
 - 간격: 화면 전체 패딩 `p-4`, 콘텐츠 블록 사이 `space-y-4`, 카드 안쪽 패딩 `p-4`(확정 2026-07-11 — 일간/주간 스케줄러 화면 구현 기준)

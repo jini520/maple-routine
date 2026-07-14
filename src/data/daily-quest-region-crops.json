@@ -1,0 +1,20 @@
+{
+  "vanishingJourney": { "size": "250% auto", "position": "45% 70%" },
+  "chuchuIsland": { "size": "230% auto", "position": "65% 70%" },
+  "lachelein": { "size": "310% auto", "position": "0% 45%" },
+  "arcana": { "size": "200% auto", "position": "100% 65%" },
+  "morass": { "size": "170% auto", "position": "0% 80%" },
+  "esfera": { "size": "280% auto", "position": "60% 60%" },
+  "moonbridge": { "size": "190% auto", "position": "0% 60%" },
+  "labyrinthOfSuffering": { "size": "120% auto", "position": "0% 50%" },
+  "limen": { "size": "140% auto", "position": "25% 50%" },
+  "cernium": { "size": "220% auto", "position": "50% 40%" },
+  "hotelArcus": { "size": "220% auto", "position": "20% 35%" },
+  "odium": { "size": "250% auto", "position": "50% 50%" },
+  "dowonkyung": { "size": "170% auto", "position": "50% 65%" },
+  "arteria": { "size": "180% auto", "position": "50% 45%" },
+  "carcion": { "size": "190% auto", "position": "45% 45%" },
+  "tallahart": { "size": "260% auto", "position": "0% 70%" },
+  "geardrock": { "size": "220% auto", "position": "70% 60%" },
+  "monsterPark": { "size": "250% auto", "position": "5% 60%" }
+}

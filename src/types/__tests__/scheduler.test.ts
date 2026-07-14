@@ -32,9 +32,11 @@ describe('domain 타입 샘플 객체', () => {
   it('DailyContent 샘플이 필드를 모두 채워 구성된다', () => {
     const sample: DailyContent = {
       name: '몬스터파크',
+      kind: 'contents',
       isRegistered: true,
       nowCount: 7,
       maxCount: 14,
+      questState: null,
     }
     expect(sample.name).toBe('몬스터파크')
   })
