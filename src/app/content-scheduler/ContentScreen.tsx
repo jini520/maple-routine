@@ -543,7 +543,7 @@ export function ContentScreen(): React.JSX.Element {
       <div className="sticky top-0 z-10 bg-bg px-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-2">
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-lg font-semibold text-text">컨텐츠 스케줄러 🧪</h1>
+            <h1 className="text-lg font-semibold text-text">컨텐츠 스케줄러</h1>
             {characterManageButton}
           </div>
 
