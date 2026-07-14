@@ -16,7 +16,7 @@
       "status": "completed",
       "started_at": "2026-07-15T01:16:51+0900",
       "summary": "native/live-update.ts에 LIVE_UPDATE_MANIFEST_URL_BETA·resolveLiveUpdateManifestUrl(channel)을 추가하고 main.tsx가 빌드 시점 VITE_LIVE_UPDATE_CHANNEL로 채널을 고르도록 변경(런타임 토글 없음, ADR-024)",
-      "completed_at": "2026-07-15T01:18:30+0900"
+      "completed_at": "2026-07-15T01:18:29+0900"
     },
     {
       "step": 2,
