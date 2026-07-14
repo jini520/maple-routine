@@ -8,7 +8,11 @@ export function OnboardingScreen(): React.JSX.Element {
 
   switch (status) {
     case 'awaitingApiKey':
-      return <ApiKeyForm isSubmitting={false} errorMessage={null} onSubmit={submitApiKey} />
+      return (
+        <div className="flex min-h-screen items-center justify-center p-4">
+          <ApiKeyForm isSubmitting={false} errorMessage={null} onSubmit={submitApiKey} />
+        </div>
+      )
 
     case 'verifyingApiKey':
       return <p className="text-sm text-text-muted">캐릭터 목록을 확인하고 있어요...</p>
@@ -20,19 +24,21 @@ export function OnboardingScreen(): React.JSX.Element {
           ? Math.round((prefetchProgress.completed / prefetchProgress.total) * 100)
           : 0
       return (
-        <div className="space-y-2 p-4">
-          <p className="text-sm text-text-muted">
-            캐릭터 정보를 준비하고 있어요
-            {prefetchProgress !== null ? ` (${prefetchProgress.completed}/${prefetchProgress.total})` : ''}
-          </p>
-          <div
-            role="progressbar"
-            aria-valuenow={percent}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            className="h-1.5 w-full overflow-hidden rounded-full bg-surface-2"
-          >
-            <div className="h-1.5 rounded-full bg-primary" style={{ width: `${percent}%` }} />
+        <div className="flex min-h-screen items-center justify-center p-4">
+          <div className="w-full space-y-2">
+            <p className="text-sm text-text-muted">
+              캐릭터 정보를 준비하고 있어요
+              {prefetchProgress !== null ? ` (${prefetchProgress.completed}/${prefetchProgress.total})` : ''}
+            </p>
+            <div
+              role="progressbar"
+              aria-valuenow={percent}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              className="h-1.5 w-full overflow-hidden rounded-full bg-surface-2"
+            >
+              <div className="h-1.5 rounded-full bg-primary" style={{ width: `${percent}%` }} />
+            </div>
           </div>
         </div>
       )
@@ -40,12 +46,14 @@ export function OnboardingScreen(): React.JSX.Element {
 
     case 'selectingAccount':
       return (
-        <AccountSelectionList
-          accounts={accounts}
-          isSubmitting={false}
-          errorMessage={null}
-          onSelect={selectAccount}
-        />
+        <div className="flex min-h-screen items-center justify-center p-4">
+          <AccountSelectionList
+            accounts={accounts}
+            isSubmitting={false}
+            errorMessage={null}
+            onSelect={selectAccount}
+          />
+        </div>
       )
 
     case 'completed':
@@ -54,20 +62,24 @@ export function OnboardingScreen(): React.JSX.Element {
     case 'error':
       if (accounts.length === 0) {
         return (
-          <ApiKeyForm
-            isSubmitting={false}
-            errorMessage={error !== null ? formatOnboardingError(error) : null}
-            onSubmit={submitApiKey}
-          />
+          <div className="flex min-h-screen items-center justify-center p-4">
+            <ApiKeyForm
+              isSubmitting={false}
+              errorMessage={error !== null ? formatOnboardingError(error) : null}
+              onSubmit={submitApiKey}
+            />
+          </div>
         )
       }
       return (
-        <AccountSelectionList
-          accounts={accounts}
-          isSubmitting={false}
-          errorMessage={error !== null ? formatOnboardingError(error) : null}
-          onSelect={selectAccount}
-        />
+        <div className="flex min-h-screen items-center justify-center p-4">
+          <AccountSelectionList
+            accounts={accounts}
+            isSubmitting={false}
+            errorMessage={error !== null ? formatOnboardingError(error) : null}
+            onSelect={selectAccount}
+          />
+        </div>
       )
   }
 }

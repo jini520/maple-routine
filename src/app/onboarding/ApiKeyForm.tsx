@@ -17,11 +17,7 @@ export function ApiKeyForm(props: ApiKeyFormProps): React.JSX.Element {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-[14px] bg-surface border border-border p-6 space-y-4">
-      <div className="h-32 flex items-center justify-center rounded-[10px] border-2 border-dashed border-border">
-        <p className="text-sm text-text-muted">API 키 발급 화면 예시</p>
-      </div>
-
+    <form onSubmit={handleSubmit} className="w-full rounded-[14px] bg-surface border border-border p-6 space-y-4">
       <p className="text-sm text-text-muted">
         <a
           href="https://openapi.nexon.com"
@@ -53,7 +49,7 @@ export function ApiKeyForm(props: ApiKeyFormProps): React.JSX.Element {
       <button
         type="submit"
         disabled={props.isSubmitting || apiKey.trim().length === 0}
-        className="rounded-full bg-primary text-bg font-semibold hover:bg-primary-hover px-5 py-2.5 disabled:opacity-50"
+        className="w-full rounded-full bg-primary text-bg font-semibold hover:bg-primary-hover px-5 py-2.5 disabled:opacity-50"
       >
         확인
       </button>

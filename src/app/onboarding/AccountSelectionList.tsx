@@ -1,6 +1,24 @@
-import { useState } from 'react'
 import type { MapleAccount } from '../../types'
 import { pickRepresentativeCharacter } from '../../features/onboarding/representative-character'
+import { useRepresentativePortraits } from '../../features/onboarding/use-representative-portraits'
+import { useState } from 'react'
+
+// BossProfitScreen의 CharacterAvatar와 동일한 얼굴 크롭 방식(ADR-015) — character/basic이
+// 반환하는 300x300 전신 이미지에서 얼굴 부분만 보이도록 확대·정렬한다. 아바타 크기가
+// 화면마다 다르게 튜닝되는 기존 관례를 따라 이 화면(w-9, 36px) 전용 상수를 둔다.
+const PORTRAIT_SOURCE_IMAGE_SIZE = 300
+const PORTRAIT_FACE_CROP_BOX = { x: 123, y: 128, size: 48 }
+const PORTRAIT_AVATAR_SIZE = 36
+
+function portraitFaceCropStyle(): React.CSSProperties {
+  const scale = PORTRAIT_AVATAR_SIZE / PORTRAIT_FACE_CROP_BOX.size
+  return {
+    width: PORTRAIT_SOURCE_IMAGE_SIZE * scale,
+    height: PORTRAIT_SOURCE_IMAGE_SIZE * scale,
+    left: -PORTRAIT_FACE_CROP_BOX.x * scale,
+    top: -PORTRAIT_FACE_CROP_BOX.y * scale,
+  }
+}
 
 export interface AccountSelectionListProps {
   accounts: MapleAccount[]
@@ -11,9 +29,10 @@ export interface AccountSelectionListProps {
 
 export function AccountSelectionList(props: AccountSelectionListProps): React.JSX.Element {
   const [highlightedAccountId, setHighlightedAccountId] = useState<string | null>(null)
+  const portraits = useRepresentativePortraits(props.accounts)
 
   return (
-    <div className="rounded-[14px] bg-surface border border-border p-6 space-y-4">
+    <div className="w-full rounded-[14px] bg-surface border border-border p-6 space-y-4">
       <p className="text-sm text-text">사용할 메이플 ID를 선택해주세요.</p>
 
       {props.errorMessage !== null && <p className="text-sm text-error">{props.errorMessage}</p>}
@@ -36,13 +55,26 @@ export function AccountSelectionList(props: AccountSelectionListProps): React.JS
                     : 'w-full flex items-center gap-3 text-left rounded-[10px] border border-border px-4 py-3 hover:bg-primary/15 disabled:opacity-50'
                 }
               >
-                <span className="w-9 h-9 shrink-0 rounded-full bg-surface-2 border border-border" />
+                <span className="relative w-9 h-9 shrink-0 overflow-hidden rounded-full bg-surface-2 border border-border">
+                  {portraits[account.accountId] ? (
+                    <img
+                      src={portraits[account.accountId] ?? undefined}
+                      alt={representative.name}
+                      className="absolute max-w-none"
+                      style={portraitFaceCropStyle()}
+                    />
+                  ) : (
+                    <span className="flex h-full w-full items-center justify-center text-xs text-text-muted">
+                      ?
+                    </span>
+                  )}
+                </span>
                 <span className="flex flex-col">
                   <span className="text-sm text-text">
                     {representative.name} · {representative.jobClass} Lv.{representative.level}
                   </span>
                   <span className="text-sm text-text-muted">
-                    {representative.world} · 캐릭터 {account.characters.length}명
+                    {representative.world} · 캐릭터 {account.characters.length}개
                   </span>
                 </span>
               </button>

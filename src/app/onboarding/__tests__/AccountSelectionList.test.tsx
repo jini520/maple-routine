@@ -2,12 +2,24 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { MapleAccount } from '../../../types'
 import { AccountSelectionList } from '../AccountSelectionList'
+import { useRepresentativePortraits } from '../../../features/onboarding/use-representative-portraits'
+
+vi.mock('../../../features/onboarding/use-representative-portraits', () => ({
+  useRepresentativePortraits: vi.fn(),
+}))
+
+const mockedUseRepresentativePortraits = vi.mocked(useRepresentativePortraits)
+
+beforeEach(() => {
+  mockedUseRepresentativePortraits.mockReturnValue({})
+})
 
 afterEach(() => {
   cleanup()
+  vi.clearAllMocks()
 })
 
 const accounts: MapleAccount[] = [
@@ -27,15 +39,15 @@ const accounts: MapleAccount[] = [
 ]
 
 describe('AccountSelectionList', () => {
-  it('각 계정을 대표 캐릭터 "닉네임 · 직업 Lv.레벨"와 "월드 · 캐릭터 N명" 2줄로 렌더링한다', () => {
+  it('각 계정을 대표 캐릭터 "닉네임 · 직업 Lv.레벨"와 "월드 · 캐릭터 N개" 2줄로 렌더링한다', () => {
     render(
       <AccountSelectionList accounts={accounts} isSubmitting={false} errorMessage={null} onSelect={vi.fn()} />,
     )
 
     expect(screen.getByText('내옆에최성일 · 아크메이지(썬,콜) Lv.211')).toBeInTheDocument()
-    expect(screen.getByText('베라 · 캐릭터 1명')).toBeInTheDocument()
+    expect(screen.getByText('베라 · 캐릭터 1개')).toBeInTheDocument()
     expect(screen.getByText('낟낟 · 렌 Lv.293')).toBeInTheDocument()
-    expect(screen.getByText('엘리시움 · 캐릭터 2명')).toBeInTheDocument()
+    expect(screen.getByText('엘리시움 · 캐릭터 2개')).toBeInTheDocument()
   })
 
   it('"계속하기" 버튼은 초기에 비활성화 상태다', () => {
@@ -93,5 +105,32 @@ describe('AccountSelectionList', () => {
     )
 
     expect(screen.getByText('기기에 저장하지 못했습니다. 다시 시도해주세요')).toBeInTheDocument()
+  })
+
+  it('대표 캐릭터의 초상화 URL이 있으면 이미지를 렌더링한다', () => {
+    mockedUseRepresentativePortraits.mockReturnValue({
+      'da9b2f2-account-hash-1': 'https://example.com/portrait.png',
+      '69e3525-account-hash-2': null,
+    })
+
+    render(
+      <AccountSelectionList accounts={accounts} isSubmitting={false} errorMessage={null} onSelect={vi.fn()} />,
+    )
+
+    expect(screen.getByAltText('내옆에최성일')).toHaveAttribute('src', 'https://example.com/portrait.png')
+  })
+
+  it('초상화를 찾지 못한 계정은 "?"로 대체 표시한다', () => {
+    mockedUseRepresentativePortraits.mockReturnValue({
+      'da9b2f2-account-hash-1': null,
+      '69e3525-account-hash-2': null,
+    })
+
+    render(
+      <AccountSelectionList accounts={accounts} isSubmitting={false} errorMessage={null} onSelect={vi.fn()} />,
+    )
+
+    expect(screen.getAllByText('?')).toHaveLength(2)
+    expect(screen.queryByRole('img')).not.toBeInTheDocument()
   })
 })
