@@ -1,4 +1,4 @@
-import { Capacitor } from '@capacitor/core'
+import { Capacitor, CapacitorHttp } from '@capacitor/core'
 import { CapacitorUpdater } from '@capgo/capacitor-updater'
 
 // scripts/publish-live-update.mjs가 이 저장소의 "live-update-latest" 릴리스에 latest.json을 올린다(ADR-022).
@@ -44,9 +44,11 @@ export async function checkForLiveUpdate(manifestUrl: string): Promise<void> {
   if (Capacitor.getPlatform() === 'web') return
 
   try {
-    const response = await fetch(manifestUrl)
-    if (!response.ok) return
-    const manifest = (await response.json()) as LiveUpdateManifest
+    // GitHub Releases 응답에는 Access-Control-Allow-Origin이 없어 WebView의 일반 fetch()는
+    // CORS로 차단된다. CapacitorHttp는 네이티브에서 직접 요청해 CORS 적용 대상이 아니다.
+    const response = await CapacitorHttp.get({ url: manifestUrl })
+    if (response.status < 200 || response.status >= 300) return
+    const manifest = response.data as LiveUpdateManifest
 
     const { bundle } = await CapacitorUpdater.current()
     if (!isNewerVersion(bundle.version, manifest.version)) return

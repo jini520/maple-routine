@@ -8,8 +8,9 @@ import {
   resolveLiveUpdateManifestUrl,
 } from '../live-update'
 
-const { getPlatformMock } = vi.hoisted(() => ({
+const { getPlatformMock, httpGetMock } = vi.hoisted(() => ({
   getPlatformMock: vi.fn(),
+  httpGetMock: vi.fn(),
 }))
 
 const { currentMock, downloadMock, nextMock, notifyAppReadyMock } = vi.hoisted(() => ({
@@ -21,6 +22,7 @@ const { currentMock, downloadMock, nextMock, notifyAppReadyMock } = vi.hoisted((
 
 vi.mock('@capacitor/core', () => ({
   Capacitor: { getPlatform: getPlatformMock },
+  CapacitorHttp: { get: httpGetMock },
 }))
 
 vi.mock('@capgo/capacitor-updater', () => ({
@@ -32,16 +34,13 @@ vi.mock('@capgo/capacitor-updater', () => ({
   },
 }))
 
-const fetchMock = vi.fn()
-
 beforeEach(() => {
   getPlatformMock.mockReset().mockReturnValue('android')
   currentMock.mockReset()
   downloadMock.mockReset()
   nextMock.mockReset()
   notifyAppReadyMock.mockReset()
-  fetchMock.mockReset()
-  vi.stubGlobal('fetch', fetchMock)
+  httpGetMock.mockReset()
 })
 
 describe('isNewerVersion', () => {
@@ -79,18 +78,18 @@ describe('checkForLiveUpdate', () => {
 
     await checkForLiveUpdate(manifestUrl)
 
-    expect(fetchMock).not.toHaveBeenCalled()
+    expect(httpGetMock).not.toHaveBeenCalled()
   })
 
   it('manifest 조회가 네트워크 오류로 실패하면 조용히 종료한다', async () => {
-    fetchMock.mockRejectedValue(new Error('network error'))
+    httpGetMock.mockRejectedValue(new Error('network error'))
 
     await expect(checkForLiveUpdate(manifestUrl)).resolves.toBeUndefined()
     expect(downloadMock).not.toHaveBeenCalled()
   })
 
   it('manifest 응답이 실패 상태면 조용히 종료한다', async () => {
-    fetchMock.mockResolvedValue({ ok: false, json: vi.fn() })
+    httpGetMock.mockResolvedValue({ status: 404, data: null })
 
     await checkForLiveUpdate(manifestUrl)
 
@@ -98,9 +97,9 @@ describe('checkForLiveUpdate', () => {
   })
 
   it('현재 버전보다 최신이면 다운로드 후 next를 호출한다', async () => {
-    fetchMock.mockResolvedValue({
-      ok: true,
-      json: vi.fn().mockResolvedValue({ version: '1.1.0', url: 'https://cdn/1.1.0.zip', checksum: 'abc123' }),
+    httpGetMock.mockResolvedValue({
+      status: 200,
+      data: { version: '1.1.0', url: 'https://cdn/1.1.0.zip', checksum: 'abc123' },
     })
     currentMock.mockResolvedValue({
       bundle: { id: 'builtin', version: '1.0.0', downloaded: '', checksum: '', status: 'success' },
@@ -110,6 +109,7 @@ describe('checkForLiveUpdate', () => {
 
     await checkForLiveUpdate(manifestUrl)
 
+    expect(httpGetMock).toHaveBeenCalledWith({ url: manifestUrl })
     expect(downloadMock).toHaveBeenCalledWith({
       url: 'https://cdn/1.1.0.zip',
       version: '1.1.0',
@@ -119,9 +119,9 @@ describe('checkForLiveUpdate', () => {
   })
 
   it('이미 최신 버전이면 다운로드하지 않는다', async () => {
-    fetchMock.mockResolvedValue({
-      ok: true,
-      json: vi.fn().mockResolvedValue({ version: '1.0.0', url: 'https://cdn/1.0.0.zip', checksum: 'abc123' }),
+    httpGetMock.mockResolvedValue({
+      status: 200,
+      data: { version: '1.0.0', url: 'https://cdn/1.0.0.zip', checksum: 'abc123' },
     })
     currentMock.mockResolvedValue({
       bundle: { id: 'builtin', version: '1.0.0', downloaded: '', checksum: '', status: 'success' },
@@ -135,9 +135,9 @@ describe('checkForLiveUpdate', () => {
   })
 
   it('다운로드나 체크섬 검증이 실패해도 앱이 죽지 않는다', async () => {
-    fetchMock.mockResolvedValue({
-      ok: true,
-      json: vi.fn().mockResolvedValue({ version: '1.1.0', url: 'https://cdn/1.1.0.zip', checksum: 'abc123' }),
+    httpGetMock.mockResolvedValue({
+      status: 200,
+      data: { version: '1.1.0', url: 'https://cdn/1.1.0.zip', checksum: 'abc123' },
     })
     currentMock.mockResolvedValue({
       bundle: { id: 'builtin', version: '1.0.0', downloaded: '', checksum: '', status: 'success' },
