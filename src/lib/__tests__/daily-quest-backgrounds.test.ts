@@ -16,6 +16,13 @@ describe('getDailyQuestBackgroundUrl', () => {
   it('존재하지 않는 slug면 null을 반환한다', () => {
     expect(getDailyQuestBackgroundUrl('존재하지않는슬러그')).toBeNull()
   })
+
+  it('jpg 파일도 조회된다 (flagRace -> flagRace.jpg)', () => {
+    const url = getDailyQuestBackgroundUrl('flagRace')
+
+    expect(url).not.toBeNull()
+    expect(url).toEqual(expect.stringContaining('flagRace'))
+  })
 })
 
 describe('getDailyQuestRegionCrop', () => {

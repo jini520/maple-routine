@@ -7,7 +7,14 @@ import { matchDailyQuestRegionSlug, stripDailyQuestPrefix } from '../../lib/dail
 import { getBossPortraitCrop } from '../../lib/boss-icons'
 import type { BossPortraitCrop } from '../../lib/boss-icons'
 import type { DailyQuestRegionCrop } from '../../lib/daily-quest-backgrounds'
-import { DailyQuestCard, EpicDungeonCard, GuildContentCard, MonsterParkCard } from './ContentScreen'
+import {
+  DailyQuestCard,
+  EpicDungeonCard,
+  GuildFlagRaceCard,
+  GuildMissionPointsCard,
+  GuildUndergroundWaterwayCard,
+  MonsterParkCard,
+} from './ContentScreen'
 
 const MONSTER_PARK_BACKGROUND_SLUG = 'monsterPark'
 const MONSTER_PARK_CONTENT: DailyContent = {
@@ -39,7 +46,7 @@ const GUILD_PREVIEW_FLAG_RACE = weeklyContent('[길드] 플래그 레이스')
 // 크롭 조정이 끝나면 이 파일과 App.tsx의 /debug/quest-cards 라우트, ContentScreen.tsx의
 // DailyQuestCard export를 삭제해도 된다.
 
-const POSITION_STEP = 5
+const POSITION_STEP = 1
 const SCALE_STEP = 10
 
 interface DailyQuestRegionEntry {
@@ -322,17 +329,24 @@ export function DailyQuestCardPreview(): React.JSX.Element {
       ))}
 
       <SlugCropAdjuster
-        label="길드"
+        label="길드 지하 수로"
         slug="arcanus"
         initialCrop={getBossPortraitCrop('arcanus')}
-        renderCard={(crop) => (
-          <GuildContentCard
-            undergroundWaterway={GUILD_PREVIEW_UNDERGROUND_WATERWAY}
-            missionPoints={GUILD_PREVIEW_MISSION_POINTS}
-            flagRace={GUILD_PREVIEW_FLAG_RACE}
-            crop={crop}
-          />
-        )}
+        renderCard={(crop) => <GuildUndergroundWaterwayCard content={GUILD_PREVIEW_UNDERGROUND_WATERWAY} crop={crop} />}
+      />
+
+      <SlugCropAdjuster
+        label="길드 주간 미션 포인트"
+        slug="hallOfHeroes"
+        initialCrop={getDailyQuestRegionCrop('hallOfHeroes')}
+        renderCard={(crop) => <GuildMissionPointsCard content={GUILD_PREVIEW_MISSION_POINTS} crop={crop} />}
+      />
+
+      <SlugCropAdjuster
+        label="길드 플래그 레이스"
+        slug="flagRace"
+        initialCrop={getDailyQuestRegionCrop('flagRace')}
+        renderCard={(crop) => <GuildFlagRaceCard content={GUILD_PREVIEW_FLAG_RACE} crop={crop} />}
       />
 
       {ALL_QUESTS.map((content) => (

@@ -35,7 +35,9 @@ const GUILD_PREFIX = '[길드] '
 const GUILD_MISSION_POINTS_NAME = '[길드] 주간 미션 포인트'
 const GUILD_UNDERGROUND_WATERWAY_NAME = '[길드] 지하 수로'
 const GUILD_FLAG_RACE_NAME = '[길드] 플래그 레이스'
-const GUILD_BACKGROUND_SLUG = 'arcanus'
+const GUILD_UNDERGROUND_WATERWAY_BACKGROUND_SLUG = 'arcanus'
+const GUILD_MISSION_POINTS_BACKGROUND_SLUG = 'hallOfHeroes'
+const GUILD_FLAG_RACE_BACKGROUND_SLUG = 'flagRace'
 
 const QUEST_STATE_LABELS: Record<0 | 1 | 2, string> = {
   0: '시작 안함',
@@ -164,9 +166,9 @@ export function MonsterParkCard(props: {
               aria-valuenow={content.nowCount}
               aria-valuemin={0}
               aria-valuemax={content.maxCount}
-              className="h-1.5 w-full overflow-hidden rounded-full bg-white/15"
+              className="h-1.5 w-full overflow-hidden rounded-full bg-primary/15"
             >
-              <div className="h-1.5 rounded-full bg-white/80" style={{ width: `${progressPercent}%` }} />
+              <div className="h-1.5 rounded-full bg-primary" style={{ width: `${progressPercent}%` }} />
             </div>
           </div>
         )}
@@ -286,18 +288,61 @@ export function MuLungDojoCard(props: { content: WeeklyContent }): React.JSX.Ele
   )
 }
 
-export function GuildContentCard(props: {
-  undergroundWaterway: WeeklyContent
-  missionPoints: WeeklyContent | null
-  flagRace: WeeklyContent | null
+function stripGuildPrefix(name: string): string {
+  return name.startsWith(GUILD_PREFIX) ? name.slice(GUILD_PREFIX.length) : name
+}
+
+export function GuildUndergroundWaterwayCard(props: {
+  content: WeeklyContent
   crop?: BossPortraitCrop
 }): React.JSX.Element {
-  const { undergroundWaterway, missionPoints, flagRace } = props
-  const displayName = undergroundWaterway.name.startsWith(GUILD_PREFIX)
-    ? undergroundWaterway.name.slice(GUILD_PREFIX.length)
-    : undergroundWaterway.name
-  const backgroundUrl = getBossPortraitUrl(GUILD_BACKGROUND_SLUG)
-  const crop = props.crop ?? getBossPortraitCrop(GUILD_BACKGROUND_SLUG)
+  const { content } = props
+  const displayName = stripGuildPrefix(content.name)
+  const backgroundUrl = getBossPortraitUrl(GUILD_UNDERGROUND_WATERWAY_BACKGROUND_SLUG)
+  const crop = props.crop ?? getBossPortraitCrop(GUILD_UNDERGROUND_WATERWAY_BACKGROUND_SLUG)
+
+  return (
+    <div className="relative h-20 overflow-hidden rounded-[14px] border border-[#37323E] bg-[#1A1720]">
+      {backgroundUrl !== null && (
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url(${backgroundUrl})`,
+            backgroundSize: crop.size,
+            backgroundPosition: crop.position,
+            filter: 'saturate(.85) brightness(.8)',
+            opacity: 0.65,
+            maskImage: CARD_MASK_IMAGE,
+            WebkitMaskImage: CARD_MASK_IMAGE,
+          }}
+        />
+      )}
+
+      <div className="relative flex h-full items-center justify-between" style={{ padding: '0 14px' }}>
+        <div className="flex items-center gap-2">
+          <CategoryBadge label="길드" />
+          <span className="text-sm font-medium text-[#E8DFEC]" style={{ textShadow: CARD_NAME_TEXT_SHADOW }}>
+            {displayName}
+          </span>
+        </div>
+
+        <span className="rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary">
+          {content.nowCount}점
+        </span>
+      </div>
+    </div>
+  )
+}
+
+export function GuildMissionPointsCard(props: {
+  content: WeeklyContent
+  crop?: DailyQuestRegionCrop
+}): React.JSX.Element {
+  const { content } = props
+  const displayName = stripGuildPrefix(content.name)
+  const backgroundUrl = getDailyQuestBackgroundUrl(GUILD_MISSION_POINTS_BACKGROUND_SLUG)
+  const crop = props.crop ?? getDailyQuestRegionCrop(GUILD_MISSION_POINTS_BACKGROUND_SLUG)
+  const progressPercent = content.maxCount > 0 ? Math.min((content.nowCount / content.maxCount) * 100, 100) : 0
 
   return (
     <div className="relative h-28 overflow-hidden rounded-[14px] border border-[#37323E] bg-[#1A1720]">
@@ -316,32 +361,74 @@ export function GuildContentCard(props: {
         />
       )}
 
-      {/* 그리드 1열(뱃지)/2열(제목·하단 문구)로 나눠, 하단 문구의 시작 위치가 뱃지 너비와
-          무관하게 항상 "지하 수로" 제목과 같은 x좌표에서 시작하도록 한다. */}
-      <div
-        className="relative grid h-full"
-        style={{ gridTemplateColumns: 'auto 1fr', gridTemplateRows: '80px 1fr', padding: '0 14px', columnGap: '8px' }}
-      >
-        <div className="flex items-center" style={{ gridColumn: 1, gridRow: 1 }}>
-          <CategoryBadge label="길드" />
+      <div className="relative flex h-full flex-col">
+        <div className="flex h-20 shrink-0 items-center justify-between" style={{ padding: '0 14px' }}>
+          <div className="flex items-center gap-2">
+            <CategoryBadge label="길드" />
+            <span className="text-sm font-medium text-[#E8DFEC]" style={{ textShadow: CARD_NAME_TEXT_SHADOW }}>
+              {displayName}
+            </span>
+          </div>
+
+          <span className="rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary">
+            {content.nowCount}/{content.maxCount}
+          </span>
         </div>
 
-        <div className="flex items-center justify-between" style={{ gridColumn: 2, gridRow: 1 }}>
+        {content.maxCount > 0 && (
+          <div className="flex flex-1 items-start px-[14px] pt-0">
+            <div
+              role="progressbar"
+              aria-valuenow={content.nowCount}
+              aria-valuemin={0}
+              aria-valuemax={content.maxCount}
+              className="h-1.5 w-full overflow-hidden rounded-full bg-primary/15"
+            >
+              <div className="h-1.5 rounded-full bg-primary" style={{ width: `${progressPercent}%` }} />
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+export function GuildFlagRaceCard(props: {
+  content: WeeklyContent
+  crop?: DailyQuestRegionCrop
+}): React.JSX.Element {
+  const { content } = props
+  const displayName = stripGuildPrefix(content.name)
+  const backgroundUrl = getDailyQuestBackgroundUrl(GUILD_FLAG_RACE_BACKGROUND_SLUG)
+  const crop = props.crop ?? getDailyQuestRegionCrop(GUILD_FLAG_RACE_BACKGROUND_SLUG)
+  const questState: 0 | 2 = content.nowCount > 0 ? 2 : 0
+
+  return (
+    <div className="relative h-20 overflow-hidden rounded-[14px] border border-[#37323E] bg-[#1A1720]">
+      {backgroundUrl !== null && (
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url(${backgroundUrl})`,
+            backgroundSize: crop.size,
+            backgroundPosition: crop.position,
+            filter: 'saturate(.85) brightness(.8)',
+            opacity: 0.65,
+            maskImage: CARD_MASK_IMAGE,
+            WebkitMaskImage: CARD_MASK_IMAGE,
+          }}
+        />
+      )}
+
+      <div className="relative flex h-full items-center justify-between" style={{ padding: '0 14px' }}>
+        <div className="flex items-center gap-2">
+          <CategoryBadge label="길드" />
           <span className="text-sm font-medium text-[#E8DFEC]" style={{ textShadow: CARD_NAME_TEXT_SHADOW }}>
             {displayName}
           </span>
-          <span className="rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary">
-            {undergroundWaterway.nowCount}점
-          </span>
         </div>
 
-        <div style={{ gridColumn: 1, gridRow: 2 }} />
-
-        <div className="flex items-start pt-0" style={{ gridColumn: 2, gridRow: 2 }}>
-          <p className="text-xs text-[#E8DFEC]/70">
-            주간 미션 포인트: {missionPoints?.nowCount ?? 0} · 플래그 레이스: {flagRace?.nowCount ?? 0}
-          </p>
-        </div>
+        <QuestStateBadge questState={questState} />
       </div>
     </div>
   )
@@ -399,25 +486,8 @@ export function ContentScreen(): React.JSX.Element {
     selected !== null ? selected.dailyContents.filter((content) => content.isRegistered) : []
 
   const weeklyContents = selected !== null ? selected.weeklyContents : []
-  const guildMissionPoints = weeklyContents.find((content) => content.name === GUILD_MISSION_POINTS_NAME) ?? null
-  const guildUndergroundWaterway =
-    weeklyContents.find((content) => content.name === GUILD_UNDERGROUND_WATERWAY_NAME) ?? null
-  const guildFlagRace = weeklyContents.find((content) => content.name === GUILD_FLAG_RACE_NAME) ?? null
 
-  // 길드 서브 항목(미션 포인트·플래그 레이스) 둘 다 게임 내 스케줄러에 미등록이면 묶음 카드 대신
-  // 등록된 길드 항목(대개 지하 수로만)을 일반 카드로 표시한다 (ADR-021).
-  const showGuildCard =
-    guildUndergroundWaterway !== null &&
-    guildUndergroundWaterway.isRegistered &&
-    ((guildMissionPoints?.isRegistered ?? false) || (guildFlagRace?.isRegistered ?? false))
-
-  const registeredWeeklyContents = weeklyContents.filter((content) => {
-    if (!content.isRegistered) return false
-    if (showGuildCard && (content.name === GUILD_MISSION_POINTS_NAME || content.name === GUILD_FLAG_RACE_NAME)) {
-      return false
-    }
-    return true
-  })
+  const registeredWeeklyContents = weeklyContents.filter((content) => content.isRegistered)
 
   async function handleSaveTracking(ocids: string[]): Promise<void> {
     await saveTrackedOcids(ocids)
@@ -633,14 +703,26 @@ export function ContentScreen(): React.JSX.Element {
               {registeredWeeklyContents.length > 0 && (
                 <ul className="space-y-3">
                   {registeredWeeklyContents.map((content) => {
-                    if (content.name === GUILD_UNDERGROUND_WATERWAY_NAME && showGuildCard) {
+                    if (content.name === GUILD_UNDERGROUND_WATERWAY_NAME) {
                       return (
                         <li key={content.name}>
-                          <GuildContentCard
-                            undergroundWaterway={content}
-                            missionPoints={guildMissionPoints}
-                            flagRace={guildFlagRace}
-                          />
+                          <GuildUndergroundWaterwayCard content={content} />
+                        </li>
+                      )
+                    }
+
+                    if (content.name === GUILD_MISSION_POINTS_NAME) {
+                      return (
+                        <li key={content.name}>
+                          <GuildMissionPointsCard content={content} />
+                        </li>
+                      )
+                    }
+
+                    if (content.name === GUILD_FLAG_RACE_NAME) {
+                      return (
+                        <li key={content.name}>
+                          <GuildFlagRaceCard content={content} />
                         </li>
                       )
                     }

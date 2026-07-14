@@ -455,18 +455,14 @@ describe('ContentScreen', () => {
     expect(screen.queryByText('완료')).not.toBeInTheDocument()
   })
 
-  it('ADR-021: 길드 항목 3종은 하나의 카드로 묶여 지하 수로가 메인, 나머지는 하단에 점수로 표시된다', async () => {
+  it('ADR-021 정정: 길드 지하 수로는 독립 카드로 표시되고 점수 뱃지를 보여준다', async () => {
     mockStore({
       status: 'loaded',
       trackedOcids: ['ocid-1'],
       characters: [
         character({
           ocid: 'ocid-1',
-          weeklyContents: [
-            { name: '[길드] 주간 미션 포인트', kind: 'contents', isRegistered: true, nowCount: 10, maxCount: 10 },
-            { name: '[길드] 지하 수로', kind: 'contents', isRegistered: true, nowCount: 13416, maxCount: 0 },
-            { name: '[길드] 플래그 레이스', kind: 'contents', isRegistered: true, nowCount: 0, maxCount: 0 },
-          ],
+          weeklyContents: [{ name: '[길드] 지하 수로', kind: 'contents', isRegistered: true, nowCount: 13416, maxCount: 0 }],
         }),
       ],
     })
@@ -478,11 +474,53 @@ describe('ContentScreen', () => {
     expect(screen.getByText('길드')).toBeInTheDocument()
     expect(screen.getByText('지하 수로')).toBeInTheDocument()
     expect(screen.getByText('13416점')).toBeInTheDocument()
-    expect(screen.getByText('주간 미션 포인트: 10 · 플래그 레이스: 0')).toBeInTheDocument()
     expect(screen.queryByText('[길드] 지하 수로')).not.toBeInTheDocument()
   })
 
-  it('ADR-021: 길드 미션 포인트·플래그 레이스가 둘 다 미등록이면 지하 수로를 일반 카드로 표시한다', async () => {
+  it('ADR-021 정정: 길드 주간 미션 포인트는 독립 카드로 표시되고 진행률 바를 보여준다', async () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [
+        character({
+          ocid: 'ocid-1',
+          weeklyContents: [{ name: '[길드] 주간 미션 포인트', kind: 'contents', isRegistered: true, nowCount: 10, maxCount: 10 }],
+        }),
+      ],
+    })
+
+    render(<ContentScreen />)
+    await screen.findByRole('combobox')
+    fireEvent.click(screen.getByRole('button', { name: '주간' }))
+
+    expect(screen.getByText('길드')).toBeInTheDocument()
+    expect(screen.getByText('주간 미션 포인트')).toBeInTheDocument()
+    expect(screen.getByText('10/10')).toBeInTheDocument()
+    expect(screen.getByRole('progressbar')).toBeInTheDocument()
+  })
+
+  it('ADR-021 정정: 길드 플래그 레이스는 독립 카드로 표시되고 완료 뱃지를 보여준다', async () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [
+        character({
+          ocid: 'ocid-1',
+          weeklyContents: [{ name: '[길드] 플래그 레이스', kind: 'contents', isRegistered: true, nowCount: 1, maxCount: 0 }],
+        }),
+      ],
+    })
+
+    render(<ContentScreen />)
+    await screen.findByRole('combobox')
+    fireEvent.click(screen.getByRole('button', { name: '주간' }))
+
+    expect(screen.getByText('길드')).toBeInTheDocument()
+    expect(screen.getByText('플래그 레이스')).toBeInTheDocument()
+    expect(screen.getByText('완료')).toBeInTheDocument()
+  })
+
+  it('ADR-021 정정: 길드 항목은 서로 독립적으로 표시되어 일부만 등록돼도 나머지에 영향 없다', async () => {
     mockStore({
       status: 'loaded',
       trackedOcids: ['ocid-1'],
@@ -502,8 +540,9 @@ describe('ContentScreen', () => {
     await screen.findByRole('combobox')
     fireEvent.click(screen.getByRole('button', { name: '주간' }))
 
-    expect(screen.getByText(/\[길드\] 지하 수로/)).toBeInTheDocument()
-    expect(screen.queryByText('13416점')).not.toBeInTheDocument()
-    expect(screen.queryByText('길드')).not.toBeInTheDocument()
+    expect(screen.getByText('지하 수로')).toBeInTheDocument()
+    expect(screen.getByText('13416점')).toBeInTheDocument()
+    expect(screen.queryByText('주간 미션 포인트')).not.toBeInTheDocument()
+    expect(screen.queryByText('플래그 레이스')).not.toBeInTheDocument()
   })
 })

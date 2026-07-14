@@ -16,5 +16,7 @@
   "carcion": { "size": "190% auto", "position": "45% 45%" },
   "tallahart": { "size": "260% auto", "position": "0% 70%" },
   "geardrock": { "size": "220% auto", "position": "70% 60%" },
-  "monsterPark": { "size": "250% auto", "position": "5% 60%" }
+  "monsterPark": { "size": "250% auto", "position": "5% 60%" },
+  "hallOfHeroes": { "size": "200% auto", "position": "15% 55%" },
+  "flagRace": { "size": "180% auto", "position": "70% 65%" }
 }
