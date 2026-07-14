@@ -403,113 +403,135 @@ export function BossProfitScreen(): React.JSX.Element {
   const totalMeso = characterGroups.reduce((sum, group) => sum + groupTotalMeso(group), 0)
 
   return (
-    <div className="p-4 space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-text">보스 수익</h1>
-        <button
-          type="button"
-          onClick={() => refresh(trackedOcids ?? [])}
-          aria-label="새로고침"
-          className="p-2 text-primary-text hover:text-primary-hover"
-        >
-          <RefreshCw className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
-        </button>
+    <div className="-mt-[env(safe-area-inset-top)] space-y-4">
+      {/* 제목~총 수익 카드까지는 화면 상단에 고정하고 그 아래 캐릭터 아코디언 목록만
+          스크롤되게 한다(사용자 요청, 2026-07-14) — content-scheduler/boss-scheduler와
+          동일한 sticky 헤더 패턴(docs/UI_GUIDE.md "스크롤 영역" 참고)을 그대로 재사용한다. */}
+      <div className="sticky top-0 z-10 bg-bg px-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-2">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-lg font-semibold text-text">보스 수익</h1>
+            <button
+              type="button"
+              onClick={() => refresh(trackedOcids ?? [])}
+              aria-label="새로고침"
+              className="p-2 text-primary-text hover:text-primary-hover"
+            >
+              <RefreshCw className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={() => setTab('weekly')}
+              className={
+                tab === 'weekly'
+                  ? 'rounded-full bg-primary/15 px-3 py-[5px] text-sm font-semibold text-primary'
+                  : 'px-3 text-sm font-medium text-text-muted'
+              }
+            >
+              주간
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab('monthly')}
+              className={
+                tab === 'monthly'
+                  ? 'rounded-full bg-primary/15 px-3 py-[5px] text-sm font-semibold text-primary'
+                  : 'px-3 text-sm font-medium text-text-muted'
+              }
+            >
+              월간
+            </button>
+          </div>
+
+          <div className="flex items-center justify-center gap-4">
+            <button
+              type="button"
+              onClick={() => goToPreviousPeriod()}
+              disabled={isPrevDisabled}
+              aria-label="이전 기간"
+              className="flex h-7 w-7 items-center justify-center rounded-full border border-border text-text disabled:opacity-30"
+            >
+              <ChevronLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+            </button>
+
+            <div className="text-center">
+              <p className="text-sm font-semibold text-text">{periodLabel.primary}</p>
+              <p className="mt-0.5 text-xs text-text-muted tabular-nums">{periodLabel.secondary}</p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => goToNextPeriod()}
+              disabled={isNextDisabled}
+              aria-label="다음 기간"
+              className="flex h-7 w-7 items-center justify-center rounded-full border border-border text-text disabled:opacity-30"
+            >
+              <ChevronRight className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+            </button>
+          </div>
+
+          {staleCharacterNames.length > 0 && (
+            <p className="text-sm text-error">
+              일부 캐릭터 동기화 실패: {staleCharacterNames.join(', ')} — 마지막 동기화 결과를 표시 중입니다
+            </p>
+          )}
+
+          {!isPeriodLoading && (status === 'idle' || status === 'loading') && characterGroups.length === 0 && (
+            <p className="text-sm text-text-muted">불러오는 중...</p>
+          )}
+
+          {status === 'error' && (
+            <p className="text-sm text-error">
+              {error !== null ? formatScheduleSyncError(error) : '오류가 발생했습니다'}
+            </p>
+          )}
+
+          {!isPeriodLoading && periodUnavailable && (
+            <p className="text-sm text-error">이 기간을 불러오지 못했습니다 — 다시 시도해주세요</p>
+          )}
+
+          {!isPeriodLoading && characterGroups.length > 0 && (
+            <div className="rounded-[14px] bg-surface border border-border shadow-[0_1px_2px_rgba(0,0,0,0.3),0_4px_12px_rgba(153,117,179,0.18)] p-6 text-center">
+              <p className="text-sm text-text-muted">{periodLabel.primary} 총 수익</p>
+              <p className="text-lg font-semibold text-text">{totalMeso.toLocaleString()} 메소</p>
+            </div>
+          )}
+        </div>
+
+        {/* 헤더 아래에 살짝 겹쳐 그라데이션+블러로 카드가 잘려 보이지 않고 자연스럽게
+            사라지도록 한다(content-scheduler/boss-scheduler와 동일한 패턴). */}
+        <div
+          className="pointer-events-none absolute inset-x-0 top-full h-8 bg-gradient-to-b from-bg to-transparent backdrop-blur-sm"
+          style={{
+            maskImage: 'linear-gradient(to bottom, black, transparent)',
+            WebkitMaskImage: 'linear-gradient(to bottom, black, transparent)',
+          }}
+          aria-hidden="true"
+        />
       </div>
 
-      <div className="flex items-center gap-4">
-        <button
-          type="button"
-          onClick={() => setTab('weekly')}
-          className={
-            tab === 'weekly'
-              ? 'rounded-full bg-primary/15 px-3 py-[5px] text-sm font-semibold text-primary'
-              : 'px-3 text-sm font-medium text-text-muted'
-          }
-        >
-          주간
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab('monthly')}
-          className={
-            tab === 'monthly'
-              ? 'rounded-full bg-primary/15 px-3 py-[5px] text-sm font-semibold text-primary'
-              : 'px-3 text-sm font-medium text-text-muted'
-          }
-        >
-          월간
-        </button>
+      <div className="space-y-4 px-4 pb-4">
+        {isPeriodLoading && (
+          <div className="rounded-[14px] border border-dashed border-border p-6 flex flex-col items-center gap-3 text-center">
+            <div className="h-6 w-6 rounded-full border-[3px] border-border border-t-primary animate-spin motion-reduce:animate-none" />
+            <p className="text-xs text-text-muted">{periodLabel.primary} 기록을 불러오는 중...</p>
+          </div>
+        )}
+
+        {!isPeriodLoading && status === 'loaded' && characterGroups.length === 0 && (
+          <div className="rounded-[14px] border border-dashed border-border p-4 text-sm text-text-muted">
+            아직 처치한 보스가 없습니다
+          </div>
+        )}
+
+        {!isPeriodLoading &&
+          characterGroups.map((group) => (
+            <CharacterAccordion key={group.ocid} group={group} tab={tab} setPartySize={setPartySize} now={now} />
+          ))}
       </div>
-
-      <div className="flex items-center justify-center gap-4">
-        <button
-          type="button"
-          onClick={() => goToPreviousPeriod()}
-          disabled={isPrevDisabled}
-          aria-label="이전 기간"
-          className="flex h-7 w-7 items-center justify-center rounded-full border border-border text-text disabled:opacity-30"
-        >
-          <ChevronLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
-        </button>
-
-        <div className="text-center">
-          <p className="text-sm font-semibold text-text">{periodLabel.primary}</p>
-          <p className="mt-0.5 text-xs text-text-muted tabular-nums">{periodLabel.secondary}</p>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => goToNextPeriod()}
-          disabled={isNextDisabled}
-          aria-label="다음 기간"
-          className="flex h-7 w-7 items-center justify-center rounded-full border border-border text-text disabled:opacity-30"
-        >
-          <ChevronRight className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
-        </button>
-      </div>
-
-      {staleCharacterNames.length > 0 && (
-        <p className="text-sm text-error">
-          일부 캐릭터 동기화 실패: {staleCharacterNames.join(', ')} — 마지막 동기화 결과를 표시 중입니다
-        </p>
-      )}
-
-      {!isPeriodLoading && (status === 'idle' || status === 'loading') && characterGroups.length === 0 && (
-        <p className="text-sm text-text-muted">불러오는 중...</p>
-      )}
-
-      {status === 'error' && (
-        <p className="text-sm text-error">{error !== null ? formatScheduleSyncError(error) : '오류가 발생했습니다'}</p>
-      )}
-
-      {isPeriodLoading && (
-        <div className="rounded-[14px] border border-dashed border-border p-6 flex flex-col items-center gap-3 text-center">
-          <div className="h-6 w-6 rounded-full border-[3px] border-border border-t-primary animate-spin motion-reduce:animate-none" />
-          <p className="text-xs text-text-muted">{periodLabel.primary} 기록을 불러오는 중...</p>
-        </div>
-      )}
-
-      {!isPeriodLoading && periodUnavailable && (
-        <p className="text-sm text-error">이 기간을 불러오지 못했습니다 — 다시 시도해주세요</p>
-      )}
-
-      {!isPeriodLoading && status === 'loaded' && characterGroups.length === 0 && (
-        <div className="rounded-[14px] border border-dashed border-border p-4 text-sm text-text-muted">
-          아직 처치한 보스가 없습니다
-        </div>
-      )}
-
-      {!isPeriodLoading && characterGroups.length > 0 && (
-        <div className="rounded-[14px] bg-surface border border-border shadow-[0_1px_2px_rgba(0,0,0,0.3),0_4px_12px_rgba(153,117,179,0.18)] p-6 text-center">
-          <p className="text-sm text-text-muted">{periodLabel.primary} 총 수익</p>
-          <p className="text-lg font-semibold text-text">{totalMeso.toLocaleString()} 메소</p>
-        </div>
-      )}
-
-      {!isPeriodLoading &&
-        characterGroups.map((group) => (
-          <CharacterAccordion key={group.ocid} group={group} tab={tab} setPartySize={setPartySize} now={now} />
-        ))}
     </div>
   )
 }
