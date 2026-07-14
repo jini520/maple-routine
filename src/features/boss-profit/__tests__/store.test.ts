@@ -68,7 +68,12 @@ vi.mock('../../../nexon/schedule', () => ({
   fetchSchedulerCharacterState: fetchSchedulerCharacterStateMock,
 }))
 
-import { getAdjacentPeriodKey, getCurrentBossProfitPeriod } from '../../../lib/boss-profit-period'
+import {
+  getAdjacentPeriodKey,
+  getBackfillQueryDate,
+  getCurrentBossProfitPeriod,
+  MIN_SCHEDULER_DATE,
+} from '../../../lib/boss-profit-period'
 import { useBossProfitStore } from '../store'
 
 function bossContent(overrides: Partial<BossContent> = {}): BossContent {
@@ -783,6 +788,37 @@ describe('useBossProfitStore', () => {
       const state = useBossProfitStore.getState()
       expect(state.periodUnavailable).toBe(true)
       expect(markPeriodCheckedMock).not.toHaveBeenCalled()
+    })
+
+    it('goToPreviousPeriod: MIN_SCHEDULER_DATE 이전 기간은 API를 호출하지 않고 곧바로 체크 완료로 처리한다', async () => {
+      syncSchedulesMock.mockResolvedValue([syncResult()])
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+
+      isPeriodCheckedMock.mockResolvedValue(false)
+      getBossProfitRecordsMock.mockResolvedValue([])
+      fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState())
+
+      // MIN_SCHEDULER_DATE 이전으로 넘어가기 바로 전 주까지 이동한다(경계를 넘는 마지막 한 걸음만
+      // 깨끗한 mock 상태로 관찰하기 위해).
+      for (let i = 0; i < 10; i += 1) {
+        const before = useBossProfitStore.getState().periodKey
+        const next = getAdjacentPeriodKey('weekly', before, 'prev')
+        if (getBackfillQueryDate('weekly', next) < MIN_SCHEDULER_DATE) {
+          break
+        }
+        await useBossProfitStore.getState().goToPreviousPeriod()
+      }
+
+      fetchSchedulerCharacterStateMock.mockClear()
+      markPeriodCheckedMock.mockClear()
+
+      await useBossProfitStore.getState().goToPreviousPeriod()
+
+      const targetPeriodKey = useBossProfitStore.getState().periodKey
+      expect(getBackfillQueryDate('weekly', targetPeriodKey) < MIN_SCHEDULER_DATE).toBe(true)
+      expect(fetchSchedulerCharacterStateMock).not.toHaveBeenCalled()
+      expect(markPeriodCheckedMock).toHaveBeenCalledWith('ocid-1', 'weekly', targetPeriodKey, expect.any(String))
+      expect(useBossProfitStore.getState().periodUnavailable).toBe(false)
     })
 
     it('goToNextPeriod: 이미 최신 기간이면 periodKey가 바뀌지 않고 아무 것도 호출하지 않는다', async () => {

@@ -8,6 +8,7 @@ import {
   getCurrentBossProfitPeriod,
   getWeeklyPeriodKeysInMonth,
   isLatestPeriod,
+  MIN_SCHEDULER_DATE,
 } from '../../lib/boss-profit-period'
 import { fetchSchedulerCharacterState } from '../../nexon/schedule'
 import { getAuthConfig } from '../../storage/api-key'
@@ -286,13 +287,22 @@ function buildBackfillTargets(tab: BossCycle, periodKey: string, ocids: string[]
 // 기록 로직과 동일하게 "기록이 없는 조합만" 기본값(파티 관리 설정, 없으면 1)으로 채운다.
 // 반환값은 이 target을 이번에 확인할 수 없었는지(periodUnavailable에 반영) 여부다.
 async function backfillTarget(target: BackfillTarget, now: Date): Promise<boolean> {
+  const date = getBackfillQueryDate(target.cycle, target.periodKey)
+
+  // 스케줄러 API가 존재하기 이전 기간(ADR-023 "추가 확인") — 재시도해도 영구히 실패하므로
+  // API를 호출하지 않고 곧바로 "확인 완료, 기록 없음"으로 처리한다. periodUnavailable(재시도
+  // 유도)이 아니라 일반적인 "기록 없음"과 동일하게 다룬다 — 이 기간은 애초에 데이터가 없다.
+  if (date < MIN_SCHEDULER_DATE) {
+    await markPeriodChecked(target.ocid, target.cycle, target.periodKey, now.toISOString())
+    return false
+  }
+
   const authConfig = await getAuthConfig()
   if (authConfig === null) {
     return true
   }
 
   try {
-    const date = getBackfillQueryDate(target.cycle, target.periodKey)
     const state = await fetchSchedulerCharacterState(authConfig.apiKey, target.ocid, date)
     const completedBosses = state.bossContents
       .map(matchBossContent)

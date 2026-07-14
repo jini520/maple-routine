@@ -6,7 +6,14 @@ import {
   getCurrentBossProfitPeriod,
   getWeeklyPeriodKeysInMonth,
   isLatestPeriod,
+  MIN_SCHEDULER_DATE,
 } from '../boss-profit-period'
+
+describe('MIN_SCHEDULER_DATE', () => {
+  it('사용자 실측(2026-07-14)으로 확인된 스케줄러 API 조회 가능 최소 날짜다', () => {
+    expect(MIN_SCHEDULER_DATE).toBe('2026-06-25')
+  })
+})
 
 describe('getCurrentBossProfitPeriod', () => {
   describe('weekly', () => {
