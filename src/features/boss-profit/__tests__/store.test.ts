@@ -72,6 +72,7 @@ import {
   getAdjacentPeriodKey,
   getBackfillQueryDate,
   getCurrentBossProfitPeriod,
+  getWeeklyPeriodKeysInMonth,
   MIN_SCHEDULER_DATE,
 } from '../../../lib/boss-profit-period'
 import { useBossProfitStore } from '../store'
@@ -738,6 +739,64 @@ describe('useBossProfitStore', () => {
       await flushMicrotasks()
 
       expect(useBossProfitStore.getState().rows).toEqual([])
+    })
+
+    it('월간 탭 캐시 단계에서도 이미 확정된 지난 주차 합계가 즉시 반영된다(syncSchedules 응답 전 weeklySubtotals 누락 방지)', async () => {
+      // 이번 달에 반드시 "지난 주차"가 존재하도록 날짜를 고정한다(월초에 테스트를 실행하면
+      // 지난 주차가 아예 없어 전제가 깨지는 걸 방지) — Date만 고정하고 타이머는 실제로 둬서
+      // 아래 flushMicrotasks(실제 setTimeout 기반)가 그대로 동작하게 한다.
+      vi.useFakeTimers({ toFake: ['Date'] })
+      vi.setSystemTime(new Date('2026-07-30T06:00:00.000Z'))
+
+      try {
+        syncSchedulesMock.mockResolvedValue([syncResult()])
+        await useBossProfitStore.getState().refresh(['ocid-1'])
+        await useBossProfitStore.getState().setTab('monthly')
+
+        const monthPeriodKey = useBossProfitStore.getState().periodKey
+        const currentWeeklyPeriodKey = getCurrentBossProfitPeriod('weekly', new Date()).periodKey
+        const pastWeekKey = getWeeklyPeriodKeysInMonth(monthPeriodKey).find(
+          (key) => key < currentWeeklyPeriodKey,
+        )
+        if (pastWeekKey === undefined) {
+          throw new Error('테스트 전제 실패: 고정한 날짜 기준 이번 달에 지난 주차가 있어야 한다')
+        }
+
+        const pastRecord: BossProfitRecord = {
+          ocid: 'ocid-1',
+          boss: '스우',
+          difficulty: '노멀',
+          cycle: 'weekly',
+          periodKey: pastWeekKey,
+          partySize: 2,
+          priceMeso: 4_000_000,
+          payoutMeso: 2_000_000,
+          recordedAt: '2026-07-01T00:00:00.000Z',
+        }
+
+        vi.clearAllMocks()
+        getBossProfitRecordsMock.mockResolvedValue([pastRecord])
+        getCachedSchedulerStateMock.mockResolvedValue(cachedEntry())
+        getCachedCharacterBasicMock.mockImplementation(async (ocid: string) => ({
+          profile: { name: `캐릭터-${ocid}`, level: 200, imageUrl: 'x', accessFlag: true },
+          cachedAt: '2026-07-01T00:00:00.000Z',
+        }))
+
+        const pending = new Promise<CharacterScheduleSync[]>(() => {})
+        syncSchedulesMock.mockReturnValue(pending)
+
+        void useBossProfitStore.getState().refresh(['ocid-1'])
+        await flushMicrotasks()
+
+        const midState = useBossProfitStore.getState()
+        expect(midState.status).toBe('loading')
+        const pastSubtotal = midState.weeklySubtotals.find((subtotal) => subtotal.periodKey === pastWeekKey)
+        expect(pastSubtotal).toBeDefined()
+        expect(pastSubtotal?.totalMeso).toBe(2_000_000)
+        expect(pastSubtotal?.state).toBe('confirmed')
+      } finally {
+        vi.useRealTimers()
+      }
     })
   })
 

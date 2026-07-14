@@ -591,6 +591,15 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     )
     latestSyncSnapshot = { ocids: [...ocids], rows: cachedMergedRows, characterProfiles: cachedCharacterProfiles }
 
+    // monthly 탭의 주차별 합계도 캐시 단계에서 미리 채운다 — 지난 주차 합계는 로컬 기록
+    // (getBossProfitRecords) 조회만으로 구해지는 값이라 API 재검증을 기다릴 이유가 없다.
+    // 이걸 생략하면 매번 화면 진입 시 이미 확정된 지난 주차 합계까지 잠깐 사라졌다가
+    // syncSchedules 완료 후에야 다시 채워지는 것처럼 보인다.
+    const cachedWeeklySubtotals =
+      tab === 'monthly'
+        ? await buildWeeklySubtotalsForMonth(sortedOcids, currentPeriodKey, cachedMergedRows, cachedCharacterProfiles, now)
+        : []
+
     // 이 호출보다 나중에 시작된 refresh/setTab/goToXPeriod가 이미 있다면(연타 등) 이 시점의
     // 캐시 우선 표시조차 화면에 반영하지 않는다 — 더 최신 액션이 이미 진행 중이므로 그 결과가
     // 우선한다.
@@ -600,7 +609,7 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
       status: 'loading',
       periodKey: currentPeriodKey,
       rows: filterRowsForTab(cachedMergedRows, tab, currentPeriodKey),
-      weeklySubtotals: [],
+      weeklySubtotals: cachedWeeklySubtotals,
       isPeriodLoading: false,
       periodUnavailable: false,
       error: null,
