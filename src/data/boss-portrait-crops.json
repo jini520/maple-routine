@@ -23,5 +23,9 @@
   "bardrix": { "size": "100% auto", "position": "50% 40%" },
   "jupiter": { "size": "100% auto", "position": "50% 40%" },
   "maerin": { "size": "100% auto", "position": "50% 35%" },
-  "blackMage": { "size": "100% auto", "position": "50% 35%" }
+  "blackMage": { "size": "100% auto", "position": "50% 35%" },
+  "ancientGodMitra": { "size": "150% auto", "position": "50% 50%" },
+  "senya": { "size": "150% auto", "position": "50% 35%" },
+  "baekyeon": { "size": "150% auto", "position": "30% 40%" },
+  "arcanus": { "size": "150% auto", "position": "10% 50%" }
 }

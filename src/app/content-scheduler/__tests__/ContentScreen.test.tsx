@@ -75,7 +75,7 @@ describe('ContentScreen', () => {
       characters: [
         character({
           ocid: 'ocid-1',
-          dailyContents: [{ name: '몬스터파크', isRegistered: true, nowCount: 7, maxCount: 14 }],
+          dailyContents: [{ name: '몬스터파크', kind: 'contents', isRegistered: true, nowCount: 7, maxCount: 14, questState: null }],
         }),
       ],
     })
@@ -125,8 +125,8 @@ describe('ContentScreen', () => {
         character({
           ocid: 'ocid-1',
           dailyContents: [
-            { name: '몬스터파크', isRegistered: true, nowCount: 7, maxCount: 14 },
-            { name: '미등록 콘텐츠', isRegistered: false, nowCount: 0, maxCount: 1 },
+            { name: '몬스터파크', kind: 'contents', isRegistered: true, nowCount: 7, maxCount: 14, questState: null },
+            { name: '미등록 콘텐츠', kind: 'contents', isRegistered: false, nowCount: 0, maxCount: 1, questState: null },
           ],
           weeklyContents: [
             { name: '에픽 던전 : 악몽선경', kind: 'contents', isRegistered: true, nowCount: 5, maxCount: 0 },
@@ -150,7 +150,7 @@ describe('ContentScreen', () => {
       characters: [
         character({
           ocid: 'ocid-1',
-          dailyContents: [{ name: '몬스터파크', isRegistered: true, nowCount: 7, maxCount: 14 }],
+          dailyContents: [{ name: '몬스터파크', kind: 'contents', isRegistered: true, nowCount: 7, maxCount: 14, questState: null }],
           weeklyContents: [
             { name: '에픽 던전 : 악몽선경', kind: 'contents', isRegistered: true, nowCount: 5, maxCount: 0 },
             {
@@ -169,7 +169,7 @@ describe('ContentScreen', () => {
     await screen.findByRole('combobox')
     fireEvent.click(screen.getByRole('button', { name: '주간' }))
 
-    expect(screen.getByText(/에픽 던전 : 악몽선경/)).toBeInTheDocument()
+    expect(screen.getByText('악몽선경')).toBeInTheDocument()
     expect(screen.queryByText(/주간 드래곤 퇴치/)).not.toBeInTheDocument()
     expect(screen.queryByText(/몬스터파크/)).not.toBeInTheDocument()
   })
@@ -203,12 +203,12 @@ describe('ContentScreen', () => {
         character({
           ocid: 'ocid-1',
           characterName: '낟낟',
-          dailyContents: [{ name: '몬스터파크', isRegistered: true, nowCount: 7, maxCount: 14 }],
+          dailyContents: [{ name: '몬스터파크', kind: 'contents', isRegistered: true, nowCount: 7, maxCount: 14, questState: null }],
         }),
         character({
           ocid: 'ocid-2',
           characterName: '내옆에최성일',
-          dailyContents: [{ name: '레브 던전', isRegistered: true, nowCount: 1, maxCount: 1 }],
+          dailyContents: [{ name: '레브 던전', kind: 'contents', isRegistered: true, nowCount: 1, maxCount: 1, questState: null }],
         }),
       ],
     })
@@ -267,7 +267,7 @@ describe('ContentScreen', () => {
       characters: [
         character({
           ocid: 'ocid-1',
-          dailyContents: [{ name: '몬스터파크', isRegistered: true, nowCount: 7, maxCount: 14 }],
+          dailyContents: [{ name: '몬스터파크', kind: 'contents', isRegistered: true, nowCount: 7, maxCount: 14, questState: null }],
         }),
       ],
     })
@@ -308,6 +308,59 @@ describe('ContentScreen', () => {
     expect(refresh).toHaveBeenCalledWith(['ocid-1'])
   })
 
+  it('ADR-020: kind가 quest인 일간 항목은 접두어를 제거한 이름과 quest_state 뱃지를 보여주고 now/max 표기는 없다', async () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [
+        character({
+          ocid: 'ocid-1',
+          dailyContents: [
+            {
+              name: '[일일 퀘스트] 레헬른의 평온한 밤',
+              kind: 'quest',
+              isRegistered: true,
+              nowCount: 0,
+              maxCount: 0,
+              questState: 1,
+            },
+          ],
+        }),
+      ],
+    })
+
+    render(<ContentScreen />)
+    await screen.findByRole('combobox')
+
+    expect(screen.getByText('레헬른의 평온한 밤')).toBeInTheDocument()
+    expect(screen.queryByText(/\[일일 퀘스트\]/)).not.toBeInTheDocument()
+    expect(screen.getByText('진행 중')).toBeInTheDocument()
+    expect(screen.getByAltText('')).toHaveAttribute('src', expect.stringContaining('lachelein'))
+  })
+
+  it('ADR-020: 몬스터파크는 배경+아이콘 카드로 렌더링되고 진행률 뱃지·진행률 바를 유지한다', async () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [
+        character({
+          ocid: 'ocid-1',
+          dailyContents: [
+            { name: '몬스터파크', kind: 'contents', isRegistered: true, nowCount: 7, maxCount: 14, questState: null },
+          ],
+        }),
+      ],
+    })
+
+    render(<ContentScreen />)
+    await screen.findByRole('combobox')
+
+    expect(screen.getByText('몬스터파크')).toBeInTheDocument()
+    expect(screen.getByText('7/14')).toBeInTheDocument()
+    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '7')
+    expect(screen.getByAltText('')).toHaveAttribute('src', expect.stringContaining('monsterPark'))
+  })
+
   it('일간 탭에서 등록된 dailyContents가 없고 isStale이 false면 빈 상태 안내가 그 탭에만 보인다', async () => {
     mockStore({
       status: 'loaded',
@@ -331,6 +384,126 @@ describe('ContentScreen', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '주간' }))
     expect(screen.queryByText(/게임에서 스케줄러에 등록해주세요/)).not.toBeInTheDocument()
-    expect(screen.getByText(/에픽 던전 : 악몽선경/)).toBeInTheDocument()
+    expect(screen.getByText('악몽선경')).toBeInTheDocument()
+  })
+
+  it('ADR-021: 에픽 던전 항목은 접두어가 뱃지로 분리되고 now_count에 따라 시작 안함/완료 뱃지를 보여준다', async () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [
+        character({
+          ocid: 'ocid-1',
+          weeklyContents: [
+            { name: '에픽 던전 : 하이마운틴', kind: 'contents', isRegistered: true, nowCount: 0, maxCount: 0 },
+            { name: '에픽 던전 : 앵글러 컴퍼니', kind: 'contents', isRegistered: true, nowCount: 5, maxCount: 0 },
+          ],
+        }),
+      ],
+    })
+
+    render(<ContentScreen />)
+    await screen.findByRole('combobox')
+    fireEvent.click(screen.getByRole('button', { name: '주간' }))
+
+    expect(screen.getAllByText('에픽 던전')).toHaveLength(2)
+    expect(screen.getByText('하이마운틴')).toBeInTheDocument()
+    expect(screen.getByText('앵글러 컴퍼니')).toBeInTheDocument()
+    expect(screen.getByText('시작 안함')).toBeInTheDocument()
+    expect(screen.getByText('완료')).toBeInTheDocument()
+  })
+
+  it('ADR-021: 주간 지역 콘텐츠는 지역 아이콘·배경과 now_count 기반 완료 뱃지를 보여준다', async () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [
+        character({
+          ocid: 'ocid-1',
+          weeklyContents: [{ name: '에르다 스펙트럼', kind: 'contents', isRegistered: true, nowCount: 1, maxCount: 1 }],
+        }),
+      ],
+    })
+
+    render(<ContentScreen />)
+    await screen.findByRole('combobox')
+    fireEvent.click(screen.getByRole('button', { name: '주간' }))
+
+    expect(screen.getByText('에르다 스펙트럼')).toBeInTheDocument()
+    expect(screen.getByText('완료')).toBeInTheDocument()
+    expect(screen.getByAltText('')).toHaveAttribute('src', expect.stringContaining('vanishingJourney'))
+  })
+
+  it('ADR-021: 무릉도장은 배경·뱃지 없이 이름만 있는 카드로 표시된다', async () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [
+        character({
+          ocid: 'ocid-1',
+          weeklyContents: [{ name: '무릉도장', kind: 'contents', isRegistered: true, nowCount: 0, maxCount: 0 }],
+        }),
+      ],
+    })
+
+    render(<ContentScreen />)
+    await screen.findByRole('combobox')
+    fireEvent.click(screen.getByRole('button', { name: '주간' }))
+
+    expect(screen.getByText('무릉도장')).toBeInTheDocument()
+    expect(screen.queryByRole('img')).not.toBeInTheDocument()
+    expect(screen.queryByText('완료')).not.toBeInTheDocument()
+  })
+
+  it('ADR-021: 길드 항목 3종은 하나의 카드로 묶여 지하 수로가 메인, 나머지는 하단에 점수로 표시된다', async () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [
+        character({
+          ocid: 'ocid-1',
+          weeklyContents: [
+            { name: '[길드] 주간 미션 포인트', kind: 'contents', isRegistered: true, nowCount: 10, maxCount: 10 },
+            { name: '[길드] 지하 수로', kind: 'contents', isRegistered: true, nowCount: 13416, maxCount: 0 },
+            { name: '[길드] 플래그 레이스', kind: 'contents', isRegistered: true, nowCount: 0, maxCount: 0 },
+          ],
+        }),
+      ],
+    })
+
+    render(<ContentScreen />)
+    await screen.findByRole('combobox')
+    fireEvent.click(screen.getByRole('button', { name: '주간' }))
+
+    expect(screen.getByText('길드')).toBeInTheDocument()
+    expect(screen.getByText('지하 수로')).toBeInTheDocument()
+    expect(screen.getByText('13416점')).toBeInTheDocument()
+    expect(screen.getByText('주간 미션 포인트: 10 · 플래그 레이스: 0')).toBeInTheDocument()
+    expect(screen.queryByText('[길드] 지하 수로')).not.toBeInTheDocument()
+  })
+
+  it('ADR-021: 길드 미션 포인트·플래그 레이스가 둘 다 미등록이면 지하 수로를 일반 카드로 표시한다', async () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [
+        character({
+          ocid: 'ocid-1',
+          weeklyContents: [
+            { name: '[길드] 주간 미션 포인트', kind: 'contents', isRegistered: false, nowCount: 0, maxCount: 0 },
+            { name: '[길드] 지하 수로', kind: 'contents', isRegistered: true, nowCount: 13416, maxCount: 0 },
+            { name: '[길드] 플래그 레이스', kind: 'contents', isRegistered: false, nowCount: 0, maxCount: 0 },
+          ],
+        }),
+      ],
+    })
+
+    render(<ContentScreen />)
+    await screen.findByRole('combobox')
+    fireEvent.click(screen.getByRole('button', { name: '주간' }))
+
+    expect(screen.getByText(/\[길드\] 지하 수로/)).toBeInTheDocument()
+    expect(screen.queryByText('13416점')).not.toBeInTheDocument()
+    expect(screen.queryByText('길드')).not.toBeInTheDocument()
   })
 })

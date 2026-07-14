@@ -18,6 +18,14 @@ describe('normalizeSchedulerCharacterState', () => {
         max_count: 14,
         quest_state: null,
       },
+      {
+        content_name: '[일일 퀘스트] 레헬른의 평온한 밤',
+        type: 'quest',
+        registration_flag: 'true',
+        now_count: 0,
+        max_count: 0,
+        quest_state: '1',
+      },
     ],
     weekly_contents: [
       {
@@ -75,9 +83,11 @@ describe('normalizeSchedulerCharacterState', () => {
 
     expect(result.dailyContents[0]).toEqual({
       name: '몬스터파크',
+      kind: 'contents',
       isRegistered: true,
       nowCount: 7,
       maxCount: 14,
+      questState: null,
     })
 
     expect(result.weeklyContents[1]).toEqual({
@@ -86,6 +96,19 @@ describe('normalizeSchedulerCharacterState', () => {
       isRegistered: false,
       nowCount: 0,
       maxCount: 0,
+    })
+  })
+
+  it('일간 quest_state 문자열을 숫자로 파싱하고 kind를 채운다', () => {
+    const result = normalizeSchedulerCharacterState(baseWire)
+
+    expect(result.dailyContents[1]).toEqual({
+      name: '[일일 퀘스트] 레헬른의 평온한 밤',
+      kind: 'quest',
+      isRegistered: true,
+      nowCount: 0,
+      maxCount: 0,
+      questState: 1,
     })
   })
 

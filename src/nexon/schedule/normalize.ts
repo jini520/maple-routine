@@ -21,9 +21,11 @@ const DIFFICULTY_MAP: Record<NexonRawDifficulty, BossContent['difficulty']> = {
 function normalizeDailyContent(wire: NexonDailyContentWire): DailyContent {
   return {
     name: wire.content_name,
+    kind: wire.type,
     isRegistered: wire.registration_flag === 'true',
     nowCount: wire.now_count,
     maxCount: wire.max_count,
+    questState: wire.quest_state === null ? null : (Number(wire.quest_state) as 0 | 1 | 2),
   }
 }
 

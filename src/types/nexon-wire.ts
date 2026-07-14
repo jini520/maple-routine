@@ -27,7 +27,7 @@ export type NexonRawBossCycle = 'bossDaily' | 'bossWeekly' | 'bossMonthly'
 
 export interface NexonDailyContentWire {
   content_name: string
-  type: string
+  type: 'contents' | 'quest'
   registration_flag: 'true' | 'false'
   now_count: number
   max_count: number

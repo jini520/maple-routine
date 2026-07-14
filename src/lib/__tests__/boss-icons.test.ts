@@ -16,6 +16,13 @@ describe('getBossPortraitUrl', () => {
   it('존재하지 않는 slug면 null을 반환한다', () => {
     expect(getBossPortraitUrl('존재하지않는슬러그')).toBeNull()
   })
+
+  it('확장자가 png인 경우에도 URL을 반환한다(ADR-021, 에픽 던전/길드 배경)', () => {
+    const url = getBossPortraitUrl('senya')
+
+    expect(url).not.toBeNull()
+    expect(url).toEqual(expect.stringContaining('senya'))
+  })
 })
 
 describe('getBossPortraitCrop', () => {
