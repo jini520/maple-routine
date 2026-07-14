@@ -12,7 +12,7 @@ src/
 │   ├── hunting-timer/      # 사냥 타이머 화면
 │   ├── boss-profit/        # 주간 보스 수익 계산기 화면
 │   ├── item-drop/          # 물욕 아이템 드랍 현황 화면
-│   └── settings/            # API 키 재입력, 계정(메이플 ID) 변경, 연결 해제, 테마 선택(레테/렌). 크래시 리포팅 토글·알림 권한 재요청 안내·미예약 알림 개수 표시는 후속 task
+│   └── settings/            # API 키 재입력, 계정(메이플 ID) 변경, 연결 해제, 테마 선택(레테/렌/머쉬맘/혼테일). 크래시 리포팅 토글·알림 권한 재요청 안내·미예약 알림 개수 표시는 후속 task
 ├── features/                # 기능별 도메인 로직 (UI 상태 + 비즈니스 로직)
 │   ├── onboarding/           # API 키 입력 → 계정 목록 조회 → 계정 선택 흐름
 │   ├── content-scheduler/    # 일간 콘텐츠 + 주간 콘텐츠 상태 ([[ADR-013]], 기존 daily-scheduler/weekly-scheduler 통합)
@@ -21,8 +21,8 @@ src/
 │   ├── boss-profit/
 │   ├── item-drop/
 │   ├── settings/              # API 키·계정(메이플 ID) 변경, 연결 해제 (2026-07-12 정리 — 그동안 app/settings만 언급되고 이 폴더는 누락돼 있었음)
-│   └── theme/                 # 선택된 테마(레테/렌) 상태, storage/theme.ts로 영속화 ([[ADR-009]] 재개, 2026-07-12)
-├── data/                    # 게임 레퍼런스 데이터 (보스 목록, 결정 가격표, 드랍 테이블, 보스 반지 상자 확률표) — 버전 명시. job-themes.json(테마별 13토큰 컬러, [[ADR-009]])은 "레테"·"렌" 값 확정 — 설정 화면 task에서 파일로 반영(재개, 2026-07-12)
+│   └── theme/                 # 선택된 테마(레테/렌/머쉬맘/혼테일) 상태, storage/theme.ts로 영속화. 저장된 값이 없으면 OS 라이트/다크 설정에 따라 머쉬맘/혼테일 중 자동 결정 ([[ADR-009]] 재개, 2026-07-12; 2026-07-14 시스템 다크 모드 연동)
+├── data/                    # 게임 레퍼런스 데이터 (보스 목록, 결정 가격표, 드랍 테이블, 보스 반지 상자 확률표) — 버전 명시. job-themes.json(테마별 17토큰 컬러, [[ADR-009]])은 "레테"·"렌"·"머쉬맘"·"혼테일" 값 확정
 ├── nexon/                   # Nexon Open API 클라이언트 ([[ADR-007]]) — 사용자 개인 API 키로 직접 호출, 서버 없음
 │   ├── character/            # GET /maplestory/v1/character/list로 계정 소속 캐릭터 목록 자동 조회(수동 등록 폼 없음). GET /maplestory/v1/character/basic(ocid별, [[ADR-015]])로 "캐릭터 관리" 피커의 캐릭터 이미지(`character_image`)·`access_flag`를 병렬 조회
 │   └── schedule/             # 스케줄러 Open API 호출 + src/data/ 참조 테이블과의 매핑(난이도 영↔한글, 보스명 정규화, cycle 기반 bossDaily 필터링)
@@ -124,7 +124,7 @@ Feature 단위 구조. 각 `features/*` 폴더가 해당 기능의 상태와 로
   → API 키 재입력/변경: storage/의 보안 영역에 새 키를 덮어쓰고 nexon/character로 재검증([[ADR-007]], [[ADR-003]])
   → 계정(메이플 ID) 변경: API 키 재입력 없이, 저장된 키로 character/list를 다시 호출해 계정 선택 UI(`AccountSelectionList` 재사용)를 다시 보여주고, 선택된 accountId만 storage/에 갱신한다(확정, 2026-07-12). 캐릭터 관련 로컬 기록(보스 수익·드랍 히스토리)은 삭제하지 않음([[ADR-008]] 참조 무결성)
   → 연결 해제(로그아웃, 확정, 2026-07-12): `storage/api-key.ts`의 `clearAuthConfig()`와 `features/onboarding`의 `RESET` 이벤트를 그대로 재사용해 온보딩 화면으로 되돌아간다 — 별도 신규 로직 없이 기존 두 조각을 연결하는 수준
-  → 테마 선택(재개, 2026-07-12, [[ADR-009]]): 레테/렌 중 선택하면 features/theme의 Zustand 스토어가 갱신되고 storage/theme.ts에 영속화, `:root[data-theme]` 오버라이드로 즉시 반영
+  → 테마 선택(재개, 2026-07-12, [[ADR-009]]): 레테/렌/머쉬맘/혼테일 중 선택하면 features/theme의 Zustand 스토어가 갱신되고 storage/theme.ts에 영속화, `:root[data-theme]` 오버라이드로 즉시 반영(기본값 머쉬맘은 오버라이드 없이 `@theme` 블록 그대로 사용). 저장된 값이 없으면 `matchMedia('(prefers-color-scheme: dark)')`로 OS 설정을 확인해 라이트=머쉬맘/다크=혼테일을 기본값으로 쓴다(2026-07-14).
   → 다음 항목은 이번 task 범위 밖(후속 task로 미룸, 2026-07-12): 크래시 리포팅 opt-in 토글([[ADR-008]], `lib/error-reporting` 미구현), 알림 권한 재요청 안내, 미예약 알림 개수 표시([[ADR-004]] 64개 한도 우선순위 정책 자체가 미구현)
 ```
 
@@ -134,11 +134,15 @@ Feature 단위 구조. 각 `features/*` 폴더가 해당 기능의 상태와 로
 - 영속 데이터(Nexon API 키, 동기화 캐시, 보스 처치/수익 기록, 드랍 히스토리, 선택된 테마)는 `storage/`에 저장하고, 앱 시작 시 로드해 클라이언트 상태로 hydration.
 
 ## 테마 시스템 ([[ADR-009]])
-직업 고유 컬러 기반 다중 테마 지원 예정. **정정(2026-07-12)**: Primary 하나만 파생 공식으로 확장하는 방식은 폐기, 테마마다 13개 시맨틱 토큰(`bg`/`surface`/`surface-2`/`border`/`border-strong`/`primary`/`primary-hover`/`primary-text`/`secondary`/`info-tint`/`error`/`text`/`text-muted`/`text-disabled`)을 값으로 직접 갖는다. 현재 "레테"(다크)·"렌"(라이트, 2026-07-12 재수정) 2개 테마의 실제 컬러 값이 확정됐다(값은 `docs/UI_GUIDE.md` "테마 시스템" 표 참고, `src/data/job-themes.json` 반영은 구현 단계에서 진행).
+직업 고유 컬러 기반 다중 테마 지원 예정. **정정(2026-07-12)**: Primary 하나만 파생 공식으로 확장하는 방식은 폐기, 테마마다 17개 시맨틱 토큰(`bg`/`surface`/`surface-2`/`border`/`border-strong`/`primary`/`primary-hover`/`primary-text`/`secondary`/`secondary-text`/`third`/`third-text`/`info-tint`/`error`/`text`/`text-muted`/`text-disabled`, 2026-07-14 `third`·`-text` 계열 5개 추가)을 값으로 직접 갖는다. 현재 "레테"(다크)·"렌"(라이트)·"머쉬맘"(라이트, **기본**, 2026-07-14 추가)·"혼테일"(다크, **시스템 다크 모드 기본**, 2026-07-14 추가) 4개 테마의 실제 컬러 값이 확정됐다(값은 `docs/UI_GUIDE.md` "테마 시스템" 표 참고).
 
 **구현 범위 축소(2026-07-12)**: 런타임 전환 기능은 당장 만들지 않는다 — "렌" 13토큰 값을 `src/index.css`의 `@theme` 블록에 정적으로 반영해 활성 팔레트를 레테→렌으로 교체하는 것까지만 이번 범위다. 아래는 전환 기능이 실제로 필요해질 때의 목표 설계다.
 
-**재개(2026-07-12, 설정 화면 task 범위 포함)**: 위 "구현 범위 축소"로 미뤄뒀던 런타임 전환 인프라를 이번에 구현한다. Tailwind v4 `@theme` 블록이 기본(레테) 테마 값을 정의하고, `:root[data-theme="..."] { --color-*: ...; }`로 오버라이드. Tailwind v4 유틸리티(`bg-primary`, `text-text` 등)는 이미 `var(--color-*)`를 참조하므로 `features/*`·`components/` 코드 변경 없이 `data-theme` 속성 전환만으로 테마가 바뀐다. 선택된 테마는 위 "상태 관리"와 동일하게 Zustand(`src/features/theme/store.ts`) + `storage/theme.ts`(기존 `api-key.ts`와 같은 `Preferences` 기반 어댑터 패턴) 영속화로 관리하고, `AppShell`의 `restoreFromStorage` 흐름과 같은 위치에서 앱 시작 시 hydration한다. 설정 화면에서는 레테/렌 두 값 중 하나를 고르는 최소 범위 선택 UI만 제공한다(직업 기반 자동 매핑은 여전히 미정이라 범위 밖).
+**재개(2026-07-12, 설정 화면 task 범위 포함)**: 위 "구현 범위 축소"로 미뤄뒀던 런타임 전환 인프라를 이번에 구현한다. Tailwind v4 `@theme` 블록이 기본 테마 값을 정의하고, `:root[data-theme="..."] { --color-*: ...; }`로 오버라이드. Tailwind v4 유틸리티(`bg-primary`, `text-text` 등)는 이미 `var(--color-*)`를 참조하므로 `features/*`·`components/` 코드 변경 없이 `data-theme` 속성 전환만으로 테마가 바뀐다. 선택된 테마는 위 "상태 관리"와 동일하게 Zustand(`src/features/theme/store.ts`) + `storage/theme.ts`(기존 `api-key.ts`와 같은 `Preferences` 기반 어댑터 패턴) 영속화로 관리하고, `AppShell`의 `restoreFromStorage` 흐름과 같은 위치에서 앱 시작 시 hydration한다. 설정 화면에서는 등록된 테마 중 하나를 고르는 최소 범위 선택 UI만 제공한다(직업 기반 자동 매핑은 여전히 미정이라 범위 밖).
+
+**3번째 테마 `mushmom` 추가 + 기본 테마 교체(2026-07-14)**: `mushmom`(라이트)이 `@theme` 기본 블록 값·Zustand 초기값·`storage/theme.ts` 폴백값을 모두 대체해 기본 테마가 된다. "렌"은 "레테"와 동일하게 `:root[data-theme='렌']` 오버라이드 블록을 갖는 선택지로 전환. 상세는 `docs/ADR.md` ADR-009 참고.
+
+**테마 이름 한글화 + 4번째 테마 "혼테일" 추가 + 시스템 다크 모드 연동(2026-07-14)**: `mushmom`을 "머쉬맘"으로 개명하고, 4번째 테마 "혼테일"(다크)을 `:root[data-theme='혼테일']` 오버라이드로 추가. `restoreFromStorage()`가 저장된 값이 없을 때 `window.matchMedia('(prefers-color-scheme: dark)')`로 OS 설정을 확인해 라이트="머쉬맘"/다크="혼테일"을 기본값으로 쓰도록 확장(앱 실행 시 1회 판정, 실시간 반영은 범위 밖). 상세는 `docs/ADR.md` ADR-009 참고.
 
 기존 `--color-gold`/`--color-gold-bright`/`--color-magenta`/`--color-neutral-warm` 토큰은 13토큰 스키마에 없어 폐기하고 사용처를 마이그레이션한다(`gold`→`secondary`, `magenta`→`error`, `neutral-warm`→`text-muted` 통합, `gold-bright`는 미사용 확인 후 폐기) — 상세는 [[ADR-009]] 2026-07-12 정정 참고. 이 마이그레이션은 정적 교체 범위에 포함되어 지금 진행한다.
 

@@ -6,7 +6,7 @@ export interface ThemeSelectorProps {
   onSelect: (theme: ThemeName) => void
 }
 
-const THEME_OPTIONS: ThemeName[] = ['레테', '렌']
+const THEME_OPTIONS: ThemeName[] = ['머쉬맘', '혼테일', '레테', '렌']
 
 // ThemeModal 안에 들어가는 선택 목록 — 모달 자체가 카드 역할을 하므로 여기서는
 // 카드 테두리를 다시 두르지 않는다.

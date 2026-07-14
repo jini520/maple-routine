@@ -9,14 +9,14 @@ afterEach(() => {
 })
 
 describe('ThemeSwatchDots', () => {
-  it('테마의 대표 색상 3개(primary/secondary/error)를 점으로 렌더링한다', () => {
+  it('테마의 대표 색상 3개(primary/secondary/third)를 점으로 렌더링한다', () => {
     render(<ThemeSwatchDots theme="렌" />)
 
     const dots = screen.getAllByTestId('theme-swatch-dot')
     expect(dots).toHaveLength(3)
     expect(dots[0]).toHaveStyle({ backgroundColor: '#DC171D' })
     expect(dots[1]).toHaveStyle({ backgroundColor: '#437B71' })
-    expect(dots[2]).toHaveStyle({ backgroundColor: '#B91C1C' })
+    expect(dots[2]).toHaveStyle({ backgroundColor: '#C9EEF2' })
   })
 
   it('레테 테마면 레테의 색상 값을 쓴다', () => {
@@ -24,5 +24,23 @@ describe('ThemeSwatchDots', () => {
 
     const dots = screen.getAllByTestId('theme-swatch-dot')
     expect(dots[0]).toHaveStyle({ backgroundColor: '#9975B3' })
+  })
+
+  it('머쉬맘 테마면 머쉬맘의 색상 값을 쓴다', () => {
+    render(<ThemeSwatchDots theme="머쉬맘" />)
+
+    const dots = screen.getAllByTestId('theme-swatch-dot')
+    expect(dots[0]).toHaveStyle({ backgroundColor: '#F58B0F' })
+    expect(dots[1]).toHaveStyle({ backgroundColor: '#F7D00D' })
+    expect(dots[2]).toHaveStyle({ backgroundColor: '#CA763A' })
+  })
+
+  it('혼테일 테마면 혼테일의 색상 값을 쓴다', () => {
+    render(<ThemeSwatchDots theme="혼테일" />)
+
+    const dots = screen.getAllByTestId('theme-swatch-dot')
+    expect(dots[0]).toHaveStyle({ backgroundColor: '#E86A16' })
+    expect(dots[1]).toHaveStyle({ backgroundColor: '#7B777A' })
+    expect(dots[2]).toHaveStyle({ backgroundColor: '#936E68' })
   })
 })

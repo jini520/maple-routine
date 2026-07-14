@@ -1,18 +1,19 @@
-import { useEffect, useState } from 'react'
-import { RefreshCw } from 'lucide-react'
-import { useContentSchedulerStore } from '../../features/content-scheduler/store'
+import type { CharacterPickerEntry, DailyContent, WeeklyContent } from '../../types'
 import { formatScheduleSyncError, formatSyncedAt } from '../../features/schedule-sync/format'
-import { getCharacterPickerRoster } from '../../features/schedule-sync/schedule-sync'
+import { getBossPortraitCrop, getBossPortraitUrl } from '../../lib/boss-icons'
+import { getDailyQuestBackgroundUrl, getDailyQuestRegionCrop } from '../../lib/daily-quest-backgrounds'
+import { matchDailyQuestRegionSlug, stripDailyQuestPrefix } from '../../lib/daily-quest-matching'
+import { useEffect, useState } from 'react'
+
+import type { BossPortraitCrop } from '../../lib/boss-icons'
 import { CharacterSelectDropdown } from '../../components/CharacterSelectDropdown/CharacterSelectDropdown'
 import { CharacterTrackingPicker } from '../../components/CharacterTrackingPicker/CharacterTrackingPicker'
-import { getDailyQuestBackgroundUrl, getDailyQuestRegionCrop } from '../../lib/daily-quest-backgrounds'
 import type { DailyQuestRegionCrop } from '../../lib/daily-quest-backgrounds'
+import { RefreshCw } from 'lucide-react'
+import { getCharacterPickerRoster } from '../../features/schedule-sync/schedule-sync'
 import { getDailyQuestRegionIconUrl } from '../../lib/daily-quest-icons'
-import { matchDailyQuestRegionSlug, stripDailyQuestPrefix } from '../../lib/daily-quest-matching'
-import { getBossPortraitCrop, getBossPortraitUrl } from '../../lib/boss-icons'
-import type { BossPortraitCrop } from '../../lib/boss-icons'
 import { matchWeeklyRegionalQuestSlug } from '../../lib/weekly-regional-quest-matching'
-import type { CharacterPickerEntry, DailyContent, WeeklyContent } from '../../types'
+import { useContentSchedulerStore } from '../../features/content-scheduler/store'
 
 type ContentTab = 'daily' | 'weekly'
 
@@ -154,7 +155,7 @@ export function MonsterParkCard(props: {
             </span>
           </div>
 
-          <span className="rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary">
+          <span className="rounded-full bg-third/20 px-2.5 py-1 text-xs font-semibold text-third">
             {content.nowCount}/{content.maxCount}
           </span>
         </div>
@@ -166,9 +167,9 @@ export function MonsterParkCard(props: {
               aria-valuenow={content.nowCount}
               aria-valuemin={0}
               aria-valuemax={content.maxCount}
-              className="h-1.5 w-full overflow-hidden rounded-full bg-primary/15"
+              className="h-1.5 w-full overflow-hidden rounded-full bg-white/15"
             >
-              <div className="h-1.5 rounded-full bg-primary" style={{ width: `${progressPercent}%` }} />
+              <div className="h-1.5 rounded-full bg-third" style={{ width: `${progressPercent}%` }} />
             </div>
           </div>
         )}
@@ -326,7 +327,7 @@ export function GuildUndergroundWaterwayCard(props: {
           </span>
         </div>
 
-        <span className="rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary">
+        <span className="rounded-full bg-third/20 px-2.5 py-1 text-xs font-semibold text-third">
           {content.nowCount}점
         </span>
       </div>
@@ -370,7 +371,7 @@ export function GuildMissionPointsCard(props: {
             </span>
           </div>
 
-          <span className="rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary">
+          <span className="rounded-full bg-third/20 px-2.5 py-1 text-xs font-semibold text-third">
             {content.nowCount}/{content.maxCount}
           </span>
         </div>
@@ -382,9 +383,9 @@ export function GuildMissionPointsCard(props: {
               aria-valuenow={content.nowCount}
               aria-valuemin={0}
               aria-valuemax={content.maxCount}
-              className="h-1.5 w-full overflow-hidden rounded-full bg-primary/15"
+              className="h-1.5 w-full overflow-hidden rounded-full bg-white/15"
             >
-              <div className="h-1.5 rounded-full bg-primary" style={{ width: `${progressPercent}%` }} />
+              <div className="h-1.5 rounded-full bg-third" style={{ width: `${progressPercent}%` }} />
             </div>
           </div>
         )}

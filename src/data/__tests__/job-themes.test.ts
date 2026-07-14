@@ -13,6 +13,9 @@ const EXPECTED = {
     primaryHover: '#85639F',
     primaryText: '#61417B',
     secondary: '#D1C093',
+    secondaryText: '#D1C093',
+    third: '#D8608F',
+    thirdText: '#DA6995',
     infoTint: '#C9D6F2',
     error: '#D8608F',
     text: '#E8DFEC',
@@ -29,11 +32,52 @@ const EXPECTED = {
     primaryHover: '#B33946',
     primaryText: '#803440',
     secondary: '#437B71',
-    infoTint: '#C9EEF2',
-    error: '#B91C1C',
+    secondaryText: '#3E7369',
+    third: '#C9EEF2',
+    thirdText: '#21808A',
+    infoTint: '#E4F6F8',
+    error: '#A31118',
     text: '#171721',
     textMuted: '#525475',
     textDisabled: '#8A8089',
+  },
+  머쉬맘: {
+    bg: '#F2F0E2',
+    surface: '#FDFCF6',
+    surface2: '#E4E1CE',
+    border: '#CFC9AE',
+    borderStrong: '#A3996E',
+    primary: '#F58B0F',
+    primaryHover: '#C55907',
+    primaryText: '#9C4304',
+    secondary: '#F7D00D',
+    secondaryText: '#7A5E00',
+    third: '#CA763A',
+    thirdText: '#8F4E1F',
+    infoTint: '#FBF3D0',
+    error: '#B3200B',
+    text: '#241208',
+    textMuted: '#645C42',
+    textDisabled: '#9A9070',
+  },
+  혼테일: {
+    bg: '#0B0B0B',
+    surface: '#241110',
+    surface2: '#362120',
+    border: '#524344',
+    borderStrong: '#695E5F',
+    primary: '#E86A16',
+    primaryHover: '#C34204',
+    primaryText: '#F09A55',
+    secondary: '#7B777A',
+    secondaryText: '#B8B2B4',
+    third: '#936E68',
+    thirdText: '#C79A92',
+    infoTint: '#3A3235',
+    error: '#E85447',
+    text: '#E6E1E2',
+    textMuted: '#9F9594',
+    textDisabled: '#7A6E6F',
   },
 } as const
 
@@ -47,6 +91,9 @@ const TOKEN_FIELDS = [
   'primaryHover',
   'primaryText',
   'secondary',
+  'secondaryText',
+  'third',
+  'thirdText',
   'infoTint',
   'error',
   'text',
@@ -55,16 +102,22 @@ const TOKEN_FIELDS = [
 ]
 
 describe('job-themes.json', () => {
-  it('정확히 레테/렌 두 키만 가진다', () => {
-    expect(Object.keys(jobThemes).sort()).toEqual(['레테', '렌'].sort())
+  it('정확히 레테/렌/머쉬맘/혼테일 네 키만 가진다', () => {
+    expect(Object.keys(jobThemes).sort()).toEqual(['레테', '렌', '머쉬맘', '혼테일'].sort())
   })
 
-  it.each(['레테', '렌'] as const)('%s 테마가 ThemeTokens의 14개 필드를 전부 가진다', (themeName) => {
-    const theme = jobThemes[themeName] as Record<string, string>
-    expect(Object.keys(theme).sort()).toEqual([...TOKEN_FIELDS].sort())
-  })
+  it.each(['레테', '렌', '머쉬맘', '혼테일'] as const)(
+    '%s 테마가 ThemeTokens의 17개 필드를 전부 가진다',
+    (themeName) => {
+      const theme = jobThemes[themeName] as Record<string, string>
+      expect(Object.keys(theme).sort()).toEqual([...TOKEN_FIELDS].sort())
+    },
+  )
 
-  it.each(['레테', '렌'] as const)('%s 테마의 값이 docs/UI_GUIDE.md 표와 정확히 일치한다', (themeName) => {
-    expect(jobThemes[themeName]).toEqual(EXPECTED[themeName])
-  })
+  it.each(['레테', '렌', '머쉬맘', '혼테일'] as const)(
+    '%s 테마의 값이 docs/UI_GUIDE.md 표와 정확히 일치한다',
+    (themeName) => {
+      expect(jobThemes[themeName]).toEqual(EXPECTED[themeName])
+    },
+  )
 })

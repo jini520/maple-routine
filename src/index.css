@@ -1,27 +1,31 @@
 @import "tailwindcss";
 
+/* 머쉬맘(라이트, 기본) 테마 — 데이터 출처: src/data/job-themes.json, 값 근거는 docs/UI_GUIDE.md "테마 시스템" 표 (ADR-009) */
 @theme {
   /* backgrounds */
-  --color-bg: #f6f5f5;
-  --color-surface: #ffffff;
-  --color-surface-2: #e5e6e9;
-  --color-border: #dbd3d6;
-  --color-border-strong: #c8c1c6;
+  --color-bg: #f2f0e2;
+  --color-surface: #fdfcf6;
+  --color-surface-2: #e4e1ce;
+  --color-border: #cfc9ae;
+  --color-border-strong: #a3996e;
 
   /* brand */
-  --color-primary: #dc171d;
-  --color-primary-hover: #b33946;
-  --color-primary-text: #803440;
+  --color-primary: #f58b0f;
+  --color-primary-hover: #c55907;
+  --color-primary-text: #9c4304;
 
   /* accent */
-  --color-secondary: #437b71;
-  --color-info-tint: #c9eef2;
-  --color-error: #b91c1c;
+  --color-secondary: #f7d00d;
+  --color-secondary-text: #7a5e00;
+  --color-third: #ca763a;
+  --color-third-text: #8f4e1f;
+  --color-info-tint: #fbf3d0;
+  --color-error: #b3200b;
 
   /* text */
-  --color-text: #171721;
-  --color-text-muted: #525475;
-  --color-text-disabled: #8a8089;
+  --color-text: #241208;
+  --color-text-muted: #645c42;
+  --color-text-disabled: #9a9070;
 }
 
 /* 레테(다크) 테마 — 데이터 출처: src/data/job-themes.json, 값 근거는 docs/UI_GUIDE.md "테마 시스템" 표 (ADR-009) */
@@ -35,9 +39,54 @@
   --color-primary-hover: #85639f;
   --color-primary-text: #61417b;
   --color-secondary: #d1c093;
+  --color-secondary-text: #d1c093;
+  --color-third: #d8608f;
+  --color-third-text: #da6995;
   --color-info-tint: #c9d6f2;
   --color-error: #d8608f;
   --color-text: #e8dfec;
   --color-text-muted: #b89cbd;
   --color-text-disabled: #8a758d;
+}
+
+/* 렌(라이트) 테마 — 데이터 출처: src/data/job-themes.json, 값 근거는 docs/UI_GUIDE.md "테마 시스템" 표 (ADR-009) */
+:root[data-theme='렌'] {
+  --color-bg: #f6f5f5;
+  --color-surface: #ffffff;
+  --color-surface-2: #e5e6e9;
+  --color-border: #dbd3d6;
+  --color-border-strong: #c8c1c6;
+  --color-primary: #dc171d;
+  --color-primary-hover: #b33946;
+  --color-primary-text: #803440;
+  --color-secondary: #437b71;
+  --color-secondary-text: #3e7369;
+  --color-third: #c9eef2;
+  --color-third-text: #21808a;
+  --color-info-tint: #e4f6f8;
+  --color-error: #a31118;
+  --color-text: #171721;
+  --color-text-muted: #525475;
+  --color-text-disabled: #8a8089;
+}
+
+/* 혼테일(다크, 시스템 다크 모드 기본) 테마 — 데이터 출처: src/data/job-themes.json, 값 근거는 docs/UI_GUIDE.md "테마 시스템" 표 (ADR-009) */
+:root[data-theme='혼테일'] {
+  --color-bg: #0b0b0b;
+  --color-surface: #241110;
+  --color-surface-2: #362120;
+  --color-border: #524344;
+  --color-border-strong: #695e5f;
+  --color-primary: #e86a16;
+  --color-primary-hover: #c34204;
+  --color-primary-text: #f09a55;
+  --color-secondary: #7b777a;
+  --color-secondary-text: #b8b2b4;
+  --color-third: #936e68;
+  --color-third-text: #c79a92;
+  --color-info-tint: #3a3235;
+  --color-error: #e85447;
+  --color-text: #e6e1e2;
+  --color-text-muted: #9f9594;
+  --color-text-disabled: #7a6e6f;
 }
