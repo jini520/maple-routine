@@ -24,6 +24,10 @@ export function resolveReleaseTag(isBeta) {
   return isBeta ? 'live-update-beta' : 'live-update-latest'
 }
 
+export function resolveBuildScript(isBeta) {
+  return isBeta ? 'build:beta' : 'build'
+}
+
 export function parseArgs(argv) {
   const isBeta = argv.includes('--beta')
   const version = argv.find((arg) => arg !== '--beta')
@@ -45,7 +49,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const manifestPath = join(workDir, 'latest.json')
 
   console.log('[1/5] 빌드 중...')
-  execFileSync('npm', ['run', 'build'], { cwd: root, stdio: 'inherit' })
+  execFileSync('npm', ['run', resolveBuildScript(isBeta)], { cwd: root, stdio: 'inherit' })
 
   console.log('[2/5] dist/ 압축 중...')
   execFileSync('zip', ['-r', zipPath, '.'], { cwd: join(root, 'dist'), stdio: 'inherit' })

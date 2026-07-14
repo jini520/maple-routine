@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseArgs, resolveReleaseTag } from '../publish-live-update.mjs'
+import { parseArgs, resolveBuildScript, resolveReleaseTag } from '../publish-live-update.mjs'
 
 describe('resolveReleaseTag', () => {
   it('isBeta가 true면 live-update-beta를 반환한다', () => {
@@ -8,6 +8,16 @@ describe('resolveReleaseTag', () => {
 
   it('isBeta가 false면 live-update-latest를 반환한다', () => {
     expect(resolveReleaseTag(false)).toBe('live-update-latest')
+  })
+})
+
+describe('resolveBuildScript', () => {
+  it('isBeta가 true면 build:beta를 반환한다', () => {
+    expect(resolveBuildScript(true)).toBe('build:beta')
+  })
+
+  it('isBeta가 false면 build를 반환한다', () => {
+    expect(resolveBuildScript(false)).toBe('build')
   })
 })
 
