@@ -7,7 +7,8 @@
       "name": "version-format",
       "status": "completed",
       "started_at": "2026-07-15T01:15:27+0900",
-      "summary": "android versionName과 iOS MARKETING_VERSION(Debug/Release)을 1.0 → 1.0.0으로 통일해 isNewerVersion의 x.y.z 파싱 요구사항을 충족시킴"
+      "summary": "android versionName과 iOS MARKETING_VERSION(Debug/Release)을 1.0 → 1.0.0으로 통일해 isNewerVersion의 x.y.z 파싱 요구사항을 충족시킴",
+      "completed_at": "2026-07-15T01:16:51+0900"
     },
     {
       "step": 1,
