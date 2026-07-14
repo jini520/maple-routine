@@ -12,12 +12,14 @@ import { formatScheduleSyncError } from '../../features/schedule-sync/format'
 import { formatBossProfitPeriodLabel, isEarliestNavigablePeriod, isLatestPeriod } from '../../lib/boss-profit-period'
 import type { BossCycle } from '../../types'
 
-// components/CharacterTrackingPicker와 동일한 얼굴 크롭 기법(ADR-015)을 이 화면의 36px
+// components/CharacterTrackingPicker와 동일한 얼굴 크롭 기법(ADR-015)을 이 화면의 32px
 // 아바타 슬롯 크기에 맞춰 재사용한다 — 이 프로젝트는 화면마다 UI를 그대로 복제하는 관례를
 // 따른다(탭 pill과 동일한 이유, ADR-018).
 const AVATAR_SOURCE_IMAGE_SIZE = 300
-const AVATAR_FACE_CROP_BOX = { x: 115, y: 120, size: 64 }
-const AVATAR_SIZE = 36 // 기존 32px(h-8)에서 살짝 확대(사용자 요청, 2026-07-14)
+// 원본 크롭 박스({ x: 115, y: 120, size: 64 })와 중심(147, 152)은 유지한 채 size만 64→48로
+// 줄여 확대율을 높였다(사용자 요청, 2026-07-14 — 원 크기가 아니라 이미지 확대 배율 조정).
+const AVATAR_FACE_CROP_BOX = { x: 123, y: 128, size: 48 }
+const AVATAR_SIZE = 32
 
 // BossPortrait의 size prop 기본값(40px, 기존 h-10 관례)과 동일하게 시작값을 맞춘다 —
 // /debug/boss-portrait-size에서 이 값을 조정해보고 확정되면 여기 상수만 바꾸면 된다.
@@ -35,7 +37,7 @@ function avatarFaceCropStyle(): React.CSSProperties {
 
 function CharacterAvatar(props: { characterName: string; imageUrl: string | null }): React.JSX.Element {
   return (
-    <span className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full bg-surface-2">
+    <span className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full bg-surface-2">
       {props.imageUrl !== null ? (
         <img
           src={props.imageUrl}
