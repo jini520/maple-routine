@@ -87,7 +87,8 @@
     },
     {
       "dir": "live-update-beta",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-07-15T01:20:14+0900"
     }
   ]
 }
