@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">메이플 루틴</string>
+    <string name="title_activity_main">메이플 루틴</string>
+    <string name="package_name">com.mapleroutine.app</string>
+    <string name="custom_url_scheme">com.mapleroutine.app</string>
+</resources>
