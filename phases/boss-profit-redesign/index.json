@@ -16,7 +16,7 @@
       "status": "completed",
       "started_at": "2026-07-14T17:41:46+0900",
       "summary": "fetchSchedulerCharacterState에 optional date 파라미터 추가(쿼리스트링 &date=YYYY-MM-DD), requestJson/에러 분류는 변경 없이 재사용, 신규 테스트 1건 포함 전체 590건 통과",
-      "completed_at": "2026-07-14T17:42:25+0900"
+      "completed_at": "2026-07-14T17:43:06+0900"
     },
     {
       "step": 2,
