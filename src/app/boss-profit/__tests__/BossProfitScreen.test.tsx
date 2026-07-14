@@ -127,7 +127,7 @@ describe('BossProfitScreen', () => {
       status: 'loaded',
       trackedOcids: ['ocid-1'],
       rows: [row()],
-      periodKey: '2020-01-02',
+      periodKey: '2026-07-02',
       goToPreviousPeriod,
       goToNextPeriod,
     })
@@ -169,6 +169,35 @@ describe('BossProfitScreen', () => {
     render(<BossProfitScreen />)
 
     expect(screen.getByRole('button', { name: '다음 기간' })).not.toBeDisabled()
+  })
+
+  it('MIN_SCHEDULER_DATE 이전으로는 이동할 수 없어 이전 기간 버튼이 disabled다(weekly)', () => {
+    mockStore({
+      status: 'loaded',
+      tab: 'weekly',
+      trackedOcids: ['ocid-1'],
+      rows: [row()],
+      periodKey: '2026-06-25', // 이 이전(6/18)은 백필 불가능한 기간이라 더 못 간다
+    })
+
+    render(<BossProfitScreen />)
+
+    expect(screen.getByRole('button', { name: '이전 기간' })).toBeDisabled()
+  })
+
+  it('MIN_SCHEDULER_DATE 이전 달로는 이동할 수 없어 이전 기간 버튼이 disabled다(monthly)', () => {
+    mockStore({
+      status: 'loaded',
+      tab: 'monthly',
+      trackedOcids: ['ocid-1'],
+      rows: [],
+      weeklySubtotals: [subtotal()],
+      periodKey: '2026-06', // 이 이전(2026-05)은 통째로 백필 불가능한 달이라 더 못 간다
+    })
+
+    render(<BossProfitScreen />)
+
+    expect(screen.getByRole('button', { name: '이전 기간' })).toBeDisabled()
   })
 
   it('isPeriodLoading이 true면 스피너를 보여주고 보스 목록은 렌더되지 않는다', () => {

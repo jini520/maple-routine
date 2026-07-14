@@ -9,7 +9,7 @@ import {
   type BossProfitWeeklySubtotal,
 } from '../../features/boss-profit/store'
 import { formatScheduleSyncError } from '../../features/schedule-sync/format'
-import { formatBossProfitPeriodLabel, isLatestPeriod } from '../../lib/boss-profit-period'
+import { formatBossProfitPeriodLabel, isEarliestNavigablePeriod, isLatestPeriod } from '../../lib/boss-profit-period'
 import type { BossCycle } from '../../types'
 
 interface BossReferenceEntry {
@@ -155,7 +155,7 @@ function WeeklySubtotalRow(props: { subtotal: BossProfitWeeklySubtotal; now: Dat
   return (
     <li
       className={
-        subtotal.state === 'upcoming'
+        subtotal.state === 'upcoming' || subtotal.state === 'unavailable'
           ? 'flex items-center gap-3 p-4 border-b border-border opacity-40'
           : 'flex items-center gap-3 p-4 border-b border-border'
       }
@@ -171,9 +171,9 @@ function WeeklySubtotalRow(props: { subtotal: BossProfitWeeklySubtotal; now: Dat
         </span>
       )}
 
-      {subtotal.state === 'upcoming' ? (
-        <span className="text-xs text-text-muted">예정</span>
-      ) : (
+      {subtotal.state === 'upcoming' && <span className="text-xs text-text-muted">예정</span>}
+      {subtotal.state === 'unavailable' && <span className="text-xs text-text-muted">데이터 없음</span>}
+      {(subtotal.state === 'confirmed' || subtotal.state === 'inProgress') && (
         <span className="text-sm font-semibold text-text tabular-nums">{subtotal.totalMeso.toLocaleString()} 메소</span>
       )}
     </li>
@@ -359,6 +359,7 @@ export function BossProfitScreen(): React.JSX.Element {
   const now = new Date()
   const periodLabel = formatBossProfitPeriodLabel(tab, periodKey, now)
   const isNextDisabled = isLatestPeriod(tab, periodKey, now)
+  const isPrevDisabled = isEarliestNavigablePeriod(tab, periodKey)
   const characterGroups = buildCharacterGroups(rows, weeklySubtotals)
   const totalMeso = characterGroups.reduce((sum, group) => sum + groupTotalMeso(group), 0)
 
@@ -405,6 +406,7 @@ export function BossProfitScreen(): React.JSX.Element {
         <button
           type="button"
           onClick={() => goToPreviousPeriod()}
+          disabled={isPrevDisabled}
           aria-label="이전 기간"
           className="flex h-7 w-7 items-center justify-center rounded-full border border-border text-text disabled:opacity-30"
         >

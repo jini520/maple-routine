@@ -174,3 +174,15 @@ export function getBackfillQueryDate(cycle: BossCycle, periodKey: string): strin
   const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate()
   return `${year}-${pad(month)}-${pad(lastDay)}`
 }
+
+/**
+ * periodKey에서 한 단계 더 과거로 이동하면 MIN_SCHEDULER_DATE 이전이라 백필 자체가 불가능한
+ * 기간에 도달하는지 확인한다. true면 이 기간에서 prev 방향 네비게이션 버튼을 비활성화해야 한다.
+ * (weekly에 적용하면 2026-06-25 이전 주로 이동을 막고, monthly에 적용하면 그 달이 통째로
+ * MIN_SCHEDULER_DATE 이전인 달 — 2026-05 이전 — 로 이동을 막는다. 이미 진입한 기간 자체가
+ * 부분적으로만 조회 불가능한 경우(예: 2026-06월, 1~3주차만 데이터 없음)는 막지 않는다.)
+ */
+export function isEarliestNavigablePeriod(cycle: BossCycle, periodKey: string): boolean {
+  const prevPeriodKey = getAdjacentPeriodKey(cycle, periodKey, 'prev')
+  return getBackfillQueryDate(cycle, prevPeriodKey) < MIN_SCHEDULER_DATE
+}

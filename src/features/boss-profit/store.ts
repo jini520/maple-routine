@@ -7,6 +7,7 @@ import {
   getBackfillQueryDate,
   getCurrentBossProfitPeriod,
   getWeeklyPeriodKeysInMonth,
+  isEarliestNavigablePeriod,
   isLatestPeriod,
   MIN_SCHEDULER_DATE,
 } from '../../lib/boss-profit-period'
@@ -36,7 +37,7 @@ export interface BossProfitRow {
   payoutMeso: number | null // partySize가 null이거나 priceMeso가 null이면 null
 }
 
-export type WeeklySubtotalState = 'confirmed' | 'inProgress' | 'upcoming'
+export type WeeklySubtotalState = 'confirmed' | 'inProgress' | 'upcoming' | 'unavailable'
 
 export interface BossProfitWeeklySubtotal {
   ocid: string
@@ -243,6 +244,11 @@ async function buildWeeklySubtotalsForMonth(
         subtotals.push({ ocid, characterName, periodKey: weekKey, totalMeso, state: 'inProgress' })
       } else if (weekKey > currentWeeklyPeriodKey) {
         subtotals.push({ ocid, characterName, periodKey: weekKey, totalMeso: 0, state: 'upcoming' })
+      } else if (getBackfillQueryDate('weekly', weekKey) < MIN_SCHEDULER_DATE) {
+        // 스케줄러 API가 존재하기 이전 주 — 애초에 조회(백필)하지 않는 기간이므로(backfillTarget
+        // 참고) "0메소"가 아니라 "데이터 없음"으로 구분해 표시해야 한다. 캐릭터 소계 계산에는
+        // 0으로 반영된다(totalMeso: 0).
+        subtotals.push({ ocid, characterName, periodKey: weekKey, totalMeso: 0, state: 'unavailable' })
       } else {
         const totalMeso = pastRecords
           .filter((record) => record.ocid === ocid && record.cycle === 'weekly' && record.periodKey === weekKey)
@@ -659,8 +665,11 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
   },
 
   async goToPreviousPeriod() {
-    const myGeneration = ++requestGeneration
     const { tab, periodKey } = get()
+    if (isEarliestNavigablePeriod(tab, periodKey)) {
+      return
+    }
+    const myGeneration = ++requestGeneration
     const now = new Date()
     const newPeriodKey = getAdjacentPeriodKey(tab, periodKey, 'prev')
     const ocids = latestSyncSnapshot?.ocids ?? get().trackedOcids ?? []
