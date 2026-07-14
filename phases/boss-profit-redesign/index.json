@@ -29,7 +29,10 @@
     {
       "step": 3,
       "name": "profit-store",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-07-14T17:45:16+0900",
+      "summary": "boss-profit store에 tab/periodKey/weeklySubtotals/isPeriodLoading/periodUnavailable 상태와 setTab/goToPreviousPeriod/goToNextPeriod 추가, 로컬 우선 캐싱(현재 기간은 스냅샷 슬라이스, 과거 기간은 isPeriodChecked 게이트 후 date 파라미터 순차 백필)과 mergeRecordsIntoRows의 priceMeso 복원 버그 수정 구현, 신규 테스트 7건 포함 전체 603건 통과",
+      "completed_at": "2026-07-14T18:02:00+0900"
     },
     {
       "step": 4,
