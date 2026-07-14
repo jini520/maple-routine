@@ -42,6 +42,16 @@ describe('round-trip', () => {
     await setTheme('렌')
     await expect(getTheme()).resolves.toBe('렌')
   })
+
+  it('setTheme(머쉬맘) 후 getTheme()은 머쉬맘을 반환한다', async () => {
+    await setTheme('머쉬맘')
+    await expect(getTheme()).resolves.toBe('머쉬맘')
+  })
+
+  it('setTheme(혼테일) 후 getTheme()은 혼테일을 반환한다', async () => {
+    await setTheme('혼테일')
+    await expect(getTheme()).resolves.toBe('혼테일')
+  })
 })
 
 describe('손상되거나 알 수 없는 값', () => {

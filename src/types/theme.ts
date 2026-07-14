@@ -1,4 +1,4 @@
-export type ThemeName = '레테' | '렌'
+export type ThemeName = '레테' | '렌' | '머쉬맘' | '혼테일'
 
 export interface ThemeTokens {
   bg: string
@@ -10,6 +10,9 @@ export interface ThemeTokens {
   primaryHover: string
   primaryText: string
   secondary: string
+  secondaryText: string
+  third: string
+  thirdText: string
   infoTint: string
   error: string
   text: string
