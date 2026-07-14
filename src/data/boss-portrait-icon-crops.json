@@ -1,1 +1,27 @@
-{}
+{
+  "zakum": { "size": "220% auto", "position": "60% 40%" },
+  "magnus": { "size": "280% auto", "position": "40% 20%" },
+  "papulatus": { "size": "410% auto", "position": "50% 30%" },
+  "vonBon": { "size": "250% auto", "position": "30% 35%" },
+  "pierre": { "size": "240% auto", "position": "45% 45%" },
+  "crimsonQueen": { "size": "330% auto", "position": "55% 15%" },
+  "vellum": { "size": "170% auto", "position": "15% 50%" },
+  "lotus": { "size": "250% auto", "position": "45% 20%" },
+  "damien": { "size": "250% auto", "position": "45% 35%" },
+  "slime": { "size": "200% auto", "position": "40% 50%" },
+  "lucid": { "size": "230% auto", "position": "35% 45%" },
+  "will": { "size": "270% auto", "position": "35% 5%" },
+  "gloom": { "size": "160% auto", "position": "45% 40%" },
+  "verusHilla": { "size": "250% auto", "position": "45% 15%" },
+  "darknell": { "size": "250% auto", "position": "50% 15%" },
+  "seren": { "size": "330% auto", "position": "50% 40%" },
+  "kalos": { "size": "210% auto", "position": "40% 65%" },
+  "adversary": { "size": "210% auto", "position": "40% 35%" },
+  "kaling": { "size": "800% auto", "position": "42% 49%" },
+  "maleficStar": { "size": "210% auto", "position": "40% 25%" },
+  "limbo": { "size": "240% auto", "position": "30% 60%" },
+  "bardrix": { "size": "230% auto", "position": "25% 30%" },
+  "jupiter": { "size": "200% auto", "position": "45% 25%" },
+  "maerin": { "size": "180% auto", "position": "50% 30%" },
+  "blackMage": { "size": "240% auto", "position": "20% 20%" }
+}
