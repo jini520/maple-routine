@@ -82,7 +82,8 @@
     },
     {
       "dir": "boss-profit-redesign",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-07-14T18:12:15+0900"
     }
   ]
 }
