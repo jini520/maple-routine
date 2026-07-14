@@ -157,7 +157,7 @@ describe('AppShell', () => {
 
     renderAt('/profit')
 
-    expect(screen.getByRole('heading', { name: '주간 보스 수익 계산기' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '보스 수익' })).toBeInTheDocument()
   })
 
   it('status가 completed가 아닐 때 /settings로 접근하면 온보딩으로 리다이렉트된다', () => {

@@ -75,6 +75,9 @@ describe('getBossProfitDb', () => {
     expect(dbExecuteMock).toHaveBeenCalledWith(
       expect.stringContaining('CREATE TABLE IF NOT EXISTS boss_party_settings'),
     )
+    expect(dbExecuteMock).toHaveBeenCalledWith(
+      expect.stringContaining('CREATE TABLE IF NOT EXISTS boss_profit_period_checks'),
+    )
     expect(db).toBe(fakeDb)
   })
 

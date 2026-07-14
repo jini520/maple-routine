@@ -1,0 +1,48 @@
+{
+  "project": "메이플 루틴 (Maple Routine)",
+  "phase": "boss-profit-redesign",
+  "steps": [
+    {
+      "step": 0,
+      "name": "period-lib",
+      "status": "completed",
+      "started_at": "2026-07-14T17:39:08+0900",
+      "summary": "boss-profit-period.ts에 getAdjacentPeriodKey/isLatestPeriod/formatBossProfitPeriodLabel/getWeeklyPeriodKeysInMonth/getBackfillQueryDate 추가, 단위 테스트 19건 통과",
+      "completed_at": "2026-07-14T17:41:46+0900"
+    },
+    {
+      "step": 1,
+      "name": "date-param-api",
+      "status": "completed",
+      "started_at": "2026-07-14T17:41:46+0900",
+      "summary": "fetchSchedulerCharacterState에 optional date 파라미터 추가(쿼리스트링 &date=YYYY-MM-DD), requestJson/에러 분류는 변경 없이 재사용, 신규 테스트 1건 포함 전체 590건 통과",
+      "completed_at": "2026-07-14T17:43:06+0900"
+    },
+    {
+      "step": 2,
+      "name": "backfill-tracking",
+      "status": "completed",
+      "started_at": "2026-07-14T17:43:06+0900",
+      "summary": "boss_profit_period_checks 테이블(ocid+cycle+period_key PK) 신규 추가, storage/boss-profit-period-checks.ts에 isPeriodChecked/markPeriodChecked 구현, 단위 테스트 6건 포함 전체 596건 통과",
+      "completed_at": "2026-07-14T17:45:16+0900"
+    },
+    {
+      "step": 3,
+      "name": "profit-store",
+      "status": "completed",
+      "started_at": "2026-07-14T17:45:16+0900",
+      "summary": "boss-profit store에 tab/periodKey/weeklySubtotals/isPeriodLoading/periodUnavailable 상태와 setTab/goToPreviousPeriod/goToNextPeriod 추가, 로컬 우선 캐싱(현재 기간은 스냅샷 슬라이스, 과거 기간은 isPeriodChecked 게이트 후 date 파라미터 순차 백필)과 mergeRecordsIntoRows의 priceMeso 복원 버그 수정 구현, 신규 테스트 7건 포함 전체 603건 통과",
+      "completed_at": "2026-07-14T18:03:59+0900"
+    },
+    {
+      "step": 4,
+      "name": "profit-screen",
+      "status": "completed",
+      "started_at": "2026-07-14T18:04:00+0900",
+      "summary": "BossProfitScreen을 \"보스 수익\"으로 재작성 — 주간/월간 탭·기간 네비게이터(다음 버튼 최신 기간에서 비활성)·백필 스피너, 헤더+본문 결합 아코디언(아바타/이름/합계 분리, hairline 통합 리스트, -/+ 압축 스테퍼, footer 소계), 월간 탭 주차별 합계+월간 보스 서브섹션 구현. App.test.tsx의 구 제목 단언 1건 갱신 포함 전체 610건 통과, 빌드 통과. 온보딩 완료 상태를 요구해 실제 브라우저 시각 검증은 수행하지 못함(도구 제약)",
+      "completed_at": "2026-07-14T18:12:15+0900"
+    }
+  ],
+  "created_at": "2026-07-14T17:39:08+0900",
+  "completed_at": "2026-07-14T18:12:15+0900"
+}

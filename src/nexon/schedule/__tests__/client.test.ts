@@ -48,6 +48,20 @@ describe('fetchSchedulerCharacterState', () => {
       }),
     )
   })
+
+  it('date가 주어지면 쿼리 파라미터에 date를 함께 담아 호출한다', async () => {
+    const fetchMock = vi.fn(async () => jsonResponse(200, schedulerFixture('낟낟')))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await fetchSchedulerCharacterState('test-api-key', 'ocid-123', '2026-06-01')
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://open.api.nexon.com/maplestory/v1/scheduler/character-state?ocid=ocid-123&date=2026-06-01',
+      expect.objectContaining({
+        headers: { 'x-nxopen-api-key': 'test-api-key' },
+      }),
+    )
+  })
 })
 
 describe('fetchSchedulerStatesForCharacters', () => {

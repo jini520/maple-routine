@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CharacterScheduleSync } from '../../schedule-sync/schedule-sync'
-import type { BossContent } from '../../../types'
+import type { BossContent, SchedulerCharacterState } from '../../../types'
 import type { BossProfitRecord } from '../../../storage/boss-profit'
 import type { CachedSchedulerEntry } from '../../../storage/scheduler-cache'
 
@@ -11,6 +11,11 @@ const {
   upsertBossProfitRecordMock,
   getBossPartySizeMock,
   getCachedSchedulerStateMock,
+  getCachedCharacterBasicMock,
+  isPeriodCheckedMock,
+  markPeriodCheckedMock,
+  getAuthConfigMock,
+  fetchSchedulerCharacterStateMock,
 } = vi.hoisted(() => ({
   syncSchedulesMock: vi.fn(),
   getTrackedCharacterOcidsMock: vi.fn(),
@@ -18,6 +23,11 @@ const {
   upsertBossProfitRecordMock: vi.fn(),
   getBossPartySizeMock: vi.fn(),
   getCachedSchedulerStateMock: vi.fn(),
+  getCachedCharacterBasicMock: vi.fn(),
+  isPeriodCheckedMock: vi.fn(),
+  markPeriodCheckedMock: vi.fn(),
+  getAuthConfigMock: vi.fn(),
+  fetchSchedulerCharacterStateMock: vi.fn(),
 }))
 
 vi.mock('../../schedule-sync/schedule-sync', () => ({
@@ -41,6 +51,30 @@ vi.mock('../../../storage/scheduler-cache', () => ({
   getCachedSchedulerState: getCachedSchedulerStateMock,
 }))
 
+vi.mock('../../../storage/character-basic-cache', () => ({
+  getCachedCharacterBasic: getCachedCharacterBasicMock,
+}))
+
+vi.mock('../../../storage/boss-profit-period-checks', () => ({
+  isPeriodChecked: isPeriodCheckedMock,
+  markPeriodChecked: markPeriodCheckedMock,
+}))
+
+vi.mock('../../../storage/api-key', () => ({
+  getAuthConfig: getAuthConfigMock,
+}))
+
+vi.mock('../../../nexon/schedule', () => ({
+  fetchSchedulerCharacterState: fetchSchedulerCharacterStateMock,
+}))
+
+import {
+  getAdjacentPeriodKey,
+  getBackfillQueryDate,
+  getCurrentBossProfitPeriod,
+  getWeeklyPeriodKeysInMonth,
+  MIN_SCHEDULER_DATE,
+} from '../../../lib/boss-profit-period'
 import { useBossProfitStore } from '../store'
 
 function bossContent(overrides: Partial<BossContent> = {}): BossContent {
@@ -80,7 +114,12 @@ function syncResult(overrides: Partial<CharacterScheduleSync> = {}): CharacterSc
 beforeEach(() => {
   useBossProfitStore.setState({
     status: 'idle',
+    tab: 'weekly',
+    periodKey: getCurrentBossProfitPeriod('weekly', new Date()).periodKey,
     rows: [],
+    weeklySubtotals: [],
+    isPeriodLoading: false,
+    periodUnavailable: false,
     error: null,
     staleCharacterNames: [],
     trackedOcids: null,
@@ -89,6 +128,14 @@ beforeEach(() => {
   upsertBossProfitRecordMock.mockResolvedValue(undefined)
   getBossPartySizeMock.mockResolvedValue(null)
   getCachedSchedulerStateMock.mockResolvedValue(null)
+  getCachedCharacterBasicMock.mockImplementation(async (ocid: string) => ({
+    profile: { name: `캐릭터-${ocid}`, level: 200, imageUrl: 'x', accessFlag: true },
+    cachedAt: '2026-07-01T00:00:00.000Z',
+  }))
+  isPeriodCheckedMock.mockResolvedValue(false)
+  markPeriodCheckedMock.mockResolvedValue(undefined)
+  getAuthConfigMock.mockResolvedValue({ apiKey: 'test-key', selectedAccountId: 'acc-1' })
+  fetchSchedulerCharacterStateMock.mockResolvedValue(null)
 })
 
 afterEach(() => {
@@ -134,7 +181,7 @@ describe('useBossProfitStore', () => {
     expect(rows[0].boss).toBe('스우')
   })
 
-  it('weekly·monthly 처치 보스가 모두 rows에 포함된다', async () => {
+  it('weekly 탭에서는 weekly cycle 보스만, monthly 탭으로 전환하면 monthly cycle 보스만 rows에 노출된다', async () => {
     syncSchedulesMock.mockResolvedValue([
       syncResult({
         state: {
@@ -149,10 +196,17 @@ describe('useBossProfitStore', () => {
 
     await useBossProfitStore.getState().refresh(['ocid-1'])
 
-    const rows = useBossProfitStore.getState().rows
-    expect(rows.map((row) => row.boss).sort()).toEqual(['검은마법사', '자쿰'])
-    expect(rows.find((row) => row.boss === '자쿰')?.cycle).toBe('weekly')
-    expect(rows.find((row) => row.boss === '검은마법사')?.cycle).toBe('monthly')
+    const weeklyRows = useBossProfitStore.getState().rows
+    expect(weeklyRows.map((row) => row.boss)).toEqual(['자쿰'])
+    expect(weeklyRows[0].cycle).toBe('weekly')
+
+    await useBossProfitStore.getState().setTab('monthly')
+
+    const monthlyRows = useBossProfitStore.getState().rows
+    expect(monthlyRows.map((row) => row.boss)).toEqual(['검은마법사'])
+    expect(monthlyRows[0].cycle).toBe('monthly')
+    // setTab은 "현재 기간"으로만 이동하므로 API를 다시 호출하지 않는다(로컬 스냅샷에서 슬라이스).
+    expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
   })
 
   it('시세표에 없는 보스는 priceMeso가 null이고 payoutMeso도 항상 null이다', async () => {
@@ -192,6 +246,87 @@ describe('useBossProfitStore', () => {
     expect(rows.map((row) => row.ocid).sort()).toEqual(['ocid-1', 'ocid-2'])
   })
 
+  it('row.imageUrl은 character-basic-cache의 character_image로 채워진다(캐릭터명은 character/list 출처를 유지)', async () => {
+    getCachedCharacterBasicMock.mockImplementation(async (ocid: string) => ({
+      profile: { name: `캐시된-${ocid}`, level: 200, imageUrl: `https://example.com/${ocid}.png`, accessFlag: true },
+      cachedAt: '2026-07-01T00:00:00.000Z',
+    }))
+    syncSchedulesMock.mockResolvedValue([syncResult({ ocid: 'ocid-1', characterName: '라이브이름' })])
+
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+
+    const row = useBossProfitStore.getState().rows[0]
+    expect(row.characterName).toBe('라이브이름') // character/list 출처 유지(ADR-017, 정확도 우선)
+    expect(row.imageUrl).toBe('https://example.com/ocid-1.png') // character-basic-cache 출처
+  })
+
+  it('character-basic-cache에 캐시가 없으면 row.imageUrl은 null이다', async () => {
+    getCachedCharacterBasicMock.mockResolvedValue(null)
+    syncSchedulesMock.mockResolvedValue([syncResult()])
+
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+
+    expect(useBossProfitStore.getState().rows[0].imageUrl).toBeNull()
+  })
+
+  it('캐릭터 순서는 레벨 내림차순으로 고정되며 ocids 인자·API 응답 순서와 무관하다', async () => {
+    getCachedCharacterBasicMock.mockImplementation(async (ocid: string) => ({
+      profile: {
+        name: `캐릭터-${ocid}`,
+        level: ocid === 'ocid-1' ? 100 : 250,
+        imageUrl: 'x',
+        accessFlag: true,
+      },
+      cachedAt: '2026-07-01T00:00:00.000Z',
+    }))
+    // syncSchedules는 낮은 레벨(ocid-1)을 먼저 반환하지만, 최종 rows는 레벨이 더 높은
+    // ocid-2가 먼저 와야 한다 — API 응답 순서를 그대로 따르지 않는다.
+    syncSchedulesMock.mockResolvedValue([
+      syncResult({ ocid: 'ocid-1', characterName: '캐릭터-ocid-1' }),
+      syncResult({
+        ocid: 'ocid-2',
+        characterName: '캐릭터-ocid-2',
+        state: {
+          ...syncResult().state!,
+          bossContents: [bossContent({ name: '스우', difficulty: '노멀', isComplete: true })],
+        },
+      }),
+    ])
+
+    await useBossProfitStore.getState().refresh(['ocid-1', 'ocid-2'])
+
+    expect(useBossProfitStore.getState().rows.map((row) => row.ocid)).toEqual(['ocid-2', 'ocid-1'])
+  })
+
+  it('캐시 우선 표시와 실시간 동기화 이후의 캐릭터 순서가 같다(응답 도착 후 순서가 바뀌지 않는다)', async () => {
+    getCachedCharacterBasicMock.mockImplementation(async (ocid: string) => ({
+      profile: {
+        name: `캐릭터-${ocid}`,
+        level: ocid === 'ocid-1' ? 100 : 250,
+        imageUrl: 'x',
+        accessFlag: true,
+      },
+      cachedAt: '2026-07-01T00:00:00.000Z',
+    }))
+    getCachedSchedulerStateMock.mockImplementation(async (ocid: string) => ({
+      state: {
+        ...syncResult().state!,
+        characterName: `캐릭터-${ocid}`,
+        bossContents: [bossContent({ isComplete: true })],
+      },
+      syncedAt: '2026-07-01T00:00:00.000Z',
+    }))
+
+    const pending = new Promise<CharacterScheduleSync[]>(() => {})
+    syncSchedulesMock.mockReturnValue(pending)
+
+    void useBossProfitStore.getState().refresh(['ocid-1', 'ocid-2'])
+    await vi.waitFor(() => expect(useBossProfitStore.getState().rows.length).toBe(2))
+
+    const cacheFirstOrder = useBossProfitStore.getState().rows.map((row) => row.ocid)
+    expect(cacheFirstOrder).toEqual(['ocid-2', 'ocid-1']) // 레벨 내림차순(ocid-2가 250으로 더 높음)
+  })
+
   it('특정 캐릭터의 동기화 결과가 isStale이면 staleCharacterNames에 그 캐릭터명이 포함된다', async () => {
     syncSchedulesMock.mockResolvedValue([syncResult({ characterName: '캐릭터1', isStale: true })])
 
@@ -224,6 +359,33 @@ describe('useBossProfitStore', () => {
     const row = useBossProfitStore.getState().rows[0]
     expect(row.partySize).toBe(4)
     expect(row.payoutMeso).toBe(2020000)
+  })
+
+  it('저장된 기록의 priceMeso가 라이브 시세와 다르면 기록값을 그대로 쓴다(과거 기록 재계산 방지, ADR-023)', async () => {
+    syncSchedulesMock.mockResolvedValue([syncResult()]) // 자쿰 카오스, 라이브 priceMeso 8080000
+
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+    const periodKey = useBossProfitStore.getState().rows[0].periodKey
+
+    const record: BossProfitRecord = {
+      ocid: 'ocid-1',
+      boss: '자쿰',
+      difficulty: '카오스',
+      cycle: 'weekly',
+      periodKey,
+      partySize: 2,
+      priceMeso: 7_000_000, // 과거 패치 시점 시세 — 지금의 라이브 시세(8080000)와 다르다
+      payoutMeso: 3_500_000,
+      recordedAt: '2026-07-09T00:00:00.000Z',
+    }
+    getBossProfitRecordsMock.mockResolvedValue([record])
+
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+
+    const row = useBossProfitStore.getState().rows[0]
+    expect(row.priceMeso).toBe(7_000_000)
+    expect(row.partySize).toBe(2)
+    expect(row.payoutMeso).toBe(3_500_000)
   })
 
   describe('자동 파티원 수 기록 (ADR-014, 기본값 소스는 ADR-019로 boss_party_settings 조회로 대체)', () => {
@@ -577,6 +739,335 @@ describe('useBossProfitStore', () => {
       await flushMicrotasks()
 
       expect(useBossProfitStore.getState().rows).toEqual([])
+    })
+
+    it('월간 탭 캐시 단계에서도 이미 확정된 지난 주차 합계가 즉시 반영된다(syncSchedules 응답 전 weeklySubtotals 누락 방지)', async () => {
+      // 이번 달에 반드시 "지난 주차"가 존재하도록 날짜를 고정한다(월초에 테스트를 실행하면
+      // 지난 주차가 아예 없어 전제가 깨지는 걸 방지) — Date만 고정하고 타이머는 실제로 둬서
+      // 아래 flushMicrotasks(실제 setTimeout 기반)가 그대로 동작하게 한다.
+      vi.useFakeTimers({ toFake: ['Date'] })
+      vi.setSystemTime(new Date('2026-07-30T06:00:00.000Z'))
+
+      try {
+        syncSchedulesMock.mockResolvedValue([syncResult()])
+        await useBossProfitStore.getState().refresh(['ocid-1'])
+        await useBossProfitStore.getState().setTab('monthly')
+
+        const monthPeriodKey = useBossProfitStore.getState().periodKey
+        const currentWeeklyPeriodKey = getCurrentBossProfitPeriod('weekly', new Date()).periodKey
+        const pastWeekKey = getWeeklyPeriodKeysInMonth(monthPeriodKey).find(
+          (key) => key < currentWeeklyPeriodKey,
+        )
+        if (pastWeekKey === undefined) {
+          throw new Error('테스트 전제 실패: 고정한 날짜 기준 이번 달에 지난 주차가 있어야 한다')
+        }
+
+        const pastRecord: BossProfitRecord = {
+          ocid: 'ocid-1',
+          boss: '스우',
+          difficulty: '노멀',
+          cycle: 'weekly',
+          periodKey: pastWeekKey,
+          partySize: 2,
+          priceMeso: 4_000_000,
+          payoutMeso: 2_000_000,
+          recordedAt: '2026-07-01T00:00:00.000Z',
+        }
+
+        vi.clearAllMocks()
+        getBossProfitRecordsMock.mockResolvedValue([pastRecord])
+        getCachedSchedulerStateMock.mockResolvedValue(cachedEntry())
+        getCachedCharacterBasicMock.mockImplementation(async (ocid: string) => ({
+          profile: { name: `캐릭터-${ocid}`, level: 200, imageUrl: 'x', accessFlag: true },
+          cachedAt: '2026-07-01T00:00:00.000Z',
+        }))
+
+        const pending = new Promise<CharacterScheduleSync[]>(() => {})
+        syncSchedulesMock.mockReturnValue(pending)
+
+        void useBossProfitStore.getState().refresh(['ocid-1'])
+        await flushMicrotasks()
+
+        const midState = useBossProfitStore.getState()
+        expect(midState.status).toBe('loading')
+        const pastSubtotal = midState.weeklySubtotals.find((subtotal) => subtotal.periodKey === pastWeekKey)
+        expect(pastSubtotal).toBeDefined()
+        expect(pastSubtotal?.totalMeso).toBe(2_000_000)
+        expect(pastSubtotal?.state).toBe('confirmed')
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+  })
+
+  describe('기간 네비게이션 (ADR-023)', () => {
+    function schedulerState(overrides: Partial<SchedulerCharacterState> = {}): SchedulerCharacterState {
+      return {
+        asOf: '2026-06-04T00:00+09:00',
+        characterName: '낟낟',
+        world: '베라',
+        level: 200,
+        jobClass: '렌',
+        dailyContents: [],
+        weeklyContents: [],
+        bossContents: [],
+        weeklyBossClearCount: 0,
+        weeklyBossClearLimitCount: 12,
+        ...overrides,
+      }
+    }
+
+    it('goToPreviousPeriod: 이미 체크된 과거 주는 API 호출 없이 로컬 기록만으로 rows를 채운다', async () => {
+      syncSchedulesMock.mockResolvedValue([syncResult()]) // 자쿰 카오스, 이번 주
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+      const currentPeriodKey = useBossProfitStore.getState().periodKey
+      const previousPeriodKey = getAdjacentPeriodKey('weekly', currentPeriodKey, 'prev')
+
+      isPeriodCheckedMock.mockResolvedValue(true)
+      const pastRecord: BossProfitRecord = {
+        ocid: 'ocid-1',
+        boss: '자쿰',
+        difficulty: '카오스',
+        cycle: 'weekly',
+        periodKey: previousPeriodKey,
+        partySize: 3,
+        priceMeso: 8_080_000,
+        payoutMeso: 2_693_333,
+        recordedAt: '2026-06-01T00:00:00.000Z',
+      }
+      getBossProfitRecordsMock.mockResolvedValue([pastRecord])
+      getCachedCharacterBasicMock.mockResolvedValue({
+        profile: { name: '낟낟', level: 200, imageUrl: 'x', accessFlag: true },
+        cachedAt: '2026-06-01T00:00:00.000Z',
+      })
+
+      await useBossProfitStore.getState().goToPreviousPeriod()
+
+      expect(fetchSchedulerCharacterStateMock).not.toHaveBeenCalled()
+      const state = useBossProfitStore.getState()
+      expect(state.periodKey).toBe(previousPeriodKey)
+      expect(state.rows).toHaveLength(1)
+      expect(state.rows[0].characterName).toBe('낟낟')
+      expect(state.rows[0].imageUrl).toBe('x') // 과거 기간도 character-basic-cache에서 이미지 복원(ADR-023)
+      expect(state.rows[0].partySize).toBe(3)
+      expect(state.rows[0].payoutMeso).toBe(2_693_333)
+      expect(state.isPeriodLoading).toBe(false)
+      expect(state.periodUnavailable).toBe(false)
+    })
+
+    it('goToPreviousPeriod: 체크된 적 없는 과거 주는 date 파라미터로 백필하고 완료 보스를 기록한 뒤 체크 표시한다', async () => {
+      syncSchedulesMock.mockResolvedValue([syncResult()])
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+      const currentPeriodKey = useBossProfitStore.getState().periodKey
+      const previousPeriodKey = getAdjacentPeriodKey('weekly', currentPeriodKey, 'prev')
+
+      isPeriodCheckedMock.mockResolvedValue(false)
+      getBossProfitRecordsMock.mockResolvedValue([])
+      fetchSchedulerCharacterStateMock.mockResolvedValue(
+        schedulerState({
+          bossContents: [bossContent({ name: '스우', difficulty: '노멀', cycle: 'weekly', isComplete: true })],
+        }),
+      )
+
+      await useBossProfitStore.getState().goToPreviousPeriod()
+
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith(
+        'test-key',
+        'ocid-1',
+        expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+      )
+      expect(upsertBossProfitRecordMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ocid: 'ocid-1',
+          boss: '스우',
+          difficulty: '노멀',
+          cycle: 'weekly',
+          periodKey: previousPeriodKey,
+          partySize: 1,
+        }),
+      )
+      expect(markPeriodCheckedMock).toHaveBeenCalledWith('ocid-1', 'weekly', previousPeriodKey, expect.any(String))
+      expect(useBossProfitStore.getState().isPeriodLoading).toBe(false)
+      expect(useBossProfitStore.getState().periodUnavailable).toBe(false)
+    })
+
+    it('goToPreviousPeriod: 백필 도중 isPeriodLoading이 true로 바뀐다', async () => {
+      syncSchedulesMock.mockResolvedValue([syncResult()])
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+
+      isPeriodCheckedMock.mockResolvedValue(false)
+      getBossProfitRecordsMock.mockResolvedValue([])
+
+      let resolveFetch!: (value: SchedulerCharacterState) => void
+      const pending = new Promise<SchedulerCharacterState>((resolve) => {
+        resolveFetch = resolve
+      })
+      fetchSchedulerCharacterStateMock.mockReturnValue(pending)
+
+      const promise = useBossProfitStore.getState().goToPreviousPeriod()
+
+      await vi.waitFor(() => {
+        expect(useBossProfitStore.getState().isPeriodLoading).toBe(true)
+      })
+
+      resolveFetch(schedulerState())
+      await promise
+
+      expect(useBossProfitStore.getState().isPeriodLoading).toBe(false)
+    })
+
+    it('goToPreviousPeriod: 백필이 실패하면 periodUnavailable이 true가 되고 markPeriodChecked를 호출하지 않는다', async () => {
+      syncSchedulesMock.mockResolvedValue([syncResult()])
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+
+      isPeriodCheckedMock.mockResolvedValue(false)
+      getBossProfitRecordsMock.mockResolvedValue([])
+      fetchSchedulerCharacterStateMock.mockRejectedValue(new Error('network down'))
+
+      await useBossProfitStore.getState().goToPreviousPeriod()
+
+      const state = useBossProfitStore.getState()
+      expect(state.periodUnavailable).toBe(true)
+      expect(markPeriodCheckedMock).not.toHaveBeenCalled()
+    })
+
+    it('goToPreviousPeriod: MIN_SCHEDULER_DATE 이전 주는 물리적으로 이동할 수 없다(weekly)', async () => {
+      syncSchedulesMock.mockResolvedValue([syncResult()])
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+
+      isPeriodCheckedMock.mockResolvedValue(false)
+      getBossProfitRecordsMock.mockResolvedValue([])
+      fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState())
+
+      // MIN_SCHEDULER_DATE 이전으로 넘어가기 바로 전 주(더 갈 수 있는 마지막 주)까지 이동한다.
+      for (let i = 0; i < 10; i += 1) {
+        const before = useBossProfitStore.getState().periodKey
+        const next = getAdjacentPeriodKey('weekly', before, 'prev')
+        if (getBackfillQueryDate('weekly', next) < MIN_SCHEDULER_DATE) {
+          break
+        }
+        await useBossProfitStore.getState().goToPreviousPeriod()
+      }
+
+      const boundaryPeriodKey = useBossProfitStore.getState().periodKey
+      fetchSchedulerCharacterStateMock.mockClear()
+
+      // 여기서 한 번 더 이전으로 가려고 하면 아무 것도 하지 않아야 한다(API 호출도, periodKey
+      // 변경도 없음) — MIN_SCHEDULER_DATE 이전 기간은 애초에 도달 불가능하다.
+      await useBossProfitStore.getState().goToPreviousPeriod()
+
+      expect(useBossProfitStore.getState().periodKey).toBe(boundaryPeriodKey)
+      expect(fetchSchedulerCharacterStateMock).not.toHaveBeenCalled()
+    })
+
+    it('goToPreviousPeriod: 통째로 MIN_SCHEDULER_DATE 이전인 달로는 물리적으로 이동할 수 없다(monthly)', async () => {
+      syncSchedulesMock.mockResolvedValue([syncResult()])
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+      await useBossProfitStore.getState().setTab('monthly')
+
+      const monthBefore = useBossProfitStore.getState().periodKey
+      fetchSchedulerCharacterStateMock.mockClear()
+
+      // "이번 달"에서 "지난 달"로 가려고 하면, 그 달이 통째로 MIN_SCHEDULER_DATE 이전이면
+      // 아무 것도 하지 않아야 한다(periodKey 변경도, API 호출도 없음).
+      await useBossProfitStore.getState().goToPreviousPeriod()
+
+      expect(useBossProfitStore.getState().periodKey).toBe(monthBefore)
+      expect(fetchSchedulerCharacterStateMock).not.toHaveBeenCalled()
+    })
+
+    it('먼저 시작된 느린 백필이 나중에 끝나도, 그 사이 시작된 더 최신 네비게이션 결과를 덮어쓰지 않는다', async () => {
+      syncSchedulesMock.mockResolvedValue([syncResult()]) // 자쿰 카오스, 이번 주
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+      const currentPeriodKey = useBossProfitStore.getState().periodKey
+
+      isPeriodCheckedMock.mockResolvedValue(false)
+      getBossProfitRecordsMock.mockResolvedValue([])
+
+      // 이전 주 이동(백필)을 pending 상태로 묶어둔다 — 아직 응답이 오지 않은 "느린" 요청.
+      let resolveSlowFetch!: (value: SchedulerCharacterState) => void
+      const slowFetch = new Promise<SchedulerCharacterState>((resolve) => {
+        resolveSlowFetch = resolve
+      })
+      fetchSchedulerCharacterStateMock.mockReturnValueOnce(slowFetch)
+
+      const firstNavigation = useBossProfitStore.getState().goToPreviousPeriod()
+      await vi.waitFor(() => expect(useBossProfitStore.getState().isPeriodLoading).toBe(true))
+
+      // 응답을 기다리는 동안 사용자가 곧바로 이번 주로 돌아온다 — 로컬 스냅샷에서 즉시 끝난다.
+      await useBossProfitStore.getState().goToNextPeriod()
+
+      expect(useBossProfitStore.getState().periodKey).toBe(currentPeriodKey)
+      expect(useBossProfitStore.getState().rows.map((row) => row.boss)).toEqual(['자쿰'])
+      expect(useBossProfitStore.getState().isPeriodLoading).toBe(false)
+
+      // 이제서야 먼저 시작됐던 "이전 주" 백필 응답이 뒤늦게 도착한다.
+      resolveSlowFetch(
+        schedulerState({
+          bossContents: [bossContent({ name: '스우', difficulty: '노멀', isComplete: true })],
+        }),
+      )
+      await firstNavigation
+
+      // 화면은 여전히 "이번 주"를 보여줘야 한다 — 뒤늦게 도착한 이전 주 응답에 덮어써지면 안 된다.
+      expect(useBossProfitStore.getState().periodKey).toBe(currentPeriodKey)
+      expect(useBossProfitStore.getState().rows.map((row) => row.boss)).toEqual(['자쿰'])
+      expect(useBossProfitStore.getState().isPeriodLoading).toBe(false)
+    })
+
+    it('goToNextPeriod: 이미 최신 기간이면 periodKey가 바뀌지 않고 아무 것도 호출하지 않는다', async () => {
+      syncSchedulesMock.mockResolvedValue([syncResult()])
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+      const periodKeyBefore = useBossProfitStore.getState().periodKey
+
+      await useBossProfitStore.getState().goToNextPeriod()
+
+      expect(useBossProfitStore.getState().periodKey).toBe(periodKeyBefore)
+      expect(fetchSchedulerCharacterStateMock).not.toHaveBeenCalled()
+      expect(isPeriodCheckedMock).not.toHaveBeenCalled()
+    })
+
+    it('setPartySize는 과거 기간의 row에도 정상 동작한다(읽기 전용 처리 없음)', async () => {
+      syncSchedulesMock.mockResolvedValue([syncResult()])
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+      const currentPeriodKey = useBossProfitStore.getState().periodKey
+      const previousPeriodKey = getAdjacentPeriodKey('weekly', currentPeriodKey, 'prev')
+
+      isPeriodCheckedMock.mockResolvedValue(true)
+      getBossProfitRecordsMock.mockResolvedValue([
+        {
+          ocid: 'ocid-1',
+          boss: '자쿰',
+          difficulty: '카오스',
+          cycle: 'weekly',
+          periodKey: previousPeriodKey,
+          partySize: 2,
+          priceMeso: 8_080_000,
+          payoutMeso: 4_040_000,
+          recordedAt: '2026-06-01T00:00:00.000Z',
+        } satisfies BossProfitRecord,
+      ])
+      getCachedCharacterBasicMock.mockResolvedValue({
+        profile: { name: '낟낟', level: 200, imageUrl: 'x', accessFlag: true },
+        cachedAt: '2026-06-01T00:00:00.000Z',
+      })
+
+      await useBossProfitStore.getState().goToPreviousPeriod()
+      upsertBossProfitRecordMock.mockClear()
+      const pastRow = useBossProfitStore.getState().rows[0]
+
+      await useBossProfitStore.getState().setPartySize(pastRow, 3)
+
+      expect(upsertBossProfitRecordMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ocid: 'ocid-1',
+          boss: '자쿰',
+          difficulty: '카오스',
+          periodKey: previousPeriodKey,
+          partySize: 3,
+        }),
+      )
+      expect(useBossProfitStore.getState().rows[0].partySize).toBe(3)
     })
   })
 })

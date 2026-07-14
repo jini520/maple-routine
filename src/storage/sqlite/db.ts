@@ -30,6 +30,16 @@ const CREATE_BOSS_PARTY_SETTINGS_TABLE = `
   )
 `
 
+const CREATE_BOSS_PROFIT_PERIOD_CHECKS_TABLE = `
+  CREATE TABLE IF NOT EXISTS boss_profit_period_checks (
+    ocid TEXT NOT NULL,
+    cycle TEXT NOT NULL,
+    period_key TEXT NOT NULL,
+    checked_at TEXT NOT NULL,
+    PRIMARY KEY (ocid, cycle, period_key)
+  )
+`
+
 let sqliteConnection: SQLiteConnection | null = null
 let dbPromise: Promise<SQLiteDBConnection> | null = null
 
@@ -55,6 +65,7 @@ async function openBossProfitDb(): Promise<SQLiteDBConnection> {
   await db.open()
   await db.execute(CREATE_BOSS_PROFIT_RECORDS_TABLE)
   await db.execute(CREATE_BOSS_PARTY_SETTINGS_TABLE)
+  await db.execute(CREATE_BOSS_PROFIT_PERIOD_CHECKS_TABLE)
 
   return db
 }
