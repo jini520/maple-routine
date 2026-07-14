@@ -113,3 +113,22 @@ describe('getAllCachedCharacterBasicOcids (ADR-017 결정 6)', () => {
     expect(ocids).toEqual(['ocid-2'])
   })
 })
+
+describe('인덱스 갱신 동시성 (2026-07-14 정정)', () => {
+  const raceOcids = Array.from({ length: 10 }, (_, i) => `race-ocid-${i}`)
+
+  afterEach(async () => {
+    await Promise.all(raceOcids.map((ocid) => clearCachedCharacterBasic(ocid)))
+  })
+
+  it('여러 캐릭터를 동시에 캐싱해도 인덱스에서 유실되는 ocid가 없다', async () => {
+    await Promise.all(raceOcids.map((ocid) => setCachedCharacterBasic(ocid, sampleEntry)))
+
+    const ocids = await getAllCachedCharacterBasicOcids()
+    expect(new Set(ocids)).toEqual(new Set(raceOcids))
+
+    for (const ocid of raceOcids) {
+      await expect(getCachedCharacterBasic(ocid)).resolves.toEqual(sampleEntry)
+    }
+  })
+})
