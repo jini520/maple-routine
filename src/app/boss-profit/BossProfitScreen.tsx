@@ -12,6 +12,42 @@ import { formatScheduleSyncError } from '../../features/schedule-sync/format'
 import { formatBossProfitPeriodLabel, isEarliestNavigablePeriod, isLatestPeriod } from '../../lib/boss-profit-period'
 import type { BossCycle } from '../../types'
 
+// components/CharacterTrackingPicker와 동일한 얼굴 크롭 기법(ADR-015)을 이 화면의 32px
+// 아바타 슬롯 크기에 맞춰 재사용한다 — 이 프로젝트는 화면마다 UI를 그대로 복제하는 관례를
+// 따른다(탭 pill과 동일한 이유, ADR-018).
+const AVATAR_SOURCE_IMAGE_SIZE = 300
+const AVATAR_FACE_CROP_BOX = { x: 115, y: 120, size: 64 }
+const AVATAR_SIZE = 32
+
+function avatarFaceCropStyle(): React.CSSProperties {
+  const scale = AVATAR_SIZE / AVATAR_FACE_CROP_BOX.size
+  return {
+    width: AVATAR_SOURCE_IMAGE_SIZE * scale,
+    height: AVATAR_SOURCE_IMAGE_SIZE * scale,
+    left: -AVATAR_FACE_CROP_BOX.x * scale,
+    top: -AVATAR_FACE_CROP_BOX.y * scale,
+  }
+}
+
+function CharacterAvatar(props: { characterName: string; imageUrl: string | null }): React.JSX.Element {
+  return (
+    <span className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full bg-surface-2">
+      {props.imageUrl !== null ? (
+        <img
+          src={props.imageUrl}
+          alt={props.characterName}
+          className="absolute max-w-none"
+          style={avatarFaceCropStyle()}
+        />
+      ) : (
+        <span className="flex h-full w-full items-center justify-center text-xs font-bold text-text">
+          {props.characterName.charAt(0)}
+        </span>
+      )}
+    </span>
+  )
+}
+
 interface BossReferenceEntry {
   boss: string
   portraitSlug?: string
@@ -225,6 +261,7 @@ function MonthlyAccordionBody(props: {
 interface CharacterGroup {
   ocid: string
   characterName: string
+  imageUrl: string | null
   bossRows: BossProfitRow[]
   weeklySubtotals: BossProfitWeeklySubtotal[]
 }
@@ -236,22 +273,22 @@ function buildCharacterGroups(
   const groups: CharacterGroup[] = []
   const indexByOcid = new Map<string, number>()
 
-  function ensureGroup(ocid: string, characterName: string): CharacterGroup {
+  function ensureGroup(ocid: string, characterName: string, imageUrl: string | null): CharacterGroup {
     const existingIndex = indexByOcid.get(ocid)
     if (existingIndex !== undefined) {
       return groups[existingIndex]
     }
-    const group: CharacterGroup = { ocid, characterName, bossRows: [], weeklySubtotals: [] }
+    const group: CharacterGroup = { ocid, characterName, imageUrl, bossRows: [], weeklySubtotals: [] }
     indexByOcid.set(ocid, groups.length)
     groups.push(group)
     return group
   }
 
   for (const row of rows) {
-    ensureGroup(row.ocid, row.characterName).bossRows.push(row)
+    ensureGroup(row.ocid, row.characterName, row.imageUrl).bossRows.push(row)
   }
   for (const subtotal of weeklySubtotals) {
-    ensureGroup(subtotal.ocid, subtotal.characterName).weeklySubtotals.push(subtotal)
+    ensureGroup(subtotal.ocid, subtotal.characterName, subtotal.imageUrl).weeklySubtotals.push(subtotal)
   }
 
   return groups
@@ -285,9 +322,7 @@ function CharacterAccordion(props: {
             : 'flex w-full items-center gap-3 rounded-[14px] bg-surface border border-border p-4'
         }
       >
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-2 text-xs font-bold text-text">
-          {group.characterName.charAt(0)}
-        </span>
+        <CharacterAvatar characterName={group.characterName} imageUrl={group.imageUrl} />
         <span className="flex-1 truncate text-left text-sm font-semibold text-text">{group.characterName}</span>
         <span className="text-sm font-bold text-text tabular-nums">{totalMeso.toLocaleString()} 메소</span>
         {isExpanded ? (

@@ -245,6 +245,29 @@ describe('useBossProfitStore', () => {
     expect(rows.map((row) => row.ocid).sort()).toEqual(['ocid-1', 'ocid-2'])
   })
 
+  it('row.imageUrl은 character-basic-cache의 character_image로 채워진다(캐릭터명은 character/list 출처를 유지)', async () => {
+    getCachedCharacterBasicMock.mockImplementation(async (ocid: string) => ({
+      profile: { name: `캐시된-${ocid}`, level: 200, imageUrl: `https://example.com/${ocid}.png`, accessFlag: true },
+      cachedAt: '2026-07-01T00:00:00.000Z',
+    }))
+    syncSchedulesMock.mockResolvedValue([syncResult({ ocid: 'ocid-1', characterName: '라이브이름' })])
+
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+
+    const row = useBossProfitStore.getState().rows[0]
+    expect(row.characterName).toBe('라이브이름') // character/list 출처 유지(ADR-017, 정확도 우선)
+    expect(row.imageUrl).toBe('https://example.com/ocid-1.png') // character-basic-cache 출처
+  })
+
+  it('character-basic-cache에 캐시가 없으면 row.imageUrl은 null이다', async () => {
+    getCachedCharacterBasicMock.mockResolvedValue(null)
+    syncSchedulesMock.mockResolvedValue([syncResult()])
+
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+
+    expect(useBossProfitStore.getState().rows[0].imageUrl).toBeNull()
+  })
+
   it('캐릭터 순서는 레벨 내림차순으로 고정되며 ocids 인자·API 응답 순서와 무관하다', async () => {
     getCachedCharacterBasicMock.mockImplementation(async (ocid: string) => ({
       profile: {
@@ -766,6 +789,7 @@ describe('useBossProfitStore', () => {
       expect(state.periodKey).toBe(previousPeriodKey)
       expect(state.rows).toHaveLength(1)
       expect(state.rows[0].characterName).toBe('낟낟')
+      expect(state.rows[0].imageUrl).toBe('x') // 과거 기간도 character-basic-cache에서 이미지 복원(ADR-023)
       expect(state.rows[0].partySize).toBe(3)
       expect(state.rows[0].payoutMeso).toBe(2_693_333)
       expect(state.isPeriodLoading).toBe(false)

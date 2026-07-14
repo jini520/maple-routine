@@ -26,6 +26,7 @@ import { syncSchedules, type ScheduleSyncError } from '../schedule-sync/schedule
 export interface BossProfitRow {
   ocid: string
   characterName: string
+  imageUrl: string | null // character/basic의 character_image(character-basic-cache 경유). 캐시가 없으면 null(이니셜 폴백)
   boss: string // matchedBossName ?? apiName (매핑 안 되면 원문 그대로, ADR-008)
   difficulty: BossDifficulty
   cycle: BossCycle
@@ -42,6 +43,7 @@ export type WeeklySubtotalState = 'confirmed' | 'inProgress' | 'upcoming' | 'una
 export interface BossProfitWeeklySubtotal {
   ocid: string
   characterName: string
+  imageUrl: string | null
   periodKey: string
   totalMeso: number
   state: WeeklySubtotalState
@@ -73,13 +75,18 @@ export interface BossProfitStore extends BossProfitState {
   setPartySize(row: BossProfitRowKey, partySize: number): Promise<void>
 }
 
-// refresh()가 가장 최근에 계산한 "현재 기간" 전체(모든 cycle) row와 그 시점의 캐릭터명을 담아둔다.
+interface CharacterProfileInfo {
+  characterName: string
+  imageUrl: string | null
+}
+
+// refresh()가 가장 최근에 계산한 "현재 기간" 전체(모든 cycle) row와 그 시점의 캐릭터 정보를 담아둔다.
 // setTab/goToPreviousPeriod/goToNextPeriod가 "현재 기간"으로 되돌아올 때 네트워크 호출 없이
 // 이 스냅샷에서 슬라이스하기 위한 용도다(ADR-023 "로컬 우선 캐싱").
 interface LatestSyncSnapshot {
   ocids: string[]
   rows: BossProfitRow[]
-  characterNames: Map<string, string>
+  characterProfiles: Map<string, CharacterProfileInfo>
 }
 
 let latestSyncSnapshot: LatestSyncSnapshot | null = null
@@ -91,15 +98,28 @@ let latestSyncSnapshot: LatestSyncSnapshot | null = null
 // 캡처해두고, set() 직전에 "여전히 최신 세대인지" 확인해 stale한 결과는 조용히 버린다.
 let requestGeneration = 0
 
+interface SortedCharacterInfo {
+  ocid: string
+  imageUrl: string | null // character-basic-cache의 character_image. 아바타 렌더링용(ADR-023 "미확정" 해소)
+}
+
 // ADR-017 결정 2와 동일한 원칙 — 캐시 단계(trackedOcids 저장 순서)와 동기화 단계(Nexon
 // character/list 응답 순서)가 서로 달라 캐릭터 목록 위치가 API 응답 이후 갑자기 바뀌어 보이던
 // 문제를 없앤다. 레벨 내림차순(동레벨이면 이름순)으로 항상 같은 순서를 계산해, 캐시 우선 표시
-// 단계부터 실시간 동기화·과거 기간 조회까지 전부 이 순서를 그대로 따르게 한다.
-async function getSortedOcids(ocids: string[]): Promise<string[]> {
+// 단계부터 실시간 동기화·과거 기간 조회까지 전부 이 순서를 그대로 따르게 한다. character-basic-cache를
+// 이미 조회하는 김에 아바타용 imageUrl도 함께 반환한다(캐릭터명은 반환하지 않는다 — rows의
+// characterName은 character/list·스케줄러 캐시가 출처이고 character-basic-cache의 이름은 갱신
+// 시점이 달라 신뢰도가 낮다, ADR-017).
+async function getSortedCharacterInfo(ocids: string[]): Promise<SortedCharacterInfo[]> {
   const withProfile = await Promise.all(
     ocids.map(async (ocid) => {
       const cached = await getCachedCharacterBasic(ocid)
-      return { ocid, level: cached?.profile.level ?? null, name: cached?.profile.name ?? '' }
+      return {
+        ocid,
+        level: cached?.profile.level ?? null,
+        name: cached?.profile.name ?? '',
+        imageUrl: cached?.profile.imageUrl ?? null,
+      }
     }),
   )
 
@@ -111,7 +131,7 @@ async function getSortedOcids(ocids: string[]): Promise<string[]> {
       if (b.level !== a.level) return b.level - a.level
       return compareByName(a.name, b.name)
     })
-    .map((entry) => entry.ocid)
+    .map(({ ocid, imageUrl }) => ({ ocid, imageUrl }))
 }
 
 // rows(보스 단위, 캐릭터당 여러 개)를 sortedOcids가 정한 캐릭터 순서로 재배열한다. Array#sort는
@@ -124,6 +144,7 @@ function sortRowsByOcidOrder(rows: BossProfitRow[], sortedOcids: string[]): Boss
 function buildBossProfitRow(
   ocid: string,
   characterName: string,
+  imageUrl: string | null,
   boss: MatchedBoss,
   now: Date,
 ): BossProfitRow {
@@ -137,6 +158,7 @@ function buildBossProfitRow(
   return {
     ocid,
     characterName,
+    imageUrl,
     boss: bossName,
     difficulty: boss.difficulty,
     cycle: boss.cycle,
@@ -149,7 +171,12 @@ function buildBossProfitRow(
   }
 }
 
-function buildRowFromRecord(record: BossProfitRecord, characterName: string, now: Date): BossProfitRow {
+function buildRowFromRecord(
+  record: BossProfitRecord,
+  characterName: string,
+  imageUrl: string | null,
+  now: Date,
+): BossProfitRow {
   const difficulty = record.difficulty as BossDifficulty
   const priceEntry = findPriceEntry(record.boss, difficulty)
   const maxPartySize = priceEntry?.maxPartySize ?? DEFAULT_MAX_PARTY_SIZE
@@ -157,6 +184,7 @@ function buildRowFromRecord(record: BossProfitRecord, characterName: string, now
   return {
     ocid: record.ocid,
     characterName,
+    imageUrl,
     boss: record.boss,
     difficulty,
     cycle: record.cycle,
@@ -215,7 +243,7 @@ async function buildWeeklySubtotalsForMonth(
   ocids: string[],
   monthPeriodKey: string,
   liveRows: BossProfitRow[],
-  knownNames: Map<string, string>,
+  knownProfiles: Map<string, CharacterProfileInfo>,
   now: Date,
 ): Promise<BossProfitWeeklySubtotal[]> {
   if (ocids.length === 0) {
@@ -230,8 +258,10 @@ async function buildWeeklySubtotalsForMonth(
   const subtotals: BossProfitWeeklySubtotal[] = []
 
   for (const ocid of ocids) {
-    const characterName =
-      knownNames.get(ocid) ?? (await getCachedCharacterBasic(ocid))?.profile.name ?? null
+    const known = knownProfiles.get(ocid)
+    const cachedProfile = known === undefined ? (await getCachedCharacterBasic(ocid))?.profile : undefined
+    const characterName = known?.characterName ?? cachedProfile?.name ?? null
+    const imageUrl = known?.imageUrl ?? cachedProfile?.imageUrl ?? null
     if (characterName === null) {
       continue
     }
@@ -241,19 +271,19 @@ async function buildWeeklySubtotalsForMonth(
         const totalMeso = sumRowsPayout(
           liveRows.filter((row) => row.ocid === ocid && row.cycle === 'weekly' && row.periodKey === weekKey),
         )
-        subtotals.push({ ocid, characterName, periodKey: weekKey, totalMeso, state: 'inProgress' })
+        subtotals.push({ ocid, characterName, imageUrl, periodKey: weekKey, totalMeso, state: 'inProgress' })
       } else if (weekKey > currentWeeklyPeriodKey) {
-        subtotals.push({ ocid, characterName, periodKey: weekKey, totalMeso: 0, state: 'upcoming' })
+        subtotals.push({ ocid, characterName, imageUrl, periodKey: weekKey, totalMeso: 0, state: 'upcoming' })
       } else if (getBackfillQueryDate('weekly', weekKey) < MIN_SCHEDULER_DATE) {
         // 스케줄러 API가 존재하기 이전 주 — 애초에 조회(백필)하지 않는 기간이므로(backfillTarget
         // 참고) "0메소"가 아니라 "데이터 없음"으로 구분해 표시해야 한다. 캐릭터 소계 계산에는
         // 0으로 반영된다(totalMeso: 0).
-        subtotals.push({ ocid, characterName, periodKey: weekKey, totalMeso: 0, state: 'unavailable' })
+        subtotals.push({ ocid, characterName, imageUrl, periodKey: weekKey, totalMeso: 0, state: 'unavailable' })
       } else {
         const totalMeso = pastRecords
           .filter((record) => record.ocid === ocid && record.cycle === 'weekly' && record.periodKey === weekKey)
           .reduce((sum, record) => sum + record.payoutMeso, 0)
-        subtotals.push({ ocid, characterName, periodKey: weekKey, totalMeso, state: 'confirmed' })
+        subtotals.push({ ocid, characterName, imageUrl, periodKey: weekKey, totalMeso, state: 'confirmed' })
       }
     }
   }
@@ -278,19 +308,22 @@ async function buildRowsFromRecords(
     return []
   }
 
-  const nameCache = new Map<string, string | null>()
+  const profileCache = new Map<string, CharacterProfileInfo | null>()
   const rows: BossProfitRow[] = []
 
   for (const record of records) {
-    if (!nameCache.has(record.ocid)) {
+    if (!profileCache.has(record.ocid)) {
       const cached = await getCachedCharacterBasic(record.ocid)
-      nameCache.set(record.ocid, cached?.profile.name ?? null)
+      profileCache.set(
+        record.ocid,
+        cached === null ? null : { characterName: cached.profile.name, imageUrl: cached.profile.imageUrl },
+      )
     }
-    const characterName = nameCache.get(record.ocid) ?? null
-    if (characterName === null) {
+    const profile = profileCache.get(record.ocid) ?? null
+    if (profile === null) {
       continue
     }
-    rows.push(buildRowFromRecord(record, characterName, now))
+    rows.push(buildRowFromRecord(record, profile.characterName, profile.imageUrl, now))
   }
 
   return rows
@@ -417,7 +450,8 @@ async function loadPeriod(
   const currentPeriodKey = getCurrentBossProfitPeriod(tab, now).periodKey
   // buildWeeklySubtotalsForMonth의 캐릭터별 행 순서를 항상 동일하게 유지하기 위해 여기서도
   // 같은 정렬 규칙을 적용한다(refresh()와 동일한 이유 — API 응답 순서에 좌우되지 않도록).
-  const sortedOcids = await getSortedOcids(ocids)
+  const sortedCharacterInfo = await getSortedCharacterInfo(ocids)
+  const sortedOcids = sortedCharacterInfo.map((info) => info.ocid)
 
   if (periodKey === currentPeriodKey) {
     const rows =
@@ -428,7 +462,7 @@ async function loadPeriod(
             sortedOcids,
             periodKey,
             latestSyncSnapshot?.rows ?? [],
-            latestSyncSnapshot?.characterNames ?? new Map(),
+            latestSyncSnapshot?.characterProfiles ?? new Map(),
             now,
           )
         : []
@@ -498,7 +532,7 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     const currentPeriodKey = getCurrentBossProfitPeriod(tab, now).periodKey
 
     if (ocids.length === 0) {
-      latestSyncSnapshot = { ocids: [], rows: [], characterNames: new Map() }
+      latestSyncSnapshot = { ocids: [], rows: [], characterProfiles: new Map() }
       if (myGeneration !== requestGeneration) return
       set({
         status: 'loaded',
@@ -515,8 +549,11 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
 
     // 캐시 우선 표시·실시간 동기화 양쪽에서 항상 같은 캐릭터 순서(레벨 내림차순, 동레벨은
     // 이름순)를 쓰도록 미리 계산해둔다 — trackedOcids 저장 순서와 Nexon character/list 응답
-    // 순서가 달라 API 응답 이후 캐릭터 목록 위치가 바뀌어 보이던 문제를 없앤다.
-    const sortedOcids = await getSortedOcids(ocids)
+    // 순서가 달라 API 응답 이후 캐릭터 목록 위치가 바뀌어 보이던 문제를 없앤다. 아바타 이미지도
+    // 이 조회에 함께 실려 온다(character-basic-cache의 character_image, ADR-023).
+    const sortedCharacterInfo = await getSortedCharacterInfo(ocids)
+    const sortedOcids = sortedCharacterInfo.map((info) => info.ocid)
+    const imageUrlByOcid = new Map(sortedCharacterInfo.map((info) => [info.ocid, info.imageUrl]))
 
     // ADR-017 결정 1: 캐시 우선 표시 — 재검증(syncSchedules) 전에 마지막으로 성공한
     // 스케줄 캐시가 있으면 완료된 보스만 걸러 화면을 먼저 채운다. 이미 저장된 기록이
@@ -534,7 +571,7 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
           const bosses = cached.state.bossContents.map(matchBossContent)
           const completedBosses = bosses.filter((boss) => boss.isComplete)
           return completedBosses.map((boss) =>
-            buildBossProfitRow(ocid, cached.state.characterName, boss, now),
+            buildBossProfitRow(ocid, cached.state.characterName, imageUrlByOcid.get(ocid) ?? null, boss, now),
           )
         }),
       )
@@ -549,8 +586,10 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     // 등) 이 스냅샷이 null로 남지 않아야, 그 상태에서 tab 전환/기간 이동(loadPeriod)을 해도
     // 캐시 우선 표시(ADR-016/017)가 계속 유지된다. 실시간 동기화가 성공하면 아래에서 다시
     // 최신 데이터로 덮어쓴다.
-    const cachedCharacterNames = new Map(cachedRows.map((row) => [row.ocid, row.characterName]))
-    latestSyncSnapshot = { ocids: [...ocids], rows: cachedMergedRows, characterNames: cachedCharacterNames }
+    const cachedCharacterProfiles = new Map(
+      cachedRows.map((row) => [row.ocid, { characterName: row.characterName, imageUrl: row.imageUrl }]),
+    )
+    latestSyncSnapshot = { ocids: [...ocids], rows: cachedMergedRows, characterProfiles: cachedCharacterProfiles }
 
     // 이 호출보다 나중에 시작된 refresh/setTab/goToXPeriod가 이미 있다면(연타 등) 이 시점의
     // 캐시 우선 표시조차 화면에 반영하지 않는다 — 더 최신 액션이 이미 진행 중이므로 그 결과가
@@ -582,10 +621,13 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
 
     const rows: BossProfitRow[] = []
     const staleCharacterNames: string[] = []
-    const characterNames = new Map<string, string>()
+    const characterProfiles = new Map<string, CharacterProfileInfo>()
 
     for (const result of results) {
-      characterNames.set(result.ocid, result.characterName)
+      characterProfiles.set(result.ocid, {
+        characterName: result.characterName,
+        imageUrl: imageUrlByOcid.get(result.ocid) ?? null,
+      })
 
       if (result.isStale) {
         staleCharacterNames.push(result.characterName)
@@ -595,7 +637,9 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
       const completedBosses = bosses.filter((boss) => boss.isComplete)
 
       for (const boss of completedBosses) {
-        rows.push(buildBossProfitRow(result.ocid, result.characterName, boss, now))
+        rows.push(
+          buildBossProfitRow(result.ocid, result.characterName, imageUrlByOcid.get(result.ocid) ?? null, boss, now),
+        )
       }
     }
 
@@ -634,11 +678,11 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     }
 
     const sortedRows = sortRowsByOcidOrder(autoRecordedRows, sortedOcids)
-    latestSyncSnapshot = { ocids: [...ocids], rows: sortedRows, characterNames }
+    latestSyncSnapshot = { ocids: [...ocids], rows: sortedRows, characterProfiles }
 
     const weeklySubtotals =
       tab === 'monthly'
-        ? await buildWeeklySubtotalsForMonth(sortedOcids, currentPeriodKey, sortedRows, characterNames, now)
+        ? await buildWeeklySubtotalsForMonth(sortedOcids, currentPeriodKey, sortedRows, characterProfiles, now)
         : []
 
     if (myGeneration !== requestGeneration) return

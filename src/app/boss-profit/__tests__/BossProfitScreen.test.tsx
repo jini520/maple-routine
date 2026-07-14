@@ -41,6 +41,7 @@ function row(overrides: Partial<BossProfitRow> = {}): BossProfitRow {
   return {
     ocid: 'ocid-1',
     characterName: '낟낟',
+    imageUrl: null,
     boss: '자쿰',
     difficulty: '카오스',
     cycle: 'weekly',
@@ -58,6 +59,7 @@ function subtotal(overrides: Partial<BossProfitWeeklySubtotal> = {}): BossProfit
   return {
     ocid: 'ocid-1',
     characterName: '낟낟',
+    imageUrl: null,
     periodKey: '2026-07-09',
     totalMeso: 5_000_000,
     state: 'confirmed',
@@ -77,6 +79,29 @@ describe('BossProfitScreen', () => {
     render(<BossProfitScreen />)
 
     expect(screen.getByRole('heading', { name: '보스 수익' })).toBeInTheDocument()
+  })
+
+  it('row.imageUrl이 있으면 캐릭터 아바타에 실제 이미지를 렌더한다', () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row({ imageUrl: 'https://example.com/ocid-1.png' })],
+    })
+
+    render(<BossProfitScreen />)
+
+    const avatar = screen.getByAltText('낟낟')
+    expect(avatar.tagName).toBe('IMG')
+    expect(avatar).toHaveAttribute('src', 'https://example.com/ocid-1.png')
+  })
+
+  it('row.imageUrl이 null이면 캐릭터 아바타는 이니셜로 폴백한다', () => {
+    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row({ imageUrl: null })] })
+
+    render(<BossProfitScreen />)
+
+    expect(screen.queryByAltText('낟낟')).not.toBeInTheDocument()
+    expect(screen.getByText('낟')).toBeInTheDocument()
   })
 
   it('마운트 시 loadTrackedOcids가 1회 호출된다', () => {
