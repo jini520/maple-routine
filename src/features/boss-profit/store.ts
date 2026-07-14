@@ -472,6 +472,13 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
       cachedRows.length > 0 ? await getBossProfitRecords(ocids, cachedPeriodKeys) : []
     const cachedMergedRows = mergeRecordsIntoRows(cachedRows, cachedRecords)
 
+    // latestSyncSnapshot을 캐시 데이터로 즉시 채워둔다 — 이후 syncSchedules가 실패해도(네트워크
+    // 등) 이 스냅샷이 null로 남지 않아야, 그 상태에서 tab 전환/기간 이동(loadPeriod)을 해도
+    // 캐시 우선 표시(ADR-016/017)가 계속 유지된다. 실시간 동기화가 성공하면 아래에서 다시
+    // 최신 데이터로 덮어쓴다.
+    const cachedCharacterNames = new Map(cachedRows.map((row) => [row.ocid, row.characterName]))
+    latestSyncSnapshot = { ocids: [...ocids], rows: cachedMergedRows, characterNames: cachedCharacterNames }
+
     set({
       status: 'loading',
       periodKey: currentPeriodKey,
