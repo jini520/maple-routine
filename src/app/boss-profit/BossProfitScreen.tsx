@@ -12,12 +12,16 @@ import { formatScheduleSyncError } from '../../features/schedule-sync/format'
 import { formatBossProfitPeriodLabel, isEarliestNavigablePeriod, isLatestPeriod } from '../../lib/boss-profit-period'
 import type { BossCycle } from '../../types'
 
-// components/CharacterTrackingPicker와 동일한 얼굴 크롭 기법(ADR-015)을 이 화면의 32px
+// components/CharacterTrackingPicker와 동일한 얼굴 크롭 기법(ADR-015)을 이 화면의 36px
 // 아바타 슬롯 크기에 맞춰 재사용한다 — 이 프로젝트는 화면마다 UI를 그대로 복제하는 관례를
 // 따른다(탭 pill과 동일한 이유, ADR-018).
 const AVATAR_SOURCE_IMAGE_SIZE = 300
 const AVATAR_FACE_CROP_BOX = { x: 115, y: 120, size: 64 }
-const AVATAR_SIZE = 32
+const AVATAR_SIZE = 36 // 기존 32px(h-8)에서 살짝 확대(사용자 요청, 2026-07-14)
+
+// BossPortrait의 size prop 기본값(40px, 기존 h-10 관례)과 동일하게 시작값을 맞춘다 —
+// /debug/boss-portrait-size에서 이 값을 조정해보고 확정되면 여기 상수만 바꾸면 된다.
+const BOSS_PORTRAIT_SIZE = 40
 
 function avatarFaceCropStyle(): React.CSSProperties {
   const scale = AVATAR_SIZE / AVATAR_FACE_CROP_BOX.size
@@ -31,7 +35,7 @@ function avatarFaceCropStyle(): React.CSSProperties {
 
 function CharacterAvatar(props: { characterName: string; imageUrl: string | null }): React.JSX.Element {
   return (
-    <span className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full bg-surface-2">
+    <span className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full bg-surface-2">
       {props.imageUrl !== null ? (
         <img
           src={props.imageUrl}
@@ -102,9 +106,7 @@ function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Element {
 
   return (
     <li className="flex items-start gap-3 p-4 border-b border-border last:border-b-0">
-      <div className="h-10 w-10 shrink-0">
-        <BossPortrait portraitSlug={findPortraitSlug(row.boss)} label={row.boss} />
-      </div>
+      <BossPortrait portraitSlug={findPortraitSlug(row.boss)} label={row.boss} size={BOSS_PORTRAIT_SIZE} />
 
       <div className="flex-1">
         <div className="flex items-baseline gap-1.5 flex-wrap">

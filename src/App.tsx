@@ -10,6 +10,7 @@ import { BossProfitScreen } from './app/boss-profit/BossProfitScreen'
 import { SettingsScreen } from './app/settings/SettingsScreen'
 import { BossCardPreview } from './app/boss-scheduler/BossCardPreview'
 import { DailyQuestCardPreview } from './app/content-scheduler/DailyQuestCardPreview'
+import { BossPortraitSizePreview } from './app/boss-profit/BossPortraitSizePreview'
 
 const TAB_ITEMS = [
   { to: '/content', label: '컨텐츠', Icon: ListChecks },
@@ -87,6 +88,9 @@ export function AppShell(): React.JSX.Element {
           {/* 임시 — 일일퀘스트 카드 지역 배경 크롭 조정용 디버그 라우트. 온보딩/API 데이터 없이 접근 가능.
               크롭 조정이 끝나면 이 라우트와 DailyQuestCardPreview.tsx를 삭제할 것 (ADR-020) */}
           <Route path="/debug/quest-cards" element={<DailyQuestCardPreview />} />
+          {/* 임시 — 보스 수익 화면 BossPortrait 크기 조정용 디버그 라우트. 온보딩/API 데이터 없이 접근 가능.
+              크기 조정이 끝나면 이 라우트와 BossPortraitSizePreview.tsx를 삭제할 것 */}
+          <Route path="/debug/boss-portrait-size" element={<BossPortraitSizePreview />} />
         </Routes>
       </div>
       {isCompleted && <BottomTabBar />}
