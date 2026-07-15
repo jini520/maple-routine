@@ -61,6 +61,24 @@ describe('Modal', () => {
     expect(wrapper).not.toHaveClass('border')
   })
 
+  // 오버레이가 부모의 레이아웃 유틸리티(space-y-*의 margin 등)에 영향받으면 fixed 높이가 그만큼
+  // 줄어 화면 끝(상태바·제스처 영역)까지 덮지 못한다 — 실기기에서 하단 16px이 딤 처리되지 않았다.
+  // body로 포털 렌더링해 부모 컨텍스트를 원천 차단한다.
+  it('부모 레이아웃과 무관하도록 body 직속으로 렌더링한다', () => {
+    const { container } = render(
+      <div className="p-4 space-y-4">
+        <p>형제 요소</p>
+        <Modal onClose={vi.fn()} testId="test-modal-overlay">
+          <p>모달 내용</p>
+        </Modal>
+      </div>,
+    )
+
+    const overlay = screen.getByTestId('test-modal-overlay')
+    expect(overlay.parentElement).toBe(document.body)
+    expect(container.querySelector('[data-testid="test-modal-overlay"]')).toBeNull()
+  })
+
   it('열려 있는 동안 뒷 페이지(body) 스크롤을 막는다', () => {
     const { unmount } = render(
       <Modal onClose={vi.fn()}>

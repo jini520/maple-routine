@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom'
 import { useBodyScrollLock } from '../../lib/use-body-scroll-lock'
 
 export interface ModalProps {
@@ -19,7 +20,11 @@ export function Modal(props: ModalProps): React.JSX.Element {
   const showCard = props.card ?? true
   const maxWidth = props.maxWidth ?? 'max-w-sm'
 
-  return (
+  // body로 포털 렌더링한다 — 호출부 어디에 놓이든 부모의 레이아웃 유틸리티에 영향받지 않게 하려고.
+  // 예로 space-y-*는 자식에 margin-block-end를 붙이는데, position:fixed에 top/bottom이 함께 걸린
+  // 오버레이는 그 마진만큼 높이가 줄어(880→864) 화면 끝까지 못 덮는다. 그러면 상태바·제스처 영역만
+  // 딤이 빠져 밝은 띠로 남는다(실기기 확인). 포털로 띄우면 항상 뷰포트 전체를 덮는다.
+  return createPortal(
     <div
       data-testid={props.testId}
       onClick={props.onClose}
@@ -35,6 +40,7 @@ export function Modal(props: ModalProps): React.JSX.Element {
       >
         {props.children}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
