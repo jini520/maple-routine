@@ -4,6 +4,7 @@ import { Coins, ListChecks, Settings, Swords } from 'lucide-react'
 import { useOnboardingStore } from './features/onboarding/store'
 import { useThemeStore } from './features/theme/store'
 import { hideSplashScreen } from './native/splash-screen'
+import { refreshSafeAreaInsets } from './native/system-bars'
 import { OnboardingScreen } from './app/onboarding/OnboardingScreen'
 import { ContentScreen } from './app/content-scheduler/ContentScreen'
 import { BossScreen } from './app/boss-scheduler/BossScreen'
@@ -27,7 +28,7 @@ const MIN_SPLASH_MS = 1000
 
 function BottomTabBar(): React.JSX.Element {
   return (
-    <nav className="fixed inset-x-0 bottom-0 flex justify-around border-t border-border bg-surface pb-[env(safe-area-inset-bottom)]">
+    <nav className="fixed inset-x-0 bottom-0 flex justify-around border-t border-border bg-surface pb-[var(--sa-bottom)]">
       {TAB_ITEMS.map((tab) => (
         <NavLink
           key={tab.to}
@@ -61,6 +62,13 @@ export function AppShell(): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // 안전영역 인셋(--safe-area-inset-*)을 네이티브에서 받아온다. 네이티브의 최초 인셋 적용이 DOM보다
+  // 먼저 끝나면 주입이 유실되므로 마운트 직후 한 번 요청한다. 이후 회전·접힘·키보드 변화는
+  // 네이티브 리스너가 자동 갱신한다(SystemBarsPlugin.java).
+  useEffect(() => {
+    void refreshSafeAreaInsets()
+  }, [])
+
   // 앱 셸이 처음 렌더된 뒤 네이티브 스플래시를 내린다 — 실행부터 이 시점까지 스플래시가 계속 떠 있어
   // 흰 화면 없이 스플래시만 보인다. 콘텐츠가 즉시 준비되면 순식간에 사라지므로, 최소 표시 시간
   // (MIN_SPLASH_MS)을 보장해 스플래시가 충분히 보이게 한다.
@@ -80,8 +88,8 @@ export function AppShell(): React.JSX.Element {
   const isCompleted = status === 'completed'
 
   return (
-    <div className="min-h-screen bg-bg text-text pt-[env(safe-area-inset-top)]">
-      <div className={isCompleted ? 'pb-[calc(4rem+env(safe-area-inset-bottom))]' : undefined}>
+    <div className="min-h-screen bg-bg text-text pt-[var(--sa-top)]">
+      <div className={isCompleted ? 'pb-[calc(4rem+var(--sa-bottom))]' : undefined}>
         <Routes>
           <Route path="/" element={<Navigate to={isCompleted ? '/content' : '/onboarding'} replace />} />
           <Route

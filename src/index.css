@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/* 안전영역(시스템 바·노치) 인셋 별칭 — 앱이 시스템 바 뒤까지 직접 그리므로 이 값만큼 콘텐츠를 띄운다.
+   Android: env()가 구형 WebView에서 어긋나므로(Capacitor가 WebView 140/144로 분기하는 원인)
+   SystemBarsPlugin.java가 --safe-area-inset-*를 직접 주입하고 그 값을 쓴다.
+   iOS/웹: 주입이 없으므로 env()로 폴백한다. 사용처는 var(--sa-top)/var(--sa-bottom)만 쓸 것. */
+:root {
+  --sa-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
+  --sa-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+}
+
 /* 머쉬맘(라이트, 기본) 테마 — 데이터 출처: src/data/job-themes.json, 값 근거는 docs/UI_GUIDE.md "테마 시스템" 표 (ADR-009) */
 @theme {
   /* backgrounds */

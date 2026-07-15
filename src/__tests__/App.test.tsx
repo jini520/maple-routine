@@ -268,7 +268,7 @@ describe('AppShell', () => {
       </MemoryRouter>,
     )
 
-    expect(container.firstChild).toHaveClass('pt-[env(safe-area-inset-top)]')
+    expect(container.firstChild).toHaveClass('pt-[var(--sa-top)]')
   })
 
   it('하단 탭바에 bottom safe-area padding이 적용된다', () => {
@@ -276,7 +276,7 @@ describe('AppShell', () => {
 
     renderAt('/content')
 
-    expect(screen.getByRole('navigation')).toHaveClass('pb-[env(safe-area-inset-bottom)]')
+    expect(screen.getByRole('navigation')).toHaveClass('pb-[var(--sa-bottom)]')
   })
 
   it('status가 completed일 때 컨텐츠 래퍼의 하단 padding이 탭바 높이와 safe-area를 함께 반영한다', () => {
@@ -288,6 +288,6 @@ describe('AppShell', () => {
       </MemoryRouter>,
     )
 
-    expect(container.firstChild?.firstChild).toHaveClass('pb-[calc(4rem+env(safe-area-inset-bottom))]')
+    expect(container.firstChild?.firstChild).toHaveClass('pb-[calc(4rem+var(--sa-bottom))]')
   })
 })

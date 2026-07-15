@@ -8,6 +8,13 @@ const config: CapacitorConfig = {
   // 찰나에 기본 흰색이 깜빡이는 것을 없앤다.
   backgroundColor: '#FB8101',
   plugins: {
+    // Capacitor 내장 SystemBars의 인셋 개입을 끈다. 기본값 'css'는 WebView 140 미만에서 WebView를
+    // 시스템 바 안쪽으로 밀어내(padding) 바 영역을 앱이 못 그리게 만든다 — Android 15에선 네이티브로
+    // 색을 칠할 수도 없어(setNavigationBarColor no-op) 흰 띠가 남는다. 대신 SystemBarsPlugin.java가
+    // 항상 edge-to-edge로 고정하고 --safe-area-inset-* 변수를 직접 주입한다(그 파일 주석 참고).
+    SystemBars: {
+      insetsHandling: 'disable',
+    },
     // Capgo 매니지드 백엔드(plugin.capgo.app)를 쓰지 않고 GitHub Releases 자체 호스팅만 사용하므로,
     // 네이티브 자동 체크는 끄고 통계 전송도 비활성화한다(native/live-update.ts가 수동으로 체크한다, ADR-022).
     CapacitorUpdater: {
