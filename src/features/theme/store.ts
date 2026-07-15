@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import type { ThemeName } from '../../types'
 import { getTheme, setTheme } from '../../storage/theme'
 import { setStatusBarStyle } from '../../native/status-bar'
-import { setNavigationBarStyle } from '../../native/navigation-bar'
+import { setNavigationBarStyle } from '../../native/system-bars'
 
 export interface ThemeStore {
   theme: ThemeName
@@ -31,12 +31,8 @@ function applyThemeToDocument(theme: ThemeName): void {
     document.documentElement.dataset.theme = theme
   }
   const isDark = DARK_THEMES.has(theme)
-  // 하단 시스템 내비 바 배경을 탭바(bg-surface)와 맞추기 위해 현재 테마의 표면색을 읽어 넘긴다.
-  const surfaceColor = getComputedStyle(document.documentElement)
-    .getPropertyValue('--color-surface')
-    .trim()
   void setStatusBarStyle(isDark)
-  void setNavigationBarStyle(isDark, surfaceColor)
+  void setNavigationBarStyle(isDark)
 }
 
 export const useThemeStore = create<ThemeStore>()((set) => ({

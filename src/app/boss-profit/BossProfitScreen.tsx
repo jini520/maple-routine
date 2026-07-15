@@ -403,11 +403,11 @@ export function BossProfitScreen(): React.JSX.Element {
   const totalMeso = characterGroups.reduce((sum, group) => sum + groupTotalMeso(group), 0)
 
   return (
-    <div className="-mt-[env(safe-area-inset-top)] space-y-4">
+    <div className="-mt-[var(--sa-top)] space-y-4">
       {/* 제목~총 수익 카드까지는 화면 상단에 고정하고 그 아래 캐릭터 아코디언 목록만
           스크롤되게 한다(사용자 요청, 2026-07-14) — content-scheduler/boss-scheduler와
           동일한 sticky 헤더 패턴(docs/UI_GUIDE.md "스크롤 영역" 참고)을 그대로 재사용한다. */}
-      <div className="sticky top-0 z-10 bg-bg px-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-2">
+      <div className="sticky top-0 z-10 bg-bg px-4 pt-[calc(1rem+var(--sa-top))] pb-2">
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h1 className="text-lg font-semibold text-text">보스 수익</h1>

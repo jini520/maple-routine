@@ -9,7 +9,7 @@ export function OnboardingScreen(): React.JSX.Element {
   switch (status) {
     case 'awaitingApiKey':
       return (
-        <div className="flex min-h-screen items-center justify-center p-4">
+        <div className="flex justify-center px-4 pt-8 pb-4">
           <ApiKeyForm isSubmitting={false} errorMessage={null} onSubmit={submitApiKey} />
         </div>
       )
@@ -24,7 +24,7 @@ export function OnboardingScreen(): React.JSX.Element {
           ? Math.round((prefetchProgress.completed / prefetchProgress.total) * 100)
           : 0
       return (
-        <div className="flex min-h-screen items-center justify-center p-4">
+        <div className="flex justify-center px-4 pt-8 pb-4">
           <div className="w-full space-y-2">
             <p className="text-sm text-text-muted">
               캐릭터 정보를 준비하고 있어요
@@ -46,7 +46,7 @@ export function OnboardingScreen(): React.JSX.Element {
 
     case 'selectingAccount':
       return (
-        <div className="flex min-h-screen items-center justify-center p-4">
+        <div className="flex justify-center px-4 pt-8 pb-4">
           <AccountSelectionList
             accounts={accounts}
             isSubmitting={false}
@@ -62,7 +62,7 @@ export function OnboardingScreen(): React.JSX.Element {
     case 'error':
       if (accounts.length === 0) {
         return (
-          <div className="flex min-h-screen items-center justify-center p-4">
+          <div className="flex justify-center px-4 pt-8 pb-4">
             <ApiKeyForm
               isSubmitting={false}
               errorMessage={error !== null ? formatOnboardingError(error) : null}
@@ -72,7 +72,7 @@ export function OnboardingScreen(): React.JSX.Element {
         )
       }
       return (
-        <div className="flex min-h-screen items-center justify-center p-4">
+        <div className="flex justify-center px-4 pt-8 pb-4">
           <AccountSelectionList
             accounts={accounts}
             isSubmitting={false}

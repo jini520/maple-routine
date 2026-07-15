@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { getTheme, setTheme } from '../../../storage/theme'
 import { setStatusBarStyle } from '../../../native/status-bar'
-import { setNavigationBarStyle } from '../../../native/navigation-bar'
+import { setNavigationBarStyle } from '../../../native/system-bars'
 import { useThemeStore } from '../store'
 
 vi.mock('../../../storage/theme', () => ({
@@ -14,7 +14,7 @@ vi.mock('../../../native/status-bar', () => ({
   setStatusBarStyle: vi.fn(),
 }))
 
-vi.mock('../../../native/navigation-bar', () => ({
+vi.mock('../../../native/system-bars', () => ({
   setNavigationBarStyle: vi.fn(),
 }))
 
@@ -55,7 +55,7 @@ describe('restoreFromStorage', () => {
     expect(useThemeStore.getState().theme).toBe('레테')
     expect(document.documentElement.dataset.theme).toBe('레테')
     expect(setStatusBarStyle).toHaveBeenCalledWith(true)
-    expect(setNavigationBarStyle).toHaveBeenCalledWith(true, expect.any(String))
+    expect(setNavigationBarStyle).toHaveBeenCalledWith(true)
   })
 
   it('저장된 값이 렌이면 theme과 DOM을 렌으로 갱신한다', async () => {
@@ -66,7 +66,7 @@ describe('restoreFromStorage', () => {
     expect(useThemeStore.getState().theme).toBe('렌')
     expect(document.documentElement.dataset.theme).toBe('렌')
     expect(setStatusBarStyle).toHaveBeenCalledWith(false)
-    expect(setNavigationBarStyle).toHaveBeenCalledWith(false, expect.any(String))
+    expect(setNavigationBarStyle).toHaveBeenCalledWith(false)
   })
 
   it('저장된 값이 혼테일이면 theme과 DOM을 혼테일로 갱신한다', async () => {
@@ -120,7 +120,7 @@ describe('selectTheme', () => {
     expect(useThemeStore.getState().theme).toBe('레테')
     expect(document.documentElement.dataset.theme).toBe('레테')
     expect(setStatusBarStyle).toHaveBeenCalledWith(true)
-    expect(setNavigationBarStyle).toHaveBeenCalledWith(true, expect.any(String))
+    expect(setNavigationBarStyle).toHaveBeenCalledWith(true)
   })
 
   it('혼테일을 선택하면 storage에 저장하고 DOM에 혼테일을 적용한다', async () => {
@@ -142,6 +142,6 @@ describe('selectTheme', () => {
     expect(useThemeStore.getState().theme).toBe('머쉬맘')
     expect(document.documentElement.dataset.theme).toBeUndefined()
     expect(setStatusBarStyle).toHaveBeenCalledWith(false)
-    expect(setNavigationBarStyle).toHaveBeenCalledWith(false, expect.any(String))
+    expect(setNavigationBarStyle).toHaveBeenCalledWith(false)
   })
 })

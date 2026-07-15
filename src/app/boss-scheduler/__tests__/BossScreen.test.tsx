@@ -114,8 +114,8 @@ describe('BossScreen', () => {
     const stickyEl = heading.closest('.sticky')
 
     expect(stickyEl).toHaveClass('top-0')
-    expect(stickyEl).toHaveClass('pt-[calc(1rem+env(safe-area-inset-top))]')
-    expect(stickyEl?.parentElement).toHaveClass('-mt-[env(safe-area-inset-top)]')
+    expect(stickyEl).toHaveClass('pt-[calc(1rem+var(--sa-top))]')
+    expect(stickyEl?.parentElement).toHaveClass('-mt-[var(--sa-top)]')
   })
 
   it('마운트 시 loadTrackedOcids가 호출된다', async () => {

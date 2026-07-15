@@ -78,7 +78,13 @@ export function UpdatePromptModal(): React.JSX.Element | null {
 
   return (
     // 다운로드 중에는 배경 탭으로 닫히지 않게 한다(진행 중 취소 방지). 폭은 살짝 좁게(max-w-xs).
-    <Modal onClose={isDownloading ? () => {} : dismiss} testId="update-prompt-overlay" maxWidth="max-w-xs">
+    // 입력이 없어 키보드를 띄우지 않으므로 중앙에 그대로 둔다 — 다른 모달은 상단 정렬이 기본이다.
+    <Modal
+      onClose={isDownloading ? () => {} : dismiss}
+      testId="update-prompt-overlay"
+      maxWidth="max-w-xs"
+      align="center"
+    >
       <div className="space-y-5 text-center">
         {status === 'update-available' && (
           <>
