@@ -12,6 +12,7 @@ import { SettingsScreen } from './app/settings/SettingsScreen'
 import { BossCardPreview } from './app/boss-scheduler/BossCardPreview'
 import { DailyQuestCardPreview } from './app/content-scheduler/DailyQuestCardPreview'
 import { BossPortraitSizePreview } from './app/boss-profit/BossPortraitSizePreview'
+import { UpdatePromptModal } from './app/UpdatePromptModal'
 
 const TAB_ITEMS = [
   { to: '/content', label: '컨텐츠', Icon: ListChecks },
@@ -115,6 +116,8 @@ export function AppShell(): React.JSX.Element {
         </Routes>
       </div>
       {isCompleted && <BottomTabBar />}
+      {/* 사용자 동의형 업데이트 모달 — 실행 시(또는 설정에서 수동 확인 시) 새 버전이 있으면 뜬다(ADR-027). */}
+      <UpdatePromptModal />
     </div>
   )
 }

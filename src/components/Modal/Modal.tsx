@@ -8,6 +8,8 @@ export interface ModalProps {
    * 자체 카드 스타일을 갖고 있을 때(예: 재사용하는 ApiKeyForm/AccountSelectionList) 쓴다.
    * 기본값 true. */
   card?: boolean
+  /** 카드 최대 너비 Tailwind 클래스 — 기본 max-w-sm. 더 좁게(예: max-w-xs) 쓰고 싶을 때 지정. */
+  maxWidth?: string
 }
 
 // CharacterTrackingPicker/DisconnectConfirm에서 반복되던 오버레이 마크업을 공용화한 것 —
@@ -15,6 +17,7 @@ export interface ModalProps {
 export function Modal(props: ModalProps): React.JSX.Element {
   useBodyScrollLock()
   const showCard = props.card ?? true
+  const maxWidth = props.maxWidth ?? 'max-w-sm'
 
   return (
     <div
@@ -25,7 +28,9 @@ export function Modal(props: ModalProps): React.JSX.Element {
       <div
         onClick={(event) => event.stopPropagation()}
         className={
-          showCard ? 'w-full max-w-sm rounded-[14px] border border-border bg-surface p-6' : 'w-full max-w-sm'
+          showCard
+            ? `w-full ${maxWidth} rounded-[14px] border border-border bg-surface p-6`
+            : `w-full ${maxWidth}`
         }
       >
         {props.children}

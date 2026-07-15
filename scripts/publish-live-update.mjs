@@ -13,7 +13,7 @@
 
 import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -30,14 +30,20 @@ export function resolveBuildScript(isBeta) {
 
 export function parseArgs(argv) {
   const isBeta = argv.includes('--beta')
-  const version = argv.find((arg) => arg !== '--beta')
-  return { version, isBeta }
+  // --min-native <x.y.z>: 이 번들을 적용하려면 필요한 최소 네이티브 앱 버전. 있으면 매니페스트에 실어,
+  // 앱이 설치된 네이티브가 더 낮으면 "스토어 업데이트 필요"로 분기한다(ADR-027 결정 7).
+  const minNativeIdx = argv.indexOf('--min-native')
+  const minNativeVersion = minNativeIdx >= 0 ? argv[minNativeIdx + 1] : undefined
+  const version = argv.find(
+    (arg, i) => arg !== '--beta' && arg !== '--min-native' && !(minNativeIdx >= 0 && i === minNativeIdx + 1),
+  )
+  return { version, isBeta, minNativeVersion }
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { version, isBeta } = parseArgs(process.argv.slice(2))
+  const { version, isBeta, minNativeVersion } = parseArgs(process.argv.slice(2))
   if (!version || !/^\d+\.\d+\.\d+$/.test(version)) {
-    console.error('사용법: node scripts/publish-live-update.mjs <x.y.z> [--beta]')
+    console.error('사용법: node scripts/publish-live-update.mjs <x.y.z> [--beta] [--min-native <x.y.z>]')
     process.exit(1)
   }
 
@@ -54,12 +60,15 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   console.log('[2/5] dist/ 압축 중...')
   execFileSync('zip', ['-r', zipPath, '.'], { cwd: join(root, 'dist'), stdio: 'inherit' })
 
-  console.log('[3/5] 체크섬 계산 중...')
+  console.log('[3/5] 체크섬·용량 계산 중...')
   const checksum = createHash('sha256').update(readFileSync(zipPath)).digest('hex')
+  const size = statSync(zipPath).size
   const manifest = {
     version,
     url: `https://github.com/${REPO}/releases/download/${RELEASE_TAG}/${version}.zip`,
     checksum,
+    size,
+    ...(minNativeVersion ? { minNativeVersion } : {}),
   }
   writeFileSync(manifestPath, JSON.stringify(manifest, null, 2))
 

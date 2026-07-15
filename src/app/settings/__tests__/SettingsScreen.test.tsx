@@ -2,10 +2,11 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { SettingsScreen } from '../SettingsScreen'
 import { useSettingsStore } from '../../../features/settings/store'
 import { useThemeStore } from '../../../features/theme/store'
+import { useLiveUpdateStore } from '../../../features/live-update/store'
 
 vi.mock('../../../features/settings/store', () => ({
   useSettingsStore: vi.fn(),
@@ -15,8 +16,13 @@ vi.mock('../../../features/theme/store', () => ({
   useThemeStore: vi.fn(),
 }))
 
+vi.mock('../../../features/live-update/store', () => ({
+  useLiveUpdateStore: vi.fn(),
+}))
+
 const mockedUseSettingsStore = vi.mocked(useSettingsStore)
 const mockedUseThemeStore = vi.mocked(useThemeStore)
+const mockedUseLiveUpdateStore = vi.mocked(useLiveUpdateStore)
 
 function mockSettingsStore(overrides: Partial<ReturnType<typeof useSettingsStore>>): void {
   mockedUseSettingsStore.mockReturnValue({
@@ -41,6 +47,32 @@ function mockThemeStore(overrides: Partial<ReturnType<typeof useThemeStore>>): v
     ...overrides,
   })
 }
+
+function mockLiveUpdateStore(): void {
+  mockedUseLiveUpdateStore.mockReturnValue({
+    currentVersion: '1.0.0',
+    status: 'idle',
+    availableVersion: null,
+    availableSize: null,
+    minNativeVersion: null,
+    downloadProgress: 0,
+    channel: 'production',
+    pending: null,
+    downloadedBundleId: null,
+    loadCurrentVersion: vi.fn(),
+    check: vi.fn(),
+    checkOnBoot: vi.fn(),
+    startDownload: vi.fn(),
+    confirmCellularDownload: vi.fn(),
+    apply: vi.fn(),
+    openStore: vi.fn(),
+    dismiss: vi.fn(),
+  })
+}
+
+beforeEach(() => {
+  mockLiveUpdateStore()
+})
 
 afterEach(() => {
   cleanup()
