@@ -12,7 +12,6 @@ import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 
-import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
@@ -38,8 +37,6 @@ import java.util.Locale;
  */
 @CapacitorPlugin(name = "AppSystemBars")
 public class SystemBarsPlugin extends Plugin {
-
-    private boolean lastKeyboardVisible = false;
 
     @Override
     public void load() {
@@ -84,22 +81,9 @@ public class SystemBarsPlugin extends Plugin {
             v.setPadding(0, 0, 0, keyboardVisible ? imeInsets.bottom : 0);
 
             injectSafeAreaCSS(calcSafeAreaInsets(insets));
-            notifyKeyboardVisibility(keyboardVisible);
 
             return insets;
         });
-    }
-
-    /**
-     * 키보드 표시 여부가 "바뀔 때만" JS로 알린다. 위 리스너는 레이아웃마다 불리므로 매번 쏘면
-     * 불필요한 리렌더가 난다. 앱은 이 이벤트로 키보드 위에 얹히는 하단 탭바를 숨긴다.
-     */
-    private void notifyKeyboardVisibility(boolean visible) {
-        if (visible == lastKeyboardVisible) return;
-        lastKeyboardVisible = visible;
-        JSObject data = new JSObject();
-        data.put("visible", visible);
-        notifyListeners("keyboardVisibility", data);
     }
 
     /** 키보드가 떠 있으면 하단 안전영역은 0 — 그 자리는 이미 키보드가 차지한다(내장 구현과 동일). */

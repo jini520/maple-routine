@@ -9,6 +9,13 @@
   --sa-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
 }
 
+/* 화면 콘텐츠는 AppShell(div.bg-bg)이 덮지만, body 배경도 같은 테마색으로 맞춰둔다. WebView 바깥으로
+   비치는 자리 — iOS에서 키보드가 뜰 때 WebView가 줄며 드러나는 뒤쪽 영역(@capacitor/keyboard의
+   autoBackdropColor:'dom'이 이 색을 읽어간다) — 에 엉뚱한 색이 보이지 않게 하려는 것이다. */
+body {
+  background-color: var(--color-bg);
+}
+
 /* 머쉬맘(라이트, 기본) 테마 — 데이터 출처: src/data/job-themes.json, 값 근거는 docs/UI_GUIDE.md "테마 시스템" 표 (ADR-009) */
 @theme {
   /* backgrounds */

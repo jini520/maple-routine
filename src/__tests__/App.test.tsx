@@ -42,6 +42,9 @@ const { keyboardListeners } = vi.hoisted(() => ({
 
 vi.mock('../native/system-bars', () => ({
   refreshSafeAreaInsets: vi.fn().mockResolvedValue(undefined),
+}))
+
+vi.mock('../native/keyboard', () => ({
   addKeyboardVisibilityListener: vi.fn(async (onChange: (visible: boolean) => void) => {
     keyboardListeners.push(onChange)
     return () => {

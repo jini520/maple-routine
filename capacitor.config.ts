@@ -8,6 +8,13 @@ const config: CapacitorConfig = {
   // 찰나에 기본 흰색이 깜빡이는 것을 없앤다.
   backgroundColor: '#FB8101',
   plugins: {
+    // iOS는 키보드가 뜨면 WebView 프레임이 줄어드는데(resize 기본값 native), 그 뒤로 드러나는 영역에
+    // 기본 배경(위 backgroundColor의 브랜드 오렌지)이 비친다. 'dom'은 그 색을 config가 아니라 웹앱의
+    // body 배경에서 읽어가므로 테마를 따라간다(index.css가 body에 --color-bg를 깔아둔다).
+    // resize는 기본값 native를 그대로 쓴다 — 이게 없으면 WebView가 스크롤로 밀려 상태바를 침범한다.
+    Keyboard: {
+      autoBackdropColor: 'dom',
+    },
     // Capacitor 내장 SystemBars의 인셋 개입을 끈다. 기본값 'css'는 WebView 140 미만에서 WebView를
     // 시스템 바 안쪽으로 밀어내(padding) 바 영역을 앱이 못 그리게 만든다 — Android 15에선 네이티브로
     // 색을 칠할 수도 없어(setNavigationBarColor no-op) 흰 띠가 남는다. 대신 SystemBarsPlugin.java가
