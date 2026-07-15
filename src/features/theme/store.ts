@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 import type { ThemeName } from '../../types'
 import { getTheme, setTheme } from '../../storage/theme'
+import { setStatusBarStyle } from '../../native/status-bar'
+import { setNavigationBarStyle } from '../../native/navigation-bar'
 
 export interface ThemeStore {
   theme: ThemeName
@@ -10,6 +12,7 @@ export interface ThemeStore {
 
 const DEFAULT_THEME: ThemeName = '머쉬맘'
 const DEFAULT_DARK_THEME: ThemeName = '혼테일'
+const DARK_THEMES: ReadonlySet<ThemeName> = new Set(['레테', '혼테일'])
 
 // 저장된 테마가 없을 때만 쓰는 1회성 판정 — OS 다크모드 설정 변경을 앱 실행 중 실시간으로
 // 반영하지는 않는다(범위 밖, ADR-009 2026-07-14 참고). jsdom 테스트 환경은 matchMedia를
@@ -27,6 +30,13 @@ function applyThemeToDocument(theme: ThemeName): void {
   } else {
     document.documentElement.dataset.theme = theme
   }
+  const isDark = DARK_THEMES.has(theme)
+  // 하단 시스템 내비 바 배경을 탭바(bg-surface)와 맞추기 위해 현재 테마의 표면색을 읽어 넘긴다.
+  const surfaceColor = getComputedStyle(document.documentElement)
+    .getPropertyValue('--color-surface')
+    .trim()
+  void setStatusBarStyle(isDark)
+  void setNavigationBarStyle(isDark, surfaceColor)
 }
 
 export const useThemeStore = create<ThemeStore>()((set) => ({
