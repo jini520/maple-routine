@@ -7,7 +7,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        // 앱 실행 애니메이션(윈도우 확대) 및 WebView 로딩 구간에 기본 검정/흰색 대신 브랜드 오렌지가
+        // 보이도록 윈도우 배경색을 지정한다. 스플래시(오렌지)와 이어져 흰/검은 깜빡임을 없앤다.
+        // #FB8101 = RGB(251, 129, 1).
+        window?.backgroundColor = UIColor(red: 251.0/255.0, green: 129.0/255.0, blue: 1.0/255.0, alpha: 1.0)
         return true
     }
 

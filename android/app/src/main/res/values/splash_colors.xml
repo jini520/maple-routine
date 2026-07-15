@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 스플래시(네이티브 시작 화면) 배경. 라이트 모드용 풀 브랜드 주황(splash.png와 동일). -->
+    <color name="splash_background">#FB8101</color>
+</resources>

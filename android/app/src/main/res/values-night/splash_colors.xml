@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      다크 모드용 스플래시 배경. MIUI/HyperOS는 다크 모드에서 밝은 색 스플래시 배경을
+      앱 설정(테마·manifest의 forceDarkAllowed, values-night 등)과 무관하게 luminance 기준으로
+      강제로 어둡게 만든다(실기기 검증). 풀 브랜드 주황 #FB8101은 임계값을 넘어 #AD4000(칙칙한 갈색)
+      으로 깎이므로, 이 강제 다크 변환을 통과하는 "가장 밝은 주황"(#D06100)을 다크 모드 전용으로 쓴다.
+      이 값을 더 밝게(예: #FB8101) 올리면 다시 갈색으로 깎이니 주의.
+    -->
+    <color name="splash_background">#D06100</color>
+</resources>

@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, NavLink, Route, Routes } from 'react-router-do
 import { Coins, ListChecks, Settings, Swords } from 'lucide-react'
 import { useOnboardingStore } from './features/onboarding/store'
 import { useThemeStore } from './features/theme/store'
+import { hideSplashScreen } from './native/splash-screen'
 import { OnboardingScreen } from './app/onboarding/OnboardingScreen'
 import { ContentScreen } from './app/content-scheduler/ContentScreen'
 import { BossScreen } from './app/boss-scheduler/BossScreen'
@@ -18,6 +19,10 @@ const TAB_ITEMS = [
   { to: '/profit', label: '수익', Icon: Coins },
   { to: '/settings', label: '설정', Icon: Settings },
 ] as const
+
+// 네이티브 스플래시가 순식간에 지나가 깜빡이지 않도록, 앱 번들 평가 시점부터 최소 이 시간만큼은 유지한다.
+const APP_START_MS = Date.now()
+const MIN_SPLASH_MS = 1000
 
 function BottomTabBar(): React.JSX.Element {
   return (
@@ -53,6 +58,22 @@ export function AppShell(): React.JSX.Element {
   useEffect(() => {
     restoreThemeFromStorage()
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // 앱 셸이 처음 렌더된 뒤 네이티브 스플래시를 내린다 — 실행부터 이 시점까지 스플래시가 계속 떠 있어
+  // 흰 화면 없이 스플래시만 보인다. 콘텐츠가 즉시 준비되면 순식간에 사라지므로, 최소 표시 시간
+  // (MIN_SPLASH_MS)을 보장해 스플래시가 충분히 보이게 한다.
+  useEffect(() => {
+    const remaining = MIN_SPLASH_MS - (Date.now() - APP_START_MS)
+    const timer = window.setTimeout(
+      () => {
+        void hideSplashScreen()
+      },
+      Math.max(0, remaining),
+    )
+    return () => {
+      window.clearTimeout(timer)
+    }
   }, [])
 
   const isCompleted = status === 'completed'
