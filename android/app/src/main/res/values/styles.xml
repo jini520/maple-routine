@@ -16,7 +16,18 @@
     </style>
 
 
+    <!--
+      안드로이드 12+ 네이티브 시작 화면(앱 프로세스가 뜨기 전 OS가 ~0.4초 그림, 끌 수 없음) 테마.
+      배경색은 @color/splash_background(라이트 #FB8101, 다크 #D06100 — values-night 참고).
+      MIUI/HyperOS 다크모드가 밝은 배경색을 강제로 어둡게 만들기 때문에 다크용은 그 임계값을 통과하는
+      가장 밝은 주황을 쓴다. 아이콘은 splash.png에서 오려낸 투명 배경 락업. 실제 풀 브랜드 스플래시
+      (전체 이미지)는 index.html의 정적 #boot-splash가 담당한다(src/main.tsx가 마운트 직후 제거).
+      windowSplashScreenBehavior=icon_preferred: OEM이 우리 아이콘을 자기 것으로 대체하지 못하게 강제.
+    -->
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
-        <item name="android:background">@drawable/splash</item>
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon_lockup</item>
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
+        <item name="android:windowSplashScreenBehavior">icon_preferred</item>
     </style>
 </resources>

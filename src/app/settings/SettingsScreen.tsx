@@ -3,6 +3,7 @@ import packageJson from '../../../package.json'
 import { useSettingsStore } from '../../features/settings/store'
 import { useThemeStore } from '../../features/theme/store'
 import { SettingsRow } from './SettingsRow'
+import { AppUpdateSection } from './AppUpdateSection'
 import { ThemeSwatchDots } from './ThemeSwatchDots'
 import { ApiKeyModal } from './ApiKeyModal'
 import { AccountModal } from './AccountModal'
@@ -50,6 +51,8 @@ export function SettingsScreen(): React.JSX.Element {
           showChevron={false}
         />
       </div>
+
+      <AppUpdateSection />
 
       {openModal === 'apiKey' && <ApiKeyModal onClose={() => setOpenModal(null)} />}
       {openModal === 'account' && <AccountModal onClose={() => setOpenModal(null)} />}
