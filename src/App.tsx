@@ -1,10 +1,10 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { BrowserRouter, Navigate, NavLink, Route, Routes } from 'react-router-dom'
 import { Coins, ListChecks, Settings, Swords } from 'lucide-react'
 import { useOnboardingStore } from './features/onboarding/store'
 import { useThemeStore } from './features/theme/store'
 import { hideSplashScreen } from './native/splash-screen'
-import { refreshSafeAreaInsets } from './native/system-bars'
+import { addKeyboardVisibilityListener, refreshSafeAreaInsets } from './native/system-bars'
 import { OnboardingScreen } from './app/onboarding/OnboardingScreen'
 import { ContentScreen } from './app/content-scheduler/ContentScreen'
 import { BossScreen } from './app/boss-scheduler/BossScreen'
@@ -51,6 +51,7 @@ function BottomTabBar(): React.JSX.Element {
 export function AppShell(): React.JSX.Element {
   const { status, restoreFromStorage } = useOnboardingStore()
   const { restoreFromStorage: restoreThemeFromStorage } = useThemeStore()
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false)
 
   useEffect(() => {
     restoreFromStorage()
@@ -67,6 +68,26 @@ export function AppShell(): React.JSX.Element {
   // 네이티브 리스너가 자동 갱신한다(SystemBarsPlugin.java).
   useEffect(() => {
     void refreshSafeAreaInsets()
+  }, [])
+
+  // 키보드가 뜨면 네이티브가 WebView를 그만큼 밀어 올려(입력창이 가리지 않도록) 화면 하단에 고정된
+  // 탭바가 키보드 바로 위에 얹힌다 — 입력 중엔 탭 이동이 의미도 없고 시야만 가리므로 그동안 숨긴다.
+  useEffect(() => {
+    let unsubscribe: (() => void) | undefined
+    let cancelled = false
+
+    void addKeyboardVisibilityListener(setIsKeyboardVisible).then((remove) => {
+      if (cancelled) {
+        remove()
+        return
+      }
+      unsubscribe = remove
+    })
+
+    return () => {
+      cancelled = true
+      unsubscribe?.()
+    }
   }, [])
 
   // 앱 셸이 처음 렌더된 뒤 네이티브 스플래시를 내린다 — 실행부터 이 시점까지 스플래시가 계속 떠 있어
@@ -123,7 +144,7 @@ export function AppShell(): React.JSX.Element {
           <Route path="/debug/boss-portrait-size" element={<BossPortraitSizePreview />} />
         </Routes>
       </div>
-      {isCompleted && <BottomTabBar />}
+      {isCompleted && !isKeyboardVisible && <BottomTabBar />}
       {/* 사용자 동의형 업데이트 모달 — 실행 시(또는 설정에서 수동 확인 시) 새 버전이 있으면 뜬다(ADR-027). */}
       <UpdatePromptModal />
     </div>

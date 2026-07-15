@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, render, screen } from '@testing-library/react'
+import { act, cleanup, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AppShell } from '../App'
@@ -34,6 +34,28 @@ vi.mock('../features/settings/store', () => ({
 vi.mock('../features/theme/store', () => ({
   useThemeStore: vi.fn(),
 }))
+
+// 네이티브 키보드 이벤트를 테스트에서 흉내내기 위한 구독자 목록.
+const { keyboardListeners } = vi.hoisted(() => ({
+  keyboardListeners: [] as ((visible: boolean) => void)[],
+}))
+
+vi.mock('../native/system-bars', () => ({
+  refreshSafeAreaInsets: vi.fn().mockResolvedValue(undefined),
+  addKeyboardVisibilityListener: vi.fn(async (onChange: (visible: boolean) => void) => {
+    keyboardListeners.push(onChange)
+    return () => {
+      const index = keyboardListeners.indexOf(onChange)
+      if (index >= 0) keyboardListeners.splice(index, 1)
+    }
+  }),
+}))
+
+function emitKeyboardVisibility(visible: boolean): void {
+  keyboardListeners.forEach((onChange) => {
+    onChange(visible)
+  })
+}
 
 const mockedUseOnboardingStore = vi.mocked(useOnboardingStore)
 const mockedUseContentSchedulerStore = vi.mocked(useContentSchedulerStore)
@@ -289,5 +311,38 @@ describe('AppShell', () => {
     )
 
     expect(container.firstChild?.firstChild).toHaveClass('pb-[calc(4rem+var(--sa-bottom))]')
+  })
+
+  // 키보드가 뜨면 네이티브가 WebView를 그만큼 밀어 올려 탭바가 키보드 바로 위에 얹힌다 → 그동안 숨긴다.
+  describe('키보드가 올라왔을 때', () => {
+    it('하단 탭바를 숨긴다', async () => {
+      mockStore({ status: 'completed', selectedAccountId: 'account-1' })
+
+      renderAt('/content')
+      expect(screen.getByRole('navigation')).toBeInTheDocument()
+
+      await act(async () => {
+        emitKeyboardVisibility(true)
+      })
+
+      expect(screen.queryByRole('navigation')).not.toBeInTheDocument()
+    })
+
+    it('키보드가 내려가면 탭바를 다시 보여준다', async () => {
+      mockStore({ status: 'completed', selectedAccountId: 'account-1' })
+
+      renderAt('/content')
+
+      await act(async () => {
+        emitKeyboardVisibility(true)
+      })
+      expect(screen.queryByRole('navigation')).not.toBeInTheDocument()
+
+      await act(async () => {
+        emitKeyboardVisibility(false)
+      })
+
+      expect(screen.getByRole('navigation')).toBeInTheDocument()
+    })
   })
 })

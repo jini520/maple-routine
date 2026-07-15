@@ -1,9 +1,14 @@
 import { Capacitor, registerPlugin } from '@capacitor/core'
+import type { PluginListenerHandle } from '@capacitor/core'
 
 interface AppSystemBarsPlugin {
   // dark: 어두운 표면(다크 테마)이면 true → 하단 내비 글리프를 밝게 그린다.
   setStyle(options: { dark: boolean }): Promise<void>
   refreshInsets(): Promise<void>
+  addListener(
+    eventName: 'keyboardVisibility',
+    listener: (event: { visible: boolean }) => void,
+  ): Promise<PluginListenerHandle>
 }
 
 const AppSystemBars = registerPlugin<AppSystemBarsPlugin>('AppSystemBars')
@@ -22,4 +27,19 @@ export async function setNavigationBarStyle(isDarkTheme: boolean): Promise<void>
 export async function refreshSafeAreaInsets(): Promise<void> {
   if (Capacitor.getPlatform() !== 'android') return
   await AppSystemBars.refreshInsets()
+}
+
+// 키보드 표시 여부를 구독한다. 키보드가 뜨면 Capacitor가 WebView를 그만큼 밀어 올리는데(입력창이
+// 가리지 않도록), 그러면 화면 하단에 고정된 탭바가 키보드 바로 위에 얹혀 어색하다 → 그동안 숨기려고
+// 쓴다. 반환값은 구독 해제 함수. iOS는 별도 처리가 필요해 지금은 안드로이드만 구독한다.
+export async function addKeyboardVisibilityListener(
+  onChange: (visible: boolean) => void,
+): Promise<() => void> {
+  if (Capacitor.getPlatform() !== 'android') return () => {}
+  const handle = await AppSystemBars.addListener('keyboardVisibility', (event) => {
+    onChange(event.visible)
+  })
+  return () => {
+    void handle.remove()
+  }
 }
