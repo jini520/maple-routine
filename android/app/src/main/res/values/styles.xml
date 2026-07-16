@@ -30,4 +30,24 @@
         <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
         <item name="android:windowSplashScreenBehavior">icon_preferred</item>
     </style>
+
+    <!--
+      SplashActivity 전용 테마 (Capacitor/WebView를 전혀 거치지 않는 초경량 액티비티, ADR-029).
+      OS가 강제하는 아주 짧은(수십ms) 네이티브 플래시는 무채색 기본값(SplashActivity가 자체 브랜드
+      비트맵을 그릴 때까지의 찰나)로 두고, postSplashScreenTheme에서 SplashActivity.onCreate가
+      activity_splash.xml(ImageView, scaleType=centerCrop)을 그린다 — windowBackground에 비트맵을
+      직접 넣으면 화면 실제 비율에 안 맞을 때 늘어나 보이므로(2026-07-16 실기기 확인) 쓰지 않는다.
+      windowBackground는 ImageView가 인레이트되기 전 찰나에만 보이는 폴백이라 force-dark-safe한
+      단색(splash_background)으로 둔다. 비트맵(@drawable/splash) 자체는 force-dark 면역이다
+      (아이콘 PNG가 안 건드려지는 것과 동일 원리, [[project_miui_forcedark_splash]]).
+    -->
+    <style name="AppTheme.SplashActivityLaunch" parent="Theme.SplashScreen">
+        <item name="postSplashScreenTheme">@style/AppTheme.SplashActivityContent</item>
+    </style>
+
+    <style name="AppTheme.SplashActivityContent" parent="Theme.AppCompat.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowBackground">@color/splash_background</item>
+    </style>
 </resources>
