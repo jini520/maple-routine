@@ -28,6 +28,14 @@ vi.mock('../../../native/live-update', () => ({
   resolveLiveUpdateManifestUrl: resolveLiveUpdateManifestUrlMock,
 }))
 
+const { showSplashScreenMock } = vi.hoisted(() => ({
+  showSplashScreenMock: vi.fn(),
+}))
+
+vi.mock('../../../native/splash-screen', () => ({
+  showSplashScreen: showSplashScreenMock,
+}))
+
 import { useLiveUpdateStore } from '../store'
 
 const INITIAL = {
@@ -58,6 +66,7 @@ beforeEach(() => {
   getCurrentBundleVersionMock.mockReset()
   getNetworkTypeMock.mockReset().mockResolvedValue('wifi')
   openStoreForUpdateMock.mockReset()
+  showSplashScreenMock.mockReset().mockResolvedValue(undefined)
   useLiveUpdateStore.setState(INITIAL)
 })
 
@@ -164,6 +173,29 @@ describe('useLiveUpdateStore', () => {
     it('받아둔 번들이 없으면 아무 것도 안 한다', async () => {
       await s().apply()
       expect(applyDownloadedLiveUpdateMock).not.toHaveBeenCalled()
+      expect(showSplashScreenMock).not.toHaveBeenCalled()
+    })
+
+    it('적용(리로드) 직전에 스플래시를 띄워 리로드 구간의 웹뷰 배경색 노출을 덮는다 (ADR-027)', async () => {
+      useLiveUpdateStore.setState({ downloadedBundleId: 'bundle-2' })
+      applyDownloadedLiveUpdateMock.mockResolvedValue(undefined)
+
+      await s().apply()
+
+      expect(showSplashScreenMock).toHaveBeenCalled()
+      expect(showSplashScreenMock.mock.invocationCallOrder[0]).toBeLessThan(
+        applyDownloadedLiveUpdateMock.mock.invocationCallOrder[0],
+      )
+    })
+
+    it('스플래시 표시가 실패해도 적용은 계속 진행한다', async () => {
+      useLiveUpdateStore.setState({ downloadedBundleId: 'bundle-2' })
+      showSplashScreenMock.mockRejectedValue(new Error('splash fail'))
+      applyDownloadedLiveUpdateMock.mockResolvedValue(undefined)
+
+      await s().apply()
+
+      expect(applyDownloadedLiveUpdateMock).toHaveBeenCalledWith('bundle-2')
     })
   })
 
