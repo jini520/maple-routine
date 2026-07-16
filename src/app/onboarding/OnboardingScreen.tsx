@@ -30,7 +30,7 @@ export function OnboardingScreen(): React.JSX.Element {
           ? Math.round((prefetchProgress.completed / prefetchProgress.total) * 100)
           : 0
       return (
-        <div className="flex justify-center px-4 pt-8 pb-4">
+        <div className="flex min-h-[calc(100dvh-var(--sa-top)-var(--sa-bottom))] items-center justify-center px-4">
           <div className="w-full space-y-2">
             <p className="text-sm text-text-muted">
               캐릭터 정보를 준비하고 있어요

@@ -216,6 +216,8 @@ footer: flex items-center justify-between px-4 py-3 bg-surface-2 text-sm
 
 ### 온보딩 API 키 검증 중 — 폼 유지 + 버튼 스피너 — 확정, 2026-07-16
 API 키를 제출하면 즉시 캐릭터 목록 조회(`GET /character/list` 단일 요청 = 별도 검증 엔드포인트 없이 이 호출 자체가 키 검증)를 시작하고, 응답이 올 때까지 **화면을 이동시키지 않고 API 키 입력 폼을 그대로 유지**한다. 기존에 폼을 지우고 띄우던 "캐릭터 목록을 확인하고 있어요..." 문구는 제거한다 — 정상 경로가 1초 미만이라 문구가 깜빡 떴다 사라지는 게 오히려 거슬렸다.
+**정정(2026-07-16) — 세로 중앙 배치**: 온보딩 예열 화면은 진행률 블록(안내 문구 + 바)을 상단(`pt-8`)이 아니라 **화면 세로 중앙**에 둔다 — 예열은 수 초 걸리는 온보딩 유일의 본격 대기 화면이라, 텍스트가 상단에 붙기보다 중앙에 오는 게 대기 화면답다(사용자 지시). 컨테이너를 안전영역을 제외한 뷰포트 높이(`min-h-[calc(100dvh-var(--sa-top)-var(--sa-bottom))]`)로 채우고 `flex items-center justify-center`로 중앙 정렬한다(온보딩에는 하단 탭바가 없어 `--sa-bottom`까지 빼야 홈 인디케이터 영역 위 실제 가시 영역의 정중앙에 온다). 설정의 재인증 예열(`AccountFlowStatus`, 모달 안)은 대상 아님.
+
 - 검증 중(`verifyingApiKey`)에는 `ApiKeyForm`을 `isSubmitting`으로 유지한다. 폼 위치·입력값은 그대로 두고, 제출 버튼 내용만 "확인" 텍스트 → 로딩 스피너로 바꾸고 버튼을 비활성화(재제출 방지)한다.
 - 검증이 끝나면 다음 상태(계정 선택 / 예열 진행률 바)로 전이한다. 예열(prefetching)처럼 수 초 이상 걸릴 수 있는 작업은 이 규칙에서 제외 — 진행률 바를 그대로 보여준다.
 - 버튼 스피너: `h-5 w-5 rounded-full border-2 border-bg/30 border-t-bg animate-spin motion-reduce:animate-none`. 보스 수익 자동 재조회 스피너(중립 배경 위 `border-border border-t-primary`)와 달리, 솔리드 primary 버튼 안이라 버튼 글자색(`bg` 토큰)을 그대로 써서 호(arc)를 `border-t-bg`로 둔다. 접근성: 로딩 중 버튼에 `aria-busy`를 주고, 텍스트가 사라지는 동안 접근 가능한 이름을 `aria-label="확인 중"`으로 유지하며, 스피너 자체는 `aria-hidden`.
