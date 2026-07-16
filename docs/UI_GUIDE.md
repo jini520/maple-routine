@@ -225,6 +225,12 @@ API 키를 제출하면 즉시 캐릭터 목록 조회(`GET /character/list` 단
 설정 화면은 카드형 섹션 나열이 아니라, **하나의 리스트 컨테이너**(`rounded-[14px] bg-surface border border-border px-6`) 안에 행(`SettingsRow`)을 `divide-y divide-border`로 이어붙이는 방식이다. 각 행은 `py-4`, 왼쪽 라벨(`text-sm font-medium text-text`, 위험한 동작은 `text-error`) + 오른쪽 콘텐츠(기본은 `lucide-react` `ChevronRight`, `strokeWidth 2`, `text-text-muted` — 필요 없으면 `showChevron={false}`)로 구성되고, 행 전체가 버튼이라 탭하면 그 항목에 맞는 모달이 열린다("API 키 재입력"·"계정 변경"·"테마" 3개 행 전부 이 패턴, "연결 해제"만 예외로 확인 모달을 직접 연다).
 - **모달 컴포넌트(`components/Modal`)**: `CharacterTrackingPicker`/`DisconnectConfirm`에서 반복되던 오버레이(`fixed inset-0 flex items-center justify-center bg-bg/70` + 안쪽 카드 `onClick` 시 `stopPropagation`)를 공용화했다. 기본은 카드(`rounded-[14px] border border-border bg-surface p-6`)를 제공하지만, `card={false}`를 주면 위치 고정용 래퍼만 남기고 카드 스타일은 생략한다 — `ApiKeyForm`/`AccountSelectionList`처럼 이미 자체 카드를 가진 컴포넌트를 그대로 재사용할 때 카드-안-카드 중첩을 피하기 위함이다.
 - **테마 대표 컬러 점(`ThemeSwatchDots`)**: 테마의 `primary`/`secondary`/`error` 3개 토큰 값을 `h-4 w-4 rounded-full` 점으로 겹쳐(`-space-x-1`) 보여준다. 테마 행의 오른쪽 콘텐츠(점 3개 + 현재 테마 이름을 `rounded-full border border-border px-3 py-1 text-xs` 배지로)와 테마 모달 안의 선택지 각각에 재사용한다. `src/data/job-themes.json`을 직접 import해 값을 읽는다 — 활성화되지 않은 테마의 색도 미리보기로 보여줘야 해서 CSS 커스텀 프로퍼티(현재 활성 테마 값만 노출)로는 부족하기 때문이다.
+### 온보딩 계정(메이플 ID) 선택 목록 — 확정, 2026-07-16, [[ADR-006]]
+각 계정 항목은 [대표 캐릭터 얼굴 아바타(36px 원형, [[ADR-015]] 크롭 방식)] + 텍스트 2줄. 1줄은 `[월드 엠블럼] {월드} · {이름} · Lv.{레벨}`, 2줄은 `text-text-muted`로 `캐릭터 {N}개`. **직업은 표시하지 않는다** — 이름이 길면 한 줄을 넘겨서([[ADR-015]] 캐릭터 카드와 동일하게 직업 생략), 대신 월드를 첫 줄로 끌어올렸다.
+- 월드 엠블럼: `src/assets/worlds/*`의 작은 아이콘(원본 16~22px). 텍스트 앞에 인라인으로 `h-[18px] w-auto object-contain shrink-0`, 월드명과 나란히 둔다. 매핑에 없는 월드는 엠블럼 없이 월드명 텍스트만 표시(폴백).
+- 이름이 길어도 넘치지 않도록 1줄 텍스트에 `truncate`, 텍스트 컬럼은 `min-w-0`(아바타·버튼 패딩을 침범하지 않게).
+- 월드→엠블럼 파일 매핑은 `src/data/world-emblems.json`(한글 월드명 → 파일 basename, [[ADR-006]]). 챌린저스·챌린저스2·챌린저스3·챌린저스4는 모두 `challengers`.
+
 
 ### 스크롤 영역 — 확정, 2026-07-13
 컨텐츠 스케줄러·보스 스케줄러 화면은 제목부터 탭(보스는 솔로/파티 서브 필터까지)을 화면 상단에 고정하고, 그 아래 목록(컨텐츠 리스트 / 보스 카드 목록)만 스크롤되게 한다. `position: sticky`로 구현한다 — 목록 영역을 별도 `overflow-y-auto` 컨테이너로 분리하고 높이를 계산(`calc(100dvh - ...)`)하는 방식 대신, 페이지 자체의 자연스러운 스크롤 위에서 헤더 블록만 `sticky top-0`으로 붙인다. `App.tsx`의 레이아웃(높이 모델)을 전혀 건드리지 않아도 되고, 다른 화면(보스 수익 계산기·설정 등)의 기존 페이지 스크롤 방식과도 충돌하지 않는다.
