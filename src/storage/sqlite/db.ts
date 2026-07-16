@@ -57,10 +57,15 @@ async function openBossProfitDb(): Promise<SQLiteDBConnection> {
     await connection.initWebStore()
   }
 
+  // 웹뷰가 리로드되면(OTA 적용: applyDownloadedLiveUpdate → CapacitorUpdater.set이 JS 컨텍스트를
+  // 파괴하고 재로드, ADR-027) 이전 로드의 네이티브 SQLite 연결이 남는다. dbPromise는 로드마다
+  // 초기화되므로 isConnection이 true라는 건 그 stale 연결이라는 뜻 — 그대로 retrieve+open하면 첫
+  // 쿼리가 막히므로, 닫고 새로 만든다.
   const { result: alreadyConnected } = await connection.isConnection(DB_NAME, false)
-  const db = alreadyConnected
-    ? await connection.retrieveConnection(DB_NAME, false)
-    : await connection.createConnection(DB_NAME, false, 'no-encryption', 1, false)
+  if (alreadyConnected) {
+    await connection.closeConnection(DB_NAME, false)
+  }
+  const db = await connection.createConnection(DB_NAME, false, 'no-encryption', 1, false)
 
   await db.open()
   await db.execute(CREATE_BOSS_PROFIT_RECORDS_TABLE)

@@ -278,6 +278,16 @@ describe('useBossSchedulerStore', () => {
     void promise // 이 테스트는 재검증이 끝나길 기다리지 않는다
   })
 
+  it('파티 설정 조회(loadPartySizes)가 실패해도 refresh는 reject 없이 스케줄을 반영한다', async () => {
+    getBossPartySettingsMock.mockRejectedValue(new Error('sqlite fail'))
+    syncSchedulesMock.mockResolvedValue([syncResult({ ocid: 'ocid-1', characterName: '캐릭터1' })])
+
+    await useBossSchedulerStore.getState().refresh(['ocid-1'])
+
+    expect(useBossSchedulerStore.getState().status).toBe('loaded')
+    expect(useBossSchedulerStore.getState().characters).toHaveLength(1)
+  })
+
   it('refresh 시작 시 status를 loading으로 바꾼다', async () => {
     let resolveSync: (value: CharacterScheduleSync[]) => void = () => {}
     syncSchedulesMock.mockImplementation(

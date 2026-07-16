@@ -208,9 +208,13 @@ export function BossScreen(): React.JSX.Element {
 
   async function handleSaveTracking(ocids: string[]): Promise<void> {
     setSaveProgress({ completed: 0, total: ocids.length })
-    await saveTrackedOcids(ocids, (completed, total) => setSaveProgress({ completed, total }))
-    setSaveProgress(null)
-    setIsPickerOpen(false)
+    // 저장이 실패해도(스토어가 처리 못한 예외 등) 진행률 모달은 항상 닫는다 — 안 그러면 모달이 멈춘다.
+    try {
+      await saveTrackedOcids(ocids, (completed, total) => setSaveProgress({ completed, total }))
+    } finally {
+      setSaveProgress(null)
+      setIsPickerOpen(false)
+    }
   }
 
   const characterManageButton = (
