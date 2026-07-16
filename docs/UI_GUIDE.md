@@ -220,6 +220,11 @@ footer: flex items-center justify-between px-4 py-3 bg-surface-2 text-sm
 - 진행률은 `saveTrackedOcids(ocids, onProgress) → refresh(ocids, onProgress) → syncSchedules(ocids, onProgress)`로 콜백을 흘려보내 얻는다.
 - 개별 캐릭터 실패는 `syncSchedules`가 조용히 폴백 처리하므로 진행률은 계속 진행되고, 전역 에러(인증·호출한도)면 `refresh`가 화면 에러 상태로 전환한다 — 어느 경우든 진행률 모달은 완료 시 닫는다.
 
+### 스케줄러 캐릭터 드롭다운 — 선택 캐릭터 월드 아이콘 — 확정, 2026-07-16
+컨텐츠·보스 스케줄러의 캐릭터 전환 드롭다운(`CharacterSelectDropdown`)은 네이티브 `<select>`를 유지한다 — `<option>`에는 이미지를 넣을 수 없어 펼친 목록은 캐릭터명 텍스트만 표시한다. 대신 **닫힌 상태(현재 선택된 캐릭터)** 왼쪽에 그 캐릭터의 **월드 엠블럼**을 겹쳐 보여준다(사용자 선택: 네이티브 select 유지, 목록엔 아이콘 없음).
+- 엠블럼: `lib/world-emblem`(계정 선택·캐릭터 관리와 동일 매핑) 재사용. `<select>`를 `relative` 래퍼로 감싸고 엠블럼 `<img>`를 `pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-[18px] w-auto object-contain`으로 얹은 뒤, `<select>`에 `pl-9`을 줘 선택 텍스트가 엠블럼과 겹치지 않게 한다. `pointer-events-none`이라 클릭이 select로 전달돼 네이티브 목록이 그대로 열린다.
+- world는 두 경로로 스토어 캐릭터 뷰(`ContentCharacterView`/`BossCharacterView`)에 담는다 — **캐시 우선 표시 뷰는 스케줄 캐시(`SchedulerCharacterState.world`, 스케줄러 `normalize`가 `world_name`을 담아 캐시에 저장)에서**, 동기화 후 뷰는 sync 결과(`CharacterScheduleSync.world`)에서. 따라서 스케줄 캐시가 있으면 **API 응답을 기다리지 않고 엠블럼이 즉시 뜬다**. 스케줄 캐시가 전혀 없는(한 번도 동기화 안 한) 캐릭터만 동기화 후에 뜬다. 매핑에 없는 월드는 생략(폴백). **정정(2026-07-16)**: 최초 구현에서 캐시 우선 뷰에 `cached.state.world` 복사를 누락해 캐시가 있어도 엠블럼이 동기화 후에야 떴던 버그를 수정.
+
 ### 온보딩 예열 진행률 바 — 확정, 2026-07-12, [[ADR-016]]
 컨텐츠 스케줄러의 일간 콘텐츠 진행률(`role="progressbar"` + `aria-valuenow`/`aria-valuemin`/`aria-valuemax`, track `h-1.5 w-full rounded-full bg-surface-2` + fill `h-1.5 rounded-full bg-primary`)과 동일한 시각 스타일을 그대로 재사용한다 — 새 색상/모양을 만들지 않는다. 진행률 위에 안내 문구(예: "캐릭터 정보를 준비하고 있어요 (18/45)")를 `text-sm text-text-muted`로 표시한다.
 

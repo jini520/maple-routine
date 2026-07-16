@@ -14,6 +14,7 @@ import type { DailyContent, WeeklyContent } from '../../types'
 export interface ContentCharacterView {
   ocid: string
   characterName: string
+  world?: string
   dailyContents: DailyContent[]
   weeklyContents: WeeklyContent[]
   isStale: boolean
@@ -109,6 +110,7 @@ export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, ge
           return {
             ocid,
             characterName: cached.state.characterName,
+            world: cached.state.world,
             dailyContents: cached.state.dailyContents,
             weeklyContents: cached.state.weeklyContents,
             isStale: true,
@@ -134,6 +136,7 @@ export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, ge
     const characters: ContentCharacterView[] = results.map((result) => ({
       ocid: result.ocid,
       characterName: result.characterName,
+      world: result.world,
       dailyContents: result.state?.dailyContents ?? [],
       weeklyContents: result.state?.weeklyContents ?? [],
       isStale: result.isStale,

@@ -219,6 +219,7 @@ describe('useContentSchedulerStore', () => {
       {
         ocid: 'ocid-1',
         characterName: '캐시된캐릭터',
+        world: '베라',
         dailyContents: [dailyContent('몬스터파크')],
         weeklyContents: [],
         isStale: true,

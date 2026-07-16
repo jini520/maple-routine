@@ -195,6 +195,7 @@ describe('syncSchedules', () => {
       {
         ocid: 'ocid-1',
         characterName: '캐릭터-ocid-1',
+        world: '베라',
         state: schedulerState('캐릭터1'),
         syncedAt: NOW,
         isStale: false,
@@ -203,6 +204,7 @@ describe('syncSchedules', () => {
       {
         ocid: 'ocid-2',
         characterName: '캐릭터-ocid-2',
+        world: '베라',
         state: schedulerState('캐릭터2'),
         syncedAt: NOW,
         isStale: false,
@@ -279,6 +281,7 @@ describe('syncSchedules', () => {
       {
         ocid: 'ocid-1',
         characterName: '캐릭터-ocid-1',
+        world: '베라',
         state: schedulerState('캐시된-캐릭터1'),
         syncedAt: '2026-07-10T00:00:00.000Z',
         isStale: true,
@@ -300,6 +303,7 @@ describe('syncSchedules', () => {
       {
         ocid: 'ocid-1',
         characterName: '캐릭터-ocid-1',
+        world: '베라',
         state: null,
         syncedAt: null,
         isStale: true,
@@ -322,6 +326,7 @@ describe('syncSchedules', () => {
     expect(results[1]).toEqual({
       ocid: 'ocid-2',
       characterName: '캐릭터-ocid-2',
+      world: '베라',
       state: schedulerState('캐릭터2'),
       syncedAt: NOW,
       isStale: false,

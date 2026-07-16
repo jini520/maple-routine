@@ -19,6 +19,8 @@ export type ScheduleSyncError =
 export interface CharacterScheduleSync {
   ocid: string
   characterName: string
+  // 스케줄러 드롭다운의 월드 엠블럼 표시용. character/list의 world를 그대로 담는다.
+  world?: string
   state: SchedulerCharacterState | null
   syncedAt: string | null
   isStale: boolean
@@ -183,6 +185,7 @@ async function buildFallbackResult(
   return {
     ocid: character.ocid,
     characterName: character.name,
+    world: character.world,
     state: cached?.state ?? null,
     syncedAt: cached?.syncedAt ?? null,
     isStale: true,
@@ -227,6 +230,7 @@ export async function syncSchedules(
       results.push({
         ocid: character.ocid,
         characterName: character.name,
+        world: character.world,
         state,
         syncedAt,
         isStale: false,

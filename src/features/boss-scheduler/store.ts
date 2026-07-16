@@ -17,6 +17,7 @@ import { compareByName } from '../onboarding/representative-character'
 export interface BossCharacterView {
   ocid: string
   characterName: string
+  world?: string
   weeklyBosses: MatchedBoss[]
   monthlyBosses: MatchedBoss[]
   weeklyBossClearCount: number | null
@@ -125,6 +126,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
           return {
             ocid,
             characterName: cached.state.characterName,
+            world: cached.state.world,
             weeklyBosses: bosses.filter((boss) => boss.cycle === 'weekly'),
             monthlyBosses: bosses.filter((boss) => boss.cycle === 'monthly'),
             weeklyBossClearCount: cached.state.weeklyBossClearCount,
@@ -163,6 +165,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
         weeklyBossClearCount: result.state?.weeklyBossClearCount ?? null,
         weeklyBossClearLimitCount: result.state?.weeklyBossClearLimitCount ?? null,
         isStale: result.isStale,
+        world: result.world,
         syncedAt: result.syncedAt,
         error: result.error,
       }

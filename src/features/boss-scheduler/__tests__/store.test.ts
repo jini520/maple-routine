@@ -270,6 +270,7 @@ describe('useBossSchedulerStore', () => {
     await vi.waitFor(() => expect(useBossSchedulerStore.getState().status).toBe('loading'))
     const state = useBossSchedulerStore.getState()
     expect(state.characters[0].characterName).toBe('캐시된캐릭터')
+    expect(state.characters[0].world).toBe('베라')
     expect(state.characters[0].isStale).toBe(true)
     expect(state.characters[0].weeklyBossClearCount).toBe(5)
     expect(state.characters[0].weeklyBosses).toHaveLength(1)
