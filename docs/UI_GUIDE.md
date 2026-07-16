@@ -213,6 +213,13 @@ footer: flex items-center justify-between px-4 py-3 bg-surface-2 text-sm
 
 **추가(2026-07-16) — 서버 엠블럼 + 오버레이 닫기 제거**: (1) 카드 이름 옆(같은 줄)에 **서버(월드) 엠블럼**을 붙인다 — 온보딩 계정 선택과 동일한 월드→엠블럼 매핑(공용 유틸 `lib/world-emblem`, 데이터는 `src/data/world-emblems.json` [[ADR-006]])을 재사용하며, 이름은 `truncate`, 엠블럼은 `h-3.5 w-auto shrink-0 object-contain`으로 이름 앞에 둔다. world는 character/list(live 엔트리)와 character/basic의 `world_name`(캐시 stub 엔트리 포함) 양쪽에서 얻는다 — `CharacterBasicProfile.world`(옵셔널)에 `world_name`을 담아 캐시하므로 목록 도착 전 stub도 엠블럼이 나온다. 이 변경 이전의 오래된 캐시(아직 world 없음)이거나 매핑에 없는 월드면 엠블럼을 생략한다(폴백). (2) 이 "캐릭터 관리" 모달은 **오버레이(바깥 영역) 클릭으로 닫히지 않는다** — "닫기"/"저장" 버튼으로만 닫는다(실수로 닫히는 것 방지, 사용자 지시). `CharacterTrackingPicker`는 공용 `Modal`을 쓰지 않고 자체 오버레이라 이 변경이 이 모달에만 적용되고, 설정의 공용 `Modal`들은 기존대로 오버레이 클릭 닫기를 유지한다.
 
+### 캐릭터 관리 저장 진행률 모달 — 확정, 2026-07-16
+"캐릭터 관리"에서 캐릭터를 고르고 "저장"을 누르면 추적 캐릭터마다 스케줄 API(`syncSchedules`)를 순차로 호출한다. 이 처리가 끝날 때까지 아무 피드백 없이 모달이 멈춰 있다가 갑자기 닫혀, 저장이 됐는지 인지하기 어려웠다. 그래서 저장을 누르면 캐릭터 관리 모달 **위에** 진행률 모달을 띄우고, 완료되면 두 모달을 함께 닫는다.
+- 진행률 표시: [[ADR-016]] 온보딩 예열 진행률 바와 동일한 스타일(`role="progressbar"`, track `h-1.5 w-full rounded-full bg-surface-2` + fill `h-1.5 rounded-full bg-primary`)을 재사용하고, 위에 "캐릭터 정보를 저장하고 있어요 (N/M)"를 `text-sm text-text-muted`로 표시한다. N/M은 `syncSchedules`가 캐릭터를 순차 처리하며 넘기는 `onProgress(completed, total)`로 채운다.
+- 모달: 공용 `Modal`(중앙 정렬)을 재사용하되 저장 도중에는 닫을 수 없다(오버레이 클릭 무시 — 완료 시 프로그램적으로만 닫는다). 두 화면(컨텐츠·보스 스케줄러)이 공유하는 컴포넌트로 만든다.
+- 진행률은 `saveTrackedOcids(ocids, onProgress) → refresh(ocids, onProgress) → syncSchedules(ocids, onProgress)`로 콜백을 흘려보내 얻는다.
+- 개별 캐릭터 실패는 `syncSchedules`가 조용히 폴백 처리하므로 진행률은 계속 진행되고, 전역 에러(인증·호출한도)면 `refresh`가 화면 에러 상태로 전환한다 — 어느 경우든 진행률 모달은 완료 시 닫는다.
+
 ### 온보딩 예열 진행률 바 — 확정, 2026-07-12, [[ADR-016]]
 컨텐츠 스케줄러의 일간 콘텐츠 진행률(`role="progressbar"` + `aria-valuenow`/`aria-valuemin`/`aria-valuemax`, track `h-1.5 w-full rounded-full bg-surface-2` + fill `h-1.5 rounded-full bg-primary`)과 동일한 시각 스타일을 그대로 재사용한다 — 새 색상/모양을 만들지 않는다. 진행률 위에 안내 문구(예: "캐릭터 정보를 준비하고 있어요 (18/45)")를 `text-sm text-text-muted`로 표시한다.
 

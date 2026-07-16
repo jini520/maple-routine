@@ -219,6 +219,23 @@ describe('syncSchedules', () => {
     })
   })
 
+  it('onProgress로 진행률(completed/total)을 캐릭터마다 순차 갱신한다', async () => {
+    const characters = [character('ocid-1'), character('ocid-2')]
+    fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+    fetchSchedulerCharacterStateMock
+      .mockResolvedValueOnce(schedulerState('캐릭터1'))
+      .mockResolvedValueOnce(schedulerState('캐릭터2'))
+
+    const onProgress = vi.fn()
+    await syncSchedules(['ocid-1', 'ocid-2'], onProgress)
+
+    expect(onProgress.mock.calls).toEqual([
+      [0, 2],
+      [1, 2],
+      [2, 2],
+    ])
+  })
+
   it('캐릭터를 병렬이 아니라 순차적으로 호출한다', async () => {
     const characters = [character('ocid-1'), character('ocid-2'), character('ocid-3')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])

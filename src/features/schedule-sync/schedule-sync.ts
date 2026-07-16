@@ -196,20 +196,27 @@ async function buildFallbackResult(
 //
 // ocids로 지정된 캐릭터만 동기화한다 — 계정의 전체 캐릭터를 대상으로 순차 호출하면
 // 추적 대상이 아닌 캐릭터까지 불필요하게 호출하게 되어 로딩이 느려진다.
-export async function syncSchedules(ocids: string[]): Promise<CharacterScheduleSync[]> {
+export async function syncSchedules(
+  ocids: string[],
+  onProgress?: (completed: number, total: number) => void,
+): Promise<CharacterScheduleSync[]> {
   if (ocids.length === 0) {
     return []
   }
 
   const { apiKey, characters } = await resolveRegisteredCharacters()
   const targetCharacters = characters.filter((character) => ocids.includes(character.ocid))
+  const total = targetCharacters.length
 
   const results: CharacterScheduleSync[] = []
   let globalError: ScheduleSyncError | null = null
 
+  onProgress?.(0, total)
+
   for (const character of targetCharacters) {
     if (globalError !== null) {
       results.push(await buildFallbackResult(character, globalError))
+      onProgress?.(results.length, total)
       continue
     }
 
@@ -232,6 +239,7 @@ export async function syncSchedules(ocids: string[]): Promise<CharacterScheduleS
       }
       results.push(await buildFallbackResult(character, scheduleError))
     }
+    onProgress?.(results.length, total)
   }
 
   return results

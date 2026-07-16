@@ -128,7 +128,7 @@ describe('useBossSchedulerStore', () => {
 
     await useBossSchedulerStore.getState().refresh(['ocid-1'])
 
-    expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1'])
+    expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1'], undefined)
   })
 
   it('weekly와 monthly가 섞여 있으면 각각 weeklyBosses/monthlyBosses로 정확히 분리된다', async () => {
@@ -312,7 +312,7 @@ describe('useBossSchedulerStore', () => {
 
       await useBossSchedulerStore.getState().loadTrackedOcids()
 
-      expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1'])
+      expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1'], undefined)
     })
 
     it('loadTrackedOcids는 조회된 목록이 null이면 refresh를 호출하지 않는다', async () => {
@@ -332,7 +332,7 @@ describe('useBossSchedulerStore', () => {
 
       expect(setTrackedCharacterOcidsMock).toHaveBeenCalledWith('boss', ['ocid-1', 'ocid-2'])
       expect(useBossSchedulerStore.getState().trackedOcids).toEqual(['ocid-1', 'ocid-2'])
-      expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1', 'ocid-2'])
+      expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1', 'ocid-2'], undefined)
     })
   })
 

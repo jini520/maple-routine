@@ -339,7 +339,7 @@ describe('BossScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: '저장' }))
 
     await waitFor(() => {
-      expect(saveTrackedOcids).toHaveBeenCalledWith(['ocid-1', 'ocid-2'])
+      expect(saveTrackedOcids).toHaveBeenCalledWith(['ocid-1', 'ocid-2'], expect.any(Function))
     })
   })
 

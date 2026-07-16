@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react'
 import type { BossPortraitCrop } from '../../lib/boss-icons'
 import { CharacterSelectDropdown } from '../../components/CharacterSelectDropdown/CharacterSelectDropdown'
 import { CharacterTrackingPicker } from '../../components/CharacterTrackingPicker/CharacterTrackingPicker'
+import { ProgressModal } from '../../components/ProgressModal/ProgressModal'
 import type { MatchedBoss } from '../../lib/boss-matching'
 import { PartyManagementModal } from './PartyManagementModal'
 import { getCharacterPickerRoster } from '../../features/schedule-sync/schedule-sync'
@@ -140,6 +141,7 @@ export function BossScreen(): React.JSX.Element {
   const [activeTab, setActiveTab] = useState<BossTab>('weekly')
   const [roster, setRoster] = useState<CharacterPickerEntry[]>([])
   const [isPickerOpen, setIsPickerOpen] = useState(false)
+  const [saveProgress, setSaveProgress] = useState<{ completed: number; total: number } | null>(null)
   const [isPartyManagementOpen, setIsPartyManagementOpen] = useState(false)
   // ADR-019 결정 6: 주간/월간 탭은 서로 독립된 필터 상태를 갖는다(한 탭의 필터 변경이
   // 다른 탭에 영향을 주지 않음).
@@ -205,7 +207,9 @@ export function BossScreen(): React.JSX.Element {
     selected !== null ? filterByPartySize(registeredMonthlyBosses, selected.ocid, monthlyFilter) : []
 
   async function handleSaveTracking(ocids: string[]): Promise<void> {
-    await saveTrackedOcids(ocids)
+    setSaveProgress({ completed: 0, total: ocids.length })
+    await saveTrackedOcids(ocids, (completed, total) => setSaveProgress({ completed, total }))
+    setSaveProgress(null)
     setIsPickerOpen(false)
   }
 
@@ -226,6 +230,20 @@ export function BossScreen(): React.JSX.Element {
       onSave={handleSaveTracking}
       onClose={() => setIsPickerOpen(false)}
     />
+  )
+
+  // 저장 중에는 캐릭터 관리 모달 위에 진행률 모달을 띄운다(완료 시 둘 다 닫힌다).
+  const trackingModals = (
+    <>
+      {trackingPicker}
+      {saveProgress !== null && (
+        <ProgressModal
+          message="캐릭터 정보를 저장하고 있어요"
+          completed={saveProgress.completed}
+          total={saveProgress.total}
+        />
+      )}
+    </>
   )
 
   const partyManageButton = (
@@ -267,7 +285,7 @@ export function BossScreen(): React.JSX.Element {
           표시할 캐릭터가 없습니다 — 캐릭터를 선택해주세요
         </div>
 
-        {trackingPicker}
+        {trackingModals}
       </div>
     )
   }
@@ -470,7 +488,7 @@ export function BossScreen(): React.JSX.Element {
         </div>
       )}
 
-      {trackingPicker}
+      {trackingModals}
       {partyManagementModal}
     </div>
   )
