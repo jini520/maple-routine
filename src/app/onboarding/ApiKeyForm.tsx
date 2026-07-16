@@ -11,6 +11,7 @@ export function ApiKeyForm(props: ApiKeyFormProps): React.JSX.Element {
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>): void {
     event.preventDefault()
+    if (props.isSubmitting) return
     const trimmed = apiKey.trim()
     if (trimmed.length === 0) return
     props.onSubmit(trimmed)
@@ -49,9 +50,18 @@ export function ApiKeyForm(props: ApiKeyFormProps): React.JSX.Element {
       <button
         type="submit"
         disabled={props.isSubmitting || apiKey.trim().length === 0}
-        className="w-full rounded-full bg-primary text-bg font-semibold hover:bg-primary-hover px-5 py-2.5 disabled:opacity-50"
+        aria-busy={props.isSubmitting}
+        aria-label={props.isSubmitting ? '확인 중' : undefined}
+        className="flex w-full items-center justify-center rounded-full bg-primary text-bg font-semibold hover:bg-primary-hover px-5 py-2.5 disabled:opacity-50"
       >
-        확인
+        {props.isSubmitting ? (
+          <span
+            aria-hidden="true"
+            className="h-5 w-5 rounded-full border-2 border-bg/30 border-t-bg animate-spin motion-reduce:animate-none"
+          />
+        ) : (
+          '확인'
+        )}
       </button>
     </form>
   )

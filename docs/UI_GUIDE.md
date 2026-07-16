@@ -214,6 +214,13 @@ footer: flex items-center justify-between px-4 py-3 bg-surface-2 text-sm
 ### 온보딩 예열 진행률 바 — 확정, 2026-07-12, [[ADR-016]]
 컨텐츠 스케줄러의 일간 콘텐츠 진행률(`role="progressbar"` + `aria-valuenow`/`aria-valuemin`/`aria-valuemax`, track `h-1.5 w-full rounded-full bg-surface-2` + fill `h-1.5 rounded-full bg-primary`)과 동일한 시각 스타일을 그대로 재사용한다 — 새 색상/모양을 만들지 않는다. 진행률 위에 안내 문구(예: "캐릭터 정보를 준비하고 있어요 (18/45)")를 `text-sm text-text-muted`로 표시한다.
 
+### 온보딩 API 키 검증 중 — 폼 유지 + 버튼 스피너 — 확정, 2026-07-16
+API 키를 제출하면 즉시 캐릭터 목록 조회(`GET /character/list` 단일 요청 = 별도 검증 엔드포인트 없이 이 호출 자체가 키 검증)를 시작하고, 응답이 올 때까지 **화면을 이동시키지 않고 API 키 입력 폼을 그대로 유지**한다. 기존에 폼을 지우고 띄우던 "캐릭터 목록을 확인하고 있어요..." 문구는 제거한다 — 정상 경로가 1초 미만이라 문구가 깜빡 떴다 사라지는 게 오히려 거슬렸다.
+- 검증 중(`verifyingApiKey`)에는 `ApiKeyForm`을 `isSubmitting`으로 유지한다. 폼 위치·입력값은 그대로 두고, 제출 버튼 내용만 "확인" 텍스트 → 로딩 스피너로 바꾸고 버튼을 비활성화(재제출 방지)한다.
+- 검증이 끝나면 다음 상태(계정 선택 / 예열 진행률 바)로 전이한다. 예열(prefetching)처럼 수 초 이상 걸릴 수 있는 작업은 이 규칙에서 제외 — 진행률 바를 그대로 보여준다.
+- 버튼 스피너: `h-5 w-5 rounded-full border-2 border-bg/30 border-t-bg animate-spin motion-reduce:animate-none`. 보스 수익 자동 재조회 스피너(중립 배경 위 `border-border border-t-primary`)와 달리, 솔리드 primary 버튼 안이라 버튼 글자색(`bg` 토큰)을 그대로 써서 호(arc)를 `border-t-bg`로 둔다. 접근성: 로딩 중 버튼에 `aria-busy`를 주고, 텍스트가 사라지는 동안 접근 가능한 이름을 `aria-label="확인 중"`으로 유지하며, 스피너 자체는 `aria-hidden`.
+- 설정의 API 키 재입력·계정 변경(`AccountFlowStatus`의 `verifying`)에도 같은 문구가 남아 있으나 이번 단계 범위 밖 — 추후 별도 단계에서 통일 여부 결정.
+
 ### 설정 리스트 행 + 모달 — 확정, 2026-07-13
 설정 화면은 카드형 섹션 나열이 아니라, **하나의 리스트 컨테이너**(`rounded-[14px] bg-surface border border-border px-6`) 안에 행(`SettingsRow`)을 `divide-y divide-border`로 이어붙이는 방식이다. 각 행은 `py-4`, 왼쪽 라벨(`text-sm font-medium text-text`, 위험한 동작은 `text-error`) + 오른쪽 콘텐츠(기본은 `lucide-react` `ChevronRight`, `strokeWidth 2`, `text-text-muted` — 필요 없으면 `showChevron={false}`)로 구성되고, 행 전체가 버튼이라 탭하면 그 항목에 맞는 모달이 열린다("API 키 재입력"·"계정 변경"·"테마" 3개 행 전부 이 패턴, "연결 해제"만 예외로 확인 모달을 직접 연다).
 - **모달 컴포넌트(`components/Modal`)**: `CharacterTrackingPicker`/`DisconnectConfirm`에서 반복되던 오버레이(`fixed inset-0 flex items-center justify-center bg-bg/70` + 안쪽 카드 `onClick` 시 `stopPropagation`)를 공용화했다. 기본은 카드(`rounded-[14px] border border-border bg-surface p-6`)를 제공하지만, `card={false}`를 주면 위치 고정용 래퍼만 남기고 카드 스타일은 생략한다 — `ApiKeyForm`/`AccountSelectionList`처럼 이미 자체 카드를 가진 컴포넌트를 그대로 재사용할 때 카드-안-카드 중첩을 피하기 위함이다.

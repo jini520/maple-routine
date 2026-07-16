@@ -27,6 +27,25 @@ describe('ApiKeyForm', () => {
     expect(screen.getByRole('button', { name: /확인|제출|시작/ })).toBeDisabled()
   })
 
+  it('isSubmitting이면 버튼이 로딩 스피너로 바뀌고 "확인" 텍스트는 감춘다', () => {
+    render(<ApiKeyForm isSubmitting={true} errorMessage={null} onSubmit={vi.fn()} />)
+
+    const button = screen.getByRole('button', { name: '확인 중' })
+    expect(button).toHaveAttribute('aria-busy', 'true')
+    expect(button).toBeDisabled()
+    expect(screen.queryByText('확인')).not.toBeInTheDocument()
+  })
+
+  it('isSubmitting이면 Enter 제출로 onSubmit이 다시 호출되지 않는다', async () => {
+    const user = userEvent.setup()
+    const onSubmit = vi.fn()
+    render(<ApiKeyForm isSubmitting={true} errorMessage={null} onSubmit={onSubmit} />)
+
+    await user.type(screen.getByLabelText(/API 키/), 'test-api-key-123{Enter}')
+
+    expect(onSubmit).not.toHaveBeenCalled()
+  })
+
   it('errorMessage가 있으면 화면에 표시한다', () => {
     render(
       <ApiKeyForm isSubmitting={false} errorMessage="API 키가 유효하지 않습니다" onSubmit={vi.fn()} />,

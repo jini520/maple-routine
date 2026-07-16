@@ -46,13 +46,16 @@ describe('OnboardingScreen', () => {
     expect(screen.getByLabelText(/API 키/)).toBeInTheDocument()
   })
 
-  it('status가 verifyingApiKey이면 로딩 표시가 렌더링된다', () => {
+  it('status가 verifyingApiKey이면 API 키 폼이 유지되고 제출 버튼이 로딩 상태가 된다', () => {
     mockStore({ status: 'verifyingApiKey' })
 
     render(<OnboardingScreen />)
 
-    expect(screen.queryByLabelText(/API 키/)).not.toBeInTheDocument()
-    expect(screen.getByText(/확인/)).toBeInTheDocument()
+    expect(screen.getByLabelText(/API 키/)).toBeInTheDocument()
+    const button = screen.getByRole('button', { name: '확인 중' })
+    expect(button).toHaveAttribute('aria-busy', 'true')
+    expect(button).toBeDisabled()
+    expect(screen.queryByText(/확인하고 있어요/)).not.toBeInTheDocument()
   })
 
   it('status가 prefetching이면 진행률 바와 문구가 렌더링된다', () => {
