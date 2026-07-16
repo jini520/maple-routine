@@ -106,6 +106,17 @@ describe('getBossProfitDb', () => {
     expect(retrieveConnectionMock).not.toHaveBeenCalled()
   })
 
+  it('커넥션 열기에 실패하면 실패를 캐시하지 않고 다음 호출에서 재시도한다', async () => {
+    createConnectionMock.mockRejectedValueOnce(new Error('open fail'))
+    const { getBossProfitDb } = await import('../db')
+
+    await expect(getBossProfitDb()).rejects.toThrow('open fail')
+
+    const db = await getBossProfitDb()
+    expect(db).toBe(fakeDb)
+    expect(createConnectionMock).toHaveBeenCalledTimes(2)
+  })
+
   it('여러 번 호출해도 커넥션과 SQLiteConnection 인스턴스를 한 번만 만든다(싱글턴)', async () => {
     const { getBossProfitDb } = await import('../db')
 

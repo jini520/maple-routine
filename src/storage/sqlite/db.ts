@@ -78,7 +78,12 @@ async function openBossProfitDb(): Promise<SQLiteDBConnection> {
 // 앱 전체에서 커넥션을 하나만 열도록 모듈 스코프에서 캐싱한다 — 동일 이름 커넥션을 중복으로 열면 에러가 난다.
 export function getBossProfitDb(): Promise<SQLiteDBConnection> {
   if (dbPromise === null) {
-    dbPromise = openBossProfitDb()
+    dbPromise = openBossProfitDb().catch((error: unknown) => {
+      // 실패한 시도를 캐시하면 이후 모든 SQLite 접근이 재시도 없이 같은 실패를 영구히 돌려받는다
+      // (보스 수익·파티 설정·디버그 초기화 전부). 다음 호출이 처음부터 다시 열도록 캐시를 비운다.
+      dbPromise = null
+      throw error
+    })
   }
   return dbPromise
 }
