@@ -83,6 +83,18 @@ describe('normalizeCharacterBasic', () => {
     })
   })
 
+  it('world_name을 world로 매핑한다', () => {
+    const wire: NexonCharacterBasicResponse = {
+      character_name: '낟낟',
+      world_name: '엘리시움',
+      character_level: 293,
+      character_image: 'https://open.api.nexon.com/static/maplestory/character/look/abc',
+      access_flag: 'true',
+    }
+
+    expect(normalizeCharacterBasic(wire).world).toBe('엘리시움')
+  })
+
   it('access_flag가 "false" 문자열이면 accessFlag: false로 변환한다', () => {
     const wire: NexonCharacterBasicResponse = {
       character_name: '가려진부캐',

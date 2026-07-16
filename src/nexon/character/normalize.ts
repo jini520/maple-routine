@@ -24,5 +24,6 @@ export function normalizeCharacterBasic(wire: NexonCharacterBasicResponse): Char
     level: wire.character_level,
     imageUrl: wire.character_image,
     accessFlag: wire.access_flag === 'true',
+    world: wire.world_name,
   }
 }

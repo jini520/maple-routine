@@ -467,7 +467,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
 
     await vi.waitFor(() => expect(onUpdate).toHaveBeenCalled())
     expect(onUpdate.mock.calls[0][0]).toEqual([
-      { ocid: 'ocid-1', name: '캐시캐릭', level: 150, imageUrl: basicProfile({ name: '캐시캐릭', level: 150 }).imageUrl },
+      { ocid: 'ocid-1', name: '캐시캐릭', level: 150, imageUrl: basicProfile({ name: '캐시캐릭', level: 150 }).imageUrl, world: '베라' },
     ])
   })
 
@@ -482,7 +482,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
 
     await vi.waitFor(() => expect(onUpdate).toHaveBeenCalled())
     expect(onUpdate.mock.calls[0][0]).toEqual([
-      { ocid: 'ocid-1', name: '캐릭터-ocid-1', level: 200, imageUrl: null },
+      { ocid: 'ocid-1', name: '캐릭터-ocid-1', level: 200, imageUrl: null, world: '베라' },
     ])
   })
 
@@ -512,7 +512,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
 
     const last = onUpdate.mock.calls.at(-1)?.[0]
     expect(last).toEqual([
-      { ocid: 'ocid-1', name: '최신캐릭', level: 293, imageUrl: basicProfile({ name: '최신캐릭', level: 293 }).imageUrl },
+      { ocid: 'ocid-1', name: '최신캐릭', level: 293, imageUrl: basicProfile({ name: '최신캐릭', level: 293 }).imageUrl, world: '베라' },
     ])
     expect(setCachedCharacterBasicMock).toHaveBeenCalledWith(
       'ocid-1',
@@ -571,7 +571,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
 
     const last = onUpdate.mock.calls.at(-1)?.[0]
     expect(last).toEqual([
-      { ocid: 'ocid-1', name: '캐시캐릭', level: 150, imageUrl: basicProfile({ name: '캐시캐릭', level: 150 }).imageUrl },
+      { ocid: 'ocid-1', name: '캐시캐릭', level: 150, imageUrl: basicProfile({ name: '캐시캐릭', level: 150 }).imageUrl, world: '베라' },
     ])
   })
 

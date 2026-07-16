@@ -93,6 +93,7 @@ export async function getCharacterPickerRoster(
             name: cached.profile.name,
             level: cached.profile.level,
             imageUrl: cached.profile.imageUrl,
+            world: cached.profile.world,
           }
         }),
       )
@@ -120,6 +121,7 @@ export async function getCharacterPickerRoster(
           name: character.name,
           level: character.level,
           imageUrl: null,
+          world: character.world,
         })
       } else if (cached.profile.accessFlag) {
         liveEntries.set(character.ocid, {
@@ -127,6 +129,7 @@ export async function getCharacterPickerRoster(
           name: cached.profile.name,
           level: cached.profile.level,
           imageUrl: cached.profile.imageUrl,
+          world: character.world,
         })
       }
       // cached !== null && !accessFlag: 캐시상 비공개로 알려진 캐릭터는 초기 렌더에서부터 제외
@@ -151,6 +154,7 @@ export async function getCharacterPickerRoster(
             name: profile.name,
             level: profile.level,
             imageUrl: profile.imageUrl,
+            world: character.world,
           })
         } else {
           liveEntries.delete(character.ocid)
