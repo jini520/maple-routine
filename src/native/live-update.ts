@@ -1,6 +1,7 @@
 import { Capacitor, CapacitorHttp } from '@capacitor/core'
 import { CapacitorUpdater } from '@capgo/capacitor-updater'
 import { Network } from '@capacitor/network'
+import { closeBossProfitDb } from '../storage/sqlite/db'
 
 // scripts/publish-live-update.mjs가 이 저장소의 "live-update-latest" 릴리스에 latest.json을 올린다(ADR-022).
 export const LIVE_UPDATE_MANIFEST_URL =
@@ -146,7 +147,12 @@ export async function downloadLiveUpdate(
 }
 
 // 내려받아 둔 번들을 즉시 적용한다(set은 JS 컨텍스트를 파괴하고 재로드 — 이후 코드는 실행되지 않음, ADR-027).
+// set() 호출 전에 SQLite 커넥션을 먼저 정상 종료한다 — 안 그러면 리로드로 JS 쪽 캐시만 초기화되고
+// 네이티브 커넥션은 stale하게 남아, 재로드 후 첫 쿼리가 응답 없이 멈추는 문제가 있었다(2026-07-17,
+// 앱 업데이트 직후 과거 수익 데이터가 안 불러와지는 증상으로 사용자 보고 — storage/sqlite/db.ts의
+// closeBossProfitDb 참고).
 export async function applyDownloadedLiveUpdate(id: string): Promise<void> {
+  await closeBossProfitDb()
   await CapacitorUpdater.set({ id })
 }
 
