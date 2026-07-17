@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { clearAppDataExceptAuth } from '../../storage/debug-reset'
+import { closeBossProfitDb } from '../../storage/sqlite/db'
 import { showSplashScreen } from '../../native/splash-screen'
 import { SettingsRow } from './SettingsRow'
 import { DebugResetConfirm } from './DebugResetConfirm'
@@ -30,6 +31,10 @@ export function DebugResetSection(props: DebugResetSectionProps = {}): React.JSX
     // 리로드 동안 웹뷰 네이티브 배경색(브랜드 주황)이 깜빡 드러나므로, 앱 실행 때처럼 스플래시로
     // 덮고 리로드한다 — 리로드된 앱의 부팅 흐름이 스플래시를 내린다. 실패해도 리로드는 진행.
     await showSplashScreen().catch(() => {})
+    // 리로드가 JS 컨텍스트를 파괴하기 전에 SQLite 커넥션을 먼저 정상 종료한다 — 안 그러면
+    // OTA 적용(native/live-update.ts)과 같은 이유로 네이티브 쪽에 stale 커넥션이 남아, 리로드
+    // 후 보스 수익 과거 기간 조회가 "이 기간을 불러오지 못했습니다"로 실패한다(사용자 보고).
+    await closeBossProfitDb()
     ;(props.reload ?? (() => window.location.reload()))()
   }
 

@@ -4,10 +4,15 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { DebugResetSection } from '../DebugResetSection'
 import { clearAppDataExceptAuth } from '../../../storage/debug-reset'
+import { closeBossProfitDb } from '../../../storage/sqlite/db'
 import { showSplashScreen } from '../../../native/splash-screen'
 
 vi.mock('../../../storage/debug-reset', () => ({
   clearAppDataExceptAuth: vi.fn(),
+}))
+
+vi.mock('../../../storage/sqlite/db', () => ({
+  closeBossProfitDb: vi.fn(async () => {}),
 }))
 
 vi.mock('../../../native/splash-screen', () => ({
@@ -52,6 +57,22 @@ describe('DebugResetSection', () => {
     expect(mockedShow).toHaveBeenCalled()
     // 스플래시가 reload보다 먼저 호출돼야 리로드 구간을 덮는다
     expect(mockedShow.mock.invocationCallOrder[0]).toBeLessThan(reload.mock.invocationCallOrder[0])
+  })
+
+  // 리로드가 JS 컨텍스트를 파괴하기 전에 SQLite 커넥션을 먼저 정상 종료해야 한다 — 안 그러면
+  // native/live-update.ts의 OTA 적용과 같은 이유로 네이티브 쪽에 stale 커넥션이 남아, 리로드 후
+  // 보스 수익 과거 기간 조회가 실패한다(사용자 보고).
+  it('reload하기 전에 SQLite 커넥션을 먼저 정상 종료한다', async () => {
+    mockedClear.mockResolvedValue(undefined)
+    const reload = vi.fn()
+    render(<DebugResetSection reload={reload} />)
+
+    openAndConfirm()
+
+    await waitFor(() => expect(reload).toHaveBeenCalled())
+    const mockedClose = vi.mocked(closeBossProfitDb)
+    expect(mockedClose).toHaveBeenCalled()
+    expect(mockedClose.mock.invocationCallOrder[0]).toBeLessThan(reload.mock.invocationCallOrder[0])
   })
 
   it('초기화가 실패(reject)해도 "초기화 중..."에 갇히지 않고 reload한다', async () => {
