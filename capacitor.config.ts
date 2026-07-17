@@ -6,7 +6,7 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   // WebView 배경을 브랜드 오렌지로 둬, 네이티브 스플래시가 사라진 뒤 WebView 콘텐츠가 페인트되기 전
   // 찰나에 기본 흰색이 깜빡이는 것을 없앤다.
-  backgroundColor: '#FB8101',
+  backgroundColor: '#F58B0F',
   plugins: {
     // iOS는 키보드가 뜨면 WebView 프레임이 줄어드는데(resize 기본값 native), 그 뒤로 드러나는 영역에
     // 기본 배경(위 backgroundColor의 브랜드 오렌지)이 비친다. 'dom'은 그 색을 config가 아니라 웹앱의
@@ -38,6 +38,13 @@ const config: CapacitorConfig = {
     SplashScreen: {
       launchShowDuration: 3000,
       launchAutoHide: false,
+      // 리로드 커버용 show()(OTA 적용·디버그 데이터 초기화)가 Android에서 그리는 ImageView 설정.
+      // 기본 스케일 FIT_XY는 정사각 splash를 비율 무시로 늘려 가로로 눌려 보이므로 CENTER_CROP으로
+      // 비율을 유지하고(activity_splash.xml과 동일 원리), 플러그인이 fitsSystemWindows를 강제해
+      // 이미지가 못 덮는 상태바·제스처 바 영역은 backgroundColor(브랜드 주황, 이미지 가장자리와
+      // 동일 색)로 채운다(ADR-027 정정).
+      androidScaleType: 'CENTER_CROP',
+      backgroundColor: '#F58B0F',
     },
   },
 };
