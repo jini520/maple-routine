@@ -38,6 +38,13 @@ const config: CapacitorConfig = {
     SplashScreen: {
       launchShowDuration: 3000,
       launchAutoHide: false,
+      // 리로드 커버용 show()(OTA 적용·디버그 데이터 초기화)가 Android에서 그리는 ImageView 설정.
+      // 기본 스케일 FIT_XY는 정사각 splash를 비율 무시로 늘려 가로로 눌려 보이므로 CENTER_CROP으로
+      // 비율을 유지하고(activity_splash.xml과 동일 원리), 플러그인이 fitsSystemWindows를 강제해
+      // 이미지가 못 덮는 상태바·제스처 바 영역은 backgroundColor(브랜드 주황, 이미지 가장자리와
+      // 동일 색)로 채운다(ADR-027 정정).
+      androidScaleType: 'CENTER_CROP',
+      backgroundColor: '#FB8101',
     },
   },
 };
