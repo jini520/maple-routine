@@ -248,8 +248,37 @@ describe('ContentScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: '저장' }))
 
     await waitFor(() => {
-      expect(saveTrackedOcids).toHaveBeenCalledWith(['ocid-1', 'ocid-2'])
+      expect(saveTrackedOcids).toHaveBeenCalledWith(['ocid-1', 'ocid-2'], expect.any(Function))
     })
+  })
+
+  it('저장을 누르면 진행률 모달을 표시한다', async () => {
+    // onProgress를 호출한 뒤 미해결 Promise를 반환해 "저장 중" 상태를 유지시킨다.
+    const saveTrackedOcids = vi.fn((_ocids: string[], onProgress?: (c: number, t: number) => void) => {
+      onProgress?.(1, 2)
+      return new Promise<void>(() => {})
+    })
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [character({ ocid: 'ocid-1', characterName: '낟낟' })],
+      saveTrackedOcids,
+    })
+    mockedGetCharacterPickerRoster.mockImplementation(async (onUpdate) => {
+      onUpdate([
+        pickerEntry({ ocid: 'ocid-1', name: '낟낟', level: 293 }),
+        pickerEntry({ ocid: 'ocid-2', name: '내옆에최성일', level: 211 }),
+      ])
+    })
+
+    render(<ContentScreen />)
+    await screen.findByRole('combobox')
+
+    fireEvent.click(screen.getByRole('button', { name: '캐릭터 관리' }))
+    fireEvent.click(await screen.findByRole('button', { name: /내옆에최성일/ }))
+    fireEvent.click(screen.getByRole('button', { name: '저장' }))
+
+    expect(await screen.findByText('캐릭터 정보를 저장하고 있어요 (1/2)')).toBeInTheDocument()
   })
 
   it('status가 loading이고 캐시된 characters도 없으면 로딩 표시를 보여준다', async () => {

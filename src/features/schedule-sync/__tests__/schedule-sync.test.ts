@@ -195,6 +195,7 @@ describe('syncSchedules', () => {
       {
         ocid: 'ocid-1',
         characterName: '캐릭터-ocid-1',
+        world: '베라',
         state: schedulerState('캐릭터1'),
         syncedAt: NOW,
         isStale: false,
@@ -203,6 +204,7 @@ describe('syncSchedules', () => {
       {
         ocid: 'ocid-2',
         characterName: '캐릭터-ocid-2',
+        world: '베라',
         state: schedulerState('캐릭터2'),
         syncedAt: NOW,
         isStale: false,
@@ -217,6 +219,23 @@ describe('syncSchedules', () => {
       state: schedulerState('캐릭터2'),
       syncedAt: NOW,
     })
+  })
+
+  it('onProgress로 진행률(completed/total)을 캐릭터마다 순차 갱신한다', async () => {
+    const characters = [character('ocid-1'), character('ocid-2')]
+    fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+    fetchSchedulerCharacterStateMock
+      .mockResolvedValueOnce(schedulerState('캐릭터1'))
+      .mockResolvedValueOnce(schedulerState('캐릭터2'))
+
+    const onProgress = vi.fn()
+    await syncSchedules(['ocid-1', 'ocid-2'], onProgress)
+
+    expect(onProgress.mock.calls).toEqual([
+      [0, 2],
+      [1, 2],
+      [2, 2],
+    ])
   })
 
   it('캐릭터를 병렬이 아니라 순차적으로 호출한다', async () => {
@@ -262,6 +281,7 @@ describe('syncSchedules', () => {
       {
         ocid: 'ocid-1',
         characterName: '캐릭터-ocid-1',
+        world: '베라',
         state: schedulerState('캐시된-캐릭터1'),
         syncedAt: '2026-07-10T00:00:00.000Z',
         isStale: true,
@@ -283,6 +303,7 @@ describe('syncSchedules', () => {
       {
         ocid: 'ocid-1',
         characterName: '캐릭터-ocid-1',
+        world: '베라',
         state: null,
         syncedAt: null,
         isStale: true,
@@ -305,6 +326,7 @@ describe('syncSchedules', () => {
     expect(results[1]).toEqual({
       ocid: 'ocid-2',
       characterName: '캐릭터-ocid-2',
+      world: '베라',
       state: schedulerState('캐릭터2'),
       syncedAt: NOW,
       isStale: false,
@@ -467,7 +489,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
 
     await vi.waitFor(() => expect(onUpdate).toHaveBeenCalled())
     expect(onUpdate.mock.calls[0][0]).toEqual([
-      { ocid: 'ocid-1', name: '캐시캐릭', level: 150, imageUrl: basicProfile({ name: '캐시캐릭', level: 150 }).imageUrl },
+      { ocid: 'ocid-1', name: '캐시캐릭', level: 150, imageUrl: basicProfile({ name: '캐시캐릭', level: 150 }).imageUrl, world: '베라' },
     ])
   })
 
@@ -482,7 +504,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
 
     await vi.waitFor(() => expect(onUpdate).toHaveBeenCalled())
     expect(onUpdate.mock.calls[0][0]).toEqual([
-      { ocid: 'ocid-1', name: '캐릭터-ocid-1', level: 200, imageUrl: null },
+      { ocid: 'ocid-1', name: '캐릭터-ocid-1', level: 200, imageUrl: null, world: '베라' },
     ])
   })
 
@@ -512,7 +534,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
 
     const last = onUpdate.mock.calls.at(-1)?.[0]
     expect(last).toEqual([
-      { ocid: 'ocid-1', name: '최신캐릭', level: 293, imageUrl: basicProfile({ name: '최신캐릭', level: 293 }).imageUrl },
+      { ocid: 'ocid-1', name: '최신캐릭', level: 293, imageUrl: basicProfile({ name: '최신캐릭', level: 293 }).imageUrl, world: '베라' },
     ])
     expect(setCachedCharacterBasicMock).toHaveBeenCalledWith(
       'ocid-1',
@@ -571,7 +593,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
 
     const last = onUpdate.mock.calls.at(-1)?.[0]
     expect(last).toEqual([
-      { ocid: 'ocid-1', name: '캐시캐릭', level: 150, imageUrl: basicProfile({ name: '캐시캐릭', level: 150 }).imageUrl },
+      { ocid: 'ocid-1', name: '캐시캐릭', level: 150, imageUrl: basicProfile({ name: '캐시캐릭', level: 150 }).imageUrl, world: '베라' },
     ])
   })
 

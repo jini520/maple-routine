@@ -4,8 +4,9 @@ const { getPlatformMock } = vi.hoisted(() => ({
   getPlatformMock: vi.fn(),
 }))
 
-const { hideMock } = vi.hoisted(() => ({
+const { hideMock, showMock } = vi.hoisted(() => ({
   hideMock: vi.fn(),
+  showMock: vi.fn(),
 }))
 
 vi.mock('@capacitor/core', () => ({
@@ -13,14 +14,15 @@ vi.mock('@capacitor/core', () => ({
 }))
 
 vi.mock('@capacitor/splash-screen', () => ({
-  SplashScreen: { hide: hideMock },
+  SplashScreen: { hide: hideMock, show: showMock },
 }))
 
-const { hideSplashScreen } = await import('../splash-screen')
+const { hideSplashScreen, showSplashScreen } = await import('../splash-screen')
 
 beforeEach(() => {
   getPlatformMock.mockReset().mockReturnValue('ios')
   hideMock.mockReset()
+  showMock.mockReset()
 })
 
 describe('hideSplashScreen', () => {
@@ -36,5 +38,21 @@ describe('hideSplashScreen', () => {
     await hideSplashScreen()
 
     expect(hideMock).not.toHaveBeenCalled()
+  })
+})
+
+describe('showSplashScreen', () => {
+  it('네이티브 플랫폼에서는 autoHide 없이 스플래시를 띄운다(부팅 흐름이 직접 내릴 때까지 유지)', async () => {
+    await showSplashScreen()
+
+    expect(showMock).toHaveBeenCalledWith({ autoHide: false })
+  })
+
+  it('웹 플랫폼에서는 아무것도 호출하지 않는다', async () => {
+    getPlatformMock.mockReturnValue('web')
+
+    await showSplashScreen()
+
+    expect(showMock).not.toHaveBeenCalled()
   })
 })

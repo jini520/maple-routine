@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react'
 import type { BossPortraitCrop } from '../../lib/boss-icons'
 import { CharacterSelectDropdown } from '../../components/CharacterSelectDropdown/CharacterSelectDropdown'
 import { CharacterTrackingPicker } from '../../components/CharacterTrackingPicker/CharacterTrackingPicker'
+import { ProgressModal } from '../../components/ProgressModal/ProgressModal'
 import type { DailyQuestRegionCrop } from '../../lib/daily-quest-backgrounds'
 import { RefreshCw } from 'lucide-react'
 import { getCharacterPickerRoster } from '../../features/schedule-sync/schedule-sync'
@@ -450,6 +451,7 @@ export function ContentScreen(): React.JSX.Element {
   const [activeTab, setActiveTab] = useState<ContentTab>('daily')
   const [roster, setRoster] = useState<CharacterPickerEntry[]>([])
   const [isPickerOpen, setIsPickerOpen] = useState(false)
+  const [saveProgress, setSaveProgress] = useState<{ completed: number; total: number } | null>(null)
 
   useEffect(() => {
     loadTrackedOcids()
@@ -491,8 +493,14 @@ export function ContentScreen(): React.JSX.Element {
   const registeredWeeklyContents = weeklyContents.filter((content) => content.isRegistered)
 
   async function handleSaveTracking(ocids: string[]): Promise<void> {
-    await saveTrackedOcids(ocids)
-    setIsPickerOpen(false)
+    setSaveProgress({ completed: 0, total: ocids.length })
+    // 저장이 실패해도(스토어가 처리 못한 예외 등) 진행률 모달은 항상 닫는다 — 안 그러면 모달이 멈춘다.
+    try {
+      await saveTrackedOcids(ocids, (completed, total) => setSaveProgress({ completed, total }))
+    } finally {
+      setSaveProgress(null)
+      setIsPickerOpen(false)
+    }
   }
 
   const characterManageButton = (
@@ -514,6 +522,20 @@ export function ContentScreen(): React.JSX.Element {
     />
   )
 
+  // 저장 중에는 캐릭터 관리 모달 위에 진행률 모달을 띄운다(완료 시 둘 다 닫힌다).
+  const trackingModals = (
+    <>
+      {trackingPicker}
+      {saveProgress !== null && (
+        <ProgressModal
+          message="캐릭터 정보를 저장하고 있어요"
+          completed={saveProgress.completed}
+          total={saveProgress.total}
+        />
+      )}
+    </>
+  )
+
   if (isEmpty) {
     return (
       <div className="p-4 space-y-4">
@@ -526,7 +548,7 @@ export function ContentScreen(): React.JSX.Element {
           표시할 캐릭터가 없습니다 — 캐릭터를 선택해주세요
         </div>
 
-        {trackingPicker}
+        {trackingModals}
       </div>
     )
   }
@@ -784,7 +806,7 @@ export function ContentScreen(): React.JSX.Element {
         </div>
       )}
 
-      {trackingPicker}
+      {trackingModals}
     </div>
   )
 }

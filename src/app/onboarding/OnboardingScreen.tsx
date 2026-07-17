@@ -14,8 +14,14 @@ export function OnboardingScreen(): React.JSX.Element {
         </div>
       )
 
+    // 검증(캐릭터 목록 조회)은 보통 1초 미만이라 별도 로딩 문구를 띄우지 않고, 입력 폼을
+    // 그대로 유지한 채 제출 버튼만 로딩 스피너로 바꾼다 ([[UI_GUIDE]] "온보딩 API 키 검증 중").
     case 'verifyingApiKey':
-      return <p className="text-sm text-text-muted">캐릭터 목록을 확인하고 있어요...</p>
+      return (
+        <div className="flex justify-center px-4 pt-8 pb-4">
+          <ApiKeyForm isSubmitting={true} errorMessage={null} onSubmit={submitApiKey} />
+        </div>
+      )
 
     // ADR-016: 계정 확정 직후 전체 캐릭터의 정보·일정을 예열하는 동안 보여주는 진행률 화면.
     case 'prefetching': {
@@ -24,7 +30,7 @@ export function OnboardingScreen(): React.JSX.Element {
           ? Math.round((prefetchProgress.completed / prefetchProgress.total) * 100)
           : 0
       return (
-        <div className="flex justify-center px-4 pt-8 pb-4">
+        <div className="flex min-h-[calc(100dvh-var(--sa-top)-var(--sa-bottom))] items-center justify-center px-4">
           <div className="w-full space-y-2">
             <p className="text-sm text-text-muted">
               캐릭터 정보를 준비하고 있어요

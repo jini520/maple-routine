@@ -113,7 +113,7 @@ describe('useContentSchedulerStore', () => {
 
     await useContentSchedulerStore.getState().refresh(['ocid-1'])
 
-    expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1'])
+    expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1'], undefined)
   })
 
   it('모든 캐릭터가 성공하면 status: loaded이고 dailyContents·weeklyContents가 하나의 상태에서 동시에 반영된다', async () => {
@@ -219,6 +219,7 @@ describe('useContentSchedulerStore', () => {
       {
         ocid: 'ocid-1',
         characterName: '캐시된캐릭터',
+        world: '베라',
         dailyContents: [dailyContent('몬스터파크')],
         weeklyContents: [],
         isStale: true,
@@ -291,7 +292,7 @@ describe('useContentSchedulerStore', () => {
 
       await useContentSchedulerStore.getState().loadTrackedOcids()
 
-      expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1'])
+      expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1'], undefined)
     })
 
     it('loadTrackedOcids는 조회된 목록이 null이면 refresh를 호출하지 않는다', async () => {
@@ -311,7 +312,7 @@ describe('useContentSchedulerStore', () => {
 
       expect(setTrackedCharacterOcidsMock).toHaveBeenCalledWith('content', ['ocid-1', 'ocid-2'])
       expect(useContentSchedulerStore.getState().trackedOcids).toEqual(['ocid-1', 'ocid-2'])
-      expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1', 'ocid-2'])
+      expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1', 'ocid-2'], undefined)
     })
   })
 

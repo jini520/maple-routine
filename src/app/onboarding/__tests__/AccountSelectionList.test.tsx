@@ -6,15 +6,25 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { MapleAccount } from '../../../types'
 import { AccountSelectionList } from '../AccountSelectionList'
 import { useRepresentativePortraits } from '../../../features/onboarding/use-representative-portraits'
+import { worldEmblemUrl } from '../../../lib/world-emblem'
 
 vi.mock('../../../features/onboarding/use-representative-portraits', () => ({
   useRepresentativePortraits: vi.fn(),
 }))
 
+vi.mock('../../../lib/world-emblem', () => ({
+  worldEmblemUrl: vi.fn(),
+}))
+
 const mockedUseRepresentativePortraits = vi.mocked(useRepresentativePortraits)
+const mockedWorldEmblemUrl = vi.mocked(worldEmblemUrl)
 
 beforeEach(() => {
   mockedUseRepresentativePortraits.mockReturnValue({})
+  // 매핑된 월드는 URL을, 미매핑 월드('리부트')는 null을 돌려 폴백을 테스트한다.
+  mockedWorldEmblemUrl.mockImplementation((world) =>
+    world === '리부트' ? null : `/emblems/${world}.png`,
+  )
 })
 
 afterEach(() => {
@@ -39,15 +49,45 @@ const accounts: MapleAccount[] = [
 ]
 
 describe('AccountSelectionList', () => {
-  it('각 계정을 대표 캐릭터 "닉네임 · 직업 Lv.레벨"와 "월드 · 캐릭터 N개" 2줄로 렌더링한다', () => {
+  it('각 계정을 "월드 · 닉네임 · Lv.레벨" + "캐릭터 N개" 2줄로 렌더링하고 직업은 표시하지 않는다', () => {
     render(
       <AccountSelectionList accounts={accounts} isSubmitting={false} errorMessage={null} onSelect={vi.fn()} />,
     )
 
-    expect(screen.getByText('내옆에최성일 · 아크메이지(썬,콜) Lv.211')).toBeInTheDocument()
-    expect(screen.getByText('베라 · 캐릭터 1개')).toBeInTheDocument()
-    expect(screen.getByText('낟낟 · 렌 Lv.293')).toBeInTheDocument()
-    expect(screen.getByText('엘리시움 · 캐릭터 2개')).toBeInTheDocument()
+    expect(screen.getByText('베라 · 내옆에최성일 · Lv.211')).toBeInTheDocument()
+    expect(screen.getByText('캐릭터 1개')).toBeInTheDocument()
+    expect(screen.getByText('엘리시움 · 낟낟 · Lv.293')).toBeInTheDocument()
+    expect(screen.getByText('캐릭터 2개')).toBeInTheDocument()
+
+    // 직업(아크메이지/렌)은 더 이상 표시하지 않는다
+    expect(screen.queryByText(/아크메이지/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/렌/)).not.toBeInTheDocument()
+  })
+
+  it('월드 엠블럼 이미지를 월드명과 함께 표시한다', () => {
+    render(
+      <AccountSelectionList accounts={accounts} isSubmitting={false} errorMessage={null} onSelect={vi.fn()} />,
+    )
+
+    const emblem = screen.getByAltText('엘리시움')
+    expect(emblem.tagName).toBe('IMG')
+    expect(emblem).toHaveAttribute('src', '/emblems/엘리시움.png')
+  })
+
+  it('매핑에 없는 월드는 엠블럼 없이 월드명 텍스트만 표시한다', () => {
+    const rebootAccount: MapleAccount[] = [
+      {
+        accountId: 'reboot-account-hash',
+        characters: [{ ocid: 'ocid-r', name: '리부트캐릭', world: '리부트', jobClass: '히어로', level: 260 }],
+      },
+    ]
+
+    render(
+      <AccountSelectionList accounts={rebootAccount} isSubmitting={false} errorMessage={null} onSelect={vi.fn()} />,
+    )
+
+    expect(screen.getByText('리부트 · 리부트캐릭 · Lv.260')).toBeInTheDocument()
+    expect(screen.queryByAltText('리부트')).not.toBeInTheDocument()
   })
 
   it('"계속하기" 버튼은 초기에 비활성화 상태다', () => {
@@ -65,7 +105,7 @@ describe('AccountSelectionList', () => {
       <AccountSelectionList accounts={accounts} isSubmitting={false} errorMessage={null} onSelect={onSelect} />,
     )
 
-    await user.click(screen.getByText('낟낟 · 렌 Lv.293'))
+    await user.click(screen.getByText('엘리시움 · 낟낟 · Lv.293'))
 
     expect(onSelect).not.toHaveBeenCalled()
   })
@@ -77,7 +117,7 @@ describe('AccountSelectionList', () => {
       <AccountSelectionList accounts={accounts} isSubmitting={false} errorMessage={null} onSelect={onSelect} />,
     )
 
-    await user.click(screen.getByText('낟낟 · 렌 Lv.293'))
+    await user.click(screen.getByText('엘리시움 · 낟낟 · Lv.293'))
     expect(screen.getByRole('button', { name: '계속하기' })).toBeEnabled()
 
     await user.click(screen.getByRole('button', { name: '계속하기' }))
@@ -131,6 +171,8 @@ describe('AccountSelectionList', () => {
     )
 
     expect(screen.getAllByText('?')).toHaveLength(2)
-    expect(screen.queryByRole('img')).not.toBeInTheDocument()
+    // 초상화(캐릭터명 alt)는 없고, 월드 엠블럼(월드명 alt)만 존재한다
+    expect(screen.queryByAltText('내옆에최성일')).not.toBeInTheDocument()
+    expect(screen.queryByAltText('낟낟')).not.toBeInTheDocument()
   })
 })

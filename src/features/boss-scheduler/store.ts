@@ -17,6 +17,7 @@ import { compareByName } from '../onboarding/representative-character'
 export interface BossCharacterView {
   ocid: string
   characterName: string
+  world?: string
   weeklyBosses: MatchedBoss[]
   monthlyBosses: MatchedBoss[]
   weeklyBossClearCount: number | null
@@ -41,8 +42,8 @@ export interface BossSchedulerState {
 
 export interface BossSchedulerStore extends BossSchedulerState {
   loadTrackedOcids(): Promise<void>
-  saveTrackedOcids(ocids: string[]): Promise<void>
-  refresh(ocids: string[]): Promise<void>
+  saveTrackedOcids(ocids: string[], onProgress?: (completed: number, total: number) => void): Promise<void>
+  refresh(ocids: string[], onProgress?: (completed: number, total: number) => void): Promise<void>
   selectCharacter(ocid: string): Promise<void>
   loadPartySizes(ocids: string[]): Promise<void>
   setPartySize(ocid: string, boss: string, difficulty: string, partySize: number): Promise<void>
@@ -100,13 +101,13 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
     }
   },
 
-  async saveTrackedOcids(ocids) {
+  async saveTrackedOcids(ocids, onProgress) {
     await setTrackedCharacterOcids('boss', ocids)
     set({ trackedOcids: ocids })
-    await get().refresh(ocids)
+    await get().refresh(ocids, onProgress)
   },
 
-  async refresh(ocids) {
+  async refresh(ocids, onProgress) {
     if (ocids.length === 0) {
       set({ status: 'loaded', characters: [], error: null, partySizes: {} })
       return
@@ -125,6 +126,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
           return {
             ocid,
             characterName: cached.state.characterName,
+            world: cached.state.world,
             weeklyBosses: bosses.filter((boss) => boss.cycle === 'weekly'),
             monthlyBosses: bosses.filter((boss) => boss.cycle === 'monthly'),
             weeklyBossClearCount: cached.state.weeklyBossClearCount,
@@ -140,12 +142,17 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
     set({ status: 'loading', characters: await sortByCachedLevel(cachedCharacters) })
 
     // ADR-019: 파티 설정은 완료 여부·주차와 무관한 상시 데이터라 스케줄 동기화(캐시 우선 표시 →
-    // 재검증)와 독립적이다 — 벌크 조회 한 번으로 충분하다.
-    await get().loadPartySizes(ocids)
+    // 재검증)와 독립적이다 — 벌크 조회 한 번으로 충분하다. 독립적이므로 조회가 실패해도(예: SQLite
+    // 일시 오류) 스케줄 refresh 전체를 중단시키지 않는다 — 그러지 않으면 저장 진행률 모달이 안 닫힌다.
+    try {
+      await get().loadPartySizes(ocids)
+    } catch {
+      // 파티 설정 로드 실패는 조용히 넘긴다(스케줄 표시·저장 완료를 막지 않는다)
+    }
 
     let results: Awaited<ReturnType<typeof syncSchedules>>
     try {
-      results = await syncSchedules(ocids)
+      results = await syncSchedules(ocids, onProgress)
     } catch {
       // syncSchedules 자체가 던지는 에러(온보딩 미완료 등)는
       // 캐릭터별 에러가 아니라 전체 조회 자체의 실패이므로 network로 취급한다.
@@ -158,6 +165,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
       return {
         ocid: result.ocid,
         characterName: result.characterName,
+        world: result.world,
         weeklyBosses: bosses.filter((boss) => boss.cycle === 'weekly'),
         monthlyBosses: bosses.filter((boss) => boss.cycle === 'monthly'),
         weeklyBossClearCount: result.state?.weeklyBossClearCount ?? null,

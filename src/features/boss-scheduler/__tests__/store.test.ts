@@ -128,7 +128,7 @@ describe('useBossSchedulerStore', () => {
 
     await useBossSchedulerStore.getState().refresh(['ocid-1'])
 
-    expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1'])
+    expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1'], undefined)
   })
 
   it('weekly와 monthly가 섞여 있으면 각각 weeklyBosses/monthlyBosses로 정확히 분리된다', async () => {
@@ -270,11 +270,22 @@ describe('useBossSchedulerStore', () => {
     await vi.waitFor(() => expect(useBossSchedulerStore.getState().status).toBe('loading'))
     const state = useBossSchedulerStore.getState()
     expect(state.characters[0].characterName).toBe('캐시된캐릭터')
+    expect(state.characters[0].world).toBe('베라')
     expect(state.characters[0].isStale).toBe(true)
     expect(state.characters[0].weeklyBossClearCount).toBe(5)
     expect(state.characters[0].weeklyBosses).toHaveLength(1)
 
     void promise // 이 테스트는 재검증이 끝나길 기다리지 않는다
+  })
+
+  it('파티 설정 조회(loadPartySizes)가 실패해도 refresh는 reject 없이 스케줄을 반영한다', async () => {
+    getBossPartySettingsMock.mockRejectedValue(new Error('sqlite fail'))
+    syncSchedulesMock.mockResolvedValue([syncResult({ ocid: 'ocid-1', characterName: '캐릭터1' })])
+
+    await useBossSchedulerStore.getState().refresh(['ocid-1'])
+
+    expect(useBossSchedulerStore.getState().status).toBe('loaded')
+    expect(useBossSchedulerStore.getState().characters).toHaveLength(1)
   })
 
   it('refresh 시작 시 status를 loading으로 바꾼다', async () => {
@@ -312,7 +323,7 @@ describe('useBossSchedulerStore', () => {
 
       await useBossSchedulerStore.getState().loadTrackedOcids()
 
-      expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1'])
+      expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1'], undefined)
     })
 
     it('loadTrackedOcids는 조회된 목록이 null이면 refresh를 호출하지 않는다', async () => {
@@ -332,7 +343,7 @@ describe('useBossSchedulerStore', () => {
 
       expect(setTrackedCharacterOcidsMock).toHaveBeenCalledWith('boss', ['ocid-1', 'ocid-2'])
       expect(useBossSchedulerStore.getState().trackedOcids).toEqual(['ocid-1', 'ocid-2'])
-      expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1', 'ocid-2'])
+      expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1', 'ocid-2'], undefined)
     })
   })
 

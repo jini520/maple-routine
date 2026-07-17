@@ -19,6 +19,8 @@ export type ScheduleSyncError =
 export interface CharacterScheduleSync {
   ocid: string
   characterName: string
+  // 스케줄러 드롭다운의 월드 엠블럼 표시용. character/list의 world를 그대로 담는다.
+  world?: string
   state: SchedulerCharacterState | null
   syncedAt: string | null
   isStale: boolean
@@ -93,6 +95,7 @@ export async function getCharacterPickerRoster(
             name: cached.profile.name,
             level: cached.profile.level,
             imageUrl: cached.profile.imageUrl,
+            world: cached.profile.world,
           }
         }),
       )
@@ -120,6 +123,7 @@ export async function getCharacterPickerRoster(
           name: character.name,
           level: character.level,
           imageUrl: null,
+          world: character.world,
         })
       } else if (cached.profile.accessFlag) {
         liveEntries.set(character.ocid, {
@@ -127,6 +131,7 @@ export async function getCharacterPickerRoster(
           name: cached.profile.name,
           level: cached.profile.level,
           imageUrl: cached.profile.imageUrl,
+          world: character.world,
         })
       }
       // cached !== null && !accessFlag: 캐시상 비공개로 알려진 캐릭터는 초기 렌더에서부터 제외
@@ -151,6 +156,7 @@ export async function getCharacterPickerRoster(
             name: profile.name,
             level: profile.level,
             imageUrl: profile.imageUrl,
+            world: character.world,
           })
         } else {
           liveEntries.delete(character.ocid)
@@ -179,6 +185,7 @@ async function buildFallbackResult(
   return {
     ocid: character.ocid,
     characterName: character.name,
+    world: character.world,
     state: cached?.state ?? null,
     syncedAt: cached?.syncedAt ?? null,
     isStale: true,
@@ -192,20 +199,27 @@ async function buildFallbackResult(
 //
 // ocids로 지정된 캐릭터만 동기화한다 — 계정의 전체 캐릭터를 대상으로 순차 호출하면
 // 추적 대상이 아닌 캐릭터까지 불필요하게 호출하게 되어 로딩이 느려진다.
-export async function syncSchedules(ocids: string[]): Promise<CharacterScheduleSync[]> {
+export async function syncSchedules(
+  ocids: string[],
+  onProgress?: (completed: number, total: number) => void,
+): Promise<CharacterScheduleSync[]> {
   if (ocids.length === 0) {
     return []
   }
 
   const { apiKey, characters } = await resolveRegisteredCharacters()
   const targetCharacters = characters.filter((character) => ocids.includes(character.ocid))
+  const total = targetCharacters.length
 
   const results: CharacterScheduleSync[] = []
   let globalError: ScheduleSyncError | null = null
 
+  onProgress?.(0, total)
+
   for (const character of targetCharacters) {
     if (globalError !== null) {
       results.push(await buildFallbackResult(character, globalError))
+      onProgress?.(results.length, total)
       continue
     }
 
@@ -216,6 +230,7 @@ export async function syncSchedules(ocids: string[]): Promise<CharacterScheduleS
       results.push({
         ocid: character.ocid,
         characterName: character.name,
+        world: character.world,
         state,
         syncedAt,
         isStale: false,
@@ -228,6 +243,7 @@ export async function syncSchedules(ocids: string[]): Promise<CharacterScheduleS
       }
       results.push(await buildFallbackResult(character, scheduleError))
     }
+    onProgress?.(results.length, total)
   }
 
   return results

@@ -8,6 +8,7 @@ import {
   openStoreForUpdate,
   resolveLiveUpdateManifestUrl,
 } from '../../native/live-update'
+import { showSplashScreen } from '../../native/splash-screen'
 
 // idle: 확인 전 / checking: 확인 중 / up-to-date: 최신 / update-available: 새 버전 있음(모달)
 // store-required: 스토어 업데이트 필요 / confirm-cellular: 셀룰러 데이터 확인 대기 / downloading: 진행 중
@@ -152,6 +153,9 @@ export const useLiveUpdateStore = create<LiveUpdateStore>()((set, get) => {
     async apply() {
       const id = get().downloadedBundleId
       if (id === null) return
+      // 리로드 동안 웹뷰 네이티브 배경색(브랜드 주황)이 깜빡 드러나므로 스플래시로 덮는다(ADR-027
+      // 2026-07-17 추가) — 리로드된 앱의 부팅 흐름이 내린다. 스플래시 실패가 적용을 막으면 안 된다.
+      await showSplashScreen().catch(() => {})
       await applyDownloadedLiveUpdate(id)
     },
 

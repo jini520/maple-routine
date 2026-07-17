@@ -1,6 +1,7 @@
 import type { MapleAccount } from '../../types'
 import { pickRepresentativeCharacter } from '../../features/onboarding/representative-character'
 import { useRepresentativePortraits } from '../../features/onboarding/use-representative-portraits'
+import { worldEmblemUrl } from '../../lib/world-emblem'
 import { useState } from 'react'
 
 // BossProfitScreen의 CharacterAvatar와 동일한 얼굴 크롭 방식(ADR-015) — character/basic이
@@ -40,6 +41,7 @@ export function AccountSelectionList(props: AccountSelectionListProps): React.JS
       <ul className="space-y-2">
         {props.accounts.map((account) => {
           const representative = pickRepresentativeCharacter(account.characters)
+          const emblemUrl = worldEmblemUrl(representative.world)
           const isHighlighted = account.accountId === highlightedAccountId
 
           return (
@@ -69,13 +71,20 @@ export function AccountSelectionList(props: AccountSelectionListProps): React.JS
                     </span>
                   )}
                 </span>
-                <span className="flex flex-col">
-                  <span className="text-sm text-text">
-                    {representative.name} · {representative.jobClass} Lv.{representative.level}
+                <span className="flex min-w-0 flex-col">
+                  <span className="flex items-center gap-1 text-sm text-text">
+                    {emblemUrl !== null && (
+                      <img
+                        src={emblemUrl}
+                        alt={representative.world}
+                        className="h-[18px] w-auto shrink-0 object-contain"
+                      />
+                    )}
+                    <span className="min-w-0 truncate">
+                      {representative.world} · {representative.name} · Lv.{representative.level}
+                    </span>
                   </span>
-                  <span className="text-sm text-text-muted">
-                    {representative.world} · 캐릭터 {account.characters.length}개
-                  </span>
+                  <span className="text-sm text-text-muted">캐릭터 {account.characters.length}개</span>
                 </span>
               </button>
             </li>

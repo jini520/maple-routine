@@ -57,10 +57,15 @@ async function openBossProfitDb(): Promise<SQLiteDBConnection> {
     await connection.initWebStore()
   }
 
+  // 웹뷰가 리로드되면(OTA 적용: applyDownloadedLiveUpdate → CapacitorUpdater.set이 JS 컨텍스트를
+  // 파괴하고 재로드, ADR-027) 이전 로드의 네이티브 SQLite 연결이 남는다. dbPromise는 로드마다
+  // 초기화되므로 isConnection이 true라는 건 그 stale 연결이라는 뜻 — 그대로 retrieve+open하면 첫
+  // 쿼리가 막히므로, 닫고 새로 만든다.
   const { result: alreadyConnected } = await connection.isConnection(DB_NAME, false)
-  const db = alreadyConnected
-    ? await connection.retrieveConnection(DB_NAME, false)
-    : await connection.createConnection(DB_NAME, false, 'no-encryption', 1, false)
+  if (alreadyConnected) {
+    await connection.closeConnection(DB_NAME, false)
+  }
+  const db = await connection.createConnection(DB_NAME, false, 'no-encryption', 1, false)
 
   await db.open()
   await db.execute(CREATE_BOSS_PROFIT_RECORDS_TABLE)
@@ -73,7 +78,12 @@ async function openBossProfitDb(): Promise<SQLiteDBConnection> {
 // 앱 전체에서 커넥션을 하나만 열도록 모듈 스코프에서 캐싱한다 — 동일 이름 커넥션을 중복으로 열면 에러가 난다.
 export function getBossProfitDb(): Promise<SQLiteDBConnection> {
   if (dbPromise === null) {
-    dbPromise = openBossProfitDb()
+    dbPromise = openBossProfitDb().catch((error: unknown) => {
+      // 실패한 시도를 캐시하면 이후 모든 SQLite 접근이 재시도 없이 같은 실패를 영구히 돌려받는다
+      // (보스 수익·파티 설정·디버그 초기화 전부). 다음 호출이 처음부터 다시 열도록 캐시를 비운다.
+      dbPromise = null
+      throw error
+    })
   }
   return dbPromise
 }

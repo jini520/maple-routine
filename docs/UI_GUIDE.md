@@ -211,8 +211,37 @@ footer: flex items-center justify-between px-4 py-3 bg-surface-2 text-sm
 
 **모달 헤더 및 크기 — 확정, 2026-07-12**: 그리드 위에 제목(`h2`, `text-lg font-semibold text-text`, "캐릭터 관리")과 설명(`p`, `text-sm text-text-muted`, "체크한 캐릭터만 스케줄러 목록에 표시됩니다.")을 `mb-4 space-y-1`로 묶어 배치한다. 그리드의 세로 스크롤 한도는 `max-h-[60vh]`에서 `max-h-[70vh]`로 늘렸다 — 헤더가 추가돼 차지하는 공간만큼 그리드가 과도하게 좁아지지 않도록 하기 위함이다. 모달 바깥 컨테이너에는 `overflow-hidden`을 주지 않는다(그리드 내부의 `overflow-y-auto`만으로 스크롤을 처리하고, 헤더·버튼 영역이 실수로 잘리는 것을 방지).
 
+**추가(2026-07-16) — 서버 엠블럼 + 오버레이 닫기 제거**: (1) 카드 이름 옆(같은 줄)에 **서버(월드) 엠블럼**을 붙인다 — 온보딩 계정 선택과 동일한 월드→엠블럼 매핑(공용 유틸 `lib/world-emblem`, 데이터는 `src/data/world-emblems.json` [[ADR-006]])을 재사용하며, 이름은 `truncate`, 엠블럼은 `h-3.5 w-auto shrink-0 object-contain`으로 이름 앞에 둔다. world는 character/list(live 엔트리)와 character/basic의 `world_name`(캐시 stub 엔트리 포함) 양쪽에서 얻는다 — `CharacterBasicProfile.world`(옵셔널)에 `world_name`을 담아 캐시하므로 목록 도착 전 stub도 엠블럼이 나온다. 이 변경 이전의 오래된 캐시(아직 world 없음)이거나 매핑에 없는 월드면 엠블럼을 생략한다(폴백). (2) 이 "캐릭터 관리" 모달은 **오버레이(바깥 영역) 클릭으로 닫히지 않는다** — "닫기"/"저장" 버튼으로만 닫는다(실수로 닫히는 것 방지, 사용자 지시). `CharacterTrackingPicker`는 공용 `Modal`을 쓰지 않고 자체 오버레이라 이 변경이 이 모달에만 적용되고, 설정의 공용 `Modal`들은 기존대로 오버레이 클릭 닫기를 유지한다.
+
+### 캐릭터 관리 저장 진행률 모달 — 확정, 2026-07-16
+"캐릭터 관리"에서 캐릭터를 고르고 "저장"을 누르면 추적 캐릭터마다 스케줄 API(`syncSchedules`)를 순차로 호출한다. 이 처리가 끝날 때까지 아무 피드백 없이 모달이 멈춰 있다가 갑자기 닫혀, 저장이 됐는지 인지하기 어려웠다. 그래서 저장을 누르면 캐릭터 관리 모달 **위에** 진행률 모달을 띄우고, 완료되면 두 모달을 함께 닫는다.
+- 진행률 표시: [[ADR-016]] 온보딩 예열 진행률 바와 동일한 스타일(`role="progressbar"`, track `h-1.5 w-full rounded-full bg-surface-2` + fill `h-1.5 rounded-full bg-primary`)을 재사용하고, 위에 "캐릭터 정보를 저장하고 있어요 (N/M)"를 `text-sm text-text-muted`로 표시한다. N/M은 `syncSchedules`가 캐릭터를 순차 처리하며 넘기는 `onProgress(completed, total)`로 채운다.
+- 모달: 공용 `Modal`(중앙 정렬)을 재사용하되 저장 도중에는 닫을 수 없다(오버레이 클릭 무시 — 완료 시 프로그램적으로만 닫는다). 두 화면(컨텐츠·보스 스케줄러)이 공유하는 컴포넌트로 만든다.
+- 진행률은 `saveTrackedOcids(ocids, onProgress) → refresh(ocids, onProgress) → syncSchedules(ocids, onProgress)`로 콜백을 흘려보내 얻는다.
+- 개별 캐릭터 실패는 `syncSchedules`가 조용히 폴백 처리하므로 진행률은 계속 진행되고, 전역 에러(인증·호출한도)면 `refresh`가 화면 에러 상태로 전환한다 — 어느 경우든 진행률 모달은 완료 시 닫는다.
+
+### 스케줄러 캐릭터 드롭다운 — 선택 캐릭터 월드 아이콘 — 확정, 2026-07-16
+컨텐츠·보스 스케줄러의 캐릭터 전환 드롭다운(`CharacterSelectDropdown`)은 네이티브 `<select>`를 유지한다 — `<option>`에는 이미지를 넣을 수 없어 펼친 목록은 캐릭터명 텍스트만 표시한다. 대신 **닫힌 상태(현재 선택된 캐릭터)** 왼쪽에 그 캐릭터의 **월드 엠블럼**을 겹쳐 보여준다(사용자 선택: 네이티브 select 유지, 목록엔 아이콘 없음).
+- 엠블럼: `lib/world-emblem`(계정 선택·캐릭터 관리와 동일 매핑) 재사용. `<select>`를 `relative` 래퍼로 감싸고 엠블럼 `<img>`를 `pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-[18px] w-auto object-contain`으로 얹은 뒤, `<select>`에 `pl-9`을 줘 선택 텍스트가 엠블럼과 겹치지 않게 한다. `pointer-events-none`이라 클릭이 select로 전달돼 네이티브 목록이 그대로 열린다.
+- world는 두 경로로 스토어 캐릭터 뷰(`ContentCharacterView`/`BossCharacterView`)에 담는다 — **캐시 우선 표시 뷰는 스케줄 캐시(`SchedulerCharacterState.world`, 스케줄러 `normalize`가 `world_name`을 담아 캐시에 저장)에서**, 동기화 후 뷰는 sync 결과(`CharacterScheduleSync.world`)에서. 따라서 스케줄 캐시가 있으면 **API 응답을 기다리지 않고 엠블럼이 즉시 뜬다**. 스케줄 캐시가 전혀 없는(한 번도 동기화 안 한) 캐릭터만 동기화 후에 뜬다. 매핑에 없는 월드는 생략(폴백). **정정(2026-07-16)**: 최초 구현에서 캐시 우선 뷰에 `cached.state.world` 복사를 누락해 캐시가 있어도 엠블럼이 동기화 후에야 떴던 버그를 수정.
+
 ### 온보딩 예열 진행률 바 — 확정, 2026-07-12, [[ADR-016]]
 컨텐츠 스케줄러의 일간 콘텐츠 진행률(`role="progressbar"` + `aria-valuenow`/`aria-valuemin`/`aria-valuemax`, track `h-1.5 w-full rounded-full bg-surface-2` + fill `h-1.5 rounded-full bg-primary`)과 동일한 시각 스타일을 그대로 재사용한다 — 새 색상/모양을 만들지 않는다. 진행률 위에 안내 문구(예: "캐릭터 정보를 준비하고 있어요 (18/45)")를 `text-sm text-text-muted`로 표시한다.
+
+**정정(2026-07-16) — 세로 중앙 배치**: 온보딩 예열 화면은 진행률 블록(안내 문구 + 바)을 상단(`pt-8`)이 아니라 **화면 세로 중앙**에 둔다 — 예열은 수 초 걸리는 온보딩 유일의 본격 대기 화면이라, 텍스트가 상단에 붙기보다 중앙에 오는 게 대기 화면답다(사용자 지시). 컨테이너를 안전영역을 제외한 뷰포트 높이(`min-h-[calc(100dvh-var(--sa-top)-var(--sa-bottom))]`)로 채우고 `flex items-center justify-center`로 중앙 정렬한다(온보딩에는 하단 탭바가 없어 `--sa-bottom`까지 빼야 홈 인디케이터 영역 위 실제 가시 영역의 정중앙에 온다). 설정의 재인증 예열(`AccountFlowStatus`, 모달 안)은 대상 아님.
+
+### 온보딩 API 키 검증 중 — 폼 유지 + 버튼 스피너 — 확정, 2026-07-16
+API 키를 제출하면 즉시 캐릭터 목록 조회(`GET /character/list` 단일 요청 = 별도 검증 엔드포인트 없이 이 호출 자체가 키 검증)를 시작하고, 응답이 올 때까지 **화면을 이동시키지 않고 API 키 입력 폼을 그대로 유지**한다. 기존에 폼을 지우고 띄우던 "캐릭터 목록을 확인하고 있어요..." 문구는 제거한다 — 정상 경로가 1초 미만이라 문구가 깜빡 떴다 사라지는 게 오히려 거슬렸다.
+- 검증 중(`verifyingApiKey`)에는 `ApiKeyForm`을 `isSubmitting`으로 유지한다. 폼 위치·입력값은 그대로 두고, 제출 버튼 내용만 "확인" 텍스트 → 로딩 스피너로 바꾸고 버튼을 비활성화(재제출 방지)한다.
+- 검증이 끝나면 다음 상태(계정 선택 / 예열 진행률 바)로 전이한다. 예열(prefetching)처럼 수 초 이상 걸릴 수 있는 작업은 이 규칙에서 제외 — 진행률 바를 그대로 보여준다.
+- 버튼 스피너: `h-5 w-5 rounded-full border-2 border-bg/30 border-t-bg animate-spin motion-reduce:animate-none`. 보스 수익 자동 재조회 스피너(중립 배경 위 `border-border border-t-primary`)와 달리, 솔리드 primary 버튼 안이라 버튼 글자색(`bg` 토큰)을 그대로 써서 호(arc)를 `border-t-bg`로 둔다. 접근성: 로딩 중 버튼에 `aria-busy`를 주고, 텍스트가 사라지는 동안 접근 가능한 이름을 `aria-label="확인 중"`으로 유지하며, 스피너 자체는 `aria-hidden`.
+- 설정의 API 키 재입력·계정 변경(`AccountFlowStatus`의 `verifying`)에도 같은 문구가 남아 있으나 이번 단계 범위 밖 — 추후 별도 단계에서 통일 여부 결정.
+
+### 온보딩 계정(메이플 ID) 선택 목록 — 확정, 2026-07-16, [[ADR-006]]
+각 계정 항목은 [대표 캐릭터 얼굴 아바타(36px 원형, [[ADR-015]] 크롭 방식)] + 텍스트 2줄. 1줄은 `[월드 엠블럼] {월드} · {이름} · Lv.{레벨}`, 2줄은 `text-text-muted`로 `캐릭터 {N}개`. **직업은 표시하지 않는다** — 이름이 길면 한 줄을 넘겨서([[ADR-015]] 캐릭터 카드와 동일하게 직업 생략), 대신 월드를 첫 줄로 끌어올렸다.
+- 월드 엠블럼: `src/assets/worlds/*`의 작은 아이콘(원본 16~22px). 텍스트 앞에 인라인으로 `h-[18px] w-auto object-contain shrink-0`, 월드명과 나란히 둔다. 매핑에 없는 월드는 엠블럼 없이 월드명 텍스트만 표시(폴백).
+- 이름이 길어도 넘치지 않도록 1줄 텍스트에 `truncate`, 텍스트 컬럼은 `min-w-0`(아바타·버튼 패딩을 침범하지 않게).
+- 월드→엠블럼 파일 매핑은 `src/data/world-emblems.json`(한글 월드명 → 파일 basename, [[ADR-006]]). 챌린저스·챌린저스2·챌린저스3·챌린저스4는 모두 `challengers`.
 
 ### 설정 리스트 행 + 모달 — 확정, 2026-07-13
 설정 화면은 카드형 섹션 나열이 아니라, **하나의 리스트 컨테이너**(`rounded-[14px] bg-surface border border-border px-6`) 안에 행(`SettingsRow`)을 `divide-y divide-border`로 이어붙이는 방식이다. 각 행은 `py-4`, 왼쪽 라벨(`text-sm font-medium text-text`, 위험한 동작은 `text-error`) + 오른쪽 콘텐츠(기본은 `lucide-react` `ChevronRight`, `strokeWidth 2`, `text-text-muted` — 필요 없으면 `showChevron={false}`)로 구성되고, 행 전체가 버튼이라 탭하면 그 항목에 맞는 모달이 열린다("API 키 재입력"·"계정 변경"·"테마" 3개 행 전부 이 패턴, "연결 해제"만 예외로 확인 모달을 직접 연다).

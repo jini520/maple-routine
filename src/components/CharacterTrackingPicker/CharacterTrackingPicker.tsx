@@ -1,6 +1,7 @@
 import { Star } from 'lucide-react'
 import { useState } from 'react'
 import { useBodyScrollLock } from '../../lib/use-body-scroll-lock'
+import { worldEmblemUrl } from '../../lib/world-emblem'
 import type { CharacterPickerEntry } from '../../types'
 
 export interface CharacterTrackingPickerProps {
@@ -49,13 +50,9 @@ export function CharacterTrackingPicker(props: CharacterTrackingPickerProps): Re
   return (
     <div
       data-testid="character-tracking-picker-overlay"
-      onClick={props.onClose}
       className="fixed inset-0 z-50 flex items-center justify-center bg-bg/70"
     >
-      <div
-        onClick={(event) => event.stopPropagation()}
-        className="w-full max-w-sm rounded-[14px] border border-border bg-surface p-6"
-      >
+      <div className="w-full max-w-sm rounded-[14px] border border-border bg-surface p-6">
         <div className="mb-4 space-y-1">
           <h2 className="text-lg font-semibold text-text">캐릭터 관리</h2>
           <p className="text-sm text-text-muted">체크한 캐릭터만 스케줄러 목록에 표시됩니다.</p>
@@ -64,6 +61,7 @@ export function CharacterTrackingPicker(props: CharacterTrackingPickerProps): Re
         <div className="grid max-h-[70vh] grid-cols-3 gap-2 overflow-y-auto">
           {sortedEntries.map((entry) => {
             const isChecked = checkedOcids.includes(entry.ocid)
+            const emblemUrl = entry.world ? worldEmblemUrl(entry.world) : null
             return (
               <button
                 key={entry.ocid}
@@ -100,7 +98,16 @@ export function CharacterTrackingPicker(props: CharacterTrackingPickerProps): Re
                     )}
                   </span>
                 </span>
-                <span className="w-full truncate text-xs font-semibold text-text">{entry.name}</span>
+                <span className="flex w-full items-center justify-center gap-1">
+                  {emblemUrl !== null && (
+                    <img
+                      src={emblemUrl}
+                      alt={entry.world ?? ''}
+                      className="h-3.5 w-auto shrink-0 object-contain"
+                    />
+                  )}
+                  <span className="min-w-0 truncate text-xs font-semibold text-text">{entry.name}</span>
+                </span>
                 <span className="text-xs text-text-muted">Lv.{entry.level}</span>
               </button>
             )

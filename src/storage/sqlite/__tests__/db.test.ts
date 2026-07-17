@@ -9,12 +9,14 @@ const {
   isConnectionMock,
   retrieveConnectionMock,
   createConnectionMock,
+  closeConnectionMock,
   sqliteConnectionCtorMock,
 } = vi.hoisted(() => ({
   initWebStoreMock: vi.fn(),
   isConnectionMock: vi.fn(),
   retrieveConnectionMock: vi.fn(),
   createConnectionMock: vi.fn(),
+  closeConnectionMock: vi.fn(),
   sqliteConnectionCtorMock: vi.fn(),
 }))
 
@@ -37,6 +39,7 @@ vi.mock('@capacitor-community/sqlite', () => ({
     isConnection = isConnectionMock
     retrieveConnection = retrieveConnectionMock
     createConnection = createConnectionMock
+    closeConnection = closeConnectionMock
   },
 }))
 
@@ -49,6 +52,7 @@ beforeEach(() => {
   isConnectionMock.mockReset().mockResolvedValue({ result: false })
   retrieveConnectionMock.mockReset().mockResolvedValue(fakeDb)
   createConnectionMock.mockReset().mockResolvedValue(fakeDb)
+  closeConnectionMock.mockReset().mockResolvedValue(undefined)
   sqliteConnectionCtorMock.mockReset()
   dbOpenMock.mockReset().mockResolvedValue(undefined)
   dbExecuteMock.mockReset().mockResolvedValue({ changes: { changes: 0 } })
@@ -91,14 +95,26 @@ describe('getBossProfitDb', () => {
     expect(createConnectionMock).toHaveBeenCalled()
   })
 
-  it('이미 열린 커넥션이 있으면 createConnection 대신 retrieveConnection을 쓴다', async () => {
+  it('이전 페이지 로드의 stale 커넥션이 있으면 닫고 새로 createConnection한다(리로드 대응)', async () => {
     isConnectionMock.mockResolvedValue({ result: true })
     const { getBossProfitDb } = await import('../db')
 
     await getBossProfitDb()
 
-    expect(retrieveConnectionMock).toHaveBeenCalledWith('boss_profit', false)
-    expect(createConnectionMock).not.toHaveBeenCalled()
+    expect(closeConnectionMock).toHaveBeenCalledWith('boss_profit', false)
+    expect(createConnectionMock).toHaveBeenCalledWith('boss_profit', false, 'no-encryption', 1, false)
+    expect(retrieveConnectionMock).not.toHaveBeenCalled()
+  })
+
+  it('커넥션 열기에 실패하면 실패를 캐시하지 않고 다음 호출에서 재시도한다', async () => {
+    createConnectionMock.mockRejectedValueOnce(new Error('open fail'))
+    const { getBossProfitDb } = await import('../db')
+
+    await expect(getBossProfitDb()).rejects.toThrow('open fail')
+
+    const db = await getBossProfitDb()
+    expect(db).toBe(fakeDb)
+    expect(createConnectionMock).toHaveBeenCalledTimes(2)
   })
 
   it('여러 번 호출해도 커넥션과 SQLiteConnection 인스턴스를 한 번만 만든다(싱글턴)', async () => {

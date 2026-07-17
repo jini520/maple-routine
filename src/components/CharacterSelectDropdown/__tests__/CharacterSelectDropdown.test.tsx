@@ -10,8 +10,8 @@ afterEach(() => {
 })
 
 const characters = [
-  { ocid: 'ocid-1', characterName: '낟낟' },
-  { ocid: 'ocid-2', characterName: '내옆에최성일' },
+  { ocid: 'ocid-1', characterName: '낟낟', world: '엘리시움' },
+  { ocid: 'ocid-2', characterName: '내옆에최성일', world: '베라' },
 ]
 
 describe('CharacterSelectDropdown', () => {
@@ -36,5 +36,26 @@ describe('CharacterSelectDropdown', () => {
     await user.selectOptions(screen.getByRole('combobox'), 'ocid-2')
 
     expect(onSelect).toHaveBeenCalledWith('ocid-2')
+  })
+
+  it('선택된 캐릭터의 월드 엠블럼만 표시한다', () => {
+    render(<CharacterSelectDropdown characters={characters} selectedOcid="ocid-1" onSelect={vi.fn()} />)
+
+    const emblem = screen.getByAltText('엘리시움')
+    expect(emblem.tagName).toBe('IMG')
+    // 선택되지 않은 캐릭터(베라)의 엠블럼은 표시하지 않는다
+    expect(screen.queryByAltText('베라')).not.toBeInTheDocument()
+  })
+
+  it('선택된 캐릭터의 월드가 매핑에 없으면 엠블럼을 표시하지 않는다(폴백)', () => {
+    render(
+      <CharacterSelectDropdown
+        characters={[{ ocid: 'o', characterName: '리부트캐릭', world: '리부트' }]}
+        selectedOcid="o"
+        onSelect={vi.fn()}
+      />,
+    )
+
+    expect(screen.queryByAltText('리부트')).not.toBeInTheDocument()
   })
 })

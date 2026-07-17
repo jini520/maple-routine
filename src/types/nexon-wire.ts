@@ -17,6 +17,7 @@ export interface NexonCharacterListResponse {
 
 export interface NexonCharacterBasicResponse {
   character_name: string
+  world_name?: string
   character_level: number
   character_image: string
   access_flag: 'true' | 'false'
