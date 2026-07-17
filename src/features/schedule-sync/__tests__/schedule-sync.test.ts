@@ -221,7 +221,7 @@ describe('syncSchedules', () => {
     })
   })
 
-  it('onProgress로 진행률(completed/total)을 캐릭터마다 순차 갱신한다', async () => {
+  it('onProgress는 시작 시 (0,total)로 호출되고, 마지막 호출은 (total,total)이다', async () => {
     const characters = [character('ocid-1'), character('ocid-2')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
     fetchSchedulerCharacterStateMock
@@ -231,14 +231,12 @@ describe('syncSchedules', () => {
     const onProgress = vi.fn()
     await syncSchedules(['ocid-1', 'ocid-2'], onProgress)
 
-    expect(onProgress.mock.calls).toEqual([
-      [0, 2],
-      [1, 2],
-      [2, 2],
-    ])
+    expect(onProgress).toHaveBeenCalledTimes(3)
+    expect(onProgress).toHaveBeenNthCalledWith(1, 0, 2)
+    expect(onProgress).toHaveBeenLastCalledWith(2, 2)
   })
 
-  it('캐릭터를 병렬이 아니라 순차적으로 호출한다', async () => {
+  it('첫 캐릭터(프리플라이트)를 먼저 호출해 응답을 기다린 뒤, 나머지 캐릭터는 병렬로 호출한다', async () => {
     const characters = [character('ocid-1'), character('ocid-2'), character('ocid-3')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
 
@@ -252,15 +250,15 @@ describe('syncSchedules', () => {
 
     const promise = syncSchedules(['ocid-1', 'ocid-2', 'ocid-3'])
 
+    // 프리플라이트: 첫 캐릭터만 먼저 호출되고 응답을 기다린다
     await vi.waitFor(() => expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1))
     expect(resolvers).toHaveLength(1)
     resolvers[0](schedulerState('캐릭터1'))
 
-    await vi.waitFor(() => expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(2))
-    resolvers[1](schedulerState('캐릭터2'))
-
+    // 프리플라이트 성공 후 나머지 두 캐릭터는 서로를 기다리지 않고 동시에 호출된다
     await vi.waitFor(() => expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(3))
     resolvers[2](schedulerState('캐릭터3'))
+    resolvers[1](schedulerState('캐릭터2'))
 
     const results = await promise
     expect(results.map((r) => r.characterName)).toEqual(['캐릭터-ocid-1', '캐릭터-ocid-2', '캐릭터-ocid-3'])
@@ -334,7 +332,7 @@ describe('syncSchedules', () => {
     })
   })
 
-  it('첫 캐릭터에서 401(NexonAuthError)이 발생하면 이후 캐릭터는 API를 호출하지 않고 캐시 폴백만 한다', async () => {
+  it('프리플라이트(첫 캐릭터)에서 401(NexonAuthError)이 발생하면 이후 캐릭터는 API를 호출하지 않고 캐시 폴백만 한다', async () => {
     const characters = [character('ocid-1'), character('ocid-2'), character('ocid-3')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
     fetchSchedulerCharacterStateMock.mockRejectedValueOnce(new NexonAuthError('invalid'))
@@ -350,7 +348,7 @@ describe('syncSchedules', () => {
     }
   })
 
-  it('첫 캐릭터에서 429(NexonRateLimitError)가 발생하면 이후 캐릭터는 API를 호출하지 않고 캐시 폴백만 한다', async () => {
+  it('프리플라이트(첫 캐릭터)에서 429(NexonRateLimitError)가 발생하면 이후 캐릭터는 API를 호출하지 않고 캐시 폴백만 한다', async () => {
     const characters = [character('ocid-1'), character('ocid-2')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
     fetchSchedulerCharacterStateMock.mockRejectedValueOnce(new NexonRateLimitError('rate limited'))
@@ -365,22 +363,25 @@ describe('syncSchedules', () => {
     }
   })
 
-  it('두 번째 캐릭터에서 401이 발생하면 첫 캐릭터는 정상 결과를 유지하고 세 번째 캐릭터는 API를 호출하지 않는다', async () => {
+  it('프리플라이트 이후 병렬 구간에서 한 캐릭터가 401이어도 나머지 병렬 호출은 막지 않고 개별 결과로 처리한다', async () => {
     const characters = [character('ocid-1'), character('ocid-2'), character('ocid-3')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
     fetchSchedulerCharacterStateMock
-      .mockResolvedValueOnce(schedulerState('캐릭터1'))
-      .mockRejectedValueOnce(new NexonAuthError('invalid'))
+      .mockResolvedValueOnce(schedulerState('캐릭터1')) // 프리플라이트: ocid-1
+      .mockRejectedValueOnce(new NexonAuthError('invalid')) // 병렬: ocid-2
+      .mockResolvedValueOnce(schedulerState('캐릭터3')) // 병렬: ocid-3
     getCachedSchedulerStateMock.mockResolvedValue(null)
 
     const results = await syncSchedules(['ocid-1', 'ocid-2', 'ocid-3'])
 
-    expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(2)
+    // 병렬 구간의 두 캐릭터 모두 API가 호출된다 — 하나의 401이 형제 호출을 막지 않는다
+    expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(3)
     expect(results[0].isStale).toBe(false)
     expect(results[0].error).toBeNull()
     expect(results[1].error).toEqual({ kind: 'invalidApiKey' })
-    expect(results[2].error).toEqual({ kind: 'invalidApiKey' })
-    expect(results[2].isStale).toBe(true)
+    expect(results[1].isStale).toBe(true)
+    expect(results[2].isStale).toBe(false)
+    expect(results[2].error).toBeNull()
   })
 })
 

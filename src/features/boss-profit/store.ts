@@ -236,6 +236,34 @@ function sumRowsPayout(rows: BossProfitRow[]): number {
   return rows.reduce((sum, row) => sum + (row.payoutMeso ?? 0), 0)
 }
 
+// 리로드(OTA 적용·디버그 데이터 초기화 등)로 dbPromise는 초기화됐지만 네이티브 SQLite 커넥션은
+// stale하게 남아있는 경우, openBossProfitDb의 "닫고 새로 생성" 보정만으로는 그 직후 첫 쿼리가
+// 막히는 사례가 실기기에서 재현됐다(2026-07-17 — 데이터 초기화 → 보스 스케줄러 저장 직후 보스
+// 수익 화면이 "불러오는 중..."에서 영영 멈춤). refresh()뿐 아니라 loadPeriod()(기간 이동)도 같은
+// SQLite 조회에 의존하는데, 여기서 멈추면 periodKey 라벨만 바뀌고 rows는 갱신되지 않아 이전 기간
+// 숫자가 그대로 남는(에러도 로딩 표시도 없는) 증상으로 나타난다(2026-07-17 재현). SQLite 의존 호출을
+// 타임아웃과 경쟁시켜 지연/실패 시 fallback으로 진행한다 — 기록이 안 남았을 뿐이므로 다음
+// 새로고침/재방문에서 정상 커넥션으로 재시도된다.
+const SQLITE_QUERY_TIMEOUT_MS = 5000
+
+function withSqliteFallback<T>(promise: Promise<T>, fallback: T): Promise<T> {
+  return Promise.race([
+    promise.catch(() => fallback),
+    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), SQLITE_QUERY_TIMEOUT_MS)),
+  ])
+}
+
+// upsertBossProfitRecord/markPeriodChecked(쓰기)는 withSqliteFallback처럼 타임아웃을 "성공"으로
+// 위장하면 안 된다 — 실제로는 저장되지 않았는데 markPeriodChecked까지 호출되면 그 기간이 영구히
+// "확인 완료, 기록 없음"으로 잘못 캐시돼 다시는 재시도되지 않는다. 대신 타임아웃을 실패로 전파해
+// backfillTarget의 기존 catch가 재시도 가능한 실패(periodUnavailable)로 처리하게 한다.
+function withSqliteTimeout<T>(promise: Promise<T>): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error('SQLite 응답 시간 초과')), SQLITE_QUERY_TIMEOUT_MS)),
+  ])
+}
+
 // tab이 'monthly'일 때 그 달에 포함된 weekly periodKey들을 주차별로 합산한다. 현재 주는
 // liveRows(방금 refresh/캐시가 계산해둔 값)에서 바로 합산하고, 지난 주는 로컬 기록을 조회하며,
 // 아직 시작하지 않은 미래 주는 0/'upcoming'으로 채운다.
@@ -253,7 +281,8 @@ async function buildWeeklySubtotalsForMonth(
   const weekKeys = getWeeklyPeriodKeysInMonth(monthPeriodKey)
   const currentWeeklyPeriodKey = getCurrentBossProfitPeriod('weekly', now).periodKey
   const pastWeekKeys = weekKeys.filter((key) => key < currentWeeklyPeriodKey)
-  const pastRecords = pastWeekKeys.length > 0 ? await getBossProfitRecords(ocids, pastWeekKeys) : []
+  const pastRecords =
+    pastWeekKeys.length > 0 ? await withSqliteFallback(getBossProfitRecords(ocids, pastWeekKeys), []) : []
 
   const subtotals: BossProfitWeeklySubtotal[] = []
 
@@ -303,7 +332,9 @@ async function buildRowsFromRecords(
     return []
   }
 
-  const records = (await getBossProfitRecords(ocids, [periodKey])).filter((record) => record.cycle === cycle)
+  const records = (await withSqliteFallback(getBossProfitRecords(ocids, [periodKey]), [])).filter(
+    (record) => record.cycle === cycle,
+  )
   if (records.length === 0) {
     return []
   }
@@ -370,7 +401,10 @@ async function backfillTarget(target: BackfillTarget, now: Date): Promise<boolea
   // API를 호출하지 않고 곧바로 "확인 완료, 기록 없음"으로 처리한다. periodUnavailable(재시도
   // 유도)이 아니라 일반적인 "기록 없음"과 동일하게 다룬다 — 이 기간은 애초에 데이터가 없다.
   if (date < MIN_SCHEDULER_DATE) {
-    await markPeriodChecked(target.ocid, target.cycle, target.periodKey, now.toISOString())
+    await withSqliteFallback(
+      markPeriodChecked(target.ocid, target.cycle, target.periodKey, now.toISOString()),
+      undefined,
+    )
     return false
   }
 
@@ -385,7 +419,10 @@ async function backfillTarget(target: BackfillTarget, now: Date): Promise<boolea
       .map(matchBossContent)
       .filter((boss) => boss.cycle === target.cycle && boss.isComplete)
 
-    const existingRecords = await getBossProfitRecords([target.ocid], [target.periodKey])
+    const existingRecords = await withSqliteFallback(
+      getBossProfitRecords([target.ocid], [target.periodKey]),
+      [],
+    )
 
     for (const boss of completedBosses) {
       const bossName = boss.matchedBossName ?? boss.apiName
@@ -405,24 +442,29 @@ async function backfillTarget(target: BackfillTarget, now: Date): Promise<boolea
         continue
       }
 
-      const configuredPartySize = await getBossPartySize(target.ocid, bossName, boss.difficulty)
+      const configuredPartySize = await withSqliteFallback(
+        getBossPartySize(target.ocid, bossName, boss.difficulty),
+        null,
+      )
       const partySize = configuredPartySize ?? 1
       const payoutMeso = Math.floor(priceEntry.priceMeso / partySize)
 
-      await upsertBossProfitRecord({
-        ocid: target.ocid,
-        boss: bossName,
-        difficulty: boss.difficulty,
-        cycle: target.cycle,
-        periodKey: target.periodKey,
-        partySize,
-        priceMeso: priceEntry.priceMeso,
-        payoutMeso,
-        recordedAt: now.toISOString(),
-      })
+      await withSqliteTimeout(
+        upsertBossProfitRecord({
+          ocid: target.ocid,
+          boss: bossName,
+          difficulty: boss.difficulty,
+          cycle: target.cycle,
+          periodKey: target.periodKey,
+          partySize,
+          priceMeso: priceEntry.priceMeso,
+          payoutMeso,
+          recordedAt: now.toISOString(),
+        }),
+      )
     }
 
-    await markPeriodChecked(target.ocid, target.cycle, target.periodKey, now.toISOString())
+    await withSqliteTimeout(markPeriodChecked(target.ocid, target.cycle, target.periodKey, now.toISOString()))
     return false
   } catch {
     return true
@@ -474,7 +516,10 @@ async function loadPeriod(
   const targets = buildBackfillTargets(tab, periodKey, ocids, now)
   const uncheckedTargets: BackfillTarget[] = []
   for (const target of targets) {
-    const checked = await isPeriodChecked(target.ocid, target.cycle, target.periodKey)
+    const checked = await withSqliteFallback(
+      isPeriodChecked(target.ocid, target.cycle, target.periodKey),
+      false,
+    )
     if (!checked) {
       uncheckedTargets.push(target)
     }
@@ -579,7 +624,7 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
 
     const cachedPeriodKeys = Array.from(new Set(cachedRows.map((row) => row.periodKey)))
     const cachedRecords =
-      cachedRows.length > 0 ? await getBossProfitRecords(ocids, cachedPeriodKeys) : []
+      cachedRows.length > 0 ? await withSqliteFallback(getBossProfitRecords(ocids, cachedPeriodKeys), []) : []
     const cachedMergedRows = sortRowsByOcidOrder(mergeRecordsIntoRows(cachedRows, cachedRecords), sortedOcids)
 
     // latestSyncSnapshot을 캐시 데이터로 즉시 채워둔다 — 이후 syncSchedules가 실패해도(네트워크
@@ -653,7 +698,7 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     }
 
     const periodKeys = Array.from(new Set(rows.map((row) => row.periodKey)))
-    const records = await getBossProfitRecords(ocids, periodKeys)
+    const records = await withSqliteFallback(getBossProfitRecords(ocids, periodKeys), [])
     const mergedRows = mergeRecordsIntoRows(rows, records)
 
     // ADR-014/ADR-019: 기록이 없는 완료 보스는 화면 진입 전에도 즉시 기본 파티원 수로 자동 기록한다.
@@ -667,21 +712,27 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
         continue
       }
 
-      const configuredPartySize = await getBossPartySize(row.ocid, row.boss, row.difficulty)
+      const configuredPartySize = await withSqliteFallback(
+        getBossPartySize(row.ocid, row.boss, row.difficulty),
+        null,
+      )
       const partySize = configuredPartySize ?? 1
       const payoutMeso = Math.floor(row.priceMeso / partySize)
 
-      await upsertBossProfitRecord({
-        ocid: row.ocid,
-        boss: row.boss,
-        difficulty: row.difficulty,
-        cycle: row.cycle,
-        periodKey: row.periodKey,
-        partySize,
-        priceMeso: row.priceMeso,
-        payoutMeso,
-        recordedAt: now.toISOString(),
-      })
+      await withSqliteFallback(
+        upsertBossProfitRecord({
+          ocid: row.ocid,
+          boss: row.boss,
+          difficulty: row.difficulty,
+          cycle: row.cycle,
+          periodKey: row.periodKey,
+          partySize,
+          priceMeso: row.priceMeso,
+          payoutMeso,
+          recordedAt: now.toISOString(),
+        }),
+        undefined,
+      )
 
       autoRecordedRows.push({ ...row, partySize, payoutMeso })
     }

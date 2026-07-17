@@ -87,3 +87,25 @@ export function getBossProfitDb(): Promise<SQLiteDBConnection> {
   }
   return dbPromise
 }
+
+// OTA 적용(CapacitorUpdater.set)처럼 JS 컨텍스트를 파괴하는 리로드 직전에 호출한다. 이 커넥션이
+// 아직 살아있는(멀쩡한) 시점에 정상 종료해두지 않으면, 리로드로 dbPromise만 초기화되고 네이티브
+// 쪽 커넥션은 그대로 남는다 — 그 상태에서 새 JS 컨텍스트의 openBossProfitDb가 이 stale 커넥션을
+// "닫고 새로 생성"으로 복구하려 시도하지만, 이마저 실기기에서 실패해 첫 쿼리가 응답 없이 멈추는
+// 사례가 있었다(앱 업데이트 직후 과거 수익 데이터가 안 불러와지는 증상으로 사용자 보고, 2026-07-17).
+// 아직 멀쩡할 때 미리 닫아두면 네이티브 쪽에 아무 것도 안 남으므로 이 문제 자체가 생기지 않는다.
+// 실패해도(네트워크·타임아웃 등) 곧 리로드될 것이므로 조용히 무시한다 — openBossProfitDb의 기존
+// stale 감지 로직이 최후의 폴백으로 남아있다.
+export async function closeBossProfitDb(): Promise<void> {
+  if (dbPromise === null) {
+    return
+  }
+  const closing = dbPromise
+  dbPromise = null
+  try {
+    await closing
+    await getSqliteConnection().closeConnection(DB_NAME, false)
+  } catch {
+    // best-effort
+  }
+}

@@ -508,6 +508,51 @@ describe('useBossProfitStore', () => {
       expect(row.partySize).toBeNull()
       expect(row.payoutMeso).toBeNull()
     })
+
+    // 2026-07-17 실기기 재현: 데이터 초기화(리로드) 직후 보스 스케줄러에 캐릭터를 저장하면
+    // SQLite 읽기는 되지만(loadPartySizes), 리로드 이후 이 커넥션에 대한 첫 "쓰기" 쿼리
+    // (upsertBossProfitRecord)가 stale 네이티브 커넥션 탓에 막혀 보스 수익 화면이
+    // "불러오는 중..."에서 영원히 멈췄다. refresh()가 SQLite 응답을 무한정 기다리지 않고
+    // 타임아웃 후 기본값(파티원 1인)으로라도 화면을 완성해야 한다.
+    it('upsertBossProfitRecord가 응답하지 않아도(hang) 타임아웃 후 기본 파티원 수로 loaded 상태가 된다', async () => {
+      vi.useFakeTimers()
+      try {
+        getBossPartySizeMock.mockResolvedValue(null)
+        upsertBossProfitRecordMock.mockImplementation(() => new Promise(() => {}))
+        syncSchedulesMock.mockResolvedValue([syncResult()]) // 자쿰 카오스, priceMeso 8080000
+
+        const refreshPromise = useBossProfitStore.getState().refresh(['ocid-1'])
+        await vi.advanceTimersByTimeAsync(5000)
+        await refreshPromise
+
+        const state = useBossProfitStore.getState()
+        expect(state.status).toBe('loaded')
+        expect(state.rows[0].partySize).toBe(1)
+        expect(state.rows[0].payoutMeso).toBe(8080000)
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    it('getBossProfitRecords가 응답하지 않아도(hang) 타임아웃 후 기록 없이 진행해 loaded 상태가 된다', async () => {
+      vi.useFakeTimers()
+      try {
+        getBossProfitRecordsMock.mockImplementation(() => new Promise(() => {}))
+        getBossPartySizeMock.mockResolvedValue(null)
+        syncSchedulesMock.mockResolvedValue([syncResult()]) // 자쿰 카오스, priceMeso 8080000
+
+        const refreshPromise = useBossProfitStore.getState().refresh(['ocid-1'])
+        await vi.advanceTimersByTimeAsync(5000)
+        await refreshPromise
+
+        const state = useBossProfitStore.getState()
+        expect(state.status).toBe('loaded')
+        expect(state.rows[0].partySize).toBe(1)
+        expect(state.rows[0].payoutMeso).toBe(8080000)
+      } finally {
+        vi.useRealTimers()
+      }
+    })
   })
 
   describe('setPartySize', () => {
@@ -853,6 +898,68 @@ describe('useBossProfitStore', () => {
       expect(state.rows[0].payoutMeso).toBe(2_693_333)
       expect(state.isPeriodLoading).toBe(false)
       expect(state.periodUnavailable).toBe(false)
+    })
+
+    // 2026-07-17 실기기 재현: SQLite 커넥션이 stale하면 isPeriodChecked가 응답 없이 멈추고,
+    // periodKey 라벨만 "지난 주"로 바뀐 채 rows는 "이번 주" 값 그대로 남는(에러도 로딩 표시도 없는)
+    // 증상으로 나타났다. loadPeriod도 refresh()와 동일하게 타임아웃 후 "체크 안 됨"으로 간주해
+    // 백필을 진행해야 한다(멈추지 않고 끝까지 진행되는지가 핵심 — 고치기 전엔 아래 await promise가
+    // 영원히 끝나지 않았다).
+    it('goToPreviousPeriod: isPeriodChecked가 응답하지 않아도(hang) 타임아웃 후 백필을 진행해 멈추지 않는다', async () => {
+      vi.useFakeTimers()
+      try {
+        syncSchedulesMock.mockResolvedValue([syncResult()]) // 자쿰 카오스, 이번 주
+        await useBossProfitStore.getState().refresh(['ocid-1'])
+        const currentPeriodKey = useBossProfitStore.getState().periodKey
+        const previousPeriodKey = getAdjacentPeriodKey('weekly', currentPeriodKey, 'prev')
+
+        isPeriodCheckedMock.mockImplementation(() => new Promise(() => {}))
+        getBossProfitRecordsMock.mockResolvedValue([])
+        fetchSchedulerCharacterStateMock.mockResolvedValue(
+          schedulerState({
+            bossContents: [bossContent({ name: '스우', difficulty: '노멀', cycle: 'weekly', isComplete: true })],
+          }),
+        )
+
+        const promise = useBossProfitStore.getState().goToPreviousPeriod()
+        await vi.advanceTimersByTimeAsync(5000)
+        await promise
+
+        const state = useBossProfitStore.getState()
+        expect(state.periodKey).toBe(previousPeriodKey)
+        expect(fetchSchedulerCharacterStateMock).toHaveBeenCalled()
+        expect(markPeriodCheckedMock).toHaveBeenCalledWith('ocid-1', 'weekly', previousPeriodKey, expect.any(String))
+        expect(state.isPeriodLoading).toBe(false)
+        expect(state.periodUnavailable).toBe(false)
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    // 이미 체크된 과거 주라 백필 없이 buildRowsFromRecords로 바로 가는 경로에서도, 그 안의
+    // getBossProfitRecords가 응답하지 않으면(hang) 같은 방식으로 멈춰있었다.
+    it('goToPreviousPeriod: 이미 체크된 과거 주인데 getBossProfitRecords가 응답하지 않아도(hang) 타임아웃 후 멈추지 않는다', async () => {
+      vi.useFakeTimers()
+      try {
+        syncSchedulesMock.mockResolvedValue([syncResult()])
+        await useBossProfitStore.getState().refresh(['ocid-1'])
+        const currentPeriodKey = useBossProfitStore.getState().periodKey
+        const previousPeriodKey = getAdjacentPeriodKey('weekly', currentPeriodKey, 'prev')
+
+        isPeriodCheckedMock.mockResolvedValue(true)
+        getBossProfitRecordsMock.mockImplementation(() => new Promise(() => {}))
+
+        const promise = useBossProfitStore.getState().goToPreviousPeriod()
+        await vi.advanceTimersByTimeAsync(5000)
+        await promise
+
+        const state = useBossProfitStore.getState()
+        expect(state.periodKey).toBe(previousPeriodKey)
+        expect(state.rows).toEqual([])
+        expect(state.isPeriodLoading).toBe(false)
+      } finally {
+        vi.useRealTimers()
+      }
     })
 
     it('goToPreviousPeriod: 체크된 적 없는 과거 주는 date 파라미터로 백필하고 완료 보스를 기록한 뒤 체크 표시한다', async () => {

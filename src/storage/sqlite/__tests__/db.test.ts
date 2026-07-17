@@ -127,3 +127,34 @@ describe('getBossProfitDb', () => {
     expect(sqliteConnectionCtorMock).toHaveBeenCalledTimes(1)
   })
 })
+
+describe('closeBossProfitDb', () => {
+  it('열린 적 있는 커넥션을 정상 종료하고, 다음 getBossProfitDb는 새로 연다', async () => {
+    const { getBossProfitDb, closeBossProfitDb } = await import('../db')
+
+    await getBossProfitDb()
+    await closeBossProfitDb()
+
+    expect(closeConnectionMock).toHaveBeenCalledWith('boss_profit', false)
+
+    await getBossProfitDb()
+    expect(createConnectionMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('한 번도 연 적 없으면 아무것도 하지 않는다', async () => {
+    const { closeBossProfitDb } = await import('../db')
+
+    await closeBossProfitDb()
+
+    expect(closeConnectionMock).not.toHaveBeenCalled()
+  })
+
+  it('종료 중 에러가 나도 던지지 않는다(리로드는 곧 진행돼야 하므로 best-effort)', async () => {
+    closeConnectionMock.mockRejectedValue(new Error('close fail'))
+    const { getBossProfitDb, closeBossProfitDb } = await import('../db')
+
+    await getBossProfitDb()
+
+    await expect(closeBossProfitDb()).resolves.toBeUndefined()
+  })
+})
