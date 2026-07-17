@@ -2,7 +2,7 @@ import { Capacitor } from '@capacitor/core'
 import { SplashScreen } from '@capacitor/splash-screen'
 
 // 브랜드 주황 — capacitor.config.ts backgroundColor·스플래시 이미지 배경과 동일한 값(ADR-025/027).
-const BRAND_SPLASH_COLOR = '#FB8101'
+const BRAND_SPLASH_COLOR = '#F58B0F'
 
 // 네이티브 스플래시는 실행 시점부터 계속 떠 있고(capacitor.config.ts launchAutoHide:false,
 // iOS는 플러그인 / Android는 MainActivity가 유지), 앱 콘텐츠가 준비되면 이 함수로 내린다.

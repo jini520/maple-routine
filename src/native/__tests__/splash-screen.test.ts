@@ -90,8 +90,8 @@ describe('showSplashScreen', () => {
     expect(cover).not.toBeNull()
     expect(cover!.style.position).toBe('fixed')
     expect(cover!.style.inset).toBe('0px')
-    // jsdom은 hex를 rgb로 정규화한다 — #FB8101 = rgb(251, 129, 1)
-    expect(cover!.style.backgroundColor).toBe('rgb(251, 129, 1)')
+    // jsdom은 hex를 rgb로 정규화한다 — #F58B0F = rgb(245, 139, 15)
+    expect(cover!.style.backgroundColor).toBe('rgb(245, 139, 15)')
   })
 
   it('웹 플랫폼에서는 아무것도 호출하지 않고 오버레이도 깔지 않는다', async () => {

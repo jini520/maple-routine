@@ -6,7 +6,7 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   // WebView 배경을 브랜드 오렌지로 둬, 네이티브 스플래시가 사라진 뒤 WebView 콘텐츠가 페인트되기 전
   // 찰나에 기본 흰색이 깜빡이는 것을 없앤다.
-  backgroundColor: '#FB8101',
+  backgroundColor: '#F58B0F',
   plugins: {
     // iOS는 키보드가 뜨면 WebView 프레임이 줄어드는데(resize 기본값 native), 그 뒤로 드러나는 영역에
     // 기본 배경(위 backgroundColor의 브랜드 오렌지)이 비친다. 'dom'은 그 색을 config가 아니라 웹앱의
@@ -44,7 +44,7 @@ const config: CapacitorConfig = {
       // 이미지가 못 덮는 상태바·제스처 바 영역은 backgroundColor(브랜드 주황, 이미지 가장자리와
       // 동일 색)로 채운다(ADR-027 정정).
       androidScaleType: 'CENTER_CROP',
-      backgroundColor: '#FB8101',
+      backgroundColor: '#F58B0F',
     },
   },
 };
