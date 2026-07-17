@@ -100,12 +100,18 @@ export async function closeBossProfitDb(): Promise<void> {
   if (dbPromise === null) {
     return
   }
-  const closing = dbPromise
-  dbPromise = null
+  // 닫는 도중에도 dbPromise를 계속 살려둔다 — 먼저 null로 비우면, 그 사이 다른 곳에서
+  // getBossProfitDb()를 동시에 호출했을 때 "아직 안 닫힌" 커넥션을 못 보고 새로 openBossProfitDb를
+  // 시작해버린다. 그 경쟁 상태에서 이 함수의 closeConnection과 그 호출의 createConnection이
+  // 뒤엉키면 네이티브에서 "Connection boss_profit already exists"가 날 수 있다(안드로이드
+  // CapacitorSQLite.createConnection이 dbDict에 이미 등록돼 있으면 던지는 에러). 닫기가 끝난
+  // 뒤(성공이든 실패든)에만 dbPromise를 비워, 그 전까지는 동시 호출도 이 커넥션을 그대로 재사용하게 한다.
   try {
-    await closing
+    await dbPromise
     await getSqliteConnection().closeConnection(DB_NAME, false)
   } catch {
     // best-effort
+  } finally {
+    dbPromise = null
   }
 }

@@ -157,4 +157,34 @@ describe('closeBossProfitDb', () => {
 
     await expect(closeBossProfitDb()).resolves.toBeUndefined()
   })
+
+  // closeConnection이 아직 끝나지 않은 도중 다른 곳에서 getBossProfitDb()를 동시에 호출해도,
+  // 새 openBossProfitDb(→createConnection)를 시작하지 말고 기존(닫히는 중인) 커넥션을 그대로
+  // 반환해야 한다 — 안 그러면 이 함수의 closeConnection과 그 동시 호출의 createConnection이
+  // 뒤엉켜 네이티브에서 "Connection boss_profit already exists"가 날 수 있다.
+  it('종료 중에 getBossProfitDb가 동시에 호출돼도 새 커넥션을 만들지 않는다(레이스 방지)', async () => {
+    let resolveClose!: () => void
+    closeConnectionMock.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveClose = resolve
+        }),
+    )
+    const { getBossProfitDb, closeBossProfitDb } = await import('../db')
+
+    await getBossProfitDb()
+    expect(createConnectionMock).toHaveBeenCalledTimes(1)
+
+    const closePromise = closeBossProfitDb()
+    // closeBossProfitDb는 dbPromise를 await한 뒤에야 closeConnection을 호출하므로, resolveClose가
+    // 할당될 때까지 마이크로태스크를 한 번 흘려보낸다 — 그 사이(닫는 도중)에 getBossProfitDb를 호출한다.
+    await Promise.resolve()
+    const concurrentGet = getBossProfitDb()
+
+    resolveClose()
+    await closePromise
+    await concurrentGet
+
+    expect(createConnectionMock).toHaveBeenCalledTimes(1)
+  })
 })
