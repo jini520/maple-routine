@@ -508,6 +508,51 @@ describe('useBossProfitStore', () => {
       expect(row.partySize).toBeNull()
       expect(row.payoutMeso).toBeNull()
     })
+
+    // 2026-07-17 실기기 재현: 데이터 초기화(리로드) 직후 보스 스케줄러에 캐릭터를 저장하면
+    // SQLite 읽기는 되지만(loadPartySizes), 리로드 이후 이 커넥션에 대한 첫 "쓰기" 쿼리
+    // (upsertBossProfitRecord)가 stale 네이티브 커넥션 탓에 막혀 보스 수익 화면이
+    // "불러오는 중..."에서 영원히 멈췄다. refresh()가 SQLite 응답을 무한정 기다리지 않고
+    // 타임아웃 후 기본값(파티원 1인)으로라도 화면을 완성해야 한다.
+    it('upsertBossProfitRecord가 응답하지 않아도(hang) 타임아웃 후 기본 파티원 수로 loaded 상태가 된다', async () => {
+      vi.useFakeTimers()
+      try {
+        getBossPartySizeMock.mockResolvedValue(null)
+        upsertBossProfitRecordMock.mockImplementation(() => new Promise(() => {}))
+        syncSchedulesMock.mockResolvedValue([syncResult()]) // 자쿰 카오스, priceMeso 8080000
+
+        const refreshPromise = useBossProfitStore.getState().refresh(['ocid-1'])
+        await vi.advanceTimersByTimeAsync(5000)
+        await refreshPromise
+
+        const state = useBossProfitStore.getState()
+        expect(state.status).toBe('loaded')
+        expect(state.rows[0].partySize).toBe(1)
+        expect(state.rows[0].payoutMeso).toBe(8080000)
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    it('getBossProfitRecords가 응답하지 않아도(hang) 타임아웃 후 기록 없이 진행해 loaded 상태가 된다', async () => {
+      vi.useFakeTimers()
+      try {
+        getBossProfitRecordsMock.mockImplementation(() => new Promise(() => {}))
+        getBossPartySizeMock.mockResolvedValue(null)
+        syncSchedulesMock.mockResolvedValue([syncResult()]) // 자쿰 카오스, priceMeso 8080000
+
+        const refreshPromise = useBossProfitStore.getState().refresh(['ocid-1'])
+        await vi.advanceTimersByTimeAsync(5000)
+        await refreshPromise
+
+        const state = useBossProfitStore.getState()
+        expect(state.status).toBe('loaded')
+        expect(state.rows[0].partySize).toBe(1)
+        expect(state.rows[0].payoutMeso).toBe(8080000)
+      } finally {
+        vi.useRealTimers()
+      }
+    })
   })
 
   describe('setPartySize', () => {
