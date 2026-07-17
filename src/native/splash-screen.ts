@@ -7,10 +7,11 @@ const BRAND_SPLASH_COLOR = '#FB8101'
 // 네이티브 스플래시는 실행 시점부터 계속 떠 있고(capacitor.config.ts launchAutoHide:false,
 // iOS는 플러그인 / Android는 MainActivity가 유지), 앱 콘텐츠가 준비되면 이 함수로 내린다.
 export async function hideSplashScreen(): Promise<void> {
-  // index.html이 <html>에 깔아둔 인라인 브랜드 배경(리로드/콜드 스타트 첫 페인트 캔버스용,
-  // ADR-027 정정)을 앱이 준비된 시점에 걷는다 — 남겨두면 평상시 오버스크롤 영역에 주황이 비친다.
+  // index.html의 정적 부팅 커버(#boot-cover — 리로드/콜드 스타트의 첫 페인트부터 여기까지 화면
+  // 전체를 브랜드색으로 덮는다, ADR-027 정정)를 앱이 준비된 시점에 걷는다. 캔버스 배경만으론
+  // 테마(비동기 복원) 적용 전 라이트 기본값 첫 렌더가 노출되므로 렌더된 콘텐츠까지 덮는 div를 쓴다.
   // 웹(개발 서버)에서도 걷어야 하므로 플랫폼 가드보다 먼저 수행한다.
-  document.documentElement.style.removeProperty('background-color')
+  document.getElementById('boot-cover')?.remove()
   if (Capacitor.getPlatform() === 'web') return
   await SplashScreen.hide()
 }

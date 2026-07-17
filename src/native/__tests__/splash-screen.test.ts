@@ -30,8 +30,14 @@ beforeEach(() => {
   hideMock.mockReset()
   showMock.mockReset()
   document.body.innerHTML = ''
-  document.documentElement.style.removeProperty('background-color')
 })
+
+// index.html의 정적 부팅 커버(전체 화면·브랜드색)를 재현한다.
+function mountBootCover(): void {
+  const cover = document.createElement('div')
+  cover.id = 'boot-cover'
+  document.body.appendChild(cover)
+}
 
 describe('hideSplashScreen', () => {
   it('네이티브 플랫폼에서는 스플래시를 숨긴다', async () => {
@@ -48,21 +54,25 @@ describe('hideSplashScreen', () => {
     expect(hideMock).not.toHaveBeenCalled()
   })
 
-  it('index.html이 깔아둔 <html> 인라인 브랜드 배경을 제거한다(오버스크롤에 주황이 비치지 않게)', async () => {
-    document.documentElement.style.backgroundColor = '#FB8101'
+  it('index.html의 정적 부팅 커버(#boot-cover)를 제거한다(테마 적용 전 라이트 플래시까지 가리는 커버)', async () => {
+    mountBootCover()
 
     await hideSplashScreen()
 
-    expect(document.documentElement.style.backgroundColor).toBe('')
+    expect(document.getElementById('boot-cover')).toBeNull()
   })
 
-  it('웹 플랫폼에서도 <html> 인라인 브랜드 배경은 제거한다', async () => {
+  it('웹 플랫폼에서도 부팅 커버는 제거한다', async () => {
     getPlatformMock.mockReturnValue('web')
-    document.documentElement.style.backgroundColor = '#FB8101'
+    mountBootCover()
 
     await hideSplashScreen()
 
-    expect(document.documentElement.style.backgroundColor).toBe('')
+    expect(document.getElementById('boot-cover')).toBeNull()
+  })
+
+  it('부팅 커버가 이미 없어도 오류 없이 동작한다', async () => {
+    await expect(hideSplashScreen()).resolves.toBeUndefined()
   })
 })
 
