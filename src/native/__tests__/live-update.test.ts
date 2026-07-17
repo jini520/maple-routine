@@ -30,6 +30,8 @@ const { currentMock, downloadMock, setMock, notifyAppReadyMock, addListenerMock 
 
 const { networkGetStatusMock } = vi.hoisted(() => ({ networkGetStatusMock: vi.fn() }))
 
+const { closeBossProfitDbMock } = vi.hoisted(() => ({ closeBossProfitDbMock: vi.fn() }))
+
 vi.mock('@capacitor/core', () => ({
   Capacitor: { getPlatform: getPlatformMock },
   CapacitorHttp: { get: httpGetMock },
@@ -47,6 +49,8 @@ vi.mock('@capgo/capacitor-updater', () => ({
 
 vi.mock('@capacitor/network', () => ({ Network: { getStatus: networkGetStatusMock } }))
 
+vi.mock('../../storage/sqlite/db', () => ({ closeBossProfitDb: closeBossProfitDbMock }))
+
 const manifest = { version: '1.1.0', url: 'https://cdn/1.1.0.zip', checksum: 'abc123', size: 8_200_000 }
 const currentAt = (bundleVersion: string, native = '1.0.0') => ({
   bundle: { id: 'builtin', version: bundleVersion, downloaded: '', checksum: '', status: 'success' },
@@ -62,6 +66,7 @@ beforeEach(() => {
   addListenerMock.mockReset().mockResolvedValue({ remove: vi.fn() })
   networkGetStatusMock.mockReset()
   httpGetMock.mockReset()
+  closeBossProfitDbMock.mockReset().mockResolvedValue(undefined)
 })
 
 describe('isNewerVersion', () => {
@@ -224,6 +229,24 @@ describe('applyDownloadedLiveUpdate', () => {
     setMock.mockResolvedValue(undefined)
     await applyDownloadedLiveUpdate('bundle-2')
     expect(setMock).toHaveBeenCalledWith({ id: 'bundle-2' })
+  })
+
+  // set()이 JS 컨텍스트를 파괴하고 리로드하기 전에, 아직 살아있는 SQLite 커넥션을 먼저 정상
+  // 종료해둬야 한다 — 안 그러면 네이티브 쪽에 stale 커넥션이 남아 리로드 후 첫 쿼리가 멈춘다
+  // (2026-07-17, 앱 업데이트 직후 과거 수익 데이터가 안 불러와지는 증상으로 사용자 보고).
+  it('set()으로 리로드하기 전에 SQLite 커넥션을 먼저 정상 종료한다', async () => {
+    setMock.mockResolvedValue(undefined)
+    const callOrder: string[] = []
+    closeBossProfitDbMock.mockImplementation(async () => {
+      callOrder.push('close')
+    })
+    setMock.mockImplementation(async () => {
+      callOrder.push('set')
+    })
+
+    await applyDownloadedLiveUpdate('bundle-2')
+
+    expect(callOrder).toEqual(['close', 'set'])
   })
 })
 
