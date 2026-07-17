@@ -193,11 +193,33 @@ async function buildFallbackResult(
   }
 }
 
-// ADR-008: 키 무효(401/403)·rate limit(429)은 모든 캐릭터에 동일하게 적용되는 전역 실패라
-// 첫 캐릭터에서 발생하면 이후 캐릭터는 API를 더 호출하지 않고 캐시 폴백만 수행한다.
-// 그 외 네트워크 실패는 캐릭터마다 독립적으로 처리해 다음 캐릭터 조회를 막지 않는다.
+async function syncOneCharacter(apiKey: string, character: MapleCharacter): Promise<CharacterScheduleSync> {
+  try {
+    const state = await fetchSchedulerCharacterState(apiKey, character.ocid)
+    const syncedAt = new Date().toISOString()
+    await setCachedSchedulerState(character.ocid, { state, syncedAt })
+    return {
+      ocid: character.ocid,
+      characterName: character.name,
+      world: character.world,
+      state,
+      syncedAt,
+      isStale: false,
+      error: null,
+    }
+  } catch (error) {
+    return buildFallbackResult(character, toScheduleSyncError(error))
+  }
+}
+
+// ADR-008 (2026-07-17 정정): 첫 캐릭터를 프리플라이트로 먼저 호출해 401/403·429처럼 모든
+// 캐릭터에 동일하게 적용되는 전역 실패인지 확인한다. 전역 실패면 나머지 캐릭터는 API를 더
+// 호출하지 않고 캐시 폴백만 수행한다. 전역 실패가 아니면(성공 또는 캐릭터 개별 네트워크
+// 실패) 나머지 캐릭터는 서로 기다리지 않고 병렬로 호출한다 — 서비스 단계 키(초당 500건)라
+// 병렬 호출이 한도와 충돌하지 않는다. 병렬 구간에서 개별 캐릭터가 401/429를 반환해도 이미
+// 동시에 발사된 형제 호출은 막을 수 없으므로 그 캐릭터만 개별 폴백 처리한다.
 //
-// ocids로 지정된 캐릭터만 동기화한다 — 계정의 전체 캐릭터를 대상으로 순차 호출하면
+// ocids로 지정된 캐릭터만 동기화한다 — 계정의 전체 캐릭터를 대상으로 호출하면
 // 추적 대상이 아닌 캐릭터까지 불필요하게 호출하게 되어 로딩이 느려진다.
 export async function syncSchedules(
   ocids: string[],
@@ -211,40 +233,32 @@ export async function syncSchedules(
   const targetCharacters = characters.filter((character) => ocids.includes(character.ocid))
   const total = targetCharacters.length
 
-  const results: CharacterScheduleSync[] = []
-  let globalError: ScheduleSyncError | null = null
-
   onProgress?.(0, total)
 
-  for (const character of targetCharacters) {
-    if (globalError !== null) {
-      results.push(await buildFallbackResult(character, globalError))
-      onProgress?.(results.length, total)
-      continue
-    }
+  const [first, ...rest] = targetCharacters
+  const firstResult = await syncOneCharacter(apiKey, first)
+  let completed = 1
+  onProgress?.(completed, total)
 
-    try {
-      const state = await fetchSchedulerCharacterState(apiKey, character.ocid)
-      const syncedAt = new Date().toISOString()
-      await setCachedSchedulerState(character.ocid, { state, syncedAt })
-      results.push({
-        ocid: character.ocid,
-        characterName: character.name,
-        world: character.world,
-        state,
-        syncedAt,
-        isStale: false,
-        error: null,
-      })
-    } catch (error) {
-      const scheduleError = toScheduleSyncError(error)
-      if (error instanceof NexonAuthError || error instanceof NexonRateLimitError) {
-        globalError = scheduleError
-      }
-      results.push(await buildFallbackResult(character, scheduleError))
-    }
-    onProgress?.(results.length, total)
+  const isGlobalFailure = firstResult.error?.kind === 'invalidApiKey' || firstResult.error?.kind === 'rateLimited'
+
+  if (isGlobalFailure) {
+    const fallbackRest = await Promise.all(
+      rest.map((character) => buildFallbackResult(character, firstResult.error as ScheduleSyncError)),
+    )
+    completed += fallbackRest.length
+    onProgress?.(completed, total)
+    return [firstResult, ...fallbackRest]
   }
 
-  return results
+  const restResults = await Promise.all(
+    rest.map(async (character) => {
+      const result = await syncOneCharacter(apiKey, character)
+      completed += 1
+      onProgress?.(completed, total)
+      return result
+    }),
+  )
+
+  return [firstResult, ...restResults]
 }
