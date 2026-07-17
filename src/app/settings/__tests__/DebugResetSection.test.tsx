@@ -34,6 +34,18 @@ function openAndConfirm(): void {
 }
 
 describe('DebugResetSection', () => {
+  // 오버레이가 호출부(SettingsScreen의 space-y-* 컨테이너) 안에서 렌더되면 margin-block-end 때문에
+  // fixed inset-0 높이가 깎여 하단 제스처 영역만 딤이 빠진다(38c6ed7과 동일 기전, 실기기 스크린샷 확인).
+  // 공용 Modal처럼 body로 포털 렌더링돼야 화면 끝까지 덮는다.
+  it('확인 모달 오버레이는 body 직속으로 포털 렌더링된다', () => {
+    render(<DebugResetSection reload={vi.fn()} />)
+
+    fireEvent.click(screen.getByRole('button', { name: /디버그: 데이터 초기화/ }))
+
+    const overlay = screen.getByTestId('debug-reset-overlay')
+    expect(overlay.parentElement).toBe(document.body)
+  })
+
   it('초기화가 성공하면 reload를 호출한다', async () => {
     mockedClear.mockResolvedValue(undefined)
     const reload = vi.fn()

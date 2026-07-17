@@ -1,6 +1,8 @@
-import { useBodyScrollLock } from '../../lib/use-body-scroll-lock'
+import { Modal } from '../../components/Modal/Modal'
 
 // 임시 디버그 — 데이터 초기화 확인 모달. 배포 전 이 파일과 SettingsScreen의 디버그 행을 삭제할 것.
+// 공용 Modal을 쓴다 — 직접 오버레이를 그리면 호출부의 space-y-* margin에 fixed inset-0 높이가
+// 깎여 하단 제스처 영역만 딤이 빠진다(38c6ed7과 동일 기전, 실기기 확인). Modal은 body로 포털 렌더링.
 export interface DebugResetConfirmProps {
   isOpen: boolean
   isResetting: boolean
@@ -9,19 +11,11 @@ export interface DebugResetConfirmProps {
 }
 
 export function DebugResetConfirm(props: DebugResetConfirmProps): React.JSX.Element | null {
-  useBodyScrollLock(props.isOpen)
   if (!props.isOpen) return null
 
   return (
-    <div
-      data-testid="debug-reset-overlay"
-      onClick={props.onCancel}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-bg/70"
-    >
-      <div
-        onClick={(event) => event.stopPropagation()}
-        className="w-full max-w-sm rounded-[14px] border border-border bg-surface p-6 space-y-4"
-      >
+    <Modal onClose={props.onCancel} testId="debug-reset-overlay" align="center">
+      <div className="space-y-4">
         <div className="space-y-1">
           <h2 className="text-lg font-semibold text-text">데이터를 초기화할까요? (디버그)</h2>
           <p className="text-sm text-text-muted">
@@ -49,6 +43,6 @@ export function DebugResetConfirm(props: DebugResetConfirmProps): React.JSX.Elem
           </button>
         </div>
       </div>
-    </div>
+    </Modal>
   )
 }
