@@ -583,7 +583,7 @@ export function ContentScreen(): React.JSX.Element {
 
               <div className="ml-auto flex shrink-0 items-center gap-2">
                 <p className="text-sm text-text-muted whitespace-nowrap">
-                  {selected !== null ? formatSyncedAt(selected.syncedAt) : ''}
+                  {status === 'loading' ? '조회 중...' : selected !== null ? formatSyncedAt(selected.syncedAt) : ''}
                 </p>
                 <button
                   type="button"
@@ -591,7 +591,11 @@ export function ContentScreen(): React.JSX.Element {
                   aria-label="새로고침"
                   className="p-2 text-primary-text hover:text-primary-hover"
                 >
-                  <RefreshCw className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+                  <RefreshCw
+                    className={`h-4 w-4 ${status === 'loading' ? 'animate-spin' : ''}`}
+                    strokeWidth={2}
+                    aria-hidden="true"
+                  />
                 </button>
               </div>
             </div>

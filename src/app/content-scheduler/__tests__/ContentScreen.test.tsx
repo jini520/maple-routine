@@ -337,6 +337,21 @@ describe('ContentScreen', () => {
     expect(refresh).toHaveBeenCalledWith(['ocid-1'])
   })
 
+  it('status가 loading이면 새로고침 아이콘이 회전하고 조회 중 텍스트를 보여준다', async () => {
+    mockStore({
+      status: 'loading',
+      trackedOcids: ['ocid-1'],
+      characters: [character({ ocid: 'ocid-1' })],
+    })
+
+    render(<ContentScreen />)
+    await screen.findByRole('combobox')
+
+    expect(screen.getByText('조회 중...')).toBeInTheDocument()
+    const icon = screen.getByRole('button', { name: '새로고침' }).querySelector('svg')
+    expect(icon).toHaveClass('animate-spin')
+  })
+
   it('ADR-020: kind가 quest인 일간 항목은 접두어를 제거한 이름과 quest_state 뱃지를 보여주고 now/max 표기는 없다', async () => {
     mockStore({
       status: 'loaded',

@@ -301,6 +301,16 @@ describe('BossProfitScreen', () => {
     expect(refresh).toHaveBeenCalledWith(['ocid-1'])
   })
 
+  it('status가 loading이면 새로고침 아이콘이 회전하고 조회 중 텍스트를 보여준다', () => {
+    mockStore({ status: 'loading', trackedOcids: ['ocid-1'], rows: [row()] })
+
+    render(<BossProfitScreen />)
+
+    expect(screen.getByText('조회 중...')).toBeInTheDocument()
+    const icon = screen.getByRole('button', { name: '새로고침' }).querySelector('svg')
+    expect(icon).toHaveClass('animate-spin')
+  })
+
   it('stale 캐릭터가 있으면 안내 문구가 보인다', () => {
     mockStore({
       status: 'loaded',

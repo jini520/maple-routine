@@ -411,14 +411,21 @@ export function BossProfitScreen(): React.JSX.Element {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h1 className="text-lg font-semibold text-text">보스 수익</h1>
-            <button
-              type="button"
-              onClick={() => refresh(trackedOcids ?? [])}
-              aria-label="새로고침"
-              className="p-2 text-primary-text hover:text-primary-hover"
-            >
-              <RefreshCw className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
-            </button>
+            <div className="flex shrink-0 items-center gap-2">
+              {status === 'loading' && <p className="text-sm text-text-muted whitespace-nowrap">조회 중...</p>}
+              <button
+                type="button"
+                onClick={() => refresh(trackedOcids ?? [])}
+                aria-label="새로고침"
+                className="p-2 text-primary-text hover:text-primary-hover"
+              >
+                <RefreshCw
+                  className={`h-4 w-4 ${status === 'loading' ? 'animate-spin' : ''}`}
+                  strokeWidth={2}
+                  aria-hidden="true"
+                />
+              </button>
+            </div>
           </div>
 
           <div className="flex items-center gap-4">

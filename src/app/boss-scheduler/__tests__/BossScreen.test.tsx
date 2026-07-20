@@ -409,6 +409,21 @@ describe('BossScreen', () => {
     expect(refresh).toHaveBeenCalledWith(['ocid-1'])
   })
 
+  it('status가 loading이면 새로고침 아이콘이 회전하고 조회 중 텍스트를 보여준다', async () => {
+    mockStore({
+      status: 'loading',
+      trackedOcids: ['ocid-1'],
+      characters: [character({ ocid: 'ocid-1' })],
+    })
+
+    render(<BossScreen />)
+    await screen.findByRole('combobox')
+
+    expect(screen.getByText('조회 중...')).toBeInTheDocument()
+    const icon = screen.getByRole('button', { name: '새로고침' }).querySelector('svg')
+    expect(icon).toHaveClass('animate-spin')
+  })
+
   it('주간 탭에서 등록된 보스가 없고 isStale이 false면 그 탭에만 빈 상태 안내가 보인다', async () => {
     mockStore({
       status: 'loaded',
