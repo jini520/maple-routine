@@ -9,8 +9,7 @@ import { ApiKeyModal } from './ApiKeyModal'
 import { AccountModal } from './AccountModal'
 import { ThemeModal } from './ThemeModal'
 import { DisconnectConfirm } from './DisconnectConfirm'
-// 임시 디버그 — 배포 전 이 import와 아래 <DebugResetSection/> 한 줄, 그리고 관련 파일들을 삭제할 것.
-import { DebugResetSection } from './DebugResetSection'
+import { CacheDataSection } from './CacheDataSection'
 
 type OpenModal = 'apiKey' | 'account' | 'theme' | null
 
@@ -56,8 +55,7 @@ export function SettingsScreen(): React.JSX.Element {
 
       <AppUpdateSection />
 
-      {/* 임시 디버그 — 배포 전 이 줄과 DebugResetSection.tsx·debug-reset.ts·DebugResetConfirm.tsx를 삭제할 것 */}
-      <DebugResetSection />
+      <CacheDataSection />
 
       {openModal === 'apiKey' && <ApiKeyModal onClose={() => setOpenModal(null)} />}
       {openModal === 'account' && <AccountModal onClose={() => setOpenModal(null)} />}
