@@ -9,6 +9,7 @@ import { ApiKeyModal } from './ApiKeyModal'
 import { AccountModal } from './AccountModal'
 import { ThemeModal } from './ThemeModal'
 import { DisconnectConfirm } from './DisconnectConfirm'
+import { CacheDataSection } from './CacheDataSection'
 
 type OpenModal = 'apiKey' | 'account' | 'theme' | null
 
@@ -53,6 +54,8 @@ export function SettingsScreen(): React.JSX.Element {
       </div>
 
       <AppUpdateSection />
+
+      <CacheDataSection />
 
       {openModal === 'apiKey' && <ApiKeyModal onClose={() => setOpenModal(null)} />}
       {openModal === 'account' && <AccountModal onClose={() => setOpenModal(null)} />}

@@ -20,6 +20,12 @@ vi.mock('../../../features/live-update/store', () => ({
   useLiveUpdateStore: vi.fn(),
 }))
 
+// CacheDataSection이 마운트 시 실제 Preferences/SQLite를 호출하지 않도록 막는다.
+vi.mock('../../../storage/cache-data', () => ({
+  clearCacheData: vi.fn(),
+  getCacheDataSize: vi.fn(async () => 0),
+}))
+
 const mockedUseSettingsStore = vi.mocked(useSettingsStore)
 const mockedUseThemeStore = vi.mocked(useThemeStore)
 const mockedUseLiveUpdateStore = vi.mocked(useLiveUpdateStore)
@@ -90,6 +96,15 @@ describe('SettingsScreen', () => {
     expect(screen.getByRole('button', { name: /계정 변경/ })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /테마/ })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /연결 해제/ })).toBeInTheDocument()
+  })
+
+  it('"캐시 데이터 삭제" 행을 렌더링한다', () => {
+    mockSettingsStore({})
+    mockThemeStore({})
+
+    render(<SettingsScreen />)
+
+    expect(screen.getByRole('button', { name: /캐시 데이터 삭제/ })).toBeInTheDocument()
   })
 
   it('테마 행에 현재 테마 이름이 표시된다', () => {
