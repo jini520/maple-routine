@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:beta": "VITE_LIVE_UPDATE_CHANNEL=beta vite",
     "build": "tsc -b && vite build",
     "build:beta": "VITE_LIVE_UPDATE_CHANNEL=beta npm run build",
     "lint": "eslint .",
