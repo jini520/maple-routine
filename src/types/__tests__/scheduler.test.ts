@@ -4,6 +4,7 @@ import type {
   BossContent,
   DailyContent,
   SchedulerCharacterState,
+  SharedProgressEntry,
   WeeklyContent,
 } from '../scheduler'
 import type { MapleAccount, MapleCharacter } from '../character'
@@ -77,8 +78,24 @@ describe('domain 타입 샘플 객체', () => {
       bossContents: [],
       weeklyBossClearCount: 0,
       weeklyBossClearLimitCount: 0,
+      isDailyStale: false,
+      isWeeklyStale: false,
+      isWeeklyBossStale: false,
+      isMonthlyBossStale: false,
     }
     expect(sample.characterName).toBe('낟낟')
+  })
+
+  it('SharedProgressEntry 샘플이 월드/계정 공유 원장 항목 형태를 반영한다', () => {
+    const sample: SharedProgressEntry = {
+      active: true,
+      kind: 'contents',
+      nowCount: 7,
+      maxCount: 14,
+      questState: null,
+      lastUpdatedBucket: '2026-07-21',
+    }
+    expect(sample.active).toBe(true)
   })
 
   it('MapleCharacter/MapleAccount 샘플이 구성된다', () => {
@@ -174,5 +191,18 @@ describe('wire 타입 샘플 객체 (Nexon API 원본 응답 그대로)', () => 
       weekly_boss_clear_limit_count: 0,
     }
     expect(sample.character_name).toBe('낟낟')
+  })
+
+  it('NexonSchedulerCharacterStateWire은 daily_contents/weekly_contents/boss_contents를 생략할 수 있다 (ADR-030: 미접속 시 응답에 없을 수 있음)', () => {
+    const sample: NexonSchedulerCharacterStateWire = {
+      date: '2026-07-21T00:00+09:00',
+      character_name: '낟낟',
+      world_name: '엘리시움',
+      character_level: 293,
+      character_class: '렌',
+      weekly_boss_clear_count: 0,
+      weekly_boss_clear_limit_count: 0,
+    }
+    expect(sample.daily_contents).toBeUndefined()
   })
 })

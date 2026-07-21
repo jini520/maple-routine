@@ -25,3 +25,15 @@ export function getMostRecentWeeklyResetKst(now: Date): Date {
 
   return new Date(kstResetAsUtcFields - KST_OFFSET_MS)
 }
+
+/**
+ * 주어진 시점의 KST 기준 "오늘 날짜"를 YYYY-MM-DD로 반환한다 (ADR-030 — 일간 리셋 버킷 계산용).
+ * getMostRecentWeeklyResetKst와 동일하게 기기 로컬 타임존과 무관하게 항상 KST 기준으로 계산한다.
+ */
+export function getCurrentKstDateKey(now: Date): string {
+  const kstWallClock = new Date(now.getTime() + KST_OFFSET_MS)
+  const year = kstWallClock.getUTCFullYear()
+  const month = String(kstWallClock.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(kstWallClock.getUTCDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}

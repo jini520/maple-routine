@@ -1,0 +1,17 @@
+{
+  "updatedAt": "2026-07-21",
+  "source": "사용자 제공",
+  "note": "명시 안 된 항목은 전부 character 범위(기본값)로 취급한다. worldShared/accountShared 항목의 section은 이 항목이 daily_contents/weekly_contents 중 어디서 오는지를 나타낸다 — 캐릭터 자신의 응답이 비어있어도(stale) 이 section을 보고 원장에서 복원할 수 있어야 하기 때문(ADR-030). 몬스터파크는 월드당 14회(캐릭터당 최대 7회) 풀을 공유하지만, API는 캐릭터별 개별 사용량이 아니라 월드 총합을 now_count로 반환한다(2026-07-21 확인).",
+  "worldShared": [
+    { "name": "몬스터파크", "section": "daily" },
+    { "name": "[메이플 유니온] 주간 드래곤 퇴치", "section": "weekly" }
+  ],
+  "accountShared": [
+    { "name": "에픽 던전 : 하이마운틴", "section": "weekly" },
+    { "name": "에픽 던전 : 앵글러 컴퍼니", "section": "weekly" },
+    { "name": "에픽 던전 : 악몽선경", "section": "weekly" }
+  ],
+  "maxCountOverrides": {
+    "[길드] 주간 미션 포인트": 10
+  }
+}

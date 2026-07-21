@@ -50,6 +50,10 @@ function schedulerState(): SchedulerCharacterState {
     bossContents: [],
     weeklyBossClearCount: 0,
     weeklyBossClearLimitCount: 0,
+    isDailyStale: false,
+    isWeeklyStale: false,
+    isWeeklyBossStale: false,
+    isMonthlyBossStale: false,
   }
 }
 

@@ -23,3 +23,12 @@ export function trackedCharactersKey(kind: 'content' | 'boss'): string {
 export function lastSelectedCharacterKey(kind: 'content' | 'boss'): string {
   return `lastSelectedCharacter:${kind}`
 }
+
+// ADR-030: 월드/계정 단위로 완료가 공유되는 콘텐츠의 진행 상태 원장 키
+export function worldSharedProgressKey(world: string): string {
+  return `worldSharedProgress:${world}`
+}
+
+export function accountSharedProgressKey(accountId: string): string {
+  return `accountSharedProgress:${accountId}`
+}

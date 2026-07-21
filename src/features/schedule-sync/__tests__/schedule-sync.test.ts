@@ -24,6 +24,22 @@ const { getCachedCharacterBasicMock, setCachedCharacterBasicMock, getAllCachedCh
     getAllCachedCharacterBasicOcidsMock: vi.fn(),
   }))
 
+const {
+  getWorldSharedProgressMock,
+  getAccountSharedProgressMock,
+  setWorldSharedProgressEntryMock,
+  setAccountSharedProgressEntryMock,
+} = vi.hoisted(() => ({
+  getWorldSharedProgressMock: vi.fn(),
+  getAccountSharedProgressMock: vi.fn(),
+  setWorldSharedProgressEntryMock: vi.fn(),
+  setAccountSharedProgressEntryMock: vi.fn(),
+}))
+
+const { mergeSchedulerStateMock } = vi.hoisted(() => ({
+  mergeSchedulerStateMock: vi.fn(),
+}))
+
 vi.mock('../../../nexon/character', () => ({
   fetchCharacterList: fetchCharacterListMock,
   fetchCharacterBasic: fetchCharacterBasicMock,
@@ -46,6 +62,17 @@ vi.mock('../../../storage/character-basic-cache', () => ({
   getCachedCharacterBasic: getCachedCharacterBasicMock,
   setCachedCharacterBasic: setCachedCharacterBasicMock,
   getAllCachedCharacterBasicOcids: getAllCachedCharacterBasicOcidsMock,
+}))
+
+vi.mock('../../../storage/shared-progress-cache', () => ({
+  getWorldSharedProgress: getWorldSharedProgressMock,
+  getAccountSharedProgress: getAccountSharedProgressMock,
+  setWorldSharedProgressEntry: setWorldSharedProgressEntryMock,
+  setAccountSharedProgressEntry: setAccountSharedProgressEntryMock,
+}))
+
+vi.mock('../../../lib/scheduler-merge', () => ({
+  mergeSchedulerState: mergeSchedulerStateMock,
 }))
 
 import { getCharacterPickerRoster, getRegisteredCharacters, syncSchedules } from '../schedule-sync'
@@ -76,6 +103,10 @@ function schedulerState(characterName: string): SchedulerCharacterState {
     bossContents: [],
     weeklyBossClearCount: 0,
     weeklyBossClearLimitCount: 0,
+    isDailyStale: false,
+    isWeeklyStale: false,
+    isWeeklyBossStale: false,
+    isMonthlyBossStale: false,
   }
 }
 
@@ -104,6 +135,18 @@ beforeEach(() => {
   getCachedCharacterBasicMock.mockResolvedValue(null)
   setCachedCharacterBasicMock.mockResolvedValue(undefined)
   getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
+  getWorldSharedProgressMock.mockResolvedValue({})
+  getAccountSharedProgressMock.mockResolvedValue({})
+  setWorldSharedProgressEntryMock.mockResolvedValue(undefined)
+  setAccountSharedProgressEntryMock.mockResolvedValue(undefined)
+  // 기본값: 병합 없이 fresh 그대로 통과(ledger 갱신 없음) — ADR-030 병합 알고리즘 자체는
+  // lib/scheduler-merge의 자체 단위 테스트가 검증하고, 여기서는 syncOneCharacter가 그 결과를
+  // 올바른 곳(캐시·원장)에 정확히 반영하는지만 확인한다.
+  mergeSchedulerStateMock.mockImplementation((input: { fresh: SchedulerCharacterState }) => ({
+    characterState: input.fresh,
+    worldLedgerUpdates: {},
+    accountLedgerUpdates: {},
+  }))
 })
 
 afterEach(() => {
@@ -382,6 +425,89 @@ describe('syncSchedules', () => {
     expect(results[1].isStale).toBe(true)
     expect(results[2].isStale).toBe(false)
     expect(results[2].error).toBeNull()
+  })
+
+  describe('ADR-030: 캐릭터/월드/계정 병합', () => {
+    it('이전 캐시·월드/계정 원장을 읽어 mergeSchedulerState에 넘긴다', async () => {
+      const characters = [character('ocid-1')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+      const fresh = schedulerState('캐릭터1')
+      fetchSchedulerCharacterStateMock.mockResolvedValue(fresh)
+      const cachedPrevious = { state: schedulerState('이전-캐릭터1'), syncedAt: '2026-07-10T00:00:00.000Z' }
+      getCachedSchedulerStateMock.mockResolvedValue(cachedPrevious)
+      getWorldSharedProgressMock.mockResolvedValue({ 몬스터파크: { active: true } })
+      getAccountSharedProgressMock.mockResolvedValue({ '에픽 던전 : 악몽선경': { active: true } })
+
+      await syncSchedules(['ocid-1'])
+
+      expect(getWorldSharedProgressMock).toHaveBeenCalledWith(fresh.world)
+      expect(getAccountSharedProgressMock).toHaveBeenCalledWith('acc-1')
+      expect(mergeSchedulerStateMock).toHaveBeenCalledWith({
+        previous: cachedPrevious.state,
+        fresh,
+        worldLedger: { 몬스터파크: { active: true } },
+        accountLedger: { '에픽 던전 : 악몽선경': { active: true } },
+        now: expect.any(Date),
+      })
+    })
+
+    it('previous 캐시가 없으면 previous: null로 mergeSchedulerState를 호출한다', async () => {
+      const characters = [character('ocid-1')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+      fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
+      getCachedSchedulerStateMock.mockResolvedValue(null)
+
+      await syncSchedules(['ocid-1'])
+
+      expect(mergeSchedulerStateMock).toHaveBeenCalledWith(expect.objectContaining({ previous: null }))
+    })
+
+    it('mergeSchedulerState 결과(characterState)를 캐시에 쓰고 결과의 state로 반환한다', async () => {
+      const characters = [character('ocid-1')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+      fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
+      const mergedState = schedulerState('병합된-캐릭터1')
+      mergeSchedulerStateMock.mockReturnValue({
+        characterState: mergedState,
+        worldLedgerUpdates: {},
+        accountLedgerUpdates: {},
+      })
+
+      const results = await syncSchedules(['ocid-1'])
+
+      expect(results[0].state).toEqual(mergedState)
+      expect(setCachedSchedulerStateMock).toHaveBeenCalledWith('ocid-1', { state: mergedState, syncedAt: NOW })
+    })
+
+    it('worldLedgerUpdates/accountLedgerUpdates에 담긴 변경분을 각 원장에 저장한다', async () => {
+      const characters = [character('ocid-1')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+      const fresh = schedulerState('캐릭터1')
+      fetchSchedulerCharacterStateMock.mockResolvedValue(fresh)
+      const worldEntry = { active: true, kind: 'contents' as const, nowCount: 7, maxCount: 14, questState: null, lastUpdatedBucket: '2026-07-11' }
+      const accountEntry = { active: true, kind: 'contents' as const, nowCount: 1, maxCount: 0, questState: null, lastUpdatedBucket: '2026-07-09' }
+      mergeSchedulerStateMock.mockReturnValue({
+        characterState: fresh,
+        worldLedgerUpdates: { 몬스터파크: worldEntry },
+        accountLedgerUpdates: { '에픽 던전 : 악몽선경': accountEntry },
+      })
+
+      await syncSchedules(['ocid-1'])
+
+      expect(setWorldSharedProgressEntryMock).toHaveBeenCalledWith(fresh.world, '몬스터파크', worldEntry)
+      expect(setAccountSharedProgressEntryMock).toHaveBeenCalledWith('acc-1', '에픽 던전 : 악몽선경', accountEntry)
+    })
+
+    it('ledger 변경분이 없으면 원장 쓰기를 호출하지 않는다', async () => {
+      const characters = [character('ocid-1')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+      fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
+
+      await syncSchedules(['ocid-1'])
+
+      expect(setWorldSharedProgressEntryMock).not.toHaveBeenCalled()
+      expect(setAccountSharedProgressEntryMock).not.toHaveBeenCalled()
+    })
   })
 })
 

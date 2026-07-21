@@ -1,6 +1,6 @@
 # 아키텍처
 
-> 이 문서는 `docs/ADR.md`를 전제로 작성되었습니다. Capacitor / Vite+React / 로컬 저장 전용 / 백그라운드 상시 알림 모두 확정. 일간/주간 진행 상태는 Nexon Open API로 동기화하되, 사용자 개인이 발급받은 API 키를 기기에 저장해 직접 호출하는 방식이라 백엔드는 필요 없음([[ADR-007]] 신규 — 2026-07-09). 에러 핸들링·복원력 정책은 [[ADR-008]] 참고. 직업 기반 테마 시스템은 뼈대만 확정([[ADR-009]], 컬러 값 미정). 최상위 화면 구조는 "일간/주간 스케줄러"(리셋 주기 기준)에서 "컨텐츠/보스 스케줄러"(콘텐츠 종류 기준)로 개편됨([[ADR-013]], 2026-07-11). 보스 수익 계산기는 완료 감지 시 파티원 수를 자동 기록하고 캐릭터별 드롭다운 레이아웃을 쓰도록 확장됨([[ADR-014]], 2026-07-11). "캐릭터 관리" 피커는 레벨순 정렬 + 캐릭터 이미지 카드형 그리드로 개선되고 `character/basic` API 병렬 조회가 추가됨([[ADR-015]], 2026-07-12). 보스 스케줄러·컨텐츠 스케줄러의 탭 토글은 활성 상태에 배지와 동일한 pill 스타일을 재사용하고, 보스 목록은 개별 카드 나열(두상이 보이는 일러스트 bleed + 보스별 크롭 설정)로 개편됨([[ADR-018]], 2026-07-13, 설계만·구현 전). 보스 스케줄러에 캐릭터+보스+난이도 단위 상시 "파티 관리" 설정(신규 SQLite 테이블 `boss_party_settings`)이 추가되어 보스 카드에 솔로/파티 배지·주간/월간 탭 아래 솔로/파티 서브 필터가 생기고, 보스 수익 계산기의 완료 감지 시 파티원 수 기본값도 이 설정으로 통일됨([[ADR-019]], 2026-07-13, 설계만·구현 전). Live Update(OTA) 도입 — `@capgo/capacitor-updater` 플러그인 + GitHub Releases 자체 호스팅으로 JS/HTML/CSS 번들을 스토어 심사 없이 배포하며 `native/live-update.ts` 어댑터로 캡슐화([[ADR-022]], 2026-07-14, 구현 완료). "주간 보스 수익 계산기"는 "보스 수익"으로 개편되어 주간/월간 탭·기간 네비게이터를 갖추고, 기간 이동은 로컬 저장 기록만 읽으며 저장된 적 없는 과거 기간만 스케줄러 API의 `date` 파라미터로 자동 1회 재조회 후 영구 저장한다([[ADR-023]], 2026-07-14, 설계만·구현 전). 별도 공개 웹 서비스 제공은 보류(MVP 범위 밖)이며, 이 문서는 Capacitor 앱(WebView) 기준으로만 작성되었습니다.
+> 이 문서는 `docs/ADR.md`를 전제로 작성되었습니다. Capacitor / Vite+React / 로컬 저장 전용 / 백그라운드 상시 알림 모두 확정. 일간/주간 진행 상태는 Nexon Open API로 동기화하되, 사용자 개인이 발급받은 API 키를 기기에 저장해 직접 호출하는 방식이라 백엔드는 필요 없음([[ADR-007]] 신규 — 2026-07-09). 에러 핸들링·복원력 정책은 [[ADR-008]] 참고. 직업 기반 테마 시스템은 뼈대만 확정([[ADR-009]], 컬러 값 미정). 최상위 화면 구조는 "일간/주간 스케줄러"(리셋 주기 기준)에서 "컨텐츠/보스 스케줄러"(콘텐츠 종류 기준)로 개편됨([[ADR-013]], 2026-07-11). 보스 수익 계산기는 완료 감지 시 파티원 수를 자동 기록하고 캐릭터별 드롭다운 레이아웃을 쓰도록 확장됨([[ADR-014]], 2026-07-11). "캐릭터 관리" 피커는 레벨순 정렬 + 캐릭터 이미지 카드형 그리드로 개선되고 `character/basic` API 병렬 조회가 추가됨([[ADR-015]], 2026-07-12). 보스 스케줄러·컨텐츠 스케줄러의 탭 토글은 활성 상태에 배지와 동일한 pill 스타일을 재사용하고, 보스 목록은 개별 카드 나열(두상이 보이는 일러스트 bleed + 보스별 크롭 설정)로 개편됨([[ADR-018]], 2026-07-13, 설계만·구현 전). 보스 스케줄러에 캐릭터+보스+난이도 단위 상시 "파티 관리" 설정(신규 SQLite 테이블 `boss_party_settings`)이 추가되어 보스 카드에 솔로/파티 배지·주간/월간 탭 아래 솔로/파티 서브 필터가 생기고, 보스 수익 계산기의 완료 감지 시 파티원 수 기본값도 이 설정으로 통일됨([[ADR-019]], 2026-07-13, 설계만·구현 전). Live Update(OTA) 도입 — `@capgo/capacitor-updater` 플러그인 + GitHub Releases 자체 호스팅으로 JS/HTML/CSS 번들을 스토어 심사 없이 배포하며 `native/live-update.ts` 어댑터로 캡슐화([[ADR-022]], 2026-07-14, 구현 완료). "주간 보스 수익 계산기"는 "보스 수익"으로 개편되어 주간/월간 탭·기간 네비게이터를 갖추고, 기간 이동은 로컬 저장 기록만 읽으며 저장된 적 없는 과거 기간만 스케줄러 API의 `date` 파라미터로 자동 1회 재조회 후 영구 저장한다([[ADR-023]], 2026-07-14, 설계만·구현 전). 별도 공개 웹 서비스 제공은 보류(MVP 범위 밖)이며, 이 문서는 Capacitor 앱(WebView) 기준으로만 작성되었습니다. 컨텐츠 스케줄러 캐시는 캐릭터 단위 단일 스냅샷에서 캐릭터/월드/계정 3단 캐시로 재설계됨([[ADR-030]], 2026-07-21, 구현 완료) — 미접속 시 섹션 전체가 비는 응답을 감지해 마지막 캐시로 폴백하고, 항목별 공유 범위(character/world/account)를 `src/data/scheduler-content-catalog.json`으로 분류해 월드/계정 공유 콘텐츠와 "마지막 활성 캐릭터" API 오염 문제에 대응한다.
 
 ## 디렉토리 구조
 ```
@@ -26,7 +26,7 @@ src/
 ├── nexon/                   # Nexon Open API 클라이언트 ([[ADR-007]]) — 사용자 개인 API 키로 직접 호출, 서버 없음
 │   ├── character/            # GET /maplestory/v1/character/list로 계정 소속 캐릭터 목록 자동 조회(수동 등록 폼 없음). GET /maplestory/v1/character/basic(ocid별, [[ADR-015]])로 "캐릭터 관리" 피커의 캐릭터 이미지(`character_image`)·`access_flag`를 병렬 조회
 │   └── schedule/             # 스케줄러 Open API 호출 + src/data/ 참조 테이블과의 매핑(난이도 영↔한글, 보스명 정규화, cycle 기반 bossDaily 필터링)
-├── storage/                 # 로컬 저장소 접근 레이어 (SQLite/Preferences 어댑터, Nexon API 키·동기화 캐시 포함). 신규 `boss-party-settings.ts`가 `boss-profit.ts`와 동일 SQLite DB(`boss_profit`)에 `boss_party_settings` 테이블 추가 예정 — 캐릭터+보스+난이도 단위 상시 파티 인원 설정, `boss_profit_records`(주차별 완료 기록)와 별도([[ADR-019]], 설계만·구현 전)
+├── storage/                 # 로컬 저장소 접근 레이어 (SQLite/Preferences 어댑터, Nexon API 키·동기화 캐시 포함). 신규 `boss-party-settings.ts`가 `boss-profit.ts`와 동일 SQLite DB(`boss_profit`)에 `boss_party_settings` 테이블 추가 예정 — 캐릭터+보스+난이도 단위 상시 파티 인원 설정, `boss_profit_records`(주차별 완료 기록)와 별도([[ADR-019]], 설계만·구현 전). `scheduler-cache.ts`는 캐릭터 단일 스냅샷(`schedulerCache:{ocid}`) 스키마는 그대로 두고 `SchedulerCharacterState`에 섹션별 stale 플래그만 추가됐다. 신규 `shared-progress-cache.ts`가 `worldSharedProgress:{world}`/`accountSharedProgress:{accountId}`(월드/계정 공유 콘텐츠 원장)를 별도로 관리한다([[ADR-030]], 구현 완료, SQLite 전환 없이 Preferences 유지)
 ├── native/                  # Capacitor 플러그인 래퍼 + 커스텀 네이티브 플러그인 JS 인터페이스
 │   ├── hunting-timer/       # 상시 알림(Android Chronometer / iOS Live Activity) 커스텀 플러그인 래퍼
 │   ├── notification-sync/   # 알림 발송 직전 백그라운드에서 Nexon API 재확인 후 조건부 발송 (WorkManager / BGAppRefreshTask, [[ADR-004]])
@@ -109,6 +109,19 @@ Feature 단위 구조. 각 `features/*` 폴더가 해당 기능의 상태와 로
   → 보스 선택 시 `item-drop-table.json`에서 그 보스 이름과 일치하는 모든 난이도 엔트리를 합쳐 아이템 후보를 구성(이름 기준 중복 제거, 난이도 무관)
   → 각 아이템 버튼은 `lib/item-icons`로 `assets/items/` 이미지 경로를 조회해 표시(없으면 플레이스홀더)
 
+[컨텐츠 스케줄러 캐시 병합 — 미접속/월드·계정 공유/API 오염 대응, [[ADR-030]], 구현 완료]
+캐릭터 동기화 응답 도착
+  → `daily_contents`/`weekly_contents`를 각각 독립적으로 판정: 배열이 비어있거나 없으면 "이 리셋 주기 이후 이 캐릭터로 접속한 적 없음"으로 간주(응답의 `date`는 항상 조회 요청일을 반환해 타임스탬프 비교로는 판단 불가 — 배열 자체의 empty 여부만 신호로 씀)
+  → **미접속(섹션이 비어있음)**: `storage/scheduler-cache`의 그 캐릭터 마지막 정상 상태에서 이름·`registration_flag`는 유지하고 진행값(now_count/quest_state/isComplete)만 초기화해 표시. `boss_contents`는 `cycle: weekly`는 `weekly_contents`와, `cycle: monthly`는 월간 경계(매월 1일 00:00 KST, 확정)와 동일하게 판정
+  → **신선(섹션에 내용 있음)**: 항목별로 `src/data/scheduler-content-catalog.json`의 `shareScope`를 조회
+    - `shareScope: character` → `storage/scheduler-cache`에 캐릭터별로 그대로 갱신
+    - `shareScope: world`/`account` → 이 캐릭터 응답의 `registration_flag`는 무시(마지막 활성 캐릭터 오염 대상이라 신뢰 안 함). `storage`의 `worldSharedProgress:{world}`/`accountSharedProgress:{accountId}`에 `{ active: true, 진행값, lastUpdatedBucket }`을 갱신 — 어느 캐릭터든 신선한 응답으로 한 번 `active: true`가 되면 그 뒤로는 이 원장 값을 기준으로 삼는다
+  → 화면 표시 시:
+    - `shareScope: character` 항목은 이 캐릭터의 `storage/scheduler-cache` 값 그대로 노출
+    - `shareScope: world`/`account` 항목은 개별 응답의 `registration_flag` 대신 원장의 `active`만 확인해 노출 여부를 정하고, 진행값도 원장에서 가져온다(원장 자체의 stale 여부는 `lastUpdatedBucket`을 `lib/reset-clock`의 리셋 경계와 비교해 판단 — 경계를 넘겼는데 아무도 안 갱신했으면 진행값만 리셋, `active`는 유지)
+  → **알려진 한계**: 몬스터파크(`shareScope: world`)의 "A월드 캐릭터 접속 후 종료하면 B월드 캐릭터 조회 시에도 A월드 값이 나옴" 오염은 어느 쪽이 진짜 값인지 구분할 신호가 없어 처리하지 않는다(사용자 확정) — world 원장이 "마지막으로 갱신한 캐릭터"의 값을 그대로 신뢰하는 구조라 이 오염도 그대로 반영된다
+  → **알려진 API 필드 오류**: 길드 주간 미션 포인트의 `max_count`는 `scheduler-content-catalog.json`의 `maxCountOverride`(10)로 API 응답 값 대신 고정 표기
+
 사용자 입력 (파티원 수 입력 / 아이템 획득 버튼 클릭 — 컨테이너형 아이템(보스 반지 상자·장신구 상자)이면 `boss-ring-boxes.json`/`accessory-boxes.json` 후보 목록에서 실제로 나온 결과를 추가로 선택)
   → features/* 컴포넌트 (React state 갱신)
   → storage/ 레이어 (로컬 DB 읽기·쓰기 — 컨테이너 아이템은 선택된 결과까지 함께 저장)
@@ -179,6 +192,7 @@ Feature 단위 구조. 각 `features/*` 폴더가 해당 기능의 상태와 로
 - `boss-ring-boxes.json`([[ADR-010]], [[ADR-011]]): `item-drop-table.json`의 `consumable` 카테고리에 이미 존재하는 "OO옥의 보스 반지 상자" 5종(녹옥/홍옥/흑옥/백옥/생명의)에 대해, 박스 이름을 키로 레벨별 확률표·반지별 확률표를 보유. 앞의 세 파일과 달리 `boss`/`difficulty`로 조인하지 않고 아이템 `name` 문자열로 `item-drop-table.json`과 연결한다. 확률은 실제 획득 결과를 추정하는 데 쓰지 않고, 사용자가 획득 기록 시 고를 후보 목록으로만 사용. 각 반지 항목의 `iconFile`은 `assets/items/rings/`의 GMS 영문 파일명(나무위키 확인, 컨티뉴어스 링만 사용자 지시로 직접 명명)
 - `accessory-boxes.json`([[ADR-010]], 신규): "혼돈의 칠흑 장신구 상자"·"메이린의 칠흑 장신구 상자"(이름만 다르고 후보 목록 동일 — 사용자 확인)의 후보 아이템 7종을 보유. `boss-ring-boxes.json`과 같은 조인 방식(아이템 `name` 문자열)을 쓰지만, 레벨 개념이 없고 개별 확률(%)도 게임 내에 공개되지 않아 후보 목록만 있고 확률 필드는 전부 `null`
 - `item-icons.json`([[ADR-011]], 신규): 일반 물욕템(반지 제외)의 "한글 아이템명 → `assets/items/`의 기존 파일명" 매핑 테이블. `item-drop-table.json`에 필드로 넣지 않는 이유는 같은 아이템이 여러 보스에 반복 등장해 중복이 심해지기 때문. 확신도 높은 매칭만 반영, 후보가 여럿이라 확정 못 한 파일은 사용자 확인 대기 중([[ADR-011]] 미확정 목록 참고)
+- `scheduler-content-catalog.json`([[ADR-030]], 신규, 구현 완료): character 범위(기본값)가 아닌 예외 항목만 등록하는 방식 — `worldShared`/`accountShared` 배열에 `{ name, section: 'daily'|'weekly' }`, `maxCountOverrides`에 `{ 항목명: 고정값 }`을 보유. `section`은 이 항목이 daily_contents/weekly_contents 중 어디서 오는지를 나타내 캐릭터 자신의 응답이 비어있어도(stale) 원장에서 복원할 수 있게 한다. `maxCountOverrides`는 API가 알려진 오류를 내는 필드를 고정값으로 덮어쓸 때만 쓴다(예: 길드 주간 미션 포인트 `max_count`가 실제론 항상 10인데 API가 가끔 0을 반환). 조회는 `lib/scheduler-content-scope.ts`(`getShareScope`/`getContentSection`/`getMaxCountOverride`/`getContentCatalogEntries`)가 담당. 배경/아이콘 매칭용인 `daily-quest-regions.json` 등과 목적이 달라 별도 파일로 둔다. 다른 여섯 파일과 마찬가지로 AI가 임의로 채우지 않고 사용자가 확정한 값만 반영([[ADR-006]] 취지 준용)
 
 `src/data/`에는 위 여섯 파일 외에 UI 표시 전용 설정 파일도 하나 있다 — 게임 밸런스/수치 데이터가 아니므로 [[ADR-006]]("게임 데이터는 사용자 확인 후 반영")의 대상이 아니다:
 - `boss-portrait-crops.json`([[ADR-018]], 신규): 보스 스케줄러의 새 보스 카드에서 일러스트를 bleed 배치할 때 쓰는 보스별 크롭 값. `portraitSlug`를 키로 `{ size: string, position: string }`(CSS `background-size`/`background-position` 값 그대로) 매핑. 일러스트마다 인물 구도가 달라 값이 제각각이라(예: 카링 `size: "300% auto"`, 스우 `size: "190% auto"`) 하드코딩 대신 이 파일로 분리했다. 값은 AI가 임의로 채우지 않고 사용자가 각 일러스트를 넣을 때마다 직접 조정 — 매핑 없는 `portraitSlug`는 `{ size: "cover", position: "center" }`로 폴백(`lib/boss-icons.getBossPortraitCrop`). ~~`BossPortrait`(원형, 보스 수익 계산기·물욕 아이템 화면)는 이 파일을 참조하지 않는다.~~ → **정정(2026-07-14)**: `BossPortrait`도 크롭을 지원하게 됐지만 이 파일이 아니라 아래 `boss-portrait-icon-crops.json`(원형 아이콘 전용, 별도 파일)을 참조한다 — bleed 사각형과 원형 아이콘은 이상적인 크롭 값이 다르기 때문에 소스를 공유하지 않는다. **정정([[ADR-021]], 2026-07-14)**: 보스가 아닌 주간 콘텐츠 카드(에픽 던전 3종·길드 지하 수로 카드)의 배경(`ancientGodMitra`/`senya`/`baekyeon`/`arcanus`)도 같은 `src/assets/bosses/`에 넣고 이 파일·`getBossPortraitUrl`/`getBossPortraitCrop`을 그대로 재사용한다 — "보스 전용"이 아니라 "이 폴더의 슬러그 → 크롭" 범용 조회로 쓰임이 넓어졌다. 길드 콘텐츠 중 미션 포인트·플래그 레이스는 보스가 아닌 지도 배경이라 이 파일이 아니라 아래 `daily-quest-region-crops.json`을 쓴다(**정정**, 2026-07-14 — 길드 3종을 한 카드로 묶었던 최초 설계에서는 셋 다 `arcanus` 하나만 썼으나, 3종을 독립 카드로 재설계하며 지하 수로만 이 파일에 남았다).
@@ -215,7 +229,11 @@ Feature 단위 구조. 각 `features/*` 폴더가 해당 기능의 상태와 로
 
 ## 엣지 케이스
 - **신규 캐릭터, 게임 내 스케줄러 미등록**: `registration_flag`가 전부 `"false"`인 상태 — 에러가 아니라 정상적인 빈 상태(empty state) UI로 처리하고, "게임에서 스케줄러에 등록해주세요" 안내
-- **리셋 경계 시각**: Nexon 서버는 한국시간(KST) 기준 목요일 00:00에 초기화됨을 확인(2026-07-09) — `lib/reset-clock`이 계산하는 일간 00:00 KST / 주간 목요일 00:00 KST 리셋 시각과 정확히 일치하므로, 리셋 경계 불일치 리스크는 해소됨
+- **리셋 경계 시각**: Nexon 서버는 한국시간(KST) 기준 목요일 00:00에 초기화됨을 확인(2026-07-09) — `lib/reset-clock`이 계산하는 일간 00:00 KST / 주간 목요일 00:00 KST 리셋 시각과 정확히 일치하므로, 리셋 경계 불일치 리스크는 해소됨. 월간 보스 리셋 경계도 매월 1일 00:00 KST로 확정([[ADR-030]], 2026-07-21 — 기존 `lib/boss-profit-period.ts`의 "가정" 상태에서 격상)
+- **캐릭터 미접속으로 인한 스케줄 데이터 누락**: [[ADR-030]] — 응답의 `daily_contents`/`weekly_contents`가 통째로 비어있으면 그 리셋 주기 이후 이 캐릭터로 미접속한 것으로 간주해 마지막 캐시로 폴백(진행값만 리셋). 응답의 `date` 필드는 항상 조회 요청일을 그대로 반환하므로 타임스탬프 비교로는 판단 불가
+- **월드/계정 단위로 완료가 공유되는 콘텐츠**: [[ADR-030]] — 몬스터파크(world)·에픽 던전 3종(account)·[메이플 유니온] 주간 드래곤 퇴치(world)는 개별 캐릭터의 `registration_flag`를 신뢰하지 않고 `worldSharedProgress`/`accountSharedProgress` 원장의 누적값을 기준으로 노출. 그 외 항목은 전부 캐릭터 단위(기본값)
+- **"마지막 활성 캐릭터" API 오염(알려진 한계)**: [[ADR-030]] — world/account 범위 콘텐츠에 한해, 게임 클라이언트에 마지막으로 접속했던 캐릭터의 상태가 다른 캐릭터 조회 응답에 새어 들어온다(몬스터파크의 월드 간 수치 오염, 미등록 캐릭터로 인한 항목 누락). 몬스터파크의 월드 간 오염은 구분 신호가 없어 처리하지 않기로 확정 — world 원장이 이 오염을 그대로 흡수한다
+- **일부 항목의 `max_count` API 오류**: [[ADR-030]] — 길드 주간 미션 포인트는 실제로 항상 10인데 API가 가끔 0을 반환. `scheduler-content-catalog.json`의 `maxCountOverride`로 고정 표기
 - **멀티 디바이스**: 같은 API 키를 여러 기기에 입력해도 각 기기가 독립적으로 캐시를 가짐(기기 간 동기화 없음). 버그 아님, [[ADR-003]]의 자연스러운 결과
 - **캐릭터 서버 이전/개명**: 캐릭터 목록을 캐싱하지 않고 항상 nexon/character를 다시 호출해 조회하므로(2026-07-11 정정, 위 "데이터 흐름" 참고), 별도의 캐시 무효화 로직 없이 다음 조회에서 자연히 최신 상태로 반영된다
 - **캐릭터 식별 기준**: 캐릭터명은 개명·표기 변경이 가능하므로, 로컬 저장소·수익 기록 등 모든 캐릭터 식별은 캐릭터명이 아니라 항상 ocid를 기준으로 관리한다(확정, 2026-07-09)
@@ -233,6 +251,7 @@ Feature 단위 구조. 각 `features/*` 폴더가 해당 기능의 상태와 로
 - `lib/reset-clock`: 단위 테스트로 KST 자정 경계, 목요일 경계, 월/연 경계를 검증. 기기 타임존이 KST가 아닐 때도 항상 KST 기준으로 계산되는지 확인
 - `nexon/schedule` 파싱/정규화: 실제 응답 예시(ADR-007 샘플)를 fixture로 사용한 단위 테스트 — 문자열 flag 파싱, 영↔한 난이도 매핑, 양방향 공백 정규화(공백이 API에 더 많은 경우·데이터에 더 많은 경우 둘 다), `apiAlias` 매핑(시즌 보스 메이린 등), `bossDaily` 필터링, 매핑 테이블에 없는 항목의 폴백 처리
 - `nexon/schedule` 에러 경로: 네트워크 실패·401·429·스키마 불일치·JSON 파싱 실패를 각각 모킹한 단위 테스트 (ADR-008 표의 각 행에 대응하는 테스트가 있어야 함)
+- 컨텐츠 스케줄러 캐시 병합([[ADR-030]], 구현 완료): `lib/scheduler-merge.test.ts`가 핵심 알고리즘을 검증한다 — `daily_contents`/`weekly_contents`가 빈 배열/필드 없음일 때 마지막 캐시로 폴백하며 진행값만 리셋되고 이름·`registration_flag`는 유지되는지, 섹션에 내용이 있을 때는 응답을 그대로 신뢰하는지, `shareScope: character`/`world`/`account` 항목이 각각 올바른 저장소(캐릭터별 캐시 vs `worldSharedProgress`/`accountSharedProgress` 원장)에서 읽히는지, world/account 원장이 한 번 `active: true`가 된 뒤로는 개별 응답의 `registration_flag`와 무관하게 계속 노출되는지, 원장 자체가 리셋 경계(주간/월간)를 넘겼는데 아무도 갱신 안 했을 때 진행값만 리셋되고 `active`는 유지되는지, `maxCountOverride`가 API 응답값보다 우선하는지 검증. `features/schedule-sync/__tests__/schedule-sync.test.ts`는 `syncOneCharacter`가 이전 캐시·월드/계정 원장을 읽어 `mergeSchedulerState`에 넘기고 결과를 캐시·원장에 정확히 쓰는지(병합 로직 자체는 mock)를 검증한다.
 - `nexon/character`: `account_list`/`character_list`가 빈 배열인 경우, 동일 ocid 중복 응답 시 dedup 처리, 동률 레벨 계정 대표 캐릭터 선정(캐릭터명 기준 정렬 — 한글>알파벳>숫자) 각각의 단위 테스트
 - 캐릭터 관리 피커 정렬·필터링([[ADR-015]]): 레벨 내림차순 정렬(동률 시 기존 `compareByName` 기준 2차 정렬), `access_flag: "false"` 캐릭터가 후보 목록에서 제외되는지, `character/basic` 병렬 호출 중 일부만 실패해도 나머지 캐릭터는 정상 표시되는지 검증하는 단위 테스트를 기능 구현 시 추가
 - `nexon/client` 큐잉 로직: 여러 캐릭터를 동기화할 때 초당 5건(개발 단계) 이내로 순차 호출되는지, 429 응답 시 지수 백오프가 다음 허용 시각을 정확히 계산하는지 검증하는 단위 테스트
