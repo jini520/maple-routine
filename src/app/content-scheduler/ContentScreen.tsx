@@ -3,13 +3,14 @@ import { formatScheduleSyncError, formatSyncedAt } from '../../features/schedule
 import { getBossPortraitCrop, getBossPortraitUrl } from '../../lib/boss-icons'
 import { getDailyQuestBackgroundUrl, getDailyQuestRegionCrop } from '../../lib/daily-quest-backgrounds'
 import { matchDailyQuestRegionSlug, stripDailyQuestPrefix } from '../../lib/daily-quest-matching'
+import { matchWeeklyQuestRegionSlug, stripWeeklyQuestPrefix } from '../../lib/weekly-quest-matching'
 import { useEffect, useState } from 'react'
 
 import type { BossPortraitCrop } from '../../lib/boss-icons'
 import { CharacterSelectDropdown } from '../../components/CharacterSelectDropdown/CharacterSelectDropdown'
 import { CharacterTrackingPicker } from '../../components/CharacterTrackingPicker/CharacterTrackingPicker'
-import { ProgressModal } from '../../components/ProgressModal/ProgressModal'
 import type { DailyQuestRegionCrop } from '../../lib/daily-quest-backgrounds'
+import { ProgressModal } from '../../components/ProgressModal/ProgressModal'
 import { RefreshCw } from 'lucide-react'
 import { getCharacterPickerRoster } from '../../features/schedule-sync/schedule-sync'
 import { getDailyQuestRegionIconUrl } from '../../lib/daily-quest-icons'
@@ -31,8 +32,6 @@ const EPIC_DUNGEON_BACKGROUND_SLUGS: Record<string, string> = {
   악몽선경: 'baekyeon',
 }
 
-const MU_LUNG_DOJO_NAME = '무릉도장'
-
 const GUILD_PREFIX = '[길드] '
 const GUILD_MISSION_POINTS_NAME = '[길드] 주간 미션 포인트'
 const GUILD_UNDERGROUND_WATERWAY_NAME = '[길드] 지하 수로'
@@ -40,6 +39,16 @@ const GUILD_FLAG_RACE_NAME = '[길드] 플래그 레이스'
 const GUILD_UNDERGROUND_WATERWAY_BACKGROUND_SLUG = 'arcanus'
 const GUILD_MISSION_POINTS_BACKGROUND_SLUG = 'hallOfHeroes'
 const GUILD_FLAG_RACE_BACKGROUND_SLUG = 'flagRace'
+
+// 메이플 유니온 주간 드래곤 퇴치 — 실제로 등장하는 드래곤은 매주 바뀌지만 API가 어떤 드래곤인지
+// 알려주지 않아, 에픽 던전 카드와 동일하게 대표 이미지 하나로 고정한다(ADR-021 연장, 2026-07-21).
+const MAPLE_UNION_PREFIX = '[메이플 유니온] '
+const MAPLE_UNION_DRAGON_BOSS_SLUG = 'armorDragon'
+
+// "[몬스터파크] 익스트림 몬스터파커에 도전해보겠나?"는 지역명이 문장 앞이 아니라 대괄호 태그로만
+// 나타나 daily-quest-matching 방식의 접두어 제거 후 startsWith 매칭이 통하지 않는다. 대신
+// weekly-regional-quests.json에 전체 문자열을 그대로 등록하고, 표시용으로만 이 접두어를 뗀다.
+const MONSTER_PARK_EXTREME_PREFIX = '[몬스터파크] '
 
 const QUEST_STATE_LABELS: Record<0 | 1 | 2, string> = {
   0: '시작 안함',
@@ -87,6 +96,7 @@ export function DailyQuestCard(props: {
             backgroundImage: `url(${backgroundUrl})`,
             backgroundSize: crop.size,
             backgroundPosition: crop.position,
+            backgroundRepeat: 'no-repeat',
             filter: 'saturate(.85) brightness(.8)',
             opacity: 0.65,
             maskImage,
@@ -134,6 +144,7 @@ export function MonsterParkCard(props: {
             backgroundImage: `url(${backgroundUrl})`,
             backgroundSize: crop.size,
             backgroundPosition: crop.position,
+            backgroundRepeat: 'no-repeat',
             filter: 'saturate(.85) brightness(.8)',
             opacity: 0.65,
             maskImage,
@@ -179,10 +190,20 @@ export function MonsterParkCard(props: {
   )
 }
 
-// 아르카누스 배경의 푸른 전기빛과 맞춘 색(2026-07-14, 사용자 지시) — 에픽 던전·길드 카드가 공유.
-function CategoryBadge(props: { label: string }): React.JSX.Element {
+// 카테고리별 배지 색(2026-07-21, 사용자 지시) — 에픽 던전은 아르카누스 배경의 푸른 전기빛과
+// 맞춘 기존 색 유지, 메이플 유니온은 노란색 계열, 길드는 빨간색 계열로 구분.
+const CATEGORY_BADGE_COLORS = {
+  epicDungeon: 'bg-[#4DD2FF]/20 text-[#4DD2FF]',
+  mapleUnion: 'bg-[#FFC93C]/20 text-[#FFC93C]',
+  guild: 'bg-[#FF5C5C]/20 text-[#FF5C5C]',
+} as const
+
+function CategoryBadge(props: {
+  label: string
+  variant: keyof typeof CATEGORY_BADGE_COLORS
+}): React.JSX.Element {
   return (
-    <span className="rounded-full bg-[#4DD2FF]/20 px-2.5 py-1 text-xs font-semibold text-[#4DD2FF]">
+    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${CATEGORY_BADGE_COLORS[props.variant]}`}>
       {props.label}
     </span>
   )
@@ -190,6 +211,36 @@ function CategoryBadge(props: { label: string }): React.JSX.Element {
 
 const CARD_MASK_IMAGE = 'linear-gradient(90deg, #000 0%, #000 38%, transparent 76%)'
 const CARD_NAME_TEXT_SHADOW = '0 1px 3px rgba(0,0,0,.9), 0 0 10px rgba(0,0,0,.6)'
+
+// 진행 중(1) 뱃지와 같은 톤의 중립 라벨 — "N층"·"N회 완료"처럼 0/1/2 상태가 아닌 진행 수치를
+// 보여줘야 하는 카드에서 QuestStateBadge 대신 쓴다(2026-07-21, 사용자 지시).
+function CountLabelBadge(props: { label: string }): React.JSX.Element {
+  return <span className="rounded-full bg-white/20 px-2.5 py-1 text-xs font-semibold text-[#E8DFEC]">{props.label}</span>
+}
+
+// 무릉도장은 quest_state가 아니라 참여 시 도달한 층수(1~100+)가 now_count에 그대로 기록된다.
+// 성실한 조사에 대한 보답은 quest_state=1일 때 now_count/max_count(0~2)로 완료 횟수를 따로
+// 세므로, quest_state 뱃지 대신 "N회 완료"를 보여주다가 now_count===max_count에서 완료로
+// 전환한다(2026-07-21, 사용자 지시 — 두 항목 모두 weekly-quest-regions.json의 backgroundSlug로 구분).
+const MU_LUNG_DOJO_BACKGROUND_SLUG = 'muruengRaid'
+const FAITHFUL_INVESTIGATION_BACKGROUND_SLUG = 'roadOfVanishing'
+
+function renderWeeklyQuestStatus(content: WeeklyContent, backgroundSlug: string | null): React.ReactNode {
+  if (backgroundSlug === MU_LUNG_DOJO_BACKGROUND_SLUG) {
+    return content.nowCount > 0 ? <CountLabelBadge label={`${content.nowCount}층`} /> : <QuestStateBadge questState={0} />
+  }
+
+  if (backgroundSlug === FAITHFUL_INVESTIGATION_BACKGROUND_SLUG) {
+    if (content.nowCount === content.maxCount && content.maxCount > 0) {
+      return <QuestStateBadge questState={2} />
+    }
+    if (content.questState === 1) {
+      return <CountLabelBadge label={`${content.nowCount}회 완료`} />
+    }
+  }
+
+  return content.questState !== null ? <QuestStateBadge questState={content.questState} /> : null
+}
 
 export function EpicDungeonCard(props: {
   content: WeeklyContent
@@ -213,6 +264,7 @@ export function EpicDungeonCard(props: {
             backgroundImage: `url(${backgroundUrl})`,
             backgroundSize: crop.size,
             backgroundPosition: crop.position,
+            backgroundRepeat: 'no-repeat',
             filter: 'saturate(.85) brightness(.8)',
             opacity: 0.65,
             maskImage: CARD_MASK_IMAGE,
@@ -223,7 +275,7 @@ export function EpicDungeonCard(props: {
 
       <div className="relative flex h-full items-center justify-between" style={{ padding: '0 14px' }}>
         <div className="flex items-center gap-2">
-          <CategoryBadge label="에픽 던전" />
+          <CategoryBadge label="에픽 던전" variant="epicDungeon" />
           <span className="text-sm font-medium text-[#E8DFEC]" style={{ textShadow: CARD_NAME_TEXT_SHADOW }}>
             {displayName}
           </span>
@@ -240,11 +292,21 @@ export function WeeklyRegionalContentCard(props: {
   crop?: DailyQuestRegionCrop
 }): React.JSX.Element {
   const { content } = props
+  const displayName = content.name.startsWith(MONSTER_PARK_EXTREME_PREFIX)
+    ? content.name.slice(MONSTER_PARK_EXTREME_PREFIX.length)
+    : content.name
   const backgroundSlug = matchWeeklyRegionalQuestSlug(content.name)
   const backgroundUrl = getDailyQuestBackgroundUrl(backgroundSlug)
   const iconUrl = getDailyQuestRegionIconUrl(backgroundSlug)
   const crop = props.crop ?? getDailyQuestRegionCrop(backgroundSlug)
-  const questState: 0 | 2 = content.nowCount > 0 ? 2 : 0
+  // 익스트림 몬스터파커는 다른 6개 지역 콘텐츠와 달리 now_count/max_count가 아니라 실제
+  // quest_state(0/1/2)로 진행 상태를 준다(2026-07-21, 사용자 지시).
+  const questState: 0 | 1 | 2 | null =
+    backgroundSlug === MONSTER_PARK_BACKGROUND_SLUG
+      ? content.questState
+      : content.nowCount === content.maxCount && content.maxCount > 0
+        ? 2
+        : 0
 
   return (
     <div className="relative h-20 overflow-hidden rounded-[14px] border border-[#37323E] bg-[#1A1720]">
@@ -255,6 +317,7 @@ export function WeeklyRegionalContentCard(props: {
             backgroundImage: `url(${backgroundUrl})`,
             backgroundSize: crop.size,
             backgroundPosition: crop.position,
+            backgroundRepeat: 'no-repeat',
             filter: 'saturate(.85) brightness(.8)',
             opacity: 0.65,
             maskImage: CARD_MASK_IMAGE,
@@ -269,23 +332,100 @@ export function WeeklyRegionalContentCard(props: {
             <img src={iconUrl} alt="" className="h-6 w-6 shrink-0 object-contain" aria-hidden="true" />
           )}
           <span className="text-sm font-medium text-[#E8DFEC]" style={{ textShadow: CARD_NAME_TEXT_SHADOW }}>
-            {content.name}
+            {displayName}
           </span>
         </div>
 
-        <QuestStateBadge questState={questState} />
+        {questState !== null && <QuestStateBadge questState={questState} />}
       </div>
     </div>
   )
 }
 
-export function MuLungDojoCard(props: { content: WeeklyContent }): React.JSX.Element {
+export function WeeklyQuestCard(props: {
+  content: WeeklyContent
+  crop?: DailyQuestRegionCrop
+}): React.JSX.Element {
+  const { content } = props
+  const displayName = stripWeeklyQuestPrefix(content.name)
+  const backgroundSlug = matchWeeklyQuestRegionSlug(displayName)
+  const backgroundUrl = getDailyQuestBackgroundUrl(backgroundSlug)
+  const iconUrl = getDailyQuestRegionIconUrl(backgroundSlug)
+  const crop = props.crop ?? getDailyQuestRegionCrop(backgroundSlug)
+
   return (
-    <div
-      className="relative flex h-20 items-center overflow-hidden rounded-[14px] border border-[#37323E] bg-[#1A1720]"
-      style={{ padding: '0 14px' }}
-    >
-      <span className="text-sm font-medium text-[#E8DFEC]">{props.content.name}</span>
+    <div className="relative h-20 overflow-hidden rounded-[14px] border border-[#37323E] bg-[#1A1720]">
+      {backgroundUrl !== null && (
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url(${backgroundUrl})`,
+            backgroundSize: crop.size,
+            backgroundPosition: crop.position,
+            backgroundRepeat: 'no-repeat',
+            filter: 'saturate(.85) brightness(.8)',
+            opacity: 0.65,
+            maskImage: CARD_MASK_IMAGE,
+            WebkitMaskImage: CARD_MASK_IMAGE,
+          }}
+        />
+      )}
+
+      <div className="relative flex h-full items-center justify-between" style={{ padding: '0 14px' }}>
+        <div className="flex items-center gap-2">
+          {iconUrl !== null && (
+            <img src={iconUrl} alt="" className="h-6 w-6 shrink-0 object-contain" aria-hidden="true" />
+          )}
+          <span className="text-sm font-medium text-[#E8DFEC]" style={{ textShadow: CARD_NAME_TEXT_SHADOW }}>
+            {displayName}
+          </span>
+        </div>
+
+        {renderWeeklyQuestStatus(content, backgroundSlug)}
+      </div>
+    </div>
+  )
+}
+
+export function MapleUnionDragonCard(props: {
+  content: WeeklyContent
+  crop?: BossPortraitCrop
+}): React.JSX.Element {
+  const { content } = props
+  const displayName = content.name.startsWith(MAPLE_UNION_PREFIX)
+    ? content.name.slice(MAPLE_UNION_PREFIX.length)
+    : content.name
+  const backgroundUrl = getBossPortraitUrl(MAPLE_UNION_DRAGON_BOSS_SLUG)
+  const crop = props.crop ?? getBossPortraitCrop(MAPLE_UNION_DRAGON_BOSS_SLUG)
+
+  return (
+    <div className="relative h-20 overflow-hidden rounded-[14px] border border-[#37323E] bg-[#1A1720]">
+      {backgroundUrl !== null && (
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url(${backgroundUrl})`,
+            backgroundSize: crop.size,
+            backgroundPosition: crop.position,
+            backgroundRepeat: 'no-repeat',
+            filter: 'saturate(.85) brightness(.8)',
+            opacity: 0.65,
+            maskImage: CARD_MASK_IMAGE,
+            WebkitMaskImage: CARD_MASK_IMAGE,
+          }}
+        />
+      )}
+
+      <div className="relative flex h-full items-center justify-between" style={{ padding: '0 14px' }}>
+        <div className="flex items-center gap-2">
+          <CategoryBadge label="유니온" variant="mapleUnion" />
+          <span className="text-sm font-medium text-[#E8DFEC]" style={{ textShadow: CARD_NAME_TEXT_SHADOW }}>
+            {displayName}
+          </span>
+        </div>
+
+        {content.questState !== null && <QuestStateBadge questState={content.questState} />}
+      </div>
     </div>
   )
 }
@@ -312,6 +452,7 @@ export function GuildUndergroundWaterwayCard(props: {
             backgroundImage: `url(${backgroundUrl})`,
             backgroundSize: crop.size,
             backgroundPosition: crop.position,
+            backgroundRepeat: 'no-repeat',
             filter: 'saturate(.85) brightness(.8)',
             opacity: 0.65,
             maskImage: CARD_MASK_IMAGE,
@@ -322,7 +463,7 @@ export function GuildUndergroundWaterwayCard(props: {
 
       <div className="relative flex h-full items-center justify-between" style={{ padding: '0 14px' }}>
         <div className="flex items-center gap-2">
-          <CategoryBadge label="길드" />
+          <CategoryBadge label="길드" variant="guild" />
           <span className="text-sm font-medium text-[#E8DFEC]" style={{ textShadow: CARD_NAME_TEXT_SHADOW }}>
             {displayName}
           </span>
@@ -355,6 +496,7 @@ export function GuildMissionPointsCard(props: {
             backgroundImage: `url(${backgroundUrl})`,
             backgroundSize: crop.size,
             backgroundPosition: crop.position,
+            backgroundRepeat: 'no-repeat',
             filter: 'saturate(.85) brightness(.8)',
             opacity: 0.65,
             maskImage: CARD_MASK_IMAGE,
@@ -366,7 +508,7 @@ export function GuildMissionPointsCard(props: {
       <div className="relative flex h-full flex-col">
         <div className="flex h-20 shrink-0 items-center justify-between" style={{ padding: '0 14px' }}>
           <div className="flex items-center gap-2">
-            <CategoryBadge label="길드" />
+            <CategoryBadge label="길드" variant="guild" />
             <span className="text-sm font-medium text-[#E8DFEC]" style={{ textShadow: CARD_NAME_TEXT_SHADOW }}>
               {displayName}
             </span>
@@ -414,6 +556,7 @@ export function GuildFlagRaceCard(props: {
             backgroundImage: `url(${backgroundUrl})`,
             backgroundSize: crop.size,
             backgroundPosition: crop.position,
+            backgroundRepeat: 'no-repeat',
             filter: 'saturate(.85) brightness(.8)',
             opacity: 0.65,
             maskImage: CARD_MASK_IMAGE,
@@ -424,7 +567,7 @@ export function GuildFlagRaceCard(props: {
 
       <div className="relative flex h-full items-center justify-between" style={{ padding: '0 14px' }}>
         <div className="flex items-center gap-2">
-          <CategoryBadge label="길드" />
+          <CategoryBadge label="길드" variant="guild" />
           <span className="text-sm font-medium text-[#E8DFEC]" style={{ textShadow: CARD_NAME_TEXT_SHADOW }}>
             {displayName}
           </span>
@@ -671,7 +814,7 @@ export function ContentScreen(): React.JSX.Element {
               )}
 
               {registeredDailyContents.length > 0 && (
-                <ul className="space-y-3">
+                <ul className="space-y-2">
                   {registeredDailyContents.map((content) => {
                     if (content.kind === 'quest') {
                       return (
@@ -728,7 +871,7 @@ export function ContentScreen(): React.JSX.Element {
               )}
 
               {registeredWeeklyContents.length > 0 && (
-                <ul className="space-y-3">
+                <ul className="space-y-2">
                   {registeredWeeklyContents.map((content) => {
                     if (content.name === GUILD_UNDERGROUND_WATERWAY_NAME) {
                       return (
@@ -770,10 +913,18 @@ export function ContentScreen(): React.JSX.Element {
                       )
                     }
 
-                    if (content.name === MU_LUNG_DOJO_NAME) {
+                    if (content.name.startsWith(MAPLE_UNION_PREFIX)) {
                       return (
                         <li key={content.name}>
-                          <MuLungDojoCard content={content} />
+                          <MapleUnionDragonCard content={content} />
+                        </li>
+                      )
+                    }
+
+                    if (matchWeeklyQuestRegionSlug(stripWeeklyQuestPrefix(content.name)) !== null) {
+                      return (
+                        <li key={content.name}>
+                          <WeeklyQuestCard content={content} />
                         </li>
                       )
                     }

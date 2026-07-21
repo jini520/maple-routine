@@ -1,19 +1,19 @@
 [
-  { "region": "소멸의 여로", "backgroundSlug": "vanishingJourney" },
-  { "region": "츄츄 아일랜드", "backgroundSlug": "chuchuIsland" },
-  { "region": "레헬른", "backgroundSlug": "lachelein" },
+  { "region": "소멸의 여로", "backgroundSlug": "roadOfVanishing" },
+  { "region": "츄츄 아일랜드", "backgroundSlug": "chewChew" },
+  { "region": "레헬른", "backgroundSlug": "lacheln" },
   { "region": "아르카나", "backgroundSlug": "arcana" },
   { "region": "모라스", "backgroundSlug": "morass" },
   { "region": "에스페라", "backgroundSlug": "esfera" },
-  { "region": "문브릿지", "backgroundSlug": "moonbridge" },
-  { "region": "고통의 미궁", "backgroundSlug": "labyrinthOfSuffering" },
+  { "region": "문브릿지", "backgroundSlug": "moonBridge" },
+  { "region": "고통의 미궁", "backgroundSlug": "theLabyrinthOfSuffering" },
   { "region": "리멘", "backgroundSlug": "limen" },
   { "region": "세르니움", "backgroundSlug": "cernium" },
-  { "region": "호텔 아르크스", "backgroundSlug": "hotelArcus" },
+  { "region": "호텔 아르크스", "backgroundSlug": "Arcs" },
   { "region": "오디움", "backgroundSlug": "odium" },
   { "region": "도원경", "backgroundSlug": "dowonkyung" },
   { "region": "아르테리아", "backgroundSlug": "arteria" },
   { "region": "카르시온", "backgroundSlug": "carcion" },
   { "region": "탈라하트", "backgroundSlug": "tallahart" },
-  { "region": "기어드락", "backgroundSlug": "geardrock" }
+  { "region": "기어드락", "backgroundSlug": "geardrak" }
 ]

@@ -13,7 +13,9 @@ import {
   GuildFlagRaceCard,
   GuildMissionPointsCard,
   GuildUndergroundWaterwayCard,
+  MapleUnionDragonCard,
   MonsterParkCard,
+  WeeklyQuestCard,
 } from './ContentScreen'
 
 const MONSTER_PARK_BACKGROUND_SLUG = 'monsterPark'
@@ -27,7 +29,7 @@ const MONSTER_PARK_CONTENT: DailyContent = {
 }
 
 function weeklyContent(name: string, overrides: Partial<WeeklyContent> = {}): WeeklyContent {
-  return { name, kind: 'contents', isRegistered: true, nowCount: 0, maxCount: 0, ...overrides }
+  return { name, kind: 'contents', isRegistered: true, nowCount: 0, maxCount: 0, questState: null, ...overrides }
 }
 
 const EPIC_DUNGEON_PREVIEW_ENTRIES = [
@@ -39,6 +41,26 @@ const EPIC_DUNGEON_PREVIEW_ENTRIES = [
 const GUILD_PREVIEW_UNDERGROUND_WATERWAY = weeklyContent('[길드] 지하 수로', { nowCount: 13416 })
 const GUILD_PREVIEW_MISSION_POINTS = weeklyContent('[길드] 주간 미션 포인트', { nowCount: 10, maxCount: 10 })
 const GUILD_PREVIEW_FLAG_RACE = weeklyContent('[길드] 플래그 레이스')
+
+// roadOfVanishing(성실한 조사에 대한 보답)은 ALL_QUESTS(소멸의 여로)와 슬러그가 같아 크롭
+// 조정기를 여기 따로 두지 않는다 — 같은 slug는 daily-quest-region-crops.json을 공유한다.
+const WEEKLY_QUEST_PREVIEW_ENTRIES = [
+  {
+    label: '크리티아스',
+    slug: 'critias',
+    content: weeklyContent('[주간 퀘스트] 크리티아스 주간 임무', { questState: 1 }),
+  },
+  {
+    label: '타락한 세계수',
+    slug: 'fallenWorldTree',
+    content: weeklyContent('[주간 퀘스트] 타락한 세계수 주간 임무', { questState: 2 }),
+  },
+  { label: '헤이븐', slug: 'haven', content: weeklyContent('[주간 퀘스트] 헤이븐 주간 임무장', { questState: 0 }) },
+  { label: '무릉도장', slug: 'muruengRaid', content: weeklyContent('무릉도장', { nowCount: 37, maxCount: 100 }) },
+]
+
+const MAPLE_UNION_DRAGON_SLUG = 'stunDragon'
+const MAPLE_UNION_PREVIEW_CONTENT = weeklyContent('[메이플 유니온] 주간 드래곤 퇴치', { questState: 2 })
 
 // 임시 디버그 화면 — src/data/daily-quest-region-crops.json 값을 지역별로 눈으로 맞춰볼 수 있도록
 // 캐릭터/Nexon API 데이터 없이 daily-quest-regions.json에 있는 모든 지역 카드를 한 번에 보여주고,
@@ -347,6 +369,23 @@ export function DailyQuestCardPreview(): React.JSX.Element {
         slug="flagRace"
         initialCrop={getDailyQuestRegionCrop('flagRace')}
         renderCard={(crop) => <GuildFlagRaceCard content={GUILD_PREVIEW_FLAG_RACE} crop={crop} />}
+      />
+
+      {WEEKLY_QUEST_PREVIEW_ENTRIES.map((entry) => (
+        <SlugCropAdjuster
+          key={entry.slug}
+          label={entry.label}
+          slug={entry.slug}
+          initialCrop={getDailyQuestRegionCrop(entry.slug)}
+          renderCard={(crop) => <WeeklyQuestCard content={entry.content} crop={crop} />}
+        />
+      ))}
+
+      <SlugCropAdjuster
+        label="메이플 유니온 드래곤"
+        slug={MAPLE_UNION_DRAGON_SLUG}
+        initialCrop={getBossPortraitCrop(MAPLE_UNION_DRAGON_SLUG)}
+        renderCard={(crop) => <MapleUnionDragonCard content={MAPLE_UNION_PREVIEW_CONTENT} crop={crop} />}
       />
 
       {ALL_QUESTS.map((content) => (

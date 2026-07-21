@@ -23,6 +23,7 @@ describe('getBossPortraitUrl', () => {
     expect(url).not.toBeNull()
     expect(url).toEqual(expect.stringContaining('senya'))
   })
+
 })
 
 describe('getBossPortraitCrop', () => {

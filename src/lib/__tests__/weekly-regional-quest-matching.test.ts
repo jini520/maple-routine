@@ -3,9 +3,9 @@ import { matchWeeklyRegionalQuestSlug } from '../weekly-regional-quest-matching'
 
 describe('matchWeeklyRegionalQuestSlug', () => {
   const cases: Array<[string, string]> = [
-    ['에르다 스펙트럼', 'vanishingJourney'],
-    ['배고픈 무토', 'chuchuIsland'],
-    ['미드나잇 체이서', 'lachelein'],
+    ['에르다 스펙트럼', 'roadOfVanishing'],
+    ['배고픈 무토', 'chewChew'],
+    ['미드나잇 체이서', 'lacheln'],
     ['스피릿 세이비어', 'arcana'],
     ['엔하임 디펜스', 'morass'],
     ['프로텍트 에스페라', 'esfera'],

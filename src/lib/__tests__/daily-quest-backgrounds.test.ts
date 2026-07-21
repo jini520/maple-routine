@@ -6,11 +6,11 @@ describe('getDailyQuestBackgroundUrl', () => {
     expect(getDailyQuestBackgroundUrl(null)).toBeNull()
   })
 
-  it('실제로 존재하는 slug면 URL을 반환한다 (lachelein -> lachelein.webp)', () => {
-    const url = getDailyQuestBackgroundUrl('lachelein')
+  it('실제로 존재하는 slug면 URL을 반환한다 (lacheln -> lacheln.webp)', () => {
+    const url = getDailyQuestBackgroundUrl('lacheln')
 
     expect(url).not.toBeNull()
-    expect(url).toEqual(expect.stringContaining('lachelein'))
+    expect(url).toEqual(expect.stringContaining('lacheln'))
   })
 
   it('존재하지 않는 slug면 null을 반환한다', () => {

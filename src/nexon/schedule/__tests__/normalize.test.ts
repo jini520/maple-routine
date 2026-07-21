@@ -96,6 +96,7 @@ describe('normalizeSchedulerCharacterState', () => {
       isRegistered: false,
       nowCount: 0,
       maxCount: 0,
+      questState: 0,
     })
   })
 
@@ -110,6 +111,20 @@ describe('normalizeSchedulerCharacterState', () => {
       maxCount: 0,
       questState: 1,
     })
+  })
+
+  it('주간 quest_state 문자열도 일간과 동일하게 숫자로 파싱한다', () => {
+    const result = normalizeSchedulerCharacterState(baseWire)
+
+    expect(result.weeklyContents[0]).toEqual({
+      name: '에픽 던전 : 악몽선경',
+      kind: 'contents',
+      isRegistered: true,
+      nowCount: 5,
+      maxCount: 0,
+      questState: null,
+    })
+    expect(result.weeklyContents[1].questState).toBe(0)
   })
 
   it('difficulty 영문 표기를 한글로, cycle을 weekly/monthly로 변환한다', () => {
