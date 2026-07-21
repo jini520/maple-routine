@@ -28,9 +28,8 @@ function toKstWallClock(date: Date): Date {
  * 보스 수익 기록의 unique key(ocid+boss+difficulty+기간)에 쓰이는 기간을 계산한다.
  *
  * - weekly: 가장 최근 주간 리셋(KST 목요일 00:00, lib/reset-clock)의 KST 날짜를 periodKey로 쓴다.
- * - monthly: 월간 보스(검은마법사)의 실제 Nexon 서버 리셋 시각은 아직 실측 확인되지 않았다
- *   (PRD.md "확인이 필요한 사항" #36). 확정 전까지는 KST 기준 매월 1일 00:00을 리셋 경계로
- *   "가정"한다 — 실측 결과가 다르게 나오면 이 monthly 분기만 수정하면 되도록 격리해뒀다.
+ * - monthly: 월간 보스(검은마법사)의 Nexon 서버 리셋 시각은 KST 기준 매월 1일 00:00으로
+ *   확정됐다(2026-07-21, ADR-030). 이전에는 실측 전 "가정"이었으나 이제 확정 사실이다.
  */
 export function getCurrentBossProfitPeriod(cycle: BossCycle, now: Date): BossProfitPeriod {
   if (cycle === 'weekly') {

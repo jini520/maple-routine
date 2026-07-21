@@ -1,6 +1,7 @@
 import { fetchCharacterBasic, fetchCharacterList } from '../../nexon/character'
 import { NexonAuthError, NexonRateLimitError } from '../../nexon/errors'
 import { fetchSchedulerCharacterState } from '../../nexon/schedule'
+import { mergeSchedulerState } from '../../lib/scheduler-merge'
 import { compareByName } from '../onboarding/representative-character'
 import { getAuthConfig } from '../../storage/api-key'
 import {
@@ -9,6 +10,12 @@ import {
   setCachedCharacterBasic,
 } from '../../storage/character-basic-cache'
 import { getCachedSchedulerState, setCachedSchedulerState } from '../../storage/scheduler-cache'
+import {
+  getAccountSharedProgress,
+  getWorldSharedProgress,
+  setAccountSharedProgressEntry,
+  setWorldSharedProgressEntry,
+} from '../../storage/shared-progress-cache'
 import type { CharacterPickerEntry, MapleCharacter, SchedulerCharacterState } from '../../types'
 
 export type ScheduleSyncError =
@@ -39,6 +46,7 @@ function toScheduleSyncError(error: unknown): ScheduleSyncError {
 
 async function resolveRegisteredCharacters(): Promise<{
   apiKey: string
+  accountId: string
   characters: MapleCharacter[]
 }> {
   const authConfig = await getAuthConfig()
@@ -54,7 +62,7 @@ async function resolveRegisteredCharacters(): Promise<{
     throw new Error('getRegisteredCharacters: 선택된 계정을 찾을 수 없습니다')
   }
 
-  return { apiKey: authConfig.apiKey, characters: account.characters }
+  return { apiKey: authConfig.apiKey, accountId: authConfig.selectedAccountId, characters: account.characters }
 }
 
 export async function getRegisteredCharacters(): Promise<MapleCharacter[]> {
@@ -193,16 +201,47 @@ async function buildFallbackResult(
   }
 }
 
-async function syncOneCharacter(apiKey: string, character: MapleCharacter): Promise<CharacterScheduleSync> {
+// ADR-030: fetch 자체는 성공했지만 캐릭터가 리셋 이후 미접속이라 daily/weekly/boss 섹션이
+// 비어있을 수 있고, 몬스터파크·에픽 던전처럼 월드/계정 전체가 공유하는 콘텐츠도 있다 — 이 두
+// 문제를 mergeSchedulerState(순수 함수, lib/scheduler-merge)가 흡수한 "실효 상태"를 캐싱·반환한다.
+async function syncOneCharacter(
+  apiKey: string,
+  character: MapleCharacter,
+  accountId: string,
+): Promise<CharacterScheduleSync> {
   try {
-    const state = await fetchSchedulerCharacterState(apiKey, character.ocid)
+    const fresh = await fetchSchedulerCharacterState(apiKey, character.ocid)
+    const [previousCache, worldLedger, accountLedger] = await Promise.all([
+      getCachedSchedulerState(character.ocid),
+      getWorldSharedProgress(fresh.world),
+      getAccountSharedProgress(accountId),
+    ])
+
+    const { characterState, worldLedgerUpdates, accountLedgerUpdates } = mergeSchedulerState({
+      previous: previousCache?.state ?? null,
+      fresh,
+      worldLedger,
+      accountLedger,
+      now: new Date(),
+    })
+
     const syncedAt = new Date().toISOString()
-    await setCachedSchedulerState(character.ocid, { state, syncedAt })
+
+    await Promise.all([
+      setCachedSchedulerState(character.ocid, { state: characterState, syncedAt }),
+      ...Object.entries(worldLedgerUpdates).map(([name, entry]) =>
+        setWorldSharedProgressEntry(characterState.world, name, entry),
+      ),
+      ...Object.entries(accountLedgerUpdates).map(([name, entry]) =>
+        setAccountSharedProgressEntry(accountId, name, entry),
+      ),
+    ])
+
     return {
       ocid: character.ocid,
       characterName: character.name,
       world: character.world,
-      state,
+      state: characterState,
       syncedAt,
       isStale: false,
       error: null,
@@ -229,14 +268,14 @@ export async function syncSchedules(
     return []
   }
 
-  const { apiKey, characters } = await resolveRegisteredCharacters()
+  const { apiKey, accountId, characters } = await resolveRegisteredCharacters()
   const targetCharacters = characters.filter((character) => ocids.includes(character.ocid))
   const total = targetCharacters.length
 
   onProgress?.(0, total)
 
   const [first, ...rest] = targetCharacters
-  const firstResult = await syncOneCharacter(apiKey, first)
+  const firstResult = await syncOneCharacter(apiKey, first, accountId)
   let completed = 1
   onProgress?.(completed, total)
 
@@ -253,7 +292,7 @@ export async function syncSchedules(
 
   const restResults = await Promise.all(
     rest.map(async (character) => {
-      const result = await syncOneCharacter(apiKey, character)
+      const result = await syncOneCharacter(apiKey, character, accountId)
       completed += 1
       onProgress?.(completed, total)
       return result

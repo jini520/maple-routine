@@ -155,4 +155,80 @@ describe('normalizeSchedulerCharacterState', () => {
     expect(result.bossContents.find((boss) => boss.name === '힐라')).toBeUndefined()
     expect(result.bossContents).toHaveLength(2)
   })
+
+  it('섹션에 내용이 있으면 stale 플래그가 전부 false다', () => {
+    const result = normalizeSchedulerCharacterState(baseWire)
+
+    expect(result.isDailyStale).toBe(false)
+    expect(result.isWeeklyStale).toBe(false)
+    expect(result.isWeeklyBossStale).toBe(false)
+    expect(result.isMonthlyBossStale).toBe(false)
+  })
+})
+
+describe('normalizeSchedulerCharacterState — 미접속으로 인한 누락 (ADR-030)', () => {
+  const minimalWire: NexonSchedulerCharacterStateWire = {
+    date: '2026-07-21T00:00+09:00',
+    character_name: '낟낟',
+    world_name: '엘리시움',
+    character_level: 293,
+    character_class: '렌',
+    weekly_boss_clear_count: 0,
+    weekly_boss_clear_limit_count: 0,
+  }
+
+  it('daily_contents/weekly_contents/boss_contents 필드 자체가 없어도 크래시 없이 빈 배열을 반환한다', () => {
+    const result = normalizeSchedulerCharacterState(minimalWire)
+
+    expect(result.dailyContents).toEqual([])
+    expect(result.weeklyContents).toEqual([])
+    expect(result.bossContents).toEqual([])
+  })
+
+  it('필드가 없으면 4개 stale 플래그가 모두 true다', () => {
+    const result = normalizeSchedulerCharacterState(minimalWire)
+
+    expect(result.isDailyStale).toBe(true)
+    expect(result.isWeeklyStale).toBe(true)
+    expect(result.isWeeklyBossStale).toBe(true)
+    expect(result.isMonthlyBossStale).toBe(true)
+  })
+
+  it('필드가 빈 배열([])로 와도 필드가 없을 때와 동일하게 stale로 취급한다', () => {
+    const result = normalizeSchedulerCharacterState({
+      ...minimalWire,
+      daily_contents: [],
+      weekly_contents: [],
+      boss_contents: [],
+    })
+
+    expect(result.isDailyStale).toBe(true)
+    expect(result.isWeeklyStale).toBe(true)
+    expect(result.isWeeklyBossStale).toBe(true)
+    expect(result.isMonthlyBossStale).toBe(true)
+  })
+
+  it('boss_contents에 bossWeekly만 있으면 isWeeklyBossStale만 false다', () => {
+    const result = normalizeSchedulerCharacterState({
+      ...minimalWire,
+      boss_contents: [
+        { content_name: '스우', difficulty: 'hard', cycle: 'bossWeekly', registration_flag: 'true', complete_flag: 'false' },
+      ],
+    })
+
+    expect(result.isWeeklyBossStale).toBe(false)
+    expect(result.isMonthlyBossStale).toBe(true)
+  })
+
+  it('boss_contents에 bossMonthly만 있으면 isMonthlyBossStale만 false다', () => {
+    const result = normalizeSchedulerCharacterState({
+      ...minimalWire,
+      boss_contents: [
+        { content_name: '검은 마법사', difficulty: 'extreme', cycle: 'bossMonthly', registration_flag: 'true', complete_flag: 'true' },
+      ],
+    })
+
+    expect(result.isWeeklyBossStale).toBe(true)
+    expect(result.isMonthlyBossStale).toBe(false)
+  })
 })

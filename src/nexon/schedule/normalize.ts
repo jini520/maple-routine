@@ -58,18 +58,28 @@ function normalizeBossContent(wire: NexonBossContentWire): BossContent | null {
 export function normalizeSchedulerCharacterState(
   wire: NexonSchedulerCharacterStateWire,
 ): SchedulerCharacterState {
+  // ADR-030: 캐릭터가 해당 리셋 주기 이후 접속하지 않으면 이 필드들이 비거나(빈 배열) 아예
+  // 없이(undefined) 온다. 두 경우를 동일하게 "이 섹션은 지금 신뢰할 수 없음"으로 취급한다.
+  const dailyContentsWire = wire.daily_contents ?? []
+  const weeklyContentsWire = wire.weekly_contents ?? []
+  const bossContentsWire = wire.boss_contents ?? []
+
   return {
     asOf: wire.date,
     characterName: wire.character_name,
     world: wire.world_name,
     level: wire.character_level,
     jobClass: wire.character_class,
-    dailyContents: wire.daily_contents.map(normalizeDailyContent),
-    weeklyContents: wire.weekly_contents.map(normalizeWeeklyContent),
-    bossContents: wire.boss_contents
+    dailyContents: dailyContentsWire.map(normalizeDailyContent),
+    weeklyContents: weeklyContentsWire.map(normalizeWeeklyContent),
+    bossContents: bossContentsWire
       .map(normalizeBossContent)
       .filter((content): content is BossContent => content !== null),
     weeklyBossClearCount: wire.weekly_boss_clear_count,
     weeklyBossClearLimitCount: wire.weekly_boss_clear_limit_count,
+    isDailyStale: dailyContentsWire.length === 0,
+    isWeeklyStale: weeklyContentsWire.length === 0,
+    isWeeklyBossStale: !bossContentsWire.some((boss) => boss.cycle === 'bossWeekly'),
+    isMonthlyBossStale: !bossContentsWire.some((boss) => boss.cycle === 'bossMonthly'),
   }
 }
