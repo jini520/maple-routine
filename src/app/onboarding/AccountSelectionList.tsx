@@ -72,12 +72,12 @@ export function AccountSelectionList(props: AccountSelectionListProps): React.JS
                   )}
                 </span>
                 <span className="flex min-w-0 flex-col">
-                  <span className="flex items-center gap-1 text-sm text-text">
+                  <span className="flex items-center gap-0.5 text-sm text-text">
                     {emblemUrl !== null && (
                       <img
                         src={emblemUrl}
                         alt={representative.world}
-                        className="h-[18px] w-auto shrink-0 object-contain"
+                        className="h-[22px] w-auto shrink-0 object-contain"
                       />
                     )}
                     <span className="min-w-0 truncate">

@@ -18,14 +18,14 @@ export function CharacterSelectDropdown(props: CharacterSelectDropdownProps): Re
         <img
           src={emblemUrl}
           alt={selected?.world ?? ''}
-          className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-auto -translate-y-1/2 object-contain"
+          className="pointer-events-none absolute left-3 top-1/2 h-[22px] w-auto -translate-y-1/2 object-contain"
         />
       )}
       <select
         value={props.selectedOcid}
         onChange={(event) => props.onSelect(event.target.value)}
         className={`min-w-[160px] rounded-[10px] border border-border bg-surface py-3 text-sm text-text ${
-          emblemUrl !== null ? 'pl-9 pr-4' : 'px-4'
+          emblemUrl !== null ? 'pl-8 pr-4' : 'px-4'
         }`}
       >
         {props.characters.map((character) => (

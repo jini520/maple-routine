@@ -98,12 +98,12 @@ export function CharacterTrackingPicker(props: CharacterTrackingPickerProps): Re
                     )}
                   </span>
                 </span>
-                <span className="flex w-full items-center justify-center gap-1">
+                <span className="flex w-full items-center justify-center gap-0.5">
                   {emblemUrl !== null && (
                     <img
                       src={emblemUrl}
                       alt={entry.world ?? ''}
-                      className="h-3.5 w-auto shrink-0 object-contain"
+                      className="h-[17px] w-auto shrink-0 object-contain"
                     />
                   )}
                   <span className="min-w-0 truncate text-xs font-semibold text-text">{entry.name}</span>
