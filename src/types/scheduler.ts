@@ -19,6 +19,7 @@ export interface WeeklyContent {
   isRegistered: boolean
   nowCount: number
   maxCount: number
+  questState: 0 | 1 | 2 | null
 }
 
 export interface BossContent {

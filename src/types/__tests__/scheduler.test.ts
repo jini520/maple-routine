@@ -48,6 +48,7 @@ describe('domain 타입 샘플 객체', () => {
       isRegistered: true,
       nowCount: 5,
       maxCount: 0,
+      questState: null,
     }
     expect(sample.kind).toBe('contents')
   })

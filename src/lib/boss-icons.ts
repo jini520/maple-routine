@@ -13,10 +13,13 @@ const bossPortraitModules = import.meta.glob('../assets/bosses/*.{webp,png}', {
   import: 'default',
 }) as Record<string, string>
 
+// macOS 파일시스템은 한글 파일명을 NFD(분해형)로 저장하지만 소스 코드의 문자열 리터럴은
+// 보통 NFC(완성형)라 육안으로 같아 보여도 슬러그 문자열이 일치하지 않는다 — 저장/조회 양쪽을
+// NFC로 정규화해 맞춘다.
 const bossPortraitUrlsBySlug: Record<string, string> = Object.fromEntries(
   Object.entries(bossPortraitModules).map(([path, url]) => {
     const fileName = path.slice(path.lastIndexOf('/') + 1)
-    const slug = fileName.slice(0, fileName.lastIndexOf('.'))
+    const slug = fileName.slice(0, fileName.lastIndexOf('.')).normalize('NFC')
     return [slug, url]
   }),
 )
@@ -33,17 +36,17 @@ const DEFAULT_CROP: BossPortraitCrop = { size: 'cover', position: 'center' }
 export function getBossPortraitUrl(portraitSlug: string | null): string | null {
   if (portraitSlug === null) return null
 
-  return bossPortraitUrlsBySlug[portraitSlug] ?? null
+  return bossPortraitUrlsBySlug[portraitSlug.normalize('NFC')] ?? null
 }
 
 export function getBossPortraitCrop(portraitSlug: string | null): BossPortraitCrop {
   if (portraitSlug === null) return DEFAULT_CROP
 
-  return BOSS_PORTRAIT_CROPS[portraitSlug] ?? DEFAULT_CROP
+  return BOSS_PORTRAIT_CROPS[portraitSlug.normalize('NFC')] ?? DEFAULT_CROP
 }
 
 export function getBossPortraitIconCrop(portraitSlug: string | null): BossPortraitCrop {
   if (portraitSlug === null) return DEFAULT_CROP
 
-  return BOSS_PORTRAIT_ICON_CROPS[portraitSlug] ?? DEFAULT_CROP
+  return BOSS_PORTRAIT_ICON_CROPS[portraitSlug.normalize('NFC')] ?? DEFAULT_CROP
 }

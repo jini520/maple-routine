@@ -129,7 +129,7 @@ describe('ContentScreen', () => {
             { name: '미등록 콘텐츠', kind: 'contents', isRegistered: false, nowCount: 0, maxCount: 1, questState: null },
           ],
           weeklyContents: [
-            { name: '에픽 던전 : 악몽선경', kind: 'contents', isRegistered: true, nowCount: 5, maxCount: 0 },
+            { name: '에픽 던전 : 악몽선경', kind: 'contents', isRegistered: true, nowCount: 5, maxCount: 0, questState: null },
           ],
         }),
       ],
@@ -152,13 +152,14 @@ describe('ContentScreen', () => {
           ocid: 'ocid-1',
           dailyContents: [{ name: '몬스터파크', kind: 'contents', isRegistered: true, nowCount: 7, maxCount: 14, questState: null }],
           weeklyContents: [
-            { name: '에픽 던전 : 악몽선경', kind: 'contents', isRegistered: true, nowCount: 5, maxCount: 0 },
+            { name: '에픽 던전 : 악몽선경', kind: 'contents', isRegistered: true, nowCount: 5, maxCount: 0, questState: null },
             {
               name: '[메이플 유니온] 주간 드래곤 퇴치',
               kind: 'quest',
               isRegistered: false,
               nowCount: 0,
               maxCount: 0,
+              questState: 0,
             },
           ],
         }),
@@ -379,7 +380,7 @@ describe('ContentScreen', () => {
     expect(screen.getByText('레헬른의 평온한 밤')).toBeInTheDocument()
     expect(screen.queryByText(/\[일일 퀘스트\]/)).not.toBeInTheDocument()
     expect(screen.getByText('진행 중')).toBeInTheDocument()
-    expect(screen.getByAltText('')).toHaveAttribute('src', expect.stringContaining('lachelein'))
+    expect(screen.getByAltText('')).toHaveAttribute('src', expect.stringContaining('lacheln'))
   })
 
   it('ADR-020: 몬스터파크는 배경+아이콘 카드로 렌더링되고 진행률 뱃지·진행률 바를 유지한다', async () => {
@@ -414,7 +415,7 @@ describe('ContentScreen', () => {
           ocid: 'ocid-1',
           dailyContents: [],
           weeklyContents: [
-            { name: '에픽 던전 : 악몽선경', kind: 'contents', isRegistered: true, nowCount: 5, maxCount: 0 },
+            { name: '에픽 던전 : 악몽선경', kind: 'contents', isRegistered: true, nowCount: 5, maxCount: 0, questState: null },
           ],
           isStale: false,
         }),
@@ -439,8 +440,8 @@ describe('ContentScreen', () => {
         character({
           ocid: 'ocid-1',
           weeklyContents: [
-            { name: '에픽 던전 : 하이마운틴', kind: 'contents', isRegistered: true, nowCount: 0, maxCount: 0 },
-            { name: '에픽 던전 : 앵글러 컴퍼니', kind: 'contents', isRegistered: true, nowCount: 5, maxCount: 0 },
+            { name: '에픽 던전 : 하이마운틴', kind: 'contents', isRegistered: true, nowCount: 0, maxCount: 0, questState: null },
+            { name: '에픽 던전 : 앵글러 컴퍼니', kind: 'contents', isRegistered: true, nowCount: 5, maxCount: 0, questState: null },
           ],
         }),
       ],
@@ -464,7 +465,9 @@ describe('ContentScreen', () => {
       characters: [
         character({
           ocid: 'ocid-1',
-          weeklyContents: [{ name: '에르다 스펙트럼', kind: 'contents', isRegistered: true, nowCount: 1, maxCount: 1 }],
+          weeklyContents: [
+            { name: '에르다 스펙트럼', kind: 'contents', isRegistered: true, nowCount: 1, maxCount: 1, questState: null },
+          ],
         }),
       ],
     })
@@ -475,17 +478,19 @@ describe('ContentScreen', () => {
 
     expect(screen.getByText('에르다 스펙트럼')).toBeInTheDocument()
     expect(screen.getByText('완료')).toBeInTheDocument()
-    expect(screen.getByAltText('')).toHaveAttribute('src', expect.stringContaining('vanishingJourney'))
+    expect(screen.getByAltText('')).toHaveAttribute('src', expect.stringContaining('roadOfVanishing'))
   })
 
-  it('ADR-021: 무릉도장은 배경·뱃지 없이 이름만 있는 카드로 표시된다', async () => {
+  it('무릉도장은 전용 아이콘·배경과 함께 now_count를 "N층"으로 보여준다(quest_state가 아닌 도달 층수)', async () => {
     mockStore({
       status: 'loaded',
       trackedOcids: ['ocid-1'],
       characters: [
         character({
           ocid: 'ocid-1',
-          weeklyContents: [{ name: '무릉도장', kind: 'contents', isRegistered: true, nowCount: 0, maxCount: 0 }],
+          weeklyContents: [
+            { name: '무릉도장', kind: 'contents', isRegistered: true, nowCount: 37, maxCount: 100, questState: null },
+          ],
         }),
       ],
     })
@@ -495,8 +500,278 @@ describe('ContentScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: '주간' }))
 
     expect(screen.getByText('무릉도장')).toBeInTheDocument()
-    expect(screen.queryByRole('img')).not.toBeInTheDocument()
+    expect(screen.getByText('37층')).toBeInTheDocument()
     expect(screen.queryByText('완료')).not.toBeInTheDocument()
+    expect(screen.getByAltText('')).toHaveAttribute('src', expect.stringContaining('muruengRaid'))
+  })
+
+  it('무릉도장은 참여 전(now_count 0)이면 "시작 안함"을 보여준다', async () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [
+        character({
+          ocid: 'ocid-1',
+          weeklyContents: [
+            { name: '무릉도장', kind: 'contents', isRegistered: true, nowCount: 0, maxCount: 100, questState: null },
+          ],
+        }),
+      ],
+    })
+
+    render(<ContentScreen />)
+    await screen.findByRole('combobox')
+    fireEvent.click(screen.getByRole('button', { name: '주간' }))
+
+    expect(screen.getByText('시작 안함')).toBeInTheDocument()
+  })
+
+  it('"[주간 퀘스트] " 접두어가 붙은 지역 콘텐츠는 접두어 없이 지역 아이콘·배경으로 표시된다', async () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [
+        character({
+          ocid: 'ocid-1',
+          weeklyContents: [
+            {
+              name: '[주간 퀘스트] 크리티아스 주간 임무',
+              kind: 'contents',
+              isRegistered: true,
+              nowCount: 0,
+              maxCount: 0,
+              questState: 1,
+            },
+          ],
+        }),
+      ],
+    })
+
+    render(<ContentScreen />)
+    await screen.findByRole('combobox')
+    fireEvent.click(screen.getByRole('button', { name: '주간' }))
+
+    expect(screen.getByText('크리티아스 주간 임무')).toBeInTheDocument()
+    expect(screen.queryByText(/\[주간 퀘스트\]/)).not.toBeInTheDocument()
+    expect(screen.getByText('진행 중')).toBeInTheDocument()
+    expect(screen.getByAltText('')).toHaveAttribute('src', expect.stringContaining('critias'))
+  })
+
+  it('보상형 주간 퀘스트("꾸준한 의뢰에 대한 보답")는 지역명이 포함되지 않아도 헤이븐으로 매칭된다', async () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [
+        character({
+          ocid: 'ocid-1',
+          weeklyContents: [
+            {
+              name: '[주간 퀘스트] 꾸준한 의뢰에 대한 보답',
+              kind: 'contents',
+              isRegistered: true,
+              nowCount: 0,
+              maxCount: 0,
+              questState: 0,
+            },
+          ],
+        }),
+      ],
+    })
+
+    render(<ContentScreen />)
+    await screen.findByRole('combobox')
+    fireEvent.click(screen.getByRole('button', { name: '주간' }))
+
+    expect(screen.getByText('꾸준한 의뢰에 대한 보답')).toBeInTheDocument()
+    expect(screen.getByText('시작 안함')).toBeInTheDocument()
+    expect(screen.getByAltText('')).toHaveAttribute('src', expect.stringContaining('haven'))
+  })
+
+  it('성실한 조사에 대한 보답은 quest_state=1일 때 now_count를 "N회 완료"로 보여준다', async () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [
+        character({
+          ocid: 'ocid-1',
+          weeklyContents: [
+            {
+              name: '[주간 퀘스트] 성실한 조사에 대한 보답',
+              kind: 'contents',
+              isRegistered: true,
+              nowCount: 0,
+              maxCount: 2,
+              questState: 1,
+            },
+          ],
+        }),
+      ],
+    })
+
+    render(<ContentScreen />)
+    await screen.findByRole('combobox')
+    fireEvent.click(screen.getByRole('button', { name: '주간' }))
+
+    expect(screen.getByText('0회 완료')).toBeInTheDocument()
+  })
+
+  it('성실한 조사에 대한 보답은 now_count가 1일 때 "1회 완료"로 보여준다', async () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [
+        character({
+          ocid: 'ocid-1',
+          weeklyContents: [
+            {
+              name: '[주간 퀘스트] 성실한 조사에 대한 보답',
+              kind: 'contents',
+              isRegistered: true,
+              nowCount: 1,
+              maxCount: 2,
+              questState: 1,
+            },
+          ],
+        }),
+      ],
+    })
+
+    render(<ContentScreen />)
+    await screen.findByRole('combobox')
+    fireEvent.click(screen.getByRole('button', { name: '주간' }))
+
+    expect(screen.getByText('1회 완료')).toBeInTheDocument()
+  })
+
+  it('성실한 조사에 대한 보답은 now_count가 max_count와 같으면 "완료"로 전환된다', async () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [
+        character({
+          ocid: 'ocid-1',
+          weeklyContents: [
+            {
+              name: '[주간 퀘스트] 성실한 조사에 대한 보답',
+              kind: 'contents',
+              isRegistered: true,
+              nowCount: 2,
+              maxCount: 2,
+              questState: 1,
+            },
+          ],
+        }),
+      ],
+    })
+
+    render(<ContentScreen />)
+    await screen.findByRole('combobox')
+    fireEvent.click(screen.getByRole('button', { name: '주간' }))
+
+    expect(screen.getByText('완료')).toBeInTheDocument()
+    expect(screen.queryByText(/회 완료/)).not.toBeInTheDocument()
+  })
+
+  it('"[메이플 유니온] " 항목은 접두어 없이 드래곤 보스 배경의 카테고리 카드로 표시된다', async () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [
+        character({
+          ocid: 'ocid-1',
+          weeklyContents: [
+            {
+              name: '[메이플 유니온] 주간 드래곤 퇴치',
+              kind: 'contents',
+              isRegistered: true,
+              nowCount: 0,
+              maxCount: 0,
+              questState: 0,
+            },
+            {
+              name: '[메이플 유니온] PC방 주간 드래곤 퇴치',
+              kind: 'contents',
+              isRegistered: true,
+              nowCount: 0,
+              maxCount: 0,
+              questState: 2,
+            },
+          ],
+        }),
+      ],
+    })
+
+    render(<ContentScreen />)
+    await screen.findByRole('combobox')
+    fireEvent.click(screen.getByRole('button', { name: '주간' }))
+
+    expect(screen.getAllByText('유니온')).toHaveLength(2)
+    expect(screen.getByText('주간 드래곤 퇴치')).toBeInTheDocument()
+    expect(screen.getByText('PC방 주간 드래곤 퇴치')).toBeInTheDocument()
+    expect(screen.getByText('시작 안함')).toBeInTheDocument()
+    expect(screen.getByText('완료')).toBeInTheDocument()
+  })
+
+  it('"[몬스터파크] 익스트림 몬스터파커에 도전해보겠나?"는 접두어 없이 몬스터파크 아이콘·배경과 quest_state 뱃지로 표시된다', async () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [
+        character({
+          ocid: 'ocid-1',
+          weeklyContents: [
+            {
+              name: '[몬스터파크] 익스트림 몬스터파커에 도전해보겠나?',
+              kind: 'contents',
+              isRegistered: true,
+              nowCount: 0,
+              maxCount: 0,
+              questState: 1,
+            },
+          ],
+        }),
+      ],
+    })
+
+    render(<ContentScreen />)
+    await screen.findByRole('combobox')
+    fireEvent.click(screen.getByRole('button', { name: '주간' }))
+
+    expect(screen.getByText('익스트림 몬스터파커에 도전해보겠나?')).toBeInTheDocument()
+    expect(screen.queryByText(/\[몬스터파크\]/)).not.toBeInTheDocument()
+    expect(screen.getByText('진행 중')).toBeInTheDocument()
+    expect(screen.getByAltText('')).toHaveAttribute('src', expect.stringContaining('monsterPark'))
+  })
+
+  it.each([
+    [0, '시작 안함'],
+    [2, '완료'],
+  ] as const)('익스트림 몬스터파커는 quest_state=%i면 "%s"을 보여준다', async (questState, label) => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [
+        character({
+          ocid: 'ocid-1',
+          weeklyContents: [
+            {
+              name: '[몬스터파크] 익스트림 몬스터파커에 도전해보겠나?',
+              kind: 'contents',
+              isRegistered: true,
+              nowCount: 0,
+              maxCount: 0,
+              questState,
+            },
+          ],
+        }),
+      ],
+    })
+
+    render(<ContentScreen />)
+    await screen.findByRole('combobox')
+    fireEvent.click(screen.getByRole('button', { name: '주간' }))
+
+    expect(screen.getByText(label)).toBeInTheDocument()
   })
 
   it('ADR-021 정정: 길드 지하 수로는 독립 카드로 표시되고 점수 뱃지를 보여준다', async () => {
@@ -506,7 +781,9 @@ describe('ContentScreen', () => {
       characters: [
         character({
           ocid: 'ocid-1',
-          weeklyContents: [{ name: '[길드] 지하 수로', kind: 'contents', isRegistered: true, nowCount: 13416, maxCount: 0 }],
+          weeklyContents: [
+            { name: '[길드] 지하 수로', kind: 'contents', isRegistered: true, nowCount: 13416, maxCount: 0, questState: null },
+          ],
         }),
       ],
     })
@@ -528,7 +805,9 @@ describe('ContentScreen', () => {
       characters: [
         character({
           ocid: 'ocid-1',
-          weeklyContents: [{ name: '[길드] 주간 미션 포인트', kind: 'contents', isRegistered: true, nowCount: 10, maxCount: 10 }],
+          weeklyContents: [
+            { name: '[길드] 주간 미션 포인트', kind: 'contents', isRegistered: true, nowCount: 10, maxCount: 10, questState: null },
+          ],
         }),
       ],
     })
@@ -550,7 +829,9 @@ describe('ContentScreen', () => {
       characters: [
         character({
           ocid: 'ocid-1',
-          weeklyContents: [{ name: '[길드] 플래그 레이스', kind: 'contents', isRegistered: true, nowCount: 1, maxCount: 0 }],
+          weeklyContents: [
+            { name: '[길드] 플래그 레이스', kind: 'contents', isRegistered: true, nowCount: 1, maxCount: 0, questState: null },
+          ],
         }),
       ],
     })
@@ -572,9 +853,9 @@ describe('ContentScreen', () => {
         character({
           ocid: 'ocid-1',
           weeklyContents: [
-            { name: '[길드] 주간 미션 포인트', kind: 'contents', isRegistered: false, nowCount: 0, maxCount: 0 },
-            { name: '[길드] 지하 수로', kind: 'contents', isRegistered: true, nowCount: 13416, maxCount: 0 },
-            { name: '[길드] 플래그 레이스', kind: 'contents', isRegistered: false, nowCount: 0, maxCount: 0 },
+            { name: '[길드] 주간 미션 포인트', kind: 'contents', isRegistered: false, nowCount: 0, maxCount: 0, questState: null },
+            { name: '[길드] 지하 수로', kind: 'contents', isRegistered: true, nowCount: 13416, maxCount: 0, questState: null },
+            { name: '[길드] 플래그 레이스', kind: 'contents', isRegistered: false, nowCount: 0, maxCount: 0, questState: null },
           ],
         }),
       ],

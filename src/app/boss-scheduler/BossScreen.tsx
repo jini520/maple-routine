@@ -89,6 +89,7 @@ export function BossCard(props: {
             backgroundImage: `url(${portraitUrl})`,
             backgroundSize: crop.size,
             backgroundPosition: crop.position,
+            backgroundRepeat: 'no-repeat',
             filter: 'saturate(.85) brightness(.8)',
             opacity: 0.65,
             maskImage,

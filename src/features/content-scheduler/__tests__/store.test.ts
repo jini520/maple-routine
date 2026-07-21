@@ -47,7 +47,7 @@ function dailyContent(name: string): DailyContent {
 }
 
 function weeklyContent(name: string): WeeklyContent {
-  return { name, kind: 'contents', isRegistered: true, nowCount: 1, maxCount: 3 }
+  return { name, kind: 'contents', isRegistered: true, nowCount: 1, maxCount: 3, questState: null }
 }
 
 function syncResult(overrides: Partial<CharacterScheduleSync> = {}): CharacterScheduleSync {

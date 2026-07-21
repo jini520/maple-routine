@@ -6,6 +6,23 @@ import type { MatchedBoss } from '../../lib/boss-matching'
 import { getBossPortraitCrop } from '../../lib/boss-icons'
 import { BossCard } from './BossScreen'
 
+// weekly-bosses.json에는 없지만(등록된 보스 랭킹 콘텐츠가 아니라 아직 용도가 정해지지 않은
+// 신규 이미지) 위치 조정이 필요한 단발 슬러그 — ContentScreen.tsx의 메이플 유니온 드래곤
+// 카드에서 이미 쓰는 5종 + 아직 어디서도 안 쓰는 무공(2026-07-21).
+const NEW_BOSS_PREVIEW_SLUGS = ['mugong', 'stunDragon', 'sparkyDragon', 'armorDragon', 'firehornDragon', 'hammerDragon']
+
+function buildNewBossPreviewEntries(): MatchedBoss[] {
+  return NEW_BOSS_PREVIEW_SLUGS.map((slug) => ({
+    apiName: slug,
+    difficulty: '노멀' as BossDifficulty,
+    cycle: 'weekly' as BossCycle,
+    isRegistered: true,
+    isComplete: false,
+    matchedBossName: slug,
+    portraitSlug: slug,
+  }))
+}
+
 // 임시 디버그 화면 — src/data/boss-portrait-crops.json 값을 보스별로 눈으로 맞춰볼 수 있도록
 // 캐릭터/Nexon API 데이터 없이 weekly-bosses.json에 있는 모든 보스 카드를 한 번에 보여주고,
 // 방향키/줌 버튼으로 미세 조정한 뒤 그 결과 값을 그대로 복사해 JSON에 반영할 수 있게 한다.
@@ -40,6 +57,7 @@ function buildAllBosses(): MatchedBoss[] {
 }
 
 const ALL_BOSSES = buildAllBosses()
+const NEW_BOSS_PREVIEW_ENTRIES = buildNewBossPreviewEntries()
 
 function parseScale(size: string): number {
   const match = /^(\d+(?:\.\d+)?)%/.exec(size)
@@ -171,6 +189,9 @@ export function BossCardPreview(): React.JSX.Element {
   return (
     <div className="p-4 space-y-3">
       <h1 className="text-lg font-semibold text-text">보스 카드 프리뷰 (임시 — 크롭 조정용)</h1>
+      {NEW_BOSS_PREVIEW_ENTRIES.map((boss) => (
+        <BossCropAdjuster key={boss.apiName} boss={boss} />
+      ))}
       {ALL_BOSSES.map((boss) => (
         <BossCropAdjuster key={boss.apiName} boss={boss} />
       ))}

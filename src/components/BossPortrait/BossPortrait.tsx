@@ -37,6 +37,7 @@ export function BossPortrait(props: BossPortraitProps): React.JSX.Element {
         backgroundImage: `url(${url})`,
         backgroundSize: crop.size,
         backgroundPosition: crop.position,
+        backgroundRepeat: 'no-repeat',
       }}
       className="shrink-0 rounded-full"
     />
