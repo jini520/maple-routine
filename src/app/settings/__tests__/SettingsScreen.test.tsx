@@ -182,4 +182,60 @@ describe('SettingsScreen', () => {
     expect(screen.getByText(/©\s*\d{4}\s*메이플 루틴/)).toBeInTheDocument()
     expect(screen.getByText('Data based on NEXON Open API')).toBeInTheDocument()
   })
+
+  it('하단 앱 버전은 빌드 시점 package.json이 아니라 현재 실행 중인 OTA 번들 버전을 표시한다', () => {
+    mockSettingsStore({})
+    mockThemeStore({})
+    mockedUseLiveUpdateStore.mockReturnValue({
+      currentVersion: '1.0.5',
+      status: 'idle',
+      availableVersion: null,
+      availableSize: null,
+      minNativeVersion: null,
+      downloadProgress: 0,
+      channel: 'production',
+      pending: null,
+      downloadedBundleId: null,
+      loadCurrentVersion: vi.fn(),
+      check: vi.fn(),
+      checkOnBoot: vi.fn(),
+      startDownload: vi.fn(),
+      confirmCellularDownload: vi.fn(),
+      apply: vi.fn(),
+      openStore: vi.fn(),
+      dismiss: vi.fn(),
+    })
+
+    render(<SettingsScreen />)
+
+    expect(screen.getByText('v1.0.5')).toBeInTheDocument()
+  })
+
+  it('현재 번들 버전을 알 수 없으면(web 등) package.json 버전으로 폴백한다', () => {
+    mockSettingsStore({})
+    mockThemeStore({})
+    mockedUseLiveUpdateStore.mockReturnValue({
+      currentVersion: null,
+      status: 'unsupported',
+      availableVersion: null,
+      availableSize: null,
+      minNativeVersion: null,
+      downloadProgress: 0,
+      channel: 'production',
+      pending: null,
+      downloadedBundleId: null,
+      loadCurrentVersion: vi.fn(),
+      check: vi.fn(),
+      checkOnBoot: vi.fn(),
+      startDownload: vi.fn(),
+      confirmCellularDownload: vi.fn(),
+      apply: vi.fn(),
+      openStore: vi.fn(),
+      dismiss: vi.fn(),
+    })
+
+    render(<SettingsScreen />)
+
+    expect(screen.getByText(/^v\d+\.\d+\.\d+$/)).toBeInTheDocument()
+  })
 })

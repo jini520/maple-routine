@@ -1,7 +1,12 @@
 #!/usr/bin/env node
 // Live Update(OTA) 번들 배포 스크립트 (ADR-022, 베타 채널 지원 ADR-024).
 //
-// 사용법: node scripts/publish-live-update.mjs <x.y.z> [--beta]
+// 사용법: node scripts/publish-live-update.mjs [--beta] [--min-native <x.y.z>]
+//
+// 배포 버전은 CLI 인자로 받지 않고 package.json의 version을 그대로 쓴다 — 버전을 CLI 인자로
+// 자유롭게 받으면 package.json을 안 올린 채 OTA만 배포할 수 있어, 빌드된 번들에 박히는
+// package.json 버전 표시(설정 화면 하단)가 실제 배포된 OTA 버전과 어긋나는 문제가 있었다.
+// 배포 전 package.json의 version부터 올려야 한다.
 //
 // 사전 준비: `gh auth login`으로 GitHub CLI 인증만 되어 있으면 된다(추가 계정 가입·결제 수단 불필요).
 // 이 저장소(REPO)에 고정 릴리스 태그를 하나 만들어 두고(--beta 없으면 live-update-latest,
@@ -34,22 +39,21 @@ export function parseArgs(argv) {
   // 앱이 설치된 네이티브가 더 낮으면 "스토어 업데이트 필요"로 분기한다(ADR-027 결정 7).
   const minNativeIdx = argv.indexOf('--min-native')
   const minNativeVersion = minNativeIdx >= 0 ? argv[minNativeIdx + 1] : undefined
-  const version = argv.find(
-    (arg, i) => arg !== '--beta' && arg !== '--min-native' && !(minNativeIdx >= 0 && i === minNativeIdx + 1),
-  )
-  return { version, isBeta, minNativeVersion }
+  return { isBeta, minNativeVersion }
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { version, isBeta, minNativeVersion } = parseArgs(process.argv.slice(2))
+  const { isBeta, minNativeVersion } = parseArgs(process.argv.slice(2))
+
+  const root = join(import.meta.dirname, '..')
+  const { version } = JSON.parse(readFileSync(join(root, 'package.json'), 'utf-8'))
   if (!version || !/^\d+\.\d+\.\d+$/.test(version)) {
-    console.error('사용법: node scripts/publish-live-update.mjs <x.y.z> [--beta] [--min-native <x.y.z>]')
+    console.error(`package.json의 version("${version}")이 x.y.z 형식이 아닙니다. 먼저 버전을 올려주세요.`)
     process.exit(1)
   }
 
   const RELEASE_TAG = resolveReleaseTag(isBeta)
 
-  const root = join(import.meta.dirname, '..')
   const workDir = mkdtempSync(join(tmpdir(), 'live-update-'))
   const zipPath = join(workDir, `${version}.zip`)
   const manifestPath = join(workDir, 'latest.json')

@@ -21,35 +21,27 @@ describe('resolveBuildScript', () => {
   })
 })
 
+// ADR-030(라이브 업데이트 후속): 배포 버전은 더 이상 CLI 인자로 받지 않는다 — package.json의
+// version과 실제 배포 버전이 어긋날 수 있었던 근본 원인이라, package.json에서만 읽도록 통일했다.
 describe('parseArgs', () => {
-  it('버전만 주어지면 isBeta는 false다', () => {
-    expect(parseArgs(['1.2.3'])).toEqual({ version: '1.2.3', isBeta: false, minNativeVersion: undefined })
+  it('아무 인자가 없으면 isBeta는 false다', () => {
+    expect(parseArgs([])).toEqual({ isBeta: false, minNativeVersion: undefined })
   })
 
-  it('--beta가 버전 뒤에 오면 인식한다', () => {
-    expect(parseArgs(['1.2.3', '--beta'])).toEqual({ version: '1.2.3', isBeta: true, minNativeVersion: undefined })
+  it('--beta를 인식한다', () => {
+    expect(parseArgs(['--beta'])).toEqual({ isBeta: true, minNativeVersion: undefined })
   })
 
-  it('--beta가 버전 앞에 와도 인식한다(위치 무관)', () => {
-    expect(parseArgs(['--beta', '1.2.3'])).toEqual({ version: '1.2.3', isBeta: true, minNativeVersion: undefined })
-  })
-
-  it('인자가 없으면 version은 undefined다', () => {
-    expect(parseArgs([])).toEqual({ version: undefined, isBeta: false, minNativeVersion: undefined })
-  })
-
-  it('--min-native <x.y.z>를 파싱하고 그 값을 version으로 오인하지 않는다', () => {
-    expect(parseArgs(['1.2.3', '--beta', '--min-native', '2.0.0'])).toEqual({
-      version: '1.2.3',
+  it('--min-native <x.y.z>를 파싱한다', () => {
+    expect(parseArgs(['--beta', '--min-native', '2.0.0'])).toEqual({
       isBeta: true,
       minNativeVersion: '2.0.0',
     })
   })
 
-  it('--min-native가 버전 앞에 와도 위치 무관하게 파싱한다', () => {
-    expect(parseArgs(['--min-native', '2.0.0', '1.2.3'])).toEqual({
-      version: '1.2.3',
-      isBeta: false,
+  it('--min-native가 --beta 앞에 와도 위치 무관하게 파싱한다', () => {
+    expect(parseArgs(['--min-native', '2.0.0', '--beta'])).toEqual({
+      isBeta: true,
       minNativeVersion: '2.0.0',
     })
   })
