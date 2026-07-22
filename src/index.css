@@ -27,6 +27,71 @@ body {
   }
 }
 
+/* MapleSpinner(트레일 링) 전용 — 잎 외곽선 둘레의 70% 구간만 계속 이동하는 comet 효과.
+   motion-reduce: 변형이 먹으려면 Tailwind v4 @utility로 등록해야 한다(일반 클래스는 캐스케이드 순서가 보장되지 않음). */
+@keyframes maple-trail {
+  to {
+    stroke-dashoffset: -300;
+  }
+}
+
+@utility animate-maple-trail {
+  animation: maple-trail 0.9s linear infinite;
+}
+
+/* MapleWaveProgress(내부 채우기 물결형) 전용 — 수위(level)는 percent에 맞춰 인라인 transform으로 직접
+   지정하고(결정형 진행률이라 무한 반복 애니메이션이 아님), 물결의 좌우 출렁임만 무한 반복시킨다. */
+@keyframes maple-wave-scroll {
+  to {
+    transform: translateX(-127px);
+  }
+}
+
+.maple-wave-outline {
+  stroke: var(--color-primary-text);
+  stroke-width: 2.5;
+  opacity: 0.55;
+}
+
+.maple-wave-level {
+  transition: transform 0.4s ease;
+}
+
+.maple-wave-water-line {
+  transition: y 0.4s ease;
+}
+
+.maple-wave-shape {
+  fill: var(--color-primary);
+}
+
+.maple-wave-scroll {
+  animation: maple-wave-scroll 2.6s linear infinite;
+}
+
+.maple-wave-progress-text {
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 물이 채워지지 않은 영역의 글자색(테마별 브랜드 색) — 채워진 영역과는 반전 관계 */
+.maple-wave-progress-text--empty {
+  fill: var(--color-primary-text);
+}
+
+/* 물이 채워진 영역의 글자색(--color-primary 수면 위) — bg-primary 버튼의 text-bg와 동일한 반전 관계 */
+.maple-wave-progress-text--filled {
+  fill: var(--color-bg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .maple-wave-scroll {
+    animation-duration: 0.001ms;
+    animation-iteration-count: 1;
+  }
+}
+
 /* 머쉬맘(라이트, 기본) 테마 — 데이터 출처: src/data/job-themes.json, 값 근거는 docs/UI_GUIDE.md "테마 시스템" 표 (ADR-009) */
 @theme {
   /* backgrounds */

@@ -1,4 +1,5 @@
 import { useOnboardingStore } from '../../features/onboarding/store'
+import { MapleWaveProgress } from '../../components/MapleWaveProgress/MapleWaveProgress'
 import { ApiKeyForm } from './ApiKeyForm'
 import { AccountSelectionList } from './AccountSelectionList'
 import { formatOnboardingError } from './error-message'
@@ -31,20 +32,12 @@ export function OnboardingScreen(): React.JSX.Element {
           : 0
       return (
         <div className="flex min-h-[calc(100dvh-var(--sa-top)-var(--sa-bottom))] items-center justify-center px-4">
-          <div className="w-full space-y-2">
+          <div className="flex flex-col items-center gap-3">
             <p className="text-sm text-text-muted">
               캐릭터 정보를 준비하고 있어요
               {prefetchProgress !== null ? ` (${prefetchProgress.completed}/${prefetchProgress.total})` : ''}
             </p>
-            <div
-              role="progressbar"
-              aria-valuenow={percent}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              className="h-1.5 w-full overflow-hidden rounded-full bg-surface-2"
-            >
-              <div className="h-1.5 rounded-full bg-primary" style={{ width: `${percent}%` }} />
-            </div>
+            <MapleWaveProgress percent={percent} />
           </div>
         </div>
       )

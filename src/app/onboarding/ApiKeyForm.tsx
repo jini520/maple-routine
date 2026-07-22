@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { MapleSpinner } from '../../components/MapleSpinner/MapleSpinner'
 
 export interface ApiKeyFormProps {
   isSubmitting: boolean
@@ -51,14 +52,7 @@ export function ApiKeyForm(props: ApiKeyFormProps): React.JSX.Element {
         aria-label={props.isSubmitting ? '확인 중' : undefined}
         className="flex w-full items-center justify-center rounded-full bg-primary text-bg font-semibold hover:bg-primary-hover px-5 py-2.5 disabled:opacity-50"
       >
-        {props.isSubmitting ? (
-          <span
-            aria-hidden="true"
-            className="h-5 w-5 rounded-full border-2 border-bg/30 border-t-bg animate-spin motion-reduce:animate-none"
-          />
-        ) : (
-          '확인'
-        )}
+        {props.isSubmitting ? <MapleSpinner size={20} /> : '확인'}
       </button>
     </form>
   )
