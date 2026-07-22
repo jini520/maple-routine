@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { getMaxPartySize } from '../../lib/boss-crystal-prices'
-import { matchBossContent, type MatchedBoss } from '../../lib/boss-matching'
+import { countClearedWeeklyBosses, matchBossContent, WEEKLY_BOSS_CLEAR_LIMIT, type MatchedBoss } from '../../lib/boss-matching'
 import { syncSchedules, type ScheduleSyncError } from '../schedule-sync/schedule-sync'
 import {
   getLastSelectedCharacter,
@@ -129,8 +129,8 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
             world: cached.state.world,
             weeklyBosses: bosses.filter((boss) => boss.cycle === 'weekly'),
             monthlyBosses: bosses.filter((boss) => boss.cycle === 'monthly'),
-            weeklyBossClearCount: cached.state.weeklyBossClearCount,
-            weeklyBossClearLimitCount: cached.state.weeklyBossClearLimitCount,
+            weeklyBossClearCount: countClearedWeeklyBosses(bosses),
+            weeklyBossClearLimitCount: WEEKLY_BOSS_CLEAR_LIMIT,
             isStale: true,
             syncedAt: cached.syncedAt,
             error: null,
@@ -168,8 +168,8 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
         world: result.world,
         weeklyBosses: bosses.filter((boss) => boss.cycle === 'weekly'),
         monthlyBosses: bosses.filter((boss) => boss.cycle === 'monthly'),
-        weeklyBossClearCount: result.state?.weeklyBossClearCount ?? null,
-        weeklyBossClearLimitCount: result.state?.weeklyBossClearLimitCount ?? null,
+        weeklyBossClearCount: result.state === null ? null : countClearedWeeklyBosses(bosses),
+        weeklyBossClearLimitCount: result.state === null ? null : WEEKLY_BOSS_CLEAR_LIMIT,
         isStale: result.isStale,
         syncedAt: result.syncedAt,
         error: result.error,

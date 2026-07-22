@@ -6,6 +6,7 @@ import { BossScreen } from '../BossScreen'
 import { useBossSchedulerStore, type BossCharacterView } from '../../../features/boss-scheduler/store'
 import { getCharacterPickerRoster } from '../../../features/schedule-sync/schedule-sync'
 import type { CharacterPickerEntry } from '../../../types'
+import type { MatchedBoss } from '../../../lib/boss-matching'
 
 vi.mock('../../../features/boss-scheduler/store', () => ({
   useBossSchedulerStore: vi.fn(),
@@ -90,6 +91,7 @@ describe('BossScreen', () => {
               isComplete: false,
               matchedBossName: '자쿰',
               portraitSlug: null,
+              isSeasonBoss: false,
             },
           ],
         }),
@@ -149,6 +151,7 @@ describe('BossScreen', () => {
               isComplete: false,
               matchedBossName: '자쿰',
               portraitSlug: null,
+              isSeasonBoss: false,
             },
             {
               apiName: '미등록보스',
@@ -158,6 +161,7 @@ describe('BossScreen', () => {
               isComplete: false,
               matchedBossName: null,
               portraitSlug: null,
+              isSeasonBoss: false,
             },
           ],
           monthlyBosses: [
@@ -169,6 +173,7 @@ describe('BossScreen', () => {
               isComplete: true,
               matchedBossName: '검은마법사',
               portraitSlug: 'blackMage',
+              isSeasonBoss: false,
             },
           ],
           weeklyBossClearCount: 3,
@@ -188,6 +193,118 @@ describe('BossScreen', () => {
     expect(screen.getByText(/3\/12/)).toBeInTheDocument()
   })
 
+  it('미등록이어도 완료된 보스는 카드로 표시된다(ADR-031)', async () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [
+        character({
+          ocid: 'ocid-1',
+          weeklyBosses: [
+            {
+              apiName: '완료된미등록보스',
+              difficulty: '노멀',
+              cycle: 'weekly',
+              isRegistered: false,
+              isComplete: true,
+              matchedBossName: '완료된미등록보스',
+              portraitSlug: null,
+              isSeasonBoss: false,
+            },
+            {
+              apiName: '미완료미등록보스',
+              difficulty: '노멀',
+              cycle: 'weekly',
+              isRegistered: false,
+              isComplete: false,
+              matchedBossName: '미완료미등록보스',
+              portraitSlug: null,
+              isSeasonBoss: false,
+            },
+          ],
+        }),
+      ],
+    })
+
+    render(<BossScreen />)
+    await screen.findByRole('combobox')
+
+    expect(screen.getByText('완료된미등록보스')).toBeInTheDocument()
+    expect(screen.queryByText('미완료미등록보스')).not.toBeInTheDocument()
+  })
+
+  describe('챌린저스 시즌 보스 배지 (ADR-031)', () => {
+    function seasonBoss(overrides: Partial<MatchedBoss> = {}): MatchedBoss {
+      return {
+        apiName: '시즌 보스 메이린',
+        difficulty: '노멀',
+        cycle: 'weekly',
+        isRegistered: false,
+        isComplete: false,
+        matchedBossName: '시즌 보스 메이린',
+        portraitSlug: 'maerin',
+        isSeasonBoss: true,
+        ...overrides,
+      }
+    }
+
+    it('챌린저스 월드이고 시즌 보스 항목이 있으면, 등록 여부와 무관하게 season 배지를 보여준다', async () => {
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        characters: [
+          character({ ocid: 'ocid-1', world: '챌린저스2', weeklyBosses: [seasonBoss({ isRegistered: false, isComplete: false })] }),
+        ],
+      })
+
+      render(<BossScreen />)
+      await screen.findByRole('combobox')
+
+      expect(screen.getByText('season 미완료')).toBeInTheDocument()
+    })
+
+    it('시즌 보스가 완료됐으면 season 배지가 완료 상태를 보여준다', async () => {
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        characters: [
+          character({ ocid: 'ocid-1', world: '챌린저스', weeklyBosses: [seasonBoss({ isRegistered: true, isComplete: true })] }),
+        ],
+      })
+
+      render(<BossScreen />)
+      await screen.findByRole('combobox')
+
+      expect(screen.getByText('season 완료')).toBeInTheDocument()
+    })
+
+    it('챌린저스 월드가 아니면 시즌 보스 항목이 있어도 season 배지를 보여주지 않는다', async () => {
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        characters: [character({ ocid: 'ocid-1', world: '엘리시움', weeklyBosses: [seasonBoss()] })],
+      })
+
+      render(<BossScreen />)
+      await screen.findByRole('combobox')
+
+      expect(screen.queryByText(/^season /)).not.toBeInTheDocument()
+    })
+
+    it('챌린저스 월드여도 시즌 보스 항목 자체가 없으면 season 배지를 보여주지 않는다', async () => {
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        characters: [character({ ocid: 'ocid-1', world: '챌린저스', weeklyBosses: [] })],
+      })
+
+      render(<BossScreen />)
+      await screen.findByRole('combobox')
+
+      expect(screen.queryByText(/^season /)).not.toBeInTheDocument()
+    })
+  })
+
   it('"월간" 탭으로 전환하면 monthlyBosses 중 등록된 것만 보이고, n/12 배지는 렌더링되지 않는다', async () => {
     mockStore({
       status: 'loaded',
@@ -204,6 +321,7 @@ describe('BossScreen', () => {
               isComplete: false,
               matchedBossName: '자쿰',
               portraitSlug: null,
+              isSeasonBoss: false,
             },
           ],
           monthlyBosses: [
@@ -215,6 +333,7 @@ describe('BossScreen', () => {
               isComplete: true,
               matchedBossName: '검은마법사',
               portraitSlug: 'blackMage',
+              isSeasonBoss: false,
             },
             {
               apiName: '미등록월간보스',
@@ -224,6 +343,7 @@ describe('BossScreen', () => {
               isComplete: false,
               matchedBossName: null,
               portraitSlug: null,
+              isSeasonBoss: false,
             },
           ],
           weeklyBossClearCount: 3,
@@ -283,6 +403,7 @@ describe('BossScreen', () => {
               isComplete: false,
               matchedBossName: '자쿰',
               portraitSlug: null,
+              isSeasonBoss: false,
             },
           ],
         }),
@@ -298,6 +419,7 @@ describe('BossScreen', () => {
               isComplete: false,
               matchedBossName: '루시드',
               portraitSlug: null,
+              isSeasonBoss: false,
             },
           ],
         }),
@@ -367,6 +489,7 @@ describe('BossScreen', () => {
               isComplete: false,
               matchedBossName: '자쿰',
               portraitSlug: null,
+              isSeasonBoss: false,
             },
           ],
         }),
@@ -441,6 +564,7 @@ describe('BossScreen', () => {
               isComplete: true,
               matchedBossName: '검은마법사',
               portraitSlug: 'blackMage',
+              isSeasonBoss: false,
             },
           ],
           isStale: false,
@@ -471,6 +595,7 @@ describe('BossScreen', () => {
             isComplete: false,
             matchedBossName: '자쿰',
             portraitSlug: null,
+            isSeasonBoss: false,
           },
         ],
         ...overrides,
@@ -573,7 +698,7 @@ describe('BossScreen', () => {
       })
     })
 
-    it('보스 목록은 캐릭터가 스케줄러에 등록한 것과 무관하게 항상 전체 보스 목록이며, 보스를 바꾸면 그 보스가 지원하는 난이도 뱃지로 바뀌고 첫 난이도가 기본 선택된다', async () => {
+    it('등록된 보스가 하나도 없으면(기본 토글이 켜져 있어도) 전체 보스 목록으로 대체되며, 보스를 바꾸면 그 보스가 지원하는 난이도 뱃지로 바뀌고 첫 난이도가 기본 선택된다', async () => {
       mockStore({
         status: 'loaded',
         trackedOcids: ['ocid-1'],
@@ -601,6 +726,70 @@ describe('BossScreen', () => {
       expect(screen.queryByRole('button', { name: '카오스' })).not.toBeInTheDocument()
     })
 
+    describe('"스케줄러에 등록된 보스만 보기" 토글 (ADR-031)', () => {
+      it('기본값은 ON이고, 등록된 보스만 드롭다운에 보인다', async () => {
+        mockStore({
+          status: 'loaded',
+          trackedOcids: ['ocid-1'],
+          characters: [characterWithZakum()],
+        })
+
+        render(<BossScreen />)
+        await screen.findByRole('combobox')
+
+        fireEvent.click(screen.getByRole('button', { name: '파티 관리' }))
+        await screen.findByRole('heading', { name: '파티 관리' })
+
+        const toggle = screen.getByRole('switch', { name: '스케줄러에 등록된 보스만 보기' })
+        expect(toggle).toHaveAttribute('aria-checked', 'true')
+
+        const options = within(screen.getByLabelText('보스')).getAllByRole('option')
+        expect(options.map((option) => option.textContent)).toEqual(['자쿰'])
+      })
+
+      it('토글을 끄면 전체 보스 목록이 드롭다운에 보인다', async () => {
+        mockStore({
+          status: 'loaded',
+          trackedOcids: ['ocid-1'],
+          characters: [characterWithZakum()],
+        })
+
+        render(<BossScreen />)
+        await screen.findByRole('combobox')
+
+        fireEvent.click(screen.getByRole('button', { name: '파티 관리' }))
+        await screen.findByRole('heading', { name: '파티 관리' })
+
+        fireEvent.click(screen.getByRole('switch', { name: '스케줄러에 등록된 보스만 보기' }))
+
+        const options = within(screen.getByLabelText('보스')).getAllByRole('option')
+        expect(options.length).toBeGreaterThan(1)
+        expect(options.map((option) => option.textContent)).toContain('루시드')
+      })
+
+      it('토글을 껐다가 다시 등록된 보스만 보기로 돌아오면, 선택 중이던 미등록 보스 대신 등록된 보스가 다시 선택된다', async () => {
+        mockStore({
+          status: 'loaded',
+          trackedOcids: ['ocid-1'],
+          characters: [characterWithZakum()],
+        })
+
+        render(<BossScreen />)
+        await screen.findByRole('combobox')
+
+        fireEvent.click(screen.getByRole('button', { name: '파티 관리' }))
+        await screen.findByRole('heading', { name: '파티 관리' })
+
+        const toggle = screen.getByRole('switch', { name: '스케줄러에 등록된 보스만 보기' })
+        fireEvent.click(toggle) // OFF — 전체 목록
+        fireEvent.change(screen.getByLabelText('보스'), { target: { value: '루시드' } })
+        expect(screen.getByLabelText('보스')).toHaveValue('루시드')
+
+        fireEvent.click(toggle) // 다시 ON — 루시드는 미등록이라 목록에서 빠지므로 등록된 보스(자쿰)로 되돌아간다
+        expect(screen.getByLabelText('보스')).toHaveValue('자쿰')
+      })
+    })
+
     it('선택한 보스가 스케줄러에 등록돼있으면 그 등록된 난이도가 기본 선택된다(첫 난이도가 아니어도)', async () => {
       mockStore({
         status: 'loaded',
@@ -617,6 +806,7 @@ describe('BossScreen', () => {
                 isComplete: false,
                 matchedBossName: '루시드',
                 portraitSlug: null,
+                isSeasonBoss: false,
               },
             ],
           }),
@@ -634,7 +824,9 @@ describe('BossScreen', () => {
       fireEvent.change(screen.getByLabelText('보스'), { target: { value: '루시드' } })
       expect(screen.getByRole('button', { name: '하드', pressed: true })).toBeInTheDocument()
 
-      // 등록돼있지 않은 보스(자쿰)로 돌아가면 다시 첫 난이도(카오스, 유일한 옵션)로 돌아온다.
+      // 자쿰은 이 캐릭터가 등록해두지 않아 기본(등록된 보스만 보기) 목록에는 없다 —
+      // 토글을 꺼서 전체 목록으로 전환한 뒤에야 선택할 수 있다.
+      fireEvent.click(screen.getByRole('switch', { name: '스케줄러에 등록된 보스만 보기' }))
       fireEvent.change(screen.getByLabelText('보스'), { target: { value: '자쿰' } })
       expect(screen.getByRole('button', { name: '카오스', pressed: true })).toBeInTheDocument()
     })
@@ -653,6 +845,7 @@ describe('BossScreen', () => {
             isComplete: false,
             matchedBossName: '자쿰',
             portraitSlug: null,
+            isSeasonBoss: false,
           },
           {
             apiName: '루시드',
@@ -662,6 +855,7 @@ describe('BossScreen', () => {
             isComplete: false,
             matchedBossName: '루시드',
             portraitSlug: null,
+            isSeasonBoss: false,
           },
         ],
         monthlyBosses: [
@@ -673,6 +867,7 @@ describe('BossScreen', () => {
             isComplete: false,
             matchedBossName: '검은마법사',
             portraitSlug: 'blackMage',
+            isSeasonBoss: false,
           },
         ],
         ...overrides,

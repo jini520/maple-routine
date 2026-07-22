@@ -76,8 +76,6 @@ function syncResult(overrides: Partial<CharacterScheduleSync> = {}): CharacterSc
       dailyContents: [],
       weeklyContents: [],
       bossContents: [bossContent()],
-      weeklyBossClearCount: 3,
-      weeklyBossClearLimitCount: 12,
       isDailyStale: false,
       isWeeklyStale: false,
       isWeeklyBossStale: false,
@@ -160,6 +158,7 @@ describe('useBossSchedulerStore', () => {
         isComplete: false,
         matchedBossName: '자쿰',
         portraitSlug: 'zakum',
+        isSeasonBoss: false,
       },
     ])
     expect(state.characters[0].monthlyBosses).toEqual([
@@ -171,6 +170,7 @@ describe('useBossSchedulerStore', () => {
         isComplete: false,
         matchedBossName: '검은마법사',
         portraitSlug: 'blackMage',
+        isSeasonBoss: false,
       },
     ])
   })
@@ -204,16 +204,97 @@ describe('useBossSchedulerStore', () => {
     expect(state.characters[0].weeklyBosses[0].cycle).toBe('weekly')
   })
 
-  it('모든 캐릭터가 성공하면 status: loaded이고 클리어 카운트가 그대로 반영된다', async () => {
-    syncSchedulesMock.mockResolvedValue([syncResult({ ocid: 'ocid-1', characterName: '캐릭터1' })])
+  it('모든 캐릭터가 성공하면 status: loaded이고 클리어 카운트를 직접 계산한다(ADR-031)', async () => {
+    syncSchedulesMock.mockResolvedValue([
+      syncResult({
+        ocid: 'ocid-1',
+        characterName: '캐릭터1',
+        state: { ...syncResult().state!, bossContents: [bossContent({ isComplete: true })] },
+      }),
+    ])
 
     await useBossSchedulerStore.getState().refresh(['ocid-1'])
 
     const state = useBossSchedulerStore.getState()
     expect(state.status).toBe('loaded')
     expect(state.error).toBeNull()
-    expect(state.characters[0].weeklyBossClearCount).toBe(3)
+    expect(state.characters[0].weeklyBossClearCount).toBe(1)
     expect(state.characters[0].weeklyBossClearLimitCount).toBe(12)
+  })
+
+  describe('ADR-031: 주간 처치 카운트 자체 계산', () => {
+    it('등록 없이 완료된 보스도 카운트에 포함된다', async () => {
+      syncSchedulesMock.mockResolvedValue([
+        syncResult({
+          state: {
+            ...syncResult().state!,
+            bossContents: [bossContent({ name: '자쿰', isRegistered: false, isComplete: true })],
+          },
+        }),
+      ])
+
+      await useBossSchedulerStore.getState().refresh(['ocid-1'])
+
+      expect(useBossSchedulerStore.getState().characters[0].weeklyBossClearCount).toBe(1)
+    })
+
+    it('시즌 보스(메이린)는 완료돼도 카운트에서 제외된다', async () => {
+      syncSchedulesMock.mockResolvedValue([
+        syncResult({
+          state: {
+            ...syncResult().state!,
+            bossContents: [
+              bossContent({ name: '자쿰', isComplete: true }),
+              bossContent({ name: '시즌 보스 메이린', difficulty: '노멀', isComplete: true }),
+            ],
+          },
+        }),
+      ])
+
+      await useBossSchedulerStore.getState().refresh(['ocid-1'])
+
+      expect(useBossSchedulerStore.getState().characters[0].weeklyBossClearCount).toBe(1)
+    })
+
+    it('weeklyBossClearLimitCount는 API 응답과 무관하게 항상 12다', async () => {
+      syncSchedulesMock.mockResolvedValue([
+        syncResult({ state: { ...syncResult().state!, bossContents: [] } }),
+      ])
+
+      await useBossSchedulerStore.getState().refresh(['ocid-1'])
+
+      expect(useBossSchedulerStore.getState().characters[0].weeklyBossClearLimitCount).toBe(12)
+    })
+
+    it('캐시된 값을 표시할 때도 카운트를 직접 계산한다(ADR-016 캐시 우선 표시)', async () => {
+      getCachedSchedulerStateMock.mockResolvedValue({
+        state: {
+          asOf: '2026-07-11T00:00+09:00',
+          characterName: '캐시된캐릭터',
+          world: '베라',
+          level: 200,
+          jobClass: '렌',
+          dailyContents: [],
+          weeklyContents: [],
+          bossContents: [bossContent({ isComplete: true })],
+          isDailyStale: false,
+          isWeeklyStale: false,
+          isWeeklyBossStale: false,
+          isMonthlyBossStale: false,
+        },
+        syncedAt: '2026-07-11T00:00:00.000Z',
+      })
+      syncSchedulesMock.mockImplementation(() => new Promise(() => {}))
+
+      const promise = useBossSchedulerStore.getState().refresh(['ocid-1'])
+
+      await vi.waitFor(() => expect(useBossSchedulerStore.getState().status).toBe('loading'))
+      const state = useBossSchedulerStore.getState()
+      expect(state.characters[0].weeklyBossClearCount).toBe(1)
+      expect(state.characters[0].weeklyBossClearLimitCount).toBe(12)
+
+      void promise
+    })
   })
 
   it('state가 null인 캐릭터는 weeklyBosses·monthlyBosses를 빈 배열로, 클리어 카운트를 null로 채운다', async () => {
@@ -262,8 +343,10 @@ describe('useBossSchedulerStore', () => {
         dailyContents: [],
         weeklyContents: [],
         bossContents: [bossContent()],
-        weeklyBossClearCount: 5,
-        weeklyBossClearLimitCount: 12,
+        isDailyStale: false,
+        isWeeklyStale: false,
+        isWeeklyBossStale: false,
+        isMonthlyBossStale: false,
       },
       syncedAt: '2026-07-11T00:00:00.000Z',
     })
@@ -276,7 +359,6 @@ describe('useBossSchedulerStore', () => {
     expect(state.characters[0].characterName).toBe('캐시된캐릭터')
     expect(state.characters[0].world).toBe('베라')
     expect(state.characters[0].isStale).toBe(true)
-    expect(state.characters[0].weeklyBossClearCount).toBe(5)
     expect(state.characters[0].weeklyBosses).toHaveLength(1)
 
     void promise // 이 테스트는 재검증이 끝나길 기다리지 않는다

@@ -63,8 +63,6 @@ function syncResult(overrides: Partial<CharacterScheduleSync> = {}): CharacterSc
       dailyContents: [dailyContent('몬스터파크')],
       weeklyContents: [weeklyContent('에픽 던전 : 악몽선경')],
       bossContents: [],
-      weeklyBossClearCount: 0,
-      weeklyBossClearLimitCount: 0,
       isDailyStale: false,
       isWeeklyStale: false,
       isWeeklyBossStale: false,
@@ -209,8 +207,6 @@ describe('useContentSchedulerStore', () => {
         dailyContents: [dailyContent('몬스터파크')],
         weeklyContents: [],
         bossContents: [],
-        weeklyBossClearCount: 0,
-        weeklyBossClearLimitCount: 0,
       },
       syncedAt: '2026-07-11T00:00:00.000Z',
     })
@@ -246,8 +242,6 @@ describe('useContentSchedulerStore', () => {
         dailyContents: [],
         weeklyContents: [],
         bossContents: [],
-        weeklyBossClearCount: 0,
-        weeklyBossClearLimitCount: 0,
       },
       syncedAt: '2026-07-10T00:00:00.000Z',
     })

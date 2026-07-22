@@ -12,8 +12,6 @@ function baseState(overrides: Partial<SchedulerCharacterState> = {}): SchedulerC
     dailyContents: [],
     weeklyContents: [],
     bossContents: [],
-    weeklyBossClearCount: 0,
-    weeklyBossClearLimitCount: 12,
     isDailyStale: false,
     isWeeklyStale: false,
     isWeeklyBossStale: false,
@@ -259,28 +257,6 @@ describe('mergeSchedulerState — 보스 (cycle별 독립 stale)', () => {
       { name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true, isComplete: false },
       { name: '검은 마법사', difficulty: '익스트림', cycle: 'monthly', isRegistered: true, isComplete: true },
     ])
-  })
-
-  it('weeklyBossClearCount는 주간 stale이면 0으로 리셋되고, weeklyBossClearLimitCount는 이전 값을 유지한다', () => {
-    const previous = baseState({ weeklyBossClearCount: 5, weeklyBossClearLimitCount: 12 })
-    const fresh = baseState({ isWeeklyBossStale: true, weeklyBossClearCount: 0, weeklyBossClearLimitCount: 0 })
-
-    const result = mergeSchedulerState({ previous, fresh, worldLedger: {}, accountLedger: {}, now: NOW })
-
-    expect(result.characterState.weeklyBossClearCount).toBe(0)
-    expect(result.characterState.weeklyBossClearLimitCount).toBe(12)
-  })
-
-  it('주간 보스가 stale이 아니면 fresh 값을 그대로 쓴다', () => {
-    const fresh = baseState({
-      bossContents: [{ name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true, isComplete: true }],
-      weeklyBossClearCount: 3,
-      weeklyBossClearLimitCount: 12,
-    })
-
-    const result = mergeSchedulerState({ previous: null, fresh, worldLedger: {}, accountLedger: {}, now: NOW })
-
-    expect(result.characterState.weeklyBossClearCount).toBe(3)
   })
 })
 

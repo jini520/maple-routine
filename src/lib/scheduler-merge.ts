@@ -185,10 +185,6 @@ export function mergeSchedulerState(input: MergeInput): MergeOutput {
     dailyContents: dailyResult.items as DailyContent[],
     weeklyContents: weeklyResult.items as WeeklyContent[],
     bossContents: [...weeklyBosses, ...monthlyBosses],
-    weeklyBossClearCount: fresh.isWeeklyBossStale ? 0 : fresh.weeklyBossClearCount,
-    weeklyBossClearLimitCount: fresh.isWeeklyBossStale
-      ? (previous?.weeklyBossClearLimitCount ?? fresh.weeklyBossClearLimitCount)
-      : fresh.weeklyBossClearLimitCount,
   }
 
   return {

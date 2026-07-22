@@ -80,8 +80,8 @@
     { "boss": "유피테르", "difficulty": "노멀", "priceMeso": 1615000000, "asOf": "2026-06-25", "maxPartySize": 3 },
     { "boss": "유피테르", "difficulty": "하드", "priceMeso": 4845000000, "asOf": "2026-06-25", "maxPartySize": 3 },
 
-    { "boss": "메이린", "difficulty": "노멀", "priceMeso": 300000000, "asOf": "2026-07-09", "maxPartySize": 1, "note": "강력한 힘의 결정이 아닌 황금 메소 주머니(30개 × 1000만 메소) 총 가치 기준" },
-    { "boss": "메이린", "difficulty": "하드", "priceMeso": 600000000, "asOf": "2026-07-09", "maxPartySize": 1, "note": "강력한 힘의 결정이 아닌 황금 메소 주머니(60개 × 1000만 메소) 총 가치 기준" },
+    { "boss": "시즌 보스 메이린", "difficulty": "노멀", "priceMeso": 300000000, "asOf": "2026-07-09", "maxPartySize": 1, "note": "강력한 힘의 결정이 아닌 황금 메소 주머니(30개 × 1000만 메소) 총 가치 기준" },
+    { "boss": "시즌 보스 메이린", "difficulty": "하드", "priceMeso": 600000000, "asOf": "2026-07-09", "maxPartySize": 1, "note": "강력한 힘의 결정이 아닌 황금 메소 주머니(60개 × 1000만 메소) 총 가치 기준" },
 
     { "boss": "검은마법사", "difficulty": "하드", "priceMeso": 665000000, "asOf": "2026-07-01" },
     { "boss": "검은마법사", "difficulty": "익스트림", "priceMeso": 8740000000, "asOf": "2026-07-01" }

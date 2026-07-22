@@ -30,7 +30,7 @@
     { "boss": "유피테르", "difficulties": ["노멀", "하드"], "portraitSlug": "jupiter" }
   ],
   "eventWeekly": [
-    { "boss": "메이린", "difficulties": ["노멀", "하드"], "apiAlias": "시즌 보스 메이린", "note": "Nexon 스케줄러 Open API의 content_name은 '메이린'이 아니라 '시즌 보스 메이린'으로 온다(2026-07-09 실측 확인). 조인 시 apiAlias로 매핑 필요", "portraitSlug": "maerin" }
+    { "boss": "시즌 보스 메이린", "difficulties": ["노멀", "하드"], "note": "표시명을 Nexon 스케줄러 Open API의 content_name과 통일(2026-07-22, 사용자 확정) — 기존 표시명 '메이린'에서 변경. apiAlias 매핑은 boss가 이제 content_name과 동일해 더 이상 필요 없어 제거함. boss-crystal-prices.json/item-drop-table.json의 boss 키도 함께 갱신했고, 기존 저장된 파티 설정·수익 기록(boss='메이린')은 storage/sqlite/db.ts의 마이그레이션으로 이관함", "portraitSlug": "maerin" }
   ],
   "monthly": [
     { "boss": "검은마법사", "difficulties": ["하드", "익스트림"], "portraitSlug": "blackMage" }

@@ -39,8 +39,6 @@ export interface SchedulerCharacterState {
   dailyContents: DailyContent[]
   weeklyContents: WeeklyContent[]
   bossContents: BossContent[]
-  weeklyBossClearCount: number
-  weeklyBossClearLimitCount: number
   // ADR-030: 캐릭터가 해당 리셋 주기 이후 게임에 접속하지 않으면 이 섹션이 통째로 비거나
   // 없는 채로 응답이 온다. wire의 daily_contents/weekly_contents가 비었거나 없었는지,
   // boss_contents에 그 cycle 항목이 하나도 없었는지를 그대로 보존해 병합 단계(lib/scheduler-merge)가

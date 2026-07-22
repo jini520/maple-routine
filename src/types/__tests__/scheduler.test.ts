@@ -66,7 +66,7 @@ describe('domain 타입 샘플 객체', () => {
     expect(BOSS_CYCLES).toContain(sample.cycle)
   })
 
-  it('SchedulerCharacterState 샘플이 daily/weekly/boss 배열과 주간 보스 카운트를 포함한다', () => {
+  it('SchedulerCharacterState 샘플이 daily/weekly/boss 배열을 포함한다', () => {
     const sample: SchedulerCharacterState = {
       asOf: '2026-07-09T00:00+09:00',
       characterName: '낟낟',
@@ -76,8 +76,6 @@ describe('domain 타입 샘플 객체', () => {
       dailyContents: [],
       weeklyContents: [],
       bossContents: [],
-      weeklyBossClearCount: 0,
-      weeklyBossClearLimitCount: 0,
       isDailyStale: false,
       isWeeklyStale: false,
       isWeeklyBossStale: false,
