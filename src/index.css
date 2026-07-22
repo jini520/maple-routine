@@ -16,6 +16,17 @@ body {
   background-color: var(--color-bg);
 }
 
+/* Toast 자동 소멸 타이머 바 전용 — 지속시간이 토스트마다 달라(성공 2초/정보 2.5초) Tailwind 프리셋
+   애니메이션으로 표현할 수 없어 컴포넌트에서 animation-duration을 인라인으로 지정해 재생한다. */
+@keyframes toast-shrink {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
 /* 머쉬맘(라이트, 기본) 테마 — 데이터 출처: src/data/job-themes.json, 값 근거는 docs/UI_GUIDE.md "테마 시스템" 표 (ADR-009) */
 @theme {
   /* backgrounds */
