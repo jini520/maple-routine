@@ -11,6 +11,14 @@ const KST_OFFSET_MS = 9 * 60 * 60 * 1000
  */
 export const MIN_SCHEDULER_DATE = '2026-07-01'
 
+/**
+ * 스케줄러 API `date` 파라미터가 실제로 받아들이는 롤링 조회 가능 일수(사용자 실측,
+ * 2026-07-22 — 오늘(2026-07-22) 기준 2026-07-08(오늘-14일)은 조회되지 않고 2026-07-09(오늘-13일)까지만
+ * 조회된다). MIN_SCHEDULER_DATE(API 자체가 존재하기 시작한 고정 하한선)와는 별개로, 매일
+ * 하루씩 앞으로 밀리는 제약이다.
+ */
+const ROLLING_QUERY_WINDOW_DAYS = 13
+
 export interface BossProfitPeriod {
   periodKey: string // 저장/조회 시 unique key로 쓰이는 안정적인 문자열
   label: string // 화면 표시용 ("이번 주" | "이번 달")
@@ -176,11 +184,42 @@ export function getBackfillQueryDate(cycle: BossCycle, periodKey: string): strin
 }
 
 /**
+ * now(KST) 기준으로 스케줄러 API가 실제로 조회 가능한 최소 날짜(YYYY-MM-DD)를 반환한다 —
+ * ROLLING_QUERY_WINDOW_DAYS만큼 매일 앞으로 밀리는 하한선이다.
+ */
+export function getMinQueryableDate(now: Date): string {
+  const kstWallClock = toKstWallClock(now)
+  const shiftedMs = Date.UTC(
+    kstWallClock.getUTCFullYear(),
+    kstWallClock.getUTCMonth(),
+    kstWallClock.getUTCDate() - ROLLING_QUERY_WINDOW_DAYS,
+  )
+  return formatWeeklyPeriodKey(shiftedMs)
+}
+
+/**
+ * 이 기간(cycle, periodKey)을 지금(now) 실제로 API로 조회할 수 있는지 확인한다. 캐시된 기록이
+ * 이미 있는지와는 무관하게, 순수하게 "지금 API를 호출하면 성공할 수 있는가"만 본다 — 두 개의
+ * 독립적인 하한선(API가 존재하기 시작한 고정 하한선 MIN_SCHEDULER_DATE, 매일 밀리는 롤링 하한선
+ * getMinQueryableDate) 중 더 늦은(더 최근인) 쪽보다 이 기간의 조회일이 앞서면 false다.
+ */
+export function isPeriodQueryable(cycle: BossCycle, periodKey: string, now: Date): boolean {
+  const date = getBackfillQueryDate(cycle, periodKey)
+  const rollingFloor = getMinQueryableDate(now)
+  const effectiveFloor = rollingFloor > MIN_SCHEDULER_DATE ? rollingFloor : MIN_SCHEDULER_DATE
+  return date >= effectiveFloor
+}
+
+/**
  * periodKey에서 한 단계 더 과거로 이동하면 MIN_SCHEDULER_DATE 이전이라 백필 자체가 불가능한
  * 기간에 도달하는지 확인한다. true면 이 기간에서 prev 방향 네비게이션 버튼을 비활성화해야 한다.
  * (weekly에 적용하면 MIN_SCHEDULER_DATE 이전 주로 이동을 막고, monthly에 적용하면 그 달이
  * 통째로 MIN_SCHEDULER_DATE 이전인 달로 이동을 막는다. 이미 진입한 기간 자체가 부분적으로만
- * 조회 불가능한 경우(예: 2026-07월 첫 며칠만 데이터 없음)는 막지 않는다.)
+ * 조회 불가능한 경우(예: 2026-07월 첫 며칠만 데이터 없음, 혹은 롤링 윈도우를 벗어난 경우)는
+ * 막지 않는다 — 이미 캐시된 기록이 있을 수 있으므로 isPeriodQueryable과 달리 여기서는 항상
+ * MIN_SCHEDULER_DATE라는 고정 하한선만 본다. 롤링 윈도우로 인해 조회 자체가 안 되는 기간은
+ * loadPeriod/backfillTarget이 API 호출만 건너뛰고("조회 불가" 표시), 네비게이션 자체는 막지
+ * 않는다.)
  */
 export function isEarliestNavigablePeriod(cycle: BossCycle, periodKey: string): boolean {
   const prevPeriodKey = getAdjacentPeriodKey(cycle, periodKey, 'prev')

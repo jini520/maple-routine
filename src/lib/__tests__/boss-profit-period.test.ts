@@ -4,9 +4,11 @@ import {
   getAdjacentPeriodKey,
   getBackfillQueryDate,
   getCurrentBossProfitPeriod,
+  getMinQueryableDate,
   getWeeklyPeriodKeysInMonth,
   isEarliestNavigablePeriod,
   isLatestPeriod,
+  isPeriodQueryable,
   MIN_SCHEDULER_DATE,
 } from '../boss-profit-period'
 
@@ -101,6 +103,42 @@ describe('isEarliestNavigablePeriod', () => {
 
   it('monthly: 다음 달(2026-08)에서는 false다 — 한 달 전(2026-07)까지는 갈 수 있다', () => {
     expect(isEarliestNavigablePeriod('monthly', '2026-08')).toBe(false)
+  })
+})
+
+describe('getMinQueryableDate', () => {
+  it('사용자 실측(2026-07-22)대로 오늘-13일을 반환한다', () => {
+    const now = new Date('2026-07-22T12:00:00+09:00')
+
+    expect(getMinQueryableDate(now)).toBe('2026-07-09')
+  })
+})
+
+describe('isPeriodQueryable', () => {
+  const now = new Date('2026-07-22T12:00:00+09:00') // getMinQueryableDate: 2026-07-09
+
+  it('weekly: 롤링 윈도우 안(조회일이 2026-07-09 이상)이면 true다', () => {
+    // periodKey 2026-07-09(이번 주 리셋)의 조회일은 2026-07-15
+    expect(isPeriodQueryable('weekly', '2026-07-09', now)).toBe(true)
+  })
+
+  it('weekly: 롤링 윈도우를 벗어나면(조회일이 2026-07-09 미만) false다 — 오늘-14일(2026-07-08)은 조회 불가', () => {
+    // periodKey 2026-07-02의 조회일은 2026-07-08 — 오늘(2026-07-22) 기준 정확히 14일 전
+    expect(isPeriodQueryable('weekly', '2026-07-02', now)).toBe(false)
+  })
+
+  it('weekly: MIN_SCHEDULER_DATE 이전이면 롤링 윈도우 안이어도 false다', () => {
+    // MIN_SCHEDULER_DATE(2026-07-01) 이전은 롤링 윈도우와 무관하게 항상 불가
+    const recentNow = new Date('2026-07-05T12:00:00+09:00') // getMinQueryableDate: 2026-06-22(롤링 윈도우는 더 이르지만)
+    expect(isPeriodQueryable('weekly', '2026-06-18', recentNow)).toBe(false) // 조회일 2026-06-24 < MIN_SCHEDULER_DATE
+  })
+
+  it('monthly: 그 달의 마지막 날이 롤링 윈도우 안이면 true다', () => {
+    expect(isPeriodQueryable('monthly', '2026-07', now)).toBe(true) // 조회일 2026-07-31 >= 2026-07-09... (아직 안 지났어도 날짜 비교상 통과)
+  })
+
+  it('monthly: 그 달의 마지막 날이 롤링 윈도우 밖이면 false다', () => {
+    expect(isPeriodQueryable('monthly', '2026-06', now)).toBe(false) // 조회일 2026-06-30 < 2026-07-09
   })
 })
 

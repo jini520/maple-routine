@@ -53,14 +53,15 @@ vi.mock('../../../storage/boss-party-settings', () => ({
 import { useBossSchedulerStore } from '../store'
 
 function bossContent(overrides: Partial<BossContent> = {}): BossContent {
-  return {
+  const merged = {
     name: '자쿰',
-    difficulty: '카오스',
-    cycle: 'weekly',
+    difficulty: '카오스' as const,
+    cycle: 'weekly' as const,
     isRegistered: true,
     isComplete: false,
     ...overrides,
   }
+  return { ...merged, ownComplete: overrides.ownComplete ?? merged.isComplete }
 }
 
 function syncResult(overrides: Partial<CharacterScheduleSync> = {}): CharacterScheduleSync {
@@ -156,6 +157,7 @@ describe('useBossSchedulerStore', () => {
         cycle: 'weekly',
         isRegistered: true,
         isComplete: false,
+        ownComplete: false,
         matchedBossName: '자쿰',
         portraitSlug: 'zakum',
         isSeasonBoss: false,
@@ -168,6 +170,7 @@ describe('useBossSchedulerStore', () => {
         cycle: 'monthly',
         isRegistered: true,
         isComplete: false,
+        ownComplete: false,
         matchedBossName: '검은마법사',
         portraitSlug: 'blackMage',
         isSeasonBoss: false,

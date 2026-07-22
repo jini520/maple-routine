@@ -1,16 +1,24 @@
 import { describe, expect, it } from 'vitest'
 import type { BossContent } from '../../types'
-import { countClearedWeeklyBosses, matchBossContent, selectDisplayBosses, WEEKLY_BOSS_CLEAR_LIMIT, type MatchedBoss } from '../boss-matching'
+import {
+  countClearedWeeklyBosses,
+  matchBossContent,
+  selectBossProfitBosses,
+  selectDisplayBosses,
+  WEEKLY_BOSS_CLEAR_LIMIT,
+  type MatchedBoss,
+} from '../boss-matching'
 
 function bossContent(overrides: Partial<BossContent> = {}): BossContent {
-  return {
+  const merged = {
     name: '자쿰',
-    difficulty: '카오스',
-    cycle: 'weekly',
+    difficulty: '카오스' as const,
+    cycle: 'weekly' as const,
     isRegistered: true,
     isComplete: false,
     ...overrides,
   }
+  return { ...merged, ownComplete: overrides.ownComplete ?? merged.isComplete }
 }
 
 describe('matchBossContent', () => {
@@ -23,6 +31,7 @@ describe('matchBossContent', () => {
       cycle: 'weekly',
       isRegistered: true,
       isComplete: false,
+      ownComplete: false,
       matchedBossName: '자쿰',
       portraitSlug: 'zakum',
       isSeasonBoss: false,
@@ -84,10 +93,18 @@ describe('matchBossContent', () => {
       cycle: 'weekly',
       isRegistered: true,
       isComplete: false,
+      ownComplete: false,
       matchedBossName: null,
       portraitSlug: null,
       isSeasonBoss: false,
     })
+  })
+
+  it('ownComplete를 승격 없이 그대로 전달한다(ADR-032)', () => {
+    const result = matchBossContent(bossContent({ name: '자쿰', isComplete: true, ownComplete: false }))
+
+    expect(result.isComplete).toBe(true)
+    expect(result.ownComplete).toBe(false)
   })
 })
 
@@ -98,10 +115,10 @@ describe('WEEKLY_BOSS_CLEAR_LIMIT', () => {
 })
 
 function matchedBoss(overrides: Partial<MatchedBoss> = {}): MatchedBoss {
-  return {
+  const merged = {
     apiName: '자쿰',
-    difficulty: '카오스',
-    cycle: 'weekly',
+    difficulty: '카오스' as const,
+    cycle: 'weekly' as const,
     isRegistered: true,
     isComplete: false,
     matchedBossName: '자쿰',
@@ -109,6 +126,7 @@ function matchedBoss(overrides: Partial<MatchedBoss> = {}): MatchedBoss {
     isSeasonBoss: false,
     ...overrides,
   }
+  return { ...merged, ownComplete: overrides.ownComplete ?? merged.isComplete }
 }
 
 describe('countClearedWeeklyBosses (ADR-031)', () => {
@@ -188,5 +206,68 @@ describe('selectDisplayBosses (ADR-031)', () => {
       registered,
       unregisteredComplete,
     ])
+  })
+})
+
+describe('selectBossProfitBosses (ADR-032)', () => {
+  it('등록 난이도와 실제 처치 난이도가 다르면, 실제 처치 난이도(ownComplete)를 선택하고 등록 난이도는 제외한다', () => {
+    // 이지로 등록했지만 실제로는 노멀을 처치한 상황 — isComplete는 승격으로 이지도 true지만
+    // ownComplete는 노멀만 true다.
+    const registeredEasy = matchedBoss({
+      apiName: '루시드',
+      difficulty: '이지',
+      isRegistered: true,
+      isComplete: true,
+      ownComplete: false,
+    })
+    const actualNormal = matchedBoss({
+      apiName: '루시드',
+      difficulty: '노멀',
+      isRegistered: false,
+      isComplete: true,
+      ownComplete: true,
+    })
+
+    expect(selectBossProfitBosses([registeredEasy, actualNormal])).toEqual([actualNormal])
+  })
+
+  it('아직 미완료면 등록 난이도를 placeholder로 선택한다', () => {
+    const registered = matchedBoss({ apiName: '자쿰', isRegistered: true, isComplete: false, ownComplete: false })
+    expect(selectBossProfitBosses([registered])).toEqual([registered])
+  })
+
+  it('등록 난이도 자체가 실제로 완료됐으면(승격과 무관하게) 그대로 선택한다', () => {
+    const registered = matchedBoss({ apiName: '자쿰', isRegistered: true, isComplete: true, ownComplete: true })
+    expect(selectBossProfitBosses([registered])).toEqual([registered])
+  })
+
+  it('등록도 완료도 없으면 선택하지 않는다', () => {
+    const untouched = matchedBoss({ apiName: '자쿰', isRegistered: false, isComplete: false, ownComplete: false })
+    expect(selectBossProfitBosses([untouched])).toEqual([])
+  })
+
+  it('등록 없이 완료된 난이도는 그대로 선택한다', () => {
+    const cleared = matchedBoss({ apiName: '자쿰', isRegistered: false, isComplete: true, ownComplete: true })
+    expect(selectBossProfitBosses([cleared])).toEqual([cleared])
+  })
+
+  it('서로 다른 보스는 독립적으로 판정된다', () => {
+    const registeredEasy = matchedBoss({
+      apiName: '루시드',
+      difficulty: '이지',
+      isRegistered: true,
+      isComplete: true,
+      ownComplete: false,
+    })
+    const actualNormal = matchedBoss({
+      apiName: '루시드',
+      difficulty: '노멀',
+      isRegistered: false,
+      isComplete: true,
+      ownComplete: true,
+    })
+    const placeholder = matchedBoss({ apiName: '자쿰', isRegistered: true, isComplete: false, ownComplete: false })
+
+    expect(selectBossProfitBosses([registeredEasy, actualNormal, placeholder])).toEqual([actualNormal, placeholder])
   })
 })

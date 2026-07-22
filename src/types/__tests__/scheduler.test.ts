@@ -61,6 +61,7 @@ describe('domain 타입 샘플 객체', () => {
       cycle: 'monthly',
       isRegistered: true,
       isComplete: true,
+      ownComplete: true,
     }
     expect(BOSS_DIFFICULTIES).toContain(sample.difficulty)
     expect(BOSS_CYCLES).toContain(sample.cycle)

@@ -27,7 +27,8 @@ export interface BossContent {
   difficulty: BossDifficulty
   cycle: BossCycle
   isRegistered: boolean
-  isComplete: boolean
+  isComplete: boolean // 카드 완료 뱃지용(ADR-031) — 등록된 항목은 다른 난이도가 완료면 승격됨
+  ownComplete: boolean // 이 난이도 자신의 원본 complete_flag(승격 없음, ADR-032) — 실제 처치 난이도 판정에 사용
 }
 
 export interface SchedulerCharacterState {

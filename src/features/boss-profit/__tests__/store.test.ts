@@ -78,14 +78,17 @@ import {
 import { useBossProfitStore } from '../store'
 
 function bossContent(overrides: Partial<BossContent> = {}): BossContent {
-  return {
+  const merged = {
     name: '자쿰',
-    difficulty: '카오스',
-    cycle: 'weekly',
+    difficulty: '카오스' as const,
+    cycle: 'weekly' as const,
     isRegistered: true,
     isComplete: true,
     ...overrides,
   }
+  // ownComplete는 별도로 지정하지 않으면 isComplete를 그대로 따른다(승격 시나리오를 테스트할
+  // 때만 둘을 다르게 지정) — 대부분의 기존 테스트는 승격 여부를 신경 쓰지 않는다.
+  return { ...merged, ownComplete: overrides.ownComplete ?? merged.isComplete }
 }
 
 function syncResult(overrides: Partial<CharacterScheduleSync> = {}): CharacterScheduleSync {
@@ -125,6 +128,7 @@ beforeEach(() => {
     error: null,
     staleCharacterNames: [],
     trackedOcids: null,
+    lastSyncedAt: null,
   })
   getBossProfitRecordsMock.mockResolvedValue([])
   upsertBossProfitRecordMock.mockResolvedValue(undefined)
@@ -163,13 +167,13 @@ describe('useBossProfitStore', () => {
     expect(state.staleCharacterNames).toEqual([])
   })
 
-  it('미처치 보스는 rows에서 제외된다', async () => {
+  it('등록되지 않고 미처치인 보스는 rows에서 제외된다', async () => {
     syncSchedulesMock.mockResolvedValue([
       syncResult({
         state: {
           ...syncResult().state!,
           bossContents: [
-            bossContent({ name: '자쿰', isComplete: false }),
+            bossContent({ name: '자쿰', isRegistered: false, isComplete: false }),
             bossContent({ name: '스우', difficulty: '노멀', isComplete: true }),
           ],
         },
@@ -181,6 +185,77 @@ describe('useBossProfitStore', () => {
     const rows = useBossProfitStore.getState().rows
     expect(rows).toHaveLength(1)
     expect(rows[0].boss).toBe('스우')
+  })
+
+  it('등록됐지만 아직 미처치인 보스는 "미완료" placeholder row로 포함되고 0메소로 계산되며 DB에는 기록되지 않는다(ADR-032)', async () => {
+    syncSchedulesMock.mockResolvedValue([
+      syncResult({
+        state: {
+          ...syncResult().state!,
+          bossContents: [bossContent({ name: '자쿰', isRegistered: true, isComplete: false })],
+        },
+      }),
+    ])
+
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+
+    const rows = useBossProfitStore.getState().rows
+    expect(rows).toHaveLength(1)
+    expect(rows[0].boss).toBe('자쿰')
+    expect(rows[0].isComplete).toBe(false)
+    expect(rows[0].payoutMeso).toBe(0)
+    expect(rows[0].partySize).toBeNull()
+    expect(upsertBossProfitRecordMock).not.toHaveBeenCalled()
+  })
+
+  it('등록된 난이도가 완료되면 미완료 placeholder에서 정상적인 완료 row로 다음 refresh에서 대체된다(ADR-032)', async () => {
+    syncSchedulesMock.mockResolvedValue([
+      syncResult({
+        state: {
+          ...syncResult().state!,
+          bossContents: [bossContent({ name: '자쿰', isRegistered: true, isComplete: false })],
+        },
+      }),
+    ])
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+    expect(useBossProfitStore.getState().rows[0].payoutMeso).toBe(0)
+
+    syncSchedulesMock.mockResolvedValue([
+      syncResult({
+        state: {
+          ...syncResult().state!,
+          bossContents: [bossContent({ name: '자쿰', isRegistered: true, isComplete: true })],
+        },
+      }),
+    ])
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+
+    const row = useBossProfitStore.getState().rows[0]
+    expect(row.isComplete).toBe(true)
+    expect(row.partySize).toBe(1)
+    expect(row.payoutMeso).toBe(8080000)
+  })
+
+  it('등록 난이도와 실제 처치 난이도가 다르면, 이번 주 row는 실제 처치 난이도와 그 가격을 보여준다(ADR-032)', async () => {
+    // 루시드를 이지로 등록해뒀지만 실제로는 노멀을 처치한 상황
+    syncSchedulesMock.mockResolvedValue([
+      syncResult({
+        state: {
+          ...syncResult().state!,
+          bossContents: [
+            bossContent({ name: '루시드', difficulty: '이지', isRegistered: true, isComplete: true, ownComplete: false }),
+            bossContent({ name: '루시드', difficulty: '노멀', isRegistered: false, isComplete: true, ownComplete: true }),
+          ],
+        },
+      }),
+    ])
+
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+
+    const rows = useBossProfitStore.getState().rows
+    expect(rows).toHaveLength(1)
+    expect(rows[0].difficulty).toBe('노멀')
+    expect(rows[0].priceMeso).toBe(35_600_000)
   })
 
   it('weekly 탭에서는 weekly cycle 보스만, monthly 탭으로 전환하면 monthly cycle 보스만 rows에 노출된다', async () => {
@@ -335,6 +410,24 @@ describe('useBossProfitStore', () => {
     await useBossProfitStore.getState().refresh(['ocid-1'])
 
     expect(useBossProfitStore.getState().staleCharacterNames).toEqual(['캐릭터1'])
+  })
+
+  it('refresh가 성공하면 lastSyncedAt이 현재 시각으로 갱신된다', async () => {
+    syncSchedulesMock.mockResolvedValue([syncResult()])
+    expect(useBossProfitStore.getState().lastSyncedAt).toBeNull()
+
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+
+    expect(useBossProfitStore.getState().lastSyncedAt).not.toBeNull()
+  })
+
+  it('refresh 자체가 실패하면(syncSchedules 예외) lastSyncedAt이 갱신되지 않는다', async () => {
+    syncSchedulesMock.mockRejectedValue(new Error('network down'))
+
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+
+    expect(useBossProfitStore.getState().status).toBe('error')
+    expect(useBossProfitStore.getState().lastSyncedAt).toBeNull()
   })
 
   it('저장된 기록이 있으면 refresh 후 partySize/payoutMeso가 복원된다(멱등성)', async () => {
@@ -633,6 +726,25 @@ describe('useBossProfitStore', () => {
       expect(updated.partySize).toBe(3)
       expect(updated.payoutMeso).toBeNull()
     })
+
+    // 회귀 재현(2026-07-22): setPartySize가 get().rows만 갱신하고 모듈 스코프
+    // latestSyncSnapshot은 건드리지 않으면, loadPeriod의 "현재 기간" 분기가 이 스냅샷에서
+    // 슬라이스할 때 방금 수정한 값이 낡은 값으로 되돌아간다 — "파티원 수를 고쳐도 파티관리
+    // 기본값으로 계속 돌아간다"로 보고된 증상의 실제 원인이었다. setPartySize가 스냅샷도
+    // 함께 갱신하도록 고쳐 이 테스트가 통과한다.
+    it('setPartySize 이후 다른 탭으로 이동했다가 돌아와도 수정한 값이 유지된다', async () => {
+      const row = await seedRow() // 자쿰 카오스: priceMeso 8080000, 자동 기록 partySize 1
+
+      await useBossProfitStore.getState().setPartySize(row, 4)
+      expect(useBossProfitStore.getState().rows[0].partySize).toBe(4)
+
+      await useBossProfitStore.getState().setTab('monthly')
+      await useBossProfitStore.getState().setTab('weekly')
+
+      const revertedRow = useBossProfitStore.getState().rows[0]
+      expect(revertedRow.partySize).toBe(4)
+      expect(revertedRow.payoutMeso).toBe(2020000)
+    })
   })
 
   describe('추적 목록', () => {
@@ -776,9 +888,9 @@ describe('useBossProfitStore', () => {
       expect(midState.rows).toEqual([])
     })
 
-    it('캐시의 미처치 보스는 캐시 단계 rows에서 제외된다', async () => {
+    it('캐시의 미등록·미처치 보스는 캐시 단계 rows에서도 제외된다', async () => {
       getCachedSchedulerStateMock.mockResolvedValue(
-        cachedEntry({ bossContents: [bossContent({ isComplete: false })] }),
+        cachedEntry({ bossContents: [bossContent({ isRegistered: false, isComplete: false })] }),
       )
 
       const pending = new Promise<CharacterScheduleSync[]>(() => {})
@@ -788,6 +900,23 @@ describe('useBossProfitStore', () => {
       await flushMicrotasks()
 
       expect(useBossProfitStore.getState().rows).toEqual([])
+    })
+
+    it('캐시의 등록됐지만 미처치인 보스는 캐시 단계에서도 미완료 placeholder로 즉시 보여준다(ADR-032)', async () => {
+      getCachedSchedulerStateMock.mockResolvedValue(
+        cachedEntry({ bossContents: [bossContent({ isRegistered: true, isComplete: false })] }),
+      )
+
+      const pending = new Promise<CharacterScheduleSync[]>(() => {})
+      syncSchedulesMock.mockReturnValue(pending)
+
+      void useBossProfitStore.getState().refresh(['ocid-1'])
+      await flushMicrotasks()
+
+      const rows = useBossProfitStore.getState().rows
+      expect(rows).toHaveLength(1)
+      expect(rows[0].isComplete).toBe(false)
+      expect(rows[0].payoutMeso).toBe(0)
     })
 
     it('월간 탭 캐시 단계에서도 이미 확정된 지난 주차 합계가 즉시 반영된다(syncSchedules 응답 전 weeklySubtotals 누락 방지)', async () => {
@@ -1004,6 +1133,47 @@ describe('useBossProfitStore', () => {
       expect(useBossProfitStore.getState().periodUnavailable).toBe(false)
     })
 
+    it('goToPreviousPeriod: 등록 난이도와 실제 처치 난이도가 다른 과거 주는 실제 처치 난이도로 한 번만 기록한다(이중 기록 방지, ADR-032)', async () => {
+      syncSchedulesMock.mockResolvedValue([syncResult()])
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+      upsertBossProfitRecordMock.mockClear() // 초기 refresh()의 자동 기록(자쿰) 호출 이력을 지운다
+
+      isPeriodCheckedMock.mockResolvedValue(false)
+      getBossProfitRecordsMock.mockResolvedValue([])
+      // 루시드를 이지로 등록해뒀지만 실제로는 노멀을 처치한 상황(같은 content_name, 같은
+      // cycle) — normalize.ts의 승격 로직으로 이지도 isComplete: true가 되지만 ownComplete는
+      // 노멀만 true다.
+      fetchSchedulerCharacterStateMock.mockResolvedValue(
+        schedulerState({
+          bossContents: [
+            bossContent({
+              name: '루시드',
+              difficulty: '이지',
+              cycle: 'weekly',
+              isRegistered: true,
+              isComplete: true,
+              ownComplete: false,
+            }),
+            bossContent({
+              name: '루시드',
+              difficulty: '노멀',
+              cycle: 'weekly',
+              isRegistered: false,
+              isComplete: true,
+              ownComplete: true,
+            }),
+          ],
+        }),
+      )
+
+      await useBossProfitStore.getState().goToPreviousPeriod()
+
+      expect(upsertBossProfitRecordMock).toHaveBeenCalledTimes(1)
+      expect(upsertBossProfitRecordMock).toHaveBeenCalledWith(
+        expect.objectContaining({ boss: '루시드', difficulty: '노멀', priceMeso: 35_600_000 }),
+      )
+    })
+
     it('goToPreviousPeriod: 백필 도중 isPeriodLoading이 true로 바뀐다', async () => {
       syncSchedulesMock.mockResolvedValue([syncResult()])
       await useBossProfitStore.getState().refresh(['ocid-1'])
@@ -1087,6 +1257,73 @@ describe('useBossProfitStore', () => {
 
       expect(useBossProfitStore.getState().periodKey).toBe(monthBefore)
       expect(fetchSchedulerCharacterStateMock).not.toHaveBeenCalled()
+    })
+
+    it('goToPreviousPeriod: 롤링 조회 윈도우(오늘-13일)를 벗어난, 아직 체크된 적 없는 주는 API를 호출하지 않고 조회 불가로 처리한다(ADR-032)', async () => {
+      vi.useFakeTimers({ toFake: ['Date'] })
+      vi.setSystemTime(new Date('2026-07-22T12:00:00+09:00')) // 이번 주 periodKey: 2026-07-16, 롤링 하한: 2026-07-09
+
+      try {
+        syncSchedulesMock.mockResolvedValue([syncResult()])
+        await useBossProfitStore.getState().refresh(['ocid-1'])
+
+        isPeriodCheckedMock.mockResolvedValue(false)
+        getBossProfitRecordsMock.mockResolvedValue([])
+        fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState())
+
+        // 2026-07-16 → 2026-07-09(조회일 2026-07-15, 롤링 윈도우 안 — 정상 백필)
+        await useBossProfitStore.getState().goToPreviousPeriod()
+        fetchSchedulerCharacterStateMock.mockClear()
+        markPeriodCheckedMock.mockClear()
+
+        // 2026-07-09 → 2026-07-02(조회일 2026-07-08, 롤링 윈도우 밖 — API를 부르면 안 된다)
+        await useBossProfitStore.getState().goToPreviousPeriod()
+
+        expect(useBossProfitStore.getState().periodKey).toBe('2026-07-02')
+        expect(fetchSchedulerCharacterStateMock).not.toHaveBeenCalled()
+        expect(markPeriodCheckedMock).toHaveBeenCalledWith('ocid-1', 'weekly', '2026-07-02', expect.any(String))
+        // 영구히 실패하는 게 아니라 "이 기간은 조회 불가"로 확정하는 것이므로, 재시도를 유도하는
+        // periodUnavailable(네트워크 실패 등)과는 다르게 취급한다.
+        expect(useBossProfitStore.getState().periodUnavailable).toBe(false)
+        expect(useBossProfitStore.getState().rows).toEqual([])
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    it('월간 탭 주차별 합계: 롤링 윈도우를 벗어났어도 이미 저장된 기록이 있으면 조회 불가가 아니라 확정 합계를 그대로 보여준다(ADR-032)', async () => {
+      vi.useFakeTimers({ toFake: ['Date'] })
+      vi.setSystemTime(new Date('2026-07-22T12:00:00+09:00'))
+
+      try {
+        syncSchedulesMock.mockResolvedValue([syncResult()])
+        await useBossProfitStore.getState().refresh(['ocid-1'])
+        await useBossProfitStore.getState().setTab('monthly')
+
+        // 조회일 2026-07-08 — 롤링 하한(2026-07-09)보다 이전이라 "지금"은 API로 다시 조회할 수
+        // 없지만, 이 주가 아직 윈도우 안에 있었을 때 이미 저장해둔 기록이 있다고 가정한다.
+        const pastWeekKey = '2026-07-02'
+        const cachedRecord: BossProfitRecord = {
+          ocid: 'ocid-1',
+          boss: '자쿰',
+          difficulty: '카오스',
+          cycle: 'weekly',
+          periodKey: pastWeekKey,
+          partySize: 2,
+          priceMeso: 8_080_000,
+          payoutMeso: 4_040_000,
+          recordedAt: '2026-07-08T00:00:00.000Z',
+        }
+        getBossProfitRecordsMock.mockResolvedValue([cachedRecord])
+
+        await useBossProfitStore.getState().setTab('monthly')
+
+        const subtotal = useBossProfitStore.getState().weeklySubtotals.find((s) => s.periodKey === pastWeekKey)
+        expect(subtotal?.state).toBe('confirmed')
+        expect(subtotal?.totalMeso).toBe(4_040_000)
+      } finally {
+        vi.useRealTimers()
+      }
     })
 
     it('먼저 시작된 느린 백필이 나중에 끝나도, 그 사이 시작된 더 최신 네비게이션 결과를 덮어쓰지 않는다', async () => {
