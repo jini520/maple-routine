@@ -40,6 +40,17 @@ const CREATE_BOSS_PROFIT_PERIOD_CHECKS_TABLE = `
   )
 `
 
+// 메이린 카드 표시명을 API content_name('시즌 보스 메이린')과 통일하며 boss 식별 키를
+// 바꿨다(2026-07-22, weekly-bosses.json 참고) — 기존에 저장된 파티 설정·수익 기록이 새 키를
+// 못 찾는 고아 데이터가 되지 않도록 옛 키를 새 키로 옮긴다. 이미 옮겨진 뒤에는 WHERE절에
+// 걸리는 행이 없어 매번 실행해도 안전한 no-op이다.
+const MIGRATE_MEIRIN_BOSS_KEY_PARTY_SETTINGS = `
+  UPDATE boss_party_settings SET boss = '시즌 보스 메이린' WHERE boss = '메이린'
+`
+const MIGRATE_MEIRIN_BOSS_KEY_PROFIT_RECORDS = `
+  UPDATE boss_profit_records SET boss = '시즌 보스 메이린' WHERE boss = '메이린'
+`
+
 let sqliteConnection: SQLiteConnection | null = null
 let dbPromise: Promise<SQLiteDBConnection> | null = null
 
@@ -71,6 +82,8 @@ async function openBossProfitDb(): Promise<SQLiteDBConnection> {
   await db.execute(CREATE_BOSS_PROFIT_RECORDS_TABLE)
   await db.execute(CREATE_BOSS_PARTY_SETTINGS_TABLE)
   await db.execute(CREATE_BOSS_PROFIT_PERIOD_CHECKS_TABLE)
+  await db.execute(MIGRATE_MEIRIN_BOSS_KEY_PARTY_SETTINGS)
+  await db.execute(MIGRATE_MEIRIN_BOSS_KEY_PROFIT_RECORDS)
 
   return db
 }

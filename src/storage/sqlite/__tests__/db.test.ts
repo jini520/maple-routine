@@ -85,6 +85,23 @@ describe('getBossProfitDb', () => {
     expect(db).toBe(fakeDb)
   })
 
+  // 메이린 카드 표시명을 API content_name('시즌 보스 메이린')과 통일하며 boss 식별 키를 바꿨다
+  // (2026-07-22) — 기존에 저장된 파티 설정·수익 기록이 새 키를 못 찾는 고아 데이터가 되지
+  // 않도록, 열 때마다 옛 키를 새 키로 옮겨준다(이미 옮겨졌으면 WHERE절에 걸리는 행이 없어
+  // no-op).
+  it('boss_party_settings/boss_profit_records의 옛 boss 키(메이린)를 새 키(시즌 보스 메이린)로 마이그레이션한다', async () => {
+    const { getBossProfitDb } = await import('../db')
+
+    await getBossProfitDb()
+
+    expect(dbExecuteMock).toHaveBeenCalledWith(
+      expect.stringMatching(/UPDATE boss_party_settings SET boss = '시즌 보스 메이린' WHERE boss = '메이린'/),
+    )
+    expect(dbExecuteMock).toHaveBeenCalledWith(
+      expect.stringMatching(/UPDATE boss_profit_records SET boss = '시즌 보스 메이린' WHERE boss = '메이린'/),
+    )
+  })
+
   it('웹 플랫폼에서는 커넥션을 열기 전에 initWebStore를 먼저 호출한다', async () => {
     getPlatformMock.mockReturnValue('web')
     const { getBossProfitDb } = await import('../db')

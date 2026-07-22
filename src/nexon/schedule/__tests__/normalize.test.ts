@@ -166,6 +166,57 @@ describe('normalizeSchedulerCharacterState', () => {
   })
 })
 
+describe('normalizeSchedulerCharacterState — 등록 난이도 ≠ 처치 난이도 보정 (ADR-031)', () => {
+  const wireWith = (
+    bossContents: NexonSchedulerCharacterStateWire['boss_contents'],
+  ): NexonSchedulerCharacterStateWire => ({
+    date: '2026-07-22T00:00+09:00',
+    character_name: '낟낟',
+    world_name: '엘리시움',
+    character_level: 293,
+    character_class: '렌',
+    boss_contents: bossContents,
+    weekly_boss_clear_count: 0,
+    weekly_boss_clear_limit_count: 0,
+  })
+
+  it('등록된 난이도는 미완료인데 같은 보스의 다른(미등록) 난이도가 완료면, 등록된 난이도가 완료로 승격된다', () => {
+    const result = normalizeSchedulerCharacterState(
+      wireWith([
+        { content_name: '루시드', difficulty: 'easy', cycle: 'bossWeekly', registration_flag: 'true', complete_flag: 'false' },
+        { content_name: '루시드', difficulty: 'normal', cycle: 'bossWeekly', registration_flag: 'false', complete_flag: 'true' },
+      ]),
+    )
+
+    const easy = result.bossContents.find((boss) => boss.difficulty === '이지')
+    expect(easy).toEqual({ name: '루시드', difficulty: '이지', cycle: 'weekly', isRegistered: true, isComplete: true })
+  })
+
+  it('미등록 난이도끼리는 서로 완료 여부를 전파하지 않는다 — 각자 원본 complete_flag를 유지한다', () => {
+    const result = normalizeSchedulerCharacterState(
+      wireWith([
+        { content_name: '루시드', difficulty: 'normal', cycle: 'bossWeekly', registration_flag: 'false', complete_flag: 'false' },
+        { content_name: '루시드', difficulty: 'hard', cycle: 'bossWeekly', registration_flag: 'false', complete_flag: 'true' },
+      ]),
+    )
+
+    const normal = result.bossContents.find((boss) => boss.difficulty === '노멀')
+    const hard = result.bossContents.find((boss) => boss.difficulty === '하드')
+    expect(normal).toEqual({ name: '루시드', difficulty: '노멀', cycle: 'weekly', isRegistered: false, isComplete: false })
+    expect(hard).toEqual({ name: '루시드', difficulty: '하드', cycle: 'weekly', isRegistered: false, isComplete: true })
+  })
+
+  it('등록된 난이도 자체의 complete_flag가 true면 그대로 완료다(승격 로직과 무관)', () => {
+    const result = normalizeSchedulerCharacterState(
+      wireWith([
+        { content_name: '자쿰', difficulty: 'chaos', cycle: 'bossWeekly', registration_flag: 'true', complete_flag: 'true' },
+      ]),
+    )
+
+    expect(result.bossContents[0].isComplete).toBe(true)
+  })
+})
+
 describe('normalizeSchedulerCharacterState — 미접속으로 인한 누락 (ADR-030)', () => {
   const minimalWire: NexonSchedulerCharacterStateWire = {
     date: '2026-07-21T00:00+09:00',

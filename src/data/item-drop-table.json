@@ -1968,7 +1968,7 @@
       }
     },
     {
-      "boss": "메이린",
+      "boss": "시즌 보스 메이린",
       "difficulty": "노멀",
       "rewards": {
         "fixed": [
@@ -1989,7 +1989,7 @@
       }
     },
     {
-      "boss": "메이린",
+      "boss": "시즌 보스 메이린",
       "difficulty": "하드",
       "rewards": {
         "fixed": [

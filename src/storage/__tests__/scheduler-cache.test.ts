@@ -34,8 +34,6 @@ const sampleState: SchedulerCharacterState = {
   dailyContents: [],
   weeklyContents: [],
   bossContents: [],
-  weeklyBossClearCount: 0,
-  weeklyBossClearLimitCount: 0,
   isDailyStale: false,
   isWeeklyStale: false,
   isWeeklyBossStale: false,

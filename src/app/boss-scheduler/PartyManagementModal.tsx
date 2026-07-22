@@ -124,9 +124,16 @@ export function PartyManagementModal(props: PartyManagementModalProps): React.JS
     return props.getRegisteredDifficulty(bossName) ?? getDifficultiesForBoss(bossName)[0] ?? null
   }
 
-  const [selectedBoss, setSelectedBoss] = useState(ALL_BOSS_NAMES[0] ?? '')
+  // 스케줄러에 등록된 보스만 보기([[ADR-031]] 결정 4) — 기본 ON. 등록된 보스가 하나도 없으면
+  // (신규 캐릭터 등) ON이어도 전체 목록으로 대체해, "아직 등록 안 한 보스도 미리 파티 인원
+  // 설정 가능"이라는 이 모달의 원래 목적이 막히지 않게 한다.
+  const registeredBossNames = ALL_BOSS_NAMES.filter((bossName) => props.getRegisteredDifficulty(bossName) !== null)
+  const [onlyRegistered, setOnlyRegistered] = useState(true)
+  const visibleBossNames = onlyRegistered && registeredBossNames.length > 0 ? registeredBossNames : ALL_BOSS_NAMES
+
+  const [selectedBoss, setSelectedBoss] = useState(visibleBossNames[0] ?? '')
   const [selectedDifficulty, setSelectedDifficulty] = useState<BossDifficulty | null>(
-    defaultDifficultyFor(ALL_BOSS_NAMES[0] ?? ''),
+    defaultDifficultyFor(visibleBossNames[0] ?? ''),
   )
 
   const difficulties = getDifficultiesForBoss(selectedBoss)
@@ -137,6 +144,14 @@ export function PartyManagementModal(props: PartyManagementModalProps): React.JS
     setSelectedDifficulty(defaultDifficultyFor(bossName))
   }
 
+  function handleToggleOnlyRegistered(next: boolean): void {
+    setOnlyRegistered(next)
+    const nextVisibleBossNames = next && registeredBossNames.length > 0 ? registeredBossNames : ALL_BOSS_NAMES
+    if (!nextVisibleBossNames.includes(selectedBoss)) {
+      handleSelectBoss(nextVisibleBossNames[0] ?? '')
+    }
+  }
+
   return (
     <Modal onClose={props.onClose} testId="party-management-modal-overlay">
       <div className="mb-4 space-y-1">
@@ -145,6 +160,26 @@ export function PartyManagementModal(props: PartyManagementModalProps): React.JS
       </div>
 
       <div className="space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-xs font-medium text-text-muted">스케줄러에 등록된 보스만 보기</span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={onlyRegistered}
+            aria-label="스케줄러에 등록된 보스만 보기"
+            onClick={() => handleToggleOnlyRegistered(!onlyRegistered)}
+            className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+              onlyRegistered ? 'bg-primary' : 'bg-surface-2'
+            }`}
+          >
+            <span
+              className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-surface transition-transform ${
+                onlyRegistered ? 'translate-x-5' : 'translate-x-0'
+              }`}
+            />
+          </button>
+        </div>
+
         <div className="space-y-1">
           <label htmlFor="party-management-boss" className="text-xs font-medium text-text-muted">
             보스
@@ -155,7 +190,7 @@ export function PartyManagementModal(props: PartyManagementModalProps): React.JS
             onChange={(event) => handleSelectBoss(event.target.value)}
             className="w-full rounded-[10px] border border-border bg-surface px-4 py-3 text-sm text-text"
           >
-            {ALL_BOSS_NAMES.map((bossName) => (
+            {visibleBossNames.map((bossName) => (
               <option key={bossName} value={bossName}>
                 {bossName}
               </option>

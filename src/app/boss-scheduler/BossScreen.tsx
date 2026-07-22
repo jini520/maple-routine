@@ -9,7 +9,8 @@ import type { BossPortraitCrop } from '../../lib/boss-icons'
 import { CharacterSelectDropdown } from '../../components/CharacterSelectDropdown/CharacterSelectDropdown'
 import { CharacterTrackingPicker } from '../../components/CharacterTrackingPicker/CharacterTrackingPicker'
 import { ProgressModal } from '../../components/ProgressModal/ProgressModal'
-import type { MatchedBoss } from '../../lib/boss-matching'
+import { selectDisplayBosses, type MatchedBoss } from '../../lib/boss-matching'
+import { isChallengersWorld } from '../../lib/world-emblem'
 import { PartyManagementModal } from './PartyManagementModal'
 import { getCharacterPickerRoster } from '../../features/schedule-sync/schedule-sync'
 
@@ -181,10 +182,22 @@ export function BossScreen(): React.JSX.Element {
 
   const selected = characters.find((character) => character.ocid === effectiveSelectedOcid) ?? null
 
+  // 파티 관리 모달의 "등록된 난이도 기본 선택"용 — 실제 registration_flag 기준(ADR-019).
   const registeredWeeklyBosses =
     selected !== null ? selected.weeklyBosses.filter((boss) => boss.isRegistered) : []
   const registeredMonthlyBosses =
     selected !== null ? selected.monthlyBosses.filter((boss) => boss.isRegistered) : []
+
+  // 카드로 표시할 목록 — 등록된 보스뿐 아니라 미등록이어도 완료된 보스를 포함한다([[ADR-031]] 결정 5).
+  const displayedWeeklyBosses = selected !== null ? selectDisplayBosses(selected.weeklyBosses) : []
+  const displayedMonthlyBosses = selected !== null ? selectDisplayBosses(selected.monthlyBosses) : []
+
+  // 챌린저스 월드면 registration_flag와 무관하게 시즌 보스 완료 여부를 배지로 보여준다([[ADR-031]] 결정 3).
+  const seasonBosses =
+    selected !== null && selected.world !== undefined && isChallengersWorld(selected.world)
+      ? selected.weeklyBosses.filter((boss) => boss.isSeasonBoss)
+      : []
+  const isSeasonBossComplete = seasonBosses.some((boss) => boss.isComplete)
 
   function getPartySize(ocid: string, boss: MatchedBoss): number | undefined {
     const bossName = boss.matchedBossName ?? boss.apiName
@@ -203,9 +216,9 @@ export function BossScreen(): React.JSX.Element {
 
   const activeFilter = activeTab === 'weekly' ? weeklyFilter : monthlyFilter
   const filteredWeeklyBosses =
-    selected !== null ? filterByPartySize(registeredWeeklyBosses, selected.ocid, weeklyFilter) : []
+    selected !== null ? filterByPartySize(displayedWeeklyBosses, selected.ocid, weeklyFilter) : []
   const filteredMonthlyBosses =
-    selected !== null ? filterByPartySize(registeredMonthlyBosses, selected.ocid, monthlyFilter) : []
+    selected !== null ? filterByPartySize(displayedMonthlyBosses, selected.ocid, monthlyFilter) : []
 
   async function handleSaveTracking(ocids: string[]): Promise<void> {
     setSaveProgress({ completed: 0, total: ocids.length })
@@ -393,13 +406,26 @@ export function BossScreen(): React.JSX.Element {
                   </button>
                 </div>
 
-                {activeTab === 'weekly' &&
-                  selected.weeklyBossClearCount !== null &&
-                  selected.weeklyBossClearLimitCount !== null && (
-                    <span className="rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary">
-                      {selected.weeklyBossClearCount}/{selected.weeklyBossClearLimitCount}
-                    </span>
-                  )}
+                {activeTab === 'weekly' && (
+                  <div className="flex items-center gap-2">
+                    {seasonBosses.length > 0 && (
+                      <span
+                        className={
+                          isSeasonBossComplete
+                            ? 'rounded-full bg-secondary px-2.5 py-1 text-xs font-bold text-bg'
+                            : 'rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary'
+                        }
+                      >
+                        {`season ${isSeasonBossComplete ? '완료' : '미완료'}`}
+                      </span>
+                    )}
+                    {selected.weeklyBossClearCount !== null && selected.weeklyBossClearLimitCount !== null && (
+                      <span className="rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary">
+                        {selected.weeklyBossClearCount}/{selected.weeklyBossClearLimitCount}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center gap-2">
@@ -441,13 +467,13 @@ export function BossScreen(): React.JSX.Element {
         <div className="space-y-4 px-4 pb-4">
           {activeTab === 'weekly' && (
             <>
-              {registeredWeeklyBosses.length === 0 && !selected.isStale && (
+              {displayedWeeklyBosses.length === 0 && !selected.isStale && (
                 <div className="rounded-[14px] border border-dashed border-border p-4 text-sm text-text-muted">
                   표시할 항목이 없습니다 — 게임에서 스케줄러에 등록해주세요
                 </div>
               )}
 
-              {registeredWeeklyBosses.length > 0 && filteredWeeklyBosses.length === 0 && (
+              {displayedWeeklyBosses.length > 0 && filteredWeeklyBosses.length === 0 && (
                 <div className="rounded-[14px] border border-dashed border-border p-4 text-sm text-text-muted">
                   이 조건에 해당하는 보스가 없습니다
                 </div>
@@ -469,13 +495,13 @@ export function BossScreen(): React.JSX.Element {
 
           {activeTab === 'monthly' && (
             <>
-              {registeredMonthlyBosses.length === 0 && !selected.isStale && (
+              {displayedMonthlyBosses.length === 0 && !selected.isStale && (
                 <div className="rounded-[14px] border border-dashed border-border p-4 text-sm text-text-muted">
                   표시할 항목이 없습니다 — 게임에서 스케줄러에 등록해주세요
                 </div>
               )}
 
-              {registeredMonthlyBosses.length > 0 && filteredMonthlyBosses.length === 0 && (
+              {displayedMonthlyBosses.length > 0 && filteredMonthlyBosses.length === 0 && (
                 <div className="rounded-[14px] border border-dashed border-border p-4 text-sm text-text-muted">
                   이 조건에 해당하는 보스가 없습니다
                 </div>

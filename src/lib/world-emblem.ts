@@ -21,3 +21,10 @@ export function worldEmblemUrl(world: string): string | null {
   if (basename === undefined) return null
   return emblemUrlByBasename[basename] ?? null
 }
+
+// 챌린저스/챌린저스2/챌린저스3/챌린저스4 판정([[ADR-031]]) — world-emblems.json에서 이미
+// challengers 엠블럼으로 매핑된 월드 집합을 그대로 재사용해, 새 챌린저스 월드가 생겨도
+// 그 파일만 갱신하면 이 판정도 함께 갱신되게 한다.
+export function isChallengersWorld(world: string): boolean {
+  return basenameByWorld[world] === 'challengers'
+}

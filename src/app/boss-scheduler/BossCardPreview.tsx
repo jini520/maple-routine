@@ -20,6 +20,7 @@ function buildNewBossPreviewEntries(): MatchedBoss[] {
     isComplete: false,
     matchedBossName: slug,
     portraitSlug: slug,
+    isSeasonBoss: false,
   }))
 }
 
@@ -53,6 +54,7 @@ function buildAllBosses(): MatchedBoss[] {
     isComplete: index % 2 === 0,
     matchedBossName: entry.boss,
     portraitSlug: entry.portraitSlug ?? null,
+    isSeasonBoss: false,
   }))
 }
 

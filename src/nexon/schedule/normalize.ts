@@ -41,17 +41,24 @@ function normalizeWeeklyContent(wire: NexonWeeklyContentWire): WeeklyContent {
 }
 
 // bossDaily 항목(힐라 하드·핑크빈 카오스 등 일간으로 격하된 보스)은 이 앱이 다루지 않는 대상이라 걸러낸다 (ADR-007)
-function normalizeBossContent(wire: NexonBossContentWire): BossContent | null {
+//
+// 등록한 난이도와 실제로 처치한 난이도가 다를 수 있어([[ADR-031]]), 등록된 항목은 자기 자신의
+// complete_flag가 false여도 같은 content_name의 다른 난이도가 complete_flag: true면 완료로
+// 승격시킨다. 이 승격은 등록된 항목에만 적용하고, 미등록 항목끼리는 서로 전파하지 않는다 —
+// 미등록 완료 항목은 원본 complete_flag 그대로 lib/boss-matching의 카드 선택 로직에서 쓰인다.
+function normalizeBossContent(wire: NexonBossContentWire, completedNames: Set<string>): BossContent | null {
   if (wire.cycle === 'bossDaily') {
     return null
   }
+
+  const isRegistered = wire.registration_flag === 'true'
 
   return {
     name: wire.content_name,
     difficulty: DIFFICULTY_MAP[wire.difficulty],
     cycle: wire.cycle === 'bossWeekly' ? 'weekly' : 'monthly',
-    isRegistered: wire.registration_flag === 'true',
-    isComplete: wire.complete_flag === 'true',
+    isRegistered,
+    isComplete: wire.complete_flag === 'true' || (isRegistered && completedNames.has(wire.content_name)),
   }
 }
 
@@ -63,6 +70,9 @@ export function normalizeSchedulerCharacterState(
   const dailyContentsWire = wire.daily_contents ?? []
   const weeklyContentsWire = wire.weekly_contents ?? []
   const bossContentsWire = wire.boss_contents ?? []
+  const completedBossNames = new Set(
+    bossContentsWire.filter((boss) => boss.complete_flag === 'true').map((boss) => boss.content_name),
+  )
 
   return {
     asOf: wire.date,
@@ -73,10 +83,8 @@ export function normalizeSchedulerCharacterState(
     dailyContents: dailyContentsWire.map(normalizeDailyContent),
     weeklyContents: weeklyContentsWire.map(normalizeWeeklyContent),
     bossContents: bossContentsWire
-      .map(normalizeBossContent)
+      .map((boss) => normalizeBossContent(boss, completedBossNames))
       .filter((content): content is BossContent => content !== null),
-    weeklyBossClearCount: wire.weekly_boss_clear_count,
-    weeklyBossClearLimitCount: wire.weekly_boss_clear_limit_count,
     isDailyStale: dailyContentsWire.length === 0,
     isWeeklyStale: weeklyContentsWire.length === 0,
     isWeeklyBossStale: !bossContentsWire.some((boss) => boss.cycle === 'bossWeekly'),
