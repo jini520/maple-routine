@@ -609,6 +609,14 @@ describe('useBossSchedulerStore', () => {
       expect(useBossSchedulerStore.getState().partySizes).toEqual({ 'ocid-1:자쿰:카오스': 4 })
     })
 
+    it('setPartySize가 성공하면 완료 토스트를 띄운다', async () => {
+      setBossPartySizeMock.mockResolvedValue(undefined)
+
+      await useBossSchedulerStore.getState().setPartySize('ocid-1', '자쿰', '카오스', 4)
+
+      expect(showSuccessMock).toHaveBeenCalledWith('파티원 수를 저장했어요')
+    })
+
     it('setPartySize는 해당 보스의 maxPartySize를 초과하면 에러를 던지고 storage를 호출하지 않는다', async () => {
       // 스우 익스트림은 boss-crystal-prices.json에서 maxPartySize: 2로 예외 지정되어 있다.
       await expect(

@@ -216,5 +216,6 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
     set({
       partySizes: { ...get().partySizes, [partySizeKey(ocid, boss, difficulty)]: partySize },
     })
+    useToastStore.getState().showSuccess('파티원 수를 저장했어요')
   },
 }))
