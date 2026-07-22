@@ -17,8 +17,10 @@ export function ToastStack(props: ToastStackProps): React.JSX.Element | null {
     ? 'bottom-[calc(4rem+var(--sa-bottom)+0.75rem)]'
     : 'bottom-[calc(var(--sa-bottom)+0.75rem)]'
 
+  // Modal/CharacterTrackingPicker/DisconnectConfirm 등 오버레이가 전부 z-50이라, 토스트가 그보다
+  // 낮으면 모달이 열려있는 동안 배경(bg-bg/70)에 가려 안 보인다 — 토스트는 항상 최상단이어야 한다.
   return createPortal(
-    <div data-testid="toast-stack" className={`fixed inset-x-0 ${bottomClass} z-40 flex flex-col gap-2 px-4`}>
+    <div data-testid="toast-stack" className={`fixed inset-x-0 ${bottomClass} z-[60] flex flex-col gap-2 px-4`}>
       {toasts.map((toast) => (
         <Toast key={toast.id} toast={toast} onDismiss={() => dismiss(toast.id)} />
       ))}
