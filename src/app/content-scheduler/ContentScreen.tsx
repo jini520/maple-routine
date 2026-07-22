@@ -10,6 +10,7 @@ import type { BossPortraitCrop } from '../../lib/boss-icons'
 import { CharacterSelectDropdown } from '../../components/CharacterSelectDropdown/CharacterSelectDropdown'
 import { CharacterTrackingPicker } from '../../components/CharacterTrackingPicker/CharacterTrackingPicker'
 import type { DailyQuestRegionCrop } from '../../lib/daily-quest-backgrounds'
+import { MAPLE_LEAF_PATH } from '../../components/mapleLeafPath'
 import { ProgressModal } from '../../components/ProgressModal/ProgressModal'
 import { RefreshCw } from 'lucide-react'
 import { getCharacterPickerRoster } from '../../features/schedule-sync/schedule-sync'
@@ -681,14 +682,31 @@ export function ContentScreen(): React.JSX.Element {
 
   if (isEmpty) {
     return (
-      <div className="p-4 space-y-4">
+      <div className="flex min-h-[calc(100dvh-var(--sa-top)-var(--sa-bottom)-4rem)] flex-col p-4">
         <div className="flex items-center justify-between">
           <h1 className="text-lg font-semibold text-text">컨텐츠 스케줄러</h1>
           {characterManageButton}
         </div>
 
-        <div className="rounded-[14px] border border-dashed border-border p-4 text-sm text-text-muted">
-          표시할 캐릭터가 없습니다 — 캐릭터를 선택해주세요
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
+          <div className="flex h-[84px] w-[84px] items-center justify-center rounded-full bg-primary/15">
+            <svg width="42" height="43" viewBox="0 0 127 130" className="fill-primary" aria-hidden="true">
+              <path d={MAPLE_LEAF_PATH} />
+            </svg>
+          </div>
+          <div className="space-y-1">
+            <p className="text-base font-semibold text-text">표시할 캐릭터가 없습니다</p>
+            <p className="max-w-[220px] text-sm text-text-muted">
+              캐릭터를 선택하면 일간·주간 컨텐츠를 확인할 수 있습니다
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsPickerOpen(true)}
+            className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-bg hover:bg-primary-hover"
+          >
+            캐릭터 선택하기
+          </button>
         </div>
 
         {trackingModals}

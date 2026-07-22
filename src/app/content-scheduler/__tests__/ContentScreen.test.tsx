@@ -82,8 +82,27 @@ describe('ContentScreen', () => {
 
     render(<ContentScreen />)
 
-    expect(await screen.findByText('표시할 캐릭터가 없습니다 — 캐릭터를 선택해주세요')).toBeInTheDocument()
+    expect(await screen.findByText('표시할 캐릭터가 없습니다')).toBeInTheDocument()
+    expect(screen.getByText('캐릭터를 선택하면 일간·주간 컨텐츠를 확인할 수 있습니다')).toBeInTheDocument()
     expect(screen.queryByText(/몬스터파크/)).not.toBeInTheDocument()
+  })
+
+  it('빈 상태에서 중앙 CTA 버튼을 누르면 캐릭터 관리 피커가 열린다', async () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: null,
+      characters: [],
+    })
+    mockedGetCharacterPickerRoster.mockImplementation(async (onUpdate) => {
+      onUpdate([pickerEntry({ ocid: 'ocid-2', name: '내옆에최성일', level: 211 })])
+    })
+
+    render(<ContentScreen />)
+    await screen.findByText('표시할 캐릭터가 없습니다')
+
+    fireEvent.click(screen.getByRole('button', { name: '캐릭터 선택하기' }))
+
+    expect(await screen.findByRole('button', { name: /내옆에최성일/ })).toBeInTheDocument()
   })
 
   it('마운트 시 loadTrackedOcids가 호출된다', async () => {
