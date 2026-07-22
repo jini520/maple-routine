@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { Minus, Plus } from 'lucide-react'
+import { DifficultyBadge } from '../../components/DifficultyBadge/DifficultyBadge'
 import { Modal } from '../../components/Modal/Modal'
 import weeklyBossesData from '../../data/weekly-bosses.json'
 import { CRYSTAL_PRICES, getMaxPartySize } from '../../lib/boss-crystal-prices'
-import { DifficultyBadge } from './BossScreen'
 import type { BossDifficulty } from '../../types'
 
 interface BossReferenceEntry {

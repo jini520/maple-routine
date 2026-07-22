@@ -134,7 +134,10 @@ function mergeSection(
 }
 
 // 보스는 전부 character 범위(2026-07-21 확인)라 world/account 원장 단계가 필요 없다 — cycle별로
-// stale이면 이전 캐시에서 그 cycle의 항목만 골라 isComplete를 false로 리셋한다.
+// stale이면 이전 캐시에서 그 cycle의 항목만 골라 isComplete와 ownComplete를 false로 리셋한다.
+// ownComplete도 함께 리셋해야 한다 — 안 그러면 지난 리셋에서의 완료 여부가 그대로 남아있어
+// 보스 수익 계산기(selectBossProfitBosses, ADR-032)가 이번 리셋에서 아직 처치하지 않은 보스를
+// "실제로 완료함"으로 오판한다.
 function mergeBossCycle(
   cycle: BossCycle,
   freshBossContents: BossContent[],
@@ -144,7 +147,9 @@ function mergeBossCycle(
   if (!freshIsStale) {
     return freshBossContents.filter((boss) => boss.cycle === cycle)
   }
-  return previousBossContents.filter((boss) => boss.cycle === cycle).map((boss) => ({ ...boss, isComplete: false }))
+  return previousBossContents
+    .filter((boss) => boss.cycle === cycle)
+    .map((boss) => ({ ...boss, isComplete: false, ownComplete: false }))
 }
 
 export function mergeSchedulerState(input: MergeInput): MergeOutput {

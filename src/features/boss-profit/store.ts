@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { DEFAULT_MAX_PARTY_SIZE, findPriceEntry } from '../../lib/boss-crystal-prices'
-import { matchBossContent, type MatchedBoss } from '../../lib/boss-matching'
+import { matchBossContent, selectBossProfitBosses, type MatchedBoss } from '../../lib/boss-matching'
 import {
   formatBossProfitPeriodLabel,
   getAdjacentPeriodKey,
@@ -9,7 +9,7 @@ import {
   getWeeklyPeriodKeysInMonth,
   isEarliestNavigablePeriod,
   isLatestPeriod,
-  MIN_SCHEDULER_DATE,
+  isPeriodQueryable,
 } from '../../lib/boss-profit-period'
 import { fetchSchedulerCharacterState } from '../../nexon/schedule'
 import { getAuthConfig } from '../../storage/api-key'
@@ -36,6 +36,7 @@ export interface BossProfitRow {
   maxPartySize: number
   partySize: number | null // 사용자가 아직 입력 안 했으면 null
   payoutMeso: number | null // partySize가 null이거나 priceMeso가 null이면 null
+  isComplete: boolean // false면 보스 스케줄러에 등록만 되고 아직 처치 전(미완료 placeholder, ADR-032) — payoutMeso는 항상 0이고 DB에 기록되지 않는다
 }
 
 export type WeeklySubtotalState = 'confirmed' | 'inProgress' | 'upcoming' | 'unavailable'
@@ -62,6 +63,7 @@ export interface BossProfitState {
   error: ScheduleSyncError | null
   staleCharacterNames: string[]
   trackedOcids: string[] | null
+  lastSyncedAt: string | null // 페이지 전체 기준 마지막으로 성공한 실시간 동기화 시각(ISO 8601). 컨텐츠/보스 스케줄러의 formatSyncedAt과 동일하게 새로고침 아이콘 옆에 표시
 }
 
 type BossProfitRowKey = Pick<BossProfitRow, 'ocid' | 'boss' | 'difficulty' | 'cycle' | 'periodKey'>
@@ -167,7 +169,13 @@ function buildBossProfitRow(
     priceMeso,
     maxPartySize,
     partySize: null,
-    payoutMeso: null,
+    // 미완료(등록만 되고 아직 처치 전) 보스는 항상 0메소로 계산한다(ADR-032) — 완료 보스는
+    // 기존과 동일하게 null로 두고 자동 기록(위 for 루프)이나 병합(mergeRecordsIntoRows)에서 채운다.
+    // isComplete(카드 표시용 승격된 값)가 아니라 ownComplete(승격 없는 원본 완료 여부)를 써야
+    // 한다 — 여기 도달하는 boss는 이미 selectBossProfitBosses가 골라준 것이라 실제 처치 난이도
+    // (ownComplete: true) 아니면 미완료 placeholder(ownComplete: false)뿐이다.
+    payoutMeso: boss.ownComplete ? null : 0,
+    isComplete: boss.ownComplete,
   }
 }
 
@@ -194,6 +202,7 @@ function buildRowFromRecord(
     maxPartySize,
     partySize: record.partySize,
     payoutMeso: record.payoutMeso,
+    isComplete: true, // 기록은 항상 완료된 보스만 남는다(backfillTarget/자동 기록이 완료 보스만 upsert)
   }
 }
 
@@ -303,16 +312,20 @@ async function buildWeeklySubtotalsForMonth(
         subtotals.push({ ocid, characterName, imageUrl, periodKey: weekKey, totalMeso, state: 'inProgress' })
       } else if (weekKey > currentWeeklyPeriodKey) {
         subtotals.push({ ocid, characterName, imageUrl, periodKey: weekKey, totalMeso: 0, state: 'upcoming' })
-      } else if (getBackfillQueryDate('weekly', weekKey) < MIN_SCHEDULER_DATE) {
-        // 스케줄러 API가 존재하기 이전 주 — 애초에 조회(백필)하지 않는 기간이므로(backfillTarget
-        // 참고) "0메소"가 아니라 "데이터 없음"으로 구분해 표시해야 한다. 캐릭터 소계 계산에는
-        // 0으로 반영된다(totalMeso: 0).
-        subtotals.push({ ocid, characterName, imageUrl, periodKey: weekKey, totalMeso: 0, state: 'unavailable' })
       } else {
-        const totalMeso = pastRecords
-          .filter((record) => record.ocid === ocid && record.cycle === 'weekly' && record.periodKey === weekKey)
-          .reduce((sum, record) => sum + record.payoutMeso, 0)
-        subtotals.push({ ocid, characterName, imageUrl, periodKey: weekKey, totalMeso, state: 'confirmed' })
+        const matchingRecords = pastRecords.filter(
+          (record) => record.ocid === ocid && record.cycle === 'weekly' && record.periodKey === weekKey,
+        )
+        // 이 조합에 이미 저장된 기록이 있으면(과거에 조회 가능했을 때 확보한 기록일 수 있음)
+        // 지금 이 주가 조회 가능한지와 무관하게 그 기록을 그대로 쓴다 — 기록이 없을 때만
+        // "지금 API로 조회할 수 있었는가"(isPeriodQueryable, MIN_SCHEDULER_DATE 고정 하한선 +
+        // 롤링 조회 윈도우 둘 다 반영)로 "조회 불가"와 "0메소 확정"을 구분한다.
+        if (matchingRecords.length === 0 && !isPeriodQueryable('weekly', weekKey, now)) {
+          subtotals.push({ ocid, characterName, imageUrl, periodKey: weekKey, totalMeso: 0, state: 'unavailable' })
+        } else {
+          const totalMeso = matchingRecords.reduce((sum, record) => sum + record.payoutMeso, 0)
+          subtotals.push({ ocid, characterName, imageUrl, periodKey: weekKey, totalMeso, state: 'confirmed' })
+        }
       }
     }
   }
@@ -395,18 +408,21 @@ function buildBackfillTargets(tab: BossCycle, periodKey: string, ocids: string[]
 // 기록 로직과 동일하게 "기록이 없는 조합만" 기본값(파티 관리 설정, 없으면 1)으로 채운다.
 // 반환값은 이 target을 이번에 확인할 수 없었는지(periodUnavailable에 반영) 여부다.
 async function backfillTarget(target: BackfillTarget, now: Date): Promise<boolean> {
-  const date = getBackfillQueryDate(target.cycle, target.periodKey)
-
-  // 스케줄러 API가 존재하기 이전 기간(ADR-023 "추가 확인") — 재시도해도 영구히 실패하므로
-  // API를 호출하지 않고 곧바로 "확인 완료, 기록 없음"으로 처리한다. periodUnavailable(재시도
-  // 유도)이 아니라 일반적인 "기록 없음"과 동일하게 다룬다 — 이 기간은 애초에 데이터가 없다.
-  if (date < MIN_SCHEDULER_DATE) {
+  // 이 기간은 지금 API로 조회할 수 없다(ADR-032) — API가 존재하기 이전(고정 하한선) 이거나,
+  // 롤링 조회 윈도우(오늘 기준 최근 13일)를 이미 벗어났거나 둘 중 하나다. 이 함수는 애초에
+  // isPeriodChecked가 false인 대상에서만 호출되므로(loadPeriod), 여기 도달했다는 건 이 조합에
+  // 대한 기록이 아직 없다는 뜻이다 — 재시도해도 영구히 실패하므로 API를 호출하지 않고 곧바로
+  // "확인 완료, 기록 없음"으로 처리한다. periodUnavailable(재시도 유도)이 아니라 일반적인
+  // "기록 없음"과 동일하게 다룬다.
+  if (!isPeriodQueryable(target.cycle, target.periodKey, now)) {
     await withSqliteFallback(
       markPeriodChecked(target.ocid, target.cycle, target.periodKey, now.toISOString()),
       undefined,
     )
     return false
   }
+
+  const date = getBackfillQueryDate(target.cycle, target.periodKey)
 
   const authConfig = await getAuthConfig()
   if (authConfig === null) {
@@ -415,9 +431,13 @@ async function backfillTarget(target: BackfillTarget, now: Date): Promise<boolea
 
   try {
     const state = await fetchSchedulerCharacterState(authConfig.apiKey, target.ocid, date)
-    const completedBosses = state.bossContents
-      .map(matchBossContent)
-      .filter((boss) => boss.cycle === target.cycle && boss.isComplete)
+    // selectBossProfitBosses로 그룹(content_name)당 실제 처치 난이도만 골라야 한다 — 그렇지
+    // 않으면 등록 난이도와 실제 처치 난이도가 다를 때 둘 다 완료로 잡혀 같은 보스 하나를 두 번
+    // 기록(이중 계산)하게 된다(ADR-032). 과거 기간 백필이므로 미완료 placeholder(ownComplete:
+    // false)는 기록 대상에서 제외한다.
+    const completedBosses = selectBossProfitBosses(
+      state.bossContents.map(matchBossContent).filter((boss) => boss.cycle === target.cycle),
+    ).filter((boss) => boss.ownComplete)
 
     const existingRecords = await withSqliteFallback(
       getBossProfitRecords([target.ocid], [target.periodKey]),
@@ -557,6 +577,7 @@ const initialState: BossProfitState = {
   error: null,
   staleCharacterNames: [],
   trackedOcids: null,
+  lastSyncedAt: null,
 }
 
 export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
@@ -614,8 +635,14 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
             return []
           }
           const bosses = cached.state.bossContents.map(matchBossContent)
-          const completedBosses = bosses.filter((boss) => boss.isComplete)
-          return completedBosses.map((boss) =>
+          // 완료된 보스뿐 아니라 등록만 되고 아직 처치 전인 보스도 미완료 placeholder로 함께
+          // 보여준다(ADR-032) — selectBossProfitBosses가 그룹(같은 apiName)당 "실제로 처치한"
+          // 난이도(ownComplete)를 우선하고, 없으면 등록 난이도를 미완료 placeholder로 대신
+          // 고른다. boss-scheduler의 selectDisplayBosses(등록 여부 우선)와 달리, 등록 난이도와
+          // 실제 처치 난이도가 다를 수 있어([[ADR-031]]) 가격 계산에는 반드시 실제 처치 난이도를
+          // 써야 한다.
+          const displayBosses = selectBossProfitBosses(bosses)
+          return displayBosses.map((boss) =>
             buildBossProfitRow(ocid, cached.state.characterName, imageUrlByOcid.get(ocid) ?? null, boss, now),
           )
         }),
@@ -688,9 +715,9 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
       }
 
       const bosses = result.state?.bossContents.map(matchBossContent) ?? []
-      const completedBosses = bosses.filter((boss) => boss.isComplete)
+      const displayBosses = selectBossProfitBosses(bosses)
 
-      for (const boss of completedBosses) {
+      for (const boss of displayBosses) {
         rows.push(
           buildBossProfitRow(result.ocid, result.characterName, imageUrlByOcid.get(result.ocid) ?? null, boss, now),
         )
@@ -707,7 +734,10 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     // Promise.all로 동시 실행하면 트랜잭션이 겹쳐 에러가 난다 — 순차 실행으로 처리한다.
     const autoRecordedRows: BossProfitRow[] = []
     for (const row of mergedRows) {
-      if (row.partySize !== null || row.priceMeso === null) {
+      // 미완료 placeholder(ADR-032)는 절대 자동 기록하지 않는다 — 여기서 기록해버리면
+      // 나중에 실제로 완료됐을 때 "이미 기록이 있다"고 오판해 실제 처치 수익으로 다시
+      // 계산되지 않고 0메소로 영구히 고정된다.
+      if (!row.isComplete || row.partySize !== null || row.priceMeso === null) {
         autoRecordedRows.push(row)
         continue
       }
@@ -756,6 +786,7 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
       periodUnavailable: false,
       error: null,
       staleCharacterNames,
+      lastSyncedAt: new Date().toISOString(),
     })
   },
 
@@ -820,10 +851,18 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
       })
     }
 
-    set({
-      rows: get().rows.map((candidate) =>
-        matchesRowKey(candidate, rowKey) ? { ...candidate, partySize, payoutMeso } : candidate,
-      ),
-    })
+    const applyEdit = (candidate: BossProfitRow): BossProfitRow =>
+      matchesRowKey(candidate, rowKey) ? { ...candidate, partySize, payoutMeso } : candidate
+
+    set({ rows: get().rows.map(applyEdit) })
+
+    // latestSyncSnapshot(모듈 스코프 캐시)도 함께 갱신해야 한다 — 그렇지 않으면 이 수정 후
+    // 탭을 전환했다가 돌아오거나 기간을 이동했다 복귀할 때, loadPeriod의 "현재 기간" 분기가
+    // 이 스냅샷에서 그대로 슬라이스하므로 방금 수정한 값이 낡은 스냅샷 값으로 되돌아가 보인다
+    // (2026-07-22 재현 — "파티원 수를 고쳐도 다시 파티관리 기본값으로 돌아간다"로 보고된 증상의
+    // 실제 원인).
+    if (latestSyncSnapshot !== null) {
+      latestSyncSnapshot = { ...latestSyncSnapshot, rows: latestSyncSnapshot.rows.map(applyEdit) }
+    }
   },
 }))

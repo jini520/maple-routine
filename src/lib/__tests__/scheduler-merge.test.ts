@@ -241,12 +241,28 @@ describe('mergeSchedulerState — 보스 (cycle별 독립 stale)', () => {
   it('주간 보스만 stale이면 주간 보스만 리셋되고 월간 보스는 그대로 유지된다', () => {
     const previous = baseState({
       bossContents: [
-        { name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true, isComplete: true },
-        { name: '검은 마법사', difficulty: '익스트림', cycle: 'monthly', isRegistered: true, isComplete: true },
+        { name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true, isComplete: true, ownComplete: true },
+        {
+          name: '검은 마법사',
+          difficulty: '익스트림',
+          cycle: 'monthly',
+          isRegistered: true,
+          isComplete: true,
+          ownComplete: true,
+        },
       ],
     })
     const fresh = baseState({
-      bossContents: [{ name: '검은 마법사', difficulty: '익스트림', cycle: 'monthly', isRegistered: true, isComplete: true }],
+      bossContents: [
+        {
+          name: '검은 마법사',
+          difficulty: '익스트림',
+          cycle: 'monthly',
+          isRegistered: true,
+          isComplete: true,
+          ownComplete: true,
+        },
+      ],
       isWeeklyBossStale: true,
       isMonthlyBossStale: false,
     })
@@ -254,9 +270,30 @@ describe('mergeSchedulerState — 보스 (cycle별 독립 stale)', () => {
     const result = mergeSchedulerState({ previous, fresh, worldLedger: {}, accountLedger: {}, now: NOW })
 
     expect(result.characterState.bossContents).toEqual([
-      { name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true, isComplete: false },
-      { name: '검은 마법사', difficulty: '익스트림', cycle: 'monthly', isRegistered: true, isComplete: true },
+      { name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true, isComplete: false, ownComplete: false },
+      {
+        name: '검은 마법사',
+        difficulty: '익스트림',
+        cycle: 'monthly',
+        isRegistered: true,
+        isComplete: true,
+        ownComplete: true,
+      },
     ])
+  })
+
+  it('stale로 리셋될 때 ownComplete도 isComplete와 함께 false로 리셋된다(ADR-032) — 안 그러면 지난 리셋의 완료 여부가 새 주에 그대로 남는다', () => {
+    const previous = baseState({
+      bossContents: [
+        { name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true, isComplete: true, ownComplete: true },
+      ],
+    })
+    const fresh = baseState({ bossContents: [], isWeeklyBossStale: true, isMonthlyBossStale: true })
+
+    const result = mergeSchedulerState({ previous, fresh, worldLedger: {}, accountLedger: {}, now: NOW })
+
+    expect(result.characterState.bossContents[0].isComplete).toBe(false)
+    expect(result.characterState.bossContents[0].ownComplete).toBe(false)
   })
 })
 

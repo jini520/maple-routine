@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Minus, Plus, RefreshCw } from 'lucide-react'
 import { BossPortrait } from '../../components/BossPortrait/BossPortrait'
+import { DifficultyBadge } from '../../components/DifficultyBadge/DifficultyBadge'
 import weeklyBossesData from '../../data/weekly-bosses.json'
 import {
   useBossProfitStore,
@@ -8,8 +9,13 @@ import {
   type BossProfitStore,
   type BossProfitWeeklySubtotal,
 } from '../../features/boss-profit/store'
-import { formatScheduleSyncError } from '../../features/schedule-sync/format'
-import { formatBossProfitPeriodLabel, isEarliestNavigablePeriod, isLatestPeriod } from '../../lib/boss-profit-period'
+import { formatScheduleSyncError, formatSyncedAt } from '../../features/schedule-sync/format'
+import {
+  formatBossProfitPeriodLabel,
+  isEarliestNavigablePeriod,
+  isLatestPeriod,
+  isPeriodQueryable,
+} from '../../lib/boss-profit-period'
 import type { BossCycle } from '../../types'
 
 // components/CharacterTrackingPicker와 동일한 얼굴 크롭 기법(ADR-015)을 이 화면의 32px
@@ -94,6 +100,9 @@ function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Element {
   const { row } = props
   const [error, setError] = useState<string | null>(null)
   const isPriceUnknown = row.priceMeso === null
+  // 미완료(보스 스케줄러에 등록만 되고 아직 처치 전) placeholder는 파티원 수를 조정해도 의미가
+  // 없다 — 계산은 항상 0메소로 고정된다(ADR-032). "가격 미확정"과 동일한 비활성 처리를 재사용한다.
+  const isEditable = row.isComplete && !isPriceUnknown
   const partySize = row.partySize ?? 1
 
   async function handleChange(delta: number): Promise<void> {
@@ -111,23 +120,23 @@ function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Element {
       <BossPortrait portraitSlug={findPortraitSlug(row.boss)} label={row.boss} size={BOSS_PORTRAIT_SIZE} />
 
       <div className="flex-1">
-        <div className="flex items-baseline gap-1.5 flex-wrap">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <DifficultyBadge difficulty={row.difficulty} />
           <span className="text-sm font-semibold text-text">{row.boss}</span>
-          <span className="text-sm text-text-muted">· {row.difficulty}</span>
         </div>
 
         <div className="flex items-center justify-between gap-2 mt-2">
           <div
             className={
-              isPriceUnknown
-                ? 'inline-flex items-center gap-2 rounded-full border border-border px-1 py-0.5 opacity-40'
-                : 'inline-flex items-center gap-2 rounded-full border border-border px-1 py-0.5'
+              isEditable
+                ? 'inline-flex items-center gap-2 rounded-full border border-border px-1 py-0.5'
+                : 'inline-flex items-center gap-2 rounded-full border border-border px-1 py-0.5 opacity-40'
             }
           >
             <button
               type="button"
               onClick={() => handleChange(-1)}
-              disabled={isPriceUnknown || partySize <= 1}
+              disabled={!isEditable || partySize <= 1}
               aria-label={`${row.characterName} ${row.boss} ${row.difficulty} 파티원 수 감소`}
               className="flex h-[18px] w-[18px] items-center justify-center rounded-full bg-surface-2 text-text disabled:opacity-40"
             >
@@ -137,7 +146,7 @@ function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Element {
             <button
               type="button"
               onClick={() => handleChange(1)}
-              disabled={isPriceUnknown || partySize >= row.maxPartySize}
+              disabled={!isEditable || partySize >= row.maxPartySize}
               aria-label={`${row.characterName} ${row.boss} ${row.difficulty} 파티원 수 증가`}
               className="flex h-[18px] w-[18px] items-center justify-center rounded-full bg-surface-2 text-text disabled:opacity-40"
             >
@@ -145,7 +154,11 @@ function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Element {
             </button>
           </div>
 
-          {isPriceUnknown ? (
+          {!row.isComplete ? (
+            <span className="inline-block rounded-full bg-surface-2 px-2 py-0.5 text-xs font-medium text-text-muted">
+              미완료
+            </span>
+          ) : isPriceUnknown ? (
             <span className="inline-block rounded-full bg-primary/15 px-2 py-0.5 text-xs font-medium text-primary">
               가격 미확정
             </span>
@@ -212,7 +225,7 @@ function WeeklySubtotalRow(props: { subtotal: BossProfitWeeklySubtotal; now: Dat
       )}
 
       {subtotal.state === 'upcoming' && <span className="text-xs text-text-muted">예정</span>}
-      {subtotal.state === 'unavailable' && <span className="text-xs text-text-muted">데이터 없음</span>}
+      {subtotal.state === 'unavailable' && <span className="text-xs text-text-muted">조회 불가</span>}
       {(subtotal.state === 'confirmed' || subtotal.state === 'inProgress') && (
         <span className="text-sm font-semibold text-text tabular-nums">{subtotal.totalMeso.toLocaleString()} 메소</span>
       )}
@@ -226,6 +239,7 @@ function MonthlyAccordionBody(props: {
   weeklySubtotals: BossProfitWeeklySubtotal[]
   setPartySize: BossProfitStore['setPartySize']
   now: Date
+  isMonthlyBossQueryable: boolean
 }): React.JSX.Element {
   const totalMeso = sumPayout(props.bossRows) + sumSubtotals(props.weeklySubtotals)
 
@@ -244,16 +258,20 @@ function MonthlyAccordionBody(props: {
         </>
       )}
 
-      {props.bossRows.length > 0 && (
+      {(props.bossRows.length > 0 || !props.isMonthlyBossQueryable) && (
         <>
           <p className="px-4 pt-3 pb-1 text-[11px] font-bold tracking-wide text-text-muted bg-surface-2">
             월간 보스 수익
           </p>
-          <ul>
-            {props.bossRows.map((row) => (
-              <BossProfitBossRow key={rowKey(row)} row={row} setPartySize={props.setPartySize} />
-            ))}
-          </ul>
+          {props.bossRows.length > 0 ? (
+            <ul>
+              {props.bossRows.map((row) => (
+                <BossProfitBossRow key={rowKey(row)} row={row} setPartySize={props.setPartySize} />
+              ))}
+            </ul>
+          ) : (
+            <p className="px-4 py-3 text-sm text-text-muted">조회 불가</p>
+          )}
         </>
       )}
 
@@ -307,6 +325,7 @@ function CharacterAccordion(props: {
   tab: BossCycle
   setPartySize: BossProfitStore['setPartySize']
   now: Date
+  isMonthlyBossQueryable: boolean
 }): React.JSX.Element {
   const [isExpanded, setIsExpanded] = useState(false)
   const { group } = props
@@ -350,6 +369,7 @@ function CharacterAccordion(props: {
             weeklySubtotals={group.weeklySubtotals}
             setPartySize={props.setPartySize}
             now={props.now}
+            isMonthlyBossQueryable={props.isMonthlyBossQueryable}
           />
         ))}
     </div>
@@ -368,6 +388,7 @@ export function BossProfitScreen(): React.JSX.Element {
     error,
     staleCharacterNames,
     trackedOcids,
+    lastSyncedAt,
     loadTrackedOcids,
     refresh,
     setTab,
@@ -399,6 +420,9 @@ export function BossProfitScreen(): React.JSX.Element {
   const periodLabel = formatBossProfitPeriodLabel(tab, periodKey, now)
   const isNextDisabled = isLatestPeriod(tab, periodKey, now)
   const isPrevDisabled = isEarliestNavigablePeriod(tab, periodKey)
+  // 캐시된 기록이 없는 상태에서 이 기간을 "지금" API로 조회할 수 있는지(ADR-032) — false면
+  // "아직 처치한 보스가 없습니다"(확정된 빈 상태)가 아니라 "조회 불가"(확인 자체를 못 함)를 보여준다.
+  const periodQueryable = isPeriodQueryable(tab, periodKey, now)
   const characterGroups = buildCharacterGroups(rows, weeklySubtotals)
   const totalMeso = characterGroups.reduce((sum, group) => sum + groupTotalMeso(group), 0)
 
@@ -412,7 +436,9 @@ export function BossProfitScreen(): React.JSX.Element {
           <div className="flex items-center justify-between">
             <h1 className="text-lg font-semibold text-text">보스 수익</h1>
             <div className="flex shrink-0 items-center gap-2">
-              {status === 'loading' && <p className="text-sm text-text-muted whitespace-nowrap">조회 중...</p>}
+              <p className="text-sm text-text-muted whitespace-nowrap">
+                {status === 'loading' ? '조회 중...' : formatSyncedAt(lastSyncedAt)}
+              </p>
               <button
                 type="button"
                 onClick={() => refresh(trackedOcids ?? [])}
@@ -520,7 +546,7 @@ export function BossProfitScreen(): React.JSX.Element {
         />
       </div>
 
-      <div className="space-y-4 px-4 pb-4">
+      <div className="space-y-2 px-4 pb-4">
         {isPeriodLoading && (
           <div className="rounded-[14px] border border-dashed border-border p-6 flex flex-col items-center gap-3 text-center">
             <div className="h-6 w-6 rounded-full border-[3px] border-border border-t-primary animate-spin motion-reduce:animate-none" />
@@ -530,13 +556,20 @@ export function BossProfitScreen(): React.JSX.Element {
 
         {!isPeriodLoading && status === 'loaded' && characterGroups.length === 0 && (
           <div className="rounded-[14px] border border-dashed border-border p-4 text-sm text-text-muted">
-            아직 처치한 보스가 없습니다
+            {periodQueryable ? '아직 처치한 보스가 없습니다' : '조회 불가'}
           </div>
         )}
 
         {!isPeriodLoading &&
           characterGroups.map((group) => (
-            <CharacterAccordion key={group.ocid} group={group} tab={tab} setPartySize={setPartySize} now={now} />
+            <CharacterAccordion
+              key={group.ocid}
+              group={group}
+              tab={tab}
+              setPartySize={setPartySize}
+              now={now}
+              isMonthlyBossQueryable={periodQueryable}
+            />
           ))}
       </div>
     </div>

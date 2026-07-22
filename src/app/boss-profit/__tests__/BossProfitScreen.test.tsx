@@ -27,6 +27,7 @@ function mockStore(overrides: Partial<ReturnType<typeof useBossProfitStore>>): v
     error: null,
     staleCharacterNames: [],
     trackedOcids: null,
+    lastSyncedAt: null,
     loadTrackedOcids: vi.fn(),
     refresh: vi.fn(),
     setTab: vi.fn(),
@@ -51,6 +52,7 @@ function row(overrides: Partial<BossProfitRow> = {}): BossProfitRow {
     maxPartySize: 6,
     partySize: 2,
     payoutMeso: 5_000_000,
+    isComplete: true,
     ...overrides,
   }
 }
@@ -291,6 +293,17 @@ describe('BossProfitScreen', () => {
     expect(screen.getByText('아직 처치한 보스가 없습니다')).toBeInTheDocument()
   })
 
+  it('weekly 탭: 롤링 윈도우 밖(오늘-13일 이전)이고 rows가 비어있으면 "조회 불가"를 보여준다(ADR-032)', () => {
+    // periodKey 2026-07-02의 조회일은 2026-07-08 — 테스트 실행 시점(2026-07-22) 기준 롤링
+    // 하한(2026-07-09)보다 이전이라 지금은 API로 조회할 수 없는 기간이다.
+    mockStore({ status: 'loaded', tab: 'weekly', periodKey: '2026-07-02', trackedOcids: ['ocid-1'], rows: [] })
+
+    render(<BossProfitScreen />)
+
+    expect(screen.getByText('조회 불가')).toBeInTheDocument()
+    expect(screen.queryByText('아직 처치한 보스가 없습니다')).not.toBeInTheDocument()
+  })
+
   it('새로고침 버튼을 클릭하면 refresh가 추적 목록으로 호출된다', () => {
     const refresh = vi.fn()
     mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()], refresh })
@@ -309,6 +322,27 @@ describe('BossProfitScreen', () => {
     expect(screen.getByText('조회 중...')).toBeInTheDocument()
     const icon = screen.getByRole('button', { name: '새로고침' }).querySelector('svg')
     expect(icon).toHaveClass('animate-spin')
+  })
+
+  it('새로고침 아이콘 옆에 마지막 조회 시각을 상대 시간으로 보여준다(컨텐츠/보스 스케줄러와 동일한 formatSyncedAt, ADR-032)', () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row()],
+      lastSyncedAt: new Date(Date.now() - 3 * 60 * 1000).toISOString(),
+    })
+
+    render(<BossProfitScreen />)
+
+    expect(screen.getByText('3분 전')).toBeInTheDocument()
+  })
+
+  it('아직 한 번도 동기화하지 않았으면 "동기화 기록 없음"을 보여준다', () => {
+    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()], lastSyncedAt: null })
+
+    render(<BossProfitScreen />)
+
+    expect(screen.getByText('동기화 기록 없음')).toBeInTheDocument()
   })
 
   it('stale 캐릭터가 있으면 안내 문구가 보인다', () => {
@@ -386,6 +420,23 @@ describe('BossProfitScreen', () => {
     expect(screen.getByText('가격 미확정')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '낟낟 벨로나 카오스 파티원 수 증가' })).toBeDisabled()
     expect(screen.getByRole('button', { name: '낟낟 벨로나 카오스 파티원 수 감소' })).toBeDisabled()
+  })
+
+  it('isComplete가 false면 미완료 배지를 보여주고 스테퍼가 비활성화된다(ADR-032)', () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row({ isComplete: false, partySize: null, payoutMeso: 0 })],
+    })
+
+    render(<BossProfitScreen />)
+    fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
+
+    const badge = screen.getByText('미완료')
+    const bossRow = badge.closest('li') as HTMLElement
+    expect(within(bossRow).queryByText(/메소/)).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '낟낟 자쿰 카오스 파티원 수 증가' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: '낟낟 자쿰 카오스 파티원 수 감소' })).toBeDisabled()
   })
 
   it('payoutMeso가 있으면 메소 단위로 표시한다', () => {
@@ -485,7 +536,7 @@ describe('BossProfitScreen', () => {
     expect(upcomingRow).toHaveClass('opacity-40')
   })
 
-  it('monthly 탭: MIN_SCHEDULER_DATE 이전이라 조회하지 않은 주는 "0메소"가 아니라 "데이터 없음"으로 흐리게 표시된다', () => {
+  it('monthly 탭: 조회 자체가 불가능한(MIN_SCHEDULER_DATE 이전이거나 롤링 윈도우 밖) 주는 "0메소"가 아니라 "조회 불가"로 흐리게 표시된다(ADR-032)', () => {
     mockStore({
       status: 'loaded',
       tab: 'monthly',
@@ -498,10 +549,30 @@ describe('BossProfitScreen', () => {
     render(<BossProfitScreen />)
     fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
 
-    const unavailableLabel = screen.getByText('데이터 없음')
+    const unavailableLabel = screen.getByText('조회 불가')
     const unavailableRow = unavailableLabel.closest('li')
     expect(unavailableRow).toHaveClass('opacity-40')
     expect(within(unavailableRow as HTMLElement).queryByText(/메소/)).not.toBeInTheDocument()
+  })
+
+  it('monthly 탭: 롤링 윈도우 밖의 달이라 월간 보스(검은마법사) 기록이 없으면 "월간 보스 수익" 섹션에 "조회 불가"를 보여준다(ADR-032)', () => {
+    // 2026-06월의 조회일(2026-06-30)은 테스트 실행 시점(2026-07-22) 기준 롤링 하한(2026-07-09)보다
+    // 이전이라 지금은 API로 조회할 수 없다.
+    mockStore({
+      status: 'loaded',
+      tab: 'monthly',
+      periodKey: '2026-06',
+      trackedOcids: ['ocid-1'],
+      rows: [],
+      weeklySubtotals: [subtotal({ periodKey: '2026-06-04', totalMeso: 0, state: 'unavailable' })],
+    })
+
+    render(<BossProfitScreen />)
+    fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
+
+    expect(screen.getByText('월간 보스 수익')).toBeInTheDocument()
+    const sectionLabels = screen.getAllByText('조회 불가')
+    expect(sectionLabels.length).toBeGreaterThan(0)
   })
 
   it('monthly 탭: 월간 보스 기록이 없는 캐릭터도 주차별 합계만으로 그룹이 생성된다', () => {
