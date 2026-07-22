@@ -13,6 +13,7 @@ import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getCachedSchedulerState } from '../../storage/scheduler-cache'
 import type { BossDifficulty } from '../../types'
 import { compareByName } from '../onboarding/representative-character'
+import { useToastStore } from '../toast/store'
 
 export interface BossCharacterView {
   ocid: string
@@ -102,9 +103,15 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
   },
 
   async saveTrackedOcids(ocids, onProgress) {
-    await setTrackedCharacterOcids('boss', ocids)
+    try {
+      await setTrackedCharacterOcids('boss', ocids)
+    } catch {
+      useToastStore.getState().showError('저장하지 못했어요')
+      return
+    }
     set({ trackedOcids: ocids })
     await get().refresh(ocids, onProgress)
+    useToastStore.getState().showSuccess('캐릭터 정보를 모두 불러왔어요')
   },
 
   async refresh(ocids, onProgress) {
