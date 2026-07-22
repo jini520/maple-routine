@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { BossProfitScreen } from '../BossProfitScreen'
 import {
@@ -69,6 +70,14 @@ function subtotal(overrides: Partial<BossProfitWeeklySubtotal> = {}): BossProfit
   }
 }
 
+function renderBossProfitScreen(initialEntries: string[] = ['/profit']): ReturnType<typeof render> {
+  return render(
+    <MemoryRouter initialEntries={initialEntries}>
+      <BossProfitScreen />
+    </MemoryRouter>,
+  )
+}
+
 afterEach(() => {
   cleanup()
   vi.clearAllMocks()
@@ -78,7 +87,7 @@ describe('BossProfitScreen', () => {
   it('제목이 "보스 수익"으로 렌더된다', () => {
     mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()] })
 
-    render(<BossProfitScreen />)
+    renderBossProfitScreen()
 
     expect(screen.getByRole('heading', { name: '보스 수익' })).toBeInTheDocument()
   })
@@ -90,7 +99,7 @@ describe('BossProfitScreen', () => {
       rows: [row({ imageUrl: 'https://example.com/ocid-1.png' })],
     })
 
-    render(<BossProfitScreen />)
+    renderBossProfitScreen()
 
     const avatar = screen.getByAltText('낟낟')
     expect(avatar.tagName).toBe('IMG')
@@ -100,7 +109,7 @@ describe('BossProfitScreen', () => {
   it('row.imageUrl이 null이면 캐릭터 아바타는 이니셜로 폴백한다', () => {
     mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row({ imageUrl: null })] })
 
-    render(<BossProfitScreen />)
+    renderBossProfitScreen()
 
     expect(screen.queryByAltText('낟낟')).not.toBeInTheDocument()
     expect(screen.getByText('낟')).toBeInTheDocument()
@@ -110,7 +119,7 @@ describe('BossProfitScreen', () => {
     const loadTrackedOcids = vi.fn()
     mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()], loadTrackedOcids })
 
-    render(<BossProfitScreen />)
+    renderBossProfitScreen()
 
     expect(loadTrackedOcids).toHaveBeenCalledTimes(1)
   })
@@ -118,28 +127,38 @@ describe('BossProfitScreen', () => {
   it('trackedOcids가 null이면 빈 상태 안내만 보인다', () => {
     mockStore({ status: 'loaded', trackedOcids: null, rows: [] })
 
-    render(<BossProfitScreen />)
+    renderBossProfitScreen()
 
+    expect(screen.getByText('추적 중인 캐릭터가 없습니다')).toBeInTheDocument()
     expect(
-      screen.getByText('추적 중인 캐릭터가 없습니다 — 보스 스케줄러에서 캐릭터를 선택해주세요'),
+      screen.getByText('보스 스케줄러에서 캐릭터를 선택하면 수익 현황을 확인할 수 있습니다'),
     ).toBeInTheDocument()
   })
 
   it('trackedOcids가 빈 배열이면 빈 상태 안내만 보인다', () => {
     mockStore({ status: 'loaded', trackedOcids: [], rows: [] })
 
-    render(<BossProfitScreen />)
+    renderBossProfitScreen()
 
-    expect(
-      screen.getByText('추적 중인 캐릭터가 없습니다 — 보스 스케줄러에서 캐릭터를 선택해주세요'),
-    ).toBeInTheDocument()
+    expect(screen.getByText('추적 중인 캐릭터가 없습니다')).toBeInTheDocument()
+  })
+
+  it('빈 상태의 CTA는 보스 스케줄러의 캐릭터 관리를 자동으로 여는 링크다', () => {
+    mockStore({ status: 'loaded', trackedOcids: null, rows: [] })
+
+    renderBossProfitScreen()
+
+    expect(screen.getByRole('link', { name: '캐릭터 선택하러 가기' })).toHaveAttribute(
+      'href',
+      '/boss?openPicker=1',
+    )
   })
 
   it('주간/월간 탭 클릭 시 setTab이 호출된다', () => {
     const setTab = vi.fn()
     mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()], setTab })
 
-    render(<BossProfitScreen />)
+    renderBossProfitScreen()
     fireEvent.click(screen.getByRole('button', { name: '월간' }))
     expect(setTab).toHaveBeenCalledWith('monthly')
 
@@ -159,7 +178,7 @@ describe('BossProfitScreen', () => {
       goToNextPeriod,
     })
 
-    render(<BossProfitScreen />)
+    renderBossProfitScreen()
     fireEvent.click(screen.getByRole('button', { name: '이전 기간' }))
     expect(goToPreviousPeriod).toHaveBeenCalledTimes(1)
 
@@ -178,7 +197,7 @@ describe('BossProfitScreen', () => {
       periodKey: `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`,
     })
 
-    render(<BossProfitScreen />)
+    renderBossProfitScreen()
 
     expect(screen.getByRole('button', { name: '다음 기간' })).toBeDisabled()
   })
@@ -193,7 +212,7 @@ describe('BossProfitScreen', () => {
       periodKey: '2000-01',
     })
 
-    render(<BossProfitScreen />)
+    renderBossProfitScreen()
 
     expect(screen.getByRole('button', { name: '다음 기간' })).not.toBeDisabled()
   })
@@ -207,7 +226,7 @@ describe('BossProfitScreen', () => {
       periodKey: '2026-06-25', // 이 이전(6/18)은 백필 불가능한 기간이라 더 못 간다
     })
 
-    render(<BossProfitScreen />)
+    renderBossProfitScreen()
 
     expect(screen.getByRole('button', { name: '이전 기간' })).toBeDisabled()
   })
@@ -222,7 +241,7 @@ describe('BossProfitScreen', () => {
       periodKey: '2026-06', // 이 이전(2026-05)은 통째로 백필 불가능한 달이라 더 못 간다
     })
 
-    render(<BossProfitScreen />)
+    renderBossProfitScreen()
 
     expect(screen.getByRole('button', { name: '이전 기간' })).toBeDisabled()
   })
@@ -235,7 +254,7 @@ describe('BossProfitScreen', () => {
       isPeriodLoading: true,
     })
 
-    render(<BossProfitScreen />)
+    renderBossProfitScreen()
 
     expect(screen.getByText(/기록을 불러오는 중/)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /낟낟/ })).not.toBeInTheDocument()
@@ -250,7 +269,7 @@ describe('BossProfitScreen', () => {
       periodUnavailable: true,
     })
 
-    render(<BossProfitScreen />)
+    renderBossProfitScreen()
 
     expect(screen.getByText('이 기간을 불러오지 못했습니다 — 다시 시도해주세요')).toBeInTheDocument()
   })
@@ -258,7 +277,7 @@ describe('BossProfitScreen', () => {
   it('status가 loading이고 캐릭터 그룹이 없으면 로딩 표시를 보여준다', () => {
     mockStore({ status: 'loading', trackedOcids: ['ocid-1'], rows: [] })
 
-    render(<BossProfitScreen />)
+    renderBossProfitScreen()
 
     expect(screen.getByText(/불러오는 중/)).toBeInTheDocument()
   })
@@ -270,7 +289,7 @@ describe('BossProfitScreen', () => {
       rows: [row()],
     })
 
-    render(<BossProfitScreen />)
+    renderBossProfitScreen()
 
     expect(screen.queryByText(/불러오는 중/)).not.toBeInTheDocument()
     expect(screen.getByText(/총 수익/)).toBeInTheDocument()
@@ -280,7 +299,7 @@ describe('BossProfitScreen', () => {
   it('status가 error이면 에러 문구를 보여준다', () => {
     mockStore({ status: 'error', trackedOcids: ['ocid-1'], error: { kind: 'invalidApiKey' }, rows: [] })
 
-    render(<BossProfitScreen />)
+    renderBossProfitScreen()
 
     expect(screen.getByText('API 키가 유효하지 않습니다')).toBeInTheDocument()
   })
@@ -288,7 +307,7 @@ describe('BossProfitScreen', () => {
   it('추적 캐릭터는 있지만 처치한 보스가 없으면 빈 상태 문구를 보여준다', () => {
     mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [] })
 
-    render(<BossProfitScreen />)
+    renderBossProfitScreen()
 
     expect(screen.getByText('아직 처치한 보스가 없습니다')).toBeInTheDocument()
   })
@@ -298,7 +317,7 @@ describe('BossProfitScreen', () => {
     // 하한(2026-07-09)보다 이전이라 지금은 API로 조회할 수 없는 기간이다.
     mockStore({ status: 'loaded', tab: 'weekly', periodKey: '2026-07-02', trackedOcids: ['ocid-1'], rows: [] })
 
-    render(<BossProfitScreen />)
+    renderBossProfitScreen()
 
     expect(screen.getByText('조회 불가')).toBeInTheDocument()
     expect(screen.queryByText('아직 처치한 보스가 없습니다')).not.toBeInTheDocument()
@@ -308,7 +327,7 @@ describe('BossProfitScreen', () => {
     const refresh = vi.fn()
     mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()], refresh })
 
-    render(<BossProfitScreen />)
+    renderBossProfitScreen()
     fireEvent.click(screen.getByRole('button', { name: '새로고침' }))
 
     expect(refresh).toHaveBeenCalledWith(['ocid-1'])
@@ -317,7 +336,7 @@ describe('BossProfitScreen', () => {
   it('status가 loading이면 새로고침 아이콘이 회전하고 조회 중 텍스트를 보여준다', () => {
     mockStore({ status: 'loading', trackedOcids: ['ocid-1'], rows: [row()] })
 
-    render(<BossProfitScreen />)
+    renderBossProfitScreen()
 
     expect(screen.getByText('조회 중...')).toBeInTheDocument()
     const icon = screen.getByRole('button', { name: '새로고침' }).querySelector('svg')
@@ -332,7 +351,7 @@ describe('BossProfitScreen', () => {
       lastSyncedAt: new Date(Date.now() - 3 * 60 * 1000).toISOString(),
     })
 
-    render(<BossProfitScreen />)
+    renderBossProfitScreen()
 
     expect(screen.getByText('3분 전')).toBeInTheDocument()
   })
@@ -340,7 +359,7 @@ describe('BossProfitScreen', () => {
   it('아직 한 번도 동기화하지 않았으면 "동기화 기록 없음"을 보여준다', () => {
     mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()], lastSyncedAt: null })
 
-    render(<BossProfitScreen />)
+    renderBossProfitScreen()
 
     expect(screen.getByText('동기화 기록 없음')).toBeInTheDocument()
   })
@@ -353,7 +372,7 @@ describe('BossProfitScreen', () => {
       staleCharacterNames: ['낟낟'],
     })
 
-    render(<BossProfitScreen />)
+    renderBossProfitScreen()
 
     expect(screen.getByText(/일부 캐릭터 동기화 실패: 낟낟/)).toBeInTheDocument()
   })
@@ -361,7 +380,7 @@ describe('BossProfitScreen', () => {
   it('캐릭터별 드롭다운은 기본 상태에서 접혀 있어 보스 행이 보이지 않는다', () => {
     mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()] })
 
-    render(<BossProfitScreen />)
+    renderBossProfitScreen()
 
     expect(screen.queryByText('자쿰')).not.toBeInTheDocument()
   })
@@ -369,7 +388,7 @@ describe('BossProfitScreen', () => {
   it('드롭다운 헤더를 클릭하면 펼쳐져 보스 행과 합계 footer가 보이고, 다시 클릭하면 접힌다', () => {
     mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()] })
 
-    render(<BossProfitScreen />)
+    renderBossProfitScreen()
     const header = screen.getByRole('button', { name: /낟낟/ })
 
     fireEvent.click(header)
@@ -384,7 +403,7 @@ describe('BossProfitScreen', () => {
     const setPartySize = vi.fn().mockResolvedValue(undefined)
     mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row({ partySize: 2 })], setPartySize })
 
-    render(<BossProfitScreen />)
+    renderBossProfitScreen()
     fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
     fireEvent.click(screen.getByRole('button', { name: '낟낟 자쿰 카오스 파티원 수 증가' }))
 
@@ -400,7 +419,7 @@ describe('BossProfitScreen', () => {
     const setPartySize = vi.fn().mockRejectedValue(new Error('파티원 수는 1 이상 6 이하의 정수여야 합니다'))
     mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row({ partySize: 2 })], setPartySize })
 
-    render(<BossProfitScreen />)
+    renderBossProfitScreen()
     fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
     fireEvent.click(screen.getByRole('button', { name: '낟낟 자쿰 카오스 파티원 수 감소' }))
 
@@ -414,7 +433,7 @@ describe('BossProfitScreen', () => {
       rows: [row({ boss: '벨로나', priceMeso: null, partySize: null, payoutMeso: null })],
     })
 
-    render(<BossProfitScreen />)
+    renderBossProfitScreen()
     fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
 
     expect(screen.getByText('가격 미확정')).toBeInTheDocument()
@@ -429,7 +448,7 @@ describe('BossProfitScreen', () => {
       rows: [row({ isComplete: false, partySize: null, payoutMeso: 0 })],
     })
 
-    render(<BossProfitScreen />)
+    renderBossProfitScreen()
     fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
 
     const badge = screen.getByText('미완료')
@@ -446,7 +465,7 @@ describe('BossProfitScreen', () => {
       rows: [row({ priceMeso: 10_000_000, partySize: 2, payoutMeso: 5_000_000 })],
     })
 
-    render(<BossProfitScreen />)
+    renderBossProfitScreen()
     fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
 
     expect(screen.getByRole('listitem')).toHaveTextContent('5,000,000 메소')
@@ -469,7 +488,7 @@ describe('BossProfitScreen', () => {
       ],
     })
 
-    render(<BossProfitScreen />)
+    renderBossProfitScreen()
 
     expect(screen.getByText(/총 수익/)).toBeInTheDocument()
     expect(screen.getByText('8,000,000 메소')).toBeInTheDocument()
@@ -478,7 +497,7 @@ describe('BossProfitScreen', () => {
   it('rows가 비어있으면 상단 합계 카드 없이 빈 상태 문구만 보인다', () => {
     mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [] })
 
-    render(<BossProfitScreen />)
+    renderBossProfitScreen()
 
     expect(screen.getByText('아직 처치한 보스가 없습니다')).toBeInTheDocument()
     expect(screen.queryByText(/총 수익/)).not.toBeInTheDocument()
@@ -508,7 +527,7 @@ describe('BossProfitScreen', () => {
       ],
     })
 
-    render(<BossProfitScreen />)
+    renderBossProfitScreen()
     fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
 
     expect(screen.getByText('주간 보스 수익 · 주차별 합계')).toBeInTheDocument()
@@ -528,7 +547,7 @@ describe('BossProfitScreen', () => {
       weeklySubtotals: [subtotal({ periodKey: '2026-07-16', totalMeso: 0, state: 'upcoming' })],
     })
 
-    render(<BossProfitScreen />)
+    renderBossProfitScreen()
     fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
 
     const upcomingLabel = screen.getByText('예정')
@@ -546,7 +565,7 @@ describe('BossProfitScreen', () => {
       weeklySubtotals: [subtotal({ periodKey: '2026-06-25', totalMeso: 0, state: 'unavailable' })],
     })
 
-    render(<BossProfitScreen />)
+    renderBossProfitScreen()
     fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
 
     const unavailableLabel = screen.getByText('조회 불가')
@@ -567,7 +586,7 @@ describe('BossProfitScreen', () => {
       weeklySubtotals: [subtotal({ periodKey: '2026-06-04', totalMeso: 0, state: 'unavailable' })],
     })
 
-    render(<BossProfitScreen />)
+    renderBossProfitScreen()
     fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
 
     expect(screen.getByText('월간 보스 수익')).toBeInTheDocument()
@@ -585,7 +604,7 @@ describe('BossProfitScreen', () => {
       weeklySubtotals: [subtotal({ periodKey: '2026-07-02', totalMeso: 5_000_000, state: 'confirmed' })],
     })
 
-    render(<BossProfitScreen />)
+    renderBossProfitScreen()
 
     expect(screen.getByRole('button', { name: /낟낟/ })).toBeInTheDocument()
     expect(screen.queryByText('아직 처치한 보스가 없습니다')).not.toBeInTheDocument()
@@ -608,7 +627,7 @@ describe('BossProfitScreen', () => {
       ],
     })
 
-    render(<BossProfitScreen />)
+    renderBossProfitScreen()
 
     expect(screen.getByRole('button', { name: /낟낟.*5,000,000 메소/ })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /내옆에최성일.*3,000,000 메소/ })).toBeInTheDocument()

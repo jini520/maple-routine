@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { BossScreen } from '../BossScreen'
 import { useBossSchedulerStore, type BossCharacterView } from '../../../features/boss-scheduler/store'
@@ -63,6 +64,14 @@ function pickerEntry(overrides: Partial<CharacterPickerEntry> = {}): CharacterPi
   }
 }
 
+function renderBossScreen(initialEntries: string[] = ['/boss']): ReturnType<typeof render> {
+  return render(
+    <MemoryRouter initialEntries={initialEntries}>
+      <BossScreen />
+    </MemoryRouter>,
+  )
+}
+
 beforeEach(() => {
   mockedGetCharacterPickerRoster.mockImplementation(async (onUpdate) => {
     onUpdate([])
@@ -99,10 +108,44 @@ describe('BossScreen', () => {
       ],
     })
 
-    render(<BossScreen />)
+    renderBossScreen()
 
-    expect(await screen.findByText('표시할 캐릭터가 없습니다 — 캐릭터를 선택해주세요')).toBeInTheDocument()
+    expect(await screen.findByText('표시할 캐릭터가 없습니다')).toBeInTheDocument()
+    expect(screen.getByText('캐릭터를 선택하면 주간·월간 보스 스케줄을 확인할 수 있습니다')).toBeInTheDocument()
     expect(screen.queryByText(/자쿰/)).not.toBeInTheDocument()
+  })
+
+  it('빈 상태에서 중앙 CTA 버튼을 누르면 캐릭터 관리 피커가 열린다', async () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: null,
+      characters: [],
+    })
+    mockedGetCharacterPickerRoster.mockImplementation(async (onUpdate) => {
+      onUpdate([pickerEntry({ ocid: 'ocid-2', name: '내옆에최성일', level: 211 })])
+    })
+
+    renderBossScreen()
+    await screen.findByText('표시할 캐릭터가 없습니다')
+
+    fireEvent.click(screen.getByRole('button', { name: '캐릭터 선택하기' }))
+
+    expect(await screen.findByRole('button', { name: /내옆에최성일/ })).toBeInTheDocument()
+  })
+
+  it('openPicker 쿼리 파라미터로 진입하면 캐릭터 관리 피커가 자동으로 열린다', async () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: null,
+      characters: [],
+    })
+    mockedGetCharacterPickerRoster.mockImplementation(async (onUpdate) => {
+      onUpdate([pickerEntry({ ocid: 'ocid-2', name: '내옆에최성일', level: 211 })])
+    })
+
+    renderBossScreen(['/boss?openPicker=1'])
+
+    expect(await screen.findByRole('button', { name: /내옆에최성일/ })).toBeInTheDocument()
   })
 
   it('sticky 헤더가 top-0으로 화면 최상단부터 덮어 스크롤 시 안전영역 뒤로 카드가 비치지 않는다', async () => {
@@ -112,7 +155,7 @@ describe('BossScreen', () => {
       characters: [character({ ocid: 'ocid-1' })],
     })
 
-    render(<BossScreen />)
+    renderBossScreen()
     const heading = await screen.findByRole('heading', { name: '보스 스케줄러' })
     const stickyEl = heading.closest('.sticky')
 
@@ -130,7 +173,7 @@ describe('BossScreen', () => {
       loadTrackedOcids,
     })
 
-    render(<BossScreen />)
+    renderBossScreen()
     await screen.findByRole('combobox')
 
     expect(loadTrackedOcids).toHaveBeenCalledTimes(1)
@@ -186,7 +229,7 @@ describe('BossScreen', () => {
       ],
     })
 
-    render(<BossScreen />)
+    renderBossScreen()
     await screen.findByRole('combobox')
 
     expect(screen.getByText('자쿰')).toBeInTheDocument()
@@ -232,7 +275,7 @@ describe('BossScreen', () => {
       ],
     })
 
-    render(<BossScreen />)
+    renderBossScreen()
     await screen.findByRole('combobox')
 
     expect(screen.getByText('완료된미등록보스')).toBeInTheDocument()
@@ -264,7 +307,7 @@ describe('BossScreen', () => {
         ],
       })
 
-      render(<BossScreen />)
+      renderBossScreen()
       await screen.findByRole('combobox')
 
       expect(screen.getByText('season 미완료')).toBeInTheDocument()
@@ -279,7 +322,7 @@ describe('BossScreen', () => {
         ],
       })
 
-      render(<BossScreen />)
+      renderBossScreen()
       await screen.findByRole('combobox')
 
       expect(screen.getByText('season 완료')).toBeInTheDocument()
@@ -292,7 +335,7 @@ describe('BossScreen', () => {
         characters: [character({ ocid: 'ocid-1', world: '엘리시움', weeklyBosses: [seasonBoss()] })],
       })
 
-      render(<BossScreen />)
+      renderBossScreen()
       await screen.findByRole('combobox')
 
       expect(screen.queryByText(/^season /)).not.toBeInTheDocument()
@@ -305,7 +348,7 @@ describe('BossScreen', () => {
         characters: [character({ ocid: 'ocid-1', world: '챌린저스', weeklyBosses: [] })],
       })
 
-      render(<BossScreen />)
+      renderBossScreen()
       await screen.findByRole('combobox')
 
       expect(screen.queryByText(/^season /)).not.toBeInTheDocument()
@@ -362,7 +405,7 @@ describe('BossScreen', () => {
       ],
     })
 
-    render(<BossScreen />)
+    renderBossScreen()
     await screen.findByRole('combobox')
     fireEvent.click(screen.getByRole('button', { name: '월간' }))
 
@@ -388,7 +431,7 @@ describe('BossScreen', () => {
       selectCharacter,
     })
 
-    render(<BossScreen />)
+    renderBossScreen()
     const dropdown = await screen.findByRole('combobox')
     fireEvent.change(dropdown, { target: { value: 'ocid-2' } })
 
@@ -438,7 +481,7 @@ describe('BossScreen', () => {
       ],
     })
 
-    render(<BossScreen />)
+    renderBossScreen()
     await screen.findByRole('combobox')
     expect(screen.getByText(/루시드/)).toBeInTheDocument()
 
@@ -465,7 +508,7 @@ describe('BossScreen', () => {
       ])
     })
 
-    render(<BossScreen />)
+    renderBossScreen()
     await screen.findByRole('combobox')
 
     fireEvent.click(screen.getByRole('button', { name: '캐릭터 관리' }))
@@ -480,7 +523,7 @@ describe('BossScreen', () => {
   it('status가 loading이고 캐시된 characters도 없으면 로딩 표시를 보여준다', async () => {
     mockStore({ status: 'loading', trackedOcids: ['ocid-1'], characters: [] })
 
-    render(<BossScreen />)
+    renderBossScreen()
 
     expect(await screen.findByText(/불러오는 중/)).toBeInTheDocument()
   })
@@ -509,7 +552,7 @@ describe('BossScreen', () => {
       ],
     })
 
-    render(<BossScreen />)
+    renderBossScreen()
 
     expect(await screen.findByText(/자쿰/)).toBeInTheDocument()
     expect(screen.queryByText(/불러오는 중/)).not.toBeInTheDocument()
@@ -523,7 +566,7 @@ describe('BossScreen', () => {
       characters: [character({ ocid: 'ocid-1' })],
     })
 
-    render(<BossScreen />)
+    renderBossScreen()
 
     expect(await screen.findByText('API 키가 유효하지 않습니다')).toBeInTheDocument()
   })
@@ -537,7 +580,7 @@ describe('BossScreen', () => {
       refresh,
     })
 
-    render(<BossScreen />)
+    renderBossScreen()
     await screen.findByRole('combobox')
     fireEvent.click(screen.getByRole('button', { name: '새로고침' }))
 
@@ -552,7 +595,7 @@ describe('BossScreen', () => {
       characters: [character({ ocid: 'ocid-1' })],
     })
 
-    render(<BossScreen />)
+    renderBossScreen()
     await screen.findByRole('combobox')
 
     expect(screen.getByText('조회 중...')).toBeInTheDocument()
@@ -586,7 +629,7 @@ describe('BossScreen', () => {
       ],
     })
 
-    render(<BossScreen />)
+    renderBossScreen()
     await screen.findByRole('combobox')
 
     expect(screen.getByText(/게임에서 스케줄러에 등록해주세요/)).toBeInTheDocument()
@@ -625,7 +668,7 @@ describe('BossScreen', () => {
         partySizes: { 'ocid-1:자쿰:카오스': 4 },
       })
 
-      render(<BossScreen />)
+      renderBossScreen()
       await screen.findByRole('combobox')
 
       expect(screen.getByText('4인')).toBeInTheDocument()
@@ -639,7 +682,7 @@ describe('BossScreen', () => {
         partySizes: { 'ocid-1:자쿰:카오스': 1 },
       })
 
-      render(<BossScreen />)
+      renderBossScreen()
       await screen.findByRole('combobox')
 
       expect(screen.queryByText(/^\d+인$/)).not.toBeInTheDocument()
@@ -654,7 +697,7 @@ describe('BossScreen', () => {
         setPartySize,
       })
 
-      render(<BossScreen />)
+      renderBossScreen()
       await screen.findByRole('combobox')
 
       fireEvent.click(screen.getByRole('button', { name: '파티 관리' }))
@@ -684,7 +727,7 @@ describe('BossScreen', () => {
         setPartySize,
       })
 
-      render(<BossScreen />)
+      renderBossScreen()
       await screen.findByRole('combobox')
 
       fireEvent.click(screen.getByRole('button', { name: '파티 관리' }))
@@ -721,7 +764,7 @@ describe('BossScreen', () => {
         characters: [character({ ocid: 'ocid-1', weeklyBosses: [], monthlyBosses: [] })],
       })
 
-      render(<BossScreen />)
+      renderBossScreen()
       await screen.findByRole('combobox')
 
       fireEvent.click(screen.getByRole('button', { name: '파티 관리' }))
@@ -749,7 +792,7 @@ describe('BossScreen', () => {
           characters: [characterWithZakum()],
         })
 
-        render(<BossScreen />)
+        renderBossScreen()
         await screen.findByRole('combobox')
 
         fireEvent.click(screen.getByRole('button', { name: '파티 관리' }))
@@ -769,7 +812,7 @@ describe('BossScreen', () => {
           characters: [characterWithZakum()],
         })
 
-        render(<BossScreen />)
+        renderBossScreen()
         await screen.findByRole('combobox')
 
         fireEvent.click(screen.getByRole('button', { name: '파티 관리' }))
@@ -789,7 +832,7 @@ describe('BossScreen', () => {
           characters: [characterWithZakum()],
         })
 
-        render(<BossScreen />)
+        renderBossScreen()
         await screen.findByRole('combobox')
 
         fireEvent.click(screen.getByRole('button', { name: '파티 관리' }))
@@ -829,7 +872,7 @@ describe('BossScreen', () => {
         ],
       })
 
-      render(<BossScreen />)
+      renderBossScreen()
       await screen.findByRole('combobox')
 
       fireEvent.click(screen.getByRole('button', { name: '파티 관리' }))
@@ -902,7 +945,7 @@ describe('BossScreen', () => {
         partySizes: { 'ocid-1:자쿰:카오스': 4 },
       })
 
-      render(<BossScreen />)
+      renderBossScreen()
       await screen.findByRole('combobox')
       fireEvent.click(screen.getByRole('button', { name: '파티' }))
 
@@ -919,7 +962,7 @@ describe('BossScreen', () => {
         partySizes: { 'ocid-1:자쿰:카오스': 4, 'ocid-1:루시드:하드': 1 },
       })
 
-      render(<BossScreen />)
+      renderBossScreen()
       await screen.findByRole('combobox')
       fireEvent.click(screen.getByRole('button', { name: '솔로' }))
 
@@ -935,7 +978,7 @@ describe('BossScreen', () => {
         partySizes: { 'ocid-1:자쿰:카오스': 4 },
       })
 
-      render(<BossScreen />)
+      renderBossScreen()
       await screen.findByRole('combobox')
 
       fireEvent.click(screen.getByRole('button', { name: '파티' }))
@@ -967,7 +1010,7 @@ describe('BossScreen', () => {
         ],
       })
 
-      render(<BossScreen />)
+      renderBossScreen()
       await screen.findByRole('combobox')
 
       // 등록된 보스 자체가 없는 경우
@@ -984,7 +1027,7 @@ describe('BossScreen', () => {
         partySizes: {},
       })
 
-      render(<BossScreen />)
+      renderBossScreen()
       await screen.findByRole('combobox')
       fireEvent.click(screen.getByRole('button', { name: '파티' }))
 

@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Minus, Plus, RefreshCw } from 'lucide-react'
 import { BossPortrait } from '../../components/BossPortrait/BossPortrait'
 import { DifficultyBadge } from '../../components/DifficultyBadge/DifficultyBadge'
+import { MAPLE_LEAF_PATH } from '../../components/mapleLeafPath'
 import weeklyBossesData from '../../data/weekly-bosses.json'
 import {
   useBossProfitStore,
@@ -406,11 +408,27 @@ export function BossProfitScreen(): React.JSX.Element {
 
   if (isEmpty) {
     return (
-      <div className="p-4 space-y-4">
+      <div className="flex min-h-[calc(100dvh-var(--sa-top)-var(--sa-bottom)-4rem)] flex-col p-4">
         <h1 className="text-lg font-semibold text-text">보스 수익</h1>
 
-        <div className="rounded-[14px] border border-dashed border-border p-4 text-sm text-text-muted">
-          추적 중인 캐릭터가 없습니다 — 보스 스케줄러에서 캐릭터를 선택해주세요
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
+          <div className="flex h-[84px] w-[84px] items-center justify-center rounded-full bg-primary/15">
+            <svg width="42" height="43" viewBox="0 0 127 130" className="fill-primary" aria-hidden="true">
+              <path d={MAPLE_LEAF_PATH} />
+            </svg>
+          </div>
+          <div className="space-y-1">
+            <p className="text-base font-semibold text-text">추적 중인 캐릭터가 없습니다</p>
+            <p className="max-w-[220px] text-sm text-text-muted">
+              보스 스케줄러에서 캐릭터를 선택하면 수익 현황을 확인할 수 있습니다
+            </p>
+          </div>
+          <Link
+            to="/boss?openPicker=1"
+            className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-bg hover:bg-primary-hover"
+          >
+            캐릭터 선택하러 가기
+          </Link>
         </div>
       </div>
     )

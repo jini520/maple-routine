@@ -4,11 +4,13 @@ import { formatScheduleSyncError, formatSyncedAt } from '../../features/schedule
 import { getBossPortraitCrop, getBossPortraitUrl } from '../../lib/boss-icons'
 import { partySizeKey, useBossSchedulerStore } from '../../features/boss-scheduler/store'
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 
 import type { BossPortraitCrop } from '../../lib/boss-icons'
 import { CharacterSelectDropdown } from '../../components/CharacterSelectDropdown/CharacterSelectDropdown'
 import { CharacterTrackingPicker } from '../../components/CharacterTrackingPicker/CharacterTrackingPicker'
 import { DifficultyBadge } from '../../components/DifficultyBadge/DifficultyBadge'
+import { MAPLE_LEAF_PATH } from '../../components/mapleLeafPath'
 import { ProgressModal } from '../../components/ProgressModal/ProgressModal'
 import { selectDisplayBosses, type MatchedBoss } from '../../lib/boss-matching'
 import { isChallengersWorld } from '../../lib/world-emblem'
@@ -102,7 +104,8 @@ export function BossScreen(): React.JSX.Element {
   } = useBossSchedulerStore()
   const [activeTab, setActiveTab] = useState<BossTab>('weekly')
   const [roster, setRoster] = useState<CharacterPickerEntry[]>([])
-  const [isPickerOpen, setIsPickerOpen] = useState(false)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [isPickerOpen, setIsPickerOpen] = useState(() => searchParams.get('openPicker') === '1')
   const [saveProgress, setSaveProgress] = useState<{ completed: number; total: number } | null>(null)
   const [isPartyManagementOpen, setIsPartyManagementOpen] = useState(false)
   // ADR-019 결정 6: 주간/월간 탭은 서로 독립된 필터 상태를 갖는다(한 탭의 필터 변경이
@@ -112,6 +115,21 @@ export function BossScreen(): React.JSX.Element {
 
   useEffect(() => {
     loadTrackedOcids()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // 보스 수익 화면의 "캐릭터 선택하러 가기" 링크(?openPicker=1)로 진입했을 때만 URL을 정리한다 —
+  // 안 그러면 새로고침·뒤로가기마다 피커가 계속 다시 열린다.
+  useEffect(() => {
+    if (searchParams.get('openPicker') !== '1') return
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        next.delete('openPicker')
+        return next
+      },
+      { replace: true },
+    )
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -253,14 +271,31 @@ export function BossScreen(): React.JSX.Element {
 
   if (isEmpty) {
     return (
-      <div className="p-4 space-y-4">
+      <div className="flex min-h-[calc(100dvh-var(--sa-top)-var(--sa-bottom)-4rem)] flex-col p-4">
         <div className="flex items-center justify-between">
           <h1 className="text-lg font-semibold text-text">보스 스케줄러</h1>
           {characterManageButton}
         </div>
 
-        <div className="rounded-[14px] border border-dashed border-border p-4 text-sm text-text-muted">
-          표시할 캐릭터가 없습니다 — 캐릭터를 선택해주세요
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
+          <div className="flex h-[84px] w-[84px] items-center justify-center rounded-full bg-primary/15">
+            <svg width="42" height="43" viewBox="0 0 127 130" className="fill-primary" aria-hidden="true">
+              <path d={MAPLE_LEAF_PATH} />
+            </svg>
+          </div>
+          <div className="space-y-1">
+            <p className="text-base font-semibold text-text">표시할 캐릭터가 없습니다</p>
+            <p className="max-w-[220px] text-sm text-text-muted">
+              캐릭터를 선택하면 주간·월간 보스 스케줄을 확인할 수 있습니다
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsPickerOpen(true)}
+            className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-bg hover:bg-primary-hover"
+          >
+            캐릭터 선택하기
+          </button>
         </div>
 
         {trackingModals}
