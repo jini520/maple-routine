@@ -16,7 +16,7 @@ const EXPECTED = {
     secondaryText: '#D1C093',
     third: '#D8608F',
     thirdText: '#DA6995',
-    infoTint: '#C9D6F2',
+    infoTint: '#262A3A',
     error: '#D8608F',
     text: '#E8DFEC',
     textMuted: '#B89CBD',
