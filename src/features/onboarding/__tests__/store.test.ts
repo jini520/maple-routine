@@ -23,6 +23,11 @@ const { prefetchAccountDataMock } = vi.hoisted(() => ({
   prefetchAccountDataMock: vi.fn(),
 }))
 
+const { showSuccessMock, showErrorMock } = vi.hoisted(() => ({
+  showSuccessMock: vi.fn(),
+  showErrorMock: vi.fn(),
+}))
+
 vi.mock('../../../nexon/character', () => ({
   fetchCharacterList: fetchCharacterListMock,
 }))
@@ -36,6 +41,12 @@ vi.mock('../../../storage/api-key', () => ({
 
 vi.mock('../prefetch', () => ({
   prefetchAccountData: prefetchAccountDataMock,
+}))
+
+vi.mock('../../toast/store', () => ({
+  useToastStore: {
+    getState: () => ({ showSuccess: showSuccessMock, showError: showErrorMock }),
+  },
 }))
 
 import { useOnboardingStore } from '../store'
@@ -142,6 +153,15 @@ describe('useOnboardingStore.submitApiKey', () => {
     expect(state.selectedAccountId).toBe('acc-1')
   })
 
+  it('목록 조회에 성공하면 성공 토스트를 띄운다', async () => {
+    fetchCharacterListMock.mockResolvedValue([account('acc-1')])
+
+    await useOnboardingStore.getState().submitApiKey('key-1')
+
+    expect(showSuccessMock).toHaveBeenCalledWith('API 키를 확인했어요')
+    expect(showErrorMock).not.toHaveBeenCalled()
+  })
+
   it('계정이 2개 이상이면 selectingAccount가 되고 setSelectedAccountId는 호출되지 않는다', async () => {
     const accounts = [account('acc-1'), account('acc-2')]
     fetchCharacterListMock.mockResolvedValue(accounts)
@@ -163,6 +183,15 @@ describe('useOnboardingStore.submitApiKey', () => {
     expect(state.status).toBe('error')
     expect(state.error).toEqual({ kind: 'invalidApiKey' })
     expect(setApiKeyMock).not.toHaveBeenCalled()
+  })
+
+  it('목록 조회에 실패하면(종류 무관) 실패 토스트를 띄운다', async () => {
+    fetchCharacterListMock.mockRejectedValue(new NexonAuthError('invalid'))
+
+    await useOnboardingStore.getState().submitApiKey('key-1')
+
+    expect(showErrorMock).toHaveBeenCalledWith('API 키를 확인하지 못했어요')
+    expect(showSuccessMock).not.toHaveBeenCalled()
   })
 
   it('NexonRateLimitError를 만나면 rateLimited error 상태가 된다', async () => {
@@ -197,6 +226,14 @@ describe('useOnboardingStore.submitApiKey', () => {
       expect.any(Function),
     )
     expect(useOnboardingStore.getState().status).toBe('completed')
+  })
+
+  it('예열이 끝나면 완료 토스트를 띄운다', async () => {
+    fetchCharacterListMock.mockResolvedValue([account('acc-1')])
+
+    await useOnboardingStore.getState().submitApiKey('key-1')
+
+    expect(showSuccessMock).toHaveBeenCalledWith('캐릭터 정보를 모두 불러왔어요')
   })
 
   it('예열이 끝나기 전까지는 prefetching 상태이고 진행률이 반영된다', async () => {
@@ -261,6 +298,21 @@ describe('useOnboardingStore.selectAccount', () => {
     const state = useOnboardingStore.getState()
     expect(state.status).toBe('completed')
     expect(state.selectedAccountId).toBe('acc-2')
+  })
+
+  it('메이플 ID 선택 후 예열이 끝나면 완료 토스트를 띄운다', async () => {
+    const accounts = [account('acc-1'), account('acc-2')]
+    useOnboardingStore.setState({
+      status: 'selectingAccount',
+      accounts,
+      selectedAccountId: null,
+      error: null,
+      prefetchProgress: null,
+    })
+
+    await useOnboardingStore.getState().selectAccount('acc-2')
+
+    expect(showSuccessMock).toHaveBeenCalledWith('캐릭터 정보를 모두 불러왔어요')
   })
 
   it('저장이 실패하면 completed로 넘어가지 않고 storageWriteFailed error가 된다', async () => {

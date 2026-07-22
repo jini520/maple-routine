@@ -29,7 +29,7 @@ export function ApiKeyModal(props: ApiKeyModalProps): React.JSX.Element {
 
   return (
     <Modal onClose={props.onClose} testId="api-key-modal-overlay" card={false}>
-      {status === 'idle' && <ApiKeyForm isSubmitting={false} errorMessage={null} onSubmit={handleSubmit} />}
+      {status === 'idle' && <ApiKeyForm isSubmitting={false} onSubmit={handleSubmit} />}
 
       <AccountFlowStatus
         status={status}

@@ -13,7 +13,7 @@ describe('ApiKeyForm', () => {
   it('입력 후 제출하면 onSubmit이 입력값으로 호출된다', async () => {
     const user = userEvent.setup()
     const onSubmit = vi.fn()
-    render(<ApiKeyForm isSubmitting={false} errorMessage={null} onSubmit={onSubmit} />)
+    render(<ApiKeyForm isSubmitting={false} onSubmit={onSubmit} />)
 
     await user.type(screen.getByLabelText(/API 키/), 'test-api-key-123')
     await user.click(screen.getByRole('button', { name: /확인|제출|시작/ }))
@@ -22,13 +22,13 @@ describe('ApiKeyForm', () => {
   })
 
   it('isSubmitting이면 제출 버튼이 비활성화된다', () => {
-    render(<ApiKeyForm isSubmitting={true} errorMessage={null} onSubmit={vi.fn()} />)
+    render(<ApiKeyForm isSubmitting={true} onSubmit={vi.fn()} />)
 
     expect(screen.getByRole('button', { name: /확인|제출|시작/ })).toBeDisabled()
   })
 
   it('isSubmitting이면 버튼이 로딩 스피너로 바뀌고 "확인" 텍스트는 감춘다', () => {
-    render(<ApiKeyForm isSubmitting={true} errorMessage={null} onSubmit={vi.fn()} />)
+    render(<ApiKeyForm isSubmitting={true} onSubmit={vi.fn()} />)
 
     const button = screen.getByRole('button', { name: '확인 중' })
     expect(button).toHaveAttribute('aria-busy', 'true')
@@ -39,29 +39,15 @@ describe('ApiKeyForm', () => {
   it('isSubmitting이면 Enter 제출로 onSubmit이 다시 호출되지 않는다', async () => {
     const user = userEvent.setup()
     const onSubmit = vi.fn()
-    render(<ApiKeyForm isSubmitting={true} errorMessage={null} onSubmit={onSubmit} />)
+    render(<ApiKeyForm isSubmitting={true} onSubmit={onSubmit} />)
 
     await user.type(screen.getByLabelText(/API 키/), 'test-api-key-123{Enter}')
 
     expect(onSubmit).not.toHaveBeenCalled()
   })
 
-  it('errorMessage가 있으면 화면에 표시한다', () => {
-    render(
-      <ApiKeyForm isSubmitting={false} errorMessage="API 키가 유효하지 않습니다" onSubmit={vi.fn()} />,
-    )
-
-    expect(screen.getByText('API 키가 유효하지 않습니다')).toBeInTheDocument()
-  })
-
-  it('errorMessage가 없으면 에러 텍스트를 렌더링하지 않는다', () => {
-    render(<ApiKeyForm isSubmitting={false} errorMessage={null} onSubmit={vi.fn()} />)
-
-    expect(screen.queryByText('API 키가 유효하지 않습니다')).not.toBeInTheDocument()
-  })
-
   it('openapi.nexon.com 링크를 안내로 제공한다', () => {
-    render(<ApiKeyForm isSubmitting={false} errorMessage={null} onSubmit={vi.fn()} />)
+    render(<ApiKeyForm isSubmitting={false} onSubmit={vi.fn()} />)
 
     const link = screen.getByRole('link')
     expect(link).toHaveAttribute('href', expect.stringContaining('openapi.nexon.com'))

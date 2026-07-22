@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { fetchCharacterList } from '../../nexon/character'
 import { NexonAuthError, NexonRateLimitError } from '../../nexon/errors'
 import { clearAuthConfig, getAuthConfig, setApiKey, setSelectedAccountId } from '../../storage/api-key'
+import { useToastStore } from '../toast/store'
 import { prefetchAccountData } from './prefetch'
 import { initialOnboardingState, onboardingReducer, type OnboardingError, type OnboardingState } from './state'
 
@@ -36,6 +37,7 @@ export const useOnboardingStore = create<OnboardingStore>()((set, get) => {
         }),
       )
     })
+    useToastStore.getState().showSuccess('캐릭터 정보를 모두 불러왔어요')
     set((state) => onboardingReducer(state, { type: 'PREFETCH_FINISHED' }))
   }
 
@@ -109,12 +111,14 @@ export const useOnboardingStore = create<OnboardingStore>()((set, get) => {
       try {
         accounts = await fetchCharacterList(apiKey)
       } catch (error) {
+        useToastStore.getState().showError('API 키를 확인하지 못했어요')
         set((state) =>
           onboardingReducer(state, { type: 'API_KEY_REJECTED', error: toOnboardingError(error) }),
         )
         return
       }
 
+      useToastStore.getState().showSuccess('API 키를 확인했어요')
       await setApiKey(apiKey)
       await finalizeVerifiedAccounts(accounts, apiKey)
     },

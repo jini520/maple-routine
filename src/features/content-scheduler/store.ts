@@ -9,6 +9,7 @@ import {
 import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getCachedSchedulerState } from '../../storage/scheduler-cache'
 import { compareByName } from '../onboarding/representative-character'
+import { useToastStore } from '../toast/store'
 import type { DailyContent, WeeklyContent } from '../../types'
 
 export interface ContentCharacterView {
@@ -87,9 +88,15 @@ export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, ge
   },
 
   async saveTrackedOcids(ocids, onProgress) {
-    await setTrackedCharacterOcids('content', ocids)
+    try {
+      await setTrackedCharacterOcids('content', ocids)
+    } catch {
+      useToastStore.getState().showError('저장하지 못했어요')
+      return
+    }
     set({ trackedOcids: ocids })
     await get().refresh(ocids, onProgress)
+    useToastStore.getState().showSuccess('캐릭터 정보를 모두 불러왔어요')
   },
 
   async refresh(ocids, onProgress) {

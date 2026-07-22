@@ -14,9 +14,11 @@ const ICONS: Record<ToastVariant, typeof CheckCircle2> = {
   info: Info,
 }
 
+// bg-secondary/10처럼 Tailwind 투명도 접미사(/N)를 쓰면 투명(transparent)과 섞여 배경이 거의
+// 안 보인다 — surface(불투명 카드색)와 섞어야 와이어프레임대로 옅게 톤만 입힌 불투명 카드가 된다.
 const TONE_CLASSES: Record<ToastVariant, string> = {
-  success: 'bg-secondary/10',
-  error: 'bg-error/9',
+  success: 'bg-[color-mix(in_oklab,var(--color-secondary)_10%,var(--color-surface))]',
+  error: 'bg-[color-mix(in_oklab,var(--color-error)_9%,var(--color-surface))]',
   info: 'bg-info-tint',
 }
 

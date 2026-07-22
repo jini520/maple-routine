@@ -21,6 +21,11 @@ const { getCachedSchedulerStateMock, getCachedCharacterBasicMock } = vi.hoisted(
   getCachedCharacterBasicMock: vi.fn(),
 }))
 
+const { showSuccessMock, showErrorMock } = vi.hoisted(() => ({
+  showSuccessMock: vi.fn(),
+  showErrorMock: vi.fn(),
+}))
+
 vi.mock('../../schedule-sync/schedule-sync', () => ({
   syncSchedules: syncSchedulesMock,
 }))
@@ -38,6 +43,12 @@ vi.mock('../../../storage/scheduler-cache', () => ({
 
 vi.mock('../../../storage/character-basic-cache', () => ({
   getCachedCharacterBasic: getCachedCharacterBasicMock,
+}))
+
+vi.mock('../../toast/store', () => ({
+  useToastStore: {
+    getState: () => ({ showSuccess: showSuccessMock, showError: showErrorMock }),
+  },
 }))
 
 import { useContentSchedulerStore } from '../store'
@@ -311,6 +322,29 @@ describe('useContentSchedulerStore', () => {
       expect(setTrackedCharacterOcidsMock).toHaveBeenCalledWith('content', ['ocid-1', 'ocid-2'])
       expect(useContentSchedulerStore.getState().trackedOcids).toEqual(['ocid-1', 'ocid-2'])
       expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1', 'ocid-2'], undefined)
+    })
+
+    it('saveTrackedOcids가 끝나면 완료 토스트를 띄운다', async () => {
+      setTrackedCharacterOcidsMock.mockResolvedValue(undefined)
+      syncSchedulesMock.mockResolvedValue([syncResult()])
+
+      await useContentSchedulerStore.getState().saveTrackedOcids(['ocid-1'])
+
+      expect(showSuccessMock).toHaveBeenCalledWith('캐릭터 정보를 모두 불러왔어요')
+      expect(showErrorMock).not.toHaveBeenCalled()
+    })
+
+    it('storage 저장이 실패하면 실패 토스트를 띄우고 상태를 바꾸지 않는다(예외를 던지지 않음)', async () => {
+      setTrackedCharacterOcidsMock.mockRejectedValue(new Error('disk full'))
+
+      await expect(
+        useContentSchedulerStore.getState().saveTrackedOcids(['ocid-1']),
+      ).resolves.toBeUndefined()
+
+      expect(showErrorMock).toHaveBeenCalledWith('저장하지 못했어요')
+      expect(showSuccessMock).not.toHaveBeenCalled()
+      expect(syncSchedulesMock).not.toHaveBeenCalled()
+      expect(useContentSchedulerStore.getState().trackedOcids).toBeNull()
     })
   })
 
