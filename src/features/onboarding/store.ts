@@ -37,6 +37,7 @@ export const useOnboardingStore = create<OnboardingStore>()((set, get) => {
         }),
       )
     })
+    useToastStore.getState().showSuccess('캐릭터 정보를 모두 불러왔어요')
     set((state) => onboardingReducer(state, { type: 'PREFETCH_FINISHED' }))
   }
 
