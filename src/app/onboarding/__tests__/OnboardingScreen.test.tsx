@@ -95,13 +95,14 @@ describe('OnboardingScreen', () => {
     expect(screen.getByText(/완료/)).toBeInTheDocument()
   })
 
-  it('status가 error이고 accounts가 비어있으면 ApiKeyForm이 에러 메시지와 함께 렌더링된다', () => {
+  // 실패 피드백은 토스트(features/onboarding/store.ts의 showError)로 옮겨서, 여기서는 폼이
+  // 그대로 남아 재입력할 수 있는지만 확인한다 — 인라인 에러 문구는 더 이상 없다(제거).
+  it('status가 error이고 accounts가 비어있으면 ApiKeyForm이 다시 렌더링된다', () => {
     mockStore({ status: 'error', accounts: [], error: { kind: 'invalidApiKey' } })
 
     render(<OnboardingScreen />)
 
     expect(screen.getByLabelText(/API 키/)).toBeInTheDocument()
-    expect(screen.getByText('API 키가 유효하지 않습니다')).toBeInTheDocument()
   })
 
   it('status가 error이고 accounts가 비어있지 않으면 AccountSelectionList가 에러 메시지와 함께 렌더링된다', () => {

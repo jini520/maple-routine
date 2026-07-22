@@ -2,7 +2,6 @@ import { useState } from 'react'
 
 export interface ApiKeyFormProps {
   isSubmitting: boolean
-  errorMessage: string | null
   onSubmit: (apiKey: string) => void
 }
 
@@ -44,8 +43,6 @@ export function ApiKeyForm(props: ApiKeyFormProps): React.JSX.Element {
           className="w-full rounded-[10px] bg-surface border border-border px-4 py-3 text-text"
         />
       </div>
-
-      {props.errorMessage !== null && <p className="text-sm text-error">{props.errorMessage}</p>}
 
       <button
         type="submit"

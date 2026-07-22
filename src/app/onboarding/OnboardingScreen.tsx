@@ -10,7 +10,7 @@ export function OnboardingScreen(): React.JSX.Element {
     case 'awaitingApiKey':
       return (
         <div className="flex justify-center px-4 pt-8 pb-4">
-          <ApiKeyForm isSubmitting={false} errorMessage={null} onSubmit={submitApiKey} />
+          <ApiKeyForm isSubmitting={false} onSubmit={submitApiKey} />
         </div>
       )
 
@@ -19,7 +19,7 @@ export function OnboardingScreen(): React.JSX.Element {
     case 'verifyingApiKey':
       return (
         <div className="flex justify-center px-4 pt-8 pb-4">
-          <ApiKeyForm isSubmitting={true} errorMessage={null} onSubmit={submitApiKey} />
+          <ApiKeyForm isSubmitting={true} onSubmit={submitApiKey} />
         </div>
       )
 
@@ -69,11 +69,7 @@ export function OnboardingScreen(): React.JSX.Element {
       if (accounts.length === 0) {
         return (
           <div className="flex justify-center px-4 pt-8 pb-4">
-            <ApiKeyForm
-              isSubmitting={false}
-              errorMessage={error !== null ? formatOnboardingError(error) : null}
-              onSubmit={submitApiKey}
-            />
+            <ApiKeyForm isSubmitting={false} onSubmit={submitApiKey} />
           </div>
         )
       }

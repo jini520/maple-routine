@@ -81,4 +81,20 @@ describe('ToastStack', () => {
     await user.click(screen.getByRole('button', { name: '닫기' }))
     expect(dismiss).toHaveBeenCalledWith('toast-abc')
   })
+
+  it('hasTabBar가 true(기본값)면 탭바 높이만큼 띄운다', () => {
+    mockStore([{ id: '1', variant: 'success', message: '저장했어요', duration: 2000 }])
+    render(<ToastStack />)
+
+    expect(screen.getByTestId('toast-stack')).toHaveClass('bottom-[calc(4rem+var(--sa-bottom)+0.75rem)]')
+  })
+
+  it('hasTabBar가 false면 안전영역 바로 위에 띄운다(온보딩 등 탭바 없는 화면)', () => {
+    mockStore([{ id: '1', variant: 'success', message: '저장했어요', duration: 2000 }])
+    render(<ToastStack hasTabBar={false} />)
+
+    const stack = screen.getByTestId('toast-stack')
+    expect(stack).toHaveClass('bottom-[calc(var(--sa-bottom)+0.75rem)]')
+    expect(stack).not.toHaveClass('bottom-[calc(4rem+var(--sa-bottom)+0.75rem)]')
+  })
 })
