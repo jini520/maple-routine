@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ContentScreen } from '../ContentScreen'
 import { useContentSchedulerStore, type ContentCharacterView } from '../../../features/content-scheduler/store'
 import { getCharacterPickerRoster } from '../../../features/schedule-sync/schedule-sync'
+import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 import type { CharacterPickerEntry } from '../../../types'
 
 vi.mock('../../../features/content-scheduler/store', () => ({
@@ -25,10 +26,13 @@ function mockStore(overrides: Partial<ReturnType<typeof useContentSchedulerStore
     error: null,
     trackedOcids: null,
     selectedOcid: null,
+    manualTrackedByOcid: {},
     loadTrackedOcids: vi.fn(),
     saveTrackedOcids: vi.fn(),
     refresh: vi.fn(),
     selectCharacter: vi.fn(),
+    addManualContent: vi.fn(),
+    removeManualContent: vi.fn(),
     ...overrides,
   })
 }
@@ -65,6 +69,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup()
   vi.clearAllMocks()
+  useTrackingModeStore.setState({ mode: 'auto' })
 })
 
 describe('ContentScreen', () => {
@@ -888,5 +893,120 @@ describe('ContentScreen', () => {
     expect(screen.getByText('13416점')).toBeInTheDocument()
     expect(screen.queryByText('주간 미션 포인트')).not.toBeInTheDocument()
     expect(screen.queryByText('플래그 레이스')).not.toBeInTheDocument()
+  })
+
+  describe('ADR-035: 수동 트래킹 모드', () => {
+    it('수동 모드: 게임 등록 여부(isRegistered)와 무관하게 추적 중인 항목을 동기화 값과 함께 표시한다', async () => {
+      useTrackingModeStore.setState({ mode: 'manual' })
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        selectedOcid: 'ocid-1',
+        manualTrackedByOcid: { 'ocid-1': [{ contentName: '몬스터파크', kind: 'content' }] },
+        characters: [
+          character({
+            ocid: 'ocid-1',
+            // isRegistered: false여도 수동 모드에서는 추적 목록에 있으면 보인다
+            dailyContents: [
+              { name: '몬스터파크', kind: 'contents', isRegistered: false, nowCount: 9, maxCount: 14, questState: null },
+            ],
+          }),
+        ],
+      })
+
+      render(<ContentScreen />)
+      await screen.findByRole('combobox')
+
+      expect(screen.getByText('몬스터파크')).toBeInTheDocument()
+      expect(screen.getByText('9/14')).toBeInTheDocument()
+    })
+
+    it('수동 모드: 한 번도 동기화된 적 없는 항목은 템플릿 기본값으로 표시한다', async () => {
+      useTrackingModeStore.setState({ mode: 'manual' })
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        selectedOcid: 'ocid-1',
+        manualTrackedByOcid: { 'ocid-1': [{ contentName: '[일일 퀘스트] 소멸의 여로 조사', kind: 'content' }] },
+        characters: [character({ ocid: 'ocid-1', dailyContents: [] })],
+      })
+
+      render(<ContentScreen />)
+      await screen.findByRole('combobox')
+
+      // 접두어 제거된 이름 + 템플릿의 quest_state 0("시작 안함")
+      expect(screen.getByText('소멸의 여로 조사')).toBeInTheDocument()
+      expect(screen.getByText('시작 안함')).toBeInTheDocument()
+    })
+
+    it('수동 모드: "+ 항목 추가"로 항목을 선택하면 addManualContent가 호출된다', async () => {
+      useTrackingModeStore.setState({ mode: 'manual' })
+      const addManualContent = vi.fn()
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        selectedOcid: 'ocid-1',
+        manualTrackedByOcid: { 'ocid-1': [] },
+        characters: [character({ ocid: 'ocid-1', dailyContents: [] })],
+        addManualContent,
+      })
+
+      render(<ContentScreen />)
+      await screen.findByRole('combobox')
+
+      fireEvent.click(screen.getByRole('button', { name: '+ 항목 추가' }))
+      fireEvent.click(await screen.findByRole('button', { name: '몬스터파크' }))
+
+      expect(addManualContent).toHaveBeenCalledWith('ocid-1', '몬스터파크')
+    })
+
+    it('수동 모드: 카드의 삭제 버튼을 누르면 removeManualContent가 호출된다', async () => {
+      useTrackingModeStore.setState({ mode: 'manual' })
+      const removeManualContent = vi.fn()
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        selectedOcid: 'ocid-1',
+        manualTrackedByOcid: { 'ocid-1': [{ contentName: '몬스터파크', kind: 'content' }] },
+        characters: [
+          character({
+            ocid: 'ocid-1',
+            dailyContents: [
+              { name: '몬스터파크', kind: 'contents', isRegistered: true, nowCount: 7, maxCount: 14, questState: null },
+            ],
+          }),
+        ],
+        removeManualContent,
+      })
+
+      render(<ContentScreen />)
+      await screen.findByRole('combobox')
+
+      fireEvent.click(screen.getByRole('button', { name: '몬스터파크 삭제' }))
+
+      expect(removeManualContent).toHaveBeenCalledWith('ocid-1', '몬스터파크')
+    })
+
+    it('자동 모드에서는 "항목 추가" 버튼과 삭제 버튼이 렌더링되지 않는다', async () => {
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        selectedOcid: 'ocid-1',
+        characters: [
+          character({
+            ocid: 'ocid-1',
+            dailyContents: [
+              { name: '몬스터파크', kind: 'contents', isRegistered: true, nowCount: 7, maxCount: 14, questState: null },
+            ],
+          }),
+        ],
+      })
+
+      render(<ContentScreen />)
+      await screen.findByRole('combobox')
+
+      expect(screen.queryByRole('button', { name: '+ 항목 추가' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: '몬스터파크 삭제' })).not.toBeInTheDocument()
+    })
   })
 })

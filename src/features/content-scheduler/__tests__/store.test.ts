@@ -31,6 +31,11 @@ const { seedManualTrackedContentMock, trackingModeStateMock } = vi.hoisted(() =>
   trackingModeStateMock: { mode: 'auto' as 'auto' | 'manual' },
 }))
 
+const { getManualTrackedContentMock, setManualTrackedContentMock } = vi.hoisted(() => ({
+  getManualTrackedContentMock: vi.fn(),
+  setManualTrackedContentMock: vi.fn(),
+}))
+
 vi.mock('../../schedule-sync/schedule-sync', () => ({
   syncSchedules: syncSchedulesMock,
 }))
@@ -64,6 +69,11 @@ vi.mock('../../tracking-mode/store', () => ({
 
 vi.mock('../../tracking-mode/seed', () => ({
   seedManualTrackedContent: seedManualTrackedContentMock,
+}))
+
+vi.mock('../../../storage/manual-tracked-content', () => ({
+  getManualTrackedContent: getManualTrackedContentMock,
+  setManualTrackedContent: setManualTrackedContentMock,
 }))
 
 import { useContentSchedulerStore } from '../store'
@@ -108,12 +118,15 @@ beforeEach(() => {
     error: null,
     trackedOcids: null,
     selectedOcid: null,
+    manualTrackedByOcid: {},
   })
   getCachedSchedulerStateMock.mockResolvedValue(null)
   getCachedCharacterBasicMock.mockResolvedValue(null)
   getLastSelectedCharacterMock.mockResolvedValue(null)
   trackingModeStateMock.mode = 'auto'
   seedManualTrackedContentMock.mockResolvedValue(undefined)
+  getManualTrackedContentMock.mockResolvedValue([])
+  setManualTrackedContentMock.mockResolvedValue(undefined)
 })
 
 afterEach(() => {
@@ -401,6 +414,75 @@ describe('useContentSchedulerStore', () => {
       await useContentSchedulerStore.getState().saveTrackedOcids(['ocid-1', 'ocid-2'])
 
       expect(seedManualTrackedContentMock).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('ADR-035: 수동 추적 항목 (manualTrackedContent)', () => {
+    it('수동 모드일 때 refresh는 추적 목록을 읽어 manualTrackedByOcid에 채운다', async () => {
+      trackingModeStateMock.mode = 'manual'
+      syncSchedulesMock.mockResolvedValue([syncResult({ ocid: 'ocid-1' })])
+      getManualTrackedContentMock.mockImplementation(async (ocid: string) =>
+        ocid === 'ocid-1' ? [{ contentName: '몬스터파크', kind: 'content' }] : [],
+      )
+
+      await useContentSchedulerStore.getState().refresh(['ocid-1'])
+
+      expect(getManualTrackedContentMock).toHaveBeenCalledWith('ocid-1')
+      expect(useContentSchedulerStore.getState().manualTrackedByOcid).toEqual({
+        'ocid-1': [{ contentName: '몬스터파크', kind: 'content' }],
+      })
+    })
+
+    it('auto 모드에서는 refresh가 추적 목록을 읽지 않고 manualTrackedByOcid는 빈 객체로 둔다', async () => {
+      syncSchedulesMock.mockResolvedValue([syncResult({ ocid: 'ocid-1' })])
+
+      await useContentSchedulerStore.getState().refresh(['ocid-1'])
+
+      expect(getManualTrackedContentMock).not.toHaveBeenCalled()
+      expect(useContentSchedulerStore.getState().manualTrackedByOcid).toEqual({})
+    })
+
+    it('addManualContent는 저장소에 멤버십과 템플릿 max_count를 저장하고 상태를 갱신한다', async () => {
+      getManualTrackedContentMock.mockResolvedValue([])
+
+      await useContentSchedulerStore.getState().addManualContent('ocid-1', '몬스터파크')
+
+      // '몬스터파크'는 scheduler-content-template.json daily에 max_count 14로 있다
+      expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', [
+        { contentName: '몬스터파크', kind: 'content', maxCount: 14 },
+      ])
+      expect(useContentSchedulerStore.getState().manualTrackedByOcid).toEqual({
+        'ocid-1': [{ contentName: '몬스터파크', kind: 'content', maxCount: 14 }],
+      })
+    })
+
+    it('addManualContent는 이미 추적 중인 콘텐츠면 중복 추가하지 않는다', async () => {
+      getManualTrackedContentMock.mockResolvedValue([{ contentName: '몬스터파크', kind: 'content', maxCount: 14 }])
+
+      await useContentSchedulerStore.getState().addManualContent('ocid-1', '몬스터파크')
+
+      expect(setManualTrackedContentMock).not.toHaveBeenCalled()
+    })
+
+    it('removeManualContent는 해당 콘텐츠 항목만 제거하고 다른 kind(boss)·다른 이름은 보존한다', async () => {
+      getManualTrackedContentMock.mockResolvedValue([
+        { contentName: '몬스터파크', kind: 'content', maxCount: 14 },
+        { contentName: '무릉도장', kind: 'content' },
+        { contentName: '몬스터파크', kind: 'boss', difficulty: '하드' },
+      ])
+
+      await useContentSchedulerStore.getState().removeManualContent('ocid-1', '몬스터파크')
+
+      expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', [
+        { contentName: '무릉도장', kind: 'content' },
+        { contentName: '몬스터파크', kind: 'boss', difficulty: '하드' },
+      ])
+      expect(useContentSchedulerStore.getState().manualTrackedByOcid).toEqual({
+        'ocid-1': [
+          { contentName: '무릉도장', kind: 'content' },
+          { contentName: '몬스터파크', kind: 'boss', difficulty: '하드' },
+        ],
+      })
     })
   })
 

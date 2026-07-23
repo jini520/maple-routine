@@ -11,14 +11,23 @@ import { CharacterSelectDropdown } from '../../components/CharacterSelectDropdow
 import { CharacterTrackingPicker } from '../../components/CharacterTrackingPicker/CharacterTrackingPicker'
 import type { DailyQuestRegionCrop } from '../../lib/daily-quest-backgrounds'
 import { MAPLE_LEAF_PATH } from '../../components/mapleLeafPath'
+import { ManualContentPickerModal } from './ManualContentPickerModal'
 import { ProgressModal } from '../../components/ProgressModal/ProgressModal'
-import { RefreshCw } from 'lucide-react'
+import { RefreshCw, X } from 'lucide-react'
 import { getCharacterPickerRoster } from '../../features/schedule-sync/schedule-sync'
 import { getDailyQuestRegionIconUrl } from '../../lib/daily-quest-icons'
 import { matchWeeklyRegionalQuestSlug } from '../../lib/weekly-regional-quest-matching'
+import { mergeManualContentList, type SchedulerContentTemplateEntry } from '../../lib/manual-content-merge'
+import schedulerContentTemplate from '../../data/scheduler-content-template.json'
 import { useContentSchedulerStore } from '../../features/content-scheduler/store'
+import { useTrackingModeStore } from '../../features/tracking-mode/store'
 
 type ContentTab = 'daily' | 'weekly'
+
+const contentTemplate = schedulerContentTemplate as {
+  daily: SchedulerContentTemplateEntry[]
+  weekly: SchedulerContentTemplateEntry[]
+}
 
 // "몬스터파크"만 배경+아이콘 카드로 확장한다 — 다른 kind: 'contents' 항목이 생기면 그때
 // 매핑 테이블로 일반화할지 재검토한다(현재는 인스턴스가 하나뿐이라 과설계 방지, ADR-020).
@@ -580,6 +589,92 @@ export function GuildFlagRaceCard(props: {
   )
 }
 
+// 카드 종류 분기를 한 곳으로 모아, 리스트가 각 카드를 <li> 하나로 감싸(수동 모드 삭제 버튼을
+// 얹을 자리) 렌더링할 수 있게 한다. 카드 컴포넌트 자체는 그대로 재사용한다.
+function renderDailyContentCard(content: DailyContent): React.JSX.Element {
+  if (content.kind === 'quest') {
+    return <DailyQuestCard content={content} />
+  }
+
+  if (content.name === MONSTER_PARK_NAME) {
+    return <MonsterParkCard content={content} />
+  }
+
+  return (
+    <div className="rounded-[14px] bg-surface border border-border p-4 space-y-2">
+      <p className="text-sm text-text">
+        {content.name} · {content.nowCount}/{content.maxCount}
+      </p>
+      {content.maxCount > 0 && (
+        <div
+          role="progressbar"
+          aria-valuenow={content.nowCount}
+          aria-valuemin={0}
+          aria-valuemax={content.maxCount}
+          className="h-1.5 w-full rounded-full bg-surface-2 overflow-hidden"
+        >
+          <div
+            className="h-1.5 rounded-full bg-primary"
+            style={{ width: `${Math.min((content.nowCount / content.maxCount) * 100, 100)}%` }}
+          />
+        </div>
+      )}
+    </div>
+  )
+}
+
+function renderWeeklyContentCard(content: WeeklyContent): React.JSX.Element {
+  if (content.name === GUILD_UNDERGROUND_WATERWAY_NAME) {
+    return <GuildUndergroundWaterwayCard content={content} />
+  }
+
+  if (content.name === GUILD_MISSION_POINTS_NAME) {
+    return <GuildMissionPointsCard content={content} />
+  }
+
+  if (content.name === GUILD_FLAG_RACE_NAME) {
+    return <GuildFlagRaceCard content={content} />
+  }
+
+  if (content.name.startsWith(EPIC_DUNGEON_PREFIX)) {
+    return <EpicDungeonCard content={content} />
+  }
+
+  if (matchWeeklyRegionalQuestSlug(content.name) !== null) {
+    return <WeeklyRegionalContentCard content={content} />
+  }
+
+  if (content.name.startsWith(MAPLE_UNION_PREFIX)) {
+    return <MapleUnionDragonCard content={content} />
+  }
+
+  if (matchWeeklyQuestRegionSlug(stripWeeklyQuestPrefix(content.name)) !== null) {
+    return <WeeklyQuestCard content={content} />
+  }
+
+  return (
+    <div className="rounded-[14px] bg-surface border border-border p-4 space-y-2">
+      <p className="text-sm text-text">
+        {content.name} · {content.nowCount}/{content.maxCount}
+      </p>
+      {content.maxCount > 0 && (
+        <div
+          role="progressbar"
+          aria-valuenow={content.nowCount}
+          aria-valuemin={0}
+          aria-valuemax={content.maxCount}
+          className="h-1.5 w-full rounded-full bg-surface-2 overflow-hidden"
+        >
+          <div
+            className="h-1.5 rounded-full bg-primary"
+            style={{ width: `${Math.min((content.nowCount / content.maxCount) * 100, 100)}%` }}
+          />
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function ContentScreen(): React.JSX.Element {
   const {
     status,
@@ -587,14 +682,19 @@ export function ContentScreen(): React.JSX.Element {
     error,
     trackedOcids,
     selectedOcid,
+    manualTrackedByOcid,
     loadTrackedOcids,
     saveTrackedOcids,
     refresh,
     selectCharacter,
+    addManualContent,
+    removeManualContent,
   } = useContentSchedulerStore()
+  const { mode } = useTrackingModeStore()
   const [activeTab, setActiveTab] = useState<ContentTab>('daily')
   const [roster, setRoster] = useState<CharacterPickerEntry[]>([])
   const [isPickerOpen, setIsPickerOpen] = useState(false)
+  const [manualPickerTab, setManualPickerTab] = useState<ContentTab | null>(null)
   const [saveProgress, setSaveProgress] = useState<{ completed: number; total: number } | null>(null)
 
   useEffect(() => {
@@ -629,12 +729,35 @@ export function ContentScreen(): React.JSX.Element {
 
   const selected = characters.find((character) => character.ocid === effectiveSelectedOcid) ?? null
 
-  const registeredDailyContents =
-    selected !== null ? selected.dailyContents.filter((content) => content.isRegistered) : []
+  // ADR-035 결정 3·6: 수동 모드에서는 게임 등록 여부(isRegistered)가 아니라 사용자가 앱에서
+  // 관리하는 멤버십(manualTrackedContent)으로 표시 목록을 결정하고, 실제 값은 동기화 결과 또는
+  // 템플릿에서 즉석 조회한다(mergeManualContentList). auto 모드는 기존대로 등록 항목만 표시한다.
+  const manualContentItems =
+    selected !== null
+      ? (manualTrackedByOcid?.[selected.ocid] ?? []).filter((item) => item.kind === 'content')
+      : []
 
-  const weeklyContents = selected !== null ? selected.weeklyContents : []
+  const displayDailyContents: DailyContent[] =
+    selected === null
+      ? []
+      : mode === 'manual'
+        ? mergeManualContentList(manualContentItems, selected.dailyContents, contentTemplate.daily)
+        : selected.dailyContents.filter((content) => content.isRegistered)
 
-  const registeredWeeklyContents = weeklyContents.filter((content) => content.isRegistered)
+  const displayWeeklyContents: WeeklyContent[] =
+    selected === null
+      ? []
+      : mode === 'manual'
+        ? (mergeManualContentList(manualContentItems, selected.weeklyContents, contentTemplate.weekly) as WeeklyContent[])
+        : selected.weeklyContents.filter((content) => content.isRegistered)
+
+  function handleAddManualContent(contentName: string): void {
+    if (selected !== null) void addManualContent(selected.ocid, contentName)
+  }
+
+  function handleRemoveManualContent(contentName: string): void {
+    if (selected !== null) void removeManualContent(selected.ocid, contentName)
+  }
 
   async function handleSaveTracking(ocids: string[]): Promise<void> {
     setSaveProgress({ completed: 0, total: ocids.length })
@@ -825,158 +948,97 @@ export function ContentScreen(): React.JSX.Element {
         <div className="space-y-4 px-4 pb-4">
           {activeTab === 'daily' && (
             <>
-              {registeredDailyContents.length === 0 && !selected.isStale && (
+              {displayDailyContents.length === 0 && (mode === 'manual' || !selected.isStale) && (
                 <div className="rounded-[14px] border border-dashed border-border p-4 text-sm text-text-muted">
-                  표시할 항목이 없습니다 — 게임에서 스케줄러에 등록해주세요
+                  {mode === 'manual'
+                    ? '추적할 항목이 없습니다 — "항목 추가"로 추가해주세요'
+                    : '표시할 항목이 없습니다 — 게임에서 스케줄러에 등록해주세요'}
                 </div>
               )}
 
-              {registeredDailyContents.length > 0 && (
+              {displayDailyContents.length > 0 && (
                 <ul className="space-y-2">
-                  {registeredDailyContents.map((content) => {
-                    if (content.kind === 'quest') {
-                      return (
-                        <li key={content.name}>
-                          <DailyQuestCard content={content} />
-                        </li>
-                      )
-                    }
-
-                    if (content.name === MONSTER_PARK_NAME) {
-                      return (
-                        <li key={content.name}>
-                          <MonsterParkCard content={content} />
-                        </li>
-                      )
-                    }
-
-                    return (
-                      <li
-                        key={content.name}
-                        className="rounded-[14px] bg-surface border border-border p-4 space-y-2"
-                      >
-                        <p className="text-sm text-text">
-                          {content.name} · {content.nowCount}/{content.maxCount}
-                        </p>
-                        {content.maxCount > 0 && (
-                          <div
-                            role="progressbar"
-                            aria-valuenow={content.nowCount}
-                            aria-valuemin={0}
-                            aria-valuemax={content.maxCount}
-                            className="h-1.5 w-full rounded-full bg-surface-2 overflow-hidden"
-                          >
-                            <div
-                              className="h-1.5 rounded-full bg-primary"
-                              style={{ width: `${Math.min((content.nowCount / content.maxCount) * 100, 100)}%` }}
-                            />
-                          </div>
-                        )}
-                      </li>
-                    )
-                  })}
+                  {displayDailyContents.map((content) => (
+                    <li key={content.name} className="relative">
+                      {renderDailyContentCard(content)}
+                      {mode === 'manual' && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveManualContent(content.name)}
+                          aria-label={`${content.name} 삭제`}
+                          className="absolute -right-1.5 -top-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-full border border-border bg-surface text-text-muted hover:text-text"
+                        >
+                          <X className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" />
+                        </button>
+                      )}
+                    </li>
+                  ))}
                 </ul>
+              )}
+
+              {mode === 'manual' && (
+                <button
+                  type="button"
+                  onClick={() => setManualPickerTab('daily')}
+                  className="w-full rounded-[14px] border border-dashed border-border py-3 text-sm font-medium text-text-muted hover:text-text"
+                >
+                  + 항목 추가
+                </button>
               )}
             </>
           )}
 
           {activeTab === 'weekly' && (
             <>
-              {registeredWeeklyContents.length === 0 && !selected.isStale && (
+              {displayWeeklyContents.length === 0 && (mode === 'manual' || !selected.isStale) && (
                 <div className="rounded-[14px] border border-dashed border-border p-4 text-sm text-text-muted">
-                  표시할 항목이 없습니다 — 게임에서 스케줄러에 등록해주세요
+                  {mode === 'manual'
+                    ? '추적할 항목이 없습니다 — "항목 추가"로 추가해주세요'
+                    : '표시할 항목이 없습니다 — 게임에서 스케줄러에 등록해주세요'}
                 </div>
               )}
 
-              {registeredWeeklyContents.length > 0 && (
+              {displayWeeklyContents.length > 0 && (
                 <ul className="space-y-2">
-                  {registeredWeeklyContents.map((content) => {
-                    if (content.name === GUILD_UNDERGROUND_WATERWAY_NAME) {
-                      return (
-                        <li key={content.name}>
-                          <GuildUndergroundWaterwayCard content={content} />
-                        </li>
-                      )
-                    }
-
-                    if (content.name === GUILD_MISSION_POINTS_NAME) {
-                      return (
-                        <li key={content.name}>
-                          <GuildMissionPointsCard content={content} />
-                        </li>
-                      )
-                    }
-
-                    if (content.name === GUILD_FLAG_RACE_NAME) {
-                      return (
-                        <li key={content.name}>
-                          <GuildFlagRaceCard content={content} />
-                        </li>
-                      )
-                    }
-
-                    if (content.name.startsWith(EPIC_DUNGEON_PREFIX)) {
-                      return (
-                        <li key={content.name}>
-                          <EpicDungeonCard content={content} />
-                        </li>
-                      )
-                    }
-
-                    if (matchWeeklyRegionalQuestSlug(content.name) !== null) {
-                      return (
-                        <li key={content.name}>
-                          <WeeklyRegionalContentCard content={content} />
-                        </li>
-                      )
-                    }
-
-                    if (content.name.startsWith(MAPLE_UNION_PREFIX)) {
-                      return (
-                        <li key={content.name}>
-                          <MapleUnionDragonCard content={content} />
-                        </li>
-                      )
-                    }
-
-                    if (matchWeeklyQuestRegionSlug(stripWeeklyQuestPrefix(content.name)) !== null) {
-                      return (
-                        <li key={content.name}>
-                          <WeeklyQuestCard content={content} />
-                        </li>
-                      )
-                    }
-
-                    return (
-                      <li
-                        key={content.name}
-                        className="rounded-[14px] bg-surface border border-border p-4 space-y-2"
-                      >
-                        <p className="text-sm text-text">
-                          {content.name} · {content.nowCount}/{content.maxCount}
-                        </p>
-                        {content.maxCount > 0 && (
-                          <div
-                            role="progressbar"
-                            aria-valuenow={content.nowCount}
-                            aria-valuemin={0}
-                            aria-valuemax={content.maxCount}
-                            className="h-1.5 w-full rounded-full bg-surface-2 overflow-hidden"
-                          >
-                            <div
-                              className="h-1.5 rounded-full bg-primary"
-                              style={{ width: `${Math.min((content.nowCount / content.maxCount) * 100, 100)}%` }}
-                            />
-                          </div>
-                        )}
-                      </li>
-                    )
-                  })}
+                  {displayWeeklyContents.map((content) => (
+                    <li key={content.name} className="relative">
+                      {renderWeeklyContentCard(content)}
+                      {mode === 'manual' && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveManualContent(content.name)}
+                          aria-label={`${content.name} 삭제`}
+                          className="absolute -right-1.5 -top-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-full border border-border bg-surface text-text-muted hover:text-text"
+                        >
+                          <X className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" />
+                        </button>
+                      )}
+                    </li>
+                  ))}
                 </ul>
+              )}
+
+              {mode === 'manual' && (
+                <button
+                  type="button"
+                  onClick={() => setManualPickerTab('weekly')}
+                  className="w-full rounded-[14px] border border-dashed border-border py-3 text-sm font-medium text-text-muted hover:text-text"
+                >
+                  + 항목 추가
+                </button>
               )}
             </>
           )}
         </div>
+      )}
+
+      {manualPickerTab !== null && selected !== null && (
+        <ManualContentPickerModal
+          tab={manualPickerTab}
+          alreadyTracked={manualContentItems.map((item) => item.contentName)}
+          onAdd={handleAddManualContent}
+          onClose={() => setManualPickerTab(null)}
+        />
       )}
 
       {trackingModals}

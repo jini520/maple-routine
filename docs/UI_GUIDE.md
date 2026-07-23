@@ -368,6 +368,13 @@ rounded-full bg-white/20 text-[#E8DFEC] text-xs font-semibold px-2 py-1, flex it
 ```
 **보스별 일러스트 크기·위치**: 인물 구도가 보스마다 달라 고정값 하나로는 두상이 잘리거나 안 보이는 경우가 많다(카링·스우 두 예시만으로도 서로 다른 `background-size`가 필요했음, ADR-018 참고). `src/data/boss-portrait-crops.json`에서 `portraitSlug`별로 개별 지정 — 이 파일은 게임 데이터가 아니라 UI 표시 파라미터라 값은 AI가 임의로 채우지 않고 사용자가 이미지를 넣을 때마다 직접 조정한다. 세부 조회 로직은 `docs/ARCHITECTURE.md` 참고.
 
+### 수동 트래킹 체크리스트 — 컨텐츠 스케줄러 (구현 완료, 2026-07-24, [[ADR-035]])
+
+트래킹 모드가 `manual`일 때만 컨텐츠 스케줄러 일간/주간 탭에 추가/삭제 진입점이 붙는다(auto 모드에서는 렌더링 자체가 되지 않아 기존과 완전히 동일하다). 표시되는 카드 자체는 위 일일퀘스트/몬스터파크/주간 콘텐츠 카드를 **그대로 재사용**하고, 값(now/max·quest_state)은 항상 동기화 결과 또는 템플릿 기본값에서 조회한다(멤버십에 값을 복제하지 않음, [[ADR-035]] 결정 6).
+- **항목 추가 버튼**: 각 탭 리스트 하단에 `w-full rounded-[14px] border border-dashed border-border py-3 text-sm font-medium text-text-muted hover:text-text` 점선 버튼("+ 항목 추가"). 탭하면 `ManualContentPickerModal`이 열린다 — `scheduler-content-template.json`의 해당 탭(daily/weekly) 항목 중 아직 추적 중이지 않은 것만 목록으로 보여주고, 자유 텍스트 입력은 없다(고정 템플릿에서만 선택, [[ADR-035]] 결정 11). 항목 하나를 탭하면 즉시 추가되고 모달이 닫힌다.
+- **삭제 진입점**: 각 카드 우측 상단 모서리에 얹히는 원형 X 버튼(`absolute -right-1.5 -top-1.5 z-10 h-6 w-6 rounded-full border border-border bg-surface`, `lucide-react` `X` size 14). 카드의 `overflow-hidden` 밖(래핑 `<li className="relative">` 기준)에 놓여 카드 안 상태 뱃지와 겹치지 않는다. `aria-label`은 "{콘텐츠명} 삭제".
+- **빈 상태**: 추적 항목이 하나도 없으면 auto 모드의 "게임에서 스케줄러에 등록해주세요" 대신 "추적할 항목이 없습니다 — \"항목 추가\"로 추가해주세요"를 같은 점선 박스로 보여준다.
+
 ### 일일퀘스트 카드 — 확정, 2026-07-14, [[ADR-020]] (구현 전)
 
 컨텐츠 스케줄러 일간 탭에서 `kind: 'quest'`인 항목(지역별 반복 필드 퀘스트)에만 적용. `kind: 'contents'`인 항목은 아래 "몬스터파크 카드"(예외 하나)를 빼면 기존 "이름 · now/max + 진행률 바" 표시를 그대로 유지 — 이 섹션은 그 외 신규 퀘스트 카드만 다룬다. 카드 골격은 [[ADR-018]]의 보스 카드를 그대로 재사용한다(같은 상수·색값을 새로 정의하지 않음).

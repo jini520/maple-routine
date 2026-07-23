@@ -61,7 +61,10 @@
     {
       "step": 7,
       "name": "manual-checklist-ui-content",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-07-24T03:14:29+0900",
+      "summary": "컨텐츠 스케줄러 수동 트래킹 체크리스트 UI 추가(ADR-035 결정 3·6·8·11) — 순수 병합 함수 lib/manual-content-merge.ts(synced 우선·template 폴백·방어적 기본값, tracked 순서 유지) 신규, content-scheduler store에 manualTrackedByOcid 상태+manual 모드 refresh 로딩+addManualContent/removeManualContent(멤버십+템플릿 max_count만 저장) 추가, ManualContentPickerModal(고정 템플릿 선택·자유 입력 없음) 신규, ContentScreen이 manual 모드에서 등록 여부 대신 멤버십으로 표시 목록 계산(mergeManualContentList)하고 카드별 삭제 X·탭별 항목 추가 버튼·수동 빈 상태 렌더(카드 컴포넌트는 재사용, auto 모드 무변화), UI_GUIDE 수동 체크리스트 절 추가 — 테스트 1047개·빌드·lint 통과",
+      "completed_at": "2026-07-24T03:33:00+0900"
     },
     {
       "step": 8,
