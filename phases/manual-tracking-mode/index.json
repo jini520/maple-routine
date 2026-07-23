@@ -16,7 +16,7 @@
       "status": "completed",
       "started_at": "2026-07-23T20:57:21+0900",
       "summary": "features/tracking-mode/store.ts Zustand 스토어(restoreFromStorage/setMode, 시드 트리거 없음)를 TDD로 추가하고 AppShell 부팅 하이드레이션에 3번째 복원으로 연결, lifecycle.md 다이어그램 갱신 — 테스트 988개·빌드·lint 통과",
-      "completed_at": "2026-07-23T21:00:30+0900"
+      "completed_at": "2026-07-23T21:00:50+0900"
     },
     {
       "step": 2,
