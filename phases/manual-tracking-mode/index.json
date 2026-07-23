@@ -40,7 +40,7 @@
       "status": "completed",
       "started_at": "2026-07-24T02:48:48+0900",
       "summary": "온보딩에 자동/수동 트래킹 모드 선택 단계 추가(ADR-035 결정 13/16) — state.ts에 'selectingTrackingMode' status·SELECT_TRACKING_MODE 이벤트 추가하고 PREFETCH_FINISHED가 completed 대신 이 단계로 전이, store에 selectTrackingMode(setMode await 후 전이) 추가, TrackingModeStep.tsx 신규(카드 박스 없는 페이지 레이아웃·기존 선택 카드/CTA 클래스 재사용·추천 배지), OnboardingScreen에 케이스 배선 — 테스트 1009개·빌드·lint 통과",
-      "completed_at": "2026-07-24T02:55:14+0900"
+      "completed_at": "2026-07-24T02:56:01+0900"
     },
     {
       "step": 5,
