@@ -93,6 +93,57 @@ describe('mergeSchedulerState — character 범위', () => {
 
     expect(result.characterState.dailyContents).toEqual([])
   })
+
+  describe('ADR-034 정정 — stale이 아니어도 항목 단위로 previous의 누락 항목을 복원한다', () => {
+    it('daily가 stale이 아니고(빈 배열 아님) 일부 항목만 왔어도, previous에만 있던 항목은 진행값이 리셋된 채 복원된다', () => {
+      const previous = baseState({
+        dailyContents: [
+          { name: '[일일 퀘스트] 소멸의 여로 조사', kind: 'quest', isRegistered: true, nowCount: 0, maxCount: 0, questState: 1 },
+          { name: '[일일 퀘스트] 레헬른의 평온한 밤', kind: 'quest', isRegistered: true, nowCount: 0, maxCount: 0, questState: 2 },
+        ],
+      })
+      const fresh = baseState({
+        dailyContents: [
+          { name: '[일일 퀘스트] 소멸의 여로 조사', kind: 'quest', isRegistered: true, nowCount: 0, maxCount: 0, questState: 0 },
+        ],
+        isDailyStale: false,
+      })
+
+      const result = mergeSchedulerState({ previous, fresh, worldLedger: {}, accountLedger: {}, now: NOW })
+
+      expect(result.characterState.dailyContents).toEqual([
+        { name: '[일일 퀘스트] 소멸의 여로 조사', kind: 'quest', isRegistered: true, nowCount: 0, maxCount: 0, questState: 0 },
+        {
+          name: '[일일 퀘스트] 레헬른의 평온한 밤',
+          kind: 'quest',
+          isRegistered: true,
+          nowCount: 0,
+          maxCount: 0,
+          questState: 0,
+        },
+      ])
+    })
+
+    it('fresh에 이미 있는 항목은 previous로 덮어쓰지 않는다(fresh가 우선)', () => {
+      const previous = baseState({
+        dailyContents: [
+          { name: '[일일 퀘스트] 소멸의 여로 조사', kind: 'quest', isRegistered: true, nowCount: 0, maxCount: 0, questState: 2 },
+        ],
+      })
+      const fresh = baseState({
+        dailyContents: [
+          { name: '[일일 퀘스트] 소멸의 여로 조사', kind: 'quest', isRegistered: true, nowCount: 0, maxCount: 0, questState: 1 },
+        ],
+        isDailyStale: false,
+      })
+
+      const result = mergeSchedulerState({ previous, fresh, worldLedger: {}, accountLedger: {}, now: NOW })
+
+      expect(result.characterState.dailyContents).toEqual([
+        { name: '[일일 퀘스트] 소멸의 여로 조사', kind: 'quest', isRegistered: true, nowCount: 0, maxCount: 0, questState: 1 },
+      ])
+    })
+  })
 })
 
 describe('mergeSchedulerState — world 범위 (몬스터파크)', () => {
@@ -294,6 +345,46 @@ describe('mergeSchedulerState — 보스 (cycle별 독립 stale)', () => {
 
     expect(result.characterState.bossContents[0].isComplete).toBe(false)
     expect(result.characterState.bossContents[0].ownComplete).toBe(false)
+  })
+
+  it('ADR-034 정정 — 주간 보스가 stale이 아니어도(일부 항목만 왔어도) previous에만 있던 난이도는 항목 단위로 복원된다', () => {
+    const previous = baseState({
+      bossContents: [
+        { name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true, isComplete: true, ownComplete: true },
+        { name: '루시드', difficulty: '하드', cycle: 'weekly', isRegistered: true, isComplete: true, ownComplete: true },
+      ],
+    })
+    const fresh = baseState({
+      bossContents: [{ name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true, isComplete: false, ownComplete: false }],
+      isWeeklyBossStale: false,
+    })
+
+    const result = mergeSchedulerState({ previous, fresh, worldLedger: {}, accountLedger: {}, now: NOW })
+
+    expect(result.characterState.bossContents).toEqual([
+      { name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true, isComplete: false, ownComplete: false },
+      { name: '루시드', difficulty: '하드', cycle: 'weekly', isRegistered: true, isComplete: false, ownComplete: false },
+    ])
+  })
+
+  it('ADR-034 정정 — 같은 보스라도 난이도가 다르면 별개 항목으로 취급해 fresh에 없는 난이도만 복원한다', () => {
+    const previous = baseState({
+      bossContents: [
+        { name: '카링', difficulty: '이지', cycle: 'weekly', isRegistered: true, isComplete: true, ownComplete: true },
+        { name: '카링', difficulty: '하드', cycle: 'weekly', isRegistered: false, isComplete: false, ownComplete: false },
+      ],
+    })
+    const fresh = baseState({
+      bossContents: [{ name: '카링', difficulty: '이지', cycle: 'weekly', isRegistered: true, isComplete: true, ownComplete: true }],
+      isWeeklyBossStale: false,
+    })
+
+    const result = mergeSchedulerState({ previous, fresh, worldLedger: {}, accountLedger: {}, now: NOW })
+
+    expect(result.characterState.bossContents).toEqual([
+      { name: '카링', difficulty: '이지', cycle: 'weekly', isRegistered: true, isComplete: true, ownComplete: true },
+      { name: '카링', difficulty: '하드', cycle: 'weekly', isRegistered: false, isComplete: false, ownComplete: false },
+    ])
   })
 })
 

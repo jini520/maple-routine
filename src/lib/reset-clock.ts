@@ -37,3 +37,33 @@ export function getCurrentKstDateKey(now: Date): string {
   const day = String(kstWallClock.getUTCDate()).padStart(2, '0')
   return `${year}-${month}-${day}`
 }
+
+const UNSTABLE_WINDOW_MINUTES = 10
+const DEFAULT_MAX_DAYS_BACK = 13
+
+function formatKstDateKey(kstWallClock: Date): string {
+  const year = kstWallClock.getUTCFullYear()
+  const month = String(kstWallClock.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(kstWallClock.getUTCDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+/**
+ * [[ADR-034]] 스케줄러 최초 동기화·캐시 유실 대비 항목 선채움용 — Nexon 스케줄러 API에
+ * 하루씩 거슬러 올라가며 넘길 과거 조회 날짜(YYYY-MM-DD) 목록을 최신순으로 반환한다.
+ * 평소엔 KST 기준 어제(-1일)부터, KST 00:00~00:10 사이는 자정 직후 API 응답이 불안정하다고
+ * 확인돼(사용자 확인, 2026-07-23) 그제(-2일)부터 시작한다. 호출 측은 이 목록을 순서대로
+ * 조회하다 더 이상 필요 없어지면(그 날짜 응답이 정상이면) 중간에 멈춘다.
+ */
+export function getBackfillDateKeys(now: Date, maxDaysBack: number = DEFAULT_MAX_DAYS_BACK): string[] {
+  const kstWallClock = new Date(now.getTime() + KST_OFFSET_MS)
+  const isUnstableWindow = kstWallClock.getUTCHours() === 0 && kstWallClock.getUTCMinutes() < UNSTABLE_WINDOW_MINUTES
+  const startDaysBack = isUnstableWindow ? 2 : 1
+
+  const keys: string[] = []
+  for (let daysBack = startDaysBack; daysBack < startDaysBack + maxDaysBack; daysBack += 1) {
+    const dayWallClock = new Date(kstWallClock.getTime() - daysBack * 24 * 60 * 60 * 1000)
+    keys.push(formatKstDateKey(dayWallClock))
+  }
+  return keys
+}

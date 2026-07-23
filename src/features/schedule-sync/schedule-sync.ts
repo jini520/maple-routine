@@ -1,7 +1,8 @@
 import { fetchCharacterBasic, fetchCharacterList } from '../../nexon/character'
 import { NexonAuthError, NexonRateLimitError } from '../../nexon/errors'
 import { fetchSchedulerCharacterState } from '../../nexon/schedule'
-import { mergeSchedulerState } from '../../lib/scheduler-merge'
+import { mergeSchedulerState, type MergeOutput } from '../../lib/scheduler-merge'
+import { getBackfillDateKeys } from '../../lib/reset-clock'
 import { compareByName } from '../onboarding/representative-character'
 import { getAuthConfig } from '../../storage/api-key'
 import {
@@ -16,7 +17,7 @@ import {
   setAccountSharedProgressEntry,
   setWorldSharedProgressEntry,
 } from '../../storage/shared-progress-cache'
-import type { CharacterPickerEntry, MapleCharacter, SchedulerCharacterState } from '../../types'
+import type { CharacterPickerEntry, MapleCharacter, SchedulerCharacterState, SharedProgressEntry } from '../../types'
 
 export type ScheduleSyncError =
   | { kind: 'invalidApiKey' } // 401/403
@@ -201,6 +202,87 @@ async function buildFallbackResult(
   }
 }
 
+// ADR-034 정정(2026-07-23): 당일 응답의 4개 섹션(daily/weekly/weeklyBoss/monthlyBoss) 중
+// 하나라도 stale이면(리셋 이후 미접속) 과거 날짜 조회로 항목 단위 선채움을 시도한다.
+function needsBackfill(state: SchedulerCharacterState): boolean {
+  return state.isDailyStale || state.isWeeklyStale || state.isWeeklyBossStale || state.isMonthlyBossStale
+}
+
+// ADR-034 정정(2026-07-23): 당일 응답에서 stale이었던 섹션을, [[getBackfillDateKeys]]가 주는
+// 날짜(평소 -1일부터, 자정 직후 불안정 구간엔 -2일부터) 목록을 하루씩 순서대로 조회하며
+// 항목(이름 또는 이름+난이도) 단위로 채운다. 각 날짜 응답을 previous로 삼아
+// mergeSchedulerState(ADR-030 + ADR-034 항목 단위 정정)를 한 번씩 더 태우되, world/account
+// 원장은 이 루프의 범위 밖이라( previous가 아니라 "마지막 활성 캐릭터" 오염을 피하려 원장을
+// 신뢰해야 하므로, ADR-030) 4개 플래그를 모두 true로 강제해 character 범위 항목 병합만
+// 일어나게 한다. 그 날짜 응답 자체가(원래 stale이었던 섹션 기준으로) 더 이상 stale이
+// 아니면 그 시점에 멈추고, 끝까지 못 찾으면 -13일까지 다 써보고 그동안 누적된 결과를
+// best-effort로 그대로 쓴다. 특정 날짜 조회가 실패해도(네트워크 등) 그 날짜만 건너뛰고
+// 다음 날짜로 계속한다.
+async function fillMissingSections(
+  apiKey: string,
+  ocid: string,
+  stage1: MergeOutput,
+  worldLedger: Record<string, SharedProgressEntry>,
+  accountLedger: Record<string, SharedProgressEntry>,
+  now: Date,
+): Promise<MergeOutput> {
+  if (!needsBackfill(stage1.characterState)) {
+    return stage1
+  }
+
+  const originallyStale = {
+    daily: stage1.characterState.isDailyStale,
+    weekly: stage1.characterState.isWeeklyStale,
+    weeklyBoss: stage1.characterState.isWeeklyBossStale,
+    monthlyBoss: stage1.characterState.isMonthlyBossStale,
+  }
+  const mergedWorldLedger = { ...worldLedger, ...stage1.worldLedgerUpdates }
+  const mergedAccountLedger = { ...accountLedger, ...stage1.accountLedgerUpdates }
+
+  let acc = stage1
+
+  for (const dateKey of getBackfillDateKeys(now)) {
+    let dayResponse: SchedulerCharacterState
+    try {
+      dayResponse = await fetchSchedulerCharacterState(apiKey, ocid, dateKey)
+    } catch {
+      continue
+    }
+
+    const dayMerge = mergeSchedulerState({
+      previous: dayResponse,
+      fresh: {
+        ...acc.characterState,
+        isDailyStale: true,
+        isWeeklyStale: true,
+        isWeeklyBossStale: true,
+        isMonthlyBossStale: true,
+      },
+      worldLedger: mergedWorldLedger,
+      accountLedger: mergedAccountLedger,
+      now,
+    })
+
+    acc = {
+      characterState: dayMerge.characterState,
+      worldLedgerUpdates: { ...acc.worldLedgerUpdates, ...dayMerge.worldLedgerUpdates },
+      accountLedgerUpdates: { ...acc.accountLedgerUpdates, ...dayMerge.accountLedgerUpdates },
+    }
+
+    const resolved =
+      (!originallyStale.daily || !dayResponse.isDailyStale) &&
+      (!originallyStale.weekly || !dayResponse.isWeeklyStale) &&
+      (!originallyStale.weeklyBoss || !dayResponse.isWeeklyBossStale) &&
+      (!originallyStale.monthlyBoss || !dayResponse.isMonthlyBossStale)
+
+    if (resolved) {
+      break
+    }
+  }
+
+  return acc
+}
+
 // ADR-030: fetch 자체는 성공했지만 캐릭터가 리셋 이후 미접속이라 daily/weekly/boss 섹션이
 // 비어있을 수 있고, 몬스터파크·에픽 던전처럼 월드/계정 전체가 공유하는 콘텐츠도 있다 — 이 두
 // 문제를 mergeSchedulerState(순수 함수, lib/scheduler-merge)가 흡수한 "실효 상태"를 캐싱·반환한다.
@@ -217,13 +299,23 @@ async function syncOneCharacter(
       getAccountSharedProgress(accountId),
     ])
 
-    const { characterState, worldLedgerUpdates, accountLedgerUpdates } = mergeSchedulerState({
+    const now = new Date()
+    const stage1 = mergeSchedulerState({
       previous: previousCache?.state ?? null,
       fresh,
       worldLedger,
       accountLedger,
-      now: new Date(),
+      now,
     })
+
+    const { characterState, worldLedgerUpdates, accountLedgerUpdates } = await fillMissingSections(
+      apiKey,
+      character.ocid,
+      stage1,
+      worldLedger,
+      accountLedger,
+      now,
+    )
 
     const syncedAt = new Date().toISOString()
 

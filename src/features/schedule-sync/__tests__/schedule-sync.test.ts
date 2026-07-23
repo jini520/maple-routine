@@ -507,6 +507,157 @@ describe('syncSchedules', () => {
       expect(setAccountSharedProgressEntryMock).not.toHaveBeenCalled()
     })
   })
+
+  describe('ADR-034: 최초 동기화·캐시 유실 대비 -13일 이내 순차 선채움', () => {
+    function bossContent(cycle: 'weekly' | 'monthly') {
+      return { name: '자쿰', difficulty: '카오스' as const, cycle, isRegistered: true, isComplete: false, ownComplete: false }
+    }
+
+    // NOW = 2026-07-11T00:00:00.000Z = KST 2026-07-11T09:00:00(불안정 구간 아님)
+    // → getBackfillDateKeys는 '2026-07-10'(-1일)부터 시작한다.
+
+    it('당일 응답에서 4개 섹션 모두 stale이 아니면 추가 조회를 하지 않는다', async () => {
+      const characters = [character('ocid-1')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+      fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
+
+      await syncSchedules(['ocid-1'])
+
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1)
+      expect(mergeSchedulerStateMock).toHaveBeenCalledTimes(1)
+    })
+
+    it('주간 보스가 stale이면 -1일부터 조회하고, 그 날짜 응답이 그 섹션에 대해 stale이 아니면 거기서 멈춘다', async () => {
+      const characters = [character('ocid-1')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+
+      const stage1State = { ...schedulerState('캐릭터1'), isWeeklyBossStale: true, bossContents: [] }
+      const day1Response = { ...schedulerState('-1일 응답'), isWeeklyBossStale: false, bossContents: [bossContent('weekly')] }
+      const finalState = { ...schedulerState('병합결과'), isWeeklyBossStale: true, bossContents: [bossContent('weekly')] }
+
+      fetchSchedulerCharacterStateMock.mockResolvedValueOnce(schedulerState('캐릭터1')).mockResolvedValueOnce(day1Response)
+      mergeSchedulerStateMock
+        .mockReturnValueOnce({ characterState: stage1State, worldLedgerUpdates: {}, accountLedgerUpdates: {} })
+        .mockReturnValueOnce({ characterState: finalState, worldLedgerUpdates: {}, accountLedgerUpdates: {} })
+
+      const results = await syncSchedules(['ocid-1'])
+
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(2)
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(1, 'key-1', 'ocid-1')
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-1', '2026-07-10')
+
+      expect(mergeSchedulerStateMock).toHaveBeenCalledTimes(2)
+      expect(mergeSchedulerStateMock).toHaveBeenNthCalledWith(2, {
+        previous: day1Response,
+        fresh: { ...stage1State, isDailyStale: true, isWeeklyStale: true, isWeeklyBossStale: true, isMonthlyBossStale: true },
+        worldLedger: {},
+        accountLedger: {},
+        now: expect.any(Date),
+      })
+
+      expect(results[0].state).toEqual(finalState)
+      expect(setCachedSchedulerStateMock).toHaveBeenCalledWith('ocid-1', { state: finalState, syncedAt: NOW })
+    })
+
+    it('-1일도 그 섹션이 stale이면 -2일로 계속 넘어간다', async () => {
+      const characters = [character('ocid-1')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+
+      const stage1State = { ...schedulerState('캐릭터1'), isWeeklyBossStale: true, bossContents: [] }
+      const day1Response = { ...schedulerState('-1일'), isWeeklyBossStale: true, bossContents: [] }
+      const day2Response = { ...schedulerState('-2일'), isWeeklyBossStale: false, bossContents: [bossContent('weekly')] }
+
+      fetchSchedulerCharacterStateMock
+        .mockResolvedValueOnce(schedulerState('캐릭터1'))
+        .mockResolvedValueOnce(day1Response)
+        .mockResolvedValueOnce(day2Response)
+      mergeSchedulerStateMock
+        .mockReturnValueOnce({ characterState: stage1State, worldLedgerUpdates: {}, accountLedgerUpdates: {} })
+        .mockReturnValueOnce({ characterState: stage1State, worldLedgerUpdates: {}, accountLedgerUpdates: {} })
+        .mockReturnValueOnce({ characterState: stage1State, worldLedgerUpdates: {}, accountLedgerUpdates: {} })
+
+      await syncSchedules(['ocid-1'])
+
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(3)
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-1', '2026-07-10')
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(3, 'key-1', 'ocid-1', '2026-07-09')
+      expect(mergeSchedulerStateMock).toHaveBeenCalledTimes(3)
+    })
+
+    it('13일을 다 써도 못 찾으면 조회를 멈추고 그동안 누적된 결과를 그대로 쓴다', async () => {
+      const characters = [character('ocid-1')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+
+      const stage1State = { ...schedulerState('캐릭터1'), isWeeklyBossStale: true, bossContents: [] }
+      const alwaysStaleDay = { ...schedulerState('과거'), isWeeklyBossStale: true, bossContents: [] }
+
+      fetchSchedulerCharacterStateMock.mockResolvedValueOnce(schedulerState('캐릭터1')).mockResolvedValue(alwaysStaleDay)
+      mergeSchedulerStateMock.mockReturnValue({ characterState: stage1State, worldLedgerUpdates: {}, accountLedgerUpdates: {} })
+
+      const results = await syncSchedules(['ocid-1'])
+
+      // 오늘 조회 1회 + 과거 조회 13회(-1일~-13일) = 14회
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(14)
+      expect(mergeSchedulerStateMock).toHaveBeenCalledTimes(14)
+      expect(results[0].state).toEqual(stage1State)
+    })
+
+    it('과거 날짜 조회가 실패해도(네트워크 등) 그 날짜만 건너뛰고 다음 날짜로 계속한다', async () => {
+      const characters = [character('ocid-1')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+
+      const stage1State = { ...schedulerState('캐릭터1'), isWeeklyBossStale: true, bossContents: [] }
+      const day2Response = { ...schedulerState('-2일'), isWeeklyBossStale: false, bossContents: [bossContent('weekly')] }
+      const finalState = { ...schedulerState('병합결과'), isWeeklyBossStale: true, bossContents: [bossContent('weekly')] }
+
+      fetchSchedulerCharacterStateMock
+        .mockResolvedValueOnce(schedulerState('캐릭터1'))
+        .mockRejectedValueOnce(new NexonNetworkError('-1일 조회 실패'))
+        .mockResolvedValueOnce(day2Response)
+      mergeSchedulerStateMock
+        .mockReturnValueOnce({ characterState: stage1State, worldLedgerUpdates: {}, accountLedgerUpdates: {} })
+        .mockReturnValueOnce({ characterState: finalState, worldLedgerUpdates: {}, accountLedgerUpdates: {} })
+
+      const results = await syncSchedules(['ocid-1'])
+
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(3)
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(3, 'key-1', 'ocid-1', '2026-07-09')
+      // -1일 조회는 실패해서 merge가 안 불리고, 그다음 성공한 -2일만 merge된다(1단계 + -2일 = 2회)
+      expect(mergeSchedulerStateMock).toHaveBeenCalledTimes(2)
+      expect(results[0].state).toEqual(finalState)
+      expect(results[0].isStale).toBe(false)
+    })
+
+    it('1·N단계 world/account 원장 변경분을 모두 합쳐 저장하고, 다음 단계는 이전 변경분이 반영된 원장을 받는다', async () => {
+      const characters = [character('ocid-1')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+      const fresh = schedulerState('캐릭터1')
+      const day1Response = { ...schedulerState('-1일'), isWeeklyBossStale: false, bossContents: [bossContent('weekly')] }
+      fetchSchedulerCharacterStateMock.mockResolvedValueOnce(fresh).mockResolvedValueOnce(day1Response)
+
+      const stage1State = { ...schedulerState('캐릭터1'), isWeeklyBossStale: true, bossContents: [] }
+      const finalState = { ...schedulerState('병합결과'), isWeeklyBossStale: true, bossContents: [bossContent('weekly')] }
+      const worldEntry = { active: true, kind: 'contents' as const, nowCount: 7, maxCount: 14, questState: null, lastUpdatedBucket: '2026-07-11' }
+      const accountEntry = { active: true, kind: 'contents' as const, nowCount: 1, maxCount: 0, questState: null, lastUpdatedBucket: '2026-07-09' }
+
+      mergeSchedulerStateMock
+        .mockReturnValueOnce({ characterState: stage1State, worldLedgerUpdates: { 몬스터파크: worldEntry }, accountLedgerUpdates: {} })
+        .mockReturnValueOnce({
+          characterState: finalState,
+          worldLedgerUpdates: {},
+          accountLedgerUpdates: { '에픽 던전 : 악몽선경': accountEntry },
+        })
+
+      await syncSchedules(['ocid-1'])
+
+      expect(mergeSchedulerStateMock).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({ worldLedger: { 몬스터파크: worldEntry }, accountLedger: {} }),
+      )
+      expect(setWorldSharedProgressEntryMock).toHaveBeenCalledWith(fresh.world, '몬스터파크', worldEntry)
+      expect(setAccountSharedProgressEntryMock).toHaveBeenCalledWith('acc-1', '에픽 던전 : 악몽선경', accountEntry)
+    })
+  })
 })
 
 describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신)', () => {

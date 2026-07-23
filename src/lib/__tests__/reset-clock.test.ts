@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getCurrentKstDateKey, getMostRecentWeeklyResetKst } from '../reset-clock'
+import { getBackfillDateKeys, getCurrentKstDateKey, getMostRecentWeeklyResetKst } from '../reset-clock'
 
 describe('getMostRecentWeeklyResetKst', () => {
   it('정확히 KST 목요일 00:00 시점이면 같은 시각을 반환한다', () => {
@@ -83,5 +83,44 @@ describe('getCurrentKstDateKey', () => {
     const asKstOffsetString = new Date('2026-07-11T00:00:00+09:00')
     expect(getCurrentKstDateKey(asUtcString)).toBe(getCurrentKstDateKey(asKstOffsetString))
     expect(getCurrentKstDateKey(asUtcString)).toBe('2026-07-11')
+  })
+})
+
+describe('getBackfillDateKeys (ADR-034 정정 — -1일부터 -13일까지 순차 조회용 날짜 목록)', () => {
+  it('평소엔 어제(-1일)부터 13일 전까지 KST 기준 날짜를 최신순으로 13개 반환한다', () => {
+    const keys = getBackfillDateKeys(new Date('2026-07-21T10:00:00+09:00'))
+    expect(keys).toHaveLength(13)
+    expect(keys[0]).toBe('2026-07-20')
+    expect(keys[12]).toBe('2026-07-08')
+  })
+
+  it('KST 00:00~00:10 사이(불안정 구간)엔 -1일을 건너뛰고 그제(-2일)부터 13개를 반환한다', () => {
+    const keys = getBackfillDateKeys(new Date('2026-07-21T00:05:00+09:00'))
+    expect(keys[0]).toBe('2026-07-19')
+    expect(keys).toHaveLength(13)
+    expect(keys[12]).toBe('2026-07-07')
+  })
+
+  it('불안정 구간이 끝나면(00:10) 다시 -1일부터 13개를 반환한다', () => {
+    const keys = getBackfillDateKeys(new Date('2026-07-21T00:10:00+09:00'))
+    expect(keys[0]).toBe('2026-07-20')
+    expect(keys).toHaveLength(13)
+  })
+
+  it('maxDaysBack을 넘겨 범위를 조정할 수 있다', () => {
+    const keys = getBackfillDateKeys(new Date('2026-07-21T10:00:00+09:00'), 3)
+    expect(keys).toEqual(['2026-07-20', '2026-07-19', '2026-07-18'])
+  })
+
+  it('월/연 경계를 넘어서도 정확히 계산한다', () => {
+    const keys = getBackfillDateKeys(new Date('2026-01-01T10:00:00+09:00'), 2)
+    expect(keys).toEqual(['2025-12-31', '2025-12-30'])
+  })
+
+  it('기기 로컬 타임존과 무관하게 항상 같은 절대 시각을 기준으로 계산한다', () => {
+    const asUtcString = new Date('2026-07-10T15:00:00Z')
+    const asKstOffsetString = new Date('2026-07-11T00:00:00+09:00')
+    expect(getBackfillDateKeys(asUtcString, 1)).toEqual(getBackfillDateKeys(asKstOffsetString, 1))
+    expect(getBackfillDateKeys(asUtcString, 1)).toEqual(['2026-07-09'])
   })
 })
