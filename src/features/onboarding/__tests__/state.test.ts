@@ -198,7 +198,7 @@ describe('onboardingReducer', () => {
     })
   })
 
-  it('PREFETCH_FINISHED — completed로 전이하고 prefetchProgress를 지운다', () => {
+  it('PREFETCH_FINISHED — selectingTrackingMode로 전이하고 prefetchProgress를 지운다(ADR-035)', () => {
     const prefetching: OnboardingState = {
       status: 'prefetching',
       accounts: [account('acc-1')],
@@ -211,8 +211,25 @@ describe('onboardingReducer', () => {
 
     expect(result).toEqual<OnboardingState>({
       ...prefetching,
-      status: 'completed',
+      status: 'selectingTrackingMode',
       prefetchProgress: null,
+    })
+  })
+
+  it('SELECT_TRACKING_MODE — completed로 전이한다(이 step 기준, ADR-035)', () => {
+    const selecting: OnboardingState = {
+      status: 'selectingTrackingMode',
+      accounts: [account('acc-1')],
+      selectedAccountId: 'acc-1',
+      error: null,
+      prefetchProgress: null,
+    }
+
+    const result = onboardingReducer(selecting, { type: 'SELECT_TRACKING_MODE', mode: 'manual' })
+
+    expect(result).toEqual<OnboardingState>({
+      ...selecting,
+      status: 'completed',
     })
   })
 

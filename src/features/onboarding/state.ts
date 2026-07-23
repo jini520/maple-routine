@@ -1,10 +1,12 @@
 import type { MapleAccount } from '../../types'
+import type { TrackingMode } from '../../storage/tracking-mode'
 
 export type OnboardingStatus =
   | 'awaitingApiKey'
   | 'verifyingApiKey'
   | 'selectingAccount'
   | 'prefetching'
+  | 'selectingTrackingMode'
   | 'completed'
   | 'error'
 
@@ -45,6 +47,8 @@ export type OnboardingEvent =
   // ADR-016: 계정 확정 직후 전체 캐릭터 예열(character/basic + access_flag true인 경우 scheduler) 진행 상태
   | { type: 'PREFETCH_PROGRESS'; completed: number; total: number }
   | { type: 'PREFETCH_FINISHED' }
+  // ADR-035 결정 13: 예열이 끝나면 자동/수동 트래킹 모드 선택 단계로 넘어간다.
+  | { type: 'SELECT_TRACKING_MODE'; mode: TrackingMode }
   | { type: 'RESET' }
 
 export function onboardingReducer(state: OnboardingState, event: OnboardingEvent): OnboardingState {
@@ -115,10 +119,19 @@ export function onboardingReducer(state: OnboardingState, event: OnboardingEvent
       }
 
     case 'PREFETCH_FINISHED':
+      // ADR-035 결정 13: 예열 완료 후 곧바로 완료하지 않고 트래킹 모드 선택 단계로 넘어간다.
+      return {
+        ...state,
+        status: 'selectingTrackingMode',
+        prefetchProgress: null,
+      }
+
+    case 'SELECT_TRACKING_MODE':
+      // 당장은 곧바로 완료로 전이한다. 다음 step(onboarding-content-character-step)이
+      // 이 전이 대상을 'selectingContentCharacters'로 바꾼다.
       return {
         ...state,
         status: 'completed',
-        prefetchProgress: null,
       }
 
     case 'RESET':

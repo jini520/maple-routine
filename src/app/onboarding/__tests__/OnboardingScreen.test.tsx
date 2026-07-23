@@ -27,6 +27,7 @@ function mockStore(overrides: Partial<ReturnType<typeof useOnboardingStore>>): v
     restoreFromStorage: vi.fn(),
     submitApiKey: vi.fn(),
     selectAccount: vi.fn(),
+    selectTrackingMode: vi.fn(),
     reset: vi.fn(),
     ...overrides,
   })
@@ -85,6 +86,16 @@ describe('OnboardingScreen', () => {
 
     expect(screen.getByText(/메이플 ID를 선택/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /낟낟/ })).toBeInTheDocument()
+  })
+
+  it('status가 selectingTrackingMode이면 TrackingModeStep이 렌더링된다', () => {
+    mockStore({ status: 'selectingTrackingMode' })
+
+    render(<OnboardingScreen />)
+
+    expect(screen.getByText('진행 상황을 어떻게 관리할까요?')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /자동/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /수동/ })).toBeInTheDocument()
   })
 
   it('status가 completed이면 완료 placeholder 텍스트가 렌더링된다', () => {

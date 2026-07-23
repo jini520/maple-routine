@@ -28,6 +28,10 @@ const { showSuccessMock, showErrorMock } = vi.hoisted(() => ({
   showErrorMock: vi.fn(),
 }))
 
+const { setModeMock } = vi.hoisted(() => ({
+  setModeMock: vi.fn(),
+}))
+
 vi.mock('../../../nexon/character', () => ({
   fetchCharacterList: fetchCharacterListMock,
 }))
@@ -46,6 +50,12 @@ vi.mock('../prefetch', () => ({
 vi.mock('../../toast/store', () => ({
   useToastStore: {
     getState: () => ({ showSuccess: showSuccessMock, showError: showErrorMock }),
+  },
+}))
+
+vi.mock('../../tracking-mode/store', () => ({
+  useTrackingModeStore: {
+    getState: () => ({ setMode: setModeMock }),
   },
 }))
 
@@ -72,6 +82,7 @@ beforeEach(() => {
   setSelectedAccountIdMock.mockResolvedValue(undefined)
   clearAuthConfigMock.mockResolvedValue(undefined)
   prefetchAccountDataMock.mockResolvedValue(undefined)
+  setModeMock.mockResolvedValue(undefined)
   getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1', selectedAccountId: null })
 })
 
@@ -100,7 +111,7 @@ describe('useOnboardingStore.restoreFromStorage', () => {
     expect(fetchCharacterListMock).not.toHaveBeenCalled()
   })
 
-  it('apiKey만 있으면 fetchCharacterList를 다시 호출해 재개한다 (계정 1개면 자동 completed)', async () => {
+  it('apiKey만 있으면 fetchCharacterList를 다시 호출해 재개한다 (계정 1개면 예열 후 트래킹 모드 선택)', async () => {
     getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1', selectedAccountId: null })
     const accounts = [account('acc-1')]
     fetchCharacterListMock.mockResolvedValue(accounts)
@@ -109,7 +120,7 @@ describe('useOnboardingStore.restoreFromStorage', () => {
 
     expect(fetchCharacterListMock).toHaveBeenCalledWith('key-1')
     const state = useOnboardingStore.getState()
-    expect(state.status).toBe('completed')
+    expect(state.status).toBe('selectingTrackingMode')
     expect(state.selectedAccountId).toBe('acc-1')
     expect(setSelectedAccountIdMock).toHaveBeenCalledWith('acc-1')
   })
@@ -140,7 +151,7 @@ describe('useOnboardingStore.restoreFromStorage', () => {
 })
 
 describe('useOnboardingStore.submitApiKey', () => {
-  it('계정이 1개면 setSelectedAccountId까지 자동 호출되고 completed가 된다', async () => {
+  it('계정이 1개면 setSelectedAccountId까지 자동 호출되고 예열 후 트래킹 모드 선택으로 넘어간다', async () => {
     const accounts = [account('acc-1')]
     fetchCharacterListMock.mockResolvedValue(accounts)
 
@@ -149,7 +160,7 @@ describe('useOnboardingStore.submitApiKey', () => {
     expect(setApiKeyMock).toHaveBeenCalledWith('key-1')
     expect(setSelectedAccountIdMock).toHaveBeenCalledWith('acc-1')
     const state = useOnboardingStore.getState()
-    expect(state.status).toBe('completed')
+    expect(state.status).toBe('selectingTrackingMode')
     expect(state.selectedAccountId).toBe('acc-1')
   })
 
@@ -214,7 +225,7 @@ describe('useOnboardingStore.submitApiKey', () => {
     expect(state.error).toEqual({ kind: 'network' })
   })
 
-  it('계정이 1개면 예열(prefetchAccountData)이 호출되고 완료 후 completed가 된다', async () => {
+  it('계정이 1개면 예열(prefetchAccountData)이 호출되고 완료 후 트래킹 모드 선택으로 넘어간다', async () => {
     const accounts = [account('acc-1')]
     fetchCharacterListMock.mockResolvedValue(accounts)
 
@@ -225,7 +236,7 @@ describe('useOnboardingStore.submitApiKey', () => {
       accounts[0].characters,
       expect.any(Function),
     )
-    expect(useOnboardingStore.getState().status).toBe('completed')
+    expect(useOnboardingStore.getState().status).toBe('selectingTrackingMode')
   })
 
   it('예열이 끝나면 완료 토스트를 띄운다', async () => {
@@ -236,7 +247,7 @@ describe('useOnboardingStore.submitApiKey', () => {
     expect(showSuccessMock).toHaveBeenCalledWith('캐릭터 정보를 모두 불러왔어요')
   })
 
-  it('예열이 끝나기 전까지는 prefetching 상태이고 진행률이 반영된다', async () => {
+  it('예열이 끝나기 전까지는 prefetching 상태이고 진행률이 반영되며, 끝나면 트래킹 모드 선택으로 넘어간다', async () => {
     const accounts = [account('acc-1')]
     fetchCharacterListMock.mockResolvedValue(accounts)
     const progressCallbacks: Array<(progress: { completed: number; total: number }) => void> = []
@@ -259,7 +270,7 @@ describe('useOnboardingStore.submitApiKey', () => {
     resolvers[0]()
     await promise
 
-    expect(useOnboardingStore.getState().status).toBe('completed')
+    expect(useOnboardingStore.getState().status).toBe('selectingTrackingMode')
     expect(useOnboardingStore.getState().prefetchProgress).toBeNull()
   })
 
@@ -277,7 +288,7 @@ describe('useOnboardingStore.submitApiKey', () => {
 })
 
 describe('useOnboardingStore.selectAccount', () => {
-  it('저장에 성공하면 예열을 거쳐 completed 상태가 된다', async () => {
+  it('저장에 성공하면 예열을 거쳐 트래킹 모드 선택 단계가 된다', async () => {
     const accounts = [account('acc-1'), account('acc-2')]
     useOnboardingStore.setState({
       status: 'selectingAccount',
@@ -296,7 +307,7 @@ describe('useOnboardingStore.selectAccount', () => {
       expect.any(Function),
     )
     const state = useOnboardingStore.getState()
-    expect(state.status).toBe('completed')
+    expect(state.status).toBe('selectingTrackingMode')
     expect(state.selectedAccountId).toBe('acc-2')
   })
 
@@ -330,6 +341,47 @@ describe('useOnboardingStore.selectAccount', () => {
     const state = useOnboardingStore.getState()
     expect(state.status).toBe('error')
     expect(state.error).toEqual({ kind: 'storageWriteFailed' })
+  })
+})
+
+describe('useOnboardingStore.selectTrackingMode', () => {
+  function primeSelectingTrackingMode(): void {
+    useOnboardingStore.setState({
+      status: 'selectingTrackingMode',
+      accounts: [account('acc-1')],
+      selectedAccountId: 'acc-1',
+      error: null,
+      prefetchProgress: null,
+    })
+  }
+
+  it('선택한 모드로 setMode를 호출하고 completed로 전이한다', async () => {
+    primeSelectingTrackingMode()
+
+    await useOnboardingStore.getState().selectTrackingMode('manual')
+
+    expect(setModeMock).toHaveBeenCalledWith('manual')
+    expect(useOnboardingStore.getState().status).toBe('completed')
+  })
+
+  it('setMode가 끝난 뒤에만 completed로 전이한다', async () => {
+    primeSelectingTrackingMode()
+    let resolveSetMode: () => void = () => {}
+    setModeMock.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveSetMode = resolve
+        }),
+    )
+
+    const promise = useOnboardingStore.getState().selectTrackingMode('auto')
+    expect(useOnboardingStore.getState().status).toBe('selectingTrackingMode')
+
+    resolveSetMode()
+    await promise
+
+    expect(setModeMock).toHaveBeenCalledWith('auto')
+    expect(useOnboardingStore.getState().status).toBe('completed')
   })
 })
 

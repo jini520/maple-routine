@@ -2,10 +2,12 @@ import { useOnboardingStore } from '../../features/onboarding/store'
 import { MapleWaveProgress } from '../../components/MapleWaveProgress/MapleWaveProgress'
 import { ApiKeyForm } from './ApiKeyForm'
 import { AccountSelectionList } from './AccountSelectionList'
+import { TrackingModeStep } from './TrackingModeStep'
 import { formatOnboardingError } from './error-message'
 
 export function OnboardingScreen(): React.JSX.Element {
-  const { status, accounts, error, prefetchProgress, submitApiKey, selectAccount } = useOnboardingStore()
+  const { status, accounts, error, prefetchProgress, submitApiKey, selectAccount, selectTrackingMode } =
+    useOnboardingStore()
 
   switch (status) {
     case 'awaitingApiKey':
@@ -52,6 +54,14 @@ export function OnboardingScreen(): React.JSX.Element {
             errorMessage={null}
             onSelect={selectAccount}
           />
+        </div>
+      )
+
+    // ADR-035 결정 13: 예열 후 자동/수동 트래킹 모드를 고르는 단계.
+    case 'selectingTrackingMode':
+      return (
+        <div className="flex justify-center px-4 pt-8 pb-4">
+          <TrackingModeStep onSubmit={selectTrackingMode} />
         </div>
       )
 
