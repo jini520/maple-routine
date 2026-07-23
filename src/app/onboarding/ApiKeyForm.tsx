@@ -18,7 +18,7 @@ export function ApiKeyForm(props: ApiKeyFormProps): React.JSX.Element {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="w-full rounded-[14px] bg-surface border border-border p-6 space-y-4">
+    <form onSubmit={handleSubmit} className="w-full space-y-4">
       <p className="text-sm text-text-muted">
         <a
           href="https://openapi.nexon.com"
