@@ -10,6 +10,11 @@ vi.mock('../../../features/onboarding/store', () => ({
   useOnboardingStore: vi.fn(),
 }))
 
+// ContentCharacterStep이 마운트 시 호출한다 — 후보 목록은 비워둔다(렌더 확인만).
+vi.mock('../../../features/schedule-sync/schedule-sync', () => ({
+  getCharacterPickerRoster: vi.fn().mockResolvedValue(undefined),
+}))
+
 const mockedUseOnboardingStore = vi.mocked(useOnboardingStore)
 
 const account: MapleAccount = {
@@ -28,6 +33,7 @@ function mockStore(overrides: Partial<ReturnType<typeof useOnboardingStore>>): v
     submitApiKey: vi.fn(),
     selectAccount: vi.fn(),
     selectTrackingMode: vi.fn(),
+    submitContentCharacters: vi.fn(),
     reset: vi.fn(),
     ...overrides,
   })
@@ -96,6 +102,24 @@ describe('OnboardingScreen', () => {
     expect(screen.getByText('진행 상황을 어떻게 관리할까요?')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /자동/ })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /수동/ })).toBeInTheDocument()
+  })
+
+  it('status가 selectingContentCharacters이면 ContentCharacterStep이 렌더링된다', () => {
+    mockStore({ status: 'selectingContentCharacters' })
+
+    render(<OnboardingScreen />)
+
+    expect(screen.getByText('추적할 캐릭터를 선택해주세요')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '계속하기' })).toBeInTheDocument()
+  })
+
+  it('status가 seedingTracking이면 시드 준비 스피너와 문구가 렌더링된다', () => {
+    mockStore({ status: 'seedingTracking' })
+
+    render(<OnboardingScreen />)
+
+    expect(screen.getByText('체크리스트를 준비하고 있어요')).toBeInTheDocument()
+    expect(screen.getByTestId('maple-spinner')).toBeInTheDocument()
   })
 
   it('status가 completed이면 완료 placeholder 텍스트가 렌더링된다', () => {

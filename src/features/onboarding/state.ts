@@ -7,6 +7,8 @@ export type OnboardingStatus =
   | 'selectingAccount'
   | 'prefetching'
   | 'selectingTrackingMode'
+  | 'selectingContentCharacters'
+  | 'seedingTracking'
   | 'completed'
   | 'error'
 
@@ -49,6 +51,10 @@ export type OnboardingEvent =
   | { type: 'PREFETCH_FINISHED' }
   // ADR-035 결정 13: 예열이 끝나면 자동/수동 트래킹 모드 선택 단계로 넘어간다.
   | { type: 'SELECT_TRACKING_MODE'; mode: TrackingMode }
+  // ADR-035 결정 13: 트래킹 모드 선택 후 컨텐츠 추적 캐릭터를 1명 이상 고른다.
+  | { type: 'SUBMIT_CONTENT_CHARACTERS' }
+  // ADR-035 결정 15: 수동 모드일 때 시드가 끝나면(또는 자동 모드는 곧바로) 온보딩이 완료된다.
+  | { type: 'ONBOARDING_FINISHED' }
   | { type: 'RESET' }
 
 export function onboardingReducer(state: OnboardingState, event: OnboardingEvent): OnboardingState {
@@ -127,8 +133,21 @@ export function onboardingReducer(state: OnboardingState, event: OnboardingEvent
       }
 
     case 'SELECT_TRACKING_MODE':
-      // 당장은 곧바로 완료로 전이한다. 다음 step(onboarding-content-character-step)이
-      // 이 전이 대상을 'selectingContentCharacters'로 바꾼다.
+      // ADR-035 결정 13: 모드 선택 후 컨텐츠 추적 캐릭터 선택 단계로 넘어간다.
+      return {
+        ...state,
+        status: 'selectingContentCharacters',
+      }
+
+    case 'SUBMIT_CONTENT_CHARACTERS':
+      // ADR-035 결정 15: 수동 모드에서 시드가 끝날 때까지 로딩(스피너)을 유지하는 단계.
+      // 자동 모드는 이 상태를 거치지 않고 곧바로 ONBOARDING_FINISHED로 완료된다(store 참고).
+      return {
+        ...state,
+        status: 'seedingTracking',
+      }
+
+    case 'ONBOARDING_FINISHED':
       return {
         ...state,
         status: 'completed',

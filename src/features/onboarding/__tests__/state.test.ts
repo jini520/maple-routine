@@ -216,7 +216,7 @@ describe('onboardingReducer', () => {
     })
   })
 
-  it('SELECT_TRACKING_MODE — completed로 전이한다(이 step 기준, ADR-035)', () => {
+  it('SELECT_TRACKING_MODE — selectingContentCharacters로 전이한다(ADR-035 결정 13)', () => {
     const selecting: OnboardingState = {
       status: 'selectingTrackingMode',
       accounts: [account('acc-1')],
@@ -229,6 +229,40 @@ describe('onboardingReducer', () => {
 
     expect(result).toEqual<OnboardingState>({
       ...selecting,
+      status: 'selectingContentCharacters',
+    })
+  })
+
+  it('SUBMIT_CONTENT_CHARACTERS — seedingTracking으로 전이한다(ADR-035 결정 15)', () => {
+    const selecting: OnboardingState = {
+      status: 'selectingContentCharacters',
+      accounts: [account('acc-1')],
+      selectedAccountId: 'acc-1',
+      error: null,
+      prefetchProgress: null,
+    }
+
+    const result = onboardingReducer(selecting, { type: 'SUBMIT_CONTENT_CHARACTERS' })
+
+    expect(result).toEqual<OnboardingState>({
+      ...selecting,
+      status: 'seedingTracking',
+    })
+  })
+
+  it('ONBOARDING_FINISHED — completed로 전이한다', () => {
+    const seeding: OnboardingState = {
+      status: 'seedingTracking',
+      accounts: [account('acc-1')],
+      selectedAccountId: 'acc-1',
+      error: null,
+      prefetchProgress: null,
+    }
+
+    const result = onboardingReducer(seeding, { type: 'ONBOARDING_FINISHED' })
+
+    expect(result).toEqual<OnboardingState>({
+      ...seeding,
       status: 'completed',
     })
   })

@@ -2,8 +2,10 @@ import { create } from 'zustand'
 import { fetchCharacterList } from '../../nexon/character'
 import { NexonAuthError, NexonRateLimitError } from '../../nexon/errors'
 import { clearAuthConfig, getAuthConfig, setApiKey, setSelectedAccountId } from '../../storage/api-key'
+import { setTrackedCharacterOcids } from '../../storage/character-selection'
 import type { TrackingMode } from '../../storage/tracking-mode'
 import { useToastStore } from '../toast/store'
+import { seedManualTrackedContent } from '../tracking-mode/seed'
 import { useTrackingModeStore } from '../tracking-mode/store'
 import { prefetchAccountData } from './prefetch'
 import { initialOnboardingState, onboardingReducer, type OnboardingError, type OnboardingState } from './state'
@@ -13,6 +15,7 @@ export interface OnboardingStore extends OnboardingState {
   submitApiKey(apiKey: string): Promise<void>
   selectAccount(accountId: string): Promise<void>
   selectTrackingMode(mode: TrackingMode): Promise<void>
+  submitContentCharacters(ocids: string[]): Promise<void>
   reset(): Promise<void>
 }
 
@@ -156,6 +159,20 @@ export const useOnboardingStore = create<OnboardingStore>()((set, get) => {
     async selectTrackingMode(mode: TrackingMode) {
       await useTrackingModeStore.getState().setMode(mode)
       set((state) => onboardingReducer(state, { type: 'SELECT_TRACKING_MODE', mode }))
+    },
+
+    // ADR-035 결정 13/14(b)/15: 컨텐츠 추적 캐릭터를 저장하고 온보딩을 마무리한다.
+    // 수동 모드면 저장한 캐릭터 전원을 시드(트리거 b)하는 동안 'seedingTracking'에 머물며
+    // 로딩(스피너)을 유지하고, 시드가 전부 끝난 뒤에만 완료된다. 자동 모드는 시드 없이 곧바로 완료.
+    async submitContentCharacters(ocids: string[]) {
+      await setTrackedCharacterOcids('content', ocids)
+
+      if (useTrackingModeStore.getState().mode === 'manual') {
+        set((state) => onboardingReducer(state, { type: 'SUBMIT_CONTENT_CHARACTERS' }))
+        await Promise.all(ocids.map((ocid) => seedManualTrackedContent(ocid)))
+      }
+
+      set((state) => onboardingReducer(state, { type: 'ONBOARDING_FINISHED' }))
     },
 
     async reset() {

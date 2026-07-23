@@ -28,8 +28,17 @@ const { showSuccessMock, showErrorMock } = vi.hoisted(() => ({
   showErrorMock: vi.fn(),
 }))
 
-const { setModeMock } = vi.hoisted(() => ({
+const { setModeMock, trackingModeRef } = vi.hoisted(() => ({
   setModeMock: vi.fn(),
+  trackingModeRef: { current: 'auto' as 'auto' | 'manual' },
+}))
+
+const { setTrackedCharacterOcidsMock } = vi.hoisted(() => ({
+  setTrackedCharacterOcidsMock: vi.fn(),
+}))
+
+const { seedManualTrackedContentMock } = vi.hoisted(() => ({
+  seedManualTrackedContentMock: vi.fn(),
 }))
 
 vi.mock('../../../nexon/character', () => ({
@@ -55,8 +64,16 @@ vi.mock('../../toast/store', () => ({
 
 vi.mock('../../tracking-mode/store', () => ({
   useTrackingModeStore: {
-    getState: () => ({ setMode: setModeMock }),
+    getState: () => ({ setMode: setModeMock, mode: trackingModeRef.current }),
   },
+}))
+
+vi.mock('../../../storage/character-selection', () => ({
+  setTrackedCharacterOcids: setTrackedCharacterOcidsMock,
+}))
+
+vi.mock('../../tracking-mode/seed', () => ({
+  seedManualTrackedContent: seedManualTrackedContentMock,
 }))
 
 import { useOnboardingStore } from '../store'
@@ -83,6 +100,9 @@ beforeEach(() => {
   clearAuthConfigMock.mockResolvedValue(undefined)
   prefetchAccountDataMock.mockResolvedValue(undefined)
   setModeMock.mockResolvedValue(undefined)
+  setTrackedCharacterOcidsMock.mockResolvedValue(undefined)
+  seedManualTrackedContentMock.mockResolvedValue(undefined)
+  trackingModeRef.current = 'auto'
   getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1', selectedAccountId: null })
 })
 
@@ -355,16 +375,16 @@ describe('useOnboardingStore.selectTrackingMode', () => {
     })
   }
 
-  it('선택한 모드로 setMode를 호출하고 completed로 전이한다', async () => {
+  it('선택한 모드로 setMode를 호출하고 selectingContentCharacters로 전이한다', async () => {
     primeSelectingTrackingMode()
 
     await useOnboardingStore.getState().selectTrackingMode('manual')
 
     expect(setModeMock).toHaveBeenCalledWith('manual')
-    expect(useOnboardingStore.getState().status).toBe('completed')
+    expect(useOnboardingStore.getState().status).toBe('selectingContentCharacters')
   })
 
-  it('setMode가 끝난 뒤에만 completed로 전이한다', async () => {
+  it('setMode가 끝난 뒤에만 selectingContentCharacters로 전이한다', async () => {
     primeSelectingTrackingMode()
     let resolveSetMode: () => void = () => {}
     setModeMock.mockImplementation(
@@ -381,7 +401,78 @@ describe('useOnboardingStore.selectTrackingMode', () => {
     await promise
 
     expect(setModeMock).toHaveBeenCalledWith('auto')
+    expect(useOnboardingStore.getState().status).toBe('selectingContentCharacters')
+  })
+})
+
+describe('useOnboardingStore.submitContentCharacters', () => {
+  function primeSelectingContentCharacters(): void {
+    useOnboardingStore.setState({
+      status: 'selectingContentCharacters',
+      accounts: [account('acc-1')],
+      selectedAccountId: 'acc-1',
+      error: null,
+      prefetchProgress: null,
+    })
+  }
+
+  it('추적 캐릭터를 저장하고, auto 모드면 시드 없이 바로 completed로 전이한다', async () => {
+    trackingModeRef.current = 'auto'
+    primeSelectingContentCharacters()
+
+    await useOnboardingStore.getState().submitContentCharacters(['ocid-a', 'ocid-b'])
+
+    expect(setTrackedCharacterOcidsMock).toHaveBeenCalledWith('content', ['ocid-a', 'ocid-b'])
+    expect(seedManualTrackedContentMock).not.toHaveBeenCalled()
     expect(useOnboardingStore.getState().status).toBe('completed')
+  })
+
+  it('manual 모드면 각 ocid에 대해 seedManualTrackedContent를 호출한 뒤 completed로 전이한다', async () => {
+    trackingModeRef.current = 'manual'
+    primeSelectingContentCharacters()
+
+    await useOnboardingStore.getState().submitContentCharacters(['ocid-a', 'ocid-b'])
+
+    expect(setTrackedCharacterOcidsMock).toHaveBeenCalledWith('content', ['ocid-a', 'ocid-b'])
+    expect(seedManualTrackedContentMock).toHaveBeenCalledWith('ocid-a')
+    expect(seedManualTrackedContentMock).toHaveBeenCalledWith('ocid-b')
+    expect(useOnboardingStore.getState().status).toBe('completed')
+  })
+
+  it('manual 모드에서 시드가 끝나기 전까지는 seedingTracking 상태에 머문다', async () => {
+    trackingModeRef.current = 'manual'
+    primeSelectingContentCharacters()
+    let resolveSeed: () => void = () => {}
+    seedManualTrackedContentMock.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveSeed = resolve
+        }),
+    )
+
+    const promise = useOnboardingStore.getState().submitContentCharacters(['ocid-a'])
+    await vi.waitFor(() => expect(useOnboardingStore.getState().status).toBe('seedingTracking'))
+
+    resolveSeed()
+    await promise
+
+    expect(useOnboardingStore.getState().status).toBe('completed')
+  })
+
+  it('manual 모드에서도 시드는 추적 저장 이후에 실행된다', async () => {
+    trackingModeRef.current = 'manual'
+    primeSelectingContentCharacters()
+    const callOrder: string[] = []
+    setTrackedCharacterOcidsMock.mockImplementation(async () => {
+      callOrder.push('setTracked')
+    })
+    seedManualTrackedContentMock.mockImplementation(async () => {
+      callOrder.push('seed')
+    })
+
+    await useOnboardingStore.getState().submitContentCharacters(['ocid-a'])
+
+    expect(callOrder).toEqual(['setTracked', 'seed'])
   })
 })
 
