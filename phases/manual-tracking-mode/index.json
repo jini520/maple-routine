@@ -69,7 +69,10 @@
     {
       "step": 8,
       "name": "manual-checklist-ui-boss",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-07-24T03:34:24+0900",
+      "summary": "보스 스케줄러 수동 트래킹 체크리스트 UI 추가(ADR-035 결정 3·6·9·11·12, ADR-035 구현 완료) — 순수 병합 함수 lib/manual-boss-merge.ts((matchedBossName,difficulty)로 synced 매칭·공백 정규화·미매칭 시 weekly-bosses.json cycle 조회·미완료 폴백, tracked 순서 유지) 신규, boss-scheduler store에 manualTrackedByOcid 상태+manual 모드 refresh 읽기+addManualBoss/removeManualBoss(멤버십만 저장, maxCount 없음) 추가, ManualBossPickerModal(보스 드롭다운→난이도 뱃지 2단 폼·이미 추적 난이도 비활성·자유 입력 없음) 신규, BossScreen이 manual 모드에서 등록 여부 대신 멤버십으로 표시 목록 계산(mergeManualBossList, selectDisplayBosses 미적용)하고 보스 추가 버튼·카드별 삭제 X·수동 빈 상태 렌더(BossCard/DifficultyBadge 재사용, 솔로/파티 필터·n/12·시즌 배지·파티 관리는 무변경, auto 모드 무변화), ADR/UI_GUIDE 갱신 — 테스트 1069개·빌드·lint 통과",
+      "completed_at": "2026-07-24T03:49:54+0900"
     }
   ],
   "created_at": "2026-07-23T20:53:27+0900"
