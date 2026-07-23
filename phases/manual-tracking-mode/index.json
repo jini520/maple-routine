@@ -32,7 +32,7 @@
       "status": "completed",
       "started_at": "2026-07-23T21:05:16+0900",
       "summary": "content/boss-scheduler 두 스토어의 saveTrackedOcids에 ADR-035 트리거(b) 배선 — 수동 모드에서 저장 전 trackedOcids 기준 diff로 새로 추가된 ocid만 seedManualTrackedContent로 refresh 전에 개별 시드(auto 모드·기존 캐릭터는 무변화, 제거 캐릭터 데이터는 비파괴 보존) — 테스트 1001개·빌드·lint 통과",
-      "completed_at": "2026-07-23T21:09:10+0900"
+      "completed_at": "2026-07-23T21:10:08+0900"
     },
     {
       "step": 4,
