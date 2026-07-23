@@ -36,6 +36,11 @@ const { seedManualTrackedContentMock, trackingModeStateMock } = vi.hoisted(() =>
   trackingModeStateMock: { mode: 'auto' as 'auto' | 'manual' },
 }))
 
+const { getManualTrackedContentMock, setManualTrackedContentMock } = vi.hoisted(() => ({
+  getManualTrackedContentMock: vi.fn(),
+  setManualTrackedContentMock: vi.fn(),
+}))
+
 vi.mock('../../schedule-sync/schedule-sync', () => ({
   syncSchedules: syncSchedulesMock,
 }))
@@ -74,6 +79,11 @@ vi.mock('../../tracking-mode/store', () => ({
 
 vi.mock('../../tracking-mode/seed', () => ({
   seedManualTrackedContent: seedManualTrackedContentMock,
+}))
+
+vi.mock('../../../storage/manual-tracked-content', () => ({
+  getManualTrackedContent: getManualTrackedContentMock,
+  setManualTrackedContent: setManualTrackedContentMock,
 }))
 
 import { useBossSchedulerStore } from '../store'
@@ -123,6 +133,7 @@ beforeEach(() => {
     trackedOcids: null,
     selectedOcid: null,
     partySizes: {},
+    manualTrackedByOcid: {},
   })
   getCachedSchedulerStateMock.mockResolvedValue(null)
   getCachedCharacterBasicMock.mockResolvedValue(null)
@@ -130,6 +141,8 @@ beforeEach(() => {
   getBossPartySettingsMock.mockResolvedValue([])
   trackingModeStateMock.mode = 'auto'
   seedManualTrackedContentMock.mockResolvedValue(undefined)
+  getManualTrackedContentMock.mockResolvedValue([])
+  setManualTrackedContentMock.mockResolvedValue(undefined)
 })
 
 afterEach(() => {
@@ -521,6 +534,85 @@ describe('useBossSchedulerStore', () => {
       await useBossSchedulerStore.getState().saveTrackedOcids(['ocid-1', 'ocid-2'])
 
       expect(seedManualTrackedContentMock).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('ADR-035: 수동 추적 보스 (manualTrackedContent)', () => {
+    it('수동 모드일 때 refresh는 추적 목록을 읽어 manualTrackedByOcid에 채운다', async () => {
+      trackingModeStateMock.mode = 'manual'
+      syncSchedulesMock.mockResolvedValue([syncResult({ ocid: 'ocid-1' })])
+      getManualTrackedContentMock.mockImplementation(async (ocid: string) =>
+        ocid === 'ocid-1' ? [{ contentName: '자쿰', kind: 'boss', difficulty: '카오스' }] : [],
+      )
+
+      await useBossSchedulerStore.getState().refresh(['ocid-1'])
+
+      expect(getManualTrackedContentMock).toHaveBeenCalledWith('ocid-1')
+      expect(useBossSchedulerStore.getState().manualTrackedByOcid).toEqual({
+        'ocid-1': [{ contentName: '자쿰', kind: 'boss', difficulty: '카오스' }],
+      })
+    })
+
+    it('auto 모드에서는 refresh가 추적 목록을 읽지 않고 manualTrackedByOcid는 빈 객체로 둔다', async () => {
+      syncSchedulesMock.mockResolvedValue([syncResult({ ocid: 'ocid-1' })])
+
+      await useBossSchedulerStore.getState().refresh(['ocid-1'])
+
+      expect(getManualTrackedContentMock).not.toHaveBeenCalled()
+      expect(useBossSchedulerStore.getState().manualTrackedByOcid).toEqual({})
+    })
+
+    it('addManualBoss는 저장소에 (보스, 난이도) 멤버십을 저장하고 상태를 갱신한다 (maxCount 없음)', async () => {
+      getManualTrackedContentMock.mockResolvedValue([])
+
+      await useBossSchedulerStore.getState().addManualBoss('ocid-1', '자쿰', '카오스')
+
+      expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', [
+        { contentName: '자쿰', kind: 'boss', difficulty: '카오스' },
+      ])
+      expect(useBossSchedulerStore.getState().manualTrackedByOcid).toEqual({
+        'ocid-1': [{ contentName: '자쿰', kind: 'boss', difficulty: '카오스' }],
+      })
+    })
+
+    it('addManualBoss는 이미 추적 중인 (보스, 난이도)면 중복 추가하지 않는다', async () => {
+      getManualTrackedContentMock.mockResolvedValue([{ contentName: '자쿰', kind: 'boss', difficulty: '카오스' }])
+
+      await useBossSchedulerStore.getState().addManualBoss('ocid-1', '자쿰', '카오스')
+
+      expect(setManualTrackedContentMock).not.toHaveBeenCalled()
+    })
+
+    it('addManualBoss는 같은 보스의 다른 난이도는 별개 항목으로 추가한다', async () => {
+      getManualTrackedContentMock.mockResolvedValue([{ contentName: '루시드', kind: 'boss', difficulty: '이지' }])
+
+      await useBossSchedulerStore.getState().addManualBoss('ocid-1', '루시드', '하드')
+
+      expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', [
+        { contentName: '루시드', kind: 'boss', difficulty: '이지' },
+        { contentName: '루시드', kind: 'boss', difficulty: '하드' },
+      ])
+    })
+
+    it('removeManualBoss는 해당 (보스, 난이도)만 제거하고 다른 난이도·다른 kind는 보존한다', async () => {
+      getManualTrackedContentMock.mockResolvedValue([
+        { contentName: '루시드', kind: 'boss', difficulty: '이지' },
+        { contentName: '루시드', kind: 'boss', difficulty: '하드' },
+        { contentName: '루시드', kind: 'content' },
+      ])
+
+      await useBossSchedulerStore.getState().removeManualBoss('ocid-1', '루시드', '이지')
+
+      expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', [
+        { contentName: '루시드', kind: 'boss', difficulty: '하드' },
+        { contentName: '루시드', kind: 'content' },
+      ])
+      expect(useBossSchedulerStore.getState().manualTrackedByOcid).toEqual({
+        'ocid-1': [
+          { contentName: '루시드', kind: 'boss', difficulty: '하드' },
+          { contentName: '루시드', kind: 'content' },
+        ],
+      })
     })
   })
 

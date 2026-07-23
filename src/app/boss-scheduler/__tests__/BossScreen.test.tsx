@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { BossScreen } from '../BossScreen'
 import { useBossSchedulerStore, type BossCharacterView } from '../../../features/boss-scheduler/store'
 import { getCharacterPickerRoster } from '../../../features/schedule-sync/schedule-sync'
+import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 import type { CharacterPickerEntry } from '../../../types'
 import type { MatchedBoss } from '../../../lib/boss-matching'
 
@@ -29,12 +30,15 @@ function mockStore(overrides: Partial<ReturnType<typeof useBossSchedulerStore>>)
     trackedOcids: null,
     selectedOcid: null,
     partySizes: {},
+    manualTrackedByOcid: {},
     loadTrackedOcids: vi.fn(),
     saveTrackedOcids: vi.fn(),
     refresh: vi.fn(),
     selectCharacter: vi.fn(),
     loadPartySizes: vi.fn(),
     setPartySize: vi.fn(),
+    addManualBoss: vi.fn(),
+    removeManualBoss: vi.fn(),
     ...overrides,
   })
 }
@@ -81,6 +85,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup()
   vi.clearAllMocks()
+  useTrackingModeStore.setState({ mode: 'auto' })
 })
 
 describe('BossScreen', () => {
@@ -1033,6 +1038,132 @@ describe('BossScreen', () => {
 
       expect(screen.getByText('이 조건에 해당하는 보스가 없습니다')).toBeInTheDocument()
       expect(screen.queryByText(/게임에서 스케줄러에 등록해주세요/)).not.toBeInTheDocument()
+    })
+  })
+
+  describe('ADR-035: 수동 트래킹 모드', () => {
+    function unregisteredIncompleteBoss(): MatchedBoss {
+      return {
+        apiName: '자쿰',
+        difficulty: '카오스',
+        cycle: 'weekly',
+        // 게임에 등록도 안 됐고 완료도 안 된 보스 — auto라면 selectDisplayBosses가 숨긴다.
+        isRegistered: false,
+        isComplete: false,
+        ownComplete: false,
+        matchedBossName: '자쿰',
+        portraitSlug: null,
+        isSeasonBoss: false,
+      }
+    }
+
+    it('수동 모드: 게임 등록·완료 여부와 무관하게 추적 중인 보스를 표시한다', async () => {
+      useTrackingModeStore.setState({ mode: 'manual' })
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        selectedOcid: 'ocid-1',
+        manualTrackedByOcid: { 'ocid-1': [{ contentName: '자쿰', kind: 'boss', difficulty: '카오스' }] },
+        characters: [character({ ocid: 'ocid-1', weeklyBosses: [unregisteredIncompleteBoss()] })],
+      })
+
+      renderBossScreen()
+      await screen.findByRole('combobox')
+
+      expect(screen.getByText('자쿰')).toBeInTheDocument()
+    })
+
+    it('수동 모드: 한 번도 동기화된 적 없는 보스도 참조 테이블 cycle로 표시한다', async () => {
+      useTrackingModeStore.setState({ mode: 'manual' })
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        selectedOcid: 'ocid-1',
+        manualTrackedByOcid: { 'ocid-1': [{ contentName: '검은마법사', kind: 'boss', difficulty: '하드' }] },
+        characters: [character({ ocid: 'ocid-1', weeklyBosses: [], monthlyBosses: [] })],
+      })
+
+      renderBossScreen()
+      await screen.findByRole('combobox')
+
+      // 검은마법사는 월간 보스 — 주간 탭에는 안 보이고 월간 탭에 보인다.
+      expect(screen.queryByText('검은마법사')).not.toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: '월간' }))
+      expect(screen.getByText('검은마법사')).toBeInTheDocument()
+    })
+
+    it('수동 모드: "보스 추가"로 보스·난이도를 고르면 addManualBoss가 호출된다', async () => {
+      useTrackingModeStore.setState({ mode: 'manual' })
+      const addManualBoss = vi.fn()
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        selectedOcid: 'ocid-1',
+        manualTrackedByOcid: { 'ocid-1': [] },
+        characters: [character({ ocid: 'ocid-1', weeklyBosses: [] })],
+        addManualBoss,
+      })
+
+      renderBossScreen()
+      await screen.findByRole('combobox')
+
+      fireEvent.click(screen.getByRole('button', { name: '보스 추가' }))
+      fireEvent.change(await screen.findByLabelText('보스'), { target: { value: '루시드' } })
+      fireEvent.click(screen.getByRole('button', { name: '루시드 하드 추가' }))
+
+      expect(addManualBoss).toHaveBeenCalledWith('ocid-1', '루시드', '하드')
+    })
+
+    it('수동 모드: 카드의 삭제 버튼을 누르면 removeManualBoss가 호출된다', async () => {
+      useTrackingModeStore.setState({ mode: 'manual' })
+      const removeManualBoss = vi.fn()
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        selectedOcid: 'ocid-1',
+        manualTrackedByOcid: { 'ocid-1': [{ contentName: '자쿰', kind: 'boss', difficulty: '카오스' }] },
+        characters: [character({ ocid: 'ocid-1', weeklyBosses: [unregisteredIncompleteBoss()] })],
+        removeManualBoss,
+      })
+
+      renderBossScreen()
+      await screen.findByRole('combobox')
+
+      fireEvent.click(screen.getByRole('button', { name: '자쿰 카오스 삭제' }))
+
+      expect(removeManualBoss).toHaveBeenCalledWith('ocid-1', '자쿰', '카오스')
+    })
+
+    it('자동 모드에서는 "보스 추가" 버튼과 카드 삭제 버튼이 렌더링되지 않는다', async () => {
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        selectedOcid: 'ocid-1',
+        characters: [
+          character({
+            ocid: 'ocid-1',
+            weeklyBosses: [
+              {
+                apiName: '자쿰',
+                difficulty: '카오스',
+                cycle: 'weekly',
+                isRegistered: true,
+                isComplete: false,
+                ownComplete: false,
+                matchedBossName: '자쿰',
+                portraitSlug: null,
+                isSeasonBoss: false,
+              },
+            ],
+          }),
+        ],
+      })
+
+      renderBossScreen()
+      await screen.findByRole('combobox')
+
+      expect(screen.queryByRole('button', { name: '보스 추가' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: '자쿰 카오스 삭제' })).not.toBeInTheDocument()
     })
   })
 })
