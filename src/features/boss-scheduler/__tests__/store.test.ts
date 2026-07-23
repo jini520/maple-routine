@@ -31,6 +31,11 @@ const { showSuccessMock, showErrorMock } = vi.hoisted(() => ({
   showErrorMock: vi.fn(),
 }))
 
+const { seedManualTrackedContentMock, trackingModeStateMock } = vi.hoisted(() => ({
+  seedManualTrackedContentMock: vi.fn(),
+  trackingModeStateMock: { mode: 'auto' as 'auto' | 'manual' },
+}))
+
 vi.mock('../../schedule-sync/schedule-sync', () => ({
   syncSchedules: syncSchedulesMock,
 }))
@@ -59,6 +64,16 @@ vi.mock('../../toast/store', () => ({
   useToastStore: {
     getState: () => ({ showSuccess: showSuccessMock, showError: showErrorMock }),
   },
+}))
+
+vi.mock('../../tracking-mode/store', () => ({
+  useTrackingModeStore: {
+    getState: () => ({ mode: trackingModeStateMock.mode }),
+  },
+}))
+
+vi.mock('../../tracking-mode/seed', () => ({
+  seedManualTrackedContent: seedManualTrackedContentMock,
 }))
 
 import { useBossSchedulerStore } from '../store'
@@ -113,6 +128,8 @@ beforeEach(() => {
   getCachedCharacterBasicMock.mockResolvedValue(null)
   getLastSelectedCharacterMock.mockResolvedValue(null)
   getBossPartySettingsMock.mockResolvedValue([])
+  trackingModeStateMock.mode = 'auto'
+  seedManualTrackedContentMock.mockResolvedValue(undefined)
 })
 
 afterEach(() => {
@@ -465,6 +482,45 @@ describe('useBossSchedulerStore', () => {
       expect(showSuccessMock).not.toHaveBeenCalled()
       expect(syncSchedulesMock).not.toHaveBeenCalled()
       expect(useBossSchedulerStore.getState().trackedOcids).toBeNull()
+    })
+  })
+
+  describe('ADR-035 결정 14(b): 수동 모드에서 새 추적 캐릭터 개별 시드', () => {
+    it('수동 모드에서 saveTrackedOcids는 새로 추가된 캐릭터만 refresh 전에 시드한다', async () => {
+      trackingModeStateMock.mode = 'manual'
+      useBossSchedulerStore.setState({ trackedOcids: ['ocid-1'] })
+      setTrackedCharacterOcidsMock.mockResolvedValue(undefined)
+      syncSchedulesMock.mockResolvedValue([syncResult()])
+
+      await useBossSchedulerStore.getState().saveTrackedOcids(['ocid-1', 'ocid-2'])
+
+      expect(seedManualTrackedContentMock).toHaveBeenCalledTimes(1)
+      expect(seedManualTrackedContentMock).toHaveBeenCalledWith('ocid-2')
+      // 시드가 refresh(syncSchedules)보다 먼저 실행된다 — 저장 진행률 모달이 시드까지 커버(결정 15)
+      expect(seedManualTrackedContentMock.mock.invocationCallOrder[0]).toBeLessThan(
+        syncSchedulesMock.mock.invocationCallOrder[0],
+      )
+    })
+
+    it('수동 모드라도 새로 추가된 캐릭터가 없으면 시드하지 않는다', async () => {
+      trackingModeStateMock.mode = 'manual'
+      useBossSchedulerStore.setState({ trackedOcids: ['ocid-1', 'ocid-2'] })
+      setTrackedCharacterOcidsMock.mockResolvedValue(undefined)
+      syncSchedulesMock.mockResolvedValue([syncResult()])
+
+      await useBossSchedulerStore.getState().saveTrackedOcids(['ocid-1'])
+
+      expect(seedManualTrackedContentMock).not.toHaveBeenCalled()
+    })
+
+    it('auto 모드에서는 새 캐릭터가 추가돼도 시드하지 않는다', async () => {
+      useBossSchedulerStore.setState({ trackedOcids: ['ocid-1'] })
+      setTrackedCharacterOcidsMock.mockResolvedValue(undefined)
+      syncSchedulesMock.mockResolvedValue([syncResult()])
+
+      await useBossSchedulerStore.getState().saveTrackedOcids(['ocid-1', 'ocid-2'])
+
+      expect(seedManualTrackedContentMock).not.toHaveBeenCalled()
     })
   })
 

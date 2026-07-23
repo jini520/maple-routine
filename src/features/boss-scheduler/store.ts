@@ -14,6 +14,8 @@ import { getCachedSchedulerState } from '../../storage/scheduler-cache'
 import type { BossDifficulty } from '../../types'
 import { compareByName } from '../onboarding/representative-character'
 import { useToastStore } from '../toast/store'
+import { seedManualTrackedContent } from '../tracking-mode/seed'
+import { useTrackingModeStore } from '../tracking-mode/store'
 
 export interface BossCharacterView {
   ocid: string
@@ -103,6 +105,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
   },
 
   async saveTrackedOcids(ocids, onProgress) {
+    const previousOcids = get().trackedOcids ?? []
     try {
       await setTrackedCharacterOcids('boss', ocids)
     } catch {
@@ -110,6 +113,15 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
       return
     }
     set({ trackedOcids: ocids })
+
+    // ADR-035 결정 14(b): 수동 모드에서 새로 추적 목록에 추가된 캐릭터만 개별 시드한다.
+    // refresh보다 먼저 실행 — 화면의 저장 진행률 모달이 saveTrackedOcids 전체를 기다리므로
+    // 시드가 끝날 때까지 자연스럽게 로딩이 유지된다(결정 15).
+    if (useTrackingModeStore.getState().mode === 'manual') {
+      const newOcids = ocids.filter((ocid) => !previousOcids.includes(ocid))
+      await Promise.all(newOcids.map((ocid) => seedManualTrackedContent(ocid)))
+    }
+
     await get().refresh(ocids, onProgress)
     useToastStore.getState().showSuccess('캐릭터 정보를 모두 불러왔어요')
   },
