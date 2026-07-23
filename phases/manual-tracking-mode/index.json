@@ -7,7 +7,8 @@
       "name": "storage-tracking-layer",
       "status": "completed",
       "started_at": "2026-07-23T20:53:27+0900",
-      "summary": "trackingMode(전역)·manualTrackedContent:{ocid}(캐릭터별) Preferences 어댑터 2개(tracking-mode.ts, manual-tracked-content.ts)와 keys.ts 키 헬퍼를 TDD로 추가하고, scheduler-content-template.json의 stale note 문구를 제거 — 테스트 982개·빌드 통과"
+      "summary": "trackingMode(전역)·manualTrackedContent:{ocid}(캐릭터별) Preferences 어댑터 2개(tracking-mode.ts, manual-tracked-content.ts)와 keys.ts 키 헬퍼를 TDD로 추가하고, scheduler-content-template.json의 stale note 문구를 제거 — 테스트 982개·빌드 통과",
+      "completed_at": "2026-07-23T20:57:21+0900"
     },
     {
       "step": 1,
