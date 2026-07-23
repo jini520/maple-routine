@@ -3,20 +3,24 @@ import packageJson from '../../../package.json'
 import { useSettingsStore } from '../../features/settings/store'
 import { useThemeStore } from '../../features/theme/store'
 import { useLiveUpdateStore } from '../../features/live-update/store'
+import { useTrackingModeStore } from '../../features/tracking-mode/store'
+import { TRACKING_MODE_LABELS } from '../../features/tracking-mode/copy'
 import { SettingsRow } from './SettingsRow'
 import { AppUpdateSection } from './AppUpdateSection'
 import { ThemeSwatchDots } from './ThemeSwatchDots'
 import { ApiKeyModal } from './ApiKeyModal'
 import { AccountModal } from './AccountModal'
 import { ThemeModal } from './ThemeModal'
+import { TrackingModeModal } from './TrackingModeModal'
 import { DisconnectConfirm } from './DisconnectConfirm'
 import { CacheDataSection } from './CacheDataSection'
 
-type OpenModal = 'apiKey' | 'account' | 'theme' | null
+type OpenModal = 'apiKey' | 'account' | 'theme' | 'trackingMode' | null
 
 export function SettingsScreen(): React.JSX.Element {
   const { disconnect } = useSettingsStore()
   const { theme } = useThemeStore()
+  const { mode: trackingMode } = useTrackingModeStore()
   const { currentVersion, loadCurrentVersion } = useLiveUpdateStore()
 
   const [openModal, setOpenModal] = useState<OpenModal>(null)
@@ -47,6 +51,15 @@ export function SettingsScreen(): React.JSX.Element {
         <SettingsRow label="API 키 재입력" onClick={() => setOpenModal('apiKey')} />
         <SettingsRow label="계정 변경" onClick={() => setOpenModal('account')} />
         <SettingsRow
+          label="트래킹 모드"
+          onClick={() => setOpenModal('trackingMode')}
+          rightContent={
+            <span className="rounded-full border border-border px-3 py-1 text-xs font-medium text-text-muted">
+              {TRACKING_MODE_LABELS[trackingMode]}
+            </span>
+          }
+        />
+        <SettingsRow
           label="테마"
           onClick={() => setOpenModal('theme')}
           rightContent={
@@ -72,6 +85,7 @@ export function SettingsScreen(): React.JSX.Element {
 
       {openModal === 'apiKey' && <ApiKeyModal onClose={() => setOpenModal(null)} />}
       {openModal === 'account' && <AccountModal onClose={() => setOpenModal(null)} />}
+      {openModal === 'trackingMode' && <TrackingModeModal onClose={() => setOpenModal(null)} />}
       {openModal === 'theme' && <ThemeModal onClose={() => setOpenModal(null)} />}
 
       <DisconnectConfirm

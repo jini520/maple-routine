@@ -7,6 +7,7 @@ import { SettingsScreen } from '../SettingsScreen'
 import { useSettingsStore } from '../../../features/settings/store'
 import { useThemeStore } from '../../../features/theme/store'
 import { useLiveUpdateStore } from '../../../features/live-update/store'
+import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 
 vi.mock('../../../features/settings/store', () => ({
   useSettingsStore: vi.fn(),
@@ -20,6 +21,10 @@ vi.mock('../../../features/live-update/store', () => ({
   useLiveUpdateStore: vi.fn(),
 }))
 
+vi.mock('../../../features/tracking-mode/store', () => ({
+  useTrackingModeStore: vi.fn(),
+}))
+
 // CacheDataSection이 마운트 시 실제 Preferences/SQLite를 호출하지 않도록 막는다.
 vi.mock('../../../storage/cache-data', () => ({
   clearCacheData: vi.fn(),
@@ -29,6 +34,7 @@ vi.mock('../../../storage/cache-data', () => ({
 const mockedUseSettingsStore = vi.mocked(useSettingsStore)
 const mockedUseThemeStore = vi.mocked(useThemeStore)
 const mockedUseLiveUpdateStore = vi.mocked(useLiveUpdateStore)
+const mockedUseTrackingModeStore = vi.mocked(useTrackingModeStore)
 
 function mockSettingsStore(overrides: Partial<ReturnType<typeof useSettingsStore>>): void {
   mockedUseSettingsStore.mockReturnValue({
@@ -50,6 +56,15 @@ function mockThemeStore(overrides: Partial<ReturnType<typeof useThemeStore>>): v
     theme: '렌',
     restoreFromStorage: vi.fn(),
     selectTheme: vi.fn(),
+    ...overrides,
+  })
+}
+
+function mockTrackingModeStore(overrides: Partial<ReturnType<typeof useTrackingModeStore>> = {}): void {
+  mockedUseTrackingModeStore.mockReturnValue({
+    mode: 'auto',
+    restoreFromStorage: vi.fn(),
+    setMode: vi.fn(),
     ...overrides,
   })
 }
@@ -78,6 +93,7 @@ function mockLiveUpdateStore(): void {
 
 beforeEach(() => {
   mockLiveUpdateStore()
+  mockTrackingModeStore()
 })
 
 afterEach(() => {
@@ -150,6 +166,29 @@ describe('SettingsScreen', () => {
 
     expect(screen.getByTestId('theme-modal-overlay')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '레테' })).toBeInTheDocument()
+  })
+
+  it('"트래킹 모드" 행에 현재 모드 라벨이 표시된다', () => {
+    mockSettingsStore({})
+    mockThemeStore({})
+    mockTrackingModeStore({ mode: 'manual' })
+
+    render(<SettingsScreen />)
+
+    expect(
+      within(screen.getByRole('button', { name: /트래킹 모드/ })).getByText('수동'),
+    ).toBeInTheDocument()
+  })
+
+  it('"트래킹 모드" 클릭 시 트래킹 모드 모달이 열린다', async () => {
+    const user = userEvent.setup()
+    mockSettingsStore({})
+    mockThemeStore({})
+
+    render(<SettingsScreen />)
+    await user.click(screen.getByRole('button', { name: /트래킹 모드/ }))
+
+    expect(screen.getByTestId('tracking-mode-modal-overlay')).toBeInTheDocument()
   })
 
   it('"연결 해제" 클릭 시 확인 모달이 열리고, 확인 클릭 시 disconnect가 호출된다', async () => {
