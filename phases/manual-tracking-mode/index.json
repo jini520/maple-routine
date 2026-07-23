@@ -48,7 +48,7 @@
       "status": "completed",
       "started_at": "2026-07-24T02:56:01+0900",
       "summary": "온보딩에 컨텐츠 추적 캐릭터 선택 단계 추가(ADR-035 결정 13/15) — CharacterTrackingPicker에서 그리드(정렬·얼굴크롭·즐겨찾기·엠블럼)를 CharacterTrackingGrid로 추출해 모달/온보딩이 공유, ContentCharacterStep.tsx 신규(getCharacterPickerRoster 조회·1명 이상 선택 강제 CTA·MapleSpinner), state.ts에 selectingContentCharacters/seedingTracking status와 SUBMIT_CONTENT_CHARACTERS/ONBOARDING_FINISHED 이벤트 추가(SELECT_TRACKING_MODE는 이제 선택 단계로 전이), store.submitContentCharacters(추적 저장 후 manual만 시드하고 완료), OnboardingScreen 두 케이스 배선 — 테스트 1022개·빌드·lint 통과",
-      "completed_at": "2026-07-24T03:06:47+0900"
+      "completed_at": "2026-07-24T03:07:32+0900"
     },
     {
       "step": 6,
