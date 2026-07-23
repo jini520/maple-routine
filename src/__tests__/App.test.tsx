@@ -10,6 +10,7 @@ import { useBossSchedulerStore } from '../features/boss-scheduler/store'
 import { useBossProfitStore } from '../features/boss-profit/store'
 import { useSettingsStore } from '../features/settings/store'
 import { useThemeStore } from '../features/theme/store'
+import { useTrackingModeStore } from '../features/tracking-mode/store'
 
 vi.mock('../features/onboarding/store', () => ({
   useOnboardingStore: vi.fn(),
@@ -33,6 +34,10 @@ vi.mock('../features/settings/store', () => ({
 
 vi.mock('../features/theme/store', () => ({
   useThemeStore: vi.fn(),
+}))
+
+vi.mock('../features/tracking-mode/store', () => ({
+  useTrackingModeStore: vi.fn(),
 }))
 
 // 네이티브 키보드 이벤트를 테스트에서 흉내내기 위한 구독자 목록.
@@ -66,6 +71,7 @@ const mockedUseBossSchedulerStore = vi.mocked(useBossSchedulerStore)
 const mockedUseBossProfitStore = vi.mocked(useBossProfitStore)
 const mockedUseSettingsStore = vi.mocked(useSettingsStore)
 const mockedUseThemeStore = vi.mocked(useThemeStore)
+const mockedUseTrackingModeStore = vi.mocked(useTrackingModeStore)
 
 function mockStore(overrides: Partial<ReturnType<typeof useOnboardingStore>>): void {
   mockedUseOnboardingStore.mockReturnValue({
@@ -130,6 +136,13 @@ mockedUseThemeStore.mockReturnValue({
   selectTheme: vi.fn(),
 })
 
+const restoreTrackingModeFromStorage = vi.fn()
+mockedUseTrackingModeStore.mockReturnValue({
+  mode: 'auto',
+  restoreFromStorage: restoreTrackingModeFromStorage,
+  setMode: vi.fn(),
+})
+
 function renderAt(path: string): void {
   render(
     <MemoryRouter initialEntries={[path]}>
@@ -151,6 +164,14 @@ describe('AppShell', () => {
     renderAt('/')
 
     expect(restoreFromStorage).toHaveBeenCalledTimes(1)
+  })
+
+  it('마운트 시 트래킹 모드 restoreFromStorage가 정확히 1번 호출된다', () => {
+    mockStore({})
+
+    renderAt('/')
+
+    expect(restoreTrackingModeFromStorage).toHaveBeenCalledTimes(1)
   })
 
   it('status가 completed가 아닐 때 /content로 접근하면 온보딩으로 리다이렉트된다', () => {

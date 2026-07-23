@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, NavLink, Route, Routes } from 'react-router-do
 import { Coins, ListChecks, Settings, Swords } from 'lucide-react'
 import { useOnboardingStore } from './features/onboarding/store'
 import { useThemeStore } from './features/theme/store'
+import { useTrackingModeStore } from './features/tracking-mode/store'
 import { hideSplashScreen } from './native/splash-screen'
 import { refreshSafeAreaInsets } from './native/system-bars'
 import { addKeyboardVisibilityListener } from './native/keyboard'
@@ -53,6 +54,7 @@ function BottomTabBar(): React.JSX.Element {
 export function AppShell(): React.JSX.Element {
   const { status, restoreFromStorage } = useOnboardingStore()
   const { restoreFromStorage: restoreThemeFromStorage } = useThemeStore()
+  const { restoreFromStorage: restoreTrackingModeFromStorage } = useTrackingModeStore()
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false)
 
   useEffect(() => {
@@ -62,6 +64,11 @@ export function AppShell(): React.JSX.Element {
 
   useEffect(() => {
     restoreThemeFromStorage()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    restoreTrackingModeFromStorage()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
