@@ -21,7 +21,10 @@
     {
       "step": 2,
       "name": "manual-tracking-seed",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-07-23T21:00:50+0900",
+      "summary": "features/tracking-mode/seed.ts(seedManualTrackedContent — syncSchedules 최신 결과에서 isRegistered 항목만 멤버십으로 덮어쓰기 시드, 실패 시 에러 전파)를 TDD로 추가하고 store.setMode에 auto→manual 전환 트리거(a)(content+boss 추적 ocid 합집합 병렬 시드, 시드 완료 후 resolve)를 연결 — 테스트 995개·빌드·lint 통과",
+      "completed_at": "2026-07-23T21:04:31+0900"
     },
     {
       "step": 3,
