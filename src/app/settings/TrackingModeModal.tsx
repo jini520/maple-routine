@@ -35,7 +35,7 @@ export function TrackingModeModal(props: TrackingModeModalProps): React.JSX.Elem
       testId="tracking-mode-modal-overlay"
     >
       <div className="mb-4 space-y-1">
-        <h2 className="text-lg font-semibold text-text">트래킹 모드</h2>
+        <h2 className="text-lg font-semibold text-text">스케줄 관리 방법</h2>
         <p className="text-sm text-text-muted">진행 상황을 어떻게 관리할지 선택해주세요.</p>
       </div>
       <TrackingModeSelector

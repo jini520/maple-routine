@@ -62,6 +62,10 @@ describe('AccountFlowStatus', () => {
 
     expect(screen.getByText(/메이플 ID를 선택해주세요/)).toBeInTheDocument()
 
+    // AccountSelectionList가 자체 카드를 잃은 뒤로(온보딩 페이지형 개편), 설정 모달(card=false)에서
+    // 배경 없이 뜨지 않도록 이 케이스가 직접 surface 카드로 감싸야 한다.
+    expect(screen.getByText(/메이플 ID를 선택해주세요/).closest('.bg-surface')).not.toBeNull()
+
     await user.click(screen.getByText(/낟낟/))
     await user.click(screen.getByRole('button', { name: '계속하기' }))
 
