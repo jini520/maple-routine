@@ -657,6 +657,89 @@ describe('syncSchedules', () => {
       expect(setWorldSharedProgressEntryMock).toHaveBeenCalledWith(fresh.world, '몬스터파크', worldEntry)
       expect(setAccountSharedProgressEntryMock).toHaveBeenCalledWith('acc-1', '에픽 던전 : 악몽선경', accountEntry)
     })
+
+    // ADR-034 추가 정정(2026-07-25): 콜드 스타트에서 당일 daily가 완전히 비지 않고 월드공유
+    // 항목(몬스터파크)만 남으면 isDailyStale이 false라 백필이 안 걸리던 사각지대. 병합 결과에
+    // character 범위 항목이 하나도 없으면(=몬스터파크뿐) stale로 보고 과거 조회를 발동한다.
+    const monsterParkOnly = {
+      name: '몬스터파크',
+      kind: 'contents' as const,
+      isRegistered: true,
+      nowCount: 0,
+      maxCount: 14,
+      questState: null,
+    }
+    const dailyQuest = {
+      name: '[일일 퀘스트] 세르니움 조사',
+      kind: 'quest' as const,
+      isRegistered: true,
+      nowCount: 0,
+      maxCount: 0,
+      questState: 2 as const,
+    }
+
+    it('당일 daily에 월드공유 항목(몬스터파크)만 남고 character 일일이 빠졌으면 isDailyStale이 false여도 백필한다', async () => {
+      const characters = [character('ocid-1')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+
+      const stage1State = { ...schedulerState('캐릭터1'), dailyContents: [monsterParkOnly], isDailyStale: false }
+      const day1Response = { ...schedulerState('-1일 응답'), dailyContents: [dailyQuest], isDailyStale: false }
+      const finalState = { ...schedulerState('병합결과'), dailyContents: [monsterParkOnly, dailyQuest], isDailyStale: false }
+
+      fetchSchedulerCharacterStateMock.mockResolvedValueOnce(schedulerState('캐릭터1')).mockResolvedValueOnce(day1Response)
+      mergeSchedulerStateMock
+        .mockReturnValueOnce({ characterState: stage1State, worldLedgerUpdates: {}, accountLedgerUpdates: {} })
+        .mockReturnValueOnce({ characterState: finalState, worldLedgerUpdates: {}, accountLedgerUpdates: {} })
+
+      const results = await syncSchedules(['ocid-1'])
+
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(2)
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-1', '2026-07-10')
+      expect(mergeSchedulerStateMock).toHaveBeenCalledTimes(2)
+      expect(results[0].state).toEqual(finalState)
+    })
+
+    it('과거 조회 응답도 월드공유만 있으면(-1일도 여전히 부분 누락) 다음 날짜로 계속 넘어간다', async () => {
+      const characters = [character('ocid-1')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+
+      const stage1State = { ...schedulerState('캐릭터1'), dailyContents: [monsterParkOnly], isDailyStale: false }
+      const day1Response = { ...schedulerState('-1일'), dailyContents: [monsterParkOnly], isDailyStale: false }
+      const day2Response = { ...schedulerState('-2일'), dailyContents: [dailyQuest], isDailyStale: false }
+
+      fetchSchedulerCharacterStateMock
+        .mockResolvedValueOnce(schedulerState('캐릭터1'))
+        .mockResolvedValueOnce(day1Response)
+        .mockResolvedValueOnce(day2Response)
+      mergeSchedulerStateMock
+        .mockReturnValueOnce({ characterState: stage1State, worldLedgerUpdates: {}, accountLedgerUpdates: {} })
+        .mockReturnValueOnce({ characterState: stage1State, worldLedgerUpdates: {}, accountLedgerUpdates: {} })
+        .mockReturnValueOnce({ characterState: stage1State, worldLedgerUpdates: {}, accountLedgerUpdates: {} })
+
+      await syncSchedules(['ocid-1'])
+
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(3)
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(3, 'key-1', 'ocid-1', '2026-07-09')
+      expect(mergeSchedulerStateMock).toHaveBeenCalledTimes(3)
+    })
+
+    it('병합 결과 daily에 character 항목이 있으면(몬스터파크+일일퀘스트) 백필하지 않는다', async () => {
+      const characters = [character('ocid-1')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+
+      const stage1State = {
+        ...schedulerState('캐릭터1'),
+        dailyContents: [monsterParkOnly, dailyQuest],
+        isDailyStale: false,
+      }
+      fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
+      mergeSchedulerStateMock.mockReturnValue({ characterState: stage1State, worldLedgerUpdates: {}, accountLedgerUpdates: {} })
+
+      await syncSchedules(['ocid-1'])
+
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1)
+      expect(mergeSchedulerStateMock).toHaveBeenCalledTimes(1)
+    })
   })
 })
 

@@ -2,7 +2,11 @@ import { create } from 'zustand'
 import { fetchCharacterList } from '../../nexon/character'
 import { NexonAuthError, NexonRateLimitError } from '../../nexon/errors'
 import { clearAuthConfig, getAuthConfig, setApiKey, setSelectedAccountId } from '../../storage/api-key'
+import { setTrackedCharacterOcids } from '../../storage/character-selection'
+import type { TrackingMode } from '../../storage/tracking-mode'
 import { useToastStore } from '../toast/store'
+import { seedManualTrackedContent } from '../tracking-mode/seed'
+import { useTrackingModeStore } from '../tracking-mode/store'
 import { prefetchAccountData } from './prefetch'
 import { initialOnboardingState, onboardingReducer, type OnboardingError, type OnboardingState } from './state'
 
@@ -10,6 +14,8 @@ export interface OnboardingStore extends OnboardingState {
   restoreFromStorage(): Promise<void>
   submitApiKey(apiKey: string): Promise<void>
   selectAccount(accountId: string): Promise<void>
+  selectTrackingMode(mode: TrackingMode): Promise<void>
+  submitContentCharacters(ocids: string[]): Promise<void>
   reset(): Promise<void>
 }
 
@@ -144,6 +150,29 @@ export const useOnboardingStore = create<OnboardingStore>()((set, get) => {
       if (account !== undefined && authConfig !== null) {
         await runPrefetch(authConfig.apiKey, account.characters)
       }
+    },
+
+    // ADR-035 결정 13/14: 온보딩에서 자동/수동 트래킹 모드를 고른 뒤 다음 단계로 넘어간다.
+    // setMode는 결정 14(a)의 시드까지 마친 뒤 resolve되므로 그걸 await한다 — 온보딩 이 시점엔
+    // 추적 목록(trackedCharacters:content/:boss)이 아직 비어 있어 시드 대상이 없지만, 나중에
+    // 새 캐릭터를 추가할 때(트리거 b)와 동일한 경로를 타도록 비동기로 유지한다.
+    async selectTrackingMode(mode: TrackingMode) {
+      await useTrackingModeStore.getState().setMode(mode)
+      set((state) => onboardingReducer(state, { type: 'SELECT_TRACKING_MODE', mode }))
+    },
+
+    // ADR-035 결정 13/14(b)/15: 컨텐츠 추적 캐릭터를 저장하고 온보딩을 마무리한다.
+    // 수동 모드면 저장한 캐릭터 전원을 시드(트리거 b)하는 동안 'seedingTracking'에 머물며
+    // 로딩(스피너)을 유지하고, 시드가 전부 끝난 뒤에만 완료된다. 자동 모드는 시드 없이 곧바로 완료.
+    async submitContentCharacters(ocids: string[]) {
+      await setTrackedCharacterOcids('content', ocids)
+
+      if (useTrackingModeStore.getState().mode === 'manual') {
+        set((state) => onboardingReducer(state, { type: 'SUBMIT_CONTENT_CHARACTERS' }))
+        await Promise.all(ocids.map((ocid) => seedManualTrackedContent(ocid)))
+      }
+
+      set((state) => onboardingReducer(state, { type: 'ONBOARDING_FINISHED' }))
     },
 
     async reset() {

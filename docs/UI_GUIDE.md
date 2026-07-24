@@ -237,18 +237,21 @@ API 키를 제출하면 즉시 캐릭터 목록 조회(`GET /character/list` 단
 - 검증 중(`verifyingApiKey`)에는 `ApiKeyForm`을 `isSubmitting`으로 유지한다. 폼 위치·입력값은 그대로 두고, 제출 버튼 내용만 "확인" 텍스트 → 로딩 스피너로 바꾸고 버튼을 비활성화(재제출 방지)한다.
 - 검증이 끝나면 다음 상태(계정 선택 / 예열 진행률 바)로 전이한다. 예열(prefetching)처럼 수 초 이상 걸릴 수 있는 작업은 이 규칙에서 제외 — 진행률 바를 그대로 보여준다.
 - 버튼 스피너: `h-5 w-5 rounded-full border-2 border-bg/30 border-t-bg animate-spin motion-reduce:animate-none`. 보스 수익 자동 재조회 스피너(중립 배경 위 `border-border border-t-primary`)와 달리, 솔리드 primary 버튼 안이라 버튼 글자색(`bg` 토큰)을 그대로 써서 호(arc)를 `border-t-bg`로 둔다. 접근성: 로딩 중 버튼에 `aria-busy`를 주고, 텍스트가 사라지는 동안 접근 가능한 이름을 `aria-label="확인 중"`으로 유지하며, 스피너 자체는 `aria-hidden`.
-- 설정의 API 키 재입력·계정 변경(`AccountFlowStatus`의 `verifying`)에도 같은 문구가 남아 있으나 이번 단계 범위 밖 — 추후 별도 단계에서 통일 여부 결정.
+- 설정의 계정 변경(`AccountFlowStatus`의 `verifying`)에도 같은 문구가 남아 있으나 이번 단계 범위 밖 — 추후 별도 단계에서 통일 여부 결정.
 
 ### 온보딩 계정(메이플 ID) 선택 목록 — 확정, 2026-07-16, [[ADR-006]]
 각 계정 항목은 [대표 캐릭터 얼굴 아바타(36px 원형, [[ADR-015]] 크롭 방식)] + 텍스트 2줄. 1줄은 `[월드 엠블럼] {월드} · {이름} · Lv.{레벨}`, 2줄은 `text-text-muted`로 `캐릭터 {N}개`. **직업은 표시하지 않는다** — 이름이 길면 한 줄을 넘겨서([[ADR-015]] 캐릭터 카드와 동일하게 직업 생략), 대신 월드를 첫 줄로 끌어올렸다.
 - 월드 엠블럼: `src/assets/worlds/*`의 작은 아이콘(원본 16~22px). 텍스트 앞에 인라인으로 `h-[18px] w-auto object-contain shrink-0`, 월드명과 나란히 둔다. 매핑에 없는 월드는 엠블럼 없이 월드명 텍스트만 표시(폴백).
 - 이름이 길어도 넘치지 않도록 1줄 텍스트에 `truncate`, 텍스트 컬럼은 `min-w-0`(아바타·버튼 패딩을 침범하지 않게).
 - 월드→엠블럼 파일 매핑은 `src/data/world-emblems.json`(한글 월드명 → 파일 basename, [[ADR-006]]). 챌린저스·챌린저스2·챌린저스3·챌린저스4는 모두 `challengers`.
+- **정정(2026-07-25)**: 계정 선택 목록(`AccountSelectionList`)은 온보딩 페이지형 레이아웃에 맞춰 자체 카드(`rounded-[14px] bg-surface border p-6`)를 떼고 `w-full space-y-4`만 남겼다. 설정의 계정 변경 모달은 이 컴포넌트를 `AccountFlowStatus`의 `selectingAccount` 케이스에서 카드로 감싸 재사용한다(모달은 `card={false}`). 이 카드 래핑을 빠뜨리면 설정에서 계정 목록이 딤 오버레이 위에 배경 없이 떠 제대로 보이지 않는다.
 
 ### 설정 리스트 행 + 모달 — 확정, 2026-07-13
-설정 화면은 카드형 섹션 나열이 아니라, **하나의 리스트 컨테이너**(`rounded-[14px] bg-surface border border-border px-6`) 안에 행(`SettingsRow`)을 `divide-y divide-border`로 이어붙이는 방식이다. 각 행은 `py-4`, 왼쪽 라벨(`text-sm font-medium text-text`, 위험한 동작은 `text-error`) + 오른쪽 콘텐츠(기본은 `lucide-react` `ChevronRight`, `strokeWidth 2`, `text-text-muted` — 필요 없으면 `showChevron={false}`)로 구성되고, 행 전체가 버튼이라 탭하면 그 항목에 맞는 모달이 열린다("API 키 재입력"·"계정 변경"·"테마" 3개 행 전부 이 패턴, "연결 해제"만 예외로 확인 모달을 직접 연다).
-- **모달 컴포넌트(`components/Modal`)**: `CharacterTrackingPicker`/`DisconnectConfirm`에서 반복되던 오버레이(`fixed inset-0 flex items-center justify-center bg-bg/70` + 안쪽 카드 `onClick` 시 `stopPropagation`)를 공용화했다. 기본은 카드(`rounded-[14px] border border-border bg-surface p-6`)를 제공하지만, `card={false}`를 주면 위치 고정용 래퍼만 남기고 카드 스타일은 생략한다 — `ApiKeyForm`/`AccountSelectionList`처럼 이미 자체 카드를 가진 컴포넌트를 그대로 재사용할 때 카드-안-카드 중첩을 피하기 위함이다.
+설정 화면은 카드형 섹션 나열이 아니라, **하나의 리스트 컨테이너**(`rounded-[14px] bg-surface border border-border px-6`) 안에 행(`SettingsRow`)을 `divide-y divide-border`로 이어붙이는 방식이다. 각 행은 `py-4`, 왼쪽 라벨(`text-sm font-medium text-text`, 위험한 동작은 `text-error`) + 오른쪽 콘텐츠(기본은 `lucide-react` `ChevronRight`, `strokeWidth 2`, `text-text-muted` — 필요 없으면 `showChevron={false}`)로 구성되고, 행 전체가 버튼이라 탭하면 그 항목에 맞는 모달이 열린다("계정 변경"·"스케줄 관리 방법"·"테마" 3개 행 전부 이 패턴, "연결 해제"만 예외로 확인 모달을 직접 연다).
+- **정정(2026-07-25) — 설정 페이지 개편**: (1) "API 키 재입력" 행·모달(`ApiKeyModal`)을 제거했다 — 키 무효화 복구는 "연결 해제" 후 재온보딩이며, [[ADR-008]] 재입력 유도 배너는 미구현 상태로 보류(설정 store의 `changeApiKey` 로직은 나중에 되살릴 여지를 두고 남겨 둠). (2) "트래킹 모드" 행/모달 제목을 "스케줄 관리 방법"으로 바꿨다(모드 배지 "자동"/"수동"과 옵션 카피는 그대로). (3) "데이터 관리"(캐시 삭제) 섹션을 "앱 업데이트" 섹션 위로 올렸다.
+- **모달 컴포넌트(`components/Modal`)**: `CharacterTrackingPicker`/`DisconnectConfirm`에서 반복되던 오버레이(`fixed inset-0 flex items-center justify-center bg-bg/70` + 안쪽 카드 `onClick` 시 `stopPropagation`)를 공용화했다. 기본은 카드(`rounded-[14px] border border-border bg-surface p-6`)를 제공하지만, `card={false}`를 주면 위치 고정용 래퍼만 남기고 카드 스타일은 생략한다 — 자식이 필요한 카드를 직접 두를 때 카드-안-카드 중첩을 피하기 위함이다(계정 변경 모달의 `AccountFlowStatus`가 각 상태를 자체 카드로 감싸고, 계정 선택 목록도 이 컴포넌트가 카드로 감싼다).
 - **테마 대표 컬러 점(`ThemeSwatchDots`)**: 테마의 `primary`/`secondary`/`error` 3개 토큰 값을 `h-4 w-4 rounded-full` 점으로 겹쳐(`-space-x-1`) 보여준다. 테마 행의 오른쪽 콘텐츠(점 3개 + 현재 테마 이름을 `rounded-full border border-border px-3 py-1 text-xs` 배지로)와 테마 모달 안의 선택지 각각에 재사용한다. `src/data/job-themes.json`을 직접 import해 값을 읽는다 — 활성화되지 않은 테마의 색도 미리보기로 보여줘야 해서 CSS 커스텀 프로퍼티(현재 활성 테마 값만 노출)로는 부족하기 때문이다.
+- **스케줄 관리 방법 행 + 모달(`TrackingModeModal`/`TrackingModeSelector`, ADR-035 결정 1)**: 자동/수동 트래킹 모드를 전역으로 전환하는 행이다. 행 라벨과 모달 제목은 "스케줄 관리 방법"이다(2026-07-25 개편, 이전 명칭 "트래킹 모드" — 내부 컴포넌트·store 이름은 그대로 `TrackingMode*`). 오른쪽 콘텐츠는 테마 행과 동일한 배지(`rounded-full border border-border px-3 py-1 text-xs font-medium text-text-muted`)에 현재 모드 라벨("자동"/"수동")을 보여준다. 탭하면 `TrackingModeModal`이 열리고, 옵션 목록(`TrackingModeSelector`)은 `ThemeSelector`와 동일한 선택 카드 패턴(`aria-pressed`, 선택 시 `border-primary bg-primary/15`)을 쓴다. 옵션 문구는 온보딩 `TrackingModeStep`과 공용 카피(`features/tracking-mode/copy.ts`)를 공유해 두 곳이 어긋나지 않는다. 다른 모드를 고르면 `setMode`가 수동 전환 시 시드(ADR-035 결정 14(a))가 끝날 때까지 resolve되지 않으므로, 그동안 옵션을 비활성화하고 `MapleSpinner`로 "적용하고 있어요"를 표시하며 **오버레이 클릭으로 닫히지 않는다**("캐릭터 관리 저장 진행률 모달"과 동일 원칙 — 저장 도중엔 닫을 수 없다). 같은 모드를 다시 고르면 `setMode` 없이 즉시 닫힌다.
 
 ### 스크롤 영역 — 확정, 2026-07-13
 컨텐츠 스케줄러·보스 스케줄러 화면은 제목부터 탭(보스는 솔로/파티 서브 필터까지)을 화면 상단에 고정하고, 그 아래 목록(컨텐츠 리스트 / 보스 카드 목록)만 스크롤되게 한다. `position: sticky`로 구현한다 — 목록 영역을 별도 `overflow-y-auto` 컨테이너로 분리하고 높이를 계산(`calc(100dvh - ...)`)하는 방식 대신, 페이지 자체의 자연스러운 스크롤 위에서 헤더 블록만 `sticky top-0`으로 붙인다. `App.tsx`의 레이아웃(높이 모델)을 전혀 건드리지 않아도 되고, 다른 화면(보스 수익 계산기·설정 등)의 기존 페이지 스크롤 방식과도 충돌하지 않는다.
@@ -366,6 +369,43 @@ rounded-full bg-white/20 text-[#E8DFEC] text-xs font-semibold px-2 py-1, flex it
 익스트림 background: linear-gradient(180deg,#3c3c3c,#1c1414) border: 1.5px solid #ef5d78 color: #f4794f
 ```
 **보스별 일러스트 크기·위치**: 인물 구도가 보스마다 달라 고정값 하나로는 두상이 잘리거나 안 보이는 경우가 많다(카링·스우 두 예시만으로도 서로 다른 `background-size`가 필요했음, ADR-018 참고). `src/data/boss-portrait-crops.json`에서 `portraitSlug`별로 개별 지정 — 이 파일은 게임 데이터가 아니라 UI 표시 파라미터라 값은 AI가 임의로 채우지 않고 사용자가 이미지를 넣을 때마다 직접 조정한다. 세부 조회 로직은 `docs/ARCHITECTURE.md` 참고.
+
+### 수동 트래킹 — 스케줄러 화면은 읽기 전용, 편집은 전용 관리 페이지 (정정 2026-07-24, [[ADR-035]] 결정 18·19)
+
+최초 구현(카드 우상단 X 삭제 + "+ 항목 추가" 점선 버튼 + 보스 헤더 "보스 추가" + `ManualContentPickerModal`/`ManualBossPickerModal`)은 폐기했다 — 보기 화면에 편집 UI가 상주해 어수선하고, 보스 헤더는 수동 모드에서 텍스트 버튼이 3개까지 늘어났다. 컨텐츠/보스 스케줄러 화면은 두 모드 모두 **순수 읽기 전용**이고, 추적 목록 편집은 아래 관리 페이지에서만 한다. 표시 카드는 기존 카드를 그대로 재사용하고 값은 동기화 결과·템플릿에서 조회한다는 원칙(멤버십에 값 복제 없음, [[ADR-035]] 결정 6·12)은 그대로다.
+
+- **헤더 진입점**: 컨텐츠 스케줄러는 수동 모드에서만 "컨텐츠 관리" 텍스트 버튼이 "캐릭터 관리" 왼쪽에 나타난다(자동 모드는 기존과 동일하게 "캐릭터 관리" 하나). 보스 스케줄러는 기존 "파티 관리" 자리가 **두 모드 공통 "보스 관리"**로 바뀐다 — 헤더가 모드와 무관하게 항상 [보스 관리 · 캐릭터 관리] 2버튼. 버튼 스타일은 셋 다 기존 `text-sm font-medium text-text-muted hover:text-text`.
+- **빈 상태 문구(수동 모드)**: "추적할 항목이 없습니다 — \"컨텐츠 관리\"에서 추가해주세요" / "추적할 보스가 없습니다 — \"보스 관리\"에서 추가해주세요"(점선 박스는 동일).
+- **탭 표시 구분**: 수동 컨텐츠 항목은 저장 시점에 확정된 `kind`(`'daily' | 'weekly'`)로 해당 탭에만 나온다([[ADR-035]] 결정 19 — 표시 시점 추론 없음). 보스는 기존대로 `cycle`로 주간/월간을 가른다.
+
+### 컨텐츠 관리 페이지 — `/content/manage` ([[ADR-035]] 결정 18)
+
+수동 모드 전용(자동 모드에서 직접 진입하면 `/content`로 리다이렉트). 카드 박스 없는 페이지 레이아웃을 따른다.
+- **헤더·탭 sticky 고정(2026-07-24)**: 제목~탭까지를 스케줄러 화면과 동일한 sticky 패턴("스크롤 영역" 섹션)으로 상단에 고정하고 그 아래 목록만 스크롤한다 — 화면 루트 `-mt-[var(--sa-top)] space-y-4`, 헤더 블록 `sticky top-0 z-10 bg-bg px-4 pt-[calc(1rem+var(--sa-top))] pb-2`(+ 헤더-목록 경계 페이드 오버레이 동일 재사용), 목록 블록 `px-4 pb-4`. AppShell의 `pt-[--sa-top]`을 `-mt`로 상쇄해 노치까지 `bg-bg`가 덮게 한다.
+- **헤더**: 뒤로(`lucide-react` `ArrowLeft`) + 타이틀 "컨텐츠 관리" + 우측에 대상 캐릭터 칩 — 스케줄러에서 선택된 캐릭터를 승계한다. 칩은 이름 앞에 **월드 엠블럼**을 붙인다(`worldEmblemUrl`, 계정 선택·캐릭터 드롭다운과 동일 매핑; `h-3.5 w-auto shrink-0 object-contain`, 매핑에 없으면 생략). 칩 컨테이너는 `inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs`.
+- **탭**: 일간/주간, 스케줄러와 동일한 pill 탭 스타일.
+- **체크리스트**: `scheduler-content-template.json`의 해당 탭 전체를 행으로 나열하고 추적 중인 항목만 선택 상태로 표시 — 행은 기존 선택 카드 패턴(`aria-pressed`, 선택 시 `border-primary bg-primary/15`, 미선택 시 `border-border`)을 재사용한다. 행 탭 = 추적 토글, **즉시 저장**(확인 버튼 없음 — 로컬 Preferences 쓰기뿐이고 언제든 되돌릴 수 있다).
+
+**리디자인(2026-07-24, 와이어프레임 리뷰 확정) — 카테고리 그룹핑**: 평평한 체크리스트에서 카테고리 그룹으로 재구성한다. 접두사 `[일일 퀘스트] …`가 18줄 중 16줄에 똑같이 반복돼 정작 다른 부분(지역명)이 파묻히던 문제를 해소한다.
+- **카테고리 도출**: 두 소스를 합친다 — (1) `content_name`에 **이미 들어있는 접두사**(`[X] Y` → 카테고리 X·표시명 Y, `에픽 던전 : Y` → 카테고리 "에픽 던전"·표시명 Y), (2) 접두사로 못 뽑거나 접두사와 다르게 묶어야 하는 항목의 **명시적 오버라이드 맵**(`CATEGORY_OVERRIDE`). 오버라이드는 게임 도메인 분류라 AI가 추정하지 않고 **사용자(도메인 전문가)가 지정한 값만** 반영한다([[ADR-006]] 확인 완료, 2026-07-24). 오버라이드가 있으면 표시명은 접두사 제거 결과를 쓰고 카테고리만 덮어쓴다. 둘 다 없으면 카테고리 없음(단독 행, 표시명 = 원본). 같은 카테고리끼리 헤더 아래로 묶고 행에서는 접두사를 뗀 알맹이만 표시한다. 도출 로직은 공용 유틸 `lib/content-category.ts`(`categorizeContentEntries`)로 분리해 단위 테스트한다(첫 등장 순서 보존 + 실제 템플릿 그룹 구성 회귀 테스트).
+  - **사용자 확정 오버라이드(2026-07-24)**: 일간 `몬스터파크`(단독이지만 그룹화 + 주간 몬스터파크와 아이콘 통일), 주간 `무릉도장`(단독 그룹화), 주간 **"아케인리버 지역 퀘스트"** = 에르다 스펙트럼·배고픈 무토·미드나잇 체이서·스피릿 세이비어·엔하임 디펜스·프로텍트 에스페라 + `성실한 조사에 대한 보답`(원래 `[주간 퀘스트]` 소속에서 이 그룹으로 이동). **주간 그룹 표시 순서**(사용자 지정)는 첫 등장 순서가 아니라 `WEEKLY_CATEGORY_ORDER`로 정한다 — 에픽 던전 → 몬스터파크 → 길드 → 아케인리버 지역 퀘스트 → 주간 퀘스트 → 무릉도장 → 메이플 유니온. `categorizeContentEntries(entries, categoryOrder?)`의 선택 인자로 넘기며(일간은 안 넘겨 첫 등장 순서 유지), 목록에 없는 카테고리·단독은 안정 정렬로 첫 등장 순서를 유지해 뒤에 온다.
+- **그룹 헤더**: 아이콘 배지(`h-6 w-6 rounded-lg bg-third/15 text-third-text`) + 카테고리명(`text-xs font-bold`) + 우측 그룹 내 추적 카운트 배지(`{tracked}/{total}`, `rounded-full bg-surface-2 text-xs text-text-muted`). 카테고리→아이콘 매핑은 UI 결정이라 컴포넌트에 둔다(`lucide-react`: 일일/주간 퀘스트=`MapPin`, 에픽 던전=`Castle`, 메이플 유니온=`LayoutGrid`, 몬스터파크=`Swords`, 아케인리버 지역 퀘스트=`Sparkles`(그룹화 전 단독 항목 기본 아이콘 유지, 사용자 지시), 무릉도장=`Medal`, 길드=`Flag`, 그 외/단독=`Sparkles`). 행 왼쪽에도 같은 아이콘을 작게(`h-[22px]`, `text-text-muted`, 선택 시 `text-primary-text`) 얹어 스캔 앵커로 쓴다.
+- **카운트 태그**: 행 우측 참고 태그(`rounded-full bg-surface-2 px-2 text-xs text-text-muted`). 문구는 `contentCountTag(entry, category)`(공용 유틸)로 정하고, 우선순위는 **아이템 오버라이드 → 카테고리 오버라이드 → 기본 규칙**이다. 기본 규칙은 카운트형(`type==='contents' && max_count>0`)이면 `최대 {max_count}회`(관리 화면엔 진행값이 없어 `0/max`(늘 0) 오해를 피함), 아니면 태그 없음.
+  - **도메인 오버라이드(사용자 확정 2026-07-24, [[ADR-006]])**: 리셋/제한 규칙(월드당·ID당 등)은 게임 도메인 값이라 사용자 지정만 반영한다. 아이템별 — 일간 `몬스터파크`="월드 당 최대 14회", 주간 익스트림 몬스터파크="ID당 2회". 카테고리별 — `에픽 던전`="ID당 1회", `아케인리버 지역 퀘스트`=태그 숨김(개별 "최대 1회" 제거). `null`은 태그 숨김을 뜻한다.
+- 선택 상태는 카드 틴트·테두리로만(체크 표시 없음 — 원래 화면도 틴트만 썼다).
+
+### 보스 관리 페이지 — `/boss/manage` ([[ADR-035]] 결정 18)
+
+두 모드 공통 진입("보스 관리"). `PartyManagementModal`을 완전히 대체한다(파티원 수도 보스 단위 설정이라 추적 편집과 같은 행에 합침). 주간/월간 탭 구성, 레이아웃·행 스타일은 위 컨텐츠 관리 페이지와 동일 패턴.
+- **수동 모드**: `weekly-bosses.json` 전체 보스(주간 탭 = weekly+eventWeekly, 월간 탭 = monthly)를 행으로 나열. 행 = 체크(추적 여부, 탭 토글 즉시 저장) + 체크된 행에만 난이도 뱃지 목록(`boss-crystal-prices.json`에서 보스별 지원 난이도 조회, 선택된 것 외 `opacity-40`)과 파티 스테퍼가 펼쳐진다. 난이도를 바꾸면 멤버십의 (보스,난이도) 쌍이 교체된다.
+- **자동 모드**: 같은 행 구조에서 체크박스만 없다(목록 구성은 게임 등록이 결정). 상단에 안내 한 줄("자동 모드에서는 목록이 게임 등록 기준이에요 — 파티 인원만 설정할 수 있어요")과 "등록된 보스만 보기" 토글(기본 ON, [[ADR-031]] 결정 4 승계 — 끄면 전체 보스가 나와 미등록 보스 파티 인원 사전 설정 가능). 난이도는 등록 난이도가 기본 선택된다.
+- **솔로/파티 서브 필터([[ADR-019]])는 트래킹 모드와 무관하게 그대로 동작한다** — 수동 모드의 보스 목록도 `partySizes` 맵 기반 필터를 동일하게 통과시킨다. n/12 카운트·시즌 배지는 store의 auto 목록을 그대로 읽어 변경되지 않는다.
+
+**리디자인(2026-07-24, 와이어프레임 리뷰 확정) — 초상화 앵커 + 파티 스테퍼 상단 + 난이도 세그먼트**: 보스명이 평범한 텍스트로만 있고 난이도 뱃지가 흐린 채 파티 스테퍼와 한 줄에서 밀려 줄바꿈되던(난이도 4개 보스에서 특히) 배치를 정리하고, 이미 있는 보스 초상화를 아이덴티티로 도입한다.
+- **행 구조 — 2줄**: 1번째 줄 = 원형 보스 초상화(`BossPortrait`, `portraitSlug` 조회, `size={44}`, 장식이라 `aria-hidden`) + 보스명(`flex-1 truncate`) + (추적/자동일 때) **파티 스테퍼를 우상단 고정 자리**에. 2번째 줄(활성일 때만, `border-t`로 구분) = 난이도 세그먼트. 스테퍼를 난이도와 분리해 위로 올려 행마다 세로 정렬되게 하고, 난이도 4개 보스에서도 난이도가 스테퍼에 밀려 줄바꿈되던 문제를 없앤다.
+- **선택 상태 = 테두리·색**: 체크 원 없이 카드 테두리·배경색만으로 구분한다(수동 미추적=`border-border bg-surface`, 추적=`border-primary bg-primary/15`, 사용자 피드백 — 선택은 테두리·색으로 충분, 체크는 과함). 수동 토글은 **초상화+보스명 영역이 버튼**이고 버튼에 `aria-label={보스명}`을 줘 초상화(`role=img`가 아니라 `aria-hidden`)가 접근성 이름을 오염시키지 않게 한다 — 스테퍼·난이도 버튼은 이 버튼 밖 형제라 탭이 충돌하지 않는다. 자동 모드는 이 영역이 버튼이 아니라 `div`.
+- **난이도 세그먼트**: 선택된 난이도는 `DifficultyBadge` 풀컬러, 미선택은 고스트 칩(`inline-flex h-5 rounded-full border border-border px-2.5 text-[10px] font-bold text-text-disabled`, 뱃지와 높이 정렬)으로 — 기존 `opacity-40` 뱃지 나열을 대체한다(저채도 테마에서 흐린 뱃지끼리 구분이 약했음). 각 칩은 `aria-pressed` 유지, 탭하면 (보스,난이도) 멤버십 교체(수동)/화면 선택 이동(자동).
+- **파티 스테퍼**: 보더 pill(`rounded-full border border-border bg-surface`) 안에 사람 아이콘(`lucide-react` `Users`, 스케줄러 카드 파티 배지와 동일 기호) + −/값/+ 를 담은 콤팩트 폼. `파티` 텍스트 라벨은 아이콘으로 대체하고, −/+ 버튼의 `aria-label`(`{보스명} 파티원 수 감소/증가`)은 유지한다. 1~`getMaxPartySize(boss, difficulty)` 경계에서 비활성화·탭 즉시 저장은 동일.
 
 ### 일일퀘스트 카드 — 확정, 2026-07-14, [[ADR-020]] (구현 전)
 

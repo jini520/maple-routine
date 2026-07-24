@@ -3,12 +3,15 @@ import { BrowserRouter, Navigate, NavLink, Route, Routes } from 'react-router-do
 import { Coins, ListChecks, Settings, Swords } from 'lucide-react'
 import { useOnboardingStore } from './features/onboarding/store'
 import { useThemeStore } from './features/theme/store'
+import { useTrackingModeStore } from './features/tracking-mode/store'
 import { hideSplashScreen } from './native/splash-screen'
 import { refreshSafeAreaInsets } from './native/system-bars'
 import { addKeyboardVisibilityListener } from './native/keyboard'
 import { OnboardingScreen } from './app/onboarding/OnboardingScreen'
 import { ContentScreen } from './app/content-scheduler/ContentScreen'
+import { ContentManageScreen } from './app/content-scheduler/ContentManageScreen'
 import { BossScreen } from './app/boss-scheduler/BossScreen'
+import { BossManageScreen } from './app/boss-scheduler/BossManageScreen'
 import { BossProfitScreen } from './app/boss-profit/BossProfitScreen'
 import { SettingsScreen } from './app/settings/SettingsScreen'
 import { BossCardPreview } from './app/boss-scheduler/BossCardPreview'
@@ -53,6 +56,7 @@ function BottomTabBar(): React.JSX.Element {
 export function AppShell(): React.JSX.Element {
   const { status, restoreFromStorage } = useOnboardingStore()
   const { restoreFromStorage: restoreThemeFromStorage } = useThemeStore()
+  const { restoreFromStorage: restoreTrackingModeFromStorage } = useTrackingModeStore()
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false)
 
   useEffect(() => {
@@ -62,6 +66,11 @@ export function AppShell(): React.JSX.Element {
 
   useEffect(() => {
     restoreThemeFromStorage()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    restoreTrackingModeFromStorage()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -123,9 +132,19 @@ export function AppShell(): React.JSX.Element {
             path="/content"
             element={isCompleted ? <ContentScreen /> : <Navigate to="/onboarding" replace />}
           />
+          {/* ADR-035 결정 18: 수동 추적 항목 편집 전용 관리 페이지 — 스케줄러 화면은 읽기 전용. */}
+          <Route
+            path="/content/manage"
+            element={isCompleted ? <ContentManageScreen /> : <Navigate to="/onboarding" replace />}
+          />
           <Route
             path="/boss"
             element={isCompleted ? <BossScreen /> : <Navigate to="/onboarding" replace />}
+          />
+          {/* ADR-035 결정 18: 보스 추적+파티 인원 통합 관리 페이지(두 모드 공통, 파티 관리 모달 대체). */}
+          <Route
+            path="/boss/manage"
+            element={isCompleted ? <BossManageScreen /> : <Navigate to="/onboarding" replace />}
           />
           <Route
             path="/profit"

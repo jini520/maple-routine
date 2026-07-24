@@ -33,7 +33,7 @@ export function AccountSelectionList(props: AccountSelectionListProps): React.JS
   const portraits = useRepresentativePortraits(props.accounts)
 
   return (
-    <div className="w-full rounded-[14px] bg-surface border border-border p-6 space-y-4">
+    <div className="w-full space-y-4">
       <p className="text-sm text-text">사용할 메이플 ID를 선택해주세요.</p>
 
       {props.errorMessage !== null && <p className="text-sm text-error">{props.errorMessage}</p>}

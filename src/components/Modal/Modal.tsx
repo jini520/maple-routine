@@ -18,7 +18,7 @@ export interface ModalProps {
 }
 
 // CharacterTrackingPicker/DisconnectConfirm에서 반복되던 오버레이 마크업을 공용화한 것 —
-// 새 컴포넌트(ApiKeyModal/AccountModal/ThemeModal)들이 공유한다.
+// 새 컴포넌트(AccountModal/ThemeModal 등)들이 공유한다.
 export function Modal(props: ModalProps): React.JSX.Element {
   useBodyScrollLock()
   const showCard = props.card ?? true

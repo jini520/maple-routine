@@ -12,16 +12,17 @@ export interface AccountFlowStatusProps {
   onRetry: () => void
 }
 
-// ApiKeyModal/AccountModal이 공유하는 상태 렌더링 — 두 모달 모두 "API 키/저장된 키로
-// 계정을 검증하고, 필요하면 선택받고, 예열한다"는 동일한 SettingsStore 상태 머신을 보여준다.
+// AccountModal(계정 변경)이 쓰는 상태 렌더링 — "저장된 키로 계정을 검증하고, 필요하면
+// 선택받고, 예열한다"는 SettingsStore 상태 머신을 보여준다.
 export function AccountFlowStatus(props: AccountFlowStatusProps): React.JSX.Element | null {
   switch (props.status) {
     case 'idle':
       return null
 
-    // ApiKeyForm/AccountSelectionList가 각자 자체 카드 스타일(rounded-[14px] bg-surface
-    // border p-6)을 갖고 있으므로, 이 컴포넌트가 만드는 상태들도 같은 카드 스타일을 직접
-    // 둘러 일관되게 보이도록 한다 — Modal은 이 컴포넌트를 card=false로 감싸는 것이 전제.
+    // 이 컴포넌트가 만드는 상태들은 모두 같은 카드 스타일(rounded-[14px] bg-surface border p-6)을
+    // 직접 둘러 일관되게 보이도록 한다 — Modal은 이 컴포넌트를 card=false로 감싸는 것이 전제.
+    // AccountSelectionList는 온보딩 페이지형 개편으로 자체 카드를 잃었으므로(w-full space-y-4만
+    // 남음), selectingAccount 케이스에서도 여기서 카드로 감싸야 배경 없이 뜨지 않는다.
     case 'verifying':
       return (
         <p className="rounded-[14px] bg-surface border border-border p-6 text-sm text-text-muted">
@@ -31,12 +32,14 @@ export function AccountFlowStatus(props: AccountFlowStatusProps): React.JSX.Elem
 
     case 'selectingAccount':
       return (
-        <AccountSelectionList
-          accounts={props.accounts}
-          isSubmitting={false}
-          errorMessage={null}
-          onSelect={props.onSelectAccount}
-        />
+        <div className="rounded-[14px] bg-surface border border-border p-6">
+          <AccountSelectionList
+            accounts={props.accounts}
+            isSubmitting={false}
+            errorMessage={null}
+            onSelect={props.onSelectAccount}
+          />
+        </div>
       )
 
     case 'prefetching': {

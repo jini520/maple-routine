@@ -2,6 +2,7 @@ import { fetchCharacterBasic, fetchCharacterList } from '../../nexon/character'
 import { NexonAuthError, NexonRateLimitError } from '../../nexon/errors'
 import { fetchSchedulerCharacterState } from '../../nexon/schedule'
 import { mergeSchedulerState, type MergeOutput } from '../../lib/scheduler-merge'
+import { getShareScope } from '../../lib/scheduler-content-scope'
 import { getBackfillDateKeys } from '../../lib/reset-clock'
 import { compareByName } from '../onboarding/representative-character'
 import { getAuthConfig } from '../../storage/api-key'
@@ -202,10 +203,38 @@ async function buildFallbackResult(
   }
 }
 
-// ADR-034 정정(2026-07-23): 당일 응답의 4개 섹션(daily/weekly/weeklyBoss/monthlyBoss) 중
-// 하나라도 stale이면(리셋 이후 미접속) 과거 날짜 조회로 항목 단위 선채움을 시도한다.
+// ADR-034 추가 정정(2026-07-25): daily/weekly 섹션이 "완전히 비었는지(isXStale = length 0)"만으로는
+// 부족하다 — 콜드 스타트에서 당일 응답이 월드공유 항목(몬스터파크)만 남기고 character 범위 항목을
+// 통째로 누락시키면 length가 1이라 isDailyStale이 false가 되고, 로컬 캐시도 없어 항목 단위 병합이
+// 복원할 previous가 없다. 그래서 "그 섹션에 character 범위 항목이 하나라도 있는가"로 stale을 판정한다.
+// 캐릭터가 동기화되면 daily/weekly엔 항상 자기 범위 항목(일일/주간 퀘스트 등)이 들어오므로,
+// 공유 항목만 남았으면 이 캐릭터의 그 섹션은 아직 신뢰할 수 없다는 뜻이다.
+function hasCharacterScopeItem(items: { name: string }[]): boolean {
+  return items.some((item) => getShareScope(item.name) === 'character')
+}
+
+// isXStale(완전 비었을 때)은 그대로 살리고, 비지 않았어도 character 범위 항목이 하나도 없으면
+// 부분 누락으로 본다. length === 0이면 isXStale이 이미 잡으므로 두 번째 항은 length > 0에서만 의미가
+// 있다 — 테스트 스텁처럼 dailyContents가 빈 배열인데 isDailyStale이 명시적으로 false인 상태를
+// "누락"으로 오판하지 않도록 length 가드를 둔다.
+function isDailySectionMissing(state: SchedulerCharacterState): boolean {
+  return state.isDailyStale || (state.dailyContents.length > 0 && !hasCharacterScopeItem(state.dailyContents))
+}
+
+function isWeeklySectionMissing(state: SchedulerCharacterState): boolean {
+  return state.isWeeklyStale || (state.weeklyContents.length > 0 && !hasCharacterScopeItem(state.weeklyContents))
+}
+
+// ADR-034 정정(2026-07-23) + 추가 정정(2026-07-25): 4개 섹션(daily/weekly/weeklyBoss/monthlyBoss) 중
+// 하나라도 stale이면(리셋 이후 미접속) 과거 날짜 조회로 항목 단위 선채움을 시도한다. daily/weekly는
+// character 범위 항목 유무로 stale을 판정한다.
 function needsBackfill(state: SchedulerCharacterState): boolean {
-  return state.isDailyStale || state.isWeeklyStale || state.isWeeklyBossStale || state.isMonthlyBossStale
+  return (
+    isDailySectionMissing(state) ||
+    isWeeklySectionMissing(state) ||
+    state.isWeeklyBossStale ||
+    state.isMonthlyBossStale
+  )
 }
 
 // ADR-034 정정(2026-07-23): 당일 응답에서 stale이었던 섹션을, [[getBackfillDateKeys]]가 주는
@@ -231,8 +260,8 @@ async function fillMissingSections(
   }
 
   const originallyStale = {
-    daily: stage1.characterState.isDailyStale,
-    weekly: stage1.characterState.isWeeklyStale,
+    daily: isDailySectionMissing(stage1.characterState),
+    weekly: isWeeklySectionMissing(stage1.characterState),
     weeklyBoss: stage1.characterState.isWeeklyBossStale,
     monthlyBoss: stage1.characterState.isMonthlyBossStale,
   }
@@ -270,8 +299,8 @@ async function fillMissingSections(
     }
 
     const resolved =
-      (!originallyStale.daily || !dayResponse.isDailyStale) &&
-      (!originallyStale.weekly || !dayResponse.isWeeklyStale) &&
+      (!originallyStale.daily || !isDailySectionMissing(dayResponse)) &&
+      (!originallyStale.weekly || !isWeeklySectionMissing(dayResponse)) &&
       (!originallyStale.weeklyBoss || !dayResponse.isWeeklyBossStale) &&
       (!originallyStale.monthlyBoss || !dayResponse.isMonthlyBossStale)
 

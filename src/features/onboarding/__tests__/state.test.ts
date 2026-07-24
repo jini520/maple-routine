@@ -198,7 +198,7 @@ describe('onboardingReducer', () => {
     })
   })
 
-  it('PREFETCH_FINISHED — completed로 전이하고 prefetchProgress를 지운다', () => {
+  it('PREFETCH_FINISHED — selectingTrackingMode로 전이하고 prefetchProgress를 지운다(ADR-035)', () => {
     const prefetching: OnboardingState = {
       status: 'prefetching',
       accounts: [account('acc-1')],
@@ -211,8 +211,59 @@ describe('onboardingReducer', () => {
 
     expect(result).toEqual<OnboardingState>({
       ...prefetching,
-      status: 'completed',
+      status: 'selectingTrackingMode',
       prefetchProgress: null,
+    })
+  })
+
+  it('SELECT_TRACKING_MODE — selectingContentCharacters로 전이한다(ADR-035 결정 13)', () => {
+    const selecting: OnboardingState = {
+      status: 'selectingTrackingMode',
+      accounts: [account('acc-1')],
+      selectedAccountId: 'acc-1',
+      error: null,
+      prefetchProgress: null,
+    }
+
+    const result = onboardingReducer(selecting, { type: 'SELECT_TRACKING_MODE', mode: 'manual' })
+
+    expect(result).toEqual<OnboardingState>({
+      ...selecting,
+      status: 'selectingContentCharacters',
+    })
+  })
+
+  it('SUBMIT_CONTENT_CHARACTERS — seedingTracking으로 전이한다(ADR-035 결정 15)', () => {
+    const selecting: OnboardingState = {
+      status: 'selectingContentCharacters',
+      accounts: [account('acc-1')],
+      selectedAccountId: 'acc-1',
+      error: null,
+      prefetchProgress: null,
+    }
+
+    const result = onboardingReducer(selecting, { type: 'SUBMIT_CONTENT_CHARACTERS' })
+
+    expect(result).toEqual<OnboardingState>({
+      ...selecting,
+      status: 'seedingTracking',
+    })
+  })
+
+  it('ONBOARDING_FINISHED — completed로 전이한다', () => {
+    const seeding: OnboardingState = {
+      status: 'seedingTracking',
+      accounts: [account('acc-1')],
+      selectedAccountId: 'acc-1',
+      error: null,
+      prefetchProgress: null,
+    }
+
+    const result = onboardingReducer(seeding, { type: 'ONBOARDING_FINISHED' })
+
+    expect(result).toEqual<OnboardingState>({
+      ...seeding,
+      status: 'completed',
     })
   })
 

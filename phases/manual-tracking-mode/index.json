@@ -1,0 +1,80 @@
+{
+  "project": "메이플 루틴",
+  "phase": "manual-tracking-mode",
+  "steps": [
+    {
+      "step": 0,
+      "name": "storage-tracking-layer",
+      "status": "completed",
+      "started_at": "2026-07-23T20:53:27+0900",
+      "summary": "trackingMode(전역)·manualTrackedContent:{ocid}(캐릭터별) Preferences 어댑터 2개(tracking-mode.ts, manual-tracked-content.ts)와 keys.ts 키 헬퍼를 TDD로 추가하고, scheduler-content-template.json의 stale note 문구를 제거 — 테스트 982개·빌드 통과",
+      "completed_at": "2026-07-23T20:57:21+0900"
+    },
+    {
+      "step": 1,
+      "name": "tracking-mode-store",
+      "status": "completed",
+      "started_at": "2026-07-23T20:57:21+0900",
+      "summary": "features/tracking-mode/store.ts Zustand 스토어(restoreFromStorage/setMode, 시드 트리거 없음)를 TDD로 추가하고 AppShell 부팅 하이드레이션에 3번째 복원으로 연결, lifecycle.md 다이어그램 갱신 — 테스트 988개·빌드·lint 통과",
+      "completed_at": "2026-07-23T21:00:50+0900"
+    },
+    {
+      "step": 2,
+      "name": "manual-tracking-seed",
+      "status": "completed",
+      "started_at": "2026-07-23T21:00:50+0900",
+      "summary": "features/tracking-mode/seed.ts(seedManualTrackedContent — syncSchedules 최신 결과에서 isRegistered 항목만 멤버십으로 덮어쓰기 시드, 실패 시 에러 전파)를 TDD로 추가하고 store.setMode에 auto→manual 전환 트리거(a)(content+boss 추적 ocid 합집합 병렬 시드, 시드 완료 후 resolve)를 연결 — 테스트 995개·빌드·lint 통과",
+      "completed_at": "2026-07-23T21:05:16+0900"
+    },
+    {
+      "step": 3,
+      "name": "seed-trigger-b-integration",
+      "status": "completed",
+      "started_at": "2026-07-23T21:05:16+0900",
+      "summary": "content/boss-scheduler 두 스토어의 saveTrackedOcids에 ADR-035 트리거(b) 배선 — 수동 모드에서 저장 전 trackedOcids 기준 diff로 새로 추가된 ocid만 seedManualTrackedContent로 refresh 전에 개별 시드(auto 모드·기존 캐릭터는 무변화, 제거 캐릭터 데이터는 비파괴 보존) — 테스트 1001개·빌드·lint 통과",
+      "completed_at": "2026-07-23T21:10:08+0900"
+    },
+    {
+      "step": 4,
+      "name": "onboarding-tracking-mode-screen",
+      "status": "completed",
+      "started_at": "2026-07-24T02:48:48+0900",
+      "summary": "온보딩에 자동/수동 트래킹 모드 선택 단계 추가(ADR-035 결정 13/16) — state.ts에 'selectingTrackingMode' status·SELECT_TRACKING_MODE 이벤트 추가하고 PREFETCH_FINISHED가 completed 대신 이 단계로 전이, store에 selectTrackingMode(setMode await 후 전이) 추가, TrackingModeStep.tsx 신규(카드 박스 없는 페이지 레이아웃·기존 선택 카드/CTA 클래스 재사용·추천 배지), OnboardingScreen에 케이스 배선 — 테스트 1009개·빌드·lint 통과",
+      "completed_at": "2026-07-24T02:56:01+0900"
+    },
+    {
+      "step": 5,
+      "name": "onboarding-content-character-step",
+      "status": "completed",
+      "started_at": "2026-07-24T02:56:01+0900",
+      "summary": "온보딩에 컨텐츠 추적 캐릭터 선택 단계 추가(ADR-035 결정 13/15) — CharacterTrackingPicker에서 그리드(정렬·얼굴크롭·즐겨찾기·엠블럼)를 CharacterTrackingGrid로 추출해 모달/온보딩이 공유, ContentCharacterStep.tsx 신규(getCharacterPickerRoster 조회·1명 이상 선택 강제 CTA·MapleSpinner), state.ts에 selectingContentCharacters/seedingTracking status와 SUBMIT_CONTENT_CHARACTERS/ONBOARDING_FINISHED 이벤트 추가(SELECT_TRACKING_MODE는 이제 선택 단계로 전이), store.submitContentCharacters(추적 저장 후 manual만 시드하고 완료), OnboardingScreen 두 케이스 배선 — 테스트 1022개·빌드·lint 통과",
+      "completed_at": "2026-07-24T03:07:32+0900"
+    },
+    {
+      "step": 6,
+      "name": "settings-tracking-mode-toggle",
+      "status": "completed",
+      "started_at": "2026-07-24T03:07:32+0900",
+      "summary": "설정에 자동/수동 트래킹 모드 전역 전환 UI 추가(ADR-035 결정 1) — features/tracking-mode/copy.ts로 온보딩 TrackingModeStep과 옵션 카피 공유(TrackingModeStep도 이 상수 사용하도록 리팩터), TrackingModeSelector(ThemeSelector 패턴·isApplying 비활성)·TrackingModeModal(다른 모드 선택 시 setMode await 후 닫음, 시드 중 옵션 비활성+MapleSpinner+오버레이 닫힘 차단, 같은 모드는 즉시 닫음) 신규, SettingsScreen에 '트래킹 모드' 행(현재 모드 라벨 배지)+모달 배선, UI_GUIDE '설정 리스트 행 + 모달' 절 갱신 — 테스트 1028개·빌드·lint 통과",
+      "completed_at": "2026-07-24T03:14:29+0900"
+    },
+    {
+      "step": 7,
+      "name": "manual-checklist-ui-content",
+      "status": "completed",
+      "started_at": "2026-07-24T03:14:29+0900",
+      "summary": "컨텐츠 스케줄러 수동 트래킹 체크리스트 UI 추가(ADR-035 결정 3·6·8·11) — 순수 병합 함수 lib/manual-content-merge.ts(synced 우선·template 폴백·방어적 기본값, tracked 순서 유지) 신규, content-scheduler store에 manualTrackedByOcid 상태+manual 모드 refresh 로딩+addManualContent/removeManualContent(멤버십+템플릿 max_count만 저장) 추가, ManualContentPickerModal(고정 템플릿 선택·자유 입력 없음) 신규, ContentScreen이 manual 모드에서 등록 여부 대신 멤버십으로 표시 목록 계산(mergeManualContentList)하고 카드별 삭제 X·탭별 항목 추가 버튼·수동 빈 상태 렌더(카드 컴포넌트는 재사용, auto 모드 무변화), UI_GUIDE 수동 체크리스트 절 추가 — 테스트 1047개·빌드·lint 통과",
+      "completed_at": "2026-07-24T03:34:24+0900"
+    },
+    {
+      "step": 8,
+      "name": "manual-checklist-ui-boss",
+      "status": "completed",
+      "started_at": "2026-07-24T03:34:24+0900",
+      "summary": "보스 스케줄러 수동 트래킹 체크리스트 UI 추가(ADR-035 결정 3·6·9·11·12, ADR-035 구현 완료) — 순수 병합 함수 lib/manual-boss-merge.ts((matchedBossName,difficulty)로 synced 매칭·공백 정규화·미매칭 시 weekly-bosses.json cycle 조회·미완료 폴백, tracked 순서 유지) 신규, boss-scheduler store에 manualTrackedByOcid 상태+manual 모드 refresh 읽기+addManualBoss/removeManualBoss(멤버십만 저장, maxCount 없음) 추가, ManualBossPickerModal(보스 드롭다운→난이도 뱃지 2단 폼·이미 추적 난이도 비활성·자유 입력 없음) 신규, BossScreen이 manual 모드에서 등록 여부 대신 멤버십으로 표시 목록 계산(mergeManualBossList, selectDisplayBosses 미적용)하고 보스 추가 버튼·카드별 삭제 X·수동 빈 상태 렌더(BossCard/DifficultyBadge 재사용, 솔로/파티 필터·n/12·시즌 배지·파티 관리는 무변경, auto 모드 무변화), ADR/UI_GUIDE 갱신 — 테스트 1069개·빌드·lint 통과",
+      "completed_at": "2026-07-24T03:51:23+0900"
+    }
+  ],
+  "created_at": "2026-07-23T20:53:27+0900",
+  "completed_at": "2026-07-24T03:51:23+0900"
+}

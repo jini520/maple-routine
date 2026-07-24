@@ -3,20 +3,23 @@ import packageJson from '../../../package.json'
 import { useSettingsStore } from '../../features/settings/store'
 import { useThemeStore } from '../../features/theme/store'
 import { useLiveUpdateStore } from '../../features/live-update/store'
+import { useTrackingModeStore } from '../../features/tracking-mode/store'
+import { TRACKING_MODE_LABELS } from '../../features/tracking-mode/copy'
 import { SettingsRow } from './SettingsRow'
 import { AppUpdateSection } from './AppUpdateSection'
 import { ThemeSwatchDots } from './ThemeSwatchDots'
-import { ApiKeyModal } from './ApiKeyModal'
 import { AccountModal } from './AccountModal'
 import { ThemeModal } from './ThemeModal'
+import { TrackingModeModal } from './TrackingModeModal'
 import { DisconnectConfirm } from './DisconnectConfirm'
 import { CacheDataSection } from './CacheDataSection'
 
-type OpenModal = 'apiKey' | 'account' | 'theme' | null
+type OpenModal = 'account' | 'theme' | 'trackingMode' | null
 
 export function SettingsScreen(): React.JSX.Element {
   const { disconnect } = useSettingsStore()
   const { theme } = useThemeStore()
+  const { mode: trackingMode } = useTrackingModeStore()
   const { currentVersion, loadCurrentVersion } = useLiveUpdateStore()
 
   const [openModal, setOpenModal] = useState<OpenModal>(null)
@@ -44,8 +47,16 @@ export function SettingsScreen(): React.JSX.Element {
       <h1 className="text-lg font-semibold text-text">설정</h1>
 
       <div className="rounded-[14px] bg-surface border border-border px-6 divide-y divide-border">
-        <SettingsRow label="API 키 재입력" onClick={() => setOpenModal('apiKey')} />
         <SettingsRow label="계정 변경" onClick={() => setOpenModal('account')} />
+        <SettingsRow
+          label="스케줄 관리 방법"
+          onClick={() => setOpenModal('trackingMode')}
+          rightContent={
+            <span className="rounded-full border border-border px-3 py-1 text-xs font-medium text-text-muted">
+              {TRACKING_MODE_LABELS[trackingMode]}
+            </span>
+          }
+        />
         <SettingsRow
           label="테마"
           onClick={() => setOpenModal('theme')}
@@ -66,12 +77,12 @@ export function SettingsScreen(): React.JSX.Element {
         />
       </div>
 
-      <AppUpdateSection />
-
       <CacheDataSection />
 
-      {openModal === 'apiKey' && <ApiKeyModal onClose={() => setOpenModal(null)} />}
+      <AppUpdateSection />
+
       {openModal === 'account' && <AccountModal onClose={() => setOpenModal(null)} />}
+      {openModal === 'trackingMode' && <TrackingModeModal onClose={() => setOpenModal(null)} />}
       {openModal === 'theme' && <ThemeModal onClose={() => setOpenModal(null)} />}
 
       <DisconnectConfirm

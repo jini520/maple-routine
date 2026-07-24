@@ -1,10 +1,12 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ContentScreen } from '../ContentScreen'
 import { useContentSchedulerStore, type ContentCharacterView } from '../../../features/content-scheduler/store'
 import { getCharacterPickerRoster } from '../../../features/schedule-sync/schedule-sync'
+import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 import type { CharacterPickerEntry } from '../../../types'
 
 vi.mock('../../../features/content-scheduler/store', () => ({
@@ -25,12 +27,28 @@ function mockStore(overrides: Partial<ReturnType<typeof useContentSchedulerStore
     error: null,
     trackedOcids: null,
     selectedOcid: null,
+    manualTrackedByOcid: {},
     loadTrackedOcids: vi.fn(),
     saveTrackedOcids: vi.fn(),
     refresh: vi.fn(),
     selectCharacter: vi.fn(),
+    addManualContent: vi.fn(),
+    removeManualContent: vi.fn(),
     ...overrides,
   })
+}
+
+// ContentScreen이 "컨텐츠 관리" 진입에 라우터 내비게이션을 쓰므로 MemoryRouter로 감싼다.
+// /content/manage에는 프로브 요소를 둬 내비게이션 발생 여부를 검증할 수 있게 한다.
+function renderContentScreen(): ReturnType<typeof render> {
+  return render(
+    <MemoryRouter initialEntries={['/content']}>
+      <Routes>
+        <Route path="/content" element={<ContentScreen />} />
+        <Route path="/content/manage" element={<div>관리 페이지 프로브</div>} />
+      </Routes>
+    </MemoryRouter>,
+  )
 }
 
 function character(overrides: Partial<ContentCharacterView> = {}): ContentCharacterView {
@@ -65,6 +83,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup()
   vi.clearAllMocks()
+  useTrackingModeStore.setState({ mode: 'auto' })
 })
 
 describe('ContentScreen', () => {
@@ -80,7 +99,7 @@ describe('ContentScreen', () => {
       ],
     })
 
-    render(<ContentScreen />)
+    renderContentScreen()
 
     expect(await screen.findByText('표시할 캐릭터가 없습니다')).toBeInTheDocument()
     expect(screen.getByText('캐릭터를 선택하면 일간·주간 컨텐츠를 확인할 수 있습니다')).toBeInTheDocument()
@@ -97,7 +116,7 @@ describe('ContentScreen', () => {
       onUpdate([pickerEntry({ ocid: 'ocid-2', name: '내옆에최성일', level: 211 })])
     })
 
-    render(<ContentScreen />)
+    renderContentScreen()
     await screen.findByText('표시할 캐릭터가 없습니다')
 
     fireEvent.click(screen.getByRole('button', { name: '캐릭터 선택하기' }))
@@ -114,7 +133,7 @@ describe('ContentScreen', () => {
       loadTrackedOcids,
     })
 
-    render(<ContentScreen />)
+    renderContentScreen()
     await screen.findByRole('combobox')
 
     expect(loadTrackedOcids).toHaveBeenCalledTimes(1)
@@ -127,7 +146,7 @@ describe('ContentScreen', () => {
       characters: [character({ ocid: 'ocid-1' })],
     })
 
-    render(<ContentScreen />)
+    renderContentScreen()
     const heading = await screen.findByRole('heading', { name: '컨텐츠 스케줄러' })
     const stickyEl = heading.closest('.sticky')
 
@@ -154,7 +173,7 @@ describe('ContentScreen', () => {
       ],
     })
 
-    render(<ContentScreen />)
+    renderContentScreen()
     await screen.findByRole('combobox')
 
     expect(screen.getByText(/몬스터파크/)).toBeInTheDocument()
@@ -185,7 +204,7 @@ describe('ContentScreen', () => {
       ],
     })
 
-    render(<ContentScreen />)
+    renderContentScreen()
     await screen.findByRole('combobox')
     fireEvent.click(screen.getByRole('button', { name: '주간' }))
 
@@ -207,7 +226,7 @@ describe('ContentScreen', () => {
       selectCharacter,
     })
 
-    render(<ContentScreen />)
+    renderContentScreen()
     const dropdown = await screen.findByRole('combobox')
     fireEvent.change(dropdown, { target: { value: 'ocid-2' } })
 
@@ -233,7 +252,7 @@ describe('ContentScreen', () => {
       ],
     })
 
-    render(<ContentScreen />)
+    renderContentScreen()
     await screen.findByRole('combobox')
     expect(screen.getByText(/레브 던전/)).toBeInTheDocument()
 
@@ -260,7 +279,7 @@ describe('ContentScreen', () => {
       ])
     })
 
-    render(<ContentScreen />)
+    renderContentScreen()
     await screen.findByRole('combobox')
 
     fireEvent.click(screen.getByRole('button', { name: '캐릭터 관리' }))
@@ -291,7 +310,7 @@ describe('ContentScreen', () => {
       ])
     })
 
-    render(<ContentScreen />)
+    renderContentScreen()
     await screen.findByRole('combobox')
 
     fireEvent.click(screen.getByRole('button', { name: '캐릭터 관리' }))
@@ -304,7 +323,7 @@ describe('ContentScreen', () => {
   it('status가 loading이고 캐시된 characters도 없으면 로딩 표시를 보여준다', async () => {
     mockStore({ status: 'loading', trackedOcids: ['ocid-1'], characters: [] })
 
-    render(<ContentScreen />)
+    renderContentScreen()
 
     expect(await screen.findByText(/불러오는 중/)).toBeInTheDocument()
   })
@@ -321,7 +340,7 @@ describe('ContentScreen', () => {
       ],
     })
 
-    render(<ContentScreen />)
+    renderContentScreen()
 
     expect(await screen.findByText(/몬스터파크/)).toBeInTheDocument()
     expect(screen.queryByText(/불러오는 중/)).not.toBeInTheDocument()
@@ -335,7 +354,7 @@ describe('ContentScreen', () => {
       characters: [character({ ocid: 'ocid-1' })],
     })
 
-    render(<ContentScreen />)
+    renderContentScreen()
 
     expect(await screen.findByText('API 키가 유효하지 않습니다')).toBeInTheDocument()
   })
@@ -349,7 +368,7 @@ describe('ContentScreen', () => {
       refresh,
     })
 
-    render(<ContentScreen />)
+    renderContentScreen()
     await screen.findByRole('combobox')
     fireEvent.click(screen.getByRole('button', { name: '새로고침' }))
 
@@ -364,7 +383,7 @@ describe('ContentScreen', () => {
       characters: [character({ ocid: 'ocid-1' })],
     })
 
-    render(<ContentScreen />)
+    renderContentScreen()
     await screen.findByRole('combobox')
 
     expect(screen.getByText('조회 중...')).toBeInTheDocument()
@@ -393,7 +412,7 @@ describe('ContentScreen', () => {
       ],
     })
 
-    render(<ContentScreen />)
+    renderContentScreen()
     await screen.findByRole('combobox')
 
     expect(screen.getByText('레헬른의 평온한 밤')).toBeInTheDocument()
@@ -416,7 +435,7 @@ describe('ContentScreen', () => {
       ],
     })
 
-    render(<ContentScreen />)
+    renderContentScreen()
     await screen.findByRole('combobox')
 
     expect(screen.getByText('몬스터파크')).toBeInTheDocument()
@@ -441,7 +460,7 @@ describe('ContentScreen', () => {
       ],
     })
 
-    render(<ContentScreen />)
+    renderContentScreen()
     await screen.findByRole('combobox')
 
     expect(screen.getByText(/게임에서 스케줄러에 등록해주세요/)).toBeInTheDocument()
@@ -466,7 +485,7 @@ describe('ContentScreen', () => {
       ],
     })
 
-    render(<ContentScreen />)
+    renderContentScreen()
     await screen.findByRole('combobox')
     fireEvent.click(screen.getByRole('button', { name: '주간' }))
 
@@ -491,7 +510,7 @@ describe('ContentScreen', () => {
       ],
     })
 
-    render(<ContentScreen />)
+    renderContentScreen()
     await screen.findByRole('combobox')
     fireEvent.click(screen.getByRole('button', { name: '주간' }))
 
@@ -514,7 +533,7 @@ describe('ContentScreen', () => {
       ],
     })
 
-    render(<ContentScreen />)
+    renderContentScreen()
     await screen.findByRole('combobox')
     fireEvent.click(screen.getByRole('button', { name: '주간' }))
 
@@ -538,7 +557,7 @@ describe('ContentScreen', () => {
       ],
     })
 
-    render(<ContentScreen />)
+    renderContentScreen()
     await screen.findByRole('combobox')
     fireEvent.click(screen.getByRole('button', { name: '주간' }))
 
@@ -566,7 +585,7 @@ describe('ContentScreen', () => {
       ],
     })
 
-    render(<ContentScreen />)
+    renderContentScreen()
     await screen.findByRole('combobox')
     fireEvent.click(screen.getByRole('button', { name: '주간' }))
 
@@ -597,7 +616,7 @@ describe('ContentScreen', () => {
       ],
     })
 
-    render(<ContentScreen />)
+    renderContentScreen()
     await screen.findByRole('combobox')
     fireEvent.click(screen.getByRole('button', { name: '주간' }))
 
@@ -627,7 +646,7 @@ describe('ContentScreen', () => {
       ],
     })
 
-    render(<ContentScreen />)
+    renderContentScreen()
     await screen.findByRole('combobox')
     fireEvent.click(screen.getByRole('button', { name: '주간' }))
 
@@ -655,7 +674,7 @@ describe('ContentScreen', () => {
       ],
     })
 
-    render(<ContentScreen />)
+    renderContentScreen()
     await screen.findByRole('combobox')
     fireEvent.click(screen.getByRole('button', { name: '주간' }))
 
@@ -683,7 +702,7 @@ describe('ContentScreen', () => {
       ],
     })
 
-    render(<ContentScreen />)
+    renderContentScreen()
     await screen.findByRole('combobox')
     fireEvent.click(screen.getByRole('button', { name: '주간' }))
 
@@ -720,7 +739,7 @@ describe('ContentScreen', () => {
       ],
     })
 
-    render(<ContentScreen />)
+    renderContentScreen()
     await screen.findByRole('combobox')
     fireEvent.click(screen.getByRole('button', { name: '주간' }))
 
@@ -752,7 +771,7 @@ describe('ContentScreen', () => {
       ],
     })
 
-    render(<ContentScreen />)
+    renderContentScreen()
     await screen.findByRole('combobox')
     fireEvent.click(screen.getByRole('button', { name: '주간' }))
 
@@ -786,7 +805,7 @@ describe('ContentScreen', () => {
       ],
     })
 
-    render(<ContentScreen />)
+    renderContentScreen()
     await screen.findByRole('combobox')
     fireEvent.click(screen.getByRole('button', { name: '주간' }))
 
@@ -807,7 +826,7 @@ describe('ContentScreen', () => {
       ],
     })
 
-    render(<ContentScreen />)
+    renderContentScreen()
     await screen.findByRole('combobox')
     fireEvent.click(screen.getByRole('button', { name: '주간' }))
 
@@ -831,7 +850,7 @@ describe('ContentScreen', () => {
       ],
     })
 
-    render(<ContentScreen />)
+    renderContentScreen()
     await screen.findByRole('combobox')
     fireEvent.click(screen.getByRole('button', { name: '주간' }))
 
@@ -855,7 +874,7 @@ describe('ContentScreen', () => {
       ],
     })
 
-    render(<ContentScreen />)
+    renderContentScreen()
     await screen.findByRole('combobox')
     fireEvent.click(screen.getByRole('button', { name: '주간' }))
 
@@ -880,7 +899,7 @@ describe('ContentScreen', () => {
       ],
     })
 
-    render(<ContentScreen />)
+    renderContentScreen()
     await screen.findByRole('combobox')
     fireEvent.click(screen.getByRole('button', { name: '주간' }))
 
@@ -888,5 +907,212 @@ describe('ContentScreen', () => {
     expect(screen.getByText('13416점')).toBeInTheDocument()
     expect(screen.queryByText('주간 미션 포인트')).not.toBeInTheDocument()
     expect(screen.queryByText('플래그 레이스')).not.toBeInTheDocument()
+  })
+
+  describe('ADR-035: 수동 트래킹 모드', () => {
+    it('수동 모드: 게임 등록 여부(isRegistered)와 무관하게 추적 중인 항목을 동기화 값과 함께 표시한다', async () => {
+      useTrackingModeStore.setState({ mode: 'manual' })
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        selectedOcid: 'ocid-1',
+        manualTrackedByOcid: { 'ocid-1': [{ contentName: '몬스터파크', kind: 'daily' }] },
+        characters: [
+          character({
+            ocid: 'ocid-1',
+            // isRegistered: false여도 수동 모드에서는 추적 목록에 있으면 보인다
+            dailyContents: [
+              { name: '몬스터파크', kind: 'contents', isRegistered: false, nowCount: 9, maxCount: 14, questState: null },
+            ],
+          }),
+        ],
+      })
+
+      renderContentScreen()
+      await screen.findByRole('combobox')
+
+      expect(screen.getByText('몬스터파크')).toBeInTheDocument()
+      expect(screen.getByText('9/14')).toBeInTheDocument()
+    })
+
+    it('수동 모드: 표시 순서는 추가한 순서가 아니라 컨텐츠 관리(템플릿) 순서로 고정된다 (ADR-035 결정 20)', async () => {
+      useTrackingModeStore.setState({ mode: 'manual' })
+      // 멤버십은 템플릿 역순으로 추가(세르니움=템플릿 10번째가 먼저, 소멸의 여로=1번째가 나중).
+      // 표시는 템플릿 순서(소멸의 여로 → 세르니움)로 나와야 한다.
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        selectedOcid: 'ocid-1',
+        manualTrackedByOcid: {
+          'ocid-1': [
+            { contentName: '[일일 퀘스트] 세르니움 조사', kind: 'daily' },
+            { contentName: '[일일 퀘스트] 소멸의 여로 조사', kind: 'daily' },
+          ],
+        },
+        characters: [character({ ocid: 'ocid-1', dailyContents: [] })],
+      })
+
+      renderContentScreen()
+      await screen.findByRole('combobox')
+
+      const rows = screen.getAllByRole('listitem').map((li) => li.textContent ?? '')
+      const idxSomyeol = rows.findIndex((t) => t.includes('소멸의 여로 조사'))
+      const idxSereu = rows.findIndex((t) => t.includes('세르니움 조사'))
+      expect(idxSomyeol).toBeGreaterThanOrEqual(0)
+      expect(idxSereu).toBeGreaterThan(idxSomyeol)
+    })
+
+    it('수동 모드 주간 탭: 표시 순서도 컨텐츠 관리(카테고리 정렬) 순서로 고정된다 (ADR-035 결정 20)', async () => {
+      useTrackingModeStore.setState({ mode: 'manual' })
+      // 멤버십은 [무릉도장, 에픽던전 하이마운틴]로 추가하지만, 컨텐츠 관리 순서상 에픽 던전이
+      // 무릉도장보다 앞이므로 "하이마운틴"이 "무릉도장"보다 먼저 나와야 한다.
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        selectedOcid: 'ocid-1',
+        manualTrackedByOcid: {
+          'ocid-1': [
+            { contentName: '무릉도장', kind: 'weekly' },
+            { contentName: '에픽 던전 : 하이마운틴', kind: 'weekly' },
+          ],
+        },
+        characters: [character({ ocid: 'ocid-1', weeklyContents: [] })],
+      })
+
+      renderContentScreen()
+      await screen.findByRole('combobox')
+      fireEvent.click(screen.getByRole('button', { name: '주간' }))
+
+      const rows = screen.getAllByRole('listitem').map((li) => li.textContent ?? '')
+      const idxEpic = rows.findIndex((t) => t.includes('하이마운틴'))
+      const idxMulung = rows.findIndex((t) => t.includes('무릉도장'))
+      expect(idxEpic).toBeGreaterThanOrEqual(0)
+      expect(idxMulung).toBeGreaterThan(idxEpic)
+    })
+
+    it('수동 모드: 한 번도 동기화된 적 없는 항목은 템플릿 기본값으로 표시한다', async () => {
+      useTrackingModeStore.setState({ mode: 'manual' })
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        selectedOcid: 'ocid-1',
+        manualTrackedByOcid: { 'ocid-1': [{ contentName: '[일일 퀘스트] 소멸의 여로 조사', kind: 'daily' }] },
+        characters: [character({ ocid: 'ocid-1', dailyContents: [] })],
+      })
+
+      renderContentScreen()
+      await screen.findByRole('combobox')
+
+      // 접두어 제거된 이름 + 템플릿의 quest_state 0("시작 안함")
+      expect(screen.getByText('소멸의 여로 조사')).toBeInTheDocument()
+      expect(screen.getByText('시작 안함')).toBeInTheDocument()
+    })
+
+    it('수동 모드: 항목은 자기 kind의 탭에만 나온다 — 일간/주간 섞임 회귀 방지 (ADR-035 결정 19)', async () => {
+      useTrackingModeStore.setState({ mode: 'manual' })
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        selectedOcid: 'ocid-1',
+        manualTrackedByOcid: {
+          'ocid-1': [
+            { contentName: '몬스터파크', kind: 'daily' },
+            { contentName: '무릉도장', kind: 'weekly' },
+          ],
+        },
+        characters: [character({ ocid: 'ocid-1' })],
+      })
+
+      renderContentScreen()
+      await screen.findByRole('combobox')
+
+      // 일간 탭: 일간 항목만
+      expect(screen.getByText('몬스터파크')).toBeInTheDocument()
+      expect(screen.queryByText('무릉도장')).not.toBeInTheDocument()
+
+      // 주간 탭: 주간 항목만
+      fireEvent.click(screen.getByRole('button', { name: '주간' }))
+      expect(screen.getByText('무릉도장')).toBeInTheDocument()
+      expect(screen.queryByText('몬스터파크')).not.toBeInTheDocument()
+    })
+
+    it('수동 모드: 헤더의 "컨텐츠 관리"를 누르면 관리 페이지로 이동한다 (ADR-035 결정 18)', async () => {
+      useTrackingModeStore.setState({ mode: 'manual' })
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        selectedOcid: 'ocid-1',
+        manualTrackedByOcid: { 'ocid-1': [] },
+        characters: [character({ ocid: 'ocid-1' })],
+      })
+
+      renderContentScreen()
+      await screen.findByRole('combobox')
+
+      fireEvent.click(screen.getByRole('button', { name: '컨텐츠 관리' }))
+
+      expect(await screen.findByText('관리 페이지 프로브')).toBeInTheDocument()
+    })
+
+    it('수동 모드에서도 카드 위 삭제 버튼과 "+ 항목 추가"는 렌더링되지 않는다 (ADR-035 결정 18 — 편집은 관리 페이지 전용)', async () => {
+      useTrackingModeStore.setState({ mode: 'manual' })
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        selectedOcid: 'ocid-1',
+        manualTrackedByOcid: { 'ocid-1': [{ contentName: '몬스터파크', kind: 'daily' }] },
+        characters: [
+          character({
+            ocid: 'ocid-1',
+            dailyContents: [
+              { name: '몬스터파크', kind: 'contents', isRegistered: true, nowCount: 7, maxCount: 14, questState: null },
+            ],
+          }),
+        ],
+      })
+
+      renderContentScreen()
+      await screen.findByRole('combobox')
+
+      expect(screen.queryByRole('button', { name: '+ 항목 추가' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: '몬스터파크 삭제' })).not.toBeInTheDocument()
+    })
+
+    it('수동 모드: 추적 항목이 없으면 "컨텐츠 관리" 안내 빈 상태를 보여준다', async () => {
+      useTrackingModeStore.setState({ mode: 'manual' })
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        selectedOcid: 'ocid-1',
+        manualTrackedByOcid: { 'ocid-1': [] },
+        characters: [character({ ocid: 'ocid-1' })],
+      })
+
+      renderContentScreen()
+      await screen.findByRole('combobox')
+
+      expect(screen.getByText('추적할 항목이 없습니다 — "컨텐츠 관리"에서 추가해주세요')).toBeInTheDocument()
+    })
+
+    it('자동 모드에서는 "컨텐츠 관리" 버튼이 렌더링되지 않는다', async () => {
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        selectedOcid: 'ocid-1',
+        characters: [
+          character({
+            ocid: 'ocid-1',
+            dailyContents: [
+              { name: '몬스터파크', kind: 'contents', isRegistered: true, nowCount: 7, maxCount: 14, questState: null },
+            ],
+          }),
+        ],
+      })
+
+      renderContentScreen()
+      await screen.findByRole('combobox')
+
+      expect(screen.queryByRole('button', { name: '컨텐츠 관리' })).not.toBeInTheDocument()
+    })
   })
 })

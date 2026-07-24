@@ -14,6 +14,13 @@ import { getCachedSchedulerState } from '../../storage/scheduler-cache'
 import type { BossDifficulty } from '../../types'
 import { compareByName } from '../onboarding/representative-character'
 import { useToastStore } from '../toast/store'
+import { seedManualTrackedContent } from '../tracking-mode/seed'
+import { useTrackingModeStore } from '../tracking-mode/store'
+import {
+  getManualTrackedContent,
+  setManualTrackedContent,
+  type ManualTrackedItem,
+} from '../../storage/manual-tracked-content'
 
 export interface BossCharacterView {
   ocid: string
@@ -39,6 +46,9 @@ export interface BossSchedulerState {
   // key: `${ocid}:${boss}:${difficulty}` (ADR-019 결정 3) — 맵에 키가 없으면 "미설정"(솔로)을
   // 뜻한다. 이 store는 없는 키를 1로 채워 넣지 않는다 — 그 해석은 UI의 책임이다.
   partySizes: Record<string, number>
+  // ADR-035: 수동 모드에서 캐릭터별 추적 항목(멤버십). 값 필드는 여기 두지 않고 표시 시점에
+  // characters의 동기화 값 또는 참조 테이블에서 조회한다(단일 진실 공급원, 결정 6).
+  manualTrackedByOcid: Record<string, ManualTrackedItem[]>
 }
 
 export interface BossSchedulerStore extends BossSchedulerState {
@@ -48,6 +58,8 @@ export interface BossSchedulerStore extends BossSchedulerState {
   selectCharacter(ocid: string): Promise<void>
   loadPartySizes(ocids: string[]): Promise<void>
   setPartySize(ocid: string, boss: string, difficulty: string, partySize: number): Promise<void>
+  addManualBoss(ocid: string, contentName: string, difficulty: string): Promise<void>
+  removeManualBoss(ocid: string, contentName: string, difficulty: string): Promise<void>
 }
 
 const initialState: BossSchedulerState = {
@@ -57,6 +69,7 @@ const initialState: BossSchedulerState = {
   trackedOcids: null,
   selectedOcid: null,
   partySizes: {},
+  manualTrackedByOcid: {},
 }
 
 export function partySizeKey(ocid: string, boss: string, difficulty: string): string {
@@ -103,6 +116,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
   },
 
   async saveTrackedOcids(ocids, onProgress) {
+    const previousOcids = get().trackedOcids ?? []
     try {
       await setTrackedCharacterOcids('boss', ocids)
     } catch {
@@ -110,6 +124,15 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
       return
     }
     set({ trackedOcids: ocids })
+
+    // ADR-035 결정 14(b): 수동 모드에서 새로 추적 목록에 추가된 캐릭터만 개별 시드한다.
+    // refresh보다 먼저 실행 — 화면의 저장 진행률 모달이 saveTrackedOcids 전체를 기다리므로
+    // 시드가 끝날 때까지 자연스럽게 로딩이 유지된다(결정 15).
+    if (useTrackingModeStore.getState().mode === 'manual') {
+      const newOcids = ocids.filter((ocid) => !previousOcids.includes(ocid))
+      await Promise.all(newOcids.map((ocid) => seedManualTrackedContent(ocid)))
+    }
+
     await get().refresh(ocids, onProgress)
     useToastStore.getState().showSuccess('캐릭터 정보를 모두 불러왔어요')
   },
@@ -119,6 +142,17 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
       set({ status: 'loaded', characters: [], error: null, partySizes: {} })
       return
     }
+
+    // ADR-035: 수동 모드에서만 캐릭터별 추적 항목(멤버십)을 읽어둔다 — 표시 목록이 이 멤버십으로
+    // 결정되기 때문. auto 모드는 등록 여부로 목록을 결정하므로 불필요한 읽기를 건너뛴다.
+    const manualMode = useTrackingModeStore.getState().mode === 'manual'
+    const manualTrackedByOcid: Record<string, ManualTrackedItem[]> = manualMode
+      ? Object.fromEntries(
+          await Promise.all(
+            ocids.map(async (ocid) => [ocid, await getManualTrackedContent(ocid)] as const),
+          ),
+        )
+      : {}
 
     // ADR-016: 캐시 우선 표시 — 재검증(fetch) 전에 마지막으로 성공한 캐시 값이 있으면
     // 그 값으로 먼저 채워 화면이 비지 않게 한다. 재검증 응답이 오면 그대로 덮어쓴다.
@@ -146,7 +180,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
       )
     ).filter((view): view is BossCharacterView => view !== null)
 
-    set({ status: 'loading', characters: await sortByCachedLevel(cachedCharacters) })
+    set({ status: 'loading', characters: await sortByCachedLevel(cachedCharacters), manualTrackedByOcid })
 
     // ADR-019: 파티 설정은 완료 여부·주차와 무관한 상시 데이터라 스케줄 동기화(캐시 우선 표시 →
     // 재검증)와 독립적이다 — 벌크 조회 한 번으로 충분하다. 독립적이므로 조회가 실패해도(예: SQLite
@@ -183,7 +217,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
       }
     })
 
-    set({ status: 'loaded', characters: await sortByCachedLevel(characters), error: null })
+    set({ status: 'loaded', characters: await sortByCachedLevel(characters), error: null, manualTrackedByOcid })
   },
 
   async selectCharacter(ocid) {
@@ -217,5 +251,32 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
       partySizes: { ...get().partySizes, [partySizeKey(ocid, boss, difficulty)]: partySize },
     })
     useToastStore.getState().showSuccess('파티원 수를 저장했어요')
+  },
+
+  // ADR-035 결정 3·6: 저장소(단일 진실 공급원)에서 현재 배열을 읽어 (보스, 난이도) 멤버십만
+  // 추가/삭제하고 다시 저장한 뒤 화면 상태를 갱신한다. 보스는 maxCount 개념이 없어 값 필드를
+  // 채우지 않는다(완료 여부는 표시 시점에 동기화 결과에서 조회).
+  async addManualBoss(ocid, contentName, difficulty) {
+    const current = await getManualTrackedContent(ocid)
+    if (
+      current.some(
+        (item) => item.kind === 'boss' && item.contentName === contentName && item.difficulty === difficulty,
+      )
+    ) {
+      return
+    }
+    const next: ManualTrackedItem[] = [...current, { contentName, kind: 'boss', difficulty }]
+    await setManualTrackedContent(ocid, next)
+    set((state) => ({ manualTrackedByOcid: { ...state.manualTrackedByOcid, [ocid]: next } }))
+  },
+
+  async removeManualBoss(ocid, contentName, difficulty) {
+    const current = await getManualTrackedContent(ocid)
+    const next = current.filter(
+      (item) =>
+        !(item.kind === 'boss' && item.contentName === contentName && item.difficulty === difficulty),
+    )
+    await setManualTrackedContent(ocid, next)
+    set((state) => ({ manualTrackedByOcid: { ...state.manualTrackedByOcid, [ocid]: next } }))
   },
 }))

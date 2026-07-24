@@ -14,11 +14,26 @@ import { MAPLE_LEAF_PATH } from '../../components/mapleLeafPath'
 import { ProgressModal } from '../../components/ProgressModal/ProgressModal'
 import { RefreshCw } from 'lucide-react'
 import { getCharacterPickerRoster } from '../../features/schedule-sync/schedule-sync'
+import { useNavigate } from 'react-router-dom'
 import { getDailyQuestRegionIconUrl } from '../../lib/daily-quest-icons'
 import { matchWeeklyRegionalQuestSlug } from '../../lib/weekly-regional-quest-matching'
+import { mergeManualContentList } from '../../lib/manual-content-merge'
+import { CONTENT_TEMPLATE } from '../../lib/scheduler-content-template'
+import { categorizeContentEntries, WEEKLY_CATEGORY_ORDER } from '../../lib/content-category'
 import { useContentSchedulerStore } from '../../features/content-scheduler/store'
+import { useTrackingModeStore } from '../../features/tracking-mode/store'
 
 type ContentTab = 'daily' | 'weekly'
+
+// ADR-035 결정 20: 수동 모드 표시 순서를 컨텐츠 관리 페이지와 동일하게 고정하려고, 템플릿을
+// 관리 페이지와 같은 categorizeContentEntries 평탄화 순서로 미리 정렬해 mergeManualContentList에
+// 넘긴다(일간은 첫 등장 순서, 주간은 WEEKLY_CATEGORY_ORDER). 캐릭터 무관 상수라 모듈 레벨에서 1회 계산.
+const ORDERED_DAILY_TEMPLATE = categorizeContentEntries(CONTENT_TEMPLATE.daily).flatMap((group) =>
+  group.items.map((item) => item.entry),
+)
+const ORDERED_WEEKLY_TEMPLATE = categorizeContentEntries(CONTENT_TEMPLATE.weekly, WEEKLY_CATEGORY_ORDER).flatMap(
+  (group) => group.items.map((item) => item.entry),
+)
 
 // "몬스터파크"만 배경+아이콘 카드로 확장한다 — 다른 kind: 'contents' 항목이 생기면 그때
 // 매핑 테이블로 일반화할지 재검토한다(현재는 인스턴스가 하나뿐이라 과설계 방지, ADR-020).
@@ -580,6 +595,91 @@ export function GuildFlagRaceCard(props: {
   )
 }
 
+// 카드 종류 분기를 한 곳으로 모은다. 카드 컴포넌트 자체는 그대로 재사용한다.
+function renderDailyContentCard(content: DailyContent): React.JSX.Element {
+  if (content.kind === 'quest') {
+    return <DailyQuestCard content={content} />
+  }
+
+  if (content.name === MONSTER_PARK_NAME) {
+    return <MonsterParkCard content={content} />
+  }
+
+  return (
+    <div className="rounded-[14px] bg-surface border border-border p-4 space-y-2">
+      <p className="text-sm text-text">
+        {content.name} · {content.nowCount}/{content.maxCount}
+      </p>
+      {content.maxCount > 0 && (
+        <div
+          role="progressbar"
+          aria-valuenow={content.nowCount}
+          aria-valuemin={0}
+          aria-valuemax={content.maxCount}
+          className="h-1.5 w-full rounded-full bg-surface-2 overflow-hidden"
+        >
+          <div
+            className="h-1.5 rounded-full bg-primary"
+            style={{ width: `${Math.min((content.nowCount / content.maxCount) * 100, 100)}%` }}
+          />
+        </div>
+      )}
+    </div>
+  )
+}
+
+function renderWeeklyContentCard(content: WeeklyContent): React.JSX.Element {
+  if (content.name === GUILD_UNDERGROUND_WATERWAY_NAME) {
+    return <GuildUndergroundWaterwayCard content={content} />
+  }
+
+  if (content.name === GUILD_MISSION_POINTS_NAME) {
+    return <GuildMissionPointsCard content={content} />
+  }
+
+  if (content.name === GUILD_FLAG_RACE_NAME) {
+    return <GuildFlagRaceCard content={content} />
+  }
+
+  if (content.name.startsWith(EPIC_DUNGEON_PREFIX)) {
+    return <EpicDungeonCard content={content} />
+  }
+
+  if (matchWeeklyRegionalQuestSlug(content.name) !== null) {
+    return <WeeklyRegionalContentCard content={content} />
+  }
+
+  if (content.name.startsWith(MAPLE_UNION_PREFIX)) {
+    return <MapleUnionDragonCard content={content} />
+  }
+
+  if (matchWeeklyQuestRegionSlug(stripWeeklyQuestPrefix(content.name)) !== null) {
+    return <WeeklyQuestCard content={content} />
+  }
+
+  return (
+    <div className="rounded-[14px] bg-surface border border-border p-4 space-y-2">
+      <p className="text-sm text-text">
+        {content.name} · {content.nowCount}/{content.maxCount}
+      </p>
+      {content.maxCount > 0 && (
+        <div
+          role="progressbar"
+          aria-valuenow={content.nowCount}
+          aria-valuemin={0}
+          aria-valuemax={content.maxCount}
+          className="h-1.5 w-full rounded-full bg-surface-2 overflow-hidden"
+        >
+          <div
+            className="h-1.5 rounded-full bg-primary"
+            style={{ width: `${Math.min((content.nowCount / content.maxCount) * 100, 100)}%` }}
+          />
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function ContentScreen(): React.JSX.Element {
   const {
     status,
@@ -587,11 +687,14 @@ export function ContentScreen(): React.JSX.Element {
     error,
     trackedOcids,
     selectedOcid,
+    manualTrackedByOcid,
     loadTrackedOcids,
     saveTrackedOcids,
     refresh,
     selectCharacter,
   } = useContentSchedulerStore()
+  const { mode } = useTrackingModeStore()
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<ContentTab>('daily')
   const [roster, setRoster] = useState<CharacterPickerEntry[]>([])
   const [isPickerOpen, setIsPickerOpen] = useState(false)
@@ -629,12 +732,33 @@ export function ContentScreen(): React.JSX.Element {
 
   const selected = characters.find((character) => character.ocid === effectiveSelectedOcid) ?? null
 
-  const registeredDailyContents =
-    selected !== null ? selected.dailyContents.filter((content) => content.isRegistered) : []
+  // ADR-035 결정 3·6·19: 수동 모드에서는 게임 등록 여부(isRegistered)가 아니라 사용자가 앱에서
+  // 관리하는 멤버십(manualTrackedContent)으로 표시 목록을 결정하고, 실제 값은 동기화 결과 또는
+  // 템플릿에서 즉석 조회한다(mergeManualContentList). 멤버십의 kind('daily'/'weekly')가 저장
+  // 시점에 확정돼 있어 각 탭은 자기 kind 항목만 그린다. auto 모드는 기존대로 등록 항목만 표시한다.
+  const manualItems = selected !== null ? (manualTrackedByOcid?.[selected.ocid] ?? []) : []
 
-  const weeklyContents = selected !== null ? selected.weeklyContents : []
+  const displayDailyContents: DailyContent[] =
+    selected === null
+      ? []
+      : mode === 'manual'
+        ? mergeManualContentList(
+            manualItems.filter((item) => item.kind === 'daily'),
+            selected.dailyContents,
+            ORDERED_DAILY_TEMPLATE,
+          )
+        : selected.dailyContents.filter((content) => content.isRegistered)
 
-  const registeredWeeklyContents = weeklyContents.filter((content) => content.isRegistered)
+  const displayWeeklyContents: WeeklyContent[] =
+    selected === null
+      ? []
+      : mode === 'manual'
+        ? (mergeManualContentList(
+            manualItems.filter((item) => item.kind === 'weekly'),
+            selected.weeklyContents,
+            ORDERED_WEEKLY_TEMPLATE,
+          ) as WeeklyContent[])
+        : selected.weeklyContents.filter((content) => content.isRegistered)
 
   async function handleSaveTracking(ocids: string[]): Promise<void> {
     setSaveProgress({ completed: 0, total: ocids.length })
@@ -654,6 +778,17 @@ export function ContentScreen(): React.JSX.Element {
       className="text-sm font-medium text-text-muted hover:text-text"
     >
       캐릭터 관리
+    </button>
+  )
+
+  // ADR-035 결정 18: 수동 모드의 추적 항목 편집은 이 화면이 아니라 전용 관리 페이지에서 한다.
+  const manualManageButton = mode === 'manual' && (
+    <button
+      type="button"
+      onClick={() => navigate('/content/manage')}
+      className="text-sm font-medium text-text-muted hover:text-text"
+    >
+      컨텐츠 관리
     </button>
   )
 
@@ -727,7 +862,10 @@ export function ContentScreen(): React.JSX.Element {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h1 className="text-lg font-semibold text-text">컨텐츠 스케줄러</h1>
-            {characterManageButton}
+            <div className="flex items-center gap-4">
+              {manualManageButton}
+              {characterManageButton}
+            </div>
           </div>
 
           <div className="space-y-1">
@@ -825,56 +963,19 @@ export function ContentScreen(): React.JSX.Element {
         <div className="space-y-4 px-4 pb-4">
           {activeTab === 'daily' && (
             <>
-              {registeredDailyContents.length === 0 && !selected.isStale && (
+              {displayDailyContents.length === 0 && (mode === 'manual' || !selected.isStale) && (
                 <div className="rounded-[14px] border border-dashed border-border p-4 text-sm text-text-muted">
-                  표시할 항목이 없습니다 — 게임에서 스케줄러에 등록해주세요
+                  {mode === 'manual'
+                    ? '추적할 항목이 없습니다 — "컨텐츠 관리"에서 추가해주세요'
+                    : '표시할 항목이 없습니다 — 게임에서 스케줄러에 등록해주세요'}
                 </div>
               )}
 
-              {registeredDailyContents.length > 0 && (
+              {displayDailyContents.length > 0 && (
                 <ul className="space-y-2">
-                  {registeredDailyContents.map((content) => {
-                    if (content.kind === 'quest') {
-                      return (
-                        <li key={content.name}>
-                          <DailyQuestCard content={content} />
-                        </li>
-                      )
-                    }
-
-                    if (content.name === MONSTER_PARK_NAME) {
-                      return (
-                        <li key={content.name}>
-                          <MonsterParkCard content={content} />
-                        </li>
-                      )
-                    }
-
-                    return (
-                      <li
-                        key={content.name}
-                        className="rounded-[14px] bg-surface border border-border p-4 space-y-2"
-                      >
-                        <p className="text-sm text-text">
-                          {content.name} · {content.nowCount}/{content.maxCount}
-                        </p>
-                        {content.maxCount > 0 && (
-                          <div
-                            role="progressbar"
-                            aria-valuenow={content.nowCount}
-                            aria-valuemin={0}
-                            aria-valuemax={content.maxCount}
-                            className="h-1.5 w-full rounded-full bg-surface-2 overflow-hidden"
-                          >
-                            <div
-                              className="h-1.5 rounded-full bg-primary"
-                              style={{ width: `${Math.min((content.nowCount / content.maxCount) * 100, 100)}%` }}
-                            />
-                          </div>
-                        )}
-                      </li>
-                    )
-                  })}
+                  {displayDailyContents.map((content) => (
+                    <li key={content.name}>{renderDailyContentCard(content)}</li>
+                  ))}
                 </ul>
               )}
             </>
@@ -882,96 +983,19 @@ export function ContentScreen(): React.JSX.Element {
 
           {activeTab === 'weekly' && (
             <>
-              {registeredWeeklyContents.length === 0 && !selected.isStale && (
+              {displayWeeklyContents.length === 0 && (mode === 'manual' || !selected.isStale) && (
                 <div className="rounded-[14px] border border-dashed border-border p-4 text-sm text-text-muted">
-                  표시할 항목이 없습니다 — 게임에서 스케줄러에 등록해주세요
+                  {mode === 'manual'
+                    ? '추적할 항목이 없습니다 — "컨텐츠 관리"에서 추가해주세요'
+                    : '표시할 항목이 없습니다 — 게임에서 스케줄러에 등록해주세요'}
                 </div>
               )}
 
-              {registeredWeeklyContents.length > 0 && (
+              {displayWeeklyContents.length > 0 && (
                 <ul className="space-y-2">
-                  {registeredWeeklyContents.map((content) => {
-                    if (content.name === GUILD_UNDERGROUND_WATERWAY_NAME) {
-                      return (
-                        <li key={content.name}>
-                          <GuildUndergroundWaterwayCard content={content} />
-                        </li>
-                      )
-                    }
-
-                    if (content.name === GUILD_MISSION_POINTS_NAME) {
-                      return (
-                        <li key={content.name}>
-                          <GuildMissionPointsCard content={content} />
-                        </li>
-                      )
-                    }
-
-                    if (content.name === GUILD_FLAG_RACE_NAME) {
-                      return (
-                        <li key={content.name}>
-                          <GuildFlagRaceCard content={content} />
-                        </li>
-                      )
-                    }
-
-                    if (content.name.startsWith(EPIC_DUNGEON_PREFIX)) {
-                      return (
-                        <li key={content.name}>
-                          <EpicDungeonCard content={content} />
-                        </li>
-                      )
-                    }
-
-                    if (matchWeeklyRegionalQuestSlug(content.name) !== null) {
-                      return (
-                        <li key={content.name}>
-                          <WeeklyRegionalContentCard content={content} />
-                        </li>
-                      )
-                    }
-
-                    if (content.name.startsWith(MAPLE_UNION_PREFIX)) {
-                      return (
-                        <li key={content.name}>
-                          <MapleUnionDragonCard content={content} />
-                        </li>
-                      )
-                    }
-
-                    if (matchWeeklyQuestRegionSlug(stripWeeklyQuestPrefix(content.name)) !== null) {
-                      return (
-                        <li key={content.name}>
-                          <WeeklyQuestCard content={content} />
-                        </li>
-                      )
-                    }
-
-                    return (
-                      <li
-                        key={content.name}
-                        className="rounded-[14px] bg-surface border border-border p-4 space-y-2"
-                      >
-                        <p className="text-sm text-text">
-                          {content.name} · {content.nowCount}/{content.maxCount}
-                        </p>
-                        {content.maxCount > 0 && (
-                          <div
-                            role="progressbar"
-                            aria-valuenow={content.nowCount}
-                            aria-valuemin={0}
-                            aria-valuemax={content.maxCount}
-                            className="h-1.5 w-full rounded-full bg-surface-2 overflow-hidden"
-                          >
-                            <div
-                              className="h-1.5 rounded-full bg-primary"
-                              style={{ width: `${Math.min((content.nowCount / content.maxCount) * 100, 100)}%` }}
-                            />
-                          </div>
-                        )}
-                      </li>
-                    )
-                  })}
+                  {displayWeeklyContents.map((content) => (
+                    <li key={content.name}>{renderWeeklyContentCard(content)}</li>
+                  ))}
                 </ul>
               )}
             </>

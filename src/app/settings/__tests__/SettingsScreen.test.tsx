@@ -7,6 +7,7 @@ import { SettingsScreen } from '../SettingsScreen'
 import { useSettingsStore } from '../../../features/settings/store'
 import { useThemeStore } from '../../../features/theme/store'
 import { useLiveUpdateStore } from '../../../features/live-update/store'
+import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 
 vi.mock('../../../features/settings/store', () => ({
   useSettingsStore: vi.fn(),
@@ -20,6 +21,10 @@ vi.mock('../../../features/live-update/store', () => ({
   useLiveUpdateStore: vi.fn(),
 }))
 
+vi.mock('../../../features/tracking-mode/store', () => ({
+  useTrackingModeStore: vi.fn(),
+}))
+
 // CacheDataSection이 마운트 시 실제 Preferences/SQLite를 호출하지 않도록 막는다.
 vi.mock('../../../storage/cache-data', () => ({
   clearCacheData: vi.fn(),
@@ -29,6 +34,7 @@ vi.mock('../../../storage/cache-data', () => ({
 const mockedUseSettingsStore = vi.mocked(useSettingsStore)
 const mockedUseThemeStore = vi.mocked(useThemeStore)
 const mockedUseLiveUpdateStore = vi.mocked(useLiveUpdateStore)
+const mockedUseTrackingModeStore = vi.mocked(useTrackingModeStore)
 
 function mockSettingsStore(overrides: Partial<ReturnType<typeof useSettingsStore>>): void {
   mockedUseSettingsStore.mockReturnValue({
@@ -50,6 +56,15 @@ function mockThemeStore(overrides: Partial<ReturnType<typeof useThemeStore>>): v
     theme: '렌',
     restoreFromStorage: vi.fn(),
     selectTheme: vi.fn(),
+    ...overrides,
+  })
+}
+
+function mockTrackingModeStore(overrides: Partial<ReturnType<typeof useTrackingModeStore>> = {}): void {
+  mockedUseTrackingModeStore.mockReturnValue({
+    mode: 'auto',
+    restoreFromStorage: vi.fn(),
+    setMode: vi.fn(),
     ...overrides,
   })
 }
@@ -78,6 +93,7 @@ function mockLiveUpdateStore(): void {
 
 beforeEach(() => {
   mockLiveUpdateStore()
+  mockTrackingModeStore()
 })
 
 afterEach(() => {
@@ -86,16 +102,31 @@ afterEach(() => {
 })
 
 describe('SettingsScreen', () => {
-  it('API 키 재입력/계정 변경/테마/연결 해제 4개 행을 렌더링한다', () => {
+  it('계정 변경/스케줄 관리 방법/테마/연결 해제 행을 렌더링하고, API 키 재입력은 렌더링하지 않는다', () => {
     mockSettingsStore({})
     mockThemeStore({})
 
     render(<SettingsScreen />)
 
-    expect(screen.getByRole('button', { name: /API 키 재입력/ })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /계정 변경/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /스케줄 관리 방법/ })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /테마/ })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /연결 해제/ })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /API 키 재입력/ })).not.toBeInTheDocument()
+  })
+
+  it('"데이터 관리" 섹션을 "앱 업데이트" 섹션보다 위에 렌더링한다', () => {
+    mockSettingsStore({})
+    mockThemeStore({})
+
+    render(<SettingsScreen />)
+
+    const dataHeading = screen.getByRole('heading', { name: '데이터 관리' })
+    const updateHeading = screen.getByRole('heading', { name: '앱 업데이트' })
+
+    expect(
+      dataHeading.compareDocumentPosition(updateHeading) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
   })
 
   it('"캐시 데이터 삭제" 행을 렌더링한다', () => {
@@ -114,17 +145,6 @@ describe('SettingsScreen', () => {
     render(<SettingsScreen />)
 
     expect(within(screen.getByRole('button', { name: /테마/ })).getByText('레테')).toBeInTheDocument()
-  })
-
-  it('"API 키 재입력" 클릭 시 API 키 입력 모달이 열린다', async () => {
-    const user = userEvent.setup()
-    mockSettingsStore({})
-    mockThemeStore({})
-
-    render(<SettingsScreen />)
-    await user.click(screen.getByRole('button', { name: /API 키 재입력/ }))
-
-    expect(screen.getByLabelText(/API 키/)).toBeInTheDocument()
   })
 
   it('"계정 변경" 클릭 시 계정 모달이 열리고 refreshAccounts가 호출된다', async () => {
@@ -150,6 +170,29 @@ describe('SettingsScreen', () => {
 
     expect(screen.getByTestId('theme-modal-overlay')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '레테' })).toBeInTheDocument()
+  })
+
+  it('"스케줄 관리 방법" 행에 현재 모드 라벨이 표시된다', () => {
+    mockSettingsStore({})
+    mockThemeStore({})
+    mockTrackingModeStore({ mode: 'manual' })
+
+    render(<SettingsScreen />)
+
+    expect(
+      within(screen.getByRole('button', { name: /스케줄 관리 방법/ })).getByText('수동'),
+    ).toBeInTheDocument()
+  })
+
+  it('"스케줄 관리 방법" 클릭 시 트래킹 모드 모달이 열린다', async () => {
+    const user = userEvent.setup()
+    mockSettingsStore({})
+    mockThemeStore({})
+
+    render(<SettingsScreen />)
+    await user.click(screen.getByRole('button', { name: /스케줄 관리 방법/ }))
+
+    expect(screen.getByTestId('tracking-mode-modal-overlay')).toBeInTheDocument()
   })
 
   it('"연결 해제" 클릭 시 확인 모달이 열리고, 확인 클릭 시 disconnect가 호출된다', async () => {
