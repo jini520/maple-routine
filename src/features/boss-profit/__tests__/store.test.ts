@@ -418,6 +418,27 @@ describe('useBossProfitStore', () => {
     expect(cacheFirstOrder).toEqual(['ocid-2', 'ocid-1']) // 레벨 내림차순(ocid-2가 250으로 더 높음)
   })
 
+  it('한 캐릭터 안의 보스 순서는 소스 순서와 무관하게 weekly-bosses.json 정규 순서로 고정된다(ADR-036, #28)', async () => {
+    // 소스(bossContents)는 참조 순서와 어긋나게 뒤섞어 공급한다 — 루시드(10) → 자쿰(0) → 스우(7).
+    // 최종 rows는 항상 weekly-bosses.json 순서(자쿰 → 스우 → 루시드)여야 한다.
+    syncSchedulesMock.mockResolvedValue([
+      syncResult({
+        state: {
+          ...syncResult().state!,
+          bossContents: [
+            bossContent({ name: '루시드', difficulty: '노멀', isComplete: true }),
+            bossContent({ name: '자쿰', difficulty: '카오스', isComplete: true }),
+            bossContent({ name: '스우', difficulty: '노멀', isComplete: true }),
+          ],
+        },
+      }),
+    ])
+
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+
+    expect(useBossProfitStore.getState().rows.map((row) => row.boss)).toEqual(['자쿰', '스우', '루시드'])
+  })
+
   it('특정 캐릭터의 동기화 결과가 isStale이면 staleCharacterNames에 그 캐릭터명이 포함된다', async () => {
     syncSchedulesMock.mockResolvedValue([syncResult({ characterName: '캐릭터1', isStale: true })])
 

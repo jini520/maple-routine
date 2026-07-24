@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { DEFAULT_MAX_PARTY_SIZE, findPriceEntry } from '../../lib/boss-crystal-prices'
-import { matchBossContent, selectBossProfitBosses, type MatchedBoss } from '../../lib/boss-matching'
+import { getBossReferenceOrder, matchBossContent, selectBossProfitBosses, type MatchedBoss } from '../../lib/boss-matching'
 import { mergeManualBossList } from '../../lib/manual-boss-merge'
 import {
   formatBossProfitPeriodLabel,
@@ -22,7 +22,7 @@ import { getTrackedCharacterOcids } from '../../storage/character-selection'
 import { getManualTrackedContent, type ManualTrackedItem } from '../../storage/manual-tracked-content'
 import { getCachedSchedulerState } from '../../storage/scheduler-cache'
 import { getTrackingMode, type TrackingMode } from '../../storage/tracking-mode'
-import type { BossContent, BossCycle, BossDifficulty } from '../../types'
+import { BOSS_DIFFICULTIES, type BossContent, type BossCycle, type BossDifficulty } from '../../types'
 import { compareByName } from '../onboarding/representative-character'
 import { syncSchedules, type ScheduleSyncError } from '../schedule-sync/schedule-sync'
 
@@ -139,11 +139,28 @@ async function getSortedCharacterInfo(ocids: string[]): Promise<SortedCharacterI
     .map(({ ocid, imageUrl }) => ({ ocid, imageUrl }))
 }
 
-// rows(보스 단위, 캐릭터당 여러 개)를 sortedOcids가 정한 캐릭터 순서로 재배열한다. Array#sort는
-// stable이라 같은 캐릭터 안에서의 보스 행 순서는 그대로 유지된다.
+// rows(보스 단위, 캐릭터당 여러 개)를 sortedOcids가 정한 캐릭터 순서로 재배열하고, 같은 캐릭터
+// 안에서는 weekly-bosses.json 정규 순서(REFERENCE_ENTRIES: weekly → eventWeekly → monthly)로
+// 결정적으로 정렬한다([[ADR-036]], #28). 예전에는 캐릭터 순위(ocid)로만 정렬하고 stable sort에
+// 의존해 보스 순서를 데이터 소스가 만든 순서 그대로 물려받았는데, 그 소스 순서가 비결정적이라
+// (특히 ORDER BY 없는 getBossProfitRecords, 캐시/라이브 Map 삽입 순서) 로드/렌더마다 보스 순서가
+// 달라졌다. 모든 행 경로가 이 함수를 거치므로 여기서 2차 정렬 키를 부여하면 세 경로가 전부 같은
+// 순서로 고정된다. 참조에 없는 보스(매칭 실패 원문명, [[ADR-008]])는 맨 뒤로, 같은 보스의 여러
+// 난이도는 BOSS_DIFFICULTIES 순서로, 그래도 동률이면 보스명으로 완전 결정한다.
 function sortRowsByOcidOrder(rows: BossProfitRow[], sortedOcids: string[]): BossProfitRow[] {
   const rank = new Map(sortedOcids.map((ocid, index) => [ocid, index]))
-  return [...rows].sort((a, b) => (rank.get(a.ocid) ?? Number.MAX_SAFE_INTEGER) - (rank.get(b.ocid) ?? Number.MAX_SAFE_INTEGER))
+  const ocidRank = (ocid: string): number => rank.get(ocid) ?? Number.MAX_SAFE_INTEGER
+  return [...rows].sort((a, b) => {
+    const rankDiff = ocidRank(a.ocid) - ocidRank(b.ocid)
+    if (rankDiff !== 0) return rankDiff
+    // 순위가 같은데 ocid가 다르면(둘 다 sortedOcids 밖인 예외) 캐릭터끼리 섞이지 않게 ocid로 묶는다.
+    if (a.ocid !== b.ocid) return a.ocid < b.ocid ? -1 : 1
+    const bossDiff = getBossReferenceOrder(a.boss) - getBossReferenceOrder(b.boss)
+    if (bossDiff !== 0) return bossDiff
+    const difficultyDiff = BOSS_DIFFICULTIES.indexOf(a.difficulty) - BOSS_DIFFICULTIES.indexOf(b.difficulty)
+    if (difficultyDiff !== 0) return difficultyDiff
+    return a.boss < b.boss ? -1 : a.boss > b.boss ? 1 : 0
+  })
 }
 
 function buildBossProfitRow(

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { BossContent } from '../../types'
 import {
   countClearedWeeklyBosses,
+  getBossReferenceOrder,
   matchBossContent,
   selectBossProfitBosses,
   selectDisplayBosses,
@@ -269,5 +270,27 @@ describe('selectBossProfitBosses (ADR-032)', () => {
     const placeholder = matchedBoss({ apiName: '자쿰', isRegistered: true, isComplete: false, ownComplete: false })
 
     expect(selectBossProfitBosses([registeredEasy, actualNormal, placeholder])).toEqual([actualNormal, placeholder])
+  })
+})
+
+// ADR-036: weekly-bosses.json 정규 순서(REFERENCE_ENTRIES: weekly → eventWeekly → monthly) 인덱스.
+// 보스 수익 페이지·보스 관리(수동 병합)가 캐릭터 내부/추적 목록 보스 순서를 데이터 소스 순서에
+// 의존하지 않고 이 정규 순서로 고정하기 위한 공용 정렬 키다.
+describe('getBossReferenceOrder', () => {
+  it('weekly-bosses.json 나열 순서대로 오름차순 인덱스를 부여한다(자쿰 < 매그너스 < 스우 < 루시드)', () => {
+    expect(getBossReferenceOrder('자쿰')).toBe(0)
+    expect(getBossReferenceOrder('자쿰')).toBeLessThan(getBossReferenceOrder('매그너스'))
+    expect(getBossReferenceOrder('매그너스')).toBeLessThan(getBossReferenceOrder('스우'))
+    expect(getBossReferenceOrder('스우')).toBeLessThan(getBossReferenceOrder('루시드'))
+  })
+
+  it('eventWeekly(시즌 보스 메이린)는 weekly 뒤, monthly(검은마법사)는 맨 뒤에 온다', () => {
+    expect(getBossReferenceOrder('카링')).toBeLessThan(getBossReferenceOrder('시즌 보스 메이린'))
+    expect(getBossReferenceOrder('시즌 보스 메이린')).toBeLessThan(getBossReferenceOrder('검은마법사'))
+  })
+
+  it('참조 목록에 없는 보스(매칭 실패 원문명)는 Number.MAX_SAFE_INTEGER로 맨 뒤로 보낸다', () => {
+    expect(getBossReferenceOrder('알 수 없는 보스')).toBe(Number.MAX_SAFE_INTEGER)
+    expect(getBossReferenceOrder('검은마법사')).toBeLessThan(getBossReferenceOrder('알 수 없는 보스'))
   })
 })
