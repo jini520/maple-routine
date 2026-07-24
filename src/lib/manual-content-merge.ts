@@ -23,7 +23,8 @@ function parseQuestState(raw: '0' | '1' | '2' | null): 0 | 1 | 2 | null {
 // 동기화 결과(synced) 또는 그것이 없으면 템플릿 기본값에서 즉석 조회한다 — 값을 멤버십에
 // 복제하지 않아 모드 전환/재동기화 시 값이 어긋나지 않는다.
 //
-// - tracked: kind === 'content'인 manualTrackedContent 항목만 넘긴다(호출부에서 필터링).
+// - tracked: 해당 탭의 kind('daily' 또는 'weekly')인 manualTrackedContent 항목만 넘긴다
+//   (호출부에서 필터링, ADR-035 결정 19 — 일간/주간 구분은 저장 시점에 확정돼 있다).
 // - synced: 이 캐릭터의 dailyContents 또는 weeklyContents(schedulerCache 기반 최신 동기화 결과).
 // - template: scheduler-content-template.json의 daily 또는 weekly 배열(캐릭터 무관 default).
 // 반환 순서는 tracked 배열 순서를 그대로 따른다(사용자가 추가한 순서 유지).

@@ -32,8 +32,9 @@ beforeEach(async () => {
 })
 
 const SAMPLE_ITEMS: ManualTrackedItem[] = [
-  { contentName: '몬스터파크', kind: 'content', maxCount: 14 },
-  { contentName: '[일일 퀘스트] 소멸의 여로 조사', kind: 'content' },
+  { contentName: '몬스터파크', kind: 'daily', maxCount: 14 },
+  { contentName: '[일일 퀘스트] 소멸의 여로 조사', kind: 'daily' },
+  { contentName: '무릉도장', kind: 'weekly' },
   { contentName: '검은 마법사', kind: 'boss', difficulty: 'extreme' },
 ]
 
@@ -51,7 +52,7 @@ describe('round-trip', () => {
 
   it('전체 교체 방식이라 다시 저장하면 이전 배열을 완전히 덮어쓴다', async () => {
     await setManualTrackedContent('ocid-1', SAMPLE_ITEMS)
-    const replaced: ManualTrackedItem[] = [{ contentName: '무릉도장', kind: 'content' }]
+    const replaced: ManualTrackedItem[] = [{ contentName: '무릉도장', kind: 'weekly' }]
     await setManualTrackedContent('ocid-1', replaced)
     await expect(getManualTrackedContent('ocid-1')).resolves.toEqual(replaced)
   })
@@ -70,11 +71,44 @@ describe('ocid 독립성', () => {
   })
 
   it('서로 다른 ocid는 서로 다른 배열을 독립적으로 저장한다', async () => {
-    const other: ManualTrackedItem[] = [{ contentName: '에르다 스펙트럼', kind: 'content', maxCount: 1 }]
+    const other: ManualTrackedItem[] = [{ contentName: '에르다 스펙트럼', kind: 'weekly', maxCount: 1 }]
     await setManualTrackedContent('ocid-1', SAMPLE_ITEMS)
     await setManualTrackedContent('ocid-2', other)
     await expect(getManualTrackedContent('ocid-1')).resolves.toEqual(SAMPLE_ITEMS)
     await expect(getManualTrackedContent('ocid-2')).resolves.toEqual(other)
+  })
+})
+
+describe('레거시 kind 마이그레이션 (ADR-035 결정 19)', () => {
+  it("결정 19 이전의 kind: 'content' 항목은 템플릿 조회로 daily/weekly로 재분류된다", async () => {
+    await Preferences.set({
+      key: 'manualTrackedContent:ocid-1',
+      value: JSON.stringify([
+        { contentName: '몬스터파크', kind: 'content', maxCount: 14 },
+        { contentName: '무릉도장', kind: 'content' },
+        { contentName: '루시드', kind: 'boss', difficulty: '이지' },
+      ]),
+    })
+
+    await expect(getManualTrackedContent('ocid-1')).resolves.toEqual([
+      { contentName: '몬스터파크', kind: 'daily', maxCount: 14 },
+      { contentName: '무릉도장', kind: 'weekly' },
+      { contentName: '루시드', kind: 'boss', difficulty: '이지' },
+    ])
+  })
+
+  it("템플릿에 없는 레거시 'content' 항목은 목록에서 제외된다 (결정 11 일관 적용)", async () => {
+    await Preferences.set({
+      key: 'manualTrackedContent:ocid-1',
+      value: JSON.stringify([
+        { contentName: '템플릿에 없는 콘텐츠', kind: 'content' },
+        { contentName: '몬스터파크', kind: 'content' },
+      ]),
+    })
+
+    await expect(getManualTrackedContent('ocid-1')).resolves.toEqual([
+      { contentName: '몬스터파크', kind: 'daily' },
+    ])
   })
 })
 

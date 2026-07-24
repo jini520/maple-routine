@@ -68,11 +68,14 @@ beforeEach(() => {
 })
 
 describe('seedManualTrackedContent', () => {
-  it('최신 동기화 결과에서 등록된(isRegistered) 항목만 멤버십으로 저장한다', async () => {
+  it('최신 동기화 결과에서 등록된(isRegistered) 항목만 일간/주간 구분과 함께 저장한다', async () => {
     vi.mocked(syncSchedules).mockResolvedValue([
       buildSyncResult(
         buildState({
-          dailyContents: [buildDaily('몬스터파크', true), buildDaily('소멸의 여로 조사', false)],
+          dailyContents: [
+            buildDaily('몬스터파크', true),
+            buildDaily('[일일 퀘스트] 소멸의 여로 조사', false),
+          ],
           weeklyContents: [
             buildWeekly('에르다 스펙트럼', true),
             buildWeekly('무릉도장', false),
@@ -86,9 +89,43 @@ describe('seedManualTrackedContent', () => {
 
     expect(syncSchedules).toHaveBeenCalledWith([OCID])
     expect(setManualTrackedContent).toHaveBeenCalledWith(OCID, [
-      { contentName: '몬스터파크', kind: 'content' },
-      { contentName: '에르다 스펙트럼', kind: 'content' },
+      { contentName: '몬스터파크', kind: 'daily' },
+      { contentName: '에르다 스펙트럼', kind: 'weekly' },
       { contentName: '루시드', difficulty: '이지', kind: 'boss' },
+    ])
+  })
+
+  it('템플릿에 없는 컨텐츠는 등록돼 있어도 시드에서 제외한다 (ADR-035 결정 19)', async () => {
+    vi.mocked(syncSchedules).mockResolvedValue([
+      buildSyncResult(
+        buildState({
+          dailyContents: [buildDaily('템플릿에 없는 이벤트 콘텐츠', true), buildDaily('몬스터파크', true)],
+          weeklyContents: [buildWeekly('알 수 없는 주간 콘텐츠', true)],
+        }),
+      ),
+    ])
+
+    await seedManualTrackedContent(OCID)
+
+    expect(setManualTrackedContent).toHaveBeenCalledWith(OCID, [
+      { contentName: '몬스터파크', kind: 'daily' },
+    ])
+  })
+
+  it('보스는 API 원문명이 아니라 matchBossContent 정규화 명으로 저장한다 (ADR-035 결정 19)', async () => {
+    vi.mocked(syncSchedules).mockResolvedValue([
+      buildSyncResult(
+        buildState({
+          // API가 공백 없이 내려주는 케이스 — 우리 데이터 이름은 "선택받은 세렌"
+          bossContents: [buildBoss('선택받은세렌', '하드', true)],
+        }),
+      ),
+    ])
+
+    await seedManualTrackedContent(OCID)
+
+    expect(setManualTrackedContent).toHaveBeenCalledWith(OCID, [
+      { contentName: '선택받은 세렌', difficulty: '하드', kind: 'boss' },
     ])
   })
 

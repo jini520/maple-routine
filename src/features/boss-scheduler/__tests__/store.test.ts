@@ -598,19 +598,19 @@ describe('useBossSchedulerStore', () => {
       getManualTrackedContentMock.mockResolvedValue([
         { contentName: '루시드', kind: 'boss', difficulty: '이지' },
         { contentName: '루시드', kind: 'boss', difficulty: '하드' },
-        { contentName: '루시드', kind: 'content' },
+        { contentName: '무릉도장', kind: 'weekly' },
       ])
 
       await useBossSchedulerStore.getState().removeManualBoss('ocid-1', '루시드', '이지')
 
       expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', [
         { contentName: '루시드', kind: 'boss', difficulty: '하드' },
-        { contentName: '루시드', kind: 'content' },
+        { contentName: '무릉도장', kind: 'weekly' },
       ])
       expect(useBossSchedulerStore.getState().manualTrackedByOcid).toEqual({
         'ocid-1': [
           { contentName: '루시드', kind: 'boss', difficulty: '하드' },
-          { contentName: '루시드', kind: 'content' },
+          { contentName: '무릉도장', kind: 'weekly' },
         ],
       })
     })

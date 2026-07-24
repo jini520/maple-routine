@@ -64,8 +64,8 @@ export interface ContentSchedulerStore extends ContentSchedulerState {
   saveTrackedOcids(ocids: string[], onProgress?: (completed: number, total: number) => void): Promise<void>
   refresh(ocids: string[], onProgress?: (completed: number, total: number) => void): Promise<void>
   selectCharacter(ocid: string): Promise<void>
-  addManualContent(ocid: string, contentName: string): Promise<void>
-  removeManualContent(ocid: string, contentName: string): Promise<void>
+  addManualContent(ocid: string, contentName: string, kind: 'daily' | 'weekly'): Promise<void>
+  removeManualContent(ocid: string, contentName: string, kind: 'daily' | 'weekly'): Promise<void>
 }
 
 const initialState: ContentSchedulerState = {
@@ -209,24 +209,25 @@ export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, ge
     await setLastSelectedCharacter('content', ocid)
   },
 
-  // ADR-035 결정 3·6: 저장소(단일 진실 공급원)에서 현재 배열을 읽어 멤버십만 추가/삭제하고
+  // ADR-035 결정 3·6·19: 저장소(단일 진실 공급원)에서 현재 배열을 읽어 멤버십만 추가/삭제하고
   // 다시 저장한 뒤 화면 상태를 갱신한다. 값 필드는 저장하지 않는다(max_count는 템플릿 확정값 복사).
-  async addManualContent(ocid, contentName) {
+  // kind('daily'/'weekly')는 호출부(관리 페이지의 현재 탭)가 확정해 넘긴다 — 표시 시점 추론 없음.
+  async addManualContent(ocid, contentName, kind) {
     const current = await getManualTrackedContent(ocid)
-    if (current.some((item) => item.kind === 'content' && item.contentName === contentName)) {
+    if (current.some((item) => item.kind === kind && item.contentName === contentName)) {
       return
     }
     const next: ManualTrackedItem[] = [
       ...current,
-      { contentName, kind: 'content', maxCount: templateMaxCount(contentName) },
+      { contentName, kind, maxCount: templateMaxCount(contentName) },
     ]
     await setManualTrackedContent(ocid, next)
     set((state) => ({ manualTrackedByOcid: { ...state.manualTrackedByOcid, [ocid]: next } }))
   },
 
-  async removeManualContent(ocid, contentName) {
+  async removeManualContent(ocid, contentName, kind) {
     const current = await getManualTrackedContent(ocid)
-    const next = current.filter((item) => !(item.kind === 'content' && item.contentName === contentName))
+    const next = current.filter((item) => !(item.kind === kind && item.contentName === contentName))
     await setManualTrackedContent(ocid, next)
     set((state) => ({ manualTrackedByOcid: { ...state.manualTrackedByOcid, [ocid]: next } }))
   },

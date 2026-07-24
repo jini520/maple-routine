@@ -422,14 +422,14 @@ describe('useContentSchedulerStore', () => {
       trackingModeStateMock.mode = 'manual'
       syncSchedulesMock.mockResolvedValue([syncResult({ ocid: 'ocid-1' })])
       getManualTrackedContentMock.mockImplementation(async (ocid: string) =>
-        ocid === 'ocid-1' ? [{ contentName: '몬스터파크', kind: 'content' }] : [],
+        ocid === 'ocid-1' ? [{ contentName: '몬스터파크', kind: 'daily' }] : [],
       )
 
       await useContentSchedulerStore.getState().refresh(['ocid-1'])
 
       expect(getManualTrackedContentMock).toHaveBeenCalledWith('ocid-1')
       expect(useContentSchedulerStore.getState().manualTrackedByOcid).toEqual({
-        'ocid-1': [{ contentName: '몬스터파크', kind: 'content' }],
+        'ocid-1': [{ contentName: '몬스터파크', kind: 'daily' }],
       })
     })
 
@@ -442,44 +442,44 @@ describe('useContentSchedulerStore', () => {
       expect(useContentSchedulerStore.getState().manualTrackedByOcid).toEqual({})
     })
 
-    it('addManualContent는 저장소에 멤버십과 템플릿 max_count를 저장하고 상태를 갱신한다', async () => {
+    it('addManualContent는 저장소에 멤버십(kind 포함)과 템플릿 max_count를 저장하고 상태를 갱신한다', async () => {
       getManualTrackedContentMock.mockResolvedValue([])
 
-      await useContentSchedulerStore.getState().addManualContent('ocid-1', '몬스터파크')
+      await useContentSchedulerStore.getState().addManualContent('ocid-1', '몬스터파크', 'daily')
 
       // '몬스터파크'는 scheduler-content-template.json daily에 max_count 14로 있다
       expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', [
-        { contentName: '몬스터파크', kind: 'content', maxCount: 14 },
+        { contentName: '몬스터파크', kind: 'daily', maxCount: 14 },
       ])
       expect(useContentSchedulerStore.getState().manualTrackedByOcid).toEqual({
-        'ocid-1': [{ contentName: '몬스터파크', kind: 'content', maxCount: 14 }],
+        'ocid-1': [{ contentName: '몬스터파크', kind: 'daily', maxCount: 14 }],
       })
     })
 
     it('addManualContent는 이미 추적 중인 콘텐츠면 중복 추가하지 않는다', async () => {
-      getManualTrackedContentMock.mockResolvedValue([{ contentName: '몬스터파크', kind: 'content', maxCount: 14 }])
+      getManualTrackedContentMock.mockResolvedValue([{ contentName: '몬스터파크', kind: 'daily', maxCount: 14 }])
 
-      await useContentSchedulerStore.getState().addManualContent('ocid-1', '몬스터파크')
+      await useContentSchedulerStore.getState().addManualContent('ocid-1', '몬스터파크', 'daily')
 
       expect(setManualTrackedContentMock).not.toHaveBeenCalled()
     })
 
-    it('removeManualContent는 해당 콘텐츠 항목만 제거하고 다른 kind(boss)·다른 이름은 보존한다', async () => {
+    it('removeManualContent는 해당 (kind, 이름) 항목만 제거하고 다른 kind(boss)·다른 이름은 보존한다', async () => {
       getManualTrackedContentMock.mockResolvedValue([
-        { contentName: '몬스터파크', kind: 'content', maxCount: 14 },
-        { contentName: '무릉도장', kind: 'content' },
+        { contentName: '몬스터파크', kind: 'daily', maxCount: 14 },
+        { contentName: '무릉도장', kind: 'weekly' },
         { contentName: '몬스터파크', kind: 'boss', difficulty: '하드' },
       ])
 
-      await useContentSchedulerStore.getState().removeManualContent('ocid-1', '몬스터파크')
+      await useContentSchedulerStore.getState().removeManualContent('ocid-1', '몬스터파크', 'daily')
 
       expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', [
-        { contentName: '무릉도장', kind: 'content' },
+        { contentName: '무릉도장', kind: 'weekly' },
         { contentName: '몬스터파크', kind: 'boss', difficulty: '하드' },
       ])
       expect(useContentSchedulerStore.getState().manualTrackedByOcid).toEqual({
         'ocid-1': [
-          { contentName: '무릉도장', kind: 'content' },
+          { contentName: '무릉도장', kind: 'weekly' },
           { contentName: '몬스터파크', kind: 'boss', difficulty: '하드' },
         ],
       })

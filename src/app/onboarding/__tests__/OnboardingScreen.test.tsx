@@ -99,7 +99,7 @@ describe('OnboardingScreen', () => {
 
     render(<OnboardingScreen />)
 
-    expect(screen.getByText('진행 상황을 어떻게 관리할까요?')).toBeInTheDocument()
+    expect(screen.getByText('스케줄러를 어떻게 관리할까요?')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /자동/ })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /수동/ })).toBeInTheDocument()
   })

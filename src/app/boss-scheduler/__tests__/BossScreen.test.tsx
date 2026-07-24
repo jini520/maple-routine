@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { BossScreen } from '../BossScreen'
 import { useBossSchedulerStore, type BossCharacterView } from '../../../features/boss-scheduler/store'
@@ -68,10 +68,14 @@ function pickerEntry(overrides: Partial<CharacterPickerEntry> = {}): CharacterPi
   }
 }
 
+// BossScreen이 "보스 관리" 진입에 라우터 내비게이션을 쓰므로 /boss/manage에 프로브 요소를 둔다.
 function renderBossScreen(initialEntries: string[] = ['/boss']): ReturnType<typeof render> {
   return render(
     <MemoryRouter initialEntries={initialEntries}>
-      <BossScreen />
+      <Routes>
+        <Route path="/boss" element={<BossScreen />} />
+        <Route path="/boss/manage" element={<div>보스 관리 페이지 프로브</div>} />
+      </Routes>
     </MemoryRouter>,
   )
 }
@@ -693,206 +697,32 @@ describe('BossScreen', () => {
       expect(screen.queryByText(/^\d+인$/)).not.toBeInTheDocument()
     })
 
-    it('"파티 관리" 버튼 클릭 시 보스 드롭다운(기본값: 첫 보스)·등록된 난이도 뱃지·파티원 +/- 스테퍼가 있는 모달이 열리고, 증가시킨 뒤 저장하면 store의 setPartySize가 올바른 인자로 호출된다', async () => {
-      const setPartySize = vi.fn().mockResolvedValue(undefined)
+    it('"보스 관리" 버튼을 누르면 관리 페이지로 이동한다 (ADR-035 결정 18 — 파티 관리 모달 대체)', async () => {
       mockStore({
         status: 'loaded',
         trackedOcids: ['ocid-1'],
         characters: [characterWithZakum()],
-        setPartySize,
       })
 
       renderBossScreen()
       await screen.findByRole('combobox')
 
-      fireEvent.click(screen.getByRole('button', { name: '파티 관리' }))
-      expect(await screen.findByRole('heading', { name: '파티 관리' })).toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: '보스 관리' }))
 
-      // 등록된 보스가 하나(자쿰·카오스)뿐이라 드롭다운·난이도 뱃지 모두 자동 선택된다.
-      expect(screen.getByLabelText('보스')).toHaveValue('자쿰')
-      expect(screen.getByRole('button', { name: '카오스', pressed: true })).toBeInTheDocument()
-
-      const increment = screen.getByRole('button', { name: '파티원 수 증가' })
-      fireEvent.click(increment)
-      fireEvent.click(increment)
-      fireEvent.click(increment)
-      fireEvent.click(screen.getByRole('button', { name: '저장' }))
-
-      await waitFor(() => {
-        expect(setPartySize).toHaveBeenCalledWith('ocid-1', '자쿰', '카오스', 4)
-      })
+      expect(await screen.findByText('보스 관리 페이지 프로브')).toBeInTheDocument()
     })
 
-    it('파티원 수는 1 미만·보스의 최대 인원 초과로 조정할 수 없다 — 경계에서 -/+ 버튼이 비활성화된다', async () => {
-      const setPartySize = vi.fn()
+    it('기존 "파티 관리" 버튼은 더 이상 렌더링되지 않는다', async () => {
       mockStore({
         status: 'loaded',
         trackedOcids: ['ocid-1'],
         characters: [characterWithZakum()],
-        setPartySize,
       })
 
       renderBossScreen()
       await screen.findByRole('combobox')
 
-      fireEvent.click(screen.getByRole('button', { name: '파티 관리' }))
-      const modal = within(await screen.findByTestId('party-management-modal-overlay'))
-      const decrement = modal.getByRole('button', { name: '파티원 수 감소' })
-      const increment = modal.getByRole('button', { name: '파티원 수 증가' })
-
-      // 초기값은 미설정(솔로) → 1이라 감소 버튼은 처음부터 비활성화돼있다.
-      expect(decrement).toBeDisabled()
-      expect(modal.getByText('1')).toBeInTheDocument()
-
-      // 자쿰은 별도 maxPartySize 예외가 없어 기본값(6)이 상한이다 — 6까지 올리면 증가 버튼이 비활성화된다.
-      for (let i = 0; i < 6; i += 1) {
-        fireEvent.click(increment)
-      }
-      expect(modal.getByText('6')).toBeInTheDocument()
-      expect(increment).toBeDisabled()
-
-      // 비활성화된 버튼을 눌러도 값은 그대로다.
-      fireEvent.click(increment)
-      expect(modal.getByText('6')).toBeInTheDocument()
-
-      fireEvent.click(modal.getByRole('button', { name: '저장' }))
-      await waitFor(() => {
-        expect(setPartySize).toHaveBeenCalledWith('ocid-1', '자쿰', '카오스', 6)
-      })
-    })
-
-    it('등록된 보스가 하나도 없으면(기본 토글이 켜져 있어도) 전체 보스 목록으로 대체되며, 보스를 바꾸면 그 보스가 지원하는 난이도 뱃지로 바뀌고 첫 난이도가 기본 선택된다', async () => {
-      mockStore({
-        status: 'loaded',
-        trackedOcids: ['ocid-1'],
-        // 이 캐릭터는 어떤 보스도 등록해두지 않았다 — 그래도 파티 관리 보스 목록은 비어있지 않아야 한다.
-        characters: [character({ ocid: 'ocid-1', weeklyBosses: [], monthlyBosses: [] })],
-      })
-
-      renderBossScreen()
-      await screen.findByRole('combobox')
-
-      fireEvent.click(screen.getByRole('button', { name: '파티 관리' }))
-      await screen.findByRole('heading', { name: '파티 관리' })
-
-      // 전체 보스 목록의 첫 항목(자쿰)이 기본 선택되고, 자쿰은 카오스 하나만 지원한다.
-      expect(screen.getByLabelText('보스')).toHaveValue('자쿰')
-      expect(screen.getByRole('button', { name: '카오스', pressed: true })).toBeInTheDocument()
-      expect(screen.queryByRole('button', { name: '이지' })).not.toBeInTheDocument()
-
-      fireEvent.change(screen.getByLabelText('보스'), { target: { value: '루시드' } })
-
-      // 루시드는 이지/노멀/하드를 지원 — 첫 난이도(이지)가 기본 선택된다.
-      expect(screen.getByRole('button', { name: '이지', pressed: true })).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: '노멀' })).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: '하드' })).toBeInTheDocument()
-      expect(screen.queryByRole('button', { name: '카오스' })).not.toBeInTheDocument()
-    })
-
-    describe('"스케줄러에 등록된 보스만 보기" 토글 (ADR-031)', () => {
-      it('기본값은 ON이고, 등록된 보스만 드롭다운에 보인다', async () => {
-        mockStore({
-          status: 'loaded',
-          trackedOcids: ['ocid-1'],
-          characters: [characterWithZakum()],
-        })
-
-        renderBossScreen()
-        await screen.findByRole('combobox')
-
-        fireEvent.click(screen.getByRole('button', { name: '파티 관리' }))
-        await screen.findByRole('heading', { name: '파티 관리' })
-
-        const toggle = screen.getByRole('switch', { name: '스케줄러에 등록된 보스만 보기' })
-        expect(toggle).toHaveAttribute('aria-checked', 'true')
-
-        const options = within(screen.getByLabelText('보스')).getAllByRole('option')
-        expect(options.map((option) => option.textContent)).toEqual(['자쿰'])
-      })
-
-      it('토글을 끄면 전체 보스 목록이 드롭다운에 보인다', async () => {
-        mockStore({
-          status: 'loaded',
-          trackedOcids: ['ocid-1'],
-          characters: [characterWithZakum()],
-        })
-
-        renderBossScreen()
-        await screen.findByRole('combobox')
-
-        fireEvent.click(screen.getByRole('button', { name: '파티 관리' }))
-        await screen.findByRole('heading', { name: '파티 관리' })
-
-        fireEvent.click(screen.getByRole('switch', { name: '스케줄러에 등록된 보스만 보기' }))
-
-        const options = within(screen.getByLabelText('보스')).getAllByRole('option')
-        expect(options.length).toBeGreaterThan(1)
-        expect(options.map((option) => option.textContent)).toContain('루시드')
-      })
-
-      it('토글을 껐다가 다시 등록된 보스만 보기로 돌아오면, 선택 중이던 미등록 보스 대신 등록된 보스가 다시 선택된다', async () => {
-        mockStore({
-          status: 'loaded',
-          trackedOcids: ['ocid-1'],
-          characters: [characterWithZakum()],
-        })
-
-        renderBossScreen()
-        await screen.findByRole('combobox')
-
-        fireEvent.click(screen.getByRole('button', { name: '파티 관리' }))
-        await screen.findByRole('heading', { name: '파티 관리' })
-
-        const toggle = screen.getByRole('switch', { name: '스케줄러에 등록된 보스만 보기' })
-        fireEvent.click(toggle) // OFF — 전체 목록
-        fireEvent.change(screen.getByLabelText('보스'), { target: { value: '루시드' } })
-        expect(screen.getByLabelText('보스')).toHaveValue('루시드')
-
-        fireEvent.click(toggle) // 다시 ON — 루시드는 미등록이라 목록에서 빠지므로 등록된 보스(자쿰)로 되돌아간다
-        expect(screen.getByLabelText('보스')).toHaveValue('자쿰')
-      })
-    })
-
-    it('선택한 보스가 스케줄러에 등록돼있으면 그 등록된 난이도가 기본 선택된다(첫 난이도가 아니어도)', async () => {
-      mockStore({
-        status: 'loaded',
-        trackedOcids: ['ocid-1'],
-        characters: [
-          character({
-            ocid: 'ocid-1',
-            weeklyBosses: [
-              {
-                apiName: '루시드',
-                difficulty: '하드',
-                cycle: 'weekly',
-                isRegistered: true,
-                isComplete: false,
-                ownComplete: false,
-                matchedBossName: '루시드',
-                portraitSlug: null,
-                isSeasonBoss: false,
-              },
-            ],
-          }),
-        ],
-      })
-
-      renderBossScreen()
-      await screen.findByRole('combobox')
-
-      fireEvent.click(screen.getByRole('button', { name: '파티 관리' }))
-      await screen.findByRole('heading', { name: '파티 관리' })
-
-      // 루시드는 이지/노멀/하드를 지원하지만(첫 난이도는 이지), 이 캐릭터가 하드로 등록해뒀으므로
-      // 하드가 기본 선택된다.
-      fireEvent.change(screen.getByLabelText('보스'), { target: { value: '루시드' } })
-      expect(screen.getByRole('button', { name: '하드', pressed: true })).toBeInTheDocument()
-
-      // 자쿰은 이 캐릭터가 등록해두지 않아 기본(등록된 보스만 보기) 목록에는 없다 —
-      // 토글을 꺼서 전체 목록으로 전환한 뒤에야 선택할 수 있다.
-      fireEvent.click(screen.getByRole('switch', { name: '스케줄러에 등록된 보스만 보기' }))
-      fireEvent.change(screen.getByLabelText('보스'), { target: { value: '자쿰' } })
-      expect(screen.getByRole('button', { name: '카오스', pressed: true })).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: '파티 관리' })).not.toBeInTheDocument()
     })
   })
 
@@ -1092,71 +922,14 @@ describe('BossScreen', () => {
       expect(screen.getByText('검은마법사')).toBeInTheDocument()
     })
 
-    it('수동 모드: "보스 추가"로 보스·난이도를 고르면 addManualBoss가 호출된다', async () => {
+    it('수동 모드에서도 "보스 추가" 버튼과 카드 삭제 버튼은 렌더링되지 않는다 (ADR-035 결정 18 — 편집은 관리 페이지 전용)', async () => {
       useTrackingModeStore.setState({ mode: 'manual' })
-      const addManualBoss = vi.fn()
-      mockStore({
-        status: 'loaded',
-        trackedOcids: ['ocid-1'],
-        selectedOcid: 'ocid-1',
-        manualTrackedByOcid: { 'ocid-1': [] },
-        characters: [character({ ocid: 'ocid-1', weeklyBosses: [] })],
-        addManualBoss,
-      })
-
-      renderBossScreen()
-      await screen.findByRole('combobox')
-
-      fireEvent.click(screen.getByRole('button', { name: '보스 추가' }))
-      fireEvent.change(await screen.findByLabelText('보스'), { target: { value: '루시드' } })
-      fireEvent.click(screen.getByRole('button', { name: '루시드 하드 추가' }))
-
-      expect(addManualBoss).toHaveBeenCalledWith('ocid-1', '루시드', '하드')
-    })
-
-    it('수동 모드: 카드의 삭제 버튼을 누르면 removeManualBoss가 호출된다', async () => {
-      useTrackingModeStore.setState({ mode: 'manual' })
-      const removeManualBoss = vi.fn()
       mockStore({
         status: 'loaded',
         trackedOcids: ['ocid-1'],
         selectedOcid: 'ocid-1',
         manualTrackedByOcid: { 'ocid-1': [{ contentName: '자쿰', kind: 'boss', difficulty: '카오스' }] },
         characters: [character({ ocid: 'ocid-1', weeklyBosses: [unregisteredIncompleteBoss()] })],
-        removeManualBoss,
-      })
-
-      renderBossScreen()
-      await screen.findByRole('combobox')
-
-      fireEvent.click(screen.getByRole('button', { name: '자쿰 카오스 삭제' }))
-
-      expect(removeManualBoss).toHaveBeenCalledWith('ocid-1', '자쿰', '카오스')
-    })
-
-    it('자동 모드에서는 "보스 추가" 버튼과 카드 삭제 버튼이 렌더링되지 않는다', async () => {
-      mockStore({
-        status: 'loaded',
-        trackedOcids: ['ocid-1'],
-        selectedOcid: 'ocid-1',
-        characters: [
-          character({
-            ocid: 'ocid-1',
-            weeklyBosses: [
-              {
-                apiName: '자쿰',
-                difficulty: '카오스',
-                cycle: 'weekly',
-                isRegistered: true,
-                isComplete: false,
-                ownComplete: false,
-                matchedBossName: '자쿰',
-                portraitSlug: null,
-                isSeasonBoss: false,
-              },
-            ],
-          }),
-        ],
       })
 
       renderBossScreen()
@@ -1164,6 +937,24 @@ describe('BossScreen', () => {
 
       expect(screen.queryByRole('button', { name: '보스 추가' })).not.toBeInTheDocument()
       expect(screen.queryByRole('button', { name: '자쿰 카오스 삭제' })).not.toBeInTheDocument()
+      // "보스 관리" 진입은 수동 모드에서도 그대로 보인다(두 모드 공통).
+      expect(screen.getByRole('button', { name: '보스 관리' })).toBeInTheDocument()
+    })
+
+    it('수동 모드: 추적 보스가 없으면 "보스 관리" 안내 빈 상태를 보여준다', async () => {
+      useTrackingModeStore.setState({ mode: 'manual' })
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        selectedOcid: 'ocid-1',
+        manualTrackedByOcid: { 'ocid-1': [] },
+        characters: [character({ ocid: 'ocid-1', weeklyBosses: [] })],
+      })
+
+      renderBossScreen()
+      await screen.findByRole('combobox')
+
+      expect(screen.getByText('추적할 보스가 없습니다 — "보스 관리"에서 추가해주세요')).toBeInTheDocument()
     })
   })
 })

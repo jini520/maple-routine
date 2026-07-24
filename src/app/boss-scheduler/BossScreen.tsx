@@ -1,10 +1,10 @@
 import type { BossContent, CharacterPickerEntry } from '../../types'
-import { RefreshCw, Users, X } from 'lucide-react'
+import { RefreshCw, Users } from 'lucide-react'
 import { formatScheduleSyncError, formatSyncedAt } from '../../features/schedule-sync/format'
 import { getBossPortraitCrop, getBossPortraitUrl } from '../../lib/boss-icons'
 import { partySizeKey, useBossSchedulerStore } from '../../features/boss-scheduler/store'
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import type { BossPortraitCrop } from '../../lib/boss-icons'
 import { CharacterSelectDropdown } from '../../components/CharacterSelectDropdown/CharacterSelectDropdown'
@@ -15,8 +15,6 @@ import { ProgressModal } from '../../components/ProgressModal/ProgressModal'
 import { matchBossContent, selectDisplayBosses, type MatchedBoss } from '../../lib/boss-matching'
 import { mergeManualBossList } from '../../lib/manual-boss-merge'
 import { isChallengersWorld } from '../../lib/world-emblem'
-import { ManualBossPickerModal } from './ManualBossPickerModal'
-import { PartyManagementModal } from './PartyManagementModal'
 import { getCharacterPickerRoster } from '../../features/schedule-sync/schedule-sync'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 
@@ -104,18 +102,14 @@ export function BossScreen(): React.JSX.Element {
     saveTrackedOcids,
     refresh,
     selectCharacter,
-    setPartySize,
-    addManualBoss,
-    removeManualBoss,
   } = useBossSchedulerStore()
   const { mode } = useTrackingModeStore()
   const [activeTab, setActiveTab] = useState<BossTab>('weekly')
   const [roster, setRoster] = useState<CharacterPickerEntry[]>([])
+  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const [isPickerOpen, setIsPickerOpen] = useState(() => searchParams.get('openPicker') === '1')
   const [saveProgress, setSaveProgress] = useState<{ completed: number; total: number } | null>(null)
-  const [isPartyManagementOpen, setIsPartyManagementOpen] = useState(false)
-  const [isBossPickerOpen, setIsBossPickerOpen] = useState(false)
   // ADR-019 결정 6: 주간/월간 탭은 서로 독립된 필터 상태를 갖는다(한 탭의 필터 변경이
   // 다른 탭에 영향을 주지 않음).
   const [weeklyFilter, setWeeklyFilter] = useState<PartyFilter>('all')
@@ -167,12 +161,6 @@ export function BossScreen(): React.JSX.Element {
       : (characters[0]?.ocid ?? null)
 
   const selected = characters.find((character) => character.ocid === effectiveSelectedOcid) ?? null
-
-  // 파티 관리 모달의 "등록된 난이도 기본 선택"용 — 실제 registration_flag 기준(ADR-019).
-  const registeredWeeklyBosses =
-    selected !== null ? selected.weeklyBosses.filter((boss) => boss.isRegistered) : []
-  const registeredMonthlyBosses =
-    selected !== null ? selected.monthlyBosses.filter((boss) => boss.isRegistered) : []
 
   // ADR-035 결정 3·6·12: 수동 모드에서는 게임 등록 여부가 아니라 사용자가 앱에서 관리하는
   // 멤버십(manualTrackedContent)으로 표시 목록을 결정하고, 완료 여부는 동기화 결과에서 즉석
@@ -241,37 +229,17 @@ export function BossScreen(): React.JSX.Element {
   const filteredMonthlyBosses =
     selected !== null ? filterByPartySize(displayedMonthlyBosses, selected.ocid, monthlyFilter) : []
 
-  function handleAddManualBoss(contentName: string, difficulty: string): void {
-    if (selected !== null) void addManualBoss(selected.ocid, contentName, difficulty)
-  }
-
-  function handleRemoveManualBoss(contentName: string, difficulty: string): void {
-    if (selected !== null) void removeManualBoss(selected.ocid, contentName, difficulty)
-  }
-
-  // 기존 BossCard를 그대로 재사용하고, 수동 모드에서만 카드 위에 삭제 진입점을 얹는다
-  // (컨텐츠 스케줄러의 삭제 X 버튼과 동일한 인터랙션).
+  // 기존 BossCard를 그대로 재사용한다 — 추적 편집은 관리 페이지 전용(ADR-035 결정 18).
   function renderBossCards(bosses: MatchedBoss[], ocid: string): React.JSX.Element {
     return (
       <div className="space-y-2">
-        {bosses.map((boss) => {
-          const bossName = boss.matchedBossName ?? boss.apiName
-          return (
-            <div key={`${boss.apiName}-${boss.difficulty}`} className="relative">
-              <BossCard boss={boss} partySize={getPartySize(ocid, boss)} />
-              {mode === 'manual' && (
-                <button
-                  type="button"
-                  onClick={() => handleRemoveManualBoss(bossName, boss.difficulty)}
-                  aria-label={`${bossName} ${boss.difficulty} 삭제`}
-                  className="absolute -right-1.5 -top-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-full border border-border bg-surface text-text-muted hover:text-text"
-                >
-                  <X className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" />
-                </button>
-              )}
-            </div>
-          )
-        })}
+        {bosses.map((boss) => (
+          <BossCard
+            key={`${boss.apiName}-${boss.difficulty}`}
+            boss={boss}
+            partySize={getPartySize(ocid, boss)}
+          />
+        ))}
       </div>
     )
   }
@@ -320,52 +288,16 @@ export function BossScreen(): React.JSX.Element {
     </>
   )
 
-  const partyManageButton = (
+  // ADR-035 결정 18: 추적 편집(수동)과 파티원 수 설정을 관리 페이지 하나로 통합 — 두 모드 공통
+  // 진입점이라 헤더는 항상 [보스 관리 · 캐릭터 관리] 2버튼이다(기존 "파티 관리" 모달 대체).
+  const bossManageButton = (
     <button
       type="button"
-      onClick={() => setIsPartyManagementOpen(true)}
+      onClick={() => navigate('/boss/manage')}
       className="text-sm font-medium text-text-muted hover:text-text"
     >
-      파티 관리
+      보스 관리
     </button>
-  )
-
-  const bossAddButton = (
-    <button
-      type="button"
-      onClick={() => setIsBossPickerOpen(true)}
-      className="text-sm font-medium text-text-muted hover:text-text"
-    >
-      보스 추가
-    </button>
-  )
-
-  const bossPickerModal = isBossPickerOpen && selected !== null && (
-    <ManualBossPickerModal
-      alreadyTracked={manualBossItems.map((item) => ({
-        contentName: item.contentName,
-        difficulty: item.difficulty ?? '',
-      }))}
-      onAdd={handleAddManualBoss}
-      onClose={() => setIsBossPickerOpen(false)}
-    />
-  )
-
-  const partyManagementModal = isPartyManagementOpen && selected !== null && (
-    <PartyManagementModal
-      getRegisteredDifficulty={(bossName) =>
-        [...registeredWeeklyBosses, ...registeredMonthlyBosses].find(
-          (boss) => (boss.matchedBossName ?? boss.apiName) === bossName,
-        )?.difficulty ?? null
-      }
-      getPartySize={(bossName, difficulty) =>
-        partySizes[partySizeKey(selected.ocid, bossName, difficulty)] ?? 1
-      }
-      onSetPartySize={(bossName, difficulty, partySize) =>
-        setPartySize(selected.ocid, bossName, difficulty, partySize)
-      }
-      onClose={() => setIsPartyManagementOpen(false)}
-    />
   )
 
   if (isEmpty) {
@@ -417,8 +349,7 @@ export function BossScreen(): React.JSX.Element {
           <div className="flex items-center justify-between">
             <h1 className="text-lg font-semibold text-text">보스 스케줄러</h1>
             <div className="flex items-center gap-4">
-              {mode === 'manual' && selected !== null && bossAddButton}
-              {selected !== null && partyManageButton}
+              {selected !== null && bossManageButton}
               {characterManageButton}
             </div>
           </div>
@@ -565,7 +496,7 @@ export function BossScreen(): React.JSX.Element {
               {displayedWeeklyBosses.length === 0 && (mode === 'manual' || !selected.isStale) && (
                 <div className="rounded-[14px] border border-dashed border-border p-4 text-sm text-text-muted">
                   {mode === 'manual'
-                    ? '추적할 보스가 없습니다 — "보스 추가"로 추가해주세요'
+                    ? '추적할 보스가 없습니다 — "보스 관리"에서 추가해주세요'
                     : '표시할 항목이 없습니다 — 게임에서 스케줄러에 등록해주세요'}
                 </div>
               )}
@@ -585,7 +516,7 @@ export function BossScreen(): React.JSX.Element {
               {displayedMonthlyBosses.length === 0 && (mode === 'manual' || !selected.isStale) && (
                 <div className="rounded-[14px] border border-dashed border-border p-4 text-sm text-text-muted">
                   {mode === 'manual'
-                    ? '추적할 보스가 없습니다 — "보스 추가"로 추가해주세요'
+                    ? '추적할 보스가 없습니다 — "보스 관리"에서 추가해주세요'
                     : '표시할 항목이 없습니다 — 게임에서 스케줄러에 등록해주세요'}
                 </div>
               )}
@@ -603,8 +534,6 @@ export function BossScreen(): React.JSX.Element {
       )}
 
       {trackingModals}
-      {partyManagementModal}
-      {bossPickerModal}
     </div>
   )
 }

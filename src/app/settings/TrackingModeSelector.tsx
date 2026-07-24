@@ -1,8 +1,5 @@
 import type { TrackingMode } from '../../storage/tracking-mode'
-import {
-  TRACKING_MODE_OPTIONS,
-  TRACKING_MODE_RECOMMENDED_BADGE,
-} from '../../features/tracking-mode/copy'
+import { TRACKING_MODE_OPTIONS } from '../../features/tracking-mode/copy'
 
 export interface TrackingModeSelectorProps {
   mode: TrackingMode
@@ -31,14 +28,7 @@ export function TrackingModeSelector(props: TrackingModeSelectorProps): React.JS
                 : 'w-full text-left rounded-[10px] border border-border px-4 py-3 hover:bg-primary/15 disabled:opacity-50'
             }
           >
-            <span className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-text">{option.title}</span>
-              {option.recommended && (
-                <span className="shrink-0 rounded-full bg-primary/15 text-primary text-xs font-semibold px-2.5 py-1">
-                  {TRACKING_MODE_RECOMMENDED_BADGE}
-                </span>
-              )}
-            </span>
+            <span className="block text-sm font-semibold text-text">{option.title}</span>
             <span className="mt-1 block text-sm text-text-muted">{option.description}</span>
           </button>
         )

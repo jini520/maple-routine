@@ -11,10 +11,10 @@ import { CharacterSelectDropdown } from '../../components/CharacterSelectDropdow
 import { CharacterTrackingPicker } from '../../components/CharacterTrackingPicker/CharacterTrackingPicker'
 import type { DailyQuestRegionCrop } from '../../lib/daily-quest-backgrounds'
 import { MAPLE_LEAF_PATH } from '../../components/mapleLeafPath'
-import { ManualContentPickerModal } from './ManualContentPickerModal'
 import { ProgressModal } from '../../components/ProgressModal/ProgressModal'
-import { RefreshCw, X } from 'lucide-react'
+import { RefreshCw } from 'lucide-react'
 import { getCharacterPickerRoster } from '../../features/schedule-sync/schedule-sync'
+import { useNavigate } from 'react-router-dom'
 import { getDailyQuestRegionIconUrl } from '../../lib/daily-quest-icons'
 import { matchWeeklyRegionalQuestSlug } from '../../lib/weekly-regional-quest-matching'
 import { mergeManualContentList, type SchedulerContentTemplateEntry } from '../../lib/manual-content-merge'
@@ -589,8 +589,7 @@ export function GuildFlagRaceCard(props: {
   )
 }
 
-// 카드 종류 분기를 한 곳으로 모아, 리스트가 각 카드를 <li> 하나로 감싸(수동 모드 삭제 버튼을
-// 얹을 자리) 렌더링할 수 있게 한다. 카드 컴포넌트 자체는 그대로 재사용한다.
+// 카드 종류 분기를 한 곳으로 모은다. 카드 컴포넌트 자체는 그대로 재사용한다.
 function renderDailyContentCard(content: DailyContent): React.JSX.Element {
   if (content.kind === 'quest') {
     return <DailyQuestCard content={content} />
@@ -687,14 +686,12 @@ export function ContentScreen(): React.JSX.Element {
     saveTrackedOcids,
     refresh,
     selectCharacter,
-    addManualContent,
-    removeManualContent,
   } = useContentSchedulerStore()
   const { mode } = useTrackingModeStore()
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<ContentTab>('daily')
   const [roster, setRoster] = useState<CharacterPickerEntry[]>([])
   const [isPickerOpen, setIsPickerOpen] = useState(false)
-  const [manualPickerTab, setManualPickerTab] = useState<ContentTab | null>(null)
   const [saveProgress, setSaveProgress] = useState<{ completed: number; total: number } | null>(null)
 
   useEffect(() => {
@@ -729,35 +726,33 @@ export function ContentScreen(): React.JSX.Element {
 
   const selected = characters.find((character) => character.ocid === effectiveSelectedOcid) ?? null
 
-  // ADR-035 결정 3·6: 수동 모드에서는 게임 등록 여부(isRegistered)가 아니라 사용자가 앱에서
+  // ADR-035 결정 3·6·19: 수동 모드에서는 게임 등록 여부(isRegistered)가 아니라 사용자가 앱에서
   // 관리하는 멤버십(manualTrackedContent)으로 표시 목록을 결정하고, 실제 값은 동기화 결과 또는
-  // 템플릿에서 즉석 조회한다(mergeManualContentList). auto 모드는 기존대로 등록 항목만 표시한다.
-  const manualContentItems =
-    selected !== null
-      ? (manualTrackedByOcid?.[selected.ocid] ?? []).filter((item) => item.kind === 'content')
-      : []
+  // 템플릿에서 즉석 조회한다(mergeManualContentList). 멤버십의 kind('daily'/'weekly')가 저장
+  // 시점에 확정돼 있어 각 탭은 자기 kind 항목만 그린다. auto 모드는 기존대로 등록 항목만 표시한다.
+  const manualItems = selected !== null ? (manualTrackedByOcid?.[selected.ocid] ?? []) : []
 
   const displayDailyContents: DailyContent[] =
     selected === null
       ? []
       : mode === 'manual'
-        ? mergeManualContentList(manualContentItems, selected.dailyContents, contentTemplate.daily)
+        ? mergeManualContentList(
+            manualItems.filter((item) => item.kind === 'daily'),
+            selected.dailyContents,
+            contentTemplate.daily,
+          )
         : selected.dailyContents.filter((content) => content.isRegistered)
 
   const displayWeeklyContents: WeeklyContent[] =
     selected === null
       ? []
       : mode === 'manual'
-        ? (mergeManualContentList(manualContentItems, selected.weeklyContents, contentTemplate.weekly) as WeeklyContent[])
+        ? (mergeManualContentList(
+            manualItems.filter((item) => item.kind === 'weekly'),
+            selected.weeklyContents,
+            contentTemplate.weekly,
+          ) as WeeklyContent[])
         : selected.weeklyContents.filter((content) => content.isRegistered)
-
-  function handleAddManualContent(contentName: string): void {
-    if (selected !== null) void addManualContent(selected.ocid, contentName)
-  }
-
-  function handleRemoveManualContent(contentName: string): void {
-    if (selected !== null) void removeManualContent(selected.ocid, contentName)
-  }
 
   async function handleSaveTracking(ocids: string[]): Promise<void> {
     setSaveProgress({ completed: 0, total: ocids.length })
@@ -777,6 +772,17 @@ export function ContentScreen(): React.JSX.Element {
       className="text-sm font-medium text-text-muted hover:text-text"
     >
       캐릭터 관리
+    </button>
+  )
+
+  // ADR-035 결정 18: 수동 모드의 추적 항목 편집은 이 화면이 아니라 전용 관리 페이지에서 한다.
+  const manualManageButton = mode === 'manual' && (
+    <button
+      type="button"
+      onClick={() => navigate('/content/manage')}
+      className="text-sm font-medium text-text-muted hover:text-text"
+    >
+      컨텐츠 관리
     </button>
   )
 
@@ -850,7 +856,10 @@ export function ContentScreen(): React.JSX.Element {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h1 className="text-lg font-semibold text-text">컨텐츠 스케줄러</h1>
-            {characterManageButton}
+            <div className="flex items-center gap-4">
+              {manualManageButton}
+              {characterManageButton}
+            </div>
           </div>
 
           <div className="space-y-1">
@@ -951,7 +960,7 @@ export function ContentScreen(): React.JSX.Element {
               {displayDailyContents.length === 0 && (mode === 'manual' || !selected.isStale) && (
                 <div className="rounded-[14px] border border-dashed border-border p-4 text-sm text-text-muted">
                   {mode === 'manual'
-                    ? '추적할 항목이 없습니다 — "항목 추가"로 추가해주세요'
+                    ? '추적할 항목이 없습니다 — "컨텐츠 관리"에서 추가해주세요'
                     : '표시할 항목이 없습니다 — 게임에서 스케줄러에 등록해주세요'}
                 </div>
               )}
@@ -959,31 +968,9 @@ export function ContentScreen(): React.JSX.Element {
               {displayDailyContents.length > 0 && (
                 <ul className="space-y-2">
                   {displayDailyContents.map((content) => (
-                    <li key={content.name} className="relative">
-                      {renderDailyContentCard(content)}
-                      {mode === 'manual' && (
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveManualContent(content.name)}
-                          aria-label={`${content.name} 삭제`}
-                          className="absolute -right-1.5 -top-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-full border border-border bg-surface text-text-muted hover:text-text"
-                        >
-                          <X className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" />
-                        </button>
-                      )}
-                    </li>
+                    <li key={content.name}>{renderDailyContentCard(content)}</li>
                   ))}
                 </ul>
-              )}
-
-              {mode === 'manual' && (
-                <button
-                  type="button"
-                  onClick={() => setManualPickerTab('daily')}
-                  className="w-full rounded-[14px] border border-dashed border-border py-3 text-sm font-medium text-text-muted hover:text-text"
-                >
-                  + 항목 추가
-                </button>
               )}
             </>
           )}
@@ -993,7 +980,7 @@ export function ContentScreen(): React.JSX.Element {
               {displayWeeklyContents.length === 0 && (mode === 'manual' || !selected.isStale) && (
                 <div className="rounded-[14px] border border-dashed border-border p-4 text-sm text-text-muted">
                   {mode === 'manual'
-                    ? '추적할 항목이 없습니다 — "항목 추가"로 추가해주세요'
+                    ? '추적할 항목이 없습니다 — "컨텐츠 관리"에서 추가해주세요'
                     : '표시할 항목이 없습니다 — 게임에서 스케줄러에 등록해주세요'}
                 </div>
               )}
@@ -1001,44 +988,13 @@ export function ContentScreen(): React.JSX.Element {
               {displayWeeklyContents.length > 0 && (
                 <ul className="space-y-2">
                   {displayWeeklyContents.map((content) => (
-                    <li key={content.name} className="relative">
-                      {renderWeeklyContentCard(content)}
-                      {mode === 'manual' && (
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveManualContent(content.name)}
-                          aria-label={`${content.name} 삭제`}
-                          className="absolute -right-1.5 -top-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-full border border-border bg-surface text-text-muted hover:text-text"
-                        >
-                          <X className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" />
-                        </button>
-                      )}
-                    </li>
+                    <li key={content.name}>{renderWeeklyContentCard(content)}</li>
                   ))}
                 </ul>
-              )}
-
-              {mode === 'manual' && (
-                <button
-                  type="button"
-                  onClick={() => setManualPickerTab('weekly')}
-                  className="w-full rounded-[14px] border border-dashed border-border py-3 text-sm font-medium text-text-muted hover:text-text"
-                >
-                  + 항목 추가
-                </button>
               )}
             </>
           )}
         </div>
-      )}
-
-      {manualPickerTab !== null && selected !== null && (
-        <ManualContentPickerModal
-          tab={manualPickerTab}
-          alreadyTracked={manualContentItems.map((item) => item.contentName)}
-          onAdd={handleAddManualContent}
-          onClose={() => setManualPickerTab(null)}
-        />
       )}
 
       {trackingModals}

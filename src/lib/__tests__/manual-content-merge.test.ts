@@ -4,7 +4,7 @@ import type { DailyContent } from '../../types'
 import type { ManualTrackedItem } from '../../storage/manual-tracked-content'
 
 function contentItem(contentName: string): ManualTrackedItem {
-  return { contentName, kind: 'content' }
+  return { contentName, kind: 'daily' }
 }
 
 function synced(overrides: Partial<DailyContent> & { name: string }): DailyContent {
