@@ -17,17 +17,23 @@ import { getCharacterPickerRoster } from '../../features/schedule-sync/schedule-
 import { useNavigate } from 'react-router-dom'
 import { getDailyQuestRegionIconUrl } from '../../lib/daily-quest-icons'
 import { matchWeeklyRegionalQuestSlug } from '../../lib/weekly-regional-quest-matching'
-import { mergeManualContentList, type SchedulerContentTemplateEntry } from '../../lib/manual-content-merge'
-import schedulerContentTemplate from '../../data/scheduler-content-template.json'
+import { mergeManualContentList } from '../../lib/manual-content-merge'
+import { CONTENT_TEMPLATE } from '../../lib/scheduler-content-template'
+import { categorizeContentEntries, WEEKLY_CATEGORY_ORDER } from '../../lib/content-category'
 import { useContentSchedulerStore } from '../../features/content-scheduler/store'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 
 type ContentTab = 'daily' | 'weekly'
 
-const contentTemplate = schedulerContentTemplate as {
-  daily: SchedulerContentTemplateEntry[]
-  weekly: SchedulerContentTemplateEntry[]
-}
+// ADR-035 결정 20: 수동 모드 표시 순서를 컨텐츠 관리 페이지와 동일하게 고정하려고, 템플릿을
+// 관리 페이지와 같은 categorizeContentEntries 평탄화 순서로 미리 정렬해 mergeManualContentList에
+// 넘긴다(일간은 첫 등장 순서, 주간은 WEEKLY_CATEGORY_ORDER). 캐릭터 무관 상수라 모듈 레벨에서 1회 계산.
+const ORDERED_DAILY_TEMPLATE = categorizeContentEntries(CONTENT_TEMPLATE.daily).flatMap((group) =>
+  group.items.map((item) => item.entry),
+)
+const ORDERED_WEEKLY_TEMPLATE = categorizeContentEntries(CONTENT_TEMPLATE.weekly, WEEKLY_CATEGORY_ORDER).flatMap(
+  (group) => group.items.map((item) => item.entry),
+)
 
 // "몬스터파크"만 배경+아이콘 카드로 확장한다 — 다른 kind: 'contents' 항목이 생기면 그때
 // 매핑 테이블로 일반화할지 재검토한다(현재는 인스턴스가 하나뿐이라 과설계 방지, ADR-020).
@@ -739,7 +745,7 @@ export function ContentScreen(): React.JSX.Element {
         ? mergeManualContentList(
             manualItems.filter((item) => item.kind === 'daily'),
             selected.dailyContents,
-            contentTemplate.daily,
+            ORDERED_DAILY_TEMPLATE,
           )
         : selected.dailyContents.filter((content) => content.isRegistered)
 
@@ -750,7 +756,7 @@ export function ContentScreen(): React.JSX.Element {
         ? (mergeManualContentList(
             manualItems.filter((item) => item.kind === 'weekly'),
             selected.weeklyContents,
-            contentTemplate.weekly,
+            ORDERED_WEEKLY_TEMPLATE,
           ) as WeeklyContent[])
         : selected.weeklyContents.filter((content) => content.isRegistered)
 

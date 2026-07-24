@@ -109,7 +109,9 @@ describe('mergeManualContentList', () => {
     ])
   })
 
-  it('반환 순서는 tracked 배열 순서를 그대로 따른다', () => {
+  // ADR-035 결정 20(2026-07-25): 표시 순서는 멤버십(tracked) 삽입 순서가 아니라 template 순서로
+  // 고정한다 — 추가/삭제해도 순서가 흔들리지 않게. (구 계약 "tracked 순서 유지"를 대체)
+  it('반환 순서는 tracked 삽입 순서가 아니라 template 순서를 따른다', () => {
     const tracked = [contentItem('세번째'), contentItem('첫번째'), contentItem('두번째')]
     const template = [
       templateEntry({ content_name: '첫번째' }),
@@ -119,6 +121,16 @@ describe('mergeManualContentList', () => {
 
     const result = mergeManualContentList(tracked, [], template)
 
-    expect(result.map((c) => c.name)).toEqual(['세번째', '첫번째', '두번째'])
+    expect(result.map((c) => c.name)).toEqual(['첫번째', '두번째', '세번째'])
+  })
+
+  it('template에 없는 tracked 항목은 버리지 않고 template 항목들 뒤에 tracked 순서로 붙인다', () => {
+    const tracked = [contentItem('고아B'), contentItem('첫번째'), contentItem('고아A')]
+    const template = [templateEntry({ content_name: '첫번째' }), templateEntry({ content_name: '두번째' })]
+
+    const result = mergeManualContentList(tracked, [], template)
+
+    // template에 있는 '첫번째' 먼저, 그다음 template에 없는 고아들은 tracked 순서(고아B, 고아A)로
+    expect(result.map((c) => c.name)).toEqual(['첫번째', '고아B', '고아A'])
   })
 })

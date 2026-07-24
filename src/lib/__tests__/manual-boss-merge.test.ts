@@ -98,11 +98,23 @@ describe('mergeManualBossList', () => {
     ])
   })
 
-  it('반환 순서는 tracked 배열 순서를 그대로 따른다', () => {
+  // ADR-035 결정 20(2026-07-25): 표시 순서는 멤버십(tracked) 삽입 순서가 아니라 weekly-bosses.json
+  // 순서(보스 관리 페이지와 동일)로 고정한다 — 추가/삭제해도 순서가 흔들리지 않게.
+  it('반환 순서는 tracked 삽입 순서가 아니라 weekly-bosses.json 순서를 따른다', () => {
+    // weekly-bosses.json: 자쿰(0) … 루시드(10) … 검은마법사(monthly, 맨 뒤)
     const tracked = [bossItem('검은마법사', '하드'), bossItem('자쿰', '카오스'), bossItem('루시드', '이지')]
 
     const result = mergeManualBossList(tracked, [])
 
-    expect(result.map((boss) => boss.name)).toEqual(['검은마법사', '자쿰', '루시드'])
+    expect(result.map((boss) => boss.name)).toEqual(['자쿰', '루시드', '검은마법사'])
+  })
+
+  it('weekly-bosses.json에 없는 보스는 버리지 않고 참조 보스들 뒤에 tracked 순서로 붙인다', () => {
+    const tracked = [bossItem('알 수 없는 보스', '노멀'), bossItem('루시드', '하드'), bossItem('자쿰', '카오스')]
+
+    const result = mergeManualBossList(tracked, [])
+
+    // 참조에 있는 자쿰(0)·루시드(10)가 참조 순서로 먼저, 미지의 보스는 맨 뒤
+    expect(result.map((boss) => boss.name)).toEqual(['자쿰', '루시드', '알 수 없는 보스'])
   })
 })

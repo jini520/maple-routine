@@ -935,6 +935,61 @@ describe('ContentScreen', () => {
       expect(screen.getByText('9/14')).toBeInTheDocument()
     })
 
+    it('수동 모드: 표시 순서는 추가한 순서가 아니라 컨텐츠 관리(템플릿) 순서로 고정된다 (ADR-035 결정 20)', async () => {
+      useTrackingModeStore.setState({ mode: 'manual' })
+      // 멤버십은 템플릿 역순으로 추가(세르니움=템플릿 10번째가 먼저, 소멸의 여로=1번째가 나중).
+      // 표시는 템플릿 순서(소멸의 여로 → 세르니움)로 나와야 한다.
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        selectedOcid: 'ocid-1',
+        manualTrackedByOcid: {
+          'ocid-1': [
+            { contentName: '[일일 퀘스트] 세르니움 조사', kind: 'daily' },
+            { contentName: '[일일 퀘스트] 소멸의 여로 조사', kind: 'daily' },
+          ],
+        },
+        characters: [character({ ocid: 'ocid-1', dailyContents: [] })],
+      })
+
+      renderContentScreen()
+      await screen.findByRole('combobox')
+
+      const rows = screen.getAllByRole('listitem').map((li) => li.textContent ?? '')
+      const idxSomyeol = rows.findIndex((t) => t.includes('소멸의 여로 조사'))
+      const idxSereu = rows.findIndex((t) => t.includes('세르니움 조사'))
+      expect(idxSomyeol).toBeGreaterThanOrEqual(0)
+      expect(idxSereu).toBeGreaterThan(idxSomyeol)
+    })
+
+    it('수동 모드 주간 탭: 표시 순서도 컨텐츠 관리(카테고리 정렬) 순서로 고정된다 (ADR-035 결정 20)', async () => {
+      useTrackingModeStore.setState({ mode: 'manual' })
+      // 멤버십은 [무릉도장, 에픽던전 하이마운틴]로 추가하지만, 컨텐츠 관리 순서상 에픽 던전이
+      // 무릉도장보다 앞이므로 "하이마운틴"이 "무릉도장"보다 먼저 나와야 한다.
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        selectedOcid: 'ocid-1',
+        manualTrackedByOcid: {
+          'ocid-1': [
+            { contentName: '무릉도장', kind: 'weekly' },
+            { contentName: '에픽 던전 : 하이마운틴', kind: 'weekly' },
+          ],
+        },
+        characters: [character({ ocid: 'ocid-1', weeklyContents: [] })],
+      })
+
+      renderContentScreen()
+      await screen.findByRole('combobox')
+      fireEvent.click(screen.getByRole('button', { name: '주간' }))
+
+      const rows = screen.getAllByRole('listitem').map((li) => li.textContent ?? '')
+      const idxEpic = rows.findIndex((t) => t.includes('하이마운틴'))
+      const idxMulung = rows.findIndex((t) => t.includes('무릉도장'))
+      expect(idxEpic).toBeGreaterThanOrEqual(0)
+      expect(idxMulung).toBeGreaterThan(idxEpic)
+    })
+
     it('수동 모드: 한 번도 동기화된 적 없는 항목은 템플릿 기본값으로 표시한다', async () => {
       useTrackingModeStore.setState({ mode: 'manual' })
       mockStore({
