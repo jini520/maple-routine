@@ -36,6 +36,24 @@ const REFERENCE_ENTRIES: ReferenceEntryWithOrigin[] = [
 
 export const WEEKLY_BOSS_CLEAR_LIMIT: number = weeklyBossesData.weeklyBossSelectionLimit
 
+// weekly-bosses.json 정규 순서(REFERENCE_ENTRIES: weekly → eventWeekly → monthly)에서 보스
+// 표시명 → 인덱스. 보스 수익 페이지의 캐릭터 내부 보스 순서([[ADR-036]])와 보스 관리 페이지의
+// 수동 추적 목록 순서([[ADR-035]] 결정 20, mergeManualBossList)를 데이터 소스/DB 반복 순서에
+// 의존하지 않고 이 정규 순서로 고정하기 위한 공용 정렬 키다. 중복 보스명이 있으면 첫 등장 인덱스를 유지한다.
+const BOSS_REFERENCE_ORDER = new Map<string, number>()
+REFERENCE_ENTRIES.forEach((entry, index) => {
+  if (!BOSS_REFERENCE_ORDER.has(entry.boss)) {
+    BOSS_REFERENCE_ORDER.set(entry.boss, index)
+  }
+})
+
+// 보스 표시명(matchedBossName)의 정규 순서 인덱스. 참조 목록에 없는 보스(매칭 실패 원문명,
+// [[ADR-008]])는 Number.MAX_SAFE_INTEGER를 반환해 맨 뒤로 보낸다 — 안정 정렬과 함께 쓰면
+// 그들끼리는 입력 순서를 유지한다.
+export function getBossReferenceOrder(bossName: string): number {
+  return BOSS_REFERENCE_ORDER.get(bossName) ?? Number.MAX_SAFE_INTEGER
+}
+
 function stripSpaces(value: string): string {
   return value.replace(/\s+/g, '')
 }

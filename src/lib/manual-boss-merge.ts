@@ -1,5 +1,5 @@
 import weeklyBossesData from '../data/weekly-bosses.json'
-import { matchBossContent } from './boss-matching'
+import { getBossReferenceOrder, matchBossContent } from './boss-matching'
 import type { BossContent, BossCycle } from '../types'
 import type { ManualTrackedItem } from '../storage/manual-tracked-content'
 
@@ -25,24 +25,6 @@ function lookupCycle(bossName: string): BossCycle {
   return BOSS_CYCLE_BY_NAME.get(bossName) ?? 'weekly'
 }
 
-// ADR-035 결정 20: 표시 순서를 멤버십 삽입 순서가 아니라 weekly-bosses.json 순서(보스 관리 페이지
-// BOSSES_BY_TAB와 동일: weekly + eventWeekly + monthly)로 고정하기 위한 보스명 → 인덱스 테이블.
-const BOSS_ORDER_INDEX = new Map<string, number>()
-;[
-  ...(weeklyBossesData.weekly as BossReferenceEntry[]),
-  ...(weeklyBossesData.eventWeekly as BossReferenceEntry[]),
-  ...(weeklyBossesData.monthly as BossReferenceEntry[]),
-].forEach((entry, index) => {
-  if (!BOSS_ORDER_INDEX.has(entry.boss)) {
-    BOSS_ORDER_INDEX.set(entry.boss, index)
-  }
-})
-
-// 참조 테이블에 없는 보스는 맨 뒤로 보낸다(안정 정렬이라 그들끼리는 멤버십 순서 유지).
-function orderIndexOf(bossName: string): number {
-  return BOSS_ORDER_INDEX.get(bossName) ?? Number.MAX_SAFE_INTEGER
-}
-
 // ADR-035 결정 6·12: 수동 모드 보스 표시 목록은 멤버십(tracked)만으로 결정하고, 완료 여부는
 // 동기화 결과(synced)에서 즉석 조회한다 — 값을 멤버십에 복제하지 않는다(단일 진실 공급원).
 // 보스는 카운트형 진행값이 없어 별도 템플릿 기본값 파일이 필요 없다(한 번도 동기화된 적 없는
@@ -57,8 +39,10 @@ export function mergeManualBossList(
   tracked: ManualTrackedItem[],
   synced: BossContent[],
 ): BossContent[] {
-  // 안정 정렬(V8 Array#sort는 안정)이라 같은 보스명(참조 밖 포함)끼리는 멤버십 순서를 유지한다.
-  const ordered = [...tracked].sort((a, b) => orderIndexOf(a.contentName) - orderIndexOf(b.contentName))
+  // ADR-035 결정 20: weekly-bosses.json 정규 순서(보스 관리 페이지 BOSSES_BY_TAB와 동일)로 정렬한다.
+  // 순서 인덱스는 boss-matching의 공용 getBossReferenceOrder를 쓴다([[ADR-036]]에서 사설 사본 통합).
+  // 안정 정렬(V8 Array#sort는 안정)이라 참조 밖 보스(맨 뒤)끼리는 멤버십 순서를 유지한다.
+  const ordered = [...tracked].sort((a, b) => getBossReferenceOrder(a.contentName) - getBossReferenceOrder(b.contentName))
   return ordered.map((item): BossContent => {
     // 보스는 이름만으로 유일하지 않으므로 (matchedBossName, difficulty) 쌍으로 매칭한다.
     // synced.name은 API 원문(공백 차이·별칭)이라, matchBossContent로 우리 데이터 이름으로 정규화해
