@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { DEFAULT_MAX_PARTY_SIZE, findPriceEntry } from '../../lib/boss-crystal-prices'
 import { matchBossContent, selectBossProfitBosses, type MatchedBoss } from '../../lib/boss-matching'
+import { mergeManualBossList } from '../../lib/manual-boss-merge'
 import {
   formatBossProfitPeriodLabel,
   getAdjacentPeriodKey,
@@ -18,8 +19,10 @@ import { getBossProfitRecords, upsertBossProfitRecord, type BossProfitRecord } f
 import { isPeriodChecked, markPeriodChecked } from '../../storage/boss-profit-period-checks'
 import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
+import { getManualTrackedContent, type ManualTrackedItem } from '../../storage/manual-tracked-content'
 import { getCachedSchedulerState } from '../../storage/scheduler-cache'
-import type { BossCycle, BossDifficulty } from '../../types'
+import { getTrackingMode, type TrackingMode } from '../../storage/tracking-mode'
+import type { BossContent, BossCycle, BossDifficulty } from '../../types'
 import { compareByName } from '../onboarding/representative-character'
 import { syncSchedules, type ScheduleSyncError } from '../schedule-sync/schedule-sync'
 
@@ -177,6 +180,42 @@ function buildBossProfitRow(
     payoutMeso: boss.ownComplete ? null : 0,
     isComplete: boss.ownComplete,
   }
+}
+
+// bossContents(API 원문/캐시)에서 이번 기간 표시할 보스 목록을 고른다. 트래킹 모드에 따라 분기한다(ADR-035 결정 21).
+// - 자동 모드: 기존 동작 그대로 — selectBossProfitBosses(그룹당 실제 처치 난이도 우선, 없으면 인게임 등록 난이도 placeholder).
+// - 수동 모드: "실제 처치한 보스 전부(처치 난이도)" ∪ "수동 추적 중이지만 미처치인 보스(고른 난이도 placeholder)".
+//   자동 모드와 대칭이며 placeholder의 출처만 인게임 등록 → 수동 멤버십으로 바뀐다.
+function selectProfitDisplayBosses(
+  bossContents: BossContent[],
+  mode: TrackingMode,
+  manualItems: ManualTrackedItem[],
+): MatchedBoss[] {
+  const matched = bossContents.map(matchBossContent)
+  if (mode !== 'manual') {
+    return selectBossProfitBosses(matched)
+  }
+
+  const nameOf = (boss: MatchedBoss): string => boss.matchedBossName ?? boss.apiName
+
+  // ① 실제 처치한 보스는 추적 여부와 무관하게 전부, 처치한 난이도·가격으로 노출한다(사용자 확정) —
+  // 보스 수익 페이지는 정산이 목적이라([[ADR-032]]) 실제로 번 것은 다 보여준다. selectBossProfitBosses가
+  // 그룹당 실제 처치 난이도를 골라주며(등록 난이도와 다르게 처치했어도 처치 난이도로 잡힌다), 인게임
+  // 등록-only(미처치) placeholder는 수동 모드에서 신뢰하지 않으므로 ownComplete인 것만 남긴다.
+  const kills = selectBossProfitBosses(matched).filter((boss) => boss.ownComplete)
+  const killedNames = new Set(kills.map(nameOf))
+
+  // ② 수동 추적 중이지만 아직 처치하지 않은 보스는 고른 난이도로 미완료 placeholder(#33). 보스 관리
+  // 페이지와 동일 규약(mergeManualBossList — 정규화 명 매칭, cycle 폴백)으로 병합하되, 이미 ①에서 처치
+  // 난이도로 나온 보스명은 중복 배제한다.
+  const placeholders = mergeManualBossList(
+    manualItems.filter((item) => item.kind === 'boss'),
+    bossContents,
+  )
+    .map(matchBossContent)
+    .filter((boss) => !boss.ownComplete && !killedNames.has(nameOf(boss)))
+
+  return [...kills, ...placeholders]
 }
 
 function buildRowFromRecord(
@@ -621,6 +660,19 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     const sortedOcids = sortedCharacterInfo.map((info) => info.ocid)
     const imageUrlByOcid = new Map(sortedCharacterInfo.map((info) => [info.ocid, info.imageUrl]))
 
+    // ADR-035 결정 21: 수동 모드에서는 게임 등록/처치가 아니라 사용자 멤버십(manualTrackedContent)이 표시 목록을
+    // 결정하므로 캐시·라이브 브랜치 양쪽에서 참조할 수동 목록을 미리 조회해둔다(#33). 자동 모드는 이 조회를 하지
+    // 않는다 — 자동 동작은 트래킹과 완전히 독립이다.
+    const mode = await getTrackingMode()
+    const manualItemsByOcid = new Map<string, ManualTrackedItem[]>()
+    if (mode === 'manual') {
+      await Promise.all(
+        ocids.map(async (ocid) => {
+          manualItemsByOcid.set(ocid, await getManualTrackedContent(ocid))
+        }),
+      )
+    }
+
     // ADR-017 결정 1: 캐시 우선 표시 — 재검증(syncSchedules) 전에 마지막으로 성공한
     // 스케줄 캐시가 있으면 완료된 보스만 걸러 화면을 먼저 채운다. 이미 저장된 기록이
     // 있으면 함께 조회해 partySize/payoutMeso도 바로 보여준다(단순 읽기이므로 안전) —
@@ -634,14 +686,13 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
           if (cached === null) {
             return []
           }
-          const bosses = cached.state.bossContents.map(matchBossContent)
-          // 완료된 보스뿐 아니라 등록만 되고 아직 처치 전인 보스도 미완료 placeholder로 함께
+          // 자동 모드: 완료된 보스뿐 아니라 등록만 되고 아직 처치 전인 보스도 미완료 placeholder로 함께
           // 보여준다(ADR-032) — selectBossProfitBosses가 그룹(같은 apiName)당 "실제로 처치한"
           // 난이도(ownComplete)를 우선하고, 없으면 등록 난이도를 미완료 placeholder로 대신
           // 고른다. boss-scheduler의 selectDisplayBosses(등록 여부 우선)와 달리, 등록 난이도와
           // 실제 처치 난이도가 다를 수 있어([[ADR-031]]) 가격 계산에는 반드시 실제 처치 난이도를
-          // 써야 한다.
-          const displayBosses = selectBossProfitBosses(bosses)
+          // 써야 한다. 수동 모드는 사용자 멤버십을 병합해 표시한다(ADR-035 결정 21).
+          const displayBosses = selectProfitDisplayBosses(cached.state.bossContents, mode, manualItemsByOcid.get(ocid) ?? [])
           return displayBosses.map((boss) =>
             buildBossProfitRow(ocid, cached.state.characterName, imageUrlByOcid.get(ocid) ?? null, boss, now),
           )
@@ -714,8 +765,11 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
         staleCharacterNames.push(result.characterName)
       }
 
-      const bosses = result.state?.bossContents.map(matchBossContent) ?? []
-      const displayBosses = selectBossProfitBosses(bosses)
+      const displayBosses = selectProfitDisplayBosses(
+        result.state?.bossContents ?? [],
+        mode,
+        manualItemsByOcid.get(result.ocid) ?? [],
+      )
 
       for (const boss of displayBosses) {
         rows.push(

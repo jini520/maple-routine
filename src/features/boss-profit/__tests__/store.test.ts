@@ -16,6 +16,8 @@ const {
   markPeriodCheckedMock,
   getAuthConfigMock,
   fetchSchedulerCharacterStateMock,
+  getTrackingModeMock,
+  getManualTrackedContentMock,
 } = vi.hoisted(() => ({
   syncSchedulesMock: vi.fn(),
   getTrackedCharacterOcidsMock: vi.fn(),
@@ -28,6 +30,8 @@ const {
   markPeriodCheckedMock: vi.fn(),
   getAuthConfigMock: vi.fn(),
   fetchSchedulerCharacterStateMock: vi.fn(),
+  getTrackingModeMock: vi.fn(),
+  getManualTrackedContentMock: vi.fn(),
 }))
 
 vi.mock('../../schedule-sync/schedule-sync', () => ({
@@ -66,6 +70,14 @@ vi.mock('../../../storage/api-key', () => ({
 
 vi.mock('../../../nexon/schedule', () => ({
   fetchSchedulerCharacterState: fetchSchedulerCharacterStateMock,
+}))
+
+vi.mock('../../../storage/tracking-mode', () => ({
+  getTrackingMode: getTrackingModeMock,
+}))
+
+vi.mock('../../../storage/manual-tracked-content', () => ({
+  getManualTrackedContent: getManualTrackedContentMock,
 }))
 
 import {
@@ -142,6 +154,8 @@ beforeEach(() => {
   markPeriodCheckedMock.mockResolvedValue(undefined)
   getAuthConfigMock.mockResolvedValue({ apiKey: 'test-key', selectedAccountId: 'acc-1' })
   fetchSchedulerCharacterStateMock.mockResolvedValue(null)
+  getTrackingModeMock.mockResolvedValue('auto')
+  getManualTrackedContentMock.mockResolvedValue([])
 })
 
 afterEach(() => {
@@ -1418,6 +1432,134 @@ describe('useBossProfitStore', () => {
         }),
       )
       expect(useBossProfitStore.getState().rows[0].partySize).toBe(3)
+    })
+  })
+
+  describe('수동 트래킹 모드 (ADR-035 결정 21, #33)', () => {
+    it('수동으로만 추가한(인게임 미등록·미처치) 보스도 미완료 placeholder row로 표시된다 (라이브 브랜치)', async () => {
+      getTrackingModeMock.mockResolvedValue('manual')
+      getManualTrackedContentMock.mockResolvedValue([{ contentName: '스우', difficulty: '노멀', kind: 'boss' }])
+      // 동기화 결과에는 이 보스가 전혀 없다(등록도 처치도 안 함).
+      syncSchedulesMock.mockResolvedValue([
+        syncResult({ state: { ...syncResult().state!, bossContents: [] } }),
+      ])
+
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+
+      const rows = useBossProfitStore.getState().rows
+      expect(rows).toHaveLength(1)
+      expect(rows[0].boss).toBe('스우')
+      expect(rows[0].isComplete).toBe(false)
+      expect(rows[0].payoutMeso).toBe(0)
+      expect(upsertBossProfitRecordMock).not.toHaveBeenCalled()
+    })
+
+    it('수동으로만 추가한 보스도 캐시 우선 표시 단계(라이브 동기화 실패 시)에서 유지된다 (캐시 브랜치)', async () => {
+      getTrackingModeMock.mockResolvedValue('manual')
+      getManualTrackedContentMock.mockResolvedValue([{ contentName: '스우', difficulty: '노멀', kind: 'boss' }])
+      getCachedSchedulerStateMock.mockResolvedValue({
+        state: { ...syncResult().state!, bossContents: [] },
+        cachedAt: '2026-07-10T00:00:00.000Z',
+      })
+      // 라이브 동기화가 실패해도 캐시 브랜치가 세팅한 수동 보스 row가 남아 있어야 한다.
+      syncSchedulesMock.mockRejectedValue(new Error('network'))
+
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+
+      const state = useBossProfitStore.getState()
+      expect(state.status).toBe('error')
+      expect(state.rows).toHaveLength(1)
+      expect(state.rows[0].boss).toBe('스우')
+      expect(state.rows[0].payoutMeso).toBe(0)
+    })
+
+    it('수동 추적 보스가 실제로 처치되면 완료 row로 잡히고 정상 수익이 자동 기록된다', async () => {
+      getTrackingModeMock.mockResolvedValue('manual')
+      getManualTrackedContentMock.mockResolvedValue([{ contentName: '자쿰', difficulty: '카오스', kind: 'boss' }])
+      // 동기화 결과에 같은 (보스명, 난이도)가 완료 상태로 존재한다.
+      syncSchedulesMock.mockResolvedValue([
+        syncResult({
+          state: {
+            ...syncResult().state!,
+            bossContents: [bossContent({ name: '자쿰', difficulty: '카오스', isRegistered: true, isComplete: true })],
+          },
+        }),
+      ])
+
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+
+      const rows = useBossProfitStore.getState().rows
+      expect(rows).toHaveLength(1)
+      expect(rows[0].boss).toBe('자쿰')
+      expect(rows[0].isComplete).toBe(true)
+      expect(rows[0].partySize).toBe(1)
+      expect(rows[0].payoutMeso).toBe(8080000)
+    })
+
+    it('수동 추적한 난이도와 다른 난이도로 처치하면, 실제 처치한 난이도로 표시된다', async () => {
+      getTrackingModeMock.mockResolvedValue('manual')
+      // 자쿰을 "하드"로 추적했지만 실제로는 "카오스"를 처치했다.
+      getManualTrackedContentMock.mockResolvedValue([{ contentName: '자쿰', difficulty: '하드', kind: 'boss' }])
+      syncSchedulesMock.mockResolvedValue([
+        syncResult({
+          state: {
+            ...syncResult().state!,
+            bossContents: [
+              bossContent({ name: '자쿰', difficulty: '카오스', isRegistered: false, isComplete: true, ownComplete: true }),
+            ],
+          },
+        }),
+      ])
+
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+
+      const rows = useBossProfitStore.getState().rows
+      expect(rows).toHaveLength(1)
+      expect(rows[0].boss).toBe('자쿰')
+      expect(rows[0].difficulty).toBe('카오스')
+      expect(rows[0].isComplete).toBe(true)
+      expect(rows[0].payoutMeso).toBe(8080000)
+    })
+
+    it('추적하지 않은 보스라도 처치했으면 표시되고, 추적 중 미처치 보스는 placeholder로 함께 나온다', async () => {
+      getTrackingModeMock.mockResolvedValue('manual')
+      // 스우는 추적 중(미처치), 자쿰은 추적하지 않았지만 처치함.
+      getManualTrackedContentMock.mockResolvedValue([{ contentName: '스우', difficulty: '노멀', kind: 'boss' }])
+      syncSchedulesMock.mockResolvedValue([
+        syncResult({
+          state: {
+            ...syncResult().state!,
+            bossContents: [
+              bossContent({ name: '자쿰', difficulty: '카오스', isRegistered: false, isComplete: true, ownComplete: true }),
+            ],
+          },
+        }),
+      ])
+
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+
+      const rows = useBossProfitStore.getState().rows
+      const byBoss = Object.fromEntries(rows.map((row) => [row.boss, row]))
+      expect(rows).toHaveLength(2)
+      // 추적하지 않았지만 처치한 자쿰 — 완료·정산 표시
+      expect(byBoss['자쿰'].isComplete).toBe(true)
+      expect(byBoss['자쿰'].payoutMeso).toBe(8080000)
+      // 추적 중이지만 미처치인 스우 — placeholder
+      expect(byBoss['스우'].isComplete).toBe(false)
+      expect(byBoss['스우'].payoutMeso).toBe(0)
+    })
+
+    it('자동 모드에서는 manualTrackedContent를 읽지 않는다 (수동 추적 보스가 목록에 새지 않음)', async () => {
+      // 기본값(auto). 수동 목록이 저장돼 있어도 자동 모드에서는 무시돼야 한다.
+      getManualTrackedContentMock.mockResolvedValue([{ contentName: '스우', difficulty: '노멀', kind: 'boss' }])
+      syncSchedulesMock.mockResolvedValue([
+        syncResult({ state: { ...syncResult().state!, bossContents: [] } }),
+      ])
+
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+
+      expect(useBossProfitStore.getState().rows).toEqual([])
+      expect(getManualTrackedContentMock).not.toHaveBeenCalled()
     })
   })
 })
