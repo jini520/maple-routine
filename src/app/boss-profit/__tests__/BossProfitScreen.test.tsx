@@ -17,6 +17,8 @@ const CURRENT_WEEKLY_PERIOD_KEY = getCurrentBossProfitPeriod('weekly', new Date(
 
 vi.mock('../../../features/boss-profit/store', () => ({
   useBossProfitStore: vi.fn(),
+  dropRowKey: (ocid: string, boss: string, difficulty: string, periodKey: string) =>
+    `${ocid}|${boss}|${difficulty}|${periodKey}`,
 }))
 
 const mockedUseBossProfitStore = vi.mocked(useBossProfitStore)
@@ -27,6 +29,7 @@ function mockStore(overrides: Partial<ReturnType<typeof useBossProfitStore>>): v
     tab: 'weekly',
     periodKey: '2026-07-09',
     rows: [],
+    dropsByRowKey: {},
     weeklySubtotals: [],
     isPeriodLoading: false,
     periodUnavailable: false,
@@ -41,6 +44,7 @@ function mockStore(overrides: Partial<ReturnType<typeof useBossProfitStore>>): v
     goToPreviousPeriod: vi.fn(),
     goToNextPeriod: vi.fn(),
     setPartySize: vi.fn(),
+    setBossDrops: vi.fn(),
     ...overrides,
   })
 }

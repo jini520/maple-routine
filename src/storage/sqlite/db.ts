@@ -40,6 +40,26 @@ const CREATE_BOSS_PROFIT_PERIOD_CHECKS_TABLE = `
   )
 `
 
+// 보스별/기간별 드롭 기록(ADR-038). 한 보스가 여러 드롭을 가지므로 drop_index로 다중 행. 금액은
+// 저장하지 않고 재평가 가능한 구조(아이템명·카테고리·상자 출처·반지 등급·수량)만 담는다.
+const CREATE_BOSS_DROP_RECORDS_TABLE = `
+  CREATE TABLE IF NOT EXISTS boss_drop_records (
+    ocid TEXT NOT NULL,
+    boss TEXT NOT NULL,
+    difficulty TEXT NOT NULL,
+    period_key TEXT NOT NULL,
+    drop_index INTEGER NOT NULL,
+    category TEXT NOT NULL,
+    item_name TEXT NOT NULL,
+    slot TEXT,
+    box_origin TEXT,
+    ring_level INTEGER,
+    quantity INTEGER NOT NULL,
+    recorded_at TEXT NOT NULL,
+    PRIMARY KEY (ocid, boss, difficulty, period_key, drop_index)
+  )
+`
+
 // 메이린 카드 표시명을 API content_name('시즌 보스 메이린')과 통일하며 boss 식별 키를
 // 바꿨다(2026-07-22, weekly-bosses.json 참고) — 기존에 저장된 파티 설정·수익 기록이 새 키를
 // 못 찾는 고아 데이터가 되지 않도록 옛 키를 새 키로 옮긴다. 이미 옮겨진 뒤에는 WHERE절에
@@ -82,6 +102,7 @@ async function openBossProfitDb(): Promise<SQLiteDBConnection> {
   await db.execute(CREATE_BOSS_PROFIT_RECORDS_TABLE)
   await db.execute(CREATE_BOSS_PARTY_SETTINGS_TABLE)
   await db.execute(CREATE_BOSS_PROFIT_PERIOD_CHECKS_TABLE)
+  await db.execute(CREATE_BOSS_DROP_RECORDS_TABLE)
   await db.execute(MIGRATE_MEIRIN_BOSS_KEY_PARTY_SETTINGS)
   await db.execute(MIGRATE_MEIRIN_BOSS_KEY_PROFIT_RECORDS)
 

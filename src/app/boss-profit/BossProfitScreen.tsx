@@ -6,6 +6,7 @@ import { DifficultyBadge } from '../../components/DifficultyBadge/DifficultyBadg
 import { MAPLE_LEAF_PATH } from '../../components/mapleLeafPath'
 import weeklyBossesData from '../../data/weekly-bosses.json'
 import {
+  dropRowKey,
   useBossProfitStore,
   type BossProfitRow,
   type BossProfitStore,
@@ -13,7 +14,10 @@ import {
 } from '../../features/boss-profit/store'
 import { formatScheduleSyncError, formatSyncedAt } from '../../features/schedule-sync/format'
 import { formatBossProfitPeriodLabel, isLatestPeriod, isPeriodQueryable } from '../../lib/boss-profit-period'
+import { getItemIconUrl } from '../../lib/item-icons'
 import type { BossCycle } from '../../types'
+import type { RecordedDrop } from '../../types/drops'
+import { BossDropSheet } from './BossDropSheet'
 
 // components/CharacterTrackingPicker와 동일한 얼굴 크롭 기법(ADR-015)을 이 화면의 32px
 // 아바타 슬롯 크기에 맞춰 재사용한다 — 이 프로젝트는 화면마다 UI를 그대로 복제하는 관례를
@@ -88,14 +92,63 @@ function sumSubtotals(subtotals: BossProfitWeeklySubtotal[]): number {
   return subtotals.reduce((sum, subtotal) => sum + subtotal.totalMeso, 0)
 }
 
+// 접힌 보스 행의 이름 라인 오른쪽에 붙는 드롭 지시자(ADR-038). 있으면 아이콘 스택+개수, 없으면
+// "＋ 드롭 추가" 칩. 상자 결과는 실제 나온 아이템(반지 등) 아이콘으로 뜬다.
+function DropIndicator(props: { drops: RecordedDrop[] }): React.JSX.Element {
+  if (props.drops.length === 0) {
+    return (
+      <span className="ml-auto flex-none rounded-full border border-dashed border-primary/45 bg-primary/10 px-2.5 py-1 text-[11px] font-bold text-primary-text">
+        ＋ 드롭 추가
+      </span>
+    )
+  }
+
+  const shown = props.drops.slice(0, 3)
+  const extra = props.drops.length - shown.length
+
+  return (
+    <span className="ml-auto flex flex-none items-center">
+      {shown.map((drop, index) => {
+        const url = getItemIconUrl(drop.itemName, drop.slot)
+        return url !== null ? (
+          <img
+            key={`${drop.itemName}-${index}`}
+            src={url}
+            alt=""
+            className="h-6 w-6 rounded-md border-[1.5px] border-surface bg-surface-2 object-contain"
+            style={{ marginLeft: index === 0 ? 0 : -6 }}
+          />
+        ) : (
+          <span
+            key={`${drop.itemName}-${index}`}
+            className="h-6 w-6 rounded-md border-[1.5px] border-surface bg-surface-2"
+            style={{ marginLeft: index === 0 ? 0 : -6 }}
+          />
+        )
+      })}
+      {extra > 0 && (
+        <span
+          className="grid h-6 w-6 place-items-center rounded-md border-[1.5px] border-surface bg-surface-2 text-[10px] font-bold text-text-muted"
+          style={{ marginLeft: -6 }}
+        >
+          +{extra}
+        </span>
+      )}
+    </span>
+  )
+}
+
 interface BossProfitBossRowProps {
   row: BossProfitRow
+  drops: RecordedDrop[]
   setPartySize: BossProfitStore['setPartySize']
+  setBossDrops: BossProfitStore['setBossDrops']
 }
 
 function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Element {
   const { row } = props
   const [error, setError] = useState<string | null>(null)
+  const [isDropSheetOpen, setIsDropSheetOpen] = useState(false)
   const isPriceUnknown = row.priceMeso === null
   // 미완료(보스 스케줄러에 등록만 되고 아직 처치 전) placeholder는 파티원 수를 조정해도 의미가
   // 없다 — 계산은 항상 0메소로 고정된다(ADR-032). "가격 미확정"과 동일한 비활성 처리를 재사용한다.
@@ -116,11 +169,18 @@ function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Element {
     <li className="flex items-start gap-3 p-4 border-b border-border last:border-b-0">
       <BossPortrait portraitSlug={findPortraitSlug(row.boss)} label={row.boss} size={BOSS_PORTRAIT_SIZE} />
 
-      <div className="flex-1">
-        <div className="flex items-center gap-1.5 flex-wrap">
+      <div className="flex-1 min-w-0">
+        {/* 이름 라인 전체가 드롭 시트 열기 버튼(ADR-038). 파티 스테퍼는 아래 줄이라 탭 충돌 없음. */}
+        <button
+          type="button"
+          onClick={() => setIsDropSheetOpen(true)}
+          aria-label={`${row.boss} ${row.difficulty} 드롭 아이템 관리`}
+          className="flex w-full items-center gap-1.5 text-left"
+        >
           <DifficultyBadge difficulty={row.difficulty} />
-          <span className="text-sm font-semibold text-text">{row.boss}</span>
-        </div>
+          <span className="truncate text-sm font-semibold text-text">{row.boss}</span>
+          <DropIndicator drops={props.drops} />
+        </button>
 
         <div className="flex items-center justify-between gap-2 mt-2">
           <div
@@ -168,6 +228,16 @@ function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Element {
 
         {error !== null && <p className="mt-1 text-xs text-error">{error}</p>}
       </div>
+
+      {isDropSheetOpen && (
+        <BossDropSheet
+          boss={row.boss}
+          difficulty={row.difficulty}
+          initialDrops={props.drops}
+          onSave={(drops) => props.setBossDrops(row, drops)}
+          onClose={() => setIsDropSheetOpen(false)}
+        />
+      )}
     </li>
   )
 }
@@ -184,13 +254,21 @@ function AccordionFooter(props: { characterName: string; totalMeso: number }): R
 function WeeklyAccordionBody(props: {
   characterName: string
   rows: BossProfitRow[]
+  dropsByRowKey: Record<string, RecordedDrop[]>
   setPartySize: BossProfitStore['setPartySize']
+  setBossDrops: BossProfitStore['setBossDrops']
 }): React.JSX.Element {
   return (
     <div className="border-t border-border">
       <ul>
         {props.rows.map((row) => (
-          <BossProfitBossRow key={rowKey(row)} row={row} setPartySize={props.setPartySize} />
+          <BossProfitBossRow
+            key={rowKey(row)}
+            row={row}
+            drops={props.dropsByRowKey[dropRowKey(row.ocid, row.boss, row.difficulty, row.periodKey)] ?? []}
+            setPartySize={props.setPartySize}
+            setBossDrops={props.setBossDrops}
+          />
         ))}
       </ul>
       <AccordionFooter characterName={props.characterName} totalMeso={sumPayout(props.rows)} />
@@ -234,7 +312,9 @@ function MonthlyAccordionBody(props: {
   characterName: string
   bossRows: BossProfitRow[]
   weeklySubtotals: BossProfitWeeklySubtotal[]
+  dropsByRowKey: Record<string, RecordedDrop[]>
   setPartySize: BossProfitStore['setPartySize']
+  setBossDrops: BossProfitStore['setBossDrops']
   now: Date
   isMonthlyBossQueryable: boolean
 }): React.JSX.Element {
@@ -263,7 +343,13 @@ function MonthlyAccordionBody(props: {
           {props.bossRows.length > 0 ? (
             <ul>
               {props.bossRows.map((row) => (
-                <BossProfitBossRow key={rowKey(row)} row={row} setPartySize={props.setPartySize} />
+                <BossProfitBossRow
+                  key={rowKey(row)}
+                  row={row}
+                  drops={props.dropsByRowKey[dropRowKey(row.ocid, row.boss, row.difficulty, row.periodKey)] ?? []}
+                  setPartySize={props.setPartySize}
+                  setBossDrops={props.setBossDrops}
+                />
               ))}
             </ul>
           ) : (
@@ -320,7 +406,9 @@ function groupTotalMeso(group: CharacterGroup): number {
 function CharacterAccordion(props: {
   group: CharacterGroup
   tab: BossCycle
+  dropsByRowKey: Record<string, RecordedDrop[]>
   setPartySize: BossProfitStore['setPartySize']
+  setBossDrops: BossProfitStore['setBossDrops']
   now: Date
   isMonthlyBossQueryable: boolean
 }): React.JSX.Element {
@@ -357,14 +445,18 @@ function CharacterAccordion(props: {
           <WeeklyAccordionBody
             characterName={group.characterName}
             rows={group.bossRows}
+            dropsByRowKey={props.dropsByRowKey}
             setPartySize={props.setPartySize}
+            setBossDrops={props.setBossDrops}
           />
         ) : (
           <MonthlyAccordionBody
             characterName={group.characterName}
             bossRows={group.bossRows}
             weeklySubtotals={group.weeklySubtotals}
+            dropsByRowKey={props.dropsByRowKey}
             setPartySize={props.setPartySize}
+            setBossDrops={props.setBossDrops}
             now={props.now}
             isMonthlyBossQueryable={props.isMonthlyBossQueryable}
           />
@@ -393,6 +485,8 @@ export function BossProfitScreen(): React.JSX.Element {
     goToPreviousPeriod,
     goToNextPeriod,
     setPartySize,
+    setBossDrops,
+    dropsByRowKey,
   } = useBossProfitStore()
 
   useEffect(() => {
@@ -593,7 +687,9 @@ export function BossProfitScreen(): React.JSX.Element {
               key={`${tab}-${periodKey}-${group.ocid}`}
               group={group}
               tab={tab}
+              dropsByRowKey={dropsByRowKey}
               setPartySize={setPartySize}
+              setBossDrops={setBossDrops}
               now={now}
               isMonthlyBossQueryable={periodQueryable}
             />

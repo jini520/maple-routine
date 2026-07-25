@@ -16,6 +16,8 @@ import { fetchSchedulerCharacterState } from '../../nexon/schedule'
 import { getAuthConfig } from '../../storage/api-key'
 import { getBossPartySize } from '../../storage/boss-party-settings'
 import { getBossProfitRecords, upsertBossProfitRecord, type BossProfitRecord } from '../../storage/boss-profit'
+import { getBossDropRecords, replaceBossDropRecords } from '../../storage/boss-drops'
+import type { RecordedDrop } from '../../types/drops'
 import { isPeriodChecked, markPeriodChecked } from '../../storage/boss-profit-period-checks'
 import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
@@ -60,6 +62,7 @@ export interface BossProfitState {
   tab: BossCycle
   periodKey: string // 현재 tab 기준으로 선택된 기간
   rows: BossProfitRow[] // 선택된 (tab, periodKey)의 보스 row. monthly 탭이면 그 달의 monthly-cycle 보스만
+  dropsByRowKey: Record<string, RecordedDrop[]> // 보스 행별 기록된 드롭(ADR-038). 키는 dropRowKey(ocid|boss|difficulty|periodKey). rows와 독립 상태라 탭 전환 시 loadPeriod가 DB에서 재로드
   weeklySubtotals: BossProfitWeeklySubtotal[] // monthly 탭에서만 채워짐(주차별 합계). weekly 탭에서는 항상 []
   isPeriodLoading: boolean // periodKey 이동 후 백필(과거 기간 재조회) 진행 중
   periodUnavailable: boolean // 직전 백필 시도가 실패해 이 기간 일부를 지금 볼 수 없음(재시도 가능하도록 checked로 기록하지 않았다는 뜻)
@@ -79,6 +82,7 @@ export interface BossProfitStore extends BossProfitState {
   goToPreviousPeriod(): Promise<void>
   goToNextPeriod(): Promise<void>
   setPartySize(row: BossProfitRowKey, partySize: number): Promise<void>
+  setBossDrops(row: BossProfitRowKey, drops: RecordedDrop[]): Promise<void>
 }
 
 interface CharacterProfileInfo {
@@ -599,6 +603,38 @@ type BossProfitSetter = (partial: Partial<BossProfitState>) => void
 // 바꾸는 바로 그 순간 캡처한 requestGeneration 값이다 — 이 비동기 함수가 끝나기 전에 더 최신
 // 액션(연타 등)이 시작됐다면(requestGeneration이 그 사이 또 증가했다면) set()을 건너뛰어
 // stale한 응답이 최신 화면을 덮어쓰지 않게 한다.
+// 드롭 상태 키(ADR-038). BossProfitRow 키와 달리 cycle을 뺀다 — 드롭은 (ocid,boss,difficulty,
+// periodKey)로 저장되고 periodKey가 이미 주간/월간을 구분하므로 cycle이 불필요하다.
+export function dropRowKey(ocid: string, boss: string, difficulty: string, periodKey: string): string {
+  return `${ocid}|${boss}|${difficulty}|${periodKey}`
+}
+
+// rows에 등장하는 periodKey들의 드롭 기록을 dropRowKey → RecordedDrop[]로 묶어 반환한다.
+// getBossDropRecords는 ORDER BY drop_index라 추가 순서가 보존된다.
+async function loadDropsByRowKey(
+  ocids: string[],
+  rows: BossProfitRow[],
+): Promise<Record<string, RecordedDrop[]>> {
+  const periodKeys = Array.from(new Set(rows.map((row) => row.periodKey)))
+  if (ocids.length === 0 || periodKeys.length === 0) return {}
+
+  const records = await withSqliteFallback(getBossDropRecords(ocids, periodKeys), [])
+  const map: Record<string, RecordedDrop[]> = {}
+  for (const record of records) {
+    const key = dropRowKey(record.ocid, record.boss, record.difficulty, record.periodKey)
+    if (map[key] === undefined) map[key] = []
+    map[key].push({
+      category: record.category,
+      itemName: record.itemName,
+      slot: record.slot ?? undefined,
+      boxOrigin: record.boxOrigin ?? undefined,
+      ringLevel: record.ringLevel ?? undefined,
+      quantity: record.quantity,
+    })
+  }
+  return map
+}
+
 async function loadPeriod(
   set: BossProfitSetter,
   tab: BossCycle,
@@ -627,13 +663,14 @@ async function loadPeriod(
           )
         : []
     const canGoPreviousPeriod = await canReachPreviousPeriod(tab, periodKey, ocids, now)
+    const dropsByRowKey = await loadDropsByRowKey(ocids, rows)
     if (generation !== requestGeneration) return
     // loadPeriod는 항상 로컬 데이터(스냅샷/기록)로만 뷰를 정착시키고 실시간 동기화를 하지 않는다.
     // 또한 이 함수는 항상 requestGeneration을 올린 네비게이션 뒤에만 실행되므로, 진행 중이던
     // refresh의 'loading'은 이미 무효화된 상태다. 여기서 status를 'loaded'로 확정하지 않으면,
     // refresh 도중 기간을 이동했다가 돌아왔을 때 refresh의 최종 'loaded' set이 세대 가드에 막혀
     // status가 'loading'에 영구히 갇히는 버그가 생긴다(사용자 보고 — "조회 중..." 무한 진행).
-    set({ status: 'loaded', rows, weeklySubtotals, isPeriodLoading: false, periodUnavailable: false, canGoPreviousPeriod })
+    set({ status: 'loaded', rows, dropsByRowKey, weeklySubtotals, isPeriodLoading: false, periodUnavailable: false, canGoPreviousPeriod })
     return
   }
 
@@ -666,11 +703,12 @@ async function loadPeriod(
   const weeklySubtotals =
     tab === 'monthly' ? await buildWeeklySubtotalsForMonth(sortedOcids, periodKey, [], new Map(), now) : []
   const canGoPreviousPeriod = await canReachPreviousPeriod(tab, periodKey, ocids, now)
+  const dropsByRowKey = await loadDropsByRowKey(ocids, rows)
 
   if (generation !== requestGeneration) return
   // status를 'loaded'로 확정한다 — 위 "현재 기간" 분기와 같은 이유(중단된 refresh의 'loading'이
   // 세대 가드로 갇히는 것 방지).
-  set({ status: 'loaded', rows, weeklySubtotals, isPeriodLoading: false, periodUnavailable, canGoPreviousPeriod })
+  set({ status: 'loaded', rows, dropsByRowKey, weeklySubtotals, isPeriodLoading: false, periodUnavailable, canGoPreviousPeriod })
 }
 
 const initialState: BossProfitState = {
@@ -678,6 +716,7 @@ const initialState: BossProfitState = {
   tab: 'weekly',
   periodKey: getCurrentBossProfitPeriod('weekly', new Date()).periodKey,
   rows: [],
+  dropsByRowKey: {},
   weeklySubtotals: [],
   isPeriodLoading: false,
   periodUnavailable: false,
@@ -712,6 +751,7 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
         status: 'loaded',
         periodKey: currentPeriodKey,
         rows: [],
+        dropsByRowKey: {},
         weeklySubtotals: [],
         isPeriodLoading: false,
         periodUnavailable: false,
@@ -799,6 +839,8 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
         ? await buildWeeklySubtotalsForMonth(sortedOcids, currentPeriodKey, cachedMergedRows, cachedCharacterProfiles, now)
         : []
 
+    const cachedDropsByRowKey = await loadDropsByRowKey(ocids, cachedMergedRows)
+
     // 이 호출보다 나중에 시작된 refresh/setTab/goToXPeriod가 이미 있다면(연타 등) 이 시점의
     // 캐시 우선 표시조차 화면에 반영하지 않는다 — 더 최신 액션이 이미 진행 중이므로 그 결과가
     // 우선한다.
@@ -808,6 +850,7 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
       status: 'loading',
       periodKey: currentPeriodKey,
       rows: filterRowsForTab(cachedMergedRows, tab, currentPeriodKey),
+      dropsByRowKey: cachedDropsByRowKey,
       weeklySubtotals: cachedWeeklySubtotals,
       isPeriodLoading: false,
       periodUnavailable: false,
@@ -914,12 +957,15 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
         ? await buildWeeklySubtotalsForMonth(sortedOcids, currentPeriodKey, sortedRows, characterProfiles, now)
         : []
 
+    const liveDropsByRowKey = await loadDropsByRowKey(ocids, sortedRows)
+
     if (myGeneration !== requestGeneration) return
 
     set({
       status: 'loaded',
       periodKey: currentPeriodKey,
       rows: filterRowsForTab(sortedRows, tab, currentPeriodKey),
+      dropsByRowKey: liveDropsByRowKey,
       weeklySubtotals,
       isPeriodLoading: false,
       periodUnavailable: false,
@@ -1007,5 +1053,27 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     if (latestSyncSnapshot !== null) {
       latestSyncSnapshot = { ...latestSyncSnapshot, rows: latestSyncSnapshot.rows.map(applyEdit) }
     }
+  },
+
+  async setBossDrops(rowKey, drops) {
+    const row = get().rows.find((candidate) => matchesRowKey(candidate, rowKey))
+    if (row === undefined) {
+      throw new Error('setBossDrops: 존재하지 않는 보스 행입니다')
+    }
+
+    // 한 보스/기간의 드롭 집합을 통째로 교체한다(ADR-038, replace-all).
+    await replaceBossDropRecords(
+      row.ocid,
+      row.boss,
+      row.difficulty,
+      row.periodKey,
+      drops,
+      new Date().toISOString(),
+    )
+
+    // dropsByRowKey는 rows와 독립된 상태라 setPartySize와 달리 latestSyncSnapshot 이중 갱신이
+    // 필요 없다 — 탭 전환/기간 이동 시 loadPeriod가 DB(방금 replace한 결과)에서 다시 로드한다.
+    const key = dropRowKey(row.ocid, row.boss, row.difficulty, row.periodKey)
+    set({ dropsByRowKey: { ...get().dropsByRowKey, [key]: drops } })
   },
 }))
