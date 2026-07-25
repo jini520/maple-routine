@@ -164,17 +164,22 @@ describe('mergeSchedulerState — world 범위 (몬스터파크)', () => {
     ])
   })
 
-  it('registration_flag: false인 응답에서는 아직 active가 아니었다면 노출되지 않는다', () => {
+  it('registration_flag: false이고 아직 active가 아니어도 now_count는 실효 상태에 담기되 isRegistered: false로 표시된다', () => {
     const fresh = baseState({
       dailyContents: [
-        { name: '몬스터파크', kind: 'contents', isRegistered: false, nowCount: 0, maxCount: 14, questState: null },
+        { name: '몬스터파크', kind: 'contents', isRegistered: false, nowCount: 7, maxCount: 14, questState: null },
       ],
     })
 
     const result = mergeSchedulerState({ previous: null, fresh, worldLedger: {}, accountLedger: {}, now: NOW })
 
-    expect(result.characterState.dailyContents).toEqual([])
+    // auto 모드는 isRegistered로 노출을 거르므로 여전히 숨겨지지만(설계 유지), 수동 모드가 참조할 수
+    // 있게 값(now_count) 자체는 버리지 않고 실효 상태에 담는다.
+    expect(result.characterState.dailyContents).toEqual([
+      { name: '몬스터파크', kind: 'contents', isRegistered: false, nowCount: 7, maxCount: 14, questState: null },
+    ])
     expect(result.worldLedgerUpdates.몬스터파크.active).toBe(false)
+    expect(result.worldLedgerUpdates.몬스터파크.nowCount).toBe(7)
   })
 
   it('이미 active인 항목이 이번 응답에 registration_flag: false로 와도 여전히 노출되고 값은 갱신된다', () => {

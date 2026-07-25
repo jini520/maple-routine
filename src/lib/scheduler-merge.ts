@@ -108,10 +108,13 @@ function mergeSection(
         accountUpdates[item.name] = entry
       }
 
-      if (active) {
-        items.push(withMaxCountOverride({ ...item, isRegistered: true }))
-        seen.add(item.name)
-      }
+      // 값(now_count)은 active 여부와 무관하게 항상 실효 상태에 담고, 노출 여부는 isRegistered로만
+      // 제어한다: auto 모드는 isRegistered로 걸러 미등록 항목을 숨기고(등록 전엔 안 보임, 설계 유지),
+      // 수동 모드는 isRegistered를 무시하므로 API가 준 값을 그대로 표시한다. 몬스터파크처럼 now_count가
+      // 월드 총합이라 registration_flag가 false여도 값이 오는 경우, 값을 버리지 않아야 수동 모드가
+      // 0 대신 실값을 보여줄 수 있다.
+      items.push(withMaxCountOverride({ ...item, isRegistered: active }))
+      seen.add(item.name)
     }
   }
 
