@@ -12,12 +12,7 @@ import {
   type BossProfitWeeklySubtotal,
 } from '../../features/boss-profit/store'
 import { formatScheduleSyncError, formatSyncedAt } from '../../features/schedule-sync/format'
-import {
-  formatBossProfitPeriodLabel,
-  isEarliestNavigablePeriod,
-  isLatestPeriod,
-  isPeriodQueryable,
-} from '../../lib/boss-profit-period'
+import { formatBossProfitPeriodLabel, isLatestPeriod, isPeriodQueryable } from '../../lib/boss-profit-period'
 import type { BossCycle } from '../../types'
 
 // components/CharacterTrackingPicker와 동일한 얼굴 크롭 기법(ADR-015)을 이 화면의 32px
@@ -387,6 +382,7 @@ export function BossProfitScreen(): React.JSX.Element {
     weeklySubtotals,
     isPeriodLoading,
     periodUnavailable,
+    canGoPreviousPeriod,
     error,
     staleCharacterNames,
     trackedOcids,
@@ -436,8 +432,13 @@ export function BossProfitScreen(): React.JSX.Element {
 
   const now = new Date()
   const periodLabel = formatBossProfitPeriodLabel(tab, periodKey, now)
-  const isNextDisabled = isLatestPeriod(tab, periodKey, now)
-  const isPrevDisabled = isEarliestNavigablePeriod(tab, periodKey)
+  // 최신(=현재) 기간에서는 다음 이동을 막고, 새로고침 버튼도 이때만 노출한다(#30) — 과거 기간은
+  // cache-first·checked-once 모델이라 수동 새로고침이 무의미하고 오히려 현재 기간으로 되돌린다.
+  const isCurrentPeriod = isLatestPeriod(tab, periodKey, now)
+  const isNextDisabled = isCurrentPeriod
+  // 이전 이동 가능 여부는 store가 매 기간 로드 시 계산해둔 canGoPreviousPeriod로 판단한다(#29) —
+  // 조회 불가능하고 캐시 기록도 없는 기간에 착지하지 않도록 막는다.
+  const isPrevDisabled = !canGoPreviousPeriod
   // 캐시된 기록이 없는 상태에서 이 기간을 "지금" API로 조회할 수 있는지(ADR-032) — false면
   // "아직 처치한 보스가 없습니다"(확정된 빈 상태)가 아니라 "조회 불가"(확인 자체를 못 함)를 보여준다.
   const periodQueryable = isPeriodQueryable(tab, periodKey, now)
@@ -453,23 +454,28 @@ export function BossProfitScreen(): React.JSX.Element {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h1 className="text-lg font-semibold text-text">보스 수익</h1>
-            <div className="flex shrink-0 items-center gap-2">
-              <p className="text-sm text-text-muted whitespace-nowrap">
-                {status === 'loading' ? '조회 중...' : formatSyncedAt(lastSyncedAt)}
-              </p>
-              <button
-                type="button"
-                onClick={() => refresh(trackedOcids ?? [])}
-                aria-label="새로고침"
-                className="p-2 text-primary-text hover:text-primary-hover"
-              >
-                <RefreshCw
-                  className={`h-4 w-4 ${status === 'loading' ? 'animate-spin' : ''}`}
-                  strokeWidth={2}
-                  aria-hidden="true"
-                />
-              </button>
-            </div>
+            {/* 동기화 상태 영역(마지막 동기화 시각 텍스트 + 새로고침 버튼)은 현재 기간에서만
+                노출한다(#30) — 과거 기간은 cache-first·checked-once 모델이라 실시간 동기화 개념이
+                없어 "조회 중..."/"방금 전"/"n분 전" 표시도, 재조회 버튼도 의미가 없다. */}
+            {isCurrentPeriod && (
+              <div className="flex shrink-0 items-center gap-2">
+                <p className="text-sm text-text-muted whitespace-nowrap">
+                  {status === 'loading' ? '조회 중...' : formatSyncedAt(lastSyncedAt)}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => refresh(trackedOcids ?? [])}
+                  aria-label="새로고침"
+                  className="p-2 text-primary-text hover:text-primary-hover"
+                >
+                  <RefreshCw
+                    className={`h-4 w-4 ${status === 'loading' ? 'animate-spin' : ''}`}
+                    strokeWidth={2}
+                    aria-hidden="true"
+                  />
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-4">
@@ -580,8 +586,11 @@ export function BossProfitScreen(): React.JSX.Element {
 
         {!isPeriodLoading &&
           characterGroups.map((group) => (
+            // key에 tab·periodKey를 포함해 탭 전환/기간 이동 시 아코디언을 remount시킨다(#27) —
+            // 펼침 상태(isExpanded)는 CharacterAccordion 로컬 state라, key가 그대로면 인스턴스가
+            // 재사용돼 한 탭/기간에서 펼친 상태가 다른 탭/기간으로 그대로 이어졌다.
             <CharacterAccordion
-              key={group.ocid}
+              key={`${tab}-${periodKey}-${group.ocid}`}
               group={group}
               tab={tab}
               setPartySize={setPartySize}

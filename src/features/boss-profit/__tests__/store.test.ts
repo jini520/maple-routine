@@ -137,6 +137,7 @@ beforeEach(() => {
     weeklySubtotals: [],
     isPeriodLoading: false,
     periodUnavailable: false,
+    canGoPreviousPeriod: false,
     error: null,
     staleCharacterNames: [],
     trackedOcids: null,
@@ -1032,6 +1033,51 @@ describe('useBossProfitStore', () => {
       }
     }
 
+    it('refresh(조회 중)가 진행 중일 때 과거 기간으로 이동 후 다시 돌아와도 status가 loading에 갇히지 않는다', async () => {
+      vi.useFakeTimers({ toFake: ['Date'] })
+      vi.setSystemTime(new Date('2026-07-22T12:00:00+09:00')) // 이번 주 2026-07-16, 롤링 하한 2026-07-09
+      try {
+        // syncSchedules를 수동 제어해 "조회 중"(status: 'loading') 상태를 유지시킨다.
+        let resolveSync!: (value: Awaited<ReturnType<typeof syncSchedulesMock>>) => void
+        syncSchedulesMock.mockReturnValue(
+          new Promise((resolve) => {
+            resolveSync = resolve
+          }),
+        )
+        isPeriodCheckedMock.mockResolvedValue(true) // 과거 주는 이미 체크됨(백필 없이 로컬 기록만)
+        getBossProfitRecordsMock.mockResolvedValue([])
+
+        const refreshPromise = useBossProfitStore.getState().refresh(['ocid-1'])
+
+        // 캐시 우선 단계에서 status가 'loading'이 된다.
+        await vi.waitFor(() => {
+          expect(useBossProfitStore.getState().status).toBe('loading')
+        })
+
+        // 조회 중일 때 과거 기간으로 이동하면, 정착 후 status는 더 이상 'loading'이 아니어야 한다.
+        await useBossProfitStore.getState().goToPreviousPeriod()
+        expect(useBossProfitStore.getState().periodKey).toBe('2026-07-09')
+        expect(useBossProfitStore.getState().status).toBe('loaded')
+
+        // 뒤늦게 끝난 refresh는 세대 불일치로 화면(rows/status)을 덮어쓰지 않지만, 동기화가 실제로
+        // 성공했으므로 lastSyncedAt만은 기록돼야 한다 — 그렇지 않으면 현재 기간 복귀 시 신선한
+        // 데이터를 보여주면서도 "동기화 기록 없음"으로 표시된다.
+        expect(useBossProfitStore.getState().lastSyncedAt).toBeNull()
+        resolveSync([syncResult()])
+        await refreshPromise
+        expect(useBossProfitStore.getState().status).toBe('loaded')
+        expect(useBossProfitStore.getState().lastSyncedAt).not.toBeNull()
+
+        // 다시 이번 주로 돌아와도 "조회 중..."에 무한히 갇히지 않고, 동기화 시각도 유지된다.
+        await useBossProfitStore.getState().goToNextPeriod()
+        expect(useBossProfitStore.getState().periodKey).toBe('2026-07-16')
+        expect(useBossProfitStore.getState().status).toBe('loaded')
+        expect(useBossProfitStore.getState().lastSyncedAt).not.toBeNull()
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
     it('goToPreviousPeriod: 이미 체크된 과거 주는 API 호출 없이 로컬 기록만으로 rows를 채운다', async () => {
       syncSchedulesMock.mockResolvedValue([syncResult()]) // 자쿰 카오스, 이번 주
       await useBossProfitStore.getState().refresh(['ocid-1'])
@@ -1294,7 +1340,7 @@ describe('useBossProfitStore', () => {
       expect(fetchSchedulerCharacterStateMock).not.toHaveBeenCalled()
     })
 
-    it('goToPreviousPeriod: 롤링 조회 윈도우(오늘-13일)를 벗어난, 아직 체크된 적 없는 주는 API를 호출하지 않고 조회 불가로 처리한다(ADR-032)', async () => {
+    it('goToPreviousPeriod: 롤링 조회 윈도우(오늘-13일)를 벗어났고 캐시 기록도 없는 이전 주로는 이동하지 않는다(#29)', async () => {
       vi.useFakeTimers({ toFake: ['Date'] })
       vi.setSystemTime(new Date('2026-07-22T12:00:00+09:00')) // 이번 주 periodKey: 2026-07-16, 롤링 하한: 2026-07-09
 
@@ -1303,24 +1349,104 @@ describe('useBossProfitStore', () => {
         await useBossProfitStore.getState().refresh(['ocid-1'])
 
         isPeriodCheckedMock.mockResolvedValue(false)
-        getBossProfitRecordsMock.mockResolvedValue([])
+        getBossProfitRecordsMock.mockResolvedValue([]) // 어느 주에도 캐시 기록 없음
         fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState())
 
-        // 2026-07-16 → 2026-07-09(조회일 2026-07-15, 롤링 윈도우 안 — 정상 백필)
+        // 2026-07-16 → 2026-07-09(조회일 2026-07-15, 롤링 윈도우 안 — 정상 이동/백필)
         await useBossProfitStore.getState().goToPreviousPeriod()
+        expect(useBossProfitStore.getState().periodKey).toBe('2026-07-09')
+        // 2026-07-09의 이전 주(2026-07-02, 조회일 2026-07-08)는 롤링 윈도우 밖 + 기록 없음 →
+        // 더 이상 이동할 수 없다.
+        expect(useBossProfitStore.getState().canGoPreviousPeriod).toBe(false)
+
         fetchSchedulerCharacterStateMock.mockClear()
         markPeriodCheckedMock.mockClear()
 
-        // 2026-07-09 → 2026-07-02(조회일 2026-07-08, 롤링 윈도우 밖 — API를 부르면 안 된다)
+        // 이전 이동을 시도해도 "조회 불가" 기간에 착지하지 않고 아무 것도 하지 않는다.
+        await useBossProfitStore.getState().goToPreviousPeriod()
+
+        expect(useBossProfitStore.getState().periodKey).toBe('2026-07-09') // 그대로
+        expect(fetchSchedulerCharacterStateMock).not.toHaveBeenCalled()
+        expect(markPeriodCheckedMock).not.toHaveBeenCalled()
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    it('goToPreviousPeriod: 롤링 윈도우 밖이어도 이미 저장된 기록이 있으면 그 이전 주로 이동해 캐시 기록을 보여준다(#29, 캐시 존중)', async () => {
+      vi.useFakeTimers({ toFake: ['Date'] })
+      vi.setSystemTime(new Date('2026-07-22T12:00:00+09:00')) // 이번 주 periodKey: 2026-07-16, 롤링 하한: 2026-07-09
+
+      try {
+        syncSchedulesMock.mockResolvedValue([syncResult()])
+        await useBossProfitStore.getState().refresh(['ocid-1'])
+
+        // 2026-07-02는 롤링 윈도우 밖이지만, 윈도우 안이었을 때 저장해둔 기록이 남아 있다고 가정한다.
+        const cachedRecord: BossProfitRecord = {
+          ocid: 'ocid-1',
+          boss: '자쿰',
+          difficulty: '카오스',
+          cycle: 'weekly',
+          periodKey: '2026-07-02',
+          partySize: 2,
+          priceMeso: 8_080_000,
+          payoutMeso: 4_040_000,
+          recordedAt: '2026-07-08T00:00:00.000Z',
+        }
+        getBossProfitRecordsMock.mockImplementation(async (_ocids: string[], periodKeys: string[]) =>
+          periodKeys.includes('2026-07-02') ? [cachedRecord] : [],
+        )
+        isPeriodCheckedMock.mockResolvedValue(true) // 이미 확인된 캐시 기간(재조회 없이 기록만 사용)
+        fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState())
+
+        // 2026-07-16 → 2026-07-09
+        await useBossProfitStore.getState().goToPreviousPeriod()
+        expect(useBossProfitStore.getState().periodKey).toBe('2026-07-09')
+        // 2026-07-02는 조회 불가지만 기록이 있으므로 이동 가능해야 한다.
+        expect(useBossProfitStore.getState().canGoPreviousPeriod).toBe(true)
+
+        fetchSchedulerCharacterStateMock.mockClear()
+
+        // 2026-07-09 → 2026-07-02: 캐시 기록으로 채워진다(API 재조회 없음).
         await useBossProfitStore.getState().goToPreviousPeriod()
 
         expect(useBossProfitStore.getState().periodKey).toBe('2026-07-02')
         expect(fetchSchedulerCharacterStateMock).not.toHaveBeenCalled()
-        expect(markPeriodCheckedMock).toHaveBeenCalledWith('ocid-1', 'weekly', '2026-07-02', expect.any(String))
-        // 영구히 실패하는 게 아니라 "이 기간은 조회 불가"로 확정하는 것이므로, 재시도를 유도하는
-        // periodUnavailable(네트워크 실패 등)과는 다르게 취급한다.
-        expect(useBossProfitStore.getState().periodUnavailable).toBe(false)
-        expect(useBossProfitStore.getState().rows).toEqual([])
+        const rows = useBossProfitStore.getState().rows
+        expect(rows).toHaveLength(1)
+        expect(rows[0].boss).toBe('자쿰')
+        expect(rows[0].payoutMeso).toBe(4_040_000)
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    it('goToPreviousPeriod: 현재 기간에서는 (이전 주가 롤링 윈도우 안이라) canGoPreviousPeriod가 true다(#29)', async () => {
+      vi.useFakeTimers({ toFake: ['Date'] })
+      vi.setSystemTime(new Date('2026-07-22T12:00:00+09:00'))
+
+      try {
+        syncSchedulesMock.mockResolvedValue([syncResult()])
+        await useBossProfitStore.getState().refresh(['ocid-1'])
+
+        // 이번 주(2026-07-16)의 이전 주(2026-07-09, 조회일 2026-07-15)는 롤링 윈도우 안이므로 이동 가능.
+        expect(useBossProfitStore.getState().canGoPreviousPeriod).toBe(true)
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    it('setTab: 이전 달 전체가 MIN_SCHEDULER_DATE 이전이면 canGoPreviousPeriod가 false다(monthly, #29)', async () => {
+      vi.useFakeTimers({ toFake: ['Date'] })
+      vi.setSystemTime(new Date('2026-07-22T12:00:00+09:00')) // 이번 달 2026-07, 지난 달 2026-06은 통째로 MIN 이전
+
+      try {
+        syncSchedulesMock.mockResolvedValue([syncResult()])
+        await useBossProfitStore.getState().refresh(['ocid-1'])
+        await useBossProfitStore.getState().setTab('monthly')
+
+        expect(useBossProfitStore.getState().periodKey).toBe('2026-07')
+        expect(useBossProfitStore.getState().canGoPreviousPeriod).toBe(false)
       } finally {
         vi.useRealTimers()
       }

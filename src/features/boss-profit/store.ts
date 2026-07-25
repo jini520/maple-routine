@@ -63,6 +63,7 @@ export interface BossProfitState {
   weeklySubtotals: BossProfitWeeklySubtotal[] // monthly 탭에서만 채워짐(주차별 합계). weekly 탭에서는 항상 []
   isPeriodLoading: boolean // periodKey 이동 후 백필(과거 기간 재조회) 진행 중
   periodUnavailable: boolean // 직전 백필 시도가 실패해 이 기간 일부를 지금 볼 수 없음(재시도 가능하도록 checked로 기록하지 않았다는 뜻)
+  canGoPreviousPeriod: boolean // 현재 선택된 기간에서 한 칸 더 과거로 이동할 수 있는지(#29) — 이전 기간이 지금 조회 가능하거나 이미 캐시된 기록이 있을 때만 true. 조회 불가·레코드 없는 기간에 착지하는 것을 막는다.
   error: ScheduleSyncError | null
   staleCharacterNames: string[]
   trackedOcids: string[] | null
@@ -547,6 +548,47 @@ async function backfillTarget(target: BackfillTarget, now: Date): Promise<boolea
   }
 }
 
+// 이 기간(cycle, periodKey)에 대해 이미 저장된 보스 수익 기록이 하나라도 있는지 확인한다(#29).
+// 롤링 조회 윈도우를 벗어나 "지금"은 API로 다시 조회할 수 없더라도, 과거에 확보해둔 기록이 있으면
+// 그 기간을 그대로 보여줄 수 있으므로 이동을 허용해야 한다. monthly는 그 달의 monthly-cycle 기록뿐
+// 아니라 그 달에 속한 주(weekly)의 기록도 화면에 함께 표시되므로 둘 다 조회 대상에 넣는다.
+async function hasCachedRecordsForPeriod(
+  ocids: string[],
+  tab: BossCycle,
+  periodKey: string,
+): Promise<boolean> {
+  if (ocids.length === 0) {
+    return false
+  }
+  const periodKeys =
+    tab === 'monthly' ? [periodKey, ...getWeeklyPeriodKeysInMonth(periodKey)] : [periodKey]
+  const records = await withSqliteFallback(getBossProfitRecords(ocids, periodKeys), [])
+  return records.length > 0
+}
+
+// 현재 기간(periodKey)에서 한 칸 더 과거로 이동해도 되는지 판단한다(#29). 이전 버튼 게이트와
+// "조회 불가" 경계가 서로 다른 하한을 쓰던 버그를 없앤다 — 착지할 이전 기간이 실제로 데이터를
+// 보여줄 수 있을 때만 이동을 허용한다.
+//  1) MIN_SCHEDULER_DATE 이전(스케줄러 API 존재 이전)은 어떤 경우에도 데이터가 없다 → 불가.
+//  2) 지금 API로 조회 가능하면(롤링 윈도우 안) 도달 시 백필로 데이터를 채울 수 있다 → 가능.
+//  3) 롤링 윈도우 밖이라 지금은 조회 불가지만 과거에 저장해둔 기록이 있으면 그대로 보여줄 수 있다 → 가능.
+// (이 캐시 존중이 롤링 하한을 그대로 이전 게이트로 쓰지 않는 이유다.)
+async function canReachPreviousPeriod(
+  tab: BossCycle,
+  periodKey: string,
+  ocids: string[],
+  now: Date,
+): Promise<boolean> {
+  if (isEarliestNavigablePeriod(tab, periodKey)) {
+    return false
+  }
+  const prevPeriodKey = getAdjacentPeriodKey(tab, periodKey, 'prev')
+  if (isPeriodQueryable(tab, prevPeriodKey, now)) {
+    return true
+  }
+  return hasCachedRecordsForPeriod(ocids, tab, prevPeriodKey)
+}
+
 type BossProfitSetter = (partial: Partial<BossProfitState>) => void
 
 // "기간 로드" 규칙(ADR-023): 이동한 periodKey가 그 tab의 현재 기간이면 네트워크 호출 없이
@@ -584,8 +626,14 @@ async function loadPeriod(
             now,
           )
         : []
+    const canGoPreviousPeriod = await canReachPreviousPeriod(tab, periodKey, ocids, now)
     if (generation !== requestGeneration) return
-    set({ rows, weeklySubtotals, isPeriodLoading: false, periodUnavailable: false })
+    // loadPeriod는 항상 로컬 데이터(스냅샷/기록)로만 뷰를 정착시키고 실시간 동기화를 하지 않는다.
+    // 또한 이 함수는 항상 requestGeneration을 올린 네비게이션 뒤에만 실행되므로, 진행 중이던
+    // refresh의 'loading'은 이미 무효화된 상태다. 여기서 status를 'loaded'로 확정하지 않으면,
+    // refresh 도중 기간을 이동했다가 돌아왔을 때 refresh의 최종 'loaded' set이 세대 가드에 막혀
+    // status가 'loading'에 영구히 갇히는 버그가 생긴다(사용자 보고 — "조회 중..." 무한 진행).
+    set({ status: 'loaded', rows, weeklySubtotals, isPeriodLoading: false, periodUnavailable: false, canGoPreviousPeriod })
     return
   }
 
@@ -617,9 +665,12 @@ async function loadPeriod(
   const rows = sortRowsByOcidOrder(await buildRowsFromRecords(ocids, tab, periodKey, now), sortedOcids)
   const weeklySubtotals =
     tab === 'monthly' ? await buildWeeklySubtotalsForMonth(sortedOcids, periodKey, [], new Map(), now) : []
+  const canGoPreviousPeriod = await canReachPreviousPeriod(tab, periodKey, ocids, now)
 
   if (generation !== requestGeneration) return
-  set({ rows, weeklySubtotals, isPeriodLoading: false, periodUnavailable })
+  // status를 'loaded'로 확정한다 — 위 "현재 기간" 분기와 같은 이유(중단된 refresh의 'loading'이
+  // 세대 가드로 갇히는 것 방지).
+  set({ status: 'loaded', rows, weeklySubtotals, isPeriodLoading: false, periodUnavailable, canGoPreviousPeriod })
 }
 
 const initialState: BossProfitState = {
@@ -630,6 +681,7 @@ const initialState: BossProfitState = {
   weeklySubtotals: [],
   isPeriodLoading: false,
   periodUnavailable: false,
+  canGoPreviousPeriod: false,
   error: null,
   staleCharacterNames: [],
   trackedOcids: null,
@@ -663,6 +715,7 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
         weeklySubtotals: [],
         isPeriodLoading: false,
         periodUnavailable: false,
+        canGoPreviousPeriod: false,
         error: null,
         staleCharacterNames: [],
       })
@@ -676,6 +729,12 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     const sortedCharacterInfo = await getSortedCharacterInfo(ocids)
     const sortedOcids = sortedCharacterInfo.map((info) => info.ocid)
     const imageUrlByOcid = new Map(sortedCharacterInfo.map((info) => [info.ocid, info.imageUrl]))
+
+    // refresh는 항상 "현재 기간"을 보여주므로, 여기서 한 칸 더 과거로 갈 수 있는지도 함께 계산해
+    // 이전 버튼 게이트(#29)를 세운다. refresh는 현재 기간만 갱신하고 이전 기간의 기록은 건드리지
+    // 않으므로 아래 캐시·라이브 두 set() 모두 같은 값을 쓴다. 현재 기간의 이전 기간은 대개 롤링
+    // 윈도우 안이라 이 계산은 보통 DB 조회 없이 즉시 끝난다(canReachPreviousPeriod 참고).
+    const canGoPreviousPeriod = await canReachPreviousPeriod(tab, currentPeriodKey, ocids, now)
 
     // ADR-035 결정 21: 수동 모드에서는 게임 등록/처치가 아니라 사용자 멤버십(manualTrackedContent)이 표시 목록을
     // 결정하므로 캐시·라이브 브랜치 양쪽에서 참조할 수동 목록을 미리 조회해둔다(#33). 자동 모드는 이 조회를 하지
@@ -752,6 +811,7 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
       weeklySubtotals: cachedWeeklySubtotals,
       isPeriodLoading: false,
       periodUnavailable: false,
+      canGoPreviousPeriod,
       error: null,
       staleCharacterNames: [],
     })
@@ -841,6 +901,14 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     const sortedRows = sortRowsByOcidOrder(autoRecordedRows, sortedOcids)
     latestSyncSnapshot = { ocids: [...ocids], rows: sortedRows, characterProfiles }
 
+    // 실시간 동기화가 실제로 성공했으므로 "마지막 동기화 시각"을 기록한다 — 세대 가드보다 앞에서
+    // 갱신해야 한다. 그 사이 다른 기간으로 이동해(세대가 바뀌어) 아래 최종 set()이 건너뛰어지더라도,
+    // latestSyncSnapshot(모듈 스코프)은 이미 신선한 데이터로 갱신되므로 현재 기간으로 돌아오면 그
+    // 데이터가 보인다. 이때 lastSyncedAt만 함께 갱신되지 않으면 "신선한 데이터를 보여주면서도
+    // 동기화 기록 없음"이라고 표시되는 불일치가 생긴다(사용자 보고). lastSyncedAt은 현재 기간에서만
+    // 노출되므로(#30) 과거 기간을 보는 동안 이 set이 일어나도 화면에는 영향이 없다.
+    set({ lastSyncedAt: new Date().toISOString() })
+
     const weeklySubtotals =
       tab === 'monthly'
         ? await buildWeeklySubtotalsForMonth(sortedOcids, currentPeriodKey, sortedRows, characterProfiles, now)
@@ -855,9 +923,10 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
       weeklySubtotals,
       isPeriodLoading: false,
       periodUnavailable: false,
+      canGoPreviousPeriod,
       error: null,
       staleCharacterNames,
-      lastSyncedAt: new Date().toISOString(),
+      // lastSyncedAt은 위에서 세대 가드보다 먼저 갱신했다(중단돼도 시각이 남도록).
     })
   },
 
@@ -871,8 +940,11 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
   },
 
   async goToPreviousPeriod() {
-    const { tab, periodKey } = get()
-    if (isEarliestNavigablePeriod(tab, periodKey)) {
+    const { tab, periodKey, canGoPreviousPeriod } = get()
+    // 화면 이전 버튼과 동일한 플래그로 게이트한다(#29) — 착지할 이전 기간이 조회 불가능하고
+    // 캐시 기록도 없으면 이동하지 않는다. 이 플래그는 매 기간 로드 시 canReachPreviousPeriod로
+    // 계산해 저장해둔 값이다.
+    if (!canGoPreviousPeriod) {
       return
     }
     const myGeneration = ++requestGeneration
