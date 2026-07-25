@@ -20,3 +20,6 @@ phases/**/phase*-output.json
 phases/**/step*-output.json
 
 memo
+
+# 드롭 이펙트 원본 프레임(29MB PNG). 최적화본(src/assets/drop-effect/*.jpg)만 커밋한다(ADR-038).
+src/assets/ScreenEff/

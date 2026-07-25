@@ -18,6 +18,8 @@ const {
   fetchSchedulerCharacterStateMock,
   getTrackingModeMock,
   getManualTrackedContentMock,
+  getBossDropRecordsMock,
+  replaceBossDropRecordsMock,
 } = vi.hoisted(() => ({
   syncSchedulesMock: vi.fn(),
   getTrackedCharacterOcidsMock: vi.fn(),
@@ -32,6 +34,8 @@ const {
   fetchSchedulerCharacterStateMock: vi.fn(),
   getTrackingModeMock: vi.fn(),
   getManualTrackedContentMock: vi.fn(),
+  getBossDropRecordsMock: vi.fn(),
+  replaceBossDropRecordsMock: vi.fn(),
 }))
 
 vi.mock('../../schedule-sync/schedule-sync', () => ({
@@ -78,6 +82,11 @@ vi.mock('../../../storage/tracking-mode', () => ({
 
 vi.mock('../../../storage/manual-tracked-content', () => ({
   getManualTrackedContent: getManualTrackedContentMock,
+}))
+
+vi.mock('../../../storage/boss-drops', () => ({
+  getBossDropRecords: getBossDropRecordsMock,
+  replaceBossDropRecords: replaceBossDropRecordsMock,
 }))
 
 import {
@@ -134,6 +143,7 @@ beforeEach(() => {
     tab: 'weekly',
     periodKey: getCurrentBossProfitPeriod('weekly', new Date()).periodKey,
     rows: [],
+    dropsByRowKey: {},
     weeklySubtotals: [],
     isPeriodLoading: false,
     periodUnavailable: false,
@@ -144,6 +154,8 @@ beforeEach(() => {
     lastSyncedAt: null,
   })
   getBossProfitRecordsMock.mockResolvedValue([])
+  getBossDropRecordsMock.mockResolvedValue([])
+  replaceBossDropRecordsMock.mockResolvedValue(undefined)
   upsertBossProfitRecordMock.mockResolvedValue(undefined)
   getBossPartySizeMock.mockResolvedValue(null)
   getCachedSchedulerStateMock.mockResolvedValue(null)
@@ -161,6 +173,58 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.resetAllMocks()
+})
+
+describe('setBossDrops (ADR-038)', () => {
+  const sampleRow = {
+    ocid: 'ocid-1',
+    characterName: '캐릭터-1',
+    imageUrl: null,
+    boss: '스우',
+    difficulty: '하드' as const,
+    cycle: 'weekly' as const,
+    periodKey: '2026-W30',
+    periodLabel: '이번 주',
+    priceMeso: 1000,
+    maxPartySize: 6,
+    partySize: 1,
+    payoutMeso: 1000,
+    isComplete: true,
+  }
+
+  it('드롭을 replaceBossDropRecords로 통째 교체하고 dropsByRowKey를 갱신한다', async () => {
+    useBossProfitStore.setState({ status: 'loaded', rows: [sampleRow], dropsByRowKey: {} })
+
+    const drops = [
+      { category: 'equipment' as const, itemName: '루즈 컨트롤 머신 마크', slot: '얼굴장식', quantity: 1 },
+    ]
+    await useBossProfitStore.getState().setBossDrops(
+      { ocid: 'ocid-1', boss: '스우', difficulty: '하드', cycle: 'weekly', periodKey: '2026-W30' },
+      drops,
+    )
+
+    expect(replaceBossDropRecordsMock).toHaveBeenCalledWith(
+      'ocid-1',
+      '스우',
+      '하드',
+      '2026-W30',
+      drops,
+      expect.any(String),
+    )
+    expect(useBossProfitStore.getState().dropsByRowKey['ocid-1|스우|하드|2026-W30']).toEqual(drops)
+  })
+
+  it('존재하지 않는 행이면 에러를 던지고 DB를 건드리지 않는다', async () => {
+    useBossProfitStore.setState({ rows: [] })
+
+    await expect(
+      useBossProfitStore.getState().setBossDrops(
+        { ocid: 'x', boss: 'x', difficulty: '하드', cycle: 'weekly', periodKey: 'x' },
+        [],
+      ),
+    ).rejects.toThrow('존재하지 않는 보스 행')
+    expect(replaceBossDropRecordsMock).not.toHaveBeenCalled()
+  })
 })
 
 describe('useBossProfitStore', () => {

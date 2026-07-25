@@ -182,3 +182,23 @@ body {
   --color-text-muted: #9f9594;
   --color-text-disabled: #7a6e6f;
 }
+
+/* 고가 아이템 드롭 연출 — 중앙 아이템이 위아래로 살짝 부유(ADR-038). 팝인(scale)·중앙정렬 transform과
+   충돌하지 않도록 별도 래퍼(.fx-drop-float)에만 translateY 애니메이션을 건다. */
+@keyframes fx-drop-float {
+  0%,
+  100% {
+    transform: translateY(-5px);
+  }
+  50% {
+    transform: translateY(5px);
+  }
+}
+.fx-drop-float {
+  animation: fx-drop-float 2.6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .fx-drop-float {
+    animation: none;
+  }
+}
