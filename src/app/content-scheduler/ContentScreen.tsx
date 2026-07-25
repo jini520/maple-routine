@@ -17,7 +17,7 @@ import { getCharacterPickerRoster } from '../../features/schedule-sync/schedule-
 import { useNavigate } from 'react-router-dom'
 import { getDailyQuestRegionIconUrl } from '../../lib/daily-quest-icons'
 import { matchWeeklyRegionalQuestSlug } from '../../lib/weekly-regional-quest-matching'
-import { mergeManualContentList } from '../../lib/manual-content-merge'
+import { mergeManualContentList, orderContentsByTemplate } from '../../lib/manual-content-merge'
 import { CONTENT_TEMPLATE } from '../../lib/scheduler-content-template'
 import { categorizeContentEntries, WEEKLY_CATEGORY_ORDER } from '../../lib/content-category'
 import { useContentSchedulerStore } from '../../features/content-scheduler/store'
@@ -747,7 +747,11 @@ export function ContentScreen(): React.JSX.Element {
             selected.dailyContents,
             ORDERED_DAILY_TEMPLATE,
           )
-        : selected.dailyContents.filter((content) => content.isRegistered)
+        : // auto 모드도 수동 모드와 동일한 template 순서로 표시한다.
+          orderContentsByTemplate(
+            selected.dailyContents.filter((content) => content.isRegistered),
+            ORDERED_DAILY_TEMPLATE,
+          )
 
   const displayWeeklyContents: WeeklyContent[] =
     selected === null
@@ -758,7 +762,11 @@ export function ContentScreen(): React.JSX.Element {
             selected.weeklyContents,
             ORDERED_WEEKLY_TEMPLATE,
           ) as WeeklyContent[])
-        : selected.weeklyContents.filter((content) => content.isRegistered)
+        : // auto 모드도 수동 모드와 동일한 template 순서로 표시한다.
+          orderContentsByTemplate(
+            selected.weeklyContents.filter((content) => content.isRegistered),
+            ORDERED_WEEKLY_TEMPLATE,
+          )
 
   async function handleSaveTracking(ocids: string[]): Promise<void> {
     setSaveProgress({ completed: 0, total: ocids.length })

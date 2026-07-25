@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { mergeManualContentList, type SchedulerContentTemplateEntry } from '../manual-content-merge'
+import {
+  mergeManualContentList,
+  orderContentsByTemplate,
+  type SchedulerContentTemplateEntry,
+} from '../manual-content-merge'
 import type { DailyContent } from '../../types'
 import type { ManualTrackedItem } from '../../storage/manual-tracked-content'
 
@@ -132,5 +136,47 @@ describe('mergeManualContentList', () => {
 
     // template에 있는 '첫번째' 먼저, 그다음 template에 없는 고아들은 tracked 순서(고아B, 고아A)로
     expect(result.map((c) => c.name)).toEqual(['첫번째', '고아B', '고아A'])
+  })
+})
+
+// auto 모드 표시 목록을 수동 모드(mergeManualContentList)와 동일한 template 순서로 맞추기 위한 헬퍼.
+describe('orderContentsByTemplate', () => {
+  it('API/병합 순서와 무관하게 template(=컨텐츠 관리) 순서로 정렬한다', () => {
+    const contents = [
+      synced({ name: '세번째' }),
+      synced({ name: '첫번째' }),
+      synced({ name: '두번째' }),
+    ]
+    const template = [
+      templateEntry({ content_name: '첫번째' }),
+      templateEntry({ content_name: '두번째' }),
+      templateEntry({ content_name: '세번째' }),
+    ]
+
+    const result = orderContentsByTemplate(contents, template)
+
+    expect(result.map((c) => c.name)).toEqual(['첫번째', '두번째', '세번째'])
+  })
+
+  it('template에 없는 항목은 뒤로 보내되 원래 순서를 안정적으로 유지한다', () => {
+    const contents = [
+      synced({ name: '고아B' }),
+      synced({ name: '첫번째' }),
+      synced({ name: '고아A' }),
+    ]
+    const template = [templateEntry({ content_name: '첫번째' }), templateEntry({ content_name: '두번째' })]
+
+    const result = orderContentsByTemplate(contents, template)
+
+    expect(result.map((c) => c.name)).toEqual(['첫번째', '고아B', '고아A'])
+  })
+
+  it('원본 배열을 변경하지 않는다', () => {
+    const contents = [synced({ name: '두번째' }), synced({ name: '첫번째' })]
+    const template = [templateEntry({ content_name: '첫번째' }), templateEntry({ content_name: '두번째' })]
+
+    orderContentsByTemplate(contents, template)
+
+    expect(contents.map((c) => c.name)).toEqual(['두번째', '첫번째'])
   })
 })
