@@ -89,3 +89,16 @@ export function mergeManualContentList(
 
   return [...ordered, ...extras]
 }
+
+// auto 모드 표시 목록을 수동 모드(mergeManualContentList)와 동일한 template(=컨텐츠 관리) 순서로
+// 맞춘다. template에 없는 항목은 rank가 같아(= template.length) 안정 정렬 덕에 원래(병합) 순서를
+// 유지하며 뒤로 온다 — mergeManualContentList의 "template 항목 먼저, 나머지는 원래 순서로 뒤에"와 동일.
+export function orderContentsByTemplate<T extends { name: string }>(
+  contents: T[],
+  template: SchedulerContentTemplateEntry[],
+): T[] {
+  const rank = new Map(template.map((entry, index) => [entry.content_name, index]))
+  return [...contents].sort(
+    (a, b) => (rank.get(a.name) ?? template.length) - (rank.get(b.name) ?? template.length),
+  )
+}
