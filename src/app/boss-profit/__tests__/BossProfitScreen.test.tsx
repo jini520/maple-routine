@@ -9,6 +9,11 @@ import {
   type BossProfitRow,
   type BossProfitWeeklySubtotal,
 } from '../../../features/boss-profit/store'
+import { getCurrentBossProfitPeriod } from '../../../lib/boss-profit-period'
+
+// 새로고침 버튼·다음 기간 버튼은 "현재 기간"에서만 각각 노출/비활성되므로, 실행 시점과 무관하게
+// 항상 현재 기간을 가리키도록 실제 계산값을 쓴다.
+const CURRENT_WEEKLY_PERIOD_KEY = getCurrentBossProfitPeriod('weekly', new Date()).periodKey
 
 vi.mock('../../../features/boss-profit/store', () => ({
   useBossProfitStore: vi.fn(),
@@ -25,6 +30,7 @@ function mockStore(overrides: Partial<ReturnType<typeof useBossProfitStore>>): v
     weeklySubtotals: [],
     isPeriodLoading: false,
     periodUnavailable: false,
+    canGoPreviousPeriod: true,
     error: null,
     staleCharacterNames: [],
     trackedOcids: null,
@@ -217,13 +223,12 @@ describe('BossProfitScreen', () => {
     expect(screen.getByRole('button', { name: '다음 기간' })).not.toBeDisabled()
   })
 
-  it('MIN_SCHEDULER_DATE 이전으로는 이동할 수 없어 이전 기간 버튼이 disabled다(weekly)', () => {
+  it('canGoPreviousPeriod가 false면 이전 기간 버튼이 disabled다(#29) — 이전 이동 가능 여부는 store가 판단한다', () => {
     mockStore({
       status: 'loaded',
-      tab: 'weekly',
       trackedOcids: ['ocid-1'],
       rows: [row()],
-      periodKey: '2026-06-25', // 이 이전(6/18)은 백필 불가능한 기간이라 더 못 간다
+      canGoPreviousPeriod: false,
     })
 
     renderBossProfitScreen()
@@ -231,19 +236,17 @@ describe('BossProfitScreen', () => {
     expect(screen.getByRole('button', { name: '이전 기간' })).toBeDisabled()
   })
 
-  it('MIN_SCHEDULER_DATE 이전 달로는 이동할 수 없어 이전 기간 버튼이 disabled다(monthly)', () => {
+  it('canGoPreviousPeriod가 true면 이전 기간 버튼이 활성 상태다(#29)', () => {
     mockStore({
       status: 'loaded',
-      tab: 'monthly',
       trackedOcids: ['ocid-1'],
-      rows: [],
-      weeklySubtotals: [subtotal()],
-      periodKey: '2026-06', // 이 이전(2026-05)은 통째로 백필 불가능한 달이라 더 못 간다
+      rows: [row()],
+      canGoPreviousPeriod: true,
     })
 
     renderBossProfitScreen()
 
-    expect(screen.getByRole('button', { name: '이전 기간' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: '이전 기간' })).not.toBeDisabled()
   })
 
   it('isPeriodLoading이 true면 스피너를 보여주고 보스 목록은 렌더되지 않는다', () => {
@@ -323,9 +326,15 @@ describe('BossProfitScreen', () => {
     expect(screen.queryByText('아직 처치한 보스가 없습니다')).not.toBeInTheDocument()
   })
 
-  it('새로고침 버튼을 클릭하면 refresh가 추적 목록으로 호출된다', () => {
+  it('현재 기간에서 새로고침 버튼을 클릭하면 refresh가 추적 목록으로 호출된다', () => {
     const refresh = vi.fn()
-    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()], refresh })
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row()],
+      periodKey: CURRENT_WEEKLY_PERIOD_KEY,
+      refresh,
+    })
 
     renderBossProfitScreen()
     fireEvent.click(screen.getByRole('button', { name: '새로고침' }))
@@ -333,8 +342,43 @@ describe('BossProfitScreen', () => {
     expect(refresh).toHaveBeenCalledWith(['ocid-1'])
   })
 
-  it('status가 loading이면 새로고침 아이콘이 회전하고 조회 중 텍스트를 보여준다', () => {
-    mockStore({ status: 'loading', trackedOcids: ['ocid-1'], rows: [row()] })
+  it('과거 기간에서는 새로고침 버튼도, 마지막 동기화 시각 텍스트도 노출되지 않는다(#30)', () => {
+    mockStore({
+      status: 'loaded',
+      tab: 'weekly',
+      trackedOcids: ['ocid-1'],
+      rows: [row()],
+      periodKey: '2026-07-02', // 과거 기간(현재 주가 아님)
+      lastSyncedAt: new Date(Date.now() - 3 * 60 * 1000).toISOString(),
+    })
+
+    renderBossProfitScreen()
+
+    expect(screen.queryByRole('button', { name: '새로고침' })).not.toBeInTheDocument()
+    expect(screen.queryByText('3분 전')).not.toBeInTheDocument() // 동기화 시각 텍스트도 숨김
+  })
+
+  it('과거 기간에서는 status가 loading이어도 "조회 중..." 텍스트를 노출하지 않는다(#30)', () => {
+    mockStore({
+      status: 'loading',
+      tab: 'weekly',
+      trackedOcids: ['ocid-1'],
+      rows: [row()],
+      periodKey: '2026-07-02', // 과거 기간
+    })
+
+    renderBossProfitScreen()
+
+    expect(screen.queryByText('조회 중...')).not.toBeInTheDocument()
+  })
+
+  it('현재 기간에서 status가 loading이면 새로고침 아이콘이 회전하고 조회 중 텍스트를 보여준다', () => {
+    mockStore({
+      status: 'loading',
+      trackedOcids: ['ocid-1'],
+      rows: [row()],
+      periodKey: CURRENT_WEEKLY_PERIOD_KEY,
+    })
 
     renderBossProfitScreen()
 
@@ -343,11 +387,12 @@ describe('BossProfitScreen', () => {
     expect(icon).toHaveClass('animate-spin')
   })
 
-  it('새로고침 아이콘 옆에 마지막 조회 시각을 상대 시간으로 보여준다(컨텐츠/보스 스케줄러와 동일한 formatSyncedAt, ADR-032)', () => {
+  it('현재 기간에서 새로고침 아이콘 옆에 마지막 조회 시각을 상대 시간으로 보여준다(컨텐츠/보스 스케줄러와 동일한 formatSyncedAt, ADR-032)', () => {
     mockStore({
       status: 'loaded',
       trackedOcids: ['ocid-1'],
       rows: [row()],
+      periodKey: CURRENT_WEEKLY_PERIOD_KEY,
       lastSyncedAt: new Date(Date.now() - 3 * 60 * 1000).toISOString(),
     })
 
@@ -356,8 +401,14 @@ describe('BossProfitScreen', () => {
     expect(screen.getByText('3분 전')).toBeInTheDocument()
   })
 
-  it('아직 한 번도 동기화하지 않았으면 "동기화 기록 없음"을 보여준다', () => {
-    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()], lastSyncedAt: null })
+  it('현재 기간에서 아직 한 번도 동기화하지 않았으면 "동기화 기록 없음"을 보여준다', () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row()],
+      periodKey: CURRENT_WEEKLY_PERIOD_KEY,
+      lastSyncedAt: null,
+    })
 
     renderBossProfitScreen()
 
@@ -396,6 +447,69 @@ describe('BossProfitScreen', () => {
     expect(screen.getByText('낟낟 합계')).toBeInTheDocument()
 
     fireEvent.click(header)
+    expect(screen.queryByText('자쿰')).not.toBeInTheDocument()
+  })
+
+  it('탭 전환 시 펼쳐둔 아코디언 상태가 리셋된다(#27)', () => {
+    mockStore({
+      status: 'loaded',
+      tab: 'weekly',
+      periodKey: '2026-07-09',
+      trackedOcids: ['ocid-1'],
+      rows: [row()],
+    })
+    const { rerender } = renderBossProfitScreen()
+
+    // weekly 탭에서 아코디언을 펼친다
+    fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
+    expect(screen.getByText('자쿰')).toBeInTheDocument()
+
+    // 월간 탭으로 전환하면 key(`${tab}-${periodKey}-${ocid}`)가 바뀌어 remount → 펼침 상태가 리셋된다
+    mockStore({
+      status: 'loaded',
+      tab: 'monthly',
+      periodKey: '2026-07',
+      trackedOcids: ['ocid-1'],
+      rows: [row({ boss: '검은마법사', difficulty: '익스트림', cycle: 'monthly', periodKey: '2026-07' })],
+    })
+    rerender(
+      <MemoryRouter initialEntries={['/profit']}>
+        <BossProfitScreen />
+      </MemoryRouter>,
+    )
+
+    // 접힌 상태이므로 이전 탭에서 펼쳤던 보스 행도, 새 탭의 보스 행도 보이지 않는다
+    expect(screen.queryByText('자쿰')).not.toBeInTheDocument()
+    expect(screen.queryByText('검은마법사')).not.toBeInTheDocument()
+  })
+
+  it('같은 탭에서 기간 이동 시에도 펼쳐둔 아코디언 상태가 리셋된다(#27)', () => {
+    mockStore({
+      status: 'loaded',
+      tab: 'weekly',
+      periodKey: '2026-07-09',
+      trackedOcids: ['ocid-1'],
+      rows: [row()],
+    })
+    const { rerender } = renderBossProfitScreen()
+
+    fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
+    expect(screen.getByText('자쿰')).toBeInTheDocument()
+
+    // 같은 주간 탭이라도 이전 기간으로 이동하면 key가 바뀌어 remount → 펼침 리셋
+    mockStore({
+      status: 'loaded',
+      tab: 'weekly',
+      periodKey: '2026-07-02',
+      trackedOcids: ['ocid-1'],
+      rows: [row({ periodKey: '2026-07-02' })],
+    })
+    rerender(
+      <MemoryRouter initialEntries={['/profit']}>
+        <BossProfitScreen />
+      </MemoryRouter>,
+    )
+
     expect(screen.queryByText('자쿰')).not.toBeInTheDocument()
   })
 
