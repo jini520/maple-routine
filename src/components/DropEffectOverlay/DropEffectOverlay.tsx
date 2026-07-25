@@ -181,7 +181,7 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
         className="pointer-events-none absolute left-1/2 mix-blend-screen"
         style={{
           top: `calc(${ITEM_CENTER_TOP} + ${ITEM_SIZE_PX / 2 + DROP_OFFSET_Y_PX}px)`,
-          transform: 'translate(-50%, -100%) scale(2)',
+          transform: 'translate(-50%, -100%) scale(1.3)',
           transformOrigin: '50% 100%',
           zIndex: 2,
         }}
