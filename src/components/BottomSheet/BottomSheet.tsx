@@ -32,6 +32,13 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
         <Drawer.Content
           data-testid={props.testId}
           aria-describedby={undefined}
+          onPointerDownOutside={(event) => {
+            // 시트 콘텐츠 바깥 pointerdown이면 vaul/Radix가 시트를 닫는다. 단 [data-sheet-keep-open]로
+            // 표시된 오버레이(고가 드롭 연출 등)에서 시작된 탭은 닫지 않는다(ADR-039). 연출은 시트의
+            // 형제로 렌더돼 Radix가 '바깥'으로 판정하므로, 그 위 탭이 시트까지 닫아버리는 걸 막는다.
+            const target = event.detail.originalEvent.target as Element | null
+            if (target?.closest('[data-sheet-keep-open]')) event.preventDefault()
+          }}
           className="fixed inset-x-0 bottom-0 z-[60] mx-auto flex max-h-[82vh] w-full max-w-md flex-col rounded-t-[20px] border-t border-border bg-bg shadow-[0_-8px_30px_rgba(0,0,0,0.3)] outline-none"
         >
           <Drawer.Title className="sr-only">드롭 아이템 기록</Drawer.Title>

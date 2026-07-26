@@ -14,4 +14,11 @@ describe('DropEffectOverlay', () => {
     render(<DropEffectOverlay itemName="칠흑의 보스 반지" onClose={vi.fn()} />)
     expect(screen.getByTestId('drop-effect-overlay')).toHaveClass('pointer-events-auto')
   })
+
+  // 이 오버레이 위 pointerdown이 시트를 dismiss하지 않도록 BottomSheet의 onPointerDownOutside
+  // 가드가 [data-sheet-keep-open] 마커로 인식한다(ADR-039). 마커가 빠지면 연출 탭이 시트를 닫는다.
+  it('오버레이 루트에 data-sheet-keep-open 마커가 있다', () => {
+    render(<DropEffectOverlay itemName="칠흑의 보스 반지" onClose={vi.fn()} />)
+    expect(screen.getByTestId('drop-effect-overlay')).toHaveAttribute('data-sheet-keep-open')
+  })
 })

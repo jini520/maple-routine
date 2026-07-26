@@ -169,6 +169,9 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
       data-testid="drop-effect-overlay"
       // pointer-events-auto: 시트(vaul/Radix)가 열려 있으면 body에 pointer-events:none이 걸려
       // 상속으로 이 오버레이의 탭이 먹지 않고 뒤 시트로 통과된다(ADR-039). 명시적으로 되살린다.
+      // data-sheet-keep-open: 이 오버레이 위 pointerdown이 시트를 dismiss하지 않도록 BottomSheet의
+      // onPointerDownOutside 가드가 인식하는 마커(연출 탭이 시트까지 닫아버리는 문제 방지, ADR-039).
+      data-sheet-keep-open=""
       className="pointer-events-auto fixed inset-0 z-[70] cursor-pointer overflow-hidden"
     >
       <div
