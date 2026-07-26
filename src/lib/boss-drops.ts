@@ -115,19 +115,61 @@ export function isBoxItem(name: string): boolean {
   return ringBoxNames.has(key) || accessoryBoxNames.has(key)
 }
 
-export interface RingBoxContents {
-  levels: number[]
-  rings: { name: string; iconFile: string | null }[]
+export interface RingOption {
+  name: string
+  iconFile: string | null
+  hasLevel: boolean
 }
 
-// 반지 상자의 등급 후보와 반지 후보(상자마다 다름). 반지 상자가 아니면 null.
+export interface RingBoxContents {
+  levels: number[]
+  rings: RingOption[]
+}
+
+// '기타'(ADR-041): 백옥 반지 상자 목록 밖의 저가치 반지들을 한 칸으로 묶는 UI 전용 항목.
+const OTHER_RING_NAME = '기타'
+const OTHER_RING_ICON = 'Level_Jump_Ring.png' // 레벨퍼프 링 아이콘 재사용
+
+// 명명 반지 기준(baseline) = 백옥 상자 반지 집합. 데이터에서 동적 산출(하드코딩·추정 없음, ADR-041/ADR-006).
+const baselineRingNames = new Set(
+  (
+    ringBoxes.find((box) => nfc(box.name) === nfc('백옥의 보스 반지 상자'))?.itemProbabilities ?? []
+  ).map((ring) => nfc(ring.name)),
+)
+
+// 연마석(생명의 연마석 등)은 반지가 아니라 등급(레벨) 개념이 없다.
+function isWhetstone(name: string): boolean {
+  return name.includes('연마석')
+}
+
+// 반지 상자의 등급 후보와 반지 후보. 백옥 목록을 기준으로 명명 반지만 개별 노출하고, 그 밖 반지는
+// 단일 '기타'로 묶는다. 연마석은 별도(레벨 없음). 정렬: 명명 → 연마석 → 기타(ADR-041). 아니면 null.
 export function getRingBoxContents(boxName: string): RingBoxContents | null {
   const box = ringBoxes.find((candidate) => nfc(candidate.name) === nfc(boxName))
   if (box === undefined) return null
 
+  const named: RingOption[] = []
+  const whetstones: RingOption[] = []
+  let hasOther = false
+
+  for (const entry of box.itemProbabilities) {
+    if (isWhetstone(entry.name)) {
+      whetstones.push({ name: entry.name, iconFile: entry.iconFile, hasLevel: false })
+    } else if (baselineRingNames.has(nfc(entry.name))) {
+      named.push({ name: entry.name, iconFile: entry.iconFile, hasLevel: true })
+    } else {
+      hasOther = true
+    }
+  }
+
+  const rings: RingOption[] = [...named, ...whetstones]
+  if (hasOther) {
+    rings.push({ name: OTHER_RING_NAME, iconFile: OTHER_RING_ICON, hasLevel: true })
+  }
+
   return {
     levels: box.levelProbabilities.map((entry) => entry.level),
-    rings: box.itemProbabilities.map((entry) => ({ name: entry.name, iconFile: entry.iconFile })),
+    rings,
   }
 }
 

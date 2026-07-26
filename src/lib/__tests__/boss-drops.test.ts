@@ -74,21 +74,48 @@ describe('isBoxItem', () => {
   })
 })
 
-describe('getRingBoxContents', () => {
-  it('반지 상자의 등급 목록과 반지 목록을 반환한다 (홍옥: 1~4레벨, 31종)', () => {
-    const contents = getRingBoxContents('홍옥의 보스 반지 상자')
+describe('getRingBoxContents (백옥 기준 그룹핑, ADR-041)', () => {
+  it('백옥은 11 명명 반지만 반환하고 기타/연마석이 없다 (전부 레벨 있음)', () => {
+    const c = getRingBoxContents('백옥의 보스 반지 상자')
 
-    expect(contents).not.toBeNull()
-    expect(contents?.levels).toEqual([1, 2, 3, 4])
-    expect(contents?.rings.length).toBe(31)
-    expect(contents?.rings.some((ring) => ring.name === '리스트레인트 링')).toBe(true)
+    expect(c).not.toBeNull()
+    expect(c?.levels).toEqual([3, 4])
+    expect(c?.rings.length).toBe(11)
+    const names = c!.rings.map((r) => r.name)
+    expect(names).toContain('리스트레인트 링')
+    expect(names).toContain('컨티뉴어스 링')
+    expect(names).not.toContain('기타')
+    expect(c?.rings.every((r) => r.hasLevel)).toBe(true)
   })
 
-  it('상자마다 목록이 다르다 (생명: 3~4레벨, 10종)', () => {
-    const contents = getRingBoxContents('생명의 보스 반지 상자')
+  it('홍옥은 백옥 밖 반지를 맨 뒤 단일 "기타"(레벨 있음)로 묶는다', () => {
+    const c = getRingBoxContents('홍옥의 보스 반지 상자')
 
-    expect(contents?.levels).toEqual([3, 4])
-    expect(contents?.rings.length).toBe(10)
+    expect(c?.levels).toEqual([1, 2, 3, 4])
+    const names = c!.rings.map((r) => r.name)
+    // 명명 11 + 기타 1 = 12
+    expect(c?.rings.length).toBe(12)
+    expect(names).toContain('리스트레인트 링')
+    // 백옥 밖 반지는 개별 노출되지 않는다
+    expect(names).not.toContain('레벨퍼프 - S링')
+    expect(names).not.toContain('버든리프트 링')
+    // 기타는 맨 뒤, 레벨 있음
+    expect(names[names.length - 1]).toBe('기타')
+    expect(c?.rings.find((r) => r.name === '기타')?.hasLevel).toBe(true)
+  })
+
+  it('생명은 명명 반지 + 생명의 연마석(레벨 없음)이고 기타는 없다', () => {
+    const c = getRingBoxContents('생명의 보스 반지 상자')
+
+    expect(c?.levels).toEqual([3, 4])
+    const names = c!.rings.map((r) => r.name)
+    expect(names).not.toContain('기타')
+    // 정렬: 명명 → 연마석 (기타 없음) → 연마석이 맨 뒤
+    expect(names[names.length - 1]).toBe('생명의 연마석')
+    expect(c?.rings.find((r) => r.name === '생명의 연마석')?.hasLevel).toBe(false)
+    expect(c?.rings.find((r) => r.name === '리스트레인트 링')?.hasLevel).toBe(true)
+    // 9 명명 + 연마석 1 = 10
+    expect(c?.rings.length).toBe(10)
   })
 
   it('반지 상자가 아니면 null', () => {

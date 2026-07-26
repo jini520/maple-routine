@@ -45,7 +45,7 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
           <div className="flex flex-none justify-center pb-2 pt-3">
             <div className="h-1 w-9 rounded-full bg-border-strong" />
           </div>
-          <div className="overflow-y-auto pt-2 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+          <div className="overflow-y-auto pt-2">
             {props.children}
           </div>
         </Drawer.Content>

@@ -104,6 +104,62 @@ describe('BossDropSheet', () => {
     expect(onSave).toHaveBeenCalledWith([])
   })
 
+  // ADR-041: 백옥 밖 저가치 반지는 '기타'로 묶여 레벨과 함께 기록된다
+  it("반지 상자에서 '기타'를 고르면 레벨과 함께 '기타'로 기록된다", async () => {
+    const user = userEvent.setup()
+    const onSave = vi.fn()
+
+    render(
+      <BossDropSheet boss="스우" difficulty="하드" initialDrops={[]} onSave={onSave} onClose={vi.fn()} />,
+    )
+
+    await user.click(screen.getByRole('button', { name: /홍옥의 보스 반지 상자/ }))
+    await user.click(screen.getByRole('button', { name: '기타' }))
+    await user.click(screen.getByRole('button', { name: '3레벨' }))
+    await user.click(screen.getByRole('button', { name: '이 결과로 기록' }))
+    await user.click(screen.getByRole('button', { name: /추가 완료/ }))
+
+    expect(onSave).toHaveBeenCalledWith([
+      {
+        category: 'consumable',
+        itemName: '기타',
+        boxOrigin: '홍옥의 보스 반지 상자',
+        ringLevel: 3,
+        quantity: 1,
+      },
+    ])
+  })
+
+  // ADR-041: 생명 상자의 연마석은 레벨이 없어 레벨 선택이 비활성이고 레벨 없이 기록된다
+  it('연마석을 고르면 레벨 선택이 비활성이고 레벨 없이 기록 버튼이 활성화된다', async () => {
+    const user = userEvent.setup()
+    const onSave = vi.fn()
+
+    render(
+      <BossDropSheet boss="카링" difficulty="하드" initialDrops={[]} onSave={onSave} onClose={vi.fn()} />,
+    )
+
+    await user.click(screen.getByRole('button', { name: /생명의 보스 반지 상자/ }))
+    await user.click(screen.getByRole('button', { name: /생명의 연마석/ }))
+
+    // 연마석은 레벨이 없어 레벨 버튼 비활성
+    expect(screen.getByRole('button', { name: '3레벨' })).toBeDisabled()
+    // 레벨 없이도 기록 가능
+    const confirm = screen.getByRole('button', { name: '이 결과로 기록' })
+    expect(confirm).toBeEnabled()
+    await user.click(confirm)
+    await user.click(screen.getByRole('button', { name: /추가 완료/ }))
+
+    expect(onSave).toHaveBeenCalledWith([
+      {
+        category: 'consumable',
+        itemName: '생명의 연마석',
+        boxOrigin: '생명의 보스 반지 상자',
+        quantity: 1,
+      },
+    ])
+  })
+
   it('고가 아이템(칠흑 세트)을 추가하면 드롭 이펙트 오버레이가 뜬다', async () => {
     const user = userEvent.setup()
 

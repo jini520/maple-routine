@@ -224,9 +224,6 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                                   <DifficultyChip key={difficulty} difficulty={difficulty} />
                                 ))}
                               </span>
-                              {box && boxDrop && boxDrop.ringLevel === undefined && (
-                                <span className="text-[9px] font-bold text-primary-text">지정됨</span>
-                              )}
                             </button>
                           </li>
                         )
@@ -277,7 +274,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
             </>
           )}
 
-          <div className="sticky bottom-0 border-t border-border bg-bg px-4 py-3">
+          <div className="sticky bottom-0 border-t border-border bg-bg px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
             <button
               type="button"
               onClick={() => {
@@ -329,7 +326,12 @@ function BoxDrillDown(props: BoxDrillDownProps): React.JSX.Element {
   const [level, setLevel] = useState<number | null>(null)
   const [item, setItem] = useState<string | null>(null)
 
-  const canConfirm = item !== null && (ring === null || level !== null)
+  // 선택한 반지의 레벨 유무(ADR-041). 연마석(hasLevel=false)은 레벨 선택을 비활성하고 레벨 없이 기록.
+  const selectedOption = ring?.rings.find((r) => r.name === item) ?? null
+  const needsLevel = selectedOption?.hasLevel ?? false
+  const levelDisabled = selectedOption !== null && !selectedOption.hasLevel
+
+  const canConfirm = item !== null && (ring === null ? true : needsLevel ? level !== null : true)
 
   return (
     <div>
@@ -340,26 +342,7 @@ function BoxDrillDown(props: BoxDrillDownProps): React.JSX.Element {
         <span className="text-sm font-bold text-text">{props.boxName}</span>
       </div>
 
-      {ring !== null && (
-        <section className="px-4 pb-3">
-          <h3 className="mb-2 text-xs font-bold text-text-muted">등급</h3>
-          <div className="flex gap-1.5">
-            {ring.levels.map((lvl) => (
-              <button
-                key={lvl}
-                type="button"
-                onClick={() => setLevel(lvl)}
-                className={`flex-1 rounded-lg border py-2 text-xs font-bold ${
-                  level === lvl ? 'border-primary bg-primary/10 text-primary-text' : 'border-border text-text-muted'
-                }`}
-              >
-                {lvl}레벨
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
-
+      {/* 반지 종류 먼저 선택(ADR-041) */}
       <section className="px-4 pb-3">
         <h3 className="mb-2 text-xs font-bold text-text-muted">{ring !== null ? '반지' : '장신구'}</h3>
         <ul className="grid grid-cols-4 gap-2">
@@ -387,12 +370,36 @@ function BoxDrillDown(props: BoxDrillDownProps): React.JSX.Element {
         </ul>
       </section>
 
+      {/* 그다음 레벨(등급) — 항상 보이되 연마석 선택 시에만 비활성(ADR-041) */}
+      {ring !== null && (
+        <section className="px-4 pb-3">
+          <h3 className="mb-2 text-xs font-bold text-text-muted">등급</h3>
+          <div className="flex gap-1.5">
+            {ring.levels.map((lvl) => (
+              <button
+                key={lvl}
+                type="button"
+                disabled={levelDisabled}
+                onClick={() => setLevel(lvl)}
+                className={`flex-1 rounded-lg border py-2 text-xs font-bold disabled:opacity-40 ${
+                  level === lvl && !levelDisabled
+                    ? 'border-primary bg-primary/10 text-primary-text'
+                    : 'border-border text-text-muted'
+                }`}
+              >
+                {lvl}레벨
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
       <div className="sticky bottom-0 border-t border-border bg-bg px-4 py-3">
         <button
           type="button"
           disabled={!canConfirm}
           onClick={() => {
-            if (item !== null) props.onConfirm(item, level ?? undefined)
+            if (item !== null) props.onConfirm(item, needsLevel ? (level ?? undefined) : undefined)
           }}
           className="w-full rounded-xl bg-primary py-3 text-sm font-bold text-white disabled:opacity-40"
         >
