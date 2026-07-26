@@ -14,11 +14,12 @@ describe('isValuableDrop', () => {
     expect(isValuableDrop('근원의 속삭임')).toBe(true)
   })
 
-  it('개별 지정 아이템(연마석 2종·칠흑 장신구 상자)은 고가', () => {
+  it('개별 지정 아이템(연마석 2종·칠흑 장신구 상자·익셉셔널 해머)은 고가', () => {
     expect(isValuableDrop('생명의 연마석')).toBe(true)
     expect(isValuableDrop('신념의 연마석')).toBe(true)
     expect(isValuableDrop('혼돈의 칠흑 장신구 상자')).toBe(true)
     expect(isValuableDrop('메이린의 칠흑 장신구 상자')).toBe(true)
+    expect(isValuableDrop('익셉셔널 해머')).toBe(true) // ADR-040
   })
 
   it('여명 세트·일반 아이템은 고가 아님', () => {

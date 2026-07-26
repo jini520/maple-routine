@@ -3,6 +3,7 @@ export const STORAGE_KEYS = {
   selectedAccountId: 'selectedAccountId',
   theme: 'theme',
   trackingMode: 'trackingMode',
+  dropEffect: 'dropEffect',
 } as const
 
 export function schedulerCacheKey(ocid: string): string {

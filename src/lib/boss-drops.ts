@@ -1,7 +1,13 @@
 import accessoryBoxesData from '../data/accessory-boxes.json'
 import bossRingBoxesData from '../data/boss-ring-boxes.json'
 import itemDropTableData from '../data/item-drop-table.json'
-import { DROP_CATEGORIES, type DropCandidate, type DropCategory } from '../types/drops'
+import {
+  SELECTABLE_DROP_CATEGORIES,
+  type DropCandidate,
+  type DropCategory,
+  type FixedDropGroup,
+} from '../types/drops'
+import { BOSS_DIFFICULTIES, type BossDifficulty } from '../types/scheduler'
 
 // item-drop-table.json / boss-ring-boxes.json / accessory-boxes.json 조회 헬퍼(ADR-038). 게임
 // 수치 데이터는 여기서 읽기만 하고 추정하지 않는다([[ADR-006]]).
@@ -25,27 +31,66 @@ function nfc(value: string): string {
   return value.normalize('NFC')
 }
 
-// 보스+난이도의 드롭 후보를 고정→장비→소비 순서로 평탄화해 반환한다(ADR-038 결정 1).
-export function getBossDropCandidates(boss: string, difficulty: string): DropCandidate[] {
-  const entry = rewardEntries.find(
-    (candidate) => nfc(candidate.boss) === nfc(boss) && nfc(candidate.difficulty) === nfc(difficulty),
-  )
-  if (entry === undefined) return []
+// BOSS_DIFFICULTIES 정규 순서 인덱스(미상 난이도는 뒤로).
+function difficultyOrder(difficulty: string): number {
+  const index = (BOSS_DIFFICULTIES as readonly string[]).indexOf(difficulty)
+  return index === -1 ? BOSS_DIFFICULTIES.length : index
+}
 
-  const candidates: DropCandidate[] = []
-  for (const category of DROP_CATEGORIES) {
-    for (const item of entry.rewards[category] ?? []) {
-      candidates.push({
-        name: item.name,
-        category,
-        amount: item.amount,
-        slot: item.slot,
-        set: item.set,
-        note: item.note,
-      })
+// 보스의 전 난이도 엔트리를 난이도 정규 순서로 반환한다.
+function entriesForBoss(boss: string): RawRewardEntry[] {
+  return rewardEntries
+    .filter((entry) => nfc(entry.boss) === nfc(boss))
+    .slice()
+    .sort((a, b) => difficultyOrder(a.difficulty) - difficultyOrder(b.difficulty))
+}
+
+// 보스의 선택 가능한 드롭 후보(장비·소비)를 난이도 무관하게 통합해 반환한다(ADR-040 결정 1).
+// 같은 아이템은 name+slot으로 dedupe하고, 등장하는 난이도를 difficulties에 정규 순서로 담는다.
+// 고정 드롭은 값이 난이도마다 달라 여기서 제외하고 getBossFixedDrops로 별도 표시한다.
+export function getBossDropCandidates(boss: string): DropCandidate[] {
+  const byKey = new Map<string, DropCandidate>()
+  const order: string[] = []
+
+  for (const entry of entriesForBoss(boss)) {
+    const difficulty = entry.difficulty as BossDifficulty
+    for (const category of SELECTABLE_DROP_CATEGORIES) {
+      for (const item of entry.rewards[category] ?? []) {
+        const key = `${category}|${nfc(item.name)}|${nfc(item.slot ?? '')}`
+        const existing = byKey.get(key)
+        if (existing === undefined) {
+          byKey.set(key, {
+            name: item.name,
+            category,
+            slot: item.slot,
+            set: item.set,
+            note: item.note,
+            difficulties: [difficulty],
+          })
+          order.push(key)
+        } else if (!existing.difficulties.includes(difficulty)) {
+          existing.difficulties.push(difficulty)
+        }
+      }
     }
   }
-  return candidates
+  return order.map((key) => byKey.get(key) as DropCandidate)
+}
+
+// 보스의 고정 드롭을 난이도별 그룹(정규 순서)으로 반환한다(ADR-040 결정 3). 읽기 전용 표시용.
+export function getBossFixedDrops(boss: string): FixedDropGroup[] {
+  const groups: FixedDropGroup[] = []
+  for (const entry of entriesForBoss(boss)) {
+    const items = (entry.rewards.fixed ?? []).map((item) => ({
+      name: item.name,
+      amount: item.amount,
+      slot: item.slot,
+    }))
+    if (items.length > 0) {
+      groups.push({ difficulty: entry.difficulty as BossDifficulty, items })
+    }
+  }
+  return groups
 }
 
 interface RawRingBox {
