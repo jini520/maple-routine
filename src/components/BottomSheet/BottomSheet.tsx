@@ -42,10 +42,10 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
           className="fixed inset-x-0 bottom-0 z-[60] mx-auto flex max-h-[82vh] w-full max-w-md flex-col rounded-t-[20px] border-t border-border bg-bg shadow-[0_-8px_30px_rgba(0,0,0,0.3)] outline-none"
         >
           <Drawer.Title className="sr-only">드롭 아이템 기록</Drawer.Title>
-          <div className="flex flex-none justify-center pb-1 pt-2">
+          <div className="flex flex-none justify-center pb-2 pt-3">
             <div className="h-1 w-9 rounded-full bg-border-strong" />
           </div>
-          <div className="overflow-y-auto pb-[calc(1rem+env(safe-area-inset-bottom))]">
+          <div className="overflow-y-auto pt-2 pb-[calc(1rem+env(safe-area-inset-bottom))]">
             {props.children}
           </div>
         </Drawer.Content>
