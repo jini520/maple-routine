@@ -31,6 +31,13 @@ describe('getItemIconUrl', () => {
     expect(getItemIconUrl('익셉셔널 해머', '없는슬롯')).toBeNull()
   })
 
+  it('영롱한 달빛 포션은 luminous_moonshine_potion.png로 조회된다', () => {
+    const url = getItemIconUrl('영롱한 달빛 포션')
+
+    expect(url).not.toBeNull()
+    expect(url).toEqual(expect.stringContaining('luminous_moonshine_potion'))
+  })
+
   it('여러 상자에 겹치는 생명의 연마석은 item-icons.json의 whetstone로 조회된다', () => {
     const url = getItemIconUrl('생명의 연마석')
 
