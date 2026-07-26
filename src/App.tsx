@@ -4,6 +4,7 @@ import { Coins, ListChecks, Settings, Swords } from 'lucide-react'
 import { useOnboardingStore } from './features/onboarding/store'
 import { useThemeStore } from './features/theme/store'
 import { useTrackingModeStore } from './features/tracking-mode/store'
+import { useDropEffectStore } from './features/drop-effect/store'
 import { hideSplashScreen } from './native/splash-screen'
 import { refreshSafeAreaInsets } from './native/system-bars'
 import { addKeyboardVisibilityListener } from './native/keyboard'
@@ -57,6 +58,7 @@ export function AppShell(): React.JSX.Element {
   const { status, restoreFromStorage } = useOnboardingStore()
   const { restoreFromStorage: restoreThemeFromStorage } = useThemeStore()
   const { restoreFromStorage: restoreTrackingModeFromStorage } = useTrackingModeStore()
+  const { restoreFromStorage: restoreDropEffectFromStorage } = useDropEffectStore()
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false)
 
   useEffect(() => {
@@ -71,6 +73,11 @@ export function AppShell(): React.JSX.Element {
 
   useEffect(() => {
     restoreTrackingModeFromStorage()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    restoreDropEffectFromStorage()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

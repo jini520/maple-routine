@@ -115,8 +115,8 @@ function DropIndicator(props: { drops: RecordedDrop[] }): React.JSX.Element {
             key={`${drop.itemName}-${index}`}
             src={url}
             alt=""
-            className="h-6 w-6 rounded-md border-[1.5px] border-surface bg-surface-2 object-contain"
-            style={{ marginLeft: index === 0 ? 0 : -6 }}
+            className="h-6 w-6 object-contain"
+            style={{ marginLeft: index === 0 ? 0 : 2 }}
           />
         ) : (
           <span

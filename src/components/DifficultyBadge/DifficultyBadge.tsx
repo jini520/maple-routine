@@ -41,3 +41,31 @@ export function DifficultyBadge(props: { difficulty: BossDifficulty }): React.JS
     </span>
   )
 }
+
+// 난이도 약자(ADR-040) — 좁은 아이템 타일에 여러 난이도를 겹쳐 표시하기 위한 간소화 표기.
+const DIFFICULTY_ABBR: Record<BossDifficulty, string> = {
+  이지: '이',
+  노멀: '노',
+  하드: '하',
+  카오스: '카',
+  익스트림: '익',
+}
+
+// 간소화 난이도 뱃지(ADR-040) — '어느 난이도에서 뜨는지'를 약자 + 난이도색 칩으로 표시한다.
+// 약자만으론 스크린리더에 무의미해 장식 정보로 aria-hidden 처리(타일 접근명은 아이템명 유지).
+export function DifficultyChip(props: { difficulty: BossDifficulty }): React.JSX.Element {
+  return (
+    <span
+      aria-hidden="true"
+      className="inline-flex items-center justify-center rounded text-[9px] font-extrabold leading-none"
+      style={{
+        height: '14px',
+        minWidth: '14px',
+        padding: '0 3px',
+        ...DIFFICULTY_BADGE_STYLES[props.difficulty],
+      }}
+    >
+      {DIFFICULTY_ABBR[props.difficulty]}
+    </span>
+  )
+}
