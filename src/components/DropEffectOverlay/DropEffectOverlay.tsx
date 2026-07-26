@@ -167,7 +167,9 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
     <div
       onClick={() => closeRef.current()}
       data-testid="drop-effect-overlay"
-      className="fixed inset-0 z-[70] cursor-pointer overflow-hidden"
+      // pointer-events-auto: 시트(vaul/Radix)가 열려 있으면 body에 pointer-events:none이 걸려
+      // 상속으로 이 오버레이의 탭이 먹지 않고 뒤 시트로 통과된다(ADR-039). 명시적으로 되살린다.
+      className="pointer-events-auto fixed inset-0 z-[70] cursor-pointer overflow-hidden"
     >
       <div
         className="absolute inset-0"
