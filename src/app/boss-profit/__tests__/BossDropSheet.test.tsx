@@ -239,4 +239,27 @@ describe('BossDropSheet', () => {
     )
     expect(screen.getByRole('switch', { name: '연출 끄기' })).toHaveAttribute('aria-checked', 'true')
   })
+
+  // 하단 고정 바가 iOS 홈 인디케이터·Android 제스처 영역을 침범하지 않도록, 프로젝트 컨벤션인
+  // var(--sa-bottom)(index.css)로 안전영역만큼 여백을 둔다. env() 직접 사용은 구형 Android WebView에서
+  // 어긋나므로 금지.
+  it('메인 "추가 완료" 바 하단에 안전영역 패딩이 적용된다', () => {
+    render(
+      <BossDropSheet boss="스우" difficulty="하드" initialDrops={[]} onSave={vi.fn()} onClose={vi.fn()} />,
+    )
+
+    const footer = screen.getByRole('button', { name: /추가 완료/ }).parentElement
+    expect(footer).toHaveClass('pb-[calc(0.75rem+var(--sa-bottom))]')
+  })
+
+  it('상자 드릴다운 "이 결과로 기록" 바 하단에 안전영역 패딩이 적용된다', async () => {
+    const user = userEvent.setup()
+    render(
+      <BossDropSheet boss="스우" difficulty="하드" initialDrops={[]} onSave={vi.fn()} onClose={vi.fn()} />,
+    )
+
+    await user.click(screen.getByRole('button', { name: /홍옥의 보스 반지 상자/ }))
+    const footer = screen.getByRole('button', { name: '이 결과로 기록' }).parentElement
+    expect(footer).toHaveClass('pb-[calc(0.75rem+var(--sa-bottom))]')
+  })
 })
