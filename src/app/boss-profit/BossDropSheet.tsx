@@ -1,20 +1,22 @@
 import { useState } from 'react'
 import { ChevronLeft, FlaskConical, Pin, Sword, type LucideIcon } from 'lucide-react'
 import { BottomSheet } from '../../components/BottomSheet/BottomSheet'
-import { DifficultyBadge, DifficultyChip } from '../../components/DifficultyBadge/DifficultyBadge'
+import { DifficultyBadge } from '../../components/DifficultyBadge/DifficultyBadge'
 import { DropEffectOverlay } from '../../components/DropEffectOverlay/DropEffectOverlay'
 import { useDropEffectStore } from '../../features/drop-effect/store'
 import {
   getAccessoryBoxContents,
+  getBossDifficulties,
   getBossDropCandidates,
   getBossFixedDrops,
+  getObtainableTileNames,
   getRingBoxContents,
   isBoxItem,
 } from '../../lib/boss-drops'
 import { getFixedDropIcons, type FixedDropIconSpec } from '../../lib/fixed-drops'
 import { getItemIconUrl, getItemIconUrlByFile } from '../../lib/item-icons'
 import { isValuableDrop } from '../../lib/valuable-drops'
-import type { BossDifficulty } from '../../types'
+import { BOSS_DIFFICULTIES, type BossDifficulty } from '../../types'
 import type {
   DropCandidate,
   DropCategory,
@@ -43,7 +45,10 @@ const FIXED_GRID_COLS: Record<number, string> = {
 
 interface BossDropSheetProps {
   boss: string
+  // 수익 리스트 행의 난이도. 미완료면 시트 안 난이도 토글의 기본값, 완료면 유일하게 표시할 난이도.
   difficulty: BossDifficulty
+  // 완료 여부(수익 리스트 행 기준). true면 난이도 토글 없이 완료 난이도만 표시, false면 토글 노출.
+  isComplete: boolean
   initialDrops: RecordedDrop[]
   onSave: (drops: RecordedDrop[]) => void
   onClose: () => void
@@ -124,6 +129,9 @@ function EffectToggle(props: { off: boolean; onToggle: () => void }): React.JSX.
 
 export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
   const [selected, setSelected] = useState<RecordedDrop[]>(props.initialDrops)
+  // 표시할 난이도. 기본값은 행 난이도(props.difficulty). 완료면 고정, 미완료면 토글로 변경한다.
+  // 저장 키는 항상 행 난이도(display-only 필터)라 이 값은 표시·필터에만 쓴다.
+  const [selectedDifficulty, setSelectedDifficulty] = useState<BossDifficulty>(props.difficulty)
   const [activeBox, setActiveBox] = useState<{ name: string; category: SelectableDropCategory } | null>(
     null,
   )
@@ -132,9 +140,20 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
   const effectEnabled = useDropEffectStore((state) => state.enabled)
   const setEffectEnabled = useDropEffectStore((state) => state.setEnabled)
 
-  // 난이도 무관 통합 표시(ADR-040): 장비·소비는 전 난이도 통합 후보, 고정은 난이도별 그룹.
-  const candidates = getBossDropCandidates(props.boss)
-  const fixedGroups = getBossFixedDrops(props.boss)
+  // 난이도별 표시: 장비·소비는 name+slot으로 통합된 후보에서 현재 난이도만 필터, 고정은 현재
+  // 난이도 그룹만. 통합 후보는 등장 난이도(difficulties)를 담고 있어 그대로 필터에 쓴다.
+  const allCandidates = getBossDropCandidates(props.boss)
+  const allFixedGroups = getBossFixedDrops(props.boss)
+  // 난이도 토글 후보 = 드롭 테이블에 있는 난이도 + 행 난이도(테이블에 없어도 기본값은 항상 노출).
+  const tableDifficulties = getBossDifficulties(props.boss)
+  const difficultyOptions = BOSS_DIFFICULTIES.filter(
+    (difficulty) => tableDifficulties.includes(difficulty) || difficulty === props.difficulty,
+  )
+
+  const candidates = allCandidates.filter((candidate) =>
+    candidate.difficulties.includes(selectedDifficulty),
+  )
+  const fixedGroups = allFixedGroups.filter((group) => group.difficulty === selectedDifficulty)
   const byCategory = new Map<SelectableDropCategory, DropCandidate[]>()
   for (const candidate of candidates) {
     const list = byCategory.get(candidate.category) ?? []
@@ -142,6 +161,17 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
     byCategory.set(candidate.category, list)
   }
   const isEmpty = candidates.length === 0 && fixedGroups.length === 0
+
+  // 난이도 변경(미완료 전용). 이미 선택된 드롭 중 새 난이도에 존재하는 것만 유지하고 나머지는
+  // 초기화한다. 상자 결과는 상자(boxOrigin)가 새 난이도 후보에 있으면 유지(타일 기준이 상자명이라).
+  function selectDifficulty(next: BossDifficulty): void {
+    if (next === selectedDifficulty) return
+    const availableTileNames = getObtainableTileNames(props.boss, next)
+    setSelected((prev) =>
+      prev.filter((drop) => availableTileNames.has(drop.boxOrigin ?? drop.itemName)),
+    )
+    setSelectedDifficulty(next)
+  }
 
   function toggleNormal(candidate: DropCandidate): void {
     const isAdding = findNormalDrop(selected, candidate.name) === undefined
@@ -200,7 +230,31 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
             <span className="text-lg font-bold text-text">{props.boss}</span>
             <EffectToggle off={!effectEnabled} onToggle={() => void setEffectEnabled(!effectEnabled)} />
           </div>
-          <p className="px-4 pb-3 text-xs text-text-muted">획득한 드롭을 선택하세요</p>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 px-4 pb-3">
+            <p className="text-xs text-text-muted">획득한 아이템을 선택하세요</p>
+            {props.isComplete ? (
+              // 완료: 완료된 난이도만 표시(선택 불가)
+              <DifficultyBadge difficulty={props.difficulty} />
+            ) : (
+              // 미완료: 드롭 테이블 난이도를 선택 버튼으로 나열(오른쪽 끝 정렬), 선택 안 된 것은 흐림 처리
+              <div className="ml-auto flex flex-wrap items-center gap-1.5">
+                {difficultyOptions.map((difficulty) => {
+                  const active = difficulty === selectedDifficulty
+                  return (
+                    <button
+                      key={difficulty}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => selectDifficulty(difficulty)}
+                      className={active ? '' : 'opacity-40'}
+                    >
+                      <DifficultyBadge difficulty={difficulty} />
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
 
           {isEmpty ? (
             <p className="px-4 pb-4 text-sm text-text-muted">이 보스의 드롭 데이터가 아직 없습니다.</p>
@@ -247,14 +301,6 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                                 <span className="line-clamp-2 text-balance break-keep text-center text-[10px] leading-tight text-text">
                                   {displayName}
                                 </span>
-                              </span>
-                              <span
-                                className="absolute left-1 top-1 flex gap-0.5"
-                                aria-hidden="true"
-                              >
-                                {candidate.difficulties.map((difficulty) => (
-                                  <DifficultyChip key={difficulty} difficulty={difficulty} />
-                                ))}
                               </span>
                             </button>
                           </li>

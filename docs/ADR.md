@@ -1306,3 +1306,32 @@
 - `CharacterTrackingPicker`: 저장된 집합과 선택 집합이 같으면(순서만 다른 경우 포함) 저장 버튼 `disabled`, 하나라도 추가/제거되면 활성.
 - content/boss 스토어 `saveTrackedOcids`: (a) 무변경/순수 제거 시 `syncSchedules`가 **호출되지 않음**(mock 호출 0회)·`characters`가 새 집합으로 필터됨, (b) 추가 시 `syncSchedules`가 **`added`만** 인자로 1회 호출·유지 캐릭터는 재조회 안 됨, (c) 결과 `characters`가 정확히 `ocids` 집합과 일치. `refresh` 전체 동기화 경로는 기존 테스트 유지.
 - 전체 `test`·`lint`·`build` 통과.
+
+### ADR-044: 보스 드롭 시트 난이도별 표시 — 통합 표시 폐기([[ADR-040]] 결정 1·2 반전)·난이도 필터·미완료 토글/완료 고정 (구현 완료, 2026-07-27)
+
+> 문서 순서 정정: 이 결정은 채팅으로 나온 새 정책이라 [[ADR-006]]/docs-first 관례상 **구현 전에** 문서를 먼저 리뷰했어야 하나, 이번엔 구현·검증이 먼저 이뤄졌다. 커밋 전 이 항목을 리뷰 체크포인트로 삼는다.
+
+**배경**: [[ADR-040]]은 보스 드롭 입력 시트(`BossDropSheet`)를 **난이도 무관 통합 표시**로 만들고(결정 1) 각 아이템 타일에 **난이도 약자 칩**(`DifficultyChip`)을 붙였다(결정 2). 실사용에서 "지금 이 행(난이도)의 드롭만 난이도별로 보고/기록하고 싶다"는 요구가 나와, 통합 표시를 **선택 난이도 필터 표시**로 되돌린다. 사용자 확정(2026-07-27, `AskUserQuestion`): ① 저장은 **항상 행 난이도**(토글은 표시용 필터, 저장 키 무변경), ② 미완료 토글에 노출할 난이도 = **드롭 테이블에 있는 난이도**(+행 난이도), ③ 타일 난이도 약자 칩 **제거**. 게임 수치 데이터는 읽기만 하고 추정하지 않는다([[ADR-006]]).
+
+**결정**:
+1. **난이도별 필터 표시([[ADR-040]] 결정 1 반전)**: 시트는 `selectedDifficulty` **한 난이도**의 드롭만 보여준다. `getBossDropCandidates(boss)`의 통합 후보를 `candidate.difficulties.includes(selectedDifficulty)`로, `getBossFixedDrops(boss)`를 `group.difficulty === selectedDifficulty`로 필터한다. `getBossDropCandidates`/`getBossFixedDrops`의 시그니처는 `(boss)` 그대로 두고 **필터는 시트에서** 수행(통합 후보는 그대로 재사용). 기본 `selectedDifficulty = props.difficulty`(행 난이도).
+2. **미완료 = 난이도 토글**: `'획득한 드롭을 선택하세요'` 라인 오른쪽에 난이도 뱃지를 **선택 버튼**으로 나열하고, 선택 안 된 뱃지는 `opacity-40`으로 흐림 처리한다. 후보 목록 = 신규 `getBossDifficulties(boss)`(드롭 테이블에 **표시 가능한 드롭(고정·장비·소비)**이 있는 난이도, `BOSS_DIFFICULTIES` 정규 순서) **+ 행 난이도**(테이블에 없어도 기본값은 항상 노출·하이라이트 가능하도록 합집합).
+3. **완료 = 고정 뱃지**: 난이도 선택 불가. 완료 난이도(= 행 난이도) 뱃지 하나만 같은 라인에 읽기 전용으로 표시한다. 완료 여부는 신규 `isComplete` prop(부모 `BossProfitBossRow`가 `row.isComplete` 전달)로 판정한다.
+4. **난이도 변경 시 선택 재조정**: 이미 선택된 드롭 중 **새 난이도에 존재하는 것만 유지**하고 나머지는 초기화한다. 타일 정체성 기준은 상자 결과면 `boxOrigin`(=상자명=후보명), 일반 아이템이면 `itemName`. 초기 로드 시엔 재조정하지 않아(변경 시에만) `initialDrops`는 무손실 보존된다.
+5. **타일 난이도 약자 칩 제거([[ADR-040]] 결정 2 반전)**: 단일 난이도만 표시되어 칩이 중복 → 타일에서 `DifficultyChip` 렌더 제거. 헤더 난이도 뱃지는 [[ADR-040]] 정정에서 지웠으나, 여기서 선택 안내 라인에 (완료=단일 뱃지 / 미완료=선택 토글) 형태로 재도입한다. `DifficultyChip` 컴포넌트·`DIFFICULTY_ABBR` 상수·전용 테스트는 제품 사용처 0이 되어 **삭제**한다(사용자 확정 2026-07-27). `DifficultyBadge` 본체와 공용 `DIFFICULTY_BADGE_STYLES`는 존치.
+6. **저장 무변경([[ADR-038]]/[[ADR-040]] 결정 1 유지)**: 드롭은 항상 **행 난이도** 키(`dropRowKey(ocid,boss,difficulty,periodKey)`)로 저장한다. `onSave(drops)`·`setBossDrops(row, drops)` 시그니처 무변경 — 토글은 표시 필터일 뿐 저장 대상 난이도를 바꾸지 않는다.
+
+**이유**: 난이도별 드롭이 크게 다른 보스(예: 카링 이지~익스)에서 "이 행에서 뭘 먹었나"를 난이도 단위로 보고 싶다는 요구가 통합 뷰보다 실사용에 맞다. 미완료는 리스트가 placeholder 난이도만 노출하므로 토글로 실제 난이도를 짚게 하고, 완료는 이미 처치 난이도가 확정이라 고정한다.
+
+**트레이드오프**:
+- **저장을 항상 행 난이도로 고정**(사용자 확정)하므로, 미완료에서 행과 **다른** 난이도로 토글해 그 난이도 전용 아이템을 담고 저장하면, 재오픈 시 기본 난이도(행 난이도) 필터에 걸려 그 타일이 **선택 상태로 안 보일 수 있다**(DB엔 남고 접힌 행의 드롭 인디케이터엔 노출). 사용자 인지·수용한 트레이드오프.
+- `getBossDropCandidates`/`getBossFixedDrops`는 [[ADR-040]] 시그니처를 유지해 다른 사용처 영향 없음(필터만 시트로 이동).
+
+**저장소**: 스키마·키 변경 없음(`boss_drop_records`·`dropRowKey` 무변경). 신규 수치 데이터 없음(기존 `item-drop-table.json`을 읽기만).
+
+**구현(2026-07-27, 구현 완료)**: TDD로 테스트 먼저 → 구현. `lib/boss-drops`(`getBossDifficulties(boss)` 신규 — 표시 가능한 난이도 정규 순서), `BossDropSheet`(`isComplete` prop·`selectedDifficulty` 상태·`selectDifficulty` 재조정·헤더 난이도 뱃지 라인[완료 단일/미완료 토글·흐림]·후보/고정 난이도 필터·타일 `DifficultyChip` 제거), `BossProfitScreen`(`isComplete={row.isComplete}` 전달). **검증**: 전체 1228 tests 통과(신규 8 — `getBossDifficulties` 3 + 시트 난이도별 표시 5, 기존 '난이도 약자 칩' 테스트 1건은 '칩 미표시'로 교체·기존 시트 테스트는 `isComplete` prop 추가로 갱신, `DifficultyChip` 전용 테스트 2건 삭제)·`tsc --noEmit`·lint(경고 0). **미verify**: 실 데이터로 시트 난이도 토글·완료/미완료 분기 육안 확인([[ADR-038]]/[[ADR-039]]/[[ADR-040]]와 동일 — 등록 캐릭터·동기화 데이터 필요).
+
+**후속(2026-07-27) — 난이도 토글 우측 정렬·문구 변경·처치 난이도 기준 드롭 정리(사용자 요청)**:
+1. **미완료 토글 우측 정렬**: 미완료 시트의 난이도 선택 토글을 선택 안내 라인 **오른쪽 끝**으로 이동(`ml-auto`). 완료 단일 뱃지는 그대로.
+2. **안내 문구 변경**: `'획득한 드롭을 선택하세요'` → `'획득한 아이템을 선택하세요'`.
+3. **처치 난이도에서 획득 불가한 기록 드롭 제거(데이터 정합성)**: 미완료 시트의 난이도 토글은 표시용 필터라 **행 난이도 키에 다른 난이도 전용 아이템이 섞여 저장**될 수 있다(위 트레이드오프 1). 보스가 실제 처치되어 **처치 난이도가 확정(`row.isComplete`)**되면, 그 난이도에서 **획득 불가한 선택 드롭을 기록에서 제거**한다(예: 익스트림 아이템을 담아뒀는데 이지로 처치 → 이지 비획득 아이템 제거). 공통 헬퍼 `lib/boss-drops`: `getObtainableTileNames(boss, difficulty)`(그 난이도에서 획득 가능한 선택 타일명 집합 — 상자 결과는 상자명 기준), `pruneUnobtainableDrops(boss, difficulty, drops)`(비획득 선택 드롭 제거, 레거시 `category === 'fixed'` 기록은 보존해 무손실). 스토어의 드롭 로딩 단일 choke point `loadDropsByRowKey(ocids, rows, now)`에서 **완료 행에 한해** prune하고, 변경이 있으면 `replaceBossDropRecords`로 영구 반영(멱등 — 이미 정리된 기록은 재기록 없음). 미완료 행은 정리하지 않는다(처치 난이도 미확정 = scratchpad). 시트의 난이도 변경 재조정(위 결정 4)도 `getObtainableTileNames`로 통일해 한 소스에서 판정한다. **검증**: 전체 1233 tests 통과(신규 5 — 헬퍼 `getObtainableTileNames` 1·`pruneUnobtainableDrops` 2, 스토어 완료 행 prune·미완료 행 미prune 2; 시트 문구·우측 정렬은 기존 테스트에 병합)·`tsc --noEmit`·lint(경고 0)·build 통과.

@@ -233,6 +233,7 @@ function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Element {
         <BossDropSheet
           boss={row.boss}
           difficulty={row.difficulty}
+          isComplete={row.isComplete}
           initialDrops={props.drops}
           onSave={(drops) => props.setBossDrops(row, drops)}
           onClose={() => setIsDropSheetOpen(false)}

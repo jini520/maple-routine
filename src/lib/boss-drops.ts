@@ -6,6 +6,7 @@ import {
   type DropCandidate,
   type DropCategory,
   type FixedDropGroup,
+  type RecordedDrop,
 } from '../types/drops'
 import { BOSS_DIFFICULTIES, type BossDifficulty } from '../types/scheduler'
 
@@ -91,6 +92,43 @@ export function getBossFixedDrops(boss: string): FixedDropGroup[] {
     }
   }
   return groups
+}
+
+// 이 보스의 드롭 테이블에 표시 가능한 드롭(고정·장비·소비)이 있는 난이도를 정규 순서로 반환한다.
+// 드롭 시트의 난이도 토글 후보 목록에 쓴다 — 데이터 없는 난이도는 제외한다(추정 금지, [[ADR-006]]).
+export function getBossDifficulties(boss: string): BossDifficulty[] {
+  const present = new Set<BossDifficulty>()
+  for (const entry of entriesForBoss(boss)) {
+    const hasDisplayable =
+      (entry.rewards.fixed?.length ?? 0) > 0 ||
+      (entry.rewards.equipment?.length ?? 0) > 0 ||
+      (entry.rewards.consumable?.length ?? 0) > 0
+    if (hasDisplayable) present.add(entry.difficulty as BossDifficulty)
+  }
+  return BOSS_DIFFICULTIES.filter((difficulty) => present.has(difficulty))
+}
+
+// 이 보스의 특정 난이도에서 획득 가능한 '선택 타일' 이름 집합(장비·소비, 상자 포함). 상자 결과는
+// 상자명(=타일명=boxOrigin) 기준. 시트 난이도 변경 재조정·처치 난이도 확정 정리에 공통으로 쓴다.
+export function getObtainableTileNames(boss: string, difficulty: BossDifficulty): Set<string> {
+  return new Set(
+    getBossDropCandidates(boss)
+      .filter((candidate) => candidate.difficulties.includes(difficulty))
+      .map((candidate) => candidate.name),
+  )
+}
+
+// 기록 드롭에서 이 난이도(처치 난이도)에서 획득 불가한 선택 드롭을 제거한다. 상자 결과는 상자명
+// 기준. 레거시 고정(fixed) 기록은 선택 대상이 아니므로 무손실 보존한다([[ADR-040]] 결정 3).
+export function pruneUnobtainableDrops(
+  boss: string,
+  difficulty: BossDifficulty,
+  drops: RecordedDrop[],
+): RecordedDrop[] {
+  const obtainable = getObtainableTileNames(boss, difficulty)
+  return drops.filter(
+    (drop) => drop.category === 'fixed' || obtainable.has(drop.boxOrigin ?? drop.itemName),
+  )
 }
 
 interface RawRingBox {

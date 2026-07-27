@@ -2,7 +2,7 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
-import { DifficultyBadge, DifficultyChip } from '../DifficultyBadge'
+import { DifficultyBadge } from '../DifficultyBadge'
 
 afterEach(() => {
   cleanup()
@@ -20,20 +20,5 @@ describe('DifficultyBadge', () => {
 
     const badge = screen.getByText('익스트림')
     expect(badge.getAttribute('style')).toContain('linear-gradient')
-  })
-})
-
-describe('DifficultyChip (간소화, ADR-040)', () => {
-  it('난이도를 약자로 렌더링한다 (하드→하)', () => {
-    render(<DifficultyChip difficulty="하드" />)
-
-    expect(screen.getByText('하')).toBeInTheDocument()
-  })
-
-  it('난이도색을 그대로 재사용한다', () => {
-    render(<DifficultyChip difficulty="카오스" />)
-
-    const chip = screen.getByText('카')
-    expect(chip.getAttribute('style')).toContain('linear-gradient')
   })
 })

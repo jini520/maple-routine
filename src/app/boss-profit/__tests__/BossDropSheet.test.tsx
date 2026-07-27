@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useDropEffectStore } from '../../../features/drop-effect/store'
@@ -23,6 +23,7 @@ describe('BossDropSheet', () => {
       <BossDropSheet
         boss="스우"
         difficulty="하드"
+        isComplete
         initialDrops={[]}
         onSave={onSave}
         onClose={onClose}
@@ -48,6 +49,7 @@ describe('BossDropSheet', () => {
       <BossDropSheet
         boss="스우"
         difficulty="하드"
+        isComplete
         initialDrops={[]}
         onSave={onSave}
         onClose={vi.fn()}
@@ -87,7 +89,7 @@ describe('BossDropSheet', () => {
     const onSave = vi.fn()
 
     render(
-      <BossDropSheet boss="스우" difficulty="하드" initialDrops={[]} onSave={onSave} onClose={vi.fn()} />,
+      <BossDropSheet boss="스우" difficulty="하드" isComplete initialDrops={[]} onSave={onSave} onClose={vi.fn()} />,
     )
 
     // 상자 선택 → 드릴다운에서 결과 기록
@@ -110,7 +112,7 @@ describe('BossDropSheet', () => {
     const onSave = vi.fn()
 
     render(
-      <BossDropSheet boss="스우" difficulty="하드" initialDrops={[]} onSave={onSave} onClose={vi.fn()} />,
+      <BossDropSheet boss="스우" difficulty="하드" isComplete initialDrops={[]} onSave={onSave} onClose={vi.fn()} />,
     )
 
     await user.click(screen.getByRole('button', { name: /홍옥의 보스 반지 상자/ }))
@@ -136,7 +138,7 @@ describe('BossDropSheet', () => {
     const onSave = vi.fn()
 
     render(
-      <BossDropSheet boss="카링" difficulty="하드" initialDrops={[]} onSave={onSave} onClose={vi.fn()} />,
+      <BossDropSheet boss="카링" difficulty="하드" isComplete initialDrops={[]} onSave={onSave} onClose={vi.fn()} />,
     )
 
     await user.click(screen.getByRole('button', { name: /생명의 보스 반지 상자/ }))
@@ -164,7 +166,7 @@ describe('BossDropSheet', () => {
     const user = userEvent.setup()
 
     render(
-      <BossDropSheet boss="스우" difficulty="하드" initialDrops={[]} onSave={vi.fn()} onClose={vi.fn()} />,
+      <BossDropSheet boss="스우" difficulty="하드" isComplete initialDrops={[]} onSave={vi.fn()} onClose={vi.fn()} />,
     )
 
     expect(screen.queryByTestId('drop-effect-overlay')).not.toBeInTheDocument()
@@ -177,7 +179,7 @@ describe('BossDropSheet', () => {
 
     // 데이브레이크 펜던트(여명 세트)는 비고가·비박스 일반 아이템
     render(
-      <BossDropSheet boss="진 힐라" difficulty="하드" initialDrops={[]} onSave={vi.fn()} onClose={vi.fn()} />,
+      <BossDropSheet boss="진 힐라" difficulty="하드" isComplete initialDrops={[]} onSave={vi.fn()} onClose={vi.fn()} />,
     )
 
     await user.click(screen.getByRole('button', { name: /데이브레이크 펜던트/ }))
@@ -190,7 +192,7 @@ describe('BossDropSheet', () => {
     const onSave = vi.fn()
 
     render(
-      <BossDropSheet boss="스우" difficulty="하드" initialDrops={[]} onSave={onSave} onClose={vi.fn()} />,
+      <BossDropSheet boss="스우" difficulty="하드" isComplete initialDrops={[]} onSave={onSave} onClose={vi.fn()} />,
     )
 
     // 고정 아이템(주문의 흔적)은 아이콘으로만 표시되고 버튼(선택 대상)이 아니다
@@ -201,14 +203,14 @@ describe('BossDropSheet', () => {
     expect(onSave).toHaveBeenCalledWith([])
   })
 
-  it('선택 타일에 등장 난이도를 약자 칩으로 표시한다 (루즈 컨트롤: 하드+익스트림)', () => {
+  it('아이템 타일에는 난이도 약자 칩을 표시하지 않는다 (단일 난이도 필터링)', () => {
     render(
-      <BossDropSheet boss="스우" difficulty="하드" initialDrops={[]} onSave={vi.fn()} onClose={vi.fn()} />,
+      <BossDropSheet boss="스우" difficulty="하드" isComplete initialDrops={[]} onSave={vi.fn()} onClose={vi.fn()} />,
     )
 
+    // 하드 뷰에서 루즈 컨트롤 타일은 익스트림 약자 칩('익')을 더 이상 달지 않는다
     const tile = screen.getByRole('button', { name: /루즈 컨트롤 머신 마크/ })
-    expect(tile.textContent).toContain('하')
-    expect(tile.textContent).toContain('익')
+    expect(tile.textContent).not.toContain('익')
   })
 
   it('연출 끄기를 활성화하면(enabled=false) 고가 아이템을 추가해도 이펙트가 뜨지 않는다', async () => {
@@ -216,7 +218,7 @@ describe('BossDropSheet', () => {
     useDropEffectStore.setState({ enabled: false })
 
     render(
-      <BossDropSheet boss="스우" difficulty="하드" initialDrops={[]} onSave={vi.fn()} onClose={vi.fn()} />,
+      <BossDropSheet boss="스우" difficulty="하드" isComplete initialDrops={[]} onSave={vi.fn()} onClose={vi.fn()} />,
     )
 
     await user.click(screen.getByRole('button', { name: /루즈 컨트롤 머신 마크/ }))
@@ -226,7 +228,7 @@ describe('BossDropSheet', () => {
   it("'연출 끄기' 토글은 연출이 켜져 있을 때 꺼짐 상태다(반전 회귀 방지)", () => {
     useDropEffectStore.setState({ enabled: true })
     const { rerender } = render(
-      <BossDropSheet boss="스우" difficulty="하드" initialDrops={[]} onSave={vi.fn()} onClose={vi.fn()} />,
+      <BossDropSheet boss="스우" difficulty="하드" isComplete initialDrops={[]} onSave={vi.fn()} onClose={vi.fn()} />,
     )
 
     // 연출 표시 중 → '연출 끄기'는 활성(체크)이 아니어야 한다
@@ -235,7 +237,7 @@ describe('BossDropSheet', () => {
     // 연출을 끄면(enabled=false) → '연출 끄기'가 활성(체크)이 된다
     useDropEffectStore.setState({ enabled: false })
     rerender(
-      <BossDropSheet boss="스우" difficulty="하드" initialDrops={[]} onSave={vi.fn()} onClose={vi.fn()} />,
+      <BossDropSheet boss="스우" difficulty="하드" isComplete initialDrops={[]} onSave={vi.fn()} onClose={vi.fn()} />,
     )
     expect(screen.getByRole('switch', { name: '연출 끄기' })).toHaveAttribute('aria-checked', 'true')
   })
@@ -245,7 +247,7 @@ describe('BossDropSheet', () => {
   // 어긋나므로 금지.
   it('메인 "추가 완료" 바 하단에 안전영역 패딩이 적용된다', () => {
     render(
-      <BossDropSheet boss="스우" difficulty="하드" initialDrops={[]} onSave={vi.fn()} onClose={vi.fn()} />,
+      <BossDropSheet boss="스우" difficulty="하드" isComplete initialDrops={[]} onSave={vi.fn()} onClose={vi.fn()} />,
     )
 
     const footer = screen.getByRole('button', { name: /추가 완료/ }).parentElement
@@ -255,11 +257,140 @@ describe('BossDropSheet', () => {
   it('상자 드릴다운 "이 결과로 기록" 바 하단에 안전영역 패딩이 적용된다', async () => {
     const user = userEvent.setup()
     render(
-      <BossDropSheet boss="스우" difficulty="하드" initialDrops={[]} onSave={vi.fn()} onClose={vi.fn()} />,
+      <BossDropSheet boss="스우" difficulty="하드" isComplete initialDrops={[]} onSave={vi.fn()} onClose={vi.fn()} />,
     )
 
     await user.click(screen.getByRole('button', { name: /홍옥의 보스 반지 상자/ }))
     const footer = screen.getByRole('button', { name: '이 결과로 기록' }).parentElement
     expect(footer).toHaveClass('pb-[calc(0.75rem+var(--sa-bottom))]')
+  })
+
+  // ── 난이도별 표시 ─────────────────────────────────────────────────────────
+  describe('난이도별 드롭 표시', () => {
+    it('기본 난이도(행 난이도)의 아이템만 표시한다 (스우 하드)', () => {
+      render(
+        <BossDropSheet
+          boss="스우"
+          difficulty="하드"
+          isComplete
+          initialDrops={[]}
+          onSave={vi.fn()}
+          onClose={vi.fn()}
+        />,
+      )
+
+      // 하드 아이템은 보이고
+      expect(screen.getByRole('button', { name: /루즈 컨트롤 머신 마크/ })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /홍옥의 보스 반지 상자/ })).toBeInTheDocument()
+      // 다른 난이도 전용 아이템은 안 보인다
+      expect(screen.queryByRole('button', { name: /컴플리트 언더컨트롤/ })).not.toBeInTheDocument() // 익스트림 전용
+      expect(screen.queryByRole('button', { name: /녹옥의 보스 반지 상자/ })).not.toBeInTheDocument() // 노멀 전용
+      expect(screen.queryByRole('button', { name: /백옥의 보스 반지 상자/ })).not.toBeInTheDocument() // 익스트림 전용
+    })
+
+    it('완료 시 난이도를 선택할 수 없고 완료 난이도 뱃지만 노출한다', () => {
+      render(
+        <BossDropSheet
+          boss="스우"
+          difficulty="하드"
+          isComplete
+          initialDrops={[]}
+          onSave={vi.fn()}
+          onClose={vi.fn()}
+        />,
+      )
+
+      // 완료 난이도(하드) 뱃지는 선택 안내 라인에 있다
+      const header = screen.getByText('획득한 아이템을 선택하세요').parentElement as HTMLElement
+      expect(within(header).getByText('하드')).toBeInTheDocument()
+      // 다른 난이도 뱃지(노멀·익스트림)는 선택 버튼으로 노출되지 않는다
+      expect(within(header).queryByRole('button', { name: /노멀/ })).not.toBeInTheDocument()
+      expect(within(header).queryByRole('button', { name: /익스트림/ })).not.toBeInTheDocument()
+    })
+
+    it('미완료 시 드롭 테이블의 난이도 뱃지를 선택 버튼으로 나열하고, 선택 안 된 것은 흐림 처리한다', () => {
+      render(
+        <BossDropSheet
+          boss="스우"
+          difficulty="하드"
+          isComplete={false}
+          initialDrops={[]}
+          onSave={vi.fn()}
+          onClose={vi.fn()}
+        />,
+      )
+
+      const header = screen.getByText('획득한 아이템을 선택하세요').parentElement as HTMLElement
+      // 스우 드롭 테이블 난이도(노멀·하드·익스트림)가 선택 버튼으로 나열된다
+      const normal = within(header).getByRole('button', { name: /노멀/ })
+      const hard = within(header).getByRole('button', { name: /하드/ })
+      const extreme = within(header).getByRole('button', { name: /익스트림/ })
+
+      // 기본 선택 = 행 난이도(하드)
+      expect(hard).toHaveAttribute('aria-pressed', 'true')
+      expect(normal).toHaveAttribute('aria-pressed', 'false')
+      expect(extreme).toHaveAttribute('aria-pressed', 'false')
+      // 선택 안 된 뱃지는 흐림 처리
+      expect(normal.className).toContain('opacity-40')
+      expect(extreme.className).toContain('opacity-40')
+      expect(hard.className).not.toContain('opacity-40')
+      // 난이도 토글은 안내 라인 오른쪽 끝으로 정렬(ml-auto)
+      expect(hard.parentElement?.className).toContain('ml-auto')
+    })
+
+    it('미완료에서 난이도를 바꾸면 해당 난이도의 아이템으로 갱신된다', async () => {
+      const user = userEvent.setup()
+      render(
+        <BossDropSheet
+          boss="스우"
+          difficulty="하드"
+          isComplete={false}
+          initialDrops={[]}
+          onSave={vi.fn()}
+          onClose={vi.fn()}
+        />,
+      )
+
+      const header = screen.getByText('획득한 아이템을 선택하세요').parentElement as HTMLElement
+      await user.click(within(header).getByRole('button', { name: /익스트림/ }))
+
+      // 익스트림 전용 아이템이 나타나고
+      expect(screen.getByRole('button', { name: /컴플리트 언더컨트롤/ })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /백옥의 보스 반지 상자/ })).toBeInTheDocument()
+      // 하드 전용 상자는 사라진다 (루즈 컨트롤은 하드+익스트림 공통이라 유지)
+      expect(screen.queryByRole('button', { name: /홍옥의 보스 반지 상자/ })).not.toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /루즈 컨트롤 머신 마크/ })).toBeInTheDocument()
+    })
+
+    it('난이도 변경 시 새 난이도에 있는 선택은 유지하고 없는 선택은 초기화한다', async () => {
+      const user = userEvent.setup()
+      const onSave = vi.fn()
+      render(
+        <BossDropSheet
+          boss="스우"
+          difficulty="하드"
+          isComplete={false}
+          initialDrops={[]}
+          onSave={onSave}
+          onClose={vi.fn()}
+        />,
+      )
+
+      // 하드에서: 루즈 컨트롤(하드+익스트림 공통) + 홍옥 상자(하드 전용) 선택
+      await user.click(screen.getByRole('button', { name: /루즈 컨트롤 머신 마크/ }))
+      await user.click(screen.getByRole('button', { name: /홍옥의 보스 반지 상자/ }))
+      await user.click(screen.getByRole('button', { name: '3레벨' }))
+      await user.click(screen.getByRole('button', { name: /리스트레인트 링/ }))
+      await user.click(screen.getByRole('button', { name: '이 결과로 기록' }))
+
+      // 익스트림으로 전환 → 홍옥(하드 전용) 선택은 초기화, 루즈 컨트롤은 유지
+      const header = screen.getByText('획득한 아이템을 선택하세요').parentElement as HTMLElement
+      await user.click(within(header).getByRole('button', { name: /익스트림/ }))
+      await user.click(screen.getByRole('button', { name: /추가 완료/ }))
+
+      expect(onSave).toHaveBeenCalledWith([
+        { category: 'equipment', itemName: '루즈 컨트롤 머신 마크', slot: '얼굴장식', quantity: 1 },
+      ])
+    })
   })
 })
