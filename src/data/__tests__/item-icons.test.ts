@@ -8,16 +8,21 @@ import itemDropTable from '../item-drop-table.json'
 
 const itemsDir = join(dirname(fileURLToPath(import.meta.url)), '../../assets/items')
 
+// src/lib/item-icons.ts와 동일: 현재 데이터엔 iconFileBySlot이 없지만 로더가 하위호환으로
+// 지원하므로 옵셔널 필드를 포함한 타입으로 캐스트해 검증 분기를 유지한다.
+type ItemIconEntry = { name: string; iconFile?: string; iconFileBySlot?: Record<string, string> }
+const iconItems = itemIcons.items as ItemIconEntry[]
+
 describe('아이템 아이콘 매핑 정합성', () => {
   it('아이템명에 중복이 없다', () => {
-    const names = itemIcons.items.map((item) => item.name)
+    const names = iconItems.map((item) => item.name)
     expect(new Set(names).size).toBe(names.length)
   })
 
   it('모든 iconFile / iconFileBySlot 파일이 src/assets/items/에 실제로 존재한다', () => {
     const missingFiles: string[] = []
 
-    for (const item of itemIcons.items) {
+    for (const item of iconItems) {
       if (item.iconFile) {
         if (!existsSync(join(itemsDir, item.iconFile))) {
           missingFiles.push(`${item.name} -> ${item.iconFile}`)
@@ -45,7 +50,7 @@ describe('아이템 아이콘 매핑 정합성', () => {
       }
     }
 
-    const unknown = itemIcons.items.map((item) => item.name).filter((name) => !dropTableNames.has(name))
+    const unknown = iconItems.map((item) => item.name).filter((name) => !dropTableNames.has(name))
     expect(unknown).toEqual([])
   })
 })
