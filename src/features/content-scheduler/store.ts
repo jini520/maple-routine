@@ -107,8 +107,8 @@ export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, ge
 
   async loadTrackedOcids() {
     const [ocids, selectedOcid] = await Promise.all([
-      getTrackedCharacterOcids('content'),
-      getLastSelectedCharacter('content'),
+      getTrackedCharacterOcids(),
+      getLastSelectedCharacter(),
     ])
     set({ trackedOcids: ocids, selectedOcid })
     if (ocids !== null) {
@@ -119,7 +119,7 @@ export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, ge
   async saveTrackedOcids(ocids, onProgress) {
     const previousOcids = get().trackedOcids ?? []
     try {
-      await setTrackedCharacterOcids('content', ocids)
+      await setTrackedCharacterOcids(ocids)
     } catch {
       useToastStore.getState().showError('저장하지 못했어요')
       return
@@ -206,7 +206,7 @@ export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, ge
 
   async selectCharacter(ocid) {
     set({ selectedOcid: ocid })
-    await setLastSelectedCharacter('content', ocid)
+    await setLastSelectedCharacter(ocid)
   },
 
   // ADR-035 결정 3·6·19: 저장소(단일 진실 공급원)에서 현재 배열을 읽어 멤버십만 추가/삭제하고

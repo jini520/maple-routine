@@ -422,7 +422,7 @@ describe('useOnboardingStore.submitContentCharacters', () => {
 
     await useOnboardingStore.getState().submitContentCharacters(['ocid-a', 'ocid-b'])
 
-    expect(setTrackedCharacterOcidsMock).toHaveBeenCalledWith('content', ['ocid-a', 'ocid-b'])
+    expect(setTrackedCharacterOcidsMock).toHaveBeenCalledWith(['ocid-a', 'ocid-b'])
     expect(seedManualTrackedContentMock).not.toHaveBeenCalled()
     expect(useOnboardingStore.getState().status).toBe('completed')
   })
@@ -433,7 +433,7 @@ describe('useOnboardingStore.submitContentCharacters', () => {
 
     await useOnboardingStore.getState().submitContentCharacters(['ocid-a', 'ocid-b'])
 
-    expect(setTrackedCharacterOcidsMock).toHaveBeenCalledWith('content', ['ocid-a', 'ocid-b'])
+    expect(setTrackedCharacterOcidsMock).toHaveBeenCalledWith(['ocid-a', 'ocid-b'])
     expect(seedManualTrackedContentMock).toHaveBeenCalledWith('ocid-a')
     expect(seedManualTrackedContentMock).toHaveBeenCalledWith('ocid-b')
     expect(useOnboardingStore.getState().status).toBe('completed')

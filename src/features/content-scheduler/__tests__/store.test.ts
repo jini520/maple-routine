@@ -321,7 +321,7 @@ describe('useContentSchedulerStore', () => {
 
       await useContentSchedulerStore.getState().loadTrackedOcids()
 
-      expect(getTrackedCharacterOcidsMock).toHaveBeenCalledWith('content')
+      expect(getTrackedCharacterOcidsMock).toHaveBeenCalledWith()
       expect(useContentSchedulerStore.getState().trackedOcids).toEqual(['ocid-1'])
     })
 
@@ -349,7 +349,7 @@ describe('useContentSchedulerStore', () => {
 
       await useContentSchedulerStore.getState().saveTrackedOcids(['ocid-1', 'ocid-2'])
 
-      expect(setTrackedCharacterOcidsMock).toHaveBeenCalledWith('content', ['ocid-1', 'ocid-2'])
+      expect(setTrackedCharacterOcidsMock).toHaveBeenCalledWith(['ocid-1', 'ocid-2'])
       expect(useContentSchedulerStore.getState().trackedOcids).toEqual(['ocid-1', 'ocid-2'])
       expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1', 'ocid-2'], undefined)
     })
@@ -549,14 +549,14 @@ describe('useContentSchedulerStore', () => {
       ])
     })
 
-    it('loadTrackedOcids는 getLastSelectedCharacter("content") 반환값으로 selectedOcid를 초기화한다', async () => {
+    it('loadTrackedOcids는 getLastSelectedCharacter() 반환값으로 selectedOcid를 초기화한다', async () => {
       getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
       getLastSelectedCharacterMock.mockResolvedValue('ocid-1')
       syncSchedulesMock.mockResolvedValue([syncResult()])
 
       await useContentSchedulerStore.getState().loadTrackedOcids()
 
-      expect(getLastSelectedCharacterMock).toHaveBeenCalledWith('content')
+      expect(getLastSelectedCharacterMock).toHaveBeenCalledWith()
       expect(useContentSchedulerStore.getState().selectedOcid).toBe('ocid-1')
     })
 
@@ -566,7 +566,7 @@ describe('useContentSchedulerStore', () => {
       await useContentSchedulerStore.getState().selectCharacter('ocid-9')
 
       expect(useContentSchedulerStore.getState().selectedOcid).toBe('ocid-9')
-      expect(setLastSelectedCharacterMock).toHaveBeenCalledWith('content', 'ocid-9')
+      expect(setLastSelectedCharacterMock).toHaveBeenCalledWith('ocid-9')
     })
   })
 })

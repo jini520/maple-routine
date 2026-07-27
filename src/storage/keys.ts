@@ -18,12 +18,13 @@ export function characterBasicCacheIndexKey(): string {
   return 'characterBasicCache:index'
 }
 
-export function trackedCharactersKey(kind: 'content' | 'boss'): string {
-  return `trackedCharacters:${kind}`
+// ADR-042: 컨텐츠/보스로 갈려 있던 추적 목록·현재 선택을 앱 전역 단일 키로 통합했다.
+export function trackedCharactersKey(): string {
+  return 'trackedCharacters'
 }
 
-export function lastSelectedCharacterKey(kind: 'content' | 'boss'): string {
-  return `lastSelectedCharacter:${kind}`
+export function lastSelectedCharacterKey(): string {
+  return 'lastSelectedCharacter'
 }
 
 // ADR-035: 수동 트래킹 모드의 캐릭터별 추적 항목(멤버십) 키

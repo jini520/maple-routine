@@ -443,7 +443,7 @@ describe('useBossSchedulerStore', () => {
 
       await useBossSchedulerStore.getState().loadTrackedOcids()
 
-      expect(getTrackedCharacterOcidsMock).toHaveBeenCalledWith('boss')
+      expect(getTrackedCharacterOcidsMock).toHaveBeenCalledWith()
       expect(useBossSchedulerStore.getState().trackedOcids).toEqual(['ocid-1'])
     })
 
@@ -471,7 +471,7 @@ describe('useBossSchedulerStore', () => {
 
       await useBossSchedulerStore.getState().saveTrackedOcids(['ocid-1', 'ocid-2'])
 
-      expect(setTrackedCharacterOcidsMock).toHaveBeenCalledWith('boss', ['ocid-1', 'ocid-2'])
+      expect(setTrackedCharacterOcidsMock).toHaveBeenCalledWith(['ocid-1', 'ocid-2'])
       expect(useBossSchedulerStore.getState().trackedOcids).toEqual(['ocid-1', 'ocid-2'])
       expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1', 'ocid-2'], undefined)
     })
@@ -679,14 +679,14 @@ describe('useBossSchedulerStore', () => {
       ])
     })
 
-    it('loadTrackedOcids는 getLastSelectedCharacter("boss") 반환값으로 selectedOcid를 초기화한다', async () => {
+    it('loadTrackedOcids는 getLastSelectedCharacter 반환값으로 selectedOcid를 초기화한다', async () => {
       getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
       getLastSelectedCharacterMock.mockResolvedValue('ocid-1')
       syncSchedulesMock.mockResolvedValue([syncResult()])
 
       await useBossSchedulerStore.getState().loadTrackedOcids()
 
-      expect(getLastSelectedCharacterMock).toHaveBeenCalledWith('boss')
+      expect(getLastSelectedCharacterMock).toHaveBeenCalledWith()
       expect(useBossSchedulerStore.getState().selectedOcid).toBe('ocid-1')
     })
 
@@ -696,7 +696,7 @@ describe('useBossSchedulerStore', () => {
       await useBossSchedulerStore.getState().selectCharacter('ocid-9')
 
       expect(useBossSchedulerStore.getState().selectedOcid).toBe('ocid-9')
-      expect(setLastSelectedCharacterMock).toHaveBeenCalledWith('boss', 'ocid-9')
+      expect(setLastSelectedCharacterMock).toHaveBeenCalledWith('ocid-9')
     })
   })
 

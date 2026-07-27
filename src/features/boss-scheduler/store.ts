@@ -106,8 +106,8 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
 
   async loadTrackedOcids() {
     const [ocids, selectedOcid] = await Promise.all([
-      getTrackedCharacterOcids('boss'),
-      getLastSelectedCharacter('boss'),
+      getTrackedCharacterOcids(),
+      getLastSelectedCharacter(),
     ])
     set({ trackedOcids: ocids, selectedOcid })
     if (ocids !== null) {
@@ -118,7 +118,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
   async saveTrackedOcids(ocids, onProgress) {
     const previousOcids = get().trackedOcids ?? []
     try {
-      await setTrackedCharacterOcids('boss', ocids)
+      await setTrackedCharacterOcids(ocids)
     } catch {
       useToastStore.getState().showError('저장하지 못했어요')
       return
@@ -222,7 +222,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
 
   async selectCharacter(ocid) {
     set({ selectedOcid: ocid })
-    await setLastSelectedCharacter('boss', ocid)
+    await setLastSelectedCharacter(ocid)
   },
 
   async loadPartySizes(ocids) {

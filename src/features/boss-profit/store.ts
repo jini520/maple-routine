@@ -731,7 +731,7 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
   ...initialState,
 
   async loadTrackedOcids() {
-    const ocids = await getTrackedCharacterOcids('boss')
+    const ocids = await getTrackedCharacterOcids()
     set({ trackedOcids: ocids })
     if (ocids !== null) {
       await get().refresh(ocids)
