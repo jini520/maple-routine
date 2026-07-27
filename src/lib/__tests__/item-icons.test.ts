@@ -16,19 +16,16 @@ describe('getItemIconUrl', () => {
     expect(url).toEqual(expect.stringContaining('Ring_of_Restraint'))
   })
 
-  it('iconFileBySlot 아이템은 slot으로 아이콘을 고른다 (익셉셔널 해머 얼굴장식 -> except_face_acc.png)', () => {
-    const url = getItemIconUrl('익셉셔널 해머', '얼굴장식')
-
-    expect(url).not.toBeNull()
-    expect(url).toEqual(expect.stringContaining('except_face_acc'))
+  it('슬롯별 이름의 익셉셔널 해머는 각 슬롯 아이콘으로 조회된다 (이름에 슬롯 포함, 2026-07-27)', () => {
+    expect(getItemIconUrl('익셉셔널 해머(얼굴장식)')).toEqual(expect.stringContaining('except_face_acc'))
+    expect(getItemIconUrl('익셉셔널 해머(눈장식)')).toEqual(expect.stringContaining('except_eye_acc'))
+    expect(getItemIconUrl('익셉셔널 해머(훈장)')).toEqual(expect.stringContaining('except_merit'))
+    expect(getItemIconUrl('익셉셔널 해머(귀고리)')).toEqual(expect.stringContaining('except_earring'))
+    expect(getItemIconUrl('익셉셔널 해머(벨트)')).toEqual(expect.stringContaining('except_belt'))
   })
 
-  it('iconFileBySlot 아이템에 slot이 없으면 null (어느 슬롯 아이콘인지 특정 불가)', () => {
-    expect(getItemIconUrl('익셉셔널 해머')).toBeNull()
-  })
-
-  it('iconFileBySlot 아이템에 없는 slot을 주면 null', () => {
-    expect(getItemIconUrl('익셉셔널 해머', '없는슬롯')).toBeNull()
+  it('슬롯 접미사 없는 옛 익셉셔널 해머 이름은 더 이상 매핑되지 않는다', () => {
+    expect(getItemIconUrl('익셉셔널 해머', '얼굴장식')).toBeNull()
   })
 
   it("'기타'(백옥 밖 저가치 반지 묶음, ADR-041)는 레벨퍼프 링 아이콘으로 조회된다", () => {
