@@ -24,7 +24,7 @@
       "status": "completed",
       "started_at": "2026-07-27T14:51:02+0900",
       "summary": "ADR-043 결정 2·3을 보스 스케줄러 스토어의 saveTrackedOcids에 step 1(컨텐츠)과 동일한 규칙으로 미러링: added = ocids - previousOcids가 비면 syncSchedules 미호출 + 메모리 characters를 새 집합으로 필터만(네트워크 0회), added가 있으면 syncSchedules(added)로 추가분만 조회한 뒤 유지 캐릭터의 기존 메모리 뷰(없으면 신규 헬퍼 readCachedView로 scheduler-cache 폴백)와 병합·sortByCachedLevel 정렬 — 최종 characters 집합은 정확히 ocids이고 유지 캐릭터의 보스 고유 필드(weeklyBosses/monthlyBosses/클리어 카운트)는 재조회 없이 그대로 보존된다. 수동 모드 시드도 컨텐츠와 동일하게 added 대상 + 시드 직후 멤버십을 manualTrackedByOcid에 머지(refresh를 안 거쳐 새 캐릭터 멤버십이 빠지는 회귀 방지). 보스 특유 처리 — 파티 설정(loadPartySizes)은 로컬 SQLite 조회라 diff와 무관하게 항상 최종 ocids 기준으로 다시 채우고(추가 캐릭터 설정 반영·제거 캐릭터 항목 제거) 실패는 refresh와 동일하게 조용히 무시. refresh·loadTrackedOcids·loadPartySizes·setPartySize·수동 보스 액션·BossScreen·schedule-sync 무변경. 검증 — build/lint 통과, 1200 tests 통과(신규 8개: 무변경(순서만 다름)·순수제거 시 미호출, 추가 시 added만 1회 호출+getCachedSchedulerState 미조회, 유지 캐릭터 보스 필드 보존, 최초 선택 전원 조회, 추가+제거 혼합 집합 일치, 파티 설정 최종 집합 재조회, 수동 모드 멤버십 반영).",
-      "completed_at": "2026-07-27T14:54:13+0900"
+      "completed_at": "2026-07-27T14:55:05+0900"
     },
     {
       "step": 3,
