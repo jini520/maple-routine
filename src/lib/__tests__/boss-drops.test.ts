@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest'
+import type { RecordedDrop } from '../../types/drops'
 import {
   getAccessoryBoxContents,
+  getBossDifficulties,
   getBossDropCandidates,
   getBossFixedDrops,
+  getObtainableTileNames,
   getRingBoxContents,
   isBoxItem,
+  pruneUnobtainableDrops,
 } from '../boss-drops'
 
 describe('getBossDropCandidates', () => {
@@ -59,6 +63,49 @@ describe('getBossFixedDrops', () => {
 
   it('고정 드롭이 없는 보스는 빈 배열을 반환한다', () => {
     expect(getBossFixedDrops('존재하지않는보스')).toEqual([])
+  })
+})
+
+describe('getBossDifficulties', () => {
+  it('드롭 테이블에 표시 가능한 드롭이 있는 난이도를 정규 순서로 반환한다 (스우)', () => {
+    expect(getBossDifficulties('스우')).toEqual(['노멀', '하드', '익스트림'])
+  })
+
+  it('카링은 이지~익스트림 4난이도를 정규 순서로 반환한다', () => {
+    expect(getBossDifficulties('카링')).toEqual(['이지', '노멀', '하드', '익스트림'])
+  })
+
+  it('없는 보스는 빈 배열을 반환한다', () => {
+    expect(getBossDifficulties('존재하지않는보스')).toEqual([])
+  })
+})
+
+describe('getObtainableTileNames', () => {
+  it('그 난이도에서 획득 가능한 선택 타일명만 담는다 (스우 하드)', () => {
+    const names = getObtainableTileNames('스우', '하드')
+    expect(names.has('루즈 컨트롤 머신 마크')).toBe(true) // 하드+익스
+    expect(names.has('홍옥의 보스 반지 상자')).toBe(true) // 하드
+    expect(names.has('컴플리트 언더컨트롤')).toBe(false) // 익스 전용
+    expect(names.has('백옥의 보스 반지 상자')).toBe(false) // 익스 전용
+    expect(names.has('녹옥의 보스 반지 상자')).toBe(false) // 노멀 전용
+  })
+})
+
+describe('pruneUnobtainableDrops', () => {
+  it('처치 난이도에서 획득 불가한 선택 드롭을 제거한다 (스우 하드)', () => {
+    const drops: RecordedDrop[] = [
+      { category: 'equipment', itemName: '루즈 컨트롤 머신 마크', slot: '얼굴장식', quantity: 1 }, // 하드+익스 유지
+      { category: 'equipment', itemName: '컴플리트 언더컨트롤', quantity: 1 }, // 익스 전용 제거
+      { category: 'consumable', itemName: '리스트레인트 링', boxOrigin: '홍옥의 보스 반지 상자', ringLevel: 3, quantity: 1 }, // 홍옥(하드) 유지
+      { category: 'consumable', itemName: '아무 반지', boxOrigin: '백옥의 보스 반지 상자', quantity: 1 }, // 백옥(익스) 제거
+    ]
+    const pruned = pruneUnobtainableDrops('스우', '하드', drops)
+    expect(pruned.map((drop) => drop.itemName)).toEqual(['루즈 컨트롤 머신 마크', '리스트레인트 링'])
+  })
+
+  it('선택 대상이 아닌 고정(fixed) 기록은 무손실 보존한다', () => {
+    const drops: RecordedDrop[] = [{ category: 'fixed', itemName: '주문의 흔적', quantity: 1 }]
+    expect(pruneUnobtainableDrops('스우', '하드', drops)).toEqual(drops)
   })
 })
 

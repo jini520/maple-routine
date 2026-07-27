@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getItemIconUrl } from '../item-icons'
+import { getItemIconUrl, getItemIconUrlByFile } from '../item-icons'
 
 describe('getItemIconUrl', () => {
   it('item-icons.json에 매핑된 일반 아이템은 URL을 반환한다 (홍옥의 보스 반지 상자 -> boss_ring_box_red.png)', () => {
@@ -52,13 +52,24 @@ describe('getItemIconUrl', () => {
     expect(url).toEqual(expect.stringContaining('whetstone_life'))
   })
 
-  it('매핑이 없는 아이템은 null을 반환한다 (주문의 흔적)', () => {
-    expect(getItemIconUrl('주문의 흔적')).toBeNull()
+  it('매핑이 없는 아이템은 null을 반환한다', () => {
+    expect(getItemIconUrl('존재하지 않는 아이템')).toBeNull()
   })
 
   it('NFC/NFD 정규화가 달라도 동일하게 조회된다', () => {
     const nfd = '홍옥의 보스 반지 상자'.normalize('NFD')
 
     expect(getItemIconUrl(nfd)).toEqual(expect.stringContaining('boss_ring_box_red'))
+  })
+})
+
+describe('getItemIconUrlByFile', () => {
+  it('파일명으로 표시전용 아이콘(솔 에르다 단위)을 조회한다', () => {
+    expect(getItemIconUrlByFile('sole_500.webp')).toEqual(expect.stringContaining('sole_500'))
+    expect(getItemIconUrlByFile('sole_10.png')).toEqual(expect.stringContaining('sole_10'))
+  })
+
+  it('없는 파일은 null을 반환한다', () => {
+    expect(getItemIconUrlByFile('nope.png')).toBeNull()
   })
 })

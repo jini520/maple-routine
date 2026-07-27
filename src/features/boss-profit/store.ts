@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { pruneUnobtainableDrops } from '../../lib/boss-drops'
 import { DEFAULT_MAX_PARTY_SIZE, findPriceEntry } from '../../lib/boss-crystal-prices'
 import { getBossReferenceOrder, matchBossContent, selectBossProfitBosses, type MatchedBoss } from '../../lib/boss-matching'
 import { mergeManualBossList } from '../../lib/manual-boss-merge'
@@ -614,6 +615,7 @@ export function dropRowKey(ocid: string, boss: string, difficulty: string, perio
 async function loadDropsByRowKey(
   ocids: string[],
   rows: BossProfitRow[],
+  now: Date,
 ): Promise<Record<string, RecordedDrop[]>> {
   const periodKeys = Array.from(new Set(rows.map((row) => row.periodKey)))
   if (ocids.length === 0 || periodKeys.length === 0) return {}
@@ -632,6 +634,26 @@ async function loadDropsByRowKey(
       quantity: record.quantity,
     })
   }
+
+  // 처치 난이도가 확정된(완료) 행에 한해, 그 난이도에서 획득 불가한 드롭을 제거한다(ADR-044 후속).
+  // 미완료 시트의 표시용 난이도 토글로 다른 난이도 전용 아이템이 행 난이도 키에 섞여 저장될 수
+  // 있기 때문. 변경이 있으면 DB에도 영구 반영한다(멱등 — 이미 정리됐으면 재기록 없음). 미완료
+  // 행은 아직 처치 난이도가 없으므로 건드리지 않는다(scratchpad).
+  for (const row of rows) {
+    if (!row.isComplete) continue
+    const key = dropRowKey(row.ocid, row.boss, row.difficulty, row.periodKey)
+    const drops = map[key]
+    if (drops === undefined || drops.length === 0) continue
+    const pruned = pruneUnobtainableDrops(row.boss, row.difficulty, drops)
+    if (pruned.length !== drops.length) {
+      map[key] = pruned
+      await withSqliteFallback(
+        replaceBossDropRecords(row.ocid, row.boss, row.difficulty, row.periodKey, pruned, now.toISOString()),
+        undefined,
+      )
+    }
+  }
+
   return map
 }
 
@@ -663,7 +685,7 @@ async function loadPeriod(
           )
         : []
     const canGoPreviousPeriod = await canReachPreviousPeriod(tab, periodKey, ocids, now)
-    const dropsByRowKey = await loadDropsByRowKey(ocids, rows)
+    const dropsByRowKey = await loadDropsByRowKey(ocids, rows, now)
     if (generation !== requestGeneration) return
     // loadPeriod는 항상 로컬 데이터(스냅샷/기록)로만 뷰를 정착시키고 실시간 동기화를 하지 않는다.
     // 또한 이 함수는 항상 requestGeneration을 올린 네비게이션 뒤에만 실행되므로, 진행 중이던
@@ -703,7 +725,7 @@ async function loadPeriod(
   const weeklySubtotals =
     tab === 'monthly' ? await buildWeeklySubtotalsForMonth(sortedOcids, periodKey, [], new Map(), now) : []
   const canGoPreviousPeriod = await canReachPreviousPeriod(tab, periodKey, ocids, now)
-  const dropsByRowKey = await loadDropsByRowKey(ocids, rows)
+  const dropsByRowKey = await loadDropsByRowKey(ocids, rows, now)
 
   if (generation !== requestGeneration) return
   // status를 'loaded'로 확정한다 — 위 "현재 기간" 분기와 같은 이유(중단된 refresh의 'loading'이
@@ -839,7 +861,7 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
         ? await buildWeeklySubtotalsForMonth(sortedOcids, currentPeriodKey, cachedMergedRows, cachedCharacterProfiles, now)
         : []
 
-    const cachedDropsByRowKey = await loadDropsByRowKey(ocids, cachedMergedRows)
+    const cachedDropsByRowKey = await loadDropsByRowKey(ocids, cachedMergedRows, now)
 
     // 이 호출보다 나중에 시작된 refresh/setTab/goToXPeriod가 이미 있다면(연타 등) 이 시점의
     // 캐시 우선 표시조차 화면에 반영하지 않는다 — 더 최신 액션이 이미 진행 중이므로 그 결과가
@@ -957,7 +979,7 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
         ? await buildWeeklySubtotalsForMonth(sortedOcids, currentPeriodKey, sortedRows, characterProfiles, now)
         : []
 
-    const liveDropsByRowKey = await loadDropsByRowKey(ocids, sortedRows)
+    const liveDropsByRowKey = await loadDropsByRowKey(ocids, sortedRows, now)
 
     if (myGeneration !== requestGeneration) return
 

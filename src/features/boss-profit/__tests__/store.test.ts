@@ -227,6 +227,79 @@ describe('setBossDrops (ADR-038)', () => {
   })
 })
 
+describe('처치 난이도 획득 불가 드롭 제거 (ADR-044 후속)', () => {
+  function dropRecord(overrides: Record<string, unknown>): Record<string, unknown> {
+    return {
+      ocid: 'ocid-1',
+      boss: '스우',
+      difficulty: '하드',
+      cycle: 'weekly',
+      category: 'equipment',
+      slot: null,
+      boxOrigin: null,
+      ringLevel: null,
+      quantity: 1,
+      ...overrides,
+    }
+  }
+
+  it('완료 보스의 기록 드롭 중 처치 난이도에서 획득 불가한 아이템을 제거하고 DB에 반영한다', async () => {
+    const period = getCurrentBossProfitPeriod('weekly', new Date()).periodKey
+    syncSchedulesMock.mockResolvedValue([
+      syncResult({
+        state: {
+          ...syncResult().state!,
+          bossContents: [bossContent({ name: '스우', difficulty: '하드', isComplete: true, ownComplete: true })],
+        },
+      }),
+    ])
+    getBossDropRecordsMock.mockResolvedValue([
+      dropRecord({ periodKey: period, itemName: '루즈 컨트롤 머신 마크', slot: '얼굴장식' }), // 하드+익스 유지
+      dropRecord({ periodKey: period, itemName: '컴플리트 언더컨트롤' }), // 익스 전용 제거
+    ])
+
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+
+    const key = `ocid-1|스우|하드|${period}`
+    expect(useBossProfitStore.getState().dropsByRowKey[key].map((drop) => drop.itemName)).toEqual([
+      '루즈 컨트롤 머신 마크',
+    ])
+    expect(replaceBossDropRecordsMock).toHaveBeenCalledWith(
+      'ocid-1',
+      '스우',
+      '하드',
+      period,
+      [expect.objectContaining({ itemName: '루즈 컨트롤 머신 마크' })],
+      expect.any(String),
+    )
+  })
+
+  it('미완료 placeholder 보스의 드롭은 제거하지 않는다(처치 난이도 미확정)', async () => {
+    const period = getCurrentBossProfitPeriod('weekly', new Date()).periodKey
+    syncSchedulesMock.mockResolvedValue([
+      syncResult({
+        state: {
+          ...syncResult().state!,
+          bossContents: [
+            bossContent({ name: '스우', difficulty: '하드', isRegistered: true, isComplete: false, ownComplete: false }),
+          ],
+        },
+      }),
+    ])
+    getBossDropRecordsMock.mockResolvedValue([
+      dropRecord({ periodKey: period, itemName: '컴플리트 언더컨트롤' }), // 익스 전용이지만 미완료라 유지
+    ])
+
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+
+    const key = `ocid-1|스우|하드|${period}`
+    expect(useBossProfitStore.getState().dropsByRowKey[key].map((drop) => drop.itemName)).toEqual([
+      '컴플리트 언더컨트롤',
+    ])
+    expect(replaceBossDropRecordsMock).not.toHaveBeenCalled()
+  })
+})
+
 describe('useBossProfitStore', () => {
   it('초기 상태는 idle이고 rows가 비어있다', () => {
     const state = useBossProfitStore.getState()

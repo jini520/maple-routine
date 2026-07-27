@@ -1,19 +1,22 @@
 import { useState } from 'react'
-import { FlaskConical, Pin, Sword, type LucideIcon } from 'lucide-react'
+import { ChevronLeft, FlaskConical, Pin, Sword, type LucideIcon } from 'lucide-react'
 import { BottomSheet } from '../../components/BottomSheet/BottomSheet'
-import { DifficultyBadge, DifficultyChip } from '../../components/DifficultyBadge/DifficultyBadge'
+import { DifficultyBadge } from '../../components/DifficultyBadge/DifficultyBadge'
 import { DropEffectOverlay } from '../../components/DropEffectOverlay/DropEffectOverlay'
 import { useDropEffectStore } from '../../features/drop-effect/store'
 import {
   getAccessoryBoxContents,
+  getBossDifficulties,
   getBossDropCandidates,
   getBossFixedDrops,
+  getObtainableTileNames,
   getRingBoxContents,
   isBoxItem,
 } from '../../lib/boss-drops'
-import { getItemIconUrl } from '../../lib/item-icons'
+import { getFixedDropIcons, type FixedDropIconSpec } from '../../lib/fixed-drops'
+import { getItemIconUrl, getItemIconUrlByFile } from '../../lib/item-icons'
 import { isValuableDrop } from '../../lib/valuable-drops'
-import type { BossDifficulty } from '../../types'
+import { BOSS_DIFFICULTIES, type BossDifficulty } from '../../types'
 import type {
   DropCandidate,
   DropCategory,
@@ -30,9 +33,22 @@ const CATEGORY_META: Record<SelectableDropCategory, { label: string; Icon: Lucid
 // 값나가는 장비를 소비보다 먼저 노출한다.
 const DISPLAY_ORDER: SelectableDropCategory[] = ['equipment', 'consumable']
 
+// 고정 난이도 카드 배치(사용자 지시): 1→1열, 2→2열, 3→2열(2줄: 2 + 마지막 1개 full-width),
+// 4→2열(2줄). 보스당 고정 난이도는 최대 4개라 그 이상은 없다. Tailwind JIT가 정적 클래스만
+// 인식하므로 문자열로 매핑한다.
+const FIXED_GRID_COLS: Record<number, string> = {
+  1: 'grid-cols-1',
+  2: 'grid-cols-2',
+  3: 'grid-cols-2',
+  4: 'grid-cols-2',
+}
+
 interface BossDropSheetProps {
   boss: string
+  // 수익 리스트 행의 난이도. 미완료면 시트 안 난이도 토글의 기본값, 완료면 유일하게 표시할 난이도.
   difficulty: BossDifficulty
+  // 완료 여부(수익 리스트 행 기준). true면 난이도 토글 없이 완료 난이도만 표시, false면 토글 노출.
+  isComplete: boolean
   initialDrops: RecordedDrop[]
   onSave: (drops: RecordedDrop[]) => void
   onClose: () => void
@@ -52,6 +68,25 @@ function ItemThumb(props: { name: string; slot?: string; level?: number }): Reac
           lv{props.level}
         </span>
       )}
+    </span>
+  )
+}
+
+// 고정 드롭 아이콘 하나(일반 아이템 1개 또는 솔 에르다 단위 1개). 읽기 전용 표시라 버튼이 아니다.
+// 수량은 이미지 우측 하단 뱃지('N개')로 표시한다(ItemThumb 레벨 뱃지와 동일 스타일).
+function FixedDropIcon(props: { icon: FixedDropIconSpec }): React.JSX.Element {
+  const { icon } = props
+  const url = icon.iconFile !== null ? getItemIconUrlByFile(icon.iconFile) : getItemIconUrl(icon.itemName)
+  return (
+    <span className="relative inline-block h-8 w-8">
+      {url !== null ? (
+        <img src={url} alt={icon.itemName} className="h-8 w-8 object-contain" />
+      ) : (
+        <span className="block h-8 w-8 rounded-md bg-surface-2" role="img" aria-label={icon.itemName} />
+      )}
+      <span className="absolute -bottom-1 -right-1 rounded-full bg-primary px-1 py-px text-[8px] font-bold leading-none text-white ring-1 ring-bg tabular-nums">
+        {icon.count}개
+      </span>
     </span>
   )
 }
@@ -94,6 +129,9 @@ function EffectToggle(props: { off: boolean; onToggle: () => void }): React.JSX.
 
 export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
   const [selected, setSelected] = useState<RecordedDrop[]>(props.initialDrops)
+  // 표시할 난이도. 기본값은 행 난이도(props.difficulty). 완료면 고정, 미완료면 토글로 변경한다.
+  // 저장 키는 항상 행 난이도(display-only 필터)라 이 값은 표시·필터에만 쓴다.
+  const [selectedDifficulty, setSelectedDifficulty] = useState<BossDifficulty>(props.difficulty)
   const [activeBox, setActiveBox] = useState<{ name: string; category: SelectableDropCategory } | null>(
     null,
   )
@@ -102,9 +140,20 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
   const effectEnabled = useDropEffectStore((state) => state.enabled)
   const setEffectEnabled = useDropEffectStore((state) => state.setEnabled)
 
-  // 난이도 무관 통합 표시(ADR-040): 장비·소비는 전 난이도 통합 후보, 고정은 난이도별 그룹.
-  const candidates = getBossDropCandidates(props.boss)
-  const fixedGroups = getBossFixedDrops(props.boss)
+  // 난이도별 표시: 장비·소비는 name+slot으로 통합된 후보에서 현재 난이도만 필터, 고정은 현재
+  // 난이도 그룹만. 통합 후보는 등장 난이도(difficulties)를 담고 있어 그대로 필터에 쓴다.
+  const allCandidates = getBossDropCandidates(props.boss)
+  const allFixedGroups = getBossFixedDrops(props.boss)
+  // 난이도 토글 후보 = 드롭 테이블에 있는 난이도 + 행 난이도(테이블에 없어도 기본값은 항상 노출).
+  const tableDifficulties = getBossDifficulties(props.boss)
+  const difficultyOptions = BOSS_DIFFICULTIES.filter(
+    (difficulty) => tableDifficulties.includes(difficulty) || difficulty === props.difficulty,
+  )
+
+  const candidates = allCandidates.filter((candidate) =>
+    candidate.difficulties.includes(selectedDifficulty),
+  )
+  const fixedGroups = allFixedGroups.filter((group) => group.difficulty === selectedDifficulty)
   const byCategory = new Map<SelectableDropCategory, DropCandidate[]>()
   for (const candidate of candidates) {
     const list = byCategory.get(candidate.category) ?? []
@@ -112,6 +161,17 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
     byCategory.set(candidate.category, list)
   }
   const isEmpty = candidates.length === 0 && fixedGroups.length === 0
+
+  // 난이도 변경(미완료 전용). 이미 선택된 드롭 중 새 난이도에 존재하는 것만 유지하고 나머지는
+  // 초기화한다. 상자 결과는 상자(boxOrigin)가 새 난이도 후보에 있으면 유지(타일 기준이 상자명이라).
+  function selectDifficulty(next: BossDifficulty): void {
+    if (next === selectedDifficulty) return
+    const availableTileNames = getObtainableTileNames(props.boss, next)
+    setSelected((prev) =>
+      prev.filter((drop) => availableTileNames.has(drop.boxOrigin ?? drop.itemName)),
+    )
+    setSelectedDifficulty(next)
+  }
 
   function toggleNormal(candidate: DropCandidate): void {
     const isAdding = findNormalDrop(selected, candidate.name) === undefined
@@ -170,7 +230,31 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
             <span className="text-lg font-bold text-text">{props.boss}</span>
             <EffectToggle off={!effectEnabled} onToggle={() => void setEffectEnabled(!effectEnabled)} />
           </div>
-          <p className="px-4 pb-3 text-xs text-text-muted">획득한 드롭을 선택하세요</p>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 px-4 pb-3">
+            <p className="text-xs text-text-muted">획득한 아이템을 선택하세요</p>
+            {props.isComplete ? (
+              // 완료: 완료된 난이도만 표시(선택 불가)
+              <DifficultyBadge difficulty={props.difficulty} />
+            ) : (
+              // 미완료: 드롭 테이블 난이도를 선택 버튼으로 나열(오른쪽 끝 정렬), 선택 안 된 것은 흐림 처리
+              <div className="ml-auto flex flex-wrap items-center gap-1.5">
+                {difficultyOptions.map((difficulty) => {
+                  const active = difficulty === selectedDifficulty
+                  return (
+                    <button
+                      key={difficulty}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => selectDifficulty(difficulty)}
+                      className={active ? '' : 'opacity-40'}
+                    >
+                      <DifficultyBadge difficulty={difficulty} />
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
 
           {isEmpty ? (
             <p className="px-4 pb-4 text-sm text-text-muted">이 보스의 드롭 데이터가 아직 없습니다.</p>
@@ -199,7 +283,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                             <button
                               type="button"
                               onClick={() => handleTileTap(candidate)}
-                              className={`relative flex w-full flex-col items-center gap-1 rounded-xl border p-2 ${
+                              className={`relative flex w-full flex-col items-center gap-1 rounded-xl border p-2 pt-[1em] ${
                                 on ? 'border-primary bg-primary/10' : 'border-border bg-surface'
                               } ${box ? 'border-dashed' : ''}`}
                             >
@@ -213,16 +297,10 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                                 slot={boxDrop ? undefined : candidate.slot}
                                 level={boxDrop?.ringLevel}
                               />
-                              <span className="line-clamp-2 h-[2.4em] text-balance break-keep text-center text-[10px] leading-tight text-text">
-                                {displayName}
-                              </span>
-                              <span
-                                className="absolute left-1 top-1 flex gap-0.5"
-                                aria-hidden="true"
-                              >
-                                {candidate.difficulties.map((difficulty) => (
-                                  <DifficultyChip key={difficulty} difficulty={difficulty} />
-                                ))}
+                              <span className="flex h-[2em] w-full items-center justify-center">
+                                <span className="line-clamp-2 text-balance break-keep text-center text-[10px] leading-tight text-text">
+                                  {displayName}
+                                </span>
                               </span>
                             </button>
                           </li>
@@ -241,31 +319,27 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                     </span>
                     고정
                   </h3>
-                  {/* 고정 드롭은 값이 난이도마다 달라 통합하지 않고 난이도별로 값만 읽기 전용 표시(ADR-040) */}
-                  <div className="space-y-2">
-                    {fixedGroups.map((group) => (
+                  {/* 고정 드롭은 값이 난이도마다 달라 통합하지 않고 난이도별 카드로 읽기 전용 표시(ADR-040).
+                      텍스트 대신 아이콘 + 수량으로 표시, 솔 에르다는 단위별로 분해한다. */}
+                  <div className={`grid gap-2 ${FIXED_GRID_COLS[fixedGroups.length] ?? 'grid-cols-2'}`}>
+                    {fixedGroups.map((group, index) => (
                       <div
                         key={group.difficulty}
-                        className="rounded-xl border border-border bg-surface p-2.5"
+                        className={`rounded-xl border border-border bg-surface px-2 pt-1 pb-3 ${
+                          fixedGroups.length === 3 && index === 2 ? 'col-span-2' : ''
+                        }`}
                       >
-                        <div className="mb-1.5">
-                          <DifficultyBadge difficulty={group.difficulty} />
+                        <DifficultyBadge difficulty={group.difficulty} />
+                        <div className="mt-1.5 flex flex-wrap items-center justify-center gap-x-2 gap-y-2.5">
+                          {group.items.flatMap((item) =>
+                            getFixedDropIcons(item).map((icon, i) => (
+                              <FixedDropIcon
+                                key={`${item.name}-${icon.iconFile ?? 'name'}-${i}`}
+                                icon={icon}
+                              />
+                            )),
+                          )}
                         </div>
-                        <ul className="space-y-1">
-                          {group.items.map((item) => (
-                            <li
-                              key={item.name}
-                              className="flex items-center justify-between gap-2 text-xs"
-                            >
-                              <span className="text-text">{item.name}</span>
-                              {item.amount !== undefined && (
-                                <span className="shrink-0 font-semibold text-text-muted">
-                                  {item.amount}
-                                </span>
-                              )}
-                            </li>
-                          ))}
-                        </ul>
                       </div>
                     ))}
                   </div>
@@ -336,10 +410,10 @@ function BoxDrillDown(props: BoxDrillDownProps): React.JSX.Element {
   return (
     <div>
       <div className="flex items-center gap-2 px-4 pb-3 pt-1">
-        <button type="button" onClick={props.onBack} aria-label="뒤로" className="text-lg text-text">
-          ‹
+        <button type="button" onClick={props.onBack} aria-label="뒤로" className="text-text">
+          <ChevronLeft className="h-6 w-6" aria-hidden="true" />
         </button>
-        <span className="text-sm font-bold text-text">{props.boxName}</span>
+        <span className="text-lg font-bold text-text">{props.boxName}</span>
       </div>
 
       {/* 반지 종류 먼저 선택(ADR-041) */}
@@ -351,7 +425,7 @@ function BoxDrillDown(props: BoxDrillDownProps): React.JSX.Element {
               <button
                 type="button"
                 onClick={() => setItem(entry.name)}
-                className={`relative flex w-full flex-col items-center gap-1 rounded-xl border p-2 ${
+                className={`relative flex w-full flex-col items-center gap-1 rounded-xl border p-2 pt-[1em] ${
                   item === entry.name ? 'border-primary bg-primary/10' : 'border-border bg-surface'
                 }`}
               >
@@ -361,8 +435,10 @@ function BoxDrillDown(props: BoxDrillDownProps): React.JSX.Element {
                   </span>
                 )}
                 <ItemThumb name={entry.name} />
-                <span className="line-clamp-2 h-[2.4em] text-balance break-keep text-center text-[10px] leading-tight text-text">
-                  {entry.name}
+                <span className="flex h-[2em] w-full items-center justify-center">
+                  <span className="line-clamp-2 text-balance break-keep text-center text-[10px] leading-tight text-text">
+                    {entry.name}
+                  </span>
                 </span>
               </button>
             </li>

@@ -115,21 +115,21 @@ function DropIndicator(props: { drops: RecordedDrop[] }): React.JSX.Element {
             key={`${drop.itemName}-${index}`}
             src={url}
             alt=""
-            className="h-6 w-6 object-contain"
-            style={{ marginLeft: index === 0 ? 0 : 2 }}
+            className="relative h-6 w-6 object-contain"
+            style={{ marginLeft: index === 0 ? 0 : -2, zIndex: shown.length - index }}
           />
         ) : (
           <span
             key={`${drop.itemName}-${index}`}
-            className="h-6 w-6 rounded-md border-[1.5px] border-surface bg-surface-2"
-            style={{ marginLeft: index === 0 ? 0 : -6 }}
+            className="relative h-6 w-6 rounded-md border-[1.5px] border-surface bg-surface-2"
+            style={{ marginLeft: index === 0 ? 0 : -2, zIndex: shown.length - index }}
           />
         )
       })}
       {extra > 0 && (
         <span
-          className="grid h-6 w-6 place-items-center rounded-md border-[1.5px] border-surface bg-surface-2 text-[10px] font-bold text-text-muted"
-          style={{ marginLeft: -6 }}
+          className="relative grid h-6 w-6 place-items-center rounded-md border-[1.5px] border-surface bg-surface-2 text-[10px] font-bold text-text-muted"
+          style={{ marginLeft: -2, zIndex: 0 }}
         >
           +{extra}
         </span>
@@ -233,6 +233,7 @@ function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Element {
         <BossDropSheet
           boss={row.boss}
           difficulty={row.difficulty}
+          isComplete={row.isComplete}
           initialDrops={props.drops}
           onSave={(drops) => props.setBossDrops(row, drops)}
           onClose={() => setIsDropSheetOpen(false)}
