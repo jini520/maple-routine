@@ -1255,3 +1255,54 @@
 **리뷰 확정(2026-07-26)**: ① '기타' 이름 = 그대로 **`'기타'`**. ② 타일 정렬 = **명명 반지 → 연마석 → 기타**. ③ 레벨 섹션 = **항상 보임**, **연마석 선택 시에만** `disabled`. baseline 밖 반지는 전 상자에서 '기타'로 접힘·'기타'는 수익 계산 대상 아님(가치 없음)도 확정. 실기기 육안 검증은 [[ADR-038]]/[[ADR-039]]/[[ADR-040]]와 함께.
 
 **구현(2026-07-26, 구현 완료)**: TDD로 테스트 먼저 → 구현. `lib/boss-drops`(`RingOption{name,iconFile,hasLevel}` 신규, `getRingBoxContents`가 백옥 baseline으로 명명 반지 개별 + baseline 밖 반지 단일 `'기타'`(레벨퍼프 아이콘) + 연마석 별도(`hasLevel:false`)로 그룹핑, 정렬 명명→연마석→기타, 상자별 `levels`는 원본 유지), `lib/item-icons`(런타임 맵에만 `'기타'→Level_Jump_Ring.png` 특수 매핑 — `item-icons.json` 무변경으로 정합성 테스트 표면 불변), `BossDropSheet`의 `BoxDrillDown`(반지 섹션을 위로·등급 섹션을 아래로 재배치, `selectedOption.hasLevel` 기반 `needsLevel`/`levelDisabled` 도출 — 연마석 선택 시 등급 버튼 `disabled`·하이라이트 억제·레벨 없이 기록 활성, `canConfirm`/`onConfirm`이 무레벨 항목은 `ringLevel` 미포함). **검증**: 전체 1185 tests(신규 4 — `getRingBoxContents` 백옥/홍옥/생명 그룹핑·`getItemIconUrl('기타')`·`BossDropSheet` '기타' 기록·연마석 레벨 없음)·lint(경고 0)·build 통과. 기존 드릴다운 2개 테스트는 등급 항상 활성이라 클릭 순서 무관하게 통과 유지. **미verify**: 실 데이터로 시트 드릴다운 육안 확인([[ADR-038]]/[[ADR-039]]/[[ADR-040]]와 동일 — 등록 캐릭터·동기화 데이터 필요).
+
+### ADR-042: 캐릭터 추적 목록 통합 — content/boss 분리 폐기, 단일 목록·단일 현재 선택 (설계, 구현 전)
+
+**배경**: [[ADR-012]] 결정1은 "일간/주간 스케줄러가 각각 독립적으로 추적 캐릭터를 고르고 두 목록을 공유하지 않는다"를 확정했고, [[ADR-013]]은 화면 개편에 맞춰 그 키를 `trackedCharacters:content`/`trackedCharacters:boss`로 재편했다(마지막 선택 캐릭터도 `lastSelectedCharacter:content`/`:boss`로 분리). 그러나 실사용에서 사용자가 **같은 캐릭터를 컨텐츠 화면과 보스 화면에서 각각 따로 등록**해야 하는 마찰이 반복됐다 — 캐릭터 "실체"는 이미 계정 단위 단일 공유 풀(`ocid`, `getCharacterPickerRoster`)인데도 "이 캐릭터를 추적하겠다"는 선택만 화면별로 두 번 관리하는 구조였다. 동일 "캐릭터 관리" 모달 진입점이 컨텐츠 2곳·보스 3곳으로 분산돼 있던 것도 이 분리의 결과다. 이 ADR은 [[ADR-012]] 결정1·[[ADR-013]]의 키 분리를 **명시적으로 뒤집어**, 추적 캐릭터 선택을 앱 전역 단일 목록으로 통합한다(사용자 확정, 2026-07-27).
+
+**결정**:
+1. **추적 목록 단일화**: `trackedCharacters:content`/`:boss` 두 키를 폐기하고 접미사 없는 단일 키 `trackedCharacters`로 통합한다. 컨텐츠 스케줄러·보스 스케줄러·보스 수익이 **모두 이 하나의 목록**을 읽고 쓴다. `SchedulerKind = 'content' | 'boss'` 축([[ADR-012]]가 도입, `storage/character-selection.ts`)을 제거한다.
+2. **현재 선택 캐릭터도 단일화(완전 통합)**: `lastSelectedCharacter:content`/`:boss`를 단일 `lastSelectedCharacter`로 통합한다. 한 화면에서 상단 드롭다운으로 캐릭터를 바꾸면 다른 화면도 같은 캐릭터를 보게 된다. content/boss 스토어는 별도 zustand 인스턴스라 세션 중 실시간 전파는 없고, 화면 전환 시 `loadTrackedOcids`가 통합 키를 다시 읽어 반영된다(두 화면이 분리 라우트라 실사용상 충분 — "완전 통합"은 영속 계층 기준으로 성립).
+3. **UI 진입점은 두 화면에 그대로 유지(사용자 확정)**: 컨텐츠·보스 화면 각각의 "캐릭터 관리" 버튼·빈 상태 버튼·상단 드롭다운·보스의 `?openPicker=1` 딥링크를 모두 유지한다. 진입점을 설정이나 전용 화면 한 곳으로 모으는 재편은 **이번 범위 밖**이다. 두 화면의 관리 버튼이 이제 같은 통합 목록을 저장할 뿐, 화면 레이아웃·라우팅은 바꾸지 않는다. 공용 피커(`CharacterTrackingPicker`)도 무변경.
+4. **보스 수익**: `boss-profit`은 기존에 `getTrackedCharacterOcids('boss')`로 보스 목록을 재사용했으나(현 구조), 통합 후 단일 목록을 읽는다. 부수효과로 수익 화면이 "보스 추적분"이 아니라 "전체 추적 캐릭터"를 표시하게 되며 이는 통합 취지에 부합한다. 자동 기록(`boss_profit_records`, [[ADR-014]]/[[ADR-035]] 결정5)은 이 변경과 무관하게 동기화 원본 기준으로 계속 동작한다.
+5. **온보딩**: 온보딩의 캐릭터 선택([[ADR-035]] 결정13의 `ContentCharacterStep`)은 통합 목록에 저장한다. 부수효과로 온보딩 완료 즉시 보스 스케줄러도 같은 캐릭터로 채워진다 — [[ADR-035]] 결정13이 "보스 추적 캐릭터 선택은 온보딩에 포함하지 않는다"고 했던 제약이 통합으로 자연 해소된다(더 이상 보스만 따로 비어 있지 않음).
+6. **[[ADR-035]] 시드 트리거**: 수동 모드 시드가 참조하던 "content∪boss 합집합"(`features/tracking-mode/store.ts`) 계산은 단일 목록 읽기로 단순화된다. 결정 14(a)/(b) 시드 동작 자체는 불변 — 대상 목록만 하나가 된다.
+
+**마이그레이션(1회)**: 신규 `trackedCharacters` 키가 Preferences에 아직 없으면(`Preferences.get`이 `null`) 다음으로 시드한다.
+- **4개 레거시 키를 모두 합집합**: `trackedCharacters:content`·`trackedCharacters:boss`·`trackedCharacters:daily`·`trackedCharacters:weekly`를 모두 읽어 `ocid` 기준 중복 제거 합집합으로 `trackedCharacters`에 쓴다. daily/weekly까지 포함하는 이유: 기존 `migrateLegacyTrackedCharacters`가 "`content` 키가 쓰인 적 없으면" 조건으로 daily/weekly→content/boss를 이관했는데, 통합 후엔 `content`를 더 이상 쓰지 않아 그 체인이 끊긴다. daily/weekly 시대에서 바로 올라오는 설치본의 목록을 잃지 않으려면 통합 마이그레이션이 네 키를 직접 흡수해야 한다.
+- **네 키가 전부 `null`**이면 이관할 데이터가 없으므로 아무것도 쓰지 않는다(계속 미설정 — 다음 조회 때 같은 조건을 재평가하지만 결과가 같아 무해, [[ADR-013]] 마이그레이션과 동일 원칙).
+- **현재 선택**: `lastSelectedCharacter:content`가 있으면 그 값을, 없으면 `:boss` 값을 단일 `lastSelectedCharacter`로 이관(content 우선).
+- 마이그레이션 후 레거시 키(`:content`/`:boss`/`:daily`/`:weekly`, `lastSelectedCharacter:content`/`:boss`)는 삭제한다. 통합은 딱 1회 — `trackedCharacters`가 이미 존재하면 덮어쓰지 않는다.
+
+**이유**: 캐릭터 실체가 이미 공유 풀인데 선택만 화면별로 두 번 관리하는 건 사용자가 체감하는 이득 없이 마찰만 준다 — 대부분의 사용자는 "챙겨보는 캐릭터"가 컨텐츠/보스에서 동일하다. [[ADR-012]]가 화면별 분리를 도입한 원래 이유(성능 — 추적 대상만 스케줄 동기화)는 **목록을 합쳐도 그대로 유효**하다: 동기화 범위는 여전히 "통합 추적 목록"으로 제한되고, 오히려 두 목록의 합집합을 두 번 동기화하던 낭비가 사라진다. [[ADR-012]]의 "화면마다 다른 캐릭터를 볼 수 있다"는 유연성은 실사용에서 거의 쓰이지 않아, 그 유연성을 유지하는 비용(관리 진입점 5곳 분산·온보딩에서 보스만 빈 상태)이 이득을 넘어선다는 판단(사용자 확정, 2026-07-27).
+
+**트레이드오프**: [[ADR-012]] 결정1이 열어둔 "컨텐츠에서 A그룹, 보스에서 B그룹을 따로 추적"하는 사용 시나리오가 불가능해진다(단일 목록이므로). 이 유연성을 실제로 쓰던 사용자는 마이그레이션 시 두 목록의 합집합을 받게 되어, 한쪽에만 넣어뒀던 캐릭터가 양쪽에 다 보이게 된다 — 통합 취지상 의도된 동작이며, 필요하면 통합 목록에서 빼면 된다. 결정3으로 관리 버튼은 두 화면에 남으므로 "캐릭터 관리 UI가 여전히 두 군데 있다"는 분산은 이번 범위에서 해소되지 않는다(진입점 통합은 후속 과제로 분리).
+
+**저장소**: Preferences 단일 키 `trackedCharacters`(ocid 배열)·`lastSelectedCharacter`(ocid). `null`(미설정)과 `[]`(전부 해제)의 의미 구분은 [[ADR-012]] 그대로 유지. SQLite·`schedulerCache:{ocid}`·`characterBasicCache:{ocid}`·`manualTrackedContent:{ocid}` 등 ocid 단위 데이터는 전부 무변경(애초에 kind 구분이 없었음).
+
+**성공 기준(TDD, CLAUDE.md)**: 테스트 먼저 → 구현.
+- `storage/character-selection`: `getTrackedCharacterOcids()`/`setTrackedCharacterOcids(ocids)`/`getLastSelectedCharacter()`/`setLastSelectedCharacter(ocid)`가 인자 없이 단일 키를 읽고 쓴다. 마이그레이션 테스트 — (a) content∪boss 합집합·중복 제거, (b) daily/weekly만 있는 설치본 흡수, (c) 네 키 전부 null이면 미기록, (d) `lastSelectedCharacter` content 우선 이관, (e) 레거시 키 삭제, (f) 이미 `trackedCharacters` 존재 시 덮어쓰지 않음.
+- 스토어 5종(`content-scheduler`/`boss-scheduler`/`boss-profit`/`tracking-mode`/`onboarding`): `kind` 인자 제거 후에도 로드·저장·선택 동작이 통합 키 기준으로 통과. tracking-mode 시드가 단일 목록을 대상으로 시드.
+- 전체 `test`·`lint`·`build` 통과. UI 컴포넌트·라우팅 무변경이므로 화면 테스트는 원칙적으로 영향 없음(확인).
+
+### ADR-043: 캐릭터 관리 저장 — 변경 없으면 저장 비활성·제거만 하면 재동기화 생략·추가분만 fetch (설계, 구현 전, 이슈 #31)
+
+**배경**: 캐릭터 관리 피커(`CharacterTrackingPicker`)에서 (1) 선택을 하나도 바꾸지 않아도 "저장" 버튼이 항상 활성이고, (2) 캐릭터를 **제거만** 하거나 변경이 없어도 `saveTrackedOcids`가 남은 전체 캐릭터를 네트워크 재조회하며, (3) 캐릭터를 **추가**할 때도 새로 추가된 캐릭터만이 아니라 추적 목록 전체를 개별 fetch한다(10명 중 1명 추가 시 11회 호출). 실사용에서 불필요한 지연·API 낭비로 확인됨(이슈 #31). [[ADR-042]]로 content/보스 스토어가 동일 추적 패턴이 되므로 이 개선도 양쪽에 같은 모양으로 들어간다.
+
+**결정**:
+1. **저장 버튼 비활성(요구 a)**: `CharacterTrackingPicker`에서 현재 `selectedOcids`와 저장된 `trackedOcids`가 **집합으로 동일**하면(순서·중복 무시) "저장" 버튼을 `disabled`한다. `CharacterTrackingGrid`의 토글이 ocid를 배열 **끝에 append**하므로 `['a','b']`와 `['b','a']`는 같은 집합이지만 배열은 다르다 — 반드시 `Set` 기반 멤버십 비교로 판정하고 단순 배열/문자열 비교를 쓰지 않는다. 컴포넌트 내부 상태·props만으로 판정하므로 스토어와 무관하다.
+2. **제거·무변경 시 재동기화 생략(요구 b)**: `saveTrackedOcids(ocids)`에서 이미 계산하는 `previousOcids`로 `added = ocids − previousOcids`를 도출한다. `added.length === 0`(순수 제거 또는 무변경)이면 `syncSchedules`를 **호출하지 않고**, 메모리의 `characters`를 새 집합(`ocids`)으로 **필터링**만 해 화면을 재구성한다 — 네트워크 0회. 유지되는 캐릭터의 데이터는 직전 동기화 값 그대로다(제거 동작에서 남은 캐릭터 데이터가 바뀔 이유가 없으므로 무해).
+3. **추가분만 fetch(요구 c)**: `added.length > 0`이면 `syncSchedules(added)`로 **새로 추가된 캐릭터만** 네트워크 조회하고, 유지되는 캐릭터(`previousOcids ∩ ocids`)는 기존 메모리/캐시 뷰를 그대로 재사용해 병합한 뒤 정렬한다. 유지 캐릭터를 재fetch하지 않는다.
+4. **`refresh`(전체 sync)는 불변**: 초기 로드(`loadTrackedOcids`)·당겨서 새로고침 등 "전체를 다시 받아야 하는" 경로는 기존 `refresh(ocids)` 전체 동기화를 그대로 쓴다. diff 최적화는 `saveTrackedOcids`에만 적용한다 — "저장 시점의 추가/제거"만 부분 처리 대상이다.
+5. **[[ADR-035]] 수동 시딩 불변**: 수동 모드 시딩은 이미 `added`(신규 ocid)만 대상으로 하므로([[ADR-035]] 결정 14(b)) 변경 없다. 결정 2에서 `syncSchedules`를 생략해도 시딩 로직은 그대로 `added` 기준으로 돈다(added=0이면 시딩 대상도 0).
+
+**이유**: 캐릭터 관리는 "몇 명 추가/제거"가 대부분인데, 매번 목록 전체를 재조회하면 관심 밖의 캐릭터까지 네트워크를 태워 저장이 느려진다. 추가분만 조회하면 사용자가 실제로 바꾼 만큼만 비용을 치른다. 제거는 이미 가진 데이터에서 빼기만 하면 되므로 네트워크가 아예 필요 없다. 저장 버튼 비활성은 "바뀐 게 없는데 눌러서 전체 재조회가 도는" 무의미한 동작을 원천 차단한다.
+
+**트레이드오프**: 제거 시 남은 캐릭터를 재조회하지 않으므로, 그 순간 화면은 마지막 동기화 값(약간 stale 가능)을 유지한다 — 최신화가 필요하면 기존 새로고침 경로(결정 4)로 전체 동기화하면 된다. 저장 버튼 비활성 판정을 `Set`으로 하지 않고 배열로 하면 순서 차이를 "변경됨"으로 오판해 비활성이 동작하지 않으므로, 비교 방식이 곧 정확성이다(결정 1 주의).
+
+**저장소**: 스키마·키 변경 없음([[ADR-042]]의 단일 `trackedCharacters` 위에서 동작). `schedulerCache:{ocid}` 캐시 구조 무변경.
+
+**성공 기준(TDD, CLAUDE.md)**: 테스트 먼저 → 구현.
+- `CharacterTrackingPicker`: 저장된 집합과 선택 집합이 같으면(순서만 다른 경우 포함) 저장 버튼 `disabled`, 하나라도 추가/제거되면 활성.
+- content/boss 스토어 `saveTrackedOcids`: (a) 무변경/순수 제거 시 `syncSchedules`가 **호출되지 않음**(mock 호출 0회)·`characters`가 새 집합으로 필터됨, (b) 추가 시 `syncSchedules`가 **`added`만** 인자로 1회 호출·유지 캐릭터는 재조회 안 됨, (c) 결과 `characters`가 정확히 `ocids` 집합과 일치. `refresh` 전체 동기화 경로는 기존 테스트 유지.
+- 전체 `test`·`lint`·`build` 통과.

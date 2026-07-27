@@ -1,0 +1,10 @@
+{
+  "project": "메이플 루틴",
+  "phase": "character-tracking-unify",
+  "steps": [
+    { "step": 0, "name": "storage-unify", "status": "pending" },
+    { "step": 1, "name": "content-store-diff", "status": "pending" },
+    { "step": 2, "name": "boss-store-diff", "status": "pending" },
+    { "step": 3, "name": "picker-save-guard", "status": "pending" }
+  ]
+}
