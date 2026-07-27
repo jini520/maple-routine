@@ -10,7 +10,7 @@ interface DropEffectOverlayProps {
   onClose: () => void
 }
 
-// 단계별 고정 fps(ADR-038): ScreenEff 18(8f 시점에 아이템+pre 병렬) → pre 16 → loop 8 → end 14.
+// 단계별 고정 fps(ADR-038): ScreenEff 15(8f 시점에 아이템+pre 병렬) → pre 14 → loop 11.5 → end 12.
 const FPS = { screen: 15, pre: 14, loop: 11.5, end: 12 }
 const DROP_START_FRAME = 8
 
