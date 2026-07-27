@@ -7,7 +7,8 @@
       "name": "storage-unify",
       "status": "completed",
       "started_at": "2026-07-27T14:41:09+0900",
-      "summary": "ADR-042 저장 계층 통합: keys.ts의 trackedCharactersKey()/lastSelectedCharacterKey()가 인자 없이 단일 키('trackedCharacters'/'lastSelectedCharacter') 반환. character-selection.ts에서 SchedulerKind와 모든 kind 파라미터 제거(get/set/clear 6개 함수), 레거시 daily/weekly 마이그레이션을 통합 1회 마이그레이션으로 교체 — trackedCharacters 키가 없을 때만 :content/:boss/:daily/:weekly 4키를 dedupe 합집합으로 이관(4키 전부 null이면 미기록), lastSelectedCharacter는 content 우선, 이관 후 레거시 6키 삭제. get 두 함수가 Promise.all로 동시 호출될 때 read-modify-write 경합으로 합집합이 유실되지 않도록 character-basic-cache와 동일한 프로미스 체인 락 적용. 호출부 5곳(content-scheduler/boss-scheduler/boss-profit/onboarding 스토어는 인자만 제거, tracking-mode는 content+boss 합집합 계산을 단일 읽기로 축소) 및 관련 테스트 단언 갱신. 주의: saveTrackedOcids의 refresh는 아직 전체 sync 그대로(#31 diff 동기화는 step 1~2 범위), CharacterTrackingPicker·manual-tracked-content.ts 무변경. 검증 — build/lint 통과, 1186 tests 통과(character-selection 20개 재작성 포함)."
+      "summary": "ADR-042 저장 계층 통합: keys.ts의 trackedCharactersKey()/lastSelectedCharacterKey()가 인자 없이 단일 키('trackedCharacters'/'lastSelectedCharacter') 반환. character-selection.ts에서 SchedulerKind와 모든 kind 파라미터 제거(get/set/clear 6개 함수), 레거시 daily/weekly 마이그레이션을 통합 1회 마이그레이션으로 교체 — trackedCharacters 키가 없을 때만 :content/:boss/:daily/:weekly 4키를 dedupe 합집합으로 이관(4키 전부 null이면 미기록), lastSelectedCharacter는 content 우선, 이관 후 레거시 6키 삭제. get 두 함수가 Promise.all로 동시 호출될 때 read-modify-write 경합으로 합집합이 유실되지 않도록 character-basic-cache와 동일한 프로미스 체인 락 적용. 호출부 5곳(content-scheduler/boss-scheduler/boss-profit/onboarding 스토어는 인자만 제거, tracking-mode는 content+boss 합집합 계산을 단일 읽기로 축소) 및 관련 테스트 단언 갱신. 주의: saveTrackedOcids의 refresh는 아직 전체 sync 그대로(#31 diff 동기화는 step 1~2 범위), CharacterTrackingPicker·manual-tracked-content.ts 무변경. 검증 — build/lint 통과, 1186 tests 통과(character-selection 20개 재작성 포함).",
+      "completed_at": "2026-07-27T14:45:56+0900"
     },
     {
       "step": 1,
