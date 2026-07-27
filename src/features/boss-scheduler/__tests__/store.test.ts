@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { matchBossContent } from '../../../lib/boss-matching'
 import type { CharacterScheduleSync } from '../../schedule-sync/schedule-sync'
 import type { BossContent } from '../../../types'
 
@@ -86,7 +87,7 @@ vi.mock('../../../storage/manual-tracked-content', () => ({
   setManualTrackedContent: setManualTrackedContentMock,
 }))
 
-import { useBossSchedulerStore } from '../store'
+import { useBossSchedulerStore, type BossCharacterView } from '../store'
 
 function bossContent(overrides: Partial<BossContent> = {}): BossContent {
   const merged = {
@@ -495,6 +496,160 @@ describe('useBossSchedulerStore', () => {
       expect(showSuccessMock).not.toHaveBeenCalled()
       expect(syncSchedulesMock).not.toHaveBeenCalled()
       expect(useBossSchedulerStore.getState().trackedOcids).toBeNull()
+    })
+  })
+
+  describe('ADR-043: 저장 시 추가된 캐릭터만 동기화', () => {
+    function characterView(ocid: string, characterName: string): BossCharacterView {
+      return {
+        ocid,
+        characterName,
+        weeklyBosses: [matchBossContent(bossContent({ isComplete: true, ownComplete: true }))],
+        monthlyBosses: [],
+        weeklyBossClearCount: 1,
+        weeklyBossClearLimitCount: 12,
+        isStale: false,
+        syncedAt: '2026-07-27T00:00:00.000Z',
+        error: null,
+      }
+    }
+
+    beforeEach(() => {
+      setTrackedCharacterOcidsMock.mockResolvedValue(undefined)
+    })
+
+    it('선택이 바뀌지 않았으면(순서만 달라도) syncSchedules를 호출하지 않고 목록을 그대로 유지한다', async () => {
+      useBossSchedulerStore.setState({
+        trackedOcids: ['ocid-1', 'ocid-2'],
+        characters: [characterView('ocid-1', '캐릭터1'), characterView('ocid-2', '캐릭터2')],
+      })
+
+      await useBossSchedulerStore.getState().saveTrackedOcids(['ocid-2', 'ocid-1'])
+
+      expect(syncSchedulesMock).not.toHaveBeenCalled()
+      const state = useBossSchedulerStore.getState()
+      expect(state.status).toBe('loaded')
+      expect(state.characters.map((character) => character.ocid).sort()).toEqual(['ocid-1', 'ocid-2'])
+      expect(setTrackedCharacterOcidsMock).toHaveBeenCalledWith(['ocid-2', 'ocid-1'])
+    })
+
+    it('제거만 했으면 syncSchedules를 호출하지 않고 남은 캐릭터만 필터링한다', async () => {
+      useBossSchedulerStore.setState({
+        trackedOcids: ['ocid-1', 'ocid-2'],
+        characters: [characterView('ocid-1', '캐릭터1'), characterView('ocid-2', '캐릭터2')],
+      })
+
+      await useBossSchedulerStore.getState().saveTrackedOcids(['ocid-1'])
+
+      expect(syncSchedulesMock).not.toHaveBeenCalled()
+      const state = useBossSchedulerStore.getState()
+      expect(state.status).toBe('loaded')
+      expect(state.characters.map((character) => character.ocid)).toEqual(['ocid-1'])
+      expect(state.characters[0].characterName).toBe('캐릭터1')
+    })
+
+    it('캐릭터를 추가하면 추가된 ocid만 인자로 syncSchedules를 1회 호출하고 유지 캐릭터는 재조회하지 않는다', async () => {
+      syncSchedulesMock.mockResolvedValue([syncResult({ ocid: 'ocid-2', characterName: '새캐릭터' })])
+      useBossSchedulerStore.setState({
+        trackedOcids: ['ocid-1'],
+        characters: [characterView('ocid-1', '기존캐릭터')],
+      })
+
+      await useBossSchedulerStore.getState().saveTrackedOcids(['ocid-1', 'ocid-2'])
+
+      expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
+      expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-2'], undefined)
+      // 유지 캐릭터는 메모리 뷰를 그대로 재사용한다 — 네트워크는 물론 캐시도 다시 읽지 않는다
+      expect(getCachedSchedulerStateMock).not.toHaveBeenCalled()
+
+      const state = useBossSchedulerStore.getState()
+      expect(state.status).toBe('loaded')
+      expect(state.characters.map((character) => character.ocid).sort()).toEqual(['ocid-1', 'ocid-2'])
+      expect(state.characters.find((character) => character.ocid === 'ocid-2')?.characterName).toBe(
+        '새캐릭터',
+      )
+    })
+
+    it('유지 캐릭터의 보스 목록·클리어 카운트가 재조회 없이 그대로 보존된다', async () => {
+      syncSchedulesMock.mockResolvedValue([syncResult({ ocid: 'ocid-2', characterName: '새캐릭터' })])
+      const kept = characterView('ocid-1', '기존캐릭터')
+      useBossSchedulerStore.setState({ trackedOcids: ['ocid-1'], characters: [kept] })
+
+      await useBossSchedulerStore.getState().saveTrackedOcids(['ocid-1', 'ocid-2'])
+
+      const restored = useBossSchedulerStore
+        .getState()
+        .characters.find((character) => character.ocid === 'ocid-1')
+      expect(restored).toEqual(kept)
+    })
+
+    it('최초 선택(이전 추적 목록 없음)이면 전원이 추가분이라 전체를 조회한다', async () => {
+      syncSchedulesMock.mockResolvedValue([
+        syncResult({ ocid: 'ocid-1', characterName: '캐릭터1' }),
+        syncResult({ ocid: 'ocid-2', characterName: '캐릭터2' }),
+      ])
+
+      await useBossSchedulerStore.getState().saveTrackedOcids(['ocid-1', 'ocid-2'])
+
+      expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1', 'ocid-2'], undefined)
+      expect(
+        useBossSchedulerStore
+          .getState()
+          .characters.map((character) => character.ocid)
+          .sort(),
+      ).toEqual(['ocid-1', 'ocid-2'])
+    })
+
+    it('추가와 제거가 함께 일어나도 최종 목록은 정확히 저장한 집합이 된다', async () => {
+      syncSchedulesMock.mockResolvedValue([syncResult({ ocid: 'ocid-3', characterName: '새캐릭터' })])
+      useBossSchedulerStore.setState({
+        trackedOcids: ['ocid-1', 'ocid-2'],
+        characters: [characterView('ocid-1', '캐릭터1'), characterView('ocid-2', '캐릭터2')],
+      })
+
+      await useBossSchedulerStore.getState().saveTrackedOcids(['ocid-1', 'ocid-3'])
+
+      expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-3'], undefined)
+      expect(
+        useBossSchedulerStore
+          .getState()
+          .characters.map((character) => character.ocid)
+          .sort(),
+      ).toEqual(['ocid-1', 'ocid-3'])
+    })
+
+    it('파티 설정은 동기화를 건너뛰어도 최종 집합 기준으로 다시 채워진다(로컬 조회)', async () => {
+      getBossPartySettingsMock.mockResolvedValue([
+        { ocid: 'ocid-1', boss: '자쿰', difficulty: '카오스', partySize: 4, updatedAt: '2026-07-27T00:00:00.000Z' },
+      ])
+      useBossSchedulerStore.setState({
+        trackedOcids: ['ocid-1', 'ocid-2'],
+        characters: [characterView('ocid-1', '캐릭터1'), characterView('ocid-2', '캐릭터2')],
+      })
+
+      await useBossSchedulerStore.getState().saveTrackedOcids(['ocid-1'])
+
+      expect(syncSchedulesMock).not.toHaveBeenCalled()
+      expect(getBossPartySettingsMock).toHaveBeenCalledWith(['ocid-1'])
+      expect(useBossSchedulerStore.getState().partySizes).toEqual({ 'ocid-1:자쿰:카오스': 4 })
+    })
+
+    it('수동 모드에서 캐릭터를 추가하면 시드된 멤버십이 manualTrackedByOcid에 반영된다', async () => {
+      trackingModeStateMock.mode = 'manual'
+      syncSchedulesMock.mockResolvedValue([syncResult({ ocid: 'ocid-2', characterName: '새캐릭터' })])
+      getManualTrackedContentMock.mockImplementation(async (ocid: string) =>
+        ocid === 'ocid-2' ? [{ contentName: '자쿰', kind: 'boss', difficulty: '카오스' }] : [],
+      )
+      useBossSchedulerStore.setState({
+        trackedOcids: ['ocid-1'],
+        characters: [characterView('ocid-1', '기존캐릭터')],
+      })
+
+      await useBossSchedulerStore.getState().saveTrackedOcids(['ocid-1', 'ocid-2'])
+
+      expect(useBossSchedulerStore.getState().manualTrackedByOcid).toEqual({
+        'ocid-2': [{ contentName: '자쿰', kind: 'boss', difficulty: '카오스' }],
+      })
     })
   })
 

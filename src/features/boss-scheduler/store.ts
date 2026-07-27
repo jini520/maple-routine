@@ -101,6 +101,28 @@ async function sortByCachedLevel(views: BossCharacterView[]): Promise<BossCharac
     .map((entry) => entry.view)
 }
 
+// ADR-043 결정 3: 저장 시점에 유지되는 캐릭터의 뷰가 메모리에 없을 때만 쓰는 폴백 —
+// 네트워크(syncSchedules)는 새로 추가된 캐릭터에만 쓰고, 그 외에는 마지막 캐시를 읽는다.
+async function readCachedView(ocid: string): Promise<BossCharacterView | null> {
+  const cached = await getCachedSchedulerState(ocid)
+  if (cached === null) {
+    return null
+  }
+  const bosses = cached.state.bossContents.map(matchBossContent)
+  return {
+    ocid,
+    characterName: cached.state.characterName,
+    world: cached.state.world,
+    weeklyBosses: bosses.filter((boss) => boss.cycle === 'weekly'),
+    monthlyBosses: bosses.filter((boss) => boss.cycle === 'monthly'),
+    weeklyBossClearCount: countClearedWeeklyBosses(bosses),
+    weeklyBossClearLimitCount: WEEKLY_BOSS_CLEAR_LIMIT,
+    isStale: true,
+    syncedAt: cached.syncedAt,
+    error: null,
+  }
+}
+
 export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => ({
   ...initialState,
 
@@ -125,15 +147,79 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
     }
     set({ trackedOcids: ocids })
 
-    // ADR-035 결정 14(b): 수동 모드에서 새로 추적 목록에 추가된 캐릭터만 개별 시드한다.
-    // refresh보다 먼저 실행 — 화면의 저장 진행률 모달이 saveTrackedOcids 전체를 기다리므로
+    // ADR-043 결정 2·3: 저장 시점에는 새로 추가된 캐릭터만 조회한다 — 유지되는 캐릭터는
+    // 이미 가진 뷰를 그대로 재사용하고, 제거만 했거나 아무것도 안 바뀌었으면 조회 자체를 하지 않는다.
+    const added = ocids.filter((ocid) => !previousOcids.includes(ocid))
+
+    // ADR-035 결정 14(b): 수동 모드에서 새로 추적 목록에 추가된 캐릭터만 개별 시드하고, 그
+    // 멤버십을 화면 상태에도 반영한다(동기화가 added만 훑으므로 refresh처럼 전체를 다시 읽지 않는다).
+    // 동기화보다 먼저 실행 — 화면의 저장 진행률 모달이 saveTrackedOcids 전체를 기다리므로
     // 시드가 끝날 때까지 자연스럽게 로딩이 유지된다(결정 15).
-    if (useTrackingModeStore.getState().mode === 'manual') {
-      const newOcids = ocids.filter((ocid) => !previousOcids.includes(ocid))
-      await Promise.all(newOcids.map((ocid) => seedManualTrackedContent(ocid)))
+    if (added.length > 0 && useTrackingModeStore.getState().mode === 'manual') {
+      await Promise.all(added.map((ocid) => seedManualTrackedContent(ocid)))
+      const seeded = Object.fromEntries(
+        await Promise.all(added.map(async (ocid) => [ocid, await getManualTrackedContent(ocid)] as const)),
+      )
+      set((state) => ({ manualTrackedByOcid: { ...state.manualTrackedByOcid, ...seeded } }))
     }
 
-    await get().refresh(ocids, onProgress)
+    // ADR-019: 파티 설정은 스케줄 동기화와 독립적인 로컬 조회라 위 diff와 무관하게 항상 새 집합
+    // 기준으로 다시 채운다 — 그래야 추가된 캐릭터의 설정이 들어오고 제거된 캐릭터의 항목이 빠진다.
+    // refresh와 동일하게 실패는 조용히 넘긴다(저장 진행률 모달이 안 닫히는 걸 막는다).
+    try {
+      await get().loadPartySizes(ocids)
+    } catch {
+      // 파티 설정 로드 실패는 조용히 넘긴다(스케줄 표시·저장 완료를 막지 않는다)
+    }
+
+    if (added.length === 0) {
+      // 네트워크 0회 — 이미 가진 뷰에서 빠진 캐릭터만 걷어내면 화면이 정확해진다.
+      set({
+        status: 'loaded',
+        error: null,
+        characters: get().characters.filter((character) => ocids.includes(character.ocid)),
+      })
+    } else {
+      set({ status: 'loading' })
+
+      const existingByOcid = new Map(get().characters.map((character) => [character.ocid, character]))
+      const keptViews = (
+        await Promise.all(
+          ocids
+            .filter((ocid) => !added.includes(ocid))
+            .map(async (ocid) => existingByOcid.get(ocid) ?? (await readCachedView(ocid))),
+        )
+      ).filter((view): view is BossCharacterView => view != null)
+
+      const results = await syncSchedules(added, onProgress).catch(() => null)
+      if (results === null) {
+        // syncSchedules 자체가 던지는 에러(온보딩 미완료 등)는 캐릭터별 에러가 아니라
+        // 전체 조회 자체의 실패이므로 network로 취급한다(refresh와 동일).
+        set({ status: 'error', error: { kind: 'network' }, characters: await sortByCachedLevel(keptViews) })
+      } else {
+        const addedViews: BossCharacterView[] = results.map((result) => {
+          const bosses = result.state?.bossContents.map(matchBossContent) ?? []
+          return {
+            ocid: result.ocid,
+            characterName: result.characterName,
+            world: result.world,
+            weeklyBosses: bosses.filter((boss) => boss.cycle === 'weekly'),
+            monthlyBosses: bosses.filter((boss) => boss.cycle === 'monthly'),
+            weeklyBossClearCount: result.state === null ? null : countClearedWeeklyBosses(bosses),
+            weeklyBossClearLimitCount: result.state === null ? null : WEEKLY_BOSS_CLEAR_LIMIT,
+            isStale: result.isStale,
+            syncedAt: result.syncedAt,
+            error: result.error,
+          }
+        })
+        set({
+          status: 'loaded',
+          error: null,
+          characters: await sortByCachedLevel([...keptViews, ...addedViews]),
+        })
+      }
+    }
+
     useToastStore.getState().showSuccess('캐릭터 정보를 모두 불러왔어요')
   },
 
