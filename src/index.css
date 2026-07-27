@@ -202,3 +202,119 @@ body {
     animation: none;
   }
 }
+
+/* 고가 드롭 캐릭터 카드 강조 — 골드 테두리를 회전 샤인이 돌고, 그 바깥을 은은한 골드 글로우가 감싼다.
+   전 테마 공통 네온 골드(#f7d00d). 테두리 링은 ::before의 conic-gradient(회전 샤인)가 담당하고,
+   box-shadow는 글로우(확산)만 맡되 이전보다 확산을 줄였다. box-shadow는 border-box 바깥이라 카드 자체
+   border/overflow-hidden과 겹치지 않고, 메인 스크롤 영역엔 overflow-x 클리핑이 없어 잘리지 않는다.
+   각도를 애니메이션하려고 @property로 --vd-angle을 등록한다 — 미지원 WebView에선 폴백값 0deg의 정적
+   골드 테두리로 자연 degrade한다(글로우 맥동과 폴백 링은 그대로 보인다). */
+@property --vd-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+.valuable-drop-card {
+  position: relative;
+  /* 글로우(확산)만 담당 — 이전(peak 26px)보다 확산을 줄였다. 정적 폴백값이기도 하다 */
+  box-shadow:
+    0 0 8px 0 rgba(247, 208, 13, 0.45),
+    0 0 15px 2px rgba(247, 208, 13, 0.25);
+}
+/* 회전 샤인 테두리 — conic base를 골드로 항상 채워 라이트 배경에서도 또렷하고, 밝은 하이라이트 대역이
+   돌며 샤인이 테두리를 훑는다. padding + mask(xor)로 2px 링만 남긴다. pointer-events:none로 클릭 무간섭. */
+.valuable-drop-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: 14px;
+  padding: 2px;
+  --vd-angle: 0deg; /* @property 미지원 WebView 폴백값 */
+  background: conic-gradient(
+    from var(--vd-angle),
+    #f7d00d 0deg,
+    #f7d00d 140deg,
+    #fff6c2 205deg,
+    #ffffff 235deg,
+    #fff6c2 265deg,
+    #f7d00d 330deg,
+    #f7d00d 360deg
+  );
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+@keyframes valuable-drop-glow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 6px 0 rgba(247, 208, 13, 0.4),
+      0 0 12px 2px rgba(247, 208, 13, 0.2);
+  }
+  50% {
+    box-shadow:
+      0 0 10px 1px rgba(247, 208, 13, 0.6),
+      0 0 18px 4px rgba(247, 208, 13, 0.32);
+  }
+}
+@keyframes valuable-drop-spin {
+  to {
+    --vd-angle: 360deg;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .valuable-drop-card {
+    animation: valuable-drop-glow 2s ease-in-out infinite;
+  }
+  .valuable-drop-card::before {
+    animation: valuable-drop-spin 2.6s linear infinite;
+  }
+}
+/* 카드를 펼치면 글로우 맥동만 멈추고, 회전 샤인 테두리는 계속 돈다(사용자 요청). ::before의 spin은
+   건드리지 않고 요소 자신의 glow 애니메이션만 none으로 덮어 글로우를 정적 폴백값에 고정한다. 두 클래스
+   복합 선택자로 위 @media 규칙(.valuable-drop-card { animation })보다 명시도를 높여 순서 무관하게 이긴다. */
+.valuable-drop-card.valuable-drop-card--expanded {
+  animation: none;
+}
+
+/* 고가 드롭 보스 행 강조 — 카드를 펼치면 카드 테두리 효과 대신 실제 고가 아이템을 획득한 보스 행으로
+   강조가 이동한다. 테두리/글로우가 아니라 "배경" 효과다(사용자 요청). 획득 아이템 아이콘이 있는 오른쪽
+   부근에서 은은하게 배어나오는 정적 골드 글로우 + 아주 살짝 숨쉬는 틴트로, 리워드가 빛나는 듯한 느낌을 준다
+   (가로로 흐르던 셰인은 로딩 스켈레톤처럼 부자연스러워 걷어냈다). li 자체 background라 콘텐츠 뒤에 자연히
+   깔린다(z-index 다툼 없음). 반투명 골드라 라이트/다크 표면 위에서 텍스트 가독성을 해치지 않는다. */
+@keyframes valuable-drop-row-pulse {
+  0%,
+  100% {
+    background-color: rgba(247, 208, 13, 0.03);
+  }
+  50% {
+    background-color: rgba(247, 208, 13, 0.1);
+  }
+}
+.valuable-drop-row {
+  background-color: rgba(247, 208, 13, 0.05); /* 정적 폴백 틴트 */
+  background-image: radial-gradient(
+    70% 160% at 82% 50%,
+    rgba(247, 208, 13, 0.22),
+    rgba(247, 208, 13, 0.06) 58%,
+    transparent 78%
+  );
+}
+@media (prefers-reduced-motion: no-preference) {
+  .valuable-drop-row {
+    animation: valuable-drop-row-pulse 2.6s ease-in-out infinite;
+  }
+}
+/* 헤더의 반짝임 배지 — 골드 그라데이션 pill. 어두운/밝은 테마 표면 모두에서 또렷하게 보인다. */
+.valuable-drop-badge {
+  background: linear-gradient(135deg, #ffe98a, #f7c400);
+  color: #6b4e00;
+  box-shadow: 0 0 8px rgba(247, 208, 13, 0.55);
+}
