@@ -97,7 +97,8 @@
     },
     {
       "dir": "character-tracking-unify",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-07-27T14:57:03+0900"
     }
   ]
 }
