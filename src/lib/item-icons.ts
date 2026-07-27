@@ -56,7 +56,7 @@ iconByName['기타'.normalize('NFC')] = 'Level_Jump_Ring.png'
 
 /**
  * 아이템명(+슬롯)으로 아이콘 URL을 조회한다. 매핑/파일이 없으면 null(호출부에서 플레이스홀더 폴백).
- * `iconFileBySlot` 아이템(익셉셔널 해머 등)은 slot이 있어야 특정 가능하다.
+ * `iconFileBySlot` 매핑(현재 데이터엔 없음)은 slot이 있어야 특정 가능하다.
  */
 export function getItemIconUrl(name: string, slot?: string): string | null {
   const mapping = iconByName[name.normalize('NFC')]

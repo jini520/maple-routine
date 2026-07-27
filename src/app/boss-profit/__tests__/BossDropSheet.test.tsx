@@ -303,6 +303,8 @@ describe('BossDropSheet', () => {
       // 완료 난이도(하드) 뱃지는 선택 안내 라인에 있다
       const header = screen.getByText('획득한 아이템을 선택하세요').parentElement as HTMLElement
       expect(within(header).getByText('하드')).toBeInTheDocument()
+      // 완료 뱃지도 안내 라인 오른쪽 끝으로 정렬(ml-auto 래퍼)
+      expect(within(header).getByText('하드').parentElement?.className).toContain('ml-auto')
       // 다른 난이도 뱃지(노멀·익스트림)는 선택 버튼으로 노출되지 않는다
       expect(within(header).queryByRole('button', { name: /노멀/ })).not.toBeInTheDocument()
       expect(within(header).queryByRole('button', { name: /익스트림/ })).not.toBeInTheDocument()

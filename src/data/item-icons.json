@@ -1,7 +1,7 @@
 {
   "updatedAt": "2026-07-27",
   "source": "src/assets/items/의 기존 파일명(사용자 제공, 영문 내부 코드명 스타일)을 item-drop-table.json의 실제 보상 데이터와 대조해 매칭([[ADR-011]]). 파일명 자체는 바꾸지 않고 그대로 쓴다 — 이 파일은 '한글 아이템명 → 기존 파일명' 매핑 전용.",
-  "note": "확신도가 높은 매칭 + 사용자가 2026-07-11에 직접 확인해준 매칭을 반영했다. '익셉셔널 해머'는 슬롯(눈장식/훈장/귀고리/얼굴장식/벨트)에 따라 아이콘이 달라 iconFile 대신 iconFileBySlot을 쓴다. '솔 에르다의 기운'(가칭 sole_10/sole_200/향후 sole_500)은 수량 구간별로 아이콘이 갈리는 것으로 보이나 정확한 구간 기준이 아직 확정 안 돼 매핑을 보류했다(사용자가 추후 정리 예정). 그 외 후보가 여러 개라 확정 못 한 파일은 여기 넣지 않는다.",
+  "note": "확신도가 높은 매칭 + 사용자가 2026-07-11에 직접 확인해준 매칭을 반영했다. '익셉셔널 해머'는 슬롯(눈장식/훈장/귀고리/얼굴장식/벨트)마다 아이콘이 다른데, item-drop-table.json에서 이름 자체에 슬롯이 포함되도록 분리(2026-07-27)돼 각 이름을 iconFile로 개별 매핑한다. '솔 에르다의 기운'(가칭 sole_10/sole_200/향후 sole_500)은 수량 구간별로 아이콘이 갈리는 것으로 보이나 정확한 구간 기준이 아직 확정 안 돼 매핑을 보류했다(사용자가 추후 정리 예정). 그 외 후보가 여러 개라 확정 못 한 파일은 여기 넣지 않는다.",
   "items": [
     { "name": "홍옥의 보스 반지 상자", "iconFile": "boss_ring_box_red.png" },
     { "name": "흑옥의 보스 반지 상자", "iconFile": "boss_ring_box_black.png" },
@@ -43,17 +43,11 @@
     { "name": "영원한 충성의 흔적", "iconFile": "frag_eternel_bardrix.png", "note": "발드릭스 전용 fixed 보상(사용자 확인 2026-07-11)" },
     { "name": "뒤틀린 갈망의 편린", "iconFile": "frag_eternel_jupiter.png", "note": "유피테르 전용 fixed 보상(사용자 확인 2026-07-11)" },
 
-    {
-      "name": "익셉셔널 해머",
-      "iconFileBySlot": {
-        "눈장식": "except_eye_acc.png",
-        "훈장": "except_merit.png",
-        "귀고리": "except_earring.png",
-        "얼굴장식": "except_face_acc.png",
-        "벨트": "except_belt.png"
-      },
-      "note": "슬롯에 따라 아이콘이 다름(사용자 확인 2026-07-11). 얼굴장식(익스트림 세렌)·벨트(익스트림 검은마법사) 슬롯 변형은 item-drop-table.json에 해당 보스+난이도 엔트리가 아직 없어 아이콘 매핑만 미리 반영, 보상 데이터는 추후 추가 필요"
-    },
+    { "name": "익셉셔널 해머(눈장식)", "iconFile": "except_eye_acc.png", "note": "슬롯별로 아이콘·이름이 다름(사용자 확인 2026-07-11, 이름에 슬롯 포함 2026-07-27). 감시자 칼로스" },
+    { "name": "익셉셔널 해머(훈장)", "iconFile": "except_merit.png", "note": "최초의 대적자" },
+    { "name": "익셉셔널 해머(귀고리)", "iconFile": "except_earring.png", "note": "카링" },
+    { "name": "익셉셔널 해머(얼굴장식)", "iconFile": "except_face_acc.png", "note": "선택받은 세렌" },
+    { "name": "익셉셔널 해머(벨트)", "iconFile": "except_belt.png", "note": "검은마법사" },
 
     { "name": "생명의 연마석", "iconFile": "whetstone_life.png" },
     { "name": "신념의 연마석", "iconFile": "whetstone_faith.png" },

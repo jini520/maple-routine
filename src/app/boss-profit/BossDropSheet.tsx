@@ -233,8 +233,10 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 px-4 pb-3">
             <p className="text-xs text-text-muted">획득한 아이템을 선택하세요</p>
             {props.isComplete ? (
-              // 완료: 완료된 난이도만 표시(선택 불가)
-              <DifficultyBadge difficulty={props.difficulty} />
+              // 완료: 완료된 난이도만 표시(선택 불가). 미완료 토글과 동일하게 오른쪽 끝 정렬.
+              <span className="ml-auto">
+                <DifficultyBadge difficulty={props.difficulty} />
+              </span>
             ) : (
               // 미완료: 드롭 테이블 난이도를 선택 버튼으로 나열(오른쪽 끝 정렬), 선택 안 된 것은 흐림 처리
               <div className="ml-auto flex flex-wrap items-center gap-1.5">
