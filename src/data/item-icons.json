@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-07-11",
+  "updatedAt": "2026-07-27",
   "source": "src/assets/items/의 기존 파일명(사용자 제공, 영문 내부 코드명 스타일)을 item-drop-table.json의 실제 보상 데이터와 대조해 매칭([[ADR-011]]). 파일명 자체는 바꾸지 않고 그대로 쓴다 — 이 파일은 '한글 아이템명 → 기존 파일명' 매핑 전용.",
   "note": "확신도가 높은 매칭 + 사용자가 2026-07-11에 직접 확인해준 매칭을 반영했다. '익셉셔널 해머'는 슬롯(눈장식/훈장/귀고리/얼굴장식/벨트)에 따라 아이콘이 달라 iconFile 대신 iconFileBySlot을 쓴다. '솔 에르다의 기운'(가칭 sole_10/sole_200/향후 sole_500)은 수량 구간별로 아이콘이 갈리는 것으로 보이나 정확한 구간 기준이 아직 확정 안 돼 매핑을 보류했다(사용자가 추후 정리 예정). 그 외 후보가 여러 개라 확정 못 한 파일은 여기 넣지 않는다.",
   "items": [
@@ -64,8 +64,27 @@
 
     { "name": "파풀라투스 마크", "iconFile": "papulatus_mark.png", "note": "임시 빈 이미지 — 실제 아이콘 파일 필요(2026-07-11)" },
     { "name": "루인 포스실드", "iconFile": "ruin_force_shield.png", "note": "임시 빈 이미지 — 실제 아이콘 파일 필요(2026-07-11)" },
-    { "name": "메이린의 에테르넬 방어구 상자", "iconFile": "box_eternel_maerin.png", "note": "임시 빈 이미지 — 실제 아이콘 파일 필요(2026-07-11)" },
-    { "name": "운명의 에테르넬 방어구 상자", "iconFile": "box_eternel_destiny.png", "note": "임시 빈 이미지 — 실제 아이콘 파일 필요(2026-07-11)" },
-    { "name": "메이린의 칠흑 장신구 상자", "iconFile": "dark_boss_box_maerin.png", "note": "혼돈의 칠흑 장신구 상자와 별개의 전용 이미지가 있음(사용자 확인, 2026-07-11) — 실제 파일은 추후 사용자가 채울 예정, 지금은 임시 빈 이미지" }
+    { "name": "메이린의 에테르넬 방어구 상자", "iconFile": "box_eternel_maerin.webp", "note": "메이린 하드 드랍. 실제 아이콘 이미지 반영(사용자 제공, 2026-07-27)" },
+    { "name": "운명의 에테르넬 방어구 상자", "iconFile": "box_eternel_destiny.webp", "note": "메이린 하드 드랍. 실제 아이콘 이미지 반영(사용자 제공, 2026-07-27)" },
+    { "name": "메이린의 칠흑 장신구 상자", "iconFile": "dark_boss_box_maerin.webp", "note": "혼돈의 칠흑 장신구 상자와 별개의 전용 이미지. 실제 아이콘 이미지 반영(사용자 제공, 2026-07-27)" },
+    { "name": "메이린의 상급 솔 에르다 조각 상자", "iconFile": "box_solerda_maerin_high.webp", "note": "메이린 하드 드랍. 실제 아이콘 이미지 반영(사용자 제공, 2026-07-27)" },
+    { "name": "메이린의 하급 솔 에르다 조각 상자", "iconFile": "box_solerda_maerin_high.webp", "note": "전용 이미지 없이 상급과 동일 이미지 공유(사용자 지시, 2026-07-27)" },
+    { "name": "변화하는 운명의 파편", "iconFile": "frag_destiny.webp", "note": "메이린 하드 드랍. 실제 아이콘 이미지 반영(사용자 제공, 2026-07-27)" },
+
+    { "name": "메멘토 골드 큐브", "iconFile": "cube_gold.png", "note": "고정 드랍 큐브(사용자 제공, 2026-07-27)" },
+    { "name": "메멘토 실버 큐브", "iconFile": "cube_silver.png", "note": "고정 드랍 큐브(사용자 제공, 2026-07-27)" },
+    { "name": "메멘토 브론즈 에디셔널 큐브", "iconFile": "cube_bronze_additional.png", "note": "고정 드랍 큐브(사용자 제공, 2026-07-27)" },
+    { "name": "주문의 흔적", "iconFile": "spell_trace.webp", "note": "고정 드랍(사용자 제공, 2026-07-27)" },
+    { "name": "미트라의 코어 젬스톤", "iconFile": "core_gemstone_mitra.png", "note": "고정 드랍(사용자 제공, 2026-07-27)" },
+    { "name": "거울세계의 코어 젬스톤", "iconFile": "core_gemstone_mirror.png", "note": "고정 드랍(사용자 제공, 2026-07-27)" },
+
+    { "name": "남겨진 칼로스의 의지", "iconFile": "kalos_will.webp", "note": "감시자 칼로스 고정 드랍(사용자 제공, 2026-07-27)" },
+    { "name": "남겨진 칼로스의 의지 조각", "iconFile": "kalos_will_piece.webp", "note": "감시자 칼로스 고정 드랍(사용자 제공, 2026-07-27)" },
+    { "name": "뒤엉킨 흉수의 고리", "iconFile": "kaling_link.webp", "note": "카링 고정 드랍(사용자 제공, 2026-07-27)" },
+    { "name": "뒤엉킨 흉수의 고리 조각", "iconFile": "kaling_link_piece.webp", "note": "카링 고정 드랍(사용자 제공, 2026-07-27)" },
+    { "name": "이어진 고대의 결의", "iconFile": "adversary_resolve.webp", "note": "최초의 대적자 고정 드랍(사용자 제공, 2026-07-27)" },
+    { "name": "이어진 고대의 결의 조각", "iconFile": "adversary_resolve_piece.webp", "note": "최초의 대적자 고정 드랍(사용자 제공, 2026-07-27)" },
+    { "name": "황홀한 환상의 단편", "iconFile": "maleficstar_shard.webp", "note": "찬란한 흉성 고정 드랍(사용자 제공, 2026-07-27)" },
+    { "name": "황홀한 환상의 단편 조각", "iconFile": "maleficstar_shard_piece.webp", "note": "찬란한 흉성 고정 드랍(사용자 제공, 2026-07-27)" }
   ]
 }

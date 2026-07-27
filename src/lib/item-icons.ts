@@ -68,3 +68,11 @@ export function getItemIconUrl(name: string, slot?: string): string | null {
 
   return urlsByFileName[fileName.normalize('NFC')] ?? null
 }
+
+/**
+ * 파일명으로 직접 아이콘 URL을 조회한다. 실재 아이템명이 아닌 표시전용 아이콘(솔 에르다 단위
+ * 분해 등)에 쓴다 — 이런 파일은 item-icons.json 매핑 없이 파일명으로만 참조된다.
+ */
+export function getItemIconUrlByFile(fileName: string): string | null {
+  return urlsByFileName[fileName.normalize('NFC')] ?? null
+}

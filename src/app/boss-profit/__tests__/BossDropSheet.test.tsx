@@ -193,8 +193,8 @@ describe('BossDropSheet', () => {
       <BossDropSheet boss="스우" difficulty="하드" initialDrops={[]} onSave={onSave} onClose={vi.fn()} />,
     )
 
-    // 고정 아이템(주문의 흔적)은 값만 표시되고 버튼(선택 대상)이 아니다
-    expect(screen.getAllByText('주문의 흔적').length).toBeGreaterThan(0)
+    // 고정 아이템(주문의 흔적)은 아이콘으로만 표시되고 버튼(선택 대상)이 아니다
+    expect(screen.getAllByRole('img', { name: '주문의 흔적' }).length).toBeGreaterThan(0)
     expect(screen.queryByRole('button', { name: /주문의 흔적/ })).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: /추가 완료/ }))

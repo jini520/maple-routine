@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FlaskConical, Pin, Sword, type LucideIcon } from 'lucide-react'
+import { ChevronLeft, FlaskConical, Pin, Sword, type LucideIcon } from 'lucide-react'
 import { BottomSheet } from '../../components/BottomSheet/BottomSheet'
 import { DifficultyBadge, DifficultyChip } from '../../components/DifficultyBadge/DifficultyBadge'
 import { DropEffectOverlay } from '../../components/DropEffectOverlay/DropEffectOverlay'
@@ -11,7 +11,8 @@ import {
   getRingBoxContents,
   isBoxItem,
 } from '../../lib/boss-drops'
-import { getItemIconUrl } from '../../lib/item-icons'
+import { getFixedDropIcons, type FixedDropIconSpec } from '../../lib/fixed-drops'
+import { getItemIconUrl, getItemIconUrlByFile } from '../../lib/item-icons'
 import { isValuableDrop } from '../../lib/valuable-drops'
 import type { BossDifficulty } from '../../types'
 import type {
@@ -29,6 +30,16 @@ const CATEGORY_META: Record<SelectableDropCategory, { label: string; Icon: Lucid
 }
 // 값나가는 장비를 소비보다 먼저 노출한다.
 const DISPLAY_ORDER: SelectableDropCategory[] = ['equipment', 'consumable']
+
+// 고정 난이도 카드 배치(사용자 지시): 1→1열, 2→2열, 3→2열(2줄: 2 + 마지막 1개 full-width),
+// 4→2열(2줄). 보스당 고정 난이도는 최대 4개라 그 이상은 없다. Tailwind JIT가 정적 클래스만
+// 인식하므로 문자열로 매핑한다.
+const FIXED_GRID_COLS: Record<number, string> = {
+  1: 'grid-cols-1',
+  2: 'grid-cols-2',
+  3: 'grid-cols-2',
+  4: 'grid-cols-2',
+}
 
 interface BossDropSheetProps {
   boss: string
@@ -52,6 +63,25 @@ function ItemThumb(props: { name: string; slot?: string; level?: number }): Reac
           lv{props.level}
         </span>
       )}
+    </span>
+  )
+}
+
+// 고정 드롭 아이콘 하나(일반 아이템 1개 또는 솔 에르다 단위 1개). 읽기 전용 표시라 버튼이 아니다.
+// 수량은 이미지 우측 하단 뱃지('N개')로 표시한다(ItemThumb 레벨 뱃지와 동일 스타일).
+function FixedDropIcon(props: { icon: FixedDropIconSpec }): React.JSX.Element {
+  const { icon } = props
+  const url = icon.iconFile !== null ? getItemIconUrlByFile(icon.iconFile) : getItemIconUrl(icon.itemName)
+  return (
+    <span className="relative inline-block h-8 w-8">
+      {url !== null ? (
+        <img src={url} alt={icon.itemName} className="h-8 w-8 object-contain" />
+      ) : (
+        <span className="block h-8 w-8 rounded-md bg-surface-2" role="img" aria-label={icon.itemName} />
+      )}
+      <span className="absolute -bottom-1 -right-1 rounded-full bg-primary px-1 py-px text-[8px] font-bold leading-none text-white ring-1 ring-bg tabular-nums">
+        {icon.count}개
+      </span>
     </span>
   )
 }
@@ -199,7 +229,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                             <button
                               type="button"
                               onClick={() => handleTileTap(candidate)}
-                              className={`relative flex w-full flex-col items-center gap-1 rounded-xl border p-2 ${
+                              className={`relative flex w-full flex-col items-center gap-1 rounded-xl border p-2 pt-[1em] ${
                                 on ? 'border-primary bg-primary/10' : 'border-border bg-surface'
                               } ${box ? 'border-dashed' : ''}`}
                             >
@@ -213,8 +243,10 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                                 slot={boxDrop ? undefined : candidate.slot}
                                 level={boxDrop?.ringLevel}
                               />
-                              <span className="line-clamp-2 h-[2.4em] text-balance break-keep text-center text-[10px] leading-tight text-text">
-                                {displayName}
+                              <span className="flex h-[2em] w-full items-center justify-center">
+                                <span className="line-clamp-2 text-balance break-keep text-center text-[10px] leading-tight text-text">
+                                  {displayName}
+                                </span>
                               </span>
                               <span
                                 className="absolute left-1 top-1 flex gap-0.5"
@@ -241,31 +273,27 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                     </span>
                     고정
                   </h3>
-                  {/* 고정 드롭은 값이 난이도마다 달라 통합하지 않고 난이도별로 값만 읽기 전용 표시(ADR-040) */}
-                  <div className="space-y-2">
-                    {fixedGroups.map((group) => (
+                  {/* 고정 드롭은 값이 난이도마다 달라 통합하지 않고 난이도별 카드로 읽기 전용 표시(ADR-040).
+                      텍스트 대신 아이콘 + 수량으로 표시, 솔 에르다는 단위별로 분해한다. */}
+                  <div className={`grid gap-2 ${FIXED_GRID_COLS[fixedGroups.length] ?? 'grid-cols-2'}`}>
+                    {fixedGroups.map((group, index) => (
                       <div
                         key={group.difficulty}
-                        className="rounded-xl border border-border bg-surface p-2.5"
+                        className={`rounded-xl border border-border bg-surface px-2 pt-1 pb-3 ${
+                          fixedGroups.length === 3 && index === 2 ? 'col-span-2' : ''
+                        }`}
                       >
-                        <div className="mb-1.5">
-                          <DifficultyBadge difficulty={group.difficulty} />
+                        <DifficultyBadge difficulty={group.difficulty} />
+                        <div className="mt-1.5 flex flex-wrap items-center justify-center gap-x-2 gap-y-2.5">
+                          {group.items.flatMap((item) =>
+                            getFixedDropIcons(item).map((icon, i) => (
+                              <FixedDropIcon
+                                key={`${item.name}-${icon.iconFile ?? 'name'}-${i}`}
+                                icon={icon}
+                              />
+                            )),
+                          )}
                         </div>
-                        <ul className="space-y-1">
-                          {group.items.map((item) => (
-                            <li
-                              key={item.name}
-                              className="flex items-center justify-between gap-2 text-xs"
-                            >
-                              <span className="text-text">{item.name}</span>
-                              {item.amount !== undefined && (
-                                <span className="shrink-0 font-semibold text-text-muted">
-                                  {item.amount}
-                                </span>
-                              )}
-                            </li>
-                          ))}
-                        </ul>
                       </div>
                     ))}
                   </div>
@@ -336,10 +364,10 @@ function BoxDrillDown(props: BoxDrillDownProps): React.JSX.Element {
   return (
     <div>
       <div className="flex items-center gap-2 px-4 pb-3 pt-1">
-        <button type="button" onClick={props.onBack} aria-label="뒤로" className="text-lg text-text">
-          ‹
+        <button type="button" onClick={props.onBack} aria-label="뒤로" className="text-text">
+          <ChevronLeft className="h-6 w-6" aria-hidden="true" />
         </button>
-        <span className="text-sm font-bold text-text">{props.boxName}</span>
+        <span className="text-lg font-bold text-text">{props.boxName}</span>
       </div>
 
       {/* 반지 종류 먼저 선택(ADR-041) */}
@@ -351,7 +379,7 @@ function BoxDrillDown(props: BoxDrillDownProps): React.JSX.Element {
               <button
                 type="button"
                 onClick={() => setItem(entry.name)}
-                className={`relative flex w-full flex-col items-center gap-1 rounded-xl border p-2 ${
+                className={`relative flex w-full flex-col items-center gap-1 rounded-xl border p-2 pt-[1em] ${
                   item === entry.name ? 'border-primary bg-primary/10' : 'border-border bg-surface'
                 }`}
               >
@@ -361,8 +389,10 @@ function BoxDrillDown(props: BoxDrillDownProps): React.JSX.Element {
                   </span>
                 )}
                 <ItemThumb name={entry.name} />
-                <span className="line-clamp-2 h-[2.4em] text-balance break-keep text-center text-[10px] leading-tight text-text">
-                  {entry.name}
+                <span className="flex h-[2em] w-full items-center justify-center">
+                  <span className="line-clamp-2 text-balance break-keep text-center text-[10px] leading-tight text-text">
+                    {entry.name}
+                  </span>
                 </span>
               </button>
             </li>
