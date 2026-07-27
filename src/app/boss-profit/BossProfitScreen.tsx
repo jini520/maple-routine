@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Minus, Plus, RefreshCw } from 'lucide-react'
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Minus, Plus, RefreshCw, Sparkles } from 'lucide-react'
 import { BossPortrait } from '../../components/BossPortrait/BossPortrait'
 import { DifficultyBadge } from '../../components/DifficultyBadge/DifficultyBadge'
 import { MAPLE_LEAF_PATH } from '../../components/mapleLeafPath'
@@ -15,6 +15,7 @@ import {
 import { formatScheduleSyncError, formatSyncedAt } from '../../features/schedule-sync/format'
 import { formatBossProfitPeriodLabel, isLatestPeriod, isPeriodQueryable } from '../../lib/boss-profit-period'
 import { getItemIconUrl } from '../../lib/item-icons'
+import { isValuableDrop } from '../../lib/valuable-drops'
 import type { BossCycle } from '../../types'
 import type { RecordedDrop } from '../../types/drops'
 import { BossDropSheet } from './BossDropSheet'
@@ -149,6 +150,9 @@ function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Element {
   const { row } = props
   const [error, setError] = useState<string | null>(null)
   const [isDropSheetOpen, setIsDropSheetOpen] = useState(false)
+  // 이 보스에서 고가 아이템을 획득했으면 행 배경에 골드 셰인이 흐르는 강조 효과(valuable-drop-row)를 준다
+  // — 캐릭터 카드를 펼쳤을 때 카드 테두리 효과 대신 실제 획득한 보스 행으로 강조가 이동하는 지점(사용자 요청).
+  const hasValuableDrop = props.drops.some((drop) => isValuableDrop(drop.itemName))
   const isPriceUnknown = row.priceMeso === null
   // 미완료(보스 스케줄러에 등록만 되고 아직 처치 전) placeholder는 파티원 수를 조정해도 의미가
   // 없다 — 계산은 항상 0메소로 고정된다(ADR-032). "가격 미확정"과 동일한 비활성 처리를 재사용한다.
@@ -166,7 +170,11 @@ function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Element {
   }
 
   return (
-    <li className="flex items-start gap-3 p-4 border-b border-border last:border-b-0">
+    <li
+      className={`flex items-start gap-3 p-4 border-b border-border last:border-b-0${
+        hasValuableDrop ? ' valuable-drop-row' : ''
+      }`}
+    >
       <BossPortrait portraitSlug={findPortraitSlug(row.boss)} label={row.boss} size={BOSS_PORTRAIT_SIZE} />
 
       <div className="flex-1 min-w-0">
@@ -404,6 +412,63 @@ function groupTotalMeso(group: CharacterGroup): number {
   return sumPayout(group.bossRows) + sumSubtotals(group.weeklySubtotals)
 }
 
+// 이 캐릭터가 현재 기간에 기록한 고가 아이템 드롭 목록. 드롭은 dropRowKey(ocid,boss,difficulty,periodKey)로
+// 저장되므로 그룹의 보스 행마다 조회해 isValuableDrop(ADR-038)로 거른다. weekly 탭 기준이며, monthly 탭에서는
+// 월간 보스 행의 드롭만 집계된다(주차별 합계에는 보스 행이 없어 대상이 아님).
+function collectGroupValuableDrops(
+  group: CharacterGroup,
+  dropsByRowKey: Record<string, RecordedDrop[]>,
+): RecordedDrop[] {
+  const valuable: RecordedDrop[] = []
+  for (const row of group.bossRows) {
+    const drops = dropsByRowKey[dropRowKey(row.ocid, row.boss, row.difficulty, row.periodKey)] ?? []
+    for (const drop of drops) {
+      if (isValuableDrop(drop.itemName)) valuable.push(drop)
+    }
+  }
+  return valuable
+}
+
+// 고가 드롭이 기록된 주차의 캐릭터 카드 우상단에 떠서, 실제 획득한 고가 아이템 아이콘(최대 3개 + 나머지 개수)을
+// 골드 반짝임 칩으로 보여준다. overflow-hidden(펼침 시)에 잘리지 않도록 카드 바깥 relative 래퍼에 붙인다.
+function ValuableDropBadge(props: { drops: RecordedDrop[] }): React.JSX.Element {
+  const shown = props.drops.slice(0, 3)
+  const extra = props.drops.length - shown.length
+
+  return (
+    <span
+      role="img"
+      aria-label="고가 드롭"
+      title="고가 아이템 드롭"
+      className="valuable-drop-badge absolute -right-1.5 -top-2 z-10 flex items-center gap-1 rounded-full py-0.5 pl-1.5 pr-2"
+    >
+      <Sparkles className="h-3 w-3 flex-none" strokeWidth={2.5} aria-hidden="true" />
+      <span className="flex items-center">
+        {shown.map((drop, index) => {
+          const url = getItemIconUrl(drop.itemName, drop.slot)
+          const stackStyle = { marginLeft: index === 0 ? 0 : -6, zIndex: shown.length - index }
+          return url !== null ? (
+            <img
+              key={`${drop.itemName}-${index}`}
+              src={url}
+              alt=""
+              className="relative h-5 w-5 flex-none rounded-full bg-surface object-contain ring-[1.5px] ring-white/80"
+              style={stackStyle}
+            />
+          ) : (
+            <span
+              key={`${drop.itemName}-${index}`}
+              className="relative h-5 w-5 flex-none rounded-full bg-surface-2 ring-[1.5px] ring-white/80"
+              style={stackStyle}
+            />
+          )
+        })}
+      </span>
+      {extra > 0 && <span className="text-[10px] font-bold leading-none tabular-nums">+{extra}</span>}
+    </span>
+  )
+}
+
 function CharacterAccordion(props: {
   group: CharacterGroup
   tab: BossCycle
@@ -416,52 +481,72 @@ function CharacterAccordion(props: {
   const [isExpanded, setIsExpanded] = useState(false)
   const { group } = props
   const totalMeso = groupTotalMeso(group)
+  // 이 주차에 고가 아이템 드롭이 기록됐을 때: 카드에 골드 회전샤인 테두리/글로우(valuable-drop-card) +
+  // 우상단 획득 아이템 배지를 준다. 접힘/펼침 모두 회전 샤인 테두리·글로우·배지는 유지하되, 펼치면
+  // 글로우 맥동만 멈춘다(valuable-drop-card--expanded → 회전 샤인은 계속 돌고 글로우 확산만 정적). 추가로
+  // 펼쳤을 때는 고가 아이템을 획득한 보스 행(valuable-drop-row, 배경 효과)에도 강조가 들어간다.
+  const valuableDrops = collectGroupValuableDrops(group, props.dropsByRowKey)
+  const hasValuable = valuableDrops.length > 0
+  const shellClass = [
+    isExpanded ? 'rounded-[14px] bg-surface border border-border overflow-hidden' : '',
+    hasValuable
+      ? isExpanded
+        ? 'valuable-drop-card valuable-drop-card--expanded'
+        : 'valuable-drop-card rounded-[14px]'
+      : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
 
-  // 펼침 상태에 따라 바깥 wrapper와 header의 className만 바꾼다 — 루트 엘리먼트 타입을
-  // button↔div로 바꾸면 React가 트리를 통째로 언마운트/리마운트해 헤더 버튼의 포커스가
-  // 날아간다(실사용 키보드 접근성 문제이자, 테스트에서 클릭 참조가 stale해지는 원인이었다).
+  // 펼침 상태에 따라 shell과 header의 className만 바꾼다 — 루트 엘리먼트 타입을 button↔div로 바꾸면
+  // React가 트리를 통째로 언마운트/리마운트해 헤더 버튼의 포커스가 날아간다(실사용 키보드 접근성 문제이자,
+  // 테스트에서 클릭 참조가 stale해지는 원인이었다). 배지는 shell(펼침 시 overflow-hidden) 바깥의 relative
+  // 래퍼에 절대배치해, 카드 모서리 밖으로 살짝 튀어나와도 잘리지 않게 한다.
   return (
-    <div className={isExpanded ? 'rounded-[14px] bg-surface border border-border overflow-hidden' : ''}>
-      <button
-        type="button"
-        onClick={() => setIsExpanded((prev) => !prev)}
-        className={
-          isExpanded
-            ? 'flex w-full items-center gap-3 p-4'
-            : 'flex w-full items-center gap-3 rounded-[14px] bg-surface border border-border p-4'
-        }
-      >
-        <CharacterAvatar characterName={group.characterName} imageUrl={group.imageUrl} />
-        <span className="flex-1 truncate text-left text-sm font-semibold text-text">{group.characterName}</span>
-        <span className="text-sm font-bold text-text tabular-nums">{totalMeso.toLocaleString()} 메소</span>
-        {isExpanded ? (
-          <ChevronUp className="h-4 w-4 text-text-muted" strokeWidth={2} aria-hidden="true" />
-        ) : (
-          <ChevronDown className="h-4 w-4 text-text-muted" strokeWidth={2} aria-hidden="true" />
-        )}
-      </button>
+    <div className="relative">
+      {hasValuable && <ValuableDropBadge drops={valuableDrops} />}
+      <div className={shellClass}>
+        <button
+          type="button"
+          onClick={() => setIsExpanded((prev) => !prev)}
+          className={
+            isExpanded
+              ? 'flex w-full items-center gap-3 p-4'
+              : 'flex w-full items-center gap-3 rounded-[14px] bg-surface border border-border p-4'
+          }
+        >
+          <CharacterAvatar characterName={group.characterName} imageUrl={group.imageUrl} />
+          <span className="flex-1 truncate text-left text-sm font-semibold text-text">{group.characterName}</span>
+          <span className="text-sm font-bold text-text tabular-nums">{totalMeso.toLocaleString()} 메소</span>
+          {isExpanded ? (
+            <ChevronUp className="h-4 w-4 text-text-muted" strokeWidth={2} aria-hidden="true" />
+          ) : (
+            <ChevronDown className="h-4 w-4 text-text-muted" strokeWidth={2} aria-hidden="true" />
+          )}
+        </button>
 
-      {isExpanded &&
-        (props.tab === 'weekly' ? (
-          <WeeklyAccordionBody
-            characterName={group.characterName}
-            rows={group.bossRows}
-            dropsByRowKey={props.dropsByRowKey}
-            setPartySize={props.setPartySize}
-            setBossDrops={props.setBossDrops}
-          />
-        ) : (
-          <MonthlyAccordionBody
-            characterName={group.characterName}
-            bossRows={group.bossRows}
-            weeklySubtotals={group.weeklySubtotals}
-            dropsByRowKey={props.dropsByRowKey}
-            setPartySize={props.setPartySize}
-            setBossDrops={props.setBossDrops}
-            now={props.now}
-            isMonthlyBossQueryable={props.isMonthlyBossQueryable}
-          />
-        ))}
+        {isExpanded &&
+          (props.tab === 'weekly' ? (
+            <WeeklyAccordionBody
+              characterName={group.characterName}
+              rows={group.bossRows}
+              dropsByRowKey={props.dropsByRowKey}
+              setPartySize={props.setPartySize}
+              setBossDrops={props.setBossDrops}
+            />
+          ) : (
+            <MonthlyAccordionBody
+              characterName={group.characterName}
+              bossRows={group.bossRows}
+              weeklySubtotals={group.weeklySubtotals}
+              dropsByRowKey={props.dropsByRowKey}
+              setPartySize={props.setPartySize}
+              setBossDrops={props.setBossDrops}
+              now={props.now}
+              isMonthlyBossQueryable={props.isMonthlyBossQueryable}
+            />
+          ))}
+      </div>
     </div>
   )
 }

@@ -728,6 +728,119 @@ describe('BossProfitScreen', () => {
     expect(screen.queryByText('아직 처치한 보스가 없습니다')).not.toBeInTheDocument()
   })
 
+  // 고가 아이템 드롭 강조 효과 — valuable-drops.json의 실제 데이터(isValuableDrop)를 그대로 쓴다.
+  const VALUABLE_ITEM = '생명의 연마석' // valuable-drops.json items에 포함된 고가 아이템
+
+  it('해당 주차에 고가 아이템 드롭이 기록돼 있으면 캐릭터 카드에 고가 드롭 강조 배지가 표시된다', () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row()],
+      dropsByRowKey: {
+        'ocid-1|자쿰|카오스|2026-07-09': [{ category: 'consumable', itemName: VALUABLE_ITEM, quantity: 1 }],
+      },
+    })
+
+    renderBossProfitScreen()
+
+    expect(screen.getByRole('img', { name: '고가 드롭' })).toBeInTheDocument()
+  })
+
+  it('고가 아이템이 아닌 드롭만 있으면 강조 배지가 표시되지 않는다', () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row()],
+      dropsByRowKey: {
+        'ocid-1|자쿰|카오스|2026-07-09': [{ category: 'consumable', itemName: '평범한 소비 아이템', quantity: 1 }],
+      },
+    })
+
+    renderBossProfitScreen()
+
+    expect(screen.queryByRole('img', { name: '고가 드롭' })).not.toBeInTheDocument()
+  })
+
+  it('고가 드롭이 있는 카드의 바깥 wrapper에 강조 효과 클래스(valuable-drop-card)가 붙는다', () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row()],
+      dropsByRowKey: {
+        'ocid-1|자쿰|카오스|2026-07-09': [{ category: 'consumable', itemName: VALUABLE_ITEM, quantity: 1 }],
+      },
+    })
+
+    renderBossProfitScreen()
+
+    const shell = screen.getByRole('button', { name: /낟낟/ }).parentElement
+    expect(shell).toHaveClass('valuable-drop-card')
+  })
+
+  it('드롭이 전혀 없는 카드에는 강조 효과 클래스가 붙지 않는다', () => {
+    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()], dropsByRowKey: {} })
+
+    renderBossProfitScreen()
+
+    const shell = screen.getByRole('button', { name: /낟낟/ }).parentElement
+    expect(shell).not.toHaveClass('valuable-drop-card')
+  })
+
+  it('카드를 펼치면 글로우 맥동만 멈추고(valuable-drop-card--expanded) 회전 샤인 테두리·글로우·배지는 유지된다', () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row()],
+      dropsByRowKey: {
+        'ocid-1|자쿰|카오스|2026-07-09': [{ category: 'consumable', itemName: VALUABLE_ITEM, quantity: 1 }],
+      },
+    })
+
+    renderBossProfitScreen()
+    const header = screen.getByRole('button', { name: /낟낟/ })
+    expect(header.parentElement).toHaveClass('valuable-drop-card')
+    expect(header.parentElement).not.toHaveClass('valuable-drop-card--expanded') // 접힘: 글로우 맥동 동작
+
+    fireEvent.click(header) // 펼침
+
+    expect(header.parentElement).toHaveClass('valuable-drop-card') // 회전 샤인 테두리·글로우 유지
+    expect(header.parentElement).toHaveClass('valuable-drop-card--expanded') // 글로우 맥동만 정지
+    expect(screen.getByRole('img', { name: '고가 드롭' })).toBeInTheDocument() // 배지 유지
+  })
+
+  it('펼치면 고가 아이템을 획득한 보스 행 배경에 강조 효과(valuable-drop-row)가 이동한다', () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row()],
+      dropsByRowKey: {
+        'ocid-1|자쿰|카오스|2026-07-09': [{ category: 'consumable', itemName: VALUABLE_ITEM, quantity: 1 }],
+      },
+    })
+
+    renderBossProfitScreen()
+    fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
+
+    expect(screen.getByText('자쿰').closest('li')).toHaveClass('valuable-drop-row')
+  })
+
+  it('고가 아이템이 없는 보스 행 배경에는 강조 효과가 적용되지 않는다', () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row({ boss: '자쿰' }), row({ boss: '벨로나' })],
+      dropsByRowKey: {
+        'ocid-1|자쿰|카오스|2026-07-09': [{ category: 'consumable', itemName: VALUABLE_ITEM, quantity: 1 }],
+      },
+    })
+
+    renderBossProfitScreen()
+    fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
+
+    expect(screen.getByText('자쿰').closest('li')).toHaveClass('valuable-drop-row')
+    expect(screen.getByText('벨로나').closest('li')).not.toHaveClass('valuable-drop-row')
+  })
+
   it('드롭다운 헤더에 그 캐릭터의 합계만 표시되고 다른 캐릭터 수익이 섞이지 않는다', () => {
     mockStore({
       status: 'loaded',

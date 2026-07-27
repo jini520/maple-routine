@@ -486,6 +486,10 @@ rounded-full bg-white/20 text-[#E8DFEC] text-xs font-semibold px-2 py-1, flex it
 
 ## 애니메이션
 - 확정된 애니메이션 없음(2026-07-11) — hover 시 색상 전환(`hover:bg-...`/`hover:text-...`) 정도만 Tailwind 기본 유틸리티로 처리하고, 페이드·슬라이드 등 명시적 트랜지션은 아직 도입하지 않았다. 필요해지면 이 섹션에 추가
+- **고가 드롭 강조 — 확정, 2026-07-28, [[ADR-045]]**: 보스 수익 목록에서 그 주차에 고가 아이템(`isValuableDrop`)을 먹은 항목을 네온 골드(#f7d00d)로 강조. `index.css`의 plain 클래스 3종으로 구현하며, 모든 모션은 `@media (prefers-reduced-motion: no-preference)`에서만 재생(정적 폴백 유지).
+  - `.valuable-drop-card`(접힘 캐릭터 카드): `::before` `conic-gradient`+`mask(xor)` 2px 링을 `@property --vd-angle`로 회전(회전 샤인 테두리) + `box-shadow` 글로우 맥동. 우상단에 획득 아이템 배지(`Sparkles`+아이템 아이콘). `@property` 미지원 WebView는 정적 골드 테두리로 degrade.
+  - `.valuable-drop-card--expanded`(펼침): 요소 자신의 glow 맥동만 정지(회전 샤인은 유지). 복합 선택자로 `@media` 규칙보다 명시도 우선.
+  - `.valuable-drop-row`(펼침 시 고가 획득 보스 행): 테두리/글로우가 아닌 **배경** — 아이템 쪽(`radial-gradient at 82% 50%`) 골드 글로우 + 미세 틴트 맥동. `<li>` 자체 `background`라 콘텐츠 뒤에 깔림.
 
 ## 아이콘
 - **라이브러리: `lucide-react`(확정, 2026-07-11)** — 새 아이콘이 필요하면 이 라이브러리에서만 가져온다. 다른 아이콘 라이브러리를 섞어 쓰지 않는다

@@ -1335,3 +1335,28 @@
 1. **난이도 표시 우측 정렬**: 시트 선택 안내 라인의 난이도 표시(미완료 토글·완료 단일 뱃지 **둘 다**)를 **오른쪽 끝**으로 이동(`ml-auto`). 완료 뱃지는 컴포넌트라 `ml-auto` 래퍼 span으로 감싼다.
 2. **안내 문구 변경**: `'획득한 드롭을 선택하세요'` → `'획득한 아이템을 선택하세요'`.
 3. **처치 난이도에서 획득 불가한 기록 드롭 제거(데이터 정합성)**: 미완료 시트의 난이도 토글은 표시용 필터라 **행 난이도 키에 다른 난이도 전용 아이템이 섞여 저장**될 수 있다(위 트레이드오프 1). 보스가 실제 처치되어 **처치 난이도가 확정(`row.isComplete`)**되면, 그 난이도에서 **획득 불가한 선택 드롭을 기록에서 제거**한다(예: 익스트림 아이템을 담아뒀는데 이지로 처치 → 이지 비획득 아이템 제거). 공통 헬퍼 `lib/boss-drops`: `getObtainableTileNames(boss, difficulty)`(그 난이도에서 획득 가능한 선택 타일명 집합 — 상자 결과는 상자명 기준), `pruneUnobtainableDrops(boss, difficulty, drops)`(비획득 선택 드롭 제거, 레거시 `category === 'fixed'` 기록은 보존해 무손실). 스토어의 드롭 로딩 단일 choke point `loadDropsByRowKey(ocids, rows, now)`에서 **완료 행에 한해** prune하고, 변경이 있으면 `replaceBossDropRecords`로 영구 반영(멱등 — 이미 정리된 기록은 재기록 없음). 미완료 행은 정리하지 않는다(처치 난이도 미확정 = scratchpad). 시트의 난이도 변경 재조정(위 결정 4)도 `getObtainableTileNames`로 통일해 한 소스에서 판정한다. **검증**: 전체 1233 tests 통과(신규 5 — 헬퍼 `getObtainableTileNames` 1·`pruneUnobtainableDrops` 2, 스토어 완료 행 prune·미완료 행 미prune 2; 시트 문구·우측 정렬은 기존 테스트에 병합)·`tsc --noEmit`·lint(경고 0)·build 통과.
+
+### ADR-045: 보스 수익 — 고가 아이템 드롭 시 캐릭터/보스 카드 강조 효과(회전 샤인 테두리·글로우·획득 아이템 배지·행 배경) (구현 완료, 2026-07-28)
+
+> 문서 순서 정정: 이 결정도 [[ADR-044]]와 마찬가지로 채팅에서 프로토타입을 반복 조정하며 확정된 UI 강조라, [[ADR-006]]/docs-first 관례상 구현 전에 문서를 먼저 리뷰했어야 하나 이번엔 브라우저 프리뷰로 시안을 확정한 뒤 문서를 작성했다. 커밋 전 이 항목을 리뷰 체크포인트로 삼는다.
+
+**배경**: 보스 수익 페이지에서 고가 아이템을 드롭 기록했을 때, 이미 있는 **일회성 전체화면 연출**([[ADR-038]] `DropEffectOverlay` — 추가 순간에만 재생)과 별개로, "그 주차에 고가템을 먹은 캐릭터/보스"를 **목록에서 지속적으로 알아볼** 강조가 필요하다는 사용자 요청. 고가 여부 판정은 신규 데이터 없이 기존 `isValuableDrop`([[ADR-038]] `valuable-drops.json`)을 재사용한다(게임 수치 추정 금지, [[ADR-006]]). `features/*`는 표시 로직만 두고 저장소/네이티브에 직접 접근하지 않는다([[ADR-003]]/[[ADR-005]] — 이 강조는 순수 CSS/컴포넌트).
+
+**결정**:
+1. **판정 재사용**: 캐릭터 그룹은 보스 행마다 `dropsByRowKey[dropRowKey(...)]`를 조회해 `isValuableDrop`인 드롭을 모으고(`collectGroupValuableDrops`), 보스 행은 자신의 `drops.some(isValuableDrop)`로 판정한다. 신규 수치 데이터·저장 스키마 변경 없음.
+2. **접힘 캐릭터 카드 — 회전 샤인 테두리 + 글로우 + 배지(`valuable-drop-card`)**: 전 테마 공통 **네온 골드(#f7d00d)**. 테두리는 `::before`의 `conic-gradient`(골드 base 상시 + 밝은 하이라이트 대역)를 `padding`+`mask(xor)`로 2px 링만 남기고, `@property --vd-angle`을 회전시켜 샤인이 테두리를 돈다. 글로우는 `box-shadow`(border-box 밖이라 카드 자체 border/overflow-hidden과 무충돌)가 맡아 은은히 맥동. 우상단에는 shell 바깥 `relative` 래퍼에 절대배치한 골드 배지(`Sparkles` + **실제 획득한 고가 아이템 아이콘** 최대 3 + `+N`, `getItemIconUrl` 재사용).
+3. **라이트 테마 가시성 + 색상**: 초기 시안의 순수 노랑은 크림 배경에 묻혀 앰버로 뺐더니 "너무 주황"이라, **전 테마 동일 네온 골드**로 통일하되 라이트 배경 가시성은 **불투명·두꺼운 링**으로 확보(색을 주황으로 빼지 않음). 글로우 확산은 초기값보다 축소.
+4. **펼침 — 글로우 맥동만 정지, 회전 샤인·테두리·글로우·배지는 유지(`valuable-drop-card--expanded`)**: 펼치면 요소 자신의 glow 애니메이션만 `animation: none`으로 덮고(복합 클래스 선택자로 `@media` 규칙보다 명시도 우선), `::before`의 회전 샤인은 계속 돈다. 카드 강조를 없애지 않아 밋밋해지지 않게 한다(사용자 확정 — "다 없애지 말고 애니메이션만 최소화").
+5. **펼침 — 고가 아이템 획득 보스 행 배경 강조(`valuable-drop-row`)**: 테두리/글로우가 **아니라 배경** 효과(사용자 확정). 획득 아이템 아이콘이 있는 오른쪽 부근(`radial-gradient at 82% 50%`)에서 배어나오는 정적 골드 글로우 + 아주 미세한 틴트 맥동. 최초 시안의 "가로로 흐르는 셰인"은 로딩 스켈레톤처럼 보여 폐기. `<li>` 자체 `background`로 그려 콘텐츠 뒤에 자연히 깔리고(z-index 다툼 없음) 반투명 골드라 텍스트 가독성을 해치지 않는다.
+6. **모션/견고성 폴백**: 모든 애니메이션은 `@media (prefers-reduced-motion: no-preference)`에만 걸어 모션 최소화 시 정적 골드 테두리/글로우/틴트만 남긴다(기존 `.fx-drop-float` 패턴). 회전 샤인의 `@property` 미지원 WebView에선 `--vd-angle` 폴백값(0deg)의 **정적 골드 테두리**로 자연 degrade한다.
+
+**이유**: 전체화면 연출은 순간적이라 "지난 기록을 훑을 때" 어떤 캐릭터/보스가 대박이었는지 알 수 없다. 접힘=요약(캐릭터 카드에 화려한 회전 샤인+배지), 펼침=상세(카드는 차분히 유지하되 실제 획득한 보스 행 배경으로 시선 이동)로 정보 계층을 맞췄다. "고가=골드"는 테마 무관 신호라 색은 고정하되 라이트 배경 가시성만 형태(불투명 링)로 보정.
+
+**트레이드오프**:
+- **monthly 탭**: 강조는 보스 행(`bossRows`) 기준이라 주간 탭에선 완전 동작하나, 월간 탭에선 "월간 보스" 드롭만 집계된다(주차별 합계 행엔 보스 행이 없어 대상 아님). 프로토타입 범위로 수용.
+- **회전 샤인 `@property` 의존**: 최신 Chromium WebView(안드로이드)·iOS 16.4+에서만 회전하고, 구형 WebView에선 정적 골드 테두리로 degrade(깨지지 않음). **실기기 확인 필요(미verify)**.
+- **배지 아이템 아이콘 접근성**: 장식용 `alt=""`이라 스크린리더엔 배지 전체가 "고가 드롭"으로만 읽힌다(아이템명 미노출). 필요 시 `aria-label`에 아이템명 추가 가능.
+
+**저장소**: 스키마·데이터 변경 없음(순수 CSS/컴포넌트, `boss_drop_records`·`dropRowKey`·`item-drop-table.json`은 읽기만).
+
+**구현(2026-07-28, 구현 완료)**: TDD로 테스트 먼저 → 구현. `BossProfitScreen.tsx`(`collectGroupValuableDrops`/`ValuableDropBadge`, `CharacterAccordion`의 `valuable-drop-card`·`--expanded`·배지 배선, `BossProfitBossRow`의 `valuable-drop-row` 배선), `index.css`(회전 샤인 `@property`/conic/mask·글로우 맥동·`--expanded` 정지·행 radial 배경), 테스트 7건 신규. **검증**: 전체 1240 tests 통과·lint(경고 0)·build(CSS의 `@property`/`conic-gradient`/`mask-composite` 번들 반영 확인)·브라우저 프리뷰로 라이트/다크 접힘·펼침·보스 행 배경 육안 확인. **미verify**: 실기기(안드로이드/iOS WebView)에서 `@property` 회전 샤인 실제 회전 + 실 데이터로 육안 확인([[ADR-038]] 계열과 동일 — 등록 캐릭터·동기화 데이터 필요).
