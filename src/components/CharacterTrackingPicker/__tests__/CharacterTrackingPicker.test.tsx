@@ -69,6 +69,70 @@ describe('CharacterTrackingPicker', () => {
     expect(onSave).toHaveBeenCalledWith(['ocid-2'])
   })
 
+  it('선택을 바꾸지 않으면 저장 버튼이 비활성이다', () => {
+    render(
+      <CharacterTrackingPicker
+        entries={entries}
+        trackedOcids={['ocid-1']}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByRole('button', { name: '저장' })).toBeDisabled()
+  })
+
+  it('캐릭터를 추가로 체크하면 저장 버튼이 활성화된다', async () => {
+    const user = userEvent.setup()
+    render(
+      <CharacterTrackingPicker
+        entries={entries}
+        trackedOcids={['ocid-1']}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: /내옆에최성일/ }))
+
+    expect(screen.getByRole('button', { name: '저장' })).toBeEnabled()
+  })
+
+  it('바꿨다가 원래 집합으로 되돌리면 저장 버튼이 다시 비활성이 된다', async () => {
+    const user = userEvent.setup()
+    render(
+      <CharacterTrackingPicker
+        entries={entries}
+        trackedOcids={['ocid-1']}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: /내옆에최성일/ }))
+    await user.click(screen.getByRole('button', { name: /내옆에최성일/ }))
+
+    expect(screen.getByRole('button', { name: '저장' })).toBeDisabled()
+  })
+
+  it('선택 순서만 달라진 동일 집합에서도 저장 버튼이 비활성으로 유지된다', async () => {
+    const user = userEvent.setup()
+    render(
+      <CharacterTrackingPicker
+        entries={entries}
+        trackedOcids={['ocid-1', 'ocid-2']}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+
+    // 해제 후 다시 선택하면 배열은 ['ocid-2', 'ocid-1'] 순서가 되지만 집합은 동일하다.
+    await user.click(screen.getByRole('button', { name: /낟낟/ }))
+    await user.click(screen.getByRole('button', { name: /낟낟/ }))
+
+    expect(screen.getByRole('button', { name: '저장' })).toBeDisabled()
+  })
+
   it('닫기 버튼 클릭 시 onSave 없이 onClose만 호출된다', async () => {
     const user = userEvent.setup()
     const onSave = vi.fn()

@@ -76,7 +76,7 @@ vi.mock('../../../storage/manual-tracked-content', () => ({
   setManualTrackedContent: setManualTrackedContentMock,
 }))
 
-import { useContentSchedulerStore } from '../store'
+import { useContentSchedulerStore, type ContentCharacterView } from '../store'
 
 function dailyContent(name: string): DailyContent {
   return { name, kind: 'contents', isRegistered: true, nowCount: 1, maxCount: 3, questState: null }
@@ -321,7 +321,7 @@ describe('useContentSchedulerStore', () => {
 
       await useContentSchedulerStore.getState().loadTrackedOcids()
 
-      expect(getTrackedCharacterOcidsMock).toHaveBeenCalledWith('content')
+      expect(getTrackedCharacterOcidsMock).toHaveBeenCalledWith()
       expect(useContentSchedulerStore.getState().trackedOcids).toEqual(['ocid-1'])
     })
 
@@ -349,7 +349,7 @@ describe('useContentSchedulerStore', () => {
 
       await useContentSchedulerStore.getState().saveTrackedOcids(['ocid-1', 'ocid-2'])
 
-      expect(setTrackedCharacterOcidsMock).toHaveBeenCalledWith('content', ['ocid-1', 'ocid-2'])
+      expect(setTrackedCharacterOcidsMock).toHaveBeenCalledWith(['ocid-1', 'ocid-2'])
       expect(useContentSchedulerStore.getState().trackedOcids).toEqual(['ocid-1', 'ocid-2'])
       expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1', 'ocid-2'], undefined)
     })
@@ -375,6 +375,132 @@ describe('useContentSchedulerStore', () => {
       expect(showSuccessMock).not.toHaveBeenCalled()
       expect(syncSchedulesMock).not.toHaveBeenCalled()
       expect(useContentSchedulerStore.getState().trackedOcids).toBeNull()
+    })
+  })
+
+  describe('ADR-043: 저장 시 추가된 캐릭터만 동기화', () => {
+    function characterView(ocid: string, characterName: string): ContentCharacterView {
+      return {
+        ocid,
+        characterName,
+        dailyContents: [dailyContent('몬스터파크')],
+        weeklyContents: [],
+        isStale: false,
+        syncedAt: '2026-07-27T00:00:00.000Z',
+        error: null,
+      }
+    }
+
+    beforeEach(() => {
+      setTrackedCharacterOcidsMock.mockResolvedValue(undefined)
+    })
+
+    it('선택이 바뀌지 않았으면(순서만 달라도) syncSchedules를 호출하지 않고 목록을 그대로 유지한다', async () => {
+      useContentSchedulerStore.setState({
+        trackedOcids: ['ocid-1', 'ocid-2'],
+        characters: [characterView('ocid-1', '캐릭터1'), characterView('ocid-2', '캐릭터2')],
+      })
+
+      await useContentSchedulerStore.getState().saveTrackedOcids(['ocid-2', 'ocid-1'])
+
+      expect(syncSchedulesMock).not.toHaveBeenCalled()
+      const state = useContentSchedulerStore.getState()
+      expect(state.status).toBe('loaded')
+      expect(state.characters.map((character) => character.ocid).sort()).toEqual(['ocid-1', 'ocid-2'])
+      expect(setTrackedCharacterOcidsMock).toHaveBeenCalledWith(['ocid-2', 'ocid-1'])
+    })
+
+    it('제거만 했으면 syncSchedules를 호출하지 않고 남은 캐릭터만 필터링한다', async () => {
+      useContentSchedulerStore.setState({
+        trackedOcids: ['ocid-1', 'ocid-2'],
+        characters: [characterView('ocid-1', '캐릭터1'), characterView('ocid-2', '캐릭터2')],
+      })
+
+      await useContentSchedulerStore.getState().saveTrackedOcids(['ocid-1'])
+
+      expect(syncSchedulesMock).not.toHaveBeenCalled()
+      const state = useContentSchedulerStore.getState()
+      expect(state.status).toBe('loaded')
+      expect(state.characters.map((character) => character.ocid)).toEqual(['ocid-1'])
+      expect(state.characters[0].characterName).toBe('캐릭터1')
+    })
+
+    it('캐릭터를 추가하면 추가된 ocid만 인자로 syncSchedules를 1회 호출하고 유지 캐릭터는 재조회하지 않는다', async () => {
+      syncSchedulesMock.mockResolvedValue([syncResult({ ocid: 'ocid-2', characterName: '새캐릭터' })])
+      useContentSchedulerStore.setState({
+        trackedOcids: ['ocid-1'],
+        characters: [characterView('ocid-1', '기존캐릭터')],
+      })
+
+      await useContentSchedulerStore.getState().saveTrackedOcids(['ocid-1', 'ocid-2'])
+
+      expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
+      expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-2'], undefined)
+      // 유지 캐릭터는 메모리 뷰를 그대로 재사용한다 — 네트워크는 물론 캐시도 다시 읽지 않는다
+      expect(getCachedSchedulerStateMock).not.toHaveBeenCalled()
+
+      const state = useContentSchedulerStore.getState()
+      expect(state.status).toBe('loaded')
+      expect(state.characters.map((character) => character.ocid).sort()).toEqual(['ocid-1', 'ocid-2'])
+      expect(state.characters.find((character) => character.ocid === 'ocid-1')?.characterName).toBe(
+        '기존캐릭터',
+      )
+      expect(state.characters.find((character) => character.ocid === 'ocid-2')?.characterName).toBe(
+        '새캐릭터',
+      )
+    })
+
+    it('최초 선택(이전 추적 목록 없음)이면 전원이 추가분이라 전체를 조회한다', async () => {
+      syncSchedulesMock.mockResolvedValue([
+        syncResult({ ocid: 'ocid-1', characterName: '캐릭터1' }),
+        syncResult({ ocid: 'ocid-2', characterName: '캐릭터2' }),
+      ])
+
+      await useContentSchedulerStore.getState().saveTrackedOcids(['ocid-1', 'ocid-2'])
+
+      expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1', 'ocid-2'], undefined)
+      expect(
+        useContentSchedulerStore
+          .getState()
+          .characters.map((character) => character.ocid)
+          .sort(),
+      ).toEqual(['ocid-1', 'ocid-2'])
+    })
+
+    it('추가와 제거가 함께 일어나도 최종 목록은 정확히 저장한 집합이 된다', async () => {
+      syncSchedulesMock.mockResolvedValue([syncResult({ ocid: 'ocid-3', characterName: '새캐릭터' })])
+      useContentSchedulerStore.setState({
+        trackedOcids: ['ocid-1', 'ocid-2'],
+        characters: [characterView('ocid-1', '캐릭터1'), characterView('ocid-2', '캐릭터2')],
+      })
+
+      await useContentSchedulerStore.getState().saveTrackedOcids(['ocid-1', 'ocid-3'])
+
+      expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-3'], undefined)
+      expect(
+        useContentSchedulerStore
+          .getState()
+          .characters.map((character) => character.ocid)
+          .sort(),
+      ).toEqual(['ocid-1', 'ocid-3'])
+    })
+
+    it('수동 모드에서 캐릭터를 추가하면 시드된 멤버십이 manualTrackedByOcid에 반영된다', async () => {
+      trackingModeStateMock.mode = 'manual'
+      syncSchedulesMock.mockResolvedValue([syncResult({ ocid: 'ocid-2', characterName: '새캐릭터' })])
+      getManualTrackedContentMock.mockImplementation(async (ocid: string) =>
+        ocid === 'ocid-2' ? [{ contentName: '몬스터파크', kind: 'daily' }] : [],
+      )
+      useContentSchedulerStore.setState({
+        trackedOcids: ['ocid-1'],
+        characters: [characterView('ocid-1', '기존캐릭터')],
+      })
+
+      await useContentSchedulerStore.getState().saveTrackedOcids(['ocid-1', 'ocid-2'])
+
+      expect(useContentSchedulerStore.getState().manualTrackedByOcid).toEqual({
+        'ocid-2': [{ contentName: '몬스터파크', kind: 'daily' }],
+      })
     })
   })
 
@@ -549,14 +675,14 @@ describe('useContentSchedulerStore', () => {
       ])
     })
 
-    it('loadTrackedOcids는 getLastSelectedCharacter("content") 반환값으로 selectedOcid를 초기화한다', async () => {
+    it('loadTrackedOcids는 getLastSelectedCharacter() 반환값으로 selectedOcid를 초기화한다', async () => {
       getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
       getLastSelectedCharacterMock.mockResolvedValue('ocid-1')
       syncSchedulesMock.mockResolvedValue([syncResult()])
 
       await useContentSchedulerStore.getState().loadTrackedOcids()
 
-      expect(getLastSelectedCharacterMock).toHaveBeenCalledWith('content')
+      expect(getLastSelectedCharacterMock).toHaveBeenCalledWith()
       expect(useContentSchedulerStore.getState().selectedOcid).toBe('ocid-1')
     })
 
@@ -566,7 +692,7 @@ describe('useContentSchedulerStore', () => {
       await useContentSchedulerStore.getState().selectCharacter('ocid-9')
 
       expect(useContentSchedulerStore.getState().selectedOcid).toBe('ocid-9')
-      expect(setLastSelectedCharacterMock).toHaveBeenCalledWith('content', 'ocid-9')
+      expect(setLastSelectedCharacterMock).toHaveBeenCalledWith('ocid-9')
     })
   })
 })

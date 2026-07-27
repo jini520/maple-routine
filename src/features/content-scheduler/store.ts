@@ -102,13 +102,32 @@ async function sortByCachedLevel(views: ContentCharacterView[]): Promise<Content
     .map((entry) => entry.view)
 }
 
+// ADR-043 결정 3: 저장 시점에 유지되는 캐릭터의 뷰가 메모리에 없을 때만 쓰는 폴백 —
+// 네트워크(syncSchedules)는 새로 추가된 캐릭터에만 쓰고, 그 외에는 마지막 캐시를 읽는다.
+async function readCachedView(ocid: string): Promise<ContentCharacterView | null> {
+  const cached = await getCachedSchedulerState(ocid)
+  if (cached === null) {
+    return null
+  }
+  return {
+    ocid,
+    characterName: cached.state.characterName,
+    world: cached.state.world,
+    dailyContents: cached.state.dailyContents,
+    weeklyContents: cached.state.weeklyContents,
+    isStale: true,
+    syncedAt: cached.syncedAt,
+    error: null,
+  }
+}
+
 export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, get) => ({
   ...initialState,
 
   async loadTrackedOcids() {
     const [ocids, selectedOcid] = await Promise.all([
-      getTrackedCharacterOcids('content'),
-      getLastSelectedCharacter('content'),
+      getTrackedCharacterOcids(),
+      getLastSelectedCharacter(),
     ])
     set({ trackedOcids: ocids, selectedOcid })
     if (ocids !== null) {
@@ -119,22 +138,72 @@ export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, ge
   async saveTrackedOcids(ocids, onProgress) {
     const previousOcids = get().trackedOcids ?? []
     try {
-      await setTrackedCharacterOcids('content', ocids)
+      await setTrackedCharacterOcids(ocids)
     } catch {
       useToastStore.getState().showError('저장하지 못했어요')
       return
     }
     set({ trackedOcids: ocids })
 
-    // ADR-035 결정 14(b): 수동 모드에서 새로 추적 목록에 추가된 캐릭터만 개별 시드한다.
-    // refresh보다 먼저 실행 — 화면의 저장 진행률 모달이 saveTrackedOcids 전체를 기다리므로
+    // ADR-043 결정 2·3: 저장 시점에는 새로 추가된 캐릭터만 조회한다 — 유지되는 캐릭터는
+    // 이미 가진 뷰를 그대로 재사용하고, 제거만 했거나 아무것도 안 바뀌었으면 조회 자체를 하지 않는다.
+    const added = ocids.filter((ocid) => !previousOcids.includes(ocid))
+
+    // ADR-035 결정 14(b): 수동 모드에서 새로 추적 목록에 추가된 캐릭터만 개별 시드하고, 그
+    // 멤버십을 화면 상태에도 반영한다(동기화가 added만 훑으므로 refresh처럼 전체를 다시 읽지 않는다).
+    // 동기화보다 먼저 실행 — 화면의 저장 진행률 모달이 saveTrackedOcids 전체를 기다리므로
     // 시드가 끝날 때까지 자연스럽게 로딩이 유지된다(결정 15).
-    if (useTrackingModeStore.getState().mode === 'manual') {
-      const newOcids = ocids.filter((ocid) => !previousOcids.includes(ocid))
-      await Promise.all(newOcids.map((ocid) => seedManualTrackedContent(ocid)))
+    if (added.length > 0 && useTrackingModeStore.getState().mode === 'manual') {
+      await Promise.all(added.map((ocid) => seedManualTrackedContent(ocid)))
+      const seeded = Object.fromEntries(
+        await Promise.all(added.map(async (ocid) => [ocid, await getManualTrackedContent(ocid)] as const)),
+      )
+      set((state) => ({ manualTrackedByOcid: { ...state.manualTrackedByOcid, ...seeded } }))
     }
 
-    await get().refresh(ocids, onProgress)
+    if (added.length === 0) {
+      // 네트워크 0회 — 이미 가진 뷰에서 빠진 캐릭터만 걷어내면 화면이 정확해진다.
+      set({
+        status: 'loaded',
+        error: null,
+        characters: get().characters.filter((character) => ocids.includes(character.ocid)),
+      })
+    } else {
+      set({ status: 'loading' })
+
+      const existingByOcid = new Map(get().characters.map((character) => [character.ocid, character]))
+      const keptViews = (
+        await Promise.all(
+          ocids
+            .filter((ocid) => !added.includes(ocid))
+            .map(async (ocid) => existingByOcid.get(ocid) ?? (await readCachedView(ocid))),
+        )
+      ).filter((view): view is ContentCharacterView => view != null)
+
+      const results = await syncSchedules(added, onProgress).catch(() => null)
+      if (results === null) {
+        // syncSchedules 자체가 던지는 에러(온보딩 미완료 등)는 캐릭터별 에러가 아니라
+        // 전체 조회 자체의 실패이므로 network로 취급한다(refresh와 동일).
+        set({ status: 'error', error: { kind: 'network' }, characters: await sortByCachedLevel(keptViews) })
+      } else {
+        const addedViews: ContentCharacterView[] = results.map((result) => ({
+          ocid: result.ocid,
+          characterName: result.characterName,
+          world: result.world,
+          dailyContents: result.state?.dailyContents ?? [],
+          weeklyContents: result.state?.weeklyContents ?? [],
+          isStale: result.isStale,
+          syncedAt: result.syncedAt,
+          error: result.error,
+        }))
+        set({
+          status: 'loaded',
+          error: null,
+          characters: await sortByCachedLevel([...keptViews, ...addedViews]),
+        })
+      }
+    }
+
     useToastStore.getState().showSuccess('캐릭터 정보를 모두 불러왔어요')
   },
 
@@ -206,7 +275,7 @@ export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, ge
 
   async selectCharacter(ocid) {
     set({ selectedOcid: ocid })
-    await setLastSelectedCharacter('content', ocid)
+    await setLastSelectedCharacter(ocid)
   },
 
   // ADR-035 결정 3·6·19: 저장소(단일 진실 공급원)에서 현재 배열을 읽어 멤버십만 추가/삭제하고

@@ -1,7 +1,15 @@
 import { Preferences } from '@capacitor/preferences'
 import { lastSelectedCharacterKey, trackedCharactersKey } from './keys'
 
-export type SchedulerKind = 'content' | 'boss'
+const LEGACY_TRACKED_KEYS = [
+  'trackedCharacters:content',
+  'trackedCharacters:boss',
+  'trackedCharacters:daily',
+  'trackedCharacters:weekly',
+] as const
+
+const LEGACY_LAST_SELECTED_CONTENT_KEY = 'lastSelectedCharacter:content'
+const LEGACY_LAST_SELECTED_BOSS_KEY = 'lastSelectedCharacter:boss'
 
 function parseOcids(value: string | null): string[] | null {
   if (value === null) {
@@ -19,59 +27,85 @@ function dedupeByOcid(ocids: string[]): string[] {
   return Array.from(new Set(ocids))
 }
 
-async function migrateLegacyTrackedCharacters(): Promise<void> {
-  const contentRaw = await Preferences.get({ key: 'trackedCharacters:content' })
-  if (contentRaw.value !== null) {
+// ADR-042 마이그레이션(1회): 화면별로 갈려 있던 추적 목록을 단일 키로 합친다.
+// content∪boss뿐 아니라 daily/weekly(ADR-013 이전 설치본)까지 흡수하는 이유 — 통합 후에는
+// content 키를 더 이상 쓰지 않아 기존 daily/weekly → content/boss 이관 체인이 끊기므로,
+// 그 시대에서 바로 올라오는 설치본의 목록이 통째로 유실된다.
+async function runUnifyMigration(): Promise<void> {
+  const existing = await Preferences.get({ key: trackedCharactersKey() })
+  if (existing.value !== null) {
     return
   }
 
-  const legacyDailyRaw = await Preferences.get({ key: 'trackedCharacters:daily' })
-  const legacyWeeklyRaw = await Preferences.get({ key: 'trackedCharacters:weekly' })
-  const legacyDaily = parseOcids(legacyDailyRaw.value)
-  const legacyWeekly = parseOcids(legacyWeeklyRaw.value)
+  const legacyLists = await Promise.all(
+    LEGACY_TRACKED_KEYS.map(async (key) => parseOcids((await Preferences.get({ key })).value)),
+  )
 
-  if (legacyDaily === null && legacyWeekly === null) {
+  if (legacyLists.every((list) => list === null)) {
     return
   }
 
-  const content = dedupeByOcid([...(legacyDaily ?? []), ...(legacyWeekly ?? [])])
-  await Preferences.set({ key: 'trackedCharacters:content', value: JSON.stringify(content) })
+  const merged = dedupeByOcid(legacyLists.flatMap((list) => list ?? []))
+  await Preferences.set({ key: trackedCharactersKey(), value: JSON.stringify(merged) })
 
-  if (legacyWeekly !== null) {
-    await Preferences.set({ key: 'trackedCharacters:boss', value: JSON.stringify(legacyWeekly) })
+  const [legacyContentSelected, legacyBossSelected] = await Promise.all([
+    Preferences.get({ key: LEGACY_LAST_SELECTED_CONTENT_KEY }),
+    Preferences.get({ key: LEGACY_LAST_SELECTED_BOSS_KEY }),
+  ])
+  const lastSelected = legacyContentSelected.value ?? legacyBossSelected.value
+  if (lastSelected !== null) {
+    await Preferences.set({ key: lastSelectedCharacterKey(), value: lastSelected })
   }
 
-  await Preferences.remove({ key: 'trackedCharacters:daily' })
-  await Preferences.remove({ key: 'trackedCharacters:weekly' })
+  await Promise.all(
+    [
+      ...LEGACY_TRACKED_KEYS,
+      LEGACY_LAST_SELECTED_CONTENT_KEY,
+      LEGACY_LAST_SELECTED_BOSS_KEY,
+    ].map((key) => Preferences.remove({ key })),
+  )
 }
 
-export async function getTrackedCharacterOcids(kind: SchedulerKind): Promise<string[] | null> {
-  await migrateLegacyTrackedCharacters()
+// 마이그레이션은 읽고-수정하고-쓰는 구간이라, 스토어가 추적 목록과 마지막 선택을 Promise.all로
+// 동시에 조회하면 락 없이 겹쳐 돌다가 한쪽이 레거시 키를 지운 뒤 다른 쪽이 더 작은 합집합으로
+// 덮어쓸 수 있다(character-basic-cache의 인덱스 락과 동일한 문제·동일한 해법).
+let migrationLock: Promise<void> = Promise.resolve()
 
-  const { value } = await Preferences.get({ key: trackedCharactersKey(kind) })
+function migrateLegacyCharacterSelection(): Promise<void> {
+  const result = migrationLock.then(runUnifyMigration, runUnifyMigration)
+  migrationLock = result.then(
+    () => undefined,
+    () => undefined,
+  )
+  return result
+}
+
+export async function getTrackedCharacterOcids(): Promise<string[] | null> {
+  await migrateLegacyCharacterSelection()
+
+  const { value } = await Preferences.get({ key: trackedCharactersKey() })
   return parseOcids(value)
 }
 
-export async function setTrackedCharacterOcids(
-  kind: SchedulerKind,
-  ocids: string[],
-): Promise<void> {
-  await Preferences.set({ key: trackedCharactersKey(kind), value: JSON.stringify(ocids) })
+export async function setTrackedCharacterOcids(ocids: string[]): Promise<void> {
+  await Preferences.set({ key: trackedCharactersKey(), value: JSON.stringify(ocids) })
 }
 
-export async function clearTrackedCharacterOcids(kind: SchedulerKind): Promise<void> {
-  await Preferences.remove({ key: trackedCharactersKey(kind) })
+export async function clearTrackedCharacterOcids(): Promise<void> {
+  await Preferences.remove({ key: trackedCharactersKey() })
 }
 
-export async function getLastSelectedCharacter(kind: SchedulerKind): Promise<string | null> {
-  const { value } = await Preferences.get({ key: lastSelectedCharacterKey(kind) })
+export async function getLastSelectedCharacter(): Promise<string | null> {
+  await migrateLegacyCharacterSelection()
+
+  const { value } = await Preferences.get({ key: lastSelectedCharacterKey() })
   return value
 }
 
-export async function setLastSelectedCharacter(kind: SchedulerKind, ocid: string): Promise<void> {
-  await Preferences.set({ key: lastSelectedCharacterKey(kind), value: ocid })
+export async function setLastSelectedCharacter(ocid: string): Promise<void> {
+  await Preferences.set({ key: lastSelectedCharacterKey(), value: ocid })
 }
 
-export async function clearLastSelectedCharacter(kind: SchedulerKind): Promise<void> {
-  await Preferences.remove({ key: lastSelectedCharacterKey(kind) })
+export async function clearLastSelectedCharacter(): Promise<void> {
+  await Preferences.remove({ key: lastSelectedCharacterKey() })
 }

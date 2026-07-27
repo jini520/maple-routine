@@ -165,7 +165,7 @@ export const useOnboardingStore = create<OnboardingStore>()((set, get) => {
     // 수동 모드면 저장한 캐릭터 전원을 시드(트리거 b)하는 동안 'seedingTracking'에 머물며
     // 로딩(스피너)을 유지하고, 시드가 전부 끝난 뒤에만 완료된다. 자동 모드는 시드 없이 곧바로 완료.
     async submitContentCharacters(ocids: string[]) {
-      await setTrackedCharacterOcids('content', ocids)
+      await setTrackedCharacterOcids(ocids)
 
       if (useTrackingModeStore.getState().mode === 'manual') {
         set((state) => onboardingReducer(state, { type: 'SUBMIT_CONTENT_CHARACTERS' }))

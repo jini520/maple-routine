@@ -94,6 +94,11 @@
       "dir": "manual-tracking-mode",
       "status": "completed",
       "completed_at": "2026-07-24T03:51:23+0900"
+    },
+    {
+      "dir": "character-tracking-unify",
+      "status": "completed",
+      "completed_at": "2026-07-27T14:57:03+0900"
     }
   ]
 }

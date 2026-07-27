@@ -71,10 +71,8 @@ describe('setMode', () => {
 })
 
 describe('setMode — 시드 트리거 (a): auto → manual 전환 (ADR-035 결정 14)', () => {
-  it('auto에서 manual로 전환하면 추적 중인 모든 ocid(content+boss 합집합, 중복 제거)를 시드한다', async () => {
-    vi.mocked(getTrackedCharacterOcids).mockImplementation(async (kind) =>
-      kind === 'content' ? ['ocid-a', 'ocid-b'] : ['ocid-b', 'ocid-c'],
-    )
+  it('auto에서 manual로 전환하면 추적 중인 모든 ocid를 시드한다', async () => {
+    vi.mocked(getTrackedCharacterOcids).mockResolvedValue(['ocid-a', 'ocid-b', 'ocid-c'])
 
     await useTrackingModeStore.getState().setMode('manual')
 

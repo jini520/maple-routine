@@ -9,156 +9,184 @@ import {
   setTrackedCharacterOcids,
 } from '../character-selection'
 
-vi.mock('@capacitor/preferences', () => {
-  const store = new Map<string, string>()
-  return {
-    Preferences: {
-      get: vi.fn(async ({ key }: { key: string }) => ({
-        value: store.has(key) ? (store.get(key) as string) : null,
-      })),
-      set: vi.fn(async ({ key, value }: { key: string; value: string }) => {
-        store.set(key, value)
-      }),
-      remove: vi.fn(async ({ key }: { key: string }) => {
-        store.delete(key)
-      }),
-    },
-  }
-})
+const { store } = vi.hoisted(() => ({ store: new Map<string, string>() }))
 
-beforeEach(async () => {
+vi.mock('@capacitor/preferences', () => ({
+  Preferences: {
+    get: vi.fn(async ({ key }: { key: string }) => ({
+      value: store.has(key) ? (store.get(key) as string) : null,
+    })),
+    set: vi.fn(async ({ key, value }: { key: string; value: string }) => {
+      store.set(key, value)
+    }),
+    remove: vi.fn(async ({ key }: { key: string }) => {
+      store.delete(key)
+    }),
+  },
+}))
+
+beforeEach(() => {
+  store.clear()
   vi.mocked(Preferences.get).mockClear()
   vi.mocked(Preferences.set).mockClear()
   vi.mocked(Preferences.remove).mockClear()
-  await clearTrackedCharacterOcids('content')
-  await clearTrackedCharacterOcids('boss')
-  await clearLastSelectedCharacter('content')
-  await clearLastSelectedCharacter('boss')
-  await Preferences.remove({ key: 'trackedCharacters:daily' })
-  await Preferences.remove({ key: 'trackedCharacters:weekly' })
 })
 
 describe('round-trip', () => {
   it('setTrackedCharacterOcids 후 getTrackedCharacterOcids로 저장한 값을 그대로 읽는다', async () => {
-    await setTrackedCharacterOcids('content', ['ocid-1', 'ocid-2'])
-    await expect(getTrackedCharacterOcids('content')).resolves.toEqual(['ocid-1', 'ocid-2'])
-  })
-})
-
-describe('content/boss 독립성', () => {
-  it('content를 설정해도 boss는 영향받지 않는다', async () => {
-    await setTrackedCharacterOcids('content', ['ocid-1'])
-    await expect(getTrackedCharacterOcids('boss')).resolves.toBeNull()
+    await setTrackedCharacterOcids(['ocid-1', 'ocid-2'])
+    await expect(getTrackedCharacterOcids()).resolves.toEqual(['ocid-1', 'ocid-2'])
   })
 
-  it('content와 boss는 서로 다른 값을 독립적으로 저장한다', async () => {
-    await setTrackedCharacterOcids('content', ['ocid-1'])
-    await setTrackedCharacterOcids('boss', ['ocid-2', 'ocid-3'])
-    await expect(getTrackedCharacterOcids('content')).resolves.toEqual(['ocid-1'])
-    await expect(getTrackedCharacterOcids('boss')).resolves.toEqual(['ocid-2', 'ocid-3'])
+  it('단일 키(trackedCharacters)에 저장한다', async () => {
+    await setTrackedCharacterOcids(['ocid-1'])
+    await expect(Preferences.get({ key: 'trackedCharacters' })).resolves.toEqual({
+      value: JSON.stringify(['ocid-1']),
+    })
   })
 })
 
 describe('저장된 값이 없는 경우', () => {
   it('한 번도 설정한 적 없으면 null을 반환한다', async () => {
-    await expect(getTrackedCharacterOcids('content')).resolves.toBeNull()
+    await expect(getTrackedCharacterOcids()).resolves.toBeNull()
   })
 })
 
 describe('빈 배열과 null의 구분', () => {
   it('사용자가 명시적으로 전부 해제하면 null이 아니라 빈 배열을 반환한다', async () => {
-    await setTrackedCharacterOcids('content', [])
-    await expect(getTrackedCharacterOcids('content')).resolves.toEqual([])
+    await setTrackedCharacterOcids([])
+    await expect(getTrackedCharacterOcids()).resolves.toEqual([])
   })
 })
 
 describe('clearTrackedCharacterOcids', () => {
   it('clear 이후에는 다시 null을 반환한다', async () => {
-    await setTrackedCharacterOcids('content', ['ocid-1'])
-    await clearTrackedCharacterOcids('content')
-    await expect(getTrackedCharacterOcids('content')).resolves.toBeNull()
+    await setTrackedCharacterOcids(['ocid-1'])
+    await clearTrackedCharacterOcids()
+    await expect(getTrackedCharacterOcids()).resolves.toBeNull()
   })
 })
 
 describe('손상된 JSON', () => {
   it('저장된 값이 손상된 JSON이면 예외를 던지지 않고 null을 반환한다', async () => {
-    await Preferences.set({ key: 'trackedCharacters:content', value: 'not-valid-json{' })
-    await expect(getTrackedCharacterOcids('content')).resolves.toBeNull()
+    await Preferences.set({ key: 'trackedCharacters', value: 'not-valid-json{' })
+    await expect(getTrackedCharacterOcids()).resolves.toBeNull()
   })
 })
 
 describe('쓰기 실패 전파', () => {
   it('Preferences.set이 reject되면 setTrackedCharacterOcids도 에러를 그대로 전파한다', async () => {
     vi.mocked(Preferences.set).mockRejectedValueOnce(new Error('disk full'))
-    await expect(setTrackedCharacterOcids('content', ['ocid-1'])).rejects.toThrow('disk full')
+    await expect(setTrackedCharacterOcids(['ocid-1'])).rejects.toThrow('disk full')
   })
 })
 
-describe('레거시 daily/weekly 마이그레이션', () => {
-  it('레거시 daily/weekly 둘 다 없으면 content/boss 둘 다 null이다', async () => {
-    await expect(getTrackedCharacterOcids('content')).resolves.toBeNull()
-    await expect(getTrackedCharacterOcids('boss')).resolves.toBeNull()
+// ADR-042: content/boss로 갈려 있던 추적 목록을 단일 키로 통합한다.
+describe('통합 마이그레이션', () => {
+  it('content·boss 목록을 중복 제거된 합집합으로 이관한다', async () => {
+    await Preferences.set({ key: 'trackedCharacters:content', value: JSON.stringify(['a', 'b']) })
+    await Preferences.set({ key: 'trackedCharacters:boss', value: JSON.stringify(['b', 'c']) })
+
+    await expect(getTrackedCharacterOcids()).resolves.toEqual(['a', 'b', 'c'])
   })
 
-  it('레거시 daily만 있으면 content로 옮겨지고 boss는 null이다', async () => {
-    await Preferences.set({ key: 'trackedCharacters:daily', value: JSON.stringify(['a', 'b']) })
-    await expect(getTrackedCharacterOcids('content')).resolves.toEqual(['a', 'b'])
-    await expect(getTrackedCharacterOcids('boss')).resolves.toBeNull()
-  })
-
-  it('레거시 weekly만 있으면 content와 boss 양쪽으로 복사된다', async () => {
-    await Preferences.set({ key: 'trackedCharacters:weekly', value: JSON.stringify(['b', 'c']) })
-    await expect(getTrackedCharacterOcids('content')).resolves.toEqual(['b', 'c'])
-    await expect(getTrackedCharacterOcids('boss')).resolves.toEqual(['b', 'c'])
-  })
-
-  it('레거시 daily·weekly 둘 다 있으면 content는 중복 제거된 합집합(daily 우선 순서), boss는 weekly 그대로다', async () => {
-    await Preferences.set({ key: 'trackedCharacters:daily', value: JSON.stringify(['a', 'b']) })
-    await Preferences.set({ key: 'trackedCharacters:weekly', value: JSON.stringify(['b', 'c']) })
-    await expect(getTrackedCharacterOcids('content')).resolves.toEqual(['a', 'b', 'c'])
-    await expect(getTrackedCharacterOcids('boss')).resolves.toEqual(['b', 'c'])
-  })
-
-  it('레거시 daily가 빈 배열(명시적 전부 해제)이면 content도 빈 배열로 옮겨지고 boss는 null이다', async () => {
-    await Preferences.set({ key: 'trackedCharacters:daily', value: JSON.stringify([]) })
-    await expect(getTrackedCharacterOcids('content')).resolves.toEqual([])
-    await expect(getTrackedCharacterOcids('boss')).resolves.toBeNull()
-  })
-
-  it('마이그레이션 후 레거시 키는 삭제된다', async () => {
+  it('레거시 daily/weekly만 있는 설치본의 목록도 흡수한다', async () => {
     await Preferences.set({ key: 'trackedCharacters:daily', value: JSON.stringify(['a']) })
-    await Preferences.set({ key: 'trackedCharacters:weekly', value: JSON.stringify(['b']) })
-    await getTrackedCharacterOcids('content')
-    await expect(Preferences.get({ key: 'trackedCharacters:daily' })).resolves.toEqual({ value: null })
-    await expect(Preferences.get({ key: 'trackedCharacters:weekly' })).resolves.toEqual({ value: null })
+    await Preferences.set({ key: 'trackedCharacters:weekly', value: JSON.stringify(['b', 'a']) })
+
+    await expect(getTrackedCharacterOcids()).resolves.toEqual(['a', 'b'])
   })
 
-  it('마이그레이션은 1회만 실행되어 이후 명시적 저장을 덮어쓰지 않는다', async () => {
-    await Preferences.set({ key: 'trackedCharacters:daily', value: JSON.stringify(['a', 'b']) })
-    await getTrackedCharacterOcids('content')
-    await setTrackedCharacterOcids('content', [])
-    await expect(getTrackedCharacterOcids('content')).resolves.toEqual([])
+  it('네 레거시 키가 전부 없으면 아무것도 쓰지 않고 null을 반환한다', async () => {
+    await expect(getTrackedCharacterOcids()).resolves.toBeNull()
+    await expect(Preferences.get({ key: 'trackedCharacters' })).resolves.toEqual({ value: null })
+  })
+
+  it('레거시 목록이 빈 배열(명시적 전부 해제)이면 빈 배열로 이관한다', async () => {
+    await Preferences.set({ key: 'trackedCharacters:content', value: JSON.stringify([]) })
+
+    await expect(getTrackedCharacterOcids()).resolves.toEqual([])
+  })
+
+  it('마지막 선택 캐릭터는 content 값을 우선해 이관한다', async () => {
+    await Preferences.set({ key: 'trackedCharacters:content', value: JSON.stringify(['a']) })
+    await Preferences.set({ key: 'lastSelectedCharacter:content', value: 'ocid-content' })
+    await Preferences.set({ key: 'lastSelectedCharacter:boss', value: 'ocid-boss' })
+
+    await expect(getLastSelectedCharacter()).resolves.toBe('ocid-content')
+  })
+
+  it('content 쪽 마지막 선택이 없으면 boss 값을 이관한다', async () => {
+    await Preferences.set({ key: 'trackedCharacters:boss', value: JSON.stringify(['a']) })
+    await Preferences.set({ key: 'lastSelectedCharacter:boss', value: 'ocid-boss' })
+
+    await expect(getLastSelectedCharacter()).resolves.toBe('ocid-boss')
+  })
+
+  it('이관 후 레거시 키를 전부 삭제한다', async () => {
+    await Preferences.set({ key: 'trackedCharacters:content', value: JSON.stringify(['a']) })
+    await Preferences.set({ key: 'trackedCharacters:boss', value: JSON.stringify(['b']) })
+    await Preferences.set({ key: 'trackedCharacters:daily', value: JSON.stringify(['c']) })
+    await Preferences.set({ key: 'trackedCharacters:weekly', value: JSON.stringify(['d']) })
+    await Preferences.set({ key: 'lastSelectedCharacter:content', value: 'ocid-content' })
+    await Preferences.set({ key: 'lastSelectedCharacter:boss', value: 'ocid-boss' })
+
+    await getTrackedCharacterOcids()
+
+    for (const key of [
+      'trackedCharacters:content',
+      'trackedCharacters:boss',
+      'trackedCharacters:daily',
+      'trackedCharacters:weekly',
+      'lastSelectedCharacter:content',
+      'lastSelectedCharacter:boss',
+    ]) {
+      await expect(Preferences.get({ key })).resolves.toEqual({ value: null })
+    }
+  })
+
+  it('통합 키가 이미 있으면 레거시 값으로 덮어쓰지 않는다', async () => {
+    await setTrackedCharacterOcids([])
+    await Preferences.set({ key: 'trackedCharacters:content', value: JSON.stringify(['a']) })
+
+    await expect(getTrackedCharacterOcids()).resolves.toEqual([])
+  })
+
+  it('getLastSelectedCharacter만 호출해도 이관이 수행된다', async () => {
+    await Preferences.set({ key: 'trackedCharacters:content', value: JSON.stringify(['a']) })
+    await Preferences.set({ key: 'lastSelectedCharacter:content', value: 'ocid-content' })
+
+    await getLastSelectedCharacter()
+
+    await expect(Preferences.get({ key: 'trackedCharacters' })).resolves.toEqual({
+      value: JSON.stringify(['a']),
+    })
+  })
+
+  it('추적 목록과 마지막 선택을 동시에 조회해도(스토어의 Promise.all) 합집합이 유실되지 않는다', async () => {
+    await Preferences.set({ key: 'trackedCharacters:content', value: JSON.stringify(['a']) })
+    await Preferences.set({ key: 'trackedCharacters:boss', value: JSON.stringify(['b']) })
+
+    const [ocids] = await Promise.all([getTrackedCharacterOcids(), getLastSelectedCharacter()])
+
+    expect(ocids).toEqual(['a', 'b'])
+    await expect(getTrackedCharacterOcids()).resolves.toEqual(['a', 'b'])
   })
 })
 
 describe('마지막 선택 캐릭터', () => {
   it('저장 전에는 null을 반환한다', async () => {
-    await expect(getLastSelectedCharacter('content')).resolves.toBeNull()
+    await expect(getLastSelectedCharacter()).resolves.toBeNull()
   })
 
   it('setLastSelectedCharacter 후 getLastSelectedCharacter로 저장한 ocid를 그대로 읽는다', async () => {
-    await setLastSelectedCharacter('content', 'ocid-1')
-    await expect(getLastSelectedCharacter('content')).resolves.toBe('ocid-1')
-  })
-
-  it('content와 boss는 서로 독립된 키를 쓴다', async () => {
-    await setLastSelectedCharacter('content', 'ocid-1')
-    await expect(getLastSelectedCharacter('boss')).resolves.toBeNull()
+    await setLastSelectedCharacter('ocid-1')
+    await expect(getLastSelectedCharacter()).resolves.toBe('ocid-1')
   })
 
   it('clearLastSelectedCharacter 호출 후 다시 null을 반환한다', async () => {
-    await setLastSelectedCharacter('content', 'ocid-1')
-    await clearLastSelectedCharacter('content')
-    await expect(getLastSelectedCharacter('content')).resolves.toBeNull()
+    await setLastSelectedCharacter('ocid-1')
+    await clearLastSelectedCharacter()
+    await expect(getLastSelectedCharacter()).resolves.toBeNull()
   })
 })

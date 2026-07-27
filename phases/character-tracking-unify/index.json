@@ -1,0 +1,40 @@
+{
+  "project": "메이플 루틴",
+  "phase": "character-tracking-unify",
+  "steps": [
+    {
+      "step": 0,
+      "name": "storage-unify",
+      "status": "completed",
+      "started_at": "2026-07-27T14:41:09+0900",
+      "summary": "ADR-042 저장 계층 통합: keys.ts의 trackedCharactersKey()/lastSelectedCharacterKey()가 인자 없이 단일 키('trackedCharacters'/'lastSelectedCharacter') 반환. character-selection.ts에서 SchedulerKind와 모든 kind 파라미터 제거(get/set/clear 6개 함수), 레거시 daily/weekly 마이그레이션을 통합 1회 마이그레이션으로 교체 — trackedCharacters 키가 없을 때만 :content/:boss/:daily/:weekly 4키를 dedupe 합집합으로 이관(4키 전부 null이면 미기록), lastSelectedCharacter는 content 우선, 이관 후 레거시 6키 삭제. get 두 함수가 Promise.all로 동시 호출될 때 read-modify-write 경합으로 합집합이 유실되지 않도록 character-basic-cache와 동일한 프로미스 체인 락 적용. 호출부 5곳(content-scheduler/boss-scheduler/boss-profit/onboarding 스토어는 인자만 제거, tracking-mode는 content+boss 합집합 계산을 단일 읽기로 축소) 및 관련 테스트 단언 갱신. 주의: saveTrackedOcids의 refresh는 아직 전체 sync 그대로(#31 diff 동기화는 step 1~2 범위), CharacterTrackingPicker·manual-tracked-content.ts 무변경. 검증 — build/lint 통과, 1186 tests 통과(character-selection 20개 재작성 포함).",
+      "completed_at": "2026-07-27T14:45:56+0900"
+    },
+    {
+      "step": 1,
+      "name": "content-store-diff",
+      "status": "completed",
+      "started_at": "2026-07-27T14:45:56+0900",
+      "summary": "ADR-043 결정 2·3을 컨텐츠 스케줄러 스토어의 saveTrackedOcids에만 적용: added = ocids - previousOcids를 도출해, added가 비면(제거·무변경) syncSchedules를 아예 호출하지 않고 메모리 characters를 새 집합으로 필터만 하고(네트워크 0회), added가 있으면 syncSchedules(added)로 추가분만 조회한 뒤 유지 캐릭터의 기존 메모리 뷰(없으면 신규 헬퍼 readCachedView로 scheduler-cache 폴백, 네트워크 아님)와 병합해 sortByCachedLevel로 정렬한다 — 최종 characters 집합은 정확히 ocids. 수동 모드 시드는 기존대로 added만 대상이되, refresh를 안 거치게 되면서 새 캐릭터의 멤버십이 화면 상태에 안 들어가는 회귀를 막으려 시드 직후 added의 manualTrackedContent를 읽어 manualTrackedByOcid에 머지. sync 실패는 refresh와 동일하게 status:'error'+network로 처리하고 완료 토스트는 기존 동작 그대로 유지. refresh·loadTrackedOcids(전체 동기화 경로)·schedule-sync·시드 로직은 무변경. 검증 — build/lint 통과, 1192 tests 통과(신규 6개: 무변경·순수제거 시 미호출, 추가 시 added만 1회 호출+유지 캐릭터 캐시조차 미조회, 최초 선택 전원 조회, 추가+제거 혼합 집합 일치, 수동 모드 멤버십 반영). 주의: boss 스토어(features/boss-scheduler/store.ts)에 동일 규칙 필요 — step 2 범위.",
+      "completed_at": "2026-07-27T14:51:02+0900"
+    },
+    {
+      "step": 2,
+      "name": "boss-store-diff",
+      "status": "completed",
+      "started_at": "2026-07-27T14:51:02+0900",
+      "summary": "ADR-043 결정 2·3을 보스 스케줄러 스토어의 saveTrackedOcids에 step 1(컨텐츠)과 동일한 규칙으로 미러링: added = ocids - previousOcids가 비면 syncSchedules 미호출 + 메모리 characters를 새 집합으로 필터만(네트워크 0회), added가 있으면 syncSchedules(added)로 추가분만 조회한 뒤 유지 캐릭터의 기존 메모리 뷰(없으면 신규 헬퍼 readCachedView로 scheduler-cache 폴백)와 병합·sortByCachedLevel 정렬 — 최종 characters 집합은 정확히 ocids이고 유지 캐릭터의 보스 고유 필드(weeklyBosses/monthlyBosses/클리어 카운트)는 재조회 없이 그대로 보존된다. 수동 모드 시드도 컨텐츠와 동일하게 added 대상 + 시드 직후 멤버십을 manualTrackedByOcid에 머지(refresh를 안 거쳐 새 캐릭터 멤버십이 빠지는 회귀 방지). 보스 특유 처리 — 파티 설정(loadPartySizes)은 로컬 SQLite 조회라 diff와 무관하게 항상 최종 ocids 기준으로 다시 채우고(추가 캐릭터 설정 반영·제거 캐릭터 항목 제거) 실패는 refresh와 동일하게 조용히 무시. refresh·loadTrackedOcids·loadPartySizes·setPartySize·수동 보스 액션·BossScreen·schedule-sync 무변경. 검증 — build/lint 통과, 1200 tests 통과(신규 8개: 무변경(순서만 다름)·순수제거 시 미호출, 추가 시 added만 1회 호출+getCachedSchedulerState 미조회, 유지 캐릭터 보스 필드 보존, 최초 선택 전원 조회, 추가+제거 혼합 집합 일치, 파티 설정 최종 집합 재조회, 수동 모드 멤버십 반영).",
+      "completed_at": "2026-07-27T14:55:05+0900"
+    },
+    {
+      "step": 3,
+      "name": "picker-save-guard",
+      "status": "completed",
+      "started_at": "2026-07-27T14:55:05+0900",
+      "summary": "ADR-043 결정 1(이슈 #31 (a)): CharacterTrackingPicker의 저장 버튼을 선택 집합이 저장된 집합과 동일할 때 비활성화. 순수 컴포넌트 변경으로 스토어·저장 계층은 건드리지 않고 props(trackedOcids)·state(selectedOcids)만 비교한다. 판정은 신규 모듈 로컬 헬퍼 isSameOcidSet(Set 크기 비교 + 전 원소 멤버십 확인) — 그리드 toggle이 ocid를 배열 끝에 append해 같은 집합도 배열 순서가 달라지므로 배열/문자열 비교(===·JSON.stringify·길이)를 쓰면 비활성이 오작동한다. 버튼은 disabled + 프로젝트 기존 비활성 패턴(disabled:opacity-50, ContentCharacterStep·AccountSelectionList와 동일)만 추가하고 기존 활성 스타일·레이아웃·onSave/onClose 시그니처는 무변경. CharacterTrackingGrid(append 토글)·온보딩 ContentCharacterStep 무변경. 검증 — build/lint 통과, 1204 tests 통과(신규 4개: 초기 렌더 비활성, 추가 체크 시 활성, 체크→해제로 원복 시 재비활성, 해제 후 재선택으로 배열 순서만 달라진 동일 집합에서 비활성 유지(집합 비교 회귀 방지) — TDD로 3개 선실패 확인 후 구현). 기존 '저장 클릭 시 현재 선택으로 onSave' 테스트도 그대로 통과.",
+      "completed_at": "2026-07-27T14:57:03+0900"
+    }
+  ],
+  "created_at": "2026-07-27T14:41:09+0900",
+  "completed_at": "2026-07-27T14:57:03+0900"
+}

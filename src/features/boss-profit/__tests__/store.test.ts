@@ -854,7 +854,7 @@ describe('useBossProfitStore', () => {
 
       await useBossProfitStore.getState().loadTrackedOcids()
 
-      expect(getTrackedCharacterOcidsMock).toHaveBeenCalledWith('boss')
+      expect(getTrackedCharacterOcidsMock).toHaveBeenCalledWith()
       expect(useBossProfitStore.getState().trackedOcids).toEqual(['ocid-1'])
     })
 
