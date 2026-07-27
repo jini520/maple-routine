@@ -3,6 +3,15 @@ import { useBodyScrollLock } from '../../lib/use-body-scroll-lock'
 import type { CharacterPickerEntry } from '../../types'
 import { CharacterTrackingGrid } from './CharacterTrackingGrid'
 
+// ADR-043 결정 1: 그리드의 토글이 ocid를 배열 끝에 append하므로 같은 집합이어도 배열
+// 순서가 달라진다 — 저장 버튼 활성 여부는 반드시 멤버십(집합)으로만 판정한다.
+function isSameOcidSet(a: string[], b: string[]): boolean {
+  const left = new Set(a)
+  const right = new Set(b)
+  if (left.size !== right.size) return false
+  return [...left].every((ocid) => right.has(ocid))
+}
+
 export interface CharacterTrackingPickerProps {
   entries: CharacterPickerEntry[]
   trackedOcids: string[]
@@ -13,6 +22,7 @@ export interface CharacterTrackingPickerProps {
 export function CharacterTrackingPicker(props: CharacterTrackingPickerProps): React.JSX.Element {
   useBodyScrollLock()
   const [selectedOcids, setSelectedOcids] = useState<string[]>(props.trackedOcids)
+  const isUnchanged = isSameOcidSet(selectedOcids, props.trackedOcids)
 
   return (
     <div
@@ -42,7 +52,8 @@ export function CharacterTrackingPicker(props: CharacterTrackingPickerProps): Re
           <button
             type="button"
             onClick={() => props.onSave(selectedOcids)}
-            className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-bg hover:bg-primary-hover"
+            disabled={isUnchanged}
+            className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-bg hover:bg-primary-hover disabled:opacity-50"
           >
             저장
           </button>
