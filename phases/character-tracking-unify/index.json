@@ -13,7 +13,10 @@
     {
       "step": 1,
       "name": "content-store-diff",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-07-27T14:45:56+0900",
+      "summary": "ADR-043 결정 2·3을 컨텐츠 스케줄러 스토어의 saveTrackedOcids에만 적용: added = ocids - previousOcids를 도출해, added가 비면(제거·무변경) syncSchedules를 아예 호출하지 않고 메모리 characters를 새 집합으로 필터만 하고(네트워크 0회), added가 있으면 syncSchedules(added)로 추가분만 조회한 뒤 유지 캐릭터의 기존 메모리 뷰(없으면 신규 헬퍼 readCachedView로 scheduler-cache 폴백, 네트워크 아님)와 병합해 sortByCachedLevel로 정렬한다 — 최종 characters 집합은 정확히 ocids. 수동 모드 시드는 기존대로 added만 대상이되, refresh를 안 거치게 되면서 새 캐릭터의 멤버십이 화면 상태에 안 들어가는 회귀를 막으려 시드 직후 added의 manualTrackedContent를 읽어 manualTrackedByOcid에 머지. sync 실패는 refresh와 동일하게 status:'error'+network로 처리하고 완료 토스트는 기존 동작 그대로 유지. refresh·loadTrackedOcids(전체 동기화 경로)·schedule-sync·시드 로직은 무변경. 검증 — build/lint 통과, 1192 tests 통과(신규 6개: 무변경·순수제거 시 미호출, 추가 시 added만 1회 호출+유지 캐릭터 캐시조차 미조회, 최초 선택 전원 조회, 추가+제거 혼합 집합 일치, 수동 모드 멤버십 반영). 주의: boss 스토어(features/boss-scheduler/store.ts)에 동일 규칙 필요 — step 2 범위.",
+      "completed_at": "2026-07-27T14:51:30+0900"
     },
     {
       "step": 2,
