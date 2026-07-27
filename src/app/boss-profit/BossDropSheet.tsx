@@ -274,7 +274,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
             </>
           )}
 
-          <div className="sticky bottom-0 border-t border-border bg-bg px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+          <div className="sticky bottom-0 border-t border-border bg-bg px-4 pt-3 pb-[calc(0.75rem+var(--sa-bottom))]">
             <button
               type="button"
               onClick={() => {
@@ -394,7 +394,7 @@ function BoxDrillDown(props: BoxDrillDownProps): React.JSX.Element {
         </section>
       )}
 
-      <div className="sticky bottom-0 border-t border-border bg-bg px-4 py-3">
+      <div className="sticky bottom-0 border-t border-border bg-bg px-4 pt-3 pb-[calc(0.75rem+var(--sa-bottom))]">
         <button
           type="button"
           disabled={!canConfirm}
