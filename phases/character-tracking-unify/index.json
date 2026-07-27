@@ -32,7 +32,7 @@
       "status": "completed",
       "started_at": "2026-07-27T14:55:05+0900",
       "summary": "ADR-043 결정 1(이슈 #31 (a)): CharacterTrackingPicker의 저장 버튼을 선택 집합이 저장된 집합과 동일할 때 비활성화. 순수 컴포넌트 변경으로 스토어·저장 계층은 건드리지 않고 props(trackedOcids)·state(selectedOcids)만 비교한다. 판정은 신규 모듈 로컬 헬퍼 isSameOcidSet(Set 크기 비교 + 전 원소 멤버십 확인) — 그리드 toggle이 ocid를 배열 끝에 append해 같은 집합도 배열 순서가 달라지므로 배열/문자열 비교(===·JSON.stringify·길이)를 쓰면 비활성이 오작동한다. 버튼은 disabled + 프로젝트 기존 비활성 패턴(disabled:opacity-50, ContentCharacterStep·AccountSelectionList와 동일)만 추가하고 기존 활성 스타일·레이아웃·onSave/onClose 시그니처는 무변경. CharacterTrackingGrid(append 토글)·온보딩 ContentCharacterStep 무변경. 검증 — build/lint 통과, 1204 tests 통과(신규 4개: 초기 렌더 비활성, 추가 체크 시 활성, 체크→해제로 원복 시 재비활성, 해제 후 재선택으로 배열 순서만 달라진 동일 집합에서 비활성 유지(집합 비교 회귀 방지) — TDD로 3개 선실패 확인 후 구현). 기존 '저장 클릭 시 현재 선택으로 onSave' 테스트도 그대로 통과.",
-      "completed_at": "2026-07-27T14:56:30+0900"
+      "completed_at": "2026-07-27T14:57:03+0900"
     }
   ],
   "created_at": "2026-07-27T14:41:09+0900"
