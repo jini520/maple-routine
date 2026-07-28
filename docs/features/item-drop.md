@@ -1,8 +1,8 @@
 # 물욕 아이템 드랍 (Item Drop)
 
 > **범위**: 보스별 물욕템 획득 기록, 랜덤 컨테이너 결과 선택, 드롭 입력 시트, 고가 아이템 리스트. 수익 합산·고가 드롭 연출은 [boss-profit.md](./boss-profit.md), 게임 데이터 파일은 [../foundation/game-data.md](../foundation/game-data.md).
-> **관련 소스**: `app/item-drop/` · `features/item-drop/` · `features/drop-effect/` · `storage/boss-drop-records`·`storage/drop-effect` · `lib/item-icons` · `BossDropSheet`(vaul Drawer) · `src/data/item-drop-table.json`·`boss-ring-boxes.json`·`accessory-boxes.json`·`item-icons.json`·`valuable-drops.json`.
-> **관련 ADR**: [[ADR-011]] [[ADR-010]] [[ADR-038]] [[ADR-039]] [[ADR-040]] [[ADR-041]] [[ADR-045]]. **관련 문서**: [../foundation/game-data.md](../foundation/game-data.md), [boss-profit.md](./boss-profit.md).
+> **관련 소스**: `app/item-drop/` · `features/item-drop/` · `features/drop-effect/` · `storage/boss-drop-records`·`storage/drop-effect` · `lib/item-icons`·`lib/drop-effect-frames`·`lib/drop-effect-layout` · `DropEffectOverlay` · `BossDropSheet`(vaul Drawer) · `src/data/item-drop-table.json`·`boss-ring-boxes.json`·`accessory-boxes.json`·`item-icons.json`·`valuable-drops.json`.
+> **관련 ADR**: [[ADR-011]] [[ADR-010]] [[ADR-038]] [[ADR-039]] [[ADR-040]] [[ADR-041]] [[ADR-045]] [[ADR-048]]. **관련 문서**: [../foundation/game-data.md](../foundation/game-data.md), [boss-profit.md](./boss-profit.md).
 
 ## 정책
 - **화면 구조**: 2단계 — 드랍 탭 진입 시 **보스 목록** → 하나 선택 시 그 보스의 **물욕템 그리드 + 획득 히스토리**.
@@ -20,6 +20,9 @@
 - **카테고리 헤더 아이콘**([[ADR-040]] 결정 4): lucide — 장비 `Sword`, 소비 `FlaskConical`, 고정 `Pin`.
 - **랜덤 상자 드릴다운**: 반지 상자·칠흑 장신구 상자는 시트 내 드릴다운으로 개봉 결과 직접 선택 기록. 반지 상자 결과([[ADR-041]]): 백옥 기준 목록·저가치 반지 '기타' 묶음·반지→레벨 선택 순서·연마석 레벨 없음.
 - **고가 연출 on/off 토글**([[ADR-040]] 결정 6): 시트 헤더에 전역 토글(`storage/drop-effect`·`features/drop-effect`, 기본 표시). 고가 아이템 드롭 시 전체화면 연출(ScreenEff/DropEff 프레임 시퀀스, 검은배경 JPEG+black-crush+`mix-blend:screen` 으로 29MB→~2MB, 원본 PNG 미커밋·최적화본만 커밋). 고가 리스트 `valuable-drops.json`([[ADR-038]] 1차 + [[ADR-040]] 익셉셔널 해머 추가). 보스 수익 목록의 고가 강조는 [boss-profit.md](./boss-profit.md) [[ADR-045]].
+- **DropEff 프레임 정렬**([[ADR-048]]): 프레임 비트맵 크기가 제각각(가로 38~285px)이라 하단-중앙 앵커로는 기둥 축이 최대 26px 흔들린다. 최적화 과정에서 유실된 WZ `origin`을 템플릿 정합으로 복원해 `lib/drop-effect-layout.ts` 테이블(39프레임 `[x, y]`)로 두고, `DropEffectOverlay`가 그 점을 화면 앵커에 맞춘다(`transformOrigin:'0 0'` + `translate(-x·S,-y·S) scale(S)`, `src`와 `transform` 동시 갱신). y는 전부 비트맵 하단(= 지면선) 고정.
+- **ScreenEff 배율 고정**([[ADR-048]] 결정 5): ScreenEff 크롭은 이미 버스트 원점 기준 중앙 정렬이라 origin 테이블이 필요 없다. 문제는 `object-fit:cover` 가 프레임마다 자기 크기로 배율을 따로 잡아 버스트가 들썩이는 것(390x844 기준 1.232~2.198, 프레임 0→1 에서 42% 점프). 기준 프레임(1146x685)이 화면을 덮는 배율 하나를 전 프레임에 적용한다 — `left-1/2 top-1/2` + `translate(-50%,-50%) scale(S)`, `max-w-none`(preflight 해제).
+- **프레임 픽셀·좌표 동시 교체**([[ADR-048]] 결정 6): `img.src` 교체는 비동기라(39프레임 전부 대입 직후 `complete=false`) 좌표만 먼저 옮기면 이전 프레임이 새 origin 으로 그려져 산발적으로 한 프레임 튄다. 마운트 시 DropEff 프레임을 미리 디코드해 두고(ref 로 보유), 그래도 준비 전이면 `applyDropFrame` 이 좌표를 유지한 채 반환한다(매 tick 재호출로 자동 복구). 표시 여부도 같은 함수가 관리.
 
 ### 바텀시트 = vaul(Drawer) ([[ADR-039]])
 자체 `createPortal` 바텀시트를 vaul 라이브러리로 교체(자체구현은 데스크톱 마우스 드래그 닫기 불가·스냅 복귀·fling 없음). 공개 API(`onClose`/`children`/`testId`)·시각 스킨(오버레이 `bg-bg/70`·`rounded-t-[20px]`·`z-[60]`·그랩 핸들·`max-h-[82vh]`·safe-area 패딩) 유지해 `BossDropSheet` 무변경. 부모 조건부 마운트는 내부 `open` 상태 + `onAnimationEnd`(닫힘 후 `onClose`). 포커스 트랩·Esc·`aria` vaul 내장. jsdom 폴리필(pointer capture·`scrollIntoView`·`matchMedia`·`ResizeObserver`) `setupFiles` 추가. 네이티브 변경 없어 OTA 배포 가능.
