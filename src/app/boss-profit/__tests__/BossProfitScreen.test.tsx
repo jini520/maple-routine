@@ -865,6 +865,12 @@ describe('BossProfitScreen', () => {
   it('ADR-047 후속: stuck 헤더 하단에 경계 페이드(그라데이션+블러)를 둔다', () => {
     mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()] })
 
+    // jsdom은 getBoundingClientRect가 모두 0이라 헤더 높이가 측정되지 않는다. 페이드는 측정 전에는
+    // 위치를 잡을 수 없어 렌더를 보류하므로(카드 최상단에 깔리는 것 방지), 실제 레이아웃 높이를 주입한다.
+    const rect = vi
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockReturnValue({ height: 64 } as DOMRect)
+
     renderBossProfitScreen()
     const header = screen.getByRole('button', { name: /낟낟/ })
     const card = header.closest('.isolate')
@@ -882,7 +888,10 @@ describe('BossProfitScreen', () => {
     // (셸엔 overflow-hidden을 걸 수 없어 클리핑도 불가) — 본문 범위 제약 박스 안의 sticky로 둔다.
     expect(header.querySelector('.bg-gradient-to-b')).toBeNull()
     expect(fade?.parentElement).toHaveClass('absolute', 'pointer-events-none')
-    expect(fade?.parentElement?.style.top).not.toBe('') // 헤더 실측 높이 주입 배선
+    // 제약 박스 top = 헤더 실측 높이 — 0이면 카드 최상단(헤더 위)에 깔린다
+    expect(fade?.parentElement?.style.top).toBe('64px')
+
+    rect.mockRestore()
   })
 
   it('ADR-047 후속: 고가 드롭 배지도 헤더와 함께 고정된다(높이 0 sticky 레일)', () => {
