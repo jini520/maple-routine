@@ -585,6 +585,29 @@ function CharacterAccordion(props: {
           // 카드와 어긋난다(사용자 요청) — ADR-045의 원래 구조 그대로, z-10도 배지 자신이 갖는다.
           <ValuableDropBadge drops={valuableDrops} label="고가 드롭" className="absolute -right-1.5 -top-2 z-10" />
         ))}
+
+      {/* stuck 헤더 아래 경계 페이드(ADR-047 후속) — 중첩 sticky에서는 콘텐츠가 지나가는 경계가 여기라,
+          페이지 헤더에서 뺀 공용 레시피를 카드 표면색(from-surface)으로 여기에 붙인다. 헤더의 자식
+          (top-full)으로 두면 헤더가 카드 끝에서 릴리스될 때 페이드가 카드 밖으로 새어나오고, 셸엔
+          overflow-hidden을 걸 수 없어(sticky 무력화) 클리핑도 못 한다. 그래서 본문 범위(top=헤더 높이 ~
+          카드 바닥)로 제한한 박스 안의 sticky 요소로 둔다 — sticky가 자기 박스를 카드 안에 붙잡아준다. */}
+      {isExpanded && (
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-[5]"
+          style={{ top: headerHeight }}
+          aria-hidden="true"
+        >
+          <div
+            className="sticky h-8 bg-gradient-to-b from-surface to-transparent backdrop-blur-sm"
+            style={{
+              top: props.stickyTop + headerHeight,
+              maskImage: 'linear-gradient(to bottom, black, transparent)',
+              WebkitMaskImage: 'linear-gradient(to bottom, black, transparent)',
+            }}
+          />
+        </div>
+      )}
+
       <div className={shellClass}>
         <button
           ref={headerRef}
@@ -600,19 +623,6 @@ function CharacterAccordion(props: {
               : 'flex w-full items-center gap-3 rounded-[14px] bg-surface border border-border p-4'
           }
         >
-          {/* stuck 헤더 아래 경계 페이드(ADR-047 후속) — 중첩 sticky에서는 콘텐츠가 지나가는 경계가
-              여기라, 페이지 헤더에서 뺀 공용 레시피를 카드 표면색(from-surface)으로 여기에 붙인다.
-              헤더와 함께 움직이도록 헤더 안에 두고, button 자식은 phrasing content여야 해서 span이다. */}
-          {isExpanded && (
-            <span
-              className="pointer-events-none absolute inset-x-0 top-full h-8 bg-gradient-to-b from-surface to-transparent backdrop-blur-sm"
-              style={{
-                maskImage: 'linear-gradient(to bottom, black, transparent)',
-                WebkitMaskImage: 'linear-gradient(to bottom, black, transparent)',
-              }}
-              aria-hidden="true"
-            />
-          )}
           <CharacterAvatar characterName={group.characterName} imageUrl={group.imageUrl} />
           <span className="flex-1 truncate text-left text-sm font-semibold text-text">{group.characterName}</span>
           <span className="text-sm font-bold text-text tabular-nums">{totalMeso.toLocaleString()} 메소</span>

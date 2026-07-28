@@ -867,15 +867,22 @@ describe('BossProfitScreen', () => {
 
     renderBossProfitScreen()
     const header = screen.getByRole('button', { name: /낟낟/ })
-    expect(header.querySelector('.bg-gradient-to-b')).toBeNull() // 접힘: 고정 대상이 아니라 페이드도 없음
+    const card = header.closest('.isolate')
+    expect(card?.querySelector('.bg-gradient-to-b')).toBeNull() // 접힘: 고정 대상이 아니라 페이드도 없음
 
     fireEvent.click(header)
 
-    // 중첩 sticky에서는 콘텐츠가 지나가는 경계가 카드 헤더 아래다 — 페이드가 헤더와 함께 움직이도록
-    // 헤더 안에 둔다(top-full). 배경색은 페이지가 아니라 카드 표면색(from-surface).
-    const fade = header.querySelector('.bg-gradient-to-b')
+    // 중첩 sticky에서는 콘텐츠가 지나가는 경계가 카드 헤더 아래다. 배경색은 페이지가 아니라
+    // 카드 표면색(from-surface).
+    const fade = card?.querySelector('.bg-gradient-to-b')
     expect(fade).not.toBeNull()
-    expect(fade).toHaveClass('backdrop-blur-sm', 'from-surface', 'top-full')
+    expect(fade).toHaveClass('backdrop-blur-sm', 'from-surface', 'sticky')
+
+    // 헤더 자식(top-full)으로 두면 헤더가 카드 끝에서 릴리스될 때 페이드가 카드 밖으로 새어나온다
+    // (셸엔 overflow-hidden을 걸 수 없어 클리핑도 불가) — 본문 범위 제약 박스 안의 sticky로 둔다.
+    expect(header.querySelector('.bg-gradient-to-b')).toBeNull()
+    expect(fade?.parentElement).toHaveClass('absolute', 'pointer-events-none')
+    expect(fade?.parentElement?.style.top).not.toBe('') // 헤더 실측 높이 주입 배선
   })
 
   it('ADR-047 후속: 고가 드롭 배지도 헤더와 함께 고정된다(높이 0 sticky 레일)', () => {
