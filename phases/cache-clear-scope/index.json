@@ -16,7 +16,7 @@
       "status": "completed",
       "started_at": "2026-07-29T03:26:05+0900",
       "summary": "db.ts의 CREATE 상수 4개를 TABLE_DEFINITIONS 배열([{name, createSql}]) 하나로 합치고 이름 목록을 export — `import { BOSS_PROFIT_TABLE_NAMES } from 'src/storage/sqlite/db.ts'`(readonly string[], 순서: boss_profit_records → boss_party_settings → boss_profit_period_checks → boss_drop_records). openBossProfitDb는 배열 순회로 CREATE 후 메이린 마이그레이션 2개 실행(순서 불변, 마이그레이션은 배열 밖 별도 상수 유지). 회귀 가드 테스트는 src/storage/sqlite/__tests__/db.test.ts의 describe('BOSS_PROFIT_TABLE_NAMES') — node:fs로 db.ts 소스를 읽어 /CREATE TABLE IF NOT EXISTS (\\w+)/ 매치 집합과 export 목록을 정렬 비교(배열을 우회한 직접 db.execute까지 탐지). SQL 본문은 한 글자도 변경 없음(git diff -w에서 컬럼·PK 라인이 전부 context). 동작 불변 — cache-data.ts는 아직 CLEARED_TABLES 하드코딩 3개를 쓰고 있고 그 교체는 step 2 범위. AC: build/lint 통과, db.test.ts 13개 전부 통과. 전체 테스트에서 BossProfitScreen 2건·boss-profit store 1건이 실패하지만 변경 전 코드(stash)에서도 동일하게 실패하는 선재 결함.",
-      "completed_at": "2026-07-29T03:29:30+0900"
+      "completed_at": "2026-07-29T03:29:59+0900"
     },
     {
       "step": 2,
