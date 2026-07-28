@@ -847,6 +847,45 @@ describe('BossProfitScreen', () => {
     expect(screen.getByText('벨로나').closest('li')).not.toHaveClass('valuable-drop-row')
   })
 
+  // 펼친 캐릭터 카드 헤더 sticky 고정(ADR-047)
+  it('ADR-047: 카드를 펼치면 헤더(초상화·이름·총액)가 sticky로 고정된다', () => {
+    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()] })
+
+    renderBossProfitScreen()
+    // 펼치면 파티원 스테퍼(aria-label에 캐릭터명 포함)가 생겨 /낟낟/ 쿼리가 모호해지므로, 헤더 참조를
+    // 클릭 전에 잡아 재사용한다(React가 같은 DOM 노드의 className만 갱신 — 기존 강조 효과 테스트와 동일).
+    const header = screen.getByRole('button', { name: /낟낟/ })
+    expect(header).not.toHaveClass('sticky') // 접힘: 단독 카드라 고정 대상 없음
+
+    fireEvent.click(header)
+
+    expect(header).toHaveClass('sticky')
+    // 아래로 지나가는 보스 행을 가려야 하므로 자기 배경이 필요하고, 드롭 아이콘(inline zIndex 1~3)보다
+    // 위·고가 드롭 배지(z-10)보다 아래 층이어야 한다.
+    expect(header).toHaveClass('bg-surface')
+    expect(header).toHaveClass('z-[5]')
+  })
+
+  it('ADR-047: 펼침 셸에는 overflow-hidden이 없다(sticky 헤더 무력화 방지 회귀 가드)', () => {
+    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()] })
+
+    renderBossProfitScreen()
+    const header = screen.getByRole('button', { name: /낟낟/ })
+    fireEvent.click(header)
+
+    // overflow:hidden 조상은 스크롤포트를 만들어 sticky를 죽인다 — 셸에 다시 붙으면 이 테스트가 잡는다.
+    expect(header.parentElement).not.toHaveClass('overflow-hidden')
+  })
+
+  it('ADR-047: 소계 footer가 셸 하단 모서리를 직접 라운딩한다(overflow-hidden 대체)', () => {
+    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()] })
+
+    renderBossProfitScreen()
+    fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
+
+    expect(screen.getByText('낟낟 합계').parentElement).toHaveClass('rounded-b-[14px]')
+  })
+
   // 총 수익 헤드라인의 기간 전체 고가 드롭 뱃지(ADR-046) — 캐릭터 카드 배지와 같은 컴포넌트를 쓰되
   // aria-label로 구분한다("고가 드롭" = 캐릭터 카드, "이 기간 고가 드롭" = 헤드라인 요약).
   it('ADR-046: 기간에 고가 드롭이 있으면 총 수익 헤드라인에도 고가 드롭 뱃지가 표시된다', () => {

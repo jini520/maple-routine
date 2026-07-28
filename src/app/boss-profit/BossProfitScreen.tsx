@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   ChevronDown,
@@ -263,7 +263,8 @@ function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Element {
 
 function AccordionFooter(props: { characterName: string; totalMeso: number }): React.JSX.Element {
   return (
-    <div className="flex items-center justify-between px-4 py-3 bg-surface-2 text-sm">
+    // rounded-b-[14px]: 셸의 overflow-hidden을 뺐으므로(ADR-047) 하단 모서리를 footer가 직접 깎는다.
+    <div className="flex items-center justify-between rounded-b-[14px] px-4 py-3 bg-surface-2 text-sm">
       <span className="text-text-muted">{props.characterName} 합계</span>
       <span className="font-semibold tabular-nums text-text">{props.totalMeso.toLocaleString()} 메소</span>
     </div>
@@ -503,6 +504,7 @@ function CharacterAccordion(props: {
   setBossDrops: BossProfitStore['setBossDrops']
   now: Date
   isMonthlyBossQueryable: boolean
+  stickyTop: number
 }): React.JSX.Element {
   const [isExpanded, setIsExpanded] = useState(false)
   const { group } = props
@@ -514,7 +516,9 @@ function CharacterAccordion(props: {
   const valuableDrops = collectGroupValuableDrops(group, props.dropsByRowKey)
   const hasValuable = valuableDrops.length > 0
   const shellClass = [
-    isExpanded ? 'rounded-[14px] bg-surface border border-border overflow-hidden' : '',
+    // overflow-hidden을 두지 않는다(ADR-047) — overflow:hidden 조상은 스크롤포트를 만들어 헤더 sticky를
+    // 무력화한다. 하단 모서리 클리핑은 AccordionFooter의 rounded-b-[14px]가 대신한다.
+    isExpanded ? 'rounded-[14px] bg-surface border border-border' : '',
     hasValuable
       ? isExpanded
         ? 'valuable-drop-card valuable-drop-card--expanded'
@@ -539,9 +543,13 @@ function CharacterAccordion(props: {
         <button
           type="button"
           onClick={() => setIsExpanded((prev) => !prev)}
+          // 펼침 헤더는 카드 안에서 sticky로 고정한다(ADR-047) — top은 페이지 sticky 헤더 실측 높이라
+          // 그 바로 아래에 붙고, bg-surface가 밑으로 지나가는 보스 행을 가린다. z-[5]는 드롭 아이콘
+          // (relative + inline zIndex 1~3) 위 · 고가 드롭 배지(z-10, ADR-045) 아래 층.
+          style={isExpanded ? { top: props.stickyTop } : undefined}
           className={
             isExpanded
-              ? 'flex w-full items-center gap-3 p-4'
+              ? 'sticky z-[5] flex w-full items-center gap-3 rounded-t-[14px] bg-surface p-4'
               : 'flex w-full items-center gap-3 rounded-[14px] bg-surface border border-border p-4'
           }
         >
@@ -612,6 +620,29 @@ export function BossProfitScreen(): React.JSX.Element {
 
   const isEmpty = trackedOcids === null || trackedOcids.length === 0
 
+  // 펼친 캐릭터 카드 헤더를 이 페이지 sticky 헤더 "아래"에 붙이기 위한 실측 높이(ADR-047).
+  // 페이지 헤더는 불투명(bg-bg)하고 높이가 상태에 따라 가변이라(탭·기간 라벨·동기화 실패 경고·에러 문구·
+  // 총 수익 헤드라인 유무) 상수로 둘 수 없다. 미지원 환경은 0으로 남아 top-0으로 자연 degrade한다.
+  // 빈 상태에서는 헤더 자체가 렌더되지 않으므로 isEmpty가 풀릴 때 다시 붙인다.
+  const stickyHeaderRef = useRef<HTMLDivElement>(null)
+  const [stickyHeaderHeight, setStickyHeaderHeight] = useState(0)
+
+  useEffect(() => {
+    const element = stickyHeaderRef.current
+    if (element === null) return
+
+    const measure = (): void => {
+      setStickyHeaderHeight(element.getBoundingClientRect().height)
+    }
+    measure()
+
+    const observer = new ResizeObserver(measure)
+    observer.observe(element)
+    return () => {
+      observer.disconnect()
+    }
+  }, [isEmpty])
+
   if (isEmpty) {
     return (
       <div className="flex min-h-[calc(100dvh-var(--sa-top)-var(--sa-bottom)-4rem)] flex-col p-4">
@@ -662,7 +693,7 @@ export function BossProfitScreen(): React.JSX.Element {
       {/* 제목~총 수익 카드까지는 화면 상단에 고정하고 그 아래 캐릭터 아코디언 목록만
           스크롤되게 한다(사용자 요청, 2026-07-14) — content-scheduler/boss-scheduler와
           동일한 sticky 헤더 패턴(docs/UI_GUIDE.md "스크롤 영역" 참고)을 그대로 재사용한다. */}
-      <div className="sticky top-0 z-10 bg-bg px-4 pt-[calc(1rem+var(--sa-top))] pb-2">
+      <div ref={stickyHeaderRef} className="sticky top-0 z-10 bg-bg px-4 pt-[calc(1rem+var(--sa-top))] pb-2">
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h1 className="text-lg font-semibold text-text">보스 수익</h1>
@@ -831,6 +862,7 @@ export function BossProfitScreen(): React.JSX.Element {
               setBossDrops={setBossDrops}
               now={now}
               isMonthlyBossQueryable={periodQueryable}
+              stickyTop={stickyHeaderHeight}
             />
           ))}
       </div>

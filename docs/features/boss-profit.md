@@ -27,8 +27,10 @@
 
 ### 아코디언 (캐릭터별 드롭다운) — [[ADR-014]], [[ADR-023]] 재설계
 - 아바타(원형 이니셜 또는 캐릭터 이미지 — 미확정) + 이름 + 우측 금액 + Chevron.
-- **접힘/펼침 셸이 다르다**: 접힘 = 단독 카드(`rounded-[14px] bg-surface border border-border p-4`). 펼침 = 헤더+본문을 하나의 셸로(바깥 wrapper `rounded-[14px] bg-surface border border-border overflow-hidden`, 헤더는 자체 border/rounded/bg 없이 `p-4 flex items-center gap-3`, 본문은 `border-t border-border` 하나로 경계). 접힘 상태(다른 캐릭터 미펼침)는 완결된 단독 카드.
+- **접힘/펼침 셸이 다르다**: 접힘 = 단독 카드(`rounded-[14px] bg-surface border border-border p-4`). 펼침 = 헤더+본문을 하나의 셸로(바깥 wrapper `rounded-[14px] bg-surface border border-border`, 헤더는 자체 border/rounded 없이 `p-4 flex items-center gap-3`, 본문은 `border-t border-border` 하나로 경계). 접힘 상태(다른 캐릭터 미펼침)는 완결된 단독 카드. **셸에 `overflow-hidden`을 두지 않는다**([[ADR-047]]) — sticky 헤더를 무력화하므로, 하단 모서리 클리핑은 footer의 `rounded-b-[14px]`가 대신한다.
 - **헤더**: 아바타 `h-8 w-8 rounded-full bg-surface-2 ... text-xs font-bold text-text` + 이름 `flex-1 text-sm font-semibold text-text truncate` + 금액 `text-sm font-bold text-text tabular-nums`(우측 세로 정렬) + Chevron(`ChevronDown`/`ChevronUp`).
+- **펼침 헤더는 sticky** — [[ADR-047]]: 펼쳤을 때만 `sticky z-[5] rounded-t-[14px] bg-surface` + `top` = **페이지 sticky 헤더의 실측 높이**(`ResizeObserver`, 헤더 높이가 탭·경고 문구에 따라 가변이라 상수 불가). `bg-surface`는 아래로 지나가는 보스 행을 가리기 위해 필수이고, 그 때문에 `rounded-t-[14px]`로 셸 상단 라운딩을 따라가야 한다(사각 배경이 둥근 모서리를 덮음).
+  - **카드 내부 z 레이어**(`isolate` 안): 드롭 아이콘 `1~3` < sticky 헤더 `5` < 골드 회전 샤인 링(`.valuable-drop-card::before`) `6` < 고가 드롭 배지 `10`. 링이 헤더보다 낮으면 테두리 상단·좌우가 헤더 배경에 끊긴다.
 - **본문 — 보스 행(개별 카드 아닌 통합 리스트)**:
 ```
 행: flex items-start gap-3 p-4 border-b border-border last:border-b-0 (자체 rounded/bg/border 없음)
@@ -38,7 +40,7 @@
 ```
 캐릭터명은 헤더에만(행에서 제거). "가격 미확정" 행도 같은 2줄 구조 유지 — 금액 자리에 배지(`rounded-full bg-primary/15 px-2 py-0.5 text-xs font-medium text-primary`), 스테퍼는 `opacity-40` 비활성.
 - **파티원 스테퍼(−/+)**: `inline-flex items-center gap-2 rounded-full border border-border px-1 py-0.5`, 버튼 `h-[18px] w-[18px] rounded-full bg-surface-2`, 값 `text-xs tabular-nums`. 파티 관리 모달과 동일 조작(경계 비활성화).
-- **소계 footer**: `flex items-center justify-between px-4 py-3 bg-surface-2 text-sm`, 왼쪽 "{캐릭터명} 합계" `text-text-muted`, 오른쪽 금액 `font-semibold tabular-nums text-text`.
+- **소계 footer**: `flex items-center justify-between px-4 py-3 bg-surface-2 text-sm rounded-b-[14px]`, 왼쪽 "{캐릭터명} 합계" `text-text-muted`, 오른쪽 금액 `font-semibold tabular-nums text-text`. 하단 라운딩은 셸의 `overflow-hidden`을 뺀 대체 수단([[ADR-047]]) — 셸 하단에 닿는 배경 요소를 새로 추가할 땐 같은 처리가 필요하다.
 - 기본 **전부 접힘** 시작(추적 캐릭터 많을 때 과도한 길이 방지). 리스트 key `${tab}-${periodKey}-${ocid}` 로 탭/기간 이동 시 remount(펼침 상태 리셋, [[ADR-037]]).
 
 ### 총 수익 헤드라인 (sticky 헤더 최하단) — [[ADR-046]]
@@ -76,7 +78,7 @@
 ### 고가 드롭 강조 — [[ADR-045]]
 그 주차에 고가 아이템(`isValuableDrop`)을 먹은 항목을 네온 골드(`#f7d00d`)로 강조. `index.css` plain 클래스 3종, 모든 모션은 `prefers-reduced-motion: no-preference` 에서만(정적 폴백).
 - `.valuable-drop-card`(접힘 캐릭터 카드): `::before` `conic-gradient`+`mask(xor)` 2px 링을 `@property --vd-angle` 로 회전(회전 샤인 테두리) + `box-shadow` 글로우 맥동. 우상단 획득 아이템 배지(`Sparkles`+아이템 아이콘). `@property` 미지원 WebView는 정적 골드 테두리로 degrade.
-- `.valuable-drop-card--expanded`(펼침): 요소 자신 glow 맥동만 정지(회전 샤인 유지). 복합 선택자로 `@media` 규칙보다 명시도 우선.
+- `.valuable-drop-card--expanded`(펼침): 요소 자신 glow 맥동만 정지(회전 샤인 유지). 복합 선택자로 `@media` 규칙보다 명시도 우선. 링 `::before`는 `z-index: 6` — 펼침 sticky 헤더(`z-[5]`)의 불투명 배경에 테두리가 끊기지 않도록([[ADR-047]]).
 - `.valuable-drop-row`(펼침 시 고가 획득 보스 행): 테두리/글로우 아닌 **배경** — 아이템 쪽(`radial-gradient at 82% 50%`) 골드 글로우 + 미세 틴트 맥동. `<li>` 자체 `background`.
 - **총 수익 헤드라인 뱃지**([[ADR-046]]): 같은 배지 컴포넌트를 기간 전체 집계(`collectAllValuableDrops` = 캐릭터 그룹별 `collectGroupValuableDrops` 합집합)로 라벨행 우측에 재사용. 배치·라벨만 호출부가 정하고(카드 = `absolute -right-1.5 -top-2 z-10`·`aria-label="고가 드롭"`, 헤드라인 = 인라인·`aria-label="이 기간 고가 드롭"`) 외형·아이콘 스택(최대 3 + `+N`) 규칙은 단일 구현. 드롭 없으면 미렌더.
 
