@@ -369,4 +369,64 @@ describe('AppShell', () => {
       expect(screen.getByRole('navigation')).toBeInTheDocument()
     })
   })
+
+  // ADR-050: iOS WKWebView가 두 손가락 동시 탭에서 드물게 합성하는 클릭은 React 이벤트 시스템을
+  // 타지 않아 NavLink의 preventDefault가 걸리지 않는다. 그대로 두면 <a href>의 기본 동작이 실행돼
+  // 문서 전체가 다시 로드되고(2026-07-28 실기기 계측: click → PAGEHIDE), 그 리로드가
+  // closeBossProfitDb를 못 거쳐 네이티브 SQLite 커넥션이 stale하게 남는다.
+  describe('하단 탭바 클릭 인터셉터 (ADR-050)', () => {
+    function navBubbleDefaultPrevented(link: HTMLElement): { read: () => boolean | null } {
+      const nav = link.closest('nav')
+      if (nav === null) throw new Error('탭바 <nav>를 찾지 못했습니다')
+      let prevented: boolean | null = null
+      // <nav>의 버블 리스너는 React(#root에 위임)보다 먼저 돈다 — 여기서 이미 차단돼 있다는 것은
+      // React 바깥(캡처 단계)에서 막혔다는 뜻이고, 그래야 React를 안 타는 클릭도 막힌다.
+      nav.addEventListener('click', (event) => {
+        prevented = event.defaultPrevented
+      })
+      return { read: () => prevented }
+    }
+
+    it('탭 클릭의 기본 동작이 React보다 먼저 차단된다', () => {
+      mockStore({ status: 'completed', selectedAccountId: 'account-1' })
+      renderAt('/content')
+
+      const bossLink = screen.getByRole('link', { name: '보스' })
+      const probe = navBubbleDefaultPrevented(bossLink)
+
+      act(() => {
+        bossLink.click()
+      })
+
+      expect(probe.read()).toBe(true)
+    })
+
+    it('네 탭 모두 기본 동작이 차단된다', () => {
+      mockStore({ status: 'completed', selectedAccountId: 'account-1' })
+      renderAt('/content')
+
+      for (const name of ['컨텐츠', '보스', '수익', '설정']) {
+        const link = screen.getByRole('link', { name })
+        const probe = navBubbleDefaultPrevented(link)
+
+        act(() => {
+          link.click()
+        })
+
+        expect(probe.read(), `${name} 탭`).toBe(true)
+      }
+    })
+
+    it('기본 동작을 막아도 탭 이동은 정상 동작한다', () => {
+      mockStore({ status: 'completed', selectedAccountId: 'account-1' })
+      renderAt('/content')
+
+      act(() => {
+        screen.getByRole('link', { name: '보스' }).click()
+      })
+
+      expect(screen.getByRole('heading', { name: '보스 스케줄러' })).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: '보스' })).toHaveAttribute('aria-current', 'page')
+    })
+  })
 })

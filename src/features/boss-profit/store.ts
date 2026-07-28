@@ -921,8 +921,13 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     }
 
     const periodKeys = Array.from(new Set(rows.map((row) => row.periodKey)))
-    const records = await withSqliteFallback(getBossProfitRecords(ocids, periodKeys), [])
-    const mergedRows = mergeRecordsIntoRows(rows, records)
+    // 폴백을 []가 아니라 null로 둬 "조회 실패"와 "기록 없음"을 구분한다 — 실패를 "없음"으로 읽으면
+    // 아래 자동 기록이 사용자가 저장한 파티원 수를 1로 덮어쓴다([[ADR-050]] 결정 3).
+    const records = await withSqliteFallback<BossProfitRecord[] | null>(
+      getBossProfitRecords(ocids, periodKeys),
+      null,
+    )
+    const mergedRows = mergeRecordsIntoRows(rows, records ?? [])
 
     // ADR-014/ADR-019: 기록이 없는 완료 보스는 화면 진입 전에도 즉시 기본 파티원 수로 자동 기록한다.
     // 기본값은 boss_party_settings(파티 관리) 조회 결과, 없으면 1(솔로)이다.
@@ -933,7 +938,9 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
       // 미완료 placeholder(ADR-032)는 절대 자동 기록하지 않는다 — 여기서 기록해버리면
       // 나중에 실제로 완료됐을 때 "이미 기록이 있다"고 오판해 실제 처치 수익으로 다시
       // 계산되지 않고 0메소로 영구히 고정된다.
-      if (!row.isComplete || row.partySize !== null || row.priceMeso === null) {
+      // records가 null이면 조회 자체가 실패한 것이라 이 조합에 기록이 있는지 알 수 없다 —
+      // 기본값으로 덮어쓰지 말고 다음 새로고침의 정상 커넥션에 맡긴다([[ADR-050]] 결정 3).
+      if (records === null || !row.isComplete || row.partySize !== null || row.priceMeso === null) {
         autoRecordedRows.push(row)
         continue
       }
