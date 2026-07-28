@@ -867,15 +867,18 @@ describe('BossProfitScreen', () => {
 
     // jsdom은 getBoundingClientRect가 모두 0이라 헤더 높이가 측정되지 않는다. 페이드는 측정 전에는
     // 위치를 잡을 수 없어 렌더를 보류하므로(카드 최상단에 깔리는 것 방지), 실제 레이아웃 높이를 주입한다.
+    // 접힘 헤더는 border가 있어 66px, 펼침은 테두리가 없어 64px — 이 차이를 재현해 "접힘 시 측정값이
+    // 남아 2px 틈이 생기는" 회귀를 잡는다(ResizeObserver는 content-box 관찰이라 테두리 변화를 못 잡는다).
     const rect = vi
       .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
-      .mockReturnValue({ height: 64 } as DOMRect)
+      .mockReturnValue({ height: 66 } as DOMRect)
 
     renderBossProfitScreen()
     const header = screen.getByRole('button', { name: /낟낟/ })
     const card = header.closest('.isolate')
     expect(card?.querySelector('.bg-gradient-to-b')).toBeNull() // 접힘: 고정 대상이 아니라 페이드도 없음
 
+    rect.mockReturnValue({ height: 64 } as DOMRect) // 펼치면 헤더 border가 없어져 2px 줄어든다
     fireEvent.click(header)
 
     // 중첩 sticky에서는 콘텐츠가 지나가는 경계가 카드 헤더 아래다. 배경색은 페이지가 아니라

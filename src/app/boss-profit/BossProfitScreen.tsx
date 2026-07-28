@@ -511,9 +511,11 @@ function CharacterAccordion(props: {
   stickyTop: number
 }): React.JSX.Element {
   const [isExpanded, setIsExpanded] = useState(false)
-  // 배지 sticky 레일의 고정 범위를 헤더와 맞추기 위한 헤더 실측 높이(ADR-047 후속) — 높이 0인 레일은
-  // 카드 맨 아래까지 붙어 있어, 자기 높이만큼 일찍 떨어지는 헤더와 카드 끝에서 어긋난다. 글꼴 확대 시
-  // 헤더 높이가 달라질 수 있어 상수 대신 측정한다. 헤더 버튼 노드는 접힘/펼침에 유지돼 관찰이 이어진다.
+  // 배지 sticky 레일의 고정 범위와 하단 페이드 위치를 헤더에 맞추기 위한 헤더 실측 높이(ADR-047 후속).
+  // 글꼴 확대 시 높이가 달라질 수 있어 상수 대신 측정한다.
+  // isExpanded를 의존성에 두고 다시 측정해야 한다 — 접힘 헤더는 `border border-border`가 있어 펼침보다
+  // 2px 높은데, ResizeObserver는 기본이 content-box 관찰이라 테두리만 사라지는 변화로는 콜백이 발생하지
+  // 않는다. 접힘 측정값(66px)이 남으면 펼침 헤더(64px)와 페이드 사이에 2px 틈이 생긴다.
   const headerRef = useRef<HTMLButtonElement>(null)
   const [headerHeight, setHeaderHeight] = useState(0)
 
@@ -531,7 +533,7 @@ function CharacterAccordion(props: {
     return () => {
       observer.disconnect()
     }
-  }, [])
+  }, [isExpanded])
 
   const { group } = props
   const totalMeso = groupTotalMeso(group)
