@@ -7,7 +7,8 @@
       "name": "docs-policy",
       "status": "completed",
       "started_at": "2026-07-29T03:43:00+0900",
-      "summary": "ADR-053 신규(설계, 구현 전) — ①access_flag가 확인된 캐릭터만 방출(schedule-sync.ts:130-137의 character/list 채움 분기 제거), ②①에서 방출한 stub이 0건인 콜드 스타트에서만 ②·③ 중간 onUpdate를 억제하고 모든 character/basic 완료 후 1회만 방출(stub이 1건이라도 있으면 ADR-016 SWR 즉시표시+개별patch 그대로 유지), ③getCharacterPickerRoster 시그니처 불변·호출부(ContentScreen·BossScreen·ContentCharacterStep)가 Promise resolve/reject로 로딩 관리 — 항목 없고 조회 중이면 MapleSpinner, 조회 후 비면 '활성 캐릭터 없음'(빈 상태)과 '조회 실패'(에러)를 구분, 401/429 reject에서 반드시 로딩 해제. 갱신 문서: docs/adr/ADR-053.md(전문), docs/ADR.md(인덱스 1줄), docs/adr/ADR-016.md·ADR-017.md(하단 정정 문단 추가, 본문 무삭제), docs/features/content-scheduler.md(정책 원문 '캐릭터 관리 피커 — 후보 목록 로딩' 절), docs/features/boss-scheduler.md·docs/features/onboarding.md(동일 정책 참조 + 각 화면 특이사항), docs/foundation/design-system.md(피커 컴포넌트 로딩/빈/실패 3상태 스펙). 3개 feature 문서 모두 history 줄 추가."
+      "summary": "ADR-053 신규(설계, 구현 전) — ①access_flag가 확인된 캐릭터만 방출(schedule-sync.ts:130-137의 character/list 채움 분기 제거), ②①에서 방출한 stub이 0건인 콜드 스타트에서만 ②·③ 중간 onUpdate를 억제하고 모든 character/basic 완료 후 1회만 방출(stub이 1건이라도 있으면 ADR-016 SWR 즉시표시+개별patch 그대로 유지), ③getCharacterPickerRoster 시그니처 불변·호출부(ContentScreen·BossScreen·ContentCharacterStep)가 Promise resolve/reject로 로딩 관리 — 항목 없고 조회 중이면 MapleSpinner, 조회 후 비면 '활성 캐릭터 없음'(빈 상태)과 '조회 실패'(에러)를 구분, 401/429 reject에서 반드시 로딩 해제. 갱신 문서: docs/adr/ADR-053.md(전문), docs/ADR.md(인덱스 1줄), docs/adr/ADR-016.md·ADR-017.md(하단 정정 문단 추가, 본문 무삭제), docs/features/content-scheduler.md(정책 원문 '캐릭터 관리 피커 — 후보 목록 로딩' 절), docs/features/boss-scheduler.md·docs/features/onboarding.md(동일 정책 참조 + 각 화면 특이사항), docs/foundation/design-system.md(피커 컴포넌트 로딩/빈/실패 3상태 스펙). 3개 feature 문서 모두 history 줄 추가.",
+      "completed_at": "2026-07-29T03:49:07+0900"
     },
     {
       "step": 1,
