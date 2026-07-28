@@ -1,6 +1,13 @@
 import { useEffect, useRef } from 'react'
 
 import { DROP_EFFECT_FRAMES } from '../../lib/drop-effect-frames'
+import {
+  DROP_EFFECT_ORIGINS,
+  DROP_PILLAR_SCALE,
+  dropFrameTransform,
+  screenEffectScale,
+} from '../../lib/drop-effect-layout'
+import type { DropEffectPhase } from '../../lib/drop-effect-layout'
 import { createPortal } from 'react-dom'
 import { getItemIconUrl } from '../../lib/item-icons'
 
@@ -14,13 +21,26 @@ interface DropEffectOverlayProps {
 const FPS = { screen: 15, pre: 14, loop: 11.5, end: 12 }
 const DROP_START_FRAME = 8
 
-// 중앙 아이템 세로 위치(값 ↑ = 아래로). DropEff 하단 앵커도 이 값 기준으로 계산한다.
+// 중앙 아이템 세로 위치(값 ↑ = 아래로). DropEff 지면 앵커도 이 값 기준으로 계산한다.
 const ITEM_CENTER_TOP = '66%'
 const ITEM_SIZE_PX = 72
 // DropEff 기둥만 아이템과 무관하게 세로 이동(양수 = 아래로).
 const DROP_OFFSET_Y_PX = 8
+// 프레임마다 비트맵 크기가 달라 하단-중앙으로는 기둥 축이 최대 26px 흔들린다(ADR-048). src 를 바꿀 땐
+// 반드시 그 프레임 origin 에 맞춘 transform 도 같이 갱신해, 앵커에 지면 접점이 오도록 배치한다.
+//
+// 단 src 교체는 비동기다 — 새 프레임이 아직 안 그려졌는데 transform 만 먼저 옮기면 이전 프레임 픽셀이
+// 새 origin 으로 그려져 한 프레임 옆으로 튄다(프레임 크기가 제각각이라 오차가 최대 26px). 그래서 픽셀이
+// 준비되기 전엔 좌표도 그대로 두고, 이 함수는 tick 마다 다시 불리므로 준비되는 즉시 함께 제자리를 잡는다.
+// 좌표가 아직 없는 프레임을 보여주지 않도록 표시 여부도 여기서 켠다.
+function applyDropFrame(el: HTMLImageElement, phase: DropEffectPhase, index: number): void {
+  el.src = DROP_EFFECT_FRAMES[phase][index]
+  if (!el.complete) return
+  el.style.transform = dropFrameTransform(DROP_EFFECT_ORIGINS[phase][index], DROP_PILLAR_SCALE)
+  el.style.opacity = '1'
+}
 
-// 고가 아이템 드롭 시 전체화면 연출. ScreenEff는 cover로 화면을 채우고, 8프레임 시점에 아이템이
+// 고가 아이템 드롭 시 전체화면 연출. ScreenEff는 전 프레임 동일 배율로 화면을 채우고, 8프레임 시점에 아이템이
 // 등장하며 DropEff(pre→loop ∞)가 아이템 하단에서 올라온다. 화면 탭 → end 재생 후 닫힘.
 // 빛 효과는 검은배경 JPEG + mix-blend:screen(가산 합성) — 검정은 투명 처리된다.
 export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Element {
@@ -29,6 +49,9 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
   const dropRef = useRef<HTMLImageElement>(null)
   const itemRef = useRef<HTMLImageElement>(null)
   const closeRef = useRef<() => void>(() => props.onClose())
+  // 디코드해 둔 DropEff 프레임을 붙잡아 둔다(GC 방지). 미리 디코드해야 재생 중 src 교체가 곧바로
+  // 반영돼(complete=true) 픽셀과 좌표가 같은 프레임으로 함께 바뀐다 — applyDropFrame 주석 참고.
+  const preloadRef = useRef<HTMLImageElement[]>([])
 
   useEffect(() => {
     const frames = DROP_EFFECT_FRAMES
@@ -40,6 +63,15 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
       closeRef.current = () => props.onClose()
       return
     }
+
+    preloadRef.current = [...frames.pre, ...frames.loop, ...frames.end].map((url) => {
+      const img = new Image()
+      img.src = url
+      // decode()가 없는 구형 WebView 는 로드만으로 충분(complete 로 판단). 실패해도 재생은 그대로
+      // 진행되고 좌표만 한 tick 늦는다.
+      void img.decode?.().catch(() => {})
+      return img
+    })
 
     let raf = 0
     let lastTs = 0
@@ -57,6 +89,7 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
     }
 
     elScreen.style.opacity = '1'
+    elScreen.style.transform = `translate(-50%, -50%) scale(${screenEffectScale(window.innerWidth, window.innerHeight)})`
     elScreen.src = frames.screen[0]
     elDrop.style.opacity = '0'
     if (elItem !== null) elItem.style.opacity = '0'
@@ -66,8 +99,7 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
       st.dPhase = 'pre'
       st.dIdx = 0
       st.dAcc = 0
-      elDrop!.style.opacity = '1'
-      elDrop!.src = frames.pre[0]
+      applyDropFrame(elDrop!, 'pre', 0) // 표시(opacity)는 첫 프레임 픽셀이 준비될 때 켜진다
       if (elItem !== null) {
         elItem.style.opacity = '1'
         elItem.style.transform = 'scale(1)' // 중앙정렬은 래퍼가, 부유는 .fx-drop-float가 담당
@@ -120,7 +152,7 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
               st.dIdx = 0
             }
           }
-          elDrop!.src = (st.dPhase === 'pre' ? frames.pre : frames.loop)[st.dIdx]
+          applyDropFrame(elDrop!, st.dPhase, st.dIdx)
         }
       } else {
         // 닫기: end (14fps·1회) → 종료
@@ -135,7 +167,7 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
             return
           }
         }
-        elDrop!.src = frames.end[st.eIdx]
+        applyDropFrame(elDrop!, 'end', st.eIdx)
       }
       raf = requestAnimationFrame(tick)
     }
@@ -154,9 +186,8 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
       st.eIdx = 0
       st.eAcc = 0
       elScreen!.style.opacity = '0'
-      elDrop!.style.opacity = '1'
       if (elItem !== null) elItem.style.opacity = '1'
-      elDrop!.src = frames.end[0]
+      applyDropFrame(elDrop!, 'end', 0)
     }
 
     return () => cancelAnimationFrame(raf)
@@ -178,16 +209,18 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
         className="absolute inset-0"
         style={{ background: 'radial-gradient(circle at 50% 50%, #1b0f29, #05010a)' }}
       />
-      {/* DropEff: 검은배경 JPEG + screen 블렌드, 아이템 하단 기준 상승 */}
+      {/* DropEff: 검은배경 JPEG + screen 블렌드, 아이템 하단 기준 상승.
+          left/top 이 기둥의 지면 앵커고, 프레임별 origin 을 그 점에 맞추는 transform 은
+          applyDropFrame 이 src 와 함께 매 프레임 갱신한다(ADR-048). */}
       <img
         ref={dropRef}
         alt=""
         aria-hidden="true"
+        data-testid="drop-effect-pillar"
         className="pointer-events-none absolute left-1/2 mix-blend-screen"
         style={{
           top: `calc(${ITEM_CENTER_TOP} + ${ITEM_SIZE_PX / 2 + DROP_OFFSET_Y_PX}px)`,
-          transform: 'translate(-50%, -100%) scale(1.3)',
-          transformOrigin: '50% 100%',
+          transformOrigin: '0 0',
           zIndex: 2,
         }}
       />
@@ -214,12 +247,15 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
           </div>
         </div>
       )}
-      {/* ScreenEff: cover로 화면 채움 + screen 블렌드 */}
+      {/* ScreenEff: 전 프레임 동일 배율 + screen 블렌드. 크롭이 이미 버스트 원점 기준 중앙이라
+          위치는 translate(-50%,-50%)로 충분하고, 배율만 고정하면 된다(ADR-048 결정 5).
+          max-w-none: preflight의 img{max-width:100%}가 큰 프레임을 컨테이너 폭으로 줄여 배율을 깬다. */}
       <img
         ref={screenRef}
         alt=""
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 h-full w-full object-cover mix-blend-screen"
+        data-testid="drop-effect-screen"
+        className="pointer-events-none absolute top-1/2 left-1/2 max-w-none mix-blend-screen"
         style={{ zIndex: 4 }}
       />
       <p
