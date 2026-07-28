@@ -743,7 +743,11 @@ describe('BossProfitScreen', () => {
 
     renderBossProfitScreen()
 
-    expect(screen.getByRole('img', { name: '고가 드롭' })).toBeInTheDocument()
+    const badge = screen.getByRole('img', { name: '고가 드롭' })
+    expect(badge).toBeInTheDocument()
+    // 배지의 z-index(z-10)가 페이지 루트로 새어나가 sticky 헤더·하단 nav·safe-area를 침범하지 않도록,
+    // 배지를 감싼 바깥 wrapper가 stacking을 격리(isolate)해야 한다(회귀 가드).
+    expect(badge.parentElement).toHaveClass('isolate')
   })
 
   it('고가 아이템이 아닌 드롭만 있으면 강조 배지가 표시되지 않는다', () => {

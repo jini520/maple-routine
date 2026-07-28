@@ -503,7 +503,9 @@ function CharacterAccordion(props: {
   // 테스트에서 클릭 참조가 stale해지는 원인이었다). 배지는 shell(펼침 시 overflow-hidden) 바깥의 relative
   // 래퍼에 절대배치해, 카드 모서리 밖으로 살짝 튀어나와도 잘리지 않게 한다.
   return (
-    <div className="relative">
+    // isolate(isolation:isolate): 우상단 배지의 z-index를 이 카드 안에 가둔다. 없으면 배지의 z-10이
+    // 페이지 루트 stacking으로 새어나가 sticky 헤더(z-10)·하단 fixed nav·safe-area 위로 그려진다.
+    <div className="relative isolate">
       {hasValuable && <ValuableDropBadge drops={valuableDrops} />}
       <div className={shellClass}>
         <button
