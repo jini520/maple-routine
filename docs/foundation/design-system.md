@@ -109,6 +109,8 @@ style: maskImage/WebkitMaskImage: linear-gradient(to bottom, black, transparent)
 ```
 색(그라데이션)과 블러(같은 mask 그라데이션)를 동시에 옅어지게 해야 자연스럽다. `mask-image` 는 Tailwind 로 애매해 인라인 스타일(보스 카드 일러스트 페이드와 동일 패턴).
 
+**예외 — 보스 수익 화면은 `backdrop-blur-sm` 없이 색 그라데이션만 쓴다**(사용자 요청, 2026-07-28). 이 화면만 헤더 아래로 지나가는 콘텐츠가 흐려지는 걸 원하지 않는다. 나머지 4개 화면(컨텐츠·컨텐츠 관리·보스·보스 관리)은 블러를 유지하므로, 이 파일의 레시피를 그대로 복사할 때 보스 수익에는 블러를 되붙이지 말 것. 상세는 [features/boss-profit.md](../features/boss-profit.md).
+
 ### 레이아웃
 - 전체 너비: 모바일 단일 컬럼, max-width 제한 없음(하이브리드 앱이라 데스크톱 와이드 미고려).
 - 좌측 정렬 기본. 화면 패딩 `p-4`, 블록 사이 `space-y-4`, 카드 안쪽 `p-4`.

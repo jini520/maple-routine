@@ -822,10 +822,11 @@ export function BossProfitScreen(): React.JSX.Element {
           )}
         </div>
 
-        {/* 헤더 아래에 살짝 겹쳐 그라데이션+블러로 카드가 잘려 보이지 않고 자연스럽게
-            사라지도록 한다(content-scheduler/boss-scheduler와 동일한 패턴). */}
+        {/* 헤더 아래에 살짝 겹쳐 색 그라데이션으로 카드가 잘려 보이지 않고 자연스럽게 사라지도록 한다.
+            공용 레시피(content-scheduler/boss-scheduler)와 달리 이 화면만 backdrop-blur-sm을 빼서
+            헤더 아래를 지나는 카드가 흐려지지 않게 한다(사용자 요청, 2026-07-28) — 되붙이지 말 것. */}
         <div
-          className="pointer-events-none absolute inset-x-0 top-full h-8 bg-gradient-to-b from-bg to-transparent backdrop-blur-sm"
+          className="pointer-events-none absolute inset-x-0 top-full h-8 bg-gradient-to-b from-bg to-transparent"
           style={{
             maskImage: 'linear-gradient(to bottom, black, transparent)',
             WebkitMaskImage: 'linear-gradient(to bottom, black, transparent)',

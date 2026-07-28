@@ -847,6 +847,17 @@ describe('BossProfitScreen', () => {
     expect(screen.getByText('벨로나').closest('li')).not.toHaveClass('valuable-drop-row')
   })
 
+  it('sticky 헤더 경계 페이드에 backdrop-blur를 쓰지 않는다(공용 레시피에서 이 화면만 제외 — 회귀 가드)', () => {
+    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()] })
+
+    const { container } = renderBossProfitScreen()
+
+    // 다른 4개 화면은 backdrop-blur-sm을 유지하므로 레시피를 복사하다 되붙기 쉽다.
+    expect(container.querySelector('.backdrop-blur-sm')).toBeNull()
+    // 색 그라데이션 페이드 자체는 유지된다.
+    expect(container.querySelector('.bg-gradient-to-b')).not.toBeNull()
+  })
+
   // 펼친 캐릭터 카드 헤더 sticky 고정(ADR-047)
   it('ADR-047: 카드를 펼치면 헤더(초상화·이름·총액)가 sticky로 고정된다', () => {
     mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()] })
