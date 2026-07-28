@@ -889,11 +889,31 @@ describe('BossProfitScreen', () => {
     })
 
     renderBossProfitScreen()
+    fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
 
     // 배지를 헤더 안에 넣으면 헤더의 z-[5] 컨텍스트에 갇혀 골드 링(z-6)이 배지 위를 지나간다.
     // 그래서 셸 바깥(z-10)에 남기고 높이 0 sticky 레일에 얹어 헤더와 같은 오프셋으로 고정한다.
     const rail = screen.getByRole('img', { name: '고가 드롭' }).parentElement
     expect(rail).toHaveClass('sticky', 'h-0', 'z-10')
+  })
+
+  it('ADR-047 후속: 접힘 상태의 배지는 sticky가 아니다(고정할 헤더가 없고 containing block이 헤더 높이뿐)', () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row()],
+      dropsByRowKey: {
+        'ocid-1|자쿰|카오스|2026-07-09': [{ category: 'consumable', itemName: VALUABLE_ITEM, quantity: 1 }],
+      },
+    })
+
+    renderBossProfitScreen()
+
+    // 접힘일 때는 ADR-045 원래 구조 — 레일 없이 카드 wrapper 기준 absolute이고 z-10은 배지 자신이 갖는다
+    // (레일이 없으면 정적 요소엔 z-index가 먹지 않아 골드 링 z-6 아래로 내려간다).
+    const badge = screen.getByRole('img', { name: '고가 드롭' })
+    expect(badge.parentElement).not.toHaveClass('sticky')
+    expect(badge).toHaveClass('absolute', 'z-10')
   })
 
   // 펼친 캐릭터 카드 헤더 sticky 고정(ADR-047)
