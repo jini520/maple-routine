@@ -286,6 +286,13 @@ body {
 .valuable-drop-card.valuable-drop-card--expanded {
   animation: none;
 }
+/* 펼침 셸은 overflow:clip으로 자식을 잘라내는데(ADR-049), 클리핑 곡선은 패딩 박스 기준이라 반경이
+   13px(= 14 - 테두리 1px)다. 링은 inset:0(= 패딩 박스)에 있으므로 반경도 13px로 맞춰야 모서리
+   바깥쪽이 깎이지 않는다 — 원래 패딩 박스의 실제 반경이 13px이라 기하학적으로도 이쪽이 맞다.
+   접힘 셸은 테두리가 없어(패딩 박스 = 테두리 박스) 14px 그대로 둔다. */
+.valuable-drop-card.valuable-drop-card--expanded::before {
+  border-radius: 13px;
+}
 
 /* 고가 드롭 보스 행 강조 — 카드를 펼치면 카드 테두리 효과 대신 실제 고가 아이템을 획득한 보스 행으로
    강조가 이동한다. 테두리/글로우가 아니라 "배경" 효과다(사용자 요청). 획득 아이템 아이콘이 있는 오른쪽
