@@ -596,8 +596,11 @@ function CharacterAccordion(props: {
       {/* headerHeight가 0이면(측정 전 첫 프레임·HMR로 effect가 재실행되지 않은 상태) 제약 박스 top이 0이 돼
           페이드가 카드 최상단(헤더 위)에 깔린다 — 잘못된 위치로 그리는 대신 측정될 때까지 렌더하지 않는다. */}
       {isExpanded && headerHeight > 0 && (
+        // inset-x-px·bottom-px: 셸 테두리(border 1px) 두께만큼 들여 페이드가 테두리를 덮지 않게 한다
+        // — 이 박스는 wrapper(= 셸 border-box) 기준이라 inset-x-0이면 테두리까지 덮는다. 테두리 두께를
+        // 바꾸면 이 값도 함께 바꿀 것.
         <div
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-[5]"
+          className="pointer-events-none absolute inset-x-px bottom-px z-[5]"
           style={{ top: headerHeight }}
           aria-hidden="true"
         >

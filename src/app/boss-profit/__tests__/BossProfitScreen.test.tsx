@@ -891,6 +891,9 @@ describe('BossProfitScreen', () => {
     // (셸엔 overflow-hidden을 걸 수 없어 클리핑도 불가) — 본문 범위 제약 박스 안의 sticky로 둔다.
     expect(header.querySelector('.bg-gradient-to-b')).toBeNull()
     expect(fade?.parentElement).toHaveClass('absolute', 'pointer-events-none')
+    // 카드 테두리(1px)를 덮지 않도록 좌우·하단을 테두리 두께만큼 들인다 — wrapper 기준 inset-x-0이면
+    // 테두리까지 포함한 전체 폭을 덮어 테두리가 페이드에 가린다.
+    expect(fade?.parentElement).toHaveClass('inset-x-px', 'bottom-px')
     // 제약 박스 top = 헤더 실측 높이 — 0이면 카드 최상단(헤더 위)에 깔린다
     expect(fade?.parentElement?.style.top).toBe('64px')
 
