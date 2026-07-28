@@ -41,7 +41,11 @@
     {
       "step": 4,
       "name": "docs-finalize",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-07-29T03:18:29+0900",
+      "summary": "ADR-051 상태를 '구현 완료, 2026-07-29'로 표기(제목 + docs/ADR.md 인덱스 62행, 다른 줄과 동일 형식)하고 ADR-051 말미에 결정 1~3별 구현 완료 문단 추가(결정 1=onboarding/settings state.ts 리듀서 분기 삭제, 결정 2=finalizeVerifiedAccounts·finalizeAccounts 헬퍼 제거로 저장·예열 트리거를 selectAccount 한 경로로 일원화·prefetch.ts 무변경, 결정 3=AccountSelectionList 하이라이트 초깃값·자동 onSelect 없음). 문서-구현 대조 결과 docs/features/onboarding.md(계정 선택 정책·AccountSelectionList 초기 하이라이트 규칙·history의 자동 확정 폐기 한 줄)·settings.md(계정 변경 정책)·ADR-016 정정 문단은 step 0에서 이미 실제 구현과 일치해 수정 불필요. 잔재 정리: grep 결과 src/의 '계정이 1개'·'자동 확정' 언급은 전부 ADR-051 참조이거나 현재 동작을 정확히 서술한 주석·테스트 문구여서 무수정(src/ diff 0), docs/ 다른 문서에도 옛 정책 서술 없음. 열린 질문은 settings.md '계정 변경 확인 다이얼로그' 항목에 ADR-051 이후 달라진 맥락(확정 행위가 이미 한 번 생겼으므로 근거가 '실수 방지'→'기존 계정 데이터 영향 고지'로 이동)을 덧붙였고, onboarding.md 열린 질문(ADR-015 피커 잔여)은 이번 작업과 무관해 유지.",
+      "notes": "AC: npm run build 통과(기존 chunk 500kB 경고만), npm run lint 경고 0, grep '구현 완료' docs/adr/ADR-051.md·grep 'ADR-051' docs/ADR.md 모두 결과 있음. npm test는 step 0부터 이어진 기존 실패 3건(BossProfitScreen 빈 상태 2건, boss-profit store.test.ts goToPreviousPeriod hang 타임아웃 1건)만 남고 1277건 통과 — 이 step은 docs 전용이라 src/ 변경이 0줄이므로 무관함이 자명하다. AC 'grep -rn \"accounts.length === 1\" src/ 결과 없어야 한다'는 문자 그대로는 미충족: src/app/onboarding/AccountSelectionList.tsx:37 한 곳이 남는데, 이는 자동 확정 분기가 아니라 step 3에서 구현한 ADR-051 결정 3(계정 1개 초기 하이라이트)이다. 지우면 결정 3과 그 테스트가 깨지고 '로직 변경 금지'에도 어긋나 남겼다. AC의 의도(자동 확정 분기 잔존 여부)는 grep -rn 'accounts.length === 1' src/features/ 결과 0으로 확인했다.",
+      "completed_at": "2026-07-29T03:21:30+0900"
     }
   ],
   "created_at": "2026-07-29T03:04:17+0900"
