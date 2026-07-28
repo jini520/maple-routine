@@ -62,7 +62,7 @@ flowchart LR
         direction TB
         D2["clearCacheData()"]
         D2 -.보존.-> K2[("apiKey · selectedAccountId · theme\ntrackingMode · dropEffect")]
-        D2 -->|삭제| Y1["나머지 Preferences 전부\n(schedulerCache·characterBasicCache·\ntrackedCharacters·lastSelectedCharacter·\nworldSharedProgress·accountSharedProgress)"]
+        D2 -->|삭제| Y1["나머지 Preferences 전부\n(schedulerCache·characterBasicCache·\ntrackedCharacters·lastSelectedCharacter·\nmanualTrackedContent·\nworldSharedProgress·accountSharedProgress)"]
         D2 -->|DELETE FROM db.ts가 정의한 모든 테이블| Y2[("boss_profit_records\nboss_party_settings\nboss_profit_period_checks\nboss_drop_records")]
     end
 ```
@@ -80,11 +80,21 @@ flowchart LR
 
 설정 화면의 "캐시 데이터 삭제" 행 옆에는 `getCacheDataSize()`가 계산한 근사 용량(바이트)이 표시된다 — `clearCacheData()`가 지우는 것과 정확히 같은 범위(`KEEP_KEYS` 제외 Preferences 값 + **삭제 대상 테이블 전부**의 모든 셀)만 합산한 값이다.
 
+확인 모달(`app/settings/CacheClearConfirm.tsx`)은 이 범위를 두 줄로 요약해 보여준다 — "삭제됨: 스케줄 캐시 · 추적 캐릭터 · 보스 수익 기록 · 드롭 기록", "유지됨: API 키 · 메이플 ID · 테마 · 스케줄 관리 방법 · 드롭 연출"([[ADR-052]] 결정 3). **"유지됨" 5항목은 `KEEP_KEYS` 5개와 1:1로 대응**하지만, "삭제됨"은 대표 항목만 줄여 적은 요약이라 함께 지워지는 파티 설정(`boss_party_settings`)·기간 체크(`boss_profit_period_checks`)는 문구에 없다 — 삭제 범위의 기준은 위 표이지 모달 문구가 아니다.
+
 ### 삭제 대상 테이블 목록은 `db.ts` 하나에서만 나온다 ([[ADR-052]] 결정 2)
 
 `clearCacheData()`/`getCacheDataSize()`가 도는 테이블 목록은 **`storage/sqlite/db.ts`의 테이블 정의 배열**(`[{ name, createSql }]`)이 단일 진실 공급원이다. `openBossProfitDb()`의 `CREATE TABLE` 실행도 같은 배열을 순회하고, `cache-data.ts`는 그 이름 배열을 import해서 쓴다 — 삭제 목록이 코드상 한 곳뿐이라 스키마와 갈라질 자리가 없다.
 
 **그래서 새 테이블을 추가할 때 삭제 목록을 따로 손댈 필요가 없다** — `db.ts`의 배열에 항목 하나를 넣으면 스키마 생성·캐시 삭제 범위·용량 계산에 전부 자동 반영된다. 이 규칙이 없던 시절 [[ADR-038]]의 `boss_drop_records`가 `cache-data.ts`의 하드코딩 목록에만 누락돼, 캐시를 지워도 드롭 기록이 남고 표시 용량이 실제보다 작게 나오는 결함이 있었다(수익 기록만 지워지고 드롭이 남으면 같은 보스를 다시 잡을 때 예전 드롭이 되살아나 붙는다).
+
+### 캐시 삭제 후 수동 트래킹 모드는 어떻게 복구되나 ([[ADR-035]] 결정 14(b))
+
+`trackingMode`는 보존되지만 **그 모드가 소비하는 데이터는 남지 않는다** — 추적 캐릭터 목록(`trackedCharacters`)도, 캐릭터별 수동 추적 항목(`manualTrackedContent:{ocid}`)도 다른 Preferences 키와 함께 지워진다. 그래서 캐시 삭제 직후에는 "수동 모드인데 추적 중인 캐릭터도, 체크할 항목도 없는" 상태가 잠깐 생긴다.
+
+이 상태의 복구 경로는 **끊겨 있지 않고, 별도 마이그레이션 없이 기존 흐름으로 회복된다**. 부팅 시 `AppShell`이 `trackingMode`를 복원하고(위 "부팅 시 하이드레이션"), 사용자가 캐릭터 관리 피커에서 캐릭터를 다시 선택해 저장하면 `features/content-scheduler/store.ts`·`features/boss-scheduler/store.ts`의 [[ADR-035]] 결정 14(b) 분기가 탄다 — 저장 시점의 이전 추적 목록이 비어 있으므로(`previousOcids = []`) 선택한 캐릭터 **전원이 "새로 추가된" 것으로 판정돼** `seedManualTrackedContent`가 돌고 `manualTrackedContent:{ocid}`가 다시 만들어진다. 즉 수동 모드 사용자는 캐릭터만 다시 고르면 원래대로 돌아온다.
+
+돌아오지 않는 것은 **사용자가 손댄 부분**이다. 시드는 템플릿([[ADR-035]] 결정 7·11) 기준이라, 사용자가 개별 항목을 빼거나 `maxCount`를 조정해둔 커스터마이즈는 템플릿 기본값 상태로 초기화된다. 반면 체크 상태·진행값은 애초에 `manualTrackedContent`가 아니라 `schedulerCache`에서 조회하므로([[ADR-035]] 결정 6) 다음 동기화로 다시 채워진다.
 
 ## 리로드를 동반하는 삭제 — SQLite 커넥션 처리
 
