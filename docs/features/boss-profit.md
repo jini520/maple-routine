@@ -30,7 +30,8 @@
 - **접힘/펼침 셸이 다르다**: 접힘 = 단독 카드(`rounded-[14px] bg-surface border border-border p-4`). 펼침 = 헤더+본문을 하나의 셸로(바깥 wrapper `rounded-[14px] bg-surface border border-border`, 헤더는 자체 border/rounded 없이 `p-4 flex items-center gap-3`, 본문은 `border-t border-border` 하나로 경계). 접힘 상태(다른 캐릭터 미펼침)는 완결된 단독 카드. **셸에 `overflow-hidden`을 두지 않는다**([[ADR-047]]) — sticky 헤더를 무력화하므로, 하단 모서리 클리핑은 footer의 `rounded-b-[14px]`가 대신한다.
 - **헤더**: 아바타 `h-8 w-8 rounded-full bg-surface-2 ... text-xs font-bold text-text` + 이름 `flex-1 text-sm font-semibold text-text truncate` + 금액 `text-sm font-bold text-text tabular-nums`(우측 세로 정렬) + Chevron(`ChevronDown`/`ChevronUp`).
 - **펼침 헤더는 sticky** — [[ADR-047]]: 펼쳤을 때만 `sticky z-[5] rounded-t-[14px] bg-surface` + `top` = **페이지 sticky 헤더의 실측 높이**(`ResizeObserver`, 헤더 높이가 탭·경고 문구에 따라 가변이라 상수 불가). `bg-surface`는 아래로 지나가는 보스 행을 가리기 위해 필수이고, 그 때문에 `rounded-t-[14px]`로 셸 상단 라운딩을 따라가야 한다(사각 배경이 둥근 모서리를 덮음).
-  - **카드 내부 z 레이어**(`isolate` 안): 드롭 아이콘 `1~3` < sticky 헤더 `5` < 골드 회전 샤인 링(`.valuable-drop-card::before`) `6` < 고가 드롭 배지 `10`. 링이 헤더보다 낮으면 테두리 상단·좌우가 헤더 배경에 끊긴다.
+  - **카드 내부 z 레이어**(`isolate` 안): 드롭 아이콘 `1~3` < sticky 헤더 `5`(하단 페이드 포함) < 골드 회전 샤인 링(`.valuable-drop-card::before`) `6` < 고가 드롭 배지 `10`. 링이 헤더보다 낮으면 테두리 상단·좌우가 헤더 배경에 끊긴다.
+  - **고가 드롭 배지도 함께 고정**([[ADR-047]] 후속): 배지를 헤더 안에 넣으면 헤더의 `z-[5]` 컨텍스트에 갇혀 골드 링(`z-6`)이 위를 지나간다. 그래서 셸 바깥에 남기고 **높이 0 sticky 레일**(`sticky z-10 h-0`, `top` = `stickyTop + 8`)에 얹는다 — `+8`은 배지의 `-top-2`를 상쇄해 stuck 시 헤더 상단선에 걸치게 하는 값.
 - **본문 — 보스 행(개별 카드 아닌 통합 리스트)**:
 ```
 행: flex items-start gap-3 p-4 border-b border-border last:border-b-0 (자체 rounded/bg/border 없음)
@@ -43,8 +44,10 @@
 - **소계 footer**: `flex items-center justify-between px-4 py-3 bg-surface-2 text-sm rounded-b-[14px]`, 왼쪽 "{캐릭터명} 합계" `text-text-muted`, 오른쪽 금액 `font-semibold tabular-nums text-text`. 하단 라운딩은 셸의 `overflow-hidden`을 뺀 대체 수단([[ADR-047]]) — 셸 하단에 닿는 배경 요소를 새로 추가할 땐 같은 처리가 필요하다.
 - 기본 **전부 접힘** 시작(추적 캐릭터 많을 때 과도한 길이 방지). 리스트 key `${tab}-${periodKey}-${ocid}` 로 탭/기간 이동 시 remount(펼침 상태 리셋, [[ADR-037]]).
 
-### sticky 헤더 — 공용 패턴 + 경계 페이드 미사용
-제목~총 수익 헤드라인까지 `sticky top-0 z-10 bg-bg`로 고정하고 그 아래 캐릭터 목록만 스크롤한다([foundation/design-system.md](../foundation/design-system.md) "스크롤 영역" 레시피 재사용). 단 **헤더-목록 경계 페이드 오버레이는 쓰지 않는다**([[ADR-047]] 결정 6, 2026-07-28) — 그 오버레이는 헤더 바로 아래 32px를 `bg-bg`로 덮는데, 펼친 캐릭터 카드의 sticky 헤더가 멈추는 자리가 바로 그 밴드라 stuck 헤더 상단이 가려진다(카드는 `isolate`로 `z-10` 아래). 경계는 총 수익 헤드라인 하단의 `h-px bg-border` 헤어라인이 담당한다. 다른 4개 화면은 페이드를 유지하므로 공용 레시피를 복사할 때 되붙이지 말 것(회귀 가드 테스트 있음).
+### sticky 헤더 — 공용 패턴 + 경계 페이드는 카드 헤더로 이동
+제목~총 수익 헤드라인까지 `sticky top-0 z-10 bg-bg`로 고정하고 그 아래 캐릭터 목록만 스크롤한다([foundation/design-system.md](../foundation/design-system.md) "스크롤 영역" 레시피 재사용). 단 **페이지 헤더에는 경계 페이드 오버레이를 쓰지 않는다**([[ADR-047]] 결정 6) — 그 오버레이는 헤더 바로 아래 32px를 `bg-bg`로 덮는데, 펼친 캐릭터 카드의 sticky 헤더가 멈추는 자리가 바로 그 밴드라 stuck 헤더가 가려진다(카드는 `isolate`로 `z-10` 아래). 페이지 헤더의 경계는 총 수익 헤드라인 하단의 `h-px bg-border` 헤어라인이 담당한다. 다른 4개 화면은 페이드를 유지하므로 공용 레시피를 복사할 때 페이지 헤더에 되붙이지 말 것(회귀 가드 테스트 있음).
+
+**대신 페이드는 stuck 카드 헤더 하단으로 옮겼다**([[ADR-047]] 후속) — 중첩 sticky에서는 콘텐츠가 지나가는 경계가 그쪽이기 때문. 펼침 헤더 버튼 안에 `<span>`으로 `pointer-events-none absolute inset-x-0 top-full h-8 bg-gradient-to-b from-surface to-transparent backdrop-blur-sm` + mask 인라인 스타일(공용 레시피와 동일, 배경색만 `from-surface`). 버튼 자식이라 `div`가 아닌 `span`이어야 한다. CSS로 stuck 여부를 알 수 없어 평상시에도 존재한다.
 
 ### 총 수익 헤드라인 (sticky 헤더 최하단) — [[ADR-046]]
 `characterGroups` 합계를 보여주는 기간 요약. **카드가 아니다** — 아래 캐릭터 카드가 전부 같은 카드 셸(`rounded-[14px] bg-surface border border-border`)이라, 요약도 카드면 "동일한 흰 카드의 반복"으로 묻힌다([[ADR-046]] 배경). 카드 셸 없이 배경 위 타이포로 두고 색·크기로만 위계를 준다.

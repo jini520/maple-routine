@@ -749,7 +749,8 @@ describe('BossProfitScreen', () => {
     expect(badge).toBeInTheDocument()
     // 배지의 z-index(z-10)가 페이지 루트로 새어나가 sticky 헤더·하단 nav·safe-area를 침범하지 않도록,
     // 배지를 감싼 바깥 wrapper가 stacking을 격리(isolate)해야 한다(회귀 가드).
-    expect(badge.parentElement).toHaveClass('isolate')
+    // 배지가 sticky 레일 안으로 들어가며 부모가 한 겹 깊어져(ADR-047 후속) closest로 확인한다.
+    expect(badge.closest('.isolate')).not.toBeNull()
   })
 
   it('고가 아이템이 아닌 드롭만 있으면 강조 배지가 표시되지 않는다', () => {
@@ -847,16 +848,52 @@ describe('BossProfitScreen', () => {
     expect(screen.getByText('벨로나').closest('li')).not.toHaveClass('valuable-drop-row')
   })
 
-  it('ADR-047: sticky 헤더에 경계 페이드 오버레이를 두지 않는다(stuck된 캐릭터 헤더를 가림 — 회귀 가드)', () => {
+  it('ADR-047: 페이지 헤더에는 경계 페이드 오버레이를 두지 않는다(stuck된 캐릭터 헤더를 가림 — 회귀 가드)', () => {
     mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()] })
 
     const { container } = renderBossProfitScreen()
 
     // 페이드는 페이지 헤더(z-10) 안 top-full h-8 밴드를 bg-bg로 덮는데, 펼친 카드의 sticky 헤더가
     // 멈추는 자리가 바로 그 밴드다(카드는 isolate로 z-10 아래). 다른 4개 화면은 페이드를 유지하므로
-    // 공용 레시피를 복사하다 되붙기 쉬워 가드를 둔다.
-    expect(container.querySelector('.backdrop-blur-sm')).toBeNull()
-    expect(container.querySelector('.bg-gradient-to-b')).toBeNull()
+    // 공용 레시피를 복사하다 되붙기 쉬워 가드를 둔다. 카드 헤더 자신의 페이드는 별도 테스트에서 검증.
+    const pageHeader = container.querySelector('.sticky.top-0')
+    expect(pageHeader).not.toBeNull()
+    expect(pageHeader?.querySelector('.backdrop-blur-sm')).toBeNull()
+    expect(pageHeader?.querySelector('.bg-gradient-to-b')).toBeNull()
+  })
+
+  it('ADR-047 후속: stuck 헤더 하단에 경계 페이드(그라데이션+블러)를 둔다', () => {
+    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()] })
+
+    renderBossProfitScreen()
+    const header = screen.getByRole('button', { name: /낟낟/ })
+    expect(header.querySelector('.bg-gradient-to-b')).toBeNull() // 접힘: 고정 대상이 아니라 페이드도 없음
+
+    fireEvent.click(header)
+
+    // 중첩 sticky에서는 콘텐츠가 지나가는 경계가 카드 헤더 아래다 — 페이드가 헤더와 함께 움직이도록
+    // 헤더 안에 둔다(top-full). 배경색은 페이지가 아니라 카드 표면색(from-surface).
+    const fade = header.querySelector('.bg-gradient-to-b')
+    expect(fade).not.toBeNull()
+    expect(fade).toHaveClass('backdrop-blur-sm', 'from-surface', 'top-full')
+  })
+
+  it('ADR-047 후속: 고가 드롭 배지도 헤더와 함께 고정된다(높이 0 sticky 레일)', () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row()],
+      dropsByRowKey: {
+        'ocid-1|자쿰|카오스|2026-07-09': [{ category: 'consumable', itemName: VALUABLE_ITEM, quantity: 1 }],
+      },
+    })
+
+    renderBossProfitScreen()
+
+    // 배지를 헤더 안에 넣으면 헤더의 z-[5] 컨텍스트에 갇혀 골드 링(z-6)이 배지 위를 지나간다.
+    // 그래서 셸 바깥(z-10)에 남기고 높이 0 sticky 레일에 얹어 헤더와 같은 오프셋으로 고정한다.
+    const rail = screen.getByRole('img', { name: '고가 드롭' }).parentElement
+    expect(rail).toHaveClass('sticky', 'h-0', 'z-10')
   })
 
   // 펼친 캐릭터 카드 헤더 sticky 고정(ADR-047)

@@ -449,6 +449,10 @@ function collectAllValuableDrops(
   return groups.flatMap((group) => collectGroupValuableDrops(group, dropsByRowKey))
 }
 
+// 배지가 카드 상단 밖으로 올라간 양(-top-2 = 0.5rem). sticky 레일 오프셋에서 이만큼 상쇄해야
+// stuck 시 배지가 헤더 상단선에 걸린다(ADR-047 후속).
+const BADGE_TOP_OFFSET = 8
+
 // 실제 획득한 고가 아이템 아이콘(최대 3개 + 나머지 개수)을 골드 반짝임 칩으로 보여준다.
 // 배치·라벨은 호출부가 정한다(ADR-046) — 캐릭터 카드는 우상단 절대배치(overflow-hidden에 잘리지 않도록
 // 카드 바깥 relative 래퍼에 붙인다), 총 수익 헤드라인은 라벨행 우측 인라인. 외형·아이콘 스택 규칙은 공통.
@@ -537,7 +541,13 @@ function CharacterAccordion(props: {
     // 페이지 루트 stacking으로 새어나가 sticky 헤더(z-10)·하단 fixed nav·safe-area 위로 그려진다.
     <div className="relative isolate">
       {hasValuable && (
-        <ValuableDropBadge drops={valuableDrops} label="고가 드롭" className="absolute -right-1.5 -top-2 z-10" />
+        // 배지도 헤더와 함께 고정한다(ADR-047 후속). 헤더 "안"에 넣으면 헤더의 z-[5] 스택 컨텍스트에
+        // 갇혀 골드 링(z-6)이 배지 위를 지나가므로, 셸 바깥(z-10)에 남기고 높이 0 sticky 레일에 얹는다.
+        // h-0 + 자식 absolute라 레이아웃 영향 없음. top에 BADGE_TOP_OFFSET을 더하는 이유는 배지가
+        // -top-2로 올라가 있어서 — 그래야 stuck 시 헤더 상단선에 걸치고 페이지 헤더 뒤로 숨지 않는다.
+        <div className="sticky z-10 h-0" style={{ top: props.stickyTop + BADGE_TOP_OFFSET }}>
+          <ValuableDropBadge drops={valuableDrops} label="고가 드롭" className="absolute -right-1.5 -top-2" />
+        </div>
       )}
       <div className={shellClass}>
         <button
@@ -553,6 +563,19 @@ function CharacterAccordion(props: {
               : 'flex w-full items-center gap-3 rounded-[14px] bg-surface border border-border p-4'
           }
         >
+          {/* stuck 헤더 아래 경계 페이드(ADR-047 후속) — 중첩 sticky에서는 콘텐츠가 지나가는 경계가
+              여기라, 페이지 헤더에서 뺀 공용 레시피를 카드 표면색(from-surface)으로 여기에 붙인다.
+              헤더와 함께 움직이도록 헤더 안에 두고, button 자식은 phrasing content여야 해서 span이다. */}
+          {isExpanded && (
+            <span
+              className="pointer-events-none absolute inset-x-0 top-full h-8 bg-gradient-to-b from-surface to-transparent backdrop-blur-sm"
+              style={{
+                maskImage: 'linear-gradient(to bottom, black, transparent)',
+                WebkitMaskImage: 'linear-gradient(to bottom, black, transparent)',
+              }}
+              aria-hidden="true"
+            />
+          )}
           <CharacterAvatar characterName={group.characterName} imageUrl={group.imageUrl} />
           <span className="flex-1 truncate text-left text-sm font-semibold text-text">{group.characterName}</span>
           <span className="text-sm font-bold text-text tabular-nums">{totalMeso.toLocaleString()} 메소</span>
