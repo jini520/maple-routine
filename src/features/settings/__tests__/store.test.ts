@@ -72,13 +72,29 @@ afterEach(() => {
 })
 
 describe('useSettingsStore.changeApiKey', () => {
-  it('성공하면 setApiKey를 호출하고, 계정이 1개면 자동으로 prefetching까지 진행 후 idle로 돌아간다', async () => {
+  it('성공하면 setApiKey를 호출하고, 계정이 1개여도 selectingAccount에서 멈춘다(ADR-051)', async () => {
     const accounts = [account('acc-1')]
     fetchCharacterListMock.mockResolvedValue(accounts)
 
     await useSettingsStore.getState().changeApiKey('new-key')
 
     expect(setApiKeyMock).toHaveBeenCalledWith('new-key')
+    expect(setSelectedAccountIdMock).not.toHaveBeenCalled()
+    expect(prefetchAccountDataMock).not.toHaveBeenCalled()
+    const state = useSettingsStore.getState()
+    expect(state.status).toBe('selectingAccount')
+    expect(state.accounts).toEqual(accounts)
+  })
+
+  it('계정이 1개여도 사용자가 selectAccount로 확정해야 저장·예열을 거쳐 idle로 돌아간다(ADR-051)', async () => {
+    const accounts = [account('acc-1')]
+    fetchCharacterListMock.mockResolvedValue(accounts)
+    // setApiKey 이후 저장소에는 방금 넣은 키가 남는다 — selectAccount는 그 키로 예열한다.
+    getAuthConfigMock.mockResolvedValue({ apiKey: 'new-key', selectedAccountId: null })
+
+    await useSettingsStore.getState().changeApiKey('new-key')
+    await useSettingsStore.getState().selectAccount('acc-1')
+
     expect(setSelectedAccountIdMock).toHaveBeenCalledWith('acc-1')
     expect(prefetchAccountDataMock).toHaveBeenCalledWith('new-key', accounts[0].characters, expect.any(Function))
     expect(useSettingsStore.getState().status).toBe('idle')
@@ -144,7 +160,7 @@ describe('useSettingsStore.changeApiKey', () => {
 })
 
 describe('useSettingsStore.refreshAccounts', () => {
-  it('setApiKey를 호출하지 않고, 저장된 키로 재조회해 계정이 1개면 prefetching까지 진행한다', async () => {
+  it('setApiKey를 호출하지 않고, 저장된 키로 재조회해 계정이 1개여도 selectingAccount에서 멈춘다(ADR-051)', async () => {
     const accounts = [account('acc-1')]
     fetchCharacterListMock.mockResolvedValue(accounts)
 
@@ -152,6 +168,20 @@ describe('useSettingsStore.refreshAccounts', () => {
 
     expect(fetchCharacterListMock).toHaveBeenCalledWith('key-1')
     expect(setApiKeyMock).not.toHaveBeenCalled()
+    expect(setSelectedAccountIdMock).not.toHaveBeenCalled()
+    expect(prefetchAccountDataMock).not.toHaveBeenCalled()
+    const state = useSettingsStore.getState()
+    expect(state.status).toBe('selectingAccount')
+    expect(state.accounts).toEqual(accounts)
+  })
+
+  it('계정이 1개여도 사용자가 selectAccount로 확정해야 저장·예열을 거쳐 idle로 돌아간다(ADR-051)', async () => {
+    const accounts = [account('acc-1')]
+    fetchCharacterListMock.mockResolvedValue(accounts)
+
+    await useSettingsStore.getState().refreshAccounts()
+    await useSettingsStore.getState().selectAccount('acc-1')
+
     expect(setSelectedAccountIdMock).toHaveBeenCalledWith('acc-1')
     expect(prefetchAccountDataMock).toHaveBeenCalledWith('key-1', accounts[0].characters, expect.any(Function))
     expect(useSettingsStore.getState().status).toBe('idle')

@@ -29,7 +29,13 @@ export interface AccountSelectionListProps {
 }
 
 export function AccountSelectionList(props: AccountSelectionListProps): React.JSX.Element {
-  const [highlightedAccountId, setHighlightedAccountId] = useState<string | null>(null)
+  // ADR-051 결정 3: 계정이 정확히 1개면 그 항목을 초기 하이라이트로 지정한다. 화면은 반드시
+  // 보여주되(어떤 메이플 ID에 연동되는지 확인하는 것이 목적) 고를 것이 하나뿐이니 항목 선택 탭
+  // 1회는 아끼고 "계속하기" 확정 행위만 남긴다. 확정은 어디까지나 사용자의 클릭이므로 여기서
+  // onSelect 를 자동 호출하지 않는다. 목록은 마운트 시점에 확정돼 있어 초깃값 하나면 충분하다.
+  const [highlightedAccountId, setHighlightedAccountId] = useState<string | null>(
+    props.accounts.length === 1 ? props.accounts[0].accountId : null,
+  )
   const portraits = useRepresentativePortraits(props.accounts)
 
   return (

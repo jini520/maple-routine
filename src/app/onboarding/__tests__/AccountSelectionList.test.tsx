@@ -90,11 +90,95 @@ describe('AccountSelectionList', () => {
     expect(screen.queryByAltText('리부트')).not.toBeInTheDocument()
   })
 
-  it('"계속하기" 버튼은 초기에 비활성화 상태다', () => {
+  it('계정이 2개 이상이면 초기에 하이라이트된 항목이 없고 "계속하기"가 비활성화 상태다', () => {
     render(
       <AccountSelectionList accounts={accounts} isSubmitting={false} errorMessage={null} onSelect={vi.fn()} />,
     )
 
+    for (const button of screen.getAllByRole('button', { name: /캐릭터 \d+개/ })) {
+      expect(button).toHaveAttribute('aria-pressed', 'false')
+    }
+    expect(screen.getByRole('button', { name: '계속하기' })).toBeDisabled()
+  })
+
+  it('계정이 2개 이상일 때 다른 항목을 누르면 하이라이트가 옮겨간다', async () => {
+    const user = userEvent.setup()
+    render(
+      <AccountSelectionList accounts={accounts} isSubmitting={false} errorMessage={null} onSelect={vi.fn()} />,
+    )
+
+    const first = screen.getByText('베라 · 내옆에최성일 · Lv.211').closest('button')
+    const second = screen.getByText('엘리시움 · 낟낟 · Lv.293').closest('button')
+
+    await user.click(second as HTMLElement)
+    expect(second).toHaveAttribute('aria-pressed', 'true')
+    expect(first).toHaveAttribute('aria-pressed', 'false')
+
+    await user.click(first as HTMLElement)
+    expect(first).toHaveAttribute('aria-pressed', 'true')
+    expect(second).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  // ADR-051 결정 3: 계정이 1개면 고를 것이 없으므로 항목 선택 탭은 생략하고
+  // "계속하기" 확정 행위만 남긴다.
+  it('계정이 1개면 그 항목이 초기 하이라이트이고 "계속하기"가 곧바로 활성화된다', () => {
+    render(
+      <AccountSelectionList
+        accounts={[accounts[0]]}
+        isSubmitting={false}
+        errorMessage={null}
+        onSelect={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByText('베라 · 내옆에최성일 · Lv.211').closest('button')).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    expect(screen.getByRole('button', { name: '계속하기' })).toBeEnabled()
+  })
+
+  it('계정이 1개여도 렌더만으로는 onSelect가 호출되지 않고 "계속하기"를 눌러야 확정된다', async () => {
+    const user = userEvent.setup()
+    const onSelect = vi.fn()
+    render(
+      <AccountSelectionList
+        accounts={[accounts[0]]}
+        isSubmitting={false}
+        errorMessage={null}
+        onSelect={onSelect}
+      />,
+    )
+
+    expect(onSelect).not.toHaveBeenCalled()
+
+    await user.click(screen.getByRole('button', { name: '계속하기' }))
+
+    expect(onSelect).toHaveBeenCalledWith('da9b2f2-account-hash-1')
+  })
+
+  it('isSubmitting이면 계정 수와 무관하게 항목과 "계속하기"가 모두 비활성화된다', () => {
+    const { unmount } = render(
+      <AccountSelectionList
+        accounts={[accounts[0]]}
+        isSubmitting={true}
+        errorMessage={null}
+        onSelect={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByText('베라 · 내옆에최성일 · Lv.211').closest('button')).toBeDisabled()
+    expect(screen.getByRole('button', { name: '계속하기' })).toBeDisabled()
+
+    unmount()
+
+    render(
+      <AccountSelectionList accounts={accounts} isSubmitting={true} errorMessage={null} onSelect={vi.fn()} />,
+    )
+
+    for (const button of screen.getAllByRole('button', { name: /캐릭터 \d+개/ })) {
+      expect(button).toBeDisabled()
+    }
     expect(screen.getByRole('button', { name: '계속하기' })).toBeDisabled()
   })
 

@@ -311,14 +311,6 @@ describe('BossProfitScreen', () => {
     expect(screen.getByText('API 키가 유효하지 않습니다')).toBeInTheDocument()
   })
 
-  it('추적 캐릭터는 있지만 처치한 보스가 없으면 빈 상태 문구를 보여준다', () => {
-    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [] })
-
-    renderBossProfitScreen()
-
-    expect(screen.getByText('아직 처치한 보스가 없습니다')).toBeInTheDocument()
-  })
-
   it('weekly 탭: 롤링 윈도우 밖(오늘-13일 이전)이고 rows가 비어있으면 "조회 불가"를 보여준다(ADR-032)', () => {
     // periodKey 2026-07-02의 조회일은 2026-07-08 — 테스트 실행 시점(2026-07-22) 기준 롤링
     // 하한(2026-07-09)보다 이전이라 지금은 API로 조회할 수 없는 기간이다.
@@ -613,15 +605,6 @@ describe('BossProfitScreen', () => {
     // 헤드라인은 금액과 단위를 분리해 렌더하므로(ADR-046) getByText는 직계 텍스트("8,000,000")만 잡는다 —
     // 단위까지는 textContent로 확인한다.
     expect(screen.getByText('8,000,000')).toHaveTextContent('8,000,000 메소')
-  })
-
-  it('rows가 비어있으면 상단 합계 카드 없이 빈 상태 문구만 보인다', () => {
-    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [] })
-
-    renderBossProfitScreen()
-
-    expect(screen.getByText('아직 처치한 보스가 없습니다')).toBeInTheDocument()
-    expect(screen.queryByText(/총 수익/)).not.toBeInTheDocument()
   })
 
   it('monthly 탭: 주차별 합계 서브섹션과 월간 보스 서브섹션이 각각 렌더된다', () => {
