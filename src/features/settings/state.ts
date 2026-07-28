@@ -47,15 +47,8 @@ export function settingsReducer(state: SettingsState, event: SettingsEvent): Set
       }
 
     case 'ACCOUNTS_VERIFIED':
-      // ADR-016과 동일한 자동 확정 규칙: 계정이 정확히 1개면 선택 화면 없이 바로 prefetching으로 넘어간다.
-      if (event.accounts.length === 1) {
-        return {
-          ...state,
-          status: 'prefetching',
-          accounts: event.accounts,
-          error: null,
-        }
-      }
+      // ADR-051: 계정 수와 무관하게 항상 선택 화면을 거친다 — 계정이 1개여도 자동 확정하지 않는다.
+      // 계정 확정(과 그에 이어지는 ADR-016 예열)은 사용자가 "계속하기"를 누르는 SELECT_ACCOUNT 하나뿐이다.
       return {
         ...state,
         status: 'selectingAccount',

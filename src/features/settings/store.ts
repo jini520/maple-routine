@@ -40,16 +40,6 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => {
     set((state) => settingsReducer(state, { type: 'PREFETCH_FINISHED' }))
   }
 
-  // changeApiKey/refreshAccounts가 공유하는 마무리 단계 — 계정 검증 이후의 흐름은 두 트리거가 동일하다.
-  async function finalizeAccounts(accounts: MapleAccount[], apiKey: string): Promise<void> {
-    set((state) => settingsReducer(state, { type: 'ACCOUNTS_VERIFIED', accounts }))
-
-    if (get().status === 'prefetching') {
-      await setSelectedAccountId(accounts[0].accountId)
-      await runPrefetch(apiKey, accounts[0].characters)
-    }
-  }
-
   return {
     ...initialSettingsState,
 
@@ -73,7 +63,7 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => {
         return
       }
 
-      await finalizeAccounts(accounts, apiKey)
+      set((state) => settingsReducer(state, { type: 'ACCOUNTS_VERIFIED', accounts }))
     },
 
     async refreshAccounts() {
@@ -93,7 +83,7 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => {
         return
       }
 
-      await finalizeAccounts(accounts, authConfig.apiKey)
+      set((state) => settingsReducer(state, { type: 'ACCOUNTS_VERIFIED', accounts }))
     },
 
     async selectAccount(accountId: string) {
@@ -108,6 +98,7 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => {
 
       set((state) => settingsReducer(state, { type: 'SELECT_ACCOUNT', accountId }))
 
+      // ADR-016/ADR-051: 계정 수와 무관하게 사용자가 확정한 이 경로에서만 예열을 시작한다.
       const account = get().accounts.find((candidate) => candidate.accountId === accountId)
       const authConfig = await getAuthConfig()
       if (account !== undefined && authConfig !== null) {
