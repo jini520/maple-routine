@@ -24,7 +24,7 @@
       "status": "completed",
       "started_at": "2026-07-29T03:29:59+0900",
       "summary": "cache-data.ts의 실제 삭제 범위를 ADR-052 결정 1·2에 맞췄다. KEEP_KEYS는 이제 5개 — apiKey · selectedAccountId · theme · trackingMode · dropEffect(Preferences는 여전히 '이 5개 빼고 전부' 반전 규칙, 새 키 자동 포함). CLEARED_TABLES 하드코딩 3개를 제거하고 `import { BOSS_PROFIT_TABLE_NAMES } from './sqlite/db'`로 교체 — clearCacheData(DELETE FROM)와 getCacheDataSize(SELECT *) 양쪽이 같은 배열을 순회하므로 범위가 구조적으로 일치하고, 누락돼 있던 boss_drop_records가 실제로 삭제·용량 합산에 포함된다(테이블 이름 문자열은 cache-data.ts에 한 번도 등장하지 않음, grep으로 확인). DROP이 아닌 DELETE FROM 유지. 회귀 가드 테스트(src/storage/__tests__/cache-data.test.ts) — (1) vi.mock('../sqlite/db')를 importOriginal 스프레드로 바꿔 BOSS_PROFIT_TABLE_NAMES는 실제 값을 쓰고 getBossProfitDb만 모킹, (2) 'db.ts가 정의한 SQLite 테이블을 하나도 빠짐없이 비운다' — 목록을 순회해 `DELETE FROM <name>;` 호출을 단언 + 호출 횟수 === 테이블 개수(목록 밖 테이블 삭제 금지), (3) 보존 키 5개 단언, (4) getCacheDataSize는 trackingMode 'manual'(6B)·dropEffect 'off'(3B)를 seed해도 합계 12B 불변, 보존 키만 남으면 0. AC: build·lint·grep 4종 통과, cache-data.test.ts 6개 통과. 전체 테스트는 BossProfitScreen 2건·boss-profit store 1건 실패하나 stash 후 동일하게 실패하는 선재 결함(step 1과 같음). 작업 4(조사) 결과 — 캐시 삭제 후 trackingMode:'manual'만 남고 trackedCharacters가 비어도 복구 경로는 살아 있다: 부팅 시 AppShell이 trackingMode를 복원하고, 사용자가 캐릭터 관리에서 저장하면 content-scheduler/store.ts:156과 boss-scheduler/store.ts:158의 ADR-035 결정 14(b) 분기가 previousOcids=[] 이므로 선택한 전원을 added로 보고 seedManualTrackedContent를 돌려 manualTrackedContent:*를 재생성한다(코드 변경 없음, 조사만). 다음 step(확인 모달 문구)에 필요한 사실: 삭제됨 = 나머지 Preferences 전부 + SQLite 4개 테이블(수익 기록·파티 설정·기간 체크·드롭 기록) 전체 행, 유지됨 = API 키·선택 계정·테마·트래킹 모드·드롭 연출 설정.",
-      "completed_at": "2026-07-29T03:33:41+0900"
+      "completed_at": "2026-07-29T03:33:43+0900"
     },
     {
       "step": 3,
