@@ -27,7 +27,7 @@
       "started_at": "2026-07-29T03:12:15+0900",
       "summary": "설정(계정 변경) 경로의 단일 계정 자동 확정 제거(ADR-051 결정 1·2) — features/settings/state.ts: ACCOUNTS_VERIFIED의 accounts.length === 1 → prefetching 분기를 통째로 삭제해 계정 수와 무관하게 항상 selectingAccount 반환(주석을 ADR-051 기준으로 현행화), features/settings/store.ts: 리듀서 분기가 사라져 죽은 코드가 된 finalizeAccounts의 get().status === 'prefetching' 블록(선제 setSelectedAccountId + runPrefetch)을 제거하고, 한 줄만 남은 헬퍼 자체를 없애 changeApiKey·refreshAccounts 두 호출부에서 set(ACCOUNTS_VERIFIED)를 직접 호출(selectAccount의 예열 시작점에 ADR-016/ADR-051 주석 추가). runPrefetch·setSelectedAccountId import·get은 selectAccount가 계속 써서 유지. 테스트 먼저 갱신해 5건 실패 확인 후 구현(state.test.ts 1건 = 계정 1개도 selectingAccount, store.test.ts: changeApiKey·refreshAccounts 각각 stop-at-selectingAccount로 전환 + 이어지는 selectAccount 확정 경로 신규 2건). AccountFlowStatus.tsx·그 테스트는 무변경(selectingAccount 케이스에 자연히 도달, 계정 수 전제 없음). 두 경로(온보딩·설정) 모두 자동 확정 제거 완료, 남은 것은 AccountSelectionList 초기 하이라이트(step 3).",
       "notes": "AC: npm run build 통과, npm run lint 경고 0, grep 'accounts.length === 1' (onboarding·settings) 결과 없음. npm test는 settings/onboarding/app-settings 145건 전부 통과, 전체는 step 0부터 이어진 기존 실패 3건(BossProfitScreen 빈 상태 2건, boss-profit store.test.ts goToPreviousPeriod hang 타임아웃 1건)만 남음 — git stash로 이번 변경을 뺀 상태에서도 동일하게 3건 실패함을 재확인해 무관함을 검증했다.",
-      "completed_at": "2026-07-29T03:15:30+0900"
+      "completed_at": "2026-07-29T03:15:41+0900"
     },
     {
       "step": 3,
