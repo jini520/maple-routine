@@ -804,6 +804,10 @@ export function ContentScreen(): React.JSX.Element {
     <CharacterTrackingPicker
       entries={roster}
       trackedOcids={trackedOcids ?? []}
+      // TODO(step 3): getCharacterPickerRoster의 Promise resolve/reject로 실제 로딩·실패 상태를
+      // 관리해 내려준다(ADR-053 결정 3). 지금은 기존 동작(상태 없음)을 그대로 표현하는 임시값.
+      isLoading={false}
+      loadFailed={false}
       onSave={handleSaveTracking}
       onClose={() => setIsPickerOpen(false)}
     />

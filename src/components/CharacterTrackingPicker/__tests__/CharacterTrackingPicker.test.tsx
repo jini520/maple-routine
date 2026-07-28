@@ -18,10 +18,14 @@ const entries: CharacterPickerEntry[] = [
   { ocid: 'ocid-3', name: '테스트캐릭터', level: 165, imageUrl: null, world: '리부트' },
 ]
 
+// ADR-053 결정 3: 로딩/실패는 호출부가 getCharacterPickerRoster의 Promise로 판정해 내려준다.
+// 아래 기존 케이스는 모두 "조회 완료 + 성공" 상태를 전제한다.
+const loaded = { isLoading: false, loadFailed: false }
+
 describe('CharacterTrackingPicker', () => {
   it('제목과 설명을 보여준다', () => {
     render(
-      <CharacterTrackingPicker entries={entries} trackedOcids={[]} onSave={vi.fn()} onClose={vi.fn()} />,
+      <CharacterTrackingPicker entries={entries} trackedOcids={[]} {...loaded} onSave={vi.fn()} onClose={vi.fn()} />,
     )
 
     expect(screen.getByRole('heading', { name: '캐릭터 관리' })).toBeInTheDocument()
@@ -33,6 +37,7 @@ describe('CharacterTrackingPicker', () => {
       <CharacterTrackingPicker
         entries={entries}
         trackedOcids={['ocid-1', 'ocid-3']}
+        {...loaded}
         onSave={vi.fn()}
         onClose={vi.fn()}
       />,
@@ -47,7 +52,13 @@ describe('CharacterTrackingPicker', () => {
     const user = userEvent.setup()
     const onSave = vi.fn()
     render(
-      <CharacterTrackingPicker entries={entries} trackedOcids={['ocid-1']} onSave={onSave} onClose={vi.fn()} />,
+      <CharacterTrackingPicker
+        entries={entries}
+        trackedOcids={['ocid-1']}
+        {...loaded}
+        onSave={onSave}
+        onClose={vi.fn()}
+      />,
     )
 
     await user.click(screen.getByRole('button', { name: /내옆에최성일/ }))
@@ -59,7 +70,13 @@ describe('CharacterTrackingPicker', () => {
     const user = userEvent.setup()
     const onSave = vi.fn()
     render(
-      <CharacterTrackingPicker entries={entries} trackedOcids={['ocid-1']} onSave={onSave} onClose={vi.fn()} />,
+      <CharacterTrackingPicker
+        entries={entries}
+        trackedOcids={['ocid-1']}
+        {...loaded}
+        onSave={onSave}
+        onClose={vi.fn()}
+      />,
     )
 
     await user.click(screen.getByRole('button', { name: /내옆에최성일/ }))
@@ -74,6 +91,7 @@ describe('CharacterTrackingPicker', () => {
       <CharacterTrackingPicker
         entries={entries}
         trackedOcids={['ocid-1']}
+        {...loaded}
         onSave={vi.fn()}
         onClose={vi.fn()}
       />,
@@ -88,6 +106,7 @@ describe('CharacterTrackingPicker', () => {
       <CharacterTrackingPicker
         entries={entries}
         trackedOcids={['ocid-1']}
+        {...loaded}
         onSave={vi.fn()}
         onClose={vi.fn()}
       />,
@@ -104,6 +123,7 @@ describe('CharacterTrackingPicker', () => {
       <CharacterTrackingPicker
         entries={entries}
         trackedOcids={['ocid-1']}
+        {...loaded}
         onSave={vi.fn()}
         onClose={vi.fn()}
       />,
@@ -121,6 +141,7 @@ describe('CharacterTrackingPicker', () => {
       <CharacterTrackingPicker
         entries={entries}
         trackedOcids={['ocid-1', 'ocid-2']}
+        {...loaded}
         onSave={vi.fn()}
         onClose={vi.fn()}
       />,
@@ -138,7 +159,13 @@ describe('CharacterTrackingPicker', () => {
     const onSave = vi.fn()
     const onClose = vi.fn()
     render(
-      <CharacterTrackingPicker entries={entries} trackedOcids={['ocid-1']} onSave={onSave} onClose={onClose} />,
+      <CharacterTrackingPicker
+        entries={entries}
+        trackedOcids={['ocid-1']}
+        {...loaded}
+        onSave={onSave}
+        onClose={onClose}
+      />,
     )
 
     await user.click(screen.getByRole('button', { name: /내옆에최성일/ }))
@@ -153,7 +180,13 @@ describe('CharacterTrackingPicker', () => {
     const onSave = vi.fn()
     const onClose = vi.fn()
     render(
-      <CharacterTrackingPicker entries={entries} trackedOcids={['ocid-1']} onSave={onSave} onClose={onClose} />,
+      <CharacterTrackingPicker
+        entries={entries}
+        trackedOcids={['ocid-1']}
+        {...loaded}
+        onSave={onSave}
+        onClose={onClose}
+      />,
     )
 
     await user.click(screen.getByTestId('character-tracking-picker-overlay'))
@@ -164,7 +197,7 @@ describe('CharacterTrackingPicker', () => {
 
   it('각 캐릭터 카드에 서버(월드) 엠블럼을 표시한다', () => {
     render(
-      <CharacterTrackingPicker entries={entries} trackedOcids={[]} onSave={vi.fn()} onClose={vi.fn()} />,
+      <CharacterTrackingPicker entries={entries} trackedOcids={[]} {...loaded} onSave={vi.fn()} onClose={vi.fn()} />,
     )
 
     const emblem = screen.getByAltText('엘리시움')
@@ -174,7 +207,7 @@ describe('CharacterTrackingPicker', () => {
 
   it('매핑에 없는 월드는 엠블럼을 표시하지 않는다(폴백)', () => {
     render(
-      <CharacterTrackingPicker entries={entries} trackedOcids={[]} onSave={vi.fn()} onClose={vi.fn()} />,
+      <CharacterTrackingPicker entries={entries} trackedOcids={[]} {...loaded} onSave={vi.fn()} onClose={vi.fn()} />,
     )
 
     expect(screen.queryByAltText('리부트')).not.toBeInTheDocument()
@@ -182,7 +215,7 @@ describe('CharacterTrackingPicker', () => {
 
   it('imageUrl이 있으면 캐릭터 이미지를 렌더링한다', () => {
     render(
-      <CharacterTrackingPicker entries={entries} trackedOcids={[]} onSave={vi.fn()} onClose={vi.fn()} />,
+      <CharacterTrackingPicker entries={entries} trackedOcids={[]} {...loaded} onSave={vi.fn()} onClose={vi.fn()} />,
     )
 
     expect(screen.getByRole('img', { name: '낟낟' })).toHaveAttribute('src', 'https://example.com/1.png')
@@ -190,7 +223,7 @@ describe('CharacterTrackingPicker', () => {
 
   it('imageUrl이 null이면 이미지 대신 플레이스홀더를 표시한다', () => {
     render(
-      <CharacterTrackingPicker entries={entries} trackedOcids={[]} onSave={vi.fn()} onClose={vi.fn()} />,
+      <CharacterTrackingPicker entries={entries} trackedOcids={[]} {...loaded} onSave={vi.fn()} onClose={vi.fn()} />,
     )
 
     const card = screen.getByRole('button', { name: /내옆에최성일/ })
@@ -202,7 +235,7 @@ describe('CharacterTrackingPicker', () => {
   it('즐겨찾기한 캐릭터가 레벨이 낮아도 그룹 맨 앞으로 재정렬된다', async () => {
     const user = userEvent.setup()
     render(
-      <CharacterTrackingPicker entries={entries} trackedOcids={[]} onSave={vi.fn()} onClose={vi.fn()} />,
+      <CharacterTrackingPicker entries={entries} trackedOcids={[]} {...loaded} onSave={vi.fn()} onClose={vi.fn()} />,
     )
 
     await user.click(screen.getByRole('button', { name: /테스트캐릭터/ }))
@@ -216,7 +249,7 @@ describe('CharacterTrackingPicker', () => {
   it('즐겨찾기를 다시 해제하면 원래 순서(레벨 내림차순)로 되돌아간다', async () => {
     const user = userEvent.setup()
     render(
-      <CharacterTrackingPicker entries={entries} trackedOcids={[]} onSave={vi.fn()} onClose={vi.fn()} />,
+      <CharacterTrackingPicker entries={entries} trackedOcids={[]} {...loaded} onSave={vi.fn()} onClose={vi.fn()} />,
     )
 
     await user.click(screen.getByRole('button', { name: /테스트캐릭터/ }))
@@ -230,7 +263,7 @@ describe('CharacterTrackingPicker', () => {
 
   it('열려 있는 동안 뒷 페이지(body) 스크롤을 막는다', () => {
     const { unmount } = render(
-      <CharacterTrackingPicker entries={entries} trackedOcids={[]} onSave={vi.fn()} onClose={vi.fn()} />,
+      <CharacterTrackingPicker entries={entries} trackedOcids={[]} {...loaded} onSave={vi.fn()} onClose={vi.fn()} />,
     )
 
     expect(document.body.style.overflow).toBe('hidden')
@@ -238,5 +271,125 @@ describe('CharacterTrackingPicker', () => {
     unmount()
 
     expect(document.body.style.overflow).toBe('')
+  })
+})
+
+// ADR-053 결정 3: 그리드에 보여줄 항목이 없을 때 "조회 중"·"활성 캐릭터 0명"·"조회 실패"를
+// 서로 구분해 그린다(실패를 빈 상태로 위장하지 않는다 — error-resilience.md 원칙 1·2).
+describe('CharacterTrackingPicker — 로딩/빈/실패 상태 (ADR-053)', () => {
+  it('조회 중이고 보여줄 항목이 없으면 스피너를 보여주고 그리드 항목은 없다', () => {
+    render(
+      <CharacterTrackingPicker
+        entries={[]}
+        trackedOcids={[]}
+        isLoading
+        loadFailed={false}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByTestId('maple-spinner')).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveAttribute('aria-busy', 'true')
+    expect(screen.queryByRole('button', { name: /낟낟/ })).not.toBeInTheDocument()
+  })
+
+  it('조회 중이어도 캐시로 보여줄 항목이 있으면 스피너 대신 그리드를 그린다(ADR-016 캐시 우선 표시)', () => {
+    render(
+      <CharacterTrackingPicker
+        entries={entries}
+        trackedOcids={[]}
+        isLoading
+        loadFailed={false}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+
+    expect(screen.queryByTestId('maple-spinner')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /낟낟/ })).toBeInTheDocument()
+  })
+
+  it('조회가 끝났는데 항목이 없으면 빈 상태 안내를 보여준다(스피너 없음)', () => {
+    render(
+      <CharacterTrackingPicker
+        entries={[]}
+        trackedOcids={[]}
+        isLoading={false}
+        loadFailed={false}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByText('표시할 캐릭터가 없어요')).toBeInTheDocument()
+    expect(screen.queryByTestId('maple-spinner')).not.toBeInTheDocument()
+  })
+
+  it('조회가 실패로 끝나면 빈 상태와 구분되는 실패 안내를 보여준다', () => {
+    render(
+      <CharacterTrackingPicker
+        entries={[]}
+        trackedOcids={[]}
+        isLoading={false}
+        loadFailed
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByText(/캐릭터 목록을 불러오지 못했어요/)).toBeInTheDocument()
+    expect(screen.queryByText('표시할 캐릭터가 없어요')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('maple-spinner')).not.toBeInTheDocument()
+  })
+
+  it('조회가 끝나고 항목이 있으면 그리드만 보여준다', () => {
+    render(
+      <CharacterTrackingPicker
+        entries={entries}
+        trackedOcids={[]}
+        isLoading={false}
+        loadFailed={false}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByRole('button', { name: /낟낟/ })).toBeInTheDocument()
+    expect(screen.queryByTestId('maple-spinner')).not.toBeInTheDocument()
+    expect(screen.queryByText('표시할 캐릭터가 없어요')).not.toBeInTheDocument()
+    expect(screen.queryByText(/캐릭터 목록을 불러오지 못했어요/)).not.toBeInTheDocument()
+  })
+
+  it('로딩 중이어도 저장 버튼 비활성 판정은 ADR-043 집합 비교 그대로다', async () => {
+    const user = userEvent.setup()
+    const { rerender } = render(
+      <CharacterTrackingPicker
+        entries={[]}
+        trackedOcids={['ocid-1']}
+        isLoading
+        loadFailed={false}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+
+    // 로딩 중에는 선택을 바꿀 수 없으니 자연히 비활성이다(별도 disabled 분기 없이).
+    expect(screen.getByRole('button', { name: '저장' })).toBeDisabled()
+
+    rerender(
+      <CharacterTrackingPicker
+        entries={entries}
+        trackedOcids={['ocid-1']}
+        isLoading={false}
+        loadFailed={false}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: /내옆에최성일/ }))
+
+    expect(screen.getByRole('button', { name: '저장' })).toBeEnabled()
   })
 })
