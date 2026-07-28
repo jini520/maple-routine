@@ -895,6 +895,13 @@ describe('BossProfitScreen', () => {
     // 그래서 셸 바깥(z-10)에 남기고 높이 0 sticky 레일에 얹어 헤더와 같은 오프셋으로 고정한다.
     const rail = screen.getByRole('img', { name: '고가 드롭' }).parentElement
     expect(rail).toHaveClass('sticky', 'h-0', 'z-10')
+
+    // 높이 0 레일은 카드 맨 아래까지 붙어 있어, 자기 높이만큼 일찍 떨어지는 헤더와 어긋난다.
+    // 그래서 "bottom = 헤더 실측 높이"인 absolute 제약 박스로 고정 범위를 헤더에 맞춘다(레이아웃 영향 없음).
+    const constraint = rail?.parentElement
+    expect(constraint).toHaveClass('absolute', 'pointer-events-none')
+    expect(constraint?.style.bottom).not.toBe('') // 실측값 주입 배선(jsdom에선 0px)
+    expect(screen.getByRole('img', { name: '고가 드롭' })).toHaveClass('pointer-events-auto')
   })
 
   it('ADR-047 후속: 접힘 상태의 배지는 sticky가 아니다(고정할 헤더가 없고 containing block이 헤더 높이뿐)', () => {

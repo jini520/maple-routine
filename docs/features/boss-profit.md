@@ -31,7 +31,7 @@
 - **헤더**: 아바타 `h-8 w-8 rounded-full bg-surface-2 ... text-xs font-bold text-text` + 이름 `flex-1 text-sm font-semibold text-text truncate` + 금액 `text-sm font-bold text-text tabular-nums`(우측 세로 정렬) + Chevron(`ChevronDown`/`ChevronUp`).
 - **펼침 헤더는 sticky** — [[ADR-047]]: 펼쳤을 때만 `sticky z-[5] rounded-t-[14px] bg-surface` + `top` = **페이지 sticky 헤더의 실측 높이**(`ResizeObserver`, 헤더 높이가 탭·경고 문구에 따라 가변이라 상수 불가). `bg-surface`는 아래로 지나가는 보스 행을 가리기 위해 필수이고, 그 때문에 `rounded-t-[14px]`로 셸 상단 라운딩을 따라가야 한다(사각 배경이 둥근 모서리를 덮음).
   - **카드 내부 z 레이어**(`isolate` 안): 드롭 아이콘 `1~3` < sticky 헤더 `5`(하단 페이드 포함) < 골드 회전 샤인 링(`.valuable-drop-card::before`) `6` < 고가 드롭 배지 `10`. 링이 헤더보다 낮으면 테두리 상단·좌우가 헤더 배경에 끊긴다.
-  - **고가 드롭 배지도 함께 고정 — 펼침 상태에만**([[ADR-047]] 후속): 배지를 헤더 안에 넣으면 헤더의 `z-[5]` 컨텍스트에 갇혀 골드 링(`z-6`)이 위를 지나간다. 그래서 셸 바깥에 남기고 **높이 0 sticky 레일**(`sticky z-10 h-0`, `top` = `stickyTop + 8`)에 얹는다 — `+8`은 배지의 `-top-2`를 상쇄해 stuck 시 헤더 상단선에 걸치게 하는 값. **접힘 상태는 레일 없이** [[ADR-045]] 원래 구조(`absolute -right-1.5 -top-2 z-10`)를 쓴다 — 접힌 카드는 고정할 헤더가 없고 containing block이 헤더 높이뿐이라 배지만 떠서 어긋난다.
+  - **고가 드롭 배지도 함께 고정 — 펼침 상태에만**([[ADR-047]] 후속): 배지를 헤더 안에 넣으면 헤더의 `z-[5]` 컨텍스트에 갇혀 골드 링(`z-6`)이 위를 지나간다. 그래서 셸 바깥에 남기고 **높이 0 sticky 레일**(`sticky z-10 h-0`, `top` = `stickyTop + 8`)에 얹는다 — `+8`은 배지의 `-top-2`를 상쇄해 stuck 시 헤더 상단선에 걸치게 하는 값. **접힘 상태는 레일 없이** [[ADR-045]] 원래 구조(`absolute -right-1.5 -top-2 z-10`)를 쓴다 — 접힌 카드는 고정할 헤더가 없고 containing block이 헤더 높이뿐이라 배지만 떠서 어긋난다. 레일은 `absolute inset-x-0 top-0` + `bottom` = **헤더 실측 높이**인 제약 박스 안에 둔다 — 높이 0 레일은 카드 끝까지 붙어 헤더(자기 높이만큼 일찍 떨어짐)와 어긋나므로 범위를 맞춘 것(`absolute`라 레이아웃 영향 없음, `pointer-events-none`/배지만 `auto`).
 - **본문 — 보스 행(개별 카드 아닌 통합 리스트)**:
 ```
 행: flex items-start gap-3 p-4 border-b border-border last:border-b-0 (자체 rounded/bg/border 없음)

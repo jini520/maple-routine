@@ -511,6 +511,28 @@ function CharacterAccordion(props: {
   stickyTop: number
 }): React.JSX.Element {
   const [isExpanded, setIsExpanded] = useState(false)
+  // 배지 sticky 레일의 고정 범위를 헤더와 맞추기 위한 헤더 실측 높이(ADR-047 후속) — 높이 0인 레일은
+  // 카드 맨 아래까지 붙어 있어, 자기 높이만큼 일찍 떨어지는 헤더와 카드 끝에서 어긋난다. 글꼴 확대 시
+  // 헤더 높이가 달라질 수 있어 상수 대신 측정한다. 헤더 버튼 노드는 접힘/펼침에 유지돼 관찰이 이어진다.
+  const headerRef = useRef<HTMLButtonElement>(null)
+  const [headerHeight, setHeaderHeight] = useState(0)
+
+  useEffect(() => {
+    const element = headerRef.current
+    if (element === null) return
+
+    const measure = (): void => {
+      setHeaderHeight(element.getBoundingClientRect().height)
+    }
+    measure()
+
+    const observer = new ResizeObserver(measure)
+    observer.observe(element)
+    return () => {
+      observer.disconnect()
+    }
+  }, [])
+
   const { group } = props
   const totalMeso = groupTotalMeso(group)
   // 이 주차에 고가 아이템 드롭이 기록됐을 때: 카드에 골드 회전샤인 테두리/글로우(valuable-drop-card) +
@@ -547,8 +569,16 @@ function CharacterAccordion(props: {
           // 얹는다(h-0 + 자식 absolute라 레이아웃 영향 없음). sticky는 z-index 없이도 스택 컨텍스트를
           // 만들어 레일이 z-10을 가져야 링 위로 간다. top에 BADGE_TOP_OFFSET을 더하는 이유는 배지가
           // -top-2로 올라가 있어서 — 그래야 stuck 시 헤더 상단선에 걸치고 페이지 헤더 뒤로 숨지 않는다.
-          <div className="sticky z-10 h-0" style={{ top: props.stickyTop + BADGE_TOP_OFFSET }}>
-            <ValuableDropBadge drops={valuableDrops} label="고가 드롭" className="absolute -right-1.5 -top-2" />
+          // 바깥 absolute 박스는 레일의 고정 범위를 "카드 높이 - 헤더 높이"로 잘라 헤더와 같은 시점에
+          // 떨어지게 한다(없으면 카드 끝에서 배지만 남아 어긋난다). absolute라 레이아웃엔 영향 없다.
+          <div className="pointer-events-none absolute inset-x-0 top-0" style={{ bottom: headerHeight }}>
+            <div className="sticky z-10 h-0" style={{ top: props.stickyTop + BADGE_TOP_OFFSET }}>
+              <ValuableDropBadge
+                drops={valuableDrops}
+                label="고가 드롭"
+                className="pointer-events-auto absolute -right-1.5 -top-2"
+              />
+            </div>
           </div>
         ) : (
           // 접힘: 고정할 헤더가 없고 containing block이 헤더 높이(~56px)뿐이라 레일을 쓰면 배지만 떠서
@@ -557,6 +587,7 @@ function CharacterAccordion(props: {
         ))}
       <div className={shellClass}>
         <button
+          ref={headerRef}
           type="button"
           onClick={() => setIsExpanded((prev) => !prev)}
           // 펼침 헤더는 카드 안에서 sticky로 고정한다(ADR-047) — top은 페이지 sticky 헤더 실측 높이라
