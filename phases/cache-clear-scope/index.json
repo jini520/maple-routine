@@ -1,0 +1,11 @@
+{
+  "project": "메이플 루틴",
+  "phase": "cache-clear-scope",
+  "steps": [
+    { "step": 0, "name": "docs-policy", "status": "pending" },
+    { "step": 1, "name": "table-registry", "status": "pending" },
+    { "step": 2, "name": "cache-data-scope", "status": "pending" },
+    { "step": 3, "name": "confirm-copy", "status": "pending" },
+    { "step": 4, "name": "docs-finalize", "status": "pending" }
+  ]
+}

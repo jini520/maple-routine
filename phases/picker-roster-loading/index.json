@@ -1,0 +1,11 @@
+{
+  "project": "메이플 루틴",
+  "phase": "picker-roster-loading",
+  "steps": [
+    { "step": 0, "name": "docs-policy", "status": "pending" },
+    { "step": 1, "name": "roster-emission", "status": "pending" },
+    { "step": 2, "name": "picker-loading-ui", "status": "pending" },
+    { "step": 3, "name": "screen-wiring", "status": "pending" },
+    { "step": 4, "name": "docs-finalize", "status": "pending" }
+  ]
+}
