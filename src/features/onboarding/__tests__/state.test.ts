@@ -57,7 +57,7 @@ describe('onboardingReducer', () => {
     })
   })
 
-  it('API_KEY_VERIFIED — 계정이 정확히 1개면 선택 화면 없이 prefetching으로 전이한다(ADR-016)', () => {
+  it('API_KEY_VERIFIED — 계정이 정확히 1개여도 자동 확정 없이 selectingAccount로 전이한다(ADR-051)', () => {
     const accounts = [account('acc-1')]
 
     const result = onboardingReducer(initialOnboardingState, {
@@ -66,9 +66,9 @@ describe('onboardingReducer', () => {
     })
 
     expect(result).toEqual<OnboardingState>({
-      status: 'prefetching',
+      status: 'selectingAccount',
       accounts,
-      selectedAccountId: 'acc-1',
+      selectedAccountId: null,
       error: null,
       prefetchProgress: null,
     })

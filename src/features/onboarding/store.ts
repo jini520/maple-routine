@@ -30,8 +30,8 @@ function toOnboardingError(error: unknown): OnboardingError {
 }
 
 export const useOnboardingStore = create<OnboardingStore>()((set, get) => {
-  // ADR-016: 계정이 확정된 직후(단일 계정 자동 확정 또는 다중 계정 중 선택) 전체 캐릭터를
-  // 예열한다. 진행률은 PREFETCH_PROGRESS로 스트리밍 반영하고, 끝나면 PREFETCH_FINISHED로
+  // ADR-016: 계정이 확정된 직후(ADR-051 이후로는 사용자가 "계속하기"를 누른 selectAccount 한 곳뿐)
+  // 전체 캐릭터를 예열한다. 진행률은 PREFETCH_PROGRESS로 스트리밍 반영하고, 끝나면 PREFETCH_FINISHED로
   // 'completed'로 넘어간다.
   async function runPrefetch(apiKey: string, characters: OnboardingState['accounts'][number]['characters']) {
     await prefetchAccountData(apiKey, characters, (progress) => {
@@ -45,35 +45,6 @@ export const useOnboardingStore = create<OnboardingStore>()((set, get) => {
     })
     useToastStore.getState().showSuccess('캐릭터 정보를 모두 불러왔어요')
     set((state) => onboardingReducer(state, { type: 'PREFETCH_FINISHED' }))
-  }
-
-  // ADR-008: 계정이 1개라 자동 completed로 전이할 때도 selectedAccountId가 먼저 storage에 저장되어야 한다.
-  // restoreFromStorage/submitApiKey 둘 다 fetchCharacterList 성공 이후 이 마무리 단계를 공유해
-  // "자동완료" 규칙이 재개 경로에서도 동일하게 적용되도록 한다.
-  async function finalizeVerifiedAccounts(
-    accounts: OnboardingState['accounts'],
-    apiKey: string,
-  ): Promise<void> {
-    if (accounts.length === 1) {
-      try {
-        await setSelectedAccountId(accounts[0].accountId)
-      } catch {
-        set((state) =>
-          onboardingReducer(state, {
-            type: 'API_KEY_REJECTED',
-            error: { kind: 'storageWriteFailed' },
-          }),
-        )
-        return
-      }
-    }
-
-    set((state) => onboardingReducer(state, { type: 'API_KEY_VERIFIED', accounts }))
-
-    // ADR-016: 계정이 정확히 1개면 reducer가 곧바로 'prefetching'으로 전이한다 — 그 경우에만 예열을 시작한다.
-    if (get().status === 'prefetching') {
-      await runPrefetch(apiKey, accounts[0].characters)
-    }
   }
 
   return {
@@ -107,7 +78,7 @@ export const useOnboardingStore = create<OnboardingStore>()((set, get) => {
         return
       }
 
-      await finalizeVerifiedAccounts(accounts, authConfig.apiKey)
+      set((state) => onboardingReducer(state, { type: 'API_KEY_VERIFIED', accounts }))
     },
 
     async submitApiKey(apiKey: string) {
@@ -126,7 +97,7 @@ export const useOnboardingStore = create<OnboardingStore>()((set, get) => {
 
       useToastStore.getState().showSuccess('API 키를 확인했어요')
       await setApiKey(apiKey)
-      await finalizeVerifiedAccounts(accounts, apiKey)
+      set((state) => onboardingReducer(state, { type: 'API_KEY_VERIFIED', accounts }))
     },
 
     async selectAccount(accountId: string) {
@@ -144,7 +115,7 @@ export const useOnboardingStore = create<OnboardingStore>()((set, get) => {
 
       set((state) => onboardingReducer(state, { type: 'SELECT_ACCOUNT', accountId }))
 
-      // ADR-016: 다중 계정 중 선택한 경우도 단일 계정과 동일하게 예열을 거친다.
+      // ADR-016/ADR-051: 계정 수와 무관하게 사용자가 확정한 이 경로에서만 예열을 시작한다.
       const account = get().accounts.find((candidate) => candidate.accountId === accountId)
       const authConfig = await getAuthConfig()
       if (account !== undefined && authConfig !== null) {

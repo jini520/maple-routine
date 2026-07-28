@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const { getPlatformMock } = vi.hoisted(() => ({
@@ -184,6 +185,23 @@ describe('getBossProfitDb', () => {
     } finally {
       vi.useRealTimers()
     }
+  })
+})
+
+// ADR-052 결정 2: 삭제 대상 테이블 목록의 단일 진실 공급원은 db.ts의 테이블 정의 배열 하나다.
+// 정의 배열을 순회해 CREATE하므로 구조적으로 drift가 어렵지만, 배열을 거치지 않고 db.execute에
+// CREATE 문을 직접 끼워 넣는 경우까지 잡기 위해 소스 자체를 읽어 대조한다 — 여기서 누락되면
+// 캐시 데이터 삭제·용량 계산이 그 테이블을 조용히 빠뜨린다(boss_drop_records가 그랬다).
+describe('BOSS_PROFIT_TABLE_NAMES', () => {
+  it('db.ts가 만드는 모든 테이블이 export된 이름 목록에 들어 있다', async () => {
+    const { BOSS_PROFIT_TABLE_NAMES } = await import('../db')
+
+    const source = readFileSync(new URL('../db.ts', import.meta.url), 'utf-8')
+    const createdTables = [...source.matchAll(/CREATE TABLE IF NOT EXISTS (\w+)/g)].map(
+      (match) => match[1],
+    )
+
+    expect([...createdTables].sort()).toEqual([...BOSS_PROFIT_TABLE_NAMES].sort())
   })
 })
 

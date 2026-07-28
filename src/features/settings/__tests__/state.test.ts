@@ -40,7 +40,7 @@ describe('settingsReducer', () => {
     })
   })
 
-  it('ACCOUNTS_VERIFIED — 계정이 정확히 1개면 선택 화면 없이 prefetching으로 전이한다', () => {
+  it('ACCOUNTS_VERIFIED — 계정이 1개여도 자동 확정하지 않고 selectingAccount로 전이한다(ADR-051)', () => {
     const accounts = [account('acc-1')]
 
     const result = settingsReducer(initialSettingsState, {
@@ -49,7 +49,7 @@ describe('settingsReducer', () => {
     })
 
     expect(result).toEqual<SettingsState>({
-      status: 'prefetching',
+      status: 'selectingAccount',
       accounts,
       error: null,
       prefetchProgress: null,

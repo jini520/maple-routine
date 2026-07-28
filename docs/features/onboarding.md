@@ -2,11 +2,11 @@
 
 > **범위**: API 키 입력·계정(메이플 ID) 선택·전체 캐릭터 예열. 설정에서의 계정 변경/연결 해제는 [settings.md](./settings.md).
 > **관련 소스**: `app/onboarding/` · `features/onboarding/` · `nexon/character` · `storage/api-key` · `storage/character-basic-cache` · `storage/scheduler-cache` · `AccountSelectionList` · `ApiKeyForm`.
-> **관련 ADR**: [[ADR-007]] [[ADR-016]] [[ADR-015]] [[ADR-006]] [[ADR-053]]. **관련 문서**: [../foundation/nexon-api.md](../foundation/nexon-api.md), [../foundation/architecture.md](../foundation/architecture.md).
+> **관련 ADR**: [[ADR-007]] [[ADR-016]] [[ADR-015]] [[ADR-006]] [[ADR-051]] [[ADR-053]]. **관련 문서**: [../foundation/nexon-api.md](../foundation/nexon-api.md), [../foundation/architecture.md](../foundation/architecture.md).
 
 ## 정책
 - **키 입력**: `openapi.nexon.com` 링크 + 샘플 이미지 + 설명 문구로 가볍게 안내(앱 내 단계별 위저드 아님). 키는 `storage/` 보안 영역에 저장.
-- **계정 선택**: 키 제출 즉시 `character/list` 호출(별도 검증 엔드포인트 없이 이 호출 자체가 키 검증). `account_list` 가 2개 이상이면 "어느 메이플 ID를 쓸지" 선택 화면. 선택은 이후 설정에서 변경 가능. `storage/` 에는 `apiKey` 와 선택 `accountId` 만 저장(캐릭터 목록은 캐싱 안 함).
+- **계정 선택**: 키 제출 즉시 `character/list` 호출(별도 검증 엔드포인트 없이 이 호출 자체가 키 검증). **계정 수와 무관하게 항상 "어느 메이플 ID를 쓸지" 선택 화면을 보여준다**([[ADR-051]]) — 계정이 1개여도 건너뛰지 않으며, 사용자가 "계속하기"로 확정해야 예열이 시작된다. 선택은 이후 설정에서 변경 가능. `storage/` 에는 `apiKey` 와 선택 `accountId` 만 저장(캐릭터 목록은 캐싱 안 함).
 - **예열([[ADR-016]])**: 계정 확정 즉시 온보딩을 끝내지 않고, 그 계정 **전체 캐릭터**(추적 대상 무관) 데이터를 진행률 바와 함께 미리 받는다 — 이후 스케줄러·피커 첫 진입 시 로딩 없이 뜨게 하기 위함. `OnboardingStatus` 에 `'prefetching'` 추가, 각 캐릭터에 `character/basic` → (`access_flag: true` 만) `scheduler/character-state` 순서의 독립 파이프라인을 병렬 실행하고 하나 끝날 때마다 즉시 캐시 기록 + 진행률 갱신. 개별 실패는 그 캐릭터만 캐시 없이 넘어가고 전체를 막지 않는다. 전체 완료 시 `'completed'`. 캐릭터 많은 계정은 수 초 걸릴 수 있음(사용자 수용).
 
 ## UI
@@ -20,6 +20,7 @@
 
 ### 계정(메이플 ID) 선택 목록 — `AccountSelectionList`, 2026-07-16, [[ADR-006]]
 각 계정 = [대표 캐릭터 얼굴 아바타 36px 원형] + 텍스트 2줄. 1줄 `[월드 엠블럼] {월드} · {이름} · Lv.{레벨}`, 2줄 `text-text-muted` `캐릭터 {N}개`. **직업 미표시**(이름이 길면 넘겨서 대신 월드를 첫 줄로). 월드 엠블럼 `src/assets/worlds/*`, `h-[18px] w-auto object-contain shrink-0`, 미매핑 월드는 텍스트만. 1줄 `truncate`, 텍스트 컬럼 `min-w-0`. 월드→엠블럼 매핑은 `world-emblems.json`(챌린저스1~4 모두 `challengers`). 컴포넌트는 온보딩 페이지형 레이아웃에 맞춰 자체 카드 없이 `w-full space-y-4` — 설정 계정 변경 모달이 이걸 카드로 감싸 재사용(모달 `card={false}`).
+**계정이 1개면 그 항목을 초기 하이라이트로 지정한다**([[ADR-051]]) — 고를 것이 하나뿐이므로 항목 선택 탭은 생략하고 "계속하기" 확정 행위만 남긴다.
 
 ### 예열 진행률 바 — [[ADR-016]]
 진행률 바 프리미티브([../foundation/design-system.md](../foundation/design-system.md)) 재사용 + "캐릭터 정보를 준비하고 있어요 (18/45)" `text-sm text-text-muted`. **세로 중앙 배치**(2026-07-16): 예열은 온보딩 유일의 수 초 대기 화면이라 상단 붙임보다 중앙이 대기 화면다움. 컨테이너 `min-h-[calc(100dvh-var(--sa-top)-var(--sa-bottom))]` + `flex items-center justify-center`(온보딩엔 하단 탭바 없어 `--sa-bottom` 까지 빼야 정중앙). 설정의 재인증 예열(`AccountFlowStatus`, 모달 안)은 대상 아님.
@@ -33,6 +34,7 @@
 - 캐릭터 관리 피커 개선([[ADR-015]]) 잔여: Nexon `character/look` 이미지 얼굴 크롭 쿼리 공식 지원 여부(미지원 시 CSS 근사), 개선을 다른 캐릭터 선택 UI로 확장할지.
 
 ## 폐기된 정책 (history)
+- ~~계정이 정확히 1개면 선택 화면 없이 자동 확정~~ → 계정 수와 무관하게 항상 선택 화면 경유([[ADR-051]], 2026-07-29).
 - ~~키 제출 시 폼을 지우고 "캐릭터 목록을 확인하고 있어요..." 문구 표시~~ → 폼 유지 + 버튼 스피너로 변경(2026-07-16). 설정 계정 변경(`AccountFlowStatus` `verifying`)엔 문구가 남아 있으나 별도 단계 통일 예정.
 - ~~선택 계정의 `character_list` 를 캐싱~~ → 캐싱 안 함, 매번 재조회(2026-07-11). 상세 [../foundation/architecture.md](../foundation/architecture.md).
 - ~~계정 선택 목록에 직업 표기~~ → 직업 생략, 월드를 첫 줄로([[ADR-015]] 캐릭터 카드와 통일).

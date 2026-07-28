@@ -1,6 +1,6 @@
 # SQLite — `boss_profit.db`
 
-`@capacitor-community/sqlite` 기반 단일 DB(`storage/sqlite/db.ts`). 보스 수익 관련 3개 테이블만 여기에 있고, 나머지 데이터는 모두 [Preferences](./preferences.md)다 — "복합키로 upsert/조회가 잦은 기록형 데이터"만 관계형으로 뒀다.
+`@capacitor-community/sqlite` 기반 단일 DB(`storage/sqlite/db.ts`). 보스 수익 관련 4개 테이블만 여기에 있고, 나머지 데이터는 모두 [Preferences](./preferences.md)다 — "복합키로 upsert/조회가 잦은 기록형 데이터"만 관계형으로 뒀다.
 
 ## 스키마
 
@@ -30,10 +30,25 @@ erDiagram
         TEXT period_key PK
         TEXT checked_at
     }
+    boss_drop_records {
+        TEXT ocid PK
+        TEXT boss PK
+        TEXT difficulty PK
+        TEXT period_key PK
+        INTEGER drop_index PK
+        TEXT category
+        TEXT item_name
+        TEXT slot
+        TEXT box_origin
+        INTEGER ring_level
+        INTEGER quantity
+        TEXT recorded_at
+    }
     boss_party_settings ||--o{ boss_profit_records : "파티원 수 기본값 시드"
+    boss_profit_records ||--o{ boss_drop_records : "같은 (ocid, boss, difficulty, period_key)"
 ```
 
-> FOREIGN KEY 제약은 실제로 걸려 있지 않다 — 위 관계는 앱 코드가 `(ocid, boss, difficulty)`로 논리적으로 조인하는 것뿐이다(`features/boss-profit/store.ts`가 완료 감지 시 `boss_party_settings`를 먼저 조회해 `boss_profit_records`의 기본 파티원 수로 쓴다).
+> FOREIGN KEY 제약은 실제로 걸려 있지 않다 — 위 관계는 앱 코드가 `(ocid, boss, difficulty)`(파티 설정) / `(ocid, boss, difficulty, period_key)`(드롭 기록)로 논리적으로 조인하는 것뿐이다(`features/boss-profit/store.ts`가 완료 감지 시 `boss_party_settings`를 먼저 조회해 `boss_profit_records`의 기본 파티원 수로 쓴다). 제약이 없으므로 **한쪽만 지우면 고아 행이 남는다** — 캐시 삭제가 네 테이블을 함께 비워야 하는 이유다([[ADR-052]]).
 
 ## 테이블별 역할
 
@@ -54,6 +69,18 @@ PK: `(ocid, cycle, period_key)`. "이 캐릭터의 이 기간은 이미 (재)조
 
 - 보스 수익 화면의 기간 네비게이터가 과거로 이동할 때, 이 테이블에 체크 기록이 없는 기간만 `nexon/schedule`을 `date` 파라미터로 1회 재조회한다([[ADR-023]]). 한 번 체크되면 그 기간은 다시 재조회하지 않고 로컬 기록만 신뢰한다.
 
+### `boss_drop_records` — 기간별 드롭 기록
+PK: `(ocid, boss, difficulty, period_key, drop_index)`. [[ADR-038]]에서 도입했다. 한 보스가 여러 드롭을 가지므로 `drop_index`로 **같은 (보스, 난이도, 기간)에 여러 행**이 들어간다 — 위 세 테이블처럼 조합당 1행이 아니다.
+
+- **금액을 저장하지 않는다.** 나중에 재평가 가능한 구조(`category`·`item_name`·`slot`·`box_origin`·`ring_level`·`quantity`)만 담고, 시세가 바뀌어도 저장된 행을 고칠 필요가 없도록 표시 시점에 `src/data/`의 시세표로 환산한다. `slot`·`box_origin`·`ring_level`은 nullable — 해당 카테고리가 아닌 드롭에는 값이 없다.
+- **`boss_profit_records`와 짝을 이룬다**(같은 `(ocid, boss, difficulty, period_key)`). FK가 없으므로 수익 기록만 지우고 이걸 남기면 고아 행이 되고, 같은 보스를 같은 기간에 다시 처치하면 예전 드롭이 되살아나 붙는다([[ADR-052]]).
+
+## 새 테이블을 추가할 때
+
+**`storage/sqlite/db.ts`의 테이블 정의 배열(`[{ name, createSql }]`)에만 넣으면 스키마 생성·캐시 삭제 범위·용량 계산에 자동 반영된다** — 삭제 목록을 따로 관리하는 곳은 없다([[ADR-052]] 결정 2). `openBossProfitDb()`의 `CREATE TABLE` 실행과 `storage/cache-data.ts`의 `DELETE FROM`/용량 합산이 모두 이 배열 하나를 본다. 자세한 삭제 범위는 [lifecycle.md](./lifecycle.md)의 "삭제 범위: 연결 해제 vs 캐시 데이터 삭제" 참고.
+
+> 이 규칙이 생기기 전에는 `cache-data.ts`가 테이블 이름을 하드코딩한 별도 목록을 들고 있어, 나중에 추가된 `boss_drop_records`가 거기 빠진 채로 남았다(이 문서에도 같은 누락이 있었다).
+
 ## 커넥션 라이프사이클과 운영상 주의사항
 
 `getBossProfitDb()`가 모듈 스코프에서 커넥션을 싱글턴으로 캐싱한다(`storage/sqlite/db.ts`). 아래 두 시점 모두 **JS 컨텍스트를 파괴하고 리로드**하는 이벤트라, 리로드 직전에 반드시 `closeBossProfitDb()`로 커넥션을 먼저 정상 종료해야 한다 — 그러지 않으면 네이티브 쪽에 stale 커넥션이 남아 리로드 후 첫 쿼리가 응답 없이 멈춘다(앱 업데이트 직후 과거 수익 데이터가 안 불러와지는 증상으로 2026-07-17 실사용자 보고, `storage/sqlite/db.ts`의 `closeBossProfitDb` 주석 참고).
@@ -70,7 +97,7 @@ sequenceDiagram
     Note over UI: JS 컨텍스트 파괴·재로드
     UI->>DB: getBossProfitDb() (다음 쿼리가 최초 호출)
     DB->>Native: isConnection() 확인 후 없으면 createConnection + open
-    DB->>Native: CREATE TABLE IF NOT EXISTS × 3 + 마이그레이션 UPDATE 실행
+    DB->>Native: CREATE TABLE IF NOT EXISTS × 4 + 마이그레이션 UPDATE 실행
 ```
 
 이 패턴을 쓰는 두 곳:

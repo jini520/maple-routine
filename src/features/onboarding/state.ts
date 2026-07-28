@@ -76,17 +76,8 @@ export function onboardingReducer(state: OnboardingState, event: OnboardingEvent
       }
 
     case 'API_KEY_VERIFIED':
-      // ADR-016: 계정이 확정되는 즉시(단일 계정 자동 확정) 'completed'로 바로 넘어가지 않고
-      // 'prefetching'에 머물러 전체 캐릭터 데이터를 예열한 뒤에야 완료된다.
-      if (event.accounts.length === 1) {
-        return {
-          status: 'prefetching',
-          accounts: event.accounts,
-          selectedAccountId: event.accounts[0].accountId,
-          error: null,
-          prefetchProgress: null,
-        }
-      }
+      // ADR-051: 계정 수와 무관하게 항상 선택 화면을 거친다 — 계정이 1개여도 자동 확정하지 않는다.
+      // 계정 확정(과 그에 이어지는 ADR-016 예열)은 사용자가 "계속하기"를 누르는 SELECT_ACCOUNT 하나뿐이다.
       return {
         status: 'selectingAccount',
         accounts: event.accounts,
@@ -103,7 +94,7 @@ export function onboardingReducer(state: OnboardingState, event: OnboardingEvent
       }
 
     case 'SELECT_ACCOUNT':
-      // ADR-016: 다중 계정 중 선택한 경우도 단일 계정과 동일하게 예열을 거친 뒤 완료된다.
+      // ADR-016/ADR-051: 계정 수와 무관하게 모든 계정 확정이 이 경로 하나를 지나 예열을 거친다.
       return {
         ...state,
         status: 'prefetching',

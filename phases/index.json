@@ -102,11 +102,13 @@
     },
     {
       "dir": "account-selection-always",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-07-29T03:21:15+0900"
     },
     {
       "dir": "cache-clear-scope",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-07-29T03:42:56+0900"
     },
     {
       "dir": "picker-roster-loading",
