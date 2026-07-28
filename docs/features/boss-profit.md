@@ -41,6 +41,19 @@
 - **소계 footer**: `flex items-center justify-between px-4 py-3 bg-surface-2 text-sm`, 왼쪽 "{캐릭터명} 합계" `text-text-muted`, 오른쪽 금액 `font-semibold tabular-nums text-text`.
 - 기본 **전부 접힘** 시작(추적 캐릭터 많을 때 과도한 길이 방지). 리스트 key `${tab}-${periodKey}-${ocid}` 로 탭/기간 이동 시 remount(펼침 상태 리셋, [[ADR-037]]).
 
+### 총 수익 헤드라인 (sticky 헤더 최하단) — [[ADR-046]]
+`characterGroups` 합계를 보여주는 기간 요약. **카드가 아니다** — 아래 캐릭터 카드가 전부 같은 카드 셸(`rounded-[14px] bg-surface border border-border`)이라, 요약도 카드면 "동일한 흰 카드의 반복"으로 묻힌다([[ADR-046]] 배경). 카드 셸 없이 배경 위 타이포로 두고 색·크기로만 위계를 준다.
+```
+라벨행: flex items-center justify-between gap-2
+  라벨 text-xs font-semibold tracking-wide text-text-muted — "{periodLabel.primary} 총 수익"
+  우측: 기간 전체 고가 드롭 뱃지(있을 때만)
+금액행: mt-1.5 flex items-center gap-2.5
+  코인 엠블럼 h-8 w-8 rounded-full bg-primary/12 text-primary + lucide Coins h-[18px] w-[18px]
+  금액 text-xl font-extrabold leading-none tabular-nums text-primary + 단위 "메소" text-xs font-bold text-text-muted
+헤어라인: mt-3 h-px bg-border (sticky 헤더 바닥 경계 = 카드 테두리 대체)
+```
+새 색 신설 금지 — `primary`(금액·엠블럼)와 `text-muted`(라벨·단위)만. 보스 처치 수·캐릭터 수는 **표시하지 않는다**(중요 정보 아님, [[ADR-046]] 결정 5). 단위 "메소"는 별도 span이지만 숫자와 사이에 실제 공백 문자를 남긴다(마진만으론 `textContent`가 "N메소"로 붙어 스크린리더가 붙여 읽음).
+
 ### 주간/월간 탭 + 기간 네비게이터 — [[ADR-023]]
 탭은 탭 토글 레시피 재사용(주간/월간, 카운트 배지 없음). 네비게이터:
 ```
@@ -65,6 +78,7 @@
 - `.valuable-drop-card`(접힘 캐릭터 카드): `::before` `conic-gradient`+`mask(xor)` 2px 링을 `@property --vd-angle` 로 회전(회전 샤인 테두리) + `box-shadow` 글로우 맥동. 우상단 획득 아이템 배지(`Sparkles`+아이템 아이콘). `@property` 미지원 WebView는 정적 골드 테두리로 degrade.
 - `.valuable-drop-card--expanded`(펼침): 요소 자신 glow 맥동만 정지(회전 샤인 유지). 복합 선택자로 `@media` 규칙보다 명시도 우선.
 - `.valuable-drop-row`(펼침 시 고가 획득 보스 행): 테두리/글로우 아닌 **배경** — 아이템 쪽(`radial-gradient at 82% 50%`) 골드 글로우 + 미세 틴트 맥동. `<li>` 자체 `background`.
+- **총 수익 헤드라인 뱃지**([[ADR-046]]): 같은 배지 컴포넌트를 기간 전체 집계(`collectAllValuableDrops` = 캐릭터 그룹별 `collectGroupValuableDrops` 합집합)로 라벨행 우측에 재사용. 배치·라벨만 호출부가 정하고(카드 = `absolute -right-1.5 -top-2 z-10`·`aria-label="고가 드롭"`, 헤드라인 = 인라인·`aria-label="이 기간 고가 드롭"`) 외형·아이콘 스택(최대 3 + `+N`) 규칙은 단일 구현. 드롭 없으면 미렌더.
 
 ## SQLite 안정성
 `applyDownloadedLiveUpdate()`(`CapacitorUpdater.set()`)가 JS 컨텍스트를 파괴하는 리로드 전에 SQLite 커넥션을 정상 종료하지 않으면 stale 커넥션이 남아 과거 수익 데이터 로드가 조용히 멈춘다 → `storage/sqlite/db.ts` 의 `closeBossProfitDb()` 로 리로드 전 미리 닫음([[ADR-008]] 세 번째 정정). 읽기 조회는 `withSqliteFallback`(타임아웃 폴백), 쓰기는 `withSqliteTimeout`(타임아웃을 실패로 전파 — 성공 위장 시 영구 유실 위험).

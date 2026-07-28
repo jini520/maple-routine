@@ -609,7 +609,9 @@ describe('BossProfitScreen', () => {
     renderBossProfitScreen()
 
     expect(screen.getByText(/총 수익/)).toBeInTheDocument()
-    expect(screen.getByText('8,000,000 메소')).toBeInTheDocument()
+    // 헤드라인은 금액과 단위를 분리해 렌더하므로(ADR-046) getByText는 직계 텍스트("8,000,000")만 잡는다 —
+    // 단위까지는 textContent로 확인한다.
+    expect(screen.getByText('8,000,000')).toHaveTextContent('8,000,000 메소')
   })
 
   it('rows가 비어있으면 상단 합계 카드 없이 빈 상태 문구만 보인다', () => {
@@ -843,6 +845,59 @@ describe('BossProfitScreen', () => {
 
     expect(screen.getByText('자쿰').closest('li')).toHaveClass('valuable-drop-row')
     expect(screen.getByText('벨로나').closest('li')).not.toHaveClass('valuable-drop-row')
+  })
+
+  // 총 수익 헤드라인의 기간 전체 고가 드롭 뱃지(ADR-046) — 캐릭터 카드 배지와 같은 컴포넌트를 쓰되
+  // aria-label로 구분한다("고가 드롭" = 캐릭터 카드, "이 기간 고가 드롭" = 헤드라인 요약).
+  it('ADR-046: 기간에 고가 드롭이 있으면 총 수익 헤드라인에도 고가 드롭 뱃지가 표시된다', () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row()],
+      dropsByRowKey: {
+        'ocid-1|자쿰|카오스|2026-07-09': [{ category: 'consumable', itemName: VALUABLE_ITEM, quantity: 1 }],
+      },
+    })
+
+    renderBossProfitScreen()
+
+    expect(screen.getByRole('img', { name: '이 기간 고가 드롭' })).toBeInTheDocument()
+  })
+
+  it('ADR-046: 고가 드롭이 없으면 총 수익 헤드라인에 뱃지를 렌더하지 않는다', () => {
+    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()], dropsByRowKey: {} })
+
+    renderBossProfitScreen()
+
+    expect(screen.getByText(/총 수익/)).toBeInTheDocument()
+    expect(screen.queryByRole('img', { name: '이 기간 고가 드롭' })).not.toBeInTheDocument()
+  })
+
+  it('ADR-046: 헤드라인 뱃지는 여러 캐릭터의 고가 드롭을 모두 모아 집계한다(최대 3개 + 나머지 개수)', () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1', 'ocid-2'],
+      rows: [
+        row({ ocid: 'ocid-1', characterName: '낟낟', boss: '자쿰' }),
+        row({ ocid: 'ocid-2', characterName: '내옆에최성일', boss: '루시드' }),
+      ],
+      dropsByRowKey: {
+        'ocid-1|자쿰|카오스|2026-07-09': [
+          { category: 'consumable', itemName: VALUABLE_ITEM, quantity: 1 },
+          { category: 'consumable', itemName: '신념의 연마석', quantity: 1 },
+        ],
+        'ocid-2|루시드|카오스|2026-07-09': [
+          { category: 'equipment', itemName: '혼돈의 칠흑 장신구 상자', quantity: 1 },
+          { category: 'equipment', itemName: '메이린의 칠흑 장신구 상자', quantity: 1 },
+        ],
+      },
+    })
+
+    renderBossProfitScreen()
+
+    // 캐릭터별 배지(각 2개)와 달리 헤드라인은 4개를 합쳐 3개만 보여주고 나머지는 "+1"로 접는다.
+    const headlineBadge = screen.getByRole('img', { name: '이 기간 고가 드롭' })
+    expect(within(headlineBadge).getByText('+1')).toBeInTheDocument()
   })
 
   it('드롭다운 헤더에 그 캐릭터의 합계만 표시되고 다른 캐릭터 수익이 섞이지 않는다', () => {
