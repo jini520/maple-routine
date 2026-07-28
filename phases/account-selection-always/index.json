@@ -32,7 +32,11 @@
     {
       "step": 3,
       "name": "single-account-highlight",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-07-29T03:15:41+0900",
+      "summary": "계정 1개일 때 초기 하이라이트 지정(ADR-051 결정 3) — src/app/onboarding/AccountSelectionList.tsx 한 파일만 수정: useState<string | null> 초깃값을 props.accounts.length === 1 ? props.accounts[0].accountId : null 로 바꾸고 의도(화면은 반드시 보여주되 항목 선택 탭 1회만 아낀다)를 주석으로 남겼다. 자동 onSelect는 넣지 않음 — 계정이 1개여도 확정은 사용자가 '계속하기'를 눌러야 일어난다(상태 머신에서 없앤 자동 확정을 UI에서 되살리지 않기 위함, 이슈 #60의 핵심). props.accounts를 감시하는 useEffect 동기화도 넣지 않았고(목록은 마운트 시점에 확정), 렌더링·스타일·aria-pressed 규약·onSelect 시그니처는 그대로다. 테스트 먼저 작성해 2건 실패 확인 후 구현(AccountSelectionList.test.tsx: 계정 1개 초기 하이라이트+계속하기 활성 / 계정 1개 렌더만으로는 onSelect 미호출·계속하기 클릭 시 확정 신규, 기존 '계속하기 초기 비활성' 테스트를 계정 2개 이상 aria-pressed=false 전제로 확장, 하이라이트 이동·isSubmitting 계정 수 무관 비활성 회귀 테스트 추가). OnboardingScreen.test.tsx·AccountFlowStatus.test.tsx는 '선택 없음'을 전제하지 않아 무변경, features/onboarding·features/settings도 무변경.",
+      "notes": "AC: npm run build 통과(기존 chunk 500kB 경고만), npm run lint 경고 0, npm test는 onboarding·settings 관련 24개 파일 190건 전부 통과. 전체 스위트에는 step 0부터 이어진 기존 실패 3건(BossProfitScreen 빈 상태 2건, boss-profit store.test.ts goToPreviousPeriod hang 타임아웃 1건)만 남으며, git stash로 이번 변경을 뺀 상태에서도 동일하게 3건 실패함을 재확인해 무관함을 검증했다. ADR-051·docs 상태 갱신은 step 4(docs-finalize) 범위라 손대지 않았다.",
+      "completed_at": "2026-07-29T03:18:30+0900"
     },
     {
       "step": 4,
