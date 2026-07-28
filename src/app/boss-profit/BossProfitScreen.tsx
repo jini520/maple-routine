@@ -261,18 +261,11 @@ function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Element {
   )
 }
 
-function AccordionFooter(props: { characterName: string; totalMeso: number }): React.JSX.Element {
-  return (
-    // rounded-b-[14px]: 셸의 overflow-hidden을 뺐으므로(ADR-047) 하단 모서리를 footer가 직접 깎는다.
-    <div className="flex items-center justify-between rounded-b-[14px] px-4 py-3 bg-surface-2 text-sm">
-      <span className="text-text-muted">{props.characterName} 합계</span>
-      <span className="font-semibold tabular-nums text-text">{props.totalMeso.toLocaleString()} 메소</span>
-    </div>
-  )
-}
+// 소계 footer는 두지 않는다(ADR-047 후속 3) — 헤더가 sticky라 캐릭터 합계가 스크롤 내내 보여 중복이다.
+// 그 결과 셸 하단에 닿는 배경 요소가 없어 하단 모서리 보정도 불필요하다. 새로 추가한다면 셸엔
+// overflow-hidden을 걸 수 없으므로(ADR-047 결정 2) 그 요소가 직접 rounded-b-[14px]를 가져야 한다.
 
 function WeeklyAccordionBody(props: {
-  characterName: string
   rows: BossProfitRow[]
   dropsByRowKey: Record<string, RecordedDrop[]>
   setPartySize: BossProfitStore['setPartySize']
@@ -291,7 +284,6 @@ function WeeklyAccordionBody(props: {
           />
         ))}
       </ul>
-      <AccordionFooter characterName={props.characterName} totalMeso={sumPayout(props.rows)} />
     </div>
   )
 }
@@ -329,7 +321,6 @@ function WeeklySubtotalRow(props: { subtotal: BossProfitWeeklySubtotal; now: Dat
 }
 
 function MonthlyAccordionBody(props: {
-  characterName: string
   bossRows: BossProfitRow[]
   weeklySubtotals: BossProfitWeeklySubtotal[]
   dropsByRowKey: Record<string, RecordedDrop[]>
@@ -338,8 +329,6 @@ function MonthlyAccordionBody(props: {
   now: Date
   isMonthlyBossQueryable: boolean
 }): React.JSX.Element {
-  const totalMeso = sumPayout(props.bossRows) + sumSubtotals(props.weeklySubtotals)
-
   return (
     <div className="border-t border-border">
       {props.weeklySubtotals.length > 0 && (
@@ -377,8 +366,6 @@ function MonthlyAccordionBody(props: {
           )}
         </>
       )}
-
-      <AccordionFooter characterName={props.characterName} totalMeso={totalMeso} />
     </div>
   )
 }
@@ -545,7 +532,7 @@ function CharacterAccordion(props: {
   const hasValuable = valuableDrops.length > 0
   const shellClass = [
     // overflow-hidden을 두지 않는다(ADR-047) — overflow:hidden 조상은 스크롤포트를 만들어 헤더 sticky를
-    // 무력화한다. 하단 모서리 클리핑은 AccordionFooter의 rounded-b-[14px]가 대신한다.
+    // 무력화한다. 소계 footer 제거 후(후속 3) 셸 하단에 닿는 배경 요소가 없어 클리핑 대체도 불필요하다.
     isExpanded ? 'rounded-[14px] bg-surface border border-border' : '',
     hasValuable
       ? isExpanded
@@ -643,7 +630,6 @@ function CharacterAccordion(props: {
         {isExpanded &&
           (props.tab === 'weekly' ? (
             <WeeklyAccordionBody
-              characterName={group.characterName}
               rows={group.bossRows}
               dropsByRowKey={props.dropsByRowKey}
               setPartySize={props.setPartySize}
@@ -651,7 +637,6 @@ function CharacterAccordion(props: {
             />
           ) : (
             <MonthlyAccordionBody
-              characterName={group.characterName}
               bossRows={group.bossRows}
               weeklySubtotals={group.weeklySubtotals}
               dropsByRowKey={props.dropsByRowKey}

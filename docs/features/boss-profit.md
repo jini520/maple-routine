@@ -41,7 +41,7 @@
 ```
 캐릭터명은 헤더에만(행에서 제거). "가격 미확정" 행도 같은 2줄 구조 유지 — 금액 자리에 배지(`rounded-full bg-primary/15 px-2 py-0.5 text-xs font-medium text-primary`), 스테퍼는 `opacity-40` 비활성.
 - **파티원 스테퍼(−/+)**: `inline-flex items-center gap-2 rounded-full border border-border px-1 py-0.5`, 버튼 `h-[18px] w-[18px] rounded-full bg-surface-2`, 값 `text-xs tabular-nums`. 파티 관리 모달과 동일 조작(경계 비활성화).
-- **소계 footer**: `flex items-center justify-between px-4 py-3 bg-surface-2 text-sm rounded-b-[14px]`, 왼쪽 "{캐릭터명} 합계" `text-text-muted`, 오른쪽 금액 `font-semibold tabular-nums text-text`. 하단 라운딩은 셸의 `overflow-hidden`을 뺀 대체 수단([[ADR-047]]) — 셸 하단에 닿는 배경 요소를 새로 추가할 땐 같은 처리가 필요하다.
+- **소계 footer 없음**([[ADR-047]] 후속) — 헤더가 sticky라 캐릭터 합계가 스크롤 내내 보이므로 하단 중복 표시를 제거했다. 그 결과 셸 하단에 닿는 배경 요소가 없어 하단 모서리 보정(`rounded-b-*`)도 불필요하다 — **셸 하단에 닿는 배경 요소를 새로 추가하면** 셸엔 `overflow-hidden`을 걸 수 없으므로([[ADR-047]] 결정 2) 그 요소가 직접 `rounded-b-[14px]`를 가져야 한다.
 - 기본 **전부 접힘** 시작(추적 캐릭터 많을 때 과도한 길이 방지). 리스트 key `${tab}-${periodKey}-${ocid}` 로 탭/기간 이동 시 remount(펼침 상태 리셋, [[ADR-037]]).
 
 ### sticky 헤더 — 공용 패턴 + 경계 페이드는 카드 헤더로 이동
@@ -100,6 +100,7 @@
 - ~~기본 파티원 수 = 가장 최근 기록값 이어받기~~ → `boss_party_settings` 설정 조회로 완전 대체([[ADR-019]]).
 - ~~월간 보스(검은마법사)를 이 화면에서 제외~~ → 주간/월간 탭 도입으로 월간 탭에서 부활([[ADR-023]], [[ADR-017]] 미확정 해소).
 - ~~아코디언 헤더 합계 + 섹션 타이틀 "이번 주 합계 N 메소" 중복 표시~~ → 섹션 타이틀 합계 제거(합계는 헤더에만)([[ADR-017]]).
+- ~~펼침 본문 하단 소계 footer("{캐릭터명} 합계" + 금액, `bg-surface-2 rounded-b-[14px]`)~~ → 헤더 sticky로 합계가 상시 보이므로 제거([[ADR-047]] 후속, 2026-07-28). [[ADR-023]]의 소계 footer 결정을 폐기하며, [[ADR-017]]의 "합계는 헤더에만" 원칙으로 되돌아간 셈.
 - ~~아코디언 헤더 = "{캐릭터명} · {합계} 메소" 한 줄, 보스 행 = 개별 카드~~ → 아바타+이름+금액 분리, 보스 행 통합 리스트([[ADR-023]]).
 - ~~과거 기록 파티원 수 읽기 전용(잠정)~~ → 항상 편집 가능([[ADR-032]], PRD #46).
 - ~~보스 표시 순서가 로드/렌더마다 달라짐~~ → 정규 순서 2차 정렬로 고정([[ADR-036]]).

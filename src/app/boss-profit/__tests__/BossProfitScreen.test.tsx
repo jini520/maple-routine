@@ -440,7 +440,7 @@ describe('BossProfitScreen', () => {
     expect(screen.queryByText('자쿰')).not.toBeInTheDocument()
   })
 
-  it('드롭다운 헤더를 클릭하면 펼쳐져 보스 행과 합계 footer가 보이고, 다시 클릭하면 접힌다', () => {
+  it('드롭다운 헤더를 클릭하면 펼쳐져 보스 행이 보이고, 다시 클릭하면 접힌다', () => {
     mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()] })
 
     renderBossProfitScreen()
@@ -448,7 +448,8 @@ describe('BossProfitScreen', () => {
 
     fireEvent.click(header)
     expect(screen.getByText('자쿰')).toBeInTheDocument()
-    expect(screen.getByText('낟낟 합계')).toBeInTheDocument()
+    // 합계는 sticky 헤더에 상시 표시되므로 하단 소계 footer는 두지 않는다(ADR-047 후속 3)
+    expect(screen.queryByText('낟낟 합계')).not.toBeInTheDocument()
 
     fireEvent.click(header)
     expect(screen.queryByText('자쿰')).not.toBeInTheDocument()
@@ -975,13 +976,15 @@ describe('BossProfitScreen', () => {
     expect(header.parentElement).not.toHaveClass('overflow-hidden')
   })
 
-  it('ADR-047: 소계 footer가 셸 하단 모서리를 직접 라운딩한다(overflow-hidden 대체)', () => {
+  it('ADR-047 후속 3: 펼쳐도 소계 footer를 렌더하지 않는다(합계는 sticky 헤더에 상시 표시)', () => {
     mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()] })
 
     renderBossProfitScreen()
     fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
 
-    expect(screen.getByText('낟낟 합계').parentElement).toHaveClass('rounded-b-[14px]')
+    expect(screen.queryByText(/합계/)).not.toBeInTheDocument()
+    // footer가 사라져 셸 하단에 닿는 배경 요소가 없다 — 하단 모서리 보정도 불필요(ADR-047 결정 2 참고).
+    expect(document.querySelector('.rounded-b-\\[14px\\]')).toBeNull()
   })
 
   // 총 수익 헤드라인의 기간 전체 고가 드롭 뱃지(ADR-046) — 캐릭터 카드 배지와 같은 컴포넌트를 쓰되
