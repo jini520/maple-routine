@@ -109,6 +109,10 @@ export function BossScreen(): React.JSX.Element {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const [isPickerOpen, setIsPickerOpen] = useState(() => searchParams.get('openPicker') === '1')
+  // ADR-053 결정 3: 후보 목록 조회의 로딩·실패는 조회를 소유한 화면이 관리해 피커에 내려준다.
+  // 초기값은 "마운트 직후 조회가 시작되는가"(= ?openPicker=1로 이미 열려 있는가)와 같다.
+  const [isRosterLoading, setIsRosterLoading] = useState(isPickerOpen)
+  const [rosterFailed, setRosterFailed] = useState(false)
   const [saveProgress, setSaveProgress] = useState<{ completed: number; total: number } | null>(null)
   // ADR-019 결정 6: 주간/월간 탭은 서로 독립된 필터 상태를 갖는다(한 탭의 필터 변경이
   // 다른 탭에 영향을 주지 않음).
@@ -142,12 +146,21 @@ export function BossScreen(): React.JSX.Element {
   // ADR-017 결정 6: character/list 응답을 기다리는 동안에도 character-basic-cache에 이미
   // 있는 캐릭터(추적 여부 무관)는 즉시 먼저 보여줘, 피커를 열 때마다 짧게 비어 보이던 문제를
   // 완화한다.
+  // ADR-053 결정 3: 조회 결과(Promise)를 버리지 않고 로딩·실패 상태로 남긴다 — 401/429는 reject로
+  // 나오므로 finally에서 반드시 로딩을 해제해야 스피너가 영구히 걸리지 않는다. roster는 재조회
+  // 시작 시에도 비우지 않는다(캐시로 보여주던 목록을 지우면 ADR-016 캐시 우선 표시가 무력화된다).
   useEffect(() => {
     if (!isPickerOpen) return
     let cancelled = false
     getCharacterPickerRoster((entries) => {
       if (!cancelled) setRoster(entries)
-    }).catch(() => {})
+    })
+      .catch(() => {
+        if (!cancelled) setRosterFailed(true)
+      })
+      .finally(() => {
+        if (!cancelled) setIsRosterLoading(false)
+      })
     return () => {
       cancelled = true
     }
@@ -255,10 +268,19 @@ export function BossScreen(): React.JSX.Element {
     }
   }
 
+  // ADR-053 결정 3: 피커를 여는 유일한 경로 — 여는 순간 로딩·실패를 초기화한다(닫았다 다시 열면
+  // 아래 useEffect가 재조회하므로 직전 실패가 남아 있으면 안 된다). 초기화를 effect 본문이 아니라
+  // 이 이벤트 핸들러에 두는 이유는 effect 본문의 동기 setState가 cascading render를 만들기 때문.
+  function openPicker(): void {
+    setIsPickerOpen(true)
+    setIsRosterLoading(true)
+    setRosterFailed(false)
+  }
+
   const characterManageButton = (
     <button
       type="button"
-      onClick={() => setIsPickerOpen(true)}
+      onClick={openPicker}
       className="text-sm font-medium text-text-muted hover:text-text"
     >
       캐릭터 관리
@@ -269,10 +291,8 @@ export function BossScreen(): React.JSX.Element {
     <CharacterTrackingPicker
       entries={roster}
       trackedOcids={trackedOcids ?? []}
-      // TODO(step 3): getCharacterPickerRoster의 Promise resolve/reject로 실제 로딩·실패 상태를
-      // 관리해 내려준다(ADR-053 결정 3). 지금은 기존 동작(상태 없음)을 그대로 표현하는 임시값.
-      isLoading={false}
-      loadFailed={false}
+      isLoading={isRosterLoading}
+      loadFailed={rosterFailed}
       onSave={handleSaveTracking}
       onClose={() => setIsPickerOpen(false)}
     />
@@ -326,7 +346,7 @@ export function BossScreen(): React.JSX.Element {
           </div>
           <button
             type="button"
-            onClick={() => setIsPickerOpen(true)}
+            onClick={openPicker}
             className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-bg hover:bg-primary-hover"
           >
             캐릭터 선택하기

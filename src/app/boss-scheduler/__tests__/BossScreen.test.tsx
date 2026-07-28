@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { BossScreen } from '../BossScreen'
@@ -956,5 +956,106 @@ describe('BossScreen', () => {
 
       expect(screen.getByText('추적할 보스가 없습니다 — "보스 관리"에서 추가해주세요')).toBeInTheDocument()
     })
+  })
+})
+
+// ADR-053 결정 3: 후보 목록 조회의 로딩·실패는 화면(app/)이 getCharacterPickerRoster의 Promise로
+// 판정해 피커에 props로 내려준다 — ContentScreen과 동일한 배선이다(한쪽만 고치는 실수 방지).
+describe('BossScreen — 캐릭터 관리 피커 후보 목록 로딩 (ADR-053)', () => {
+  // resolve/reject 시점을 테스트가 제어할 수 있도록 미해결 Promise를 반환하는 모의 구현.
+  // 피커를 다시 열면 mockImplementation이 다시 불려 새 Promise로 교체된다.
+  function deferRoster(): {
+    emit: (entries: CharacterPickerEntry[]) => void
+    resolve: () => Promise<void>
+    reject: (error: unknown) => Promise<void>
+  } {
+    let onUpdateRef: (entries: CharacterPickerEntry[]) => void = () => {}
+    let resolveRef: () => void = () => {}
+    let rejectRef: (error: unknown) => void = () => {}
+
+    mockedGetCharacterPickerRoster.mockImplementation((onUpdate) => {
+      onUpdateRef = onUpdate
+      return new Promise<void>((resolve, reject) => {
+        resolveRef = resolve
+        rejectRef = reject
+      })
+    })
+
+    return {
+      emit: (entries) => act(() => onUpdateRef(entries)),
+      resolve: () => act(async () => resolveRef()),
+      reject: (error) => act(async () => rejectRef(error)),
+    }
+  }
+
+  async function renderAndOpenPicker(): Promise<void> {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [character({ ocid: 'ocid-1', characterName: '낟낟' })],
+    })
+
+    renderBossScreen()
+    await screen.findByRole('combobox')
+    fireEvent.click(screen.getByRole('button', { name: '캐릭터 관리' }))
+  }
+
+  it('조회 중이고 보여줄 항목이 없으면 스피너를 보여준다', async () => {
+    deferRoster()
+
+    await renderAndOpenPicker()
+
+    expect(await screen.findByTestId('maple-spinner')).toBeInTheDocument()
+    expect(screen.queryByText('표시할 캐릭터가 없어요')).not.toBeInTheDocument()
+  })
+
+  it('콜드 스타트: 조회가 끝나면 스피너가 사라지고 목록이 보인다', async () => {
+    const roster = deferRoster()
+
+    await renderAndOpenPicker()
+    await screen.findByTestId('maple-spinner')
+
+    roster.emit([pickerEntry({ ocid: 'ocid-2', name: '내옆에최성일', level: 211 })])
+    await roster.resolve()
+
+    expect(screen.getByRole('button', { name: /내옆에최성일/ })).toBeInTheDocument()
+    expect(screen.queryByTestId('maple-spinner')).not.toBeInTheDocument()
+  })
+
+  it('ADR-016 웜 캐시: 조회가 끝나기 전에 항목이 도착하면 스피너 없이 바로 목록을 보여준다', async () => {
+    const roster = deferRoster()
+
+    await renderAndOpenPicker()
+    roster.emit([pickerEntry({ ocid: 'ocid-2', name: '내옆에최성일', level: 211 })])
+
+    expect(screen.getByRole('button', { name: /내옆에최성일/ })).toBeInTheDocument()
+    expect(screen.queryByTestId('maple-spinner')).not.toBeInTheDocument()
+  })
+
+  it('전역 실패(401/429)로 reject되면 스피너가 걷히고 실패 안내를 보여준다', async () => {
+    const roster = deferRoster()
+
+    await renderAndOpenPicker()
+    await screen.findByTestId('maple-spinner')
+
+    await roster.reject(new Error('401'))
+
+    expect(screen.getByText('캐릭터 목록을 불러오지 못했어요 — 닫고 다시 열어주세요')).toBeInTheDocument()
+    expect(screen.queryByTestId('maple-spinner')).not.toBeInTheDocument()
+  })
+
+  it('피커를 닫았다 다시 열면 실패 상태가 초기화되고 다시 조회한다', async () => {
+    const roster = deferRoster()
+
+    await renderAndOpenPicker()
+    await roster.reject(new Error('401'))
+    await screen.findByText('캐릭터 목록을 불러오지 못했어요 — 닫고 다시 열어주세요')
+
+    fireEvent.click(screen.getByRole('button', { name: '닫기' }))
+    fireEvent.click(screen.getByRole('button', { name: '캐릭터 관리' }))
+
+    expect(await screen.findByTestId('maple-spinner')).toBeInTheDocument()
+    expect(screen.queryByText('캐릭터 목록을 불러오지 못했어요 — 닫고 다시 열어주세요')).not.toBeInTheDocument()
+    expect(mockedGetCharacterPickerRoster).toHaveBeenCalledTimes(2)
   })
 })
