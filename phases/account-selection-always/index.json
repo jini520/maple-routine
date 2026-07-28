@@ -14,7 +14,11 @@
     {
       "step": 1,
       "name": "onboarding-flow",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-07-29T03:08:00+0900",
+      "summary": "온보딩 경로의 단일 계정 자동 확정 제거(ADR-051 결정 1·2) — state.ts: API_KEY_VERIFIED의 accounts.length === 1 분기 삭제로 계정 수와 무관하게 항상 selectingAccount 반환(주석 2곳 현행화), store.ts: finalizeVerifiedAccounts 헬퍼 자체를 제거하고(선제 setSelectedAccountId + 'prefetching' 확인 후 예열 시작 + ADR-008 주석 포함) restoreFromStorage·submitApiKey 두 호출부에서 set(API_KEY_VERIFIED)를 직접 호출 — selectedAccountId 저장·예열 트리거가 selectAccount 한 경로로 일원화됨(storageWriteFailed도 ACCOUNT_SELECTION_FAILED 하나만 남음). 테스트 먼저 갱신해 3건 실패 확인 후 구현(state.test.ts 1건, store.test.ts: 계정 1개 stop-at-selectingAccount + 이어지는 selectAccount 확정 경로 신규, 예열 진행률 테스트는 selectAccount describe로 이동, 자동확정 전제 테스트 제거). prefetch.ts·OnboardingScreen.tsx·AccountSelectionList는 무변경. 설정(features/settings) 경로에는 아직 같은 자동 확정 규칙이 남아 있다 — step 2 범위.",
+      "notes": "AC: npm run build 통과, npm run lint 경고 0, npm test는 온보딩 55건 전부 통과. 전체 스위트에는 step 0부터 이어진 기존 실패 3건(BossProfitScreen 빈 상태 2건, boss-profit store.test.ts goToPreviousPeriod hang 타임아웃 1건)이 그대로 남아 있으며 이번 변경과 무관하다(boss-profit은 onboarding에서 representative-character만 import — 이번에 손대지 않은 파일).",
+      "completed_at": "2026-07-29T03:12:00+0900"
     },
     {
       "step": 2,
