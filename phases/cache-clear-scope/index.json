@@ -2,10 +2,47 @@
   "project": "메이플 루틴",
   "phase": "cache-clear-scope",
   "steps": [
-    { "step": 0, "name": "docs-policy", "status": "pending" },
-    { "step": 1, "name": "table-registry", "status": "pending" },
-    { "step": 2, "name": "cache-data-scope", "status": "pending" },
-    { "step": 3, "name": "confirm-copy", "status": "pending" },
-    { "step": 4, "name": "docs-finalize", "status": "pending" }
-  ]
+    {
+      "step": 0,
+      "name": "docs-policy",
+      "status": "completed",
+      "started_at": "2026-07-29T03:21:19+0900",
+      "summary": "ADR-052 신규(설계, 구현 전) + ADR.md 인덱스 1줄 + ADR-035 보류 해소 정정 + persistence 4문서 갱신. 구현 규칙 3가지 — (1) KEEP_KEYS에 trackingMode·dropEffect 추가해 캐시 삭제에도 보존(theme과 동일 성격의 취향 설정), (2) 삭제 대상 SQLite 테이블 목록의 단일 진실 공급원은 db.ts의 [{name, createSql}] 배열 하나 — openBossProfitDb가 그 배열을 순회해 CREATE하고 이름 배열을 export, cache-data.ts는 CLEARED_TABLES 하드코딩을 없애고 import(boss_drop_records 누락·고아 드롭 행 문제 해소, sqlite_master 동적 조회는 기각), (3) CacheClearConfirm 문구를 실제 범위와 동기화(삭제됨에 드롭 기록 추가, 유지됨에 트래킹 모드·드롭 연출 설정 추가). 부수 발견 — docs/persistence/preferences.md의 trackedCharacters:content/:boss·lastSelectedCharacter:* 행은 ADR-042의 단일 키 통합이 반영되지 않은 별개 문서 드리프트(이번 이슈와 무관해 손대지 않음).",
+      "completed_at": "2026-07-29T03:26:05+0900"
+    },
+    {
+      "step": 1,
+      "name": "table-registry",
+      "status": "completed",
+      "started_at": "2026-07-29T03:26:05+0900",
+      "summary": "db.ts의 CREATE 상수 4개를 TABLE_DEFINITIONS 배열([{name, createSql}]) 하나로 합치고 이름 목록을 export — `import { BOSS_PROFIT_TABLE_NAMES } from 'src/storage/sqlite/db.ts'`(readonly string[], 순서: boss_profit_records → boss_party_settings → boss_profit_period_checks → boss_drop_records). openBossProfitDb는 배열 순회로 CREATE 후 메이린 마이그레이션 2개 실행(순서 불변, 마이그레이션은 배열 밖 별도 상수 유지). 회귀 가드 테스트는 src/storage/sqlite/__tests__/db.test.ts의 describe('BOSS_PROFIT_TABLE_NAMES') — node:fs로 db.ts 소스를 읽어 /CREATE TABLE IF NOT EXISTS (\\w+)/ 매치 집합과 export 목록을 정렬 비교(배열을 우회한 직접 db.execute까지 탐지). SQL 본문은 한 글자도 변경 없음(git diff -w에서 컬럼·PK 라인이 전부 context). 동작 불변 — cache-data.ts는 아직 CLEARED_TABLES 하드코딩 3개를 쓰고 있고 그 교체는 step 2 범위. AC: build/lint 통과, db.test.ts 13개 전부 통과. 전체 테스트에서 BossProfitScreen 2건·boss-profit store 1건이 실패하지만 변경 전 코드(stash)에서도 동일하게 실패하는 선재 결함.",
+      "completed_at": "2026-07-29T03:29:59+0900"
+    },
+    {
+      "step": 2,
+      "name": "cache-data-scope",
+      "status": "completed",
+      "started_at": "2026-07-29T03:29:59+0900",
+      "summary": "cache-data.ts의 실제 삭제 범위를 ADR-052 결정 1·2에 맞췄다. KEEP_KEYS는 이제 5개 — apiKey · selectedAccountId · theme · trackingMode · dropEffect(Preferences는 여전히 '이 5개 빼고 전부' 반전 규칙, 새 키 자동 포함). CLEARED_TABLES 하드코딩 3개를 제거하고 `import { BOSS_PROFIT_TABLE_NAMES } from './sqlite/db'`로 교체 — clearCacheData(DELETE FROM)와 getCacheDataSize(SELECT *) 양쪽이 같은 배열을 순회하므로 범위가 구조적으로 일치하고, 누락돼 있던 boss_drop_records가 실제로 삭제·용량 합산에 포함된다(테이블 이름 문자열은 cache-data.ts에 한 번도 등장하지 않음, grep으로 확인). DROP이 아닌 DELETE FROM 유지. 회귀 가드 테스트(src/storage/__tests__/cache-data.test.ts) — (1) vi.mock('../sqlite/db')를 importOriginal 스프레드로 바꿔 BOSS_PROFIT_TABLE_NAMES는 실제 값을 쓰고 getBossProfitDb만 모킹, (2) 'db.ts가 정의한 SQLite 테이블을 하나도 빠짐없이 비운다' — 목록을 순회해 `DELETE FROM <name>;` 호출을 단언 + 호출 횟수 === 테이블 개수(목록 밖 테이블 삭제 금지), (3) 보존 키 5개 단언, (4) getCacheDataSize는 trackingMode 'manual'(6B)·dropEffect 'off'(3B)를 seed해도 합계 12B 불변, 보존 키만 남으면 0. AC: build·lint·grep 4종 통과, cache-data.test.ts 6개 통과. 전체 테스트는 BossProfitScreen 2건·boss-profit store 1건 실패하나 stash 후 동일하게 실패하는 선재 결함(step 1과 같음). 작업 4(조사) 결과 — 캐시 삭제 후 trackingMode:'manual'만 남고 trackedCharacters가 비어도 복구 경로는 살아 있다: 부팅 시 AppShell이 trackingMode를 복원하고, 사용자가 캐릭터 관리에서 저장하면 content-scheduler/store.ts:156과 boss-scheduler/store.ts:158의 ADR-035 결정 14(b) 분기가 previousOcids=[] 이므로 선택한 전원을 added로 보고 seedManualTrackedContent를 돌려 manualTrackedContent:*를 재생성한다(코드 변경 없음, 조사만). 다음 step(확인 모달 문구)에 필요한 사실: 삭제됨 = 나머지 Preferences 전부 + SQLite 4개 테이블(수익 기록·파티 설정·기간 체크·드롭 기록) 전체 행, 유지됨 = API 키·선택 계정·테마·트래킹 모드·드롭 연출 설정.",
+      "completed_at": "2026-07-29T03:33:43+0900"
+    },
+    {
+      "step": 3,
+      "name": "confirm-copy",
+      "status": "completed",
+      "started_at": "2026-07-29T03:33:43+0900",
+      "summary": "CacheClearConfirm.tsx의 삭제됨/유지됨 문구를 step 2의 실제 범위(cache-data.ts)와 동기화(ADR-052 결정 3). 최종 문구 2줄 — 삭제됨: `스케줄 캐시 · 추적 캐릭터 · 보스 수익 기록 · 드롭 기록` / 유지됨: `API 키 · 메이플 ID · 테마 · 스케줄 관리 방법 · 드롭 연출`. 유지됨 5항목은 KEEP_KEYS 5개(apiKey·selectedAccountId·theme·trackingMode·dropEffect)와 1:1 대응하며 내부 키 이름 대신 앱 표기(설정 행 라벨 '스케줄 관리 방법' ADR-035 개명, 계정은 '메이플 ID')를 썼다. 변경은 두 span의 텍스트뿐 — 공용 Modal·2행 레이아웃(flex items-start justify-between + border-b)·색 토큰(text-error/text-text)·복구 불가 안내·버튼 모두 그대로(유지됨 span만 길어져 삭제됨과 같은 멀티라인 JSX 형태로 감쌈, 클래스 동일). 신규 테스트 src/app/settings/__tests__/CacheClearConfirm.test.tsx 7개(TDD — 문구 2건이 먼저 red인 것 확인 후 구현): isOpen=false 미렌더 / 삭제됨 행에 드롭 기록 포함 / 유지됨 행에 5항목 포함(행 라벨로 closest('div') textContent 조회) / 복구 불가 안내 / isClearing 시 취소·삭제 동시 비활성 + '삭제 중...' / 삭제·취소 클릭 콜백. AC: build·lint(경고 0)·grep '드롭 기록' 통과, 전체 테스트 1281 passed. 실패 3건(BossProfitScreen 2·boss-profit store 1)은 stash 후에도 동일한 선재 결함(step 1·2와 같음). 관찰(수정 안 함) — 삭제 대상 SQLite 4테이블 중 boss_party_settings(파티 설정)는 이번 문구에도 항목으로 없다. step 지시가 삭제됨 4항목을 명시했고 적힌 항목은 전부 실제 삭제 대상이라 그대로 뒀으니, 열거의 완결성 판단은 step 4 문서 점검에서 다룰 것.",
+      "completed_at": "2026-07-29T03:36:44+0900"
+    },
+    {
+      "step": 4,
+      "name": "docs-finalize",
+      "status": "completed",
+      "started_at": "2026-07-29T03:36:44+0900",
+      "summary": "문서 상태를 구현 완료로 맞추고 실제 코드와 항목 단위 대조를 마쳤다. src/ 변경 0줄(git diff --stat -- src/ 비어 있음) — 옛 범위를 서술한 주석이 src에 남아있지 않아 현행화할 것도 없었다. (1) ADR 상태: ADR-052 제목 '(설계, 구현 전)' → '(구현 완료, 2026-07-29)', docs/ADR.md 인덱스 62행도 동일 표기(ADR-049·050과 같은 '구현 완료, 날짜' 형식). ADR-052 말미에 구현 완료 문단 추가 — db.ts(TABLE_DEFINITIONS+BOSS_PROFIT_TABLE_NAMES export, 결정 2)·cache-data.ts(KEEP_KEYS 5개, CLEARED_TABLES→import 교체, boss_drop_records 실삭제·용량 합산, 결정 1·2)·CacheClearConfirm.tsx(문구 동기화, 결정 3)와 회귀 가드 2종(db.test.ts 소스↔export 일치, cache-data.test.ts 전 테이블 DELETE+호출 횟수). (2) 대조 결과 — lifecycle.md K2 보존 노드 5개 = KEEP_KEYS 5개 일치, Y2 노드 4테이블 = TABLE_DEFINITIONS 일치, preferences.md '캐시 삭제 시' 열 전 행이 KEEP_KEYS 소속과 일치, sqlite.md 테이블 목록·ERD 12/5/4/9 컬럼 전부 db.ts와 일치(CREATE×4 표기도 정확). 어긋난 곳은 Y1 노드에 manualTrackedContent가 빠져 있던 것 하나 — 실제로 삭제되므로 문서 쪽에 추가. (3) 모달 문구 vs lifecycle 범위: '유지됨' 5항목은 KEEP_KEYS와 1:1이나 '삭제됨'은 요약이라 boss_party_settings(파티 설정)·boss_profit_period_checks(기간 체크)가 빠져 있다 — 모순이 아닌 불완전 열거이고 문구 수정은 이 step의 src 금지에 걸려, lifecycle.md에 '삭제 범위의 기준은 표이지 모달 문구가 아니다'를 명시하고 ADR-052 '남은 것' 문단에 별도 판단 대상으로 기록. 후속 이슈 후보 1: 확인 모달 삭제됨 열거에 파티 설정을 넣을지(문구/UX 판단). (4) step 2 조사 결과 반영 — 수동 모드 복구 경로는 살아 있음이 확인돼 lifecycle.md에 '캐시 삭제 후 수동 트래킹 모드는 어떻게 복구되나' 절 추가(trackingMode는 남고 trackedCharacters·manualTrackedContent:*는 지워짐 → 부팅 시 AppShell 복원 + 캐릭터 재선택 시 previousOcids=[] 이므로 ADR-035 결정 14(b) seedManualTrackedContent가 전원 시드 → 멤버십 복구. 다만 사용자가 항목을 빼거나 maxCount를 조정한 커스터마이즈는 템플릿 기본값으로 초기화되고, 체크·진행값은 애초에 schedulerCache 소관이라 다음 동기화로 회복). (5) 잔재: grep '3개 테이블|세 SQLite 테이블|CLEARED_TABLES' → src/ 0건, docs/는 ADR-052 배경 문단 3곳뿐(옛 상태를 기록한 서술이라 유지). (6) 열린 질문: docs/features/settings.md의 열린 질문 2건·후속 task 1건 모두 이번 작업과 무관해 삭제 없음. IAP 규칙은 어디에도 없어 preferences.md 키 표 아래에 신설 — '캐시 삭제는 KEEP_KEYS 제외 전부 반전 규칙이라 새 키는 기본이 삭제 대상, 재조회로 복구 못 하는 값(특히 인앱 결제/구매 상태)은 만들 때 KEEP_KEYS에 함께 넣어라'. 후속 이슈 후보 2(기존 드리프트, 이번 범위 밖 — step 0도 동일 판단): preferences.md 키 표가 아직 ADR-042 이전 표기(trackedCharacters:content/:boss·lastSelectedCharacter:*)이고 manualTrackedContent:{ocid} 행 자체가 없다. AC: build 통과, lint 경고 0, ADR 상태 grep 2종 통과, CLEARED_TABLES grep src/ 0건. npm test는 1281 passed / 3 failed이며 실패 3건(BossProfitScreen 2·boss-profit store 1)은 이 step 시작 직전 편집 전 상태에서 돌린 베이스라인과 동일하고 step 1~3이 stash로 선재 결함임을 확인한 것과 같은 항목이다(이 step은 src를 한 줄도 바꾸지 않았다).",
+      "completed_at": "2026-07-29T03:42:56+0900"
+    }
+  ],
+  "created_at": "2026-07-29T03:21:19+0900",
+  "completed_at": "2026-07-29T03:42:56+0900"
 }

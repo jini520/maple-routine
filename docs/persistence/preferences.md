@@ -17,6 +17,8 @@ flowchart TD
     Auth --> apiKey
     Auth --> selectedAccountId
     Auth --> theme
+    Auth --> trackingMode
+    Auth --> dropEffect
 
     Sync --> schedulerCache["schedulerCache:{ocid}"]
     Sync --> charBasic["characterBasicCache:{ocid}"]
@@ -38,6 +40,8 @@ flowchart TD
 | `apiKey` | `string` (평문 API 키) | `storage/api-key.ts` | **보존** | Nexon Open API 개인 키. 연결 해제 시에만 삭제됨 |
 | `selectedAccountId` | `string \| null` | `storage/api-key.ts` | **보존** | 여러 메이플 ID 중 선택된 계정. `null`이면 키 자체를 제거(값 없음) |
 | `theme` | `ThemeName` (`'레테'\|'렌'\|'머쉬맘'\|'혼테일'`) | `storage/theme.ts` | **보존** | 유효하지 않은 값이면 `getTheme()`이 `null` 반환 |
+| `trackingMode` | `'auto' \| 'manual'` | `storage/tracking-mode.ts` | **보존** | 값이 없거나 알 수 없는 값이면 `'auto'`([[ADR-035]] 결정 2). 보존 결정은 [[ADR-052]] |
+| `dropEffect` | `'on' \| 'off'` | `storage/drop-effect.ts` | **보존** | 고가 드롭 연출 표시 여부([[ADR-040]] 결정 6). 값이 없으면 표시(on). 보존 결정은 [[ADR-052]] |
 | `schedulerCache:{ocid}` | `{ state: SchedulerCharacterState, syncedAt: string }` (JSON) | `storage/scheduler-cache.ts` | 삭제 | 캐릭터별 마지막 동기화 스냅샷(일간/주간/보스 콘텐츠) |
 | `characterBasicCache:{ocid}` | `{ profile: CharacterBasicProfile, cachedAt: string }` (JSON) | `storage/character-basic-cache.ts` | 삭제 | 캐릭터 이미지·레벨·`access_flag` 캐시 |
 | `characterBasicCache:index` | `string[]` (ocid 목록, JSON) | `storage/character-basic-cache.ts` | 삭제 | "지금까지 캐싱된 적 있는 캐릭터가 누구인지" 역인덱스([[ADR-017]] 결정 6). 동시 쓰기 유실 방지를 위해 read-modify-write를 프로미스 체인으로 직렬화 |
@@ -47,6 +51,8 @@ flowchart TD
 | `lastSelectedCharacter:boss` | `string` (ocid, 평문) | `storage/character-selection.ts` | 삭제 | 보스 스케줄러 드롭다운의 마지막 선택 캐릭터 |
 | `worldSharedProgress:{world}` | `Record<itemName, SharedProgressEntry>` (JSON) | `storage/shared-progress-cache.ts` | 삭제 | 월드 단위로 완료가 공유되는 콘텐츠(예: 몬스터파크) 진행 원장([[ADR-030]]) |
 | `accountSharedProgress:{accountId}` | `Record<itemName, SharedProgressEntry>` (JSON) | `storage/shared-progress-cache.ts` | 삭제 | 계정 단위로 공유되는 콘텐츠(예: 에픽 던전) 진행 원장([[ADR-030]]) |
+
+> **새 키를 추가할 때 — 기본값은 "지워진다"다.** 캐시 삭제는 Preferences를 반전 규칙(`storage/cache-data.ts`의 `KEEP_KEYS` 제외 전부)으로 지우므로, 아무 조치도 하지 않으면 **새 키는 자동으로 삭제 대상**이 된다. 재조회로 복구할 수 없는 값 — 특히 인앱 결제/구매(IAP) 상태처럼 지워지면 사용자가 실제 손해를 보는 키 — 은 만들 때 반드시 `KEEP_KEYS`에 함께 넣어라([[ADR-052]] 결정 1이 `trackingMode`·`dropEffect`에 적용한 것과 같은 기준: "재조회로 복구되는 캐시인가, 사용자가 명시적으로 만든 값인가").
 
 > `trackedCharacters:daily` / `trackedCharacters:weekly`는 화면 개편([[ADR-013]]) 이전의 레거시 키다. `getTrackedCharacterOcids`가 호출될 때마다 `migrateLegacyTrackedCharacters()`가 먼저 실행되어, `trackedCharacters:content`가 아직 없으면 레거시 값을 1회 이관하고 원본을 지운다 — 이관이 끝난 기기에서는 다시 나타나지 않는 no-op이다.
 
