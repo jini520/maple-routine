@@ -1,6 +1,16 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Minus, Plus, RefreshCw, Sparkles } from 'lucide-react'
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  Coins,
+  Minus,
+  Plus,
+  RefreshCw,
+  Sparkles,
+} from 'lucide-react'
 import { BossPortrait } from '../../components/BossPortrait/BossPortrait'
 import { DifficultyBadge } from '../../components/DifficultyBadge/DifficultyBadge'
 import { MAPLE_LEAF_PATH } from '../../components/mapleLeafPath'
@@ -251,17 +261,11 @@ function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Element {
   )
 }
 
-function AccordionFooter(props: { characterName: string; totalMeso: number }): React.JSX.Element {
-  return (
-    <div className="flex items-center justify-between px-4 py-3 bg-surface-2 text-sm">
-      <span className="text-text-muted">{props.characterName} 합계</span>
-      <span className="font-semibold tabular-nums text-text">{props.totalMeso.toLocaleString()} 메소</span>
-    </div>
-  )
-}
+// 소계 footer는 두지 않는다(ADR-047 후속 3) — 헤더가 sticky라 캐릭터 합계가 스크롤 내내 보여 중복이다.
+// 그 결과 셸 하단에 닿는 배경 요소가 없어 하단 모서리 보정도 불필요하다. 새로 추가한다면 셸엔
+// overflow-hidden을 걸 수 없으므로(ADR-047 결정 2) 그 요소가 직접 rounded-b-[14px]를 가져야 한다.
 
 function WeeklyAccordionBody(props: {
-  characterName: string
   rows: BossProfitRow[]
   dropsByRowKey: Record<string, RecordedDrop[]>
   setPartySize: BossProfitStore['setPartySize']
@@ -280,7 +284,6 @@ function WeeklyAccordionBody(props: {
           />
         ))}
       </ul>
-      <AccordionFooter characterName={props.characterName} totalMeso={sumPayout(props.rows)} />
     </div>
   )
 }
@@ -318,7 +321,6 @@ function WeeklySubtotalRow(props: { subtotal: BossProfitWeeklySubtotal; now: Dat
 }
 
 function MonthlyAccordionBody(props: {
-  characterName: string
   bossRows: BossProfitRow[]
   weeklySubtotals: BossProfitWeeklySubtotal[]
   dropsByRowKey: Record<string, RecordedDrop[]>
@@ -327,8 +329,6 @@ function MonthlyAccordionBody(props: {
   now: Date
   isMonthlyBossQueryable: boolean
 }): React.JSX.Element {
-  const totalMeso = sumPayout(props.bossRows) + sumSubtotals(props.weeklySubtotals)
-
   return (
     <div className="border-t border-border">
       {props.weeklySubtotals.length > 0 && (
@@ -366,8 +366,6 @@ function MonthlyAccordionBody(props: {
           )}
         </>
       )}
-
-      <AccordionFooter characterName={props.characterName} totalMeso={totalMeso} />
     </div>
   )
 }
@@ -429,18 +427,38 @@ function collectGroupValuableDrops(
   return valuable
 }
 
-// 고가 드롭이 기록된 주차의 캐릭터 카드 우상단에 떠서, 실제 획득한 고가 아이템 아이콘(최대 3개 + 나머지 개수)을
-// 골드 반짝임 칩으로 보여준다. overflow-hidden(펼침 시)에 잘리지 않도록 카드 바깥 relative 래퍼에 붙인다.
-function ValuableDropBadge(props: { drops: RecordedDrop[] }): React.JSX.Element {
+// 이 기간 전체(모든 추적 캐릭터)의 고가 드롭 — 총 수익 헤드라인 뱃지용(ADR-046). 캐릭터별 집계를
+// 그대로 합치므로 월간 탭 한계(주차별 합계 행엔 보스 행이 없어 월간 보스 드롭만 잡힘)도 동일하게 승계한다.
+function collectAllValuableDrops(
+  groups: CharacterGroup[],
+  dropsByRowKey: Record<string, RecordedDrop[]>,
+): RecordedDrop[] {
+  return groups.flatMap((group) => collectGroupValuableDrops(group, dropsByRowKey))
+}
+
+// 배지가 카드 상단 밖으로 올라간 양(-top-2 = 0.5rem). sticky 레일 오프셋에서 이만큼 상쇄해야
+// stuck 시 배지가 헤더 상단선에 걸린다(ADR-047 후속).
+const BADGE_TOP_OFFSET = 8
+
+// 실제 획득한 고가 아이템 아이콘(최대 3개 + 나머지 개수)을 골드 반짝임 칩으로 보여준다.
+// 배치·라벨은 호출부가 정한다(ADR-046) — 캐릭터 카드는 우상단 절대배치(overflow-hidden에 잘리지 않도록
+// 카드 바깥 relative 래퍼에 붙인다), 총 수익 헤드라인은 라벨행 우측 인라인. 외형·아이콘 스택 규칙은 공통.
+function ValuableDropBadge(props: {
+  drops: RecordedDrop[]
+  label: string
+  className?: string
+}): React.JSX.Element {
   const shown = props.drops.slice(0, 3)
   const extra = props.drops.length - shown.length
 
   return (
     <span
       role="img"
-      aria-label="고가 드롭"
+      aria-label={props.label}
       title="고가 아이템 드롭"
-      className="valuable-drop-badge absolute -right-1.5 -top-2 z-10 flex items-center gap-1 rounded-full py-0.5 pl-1.5 pr-2"
+      className={`valuable-drop-badge flex flex-none items-center gap-1 rounded-full py-0.5 pl-1.5 pr-2${
+        props.className !== undefined ? ` ${props.className}` : ''
+      }`}
     >
       <Sparkles className="h-3 w-3 flex-none" strokeWidth={2.5} aria-hidden="true" />
       <span className="flex items-center">
@@ -477,8 +495,33 @@ function CharacterAccordion(props: {
   setBossDrops: BossProfitStore['setBossDrops']
   now: Date
   isMonthlyBossQueryable: boolean
+  stickyTop: number
 }): React.JSX.Element {
   const [isExpanded, setIsExpanded] = useState(false)
+  // 배지 sticky 레일의 고정 범위와 하단 페이드 위치를 헤더에 맞추기 위한 헤더 실측 높이(ADR-047 후속).
+  // 글꼴 확대 시 높이가 달라질 수 있어 상수 대신 측정한다.
+  // isExpanded를 의존성에 두고 다시 측정해야 한다 — 접힘 헤더는 `border border-border`가 있어 펼침보다
+  // 2px 높은데, ResizeObserver는 기본이 content-box 관찰이라 테두리만 사라지는 변화로는 콜백이 발생하지
+  // 않는다. 접힘 측정값(66px)이 남으면 펼침 헤더(64px)와 페이드 사이에 2px 틈이 생긴다.
+  const headerRef = useRef<HTMLButtonElement>(null)
+  const [headerHeight, setHeaderHeight] = useState(0)
+
+  useEffect(() => {
+    const element = headerRef.current
+    if (element === null) return
+
+    const measure = (): void => {
+      setHeaderHeight(element.getBoundingClientRect().height)
+    }
+    measure()
+
+    const observer = new ResizeObserver(measure)
+    observer.observe(element)
+    return () => {
+      observer.disconnect()
+    }
+  }, [isExpanded])
+
   const { group } = props
   const totalMeso = groupTotalMeso(group)
   // 이 주차에 고가 아이템 드롭이 기록됐을 때: 카드에 골드 회전샤인 테두리/글로우(valuable-drop-card) +
@@ -488,7 +531,9 @@ function CharacterAccordion(props: {
   const valuableDrops = collectGroupValuableDrops(group, props.dropsByRowKey)
   const hasValuable = valuableDrops.length > 0
   const shellClass = [
-    isExpanded ? 'rounded-[14px] bg-surface border border-border overflow-hidden' : '',
+    // overflow-hidden을 두지 않는다(ADR-047) — overflow:hidden 조상은 스크롤포트를 만들어 헤더 sticky를
+    // 무력화한다. 소계 footer 제거 후(후속 3) 셸 하단에 닿는 배경 요소가 없어 클리핑 대체도 불필요하다.
+    isExpanded ? 'rounded-[14px] bg-surface border border-border' : '',
     hasValuable
       ? isExpanded
         ? 'valuable-drop-card valuable-drop-card--expanded'
@@ -506,14 +551,69 @@ function CharacterAccordion(props: {
     // isolate(isolation:isolate): 우상단 배지의 z-index를 이 카드 안에 가둔다. 없으면 배지의 z-10이
     // 페이지 루트 stacking으로 새어나가 sticky 헤더(z-10)·하단 fixed nav·safe-area 위로 그려진다.
     <div className="relative isolate">
-      {hasValuable && <ValuableDropBadge drops={valuableDrops} />}
+      {hasValuable &&
+        (isExpanded ? (
+          // 펼침: 배지도 헤더와 함께 고정한다(ADR-047 후속). 헤더 "안"에 넣으면 헤더의 z-[5] 스택
+          // 컨텍스트에 갇혀 골드 링(z-6)이 배지 위를 지나가므로, 셸 바깥에 남기고 높이 0 sticky 레일에
+          // 얹는다(h-0 + 자식 absolute라 레이아웃 영향 없음). sticky는 z-index 없이도 스택 컨텍스트를
+          // 만들어 레일이 z-10을 가져야 링 위로 간다. top에 BADGE_TOP_OFFSET을 더하는 이유는 배지가
+          // -top-2로 올라가 있어서 — 그래야 stuck 시 헤더 상단선에 걸치고 페이지 헤더 뒤로 숨지 않는다.
+          // 바깥 absolute 박스는 레일의 고정 범위를 "카드 높이 - 헤더 높이"로 잘라 헤더와 같은 시점에
+          // 떨어지게 한다(없으면 카드 끝에서 배지만 남아 어긋난다). absolute라 레이아웃엔 영향 없다.
+          <div className="pointer-events-none absolute inset-x-0 top-0" style={{ bottom: headerHeight }}>
+            <div className="sticky z-10 h-0" style={{ top: props.stickyTop + BADGE_TOP_OFFSET }}>
+              <ValuableDropBadge
+                drops={valuableDrops}
+                label="고가 드롭"
+                className="pointer-events-auto absolute -right-1.5 -top-2"
+              />
+            </div>
+          </div>
+        ) : (
+          // 접힘: 고정할 헤더가 없고 containing block이 헤더 높이(~56px)뿐이라 레일을 쓰면 배지만 떠서
+          // 카드와 어긋난다(사용자 요청) — ADR-045의 원래 구조 그대로, z-10도 배지 자신이 갖는다.
+          <ValuableDropBadge drops={valuableDrops} label="고가 드롭" className="absolute -right-1.5 -top-2 z-10" />
+        ))}
+
+      {/* stuck 헤더 아래 경계 페이드(ADR-047 후속) — 중첩 sticky에서는 콘텐츠가 지나가는 경계가 여기라,
+          페이지 헤더에서 뺀 공용 레시피를 카드 표면색(from-surface)으로 여기에 붙인다. 헤더의 자식
+          (top-full)으로 두면 헤더가 카드 끝에서 릴리스될 때 페이드가 카드 밖으로 새어나오고, 셸엔
+          overflow-hidden을 걸 수 없어(sticky 무력화) 클리핑도 못 한다. 그래서 본문 범위(top=헤더 높이 ~
+          카드 바닥)로 제한한 박스 안의 sticky 요소로 둔다 — sticky가 자기 박스를 카드 안에 붙잡아준다. */}
+      {/* headerHeight가 0이면(측정 전 첫 프레임·HMR로 effect가 재실행되지 않은 상태) 제약 박스 top이 0이 돼
+          페이드가 카드 최상단(헤더 위)에 깔린다 — 잘못된 위치로 그리는 대신 측정될 때까지 렌더하지 않는다. */}
+      {isExpanded && headerHeight > 0 && (
+        // inset-x-px·bottom-px: 셸 테두리(border 1px) 두께만큼 들여 페이드가 테두리를 덮지 않게 한다
+        // — 이 박스는 wrapper(= 셸 border-box) 기준이라 inset-x-0이면 테두리까지 덮는다. 테두리 두께를
+        // 바꾸면 이 값도 함께 바꿀 것.
+        <div
+          className="pointer-events-none absolute inset-x-px bottom-px z-[5]"
+          style={{ top: headerHeight }}
+          aria-hidden="true"
+        >
+          <div
+            className="sticky h-8 bg-gradient-to-b from-surface to-transparent backdrop-blur-sm"
+            style={{
+              top: props.stickyTop + headerHeight,
+              maskImage: 'linear-gradient(to bottom, black, transparent)',
+              WebkitMaskImage: 'linear-gradient(to bottom, black, transparent)',
+            }}
+          />
+        </div>
+      )}
+
       <div className={shellClass}>
         <button
+          ref={headerRef}
           type="button"
           onClick={() => setIsExpanded((prev) => !prev)}
+          // 펼침 헤더는 카드 안에서 sticky로 고정한다(ADR-047) — top은 페이지 sticky 헤더 실측 높이라
+          // 그 바로 아래에 붙고, bg-surface가 밑으로 지나가는 보스 행을 가린다. z-[5]는 드롭 아이콘
+          // (relative + inline zIndex 1~3) 위 · 고가 드롭 배지(z-10, ADR-045) 아래 층.
+          style={isExpanded ? { top: props.stickyTop } : undefined}
           className={
             isExpanded
-              ? 'flex w-full items-center gap-3 p-4'
+              ? 'sticky z-[5] flex w-full items-center gap-3 rounded-t-[14px] bg-surface p-4'
               : 'flex w-full items-center gap-3 rounded-[14px] bg-surface border border-border p-4'
           }
         >
@@ -530,7 +630,6 @@ function CharacterAccordion(props: {
         {isExpanded &&
           (props.tab === 'weekly' ? (
             <WeeklyAccordionBody
-              characterName={group.characterName}
               rows={group.bossRows}
               dropsByRowKey={props.dropsByRowKey}
               setPartySize={props.setPartySize}
@@ -538,7 +637,6 @@ function CharacterAccordion(props: {
             />
           ) : (
             <MonthlyAccordionBody
-              characterName={group.characterName}
               bossRows={group.bossRows}
               weeklySubtotals={group.weeklySubtotals}
               dropsByRowKey={props.dropsByRowKey}
@@ -584,6 +682,29 @@ export function BossProfitScreen(): React.JSX.Element {
 
   const isEmpty = trackedOcids === null || trackedOcids.length === 0
 
+  // 펼친 캐릭터 카드 헤더를 이 페이지 sticky 헤더 "아래"에 붙이기 위한 실측 높이(ADR-047).
+  // 페이지 헤더는 불투명(bg-bg)하고 높이가 상태에 따라 가변이라(탭·기간 라벨·동기화 실패 경고·에러 문구·
+  // 총 수익 헤드라인 유무) 상수로 둘 수 없다. 미지원 환경은 0으로 남아 top-0으로 자연 degrade한다.
+  // 빈 상태에서는 헤더 자체가 렌더되지 않으므로 isEmpty가 풀릴 때 다시 붙인다.
+  const stickyHeaderRef = useRef<HTMLDivElement>(null)
+  const [stickyHeaderHeight, setStickyHeaderHeight] = useState(0)
+
+  useEffect(() => {
+    const element = stickyHeaderRef.current
+    if (element === null) return
+
+    const measure = (): void => {
+      setStickyHeaderHeight(element.getBoundingClientRect().height)
+    }
+    measure()
+
+    const observer = new ResizeObserver(measure)
+    observer.observe(element)
+    return () => {
+      observer.disconnect()
+    }
+  }, [isEmpty])
+
   if (isEmpty) {
     return (
       <div className="flex min-h-[calc(100dvh-var(--sa-top)-var(--sa-bottom)-4rem)] flex-col p-4">
@@ -626,13 +747,15 @@ export function BossProfitScreen(): React.JSX.Element {
   const periodQueryable = isPeriodQueryable(tab, periodKey, now)
   const characterGroups = buildCharacterGroups(rows, weeklySubtotals)
   const totalMeso = characterGroups.reduce((sum, group) => sum + groupTotalMeso(group), 0)
+  // 총 수익 헤드라인 우측 뱃지용 — 이 기간 전체 고가 드롭(ADR-046)
+  const periodValuableDrops = collectAllValuableDrops(characterGroups, dropsByRowKey)
 
   return (
     <div className="-mt-[var(--sa-top)] space-y-4">
       {/* 제목~총 수익 카드까지는 화면 상단에 고정하고 그 아래 캐릭터 아코디언 목록만
           스크롤되게 한다(사용자 요청, 2026-07-14) — content-scheduler/boss-scheduler와
           동일한 sticky 헤더 패턴(docs/UI_GUIDE.md "스크롤 영역" 참고)을 그대로 재사용한다. */}
-      <div className="sticky top-0 z-10 bg-bg px-4 pt-[calc(1rem+var(--sa-top))] pb-2">
+      <div ref={stickyHeaderRef} className="sticky top-0 z-10 bg-bg px-4 pt-[calc(1rem+var(--sa-top))] pb-2">
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h1 className="text-lg font-semibold text-text">보스 수익</h1>
@@ -732,24 +855,38 @@ export function BossProfitScreen(): React.JSX.Element {
             <p className="text-sm text-error">이 기간을 불러오지 못했습니다 — 다시 시도해주세요</p>
           )}
 
+          {/* 총 수익 요약은 카드가 아니라 헤드라인이다(ADR-046) — 아래 캐릭터 카드가 전부 같은 카드 셸이라
+              요약도 카드면 "동일한 흰 카드의 반복"으로 묻힌다. 카드 셸을 걷어내고 색·크기로만 위계를 주고,
+              라벨행 우측에는 이 기간 전체 고가 드롭 뱃지(ADR-045 배지 재사용)를 장식 겸 정보로 얹는다. */}
           {!isPeriodLoading && characterGroups.length > 0 && (
-            <div className="rounded-[14px] bg-surface border border-border shadow-[0_1px_2px_rgba(0,0,0,0.3),0_4px_12px_rgba(153,117,179,0.18)] p-6 text-center">
-              <p className="text-sm text-text-muted">{periodLabel.primary} 총 수익</p>
-              <p className="text-lg font-semibold text-text">{totalMeso.toLocaleString()} 메소</p>
+            <div>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs font-semibold tracking-wide text-text-muted">
+                  {periodLabel.primary} 총 수익
+                </p>
+                {periodValuableDrops.length > 0 && (
+                  <ValuableDropBadge drops={periodValuableDrops} label="이 기간 고가 드롭" />
+                )}
+              </div>
+              <div className="mt-1.5 flex items-center gap-2.5">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/12 text-primary">
+                  <Coins className="h-[18px] w-[18px]" strokeWidth={2} aria-hidden="true" />
+                </span>
+                {/* 단위는 별도 span으로 격하하되 숫자와 사이에 실제 공백 문자를 남긴다 — 마진만으로 띄우면
+                    textContent가 "N메소"로 붙어 스크린리더가 붙여 읽는다(ADR-046 트레이드오프). */}
+                <p className="text-xl font-extrabold leading-none tabular-nums text-primary">
+                  {totalMeso.toLocaleString()}{' '}
+                  <span className="text-xs font-bold text-text-muted">메소</span>
+                </p>
+              </div>
+              <div className="mt-3 h-px bg-border" aria-hidden="true" />
             </div>
           )}
         </div>
 
-        {/* 헤더 아래에 살짝 겹쳐 그라데이션+블러로 카드가 잘려 보이지 않고 자연스럽게
-            사라지도록 한다(content-scheduler/boss-scheduler와 동일한 패턴). */}
-        <div
-          className="pointer-events-none absolute inset-x-0 top-full h-8 bg-gradient-to-b from-bg to-transparent backdrop-blur-sm"
-          style={{
-            maskImage: 'linear-gradient(to bottom, black, transparent)',
-            WebkitMaskImage: 'linear-gradient(to bottom, black, transparent)',
-          }}
-          aria-hidden="true"
-        />
+        {/* 공용 레시피의 헤더-목록 경계 페이드 오버레이(absolute top-full h-8)는 이 화면에 두지 않는다
+            (ADR-047 결정 6) — 펼친 카드의 sticky 헤더가 멈추는 자리가 바로 그 밴드라, z-10 페이지 헤더
+            안의 오버레이가 stuck 헤더 상단을 덮어 가린다. 경계는 총 수익 헤드라인 하단 헤어라인이 담당. */}
       </div>
 
       <div className="space-y-2 px-4 pb-4">
@@ -780,6 +917,7 @@ export function BossProfitScreen(): React.JSX.Element {
               setBossDrops={setBossDrops}
               now={now}
               isMonthlyBossQueryable={periodQueryable}
+              stickyTop={stickyHeaderHeight}
             />
           ))}
       </div>

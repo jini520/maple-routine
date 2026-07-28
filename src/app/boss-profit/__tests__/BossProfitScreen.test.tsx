@@ -440,7 +440,7 @@ describe('BossProfitScreen', () => {
     expect(screen.queryByText('자쿰')).not.toBeInTheDocument()
   })
 
-  it('드롭다운 헤더를 클릭하면 펼쳐져 보스 행과 합계 footer가 보이고, 다시 클릭하면 접힌다', () => {
+  it('드롭다운 헤더를 클릭하면 펼쳐져 보스 행이 보이고, 다시 클릭하면 접힌다', () => {
     mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()] })
 
     renderBossProfitScreen()
@@ -448,7 +448,8 @@ describe('BossProfitScreen', () => {
 
     fireEvent.click(header)
     expect(screen.getByText('자쿰')).toBeInTheDocument()
-    expect(screen.getByText('낟낟 합계')).toBeInTheDocument()
+    // 합계는 sticky 헤더에 상시 표시되므로 하단 소계 footer는 두지 않는다(ADR-047 후속 3)
+    expect(screen.queryByText('낟낟 합계')).not.toBeInTheDocument()
 
     fireEvent.click(header)
     expect(screen.queryByText('자쿰')).not.toBeInTheDocument()
@@ -609,7 +610,9 @@ describe('BossProfitScreen', () => {
     renderBossProfitScreen()
 
     expect(screen.getByText(/총 수익/)).toBeInTheDocument()
-    expect(screen.getByText('8,000,000 메소')).toBeInTheDocument()
+    // 헤드라인은 금액과 단위를 분리해 렌더하므로(ADR-046) getByText는 직계 텍스트("8,000,000")만 잡는다 —
+    // 단위까지는 textContent로 확인한다.
+    expect(screen.getByText('8,000,000')).toHaveTextContent('8,000,000 메소')
   })
 
   it('rows가 비어있으면 상단 합계 카드 없이 빈 상태 문구만 보인다', () => {
@@ -747,7 +750,8 @@ describe('BossProfitScreen', () => {
     expect(badge).toBeInTheDocument()
     // 배지의 z-index(z-10)가 페이지 루트로 새어나가 sticky 헤더·하단 nav·safe-area를 침범하지 않도록,
     // 배지를 감싼 바깥 wrapper가 stacking을 격리(isolate)해야 한다(회귀 가드).
-    expect(badge.parentElement).toHaveClass('isolate')
+    // 배지가 sticky 레일 안으로 들어가며 부모가 한 겹 깊어져(ADR-047 후속) closest로 확인한다.
+    expect(badge.closest('.isolate')).not.toBeNull()
   })
 
   it('고가 아이템이 아닌 드롭만 있으면 강조 배지가 표시되지 않는다', () => {
@@ -843,6 +847,197 @@ describe('BossProfitScreen', () => {
 
     expect(screen.getByText('자쿰').closest('li')).toHaveClass('valuable-drop-row')
     expect(screen.getByText('벨로나').closest('li')).not.toHaveClass('valuable-drop-row')
+  })
+
+  it('ADR-047: 페이지 헤더에는 경계 페이드 오버레이를 두지 않는다(stuck된 캐릭터 헤더를 가림 — 회귀 가드)', () => {
+    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()] })
+
+    const { container } = renderBossProfitScreen()
+
+    // 페이드는 페이지 헤더(z-10) 안 top-full h-8 밴드를 bg-bg로 덮는데, 펼친 카드의 sticky 헤더가
+    // 멈추는 자리가 바로 그 밴드다(카드는 isolate로 z-10 아래). 다른 4개 화면은 페이드를 유지하므로
+    // 공용 레시피를 복사하다 되붙기 쉬워 가드를 둔다. 카드 헤더 자신의 페이드는 별도 테스트에서 검증.
+    const pageHeader = container.querySelector('.sticky.top-0')
+    expect(pageHeader).not.toBeNull()
+    expect(pageHeader?.querySelector('.backdrop-blur-sm')).toBeNull()
+    expect(pageHeader?.querySelector('.bg-gradient-to-b')).toBeNull()
+  })
+
+  it('ADR-047 후속: stuck 헤더 하단에 경계 페이드(그라데이션+블러)를 둔다', () => {
+    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()] })
+
+    // jsdom은 getBoundingClientRect가 모두 0이라 헤더 높이가 측정되지 않는다. 페이드는 측정 전에는
+    // 위치를 잡을 수 없어 렌더를 보류하므로(카드 최상단에 깔리는 것 방지), 실제 레이아웃 높이를 주입한다.
+    // 접힘 헤더는 border가 있어 66px, 펼침은 테두리가 없어 64px — 이 차이를 재현해 "접힘 시 측정값이
+    // 남아 2px 틈이 생기는" 회귀를 잡는다(ResizeObserver는 content-box 관찰이라 테두리 변화를 못 잡는다).
+    const rect = vi
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockReturnValue({ height: 66 } as DOMRect)
+
+    renderBossProfitScreen()
+    const header = screen.getByRole('button', { name: /낟낟/ })
+    const card = header.closest('.isolate')
+    expect(card?.querySelector('.bg-gradient-to-b')).toBeNull() // 접힘: 고정 대상이 아니라 페이드도 없음
+
+    rect.mockReturnValue({ height: 64 } as DOMRect) // 펼치면 헤더 border가 없어져 2px 줄어든다
+    fireEvent.click(header)
+
+    // 중첩 sticky에서는 콘텐츠가 지나가는 경계가 카드 헤더 아래다. 배경색은 페이지가 아니라
+    // 카드 표면색(from-surface).
+    const fade = card?.querySelector('.bg-gradient-to-b')
+    expect(fade).not.toBeNull()
+    expect(fade).toHaveClass('backdrop-blur-sm', 'from-surface', 'sticky')
+
+    // 헤더 자식(top-full)으로 두면 헤더가 카드 끝에서 릴리스될 때 페이드가 카드 밖으로 새어나온다
+    // (셸엔 overflow-hidden을 걸 수 없어 클리핑도 불가) — 본문 범위 제약 박스 안의 sticky로 둔다.
+    expect(header.querySelector('.bg-gradient-to-b')).toBeNull()
+    expect(fade?.parentElement).toHaveClass('absolute', 'pointer-events-none')
+    // 카드 테두리(1px)를 덮지 않도록 좌우·하단을 테두리 두께만큼 들인다 — wrapper 기준 inset-x-0이면
+    // 테두리까지 포함한 전체 폭을 덮어 테두리가 페이드에 가린다.
+    expect(fade?.parentElement).toHaveClass('inset-x-px', 'bottom-px')
+    // 제약 박스 top = 헤더 실측 높이 — 0이면 카드 최상단(헤더 위)에 깔린다
+    expect(fade?.parentElement?.style.top).toBe('64px')
+
+    rect.mockRestore()
+  })
+
+  it('ADR-047 후속: 고가 드롭 배지도 헤더와 함께 고정된다(높이 0 sticky 레일)', () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row()],
+      dropsByRowKey: {
+        'ocid-1|자쿰|카오스|2026-07-09': [{ category: 'consumable', itemName: VALUABLE_ITEM, quantity: 1 }],
+      },
+    })
+
+    renderBossProfitScreen()
+    fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
+
+    // 배지를 헤더 안에 넣으면 헤더의 z-[5] 컨텍스트에 갇혀 골드 링(z-6)이 배지 위를 지나간다.
+    // 그래서 셸 바깥(z-10)에 남기고 높이 0 sticky 레일에 얹어 헤더와 같은 오프셋으로 고정한다.
+    const rail = screen.getByRole('img', { name: '고가 드롭' }).parentElement
+    expect(rail).toHaveClass('sticky', 'h-0', 'z-10')
+
+    // 높이 0 레일은 카드 맨 아래까지 붙어 있어, 자기 높이만큼 일찍 떨어지는 헤더와 어긋난다.
+    // 그래서 "bottom = 헤더 실측 높이"인 absolute 제약 박스로 고정 범위를 헤더에 맞춘다(레이아웃 영향 없음).
+    const constraint = rail?.parentElement
+    expect(constraint).toHaveClass('absolute', 'pointer-events-none')
+    expect(constraint?.style.bottom).not.toBe('') // 실측값 주입 배선(jsdom에선 0px)
+    expect(screen.getByRole('img', { name: '고가 드롭' })).toHaveClass('pointer-events-auto')
+  })
+
+  it('ADR-047 후속: 접힘 상태의 배지는 sticky가 아니다(고정할 헤더가 없고 containing block이 헤더 높이뿐)', () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row()],
+      dropsByRowKey: {
+        'ocid-1|자쿰|카오스|2026-07-09': [{ category: 'consumable', itemName: VALUABLE_ITEM, quantity: 1 }],
+      },
+    })
+
+    renderBossProfitScreen()
+
+    // 접힘일 때는 ADR-045 원래 구조 — 레일 없이 카드 wrapper 기준 absolute이고 z-10은 배지 자신이 갖는다
+    // (레일이 없으면 정적 요소엔 z-index가 먹지 않아 골드 링 z-6 아래로 내려간다).
+    const badge = screen.getByRole('img', { name: '고가 드롭' })
+    expect(badge.parentElement).not.toHaveClass('sticky')
+    expect(badge).toHaveClass('absolute', 'z-10')
+  })
+
+  // 펼친 캐릭터 카드 헤더 sticky 고정(ADR-047)
+  it('ADR-047: 카드를 펼치면 헤더(초상화·이름·총액)가 sticky로 고정된다', () => {
+    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()] })
+
+    renderBossProfitScreen()
+    // 펼치면 파티원 스테퍼(aria-label에 캐릭터명 포함)가 생겨 /낟낟/ 쿼리가 모호해지므로, 헤더 참조를
+    // 클릭 전에 잡아 재사용한다(React가 같은 DOM 노드의 className만 갱신 — 기존 강조 효과 테스트와 동일).
+    const header = screen.getByRole('button', { name: /낟낟/ })
+    expect(header).not.toHaveClass('sticky') // 접힘: 단독 카드라 고정 대상 없음
+
+    fireEvent.click(header)
+
+    expect(header).toHaveClass('sticky')
+    // 아래로 지나가는 보스 행을 가려야 하므로 자기 배경이 필요하고, 드롭 아이콘(inline zIndex 1~3)보다
+    // 위·고가 드롭 배지(z-10)보다 아래 층이어야 한다.
+    expect(header).toHaveClass('bg-surface')
+    expect(header).toHaveClass('z-[5]')
+  })
+
+  it('ADR-047: 펼침 셸에는 overflow-hidden이 없다(sticky 헤더 무력화 방지 회귀 가드)', () => {
+    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()] })
+
+    renderBossProfitScreen()
+    const header = screen.getByRole('button', { name: /낟낟/ })
+    fireEvent.click(header)
+
+    // overflow:hidden 조상은 스크롤포트를 만들어 sticky를 죽인다 — 셸에 다시 붙으면 이 테스트가 잡는다.
+    expect(header.parentElement).not.toHaveClass('overflow-hidden')
+  })
+
+  it('ADR-047 후속 3: 펼쳐도 소계 footer를 렌더하지 않는다(합계는 sticky 헤더에 상시 표시)', () => {
+    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()] })
+
+    renderBossProfitScreen()
+    fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
+
+    expect(screen.queryByText(/합계/)).not.toBeInTheDocument()
+    // footer가 사라져 셸 하단에 닿는 배경 요소가 없다 — 하단 모서리 보정도 불필요(ADR-047 결정 2 참고).
+    expect(document.querySelector('.rounded-b-\\[14px\\]')).toBeNull()
+  })
+
+  // 총 수익 헤드라인의 기간 전체 고가 드롭 뱃지(ADR-046) — 캐릭터 카드 배지와 같은 컴포넌트를 쓰되
+  // aria-label로 구분한다("고가 드롭" = 캐릭터 카드, "이 기간 고가 드롭" = 헤드라인 요약).
+  it('ADR-046: 기간에 고가 드롭이 있으면 총 수익 헤드라인에도 고가 드롭 뱃지가 표시된다', () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row()],
+      dropsByRowKey: {
+        'ocid-1|자쿰|카오스|2026-07-09': [{ category: 'consumable', itemName: VALUABLE_ITEM, quantity: 1 }],
+      },
+    })
+
+    renderBossProfitScreen()
+
+    expect(screen.getByRole('img', { name: '이 기간 고가 드롭' })).toBeInTheDocument()
+  })
+
+  it('ADR-046: 고가 드롭이 없으면 총 수익 헤드라인에 뱃지를 렌더하지 않는다', () => {
+    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()], dropsByRowKey: {} })
+
+    renderBossProfitScreen()
+
+    expect(screen.getByText(/총 수익/)).toBeInTheDocument()
+    expect(screen.queryByRole('img', { name: '이 기간 고가 드롭' })).not.toBeInTheDocument()
+  })
+
+  it('ADR-046: 헤드라인 뱃지는 여러 캐릭터의 고가 드롭을 모두 모아 집계한다(최대 3개 + 나머지 개수)', () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1', 'ocid-2'],
+      rows: [
+        row({ ocid: 'ocid-1', characterName: '낟낟', boss: '자쿰' }),
+        row({ ocid: 'ocid-2', characterName: '내옆에최성일', boss: '루시드' }),
+      ],
+      dropsByRowKey: {
+        'ocid-1|자쿰|카오스|2026-07-09': [
+          { category: 'consumable', itemName: VALUABLE_ITEM, quantity: 1 },
+          { category: 'consumable', itemName: '신념의 연마석', quantity: 1 },
+        ],
+        'ocid-2|루시드|카오스|2026-07-09': [
+          { category: 'equipment', itemName: '혼돈의 칠흑 장신구 상자', quantity: 1 },
+          { category: 'equipment', itemName: '메이린의 칠흑 장신구 상자', quantity: 1 },
+        ],
+      },
+    })
+
+    renderBossProfitScreen()
+
+    // 캐릭터별 배지(각 2개)와 달리 헤드라인은 4개를 합쳐 3개만 보여주고 나머지는 "+1"로 접는다.
+    const headlineBadge = screen.getByRole('img', { name: '이 기간 고가 드롭' })
+    expect(within(headlineBadge).getByText('+1')).toBeInTheDocument()
   })
 
   it('드롭다운 헤더에 그 캐릭터의 합계만 표시되고 다른 캐릭터 수익이 섞이지 않는다', () => {
