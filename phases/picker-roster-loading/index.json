@@ -16,7 +16,7 @@
       "status": "completed",
       "started_at": "2026-07-29T03:49:07+0900",
       "summary": "getCharacterPickerRoster 방출 규칙 변경(시그니처·Promise.all 병렬성 불변). ①stub 방출 시 함수 스코프 hasVisibleView=true. 제거한 분기: ②단계의 `if (cached === null) { liveEntries.set(..., imageUrl: null) }` — 이제 ②엔 `cached !== null && accessFlag`인 캐릭터만 들어간다(access_flag 미상 비표시, ADR-053 결정 1). 중간 방출은 hasVisibleView일 때만: ②(character/list 직후)와 ③(character/basic 개별 응답마다). 루프 종료 후 globalError === null일 때만 최종 onUpdate 1회(웜·콜드 공통, throw 경로에선 방출 없음). 결과 타이밍 — 웜(stub 1건 이상 방출): 총 ≥2회 = ①character/list 응답 전 즉시 + ②character/list 응답 시 + ③basic 응답마다 + 최종 1회(마지막 patch와 동일값). 콜드(stub 0건 = 인덱스 비었거나 전부 accessFlag:false): 중간 0회, 모든 character/basic 완료 후 정확히 1회만 방출 → step 2·3의 스피너는 '항목 0건 + Promise pending' 동안 떠 있고 이 최종 방출(=Promise resolve) 또는 401/429 reject 시 걷힌다. 예외 유지: characters.length === 0이면 onUpdate([]) 후 즉시 return(콜드에서도 방출), 개별 네트워크 실패는 캐시 값 유지·전체 미차단, 정렬 규칙 불변. 테스트: schedule-sync.test.ts에 ADR-053 describe 6케이스 추가(웜 방출 순서·콜드 1회·인덱스 전부 비활성=콜드·basic accessFlag:false 전 방출 미등장·401/429 콜드 무방출 throw) + 옛 규칙 고정 단언 5건 갱신. schedule-sync.test.ts 52/52 통과, build·lint 통과. 참고: npm test 전체에서 boss-profit 3건 실패는 이 step 이전부터 있던 실패(git stash로 확인, 본 변경과 무관).",
-      "completed_at": "2026-07-29T03:56:00+0900"
+      "completed_at": "2026-07-29T03:56:10+0900"
     },
     {
       "step": 2,
