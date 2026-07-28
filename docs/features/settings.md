@@ -2,12 +2,12 @@
 
 > **범위**: API 키 관리·계정(메이플 ID) 변경·연결 해제·테마 선택·스케줄 관리 방법(트래킹 모드)·데이터 관리·앱 업데이트·footer 표기. 다른 기능 설명에 흩어져 있던 요구사항을 통합 정리.
 > **관련 소스**: `app/settings/` · `features/settings/`(`changeApiKey`) · `storage/api-key`(`clearAuthConfig`) · `features/onboarding`(`RESET`) · `features/tracking-mode`(`copy.ts`) · `AccountFlowStatus` · `SettingsRow` · `TrackingModeModal`/`TrackingModeSelector` · `ThemeSelector`/`ThemeSwatchDots`.
-> **관련 ADR**: [[ADR-007]] [[ADR-008]] [[ADR-009]] [[ADR-004]] [[ADR-035]] [[ADR-026]] [[ADR-027]]. **관련 문서**: [onboarding.md](./onboarding.md), [theme.md](./theme.md), [live-update.md](./live-update.md), [../foundation/nexon-api.md](../foundation/nexon-api.md).
+> **관련 ADR**: [[ADR-007]] [[ADR-008]] [[ADR-009]] [[ADR-004]] [[ADR-035]] [[ADR-026]] [[ADR-027]] [[ADR-051]]. **관련 문서**: [onboarding.md](./onboarding.md), [theme.md](./theme.md), [live-update.md](./live-update.md), [../foundation/nexon-api.md](../foundation/nexon-api.md).
 
 ## 정책
 진입 경로는 **하단 탭바 4번째 탭**(별도 헤더 아이콘 아님, 확정 2026-07-12).
 
-- **계정(메이플 ID) 변경**: API 키 재입력 없이, 저장된 키로 `character/list` 를 다시 호출해 계정 선택 UI(`AccountSelectionList` 재사용)를 다시 보여주고 선택된 `accountId` 만 갱신. 계정 관련 로컬 기록(보스 수익·드랍 히스토리)은 삭제하지 않음([[ADR-008]] 참조 무결성). 이전 계정 캐릭터 기록도 보존, 현재 계정 캐릭터만 노출.
+- **계정(메이플 ID) 변경**: API 키 재입력 없이, 저장된 키로 `character/list` 를 다시 호출해 계정 선택 UI(`AccountSelectionList` 재사용)를 다시 보여주고 선택된 `accountId` 만 갱신. **계정이 1개여도 선택 UI를 보여준다**([[ADR-051]]) — 온보딩과 설정 두 경로가 "계정 수와 무관하게 항상 선택 화면 경유, 사용자가 '계속하기'로 확정해야 저장·예열" 이라는 같은 규칙을 공유한다(상세 [onboarding.md](./onboarding.md)). 계정 관련 로컬 기록(보스 수익·드랍 히스토리)은 삭제하지 않음([[ADR-008]] 참조 무결성). 이전 계정 캐릭터 기록도 보존, 현재 계정 캐릭터만 노출.
 - **연결 해제(로그아웃)**: `storage/api-key.ts` 의 `clearAuthConfig()` + `features/onboarding` 의 `RESET` 이벤트를 재사용해 온보딩 화면으로 복귀(신규 로직 없이 기존 두 조각 연결). 키 무효화 복구 경로도 이것(재온보딩).
 - **테마 선택**: 레테/렌/머쉬맘/혼테일 중 선택 → 즉시 반영. 상세 [theme.md](./theme.md).
 - **스케줄 관리 방법(트래킹 모드)**: 자동/수동 전역 토글([[ADR-035]]). 상세는 아래 UI.
