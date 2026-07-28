@@ -1,0 +1,11 @@
+{
+  "project": "메이플 루틴",
+  "phase": "account-selection-always",
+  "steps": [
+    { "step": 0, "name": "docs-policy", "status": "pending" },
+    { "step": 1, "name": "onboarding-flow", "status": "pending" },
+    { "step": 2, "name": "settings-flow", "status": "pending" },
+    { "step": 3, "name": "single-account-highlight", "status": "pending" },
+    { "step": 4, "name": "docs-finalize", "status": "pending" }
+  ]
+}
