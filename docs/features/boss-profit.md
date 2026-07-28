@@ -43,8 +43,8 @@
 - **소계 footer**: `flex items-center justify-between px-4 py-3 bg-surface-2 text-sm rounded-b-[14px]`, 왼쪽 "{캐릭터명} 합계" `text-text-muted`, 오른쪽 금액 `font-semibold tabular-nums text-text`. 하단 라운딩은 셸의 `overflow-hidden`을 뺀 대체 수단([[ADR-047]]) — 셸 하단에 닿는 배경 요소를 새로 추가할 땐 같은 처리가 필요하다.
 - 기본 **전부 접힘** 시작(추적 캐릭터 많을 때 과도한 길이 방지). 리스트 key `${tab}-${periodKey}-${ocid}` 로 탭/기간 이동 시 remount(펼침 상태 리셋, [[ADR-037]]).
 
-### sticky 헤더 — 공용 패턴 + 블러 예외
-제목~총 수익 헤드라인까지 `sticky top-0 z-10 bg-bg`로 고정하고 그 아래 캐릭터 목록만 스크롤한다([foundation/design-system.md](../foundation/design-system.md) "스크롤 영역" 레시피 재사용). 단 **헤더-목록 경계 페이드에서 `backdrop-blur-sm`을 뺀다**(사용자 요청, 2026-07-28) — 색 그라데이션(`bg-gradient-to-b from-bg to-transparent` + mask)만 남겨 헤더 아래를 지나는 카드가 흐려지지 않게 한다. 다른 4개 화면은 블러를 유지하므로 공용 레시피를 복사할 때 되붙이지 말 것(회귀 가드 테스트 있음).
+### sticky 헤더 — 공용 패턴 + 경계 페이드 미사용
+제목~총 수익 헤드라인까지 `sticky top-0 z-10 bg-bg`로 고정하고 그 아래 캐릭터 목록만 스크롤한다([foundation/design-system.md](../foundation/design-system.md) "스크롤 영역" 레시피 재사용). 단 **헤더-목록 경계 페이드 오버레이는 쓰지 않는다**([[ADR-047]] 결정 6, 2026-07-28) — 그 오버레이는 헤더 바로 아래 32px를 `bg-bg`로 덮는데, 펼친 캐릭터 카드의 sticky 헤더가 멈추는 자리가 바로 그 밴드라 stuck 헤더 상단이 가려진다(카드는 `isolate`로 `z-10` 아래). 경계는 총 수익 헤드라인 하단의 `h-px bg-border` 헤어라인이 담당한다. 다른 4개 화면은 페이드를 유지하므로 공용 레시피를 복사할 때 되붙이지 말 것(회귀 가드 테스트 있음).
 
 ### 총 수익 헤드라인 (sticky 헤더 최하단) — [[ADR-046]]
 `characterGroups` 합계를 보여주는 기간 요약. **카드가 아니다** — 아래 캐릭터 카드가 전부 같은 카드 셸(`rounded-[14px] bg-surface border border-border`)이라, 요약도 카드면 "동일한 흰 카드의 반복"으로 묻힌다([[ADR-046]] 배경). 카드 셸 없이 배경 위 타이포로 두고 색·크기로만 위계를 준다.

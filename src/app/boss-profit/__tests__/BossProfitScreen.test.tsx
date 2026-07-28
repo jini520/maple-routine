@@ -847,15 +847,16 @@ describe('BossProfitScreen', () => {
     expect(screen.getByText('벨로나').closest('li')).not.toHaveClass('valuable-drop-row')
   })
 
-  it('sticky 헤더 경계 페이드에 backdrop-blur를 쓰지 않는다(공용 레시피에서 이 화면만 제외 — 회귀 가드)', () => {
+  it('ADR-047: sticky 헤더에 경계 페이드 오버레이를 두지 않는다(stuck된 캐릭터 헤더를 가림 — 회귀 가드)', () => {
     mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()] })
 
     const { container } = renderBossProfitScreen()
 
-    // 다른 4개 화면은 backdrop-blur-sm을 유지하므로 레시피를 복사하다 되붙기 쉽다.
+    // 페이드는 페이지 헤더(z-10) 안 top-full h-8 밴드를 bg-bg로 덮는데, 펼친 카드의 sticky 헤더가
+    // 멈추는 자리가 바로 그 밴드다(카드는 isolate로 z-10 아래). 다른 4개 화면은 페이드를 유지하므로
+    // 공용 레시피를 복사하다 되붙기 쉬워 가드를 둔다.
     expect(container.querySelector('.backdrop-blur-sm')).toBeNull()
-    // 색 그라데이션 페이드 자체는 유지된다.
-    expect(container.querySelector('.bg-gradient-to-b')).not.toBeNull()
+    expect(container.querySelector('.bg-gradient-to-b')).toBeNull()
   })
 
   // 펼친 캐릭터 카드 헤더 sticky 고정(ADR-047)

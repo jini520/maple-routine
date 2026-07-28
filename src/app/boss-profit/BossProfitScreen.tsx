@@ -822,17 +822,9 @@ export function BossProfitScreen(): React.JSX.Element {
           )}
         </div>
 
-        {/* 헤더 아래에 살짝 겹쳐 색 그라데이션으로 카드가 잘려 보이지 않고 자연스럽게 사라지도록 한다.
-            공용 레시피(content-scheduler/boss-scheduler)와 달리 이 화면만 backdrop-blur-sm을 빼서
-            헤더 아래를 지나는 카드가 흐려지지 않게 한다(사용자 요청, 2026-07-28) — 되붙이지 말 것. */}
-        <div
-          className="pointer-events-none absolute inset-x-0 top-full h-8 bg-gradient-to-b from-bg to-transparent"
-          style={{
-            maskImage: 'linear-gradient(to bottom, black, transparent)',
-            WebkitMaskImage: 'linear-gradient(to bottom, black, transparent)',
-          }}
-          aria-hidden="true"
-        />
+        {/* 공용 레시피의 헤더-목록 경계 페이드 오버레이(absolute top-full h-8)는 이 화면에 두지 않는다
+            (ADR-047 결정 6) — 펼친 카드의 sticky 헤더가 멈추는 자리가 바로 그 밴드라, z-10 페이지 헤더
+            안의 오버레이가 stuck 헤더 상단을 덮어 가린다. 경계는 총 수익 헤드라인 하단 헤어라인이 담당. */}
       </div>
 
       <div className="space-y-2 px-4 pb-4">
