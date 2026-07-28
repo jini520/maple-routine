@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { BrowserRouter, Navigate, NavLink, Route, Routes } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { BrowserRouter, Navigate, NavLink, Route, Routes, useNavigate } from 'react-router-dom'
 import { Coins, ListChecks, Settings, Swords } from 'lucide-react'
 import { useOnboardingStore } from './features/onboarding/store'
 import { useThemeStore } from './features/theme/store'
@@ -33,8 +33,47 @@ const APP_START_MS = Date.now()
 const MIN_SPLASH_MS = 1000
 
 function BottomTabBar(): React.JSX.Element {
+  const navigate = useNavigate()
+  const navRef = useRef<HTMLElement>(null)
+
+  // 탭 이동의 책임은 NavLink가 아니라 이 인터셉터에 있다(NavLink는 활성 스타일·aria-current 담당).
+  // iOS WKWebView는 인접한 두 탭을 동시에 누를 때 드물게 클릭 하나를 합성하는데, 그 클릭은 React
+  // 이벤트 시스템을 타지 않아 NavLink의 preventDefault가 걸리지 않는다. 그러면 <a href>의 기본
+  // 동작이 그대로 실행돼 문서 전체가 다시 로드되고(2026-07-28 실기기 계측: click → PAGEHIDE),
+  // 그 리로드는 closeBossProfitDb()를 못 거쳐 네이티브 SQLite 커넥션을 stale하게 남긴다 — 보스
+  // 수익의 파티원 수·수익 금액이 앱 재시작 전까지 안 불러와지던 증상의 실제 원인이다([[ADR-050]]).
+  // React 안에서는 막을 수 없다(그 핸들러 자체가 안 도는 게 문제다). React 밖의 DOM 리스너를
+  // 캡처 단계에 걸어 어떤 경로로 들어온 클릭이든 문서 네비게이션이 되지 않게 하고, 직접
+  // navigate해 SPA 라우팅으로 되돌린다. 캡처가 React보다 먼저 도므로 여기서 preventDefault를 하면
+  // react-router의 Link는 자기 가드(`if (!event.defaultPrevented)`)에 막혀 이동을 건너뛴다 —
+  // 이중 이동은 생기지 않는다.
+  useEffect(() => {
+    const nav = navRef.current
+    if (nav === null) {
+      return
+    }
+
+    const interceptClick = (event: MouseEvent): void => {
+      const anchor = event.target instanceof Element ? event.target.closest('a[href]') : null
+      const href = anchor?.getAttribute('href')
+      if (href === null || href === undefined) {
+        return
+      }
+      event.preventDefault()
+      navigate(href)
+    }
+
+    nav.addEventListener('click', interceptClick, true)
+    return () => {
+      nav.removeEventListener('click', interceptClick, true)
+    }
+  }, [navigate])
+
   return (
-    <nav className="fixed inset-x-0 bottom-0 flex justify-around border-t border-border bg-surface pb-[var(--sa-bottom)]">
+    <nav
+      ref={navRef}
+      className="fixed inset-x-0 bottom-0 flex justify-around border-t border-border bg-surface pb-[var(--sa-bottom)]"
+    >
       {TAB_ITEMS.map((tab) => (
         <NavLink
           key={tab.to}

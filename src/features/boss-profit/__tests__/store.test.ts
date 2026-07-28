@@ -730,6 +730,31 @@ describe('useBossProfitStore', () => {
       expect(row.payoutMeso).toBe(2020000)
     })
 
+    // ADR-050 결정 3: withSqliteFallback은 조회 실패·타임아웃을 빈 결과로 바꾼다. 그 빈 결과를
+    // "기록이 없다"로 읽으면 자동 기록이 party_size=1로 사용자가 저장한 값을 덮어쓴다 — 리로드 후
+    // stale 커넥션으로 조회가 멈추는 상황(ADR-050)에서 실제로 일어날 수 있는 데이터 손상이다.
+    it('기록 조회 자체가 실패하면 자동 기록으로 기본 파티원 수를 덮어쓰지 않는다', async () => {
+      getBossProfitRecordsMock.mockRejectedValue(new Error('SQLite 응답 없음'))
+      getBossPartySizeMock.mockResolvedValue(null)
+      syncSchedulesMock.mockResolvedValue([syncResult()]) // 자쿰 카오스, priceMeso 8080000
+
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+
+      expect(upsertBossProfitRecordMock).not.toHaveBeenCalled()
+    })
+
+    it('기록 조회가 성공했고 결과가 비어 있으면(진짜 기록 없음) 기존대로 자동 기록한다', async () => {
+      getBossProfitRecordsMock.mockResolvedValue([])
+      getBossPartySizeMock.mockResolvedValue(null)
+      syncSchedulesMock.mockResolvedValue([syncResult()])
+
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+
+      expect(upsertBossProfitRecordMock).toHaveBeenCalledWith(
+        expect.objectContaining({ ocid: 'ocid-1', boss: '자쿰', difficulty: '카오스', partySize: 1 }),
+      )
+    })
+
     it('자동 기록 대상 보스가 여러 개여도 upsert 호출이 겹치지 않는다(동일 SQLite 커넥션 트랜잭션 충돌 방지)', async () => {
       let active = 0
       let sawOverlap = false
@@ -802,7 +827,10 @@ describe('useBossProfitStore', () => {
       }
     })
 
-    it('getBossProfitRecords가 응답하지 않아도(hang) 타임아웃 후 기록 없이 진행해 loaded 상태가 된다', async () => {
+    // 원래 취지(2026-07-17)는 "조회가 멈춰도 화면이 '불러오는 중'에 영영 갇히지 않는다"이고 그대로
+    // 유효하다. 다만 그때 party_size=1로 자동 기록하던 동작은 [[ADR-050]] 결정 3으로 폐기했다 —
+    // 조회 실패를 "기록 없음"으로 읽고 사용자가 저장한 값을 덮어쓰는 데이터 손상 경로였다.
+    it('getBossProfitRecords가 응답하지 않아도(hang) 타임아웃 후 멈추지 않고, 기본 파티원 수로 덮어쓰지도 않는다', async () => {
       vi.useFakeTimers()
       try {
         getBossProfitRecordsMock.mockImplementation(() => new Promise(() => {}))
@@ -815,8 +843,9 @@ describe('useBossProfitStore', () => {
 
         const state = useBossProfitStore.getState()
         expect(state.status).toBe('loaded')
-        expect(state.rows[0].partySize).toBe(1)
-        expect(state.rows[0].payoutMeso).toBe(8080000)
+        expect(state.rows).toHaveLength(1)
+        expect(state.rows[0].partySize).toBeNull()
+        expect(upsertBossProfitRecordMock).not.toHaveBeenCalled()
       } finally {
         vi.useRealTimers()
       }

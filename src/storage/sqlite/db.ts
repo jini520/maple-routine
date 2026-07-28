@@ -109,10 +109,32 @@ async function openBossProfitDb(): Promise<SQLiteDBConnection> {
   return db
 }
 
+// 예기치 않은 리로드(탭 링크 기본 동작 누출, WebKit 콘텐츠 프로세스 사망 시 Capacitor iOS의 자동
+// webView.reload()) 뒤에는 위 stale 감지가 복구하지 못하고 첫 호출이 **에러 없이 멈추는** 경우가
+// 있다. reject 경로에만 복구가 있으면(아래 catch) 그 죽은 커넥션이 dbPromise에 영구 캐시돼 앱을
+// 재시작할 때까지 모든 조회가 실패한다 — 보스 수익 데이터가 안 불러와지는 증상([[ADR-050]] 결정 2).
+// 타임아웃과 경쟁시켜 "무응답"을 재시도 가능한 실패로 바꾼다. 네이티브 브릿지 큐 자체가 막힌
+// 경우엔 재시도 호출도 같은 큐에 서므로 회복되지 않지만, 그 경우까지 JS에서 할 수 있는 일은 없다.
+const OPEN_TIMEOUT_MS = 10_000
+
+function withOpenTimeout(promise: Promise<SQLiteDBConnection>): Promise<SQLiteDBConnection> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) => {
+      timer = setTimeout(() => {
+        reject(new Error('SQLite 커넥션 열기 시간 초과'))
+      }, OPEN_TIMEOUT_MS)
+    }),
+  ]).finally(() => {
+    clearTimeout(timer)
+  })
+}
+
 // 앱 전체에서 커넥션을 하나만 열도록 모듈 스코프에서 캐싱한다 — 동일 이름 커넥션을 중복으로 열면 에러가 난다.
 export function getBossProfitDb(): Promise<SQLiteDBConnection> {
   if (dbPromise === null) {
-    dbPromise = openBossProfitDb().catch((error: unknown) => {
+    dbPromise = withOpenTimeout(openBossProfitDb()).catch((error: unknown) => {
       // 실패한 시도를 캐시하면 이후 모든 SQLite 접근이 재시도 없이 같은 실패를 영구히 돌려받는다
       // (보스 수익·파티 설정·디버그 초기화 전부). 다음 호출이 처음부터 다시 열도록 캐시를 비운다.
       dbPromise = null

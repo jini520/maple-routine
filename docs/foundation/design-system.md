@@ -115,6 +115,7 @@ style: maskImage/WebkitMaskImage: linear-gradient(to bottom, black, transparent)
 - 전체 너비: 모바일 단일 컬럼, max-width 제한 없음(하이브리드 앱이라 데스크톱 와이드 미고려).
 - 좌측 정렬 기본. 화면 패딩 `p-4`, 블록 사이 `space-y-4`, 카드 안쪽 `p-4`.
 - **하단 고정 탭바**: 화면이 2개 이상 되는 시점부터 `border-t` + 아이콘(위)·라벨(아래). 아직 화면 없는 기능 탭은 만들기 전까지 추가 안 함. 설정은 4번째 탭.
+  - **탭 이동은 `NavLink`가 아니라 캡처 단계 클릭 인터셉터가 책임진다**([[ADR-050]] 결정 1). `NavLink`는 활성 스타일(`isActive`)·`aria-current`만 담당한다. iOS에서 두 손가락 동시 탭이 React 이벤트 시스템을 안 타는 클릭을 만들어 `<a href>`의 기본 동작이 **문서 전체 리로드**로 새어 나간 사례가 있어(2026-07-28 실기기 확인), React 밖의 DOM 리스너로 `preventDefault()` + `navigate()`를 직접 수행한다. 탭바를 수정할 때 이 분담을 유지할 것.
 
 ## 타이포그래피
 | 용도 | 스타일 |

@@ -77,6 +77,17 @@ sequenceDiagram
 - `native/live-update.ts`의 `applyDownloadedLiveUpdate()` — OTA 번들 적용 직전
 - `app/settings/CacheDataSection.tsx`의 `handleClear()` — 캐시 데이터 삭제 직후 리로드 직전
 
+### 예기치 않은 리로드 — 손으로 배선한 두 곳으로는 못 막는다 ([[ADR-050]])
+
+위 두 곳은 **우리가 리로드를 일으키는** 경우다. 그 밖에 앱이 통제할 수 없는 리로드 경로가 있고, 거기엔 `closeBossProfitDb()`를 끼워 넣을 자리가 없다.
+
+- **탭 링크의 기본 동작 누출** — iOS WKWebView가 두 손가락 동시 탭에서 드물게 합성하는 클릭이 React 이벤트 시스템을 타지 않아 `<a href>`가 실제 문서 네비게이션이 됐다(2026-07-28 실기기 계측: `click` → `PAGEHIDE`). `App.tsx`의 탭바 캡처 인터셉터로 차단했다([[ADR-050]] 결정 1).
+- **WebKit 콘텐츠 프로세스 사망** — Capacitor iOS(`WebViewDelegationHandler.swift`)가 **자동으로 `webView.reload()`** 한다. 앱 코드로 개입할 수 없다.
+
+그래서 커넥션 쪽에도 방어가 있어야 한다 — `openBossProfitDb()`는 **타임아웃과 경쟁**시켜, 커넥션이 에러 없이 멈춰도 `dbPromise`를 비우고 다음 호출이 처음부터 다시 열게 한다([[ADR-050]] 결정 2). 이 방어가 없으면 죽은 커넥션이 `dbPromise`에 영구 캐시되어 **앱을 재시작할 때까지** 모든 조회가 실패한다. 단 네이티브 브릿지 큐 자체가 막힌 경우엔 재시도 호출도 같은 큐에 서므로 회복되지 않는다.
+
+**조회 실패를 "기록 없음"으로 오인하지 말 것** — `features/boss-profit/store.ts`의 `withSqliteFallback`은 타임아웃을 빈 결과로 바꾸는데, 그 값을 "기록이 없다"로 읽으면 자동 기록이 `party_size = 1`로 **사용자가 저장한 값을 덮어쓴다**. `getBossProfitRecords` 조회는 폴백을 `null`로 두어 실패와 빈 결과를 구분하고, 실패면 자동 기록을 건너뛴다([[ADR-050]] 결정 3).
+
 ## 마이그레이션
 
 `openBossProfitDb()`가 커넥션을 열 때마다(앱 실행마다) 다음 두 UPDATE 문을 함께 실행한다. 조건에 걸리는 행이 이미 없으면 매번 실행해도 안전한 no-op이다.
