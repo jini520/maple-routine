@@ -2,10 +2,33 @@
   "project": "메이플 루틴",
   "phase": "cache-clear-scope",
   "steps": [
-    { "step": 0, "name": "docs-policy", "status": "pending" },
-    { "step": 1, "name": "table-registry", "status": "pending" },
-    { "step": 2, "name": "cache-data-scope", "status": "pending" },
-    { "step": 3, "name": "confirm-copy", "status": "pending" },
-    { "step": 4, "name": "docs-finalize", "status": "pending" }
-  ]
+    {
+      "step": 0,
+      "name": "docs-policy",
+      "status": "completed",
+      "started_at": "2026-07-29T03:21:19+0900",
+      "summary": "ADR-052 신규(설계, 구현 전) + ADR.md 인덱스 1줄 + ADR-035 보류 해소 정정 + persistence 4문서 갱신. 구현 규칙 3가지 — (1) KEEP_KEYS에 trackingMode·dropEffect 추가해 캐시 삭제에도 보존(theme과 동일 성격의 취향 설정), (2) 삭제 대상 SQLite 테이블 목록의 단일 진실 공급원은 db.ts의 [{name, createSql}] 배열 하나 — openBossProfitDb가 그 배열을 순회해 CREATE하고 이름 배열을 export, cache-data.ts는 CLEARED_TABLES 하드코딩을 없애고 import(boss_drop_records 누락·고아 드롭 행 문제 해소, sqlite_master 동적 조회는 기각), (3) CacheClearConfirm 문구를 실제 범위와 동기화(삭제됨에 드롭 기록 추가, 유지됨에 트래킹 모드·드롭 연출 설정 추가). 부수 발견 — docs/persistence/preferences.md의 trackedCharacters:content/:boss·lastSelectedCharacter:* 행은 ADR-042의 단일 키 통합이 반영되지 않은 별개 문서 드리프트(이번 이슈와 무관해 손대지 않음)."
+    },
+    {
+      "step": 1,
+      "name": "table-registry",
+      "status": "pending"
+    },
+    {
+      "step": 2,
+      "name": "cache-data-scope",
+      "status": "pending"
+    },
+    {
+      "step": 3,
+      "name": "confirm-copy",
+      "status": "pending"
+    },
+    {
+      "step": 4,
+      "name": "docs-finalize",
+      "status": "pending"
+    }
+  ],
+  "created_at": "2026-07-29T03:21:19+0900"
 }

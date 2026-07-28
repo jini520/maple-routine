@@ -61,9 +61,9 @@ flowchart LR
     subgraph CacheClear["캐시 데이터 삭제"]
         direction TB
         D2["clearCacheData()"]
-        D2 -.보존.-> K2[("apiKey · selectedAccountId · theme")]
+        D2 -.보존.-> K2[("apiKey · selectedAccountId · theme\ntrackingMode · dropEffect")]
         D2 -->|삭제| Y1["나머지 Preferences 전부\n(schedulerCache·characterBasicCache·\ntrackedCharacters·lastSelectedCharacter·\nworldSharedProgress·accountSharedProgress)"]
-        D2 -->|DELETE FROM 3개 테이블| Y2[("boss_profit_records\nboss_party_settings\nboss_profit_period_checks")]
+        D2 -->|DELETE FROM db.ts가 정의한 모든 테이블| Y2[("boss_profit_records\nboss_party_settings\nboss_profit_period_checks\nboss_drop_records")]
     end
 ```
 
@@ -71,14 +71,20 @@ flowchart LR
 |---|---|---|
 | 어디서 | 설정 → 연결 해제 | 설정 → 데이터 관리 → 캐시 데이터 삭제 |
 | 구현 | `storage/api-key.ts`의 `clearAuthConfig()` + `features/onboarding`의 `RESET` 이벤트 | `storage/cache-data.ts`의 `clearCacheData()` |
-| 지우는 것 | `apiKey`, `selectedAccountId` **딱 2개 키만** | `KEEP_KEYS`(`apiKey`/`selectedAccountId`/`theme`) 제외 **모든 Preferences 키** + SQLite 3개 테이블 전체 행 |
+| 지우는 것 | `apiKey`, `selectedAccountId` **딱 2개 키만** | `KEEP_KEYS`(`apiKey`/`selectedAccountId`/`theme`/`trackingMode`/`dropEffect`, 5개) 제외 **모든 Preferences 키** + **`db.ts`가 정의한 모든 SQLite 테이블**의 전체 행 |
 | 보스 수익 기록 | 그대로 유지 | **영구 삭제** (서버에 없는 로컬 전용 데이터라 복구 불가) |
 | 결과 | 온보딩 화면으로 돌아감 | 같은 계정으로 계속 쓰되, 모든 로컬 기록·캐시가 초기화된 상태로 리로드 |
 | 의도 | "다른 계정으로 전환" | "저장 공간 확보 / 상태 초기화" — 참조 무결성 보존이 목적이 아니라 명시적 초기화 |
 
 `clearCacheData()`는 SQLite 테이블을 `DROP`이 아니라 `DELETE FROM`으로 비운다 — 스키마(테이블 자체)는 남고 행만 사라진다.
 
-설정 화면의 "캐시 데이터 삭제" 행 옆에는 `getCacheDataSize()`가 계산한 근사 용량(바이트)이 표시된다 — `clearCacheData()`가 지우는 것과 정확히 같은 범위(`KEEP_KEYS` 제외 Preferences 값 + 저 3개 테이블의 모든 셀)만 합산한 값이다.
+설정 화면의 "캐시 데이터 삭제" 행 옆에는 `getCacheDataSize()`가 계산한 근사 용량(바이트)이 표시된다 — `clearCacheData()`가 지우는 것과 정확히 같은 범위(`KEEP_KEYS` 제외 Preferences 값 + **삭제 대상 테이블 전부**의 모든 셀)만 합산한 값이다.
+
+### 삭제 대상 테이블 목록은 `db.ts` 하나에서만 나온다 ([[ADR-052]] 결정 2)
+
+`clearCacheData()`/`getCacheDataSize()`가 도는 테이블 목록은 **`storage/sqlite/db.ts`의 테이블 정의 배열**(`[{ name, createSql }]`)이 단일 진실 공급원이다. `openBossProfitDb()`의 `CREATE TABLE` 실행도 같은 배열을 순회하고, `cache-data.ts`는 그 이름 배열을 import해서 쓴다 — 삭제 목록이 코드상 한 곳뿐이라 스키마와 갈라질 자리가 없다.
+
+**그래서 새 테이블을 추가할 때 삭제 목록을 따로 손댈 필요가 없다** — `db.ts`의 배열에 항목 하나를 넣으면 스키마 생성·캐시 삭제 범위·용량 계산에 전부 자동 반영된다. 이 규칙이 없던 시절 [[ADR-038]]의 `boss_drop_records`가 `cache-data.ts`의 하드코딩 목록에만 누락돼, 캐시를 지워도 드롭 기록이 남고 표시 용량이 실제보다 작게 나오는 결함이 있었다(수익 기록만 지워지고 드롭이 남으면 같은 보스를 다시 잡을 때 예전 드롭이 되살아나 붙는다).
 
 ## 리로드를 동반하는 삭제 — SQLite 커넥션 처리
 

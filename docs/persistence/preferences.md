@@ -17,6 +17,8 @@ flowchart TD
     Auth --> apiKey
     Auth --> selectedAccountId
     Auth --> theme
+    Auth --> trackingMode
+    Auth --> dropEffect
 
     Sync --> schedulerCache["schedulerCache:{ocid}"]
     Sync --> charBasic["characterBasicCache:{ocid}"]
@@ -38,6 +40,8 @@ flowchart TD
 | `apiKey` | `string` (평문 API 키) | `storage/api-key.ts` | **보존** | Nexon Open API 개인 키. 연결 해제 시에만 삭제됨 |
 | `selectedAccountId` | `string \| null` | `storage/api-key.ts` | **보존** | 여러 메이플 ID 중 선택된 계정. `null`이면 키 자체를 제거(값 없음) |
 | `theme` | `ThemeName` (`'레테'\|'렌'\|'머쉬맘'\|'혼테일'`) | `storage/theme.ts` | **보존** | 유효하지 않은 값이면 `getTheme()`이 `null` 반환 |
+| `trackingMode` | `'auto' \| 'manual'` | `storage/tracking-mode.ts` | **보존** | 값이 없거나 알 수 없는 값이면 `'auto'`([[ADR-035]] 결정 2). 보존 결정은 [[ADR-052]] |
+| `dropEffect` | `'on' \| 'off'` | `storage/drop-effect.ts` | **보존** | 고가 드롭 연출 표시 여부([[ADR-040]] 결정 6). 값이 없으면 표시(on). 보존 결정은 [[ADR-052]] |
 | `schedulerCache:{ocid}` | `{ state: SchedulerCharacterState, syncedAt: string }` (JSON) | `storage/scheduler-cache.ts` | 삭제 | 캐릭터별 마지막 동기화 스냅샷(일간/주간/보스 콘텐츠) |
 | `characterBasicCache:{ocid}` | `{ profile: CharacterBasicProfile, cachedAt: string }` (JSON) | `storage/character-basic-cache.ts` | 삭제 | 캐릭터 이미지·레벨·`access_flag` 캐시 |
 | `characterBasicCache:index` | `string[]` (ocid 목록, JSON) | `storage/character-basic-cache.ts` | 삭제 | "지금까지 캐싱된 적 있는 캐릭터가 누구인지" 역인덱스([[ADR-017]] 결정 6). 동시 쓰기 유실 방지를 위해 read-modify-write를 프로미스 체인으로 직렬화 |

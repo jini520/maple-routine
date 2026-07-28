@@ -11,7 +11,7 @@
 | 저장소 | 무엇을 담당 | 형태 |
 |---|---|---|
 | **Capacitor Preferences** | 대부분의 데이터. 인증, 테마, 동기화 캐시, 사용자 기록 원장 | 평문 Key-Value (iOS UserDefaults / Android SharedPreferences) |
-| **SQLite (`boss_profit.db`)** | 보스 수익 관련 데이터만 | 관계형 테이블 3개 |
+| **SQLite (`boss_profit.db`)** | 보스 수익 관련 데이터만 | 관계형 테이블 4개 |
 | **네이티브 OS 레벨** | 로컬 알림 예약, OTA 번들 파일 | 앱 코드가 직접 읽지 못하는 OS/플러그인 소유 저장소 |
 
 보스 수익만 SQLite인 이유는 "기간별 기록이 누적되고, (ocid, boss, difficulty, period_key) 같은 복합키로 조회·upsert가 잦다"는 특성 때문이다. 나머지는 대부분 "캐릭터 하나당 JSON 덩어리 하나" 형태라 Key-Value로 충분하다.
@@ -55,7 +55,7 @@ flowchart LR
 
 | 분류 | 예시 | 특징 |
 |---|---|---|
-| **인증/설정** | `apiKey`, `selectedAccountId`, `theme` | 사용자가 명시적으로 설정. "캐시 데이터 삭제"에도 보존됨 |
+| **인증/설정** | `apiKey`, `selectedAccountId`, `theme`, `trackingMode`, `dropEffect` | 사용자가 명시적으로 설정. "캐시 데이터 삭제"에도 보존됨 |
 | **동기화 캐시** | 스케줄러 상태, 캐릭터 기본 정보, 공유 진행 원장 | Nexon API 응답을 로컬에 미러링. 서버가 진실이고 이건 stale-while-revalidate용 사본([[ADR-016]]) |
 | **로컬 전용 기록** | 보스 수익 기록, 파티 설정, 기간 체크 | Nexon API에 없는, 사용자가 이 앱에서만 남기는 값. 서버 재동기화로 복구 불가 |
 
