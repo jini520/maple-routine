@@ -131,7 +131,7 @@ describe('useOnboardingStore.restoreFromStorage', () => {
     expect(fetchCharacterListMock).not.toHaveBeenCalled()
   })
 
-  it('apiKey만 있으면 fetchCharacterList를 다시 호출해 재개한다 (계정 1개면 예열 후 트래킹 모드 선택)', async () => {
+  it('apiKey만 있으면 fetchCharacterList를 다시 호출해 재개하고, 계정이 1개여도 selectingAccount에서 멈춘다(ADR-051)', async () => {
     getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1', selectedAccountId: null })
     const accounts = [account('acc-1')]
     fetchCharacterListMock.mockResolvedValue(accounts)
@@ -140,9 +140,11 @@ describe('useOnboardingStore.restoreFromStorage', () => {
 
     expect(fetchCharacterListMock).toHaveBeenCalledWith('key-1')
     const state = useOnboardingStore.getState()
-    expect(state.status).toBe('selectingTrackingMode')
-    expect(state.selectedAccountId).toBe('acc-1')
-    expect(setSelectedAccountIdMock).toHaveBeenCalledWith('acc-1')
+    expect(state.status).toBe('selectingAccount')
+    expect(state.accounts).toEqual(accounts)
+    expect(state.selectedAccountId).toBeNull()
+    expect(setSelectedAccountIdMock).not.toHaveBeenCalled()
+    expect(prefetchAccountDataMock).not.toHaveBeenCalled()
   })
 
   it('apiKey만 있고 계정이 2개 이상이면 selectingAccount로 재개한다', async () => {
@@ -171,14 +173,34 @@ describe('useOnboardingStore.restoreFromStorage', () => {
 })
 
 describe('useOnboardingStore.submitApiKey', () => {
-  it('계정이 1개면 setSelectedAccountId까지 자동 호출되고 예열 후 트래킹 모드 선택으로 넘어간다', async () => {
+  it('계정이 1개여도 자동 확정하지 않고 selectingAccount에서 멈춘다(ADR-051)', async () => {
     const accounts = [account('acc-1')]
     fetchCharacterListMock.mockResolvedValue(accounts)
 
     await useOnboardingStore.getState().submitApiKey('key-1')
 
     expect(setApiKeyMock).toHaveBeenCalledWith('key-1')
+    expect(setSelectedAccountIdMock).not.toHaveBeenCalled()
+    expect(prefetchAccountDataMock).not.toHaveBeenCalled()
+    const state = useOnboardingStore.getState()
+    expect(state.status).toBe('selectingAccount')
+    expect(state.accounts).toEqual(accounts)
+    expect(state.selectedAccountId).toBeNull()
+  })
+
+  it('계정이 1개여도 사용자가 selectAccount로 확정해야 저장·예열을 거쳐 트래킹 모드 선택으로 넘어간다(ADR-051)', async () => {
+    const accounts = [account('acc-1')]
+    fetchCharacterListMock.mockResolvedValue(accounts)
+
+    await useOnboardingStore.getState().submitApiKey('key-1')
+    await useOnboardingStore.getState().selectAccount('acc-1')
+
     expect(setSelectedAccountIdMock).toHaveBeenCalledWith('acc-1')
+    expect(prefetchAccountDataMock).toHaveBeenCalledWith(
+      'key-1',
+      accounts[0].characters,
+      expect.any(Function),
+    )
     const state = useOnboardingStore.getState()
     expect(state.status).toBe('selectingTrackingMode')
     expect(state.selectedAccountId).toBe('acc-1')
@@ -245,66 +267,6 @@ describe('useOnboardingStore.submitApiKey', () => {
     expect(state.error).toEqual({ kind: 'network' })
   })
 
-  it('계정이 1개면 예열(prefetchAccountData)이 호출되고 완료 후 트래킹 모드 선택으로 넘어간다', async () => {
-    const accounts = [account('acc-1')]
-    fetchCharacterListMock.mockResolvedValue(accounts)
-
-    await useOnboardingStore.getState().submitApiKey('key-1')
-
-    expect(prefetchAccountDataMock).toHaveBeenCalledWith(
-      'key-1',
-      accounts[0].characters,
-      expect.any(Function),
-    )
-    expect(useOnboardingStore.getState().status).toBe('selectingTrackingMode')
-  })
-
-  it('예열이 끝나면 완료 토스트를 띄운다', async () => {
-    fetchCharacterListMock.mockResolvedValue([account('acc-1')])
-
-    await useOnboardingStore.getState().submitApiKey('key-1')
-
-    expect(showSuccessMock).toHaveBeenCalledWith('캐릭터 정보를 모두 불러왔어요')
-  })
-
-  it('예열이 끝나기 전까지는 prefetching 상태이고 진행률이 반영되며, 끝나면 트래킹 모드 선택으로 넘어간다', async () => {
-    const accounts = [account('acc-1')]
-    fetchCharacterListMock.mockResolvedValue(accounts)
-    const progressCallbacks: Array<(progress: { completed: number; total: number }) => void> = []
-    const resolvers: Array<() => void> = []
-    prefetchAccountDataMock.mockImplementation(
-      (_apiKey: string, _characters: unknown, onProgress: (p: { completed: number; total: number }) => void) => {
-        progressCallbacks.push(onProgress)
-        return new Promise<void>((resolve) => {
-          resolvers.push(resolve)
-        })
-      },
-    )
-
-    const promise = useOnboardingStore.getState().submitApiKey('key-1')
-
-    await vi.waitFor(() => expect(useOnboardingStore.getState().status).toBe('prefetching'))
-    progressCallbacks[0]({ completed: 1, total: 2 })
-    expect(useOnboardingStore.getState().prefetchProgress).toEqual({ completed: 1, total: 2 })
-
-    resolvers[0]()
-    await promise
-
-    expect(useOnboardingStore.getState().status).toBe('selectingTrackingMode')
-    expect(useOnboardingStore.getState().prefetchProgress).toBeNull()
-  })
-
-  it('계정 1개 자동완료 시 setSelectedAccountId가 실패하면 completed가 되지 않고 storageWriteFailed error가 된다', async () => {
-    const accounts = [account('acc-1')]
-    fetchCharacterListMock.mockResolvedValue(accounts)
-    setSelectedAccountIdMock.mockRejectedValue(new Error('disk full'))
-
-    await useOnboardingStore.getState().submitApiKey('key-1')
-
-    const state = useOnboardingStore.getState()
-    expect(state.status).toBe('error')
-    expect(state.error).toEqual({ kind: 'storageWriteFailed' })
-  })
 })
 
 describe('useOnboardingStore.selectAccount', () => {
@@ -344,6 +306,39 @@ describe('useOnboardingStore.selectAccount', () => {
     await useOnboardingStore.getState().selectAccount('acc-2')
 
     expect(showSuccessMock).toHaveBeenCalledWith('캐릭터 정보를 모두 불러왔어요')
+  })
+
+  it('예열이 끝나기 전까지는 prefetching 상태이고 진행률이 반영되며, 끝나면 트래킹 모드 선택으로 넘어간다', async () => {
+    const accounts = [account('acc-1'), account('acc-2')]
+    useOnboardingStore.setState({
+      status: 'selectingAccount',
+      accounts,
+      selectedAccountId: null,
+      error: null,
+      prefetchProgress: null,
+    })
+    const progressCallbacks: Array<(progress: { completed: number; total: number }) => void> = []
+    const resolvers: Array<() => void> = []
+    prefetchAccountDataMock.mockImplementation(
+      (_apiKey: string, _characters: unknown, onProgress: (p: { completed: number; total: number }) => void) => {
+        progressCallbacks.push(onProgress)
+        return new Promise<void>((resolve) => {
+          resolvers.push(resolve)
+        })
+      },
+    )
+
+    const promise = useOnboardingStore.getState().selectAccount('acc-2')
+
+    await vi.waitFor(() => expect(useOnboardingStore.getState().status).toBe('prefetching'))
+    progressCallbacks[0]({ completed: 1, total: 2 })
+    expect(useOnboardingStore.getState().prefetchProgress).toEqual({ completed: 1, total: 2 })
+
+    resolvers[0]()
+    await promise
+
+    expect(useOnboardingStore.getState().status).toBe('selectingTrackingMode')
+    expect(useOnboardingStore.getState().prefetchProgress).toBeNull()
   })
 
   it('저장이 실패하면 completed로 넘어가지 않고 storageWriteFailed error가 된다', async () => {
