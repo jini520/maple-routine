@@ -21,12 +21,14 @@ export function CacheClearConfirm(props: CacheClearConfirmProps): React.JSX.Elem
           <div className="flex items-start justify-between gap-4 border-b border-border py-2.5">
             <span className="shrink-0 pt-0.5 text-xs font-semibold text-text-muted">삭제됨</span>
             <span className="text-right text-sm font-semibold text-error">
-              스케줄 캐시 · 추적 캐릭터 · 보스 수익 기록
+              스케줄 캐시 · 추적 캐릭터 · 보스 수익 기록 · 드롭 기록
             </span>
           </div>
           <div className="flex items-start justify-between gap-4 border-b border-border py-2.5">
             <span className="shrink-0 pt-0.5 text-xs font-semibold text-text-muted">유지됨</span>
-            <span className="text-right text-sm text-text">API 키</span>
+            <span className="text-right text-sm text-text">
+              API 키 · 메이플 ID · 테마 · 스케줄 관리 방법 · 드롭 연출
+            </span>
           </div>
         </div>
 

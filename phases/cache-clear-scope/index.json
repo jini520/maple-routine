@@ -29,7 +29,9 @@
     {
       "step": 3,
       "name": "confirm-copy",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-07-29T03:33:43+0900",
+      "summary": "CacheClearConfirm.tsx의 삭제됨/유지됨 문구를 step 2의 실제 범위(cache-data.ts)와 동기화(ADR-052 결정 3). 최종 문구 2줄 — 삭제됨: `스케줄 캐시 · 추적 캐릭터 · 보스 수익 기록 · 드롭 기록` / 유지됨: `API 키 · 메이플 ID · 테마 · 스케줄 관리 방법 · 드롭 연출`. 유지됨 5항목은 KEEP_KEYS 5개(apiKey·selectedAccountId·theme·trackingMode·dropEffect)와 1:1 대응하며 내부 키 이름 대신 앱 표기(설정 행 라벨 '스케줄 관리 방법' ADR-035 개명, 계정은 '메이플 ID')를 썼다. 변경은 두 span의 텍스트뿐 — 공용 Modal·2행 레이아웃(flex items-start justify-between + border-b)·색 토큰(text-error/text-text)·복구 불가 안내·버튼 모두 그대로(유지됨 span만 길어져 삭제됨과 같은 멀티라인 JSX 형태로 감쌈, 클래스 동일). 신규 테스트 src/app/settings/__tests__/CacheClearConfirm.test.tsx 7개(TDD — 문구 2건이 먼저 red인 것 확인 후 구현): isOpen=false 미렌더 / 삭제됨 행에 드롭 기록 포함 / 유지됨 행에 5항목 포함(행 라벨로 closest('div') textContent 조회) / 복구 불가 안내 / isClearing 시 취소·삭제 동시 비활성 + '삭제 중...' / 삭제·취소 클릭 콜백. AC: build·lint(경고 0)·grep '드롭 기록' 통과, 전체 테스트 1281 passed. 실패 3건(BossProfitScreen 2·boss-profit store 1)은 stash 후에도 동일한 선재 결함(step 1·2와 같음). 관찰(수정 안 함) — 삭제 대상 SQLite 4테이블 중 boss_party_settings(파티 설정)는 이번 문구에도 항목으로 없다. step 지시가 삭제됨 4항목을 명시했고 적힌 항목은 전부 실제 삭제 대상이라 그대로 뒀으니, 열거의 완결성 판단은 step 4 문서 점검에서 다룰 것."
     },
     {
       "step": 4,
