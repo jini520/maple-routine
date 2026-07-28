@@ -2,10 +2,47 @@
   "project": "메이플 루틴",
   "phase": "picker-roster-loading",
   "steps": [
-    { "step": 0, "name": "docs-policy", "status": "pending" },
-    { "step": 1, "name": "roster-emission", "status": "pending" },
-    { "step": 2, "name": "picker-loading-ui", "status": "pending" },
-    { "step": 3, "name": "screen-wiring", "status": "pending" },
-    { "step": 4, "name": "docs-finalize", "status": "pending" }
-  ]
+    {
+      "step": 0,
+      "name": "docs-policy",
+      "status": "completed",
+      "started_at": "2026-07-29T03:43:00+0900",
+      "summary": "ADR-053 신규(설계, 구현 전) — ①access_flag가 확인된 캐릭터만 방출(schedule-sync.ts:130-137의 character/list 채움 분기 제거), ②①에서 방출한 stub이 0건인 콜드 스타트에서만 ②·③ 중간 onUpdate를 억제하고 모든 character/basic 완료 후 1회만 방출(stub이 1건이라도 있으면 ADR-016 SWR 즉시표시+개별patch 그대로 유지), ③getCharacterPickerRoster 시그니처 불변·호출부(ContentScreen·BossScreen·ContentCharacterStep)가 Promise resolve/reject로 로딩 관리 — 항목 없고 조회 중이면 MapleSpinner, 조회 후 비면 '활성 캐릭터 없음'(빈 상태)과 '조회 실패'(에러)를 구분, 401/429 reject에서 반드시 로딩 해제. 갱신 문서: docs/adr/ADR-053.md(전문), docs/ADR.md(인덱스 1줄), docs/adr/ADR-016.md·ADR-017.md(하단 정정 문단 추가, 본문 무삭제), docs/features/content-scheduler.md(정책 원문 '캐릭터 관리 피커 — 후보 목록 로딩' 절), docs/features/boss-scheduler.md·docs/features/onboarding.md(동일 정책 참조 + 각 화면 특이사항), docs/foundation/design-system.md(피커 컴포넌트 로딩/빈/실패 3상태 스펙). 3개 feature 문서 모두 history 줄 추가.",
+      "completed_at": "2026-07-29T03:49:07+0900"
+    },
+    {
+      "step": 1,
+      "name": "roster-emission",
+      "status": "completed",
+      "started_at": "2026-07-29T03:49:07+0900",
+      "summary": "getCharacterPickerRoster 방출 규칙 변경(시그니처·Promise.all 병렬성 불변). ①stub 방출 시 함수 스코프 hasVisibleView=true. 제거한 분기: ②단계의 `if (cached === null) { liveEntries.set(..., imageUrl: null) }` — 이제 ②엔 `cached !== null && accessFlag`인 캐릭터만 들어간다(access_flag 미상 비표시, ADR-053 결정 1). 중간 방출은 hasVisibleView일 때만: ②(character/list 직후)와 ③(character/basic 개별 응답마다). 루프 종료 후 globalError === null일 때만 최종 onUpdate 1회(웜·콜드 공통, throw 경로에선 방출 없음). 결과 타이밍 — 웜(stub 1건 이상 방출): 총 ≥2회 = ①character/list 응답 전 즉시 + ②character/list 응답 시 + ③basic 응답마다 + 최종 1회(마지막 patch와 동일값). 콜드(stub 0건 = 인덱스 비었거나 전부 accessFlag:false): 중간 0회, 모든 character/basic 완료 후 정확히 1회만 방출 → step 2·3의 스피너는 '항목 0건 + Promise pending' 동안 떠 있고 이 최종 방출(=Promise resolve) 또는 401/429 reject 시 걷힌다. 예외 유지: characters.length === 0이면 onUpdate([]) 후 즉시 return(콜드에서도 방출), 개별 네트워크 실패는 캐시 값 유지·전체 미차단, 정렬 규칙 불변. 테스트: schedule-sync.test.ts에 ADR-053 describe 6케이스 추가(웜 방출 순서·콜드 1회·인덱스 전부 비활성=콜드·basic accessFlag:false 전 방출 미등장·401/429 콜드 무방출 throw) + 옛 규칙 고정 단언 5건 갱신. schedule-sync.test.ts 52/52 통과, build·lint 통과. 참고: npm test 전체에서 boss-profit 3건 실패는 이 step 이전부터 있던 실패(git stash로 확인, 본 변경과 무관).",
+      "completed_at": "2026-07-29T03:56:10+0900"
+    },
+    {
+      "step": 2,
+      "name": "picker-loading-ui",
+      "status": "completed",
+      "started_at": "2026-07-29T03:56:11+0900",
+      "summary": "CharacterTrackingPicker에 필수(optional 아님) props 2개 추가 — `isLoading: boolean`(후보 목록 조회 진행 중), `loadFailed: boolean`(401/429 등 전역 실패로 종료). 그리드 자리 렌더 분기를 같은 파일 내부 PickerBody(props & { onChange })로 분리하고 우선순위대로 판정: ①`entries.length > 0` → CharacterTrackingGrid(조회 중이어도 그리드 — ADR-016 캐시 우선 표시를 스피너로 가리지 않음), ②`isLoading` → 스피너(즉 스피너 조건식은 실질적으로 `isLoading && entries.length === 0`), ③`loadFailed` → 실패 문구 'text-error', ④그 외 → 빈 상태 문구 'text-text-muted'. 스피너 마크업: `<div role=\"status\" aria-busy=\"true\" aria-label=\"캐릭터 목록을 불러오는 중\" className=\"flex min-h-[120px] items-center justify-center\">` + `<MapleSpinner size={32} className=\"text-primary\" />`(그리드 max-h-[70vh] 흉내 없이 min-h-[120px]만). 문구는 서로 구분: 실패 '캐릭터 목록을 불러오지 못했어요 — 닫고 다시 열어주세요' / 빈 상태 '표시할 캐릭터가 없어요'(재시도 버튼은 props에 없어 추가 안 함, 재조회=모달 재오픈 안내). 미변경 보장: isSameOcidSet 기반 ADR-043 저장 비활성 판정 그대로(disabled={isLoading} 분기 없음), CharacterTrackingGrid.tsx 무수정, 컴포넌트 내 데이터 조회 없음(props만). 임시 배선(step 3에서 실제 상태로 교체 필요): ContentScreen.tsx:803-812와 BossScreen.tsx:268-277의 <CharacterTrackingPicker>에 `isLoading={false} loadFailed={false}` 하드코딩 + 각각 'TODO(step 3): getCharacterPickerRoster Promise resolve/reject로 관리' 주석 — 현재 두 화면은 여전히 `.catch(() => {})`라 실제 로딩/실패 상태를 알지 못하며, 이 값이 바뀌기 전까지 콜드 스타트에서 스피너가 뜨지 않는다. 테스트: CharacterTrackingPicker.test.tsx에 ADR-053 describe 6케이스 추가(로딩+0건 스피너·로딩+웜캐시 그리드·완료+0건 빈 상태·완료+실패 문구(빈 상태 문구 부재까지 단언)·완료+항목 그리드만·로딩→완료 rerender 후 ADR-043 저장 버튼 회귀) + 기존 17케이스에 `{...loaded}`(isLoading:false, loadFailed:false) 주입. 검증: 23/23 통과, npm run build·npm run lint 무경고. npm test 전체 1285 통과 / boss-profit 3건 실패는 step 1과 동일한 선행 실패(git stash로 재확인, 본 변경과 무관).",
+      "completed_at": "2026-07-29T04:00:40+0900"
+    },
+    {
+      "step": 3,
+      "name": "screen-wiring",
+      "status": "completed",
+      "started_at": "2026-07-29T04:00:41+0900",
+      "summary": "세 호출부(ContentScreen·BossScreen·ContentCharacterStep)에 동일 구조로 로딩·실패 배선 — 상태 이름은 세 곳 모두 `isRosterLoading`·`rosterFailed`(+기존 `roster`). 조회 effect는 셋 다 같은 모양: `getCharacterPickerRoster(entries => { if (!cancelled) setRoster(entries) }).catch(() => { if (!cancelled) setRosterFailed(true) }).finally(() => { if (!cancelled) setIsRosterLoading(false) })` — cancelled 가드를 then/catch/finally 전부에 적용하고, 성공·실패 어느 경로든 finally에서 로딩을 해제해 401/429 reject에도 스피너가 걸리지 않는다. 빈 `.catch(() => {})`는 세 파일에서 모두 사라졌다(AC grep 무결과). roster는 재조회 시작 시에도 비우지 않는다(ADR-016 캐시 우선 표시 유지 — 스피너 조건이 entries 0건이라 웜 캐시에선 스피너가 아예 안 뜬다). 로딩 초기화 위치(step 지시에서 벗어난 유일한 지점): effect 본문의 동기 setState가 `react-hooks/set-state-in-effect`(cascading render) 오류라 lint 0 경고를 못 맞춘다 → 대신 ①피커 두 화면은 여는 유일한 경로로 `openPicker()`(setIsPickerOpen(true)+setIsRosterLoading(true)+setRosterFailed(false))를 두고 헤더 '캐릭터 관리' 버튼·빈 상태 CTA 둘 다 이걸 쓰게 통일, 초기값은 `useState(isPickerOpen)`(BossScreen의 ?openPicker=1 자동 오픈 대응) ②ContentCharacterStep은 마운트 즉시 1회 조회라 `useState(true)`로 시작(effect에서 재설정 불필요). 결과적으로 모달 재개폐 시 로딩·실패가 초기화되고 재조회되며, 여는 순간부터 로딩이라 빈 상태 문구가 한 프레임 스치는 일도 없다. 피커에는 임시값 대신 `isLoading={isRosterLoading} loadFailed={rosterFailed}` 전달(step 2 TODO 주석 제거). ContentCharacterStep은 모달이 아니라 페이지라 같은 파일 내부 `RosterBody`로 피커와 동일한 우선순위(항목>0 → 그리드 / isLoading → MapleSpinner 32px `role=status aria-busy` / loadFailed → text-error 문구 / 그 외 → '표시할 캐릭터가 없어요')를 직접 그린다 — 실패 문구만 재시도 수단이 달라 '캐릭터 목록을 불러오지 못했어요 — 네트워크를 확인한 뒤 앱을 다시 실행해주세요'(피커는 '닫고 다시 열어주세요'). '계속하기' 버튼 제약(selectedOcids 0명이면 비활성)은 그대로. 컴포넌트(CharacterTrackingPicker/Grid)와 schedule-sync.ts는 무수정. 테스트(TDD, 구현 전 15건 중 11건 red 확인 — 웜 캐시 2건은 회귀 가드라 처음부터 green): 세 파일에 미해결 Promise를 반환하는 deferRoster 헬퍼 + ADR-053 describe 추가(ContentScreen 5·BossScreen 5·ContentCharacterStep 5 = 조회 중 스피너 / 콜드 완료 후 목록 / 웜 캐시 스피너 없음 / reject 시 스피너 해제+실패 문구 / 모달 재개폐 초기화·재조회 2회, 온보딩은 재개폐 대신 완료+0건 빈 상태). 검증: npm run build·npm run lint 무경고, AC grep 무결과, 세 화면+피커 테스트 179/179 통과, 전체 1300 통과 / boss-profit 3건 실패는 step 1·2와 동일한 선행 실패(git stash로 재확인, 본 변경과 무관).",
+      "completed_at": "2026-07-29T04:11:37+0900"
+    },
+    {
+      "step": 4,
+      "name": "docs-finalize",
+      "status": "completed",
+      "started_at": "2026-07-29T04:11:37+0900",
+      "summary": "문서 상태를 '구현 완료'로 맞추고 서술을 실제 코드와 대조. 상태 표기: docs/adr/ADR-053.md 제목 '(설계, 구현 전)'→'(구현 완료, 2026-07-29)', docs/ADR.md 인덱스 62행 동일 형식(ADR-045~050과 같은 '(구현 완료, YYYY-MM-DD)'), docs/features/content-scheduler.md '캐릭터 관리 피커 — 후보 목록 로딩' 절 제목·docs/features/onboarding.md '추적 캐릭터 선택 단계' 절 제목·docs/foundation/design-system.md '로딩/빈/실패 상태' 문단 모두 '설계'→'구현 완료 2026-07-29'. ADR-053 말미에 구현 문단 추가 — 결정 1·2는 schedule-sync.ts(②분기 제거 + hasVisibleView로 콜드 판정, throw 경로 무방출), 결정 3은 CharacterTrackingPicker(필수 props isLoading·loadFailed, 4단 우선순위)와 화면 3곳(catch→실패/finally→로딩 해제)·온보딩은 RosterBody로 직접 렌더, 그리고 ADR-016 SWR 회귀 고정 테스트 위치(schedule-sync.test.ts ADR-053 describe 첫 케이스 '웜 캐시 — character/list 응답 전 stub을 방출…' + 세 화면 테스트의 'ADR-016 웜 캐시: …스피너 없이 바로 목록' 케이스) 명시. 대조 결과 문서를 코드에 맞춰 고친 곳 2건(코드 무수정): ①design-system.md가 '실패 문구 + 재시도'라고 적어 재시도 버튼이 있는 것처럼 읽혔으나 실제로는 버튼 없이 '닫고 다시 열기' 안내뿐 → 실제 문구·클래스·스피너 마크업을 코드블록으로 기록하고 재시도 수단을 명시(content-scheduler.md·onboarding.md에도 실제 문구와 온보딩 전용 실패 문구 '네트워크를 확인한 뒤 앱을 다시 실행해주세요' 반영), ②design-system.md 캐릭터 그리드 절의 'character/basic 실패 캐릭터는 ? 플레이스홀더로 표시'가 ADR-053 이후 캐시 있는 캐릭터에만 해당돼 그 조건을 덧붙임(옛 문장 삭제 없이 단서만 추가). 나머지 대조는 문서=구현 일치(웜 즉시표시+patch / 콜드 스피너→1회 방출, access_flag 미상 미표시(schedule-sync.ts:143 cached!==null && accessFlag 외 유입 경로 없음), 빈 상태 '표시할 캐릭터가 없어요'(text-text-muted)와 실패 '캐릭터 목록을 불러오지 못했어요 — 닫고 다시 열어주세요'(text-error) 구분, ADR-016·017 정정 문단 내용 그대로 성립). 잔재 점검: getCharacterPickerRoster 호출부는 여전히 3곳(ContentScreen:725·BossScreen:155·ContentCharacterStep:72)이고 셋 다 로딩 배선 완비, src/app/ 빈 catch는 src/app/settings/CacheDataSection.tsx 3건(:24 캐시 크기 조회, :32 clearCacheData, :37 showSplashScreen)만 남았으나 이번 범위(피커 로스터) 밖이라 미수정 — 별도 이슈 후보. src/ 주석 중 옛 방출 규칙('캐시 없으면 character/list로 먼저 그린다')을 서술하는 곳은 없어 주석 수정도 불필요(git diff에 src/ 변경 0건). 열린 질문: content-scheduler.md엔 해당 섹션 없음, boss-scheduler.md는 '벨로나 출시 시 데이터 갱신'뿐(무관), onboarding.md의 ADR-015 얼굴 크롭 항목은 지시대로 보존. AC: npm run build 통과, npm run lint 경고 0, grep 2건 모두 결과 있음. npm test는 1300 통과 / boss-profit 3건 실패 — step 1~3과 동일한 선행 실패이고 이 step은 src를 전혀 건드리지 않았다(git diff --stat -- src/ 빈 결과).",
+      "completed_at": "2026-07-29T04:16:10+0900"
+    }
+  ],
+  "created_at": "2026-07-29T03:43:00+0900",
+  "completed_at": "2026-07-29T04:16:10+0900"
 }

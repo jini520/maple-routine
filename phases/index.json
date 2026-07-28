@@ -112,7 +112,8 @@
     },
     {
       "dir": "picker-roster-loading",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-07-29T04:16:10+0900"
     }
   ]
 }

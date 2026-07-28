@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { MapleAccount, MapleCharacter, SchedulerCharacterState } from '../../../types'
+import type { CharacterPickerEntry, MapleAccount, MapleCharacter, SchedulerCharacterState } from '../../../types'
 import { NexonAuthError, NexonNetworkError, NexonRateLimitError } from '../../../nexon/errors'
 
 const { fetchCharacterListMock, fetchCharacterBasicMock, fetchSchedulerCharacterStateMock } = vi.hoisted(() => ({
@@ -804,7 +804,9 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       expect(getCachedCharacterBasicMock).not.toHaveBeenCalled()
     })
 
-    it('character/list 응답이 도착하면 stub 목록이 계정 전체 후보 목록으로 교체된다', async () => {
+    // ADR-053 결정 1로 갱신: 예전에는 character/list 응답 시점에 캐시 없는 캐릭터까지 전부
+    // 채워 넣었으나(access_flag 미상), 이제는 캐시로 활성이 확인된 캐릭터만 남는다.
+    it('character/list 응답이 도착해도 캐시로 활성이 확인된 캐릭터만 담긴 목록으로 교체된다', async () => {
       const characters = [character('ocid-1'), character('ocid-2')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1'])
@@ -819,8 +821,17 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       void getCharacterPickerRoster(onUpdate)
 
       await vi.waitFor(() => expect(onUpdate.mock.calls.length).toBeGreaterThanOrEqual(2))
-      const afterCharacterList = onUpdate.mock.calls.at(-1)?.[0] as Array<{ ocid: string }>
-      expect(afterCharacterList.map((entry) => entry.ocid).sort()).toEqual(['ocid-1', 'ocid-2'])
+      const afterCharacterList = onUpdate.mock.calls.at(-1)?.[0] as CharacterPickerEntry[]
+      expect(afterCharacterList.map((entry) => entry.ocid)).toEqual(['ocid-1'])
+      expect(afterCharacterList).toEqual([
+        {
+          ocid: 'ocid-1',
+          name: '캐싱된캐릭',
+          level: 180,
+          imageUrl: basicProfile({ name: '캐싱된캐릭', level: 180 }).imageUrl,
+          world: '베라',
+        },
+      ])
     })
   })
 
@@ -837,6 +848,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
   it('캐시된 캐릭터는 character/basic 응답을 기다리지 않고 첫 onUpdate에 즉시 포함된다', async () => {
     const characters = [character('ocid-1')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+    getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1'])
     getCachedCharacterBasicMock.mockResolvedValue({
       profile: basicProfile({ name: '캐시캐릭', level: 150 }),
       cachedAt: '2026-07-11T00:00:00.000Z',
@@ -846,41 +858,75 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     const onUpdate = vi.fn()
     void getCharacterPickerRoster(onUpdate)
 
+    // 첫 방출(stub)은 character/basic 응답 없이도 캐시 값만으로 이뤄진다
     await vi.waitFor(() => expect(onUpdate).toHaveBeenCalled())
     expect(onUpdate.mock.calls[0][0]).toEqual([
+      { ocid: 'ocid-1', name: '캐시캐릭', level: 150, imageUrl: basicProfile({ name: '캐시캐릭', level: 150 }).imageUrl },
+    ])
+
+    // character/list 응답 이후 방출도 캐시 값(+ world)을 그대로 유지한다
+    await vi.waitFor(() => expect(onUpdate.mock.calls.length).toBeGreaterThanOrEqual(2))
+    expect(onUpdate.mock.calls.at(-1)?.[0]).toEqual([
       { ocid: 'ocid-1', name: '캐시캐릭', level: 150, imageUrl: basicProfile({ name: '캐시캐릭', level: 150 }).imageUrl, world: '베라' },
     ])
   })
 
-  it('캐시가 없는 캐릭터는 character/list의 이름/레벨로 imageUrl: null인 채 첫 onUpdate에 포함된다', async () => {
-    const characters = [character('ocid-1')]
+  // ADR-053 결정 1로 갱신: 예전에는 imageUrl: null + character/list의 이름/레벨로 즉시 넣었다.
+  it('캐시가 없는 캐릭터는 character/basic으로 활성이 확인되기 전까지 어떤 방출에도 포함되지 않는다', async () => {
+    const characters = [character('ocid-1'), character('ocid-2')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
-    getCachedCharacterBasicMock.mockResolvedValue(null)
-    fetchCharacterBasicMock.mockImplementation(() => new Promise(() => {}))
+    getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1'])
+    getCachedCharacterBasicMock.mockImplementation(async (ocid: string) =>
+      ocid === 'ocid-1'
+        ? { profile: basicProfile({ name: '캐시캐릭', level: 150 }), cachedAt: '2026-07-11T00:00:00.000Z' }
+        : null,
+    )
+    const resolvers: Array<(profile: ReturnType<typeof basicProfile>) => void> = []
+    fetchCharacterBasicMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolvers.push(resolve)
+        }),
+    )
 
     const onUpdate = vi.fn()
-    void getCharacterPickerRoster(onUpdate)
+    const promise = getCharacterPickerRoster(onUpdate)
 
-    await vi.waitFor(() => expect(onUpdate).toHaveBeenCalled())
-    expect(onUpdate.mock.calls[0][0]).toEqual([
-      { ocid: 'ocid-1', name: '캐릭터-ocid-1', level: 200, imageUrl: null, world: '베라' },
-    ])
+    await vi.waitFor(() => expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(2))
+    for (const [entries] of onUpdate.mock.calls) {
+      expect((entries as CharacterPickerEntry[]).map((entry) => entry.ocid)).toEqual(['ocid-1'])
+    }
+
+    // character/basic이 활성을 확인해준 뒤에야 목록에 들어온다
+    resolvers[0](basicProfile({ name: '캐시캐릭', level: 150 }))
+    resolvers[1](basicProfile({ name: '새캐릭', level: 250 }))
+    await promise
+
+    const last = onUpdate.mock.calls.at(-1)?.[0] as CharacterPickerEntry[]
+    expect(last.map((entry) => entry.ocid)).toEqual(['ocid-2', 'ocid-1'])
   })
 
-  it('캐시상 access_flag가 false인 캐릭터는 첫 onUpdate에서부터 제외된다', async () => {
-    const characters = [character('ocid-1')]
+  it('캐시상 access_flag가 false인 캐릭터는 모든 방출에서 제외된다', async () => {
+    const characters = [character('ocid-1'), character('ocid-2')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
-    getCachedCharacterBasicMock.mockResolvedValue({
-      profile: { ...basicProfile({ name: '비공개', level: 999 }), accessFlag: false },
-      cachedAt: '2026-07-11T00:00:00.000Z',
-    })
+    getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1', 'ocid-2'])
+    getCachedCharacterBasicMock.mockImplementation(async (ocid: string) =>
+      ocid === 'ocid-1'
+        ? { profile: basicProfile({ name: '활성캐릭', level: 150 }), cachedAt: '2026-07-11T00:00:00.000Z' }
+        : {
+            profile: { ...basicProfile({ name: '비공개', level: 999 }), accessFlag: false },
+            cachedAt: '2026-07-11T00:00:00.000Z',
+          },
+    )
     fetchCharacterBasicMock.mockImplementation(() => new Promise(() => {}))
 
     const onUpdate = vi.fn()
     void getCharacterPickerRoster(onUpdate)
 
-    await vi.waitFor(() => expect(onUpdate).toHaveBeenCalled())
-    expect(onUpdate.mock.calls[0][0]).toEqual([])
+    await vi.waitFor(() => expect(onUpdate.mock.calls.length).toBeGreaterThanOrEqual(2))
+    for (const [entries] of onUpdate.mock.calls) {
+      expect((entries as CharacterPickerEntry[]).map((entry) => entry.ocid)).toEqual(['ocid-1'])
+    }
   })
 
   it('character/basic 응답이 도착하면 값을 갱신하고 캐시에 기록한다', async () => {
@@ -913,9 +959,16 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     expect(last).toEqual([])
   })
 
+  // ADR-053 결정 2: 개별 patch 스트리밍은 "보여줄 캐시가 있는" 웜 경로의 동작이다(콜드 경로는
+  // 아래 ADR-053 describe에서 중간 방출 억제를 검증한다).
   it('character/basic을 Promise.all로 뭉치지 않고 하나씩 끝나는 대로 onUpdate한다', async () => {
     const characters = [character('ocid-1'), character('ocid-2'), character('ocid-3')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+    getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1', 'ocid-2', 'ocid-3'])
+    getCachedCharacterBasicMock.mockImplementation(async (ocid: string) => ({
+      profile: basicProfile({ name: `캐시-${ocid}`, level: 100 }),
+      cachedAt: '2026-07-11T00:00:00.000Z',
+    }))
     const resolvers: Array<(profile: ReturnType<typeof basicProfile>) => void> = []
     fetchCharacterBasicMock.mockImplementation(
       () =>
@@ -938,7 +991,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     await promise
   })
 
-  it('개별 실패는 기존 값(캐시 또는 character/list)을 유지한 채 조용히 넘어간다', async () => {
+  it('개별 실패는 기존 캐시 값을 유지한 채 조용히 넘어간다', async () => {
     const characters = [character('ocid-1')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
     getCachedCharacterBasicMock.mockResolvedValue({
@@ -976,6 +1029,158 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     })
 
     await expect(getCharacterPickerRoster(vi.fn())).rejects.toThrow(NexonRateLimitError)
+  })
+
+  describe('ADR-053 결정 1·2: access_flag 확인된 캐릭터만 방출 + 콜드 스타트 중간 방출 억제', () => {
+    it('웜 캐시 — character/list 응답 전 stub을 방출하고, 이후 응답마다 추가로 방출한다(ADR-016 SWR 유지)', async () => {
+      const characters = [character('ocid-1'), character('ocid-2')]
+      let resolveList: (accounts: MapleAccount[]) => void = () => {}
+      fetchCharacterListMock.mockImplementation(
+        () =>
+          new Promise<MapleAccount[]>((resolve) => {
+            resolveList = resolve
+          }),
+      )
+      getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1', 'ocid-2'])
+      getCachedCharacterBasicMock.mockImplementation(async (ocid: string) => ({
+        profile: basicProfile({ name: `캐시-${ocid}`, level: 100 }),
+        cachedAt: '2026-07-11T00:00:00.000Z',
+      }))
+      const resolvers: Array<(profile: ReturnType<typeof basicProfile>) => void> = []
+      fetchCharacterBasicMock.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolvers.push(resolve)
+          }),
+      )
+
+      const onUpdate = vi.fn()
+      const promise = getCharacterPickerRoster(onUpdate)
+
+      // ① stub — character/list 응답을 기다리지 않고 즉시
+      await vi.waitFor(() => expect(onUpdate).toHaveBeenCalledTimes(1))
+      expect(fetchCharacterBasicMock).not.toHaveBeenCalled()
+
+      // ② character/list 응답 시점에 추가 방출
+      resolveList([account('acc-1', characters)])
+      await vi.waitFor(() => expect(onUpdate.mock.calls.length).toBeGreaterThanOrEqual(2))
+      await vi.waitFor(() => expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(2))
+      const callsBeforeAnyResolve = onUpdate.mock.calls.length
+
+      // ③ character/basic 응답마다 개별 patch 방출
+      resolvers[0](basicProfile({ name: '최신-1', level: 250 }))
+      await vi.waitFor(() => expect(onUpdate.mock.calls.length).toBeGreaterThan(callsBeforeAnyResolve))
+
+      resolvers[1](basicProfile({ name: '최신-2', level: 240 }))
+      await promise
+
+      expect(onUpdate.mock.calls.length).toBeGreaterThanOrEqual(4)
+      expect(onUpdate.mock.calls.at(-1)?.[0]).toEqual([
+        { ocid: 'ocid-1', name: '최신-1', level: 250, imageUrl: basicProfile({ name: '최신-1', level: 250 }).imageUrl, world: '베라' },
+        { ocid: 'ocid-2', name: '최신-2', level: 240, imageUrl: basicProfile({ name: '최신-2', level: 240 }).imageUrl, world: '베라' },
+      ])
+    })
+
+    it('콜드 캐시 — character/list·개별 character/basic 응답 시점엔 방출하지 않고 완료 후 정확히 1회만 방출한다', async () => {
+      const characters = [character('ocid-1'), character('ocid-2')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+      getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
+      getCachedCharacterBasicMock.mockResolvedValue(null)
+      const resolvers: Array<(profile: ReturnType<typeof basicProfile>) => void> = []
+      fetchCharacterBasicMock.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolvers.push(resolve)
+          }),
+      )
+
+      const onUpdate = vi.fn()
+      const promise = getCharacterPickerRoster(onUpdate)
+
+      // ② character/list 응답 — 방출 없음
+      await vi.waitFor(() => expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(2))
+      expect(onUpdate).not.toHaveBeenCalled()
+
+      // ③ 개별 응답 — 방출 없음
+      resolvers[0](basicProfile({ name: '캐릭1', level: 250 }))
+      await vi.waitFor(() => expect(setCachedCharacterBasicMock).toHaveBeenCalledTimes(1))
+      expect(onUpdate).not.toHaveBeenCalled()
+
+      resolvers[1](basicProfile({ name: '캐릭2', level: 240 }))
+      await promise
+
+      expect(onUpdate).toHaveBeenCalledTimes(1)
+      expect(onUpdate).toHaveBeenCalledWith([
+        { ocid: 'ocid-1', name: '캐릭1', level: 250, imageUrl: basicProfile({ name: '캐릭1', level: 250 }).imageUrl, world: '베라' },
+        { ocid: 'ocid-2', name: '캐릭2', level: 240, imageUrl: basicProfile({ name: '캐릭2', level: 240 }).imageUrl, world: '베라' },
+      ])
+    })
+
+    it('콜드 캐시 — 캐시 인덱스에 ocid가 있어도 전부 access_flag: false면 콜드로 보고 1회만 방출한다', async () => {
+      const characters = [character('ocid-1'), character('ocid-2')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+      getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1', 'ocid-2'])
+      getCachedCharacterBasicMock.mockImplementation(async () => ({
+        profile: { ...basicProfile({ name: '비공개', level: 999 }), accessFlag: false },
+        cachedAt: '2026-07-11T00:00:00.000Z',
+      }))
+      fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) =>
+        ocid === 'ocid-1' ? basicProfile({ name: '이제활성', level: 210 }) : basicProfile({ name: '이제활성2', level: 205 }),
+      )
+
+      const onUpdate = vi.fn()
+      await getCharacterPickerRoster(onUpdate)
+
+      expect(onUpdate).toHaveBeenCalledTimes(1)
+      expect((onUpdate.mock.calls[0][0] as CharacterPickerEntry[]).map((entry) => entry.name)).toEqual([
+        '이제활성',
+        '이제활성2',
+      ])
+    })
+
+    it('콜드 캐시 — character/basic이 access_flag: false를 반환한 캐릭터는 어떤 방출에도 등장하지 않는다', async () => {
+      const characters = [character('ocid-1'), character('ocid-2')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+      fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) =>
+        ocid === 'ocid-1'
+          ? basicProfile({ name: '활성캐릭', level: 200 })
+          : { ...basicProfile({ name: '비공개', level: 999 }), accessFlag: false },
+      )
+
+      const onUpdate = vi.fn()
+      await getCharacterPickerRoster(onUpdate)
+
+      const emittedOcids = onUpdate.mock.calls.flatMap(([entries]) =>
+        (entries as CharacterPickerEntry[]).map((entry) => entry.ocid),
+      )
+      expect(emittedOcids).toEqual(['ocid-1'])
+    })
+
+    it('콜드 캐시 — 전역 실패(401)면 불완전한 목록을 최종 방출하지 않고 그대로 던진다', async () => {
+      const characters = [character('ocid-1'), character('ocid-2')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+      fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) => {
+        if (ocid === 'ocid-1') throw new NexonAuthError('invalid')
+        return basicProfile({ name: '정상캐릭', level: 100 })
+      })
+
+      const onUpdate = vi.fn()
+      await expect(getCharacterPickerRoster(onUpdate)).rejects.toThrow(NexonAuthError)
+      expect(onUpdate).not.toHaveBeenCalled()
+    })
+
+    it('콜드 캐시 — 전역 실패(429)면 불완전한 목록을 최종 방출하지 않고 그대로 던진다', async () => {
+      const characters = [character('ocid-1'), character('ocid-2')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+      fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) => {
+        if (ocid === 'ocid-1') throw new NexonRateLimitError('rate limited')
+        return basicProfile({ name: '정상캐릭', level: 100 })
+      })
+
+      const onUpdate = vi.fn()
+      await expect(getCharacterPickerRoster(onUpdate)).rejects.toThrow(NexonRateLimitError)
+      expect(onUpdate).not.toHaveBeenCalled()
+    })
   })
 
   it('정렬은 레벨 내림차순이고, 동레벨이면 대표 캐릭터 비교 로직(한글 우선)으로 2차 정렬한다', async () => {

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, render, screen } from '@testing-library/react'
+import { act, cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CharacterPickerEntry } from '../../../types'
@@ -81,5 +81,88 @@ describe('ContentCharacterStep', () => {
     expect(button).toBeDisabled()
     expect(button).toHaveAttribute('aria-busy', 'true')
     expect(screen.getByTestId('maple-spinner')).toBeInTheDocument()
+  })
+})
+
+// ADR-053 결정 3: 이 단계는 모달이 아니라 온보딩 페이지라 그리드 자리에 직접 스피너/안내를 그린다.
+// 정상 경로는 직전 예열(ADR-016)로 캐시가 따뜻하지만, 예열이 통째로 실패하면 이 경로를 밟는다 —
+// 그때 "조회 실패"를 빈 상태로 위장하면 CTA가 비활성인 채로 온보딩이 멈춘다.
+describe('ContentCharacterStep — 후보 목록 로딩 (ADR-053)', () => {
+  // resolve/reject 시점을 테스트가 제어할 수 있도록 미해결 Promise를 반환하는 모의 구현.
+  function deferRoster(): {
+    emit: (entries: CharacterPickerEntry[]) => void
+    resolve: () => Promise<void>
+    reject: (error: unknown) => Promise<void>
+  } {
+    let onUpdateRef: (entries: CharacterPickerEntry[]) => void = () => {}
+    let resolveRef: () => void = () => {}
+    let rejectRef: (error: unknown) => void = () => {}
+
+    getCharacterPickerRosterMock.mockImplementation((onUpdate: (e: CharacterPickerEntry[]) => void) => {
+      onUpdateRef = onUpdate
+      return new Promise<void>((resolve, reject) => {
+        resolveRef = resolve
+        rejectRef = reject
+      })
+    })
+
+    return {
+      emit: (entries) => act(() => onUpdateRef(entries)),
+      resolve: () => act(async () => resolveRef()),
+      reject: (error) => act(async () => rejectRef(error)),
+    }
+  }
+
+  it('조회 중이고 보여줄 항목이 없으면 그리드 자리에 스피너를 보여준다', () => {
+    deferRoster()
+
+    render(<ContentCharacterStep isSubmitting={false} onSubmit={vi.fn()} />)
+
+    expect(screen.getByTestId('maple-spinner')).toBeInTheDocument()
+    expect(screen.queryByText('표시할 캐릭터가 없어요')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '계속하기' })).toBeDisabled()
+  })
+
+  it('콜드 스타트: 조회가 끝나면 스피너가 사라지고 목록이 보인다', async () => {
+    const roster = deferRoster()
+
+    render(<ContentCharacterStep isSubmitting={false} onSubmit={vi.fn()} />)
+    roster.emit(entries)
+    await roster.resolve()
+
+    expect(screen.getByRole('button', { name: /낟낟/ })).toBeInTheDocument()
+    expect(screen.queryByTestId('maple-spinner')).not.toBeInTheDocument()
+  })
+
+  it('ADR-016 웜 캐시: 조회가 끝나기 전에 항목이 도착하면 스피너 없이 바로 목록을 보여준다', () => {
+    const roster = deferRoster()
+
+    render(<ContentCharacterStep isSubmitting={false} onSubmit={vi.fn()} />)
+    roster.emit(entries)
+
+    expect(screen.getByRole('button', { name: /낟낟/ })).toBeInTheDocument()
+    expect(screen.queryByTestId('maple-spinner')).not.toBeInTheDocument()
+  })
+
+  it('조회가 끝났는데 항목이 0건이면 빈 상태 안내를 보여준다', async () => {
+    const roster = deferRoster()
+
+    render(<ContentCharacterStep isSubmitting={false} onSubmit={vi.fn()} />)
+    roster.emit([])
+    await roster.resolve()
+
+    expect(screen.getByText('표시할 캐릭터가 없어요')).toBeInTheDocument()
+    expect(screen.queryByTestId('maple-spinner')).not.toBeInTheDocument()
+  })
+
+  it('전역 실패(401/429)로 reject되면 스피너가 걷히고 실패 안내를 보여준다', async () => {
+    const roster = deferRoster()
+
+    render(<ContentCharacterStep isSubmitting={false} onSubmit={vi.fn()} />)
+    await roster.reject(new Error('401'))
+
+    expect(screen.getByText(/캐릭터 목록을 불러오지 못했어요/)).toBeInTheDocument()
+    expect(screen.queryByText('표시할 캐릭터가 없어요')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('maple-spinner')).not.toBeInTheDocument()
   })
 })

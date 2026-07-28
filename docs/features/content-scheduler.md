@@ -2,7 +2,7 @@
 
 > **범위**: 일간/주간 콘텐츠 진행 상태 표시, 캐릭터 추적, 3단 캐시 병합, 콘텐츠 카드(일일퀘스트·몬스터파크·주간 콘텐츠), 컨텐츠 관리 페이지. 캐릭터 관리 피커 컴포넌트는 [../foundation/design-system.md](../foundation/design-system.md), 수동/자동 트래킹 모드 전역 토글은 [settings.md](./settings.md).
 > **관련 소스**: `app/content-scheduler/`(`ContentScreen.tsx`) · `features/content-scheduler/` · `lib/scheduler-merge` · `lib/scheduler-content-scope` · `lib/content-category` · `lib/daily-quest-backgrounds` · `storage/scheduler-cache` · `storage/shared-progress-cache` · `src/data/scheduler-content-catalog.json`·`daily-quest-regions.json`·`daily-quest-region-crops.json`·`weekly-regional-quests.json`·`scheduler-content-template.json` · `/content/manage`.
-> **관련 ADR**: [[ADR-013]] [[ADR-012]] [[ADR-030]] [[ADR-020]] [[ADR-021]] [[ADR-035]] [[ADR-018]]. **관련 문서**: [../foundation/architecture.md](../foundation/architecture.md), [../foundation/nexon-api.md](../foundation/nexon-api.md), [../foundation/error-resilience.md](../foundation/error-resilience.md).
+> **관련 ADR**: [[ADR-013]] [[ADR-012]] [[ADR-030]] [[ADR-020]] [[ADR-021]] [[ADR-035]] [[ADR-018]] [[ADR-053]]. **관련 문서**: [../foundation/architecture.md](../foundation/architecture.md), [../foundation/nexon-api.md](../foundation/nexon-api.md), [../foundation/error-resilience.md](../foundation/error-resilience.md).
 
 ## 정책
 - 화면 안에 **일간 탭**(`daily_contents`) + **주간 탭**(`weekly_contents`). **월간 탭 없음**(월간 주기 일반 콘텐츠가 API에 없음).
@@ -10,6 +10,12 @@
 - 캐릭터별 진행 상태를 Nexon Open API 로 동기화해 **읽기 전용** 표시(앱 내 수동 체크는 자동 모드엔 없음). 표시 항목은 게임 스케줄러에 실제 등록된 것만(`registration_flag: "true"`). 진행률은 `now_count`/`max_count` 그대로(예: 몬스터파크 7/14).
 - 지정 시각까지 미완료 시 로컬 알림(알림 시각에 실시간 재확인, [[ADR-004]]). 알림 시각은 설정 가능.
 - 빈 상태·에러 상태 처리는 [../foundation/error-resilience.md](../foundation/error-resilience.md).
+
+## 캐릭터 관리 피커 — 후보 목록 로딩 ([[ADR-053]], 구현 완료 2026-07-29)
+`getCharacterPickerRoster`(`features/schedule-sync`)가 `onUpdate` 로 흘리는 후보 목록의 정책. 보스 스케줄러([boss-scheduler.md](./boss-scheduler.md))·온보딩 캐릭터 선택 단계([onboarding.md](./onboarding.md))가 같은 함수를 공유하므로 세 화면에 동일하게 적용된다. 카드 그리드 자체의 스타일은 [../foundation/design-system.md](../foundation/design-system.md).
+- **활성(`access_flag: true`)이 확인된 캐릭터만** 목록에 넣는다. `character/list` 응답에는 `access_flag` 가 없으므로 그 단계에서 캐시 없는 캐릭터를 채워 넣지 않는다 — 확인 경로는 `character-basic-cache` 또는 `character/basic` 응답 둘뿐이다([[ADR-015]] 결정 5를 "확인 전까지도 넣지 않는다"로 엄격 적용).
+- **캐시가 있으면 즉시 표시 + 개별 patch**([[ADR-016]] 결정 4·[[ADR-017]] 결정 6 SWR 그대로, 변경 없음). **표시할 캐시가 한 건도 없으면(콜드 스타트 — 캐시 삭제·재설치 직후)** 중간 결과를 흘리지 않고 **스피너 → 조회 완료 후 한 번에** 목록을 그린다. 판정 기준은 "캐시 인덱스가 비었는가"가 아니라 "실제로 방출한 stub이 0건인가".
+- 조회가 끝났는데 목록이 비면 **"활성 캐릭터 없음"(정상 빈 상태 — "표시할 캐릭터가 없어요", `text-text-muted`)** 과 **"조회 실패"(에러 상태 — "캐릭터 목록을 불러오지 못했어요 — 닫고 다시 열어주세요", `text-error`)** 를 구분해 안내한다. 401/429는 전역 실패로 throw되므로 그 reject 경로에서 반드시 로딩을 해제한다(스피너 영구 고정 방지). 재시도 수단은 **모달을 닫았다 다시 여는 것**뿐이다(별도 재시도 버튼 없음 — 여는 순간 로딩·실패 상태가 초기화되고 재조회된다).
 
 ## 3단 캐시 병합 ([[ADR-030]], 구현 완료)
 캐릭터 단일 스냅샷 → 캐릭터/월드/계정 3단 캐시. 응답 도착 시:
@@ -69,6 +75,7 @@
 
 ## 폐기된 정책 (history)
 - ~~체크박스로 캐릭터 선택~~ → 캐릭터 이미지 카드형 그리드 토글([[ADR-015]]).
+- ~~캐시가 없으면 `character/list` 응답으로 `access_flag` 미상 캐릭터까지 먼저 표시~~ → 활성 확인된 캐릭터만 표시, 콜드 스타트는 스피너([[ADR-053]], 2026-07-29).
 - ~~캐시가 캐릭터 단위 단일 스냅샷~~ → 캐릭터/월드/계정 3단 캐시([[ADR-030]]).
 - ~~평평한 체크리스트(관리 페이지)~~ → 카테고리 그룹핑([[ADR-035]] 2026-07-24): `[일일 퀘스트]` 접두사가 16/18줄 반복돼 지역명이 파묻히던 문제 해소.
 - ~~수동 편집 UI가 스케줄러 화면에 상주(카드 X 삭제·"+ 항목 추가")~~ → 화면은 읽기 전용, 편집은 `/content/manage`([[ADR-035]] 결정 18). 수동 항목이 일간/주간 양쪽에 섞이던 버그의 원인이 멤버십 스키마의 일간/주간 구분 부재라 `ManualTrackedItem.kind` 세분.
