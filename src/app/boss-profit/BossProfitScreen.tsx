@@ -107,8 +107,10 @@ function sumSubtotals(subtotals: BossProfitWeeklySubtotal[]): number {
 // "＋ 드롭 추가" 칩. 상자 결과는 실제 나온 아이템(반지 등) 아이콘으로 뜬다.
 function DropIndicator(props: { drops: RecordedDrop[] }): React.JSX.Element {
   if (props.drops.length === 0) {
+    // 아이콘 스택(h-6)과 같은 슬롯이라 높이도 h-6으로 맞춘다(ADR-049) — py로 높이를 만들면
+    // text-[11px]의 line-height(font 의존)가 그대로 행 높이에 실려 드롭 유무로 행이 튄다.
     return (
-      <span className="ml-auto flex-none rounded-full border border-dashed border-primary/45 bg-primary/10 px-2.5 py-1 text-[11px] font-bold text-primary-text">
+      <span className="ml-auto inline-flex h-6 flex-none items-center rounded-full border border-dashed border-primary/45 bg-primary/10 px-2.5 text-[11px] font-bold text-primary-text">
         ＋ 드롭 추가
       </span>
     )
@@ -180,8 +182,11 @@ function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Element {
   }
 
   return (
+    // 마지막 행도 테두리 "박스"는 남기고 색만 지운다(last:border-b-transparent, ADR-049) —
+    // last:border-b-0이면 그 행만 1px 짧아진다. 배경은 border-box 기준이라 valuable-drop-row의
+    // 골드 배경이 투명 테두리 자리도 그대로 채운다(시각 변화 없음).
     <li
-      className={`flex items-start gap-3 p-4 border-b border-border last:border-b-0${
+      className={`flex items-start gap-3 p-4 border-b border-border last:border-b-transparent${
         hasValuableDrop ? ' valuable-drop-row' : ''
       }`}
     >
@@ -193,7 +198,9 @@ function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Element {
           type="button"
           onClick={() => setIsDropSheetOpen(true)}
           aria-label={`${row.boss} ${row.difficulty} 드롭 아이템 관리`}
-          className="flex w-full items-center gap-1.5 text-left"
+          // h-6 고정(ADR-049) — 자식(난이도 뱃지 20px · 보스명 20px · 드롭 지시자 24px) 중 최대값에
+          // 높이를 맡기면 지시자 종류가 바뀔 때마다 행 높이가 흔들린다.
+          className="flex h-6 w-full items-center gap-1.5 text-left"
         >
           <DifficultyBadge difficulty={row.difficulty} />
           <span className="truncate text-sm font-semibold text-text">{row.boss}</span>
@@ -531,9 +538,12 @@ function CharacterAccordion(props: {
   const valuableDrops = collectGroupValuableDrops(group, props.dropsByRowKey)
   const hasValuable = valuableDrops.length > 0
   const shellClass = [
-    // overflow-hidden을 두지 않는다(ADR-047) — overflow:hidden 조상은 스크롤포트를 만들어 헤더 sticky를
-    // 무력화한다. 소계 footer 제거 후(후속 3) 셸 하단에 닿는 배경 요소가 없어 클리핑 대체도 불필요하다.
-    isExpanded ? 'rounded-[14px] bg-surface border border-border' : '',
+    // overflow-hidden은 여전히 금지(ADR-047) — 스크롤포트를 만들어 헤더 sticky를 무력화한다. 대신
+    // overflow-clip을 쓴다(ADR-049): 스크롤 컨테이너를 만들지 않아 sticky와 공존하면서 자식을 카드
+    // 모양대로 잘라낸다. 이 클리핑 하나로 (a) stuck 헤더의 둥근 모서리로 보스 행이 비치는 문제와
+    // (b) 헤더가 카드 끝에서 릴리스될 때 하단 모서리가 뾰족해지는 문제가 함께 사라진다 — 헤더에
+    // 상태별 라운딩을 분기할 필요가 없다. 클리핑은 패딩 박스(반경 13px = 14 - 테두리 1px) 기준.
+    isExpanded ? 'overflow-clip rounded-[14px] bg-surface border border-border' : '',
     hasValuable
       ? isExpanded
         ? 'valuable-drop-card valuable-drop-card--expanded'
@@ -610,10 +620,14 @@ function CharacterAccordion(props: {
           // 펼침 헤더는 카드 안에서 sticky로 고정한다(ADR-047) — top은 페이지 sticky 헤더 실측 높이라
           // 그 바로 아래에 붙고, bg-surface가 밑으로 지나가는 보스 행을 가린다. z-[5]는 드롭 아이콘
           // (relative + inline zIndex 1~3) 위 · 고가 드롭 배지(z-10, ADR-045) 아래 층.
+          // 헤더는 라운딩 없이 "사각"이다(ADR-049) — 셸의 overflow-clip이 대신 깎는다. rounded-t-[14px]를
+          // 주면 stuck 상태에서 모서리 안쪽이 투명이라 그 아래를 지나가는 보스 행이 비친다(사용자 보고).
+          // 셸 클리핑은 카드 자신의 모서리에서만 일어나므로 stuck 헤더의 라운딩을 덮어주지 못한다 —
+          // 반대로 헤더가 사각이면 카드 최상단(= 클리핑 곡선과 일치)에서 클리핑이 라운딩을 만들어준다.
           style={isExpanded ? { top: props.stickyTop } : undefined}
           className={
             isExpanded
-              ? 'sticky z-[5] flex w-full items-center gap-3 rounded-t-[14px] bg-surface p-4'
+              ? 'sticky z-[5] flex w-full items-center gap-3 bg-surface p-4'
               : 'flex w-full items-center gap-3 rounded-[14px] bg-surface border border-border p-4'
           }
         >
@@ -757,31 +771,7 @@ export function BossProfitScreen(): React.JSX.Element {
           동일한 sticky 헤더 패턴(docs/UI_GUIDE.md "스크롤 영역" 참고)을 그대로 재사용한다. */}
       <div ref={stickyHeaderRef} className="sticky top-0 z-10 bg-bg px-4 pt-[calc(1rem+var(--sa-top))] pb-2">
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-lg font-semibold text-text">보스 수익</h1>
-            {/* 동기화 상태 영역(마지막 동기화 시각 텍스트 + 새로고침 버튼)은 현재 기간에서만
-                노출한다(#30) — 과거 기간은 cache-first·checked-once 모델이라 실시간 동기화 개념이
-                없어 "조회 중..."/"방금 전"/"n분 전" 표시도, 재조회 버튼도 의미가 없다. */}
-            {isCurrentPeriod && (
-              <div className="flex shrink-0 items-center gap-2">
-                <p className="text-sm text-text-muted whitespace-nowrap">
-                  {status === 'loading' ? '조회 중...' : formatSyncedAt(lastSyncedAt)}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => refresh(trackedOcids ?? [])}
-                  aria-label="새로고침"
-                  className="p-2 text-primary-text hover:text-primary-hover"
-                >
-                  <RefreshCw
-                    className={`h-4 w-4 ${status === 'loading' ? 'animate-spin' : ''}`}
-                    strokeWidth={2}
-                    aria-hidden="true"
-                  />
-                </button>
-              </div>
-            )}
-          </div>
+          <h1 className="text-lg font-semibold text-text">보스 수익</h1>
 
           <div className="flex items-center gap-4">
             <button
@@ -806,6 +796,32 @@ export function BossProfitScreen(): React.JSX.Element {
             >
               월간
             </button>
+
+            {/* 동기화 상태 영역(마지막 동기화 시각 텍스트 + 새로고침 버튼)은 현재 기간에서만
+                노출한다(#30) — 과거 기간은 cache-first·checked-once 모델이라 실시간 동기화 개념이
+                없어 "조회 중..."/"방금 전"/"n분 전" 표시도, 재조회 버튼도 의미가 없다.
+                제목 줄이 아니라 탭과 같은 줄에 둔다(ADR-049). */}
+            {isCurrentPeriod && (
+              <div className="ml-auto flex shrink-0 items-center gap-2">
+                <p className="text-sm text-text-muted whitespace-nowrap">
+                  {status === 'loading' ? '조회 중...' : formatSyncedAt(lastSyncedAt)}
+                </p>
+                {/* 이 줄의 높이는 활성 탭 pill(py-[5px] + text-sm 20px = 30px)이 정한다. 기본 p-2면
+                    아이콘 16 + 패딩 16 = 32px라 새로고침이 없는 과거 기간과 2px 어긋난다(ADR-049). */}
+                <button
+                  type="button"
+                  onClick={() => refresh(trackedOcids ?? [])}
+                  aria-label="새로고침"
+                  className="flex h-[30px] w-[30px] items-center justify-center text-primary-text hover:text-primary-hover"
+                >
+                  <RefreshCw
+                    className={`h-4 w-4 ${status === 'loading' ? 'animate-spin' : ''}`}
+                    strokeWidth={2}
+                    aria-hidden="true"
+                  />
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center justify-center gap-4">
@@ -860,12 +876,19 @@ export function BossProfitScreen(): React.JSX.Element {
               라벨행 우측에는 이 기간 전체 고가 드롭 뱃지(ADR-045 배지 재사용)를 장식 겸 정보로 얹는다. */}
           {!isPeriodLoading && characterGroups.length > 0 && (
             <div>
-              <div className="flex items-center justify-between gap-2">
+              {/* 뱃지는 흐름 밖(absolute)에 둔다(ADR-049) — 흐름에 있으면 라벨(16px)보다 큰
+                  뱃지(24px)가 줄 높이를 정해 뱃지 유무로 헤드라인이 8px 튄다. 뱃지에 붙일 탭 확대
+                  애니메이션도 주변 레이아웃을 밀지 않아야 한다. */}
+              <div className="relative flex items-center">
                 <p className="text-xs font-semibold tracking-wide text-text-muted">
                   {periodLabel.primary} 총 수익
                 </p>
                 {periodValuableDrops.length > 0 && (
-                  <ValuableDropBadge drops={periodValuableDrops} label="이 기간 고가 드롭" />
+                  <ValuableDropBadge
+                    drops={periodValuableDrops}
+                    label="이 기간 고가 드롭"
+                    className="absolute right-0 top-1/2 -translate-y-1/2"
+                  />
                 )}
               </div>
               <div className="mt-1.5 flex items-center gap-2.5">

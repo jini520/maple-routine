@@ -987,6 +987,101 @@ describe('BossProfitScreen', () => {
     expect(document.querySelector('.rounded-b-\\[14px\\]')).toBeNull()
   })
 
+  // 레이아웃 유격 정리(ADR-049) — jsdom엔 레이아웃이 없어 픽셀을 잴 수 없으므로, 높이를 결정하는
+  // 클래스 배선을 회귀 가드로 고정한다(수치 근거는 ADR-049 표 참고).
+  it('ADR-049: 동기화 상태 영역(시각 텍스트·새로고침)이 주간/월간 탭과 같은 줄에 있고 버튼 높이가 30px다', () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row()],
+      periodKey: CURRENT_WEEKLY_PERIOD_KEY,
+    })
+
+    renderBossProfitScreen()
+
+    const refresh = screen.getByRole('button', { name: '새로고침' })
+    // 같은 줄 = 주간 탭 버튼과 같은 flex 컨테이너 안. 제목(h1) 줄에 남아 있으면 실패한다.
+    const tabRow = screen.getByRole('button', { name: '주간' }).parentElement
+    expect(tabRow).not.toBeNull()
+    expect(tabRow?.contains(refresh)).toBe(true)
+    // 제목은 별개 줄로 남는다 — 탭 줄로 끌려오면 실패한다.
+    expect(tabRow?.contains(screen.getByRole('heading', { name: '보스 수익' }))).toBe(false)
+    // 탭은 좌측, 동기화 상태는 우측(ml-auto)
+    expect(refresh.parentElement).toHaveClass('ml-auto')
+
+    // 활성 탭 pill이 30px(py-[5px] + text-sm 20px)라 버튼도 30px여야 한다 — 기본 p-2(32px)면
+    // 새로고침이 없는 과거 기간과 2px 어긋난다.
+    expect(refresh).toHaveClass('h-[30px]', 'w-[30px]')
+    expect(refresh).not.toHaveClass('p-2')
+  })
+
+  it('ADR-049: 총 수익 헤드라인의 고가 드롭 뱃지는 absolute라 라벨행 높이에 영향을 주지 않는다', () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row()],
+      dropsByRowKey: {
+        'ocid-1|자쿰|카오스|2026-07-09': [{ category: 'consumable', itemName: VALUABLE_ITEM, quantity: 1 }],
+      },
+    })
+
+    renderBossProfitScreen()
+
+    // 흐름에 있으면 뱃지(24px)가 라벨(16px)보다 커서 줄 높이가 튄다. 뱃지에 붙일 탭 확대 애니메이션도
+    // 주변 레이아웃을 밀게 되므로 흐름 밖(absolute)에 둔다.
+    const badge = screen.getByRole('img', { name: '이 기간 고가 드롭' })
+    expect(badge).toHaveClass('absolute')
+    expect(badge.parentElement).toHaveClass('relative')
+  })
+
+  it('ADR-049: 펼침 셸은 overflow-clip으로 모서리를 잘라낸다(overflow-hidden은 여전히 금지)', () => {
+    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()] })
+
+    renderBossProfitScreen()
+    const header = screen.getByRole('button', { name: /낟낟/ })
+    fireEvent.click(header)
+
+    // clip은 스크롤 컨테이너를 만들지 않아 sticky 헤더가 살아 있다 — hidden과 달리 함께 쓸 수 있다.
+    // 이 클리핑이 stuck 헤더 모서리로 보스 행이 비치는 문제와, 카드 끝에서 헤더 하단 모서리가
+    // 뾰족해지는 문제를 동시에 없앤다.
+    expect(header.parentElement).toHaveClass('overflow-clip')
+    expect(header.parentElement).not.toHaveClass('overflow-hidden')
+    // 헤더 자신은 사각이어야 한다 — rounded-t-*를 주면 stuck 상태에서 모서리 안쪽이 투명이라
+    // 그 아래를 지나가는 보스 행이 비친다(브라우저 hit-test로 재현 확인). 셸 클리핑은 카드 모서리
+    // 에서만 일어나므로 카드 중간에 멈춘 헤더의 라운딩은 덮어주지 못한다.
+    expect(header.className).not.toMatch(/rounded-t-/)
+  })
+
+  it('ADR-049: 보스 행 높이가 드롭 유무·마지막 행 여부와 무관하게 고정된다', () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row({ boss: '자쿰' }), row({ boss: '벨로나' })],
+      dropsByRowKey: {
+        'ocid-1|자쿰|카오스|2026-07-09': [{ category: 'consumable', itemName: VALUABLE_ITEM, quantity: 1 }],
+      },
+    })
+
+    renderBossProfitScreen()
+    fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
+
+    // 마지막 행만 테두리를 없애면(last:border-b-0) 1px 짧아진다 — 색만 지워 박스는 남긴다.
+    const lastRow = screen.getByText('벨로나').closest('li')
+    expect(lastRow).toHaveClass('last:border-b-transparent')
+    expect(lastRow).not.toHaveClass('last:border-b-0')
+
+    // 이름 줄은 자식(칩 vs 아이콘 스택)에 높이를 맡기지 않고 h-6으로 고정한다.
+    const withDrop = screen.getByRole('button', { name: /자쿰 카오스 드롭 아이템 관리/ })
+    const withoutDrop = screen.getByRole('button', { name: /벨로나 카오스 드롭 아이템 관리/ })
+    expect(withDrop).toHaveClass('h-6')
+    expect(withoutDrop).toHaveClass('h-6')
+
+    // "＋ 드롭 추가" 칩도 아이콘 스택과 같은 24px — 세로 패딩으로 높이를 만들면 line-height에 휘둘린다.
+    const addChip = within(withoutDrop).getByText(/드롭 추가/)
+    expect(addChip).toHaveClass('h-6')
+    expect(addChip).not.toHaveClass('py-1')
+  })
+
   // 총 수익 헤드라인의 기간 전체 고가 드롭 뱃지(ADR-046) — 캐릭터 카드 배지와 같은 컴포넌트를 쓰되
   // aria-label로 구분한다("고가 드롭" = 캐릭터 카드, "이 기간 고가 드롭" = 헤드라인 요약).
   it('ADR-046: 기간에 고가 드롭이 있으면 총 수익 헤드라인에도 고가 드롭 뱃지가 표시된다', () => {
