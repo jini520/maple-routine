@@ -2,11 +2,12 @@
 
 > **범위**: 주간/월간 보스 진행 상태, 캐릭터 추적, 파티 관리, 보스 카드·난이도 뱃지, 솔로/파티 필터, 보스 관리 페이지. 캐릭터 관리 피커·탭 토글은 [../foundation/design-system.md](../foundation/design-system.md), 수동/자동 트래킹 전역 토글은 [settings.md](./settings.md).
 > **관련 소스**: `app/boss-scheduler/`(`BossScreen.tsx` — `BossCard`·`DifficultyBadge` export) · `features/boss-scheduler/` · `storage/boss-party-settings`(SQLite `boss_party_settings`) · `lib/boss-icons` · `lib/boss-matching` · `PartyManagementModal` · `/boss/manage` · `src/data/weekly-bosses.json`·`boss-crystal-prices.json`·`boss-portrait-crops.json`.
-> **관련 ADR**: [[ADR-013]] [[ADR-012]] [[ADR-018]] [[ADR-019]] [[ADR-035]] [[ADR-031]] [[ADR-006]]. **관련 문서**: [../foundation/architecture.md](../foundation/architecture.md), [../foundation/nexon-api.md](../foundation/nexon-api.md), [../foundation/game-data.md](../foundation/game-data.md), [boss-profit.md](./boss-profit.md).
+> **관련 ADR**: [[ADR-013]] [[ADR-012]] [[ADR-018]] [[ADR-019]] [[ADR-035]] [[ADR-031]] [[ADR-006]] [[ADR-053]]. **관련 문서**: [../foundation/architecture.md](../foundation/architecture.md), [../foundation/nexon-api.md](../foundation/nexon-api.md), [../foundation/game-data.md](../foundation/game-data.md), [boss-profit.md](./boss-profit.md).
 
 ## 정책
 - 화면 안에 **주간 탭**(`cycle: bossWeekly`) + **월간 탭**(`cycle: bossMonthly`, 현재 검은마법사 1종). **일간 탭 없음** — `bossDaily` 는 [[ADR-007]] 정책대로 계속 무시.
 - 컨텐츠 스케줄러와 동일하게 "캐릭터 관리"로 고른 캐릭터만 표시하고 API 호출도 그 캐릭터로만 제한. 추적 목록 `trackedCharacters:boss` 는 컨텐츠와 **독립**(예: 컨텐츠에서 안 고른 캐릭터를 보스에서 고를 수 있음). 피커 UI는 동일 컴포넌트 공유([[ADR-015]]).
+- 피커 후보 목록 로딩도 컨텐츠 스케줄러와 **동일**([[ADR-053]], 정책 원문은 [content-scheduler.md](./content-scheduler.md) "캐릭터 관리 피커 — 후보 목록 로딩"): 활성(`access_flag: true`)이 확인된 캐릭터만 표시, 표시할 캐시가 없으면 스피너 → 조회 완료 후 한 번에 목록(캐시가 있으면 기존 [[ADR-016]] 즉시 표시 + patch 유지), 조회 후 목록이 비면 "활성 캐릭터 없음"과 "조회 실패"를 구분해 안내.
 - 보스 진행 상태를 Nexon API 로 동기화해 읽기 전용 표시(컨텐츠와 동일 모델·엣지·에러). `complete_flag` 그대로 표시. `weekly-bosses.json` 은 보스명·난이도 표기 매핑 참조 테이블(주간=`weekly`+`eventWeekly`, 월간=`monthly` 섹션). 미매핑은 "알 수 없는 콘텐츠".
 - **주간 12마리 제한**: 캐릭터당 주간 보스 최대 12마리(난이도 조합 단위)가 게임 규칙, API `weekly_boss_clear_count`/`weekly_boss_clear_limit_count` 반영. **이 카운트는 주간 탭에서만** 표시(월간 보스는 무관). 시즌보스(메이린)는 예외라 "n/12" 에서 별도 처리(`weekly` 섹션만 분모·분자).
 - 미완료 시 로컬 알림(실시간 재확인). 주간 리셋 = KST 목요일 00:00.
@@ -65,6 +66,7 @@ rounded-full bg-white/20 text-[#E8DFEC] text-xs font-semibold px-2 py-1, flex it
 
 ## 폐기된 정책 (history)
 - ~~보스 전체를 하나의 카드(`<ul>`)에 담고 왼쪽 체크 도형으로 완료 표시~~ → 보스별 독립 카드 + 일러스트 bleed + 오른쪽 완료 뱃지([[ADR-018]]).
+- ~~캐시가 없으면 `character/list` 응답으로 `access_flag` 미상 캐릭터까지 먼저 표시~~ → 활성 확인된 캐릭터만 표시, 콜드 스타트는 스피너([[ADR-053]], 2026-07-29).
 - ~~앱 내에서 최대 12마리 선택 UI~~ → 미도입. 게임 등록 목록을 그대로 표시([[ADR-007]]).
 - ~~보스 초상화가 난이도별 파일~~ → 보스당 1장(webp)으로 통합, `getBossPortraitUrl(portraitSlug)` 에서 difficulty 제거([[ADR-018]]).
 - ~~파티 관리 진입 = 보스 카드 안 아이콘 버튼 → 단일 보스 모달~~ → 화면 상단 버튼 + 3단 폼 모달([[ADR-019]] 재정정) → `/boss/manage` 페이지([[ADR-035]]).

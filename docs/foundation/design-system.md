@@ -72,6 +72,8 @@ Text(라이트): text-[#8A7362] hover:text-[#5B4636]   Text(다크): text-neutra
 ```
 정렬: **즐겨찾기(선택) 먼저, 그다음 나머지**, 각 그룹 내부 레벨 내림차순 — 즐겨찾기 토글 시 즉시 재배치. `character/basic` 실패 캐릭터는 "?" 플레이스홀더 + 이름·레벨 유지(선택 가능). 서버 엠블럼은 `lib/world-emblem`(데이터 `world-emblems.json`) 재사용, world 없거나 미매핑이면 생략. 모달 헤더(제목+설명 `mb-4 space-y-1`), 그리드 `max-h-[70vh] overflow-y-auto`, **이 모달은 오버레이 클릭으로 닫히지 않음**(닫기/저장 버튼만, 자체 오버레이라 이 모달에만 적용).
 
+**로딩/빈/실패 상태 ([[ADR-053]], 설계)**: 그리드에 항목이 없을 때 세 경우를 구분해 그린다 — 조회 중이면 `MapleSpinner`(그리드 자리 중앙), 조회 완료 후 항목 0건이면 "활성 캐릭터 없음" 빈 상태 문구, 조회 실패면 실패 문구 + 재시도(빈 상태로 위장 금지, [error-resilience.md](./error-resilience.md) 원칙 1·2). 항목이 하나라도 있으면 기존대로 그리드만 그린다. 어느 상태인지는 `getCharacterPickerRoster` Promise의 resolve/reject로 호출부가 판정해 props로 내려준다(정책 원문 [../features/content-scheduler.md](../features/content-scheduler.md)).
+
 ### 캐릭터 관리 저장 진행률 모달 — 2026-07-16
 "저장" 시 추적 캐릭터마다 `syncSchedules` 순차 호출하는 동안 캐릭터 관리 모달 **위에** 진행률 모달을 띄우고 완료 시 함께 닫는다. 진행률 바 스타일은 온보딩 예열 바와 동일(track `h-1.5 w-full rounded-full bg-surface-2` + fill `h-1.5 rounded-full bg-primary`) + "캐릭터 정보를 저장하고 있어요 (N/M)". 공용 `Modal` 재사용, 저장 도중 오버레이 클릭 무시(완료 시 프로그램적으로만 닫음). 콜백 `saveTrackedOcids → refresh → syncSchedules` 로 `onProgress(completed, total)` 전달. 개별 실패는 조용히 폴백, 전역 에러면 화면 에러 상태 전환.
 
