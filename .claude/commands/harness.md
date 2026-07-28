@@ -92,8 +92,8 @@
 
 먼저 아래 파일들을 읽고 프로젝트의 아키텍처와 설계 의도를 파악하라:
 
-- `/docs/ARCHITECTURE.md`
-- `/docs/ADR.md`
+- `/docs/README.md` (문서 인덱스 — 이 작업에 해당하는 `features/`·`foundation/` 문서를 골라 읽어라)
+- `/docs/ADR.md` (슬림 인덱스 — 관련 ADR만 `/docs/adr/ADR-NNN.md` 로 열어라. 전체를 컨텍스트에 올리지 말 것)
 - {이전 step에서 생성/수정된 파일 경로}
 
 이전 step에서 만들어진 코드를 꼼꼼히 읽고, 설계 의도를 이해한 뒤 작업하라.
