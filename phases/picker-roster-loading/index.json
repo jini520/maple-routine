@@ -37,7 +37,10 @@
     {
       "step": 4,
       "name": "docs-finalize",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-07-29T04:11:37+0900",
+      "summary": "문서 상태를 '구현 완료'로 맞추고 서술을 실제 코드와 대조. 상태 표기: docs/adr/ADR-053.md 제목 '(설계, 구현 전)'→'(구현 완료, 2026-07-29)', docs/ADR.md 인덱스 62행 동일 형식(ADR-045~050과 같은 '(구현 완료, YYYY-MM-DD)'), docs/features/content-scheduler.md '캐릭터 관리 피커 — 후보 목록 로딩' 절 제목·docs/features/onboarding.md '추적 캐릭터 선택 단계' 절 제목·docs/foundation/design-system.md '로딩/빈/실패 상태' 문단 모두 '설계'→'구현 완료 2026-07-29'. ADR-053 말미에 구현 문단 추가 — 결정 1·2는 schedule-sync.ts(②분기 제거 + hasVisibleView로 콜드 판정, throw 경로 무방출), 결정 3은 CharacterTrackingPicker(필수 props isLoading·loadFailed, 4단 우선순위)와 화면 3곳(catch→실패/finally→로딩 해제)·온보딩은 RosterBody로 직접 렌더, 그리고 ADR-016 SWR 회귀 고정 테스트 위치(schedule-sync.test.ts ADR-053 describe 첫 케이스 '웜 캐시 — character/list 응답 전 stub을 방출…' + 세 화면 테스트의 'ADR-016 웜 캐시: …스피너 없이 바로 목록' 케이스) 명시. 대조 결과 문서를 코드에 맞춰 고친 곳 2건(코드 무수정): ①design-system.md가 '실패 문구 + 재시도'라고 적어 재시도 버튼이 있는 것처럼 읽혔으나 실제로는 버튼 없이 '닫고 다시 열기' 안내뿐 → 실제 문구·클래스·스피너 마크업을 코드블록으로 기록하고 재시도 수단을 명시(content-scheduler.md·onboarding.md에도 실제 문구와 온보딩 전용 실패 문구 '네트워크를 확인한 뒤 앱을 다시 실행해주세요' 반영), ②design-system.md 캐릭터 그리드 절의 'character/basic 실패 캐릭터는 ? 플레이스홀더로 표시'가 ADR-053 이후 캐시 있는 캐릭터에만 해당돼 그 조건을 덧붙임(옛 문장 삭제 없이 단서만 추가). 나머지 대조는 문서=구현 일치(웜 즉시표시+patch / 콜드 스피너→1회 방출, access_flag 미상 미표시(schedule-sync.ts:143 cached!==null && accessFlag 외 유입 경로 없음), 빈 상태 '표시할 캐릭터가 없어요'(text-text-muted)와 실패 '캐릭터 목록을 불러오지 못했어요 — 닫고 다시 열어주세요'(text-error) 구분, ADR-016·017 정정 문단 내용 그대로 성립). 잔재 점검: getCharacterPickerRoster 호출부는 여전히 3곳(ContentScreen:725·BossScreen:155·ContentCharacterStep:72)이고 셋 다 로딩 배선 완비, src/app/ 빈 catch는 src/app/settings/CacheDataSection.tsx 3건(:24 캐시 크기 조회, :32 clearCacheData, :37 showSplashScreen)만 남았으나 이번 범위(피커 로스터) 밖이라 미수정 — 별도 이슈 후보. src/ 주석 중 옛 방출 규칙('캐시 없으면 character/list로 먼저 그린다')을 서술하는 곳은 없어 주석 수정도 불필요(git diff에 src/ 변경 0건). 열린 질문: content-scheduler.md엔 해당 섹션 없음, boss-scheduler.md는 '벨로나 출시 시 데이터 갱신'뿐(무관), onboarding.md의 ADR-015 얼굴 크롭 항목은 지시대로 보존. AC: npm run build 통과, npm run lint 경고 0, grep 2건 모두 결과 있음. npm test는 1300 통과 / boss-profit 3건 실패 — step 1~3과 동일한 선행 실패이고 이 step은 src를 전혀 건드리지 않았다(git diff --stat -- src/ 빈 결과).",
+      "completed_at": "2026-07-29T04:16:00+0900"
     }
   ],
   "created_at": "2026-07-29T03:43:00+0900"
