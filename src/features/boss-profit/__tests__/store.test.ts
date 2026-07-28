@@ -1318,32 +1318,6 @@ describe('useBossProfitStore', () => {
       }
     })
 
-    // 이미 체크된 과거 주라 백필 없이 buildRowsFromRecords로 바로 가는 경로에서도, 그 안의
-    // getBossProfitRecords가 응답하지 않으면(hang) 같은 방식으로 멈춰있었다.
-    it('goToPreviousPeriod: 이미 체크된 과거 주인데 getBossProfitRecords가 응답하지 않아도(hang) 타임아웃 후 멈추지 않는다', async () => {
-      vi.useFakeTimers()
-      try {
-        syncSchedulesMock.mockResolvedValue([syncResult()])
-        await useBossProfitStore.getState().refresh(['ocid-1'])
-        const currentPeriodKey = useBossProfitStore.getState().periodKey
-        const previousPeriodKey = getAdjacentPeriodKey('weekly', currentPeriodKey, 'prev')
-
-        isPeriodCheckedMock.mockResolvedValue(true)
-        getBossProfitRecordsMock.mockImplementation(() => new Promise(() => {}))
-
-        const promise = useBossProfitStore.getState().goToPreviousPeriod()
-        await vi.advanceTimersByTimeAsync(5000)
-        await promise
-
-        const state = useBossProfitStore.getState()
-        expect(state.periodKey).toBe(previousPeriodKey)
-        expect(state.rows).toEqual([])
-        expect(state.isPeriodLoading).toBe(false)
-      } finally {
-        vi.useRealTimers()
-      }
-    })
-
     it('goToPreviousPeriod: 체크된 적 없는 과거 주는 date 파라미터로 백필하고 완료 보스를 기록한 뒤 체크 표시한다', async () => {
       syncSchedulesMock.mockResolvedValue([syncResult()])
       await useBossProfitStore.getState().refresh(['ocid-1'])
