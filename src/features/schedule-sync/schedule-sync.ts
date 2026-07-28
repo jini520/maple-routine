@@ -76,13 +76,25 @@ function sortPickerEntries(entries: CharacterPickerEntry[]): CharacterPickerEntr
   return [...entries].sort((a, b) => (b.level !== a.level ? b.level - a.level : compareByName(a.name, b.name)))
 }
 
-// ADR-016: 캐시 우선 표시(Stale-While-Revalidate) — 캐시가 있으면 즉시 그 값으로 첫 onUpdate를
-// 호출해 화면을 비우지 않고, 그 뒤 character/basic을 캐릭터별로 병렬 호출해 하나씩 끝나는 대로
-// (Promise.all로 뭉쳐 기다리지 않고) 값을 patch하며 onUpdate를 다시 호출한다. 401/429는 전역
-// 실패로 보고 던지고, 그 외 개별 실패는 이미 있던 값(캐시 또는 character/list)을 그대로 둔다.
+// ADR-016 결정 4: 캐시 우선 표시(Stale-While-Revalidate) — 캐시가 있으면 즉시 그 값으로 첫
+// onUpdate를 호출해 화면을 비우지 않고, 그 뒤 character/basic을 캐릭터별로 병렬 호출해 하나씩
+// 끝나는 대로(Promise.all로 뭉쳐 기다리지 않고) 값을 patch하며 onUpdate를 다시 호출한다.
+// 401/429는 전역 실패로 보고 던지고, 그 외 개별 실패는 이미 있던 캐시 값을 그대로 둔다.
+//
+// ADR-053 결정 1·2 (2026-07-29): 목록에는 access_flag가 확인된 캐릭터만 넣는다 — 확인 경로는
+// character-basic-cache 또는 character/basic 응답 둘뿐이고, access_flag가 없는 character/list
+// 응답으로 목록을 채우지 않는다. 그래서 ①에서 보여줄 stub이 한 건도 없는 콜드 스타트(캐시 삭제·
+// 재설치 직후)에는 흘릴 중간 결과가 추측뿐이므로 ②·③의 중간 onUpdate를 억제하고, 모든
+// character/basic이 끝난 뒤 1회만 방출한다(그동안 호출부는 스피너를 보여준다). 반대로 stub을
+// 한 건이라도 방출했다면 위 ADR-016 SWR 동작이 그대로 유지된다 — 즉시 표시 + 개별 patch.
 export async function getCharacterPickerRoster(
   onUpdate: (entries: CharacterPickerEntry[]) => void,
 ): Promise<void> {
+  // ADR-053 결정 2: 판정 기준은 "캐시 인덱스가 비었는가"가 아니라 "①에서 실제로 사용자에게
+  // 보여줄 것을 방출했는가"다 — 인덱스에 ocid가 있어도 전부 accessFlag: false면 화면에 보여줄
+  // 게 없는 것은 마찬가지이기 때문이다.
+  let hasVisibleView = false
+
   // ADR-017 결정 6 (2026-07-12 재수정): character/list는 캐싱하지 않으므로(개명·전직·레벨업
   // 정확성 우선, ADR 2026-07-11 정정) 이 함수가 열릴 때마다 그 네트워크 응답을 기다려야 한다.
   // 그동안 character-basic-cache에 이미 있는 캐릭터는(추적 여부 무관 — 온보딩 예열이 계정
@@ -113,6 +125,7 @@ export async function getCharacterPickerRoster(
 
     if (stubEntries.length > 0) {
       onUpdate(sortPickerEntries(stubEntries))
+      hasVisibleView = true
     }
   }
 
@@ -127,15 +140,7 @@ export async function getCharacterPickerRoster(
   await Promise.all(
     characters.map(async (character) => {
       const cached = await getCachedCharacterBasic(character.ocid)
-      if (cached === null) {
-        liveEntries.set(character.ocid, {
-          ocid: character.ocid,
-          name: character.name,
-          level: character.level,
-          imageUrl: null,
-          world: character.world,
-        })
-      } else if (cached.profile.accessFlag) {
+      if (cached !== null && cached.profile.accessFlag) {
         liveEntries.set(character.ocid, {
           ocid: character.ocid,
           name: cached.profile.name,
@@ -144,10 +149,14 @@ export async function getCharacterPickerRoster(
           world: character.world,
         })
       }
-      // cached !== null && !accessFlag: 캐시상 비공개로 알려진 캐릭터는 초기 렌더에서부터 제외
+      // ADR-053 결정 1: 캐시가 없거나(access_flag 미상 — character/list 응답엔 그 값이 없다)
+      // 캐시상 비공개로 알려진 캐릭터는 이 단계에서 넣지 않는다. 캐시 없는 캐릭터는 아래
+      // character/basic 응답이 활성을 확인해주면 그때 들어온다.
     }),
   )
-  onUpdate(sortPickerEntries(Array.from(liveEntries.values())))
+  if (hasVisibleView) {
+    onUpdate(sortPickerEntries(Array.from(liveEntries.values())))
+  }
 
   let globalError: unknown = null
 
@@ -171,13 +180,15 @@ export async function getCharacterPickerRoster(
         } else {
           liveEntries.delete(character.ocid)
         }
-        onUpdate(sortPickerEntries(Array.from(liveEntries.values())))
+        if (hasVisibleView) {
+          onUpdate(sortPickerEntries(Array.from(liveEntries.values())))
+        }
       } catch (error) {
         if (error instanceof NexonAuthError || error instanceof NexonRateLimitError) {
           globalError = error
           return
         }
-        // 개별 실패 — 이미 있던 값(캐시 또는 character/list)을 그대로 유지
+        // 개별 실패 — 이미 있던 캐시 값을 그대로 유지
       }
     }),
   )
@@ -185,6 +196,11 @@ export async function getCharacterPickerRoster(
   if (globalError !== null) {
     throw globalError
   }
+
+  // ADR-053 결정 2: 조회가 모두 끝난 뒤의 최종 방출. 콜드 스타트에선 이게 유일한 방출이고,
+  // 웜 경로에선 마지막 patch와 같은 값이라 무해하다. 전역 실패(위에서 throw)일 때는 불완전한
+  // 목록을 "완성된 결과"처럼 내보내지 않는다.
+  onUpdate(sortPickerEntries(Array.from(liveEntries.values())))
 }
 
 async function buildFallbackResult(
