@@ -1565,13 +1565,14 @@ describe('BossProfitScreen', () => {
       expect(badge).toHaveClass('absolute')
       expect(badge.parentElement).toHaveClass('relative')
 
-      // ADR-054 정정 3: 칩은 라벨 텍스트 옆(= 라벨행 흐름 안)에 산다. 그래서 이 줄의 높이 불변이
-      // 뱃지 absolute 배치만으로는 보장되지 않는다 — 칩 자신이 라벨(text-xs = 16px)과 같은 h-4여야
-      // 한다. h-4가 풀리면 라벨행이 다시 커지고, 그게 ADR-049가 없앤 헤드라인 튐이다.
+      // ADR-054 정정 3·4: 칩은 라벨 텍스트 옆(= 라벨행 흐름 안)에 산다. 줄 높이는 라벨의 우연한
+      // 높이가 아니라 h-6(24px) 명시 고정이 보장한다 — 그래야 뱃지·칩 유무와 무관하게 항상 같다.
       const chip = crystalRow()
       const labelRow = screen.getByText(/총 수익/).parentElement
+      expect(labelRow).toHaveClass('h-6')
       expect(labelRow?.contains(chip)).toBe(true)
-      expect(chip).toHaveClass('h-4')
+      // 칩은 줄 높이(24px)를 넘지 않아야 한다 — 넘으면 h-6 고정이 무의미해지고 줄이 다시 커진다.
+      expect(chip).toHaveClass('h-5')
       // 칩은 흐름 안에 있어야 한다 — absolute로 빼면 라벨과 겹친다(뱃지와 달리 좌측에 붙기 때문).
       expect(chip?.className).not.toContain('absolute')
     })

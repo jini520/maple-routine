@@ -639,16 +639,16 @@ function CrystalSummaryChip(props: { tab: BossCycle; groups: CharacterGroup[] })
   // 칩은 화면에 "간단히"만 — 월드 수·월드명 같은 부가 표기는 팝오버로 넘긴다(사용자 요청).
   const chipContent = (
     <>
-      {iconUrl !== null && <img src={iconUrl} alt="" className="h-3.5 w-3.5 flex-none object-contain" />}
+      {iconUrl !== null && <img src={iconUrl} alt="" className="h-4 w-4 flex-none object-contain" />}
       {/* 숫자와 단위 사이는 마진이 아니라 실제 공백 문자로 띄운다 — 마진만으론 textContent가
           "34/90"으로 붙어 스크린리더가 이어 읽는다([[ADR-046]]에서 "메소" 단위로 정한 규약).
           "개"는 한국어 표기상 숫자에 붙으므로 공백을 넣지 않는다. */}
       {isWeekly ? (
-        <span className="text-[11px] font-bold leading-none tabular-nums text-primary">
+        <span className="text-xs font-bold leading-none tabular-nums text-primary">
           {cleared} <span className="font-semibold opacity-70">/ {limit}</span>
         </span>
       ) : (
-        <span className="text-[11px] font-bold leading-none tabular-nums text-primary">
+        <span className="text-xs font-bold leading-none tabular-nums text-primary">
           {cleared}
           <span className="font-semibold opacity-70">개</span>
         </span>
@@ -656,9 +656,9 @@ function CrystalSummaryChip(props: { tab: BossCycle; groups: CharacterGroup[] })
     </>
   )
 
-  // h-4(16px) 고정 — 라벨행 높이를 라벨(text-xs)이 계속 정하게 둔다(위 주석 참고). leading-none과
+  // h-5(20px) — 라벨행이 h-6(24px)으로 고정돼 있으므로 그 안에 들어가기만 하면 된다. leading-none과
   // 함께 두어야 글꼴 line-height가 칩 높이를 밀어 올리지 않는다.
-  const chipClassName = 'ml-2 flex h-4 flex-none items-center gap-1 rounded-full bg-primary/12 px-2'
+  const chipClassName = 'ml-2 flex h-5 flex-none items-center gap-1 rounded-full bg-primary/12 px-2'
 
   // 단일 월드·월간 탭은 펼칠 것이 없어 버튼으로 두지 않는다. 수치만으로는 무엇의 비율인지 읽히지
   // 않으므로 칩 전체에 레이블을 주고 아이콘은 장식(alt="")으로 남긴다(아바타 링과 동일 규약).
@@ -690,9 +690,9 @@ function CrystalSummaryChip(props: { tab: BossCycle; groups: CharacterGroup[] })
       >
         {chipContent}
         {isBreakdownOpen ? (
-          <ChevronUp className="h-2.5 w-2.5 flex-none text-primary" strokeWidth={3} aria-hidden="true" />
+          <ChevronUp className="h-3 w-3 flex-none text-primary" strokeWidth={2.5} aria-hidden="true" />
         ) : (
-          <ChevronDown className="h-2.5 w-2.5 flex-none text-primary" strokeWidth={3} aria-hidden="true" />
+          <ChevronDown className="h-3 w-3 flex-none text-primary" strokeWidth={2.5} aria-hidden="true" />
         )}
       </button>
       {isBreakdownOpen && (
@@ -1132,14 +1132,17 @@ export function BossProfitScreen(): React.JSX.Element {
               {/* 뱃지는 흐름 밖(absolute)에 둔다(ADR-049) — 흐름에 있으면 라벨(16px)보다 큰
                   뱃지(24px)가 줄 높이를 정해 뱃지 유무로 헤드라인이 8px 튄다. 뱃지에 붙일 탭 확대
                   애니메이션도 주변 레이아웃을 밀지 않아야 한다. */}
-              <div className="relative flex items-center">
+              {/* 라벨행 높이를 h-6(24px)으로 "명시" 고정한다([[ADR-054]] 정정 4, 사용자 요청) —
+                  전에는 라벨(text-xs = 16px)이 우연히 정하는 값이라, 그보다 큰 요소를 흐름에 넣는
+                  순간 줄이 커졌다(그래서 24px 고가 드롭 뱃지를 absolute로 빼냈다, [[ADR-049]] 결정 2).
+                  높이를 못 박아두면 그 의존이 끊긴다 — 뱃지·결정석 칩이 있든 없든 줄은 항상 24px다. */}
+              <div className="relative flex h-6 items-center">
                 <p className="text-xs font-semibold tracking-wide text-text-muted">
                   {periodLabel.primary} 총 수익
                 </p>
                 {/* 결정석 판매 현황은 라벨 텍스트 바로 옆에 둔다([[ADR-054]] 정정 3, 사용자 요청).
-                    이 줄에 흐름으로 들어가는 요소는 라벨 높이(16px)를 넘으면 안 된다 — 넘는 순간
-                    뱃지 유무로 헤드라인이 튀는 [[ADR-049]] 회귀가 되살아난다. 그래서 칩은 h-4로
-                    고정한다. 우측 끝은 여전히 고가 드롭 뱃지(absolute)의 자리이므로 침범하지 않는다. */}
+                    칩은 줄 높이(24px) 안에서 h-5까지 키울 수 있다 — 24px를 넘기지만 않으면 된다.
+                    우측 끝은 여전히 고가 드롭 뱃지(absolute)의 자리이므로 침범하지 않는다. */}
                 {isCurrentPeriod && <CrystalSummaryChip tab={tab} groups={characterGroups} />}
                 {periodValuableDrops.length > 0 && (
                   <ValuableDropBadge

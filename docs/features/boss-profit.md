@@ -82,7 +82,8 @@ a11y: 숫자 span에 role="img" aria-label="주간 보스 처치 8 / 12", 링은
 ### 총 수익 헤드라인 (sticky 헤더 최하단) — [[ADR-046]]
 `characterGroups` 합계를 보여주는 기간 요약. **카드가 아니다** — 아래 캐릭터 카드가 전부 같은 카드 셸(`rounded-[14px] bg-surface border border-border`)이라, 요약도 카드면 "동일한 흰 카드의 반복"으로 묻힌다([[ADR-046]] 배경). 카드 셸 없이 배경 위 타이포로 두고 색·크기로만 위계를 준다.
 ```
-라벨행: relative flex items-center — 높이는 라벨(16px)로 항상 고정
+라벨행: relative flex h-6 items-center — 24px 명시 고정(ADR-054 정정 4)
+      └ 라벨의 우연한 높이(16px)에 기대지 않는다 — 못 박아두면 뱃지·칩 유무와 무관하게 줄이 항상 같다
   라벨 text-xs font-semibold tracking-wide text-text-muted — "{periodLabel.primary} 총 수익"
   라벨 옆: 결정석 판매 현황 칩(현재 기간에만) — 흐름 안이지만 h-4라 줄 높이를 밀지 않는다(아래 상세)
   우측: 기간 전체 고가 드롭 뱃지(있을 때만) — absolute right-0 top-1/2 -translate-y-1/2
@@ -92,16 +93,17 @@ a11y: 숫자 span에 role="img" aria-label="주간 보스 처치 8 / 12", 링은
 헤어라인: mt-3 h-px bg-border (sticky 헤더 바닥 경계 = 카드 테두리 대체)
 ```
 
-**결정석 판매 현황 칩**([[ADR-054]] 결정 9·정정 2·3, #53) — **라벨행의 "{기간} 총 수익" 텍스트 옆**에 붙는다(`CrystalSummaryChip`). 새 줄로 두면 sticky 헤더가 그만큼 높아져 목록을 잠식한다(정정 2 — 헤더를 줄여둔 [[ADR-049]] 작업을 되돌리는 셈이었다). **이 줄에 흐름으로 들어가므로 칩 높이는 라벨(`text-xs` = 16px)과 같은 `h-4` 여야 한다** — 넘는 순간 라벨행이 커지고, 그게 고가 드롭 뱃지(24px)를 `absolute` 로 빼낸 이유다([[ADR-049]] 결정 2). 그 뱃지가 여전히 우측 끝을 `absolute` 로 쓰므로 칩은 **좌측(라벨 옆)**에 붙는다. **두 탭 모두 현재 기간에만** 렌더하고(호출부 `isCurrentPeriod &&`), 주간 탭은 월드당 한도 90 대비(복수 월드면 `90 × 월드 수`), 월간 탭은 **분모 없이 개수만**(90은 주간 전용 한도라 월간 보스 결정석은 포함되지 않는다).
+**결정석 판매 현황 칩**([[ADR-054]] 결정 9·정정 2·3, #53) — **라벨행의 "{기간} 총 수익" 텍스트 옆**에 붙는다(`CrystalSummaryChip`). 새 줄로 두면 sticky 헤더가 그만큼 높아져 목록을 잠식한다(정정 2 — 헤더를 줄여둔 [[ADR-049]] 작업을 되돌리는 셈이었다). **라벨행 높이는 `h-6`(24px)으로 명시 고정하고**(정정 4) 칩은 그 안에 들어가는 `h-5` 다. 전에는 라벨(`text-xs` = 16px)이 우연히 높이를 정해, 그보다 큰 요소를 흐름에 넣는 순간 줄이 커졌다 — 그게 고가 드롭 뱃지(24px)를 `absolute` 로 빼낸 이유다([[ADR-049]] 결정 2). 높이를 못 박으면 그 의존이 끊긴다. 그 뱃지가 여전히 우측 끝을 `absolute` 로 쓰므로 칩은 **좌측(라벨 옆)**에 붙는다. **두 탭 모두 현재 기간에만** 렌더하고(호출부 `isCurrentPeriod &&`), 주간 탭은 월드당 한도 90 대비(복수 월드면 `90 × 월드 수`), 월간 탭은 **분모 없이 개수만**(90은 주간 전용 한도라 월간 보스 결정석은 포함되지 않는다).
 ```
-칩: ml-2 flex h-4 flex-none items-center gap-1 rounded-full bg-primary/12 px-2
-      └ h-4 고정이 이 줄의 계약이다(위 문단) — py-*로 높이를 만들면 글꼴 line-height가 라벨행을 밀어 올린다
-  아이콘 img h-3.5 w-3.5 flex-none object-contain(alt="")
+칩: ml-2 flex h-5 flex-none items-center gap-1 rounded-full bg-primary/12 px-2
+      └ 라벨행이 h-6(24px) 고정이므로 그 안에 들어가기만 하면 된다. py-*로 높이를 만들지 말 것 —
+        글꼴 line-height가 실려 칩이 24px를 넘고, 그러면 h-6 고정이 무의미해진다(leading-none과 함께 쓴다)
+  아이콘 img h-4 w-4 flex-none object-contain(alt="")
       주간 intense_power_crystal_weekly.webp / 월간 intense_power_crystal_monthly.webp — null이면 아이콘만 생략
-  주간 탭: <span text-[11px] font-bold leading-none tabular-nums text-primary>{n} <span font-semibold opacity-70>/ {한도}</span></span>
+  주간 탭: <span text-xs font-bold leading-none tabular-nums text-primary>{n} <span font-semibold opacity-70>/ {한도}</span></span>
       └ 숫자와 "/" 사이는 실제 공백 문자(마진만으론 textContent가 "34/90"으로 붙어 스크린리더가 이어 읽음)
   월간 탭: 같은 구조에 분모 대신 "개" — 한국어 표기상 숫자에 붙으므로 이쪽은 공백 없음
-  복수 월드면 칩이 button(type="button" + aria-expanded + relative z-20) + ChevronDown/Up h-2.5 w-2.5 text-primary
+  복수 월드면 칩이 button(type="button" + aria-expanded + relative z-20) + ChevronDown/Up h-3 w-3 text-primary
       단일 월드·월간 탭이면 button 아님(펼칠 것이 없음) → role="img"
   칩에는 수치만 — "N개 월드"·월드명 같은 부가 정보는 팝오버로 넘긴다("화면에는 간단히", 정정 2)
   a11y: 칩 전체에 aria-label("주간 결정석 판매 34 / 90" · "월간 결정석 3개"), 아이콘은 장식(alt="")
