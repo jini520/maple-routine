@@ -40,7 +40,7 @@
 - **접힘/펼침 셸이 다르다**: 접힘 = 단독 카드(`rounded-[14px] bg-surface border border-border px-4 py-3`). 펼침 = 헤더+본문을 하나의 셸로(바깥 wrapper `rounded-[14px] bg-surface border border-border`, 헤더는 자체 border/rounded 없이 `px-4 py-3 flex items-center gap-3`, 본문은 `border-t border-border` 하나로 경계). 접힘 상태(다른 캐릭터 미펼침)는 완결된 단독 카드.
 - **셸 클리핑은 `overflow: clip`**([[ADR-049]], [[ADR-047]] 결정 2 갱신): `overflow-hidden`은 **금지**다 — 스크롤 컨테이너를 만들어 sticky 헤더를 무력화한다. 반면 `overflow: clip`은 스크롤 컨테이너를 만들지 않아 sticky를 지키면서 자식을 카드 모양대로 잘라낸다. 이 클리핑이 (a) stuck 헤더의 둥근 모서리로 보스 행이 비치는 문제와 (b) 헤더가 카드 끝에서 릴리스될 때 하단 모서리가 뾰족해지는 문제를 **상태별 라운딩 분기 없이** 동시에 해결한다 — 단 **헤더 자신은 사각이어야 한다**(위 sticky 항목). 클리핑은 **패딩 박스**(반경 13px = 14 − 테두리 1px)에서 일어나므로, 셸 안쪽에 붙는 장식은 그 곡선을 기준으로 맞춘다 — 골드 링은 펼침 상태에만 반경 13px(아래 "고가 드롭 강조"). 셸 **바깥**(카드 `isolate` 직속)의 배지·경계 페이드는 클리핑 대상이 아니다.
 - **헤더**: 아바타 `h-8 w-8 rounded-full bg-surface-2 ... text-xs font-bold text-text` + 이름 `flex-1 text-sm font-semibold text-text truncate` + 금액 `text-sm font-bold text-text tabular-nums`(우측 세로 정렬) + Chevron(`ChevronDown`/`ChevronUp`).
-- **주간 보스 처치 수 = 아바타 진행 링 + 숫자**([[ADR-054]] 결정 3·정정 1, #52) — **주간 탭 · 현재 기간에만**(`tab === 'weekly' && isCurrentPeriod`). `isCurrentPeriod` 는 화면이 이미 계산한 `isLatestPeriod` 를 prop으로 내린 값이다 — 아코디언이 다시 판정하지 않는다(같은 판정을 두 곳에서 하면 갈라진다). **진행률의 시각 표현은 가로폭을 쓰지 않는 아바타 테두리가 맡고, 숫자는 텍스트만 남긴다** — 아이콘+배경 칩(≈62px)이 캐릭터명을 가렸기 때문이다(정정 1).
+- **주간 보스 처치 수 = 아바타 진행 링**([[ADR-054]] 결정 3·정정 1·7, #52) — **주간 탭 · 현재 기간에만**(`tab === 'weekly' && isCurrentPeriod`). `isCurrentPeriod` 는 화면이 이미 계산한 `isLatestPeriod` 를 prop으로 내린 값이다 — 아코디언이 다시 판정하지 않는다(같은 판정을 두 곳에서 하면 갈라진다). 진행률은 **가로폭을 쓰지 않는 아바타 테두리**만으로 표현한다 — 카드의 `n/12` 숫자 표기는 **보류**다(정정 7). 아이콘+배경 칩(≈62px) → 텍스트(≈30px)로 줄여도 헤더 가로폭을 캐릭터명과 다투는 문제가 남아, 만족스러운 배치를 찾을 때까지 뺐다. 되살릴 때 파생 함수(`countGroupClearedWeeklyBosses`)와 링은 그대로 쓸 수 있다.
 ```
 아바타 슬롯: relative flex h-10 w-10 shrink-0 items-center justify-center  (40px — 초상화보다 크다)
   └ 슬롯이 8px 커진 만큼 헤더 상하 패딩을 p-4 → py-3으로 줄여 헤더 높이를 64px로 되돌린다(ADR-054 정정 6)
@@ -55,8 +55,9 @@
         캡이 시작점 뒤로 튀어나온 만큼 밀어 칸을 원래 자리에 앉히는 보정이다(보이는 호 7.55 · 갭 2.4로 butt와 동일)
   채운 칸 stroke-primary / 빈 칸 stroke-border, svg에 -rotate-90(12시부터 시계방향)
   링은 초상화 span의 형제로 두고 슬롯에 absolute — 초상화 span은 overflow-hidden이라 안에 넣으면 stroke 바깥 절반이 잘린다
-숫자: flex-none text-xs font-semibold tabular-nums text-text-muted "8/12" (배경·아이콘 없음, 금액 왼쪽)
-a11y: 숫자 span에 role="img" aria-label="주간 보스 처치 8 / 12", 링은 aria-hidden(중복 낭독 방지)
+숫자(n/12): 보류 — 카드에 렌더하지 않는다(정정 7). 회귀 가드 테스트 있음
+a11y: 링 자체가 role="img" aria-label="주간 보스 처치 8 / 12" — 링이 유일한 표현이라 여기에 레이블이 없으면
+      스크린리더 사용자에게는 진행률이 아예 존재하지 않게 된다(숫자를 되살리면 중복 낭독을 재검토할 것)
 ```
 - **펼침 헤더는 sticky** — [[ADR-047]]: 펼쳤을 때만 `sticky z-[5] bg-surface` + `top` = **페이지 sticky 헤더의 실측 높이**(`ResizeObserver`, 헤더 높이가 탭·경고 문구에 따라 가변이라 상수 불가). `bg-surface`는 아래로 지나가는 보스 행을 가리기 위해 필수다.
   - **헤더에 `rounded-t-*`를 주지 말 것**([[ADR-049]]) — stuck 상태에서 모서리 안쪽이 투명이라 **그 아래를 지나가는 보스 행이 비친다**. 상단 라운딩은 셸의 `overflow: clip`이 담당한다: 클리핑 곡선은 카드 자신의 모서리에만 있어서 카드 한가운데 멈춘 헤더의 노치는 못 덮지만, 헤더가 **사각**이면 stuck 중엔 불투명하고 정지 위치(= 카드 최상단 = 곡선과 일치)에서는 클리핑이 라운딩을 만들어준다. 라운딩의 책임은 헤더가 아니라 카드에 있다.

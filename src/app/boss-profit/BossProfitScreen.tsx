@@ -80,10 +80,13 @@ function AvatarClearRing(props: { cleared: number; total: number }): React.JSX.E
 
   return (
     // -rotate-90: SVG 각도 0은 3시 방향이라 12시부터 시계방향으로 차게 돌린다.
+    // 링이 진행률의 유일한 표현이므로(정정 7 — n/12 텍스트 보류) 레이블은 링이 갖는다. 링까지
+    // aria-hidden이면 스크린리더 사용자에게는 진행률이 아예 존재하지 않게 된다.
     <svg
       viewBox={`0 0 ${AVATAR_SLOT_SIZE} ${AVATAR_SLOT_SIZE}`}
       className="pointer-events-none absolute inset-0 h-full w-full -rotate-90"
-      aria-hidden="true"
+      role="img"
+      aria-label={`주간 보스 처치 ${props.cleared} / ${props.total}`}
     >
       {Array.from({ length: props.total }, (_, index) => (
         <circle
@@ -770,12 +773,12 @@ function CharacterAccordion(props: {
   // 펼쳤을 때는 고가 아이템을 획득한 보스 행(valuable-drop-row, 배경 효과)에도 강조가 들어간다.
   const valuableDrops = collectGroupValuableDrops(group, props.dropsByRowKey)
   const hasValuable = valuableDrops.length > 0
-  // 주간 보스 처치 수 배지는 주간 탭 · 현재 기간에만 보여준다([[ADR-054]] 결정 4) — 월간 탭 rows에는
+  // 주간 보스 처치 진행 링은 주간 탭 · 현재 기간에만 보여준다([[ADR-054]] 결정 4) — 월간 탭 rows에는
   // cycle === 'monthly' 행만 담겨 주간 처치 수를 파생할 수 없고, 과거 기간 rows는 가격 미확정
   // 보스(벨로나)가 애초에 DB에 기록되지 않아 실제보다 적게 나온다. isCurrentPeriod는 화면이 이미
   // isLatestPeriod로 계산한 값을 그대로 받는다(같은 판정을 두 곳에서 하면 갈라진다).
-  const showClearCountBadge = props.tab === 'weekly' && props.isCurrentPeriod
-  const clearedWeeklyBossCount = showClearCountBadge ? countGroupClearedWeeklyBosses(group) : 0
+  const showClearProgress = props.tab === 'weekly' && props.isCurrentPeriod
+  const clearedWeeklyBossCount = showClearProgress ? countGroupClearedWeeklyBosses(group) : 0
   const shellClass = [
     // overflow-hidden은 여전히 금지(ADR-047) — 스크롤포트를 만들어 헤더 sticky를 무력화한다. 대신
     // overflow-clip을 쓴다(ADR-049): 스크롤 컨테이너를 만들지 않아 sticky와 공존하면서 자식을 카드
@@ -877,22 +880,13 @@ function CharacterAccordion(props: {
             characterName={group.characterName}
             imageUrl={group.imageUrl}
             clearProgress={
-              showClearCountBadge ? { cleared: clearedWeeklyBossCount, total: WEEKLY_BOSS_CLEAR_LIMIT } : null
+              showClearProgress ? { cleared: clearedWeeklyBossCount, total: WEEKLY_BOSS_CLEAR_LIMIT } : null
             }
           />
           <span className="flex-1 truncate text-left text-sm font-semibold text-text">{group.characterName}</span>
-          {showClearCountBadge && (
-            // 진행률의 시각 표현은 아바타 링이 맡으므로 여기는 정확한 수치만 담당한다([[ADR-054]] 정정 1)
-            // — 아이콘+배경 칩(약 62px)이 캐릭터명을 가린다는 사용자 지적에 따라 배경 없는 텍스트(약 30px)로
-            // 줄였다. 금액 왼쪽에 두는 위치는 그대로다. 링만으로는 "8"인지 "9"인지 셀 수 없어 숫자는 남긴다.
-            <span
-              role="img"
-              aria-label={`주간 보스 처치 ${clearedWeeklyBossCount} / ${WEEKLY_BOSS_CLEAR_LIMIT}`}
-              className="flex-none text-xs font-semibold tabular-nums text-text-muted"
-            >
-              {`${clearedWeeklyBossCount}/${WEEKLY_BOSS_CLEAR_LIMIT}`}
-            </span>
-          )}
+          {/* 숫자 표기(n/12)는 보류 상태다([[ADR-054]] 정정 7) — 헤더 가로폭을 두고 캐릭터명과 경합하는데
+              둘 다 만족하는 배치를 아직 찾지 못했다. 진행률은 아바타 링이 표현하고, 정확한 수치가 필요해지면
+              그때 다시 설계한다. 링 자체는 그대로 두므로 되살릴 때 파생 함수는 그대로 쓸 수 있다. */}
           <span className="text-sm font-bold text-text tabular-nums">{totalMeso.toLocaleString()} 메소</span>
           {isExpanded ? (
             <ChevronUp className="h-4 w-4 text-text-muted" strokeWidth={2} aria-hidden="true" />

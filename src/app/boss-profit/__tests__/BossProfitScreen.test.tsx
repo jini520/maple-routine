@@ -1144,14 +1144,15 @@ describe('BossProfitScreen', () => {
     expect(screen.getByRole('button', { name: /내옆에최성일.*3,000,000 메소/ })).toBeInTheDocument()
   })
 
-  // 주간 보스 처치 수 배지(ADR-054, #52) — 처치 수는 store 필드가 아니라 rows에서 파생하므로,
-  // 모든 케이스를 rows 구성만으로 재현한다.
-  describe('주간 보스 처치 수 배지(ADR-054, #52)', () => {
-    function clearBadge(): HTMLElement | null {
+  // 주간 보스 처치 진행 링(ADR-054 #52, 정정 7로 n/12 텍스트는 보류) — 처치 수는 store 필드가
+  // 아니라 rows에서 파생하므로 모든 케이스를 rows 구성만으로 재현한다. 링이 진행률의 유일한
+  // 표현이라 수치는 링의 접근성 레이블로 확인한다.
+  describe('주간 보스 처치 진행 링(ADR-054, #52)', () => {
+    function clearProgress(): HTMLElement | null {
       return screen.queryByRole('img', { name: /주간 보스 처치/ })
     }
 
-    it('주간 탭·현재 기간에서 완료한 주간 보스 수를 캐릭터 카드 헤더에 n/12로 보여준다', () => {
+    it('주간 탭·현재 기간에서 완료한 주간 보스 수를 아바타 링으로 보여준다', () => {
       mockStore({
         status: 'loaded',
         tab: 'weekly',
@@ -1166,8 +1167,9 @@ describe('BossProfitScreen', () => {
 
       renderBossProfitScreen()
 
-      expect(clearBadge()).toBeInTheDocument()
-      expect(screen.getByText(`3/${WEEKLY_BOSS_CLEAR_LIMIT}`)).toBeInTheDocument()
+      expect(clearProgress()).toHaveAccessibleName(`주간 보스 처치 3 / ${WEEKLY_BOSS_CLEAR_LIMIT}`)
+      // 정정 7: 카드에는 n/12 텍스트를 두지 않는다(캐릭터명과 가로폭을 다투는 배치를 아직 못 찾음).
+      expect(screen.queryByText(`3/${WEEKLY_BOSS_CLEAR_LIMIT}`)).not.toBeInTheDocument()
     })
 
     it('시즌 보스(메이린)는 주간 12마리 제한 예외라 처치 수에 포함하지 않는다', () => {
@@ -1184,7 +1186,7 @@ describe('BossProfitScreen', () => {
 
       renderBossProfitScreen()
 
-      expect(screen.getByText(`1/${WEEKLY_BOSS_CLEAR_LIMIT}`)).toBeInTheDocument()
+      expect(clearProgress()).toHaveAccessibleName(`주간 보스 처치 1 / ${WEEKLY_BOSS_CLEAR_LIMIT}`)
     })
 
     it('미완료 placeholder 행(isComplete: false)은 처치 수에 포함하지 않는다', () => {
@@ -1201,7 +1203,7 @@ describe('BossProfitScreen', () => {
 
       renderBossProfitScreen()
 
-      expect(screen.getByText(`1/${WEEKLY_BOSS_CLEAR_LIMIT}`)).toBeInTheDocument()
+      expect(clearProgress()).toHaveAccessibleName(`주간 보스 처치 1 / ${WEEKLY_BOSS_CLEAR_LIMIT}`)
     })
 
     it('같은 보스를 여러 난이도로 완료해도 1로만 센다(보스명 distinct)', () => {
@@ -1218,10 +1220,10 @@ describe('BossProfitScreen', () => {
 
       renderBossProfitScreen()
 
-      expect(screen.getByText(`1/${WEEKLY_BOSS_CLEAR_LIMIT}`)).toBeInTheDocument()
+      expect(clearProgress()).toHaveAccessibleName(`주간 보스 처치 1 / ${WEEKLY_BOSS_CLEAR_LIMIT}`)
     })
 
-    it('월간 탭에서는 배지를 렌더하지 않는다(rows에 monthly 행만 있어 주간 처치 수를 파생할 수 없다)', () => {
+    it('월간 탭에서는 링을 렌더하지 않는다(rows에 monthly 행만 있어 주간 처치 수를 파생할 수 없다)', () => {
       mockStore({
         status: 'loaded',
         tab: 'monthly',
@@ -1239,10 +1241,10 @@ describe('BossProfitScreen', () => {
 
       renderBossProfitScreen()
 
-      expect(clearBadge()).not.toBeInTheDocument()
+      expect(clearProgress()).not.toBeInTheDocument()
     })
 
-    it('과거 기간에서는 배지를 렌더하지 않는다(가격 미확정 보스가 DB에 기록되지 않아 과소집계)', () => {
+    it('과거 기간에서는 링을 렌더하지 않는다(가격 미확정 보스가 DB에 기록되지 않아 과소집계)', () => {
       mockStore({
         status: 'loaded',
         tab: 'weekly',
@@ -1253,7 +1255,7 @@ describe('BossProfitScreen', () => {
 
       renderBossProfitScreen()
 
-      expect(clearBadge()).not.toBeInTheDocument()
+      expect(clearProgress()).not.toBeInTheDocument()
     })
 
     it('분모는 weekly-bosses.json의 WEEKLY_BOSS_CLEAR_LIMIT을 따른다(리터럴 12 금지)', () => {
@@ -1268,15 +1270,30 @@ describe('BossProfitScreen', () => {
       renderBossProfitScreen()
 
       // queryBy가 아니라 getBy — 없으면 여기서 바로 실패시키고 타입도 non-null로 좁힌다.
-      const badge = screen.getByRole('img', { name: /주간 보스 처치/ })
-      expect(badge).toHaveAccessibleName(`주간 보스 처치 1 / ${WEEKLY_BOSS_CLEAR_LIMIT}`)
-      expect(badge).toHaveTextContent(`1/${WEEKLY_BOSS_CLEAR_LIMIT}`)
-      // ADR-054 정정 1: 진행률의 시각 표현은 아바타 링이 맡고 이 수치는 텍스트만 남는다 —
-      // 아이콘+배경 칩이 캐릭터명을 가린다는 사용자 지적에 따른 축소다. 배경 칩으로 되돌리면
-      // 헤더 가로 공간을 다시 두 배로 먹으므로 회귀 가드를 둔다.
-      expect(badge).toHaveClass('text-xs')
-      expect(badge.className).not.toContain('bg-primary')
-      expect(badge.querySelector('img')).toBeNull()
+      const ring = screen.getByRole('img', { name: /주간 보스 처치/ })
+      expect(ring).toHaveAccessibleName(`주간 보스 처치 1 / ${WEEKLY_BOSS_CLEAR_LIMIT}`)
+      // 칸 수도 상수를 따라야 한다 — 링과 레이블이 서로 다른 분모를 쓰면 안 된다.
+      expect(ring.querySelectorAll('circle')).toHaveLength(WEEKLY_BOSS_CLEAR_LIMIT)
+    })
+
+    it('카드에는 n/12 텍스트를 두지 않는다 — 링이 유일한 표현이다(ADR-054 정정 7, 보류)', () => {
+      mockStore({
+        status: 'loaded',
+        tab: 'weekly',
+        periodKey: CURRENT_WEEKLY_PERIOD_KEY,
+        trackedOcids: ['ocid-1'],
+        rows: [row({ boss: '자쿰', periodKey: CURRENT_WEEKLY_PERIOD_KEY })],
+      })
+
+      renderBossProfitScreen()
+
+      // 헤더 가로폭을 두고 캐릭터명과 경합하지 않는 배치를 찾을 때까지 수치 표기는 보류한다.
+      // 되살릴 때는 이 테스트를 지우고 배치 계약을 새로 적을 것.
+      // 제거 전 배지가 렌더하던 문자열 그대로 — 정규식으로 쓰면 이스케이프가 어긋나도 조용히
+      // 통과해(무엇과도 매칭 안 됨) 삭제 검증이 공허해진다.
+      expect(screen.queryByText(`1/${WEEKLY_BOSS_CLEAR_LIMIT}`)).not.toBeInTheDocument()
+      // 진행률 자체는 남아 있어야 한다(스크린리더는 링의 레이블로 읽는다).
+      expect(clearProgress()).toBeInTheDocument()
     })
 
     it('아바타 테두리가 한도(12)만큼 쪼개진 진행 링이고 처치한 만큼만 채워진다(ADR-054 정정 1)', () => {
