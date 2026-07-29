@@ -658,7 +658,7 @@ function CrystalSummaryChip(props: { tab: BossCycle; groups: CharacterGroup[] })
 
   // h-5(20px) — 라벨행이 h-6(24px)으로 고정돼 있으므로 그 안에 들어가기만 하면 된다. leading-none과
   // 함께 두어야 글꼴 line-height가 칩 높이를 밀어 올리지 않는다.
-  const chipClassName = 'ml-2 flex h-5 flex-none items-center gap-1 rounded-full bg-primary/12 px-2'
+  const chipClassName = 'ml-2 flex h-5 flex-none items-center gap-1 rounded-full bg-primary/12 px-1.5'
 
   // 단일 월드·월간 탭은 펼칠 것이 없어 버튼으로 두지 않는다. 수치만으로는 무엇의 비율인지 읽히지
   // 않으므로 칩 전체에 레이블을 주고 아이콘은 장식(alt="")으로 남긴다(아바타 링과 동일 규약).

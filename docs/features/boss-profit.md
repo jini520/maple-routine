@@ -95,7 +95,7 @@ a11y: 숫자 span에 role="img" aria-label="주간 보스 처치 8 / 12", 링은
 
 **결정석 판매 현황 칩**([[ADR-054]] 결정 9·정정 2·3, #53) — **라벨행의 "{기간} 총 수익" 텍스트 옆**에 붙는다(`CrystalSummaryChip`). 새 줄로 두면 sticky 헤더가 그만큼 높아져 목록을 잠식한다(정정 2 — 헤더를 줄여둔 [[ADR-049]] 작업을 되돌리는 셈이었다). **라벨행 높이는 `h-6`(24px)으로 명시 고정하고**(정정 4) 칩은 그 안에 들어가는 `h-5` 다. 전에는 라벨(`text-xs` = 16px)이 우연히 높이를 정해, 그보다 큰 요소를 흐름에 넣는 순간 줄이 커졌다 — 그게 고가 드롭 뱃지(24px)를 `absolute` 로 빼낸 이유다([[ADR-049]] 결정 2). 높이를 못 박으면 그 의존이 끊긴다. 그 뱃지가 여전히 우측 끝을 `absolute` 로 쓰므로 칩은 **좌측(라벨 옆)**에 붙는다. **두 탭 모두 현재 기간에만** 렌더하고(호출부 `isCurrentPeriod &&`), 주간 탭은 월드당 한도 90 대비(복수 월드면 `90 × 월드 수`), 월간 탭은 **분모 없이 개수만**(90은 주간 전용 한도라 월간 보스 결정석은 포함되지 않는다).
 ```
-칩: ml-2 flex h-5 flex-none items-center gap-1 rounded-full bg-primary/12 px-2
+칩: ml-2 flex h-5 flex-none items-center gap-1 rounded-full bg-primary/12 px-1.5
       └ 라벨행이 h-6(24px) 고정이므로 그 안에 들어가기만 하면 된다. py-*로 높이를 만들지 말 것 —
         글꼴 line-height가 실려 칩이 24px를 넘고, 그러면 h-6 고정이 무의미해진다(leading-none과 함께 쓴다)
   아이콘 img h-4 w-4 flex-none object-contain(alt="")
