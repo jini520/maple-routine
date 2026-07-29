@@ -3,13 +3,13 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { CacheDataSection } from '../CacheDataSection'
-import { clearCacheData, getCacheDataSize } from '../../../storage/cache-data'
+import { clearCacheData, getCacheDataSizes } from '../../../storage/cache-data'
 import { closeBossProfitDb } from '../../../storage/sqlite/db'
 import { showSplashScreen } from '../../../native/splash-screen'
 
 vi.mock('../../../storage/cache-data', () => ({
   clearCacheData: vi.fn(),
-  getCacheDataSize: vi.fn(async () => 0),
+  getCacheDataSizes: vi.fn(async () => ({ general: 0, bossRecords: 0 })),
 }))
 
 vi.mock('../../../storage/sqlite/db', () => ({
@@ -21,7 +21,7 @@ vi.mock('../../../native/splash-screen', () => ({
 }))
 
 const mockedClear = vi.mocked(clearCacheData)
-const mockedGetSize = vi.mocked(getCacheDataSize)
+const mockedGetSizes = vi.mocked(getCacheDataSizes)
 
 afterEach(() => {
   cleanup()
@@ -30,17 +30,48 @@ afterEach(() => {
   document.body.style.overflow = ''
 })
 
+// 삭제 버튼은 선택 용량을 함께 표기하므로("삭제 (1.5KB)") 앞부분으로 잡는다 — 행 버튼의
+// 접근성 이름은 "캐시 데이터 삭제"라 ^ 앵커에 걸리지 않는다.
 function openAndConfirm(): void {
   fireEvent.click(screen.getByRole('button', { name: /캐시 데이터 삭제/ }))
-  fireEvent.click(screen.getByRole('button', { name: '삭제' }))
+  fireEvent.click(screen.getByRole('button', { name: /^삭제/ }))
 }
 
 describe('CacheDataSection', () => {
-  it('마운트 시 조회한 용량을 사람이 읽을 수 있는 단위로 보여준다', async () => {
-    mockedGetSize.mockResolvedValue(1536)
+  // 행에 쓰는 총합은 그룹별 용량의 합으로 파생한다(ADR-058 결정 8).
+  it('마운트 시 조회한 그룹별 용량의 합을 사람이 읽을 수 있는 단위로 보여준다', async () => {
+    mockedGetSizes.mockResolvedValue({ general: 1024, bossRecords: 512 })
     render(<CacheDataSection reload={vi.fn()} />)
 
     expect(await screen.findByText('1.5KB')).toBeInTheDocument()
+  })
+
+  it('모달에서 고른 그룹을 clearCacheData에 그대로 넘긴다', async () => {
+    mockedClear.mockResolvedValue(undefined)
+    const reload = vi.fn()
+    render(<CacheDataSection reload={reload} />)
+
+    fireEvent.click(screen.getByRole('button', { name: /캐시 데이터 삭제/ }))
+    fireEvent.click(screen.getByRole('checkbox', { name: /보스 수익·드롭 기록/ }))
+    fireEvent.click(screen.getByRole('button', { name: /^삭제/ }))
+
+    await waitFor(() => expect(reload).toHaveBeenCalled())
+    expect(mockedClear).toHaveBeenCalledWith({ general: true, bossRecords: false })
+  })
+
+  // ADR-058 결정 7: 어떤 그룹을 골라도 리로드 흐름(ADR-050)은 동일하다 — 두 그룹 모두 화면
+  // 스토어가 메모리에 들고 있는 상태를 무효화하므로 선택적 재수화 경로를 새로 만들지 않는다.
+  it('일부 그룹만 삭제해도 리로드한다', async () => {
+    mockedClear.mockResolvedValue(undefined)
+    const reload = vi.fn()
+    render(<CacheDataSection reload={reload} />)
+
+    fireEvent.click(screen.getByRole('button', { name: /캐시 데이터 삭제/ }))
+    fireEvent.click(screen.getByRole('checkbox', { name: /일반 데이터/ }))
+    fireEvent.click(screen.getByRole('button', { name: /^삭제/ }))
+
+    await waitFor(() => expect(reload).toHaveBeenCalled())
+    expect(mockedClear).toHaveBeenCalledWith({ general: false, bossRecords: true })
   })
 
   // 오버레이가 호출부(SettingsScreen의 space-y-* 컨테이너) 안에서 렌더되면 margin-block-end 때문에

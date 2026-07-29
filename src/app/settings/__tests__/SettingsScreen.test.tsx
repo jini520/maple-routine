@@ -28,7 +28,7 @@ vi.mock('../../../features/tracking-mode/store', () => ({
 // CacheDataSection이 마운트 시 실제 Preferences/SQLite를 호출하지 않도록 막는다.
 vi.mock('../../../storage/cache-data', () => ({
   clearCacheData: vi.fn(),
-  getCacheDataSize: vi.fn(async () => 0),
+  getCacheDataSizes: vi.fn(async () => ({ general: 0, bossRecords: 0 })),
 }))
 
 const mockedUseSettingsStore = vi.mocked(useSettingsStore)

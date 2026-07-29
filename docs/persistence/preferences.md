@@ -24,10 +24,9 @@ flowchart TD
     Sync --> charBasic["characterBasicCache:{ocid}"]
     Sync --> charBasicIdx["characterBasicCache:index"]
 
-    Track --> trackedC["trackedCharacters:content"]
-    Track --> trackedB["trackedCharacters:boss"]
-    Track --> lastC["lastSelectedCharacter:content"]
-    Track --> lastB["lastSelectedCharacter:boss"]
+    Track --> tracked["trackedCharacters"]
+    Track --> last["lastSelectedCharacter"]
+    Track --> manual["manualTrackedContent:{ocid}"]
 
     Ledger --> world["worldSharedProgress:{world}"]
     Ledger --> account["accountSharedProgress:{accountId}"]
@@ -45,16 +44,15 @@ flowchart TD
 | `schedulerCache:{ocid}` | `{ state: SchedulerCharacterState, syncedAt: string }` (JSON) | `storage/scheduler-cache.ts` | 삭제 | 캐릭터별 마지막 동기화 스냅샷(일간/주간/보스 콘텐츠) |
 | `characterBasicCache:{ocid}` | `{ profile: CharacterBasicProfile, cachedAt: string }` (JSON) | `storage/character-basic-cache.ts` | 삭제 | 캐릭터 이미지·레벨·`access_flag` 캐시 |
 | `characterBasicCache:index` | `string[]` (ocid 목록, JSON) | `storage/character-basic-cache.ts` | 삭제 | "지금까지 캐싱된 적 있는 캐릭터가 누구인지" 역인덱스([[ADR-017]] 결정 6). 동시 쓰기 유실 방지를 위해 read-modify-write를 프로미스 체인으로 직렬화 |
-| `trackedCharacters:content` | `string[]` (ocid 목록, JSON) | `storage/character-selection.ts` | 삭제 | 컨텐츠 스케줄러 "캐릭터 관리"에서 추적 선택한 캐릭터 |
-| `trackedCharacters:boss` | `string[]` (ocid 목록, JSON) | `storage/character-selection.ts` | 삭제 | 보스 스케줄러/보스 수익 화면이 공유하는 추적 목록 |
-| `lastSelectedCharacter:content` | `string` (ocid, 평문) | `storage/character-selection.ts` | 삭제 | 컨텐츠 스케줄러 드롭다운의 마지막 선택 캐릭터 |
-| `lastSelectedCharacter:boss` | `string` (ocid, 평문) | `storage/character-selection.ts` | 삭제 | 보스 스케줄러 드롭다운의 마지막 선택 캐릭터 |
+| `trackedCharacters` | `string[]` (ocid 목록, JSON) | `storage/character-selection.ts` | 삭제 | "캐릭터 관리"에서 추적 선택한 캐릭터. **앱 전역 단일 목록**([[ADR-042]]) — 컨텐츠/보스 화면이 같은 목록을 본다. `null`(미설정)과 `[]`(전부 해제)의 의미가 다름([[ADR-012]]) |
+| `lastSelectedCharacter` | `string` (ocid, 평문) | `storage/character-selection.ts` | 삭제 | 드롭다운의 마지막 선택 캐릭터. 이것도 화면 구분 없는 단일 키([[ADR-042]]) |
+| `manualTrackedContent:{ocid}` | `ManualTrackedItem[]` (JSON) | `storage/manual-tracked-content.ts` | 삭제 | 수동 모드에서 그 캐릭터가 추적할 항목의 **멤버십 + 사용자 입력 `maxCount`만**([[ADR-035]] 결정 6). 진행값·체크 상태는 여기 없고 `schedulerCache`가 단일 진실 공급원 |
 | `worldSharedProgress:{world}` | `Record<itemName, SharedProgressEntry>` (JSON) | `storage/shared-progress-cache.ts` | 삭제 | 월드 단위로 완료가 공유되는 콘텐츠(예: 몬스터파크) 진행 원장([[ADR-030]]) |
 | `accountSharedProgress:{accountId}` | `Record<itemName, SharedProgressEntry>` (JSON) | `storage/shared-progress-cache.ts` | 삭제 | 계정 단위로 공유되는 콘텐츠(예: 에픽 던전) 진행 원장([[ADR-030]]) |
 
 > **새 키를 추가할 때 — 기본값은 "지워진다"다.** 캐시 삭제는 Preferences를 반전 규칙(`storage/cache-data.ts`의 `KEEP_KEYS` 제외 전부)으로 지우므로, 아무 조치도 하지 않으면 **새 키는 자동으로 삭제 대상**이 된다. 재조회로 복구할 수 없는 값 — 특히 인앱 결제/구매(IAP) 상태처럼 지워지면 사용자가 실제 손해를 보는 키 — 은 만들 때 반드시 `KEEP_KEYS`에 함께 넣어라([[ADR-052]] 결정 1이 `trackingMode`·`dropEffect`에 적용한 것과 같은 기준: "재조회로 복구되는 캐시인가, 사용자가 명시적으로 만든 값인가").
 
-> `trackedCharacters:daily` / `trackedCharacters:weekly`는 화면 개편([[ADR-013]]) 이전의 레거시 키다. `getTrackedCharacterOcids`가 호출될 때마다 `migrateLegacyTrackedCharacters()`가 먼저 실행되어, `trackedCharacters:content`가 아직 없으면 레거시 값을 1회 이관하고 원본을 지운다 — 이관이 끝난 기기에서는 다시 나타나지 않는 no-op이다.
+> **레거시 키 4종** — `trackedCharacters:content` / `:boss`([[ADR-013]] 시대) 와 `trackedCharacters:daily` / `:weekly`([[ADR-013]] 이전) 는 전부 [[ADR-042]] 통합 이후의 레거시다(`lastSelectedCharacter:content` / `:boss` 도 마찬가지). `getTrackedCharacterOcids`가 호출될 때마다 `character-selection.ts`의 통합 마이그레이션이 먼저 실행되어, `trackedCharacters`가 아직 없으면 **네 레거시 목록의 중복 제거된 합집합**을 1회 이관하고 원본을 지운다 — 이관이 끝난 기기에서는 다시 나타나지 않는 no-op이다. daily/weekly까지 흡수하는 이유는 통합 후 `:content` 키를 더 쓰지 않아 옛 이관 체인이 끊기기 때문이다.
 
 ## 캐릭터별(ocid)로 저장되는 데이터
 
@@ -216,13 +214,13 @@ flowchart TB
 | 시점 | 대상 캐릭터 | 쓰는 것 |
 |---|---|---|
 | 온보딩 완료 직전 예열([[ADR-016]], `features/onboarding/prefetch.ts`) | **계정의 전체 캐릭터** (추적 여부 무관) | `characterBasicCache:{ocid}` 전원. `schedulerCache:{ocid}`는 `accessFlag: true`인 캐릭터만. **`worldSharedProgress`/`accountSharedProgress`는 이 시점엔 쓰지 않는다** — 아래 참고 |
-| 컨텐츠 스케줄러 새로고침 | `trackedCharacters:content`에 속한 캐릭터만 | 해당 캐릭터들의 `schedulerCache:{ocid}` + 그 캐릭터들의 월드/계정 원장 |
-| 보스 스케줄러/보스 수익 새로고침 | `trackedCharacters:boss`에 속한 캐릭터만 | 동일 |
+| 컨텐츠 스케줄러 새로고침 | `trackedCharacters`에 속한 캐릭터만 | 해당 캐릭터들의 `schedulerCache:{ocid}` + 그 캐릭터들의 월드/계정 원장 |
+| 보스 스케줄러/보스 수익 새로고침 | 동일(같은 단일 목록) | 동일 |
 
-`trackedCharacters:content`와 `trackedCharacters:boss`는 **화면마다 완전히 독립적으로 선택**한다(같은 캐릭터를 컨텐츠에서는 추적하고 보스에서는 추적 안 할 수 있음). 그런데 `schedulerCache:{ocid}`는 화면 구분 없이 **캐릭터 하나당 daily/weekly/boss 전체를 한 덩어리로** 저장하므로, 컨텐츠 스케줄러만 추적 중인 캐릭터라도 컨텐츠 화면이 새로고침될 때마다 그 캐릭터의 `bossContents`까지 같이 갱신된다 — 보스 화면이 그 캐릭터를 추적하지 않아 직접 동기화를 트리거하지 않아도, 컨텐츠 쪽 동기화의 부수 효과로 캐시가 최신 상태를 유지하는 셈이다(단, 화면에 노출할지는 각 화면의 추적 목록이 별도로 결정).
+추적 목록은 [[ADR-042]]로 **앱 전역 단일 키**가 되어, 어느 화면에서 새로고침하든 대상 캐릭터 집합이 같다. `schedulerCache:{ocid}`도 화면 구분 없이 **캐릭터 하나당 daily/weekly/boss 전체를 한 덩어리로** 저장하므로, 어느 화면에서 새로고침하든 그 캐릭터의 `bossContents`까지 함께 갱신된다.
 
 같은 이유로 **`worldSharedProgress`/`accountSharedProgress`는 "추적되어 실제로 동기화된" 캐릭터를 통해서만 갱신된다** — 온보딩 예열은 이 두 원장을 건드리지 않는다. 그래서 캐릭터를 추적 목록에 한 번도 넣지 않으면, 그 캐릭터의 개인 스냅샷(`schedulerCache`)은 예열로 채워져 있어도 걔 몫의 월드/계정 공유 항목은 다른 캐릭터가 대신 갱신해주지 않는 한 계속 비어 있을 수 있다.
 
 ### 엣지 케이스 — 계정을 바꾸면 이전 계정 데이터는 고아가 된다
 
-설정에서 "계정(메이플 ID) 변경"을 하면 `selectedAccountId`만 새 값으로 덮어써진다(`docs/ARCHITECTURE.md` "설정 화면" 절). 이전 계정 소속이던 캐릭터들의 `characterBasicCache:{ocid}`·`schedulerCache:{ocid}`, 이전 계정이 남긴 `trackedCharacters:*`의 옛 ocid들, `accountSharedProgress:{이전accountId}`는 **자동으로 정리되지 않고 그대로 남는다** — 참조 무결성을 지키지 않고 지우는 대신, 명시적인 "캐시 데이터 삭제"([lifecycle.md](./lifecycle.md) 참고)로만 정리되는 쪽을 택한 설계다. 다시 이전 계정으로 돌아가면 이 고아 데이터가 그대로 유효한 캐시로 재사용된다는 것이 장점이다.
+설정에서 "계정(메이플 ID) 변경"을 하면 `selectedAccountId`만 새 값으로 덮어써진다(`docs/ARCHITECTURE.md` "설정 화면" 절). 이전 계정 소속이던 캐릭터들의 `characterBasicCache:{ocid}`·`schedulerCache:{ocid}`, 이전 계정이 남긴 `trackedCharacters`의 옛 ocid들, `accountSharedProgress:{이전accountId}`는 **자동으로 정리되지 않고 그대로 남는다** — 참조 무결성을 지키지 않고 지우는 대신, 명시적인 "캐시 데이터 삭제"([lifecycle.md](./lifecycle.md) 참고)로만 정리되는 쪽을 택한 설계다. 다시 이전 계정으로 돌아가면 이 고아 데이터가 그대로 유효한 캐시로 재사용된다는 것이 장점이다.
