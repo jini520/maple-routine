@@ -463,10 +463,10 @@ describe('ContentScreen', () => {
     renderContentScreen()
     await screen.findByRole('combobox')
 
-    expect(screen.getByText(/게임에서 스케줄러에 등록해주세요/)).toBeInTheDocument()
+    expect(screen.getByText('등록된 일간 컨텐츠가 없습니다')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: '주간' }))
-    expect(screen.queryByText(/게임에서 스케줄러에 등록해주세요/)).not.toBeInTheDocument()
+    expect(screen.queryByText('등록된 일간 컨텐츠가 없습니다')).not.toBeInTheDocument()
     expect(screen.getByText('악몽선경')).toBeInTheDocument()
   })
 
@@ -1049,7 +1049,29 @@ describe('ContentScreen', () => {
       renderContentScreen()
       await screen.findByRole('combobox')
 
-      fireEvent.click(screen.getByRole('button', { name: '컨텐츠 관리' }))
+      // 추적 항목이 0건이라 빈 상태 CTA(ADR-060)도 같은 라벨을 쓴다 — 첫 번째가 헤더 버튼이다.
+      fireEvent.click(screen.getAllByRole('button', { name: '컨텐츠 관리' })[0])
+
+      expect(await screen.findByText('관리 페이지 프로브')).toBeInTheDocument()
+    })
+
+    // ADR-060: 빈 상태 문구가 "컨텐츠 관리에서 골라주세요"라고 지시하면 실제로 그리로 데려가야 한다.
+    it('수동 모드: 빈 상태의 "컨텐츠 관리" CTA를 누르면 관리 페이지로 이동한다 (ADR-060)', async () => {
+      useTrackingModeStore.setState({ mode: 'manual' })
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        selectedOcid: 'ocid-1',
+        manualTrackedByOcid: { 'ocid-1': [] },
+        characters: [character({ ocid: 'ocid-1' })],
+      })
+
+      renderContentScreen()
+      await screen.findByRole('combobox')
+
+      const buttons = screen.getAllByRole('button', { name: '컨텐츠 관리' })
+      expect(buttons).toHaveLength(2) // 헤더 + 빈 상태 CTA
+      fireEvent.click(buttons[1])
 
       expect(await screen.findByText('관리 페이지 프로브')).toBeInTheDocument()
     })
@@ -1091,7 +1113,7 @@ describe('ContentScreen', () => {
       renderContentScreen()
       await screen.findByRole('combobox')
 
-      expect(screen.getByText('추적할 항목이 없습니다 — "컨텐츠 관리"에서 추가해주세요')).toBeInTheDocument()
+      expect(screen.getByText('추적할 일간 컨텐츠가 없습니다')).toBeInTheDocument()
     })
 
     it('자동 모드에서는 "컨텐츠 관리" 버튼이 렌더링되지 않는다', async () => {

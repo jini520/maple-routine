@@ -10,9 +10,9 @@ import type { BossPortraitCrop } from '../../lib/boss-icons'
 import { CharacterSelectDropdown } from '../../components/CharacterSelectDropdown/CharacterSelectDropdown'
 import { CharacterTrackingPicker } from '../../components/CharacterTrackingPicker/CharacterTrackingPicker'
 import type { DailyQuestRegionCrop } from '../../lib/daily-quest-backgrounds'
-import { MAPLE_LEAF_PATH } from '../../components/mapleLeafPath'
+import { EmptyState } from '../../components/EmptyState/EmptyState'
 import { ProgressModal } from '../../components/ProgressModal/ProgressModal'
-import { RefreshCw } from 'lucide-react'
+import { ListChecks, RefreshCw } from 'lucide-react'
 import { getCharacterPickerRoster } from '../../features/schedule-sync/schedule-sync'
 import { useNavigate } from 'react-router-dom'
 import { getDailyQuestRegionIconUrl } from '../../lib/daily-quest-icons'
@@ -822,6 +822,25 @@ export function ContentScreen(): React.JSX.Element {
     </button>
   )
 
+  // ADR-060: 빈 상태 문구는 탭(일간/주간)과 모드(수동/자동)별로 나눈다. 수동 모드만 CTA를 준다 —
+  // 자동 모드가 지시하는 곳("게임에서 등록")은 앱 밖이라 데려다줄 수 없다.
+  function contentEmptyProps(tab: 'daily' | 'weekly'): React.ComponentProps<typeof EmptyState> {
+    const label = tab === 'daily' ? '일간' : '주간'
+    if (mode === 'manual') {
+      return {
+        icon: ListChecks,
+        title: `추적할 ${label} 컨텐츠가 없습니다`,
+        description: `컨텐츠 관리에서 ${tab === 'daily' ? '매일 챙길' : '주간'} 항목을 골라주세요`,
+        action: { label: '컨텐츠 관리', onClick: () => navigate('/content/manage') },
+      }
+    }
+    return {
+      icon: ListChecks,
+      title: `등록된 ${label} 컨텐츠가 없습니다`,
+      description: '게임 내 스케줄러에 등록하면 여기에 자동으로 표시됩니다',
+    }
+  }
+
   const trackingPicker = isPickerOpen && (
     <CharacterTrackingPicker
       entries={roster}
@@ -855,25 +874,14 @@ export function ContentScreen(): React.JSX.Element {
           {characterManageButton}
         </div>
 
-        <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
-          <div className="flex h-[84px] w-[84px] items-center justify-center rounded-full bg-primary/15">
-            <svg width="42" height="43" viewBox="0 0 127 130" className="fill-primary" aria-hidden="true">
-              <path d={MAPLE_LEAF_PATH} />
-            </svg>
-          </div>
-          <div className="space-y-1">
-            <p className="text-base font-semibold text-text">표시할 캐릭터가 없습니다</p>
-            <p className="max-w-[220px] text-sm text-text-muted">
-              캐릭터를 선택하면 일간·주간 컨텐츠를 확인할 수 있습니다
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={openPicker}
-            className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-bg hover:bg-primary-hover"
-          >
-            캐릭터 선택하기
-          </button>
+        <div className="flex flex-1 flex-col items-center justify-center">
+          <EmptyState
+            size="page"
+            icon="leaf"
+            title="표시할 캐릭터가 없습니다"
+            description="캐릭터를 선택하면 일간·주간 컨텐츠를 확인할 수 있습니다"
+            action={{ label: '캐릭터 선택하기', onClick: openPicker }}
+          />
         </div>
 
         {trackingModals}
@@ -996,11 +1004,7 @@ export function ContentScreen(): React.JSX.Element {
           {activeTab === 'daily' && (
             <>
               {displayDailyContents.length === 0 && (mode === 'manual' || !selected.isStale) && (
-                <div className="rounded-[14px] border border-dashed border-border p-4 text-sm text-text-muted">
-                  {mode === 'manual'
-                    ? '추적할 항목이 없습니다 — "컨텐츠 관리"에서 추가해주세요'
-                    : '표시할 항목이 없습니다 — 게임에서 스케줄러에 등록해주세요'}
-                </div>
+                <EmptyState {...contentEmptyProps('daily')} />
               )}
 
               {displayDailyContents.length > 0 && (
@@ -1016,11 +1020,7 @@ export function ContentScreen(): React.JSX.Element {
           {activeTab === 'weekly' && (
             <>
               {displayWeeklyContents.length === 0 && (mode === 'manual' || !selected.isStale) && (
-                <div className="rounded-[14px] border border-dashed border-border p-4 text-sm text-text-muted">
-                  {mode === 'manual'
-                    ? '추적할 항목이 없습니다 — "컨텐츠 관리"에서 추가해주세요'
-                    : '표시할 항목이 없습니다 — 게임에서 스케줄러에 등록해주세요'}
-                </div>
+                <EmptyState {...contentEmptyProps('weekly')} />
               )}
 
               {displayWeeklyContents.length > 0 && (

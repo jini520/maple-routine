@@ -641,10 +641,10 @@ describe('BossScreen', () => {
     renderBossScreen()
     await screen.findByRole('combobox')
 
-    expect(screen.getByText(/게임에서 스케줄러에 등록해주세요/)).toBeInTheDocument()
+    expect(screen.getByText('등록된 주간 보스가 없습니다')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: '월간' }))
-    expect(screen.queryByText(/게임에서 스케줄러에 등록해주세요/)).not.toBeInTheDocument()
+    expect(screen.queryByText('등록된 주간 보스가 없습니다')).not.toBeInTheDocument()
     expect(screen.getByText(/검은마법사/)).toBeInTheDocument()
   })
 
@@ -849,7 +849,7 @@ describe('BossScreen', () => {
       await screen.findByRole('combobox')
 
       // 등록된 보스 자체가 없는 경우
-      expect(screen.getByText(/게임에서 스케줄러에 등록해주세요/)).toBeInTheDocument()
+      expect(screen.getByText('등록된 주간 보스가 없습니다')).toBeInTheDocument()
       expect(screen.queryByText('이 조건에 해당하는 보스가 없습니다')).not.toBeInTheDocument()
 
       cleanup()
@@ -867,7 +867,27 @@ describe('BossScreen', () => {
       fireEvent.click(screen.getByRole('button', { name: '파티' }))
 
       expect(screen.getByText('이 조건에 해당하는 보스가 없습니다')).toBeInTheDocument()
-      expect(screen.queryByText(/게임에서 스케줄러에 등록해주세요/)).not.toBeInTheDocument()
+      expect(screen.queryByText('등록된 주간 보스가 없습니다')).not.toBeInTheDocument()
+    })
+
+    // ADR-060: 필터가 가린 상태라 CTA는 "관리 페이지"가 아니라 필터 초기화다.
+    it('필터 결과가 0개면 "필터 초기화" CTA가 그 탭의 필터를 전체로 되돌린다 (ADR-060)', async () => {
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        characters: [characterWithTwoBosses()],
+        partySizes: {},
+      })
+
+      renderBossScreen()
+      await screen.findByRole('combobox')
+      fireEvent.click(screen.getByRole('button', { name: '파티' }))
+      expect(screen.getByText('이 조건에 해당하는 보스가 없습니다')).toBeInTheDocument()
+
+      fireEvent.click(screen.getByRole('button', { name: '필터 초기화' }))
+
+      expect(screen.queryByText('이 조건에 해당하는 보스가 없습니다')).not.toBeInTheDocument()
+      expect(screen.getByRole('button', { name: '전체' })).toHaveClass('bg-primary/15')
     })
   })
 
@@ -954,7 +974,29 @@ describe('BossScreen', () => {
       renderBossScreen()
       await screen.findByRole('combobox')
 
-      expect(screen.getByText('추적할 보스가 없습니다 — "보스 관리"에서 추가해주세요')).toBeInTheDocument()
+      expect(screen.getByText('추적할 주간 보스가 없습니다')).toBeInTheDocument()
+    })
+
+    // ADR-060: 빈 상태 문구가 "보스 관리에서 골라주세요"라고 지시하면 실제로 그리로 데려가야 한다.
+    it('수동 모드: 빈 상태의 "보스 관리" CTA를 누르면 관리 페이지로 이동한다 (ADR-060)', async () => {
+      useTrackingModeStore.setState({ mode: 'manual' })
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        selectedOcid: 'ocid-1',
+        manualTrackedByOcid: { 'ocid-1': [] },
+        characters: [character({ ocid: 'ocid-1', weeklyBosses: [] })],
+      })
+
+      renderBossScreen()
+      await screen.findByRole('combobox')
+
+      // 헤더 버튼과 빈 상태 CTA가 같은 라벨을 쓴다 — 두 번째가 CTA다.
+      const buttons = screen.getAllByRole('button', { name: '보스 관리' })
+      expect(buttons).toHaveLength(2)
+      fireEvent.click(buttons[1])
+
+      expect(await screen.findByText('보스 관리 페이지 프로브')).toBeInTheDocument()
     })
   })
 })

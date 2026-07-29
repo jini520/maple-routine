@@ -145,7 +145,8 @@ a11y: 링 자체가 role="img" aria-label="{주간|월간} 보스 처치 8 / 12"
 라벨: 1줄 text-sm font-semibold text-text(상대/절대), 2줄 text-xs text-text-muted tabular-nums mt-0.5(정확 날짜, 항상)
 ```
 최신 기간에서 다음 버튼 `disabled`.
-- **기간 미보유 자동 재조회 스피너**: 빈 상태 박스 스타일 재사용 — `rounded-[14px] border border-dashed border-border p-6 flex flex-col items-center gap-3 text-center`, 스피너 `h-6 w-6 rounded-full border-[3px] border-border border-t-primary animate-spin motion-reduce:animate-none`, 안내 `text-xs text-text-muted`(예 "5월 2주차 기록을 불러오는 중..."). `border-t-primary` = 진행 중 의미. 미접속 기간 문구는 미정.
+- **빈 상태·조회 불가**([[ADR-060]]): 처치 기록 0건은 공용 `EmptyState`(inline, `Coins`, "아직 처치한 보스가 없습니다", **CTA 없음** — 앱 안에 할 일이 없다). 롤링 조회 윈도우 밖([[ADR-032]])은 빈 상태가 아니라 `UnavailableNotice`(정보 톤) — 기간 목록은 기본형, 캐릭터 카드 안은 `compact`. 레시피는 [design-system.md](../foundation/design-system.md).
+- **기간 미보유 자동 재조회 스피너**: 점선 박스(빈 상태가 [[ADR-060]]로 실선 배지형이 된 뒤에도 로딩만 점선 유지 — "아직 자리가 비어있다"는 신호) — `rounded-[14px] border border-dashed border-border p-6 flex flex-col items-center gap-3 text-center`, 스피너 `h-6 w-6 rounded-full border-[3px] border-border border-t-primary animate-spin motion-reduce:animate-none`, 안내 `text-xs text-text-muted`(예 "5월 2주차 기록을 불러오는 중..."). `border-t-primary` = 진행 중 의미. 미접속 기간 문구는 미정.
 - **월간 탭 — 주차별 합계 + 월간 보스**: 보스 나열 대신 그 달 `cycle: weekly` 를 주차(시작 목요일 속한 달 기준 N주차)로 묶어 합산 후 `cycle: monthly` 상세를 이어 붙임. 아코디언 본문 셸 안 두 서브섹션:
 ```
 서브섹션 라벨: px-4 pt-3 pb-1 text-[11px] font-bold tracking-wide text-text-muted bg-surface-2

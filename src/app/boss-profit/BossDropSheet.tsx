@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { ChevronLeft, FlaskConical, Pin, Sword, type LucideIcon } from 'lucide-react'
+import { ChevronLeft, FlaskConical, PackageOpen, Pin, Sword, type LucideIcon } from 'lucide-react'
 import { BottomSheet } from '../../components/BottomSheet/BottomSheet'
+import { EmptyState } from '../../components/EmptyState/EmptyState'
 import { DifficultyBadge } from '../../components/DifficultyBadge/DifficultyBadge'
 import { DropEffectOverlay } from '../../components/DropEffectOverlay/DropEffectOverlay'
 import { useDropEffectStore } from '../../features/drop-effect/store'
@@ -259,7 +260,13 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
           </div>
 
           {isEmpty ? (
-            <p className="px-4 pb-4 text-sm text-text-muted">이 보스의 드롭 데이터가 아직 없습니다.</p>
+            <div className="px-4 pb-4">
+              <EmptyState
+                icon={PackageOpen}
+                title="이 보스의 드롭 데이터가 아직 없습니다"
+                description="드롭 목록이 준비되면 여기에서 바로 입력할 수 있습니다"
+              />
+            </div>
           ) : (
             <>
               {DISPLAY_ORDER.filter((category) => byCategory.has(category)).map((category) => {

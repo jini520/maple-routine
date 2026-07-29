@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import {
   ChevronDown,
   ChevronLeft,
@@ -13,7 +13,8 @@ import {
 } from 'lucide-react'
 import { BossPortrait } from '../../components/BossPortrait/BossPortrait'
 import { DifficultyBadge } from '../../components/DifficultyBadge/DifficultyBadge'
-import { MAPLE_LEAF_PATH } from '../../components/mapleLeafPath'
+import { EmptyState } from '../../components/EmptyState/EmptyState'
+import { UnavailableNotice } from '../../components/EmptyState/UnavailableNotice'
 import weeklyBossesData from '../../data/weekly-bosses.json'
 import {
   dropRowKey,
@@ -451,7 +452,7 @@ function MonthlyAccordionBody(props: {
               ))}
             </ul>
           ) : (
-            <p className="px-4 py-3 text-sm text-text-muted">조회 불가</p>
+            <UnavailableNotice compact />
           )}
         </>
       )}
@@ -960,6 +961,8 @@ export function BossProfitScreen(): React.JSX.Element {
     dropsByRowKey,
   } = useBossProfitStore()
 
+  const navigate = useNavigate()
+
   useEffect(() => {
     loadTrackedOcids()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -995,24 +998,17 @@ export function BossProfitScreen(): React.JSX.Element {
       <div className="flex min-h-[calc(100dvh-var(--sa-top)-var(--sa-bottom)-4rem)] flex-col p-4">
         <h1 className="text-lg font-semibold text-text">보스 수익</h1>
 
-        <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
-          <div className="flex h-[84px] w-[84px] items-center justify-center rounded-full bg-primary/15">
-            <svg width="42" height="43" viewBox="0 0 127 130" className="fill-primary" aria-hidden="true">
-              <path d={MAPLE_LEAF_PATH} />
-            </svg>
-          </div>
-          <div className="space-y-1">
-            <p className="text-base font-semibold text-text">추적 중인 캐릭터가 없습니다</p>
-            <p className="max-w-[220px] text-sm text-text-muted">
-              보스 스케줄러에서 캐릭터를 선택하면 수익 현황을 확인할 수 있습니다
-            </p>
-          </div>
-          <Link
-            to="/boss?openPicker=1"
-            className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-bg hover:bg-primary-hover"
-          >
-            캐릭터 선택하러 가기
-          </Link>
+        <div className="flex flex-1 flex-col items-center justify-center">
+          <EmptyState
+            size="page"
+            icon="leaf"
+            title="추적 중인 캐릭터가 없습니다"
+            description="보스 스케줄러에서 캐릭터를 선택하면 수익 현황을 확인할 수 있습니다"
+            action={{
+              label: '캐릭터 선택하러 가기',
+              onClick: () => navigate('/boss?openPicker=1'),
+            }}
+          />
         </div>
       </div>
     )
@@ -1199,11 +1195,20 @@ export function BossProfitScreen(): React.JSX.Element {
           </div>
         )}
 
-        {!isPeriodLoading && status === 'loaded' && characterGroups.length === 0 && (
-          <div className="rounded-[14px] border border-dashed border-border p-4 text-sm text-text-muted">
-            {periodQueryable ? '아직 처치한 보스가 없습니다' : '조회 불가'}
-          </div>
-        )}
+        {/* ADR-060: "확정된 빈 상태"와 "조회 자체를 못 함"은 디자인을 공유하지 않는다 — 같은 모양이면
+            조회 불가가 "데이터가 없다"로 오해된다. 처치 0건은 CTA를 달지 않는다(앱 안에 할 일이 없다). */}
+        {!isPeriodLoading &&
+          status === 'loaded' &&
+          characterGroups.length === 0 &&
+          (periodQueryable ? (
+            <EmptyState
+              icon={Coins}
+              title="아직 처치한 보스가 없습니다"
+              description="보스를 처치하면 수익이 자동으로 집계됩니다"
+            />
+          ) : (
+            <UnavailableNotice />
+          ))}
 
         {!isPeriodLoading &&
           characterGroups.map((group) => (

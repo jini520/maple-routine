@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { BossProfitScreen } from '../BossProfitScreen'
 import {
@@ -88,6 +88,12 @@ function subtotal(overrides: Partial<BossProfitWeeklySubtotal> = {}): BossProfit
   }
 }
 
+// 빈 상태 CTA가 실제로 이동시키는 경로(쿼리 포함)를 확인하기 위한 목적지 프로브.
+function LocationProbe(): React.JSX.Element {
+  const location = useLocation()
+  return <div data-testid="location-probe">{`${location.pathname}${location.search}`}</div>
+}
+
 function renderBossProfitScreen(initialEntries: string[] = ['/profit']): ReturnType<typeof render> {
   return render(
     <MemoryRouter initialEntries={initialEntries}>
@@ -161,15 +167,22 @@ describe('BossProfitScreen', () => {
     expect(screen.getByText('추적 중인 캐릭터가 없습니다')).toBeInTheDocument()
   })
 
-  it('빈 상태의 CTA는 보스 스케줄러의 캐릭터 관리를 자동으로 여는 링크다', () => {
+  // ADR-060으로 공용 EmptyState를 쓰면서 <Link> 가 버튼+navigate 로 바뀌었다 — 목적지는 그대로다.
+  it('빈 상태의 CTA는 보스 스케줄러의 캐릭터 관리를 자동으로 여는 곳으로 보낸다', () => {
     mockStore({ status: 'loaded', trackedOcids: null, rows: [] })
 
-    renderBossProfitScreen()
-
-    expect(screen.getByRole('link', { name: '캐릭터 선택하러 가기' })).toHaveAttribute(
-      'href',
-      '/boss?openPicker=1',
+    render(
+      <MemoryRouter initialEntries={['/profit']}>
+        <Routes>
+          <Route path="/profit" element={<BossProfitScreen />} />
+          <Route path="/boss" element={<LocationProbe />} />
+        </Routes>
+      </MemoryRouter>,
     )
+
+    fireEvent.click(screen.getByRole('button', { name: '캐릭터 선택하러 가기' }))
+
+    expect(screen.getByTestId('location-probe')).toHaveTextContent('/boss?openPicker=1')
   })
 
   it('주간/월간 탭 클릭 시 setTab이 호출된다', () => {
@@ -326,7 +339,8 @@ describe('BossProfitScreen', () => {
 
     renderBossProfitScreen()
 
-    expect(screen.getByText('조회 불가')).toBeInTheDocument()
+    // ADR-060: 확정된 빈 상태("아직 처치한 보스가 없습니다")와 디자인·문구를 공유하지 않는다.
+    expect(screen.getByText('이 기간은 조회할 수 없어요')).toBeInTheDocument()
     expect(screen.queryByText('아직 처치한 보스가 없습니다')).not.toBeInTheDocument()
   })
 
