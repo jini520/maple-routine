@@ -39,6 +39,19 @@ body {
   animation: maple-trail 0.9s linear infinite;
 }
 
+/* MapleSweepSpinner(스윕) 전용 — 흐린 잎 위로 밝은 띠가 아래에서 위로 훑고 지나간다([[ADR-061]]).
+   띠는 잎 아래(y=140)에서 시작하므로 -230px면 잎을 완전히 통과한다. animate-maple-trail과 같은
+   이유로 @utility 등록(그래야 motion-reduce: 변형이 캐스케이드에서 이긴다). */
+@keyframes maple-sweep {
+  to {
+    transform: translateY(-230px);
+  }
+}
+
+@utility animate-maple-sweep {
+  animation: maple-sweep 1.4s ease-in-out infinite;
+}
+
 /* MapleWaveProgress(내부 채우기 물결형) 전용 — 수위(level)는 percent에 맞춰 인라인 transform으로 직접
    지정하고(결정형 진행률이라 무한 반복 애니메이션이 아님), 물결의 좌우 출렁임만 무한 반복시킨다. */
 @keyframes maple-wave-scroll {
