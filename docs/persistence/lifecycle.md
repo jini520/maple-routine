@@ -32,8 +32,8 @@ flowchart TD
     Sync -->|공유 콘텐츠 병합, ADR-030| Pref4[("worldSharedProgress:*\naccountSharedProgress:*")]
     Sync -->|처치 감지 시 자동 upsert, ADR-014| Sql1[("boss_profit_records")]
 
-    UserPick["사용자: 캐릭터 관리 피커에서 추적 선택"] -->|setTrackedCharacterOcids| Pref5[("trackedCharacters:content/boss")]
-    UserPick -->|드롭다운 마지막 선택| Pref6[("lastSelectedCharacter:content/boss")]
+    UserPick["사용자: 캐릭터 관리 피커에서 추적 선택"] -->|setTrackedCharacterOcids| Pref5[("trackedCharacters")]
+    UserPick -->|드롭다운 마지막 선택| Pref6[("lastSelectedCharacter")]
 
     UserParty["사용자: 파티 관리 모달에서 저장"] -->|setBossPartySize| Sql2[("boss_party_settings")]
 
@@ -58,14 +58,16 @@ flowchart LR
         D1 -.보존.-> K1["나머지 전부\n(동기화 캐시·추적 목록·\n보스 수익 기록·테마)"]
     end
 
-    subgraph CacheClear["캐시 데이터 삭제"]
+    subgraph CacheClear["캐시 데이터 삭제 (그룹 선택)"]
         direction TB
-        D2["clearCacheData()"]
-        D2 -.보존.-> K2[("apiKey · selectedAccountId · theme\ntrackingMode · dropEffect")]
-        D2 -->|삭제| Y1["나머지 Preferences 전부\n(schedulerCache·characterBasicCache·\ntrackedCharacters·lastSelectedCharacter·\nmanualTrackedContent·\nworldSharedProgress·accountSharedProgress)"]
-        D2 -->|DELETE FROM db.ts가 정의한 모든 테이블| Y2[("boss_profit_records\nboss_party_settings\nboss_profit_period_checks\nboss_drop_records")]
+        D2["clearCacheData(selection)"]
+        D2 -.항상 보존.-> K2[("apiKey · selectedAccountId · theme\ntrackingMode · dropEffect")]
+        D2 -->|general 그룹| Y1["KEEP_KEYS 제외 Preferences 전부\n(schedulerCache·characterBasicCache·\ntrackedCharacters·lastSelectedCharacter·\nmanualTrackedContent·\nworldSharedProgress·accountSharedProgress)\n+ boss_party_settings"]
+        D2 -->|bossRecords 그룹| Y2[("boss_profit_records\nboss_drop_records\nboss_profit_period_checks")]
     end
 ```
+
+두 그룹은 각각 끄고 켤 수 있다([[ADR-058]]) — 용량 대부분을 차지하는 동기화 캐시만 비우고 **복구 불가능한 수익·드롭 기록은 남기는** 선택이 가능하다. 아래 표의 "지우는 것"은 두 그룹을 모두 선택했을 때(기본값)의 범위다.
 
 | | 연결 해제 | 캐시 데이터 삭제 |
 |---|---|---|
@@ -78,9 +80,26 @@ flowchart LR
 
 `clearCacheData()`는 SQLite 테이블을 `DROP`이 아니라 `DELETE FROM`으로 비운다 — 스키마(테이블 자체)는 남고 행만 사라진다.
 
-설정 화면의 "캐시 데이터 삭제" 행 옆에는 `getCacheDataSize()`가 계산한 근사 용량(바이트)이 표시된다 — `clearCacheData()`가 지우는 것과 정확히 같은 범위(`KEEP_KEYS` 제외 Preferences 값 + **삭제 대상 테이블 전부**의 모든 셀)만 합산한 값이다.
+설정 화면의 "캐시 데이터 삭제" 행 옆에는 근사 용량(바이트)이 표시된다 — `getCacheDataSizes()`가 계산한 **그룹별 용량의 합**이며, 각 그룹 값은 그 그룹이 실제로 지우는 것과 정확히 같은 범위(해당 Preferences 값 + 해당 테이블의 모든 셀)만 합산한다.
 
-확인 모달(`app/settings/CacheClearConfirm.tsx`)은 이 범위를 두 줄로 요약해 보여준다 — "삭제됨: 스케줄 캐시 · 추적 캐릭터 · 보스 수익 기록 · 드롭 기록", "유지됨: API 키 · 메이플 ID · 테마 · 스케줄 관리 방법 · 드롭 연출"([[ADR-052]] 결정 3). **"유지됨" 5항목은 `KEEP_KEYS` 5개와 1:1로 대응**하지만, "삭제됨"은 대표 항목만 줄여 적은 요약이라 함께 지워지는 파티 설정(`boss_party_settings`)·기간 체크(`boss_profit_period_checks`)는 문구에 없다 — 삭제 범위의 기준은 위 표이지 모달 문구가 아니다.
+### 삭제 그룹은 2개다 ([[ADR-058]])
+
+| 그룹 | 모달 표기 | 범위 | 복구 |
+|---|---|---|---|
+| `general` | 일반 데이터 | `KEEP_KEYS` 제외 **모든** Preferences 키 + `BOSS_PROFIT_TABLE_NAMES` **−** `bossRecords` 테이블(현재 `boss_party_settings`) | 캐시는 재동기화로 복구. 추적 목록·수동 추적 항목은 **재선택 필요** |
+| `bossRecords` | 보스 수익·드롭 기록 | `boss_profit_records` · `boss_drop_records` · `boss_profit_period_checks` | **복구 불가** |
+
+**그룹 정의는 열거가 아니라 차집합이다** — 명시 목록을 갖는 쪽은 `bossRecords`뿐이고 `general`은 "나머지 전부"로 파생된다. 그래서 새 Preferences 키도, `db.ts`에 추가된 새 SQLite 테이블도 **자동으로 `general`에 편입돼** 계속 삭제 대상으로 남는다. 두 그룹을 모두 열거식으로 정의했다면 어느 그룹에도 안 잡히는 데이터가 생기고, 그건 [[ADR-052]]가 없앤 "새 저장소가 삭제 목록에서 누락된다"는 결함이 부호만 뒤집힌 형태다.
+
+경계에 있는 두 테이블의 소속에는 이유가 있다.
+
+- **`boss_profit_period_checks`가 `bossRecords`에 있는 이유** — 이 표식 자체는 재조회로 복구되지만, `general`에 뒀다면 "수익 기록은 지우고 표식은 남기는" 조합이 가능해진다. `loadPeriod`가 `isPeriodChecked()`로 백필 대상을 거르므로([[ADR-023]]), 그 상태에서는 NEXON API가 아직 제공하는 **최근 2주치를 다시 긁어올 경로마저 막힌다.**
+- **`boss_party_settings`가 `general`에 있는 이유** — 기록이 아니라 설정이고, 어느 쪽으로 지워도 위험한 조합이 없다. 파티 인원은 저장 시점에 `boss_profit_records.party_size`로 복사되므로 설정을 지워도 이미 기록된 정산액은 바뀌지 않는다.
+- **수익과 드롭을 더 쪼개지 않는 이유** — `boss_profit_records`만 지우고 `boss_drop_records`가 남으면 고아 드롭 행이 되어, 같은 캐릭터가 같은 보스를 같은 기간에 다시 잡을 때 예전 드롭이 되살아나 붙는다([[ADR-052]]). 이 조합을 UI 경고가 아니라 **그룹 경계로** 막는다.
+
+확인 모달(`app/settings/CacheClearConfirm.tsx`)은 이 두 그룹을 체크박스 2행으로 보여주고(기본 전체 체크), 각 행에 그룹 용량을, `bossRecords` 행에 복구 불가 경고를 붙인다. **보존되는 `KEEP_KEYS` 5개는 모달에 나열하지 않는다**([[ADR-058]] 결정 9로 [[ADR-052]] 결정 3의 "유지됨" 줄 폐기) — 삭제되는 데이터는 전부 둘 중 한 그룹에 속하므로, 체크를 풀면 그 그룹이 남는다는 것이 화면 구조로 드러난다.
+
+각 행 아래 항목 문구("캐릭터 정보 · 수동 선택 항목 · 파티 보스 설정 등")는 **대표 항목만 적은 요약**이다([[ADR-058]] 결정 10) — 스케줄 캐시·공유 진행 원장·마지막 선택 캐릭터·기간 조회 기록처럼 문구에 없는 것도 같은 그룹으로 함께 지워진다. **삭제 범위의 기준은 위 표이지 모달 문구가 아니다.**
 
 ### 삭제 대상 테이블 목록은 `db.ts` 하나에서만 나온다 ([[ADR-052]] 결정 2)
 

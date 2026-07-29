@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { clearCacheData, getCacheDataSize } from '../../storage/cache-data'
+import type { CacheDataGroupId, CacheDataSelection } from '../../storage/cache-data'
+import { clearCacheData, getCacheDataSizes } from '../../storage/cache-data'
 import { closeBossProfitDb } from '../../storage/sqlite/db'
 import { showSplashScreen } from '../../native/splash-screen'
 import { formatBytes } from '../../lib/format-bytes'
@@ -16,20 +17,23 @@ export interface CacheDataSectionProps {
 export function CacheDataSection(props: CacheDataSectionProps = {}): React.JSX.Element {
   const [isOpen, setIsOpen] = useState(false)
   const [isClearing, setIsClearing] = useState(false)
-  const [sizeBytes, setSizeBytes] = useState<number | null>(null)
+  const [sizes, setSizes] = useState<Record<CacheDataGroupId, number> | null>(null)
 
   useEffect(() => {
-    getCacheDataSize()
-      .then(setSizeBytes)
+    getCacheDataSizes()
+      .then(setSizes)
       .catch(() => {})
   }, [])
 
-  async function handleClear(): Promise<void> {
+  // 행에 쓰는 총합은 그룹별 용량의 합으로 파생한다(ADR-058 결정 8).
+  const totalBytes = sizes === null ? null : sizes.general + sizes.bossRecords
+
+  async function handleClear(selection: CacheDataSelection): Promise<void> {
     setIsClearing(true)
     // 삭제가 실패하거나(reject) 네이티브 호출이 돌아오지 않아도(hang) 모달이 "삭제 중..."에
     // 갇히지 않도록, 실패는 삼키고 타임아웃과 경쟁시킨 뒤 항상 리로드한다.
     await Promise.race([
-      clearCacheData().catch(() => {}),
+      clearCacheData(selection).catch(() => {}),
       new Promise((resolve) => setTimeout(resolve, CLEAR_TIMEOUT_MS)),
     ])
     // 리로드 동안 웹뷰 네이티브 배경색(브랜드 주황)이 깜빡 드러나므로, 앱 실행 때처럼 스플래시로
@@ -52,7 +56,7 @@ export function CacheDataSection(props: CacheDataSectionProps = {}): React.JSX.E
           onClick={() => setIsOpen(true)}
           danger
           rightContent={
-            <span className="text-sm text-text-muted">{sizeBytes !== null ? formatBytes(sizeBytes) : ''}</span>
+            <span className="text-sm text-text-muted">{totalBytes !== null ? formatBytes(totalBytes) : ''}</span>
           }
         />
       </div>
@@ -60,8 +64,9 @@ export function CacheDataSection(props: CacheDataSectionProps = {}): React.JSX.E
       <CacheClearConfirm
         isOpen={isOpen}
         isClearing={isClearing}
-        onConfirm={() => {
-          void handleClear()
+        sizes={sizes}
+        onConfirm={(selection) => {
+          void handleClear(selection)
         }}
         onCancel={() => setIsOpen(false)}
       />

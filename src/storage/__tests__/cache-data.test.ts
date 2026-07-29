@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { Preferences } from '@capacitor/preferences'
-import { clearCacheData, getCacheDataSize } from '../cache-data'
+import {
+  BOSS_RECORD_TABLE_NAMES,
+  GENERAL_TABLE_NAMES,
+  clearCacheData,
+  getCacheDataSizes,
+} from '../cache-data'
 import { BOSS_PROFIT_TABLE_NAMES, getBossProfitDb } from '../sqlite/db'
 
 vi.mock('@capacitor/preferences', () => {
@@ -22,7 +27,7 @@ vi.mock('@capacitor/preferences', () => {
 })
 
 const { dbExecuteMock, dbQueryMock } = vi.hoisted(() => ({
-  dbExecuteMock: vi.fn(async () => {}),
+  dbExecuteMock: vi.fn<(statement: string) => Promise<void>>(async () => {}),
   dbQueryMock: vi.fn(),
 }))
 // ADR-052 결정 2: 삭제 대상 테이블 목록은 db.ts가 단일 진실 공급원이므로, 커넥션(getBossProfitDb)만
@@ -32,6 +37,12 @@ vi.mock('../sqlite/db', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../sqlite/db')>()),
   getBossProfitDb: vi.fn(async () => ({ execute: dbExecuteMock, query: dbQueryMock })),
 }))
+
+const KEEP_KEY_NAMES = ['apiKey', 'selectedAccountId', 'theme', 'trackingMode', 'dropEffect']
+
+function deleteCalls(): string[] {
+  return dbExecuteMock.mock.calls.map(([statement]) => statement)
+}
 
 beforeEach(async () => {
   const { keys } = await Preferences.keys()
@@ -43,10 +54,40 @@ beforeEach(async () => {
   await Preferences.set({ key: 'dropEffect', value: 'off' })
   await Preferences.set({ key: 'schedulerCache:ocid-1', value: '{}' })
   await Preferences.set({ key: 'characterBasicCache:index', value: '[]' })
-  await Preferences.set({ key: 'trackedCharacters:content', value: '[]' })
-  await Preferences.set({ key: 'lastSelectedCharacter:boss', value: 'ocid-1' })
+  await Preferences.set({ key: 'trackedCharacters', value: '[]' })
+  await Preferences.set({ key: 'lastSelectedCharacter', value: 'ocid-1' })
   dbQueryMock.mockResolvedValue({ values: [] })
   vi.clearAllMocks()
+})
+
+// ADR-058 결정 2: 그룹 정의는 열거가 아니라 차집합이다 — bossRecords만 명시 목록이고 general은
+// 나머지 전부로 파생된다. 이 성질이 깨지면 새 테이블이 어느 그룹에도 안 잡혀 영영 안 지워진다
+// (ADR-052가 없앤 누락 결함의 부호만 뒤집힌 형태).
+describe('그룹 ↔ 테이블 분할', () => {
+  it('두 그룹의 합집합이 db.ts가 정의한 테이블 전체와 같다', () => {
+    const union = new Set([...GENERAL_TABLE_NAMES, ...BOSS_RECORD_TABLE_NAMES])
+
+    expect(union).toEqual(new Set(BOSS_PROFIT_TABLE_NAMES))
+  })
+
+  it('두 그룹이 겹치지 않는다 — 한 테이블은 정확히 한 그룹에만 속한다', () => {
+    const bossRecords = new Set<string>(BOSS_RECORD_TABLE_NAMES)
+
+    expect(GENERAL_TABLE_NAMES.filter((table) => bossRecords.has(table))).toEqual([])
+  })
+
+  // ADR-058 결정 3: 재조회 표식만 남고 기록이 사라지면 loadPeriod의 isPeriodChecked 가드가
+  // 백필을 건너뛰어(ADR-023), API가 아직 주는 최근 2주치마저 되살릴 수 없게 된다.
+  it('boss_profit_period_checks는 수익 기록과 같은 그룹이다', () => {
+    expect(BOSS_RECORD_TABLE_NAMES).toContain('boss_profit_records')
+    expect(BOSS_RECORD_TABLE_NAMES).toContain('boss_drop_records')
+    expect(BOSS_RECORD_TABLE_NAMES).toContain('boss_profit_period_checks')
+  })
+
+  // ADR-058 결정 4: 기록이 아니라 설정이고, 어느 쪽으로 지워도 위험한 조합이 없다.
+  it('boss_party_settings는 일반 데이터 그룹이다', () => {
+    expect(GENERAL_TABLE_NAMES).toContain('boss_party_settings')
+  })
 })
 
 describe('clearCacheData', () => {
@@ -62,64 +103,127 @@ describe('clearCacheData', () => {
     expect((await Preferences.get({ key: 'dropEffect' })).value).toBe('off')
   })
 
-  it('캐시·추적 목록·마지막 선택 등 나머지 Preferences를 모두 지운다', async () => {
+  it('보존 키는 어떤 그룹 조합에서도 남는다', async () => {
+    await clearCacheData({ general: true, bossRecords: true })
+    await clearCacheData({ general: true, bossRecords: false })
+    await clearCacheData({ general: false, bossRecords: true })
+
+    for (const key of KEEP_KEY_NAMES) {
+      expect((await Preferences.get({ key })).value).not.toBeNull()
+    }
+  })
+
+  // 인자 없는 호출은 선택 삭제 도입 전과 같아야 한다(ADR-058 — 호출부 호환).
+  it('인자 없이 호출하면 두 그룹을 모두 지운다', async () => {
     await clearCacheData()
 
     expect((await Preferences.get({ key: 'schedulerCache:ocid-1' })).value).toBeNull()
     expect((await Preferences.get({ key: 'characterBasicCache:index' })).value).toBeNull()
-    expect((await Preferences.get({ key: 'trackedCharacters:content' })).value).toBeNull()
-    expect((await Preferences.get({ key: 'lastSelectedCharacter:boss' })).value).toBeNull()
-  })
-
-  // 여기서 테이블 이름을 다시 나열하면 db.ts와 갈라질 두 번째 목록이 생겨, 정확히 이 테스트가
-  // 막아야 할 누락(boss_drop_records가 빠져 캐시를 지워도 드롭 기록이 남던 결함)을 못 잡는다.
-  it('db.ts가 정의한 SQLite 테이블을 하나도 빠짐없이 비운다', async () => {
-    await clearCacheData()
-
-    expect(getBossProfitDb).toHaveBeenCalled()
+    expect((await Preferences.get({ key: 'trackedCharacters' })).value).toBeNull()
+    expect((await Preferences.get({ key: 'lastSelectedCharacter' })).value).toBeNull()
     for (const table of BOSS_PROFIT_TABLE_NAMES) {
       expect(dbExecuteMock).toHaveBeenCalledWith(`DELETE FROM ${table};`)
     }
     // 목록에 없는 테이블까지 지우지 않는다(스키마 DROP·다른 DELETE 없음).
     expect(dbExecuteMock).toHaveBeenCalledTimes(BOSS_PROFIT_TABLE_NAMES.length)
   })
-})
 
-describe('getCacheDataSize', () => {
-  it('보존 키(KEEP_KEYS)를 제외한 Preferences 값의 바이트 수를 합산한다', async () => {
-    const size = await getCacheDataSize()
+  describe('일반 데이터만 선택', () => {
+    it('보존 키를 제외한 Preferences를 모두 지운다', async () => {
+      await clearCacheData({ general: true, bossRecords: false })
 
-    // schedulerCache:ocid-1 '{}'(2) + characterBasicCache:index '[]'(2)
-    // + trackedCharacters:content '[]'(2) + lastSelectedCharacter:boss 'ocid-1'(6) = 12.
-    // 보존 키(apiKey·selectedAccountId·theme·trackingMode·dropEffect)는 삭제되지 않으므로 제외 —
-    // trackingMode 'manual'(6)·dropEffect 'off'(3)를 seed해도 합계가 늘지 않아야 한다(ADR-052 결정 1).
-    expect(size).toBe(12)
+      expect((await Preferences.get({ key: 'schedulerCache:ocid-1' })).value).toBeNull()
+      expect((await Preferences.get({ key: 'characterBasicCache:index' })).value).toBeNull()
+      expect((await Preferences.get({ key: 'trackedCharacters' })).value).toBeNull()
+      expect((await Preferences.get({ key: 'lastSelectedCharacter' })).value).toBeNull()
+    })
+
+    it('일반 그룹 테이블만 비우고 수익·드롭 기록은 건드리지 않는다', async () => {
+      await clearCacheData({ general: true, bossRecords: false })
+
+      for (const table of GENERAL_TABLE_NAMES) {
+        expect(dbExecuteMock).toHaveBeenCalledWith(`DELETE FROM ${table};`)
+      }
+      for (const table of BOSS_RECORD_TABLE_NAMES) {
+        expect(dbExecuteMock).not.toHaveBeenCalledWith(`DELETE FROM ${table};`)
+      }
+      expect(deleteCalls()).toHaveLength(GENERAL_TABLE_NAMES.length)
+    })
   })
 
-  it('SQLite 각 테이블 행의 값 바이트 수도 합산한다', async () => {
+  describe('수익·드롭 기록만 선택', () => {
+    it('Preferences는 한 개도 지우지 않는다', async () => {
+      await clearCacheData({ general: false, bossRecords: true })
+
+      expect((await Preferences.get({ key: 'schedulerCache:ocid-1' })).value).toBe('{}')
+      expect((await Preferences.get({ key: 'characterBasicCache:index' })).value).toBe('[]')
+      expect((await Preferences.get({ key: 'trackedCharacters' })).value).toBe('[]')
+      expect((await Preferences.get({ key: 'lastSelectedCharacter' })).value).toBe('ocid-1')
+      expect(Preferences.remove).not.toHaveBeenCalled()
+    })
+
+    it('수익·드롭 기록 테이블만 비운다', async () => {
+      await clearCacheData({ general: false, bossRecords: true })
+
+      for (const table of BOSS_RECORD_TABLE_NAMES) {
+        expect(dbExecuteMock).toHaveBeenCalledWith(`DELETE FROM ${table};`)
+      }
+      for (const table of GENERAL_TABLE_NAMES) {
+        expect(dbExecuteMock).not.toHaveBeenCalledWith(`DELETE FROM ${table};`)
+      }
+      expect(deleteCalls()).toHaveLength(BOSS_RECORD_TABLE_NAMES.length)
+    })
+  })
+
+  it('아무 그룹도 선택하지 않으면 아무것도 지우지 않는다', async () => {
+    await clearCacheData({ general: false, bossRecords: false })
+
+    expect(Preferences.remove).not.toHaveBeenCalled()
+    expect(dbExecuteMock).not.toHaveBeenCalled()
+    // 지울 것이 없으면 커넥션도 열지 않는다.
+    expect(getBossProfitDb).not.toHaveBeenCalled()
+  })
+})
+
+describe('getCacheDataSizes', () => {
+  it('보존 키를 제외한 Preferences 바이트 수를 일반 그룹에 합산한다', async () => {
+    const sizes = await getCacheDataSizes()
+
+    // schedulerCache:ocid-1 '{}'(2) + characterBasicCache:index '[]'(2)
+    // + trackedCharacters '[]'(2) + lastSelectedCharacter 'ocid-1'(6) = 12.
+    // 보존 키(apiKey·selectedAccountId·theme·trackingMode·dropEffect)는 삭제되지 않으므로 제외 —
+    // trackingMode 'manual'(6)·dropEffect 'off'(3)를 seed해도 합계가 늘지 않아야 한다(ADR-052 결정 1).
+    expect(sizes.general).toBe(12)
+  })
+
+  it('SQLite 각 테이블 행의 바이트 수를 그 테이블이 속한 그룹에 합산한다', async () => {
     dbQueryMock.mockImplementation(async (sql: string) => {
       if (sql.includes('boss_profit_records')) {
         return { values: [{ ocid: 'ocid-1', boss: '자쿰' }] }
       }
+      if (sql.includes('boss_party_settings')) {
+        return { values: [{ ocid: 'ocid-2' }] }
+      }
       return { values: [] }
     })
 
-    const size = await getCacheDataSize()
+    const sizes = await getCacheDataSizes()
 
-    const prefsBytes = 12
-    const rowBytes = new TextEncoder().encode('ocid-1').length + new TextEncoder().encode('자쿰').length
-    expect(size).toBe(prefsBytes + rowBytes)
+    const recordBytes = new TextEncoder().encode('ocid-1').length + new TextEncoder().encode('자쿰').length
+    expect(sizes.bossRecords).toBe(recordBytes)
+    // 일반 그룹 = Preferences 12 + boss_party_settings의 'ocid-2'(6)
+    expect(sizes.general).toBe(12 + new TextEncoder().encode('ocid-2').length)
   })
 
-  it('보존 키만 남아 있으면 0을 반환한다', async () => {
-    const keepKeys = ['apiKey', 'selectedAccountId', 'theme', 'trackingMode', 'dropEffect']
+  it('보존 키만 남아 있으면 일반 그룹이 0이다', async () => {
     const { keys } = await Preferences.keys()
     await Promise.all(
-      keys.filter((key) => !keepKeys.includes(key)).map((key) => Preferences.remove({ key })),
+      keys.filter((key) => !KEEP_KEY_NAMES.includes(key)).map((key) => Preferences.remove({ key })),
     )
 
-    const size = await getCacheDataSize()
+    const sizes = await getCacheDataSizes()
 
-    expect(size).toBe(0)
+    expect(sizes.general).toBe(0)
+    expect(sizes.bossRecords).toBe(0)
   })
 })
