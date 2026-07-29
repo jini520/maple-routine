@@ -150,9 +150,11 @@ export function BossManageScreen(): React.JSX.Element {
     if (difficulty === null) return
     // 한도 초과는 행을 막지 않고 눌렀을 때 토스트로 알린다(사용자 지시) — 흐림은 "고를 수 없다"만
     // 말하고 이유는 시도한 순간에 말한다. 판정은 스토어가 돌려주는 결과를 그대로 쓴다(조건 중복 금지).
+    // showError가 아니라 showInfo다: 실패가 아니라 규칙 안내이고, error는 자동 소멸이 없어
+    // (duration null) 사용자가 직접 닫아야 한다(사용자 지시 — 경고 톤 + 자동 소멸).
     const result = await addManualBoss(selected.ocid, bossName, difficulty)
     if (result === 'limitReached') {
-      useToastStore.getState().showError(`주간 ${WEEKLY_BOSS_CLEAR_LIMIT}개를 모두 선택했어요`)
+      useToastStore.getState().showInfo(`주간 ${WEEKLY_BOSS_CLEAR_LIMIT}개를 모두 선택했어요`)
     }
   }
 

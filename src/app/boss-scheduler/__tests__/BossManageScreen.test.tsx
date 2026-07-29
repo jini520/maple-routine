@@ -398,11 +398,12 @@ describe('BossManageScreen — 주간 12개 한도 (ADR-055)', () => {
       renderManageScreen()
       fireEvent.click(screen.getByRole('button', { name: '더스크' }))
 
-      await waitFor(() =>
-        expect(useToastStore.getState().toasts.map((toast) => toast.message)).toContain(
-          '주간 12개를 모두 선택했어요',
-        ),
-      )
+      // 실패가 아니라 규칙 안내이므로 error가 아닌 자동 소멸 토스트(info)여야 한다.
+      await waitFor(() => expect(useToastStore.getState().toasts).toHaveLength(1))
+      const [toast] = useToastStore.getState().toasts
+      expect(toast.message).toBe('주간 12개를 모두 선택했어요')
+      expect(toast.variant).toBe('info')
+      expect(toast.duration).not.toBeNull()
     })
 
     it('한도에 걸리지 않은 추가는 토스트를 띄우지 않는다', async () => {
