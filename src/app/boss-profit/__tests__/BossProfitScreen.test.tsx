@@ -1543,7 +1543,7 @@ describe('BossProfitScreen', () => {
       expect(crystalRow()).toHaveTextContent(`3 / ${WEEKLY_CRYSTAL_SALE_LIMIT}`)
     })
 
-    it('ADR-049 회귀 가드: 결정석 칩은 라벨행이 아니라 금액행 안에 있다(고가 드롭 뱃지 자리를 뺏지 않는다)', () => {
+    it('ADR-049 회귀 가드: 라벨행에 들어간 결정석 칩은 h-4라 줄 높이를 밀지 않는다(고가 드롭 뱃지는 그대로 absolute)', () => {
       mockStore({
         status: 'loaded',
         tab: 'weekly',
@@ -1565,15 +1565,15 @@ describe('BossProfitScreen', () => {
       expect(badge).toHaveClass('absolute')
       expect(badge.parentElement).toHaveClass('relative')
 
-      // ADR-054 정정 2: 칩은 새 줄이 아니라 금액행(코인 엠블럼이 있는 줄) 안에 산다 — 줄을 하나
-      // 더 만들면 sticky 헤더가 그만큼 높아져 목록을 잠식한다(사용자 지적). 금액행 높이는 코인
-      // 엠블럼(h-8)이 정하므로 칩을 얹어도 높이가 늘지 않는다.
+      // ADR-054 정정 3: 칩은 라벨 텍스트 옆(= 라벨행 흐름 안)에 산다. 그래서 이 줄의 높이 불변이
+      // 뱃지 absolute 배치만으로는 보장되지 않는다 — 칩 자신이 라벨(text-xs = 16px)과 같은 h-4여야
+      // 한다. h-4가 풀리면 라벨행이 다시 커지고, 그게 ADR-049가 없앤 헤드라인 튐이다.
       const chip = crystalRow()
-      expect(badge.parentElement?.contains(chip)).toBe(false)
-
-      const amountRow = screen.getByText('메소').closest('div')
-      expect(amountRow?.contains(chip)).toBe(true)
-      expect(amountRow?.querySelector('.h-8.w-8')).not.toBeNull()
+      const labelRow = screen.getByText(/총 수익/).parentElement
+      expect(labelRow?.contains(chip)).toBe(true)
+      expect(chip).toHaveClass('h-4')
+      // 칩은 흐름 안에 있어야 한다 — absolute로 빼면 라벨과 겹친다(뱃지와 달리 좌측에 붙기 때문).
+      expect(chip?.className).not.toContain('absolute')
     })
   })
 })
