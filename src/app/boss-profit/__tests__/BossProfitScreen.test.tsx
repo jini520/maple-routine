@@ -10,10 +10,12 @@ import {
   type BossProfitWeeklySubtotal,
 } from '../../../features/boss-profit/store'
 import { getCurrentBossProfitPeriod } from '../../../lib/boss-profit-period'
+import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss-matching'
 
 // 새로고침 버튼·다음 기간 버튼은 "현재 기간"에서만 각각 노출/비활성되므로, 실행 시점과 무관하게
 // 항상 현재 기간을 가리키도록 실제 계산값을 쓴다.
 const CURRENT_WEEKLY_PERIOD_KEY = getCurrentBossProfitPeriod('weekly', new Date()).periodKey
+const CURRENT_MONTHLY_PERIOD_KEY = getCurrentBossProfitPeriod('monthly', new Date()).periodKey
 
 vi.mock('../../../features/boss-profit/store', () => ({
   useBossProfitStore: vi.fn(),
@@ -1140,5 +1142,137 @@ describe('BossProfitScreen', () => {
 
     expect(screen.getByRole('button', { name: /낟낟.*5,000,000 메소/ })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /내옆에최성일.*3,000,000 메소/ })).toBeInTheDocument()
+  })
+
+  // 주간 보스 처치 수 배지(ADR-054, #52) — 처치 수는 store 필드가 아니라 rows에서 파생하므로,
+  // 모든 케이스를 rows 구성만으로 재현한다.
+  describe('주간 보스 처치 수 배지(ADR-054, #52)', () => {
+    function clearBadge(): HTMLElement | null {
+      return screen.queryByRole('img', { name: /주간 보스 처치/ })
+    }
+
+    it('주간 탭·현재 기간에서 완료한 주간 보스 수를 캐릭터 카드 헤더에 n/12로 보여준다', () => {
+      mockStore({
+        status: 'loaded',
+        tab: 'weekly',
+        periodKey: CURRENT_WEEKLY_PERIOD_KEY,
+        trackedOcids: ['ocid-1'],
+        rows: [
+          row({ boss: '자쿰', periodKey: CURRENT_WEEKLY_PERIOD_KEY }),
+          row({ boss: '루시드', periodKey: CURRENT_WEEKLY_PERIOD_KEY }),
+          row({ boss: '윌', periodKey: CURRENT_WEEKLY_PERIOD_KEY }),
+        ],
+      })
+
+      renderBossProfitScreen()
+
+      expect(clearBadge()).toBeInTheDocument()
+      expect(screen.getByText(`3/${WEEKLY_BOSS_CLEAR_LIMIT}`)).toBeInTheDocument()
+    })
+
+    it('시즌 보스(메이린)는 주간 12마리 제한 예외라 처치 수에 포함하지 않는다', () => {
+      mockStore({
+        status: 'loaded',
+        tab: 'weekly',
+        periodKey: CURRENT_WEEKLY_PERIOD_KEY,
+        trackedOcids: ['ocid-1'],
+        rows: [
+          row({ boss: '자쿰', periodKey: CURRENT_WEEKLY_PERIOD_KEY }),
+          row({ boss: '시즌 보스 메이린', periodKey: CURRENT_WEEKLY_PERIOD_KEY }),
+        ],
+      })
+
+      renderBossProfitScreen()
+
+      expect(screen.getByText(`1/${WEEKLY_BOSS_CLEAR_LIMIT}`)).toBeInTheDocument()
+    })
+
+    it('미완료 placeholder 행(isComplete: false)은 처치 수에 포함하지 않는다', () => {
+      mockStore({
+        status: 'loaded',
+        tab: 'weekly',
+        periodKey: CURRENT_WEEKLY_PERIOD_KEY,
+        trackedOcids: ['ocid-1'],
+        rows: [
+          row({ boss: '자쿰', periodKey: CURRENT_WEEKLY_PERIOD_KEY }),
+          row({ boss: '루시드', periodKey: CURRENT_WEEKLY_PERIOD_KEY, isComplete: false, payoutMeso: 0 }),
+        ],
+      })
+
+      renderBossProfitScreen()
+
+      expect(screen.getByText(`1/${WEEKLY_BOSS_CLEAR_LIMIT}`)).toBeInTheDocument()
+    })
+
+    it('같은 보스를 여러 난이도로 완료해도 1로만 센다(보스명 distinct)', () => {
+      mockStore({
+        status: 'loaded',
+        tab: 'weekly',
+        periodKey: CURRENT_WEEKLY_PERIOD_KEY,
+        trackedOcids: ['ocid-1'],
+        rows: [
+          row({ boss: '자쿰', difficulty: '카오스', periodKey: CURRENT_WEEKLY_PERIOD_KEY }),
+          row({ boss: '자쿰', difficulty: '하드', periodKey: CURRENT_WEEKLY_PERIOD_KEY }),
+        ],
+      })
+
+      renderBossProfitScreen()
+
+      expect(screen.getByText(`1/${WEEKLY_BOSS_CLEAR_LIMIT}`)).toBeInTheDocument()
+    })
+
+    it('월간 탭에서는 배지를 렌더하지 않는다(rows에 monthly 행만 있어 주간 처치 수를 파생할 수 없다)', () => {
+      mockStore({
+        status: 'loaded',
+        tab: 'monthly',
+        periodKey: CURRENT_MONTHLY_PERIOD_KEY,
+        trackedOcids: ['ocid-1'],
+        rows: [
+          row({
+            boss: '검은마법사',
+            difficulty: '익스트림',
+            cycle: 'monthly',
+            periodKey: CURRENT_MONTHLY_PERIOD_KEY,
+          }),
+        ],
+      })
+
+      renderBossProfitScreen()
+
+      expect(clearBadge()).not.toBeInTheDocument()
+    })
+
+    it('과거 기간에서는 배지를 렌더하지 않는다(가격 미확정 보스가 DB에 기록되지 않아 과소집계)', () => {
+      mockStore({
+        status: 'loaded',
+        tab: 'weekly',
+        periodKey: '2026-07-02', // 현재 기간이 아님
+        trackedOcids: ['ocid-1'],
+        rows: [row({ boss: '자쿰', periodKey: '2026-07-02' })],
+      })
+
+      renderBossProfitScreen()
+
+      expect(clearBadge()).not.toBeInTheDocument()
+    })
+
+    it('분모는 weekly-bosses.json의 WEEKLY_BOSS_CLEAR_LIMIT을 따른다(리터럴 12 금지)', () => {
+      mockStore({
+        status: 'loaded',
+        tab: 'weekly',
+        periodKey: CURRENT_WEEKLY_PERIOD_KEY,
+        trackedOcids: ['ocid-1'],
+        rows: [row({ boss: '자쿰', periodKey: CURRENT_WEEKLY_PERIOD_KEY })],
+      })
+
+      renderBossProfitScreen()
+
+      const badge = clearBadge()
+      expect(badge).toHaveAccessibleName(`주간 보스 처치 1 / ${WEEKLY_BOSS_CLEAR_LIMIT}`)
+      expect(badge).toHaveTextContent(`1/${WEEKLY_BOSS_CLEAR_LIMIT}`)
+      // 아바타(32px)가 헤더 높이를 정하므로 배지는 24px(py-1 + text-xs 16px)를 넘지 않아야 한다 —
+      // 헤더 높이가 바뀌면 ResizeObserver 실측값에 물린 sticky 오프셋·배지 레일·하단 페이드가 어긋난다.
+      expect(badge).toHaveClass('py-1', 'text-xs')
+    })
   })
 })

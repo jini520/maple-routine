@@ -23,8 +23,9 @@ import {
   type BossProfitWeeklySubtotal,
 } from '../../features/boss-profit/store'
 import { formatScheduleSyncError, formatSyncedAt } from '../../features/schedule-sync/format'
+import { isSeasonBossName, WEEKLY_BOSS_CLEAR_LIMIT } from '../../lib/boss-matching'
 import { formatBossProfitPeriodLabel, isLatestPeriod, isPeriodQueryable } from '../../lib/boss-profit-period'
-import { getItemIconUrl } from '../../lib/item-icons'
+import { getItemIconUrl, getItemIconUrlByFile } from '../../lib/item-icons'
 import { isValuableDrop } from '../../lib/valuable-drops'
 import type { BossCycle } from '../../types'
 import type { RecordedDrop } from '../../types/drops'
@@ -443,6 +444,25 @@ function collectAllValuableDrops(
   return groups.flatMap((group) => collectGroupValuableDrops(group, dropsByRowKey))
 }
 
+// 이 캐릭터가 이번 주에 처치한 주간 보스 수([[ADR-054]] 결정 3) — 처치 수는 store 필드가 아니라
+// rows에서 파생한다. 보스명 기준 distinct라 같은 보스를 여러 난이도로 완료해도 1로 센다(게임 룰이
+// 그렇고, 보스 스케줄러가 쓰는 countClearedWeeklyBosses도 content_name 그룹당 1이다 — 두 지표가
+// 어긋나면 같은 숫자가 화면마다 다르게 보인다). 시즌 보스(메이린)는 12마리 제한 예외라 제외한다.
+// cycle 필터는 호출부(주간 탭)에서 사실상 no-op이지만, 월드별 결정석 합계(#53)도 이 함수 하나를
+// 공유하므로 함수 안에 둔다.
+function countGroupClearedWeeklyBosses(group: CharacterGroup): number {
+  const clearedBossNames = new Set<string>()
+  for (const row of group.bossRows) {
+    if (row.cycle !== 'weekly' || !row.isComplete || isSeasonBossName(row.boss)) continue
+    clearedBossNames.add(row.boss)
+  }
+  return clearedBossNames.size
+}
+
+// 주간 결정석 아이콘. 드랍 테이블 항목이 아니라 UI 표시 전용이라 item-icons.json에 등록하지 않고
+// 파일명으로 직접 조회한다([[ADR-054]] 결정 10). 파일이 없으면 null — 아이콘만 생략하고 숫자는 그대로 둔다.
+const WEEKLY_CRYSTAL_ICON_URL = getItemIconUrlByFile('intense_power_crystal_weekly.webp')
+
 // 배지가 카드 상단 밖으로 올라간 양(-top-2 = 0.5rem). sticky 레일 오프셋에서 이만큼 상쇄해야
 // stuck 시 배지가 헤더 상단선에 걸린다(ADR-047 후속).
 const BADGE_TOP_OFFSET = 8
@@ -502,6 +522,7 @@ function CharacterAccordion(props: {
   setBossDrops: BossProfitStore['setBossDrops']
   now: Date
   isMonthlyBossQueryable: boolean
+  isCurrentPeriod: boolean
   stickyTop: number
 }): React.JSX.Element {
   const [isExpanded, setIsExpanded] = useState(false)
@@ -537,6 +558,12 @@ function CharacterAccordion(props: {
   // 펼쳤을 때는 고가 아이템을 획득한 보스 행(valuable-drop-row, 배경 효과)에도 강조가 들어간다.
   const valuableDrops = collectGroupValuableDrops(group, props.dropsByRowKey)
   const hasValuable = valuableDrops.length > 0
+  // 주간 보스 처치 수 배지는 주간 탭 · 현재 기간에만 보여준다([[ADR-054]] 결정 4) — 월간 탭 rows에는
+  // cycle === 'monthly' 행만 담겨 주간 처치 수를 파생할 수 없고, 과거 기간 rows는 가격 미확정
+  // 보스(벨로나)가 애초에 DB에 기록되지 않아 실제보다 적게 나온다. isCurrentPeriod는 화면이 이미
+  // isLatestPeriod로 계산한 값을 그대로 받는다(같은 판정을 두 곳에서 하면 갈라진다).
+  const showClearCountBadge = props.tab === 'weekly' && props.isCurrentPeriod
+  const clearedWeeklyBossCount = showClearCountBadge ? countGroupClearedWeeklyBosses(group) : 0
   const shellClass = [
     // overflow-hidden은 여전히 금지(ADR-047) — 스크롤포트를 만들어 헤더 sticky를 무력화한다. 대신
     // overflow-clip을 쓴다(ADR-049): 스크롤 컨테이너를 만들지 않아 sticky와 공존하면서 자식을 카드
@@ -633,6 +660,22 @@ function CharacterAccordion(props: {
         >
           <CharacterAvatar characterName={group.characterName} imageUrl={group.imageUrl} />
           <span className="flex-1 truncate text-left text-sm font-semibold text-text">{group.characterName}</span>
+          {showClearCountBadge && (
+            // 보스 스케줄러(BossScreen)의 주간 처치 수 배지와 같은 스타일 — 같은 지표를 두 화면에서
+            // 다르게 보이게 하지 않는다. 높이는 24px(py-1 + text-xs 16px, 아이콘도 h-4)로 아바타(32px)
+            // 아래라 헤더 높이는 그대로다. "n/m"만으로는 무엇의 진행률인지 읽히지 않아 배지 전체에
+            // 레이블을 주고 아이콘은 장식(alt="")으로 둔다.
+            <span
+              role="img"
+              aria-label={`주간 보스 처치 ${clearedWeeklyBossCount} / ${WEEKLY_BOSS_CLEAR_LIMIT}`}
+              className="flex flex-none items-center gap-1 rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary"
+            >
+              {WEEKLY_CRYSTAL_ICON_URL !== null && (
+                <img src={WEEKLY_CRYSTAL_ICON_URL} alt="" className="h-4 w-4 flex-none object-contain" />
+              )}
+              <span className="tabular-nums">{`${clearedWeeklyBossCount}/${WEEKLY_BOSS_CLEAR_LIMIT}`}</span>
+            </span>
+          )}
           <span className="text-sm font-bold text-text tabular-nums">{totalMeso.toLocaleString()} 메소</span>
           {isExpanded ? (
             <ChevronUp className="h-4 w-4 text-text-muted" strokeWidth={2} aria-hidden="true" />
@@ -940,6 +983,7 @@ export function BossProfitScreen(): React.JSX.Element {
               setBossDrops={setBossDrops}
               now={now}
               isMonthlyBossQueryable={periodQueryable}
+              isCurrentPeriod={isCurrentPeriod}
               stickyTop={stickyHeaderHeight}
             />
           ))}
