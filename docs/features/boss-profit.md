@@ -40,14 +40,16 @@
 - **접힘/펼침 셸이 다르다**: 접힘 = 단독 카드(`rounded-[14px] bg-surface border border-border p-4`). 펼침 = 헤더+본문을 하나의 셸로(바깥 wrapper `rounded-[14px] bg-surface border border-border`, 헤더는 자체 border/rounded 없이 `p-4 flex items-center gap-3`, 본문은 `border-t border-border` 하나로 경계). 접힘 상태(다른 캐릭터 미펼침)는 완결된 단독 카드.
 - **셸 클리핑은 `overflow: clip`**([[ADR-049]], [[ADR-047]] 결정 2 갱신): `overflow-hidden`은 **금지**다 — 스크롤 컨테이너를 만들어 sticky 헤더를 무력화한다. 반면 `overflow: clip`은 스크롤 컨테이너를 만들지 않아 sticky를 지키면서 자식을 카드 모양대로 잘라낸다. 이 클리핑이 (a) stuck 헤더의 둥근 모서리로 보스 행이 비치는 문제와 (b) 헤더가 카드 끝에서 릴리스될 때 하단 모서리가 뾰족해지는 문제를 **상태별 라운딩 분기 없이** 동시에 해결한다 — 단 **헤더 자신은 사각이어야 한다**(위 sticky 항목). 클리핑은 **패딩 박스**(반경 13px = 14 − 테두리 1px)에서 일어나므로, 셸 안쪽에 붙는 장식은 그 곡선을 기준으로 맞춘다 — 골드 링은 펼침 상태에만 반경 13px(아래 "고가 드롭 강조"). 셸 **바깥**(카드 `isolate` 직속)의 배지·경계 페이드는 클리핑 대상이 아니다.
 - **헤더**: 아바타 `h-8 w-8 rounded-full bg-surface-2 ... text-xs font-bold text-text` + 이름 `flex-1 text-sm font-semibold text-text truncate` + 금액 `text-sm font-bold text-text tabular-nums`(우측 세로 정렬) + Chevron(`ChevronDown`/`ChevronUp`).
-- **주간 보스 처치 수 배지 `n/12`**([[ADR-054]], #52) — **주간 탭 · 현재 기간에만**(`tab === 'weekly' && isCurrentPeriod`). 이름(`flex-1`)과 금액 사이 = 금액 왼쪽에 둔다. `isCurrentPeriod` 는 화면이 이미 계산한 `isLatestPeriod` 를 prop으로 내린 값이다 — 아코디언이 다시 판정하지 않는다(같은 판정을 두 곳에서 하면 갈라진다).
+- **주간 보스 처치 수 = 아바타 진행 링 + 숫자**([[ADR-054]] 결정 3·정정 1, #52) — **주간 탭 · 현재 기간에만**(`tab === 'weekly' && isCurrentPeriod`). `isCurrentPeriod` 는 화면이 이미 계산한 `isLatestPeriod` 를 prop으로 내린 값이다 — 아코디언이 다시 판정하지 않는다(같은 판정을 두 곳에서 하면 갈라진다). **진행률의 시각 표현은 가로폭을 쓰지 않는 아바타 테두리가 맡고, 숫자는 텍스트만 남긴다** — 아이콘+배경 칩(≈62px)이 캐릭터명을 가렸기 때문이다(정정 1).
 ```
-배지: flex flex-none items-center gap-1 rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary
-      (보스 스케줄러 BossScreen.tsx의 주간 처치 수 배지와 동일 — 신규 스타일 금지)
-  안쪽: 결정석 아이콘 img h-4 w-4 flex-none object-contain(alt="") + span.tabular-nums "8/12"
-        아이콘은 intense_power_crystal_weekly.webp — URL이 null이면 아이콘만 생략하고 숫자는 그대로
-높이: 24px — 아바타(h-8 = 32px)가 헤더 높이를 정하므로 배지를 넣어도 헤더 높이는 불변이어야 한다
-a11y: 배지 전체에 role="img" aria-label="주간 보스 처치 8 / 12" — "n/m"만으론 무엇의 진행률인지 안 읽힌다
+진행 링(AvatarClearRing): 아바타 슬롯 32px "안쪽"에 SVG로 12칸(WEEKLY_BOSS_CLEAR_LIMIT)을 그린다
+  circle × 12, r = (32 − stroke)/2, strokeWidth 2.5, strokeLinecap butt
+  칸 = strokeDasharray(`${seg − gap} ${둘레 − (seg − gap)}`) + strokeDashoffset(−i × seg), seg = 둘레/12, gap 2.4
+  채운 칸 stroke-primary / 빈 칸 stroke-border, svg에 -rotate-90(12시부터 시계방향)
+  링은 이미지 span의 형제로 두고 래퍼에 absolute — 이미지 span은 overflow-hidden이라 안에 넣으면 stroke 바깥 절반이 잘린다
+  슬롯을 키우지 말 것: 헤더 높이가 바뀌면 ResizeObserver 실측에 물린 sticky 오프셋·배지 레일·페이드가 어긋난다
+숫자: flex-none text-xs font-semibold tabular-nums text-text-muted "8/12" (배경·아이콘 없음, 금액 왼쪽)
+a11y: 숫자 span에 role="img" aria-label="주간 보스 처치 8 / 12", 링은 aria-hidden(중복 낭독 방지)
 ```
 - **펼침 헤더는 sticky** — [[ADR-047]]: 펼쳤을 때만 `sticky z-[5] bg-surface` + `top` = **페이지 sticky 헤더의 실측 높이**(`ResizeObserver`, 헤더 높이가 탭·경고 문구에 따라 가변이라 상수 불가). `bg-surface`는 아래로 지나가는 보스 행을 가리기 위해 필수다.
   - **헤더에 `rounded-t-*`를 주지 말 것**([[ADR-049]]) — stuck 상태에서 모서리 안쪽이 투명이라 **그 아래를 지나가는 보스 행이 비친다**. 상단 라운딩은 셸의 `overflow: clip`이 담당한다: 클리핑 곡선은 카드 자신의 모서리에만 있어서 카드 한가운데 멈춘 헤더의 노치는 못 덮지만, 헤더가 **사각**이면 stuck 중엔 불투명하고 정지 위치(= 카드 최상단 = 곡선과 일치)에서는 클리핑이 라운딩을 만들어준다. 라운딩의 책임은 헤더가 아니라 카드에 있다.
@@ -86,28 +88,31 @@ a11y: 배지 전체에 role="img" aria-label="주간 보스 처치 8 / 12" — "
 헤어라인: mt-3 h-px bg-border (sticky 헤더 바닥 경계 = 카드 테두리 대체)
 ```
 
-**결정석 판매 현황 줄**([[ADR-054]], #53) — 금액행 다음, 헤어라인 위에 새 줄로 넣는다(`CrystalSummaryRow`). 라벨행 우측은 고가 드롭 뱃지가 `absolute` 로 점유하고 있고 그 이유가 "뱃지 유무로 라벨행이 튀는 것"([[ADR-049]])이므로, 같은 자리에 흐름으로 끼워 넣으면 그 회귀를 되살린다. **두 탭 모두 현재 기간에만** 렌더하고(호출부 `isCurrentPeriod &&`), 주간 탭은 월드당 한도 90 대비(복수 월드면 `90 × 월드 수`), 월간 탭은 **분모 없이 개수만**(90은 주간 전용 한도라 월간 보스 결정석은 포함되지 않는다).
+**결정석 판매 현황 칩**([[ADR-054]] 결정 9·정정 2, #53) — **새 줄이 아니라 금액행 안**에 `ml-auto` 칩으로 붙는다(`CrystalSummaryChip`). 줄을 하나 더 만들면 sticky 헤더가 그만큼 높아져 목록을 잠식한다(정정 2 — 헤더를 줄여둔 [[ADR-049]] 작업을 되돌리는 셈이었다). 금액행 높이는 코인 엠블럼(`h-8` = 32px)이 정하므로 칩(24px)은 높이에 영향이 없다. 라벨행 우측에 두지 못하는 이유는 그대로다 — 고가 드롭 뱃지가 `absolute` 로 점유 중이고, 흐름에 끼우면 뱃지 유무로 라벨행이 튄다([[ADR-049]]). **두 탭 모두 현재 기간에만** 렌더하고(호출부 `isCurrentPeriod &&`), 주간 탭은 월드당 한도 90 대비(복수 월드면 `90 × 월드 수`), 월간 탭은 **분모 없이 개수만**(90은 주간 전용 한도라 월간 보스 결정석은 포함되지 않는다).
 ```
-결정석행: mt-2 flex items-center gap-2 (복수 월드일 때는 button이라 w-full 추가)
-  아이콘 img h-5 w-5 flex-none object-contain(alt="")
+칩: ml-auto flex flex-none items-center gap-1.5 rounded-full bg-primary/12 px-2.5 py-1
+  아이콘 img h-4 w-4 flex-none object-contain(alt="")
       주간 intense_power_crystal_weekly.webp / 월간 intense_power_crystal_monthly.webp — null이면 아이콘만 생략
-  주간 탭: <span text-sm font-bold tabular-nums text-text>{n} <span text-xs font-semibold text-text-muted>/ {한도}</span></span>
+  주간 탭: <span text-xs font-bold tabular-nums text-primary>{n} <span font-semibold opacity-70>/ {한도}</span></span>
       └ 숫자와 "/" 사이는 실제 공백 문자(마진만으론 textContent가 "34/90"으로 붙어 스크린리더가 이어 읽음)
   월간 탭: 같은 구조에 분모 대신 "개" — 한국어 표기상 숫자에 붙으므로 이쪽은 공백 없음
-  복수 월드일 때만 우측: ml-auto flex items-center gap-1
-      "N개 월드" text-xs text-text-muted + ChevronDown/ChevronUp h-3.5 w-3.5 text-text-muted
-  복수 월드면 이 줄 전체가 button(type="button" + aria-expanded), 단일 월드·월간 탭이면 button 아님(펼칠 것이 없음)
-  a11y: 배지와 같은 규약 — 줄 전체에 aria-label("주간 결정석 판매 34 / 90" · "월간 결정석 3개"),
-        button 아닐 땐 role="img", 아이콘은 장식(alt="")
-펼침(복수 월드에서 열었을 때만): mt-1.5 space-y-1 pl-7
-  줄: flex items-center gap-1.5
+  복수 월드면 칩이 button(type="button" + aria-expanded + relative z-20) + ChevronDown/Up h-3 w-3 text-primary
+      단일 월드·월간 탭이면 button 아님(펼칠 것이 없음) → role="img"
+  칩에는 수치만 — "N개 월드"·월드명 같은 부가 정보는 팝오버로 넘긴다("화면에는 간단히", 정정 2)
+  a11y: 칩 전체에 aria-label("주간 결정석 판매 34 / 90" · "월간 결정석 3개"), 아이콘은 장식(alt="")
+팝오버(복수 월드에서 열었을 때만) — 흐름 밖이라 월드가 몇 개든 헤더 높이 불변:
+  absolute right-0 top-full z-20 mt-1.5 min-w-[168px] rounded-[12px] border border-border bg-surface p-2 shadow-lg
+      기준 박스는 금액행(relative). 페이지 sticky 헤더가 z-10 스택 컨텍스트라 z-20은 그 안에서만 겨루고,
+      헤더 자체가 목록 위에 있어 팝오버는 캐릭터 카드 위로 그려진다([[ADR-047]] 결정 6과 같은 층위)
+  제목 p px-1 pb-1.5 text-[11px] font-bold tracking-wide text-text-muted "월드별 판매 현황"
+  줄: flex items-center gap-1.5 px-1
       엠블럼 img h-4 w-4 flex-none (worldEmblemUrl, null이면 엠블럼만 생략)
-      월드명 text-xs text-text-muted
-      ml-auto "34 / 90" text-xs font-semibold tabular-nums text-text
+      월드명 text-xs text-text-muted / ml-auto pl-3 "34 / 90" text-xs font-semibold tabular-nums text-text
+  바깥 탭 닫기: fixed inset-0 z-10 투명 button(aria-label "월드별 결정석 판매 현황 닫기")
 ```
-접힘 상태는 **월드가 몇 개든 항상 한 줄**로 고정한다([[ADR-054]] 결정 7) — 헤더 높이는 `ResizeObserver` 실측이라 변해도 sticky 오프셋은 따라오지만, 줄이 늘면 헤더가 목록 영역을 잠식한다. 결정석 아이콘은 `item-icons.json` 에 등록하지 않고 `getItemIconUrlByFile(fileName)` 로 파일명 직접 조회한다(주간/월간 각 1장) — 결정석은 드랍 테이블 항목이 아니라 UI 표시 전용이라 등록하면 `item-icons.test.ts` 의 "드랍 테이블 실재" 정합성 검사를 깬다.
+접힘 상태는 **월드가 몇 개든 칩 하나**로 고정한다([[ADR-054]] 결정 7·정정 2) — 헤더 높이는 `ResizeObserver` 실측이라 변해도 sticky 오프셋은 따라오지만, 헤더가 커지면 목록 영역을 잠식한다. 결정석 아이콘은 `item-icons.json` 에 등록하지 않고 `getItemIconUrlByFile(fileName)` 로 파일명 직접 조회한다(주간/월간 각 1장) — 결정석은 드랍 테이블 항목이 아니라 UI 표시 전용이라 등록하면 `item-icons.test.ts` 의 "드랍 테이블 실재" 정합성 검사를 깬다.
 
-수치 파생: 주간 = `summarizeWorldCrystals(groups)`(그룹 월드 = `bossRows[0]?.world`, `null` 그룹 제외, `Map` 삽입 순서로 결정적) 의 월드별 합, 월간 = `countMonthlyCrystals(groups)`(그룹별 `cycle === 'monthly' && isComplete` 보스명 distinct 합 — 90 한도와 무관한 별개 수치). **주간 탭인데 월드를 아는 캐릭터가 0명이면 줄 자체를 렌더하지 않는다**(대비할 한도가 없음). 월드는 알고 처치가 0이면 `0 / 90` 을 그대로 보여준다.
+수치 파생: 주간 = `summarizeWorldCrystals(groups)`(그룹 월드 = `bossRows[0]?.world`, `null` 그룹 제외, `Map` 삽입 순서로 결정적) 의 월드별 합, 월간 = `countMonthlyCrystals(groups)`(그룹별 `cycle === 'monthly' && isComplete` 보스명 distinct 합 — 90 한도와 무관한 별개 수치). **주간 탭인데 월드를 아는 캐릭터가 0명이면 칩 자체를 렌더하지 않는다**(대비할 한도가 없음). 월드는 알고 처치가 0이면 `0 / 90` 을 그대로 보여준다. 월간 탭은 처치가 0이어도 `0개` 를 그대로 둔다(사용자 확정 2026-07-29 — 한 달 대부분이 0이지만 "아직 안 잡았다"도 정보다).
 뱃지는 **레이아웃 흐름 밖**(`absolute`)에 둔다([[ADR-049]]) — 흐름에 있으면 뱃지 유무로 라벨행이 16 ↔ 24px로 튀고, 뱃지에 붙일 탭 확대 애니메이션이 주변을 밀게 된다.
 새 색 신설 금지 — 기존 토큰만 쓴다(금액·엠블럼 `primary`, 라벨·단위 `text-muted`, 결정석 수치 `text`). **캐릭터 수는 표시하지 않는다**(중요 정보 아님, [[ADR-046]] 결정 5). 보스 처치 수는 같은 결정으로 한 번 배제됐다가 결정석 판매 현황 줄로 되살아났다([[ADR-054]] 결정 9 — 통계가 아니라 한도 대비 소진량이라는 새 의미를 얻었기 때문. 아래 history 참고). 단위 "메소"는 별도 span이지만 숫자와 사이에 실제 공백 문자를 남긴다(마진만으론 `textContent`가 "N메소"로 붙어 스크린리더가 붙여 읽음).
 

@@ -1267,12 +1267,51 @@ describe('BossProfitScreen', () => {
 
       renderBossProfitScreen()
 
-      const badge = clearBadge()
+      // queryBy가 아니라 getBy — 없으면 여기서 바로 실패시키고 타입도 non-null로 좁힌다.
+      const badge = screen.getByRole('img', { name: /주간 보스 처치/ })
       expect(badge).toHaveAccessibleName(`주간 보스 처치 1 / ${WEEKLY_BOSS_CLEAR_LIMIT}`)
       expect(badge).toHaveTextContent(`1/${WEEKLY_BOSS_CLEAR_LIMIT}`)
-      // 아바타(32px)가 헤더 높이를 정하므로 배지는 24px(py-1 + text-xs 16px)를 넘지 않아야 한다 —
-      // 헤더 높이가 바뀌면 ResizeObserver 실측값에 물린 sticky 오프셋·배지 레일·하단 페이드가 어긋난다.
-      expect(badge).toHaveClass('py-1', 'text-xs')
+      // ADR-054 정정 1: 진행률의 시각 표현은 아바타 링이 맡고 이 수치는 텍스트만 남는다 —
+      // 아이콘+배경 칩이 캐릭터명을 가린다는 사용자 지적에 따른 축소다. 배경 칩으로 되돌리면
+      // 헤더 가로 공간을 다시 두 배로 먹으므로 회귀 가드를 둔다.
+      expect(badge).toHaveClass('text-xs')
+      expect(badge.className).not.toContain('bg-primary')
+      expect(badge.querySelector('img')).toBeNull()
+    })
+
+    it('아바타 테두리가 한도(12)만큼 쪼개진 진행 링이고 처치한 만큼만 채워진다(ADR-054 정정 1)', () => {
+      mockStore({
+        status: 'loaded',
+        tab: 'weekly',
+        periodKey: CURRENT_WEEKLY_PERIOD_KEY,
+        trackedOcids: ['ocid-1'],
+        rows: [
+          row({ boss: '자쿰', periodKey: CURRENT_WEEKLY_PERIOD_KEY }),
+          row({ boss: '루시드', periodKey: CURRENT_WEEKLY_PERIOD_KEY }),
+        ],
+      })
+
+      const { container } = renderBossProfitScreen()
+
+      const segments = container.querySelectorAll('svg.-rotate-90 circle')
+      expect(segments).toHaveLength(WEEKLY_BOSS_CLEAR_LIMIT)
+      // 처치한 2칸만 primary, 나머지는 border — 링이 진행률을 그대로 반영한다.
+      const filled = [...segments].filter((segment) => segment.classList.contains('stroke-primary'))
+      expect(filled).toHaveLength(2)
+    })
+
+    it('월간 탭·과거 기간에는 아바타 진행 링도 그리지 않는다', () => {
+      mockStore({
+        status: 'loaded',
+        tab: 'monthly',
+        periodKey: '2026-07',
+        trackedOcids: ['ocid-1'],
+        rows: [row({ boss: '검은마법사', difficulty: '하드', cycle: 'monthly', periodKey: '2026-07' })],
+      })
+
+      const { container } = renderBossProfitScreen()
+
+      expect(container.querySelector('svg.-rotate-90 circle')).toBeNull()
     })
   })
 
@@ -1315,7 +1354,7 @@ describe('BossProfitScreen', () => {
       expect(screen.queryByRole('button', { name: /결정석/ })).not.toBeInTheDocument()
     })
 
-    it('월드가 여러 개면 분모가 90 × 월드 수가 되고 "N개 월드" 표기가 붙는다', () => {
+    it('월드가 여러 개면 분모가 90 × 월드 수가 되고 펼침 토글이 붙는다', () => {
       mockStore({
         status: 'loaded',
         tab: 'weekly',
@@ -1329,10 +1368,15 @@ describe('BossProfitScreen', () => {
 
       renderBossProfitScreen()
 
-      expect(
-        screen.getByRole('button', { name: `주간 결정석 판매 5 / ${WEEKLY_CRYSTAL_SALE_LIMIT * 2}` }),
-      ).toBeInTheDocument()
-      expect(screen.getByText('2개 월드')).toBeInTheDocument()
+      const toggle = screen.getByRole('button', {
+        name: `주간 결정석 판매 5 / ${WEEKLY_CRYSTAL_SALE_LIMIT * 2}`,
+      })
+      expect(toggle).toHaveAttribute('aria-expanded', 'false')
+      // ADR-054 정정 2: 칩에는 수치만 남기고 월드 수·월드명 같은 부가 정보는 팝오버로 넘겼다
+      // ("화면에는 간단히, 터치하면 추가 정보" — 사용자 요청). 접힘 상태에서 월드명이 보이면
+      // 그만큼 sticky 헤더 가로/세로를 다시 먹는다는 뜻이다.
+      expect(screen.queryByText('스카니아')).not.toBeInTheDocument()
+      expect(screen.queryByText('루나')).not.toBeInTheDocument()
     })
 
     it('복수 월드에서 줄을 탭하면 월드별 줄이 펼쳐지고 다시 탭하면 접힌다', () => {
@@ -1499,7 +1543,7 @@ describe('BossProfitScreen', () => {
       expect(crystalRow()).toHaveTextContent(`3 / ${WEEKLY_CRYSTAL_SALE_LIMIT}`)
     })
 
-    it('ADR-049 회귀 가드: 결정석 줄은 라벨행이 아니라 금액행 아래 새 줄이다(고가 드롭 뱃지 자리를 뺏지 않는다)', () => {
+    it('ADR-049 회귀 가드: 결정석 칩은 라벨행이 아니라 금액행 안에 있다(고가 드롭 뱃지 자리를 뺏지 않는다)', () => {
       mockStore({
         status: 'loaded',
         tab: 'weekly',
@@ -1521,9 +1565,15 @@ describe('BossProfitScreen', () => {
       expect(badge).toHaveClass('absolute')
       expect(badge.parentElement).toHaveClass('relative')
 
-      const line = crystalRow()
-      expect(line).toHaveClass('mt-2')
-      expect(badge.parentElement?.contains(line)).toBe(false)
+      // ADR-054 정정 2: 칩은 새 줄이 아니라 금액행(코인 엠블럼이 있는 줄) 안에 산다 — 줄을 하나
+      // 더 만들면 sticky 헤더가 그만큼 높아져 목록을 잠식한다(사용자 지적). 금액행 높이는 코인
+      // 엠블럼(h-8)이 정하므로 칩을 얹어도 높이가 늘지 않는다.
+      const chip = crystalRow()
+      expect(badge.parentElement?.contains(chip)).toBe(false)
+
+      const amountRow = screen.getByText('메소').closest('div')
+      expect(amountRow?.contains(chip)).toBe(true)
+      expect(amountRow?.querySelector('.h-8.w-8')).not.toBeNull()
     })
   })
 })
