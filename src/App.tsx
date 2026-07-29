@@ -19,6 +19,7 @@ import { BossCardPreview } from './app/boss-scheduler/BossCardPreview'
 import { DailyQuestCardPreview } from './app/content-scheduler/DailyQuestCardPreview'
 import { BossPortraitSizePreview } from './app/boss-profit/BossPortraitSizePreview'
 import { UpdatePromptModal } from './app/UpdatePromptModal'
+import { LoadingPreview } from './app/LoadingPreview'
 import { ToastStack } from './components/Toast/ToastStack'
 
 const TAB_ITEMS = [
@@ -209,6 +210,9 @@ export function AppShell(): React.JSX.Element {
           {/* 임시 — 보스 수익 화면 BossPortrait 크기 조정용 디버그 라우트. 온보딩/API 데이터 없이 접근 가능.
               크기 조정이 끝나면 이 라우트와 BossPortraitSizePreview.tsx를 삭제할 것 */}
           <Route path="/debug/boss-portrait-size" element={<BossPortraitSizePreview />} />
+          {/* 임시 — 로딩 표현 선택지 비교용 디버그 라우트([[ADR-061]]). 온보딩/API 데이터 없이 접근 가능.
+              선택이 확정되면 이 라우트와 LoadingPreview.tsx를 삭제할 것 */}
+          <Route path="/debug/loading" element={<LoadingPreview />} />
         </Routes>
       </div>
       {isCompleted && !isKeyboardVisible && <BottomTabBar />}
