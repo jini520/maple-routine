@@ -1087,6 +1087,48 @@ describe('BossProfitScreen', () => {
     expect(addChip).not.toHaveClass('py-1')
   })
 
+  // 보스 행 드롭 지시자의 반지 등급 뱃지(2026-07-30) — 반지 상자 드릴다운 결과(ADR-041)만
+  // ringLevel이 있고, 그 드롭에만 아이콘 우측 하단 lvN 뱃지가 붙는다.
+  it('특수 스킬 반지 드롭은 아이콘 우측 하단에 lvN 뱃지를 표시한다', () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row()],
+      dropsByRowKey: {
+        'ocid-1|자쿰|카오스|2026-07-09': [
+          { category: 'equipment', itemName: '리스트레인트 링', boxOrigin: '백옥의 보스 반지 상자', ringLevel: 4, quantity: 1 },
+          { category: 'consumable', itemName: VALUABLE_ITEM, quantity: 1 },
+        ],
+      },
+    })
+
+    renderBossProfitScreen()
+    fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
+
+    const indicator = screen.getByRole('button', { name: /자쿰 카오스 드롭 아이템 관리/ })
+    // 반지 하나만 등급이 있으므로 뱃지도 하나 — 등급 없는 드롭에는 붙지 않는다.
+    const badges = within(indicator).getAllByText('lv4')
+    expect(badges).toHaveLength(1)
+    expect(badges[0]).toHaveClass('absolute', '-bottom-1', '-right-0.5')
+  })
+
+  it('등급 없는 드롭만 있으면 lv 뱃지를 렌더하지 않는다', () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row()],
+      dropsByRowKey: {
+        'ocid-1|자쿰|카오스|2026-07-09': [{ category: 'consumable', itemName: VALUABLE_ITEM, quantity: 1 }],
+      },
+    })
+
+    renderBossProfitScreen()
+    fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
+
+    const indicator = screen.getByRole('button', { name: /자쿰 카오스 드롭 아이템 관리/ })
+    expect(within(indicator).queryByText(/^lv/)).not.toBeInTheDocument()
+  })
+
   // 총 수익 헤드라인의 기간 전체 고가 드롭 뱃지(ADR-046) — 캐릭터 카드 배지와 같은 컴포넌트를 쓰되
   // aria-label로 구분한다("고가 드롭" = 캐릭터 카드, "이 기간 고가 드롭" = 헤드라인 요약).
   it('ADR-046: 기간에 고가 드롭이 있으면 총 수익 헤드라인에도 고가 드롭 뱃지가 표시된다', () => {
