@@ -2,7 +2,12 @@ import { useEffect, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Castle, Flag, LayoutGrid, MapPin, Medal, Sparkles, Swords, type LucideIcon } from 'lucide-react'
 import { CONTENT_TEMPLATE } from '../../lib/scheduler-content-template'
-import { categorizeContentEntries, contentCountTag, WEEKLY_CATEGORY_ORDER } from '../../lib/content-category'
+import {
+  categorizeContentEntries,
+  contentCountTag,
+  isGuildContent,
+  WEEKLY_CATEGORY_ORDER,
+} from '../../lib/content-category'
 import { worldEmblemUrl } from '../../lib/world-emblem'
 import { useContentSchedulerStore } from '../../features/content-scheduler/store'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
@@ -78,6 +83,15 @@ export function ContentManageScreen(): React.JSX.Element {
     } else {
       void addManualContent(selected.ocid, contentName, activeTab)
     }
+  }
+
+  // ADR-057: null일 때만 "가입한 길드 없음"이다. undefined(구버전 캐시·응답에 필드 없음)는
+  // "모름"이라 잠그지 않는다 — 모름을 미가입으로 취급하면 멀쩡한 사용자의 길드 콘텐츠가 막힌다.
+  const hasNoGuild = selected?.guildName === null
+
+  // 이미 추적 중인 항목은 잠그지 않는다 — 길드를 나가도 해제할 수 있어야 한다([[ADR-057]] 결정 5).
+  function isGuildBlocked(contentName: string): boolean {
+    return !trackedNames.has(contentName) && hasNoGuild && isGuildContent(contentName)
   }
 
   return (
@@ -181,17 +195,23 @@ export function ContentManageScreen(): React.JSX.Element {
                   <ul className="space-y-2">
                     {group.items.map(({ entry, displayName }) => {
                       const isTracked = trackedNames.has(entry.content_name)
+                      const isLocked = isGuildBlocked(entry.content_name)
                       const tag = contentCountTag(entry, group.label)
+                      // 사유는 오른쪽 뱃지가 아니라 흐려진 행 위에 얹는 한 줄로 알린다 —
+                      // 보스 관리 화면과 같은 규칙(사용자 피드백, [[ADR-055]] 정정 1).
                       return (
-                        <li key={entry.content_name}>
+                        <li key={entry.content_name} className={isLocked ? 'relative' : undefined}>
                           <button
                             type="button"
                             aria-pressed={isTracked}
+                            disabled={isLocked}
                             onClick={() => handleToggle(entry.content_name)}
                             className={
                               isTracked
                                 ? 'flex w-full items-center gap-3 rounded-[10px] border border-primary bg-primary/15 px-4 py-3 text-left'
-                                : 'flex w-full items-center gap-3 rounded-[10px] border border-border px-4 py-3 text-left hover:bg-primary/15'
+                                : isLocked
+                                  ? 'flex w-full items-center gap-3 rounded-[10px] border border-border px-4 py-3 text-left'
+                                  : 'flex w-full items-center gap-3 rounded-[10px] border border-border px-4 py-3 text-left hover:bg-primary/15'
                             }
                           >
                             <GroupIcon
@@ -212,6 +232,14 @@ export function ContentManageScreen(): React.JSX.Element {
                               </span>
                             )}
                           </button>
+
+                          {/* 보스 관리 화면과 같은 규칙 — 흐림은 콘텐츠 opacity가 아니라 그 위를
+                              덮는 스크림이다. 이 행은 자체 배경이 없어 페이지 배경색(bg)으로 덮는다. */}
+                          {isLocked && (
+                            <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-[10px] bg-bg/85 px-4 backdrop-blur-[2px]">
+                              <span className="text-sm font-semibold text-text">길드 가입 시 진행 가능</span>
+                            </div>
+                          )}
                         </li>
                       )
                     })}

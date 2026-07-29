@@ -117,7 +117,8 @@ describe('BossManageScreen — 수동 모드', () => {
   it('주간 탭에 전체 보스(주간+시즌 주간)가 나오고, 추적 중인 보스만 선택 상태다', () => {
     useTrackingModeStore.setState({ mode: 'manual' })
     mockStore({
-      characters: [character()],
+      // 시즌 보스는 챌린저스 월드에서만 나온다(ADR-056) — 전체 목록을 보려면 그 월드여야 한다.
+      characters: [character({ world: '챌린저스' })],
       manualTrackedByOcid: { 'ocid-1': [{ contentName: '자쿰', kind: 'boss', difficulty: '카오스' }] },
     })
 
@@ -300,5 +301,187 @@ describe('BossManageScreen — 자동 모드', () => {
     expect(row.getByRole('button', { name: '하드' })).toHaveAttribute('aria-pressed', 'true')
     fireEvent.click(row.getByRole('button', { name: '루시드 파티원 수 증가' }))
     expect(setPartySize).toHaveBeenCalledWith('ocid-1', '루시드', '하드', 3)
+  })
+})
+
+// ADR-055(이슈 #62): 수동 선택 가드 — 주간 보스 12개 한도.
+describe('BossManageScreen — 주간 12개 한도 (ADR-055)', () => {
+  // weekly-bosses.json 주간 섹션 앞부분 12종 — 실재 이름이어야 주기·시즌 판정이 통한다.
+  const TWELVE_WEEKLY_BOSSES = [
+    '자쿰',
+    '매그너스',
+    '파풀라투스',
+    '반반',
+    '피에르',
+    '블러디 퀸',
+    '벨룸',
+    '스우',
+    '데미안',
+    '가디언 엔젤 슬라임',
+    '루시드',
+    '윌',
+  ]
+
+  function trackedBosses(bossNames: string[]): Array<{ contentName: string; kind: 'boss'; difficulty: string }> {
+    return bossNames.map((contentName) => ({ contentName, kind: 'boss' as const, difficulty: '노멀' }))
+  }
+
+  describe('주간 12개 한도 (#62)', () => {
+    it('주간 탭 헤더에 n/12 카운터를 표시한다', () => {
+      useTrackingModeStore.setState({ mode: 'manual' })
+      mockStore({
+        characters: [character()],
+        manualTrackedByOcid: { 'ocid-1': trackedBosses(['자쿰', '스우']) },
+      })
+
+      renderManageScreen()
+
+      expect(screen.getByText('2/12')).toBeInTheDocument()
+    })
+
+    it('시즌 보스·월간 보스는 카운터에 포함하지 않는다', () => {
+      useTrackingModeStore.setState({ mode: 'manual' })
+      mockStore({
+        characters: [character()],
+        manualTrackedByOcid: {
+          'ocid-1': [
+            ...trackedBosses(['자쿰']),
+            { contentName: '시즌 보스 메이린', kind: 'boss', difficulty: '노멀' },
+            { contentName: '검은마법사', kind: 'boss', difficulty: '하드' },
+          ],
+        },
+      })
+
+      renderManageScreen()
+
+      expect(screen.getByText('1/12')).toBeInTheDocument()
+    })
+
+    it('월간 탭에는 카운터를 표시하지 않는다 — 12는 주간 한도다', () => {
+      useTrackingModeStore.setState({ mode: 'manual' })
+      mockStore({
+        characters: [character()],
+        manualTrackedByOcid: { 'ocid-1': trackedBosses(['자쿰', '스우']) },
+      })
+
+      renderManageScreen()
+      fireEvent.click(screen.getByRole('button', { name: '월간' }))
+
+      expect(screen.queryByText('2/12')).not.toBeInTheDocument()
+    })
+
+    it('한도에 도달하면 미선택 보스의 토글을 비활성화한다', () => {
+      useTrackingModeStore.setState({ mode: 'manual' })
+      mockStore({
+        characters: [character()],
+        manualTrackedByOcid: { 'ocid-1': trackedBosses(TWELVE_WEEKLY_BOSSES) },
+      })
+
+      renderManageScreen()
+
+      expect(screen.getByRole('button', { name: '더스크' })).toBeDisabled()
+    })
+
+    it('한도에 도달해도 이미 선택된 보스는 해제할 수 있어야 하므로 활성 상태를 유지한다', () => {
+      useTrackingModeStore.setState({ mode: 'manual' })
+      const removeManualBoss = vi.fn()
+      mockStore({
+        characters: [character()],
+        manualTrackedByOcid: { 'ocid-1': trackedBosses(TWELVE_WEEKLY_BOSSES) },
+        removeManualBoss,
+      })
+
+      renderManageScreen()
+      fireEvent.click(screen.getByRole('button', { name: '자쿰' }))
+
+      expect(removeManualBoss).toHaveBeenCalledWith('ocid-1', '자쿰', '노멀')
+    })
+
+    it('한도에 도달해도 시즌 보스는 선택할 수 있다', () => {
+      useTrackingModeStore.setState({ mode: 'manual' })
+      mockStore({
+        characters: [character({ world: '챌린저스' })],
+        manualTrackedByOcid: { 'ocid-1': trackedBosses(TWELVE_WEEKLY_BOSSES) },
+      })
+
+      renderManageScreen()
+
+      expect(screen.getByRole('button', { name: '시즌 보스 메이린' })).not.toBeDisabled()
+    })
+
+    it('한도에 도달해도 월간 탭의 보스는 선택할 수 있다', () => {
+      useTrackingModeStore.setState({ mode: 'manual' })
+      mockStore({
+        characters: [character()],
+        manualTrackedByOcid: { 'ocid-1': trackedBosses(TWELVE_WEEKLY_BOSSES) },
+      })
+
+      renderManageScreen()
+      fireEvent.click(screen.getByRole('button', { name: '월간' }))
+
+      expect(screen.getByRole('button', { name: '검은마법사' })).not.toBeDisabled()
+    })
+
+    it('자동 모드에는 카운터를 표시하지 않는다 — 선택 자체가 없다', () => {
+      useTrackingModeStore.setState({ mode: 'auto' })
+      mockStore({
+        characters: [character()],
+        manualTrackedByOcid: { 'ocid-1': trackedBosses(['자쿰', '스우']) },
+      })
+
+      renderManageScreen()
+
+      expect(screen.queryByText('2/12')).not.toBeInTheDocument()
+    })
+  })
+})
+
+// ADR-056: 목록 구성 규칙 — 미출시 보스 제외, 시즌 보스는 챌린저스 월드 전용.
+describe('BossManageScreen — 목록 구성 (ADR-056)', () => {
+  it('미출시 보스(벨로나)는 목록에 나오지 않는다', () => {
+    useTrackingModeStore.setState({ mode: 'manual' })
+    mockStore({ characters: [character({ world: '스카니아' })] })
+
+    renderManageScreen()
+
+    expect(screen.queryByRole('button', { name: '벨로나' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '자쿰' })).toBeInTheDocument()
+  })
+
+  it('챌린저스 월드 캐릭터에게는 시즌 보스가 나온다', () => {
+    useTrackingModeStore.setState({ mode: 'manual' })
+    mockStore({ characters: [character({ world: '챌린저스2' })] })
+
+    renderManageScreen()
+
+    expect(screen.getByRole('button', { name: '시즌 보스 메이린' })).toBeInTheDocument()
+  })
+
+  it('일반 월드 캐릭터에게는 시즌 보스가 나오지 않는다', () => {
+    useTrackingModeStore.setState({ mode: 'manual' })
+    mockStore({ characters: [character({ world: '스카니아' })] })
+
+    renderManageScreen()
+
+    expect(screen.queryByRole('button', { name: '시즌 보스 메이린' })).not.toBeInTheDocument()
+  })
+
+  it('월드를 모르면(구버전 캐시) 시즌 보스를 숨긴다 — 보스 스케줄러의 시즌 배지와 같은 판정', () => {
+    useTrackingModeStore.setState({ mode: 'manual' })
+    mockStore({ characters: [character({ world: undefined })] })
+
+    renderManageScreen()
+
+    expect(screen.queryByRole('button', { name: '시즌 보스 메이린' })).not.toBeInTheDocument()
+  })
+
+  it('자동 모드에서도 같은 규칙이 적용된다', () => {
+    useTrackingModeStore.setState({ mode: 'auto' })
+    mockStore({ characters: [character({ world: '스카니아' })] })
+
+    renderManageScreen()
+
+    expect(screen.queryByText('시즌 보스 메이린')).not.toBeInTheDocument()
+    expect(screen.queryByText('벨로나')).not.toBeInTheDocument()
   })
 })

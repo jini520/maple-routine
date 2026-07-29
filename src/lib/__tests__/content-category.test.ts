@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { categorizeContentEntries, contentCountTag, WEEKLY_CATEGORY_ORDER } from '../content-category'
+import {
+  categorizeContentEntries,
+  contentCountTag,
+  isGuildContent,
+  WEEKLY_CATEGORY_ORDER,
+} from '../content-category'
 import { CONTENT_TEMPLATE } from '../scheduler-content-template'
 import type { SchedulerContentTemplateEntry } from '../manual-content-merge'
 
@@ -161,5 +166,22 @@ describe('categorizeContentEntries — categoryOrder 재정렬', () => {
 
     // 에픽 던전(0)·길드(1)가 앞으로, 목록에 없는 메이플 유니온은 뒤에(첫 등장 순서 유지)
     expect(groups.map((g) => g.label)).toEqual(['에픽 던전', '길드', '메이플 유니온'])
+  })
+})
+
+// ADR-057: 길드 콘텐츠 판정 — 길드 가입 여부로 선택을 막을 대상을 고르는 데 쓴다. 항목명을
+// 코드에 나열하지 않고 이미 있는 카테고리 도출을 재사용해, 길드 콘텐츠가 추가돼도 따라온다.
+describe('isGuildContent (ADR-057)', () => {
+  it('[길드] 접두사 항목은 길드 콘텐츠다', () => {
+    expect(isGuildContent('[길드] 주간 미션 포인트')).toBe(true)
+    expect(isGuildContent('[길드] 지하 수로')).toBe(true)
+    expect(isGuildContent('[길드] 플래그 레이스')).toBe(true)
+  })
+
+  it('다른 카테고리 항목은 길드 콘텐츠가 아니다', () => {
+    expect(isGuildContent('무릉도장')).toBe(false)
+    expect(isGuildContent('[주간 퀘스트] 헤이븐 주간 임무')).toBe(false)
+    expect(isGuildContent('[일일 퀘스트] 소멸의 여로 조사')).toBe(false)
+    expect(isGuildContent('에픽 던전 : 하이마운틴')).toBe(false)
   })
 })

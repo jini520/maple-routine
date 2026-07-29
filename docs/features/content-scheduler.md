@@ -2,7 +2,7 @@
 
 > **범위**: 일간/주간 콘텐츠 진행 상태 표시, 캐릭터 추적, 3단 캐시 병합, 콘텐츠 카드(일일퀘스트·몬스터파크·주간 콘텐츠), 컨텐츠 관리 페이지. 캐릭터 관리 피커 컴포넌트는 [../foundation/design-system.md](../foundation/design-system.md), 수동/자동 트래킹 모드 전역 토글은 [settings.md](./settings.md).
 > **관련 소스**: `app/content-scheduler/`(`ContentScreen.tsx`) · `features/content-scheduler/` · `lib/scheduler-merge` · `lib/scheduler-content-scope` · `lib/content-category` · `lib/daily-quest-backgrounds` · `storage/scheduler-cache` · `storage/shared-progress-cache` · `src/data/scheduler-content-catalog.json`·`daily-quest-regions.json`·`daily-quest-region-crops.json`·`weekly-regional-quests.json`·`scheduler-content-template.json` · `/content/manage`.
-> **관련 ADR**: [[ADR-013]] [[ADR-012]] [[ADR-030]] [[ADR-020]] [[ADR-021]] [[ADR-035]] [[ADR-018]] [[ADR-053]]. **관련 문서**: [../foundation/architecture.md](../foundation/architecture.md), [../foundation/nexon-api.md](../foundation/nexon-api.md), [../foundation/error-resilience.md](../foundation/error-resilience.md).
+> **관련 ADR**: [[ADR-013]] [[ADR-012]] [[ADR-030]] [[ADR-020]] [[ADR-021]] [[ADR-035]] [[ADR-018]] [[ADR-053]] [[ADR-057]]. **관련 문서**: [../foundation/architecture.md](../foundation/architecture.md), [../foundation/nexon-api.md](../foundation/nexon-api.md), [../foundation/error-resilience.md](../foundation/error-resilience.md).
 
 ## 정책
 - 화면 안에 **일간 탭**(`daily_contents`) + **주간 탭**(`weekly_contents`). **월간 탭 없음**(월간 주기 일반 콘텐츠가 API에 없음).
@@ -73,7 +73,15 @@
   - **그룹 헤더**: 아이콘 배지(`h-6 w-6 rounded-lg bg-third/15 text-third-text`) + 카테고리명 + 추적 카운트(`{tracked}/{total}`). 아이콘 매핑(컴포넌트): 일일/주간 퀘스트 `MapPin`, 에픽 던전 `Castle`, 메이플 유니온 `LayoutGrid`, 몬스터파크 `Swords`, 아케인리버 지역 퀘스트 `Sparkles`, 무릉도장 `Medal`, 길드 `Flag`, 그 외 `Sparkles`. 행 왼쪽에도 같은 아이콘 작게(선택 시 `text-primary-text`).
   - **카운트 태그**: `contentCountTag(entry, category)`, 우선순위 아이템 오버라이드 → 카테고리 오버라이드 → 기본(카운트형이면 "최대 {max_count}회"). 도메인 오버라이드(사용자 확정, [[ADR-006]]): 일간 몬스터파크 "월드 당 최대 14회", 주간 익스트림 몬파 "ID당 2회", 에픽 던전 "ID당 1회", 아케인리버 지역 퀘스트 태그 숨김(`null`).
 
+### 길드 콘텐츠 — 길드 가입 캐릭터만 선택 ([[ADR-057]], 구현 완료 2026-07-29)
+길드 카테고리 항목(`[길드] 주간 미션 포인트`·`지하 수로`·`플래그 레이스`)은 **가입한 길드가 있는 캐릭터만** 선택할 수 있다. 미가입이면 관리 페이지에서 행 `disabled` + 흐림 위에 `길드 가입 시 진행 가능` 한 줄(표기 규칙은 보스 관리 화면과 공유 — 행 위를 덮는 스크림 `bg-bg/85` + `backdrop-blur-[2px]`, [[ADR-055]] 정정 1).
+- **판정 원천**: `character/basic` 의 `character_guild_name` → `ContentCharacterView.guildName`(`sortByCachedLevel` 이 `level` 과 함께 캐시에서 꺼낸다, 추가 호출 0).
+- **`null`(미가입)일 때만 잠근다.** `undefined` 는 "모름"(구버전 캐시·응답에 필드 없음)이라 잠그지 않는다 — 둘을 합치면 데이터가 불완전할 때 길드 콘텐츠가 전부 막힌다([[ADR-057]] 결정 2).
+- **대상 판정은 카테고리 도출 재사용**(`isGuildContent` → `parse(name).category === '길드'`) — 항목명을 코드에 나열하지 않아 화면 그룹핑과 어긋날 수 없다.
+- **이미 추적 중인 항목은 잠그지 않는다**(길드 탈퇴 후에도 해제 가능). 표시 화면(`ContentScreen`)의 `진행 불가` 표기는 이번 범위 밖 — 레벨 잠금만 표시한다.
+
 ## 폐기된 정책 (history)
+- ~~레벨 미달 항목은 수동 선택 불가(관리 페이지 잠금) + 스케줄러 화면에 "진행 불가"~~ → **미도입, 자유 선택**([[ADR-055]] 정정 2, 2026-07-29 사용자 결정, 이슈 #32 폐기). 요구 레벨 데이터(`requiredLevel`)는 `scheduler-content-template.json` 에 남아 있으나 **읽는 코드가 없다**.
 - ~~체크박스로 캐릭터 선택~~ → 캐릭터 이미지 카드형 그리드 토글([[ADR-015]]).
 - ~~캐시가 없으면 `character/list` 응답으로 `access_flag` 미상 캐릭터까지 먼저 표시~~ → 활성 확인된 캐릭터만 표시, 콜드 스타트는 스피너([[ADR-053]], 2026-07-29).
 - ~~캐시가 캐릭터 단위 단일 스냅샷~~ → 캐릭터/월드/계정 3단 캐시([[ADR-030]]).

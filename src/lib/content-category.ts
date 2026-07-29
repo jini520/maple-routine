@@ -74,6 +74,14 @@ function parse(name: string): { category: string | null; displayName: string } {
   return { category: override ?? null, displayName: name }
 }
 
+export const GUILD_CATEGORY = '길드'
+
+// ADR-057: 길드 가입 여부로 선택을 막을 대상 판정. 항목명을 코드에 나열하는 대신 이미 있는
+// 카테고리 도출(parse)을 재사용한다 — 길드 콘텐츠가 추가돼도 템플릿만 갱신하면 따라온다.
+export function isGuildContent(contentName: string): boolean {
+  return parse(contentName).category === GUILD_CATEGORY
+}
+
 // 접두사 없는 항목은 label:null 단독 그룹으로 그 자리에 두고, 카테고리 첫 등장 순서를 보존한다.
 export const WEEKLY_CATEGORY_ORDER = [
   '에픽 던전',

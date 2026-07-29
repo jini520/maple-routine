@@ -5,7 +5,13 @@ import { BossPortrait } from '../../components/BossPortrait/BossPortrait'
 import { DifficultyBadge } from '../../components/DifficultyBadge/DifficultyBadge'
 import weeklyBossesData from '../../data/weekly-bosses.json'
 import { getMaxPartySize } from '../../lib/boss-crystal-prices'
-import { worldEmblemUrl } from '../../lib/world-emblem'
+import {
+  countManualWeeklyBosses,
+  getBossCycleByName,
+  isSeasonBossName,
+  WEEKLY_BOSS_CLEAR_LIMIT,
+} from '../../lib/boss-matching'
+import { isChallengersWorld, worldEmblemUrl } from '../../lib/world-emblem'
 import { partySizeKey, useBossSchedulerStore } from '../../features/boss-scheduler/store'
 import { useToastStore } from '../../features/toast/store'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
@@ -17,29 +23,33 @@ interface BossReferenceEntry {
   boss: string
   difficulties: string[]
   portraitSlug?: string | null
+  status?: string
+}
+
+interface BossListEntry {
+  boss: string
+  difficulties: BossDifficulty[]
+  portraitSlug: string | null
 }
 
 // 관리 페이지의 보스 목록은 게임 레퍼런스 데이터(weekly-bosses.json) 그대로다 — 주간 탭은
-// 주간+시즌 주간, 월간 탭은 월간(ADR-035 결정 18). 난이도 후보도 같은 파일의 difficulties를 쓴다
-// (폐기된 ManualBossPickerModal과 동일 소스).
-const BOSSES_BY_TAB: Record<
-  BossTab,
-  Array<{ boss: string; difficulties: BossDifficulty[]; portraitSlug: string | null }>
-> = {
-  weekly: [
-    ...(weeklyBossesData.weekly as BossReferenceEntry[]),
-    ...(weeklyBossesData.eventWeekly as BossReferenceEntry[]),
-  ].map((entry) => ({
-    boss: entry.boss,
-    difficulties: entry.difficulties as BossDifficulty[],
-    portraitSlug: entry.portraitSlug ?? null,
-  })),
-  monthly: (weeklyBossesData.monthly as BossReferenceEntry[]).map((entry) => ({
-    boss: entry.boss,
-    difficulties: entry.difficulties as BossDifficulty[],
-    portraitSlug: entry.portraitSlug ?? null,
-  })),
+// 주간(+챌린저스 월드에 한해 시즌 주간), 월간 탭은 월간(ADR-035 결정 18, ADR-056). 난이도
+// 후보도 같은 파일의 difficulties를 쓴다(폐기된 ManualBossPickerModal과 동일 소스).
+// ADR-056 결정 1: 미출시 보스(status: 'unreleased', 현재 벨로나)는 목록에서 뺀다. 보스명을
+// 코드에 박지 않고 데이터의 status로 거르므로, 출시되면 그 필드를 지우는 것만으로 되돌아온다.
+function toListEntries(entries: BossReferenceEntry[]): BossListEntry[] {
+  return entries
+    .filter((entry) => entry.status !== 'unreleased')
+    .map((entry) => ({
+      boss: entry.boss,
+      difficulties: entry.difficulties as BossDifficulty[],
+      portraitSlug: entry.portraitSlug ?? null,
+    }))
 }
+
+const WEEKLY_BOSSES = toListEntries(weeklyBossesData.weekly as BossReferenceEntry[])
+const SEASON_BOSSES = toListEntries(weeklyBossesData.eventWeekly as BossReferenceEntry[])
+const MONTHLY_BOSSES = toListEntries(weeklyBossesData.monthly as BossReferenceEntry[])
 
 // ADR-035 결정 18: 보스 관리 페이지 — 두 모드 공통 진입("보스 관리"), PartyManagementModal 대체.
 // 수동 모드: 전체 보스 체크리스트(행 탭 = 추적 토글, 즉시 저장) + 체크된 행에만 난이도 뱃지와
@@ -105,7 +115,24 @@ export function BossManageScreen(): React.JSX.Element {
     return registeredDifficultyByBoss.get(bossName) ?? difficulties[0] ?? null
   }
 
-  const allEntries = BOSSES_BY_TAB[activeTab]
+  // 결정 3: 12는 주간 한도이고 시즌 보스는 예외다 — 카운트 규칙은 lib/boss-matching 한 곳에만 있다.
+  const weeklyTrackedCount = countManualWeeklyBosses(trackedBossItems)
+  const isWeeklyLimitReached = mode === 'manual' && weeklyTrackedCount >= WEEKLY_BOSS_CLEAR_LIMIT
+
+  function countsTowardWeeklyLimit(bossName: string): boolean {
+    return getBossCycleByName(bossName) === 'weekly' && !isSeasonBossName(bossName)
+  }
+
+  // ADR-056 결정 2: 시즌 보스는 챌린저스 월드(챌린저스1~4) 전용 콘텐츠라 그 월드 캐릭터에게만
+  // 보여준다. 월드를 모르는 구버전 캐시는 비-챌린저스로 취급한다 — 보스 스케줄러 화면의 시즌
+  // 배지가 쓰는 판정과 같아야 두 화면이 갈라지지 않는다.
+  const showsSeasonBosses = selected?.world !== undefined && isChallengersWorld(selected.world)
+  const allEntries =
+    activeTab === 'weekly'
+      ? showsSeasonBosses
+        ? [...WEEKLY_BOSSES, ...SEASON_BOSSES]
+        : WEEKLY_BOSSES
+      : MONTHLY_BOSSES
   // 자동 모드 기본은 등록된 보스만 — 단 등록 보스가 하나도 없으면(신규 캐릭터 등) 전체 목록으로
   // 대체해 "미등록 보스 파티 인원 미리 설정"이라는 원래 목적이 막히지 않게 한다(ADR-031 결정 4).
   const registeredEntries = allEntries.filter((entry) => registeredDifficultyByBoss.has(entry.boss))
@@ -278,6 +305,15 @@ export function BossManageScreen(): React.JSX.Element {
                 >
                   월간
                 </button>
+
+                {/* ADR-055 결정 8(이슈 #62): 주간 12개 한도 카운터. 주간 탭·수동 모드에만 — 월간
+                    보스는 이 한도와 무관하고 자동 모드는 선택 자체가 없다. 스타일은 보스 스케줄러
+                    화면의 n/12 배지 재사용(신규 스타일 금지). */}
+                {mode === 'manual' && activeTab === 'weekly' && (
+                  <span className="ml-auto rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary tabular-nums">
+                    {weeklyTrackedCount}/{WEEKLY_BOSS_CLEAR_LIMIT}
+                  </span>
+                )}
               </div>
 
               {mode === 'auto' && (
@@ -325,6 +361,17 @@ export function BossManageScreen(): React.JSX.Element {
               const trackedDifficulty = mode === 'manual' ? trackedDifficultyOf(entry.boss) : null
               const isTracked = trackedDifficulty !== null
 
+              // ADR-055: 한도가 찼을 때 미선택 행을 막는다. 이미 선택된 행은 잠그지 않는다 —
+              // 해제할 수 있어야 한다. 사유는 흐려진 행 위에 얹는 한 줄로 알린다(사용자 피드백).
+              const isLimitBlocked =
+                mode === 'manual' &&
+                !isTracked &&
+                isWeeklyLimitReached &&
+                countsTowardWeeklyLimit(entry.boss)
+              const blockMessage = isLimitBlocked
+                ? `주간 ${WEEKLY_BOSS_CLEAR_LIMIT}개를 모두 선택했어요`
+                : null
+
               // 자동 모드의 행 난이도: 화면 전용 선택 → 등록 난이도 → 첫 난이도 순.
               const autoDifficulty =
                 autoDifficultyByBoss[entry.boss] ?? defaultDifficultyFor(entry.boss, entry.difficulties)
@@ -333,10 +380,14 @@ export function BossManageScreen(): React.JSX.Element {
               const activeDifficulty = mode === 'manual' ? trackedDifficulty : autoDifficulty
               const isExpanded = mode === 'auto' || isTracked
 
+              // 흐림은 li가 아니라 안쪽 내용에만 건다 — li에 걸면 그 위에 얹는 안내 문구까지
+              // 함께 흐려져 읽히지 않는다.
               const rowClassName =
                 mode === 'manual' && isTracked
                   ? 'rounded-[14px] border border-primary bg-primary/15'
-                  : 'rounded-[14px] border border-border bg-surface'
+                  : isLimitBlocked
+                    ? 'relative rounded-[14px] border border-border bg-surface'
+                    : 'rounded-[14px] border border-border bg-surface'
 
               const nameContent = (
                 <>
@@ -358,6 +409,7 @@ export function BossManageScreen(): React.JSX.Element {
                         type="button"
                         aria-pressed={isTracked}
                         aria-label={entry.boss}
+                        disabled={isLimitBlocked}
                         onClick={() => void handleToggleTracked(entry.boss, entry.difficulties)}
                         className="flex min-w-0 flex-1 items-center gap-3 text-left"
                       >
@@ -379,6 +431,15 @@ export function BossManageScreen(): React.JSX.Element {
                         : renderDifficultyPills(entry.difficulties, autoDifficulty, (difficulty) =>
                             setAutoDifficultyByBoss((prev) => ({ ...prev, [entry.boss]: difficulty })),
                           )}
+                    </div>
+                  )}
+
+                  {/* 흐림을 콘텐츠 opacity로 주면 문구 뒤에 초상화·보스명 형태가 그대로 남아
+                      대비가 배경마다 달라진다(사용자 피드백). 대신 행 위에 표면색 스크림을 덮어
+                      배경을 균일하게 만들고 그 위에 문구를 올린다 — 흐림과 문구가 한 레이어다. */}
+                  {blockMessage !== null && (
+                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-[14px] bg-surface/85 px-3 backdrop-blur-[2px]">
+                      <span className="text-sm font-semibold text-text">{blockMessage}</span>
                     </div>
                   )}
                 </li>

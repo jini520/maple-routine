@@ -1,4 +1,5 @@
 import weeklyBossesData from '../data/weekly-bosses.json'
+import type { ManualTrackedItem } from '../storage/manual-tracked-content'
 import type { BossContent, BossCycle, BossDifficulty } from '../types'
 
 export interface MatchedBoss {
@@ -24,14 +25,29 @@ interface BossReferenceEntry {
 
 interface ReferenceEntryWithOrigin extends BossReferenceEntry {
   isSeasonBoss: boolean
+  cycle: BossCycle
 }
 
 // eventWeekly(시즌 보스, 현재 메이린) 소속 여부를 isSeasonBoss로 태깅해둔다 — 주간 보스
 // 12마리 제한/처치 카운트에서 시즌 보스를 제외하는 판정에 쓰인다([[ADR-007]], [[ADR-031]]).
+// cycle은 세 섹션 중 어디서 왔는지다(시즌 보스도 주기는 weekly) — 수동 추적 배열이 주간·월간
+// 보스를 kind: 'boss'로 함께 담아, 주간 한도를 셀 때 주기로 걸러야 하기 때문([[ADR-055]] 결정 3).
 const REFERENCE_ENTRIES: ReferenceEntryWithOrigin[] = [
-  ...(weeklyBossesData.weekly as BossReferenceEntry[]).map((entry) => ({ ...entry, isSeasonBoss: false })),
-  ...(weeklyBossesData.eventWeekly as BossReferenceEntry[]).map((entry) => ({ ...entry, isSeasonBoss: true })),
-  ...(weeklyBossesData.monthly as BossReferenceEntry[]).map((entry) => ({ ...entry, isSeasonBoss: false })),
+  ...(weeklyBossesData.weekly as BossReferenceEntry[]).map((entry) => ({
+    ...entry,
+    isSeasonBoss: false,
+    cycle: 'weekly' as BossCycle,
+  })),
+  ...(weeklyBossesData.eventWeekly as BossReferenceEntry[]).map((entry) => ({
+    ...entry,
+    isSeasonBoss: true,
+    cycle: 'weekly' as BossCycle,
+  })),
+  ...(weeklyBossesData.monthly as BossReferenceEntry[]).map((entry) => ({
+    ...entry,
+    isSeasonBoss: false,
+    cycle: 'monthly' as BossCycle,
+  })),
 ]
 
 // 이름이 비슷하지만 단위가 다른 별개 한도라 나란히 둔다([[ADR-054]] 결정 2) — CLEAR_LIMIT은
@@ -69,6 +85,34 @@ const SEASON_BOSS_NAMES = new Set<string>(
 // 마찬가지로 정확 일치로 충분하다 — 후자는 애초에 참조표에 없으므로 시즌 보스가 아니다.
 export function isSeasonBossName(bossName: string): boolean {
   return SEASON_BOSS_NAMES.has(bossName)
+}
+
+// 보스 표시명 → 주기. eventWeekly(시즌 보스)도 주간이다 — 주간/월간 탭 구분용이고, 시즌 보스
+// 제외 여부는 isSeasonBossName이 따로 판정한다([[ADR-055]] 결정 3).
+const BOSS_CYCLE_BY_NAME = new Map<string, BossCycle>()
+for (const entry of REFERENCE_ENTRIES) {
+  if (!BOSS_CYCLE_BY_NAME.has(entry.boss)) {
+    BOSS_CYCLE_BY_NAME.set(entry.boss, entry.cycle)
+  }
+}
+
+// 참조표에 없는 보스명(매칭 실패 원문명)은 주기를 알 수 없으므로 null이다.
+export function getBossCycleByName(bossName: string): BossCycle | null {
+  return BOSS_CYCLE_BY_NAME.get(bossName) ?? null
+}
+
+// ADR-055 결정 3: 수동 추적 항목 중 "주간 12개 한도에 잡히는" 보스 수. 화면의 BOSSES_BY_TAB은
+// weekly와 eventWeekly를 합치며 출처 구분을 잃고, 저장 배열은 월간 보스까지 kind: 'boss'로
+// 함께 담으므로, 주기와 시즌 여부를 참조표에서 되찾아야 한다. 제외 규칙은
+// countClearedWeeklyBosses([[ADR-031]] 결정 1)와 같아야 한다 — 어긋나면 선택은 12/12인데
+// 처치 카운트는 11/12로 표시되는 모순이 생긴다.
+export function countManualWeeklyBosses(items: ManualTrackedItem[]): number {
+  return items.filter(
+    (item) =>
+      item.kind === 'boss' &&
+      getBossCycleByName(item.contentName) === 'weekly' &&
+      !isSeasonBossName(item.contentName),
+  ).length
 }
 
 function stripSpaces(value: string): string {

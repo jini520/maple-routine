@@ -1,6 +1,14 @@
 import { create } from 'zustand'
 import { getMaxPartySize } from '../../lib/boss-crystal-prices'
-import { countClearedWeeklyBosses, matchBossContent, WEEKLY_BOSS_CLEAR_LIMIT, type MatchedBoss } from '../../lib/boss-matching'
+import {
+  countClearedWeeklyBosses,
+  countManualWeeklyBosses,
+  getBossCycleByName,
+  isSeasonBossName,
+  matchBossContent,
+  WEEKLY_BOSS_CLEAR_LIMIT,
+  type MatchedBoss,
+} from '../../lib/boss-matching'
 import { syncSchedules, type ScheduleSyncError } from '../schedule-sync/schedule-sync'
 import {
   getLastSelectedCharacter,
@@ -21,6 +29,10 @@ import {
   setManualTrackedContent,
   type ManualTrackedItem,
 } from '../../storage/manual-tracked-content'
+
+// ADR-055 결정 1·2: 추가 시도의 결과. 'duplicate'는 이미 같은 (보스, 난이도)를 추적 중이라
+// 아무 일도 일어나지 않은 경우이고, 'limitReached'는 주간 12개 한도가 막은 경우다.
+export type ManualBossAddResult = 'added' | 'duplicate' | 'limitReached'
 
 export interface BossCharacterView {
   ocid: string
@@ -58,7 +70,7 @@ export interface BossSchedulerStore extends BossSchedulerState {
   selectCharacter(ocid: string): Promise<void>
   loadPartySizes(ocids: string[]): Promise<void>
   setPartySize(ocid: string, boss: string, difficulty: string, partySize: number): Promise<void>
-  addManualBoss(ocid: string, contentName: string, difficulty: string): Promise<void>
+  addManualBoss(ocid: string, contentName: string, difficulty: string): Promise<ManualBossAddResult>
   removeManualBoss(ocid: string, contentName: string, difficulty: string): Promise<void>
 }
 
@@ -342,6 +354,8 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
   // ADR-035 결정 3·6: 저장소(단일 진실 공급원)에서 현재 배열을 읽어 (보스, 난이도) 멤버십만
   // 추가/삭제하고 다시 저장한 뒤 화면 상태를 갱신한다. 보스는 maxCount 개념이 없어 값 필드를
   // 채우지 않는다(완료 여부는 표시 시점에 동기화 결과에서 조회).
+  // ADR-055 결정 2: 한도 초과는 여기서 막고 결과 코드로 알린다 — UI 사전 차단만으로는
+  // 난이도 교체(remove → add)·시드 같은 다른 호출 경로가 새어나간다.
   async addManualBoss(ocid, contentName, difficulty) {
     const current = await getManualTrackedContent(ocid)
     if (
@@ -349,11 +363,20 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
         (item) => item.kind === 'boss' && item.contentName === contentName && item.difficulty === difficulty,
       )
     ) {
-      return
+      return 'duplicate'
     }
+
+    // 결정 3: 한도는 주간 보스에만 걸린다 — 시즌 보스·월간 보스는 카운트에도, 이 검사에도 들어가지 않는다.
+    const countsTowardWeeklyLimit =
+      getBossCycleByName(contentName) === 'weekly' && !isSeasonBossName(contentName)
+    if (countsTowardWeeklyLimit && countManualWeeklyBosses(current) >= WEEKLY_BOSS_CLEAR_LIMIT) {
+      return 'limitReached'
+    }
+
     const next: ManualTrackedItem[] = [...current, { contentName, kind: 'boss', difficulty }]
     await setManualTrackedContent(ocid, next)
     set((state) => ({ manualTrackedByOcid: { ...state.manualTrackedByOcid, [ocid]: next } }))
+    return 'added'
   },
 
   async removeManualBoss(ocid, contentName, difficulty) {

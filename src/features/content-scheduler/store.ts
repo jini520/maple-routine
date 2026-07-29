@@ -17,6 +17,7 @@ import {
   setManualTrackedContent,
   type ManualTrackedItem,
 } from '../../storage/manual-tracked-content'
+import { isGuildContent } from '../../lib/content-category'
 import type { SchedulerContentTemplateEntry } from '../../lib/manual-content-merge'
 import schedulerContentTemplate from '../../data/scheduler-content-template.json'
 import type { DailyContent, WeeklyContent } from '../../types'
@@ -35,10 +36,17 @@ function templateMaxCount(contentName: string): number | undefined {
   return entry?.max_count
 }
 
+// ADR-055 결정 1·2 / ADR-057: 추가 시도의 결과. 컨텐츠에는 개수 한도가 없어 보스와 달리
+// 'limitReached'가 없고, 대신 길드 콘텐츠 전용 사유 'guildRequired'가 있다.
+export type ManualContentAddResult = 'added' | 'duplicate' | 'guildRequired'
+
 export interface ContentCharacterView {
   ocid: string
   characterName: string
   world?: string
+  // ADR-057: 같은 캐시에서 함께 꺼내는 길드명. null = 미가입(길드 콘텐츠 잠금 근거),
+  // undefined = 모름(잠그지 않음).
+  guildName?: string | null
   dailyContents: DailyContent[]
   weeklyContents: WeeklyContent[]
   isStale: boolean
@@ -64,7 +72,7 @@ export interface ContentSchedulerStore extends ContentSchedulerState {
   saveTrackedOcids(ocids: string[], onProgress?: (completed: number, total: number) => void): Promise<void>
   refresh(ocids: string[], onProgress?: (completed: number, total: number) => void): Promise<void>
   selectCharacter(ocid: string): Promise<void>
-  addManualContent(ocid: string, contentName: string, kind: 'daily' | 'weekly'): Promise<void>
+  addManualContent(ocid: string, contentName: string, kind: 'daily' | 'weekly'): Promise<ManualContentAddResult>
   removeManualContent(ocid: string, contentName: string, kind: 'daily' | 'weekly'): Promise<void>
 }
 
@@ -81,11 +89,13 @@ const initialState: ContentSchedulerState = {
 // 목록에서 필터링한 순서)가 서로 달라 생기던 불일치를 없애기 위해, character-basic-cache의
 // level을 병합해 레벨 내림차순(동레벨이면 compareByName)으로 통일한다. 레벨 캐시가 없는
 // 캐릭터는 맨 뒤로 보낸다.
+// ADR-057: 길드명은 여기서 함께 꺼내 뷰에 실어 보낸다 — 정렬을 위해 이미 읽는 캐시 객체
+// 안에 있으므로 추가 조회가 0이고, 화면이 character-basic-cache를 다시 읽을 이유가 없다.
 async function sortByCachedLevel(views: ContentCharacterView[]): Promise<ContentCharacterView[]> {
   const withLevel = await Promise.all(
     views.map(async (view) => {
       const cached = await getCachedCharacterBasic(view.ocid)
-      return { view, level: cached?.profile.level ?? null }
+      return { view, level: cached?.profile.level ?? null, guildName: cached?.profile.guildName }
     }),
   )
 
@@ -99,7 +109,7 @@ async function sortByCachedLevel(views: ContentCharacterView[]): Promise<Content
       if (b.level !== a.level) return b.level - a.level
       return compareByName(a.view.characterName, b.view.characterName)
     })
-    .map((entry) => entry.view)
+    .map((entry) => ({ ...entry.view, guildName: entry.guildName }))
 }
 
 // ADR-043 결정 3: 저장 시점에 유지되는 캐릭터의 뷰가 메모리에 없을 때만 쓰는 폴백 —
@@ -281,10 +291,19 @@ export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, ge
   // ADR-035 결정 3·6·19: 저장소(단일 진실 공급원)에서 현재 배열을 읽어 멤버십만 추가/삭제하고
   // 다시 저장한 뒤 화면 상태를 갱신한다. 값 필드는 저장하지 않는다(max_count는 템플릿 확정값 복사).
   // kind('daily'/'weekly')는 호출부(관리 페이지의 현재 탭)가 확정해 넘긴다 — 표시 시점 추론 없음.
+  // ADR-055 결정 2: 선택 불가 항목은 여기서 막는다 — UI 사전 차단만으로는 다른 호출 경로가 샌다.
   async addManualContent(ocid, contentName, kind) {
+    const view = get().characters.find((character) => character.ocid === ocid)
+
+    // ADR-057: 길드 콘텐츠는 길드에 가입한 캐릭터만 진행할 수 있다. guildName이 null일 때만
+    // 막는다 — undefined는 "미가입"이 아니라 "모름"이라 잠그면 안 된다(같은 이유로 뷰가 없어도 통과).
+    if (view?.guildName === null && isGuildContent(contentName)) {
+      return 'guildRequired'
+    }
+
     const current = await getManualTrackedContent(ocid)
     if (current.some((item) => item.kind === kind && item.contentName === contentName)) {
-      return
+      return 'duplicate'
     }
     const next: ManualTrackedItem[] = [
       ...current,
@@ -292,6 +311,7 @@ export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, ge
     ]
     await setManualTrackedContent(ocid, next)
     set((state) => ({ manualTrackedByOcid: { ...state.manualTrackedByOcid, [ocid]: next } }))
+    return 'added'
   },
 
   async removeManualContent(ocid, contentName, kind) {

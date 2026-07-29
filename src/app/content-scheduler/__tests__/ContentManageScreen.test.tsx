@@ -181,3 +181,68 @@ describe('ContentManageScreen', () => {
     expect(screen.getByText(/캐릭터를 먼저 선택/)).toBeInTheDocument()
   })
 })
+
+// ADR-057: 길드 콘텐츠는 길드에 가입한 캐릭터만 선택할 수 있다.
+describe('ContentManageScreen — 길드 미가입 잠금 (ADR-057)', () => {
+  it('길드가 있으면 길드 콘텐츠를 선택할 수 있다', () => {
+    useTrackingModeStore.setState({ mode: 'manual' })
+    mockStore({ characters: [character({ guildName: '메이플길드' })] })
+
+    renderManageScreen()
+    fireEvent.click(screen.getByRole('button', { name: '주간' }))
+
+    expect(screen.getByRole('button', { name: /지하 수로/ })).not.toBeDisabled()
+    expect(screen.getByRole('button', { name: /플래그 레이스/ })).not.toBeDisabled()
+    expect(screen.getByRole('button', { name: /주간 미션 포인트/ })).not.toBeDisabled()
+  })
+
+  it('길드 미가입(guildName: null)이면 길드 콘텐츠 3종을 모두 비활성화하고 "길드 필요"를 표시한다', () => {
+    useTrackingModeStore.setState({ mode: 'manual' })
+    mockStore({ characters: [character({ guildName: null })] })
+
+    renderManageScreen()
+    fireEvent.click(screen.getByRole('button', { name: '주간' }))
+
+    const waterway = screen.getByRole('button', { name: /지하 수로/ })
+    expect(waterway).toBeDisabled()
+    expect(screen.getAllByText('길드 가입 시 진행 가능')).toHaveLength(3)
+    expect(screen.getByRole('button', { name: /플래그 레이스/ })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /주간 미션 포인트/ })).toBeDisabled()
+  })
+
+  it('길드 미가입이어도 길드 외 콘텐츠는 잠그지 않는다', () => {
+    useTrackingModeStore.setState({ mode: 'manual' })
+    mockStore({ characters: [character({ guildName: null })] })
+
+    renderManageScreen()
+    fireEvent.click(screen.getByRole('button', { name: '주간' }))
+
+    expect(screen.getByRole('button', { name: /무릉도장/ })).not.toBeDisabled()
+  })
+
+  it('길드 정보를 모르면(guildName: undefined) 잠그지 않는다 — 모름을 미가입으로 취급하지 않는다', () => {
+    useTrackingModeStore.setState({ mode: 'manual' })
+    mockStore({ characters: [character({ guildName: undefined })] })
+
+    renderManageScreen()
+    fireEvent.click(screen.getByRole('button', { name: '주간' }))
+
+    expect(screen.getByRole('button', { name: /지하 수로/ })).not.toBeDisabled()
+  })
+
+  it('이미 추적 중인 길드 콘텐츠는 길드를 나가도 해제할 수 있어야 하므로 활성 상태를 유지한다', () => {
+    useTrackingModeStore.setState({ mode: 'manual' })
+    const removeManualContent = vi.fn()
+    mockStore({
+      characters: [character({ guildName: null })],
+      manualTrackedByOcid: { 'ocid-1': [{ contentName: '[길드] 지하 수로', kind: 'weekly' }] },
+      removeManualContent,
+    })
+
+    renderManageScreen()
+    fireEvent.click(screen.getByRole('button', { name: '주간' }))
+    fireEvent.click(screen.getByRole('button', { name: /지하 수로/ }))
+
+    expect(removeManualContent).toHaveBeenCalledWith('ocid-1', '[길드] 지하 수로', 'weekly')
+  })
+})

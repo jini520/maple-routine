@@ -88,6 +88,7 @@ vi.mock('../../../storage/manual-tracked-content', () => ({
 }))
 
 import { useBossSchedulerStore, type BossCharacterView } from '../store'
+import type { ManualTrackedItem } from '../../../storage/manual-tracked-content'
 
 function bossContent(overrides: Partial<BossContent> = {}): BossContent {
   const merged = {
@@ -768,6 +769,87 @@ describe('useBossSchedulerStore', () => {
           { contentName: '무릉도장', kind: 'weekly' },
         ],
       })
+    })
+  })
+
+  // ADR-055 결정 2·3(이슈 #62): 한도 가드의 본체는 스토어다 — UI에서만 막으면 난이도 교체·시드
+  // 같은 다른 호출 경로가 그대로 새어나간다.
+  describe('ADR-055: 수동 주간 보스 12개 한도', () => {
+    // weekly-bosses.json 주간 섹션 앞부분 12종 — 실재하는 이름이어야 주기·시즌 판정이 통한다.
+    const TWELVE_WEEKLY_BOSSES = [
+      '자쿰',
+      '매그너스',
+      '파풀라투스',
+      '반반',
+      '피에르',
+      '블러디 퀸',
+      '벨룸',
+      '스우',
+      '데미안',
+      '가디언 엔젤 슬라임',
+      '루시드',
+      '윌',
+    ]
+
+    function trackedBosses(bossNames: string[]): ManualTrackedItem[] {
+      return bossNames.map((contentName) => ({ contentName, kind: 'boss' as const, difficulty: '노멀' }))
+    }
+
+    it('한도(12)에 도달하면 저장하지 않고 limitReached를 반환한다', async () => {
+      getManualTrackedContentMock.mockResolvedValue(trackedBosses(TWELVE_WEEKLY_BOSSES))
+
+      const result = await useBossSchedulerStore.getState().addManualBoss('ocid-1', '더스크', '노멀')
+
+      expect(result).toBe('limitReached')
+      expect(setManualTrackedContentMock).not.toHaveBeenCalled()
+    })
+
+    it('한도 직전(11)이면 정상 추가한다', async () => {
+      getManualTrackedContentMock.mockResolvedValue(trackedBosses(TWELVE_WEEKLY_BOSSES.slice(0, 11)))
+
+      const result = await useBossSchedulerStore.getState().addManualBoss('ocid-1', '더스크', '노멀')
+
+      expect(result).toBe('added')
+      expect(setManualTrackedContentMock).toHaveBeenCalled()
+    })
+
+    it('시즌 보스(메이린)는 한도가 찼어도 추가할 수 있다 — 처치 카운트 제외 규칙과 동일', async () => {
+      getManualTrackedContentMock.mockResolvedValue(trackedBosses(TWELVE_WEEKLY_BOSSES))
+
+      const result = await useBossSchedulerStore.getState().addManualBoss('ocid-1', '시즌 보스 메이린', '노멀')
+
+      expect(result).toBe('added')
+      expect(setManualTrackedContentMock).toHaveBeenCalled()
+    })
+
+    it('월간 보스(검은마법사)는 한도가 찼어도 추가할 수 있다 — 12는 주간 한도다', async () => {
+      getManualTrackedContentMock.mockResolvedValue(trackedBosses(TWELVE_WEEKLY_BOSSES))
+
+      const result = await useBossSchedulerStore.getState().addManualBoss('ocid-1', '검은마법사', '하드')
+
+      expect(result).toBe('added')
+      expect(setManualTrackedContentMock).toHaveBeenCalled()
+    })
+
+    it('시즌·월간 보스는 주간 카운트를 채우지 않는다 — 그 둘이 섞여 있어도 주간 12개까지 선택 가능', async () => {
+      getManualTrackedContentMock.mockResolvedValue([
+        ...trackedBosses(TWELVE_WEEKLY_BOSSES.slice(0, 11)),
+        { contentName: '시즌 보스 메이린', kind: 'boss', difficulty: '노멀' },
+        { contentName: '검은마법사', kind: 'boss', difficulty: '하드' },
+        { contentName: '무릉도장', kind: 'weekly' },
+      ])
+
+      const result = await useBossSchedulerStore.getState().addManualBoss('ocid-1', '더스크', '노멀')
+
+      expect(result).toBe('added')
+    })
+
+    it('이미 추적 중인 (보스, 난이도)면 duplicate를 반환한다', async () => {
+      getManualTrackedContentMock.mockResolvedValue([{ contentName: '자쿰', kind: 'boss', difficulty: '카오스' }])
+
+      const result = await useBossSchedulerStore.getState().addManualBoss('ocid-1', '자쿰', '카오스')
+
+      expect(result).toBe('duplicate')
     })
   })
 

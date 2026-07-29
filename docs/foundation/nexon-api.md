@@ -13,7 +13,8 @@
 
 ## 엔드포인트
 - **`GET /maplestory/v1/character/list`** (`nexon/character`): 계정 소속 캐릭터 목록. 캐릭터명+월드 수동 입력 폼은 없다. 응답: `{ account_list: [{ account_id, character_list: [{ ocid, character_name, world_name, character_class, character_level }] }] }`. **하나의 키가 여러 `account_id`(메이플 ID)를 반환할 수 있다**(실측, 2026-07-09) — `account_list.length > 1` 이면 계정 선택 UI. `ocid` 는 길이가 계정마다 다르므로(32~65자 관찰) 불투명 문자열로 다룬다. 키가 등록된 Nexon 계정 캐릭터만 반환(다른 계정은 별도 키 필요).
-- **`GET /maplestory/v1/character/basic`** (`nexon/character`, ocid별, [[ADR-015]]): 캐릭터 이미지(`character_image`)·`access_flag`·`world_name`. "캐릭터 관리" 피커·아바타에 사용, 병렬 호출.
+- **`GET /maplestory/v1/character/basic`** (`nexon/character`, ocid별, [[ADR-015]]): 캐릭터 이미지(`character_image`)·`access_flag`·`world_name`·`character_level`·`character_guild_name`. "캐릭터 관리" 피커·아바타에 사용, 병렬 호출. 이 응답 하나가 캐릭터 단위 파생 정보의 공용 원천이다 — 월드([[ADR-054]] 결정 5), 레벨([[ADR-055]] 결정 6), 길드([[ADR-057]] 결정 1)를 모두 여기서 꺼내 쓰므로 새 판정에 캐릭터 속성이 필요하면 **추가 호출 전에 이 응답부터 확인**할 것.
+  - **`character_guild_name` 은 세 상태를 구분해 정규화한다**([[ADR-057]] 결정 2): 문자열=그 길드 소속, `null`·빈 문자열=**가입한 길드 없음**, 필드 자체가 없음=**모름**. `normalizeCharacterBasic` 이 앞의 둘을 `null`, 마지막을 `undefined` 로 매핑한다. 둘을 합치면 응답·캐시가 불완전할 때 모든 캐릭터가 "미가입"으로 보여 길드 콘텐츠가 잘못 잠긴다.
 - **`GET /maplestory/v1/scheduler/character-state`** (`nexon/schedule`, ocid별): `daily_contents`/`weekly_contents`/`boss_contents` 를 앱 도메인 모델로 변환.
   - `boss_contents.cycle` = `bossDaily`/`bossWeekly`/`bossMonthly`(실측). **`bossWeekly`·`bossMonthly` 만 사용, `bossDaily` 무시** — 힐라(하드)·핑크빈(카오스) 등 일간 격하 보스가 `bossDaily` 로 온다([[ADR-006]] 일치).
   - **`date`(YYYY-MM-DD) 쿼리 파라미터** 지원(공식 문서 확인, 2026-07-14, [[ADR-023]]) — 보스 수익 과거 기간 재조회에 사용. 조회 하한: 고정 하한 `MIN_SCHEDULER_DATE`(2026-07-01) + 롤링 하한(오늘-13일, 정확히 14일 전은 조회 불가) 중 더 늦은 쪽([[ADR-032]]).

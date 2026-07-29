@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import type { BossContent } from '../../types'
+import type { ManualTrackedItem } from '../../storage/manual-tracked-content'
 import {
   countClearedWeeklyBosses,
+  countManualWeeklyBosses,
+  getBossCycleByName,
   getBossReferenceOrder,
   isSeasonBossName,
   matchBossContent,
@@ -325,5 +328,60 @@ describe('getBossReferenceOrder', () => {
   it('참조 목록에 없는 보스(매칭 실패 원문명)는 Number.MAX_SAFE_INTEGER로 맨 뒤로 보낸다', () => {
     expect(getBossReferenceOrder('알 수 없는 보스')).toBe(Number.MAX_SAFE_INTEGER)
     expect(getBossReferenceOrder('검은마법사')).toBeLessThan(getBossReferenceOrder('알 수 없는 보스'))
+  })
+})
+
+// ADR-055 결정 3: 수동 선택 12개 한도의 카운트 규칙을 여기 한 곳에만 둔다. 화면의
+// BOSSES_BY_TAB은 weekly와 eventWeekly를 합치며 출처 구분을 잃으므로, 주기·시즌 여부는
+// 반드시 참조표(getBossCycleByName·isSeasonBossName)로 되찾아야 한다.
+describe('getBossCycleByName (ADR-055)', () => {
+  it('weekly·eventWeekly 소속 보스는 weekly다', () => {
+    expect(getBossCycleByName('자쿰')).toBe('weekly')
+    expect(getBossCycleByName('시즌 보스 메이린')).toBe('weekly')
+  })
+
+  it('monthly 소속 보스(검은마법사)는 monthly다', () => {
+    expect(getBossCycleByName('검은마법사')).toBe('monthly')
+  })
+
+  it('참조표에 없는 보스명은 null이다', () => {
+    expect(getBossCycleByName('알 수 없는 보스')).toBeNull()
+  })
+})
+
+describe('countManualWeeklyBosses (ADR-055)', () => {
+  const bossItem = (contentName: string, difficulty: string): ManualTrackedItem => ({
+    contentName,
+    kind: 'boss',
+    difficulty,
+  })
+
+  it('주간 보스 항목 수를 센다', () => {
+    expect(countManualWeeklyBosses([bossItem('자쿰', '카오스'), bossItem('스우', '하드')])).toBe(2)
+  })
+
+  it('시즌 보스(메이린)는 세지 않는다 — countClearedWeeklyBosses와 같은 규칙', () => {
+    expect(countManualWeeklyBosses([bossItem('자쿰', '카오스'), bossItem('시즌 보스 메이린', '노멀')])).toBe(1)
+  })
+
+  it('월간 보스(검은마법사)는 세지 않는다 — 같은 배열에 kind: boss로 저장되지만 주간 한도와 무관하다', () => {
+    expect(countManualWeeklyBosses([bossItem('자쿰', '카오스'), bossItem('검은마법사', '하드')])).toBe(1)
+  })
+
+  it('컨텐츠 항목(kind: daily/weekly)은 세지 않는다', () => {
+    const items: ManualTrackedItem[] = [
+      bossItem('자쿰', '카오스'),
+      { contentName: '몬스터파크', kind: 'daily' },
+      { contentName: '무릉도장', kind: 'weekly' },
+    ]
+    expect(countManualWeeklyBosses(items)).toBe(1)
+  })
+
+  it('참조표에 없는 보스명은 주기를 알 수 없으므로 세지 않는다', () => {
+    expect(countManualWeeklyBosses([bossItem('알 수 없는 보스', '노멀')])).toBe(0)
+  })
+
+  it('같은 보스의 다른 난이도는 각각 센다 — 저장 단위가 (보스, 난이도) 쌍이다', () => {
+    expect(countManualWeeklyBosses([bossItem('스우', '노멀'), bossItem('스우', '하드')])).toBe(2)
   })
 })

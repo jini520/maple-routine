@@ -590,6 +590,53 @@ describe('useContentSchedulerStore', () => {
       expect(setManualTrackedContentMock).not.toHaveBeenCalled()
     })
 
+    // 가드 테스트용 최소 뷰 — 가드가 보는 건 ocid·guildName뿐이다.
+    function guardView(overrides: Partial<ContentCharacterView>): ContentCharacterView {
+      return {
+        ocid: 'ocid-1',
+        characterName: '낟낟',
+        dailyContents: [],
+        weeklyContents: [],
+        isStale: false,
+        syncedAt: null,
+        error: null,
+        ...overrides,
+      }
+    }
+
+    // ADR-057: 가드의 본체는 스토어다 — UI 사전 차단만으로는 다른 호출 경로가 샌다.
+    it('addManualContent는 길드 미가입(guildName: null)이면 길드 콘텐츠를 거부한다', async () => {
+      useContentSchedulerStore.setState({
+        characters: [guardView({ guildName: null })],
+      })
+
+      const result = await useContentSchedulerStore.getState().addManualContent('ocid-1', '[길드] 지하 수로', 'weekly')
+
+      expect(result).toBe('guildRequired')
+      expect(setManualTrackedContentMock).not.toHaveBeenCalled()
+    })
+
+    it('addManualContent는 길드 정보를 모르면(guildName: undefined) 길드 콘텐츠를 통과시킨다', async () => {
+      useContentSchedulerStore.setState({
+        characters: [guardView({ guildName: undefined })],
+      })
+
+      const result = await useContentSchedulerStore.getState().addManualContent('ocid-1', '[길드] 지하 수로', 'weekly')
+
+      expect(result).toBe('added')
+      expect(setManualTrackedContentMock).toHaveBeenCalled()
+    })
+
+    it('addManualContent는 길드 미가입이어도 길드 외 콘텐츠는 통과시킨다', async () => {
+      useContentSchedulerStore.setState({
+        characters: [guardView({ guildName: null })],
+      })
+
+      const result = await useContentSchedulerStore.getState().addManualContent('ocid-1', '무릉도장', 'weekly')
+
+      expect(result).toBe('added')
+    })
+
     it('removeManualContent는 해당 (kind, 이름) 항목만 제거하고 다른 kind(boss)·다른 이름은 보존한다', async () => {
       getManualTrackedContentMock.mockResolvedValue([
         { contentName: '몬스터파크', kind: 'daily', maxCount: 14 },
