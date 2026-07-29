@@ -1,0 +1,39 @@
+{
+  "project": "메이플 루틴",
+  "phase": "boss-profit-crystal-limit",
+  "steps": [
+    {
+      "step": 0,
+      "name": "docs-policy",
+      "status": "completed",
+      "started_at": "2026-07-29T15:33:49+0900",
+      "summary": "ADR-054 신설(결정 10건: 90=월드당·12와 별개 지표·rows 파생·주간탭 현재기간 한정·world는 imageUrl 경로 배관·월드 미상 제외·단일/복수 월드 줄·월간 분모 없음·금액행 아래 배치·item-icons 미등록) + ADR.md 인덱스 한 줄 + boss-profit.md(정책·n/12 배지·결정석 줄 레시피·열린 질문 정리) + game-data.md weeklyCrystalSaleLimit 구분 설명. src/ 무변경"
+    },
+    {
+      "step": 1,
+      "name": "crystal-reference-data",
+      "status": "pending"
+    },
+    {
+      "step": 2,
+      "name": "world-plumbing",
+      "status": "pending"
+    },
+    {
+      "step": 3,
+      "name": "character-clear-badge",
+      "status": "pending"
+    },
+    {
+      "step": 4,
+      "name": "world-crystal-summary",
+      "status": "pending"
+    },
+    {
+      "step": 5,
+      "name": "docs-finalize",
+      "status": "pending"
+    }
+  ],
+  "created_at": "2026-07-29T15:33:49+0900"
+}
