@@ -32,7 +32,7 @@
       "status": "completed",
       "started_at": "2026-07-29T15:49:12+0900",
       "summary": "BossProfitScreen.tsx 단일 파일: 파생 함수 `countGroupClearedWeeklyBosses(group: CharacterGroup): number` 신설(collectGroupValuableDrops 옆, cycle==='weekly' && isComplete && !isSeasonBossName(row.boss) 필터 후 보스명 Set으로 distinct — step 4의 월드별 합산이 이 함수를 그대로 재사용, 계산 두 벌 금지) + 캐릭터 카드 헤더 배지(캐릭터명 flex-1과 금액 사이, BossScreen 주간 처치 수 배지와 동일 스타일 rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary · 모듈 상수 WEEKLY_CRYSTAL_ICON_URL = getItemIconUrlByFile('intense_power_crystal_weekly.webp') 아이콘 h-4 w-4 · null이면 아이콘만 생략 · 분모는 WEEKLY_BOSS_CLEAR_LIMIT · role=\"img\" aria-label=\"주간 보스 처치 n / 12\" · 높이 24px로 헤더 높이 불변). 표시 조건은 tab==='weekly' && isCurrentPeriod — 화면이 이미 계산한 isLatestPeriod 결과를 CharacterAccordion에 isCurrentPeriod prop으로 내림(아코디언 내부 재계산 없음). store.ts·헤드라인 영역 무변경. 테스트 7건 추가(114 파일/1331건 통과)",
-      "completed_at": "2026-07-29T15:53:10+0900"
+      "completed_at": "2026-07-29T15:53:32+0900"
     },
     {
       "step": 4,
