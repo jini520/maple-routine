@@ -37,7 +37,10 @@
     {
       "step": 4,
       "name": "world-crystal-summary",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-07-29T15:53:32+0900",
+      "summary": "BossProfitScreen.tsx 단일 파일: 파생 `summarizeWorldCrystals(groups): {world, cleared}[]`(그룹 월드는 bossRows[0]?.world ?? null로 판정, null 그룹 제외 = 미분류 줄 없음, Map 삽입 순서로 결정적 — 처치 수는 step 3의 countGroupClearedWeeklyBosses를 그대로 재사용) + `countMonthlyCrystals(groups)`(cycle==='monthly' && isComplete 그룹별 distinct 합, 90 한도와 무관한 별개 수치) + `CrystalSummaryRow` 컴포넌트를 총 수익 헤드라인 금액행 아래·헤어라인 위에 배치(isCurrentPeriod 한정). 주간=`n / (90 × 월드 수)`, 복수 월드면 줄 전체가 button(aria-expanded)+'N개 월드'+chevron, 펼치면 worldEmblemUrl 재사용한 월드별 `n / 90` 줄(pl-7); 월간=분모 없이 `n개`. 월드를 아는 캐릭터가 0이면 줄 미렌더, 월드는 알고 처치 0이면 `0 / 90` 표시. 분모는 WEEKLY_CRYSTAL_SALE_LIMIT(리터럴 90 없음), 신규 색·토큰 없음(text·text-muted), 라벨행 고가 드롭 뱃지 absolute 배치·stickyHeaderHeight 계산·store.ts 무변경. 테스트 11건 추가(114 파일/1342건 통과)",
+      "completed_at": "2026-07-29T15:59:20+0900"
     },
     {
       "step": 5,

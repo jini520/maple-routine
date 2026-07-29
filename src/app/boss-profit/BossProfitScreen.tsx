@@ -23,10 +23,11 @@ import {
   type BossProfitWeeklySubtotal,
 } from '../../features/boss-profit/store'
 import { formatScheduleSyncError, formatSyncedAt } from '../../features/schedule-sync/format'
-import { isSeasonBossName, WEEKLY_BOSS_CLEAR_LIMIT } from '../../lib/boss-matching'
+import { isSeasonBossName, WEEKLY_BOSS_CLEAR_LIMIT, WEEKLY_CRYSTAL_SALE_LIMIT } from '../../lib/boss-matching'
 import { formatBossProfitPeriodLabel, isLatestPeriod, isPeriodQueryable } from '../../lib/boss-profit-period'
 import { getItemIconUrl, getItemIconUrlByFile } from '../../lib/item-icons'
 import { isValuableDrop } from '../../lib/valuable-drops'
+import { worldEmblemUrl } from '../../lib/world-emblem'
 import type { BossCycle } from '../../types'
 import type { RecordedDrop } from '../../types/drops'
 import { BossDropSheet } from './BossDropSheet'
@@ -459,9 +460,47 @@ function countGroupClearedWeeklyBosses(group: CharacterGroup): number {
   return clearedBossNames.size
 }
 
-// 주간 결정석 아이콘. 드랍 테이블 항목이 아니라 UI 표시 전용이라 item-icons.json에 등록하지 않고
+interface WorldCrystalSummary {
+  world: string
+  cleared: number
+}
+
+// 월드별 주간 결정석 소진량([[ADR-054]] 결정 1 — 90은 계정이 아니라 월드당 한도다). 캐릭터별
+// 처치 수는 위 countGroupClearedWeeklyBosses를 그대로 재사용하고(계산 두 벌 금지, 결정 3) 여기서는
+// 월드 묶음만 얹는다. 그룹의 행은 모두 같은 캐릭터에서 나오므로 월드도 첫 행에서 읽으면 된다.
+// world가 null인 캐릭터(구버전 캐시)는 어느 월드 한도에도 귀속시킬 수 없어 조용히 제외한다
+// (결정 6 — "미분류" 줄을 만들지 않는다). 결과 순서는 Map 삽입 순서 = 월드가 처음 등장한 캐릭터의
+// 정렬 순서라 렌더마다 흔들리지 않는다(표시 순서 고정, [[ADR-036]]).
+function summarizeWorldCrystals(groups: CharacterGroup[]): WorldCrystalSummary[] {
+  const clearedByWorld = new Map<string, number>()
+  for (const group of groups) {
+    const world = group.bossRows[0]?.world ?? null
+    if (world === null) continue
+    clearedByWorld.set(world, (clearedByWorld.get(world) ?? 0) + countGroupClearedWeeklyBosses(group))
+  }
+  return [...clearedByWorld].map(([world, cleared]) => ({ world, cleared }))
+}
+
+// 이 기간 월간 보스(검은마법사) 결정석 개수. 주간 90 한도에 포함되지 않는 별개 수치라([[ADR-054]]
+// 결정 1·8) 위 주간 집계와 섞지 않는다 — 시즌 보스는 weekly 소속이라 여기선 판정할 것이 없다.
+// 결정석은 캐릭터마다 각자 나오므로 그룹별 distinct(같은 보스를 여러 난이도로 잡아도 1)를 더한다.
+function countMonthlyCrystals(groups: CharacterGroup[]): number {
+  let total = 0
+  for (const group of groups) {
+    const clearedBossNames = new Set<string>()
+    for (const row of group.bossRows) {
+      if (row.cycle !== 'monthly' || !row.isComplete) continue
+      clearedBossNames.add(row.boss)
+    }
+    total += clearedBossNames.size
+  }
+  return total
+}
+
+// 결정석 아이콘(주간/월간). 드랍 테이블 항목이 아니라 UI 표시 전용이라 item-icons.json에 등록하지 않고
 // 파일명으로 직접 조회한다([[ADR-054]] 결정 10). 파일이 없으면 null — 아이콘만 생략하고 숫자는 그대로 둔다.
 const WEEKLY_CRYSTAL_ICON_URL = getItemIconUrlByFile('intense_power_crystal_weekly.webp')
+const MONTHLY_CRYSTAL_ICON_URL = getItemIconUrlByFile('intense_power_crystal_monthly.webp')
 
 // 배지가 카드 상단 밖으로 올라간 양(-top-2 = 0.5rem). sticky 레일 오프셋에서 이만큼 상쇄해야
 // stuck 시 배지가 헤더 상단선에 걸린다(ADR-047 후속).
@@ -511,6 +550,99 @@ function ValuableDropBadge(props: {
       </span>
       {extra > 0 && <span className="text-[10px] font-bold leading-none tabular-nums">+{extra}</span>}
     </span>
+  )
+}
+
+// 총 수익 헤드라인의 결정석 판매 현황 줄([[ADR-054]] 결정 9) — 금액행 다음, 헤어라인 위. 라벨행
+// 우측은 기간 전체 고가 드롭 뱃지가 absolute로 점유 중이고 그 이유가 "뱃지 유무로 라벨행이
+// 16↔24px 튀는 것"([[ADR-049]] 결정 2)이라, 같은 자리에 흐름으로 끼워 넣으면 그 회귀를 되살린다.
+// 접힘 상태는 월드가 몇 개든 항상 한 줄로 고정한다(결정 7) — 헤더 높이 변화 자체는 ResizeObserver
+// 실측이라 따라오지만, 줄이 늘면 sticky 헤더가 목록 영역을 잠식한다.
+function CrystalSummaryRow(props: { tab: BossCycle; groups: CharacterGroup[] }): React.JSX.Element | null {
+  const [isBreakdownOpen, setIsBreakdownOpen] = useState(false)
+
+  const isWeekly = props.tab === 'weekly'
+  const worlds = isWeekly ? summarizeWorldCrystals(props.groups) : []
+  // 주간 탭인데 월드를 아는 캐릭터가 하나도 없으면(구버전 캐시만 있는 경우) 대비할 한도가 없다.
+  // 반대로 월드는 알지만 처치 수가 0이면 "0 / 90"을 그대로 보여준다(정보로서 유효하다).
+  if (isWeekly && worlds.length === 0) return null
+
+  const iconUrl = isWeekly ? WEEKLY_CRYSTAL_ICON_URL : MONTHLY_CRYSTAL_ICON_URL
+  const cleared = isWeekly
+    ? worlds.reduce((sum, summary) => sum + summary.cleared, 0)
+    : countMonthlyCrystals(props.groups)
+  // 각 월드가 각자 90을 가지므로 복수 월드의 분모는 90 × 월드 수다(결정 7).
+  const limit = WEEKLY_CRYSTAL_SALE_LIMIT * worlds.length
+  const isExpandable = worlds.length > 1
+  const label = isWeekly ? `주간 결정석 판매 ${cleared} / ${limit}` : `월간 결정석 ${cleared}개`
+
+  const content = (
+    <>
+      {iconUrl !== null && <img src={iconUrl} alt="" className="h-5 w-5 flex-none object-contain" />}
+      {/* 숫자와 단위 사이는 마진이 아니라 실제 공백 문자로 띄운다 — 마진만으론 textContent가
+          "34/90"으로 붙어 스크린리더가 이어 읽는다([[ADR-046]]에서 "메소" 단위로 정한 규약).
+          "개"는 한국어 표기상 숫자에 붙으므로 공백을 넣지 않는다. */}
+      {isWeekly ? (
+        <span className="text-sm font-bold tabular-nums text-text">
+          {cleared} <span className="text-xs font-semibold text-text-muted">/ {limit}</span>
+        </span>
+      ) : (
+        <span className="text-sm font-bold tabular-nums text-text">
+          {cleared}
+          <span className="text-xs font-semibold text-text-muted">개</span>
+        </span>
+      )}
+      {isExpandable && (
+        <span className="ml-auto flex items-center gap-1">
+          <span className="text-xs text-text-muted">{worlds.length}개 월드</span>
+          {isBreakdownOpen ? (
+            <ChevronUp className="h-3.5 w-3.5 text-text-muted" strokeWidth={2} aria-hidden="true" />
+          ) : (
+            <ChevronDown className="h-3.5 w-3.5 text-text-muted" strokeWidth={2} aria-hidden="true" />
+          )}
+        </span>
+      )}
+    </>
+  )
+
+  // 단일 월드·월간 탭은 펼칠 것이 없어 버튼으로 두지 않는다. 수치만으로는 무엇의 비율인지 읽히지
+  // 않으므로 줄 전체에 레이블을 주고 아이콘은 장식(alt="")으로 남긴다(캐릭터 배지와 동일 규약).
+  if (!isExpandable) {
+    return (
+      <div role="img" aria-label={label} className="mt-2 flex items-center gap-2">
+        {content}
+      </div>
+    )
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setIsBreakdownOpen((prev) => !prev)}
+        aria-label={label}
+        aria-expanded={isBreakdownOpen}
+        className="mt-2 flex w-full items-center gap-2"
+      >
+        {content}
+      </button>
+      {isBreakdownOpen && (
+        <div className="mt-1.5 space-y-1 pl-7">
+          {worlds.map((summary) => {
+            const emblemUrl = worldEmblemUrl(summary.world)
+            return (
+              <div key={summary.world} className="flex items-center gap-1.5">
+                {emblemUrl !== null && <img src={emblemUrl} alt="" className="h-4 w-4 flex-none" />}
+                <span className="text-xs text-text-muted">{summary.world}</span>
+                <span className="ml-auto text-xs font-semibold tabular-nums text-text">
+                  {summary.cleared} / {WEEKLY_CRYSTAL_SALE_LIMIT}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </>
   )
 }
 
@@ -945,6 +1077,11 @@ export function BossProfitScreen(): React.JSX.Element {
                   <span className="text-xs font-bold text-text-muted">메소</span>
                 </p>
               </div>
+              {/* 결정석 판매 현황은 금액행 아래 새 줄로 둔다([[ADR-054]] 결정 9) — 라벨행 우측은
+                  고가 드롭 뱃지가 absolute로 점유 중이라 흐름에 끼우면 헤드라인이 튄다(ADR-049).
+                  현재 기간 한정(결정 4) — 과거 기간 rows는 가격 미확정 보스가 DB에 없어 과소집계되고,
+                  결정석은 이월 없이 매주 초기화되므로 지난 주 소진량을 보여줄 이유도 없다. */}
+              {isCurrentPeriod && <CrystalSummaryRow tab={tab} groups={characterGroups} />}
               <div className="mt-3 h-px bg-border" aria-hidden="true" />
             </div>
           )}

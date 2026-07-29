@@ -10,7 +10,7 @@ import {
   type BossProfitWeeklySubtotal,
 } from '../../../features/boss-profit/store'
 import { getCurrentBossProfitPeriod } from '../../../lib/boss-profit-period'
-import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss-matching'
+import { WEEKLY_BOSS_CLEAR_LIMIT, WEEKLY_CRYSTAL_SALE_LIMIT } from '../../../lib/boss-matching'
 
 // 새로고침 버튼·다음 기간 버튼은 "현재 기간"에서만 각각 노출/비활성되므로, 실행 시점과 무관하게
 // 항상 현재 기간을 가리키도록 실제 계산값을 쓴다.
@@ -1273,6 +1273,257 @@ describe('BossProfitScreen', () => {
       // 아바타(32px)가 헤더 높이를 정하므로 배지는 24px(py-1 + text-xs 16px)를 넘지 않아야 한다 —
       // 헤더 높이가 바뀌면 ResizeObserver 실측값에 물린 sticky 오프셋·배지 레일·하단 페이드가 어긋난다.
       expect(badge).toHaveClass('py-1', 'text-xs')
+    })
+  })
+
+  // 총 수익 헤드라인의 결정석 판매 현황 줄(ADR-054, #53) — 주간 한도 90은 "월드당"이라 캐릭터별
+  // 처치 수(위 n/12와 같은 파생값)를 월드로 묶어 합산한다. rows의 world 필드만으로 재현한다.
+  describe('월드별 주간 결정석 판매 현황(ADR-054, #53)', () => {
+    function crystalRow(): HTMLElement | null {
+      return screen.queryByLabelText(/결정석/)
+    }
+
+    // 한 캐릭터가 서로 다른 보스 n종을 완료한 행들 — 처치 수 n이 되도록 보스명만 바꿔 만든다.
+    function clearedRows(
+      ocid: string,
+      characterName: string,
+      world: string | null,
+      bosses: string[],
+    ): BossProfitRow[] {
+      return bosses.map((boss) =>
+        row({ ocid, characterName, world, boss, periodKey: CURRENT_WEEKLY_PERIOD_KEY }),
+      )
+    }
+
+    it('월드가 하나면 그 월드의 캐릭터 처치 수를 합산해 "n / 90" 한 줄로 보여준다', () => {
+      mockStore({
+        status: 'loaded',
+        tab: 'weekly',
+        periodKey: CURRENT_WEEKLY_PERIOD_KEY,
+        trackedOcids: ['ocid-1', 'ocid-2'],
+        rows: [
+          ...clearedRows('ocid-1', '낟낟', '스카니아', ['자쿰', '루시드', '윌']),
+          ...clearedRows('ocid-2', '내옆에최성일', '스카니아', ['자쿰', '루시드']),
+        ],
+      })
+
+      renderBossProfitScreen()
+
+      expect(crystalRow()).toHaveAccessibleName(`주간 결정석 판매 5 / ${WEEKLY_CRYSTAL_SALE_LIMIT}`)
+      // 단일 월드는 펼칠 것이 없다 — 월드 수 표기도, 토글 버튼도 두지 않는다.
+      expect(screen.queryByText(/개 월드/)).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /결정석/ })).not.toBeInTheDocument()
+    })
+
+    it('월드가 여러 개면 분모가 90 × 월드 수가 되고 "N개 월드" 표기가 붙는다', () => {
+      mockStore({
+        status: 'loaded',
+        tab: 'weekly',
+        periodKey: CURRENT_WEEKLY_PERIOD_KEY,
+        trackedOcids: ['ocid-1', 'ocid-2'],
+        rows: [
+          ...clearedRows('ocid-1', '낟낟', '스카니아', ['자쿰', '루시드', '윌']),
+          ...clearedRows('ocid-2', '내옆에최성일', '루나', ['자쿰', '루시드']),
+        ],
+      })
+
+      renderBossProfitScreen()
+
+      expect(
+        screen.getByRole('button', { name: `주간 결정석 판매 5 / ${WEEKLY_CRYSTAL_SALE_LIMIT * 2}` }),
+      ).toBeInTheDocument()
+      expect(screen.getByText('2개 월드')).toBeInTheDocument()
+    })
+
+    it('복수 월드에서 줄을 탭하면 월드별 줄이 펼쳐지고 다시 탭하면 접힌다', () => {
+      mockStore({
+        status: 'loaded',
+        tab: 'weekly',
+        periodKey: CURRENT_WEEKLY_PERIOD_KEY,
+        trackedOcids: ['ocid-1', 'ocid-2'],
+        rows: [
+          ...clearedRows('ocid-1', '낟낟', '스카니아', ['자쿰', '루시드', '윌']),
+          ...clearedRows('ocid-2', '내옆에최성일', '루나', ['자쿰', '루시드']),
+        ],
+      })
+
+      renderBossProfitScreen()
+      const toggle = screen.getByRole('button', { name: /주간 결정석 판매/ })
+      expect(toggle).toHaveAttribute('aria-expanded', 'false')
+      expect(screen.queryByText('스카니아')).not.toBeInTheDocument()
+
+      fireEvent.click(toggle)
+
+      expect(toggle).toHaveAttribute('aria-expanded', 'true')
+      expect(screen.getByText('스카니아')).toBeInTheDocument()
+      expect(screen.getByText('루나')).toBeInTheDocument()
+      // 월드별 분모는 각 월드가 각자 갖는 90 그대로(합산 분모 180이 아니다)
+      expect(screen.getByText(`3 / ${WEEKLY_CRYSTAL_SALE_LIMIT}`)).toBeInTheDocument()
+      expect(screen.getByText(`2 / ${WEEKLY_CRYSTAL_SALE_LIMIT}`)).toBeInTheDocument()
+
+      fireEvent.click(toggle)
+
+      expect(screen.queryByText('스카니아')).not.toBeInTheDocument()
+    })
+
+    it('월드를 모르는 캐릭터(world: null)의 처치 수는 합계에서 제외한다(ADR-054 결정 6)', () => {
+      mockStore({
+        status: 'loaded',
+        tab: 'weekly',
+        periodKey: CURRENT_WEEKLY_PERIOD_KEY,
+        trackedOcids: ['ocid-1', 'ocid-2'],
+        rows: [
+          ...clearedRows('ocid-1', '낟낟', '스카니아', ['자쿰', '루시드']),
+          ...clearedRows('ocid-2', '내옆에최성일', null, ['자쿰', '루시드', '윌']),
+        ],
+      })
+
+      renderBossProfitScreen()
+
+      // "미분류" 줄을 만들지 않고 조용히 뺀다 — 월드는 스카니아 하나뿐이다.
+      expect(crystalRow()).toHaveAccessibleName(`주간 결정석 판매 2 / ${WEEKLY_CRYSTAL_SALE_LIMIT}`)
+      expect(screen.queryByText(/개 월드/)).not.toBeInTheDocument()
+    })
+
+    it('모든 캐릭터의 월드를 모르면 결정석 줄 자체를 렌더하지 않는다', () => {
+      mockStore({
+        status: 'loaded',
+        tab: 'weekly',
+        periodKey: CURRENT_WEEKLY_PERIOD_KEY,
+        trackedOcids: ['ocid-1'],
+        rows: clearedRows('ocid-1', '낟낟', null, ['자쿰', '루시드']),
+      })
+
+      renderBossProfitScreen()
+
+      expect(crystalRow()).not.toBeInTheDocument()
+    })
+
+    it('시즌 보스(메이린)는 월드 합계에도 포함하지 않는다', () => {
+      mockStore({
+        status: 'loaded',
+        tab: 'weekly',
+        periodKey: CURRENT_WEEKLY_PERIOD_KEY,
+        trackedOcids: ['ocid-1'],
+        rows: clearedRows('ocid-1', '낟낟', '스카니아', ['자쿰', '시즌 보스 메이린']),
+      })
+
+      renderBossProfitScreen()
+
+      expect(crystalRow()).toHaveAccessibleName(`주간 결정석 판매 1 / ${WEEKLY_CRYSTAL_SALE_LIMIT}`)
+    })
+
+    it('월드는 알지만 처치 수가 0이면 "0 / 90"을 그대로 보여준다', () => {
+      mockStore({
+        status: 'loaded',
+        tab: 'weekly',
+        periodKey: CURRENT_WEEKLY_PERIOD_KEY,
+        trackedOcids: ['ocid-1'],
+        rows: [
+          row({
+            world: '스카니아',
+            periodKey: CURRENT_WEEKLY_PERIOD_KEY,
+            isComplete: false,
+            partySize: null,
+            payoutMeso: 0,
+          }),
+        ],
+      })
+
+      renderBossProfitScreen()
+
+      expect(crystalRow()).toHaveAccessibleName(`주간 결정석 판매 0 / ${WEEKLY_CRYSTAL_SALE_LIMIT}`)
+    })
+
+    it('월간 탭에서는 분모 없이 월간 결정석 개수만 보여준다(90은 주간 전용 한도)', () => {
+      mockStore({
+        status: 'loaded',
+        tab: 'monthly',
+        periodKey: CURRENT_MONTHLY_PERIOD_KEY,
+        trackedOcids: ['ocid-1', 'ocid-2'],
+        rows: [
+          row({
+            ocid: 'ocid-1',
+            characterName: '낟낟',
+            world: '스카니아',
+            boss: '검은마법사',
+            difficulty: '익스트림',
+            cycle: 'monthly',
+            periodKey: CURRENT_MONTHLY_PERIOD_KEY,
+          }),
+          row({
+            ocid: 'ocid-2',
+            characterName: '내옆에최성일',
+            world: '루나',
+            boss: '검은마법사',
+            difficulty: '익스트림',
+            cycle: 'monthly',
+            periodKey: CURRENT_MONTHLY_PERIOD_KEY,
+          }),
+        ],
+      })
+
+      renderBossProfitScreen()
+
+      expect(crystalRow()).toHaveAccessibleName('월간 결정석 2개')
+      expect(crystalRow()).toHaveTextContent('2개')
+      expect(screen.queryByText(new RegExp(`/ ${WEEKLY_CRYSTAL_SALE_LIMIT}`))).not.toBeInTheDocument()
+      expect(screen.queryByText(/개 월드/)).not.toBeInTheDocument()
+    })
+
+    it('과거 기간에서는 결정석 줄을 렌더하지 않는다', () => {
+      mockStore({
+        status: 'loaded',
+        tab: 'weekly',
+        periodKey: '2026-07-02', // 현재 기간이 아님
+        trackedOcids: ['ocid-1'],
+        rows: [row({ world: '스카니아', periodKey: '2026-07-02' })],
+      })
+
+      renderBossProfitScreen()
+
+      expect(crystalRow()).not.toBeInTheDocument()
+    })
+
+    it('분모는 weekly-bosses.json의 WEEKLY_CRYSTAL_SALE_LIMIT을 따른다(리터럴 90 금지)', () => {
+      mockStore({
+        status: 'loaded',
+        tab: 'weekly',
+        periodKey: CURRENT_WEEKLY_PERIOD_KEY,
+        trackedOcids: ['ocid-1'],
+        rows: clearedRows('ocid-1', '낟낟', '스카니아', ['자쿰', '루시드', '윌']),
+      })
+
+      renderBossProfitScreen()
+
+      expect(crystalRow()).toHaveTextContent(`3 / ${WEEKLY_CRYSTAL_SALE_LIMIT}`)
+    })
+
+    it('ADR-049 회귀 가드: 결정석 줄은 라벨행이 아니라 금액행 아래 새 줄이다(고가 드롭 뱃지 자리를 뺏지 않는다)', () => {
+      mockStore({
+        status: 'loaded',
+        tab: 'weekly',
+        periodKey: CURRENT_WEEKLY_PERIOD_KEY,
+        trackedOcids: ['ocid-1'],
+        rows: [row({ world: '스카니아', periodKey: CURRENT_WEEKLY_PERIOD_KEY })],
+        dropsByRowKey: {
+          [`ocid-1|자쿰|카오스|${CURRENT_WEEKLY_PERIOD_KEY}`]: [
+            { category: 'consumable', itemName: VALUABLE_ITEM, quantity: 1 },
+          ],
+        },
+      })
+
+      renderBossProfitScreen()
+
+      // 뱃지는 여전히 라벨행에 absolute로 떠 있어야 한다 — 결정석 줄이 그 자리를 흐름으로 차지하면
+      // 뱃지 유무로 헤드라인이 8px 튀는 회귀가 되살아난다.
+      const badge = screen.getByRole('img', { name: '이 기간 고가 드롭' })
+      expect(badge).toHaveClass('absolute')
+      expect(badge.parentElement).toHaveClass('relative')
+
+      const line = crystalRow()
+      expect(line).toHaveClass('mt-2')
+      expect(badge.parentElement?.contains(line)).toBe(false)
     })
   })
 })
