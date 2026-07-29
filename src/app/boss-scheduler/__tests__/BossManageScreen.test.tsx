@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { BossManageScreen } from '../BossManageScreen'
 import { useBossSchedulerStore, type BossCharacterView } from '../../../features/boss-scheduler/store'
+import { useToastStore } from '../../../features/toast/store'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 import type { MatchedBoss } from '../../../lib/boss-matching'
 
@@ -370,7 +371,7 @@ describe('BossManageScreen — 주간 12개 한도 (ADR-055)', () => {
       expect(screen.queryByText('2/12')).not.toBeInTheDocument()
     })
 
-    it('한도에 도달하면 미선택 보스의 토글을 비활성화한다', () => {
+    it('한도에 도달해도 미선택 보스의 토글을 비활성화하지 않는다 — 눌러야 이유를 알릴 수 있다', () => {
       useTrackingModeStore.setState({ mode: 'manual' })
       mockStore({
         characters: [character()],
@@ -379,7 +380,43 @@ describe('BossManageScreen — 주간 12개 한도 (ADR-055)', () => {
 
       renderManageScreen()
 
-      expect(screen.getByRole('button', { name: '더스크' })).toBeDisabled()
+      expect(screen.getByRole('button', { name: '더스크' })).not.toBeDisabled()
+      // 대신 행을 흐리게 둬 "지금은 고를 수 없다"를 먼저 보여준다
+      expect(bossRow('더스크').className).toContain('opacity-40')
+      expect(bossRow('자쿰').className).not.toContain('opacity-40')
+    })
+
+    it('한도가 찬 상태에서 미선택 보스를 누르면 토스트로 이유를 알린다', async () => {
+      useTrackingModeStore.setState({ mode: 'manual' })
+      useToastStore.setState({ toasts: [], queue: [] })
+      mockStore({
+        characters: [character()],
+        manualTrackedByOcid: { 'ocid-1': trackedBosses(TWELVE_WEEKLY_BOSSES) },
+        addManualBoss: vi.fn().mockResolvedValue('limitReached'),
+      })
+
+      renderManageScreen()
+      fireEvent.click(screen.getByRole('button', { name: '더스크' }))
+
+      await waitFor(() =>
+        expect(useToastStore.getState().toasts.map((toast) => toast.message)).toContain(
+          '주간 12개를 모두 선택했어요',
+        ),
+      )
+    })
+
+    it('한도에 걸리지 않은 추가는 토스트를 띄우지 않는다', async () => {
+      useTrackingModeStore.setState({ mode: 'manual' })
+      useToastStore.setState({ toasts: [], queue: [] })
+      mockStore({
+        characters: [character()],
+        addManualBoss: vi.fn().mockResolvedValue('added'),
+      })
+
+      renderManageScreen()
+      fireEvent.click(screen.getByRole('button', { name: '자쿰' }))
+
+      await waitFor(() => expect(useToastStore.getState().toasts).toEqual([]))
     })
 
     it('한도에 도달해도 이미 선택된 보스는 해제할 수 있어야 하므로 활성 상태를 유지한다', () => {
