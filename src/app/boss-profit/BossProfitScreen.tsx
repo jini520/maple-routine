@@ -62,7 +62,7 @@ function avatarFaceCropStyle(): React.CSSProperties {
 // 탭을 옮길 때마다 모든 카드가 8px씩 튄다(높이는 ResizeObserver 실측이라 따라오지만, 그 튐 자체가
 // [[ADR-049]]가 없애려던 것이다). 초상화 이미지 크기는 32px 그대로라 얼굴 크롭은 영향받지 않는다.
 const AVATAR_SLOT_SIZE = 40
-const AVATAR_RING_STROKE = 2
+const AVATAR_RING_STROKE = 2.5
 // 칸 사이 간격(viewBox 단위 호 길이). 12칸이 하나의 원처럼 보이지 않도록 눈에 띄는 최소값.
 const AVATAR_RING_GAP = 2.4
 
@@ -71,8 +71,12 @@ function AvatarClearRing(props: { cleared: number; total: number }): React.JSX.E
   const radius = (AVATAR_SLOT_SIZE - AVATAR_RING_STROKE) / 2
   const circumference = 2 * Math.PI * radius
   const segment = circumference / props.total
-  // 갭을 뺀 나머지가 실제로 그려지는 칸이다. total이 커져 갭이 칸보다 길어져도 선이 사라지지 않게 하한을 둔다.
-  const dash = Math.max(segment - AVATAR_RING_GAP, 0.5)
+  // strokeLinecap="round"는 칸 양끝을 stroke 두께의 절반(=1)씩 더 그린다(정정 5) — 그만큼 dash를
+  // 미리 줄여야 눈에 보이는 칸 길이와 칸 사이 간격이 butt일 때와 같게 유지된다. 빼지 않으면 갭이
+  // 2.4 → 0.4로 뭉개져 12칸이 하나의 원처럼 보인다.
+  const dash = Math.max(segment - AVATAR_RING_GAP - AVATAR_RING_STROKE, 0.5)
+  // 캡이 시작점 뒤로 0.5 stroke만큼 튀어나오므로 그만큼 밀어야 칸이 원래 자리에 그대로 앉는다.
+  const capOffset = AVATAR_RING_STROKE / 2
 
   return (
     // -rotate-90: SVG 각도 0은 3시 방향이라 12시부터 시계방향으로 차게 돌린다.
@@ -89,10 +93,10 @@ function AvatarClearRing(props: { cleared: number; total: number }): React.JSX.E
           r={radius}
           fill="none"
           strokeWidth={AVATAR_RING_STROKE}
-          strokeLinecap="butt"
+          strokeLinecap="round"
           className={index < props.cleared ? 'stroke-primary' : 'stroke-border'}
           strokeDasharray={`${dash} ${circumference - dash}`}
-          strokeDashoffset={-index * segment}
+          strokeDashoffset={-(index * segment + capOffset)}
         />
       ))}
     </svg>
@@ -860,10 +864,13 @@ function CharacterAccordion(props: {
           // 셸 클리핑은 카드 자신의 모서리에서만 일어나므로 stuck 헤더의 라운딩을 덮어주지 못한다 —
           // 반대로 헤더가 사각이면 카드 최상단(= 클리핑 곡선과 일치)에서 클리핑이 라운딩을 만들어준다.
           style={isExpanded ? { top: props.stickyTop } : undefined}
+          // 상하 패딩은 p-4(16px)가 아니라 py-3(12px)이다([[ADR-054]] 정정 6) — 아바타 슬롯이 진행
+          // 링 때문에 32 → 40px로 커진 만큼(정정 3) 패딩에서 8px을 돌려받아 헤더 높이를 링 도입
+          // 전과 같은 64px로 되돌린다(12 + 40 + 12). 좌우는 보스 행(p-4)과 맞춰 16px 유지.
           className={
             isExpanded
-              ? 'sticky z-[5] flex w-full items-center gap-3 bg-surface p-4'
-              : 'flex w-full items-center gap-3 rounded-[14px] bg-surface border border-border p-4'
+              ? 'sticky z-[5] flex w-full items-center gap-3 bg-surface px-4 py-3'
+              : 'flex w-full items-center gap-3 rounded-[14px] bg-surface border border-border px-4 py-3'
           }
         >
           <CharacterAvatar

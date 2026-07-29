@@ -37,18 +37,22 @@
 
 ### 아코디언 (캐릭터별 드롭다운) — [[ADR-014]], [[ADR-023]] 재설계
 - 아바타(원형 이니셜 또는 캐릭터 이미지 — 미확정) + 이름 + 우측 금액 + Chevron.
-- **접힘/펼침 셸이 다르다**: 접힘 = 단독 카드(`rounded-[14px] bg-surface border border-border p-4`). 펼침 = 헤더+본문을 하나의 셸로(바깥 wrapper `rounded-[14px] bg-surface border border-border`, 헤더는 자체 border/rounded 없이 `p-4 flex items-center gap-3`, 본문은 `border-t border-border` 하나로 경계). 접힘 상태(다른 캐릭터 미펼침)는 완결된 단독 카드.
+- **접힘/펼침 셸이 다르다**: 접힘 = 단독 카드(`rounded-[14px] bg-surface border border-border px-4 py-3`). 펼침 = 헤더+본문을 하나의 셸로(바깥 wrapper `rounded-[14px] bg-surface border border-border`, 헤더는 자체 border/rounded 없이 `px-4 py-3 flex items-center gap-3`, 본문은 `border-t border-border` 하나로 경계). 접힘 상태(다른 캐릭터 미펼침)는 완결된 단독 카드.
 - **셸 클리핑은 `overflow: clip`**([[ADR-049]], [[ADR-047]] 결정 2 갱신): `overflow-hidden`은 **금지**다 — 스크롤 컨테이너를 만들어 sticky 헤더를 무력화한다. 반면 `overflow: clip`은 스크롤 컨테이너를 만들지 않아 sticky를 지키면서 자식을 카드 모양대로 잘라낸다. 이 클리핑이 (a) stuck 헤더의 둥근 모서리로 보스 행이 비치는 문제와 (b) 헤더가 카드 끝에서 릴리스될 때 하단 모서리가 뾰족해지는 문제를 **상태별 라운딩 분기 없이** 동시에 해결한다 — 단 **헤더 자신은 사각이어야 한다**(위 sticky 항목). 클리핑은 **패딩 박스**(반경 13px = 14 − 테두리 1px)에서 일어나므로, 셸 안쪽에 붙는 장식은 그 곡선을 기준으로 맞춘다 — 골드 링은 펼침 상태에만 반경 13px(아래 "고가 드롭 강조"). 셸 **바깥**(카드 `isolate` 직속)의 배지·경계 페이드는 클리핑 대상이 아니다.
 - **헤더**: 아바타 `h-8 w-8 rounded-full bg-surface-2 ... text-xs font-bold text-text` + 이름 `flex-1 text-sm font-semibold text-text truncate` + 금액 `text-sm font-bold text-text tabular-nums`(우측 세로 정렬) + Chevron(`ChevronDown`/`ChevronUp`).
 - **주간 보스 처치 수 = 아바타 진행 링 + 숫자**([[ADR-054]] 결정 3·정정 1, #52) — **주간 탭 · 현재 기간에만**(`tab === 'weekly' && isCurrentPeriod`). `isCurrentPeriod` 는 화면이 이미 계산한 `isLatestPeriod` 를 prop으로 내린 값이다 — 아코디언이 다시 판정하지 않는다(같은 판정을 두 곳에서 하면 갈라진다). **진행률의 시각 표현은 가로폭을 쓰지 않는 아바타 테두리가 맡고, 숫자는 텍스트만 남긴다** — 아이콘+배경 칩(≈62px)이 캐릭터명을 가렸기 때문이다(정정 1).
 ```
 아바타 슬롯: relative flex h-10 w-10 shrink-0 items-center justify-center  (40px — 초상화보다 크다)
+  └ 슬롯이 8px 커진 만큼 헤더 상하 패딩을 p-4 → py-3으로 줄여 헤더 높이를 64px로 되돌린다(ADR-054 정정 6)
   └ 안에 초상화 span relative h-8 w-8 overflow-hidden rounded-full bg-surface-2 (32px, 중앙)
     relative를 이 span에 유지할 것 — 40px 슬롯이 크롭 기준이 되면 얼굴이 4px씩 밀린다(ADR-015 기법)
   └ 슬롯은 링이 없을 때(월간 탭·과거 기간)도 40px 고정 — 링 유무로 줄이면 탭 전환 때마다 카드가 8px 튄다
 진행 링(AvatarClearRing): 초상화 "바깥"에 2px 여백을 두고 도는 SVG 12칸(WEEKLY_BOSS_CLEAR_LIMIT)
-  circle × 12, r = (40 − stroke)/2 = 19, strokeWidth 2, strokeLinecap butt → 안쪽 끝 18 vs 초상화 반지름 16 = 2px 여백
-  칸 = strokeDasharray(`${seg − gap} ${둘레 − (seg − gap)}`) + strokeDashoffset(−i × seg), seg = 둘레/12, gap 2.4
+  circle × 12, r = (40 − stroke)/2 = 19, strokeWidth 2, strokeLinecap round → 안쪽 끝 18 vs 초상화 반지름 16 = 2px 여백
+  칸 = strokeDasharray(`${dash} ${둘레 − dash}`) + strokeDashoffset(−(i × seg + stroke/2)), seg = 둘레/12, gap 2.4
+      dash = seg − gap − stroke  (round 캡이 양끝을 stroke/2씩 더 그리므로 미리 빼둔다, ADR-054 정정 5)
+      └ 안 빼면 갭이 2.4 → 0.4로 뭉개져 12칸이 하나의 원처럼 보인다. dashoffset의 +stroke/2는
+        캡이 시작점 뒤로 튀어나온 만큼 밀어 칸을 원래 자리에 앉히는 보정이다(보이는 호 7.55 · 갭 2.4로 butt와 동일)
   채운 칸 stroke-primary / 빈 칸 stroke-border, svg에 -rotate-90(12시부터 시계방향)
   링은 초상화 span의 형제로 두고 슬롯에 absolute — 초상화 span은 overflow-hidden이라 안에 넣으면 stroke 바깥 절반이 잘린다
 숫자: flex-none text-xs font-semibold tabular-nums text-text-muted "8/12" (배경·아이콘 없음, 금액 왼쪽)
