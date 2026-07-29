@@ -421,6 +421,16 @@ export function BossManageScreen(): React.JSX.Element {
               const rowRequiredLevel =
                 selectionBlock === 'levelLocked' ? lowestRequiredLevel(entry.boss, entry.difficulties) : null
 
+              // 사유는 행 오른쪽 뱃지가 아니라 흐려진 행 **위에 얹는 한 줄**로 알린다 —
+              // 뱃지만으로는 "왜 흐린가"가 읽히지 않았다(사용자 피드백). 문구는 상태가 아니라
+              // 다음 행동을 말한다("몇 레벨이면 되는지"·"무엇을 해제해야 하는지").
+              const blockMessage =
+                selectionBlock === 'levelLocked' && rowRequiredLevel !== null
+                  ? `${rowRequiredLevel}레벨 달성 시 진행 가능`
+                  : selectionBlock === 'limitReached'
+                    ? `주간 ${WEEKLY_BOSS_CLEAR_LIMIT}개를 모두 선택했어요`
+                    : null
+
               // 자동 모드의 행 난이도: 화면 전용 선택 → 등록 난이도 → 첫 난이도 순.
               const autoDifficulty =
                 autoDifficultyByBoss[entry.boss] ?? defaultDifficultyFor(entry.boss, entry.difficulties)
@@ -429,11 +439,13 @@ export function BossManageScreen(): React.JSX.Element {
               const activeDifficulty = mode === 'manual' ? trackedDifficulty : autoDifficulty
               const isExpanded = mode === 'auto' || isTracked
 
+              // 흐림은 li가 아니라 안쪽 내용에만 건다 — li에 걸면 그 위에 얹는 안내 문구까지
+              // 함께 흐려져 읽히지 않는다.
               const rowClassName =
                 mode === 'manual' && isTracked
                   ? 'rounded-[14px] border border-primary bg-primary/15'
                   : selectionBlock !== null
-                    ? 'rounded-[14px] border border-border bg-surface opacity-50'
+                    ? 'relative rounded-[14px] border border-border bg-surface'
                     : 'rounded-[14px] border border-border bg-surface'
 
               const nameContent = (
@@ -449,40 +461,43 @@ export function BossManageScreen(): React.JSX.Element {
 
               return (
                 <li key={entry.boss} className={rowClassName}>
-                  {/* 1번째 줄: 초상화 + 보스명(수동은 추적 토글 버튼) + 파티 스테퍼(우상단) */}
-                  <div className="flex items-center gap-3 px-3 py-2.5">
-                    {mode === 'manual' ? (
-                      <button
-                        type="button"
-                        aria-pressed={isTracked}
-                        aria-label={entry.boss}
-                        disabled={selectionBlock !== null}
-                        onClick={() => void handleToggleTracked(entry.boss, entry.difficulties)}
-                        className="flex min-w-0 flex-1 items-center gap-3 text-left"
-                      >
-                        {nameContent}
-                      </button>
-                    ) : (
-                      <div className="flex min-w-0 flex-1 items-center gap-3">{nameContent}</div>
+                  <div className={blockMessage !== null ? 'opacity-30' : undefined}>
+                    {/* 1번째 줄: 초상화 + 보스명(수동은 추적 토글 버튼) + 파티 스테퍼(우상단) */}
+                    <div className="flex items-center gap-3 px-3 py-2.5">
+                      {mode === 'manual' ? (
+                        <button
+                          type="button"
+                          aria-pressed={isTracked}
+                          aria-label={entry.boss}
+                          disabled={selectionBlock !== null}
+                          onClick={() => void handleToggleTracked(entry.boss, entry.difficulties)}
+                          className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                        >
+                          {nameContent}
+                        </button>
+                      ) : (
+                        <div className="flex min-w-0 flex-1 items-center gap-3">{nameContent}</div>
+                      )}
+                      {activeDifficulty !== null && renderPartyStepper(entry.boss, activeDifficulty)}
+                    </div>
+
+                    {/* 2번째 줄: 난이도 세그먼트 */}
+                    {isExpanded && (
+                      <div className="flex flex-wrap items-center gap-2 border-t border-border/60 px-3 pb-2.5 pt-2.5">
+                        {mode === 'manual' && trackedDifficulty !== null
+                          ? renderDifficultyPills(entry.boss, entry.difficulties, trackedDifficulty, (difficulty) =>
+                              void handleSwitchDifficulty(entry.boss, trackedDifficulty, difficulty),
+                            )
+                          : renderDifficultyPills(entry.boss, entry.difficulties, autoDifficulty, (difficulty) =>
+                              setAutoDifficultyByBoss((prev) => ({ ...prev, [entry.boss]: difficulty })),
+                            )}
+                      </div>
                     )}
-                    {rowRequiredLevel !== null && (
-                      <span className="inline-flex h-5 shrink-0 items-center rounded-full border border-border px-2.5 text-[10px] font-bold tracking-[.03em] text-text-disabled">
-                        Lv.{rowRequiredLevel}
-                      </span>
-                    )}
-                    {activeDifficulty !== null && renderPartyStepper(entry.boss, activeDifficulty)}
                   </div>
 
-                  {/* 2번째 줄: 난이도 세그먼트 */}
-                  {isExpanded && (
-                    <div className="flex flex-wrap items-center gap-2 border-t border-border/60 px-3 pb-2.5 pt-2.5">
-                      {mode === 'manual' && trackedDifficulty !== null
-                        ? renderDifficultyPills(entry.boss, entry.difficulties, trackedDifficulty, (difficulty) =>
-                            void handleSwitchDifficulty(entry.boss, trackedDifficulty, difficulty),
-                          )
-                        : renderDifficultyPills(entry.boss, entry.difficulties, autoDifficulty, (difficulty) =>
-                            setAutoDifficultyByBoss((prev) => ({ ...prev, [entry.boss]: difficulty })),
-                          )}
+                  {blockMessage !== null && (
+                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-3">
+                      <span className="text-xs font-semibold text-text-muted">{blockMessage}</span>
                     </div>
                   )}
                 </li>

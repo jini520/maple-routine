@@ -436,7 +436,7 @@ describe('BossManageScreen — 수동 선택 가드 (ADR-055)', () => {
   })
 
   describe('요구 레벨 미달 잠금 (#32)', () => {
-    it('모든 난이도가 레벨 미달이면 행 토글을 비활성화하고 요구 레벨을 표시한다', () => {
+    it('모든 난이도가 레벨 미달이면 행 토글을 비활성화하고 흐린 행 위에 안내 문구를 얹는다', () => {
       useTrackingModeStore.setState({ mode: 'manual' })
       // 유피테르는 노멀·하드 모두 295 요구 — 레벨 200 캐릭터는 전 난이도 잠김.
       mockStore({ characters: [character({ level: 200 })] })
@@ -444,7 +444,36 @@ describe('BossManageScreen — 수동 선택 가드 (ADR-055)', () => {
       renderManageScreen()
 
       expect(screen.getByRole('button', { name: '유피테르' })).toBeDisabled()
-      expect(within(bossRow('유피테르')).getByText('Lv.295')).toBeInTheDocument()
+      expect(within(bossRow('유피테르')).getByText('295레벨 달성 시 진행 가능')).toBeInTheDocument()
+      // 오른쪽 레벨 뱃지는 쓰지 않는다(사용자 피드백)
+      expect(within(bossRow('유피테르')).queryByText('Lv.295')).not.toBeInTheDocument()
+    })
+
+    it('한도 도달로 막힌 행에도 왜 막혔는지 문구를 얹는다', () => {
+      useTrackingModeStore.setState({ mode: 'manual' })
+      mockStore({
+        characters: [character({ level: 300 })],
+        manualTrackedByOcid: {
+          'ocid-1': [
+            '자쿰',
+            '매그너스',
+            '파풀라투스',
+            '반반',
+            '피에르',
+            '블러디 퀸',
+            '벨룸',
+            '스우',
+            '데미안',
+            '가디언 엔젤 슬라임',
+            '루시드',
+            '윌',
+          ].map((contentName) => ({ contentName, kind: 'boss' as const, difficulty: '노멀' })),
+        },
+      })
+
+      renderManageScreen()
+
+      expect(within(bossRow('더스크')).getByText('주간 12개를 모두 선택했어요')).toBeInTheDocument()
     })
 
     it('레벨을 충족하는 보스는 잠기지 않는다', () => {
@@ -454,7 +483,7 @@ describe('BossManageScreen — 수동 선택 가드 (ADR-055)', () => {
       renderManageScreen()
 
       expect(screen.getByRole('button', { name: '자쿰' })).not.toBeDisabled()
-      expect(within(bossRow('자쿰')).queryByText(/^Lv\./)).not.toBeInTheDocument()
+      expect(within(bossRow('자쿰')).queryByText(/진행 가능/)).not.toBeInTheDocument()
     })
 
     it('캐릭터 레벨을 모르면(캐시 미스) 잠그지 않는다 — 결정 5', () => {

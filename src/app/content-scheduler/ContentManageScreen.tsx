@@ -205,8 +205,16 @@ export function ContentManageScreen(): React.JSX.Element {
                       const selectionBlock = selectionBlockOf(entry.content_name)
                       const isLocked = selectionBlock !== null
                       const tag = contentCountTag(entry, group.label)
+                      // 사유는 오른쪽 뱃지가 아니라 흐려진 행 위에 얹는 한 줄로 알린다 —
+                      // 보스 관리 화면과 같은 규칙(사용자 피드백, [[ADR-055]] 정정 1).
+                      const blockMessage =
+                        selectionBlock === 'levelLocked'
+                          ? `${getContentRequiredLevel(entry.content_name)}레벨 달성 시 진행 가능`
+                          : selectionBlock === 'guildRequired'
+                            ? '길드 가입 시 진행 가능'
+                            : null
                       return (
-                        <li key={entry.content_name}>
+                        <li key={entry.content_name} className={isLocked ? 'relative' : undefined}>
                           <button
                             type="button"
                             aria-pressed={isTracked}
@@ -216,7 +224,7 @@ export function ContentManageScreen(): React.JSX.Element {
                               isTracked
                                 ? 'flex w-full items-center gap-3 rounded-[10px] border border-primary bg-primary/15 px-4 py-3 text-left'
                                 : isLocked
-                                  ? 'flex w-full items-center gap-3 rounded-[10px] border border-border px-4 py-3 text-left opacity-50'
+                                  ? 'flex w-full items-center gap-3 rounded-[10px] border border-border px-4 py-3 text-left opacity-30'
                                   : 'flex w-full items-center gap-3 rounded-[10px] border border-border px-4 py-3 text-left hover:bg-primary/15'
                             }
                           >
@@ -232,22 +240,18 @@ export function ContentManageScreen(): React.JSX.Element {
                             <span className="min-w-0 flex-1 truncate text-sm font-medium text-text">
                               {displayName}
                             </span>
-                            {/* ADR-055 결정 8: 잠긴 항목은 카운트 태그 대신 사유를 보여준다 —
-                                진행할 수 없는 항목의 "최대 n회"보다 "무엇이 있어야 열리는지"가 쓸모 있다. */}
-                            {selectionBlock !== null ? (
+                            {tag !== null && (
                               <span className="shrink-0 rounded-full bg-surface-2 px-2.5 py-1 text-xs font-medium text-text-muted">
-                                {selectionBlock === 'levelLocked'
-                                  ? `Lv.${getContentRequiredLevel(entry.content_name)}`
-                                  : '길드 필요'}
+                                {tag}
                               </span>
-                            ) : (
-                              tag !== null && (
-                                <span className="shrink-0 rounded-full bg-surface-2 px-2.5 py-1 text-xs font-medium text-text-muted">
-                                  {tag}
-                                </span>
-                              )
                             )}
                           </button>
+
+                          {blockMessage !== null && (
+                            <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-4">
+                              <span className="text-xs font-semibold text-text-muted">{blockMessage}</span>
+                            </div>
+                          )}
                         </li>
                       )
                     })}

@@ -185,7 +185,7 @@ describe('ContentManageScreen', () => {
 // ADR-055(이슈 #32): 요구 레벨 미달 항목은 선택할 수 없다. 보스와 판정 로직을 공유하고
 // (lib/required-level) 표현만 이 화면 규칙을 따른다.
 describe('ContentManageScreen — 요구 레벨 미달 잠금 (ADR-055)', () => {
-  it('레벨이 모자란 항목은 토글을 비활성화하고 요구 레벨을 표시한다', () => {
+  it('레벨이 모자란 항목은 토글을 비활성화하고 흐린 행 위에 안내 문구를 얹는다', () => {
     useTrackingModeStore.setState({ mode: 'manual' })
     // 기어드락 일일퀘는 295 요구 — 레벨 200 캐릭터는 잠긴다.
     mockStore({ characters: [character({ level: 200 })] })
@@ -194,7 +194,9 @@ describe('ContentManageScreen — 요구 레벨 미달 잠금 (ADR-055)', () => 
 
     const locked = screen.getByRole('button', { name: /기어드락/ })
     expect(locked).toBeDisabled()
-    expect(locked).toHaveTextContent('Lv.295')
+    expect(screen.getByText('295레벨 달성 시 진행 가능')).toBeInTheDocument()
+    // 오른쪽 레벨 뱃지는 쓰지 않는다(사용자 피드백)
+    expect(locked).not.toHaveTextContent('Lv.295')
   })
 
   it('레벨을 충족하는 항목은 잠기지 않는다', () => {
@@ -271,7 +273,7 @@ describe('ContentManageScreen — 길드 미가입 잠금 (ADR-057)', () => {
 
     const waterway = screen.getByRole('button', { name: /지하 수로/ })
     expect(waterway).toBeDisabled()
-    expect(waterway).toHaveTextContent('길드 필요')
+    expect(screen.getAllByText('길드 가입 시 진행 가능')).toHaveLength(3)
     expect(screen.getByRole('button', { name: /플래그 레이스/ })).toBeDisabled()
     expect(screen.getByRole('button', { name: /주간 미션 포인트/ })).toBeDisabled()
   })
