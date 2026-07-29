@@ -9,7 +9,7 @@ describe('getItemIconUrl', () => {
     expect(url).toEqual(expect.stringContaining('boss_ring_box_red'))
   })
 
-  it('boss-ring-boxes.json의 반지는 rings/ 하위 파일로 조회된다 (리스트레인트 링 -> Ring_of_Restraint.png)', () => {
+  it('boss-ring-boxes.json의 반지는 rings/ 하위 파일로 조회된다 (리스트레인트 링 -> Ring_of_Restraint.webp)', () => {
     const url = getItemIconUrl('리스트레인트 링')
 
     expect(url).not.toBeNull()
