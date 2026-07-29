@@ -45,7 +45,10 @@
     {
       "step": 5,
       "name": "docs-finalize",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-07-29T15:59:59+0900",
+      "summary": "docs 4파일만 변경(src/ 무변경, build OK · 114 파일/1342건 통과). ADR-054 상태 (설계, 구현 전)→(구현 완료, 2026-07-29) + ADR.md 인덱스 행 (구현 완료, 이슈 #52·#53) + ADR-054에 '구현 메모' 절 신설(파생 함수 3종 위치·그룹 월드 판정·아이콘 파일명 확정·isCurrentPeriod prop 재사용·worldEmblemUrl 재사용)과 결정 4에 '구현 확인' 한 줄(주간 탭 한정은 진행률에 걸리는 제약이고 월간 개수 줄도 현재 기간 한정 — 결정 8과 합쳐 읽음). boss-profit.md: 배지·결정석 줄 레시피를 실제 코드에 맞춰 현행화(배지 flex flex-none items-center gap-1 누락 보정·role=img aria-label·button일 때 w-full·수치 span 중첩과 실제 공백 문자·아이콘 파일명 명시·aria-expanded), 파생 함수와 '월드 아는 캐릭터 0명이면 줄 미렌더' 조건 추가, 헤더 관련 소스에 lib/boss-matching·world-emblem·item-icons·weekly-bosses.json 추가, 정책의 한계를 3항목(추적 밖 캐릭터·월드 미상 제외지만 n/12은 유지·과거 기간/월간 탭 미표시 이유)으로 확장. game-data.md 데이터 확정 현황에 weeklyCrystalSaleLimit: 90(2026-07-29 사용자 확정) 한 줄. 열린 질문은 'UI 주석 문구로도 알릴지'만 남기고(구현에서 의도적으로 제외된 미결 사항) 문서에 한계를 남겼음을 명시. 구현-문서 불일치는 모두 문서 쪽을 고쳐 해소했고 정책 수준 차이(코드 결함)는 발견되지 않음",
+      "completed_at": "2026-07-29T16:05:00+0900"
     }
   ],
   "created_at": "2026-07-29T15:33:49+0900"

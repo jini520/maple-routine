@@ -1,7 +1,7 @@
 # 보스 수익 (Boss Profit)
 
 > **범위**: 처치 보스 수익 계산, 파티원 수 자동 기록, 주간/월간 탭·기간 네비게이터, 아코디언 레이아웃, 고가 드롭 강조 연출. 보스 목록의 출처·파티 설정은 [boss-scheduler.md](./boss-scheduler.md), 물욕 드롭 입력은 [item-drop.md](./item-drop.md).
-> **관련 소스**: `app/boss-profit/`(`BossProfitScreen.tsx`) · `features/boss-profit/` · `storage/boss-profit`(SQLite `boss_profit_records`) · `storage/sqlite/db.ts` · `lib/boss-profit-period.ts` · `src/data/boss-crystal-prices.json`·`boss-portrait-icon-crops.json` · `index.css`(고가 드롭 클래스).
+> **관련 소스**: `app/boss-profit/`(`BossProfitScreen.tsx`) · `features/boss-profit/` · `storage/boss-profit`(SQLite `boss_profit_records`) · `storage/sqlite/db.ts` · `lib/boss-profit-period.ts` · `lib/boss-matching.ts`(정규 순서·`WEEKLY_BOSS_CLEAR_LIMIT`·`WEEKLY_CRYSTAL_SALE_LIMIT`·`isSeasonBossName`) · `lib/world-emblem.ts`·`lib/item-icons.ts`(결정석/월드 아이콘) · `src/data/boss-crystal-prices.json`·`weekly-bosses.json`·`boss-portrait-icon-crops.json` · `index.css`(고가 드롭 클래스).
 > **관련 ADR**: [[ADR-014]] [[ADR-017]] [[ADR-019]] [[ADR-023]] [[ADR-032]] [[ADR-033]] [[ADR-036]] [[ADR-037]] [[ADR-045]] [[ADR-049]] [[ADR-054]] [[ADR-010]]. **관련 문서**: [../foundation/game-data.md](../foundation/game-data.md), [../foundation/error-resilience.md](../foundation/error-resilience.md), [../persistence/sqlite.md](../persistence/sqlite.md).
 
 ## 정책
@@ -13,7 +13,10 @@
   - **처치 수는 store 필드가 아니라 화면에서 `rows` 로 파생**한다 — `distinct(bossRows.filter(r => r.isComplete && !isSeasonBossName(r.boss)).map(r => r.boss)).length`. 의미는 보스 스케줄러의 `countClearedWeeklyBosses`(등록 여부 무관·실제 처치·난이도 중복 1)와 동일하고, 캐릭터 배지(`n/12`)와 월드 합계(`n/90`)가 **이 값 하나를 공유**한다(계산 두 벌 금지).
   - **표시 범위는 주간 탭 · 현재 기간 한정**. ① 월간 탭 `rows` 에는 `cycle === 'monthly'` 만 있어 주간 처치 수를 파생할 수 없고(주간분은 합계 행으로만 존재), 애초에 주간 한도가 월간 탭에서 의미가 없다. ② 과거 기간 `rows` 는 DB 기록에서 오는데 **가격 미확정 보스(벨로나)는 기록되지 않아**(백필·자동 기록 모두 `priceMeso === null` 이면 스킵) 실제보다 적게 나온다 — store에 카운트 필드를 신설해도 과거 백필 경로엔 `bossContents` 자체가 없어 해결되지 않는다. 결정석이 이월 없이 매주 초기화되므로 현재 기간 한정이 의미상으로도 정확하다.
   - **월드 정보**는 `imageUrl` 과 같은 경로로 배관한다 — `getSortedCharacterInfo` 가 이미 부르는 `getCachedCharacterBasic(ocid)` 의 같은 `profile` 에서 `world` 를 함께 꺼내 행까지 흘린다(추가 조회·새 저장소·새 API 호출 없음). `world` 는 옵셔널이라 **모르는 캐릭터는 월드 집계에서 조용히 제외**한다("미분류" 줄 없음) — 그만큼 월드 합계가 과소집계되지만 캐릭터 카드의 `n/12` 는 월드와 무관하게 그대로 표시된다.
-  - **한계**: 90은 월드 단위인데 앱은 추적 캐릭터만 동기화하므로([[ADR-042]]) 추적 밖 캐릭터의 처치는 셀 수 없다(실제 소진량보다 적게 표시). 이번 범위에서 UI 주석 문구는 넣지 않는다.
+  - **알려진 한계**(표시된 숫자가 실제 게임과 다를 수 있는 세 가지 — "왜 숫자가 안 맞냐"는 물음의 답):
+    1. **추적 밖 캐릭터의 처치는 셀 수 없다.** 90은 월드 단위 한도인데 앱은 사용자가 고른 추적 캐릭터만 동기화한다([[ADR-042]]). 같은 월드의 추적 밖 캐릭터로 보스를 잡으면 실제 소진량보다 **적게** 표시된다. 이번 범위에서 UI 주석 문구는 넣지 않는다(헤드라인을 더 늘리지 않기 위함).
+    2. **월드를 모르는 캐릭터는 월드 합계에서 빠진다.** 구버전 `character-basic-cache` 엔트리에는 `world` 가 없어 어느 월드 한도에도 귀속시킬 수 없다("미분류" 줄을 만들지 않는다). 다만 그 캐릭터 카드의 `n/12` 배지는 월드와 무관하게 정상 표시되므로 **개별 진행률 정보는 잃지 않고**, 캐시가 갱신되면 자동으로 합계에 합류한다.
+    3. **과거 기간·월간 탭에는 주간 진행률을 표시하지 않는다.** 과거 기간은 가격 미확정 보스(벨로나)가 애초에 DB에 기록되지 않아 구조적으로 과소집계되고, 월간 탭 `rows` 에는 주간 행 자체가 없어(주간분은 주차별 합계 행으로만 존재) 파생할 원본이 없다. 결정석이 이월 없이 매주 초기화되므로 현재 기간 한정이 의미상으로도 정확하다.
 - **멱등성**: `(characterId, boss, difficulty, weekOf)` 유니크 upsert. 참조 데이터 제거돼도 과거 기록 보존([../foundation/error-resilience.md](../foundation/error-resilience.md)).
 
 ## 자동 기록 ([[ADR-014]])
@@ -37,12 +40,14 @@
 - **접힘/펼침 셸이 다르다**: 접힘 = 단독 카드(`rounded-[14px] bg-surface border border-border p-4`). 펼침 = 헤더+본문을 하나의 셸로(바깥 wrapper `rounded-[14px] bg-surface border border-border`, 헤더는 자체 border/rounded 없이 `p-4 flex items-center gap-3`, 본문은 `border-t border-border` 하나로 경계). 접힘 상태(다른 캐릭터 미펼침)는 완결된 단독 카드.
 - **셸 클리핑은 `overflow: clip`**([[ADR-049]], [[ADR-047]] 결정 2 갱신): `overflow-hidden`은 **금지**다 — 스크롤 컨테이너를 만들어 sticky 헤더를 무력화한다. 반면 `overflow: clip`은 스크롤 컨테이너를 만들지 않아 sticky를 지키면서 자식을 카드 모양대로 잘라낸다. 이 클리핑이 (a) stuck 헤더의 둥근 모서리로 보스 행이 비치는 문제와 (b) 헤더가 카드 끝에서 릴리스될 때 하단 모서리가 뾰족해지는 문제를 **상태별 라운딩 분기 없이** 동시에 해결한다 — 단 **헤더 자신은 사각이어야 한다**(위 sticky 항목). 클리핑은 **패딩 박스**(반경 13px = 14 − 테두리 1px)에서 일어나므로, 셸 안쪽에 붙는 장식은 그 곡선을 기준으로 맞춘다 — 골드 링은 펼침 상태에만 반경 13px(아래 "고가 드롭 강조"). 셸 **바깥**(카드 `isolate` 직속)의 배지·경계 페이드는 클리핑 대상이 아니다.
 - **헤더**: 아바타 `h-8 w-8 rounded-full bg-surface-2 ... text-xs font-bold text-text` + 이름 `flex-1 text-sm font-semibold text-text truncate` + 금액 `text-sm font-bold text-text tabular-nums`(우측 세로 정렬) + Chevron(`ChevronDown`/`ChevronUp`).
-- **주간 보스 처치 수 배지 `n/12`**([[ADR-054]], #52) — **주간 탭 · 현재 기간에만**. 이름(`flex-1`)과 금액 사이 = 금액 왼쪽에 둔다.
+- **주간 보스 처치 수 배지 `n/12`**([[ADR-054]], #52) — **주간 탭 · 현재 기간에만**(`tab === 'weekly' && isCurrentPeriod`). 이름(`flex-1`)과 금액 사이 = 금액 왼쪽에 둔다. `isCurrentPeriod` 는 화면이 이미 계산한 `isLatestPeriod` 를 prop으로 내린 값이다 — 아코디언이 다시 판정하지 않는다(같은 판정을 두 곳에서 하면 갈라진다).
 ```
-배지: rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary
+배지: flex flex-none items-center gap-1 rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary
       (보스 스케줄러 BossScreen.tsx의 주간 처치 수 배지와 동일 — 신규 스타일 금지)
-  안쪽: 결정석 아이콘 img h-4 w-4 flex-none object-contain + "8/12"
+  안쪽: 결정석 아이콘 img h-4 w-4 flex-none object-contain(alt="") + span.tabular-nums "8/12"
+        아이콘은 intense_power_crystal_weekly.webp — URL이 null이면 아이콘만 생략하고 숫자는 그대로
 높이: 24px — 아바타(h-8 = 32px)가 헤더 높이를 정하므로 배지를 넣어도 헤더 높이는 불변이어야 한다
+a11y: 배지 전체에 role="img" aria-label="주간 보스 처치 8 / 12" — "n/m"만으론 무엇의 진행률인지 안 읽힌다
 ```
 - **펼침 헤더는 sticky** — [[ADR-047]]: 펼쳤을 때만 `sticky z-[5] bg-surface` + `top` = **페이지 sticky 헤더의 실측 높이**(`ResizeObserver`, 헤더 높이가 탭·경고 문구에 따라 가변이라 상수 불가). `bg-surface`는 아래로 지나가는 보스 행을 가리기 위해 필수다.
   - **헤더에 `rounded-t-*`를 주지 말 것**([[ADR-049]]) — stuck 상태에서 모서리 안쪽이 투명이라 **그 아래를 지나가는 보스 행이 비친다**. 상단 라운딩은 셸의 `overflow: clip`이 담당한다: 클리핑 곡선은 카드 자신의 모서리에만 있어서 카드 한가운데 멈춘 헤더의 노치는 못 덮지만, 헤더가 **사각**이면 stuck 중엔 불투명하고 정지 위치(= 카드 최상단 = 곡선과 일치)에서는 클리핑이 라운딩을 만들어준다. 라운딩의 책임은 헤더가 아니라 카드에 있다.
@@ -81,15 +86,19 @@
 헤어라인: mt-3 h-px bg-border (sticky 헤더 바닥 경계 = 카드 테두리 대체)
 ```
 
-**결정석 판매 현황 줄**([[ADR-054]], #53) — 금액행 다음, 헤어라인 위에 새 줄로 넣는다. 라벨행 우측은 고가 드롭 뱃지가 `absolute` 로 점유하고 있고 그 이유가 "뱃지 유무로 라벨행이 튀는 것"([[ADR-049]])이므로, 같은 자리에 흐름으로 끼워 넣으면 그 회귀를 되살린다. 주간 탭은 월드당 한도 90 대비(복수 월드면 `90 × 월드 수`), 월간 탭은 **분모 없이 개수만**(90은 주간 전용 한도라 월간 보스 결정석은 포함되지 않는다).
+**결정석 판매 현황 줄**([[ADR-054]], #53) — 금액행 다음, 헤어라인 위에 새 줄로 넣는다(`CrystalSummaryRow`). 라벨행 우측은 고가 드롭 뱃지가 `absolute` 로 점유하고 있고 그 이유가 "뱃지 유무로 라벨행이 튀는 것"([[ADR-049]])이므로, 같은 자리에 흐름으로 끼워 넣으면 그 회귀를 되살린다. **두 탭 모두 현재 기간에만** 렌더하고(호출부 `isCurrentPeriod &&`), 주간 탭은 월드당 한도 90 대비(복수 월드면 `90 × 월드 수`), 월간 탭은 **분모 없이 개수만**(90은 주간 전용 한도라 월간 보스 결정석은 포함되지 않는다).
 ```
-결정석행: mt-2 flex items-center gap-2
-  아이콘 img h-5 w-5 flex-none object-contain
-  주간 탭: 수치 text-sm font-bold tabular-nums text-text + " / 90" span text-xs font-semibold text-text-muted
-  월간 탭: 수치 text-sm font-bold tabular-nums text-text + "개" span text-xs font-semibold text-text-muted (분모 없음)
+결정석행: mt-2 flex items-center gap-2 (복수 월드일 때는 button이라 w-full 추가)
+  아이콘 img h-5 w-5 flex-none object-contain(alt="")
+      주간 intense_power_crystal_weekly.webp / 월간 intense_power_crystal_monthly.webp — null이면 아이콘만 생략
+  주간 탭: <span text-sm font-bold tabular-nums text-text>{n} <span text-xs font-semibold text-text-muted>/ {한도}</span></span>
+      └ 숫자와 "/" 사이는 실제 공백 문자(마진만으론 textContent가 "34/90"으로 붙어 스크린리더가 이어 읽음)
+  월간 탭: 같은 구조에 분모 대신 "개" — 한국어 표기상 숫자에 붙으므로 이쪽은 공백 없음
   복수 월드일 때만 우측: ml-auto flex items-center gap-1
       "N개 월드" text-xs text-text-muted + ChevronDown/ChevronUp h-3.5 w-3.5 text-text-muted
-  복수 월드면 이 줄 전체가 button(type="button"), 단일 월드·월간 탭이면 button 아님(펼칠 것이 없음)
+  복수 월드면 이 줄 전체가 button(type="button" + aria-expanded), 단일 월드·월간 탭이면 button 아님(펼칠 것이 없음)
+  a11y: 배지와 같은 규약 — 줄 전체에 aria-label("주간 결정석 판매 34 / 90" · "월간 결정석 3개"),
+        button 아닐 땐 role="img", 아이콘은 장식(alt="")
 펼침(복수 월드에서 열었을 때만): mt-1.5 space-y-1 pl-7
   줄: flex items-center gap-1.5
       엠블럼 img h-4 w-4 flex-none (worldEmblemUrl, null이면 엠블럼만 생략)
@@ -97,6 +106,8 @@
       ml-auto "34 / 90" text-xs font-semibold tabular-nums text-text
 ```
 접힘 상태는 **월드가 몇 개든 항상 한 줄**로 고정한다([[ADR-054]] 결정 7) — 헤더 높이는 `ResizeObserver` 실측이라 변해도 sticky 오프셋은 따라오지만, 줄이 늘면 헤더가 목록 영역을 잠식한다. 결정석 아이콘은 `item-icons.json` 에 등록하지 않고 `getItemIconUrlByFile(fileName)` 로 파일명 직접 조회한다(주간/월간 각 1장) — 결정석은 드랍 테이블 항목이 아니라 UI 표시 전용이라 등록하면 `item-icons.test.ts` 의 "드랍 테이블 실재" 정합성 검사를 깬다.
+
+수치 파생: 주간 = `summarizeWorldCrystals(groups)`(그룹 월드 = `bossRows[0]?.world`, `null` 그룹 제외, `Map` 삽입 순서로 결정적) 의 월드별 합, 월간 = `countMonthlyCrystals(groups)`(그룹별 `cycle === 'monthly' && isComplete` 보스명 distinct 합 — 90 한도와 무관한 별개 수치). **주간 탭인데 월드를 아는 캐릭터가 0명이면 줄 자체를 렌더하지 않는다**(대비할 한도가 없음). 월드는 알고 처치가 0이면 `0 / 90` 을 그대로 보여준다.
 뱃지는 **레이아웃 흐름 밖**(`absolute`)에 둔다([[ADR-049]]) — 흐름에 있으면 뱃지 유무로 라벨행이 16 ↔ 24px로 튀고, 뱃지에 붙일 탭 확대 애니메이션이 주변을 밀게 된다.
 새 색 신설 금지 — `primary`(금액·엠블럼)와 `text-muted`(라벨·단위)만. 보스 처치 수·캐릭터 수는 **표시하지 않는다**(중요 정보 아님, [[ADR-046]] 결정 5). 단위 "메소"는 별도 span이지만 숫자와 사이에 실제 공백 문자를 남긴다(마진만으론 `textContent`가 "N메소"로 붙어 스크린리더가 붙여 읽음).
 
@@ -132,7 +143,7 @@
 
 ## 열린 질문
 - 결정 시세 시점별 이력화 필요 여부([../foundation/game-data.md](../foundation/game-data.md)).
-- 월드 결정석 한도(`n/90`)가 추적 밖 캐릭터의 처치를 못 세는 한계를 UI 주석 문구로 알릴지 여부([[ADR-054]] — 헤드라인을 더 늘리지 않으려 이번 범위에서는 제외).
+- 월드 결정석 한도(`n/90`)가 추적 밖 캐릭터의 처치를 못 세는 한계를 **UI 주석 문구로도 알릴지** 여부([[ADR-054]] 트레이드오프 — 헤드라인을 더 늘리지 않으려 구현 범위에서는 제외했고, 문서에는 위 "알려진 한계"로 남겼다. 사용자 문의가 실제로 생기면 후속 결정으로 다룬다).
 
 ## 폐기된 정책 (history)
 - ~~아코디언 아바타를 이니셜로 둘지 `character/basic` 이미지로 바꿀지 미정~~ → `character-basic-cache` 의 `imageUrl`(없으면 이니셜 폴백)로 확정·구현 완료(`CharacterAvatar`, `getSortedCharacterInfo`가 정렬용 캐시 조회 김에 함께 반환) — [[ADR-023]] "미확정" 해소.
