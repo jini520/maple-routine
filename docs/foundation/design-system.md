@@ -81,6 +81,29 @@ Text(라이트): text-[#8A7362] hover:text-[#5B4636]   Text(다크): text-neutra
 ```
 재시도 버튼은 두지 않는다 — 모달을 닫았다 다시 열면 로딩·실패가 초기화되고 재조회되므로 그 경로를 문구로 안내한다. 온보딩 캐릭터 선택 단계(`ContentCharacterStep`)는 같은 분기를 페이지에서 직접 그리며 실패 문구만 "…네트워크를 확인한 뒤 앱을 다시 실행해주세요"로 다르다([onboarding.md](../features/onboarding.md)).
 
+### 빈 상태 (`components/EmptyState`) — [[ADR-060]], 구현 완료 2026-07-29
+"비어있음"을 표시하는 11곳이 이 컴포넌트 하나를 쓴다. `size` 두 변형만 다르고 구조는 동일 — **원형 배지(컨텍스트 아이콘) + 제목 + 설명 + CTA**, 중앙 정렬.
+```
+공통:   flex flex-col items-center text-center, 배지 rounded-full bg-primary/15, 아이콘 text-primary strokeWidth 1.75
+page:   배지 84px / 아이콘 40px / 제목 text-base / 설명 text-sm max-w-[220px] / CTA px-5 py-2.5 text-sm / gap-4
+inline: 배지 56px / 아이콘 28px / 제목 text-sm  / 설명 text-xs max-w-[240px] / CTA px-4 py-2 text-xs / gap-3
+        + 박스 rounded-[14px] border border-border bg-surface px-4 py-8 (page 는 자체 박스 없음 — 화면이 감싼다)
+CTA:    rounded-full bg-primary text-bg font-semibold hover:bg-primary-hover (Primary 버튼 재사용, 새 스타일 금지)
+```
+- **배지 안 마크는 자리에 따라 둘로 갈린다**([[ADR-060]] 결정 2): **목록 빈 상태(inline)는 화면별 컨텍스트 아이콘**(lucide) — 컨텐츠 `ListChecks` · 보스 `Swords` · 필터 `SlidersHorizontal` · 수익 `Coins` · 드롭 `PackageOpen`. 목록 자리는 "무엇이 비었는지"를 알려야 하기 때문. **캐릭터 미선택(page)은 브랜드 마크(단풍잎, `icon="leaf"`)** — 화면 전체를 차지하는 자리라 앱의 얼굴 역할을 겸한다(사용자 결정).
+- **문구 규칙**: 제목은 *무엇이* 비었는지(`추적할 일간 컨텐츠가 없습니다` / `등록된 주간 보스가 없습니다`) — 탭·모드별로 문구를 나눈다(일간/주간, 주간/월간, 수동/자동이 같은 문구를 공유하지 않는다). 설명은 다음 행동 한 줄. CTA 라벨은 목적지 이름 그대로(`컨텐츠 관리`·`보스 관리`).
+- **CTA는 문구가 지시하는 곳으로 실제 이동시킨다** — 수동 모드 컨텐츠 `/content/manage`, 수동 모드 보스 `/boss/manage`, 필터 결과 없음은 필터 초기화. **갈 곳이 없으면 CTA를 만들지 않는다**: 자동 모드("게임에서 등록해주세요")는 목적지가 앱 밖이고, 보스 수익 "아직 처치한 보스가 없습니다"는 앱 안에 할 일이 없다. 억지 목적지 금지.
+- **"조회 불가"에는 이 컴포넌트를 쓰지 않는다** — 아래 `UnavailableNotice` 참고([error-resilience.md](./error-resilience.md) 원칙 2).
+- 배지(둥근 배경 박스)는 아래 "아이콘" 절의 *배경 없이 단독* 규칙에 대한 **명시적 예외**다 — 빈 상태 배지는 아이콘이 아니라 **일러스트 자리**로 취급한다.
+
+### 조회 불가 알림 (`components/EmptyState/UnavailableNotice`) — [[ADR-060]]
+확인 자체를 못 한 상태(보스 수익 롤링 조회 윈도우 밖, [[ADR-032]])는 빈 상태와 **디자인을 공유하지 않는다** — 같은 모양이면 "데이터가 없다"로 오해된다. 톤은 경고(error)가 아니라 **정보**: 사용자가 고칠 수 있는 실패가 아니라 API의 알려진 제약이라 error 색은 과하다.
+```
+기본:    flex items-start gap-3 rounded-[14px] border border-border bg-info-tint p-4
+         + Info 아이콘(h-5 text-text-muted) + 제목 text-sm font-semibold + 설명 text-xs text-text-muted
+compact: 카드 안에 중첩될 때. rounded-[10px] bg-surface-2 px-3 py-2.5, 아이콘 h-4, 제목 한 줄만(설명 생략)
+```
+
 ### 캐릭터 관리 저장 진행률 모달 — 2026-07-16
 "저장" 시 추적 캐릭터마다 `syncSchedules` 순차 호출하는 동안 캐릭터 관리 모달 **위에** 진행률 모달을 띄우고 완료 시 함께 닫는다. 진행률 바 스타일은 온보딩 예열 바와 동일(track `h-1.5 w-full rounded-full bg-surface-2` + fill `h-1.5 rounded-full bg-primary`) + "캐릭터 정보를 저장하고 있어요 (N/M)". 공용 `Modal` 재사용, 저장 도중 오버레이 클릭 무시(완료 시 프로그램적으로만 닫음). 콜백 `saveTrackedOcids → refresh → syncSchedules` 로 `onProgress(completed, total)` 전달. 개별 실패는 조용히 폴백, 전역 에러면 화면 에러 상태 전환.
 
@@ -142,7 +165,7 @@ style: maskImage/WebkitMaskImage: linear-gradient(to bottom, black, transparent)
 ## 아이콘
 - **라이브러리: `lucide-react`**(확정) — 새 아이콘은 이 라이브러리에서만. 다른 라이브러리 혼용 금지.
 - `strokeWidth`: 하단 탭바 `1.5`, 소형 액션(새로고침 등) `2`.
-- 아이콘 컨테이너(둥근 배경 박스)로 감싸지 않는다 — 강조색 아이콘을 배경 없이 단독으로.
+- 아이콘 컨테이너(둥근 배경 박스)로 감싸지 않는다 — 강조색 아이콘을 배경 없이 단독으로. **예외 2곳**: 빈 상태 배지(위 `EmptyState`, [[ADR-060]] — 아이콘이 아니라 일러스트 자리)와 드롭 시트 카테고리 헤더.
 - 현재 사용: 하단 탭바 `ListChecks`(컨텐츠)/`Swords`(보스), 새로고침 `RefreshCw`, 보스 카드 파티 배지 `Users`, 파티 스테퍼 `Minus`/`Plus`.
 
 ## 폐기된 정책 (history)

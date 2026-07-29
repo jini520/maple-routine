@@ -51,6 +51,10 @@ rounded-full bg-white/20 text-[#E8DFEC] text-xs font-semibold px-2 py-1, flex it
 
 ### 솔로/파티 서브 필터 ([[ADR-019]])
 주간/월간 탭 행 바로 아래 한 줄. 탭 토글 pill 재사용하되 한 단계 낮은 위계라 `text-xs`. 옵션 전체/솔로/파티(순서 고정). 현재 활성 탭(주간/월간) 안에서만 적용, 두 탭의 필터 선택 상태는 독립. `partySizes` 맵 기반 클라이언트 필터(설정 없음=솔로 포함), API 재호출 없음. 수동 모드에서도 동일 동작([[ADR-035]]).
+- **필터 결과 없음**: 공용 `EmptyState`(inline, `SlidersHorizontal`) — "이 조건에 해당하는 보스가 없습니다" + CTA **"필터 초기화"**(그 탭 필터를 `all` 로, [[ADR-060]]). 보스가 아예 0건인 빈 상태와는 다른 케이스라 문구·CTA를 나눈다.
+
+### 빈 상태 ([[ADR-060]])
+공용 `EmptyState`(inline, `Swords`). 수동 모드는 "추적할 주간/월간 보스가 없습니다" + CTA "보스 관리" → `/boss/manage`, 자동 모드는 "등록된 주간/월간 보스가 없습니다"(CTA 없음 — 목적지가 앱 밖). 주간/월간 문구를 공유하지 않는다. 레시피는 [design-system.md](../foundation/design-system.md).
 
 ### 보스 관리 페이지 `/boss/manage` ([[ADR-035]] 결정 18)
 두 모드 공통 진입("보스 관리"). `PartyManagementModal` 을 완전 대체(파티원 수도 보스 단위라 추적 편집과 같은 행에 합침). 주간/월간 탭, 레이아웃·행 스타일은 컨텐츠 관리 페이지와 동일.

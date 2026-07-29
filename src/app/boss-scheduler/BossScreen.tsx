@@ -1,5 +1,5 @@
 import type { BossContent, CharacterPickerEntry } from '../../types'
-import { RefreshCw, Users } from 'lucide-react'
+import { RefreshCw, SlidersHorizontal, Swords, Users } from 'lucide-react'
 import { formatScheduleSyncError, formatSyncedAt } from '../../features/schedule-sync/format'
 import { getBossPortraitCrop, getBossPortraitUrl } from '../../lib/boss-icons'
 import { partySizeKey, useBossSchedulerStore } from '../../features/boss-scheduler/store'
@@ -10,7 +10,7 @@ import type { BossPortraitCrop } from '../../lib/boss-icons'
 import { CharacterSelectDropdown } from '../../components/CharacterSelectDropdown/CharacterSelectDropdown'
 import { CharacterTrackingPicker } from '../../components/CharacterTrackingPicker/CharacterTrackingPicker'
 import { DifficultyBadge } from '../../components/DifficultyBadge/DifficultyBadge'
-import { MAPLE_LEAF_PATH } from '../../components/mapleLeafPath'
+import { EmptyState } from '../../components/EmptyState/EmptyState'
 import { ProgressModal } from '../../components/ProgressModal/ProgressModal'
 import { matchBossContent, selectDisplayBosses, type MatchedBoss } from '../../lib/boss-matching'
 import { mergeManualBossList } from '../../lib/manual-boss-merge'
@@ -312,6 +312,38 @@ export function BossScreen(): React.JSX.Element {
     </>
   )
 
+  // ADR-060: 빈 상태 문구는 탭(주간/월간)과 모드(수동/자동)별로 나눈다. 수동 모드만 CTA를 준다 —
+  // 자동 모드가 지시하는 곳("게임에서 등록")은 앱 밖이라 데려다줄 수 없다.
+  function bossEmptyProps(tab: 'weekly' | 'monthly'): React.ComponentProps<typeof EmptyState> {
+    const label = tab === 'weekly' ? '주간' : '월간'
+    if (mode === 'manual') {
+      return {
+        icon: Swords,
+        title: `추적할 ${label} 보스가 없습니다`,
+        description: `보스 관리에서 이번 ${tab === 'weekly' ? '주' : '달'}에 잡을 보스를 골라주세요`,
+        action: { label: '보스 관리', onClick: () => navigate('/boss/manage') },
+      }
+    }
+    return {
+      icon: Swords,
+      title: `등록된 ${label} 보스가 없습니다`,
+      description: '게임 내 스케줄러에 등록하면 여기에 자동으로 표시됩니다',
+    }
+  }
+
+  // 보스가 0건인 빈 상태와 달리 "필터가 가린 상태"라 CTA는 필터를 되돌린다(ADR-060 결정 3).
+  function filterEmptyProps(tab: 'weekly' | 'monthly'): React.ComponentProps<typeof EmptyState> {
+    return {
+      icon: SlidersHorizontal,
+      title: '이 조건에 해당하는 보스가 없습니다',
+      description: '솔로·파티 필터를 해제하면 전체 보스를 볼 수 있습니다',
+      action: {
+        label: '필터 초기화',
+        onClick: () => (tab === 'weekly' ? setWeeklyFilter('all') : setMonthlyFilter('all')),
+      },
+    }
+  }
+
   // ADR-035 결정 18: 추적 편집(수동)과 파티원 수 설정을 관리 페이지 하나로 통합 — 두 모드 공통
   // 진입점이라 헤더는 항상 [보스 관리 · 캐릭터 관리] 2버튼이다(기존 "파티 관리" 모달 대체).
   const bossManageButton = (
@@ -332,25 +364,14 @@ export function BossScreen(): React.JSX.Element {
           {characterManageButton}
         </div>
 
-        <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
-          <div className="flex h-[84px] w-[84px] items-center justify-center rounded-full bg-primary/15">
-            <svg width="42" height="43" viewBox="0 0 127 130" className="fill-primary" aria-hidden="true">
-              <path d={MAPLE_LEAF_PATH} />
-            </svg>
-          </div>
-          <div className="space-y-1">
-            <p className="text-base font-semibold text-text">표시할 캐릭터가 없습니다</p>
-            <p className="max-w-[220px] text-sm text-text-muted">
-              캐릭터를 선택하면 주간·월간 보스 스케줄을 확인할 수 있습니다
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={openPicker}
-            className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-bg hover:bg-primary-hover"
-          >
-            캐릭터 선택하기
-          </button>
+        <div className="flex flex-1 flex-col items-center justify-center">
+          <EmptyState
+            size="page"
+            icon="leaf"
+            title="표시할 캐릭터가 없습니다"
+            description="캐릭터를 선택하면 주간·월간 보스 스케줄을 확인할 수 있습니다"
+            action={{ label: '캐릭터 선택하기', onClick: openPicker }}
+          />
         </div>
 
         {trackingModals}
@@ -518,17 +539,11 @@ export function BossScreen(): React.JSX.Element {
           {activeTab === 'weekly' && (
             <>
               {displayedWeeklyBosses.length === 0 && (mode === 'manual' || !selected.isStale) && (
-                <div className="rounded-[14px] border border-dashed border-border p-4 text-sm text-text-muted">
-                  {mode === 'manual'
-                    ? '추적할 보스가 없습니다 — "보스 관리"에서 추가해주세요'
-                    : '표시할 항목이 없습니다 — 게임에서 스케줄러에 등록해주세요'}
-                </div>
+                <EmptyState {...bossEmptyProps('weekly')} />
               )}
 
               {displayedWeeklyBosses.length > 0 && filteredWeeklyBosses.length === 0 && (
-                <div className="rounded-[14px] border border-dashed border-border p-4 text-sm text-text-muted">
-                  이 조건에 해당하는 보스가 없습니다
-                </div>
+                <EmptyState {...filterEmptyProps('weekly')} />
               )}
 
               {filteredWeeklyBosses.length > 0 && renderBossCards(filteredWeeklyBosses, selected.ocid)}
@@ -538,17 +553,11 @@ export function BossScreen(): React.JSX.Element {
           {activeTab === 'monthly' && (
             <>
               {displayedMonthlyBosses.length === 0 && (mode === 'manual' || !selected.isStale) && (
-                <div className="rounded-[14px] border border-dashed border-border p-4 text-sm text-text-muted">
-                  {mode === 'manual'
-                    ? '추적할 보스가 없습니다 — "보스 관리"에서 추가해주세요'
-                    : '표시할 항목이 없습니다 — 게임에서 스케줄러에 등록해주세요'}
-                </div>
+                <EmptyState {...bossEmptyProps('monthly')} />
               )}
 
               {displayedMonthlyBosses.length > 0 && filteredMonthlyBosses.length === 0 && (
-                <div className="rounded-[14px] border border-dashed border-border p-4 text-sm text-text-muted">
-                  이 조건에 해당하는 보스가 없습니다
-                </div>
+                <EmptyState {...filterEmptyProps('monthly')} />
               )}
 
               {filteredMonthlyBosses.length > 0 && renderBossCards(filteredMonthlyBosses, selected.ocid)}
