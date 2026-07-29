@@ -206,20 +206,26 @@ function DropIndicator(props: { drops: RecordedDrop[] }): React.JSX.Element {
     <span className="ml-auto flex flex-none items-center">
       {shown.map((drop, index) => {
         const url = getItemIconUrl(drop.itemName, drop.slot)
-        return url !== null ? (
-          <img
-            key={`${drop.itemName}-${index}`}
-            src={url}
-            alt=""
-            className="relative h-6 w-6 object-contain"
-            style={{ marginLeft: index === 0 ? 0 : -2, zIndex: shown.length - index }}
-          />
-        ) : (
+        return (
           <span
             key={`${drop.itemName}-${index}`}
-            className="relative h-6 w-6 rounded-md border-[1.5px] border-surface bg-surface-2"
+            className="relative h-6 w-6 flex-none"
             style={{ marginLeft: index === 0 ? 0 : -2, zIndex: shown.length - index }}
-          />
+          >
+            {url !== null ? (
+              <img src={url} alt="" className="h-6 w-6 object-contain" />
+            ) : (
+              <span className="block h-6 w-6 rounded-md border-[1.5px] border-surface bg-surface-2" />
+            )}
+            {/* 특수 스킬 반지(반지 상자 드릴다운 결과, ADR-041)만 등급이 기록된다 — 드롭 시트
+                ItemThumb의 lv 뱃지와 같은 규칙. 아이콘이 24px(시트는 36px)이라 좌우 패딩만 줄였다.
+                absolute라 이름 줄의 h-6 고정(ADR-049)에는 영향을 주지 않는다. */}
+            {drop.ringLevel !== undefined && (
+              <span className="absolute -bottom-1 -right-0.5 rounded-full bg-primary px-0.5 py-px text-[8px] font-bold leading-none text-white ring-1 ring-bg">
+                lv{drop.ringLevel}
+              </span>
+            )}
+          </span>
         )
       })}
       {extra > 0 && (

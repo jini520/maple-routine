@@ -9,7 +9,7 @@ describe('getItemIconUrl', () => {
     expect(url).toEqual(expect.stringContaining('boss_ring_box_red'))
   })
 
-  it('boss-ring-boxes.json의 반지는 rings/ 하위 파일로 조회된다 (리스트레인트 링 -> Ring_of_Restraint.png)', () => {
+  it('boss-ring-boxes.json의 반지는 rings/ 하위 파일로 조회된다 (리스트레인트 링 -> Ring_of_Restraint.webp)', () => {
     const url = getItemIconUrl('리스트레인트 링')
 
     expect(url).not.toBeNull()
@@ -28,11 +28,11 @@ describe('getItemIconUrl', () => {
     expect(getItemIconUrl('익셉셔널 해머', '얼굴장식')).toBeNull()
   })
 
-  it("'기타'(백옥 밖 저가치 반지 묶음, ADR-041)는 레벨퍼프 링 아이콘으로 조회된다", () => {
+  it("'기타'(백옥 밖 저가치 반지 묶음, ADR-041)는 리밋 링 아이콘으로 조회된다", () => {
     const url = getItemIconUrl('기타')
 
     expect(url).not.toBeNull()
-    expect(url).toEqual(expect.stringContaining('Level_Jump_Ring'))
+    expect(url).toEqual(expect.stringContaining('Limit_Ring'))
   })
 
   it('영롱한 달빛 포션은 luminous_moonshine_potion.png로 조회된다', () => {

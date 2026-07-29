@@ -51,8 +51,8 @@ for (const item of itemIconsData.items as ItemIconEntry[]) {
 
 // '기타'(ADR-041): 백옥 반지 상자 목록 밖 저가치 반지 묶음. 실재 아이템명이 아닌 UI 전용이라
 // item-icons.json(정합성 테스트가 드랍테이블 실재를 강제)이 아니라 런타임 맵에만 특수 매핑한다.
-// 레벨퍼프 링 아이콘(items/rings/Level_Jump_Ring.png)을 재사용.
-iconByName['기타'.normalize('NFC')] = 'Level_Jump_Ring.png'
+// 리밋 링 아이콘(items/rings/Limit_Ring.webp)을 재사용.
+iconByName['기타'.normalize('NFC')] = 'Limit_Ring.webp'
 
 /**
  * 아이템명(+슬롯)으로 아이콘 URL을 조회한다. 매핑/파일이 없으면 null(호출부에서 플레이스홀더 폴백).
