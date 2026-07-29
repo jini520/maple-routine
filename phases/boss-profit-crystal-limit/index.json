@@ -16,7 +16,7 @@
       "status": "completed",
       "started_at": "2026-07-29T15:38:59+0900",
       "summary": "레퍼런스 데이터 레이어: 결정석 아이콘 git mv 영문화(intense_power_crystal_weekly.webp · intense_power_crystal_monthly.webp — item-icons.json 미등록, getItemIconUrlByFile(fileName)로 조회) + weekly-bosses.json에 weeklyCrystalSaleLimit: 90 신설·note에 12(캐릭터당)/90(월드당) 구분 명시 + boss-matching.ts에 WEEKLY_CRYSTAL_SALE_LIMIT 상수와 isSeasonBossName(bossName) 헬퍼(모듈 스코프 Set, 정확 일치) 순수 추가. 테스트 7건 추가(114 파일/1319건 전체 통과), src/app·src/features 무변경",
-      "completed_at": "2026-07-29T15:43:30+0900"
+      "completed_at": "2026-07-29T15:43:16+0900"
     },
     {
       "step": 2,
