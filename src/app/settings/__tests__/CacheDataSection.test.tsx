@@ -46,6 +46,23 @@ describe('CacheDataSection', () => {
     expect(await screen.findByText('1.5KB')).toBeInTheDocument()
   })
 
+  // ADR-061 결정 7: 조회 전에도 값과 같은 폭·타이포로 자리를 잡아 값이 들어와도 레이아웃이 밀리지 않는다.
+  it('용량 조회 전에는 "- KB" 자리표시를 보여준다', async () => {
+    let resolveSizes: (sizes: { general: number; bossRecords: number }) => void = () => {}
+    mockedGetSizes.mockReturnValue(
+      new Promise((resolve) => {
+        resolveSizes = resolve
+      }),
+    )
+    render(<CacheDataSection reload={vi.fn()} />)
+
+    expect(screen.getByText('- KB')).toBeInTheDocument()
+
+    resolveSizes({ general: 1024, bossRecords: 512 })
+    expect(await screen.findByText('1.5KB')).toBeInTheDocument()
+    expect(screen.queryByText('- KB')).not.toBeInTheDocument()
+  })
+
   it('모달에서 고른 그룹을 clearCacheData에 그대로 넘긴다', async () => {
     mockedClear.mockResolvedValue(undefined)
     const reload = vi.fn()

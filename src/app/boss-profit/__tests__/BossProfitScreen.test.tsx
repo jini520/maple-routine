@@ -284,7 +284,7 @@ describe('BossProfitScreen', () => {
 
     renderBossProfitScreen()
 
-    expect(screen.getByText(/기록을 불러오는 중/)).toBeInTheDocument()
+    expect(screen.getByText(/기록을 불러오고 있어요/)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /낟낟/ })).not.toBeInTheDocument()
     expect(screen.queryByText(/총 수익/)).not.toBeInTheDocument()
   })
@@ -307,7 +307,7 @@ describe('BossProfitScreen', () => {
 
     renderBossProfitScreen()
 
-    expect(screen.getByText(/불러오는 중/)).toBeInTheDocument()
+    expect(screen.getByText(/불러오고 있어요/)).toBeInTheDocument()
   })
 
   it('ADR-017: status가 loading이어도 캐시된 rows가 있으면 로딩 표시 대신 목록을 계속 보여준다', () => {
@@ -319,7 +319,7 @@ describe('BossProfitScreen', () => {
 
     renderBossProfitScreen()
 
-    expect(screen.queryByText(/불러오는 중/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/불러오고 있어요/)).not.toBeInTheDocument()
     expect(screen.getByText(/총 수익/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /낟낟/ })).toBeInTheDocument()
   })

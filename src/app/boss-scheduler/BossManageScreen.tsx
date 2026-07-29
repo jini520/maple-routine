@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Minus, Plus, Users } from 'lucide-react'
 import { BossPortrait } from '../../components/BossPortrait/BossPortrait'
 import { DifficultyBadge } from '../../components/DifficultyBadge/DifficultyBadge'
+import { LoadingState } from '../../components/LoadingState/LoadingState'
 import weeklyBossesData from '../../data/weekly-bosses.json'
 import { getMaxPartySize } from '../../lib/boss-crystal-prices'
 import {
@@ -60,6 +61,7 @@ const MONTHLY_BOSSES = toListEntries(weeklyBossesData.monthly as BossReferenceEn
 // 체크 없이 카드 테두리·색으로만 나타낸다. 수동 토글 버튼엔 aria-label로 이름을 고정한다.
 export function BossManageScreen(): React.JSX.Element {
   const {
+    status,
     characters,
     selectedOcid,
     partySizes,
@@ -357,7 +359,12 @@ export function BossManageScreen(): React.JSX.Element {
         />
       </div>
 
-      {selected === null ? (
+      {/* ADR-061 결정 10: 조회가 끝나기 전(idle·loading)에는 빈 상태 문구로 위장하지 않는다. */}
+      {selected === null && (status === 'idle' || status === 'loading') ? (
+        <div className="px-4 pb-4">
+          <LoadingState size="page" message="불러오고 있어요" />
+        </div>
+      ) : selected === null ? (
         <div className="px-4 pb-4">
           <p className="text-sm text-text-muted">캐릭터를 먼저 선택해주세요 — 보스 스케줄러의 "캐릭터 관리"에서 추가할 수 있어요.</p>
         </div>

@@ -534,7 +534,7 @@ describe('BossScreen', () => {
 
     renderBossScreen()
 
-    expect(await screen.findByText(/불러오는 중/)).toBeInTheDocument()
+    expect(await screen.findByText(/불러오고 있어요/)).toBeInTheDocument()
   })
 
   it('ADR-016: status가 loading이어도 캐시된 characters가 있으면 로딩 표시 대신 목록을 계속 보여준다', async () => {
@@ -564,7 +564,7 @@ describe('BossScreen', () => {
     renderBossScreen()
 
     expect(await screen.findByText(/자쿰/)).toBeInTheDocument()
-    expect(screen.queryByText(/불러오는 중/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/불러오고 있어요/)).not.toBeInTheDocument()
   })
 
   it('status가 error이면 에러 문구를 보여준다', async () => {
@@ -1047,7 +1047,7 @@ describe('BossScreen — 캐릭터 관리 피커 후보 목록 로딩 (ADR-053)'
 
     await renderAndOpenPicker()
 
-    expect(await screen.findByTestId('maple-spinner')).toBeInTheDocument()
+    expect(await screen.findByTestId('maple-sweep-spinner')).toBeInTheDocument()
     expect(screen.queryByText('표시할 캐릭터가 없어요')).not.toBeInTheDocument()
   })
 
@@ -1055,13 +1055,13 @@ describe('BossScreen — 캐릭터 관리 피커 후보 목록 로딩 (ADR-053)'
     const roster = deferRoster()
 
     await renderAndOpenPicker()
-    await screen.findByTestId('maple-spinner')
+    await screen.findByTestId('maple-sweep-spinner')
 
     roster.emit([pickerEntry({ ocid: 'ocid-2', name: '내옆에최성일', level: 211 })])
     await roster.resolve()
 
     expect(screen.getByRole('button', { name: /내옆에최성일/ })).toBeInTheDocument()
-    expect(screen.queryByTestId('maple-spinner')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('maple-sweep-spinner')).not.toBeInTheDocument()
   })
 
   it('ADR-016 웜 캐시: 조회가 끝나기 전에 항목이 도착하면 스피너 없이 바로 목록을 보여준다', async () => {
@@ -1071,19 +1071,19 @@ describe('BossScreen — 캐릭터 관리 피커 후보 목록 로딩 (ADR-053)'
     roster.emit([pickerEntry({ ocid: 'ocid-2', name: '내옆에최성일', level: 211 })])
 
     expect(screen.getByRole('button', { name: /내옆에최성일/ })).toBeInTheDocument()
-    expect(screen.queryByTestId('maple-spinner')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('maple-sweep-spinner')).not.toBeInTheDocument()
   })
 
   it('전역 실패(401/429)로 reject되면 스피너가 걷히고 실패 안내를 보여준다', async () => {
     const roster = deferRoster()
 
     await renderAndOpenPicker()
-    await screen.findByTestId('maple-spinner')
+    await screen.findByTestId('maple-sweep-spinner')
 
     await roster.reject(new Error('401'))
 
     expect(screen.getByText('캐릭터 목록을 불러오지 못했어요 — 닫고 다시 열어주세요')).toBeInTheDocument()
-    expect(screen.queryByTestId('maple-spinner')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('maple-sweep-spinner')).not.toBeInTheDocument()
   })
 
   it('피커를 닫았다 다시 열면 실패 상태가 초기화되고 다시 조회한다', async () => {
@@ -1096,7 +1096,7 @@ describe('BossScreen — 캐릭터 관리 피커 후보 목록 로딩 (ADR-053)'
     fireEvent.click(screen.getByRole('button', { name: '닫기' }))
     fireEvent.click(screen.getByRole('button', { name: '캐릭터 관리' }))
 
-    expect(await screen.findByTestId('maple-spinner')).toBeInTheDocument()
+    expect(await screen.findByTestId('maple-sweep-spinner')).toBeInTheDocument()
     expect(screen.queryByText('캐릭터 목록을 불러오지 못했어요 — 닫고 다시 열어주세요')).not.toBeInTheDocument()
     expect(mockedGetCharacterPickerRoster).toHaveBeenCalledTimes(2)
   })

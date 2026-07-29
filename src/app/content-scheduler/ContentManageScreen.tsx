@@ -9,6 +9,7 @@ import {
   WEEKLY_CATEGORY_ORDER,
 } from '../../lib/content-category'
 import { worldEmblemUrl } from '../../lib/world-emblem'
+import { LoadingState } from '../../components/LoadingState/LoadingState'
 import { useContentSchedulerStore } from '../../features/content-scheduler/store'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 
@@ -41,6 +42,7 @@ function categoryIcon(label: string | null): LucideIcon {
 // 카테고리 그룹핑 — 반복되는 "[일일 퀘스트] …"를 헤더로 한 번만 묶고 행에는 알맹이만 표시한다.
 export function ContentManageScreen(): React.JSX.Element {
   const {
+    status,
     characters,
     selectedOcid,
     manualTrackedByOcid,
@@ -165,7 +167,13 @@ export function ContentManageScreen(): React.JSX.Element {
         />
       </div>
 
-      {selected === null ? (
+      {/* ADR-061 결정 10: 조회가 끝나기 전(idle·loading)에는 빈 상태 문구로 위장하지 않고
+          로딩 카드를 그린다 — 확정된 빈 상태는 조회가 끝난 뒤에만 말할 수 있다([[ADR-060]]). */}
+      {selected === null && (status === 'idle' || status === 'loading') ? (
+        <div className="px-4 pb-4">
+          <LoadingState size="page" message="불러오고 있어요" />
+        </div>
+      ) : selected === null ? (
         <div className="px-4 pb-4">
           <p className="text-sm text-text-muted">캐릭터를 먼저 선택해주세요 — 컨텐츠 스케줄러의 "캐릭터 관리"에서 추가할 수 있어요.</p>
         </div>

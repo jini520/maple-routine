@@ -81,7 +81,22 @@ describe('AppUpdateSection', () => {
     mockStore({ status: 'downloading', downloadProgress: 30 })
     render(<AppUpdateSection />)
     expect(screen.getByText(/다운로드 중 30%/)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '업데이트 확인' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: '확인 중' })).toBeDisabled()
+  })
+
+  // ADR-061 결정 5: 진행 중인지 멈춘 건지 구분되도록 버튼 안에 스피너 + '~중' 라벨을 넣는다.
+  it('확인 중에는 버튼이 스피너와 "확인 중" 라벨로 바뀐다', () => {
+    mockStore({ status: 'checking' })
+    render(<AppUpdateSection />)
+    expect(screen.getByRole('button', { name: '확인 중' })).toBeDisabled()
+    expect(screen.getByTestId('maple-spinner')).toBeInTheDocument()
+  })
+
+  // ADR-061 결정 9: 말줄임표는 '...'(마침표 3개)로 통일 — '…'(1글자) 금지.
+  it('상태 문구에 … 1글자 말줄임표를 쓰지 않는다', () => {
+    mockStore({ status: 'checking' })
+    const { container } = render(<AppUpdateSection />)
+    expect(container.textContent).not.toContain('…')
   })
 
   it('오류면 오류 문구를 표시한다', () => {

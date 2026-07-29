@@ -130,10 +130,12 @@ export function UpdatePromptModal(): React.JSX.Element | null {
         {status === 'downloading' && (
           <div className="space-y-3">
             <h2 className="text-base font-semibold text-text">다운로드 중</h2>
-            <div className="h-2 w-full overflow-hidden rounded-full bg-surface-2">
+            {/* ADR-061 결정 6: 결정형 진행률은 예외 없이 h-1.5 프리미티브 하나 — 이 모달만
+                쓰던 h-2 변형을 없앤다. */}
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
               <div
                 data-testid="update-progress-bar"
-                className="h-full rounded-full bg-primary transition-[width]"
+                className="h-1.5 rounded-full bg-primary transition-[width]"
                 style={{ width: `${downloadProgress}%` }}
               />
             </div>

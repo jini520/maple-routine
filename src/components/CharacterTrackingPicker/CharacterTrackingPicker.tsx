@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useBodyScrollLock } from '../../lib/use-body-scroll-lock'
 import type { CharacterPickerEntry } from '../../types'
-import { MapleSpinner } from '../MapleSpinner/MapleSpinner'
+import { MapleSweepSpinner } from '../MapleSweepSpinner/MapleSweepSpinner'
 import { CharacterTrackingGrid } from './CharacterTrackingGrid'
 
 // ADR-043 결정 1: 그리드의 토글이 ocid를 배열 끝에 append하므로 같은 집합이어도 배열
@@ -47,7 +47,7 @@ function PickerBody(props: CharacterTrackingPickerProps & { onChange: (ocids: st
         aria-label="캐릭터 목록을 불러오는 중"
         className="flex min-h-[120px] items-center justify-center"
       >
-        <MapleSpinner size={32} className="text-primary" />
+        <MapleSweepSpinner size={32} className="text-primary" />
       </div>
     )
   }

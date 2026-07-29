@@ -174,11 +174,23 @@ describe('ContentManageScreen', () => {
 
   it('표시할 캐릭터가 없으면 안내 문구를 보여준다', () => {
     useTrackingModeStore.setState({ mode: 'manual' })
-    mockStore({ characters: [], trackedOcids: [] })
+    mockStore({ status: 'loaded', characters: [], trackedOcids: [] })
 
     renderManageScreen()
 
     expect(screen.getByText(/캐릭터를 먼저 선택/)).toBeInTheDocument()
+  })
+
+  // ADR-060/ADR-061 결정 10: 로딩을 빈 상태로 위장하지 않는다 — 조회가 끝나기 전에는
+  // "캐릭터를 먼저 선택해주세요"가 아니라 로딩 카드를 보여준다.
+  it('조회가 끝나기 전에는 빈 상태 문구 대신 로딩 카드를 보여준다', () => {
+    useTrackingModeStore.setState({ mode: 'manual' })
+    mockStore({ status: 'loading', characters: [], trackedOcids: null })
+
+    renderManageScreen()
+
+    expect(screen.getByTestId('loading-state')).toBeInTheDocument()
+    expect(screen.queryByText(/캐릭터를 먼저 선택/)).not.toBeInTheDocument()
   })
 })
 

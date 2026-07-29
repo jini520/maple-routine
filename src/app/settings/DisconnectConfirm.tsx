@@ -1,4 +1,5 @@
 import { useBodyScrollLock } from '../../lib/use-body-scroll-lock'
+import { MapleSpinner } from '../../components/MapleSpinner/MapleSpinner'
 
 export interface DisconnectConfirmProps {
   isOpen: boolean
@@ -40,10 +41,13 @@ export function DisconnectConfirm(props: DisconnectConfirmProps): React.JSX.Elem
           <button
             type="button"
             disabled={props.isDisconnecting}
+            aria-busy={props.isDisconnecting}
             onClick={props.onConfirm}
-            className="rounded-full border border-error px-5 py-2.5 text-sm font-semibold text-error hover:bg-error/10 disabled:opacity-50"
+            className="flex items-center justify-center gap-2 rounded-full border border-error px-5 py-2.5 text-sm font-semibold text-error hover:bg-error/10 disabled:opacity-50"
           >
-            {props.isDisconnecting ? '해제하는 중...' : '연결 해제'}
+            {/* ADR-061 결정 5·9 — 스피너 + 말줄임표 없는 '~중' 라벨 */}
+            {props.isDisconnecting && <MapleSpinner size={16} />}
+            {props.isDisconnecting ? '해제 중' : '연결 해제'}
           </button>
         </div>
       </div>

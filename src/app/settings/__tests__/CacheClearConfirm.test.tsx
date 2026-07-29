@@ -69,11 +69,13 @@ describe('CacheClearConfirm', () => {
     expect(groupToggle(/보스 수익·드롭 기록/)).toHaveTextContent('512B')
   })
 
-  it('용량을 아직 모르면(null) 용량 없이 그룹만 보여준다', () => {
+  // ADR-061 결정 7: 용량 span을 아예 안 그리면 값이 들어올 때 레이아웃이 점프한다 —
+  // 조회 전에도 같은 자리에 "- KB" 자리표시를 둔다.
+  it('용량을 아직 모르면(null) 각 그룹에 "- KB" 자리표시를 보여준다', () => {
     renderConfirm({ sizes: null })
 
-    expect(groupToggle(/일반 데이터/)).toBeInTheDocument()
-    expect(screen.queryByText(/KB/)).not.toBeInTheDocument()
+    expect(groupToggle(/일반 데이터/)).toHaveTextContent('- KB')
+    expect(groupToggle(/보스 수익·드롭 기록/)).toHaveTextContent('- KB')
   })
 
   it('선택한 그룹의 용량 합계를 삭제 버튼에 보여준다', async () => {
@@ -176,7 +178,9 @@ describe('CacheClearConfirm', () => {
   it('isClearing이 true면 취소·삭제 버튼과 그룹 선택이 모두 비활성화된다', () => {
     renderConfirm({ isClearing: true })
 
-    expect(screen.getByRole('button', { name: '삭제 중...' })).toBeDisabled()
+    // ADR-061 결정 5·9: 버튼 안은 스피너 + 말줄임표 없는 '~중' 라벨.
+    expect(screen.getByRole('button', { name: '삭제 중' })).toBeDisabled()
+    expect(screen.getByTestId('maple-spinner')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '취소' })).toBeDisabled()
     expect(groupToggle(/일반 데이터/)).toBeDisabled()
     expect(groupToggle(/보스 수익·드롭 기록/)).toBeDisabled()

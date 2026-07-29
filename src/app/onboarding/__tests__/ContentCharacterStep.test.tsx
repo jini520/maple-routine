@@ -118,7 +118,7 @@ describe('ContentCharacterStep — 후보 목록 로딩 (ADR-053)', () => {
 
     render(<ContentCharacterStep isSubmitting={false} onSubmit={vi.fn()} />)
 
-    expect(screen.getByTestId('maple-spinner')).toBeInTheDocument()
+    expect(screen.getByTestId('maple-sweep-spinner')).toBeInTheDocument()
     expect(screen.queryByText('표시할 캐릭터가 없어요')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: '계속하기' })).toBeDisabled()
   })
@@ -131,7 +131,7 @@ describe('ContentCharacterStep — 후보 목록 로딩 (ADR-053)', () => {
     await roster.resolve()
 
     expect(screen.getByRole('button', { name: /낟낟/ })).toBeInTheDocument()
-    expect(screen.queryByTestId('maple-spinner')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('maple-sweep-spinner')).not.toBeInTheDocument()
   })
 
   it('ADR-016 웜 캐시: 조회가 끝나기 전에 항목이 도착하면 스피너 없이 바로 목록을 보여준다', () => {
@@ -141,7 +141,7 @@ describe('ContentCharacterStep — 후보 목록 로딩 (ADR-053)', () => {
     roster.emit(entries)
 
     expect(screen.getByRole('button', { name: /낟낟/ })).toBeInTheDocument()
-    expect(screen.queryByTestId('maple-spinner')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('maple-sweep-spinner')).not.toBeInTheDocument()
   })
 
   it('조회가 끝났는데 항목이 0건이면 빈 상태 안내를 보여준다', async () => {
@@ -152,7 +152,7 @@ describe('ContentCharacterStep — 후보 목록 로딩 (ADR-053)', () => {
     await roster.resolve()
 
     expect(screen.getByText('표시할 캐릭터가 없어요')).toBeInTheDocument()
-    expect(screen.queryByTestId('maple-spinner')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('maple-sweep-spinner')).not.toBeInTheDocument()
   })
 
   it('전역 실패(401/429)로 reject되면 스피너가 걷히고 실패 안내를 보여준다', async () => {
@@ -163,6 +163,6 @@ describe('ContentCharacterStep — 후보 목록 로딩 (ADR-053)', () => {
 
     expect(screen.getByText(/캐릭터 목록을 불러오지 못했어요/)).toBeInTheDocument()
     expect(screen.queryByText('표시할 캐릭터가 없어요')).not.toBeInTheDocument()
-    expect(screen.queryByTestId('maple-spinner')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('maple-sweep-spinner')).not.toBeInTheDocument()
   })
 })

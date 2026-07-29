@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import packageJson from '../../../package.json'
 import { useLiveUpdateStore, type LiveUpdateStatus } from '../../features/live-update/store'
+import { MapleSpinner } from '../../components/MapleSpinner/MapleSpinner'
 
 // 설정의 관찰용 섹션 — 현재 실행 번들 버전과 상태를 보여주고 수동 확인을 제공한다(ADR-026/ADR-027).
 // 새 버전을 실제로 받고 적용하는 동의 플로우는 UpdatePromptModal이 담당한다.
@@ -13,9 +14,11 @@ export function AppUpdateSection(): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // ADR-061 결정 9: 말줄임표는 '...'(마침표 3개)로 통일하고, 대기 문구는 '~하고 있어요'.
+  // 여기의 checking/downloading은 버튼 라벨이 따로 상태를 말하므로 상태 칸은 짧게 둔다.
   const statusText: Record<LiveUpdateStatus, string> = {
     idle: '탭하여 확인',
-    checking: '확인 중…',
+    checking: '확인하고 있어요',
     'up-to-date': '최신입니다',
     'update-available': `새 버전 v${availableVersion} 있음`,
     'store-required': '스토어 업데이트 필요',
@@ -66,9 +69,13 @@ export function AppUpdateSection(): React.JSX.Element {
                 void check()
               }}
               disabled={isBusy}
-              className="w-full rounded-full bg-primary text-bg font-semibold hover:bg-primary-hover px-5 py-2.5 text-sm disabled:opacity-50"
+              aria-busy={isBusy}
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-primary text-bg font-semibold hover:bg-primary-hover px-5 py-2.5 text-sm disabled:opacity-50"
             >
-              업데이트 확인
+              {/* ADR-061 결정 5: 네트워크 왕복이라 disabled만으로는 진행 중인지 멈춘 건지
+                  구분되지 않는다 — 스피너 + '~중' 라벨로 바꾼다. */}
+              {isBusy && <MapleSpinner size={16} />}
+              {isBusy ? '확인 중' : '업데이트 확인'}
             </button>
           </div>
         )}

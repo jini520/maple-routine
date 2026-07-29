@@ -289,7 +289,7 @@ describe('CharacterTrackingPicker — 로딩/빈/실패 상태 (ADR-053)', () =>
       />,
     )
 
-    expect(screen.getByTestId('maple-spinner')).toBeInTheDocument()
+    expect(screen.getByTestId('maple-sweep-spinner')).toBeInTheDocument()
     expect(screen.getByRole('status')).toHaveAttribute('aria-busy', 'true')
     expect(screen.queryByRole('button', { name: /낟낟/ })).not.toBeInTheDocument()
   })
@@ -306,7 +306,7 @@ describe('CharacterTrackingPicker — 로딩/빈/실패 상태 (ADR-053)', () =>
       />,
     )
 
-    expect(screen.queryByTestId('maple-spinner')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('maple-sweep-spinner')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: /낟낟/ })).toBeInTheDocument()
   })
 
@@ -323,7 +323,7 @@ describe('CharacterTrackingPicker — 로딩/빈/실패 상태 (ADR-053)', () =>
     )
 
     expect(screen.getByText('표시할 캐릭터가 없어요')).toBeInTheDocument()
-    expect(screen.queryByTestId('maple-spinner')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('maple-sweep-spinner')).not.toBeInTheDocument()
   })
 
   it('조회가 실패로 끝나면 빈 상태와 구분되는 실패 안내를 보여준다', () => {
@@ -340,7 +340,7 @@ describe('CharacterTrackingPicker — 로딩/빈/실패 상태 (ADR-053)', () =>
 
     expect(screen.getByText(/캐릭터 목록을 불러오지 못했어요/)).toBeInTheDocument()
     expect(screen.queryByText('표시할 캐릭터가 없어요')).not.toBeInTheDocument()
-    expect(screen.queryByTestId('maple-spinner')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('maple-sweep-spinner')).not.toBeInTheDocument()
   })
 
   it('조회가 끝나고 항목이 있으면 그리드만 보여준다', () => {
@@ -356,7 +356,7 @@ describe('CharacterTrackingPicker — 로딩/빈/실패 상태 (ADR-053)', () =>
     )
 
     expect(screen.getByRole('button', { name: /낟낟/ })).toBeInTheDocument()
-    expect(screen.queryByTestId('maple-spinner')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('maple-sweep-spinner')).not.toBeInTheDocument()
     expect(screen.queryByText('표시할 캐릭터가 없어요')).not.toBeInTheDocument()
     expect(screen.queryByText(/캐릭터 목록을 불러오지 못했어요/)).not.toBeInTheDocument()
   })

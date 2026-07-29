@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { CharacterTrackingGrid } from '../../components/CharacterTrackingPicker/CharacterTrackingGrid'
 import { MapleSpinner } from '../../components/MapleSpinner/MapleSpinner'
+import { MapleSweepSpinner } from '../../components/MapleSweepSpinner/MapleSweepSpinner'
 import { getCharacterPickerRoster } from '../../features/schedule-sync/schedule-sync'
 import type { CharacterPickerEntry } from '../../types'
 
@@ -31,7 +32,7 @@ function RosterBody(props: {
         aria-label="캐릭터 목록을 불러오는 중"
         className="flex min-h-[120px] items-center justify-center"
       >
-        <MapleSpinner size={32} className="text-primary" />
+        <MapleSweepSpinner size={32} className="text-primary" />
       </div>
     )
   }
@@ -103,11 +104,12 @@ export function ContentCharacterStep(props: ContentCharacterStepProps): React.JS
         type="button"
         disabled={selectedOcids.length === 0 || props.isSubmitting}
         aria-busy={props.isSubmitting}
-        aria-label={props.isSubmitting ? '저장 중' : undefined}
         onClick={() => props.onSubmit(selectedOcids)}
-        className="flex w-full items-center justify-center rounded-full bg-primary text-bg font-semibold hover:bg-primary-hover px-5 py-2.5 disabled:opacity-50"
+        className="flex w-full items-center justify-center gap-2 rounded-full bg-primary text-bg font-semibold hover:bg-primary-hover px-5 py-2.5 disabled:opacity-50"
       >
-        {props.isSubmitting ? <MapleSpinner size={20} /> : '계속하기'}
+        {/* ADR-061 결정 5·9 — 스피너 + 말줄임표 없는 '~중' 라벨 */}
+        {props.isSubmitting && <MapleSpinner size={16} />}
+        {props.isSubmitting ? '저장 중' : '계속하기'}
       </button>
     </div>
   )

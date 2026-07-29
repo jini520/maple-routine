@@ -49,10 +49,12 @@ describe('DisconnectConfirm', () => {
     expect(onCancel).toHaveBeenCalled()
   })
 
-  it('isDisconnecting이 true면 확인 버튼이 비활성화된다', () => {
+  // ADR-061 결정 5·9: 버튼 안은 스피너 + 말줄임표 없는 '~중' 라벨.
+  it('isDisconnecting이 true면 확인 버튼이 스피너와 함께 비활성화된다', () => {
     render(<DisconnectConfirm isOpen={true} isDisconnecting={true} onConfirm={vi.fn()} onCancel={vi.fn()} />)
 
-    expect(screen.getByRole('button', { name: '해제하는 중...' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: '해제 중' })).toBeDisabled()
+    expect(screen.getByTestId('maple-spinner')).toBeInTheDocument()
   })
 
   it('isOpen이 true면 뒷 페이지 스크롤을 막고, false가 되면 복원한다', () => {

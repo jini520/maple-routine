@@ -11,6 +11,7 @@ import { CharacterSelectDropdown } from '../../components/CharacterSelectDropdow
 import { CharacterTrackingPicker } from '../../components/CharacterTrackingPicker/CharacterTrackingPicker'
 import type { DailyQuestRegionCrop } from '../../lib/daily-quest-backgrounds'
 import { EmptyState } from '../../components/EmptyState/EmptyState'
+import { LoadingState } from '../../components/LoadingState/LoadingState'
 import { ProgressModal } from '../../components/ProgressModal/ProgressModal'
 import { ListChecks, RefreshCw } from 'lucide-react'
 import { getCharacterPickerRoster } from '../../features/schedule-sync/schedule-sync'
@@ -953,9 +954,9 @@ export function ContentScreen(): React.JSX.Element {
           )}
 
           {/* ADR-016: 캐시된 characters가 있으면 재검증(status: 'loading') 중에도 계속 보여준다 —
-              "불러오는 중"은 보여줄 데이터가 아예 없을 때만 표시한다. */}
+              셸 승계 카드는 보여줄 데이터가 아예 없을 때만 그린다([[ADR-061]] 결정 2). */}
           {(status === 'idle' || status === 'loading') && characters.length === 0 && (
-            <p className="text-sm text-text-muted">불러오는 중...</p>
+            <LoadingState size="page" message="불러오고 있어요" />
           )}
 
           {characters.length > 0 && selected !== null && (
