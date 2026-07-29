@@ -166,7 +166,7 @@ export interface RingBoxContents {
 
 // '기타'(ADR-041): 백옥 반지 상자 목록 밖의 저가치 반지들을 한 칸으로 묶는 UI 전용 항목.
 const OTHER_RING_NAME = '기타'
-const OTHER_RING_ICON = 'Level_Jump_Ring.png' // 레벨퍼프 링 아이콘 재사용
+const OTHER_RING_ICON = 'Limit_Ring.webp' // 리밋 링 아이콘 재사용
 
 // 명명 반지 기준(baseline) = 백옥 상자 반지 집합. 데이터에서 동적 산출(하드코딩·추정 없음, ADR-041/ADR-006).
 const baselineRingNames = new Set(
