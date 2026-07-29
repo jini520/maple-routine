@@ -1,56 +1,294 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { RefreshCw } from 'lucide-react'
-import { MapleSpinner } from '../components/MapleSpinner/MapleSpinner'
-import { MapleWaveProgress } from '../components/MapleWaveProgress/MapleWaveProgress'
 import { MAPLE_LEAF_PATH } from '../components/mapleLeafPath'
 import { useThemeStore } from '../features/theme/store'
 import type { ThemeName } from '../types/theme'
 
-// 임시 디버그 화면 — [[ADR-061]](로딩 표현 통일)의 상황별 선택지를 실제 모션으로 비교한다.
-// 텍스트 표만으로는 "스피너냐 스켈레톤이냐"를 판단할 수 없어, 각 선택지를 실제로 놓일 자리와
-// 비슷한 프레임(헤더·목록·모달·설정 행) 안에 렌더한다.
+// 임시 디버그 화면 — [[ADR-061]](로딩 표현 통일)의 시안 비교용.
+//
+// 1차 선택(2026-07-30, 잠정): S1=B(스피너+라벨 병기) · S2=A(스피너+문구) · S3=A(현행 유지)
+// · S5=B(전부 얇은 바) · S6=A(h-1.5 통일) · S8='- KB' 자리표시.
+// S4(백필)·S7(모달 차단)은 "새로 디자인"으로 남았고, S9는 "'~중...'은 새로고침 옆 '조회 중...'만
+// 남기고 전부 제거"가 목표, S10은 독립 선택이 아니라 위 자리들에 무엇을 넣을지의 문제로 흡수됐다.
+//
+// 그래서 이 화면은 "선택지 나열"에서 "잠정 결정 위에서 스피너 디자인을 갈아끼워 보는 화면"으로
+// 바뀌었다. 상단에서 스피너 시안·문구안·테마를 고르면 아래 모든 자리가 그 조합으로 다시 그려진다.
+//
 // 선택이 확정되면 이 파일과 App.tsx의 /debug/loading 라우트를 삭제하고, 확정된 규칙을
 // docs/foundation/design-system.md "로딩 표현" 섹션으로 옮길 것.
 //
-// 후보 프리미티브 중 아직 앱에 없는 것(드로잉형·펄스형 스피너, 스켈레톤, 인디터미네이트 바)은
-// 이 파일 안에서만 정의한다 — 채택되기 전에 index.css를 오염시키지 않으려는 것이라, 채택 시
-// keyframe을 index.css로 옮기고(Tailwind v4는 motion-reduce가 먹으려면 @utility 등록 필요)
-// 컴포넌트는 src/components/로 승격할 것.
+// 아직 앱에 없는 것(트레일 링 외 스피너 6종, 인디터미네이트 바)은 이 파일 안에서만 정의한다 —
+// 채택 시 keyframe을 index.css로 옮기고(Tailwind v4는 motion-reduce가 먹으려면 @utility 등록 필요)
+// 컴포넌트를 src/components/로 승격할 것.
 
 const PREVIEW_STYLES = `
-@keyframes dbg-maple-draw {
+/* 1. 트레일 링 — 현행 MapleSpinner(외곽선 둘레의 70% 구간이 도는 comet) */
+@keyframes dbg-trail { to { stroke-dashoffset: -300 } }
+.dbg-trail { animation: dbg-trail 0.9s linear infinite }
+
+/* 2. 드로잉 — 외곽선을 그렸다가 지운다 */
+@keyframes dbg-draw {
   0% { stroke-dashoffset: 300 }
   45% { stroke-dashoffset: 0 }
   100% { stroke-dashoffset: -300 }
 }
-.dbg-maple-draw { animation: dbg-maple-draw 1.8s ease-in-out infinite }
+.dbg-draw { animation: dbg-draw 1.8s ease-in-out infinite }
 
-@keyframes dbg-maple-pulse {
+/* 3. 펄스 — 채워진 잎이 숨쉬고 뒤로 후광이 퍼진다 */
+@keyframes dbg-pulse {
   0%, 100% { transform: scale(0.84); opacity: 0.5 }
   50% { transform: scale(1); opacity: 1 }
 }
-.dbg-maple-pulse {
-  animation: dbg-maple-pulse 1.3s ease-in-out infinite;
-  transform-box: fill-box;
-  transform-origin: center;
-}
-
-@keyframes dbg-maple-halo {
-  0% { transform: scale(0.85); opacity: 0.45 }
+@keyframes dbg-halo {
+  0% { transform: scale(0.85); opacity: 0.4 }
   100% { transform: scale(1.5); opacity: 0 }
 }
-.dbg-maple-halo {
-  animation: dbg-maple-halo 1.3s ease-out infinite;
+.dbg-pulse { animation: dbg-pulse 1.3s ease-in-out infinite }
+.dbg-halo { animation: dbg-halo 1.3s ease-out infinite }
+
+/* 4. 회전 — 잎 한 장이 자전한다 */
+@keyframes dbg-spin { to { transform: rotate(360deg) } }
+.dbg-spin { animation: dbg-spin 1.1s linear infinite }
+
+/* 5. 낙엽 — 좌우로 기울며 살짝 위아래로 흔들린다 */
+@keyframes dbg-sway {
+  0%, 100% { transform: rotate(-20deg) translateY(-3px) }
+  50% { transform: rotate(20deg) translateY(3px) }
+}
+.dbg-sway { animation: dbg-sway 1.5s ease-in-out infinite }
+
+/* 6. 스윕 — 흐린 잎 위로 밝은 띠가 위에서 아래로 훑고 지나간다 */
+@keyframes dbg-sweep { to { transform: translateY(230px) } }
+.dbg-sweep { animation: dbg-sweep 1.4s ease-in-out infinite }
+
+/* 7. 궤도 — 작은 잎 3장이 원을 돈다(각 잎은 시차를 두고 밝아진다) */
+@keyframes dbg-orbit { to { transform: rotate(360deg) } }
+@keyframes dbg-orbit-fade {
+  0%, 100% { opacity: 0.45 }
+  30% { opacity: 1 }
+}
+.dbg-orbit { animation: dbg-orbit 1.6s linear infinite }
+.dbg-orbit-leaf { animation: dbg-orbit-fade 1.6s ease-in-out infinite }
+
+/* SVG 안에서 transform-origin: center 가 도형 bbox 기준으로 잡히게 한다 */
+.dbg-spin, .dbg-sway, .dbg-pulse, .dbg-halo, .dbg-orbit, .dbg-orbit-leaf {
   transform-box: fill-box;
   transform-origin: center;
 }
 
+/* S7 후보 — 모달 카드 상단에 붙는 인디터미네이트 띠 */
 @keyframes dbg-indeterminate {
   0% { transform: translateX(-110%) }
   100% { transform: translateX(410%) }
 }
 .dbg-indeterminate { animation: dbg-indeterminate 1.2s ease-in-out infinite }
 `
+
+// ---------------------------------------------------------------------------
+// 스피너 시안 7종
+// ---------------------------------------------------------------------------
+
+type SpinnerVariant = 'trail' | 'draw' | 'pulse' | 'spin' | 'sway' | 'sweep' | 'orbit'
+
+const VARIANTS: { id: SpinnerVariant; label: string; note: string }[] = [
+  { id: 'trail', label: '트레일 링', note: '현행 — 외곽선 70% 구간이 도는 comet' },
+  { id: 'draw', label: '드로잉', note: '외곽선을 그렸다 지운다 — 큰 자리에서 잘 읽힌다' },
+  { id: 'pulse', label: '펄스', note: '채워진 잎 + 후광 — 작은 크기에서도 존재감이 있다' },
+  { id: 'spin', label: '회전', note: '잎 한 장이 자전 — 가장 보편적인 "로딩" 신호' },
+  { id: 'sway', label: '낙엽', note: '좌우로 기울며 흔들린다 — 조용하지만 로딩으로 안 읽힐 수 있다' },
+  { id: 'sweep', label: '스윕', note: '흐린 잎 위를 밝은 띠가 훑는다 — 스켈레톤 샤인과 같은 어법' },
+  { id: 'orbit', label: '궤도', note: '작은 잎 3장이 원을 돈다 — 점 3개 스피너의 단풍잎판' },
+]
+
+interface SpinnerProps {
+  variant: SpinnerVariant
+  size?: number
+  className?: string
+}
+
+// 잎 bbox 중심(대략). 궤도형에서 작은 잎을 원주 위에 놓을 때 기준으로 쓴다.
+const LEAF_CX = 63.5
+const LEAF_CY = 65
+
+// 궤도 반지름과 잎 배율은 서로 묶여 있다 — 작은 크기(16px)에서도 잎 모양이 남으려면 배율을 키워야
+// 하고, 배율을 키우면 반지름을 줄여야 viewBox를 넘지 않는다.
+function orbitLeafTransform(angleDeg: number): string {
+  const radius = 38
+  const scale = 0.44
+  const radian = (angleDeg * Math.PI) / 180
+  const x = LEAF_CX + radius * Math.cos(radian)
+  const y = LEAF_CY + radius * Math.sin(radian)
+  return `translate(${x} ${y}) scale(${scale}) translate(${-LEAF_CX} ${-LEAF_CY})`
+}
+
+export function Spinner(props: SpinnerProps): React.JSX.Element {
+  const uid = useId()
+  const size = props.size ?? 20
+  const clipId = `dbg-leaf-clip-${uid}`
+  const gradientId = `dbg-sweep-gradient-${uid}`
+
+  const svgProps = {
+    'aria-hidden': true as const,
+    width: size,
+    height: size * (130 / 127),
+    viewBox: '0 0 127 130',
+    className: props.className,
+  }
+
+  switch (props.variant) {
+    case 'trail':
+      return (
+        <svg {...svgProps}>
+          <path
+            d={MAPLE_LEAF_PATH}
+            pathLength={300}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={9}
+            strokeLinecap="round"
+            strokeDasharray="210 90"
+            className="dbg-trail"
+          />
+        </svg>
+      )
+
+    case 'draw':
+      return (
+        <svg {...svgProps}>
+          <path
+            d={MAPLE_LEAF_PATH}
+            pathLength={300}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={9}
+            strokeLinecap="round"
+            strokeDasharray="300 300"
+            className="dbg-draw"
+          />
+        </svg>
+      )
+
+    case 'pulse':
+      return (
+        <svg {...svgProps} overflow="visible">
+          <path d={MAPLE_LEAF_PATH} fill="currentColor" opacity={0.35} className="dbg-halo" />
+          <path d={MAPLE_LEAF_PATH} fill="currentColor" className="dbg-pulse" />
+        </svg>
+      )
+
+    case 'spin':
+      return (
+        <svg {...svgProps}>
+          <path d={MAPLE_LEAF_PATH} fill="currentColor" className="dbg-spin" />
+        </svg>
+      )
+
+    case 'sway':
+      return (
+        <svg {...svgProps}>
+          <path d={MAPLE_LEAF_PATH} fill="currentColor" className="dbg-sway" />
+        </svg>
+      )
+
+    // clipPath의 직접 자식은 도형 요소여야 한다 — <g>로 묶으면 Chrome이 조용히 무시해 빈 클립이
+    // 된다(MapleWaveProgress에서 겪은 트랩). 여기서는 <path> 하나만 자식으로 둔다.
+    case 'sweep':
+      return (
+        <svg {...svgProps}>
+          <defs>
+            <clipPath id={clipId} clipPathUnits="userSpaceOnUse">
+              <path d={MAPLE_LEAF_PATH} />
+            </clipPath>
+            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="currentColor" stopOpacity="0" />
+              <stop offset="50%" stopColor="currentColor" stopOpacity="1" />
+              <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <path d={MAPLE_LEAF_PATH} fill="currentColor" opacity={0.32} />
+          <g clipPath={`url(#${clipId})`}>
+            <rect
+              className="dbg-sweep"
+              x="-10"
+              y="-90"
+              width="147"
+              height="80"
+              fill={`url(#${gradientId})`}
+            />
+          </g>
+        </svg>
+      )
+
+    case 'orbit':
+      return (
+        <svg {...svgProps}>
+          <g className="dbg-orbit">
+            {[-90, 30, 150].map((angle, index) => (
+              <path
+                key={angle}
+                d={MAPLE_LEAF_PATH}
+                fill="currentColor"
+                transform={orbitLeafTransform(angle)}
+                className="dbg-orbit-leaf"
+                style={{ animationDelay: `${index * 0.53}s` }}
+              />
+            ))}
+          </g>
+        </svg>
+      )
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 문구안 — S9("'~중...'은 새로고침 옆 '조회 중...'만 남긴다")를 버튼 라벨과 어떻게 맞출지
+// ---------------------------------------------------------------------------
+
+type ToneId = 'polite' | 'short'
+
+interface Copy {
+  verifyBtn: string
+  deleteBtn: string
+  disconnectBtn: string
+  coldStart: string
+  backfill: string
+  applying: string
+  verifyingAccount: string
+  prefetching: string
+  saving: string
+}
+
+// 규칙(사용자 지침): 제거 대상은 말줄임표가 붙는 '~중...' 형태다. 버튼 내부처럼 폭이 좁은 자리는
+// 말줄임표를 뺀 '~중'을 쓸 수 있다. 말줄임표가 살아남는 곳은 새로고침 옆 '조회 중...' 한 곳뿐.
+const COPY: Record<ToneId, Copy> = {
+  // 안 1 — 버튼까지 전부 '~하고 있어요'. 톤이 한 갈래로 모이는 대신 버튼 라벨이 길어진다.
+  polite: {
+    verifyBtn: '확인하고 있어요',
+    deleteBtn: '삭제하고 있어요',
+    disconnectBtn: '해제하고 있어요',
+    coldStart: '불러오고 있어요',
+    backfill: '7월 3주차 기록을 불러오고 있어요',
+    applying: '적용하고 있어요',
+    verifyingAccount: '캐릭터 목록을 확인하고 있어요',
+    prefetching: '캐릭터 정보를 준비하고 있어요',
+    saving: '캐릭터 정보를 저장하고 있어요',
+  },
+  // 안 2 — 버튼은 말줄임표 없는 '~중', 나머지는 '~하고 있어요'.
+  short: {
+    verifyBtn: '확인 중',
+    deleteBtn: '삭제 중',
+    disconnectBtn: '해제 중',
+    coldStart: '불러오고 있어요',
+    backfill: '7월 3주차 기록을 불러오고 있어요',
+    applying: '적용하고 있어요',
+    verifyingAccount: '캐릭터 목록을 확인하고 있어요',
+    prefetching: '캐릭터 정보를 준비하고 있어요',
+    saving: '캐릭터 정보를 저장하고 있어요',
+  },
+}
+
+// ---------------------------------------------------------------------------
+// 공통 훅·목업
+// ---------------------------------------------------------------------------
 
 const THEME_OPTIONS: ThemeName[] = ['머쉬맘', '혼테일', '레테', '렌']
 
@@ -62,8 +300,7 @@ function applyThemeToDocument(theme: ThemeName): void {
   }
 }
 
-// 이 화면의 테마 전환은 미리보기 전용이라 저장하지 않는다(스토어를 거치지 않고 document에만 적용).
-// 화면을 떠날 때 저장된 테마로 되돌린다.
+// 이 화면의 테마 전환은 미리보기 전용이라 저장하지 않는다. 떠날 때 저장된 테마로 되돌린다.
 function useLocalThemePreview(): [ThemeName, (theme: ThemeName) => void] {
   const { theme: storedTheme } = useThemeStore()
   const [theme, setTheme] = useState<ThemeName>(storedTheme)
@@ -81,7 +318,6 @@ function useLocalThemePreview(): [ThemeName, (theme: ThemeName) => void] {
   return [theme, setTheme]
 }
 
-// 결정형 진행률 선택지는 멈춰 있으면 비교가 안 되므로 0→100%를 5초 주기로 반복 재생한다.
 function usePreviewPercent(): number {
   const [percent, setPercent] = useState(0)
   useEffect(() => {
@@ -93,110 +329,56 @@ function usePreviewPercent(): number {
   return percent
 }
 
-// ---------------------------------------------------------------------------
-// 후보 프리미티브 (앱에 아직 없는 것들)
-// ---------------------------------------------------------------------------
-
-interface CandidateSpinnerProps {
-  size?: number
-  className?: string
-}
-
-// P9-a 드로잉형 — 외곽선을 그렸다가 지운다.
-function MapleDrawSpinner(props: CandidateSpinnerProps): React.JSX.Element {
-  const size = props.size ?? 32
+function Chip(props: {
+  selected: boolean
+  onClick: () => void
+  children: React.ReactNode
+}): React.JSX.Element {
   return (
-    <svg
-      aria-hidden="true"
-      width={size}
-      height={size * (130 / 127)}
-      viewBox="0 0 127 130"
-      className={props.className}
+    <button
+      type="button"
+      aria-pressed={props.selected}
+      onClick={props.onClick}
+      className={
+        props.selected
+          ? 'rounded-full border border-primary bg-primary/15 px-3 py-1.5 text-xs font-semibold text-primary'
+          : 'rounded-full border border-border px-3 py-1.5 text-xs font-medium text-text-muted'
+      }
     >
-      <path
-        d={MAPLE_LEAF_PATH}
-        pathLength={300}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={9}
-        strokeLinecap="round"
-        strokeDasharray="300 300"
-        className="dbg-maple-draw"
-      />
-    </svg>
+      {props.children}
+    </button>
   )
 }
 
-// P9-b 펄스형 — 채워진 잎이 숨쉬듯 커졌다 작아지고 뒤로 후광이 퍼진다.
-function MaplePulseSpinner(props: CandidateSpinnerProps): React.JSX.Element {
-  const size = props.size ?? 32
-  return (
-    <svg
-      aria-hidden="true"
-      width={size}
-      height={size * (130 / 127)}
-      viewBox="0 0 127 130"
-      overflow="visible"
-      className={props.className}
-    >
-      <path d={MAPLE_LEAF_PATH} fill="currentColor" opacity={0.35} className="dbg-maple-halo" />
-      <path d={MAPLE_LEAF_PATH} fill="currentColor" className="dbg-maple-pulse" />
-    </svg>
-  )
-}
+type SectionState = '잠정 결정' | '새로 디자인' | '비교'
 
-// P5 현행 인라인 CSS 링(보스 수익 백필 1곳) — 비교용으로 그대로 옮겨 그린다.
-function RingSpinner(props: { size?: number }): React.JSX.Element {
-  const size = props.size ?? 24
-  return (
-    <div
-      style={{ width: size, height: size }}
-      className="rounded-full border-[3px] border-border border-t-primary animate-spin motion-reduce:animate-none"
-    />
-  )
+const STATE_CLASSES: Record<SectionState, string> = {
+  '잠정 결정': 'bg-secondary/20 text-secondary-text',
+  '새로 디자인': 'bg-third/20 text-third-text',
+  비교: 'bg-primary/15 text-primary',
 }
-
-// P8 스켈레톤 — 채택 시 신설할 프리미티브.
-function SkeletonBox(props: { className: string }): React.JSX.Element {
-  return <div className={`animate-pulse rounded bg-surface-2 ${props.className}`} />
-}
-
-function SkeletonListRow(): React.JSX.Element {
-  return (
-    <div className="flex items-center gap-3 rounded-[10px] border border-border px-4 py-3">
-      <SkeletonBox className="h-[18px] w-[18px] shrink-0" />
-      <SkeletonBox className="h-3.5 w-2/5" />
-      <SkeletonBox className="ml-auto h-5 w-12 shrink-0 rounded-full" />
-    </div>
-  )
-}
-
-// S3-C 후보 — 페이지 헤더 하단에 붙는 2px 인디터미네이트 바.
-function IndeterminateBar(): React.JSX.Element {
-  return (
-    <div className="h-[2px] w-full overflow-hidden bg-transparent">
-      <div className="dbg-indeterminate h-[2px] w-1/4 rounded-full bg-primary" />
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// 미리보기 프레임·목업
-// ---------------------------------------------------------------------------
 
 function Section(props: {
   code: string
   title: string
-  current: string
+  state: SectionState
+  note: string
   children: React.ReactNode
 }): React.JSX.Element {
   return (
     <section className="space-y-3 border-t border-border pt-6">
-      <div className="space-y-1">
-        <h2 className="text-base font-bold text-text">
-          <span className="text-primary">{props.code}</span> {props.title}
-        </h2>
-        <p className="text-xs leading-relaxed text-text-muted">현재: {props.current}</p>
+      <div className="space-y-1.5">
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="text-base font-bold text-text">
+            <span className="text-primary">{props.code}</span> {props.title}
+          </h2>
+          <span
+            className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${STATE_CLASSES[props.state]}`}
+          >
+            {props.state}
+          </span>
+        </div>
+        <p className="text-xs leading-relaxed text-text-muted">{props.note}</p>
       </div>
       <div className="space-y-4">{props.children}</div>
     </section>
@@ -207,7 +389,7 @@ function Option(props: { label: string; note: string; children: React.ReactNode 
   return (
     <div className="space-y-1.5">
       <div className="flex items-baseline gap-2">
-        <span className="shrink-0 rounded-full bg-primary/15 px-2 py-0.5 text-xs font-bold text-primary">
+        <span className="shrink-0 rounded-full bg-surface-2 px-2 py-0.5 text-xs font-bold text-text">
           {props.label}
         </span>
         <span className="text-xs leading-relaxed text-text-muted">{props.note}</span>
@@ -234,8 +416,7 @@ function MockRow(props: { name: string; tag: string }): React.JSX.Element {
   )
 }
 
-// 스케줄러 3화면의 헤더(캐릭터 드롭다운 + 동기화 줄 + 탭)를 축약한 목업.
-function MockSchedulerHeader(props: { syncSlot: React.ReactNode; bar?: React.ReactNode }): React.JSX.Element {
+function MockSchedulerHeader(props: { syncSlot: React.ReactNode }): React.JSX.Element {
   return (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold text-text">컨텐츠</h3>
@@ -249,45 +430,56 @@ function MockSchedulerHeader(props: { syncSlot: React.ReactNode; bar?: React.Rea
         </div>
         <div className="flex items-center gap-1">{props.syncSlot}</div>
       </div>
-      {props.bar}
     </div>
   )
 }
 
-function RefreshButton(props: { spinning: boolean }): React.JSX.Element {
+function MockModalCard(props: { children: React.ReactNode; className?: string }): React.JSX.Element {
   return (
-    <span className="p-2 text-primary-text">
-      <RefreshCw
-        className={`h-4 w-4 ${props.spinning ? 'animate-spin' : ''}`}
-        strokeWidth={2}
-        aria-hidden="true"
-      />
-    </span>
+    <div
+      className={`relative mx-auto w-full max-w-sm overflow-hidden rounded-[14px] border border-border bg-surface p-6 ${props.className ?? ''}`}
+    >
+      {props.children}
+    </div>
   )
 }
 
-function MockModalCard(props: { children: React.ReactNode }): React.JSX.Element {
+function MockModeOptions(props: { dimmed?: boolean }): React.JSX.Element {
   return (
-    <div className="mx-auto w-full max-w-sm rounded-[14px] border border-border bg-surface p-6">{props.children}</div>
-  )
-}
-
-function MockSettingsRow(props: { label: string; right: React.ReactNode }): React.JSX.Element {
-  return (
-    <div className="rounded-[14px] border border-border bg-surface px-6">
-      <div className="flex items-center justify-between py-4">
-        <span className="text-sm font-medium text-text">{props.label}</span>
-        {props.right}
+    <div className={`space-y-2 ${props.dimmed === true ? 'opacity-40' : ''}`}>
+      <div className="rounded-[10px] border border-primary bg-primary/15 px-4 py-3 text-sm font-semibold text-text">
+        자동
       </div>
+      <div className="rounded-[10px] border border-border px-4 py-3 text-sm font-semibold text-text">수동</div>
     </div>
   )
 }
 
-function ProgressBar(props: { percent: number; thick?: boolean }): React.JSX.Element {
-  const height = props.thick === true ? 'h-2' : 'h-1.5'
+// 캐시 삭제 모달의 그룹 체크 목록 — S7-C는 이 모달이 실제 대상이라(액션 버튼이 있는 유일한 차단
+// 모달) 자동/수동 선택지 대신 실제 내용으로 목업한다.
+function MockCacheGroups(props: { dimmed?: boolean }): React.JSX.Element {
   return (
-    <div className={`${height} w-full overflow-hidden rounded-full bg-surface-2`}>
-      <div className={`${height} rounded-full bg-primary`} style={{ width: `${props.percent}%` }} />
+    <div className={`border-t border-border ${props.dimmed === true ? 'opacity-40' : ''}`}>
+      {[
+        { label: '일반 데이터', size: '3.1 MB' },
+        { label: '보스 수익·드롭 기록', size: '9.3 MB' },
+      ].map((group) => (
+        <div key={group.label} className="flex items-start gap-3 border-b border-border py-3">
+          <span className="mt-0.5 h-[18px] w-[18px] shrink-0 rounded-[5px] bg-primary" />
+          <span className="flex flex-1 items-center justify-between gap-3">
+            <span className="text-sm font-semibold text-text">{group.label}</span>
+            <span className="shrink-0 text-sm text-text-muted tabular-nums">{group.size}</span>
+          </span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function ProgressBar(props: { percent: number }): React.JSX.Element {
+  return (
+    <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
+      <div className="h-1.5 rounded-full bg-primary" style={{ width: `${props.percent}%` }} />
     </div>
   )
 }
@@ -298,8 +490,11 @@ function ProgressBar(props: { percent: number; thick?: boolean }): React.JSX.Ele
 
 export function LoadingPreview(): React.JSX.Element {
   const [theme, setTheme] = useLocalThemePreview()
+  const [variant, setVariant] = useState<SpinnerVariant>('trail')
+  const [tone, setTone] = useState<ToneId>('short')
   const percent = usePreviewPercent()
   const completed = Math.round((percent / 100) * 12)
+  const copy = COPY[tone]
 
   return (
     <div className="min-h-screen bg-bg px-4 pb-16 pt-[calc(1rem+var(--sa-top))]">
@@ -307,80 +502,109 @@ export function LoadingPreview(): React.JSX.Element {
 
       <div className="mx-auto max-w-md space-y-6">
         <header className="space-y-2">
-          <h1 className="text-lg font-bold text-text">로딩 표현 비교 (ADR-061)</h1>
+          <h1 className="text-lg font-bold text-text">로딩 시안 비교 (ADR-061)</h1>
           <p className="text-xs leading-relaxed text-text-muted">
-            상황(S1~S10)마다 선택지를 실제 모션으로 비교하는 임시 화면. 진행률은 5초 주기로 0→100%를 반복
-            재생한다. 테마 전환은 이 화면에서만 적용되고 저장되지 않는다.
+            1차 선택을 전제로 스피너 디자인을 갈아끼워 보는 화면. 위에서 시안·문구안·테마를 고르면 아래
+            모든 자리가 그 조합으로 다시 그려진다. 진행률은 5초 주기로 0→100%를 반복 재생한다.
           </p>
         </header>
 
-        <div className="flex flex-wrap gap-2">
-          {THEME_OPTIONS.map((option) => (
-            <button
-              key={option}
-              type="button"
-              aria-pressed={theme === option}
-              onClick={() => setTheme(option)}
-              className={
-                theme === option
-                  ? 'rounded-full border border-primary bg-primary/15 px-3 py-1.5 text-xs font-semibold text-primary'
-                  : 'rounded-full border border-border px-3 py-1.5 text-xs font-medium text-text-muted'
-              }
-            >
-              {option}
-            </button>
-          ))}
+        <div className="space-y-3 rounded-[14px] border border-border bg-surface p-4">
+          <div className="space-y-1.5">
+            <p className="text-xs font-bold text-text">스피너 시안</p>
+            <div className="flex flex-wrap gap-2">
+              {VARIANTS.map((item) => (
+                <Chip key={item.id} selected={variant === item.id} onClick={() => setVariant(item.id)}>
+                  <span className="flex items-center gap-1.5">
+                    <Spinner variant={item.id} size={13} />
+                    {item.label}
+                  </span>
+                </Chip>
+              ))}
+            </div>
+            <p className="text-[11px] leading-relaxed text-text-muted">
+              {VARIANTS.find((item) => item.id === variant)?.note}
+            </p>
+          </div>
+
+          <div className="space-y-1.5 border-t border-border pt-3">
+            <p className="text-xs font-bold text-text">문구안 (S9)</p>
+            <div className="flex flex-wrap gap-2">
+              <Chip selected={tone === 'short'} onClick={() => setTone('short')}>
+                버튼은 ~중
+              </Chip>
+              <Chip selected={tone === 'polite'} onClick={() => setTone('polite')}>
+                전부 ~하고 있어요
+              </Chip>
+            </div>
+            <p className="text-[11px] leading-relaxed text-text-muted">
+              제거 대상은 말줄임표가 붙는 &apos;~중...&apos; 형태다. 버튼 내부는 말줄임표를 뺀
+              &apos;~중&apos;을 쓸 수 있고, 말줄임표가 살아남는 곳은 새로고침 옆 &apos;조회 중...&apos;
+              한 곳뿐이다.
+            </p>
+          </div>
+
+          <div className="space-y-1.5 border-t border-border pt-3">
+            <p className="text-xs font-bold text-text">테마</p>
+            <div className="flex flex-wrap gap-2">
+              {THEME_OPTIONS.map((option) => (
+                <Chip key={option} selected={theme === option} onClick={() => setTheme(option)}>
+                  {option}
+                </Chip>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* ------------------------------------------------------------------ */}
         <Section
-          code="S1"
-          title="버튼 내부 대기"
-          current="온보딩(확인·계속하기)은 스피너, 설정(업데이트 확인·캐시 삭제·연결 해제)은 텍스트만"
+          code="시안"
+          title="스피너 7종 — 크기별"
+          state="비교"
+          note="위 16px(버튼 안) · 가운데 24px(영역) · 아래 32px(화면·모달). 실제로 쓰이는 세 크기다."
         >
-          <Option label="A" note="전부 스피너 — 라벨을 스피너가 대체(aria-label로 상태 전달)">
-            <div className="space-y-2">
-              <button type="button" className={PRIMARY_BTN}>
-                <MapleSpinner size={18} />
-              </button>
-              <button type="button" className={DANGER_BTN}>
-                <MapleSpinner size={18} />
-              </button>
+          <div className="rounded-[14px] border border-dashed border-border bg-bg p-4">
+            <div className="space-y-4 text-primary">
+              {[16, 24, 32].map((size) => (
+                <div key={size} className="flex items-center justify-between gap-1">
+                  {VARIANTS.map((item) => (
+                    <div key={item.id} className="flex flex-1 justify-center">
+                      <Spinner variant={item.id} size={size} />
+                    </div>
+                  ))}
+                </div>
+              ))}
+              <div className="flex items-center justify-between gap-1">
+                {VARIANTS.map((item) => (
+                  <div key={item.id} className="flex-1 text-center text-[9px] leading-tight text-text-muted">
+                    {item.label}
+                  </div>
+                ))}
+              </div>
             </div>
-          </Option>
+          </div>
+        </Section>
 
-          <Option label="B" note="스피너 + 라벨 병기 — 무엇이 진행 중인지 글자로 남는다(버튼 폭이 흔들림)">
+        {/* ------------------------------------------------------------------ */}
+        <Section
+          code="S1"
+          title="버튼 내부 대기 — 스피너 + 라벨 병기"
+          state="잠정 결정"
+          note="온보딩·설정 구분 없이 모든 제출 버튼이 같은 형태. 라벨이 남으므로 S9 문구안이 여기서 갈린다."
+        >
+          <Option label="적용" note="온보딩 API 키 확인 / 캐시 데이터 삭제 / 연결 해제">
             <div className="space-y-2">
               <button type="button" className={PRIMARY_BTN}>
-                <MapleSpinner size={16} />
-                확인 중...
+                <Spinner variant={variant} size={16} />
+                {copy.verifyBtn}
               </button>
               <button type="button" className={DANGER_BTN}>
-                <MapleSpinner size={16} />
-                삭제 중...
-              </button>
-            </div>
-          </Option>
-
-          <Option label="C" note="성격으로 분리 — 조회성은 스피너만, 파괴적 동작은 라벨 병기">
-            <div className="space-y-2">
-              <button type="button" className={PRIMARY_BTN}>
-                <MapleSpinner size={18} />
+                <Spinner variant={variant} size={16} />
+                {copy.deleteBtn}
               </button>
               <button type="button" className={DANGER_BTN}>
-                <MapleSpinner size={16} />
-                삭제 중...
-              </button>
-            </div>
-          </Option>
-
-          <Option label="D" note="현행 유지 — 온보딩만 스피너, 설정은 라벨 텍스트만">
-            <div className="space-y-2">
-              <button type="button" className={PRIMARY_BTN}>
-                <MapleSpinner size={18} />
-              </button>
-              <button type="button" className={DANGER_BTN}>
-                삭제 중...
+                <Spinner variant={variant} size={16} />
+                {copy.disconnectBtn}
               </button>
             </div>
           </Option>
@@ -389,41 +613,21 @@ export function LoadingPreview(): React.JSX.Element {
         {/* ------------------------------------------------------------------ */}
         <Section
           code="S2"
-          title="콜드 스타트 — 보여줄 데이터가 아예 없음"
-          current="스케줄러 3화면은 '불러오는 중...' 한 줄, 관리 화면 2곳·앱 부팅 복원은 표시 없음"
+          title="콜드 스타트 — 스피너 32 + 문구"
+          state="잠정 결정"
+          note="스케줄러 3화면 · 관리 화면 2곳 · 앱 부팅 복원 · 온보딩 시드가 모두 이 형태를 공유한다."
         >
-          <Option label="A" note="MapleSpinner 32 + 문구 — 온보딩 시드 화면과 같은 조합">
-            <MockSchedulerHeader syncSlot={<RefreshButton spinning={false} />} />
+          <Option label="적용" note="보여줄 데이터가 하나도 없을 때만. 캐시가 있으면 S3로 간다.">
+            <MockSchedulerHeader
+              syncSlot={
+                <span className="p-2 text-primary-text">
+                  <RefreshCw className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+                </span>
+              }
+            />
             <div className="flex min-h-[168px] flex-col items-center justify-center gap-3">
-              <MapleSpinner size={32} className="text-primary" />
-              <p className="text-sm text-text-muted">불러오는 중...</p>
-            </div>
-          </Option>
-
-          <Option label="B" note="스켈레톤 — 레이아웃 점프가 없고 무엇을 기다리는지 골격이 전달한다(신설 필요)">
-            <MockSchedulerHeader syncSlot={<RefreshButton spinning={false} />} />
-            <div className="mt-3 space-y-2">
-              <SkeletonListRow />
-              <SkeletonListRow />
-              <SkeletonListRow />
-            </div>
-          </Option>
-
-          <Option label="C" note="현행 — 텍스트 한 줄만(문구만 '불러오는 중...'으로 통일)">
-            <MockSchedulerHeader syncSlot={<RefreshButton spinning={false} />} />
-            <div className="mt-3 min-h-[168px]">
-              <p className="text-sm text-text-muted">불러오는 중...</p>
-            </div>
-          </Option>
-
-          <Option label="D" note="혼합 — 목록형은 스켈레톤(위), 결과가 하나뿐인 앱 부팅 복원은 스피너(아래)">
-            <div className="space-y-2">
-              <SkeletonListRow />
-              <SkeletonListRow />
-            </div>
-            <div className="mt-4 flex min-h-[120px] flex-col items-center justify-center gap-3 rounded-[10px] bg-surface">
-              <MapleSpinner size={32} className="text-primary" />
-              <p className="text-sm text-text-muted">준비하고 있어요</p>
+              <Spinner variant={variant} size={32} className="text-primary" />
+              <p className="text-sm text-text-muted">{copy.coldStart}</p>
             </div>
           </Option>
         </Section>
@@ -431,48 +635,20 @@ export function LoadingPreview(): React.JSX.Element {
         {/* ------------------------------------------------------------------ */}
         <Section
           code="S3"
-          title="SWR 재검증 — 캐시 데이터가 이미 화면에 있음"
-          current="'마지막 동기화 3분 전' 자리를 '조회 중...'이 대체 + RefreshCw 회전"
+          title="SWR 재검증 — 현행 유지"
+          state="잠정 결정"
+          note="스피너를 쓰지 않는 유일한 로딩 자리. '조회 중...'은 앱에서 유일하게 남는 '~중...' 문구다."
         >
-          <Option label="A" note="현행 — 텍스트 + 아이콘 회전(신호 둘)">
+          <Option label="적용" note="캐시가 화면에 남아 있으므로 가리지 않는다(ADR-016)">
             <MockSchedulerHeader
               syncSlot={
                 <>
                   <p className="whitespace-nowrap text-sm text-text-muted">조회 중...</p>
-                  <RefreshButton spinning={true} />
+                  <span className="p-2 text-primary-text">
+                    <RefreshCw className="h-4 w-4 animate-spin" strokeWidth={2} aria-hidden="true" />
+                  </span>
                 </>
               }
-            />
-            <div className="mt-3 space-y-2">
-              <MockRow name="일일 퀘스트" tag="3/5" />
-              <MockRow name="몬스터파크" tag="2/3" />
-            </div>
-          </Option>
-
-          <Option label="B" note="아이콘 회전만 — 마지막 동기화 시각이 유지돼 헤더 폭이 흔들리지 않는다">
-            <MockSchedulerHeader
-              syncSlot={
-                <>
-                  <p className="whitespace-nowrap text-sm text-text-muted">3분 전</p>
-                  <RefreshButton spinning={true} />
-                </>
-              }
-            />
-            <div className="mt-3 space-y-2">
-              <MockRow name="일일 퀘스트" tag="3/5" />
-              <MockRow name="몬스터파크" tag="2/3" />
-            </div>
-          </Option>
-
-          <Option label="C" note="헤더 하단 2px 인디터미네이트 바 + 시각 유지(신설 필요)">
-            <MockSchedulerHeader
-              syncSlot={
-                <>
-                  <p className="whitespace-nowrap text-sm text-text-muted">3분 전</p>
-                  <RefreshButton spinning={false} />
-                </>
-              }
-              bar={<IndeterminateBar />}
             />
             <div className="mt-3 space-y-2">
               <MockRow name="일일 퀘스트" tag="3/5" />
@@ -484,302 +660,200 @@ export function LoadingPreview(): React.JSX.Element {
         {/* ------------------------------------------------------------------ */}
         <Section
           code="S4"
-          title="영역 부분 로딩 — 보스 수익 과거 기간 백필"
-          current="점선 카드 안 인라인 CSS 링(앱에서 유일한 비-브랜드 스피너) + 문구"
+          title="영역 부분 로딩 — 점선 없는 새 디자인"
+          state="새로 디자인"
+          note="보스 수익 과거 기간 백필. 기간 화살표를 누를 때마다 반복해 뜨고, 끝나면 캐릭터 카드가 그 자리를 채운다. 점선 박스는 빈 상태(EmptyState)의 어법이라 로딩과 겹쳤던 것이 문제였다."
         >
-          <Option label="A" note="MapleSpinner 24로 교체 — 앱 전체에서 '대기 = 단풍잎'으로 단일화">
-            <div className="flex flex-col items-center gap-3 rounded-[14px] border border-dashed border-border p-6 text-center">
-              <MapleSpinner size={24} className="text-primary" />
-              <p className="text-xs text-text-muted">7월 3주차 기록을 불러오는 중...</p>
-            </div>
-          </Option>
-
-          <Option label="B" note="스켈레톤 카드 — 백필 후 나타날 캐릭터 카드 골격을 미리 그린다">
-            <div className="space-y-2">
-              <div className="flex items-center gap-3 rounded-[14px] border border-border bg-surface p-4">
-                <SkeletonBox className="h-10 w-10 shrink-0 rounded-full" />
-                <div className="flex-1 space-y-2">
-                  <SkeletonBox className="h-3.5 w-1/3" />
-                  <SkeletonBox className="h-3 w-1/2" />
-                </div>
-              </div>
-              <div className="flex items-center gap-3 rounded-[14px] border border-border bg-surface p-4">
-                <SkeletonBox className="h-10 w-10 shrink-0 rounded-full" />
-                <div className="flex-1 space-y-2">
-                  <SkeletonBox className="h-3.5 w-2/5" />
-                  <SkeletonBox className="h-3 w-1/3" />
-                </div>
-              </div>
-            </div>
-          </Option>
-
-          <Option label="C" note="현행 유지 — 기간을 넘길 때마다 반복해 뜨는 자리라 중립 링이 덜 튄다">
-            <div className="flex flex-col items-center gap-3 rounded-[14px] border border-dashed border-border p-6 text-center">
-              <RingSpinner size={24} />
-              <p className="text-xs text-text-muted">7월 3주차 기록을 불러오는 중...</p>
-            </div>
-          </Option>
-        </Section>
-
-        {/* ------------------------------------------------------------------ */}
-        <Section
-          code="S5"
-          title="결정형 진행률 — 대량 순차 작업 (N/M)"
-          current="같은 작업이 3표현 — 온보딩 예열은 물결, 계정 변경 예열은 얇은 바, 캐릭터 관리 저장은 모달 안 얇은 바"
-        >
-          <Option label="A" note="전부 MapleWaveProgress — 모달 안에도 64px 브랜드 마크가 들어간다">
-            <div className="flex flex-col items-center gap-3 py-4">
-              <p className="text-sm text-text-muted">
-                캐릭터 정보를 준비하고 있어요 ({completed}/12)
-              </p>
-              <MapleWaveProgress percent={percent} />
-            </div>
-            <MockModalCard>
-              <div className="space-y-2">
-                <p className="text-sm text-text-muted">캐릭터 정보를 저장하고 있어요 ({completed}/12)</p>
-                <div className="flex justify-center pt-1">
-                  <MapleWaveProgress percent={percent} size={48} />
-                </div>
-              </div>
-            </MockModalCard>
-          </Option>
-
-          <Option label="B" note="전부 얇은 바 — design-system '진행률 바 프리미티브 재사용'에 가장 충실">
-            <div className="space-y-2 py-4">
-              <p className="text-sm text-text-muted">캐릭터 정보를 준비하고 있어요 ({completed}/12)</p>
-              <ProgressBar percent={percent} />
-            </div>
-            <MockModalCard>
-              <div className="space-y-2">
-                <p className="text-sm text-text-muted">캐릭터 정보를 저장하고 있어요 ({completed}/12)</p>
-                <ProgressBar percent={percent} />
-              </div>
-            </MockModalCard>
-          </Option>
-
-          <Option label="C" note="자리로 분리 — 화면 전체는 물결, 모달·카드 안은 얇은 바(현행에서 손댈 곳이 거의 없음)">
-            <div className="flex flex-col items-center gap-3 py-4">
-              <p className="text-sm text-text-muted">
-                캐릭터 정보를 준비하고 있어요 ({completed}/12)
-              </p>
-              <MapleWaveProgress percent={percent} />
-            </div>
-            <MockModalCard>
-              <div className="space-y-2">
-                <p className="text-sm text-text-muted">캐릭터 정보를 저장하고 있어요 ({completed}/12)</p>
-                <ProgressBar percent={percent} />
-              </div>
-            </MockModalCard>
-          </Option>
-        </Section>
-
-        {/* ------------------------------------------------------------------ */}
-        <Section
-          code="S6"
-          title="결정형 진행률 — 다운로드(OTA)"
-          current="업데이트 모달은 굵은 바(h-2) + %, 설정 섹션은 '다운로드 중 45%' 텍스트만"
-        >
-          <Option label="A" note="h-1.5 프리미티브로 통일 — h-2 변형을 없앤다">
-            <MockModalCard>
-              <div className="space-y-3 text-center">
-                <h4 className="text-base font-semibold text-text">다운로드 중</h4>
-                <ProgressBar percent={percent} />
-                <p className="text-xs font-medium tabular-nums text-text-muted">{percent}%</p>
-              </div>
-            </MockModalCard>
-          </Option>
-
-          <Option label="B" note="현행 h-2 유지 — 모달 주역이면 굵게, 보조면 얇게를 규칙으로 문서화">
-            <MockModalCard>
-              <div className="space-y-3 text-center">
-                <h4 className="text-base font-semibold text-text">다운로드 중</h4>
-                <ProgressBar percent={percent} thick />
-                <p className="text-xs font-medium tabular-nums text-text-muted">{percent}%</p>
-              </div>
-            </MockModalCard>
-          </Option>
-
-          <Option label="C" note="MapleWaveProgress — 업데이트 모달은 앱이 말을 거는 자리라 브랜드 마크">
-            <MockModalCard>
+          <Option
+            label="A"
+            note="셸 승계 — 로딩 후 나타날 캐릭터 카드와 같은 실선 surface 카드. 카드가 자리를 먼저 잡아 결과가 들어와도 화면이 튀지 않는다."
+          >
+            <div className="rounded-[14px] border border-border bg-surface p-6">
               <div className="flex flex-col items-center gap-3 text-center">
-                <h4 className="text-base font-semibold text-text">다운로드 중</h4>
-                <MapleWaveProgress percent={percent} />
+                <Spinner variant={variant} size={24} className="text-primary" />
+                <p className="text-xs text-text-muted">{copy.backfill}</p>
               </div>
-            </MockModalCard>
+            </div>
+          </Option>
+
+          <Option
+            label="B"
+            note="알약 — 스피너와 문구를 한 줄 배지로 묶어 중앙에. 높이가 낮아 기간을 연달아 넘겨도 화면 요동이 가장 적다."
+          >
+            <div className="flex justify-center py-6">
+              <span className="inline-flex items-center gap-2 rounded-full bg-surface-2 py-2 pl-2.5 pr-4">
+                <Spinner variant={variant} size={16} className="text-primary" />
+                <span className="text-xs font-medium text-text-muted">{copy.backfill}</span>
+              </span>
+            </div>
+          </Option>
+
+          <Option
+            label="C"
+            note="맨몸 — 테두리도 배경도 없이 스피너 + 문구만. 가장 조용하지만 '무엇을 기다리는지'를 문구 혼자 감당한다."
+          >
+            <div className="flex flex-col items-center gap-3 py-8 text-center">
+              <Spinner variant={variant} size={24} className="text-primary" />
+              <p className="text-xs text-text-muted">{copy.backfill}</p>
+            </div>
           </Option>
         </Section>
 
         {/* ------------------------------------------------------------------ */}
         <Section
           code="S7"
-          title="모달 차단 작업 — 진행 중엔 닫을 수 없음"
-          current="갈림 — 모드 전환은 스피너+문구, 계정 검증은 문구만, 캐시 삭제는 버튼 라벨만"
+          title="모달 차단 작업 — 새 디자인"
+          state="새로 디자인"
+          note="모드 전환(시드) · 계정 검증 · 캐시 삭제. 공통 요구는 '진행 중임이 보이고, 닫을 수 없음이 전달되고, 무슨 선택을 하던 중이었는지 맥락이 사라지지 않는 것'."
         >
-          <Option label="A" note="스피너 + 문구로 통일 — 선택지는 그대로 두고 아래에 상태 줄을 붙인다">
+          <Option
+            label="A"
+            note="상단 띠 + 본문 딤 — 카드 최상단에 인디터미네이트 띠, 선택지는 흐려져 맥락만 남는다. 카드 크기가 변하지 않아 모달이 튀지 않는다."
+          >
+            <MockModalCard>
+              <div className="absolute inset-x-0 top-0 h-[3px] overflow-hidden bg-surface-2">
+                <div className="dbg-indeterminate h-full w-1/4 rounded-full bg-primary" />
+              </div>
+              <div className="mb-4 space-y-1">
+                <h4 className="text-lg font-semibold text-text">스케줄 관리 방법</h4>
+                <p className="text-sm text-text-muted">진행 상황을 어떻게 관리할지 선택해주세요.</p>
+              </div>
+              <MockModeOptions dimmed />
+              <p className="mt-4 text-center text-sm font-medium text-text">{copy.applying}</p>
+            </MockModalCard>
+          </Option>
+
+          <Option
+            label="B"
+            note="스크림 오버레이 — 카드 위에 반투명 층을 덮고 그 위에 스피너 + 문구. 선택지가 비쳐 맥락이 남고, 덮개 자체가 '지금은 못 누른다'를 말한다."
+          >
             <MockModalCard>
               <div className="mb-4 space-y-1">
                 <h4 className="text-lg font-semibold text-text">스케줄 관리 방법</h4>
                 <p className="text-sm text-text-muted">진행 상황을 어떻게 관리할지 선택해주세요.</p>
               </div>
-              <div className="space-y-2 opacity-50">
-                <div className="rounded-[10px] border border-primary bg-primary/15 px-4 py-3 text-sm font-semibold text-text">
-                  자동
-                </div>
-                <div className="rounded-[10px] border border-border px-4 py-3 text-sm font-semibold text-text">
-                  수동
-                </div>
-              </div>
-              <div className="mt-4 flex items-center justify-center gap-2 text-sm text-text-muted">
-                <MapleSpinner size={18} />
-                <span>적용하고 있어요</span>
+              <MockModeOptions />
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-surface/85 backdrop-blur-[2px]">
+                <Spinner variant={variant} size={32} className="text-primary" />
+                <p className="text-sm font-medium text-text">{copy.applying}</p>
               </div>
             </MockModalCard>
           </Option>
 
-          <Option label="B" note="본문 전체를 로딩으로 교체 — '지금은 못 누른다'가 가장 명확하지만 취소 경로도 사라진다">
+          <Option
+            label="C"
+            note="상태 줄 승계 — 액션 버튼이 있던 자리를 스피너 + 문구 한 줄이 그대로 이어받는다. 누를 것이 사라지는 것으로 차단을 말한다."
+          >
             <MockModalCard>
-              <div className="flex flex-col items-center gap-3 py-6">
-                <MapleSpinner size={32} className="text-primary" />
-                <p className="text-sm text-text-muted">적용하고 있어요</p>
+              <div className="mb-4 space-y-1">
+                <h4 className="text-base font-bold text-text">캐시 데이터 삭제</h4>
+                <p className="text-sm text-text-muted">지울 데이터를 선택하세요.</p>
+              </div>
+              <MockCacheGroups dimmed />
+              <div className="mt-4 flex items-center justify-center gap-2 rounded-full bg-surface-2 py-2.5">
+                <Spinner variant={variant} size={16} className="text-primary" />
+                <span className="text-sm font-medium text-text-muted">{copy.deleteBtn}</span>
               </div>
             </MockModalCard>
           </Option>
+        </Section>
 
-          <Option label="C" note="현행 — 문구만(계정 검증) / 버튼 라벨만(캐시 삭제, 최대 10초)">
-            <div className="space-y-3">
-              <MockModalCard>
-                <p className="text-sm text-text-muted">캐릭터 목록을 확인하고 있어요...</p>
-              </MockModalCard>
-              <MockModalCard>
-                <div className="flex justify-end gap-2">
-                  <span className="rounded-full px-5 py-2.5 text-sm font-medium text-text-muted opacity-50">
-                    취소
-                  </span>
-                  <span className="rounded-full border border-error px-5 py-2.5 text-sm font-semibold text-error opacity-50">
-                    삭제 중...
-                  </span>
-                </div>
-              </MockModalCard>
+        {/* ------------------------------------------------------------------ */}
+        <Section
+          code="S5 · S6"
+          title="결정형 진행률 — 전부 얇은 바(h-1.5)"
+          state="잠정 결정"
+          note="예열·저장·다운로드가 같은 프리미티브를 쓴다. MapleWaveProgress와 h-2 변형은 폐기 대상 — 물결형이 앱에서 사라진다는 뜻이다."
+        >
+          <Option label="적용" note="온보딩 예열(화면) / 캐릭터 관리 저장(모달) / OTA 다운로드(모달)">
+            <div className="space-y-2 py-2">
+              <p className="text-sm text-text-muted">
+                {copy.prefetching} ({completed}/12)
+              </p>
+              <ProgressBar percent={percent} />
             </div>
+            <MockModalCard className="mt-3">
+              <div className="space-y-2">
+                <p className="text-sm text-text-muted">
+                  {copy.saving} ({completed}/12)
+                </p>
+                <ProgressBar percent={percent} />
+              </div>
+            </MockModalCard>
+            <MockModalCard className="mt-3">
+              <div className="space-y-3 text-center">
+                <h4 className="text-base font-semibold text-text">다운로드 중</h4>
+                <ProgressBar percent={percent} />
+                <p className="text-xs font-medium tabular-nums text-text-muted">{percent}%</p>
+              </div>
+            </MockModalCard>
           </Option>
         </Section>
 
         {/* ------------------------------------------------------------------ */}
         <Section
           code="S8"
-          title="값 하나가 늦게 채워지는 자리 — 캐시 용량"
-          current="빈 문자열 / 용량 span 자체를 렌더하지 않아 레이아웃이 점프한다"
+          title="값 하나가 늦게 채워지는 자리 — '- KB'"
+          state="잠정 결정"
+          note="조회 전에도 같은 폭·같은 타이포로 자리를 잡아 값이 들어와도 레이아웃이 밀리지 않는다."
         >
-          <Option label="현행" note="값이 툭 나타난다(비교 기준)">
-            <MockSettingsRow label="캐시 데이터 삭제" right={<span className="text-sm text-text-muted" />} />
-          </Option>
-
-          <Option label="A" note="스켈레톤 칩 — 자리를 미리 잡아 점프가 없다">
-            <MockSettingsRow label="캐시 데이터 삭제" right={<SkeletonBox className="h-4 w-14" />} />
-          </Option>
-
-          <Option label="B" note="자리만 예약하고 — 표시 — 애니메이션 없이 가장 조용하다">
-            <MockSettingsRow label="캐시 데이터 삭제" right={<span className="text-sm text-text-muted">—</span>} />
-          </Option>
-
-          <Option label="C" note="MapleSpinner 14 — 설정 행마다 단풍잎이 돌면 과할 수 있다">
-            <MockSettingsRow
-              label="캐시 데이터 삭제"
-              right={<MapleSpinner size={14} className="text-text-muted" />}
-            />
+          <Option label="적용" note="위: 조회 전 / 아래: 조회 후">
+            <div className="space-y-2">
+              <div className="rounded-[14px] border border-border bg-surface px-6">
+                <div className="flex items-center justify-between py-4">
+                  <span className="text-sm font-medium text-text">캐시 데이터 삭제</span>
+                  <span className="text-sm text-text-muted tabular-nums">- KB</span>
+                </div>
+              </div>
+              <div className="rounded-[14px] border border-border bg-surface px-6">
+                <div className="flex items-center justify-between py-4">
+                  <span className="text-sm font-medium text-text">캐시 데이터 삭제</span>
+                  <span className="text-sm text-text-muted tabular-nums">12.4 MB</span>
+                </div>
+              </div>
+            </div>
           </Option>
         </Section>
 
         {/* ------------------------------------------------------------------ */}
         <Section
           code="S9"
-          title="문구 규칙"
-          current="9종 혼재 — '~중...'(6) vs '~하고 있어요'(4), 말줄임표도 ... 와 … 가 섞임"
+          title="문구 — 말줄임표가 남는 곳은 한 곳뿐"
+          state="비교"
+          note="제거 대상은 말줄임표가 붙는 '~중...'이다. 버튼 내부는 말줄임표를 뺀 '~중'을 쓸 수 있으므로, 두 안의 차이는 버튼 라벨에서만 난다 — 나머지 자리는 어느 안이든 '~하고 있어요'다."
         >
-          <Option label="A" note="전부 '~하고 있어요' — 앱 전반의 존댓말 톤과 일치, 버튼 안에서는 길다">
-            <ul className="space-y-1.5 text-sm text-text-muted">
-              <li>목록을 불러오고 있어요</li>
-              <li>최신 정보를 확인하고 있어요</li>
-              <li>캐시를 삭제하고 있어요</li>
-              <li>연결을 해제하고 있어요</li>
-            </ul>
-          </Option>
-
-          <Option label="B" note="전부 '~중...' — 짧아 좁은 자리에 유리, 온보딩·모달의 따뜻한 톤이 사라진다">
-            <ul className="space-y-1.5 text-sm text-text-muted">
-              <li>불러오는 중...</li>
-              <li>조회 중...</li>
-              <li>삭제 중...</li>
-              <li>해제하는 중...</li>
-            </ul>
-          </Option>
-
-          <Option label="C" note="자리로 분리 — 버튼·헤더처럼 좁으면 '~중...', 화면·모달처럼 넓으면 '~하고 있어요'">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between gap-2 rounded-[10px] border border-border px-3 py-2">
-                <span className="text-xs text-text-disabled">헤더</span>
-                <span className="text-sm text-text-muted">조회 중...</span>
-              </div>
-              <button type="button" className={DANGER_BTN}>
-                <MapleSpinner size={16} />
-                삭제 중...
+          <Option label="A" note="버튼은 ~중(말줄임표 없음) — 버튼 폭 변화가 적다">
+            <div className="space-y-2">
+              <button type="button" className={PRIMARY_BTN}>
+                <Spinner variant={variant} size={16} />
+                {COPY.short.verifyBtn}
               </button>
-              <div className="flex flex-col items-center gap-2 rounded-[10px] border border-border py-5">
-                <MapleSpinner size={32} className="text-primary" />
-                <span className="text-sm text-text-muted">체크리스트를 준비하고 있어요</span>
-              </div>
-            </div>
-          </Option>
-        </Section>
-
-        {/* ------------------------------------------------------------------ */}
-        <Section
-          code="S10"
-          title="스피너를 몇 종 둘 것인가"
-          current="트레일 링(MapleSpinner)만 배치됨 — 2026-07-22에 함께 채택한 드로잉형·펄스형은 배치처 없음"
-        >
-          <Option label="비교" note="왼쪽부터 트레일 링 / 드로잉형 / 펄스형 — 위 20px(버튼), 아래 32px(화면)">
-            <div className="space-y-5">
-              <div className="flex items-end justify-around text-primary">
-                <div className="flex flex-col items-center gap-2">
-                  <MapleSpinner size={20} />
-                  <span className="text-[10px] text-text-muted">트레일 링</span>
-                </div>
-                <div className="flex flex-col items-center gap-2">
-                  <MapleDrawSpinner size={20} />
-                  <span className="text-[10px] text-text-muted">드로잉형</span>
-                </div>
-                <div className="flex flex-col items-center gap-2">
-                  <MaplePulseSpinner size={20} />
-                  <span className="text-[10px] text-text-muted">펄스형</span>
-                </div>
-              </div>
-              <div className="flex items-end justify-around text-primary">
-                <MapleSpinner size={32} />
-                <MapleDrawSpinner size={32} />
-                <MaplePulseSpinner size={32} />
-              </div>
+              <button type="button" className={DANGER_BTN}>
+                <Spinner variant={variant} size={16} />
+                {COPY.short.deleteBtn}
+              </button>
             </div>
           </Option>
 
-          <Option label="A" note="1종만 유지 — 비결정형은 전부 트레일 링, 드로잉형·펄스형은 폐기">
-            <div className="flex items-center justify-around text-primary">
-              <MapleSpinner size={20} />
-              <MapleSpinner size={32} />
+          <Option label="B" note="버튼까지 ~하고 있어요 — 톤이 한 갈래로 모이지만 라벨이 길어진다">
+            <div className="space-y-2">
+              <button type="button" className={PRIMARY_BTN}>
+                <Spinner variant={variant} size={16} />
+                {COPY.polite.verifyBtn}
+              </button>
+              <button type="button" className={DANGER_BTN}>
+                <Spinner variant={variant} size={16} />
+                {COPY.polite.deleteBtn}
+              </button>
             </div>
           </Option>
 
-          <Option label="B" note="크기로 2종 — 작은 자리(≤20px)는 트레일 링, 큰 자리(≥32px)는 드로잉형">
-            <div className="flex items-center justify-around text-primary">
-              <MapleSpinner size={20} />
-              <MapleDrawSpinner size={32} />
-            </div>
-          </Option>
-
-          <Option label="C" note="대기 길이로 2종 — 짧은 대기는 트레일 링, 긴 대기(시드·백필·캐시 삭제)는 펄스형">
-            <div className="flex items-center justify-around text-primary">
-              <MapleSpinner size={20} />
-              <MaplePulseSpinner size={32} />
+          <Option label="예외" note="말줄임표가 유일하게 남는 곳 — 새로고침 버튼 옆">
+            <div className="flex items-center justify-end gap-1">
+              <p className="whitespace-nowrap text-sm text-text-muted">조회 중...</p>
+              <span className="p-2 text-primary-text">
+                <RefreshCw className="h-4 w-4 animate-spin" strokeWidth={2} aria-hidden="true" />
+              </span>
             </div>
           </Option>
         </Section>
