@@ -147,8 +147,14 @@ export function BossManageScreen(): React.JSX.Element {
       return
     }
     const difficulty = defaultDifficultyFor(bossName, difficulties)
-    if (difficulty !== null) {
-      await addManualBoss(selected.ocid, bossName, difficulty)
+    if (difficulty === null) return
+    // 한도 초과는 행을 막지 않고 눌렀을 때 토스트로 알린다(사용자 지시) — 흐림은 "고를 수 없다"만
+    // 말하고 이유는 시도한 순간에 말한다. 판정은 스토어가 돌려주는 결과를 그대로 쓴다(조건 중복 금지).
+    // showError가 아니라 showInfo다: 실패가 아니라 규칙 안내이고, error는 자동 소멸이 없어
+    // (duration null) 사용자가 직접 닫아야 한다(사용자 지시 — 경고 톤 + 자동 소멸).
+    const result = await addManualBoss(selected.ocid, bossName, difficulty)
+    if (result === 'limitReached') {
+      useToastStore.getState().showInfo(`주간 ${WEEKLY_BOSS_CLEAR_LIMIT}개를 모두 선택했어요`)
     }
   }
 
@@ -361,16 +367,13 @@ export function BossManageScreen(): React.JSX.Element {
               const trackedDifficulty = mode === 'manual' ? trackedDifficultyOf(entry.boss) : null
               const isTracked = trackedDifficulty !== null
 
-              // ADR-055: 한도가 찼을 때 미선택 행을 막는다. 이미 선택된 행은 잠그지 않는다 —
-              // 해제할 수 있어야 한다. 사유는 흐려진 행 위에 얹는 한 줄로 알린다(사용자 피드백).
+              // ADR-055: 한도가 찼을 때 미선택 행은 흐리게만 둔다 — 비활성화하지 않는다.
+              // 눌러야 이유(토스트)를 알릴 수 있고, 이미 선택된 행은 애초에 대상이 아니다.
               const isLimitBlocked =
                 mode === 'manual' &&
                 !isTracked &&
                 isWeeklyLimitReached &&
                 countsTowardWeeklyLimit(entry.boss)
-              const blockMessage = isLimitBlocked
-                ? `주간 ${WEEKLY_BOSS_CLEAR_LIMIT}개를 모두 선택했어요`
-                : null
 
               // 자동 모드의 행 난이도: 화면 전용 선택 → 등록 난이도 → 첫 난이도 순.
               const autoDifficulty =
@@ -386,7 +389,7 @@ export function BossManageScreen(): React.JSX.Element {
                 mode === 'manual' && isTracked
                   ? 'rounded-[14px] border border-primary bg-primary/15'
                   : isLimitBlocked
-                    ? 'relative rounded-[14px] border border-border bg-surface'
+                    ? 'rounded-[14px] border border-border bg-surface opacity-40'
                     : 'rounded-[14px] border border-border bg-surface'
 
               const nameContent = (
@@ -409,7 +412,6 @@ export function BossManageScreen(): React.JSX.Element {
                         type="button"
                         aria-pressed={isTracked}
                         aria-label={entry.boss}
-                        disabled={isLimitBlocked}
                         onClick={() => void handleToggleTracked(entry.boss, entry.difficulties)}
                         className="flex min-w-0 flex-1 items-center gap-3 text-left"
                       >
@@ -434,14 +436,6 @@ export function BossManageScreen(): React.JSX.Element {
                     </div>
                   )}
 
-                  {/* 흐림을 콘텐츠 opacity로 주면 문구 뒤에 초상화·보스명 형태가 그대로 남아
-                      대비가 배경마다 달라진다(사용자 피드백). 대신 행 위에 표면색 스크림을 덮어
-                      배경을 균일하게 만들고 그 위에 문구를 올린다 — 흐림과 문구가 한 레이어다. */}
-                  {blockMessage !== null && (
-                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-[14px] bg-surface/85 px-3 backdrop-blur-[2px]">
-                      <span className="text-sm font-semibold text-text">{blockMessage}</span>
-                    </div>
-                  )}
                 </li>
               )
             })}
