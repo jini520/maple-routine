@@ -18,6 +18,7 @@ import { useNavigate } from 'react-router-dom'
 import { getDailyQuestRegionIconUrl } from '../../lib/daily-quest-icons'
 import { matchWeeklyRegionalQuestSlug } from '../../lib/weekly-regional-quest-matching'
 import { mergeManualContentList, orderContentsByTemplate } from '../../lib/manual-content-merge'
+import { getContentRequiredLevel, isLevelLocked } from '../../lib/required-level'
 import { CONTENT_TEMPLATE } from '../../lib/scheduler-content-template'
 import { categorizeContentEntries, WEEKLY_CATEGORY_ORDER } from '../../lib/content-category'
 import { useContentSchedulerStore } from '../../features/content-scheduler/store'
@@ -751,6 +752,24 @@ export function ContentScreen(): React.JSX.Element {
   // 시점에 확정돼 있어 각 탭은 자기 kind 항목만 그린다. auto 모드는 기존대로 등록 항목만 표시한다.
   const manualItems = selected !== null ? (manualTrackedByOcid?.[selected.ocid] ?? []) : []
 
+  // ADR-055 결정 9(이슈 #32): 레벨이 모자란 항목은 흐리게 + "진행 불가"로 표시만 하고 추적
+  // 목록에서 빼지 않는다(사용자가 손대지 않은 설정을 앱이 지우지 않는다). 카드 종류가 9가지라
+  // 각 컴포넌트에 prop을 뚫는 대신 목록 항목을 감싸는 자리에서 한 번에 처리한다 — 잠금은
+  // "카드가 무엇을 보여주는가"가 아니라 "이 항목을 진행할 수 있는가"의 문제라 바깥이 맞는 자리다.
+  function renderLevelAware(contentName: string, card: React.JSX.Element): React.JSX.Element {
+    if (!isLevelLocked(selected?.level ?? null, getContentRequiredLevel(contentName))) {
+      return card
+    }
+    return (
+      <div className="relative opacity-50">
+        {card}
+        <span className="absolute right-2 top-2 z-10 rounded-full bg-gray-200/20 px-2 py-0.5 text-[10px] font-semibold text-[#E8DFEC]">
+          진행 불가
+        </span>
+      </div>
+    )
+  }
+
   const displayDailyContents: DailyContent[] =
     selected === null
       ? []
@@ -1006,7 +1025,9 @@ export function ContentScreen(): React.JSX.Element {
               {displayDailyContents.length > 0 && (
                 <ul className="space-y-2">
                   {displayDailyContents.map((content) => (
-                    <li key={content.name}>{renderDailyContentCard(content)}</li>
+                    <li key={content.name}>
+                      {renderLevelAware(content.name, renderDailyContentCard(content))}
+                    </li>
                   ))}
                 </ul>
               )}
@@ -1026,7 +1047,9 @@ export function ContentScreen(): React.JSX.Element {
               {displayWeeklyContents.length > 0 && (
                 <ul className="space-y-2">
                   {displayWeeklyContents.map((content) => (
-                    <li key={content.name}>{renderWeeklyContentCard(content)}</li>
+                    <li key={content.name}>
+                      {renderLevelAware(content.name, renderWeeklyContentCard(content))}
+                    </li>
                   ))}
                 </ul>
               )}

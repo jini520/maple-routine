@@ -14,6 +14,7 @@ import { MAPLE_LEAF_PATH } from '../../components/mapleLeafPath'
 import { ProgressModal } from '../../components/ProgressModal/ProgressModal'
 import { matchBossContent, selectDisplayBosses, type MatchedBoss } from '../../lib/boss-matching'
 import { mergeManualBossList } from '../../lib/manual-boss-merge'
+import { getBossRequiredLevel, isLevelLocked } from '../../lib/required-level'
 import { isChallengersWorld } from '../../lib/world-emblem'
 import { getCharacterPickerRoster } from '../../features/schedule-sync/schedule-sync'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
@@ -32,8 +33,11 @@ export function BossCard(props: {
   boss: MatchedBoss
   crop?: BossPortraitCrop
   partySize?: number
+  // ADR-055 결정 9(이슈 #32): 캐릭터 레벨이 이 (보스, 난이도)의 요구 레벨에 못 미치는 상태.
+  // 표시만 바꾸고 추적 목록에서 자동으로 빼지 않는다 — 사용자가 손대지 않은 설정을 앱이 지우지 않는다.
+  isLevelLocked?: boolean
 }): React.JSX.Element {
-  const { boss, partySize } = props
+  const { boss, partySize, isLevelLocked = false } = props
   const portraitUrl = getBossPortraitUrl(boss.portraitSlug)
   const crop = props.crop ?? getBossPortraitCrop(boss.portraitSlug)
   const bossName = boss.matchedBossName ?? boss.apiName
@@ -45,7 +49,13 @@ export function BossCard(props: {
   // 완료 뱃지는 앱 전체에서 공유하는 "완료/성공" 의미 색(secondary)이라 여기서는 고정하지 않고
   // theme 토큰을 그대로 써서 테마에 따라 계속 바뀌게 둔다.
   return (
-    <div className="relative h-20 overflow-hidden rounded-[14px] border border-[#37323E] bg-[#1A1720]">
+    <div
+      className={
+        isLevelLocked
+          ? 'relative h-20 overflow-hidden rounded-[14px] border border-[#37323E] bg-[#1A1720] opacity-50'
+          : 'relative h-20 overflow-hidden rounded-[14px] border border-[#37323E] bg-[#1A1720]'
+      }
+    >
       {portraitUrl !== null && (
         <div
           className="absolute inset-0"
@@ -80,6 +90,11 @@ export function BossCard(props: {
         </div>
 
         <div className="flex items-center gap-1.5">
+          {isLevelLocked && (
+            <span className="rounded-full bg-gray-200/20 px-2.5 py-1 text-xs font-semibold text-[#E8DFEC]">
+              진행 불가
+            </span>
+          )}
           {boss.isComplete && (
             <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-bold text-bg">완료</span>
           )}
@@ -251,6 +266,10 @@ export function BossScreen(): React.JSX.Element {
             key={`${boss.apiName}-${boss.difficulty}`}
             boss={boss}
             partySize={getPartySize(ocid, boss)}
+            isLevelLocked={isLevelLocked(
+              selected?.level ?? null,
+              getBossRequiredLevel(boss.matchedBossName ?? boss.apiName, boss.difficulty),
+            )}
           />
         ))}
       </div>

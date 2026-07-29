@@ -2,7 +2,13 @@ import { useEffect, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Castle, Flag, LayoutGrid, MapPin, Medal, Sparkles, Swords, type LucideIcon } from 'lucide-react'
 import { CONTENT_TEMPLATE } from '../../lib/scheduler-content-template'
-import { categorizeContentEntries, contentCountTag, WEEKLY_CATEGORY_ORDER } from '../../lib/content-category'
+import {
+  categorizeContentEntries,
+  contentCountTag,
+  isGuildContent,
+  WEEKLY_CATEGORY_ORDER,
+} from '../../lib/content-category'
+import { getContentRequiredLevel, isLevelLocked } from '../../lib/required-level'
 import { worldEmblemUrl } from '../../lib/world-emblem'
 import { useContentSchedulerStore } from '../../features/content-scheduler/store'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
@@ -78,6 +84,21 @@ export function ContentManageScreen(): React.JSX.Element {
     } else {
       void addManualContent(selected.ocid, contentName, activeTab)
     }
+  }
+
+  // ADR-055 결정 5·6: 캐릭터 레벨은 뷰에 실려 온 캐시값이다. 없으면 잠그지 않는다.
+  const characterLevel = selected?.level ?? null
+  // ADR-057: null일 때만 "가입한 길드 없음"이다. undefined(구버전 캐시·응답에 필드 없음)는
+  // "모름"이라 잠그지 않는다 — 모름을 미가입으로 취급하면 멀쩡한 사용자의 길드 콘텐츠가 막힌다.
+  const hasNoGuild = selected?.guildName === null
+
+  // 선택 불가 사유([[ADR-055]] 결정 1의 모델을 이 화면 몫으로 좁힌 것). 이미 추적 중인 항목은
+  // 어떤 사유로도 잠그지 않는다 — 나중에 잠금 상태가 되어도 해제할 수 있어야 한다(결정 9).
+  function selectionBlockOf(contentName: string): 'levelLocked' | 'guildRequired' | null {
+    if (trackedNames.has(contentName)) return null
+    if (isLevelLocked(characterLevel, getContentRequiredLevel(contentName))) return 'levelLocked'
+    if (hasNoGuild && isGuildContent(contentName)) return 'guildRequired'
+    return null
   }
 
   return (
@@ -181,17 +202,22 @@ export function ContentManageScreen(): React.JSX.Element {
                   <ul className="space-y-2">
                     {group.items.map(({ entry, displayName }) => {
                       const isTracked = trackedNames.has(entry.content_name)
+                      const selectionBlock = selectionBlockOf(entry.content_name)
+                      const isLocked = selectionBlock !== null
                       const tag = contentCountTag(entry, group.label)
                       return (
                         <li key={entry.content_name}>
                           <button
                             type="button"
                             aria-pressed={isTracked}
+                            disabled={isLocked}
                             onClick={() => handleToggle(entry.content_name)}
                             className={
                               isTracked
                                 ? 'flex w-full items-center gap-3 rounded-[10px] border border-primary bg-primary/15 px-4 py-3 text-left'
-                                : 'flex w-full items-center gap-3 rounded-[10px] border border-border px-4 py-3 text-left hover:bg-primary/15'
+                                : isLocked
+                                  ? 'flex w-full items-center gap-3 rounded-[10px] border border-border px-4 py-3 text-left opacity-50'
+                                  : 'flex w-full items-center gap-3 rounded-[10px] border border-border px-4 py-3 text-left hover:bg-primary/15'
                             }
                           >
                             <GroupIcon
@@ -206,10 +232,20 @@ export function ContentManageScreen(): React.JSX.Element {
                             <span className="min-w-0 flex-1 truncate text-sm font-medium text-text">
                               {displayName}
                             </span>
-                            {tag !== null && (
+                            {/* ADR-055 결정 8: 잠긴 항목은 카운트 태그 대신 사유를 보여준다 —
+                                진행할 수 없는 항목의 "최대 n회"보다 "무엇이 있어야 열리는지"가 쓸모 있다. */}
+                            {selectionBlock !== null ? (
                               <span className="shrink-0 rounded-full bg-surface-2 px-2.5 py-1 text-xs font-medium text-text-muted">
-                                {tag}
+                                {selectionBlock === 'levelLocked'
+                                  ? `Lv.${getContentRequiredLevel(entry.content_name)}`
+                                  : '길드 필요'}
                               </span>
+                            ) : (
+                              tag !== null && (
+                                <span className="shrink-0 rounded-full bg-surface-2 px-2.5 py-1 text-xs font-medium text-text-muted">
+                                  {tag}
+                                </span>
+                              )
                             )}
                           </button>
                         </li>

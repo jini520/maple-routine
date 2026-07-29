@@ -5,7 +5,14 @@ import { BossPortrait } from '../../components/BossPortrait/BossPortrait'
 import { DifficultyBadge } from '../../components/DifficultyBadge/DifficultyBadge'
 import weeklyBossesData from '../../data/weekly-bosses.json'
 import { getMaxPartySize } from '../../lib/boss-crystal-prices'
-import { worldEmblemUrl } from '../../lib/world-emblem'
+import {
+  countManualWeeklyBosses,
+  getBossCycleByName,
+  isSeasonBossName,
+  WEEKLY_BOSS_CLEAR_LIMIT,
+} from '../../lib/boss-matching'
+import { getBossRequiredLevel, isLevelLocked } from '../../lib/required-level'
+import { isChallengersWorld, worldEmblemUrl } from '../../lib/world-emblem'
 import { partySizeKey, useBossSchedulerStore } from '../../features/boss-scheduler/store'
 import { useToastStore } from '../../features/toast/store'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
@@ -17,29 +24,33 @@ interface BossReferenceEntry {
   boss: string
   difficulties: string[]
   portraitSlug?: string | null
+  status?: string
+}
+
+interface BossListEntry {
+  boss: string
+  difficulties: BossDifficulty[]
+  portraitSlug: string | null
 }
 
 // 관리 페이지의 보스 목록은 게임 레퍼런스 데이터(weekly-bosses.json) 그대로다 — 주간 탭은
-// 주간+시즌 주간, 월간 탭은 월간(ADR-035 결정 18). 난이도 후보도 같은 파일의 difficulties를 쓴다
-// (폐기된 ManualBossPickerModal과 동일 소스).
-const BOSSES_BY_TAB: Record<
-  BossTab,
-  Array<{ boss: string; difficulties: BossDifficulty[]; portraitSlug: string | null }>
-> = {
-  weekly: [
-    ...(weeklyBossesData.weekly as BossReferenceEntry[]),
-    ...(weeklyBossesData.eventWeekly as BossReferenceEntry[]),
-  ].map((entry) => ({
-    boss: entry.boss,
-    difficulties: entry.difficulties as BossDifficulty[],
-    portraitSlug: entry.portraitSlug ?? null,
-  })),
-  monthly: (weeklyBossesData.monthly as BossReferenceEntry[]).map((entry) => ({
-    boss: entry.boss,
-    difficulties: entry.difficulties as BossDifficulty[],
-    portraitSlug: entry.portraitSlug ?? null,
-  })),
+// 주간(+챌린저스 월드에 한해 시즌 주간), 월간 탭은 월간(ADR-035 결정 18, ADR-056). 난이도
+// 후보도 같은 파일의 difficulties를 쓴다(폐기된 ManualBossPickerModal과 동일 소스).
+// ADR-056 결정 1: 미출시 보스(status: 'unreleased', 현재 벨로나)는 목록에서 뺀다. 보스명을
+// 코드에 박지 않고 데이터의 status로 거르므로, 출시되면 그 필드를 지우는 것만으로 되돌아온다.
+function toListEntries(entries: BossReferenceEntry[]): BossListEntry[] {
+  return entries
+    .filter((entry) => entry.status !== 'unreleased')
+    .map((entry) => ({
+      boss: entry.boss,
+      difficulties: entry.difficulties as BossDifficulty[],
+      portraitSlug: entry.portraitSlug ?? null,
+    }))
 }
+
+const WEEKLY_BOSSES = toListEntries(weeklyBossesData.weekly as BossReferenceEntry[])
+const SEASON_BOSSES = toListEntries(weeklyBossesData.eventWeekly as BossReferenceEntry[])
+const MONTHLY_BOSSES = toListEntries(weeklyBossesData.monthly as BossReferenceEntry[])
 
 // ADR-035 결정 18: 보스 관리 페이지 — 두 모드 공통 진입("보스 관리"), PartyManagementModal 대체.
 // 수동 모드: 전체 보스 체크리스트(행 탭 = 추적 토글, 즉시 저장) + 체크된 행에만 난이도 뱃지와
@@ -101,11 +112,56 @@ export function BossManageScreen(): React.JSX.Element {
     return item !== undefined ? ((item.difficulty ?? null) as BossDifficulty | null) : null
   }
 
-  function defaultDifficultyFor(bossName: string, difficulties: BossDifficulty[]): BossDifficulty | null {
-    return registeredDifficultyByBoss.get(bossName) ?? difficulties[0] ?? null
+  // ADR-055 결정 5·6: 캐릭터 레벨은 뷰에 실려 온 캐시값(sortByCachedLevel)이다. 없으면(콜드
+  // 스타트) null이고, 그때는 요구 레벨 잠금을 걸지 않는다.
+  const characterLevel = selected?.level ?? null
+
+  function isDifficultyLocked(bossName: string, difficulty: BossDifficulty): boolean {
+    return isLevelLocked(characterLevel, getBossRequiredLevel(bossName, difficulty))
   }
 
-  const allEntries = BOSSES_BY_TAB[activeTab]
+  // 결정 7: 잠금 단위는 난이도다 — 같은 보스라도 일부 난이도만 잠길 수 있다.
+  function unlockedDifficulties(bossName: string, difficulties: BossDifficulty[]): BossDifficulty[] {
+    return difficulties.filter((difficulty) => !isDifficultyLocked(bossName, difficulty))
+  }
+
+  // 행 전체가 잠겼을 때 보여줄 "이 레벨이면 열린다" 값 — 난이도별 요구 레벨 중 최솟값이다.
+  function lowestRequiredLevel(bossName: string, difficulties: BossDifficulty[]): number | null {
+    const levels = difficulties
+      .map((difficulty) => getBossRequiredLevel(bossName, difficulty))
+      .filter((level): level is number => level !== null)
+    return levels.length > 0 ? Math.min(...levels) : null
+  }
+
+  // 결정 7: 기본 난이도는 반드시 선택 가능한 것 중에서 고른다 — 잠긴 난이도를 고르면 스토어가
+  // 거부해 "눌러도 아무 일이 없는 행"이 된다.
+  function defaultDifficultyFor(bossName: string, difficulties: BossDifficulty[]): BossDifficulty | null {
+    const available = unlockedDifficulties(bossName, difficulties)
+    const registered = registeredDifficultyByBoss.get(bossName)
+    if (registered !== undefined && available.includes(registered)) {
+      return registered
+    }
+    return available[0] ?? null
+  }
+
+  // 결정 3: 12는 주간 한도이고 시즌 보스는 예외다 — 카운트 규칙은 lib/boss-matching 한 곳에만 있다.
+  const weeklyTrackedCount = countManualWeeklyBosses(trackedBossItems)
+  const isWeeklyLimitReached = mode === 'manual' && weeklyTrackedCount >= WEEKLY_BOSS_CLEAR_LIMIT
+
+  function countsTowardWeeklyLimit(bossName: string): boolean {
+    return getBossCycleByName(bossName) === 'weekly' && !isSeasonBossName(bossName)
+  }
+
+  // ADR-056 결정 2: 시즌 보스는 챌린저스 월드(챌린저스1~4) 전용 콘텐츠라 그 월드 캐릭터에게만
+  // 보여준다. 월드를 모르는 구버전 캐시는 비-챌린저스로 취급한다 — 보스 스케줄러 화면의 시즌
+  // 배지가 쓰는 판정과 같아야 두 화면이 갈라지지 않는다.
+  const showsSeasonBosses = selected?.world !== undefined && isChallengersWorld(selected.world)
+  const allEntries =
+    activeTab === 'weekly'
+      ? showsSeasonBosses
+        ? [...WEEKLY_BOSSES, ...SEASON_BOSSES]
+        : WEEKLY_BOSSES
+      : MONTHLY_BOSSES
   // 자동 모드 기본은 등록된 보스만 — 단 등록 보스가 하나도 없으면(신규 캐릭터 등) 전체 목록으로
   // 대체해 "미등록 보스 파티 인원 미리 설정"이라는 원래 목적이 막히지 않게 한다(ADR-031 결정 4).
   const registeredEntries = allEntries.filter((entry) => registeredDifficultyByBoss.has(entry.boss))
@@ -126,12 +182,18 @@ export function BossManageScreen(): React.JSX.Element {
   }
 
   // 수동 모드의 난이도 변경 = (보스, 난이도) 멤버십 교체 — 기존 쌍을 지우고 새 쌍을 추가한다.
+  // ADR-055 결정 2: 이 경로는 remove가 먼저라, 뒤이은 add를 스토어가 거부하면 항목이 사라진다.
+  // 그래서 지우기 전에 레벨 잠금을 먼저 확인한다(한도는 같은 보스를 1:1 교체하는 것이라 걸리지 않는다).
   async function handleSwitchDifficulty(
     bossName: string,
     from: BossDifficulty,
     to: BossDifficulty,
   ): Promise<void> {
     if (selected === null || from === to) return
+    if (isDifficultyLocked(bossName, to)) {
+      useToastStore.getState().showError('레벨이 부족해 선택할 수 없어요')
+      return
+    }
     await removeManualBoss(selected.ocid, bossName, from)
     await addManualBoss(selected.ocid, bossName, to)
   }
@@ -183,7 +245,10 @@ export function BossManageScreen(): React.JSX.Element {
 
   // 세그먼트 컨트롤: 선택된 난이도는 풀컬러 DifficultyBadge, 미선택은 고스트 칩(뱃지와 높이 정렬).
   // 흐린 뱃지(opacity-40) 나열을 대체한다 — 저채도 테마에서 흐린 뱃지끼리 구분이 약했다.
+  // ADR-055 결정 7: 레벨 미달 난이도는 비활성 칩으로 남기되 목록에서 빼지 않는다 — "몇 레벨이면
+  // 열리는지"가 보여야 사용자가 다음 행동을 정할 수 있다.
   function renderDifficultyPills(
+    bossName: string,
     difficulties: BossDifficulty[],
     selectedDifficulty: BossDifficulty | null,
     onSelect: (difficulty: BossDifficulty) => void,
@@ -192,19 +257,24 @@ export function BossManageScreen(): React.JSX.Element {
       <span className="flex flex-wrap items-center gap-2">
         {difficulties.map((difficulty) => {
           const isSelected = selectedDifficulty === difficulty
+          // 잠금은 수동 모드(추적 선택)에만 건다 — 자동 모드의 난이도 선택은 멤버십이 아니라
+          // "어느 난이도의 파티 인원을 편집할지"라, 막으면 진행 불가 보스의 사전 설정이 막힌다.
+          const isLocked = mode === 'manual' && isDifficultyLocked(bossName, difficulty)
+          const requiredLevel = getBossRequiredLevel(bossName, difficulty)
           return (
             <button
               key={difficulty}
               type="button"
               onClick={() => onSelect(difficulty)}
               aria-pressed={isSelected}
-              className="inline-flex rounded-full border-0 p-0 leading-none"
+              disabled={isLocked}
+              className="inline-flex rounded-full border-0 p-0 leading-none disabled:opacity-40"
             >
               {isSelected ? (
                 <DifficultyBadge difficulty={difficulty} />
               ) : (
                 <span className="inline-flex h-5 items-center rounded-full border border-border px-2.5 text-[10px] font-bold tracking-[.03em] text-text-disabled">
-                  {difficulty}
+                  {isLocked && requiredLevel !== null ? `${difficulty} Lv.${requiredLevel}` : difficulty}
                 </span>
               )}
             </button>
@@ -278,6 +348,15 @@ export function BossManageScreen(): React.JSX.Element {
                 >
                   월간
                 </button>
+
+                {/* ADR-055 결정 8(이슈 #62): 주간 12개 한도 카운터. 주간 탭·수동 모드에만 — 월간
+                    보스는 이 한도와 무관하고 자동 모드는 선택 자체가 없다. 스타일은 보스 스케줄러
+                    화면의 n/12 배지 재사용(신규 스타일 금지). */}
+                {mode === 'manual' && activeTab === 'weekly' && (
+                  <span className="ml-auto rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary tabular-nums">
+                    {weeklyTrackedCount}/{WEEKLY_BOSS_CLEAR_LIMIT}
+                  </span>
+                )}
               </div>
 
               {mode === 'auto' && (
@@ -325,6 +404,23 @@ export function BossManageScreen(): React.JSX.Element {
               const trackedDifficulty = mode === 'manual' ? trackedDifficultyOf(entry.boss) : null
               const isTracked = trackedDifficulty !== null
 
+              // ADR-055 결정 1: 선택 불가 사유는 하나로 좁힌다 — levelLocked가 limitReached보다
+              // 우선한다(레벨 미달은 이 화면에서 풀 수 없고, 한도는 다른 항목을 해제하면 풀린다).
+              // 이미 선택된 행은 어느 경우에도 잠그지 않는다 — 해제할 수 있어야 한다.
+              const isRowLevelLocked =
+                mode === 'manual' && unlockedDifficulties(entry.boss, entry.difficulties).length === 0
+              const isRowLimitBlocked =
+                mode === 'manual' && isWeeklyLimitReached && countsTowardWeeklyLimit(entry.boss)
+              const selectionBlock: 'levelLocked' | 'limitReached' | null = isTracked
+                ? null
+                : isRowLevelLocked
+                  ? 'levelLocked'
+                  : isRowLimitBlocked
+                    ? 'limitReached'
+                    : null
+              const rowRequiredLevel =
+                selectionBlock === 'levelLocked' ? lowestRequiredLevel(entry.boss, entry.difficulties) : null
+
               // 자동 모드의 행 난이도: 화면 전용 선택 → 등록 난이도 → 첫 난이도 순.
               const autoDifficulty =
                 autoDifficultyByBoss[entry.boss] ?? defaultDifficultyFor(entry.boss, entry.difficulties)
@@ -336,7 +432,9 @@ export function BossManageScreen(): React.JSX.Element {
               const rowClassName =
                 mode === 'manual' && isTracked
                   ? 'rounded-[14px] border border-primary bg-primary/15'
-                  : 'rounded-[14px] border border-border bg-surface'
+                  : selectionBlock !== null
+                    ? 'rounded-[14px] border border-border bg-surface opacity-50'
+                    : 'rounded-[14px] border border-border bg-surface'
 
               const nameContent = (
                 <>
@@ -358,6 +456,7 @@ export function BossManageScreen(): React.JSX.Element {
                         type="button"
                         aria-pressed={isTracked}
                         aria-label={entry.boss}
+                        disabled={selectionBlock !== null}
                         onClick={() => void handleToggleTracked(entry.boss, entry.difficulties)}
                         className="flex min-w-0 flex-1 items-center gap-3 text-left"
                       >
@@ -366,6 +465,11 @@ export function BossManageScreen(): React.JSX.Element {
                     ) : (
                       <div className="flex min-w-0 flex-1 items-center gap-3">{nameContent}</div>
                     )}
+                    {rowRequiredLevel !== null && (
+                      <span className="inline-flex h-5 shrink-0 items-center rounded-full border border-border px-2.5 text-[10px] font-bold tracking-[.03em] text-text-disabled">
+                        Lv.{rowRequiredLevel}
+                      </span>
+                    )}
                     {activeDifficulty !== null && renderPartyStepper(entry.boss, activeDifficulty)}
                   </div>
 
@@ -373,10 +477,10 @@ export function BossManageScreen(): React.JSX.Element {
                   {isExpanded && (
                     <div className="flex flex-wrap items-center gap-2 border-t border-border/60 px-3 pb-2.5 pt-2.5">
                       {mode === 'manual' && trackedDifficulty !== null
-                        ? renderDifficultyPills(entry.difficulties, trackedDifficulty, (difficulty) =>
+                        ? renderDifficultyPills(entry.boss, entry.difficulties, trackedDifficulty, (difficulty) =>
                             void handleSwitchDifficulty(entry.boss, trackedDifficulty, difficulty),
                           )
-                        : renderDifficultyPills(entry.difficulties, autoDifficulty, (difficulty) =>
+                        : renderDifficultyPills(entry.boss, entry.difficulties, autoDifficulty, (difficulty) =>
                             setAutoDifficultyByBoss((prev) => ({ ...prev, [entry.boss]: difficulty })),
                           )}
                     </div>

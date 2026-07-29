@@ -1,39 +1,39 @@
 {
-  "updatedAt": "2026-07-11",
+  "updatedAt": "2026-07-29",
   "source": "사용자 제공",
-  "note": "보스 종류/난이도 조합은 아래 목록 전체이며, 캐릭터는 이 중 최대 12마리(난이도 조합 단위)까지 선택해 주간 보스 스케줄로 등록·완료 처리한다. 힐라(하드)·핑크빈(카오스)는 일간 보스로 격하되어 목록에서 제외함. eventWeekly(시즌보스, 현재 메이린만 해당)는 이 12마리 제한에서 예외라 카운트에 포함되지 않음 — Nexon 스케줄러 Open API의 weekly_boss_clear_count/weekly_boss_clear_limit_count 필드도 이 게임 규칙을 그대로 반영함(2026-07-09 확인). portraitSlug는 src/assets/bosses/의 파일명(portraitSlug.webp)에서 슬러그 부분([[ADR-011]], 정정 [[ADR-018]] 2026-07-13 — 기존 난이도별 파일이 보스당 1장으로 통합되며 파일명에서 난이도 접두사가 빠짐). portraitSlug가 없는 보스(현재 벨로나만)는 아직 이미지 파일이 없음. weeklyBossSelectionLimit(12)과 weeklyCrystalSaleLimit(90)은 이름이 비슷하지만 단위가 다른 별개 한도임([[ADR-054]], 사용자 확인 2026-07-29) — 전자는 '캐릭터당' 주간 보스 등록/처치 한도이고, 후자는 '월드당' 주당 결정석 판매 한도(주간 보스만 포함 — 월간 보스인 검은마법사 결정석 제외, 시즌 보스 제외, 이월 없이 매주 초기화)임.",
+  "note": "보스 종류/난이도 조합은 아래 목록 전체이며, 캐릭터는 이 중 최대 12마리(난이도 조합 단위)까지 선택해 주간 보스 스케줄로 등록·완료 처리한다. 힐라(하드)·핑크빈(카오스)는 일간 보스로 격하되어 목록에서 제외함. eventWeekly(시즌보스, 현재 메이린만 해당)는 이 12마리 제한에서 예외라 카운트에 포함되지 않음 — Nexon 스케줄러 Open API의 weekly_boss_clear_count/weekly_boss_clear_limit_count 필드도 이 게임 규칙을 그대로 반영함(2026-07-09 확인). portraitSlug는 src/assets/bosses/의 파일명(portraitSlug.webp)에서 슬러그 부분([[ADR-011]], 정정 [[ADR-018]] 2026-07-13 — 기존 난이도별 파일이 보스당 1장으로 통합되며 파일명에서 난이도 접두사가 빠짐). portraitSlug가 없는 보스(현재 벨로나만)는 아직 이미지 파일이 없음. weeklyBossSelectionLimit(12)과 weeklyCrystalSaleLimit(90)은 이름이 비슷하지만 단위가 다른 별개 한도임([[ADR-054]], 사용자 확인 2026-07-29) — 전자는 '캐릭터당' 주간 보스 등록/처치 한도이고, 후자는 '월드당' 주당 결정석 판매 한도(주간 보스만 포함 — 월간 보스인 검은마법사 결정석 제외, 시즌 보스 제외, 이월 없이 매주 초기화)임. requiredLevels는 난이도별 입장 요구 레벨(진행 가능 최소 레벨, [[ADR-055]]/이슈 #32, 사용자 확인 2026-07-29) — 키는 반드시 같은 엔트리 difficulties의 부분집합이어야 하고(data-consistency 테스트가 검증), 값이 없는 난이도는 필드를 생략함(생략=잠금 없음). 메이린을 제외한 모든 보스는 난이도가 달라도 입장 레벨이 같아 같은 값이 반복됨(메이린만 노멀 270/하드 280).",
   "weeklyBossSelectionLimit": 12,
   "weeklyCrystalSaleLimit": 90,
   "weekly": [
-    { "boss": "자쿰", "difficulties": ["카오스"], "portraitSlug": "zakum" },
-    { "boss": "매그너스", "difficulties": ["하드"], "portraitSlug": "magnus" },
-    { "boss": "파풀라투스", "difficulties": ["카오스"], "portraitSlug": "papulatus" },
-    { "boss": "반반", "difficulties": ["카오스"], "portraitSlug": "vonBon" },
-    { "boss": "피에르", "difficulties": ["카오스"], "portraitSlug": "pierre" },
-    { "boss": "블러디 퀸", "difficulties": ["카오스"], "portraitSlug": "crimsonQueen" },
-    { "boss": "벨룸", "difficulties": ["카오스"], "portraitSlug": "vellum" },
-    { "boss": "스우", "difficulties": ["노멀", "하드", "익스트림"], "portraitSlug": "lotus" },
-    { "boss": "데미안", "difficulties": ["노멀", "하드"], "portraitSlug": "damien" },
-    { "boss": "가디언 엔젤 슬라임", "difficulties": ["노멀", "카오스"], "portraitSlug": "slime" },
-    { "boss": "루시드", "difficulties": ["이지", "노멀", "하드"], "portraitSlug": "lucid" },
-    { "boss": "윌", "difficulties": ["이지", "노멀", "하드"], "portraitSlug": "will" },
-    { "boss": "더스크", "difficulties": ["노멀", "카오스"], "portraitSlug": "gloom" },
-    { "boss": "진 힐라", "difficulties": ["노멀", "하드"], "portraitSlug": "verusHilla" },
-    { "boss": "듄켈", "difficulties": ["노멀", "하드"], "portraitSlug": "darknell" },
-    { "boss": "선택받은 세렌", "difficulties": ["노멀", "하드", "익스트림"], "portraitSlug": "seren" },
-    { "boss": "감시자 칼로스", "difficulties": ["이지", "노멀", "카오스", "익스트림"], "portraitSlug": "kalos" },
-    { "boss": "최초의 대적자", "difficulties": ["이지", "노멀", "하드", "익스트림"], "portraitSlug": "adversary" },
-    { "boss": "카링", "difficulties": ["이지", "노멀", "하드", "익스트림"], "portraitSlug": "kaling" },
-    { "boss": "찬란한 흉성", "difficulties": ["노멀", "하드"], "portraitSlug": "maleficStar" },
-    { "boss": "벨로나", "difficulties": ["이지", "노멀", "하드"], "status": "unreleased", "note": "아직 출시되지 않은 보스. 출시 후 가격/드랍 데이터 추가 필요" },
-    { "boss": "림보", "difficulties": ["노멀", "하드"], "portraitSlug": "limbo" },
-    { "boss": "발드릭스", "difficulties": ["노멀", "하드"], "portraitSlug": "bardrix" },
-    { "boss": "유피테르", "difficulties": ["노멀", "하드"], "portraitSlug": "jupiter" }
+    { "boss": "자쿰", "difficulties": ["카오스"], "requiredLevels": { "카오스": 90 }, "portraitSlug": "zakum" },
+    { "boss": "매그너스", "difficulties": ["하드"], "requiredLevels": { "하드": 175 }, "portraitSlug": "magnus" },
+    { "boss": "파풀라투스", "difficulties": ["카오스"], "requiredLevels": { "카오스": 190 }, "portraitSlug": "papulatus" },
+    { "boss": "반반", "difficulties": ["카오스"], "requiredLevels": { "카오스": 180 }, "portraitSlug": "vonBon" },
+    { "boss": "피에르", "difficulties": ["카오스"], "requiredLevels": { "카오스": 180 }, "portraitSlug": "pierre" },
+    { "boss": "블러디 퀸", "difficulties": ["카오스"], "requiredLevels": { "카오스": 180 }, "portraitSlug": "crimsonQueen" },
+    { "boss": "벨룸", "difficulties": ["카오스"], "requiredLevels": { "카오스": 180 }, "portraitSlug": "vellum" },
+    { "boss": "스우", "difficulties": ["노멀", "하드", "익스트림"], "requiredLevels": { "노멀": 190, "하드": 190, "익스트림": 190 }, "portraitSlug": "lotus" },
+    { "boss": "데미안", "difficulties": ["노멀", "하드"], "requiredLevels": { "노멀": 190, "하드": 190 }, "portraitSlug": "damien" },
+    { "boss": "가디언 엔젤 슬라임", "difficulties": ["노멀", "카오스"], "requiredLevels": { "노멀": 210, "카오스": 210 }, "portraitSlug": "slime" },
+    { "boss": "루시드", "difficulties": ["이지", "노멀", "하드"], "requiredLevels": { "이지": 220, "노멀": 220, "하드": 220 }, "portraitSlug": "lucid" },
+    { "boss": "윌", "difficulties": ["이지", "노멀", "하드"], "requiredLevels": { "이지": 235, "노멀": 235, "하드": 235 }, "portraitSlug": "will" },
+    { "boss": "더스크", "difficulties": ["노멀", "카오스"], "requiredLevels": { "노멀": 245, "카오스": 245 }, "portraitSlug": "gloom" },
+    { "boss": "진 힐라", "difficulties": ["노멀", "하드"], "requiredLevels": { "노멀": 250, "하드": 250 }, "portraitSlug": "verusHilla" },
+    { "boss": "듄켈", "difficulties": ["노멀", "하드"], "requiredLevels": { "노멀": 255, "하드": 255 }, "portraitSlug": "darknell" },
+    { "boss": "선택받은 세렌", "difficulties": ["노멀", "하드", "익스트림"], "requiredLevels": { "노멀": 260, "하드": 260, "익스트림": 260 }, "portraitSlug": "seren" },
+    { "boss": "감시자 칼로스", "difficulties": ["이지", "노멀", "카오스", "익스트림"], "requiredLevels": { "이지": 265, "노멀": 265, "카오스": 265, "익스트림": 265 }, "portraitSlug": "kalos" },
+    { "boss": "최초의 대적자", "difficulties": ["이지", "노멀", "하드", "익스트림"], "requiredLevels": { "이지": 270, "노멀": 270, "하드": 270, "익스트림": 270 }, "portraitSlug": "adversary" },
+    { "boss": "카링", "difficulties": ["이지", "노멀", "하드", "익스트림"], "requiredLevels": { "이지": 275, "노멀": 275, "하드": 275, "익스트림": 275 }, "portraitSlug": "kaling" },
+    { "boss": "찬란한 흉성", "difficulties": ["노멀", "하드"], "requiredLevels": { "노멀": 280, "하드": 280 }, "portraitSlug": "maleficStar" },
+    { "boss": "벨로나", "difficulties": ["이지", "노멀", "하드"], "requiredLevels": { "이지": 280, "노멀": 280, "하드": 280 }, "status": "unreleased", "note": "아직 출시되지 않은 보스. 출시 후 가격/드랍 데이터 추가 필요" },
+    { "boss": "림보", "difficulties": ["노멀", "하드"], "requiredLevels": { "노멀": 285, "하드": 285 }, "portraitSlug": "limbo" },
+    { "boss": "발드릭스", "difficulties": ["노멀", "하드"], "requiredLevels": { "노멀": 290, "하드": 290 }, "portraitSlug": "bardrix" },
+    { "boss": "유피테르", "difficulties": ["노멀", "하드"], "requiredLevels": { "노멀": 295, "하드": 295 }, "portraitSlug": "jupiter" }
   ],
   "eventWeekly": [
-    { "boss": "시즌 보스 메이린", "difficulties": ["노멀", "하드"], "note": "표시명을 Nexon 스케줄러 Open API의 content_name과 통일(2026-07-22, 사용자 확정) — 기존 표시명 '메이린'에서 변경. apiAlias 매핑은 boss가 이제 content_name과 동일해 더 이상 필요 없어 제거함. boss-crystal-prices.json/item-drop-table.json의 boss 키도 함께 갱신했고, 기존 저장된 파티 설정·수익 기록(boss='메이린')은 storage/sqlite/db.ts의 마이그레이션으로 이관함", "portraitSlug": "maerin" }
+    { "boss": "시즌 보스 메이린", "difficulties": ["노멀", "하드"], "requiredLevels": { "노멀": 270, "하드": 280 }, "note": "표시명을 Nexon 스케줄러 Open API의 content_name과 통일(2026-07-22, 사용자 확정) — 기존 표시명 '메이린'에서 변경. apiAlias 매핑은 boss가 이제 content_name과 동일해 더 이상 필요 없어 제거함. boss-crystal-prices.json/item-drop-table.json의 boss 키도 함께 갱신했고, 기존 저장된 파티 설정·수익 기록(boss='메이린')은 storage/sqlite/db.ts의 마이그레이션으로 이관함", "portraitSlug": "maerin" }
   ],
   "monthly": [
-    { "boss": "검은마법사", "difficulties": ["하드", "익스트림"], "portraitSlug": "blackMage" }
+    { "boss": "검은마법사", "difficulties": ["하드", "익스트림"], "requiredLevels": { "하드": 255, "익스트림": 255 }, "portraitSlug": "blackMage" }
   ]
 }

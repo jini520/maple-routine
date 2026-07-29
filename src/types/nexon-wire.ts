@@ -21,6 +21,9 @@ export interface NexonCharacterBasicResponse {
   character_level: number
   character_image: string
   access_flag: 'true' | 'false'
+  // 가입한 길드명(사용자 확인 2026-07-29, [[ADR-057]]). 미가입이면 null 또는 빈 문자열로 오고,
+  // 응답 자체에 필드가 없을 수 있으므로 옵셔널이다 — 그 둘의 구분은 normalizeCharacterBasic이 한다.
+  character_guild_name?: string | null
 }
 
 export type NexonRawDifficulty = 'easy' | 'normal' | 'hard' | 'chaos' | 'extreme'

@@ -1,7 +1,7 @@
 {
-  "updatedAt": "2026-07-23",
+  "updatedAt": "2026-07-29",
   "source": "사용자 제공",
-  "note": "수동 트래킹 모드([[ADR-035]] 결정 8)에서 schedulerCache에 한 번도 잡힌 적 없는 추적 항목에 쓸 캐릭터 무관 default 값 — 컨텐츠 스케줄러(일간/주간) 전용, 보스는 weekly-bosses.json을 재사용한다. content_name은 실제 Nexon 응답과 정확히 일치해야 매칭된다(공백·표기 차이 주의, ADR-007/ADR-031 참고). 새 콘텐츠가 게임에 추가되면 이 파일부터 먼저 갱신한다(ADR-006 절차, AI가 임의로 채우지 않음).",
+  "note": "수동 트래킹 모드([[ADR-035]] 결정 8)에서 schedulerCache에 한 번도 잡힌 적 없는 추적 항목에 쓸 캐릭터 무관 default 값 — 컨텐츠 스케줄러(일간/주간) 전용, 보스는 weekly-bosses.json을 재사용한다. content_name은 실제 Nexon 응답과 정확히 일치해야 매칭된다(공백·표기 차이 주의, ADR-007/ADR-031 참고). requiredLevel(진행 가능 최소 레벨, [[ADR-055]]/이슈 #32)은 2026-07-29 사용자 제공분이며 값이 없는 항목은 레벨 제한이 없거나 미확정이라 필드를 생략한다(생략=잠금 없음). 새 콘텐츠가 게임에 추가되면 이 파일부터 먼저 갱신한다(ADR-006 절차, AI가 임의로 채우지 않음).",
   "daily": [
     {
       "content_name": "몬스터파크",
@@ -9,7 +9,8 @@
       "registration_flag": "false",
       "now_count": 0,
       "max_count": 14,
-      "quest_state": null
+      "quest_state": null,
+      "requiredLevel": 105
     },
     {
       "content_name": "[일일 퀘스트] 소멸의 여로 조사",
@@ -17,7 +18,8 @@
       "registration_flag": "false",
       "now_count": 0,
       "max_count": 100,
-      "quest_state": "0"
+      "quest_state": "0",
+      "requiredLevel": 200
     },
     {
       "content_name": "[일일 퀘스트] 츄츄 아일랜드 최고의 요리",
@@ -25,7 +27,8 @@
       "registration_flag": "false",
       "now_count": 0,
       "max_count": 100,
-      "quest_state": "0"
+      "quest_state": "0",
+      "requiredLevel": 210
     },
     {
       "content_name": "[일일 퀘스트] 레헬른의 평온한 밤",
@@ -33,7 +36,8 @@
       "registration_flag": "false",
       "now_count": 0,
       "max_count": 100,
-      "quest_state": "0"
+      "quest_state": "0",
+      "requiredLevel": 220
     },
     {
       "content_name": "[일일 퀘스트] 아르카나의 평온한 바람",
@@ -41,7 +45,8 @@
       "registration_flag": "false",
       "now_count": 0,
       "max_count": 100,
-      "quest_state": "0"
+      "quest_state": "0",
+      "requiredLevel": 225
     },
     {
       "content_name": "[일일 퀘스트] 모라스의 안정을 위해",
@@ -49,7 +54,8 @@
       "registration_flag": "false",
       "now_count": 0,
       "max_count": 100,
-      "quest_state": "0"
+      "quest_state": "0",
+      "requiredLevel": 230
     },
     {
       "content_name": "[일일 퀘스트] 에스페라 연구 명령",
@@ -57,7 +63,8 @@
       "registration_flag": "false",
       "now_count": 0,
       "max_count": 100,
-      "quest_state": "0"
+      "quest_state": "0",
+      "requiredLevel": 235
     },
     {
       "content_name": "[일일 퀘스트] 문브릿지 조사",
@@ -65,7 +72,8 @@
       "registration_flag": "false",
       "now_count": 0,
       "max_count": 100,
-      "quest_state": "0"
+      "quest_state": "0",
+      "requiredLevel": 245
     },
     {
       "content_name": "[일일 퀘스트] 고통의 미궁 조사",
@@ -73,7 +81,8 @@
       "registration_flag": "false",
       "now_count": 0,
       "max_count": 100,
-      "quest_state": "0"
+      "quest_state": "0",
+      "requiredLevel": 250
     },
     {
       "content_name": "[일일 퀘스트] 리멘 조사",
@@ -81,7 +90,8 @@
       "registration_flag": "false",
       "now_count": 0,
       "max_count": 100,
-      "quest_state": "0"
+      "quest_state": "0",
+      "requiredLevel": 255
     },
     {
       "content_name": "[일일 퀘스트] 세르니움 조사",
@@ -89,7 +99,8 @@
       "registration_flag": "false",
       "now_count": 0,
       "max_count": 100,
-      "quest_state": "0"
+      "quest_state": "0",
+      "requiredLevel": 260
     },
     {
       "content_name": "[일일 퀘스트] 호텔 아르크스 주변 청소",
@@ -97,7 +108,8 @@
       "registration_flag": "false",
       "now_count": 0,
       "max_count": 100,
-      "quest_state": "0"
+      "quest_state": "0",
+      "requiredLevel": 265
     },
     {
       "content_name": "[일일 퀘스트] 오디움 일대 탐사",
@@ -105,7 +117,8 @@
       "registration_flag": "false",
       "now_count": 0,
       "max_count": 100,
-      "quest_state": "0"
+      "quest_state": "0",
+      "requiredLevel": 270
     },
     {
       "content_name": "[일일 퀘스트] 도원경 오염 정화",
@@ -113,7 +126,8 @@
       "registration_flag": "false",
       "now_count": 0,
       "max_count": 100,
-      "quest_state": "0"
+      "quest_state": "0",
+      "requiredLevel": 275
     },
     {
       "content_name": "[일일 퀘스트] 아르테리아 잔당 처치",
@@ -121,7 +135,8 @@
       "registration_flag": "false",
       "now_count": 0,
       "max_count": 100,
-      "quest_state": "0"
+      "quest_state": "0",
+      "requiredLevel": 280
     },
     {
       "content_name": "[일일 퀘스트] 카르시온 복구 지원",
@@ -129,7 +144,8 @@
       "registration_flag": "false",
       "now_count": 0,
       "max_count": 100,
-      "quest_state": "0"
+      "quest_state": "0",
+      "requiredLevel": 285
     },
     {
       "content_name": "[일일 퀘스트] 탈라하트 고대신의 힘 조사",
@@ -137,7 +153,8 @@
       "registration_flag": "false",
       "now_count": 0,
       "max_count": 100,
-      "quest_state": "0"
+      "quest_state": "0",
+      "requiredLevel": 290
     },
     {
       "content_name": "[일일 퀘스트] 기어드락 크로노스의 잔재 수집",
@@ -145,7 +162,8 @@
       "registration_flag": "false",
       "now_count": 0,
       "max_count": 100,
-      "quest_state": "0"
+      "quest_state": "0",
+      "requiredLevel": 295
     }
   ],
   "weekly": [
@@ -155,7 +173,8 @@
       "registration_flag": "false",
       "now_count": 0,
       "max_count": 0,
-      "quest_state": null
+      "quest_state": null,
+      "requiredLevel": 260
     },
     {
       "content_name": "에픽 던전 : 앵글러 컴퍼니",
@@ -163,7 +182,8 @@
       "registration_flag": "false",
       "now_count": 0,
       "max_count": 0,
-      "quest_state": null
+      "quest_state": null,
+      "requiredLevel": 270
     },
     {
       "content_name": "에픽 던전 : 악몽선경",
@@ -171,7 +191,8 @@
       "registration_flag": "false",
       "now_count": 0,
       "max_count": 0,
-      "quest_state": null
+      "quest_state": null,
+      "requiredLevel": 280
     },
     {
       "content_name": "[메이플 유니온] 주간 드래곤 퇴치",
@@ -195,7 +216,8 @@
       "registration_flag": "false",
       "now_count": 0,
       "max_count": 5,
-      "quest_state": "0"
+      "quest_state": "0",
+      "requiredLevel": 260
     },
     {
       "content_name": "에르다 스펙트럼",
@@ -203,7 +225,8 @@
       "registration_flag": "false",
       "now_count": 0,
       "max_count": 1,
-      "quest_state": null
+      "quest_state": null,
+      "requiredLevel": 200
     },
     {
       "content_name": "배고픈 무토",
@@ -211,7 +234,8 @@
       "registration_flag": "false",
       "now_count": 0,
       "max_count": 1,
-      "quest_state": null
+      "quest_state": null,
+      "requiredLevel": 210
     },
     {
       "content_name": "미드나잇 체이서",
@@ -219,7 +243,8 @@
       "registration_flag": "false",
       "now_count": 0,
       "max_count": 1,
-      "quest_state": null
+      "quest_state": null,
+      "requiredLevel": 220
     },
     {
       "content_name": "스피릿 세이비어",
@@ -227,7 +252,8 @@
       "registration_flag": "false",
       "now_count": 0,
       "max_count": 1,
-      "quest_state": null
+      "quest_state": null,
+      "requiredLevel": 225
     },
     {
       "content_name": "엔하임 디펜스",
@@ -235,7 +261,8 @@
       "registration_flag": "false",
       "now_count": 0,
       "max_count": 1,
-      "quest_state": null
+      "quest_state": null,
+      "requiredLevel": 230
     },
     {
       "content_name": "프로텍트 에스페라",
@@ -243,7 +270,8 @@
       "registration_flag": "false",
       "now_count": 0,
       "max_count": 1,
-      "quest_state": null
+      "quest_state": null,
+      "requiredLevel": 235
     },
     {
       "content_name": "[주간 퀘스트] 성실한 조사에 대한 보답",
@@ -251,7 +279,8 @@
       "registration_flag": "false",
       "now_count": 0,
       "max_count": 0,
-      "quest_state": "0"
+      "quest_state": "0",
+      "requiredLevel": 200
     },
     {
       "content_name": "[주간 퀘스트] 크리티아스 주간 임무",
@@ -259,7 +288,8 @@
       "registration_flag": "false",
       "now_count": 0,
       "max_count": 0,
-      "quest_state": "0"
+      "quest_state": "0",
+      "requiredLevel": 170
     },
     {
       "content_name": "[주간 퀘스트] 타락한 세계수 주간 임무",
@@ -267,7 +297,8 @@
       "registration_flag": "false",
       "now_count": 0,
       "max_count": 0,
-      "quest_state": "0"
+      "quest_state": "0",
+      "requiredLevel": 190
     },
     {
       "content_name": "[주간 퀘스트] 타락한 세계수 정화에 대한 보답",
@@ -275,7 +306,8 @@
       "registration_flag": "false",
       "now_count": 0,
       "max_count": 0,
-      "quest_state": "0"
+      "quest_state": "0",
+      "requiredLevel": 190
     },
     {
       "content_name": "[주간 퀘스트] 헤이븐 주간 임무",
@@ -283,7 +315,8 @@
       "registration_flag": "false",
       "now_count": 0,
       "max_count": 0,
-      "quest_state": "0"
+      "quest_state": "0",
+      "requiredLevel": 190
     },
     {
       "content_name": "[주간 퀘스트] 꾸준한 의뢰에 대한 보답",
@@ -291,7 +324,8 @@
       "registration_flag": "false",
       "now_count": 0,
       "max_count": 0,
-      "quest_state": "0"
+      "quest_state": "0",
+      "requiredLevel": 190
     },
     {
       "content_name": "무릉도장",
@@ -299,7 +333,8 @@
       "registration_flag": "false",
       "now_count": 0,
       "max_count": 0,
-      "quest_state": null
+      "quest_state": null,
+      "requiredLevel": 105
     },
     {
       "content_name": "[길드] 주간 미션 포인트",

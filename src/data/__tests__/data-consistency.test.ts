@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import weeklyBosses from '../weekly-bosses.json'
 import bossCrystalPrices from '../boss-crystal-prices.json'
 import itemDropTable from '../item-drop-table.json'
+import contentTemplate from '../scheduler-content-template.json'
 
 function key(boss: string, difficulty: string): string {
   return `${boss}::${difficulty}`
@@ -133,6 +134,44 @@ describe('게임 레퍼런스 데이터 정합성', () => {
     expect(Number.isInteger(weeklyCrystalSaleLimit)).toBe(true)
     expect(weeklyCrystalSaleLimit).toBeGreaterThan(0)
     expect(weeklyCrystalSaleLimit).toBeGreaterThan(weeklyBossSelectionLimit)
+  })
+
+  // ADR-055 결정 4: requiredLevels는 난이도별 맵이다. 키가 difficulties와 어긋나면 그 난이도는
+  // 조용히 "요구 레벨 없음"(=잠금 없음)으로 통과해버려 오타가 드러나지 않는다.
+  it('requiredLevels의 키는 같은 엔트리 difficulties의 부분집합이다', () => {
+    const invalid: string[] = []
+    for (const section of ['weekly', 'eventWeekly', 'monthly'] as const) {
+      for (const entry of weeklyBosses[section]) {
+        const requiredLevels = (entry as { requiredLevels?: Record<string, number> }).requiredLevels
+        if (requiredLevels === undefined) continue
+        for (const difficulty of Object.keys(requiredLevels)) {
+          if (!entry.difficulties.includes(difficulty)) invalid.push(key(entry.boss, difficulty))
+        }
+      }
+    }
+    expect(invalid).toEqual([])
+  })
+
+  it('requiredLevels의 값은 모두 양의 정수다', () => {
+    const invalid: string[] = []
+    for (const section of ['weekly', 'eventWeekly', 'monthly'] as const) {
+      for (const entry of weeklyBosses[section]) {
+        const requiredLevels = (entry as { requiredLevels?: Record<string, number> }).requiredLevels
+        if (requiredLevels === undefined) continue
+        for (const [difficulty, level] of Object.entries(requiredLevels)) {
+          if (!Number.isInteger(level) || level <= 0) invalid.push(key(entry.boss, difficulty))
+        }
+      }
+    }
+    expect(invalid).toEqual([])
+  })
+
+  it('컨텐츠 템플릿의 requiredLevel은 값이 있으면 양의 정수다(없으면 레벨 제한 없음)', () => {
+    const invalid = [...contentTemplate.daily, ...contentTemplate.weekly].filter((entry) => {
+      const level = (entry as { requiredLevel?: number }).requiredLevel
+      return level !== undefined && (!Number.isInteger(level) || level <= 0)
+    })
+    expect(invalid).toEqual([])
   })
 
   it('eventWeekly의 apiAlias는 문자열이고 공백을 제거해도 boss 필드와 달라야 한다(별칭일 이유가 있어야 함)', () => {

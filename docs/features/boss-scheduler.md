@@ -2,7 +2,7 @@
 
 > **범위**: 주간/월간 보스 진행 상태, 캐릭터 추적, 파티 관리, 보스 카드·난이도 뱃지, 솔로/파티 필터, 보스 관리 페이지. 캐릭터 관리 피커·탭 토글은 [../foundation/design-system.md](../foundation/design-system.md), 수동/자동 트래킹 전역 토글은 [settings.md](./settings.md).
 > **관련 소스**: `app/boss-scheduler/`(`BossScreen.tsx` — `BossCard`·`DifficultyBadge` export) · `features/boss-scheduler/` · `storage/boss-party-settings`(SQLite `boss_party_settings`) · `lib/boss-icons` · `lib/boss-matching` · `PartyManagementModal` · `/boss/manage` · `src/data/weekly-bosses.json`·`boss-crystal-prices.json`·`boss-portrait-crops.json`.
-> **관련 ADR**: [[ADR-013]] [[ADR-012]] [[ADR-018]] [[ADR-019]] [[ADR-035]] [[ADR-031]] [[ADR-006]] [[ADR-053]]. **관련 문서**: [../foundation/architecture.md](../foundation/architecture.md), [../foundation/nexon-api.md](../foundation/nexon-api.md), [../foundation/game-data.md](../foundation/game-data.md), [boss-profit.md](./boss-profit.md).
+> **관련 ADR**: [[ADR-013]] [[ADR-012]] [[ADR-018]] [[ADR-019]] [[ADR-035]] [[ADR-031]] [[ADR-006]] [[ADR-053]] [[ADR-055]] [[ADR-056]]. **관련 문서**: [../foundation/architecture.md](../foundation/architecture.md), [../foundation/nexon-api.md](../foundation/nexon-api.md), [../foundation/game-data.md](../foundation/game-data.md), [boss-profit.md](./boss-profit.md).
 
 ## 정책
 - 화면 안에 **주간 탭**(`cycle: bossWeekly`) + **월간 탭**(`cycle: bossMonthly`, 현재 검은마법사 1종). **일간 탭 없음** — `bossDaily` 는 [[ADR-007]] 정책대로 계속 무시.
@@ -54,9 +54,30 @@ rounded-full bg-white/20 text-[#E8DFEC] text-xs font-semibold px-2 py-1, flex it
 
 ### 보스 관리 페이지 `/boss/manage` ([[ADR-035]] 결정 18)
 두 모드 공통 진입("보스 관리"). `PartyManagementModal` 을 완전 대체(파티원 수도 보스 단위라 추적 편집과 같은 행에 합침). 주간/월간 탭, 레이아웃·행 스타일은 컨텐츠 관리 페이지와 동일.
-- **수동 모드**: `weekly-bosses.json` 전체 보스(주간=weekly+eventWeekly, 월간=monthly) 나열. 행 = 체크(추적, 탭 즉시 저장) + 체크된 행에 난이도 뱃지 목록(`boss-crystal-prices.json` 지원 난이도, 미선택 `opacity-40`)·파티 스테퍼. 난이도 변경 시 (보스,난이도) 쌍 교체.
+- **목록 구성** ([[ADR-056]], 2026-07-29): 참조표 전체가 아니라 **이 캐릭터가 고를 수 있는 것만** 나열한다. ① 미출시 보스(`status: "unreleased"`, 현재 벨로나) 제외 — 보스명이 아니라 `status` 로 거르므로 출시 시 데이터에서 그 필드만 지우면 된다. ② 시즌 보스(eventWeekly)는 **선택 캐릭터의 월드가 챌린저스(1~4)일 때만** 표시(`isChallengersWorld`, 보스 스케줄러 시즌 배지와 같은 판정). 월드 미상(구버전 캐시)이면 숨긴다. 두 모드 공통이며, 12개 한도의 시즌 보스 **카운트 제외** 규칙과는 별개다(챌린저스 월드에선 목록엔 나오고 카운트엔 안 들어간다).
+- **수동 모드**: 위 규칙으로 걸러진 보스 나열(주간=weekly+시즌, 월간=monthly). 행 = 체크(추적, 탭 즉시 저장) + 체크된 행에 난이도 뱃지 목록(`boss-crystal-prices.json` 지원 난이도, 미선택 `opacity-40`)·파티 스테퍼. 난이도 변경 시 (보스,난이도) 쌍 교체.
 - **자동 모드**: 같은 행 구조에서 체크박스만 없음. 상단 안내("자동 모드에서는 목록이 게임 등록 기준이에요 — 파티 인원만 설정") + "등록된 보스만 보기" 토글(기본 ON, [[ADR-031]] 결정 4). 난이도는 등록 난이도 기본 선택.
 - **리디자인(2026-07-24) — 초상화 앵커 + 파티 스테퍼 상단 + 난이도 세그먼트**: 행 2줄 — 1줄 원형 `BossPortrait`(`size={44}`, `aria-hidden`) + 보스명(`flex-1 truncate`) + 파티 스테퍼(우상단 고정). 2줄(활성 시, `border-t`) 난이도 세그먼트. 선택 = 테두리·색(체크 원 없음, 미추적 `border-border bg-surface`, 추적 `border-primary bg-primary/15`). 수동 토글은 초상화+보스명 영역이 버튼(`aria-label={보스명}`). 난이도 세그먼트: 선택은 `DifficultyBadge` 풀컬러, 미선택은 고스트 칩(`inline-flex h-5 rounded-full border border-border px-2.5 text-[10px] font-bold text-text-disabled`). 파티 스테퍼: 보더 pill 안 `Users` 아이콘 + −/값/+, 1~`getMaxPartySize(boss, difficulty)` 경계 비활성화, 탭 즉시 저장.
+
+### 수동 선택 가드 ([[ADR-055]], 구현 완료 2026-07-29, 이슈 #62·#32)
+수동 모드 보스 관리 페이지에서 항목을 선택할 수 없는 사유는 두 가지이고, **한 모델로 다룬다**(`levelLocked` > `limitReached` 우선순위 — 사용자가 이 화면에서 풀 수 없는 이유를 먼저 알린다). 가드의 본체는 스토어(`addManualBoss`)이고 화면은 사전 차단만 한다 — UI에서만 막으면 난이도 교체(remove → add) 같은 다른 호출 경로가 새어나간다.
+
+**주간 12개 한도(#62)** — 게임의 주간 보스 등록 한도와 같은 규칙(`weeklyBossSelectionLimit`, `WEEKLY_BOSS_CLEAR_LIMIT`). 새 수치를 정의하지 않는다.
+- **주간 탭에만** 적용. 월간 탭(검은마법사)은 한도 없음. 월간 보스도 같은 배열에 `kind: 'boss'` 로 저장되므로 `kind` 만으로 세면 안 되고 **주기로 걸러야 한다**.
+- **시즌 보스(메이린) 제외** — `countClearedWeeklyBosses`([[ADR-031]] 결정 1)·`isSeasonBossName`([[ADR-054]] 결정 3)과 같은 규칙. 어긋나면 선택 `12/12` 인데 처치 `11/12` 인 모순이 생긴다. 카운트 규칙은 `lib/boss-matching` 의 `countManualWeeklyBosses` 한 곳에만 둔다(화면이 `BOSSES_BY_TAB` 으로 잃은 weekly/eventWeekly 구분은 `getBossCycleByName` 으로 되찾는다).
+- **UI**: 헤더 주간 탭에 `n/12` 배지(`BossScreen` 배지 스타일 재사용, 신규 스타일 금지) + 한도 도달 시 **미선택 행만** `disabled`(선택된 행은 해제할 수 있어야 하므로 계속 활성).
+- **초과 상태는 없다**: 미배포 앱이라 12개를 넘겨 저장한 사용자가 존재하지 않는다(결정 10). `15/12` 표시 규칙·잘라내기 로직을 만들지 않는다.
+
+**요구 레벨 미달(#32)** — 캐릭터 레벨 < 요구 레벨이면 선택 불가. 요구 레벨은 `weekly-bosses.json` 의 `requiredLevels`(**난이도별 맵**)이며 값은 사용자 확정분만([[ADR-006]], 2026-07-29 전량 반영).
+- **잠금 단위는 난이도 칩**이다. 같은 보스라도 익스트림만 잠길 수 있으므로 잠긴 난이도 칩만 `disabled` 로 두고, **모든 난이도가 잠긴 보스만** 행 전체를 잠근다. `defaultDifficultyFor` 도 선택 **가능한** 난이도 중에서 고른다(그러지 않으면 눌러도 아무 일 없는 행이 된다).
+- **난이도 칩 잠금은 수동 모드에서만.** 자동 모드의 난이도 선택은 멤버십이 아니라 파티 인원 편집 대상 선택이라, 막으면 진행 불가 보스의 파티 인원 사전 설정([[ADR-031]] 결정 4)이 막힌다.
+- **이미 선택된 행은 사유와 무관하게 잠그지 않는다** — 해제할 수 있어야 한다(한도·레벨 공통).
+- 난이도 교체(`handleSwitchDifficulty`)는 `remove` → `add` 순서라 add가 거부되면 항목이 사라진다 — 그래서 **지우기 전에** 레벨 잠금을 먼저 확인한다.
+- **모르면 잠그지 않는다**: 요구 레벨 데이터가 없거나 캐릭터 레벨 캐시가 없으면 통과(결정 5). 데이터가 채워지는 엔트리부터 잠금이 켜진다.
+- **캐릭터 레벨 출처**: `BossCharacterView.level`(`sortByCachedLevel` 이 이미 읽는 캐시값을 보존, 결정 6).
+- **UI**: 잠긴 항목은 dim + 기존 고스트 칩에 `Lv.{요구레벨}`(관리 화면에서는 "몇 레벨이면 되는지"가 실행 가능한 정보). 보스 카드 표시 화면에서는 dim + `진행 불가` 칩이고, 잠긴 추적 항목을 **자동으로 제거하지 않는다**(결정 9).
+
+토스트는 폴백이다 — 잠긴 버튼은 클릭 이벤트가 안 나므로, 스토어가 거부한 우회 경로에서만 뜬다.
 
 ### 파티 관리 모달 — `PartyManagementModal`(레거시, `/boss/manage` 로 대체)
 > 아래는 [[ADR-035]] 이전 설계. 현재 진입점은 위 보스 관리 페이지.
@@ -67,7 +88,7 @@ rounded-full bg-white/20 text-[#E8DFEC] text-xs font-semibold px-2 py-1, flex it
 ## 폐기된 정책 (history)
 - ~~보스 전체를 하나의 카드(`<ul>`)에 담고 왼쪽 체크 도형으로 완료 표시~~ → 보스별 독립 카드 + 일러스트 bleed + 오른쪽 완료 뱃지([[ADR-018]]).
 - ~~캐시가 없으면 `character/list` 응답으로 `access_flag` 미상 캐릭터까지 먼저 표시~~ → 활성 확인된 캐릭터만 표시, 콜드 스타트는 스피너([[ADR-053]], 2026-07-29).
-- ~~앱 내에서 최대 12마리 선택 UI~~ → 미도입. 게임 등록 목록을 그대로 표시([[ADR-007]]).
+- ~~앱 내에서 최대 12마리 선택 UI~~ → 미도입. 게임 등록 목록을 그대로 표시([[ADR-007]]) → **수동 모드 한정 재도입**([[ADR-055]], 이슈 #62). [[ADR-007]] 의 "미도입"은 게임 등록 목록을 그대로 읽는 자동 모드 전제였고, [[ADR-035]] 로 앱이 직접 선택을 보관하는 수동 모드가 생기면서 그 전제가 사라졌다 — 자동 모드는 여전히 선택 UI가 없다.
 - ~~보스 초상화가 난이도별 파일~~ → 보스당 1장(webp)으로 통합, `getBossPortraitUrl(portraitSlug)` 에서 difficulty 제거([[ADR-018]]).
 - ~~파티 관리 진입 = 보스 카드 안 아이콘 버튼 → 단일 보스 모달~~ → 화면 상단 버튼 + 3단 폼 모달([[ADR-019]] 재정정) → `/boss/manage` 페이지([[ADR-035]]).
 - ~~파티 관리 모달 난이도 선택 = `ring-2 ring-primary` 테두리~~ → 투명도 차이만(선택 불투명, 비선택 `opacity-40`)([[ADR-019]] 정정).
