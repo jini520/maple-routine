@@ -57,8 +57,8 @@ const PREVIEW_STYLES = `
 }
 .dbg-sway { animation: dbg-sway 1.5s ease-in-out infinite }
 
-/* 6. 스윕 — 흐린 잎 위로 밝은 띠가 위에서 아래로 훑고 지나간다 */
-@keyframes dbg-sweep { to { transform: translateY(230px) } }
+/* 6. 스윕 — 흐린 잎 위로 밝은 띠가 아래에서 위로 훑고 지나간다(차오르는 방향) */
+@keyframes dbg-sweep { to { transform: translateY(-230px) } }
 .dbg-sweep { animation: dbg-sweep 1.4s ease-in-out infinite }
 
 /* 7. 궤도 — 작은 잎 3장이 원을 돈다(각 잎은 시차를 두고 밝아진다) */
@@ -207,10 +207,11 @@ export function Spinner(props: SpinnerProps): React.JSX.Element {
           </defs>
           <path d={MAPLE_LEAF_PATH} fill="currentColor" opacity={0.32} />
           <g clipPath={`url(#${clipId})`}>
+            {/* 잎 아래(y=140)에서 시작해 위로 230px 이동하면 잎을 완전히 통과한다 */}
             <rect
               className="dbg-sweep"
               x="-10"
-              y="-90"
+              y="140"
               width="147"
               height="80"
               fill={`url(#${gradientId})`}
