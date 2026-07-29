@@ -125,6 +125,16 @@ describe('게임 레퍼런스 데이터 정합성', () => {
     expect(invalid).toEqual([])
   })
 
+  // ADR-054 결정 2: weeklyBossSelectionLimit(캐릭터당 12)과 weeklyCrystalSaleLimit(월드당 90)은
+  // 이름이 비슷해 서로 바꿔 적기 쉽다 — 값의 대소로 뒤바뀜을 잡는다.
+  it('weeklyCrystalSaleLimit이 양의 정수이며 weeklyBossSelectionLimit보다 크다', () => {
+    const { weeklyCrystalSaleLimit, weeklyBossSelectionLimit } = weeklyBosses
+
+    expect(Number.isInteger(weeklyCrystalSaleLimit)).toBe(true)
+    expect(weeklyCrystalSaleLimit).toBeGreaterThan(0)
+    expect(weeklyCrystalSaleLimit).toBeGreaterThan(weeklyBossSelectionLimit)
+  })
+
   it('eventWeekly의 apiAlias는 문자열이고 공백을 제거해도 boss 필드와 달라야 한다(별칭일 이유가 있어야 함)', () => {
     for (const entry of weeklyBosses.eventWeekly) {
       const apiAlias = (entry as { apiAlias?: string }).apiAlias

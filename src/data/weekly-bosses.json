@@ -1,8 +1,9 @@
 {
   "updatedAt": "2026-07-11",
   "source": "사용자 제공",
-  "note": "보스 종류/난이도 조합은 아래 목록 전체이며, 캐릭터는 이 중 최대 12마리(난이도 조합 단위)까지 선택해 주간 보스 스케줄로 등록·완료 처리한다. 힐라(하드)·핑크빈(카오스)는 일간 보스로 격하되어 목록에서 제외함. eventWeekly(시즌보스, 현재 메이린만 해당)는 이 12마리 제한에서 예외라 카운트에 포함되지 않음 — Nexon 스케줄러 Open API의 weekly_boss_clear_count/weekly_boss_clear_limit_count 필드도 이 게임 규칙을 그대로 반영함(2026-07-09 확인). portraitSlug는 src/assets/bosses/의 파일명(portraitSlug.webp)에서 슬러그 부분([[ADR-011]], 정정 [[ADR-018]] 2026-07-13 — 기존 난이도별 파일이 보스당 1장으로 통합되며 파일명에서 난이도 접두사가 빠짐). portraitSlug가 없는 보스(현재 벨로나만)는 아직 이미지 파일이 없음.",
+  "note": "보스 종류/난이도 조합은 아래 목록 전체이며, 캐릭터는 이 중 최대 12마리(난이도 조합 단위)까지 선택해 주간 보스 스케줄로 등록·완료 처리한다. 힐라(하드)·핑크빈(카오스)는 일간 보스로 격하되어 목록에서 제외함. eventWeekly(시즌보스, 현재 메이린만 해당)는 이 12마리 제한에서 예외라 카운트에 포함되지 않음 — Nexon 스케줄러 Open API의 weekly_boss_clear_count/weekly_boss_clear_limit_count 필드도 이 게임 규칙을 그대로 반영함(2026-07-09 확인). portraitSlug는 src/assets/bosses/의 파일명(portraitSlug.webp)에서 슬러그 부분([[ADR-011]], 정정 [[ADR-018]] 2026-07-13 — 기존 난이도별 파일이 보스당 1장으로 통합되며 파일명에서 난이도 접두사가 빠짐). portraitSlug가 없는 보스(현재 벨로나만)는 아직 이미지 파일이 없음. weeklyBossSelectionLimit(12)과 weeklyCrystalSaleLimit(90)은 이름이 비슷하지만 단위가 다른 별개 한도임([[ADR-054]], 사용자 확인 2026-07-29) — 전자는 '캐릭터당' 주간 보스 등록/처치 한도이고, 후자는 '월드당' 주당 결정석 판매 한도(주간 보스만 포함 — 월간 보스인 검은마법사 결정석 제외, 시즌 보스 제외, 이월 없이 매주 초기화)임.",
   "weeklyBossSelectionLimit": 12,
+  "weeklyCrystalSaleLimit": 90,
   "weekly": [
     { "boss": "자쿰", "difficulties": ["카오스"], "portraitSlug": "zakum" },
     { "boss": "매그너스", "difficulties": ["하드"], "portraitSlug": "magnus" },
