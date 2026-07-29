@@ -11,7 +11,6 @@ import {
   isSeasonBossName,
   WEEKLY_BOSS_CLEAR_LIMIT,
 } from '../../lib/boss-matching'
-import { getBossRequiredLevel, isLevelLocked } from '../../lib/required-level'
 import { isChallengersWorld, worldEmblemUrl } from '../../lib/world-emblem'
 import { partySizeKey, useBossSchedulerStore } from '../../features/boss-scheduler/store'
 import { useToastStore } from '../../features/toast/store'
@@ -112,36 +111,8 @@ export function BossManageScreen(): React.JSX.Element {
     return item !== undefined ? ((item.difficulty ?? null) as BossDifficulty | null) : null
   }
 
-  // ADR-055 결정 5·6: 캐릭터 레벨은 뷰에 실려 온 캐시값(sortByCachedLevel)이다. 없으면(콜드
-  // 스타트) null이고, 그때는 요구 레벨 잠금을 걸지 않는다.
-  const characterLevel = selected?.level ?? null
-
-  function isDifficultyLocked(bossName: string, difficulty: BossDifficulty): boolean {
-    return isLevelLocked(characterLevel, getBossRequiredLevel(bossName, difficulty))
-  }
-
-  // 결정 7: 잠금 단위는 난이도다 — 같은 보스라도 일부 난이도만 잠길 수 있다.
-  function unlockedDifficulties(bossName: string, difficulties: BossDifficulty[]): BossDifficulty[] {
-    return difficulties.filter((difficulty) => !isDifficultyLocked(bossName, difficulty))
-  }
-
-  // 행 전체가 잠겼을 때 보여줄 "이 레벨이면 열린다" 값 — 난이도별 요구 레벨 중 최솟값이다.
-  function lowestRequiredLevel(bossName: string, difficulties: BossDifficulty[]): number | null {
-    const levels = difficulties
-      .map((difficulty) => getBossRequiredLevel(bossName, difficulty))
-      .filter((level): level is number => level !== null)
-    return levels.length > 0 ? Math.min(...levels) : null
-  }
-
-  // 결정 7: 기본 난이도는 반드시 선택 가능한 것 중에서 고른다 — 잠긴 난이도를 고르면 스토어가
-  // 거부해 "눌러도 아무 일이 없는 행"이 된다.
   function defaultDifficultyFor(bossName: string, difficulties: BossDifficulty[]): BossDifficulty | null {
-    const available = unlockedDifficulties(bossName, difficulties)
-    const registered = registeredDifficultyByBoss.get(bossName)
-    if (registered !== undefined && available.includes(registered)) {
-      return registered
-    }
-    return available[0] ?? null
+    return registeredDifficultyByBoss.get(bossName) ?? difficulties[0] ?? null
   }
 
   // 결정 3: 12는 주간 한도이고 시즌 보스는 예외다 — 카운트 규칙은 lib/boss-matching 한 곳에만 있다.
@@ -182,18 +153,12 @@ export function BossManageScreen(): React.JSX.Element {
   }
 
   // 수동 모드의 난이도 변경 = (보스, 난이도) 멤버십 교체 — 기존 쌍을 지우고 새 쌍을 추가한다.
-  // ADR-055 결정 2: 이 경로는 remove가 먼저라, 뒤이은 add를 스토어가 거부하면 항목이 사라진다.
-  // 그래서 지우기 전에 레벨 잠금을 먼저 확인한다(한도는 같은 보스를 1:1 교체하는 것이라 걸리지 않는다).
   async function handleSwitchDifficulty(
     bossName: string,
     from: BossDifficulty,
     to: BossDifficulty,
   ): Promise<void> {
     if (selected === null || from === to) return
-    if (isDifficultyLocked(bossName, to)) {
-      useToastStore.getState().showError('레벨이 부족해 선택할 수 없어요')
-      return
-    }
     await removeManualBoss(selected.ocid, bossName, from)
     await addManualBoss(selected.ocid, bossName, to)
   }
@@ -245,10 +210,7 @@ export function BossManageScreen(): React.JSX.Element {
 
   // 세그먼트 컨트롤: 선택된 난이도는 풀컬러 DifficultyBadge, 미선택은 고스트 칩(뱃지와 높이 정렬).
   // 흐린 뱃지(opacity-40) 나열을 대체한다 — 저채도 테마에서 흐린 뱃지끼리 구분이 약했다.
-  // ADR-055 결정 7: 레벨 미달 난이도는 비활성 칩으로 남기되 목록에서 빼지 않는다 — "몇 레벨이면
-  // 열리는지"가 보여야 사용자가 다음 행동을 정할 수 있다.
   function renderDifficultyPills(
-    bossName: string,
     difficulties: BossDifficulty[],
     selectedDifficulty: BossDifficulty | null,
     onSelect: (difficulty: BossDifficulty) => void,
@@ -257,24 +219,19 @@ export function BossManageScreen(): React.JSX.Element {
       <span className="flex flex-wrap items-center gap-2">
         {difficulties.map((difficulty) => {
           const isSelected = selectedDifficulty === difficulty
-          // 잠금은 수동 모드(추적 선택)에만 건다 — 자동 모드의 난이도 선택은 멤버십이 아니라
-          // "어느 난이도의 파티 인원을 편집할지"라, 막으면 진행 불가 보스의 사전 설정이 막힌다.
-          const isLocked = mode === 'manual' && isDifficultyLocked(bossName, difficulty)
-          const requiredLevel = getBossRequiredLevel(bossName, difficulty)
           return (
             <button
               key={difficulty}
               type="button"
               onClick={() => onSelect(difficulty)}
               aria-pressed={isSelected}
-              disabled={isLocked}
-              className="inline-flex rounded-full border-0 p-0 leading-none disabled:opacity-40"
+              className="inline-flex rounded-full border-0 p-0 leading-none"
             >
               {isSelected ? (
                 <DifficultyBadge difficulty={difficulty} />
               ) : (
                 <span className="inline-flex h-5 items-center rounded-full border border-border px-2.5 text-[10px] font-bold tracking-[.03em] text-text-disabled">
-                  {isLocked && requiredLevel !== null ? `${difficulty} Lv.${requiredLevel}` : difficulty}
+                  {difficulty}
                 </span>
               )}
             </button>
@@ -404,32 +361,16 @@ export function BossManageScreen(): React.JSX.Element {
               const trackedDifficulty = mode === 'manual' ? trackedDifficultyOf(entry.boss) : null
               const isTracked = trackedDifficulty !== null
 
-              // ADR-055 결정 1: 선택 불가 사유는 하나로 좁힌다 — levelLocked가 limitReached보다
-              // 우선한다(레벨 미달은 이 화면에서 풀 수 없고, 한도는 다른 항목을 해제하면 풀린다).
-              // 이미 선택된 행은 어느 경우에도 잠그지 않는다 — 해제할 수 있어야 한다.
-              const isRowLevelLocked =
-                mode === 'manual' && unlockedDifficulties(entry.boss, entry.difficulties).length === 0
-              const isRowLimitBlocked =
-                mode === 'manual' && isWeeklyLimitReached && countsTowardWeeklyLimit(entry.boss)
-              const selectionBlock: 'levelLocked' | 'limitReached' | null = isTracked
-                ? null
-                : isRowLevelLocked
-                  ? 'levelLocked'
-                  : isRowLimitBlocked
-                    ? 'limitReached'
-                    : null
-              const rowRequiredLevel =
-                selectionBlock === 'levelLocked' ? lowestRequiredLevel(entry.boss, entry.difficulties) : null
-
-              // 사유는 행 오른쪽 뱃지가 아니라 흐려진 행 **위에 얹는 한 줄**로 알린다 —
-              // 뱃지만으로는 "왜 흐린가"가 읽히지 않았다(사용자 피드백). 문구는 상태가 아니라
-              // 다음 행동을 말한다("몇 레벨이면 되는지"·"무엇을 해제해야 하는지").
-              const blockMessage =
-                selectionBlock === 'levelLocked' && rowRequiredLevel !== null
-                  ? `${rowRequiredLevel}레벨 달성 시 진행 가능`
-                  : selectionBlock === 'limitReached'
-                    ? `주간 ${WEEKLY_BOSS_CLEAR_LIMIT}개를 모두 선택했어요`
-                    : null
+              // ADR-055: 한도가 찼을 때 미선택 행을 막는다. 이미 선택된 행은 잠그지 않는다 —
+              // 해제할 수 있어야 한다. 사유는 흐려진 행 위에 얹는 한 줄로 알린다(사용자 피드백).
+              const isLimitBlocked =
+                mode === 'manual' &&
+                !isTracked &&
+                isWeeklyLimitReached &&
+                countsTowardWeeklyLimit(entry.boss)
+              const blockMessage = isLimitBlocked
+                ? `주간 ${WEEKLY_BOSS_CLEAR_LIMIT}개를 모두 선택했어요`
+                : null
 
               // 자동 모드의 행 난이도: 화면 전용 선택 → 등록 난이도 → 첫 난이도 순.
               const autoDifficulty =
@@ -444,7 +385,7 @@ export function BossManageScreen(): React.JSX.Element {
               const rowClassName =
                 mode === 'manual' && isTracked
                   ? 'rounded-[14px] border border-primary bg-primary/15'
-                  : selectionBlock !== null
+                  : isLimitBlocked
                     ? 'relative rounded-[14px] border border-border bg-surface'
                     : 'rounded-[14px] border border-border bg-surface'
 
@@ -461,43 +402,44 @@ export function BossManageScreen(): React.JSX.Element {
 
               return (
                 <li key={entry.boss} className={rowClassName}>
-                  <div className={blockMessage !== null ? 'opacity-30' : undefined}>
-                    {/* 1번째 줄: 초상화 + 보스명(수동은 추적 토글 버튼) + 파티 스테퍼(우상단) */}
-                    <div className="flex items-center gap-3 px-3 py-2.5">
-                      {mode === 'manual' ? (
-                        <button
-                          type="button"
-                          aria-pressed={isTracked}
-                          aria-label={entry.boss}
-                          disabled={selectionBlock !== null}
-                          onClick={() => void handleToggleTracked(entry.boss, entry.difficulties)}
-                          className="flex min-w-0 flex-1 items-center gap-3 text-left"
-                        >
-                          {nameContent}
-                        </button>
-                      ) : (
-                        <div className="flex min-w-0 flex-1 items-center gap-3">{nameContent}</div>
-                      )}
-                      {activeDifficulty !== null && renderPartyStepper(entry.boss, activeDifficulty)}
-                    </div>
-
-                    {/* 2번째 줄: 난이도 세그먼트 */}
-                    {isExpanded && (
-                      <div className="flex flex-wrap items-center gap-2 border-t border-border/60 px-3 pb-2.5 pt-2.5">
-                        {mode === 'manual' && trackedDifficulty !== null
-                          ? renderDifficultyPills(entry.boss, entry.difficulties, trackedDifficulty, (difficulty) =>
-                              void handleSwitchDifficulty(entry.boss, trackedDifficulty, difficulty),
-                            )
-                          : renderDifficultyPills(entry.boss, entry.difficulties, autoDifficulty, (difficulty) =>
-                              setAutoDifficultyByBoss((prev) => ({ ...prev, [entry.boss]: difficulty })),
-                            )}
-                      </div>
+                  {/* 1번째 줄: 초상화 + 보스명(수동은 추적 토글 버튼) + 파티 스테퍼(우상단) */}
+                  <div className="flex items-center gap-3 px-3 py-2.5">
+                    {mode === 'manual' ? (
+                      <button
+                        type="button"
+                        aria-pressed={isTracked}
+                        aria-label={entry.boss}
+                        disabled={isLimitBlocked}
+                        onClick={() => void handleToggleTracked(entry.boss, entry.difficulties)}
+                        className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                      >
+                        {nameContent}
+                      </button>
+                    ) : (
+                      <div className="flex min-w-0 flex-1 items-center gap-3">{nameContent}</div>
                     )}
+                    {activeDifficulty !== null && renderPartyStepper(entry.boss, activeDifficulty)}
                   </div>
 
+                  {/* 2번째 줄: 난이도 세그먼트 */}
+                  {isExpanded && (
+                    <div className="flex flex-wrap items-center gap-2 border-t border-border/60 px-3 pb-2.5 pt-2.5">
+                      {mode === 'manual' && trackedDifficulty !== null
+                        ? renderDifficultyPills(entry.difficulties, trackedDifficulty, (difficulty) =>
+                            void handleSwitchDifficulty(entry.boss, trackedDifficulty, difficulty),
+                          )
+                        : renderDifficultyPills(entry.difficulties, autoDifficulty, (difficulty) =>
+                            setAutoDifficultyByBoss((prev) => ({ ...prev, [entry.boss]: difficulty })),
+                          )}
+                    </div>
+                  )}
+
+                  {/* 흐림을 콘텐츠 opacity로 주면 문구 뒤에 초상화·보스명 형태가 그대로 남아
+                      대비가 배경마다 달라진다(사용자 피드백). 대신 행 위에 표면색 스크림을 덮어
+                      배경을 균일하게 만들고 그 위에 문구를 올린다 — 흐림과 문구가 한 레이어다. */}
                   {blockMessage !== null && (
-                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-3">
-                      <span className="text-xs font-semibold text-text-muted">{blockMessage}</span>
+                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-[14px] bg-surface/85 px-3 backdrop-blur-[2px]">
+                      <span className="text-sm font-semibold text-text">{blockMessage}</span>
                     </div>
                   )}
                 </li>

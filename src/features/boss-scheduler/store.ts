@@ -9,7 +9,6 @@ import {
   WEEKLY_BOSS_CLEAR_LIMIT,
   type MatchedBoss,
 } from '../../lib/boss-matching'
-import { getBossRequiredLevel, isLevelLocked } from '../../lib/required-level'
 import { syncSchedules, type ScheduleSyncError } from '../schedule-sync/schedule-sync'
 import {
   getLastSelectedCharacter,
@@ -32,16 +31,13 @@ import {
 } from '../../storage/manual-tracked-content'
 
 // ADR-055 결정 1·2: 추가 시도의 결과. 'duplicate'는 이미 같은 (보스, 난이도)를 추적 중이라
-// 아무 일도 일어나지 않은 경우이고, 나머지 둘은 가드가 막은 경우다(SelectionBlock의 두 사유와 대응).
-export type ManualBossAddResult = 'added' | 'duplicate' | 'levelLocked' | 'limitReached'
+// 아무 일도 일어나지 않은 경우이고, 'limitReached'는 주간 12개 한도가 막은 경우다.
+export type ManualBossAddResult = 'added' | 'duplicate' | 'limitReached'
 
 export interface BossCharacterView {
   ocid: string
   characterName: string
   world?: string
-  // ADR-055 결정 6: character-basic-cache의 레벨(정렬용으로 이미 읽는 값). 캐시가 없으면 null이고,
-  // 그때는 요구 레벨 잠금을 걸지 않는다(결정 5). sortByCachedLevel이 채운다.
-  level?: number | null
   weeklyBosses: MatchedBoss[]
   monthlyBosses: MatchedBoss[]
   weeklyBossClearCount: number | null
@@ -96,9 +92,6 @@ export function partySizeKey(ocid: string, boss: string, difficulty: string): st
 // 목록에서 필터링한 순서)가 서로 달라 생기던 불일치를 없애기 위해, character-basic-cache의
 // level을 병합해 레벨 내림차순(동레벨이면 compareByName)으로 통일한다. 레벨 캐시가 없는
 // 캐릭터는 맨 뒤로 보낸다.
-// ADR-055 결정 6: 여기서 읽은 level을 버리지 않고 뷰에 실어 보낸다 — 요구 레벨 잠금 판정에
-// 필요한 값이 이미 이 경로를 지나므로, 화면이 character-basic-cache를 다시 읽을 이유가 없다.
-// characters를 채우는 모든 경로가 이 함수를 거치므로 여기 한 곳만 고치면 된다.
 async function sortByCachedLevel(views: BossCharacterView[]): Promise<BossCharacterView[]> {
   const withLevel = await Promise.all(
     views.map(async (view) => {
@@ -117,7 +110,7 @@ async function sortByCachedLevel(views: BossCharacterView[]): Promise<BossCharac
       if (b.level !== a.level) return b.level - a.level
       return compareByName(a.view.characterName, b.view.characterName)
     })
-    .map((entry) => ({ ...entry.view, level: entry.level }))
+    .map((entry) => entry.view)
 }
 
 // ADR-043 결정 3: 저장 시점에 유지되는 캐릭터의 뷰가 메모리에 없을 때만 쓰는 폴백 —
@@ -361,16 +354,9 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
   // ADR-035 결정 3·6: 저장소(단일 진실 공급원)에서 현재 배열을 읽어 (보스, 난이도) 멤버십만
   // 추가/삭제하고 다시 저장한 뒤 화면 상태를 갱신한다. 보스는 maxCount 개념이 없어 값 필드를
   // 채우지 않는다(완료 여부는 표시 시점에 동기화 결과에서 조회).
-  // ADR-055 결정 2: 선택 불가 사유(레벨 미달·한도 초과)는 여기서 막고 결과 코드로 알린다 —
-  // UI 사전 차단만으로는 난이도 교체(remove → add)·시드 같은 다른 호출 경로가 새어나간다.
+  // ADR-055 결정 2: 한도 초과는 여기서 막고 결과 코드로 알린다 — UI 사전 차단만으로는
+  // 난이도 교체(remove → add)·시드 같은 다른 호출 경로가 새어나간다.
   async addManualBoss(ocid, contentName, difficulty) {
-    // 결정 6: 캐릭터 레벨은 이미 뷰에 실려 있는 값을 쓴다(캐시를 다시 읽지 않는다). 뷰가 없으면
-    // 레벨 미상이므로 결정 5에 따라 잠그지 않는다.
-    const characterLevel = get().characters.find((character) => character.ocid === ocid)?.level ?? null
-    if (isLevelLocked(characterLevel, getBossRequiredLevel(contentName, difficulty))) {
-      return 'levelLocked'
-    }
-
     const current = await getManualTrackedContent(ocid)
     if (
       current.some(

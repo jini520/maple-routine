@@ -356,7 +356,6 @@ describe('useBossSchedulerStore', () => {
       {
         ocid: 'ocid-1',
         characterName: '캐릭터-ocid-1',
-        level: null,
         weeklyBosses: [],
         monthlyBosses: [],
         weeklyBossClearCount: null,
@@ -506,7 +505,6 @@ describe('useBossSchedulerStore', () => {
       return {
         ocid,
         characterName,
-        level: null,
         weeklyBosses: [matchBossContent(bossContent({ isComplete: true, ownComplete: true }))],
         monthlyBosses: [],
         weeklyBossClearCount: 1,

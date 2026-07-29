@@ -304,8 +304,8 @@ describe('BossManageScreen — 자동 모드', () => {
   })
 })
 
-// ADR-055(이슈 #62·#32): 수동 선택 가드 — 주간 12개 한도와 요구 레벨 미달 잠금.
-describe('BossManageScreen — 수동 선택 가드 (ADR-055)', () => {
+// ADR-055(이슈 #62): 수동 선택 가드 — 주간 보스 12개 한도.
+describe('BossManageScreen — 주간 12개 한도 (ADR-055)', () => {
   // weekly-bosses.json 주간 섹션 앞부분 12종 — 실재 이름이어야 주기·시즌 판정이 통한다.
   const TWELVE_WEEKLY_BOSSES = [
     '자쿰',
@@ -432,94 +432,6 @@ describe('BossManageScreen — 수동 선택 가드 (ADR-055)', () => {
       renderManageScreen()
 
       expect(screen.queryByText('2/12')).not.toBeInTheDocument()
-    })
-  })
-
-  describe('요구 레벨 미달 잠금 (#32)', () => {
-    it('모든 난이도가 레벨 미달이면 행 토글을 비활성화하고 흐린 행 위에 안내 문구를 얹는다', () => {
-      useTrackingModeStore.setState({ mode: 'manual' })
-      // 유피테르는 노멀·하드 모두 295 요구 — 레벨 200 캐릭터는 전 난이도 잠김.
-      mockStore({ characters: [character({ level: 200 })] })
-
-      renderManageScreen()
-
-      expect(screen.getByRole('button', { name: '유피테르' })).toBeDisabled()
-      expect(within(bossRow('유피테르')).getByText('295레벨 달성 시 진행 가능')).toBeInTheDocument()
-      // 오른쪽 레벨 뱃지는 쓰지 않는다(사용자 피드백)
-      expect(within(bossRow('유피테르')).queryByText('Lv.295')).not.toBeInTheDocument()
-    })
-
-    it('한도 도달로 막힌 행에도 왜 막혔는지 문구를 얹는다', () => {
-      useTrackingModeStore.setState({ mode: 'manual' })
-      mockStore({
-        characters: [character({ level: 300 })],
-        manualTrackedByOcid: {
-          'ocid-1': [
-            '자쿰',
-            '매그너스',
-            '파풀라투스',
-            '반반',
-            '피에르',
-            '블러디 퀸',
-            '벨룸',
-            '스우',
-            '데미안',
-            '가디언 엔젤 슬라임',
-            '루시드',
-            '윌',
-          ].map((contentName) => ({ contentName, kind: 'boss' as const, difficulty: '노멀' })),
-        },
-      })
-
-      renderManageScreen()
-
-      expect(within(bossRow('더스크')).getByText('주간 12개를 모두 선택했어요')).toBeInTheDocument()
-    })
-
-    it('레벨을 충족하는 보스는 잠기지 않는다', () => {
-      useTrackingModeStore.setState({ mode: 'manual' })
-      mockStore({ characters: [character({ level: 200 })] })
-
-      renderManageScreen()
-
-      expect(screen.getByRole('button', { name: '자쿰' })).not.toBeDisabled()
-      expect(within(bossRow('자쿰')).queryByText(/진행 가능/)).not.toBeInTheDocument()
-    })
-
-    it('캐릭터 레벨을 모르면(캐시 미스) 잠그지 않는다 — 결정 5', () => {
-      useTrackingModeStore.setState({ mode: 'manual' })
-      mockStore({ characters: [character({ level: null })] })
-
-      renderManageScreen()
-
-      expect(screen.getByRole('button', { name: '유피테르' })).not.toBeDisabled()
-    })
-
-    it('난이도별로 요구 레벨이 다른 보스는 잠긴 난이도 칩만 비활성화한다', () => {
-      useTrackingModeStore.setState({ mode: 'manual' })
-      // 메이린 노멀 270 / 하드 280 — 275면 노멀만 선택 가능하다.
-      mockStore({
-        characters: [character({ level: 275, world: '챌린저스' })],
-        manualTrackedByOcid: { 'ocid-1': [{ contentName: '시즌 보스 메이린', kind: 'boss', difficulty: '노멀' }] },
-      })
-
-      renderManageScreen()
-
-      const row = bossRow('시즌 보스 메이린')
-      expect(within(row).getByRole('button', { name: '시즌 보스 메이린' })).not.toBeDisabled()
-      expect(within(row).getByRole('button', { name: /하드/ })).toBeDisabled()
-      expect(within(row).getByRole('button', { name: /노멀/ })).not.toBeDisabled()
-    })
-
-    it('기본 난이도는 잠기지 않은 난이도 중에서 고른다 — 눌러도 아무 일 없는 행을 만들지 않는다', () => {
-      useTrackingModeStore.setState({ mode: 'manual' })
-      const addManualBoss = vi.fn()
-      mockStore({ characters: [character({ level: 275, world: '챌린저스' })], addManualBoss })
-
-      renderManageScreen()
-      fireEvent.click(screen.getByRole('button', { name: '시즌 보스 메이린' }))
-
-      expect(addManualBoss).toHaveBeenCalledWith('ocid-1', '시즌 보스 메이린', '노멀')
     })
   })
 })
