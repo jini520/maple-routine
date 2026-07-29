@@ -11,6 +11,11 @@ import {
 } from '../../../features/boss-profit/store'
 import { getCurrentBossProfitPeriod } from '../../../lib/boss-profit-period'
 import { WEEKLY_BOSS_CLEAR_LIMIT, WEEKLY_CRYSTAL_SALE_LIMIT } from '../../../lib/boss-matching'
+import weeklyBossesData from '../../../data/weekly-bosses.json'
+
+// 월간 링의 분모는 게임 한도가 아니라 "우리가 추적하는 월간 보스 종류 수"라 참조 데이터에서 파생한다
+// ([[ADR-059]] 결정 4) — 화면과 같은 소스를 봐야 월간 보스가 늘 때 테스트가 조용히 어긋나지 않는다.
+const MONTHLY_BOSS_COUNT = weeklyBossesData.monthly.length
 
 // 새로고침 버튼·다음 기간 버튼은 "현재 기간"에서만 각각 노출/비활성되므로, 실행 시점과 무관하게
 // 항상 현재 기간을 가리키도록 실제 계산값을 쓴다.
@@ -1144,12 +1149,16 @@ describe('BossProfitScreen', () => {
     expect(screen.getByRole('button', { name: /내옆에최성일.*3,000,000 메소/ })).toBeInTheDocument()
   })
 
-  // 주간 보스 처치 진행 링(ADR-054 #52, 정정 7로 n/12 텍스트는 보류) — 처치 수는 store 필드가
-  // 아니라 rows에서 파생하므로 모든 케이스를 rows 구성만으로 재현한다. 링이 진행률의 유일한
-  // 표현이라 수치는 링의 접근성 레이블로 확인한다.
-  describe('주간 보스 처치 진행 링(ADR-054, #52)', () => {
+  // 보스 처치 진행 링(ADR-054 #52, 정정 7로 n/12 텍스트는 보류 / 표시 범위는 ADR-059) — 처치 수는
+  // store 필드가 아니라 rows에서 파생하므로 모든 케이스를 rows 구성만으로 재현한다. 링이 진행률의
+  // 유일한 표현이라 수치는 링의 접근성 레이블로 확인한다.
+  describe('보스 처치 진행 링(ADR-054, #52 / ADR-059)', () => {
     function clearProgress(): HTMLElement | null {
       return screen.queryByRole('img', { name: /주간 보스 처치/ })
+    }
+
+    function monthlyClearProgress(): HTMLElement | null {
+      return screen.queryByRole('img', { name: /월간 보스 처치/ })
     }
 
     it('주간 탭·현재 기간에서 완료한 주간 보스 수를 아바타 링으로 보여준다', () => {
@@ -1223,7 +1232,7 @@ describe('BossProfitScreen', () => {
       expect(clearProgress()).toHaveAccessibleName(`주간 보스 처치 1 / ${WEEKLY_BOSS_CLEAR_LIMIT}`)
     })
 
-    it('월간 탭에서는 링을 렌더하지 않는다(rows에 monthly 행만 있어 주간 처치 수를 파생할 수 없다)', () => {
+    it('월간 탭에서는 주간 링 대신 월간 보스(검은마법사) 처치 링을 보여준다(ADR-059 결정 3)', () => {
       mockStore({
         status: 'loaded',
         tab: 'monthly',
@@ -1241,21 +1250,97 @@ describe('BossProfitScreen', () => {
 
       renderBossProfitScreen()
 
+      // 주간 처치 수를 월간으로 끌어오지 않는다 — 월간 탭 rows엔 주간 행 자체가 없다.
       expect(clearProgress()).not.toBeInTheDocument()
+      expect(monthlyClearProgress()).toHaveAccessibleName(`월간 보스 처치 1 / ${MONTHLY_BOSS_COUNT}`)
     })
 
-    it('과거 기간에서는 링을 렌더하지 않는다(가격 미확정 보스가 DB에 기록되지 않아 과소집계)', () => {
+    it('월간 보스를 아직 안 잡았으면(미완료 placeholder) 월간 링이 비어 있다', () => {
+      mockStore({
+        status: 'loaded',
+        tab: 'monthly',
+        periodKey: CURRENT_MONTHLY_PERIOD_KEY,
+        trackedOcids: ['ocid-1'],
+        rows: [
+          row({
+            boss: '검은마법사',
+            difficulty: '익스트림',
+            cycle: 'monthly',
+            periodKey: CURRENT_MONTHLY_PERIOD_KEY,
+            isComplete: false,
+            payoutMeso: 0,
+          }),
+        ],
+      })
+
+      const { container } = renderBossProfitScreen()
+
+      expect(monthlyClearProgress()).toHaveAccessibleName(`월간 보스 처치 0 / ${MONTHLY_BOSS_COUNT}`)
+      expect(container.querySelectorAll('svg.-rotate-90 circle.stroke-primary')).toHaveLength(0)
+    })
+
+    it('월간 링의 칸 수는 리터럴이 아니라 weekly-bosses.json의 monthly 항목 수를 따른다(ADR-059 결정 4)', () => {
+      mockStore({
+        status: 'loaded',
+        tab: 'monthly',
+        periodKey: CURRENT_MONTHLY_PERIOD_KEY,
+        trackedOcids: ['ocid-1'],
+        rows: [
+          row({
+            boss: '검은마법사',
+            difficulty: '하드',
+            cycle: 'monthly',
+            periodKey: CURRENT_MONTHLY_PERIOD_KEY,
+          }),
+        ],
+      })
+
+      renderBossProfitScreen()
+
+      const ring = screen.getByRole('img', { name: /월간 보스 처치/ })
+      expect(ring.querySelectorAll('circle')).toHaveLength(MONTHLY_BOSS_COUNT)
+    })
+
+    it('칸이 하나뿐인 월간 링은 간격 없이 온전한 원으로 그린다(ADR-059 정정 1)', () => {
+      mockStore({
+        status: 'loaded',
+        tab: 'monthly',
+        periodKey: CURRENT_MONTHLY_PERIOD_KEY,
+        trackedOcids: ['ocid-1'],
+        rows: [
+          row({
+            boss: '검은마법사',
+            difficulty: '익스트림',
+            cycle: 'monthly',
+            periodKey: CURRENT_MONTHLY_PERIOD_KEY,
+          }),
+        ],
+      })
+
+      renderBossProfitScreen()
+
+      // dash 보정은 "칸 사이"를 벌리기 위한 장치라, 칸이 하나면 그 틈이 나눔이 아니라 결손으로 보인다.
+      const segments = screen.getByRole('img', { name: /월간 보스 처치/ }).querySelectorAll('circle')
+      expect(segments).toHaveLength(1)
+      expect(segments[0]).not.toHaveAttribute('stroke-dasharray')
+      expect(segments[0]).not.toHaveAttribute('stroke-dashoffset')
+    })
+
+    it('과거 기간에서도 주간 링을 렌더한다(ADR-059 결정 2 — ADR-054 결정 4 폐기)', () => {
       mockStore({
         status: 'loaded',
         tab: 'weekly',
         periodKey: '2026-07-02', // 현재 기간이 아님
         trackedOcids: ['ocid-1'],
-        rows: [row({ boss: '자쿰', periodKey: '2026-07-02' })],
+        rows: [
+          row({ boss: '자쿰', periodKey: '2026-07-02' }),
+          row({ boss: '루시드', periodKey: '2026-07-02' }),
+        ],
       })
 
       renderBossProfitScreen()
 
-      expect(clearProgress()).not.toBeInTheDocument()
+      expect(clearProgress()).toHaveAccessibleName(`주간 보스 처치 2 / ${WEEKLY_BOSS_CLEAR_LIMIT}`)
     })
 
     it('분모는 weekly-bosses.json의 WEEKLY_BOSS_CLEAR_LIMIT을 따른다(리터럴 12 금지)', () => {
@@ -1315,20 +1400,24 @@ describe('BossProfitScreen', () => {
       // 처치한 2칸만 primary, 나머지는 border — 링이 진행률을 그대로 반영한다.
       const filled = [...segments].filter((segment) => segment.classList.contains('stroke-primary'))
       expect(filled).toHaveLength(2)
+      // 칸이 여럿일 때는 dash 간격이 반드시 있어야 한다 — 없으면 12칸이 하나의 원으로 뭉갠다
+      // (ADR-059 정정 1의 "칸 하나면 간격 없음"이 여기까지 번지지 않게 막는 가드).
+      expect(segments[0]).toHaveAttribute('stroke-dasharray')
     })
 
-    it('월간 탭·과거 기간에는 아바타 진행 링도 그리지 않는다', () => {
+    it('과거 월간 기간에서도 월간 링을 렌더한다', () => {
       mockStore({
         status: 'loaded',
         tab: 'monthly',
-        periodKey: '2026-07',
+        periodKey: '2026-06', // 현재 기간이 아님
         trackedOcids: ['ocid-1'],
-        rows: [row({ boss: '검은마법사', difficulty: '하드', cycle: 'monthly', periodKey: '2026-07' })],
+        rows: [row({ boss: '검은마법사', difficulty: '하드', cycle: 'monthly', periodKey: '2026-06' })],
       })
 
       const { container } = renderBossProfitScreen()
 
-      expect(container.querySelector('svg.-rotate-90 circle')).toBeNull()
+      expect(monthlyClearProgress()).toHaveAccessibleName(`월간 보스 처치 1 / ${MONTHLY_BOSS_COUNT}`)
+      expect(container.querySelectorAll('svg.-rotate-90 circle.stroke-primary')).toHaveLength(1)
     })
   })
 
@@ -1532,18 +1621,44 @@ describe('BossProfitScreen', () => {
       expect(screen.queryByText(/개 월드/)).not.toBeInTheDocument()
     })
 
-    it('과거 기간에서는 결정석 줄을 렌더하지 않는다', () => {
+    it('과거 주간 기간에서도 그 주의 결정석 판매 현황을 보여준다(ADR-059 결정 1)', () => {
       mockStore({
         status: 'loaded',
         tab: 'weekly',
         periodKey: '2026-07-02', // 현재 기간이 아님
         trackedOcids: ['ocid-1'],
-        rows: [row({ world: '스카니아', periodKey: '2026-07-02' })],
+        rows: [
+          row({ world: '스카니아', boss: '자쿰', periodKey: '2026-07-02' }),
+          row({ world: '스카니아', boss: '루시드', periodKey: '2026-07-02' }),
+        ],
       })
 
       renderBossProfitScreen()
 
-      expect(crystalRow()).not.toBeInTheDocument()
+      // 이월되지 않는 한도라(ADR-054 결정 1) 지난 주 수치는 그 주로 완결된 사실이다.
+      expect(crystalRow()).toHaveAccessibleName(`주간 결정석 판매 2 / ${WEEKLY_CRYSTAL_SALE_LIMIT}`)
+    })
+
+    it('과거 월간 기간에서도 월간 결정석 개수를 보여준다', () => {
+      mockStore({
+        status: 'loaded',
+        tab: 'monthly',
+        periodKey: '2026-06', // 현재 기간이 아님
+        trackedOcids: ['ocid-1'],
+        rows: [
+          row({
+            world: '스카니아',
+            boss: '검은마법사',
+            difficulty: '익스트림',
+            cycle: 'monthly',
+            periodKey: '2026-06',
+          }),
+        ],
+      })
+
+      renderBossProfitScreen()
+
+      expect(crystalRow()).toHaveAccessibleName('월간 결정석 1개')
     })
 
     it('분모는 weekly-bosses.json의 WEEKLY_CRYSTAL_SALE_LIMIT을 따른다(리터럴 90 금지)', () => {

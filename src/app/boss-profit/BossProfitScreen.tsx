@@ -55,18 +55,18 @@ function avatarFaceCropStyle(): React.CSSProperties {
   }
 }
 
-// 아바타 테두리를 주간 보스 한도(12)만큼 쪼갠 진행 링([[ADR-054]] 정정 1·3, 사용자 요청) — 처치할
+// 아바타 테두리를 보스 처치 한도만큼 쪼갠 진행 링([[ADR-054]] 정정 1·3, 사용자 요청) — 처치할
 // 때마다 한 칸씩 찬다. 헤더 가로폭을 전혀 쓰지 않아 캐릭터명을 가리지 않는 것이 이 표현을 고른 이유다.
 // 링은 초상화 "바깥"에 여백을 두고 두른다(정정 3) — 그래서 아바타 슬롯이 초상화(32px)보다 큰 40px다.
-// 슬롯은 링 유무와 무관하게 항상 40px로 고정한다: 링이 없는 월간 탭·과거 기간에서만 32px로 줄이면
-// 탭을 옮길 때마다 모든 카드가 8px씩 튄다(높이는 ResizeObserver 실측이라 따라오지만, 그 튐 자체가
-// [[ADR-049]]가 없애려던 것이다). 초상화 이미지 크기는 32px 그대로라 얼굴 크롭은 영향받지 않는다.
+// 슬롯은 칸 수(주간 12 · 월간 1)와 무관하게 항상 40px로 고정한다: 탭마다 크기가 달라지면 탭을 옮길
+// 때마다 모든 카드가 튄다(높이는 ResizeObserver 실측이라 따라오지만, 그 튐 자체가 [[ADR-049]]가
+// 없애려던 것이다). 초상화 이미지 크기는 32px 그대로라 얼굴 크롭은 영향받지 않는다.
 const AVATAR_SLOT_SIZE = 40
 const AVATAR_RING_STROKE = 2.5
 // 칸 사이 간격(viewBox 단위 호 길이). 12칸이 하나의 원처럼 보이지 않도록 눈에 띄는 최소값.
 const AVATAR_RING_GAP = 2.4
 
-function AvatarClearRing(props: { cleared: number; total: number }): React.JSX.Element {
+function AvatarClearRing(props: { cleared: number; total: number; cycle: BossCycle }): React.JSX.Element {
   // 링 중심 반지름 19 = 바깥 끝 20(슬롯 경계) · 안쪽 끝 18 → 초상화 반지름 16과 2px 여백(정정 3).
   const radius = (AVATAR_SLOT_SIZE - AVATAR_RING_STROKE) / 2
   const circumference = 2 * Math.PI * radius
@@ -77,16 +77,23 @@ function AvatarClearRing(props: { cleared: number; total: number }): React.JSX.E
   const dash = Math.max(segment - AVATAR_RING_GAP - AVATAR_RING_STROKE, 0.5)
   // 캡이 시작점 뒤로 0.5 stroke만큼 튀어나오므로 그만큼 밀어야 칸이 원래 자리에 그대로 앉는다.
   const capOffset = AVATAR_RING_STROKE / 2
+  // 칸이 하나뿐이면(월간 탭 — 월간 보스가 검은마법사 1종) dash를 걸지 않고 온전한 원으로 그린다
+  // ([[ADR-059]] 정정 1, 사용자 요청). 위 간격은 "칸과 칸을 나누기 위한" 장치라, 나눌 상대가 없는
+  // 링에서는 나눔이 아니라 결손으로 읽힌다. 값을 0으로 만드는 대신 속성을 통째로 빼는 이유는 dash
+  // 양끝의 둥근 캡이 정확히 겹쳐 이음매가 비치는 것을 피하기 위해서다.
+  const isSingleSegment = props.total === 1
 
   return (
     // -rotate-90: SVG 각도 0은 3시 방향이라 12시부터 시계방향으로 차게 돌린다.
     // 링이 진행률의 유일한 표현이므로(정정 7 — n/12 텍스트 보류) 레이블은 링이 갖는다. 링까지
-    // aria-hidden이면 스크린리더 사용자에게는 진행률이 아예 존재하지 않게 된다.
+    // aria-hidden이면 스크린리더 사용자에게는 진행률이 아예 존재하지 않게 된다. 레이블의 주기는
+    // 탭을 따라간다([[ADR-059]] 결정 7) — 두 탭이 같은 컴포넌트를 쓰므로 "주간"으로 고정하면
+    // 월간 탭에서 거짓말이 된다.
     <svg
       viewBox={`0 0 ${AVATAR_SLOT_SIZE} ${AVATAR_SLOT_SIZE}`}
       className="pointer-events-none absolute inset-0 h-full w-full -rotate-90"
       role="img"
-      aria-label={`주간 보스 처치 ${props.cleared} / ${props.total}`}
+      aria-label={`${props.cycle === 'weekly' ? '주간' : '월간'} 보스 처치 ${props.cleared} / ${props.total}`}
     >
       {Array.from({ length: props.total }, (_, index) => (
         <circle
@@ -98,8 +105,8 @@ function AvatarClearRing(props: { cleared: number; total: number }): React.JSX.E
           strokeWidth={AVATAR_RING_STROKE}
           strokeLinecap="round"
           className={index < props.cleared ? 'stroke-primary' : 'stroke-border'}
-          strokeDasharray={`${dash} ${circumference - dash}`}
-          strokeDashoffset={-(index * segment + capOffset)}
+          strokeDasharray={isSingleSegment ? undefined : `${dash} ${circumference - dash}`}
+          strokeDashoffset={isSingleSegment ? undefined : -(index * segment + capOffset)}
         />
       ))}
     </svg>
@@ -109,8 +116,8 @@ function AvatarClearRing(props: { cleared: number; total: number }): React.JSX.E
 function CharacterAvatar(props: {
   characterName: string
   imageUrl: string | null
-  // 진행 링을 그릴 때만 전달한다(주간 탭 · 현재 기간). null이면 링 없이 초상화만(슬롯 크기는 동일).
-  clearProgress: { cleared: number; total: number } | null
+  // 탭이 정한 진행률(주간 = n/12, 월간 = n/월간 보스 종류 수). 두 탭·모든 기간에 항상 그린다([[ADR-059]]).
+  clearProgress: { cleared: number; total: number; cycle: BossCycle }
 }): React.JSX.Element {
   return (
     // 슬롯(40px) 안에 초상화(32px)를 중앙 배치하고 링은 그 바깥 테두리에 그린다. 링을 이미지 span
@@ -132,9 +139,11 @@ function CharacterAvatar(props: {
           </span>
         )}
       </span>
-      {props.clearProgress !== null && (
-        <AvatarClearRing cleared={props.clearProgress.cleared} total={props.clearProgress.total} />
-      )}
+      <AvatarClearRing
+        cleared={props.clearProgress.cleared}
+        total={props.clearProgress.total}
+        cycle={props.clearProgress.cycle}
+      />
     </span>
   )
 }
@@ -149,6 +158,12 @@ const REFERENCE_ENTRIES: BossReferenceEntry[] = [
   ...(weeklyBossesData.eventWeekly as BossReferenceEntry[]),
   ...(weeklyBossesData.monthly as BossReferenceEntry[]),
 ]
+
+// 월간 탭 진행 링의 분모([[ADR-059]] 결정 4) — 리터럴 1이 아니라 참조 데이터에서 파생한다. 월간
+// 보스가 늘면 링 칸 수가 따라 늘어, "데이터는 2종인데 링은 1칸"이 될 수 없다. WEEKLY_BOSS_CLEAR_LIMIT
+// 처럼 lib/boss-matching에 두지 않는 이유는 성격이 달라서다 — 그쪽 둘은 게임이 정한 한도이자 보스
+// 스케줄러와 공유하는 값이고, 이건 "우리가 추적하는 월간 보스 종류 수"라 이 화면만 쓴다.
+const MONTHLY_BOSS_COUNT = weeklyBossesData.monthly.length
 
 function findPortraitSlug(boss: string): string | null {
   return REFERENCE_ENTRIES.find((entry) => entry.boss === boss)?.portraitSlug ?? null
@@ -546,20 +561,23 @@ function summarizeWorldCrystals(groups: CharacterGroup[]): WorldCrystalSummary[]
   return [...clearedByWorld].map(([world, cleared]) => ({ world, cleared }))
 }
 
+// 이 캐릭터가 이 달에 처치한 월간 보스 수(보스명 distinct — 같은 보스를 여러 난이도로 잡아도 1).
+// 주간 쪽 countGroupClearedWeeklyBosses와 대칭이며, **월간 탭 진행 링과 월간 결정석 칩이 이 함수
+// 하나를 공유한다**([[ADR-059]] 결정 5 — [[ADR-054]] 결정 3의 "계산 두 벌 금지"를 월간에도 적용).
+function countGroupClearedMonthlyBosses(group: CharacterGroup): number {
+  const clearedBossNames = new Set<string>()
+  for (const row of group.bossRows) {
+    if (row.cycle !== 'monthly' || !row.isComplete) continue
+    clearedBossNames.add(row.boss)
+  }
+  return clearedBossNames.size
+}
+
 // 이 기간 월간 보스(검은마법사) 결정석 개수. 주간 90 한도에 포함되지 않는 별개 수치라([[ADR-054]]
 // 결정 1·8) 위 주간 집계와 섞지 않는다 — 시즌 보스는 weekly 소속이라 여기선 판정할 것이 없다.
-// 결정석은 캐릭터마다 각자 나오므로 그룹별 distinct(같은 보스를 여러 난이도로 잡아도 1)를 더한다.
+// 결정석은 캐릭터마다 각자 나오므로 그룹별 처치 수를 더한다.
 function countMonthlyCrystals(groups: CharacterGroup[]): number {
-  let total = 0
-  for (const group of groups) {
-    const clearedBossNames = new Set<string>()
-    for (const row of group.bossRows) {
-      if (row.cycle !== 'monthly' || !row.isComplete) continue
-      clearedBossNames.add(row.boss)
-    }
-    total += clearedBossNames.size
-  }
-  return total
+  return groups.reduce((total, group) => total + countGroupClearedMonthlyBosses(group), 0)
 }
 
 // 결정석 아이콘(주간/월간). 드랍 테이블 항목이 아니라 UI 표시 전용이라 item-icons.json에 등록하지 않고
@@ -737,7 +755,6 @@ function CharacterAccordion(props: {
   setBossDrops: BossProfitStore['setBossDrops']
   now: Date
   isMonthlyBossQueryable: boolean
-  isCurrentPeriod: boolean
   stickyTop: number
 }): React.JSX.Element {
   const [isExpanded, setIsExpanded] = useState(false)
@@ -773,12 +790,14 @@ function CharacterAccordion(props: {
   // 펼쳤을 때는 고가 아이템을 획득한 보스 행(valuable-drop-row, 배경 효과)에도 강조가 들어간다.
   const valuableDrops = collectGroupValuableDrops(group, props.dropsByRowKey)
   const hasValuable = valuableDrops.length > 0
-  // 주간 보스 처치 진행 링은 주간 탭 · 현재 기간에만 보여준다([[ADR-054]] 결정 4) — 월간 탭 rows에는
-  // cycle === 'monthly' 행만 담겨 주간 처치 수를 파생할 수 없고, 과거 기간 rows는 가격 미확정
-  // 보스(벨로나)가 애초에 DB에 기록되지 않아 실제보다 적게 나온다. isCurrentPeriod는 화면이 이미
-  // isLatestPeriod로 계산한 값을 그대로 받는다(같은 판정을 두 곳에서 하면 갈라진다).
-  const showClearProgress = props.tab === 'weekly' && props.isCurrentPeriod
-  const clearedWeeklyBossCount = showClearProgress ? countGroupClearedWeeklyBosses(group) : 0
+  // 처치 진행 링은 두 탭 · 모든 기간에 그리고, 무엇을 세는지는 탭이 정한다([[ADR-059]] — 기간
+  // 한정을 폐기했다. 과거 rows도 DB 기록에서 오고 그 행은 전부 isComplete: true라 파생식이 그대로
+  // 성립한다). 월간 탭은 주간 처치 수를 끌어오지 않는다 — 월간 rows에는 주간 행 자체가 없고(주간분은
+  // 금액 합계 행으로만 존재), 12는 주 단위로 초기화되는 한도라 월 단위로 곱한 분모는 게임에 없다.
+  const clearProgress =
+    props.tab === 'weekly'
+      ? { cleared: countGroupClearedWeeklyBosses(group), total: WEEKLY_BOSS_CLEAR_LIMIT, cycle: props.tab }
+      : { cleared: countGroupClearedMonthlyBosses(group), total: MONTHLY_BOSS_COUNT, cycle: props.tab }
   const shellClass = [
     // overflow-hidden은 여전히 금지(ADR-047) — 스크롤포트를 만들어 헤더 sticky를 무력화한다. 대신
     // overflow-clip을 쓴다(ADR-049): 스크롤 컨테이너를 만들지 않아 sticky와 공존하면서 자식을 카드
@@ -879,9 +898,7 @@ function CharacterAccordion(props: {
           <CharacterAvatar
             characterName={group.characterName}
             imageUrl={group.imageUrl}
-            clearProgress={
-              showClearProgress ? { cleared: clearedWeeklyBossCount, total: WEEKLY_BOSS_CLEAR_LIMIT } : null
-            }
+            clearProgress={clearProgress}
           />
           <span className="flex-1 truncate text-left text-sm font-semibold text-text">{group.characterName}</span>
           {/* 숫자 표기(n/12)는 보류 상태다([[ADR-054]] 정정 7) — 헤더 가로폭을 두고 캐릭터명과 경합하는데
@@ -1144,7 +1161,7 @@ export function BossProfitScreen(): React.JSX.Element {
                 {/* 결정석 판매 현황은 라벨 텍스트 바로 옆에 둔다([[ADR-054]] 정정 3, 사용자 요청).
                     칩은 줄 높이(24px) 안에서 h-5까지 키울 수 있다 — 24px를 넘기지만 않으면 된다.
                     우측 끝은 여전히 고가 드롭 뱃지(absolute)의 자리이므로 침범하지 않는다. */}
-                {isCurrentPeriod && <CrystalSummaryChip tab={tab} groups={characterGroups} />}
+                <CrystalSummaryChip tab={tab} groups={characterGroups} />
                 {periodValuableDrops.length > 0 && (
                   <ValuableDropBadge
                     drops={periodValuableDrops}
@@ -1202,7 +1219,6 @@ export function BossProfitScreen(): React.JSX.Element {
               setBossDrops={setBossDrops}
               now={now}
               isMonthlyBossQueryable={periodQueryable}
-              isCurrentPeriod={isCurrentPeriod}
               stickyTop={stickyHeaderHeight}
             />
           ))}
