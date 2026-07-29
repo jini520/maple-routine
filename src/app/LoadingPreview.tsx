@@ -1,6 +1,9 @@
 import { useEffect, useId, useState } from 'react'
 import { RefreshCw } from 'lucide-react'
 import { MAPLE_LEAF_PATH } from '../components/mapleLeafPath'
+import { MapleSpinner } from '../components/MapleSpinner/MapleSpinner'
+import { MapleSweepSpinner } from '../components/MapleSweepSpinner/MapleSweepSpinner'
+import { LoadingState } from '../components/LoadingState/LoadingState'
 import { useThemeStore } from '../features/theme/store'
 import type { ThemeName } from '../types/theme'
 
@@ -13,11 +16,12 @@ import type { ThemeName } from '../types/theme'
 //   S1 버튼 16px = 트레일 링 / S2 화면 32px = 스윕 / S4 영역 24px = 스윕
 //   S2·S4는 표현도 공유한다 — 셸 승계 카드(로딩 후 그 자리를 채울 카드와 같은 실선 surface 껍데기).
 //   S7(모달 차단)은 모달 디자인을 다시 하기로 해 보류.
-// 스피너가 2종으로 갈렸으므로(작은 자리=트레일 링, 큰 자리=스윕) 두 어법이 한 앱 안에서 성립하는지가
-// 남은 쟁점이다 — "조합" 섹션이 그걸 본다.
 //
-// 그래서 시안 선택은 전역 토글이 아니라 각 섹션 안(VariantPicker)에 있다. 그 자리에서 바로
-// 갈아끼워 보라는 뜻이다. 문구안·테마만 상단 공통.
+// **S7을 뺀 전부가 앱에 반영됐다(2026-07-30)** — MapleSweepSpinner·LoadingState 신설, 버튼 5곳·
+// 콜드 스타트 5곳·백필·진행률·문구까지. "구현" 섹션만 그 실제 컴포넌트를 렌더하고, 나머지 섹션은
+// 이 파일 안의 사본이다(결정을 뒤집고 싶을 때 다시 비교하기 위해 남겨 둔다).
+//
+// 시안 선택은 전역 토글이 아니라 각 섹션 안(VariantPicker)에 있다. 문구안·테마만 상단 공통.
 //
 // 선택이 확정되면 이 파일과 App.tsx의 /debug/loading 라우트를 삭제하고, 확정된 규칙을
 // docs/foundation/design-system.md "로딩 표현" 섹션으로 옮길 것.
@@ -553,9 +557,9 @@ export function LoadingPreview(): React.JSX.Element {
         <header className="space-y-2">
           <h1 className="text-lg font-bold text-text">로딩 시안 비교 (ADR-061)</h1>
           <p className="text-xs leading-relaxed text-text-muted">
-            잠정 결정을 전제로 스피너를 갈아끼워 보는 화면. 시안이 자리마다 갈렸으므로(버튼=트레일 링,
-            화면·영역=스윕) 시안 선택은 각 섹션 안에 있다. 문구안·테마만 여기서 공통으로 바꾼다.
-            진행률은 5초 주기로 0→100%를 반복 재생한다.
+            <strong className="text-text">S7(모달 차단)을 뺀 전부가 앱에 반영됐다.</strong> 이 화면은
+            남은 S7 검토와, 결정을 뒤집고 싶을 때 다시 비교하는 용도로 유지한다. 시안 선택은 각 섹션 안에
+            있고 문구안·테마만 공통이다. 진행률은 5초 주기로 0→100%를 반복 재생한다.
           </p>
         </header>
 
@@ -590,10 +594,42 @@ export function LoadingPreview(): React.JSX.Element {
 
         {/* ------------------------------------------------------------------ */}
         <Section
+          code="구현"
+          title="실제 앱에 들어간 컴포넌트"
+          state="잠정 결정"
+          note="아래 시안 갤러리는 이 파일 안의 사본이지만, 이 섹션만은 앱이 실제로 쓰는 컴포넌트를 그대로 렌더한다 — 결정이 코드에 옮겨진 결과를 확인하는 자리."
+        >
+          <Option label="스피너" note="MapleSpinner 16px(버튼) / MapleSweepSpinner 24·32px(그 밖)">
+            <div className="flex items-end justify-around text-primary">
+              <div className="flex flex-col items-center gap-2">
+                <MapleSpinner size={16} />
+                <span className="text-[10px] text-text-muted">MapleSpinner 16</span>
+              </div>
+              <div className="flex flex-col items-center gap-2">
+                <MapleSweepSpinner size={24} />
+                <span className="text-[10px] text-text-muted">Sweep 24</span>
+              </div>
+              <div className="flex flex-col items-center gap-2">
+                <MapleSweepSpinner size={32} />
+                <span className="text-[10px] text-text-muted">Sweep 32</span>
+              </div>
+            </div>
+          </Option>
+
+          <Option label="셸 카드" note="LoadingState — 위 page(콜드 스타트) / 아래 inline(백필)">
+            <div className="space-y-3">
+              <LoadingState size="page" message="불러오고 있어요" />
+              <LoadingState message="7월 3주차 기록을 불러오고 있어요" />
+            </div>
+          </Option>
+        </Section>
+
+        {/* ------------------------------------------------------------------ */}
+        <Section
           code="시안"
           title="스피너 7종 — 크기별"
           state="비교"
-          note="위 16px(버튼 안) · 가운데 24px(영역) · 아래 32px(화면·모달). 실제로 쓰이는 세 크기다."
+          note="위 16px(버튼 안) · 가운데 24px(영역) · 아래 32px(화면·모달). 실제로 쓰이는 세 크기다. 결정을 뒤집고 싶을 때 다시 비교하는 자리로 남겨 둔다."
         >
           <div className="rounded-[14px] border border-dashed border-border bg-bg p-4">
             <div className="space-y-4 text-primary">

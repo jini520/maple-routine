@@ -97,7 +97,7 @@ CTA:    rounded-full bg-primary text-bg font-semibold hover:bg-primary-hover (Pr
 - **"조회 불가"에는 이 컴포넌트를 쓰지 않는다** — 아래 `UnavailableNotice` 참고([error-resilience.md](./error-resilience.md) 원칙 2).
 - 배지(둥근 배경 박스)는 아래 "아이콘" 절의 *배경 없이 단독* 규칙에 대한 **명시적 예외**다 — 빈 상태 배지는 아이콘이 아니라 **일러스트 자리**로 취급한다.
 
-### 로딩 표현 — [[ADR-061]]
+### 로딩 표현 (`components/LoadingState`, `components/MapleSweepSpinner`) — [[ADR-061]], 구현 완료 2026-07-30
 "기다리는 중"을 표시하는 모든 자리가 지키는 규칙. 세 상태(**조회 중 / 확정된 빈 상태 / 확인 불가·실패**)는 항상 서로 구분 가능해야 한다([error-resilience.md](./error-resilience.md) 원칙 2) — 그래서 로딩은 빈 상태의 어법(점선 박스·배지+CTA)을 쓰지 않는다.
 
 **스피너는 2종, 크기로 갈린다.**
