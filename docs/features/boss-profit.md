@@ -81,6 +81,7 @@ a11y: 링 자체가 role="img" aria-label="{주간|월간} 보스 처치 8 / 12"
 합계: p-4(32) + 24 + mt-2(8) + 24 + border(1) = 89px
 ```
 - **DropIndicator**(이름 줄 우측, [[ADR-038]]): 드롭 있으면 아이콘 스택(`h-6` 이미지 최대 3개 + `+N`), 없으면 "＋ 드롭 추가" 칩. 칩도 `inline-flex h-6 items-center`(세로 패딩 없음)로 **아이콘 스택과 같은 24px** — 같은 슬롯을 쓰므로 드롭을 추가해도 줄 높이가 튀지 않는다.
+  - **반지 등급 뱃지**(2026-07-30, 사용자 요청): 특수 스킬 반지(=`ringLevel`이 기록된 드롭 — 반지 상자 드릴다운 결과 [[ADR-041]])는 아이콘 **우측 하단에 `lvN` 뱃지**를 얹는다. 드롭 시트 `ItemThumb`의 뱃지와 같은 규칙(`absolute -bottom-1 -right-0.5 rounded-full bg-primary text-[8px] font-bold text-white ring-1 ring-bg`)이되 아이콘이 24px(시트는 36px)라 좌우 패딩만 `px-1`→`px-0.5`로 줄인다. 뱃지는 `absolute`라 **줄 높이(h-6)에 영향 없음**(위 고정 높이 규칙 유지). 스택 겹침(`marginLeft:-2`)·z 순서는 그대로 — 앞 아이콘이 z가 높아 자기 뱃지가 뒤 아이콘 위에 얹힌다.
 캐릭터명은 헤더에만(행에서 제거). "가격 미확정" 행도 같은 2줄 구조 유지 — 금액 자리에 배지(`rounded-full bg-primary/15 px-2 py-0.5 text-xs font-medium text-primary`), 스테퍼는 `opacity-40` 비활성.
 - **파티원 스테퍼(−/+)**: `inline-flex items-center gap-2 rounded-full border border-border px-1 py-0.5`, 버튼 `h-[18px] w-[18px] rounded-full bg-surface-2`, 값 `text-xs tabular-nums`. 파티 관리 모달과 동일 조작(경계 비활성화).
 - **소계 footer 없음**([[ADR-047]] 후속) — 헤더가 sticky라 캐릭터 합계가 스크롤 내내 보이므로 하단 중복 표시를 제거했다. 셸 하단에 닿는 배경 요소를 새로 추가해도 이제는 셸의 `overflow: clip`([[ADR-049]])이 잘라주므로 요소별 `rounded-b-*` 보정은 필요 없다.
