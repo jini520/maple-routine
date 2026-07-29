@@ -75,7 +75,8 @@ Text(라이트): text-[#8A7362] hover:text-[#5B4636]   Text(다크): text-neutra
 **로딩/빈/실패 상태 ([[ADR-053]], 구현 완료 2026-07-29)**: 그리드에 항목이 없을 때 세 경우를 구분해 그린다(빈 상태로 위장 금지, [error-resilience.md](./error-resilience.md) 원칙 1·2). 항목이 하나라도 있으면 조회 중이어도 기존대로 그리드만 그린다([[ADR-016]] 캐시 우선 표시를 스피너로 가리지 않는다). 어느 상태인지는 `getCharacterPickerRoster` Promise의 resolve/reject로 호출부가 판정해 필수 props `isLoading`·`loadFailed` 로 내려준다(정책 원문 [../features/content-scheduler.md](../features/content-scheduler.md)).
 ```
 공통 자리: flex min-h-[120px] items-center justify-center (그리드 자리 중앙)
-조회 중:   MapleSpinner size={32} text-primary, 래퍼에 role="status" aria-busy="true" aria-label="캐릭터 목록을 불러오는 중"
+조회 중:   MapleSweepSpinner size={32} text-primary, 래퍼에 role="status" aria-busy="true" aria-label="캐릭터 목록을 불러오는 중"
+           (모달·페이지 안이라 셸 승계 카드는 씌우지 않는다 — 위 "로딩 표현" 참고, [[ADR-061]])
 조회 실패: text-sm text-error "캐릭터 목록을 불러오지 못했어요 — 닫고 다시 열어주세요"
 항목 0건: text-sm text-text-muted "표시할 캐릭터가 없어요"
 ```
@@ -96,6 +97,38 @@ CTA:    rounded-full bg-primary text-bg font-semibold hover:bg-primary-hover (Pr
 - **"조회 불가"에는 이 컴포넌트를 쓰지 않는다** — 아래 `UnavailableNotice` 참고([error-resilience.md](./error-resilience.md) 원칙 2).
 - 배지(둥근 배경 박스)는 아래 "아이콘" 절의 *배경 없이 단독* 규칙에 대한 **명시적 예외**다 — 빈 상태 배지는 아이콘이 아니라 **일러스트 자리**로 취급한다.
 
+### 로딩 표현 — [[ADR-061]]
+"기다리는 중"을 표시하는 모든 자리가 지키는 규칙. 세 상태(**조회 중 / 확정된 빈 상태 / 확인 불가·실패**)는 항상 서로 구분 가능해야 한다([error-resilience.md](./error-resilience.md) 원칙 2) — 그래서 로딩은 빈 상태의 어법(점선 박스·배지+CTA)을 쓰지 않는다.
+
+**스피너는 2종, 크기로 갈린다.**
+```
+버튼 내부(16px)      MapleSpinner        단풍잎 외곽선 둘레의 70% 구간이 도는 comet
+그 밖(24·32px)       MapleSweepSpinner   흐린 잎 위로 밝은 띠가 아래→위로 훑고 지나간다
+```
+스윕이 16px에서 안 읽히고(띠가 잎보다 커져 바탕만 남아 비활성처럼 보인다) 트레일 링이 32px를 못 채우기 때문 — 두 크기 대역의 요구가 반대라 한 시안으로 덮이지 않는다. 스피너 색은 `text-primary`, 대기 문구는 `text-sm text-text-muted`.
+
+**셸 승계 카드 (`components/LoadingState`)** — 콜드 스타트와 영역 부분 로딩이 공유한다. 로딩이 끝나면 그 자리를 채울 카드와 **같은 껍데기**라 결과가 들어와도 배경이 바뀌지 않는다(스켈레톤 없이 "자리를 미리 잡는" 효용을 얻는 지점).
+```
+공통:   rounded-[14px] border border-border bg-surface p-6
+        + flex flex-col items-center justify-center gap-3 text-center
+        + 래퍼에 role="status" aria-busy="true"
+page:   스피너 32px, min-h-[132px] — 스케줄러 3화면 콜드 스타트, 컨텐츠·보스 관리 화면 최초 진입
+inline: 스피너 24px             — 보스 수익 과거 기간 백필
+```
+- **목록·카드가 들어올 자리에만 쓴다.** 모달 안(캐릭터 관리 피커)이나 화면 전체 대기(온보딩 시드·예열)는 이미 자기 껍데기가 있거나 뒤에 카드가 오지 않으므로 카드를 씌우지 않고 **스피너 + 문구만** 둔다.
+- **캐시가 남아 있으면 쓰지 않는다** — 재검증(SWR) 중에는 기존 내용을 그대로 보여준다([[ADR-016]]). 이 카드는 "보여줄 것이 하나도 없을 때"만.
+
+**버튼 내부 대기** — `MapleSpinner size={16}` + 라벨 병기(`gap-2`), `aria-busy` + `disabled`. 라벨을 지우지 않는 이유는 파괴적 동작(캐시 삭제·연결 해제)에서 무엇이 진행 중인지 글자로 확인돼야 하기 때문이고, 형태를 하나로 맞추려고 조회성 버튼에도 같은 규칙을 쓴다.
+
+**문구 규칙** — 말줄임표가 붙는 `~중...`은 **새로고침 옆 `조회 중...` 한 곳**에만 남는다(그 자리는 "마지막 동기화 3분 전" 시각 표시를 잠시 대체하는 라벨이라 짧아야 한다).
+```
+버튼 안:  ~중 (말줄임표 없음)   확인 중 · 삭제 중 · 해제 중
+그 밖:    ~하고 있어요          불러오고 있어요 · 적용하고 있어요 · 캐릭터 정보를 준비하고 있어요 (N/M)
+말줄임표: ...(마침표 3개)로 통일. …(1글자) 금지
+```
+
+**쓰지 않는 것**: 점선 박스(빈 상태 전용) · 스켈레톤(미도입) · 비-브랜드 CSS 링 스피너 · `MapleWaveProgress`(폐기) · 진행률 바 `h-2` 변형(폐기). 새로고침 아이콘(`RefreshCw`)의 회전은 스피너가 아니라 **기능 신호**라 교체 대상이 아니다.
+
 ### 조회 불가 알림 (`components/EmptyState/UnavailableNotice`) — [[ADR-060]]
 확인 자체를 못 한 상태(보스 수익 롤링 조회 윈도우 밖, [[ADR-032]])는 빈 상태와 **디자인을 공유하지 않는다** — 같은 모양이면 "데이터가 없다"로 오해된다. 톤은 경고(error)가 아니라 **정보**: 사용자가 고칠 수 있는 실패가 아니라 API의 알려진 제약이라 error 색은 과하다.
 ```
@@ -111,7 +144,7 @@ compact: 카드 안에 중첩될 때. rounded-[10px] bg-surface-2 px-3 py-2.5, �
 `CharacterSelectDropdown` 은 네이티브 `<select>` 유지(`<option>` 이미지 불가라 펼친 목록은 텍스트만). 닫힌 상태 왼쪽에 선택 캐릭터의 **월드 엠블럼** 오버레이: `<select>` 를 `relative` 래퍼로 감싸고 `<img>` 를 `pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-[18px] w-auto object-contain`, `<select>` 에 `pl-9`. world 는 캐시 우선 뷰는 스케줄 캐시(`SchedulerCharacterState.world`)에서, 동기화 후 뷰는 sync 결과에서 — 캐시 있으면 API 응답 전 즉시 표시. 미매핑 월드 생략.
 
 ### 진행률 바 프리미티브
-`role="progressbar"` + `aria-valuenow/min/max`, track `h-1.5 w-full rounded-full bg-surface-2` + fill `h-1.5 rounded-full bg-primary`. 온보딩 예열·저장 진행률·컨텐츠 진행률이 동일 스타일 재사용(새 색/모양 신설 금지).
+`role="progressbar"` + `aria-valuenow/min/max`, track `h-1.5 w-full rounded-full bg-surface-2` + fill `h-1.5 rounded-full bg-primary`. **결정형 진행률은 예외 없이 이것 하나**([[ADR-061]] 결정 6) — 온보딩 예열·계정 변경 예열·캐릭터 관리 저장·OTA 다운로드·컨텐츠 진행률이 모두 같은 스타일이다. 새 색/모양/두께 신설 금지.
 
 ## 공유 레이아웃 패턴
 
@@ -170,4 +203,8 @@ style: maskImage/WebkitMaskImage: linear-gradient(to bottom, black, transparent)
 
 ## 폐기된 정책 (history)
 - ~~일부 사용처의 배경 원으로 아이콘 감싸기~~ → 배경 없이 단독 사용으로 확정(2026-07-11).
+- ~~비결정형 대기는 `MapleSpinner`(트레일 링) 한 종~~ → 크기로 2종, 24px 이상은 신규 `MapleSweepSpinner`([[ADR-061]], 2026-07-30).
+- ~~결정형 진행률은 자리에 따라 `MapleWaveProgress`(화면)·얇은 바(모달)·`h-2` 바(OTA)~~ → 얇은 바 프리미티브 하나로 통일, `MapleWaveProgress`·`h-2` 변형 폐기([[ADR-061]], 2026-07-30).
+- ~~로딩 자리마다 껍데기가 달랐다(텍스트 한 줄 / 점선 박스 / 없음)~~ → 목록·카드가 들어올 자리는 공용 셸 승계 카드 `LoadingState`, 점선은 빈 상태 전용([[ADR-061]], 2026-07-30).
+- ~~대기 문구가 `~중...`과 `~하고 있어요`로 갈림~~ → 버튼 안은 `~중`(말줄임표 없음), 그 밖은 `~하고 있어요`, 말줄임표는 새로고침 옆 `조회 중...` 한 곳만([[ADR-061]], 2026-07-30).
 - 색·컴포넌트 규칙이 `{...}` 플레이스홀더였던 초기 UI_GUIDE → 작성 완료.
