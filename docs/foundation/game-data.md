@@ -11,7 +11,7 @@
 `weekly-bosses.json`·`boss-crystal-prices.json`·`item-drop-table.json` 세 파일은 **보스명(`boss`) + 난이도(`difficulty`)** 를 공통 키로 조인한다. 컨테이너 상자 파일(`boss-ring-boxes.json`·`accessory-boxes.json`)은 아이템 `name` 문자열로 `item-drop-table.json` 과 연결한다.
 
 ## 게임 데이터 파일 ([[ADR-006]] 대상 — 사용자 확인 필수)
-- **`weekly-bosses.json`**: 주간 보스(24종)+이벤트 주간(1종, 메이린)+월간(1종, 검은마법사) 명단·난이도. [[ADR-007]] 이후 "앱 내 선택 UI 목록"이 아니라 "API 응답(영문·공백 표기)을 한글 표기와 매핑하는 참조 테이블". `weeklyBossSelectionLimit`(12)은 UI 제약이 아니라 `weekly_boss_clear_limit_count` 대조용. `eventWeekly`(시즌보스)는 12마리 제한 예외라 "n/12" 카운터에서 `weekly` 섹션만 분모·분자에 포함. 벨로나 `status: "unreleased"`, 카이는 시즌 종료로 제외. `portraitSlug` = `assets/bosses/{portraitSlug}.webp` 조회 키(난이도 무관), `apiAlias` = 공백 제거로 안 잡히는 예외 매핑.
+- **`weekly-bosses.json`**: 주간 보스(24종)+이벤트 주간(1종, 메이린)+월간(1종, 검은마법사) 명단·난이도. [[ADR-007]] 이후 "앱 내 선택 UI 목록"이 아니라 "API 응답(영문·공백 표기)을 한글 표기와 매핑하는 참조 테이블". `weeklyBossSelectionLimit`(12)은 UI 제약이 아니라 `weekly_boss_clear_limit_count` 대조용. `eventWeekly`(시즌보스)는 12마리 제한 예외라 "n/12" 카운터에서 `weekly` 섹션만 분모·분자에 포함. **`weeklyCrystalSaleLimit`(90)은 이름만 비슷할 뿐 단위가 다른 별개 값이다**([[ADR-054]], 2026-07-29 사용자 확정) — `weeklyBossSelectionLimit`(12)이 **캐릭터당** 주간 보스 등록/처치 한도인 반면 `weeklyCrystalSaleLimit`(90)은 **월드당** 주간 결정석 판매 한도이며, 주간 보스만 포함하고(월간 보스=검은마법사 결정석은 90에 불포함) 시즌 보스는 제외하며 안 판 결정석은 다음 주로 이월되지 않는다(매주 초기화). 두 값 모두 `lib/boss-matching`(`WEEKLY_BOSS_CLEAR_LIMIT`·`WEEKLY_CRYSTAL_SALE_LIMIT`)에서 나란히 읽는다. 벨로나 `status: "unreleased"`, 카이는 시즌 종료로 제외. `portraitSlug` = `assets/bosses/{portraitSlug}.webp` 조회 키(난이도 무관), `apiAlias` = 공백 제거로 안 잡히는 예외 매핑.
 - **`boss-crystal-prices.json`**: 보스×난이도 "강력한 힘의 결정" 정가(1인 기준). 실수령 = `partySizeScaling.formula`(`floor(priceMeso / partySize)`). 벨로나 `priceMeso: null`. 메이린은 결정이 아닌 황금 메소 주머니(1개=1000만) 총 가치로 채움(entry `note`). 입장 인원 상한: `partySizeScaling.defaultMaxPartySize`(6) + entry별 `maxPartySize`(예외: 스우 익스트림 2인, 최초의 대적자·찬란한 흉성·림보·발드릭스·유피테르 3인, 메이린 1인).
 - **`item-drop-table.json`**: 보스×난이도 보상 전체(고정 보상/장비/소비/주문서/기타/최초 격파)를 원본 그대로. 버튼 노출 항목은 사용자가 선별(코드가 임의 선별 금지). 아이템 시세(`priceMeso`, [[ADR-010]])는 컨벤션만 정하고 값은 확정 시 채움.
 - **`boss-ring-boxes.json`** ([[ADR-010]], [[ADR-011]]): "OO옥의 보스 반지 상자" 5종(녹옥/홍옥/흑옥/백옥/생명의)의 레벨별·반지별 확률표. 확률은 자동 추정용이 아니라 사용자가 획득 기록 시 고를 후보 목록. 각 반지 `iconFile` = `assets/items/rings/` GMS 영문 파일명.
@@ -33,6 +33,7 @@
 ## 데이터 확정 현황
 - 세 게임 데이터 파일 반영 완료. 가격 갱신일: 주간/이벤트 주간 `2026-06-25`, 월간(검은마법사) `2026-07-01`. 힐라(하드)·핑크빈(카오스) 일간 격하로 제거, 벨로나 미출시 보류, 카이 시즌 종료 제외.
 - 보스 반지 상자 5종·칠흑 장신구 상자 후보 반영 완료(2026-07-09).
+- `weekly-bosses.json` `weeklyCrystalSaleLimit: 90`(**월드당** 주당 결정석 판매 한도) 반영 완료 — 2026-07-29 사용자 확정([[ADR-054]], 이슈 #53). 값·포함 범위(주간 보스만·시즌 보스 제외·이월 없음) 모두 사용자 확인분이며 AI 추정 없음.
 
 ## 열린 질문 (미확정 수치)
 - 찬란한 흉성(하드)·유피테르(노멀/하드)의 솔 에르다의 기운 수량이 `(추정)` 표기 — 실제 수치 확정 필요. 확정 전까지 UI에도 추정 표시 유지.

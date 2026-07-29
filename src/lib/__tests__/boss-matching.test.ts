@@ -3,10 +3,12 @@ import type { BossContent } from '../../types'
 import {
   countClearedWeeklyBosses,
   getBossReferenceOrder,
+  isSeasonBossName,
   matchBossContent,
   selectBossProfitBosses,
   selectDisplayBosses,
   WEEKLY_BOSS_CLEAR_LIMIT,
+  WEEKLY_CRYSTAL_SALE_LIMIT,
   type MatchedBoss,
 } from '../boss-matching'
 
@@ -112,6 +114,37 @@ describe('matchBossContent', () => {
 describe('WEEKLY_BOSS_CLEAR_LIMIT', () => {
   it('weekly-bosses.json의 weeklyBossSelectionLimit(12)를 그대로 노출한다', () => {
     expect(WEEKLY_BOSS_CLEAR_LIMIT).toBe(12)
+  })
+})
+
+// ADR-054 결정 2: 캐릭터당 한도(12)와 월드당 결정석 판매 한도(90)는 별개 지표다.
+describe('WEEKLY_CRYSTAL_SALE_LIMIT (ADR-054)', () => {
+  it('weekly-bosses.json의 weeklyCrystalSaleLimit(90)을 그대로 노출한다', () => {
+    expect(WEEKLY_CRYSTAL_SALE_LIMIT).toBe(90)
+  })
+
+  it('캐릭터당 한도(12)와 월드당 한도(90)는 서로 다른 값이다 — 둘을 혼용하는 회귀 가드', () => {
+    expect(WEEKLY_CRYSTAL_SALE_LIMIT).not.toBe(WEEKLY_BOSS_CLEAR_LIMIT)
+  })
+})
+
+// ADR-054 결정 3: 보스 표시명(BossProfitRow.boss)으로 시즌 보스 여부를 조회한다 —
+// 주간 처치 수·결정석 판매 수 집계에서 시즌 보스를 빼는 판정에 쓴다.
+describe('isSeasonBossName (ADR-054)', () => {
+  it('eventWeekly 소속 보스명은 true다', () => {
+    expect(isSeasonBossName('시즌 보스 메이린')).toBe(true)
+  })
+
+  it('weekly 소속 보스명은 false다', () => {
+    expect(isSeasonBossName('자쿰')).toBe(false)
+  })
+
+  it('monthly 소속 보스명은 false다', () => {
+    expect(isSeasonBossName('검은마법사')).toBe(false)
+  })
+
+  it('참조 목록에 없는 이름(매칭 실패 원문명)은 false다', () => {
+    expect(isSeasonBossName('존재하지 않는 보스')).toBe(false)
   })
 })
 

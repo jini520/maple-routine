@@ -23,9 +23,11 @@ import {
   type BossProfitWeeklySubtotal,
 } from '../../features/boss-profit/store'
 import { formatScheduleSyncError, formatSyncedAt } from '../../features/schedule-sync/format'
+import { isSeasonBossName, WEEKLY_BOSS_CLEAR_LIMIT, WEEKLY_CRYSTAL_SALE_LIMIT } from '../../lib/boss-matching'
 import { formatBossProfitPeriodLabel, isLatestPeriod, isPeriodQueryable } from '../../lib/boss-profit-period'
-import { getItemIconUrl } from '../../lib/item-icons'
+import { getItemIconUrl, getItemIconUrlByFile } from '../../lib/item-icons'
 import { isValuableDrop } from '../../lib/valuable-drops'
+import { worldEmblemUrl } from '../../lib/world-emblem'
 import type { BossCycle } from '../../types'
 import type { RecordedDrop } from '../../types/drops'
 import { BossDropSheet } from './BossDropSheet'
@@ -53,20 +55,85 @@ function avatarFaceCropStyle(): React.CSSProperties {
   }
 }
 
-function CharacterAvatar(props: { characterName: string; imageUrl: string | null }): React.JSX.Element {
+// 아바타 테두리를 주간 보스 한도(12)만큼 쪼갠 진행 링([[ADR-054]] 정정 1·3, 사용자 요청) — 처치할
+// 때마다 한 칸씩 찬다. 헤더 가로폭을 전혀 쓰지 않아 캐릭터명을 가리지 않는 것이 이 표현을 고른 이유다.
+// 링은 초상화 "바깥"에 여백을 두고 두른다(정정 3) — 그래서 아바타 슬롯이 초상화(32px)보다 큰 40px다.
+// 슬롯은 링 유무와 무관하게 항상 40px로 고정한다: 링이 없는 월간 탭·과거 기간에서만 32px로 줄이면
+// 탭을 옮길 때마다 모든 카드가 8px씩 튄다(높이는 ResizeObserver 실측이라 따라오지만, 그 튐 자체가
+// [[ADR-049]]가 없애려던 것이다). 초상화 이미지 크기는 32px 그대로라 얼굴 크롭은 영향받지 않는다.
+const AVATAR_SLOT_SIZE = 40
+const AVATAR_RING_STROKE = 2.5
+// 칸 사이 간격(viewBox 단위 호 길이). 12칸이 하나의 원처럼 보이지 않도록 눈에 띄는 최소값.
+const AVATAR_RING_GAP = 2.4
+
+function AvatarClearRing(props: { cleared: number; total: number }): React.JSX.Element {
+  // 링 중심 반지름 19 = 바깥 끝 20(슬롯 경계) · 안쪽 끝 18 → 초상화 반지름 16과 2px 여백(정정 3).
+  const radius = (AVATAR_SLOT_SIZE - AVATAR_RING_STROKE) / 2
+  const circumference = 2 * Math.PI * radius
+  const segment = circumference / props.total
+  // strokeLinecap="round"는 칸 양끝을 stroke 두께의 절반(=1)씩 더 그린다(정정 5) — 그만큼 dash를
+  // 미리 줄여야 눈에 보이는 칸 길이와 칸 사이 간격이 butt일 때와 같게 유지된다. 빼지 않으면 갭이
+  // 2.4 → 0.4로 뭉개져 12칸이 하나의 원처럼 보인다.
+  const dash = Math.max(segment - AVATAR_RING_GAP - AVATAR_RING_STROKE, 0.5)
+  // 캡이 시작점 뒤로 0.5 stroke만큼 튀어나오므로 그만큼 밀어야 칸이 원래 자리에 그대로 앉는다.
+  const capOffset = AVATAR_RING_STROKE / 2
+
   return (
-    <span className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full bg-surface-2">
-      {props.imageUrl !== null ? (
-        <img
-          src={props.imageUrl}
-          alt={props.characterName}
-          className="absolute max-w-none"
-          style={avatarFaceCropStyle()}
+    // -rotate-90: SVG 각도 0은 3시 방향이라 12시부터 시계방향으로 차게 돌린다.
+    // 링이 진행률의 유일한 표현이므로(정정 7 — n/12 텍스트 보류) 레이블은 링이 갖는다. 링까지
+    // aria-hidden이면 스크린리더 사용자에게는 진행률이 아예 존재하지 않게 된다.
+    <svg
+      viewBox={`0 0 ${AVATAR_SLOT_SIZE} ${AVATAR_SLOT_SIZE}`}
+      className="pointer-events-none absolute inset-0 h-full w-full -rotate-90"
+      role="img"
+      aria-label={`주간 보스 처치 ${props.cleared} / ${props.total}`}
+    >
+      {Array.from({ length: props.total }, (_, index) => (
+        <circle
+          key={index}
+          cx={AVATAR_SLOT_SIZE / 2}
+          cy={AVATAR_SLOT_SIZE / 2}
+          r={radius}
+          fill="none"
+          strokeWidth={AVATAR_RING_STROKE}
+          strokeLinecap="round"
+          className={index < props.cleared ? 'stroke-primary' : 'stroke-border'}
+          strokeDasharray={`${dash} ${circumference - dash}`}
+          strokeDashoffset={-(index * segment + capOffset)}
         />
-      ) : (
-        <span className="flex h-full w-full items-center justify-center text-xs font-bold text-text">
-          {props.characterName.charAt(0)}
-        </span>
+      ))}
+    </svg>
+  )
+}
+
+function CharacterAvatar(props: {
+  characterName: string
+  imageUrl: string | null
+  // 진행 링을 그릴 때만 전달한다(주간 탭 · 현재 기간). null이면 링 없이 초상화만(슬롯 크기는 동일).
+  clearProgress: { cleared: number; total: number } | null
+}): React.JSX.Element {
+  return (
+    // 슬롯(40px) 안에 초상화(32px)를 중앙 배치하고 링은 그 바깥 테두리에 그린다. 링을 이미지 span
+    // "안"에 넣으면 overflow-hidden에 stroke 바깥 절반이 잘리므로 형제로 두고 슬롯에 절대배치한다.
+    <span className="relative flex h-10 w-10 shrink-0 items-center justify-center">
+      {/* relative를 이 span에 유지해야 얼굴 크롭(absolute + left/top)의 기준 박스가 32px 초상화로
+          남는다 — 40px 슬롯이 기준이 되면 크롭이 4px씩 밀린다(ADR-015 크롭 기법 그대로). */}
+      <span className="relative h-8 w-8 overflow-hidden rounded-full bg-surface-2">
+        {props.imageUrl !== null ? (
+          <img
+            src={props.imageUrl}
+            alt={props.characterName}
+            className="absolute max-w-none"
+            style={avatarFaceCropStyle()}
+          />
+        ) : (
+          <span className="flex h-full w-full items-center justify-center text-xs font-bold text-text">
+            {props.characterName.charAt(0)}
+          </span>
+        )}
+      </span>
+      {props.clearProgress !== null && (
+        <AvatarClearRing cleared={props.clearProgress.cleared} total={props.clearProgress.total} />
       )}
     </span>
   )
@@ -443,6 +510,63 @@ function collectAllValuableDrops(
   return groups.flatMap((group) => collectGroupValuableDrops(group, dropsByRowKey))
 }
 
+// 이 캐릭터가 이번 주에 처치한 주간 보스 수([[ADR-054]] 결정 3) — 처치 수는 store 필드가 아니라
+// rows에서 파생한다. 보스명 기준 distinct라 같은 보스를 여러 난이도로 완료해도 1로 센다(게임 룰이
+// 그렇고, 보스 스케줄러가 쓰는 countClearedWeeklyBosses도 content_name 그룹당 1이다 — 두 지표가
+// 어긋나면 같은 숫자가 화면마다 다르게 보인다). 시즌 보스(메이린)는 12마리 제한 예외라 제외한다.
+// cycle 필터는 호출부(주간 탭)에서 사실상 no-op이지만, 월드별 결정석 합계(#53)도 이 함수 하나를
+// 공유하므로 함수 안에 둔다.
+function countGroupClearedWeeklyBosses(group: CharacterGroup): number {
+  const clearedBossNames = new Set<string>()
+  for (const row of group.bossRows) {
+    if (row.cycle !== 'weekly' || !row.isComplete || isSeasonBossName(row.boss)) continue
+    clearedBossNames.add(row.boss)
+  }
+  return clearedBossNames.size
+}
+
+interface WorldCrystalSummary {
+  world: string
+  cleared: number
+}
+
+// 월드별 주간 결정석 소진량([[ADR-054]] 결정 1 — 90은 계정이 아니라 월드당 한도다). 캐릭터별
+// 처치 수는 위 countGroupClearedWeeklyBosses를 그대로 재사용하고(계산 두 벌 금지, 결정 3) 여기서는
+// 월드 묶음만 얹는다. 그룹의 행은 모두 같은 캐릭터에서 나오므로 월드도 첫 행에서 읽으면 된다.
+// world가 null인 캐릭터(구버전 캐시)는 어느 월드 한도에도 귀속시킬 수 없어 조용히 제외한다
+// (결정 6 — "미분류" 줄을 만들지 않는다). 결과 순서는 Map 삽입 순서 = 월드가 처음 등장한 캐릭터의
+// 정렬 순서라 렌더마다 흔들리지 않는다(표시 순서 고정, [[ADR-036]]).
+function summarizeWorldCrystals(groups: CharacterGroup[]): WorldCrystalSummary[] {
+  const clearedByWorld = new Map<string, number>()
+  for (const group of groups) {
+    const world = group.bossRows[0]?.world ?? null
+    if (world === null) continue
+    clearedByWorld.set(world, (clearedByWorld.get(world) ?? 0) + countGroupClearedWeeklyBosses(group))
+  }
+  return [...clearedByWorld].map(([world, cleared]) => ({ world, cleared }))
+}
+
+// 이 기간 월간 보스(검은마법사) 결정석 개수. 주간 90 한도에 포함되지 않는 별개 수치라([[ADR-054]]
+// 결정 1·8) 위 주간 집계와 섞지 않는다 — 시즌 보스는 weekly 소속이라 여기선 판정할 것이 없다.
+// 결정석은 캐릭터마다 각자 나오므로 그룹별 distinct(같은 보스를 여러 난이도로 잡아도 1)를 더한다.
+function countMonthlyCrystals(groups: CharacterGroup[]): number {
+  let total = 0
+  for (const group of groups) {
+    const clearedBossNames = new Set<string>()
+    for (const row of group.bossRows) {
+      if (row.cycle !== 'monthly' || !row.isComplete) continue
+      clearedBossNames.add(row.boss)
+    }
+    total += clearedBossNames.size
+  }
+  return total
+}
+
+// 결정석 아이콘(주간/월간). 드랍 테이블 항목이 아니라 UI 표시 전용이라 item-icons.json에 등록하지 않고
+// 파일명으로 직접 조회한다([[ADR-054]] 결정 10). 파일이 없으면 null — 아이콘만 생략하고 숫자는 그대로 둔다.
+const WEEKLY_CRYSTAL_ICON_URL = getItemIconUrlByFile('intense_power_crystal_weekly.webp')
+const MONTHLY_CRYSTAL_ICON_URL = getItemIconUrlByFile('intense_power_crystal_monthly.webp')
+
 // 배지가 카드 상단 밖으로 올라간 양(-top-2 = 0.5rem). sticky 레일 오프셋에서 이만큼 상쇄해야
 // stuck 시 배지가 헤더 상단선에 걸린다(ADR-047 후속).
 const BADGE_TOP_OFFSET = 8
@@ -494,6 +618,117 @@ function ValuableDropBadge(props: {
   )
 }
 
+// 총 수익 헤드라인의 결정석 판매 현황([[ADR-054]] 결정 9, 정정 2·3으로 배치 변경) — **라벨행의
+// "{기간} 총 수익" 텍스트 바로 옆** 칩이다(사용자 요청). 원래는 금액행 아래 새 줄이었는데 그 한 줄이
+// sticky 헤더를 그대로 높여 목록을 잠식했다(헤더를 줄여둔 [[ADR-049]] 작업을 되돌리는 셈).
+// **칩 높이는 라벨(text-xs = 16px)과 같은 h-4로 고정한다** — 이 줄에 흐름으로 들어가는 요소가
+// 16px를 넘으면 라벨행이 튀고, 그것이 바로 고가 드롭 뱃지(24px)를 absolute로 빼낸 이유다
+// ([[ADR-049]] 결정 2). 그 뱃지가 여전히 우측 끝을 absolute로 쓰므로 칩은 좌측(라벨 옆)에 붙는다.
+// 월드별 분해는 흐름이 아니라 **absolute 팝오버**로 띄운다 — 펼쳐도 헤더 높이가 변하지 않는다.
+function CrystalSummaryChip(props: { tab: BossCycle; groups: CharacterGroup[] }): React.JSX.Element | null {
+  const [isBreakdownOpen, setIsBreakdownOpen] = useState(false)
+
+  const isWeekly = props.tab === 'weekly'
+  const worlds = isWeekly ? summarizeWorldCrystals(props.groups) : []
+  // 주간 탭인데 월드를 아는 캐릭터가 하나도 없으면(구버전 캐시만 있는 경우) 대비할 한도가 없다.
+  // 반대로 월드는 알지만 처치 수가 0이면 "0 / 90"을 그대로 보여준다(정보로서 유효하다).
+  if (isWeekly && worlds.length === 0) return null
+
+  const iconUrl = isWeekly ? WEEKLY_CRYSTAL_ICON_URL : MONTHLY_CRYSTAL_ICON_URL
+  const cleared = isWeekly
+    ? worlds.reduce((sum, summary) => sum + summary.cleared, 0)
+    : countMonthlyCrystals(props.groups)
+  // 각 월드가 각자 90을 가지므로 복수 월드의 분모는 90 × 월드 수다(결정 7).
+  const limit = WEEKLY_CRYSTAL_SALE_LIMIT * worlds.length
+  const isExpandable = worlds.length > 1
+  const label = isWeekly ? `주간 결정석 판매 ${cleared} / ${limit}` : `월간 결정석 ${cleared}개`
+
+  // 칩은 화면에 "간단히"만 — 월드 수·월드명 같은 부가 표기는 팝오버로 넘긴다(사용자 요청).
+  const chipContent = (
+    <>
+      {iconUrl !== null && <img src={iconUrl} alt="" className="h-4 w-4 flex-none object-contain" />}
+      {/* 숫자와 단위 사이는 마진이 아니라 실제 공백 문자로 띄운다 — 마진만으론 textContent가
+          "34/90"으로 붙어 스크린리더가 이어 읽는다([[ADR-046]]에서 "메소" 단위로 정한 규약).
+          "개"는 한국어 표기상 숫자에 붙으므로 공백을 넣지 않는다. */}
+      {isWeekly ? (
+        <span className="text-xs font-bold leading-none tabular-nums text-primary">
+          {cleared} <span className="font-semibold opacity-70">/ {limit}</span>
+        </span>
+      ) : (
+        <span className="text-xs font-bold leading-none tabular-nums text-primary">
+          {cleared}
+          <span className="font-semibold opacity-70">개</span>
+        </span>
+      )}
+    </>
+  )
+
+  // h-5(20px) — 라벨행이 h-6(24px)으로 고정돼 있으므로 그 안에 들어가기만 하면 된다. leading-none과
+  // 함께 두어야 글꼴 line-height가 칩 높이를 밀어 올리지 않는다.
+  const chipClassName = 'ml-2 flex h-5 flex-none items-center gap-1 rounded-full bg-primary/12 px-1.5'
+
+  // 단일 월드·월간 탭은 펼칠 것이 없어 버튼으로 두지 않는다. 수치만으로는 무엇의 비율인지 읽히지
+  // 않으므로 칩 전체에 레이블을 주고 아이콘은 장식(alt="")으로 남긴다(아바타 링과 동일 규약).
+  if (!isExpandable) {
+    return (
+      <span role="img" aria-label={label} className={chipClassName}>
+        {chipContent}
+      </span>
+    )
+  }
+
+  return (
+    <>
+      {/* 팝오버가 열려 있는 동안 바깥 탭으로 닫는다. 칩(z-20)보다 아래, 나머지 헤더 내용 위. */}
+      {isBreakdownOpen && (
+        <button
+          type="button"
+          aria-label="월드별 결정석 판매 현황 닫기"
+          onClick={() => setIsBreakdownOpen(false)}
+          className="fixed inset-0 z-10 cursor-default"
+        />
+      )}
+      <button
+        type="button"
+        onClick={() => setIsBreakdownOpen((prev) => !prev)}
+        aria-label={label}
+        aria-expanded={isBreakdownOpen}
+        className={`relative z-20 ${chipClassName}`}
+      >
+        {chipContent}
+        {isBreakdownOpen ? (
+          <ChevronUp className="h-3 w-3 flex-none text-primary" strokeWidth={2.5} aria-hidden="true" />
+        ) : (
+          <ChevronDown className="h-3 w-3 flex-none text-primary" strokeWidth={2.5} aria-hidden="true" />
+        )}
+      </button>
+      {isBreakdownOpen && (
+        // 흐름 밖(absolute)이라 헤더 높이에 영향이 없다 — 월드가 늘어도 sticky 영역은 그대로다.
+        // 기준 박스는 라벨행(relative)이고 칩이 좌측에 있으므로 left-0에 맞춘다(우측은 고가 드롭
+        // 뱃지 자리). 페이지 sticky 헤더가 z-10으로 스택 컨텍스트를 만들므로 이 z-20은 그 안에서만
+        // 겨루고, 헤더 자체가 목록 위에 있어 팝오버는 캐릭터 카드 위로 그려진다([[ADR-047]] 결정 6).
+        <div className="absolute left-0 top-full z-20 mt-1.5 min-w-[168px] rounded-[12px] border border-border bg-surface p-2 shadow-lg">
+          <p className="px-1 pb-1.5 text-[11px] font-bold tracking-wide text-text-muted">월드별 판매 현황</p>
+          <div className="space-y-1">
+            {worlds.map((summary) => {
+              const emblemUrl = worldEmblemUrl(summary.world)
+              return (
+                <div key={summary.world} className="flex items-center gap-1.5 px-1">
+                  {emblemUrl !== null && <img src={emblemUrl} alt="" className="h-4 w-4 flex-none" />}
+                  <span className="text-xs text-text-muted">{summary.world}</span>
+                  <span className="ml-auto pl-3 text-xs font-semibold tabular-nums text-text">
+                    {summary.cleared} / {WEEKLY_CRYSTAL_SALE_LIMIT}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
 function CharacterAccordion(props: {
   group: CharacterGroup
   tab: BossCycle
@@ -502,6 +737,7 @@ function CharacterAccordion(props: {
   setBossDrops: BossProfitStore['setBossDrops']
   now: Date
   isMonthlyBossQueryable: boolean
+  isCurrentPeriod: boolean
   stickyTop: number
 }): React.JSX.Element {
   const [isExpanded, setIsExpanded] = useState(false)
@@ -537,6 +773,12 @@ function CharacterAccordion(props: {
   // 펼쳤을 때는 고가 아이템을 획득한 보스 행(valuable-drop-row, 배경 효과)에도 강조가 들어간다.
   const valuableDrops = collectGroupValuableDrops(group, props.dropsByRowKey)
   const hasValuable = valuableDrops.length > 0
+  // 주간 보스 처치 진행 링은 주간 탭 · 현재 기간에만 보여준다([[ADR-054]] 결정 4) — 월간 탭 rows에는
+  // cycle === 'monthly' 행만 담겨 주간 처치 수를 파생할 수 없고, 과거 기간 rows는 가격 미확정
+  // 보스(벨로나)가 애초에 DB에 기록되지 않아 실제보다 적게 나온다. isCurrentPeriod는 화면이 이미
+  // isLatestPeriod로 계산한 값을 그대로 받는다(같은 판정을 두 곳에서 하면 갈라진다).
+  const showClearProgress = props.tab === 'weekly' && props.isCurrentPeriod
+  const clearedWeeklyBossCount = showClearProgress ? countGroupClearedWeeklyBosses(group) : 0
   const shellClass = [
     // overflow-hidden은 여전히 금지(ADR-047) — 스크롤포트를 만들어 헤더 sticky를 무력화한다. 대신
     // overflow-clip을 쓴다(ADR-049): 스크롤 컨테이너를 만들지 않아 sticky와 공존하면서 자식을 카드
@@ -625,14 +867,26 @@ function CharacterAccordion(props: {
           // 셸 클리핑은 카드 자신의 모서리에서만 일어나므로 stuck 헤더의 라운딩을 덮어주지 못한다 —
           // 반대로 헤더가 사각이면 카드 최상단(= 클리핑 곡선과 일치)에서 클리핑이 라운딩을 만들어준다.
           style={isExpanded ? { top: props.stickyTop } : undefined}
+          // 상하 패딩은 p-4(16px)가 아니라 py-3(12px)이다([[ADR-054]] 정정 6) — 아바타 슬롯이 진행
+          // 링 때문에 32 → 40px로 커진 만큼(정정 3) 패딩에서 8px을 돌려받아 헤더 높이를 링 도입
+          // 전과 같은 64px로 되돌린다(12 + 40 + 12). 좌우는 보스 행(p-4)과 맞춰 16px 유지.
           className={
             isExpanded
-              ? 'sticky z-[5] flex w-full items-center gap-3 bg-surface p-4'
-              : 'flex w-full items-center gap-3 rounded-[14px] bg-surface border border-border p-4'
+              ? 'sticky z-[5] flex w-full items-center gap-3 bg-surface px-4 py-3'
+              : 'flex w-full items-center gap-3 rounded-[14px] bg-surface border border-border px-4 py-3'
           }
         >
-          <CharacterAvatar characterName={group.characterName} imageUrl={group.imageUrl} />
+          <CharacterAvatar
+            characterName={group.characterName}
+            imageUrl={group.imageUrl}
+            clearProgress={
+              showClearProgress ? { cleared: clearedWeeklyBossCount, total: WEEKLY_BOSS_CLEAR_LIMIT } : null
+            }
+          />
           <span className="flex-1 truncate text-left text-sm font-semibold text-text">{group.characterName}</span>
+          {/* 숫자 표기(n/12)는 보류 상태다([[ADR-054]] 정정 7) — 헤더 가로폭을 두고 캐릭터명과 경합하는데
+              둘 다 만족하는 배치를 아직 찾지 못했다. 진행률은 아바타 링이 표현하고, 정확한 수치가 필요해지면
+              그때 다시 설계한다. 링 자체는 그대로 두므로 되살릴 때 파생 함수는 그대로 쓸 수 있다. */}
           <span className="text-sm font-bold text-text tabular-nums">{totalMeso.toLocaleString()} 메소</span>
           {isExpanded ? (
             <ChevronUp className="h-4 w-4 text-text-muted" strokeWidth={2} aria-hidden="true" />
@@ -879,10 +1133,18 @@ export function BossProfitScreen(): React.JSX.Element {
               {/* 뱃지는 흐름 밖(absolute)에 둔다(ADR-049) — 흐름에 있으면 라벨(16px)보다 큰
                   뱃지(24px)가 줄 높이를 정해 뱃지 유무로 헤드라인이 8px 튄다. 뱃지에 붙일 탭 확대
                   애니메이션도 주변 레이아웃을 밀지 않아야 한다. */}
-              <div className="relative flex items-center">
+              {/* 라벨행 높이를 h-6(24px)으로 "명시" 고정한다([[ADR-054]] 정정 4, 사용자 요청) —
+                  전에는 라벨(text-xs = 16px)이 우연히 정하는 값이라, 그보다 큰 요소를 흐름에 넣는
+                  순간 줄이 커졌다(그래서 24px 고가 드롭 뱃지를 absolute로 빼냈다, [[ADR-049]] 결정 2).
+                  높이를 못 박아두면 그 의존이 끊긴다 — 뱃지·결정석 칩이 있든 없든 줄은 항상 24px다. */}
+              <div className="relative flex h-6 items-center">
                 <p className="text-xs font-semibold tracking-wide text-text-muted">
                   {periodLabel.primary} 총 수익
                 </p>
+                {/* 결정석 판매 현황은 라벨 텍스트 바로 옆에 둔다([[ADR-054]] 정정 3, 사용자 요청).
+                    칩은 줄 높이(24px) 안에서 h-5까지 키울 수 있다 — 24px를 넘기지만 않으면 된다.
+                    우측 끝은 여전히 고가 드롭 뱃지(absolute)의 자리이므로 침범하지 않는다. */}
+                {isCurrentPeriod && <CrystalSummaryChip tab={tab} groups={characterGroups} />}
                 {periodValuableDrops.length > 0 && (
                   <ValuableDropBadge
                     drops={periodValuableDrops}
@@ -940,6 +1202,7 @@ export function BossProfitScreen(): React.JSX.Element {
               setBossDrops={setBossDrops}
               now={now}
               isMonthlyBossQueryable={periodQueryable}
+              isCurrentPeriod={isCurrentPeriod}
               stickyTop={stickyHeaderHeight}
             />
           ))}

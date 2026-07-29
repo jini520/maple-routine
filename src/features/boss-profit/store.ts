@@ -33,6 +33,7 @@ export interface BossProfitRow {
   ocid: string
   characterName: string
   imageUrl: string | null // character/basic의 character_image(character-basic-cache 경유). 캐시가 없으면 null(이니셜 폴백)
+  world: string | null // character/basic의 world_name(character-basic-cache 경유). 이전 캐시엔 없을 수 있어 null 가능([[ADR-054]] 결정 5·6 — 월드를 모르는 캐릭터는 월드 집계에서 제외)
   boss: string // matchedBossName ?? apiName (매핑 안 되면 원문 그대로, ADR-008)
   difficulty: BossDifficulty
   cycle: BossCycle
@@ -86,9 +87,12 @@ export interface BossProfitStore extends BossProfitState {
   setBossDrops(row: BossProfitRowKey, drops: RecordedDrop[]): Promise<void>
 }
 
+// 행 하나에 실리는 캐릭터 정보 한 덩어리. buildBossProfitRow/buildRowFromRecord가 이 객체를 통째로
+// 받으므로, 필드가 늘어도 채우지 않은 호출부는 컴파일 단계에서 걸린다(세 경로 중 하나만 비는 것 방지).
 interface CharacterProfileInfo {
   characterName: string
   imageUrl: string | null
+  world: string | null
 }
 
 // refresh()가 가장 최근에 계산한 "현재 기간" 전체(모든 cycle) row와 그 시점의 캐릭터 정보를 담아둔다.
@@ -112,15 +116,17 @@ let requestGeneration = 0
 interface SortedCharacterInfo {
   ocid: string
   imageUrl: string | null // character-basic-cache의 character_image. 아바타 렌더링용(ADR-023 "미확정" 해소)
+  world: string | null // 같은 캐시 프로필의 world_name. 월드별 결정석 한도 집계용([[ADR-054]] 결정 5)
 }
 
 // ADR-017 결정 2와 동일한 원칙 — 캐시 단계(trackedOcids 저장 순서)와 동기화 단계(Nexon
 // character/list 응답 순서)가 서로 달라 캐릭터 목록 위치가 API 응답 이후 갑자기 바뀌어 보이던
 // 문제를 없앤다. 레벨 내림차순(동레벨이면 이름순)으로 항상 같은 순서를 계산해, 캐시 우선 표시
 // 단계부터 실시간 동기화·과거 기간 조회까지 전부 이 순서를 그대로 따르게 한다. character-basic-cache를
-// 이미 조회하는 김에 아바타용 imageUrl도 함께 반환한다(캐릭터명은 반환하지 않는다 — rows의
+// 이미 조회하는 김에 아바타용 imageUrl과 월드(world_name)도 함께 반환한다 — 같은 profile 객체에
+// 들어 있어 추가 조회 비용이 0이다([[ADR-054]] 결정 5). 캐릭터명은 반환하지 않는다 — rows의
 // characterName은 character/list·스케줄러 캐시가 출처이고 character-basic-cache의 이름은 갱신
-// 시점이 달라 신뢰도가 낮다, ADR-017).
+// 시점이 달라 신뢰도가 낮다(ADR-017). world는 정렬에 참여하지 않는다.
 async function getSortedCharacterInfo(ocids: string[]): Promise<SortedCharacterInfo[]> {
   const withProfile = await Promise.all(
     ocids.map(async (ocid) => {
@@ -130,6 +136,9 @@ async function getSortedCharacterInfo(ocids: string[]): Promise<SortedCharacterI
         level: cached?.profile.level ?? null,
         name: cached?.profile.name ?? '',
         imageUrl: cached?.profile.imageUrl ?? null,
+        // profile.world는 옵셔널(string | undefined)이라 imageUrl과 같은 규약으로 null 정규화한다 —
+        // 화면이 부재를 두 가지 형태로 구분할 이유가 없다.
+        world: cached?.profile.world ?? null,
       }
     }),
   )
@@ -142,7 +151,7 @@ async function getSortedCharacterInfo(ocids: string[]): Promise<SortedCharacterI
       if (b.level !== a.level) return b.level - a.level
       return compareByName(a.name, b.name)
     })
-    .map(({ ocid, imageUrl }) => ({ ocid, imageUrl }))
+    .map(({ ocid, imageUrl, world }) => ({ ocid, imageUrl, world }))
 }
 
 // rows(보스 단위, 캐릭터당 여러 개)를 sortedOcids가 정한 캐릭터 순서로 재배열하고, 같은 캐릭터
@@ -171,8 +180,7 @@ function sortRowsByOcidOrder(rows: BossProfitRow[], sortedOcids: string[]): Boss
 
 function buildBossProfitRow(
   ocid: string,
-  characterName: string,
-  imageUrl: string | null,
+  character: CharacterProfileInfo,
   boss: MatchedBoss,
   now: Date,
 ): BossProfitRow {
@@ -185,8 +193,9 @@ function buildBossProfitRow(
 
   return {
     ocid,
-    characterName,
-    imageUrl,
+    characterName: character.characterName,
+    imageUrl: character.imageUrl,
+    world: character.world,
     boss: bossName,
     difficulty: boss.difficulty,
     cycle: boss.cycle,
@@ -243,8 +252,7 @@ function selectProfitDisplayBosses(
 
 function buildRowFromRecord(
   record: BossProfitRecord,
-  characterName: string,
-  imageUrl: string | null,
+  character: CharacterProfileInfo,
   now: Date,
 ): BossProfitRow {
   const difficulty = record.difficulty as BossDifficulty
@@ -253,8 +261,9 @@ function buildRowFromRecord(
 
   return {
     ocid: record.ocid,
-    characterName,
-    imageUrl,
+    characterName: character.characterName,
+    imageUrl: character.imageUrl,
+    world: character.world,
     boss: record.boss,
     difficulty,
     cycle: record.cycle,
@@ -422,14 +431,20 @@ async function buildRowsFromRecords(
       const cached = await getCachedCharacterBasic(record.ocid)
       profileCache.set(
         record.ocid,
-        cached === null ? null : { characterName: cached.profile.name, imageUrl: cached.profile.imageUrl },
+        cached === null
+          ? null
+          : {
+              characterName: cached.profile.name,
+              imageUrl: cached.profile.imageUrl,
+              world: cached.profile.world ?? null,
+            },
       )
     }
     const profile = profileCache.get(record.ocid) ?? null
     if (profile === null) {
       continue
     }
-    rows.push(buildRowFromRecord(record, profile.characterName, profile.imageUrl, now))
+    rows.push(buildRowFromRecord(record, profile, now))
   }
 
   return rows
@@ -791,6 +806,8 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     const sortedCharacterInfo = await getSortedCharacterInfo(ocids)
     const sortedOcids = sortedCharacterInfo.map((info) => info.ocid)
     const imageUrlByOcid = new Map(sortedCharacterInfo.map((info) => [info.ocid, info.imageUrl]))
+    // 월드도 같은 조회 결과에서 그대로 꺼내 행까지 흘린다([[ADR-054]] 결정 5).
+    const worldByOcid = new Map(sortedCharacterInfo.map((info) => [info.ocid, info.world]))
 
     // refresh는 항상 "현재 기간"을 보여주므로, 여기서 한 칸 더 과거로 갈 수 있는지도 함께 계산해
     // 이전 버튼 게이트(#29)를 세운다. refresh는 현재 기간만 갱신하고 이전 기간의 기록은 건드리지
@@ -831,9 +848,12 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
           // 실제 처치 난이도가 다를 수 있어([[ADR-031]]) 가격 계산에는 반드시 실제 처치 난이도를
           // 써야 한다. 수동 모드는 사용자 멤버십을 병합해 표시한다(ADR-035 결정 21).
           const displayBosses = selectProfitDisplayBosses(cached.state.bossContents, mode, manualItemsByOcid.get(ocid) ?? [])
-          return displayBosses.map((boss) =>
-            buildBossProfitRow(ocid, cached.state.characterName, imageUrlByOcid.get(ocid) ?? null, boss, now),
-          )
+          const profile: CharacterProfileInfo = {
+            characterName: cached.state.characterName,
+            imageUrl: imageUrlByOcid.get(ocid) ?? null,
+            world: worldByOcid.get(ocid) ?? null,
+          }
+          return displayBosses.map((boss) => buildBossProfitRow(ocid, profile, boss, now))
         }),
       )
     ).flat()
@@ -848,7 +868,10 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     // 캐시 우선 표시(ADR-016/017)가 계속 유지된다. 실시간 동기화가 성공하면 아래에서 다시
     // 최신 데이터로 덮어쓴다.
     const cachedCharacterProfiles = new Map(
-      cachedRows.map((row) => [row.ocid, { characterName: row.characterName, imageUrl: row.imageUrl }]),
+      cachedRows.map((row) => [
+        row.ocid,
+        { characterName: row.characterName, imageUrl: row.imageUrl, world: row.world },
+      ]),
     )
     latestSyncSnapshot = { ocids: [...ocids], rows: cachedMergedRows, characterProfiles: cachedCharacterProfiles }
 
@@ -898,10 +921,12 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     const characterProfiles = new Map<string, CharacterProfileInfo>()
 
     for (const result of results) {
-      characterProfiles.set(result.ocid, {
+      const profile: CharacterProfileInfo = {
         characterName: result.characterName,
         imageUrl: imageUrlByOcid.get(result.ocid) ?? null,
-      })
+        world: worldByOcid.get(result.ocid) ?? null,
+      }
+      characterProfiles.set(result.ocid, profile)
 
       if (result.isStale) {
         staleCharacterNames.push(result.characterName)
@@ -914,9 +939,7 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
       )
 
       for (const boss of displayBosses) {
-        rows.push(
-          buildBossProfitRow(result.ocid, result.characterName, imageUrlByOcid.get(result.ocid) ?? null, boss, now),
-        )
+        rows.push(buildBossProfitRow(result.ocid, profile, boss, now))
       }
     }
 

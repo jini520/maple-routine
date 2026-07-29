@@ -34,7 +34,10 @@ const REFERENCE_ENTRIES: ReferenceEntryWithOrigin[] = [
   ...(weeklyBossesData.monthly as BossReferenceEntry[]).map((entry) => ({ ...entry, isSeasonBoss: false })),
 ]
 
+// 이름이 비슷하지만 단위가 다른 별개 한도라 나란히 둔다([[ADR-054]] 결정 2) — CLEAR_LIMIT은
+// 캐릭터당 주간 보스 등록/처치 한도(12), CRYSTAL_SALE_LIMIT은 월드당 주간 결정석 판매 한도(90).
 export const WEEKLY_BOSS_CLEAR_LIMIT: number = weeklyBossesData.weeklyBossSelectionLimit
+export const WEEKLY_CRYSTAL_SALE_LIMIT: number = weeklyBossesData.weeklyCrystalSaleLimit
 
 // weekly-bosses.json 정규 순서(REFERENCE_ENTRIES: weekly → eventWeekly → monthly)에서 보스
 // 표시명 → 인덱스. 보스 수익 페이지의 캐릭터 내부 보스 순서([[ADR-036]])와 보스 관리 페이지의
@@ -52,6 +55,20 @@ REFERENCE_ENTRIES.forEach((entry, index) => {
 // 그들끼리는 입력 순서를 유지한다.
 export function getBossReferenceOrder(bossName: string): number {
   return BOSS_REFERENCE_ORDER.get(bossName) ?? Number.MAX_SAFE_INTEGER
+}
+
+// 시즌 보스(eventWeekly) 표시명 집합. 화면에서 행 단위로 반복 조회하므로 매 호출마다
+// REFERENCE_ENTRIES를 훑지 않도록 BOSS_REFERENCE_ORDER와 같이 모듈 로드 시 한 번만 만든다.
+const SEASON_BOSS_NAMES = new Set<string>(
+  REFERENCE_ENTRIES.filter((entry) => entry.isSeasonBoss).map((entry) => entry.boss),
+)
+
+// 보스 표시명으로 시즌 보스 여부를 조회한다([[ADR-054]] 결정 3) — 주간 처치 수·결정석 판매 수
+// 집계에서 시즌 보스를 제외하는 판정용. 입력은 BossProfitRow.boss이고 그 값은 matchedBossName
+// (REFERENCE_ENTRIES의 boss 표기 그대로) 아니면 매칭에 실패한 API 원문명이라, getBossReferenceOrder와
+// 마찬가지로 정확 일치로 충분하다 — 후자는 애초에 참조표에 없으므로 시즌 보스가 아니다.
+export function isSeasonBossName(bossName: string): boolean {
+  return SEASON_BOSS_NAMES.has(bossName)
 }
 
 function stripSpaces(value: string): string {
