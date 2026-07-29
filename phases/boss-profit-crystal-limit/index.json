@@ -21,7 +21,10 @@
     {
       "step": 2,
       "name": "world-plumbing",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-07-29T15:43:16+0900",
+      "summary": "BossProfitRow에 world: string | null 신설(부재는 항상 null — profile.world가 undefined인 구버전 캐시도 ?? null로 정규화, imageUrl과 동일 규약). getSortedCharacterInfo가 이미 부르는 getCachedCharacterBasic의 같은 profile에서 world를 함께 꺼내(추가 조회 0) SortedCharacterInfo·CharacterProfileInfo에 실어 세 경로(캐시 우선·실시간 동기화·과거 기록) 전부 배관; buildBossProfitRow/buildRowFromRecord는 캐릭터 정보를 CharacterProfileInfo 객체로 받아 호출부 누락이 컴파일에 걸리게 함. 정렬(레벨↓→이름순, ADR-036 보스 순서)·mergeRecordsIntoRows·SQLite 스키마 무변경. 테스트 5건 추가(114 파일/1324건 통과). 예외: src/app/boss-profit/__tests__/BossProfitScreen.test.tsx의 row() 픽스처에 world: null 한 줄 추가 — 필수 필드라 없으면 tsc가 실패(화면 코드 무변경)",
+      "completed_at": "2026-07-29T15:48:30+0900"
     },
     {
       "step": 3,

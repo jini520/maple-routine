@@ -180,6 +180,7 @@ describe('setBossDrops (ADR-038)', () => {
     ocid: 'ocid-1',
     characterName: '캐릭터-1',
     imageUrl: null,
+    world: null,
     boss: '스우',
     difficulty: '하드' as const,
     cycle: 'weekly' as const,
@@ -1177,6 +1178,141 @@ describe('useBossProfitStore', () => {
       } finally {
         vi.useRealTimers()
       }
+    })
+  })
+
+  // ADR-054 결정 5: 월드는 imageUrl과 똑같은 경로(getSortedCharacterInfo → getCachedCharacterBasic)로
+  // 행까지 실려온다. 행이 만들어지는 세 경로(캐시 우선 표시·실시간 동기화·과거 기록) 전부 채워져야
+  // 한 곳만 비어 로드 시점에 따라 월드 집계가 흔들리는 일이 없다.
+  describe('월드 배관 (ADR-054)', () => {
+    function cachedSchedulerEntry(): CachedSchedulerEntry {
+      return {
+        state: {
+          asOf: '2026-07-09T00:00+09:00',
+          characterName: '캐시캐릭터',
+          world: '베라',
+          level: 200,
+          jobClass: '렌',
+          dailyContents: [],
+          weeklyContents: [],
+          bossContents: [bossContent()],
+          isDailyStale: false,
+          isWeeklyStale: false,
+          isWeeklyBossStale: false,
+          isMonthlyBossStale: false,
+        },
+        syncedAt: '2026-07-10T00:00:00.000Z',
+      }
+    }
+
+    // world를 넘기지 않으면 world 키가 아예 없는(= 구버전) 캐시 프로필이 된다.
+    function mockCachedBasicWorld(world?: string) {
+      getCachedCharacterBasicMock.mockImplementation(async (ocid: string) => ({
+        profile: {
+          name: `캐릭터-${ocid}`,
+          level: 200,
+          imageUrl: 'x',
+          accessFlag: true,
+          ...(world === undefined ? {} : { world }),
+        },
+        cachedAt: '2026-07-01T00:00:00.000Z',
+      }))
+    }
+
+    it('캐시 우선 표시 경로의 row에 character-basic-cache의 world가 실린다', async () => {
+      mockCachedBasicWorld('스카니아')
+      getCachedSchedulerStateMock.mockResolvedValue(cachedSchedulerEntry())
+      syncSchedulesMock.mockReturnValue(new Promise<CharacterScheduleSync[]>(() => {}))
+
+      void useBossProfitStore.getState().refresh(['ocid-1'])
+      await vi.waitFor(() => expect(useBossProfitStore.getState().rows).toHaveLength(1))
+
+      const row = useBossProfitStore.getState().rows[0]
+      expect(row.characterName).toBe('캐시캐릭터') // 캐시 경로임을 확인
+      expect(row.world).toBe('스카니아')
+    })
+
+    it('실시간 동기화 경로의 row에도 world가 실린다', async () => {
+      mockCachedBasicWorld('스카니아')
+      syncSchedulesMock.mockResolvedValue([syncResult({ characterName: '라이브이름' })])
+
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+
+      const row = useBossProfitStore.getState().rows[0]
+      expect(row.characterName).toBe('라이브이름') // 라이브 경로임을 확인
+      expect(row.world).toBe('스카니아')
+    })
+
+    // world는 옵셔널이라 이전 캐시엔 없다(ADR-054 결정 6 — 그런 캐릭터는 월드 집계에서 제외된다).
+    // 화면이 부재를 한 가지 형태로만 다루도록 imageUrl과 동일하게 null로 정규화한다.
+    it('구버전 캐시라 profile.world가 없으면 row.world는 undefined가 아니라 null이다', async () => {
+      mockCachedBasicWorld(undefined)
+      syncSchedulesMock.mockResolvedValue([syncResult()])
+
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+
+      expect(useBossProfitStore.getState().rows[0].world).toBeNull()
+    })
+
+    it('과거 기간(로컬 기록) 경로의 row에도 world가 실린다', async () => {
+      mockCachedBasicWorld('루나')
+      syncSchedulesMock.mockResolvedValue([syncResult()])
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+      const previousPeriodKey = getAdjacentPeriodKey(
+        'weekly',
+        useBossProfitStore.getState().periodKey,
+        'prev',
+      )
+
+      isPeriodCheckedMock.mockResolvedValue(true) // 백필 없이 로컬 기록만으로 채우는 경로
+      const pastRecord: BossProfitRecord = {
+        ocid: 'ocid-1',
+        boss: '자쿰',
+        difficulty: '카오스',
+        cycle: 'weekly',
+        periodKey: previousPeriodKey,
+        partySize: 1,
+        priceMeso: 8_080_000,
+        payoutMeso: 8_080_000,
+        recordedAt: '2026-07-01T00:00:00.000Z',
+      }
+      getBossProfitRecordsMock.mockResolvedValue([pastRecord])
+
+      await useBossProfitStore.getState().goToPreviousPeriod()
+
+      const state = useBossProfitStore.getState()
+      expect(state.periodKey).toBe(previousPeriodKey)
+      expect(state.rows).toHaveLength(1)
+      expect(state.rows[0].world).toBe('루나')
+    })
+
+    // 회귀 가드: world는 정렬에 참여하지 않는다(캐릭터는 레벨 내림차순 → 이름순, [[ADR-036]]).
+    it('world를 실어도 캐릭터 정렬 순서(레벨 내림차순 → 이름순)는 그대로다', async () => {
+      const profiles: Record<string, { name: string; level: number; world: string }> = {
+        'ocid-1': { name: '가나다', level: 200, world: '핼퍼' },
+        'ocid-2': { name: '나다라', level: 200, world: '가베라' },
+        'ocid-3': { name: '다라마', level: 250, world: '나스카니아' },
+      }
+      // 월드명 가나다순(가베라 → 나스카니아 → 핼퍼)은 기대 순서와 어긋나게 배치했다 — 월드가
+      // 정렬 키에 끼어들면 이 테스트가 깨진다.
+      getCachedCharacterBasicMock.mockImplementation(async (ocid: string) => ({
+        profile: { ...profiles[ocid], imageUrl: 'x', accessFlag: true },
+        cachedAt: '2026-07-01T00:00:00.000Z',
+      }))
+      syncSchedulesMock.mockResolvedValue([
+        syncResult({ ocid: 'ocid-1', characterName: '가나다' }),
+        syncResult({ ocid: 'ocid-2', characterName: '나다라' }),
+        syncResult({ ocid: 'ocid-3', characterName: '다라마' }),
+      ])
+
+      await useBossProfitStore.getState().refresh(['ocid-1', 'ocid-2', 'ocid-3'])
+
+      // 레벨 250인 ocid-3이 먼저, 동레벨 둘은 이름순(가나다 → 나다라)
+      expect(useBossProfitStore.getState().rows.map((row) => row.ocid)).toEqual([
+        'ocid-3',
+        'ocid-1',
+        'ocid-2',
+      ])
     })
   })
 

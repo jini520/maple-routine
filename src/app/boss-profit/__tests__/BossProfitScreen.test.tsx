@@ -54,6 +54,7 @@ function row(overrides: Partial<BossProfitRow> = {}): BossProfitRow {
     ocid: 'ocid-1',
     characterName: '낟낟',
     imageUrl: null,
+    world: null,
     boss: '자쿰',
     difficulty: '카오스',
     cycle: 'weekly',
