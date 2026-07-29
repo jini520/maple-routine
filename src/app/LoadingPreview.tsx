@@ -10,7 +10,8 @@ import type { ThemeName } from '../types/theme'
 // · S5=B(전부 얇은 바) · S6=A(h-1.5 통일) · S8='- KB' 자리표시 · S9=A(버튼은 말줄임표 없는 '~중').
 //
 // 2차 선택(2026-07-30, 잠정) — 자리별 스피너 배정:
-//   S1 버튼 16px = 트레일 링 / S2 화면 32px = 스윕 / S4 영역 24px = 스윕(S2와 같은 표현)
+//   S1 버튼 16px = 트레일 링 / S2 화면 32px = 스윕 / S4 영역 24px = 스윕
+//   S2·S4는 표현도 공유한다 — 셸 승계 카드(로딩 후 그 자리를 채울 카드와 같은 실선 surface 껍데기).
 //   S7(모달 차단)은 모달 디자인을 다시 하기로 해 보류.
 // 스피너가 2종으로 갈렸으므로(작은 자리=트레일 링, 큰 자리=스윕) 두 어법이 한 앱 안에서 성립하는지가
 // 남은 쟁점이다 — "조합" 섹션이 그걸 본다.
@@ -502,6 +503,25 @@ function MockCacheGroups(props: { dimmed?: boolean }): React.JSX.Element {
   )
 }
 
+// 셸 승계 카드 — 로딩이 끝나면 이 자리를 채울 카드와 같은 껍데기(실선 surface)를 먼저 그린다.
+// S2(콜드 스타트)와 S4(영역 부분 로딩)가 같은 셸을 공유한다: 자리 크기와 스피너 크기만 다르다.
+function LoadingShellCard(props: {
+  spinner: React.ReactNode
+  message: string
+  minHeight?: string
+}): React.JSX.Element {
+  return (
+    <div className="rounded-[14px] border border-border bg-surface p-6">
+      <div
+        className={`flex flex-col items-center justify-center gap-3 text-center ${props.minHeight ?? ''}`}
+      >
+        {props.spinner}
+        <p className="text-sm text-text-muted">{props.message}</p>
+      </div>
+    </div>
+  )
+}
+
 function ProgressBar(props: { percent: number }): React.JSX.Element {
   return (
     <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
@@ -626,9 +646,9 @@ export function LoadingPreview(): React.JSX.Element {
         {/* ------------------------------------------------------------------ */}
         <Section
           code="S2"
-          title="콜드 스타트 — 스윕 32px + 문구"
+          title="콜드 스타트 — 셸 카드 + 스윕 32px"
           state="잠정 결정"
-          note="스케줄러 3화면 · 관리 화면 2곳 · 앱 부팅 복원 · 온보딩 시드가 모두 이 형태를 공유한다."
+          note="스케줄러 3화면 · 관리 화면 2곳 · 앱 부팅 복원 · 온보딩 시드가 모두 이 형태를 공유한다. 로딩이 끝나면 이 자리를 채울 카드와 같은 껍데기(실선 surface)를 먼저 그려, 결과가 들어와도 배경이 바뀌지 않는다."
         >
           <VariantPicker value={screenVariant} onChange={setScreenVariant} />
           <Option label="적용" note="보여줄 데이터가 하나도 없을 때만. 캐시가 있으면 S3로 간다.">
@@ -639,9 +659,12 @@ export function LoadingPreview(): React.JSX.Element {
                 </span>
               }
             />
-            <div className="flex min-h-[168px] flex-col items-center justify-center gap-3">
-              <Spinner variant={screenVariant} size={32} className="text-primary" />
-              <p className="text-sm text-text-muted">{copy.coldStart}</p>
+            <div className="mt-3">
+              <LoadingShellCard
+                minHeight="min-h-[132px]"
+                spinner={<Spinner variant={screenVariant} size={32} className="text-primary" />}
+                message={copy.coldStart}
+              />
             </div>
           </Option>
         </Section>
@@ -674,27 +697,25 @@ export function LoadingPreview(): React.JSX.Element {
         {/* ------------------------------------------------------------------ */}
         <Section
           code="S4"
-          title="영역 부분 로딩 — S2와 같은 표현"
+          title="영역 부분 로딩 — S2와 같은 셸 카드"
           state="잠정 결정"
-          note="보스 수익 과거 기간 백필. 점선 박스를 버리고 S2 콜드 스타트와 같은 표현(껍데기 없이 스피너 + 문구)을 쓴다 — 자리 크기만 다를 뿐 '보여줄 것이 아직 없다'는 같은 상황이라 같은 어법을 공유한다."
+          note="보스 수익 과거 기간 백필. 점선 박스를 버리고 S2와 같은 셸 카드를 쓴다 — 로딩 후 나타날 캐릭터 카드와 같은 껍데기라, 카드가 자리를 먼저 잡아 결과가 들어와도 화면이 튀지 않는다. 스피너 크기(24px)만 S2와 다르다."
         >
           <VariantPicker value={areaVariant} onChange={setAreaVariant} />
-          <Option label="적용" note="껍데기 없이 스피너 + 문구. 기간 화살표를 눌러 반복해 떠도 배경이 없어 조용하다.">
-            <div className="flex flex-col items-center gap-3 py-8 text-center">
-              <Spinner variant={areaVariant} size={24} className="text-primary" />
-              <p className="text-xs text-text-muted">{copy.backfill}</p>
-            </div>
+          <Option label="적용" note="셸 승계 — 백필이 끝나면 같은 자리·같은 껍데기에 캐릭터 카드가 들어온다.">
+            <LoadingShellCard
+              spinner={<Spinner variant={areaVariant} size={24} className="text-primary" />}
+              message={copy.backfill}
+            />
           </Option>
 
           <Option
             label="대안 A"
-            note="셸 승계 — 로딩 후 나타날 캐릭터 카드와 같은 실선 surface 카드. 카드가 자리를 먼저 잡아 결과가 들어와도 화면이 튀지 않는다."
+            note="맨몸 — 테두리도 배경도 없이 스피너 + 문구만. 가장 조용하지만 결과가 들어올 때 배경이 생겨 자리가 바뀐다."
           >
-            <div className="rounded-[14px] border border-border bg-surface p-6">
-              <div className="flex flex-col items-center gap-3 text-center">
-                <Spinner variant={areaVariant} size={24} className="text-primary" />
-                <p className="text-xs text-text-muted">{copy.backfill}</p>
-              </div>
+            <div className="flex flex-col items-center gap-3 py-8 text-center">
+              <Spinner variant={areaVariant} size={24} className="text-primary" />
+              <p className="text-xs text-text-muted">{copy.backfill}</p>
             </div>
           </Option>
 
@@ -724,10 +745,10 @@ export function LoadingPreview(): React.JSX.Element {
                 <Spinner variant={buttonVariant} size={16} />
                 {copy.verifyBtn}
               </button>
-              <div className="flex flex-col items-center gap-3 rounded-[10px] bg-surface py-6">
-                <Spinner variant={screenVariant} size={32} className="text-primary" />
-                <p className="text-sm text-text-muted">체크리스트를 준비하고 있어요</p>
-              </div>
+              <LoadingShellCard
+                spinner={<Spinner variant={screenVariant} size={32} className="text-primary" />}
+                message="체크리스트를 준비하고 있어요"
+              />
             </div>
           </Option>
 
