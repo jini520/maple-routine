@@ -55,8 +55,12 @@ export function CacheDataSection(props: CacheDataSectionProps = {}): React.JSX.E
           label="캐시 데이터 삭제"
           onClick={() => setIsOpen(true)}
           danger
+          // ADR-061 결정 7: 조회 전에도 값과 같은 폭·타이포로 자리를 잡는다(빈 문자열이면
+          // 값이 툭 나타나며 행이 밀린다).
           rightContent={
-            <span className="text-sm text-text-muted">{totalBytes !== null ? formatBytes(totalBytes) : ''}</span>
+            <span className="text-sm text-text-muted tabular-nums">
+              {totalBytes !== null ? formatBytes(totalBytes) : '- KB'}
+            </span>
           }
         />
       </div>

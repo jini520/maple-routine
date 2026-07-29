@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useOnboardingStore } from '../../features/onboarding/store'
-import { MapleSpinner } from '../../components/MapleSpinner/MapleSpinner'
-import { MapleWaveProgress } from '../../components/MapleWaveProgress/MapleWaveProgress'
+import { MapleSweepSpinner } from '../../components/MapleSweepSpinner/MapleSweepSpinner'
 import { ApiKeyForm } from './ApiKeyForm'
 import { AccountSelectionList } from './AccountSelectionList'
 import { ContentCharacterStep } from './ContentCharacterStep'
@@ -57,12 +56,22 @@ export function OnboardingScreen(): React.JSX.Element {
           : 0
       return (
         <div className="flex min-h-[calc(100dvh-var(--sa-top)-var(--sa-bottom))] items-center justify-center px-4">
-          <div className="flex flex-col items-center gap-3">
+          {/* ADR-061 결정 6: 결정형 진행률은 얇은 바 프리미티브 하나 — MapleWaveProgress(물결형)
+              폐기. 바가 가로로 늘어나므로 컨테이너 폭을 잡아준다. */}
+          <div className="w-full max-w-sm space-y-2">
             <p className="text-sm text-text-muted">
               캐릭터 정보를 준비하고 있어요
               {prefetchProgress !== null ? ` (${prefetchProgress.completed}/${prefetchProgress.total})` : ''}
             </p>
-            <MapleWaveProgress percent={percent} />
+            <div
+              role="progressbar"
+              aria-valuenow={percent}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              className="h-1.5 w-full overflow-hidden rounded-full bg-surface-2"
+            >
+              <div className="h-1.5 rounded-full bg-primary" style={{ width: `${percent}%` }} />
+            </div>
           </div>
         </div>
       )
@@ -104,9 +113,11 @@ export function OnboardingScreen(): React.JSX.Element {
     case 'seedingTracking':
       return (
         <div className="flex min-h-[calc(100dvh-var(--sa-top)-var(--sa-bottom))] items-center justify-center px-4">
-          <div className="flex flex-col items-center gap-3">
+          {/* ADR-061: 화면 전체 대기라 셸 승계 카드를 씌우지 않는다(뒤에 카드가 오지 않는다).
+              24px 이상 자리이므로 스피너는 스윕. */}
+          <div className="flex flex-col items-center gap-3" role="status" aria-busy="true">
+            <MapleSweepSpinner size={32} className="text-primary" />
             <p className="text-sm text-text-muted">체크리스트를 준비하고 있어요</p>
-            <MapleSpinner size={32} className="text-primary" />
           </div>
         </div>
       )

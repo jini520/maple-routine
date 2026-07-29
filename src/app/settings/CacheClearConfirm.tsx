@@ -1,6 +1,7 @@
 import { Check } from 'lucide-react'
 import { useState } from 'react'
 import { Modal } from '../../components/Modal/Modal'
+import { MapleSpinner } from '../../components/MapleSpinner/MapleSpinner'
 import { formatBytes } from '../../lib/format-bytes'
 import type { CacheDataGroupId, CacheDataSelection } from '../../storage/cache-data'
 
@@ -89,11 +90,11 @@ export function CacheClearConfirm(props: CacheClearConfirmProps): React.JSX.Elem
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center justify-between gap-3">
                     <span className="text-sm font-semibold text-text">{group.label}</span>
-                    {props.sizes !== null && (
-                      <span className="shrink-0 text-sm text-text-muted">
-                        {formatBytes(props.sizes[group.id])}
-                      </span>
-                    )}
+                    {/* ADR-061 결정 7: 조회 전에도 같은 자리·같은 타이포로 자리표시를 둬야
+                        값이 들어올 때 행 레이아웃이 점프하지 않는다. */}
+                    <span className="shrink-0 text-sm text-text-muted tabular-nums">
+                      {props.sizes !== null ? formatBytes(props.sizes[group.id]) : '- KB'}
+                    </span>
                   </span>
                   <span className="mt-1 block text-xs leading-relaxed text-text-muted">{group.detail}</span>
                   {group.warning !== undefined && (
@@ -117,11 +118,15 @@ export function CacheClearConfirm(props: CacheClearConfirmProps): React.JSX.Elem
           <button
             type="button"
             disabled={props.isClearing || !hasSelection}
+            aria-busy={props.isClearing}
             onClick={() => props.onConfirm(selection)}
-            className="rounded-full border border-error px-5 py-2.5 text-sm font-semibold text-error hover:bg-error/10 disabled:opacity-50"
+            className="flex items-center justify-center gap-2 rounded-full border border-error px-5 py-2.5 text-sm font-semibold text-error hover:bg-error/10 disabled:opacity-50"
           >
+            {/* ADR-061 결정 5·9 — 스피너 + 말줄임표 없는 '~중' 라벨. 이 버튼은 최대 10초
+                (CLEAR_TIMEOUT_MS) 걸리고 되돌릴 수 없어 라벨이 특히 중요하다. */}
+            {props.isClearing && <MapleSpinner size={16} />}
             {props.isClearing
-              ? '삭제 중...'
+              ? '삭제 중'
               : selectedBytes !== null
                 ? `삭제 (${formatBytes(selectedBytes)})`
                 : '삭제'}

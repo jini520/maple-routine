@@ -119,7 +119,8 @@ describe('OnboardingScreen', () => {
     render(<OnboardingScreen />)
 
     expect(screen.getByText('체크리스트를 준비하고 있어요')).toBeInTheDocument()
-    expect(screen.getByTestId('maple-spinner')).toBeInTheDocument()
+    // ADR-061 결정 1: 24px 이상 자리는 스윕 스피너.
+    expect(screen.getByTestId('maple-sweep-spinner')).toBeInTheDocument()
   })
 
   it('status가 completed이면 완료 placeholder 텍스트가 렌더링된다', () => {

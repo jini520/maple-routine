@@ -147,7 +147,7 @@ a11y: 링 자체가 role="img" aria-label="{주간|월간} 보스 처치 8 / 12"
 ```
 최신 기간에서 다음 버튼 `disabled`.
 - **빈 상태·조회 불가**([[ADR-060]]): 처치 기록 0건은 공용 `EmptyState`(inline, `Coins`, "아직 처치한 보스가 없습니다", **CTA 없음** — 앱 안에 할 일이 없다). 롤링 조회 윈도우 밖([[ADR-032]])은 빈 상태가 아니라 `UnavailableNotice`(정보 톤) — 기간 목록은 기본형, 캐릭터 카드 안은 `compact`. 레시피는 [design-system.md](../foundation/design-system.md).
-- **기간 미보유 자동 재조회 스피너**: 점선 박스(빈 상태가 [[ADR-060]]로 실선 배지형이 된 뒤에도 로딩만 점선 유지 — "아직 자리가 비어있다"는 신호) — `rounded-[14px] border border-dashed border-border p-6 flex flex-col items-center gap-3 text-center`, 스피너 `h-6 w-6 rounded-full border-[3px] border-border border-t-primary animate-spin motion-reduce:animate-none`, 안내 `text-xs text-text-muted`(예 "5월 2주차 기록을 불러오는 중..."). `border-t-primary` = 진행 중 의미. 미접속 기간 문구는 미정.
+- **기간 미보유 자동 재조회 스피너**: 공용 셸 승계 카드 `LoadingState size="inline"`([[ADR-061]] 결정 2·3·4) — `MapleSweepSpinner size={24}` + "5월 2주차 기록을 불러오고 있어요". 백필이 끝나면 같은 자리·같은 껍데기(`rounded-[14px] border border-border bg-surface`)에 캐릭터 카드가 들어온다. 미접속 기간 문구는 미정.
 - **월간 탭 — 주차별 합계 + 월간 보스**: 보스 나열 대신 그 달 `cycle: weekly` 를 주차(시작 목요일 속한 달 기준 N주차)로 묶어 합산 후 `cycle: monthly` 상세를 이어 붙임. 아코디언 본문 셸 안 두 서브섹션:
 ```
 서브섹션 라벨: px-4 pt-3 pb-1 text-[11px] font-bold tracking-wide text-text-muted bg-surface-2
@@ -173,6 +173,7 @@ a11y: 링 자체가 role="img" aria-label="{주간|월간} 보스 처치 8 / 12"
 - 월드 결정석 한도(`n/90`)가 추적 밖 캐릭터의 처치를 못 세는 한계를 **UI 주석 문구로도 알릴지** 여부([[ADR-054]] 트레이드오프 — 헤드라인을 더 늘리지 않으려 구현 범위에서는 제외했고, 문서에는 위 "알려진 한계"로 남겼다. 사용자 문의가 실제로 생기면 후속 결정으로 다룬다).
 
 ## 폐기된 정책 (history)
+- ~~기간 백필 로딩을 점선 박스 + CSS 링 스피너로 표시~~ → 공용 셸 승계 카드 `LoadingState size="inline"` + `MapleSweepSpinner`. 점선은 빈 상태 전용이라 로딩과 구분이 안 됐다([[ADR-061]], 2026-07-30).
 - ~~아코디언 아바타를 이니셜로 둘지 `character/basic` 이미지로 바꿀지 미정~~ → `character-basic-cache` 의 `imageUrl`(없으면 이니셜 폴백)로 확정·구현 완료(`CharacterAvatar`, `getSortedCharacterInfo`가 정렬용 캐시 조회 김에 함께 반환) — [[ADR-023]] "미확정" 해소.
 - ~~파티원 수를 캐릭터별로 계속 수동 입력~~ → 캐릭터+보스+난이도 조합별 로컬 저장 + 자동 기록([[ADR-014]]).
 - ~~기본 파티원 수 = 가장 최근 기록값 이어받기~~ → `boss_party_settings` 설정 조회로 완전 대체([[ADR-019]]).

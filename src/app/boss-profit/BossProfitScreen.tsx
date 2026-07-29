@@ -14,6 +14,7 @@ import {
 import { BossPortrait } from '../../components/BossPortrait/BossPortrait'
 import { DifficultyBadge } from '../../components/DifficultyBadge/DifficultyBadge'
 import { EmptyState } from '../../components/EmptyState/EmptyState'
+import { LoadingState } from '../../components/LoadingState/LoadingState'
 import { UnavailableNotice } from '../../components/EmptyState/UnavailableNotice'
 import weeklyBossesData from '../../data/weekly-bosses.json'
 import {
@@ -1130,8 +1131,9 @@ export function BossProfitScreen(): React.JSX.Element {
             </p>
           )}
 
+          {/* ADR-061 결정 2: 보여줄 데이터가 아예 없을 때만 셸 승계 카드를 그린다. */}
           {!isPeriodLoading && (status === 'idle' || status === 'loading') && characterGroups.length === 0 && (
-            <p className="text-sm text-text-muted">불러오는 중...</p>
+            <LoadingState size="page" message="불러오고 있어요" />
           )}
 
           {status === 'error' && (
@@ -1194,11 +1196,10 @@ export function BossProfitScreen(): React.JSX.Element {
       </div>
 
       <div className="space-y-2 px-4 pb-4">
+        {/* ADR-061 결정 2·3·4: 점선 박스(빈 상태의 어법)와 비-브랜드 CSS 링을 버리고 셸 승계
+            카드를 쓴다 — 백필이 끝나면 같은 자리·같은 껍데기에 캐릭터 카드가 들어온다. */}
         {isPeriodLoading && (
-          <div className="rounded-[14px] border border-dashed border-border p-6 flex flex-col items-center gap-3 text-center">
-            <div className="h-6 w-6 rounded-full border-[3px] border-border border-t-primary animate-spin motion-reduce:animate-none" />
-            <p className="text-xs text-text-muted">{periodLabel.primary} 기록을 불러오는 중...</p>
-          </div>
+          <LoadingState message={`${periodLabel.primary} 기록을 불러오고 있어요`} />
         )}
 
         {/* ADR-060: "확정된 빈 상태"와 "조회 자체를 못 함"은 디자인을 공유하지 않는다 — 같은 모양이면
