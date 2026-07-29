@@ -7,12 +7,16 @@ import type { ThemeName } from '../types/theme'
 // 임시 디버그 화면 — [[ADR-061]](로딩 표현 통일)의 시안 비교용.
 //
 // 1차 선택(2026-07-30, 잠정): S1=B(스피너+라벨 병기) · S2=A(스피너+문구) · S3=A(현행 유지)
-// · S5=B(전부 얇은 바) · S6=A(h-1.5 통일) · S8='- KB' 자리표시.
-// S4(백필)·S7(모달 차단)은 "새로 디자인"으로 남았고, S9는 "'~중...'은 새로고침 옆 '조회 중...'만
-// 남기고 전부 제거"가 목표, S10은 독립 선택이 아니라 위 자리들에 무엇을 넣을지의 문제로 흡수됐다.
+// · S5=B(전부 얇은 바) · S6=A(h-1.5 통일) · S8='- KB' 자리표시 · S9=A(버튼은 말줄임표 없는 '~중').
 //
-// 그래서 이 화면은 "선택지 나열"에서 "잠정 결정 위에서 스피너 디자인을 갈아끼워 보는 화면"으로
-// 바뀌었다. 상단에서 스피너 시안·문구안·테마를 고르면 아래 모든 자리가 그 조합으로 다시 그려진다.
+// 2차 선택(2026-07-30, 잠정) — 자리별 스피너 배정:
+//   S1 버튼 16px = 트레일 링 / S2 화면 32px = 스윕 / S4 영역 24px = 스윕(S2와 같은 표현)
+//   S7(모달 차단)은 모달 디자인을 다시 하기로 해 보류.
+// 스피너가 2종으로 갈렸으므로(작은 자리=트레일 링, 큰 자리=스윕) 두 어법이 한 앱 안에서 성립하는지가
+// 남은 쟁점이다 — "조합" 섹션이 그걸 본다.
+//
+// 그래서 시안 선택은 전역 토글이 아니라 각 섹션 안(VariantPicker)에 있다. 그 자리에서 바로
+// 갈아끼워 보라는 뜻이다. 문구안·테마만 상단 공통.
 //
 // 선택이 확정되면 이 파일과 App.tsx의 /debug/loading 라우트를 삭제하고, 확정된 규칙을
 // docs/foundation/design-system.md "로딩 표현" 섹션으로 옮길 것.
@@ -351,12 +355,33 @@ function Chip(props: {
   )
 }
 
-type SectionState = '잠정 결정' | '새로 디자인' | '비교'
+type SectionState = '잠정 결정' | '새로 디자인' | '비교' | '보류'
 
 const STATE_CLASSES: Record<SectionState, string> = {
   '잠정 결정': 'bg-secondary/20 text-secondary-text',
   '새로 디자인': 'bg-third/20 text-third-text',
   비교: 'bg-primary/15 text-primary',
+  보류: 'bg-surface-2 text-text-muted',
+}
+
+// 자리마다 시안이 갈렸으므로(2차 선택: S1=트레일 링, S2·S4=스윕) 시안 선택을 전역 토글이 아니라
+// 각 섹션 안에 둔다 — 그 자리에서 바로 갈아끼워 보라는 뜻.
+function VariantPicker(props: {
+  value: SpinnerVariant
+  onChange: (next: SpinnerVariant) => void
+}): React.JSX.Element {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {VARIANTS.map((item) => (
+        <Chip key={item.id} selected={props.value === item.id} onClick={() => props.onChange(item.id)}>
+          <span className="flex items-center gap-1">
+            <Spinner variant={item.id} size={12} />
+            {item.label}
+          </span>
+        </Chip>
+      ))}
+    </div>
+  )
 }
 
 function Section(props: {
@@ -491,7 +516,10 @@ function ProgressBar(props: { percent: number }): React.JSX.Element {
 
 export function LoadingPreview(): React.JSX.Element {
   const [theme, setTheme] = useLocalThemePreview()
-  const [variant, setVariant] = useState<SpinnerVariant>('trail')
+  // 2차 선택(2026-07-30): 버튼 안은 트레일 링, 화면·영역은 스윕.
+  const [buttonVariant, setButtonVariant] = useState<SpinnerVariant>('trail')
+  const [screenVariant, setScreenVariant] = useState<SpinnerVariant>('sweep')
+  const [areaVariant, setAreaVariant] = useState<SpinnerVariant>('sweep')
   const [tone, setTone] = useState<ToneId>('short')
   const percent = usePreviewPercent()
   const completed = Math.round((percent / 100) * 12)
@@ -505,30 +533,14 @@ export function LoadingPreview(): React.JSX.Element {
         <header className="space-y-2">
           <h1 className="text-lg font-bold text-text">로딩 시안 비교 (ADR-061)</h1>
           <p className="text-xs leading-relaxed text-text-muted">
-            1차 선택을 전제로 스피너 디자인을 갈아끼워 보는 화면. 위에서 시안·문구안·테마를 고르면 아래
-            모든 자리가 그 조합으로 다시 그려진다. 진행률은 5초 주기로 0→100%를 반복 재생한다.
+            잠정 결정을 전제로 스피너를 갈아끼워 보는 화면. 시안이 자리마다 갈렸으므로(버튼=트레일 링,
+            화면·영역=스윕) 시안 선택은 각 섹션 안에 있다. 문구안·테마만 여기서 공통으로 바꾼다.
+            진행률은 5초 주기로 0→100%를 반복 재생한다.
           </p>
         </header>
 
         <div className="space-y-3 rounded-[14px] border border-border bg-surface p-4">
           <div className="space-y-1.5">
-            <p className="text-xs font-bold text-text">스피너 시안</p>
-            <div className="flex flex-wrap gap-2">
-              {VARIANTS.map((item) => (
-                <Chip key={item.id} selected={variant === item.id} onClick={() => setVariant(item.id)}>
-                  <span className="flex items-center gap-1.5">
-                    <Spinner variant={item.id} size={13} />
-                    {item.label}
-                  </span>
-                </Chip>
-              ))}
-            </div>
-            <p className="text-[11px] leading-relaxed text-text-muted">
-              {VARIANTS.find((item) => item.id === variant)?.note}
-            </p>
-          </div>
-
-          <div className="space-y-1.5 border-t border-border pt-3">
             <p className="text-xs font-bold text-text">문구안 (S9)</p>
             <div className="flex flex-wrap gap-2">
               <Chip selected={tone === 'short'} onClick={() => setTone('short')}>
@@ -539,9 +551,8 @@ export function LoadingPreview(): React.JSX.Element {
               </Chip>
             </div>
             <p className="text-[11px] leading-relaxed text-text-muted">
-              제거 대상은 말줄임표가 붙는 &apos;~중...&apos; 형태다. 버튼 내부는 말줄임표를 뺀
-              &apos;~중&apos;을 쓸 수 있고, 말줄임표가 살아남는 곳은 새로고침 옆 &apos;조회 중...&apos;
-              한 곳뿐이다.
+              A(버튼은 ~중) 선택됨. 말줄임표가 살아남는 곳은 새로고침 옆 &apos;조회 중...&apos; 한
+              곳뿐이다.
             </p>
           </div>
 
@@ -589,22 +600,23 @@ export function LoadingPreview(): React.JSX.Element {
         {/* ------------------------------------------------------------------ */}
         <Section
           code="S1"
-          title="버튼 내부 대기 — 스피너 + 라벨 병기"
+          title="버튼 내부 대기 — 트레일 링 16px + 라벨"
           state="잠정 결정"
-          note="온보딩·설정 구분 없이 모든 제출 버튼이 같은 형태. 라벨이 남으므로 S9 문구안이 여기서 갈린다."
+          note="온보딩·설정 구분 없이 모든 제출 버튼이 같은 형태. 16px에서 획이 얇아지는 것이 이 자리의 관건이라, 다른 시안으로 갈아끼워 보려면 아래에서 고른다."
         >
+          <VariantPicker value={buttonVariant} onChange={setButtonVariant} />
           <Option label="적용" note="온보딩 API 키 확인 / 캐시 데이터 삭제 / 연결 해제">
             <div className="space-y-2">
               <button type="button" className={PRIMARY_BTN}>
-                <Spinner variant={variant} size={16} />
+                <Spinner variant={buttonVariant} size={16} />
                 {copy.verifyBtn}
               </button>
               <button type="button" className={DANGER_BTN}>
-                <Spinner variant={variant} size={16} />
+                <Spinner variant={buttonVariant} size={16} />
                 {copy.deleteBtn}
               </button>
               <button type="button" className={DANGER_BTN}>
-                <Spinner variant={variant} size={16} />
+                <Spinner variant={buttonVariant} size={16} />
                 {copy.disconnectBtn}
               </button>
             </div>
@@ -614,10 +626,11 @@ export function LoadingPreview(): React.JSX.Element {
         {/* ------------------------------------------------------------------ */}
         <Section
           code="S2"
-          title="콜드 스타트 — 스피너 32 + 문구"
+          title="콜드 스타트 — 스윕 32px + 문구"
           state="잠정 결정"
           note="스케줄러 3화면 · 관리 화면 2곳 · 앱 부팅 복원 · 온보딩 시드가 모두 이 형태를 공유한다."
         >
+          <VariantPicker value={screenVariant} onChange={setScreenVariant} />
           <Option label="적용" note="보여줄 데이터가 하나도 없을 때만. 캐시가 있으면 S3로 간다.">
             <MockSchedulerHeader
               syncSlot={
@@ -627,7 +640,7 @@ export function LoadingPreview(): React.JSX.Element {
               }
             />
             <div className="flex min-h-[168px] flex-col items-center justify-center gap-3">
-              <Spinner variant={variant} size={32} className="text-primary" />
+              <Spinner variant={screenVariant} size={32} className="text-primary" />
               <p className="text-sm text-text-muted">{copy.coldStart}</p>
             </div>
           </Option>
@@ -661,41 +674,77 @@ export function LoadingPreview(): React.JSX.Element {
         {/* ------------------------------------------------------------------ */}
         <Section
           code="S4"
-          title="영역 부분 로딩 — 점선 없는 새 디자인"
-          state="새로 디자인"
-          note="보스 수익 과거 기간 백필. 기간 화살표를 누를 때마다 반복해 뜨고, 끝나면 캐릭터 카드가 그 자리를 채운다. 점선 박스는 빈 상태(EmptyState)의 어법이라 로딩과 겹쳤던 것이 문제였다."
+          title="영역 부분 로딩 — S2와 같은 표현"
+          state="잠정 결정"
+          note="보스 수익 과거 기간 백필. 점선 박스를 버리고 S2 콜드 스타트와 같은 표현(껍데기 없이 스피너 + 문구)을 쓴다 — 자리 크기만 다를 뿐 '보여줄 것이 아직 없다'는 같은 상황이라 같은 어법을 공유한다."
         >
+          <VariantPicker value={areaVariant} onChange={setAreaVariant} />
+          <Option label="적용" note="껍데기 없이 스피너 + 문구. 기간 화살표를 눌러 반복해 떠도 배경이 없어 조용하다.">
+            <div className="flex flex-col items-center gap-3 py-8 text-center">
+              <Spinner variant={areaVariant} size={24} className="text-primary" />
+              <p className="text-xs text-text-muted">{copy.backfill}</p>
+            </div>
+          </Option>
+
           <Option
-            label="A"
+            label="대안 A"
             note="셸 승계 — 로딩 후 나타날 캐릭터 카드와 같은 실선 surface 카드. 카드가 자리를 먼저 잡아 결과가 들어와도 화면이 튀지 않는다."
           >
             <div className="rounded-[14px] border border-border bg-surface p-6">
               <div className="flex flex-col items-center gap-3 text-center">
-                <Spinner variant={variant} size={24} className="text-primary" />
+                <Spinner variant={areaVariant} size={24} className="text-primary" />
                 <p className="text-xs text-text-muted">{copy.backfill}</p>
               </div>
             </div>
           </Option>
 
           <Option
-            label="B"
+            label="대안 B"
             note="알약 — 스피너와 문구를 한 줄 배지로 묶어 중앙에. 높이가 낮아 기간을 연달아 넘겨도 화면 요동이 가장 적다."
           >
             <div className="flex justify-center py-6">
               <span className="inline-flex items-center gap-2 rounded-full bg-surface-2 py-2 pl-2.5 pr-4">
-                <Spinner variant={variant} size={16} className="text-primary" />
+                <Spinner variant={areaVariant} size={16} className="text-primary" />
                 <span className="text-xs font-medium text-text-muted">{copy.backfill}</span>
               </span>
             </div>
           </Option>
+        </Section>
 
-          <Option
-            label="C"
-            note="맨몸 — 테두리도 배경도 없이 스피너 + 문구만. 가장 조용하지만 '무엇을 기다리는지'를 문구 혼자 감당한다."
-          >
-            <div className="flex flex-col items-center gap-3 py-8 text-center">
-              <Spinner variant={variant} size={24} className="text-primary" />
-              <p className="text-xs text-text-muted">{copy.backfill}</p>
+        {/* ------------------------------------------------------------------ */}
+        <Section
+          code="조합"
+          title="두 시안이 한 앱 안에서 성립하는가"
+          state="비교"
+          note="버튼(트레일 링)과 화면·영역(스윕)은 어법이 다르다 — 외곽선이 도는 comet과 채워진 잎을 띠가 차오르는 몸짓. 한 사용자가 온보딩에서 둘을 연달아 보게 되므로 나란히 놓고 판단한다."
+        >
+          <Option label="연속" note="API 키 확인(버튼) → 체크리스트 준비(화면) — 온보딩에서 실제로 이어지는 순서">
+            <div className="space-y-3">
+              <button type="button" className={PRIMARY_BTN}>
+                <Spinner variant={buttonVariant} size={16} />
+                {copy.verifyBtn}
+              </button>
+              <div className="flex flex-col items-center gap-3 rounded-[10px] bg-surface py-6">
+                <Spinner variant={screenVariant} size={32} className="text-primary" />
+                <p className="text-sm text-text-muted">체크리스트를 준비하고 있어요</p>
+              </div>
+            </div>
+          </Option>
+
+          <Option label="나란히" note="왼쪽 16px(버튼) · 오른쪽 24/32px(영역·화면)">
+            <div className="flex items-end justify-around text-primary">
+              <div className="flex flex-col items-center gap-2">
+                <Spinner variant={buttonVariant} size={16} />
+                <span className="text-[10px] text-text-muted">16 · 버튼</span>
+              </div>
+              <div className="flex flex-col items-center gap-2">
+                <Spinner variant={areaVariant} size={24} />
+                <span className="text-[10px] text-text-muted">24 · 영역</span>
+              </div>
+              <div className="flex flex-col items-center gap-2">
+                <Spinner variant={screenVariant} size={32} />
+                <span className="text-[10px] text-text-muted">32 · 화면</span>
+              </div>
             </div>
           </Option>
         </Section>
@@ -703,9 +752,9 @@ export function LoadingPreview(): React.JSX.Element {
         {/* ------------------------------------------------------------------ */}
         <Section
           code="S7"
-          title="모달 차단 작업 — 새 디자인"
-          state="새로 디자인"
-          note="모드 전환(시드) · 계정 검증 · 캐시 삭제. 공통 요구는 '진행 중임이 보이고, 닫을 수 없음이 전달되고, 무슨 선택을 하던 중이었는지 맥락이 사라지지 않는 것'."
+          title="모달 차단 작업 — 보류"
+          state="보류"
+          note="모달 디자인 자체를 다시 하기로 해 이 자리는 그 뒤에 정한다. 아래 3안은 현재 모달 골격을 전제로 그린 것이라 새 모달이 나오면 다시 검토해야 한다 — 지우지 않고 참고로 남긴다."
         >
           <Option
             label="A"
@@ -735,7 +784,7 @@ export function LoadingPreview(): React.JSX.Element {
               </div>
               <MockModeOptions />
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-surface/85 backdrop-blur-[2px]">
-                <Spinner variant={variant} size={32} className="text-primary" />
+                <Spinner variant={screenVariant} size={32} className="text-primary" />
                 <p className="text-sm font-medium text-text">{copy.applying}</p>
               </div>
             </MockModalCard>
@@ -752,7 +801,7 @@ export function LoadingPreview(): React.JSX.Element {
               </div>
               <MockCacheGroups dimmed />
               <div className="mt-4 flex items-center justify-center gap-2 rounded-full bg-surface-2 py-2.5">
-                <Spinner variant={variant} size={16} className="text-primary" />
+                <Spinner variant={buttonVariant} size={16} className="text-primary" />
                 <span className="text-sm font-medium text-text-muted">{copy.deleteBtn}</span>
               </div>
             </MockModalCard>
@@ -826,11 +875,11 @@ export function LoadingPreview(): React.JSX.Element {
           <Option label="A" note="버튼은 ~중(말줄임표 없음) — 버튼 폭 변화가 적다">
             <div className="space-y-2">
               <button type="button" className={PRIMARY_BTN}>
-                <Spinner variant={variant} size={16} />
+                <Spinner variant={buttonVariant} size={16} />
                 {COPY.short.verifyBtn}
               </button>
               <button type="button" className={DANGER_BTN}>
-                <Spinner variant={variant} size={16} />
+                <Spinner variant={buttonVariant} size={16} />
                 {COPY.short.deleteBtn}
               </button>
             </div>
@@ -839,11 +888,11 @@ export function LoadingPreview(): React.JSX.Element {
           <Option label="B" note="버튼까지 ~하고 있어요 — 톤이 한 갈래로 모이지만 라벨이 길어진다">
             <div className="space-y-2">
               <button type="button" className={PRIMARY_BTN}>
-                <Spinner variant={variant} size={16} />
+                <Spinner variant={buttonVariant} size={16} />
                 {COPY.polite.verifyBtn}
               </button>
               <button type="button" className={DANGER_BTN}>
-                <Spinner variant={variant} size={16} />
+                <Spinner variant={buttonVariant} size={16} />
                 {COPY.polite.deleteBtn}
               </button>
             </div>
