@@ -58,7 +58,8 @@ describe('index.css .media-scope 블록', () => {
   })
 
   it('기본 테마의 미디어 스코프 파생값과 일치한다', () => {
-    const expected = deriveMediaScope(getThemeDefinition(DEFAULT_THEME))
+    const base = getThemeDefinition(DEFAULT_THEME)
+    const expected = deriveMediaScope(base, base.mode)
     for (const [token, value] of Object.entries(expected)) {
       expect(SCOPE_BLOCK, token).toContain(`--color-${toCustomPropertyName(token)}: ${value.toLowerCase()};`)
     }
@@ -70,9 +71,11 @@ describe('index.css .media-scope 블록', () => {
     for (const token of ['surface', 'surface-2', 'track', 'border', 'text', 'text-muted']) {
       expect(SCOPE_BLOCK, token).toContain(`--color-${token}:`)
     }
-    for (const accent of ['primary', 'secondary', 'third', 'error']) {
+    // secondary 만 예외 — 완료 배지가 카드 안에서만 쓰이므로 모드별 값을 준다.
+    for (const accent of ['primary', 'third', 'error']) {
       expect(SCOPE_BLOCK, accent).not.toContain(`--color-${accent}-tint:`)
       expect(SCOPE_BLOCK, accent).not.toContain(`--color-${accent}-ink:`)
     }
+    expect(SCOPE_BLOCK).toContain('--color-secondary-tint:')
   })
 })

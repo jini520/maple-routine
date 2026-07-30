@@ -87,7 +87,7 @@ function printTokens(tokens: DerivedTheme): void {
   for (const [label, keys] of groups) {
     console.log(`\n  ${DIM}${label}${RESET}`)
     for (const key of keys) {
-      console.log(`    ${swatch(tokens[key])} ${key.padEnd(15)} ${tokens[key]}`)
+      console.log(`    ${swatch(tokens[key])} ${String(key).padEnd(15)} ${tokens[key]}`)
     }
   }
 }
@@ -123,7 +123,7 @@ function run(label: string, seed: ThemeSeed): void {
   console.log(JSON.stringify({ [label]: { mode: seed.mode, ...tokens } }, null, 2))
 
   console.log(`\n  ${DIM}미디어 스코프(.media-scope) 파생값${RESET}`)
-  console.log(JSON.stringify(deriveMediaScope(tokens), null, 2))
+  console.log(JSON.stringify(deriveMediaScope(tokens, seed.mode), null, 2))
 }
 
 function seedFromExisting(name: ExistingThemeName): ThemeSeed {

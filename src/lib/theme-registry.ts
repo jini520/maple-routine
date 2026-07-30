@@ -61,7 +61,7 @@ export function buildThemeCss(theme: ThemeDefinition): string {
   // mode 는 색이 아니라 의도라 커스텀 프로퍼티로 내보내지 않는다.
   const { mode, ...tokens } = theme
   void mode
-  const scope: Readonly<Record<string, string>> = deriveMediaScope(theme)
+  const scope: Readonly<Record<string, string>> = deriveMediaScope(theme, theme.mode)
 
   return [
     ':root {',

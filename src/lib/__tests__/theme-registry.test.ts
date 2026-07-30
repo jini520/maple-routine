@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import jobThemes from '../../data/job-themes.json'
-import { hexToOklch } from '../color'
+import { contrastHex, hexToOklch } from '../color'
 import {
   DEFAULT_THEME,
   THEME_NAMES,
@@ -108,10 +108,20 @@ describe('buildThemeCss', () => {
     it('accent 틴트·잉크는 스코프가 건드리지 않는다 — 칩은 자기 배경을 갖는다', () => {
       const scope = buildThemeCss(getThemeDefinition('머쉬맘')).split('.media-scope {')[1]
 
-      for (const accent of ['primary', 'secondary', 'third', 'error']) {
+      // secondary 만 예외 — 완료 배지가 카드 안에서만 쓰여 모드별 값을 준다.
+      for (const accent of ['primary', 'third', 'error']) {
         expect(scope, `${accent}-tint`).not.toContain(`--color-${accent}-tint:`)
         expect(scope, `${accent}-ink`).not.toContain(`--color-${accent}-ink:`)
       }
+    })
+
+    it.each([...THEME_NAMES])('%s: 완료 배지가 카드 안 "시작 안함" 배지와 구분된다', (name) => {
+      const scope = buildThemeCss(getThemeDefinition(name)).split('.media-scope {')[1]
+      const read = (token: string) =>
+        new RegExp(`--color-${token}: (#[0-9A-F]{6})`, 'i').exec(scope)?.[1] ?? ''
+
+      // 알파는 떼고 바탕색만 견준다 — 카드 위에 얹히므로 실제 인상은 이보다 카드 쪽에 가깝다.
+      expect(contrastHex(read('secondary-tint'), read('surface-2'))).toBeGreaterThan(1.5)
     })
   })
 })

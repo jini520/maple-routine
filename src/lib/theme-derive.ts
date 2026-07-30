@@ -61,6 +61,7 @@ const DERIVE_MARGIN = 0.1
 /** 틴트 농도 — 자리마다 달랐던 4종(/10·/12·/15·/25)을 하나로 통일했다([[ADR-064]] 결정 2). */
 const TINT_RATIO = 0.15
 
+
 /**
  * 중립 톤 램프. 배경·보더·텍스트를 순수 무채색이 아니라 primary 색상 쪽으로 살짝 기울여
  * 테마마다 고유한 톤을 갖게 한다(기존 4테마가 손으로 하던 것을 규칙화).
@@ -338,6 +339,18 @@ export function deriveTheme(seed: ThemeSeed): DerivedTheme {
 
 export type MediaScopeTokens = {
   surface: string
+  /**
+   * 완료 배지 전용 — 이 두 값은 `.media-scope` 안에서만 다르게 잡는다.
+   *
+   * 라이트 테마는 페이지 틴트를 그대로 쓴다 — 어두운 카드 위의 옅은 칩이 잘 보인다.
+   * 다크 테마에서는 그 틴트가 카드 안 "시작 안함" 배지(`surface-2`)와 너무 비슷해져 구분이
+   * 안 되므로, 원래대로 진한 채움(`secondary` + `on-secondary`)을 쓴다(사용자 지시 2026-07-30).
+   *
+   * 카드 안에서 `secondary-tint`/`secondary-ink` 를 쓰는 곳은 완료 배지뿐이라 이 재선언이
+   * 다른 자리를 건드리지 않는다(토스트 성공 톤은 스코프 밖이다).
+   */
+  secondaryTint: string
+  secondaryInk: string
   /** 카드 안쪽 한 단계 위 표면 — 진행 상태 pill·파티 배지가 쓴다. */
   surface2: string
   /** 카드 안쪽 진행률 트랙. 전역 규칙대로 `surface2` 를 따른다. */
@@ -355,11 +368,19 @@ export type MediaScopeTokens = {
  * 커스텀 프로퍼티는 선언된 요소에서 `var()` 가 해석되므로, CSS 쪽에서도 스코프 안에 다시 선언해야
  * 새 기준이 반영된다.
  */
-export function deriveMediaScope(tokens: DerivedTheme): MediaScopeTokens {
+export function deriveMediaScope(tokens: DerivedTheme, mode: ThemeMode): MediaScopeTokens {
   const surface = tokens.mediaSurface
   // 카드 안의 한 단계 위 표면. 페이지의 surface→surface-2 와 같은 폭(OKLCH L +0.09)으로 벌려
   // 카드 톤 안에 머물게 한다 — 이걸 빼면 `bg-surface-2` 가 페이지의 밝은 표면으로 해석된다.
   const surface2 = withLightness(surface, hexToOklch(surface).l + 0.09)
+
+  // 라이트는 페이지 틴트를 그대로 쓴다 — 어두운 카드 위의 옅은 칩이 잘 보인다.
+  // 다크는 그 틴트가 카드 안 "시작 안함" 배지(surface-2)와 너무 비슷해져 구분이 안 되므로
+  // 원래대로 진한 채움을 쓴다(사용자 지시 2026-07-30).
+  const complete =
+    mode === 'light'
+      ? { secondaryTint: tokens.secondaryTint, secondaryInk: tokens.secondaryInk }
+      : { secondaryTint: tokens.secondary, secondaryInk: tokens.onSecondary }
 
   return {
     surface,
@@ -368,6 +389,7 @@ export function deriveMediaScope(tokens: DerivedTheme): MediaScopeTokens {
     border: tokens.mediaBorder,
     text: tokens.mediaInk,
     textMuted: tokens.mediaInkMuted,
+    ...complete,
   }
 }
 

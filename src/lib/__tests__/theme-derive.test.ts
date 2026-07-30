@@ -225,11 +225,34 @@ describe('measureThemeContrast — 관문이 아니라 계측', () => {
   })
 })
 
+// 완료 배지는 카드 안에서만 쓰이므로 스코프가 모드별로 값을 준다([[ADR-064]] 결정 5 정정).
+describe('완료 배지 — 모드별로 다르게', () => {
+  it('라이트: 페이지 틴트를 그대로 쓴다 — 어두운 카드 위 옅은 칩이 잘 보인다', () => {
+    const tokens = deriveTheme(LIGHT_SEED)
+    const scope = deriveMediaScope(tokens, 'light')
+
+    expect(scope.secondaryTint).toBe(tokens.secondaryTint)
+    expect(scope.secondaryInk).toBe(tokens.secondaryInk)
+    expect(contrastHex(scope.secondaryTint, tokens.mediaSurface)).toBeGreaterThan(4)
+  })
+
+  it('다크: 옅은 틴트는 "시작 안함" 배지와 구분이 안 돼 진한 채움을 쓴다', () => {
+    const tokens = deriveTheme(DARK_SEED)
+    const scope = deriveMediaScope(tokens, 'dark')
+
+    expect(scope.secondaryTint).toBe(tokens.secondary)
+    expect(scope.secondaryInk).toBe(tokens.onSecondary)
+
+    // 카드 안 "시작 안함" 배지(surface-2)와 확실히 갈려야 한다.
+    expect(contrastHex(scope.secondaryTint, scope.surface2)).toBeGreaterThan(2)
+  })
+})
+
 // ADR-064 결정 5 — 일러스트 카드 안은 카드 **위에 직접 놓이는** 것들만 기준을 바꾼다.
 describe('deriveMediaScope — 카드 위에 직접 놓이는 것만 다시 묶는다', () => {
   it('표면·텍스트·보더가 media-* 를 가리킨다', () => {
     const tokens = deriveTheme(LIGHT_SEED)
-    const scope = deriveMediaScope(tokens)
+    const scope = deriveMediaScope(tokens, 'light')
 
     expect(scope.surface).toBe(tokens.mediaSurface)
     expect(scope.border).toBe(tokens.mediaBorder)
@@ -239,7 +262,7 @@ describe('deriveMediaScope — 카드 위에 직접 놓이는 것만 다시 묶�
 
   it.each(ALL_SEEDS)('%s: 카드 안 표면이 카드 톤 안에 머문다', (_label, seed) => {
     const tokens = deriveTheme(seed)
-    const scope = deriveMediaScope(tokens)
+    const scope = deriveMediaScope(tokens, seed.mode)
 
     expect(scope.track).toBe(scope.surface2)
     expect(hexToOklch(scope.surface2).l).toBeGreaterThan(hexToOklch(scope.surface).l)
@@ -253,9 +276,10 @@ describe('deriveMediaScope — 카드 위에 직접 놓이는 것만 다시 묶�
    * 사용자 보고 2026-07-30).
    */
   it('accent 틴트·잉크는 카드 안에서도 페이지 값을 쓴다', () => {
-    const scope = deriveMediaScope(deriveTheme(LIGHT_SEED)) as Record<string, string>
+    const scope = deriveMediaScope(deriveTheme(LIGHT_SEED), 'light') as Record<string, string>
 
-    for (const key of ['primaryTint', 'primaryInk', 'secondaryTint', 'secondaryInk', 'thirdTint', 'thirdInk']) {
+    // secondary 는 완료 배지 전용으로 예외다(아래 별도 describe).
+    for (const key of ['primaryTint', 'primaryInk', 'thirdTint', 'thirdInk']) {
       expect(scope[key], `${key} 는 스코프가 건드리지 않는다`).toBeUndefined()
     }
   })
