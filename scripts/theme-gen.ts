@@ -39,6 +39,22 @@ const INHERITED_KEYS = [
   'text', 'textMuted', 'textDisabled',
 ] as const
 
+/**
+ * 테마별 추가 override 와 대비 면제 — 사용자가 눈으로 확인하고 내린 결정만 들어간다.
+ *
+ * 머쉬맘: 파생된 어두운 트랙(`#585545`)보다 **기존 크림 트랙이 낫다**는 판단(2026-07-30).
+ * 진행률 채움/트랙 대비가 1.86:1로 남지만, 주황과 크림은 색상 차가 커서 실제로는 구분된다.
+ * 규칙 자체를 완화하지 않고 이 테마 하나만 면제해, 뒤에 올 파스텔 primary 테마는 계속 걸리게 둔다.
+ */
+const THEME_EXCEPTIONS: Partial<
+  Record<ExistingThemeName, { overrides?: Partial<DerivedTheme>; waivers?: string[] }>
+> = {
+  머쉬맘: {
+    overrides: { track: '#E4E1CE' },
+    waivers: ['track/primary'],
+  },
+}
+
 const DIM = '\u001b[2m'
 const RED = '\u001b[31m'
 const YELLOW = '\u001b[33m'
@@ -97,8 +113,11 @@ function printReport(report: ContrastReport): void {
   for (const check of report.checks) {
     const ratio = `${check.ratio.toFixed(2)}:1`.padStart(8)
     const label = `${check.token} / ${check.against}`.padEnd(34)
+    const waived = report.waived.includes(check)
     if (check.pass) {
       console.log(`    ${GREEN}✓${RESET} ${label}${ratio} ${DIM}(≥${check.required})${RESET}`)
+    } else if (waived) {
+      console.log(`    ${DIM}—${RESET} ${label}${ratio} ${DIM}(면제 · 원래 ≥${check.required})${RESET}`)
     } else if (check.severity === 'advisory') {
       console.log(`    ${YELLOW}!${RESET} ${label}${ratio} ${YELLOW}(권고 ≥${check.required})${RESET}`)
     } else {
@@ -106,16 +125,21 @@ function printReport(report: ContrastReport): void {
     }
   }
 
+  const tail = [
+    report.waived.length > 0 ? `${DIM}면제 ${report.waived.length}건${RESET}` : '',
+    report.warnings.length > 0 ? `${YELLOW}권고 ${report.warnings.length}건 미달${RESET}` : '',
+  ].filter(Boolean)
+
   if (report.pass) {
-    console.log(`\n  ${GREEN}필수 항목 전부 통과${RESET}${report.warnings.length > 0 ? ` ${YELLOW}(권고 ${report.warnings.length}건 미달)${RESET}` : ''}`)
+    console.log(`\n  ${GREEN}필수 항목 전부 통과${RESET}${tail.length > 0 ? ` (${tail.join(', ')})` : ''}`)
   } else {
     console.log(`\n  ${RED}필수 ${report.failures.length}건 미달 — 시드를 조정하거나 해당 토큰을 override 하세요${RESET}`)
   }
 }
 
-function run(label: string, seed: ThemeSeed): boolean {
+function run(label: string, seed: ThemeSeed, waivers: string[] = []): boolean {
   const tokens = deriveTheme(seed)
-  const report = checkThemeContrast(tokens)
+  const report = checkThemeContrast(tokens, waivers)
 
   console.log(`\n${'─'.repeat(60)}\n  ${label}  ${DIM}(${seed.mode})${RESET}`)
   printTokens(tokens)
@@ -130,19 +154,25 @@ function run(label: string, seed: ThemeSeed): boolean {
   return report.pass
 }
 
-function seedFromExisting(name: ExistingThemeName): ThemeSeed {
+function seedFromExisting(name: ExistingThemeName): { seed: ThemeSeed; waivers: string[] } {
   const existing = jobThemes[name] as Record<string, string>
+  const exception = THEME_EXCEPTIONS[name]
+
   const overrides: Partial<DerivedTheme> = {}
   for (const key of INHERITED_KEYS) {
     overrides[key] = existing[key]
   }
+  Object.assign(overrides, exception?.overrides ?? {})
 
   return {
-    primary: existing.primary,
-    secondary: existing.secondary,
-    third: existing.third,
-    mode: EXISTING_MODES[name],
-    overrides,
+    seed: {
+      primary: existing.primary,
+      secondary: existing.secondary,
+      third: existing.third,
+      mode: EXISTING_MODES[name],
+      overrides,
+    },
+    waivers: exception?.waivers ?? [],
   }
 }
 
@@ -152,7 +182,8 @@ function main(): void {
 
   if (args.has('existing-all')) {
     for (const name of Object.keys(EXISTING_MODES) as ExistingThemeName[]) {
-      allPassed = run(name, seedFromExisting(name)) && allPassed
+      const { seed, waivers } = seedFromExisting(name)
+      allPassed = run(name, seed, waivers) && allPassed
     }
   } else if (args.has('existing')) {
     const name = args.get('existing') as ExistingThemeName
@@ -160,7 +191,8 @@ function main(): void {
       console.error(`알 수 없는 테마: ${name} (가능: ${Object.keys(EXISTING_MODES).join(', ')})`)
       process.exit(1)
     }
-    allPassed = run(name, seedFromExisting(name))
+    const { seed, waivers } = seedFromExisting(name)
+    allPassed = run(name, seed, waivers)
   } else {
     const primary = args.get('primary')
     const secondary = args.get('secondary')

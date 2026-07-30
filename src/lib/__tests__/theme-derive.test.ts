@@ -99,6 +99,40 @@ describe('track — 진행률 채움 대비', () => {
     const tokens = deriveTheme(seed)
     expect(contrastHex(tokens.track, tokens.primary)).toBeGreaterThanOrEqual(3)
   })
+
+  // 머쉬맘이 이 규칙을 면제받았다고 해서 규칙이 죽으면 안 된다 — 파스텔 primary 테마에서
+  // surface-2 를 그대로 트랙에 쓰면 채움과 트랙이 둘 다 밝아 진행률이 사실상 안 보인다.
+  it('파스텔 시드에서 surface-2 를 트랙으로 쓰면 규칙이 잡아낸다', () => {
+    const tokens = deriveTheme(PASTEL_SEED)
+    expect(contrastHex(tokens.surface2, tokens.primary)).toBeLessThan(1.5)
+
+    const naive = { ...tokens, track: tokens.surface2 }
+    expect(checkThemeContrast(naive).failures.map((entry) => entry.token)).toContain('track')
+  })
+})
+
+// 규칙을 통째로 완화하는 대신 테마별로 아는 예외만 뺀다([[ADR-064]] 결정 4 정정).
+describe('대비 면제(waiver)', () => {
+  const naivePastel = () => {
+    const tokens = deriveTheme(PASTEL_SEED)
+    return { ...tokens, track: tokens.surface2 }
+  }
+
+  it('면제한 항목은 실패로 세지 않는다', () => {
+    const report = checkThemeContrast(naivePastel(), ['track/primary'])
+    expect(report.failures).toEqual([])
+    expect(report.pass).toBe(true)
+  })
+
+  it('면제해도 리포트에서 사라지지 않는다', () => {
+    const report = checkThemeContrast(naivePastel(), ['track/primary'])
+    expect(report.waived.map((entry) => `${entry.token}/${entry.against}`)).toEqual(['track/primary'])
+  })
+
+  it('다른 항목의 면제는 이 실패를 덮지 못한다', () => {
+    const report = checkThemeContrast(naivePastel(), ['text/bg'])
+    expect(report.failures.map((entry) => entry.token)).toContain('track')
+  })
 })
 
 // ADR-064 결정 5 — 일러스트 카드 안은 기준 표면이 media-surface 로 바뀐다.

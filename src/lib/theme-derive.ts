@@ -386,19 +386,34 @@ export interface ContrastCheck {
 
 export interface ContrastReport {
   checks: ContrastCheck[]
-  /** `required` 중 통과 못 한 것. 비면 테마를 커밋해도 된다. */
+  /** `required` 중 통과 못 했고 면제되지도 않은 것. 비면 테마를 커밋해도 된다. */
   failures: ContrastCheck[]
   /** `advisory` 중 통과 못 한 것. 사람이 보고 판단한다. */
   warnings: ContrastCheck[]
+  /** `required` 를 못 지켰지만 명시적으로 면제한 것. 숨기지 않고 계속 보고한다. */
+  waived: ContrastCheck[]
   pass: boolean
 }
+
+/**
+ * 면제 항목의 식별자 — `"토큰/바탕"` 형식(예: `"track/primary"`).
+ *
+ * 규칙을 통째로 완화하는 대신 **테마별로 아는 예외만** 빼는 장치다. 이렇게 두면 머쉬맘이
+ * 진행률 트랙 대비를 포기해도 뒤에 올 파스텔 primary 테마는 계속 규칙의 보호를 받는다.
+ * [[ADR-021]] 의 미달값이 코드 어디에도 표시 없이 방치됐던 전례를 반복하지 않으려는 것이라,
+ * 면제한 항목도 리포트에서 사라지지 않고 `waived` 로 계속 나온다.
+ */
+export type ContrastWaiver = string
 
 /**
  * 테마가 문서화된 대비 요구를 만족하는지 검사한다(`docs/features/theme.md` 34토큰 표).
  * 값을 나열해 비교하는 회귀 테스트를 대체하는 것이 목적이라([[ADR-064]] 결정 11),
  * 테마가 늘어도 검사 항목은 늘지 않는다.
  */
-export function checkThemeContrast(tokens: DerivedTheme): ContrastReport {
+export function checkThemeContrast(
+  tokens: DerivedTheme,
+  waivers: readonly ContrastWaiver[] = [],
+): ContrastReport {
   const checks: ContrastCheck[] = []
 
   const check = (
@@ -430,8 +445,15 @@ export function checkThemeContrast(tokens: DerivedTheme): ContrastReport {
   check('mediaInk', 'mediaSurface', AA_TEXT)
   check('mediaInkMuted', 'mediaSurface', AA_TEXT)
 
+  const waiverSet = new Set(waivers)
+  const isWaived = (entry: ContrastCheck): boolean => waiverSet.has(`${entry.token}/${entry.against}`)
+
   const unmet = checks.filter((entry) => !entry.pass)
-  const failures = unmet.filter((entry) => entry.severity === 'required')
+  const required = unmet.filter((entry) => entry.severity === 'required')
+
+  const failures = required.filter((entry) => !isWaived(entry))
+  const waived = required.filter(isWaived)
   const warnings = unmet.filter((entry) => entry.severity === 'advisory')
-  return { checks, failures, warnings, pass: failures.length === 0 }
+
+  return { checks, failures, warnings, waived, pass: failures.length === 0 }
 }
