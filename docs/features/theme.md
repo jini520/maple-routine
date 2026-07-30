@@ -27,36 +27,36 @@
 
 **Accent** — X ∈ `primary`·`secondary`·`third`·`error` 각각 `X` / `on-X` / `X-tint` / `X-ink`, 추가로 `primary-hover`.
 
-| 토큰 | 용도 | 대비 요구 |
+| 토큰 | 용도 | 대비 (참고) |
 |---|---|---|
 | `primary` | 브랜드 채움 배경 | — |
 | `primary-hover` | hover/눌림 배경 | — |
-| `on-primary` | primary 채움 위 전경 | vs `primary` ≥ 4.5:1 |
+| `on-primary` | primary 채움 위 전경 | vs `primary` — **색감이 정한다**, 수치는 참고 |
 | `primary-tint` | 배지·활성 탭·선택 카드 배경 | — |
-| `primary-ink` | primary 계열 텍스트·아이콘·링크 | vs `surface` **및** `primary-tint` ≥ 4.5:1 |
+| `primary-ink` | primary 계열 텍스트·아이콘·링크 | vs `surface` **및** `primary-tint` ≥ 4.5:1 **(겨냥함)** |
 | `secondary` / `on-secondary` / `secondary-tint` / `secondary-ink` | 보조 강조(완료 배지·성공 톤) | 위와 동일 |
 | `third` / `on-third` / `third-tint` / `third-ink` | 3차 강조(카운트·카테고리) | 위와 동일 |
 | `error` / `on-error` / `error-tint` / `error-ink` | 에러·위험 | 위와 동일 |
 
 **표면·텍스트·기타**
 
-| 토큰 | 용도 | 대비 요구 |
+| 토큰 | 용도 | 대비 (참고) |
 |---|---|---|
 | `bg` | 페이지 배경 | — |
 | `surface` | 카드/표면 | — |
 | `surface-2` | 2단계 표면 | — |
-| `track` | 진행률 바·토글 트랙 | vs `primary` ≥ 3:1 |
+| `track` | 진행률 바·토글 트랙 | `surface-2` 를 따른다, 수치는 참고 |
 | `border` | 기본 보더 | — |
 | `border-strong` | 강조 보더 | — |
-| `text` | 기본 텍스트 | vs `bg`·`surface` ≥ 4.5:1 |
-| `text-muted` | 보조 텍스트 | vs `bg`·`surface` ≥ 4.5:1 |
-| `text-disabled` | 비활성 텍스트 | vs `bg`·`surface` ≥ 3:1 |
+| `text` | 기본 텍스트 | vs `bg`·`surface` ≥ 4.5:1 **(겨냥함)** |
+| `text-muted` | 보조 텍스트 | vs `bg`·`surface` ≥ 4.5:1 **(겨냥함)** |
+| `text-disabled` | 비활성 텍스트 | 참고만 (WCAG 1.4.3 제외 대상) |
 | `info-tint` | 정보성 배경 틴트 | — |
-| `info-ink` | `info-tint` 위 텍스트·아이콘 | vs `info-tint` ≥ 4.5:1 |
+| `info-ink` | `info-tint` 위 텍스트·아이콘 | vs `info-tint` ≥ 4.5:1 **(겨냥함)** |
 | `media-surface` | 일러스트 카드 배경 | — |
 | `media-border` | 일러스트 카드 보더 | — |
-| `media-ink` | 일러스트 위 이름 텍스트 | vs `media-surface` ≥ 4.5:1 |
-| `media-ink-muted` | 일러스트 위 보조 텍스트 | vs `media-surface` ≥ 4.5:1 |
+| `media-ink` | 일러스트 위 이름 텍스트 | vs `media-surface` ≥ 4.5:1 **(겨냥함)** |
+| `media-ink-muted` | 일러스트 위 보조 텍스트 | vs `media-surface` ≥ 4.5:1 **(겨냥함)** |
 | `scrim` | 모달·바텀시트 오버레이 | — |
 | `shadow-color` | 그림자·text-shadow 색 | — |
 
@@ -70,7 +70,7 @@
   이 토큰은 **색감이 정하고 대비는 참고만 한다**(아래 판단 순서). 경계를 대비 수치가 아니라 밝기로 잡는 것이 요점이다 — 대비선으로 잡으면 어느 선을 아슬하게 넘느냐로 그림이 튄다. 대비를 맞추려고 명도를 더 밀지도 않는다. 밝은 쪽에서 끝까지 밀어봐야 대비는 거의 안 오르고(2.38→2.45) 색조만 씻겨 흰색이 된다.
 - **`X-tint`**: `color-mix(in oklab, var(--color-X) 15%, var(--color-surface))`. 테마당 손튜닝 값이 늘지 않는다. 다른 농도가 필요한 테마만 명시값으로 덮는다.
 - **`X-ink`**: X의 색상(H)을 유지한 채 명도(L)만 조정해 `surface` 와 `X-tint` 양쪽 4.5:1을 만족시킨다.
-- **`track`**: `surface-2` 에서 출발해 `primary` 대비 3:1 미달이면 조정.
+- **`track`**: `surface-2` 를 그대로 쓴다. 대비를 맞추려고 명도를 벌리지 않는다 — 특정 테마에서 진행률이 안 읽히면 그 테마만 `track` 을 덮는다.
 - **`scrim`·`shadow-color`**: `mode` 와 `bg` 색조에서 파생.
 - **`media-*`**: 테마 색조를 띤 어두운 배색으로 파생(일러스트 페이드·text-shadow가 어두운 배경 전제).
 
@@ -95,15 +95,15 @@
 
 이 스코프 덕에 카드 안 컴포넌트는 앱 전역과 **똑같은 레시피**(`bg-primary-tint text-primary-ink`)를 쓰면서 자동으로 어두운 기준을 따른다.
 
-**런타임이 아니라 생성 도구로 한다** — 색 값은 도메인 데이터라 [[ADR-006]] 상 사용자 확인이 필요한데, 런타임 계산은 그 확인 절차를 없앤다. 시드를 넣으면 34토큰 + 대비 검증 리포트가 나오고, 사람이 확인해 `job-themes.json` 에 커밋한다.
+**런타임이 아니라 생성 도구로 한다** — 색 값은 도메인 데이터라 [[ADR-006]] 상 사용자 확인이 필요한데, 런타임 계산은 그 확인 절차를 없앤다. 시드를 넣으면 34토큰 + 대비 계측 리포트가 나오고, 사람이 확인해 `job-themes.json` 에 커밋한다.
 
 ```bash
 npm run theme:gen -- --primary '#F58B0F' --secondary '#F7D00D' --third '#CA763A' --mode light
-npm run theme:gen -- --existing 머쉬맘      # 기존 테마의 17값을 승계하고 신규 토큰만 채운다
+npm run theme:gen -- --existing 머쉬맘      # 기존 테마의 확정값을 승계하고 나머지를 채운다
 npm run theme:gen -- --existing-all         # 기존 4테마 일괄
 ```
 
-터미널에 색 견본·대비 리포트·붙여넣을 JSON 블록·미디어 스코프 파생값이 함께 나온다. 파생 규칙 본체는 `lib/theme-derive.ts`(색 공간·대비 프리미티브는 `lib/color.ts`)에 있고 스크립트는 껍데기다 — 대비 검증 테스트가 같은 함수를 재사용하므로 도구와 테스트가 갈라지지 않는다.
+터미널에 색 견본·대비 계측·붙여넣을 JSON 블록·미디어 스코프 파생값이 함께 나온다. 대비 때문에 실패로 끝나지 않는다. 파생 규칙 본체는 `lib/theme-derive.ts`(색 공간·대비 프리미티브는 `lib/color.ts`)에 있고 스크립트는 껍데기다 — 회귀 테스트가 같은 함수를 재사용하므로 도구와 테스트가 갈라지지 않는다.
 
 ## 판단 순서 — 색감이 먼저, 대비는 참고
 **전체 색감과 캐릭터의 컬러 컨셉이 최우선이고, 대비비는 그다음에 참고한다**([[ADR-064]] 판단 순서, 2026-07-30 사용자 결정).
@@ -117,7 +117,7 @@ npm run theme:gen -- --existing-all         # 기존 4테마 일괄
 ## 테마 추가 방법
 `src/data/job-themes.json` 에 블록 하나를 추가하면 끝난다([[ADR-064]] 결정 10). `ThemeName` 은 JSON 키에서 추론되고, 타입 가드·`THEME_OPTIONS`·라이트/다크 판정·CSS 변수 주입이 모두 이 파일을 따라간다. 개별 파일을 손으로 동기화하지 않는다.
 
-회귀 테스트는 값을 나열하지 않고 **스키마(34필드 존재) + 위 표의 대비 요구**를 검사한다([[ADR-064]] 결정 11) — 테마가 늘어도 테스트가 늘지 않는다.
+회귀 테스트는 값을 나열하지 않고 **스키마(34필드 + `mode`) + 파생 규칙**을 검사한다([[ADR-064]] 결정 11) — 테마가 늘어도 테스트가 늘지 않는다. **겨냥함**으로 표시한 항목만 대비를 확인하고, 나머지는 계측해 보여주기만 한다.
 
 ## 테마 토큰을 쓰지 않는 영역 (의도적)
 아래는 테마를 따라가지 **않는** 것이 맞다. 정규화 대상으로 오해하지 말 것([[ADR-064]] 적용 범위 밖).
@@ -128,7 +128,6 @@ npm run theme:gen -- --existing-all         # 기존 4테마 일괄
 
 ## 열린 질문
 - 테마 이름과 실제 직업(전직) 매핑, 테마 단위(직업 대분류 vs 5차 전직 세부) 미정.
-- 기존 4개 테마의 신규 17토큰 값 — 생성 도구 산출 후 사용자 확인 필요([[ADR-006]]).
 - 선택 테마를 네이티브 스플래시·부트 커버에 반영할지.
 
 ## 폐기된 정책 (history)
