@@ -2,7 +2,7 @@
 
 > **범위**: 처치 보스 수익 계산, 파티원 수 자동 기록, 주간/월간 탭·기간 네비게이터, 아코디언 레이아웃, 고가 드롭 강조 연출. 보스 목록의 출처·파티 설정은 [boss-scheduler.md](./boss-scheduler.md), 물욕 드롭 입력은 [item-drop.md](./item-drop.md).
 > **관련 소스**: `app/boss-profit/`(`BossProfitScreen.tsx`) · `features/boss-profit/` · `storage/boss-profit`(SQLite `boss_profit_records`) · `storage/sqlite/db.ts` · `lib/boss-profit-period.ts` · `lib/boss-matching.ts`(정규 순서·`WEEKLY_BOSS_CLEAR_LIMIT`·`WEEKLY_CRYSTAL_SALE_LIMIT`·`isSeasonBossName`) · `lib/world-emblem.ts`·`lib/item-icons.ts`(결정석/월드 아이콘) · `src/data/boss-crystal-prices.json`·`weekly-bosses.json`·`boss-portrait-icon-crops.json` · `index.css`(고가 드롭 클래스).
-> **관련 ADR**: [[ADR-014]] [[ADR-017]] [[ADR-019]] [[ADR-023]] [[ADR-032]] [[ADR-033]] [[ADR-036]] [[ADR-037]] [[ADR-045]] [[ADR-049]] [[ADR-054]] [[ADR-059]] [[ADR-010]]. **관련 문서**: [../foundation/game-data.md](../foundation/game-data.md), [../foundation/error-resilience.md](../foundation/error-resilience.md), [../persistence/sqlite.md](../persistence/sqlite.md).
+> **관련 ADR**: [[ADR-014]] [[ADR-017]] [[ADR-019]] [[ADR-023]] [[ADR-032]] [[ADR-033]] [[ADR-036]] [[ADR-037]] [[ADR-045]] [[ADR-049]] [[ADR-054]] [[ADR-059]] [[ADR-010]] [[ADR-067]] [[ADR-068]] [[ADR-069]]. **관련 문서**: [../foundation/game-data.md](../foundation/game-data.md), [../foundation/error-resilience.md](../foundation/error-resilience.md), [../persistence/sqlite.md](../persistence/sqlite.md).
 
 ## 정책
 - 처치 보스 목록은 Nexon API 동기화 데이터를 그대로 사용(수동 입력 없음). 등록 여부가 아니라 **처치된(`complete_flag: true`) 보스만** 구독·표시·계산(등록만 하고 안 잡은 보스는 안 나타남). 실제 처치 난이도 우선 선택은 `selectBossProfitBosses`([[ADR-033]] — 등록 난이도 ≠ 처치 난이도 오류 수정, `ownComplete` 도입).
@@ -14,26 +14,49 @@
   - **표시 범위는 두 탭 · 모든 기간**([[ADR-059]] — [[ADR-054]] 결정 4의 "주간 탭 · 현재 기간 한정" 폐기). 과거 주의 `34 / 90` 은 "그 주에 이 월드가 한도를 얼마나 썼는가"라는 완결된 사실이고, 이월되지 않는 성질이 오히려 주별 기록으로서의 의미를 보장한다. 과거 기간 `rows` 는 DB 기록에서 오지만 그 행은 전부 `isComplete: true` 라 파생식이 그대로 성립한다.
   - **월간 탭의 링은 "월간 보스 처치"다**([[ADR-059]] 결정 3) — 주간 처치 수를 월간으로 끌어오지 않는다. 월간 탭 `rows` 에는 `cycle === 'monthly'` 만 있어 주간 처치 수를 파생할 원본이 없고(주간분은 금액 합계 행으로만 존재), 12는 **주 단위로 초기화되는 한도**라 월 단위로 곱한 분모는 게임에 없는 수치다([[ADR-006]]). 분자는 그 달에 처치한 월간 보스 수(보스명 distinct), 분모는 `MONTHLY_BOSS_COUNT = weeklyBossesData.monthly.length`(현재 검은마법사 1종 → 1칸 링). 리터럴이 아니라 참조 데이터에서 파생하므로 월간 보스가 늘면 칸도 따라 는다.
   - **월드 정보**는 `imageUrl` 과 같은 경로로 배관한다 — `getSortedCharacterInfo` 가 이미 부르는 `getCachedCharacterBasic(ocid)` 의 같은 `profile` 에서 `world` 를 함께 꺼내 행까지 흘린다(추가 조회·새 저장소·새 API 호출 없음). `world` 는 옵셔널이라 **모르는 캐릭터는 월드 집계에서 조용히 제외**한다("미분류" 줄 없음) — 그만큼 월드 합계가 과소집계되지만 캐릭터 카드의 `n/12` 는 월드와 무관하게 그대로 표시된다.
+  - **월드 리프 시**(사용자 확인 2026-07-31, [[ADR-069]]): **클리어 수(12)는 캐릭터 단위라 이어지고**, **판매 한도(90)는 월드마다 따로 산정된다**. 그래서 주 중간에 리프하면 그 주의 판매량이 두 월드에 각각 계상되고(그 주의 분모는 `90 × 2`), 캐릭터 카드의 `n/12` 는 월드와 무관하게 그 주 전체를 센다 — **링과 칩의 집계 단위가 의도적으로 다르다**(캐릭터 vs 월드). 코드를 한쪽으로 맞추면 게임 사실과 어긋난다.
   - **알려진 한계**(표시된 숫자가 실제 게임과 다를 수 있는 세 가지 — "왜 숫자가 안 맞냐"는 물음의 답):
     1. **추적 밖 캐릭터의 처치는 셀 수 없다.** 90은 월드 단위 한도인데 앱은 사용자가 고른 추적 캐릭터만 동기화한다([[ADR-042]]). 같은 월드의 추적 밖 캐릭터로 보스를 잡으면 실제 소진량보다 **적게** 표시된다. 이번 범위에서 UI 주석 문구는 넣지 않는다(헤드라인을 더 늘리지 않기 위함).
     2. **월드를 모르는 캐릭터는 월드 합계에서 빠진다.** 구버전 `character-basic-cache` 엔트리에는 `world` 가 없어 어느 월드 한도에도 귀속시킬 수 없다("미분류" 줄을 만들지 않는다). 다만 그 캐릭터 카드의 `n/12` 배지는 월드와 무관하게 정상 표시되므로 **개별 진행률 정보는 잃지 않고**, 캐시가 갱신되면 자동으로 합계에 합류한다.
     3. **과거 기간은 "기록된 것"만 센다.** 백필·자동 기록은 `boss-crystal-prices.json` 에 가격 항목이 없거나 `priceMeso === null` 인 보스를 건너뛰므로, 그런 보스는 그 기간의 링·칩에서도 빠진다([[ADR-059]] 트레이드오프). 현재 `priceMeso: null` 인 항목은 **벨로나(미출시)뿐**이라 실질 영향은 0이고, 신규 보스가 출시됐는데 가격표 갱신이 늦으면 같은 일이 생긴다. 참조 데이터를 갱신하면 그때부터의 기록에 반영되지만 롤링 조회 윈도우를 벗어난 주는 복구되지 않는다 — **다만 금액(총 수익)이 이미 똑같이 겪는 한계라, 화면의 세 숫자가 같은 기록에서 나와 서로 어긋나지는 않는다.**
-    4. **과거 기간의 월드 합계는 그 기간에 기록이 있는 캐릭터만 센다.** 기록이 하나도 없는 캐릭터는 `rows` 에 없어 그룹조차 생기지 않는다 — 화면에 보이지 않는 캐릭터가 합계에 기여하지 않는 것이므로 표시와 데이터는 일치한다.
+    4. **월드 귀속은 "지금 캐시된 월드"이고 DB에 남지 않는다 — 그래서 월드 리프가 과거 집계를 소급 변경한다.** `summarizeWorldCrystals` 는 `group.bossRows[0]?.world` 를 쓰고, 그 값은 `getCachedCharacterBasic(ocid).profile.world`(라이브 캐시)에서 온다. `boss_profit_records` 스키마에는 **`world` 컬럼이 없다** — 기록되는 스냅샷은 `price_meso`·`party_size` 뿐이다([[ADR-023]]). 따라서 캐릭터가 월드를 옮기면 그 캐릭터의 **모든 과거 주** 결정석 수가 옛 월드에서 빠져 새 월드 합계로 옮겨 붙는다(캐시가 갱신되는 시점에 조용히 바뀐다). "당시 월드"를 알 원천이 API에도 없다 — 과거 `date` 응답의 `world_name` 도 현재 월드다(실측, [[ADR-067]]). 이월되지 않는 주별 한도라는 성질([[ADR-059]])과 정면으로 어긋난다 → **`world` 컬럼 스냅샷으로 해소하기로 결정**([[ADR-069]] 결정 1·2, 구현 전).
+    5. **과거 기간의 월드 합계는 그 기간에 기록이 있는 캐릭터만 센다.** 기록이 하나도 없는 캐릭터는 `rows` 에 없어 그룹조차 생기지 않는다 — 화면에 보이지 않는 캐릭터가 합계에 기여하지 않는 것이므로 표시와 데이터는 일치한다.
 - **멱등성**: `(characterId, boss, difficulty, weekOf)` 유니크 upsert. 참조 데이터 제거돼도 과거 기록 보존([../foundation/error-resilience.md](../foundation/error-resilience.md)).
 
 ## 자동 기록 ([[ADR-014]])
 동기화로 새 처치가 확인된 보스는 사용자 입력을 기다리지 않고 즉시 `boss_profit_records` 에 upsert(화면 진입과 무관). 기본 파티원 수 = `storage/boss-party-settings` 에서 같은 (ocid, boss, difficulty)의 `boss_party_settings` 조회값, 없으면 1([[ADR-019]] — 보스 카드 배지·필터와 항상 같은 소스). 사용자가 특정 주(달)만 수정하면 그 주 기록만 갱신되고, 과거 주차의 `party_size` 는 스냅샷으로 남아 소급 변경 없음(주차별 override 유지). 등록됐지만 미완료인 보스는 "미완료" placeholder(0메소, DB 미기록)로 선등록([[ADR-032]]).
+
+**동기화가 실패한 캐릭터는 자동 기록하지 않는다**([[ADR-067]] 결정 7). `syncSchedules` 는 개별 실패 시 `buildFallbackResult` 로 **마지막 캐시 상태를 그대로** 돌려주는데(`isStale: true`), 자동 기록 루프에 `isStale` 게이트가 없어 그 낡은 완료 상태가 **현재 기간의 수익으로 영구 기록**됐다 — 캐시 우선 표시 분기는 같은 이유로 자동 기록을 일부러 하지 않는데(아래 [[ADR-017]] 항목) 폴백 경로가 그 방어를 우회한 것이다. 2주간 미접속한 캐릭터를 새로고침하면 4주 전 처치가 이번 주 수익으로 찍히고, 기록이 남은 뒤에는 `mergeRecordsIntoRows` 가 계속 복원하므로 스스로 사라지지 않는다.
+
+**처치 난이도가 확정되면 드롭 기록을 그 난이도 키로 이관한다**([[ADR-069]] 결정 4). `boss_drop_records` 의 PK가 `(ocid, boss, difficulty, period_key, drop_index)` 라, 익스트림으로 등록해두고 드롭까지 기록한 뒤 백필이 하드로 확정하면 그 드롭이 **고아**가 된다(화면·고가 드롭 배지·환산 가치에서 사라지고 DB에 남는다 — `loadDropsByRowKey` 는 `rows` 에 등장하는 키만 읽는다). 확정 시점에 옛 난이도 키의 드롭을 `pruneUnobtainableDrops(boss, 확정난이도, …)` 로 걸러 확정 키로 옮기고 옛 키는 비운다. **그 난이도에서 획득 불가능한 항목은 삭제하고 되살리지 않는다** — 거짓 기록이 환산 가치·연출에 섞이는 것이 기록 한 줄을 잃는 것보다 나쁘다(사용자 판단). 확정 키에 이미 드롭이 있으면 이관분을 뒤에 이어 붙인다.
 
 **기록 조회가 실패하면 자동 기록을 건너뛴다**([[ADR-050]] 결정 3). `getBossProfitRecords` 조회는 `withSqliteFallback` 폴백을 `[]` 가 아니라 `null` 로 두어 **"조회 실패"와 "기록 없음"을 구분**한다 — 실패를 "없음"으로 읽으면 자동 기록이 `party_size = 1` 로 사용자가 저장한 값을 덮어쓴다. 예기치 않은 리로드로 SQLite 커넥션이 stale해져 조회가 멈추는 경로가 실재하므로([../persistence/sqlite.md](../persistence/sqlite.md)) 가상의 방어가 아니다. 건너뛴 조합은 다음 새로고침에서 정상 커넥션으로 재시도되므로 유실이 아니라 지연이다.
 
 ## 기간 처리 ([[ADR-023]])
 - **주간/월간 탭**: 주간 탭 `cycle: weekly` 만, 월간 탭 "주차별 합계 + `cycle: monthly` 보스 상세".
 - **기간 네비게이터**: 탭 아래 ‹ 라벨 › 로 과거 탐색. 라벨은 최근 두 기간까지 상대("이번 주"/"지난 주", "이번 달"/"지난 달"), 그 이전은 "OO월 N주차"/"OO년 O월"(한 주가 두 달에 걸치면 시작 목요일이 속한 달 기준). 최신 기간에선 미래 화살표 비활성화.
-- **로컬 우선 캐싱**: 기간 이동은 항상 `storage/boss-profit` 의 `boss_profit_records` 만 읽어 즉시 전환, API 재호출 없음. 저장 기록 없는 과거 기간 첫 이동 때만 스피너와 함께 `nexon/schedule` 을 그 기간 `date`(YYYY-MM-DD)로 자동 1회 재조회(하한 [../foundation/nexon-api.md](../foundation/nexon-api.md) 참고) 후 즉시 영구 저장 → 다음 방문부터 재조회 안 함. 그 기간 미접속이면 재조회해도 비어 있을 수 있음.
-- **이전 기간 게이트**([[ADR-037]]): 스토어 파생 `canGoPreviousPeriod`(`canReachPreviousPeriod`: MIN 하한 미만 불가 / `isPeriodQueryable` 면 가능 / 롤링 밖이어도 캐시 기록 있으면 가능)를 이전 버튼과 `goToPreviousPeriod` 가드가 공유.
+- **로컬 우선 캐싱**: 기간 이동은 항상 `storage/boss-profit` 의 `boss_profit_records` 만 읽어 즉시 전환, API 재호출 없음. 저장 기록 없는 과거 기간 첫 이동 때만 스피너와 함께 `nexon/schedule` 을 그 기간 `date`(YYYY-MM-DD)로 자동 1회 재조회(조회 가능 구간 `[오늘−13, 오늘−1]` — [../foundation/nexon-api.md](../foundation/nexon-api.md) 참고) 후 즉시 영구 저장 → 다음 방문부터 재조회 안 함. 그 기간 미접속이면 재조회해도 비어 있을 수 있음.
+- **기간 상태는 여섯 가지다**([[ADR-067]] 결정 2 + 정정 1) — 전에는 `periodUnavailable`(재시도 유도) / `isPeriodQueryable === false`(조회 불가) 둘로만 갈랐고, 그 둘이 "0건으로 확정" · "조회 가능한데 미조회" · "아직 집계 전" · "영구 조회 불가"를 뭉갰다. 표현은 [[ADR-068]].
+
+| 상태 | 뜻 | 확인 기록 | 사용자 행동 | 표시([[ADR-068]]) |
+|---|---|---|---|---|
+| `recorded` | 기록이 있다 | — | — | 금액 |
+| `confirmedEmpty` | 조회해서 **0건을 확인**했다 | `markPeriodChecked` 함 | 없음 | `EmptyState` · `0 메소` |
+| `notChecked` | 조회 **가능**한데 아직 조회하지 않았다 | 아직 안 함 | **조회** | 조회 버튼 · `— 메소` |
+| `notCollected` | 아직 집계 전(`OPENAPI00009`) | **하지 않는다** | 없음(나중에 자동) | pending 톤 고지 · `— 메소` |
+| `outOfRange` | 조회 가능 구간 밖 — 윈도우 밖·월드 이전 이전 | 함(영구) | 없음 | `UnavailableNotice` · `— 메소` |
+| `failed` | 그 외 실패(네트워크·타임아웃 등) | 하지 않는다 | **다시 시도** | `ErrorState` · 재시도 버튼 |
+
+  - **`notChecked` 가 있어야 하는 이유**: 백필 대상은 **과거 달로 이동할 때만** 그 달의 주들을 포함하므로(`buildBackfillTargets`), **현재 달의 지난 주**는 사용자가 그 주로 직접 이동한 적이 없으면 조회되지 않는다. 그런데 `buildWeeklySubtotalsForMonth` 는 "기록 없음 + 조회 가능"을 `confirmed` 로 떨어뜨려 **조회한 적 없는 주를 `0 메소`(확정)로 표시**하고 있었다.
+  - **`confirmedEmpty` 는 시간이 지나도 `outOfRange` 로 격하되지 않는다** — 표시 판정이 `isPeriodQueryable` 하나였던 탓에, 0건으로 확정한 주가 14일 뒤 "조회 불가"로 바뀌었다. 표시 단계도 `boss_profit_period_checks` 를 읽는다([[ADR-067]] 결정 3).
+  - **현재 기간은 `checked` 로 표시되지 않는다 — 그래서 주가 닫히는 순간 반드시 재조회된다.** `markPeriodChecked` 는 `backfillTarget` 안에서만 호출되므로(`store.ts:496`·`564`), 그 주가 "현재 기간"이던 동안 `refresh()` 가 기록을 쌓아도 확인 표시는 남지 않는다. 목요일 00:00에 그 주가 과거가 되면 `isPeriodChecked` 가 false라 백필이 돌고, **그 조회일은 항상 그 주의 수요일 = 목요일 기준 오늘−1일**이라 `OPENAPI00009` 로 실패한다. 즉 **매주 목요일 새벽(어제 집계가 끝나기 전 — 실측 기준 대략 00:00~03시 KST) 지난 주를 열면 실패 문구가 뜬다** — 기록은 정상 표시되면서 함께 뜬다(재현 확인: rows 2건·총 수익 정상 + "이 기간을 불러오지 못했습니다").
+    - 닫힌 주를 한 번 더 조회하는 설계 자체는 유효하다 — 리셋 직전에 잡은 보스가 마지막 동기화 이후였다면 기록에 없기 때문이다. 고칠 것은 **실패의 해석**(`오늘−1일` 의 `OPENAPI00009` 는 `notCollected` — 실패가 아니라 "아직")과 **기록이 있는 상태의 표현**이다.
+  - **축약 응답을 `confirmedEmpty` 로 굳히지 않는다** — 200이어도 그 응답이 미접속 축약이면 "0건 확인"이 아니다. 특히 매주 목요일·매월 1일 **새벽**에는 조회일이 오늘−1일이면서 아직 집계 전이라 `OPENAPI00009` 가 나오므로(`notCollected`) 여기서 굳히면 그 기간이 영구히 0메소가 된다.
+- **이전 기간 게이트**([[ADR-037]], [[ADR-067]] 결정 6): 스토어 파생 `canGoPreviousPeriod`. 전에는 **바로 이전 한 칸만** 봐서(`isPeriodQueryable` 또는 그 기간의 캐시 기록) 기록이 없는 기간에 도달하면 그 뒤의 기록까지 전부 막혔다 — 3·4주차에 접속하지 않은 캐릭터는 1·2주차 기록이 DB에 남아 있어도 화면으로 도달할 수 없었다. **기록이 있는 가장 과거 기간까지는 항상 도달할 수 있어야 한다.**
 - **동기화 상태 영역**(마지막 동기화 시각·"조회 중" 로딩·새로고침 버튼)은 현재 기간(`isLatestPeriod`)에서만 노출(과거 기간은 cache-first·checked-once라 무의미).
 - **실패는 토스트로 알린다**([[ADR-063]]): 동기화 전체 실패(원인별 문구 + `invalidApiKey`는 설정 열기 / `network`는 다시 시도) · 일부 캐릭터 실패(**이름 대신 인원 수** — Toast 본문이 `truncate`라 나열하면 잘린다) · 파티원 수 저장 실패("파티원 수를 저장하지 못했습니다", 보스 관리 화면과 같은 문구). 헤더 아래·카드 안 인라인 문단은 전부 걷어냈다 — 특히 파티원 수는 `err.message` 원문(`setPartySize: …`)을 그대로 렌더하던 자리였다. 기간 백필 실패("이 기간을 불러오지 못했습니다")만 인라인으로 남는다(기간 라벨 바로 아래라 맥락과 붙어 있다).
 - **캐시 우선 표시**([[ADR-017]]): "지금" 기간에 한해 `syncSchedules` 재검증 전 `getCachedSchedulerState` 로 화면을 먼저 채움(위 기간별 캐싱과 별개).
+- **현재 기간의 행은 API/캐시가 원천이고, 과거 기간의 행은 기록이 원천이다** — 이 비대칭 때문에 **API가 보스를 빼면 이미 저장된 수익이 현재 기간 화면에서 사라진다**([[ADR-067]] 결정 4). 월간 보스를 처치한 뒤 1주 이상 미접속하면 축약 응답에 `bossMonthly` 가 `reg=false`·`comp=false` 로만 남아 행이 만들어지지 않고, DB에 기록이 있어도 "이번 달 총 수익 0메소"가 된다(재현 확인 — 6.65억 기록 보유 상태에서 0메소 표시). `mergeRecordsIntoRows` 는 **있는 행을 채우기만** 하고 기록만 있는 행을 만들지 않기 때문이다. 현재 기간도 기록을 합집합으로 얹어야 한다.
 - 보스 표시 순서([[ADR-036]]): `sortRowsByOcidOrder` 에 `weekly-bosses.json` 정규 순서(REFERENCE_ENTRIES: weekly→eventWeekly→monthly) 2차 정렬 키로 캐시·라이브·과거기록 세 경로를 같은 순서로 고정(`getBossReferenceOrder`, `boss-matching.ts`).
 
 ## UI
@@ -151,6 +174,9 @@ a11y: 링 자체가 role="img" aria-label="{주간|월간} 보스 처치 8 / 12"
 ```
 최신 기간에서 다음 버튼 `disabled`.
 - **빈 상태·조회 불가**([[ADR-060]]): 처치 기록 0건은 공용 `EmptyState`(inline, `ProfitIcon` — 탭바·헤드라인과 같은 아이콘([[ADR-066]]), "아직 처치한 보스가 없습니다", **CTA 없음** — 앱 안에 할 일이 없다). 롤링 조회 윈도우 밖([[ADR-032]])은 빈 상태가 아니라 `UnavailableNotice`(정보 톤) — 기간 목록은 기본형, 캐릭터 카드 안은 `compact`. 레시피는 [design-system.md](../foundation/design-system.md).
+  - **여섯 상태의 표현은 [[ADR-068]]에서 확정**(`/debug/period-states` 시안 비교, 2026-07-31). 프리미티브 3종을 그대로 쓰고 `notCollected` 만 **넷째 얼굴**(단독 `Clock` + `bg-surface-2` 중립 톤 + 액션 없음)을 받는다 — 고칠 수 없는 제약이지만 시간이 지나면 스스로 풀리므로 "영구히 확인할 수 없다"와 같은 말을 하면 거짓말이 된다. 이 톤은 새 컴포넌트가 아니라 `UnavailableNotice` 의 변형으로 흡수한다.
+  - **문구**: `notCollected` = "아직 집계되지 않았습니다 / 이 기간 기록이 준비되면 자동으로 채워집니다"(시각을 암시하는 표현 금지 — 집계 시각 미계측). `outOfRange` 의 기간은 **"최근 14일"** — 코드 상수는 13이지만 그것은 정산 시각으로 마지막 날이 몇 시간 일찍 닫힌 결과이고 넥슨 한도 자체는 14일이다([[ADR-068]] 결정 1, [nexon-api.md](../foundation/nexon-api.md)).
+  - **총 수익 헤드라인**은 금액을 모르는 네 상태에서 `0 메소` 대신 **대시(`—`)** 를 쓴다 — `0` 은 "0원 벌었다"로 읽힌다. `confirmedEmpty` 만 `0 메소` 다.
 - **기간 미보유 자동 재조회 스피너**: 공용 셸 승계 카드 `LoadingState size="inline"`([[ADR-061]] 결정 2·3·4) — `MapleSweepSpinner size={24}` + "5월 2주차 기록을 불러오고 있어요". 백필이 끝나면 같은 자리·같은 껍데기(`rounded-[14px] border border-border bg-surface`)에 캐릭터 카드가 들어온다. 미접속 기간 문구는 미정.
 - **월간 탭 — 주차별 합계 + 월간 보스**: 보스 나열 대신 그 달 `cycle: weekly` 를 주차(시작 목요일 속한 달 기준 N주차)로 묶어 합산 후 `cycle: monthly` 상세를 이어 붙임. 아코디언 본문 셸 안 두 서브섹션:
 ```
@@ -173,6 +199,9 @@ a11y: 링 자체가 role="img" aria-label="{주간|월간} 보스 처치 8 / 12"
 `applyDownloadedLiveUpdate()`(`CapacitorUpdater.set()`)가 JS 컨텍스트를 파괴하는 리로드 전에 SQLite 커넥션을 정상 종료하지 않으면 stale 커넥션이 남아 과거 수익 데이터 로드가 조용히 멈춘다 → `storage/sqlite/db.ts` 의 `closeBossProfitDb()` 로 리로드 전 미리 닫음([[ADR-008]] 세 번째 정정). 읽기 조회는 `withSqliteFallback`(타임아웃 폴백), 쓰기는 `withSqliteTimeout`(타임아웃을 실패로 전파 — 성공 위장 시 영구 유실 위험).
 
 ## 열린 질문
+- **`notChecked` 조회 버튼을 누른 뒤 실패하면** 그 행이 `failed`로 바뀌는지, 토스트로 알리고 상태를 유지하는지([[ADR-068]] 적용 범위 밖).
+- **빈 기간이 여러 개일 때의 번거로움** — 이전 게이트만 넓히는 안([[ADR-068]] 결정 5)은 빈 기간 수만큼 ‹ 를 눌러야 기록에 닿는다. 실제로 불편하면 기간 목록 시트(시안 B)를 후속으로 검토한다.
+- **조회 불가 계정을 고른 뒤의 되돌리기** — 온보딩이 계정 재선택으로 안내할지([[ADR-068]] 결정 4는 경고 표시까지만 정했다).
 - 결정 시세 시점별 이력화 필요 여부([../foundation/game-data.md](../foundation/game-data.md)).
 - 월드 결정석 한도(`n/90`)가 추적 밖 캐릭터의 처치를 못 세는 한계를 **UI 주석 문구로도 알릴지** 여부([[ADR-054]] 트레이드오프 — 헤드라인을 더 늘리지 않으려 구현 범위에서는 제외했고, 문서에는 위 "알려진 한계"로 남겼다. 사용자 문의가 실제로 생기면 후속 결정으로 다룬다).
 
