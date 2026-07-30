@@ -51,7 +51,7 @@ const THEME_EXCEPTIONS: Partial<
 > = {
   머쉬맘: {
     overrides: { track: '#E4E1CE' },
-    waivers: ['track/primary'],
+    waivers: ['track/primary', 'onPrimary/primary'],
   },
 }
 

@@ -24,6 +24,14 @@ const ALL_SEEDS: Array<[string, ThemeSeed]> = [
   ['아주 어두운', DEEP_SEED],
 ]
 
+/**
+ * 시드별로 사용자가 받아들인 대비 예외.
+ * 머쉬맘 주황(L=0.736)은 아이보리를 얹으면 3:1 하한 아래지만 그 그림을 택했다(2026-07-30).
+ */
+const SEED_WAIVERS: Record<string, string[]> = {
+  '라이트(머쉬맘 시드)': ['onPrimary/primary'],
+}
+
 describe('deriveTheme — 스키마', () => {
   it.each(ALL_SEEDS)('%s: 34개 토큰을 빠짐없이 만든다', (_label, seed) => {
     const tokens = deriveTheme(seed)
@@ -46,8 +54,8 @@ describe('deriveTheme — 스키마', () => {
 })
 
 describe('deriveTheme — 대비 요구', () => {
-  it.each(ALL_SEEDS)('%s: 모든 대비 요구를 통과한다', (_label, seed) => {
-    const report = checkThemeContrast(deriveTheme(seed))
+  it.each(ALL_SEEDS)('%s: 모든 대비 요구를 통과한다', (label, seed) => {
+    const report = checkThemeContrast(deriveTheme(seed), SEED_WAIVERS[label] ?? [])
     expect(report.failures).toEqual([])
     expect(report.pass).toBe(true)
   })
@@ -111,13 +119,25 @@ describe('on-* — 순수 흑/백이 아니라 채움색의 색조를 물려받�
     }
   })
 
-  it('주황 채움 위에는 짙은 갈색 계열이 온다 (옛 #2B1206 과 같은 방향)', () => {
-    const onPrimary = deriveTheme(LIGHT_SEED).onPrimary
-    const derived = hexToOklch(onPrimary)
-    const legacy = hexToOklch('#2B1206')
+  // 사용자 결정(2026-07-30): 색 있는 채움 위에는 아이보리 계열이 기본이다.
+  it('주황 채움 위에는 따뜻한 아이보리가 온다', () => {
+    const tokens = deriveTheme(LIGHT_SEED)
+    const onPrimary = hexToOklch(tokens.onPrimary)
 
-    expect(derived.l).toBeLessThan(0.35)
-    expect(Math.abs(derived.h - legacy.h)).toBeLessThan(30)
+    expect(onPrimary.l).toBeGreaterThan(0.9)
+    expect(onPrimary.c).toBeGreaterThan(0.004) // 순수 흰색이 아니라 주황 쪽으로 기운 아이보리
+  })
+
+  // 다만 채움이 아주 밝으면 아이보리는 글자로서 사라진다 — 그 구간은 어두운 전경으로 넘긴다.
+  it('아주 밝은 채움 위에는 어두운 전경으로 넘어간다', () => {
+    // 머쉬맘 secondary(#F7D00D, L≈0.87)에 아이보리를 얹으면 1.46:1로 안 보인다.
+    const tokens = deriveTheme(LIGHT_SEED)
+    expect(hexToOklch(tokens.secondary).l).toBeGreaterThan(0.75)
+    expect(hexToOklch(tokens.onSecondary).l).toBeLessThan(0.35)
+
+    // 파스텔 primary 도 마찬가지.
+    const pastel = deriveTheme(PASTEL_SEED)
+    expect(hexToOklch(pastel.onPrimary).l).toBeLessThan(0.35)
   })
 })
 
@@ -222,6 +242,10 @@ describe('deriveMediaScope — 미디어 기준 두 번째 벌', () => {
 // 채워진 값이 기존 값들과 함께 대비 요구를 만족해야 한다.
 describe('기존 4테마 승계', () => {
   const MODES = { 레테: 'dark', 렌: 'light', 머쉬맘: 'light', 혼테일: 'dark' } as const
+  // 사용자가 눈으로 확인하고 받아들인 예외(scripts/theme-gen.ts THEME_EXCEPTIONS 와 같은 목록).
+  const WAIVERS: Partial<Record<keyof typeof MODES, string[]>> = {
+    머쉬맘: ['track/primary', 'onPrimary/primary'],
+  }
 
   it.each(Object.keys(MODES) as Array<keyof typeof MODES>)(
     '%s: 기존 17토큰이 보존되고 신규 토큰이 대비를 통과한다',
@@ -233,6 +257,7 @@ describe('기존 4테마 승계', () => {
         third: existing.third,
         mode: MODES[name],
         overrides: {
+          ...(name === '머쉬맘' ? { track: '#E4E1CE' } : {}),
           bg: existing.bg,
           surface: existing.surface,
           surface2: existing.surface2,
@@ -252,7 +277,7 @@ describe('기존 4테마 승계', () => {
       expect(tokens.text).toBe(existing.text)
       expect(tokens.primary).toBe(existing.primary)
 
-      expect(checkThemeContrast(tokens).failures).toEqual([])
+      expect(checkThemeContrast(tokens, WAIVERS[name] ?? []).failures).toEqual([])
     },
   )
 })

@@ -86,6 +86,15 @@ const AA_TEXT = 4.5
 const AA_NON_TEXT = 3
 
 /**
+ * 채움 위 전경색(`on-*`)의 **필수** 하한 ([[ADR-064]] 결정 1 재정정, 사용자 결정 2026-07-30).
+ *
+ * 색 있는 채움 위에 아이보리를 얹는 쪽을 택하면서 이 자리만 AA(4.5:1)를 필수에서 내렸다.
+ * 대신 3:1 은 지킨다 — 그 아래는 취향이 아니라 글자가 안 보이는 구간이기 때문이다.
+ * 4.5:1 은 권고로 계속 재고, 못 지키면 리포트가 말한다.
+ */
+const ON_FILL_MIN = AA_NON_TEXT
+
+/**
  * 파생할 때만 쓰는 여유분. 기준선에 정확히 붙은 값(4.50:1)이 나오면 검사는 통과하지만
  * 우연히 걸친 것처럼 읽히고, 뒤에 값을 조금만 손봐도 곧바로 미달로 넘어간다.
  * 검사 기준 자체는 그대로 두고 **만들 때만** 조금 넘겨 잡는다.
@@ -196,19 +205,35 @@ const FOREGROUND_DARK = { lightness: 0.18, chromaScale: 0.35, chromaMax: 0.06 } 
 const FOREGROUND_LIGHT = { lightness: 0.96, chromaScale: 0.25, chromaMax: 0.04 } as const
 
 /**
+ * 채움이 이보다 밝으면 밝은 전경을 포기하고 어두운 전경으로 간다([[ADR-064]] 결정 1 재정정).
+ *
+ * 사용자 결정(2026-07-30): 색 있는 채움 위에는 **아이보리 계열이 기본**이다. 대비 최댓값을
+ * 따르면 밝은 주황(`#F58B0F`) 위에 짙은 갈색이 오는데 그 그림이 별로라는 판단이다.
+ *
+ * 다만 채움이 아주 밝으면 아이보리가 **글자로서 사라진다** — 실측으로 파스텔 하늘(L≈0.90)에
+ * 1.32:1, 렌 `third`(L≈0.92)에 1.20:1, 머쉬맘 `secondary`(L≈0.87)에 1.46:1이다. 그건 취향
+ * 문제가 아니라 글자가 안 보이는 문제라 그 구간은 어두운 전경으로 넘긴다.
+ *
+ * 경계값 0.75 는 **3:1 이 나오는 밝기가 아니다**. 실측상 아이보리가 3:1 을 내주는 한계는
+ * L≈0.70 부근이고(혼테일 primary L=0.667 → 3.14:1), 머쉬맘 primary 는 L=0.736 으로 그 위라
+ * 2.38:1 이다. 사용자가 그 그림을 택했으므로 경계를 0.736 이 들어오도록 잡았고, 대신
+ * **L 0.70~0.75 구간은 하한 미달이라 테마별 면제를 명시해야** 지나간다.
+ */
+const LIGHT_FOREGROUND_MAX_FILL_LIGHTNESS = 0.75
+
+/**
  * 채움 위 전경색 ([[ADR-064]] 결정 1).
  *
- * 흰색도 검정도 기본으로 두지 않는다 — 밝은 파스텔 채움이면 어두운 전경이, 어두운 채움이면
- * 밝은 전경이 자동으로 정해진다. **어느 쪽도 전제하지 않는 것**이 요점이다.
+ * 흰색도 검정도 기본으로 두지 않는다 — 채움색의 색상(H)을 물려받은 아이보리 또는 짙은 색을
+ * 만든다. 어느 쪽으로 갈지는 **채움의 밝기**가 정한다.
  */
 function deriveForeground(fill: string): string {
   const base = hexToOklch(fill)
-
-  // 방향만 흑/백으로 견준다 — 어느 쪽에 대비 여유가 더 있는지 알아보려는 것이고,
-  // 실제로 쓰는 값은 아래에서 색조를 넣어 만든다.
-  const goDark = contrastHex(fill, '#000000') >= contrastHex(fill, '#FFFFFF')
+  const goDark = base.l > LIGHT_FOREGROUND_MAX_FILL_LIGHTNESS
   const spec = goDark ? FOREGROUND_DARK : FOREGROUND_LIGHT
   const chroma = Math.min(base.c * spec.chromaScale, spec.chromaMax)
+
+  const tinted = oklchToHex({ l: spec.lightness, c: chroma, h: base.h })
 
   // 기본 명도에서 모자라면 극단 쪽으로 조금씩 더 민다 — 필요한 만큼만 밀어야 색조가 남는다.
   for (let step = 0; step <= 1; step += 0.01) {
@@ -216,11 +241,13 @@ function deriveForeground(fill: string): string {
     if (lightness < 0 || lightness > 1) break
 
     const candidate = oklchToHex({ l: lightness, c: chroma, h: base.h })
-    if (contrastHex(candidate, fill) >= AA_TEXT + DERIVE_MARGIN) return candidate
+    if (contrastHex(candidate, fill) >= ON_FILL_MIN + DERIVE_MARGIN) return candidate
   }
 
-  // 색조를 띤 값으로 끝내 못 맞추면 순수 흑/백으로 물러선다(대비 검사가 결과를 보고한다).
-  return goDark ? '#000000' : '#FFFFFF'
+  // 끝내 못 맞추면 **흑/백으로 달아나지 않고** 색조를 띤 기본값을 그대로 둔다. 밝은 쪽에서
+  // 명도를 끝까지 밀어봐야 대비는 거의 안 오르고(머쉬맘 primary 기준 2.38→2.45) 색조만 씻긴다.
+  // 미달 사실은 대비 검사가 보고하고, 받아들일 값이면 테마가 면제를 명시한다.
+  return tinted
 }
 
 /**
@@ -455,7 +482,9 @@ export function checkThemeContrast(
   const accents = ['primary', 'secondary', 'third', 'error'] as const
   for (const key of accents) {
     const capitalized = `${key[0].toUpperCase()}${key.slice(1)}` as Capitalize<typeof key>
-    check(`on${capitalized}` as keyof DerivedTheme, key, AA_TEXT)
+    // 채움 위 전경만 필수 하한이 3:1 이고 AA(4.5:1)는 권고다 — 아이보리를 쓰기로 한 결정의 대가.
+    check(`on${capitalized}` as keyof DerivedTheme, key, ON_FILL_MIN)
+    check(`on${capitalized}` as keyof DerivedTheme, key, AA_TEXT, 'advisory')
     check(`${key}Ink` as keyof DerivedTheme, 'surface', AA_TEXT)
     check(`${key}Ink` as keyof DerivedTheme, `${key}Tint` as keyof DerivedTheme, AA_TEXT)
   }
