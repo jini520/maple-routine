@@ -95,6 +95,16 @@
 
 **런타임이 아니라 생성 도구로 한다** — 색 값은 도메인 데이터라 [[ADR-006]] 상 사용자 확인이 필요한데, 런타임 계산은 그 확인 절차를 없앤다. 시드를 넣으면 34토큰 + 대비 검증 리포트가 나오고, 사람이 확인해 `job-themes.json` 에 커밋한다.
 
+```bash
+npm run theme:gen -- --primary '#F58B0F' --secondary '#F7D00D' --third '#CA763A' --mode light
+npm run theme:gen -- --existing 머쉬맘      # 기존 테마의 17값을 승계하고 신규 토큰만 채운다
+npm run theme:gen -- --existing-all         # 기존 4테마 일괄
+```
+
+터미널에 색 견본·대비 리포트·붙여넣을 JSON 블록·미디어 스코프 파생값이 함께 나온다. 파생 규칙 본체는 `lib/theme-derive.ts`(색 공간·대비 프리미티브는 `lib/color.ts`)에 있고 스크립트는 껍데기다 — 대비 검증 테스트가 같은 함수를 재사용하므로 도구와 테스트가 갈라지지 않는다.
+
+**대비 검사는 두 등급이다.** `required` 는 반드시 통과해야 하고, `advisory` 는 통과를 권하지만 실패로 세지 않는다 — 비활성 텍스트(`text-disabled`)는 WCAG 1.4.3이 명시적으로 대비 요구에서 제외하는 대상이라, 사용자가 확정한 기존 값을 억지로 바꾸게 하지 않는다(현재 머쉬맘 `text-disabled` 가 `bg` 대비 2.78:1로 권고 미달).
+
 ## 테마 추가 방법
 `src/data/job-themes.json` 에 블록 하나를 추가하면 끝난다([[ADR-064]] 결정 10). `ThemeName` 은 JSON 키에서 추론되고, 타입 가드·`THEME_OPTIONS`·라이트/다크 판정·CSS 변수 주입이 모두 이 파일을 따라간다. 개별 파일을 손으로 동기화하지 않는다.
 
