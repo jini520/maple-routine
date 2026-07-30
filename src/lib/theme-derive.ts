@@ -80,24 +80,22 @@ export interface ThemeSeed {
   overrides?: Partial<DerivedTheme>
 }
 
-/** 본문 텍스트 기준(WCAG AA). */
+/**
+ * 대비비는 **참고 수치**다 ([[ADR-064]] 결정 1·4·11 재정정, 사용자 결정 2026-07-30).
+ *
+ * 이 모듈은 대비를 관문으로 쓰지 않는다. 판단의 최우선은 **전체 색감과 캐릭터의 컬러 컨셉**이고,
+ * 대비는 그다음에 참고한다. 앞서 대비를 필수 기준으로 세웠더니 아름다운 선택이 번번이 "면제"로
+ * 밀려났는데, 그건 틀이 뒤집힌 것이었다 — 예외로 다뤄야 할 쪽은 아름다움이 아니다.
+ *
+ * 그래서 면제(waiver) 장치를 걷어냈다. 통과/실패가 없으니 면제할 것도 없다.
+ * `measureThemeContrast` 가 수치를 재서 보여주고, 판단은 사람이 한다.
+ */
 const AA_TEXT = 4.5
-/** 비-텍스트(진행률 채움 등) 기준(WCAG AA). */
 const AA_NON_TEXT = 3
 
 /**
- * 채움 위 전경색(`on-*`)의 **필수** 하한 ([[ADR-064]] 결정 1 재정정, 사용자 결정 2026-07-30).
- *
- * 색 있는 채움 위에 아이보리를 얹는 쪽을 택하면서 이 자리만 AA(4.5:1)를 필수에서 내렸다.
- * 대신 3:1 은 지킨다 — 그 아래는 취향이 아니라 글자가 안 보이는 구간이기 때문이다.
- * 4.5:1 은 권고로 계속 재고, 못 지키면 리포트가 말한다.
- */
-const ON_FILL_MIN = AA_NON_TEXT
-
-/**
- * 파생할 때만 쓰는 여유분. 기준선에 정확히 붙은 값(4.50:1)이 나오면 검사는 통과하지만
- * 우연히 걸친 것처럼 읽히고, 뒤에 값을 조금만 손봐도 곧바로 미달로 넘어간다.
- * 검사 기준 자체는 그대로 두고 **만들 때만** 조금 넘겨 잡는다.
+ * 색을 만들 때만 쓰는 여유분. 참고선에 정확히 붙은 값(4.50:1)은 우연히 걸친 것처럼 읽히고
+ * 값을 조금만 손봐도 넘어가므로, 만들 때는 조금 넘겨 잡는다.
  */
 const DERIVE_MARGIN = 0.1
 
@@ -210,14 +208,10 @@ const FOREGROUND_LIGHT = { lightness: 0.96, chromaScale: 0.25, chromaMax: 0.04 }
  * 사용자 결정(2026-07-30): 색 있는 채움 위에는 **아이보리 계열이 기본**이다. 대비 최댓값을
  * 따르면 밝은 주황(`#F58B0F`) 위에 짙은 갈색이 오는데 그 그림이 별로라는 판단이다.
  *
- * 다만 채움이 아주 밝으면 아이보리가 **글자로서 사라진다** — 실측으로 파스텔 하늘(L≈0.90)에
- * 1.32:1, 렌 `third`(L≈0.92)에 1.20:1, 머쉬맘 `secondary`(L≈0.87)에 1.46:1이다. 그건 취향
- * 문제가 아니라 글자가 안 보이는 문제라 그 구간은 어두운 전경으로 넘긴다.
- *
- * 경계값 0.75 는 **3:1 이 나오는 밝기가 아니다**. 실측상 아이보리가 3:1 을 내주는 한계는
- * L≈0.70 부근이고(혼테일 primary L=0.667 → 3.14:1), 머쉬맘 primary 는 L=0.736 으로 그 위라
- * 2.38:1 이다. 사용자가 그 그림을 택했으므로 경계를 0.736 이 들어오도록 잡았고, 대신
- * **L 0.70~0.75 구간은 하한 미달이라 테마별 면제를 명시해야** 지나간다.
+ * 다만 채움이 아주 밝으면 아이보리가 **글자로서 사라진다** — 파스텔 하늘(L≈0.90) 위 아이보리는
+ * 흰 종이에 흰 글씨다. 그건 취향의 문제가 아니라 글자가 없어지는 문제라 그 구간만 짙은 전경으로
+ * 넘긴다. 경계는 대비 수치가 아니라 **밝기**로 잡는다 — 색을 색으로 판단한다는 뜻이고,
+ * 어느 대비선을 넘느냐로 그림이 바뀌지 않게 하려는 것이다.
  */
 const LIGHT_FOREGROUND_MAX_FILL_LIGHTNESS = 0.75
 
@@ -233,40 +227,23 @@ function deriveForeground(fill: string): string {
   const spec = goDark ? FOREGROUND_DARK : FOREGROUND_LIGHT
   const chroma = Math.min(base.c * spec.chromaScale, spec.chromaMax)
 
-  const tinted = oklchToHex({ l: spec.lightness, c: chroma, h: base.h })
-
-  // 기본 명도에서 모자라면 극단 쪽으로 조금씩 더 민다 — 필요한 만큼만 밀어야 색조가 남는다.
-  for (let step = 0; step <= 1; step += 0.01) {
-    const lightness = goDark ? spec.lightness - step : spec.lightness + step
-    if (lightness < 0 || lightness > 1) break
-
-    const candidate = oklchToHex({ l: lightness, c: chroma, h: base.h })
-    if (contrastHex(candidate, fill) >= ON_FILL_MIN + DERIVE_MARGIN) return candidate
-  }
-
-  // 끝내 못 맞추면 **흑/백으로 달아나지 않고** 색조를 띤 기본값을 그대로 둔다. 밝은 쪽에서
-  // 명도를 끝까지 밀어봐야 대비는 거의 안 오르고(머쉬맘 primary 기준 2.38→2.45) 색조만 씻긴다.
-  // 미달 사실은 대비 검사가 보고하고, 받아들일 값이면 테마가 면제를 명시한다.
-  return tinted
+  // 대비를 맞추려고 명도를 더 밀지 않는다. 밝은 쪽에서 끝까지 밀어봐야 대비는 거의 안 오르고
+  // (머쉬맘 primary 기준 2.38→2.45) 색조만 씻겨 흰색에 가까워진다 — 색감이 우선이므로
+  // 채움색에서 온 색조를 그대로 둔다. 실제 수치는 `measureThemeContrast` 가 보고한다.
+  return oklchToHex({ l: spec.lightness, c: chroma, h: base.h })
 }
 
 /**
- * 진행률 트랙 — 채움(primary)과 3:1이 나올 때까지 명도를 벌린다([[ADR-064]] 결정 4).
+ * 진행률 트랙 ([[ADR-064]] 결정 4 재정정, 사용자 결정 2026-07-30).
  *
- * 방향을 미리 정하지 않고 **양쪽을 가까운 명도부터** 훑는다. primary 가 밝으면(파스텔) 트랙을
- * 더 밝게 밀어도 대비가 안 나오고 오히려 어두워져야 하는데, 한 방향만 보면 그 경우를 놓친다.
+ * **표면 톤(`surface-2`)을 그대로 쓴다.** 앞서 채움과 3:1 이 나올 때까지 명도를 벌리게 했더니
+ * 머쉬맘에서 크림색 트랙이 어두운 올리브로 밀려 카드 인상이 망가졌고, 그걸 되돌리려면 "면제"가
+ * 필요했다. 색감이 우선이므로 트랙은 표면 톤을 따르고, 채움과의 대비는 리포트가 수치로 알려준다.
+ *
+ * 토큰을 따로 두는 이유는 값이 달라서가 아니라 **역할이 달라서**다 — 특정 테마에서 진행률이
+ * 안 읽히면 그 테마만 `track` 을 덮으면 되고, `surface-2` 를 쓰는 다른 자리는 안 건드린다.
  */
-function deriveTrack(surface2: string, primary: string): string {
-  if (contrastHex(surface2, primary) >= AA_NON_TEXT) return surface2
-
-  const base = hexToOklch(surface2).l
-  for (let step = 0.01; step <= 1; step += 0.01) {
-    for (const lightness of [base + step, base - step]) {
-      if (lightness < 0 || lightness > 1) continue
-      const candidate = withLightness(surface2, lightness)
-      if (contrastHex(candidate, primary) >= AA_NON_TEXT) return candidate
-    }
-  }
+function deriveTrack(surface2: string): string {
   return surface2
 }
 
@@ -323,7 +300,7 @@ export function deriveTheme(seed: ThemeSeed): DerivedTheme {
     bg,
     surface,
     surface2,
-    track: pick('track', deriveTrack(surface2, primary)),
+    track: pick('track', deriveTrack(surface2)),
     border,
     borderStrong,
 
@@ -417,92 +394,58 @@ export function deriveMediaScope(tokens: DerivedTheme): MediaScopeTokens {
   }
 }
 
-export interface ContrastCheck {
+export interface ContrastMeasurement {
   token: string
   against: string
   ratio: number
-  required: number
-  pass: boolean
-  /**
-   * `required` 는 반드시 통과해야 한다. `advisory` 는 통과를 권하지만 못 지켜도 실패로 세지 않는다 —
-   * 비활성 텍스트는 WCAG 1.4.3이 명시적으로 대비 요구에서 제외하는 대상이라, 기존 테마의
-   * 사용자 확정 값(예: 머쉬맘 `text-disabled` 2.78:1)을 실패로 몰아 억지로 바꾸게 하지 않는다.
-   */
-  severity: 'required' | 'advisory'
+  /** 참고선(WCAG AA) — 넘어야 하는 선이 아니라 견줘보는 눈금이다. */
+  reference: number
+  meets: boolean
 }
 
 export interface ContrastReport {
-  checks: ContrastCheck[]
-  /** `required` 중 통과 못 했고 면제되지도 않은 것. 비면 테마를 커밋해도 된다. */
-  failures: ContrastCheck[]
-  /** `advisory` 중 통과 못 한 것. 사람이 보고 판단한다. */
-  warnings: ContrastCheck[]
-  /** `required` 를 못 지켰지만 명시적으로 면제한 것. 숨기지 않고 계속 보고한다. */
-  waived: ContrastCheck[]
-  pass: boolean
+  measurements: ContrastMeasurement[]
+  /** 참고선 아래인 항목. 통과/실패가 아니라 **사람이 볼 목록**이다. */
+  below: ContrastMeasurement[]
 }
 
 /**
- * 면제 항목의 식별자 — `"토큰/바탕"` 형식(예: `"track/primary"`).
+ * 테마의 주요 색 쌍 대비를 **재서 보여준다**([[ADR-064]] 결정 11 재정정).
  *
- * 규칙을 통째로 완화하는 대신 **테마별로 아는 예외만** 빼는 장치다. 이렇게 두면 머쉬맘이
- * 진행률 트랙 대비를 포기해도 뒤에 올 파스텔 primary 테마는 계속 규칙의 보호를 받는다.
- * [[ADR-021]] 의 미달값이 코드 어디에도 표시 없이 방치됐던 전례를 반복하지 않으려는 것이라,
- * 면제한 항목도 리포트에서 사라지지 않고 `waived` 로 계속 나온다.
+ * 통과/실패를 매기지 않는다. 판단의 최우선은 전체 색감과 캐릭터의 컬러 컨셉이고 대비는 참고
+ * 수치라, 이 함수의 일은 "이 조합은 몇 대 일이다"를 정확히 말해주는 것까지다. 어느 값을 받아들일지는
+ * 수치와 실제 그림을 함께 보고 사람이 정한다.
  */
-export type ContrastWaiver = string
+export function measureThemeContrast(tokens: DerivedTheme): ContrastReport {
+  const measurements: ContrastMeasurement[] = []
 
-/**
- * 테마가 문서화된 대비 요구를 만족하는지 검사한다(`docs/features/theme.md` 34토큰 표).
- * 값을 나열해 비교하는 회귀 테스트를 대체하는 것이 목적이라([[ADR-064]] 결정 11),
- * 테마가 늘어도 검사 항목은 늘지 않는다.
- */
-export function checkThemeContrast(
-  tokens: DerivedTheme,
-  waivers: readonly ContrastWaiver[] = [],
-): ContrastReport {
-  const checks: ContrastCheck[] = []
-
-  const check = (
+  const measure = (
     token: keyof DerivedTheme,
     against: keyof DerivedTheme,
-    required: number,
-    severity: ContrastCheck['severity'] = 'required',
+    reference: number,
   ): void => {
     const ratio = contrastHex(tokens[token], tokens[against])
-    checks.push({ token, against, ratio, required, pass: ratio >= required, severity })
+    measurements.push({ token, against, ratio, reference, meets: ratio >= reference })
   }
 
   for (const surfaceKey of ['bg', 'surface'] as const) {
-    check('text', surfaceKey, AA_TEXT)
-    check('textMuted', surfaceKey, AA_TEXT)
-    check('textDisabled', surfaceKey, AA_NON_TEXT, 'advisory')
+    measure('text', surfaceKey, AA_TEXT)
+    measure('textMuted', surfaceKey, AA_TEXT)
+    measure('textDisabled', surfaceKey, AA_NON_TEXT)
   }
 
   const accents = ['primary', 'secondary', 'third', 'error'] as const
   for (const key of accents) {
     const capitalized = `${key[0].toUpperCase()}${key.slice(1)}` as Capitalize<typeof key>
-    // 채움 위 전경만 필수 하한이 3:1 이고 AA(4.5:1)는 권고다 — 아이보리를 쓰기로 한 결정의 대가.
-    check(`on${capitalized}` as keyof DerivedTheme, key, ON_FILL_MIN)
-    check(`on${capitalized}` as keyof DerivedTheme, key, AA_TEXT, 'advisory')
-    check(`${key}Ink` as keyof DerivedTheme, 'surface', AA_TEXT)
-    check(`${key}Ink` as keyof DerivedTheme, `${key}Tint` as keyof DerivedTheme, AA_TEXT)
+    measure(`on${capitalized}` as keyof DerivedTheme, key, AA_TEXT)
+    measure(`${key}Ink` as keyof DerivedTheme, 'surface', AA_TEXT)
+    measure(`${key}Ink` as keyof DerivedTheme, `${key}Tint` as keyof DerivedTheme, AA_TEXT)
   }
 
-  check('infoInk', 'infoTint', AA_TEXT)
-  check('track', 'primary', AA_NON_TEXT)
-  check('mediaInk', 'mediaSurface', AA_TEXT)
-  check('mediaInkMuted', 'mediaSurface', AA_TEXT)
+  measure('infoInk', 'infoTint', AA_TEXT)
+  measure('track', 'primary', AA_NON_TEXT)
+  measure('mediaInk', 'mediaSurface', AA_TEXT)
+  measure('mediaInkMuted', 'mediaSurface', AA_TEXT)
 
-  const waiverSet = new Set(waivers)
-  const isWaived = (entry: ContrastCheck): boolean => waiverSet.has(`${entry.token}/${entry.against}`)
-
-  const unmet = checks.filter((entry) => !entry.pass)
-  const required = unmet.filter((entry) => entry.severity === 'required')
-
-  const failures = required.filter((entry) => !isWaived(entry))
-  const waived = required.filter(isWaived)
-  const warnings = unmet.filter((entry) => entry.severity === 'advisory')
-
-  return { checks, failures, warnings, waived, pass: failures.length === 0 }
+  return { measurements, below: measurements.filter((entry) => !entry.meets) }
 }

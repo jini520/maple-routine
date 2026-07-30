@@ -3,9 +3,9 @@ import jobThemes from '../../data/job-themes.json'
 import { contrastHex, hexToOklch, mixOklab } from '../color'
 import {
   THEME_TOKEN_KEYS,
-  checkThemeContrast,
   deriveMediaScope,
   deriveTheme,
+  measureThemeContrast,
   type ThemeSeed,
 } from '../theme-derive'
 
@@ -23,14 +23,6 @@ const ALL_SEEDS: Array<[string, ThemeSeed]> = [
   ['밝은 파스텔', PASTEL_SEED],
   ['아주 어두운', DEEP_SEED],
 ]
-
-/**
- * 시드별로 사용자가 받아들인 대비 예외.
- * 머쉬맘 주황(L=0.736)은 아이보리를 얹으면 3:1 하한 아래지만 그 그림을 택했다(2026-07-30).
- */
-const SEED_WAIVERS: Record<string, string[]> = {
-  '라이트(머쉬맘 시드)': ['onPrimary/primary'],
-}
 
 describe('deriveTheme — 스키마', () => {
   it.each(ALL_SEEDS)('%s: 34개 토큰을 빠짐없이 만든다', (_label, seed) => {
@@ -53,11 +45,15 @@ describe('deriveTheme — 스키마', () => {
   })
 })
 
-describe('deriveTheme — 대비 요구', () => {
-  it.each(ALL_SEEDS)('%s: 모든 대비 요구를 통과한다', (label, seed) => {
-    const report = checkThemeContrast(deriveTheme(seed), SEED_WAIVERS[label] ?? [])
-    expect(report.failures).toEqual([])
-    expect(report.pass).toBe(true)
+// 대비는 관문이 아니지만, **명도를 맞춰서 만드는 토큰**은 그 목표를 실제로 달성해야 한다.
+// 본문 텍스트와 accent 잉크가 그렇다(on-* 는 색감 우선이라 여기 없다 — 아래 별도 describe).
+describe('deriveTheme — 명도를 맞춰 만드는 토큰', () => {
+  it.each(ALL_SEEDS)('%s: 본문·보조 텍스트가 배경 대비 AA 를 지킨다', (_label, seed) => {
+    const tokens = deriveTheme(seed)
+    for (const surface of [tokens.bg, tokens.surface]) {
+      expect(contrastHex(tokens.text, surface)).toBeGreaterThanOrEqual(4.5)
+      expect(contrastHex(tokens.textMuted, surface)).toBeGreaterThanOrEqual(4.5)
+    }
   })
 })
 
@@ -155,45 +151,39 @@ describe('*-ink — 표면과 틴트 양쪽에서 AA', () => {
   })
 })
 
-// ADR-064 결정 4 — 텍스트가 없는 채움(진행률 바)의 대비를 보증하는 주체.
-describe('track — 진행률 채움 대비', () => {
-  it.each(ALL_SEEDS)('%s: track 대 primary 가 3:1 이상', (_label, seed) => {
+// ADR-064 결정 4 재정정 — 트랙은 표면 톤을 따른다. 대비를 맞추려고 색을 밀지 않는다.
+describe('track — 표면 톤을 따른다', () => {
+  it.each(ALL_SEEDS)('%s: track 이 surface-2 와 같다', (_label, seed) => {
     const tokens = deriveTheme(seed)
-    expect(contrastHex(tokens.track, tokens.primary)).toBeGreaterThanOrEqual(3)
+    expect(tokens.track).toBe(tokens.surface2)
   })
 
-  // 머쉬맘이 이 규칙을 면제받았다고 해서 규칙이 죽으면 안 된다 — 파스텔 primary 테마에서
-  // surface-2 를 그대로 트랙에 쓰면 채움과 트랙이 둘 다 밝아 진행률이 사실상 안 보인다.
-  it('파스텔 시드에서 surface-2 를 트랙으로 쓰면 규칙이 잡아낸다', () => {
-    const tokens = deriveTheme(PASTEL_SEED)
-    expect(contrastHex(tokens.surface2, tokens.primary)).toBeLessThan(1.5)
-
-    const naive = { ...tokens, track: tokens.surface2 }
-    expect(checkThemeContrast(naive).failures.map((entry) => entry.token)).toContain('track')
+  it('특정 테마만 덮을 수 있다 — surface-2 를 쓰는 다른 자리는 안 건드린다', () => {
+    const tokens = deriveTheme({ ...LIGHT_SEED, overrides: { track: '#585545' } })
+    expect(tokens.track).toBe('#585545')
+    expect(tokens.surface2).not.toBe('#585545')
   })
 })
 
-// 규칙을 통째로 완화하는 대신 테마별로 아는 예외만 뺀다([[ADR-064]] 결정 4 정정).
-describe('대비 면제(waiver)', () => {
-  const naivePastel = () => {
-    const tokens = deriveTheme(PASTEL_SEED)
-    return { ...tokens, track: tokens.surface2 }
-  }
-
-  it('면제한 항목은 실패로 세지 않는다', () => {
-    const report = checkThemeContrast(naivePastel(), ['track/primary'])
-    expect(report.failures).toEqual([])
-    expect(report.pass).toBe(true)
+// ADR-064 결정 11 재정정 — 대비는 재서 보여줄 뿐 통과/실패를 매기지 않는다.
+describe('measureThemeContrast — 관문이 아니라 계측', () => {
+  it('기준선 아래여도 던지거나 실패로 표시하지 않는다', () => {
+    const report = measureThemeContrast(deriveTheme(LIGHT_SEED))
+    expect(report.measurements.length).toBeGreaterThan(10)
+    expect(report).not.toHaveProperty('pass')
+    expect(report).not.toHaveProperty('failures')
   })
 
-  it('면제해도 리포트에서 사라지지 않는다', () => {
-    const report = checkThemeContrast(naivePastel(), ['track/primary'])
-    expect(report.waived.map((entry) => `${entry.token}/${entry.against}`)).toEqual(['track/primary'])
-  })
+  it('기준선 아래인 항목을 숨기지 않고 목록으로 준다', () => {
+    // 머쉬맘 주황 위 아이보리는 2.16:1 — 받아들이기로 한 값이지만 수치는 그대로 보고한다.
+    const report = measureThemeContrast(deriveTheme(LIGHT_SEED))
+    const onPrimary = report.measurements.find(
+      (entry) => entry.token === 'onPrimary' && entry.against === 'primary',
+    )
 
-  it('다른 항목의 면제는 이 실패를 덮지 못한다', () => {
-    const report = checkThemeContrast(naivePastel(), ['text/bg'])
-    expect(report.failures.map((entry) => entry.token)).toContain('track')
+    expect(onPrimary?.meets).toBe(false)
+    expect(onPrimary?.ratio).toBeLessThan(3)
+    expect(report.below).toContain(onPrimary)
   })
 })
 
@@ -242,13 +232,9 @@ describe('deriveMediaScope — 미디어 기준 두 번째 벌', () => {
 // 채워진 값이 기존 값들과 함께 대비 요구를 만족해야 한다.
 describe('기존 4테마 승계', () => {
   const MODES = { 레테: 'dark', 렌: 'light', 머쉬맘: 'light', 혼테일: 'dark' } as const
-  // 사용자가 눈으로 확인하고 받아들인 예외(scripts/theme-gen.ts THEME_EXCEPTIONS 와 같은 목록).
-  const WAIVERS: Partial<Record<keyof typeof MODES, string[]>> = {
-    머쉬맘: ['track/primary', 'onPrimary/primary'],
-  }
 
   it.each(Object.keys(MODES) as Array<keyof typeof MODES>)(
-    '%s: 기존 17토큰이 보존되고 신규 토큰이 대비를 통과한다',
+    '%s: 기존 17토큰이 보존되고 신규 토큰이 채워진다',
     (name) => {
       const existing = jobThemes[name]
       const tokens = deriveTheme({
@@ -257,7 +243,6 @@ describe('기존 4테마 승계', () => {
         third: existing.third,
         mode: MODES[name],
         overrides: {
-          ...(name === '머쉬맘' ? { track: '#E4E1CE' } : {}),
           bg: existing.bg,
           surface: existing.surface,
           surface2: existing.surface2,
@@ -277,7 +262,9 @@ describe('기존 4테마 승계', () => {
       expect(tokens.text).toBe(existing.text)
       expect(tokens.primary).toBe(existing.primary)
 
-      expect(checkThemeContrast(tokens, WAIVERS[name] ?? []).failures).toEqual([])
+      // 신규 토큰이 기존 값들과 어울려 실제로 만들어지는지만 본다 — 대비는 관문이 아니다.
+      expect(Object.keys(tokens).sort()).toEqual([...THEME_TOKEN_KEYS].sort())
+      expect(measureThemeContrast(tokens).measurements.every((entry) => entry.ratio > 1)).toBe(true)
     },
   )
 })
