@@ -12,6 +12,12 @@ import {
 import { getCurrentBossProfitPeriod } from '../../../lib/boss-profit-period'
 import { WEEKLY_BOSS_CLEAR_LIMIT, WEEKLY_CRYSTAL_SALE_LIMIT } from '../../../lib/boss-matching'
 import weeklyBossesData from '../../../data/weekly-bosses.json'
+// ADR-063: 동기화 실패·일부 캐릭터 실패·파티원 수 저장 실패는 인라인 문단이 아니라 토스트로 알린다.
+const { showErrorMock } = vi.hoisted(() => ({ showErrorMock: vi.fn() }))
+vi.mock('../../../features/toast/store', () => ({
+  useToastStore: { getState: () => ({ showError: showErrorMock, showSuccess: vi.fn(), showInfo: vi.fn() }) },
+}))
+
 
 // 월간 링의 분모는 게임 한도가 아니라 "우리가 추적하는 월간 보스 종류 수"라 참조 데이터에서 파생한다
 // ([[ADR-059]] 결정 4) — 화면과 같은 소스를 봐야 월간 보스가 늘 때 테스트가 조용히 어긋나지 않는다.
@@ -324,12 +330,15 @@ describe('BossProfitScreen', () => {
     expect(screen.getByRole('button', { name: /낟낟/ })).toBeInTheDocument()
   })
 
-  it('status가 error이면 에러 문구를 보여준다', () => {
+  // ADR-063: 인라인 문단을 걷어내고 토스트로 알린다.
+  it('status가 error이면 인라인 문단이 아니라 토스트로 알린다', async () => {
     mockStore({ status: 'error', trackedOcids: ['ocid-1'], error: { kind: 'invalidApiKey' }, rows: [] })
 
     renderBossProfitScreen()
 
-    expect(screen.getByText('API 키가 유효하지 않습니다')).toBeInTheDocument()
+    await waitFor(() => expect(showErrorMock).toHaveBeenCalled())
+    expect(showErrorMock.mock.calls[0][0]).toBe('API 키가 유효하지 않습니다')
+    expect(screen.queryByText('API 키가 유효하지 않습니다')).not.toBeInTheDocument()
   })
 
   it('weekly 탭: 롤링 윈도우 밖(오늘-13일 이전)이고 rows가 비어있으면 "조회 불가"를 보여준다(ADR-032)', () => {
@@ -433,17 +442,27 @@ describe('BossProfitScreen', () => {
     expect(screen.getByText('동기화 기록 없음')).toBeInTheDocument()
   })
 
-  it('stale 캐릭터가 있으면 안내 문구가 보인다', () => {
+  // ADR-063: Toast 본문이 truncate라 이름 나열 대신 인원 수를 싣는다.
+  it('stale 캐릭터가 있으면 인원 수를 담은 토스트로 알린다', async () => {
+    const refresh = vi.fn()
     mockStore({
       status: 'loaded',
       trackedOcids: ['ocid-1'],
       rows: [row()],
-      staleCharacterNames: ['낟낟'],
+      staleCharacterNames: ['낟낟', '내옆에최성일'],
+      refresh,
     })
 
     renderBossProfitScreen()
 
-    expect(screen.getByText(/일부 캐릭터 동기화 실패: 낟낟/)).toBeInTheDocument()
+    await waitFor(() => expect(showErrorMock).toHaveBeenCalled())
+    const [message, action] = showErrorMock.mock.calls[0]
+    expect(message).toBe('일부 캐릭터를 불러오지 못했습니다 (2명)')
+    expect(action.label).toBe('다시 시도')
+    expect(screen.queryByText(/일부 캐릭터 동기화 실패/)).not.toBeInTheDocument()
+
+    action.onClick()
+    expect(refresh).toHaveBeenCalledWith(['ocid-1'])
   })
 
   it('캐릭터별 드롭다운은 기본 상태에서 접혀 있어 보스 행이 보이지 않는다', () => {
@@ -548,15 +567,20 @@ describe('BossProfitScreen', () => {
     })
   })
 
-  it('압축 스테퍼의 - 클릭이 실패하면 에러 문구를 보여준다', async () => {
-    const setPartySize = vi.fn().mockRejectedValue(new Error('파티원 수는 1 이상 6 이하의 정수여야 합니다'))
+  // ADR-063: 예외 메시지를 그대로 렌더하던 자리였다 — 개발자용 문구가 사용자에게 새지 않는지
+  // 함께 검증한다(스토어는 'setPartySize: …' 형태로 던진다).
+  it('압축 스테퍼의 - 클릭이 실패하면 원문 대신 사용자 문구 토스트를 띄운다', async () => {
+    const setPartySize = vi
+      .fn()
+      .mockRejectedValue(new Error('setPartySize: 파티원 수는 1 이상 6 이하의 정수여야 합니다'))
     mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row({ partySize: 2 })], setPartySize })
 
     renderBossProfitScreen()
     fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
     fireEvent.click(screen.getByRole('button', { name: '낟낟 자쿰 카오스 파티원 수 감소' }))
 
-    expect(await screen.findByText('파티원 수는 1 이상 6 이하의 정수여야 합니다')).toBeInTheDocument()
+    await waitFor(() => expect(showErrorMock).toHaveBeenCalledWith('파티원 수를 저장하지 못했습니다'))
+    expect(screen.queryByText(/setPartySize:/)).not.toBeInTheDocument()
   })
 
   it('priceMeso가 null이면 가격 미확정 배지를 보여주고 스테퍼가 비활성화된다', () => {

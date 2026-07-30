@@ -24,7 +24,12 @@ import {
   type BossProfitStore,
   type BossProfitWeeklySubtotal,
 } from '../../features/boss-profit/store'
-import { formatScheduleSyncError, formatSyncedAt } from '../../features/schedule-sync/format'
+import { formatSyncedAt } from '../../features/schedule-sync/format'
+import { useToastStore } from '../../features/toast/store'
+import {
+  useScheduleSyncErrorToast,
+  useStaleCharactersToast,
+} from '../../features/schedule-sync/use-sync-error-toast'
 import { isSeasonBossName, WEEKLY_BOSS_CLEAR_LIMIT, WEEKLY_CRYSTAL_SALE_LIMIT } from '../../lib/boss-matching'
 import { formatBossProfitPeriodLabel, isLatestPeriod, isPeriodQueryable } from '../../lib/boss-profit-period'
 import { getItemIconUrl, getItemIconUrlByFile } from '../../lib/item-icons'
@@ -250,7 +255,6 @@ interface BossProfitBossRowProps {
 
 function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Element {
   const { row } = props
-  const [error, setError] = useState<string | null>(null)
   const [isDropSheetOpen, setIsDropSheetOpen] = useState(false)
   // 이 보스에서 고가 아이템을 획득했으면 행 배경에 골드 셰인이 흐르는 강조 효과(valuable-drop-row)를 준다
   // — 캐릭터 카드를 펼쳤을 때 카드 테두리 효과 대신 실제 획득한 보스 행으로 강조가 이동하는 지점(사용자 요청).
@@ -261,13 +265,15 @@ function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Element {
   const isEditable = row.isComplete && !isPriceUnknown
   const partySize = row.partySize ?? 1
 
+  // ADR-063: 예외 메시지를 그대로 렌더하던 인라인 문단을 걷어내고 토스트로 알린다 — 개발자용
+  // 문구('setPartySize: …')와 SQLite 네이티브 원문이 사용자에게 새던 유일한 자리였다. 문구는
+  // 보스 관리 화면(BossManageScreen)과 같아 두 경로가 통일된다.
   async function handleChange(delta: number): Promise<void> {
     const next = clamp(partySize + delta, 1, row.maxPartySize)
     try {
       await props.setPartySize(row, next)
-      setError(null)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '파티원 수를 확인해주세요')
+    } catch {
+      useToastStore.getState().showError('파티원 수를 저장하지 못했습니다')
     }
   }
 
@@ -341,7 +347,6 @@ function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Element {
           )}
         </div>
 
-        {error !== null && <p className="mt-1 text-xs text-error">{error}</p>}
       </div>
 
       {isDropSheetOpen && (
@@ -970,6 +975,18 @@ export function BossProfitScreen(): React.JSX.Element {
 
   const navigate = useNavigate()
 
+  // ADR-063: 동기화 전체 실패는 토스트로 알린다. 기간 라벨·"n분 전" 표기가 남아 맥락은 화면에 있다.
+  useScheduleSyncErrorToast(error, {
+    onRetry: () => refresh(trackedOcids ?? []),
+    onOpenSettings: () => navigate('/settings'),
+  })
+
+  // ADR-063: 일부 캐릭터만 실패한 경우도 토스트로 옮긴다. Toast 본문은 truncate(Toast.tsx)라
+  // 이름을 나열하면 잘리므로 이름 대신 인원 수만 싣는다 — 어느 캐릭터인지는 잃지만, 지금은 선택된
+  // 캐릭터가 아닌 카드의 실패를 알 방법이 아예 없던 것보다 낫다(캐릭터 카드 자체에 표식을 붙이는
+  // 안은 별도 작업, 이슈 #78 B).
+  useStaleCharactersToast(staleCharacterNames, () => refresh(trackedOcids ?? []))
+
   useEffect(() => {
     loadTrackedOcids()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1125,21 +1142,9 @@ export function BossProfitScreen(): React.JSX.Element {
             </button>
           </div>
 
-          {staleCharacterNames.length > 0 && (
-            <p className="text-sm text-error">
-              일부 캐릭터 동기화 실패: {staleCharacterNames.join(', ')} — 마지막 동기화 결과를 표시 중입니다
-            </p>
-          )}
-
           {/* ADR-061 결정 2: 보여줄 데이터가 아예 없을 때만 셸 승계 카드를 그린다. */}
           {!isPeriodLoading && (status === 'idle' || status === 'loading') && characterGroups.length === 0 && (
             <LoadingState size="page" message="불러오고 있어요" />
-          )}
-
-          {status === 'error' && (
-            <p className="text-sm text-error">
-              {error !== null ? formatScheduleSyncError(error) : '오류가 발생했습니다'}
-            </p>
           )}
 
           {!isPeriodLoading && periodUnavailable && (

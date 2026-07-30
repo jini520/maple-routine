@@ -38,7 +38,9 @@ const {
   replaceBossDropRecordsMock: vi.fn(),
 }))
 
-vi.mock('../../schedule-sync/schedule-sync', () => ({
+// ADR-063: 스토어가 toScheduleSyncError로 원인을 살리므로 그 매핑은 실물을 쓴다(부분 모킹).
+vi.mock('../../schedule-sync/schedule-sync', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../schedule-sync/schedule-sync')>()),
   syncSchedules: syncSchedulesMock,
 }))
 

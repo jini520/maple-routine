@@ -11,6 +11,13 @@
 - 지정 시각까지 미완료 시 로컬 알림(알림 시각에 실시간 재확인, [[ADR-004]]). 알림 시각은 설정 가능.
 - 빈 상태·에러 상태 처리는 [../foundation/error-resilience.md](../foundation/error-resilience.md).
 
+## 동기화 실패 표시 ([[ADR-063]], 구현 완료 2026-07-30)
+전체 조회 실패(`status === 'error'`)는 **토스트**로 알린다 — 헤더 아래 인라인 문단(`text-sm text-error`)은 걷어냈다. 지속 상태는 새로고침 옆 "n분 전"(`formatSyncedAt`)이 이미 담당하므로 인라인 문단은 실패 사실만 중복해 말하고 있었고, 거기에는 버튼을 붙일 자리가 없었다.
+- 원인별 액션: `invalidApiKey` → **설정 열기**(재시도로 안 풀린다) · `network` → **다시 시도**(`refresh`) · `rateLimited` → **없음**(지금 누르면 또 429).
+- 스토어는 `catch` 에서 잡은 에러를 `toScheduleSyncError` 로 통과시킨다 — 전에는 `{ kind: 'network' }` 하드코딩이라 401/429가 화면에 도달할 경로가 없었다.
+- 공용 훅 `useScheduleSyncErrorToast`(`features/schedule-sync/use-sync-error-toast.ts`). 스토어가 아니라 화면에서 띄우는 이유는 `설정 열기` 가 라우터를 필요로 하기 때문([[ADR-050]] — 스토어에서 `window.location` 이동은 리로드를 유발해 SQLite 커넥션을 stale하게 만든다).
+- 캐릭터 단위 실패(`selected.error`)의 stale 배너는 이 범위 밖이다(이슈 #78 B).
+
 ## 캐릭터 관리 피커 — 후보 목록 로딩 ([[ADR-053]], 구현 완료 2026-07-29)
 `getCharacterPickerRoster`(`features/schedule-sync`)가 `onUpdate` 로 흘리는 후보 목록의 정책. 보스 스케줄러([boss-scheduler.md](./boss-scheduler.md))·온보딩 캐릭터 선택 단계([onboarding.md](./onboarding.md))가 같은 함수를 공유하므로 세 화면에 동일하게 적용된다. 카드 그리드 자체의 스타일은 [../foundation/design-system.md](../foundation/design-system.md).
 - **활성(`access_flag: true`)이 확인된 캐릭터만** 목록에 넣는다. `character/list` 응답에는 `access_flag` 가 없으므로 그 단계에서 캐시 없는 캐릭터를 채워 넣지 않는다 — 확인 경로는 `character-basic-cache` 또는 `character/basic` 응답 둘뿐이다([[ADR-015]] 결정 5를 "확인 전까지도 넣지 않는다"로 엄격 적용).

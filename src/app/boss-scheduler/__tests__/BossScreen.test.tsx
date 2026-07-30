@@ -10,6 +10,12 @@ import { NexonAuthError } from '../../../nexon/errors'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 import type { CharacterPickerEntry } from '../../../types'
 import type { MatchedBoss } from '../../../lib/boss-matching'
+// ADR-063: 동기화 실패·일부 캐릭터 실패·파티원 수 저장 실패는 인라인 문단이 아니라 토스트로 알린다.
+const { showErrorMock } = vi.hoisted(() => ({ showErrorMock: vi.fn() }))
+vi.mock('../../../features/toast/store', () => ({
+  useToastStore: { getState: () => ({ showError: showErrorMock, showSuccess: vi.fn(), showInfo: vi.fn() }) },
+}))
+
 
 vi.mock('../../../features/boss-scheduler/store', () => ({
   useBossSchedulerStore: vi.fn(),
@@ -571,7 +577,8 @@ describe('BossScreen', () => {
     expect(screen.queryByText(/불러오고 있어요/)).not.toBeInTheDocument()
   })
 
-  it('status가 error이면 에러 문구를 보여준다', async () => {
+  // ADR-063: 인라인 문단을 걷어내고 토스트로 알린다. 401은 재시도로 안 풀리므로 설정으로 보낸다.
+  it('status가 error이면 인라인 문단이 아니라 토스트로 알린다', async () => {
     mockStore({
       status: 'error',
       trackedOcids: ['ocid-1'],
@@ -581,7 +588,32 @@ describe('BossScreen', () => {
 
     renderBossScreen()
 
-    expect(await screen.findByText('API 키가 유효하지 않습니다')).toBeInTheDocument()
+    await waitFor(() => expect(showErrorMock).toHaveBeenCalled())
+    const [message, action] = showErrorMock.mock.calls[0]
+    expect(message).toBe('API 키가 유효하지 않습니다')
+    expect(action.label).toBe('설정 열기')
+    expect(screen.queryByText('API 키가 유효하지 않습니다')).not.toBeInTheDocument()
+  })
+
+  it('network 실패는 토스트에 다시 시도 액션을 붙이고, 누르면 refresh가 호출된다', async () => {
+    const refresh = vi.fn()
+    mockStore({
+      status: 'error',
+      trackedOcids: ['ocid-1'],
+      error: { kind: 'network' },
+      characters: [character({ ocid: 'ocid-1' })],
+      refresh,
+    })
+
+    renderBossScreen()
+
+    await waitFor(() => expect(showErrorMock).toHaveBeenCalled())
+    const [message, action] = showErrorMock.mock.calls[0]
+    expect(message).toBe('네트워크 오류가 발생했습니다')
+    expect(action.label).toBe('다시 시도')
+
+    action.onClick()
+    expect(refresh).toHaveBeenCalledWith(['ocid-1'])
   })
 
   it('새로고침 버튼을 클릭하면 refresh가 호출된다', async () => {

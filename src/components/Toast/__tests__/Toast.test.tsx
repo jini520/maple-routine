@@ -2,6 +2,7 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { Settings } from 'lucide-react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Toast } from '../Toast'
 import type { ToastItem } from '../../../features/toast/store'
@@ -51,6 +52,30 @@ describe('Toast', () => {
 
     expect(onClick).toHaveBeenCalledTimes(1)
     expect(onDismiss).toHaveBeenCalledTimes(1)
+  })
+
+  // ADR-063: 액션 슬롯은 아이콘만 보이고 label은 aria-label로만 쓰인다. 기본 아이콘이
+  // '다시 시도'를 전제하므로 뜻이 다른 액션은 자기 아이콘을 넘겨야 한다.
+  it('action.icon을 주면 기본 새로고침 아이콘 대신 그 아이콘을 그린다', () => {
+    function iconMarkupFor(action: { label: string; icon?: typeof Settings }): string {
+      const { container, unmount } = render(
+        <Toast
+          toast={makeToast({ variant: 'error', duration: null, action: { ...action, onClick: vi.fn() } })}
+          onDismiss={vi.fn()}
+        />,
+      )
+      const markup =
+        container.querySelector(`button[aria-label="${action.label}"] svg`)?.outerHTML ?? ''
+      unmount()
+      return markup
+    }
+
+    const defaultMarkup = iconMarkupFor({ label: '다시 시도' })
+    const settingsMarkup = iconMarkupFor({ label: '설정 열기', icon: Settings })
+
+    expect(defaultMarkup).not.toBe('')
+    expect(settingsMarkup).not.toBe('')
+    expect(settingsMarkup).not.toBe(defaultMarkup)
   })
 
   it('action이 없으면 액션 버튼을 렌더하지 않는다', () => {

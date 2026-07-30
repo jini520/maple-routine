@@ -97,7 +97,11 @@ export function Toast(props: ToastProps): React.JSX.Element {
           }}
           className="flex h-6 w-6 shrink-0 items-center justify-center text-primary"
         >
-          <RefreshCw className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" />
+          {/* 기본은 '다시 시도'를 전제한 RefreshCw. 뜻이 다른 액션은 자기 아이콘을 넘긴다([[ADR-063]]). */}
+          {(() => {
+            const ActionIcon = toast.action.icon ?? RefreshCw
+            return <ActionIcon className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" />
+          })()}
         </button>
       )}
       <button
