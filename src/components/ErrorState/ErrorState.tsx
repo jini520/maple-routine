@@ -33,7 +33,7 @@ export function ErrorState(props: ErrorStateProps): React.JSX.Element {
     <div
       data-testid="error-state"
       role="alert"
-      className="flex min-h-[120px] flex-col items-center justify-center gap-3 px-4 text-center"
+      className="flex min-h-[120px] flex-1 flex-col items-center justify-center gap-3 px-4 text-center"
     >
       <AlertTriangle className="h-7 w-7 text-error" strokeWidth={1.75} aria-hidden="true" />
 

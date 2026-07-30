@@ -455,6 +455,27 @@ describe('CharacterTrackingPicker — 로딩/빈/실패 상태 (ADR-053 · ADR-0
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 
+  // 사용자 보고 2026-07-30: 실패 상태의 액션 버튼이 아래 CTA에 붙어 보였다. 상태마다 높이가
+  // 달라 CTA가 움직인 것이 원인이라, 본문 자리를 카드 3줄 높이로 못 박는다.
+  it.each([
+    ['조회 중', { isLoading: true, loadError: null }],
+    ['빈 상태', { isLoading: false, loadError: null }],
+    ['실패', { isLoading: false, loadError: { kind: 'network' as const } }],
+  ])('본문 자리는 %s에서도 카드 3줄 높이를 유지한다', (_label, state) => {
+    const { container } = render(
+      <CharacterTrackingPicker
+        entries={[]}
+        trackedOcids={[]}
+        {...loaded}
+        {...state}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+
+    expect(container.querySelector('.min-h-\\[385px\\]')).not.toBeNull()
+  })
+
   it('로딩 중이어도 저장 버튼 비활성 판정은 ADR-043 집합 비교 그대로다', async () => {
     const user = userEvent.setup()
     const { rerender } = render(

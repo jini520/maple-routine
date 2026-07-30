@@ -6,7 +6,7 @@ import type { CharacterPickerEntry } from '../../types'
 import { ErrorState } from '../ErrorState/ErrorState'
 import { StaleBanner } from '../ErrorState/StaleBanner'
 import { MapleSweepSpinner } from '../MapleSweepSpinner/MapleSweepSpinner'
-import { CharacterTrackingGrid } from './CharacterTrackingGrid'
+import { CharacterTrackingGrid, ROSTER_BODY_MIN_H } from './CharacterTrackingGrid'
 
 // ADR-043 결정 1: 그리드의 토글이 ocid를 배열 끝에 append하므로 같은 집합이어도 배열
 // 순서가 달라진다 — 저장 버튼 활성 여부는 반드시 멤버십(집합)으로만 판정한다.
@@ -61,7 +61,7 @@ function PickerBody(props: CharacterTrackingPickerProps & { onChange: (ocids: st
         role="status"
         aria-busy="true"
         aria-label="캐릭터 목록을 불러오는 중"
-        className="flex min-h-[120px] items-center justify-center"
+        className="flex flex-1 items-center justify-center"
       >
         <MapleSweepSpinner size={32} className="text-primary" />
       </div>
@@ -83,7 +83,7 @@ function PickerBody(props: CharacterTrackingPickerProps & { onChange: (ocids: st
   }
 
   return (
-    <p className="flex min-h-[120px] items-center justify-center px-4 text-center text-sm text-text-muted">
+    <p className="flex flex-1 items-center justify-center px-4 text-center text-sm text-text-muted">
       표시할 캐릭터가 없어요
     </p>
   )
@@ -105,7 +105,10 @@ export function CharacterTrackingPicker(props: CharacterTrackingPickerProps): Re
           <p className="text-sm text-text-muted">체크한 캐릭터만 스케줄러 목록에 표시됩니다.</p>
         </div>
 
-        <PickerBody {...props} onChange={setSelectedOcids} />
+        {/* 상태가 바뀌어도 이 자리의 높이가 고정돼 아래 닫기·저장 버튼이 움직이지 않는다. */}
+        <div className={`flex flex-col ${ROSTER_BODY_MIN_H}`}>
+          <PickerBody {...props} onChange={setSelectedOcids} />
+        </div>
 
         <div className="mt-4 flex justify-end gap-2">
           <button

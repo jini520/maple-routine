@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react'
-import { CharacterTrackingGrid } from '../../components/CharacterTrackingPicker/CharacterTrackingGrid'
+import {
+  CharacterTrackingGrid,
+  ROSTER_BODY_MIN_H,
+} from '../../components/CharacterTrackingPicker/CharacterTrackingGrid'
 import { ErrorState } from '../../components/ErrorState/ErrorState'
 import { StaleBanner } from '../../components/ErrorState/StaleBanner'
 import { MapleSpinner } from '../../components/MapleSpinner/MapleSpinner'
@@ -44,7 +47,7 @@ function RosterBody(props: {
         role="status"
         aria-busy="true"
         aria-label="캐릭터 목록을 불러오는 중"
-        className="flex min-h-[120px] items-center justify-center"
+        className="flex flex-1 items-center justify-center"
       >
         <MapleSweepSpinner size={32} className="text-primary" />
       </div>
@@ -64,7 +67,7 @@ function RosterBody(props: {
   }
 
   return (
-    <p className="flex min-h-[120px] items-center justify-center px-4 text-center text-sm text-text-muted">
+    <p className="flex flex-1 items-center justify-center px-4 text-center text-sm text-text-muted">
       표시할 캐릭터가 없어요
     </p>
   )
@@ -120,13 +123,17 @@ export function ContentCharacterStep(props: ContentCharacterStepProps): React.JS
         </p>
       </div>
 
-      <RosterBody
-        roster={roster}
-        isLoading={isRosterLoading}
-        loadError={rosterError}
-        onRetry={reloadRoster}
-        onChange={setSelectedOcids}
-      />
+      {/* 상태가 바뀌어도 이 자리의 높이가 고정돼 아래 "계속하기"가 움직이지 않는다 —
+          실패 상태의 "다시 시도"가 CTA에 붙어 보이던 문제(사용자 보고 2026-07-30). */}
+      <div className={`flex flex-col ${ROSTER_BODY_MIN_H}`}>
+        <RosterBody
+          roster={roster}
+          isLoading={isRosterLoading}
+          loadError={rosterError}
+          onRetry={reloadRoster}
+          onChange={setSelectedOcids}
+        />
+      </div>
 
       <button
         type="button"

@@ -29,6 +29,16 @@ function sortForDisplay(entries: CharacterPickerEntry[], checkedOcids: string[])
   return [...favorited, ...rest]
 }
 
+// 그리드가 들어가는 자리의 최소 높이 — **카드 3줄이 렌더링될 때와 같은 높이**(실측 385px =
+// 카드 123px × 3 + gap-2 8px × 2). 카드 123px 안쪽은 아바타 56 + gap 4 + 이름행 17(월드 엠블럼
+// h-[17px]가 정하는 값, 엠블럼이 없으면 16) + gap 4 + 레벨 16 + py-3 24 + 테두리 2다.
+//
+// 이 자리는 상태에 따라 그리드/스피너/실패/빈 상태로 갈리는데, 각 상태의 높이가 다르면 그 아래
+// CTA(온보딩 "계속하기", 모달 "닫기·저장")가 상태마다 위아래로 움직이고 실패 문구의 액션 버튼과
+// CTA가 붙어 보인다(사용자 보고 2026-07-30). 높이를 3줄로 못 박아 그 의존을 끊는다 —
+// [[ADR-054]] 정정 4에서 라벨행 높이를 h-6으로 명시 고정한 것과 같은 처방이다.
+export const ROSTER_BODY_MIN_H = 'min-h-[385px]'
+
 export interface CharacterTrackingGridProps {
   entries: CharacterPickerEntry[]
   // 최초 선택 상태(초기값으로만 쓴다 — 이후엔 그리드가 자체 상태로 관리한다).

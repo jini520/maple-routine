@@ -80,6 +80,7 @@ Text(라이트): text-[#8A7362] hover:text-[#5B4636]   Text(다크): text-neutra
 조회 실패: 공용 ErrorState (아래 "실패 상태" 절, [[ADR-062]])
 항목 0건: text-sm text-text-muted "표시할 캐릭터가 없어요"
 ```
+**본문 자리 높이는 카드 3줄로 못 박는다** — `ROSTER_BODY_MIN_H`(`min-h-[385px]`, `CharacterTrackingGrid`에서 export). 실측 385px = 카드 123px × 3 + `gap-2` 8px × 2. 슬롯은 `flex flex-col`이고 중앙 정렬 분기(스피너·실패·빈 상태)는 `flex-1`로 그 높이를 채운다(그리드는 위쪽 정렬). 이 고정이 없으면 상태마다 높이가 달라 아래 CTA(온보딩 "계속하기", 모달 "닫기·저장")가 위아래로 움직이고, 실패 상태의 액션 버튼이 CTA에 붙어 보인다(사용자 보고 2026-07-30) — [[ADR-054]] 정정 4에서 라벨행을 `h-6`으로 명시 고정한 것과 같은 처방이다.
 실패는 원인(`loadError: ScheduleSyncError | null`)을 받아 원인별 문구·액션을 그린다 — 자세한 것은 아래 "실패 상태" 절([[ADR-062]]). **보여줄 항목이 있는 채로 실패하면** 목록을 지우지 않고 그 위에 스탈 배너를 얹는다. 온보딩 캐릭터 선택 단계(`ContentCharacterStep`)는 같은 분기를 페이지에서 직접 그리며 액션만 다르다(온보딩 중에는 설정 화면이 없다, [onboarding.md](../features/onboarding.md)).
 
 ### 빈 상태 (`components/EmptyState`) — [[ADR-060]], 구현 완료 2026-07-29
