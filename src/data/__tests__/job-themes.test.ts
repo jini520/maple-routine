@@ -61,14 +61,19 @@ describe('job-themes.json — 파생 규칙', () => {
   })
 
   // 잉크는 accent 원색을 지킨다 — 보이는 색은 건드리지 않고, 안 보이는 색만 보정한다.
-  it.each(NAMES)('%s: 보이는 accent 는 잉크에서도 원색 그대로다', (name) => {
+  // 잉크가 놓이는 바탕은 표면과 틴트 배지 **양쪽**이라 둘 다 봐야 한다.
+  it.each(NAMES)('%s: 두 바탕에서 다 보이는 accent 는 잉크에서도 원색 그대로다', (name) => {
     const theme = JOB_THEMES[name] as unknown as Record<string, string>
     for (const accent of ACCENTS) {
-      if (contrastHex(theme[accent], theme.surface) >= 2) {
-        expect(theme[`${accent}Ink`], `${name}.${accent}Ink`).toBe(theme[accent])
+      const backgrounds = [theme.surface, theme[`${accent}Tint`]]
+      const ink = theme[`${accent}Ink`]
+
+      if (backgrounds.every((bg) => contrastHex(theme[accent], bg) >= 2)) {
+        expect(ink, `${name}.${accent}Ink`).toBe(theme[accent])
       } else {
-        expect(contrastHex(theme[`${accent}Ink`], theme.surface), `${name}.${accent}Ink`)
-          .toBeGreaterThanOrEqual(2)
+        for (const bg of backgrounds) {
+          expect(contrastHex(ink, bg), `${name}.${accent}Ink`).toBeGreaterThanOrEqual(2)
+        }
       }
     }
   })

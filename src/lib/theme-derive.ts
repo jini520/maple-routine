@@ -10,6 +10,7 @@
  */
 
 import type { ThemeMode, ThemeTokens } from '../types/theme'
+import type { Oklch } from './color'
 import { contrastHex, hexToOklch, mixOklab, oklchToHex, withLightness } from './color'
 
 /**
@@ -191,27 +192,34 @@ const FOREGROUND_DARK = { lightness: 0.18, chromaScale: 0.35, chromaMax: 0.06 } 
 const FOREGROUND_LIGHT = { lightness: 0.96, chromaScale: 0.25, chromaMax: 0.04 } as const
 
 /**
- * 채움이 이보다 밝으면 밝은 전경을 포기하고 어두운 전경으로 간다([[ADR-064]] 결정 1 재정정).
- *
- * 사용자 결정(2026-07-30): 색 있는 채움 위에는 **아이보리 계열이 기본**이다. 대비 최댓값을
- * 따르면 밝은 주황(`#F58B0F`) 위에 짙은 갈색이 오는데 그 그림이 별로라는 판단이다.
- *
- * 다만 채움이 아주 밝으면 아이보리가 **글자로서 사라진다** — 파스텔 하늘(L≈0.90) 위 아이보리는
- * 흰 종이에 흰 글씨다. 그건 취향의 문제가 아니라 글자가 없어지는 문제라 그 구간만 짙은 전경으로
- * 넘긴다. 경계는 대비 수치가 아니라 **밝기**로 잡는다 — 색을 색으로 판단한다는 뜻이고,
- * 어느 대비선을 넘느냐로 그림이 바뀌지 않게 하려는 것이다.
- */
-const LIGHT_FOREGROUND_MAX_FILL_LIGHTNESS = 0.75
-
-/**
  * 채움 위 전경색 ([[ADR-064]] 결정 1).
  *
  * 흰색도 검정도 기본으로 두지 않는다 — 채움색의 색상(H)을 물려받은 아이보리 또는 짙은 색을
- * 만든다. 어느 쪽으로 갈지는 **채움의 밝기**가 정한다.
+ * 만든다. 색 있는 채움 위에는 **아이보리가 기본**이다(사용자 결정 2026-07-30): 대비 최댓값을
+ * 따르면 밝은 주황 위에 짙은 갈색이 오는데 그 그림이 별로다.
+ *
+ * 짙은 전경으로 넘어가는 것은 **아이보리가 글자로서 사라질 때뿐**이다. 판정은 잉크와 똑같은
+ * 가시성 하한(`INK_VISIBILITY_FLOOR`)으로 한다 — "이 색이 보이는가"라는 같은 질문이라 같은 선을
+ * 쓰는 게 맞고, 실제로 그 선이 모든 케이스를 제자리에 놓는다.
+ *
+ *   엔젤릭 파스텔 핑크 2.02 · 머쉬맘 주황 2.16 → 아이보리 (보인다)
+ *   레테 베이지 1.61 · 머쉬맘 노랑 1.34 · 렌 창백한 하늘 1.11 → 짙은 전경 (안 보인다)
+ *
+ * 밝기(L)로 경계를 잡던 방식은 폐기했다. 채움 밝기는 **아이보리가 읽히는지의 대리 지표**일
+ * 뿐이라, 같은 밝기라도 색상에 따라 결과가 갈리는데 그걸 못 본다 — 실제로 엔젤릭 파스텔
+ * 핑크(L 0.766)가 경계 0.75 를 아슬하게 넘겨 짙은 전경이 됐고, 그 그림이 어울리지 않았다.
  */
 function deriveForeground(fill: string): string {
   const base = hexToOklch(fill)
-  const goDark = base.l > LIGHT_FOREGROUND_MAX_FILL_LIGHTNESS
+
+  const ivory = (source: Oklch): string =>
+    oklchToHex({
+      l: FOREGROUND_LIGHT.lightness,
+      c: Math.min(source.c * FOREGROUND_LIGHT.chromaScale, FOREGROUND_LIGHT.chromaMax),
+      h: source.h,
+    })
+
+  const goDark = contrastHex(ivory(base), fill) < INK_VISIBILITY_FLOOR
   const spec = goDark ? FOREGROUND_DARK : FOREGROUND_LIGHT
   const chroma = Math.min(base.c * spec.chromaScale, spec.chromaMax)
 

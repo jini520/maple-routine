@@ -146,12 +146,12 @@ describe('*-ink — accent 원색을 지킨다', () => {
     expect(tokens.thirdInk).toBe(tokens.third)
   })
 
-  it.each(ALL_SEEDS)('%s: 보이는 accent 는 건드리지 않는다', (_label, seed) => {
+  it.each(ALL_SEEDS)('%s: 두 바탕에서 다 보이는 accent 는 건드리지 않는다', (_label, seed) => {
     const tokens = deriveTheme(seed)
     for (const accent of ['primary', 'secondary', 'third'] as const) {
-      const ink = tokens[`${accent}Ink`]
-      if (contrastHex(tokens[accent], tokens.surface) >= 2) {
-        expect(ink, accent).toBe(tokens[accent])
+      const backgrounds = [tokens.surface, tokens[`${accent}Tint`]]
+      if (backgrounds.every((bg) => contrastHex(tokens[accent], bg) >= 2)) {
+        expect(tokens[`${accent}Ink`], accent).toBe(tokens[accent])
       }
     }
   })
