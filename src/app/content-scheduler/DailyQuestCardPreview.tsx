@@ -208,7 +208,7 @@ function QuestRegionCropAdjuster(props: { content: DailyContent }): React.JSX.El
             onClick={() => {
               void navigator.clipboard.writeText(valueText)
             }}
-            className="text-xs font-medium text-primary-text hover:text-primary-hover"
+            className="text-xs font-medium text-primary-ink hover:text-primary-hover"
           >
             복사
           </button>
@@ -318,7 +318,7 @@ function SlugCropAdjuster(props: {
             onClick={() => {
               void navigator.clipboard.writeText(valueText)
             }}
-            className="text-xs font-medium text-primary-text hover:text-primary-hover"
+            className="text-xs font-medium text-primary-ink hover:text-primary-hover"
           >
             복사
           </button>

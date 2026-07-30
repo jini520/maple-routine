@@ -14,18 +14,19 @@ const ICONS: Record<ToastVariant, typeof CheckCircle2> = {
   info: Info,
 }
 
-// bg-secondary/10처럼 Tailwind 투명도 접미사(/N)를 쓰면 투명(transparent)과 섞여 배경이 거의
-// 안 보인다 — surface(불투명 카드색)와 섞어야 와이어프레임대로 옅게 톤만 입힌 불투명 카드가 된다.
+// 톤 배경은 *-tint 토큰이다(ADR-064 결정 2). Tailwind 투명도 접미사(bg-secondary/10)를 쓰면
+// 투명과 섞여 배경이 거의 안 보인다 — 그 문제를 이 파일이 color-mix로 우회하고 있었는데,
+// 이제 틴트가 값으로 확정돼 있어 토큰만 쓰면 된다.
 const TONE_CLASSES: Record<ToastVariant, string> = {
-  success: 'bg-[color-mix(in_oklab,var(--color-secondary)_10%,var(--color-surface))]',
-  error: 'bg-[color-mix(in_oklab,var(--color-error)_9%,var(--color-surface))]',
+  success: 'bg-secondary-tint',
+  error: 'bg-error-tint',
   info: 'bg-info-tint',
 }
 
 const ICON_CLASSES: Record<ToastVariant, string> = {
-  success: 'text-secondary-text',
-  error: 'text-error',
-  info: 'text-secondary-text',
+  success: 'text-secondary-ink',
+  error: 'text-error-ink',
+  info: 'text-info-ink',
 }
 
 export function Toast(props: ToastProps): React.JSX.Element {
@@ -84,7 +85,7 @@ export function Toast(props: ToastProps): React.JSX.Element {
       }
     >
       <Icon className={`h-4 w-4 shrink-0 ${ICON_CLASSES[toast.variant]}`} strokeWidth={2} aria-hidden="true" />
-      <p className={`min-w-0 flex-1 truncate text-sm font-medium ${toast.variant === 'error' ? 'text-error' : 'text-text'}`}>
+      <p className={`min-w-0 flex-1 truncate text-sm font-medium ${toast.variant === 'error' ? 'text-error-ink' : 'text-text'}`}>
         {toast.message}
       </p>
       {toast.action && (
@@ -95,7 +96,7 @@ export function Toast(props: ToastProps): React.JSX.Element {
             toast.action?.onClick()
             onDismiss()
           }}
-          className="flex h-6 w-6 shrink-0 items-center justify-center text-primary"
+          className="flex h-6 w-6 shrink-0 items-center justify-center text-primary-ink"
         >
           {/* 기본은 '다시 시도'를 전제한 RefreshCw. 뜻이 다른 액션은 자기 아이콘을 넘긴다([[ADR-063]]). */}
           {(() => {

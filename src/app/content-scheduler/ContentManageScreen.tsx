@@ -136,7 +136,7 @@ export function ContentManageScreen(): React.JSX.Element {
                 onClick={() => setActiveTab('daily')}
                 className={
                   activeTab === 'daily'
-                    ? 'rounded-full bg-primary/15 px-3 py-[5px] text-sm font-semibold text-primary'
+                    ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
                     : 'px-3 text-sm font-medium text-text-muted'
                 }
               >
@@ -147,7 +147,7 @@ export function ContentManageScreen(): React.JSX.Element {
                 onClick={() => setActiveTab('weekly')}
                 className={
                   activeTab === 'weekly'
-                    ? 'rounded-full bg-primary/15 px-3 py-[5px] text-sm font-semibold text-primary'
+                    ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
                     : 'px-3 text-sm font-medium text-text-muted'
                 }
               >
@@ -191,7 +191,7 @@ export function ContentManageScreen(): React.JSX.Element {
                 <div key={group.label ?? `standalone-${groupIndex}`}>
                   {group.label !== null && (
                     <div className="flex items-center gap-2 px-1 pb-2 pt-1">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-third/15 text-third-text">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-third-tint text-third-ink">
                         <GroupIcon className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" />
                       </span>
                       <span className="text-xs font-bold text-text">{group.label}</span>
@@ -216,16 +216,16 @@ export function ContentManageScreen(): React.JSX.Element {
                             onClick={() => handleToggle(entry.content_name)}
                             className={
                               isTracked
-                                ? 'flex w-full items-center gap-3 rounded-[10px] border border-primary bg-primary/15 px-4 py-3 text-left'
+                                ? 'flex w-full items-center gap-3 rounded-[10px] border border-primary bg-primary-tint px-4 py-3 text-left'
                                 : isLocked
                                   ? 'flex w-full items-center gap-3 rounded-[10px] border border-border px-4 py-3 text-left'
-                                  : 'flex w-full items-center gap-3 rounded-[10px] border border-border px-4 py-3 text-left hover:bg-primary/15'
+                                  : 'flex w-full items-center gap-3 rounded-[10px] border border-border px-4 py-3 text-left hover:bg-primary-tint'
                             }
                           >
                             <GroupIcon
                               className={
                                 isTracked
-                                  ? 'h-[18px] w-[18px] shrink-0 text-primary-text'
+                                  ? 'h-[18px] w-[18px] shrink-0 text-primary-ink'
                                   : 'h-[18px] w-[18px] shrink-0 text-text-muted'
                               }
                               strokeWidth={2}
@@ -244,7 +244,7 @@ export function ContentManageScreen(): React.JSX.Element {
                           {/* 보스 관리 화면과 같은 규칙 — 흐림은 콘텐츠 opacity가 아니라 그 위를
                               덮는 스크림이다. 이 행은 자체 배경이 없어 페이지 배경색(bg)으로 덮는다. */}
                           {isLocked && (
-                            <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-[10px] bg-bg/85 px-4 backdrop-blur-[2px]">
+                            <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-[10px] bg-scrim px-4 backdrop-blur-[2px]">
                               <span className="text-sm font-semibold text-text">길드 가입 시 진행 가능</span>
                             </div>
                           )}

@@ -24,8 +24,8 @@ export function TrackingModeSelector(props: TrackingModeSelectorProps): React.JS
             onClick={() => props.onSelect(option.mode)}
             className={
               isSelected
-                ? 'w-full text-left rounded-[10px] border border-primary bg-primary/15 px-4 py-3 disabled:opacity-50'
-                : 'w-full text-left rounded-[10px] border border-border px-4 py-3 hover:bg-primary/15 disabled:opacity-50'
+                ? 'w-full text-left rounded-[10px] border border-primary bg-primary-tint px-4 py-3 disabled:opacity-50'
+                : 'w-full text-left rounded-[10px] border border-border px-4 py-3 hover:bg-primary-tint disabled:opacity-50'
             }
           >
             <span className="block text-sm font-semibold text-text">{option.title}</span>

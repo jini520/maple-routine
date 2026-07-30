@@ -20,6 +20,7 @@ import { isChallengersWorld } from '../../lib/world-emblem'
 import { getCharacterPickerRoster, toScheduleSyncError } from '../../features/schedule-sync/schedule-sync'
 import type { ScheduleSyncError } from '../../features/schedule-sync/schedule-sync'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
+import { MEDIA_TEXT_SHADOW } from '../../lib/media-card'
 
 type BossTab = 'weekly' | 'monthly'
 type PartyFilter = 'all' | 'solo' | 'party'
@@ -42,13 +43,13 @@ export function BossCard(props: {
   const bossName = boss.matchedBossName ?? boss.apiName
   const maskImage = 'linear-gradient(90deg, #000 0%, #000 38%, transparent 76%)'
 
-  // 카드 배경/보더/보스명 텍스트는 앱 전역 테마(레테/렌)와 무관하게 항상 레테(다크) 배색을
-  // 고정으로 쓴다(사용자 지시, 2026-07-13) — 일러스트 bleed·페이드·text-shadow가 어두운 배경을
-  // 전제로 튜닝됐기 때문에 theme 토큰(bg-surface 등)을 쓰면 렌(라이트) 테마에서 대비가 깨진다.
-  // 완료 뱃지는 앱 전체에서 공유하는 "완료/성공" 의미 색(secondary)이라 여기서는 고정하지 않고
-  // theme 토큰을 그대로 써서 테마에 따라 계속 바뀌게 둔다.
+  // 카드 배경/보더/보스명 텍스트는 페이지 표면이 아니라 일러스트 위 배색을 따른다 — bleed·페이드·
+  // text-shadow가 어두운 배경을 전제로 튜닝됐기 때문에 라이트 테마에서 페이지 토큰(bg-surface 등)을
+  // 쓰면 대비가 깨진다. `media-scope`가 카드 안쪽의 기준 표면을 media-surface로 바꾸므로
+  // (ADR-064 결정 5) 안에서는 앱 전역과 같은 레시피(bg-surface·text-text)를 그대로 쓴다.
+  // 완료 뱃지는 앱 전체가 공유하는 "완료/성공" 의미 색(secondary)이라 스코프 안에서도 그대로다.
   return (
-    <div className="relative h-20 overflow-hidden rounded-[14px] border border-[#37323E] bg-[#1A1720]">
+    <div className="media-scope relative h-20 overflow-hidden rounded-[14px] border border-border bg-surface">
       {portraitUrl !== null && (
         <div
           className="absolute inset-0"
@@ -69,13 +70,13 @@ export function BossCard(props: {
         <div className="flex items-center gap-2">
           <DifficultyBadge difficulty={boss.difficulty} />
           <span
-            className="text-sm font-medium text-[#E8DFEC]"
-            style={{ textShadow: '0 1px 3px rgba(0,0,0,.9), 0 0 10px rgba(0,0,0,.6)' }}
+            className="text-sm font-medium text-text"
+            style={{ textShadow: MEDIA_TEXT_SHADOW }}
           >
             {bossName}
           </span>
           {partySize !== undefined && partySize > 1 && (
-            <span className="flex items-center gap-1 rounded-full bg-gray-200/20 px-2 py-1 text-xs font-semibold text-[#E8DFEC]">
+            <span className="flex items-center gap-1 rounded-full bg-surface-2 px-2 py-1 text-xs font-semibold text-text">
               <Users className="h-3 w-3" strokeWidth={2} aria-hidden="true" />
               {partySize}인
             </span>
@@ -84,7 +85,7 @@ export function BossCard(props: {
 
         <div className="flex items-center gap-1.5">
           {boss.isComplete && (
-            <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-bold text-bg">완료</span>
+            <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-bold text-on-secondary">완료</span>
           )}
         </div>
       </div>
@@ -440,7 +441,7 @@ export function BossScreen(): React.JSX.Element {
                   type="button"
                   onClick={() => refresh(trackedOcids ?? [])}
                   aria-label="새로고침"
-                  className="p-2 text-primary-text hover:text-primary-hover"
+                  className="p-2 text-primary-ink hover:text-primary-hover"
                 >
                   <RefreshCw
                     className={`h-4 w-4 ${status === 'loading' ? 'animate-spin' : ''}`}
@@ -452,7 +453,7 @@ export function BossScreen(): React.JSX.Element {
             </div>
 
             {selected !== null && selected.isStale && (
-              <p className="text-sm text-error">
+              <p className="text-sm text-error-ink">
                 {selected.error !== null ? formatScheduleSyncError(selected.error) : ''}
               </p>
             )}
@@ -473,7 +474,7 @@ export function BossScreen(): React.JSX.Element {
                     onClick={() => setActiveTab('weekly')}
                     className={
                       activeTab === 'weekly'
-                        ? 'rounded-full bg-primary/15 px-3 py-[5px] text-sm font-semibold text-primary'
+                        ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
                         : 'px-3 text-sm font-medium text-text-muted'
                     }
                   >
@@ -484,7 +485,7 @@ export function BossScreen(): React.JSX.Element {
                     onClick={() => setActiveTab('monthly')}
                     className={
                       activeTab === 'monthly'
-                        ? 'rounded-full bg-primary/15 px-3 py-[5px] text-sm font-semibold text-primary'
+                        ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
                         : 'px-3 text-sm font-medium text-text-muted'
                     }
                   >
@@ -498,15 +499,15 @@ export function BossScreen(): React.JSX.Element {
                       <span
                         className={
                           isSeasonBossComplete
-                            ? 'rounded-full bg-secondary px-2.5 py-1 text-xs font-bold text-bg'
-                            : 'rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary'
+                            ? 'rounded-full bg-secondary px-2.5 py-1 text-xs font-bold text-on-secondary'
+                            : 'rounded-full bg-primary-tint px-2.5 py-1 text-xs font-semibold text-primary-ink'
                         }
                       >
                         {`season ${isSeasonBossComplete ? '완료' : '미완료'}`}
                       </span>
                     )}
                     {selected.weeklyBossClearCount !== null && selected.weeklyBossClearLimitCount !== null && (
-                      <span className="rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary">
+                      <span className="rounded-full bg-primary-tint px-2.5 py-1 text-xs font-semibold text-primary-ink">
                         {selected.weeklyBossClearCount}/{selected.weeklyBossClearLimitCount}
                       </span>
                     )}
@@ -524,7 +525,7 @@ export function BossScreen(): React.JSX.Element {
                     }
                     className={
                       activeFilter === filter
-                        ? 'rounded-full bg-primary/15 px-3 py-1 text-xs font-semibold text-primary'
+                        ? 'rounded-full bg-primary-tint px-3 py-1 text-xs font-semibold text-primary-ink'
                         : 'px-3 text-xs font-medium text-text-muted'
                     }
                   >

@@ -37,7 +37,7 @@
 핵심 로직 `lib/scheduler-merge`·`lib/scheduler-content-scope`·`storage/shared-progress-cache` 는 TDD 로 단위 테스트 완비([../foundation/architecture.md](../foundation/architecture.md) 테스트 전략).
 
 ## UI — 콘텐츠 카드
-카드 골격은 보스 카드([[ADR-018]], [boss-scheduler.md](./boss-scheduler.md))를 재사용 — `rounded-[14px]`, `.media-scope` + `bg-media-surface`/`border-media-border`([[ADR-064]] 결정 5), 80px 기본 높이, 일러스트 bleed(saturate .85 brightness .8 opacity .65, mask `linear-gradient(90deg,#000 0%,#000 38%,transparent 76%)`).
+카드 골격은 보스 카드([[ADR-018]], [boss-scheduler.md](./boss-scheduler.md))를 재사용 — `rounded-[14px]`, `.media-scope` + `bg-surface`/`border-border`(스코프가 media-* 로 다시 묶는다, [[ADR-064]] 결정 5), 80px 기본 높이, 일러스트 bleed(saturate .85 brightness .8 opacity .65, mask `linear-gradient(90deg,#000 0%,#000 38%,transparent 76%)`).
 
 ### 일일퀘스트 카드 ([[ADR-020]])
 일간 탭 `kind: 'quest'` 항목에만. 왼쪽 지역 아이콘(`assets/maps/icons/{slug}`, 없으면 생략) + 퀘스트명("[일일 퀘스트] " 접두어 제거, text-shadow `0 1px 3px rgba(0,0,0,.9),0 0 10px rgba(0,0,0,.6)`). 오른쪽 `quest_state` 3단 뱃지:

@@ -23,7 +23,7 @@ export function ProgressModal(props: ProgressModalProps): React.JSX.Element {
           aria-valuenow={percent}
           aria-valuemin={0}
           aria-valuemax={100}
-          className="h-1.5 w-full overflow-hidden rounded-full bg-surface-2"
+          className="h-1.5 w-full overflow-hidden rounded-full bg-track"
         >
           <div className="h-1.5 rounded-full bg-primary" style={{ width: `${percent}%` }} />
         </div>

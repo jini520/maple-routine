@@ -296,7 +296,7 @@ export function BossManageScreen(): React.JSX.Element {
                   onClick={() => setActiveTab('weekly')}
                   className={
                     activeTab === 'weekly'
-                      ? 'rounded-full bg-primary/15 px-3 py-[5px] text-sm font-semibold text-primary'
+                      ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
                       : 'px-3 text-sm font-medium text-text-muted'
                   }
                 >
@@ -307,7 +307,7 @@ export function BossManageScreen(): React.JSX.Element {
                   onClick={() => setActiveTab('monthly')}
                   className={
                     activeTab === 'monthly'
-                      ? 'rounded-full bg-primary/15 px-3 py-[5px] text-sm font-semibold text-primary'
+                      ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
                       : 'px-3 text-sm font-medium text-text-muted'
                   }
                 >
@@ -318,7 +318,7 @@ export function BossManageScreen(): React.JSX.Element {
                     보스는 이 한도와 무관하고 자동 모드는 선택 자체가 없다. 스타일은 보스 스케줄러
                     화면의 n/12 배지 재사용(신규 스타일 금지). */}
                 {mode === 'manual' && activeTab === 'weekly' && (
-                  <span className="ml-auto rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary tabular-nums">
+                  <span className="ml-auto rounded-full bg-primary-tint px-2.5 py-1 text-xs font-semibold text-primary-ink tabular-nums">
                     {weeklyTrackedCount}/{WEEKLY_BOSS_CLEAR_LIMIT}
                   </span>
                 )}
@@ -394,7 +394,7 @@ export function BossManageScreen(): React.JSX.Element {
               // 함께 흐려져 읽히지 않는다.
               const rowClassName =
                 mode === 'manual' && isTracked
-                  ? 'rounded-[14px] border border-primary bg-primary/15'
+                  ? 'rounded-[14px] border border-primary bg-primary-tint'
                   : isLimitBlocked
                     ? 'rounded-[14px] border border-border bg-surface opacity-40'
                     : 'rounded-[14px] border border-border bg-surface'
@@ -432,7 +432,7 @@ export function BossManageScreen(): React.JSX.Element {
 
                   {/* 2번째 줄: 난이도 세그먼트 */}
                   {isExpanded && (
-                    <div className="flex flex-wrap items-center gap-2 border-t border-border/60 px-3 pb-2.5 pt-2.5">
+                    <div className="flex flex-wrap items-center gap-2 border-t border-border px-3 pb-2.5 pt-2.5">
                       {mode === 'manual' && trackedDifficulty !== null
                         ? renderDifficultyPills(entry.difficulties, trackedDifficulty, (difficulty) =>
                             void handleSwitchDifficulty(entry.boss, trackedDifficulty, difficulty),

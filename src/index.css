@@ -106,6 +106,25 @@ body {
   --color-shadow-color: #04010059;
 }
 
+/* 일러스트 카드 스코프 기본값(머쉬맘) — ADR-064 결정 5.
+   카드 안은 기준 표면이 media-surface 라 틴트·잉크를 다시 선언해야 한다(커스텀 프로퍼티는
+   선언된 요소에서 var() 가 해석되므로 상속만 받으면 surface 기준 값이 내려온다).
+   선택 테마 값은 런타임에 <style id="theme-vars"> 가 덮는다 — 여기 값은 첫 페인트용이다. */
+.media-scope {
+  --color-surface: #1d140d;
+  --color-border: #3f3329;
+  --color-text: #ece2db;
+  --color-text-muted: #aea298;
+  --color-primary-tint: #382413;
+  --color-primary-ink: #f58b0f;
+  --color-secondary-tint: #382c14;
+  --color-secondary-ink: #f7d00d;
+  --color-third-tint: #332114;
+  --color-third-ink: #cc783c;
+  --color-error-tint: #32190f;
+  --color-error-ink: #ea5942;
+}
+
 /* 고가 아이템 드롭 연출 — 중앙 아이템이 위아래로 살짝 부유(ADR-038). 팝인(scale)·중앙정렬 transform과
    충돌하지 않도록 별도 래퍼(.fx-drop-float)에만 translateY 애니메이션을 건다. */
 @keyframes fx-drop-float {

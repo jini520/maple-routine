@@ -60,7 +60,7 @@ export function AccountFlowStatus(props: AccountFlowStatusProps): React.JSX.Elem
             aria-valuenow={percent}
             aria-valuemin={0}
             aria-valuemax={100}
-            className="h-1.5 w-full overflow-hidden rounded-full bg-surface-2"
+            className="h-1.5 w-full overflow-hidden rounded-full bg-track"
           >
             <div className="h-1.5 rounded-full bg-primary" style={{ width: `${percent}%` }} />
           </div>
@@ -71,13 +71,13 @@ export function AccountFlowStatus(props: AccountFlowStatusProps): React.JSX.Elem
     case 'error':
       return (
         <div className="rounded-[14px] bg-surface border border-border p-6 space-y-2">
-          <p className="text-sm text-error">
+          <p className="text-sm text-error-ink">
             {props.error !== null ? formatSettingsError(props.error) : '오류가 발생했습니다'}
           </p>
           <button
             type="button"
             onClick={props.onRetry}
-            className="rounded-full bg-primary text-bg font-semibold hover:bg-primary-hover px-5 py-2.5 text-sm"
+            className="rounded-full bg-primary text-on-primary font-semibold hover:bg-primary-hover px-5 py-2.5 text-sm"
           >
             다시 시도
           </button>

@@ -97,7 +97,7 @@ export function CharacterTrackingPicker(props: CharacterTrackingPickerProps): Re
   return (
     <div
       data-testid="character-tracking-picker-overlay"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-bg/70"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-scrim"
     >
       <div className="w-full max-w-sm rounded-[14px] border border-border bg-surface p-6">
         <div className="mb-4 space-y-1">
@@ -122,7 +122,7 @@ export function CharacterTrackingPicker(props: CharacterTrackingPickerProps): Re
             type="button"
             onClick={() => props.onSave(selectedOcids)}
             disabled={isUnchanged}
-            className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-bg hover:bg-primary-hover disabled:opacity-50"
+            className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-on-primary hover:bg-primary-hover disabled:opacity-50"
           >
             저장
           </button>

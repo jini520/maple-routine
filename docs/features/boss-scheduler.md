@@ -21,7 +21,8 @@
 ### 보스 카드 ([[ADR-018]])
 보스별 독립 카드 + 일러스트 bleed. 목록 감싸는 상위 카드 없음(`space-y-2` 나열). **카드 배경·보더·보스명 텍스트는 페이지 표면이 아니라 일러스트 위 배색을 따른다** — bleed·페이드·text-shadow가 어두운 배경 전제라 라이트 테마에서 페이지 토큰(`bg-surface` 등)을 쓰면 대비가 깨짐. `media-*` 토큰 + `.media-scope`([[ADR-064]] 결정 5, [theme.md](./theme.md))를 쓴다 — 카드 루트에 스코프를 걸면 안쪽은 앱 전역과 같은 레시피를 쓰면서 자동으로 어두운 기준을 따른다.
 ```
-카드: media-scope rounded-[14px] border border-media-border bg-media-surface, height 80px, overflow-hidden, relative
+카드: media-scope rounded-[14px] border border-border bg-surface, height 80px, overflow-hidden, relative
+     (스코프가 surface·border 를 media-* 로 다시 묶으므로 카드 안팎이 같은 레시피를 쓴다)
 일러스트(있는 보스만): absolute inset-0, background-size/position = boss-portrait-crops.json(없으면 cover/center),
   블러 없음, saturate(.85) brightness(.8) opacity .65, mask-image: linear-gradient(90deg,#000 0%,#000 38%,transparent 76%)
 콘텐츠 행: flex items-center justify-between, padding 0 14px(좌우 동일, 일러스트 위에 바로)

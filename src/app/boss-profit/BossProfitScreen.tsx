@@ -199,7 +199,7 @@ function DropIndicator(props: { drops: RecordedDrop[] }): React.JSX.Element {
     // 아이콘 스택(h-6)과 같은 슬롯이라 높이도 h-6으로 맞춘다(ADR-049) — py로 높이를 만들면
     // text-[11px]의 line-height(font 의존)가 그대로 행 높이에 실려 드롭 유무로 행이 튄다.
     return (
-      <span className="ml-auto inline-flex h-6 flex-none items-center rounded-full border border-dashed border-primary/45 bg-primary/10 px-2.5 text-[11px] font-bold text-primary-text">
+      <span className="ml-auto inline-flex h-6 flex-none items-center rounded-full border border-dashed border-primary bg-primary-tint px-2.5 text-[11px] font-bold text-primary-ink">
         ＋ 드롭 추가
       </span>
     )
@@ -227,7 +227,7 @@ function DropIndicator(props: { drops: RecordedDrop[] }): React.JSX.Element {
                 ItemThumb의 lv 뱃지와 같은 규칙. 아이콘이 24px(시트는 36px)이라 좌우 패딩만 줄였다.
                 absolute라 이름 줄의 h-6 고정(ADR-049)에는 영향을 주지 않는다. */}
             {drop.ringLevel !== undefined && (
-              <span className="absolute -bottom-1 -right-0.5 rounded-full bg-primary px-0.5 py-px text-[8px] font-bold leading-none text-white ring-1 ring-bg">
+              <span className="absolute -bottom-1 -right-0.5 rounded-full bg-primary px-0.5 py-px text-[8px] font-bold leading-none text-on-primary ring-1 ring-bg">
                 lv{drop.ringLevel}
               </span>
             )}
@@ -337,7 +337,7 @@ function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Element {
               미완료
             </span>
           ) : isPriceUnknown ? (
-            <span className="inline-block rounded-full bg-primary/15 px-2 py-0.5 text-xs font-medium text-primary">
+            <span className="inline-block rounded-full bg-primary-tint px-2 py-0.5 text-xs font-medium text-primary-ink">
               가격 미확정
             </span>
           ) : (
@@ -408,7 +408,7 @@ function WeeklySubtotalRow(props: { subtotal: BossProfitWeeklySubtotal; now: Dat
       </div>
 
       {subtotal.state === 'inProgress' && (
-        <span className="rounded-full bg-primary/15 text-primary text-[10px] font-semibold px-2 py-0.5">
+        <span className="rounded-full bg-primary-tint text-primary-ink text-[10px] font-semibold px-2 py-0.5">
           진행 중
         </span>
       )}
@@ -682,11 +682,11 @@ function CrystalSummaryChip(props: { tab: BossCycle; groups: CharacterGroup[] })
           "34/90"으로 붙어 스크린리더가 이어 읽는다([[ADR-046]]에서 "메소" 단위로 정한 규약).
           "개"는 한국어 표기상 숫자에 붙으므로 공백을 넣지 않는다. */}
       {isWeekly ? (
-        <span className="text-xs font-bold leading-none tabular-nums text-primary">
+        <span className="text-xs font-bold leading-none tabular-nums text-primary-ink">
           {cleared} <span className="font-semibold opacity-70">/ {limit}</span>
         </span>
       ) : (
-        <span className="text-xs font-bold leading-none tabular-nums text-primary">
+        <span className="text-xs font-bold leading-none tabular-nums text-primary-ink">
           {cleared}
           <span className="font-semibold opacity-70">개</span>
         </span>
@@ -696,7 +696,7 @@ function CrystalSummaryChip(props: { tab: BossCycle; groups: CharacterGroup[] })
 
   // h-5(20px) — 라벨행이 h-6(24px)으로 고정돼 있으므로 그 안에 들어가기만 하면 된다. leading-none과
   // 함께 두어야 글꼴 line-height가 칩 높이를 밀어 올리지 않는다.
-  const chipClassName = 'ml-2 flex h-5 flex-none items-center gap-1 rounded-full bg-primary/12 px-1.5'
+  const chipClassName = 'ml-2 flex h-5 flex-none items-center gap-1 rounded-full bg-primary-tint px-1.5'
 
   // 단일 월드·월간 탭은 펼칠 것이 없어 버튼으로 두지 않는다. 수치만으로는 무엇의 비율인지 읽히지
   // 않으므로 칩 전체에 레이블을 주고 아이콘은 장식(alt="")으로 남긴다(아바타 링과 동일 규약).
@@ -728,9 +728,9 @@ function CrystalSummaryChip(props: { tab: BossCycle; groups: CharacterGroup[] })
       >
         {chipContent}
         {isBreakdownOpen ? (
-          <ChevronUp className="h-3 w-3 flex-none text-primary" strokeWidth={2.5} aria-hidden="true" />
+          <ChevronUp className="h-3 w-3 flex-none text-primary-ink" strokeWidth={2.5} aria-hidden="true" />
         ) : (
-          <ChevronDown className="h-3 w-3 flex-none text-primary" strokeWidth={2.5} aria-hidden="true" />
+          <ChevronDown className="h-3 w-3 flex-none text-primary-ink" strokeWidth={2.5} aria-hidden="true" />
         )}
       </button>
       {isBreakdownOpen && (
@@ -1070,7 +1070,7 @@ export function BossProfitScreen(): React.JSX.Element {
               onClick={() => setTab('weekly')}
               className={
                 tab === 'weekly'
-                  ? 'rounded-full bg-primary/15 px-3 py-[5px] text-sm font-semibold text-primary'
+                  ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
                   : 'px-3 text-sm font-medium text-text-muted'
               }
             >
@@ -1081,7 +1081,7 @@ export function BossProfitScreen(): React.JSX.Element {
               onClick={() => setTab('monthly')}
               className={
                 tab === 'monthly'
-                  ? 'rounded-full bg-primary/15 px-3 py-[5px] text-sm font-semibold text-primary'
+                  ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
                   : 'px-3 text-sm font-medium text-text-muted'
               }
             >
@@ -1103,7 +1103,7 @@ export function BossProfitScreen(): React.JSX.Element {
                   type="button"
                   onClick={() => refresh(trackedOcids ?? [])}
                   aria-label="새로고침"
-                  className="flex h-[30px] w-[30px] items-center justify-center text-primary-text hover:text-primary-hover"
+                  className="flex h-[30px] w-[30px] items-center justify-center text-primary-ink hover:text-primary-hover"
                 >
                   <RefreshCw
                     className={`h-4 w-4 ${status === 'loading' ? 'animate-spin' : ''}`}
@@ -1148,7 +1148,7 @@ export function BossProfitScreen(): React.JSX.Element {
           )}
 
           {!isPeriodLoading && periodUnavailable && (
-            <p className="text-sm text-error">이 기간을 불러오지 못했습니다 — 다시 시도해주세요</p>
+            <p className="text-sm text-error-ink">이 기간을 불러오지 못했습니다 — 다시 시도해주세요</p>
           )}
 
           {/* 총 수익 요약은 카드가 아니라 헤드라인이다(ADR-046) — 아래 캐릭터 카드가 전부 같은 카드 셸이라
@@ -1180,12 +1180,12 @@ export function BossProfitScreen(): React.JSX.Element {
                 )}
               </div>
               <div className="mt-1.5 flex items-center gap-2.5">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/12 text-primary">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-tint text-primary-ink">
                   <Coins className="h-[18px] w-[18px]" strokeWidth={2} aria-hidden="true" />
                 </span>
                 {/* 단위는 별도 span으로 격하하되 숫자와 사이에 실제 공백 문자를 남긴다 — 마진만으로 띄우면
                     textContent가 "N메소"로 붙어 스크린리더가 붙여 읽는다(ADR-046 트레이드오프). */}
-                <p className="text-xl font-extrabold leading-none tabular-nums text-primary">
+                <p className="text-xl font-extrabold leading-none tabular-nums text-primary-ink">
                   {totalMeso.toLocaleString()}{' '}
                   <span className="text-xs font-bold text-text-muted">메소</span>
                 </p>

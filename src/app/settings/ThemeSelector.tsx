@@ -24,8 +24,8 @@ export function ThemeSelector(props: ThemeSelectorProps): React.JSX.Element {
             onClick={() => props.onSelect(option)}
             className={
               isSelected
-                ? 'w-full flex items-center gap-3 rounded-[10px] border border-primary bg-primary/15 px-4 py-3'
-                : 'w-full flex items-center gap-3 rounded-[10px] border border-border px-4 py-3 hover:bg-primary/15'
+                ? 'w-full flex items-center gap-3 rounded-[10px] border border-primary bg-primary-tint px-4 py-3'
+                : 'w-full flex items-center gap-3 rounded-[10px] border border-border px-4 py-3 hover:bg-primary-tint'
             }
           >
             <ThemeSwatchDots theme={option} />

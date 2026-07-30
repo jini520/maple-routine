@@ -16,7 +16,7 @@ export function DisconnectConfirm(props: DisconnectConfirmProps): React.JSX.Elem
     <div
       data-testid="disconnect-confirm-overlay"
       onClick={props.onCancel}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-bg/70"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-scrim"
     >
       <div
         onClick={(event) => event.stopPropagation()}
@@ -43,7 +43,7 @@ export function DisconnectConfirm(props: DisconnectConfirmProps): React.JSX.Elem
             disabled={props.isDisconnecting}
             aria-busy={props.isDisconnecting}
             onClick={props.onConfirm}
-            className="flex items-center justify-center gap-2 rounded-full border border-error px-5 py-2.5 text-sm font-semibold text-error hover:bg-error/10 disabled:opacity-50"
+            className="flex items-center justify-center gap-2 rounded-full border border-error px-5 py-2.5 text-sm font-semibold text-error-ink hover:bg-error-tint disabled:opacity-50"
           >
             {/* ADR-061 결정 5·9 — 스피너 + 말줄임표 없는 '~중' 라벨 */}
             {props.isDisconnecting && <MapleSpinner size={16} />}

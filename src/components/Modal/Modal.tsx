@@ -37,7 +37,7 @@ export function Modal(props: ModalProps): React.JSX.Element {
     <div
       data-testid={props.testId}
       onClick={props.onClose}
-      className={`fixed inset-0 z-50 flex justify-center overflow-y-auto bg-bg/70 px-4 ${alignClass}`}
+      className={`fixed inset-0 z-50 flex justify-center overflow-y-auto bg-scrim px-4 ${alignClass}`}
     >
       <div
         onClick={(event) => event.stopPropagation()}

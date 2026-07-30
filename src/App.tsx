@@ -81,7 +81,7 @@ function BottomTabBar(): React.JSX.Element {
           to={tab.to}
           className={({ isActive }) =>
             isActive
-              ? 'flex flex-1 flex-col items-center gap-1 py-2 text-xs font-medium text-primary'
+              ? 'flex flex-1 flex-col items-center gap-1 py-2 text-xs font-medium text-primary-ink'
               : 'flex flex-1 flex-col items-center gap-1 py-2 text-xs font-medium text-text-muted'
           }
         >

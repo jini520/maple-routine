@@ -20,7 +20,7 @@ export function SettingsRow(props: SettingsRowProps): React.JSX.Element {
       onClick={props.onClick}
       className="flex w-full items-center justify-between py-4 text-left"
     >
-      <span className={props.danger ? 'text-sm font-medium text-error' : 'text-sm font-medium text-text'}>
+      <span className={props.danger ? 'text-sm font-medium text-error-ink' : 'text-sm font-medium text-text'}>
         {props.label}
       </span>
       {props.rightContent ??

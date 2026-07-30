@@ -29,7 +29,7 @@ export function UnavailableNotice(props: UnavailableNoticeProps): React.JSX.Elem
       data-testid="unavailable-notice"
       className="flex items-start gap-3 rounded-[14px] border border-border bg-info-tint p-4"
     >
-      <Info className="h-5 w-5 flex-none text-text-muted" strokeWidth={1.75} aria-hidden="true" />
+      <Info className="h-5 w-5 flex-none text-info-ink" strokeWidth={1.75} aria-hidden="true" />
       <div className="space-y-0.5">
         <p className="text-sm font-semibold text-text">{TITLE}</p>
         <p data-testid="unavailable-notice-description" className="text-xs text-text-muted">

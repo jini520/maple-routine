@@ -84,7 +84,7 @@ export function CacheClearConfirm(props: CacheClearConfirmProps): React.JSX.Elem
                       : 'mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border border-border'
                   }
                 >
-                  {isSelected && <Check size={13} strokeWidth={3} className="text-bg" />}
+                  {isSelected && <Check size={13} strokeWidth={3} className="text-on-primary" />}
                 </span>
 
                 <span className="min-w-0 flex-1">
@@ -98,7 +98,7 @@ export function CacheClearConfirm(props: CacheClearConfirmProps): React.JSX.Elem
                   </span>
                   <span className="mt-1 block text-xs leading-relaxed text-text-muted">{group.detail}</span>
                   {group.warning !== undefined && (
-                    <span className="mt-1 block text-xs leading-relaxed text-error">{group.warning}</span>
+                    <span className="mt-1 block text-xs leading-relaxed text-error-ink">{group.warning}</span>
                   )}
                 </span>
               </button>
@@ -120,7 +120,7 @@ export function CacheClearConfirm(props: CacheClearConfirmProps): React.JSX.Elem
             disabled={props.isClearing || !hasSelection}
             aria-busy={props.isClearing}
             onClick={() => props.onConfirm(selection)}
-            className="flex items-center justify-center gap-2 rounded-full border border-error px-5 py-2.5 text-sm font-semibold text-error hover:bg-error/10 disabled:opacity-50"
+            className="flex items-center justify-center gap-2 rounded-full border border-error px-5 py-2.5 text-sm font-semibold text-error-ink hover:bg-error-tint disabled:opacity-50"
           >
             {/* ADR-061 결정 5·9 — 스피너 + 말줄임표 없는 '~중' 라벨. 이 버튼은 최대 10초
                 (CLEAR_TIMEOUT_MS) 걸리고 되돌릴 수 없어 라벨이 특히 중요하다. */}

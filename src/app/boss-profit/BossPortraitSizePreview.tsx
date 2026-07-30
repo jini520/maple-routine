@@ -147,7 +147,7 @@ function BossPortraitCropAdjuster(props: { entry: BossReferenceEntry; circleSize
           onClick={() => {
             void navigator.clipboard.writeText(valueText)
           }}
-          className="text-xs font-medium text-primary-text hover:text-primary-hover"
+          className="text-xs font-medium text-primary-ink hover:text-primary-hover"
         >
           복사
         </button>
@@ -189,7 +189,7 @@ export function BossPortraitSizePreview(): React.JSX.Element {
             onClick={() => {
               void navigator.clipboard.writeText(String(circleSize))
             }}
-            className="text-xs font-medium text-primary-text hover:text-primary-hover"
+            className="text-xs font-medium text-primary-ink hover:text-primary-hover"
           >
             복사
           </button>

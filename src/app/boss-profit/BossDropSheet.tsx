@@ -65,7 +65,7 @@ function ItemThumb(props: { name: string; slot?: string; level?: number }): Reac
         <span className="block h-9 w-9 rounded-lg bg-surface-2" aria-hidden="true" />
       )}
       {props.level !== undefined && (
-        <span className="absolute -bottom-1 -right-1 rounded-full bg-primary px-1 py-px text-[8px] font-bold leading-none text-white ring-1 ring-bg">
+        <span className="absolute -bottom-1 -right-1 rounded-full bg-primary px-1 py-px text-[8px] font-bold leading-none text-on-primary ring-1 ring-bg">
           lv{props.level}
         </span>
       )}
@@ -85,7 +85,7 @@ function FixedDropIcon(props: { icon: FixedDropIconSpec }): React.JSX.Element {
       ) : (
         <span className="block h-8 w-8 rounded-md bg-surface-2" role="img" aria-label={icon.itemName} />
       )}
-      <span className="absolute -bottom-1 -right-1 rounded-full bg-primary px-1 py-px text-[8px] font-bold leading-none text-white ring-1 ring-bg tabular-nums">
+      <span className="absolute -bottom-1 -right-1 rounded-full bg-primary px-1 py-px text-[8px] font-bold leading-none text-on-primary ring-1 ring-bg tabular-nums">
         {icon.count}개
       </span>
     </span>
@@ -274,7 +274,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                 return (
                   <section key={category} className="px-4 pb-3">
                     <h3 className="mb-2 flex items-center gap-2 text-xs font-bold text-text-muted">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-third/15 text-third-text">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-third-tint text-third-ink">
                         <Icon className="h-3.5 w-3.5" aria-hidden="true" />
                       </span>
                       {label}
@@ -293,11 +293,11 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                               type="button"
                               onClick={() => handleTileTap(candidate)}
                               className={`relative flex w-full flex-col items-center gap-1 rounded-xl border p-2 pt-[1em] ${
-                                on ? 'border-primary bg-primary/10' : 'border-border bg-surface'
+                                on ? 'border-primary bg-primary-tint' : 'border-border bg-surface'
                               } ${box ? 'border-dashed' : ''}`}
                             >
                               {on && (
-                                <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-white">
+                                <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-on-primary">
                                   ✓
                                 </span>
                               )}
@@ -323,7 +323,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
               {fixedGroups.length > 0 && (
                 <section className="px-4 pb-3">
                   <h3 className="mb-2 flex items-center gap-2 text-xs font-bold text-text-muted">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-third/15 text-third-text">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-third-tint text-third-ink">
                       <Pin className="h-3.5 w-3.5" aria-hidden="true" />
                     </span>
                     고정
@@ -364,7 +364,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                 props.onSave(selected)
                 props.onClose()
               }}
-              className="w-full rounded-xl bg-primary py-3 text-sm font-bold text-white"
+              className="w-full rounded-xl bg-primary py-3 text-sm font-bold text-on-primary"
             >
               추가 완료{selected.length > 0 ? ` · ${selected.length}개` : ''}
             </button>
@@ -435,11 +435,11 @@ function BoxDrillDown(props: BoxDrillDownProps): React.JSX.Element {
                 type="button"
                 onClick={() => setItem(entry.name)}
                 className={`relative flex w-full flex-col items-center gap-1 rounded-xl border p-2 pt-[1em] ${
-                  item === entry.name ? 'border-primary bg-primary/10' : 'border-border bg-surface'
+                  item === entry.name ? 'border-primary bg-primary-tint' : 'border-border bg-surface'
                 }`}
               >
                 {item === entry.name && (
-                  <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-white">
+                  <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-on-primary">
                     ✓
                   </span>
                 )}
@@ -468,7 +468,7 @@ function BoxDrillDown(props: BoxDrillDownProps): React.JSX.Element {
                 onClick={() => setLevel(lvl)}
                 className={`flex-1 rounded-lg border py-2 text-xs font-bold disabled:opacity-40 ${
                   level === lvl && !levelDisabled
-                    ? 'border-primary bg-primary/10 text-primary-text'
+                    ? 'border-primary bg-primary-tint text-primary-ink'
                     : 'border-border text-text-muted'
                 }`}
               >
@@ -486,7 +486,7 @@ function BoxDrillDown(props: BoxDrillDownProps): React.JSX.Element {
           onClick={() => {
             if (item !== null) props.onConfirm(item, needsLevel ? (level ?? undefined) : undefined)
           }}
-          className="w-full rounded-xl bg-primary py-3 text-sm font-bold text-white disabled:opacity-40"
+          className="w-full rounded-xl bg-primary py-3 text-sm font-bold text-on-primary disabled:opacity-40"
         >
           이 결과로 기록
         </button>
