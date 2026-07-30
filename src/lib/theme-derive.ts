@@ -85,6 +85,13 @@ const AA_TEXT = 4.5
 /** 비-텍스트(진행률 채움 등) 기준(WCAG AA). */
 const AA_NON_TEXT = 3
 
+/**
+ * 파생할 때만 쓰는 여유분. 기준선에 정확히 붙은 값(4.50:1)이 나오면 검사는 통과하지만
+ * 우연히 걸친 것처럼 읽히고, 뒤에 값을 조금만 손봐도 곧바로 미달로 넘어간다.
+ * 검사 기준 자체는 그대로 두고 **만들 때만** 조금 넘겨 잡는다.
+ */
+const DERIVE_MARGIN = 0.1
+
 /** 틴트 농도 — 자리마다 달랐던 4종(/10·/12·/15·/25)을 하나로 통일했다([[ADR-064]] 결정 2). */
 const TINT_RATIO = 0.15
 
@@ -151,7 +158,7 @@ function tone(hue: number, ramp: { l: number; c: number }): string {
  */
 function adjustForContrast(hex: string, backgrounds: string[], required: number): string {
   const passes = (candidate: string): boolean =>
-    backgrounds.every((bg) => contrastHex(candidate, bg) >= required)
+    backgrounds.every((bg) => contrastHex(candidate, bg) >= required + DERIVE_MARGIN)
 
   if (passes(hex)) return hex
 
@@ -175,31 +182,45 @@ function adjustForContrast(hex: string, backgrounds: string[], required: number)
 }
 
 /**
+ * 채움 위 전경색의 색조 ([[ADR-064]] 결정 1 정정).
+ *
+ * 순수 흑/백이 아니라 **채움색의 색상(H)을 물려받은** 짙은 색·옅은 색을 쓴다. 주황 채움 위에는
+ * 짙은 갈색이, 보라 채움 위에는 짙은 보라가 온다. 이 프로젝트의 옛 기본 팔레트가 쓰던
+ * `#2B1206`(주황 채움 위 짙은 갈색)이 같은 발상이었다 — 값을 하나로 고정한 것이 문제였지
+ * 색조를 주는 것 자체는 맞았다.
+ *
+ * 채도는 원 색상보다 크게 낮춘다. 명도를 극단으로 밀면 높은 채도를 표현 범위가 감당하지 못하고,
+ * 전경은 배경이 아니라 글자라 색이 튀면 읽기 방해가 된다.
+ */
+const FOREGROUND_DARK = { lightness: 0.18, chromaScale: 0.35, chromaMax: 0.06 } as const
+const FOREGROUND_LIGHT = { lightness: 0.96, chromaScale: 0.25, chromaMax: 0.04 } as const
+
+/**
  * 채움 위 전경색 ([[ADR-064]] 결정 1).
  *
- * 흰색도 검정도 기본으로 두지 않는다 — 후보를 늘어놓고 **채움색 대비가 가장 높은 것**을 고른다.
- * 밝은 파스텔 채움이면 어두운 전경이, 어두운 채움이면 밝은 전경이 자연히 뽑힌다.
+ * 흰색도 검정도 기본으로 두지 않는다 — 밝은 파스텔 채움이면 어두운 전경이, 어두운 채움이면
+ * 밝은 전경이 자동으로 정해진다. **어느 쪽도 전제하지 않는 것**이 요점이다.
  */
-function pickForeground(fill: string, palette: { text: string; bg: string }): string {
-  const candidates = [
-    '#FFFFFF',
-    '#000000',
-    palette.text,
-    palette.bg,
-    withLightness(fill, 0.02),
-    withLightness(fill, 0.98),
-  ]
+function deriveForeground(fill: string): string {
+  const base = hexToOklch(fill)
 
-  let best = candidates[0]
-  let bestRatio = 0
-  for (const candidate of candidates) {
-    const ratio = contrastHex(candidate, fill)
-    if (ratio > bestRatio) {
-      bestRatio = ratio
-      best = candidate
-    }
+  // 방향만 흑/백으로 견준다 — 어느 쪽에 대비 여유가 더 있는지 알아보려는 것이고,
+  // 실제로 쓰는 값은 아래에서 색조를 넣어 만든다.
+  const goDark = contrastHex(fill, '#000000') >= contrastHex(fill, '#FFFFFF')
+  const spec = goDark ? FOREGROUND_DARK : FOREGROUND_LIGHT
+  const chroma = Math.min(base.c * spec.chromaScale, spec.chromaMax)
+
+  // 기본 명도에서 모자라면 극단 쪽으로 조금씩 더 민다 — 필요한 만큼만 밀어야 색조가 남는다.
+  for (let step = 0; step <= 1; step += 0.01) {
+    const lightness = goDark ? spec.lightness - step : spec.lightness + step
+    if (lightness < 0 || lightness > 1) break
+
+    const candidate = oklchToHex({ l: lightness, c: chroma, h: base.h })
+    if (contrastHex(candidate, fill) >= AA_TEXT + DERIVE_MARGIN) return candidate
   }
-  return best
+
+  // 색조를 띤 값으로 끝내 못 맞추면 순수 흑/백으로 물러선다(대비 검사가 결과를 보고한다).
+  return goDark ? '#000000' : '#FFFFFF'
 }
 
 /**
@@ -253,13 +274,12 @@ export function deriveTheme(seed: ThemeSeed): DerivedTheme {
   )
 
   const error = pick('error', tone(ERROR_HUE, ERROR_RAMP[mode]))
-  const palette = { text, bg }
 
   // accent 4종은 규칙이 완전히 같다 — 채움 / 채움 위 전경 / 틴트 / 잉크.
   const accent = (key: 'primary' | 'secondary' | 'third' | 'error', fill: string) => {
     const tint = pick(`${key}Tint`, mixOklab(fill, surface, TINT_RATIO))
     return {
-      on: pick(`on${key[0].toUpperCase()}${key.slice(1)}` as keyof DerivedTheme, pickForeground(fill, palette)),
+      on: pick(`on${key[0].toUpperCase()}${key.slice(1)}` as keyof DerivedTheme, deriveForeground(fill)),
       tint,
       ink: pick(`${key}Ink`, adjustForContrast(fill, [surface, tint], AA_TEXT)),
     }

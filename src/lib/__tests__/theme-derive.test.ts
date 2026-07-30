@@ -67,15 +67,57 @@ describe('on-* — 채움 위 전경색은 어느 쪽도 전제하지 않는다'
     expect(contrastHex(tokens.onPrimary, tokens.primary)).toBeGreaterThanOrEqual(4.5)
   })
 
-  it('흰색 고정이 아니다 — 파스텔 테마에서는 흰색이 선택되지 않는다', () => {
-    expect(deriveTheme(PASTEL_SEED).onPrimary).not.toBe('#FFFFFF')
-  })
-
   it('secondary·third·error 채움에도 같은 규칙이 적용된다', () => {
     const tokens = deriveTheme(PASTEL_SEED)
     expect(contrastHex(tokens.onSecondary, tokens.secondary)).toBeGreaterThanOrEqual(4.5)
     expect(contrastHex(tokens.onThird, tokens.third)).toBeGreaterThanOrEqual(4.5)
     expect(contrastHex(tokens.onError, tokens.error)).toBeGreaterThanOrEqual(4.5)
+  })
+})
+
+// ADR-064 결정 1 정정 — 흑/백 둘 중 하나로 퇴화하면 안 된다. 배경색마다 어울리는 전경색이 있다.
+describe('on-* — 순수 흑/백이 아니라 채움색의 색조를 물려받는다', () => {
+  const ON_KEYS = ['onPrimary', 'onSecondary', 'onThird', 'onError'] as const
+  const FILL_OF = {
+    onPrimary: 'primary',
+    onSecondary: 'secondary',
+    onThird: 'third',
+    onError: 'error',
+  } as const
+
+  it.each(ALL_SEEDS)('%s: 어떤 on-* 도 순수 흑/백이 아니다', (_label, seed) => {
+    const tokens = deriveTheme(seed)
+    for (const key of ON_KEYS) {
+      expect(tokens[key]).not.toBe('#000000')
+      expect(tokens[key]).not.toBe('#FFFFFF')
+    }
+  })
+
+  it.each(ALL_SEEDS)('%s: on-* 의 색상(H)이 채움색을 따라간다', (_label, seed) => {
+    const tokens = deriveTheme(seed)
+    for (const key of ON_KEYS) {
+      const foreground = hexToOklch(tokens[key])
+      const fill = hexToOklch(tokens[FILL_OF[key]])
+      // 색상환은 순환이라 최단 거리로 잰다.
+      const gap = Math.abs(((foreground.h - fill.h + 540) % 360) - 180)
+      expect(gap).toBeLessThan(10)
+    }
+  })
+
+  it.each(ALL_SEEDS)('%s: on-* 이 무채색이 아니다(채도가 남아 있다)', (_label, seed) => {
+    const tokens = deriveTheme(seed)
+    for (const key of ON_KEYS) {
+      expect(hexToOklch(tokens[key]).c).toBeGreaterThan(0.004)
+    }
+  })
+
+  it('주황 채움 위에는 짙은 갈색 계열이 온다 (옛 #2B1206 과 같은 방향)', () => {
+    const onPrimary = deriveTheme(LIGHT_SEED).onPrimary
+    const derived = hexToOklch(onPrimary)
+    const legacy = hexToOklch('#2B1206')
+
+    expect(derived.l).toBeLessThan(0.35)
+    expect(Math.abs(derived.h - legacy.h)).toBeLessThan(30)
   })
 })
 
