@@ -150,7 +150,7 @@ export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, ge
     try {
       await setTrackedCharacterOcids(ocids)
     } catch {
-      useToastStore.getState().showError('저장하지 못했어요')
+      useToastStore.getState().showError('저장하지 못했습니다')
       return
     }
     set({ trackedOcids: ocids })

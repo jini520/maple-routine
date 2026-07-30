@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react'
 import { CharacterTrackingGrid } from '../../components/CharacterTrackingPicker/CharacterTrackingGrid'
+import { ErrorState } from '../../components/ErrorState/ErrorState'
+import { StaleBanner } from '../../components/ErrorState/StaleBanner'
 import { MapleSpinner } from '../../components/MapleSpinner/MapleSpinner'
 import { MapleSweepSpinner } from '../../components/MapleSweepSpinner/MapleSweepSpinner'
-import { getCharacterPickerRoster } from '../../features/schedule-sync/schedule-sync'
+import { formatRosterError } from '../../features/schedule-sync/format'
+import { getCharacterPickerRoster, toScheduleSyncError } from '../../features/schedule-sync/schedule-sync'
+import type { ScheduleSyncError } from '../../features/schedule-sync/schedule-sync'
 import type { CharacterPickerEntry } from '../../types'
 
 export interface ContentCharacterStepProps {
@@ -13,15 +17,25 @@ export interface ContentCharacterStepProps {
 // ADR-053 결정 3: 이 단계는 모달이 아니라 페이지라 그리드 자리에 직접 그린다 — 판정 순서는
 // 피커(CharacterTrackingPicker)와 같다. 보여줄 항목이 하나라도 있으면 조회 중이어도 그리드를
 // 그리고(ADR-016 캐시 우선 표시), 항목이 없을 때만 조회 중(스피너)/실패(에러)/0건(빈 상태)을
-// 구분한다. 실패 문구는 이 화면에 재시도 수단이 없어 앱 재실행을 안내한다(피커는 "닫고 다시 열기").
+// 구분한다.
+//
+// ADR-062: 실패도 피커와 같은 공용 ErrorState를 쓰고 스탈 배너 분기도 같다. 다른 것은 액션뿐 —
+// 온보딩 중에는 설정 화면이 없으므로 invalidApiKey도 재시도이고 설명만 갈린다(formatRosterError의
+// place='onboarding'). 재시도 수단이 생겼으므로 "앱을 다시 실행해주세요" 안내는 없어진다.
 function RosterBody(props: {
   roster: CharacterPickerEntry[]
   isLoading: boolean
-  loadFailed: boolean
+  loadError: ScheduleSyncError | null
+  onRetry: () => void
   onChange: (ocids: string[]) => void
 }): React.JSX.Element {
   if (props.roster.length > 0) {
-    return <CharacterTrackingGrid entries={props.roster} trackedOcids={[]} onChange={props.onChange} />
+    return (
+      <>
+        {props.loadError !== null && <StaleBanner message="목록이 최신이 아닙니다" onRetry={props.onRetry} />}
+        <CharacterTrackingGrid entries={props.roster} trackedOcids={[]} onChange={props.onChange} />
+      </>
+    )
   }
 
   if (props.isLoading) {
@@ -37,11 +51,15 @@ function RosterBody(props: {
     )
   }
 
-  if (props.loadFailed) {
+  if (props.loadError !== null) {
+    const copy = formatRosterError(props.loadError, 'onboarding')
+    // place='onboarding'은 openSettings를 반환하지 않으므로 액션은 항상 재시도다.
     return (
-      <p className="flex min-h-[120px] items-center justify-center px-4 text-center text-sm text-error">
-        캐릭터 목록을 불러오지 못했어요 — 네트워크를 확인한 뒤 앱을 다시 실행해주세요
-      </p>
+      <ErrorState
+        title={copy.title}
+        description={copy.description}
+        action={{ label: copy.action.label, onClick: props.onRetry }}
+      />
     )
   }
 
@@ -61,8 +79,17 @@ export function ContentCharacterStep(props: ContentCharacterStepProps): React.JS
   // ADR-053 결정 3: 조회를 소유한 화면이 로딩·실패를 관리한다(ContentScreen·BossScreen과 동일).
   // 이 단계는 피커와 달리 마운트 즉시 조회를 시작하므로 첫 렌더부터 로딩이다.
   const [isRosterLoading, setIsRosterLoading] = useState(true)
-  const [rosterFailed, setRosterFailed] = useState(false)
+  // ADR-062 결정 2: boolean이 아니라 원인을 들고 있어야 원인별 문구·액션을 그릴 수 있다.
+  const [rosterError, setRosterError] = useState<ScheduleSyncError | null>(null)
+  // ADR-062: 재조회 트리거. 이 값이 바뀌면 아래 조회 effect가 다시 돈다.
+  const [rosterReloadNonce, setRosterReloadNonce] = useState(0)
   const [selectedOcids, setSelectedOcids] = useState<string[]>([])
+
+  function reloadRoster(): void {
+    setIsRosterLoading(true)
+    setRosterError(null)
+    setRosterReloadNonce((nonce) => nonce + 1)
+  }
 
   // ADR-016/017: 캐시가 있으면 즉시 그 값으로 먼저 그리고, character/basic 응답이 하나씩
   // 도착하는 대로 patch한다(ContentScreen의 피커 열기와 동일 패턴).
@@ -73,8 +100,8 @@ export function ContentCharacterStep(props: ContentCharacterStepProps): React.JS
     getCharacterPickerRoster((entries) => {
       if (!cancelled) setRoster(entries)
     })
-      .catch(() => {
-        if (!cancelled) setRosterFailed(true)
+      .catch((error: unknown) => {
+        if (!cancelled) setRosterError(toScheduleSyncError(error))
       })
       .finally(() => {
         if (!cancelled) setIsRosterLoading(false)
@@ -82,7 +109,7 @@ export function ContentCharacterStep(props: ContentCharacterStepProps): React.JS
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [rosterReloadNonce])
 
   return (
     <div className="w-full space-y-4">
@@ -96,7 +123,8 @@ export function ContentCharacterStep(props: ContentCharacterStepProps): React.JS
       <RosterBody
         roster={roster}
         isLoading={isRosterLoading}
-        loadFailed={rosterFailed}
+        loadError={rosterError}
+        onRetry={reloadRoster}
         onChange={setSelectedOcids}
       />
 

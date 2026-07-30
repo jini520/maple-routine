@@ -36,18 +36,18 @@ describe('useToastStore', () => {
 
   it('showError는 duration이 null이고 action을 그대로 담는다', () => {
     const onClick = vi.fn()
-    useToastStore.getState().showError('저장하지 못했어요', { label: '다시 시도', onClick })
+    useToastStore.getState().showError('저장하지 못했습니다', { label: '다시 시도', onClick })
 
     expect(useToastStore.getState().toasts[0]).toMatchObject({
       variant: 'error',
-      message: '저장하지 못했어요',
+      message: '저장하지 못했습니다',
       duration: null,
       action: { label: '다시 시도', onClick },
     })
   })
 
   it('showError를 action 없이 호출할 수 있다', () => {
-    useToastStore.getState().showError('저장하지 못했어요')
+    useToastStore.getState().showError('저장하지 못했습니다')
 
     expect(useToastStore.getState().toasts[0].action).toBeUndefined()
   })

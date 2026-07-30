@@ -36,7 +36,9 @@ export interface CharacterScheduleSync {
   error: ScheduleSyncError | null
 }
 
-function toScheduleSyncError(error: unknown): ScheduleSyncError {
+// 호출부가 reject를 원인으로 변환할 수 있게 export한다([[ADR-062]] 결정 2) — 피커·온보딩 스텝이
+// getCharacterPickerRoster의 catch에서 이걸 통과시켜 loadError로 내려준다.
+export function toScheduleSyncError(error: unknown): ScheduleSyncError {
   if (error instanceof NexonAuthError) {
     return { kind: 'invalidApiKey' }
   }

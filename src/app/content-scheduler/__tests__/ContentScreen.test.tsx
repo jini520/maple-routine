@@ -13,7 +13,10 @@ vi.mock('../../../features/content-scheduler/store', () => ({
   useContentSchedulerStore: vi.fn(),
 }))
 
-vi.mock('../../../features/schedule-sync/schedule-sync', () => ({
+// ADR-062: 화면이 toScheduleSyncError로 reject를 원인으로 변환하므로, 그 매핑은 실물을 쓰고
+// getCharacterPickerRoster만 대체한다(부분 모킹).
+vi.mock('../../../features/schedule-sync/schedule-sync', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../../features/schedule-sync/schedule-sync')>()),
   getCharacterPickerRoster: vi.fn(),
 }))
 
@@ -1220,7 +1223,7 @@ describe('ContentScreen — 캐릭터 관리 피커 후보 목록 로딩 (ADR-05
 
     await roster.reject(new Error('401'))
 
-    expect(screen.getByText('캐릭터 목록을 불러오지 못했어요 — 닫고 다시 열어주세요')).toBeInTheDocument()
+    expect(screen.getByText('캐릭터 목록을 불러오지 못했습니다')).toBeInTheDocument()
     expect(screen.queryByTestId('maple-sweep-spinner')).not.toBeInTheDocument()
   })
 
@@ -1229,13 +1232,13 @@ describe('ContentScreen — 캐릭터 관리 피커 후보 목록 로딩 (ADR-05
 
     await renderAndOpenPicker()
     await roster.reject(new Error('401'))
-    await screen.findByText('캐릭터 목록을 불러오지 못했어요 — 닫고 다시 열어주세요')
+    await screen.findByText('캐릭터 목록을 불러오지 못했습니다')
 
     fireEvent.click(screen.getByRole('button', { name: '닫기' }))
     fireEvent.click(screen.getByRole('button', { name: '캐릭터 관리' }))
 
     expect(await screen.findByTestId('maple-sweep-spinner')).toBeInTheDocument()
-    expect(screen.queryByText('캐릭터 목록을 불러오지 못했어요 — 닫고 다시 열어주세요')).not.toBeInTheDocument()
+    expect(screen.queryByText('캐릭터 목록을 불러오지 못했습니다')).not.toBeInTheDocument()
     expect(mockedGetCharacterPickerRoster).toHaveBeenCalledTimes(2)
   })
 })

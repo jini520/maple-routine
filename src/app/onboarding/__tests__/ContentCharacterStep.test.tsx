@@ -9,7 +9,10 @@ const { getCharacterPickerRosterMock } = vi.hoisted(() => ({
   getCharacterPickerRosterMock: vi.fn(),
 }))
 
-vi.mock('../../../features/schedule-sync/schedule-sync', () => ({
+// ADR-062: 화면이 toScheduleSyncError로 reject를 원인으로 변환하므로, 그 매핑은 실물을 쓰고
+// getCharacterPickerRoster만 대체한다(부분 모킹).
+vi.mock('../../../features/schedule-sync/schedule-sync', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../../features/schedule-sync/schedule-sync')>()),
   getCharacterPickerRoster: getCharacterPickerRosterMock,
 }))
 
@@ -161,7 +164,7 @@ describe('ContentCharacterStep — 후보 목록 로딩 (ADR-053)', () => {
     render(<ContentCharacterStep isSubmitting={false} onSubmit={vi.fn()} />)
     await roster.reject(new Error('401'))
 
-    expect(screen.getByText(/캐릭터 목록을 불러오지 못했어요/)).toBeInTheDocument()
+    expect(screen.getByText('캐릭터 목록을 불러오지 못했습니다')).toBeInTheDocument()
     expect(screen.queryByText('표시할 캐릭터가 없어요')).not.toBeInTheDocument()
     expect(screen.queryByTestId('maple-sweep-spinner')).not.toBeInTheDocument()
   })

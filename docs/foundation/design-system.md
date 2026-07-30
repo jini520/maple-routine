@@ -77,10 +77,10 @@ Text(라이트): text-[#8A7362] hover:text-[#5B4636]   Text(다크): text-neutra
 공통 자리: flex min-h-[120px] items-center justify-center (그리드 자리 중앙)
 조회 중:   MapleSweepSpinner size={32} text-primary, 래퍼에 role="status" aria-busy="true" aria-label="캐릭터 목록을 불러오는 중"
            (모달·페이지 안이라 셸 승계 카드는 씌우지 않는다 — 위 "로딩 표현" 참고, [[ADR-061]])
-조회 실패: text-sm text-error "캐릭터 목록을 불러오지 못했어요 — 닫고 다시 열어주세요"
+조회 실패: 공용 ErrorState (아래 "실패 상태" 절, [[ADR-062]])
 항목 0건: text-sm text-text-muted "표시할 캐릭터가 없어요"
 ```
-재시도 버튼은 두지 않는다 — 모달을 닫았다 다시 열면 로딩·실패가 초기화되고 재조회되므로 그 경로를 문구로 안내한다. 온보딩 캐릭터 선택 단계(`ContentCharacterStep`)는 같은 분기를 페이지에서 직접 그리며 실패 문구만 "…네트워크를 확인한 뒤 앱을 다시 실행해주세요"로 다르다([onboarding.md](../features/onboarding.md)).
+실패는 원인(`loadError: ScheduleSyncError | null`)을 받아 원인별 문구·액션을 그린다 — 자세한 것은 아래 "실패 상태" 절([[ADR-062]]). **보여줄 항목이 있는 채로 실패하면** 목록을 지우지 않고 그 위에 스탈 배너를 얹는다. 온보딩 캐릭터 선택 단계(`ContentCharacterStep`)는 같은 분기를 페이지에서 직접 그리며 액션만 다르다(온보딩 중에는 설정 화면이 없다, [onboarding.md](../features/onboarding.md)).
 
 ### 빈 상태 (`components/EmptyState`) — [[ADR-060]], 구현 완료 2026-07-29
 "비어있음"을 표시하는 11곳이 이 컴포넌트 하나를 쓴다. `size` 두 변형만 다르고 구조는 동일 — **원형 배지(컨텍스트 아이콘) + 제목 + 설명 + CTA**, 중앙 정렬.
@@ -135,6 +135,36 @@ inline: 스피너 24px             — 보스 수익 과거 기간 백필
 기본:    flex items-start gap-3 rounded-[14px] border border-border bg-info-tint p-4
          + Info 아이콘(h-5 text-text-muted) + 제목 text-sm font-semibold + 설명 text-xs text-text-muted
 compact: 카드 안에 중첩될 때. rounded-[10px] bg-surface-2 px-3 py-2.5, 아이콘 h-4, 제목 한 줄만(설명 생략)
+```
+문구 어미는 실패와 같은 `~습니다` 를 쓴다([[ADR-062]] 결정 5) — 정보 톤은 **색(info-tint)이 담당하지 어미가 담당하지 않는다**.
+
+### 실패 상태 (`components/ErrorState`) — [[ADR-062]]
+로딩·빈 상태·조회 불가에는 공용 컴포넌트가 있는데 실패에만 없어 화면마다 `text-error` 한 줄을 각자 갖고 있던 것을 통일한다. 세 상태(**조회 중 / 확정된 빈 상태 / 확인 불가·실패**)는 항상 구분 가능해야 하므로([error-resilience.md](./error-resilience.md) 원칙 2) 빈 상태와 **디자인을 공유하지 않는다**.
+
+| | 아이콘 | 색 | 정렬 | 액션 |
+|---|---|---|---|---|
+| `EmptyState` | 원형 배지 **안** | 브랜드(primary) | 중앙 | 목적지가 앱 안에 있을 때만 |
+| `UnavailableNotice` | 단독 `Info` | 정보(info-tint) | 좌측 | 없음(고칠 수 없음) |
+| **`ErrorState`** | **단독** `AlertTriangle` | 경고(error) | 중앙 | **항상** |
+
+```
+flex min-h-[120px] flex-col items-center justify-center gap-3 px-4 text-center
++ AlertTriangle h-7 w-7 text-error (배지 없이 단독)
++ 제목 text-sm font-semibold text-text
++ 설명 text-xs text-text-muted (mx-auto max-w-[240px])
++ 액션 rounded-full bg-primary text-bg px-4 py-2 text-xs
+```
+- **배지를 쓰지 않는다** — 아래 "아이콘" 절의 *배경 없이 단독* 규칙을 그대로 따른다(예외를 늘리지 않는다). 그 결과 배지 유무만으로 빈 상태와 즉시 갈린다.
+- **`error-tint` 토큰을 만들지 않는다** — 색은 아이콘에만, 배경은 감싸는 쪽 카드에 맡긴다. 재시도 버튼은 파괴적 동작이 아니라 진행 동작이라 `bg-primary`(삭제 버튼의 `border-error text-error` 와 구분).
+- **자체 카드·크기 변형이 없다** — 적용처 두 곳이 모두 이미 껍데기 안이다(피커=모달 카드, 온보딩=페이지). `LoadingState` 를 이 두 자리에 씌우지 않는 것과 같은 판단([[ADR-061]]).
+- **원인별 문구·액션**은 자리에 따라 갈린다 — 피커의 `invalidApiKey` 만 **설정 열기**(401은 재시도로 안 풀린다), 나머지는 다시 시도. 온보딩은 설정 화면이 없어 전부 다시 시도. 표는 [[ADR-062]] 결정 3.
+- 429의 재시도 버튼은 비활성화하지 않는다(사용자 결정).
+
+**스탈 배너** — 보여줄 항목이 있는 채로 실패했을 때. 목록을 지우지 않고 그 위에 한 줄로 얹는다.
+```
+mb-3 flex items-center gap-2 rounded-[10px] px-3 py-2.5
+bg-[color-mix(in_oklab,var(--color-error)_9%,var(--color-surface))]   ← Toast error 톤 재사용(새 토큰 없음)
++ AlertTriangle h-4 text-error + 문구 text-xs text-text + 우측 "다시 시도" text-xs font-semibold text-primary-text
 ```
 
 ### 캐릭터 관리 저장 진행률 모달 — 2026-07-16
@@ -207,4 +237,7 @@ style: maskImage/WebkitMaskImage: linear-gradient(to bottom, black, transparent)
 - ~~결정형 진행률은 자리에 따라 `MapleWaveProgress`(화면)·얇은 바(모달)·`h-2` 바(OTA)~~ → 얇은 바 프리미티브 하나로 통일, `MapleWaveProgress`·`h-2` 변형 폐기([[ADR-061]], 2026-07-30).
 - ~~로딩 자리마다 껍데기가 달랐다(텍스트 한 줄 / 점선 박스 / 없음)~~ → 목록·카드가 들어올 자리는 공용 셸 승계 카드 `LoadingState`, 점선은 빈 상태 전용([[ADR-061]], 2026-07-30).
 - ~~대기 문구가 `~중...`과 `~하고 있어요`로 갈림~~ → 버튼 안은 `~중`(말줄임표 없음), 그 밖은 `~하고 있어요`, 말줄임표는 새로고침 옆 `조회 중...` 한 곳만([[ADR-061]], 2026-07-30).
+- ~~피커·온보딩 조회 실패에 재시도 버튼을 두지 않는다(닫았다 다시 열면 재조회되므로 그 경로를 문구로 안내)~~ → 공용 `ErrorState` 가 원인별 액션(다시 시도 / 설정 열기)을 갖는다. 닫았다 여는 것으로 풀리지 않는 실패(401)가 있고, 원인을 못 보여주는 상태의 그 안내는 헛수고를 시킨다([[ADR-062]]가 [[ADR-053]] 결정 3 폐기, 2026-07-30).
+- ~~실패 문구는 화면마다 `<p className="text-sm text-error">` 한 줄을 각자 보유~~ → 공용 `ErrorState`(아이콘 + 제목 + 설명 + 액션)([[ADR-062]], 2026-07-30).
+- ~~에러 문구 어미가 인라인 `~습니다` / 토스트 `~어요` 로 갈림~~ → 실패·에러·불가는 `~습니다`, 성공·안내는 `~어요`, 진행 중은 `~하고 있어요`([[ADR-062]] 결정 5, 2026-07-30).
 - 색·컴포넌트 규칙이 `{...}` 플레이스홀더였던 초기 UI_GUIDE → 작성 완료.

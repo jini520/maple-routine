@@ -243,7 +243,7 @@ describe('useOnboardingStore.submitApiKey', () => {
 
     await useOnboardingStore.getState().submitApiKey('key-1')
 
-    expect(showErrorMock).toHaveBeenCalledWith('API 키를 확인하지 못했어요')
+    expect(showErrorMock).toHaveBeenCalledWith('API 키를 확인하지 못했습니다')
     expect(showSuccessMock).not.toHaveBeenCalled()
   })
 

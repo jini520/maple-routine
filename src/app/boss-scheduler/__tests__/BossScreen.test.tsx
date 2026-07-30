@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { BossScreen } from '../BossScreen'
 import { useBossSchedulerStore, type BossCharacterView } from '../../../features/boss-scheduler/store'
 import { getCharacterPickerRoster } from '../../../features/schedule-sync/schedule-sync'
+import { NexonAuthError } from '../../../nexon/errors'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 import type { CharacterPickerEntry } from '../../../types'
 import type { MatchedBoss } from '../../../lib/boss-matching'
@@ -15,7 +16,10 @@ vi.mock('../../../features/boss-scheduler/store', () => ({
   partySizeKey: (ocid: string, boss: string, difficulty: string) => `${ocid}:${boss}:${difficulty}`,
 }))
 
-vi.mock('../../../features/schedule-sync/schedule-sync', () => ({
+// ADR-062: 화면이 toScheduleSyncError로 reject를 원인으로 변환하므로, 그 매핑은 실물을 쓰고
+// getCharacterPickerRoster만 대체한다(부분 모킹).
+vi.mock('../../../features/schedule-sync/schedule-sync', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../../features/schedule-sync/schedule-sync')>()),
   getCharacterPickerRoster: vi.fn(),
 }))
 
@@ -1082,7 +1086,7 @@ describe('BossScreen — 캐릭터 관리 피커 후보 목록 로딩 (ADR-053)'
 
     await roster.reject(new Error('401'))
 
-    expect(screen.getByText('캐릭터 목록을 불러오지 못했어요 — 닫고 다시 열어주세요')).toBeInTheDocument()
+    expect(screen.getByText('캐릭터 목록을 불러오지 못했습니다')).toBeInTheDocument()
     expect(screen.queryByTestId('maple-sweep-spinner')).not.toBeInTheDocument()
   })
 
@@ -1091,13 +1095,59 @@ describe('BossScreen — 캐릭터 관리 피커 후보 목록 로딩 (ADR-053)'
 
     await renderAndOpenPicker()
     await roster.reject(new Error('401'))
-    await screen.findByText('캐릭터 목록을 불러오지 못했어요 — 닫고 다시 열어주세요')
+    await screen.findByText('캐릭터 목록을 불러오지 못했습니다')
 
     fireEvent.click(screen.getByRole('button', { name: '닫기' }))
     fireEvent.click(screen.getByRole('button', { name: '캐릭터 관리' }))
 
     expect(await screen.findByTestId('maple-sweep-spinner')).toBeInTheDocument()
-    expect(screen.queryByText('캐릭터 목록을 불러오지 못했어요 — 닫고 다시 열어주세요')).not.toBeInTheDocument()
+    expect(screen.queryByText('캐릭터 목록을 불러오지 못했습니다')).not.toBeInTheDocument()
     expect(mockedGetCharacterPickerRoster).toHaveBeenCalledTimes(2)
+  })
+
+  // ADR-062: 재시도가 피커를 여는 것과 같은 초기화(reloadRoster)를 타므로, 모달을 닫지 않고도
+  // 재조회된다 — ADR-053의 "닫았다 다시 열기" 안내를 대체하는 지점이다.
+  it('실패 상태에서 다시 시도를 누르면 모달을 닫지 않고 재조회한다', async () => {
+    const roster = deferRoster()
+
+    await renderAndOpenPicker()
+    await roster.reject(new Error('network'))
+    await screen.findByText('캐릭터 목록을 불러오지 못했습니다')
+    expect(mockedGetCharacterPickerRoster).toHaveBeenCalledTimes(1)
+
+    deferRoster()
+    fireEvent.click(screen.getByRole('button', { name: '다시 시도' }))
+
+    // 모달은 그대로 열려 있고 스피너로 돌아간다.
+    expect(await screen.findByTestId('maple-sweep-spinner')).toBeInTheDocument()
+    expect(screen.getByTestId('character-tracking-picker-overlay')).toBeInTheDocument()
+    expect(screen.queryByText('캐릭터 목록을 불러오지 못했습니다')).not.toBeInTheDocument()
+    expect(mockedGetCharacterPickerRoster).toHaveBeenCalledTimes(2)
+  })
+
+  // ADR-062 결정 3: 401은 재시도로 풀리지 않으므로 설정으로 보낸다.
+  it('401 실패는 다시 시도 대신 설정 열기를 준다', async () => {
+    const roster = deferRoster()
+
+    await renderAndOpenPicker()
+    await roster.reject(new NexonAuthError('Nexon API 키가 유효하지 않습니다'))
+
+    expect(await screen.findByText('API 키가 유효하지 않습니다')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '설정 열기' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '다시 시도' })).not.toBeInTheDocument()
+  })
+
+  // ADR-062 결정 4: 캐시 stub이 방출된 뒤 실패하면(예열이 끝난 정상 경로의 기본 분기) 목록을
+  // 지우지 않고 배너만 얹는다 — 배너가 없으면 이 실패가 무음이 된다.
+  it('보여줄 항목이 있는 채로 실패하면 목록을 지우지 않고 스탈 배너를 얹는다', async () => {
+    const roster = deferRoster()
+
+    await renderAndOpenPicker()
+    roster.emit([pickerEntry({ ocid: 'ocid-2', name: '내옆에최성일', level: 211 })])
+    await roster.reject(new Error('network'))
+
+    expect(await screen.findByText('목록이 최신이 아닙니다')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /내옆에최성일/ })).toBeInTheDocument()
+    expect(screen.queryByText('캐릭터 목록을 불러오지 못했습니다')).not.toBeInTheDocument()
   })
 })

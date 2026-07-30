@@ -4,7 +4,7 @@ import { Info } from 'lucide-react'
 // 디자인을 공유하지 않는다(ADR-060 결정 5): 같은 모양이면 "데이터가 없다"로 오해된다.
 // 톤은 경고(error)가 아니라 정보 — 사용자가 고칠 수 있는 실패가 아니라 API의 알려진 제약이다.
 
-const TITLE = '이 기간은 조회할 수 없어요'
+const TITLE = '이 기간은 조회할 수 없습니다'
 const DESCRIPTION = '조회 가능한 기간(최근 13일)을 지나 확인할 수 없습니다 — 처치 기록이 없다는 뜻은 아닙니다'
 
 interface UnavailableNoticeProps {

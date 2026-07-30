@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatScheduleSyncError, formatSyncedAt } from '../format'
+import { formatRosterError, formatScheduleSyncError, formatSyncedAt } from '../format'
 import type { ScheduleSyncError } from '../schedule-sync'
 
 describe('formatScheduleSyncError', () => {
@@ -9,6 +9,60 @@ describe('formatScheduleSyncError', () => {
     [{ kind: 'network' }, '네트워크 오류가 발생했습니다'],
   ])('%o -> %s', (error, expected) => {
     expect(formatScheduleSyncError(error)).toBe(expected)
+  })
+})
+
+// ADR-062 결정 3: 같은 원인이라도 자리에 따라 줄 수 있는 행동이 다르다 —
+// 피커는 설정으로 보낼 수 있지만 온보딩 중에는 설정 화면 자체가 없다.
+describe('formatRosterError', () => {
+  it('세 원인 모두 제목과 설명을 가진다', () => {
+    const kinds: ScheduleSyncError[] = [{ kind: 'invalidApiKey' }, { kind: 'rateLimited' }, { kind: 'network' }]
+
+    for (const error of kinds) {
+      for (const place of ['picker', 'onboarding'] as const) {
+        const copy = formatRosterError(error, place)
+        expect(copy.title.length).toBeGreaterThan(0)
+        expect(copy.description.length).toBeGreaterThan(0)
+        expect(copy.action.label.length).toBeGreaterThan(0)
+      }
+    }
+  })
+
+  it('모든 문구가 에러 어미 규칙(~습니다 / ~주세요)을 따른다', () => {
+    const kinds: ScheduleSyncError[] = [{ kind: 'invalidApiKey' }, { kind: 'rateLimited' }, { kind: 'network' }]
+
+    for (const error of kinds) {
+      for (const place of ['picker', 'onboarding'] as const) {
+        const copy = formatRosterError(error, place)
+        expect(copy.title).toMatch(/(습니다|주세요)$/)
+        expect(copy.description).toMatch(/(습니다|주세요)$/)
+      }
+    }
+  })
+
+  it('피커의 invalidApiKey는 설정으로 보낸다 — 재시도로는 풀리지 않기 때문', () => {
+    const copy = formatRosterError({ kind: 'invalidApiKey' }, 'picker')
+
+    expect(copy.title).toBe('API 키가 유효하지 않습니다')
+    expect(copy.action).toEqual({ kind: 'openSettings', label: '설정 열기' })
+  })
+
+  it('온보딩의 invalidApiKey는 설정 화면이 없어 재시도만 준다', () => {
+    const copy = formatRosterError({ kind: 'invalidApiKey' }, 'onboarding')
+
+    expect(copy.title).toBe('API 키가 유효하지 않습니다')
+    expect(copy.action).toEqual({ kind: 'retry', label: '다시 시도' })
+  })
+
+  it.each(['picker', 'onboarding'] as const)('%s의 rateLimited·network는 재시도를 준다', (place) => {
+    expect(formatRosterError({ kind: 'rateLimited' }, place).action.kind).toBe('retry')
+    expect(formatRosterError({ kind: 'network' }, place).action.kind).toBe('retry')
+  })
+
+  it('rateLimited와 network는 제목이 다르다 — 원인을 구분해 말해야 한다', () => {
+    expect(formatRosterError({ kind: 'rateLimited' }, 'picker').title).not.toBe(
+      formatRosterError({ kind: 'network' }, 'picker').title,
+    )
   })
 })
 

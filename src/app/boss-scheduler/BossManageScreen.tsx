@@ -180,7 +180,7 @@ export function BossManageScreen(): React.JSX.Element {
     try {
       await setPartySize(selected.ocid, bossName, difficulty, partySize)
     } catch {
-      useToastStore.getState().showError('파티원 수를 저장하지 못했어요')
+      useToastStore.getState().showError('파티원 수를 저장하지 못했습니다')
     }
   }
 

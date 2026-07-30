@@ -88,7 +88,7 @@ export const useOnboardingStore = create<OnboardingStore>()((set, get) => {
       try {
         accounts = await fetchCharacterList(apiKey)
       } catch (error) {
-        useToastStore.getState().showError('API 키를 확인하지 못했어요')
+        useToastStore.getState().showError('API 키를 확인하지 못했습니다')
         set((state) =>
           onboardingReducer(state, { type: 'API_KEY_REJECTED', error: toOnboardingError(error) }),
         )
