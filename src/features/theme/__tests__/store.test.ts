@@ -79,14 +79,14 @@ describe('restoreFromStorage', () => {
     expect(setStatusBarStyle).toHaveBeenCalledWith(true)
   })
 
-  it('저장된 값이 없고 시스템이 라이트면 머쉬맘을 기본값으로 쓰고 data-theme은 설정되지 않는다', async () => {
+  it('저장된 값이 없고 시스템이 라이트면 머쉬맘을 기본값으로 쓴다', async () => {
     vi.mocked(getTheme).mockResolvedValue(null)
     mockSystemColorScheme(false)
 
     await useThemeStore.getState().restoreFromStorage()
 
     expect(useThemeStore.getState().theme).toBe('머쉬맘')
-    expect(document.documentElement.dataset.theme).toBeUndefined()
+    expect(document.documentElement.dataset.theme).toBe('머쉬맘')
     expect(setStatusBarStyle).toHaveBeenCalledWith(false)
   })
 
@@ -108,7 +108,7 @@ describe('restoreFromStorage', () => {
     await useThemeStore.getState().restoreFromStorage()
 
     expect(useThemeStore.getState().theme).toBe('머쉬맘')
-    expect(document.documentElement.dataset.theme).toBeUndefined()
+    expect(document.documentElement.dataset.theme).toBe('머쉬맘')
   })
 })
 
@@ -140,7 +140,7 @@ describe('selectTheme', () => {
 
     expect(setTheme).toHaveBeenCalledWith('머쉬맘')
     expect(useThemeStore.getState().theme).toBe('머쉬맘')
-    expect(document.documentElement.dataset.theme).toBeUndefined()
+    expect(document.documentElement.dataset.theme).toBe('머쉬맘')
     expect(setStatusBarStyle).toHaveBeenCalledWith(false)
     expect(setNavigationBarStyle).toHaveBeenCalledWith(false)
   })

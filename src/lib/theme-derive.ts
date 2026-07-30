@@ -301,7 +301,7 @@ export function deriveTheme(seed: ThemeSeed): DerivedTheme {
   }
 }
 
-export interface MediaScopeTokens {
+export type MediaScopeTokens = {
   surface: string
   border: string
   text: string

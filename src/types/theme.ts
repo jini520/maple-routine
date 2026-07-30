@@ -1,4 +1,11 @@
-export type ThemeName = '레테' | '렌' | '머쉬맘' | '혼테일'
+/**
+ * 등록된 테마 이름 — `job-themes.json` 의 키에서 추론한다([[ADR-064]] 결정 10).
+ *
+ * 유니온을 손으로 적지 않는 이유는 테마를 수십 개로 늘릴 계획이기 때문이다. 값 목록·타입 가드·
+ * 선택 UI·라이트/다크 판정이 모두 그 JSON 하나를 따라가므로, 테마 추가는 **JSON 한 블록**이다.
+ * (`typeof import(...)` 는 타입 자리에서만 쓰여 런타임 import 를 만들지 않는다.)
+ */
+export type ThemeName = keyof typeof import('../data/job-themes.json')
 
 export type ThemeMode = 'light' | 'dark'
 

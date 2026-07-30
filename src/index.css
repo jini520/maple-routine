@@ -52,95 +52,58 @@ body {
   animation: maple-sweep 1.4s ease-in-out infinite;
 }
 
-/* 머쉬맘(라이트, 기본) 테마 — 데이터 출처: src/data/job-themes.json, 값 근거는 docs/UI_GUIDE.md "테마 시스템" 표 (ADR-009) */
+/* 토큰 이름 정의 + 기본 테마(머쉬맘) 값 — 데이터 출처: src/data/job-themes.json (ADR-009, ADR-064).
+   Tailwind v4 는 이 블록에 적힌 이름으로 유틸리티(bg-primary·text-text-muted 등)를 만들므로,
+   34토큰이 여기 전부 있어야 한다. 값은 부팅 첫 페인트용 기본값이고, 선택 테마는 런타임에
+   features/theme/store.ts 가 <style id="theme-vars">로 덮는다(ADR-064 결정 10) — 테마별
+   :root[data-theme] 블록을 손으로 적던 방식은 폐기했다. 테마 추가는 job-themes.json 한 블록. */
 @theme {
   /* backgrounds */
   --color-bg: #f2f0e2;
   --color-surface: #fdfcf6;
   --color-surface-2: #e4e1ce;
+  --color-track: #e4e1ce;
   --color-border: #cfc9ae;
   --color-border-strong: #a3996e;
 
   /* brand */
   --color-primary: #f58b0f;
   --color-primary-hover: #c55907;
-  --color-primary-text: #9c4304;
+
+  --color-on-primary: #ffeee2;
+  --color-primary-tint: #feecda;
+  --color-primary-ink: #a15800;
 
   /* accent */
   --color-secondary: #f7d00d;
-  --color-secondary-text: #7a5e00;
+  --color-on-secondary: #171100;
+  --color-secondary-tint: #fcf6dd;
+  --color-secondary-ink: #836d00;
   --color-third: #ca763a;
-  --color-third-text: #8f4e1f;
-  --color-info-tint: #fbf3d0;
+  --color-on-third: #ffeee4;
+  --color-third-tint: #f7e8da;
+  --color-third-ink: #a2520a;
   --color-error: #b3200b;
+  --color-on-error: #ffedea;
+  --color-error-tint: #f6ddd3;
+  --color-error-ink: #b3200b;
+  --color-info-tint: #fbf3d0;
+  --color-info-ink: #241208;
 
   /* text */
   --color-text: #241208;
   --color-text-muted: #645c42;
   --color-text-disabled: #9a9070;
-}
 
-/* 레테(다크) 테마 — 데이터 출처: src/data/job-themes.json, 값 근거는 docs/UI_GUIDE.md "테마 시스템" 표 (ADR-009) */
-:root[data-theme='레테'] {
-  --color-bg: #0c080f;
-  --color-surface: #1a1720;
-  --color-surface-2: #28232e;
-  --color-border: #37323e;
-  --color-border-strong: #54444e;
-  --color-primary: #9975b3;
-  --color-primary-hover: #85639f;
-  --color-primary-text: #61417b;
-  --color-secondary: #d1c093;
-  --color-secondary-text: #d1c093;
-  --color-third: #d8608f;
-  --color-third-text: #da6995;
-  --color-info-tint: #262a3a;
-  --color-error: #d8608f;
-  --color-text: #e8dfec;
-  --color-text-muted: #b89cbd;
-  --color-text-disabled: #8a758d;
-}
+  /* 일러스트 위 배색 — .media-scope 안에서 기준 표면으로 쓰인다 */
+  --color-media-surface: #1d140d;
+  --color-media-border: #3f3329;
+  --color-media-ink: #ece2db;
+  --color-media-ink-muted: #aea298;
 
-/* 렌(라이트) 테마 — 데이터 출처: src/data/job-themes.json, 값 근거는 docs/UI_GUIDE.md "테마 시스템" 표 (ADR-009) */
-:root[data-theme='렌'] {
-  --color-bg: #f6f5f5;
-  --color-surface: #ffffff;
-  --color-surface-2: #e5e6e9;
-  --color-border: #dbd3d6;
-  --color-border-strong: #c8c1c6;
-  --color-primary: #dc171d;
-  --color-primary-hover: #b33946;
-  --color-primary-text: #803440;
-  --color-secondary: #437b71;
-  --color-secondary-text: #3e7369;
-  --color-third: #c9eef2;
-  --color-third-text: #21808a;
-  --color-info-tint: #e4f6f8;
-  --color-error: #a31118;
-  --color-text: #171721;
-  --color-text-muted: #525475;
-  --color-text-disabled: #8a8089;
-}
-
-/* 혼테일(다크, 시스템 다크 모드 기본) 테마 — 데이터 출처: src/data/job-themes.json, 값 근거는 docs/UI_GUIDE.md "테마 시스템" 표 (ADR-009) */
-:root[data-theme='혼테일'] {
-  --color-bg: #0b0b0b;
-  --color-surface: #241110;
-  --color-surface-2: #362120;
-  --color-border: #524344;
-  --color-border-strong: #695e5f;
-  --color-primary: #e86a16;
-  --color-primary-hover: #c34204;
-  --color-primary-text: #f09a55;
-  --color-secondary: #7b777a;
-  --color-secondary-text: #b8b2b4;
-  --color-third: #936e68;
-  --color-third-text: #c79a92;
-  --color-info-tint: #3a3235;
-  --color-error: #e85447;
-  --color-text: #e6e1e2;
-  --color-text-muted: #9f9594;
-  --color-text-disabled: #7a6e6f;
+  /* 깊이 — 반투명이라 8자리 hex */
+  --color-scrim: #0f0a068c;
+  --color-shadow-color: #04010059;
 }
 
 /* 고가 아이템 드롭 연출 — 중앙 아이템이 위아래로 살짝 부유(ADR-038). 팝인(scale)·중앙정렬 transform과

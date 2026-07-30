@@ -5,6 +5,7 @@ import { MapleSpinner } from '../components/MapleSpinner/MapleSpinner'
 import { MapleSweepSpinner } from '../components/MapleSweepSpinner/MapleSweepSpinner'
 import { LoadingState } from '../components/LoadingState/LoadingState'
 import { useThemeStore } from '../features/theme/store'
+import { THEME_NAMES } from '../lib/theme-registry'
 import type { ThemeName } from '../types/theme'
 
 // 임시 디버그 화면 — [[ADR-061]](로딩 표현 통일)의 시안 비교용.
@@ -300,7 +301,7 @@ const COPY: Record<ToneId, Copy> = {
 // 공통 훅·목업
 // ---------------------------------------------------------------------------
 
-const THEME_OPTIONS: ThemeName[] = ['머쉬맘', '혼테일', '레테', '렌']
+const THEME_OPTIONS = THEME_NAMES
 
 function applyThemeToDocument(theme: ThemeName): void {
   if (theme === '머쉬맘') {
