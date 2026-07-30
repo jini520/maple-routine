@@ -97,7 +97,7 @@ describe('UnavailableNotice', () => {
   it('제목과 설명을 렌더링한다', () => {
     render(<UnavailableNotice />)
 
-    expect(screen.getByText('이 기간은 조회할 수 없어요')).toBeInTheDocument()
+    expect(screen.getByText('이 기간은 조회할 수 없습니다')).toBeInTheDocument()
     expect(screen.getByTestId('unavailable-notice-description')).toHaveTextContent(
       '처치 기록이 없다는 뜻은 아닙니다',
     )
@@ -112,7 +112,7 @@ describe('UnavailableNotice', () => {
   it('compact면 카드 안에 들어가도록 축소하고 설명을 생략한다', () => {
     render(<UnavailableNotice compact />)
 
-    expect(screen.getByText('이 기간은 조회할 수 없어요')).toBeInTheDocument()
+    expect(screen.getByText('이 기간은 조회할 수 없습니다')).toBeInTheDocument()
     expect(screen.queryByTestId('unavailable-notice-description')).not.toBeInTheDocument()
   })
 })

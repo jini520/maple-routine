@@ -14,7 +14,8 @@ import { EmptyState } from '../../components/EmptyState/EmptyState'
 import { LoadingState } from '../../components/LoadingState/LoadingState'
 import { ProgressModal } from '../../components/ProgressModal/ProgressModal'
 import { ListChecks, RefreshCw } from 'lucide-react'
-import { getCharacterPickerRoster } from '../../features/schedule-sync/schedule-sync'
+import { getCharacterPickerRoster, toScheduleSyncError } from '../../features/schedule-sync/schedule-sync'
+import type { ScheduleSyncError } from '../../features/schedule-sync/schedule-sync'
 import { useNavigate } from 'react-router-dom'
 import { getDailyQuestRegionIconUrl } from '../../lib/daily-quest-icons'
 import { matchWeeklyRegionalQuestSlug } from '../../lib/weekly-regional-quest-matching'
@@ -702,7 +703,10 @@ export function ContentScreen(): React.JSX.Element {
   // ADR-053 결정 3: 후보 목록 조회의 로딩·실패는 조회를 소유한 화면이 관리해 피커에 내려준다.
   // 초기값은 "마운트 직후 조회가 시작되는가"(= 피커가 이미 열려 있는가)와 같다.
   const [isRosterLoading, setIsRosterLoading] = useState(isPickerOpen)
-  const [rosterFailed, setRosterFailed] = useState(false)
+  const [rosterError, setRosterError] = useState<ScheduleSyncError | null>(null)
+  // ADR-062: 재조회 트리거. 피커를 여는 것과 재시도가 같은 초기화(reloadRoster)를 공유하고,
+  // 이 값이 바뀌면 아래 조회 effect가 다시 돈다.
+  const [rosterReloadNonce, setRosterReloadNonce] = useState(0)
   const [saveProgress, setSaveProgress] = useState<{ completed: number; total: number } | null>(null)
 
   useEffect(() => {
@@ -726,8 +730,8 @@ export function ContentScreen(): React.JSX.Element {
     getCharacterPickerRoster((entries) => {
       if (!cancelled) setRoster(entries)
     })
-      .catch(() => {
-        if (!cancelled) setRosterFailed(true)
+      .catch((error: unknown) => {
+        if (!cancelled) setRosterError(toScheduleSyncError(error))
       })
       .finally(() => {
         if (!cancelled) setIsRosterLoading(false)
@@ -735,7 +739,7 @@ export function ContentScreen(): React.JSX.Element {
     return () => {
       cancelled = true
     }
-  }, [isPickerOpen])
+  }, [isPickerOpen, rosterReloadNonce])
 
   const isEmpty = trackedOcids === null || trackedOcids.length === 0
 
@@ -796,10 +800,16 @@ export function ContentScreen(): React.JSX.Element {
   // ADR-053 결정 3: 피커를 여는 유일한 경로 — 여는 순간 로딩·실패를 초기화한다(닫았다 다시 열면
   // 아래 useEffect가 재조회하므로 직전 실패가 남아 있으면 안 된다). 초기화를 effect 본문이 아니라
   // 이 이벤트 핸들러에 두는 이유는 effect 본문의 동기 setState가 cascading render를 만들기 때문.
+  // ADR-062 트레이드오프: 여는 경로와 재시도가 같은 초기화를 쓴다 — 재조회 로직을 한 곳으로 모은다.
+  function reloadRoster(): void {
+    setIsRosterLoading(true)
+    setRosterError(null)
+    setRosterReloadNonce((nonce) => nonce + 1)
+  }
+
   function openPicker(): void {
     setIsPickerOpen(true)
-    setIsRosterLoading(true)
-    setRosterFailed(false)
+    reloadRoster()
   }
 
   const characterManageButton = (
@@ -847,9 +857,11 @@ export function ContentScreen(): React.JSX.Element {
       entries={roster}
       trackedOcids={trackedOcids ?? []}
       isLoading={isRosterLoading}
-      loadFailed={rosterFailed}
+      loadError={rosterError}
       onSave={handleSaveTracking}
       onClose={() => setIsPickerOpen(false)}
+      onRetry={reloadRoster}
+      onOpenSettings={() => navigate('/settings')}
     />
   )
 

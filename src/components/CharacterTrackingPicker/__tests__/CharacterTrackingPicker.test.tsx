@@ -19,8 +19,9 @@ const entries: CharacterPickerEntry[] = [
 ]
 
 // ADR-053 결정 3: 로딩/실패는 호출부가 getCharacterPickerRoster의 Promise로 판정해 내려준다.
+// ADR-062 결정 2: loadFailed(boolean)를 loadError(원인)로 바꿔 원인별 문구·액션을 그린다.
 // 아래 기존 케이스는 모두 "조회 완료 + 성공" 상태를 전제한다.
-const loaded = { isLoading: false, loadFailed: false }
+const loaded = { isLoading: false, loadError: null, onRetry: vi.fn(), onOpenSettings: vi.fn() }
 
 describe('CharacterTrackingPicker', () => {
   it('제목과 설명을 보여준다', () => {
@@ -276,14 +277,14 @@ describe('CharacterTrackingPicker', () => {
 
 // ADR-053 결정 3: 그리드에 보여줄 항목이 없을 때 "조회 중"·"활성 캐릭터 0명"·"조회 실패"를
 // 서로 구분해 그린다(실패를 빈 상태로 위장하지 않는다 — error-resilience.md 원칙 1·2).
-describe('CharacterTrackingPicker — 로딩/빈/실패 상태 (ADR-053)', () => {
+describe('CharacterTrackingPicker — 로딩/빈/실패 상태 (ADR-053 · ADR-062)', () => {
   it('조회 중이고 보여줄 항목이 없으면 스피너를 보여주고 그리드 항목은 없다', () => {
     render(
       <CharacterTrackingPicker
         entries={[]}
         trackedOcids={[]}
+        {...loaded}
         isLoading
-        loadFailed={false}
         onSave={vi.fn()}
         onClose={vi.fn()}
       />,
@@ -299,8 +300,8 @@ describe('CharacterTrackingPicker — 로딩/빈/실패 상태 (ADR-053)', () =>
       <CharacterTrackingPicker
         entries={entries}
         trackedOcids={[]}
+        {...loaded}
         isLoading
-        loadFailed={false}
         onSave={vi.fn()}
         onClose={vi.fn()}
       />,
@@ -312,35 +313,129 @@ describe('CharacterTrackingPicker — 로딩/빈/실패 상태 (ADR-053)', () =>
 
   it('조회가 끝났는데 항목이 없으면 빈 상태 안내를 보여준다(스피너 없음)', () => {
     render(
-      <CharacterTrackingPicker
-        entries={[]}
-        trackedOcids={[]}
-        isLoading={false}
-        loadFailed={false}
-        onSave={vi.fn()}
-        onClose={vi.fn()}
-      />,
+      <CharacterTrackingPicker entries={[]} trackedOcids={[]} {...loaded} onSave={vi.fn()} onClose={vi.fn()} />,
     )
 
     expect(screen.getByText('표시할 캐릭터가 없어요')).toBeInTheDocument()
     expect(screen.queryByTestId('maple-sweep-spinner')).not.toBeInTheDocument()
   })
 
-  it('조회가 실패로 끝나면 빈 상태와 구분되는 실패 안내를 보여준다', () => {
+  it('항목 없이 실패하면 빈 상태와 구분되는 ErrorState를 보여준다', () => {
     render(
       <CharacterTrackingPicker
         entries={[]}
         trackedOcids={[]}
-        isLoading={false}
-        loadFailed
+        {...loaded}
+        loadError={{ kind: 'network' }}
         onSave={vi.fn()}
         onClose={vi.fn()}
       />,
     )
 
-    expect(screen.getByText(/캐릭터 목록을 불러오지 못했어요/)).toBeInTheDocument()
+    expect(screen.getByRole('alert')).toBeInTheDocument()
+    expect(screen.getByText('캐릭터 목록을 불러오지 못했습니다')).toBeInTheDocument()
     expect(screen.queryByText('표시할 캐릭터가 없어요')).not.toBeInTheDocument()
     expect(screen.queryByTestId('maple-sweep-spinner')).not.toBeInTheDocument()
+  })
+
+  it('실패 원인에 따라 문구가 달라진다 — 401은 무효 키를 말한다', () => {
+    render(
+      <CharacterTrackingPicker
+        entries={[]}
+        trackedOcids={[]}
+        {...loaded}
+        loadError={{ kind: 'invalidApiKey' }}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByText('API 키가 유효하지 않습니다')).toBeInTheDocument()
+  })
+
+  it('network 실패의 다시 시도를 누르면 onRetry가 호출된다', async () => {
+    const user = userEvent.setup()
+    const onRetry = vi.fn()
+    render(
+      <CharacterTrackingPicker
+        entries={[]}
+        trackedOcids={[]}
+        {...loaded}
+        loadError={{ kind: 'network' }}
+        onRetry={onRetry}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: '다시 시도' }))
+
+    expect(onRetry).toHaveBeenCalledTimes(1)
+  })
+
+  // ADR-062 결정 3: 401에 재시도를 주는 것은 눌러도 실패하는 버튼을 주는 것이다.
+  it('401 실패는 재시도가 아니라 설정 열기를 준다', async () => {
+    const user = userEvent.setup()
+    const onRetry = vi.fn()
+    const onOpenSettings = vi.fn()
+    render(
+      <CharacterTrackingPicker
+        entries={[]}
+        trackedOcids={[]}
+        {...loaded}
+        loadError={{ kind: 'invalidApiKey' }}
+        onRetry={onRetry}
+        onOpenSettings={onOpenSettings}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+
+    expect(screen.queryByRole('button', { name: '다시 시도' })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: '설정 열기' }))
+
+    expect(onOpenSettings).toHaveBeenCalledTimes(1)
+    expect(onRetry).not.toHaveBeenCalled()
+  })
+
+  // ADR-062 결정 4: 캐시 stub이 네트워크보다 먼저 방출되므로(ADR-017 결정 6) 예열이 끝난
+  // 정상 경로에서는 이쪽이 기본 분기다 — 배너가 없으면 실패의 대다수가 무음이 된다.
+  it('보여줄 항목이 있는 채로 실패하면 그리드를 지우지 않고 스탈 배너를 얹는다', () => {
+    render(
+      <CharacterTrackingPicker
+        entries={entries}
+        trackedOcids={[]}
+        {...loaded}
+        loadError={{ kind: 'network' }}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByRole('button', { name: /낟낟/ })).toBeInTheDocument()
+    expect(screen.getByText('목록이 최신이 아닙니다')).toBeInTheDocument()
+    // 자리 전체를 차지하는 ErrorState는 그리지 않는다
+    expect(screen.queryByText('캐릭터 목록을 불러오지 못했습니다')).not.toBeInTheDocument()
+  })
+
+  it('스탈 배너의 다시 시도를 누르면 onRetry가 호출된다', async () => {
+    const user = userEvent.setup()
+    const onRetry = vi.fn()
+    render(
+      <CharacterTrackingPicker
+        entries={entries}
+        trackedOcids={[]}
+        {...loaded}
+        loadError={{ kind: 'network' }}
+        onRetry={onRetry}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: '다시 시도' }))
+
+    expect(onRetry).toHaveBeenCalledTimes(1)
   })
 
   it('조회가 끝나고 항목이 있으면 그리드만 보여준다', () => {
@@ -348,8 +443,7 @@ describe('CharacterTrackingPicker — 로딩/빈/실패 상태 (ADR-053)', () =>
       <CharacterTrackingPicker
         entries={entries}
         trackedOcids={[]}
-        isLoading={false}
-        loadFailed={false}
+        {...loaded}
         onSave={vi.fn()}
         onClose={vi.fn()}
       />,
@@ -358,7 +452,28 @@ describe('CharacterTrackingPicker — 로딩/빈/실패 상태 (ADR-053)', () =>
     expect(screen.getByRole('button', { name: /낟낟/ })).toBeInTheDocument()
     expect(screen.queryByTestId('maple-sweep-spinner')).not.toBeInTheDocument()
     expect(screen.queryByText('표시할 캐릭터가 없어요')).not.toBeInTheDocument()
-    expect(screen.queryByText(/캐릭터 목록을 불러오지 못했어요/)).not.toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  // 사용자 보고 2026-07-30: 실패 상태의 액션 버튼이 아래 CTA에 붙어 보였다. 상태마다 높이가
+  // 달라 CTA가 움직인 것이 원인이라, 본문 자리를 카드 3줄 높이로 못 박는다.
+  it.each([
+    ['조회 중', { isLoading: true, loadError: null }],
+    ['빈 상태', { isLoading: false, loadError: null }],
+    ['실패', { isLoading: false, loadError: { kind: 'network' as const } }],
+  ])('본문 자리는 %s에서도 카드 3줄 높이를 유지한다', (_label, state) => {
+    const { container } = render(
+      <CharacterTrackingPicker
+        entries={[]}
+        trackedOcids={[]}
+        {...loaded}
+        {...state}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+
+    expect(container.querySelector('.min-h-\\[385px\\]')).not.toBeNull()
   })
 
   it('로딩 중이어도 저장 버튼 비활성 판정은 ADR-043 집합 비교 그대로다', async () => {
@@ -367,8 +482,8 @@ describe('CharacterTrackingPicker — 로딩/빈/실패 상태 (ADR-053)', () =>
       <CharacterTrackingPicker
         entries={[]}
         trackedOcids={['ocid-1']}
+        {...loaded}
         isLoading
-        loadFailed={false}
         onSave={vi.fn()}
         onClose={vi.fn()}
       />,
@@ -381,8 +496,7 @@ describe('CharacterTrackingPicker — 로딩/빈/실패 상태 (ADR-053)', () =>
       <CharacterTrackingPicker
         entries={entries}
         trackedOcids={['ocid-1']}
-        isLoading={false}
-        loadFailed={false}
+        {...loaded}
         onSave={vi.fn()}
         onClose={vi.fn()}
       />,

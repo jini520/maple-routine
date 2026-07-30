@@ -493,7 +493,7 @@ describe('useBossSchedulerStore', () => {
 
       await expect(useBossSchedulerStore.getState().saveTrackedOcids(['ocid-1'])).resolves.toBeUndefined()
 
-      expect(showErrorMock).toHaveBeenCalledWith('저장하지 못했어요')
+      expect(showErrorMock).toHaveBeenCalledWith('저장하지 못했습니다')
       expect(showSuccessMock).not.toHaveBeenCalled()
       expect(syncSchedulesMock).not.toHaveBeenCalled()
       expect(useBossSchedulerStore.getState().trackedOcids).toBeNull()

@@ -340,7 +340,7 @@ describe('BossProfitScreen', () => {
     renderBossProfitScreen()
 
     // ADR-060: 확정된 빈 상태("아직 처치한 보스가 없습니다")와 디자인·문구를 공유하지 않는다.
-    expect(screen.getByText('이 기간은 조회할 수 없어요')).toBeInTheDocument()
+    expect(screen.getByText('이 기간은 조회할 수 없습니다')).toBeInTheDocument()
     expect(screen.queryByText('아직 처치한 보스가 없습니다')).not.toBeInTheDocument()
   })
 
