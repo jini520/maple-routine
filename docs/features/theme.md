@@ -69,7 +69,7 @@
 
   이 토큰은 **색감이 정하고 대비는 참고만 한다**(아래 판단 순서). 경계를 대비 수치가 아니라 밝기로 잡는 것이 요점이다 — 대비선으로 잡으면 어느 선을 아슬하게 넘느냐로 그림이 튄다. 대비를 맞추려고 명도를 더 밀지도 않는다. 밝은 쪽에서 끝까지 밀어봐야 대비는 거의 안 오르고(2.38→2.45) 색조만 씻겨 흰색이 된다.
 - **`X-tint`**: `color-mix(in oklab, var(--color-X) 15%, var(--color-surface))`. 테마당 손튜닝 값이 늘지 않는다. 다른 농도가 필요한 테마만 명시값으로 덮는다.
-- **`X-ink`**: X의 색상(H)을 유지한 채 명도(L)만 조정해 `surface` 와 `X-tint` 양쪽 4.5:1을 만족시킨다.
+- **`X-ink`**: **accent 원색을 그대로 쓴다.** AA 를 겨냥하지 않는다 — 그렇게 했더니 머쉬맘 브랜드 주황(`#F58B0F`)이 짙은 갈색(`#A15800`)으로 눌려 탭·배지·링크 53곳이 통째로 바뀌었다. 색상(H)을 유지한 채 명도만 조정하는 보정은 **아예 안 보이는 색**(가시성 하한 2:1 미만)에만 걸린다. 이 토큰을 만든 이유였던 렌의 창백한 하늘색(`#C9EEF2`, 1.24:1)이 딱 그 경우다.
 - **`track`**: `surface-2` 를 그대로 쓴다. 대비를 맞추려고 명도를 벌리지 않는다 — 특정 테마에서 진행률이 안 읽히면 그 테마만 `track` 을 덮는다.
 - **`scrim`·`shadow-color`**: `mode` 와 `bg` 색조에서 파생.
 - **`media-*`**: 테마 색조를 띤 어두운 배색으로 파생(일러스트 페이드·text-shadow가 어두운 배경 전제).
@@ -82,14 +82,18 @@
 ```css
 .media-scope {
   --color-surface: var(--color-media-surface);
+  --color-surface-2: /* 카드 안 한 단계 위 표면 — 진행 pill·파티 배지 */;
+  --color-track: /* 카드 안 진행률 트랙 = surface-2 */;
   --color-border:  var(--color-media-border);
   --color-text:    var(--color-media-ink);
   --color-text-muted: var(--color-media-ink-muted);
   --color-primary-tint: /* media-surface 기준 재계산 */;
-  --color-primary-ink:  /* media-surface 기준 AA 통과값 */;
+  --color-primary-ink:  /* media-surface 기준 재계산 */;
   /* secondary·third·error 동일 */
 }
 ```
+
+**카드 안에서 쓰는 토큰을 하나라도 빠뜨리면 페이지 값이 그대로 내려온다.** 실제로 `surface-2`·`track` 을 빠뜨려 어두운 카드 위에 페이지의 밝은 크림색 pill 이 얹혔다("시작 안함" 배지, 2026-07-30). 회귀 테스트가 스코프 재선언 누락과 밝기 이탈을 함께 잡는다.
 
 커스텀 프로퍼티는 **선언된 요소에서** `var()` 가 해석되므로 스코프 안에서 다시 선언해야 새 기준이 반영된다(`:root` 선언을 상속만 받으면 `surface` 기준 값이 그대로 내려온다). 생성 도구가 테마마다 accent 값을 **두 벌**(일반 / 미디어) 계산하므로 사람이 채우는 값은 늘지 않는다.
 

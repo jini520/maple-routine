@@ -88,9 +88,18 @@ const NEUTRAL_RAMP = {
   },
 } as const
 
-/** 일러스트 위 배색은 라이트/다크 무관하게 어두운 쪽이다 — bleed·페이드가 어두운 배경 전제. */
+/**
+ * 일러스트 카드(`.media-scope`) 배색. 라이트/다크 무관하게 어두운 쪽이다 — bleed·페이드가
+ * 어두운 배경을 전제로 튜닝됐다. 테마 색조를 살짝 띠게 해 카드가 그 테마의 일부로 보이게 한다
+ * (사용자 확인 2026-07-30).
+ *
+ * `surface2` 는 카드 **안쪽**의 한 단계 위 표면이다(진행 상태 pill·파티 배지·진행률 트랙).
+ * 이게 없으면 스코프 안에서 `bg-surface-2` 가 **페이지의** 밝은 표면색으로 해석돼, 어두운 카드
+ * 위에 크림색 pill 이 얹히며 튄다.
+ */
 const MEDIA_RAMP = {
   surface: { l: 0.2, c: 0.02 },
+  surface2: { l: 0.29, c: 0.024 },
   border: { l: 0.33, c: 0.025 },
   ink: { l: 0.92, c: 0.015 },
   inkMuted: { l: 0.72, c: 0.02 },
@@ -117,14 +126,34 @@ function tone(hue: number, ramp: { l: number; c: number }): string {
 }
 
 /**
+ * accent 를 글자·아이콘으로 쓸 때의 **가시성 하한** ([[ADR-064]] 판단 순서, 사용자 결정 2026-07-30).
+ *
+ * AA(4.5:1)를 겨냥하지 않는다. 그렇게 했더니 머쉬맘 브랜드 주황(`#F58B0F`, 표면 대비 2.38:1)이
+ * 짙은 갈색(`#A15800`)으로 눌려 탭·배지·링크 53곳의 색이 통째로 바뀌었다 — 색감이 최우선인데
+ * 대비를 목표로 잡는 순간 브랜드 색이 먹힌다.
+ *
+ * 이 값은 목표가 아니라 **안전망**이다. `*-ink` 를 만든 이유는 렌의 창백한 하늘색
+ * (`#C9EEF2`)이 글자로 **1.24:1이라 아예 안 보이던** 사고 하나였다. 그 구간만 막고, 그보다
+ * 위면 accent 원색을 **그대로** 쓴다.
+ */
+const INK_VISIBILITY_FLOOR = 2
+
+/**
  * 바탕색 대비가 `required` 이상이 되도록 명도만 조정한다. 색상(H)·채도(C)는 유지한다.
  *
  * 원래 색에서 가장 가까운 명도를 고르므로 accent 의 인상이 최대한 남는다. 밝은 바탕이면
  * 어둡게, 어두운 바탕이면 밝게 미는 방향이 자동으로 정해진다.
  */
-function adjustForContrast(hex: string, backgrounds: string[], required: number): string {
+function adjustForContrast(
+  hex: string,
+  backgrounds: string[],
+  required: number,
+  // 목표선에는 여유분을 붙이지만 **하한(안전망)에는 붙이지 않는다** — 하한은 "여기 아래면 안 보인다"는
+  // 선이라, 여유분을 더하면 멀쩡히 보이는 원색까지 조금씩 밀어 색이 바뀐다.
+  margin: number = DERIVE_MARGIN,
+): string {
   const passes = (candidate: string): boolean =>
-    backgrounds.every((bg) => contrastHex(candidate, bg) >= required + DERIVE_MARGIN)
+    backgrounds.every((bg) => contrastHex(candidate, bg) >= required + margin)
 
   if (passes(hex)) return hex
 
@@ -244,7 +273,7 @@ export function deriveTheme(seed: ThemeSeed): DerivedTheme {
     return {
       on: pick(`on${key[0].toUpperCase()}${key.slice(1)}` as keyof DerivedTheme, deriveForeground(fill)),
       tint,
-      ink: pick(`${key}Ink`, adjustForContrast(fill, [surface, tint], AA_TEXT)),
+      ink: pick(`${key}Ink`, adjustForContrast(fill, [surface, tint], INK_VISIBILITY_FLOOR, 0)),
     }
   }
 
@@ -303,6 +332,10 @@ export function deriveTheme(seed: ThemeSeed): DerivedTheme {
 
 export type MediaScopeTokens = {
   surface: string
+  /** 카드 안쪽 한 단계 위 표면 — 진행 상태 pill·파티 배지가 쓴다. */
+  surface2: string
+  /** 카드 안쪽 진행률 트랙. 전역 규칙대로 `surface2` 를 따른다. */
+  track: string
   border: string
   text: string
   textMuted: string
@@ -329,7 +362,7 @@ export function deriveMediaScope(tokens: DerivedTheme): MediaScopeTokens {
 
   const accent = (fill: string): { tint: string; ink: string } => {
     const tint = mixOklab(fill, surface, TINT_RATIO)
-    return { tint, ink: adjustForContrast(fill, [surface, tint], AA_TEXT) }
+    return { tint, ink: adjustForContrast(fill, [surface, tint], INK_VISIBILITY_FLOOR, 0) }
   }
 
   const primary = accent(tokens.primary)
@@ -337,8 +370,14 @@ export function deriveMediaScope(tokens: DerivedTheme): MediaScopeTokens {
   const third = accent(tokens.third)
   const error = accent(tokens.error)
 
+  // 카드 안의 한 단계 위 표면. 페이지의 surface→surface-2 와 같은 폭(OKLCH L +0.09)으로 벌려
+  // 카드 톤 안에 머물게 한다 — 이걸 빼면 `bg-surface-2` 가 페이지의 밝은 표면으로 해석된다.
+  const surface2 = withLightness(surface, hexToOklch(surface).l + 0.09)
+
   return {
     surface,
+    surface2,
+    track: surface2,
     border: tokens.mediaBorder,
     text: tokens.mediaInk,
     textMuted: tokens.mediaInkMuted,

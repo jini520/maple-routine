@@ -72,17 +72,17 @@ body {
 
   --color-on-primary: #ffeee2;
   --color-primary-tint: #feecda;
-  --color-primary-ink: #a15800;
+  --color-primary-ink: #f58b0f;
 
   /* accent */
   --color-secondary: #f7d00d;
   --color-on-secondary: #171100;
   --color-secondary-tint: #fcf6dd;
-  --color-secondary-ink: #836d00;
+  --color-secondary-ink: #cead00;
   --color-third: #ca763a;
   --color-on-third: #ffeee4;
   --color-third-tint: #f7e8da;
-  --color-third-ink: #a2520a;
+  --color-third-ink: #ca763a;
   --color-error: #b3200b;
   --color-on-error: #ffedea;
   --color-error-tint: #f6ddd3;
@@ -112,6 +112,8 @@ body {
    선택 테마 값은 런타임에 <style id="theme-vars"> 가 덮는다 — 여기 값은 첫 페인트용이다. */
 .media-scope {
   --color-surface: #1d140d;
+  --color-surface-2: #332922;
+  --color-track: #332922;
   --color-border: #3f3329;
   --color-text: #ece2db;
   --color-text-muted: #aea298;
@@ -120,9 +122,9 @@ body {
   --color-secondary-tint: #382c14;
   --color-secondary-ink: #f7d00d;
   --color-third-tint: #332114;
-  --color-third-ink: #cc783c;
+  --color-third-ink: #ca763a;
   --color-error-tint: #32190f;
-  --color-error-ink: #ea5942;
+  --color-error-ink: #b3200b;
 }
 
 /* 고가 아이템 드롭 연출 — 중앙 아이템이 위아래로 살짝 부유(ADR-038). 팝인(scale)·중앙정렬 transform과

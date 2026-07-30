@@ -60,13 +60,16 @@ describe('job-themes.json — 파생 규칙', () => {
     }
   })
 
-  it.each(NAMES)('%s: accent 잉크가 표면·틴트 양쪽에서 AA 를 지킨다', (name) => {
+  // 잉크는 accent 원색을 지킨다 — 보이는 색은 건드리지 않고, 안 보이는 색만 보정한다.
+  it.each(NAMES)('%s: 보이는 accent 는 잉크에서도 원색 그대로다', (name) => {
     const theme = JOB_THEMES[name] as unknown as Record<string, string>
     for (const accent of ACCENTS) {
-      expect(contrastHex(theme[`${accent}Ink`], theme.surface), `${name}.${accent}Ink/surface`)
-        .toBeGreaterThanOrEqual(4.5)
-      expect(contrastHex(theme[`${accent}Ink`], theme[`${accent}Tint`]), `${name}.${accent}Ink/tint`)
-        .toBeGreaterThanOrEqual(4.5)
+      if (contrastHex(theme[accent], theme.surface) >= 2) {
+        expect(theme[`${accent}Ink`], `${name}.${accent}Ink`).toBe(theme[accent])
+      } else {
+        expect(contrastHex(theme[`${accent}Ink`], theme.surface), `${name}.${accent}Ink`)
+          .toBeGreaterThanOrEqual(2)
+      }
     }
   })
 

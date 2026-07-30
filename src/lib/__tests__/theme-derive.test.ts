@@ -137,17 +137,36 @@ describe('on-* — 순수 흑/백이 아니라 채움색의 색조를 물려받�
   })
 })
 
-// ADR-064 결정 3 — *-ink 는 표면과 틴트 양쪽에서 읽혀야 한다(두 역할을 겸하던 *-text 의 후속).
-describe('*-ink — 표면과 틴트 양쪽에서 AA', () => {
-  it.each(ALL_SEEDS)('%s: primary-ink 가 surface·primary-tint 모두 4.5:1 이상', (_label, seed) => {
-    const tokens = deriveTheme(seed)
-    expect(contrastHex(tokens.primaryInk, tokens.surface)).toBeGreaterThanOrEqual(4.5)
-    expect(contrastHex(tokens.primaryInk, tokens.primaryTint)).toBeGreaterThanOrEqual(4.5)
+// ADR-064 판단 순서 — 잉크는 accent 원색을 그대로 쓰고, 정말 안 보일 때만 보정한다.
+// AA 를 겨냥하던 시절엔 머쉬맘 브랜드 주황이 짙은 갈색으로 눌려 탭·배지 53곳이 통째로 바뀌었다.
+describe('*-ink — accent 원색을 지킨다', () => {
+  it('머쉬맘 브랜드 주황은 글자로 쓸 때도 그대로다', () => {
+    const tokens = deriveTheme(LIGHT_SEED)
+    expect(tokens.primaryInk).toBe(tokens.primary)
+    expect(tokens.thirdInk).toBe(tokens.third)
   })
 
-  it('색상(H)은 원래 accent 를 따라간다', () => {
-    const tokens = deriveTheme(LIGHT_SEED)
-    expect(hexToOklch(tokens.primaryInk).h).toBeCloseTo(hexToOklch(tokens.primary).h, -1)
+  it.each(ALL_SEEDS)('%s: 보이는 accent 는 건드리지 않는다', (_label, seed) => {
+    const tokens = deriveTheme(seed)
+    for (const accent of ['primary', 'secondary', 'third'] as const) {
+      const ink = tokens[`${accent}Ink`]
+      if (contrastHex(tokens[accent], tokens.surface) >= 2) {
+        expect(ink, accent).toBe(tokens[accent])
+      }
+    }
+  })
+
+  // 이 토큰을 만든 이유였던 사고 — 렌의 창백한 하늘색은 글자로 1.24:1이라 아예 안 보였다.
+  it('아예 안 보이는 색만 보정한다', () => {
+    const pale = deriveTheme({ ...LIGHT_SEED, third: '#C9EEF2' })
+    expect(contrastHex(pale.third, pale.surface)).toBeLessThan(1.5)
+    expect(pale.thirdInk).not.toBe(pale.third)
+    expect(contrastHex(pale.thirdInk, pale.surface)).toBeGreaterThanOrEqual(2)
+  })
+
+  it('보정할 때도 색상(H)은 원래 accent 를 따라간다', () => {
+    const pale = deriveTheme({ ...LIGHT_SEED, third: '#C9EEF2' })
+    expect(hexToOklch(pale.thirdInk).h).toBeCloseTo(hexToOklch(pale.third).h, -1)
   })
 })
 
@@ -189,13 +208,12 @@ describe('measureThemeContrast — 관문이 아니라 계측', () => {
 
 // ADR-064 결정 5 — 일러스트 카드 안은 기준 표면이 media-surface 로 바뀐다.
 describe('deriveMediaScope — 미디어 기준 두 번째 벌', () => {
-  it.each(ALL_SEEDS)('%s: 미디어 기준에서도 ink 가 AA 를 만족한다', (_label, seed) => {
+  it.each(ALL_SEEDS)('%s: 미디어 기준에서도 잉크가 보인다', (_label, seed) => {
     const tokens = deriveTheme(seed)
     const scope = deriveMediaScope(tokens)
 
-    expect(contrastHex(scope.primaryInk, tokens.mediaSurface)).toBeGreaterThanOrEqual(4.5)
-    expect(contrastHex(scope.primaryInk, scope.primaryTint)).toBeGreaterThanOrEqual(4.5)
-    expect(contrastHex(scope.thirdInk, scope.thirdTint)).toBeGreaterThanOrEqual(4.5)
+    expect(contrastHex(scope.primaryInk, tokens.mediaSurface)).toBeGreaterThanOrEqual(2)
+    expect(contrastHex(scope.thirdInk, scope.thirdTint)).toBeGreaterThanOrEqual(2)
   })
 
   it('스코프의 표면·텍스트는 media-* 를 가리킨다', () => {
@@ -208,7 +226,7 @@ describe('deriveMediaScope — 미디어 기준 두 번째 벌', () => {
   })
 
   // ADR-021 에 미해결로 남아 있던 사고 — 레테 카드 안 점수 배지가 3.88:1 이었다.
-  it('레테 third 가 미디어 기준에서 AA 를 넘는다 (ADR-021 미해결 건)', () => {
+  it('레테 third 가 미디어 기준으로 다시 계산된다 (ADR-021 미해결 건)', () => {
     const lete = jobThemes['레테']
     const tokens = deriveTheme({
       primary: lete.primary,
@@ -224,7 +242,8 @@ describe('deriveMediaScope — 미디어 기준 두 번째 벌', () => {
     const legacyTint = mixOklab('#D8608F', '#1A1720', 0.2)
     expect(contrastHex('#D8608F', legacyTint)).toBeLessThan(4.5)
 
-    expect(contrastHex(scope.thirdInk, scope.thirdTint)).toBeGreaterThanOrEqual(4.5)
+    // 기준 표면이 카드(어두움)로 바뀌므로 틴트도 어두워지고, 그 위에서 third 는 잘 읽힌다.
+    expect(contrastHex(scope.thirdInk, scope.thirdTint)).toBeGreaterThan(contrastHex('#D8608F', legacyTint))
   })
 })
 

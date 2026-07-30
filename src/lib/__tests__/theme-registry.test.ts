@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import jobThemes from '../../data/job-themes.json'
+import { hexToOklch } from '../color'
 import {
   DEFAULT_THEME,
   THEME_NAMES,
@@ -87,12 +88,41 @@ describe('buildThemeCss', () => {
       }
     })
 
-    it('스코프의 잉크는 :root 의 잉크와 다른 값이다 — 기준 표면이 다르기 때문', () => {
-      const theme = getThemeDefinition('머쉬맘')
+    /**
+     * 카드 안에서 쓰는 토큰을 스코프가 하나라도 빠뜨리면 **페이지 값이 그대로 내려온다**.
+     * 실제로 `surface-2`·`track` 을 빠뜨려 어두운 카드 위에 페이지의 밝은 크림색 pill 이
+     * 얹혔다("시작 안함" 배지, 사용자 보고 2026-07-30). 카드 안 표면은 전부 카드보다 어둡거나
+     * 그에 준해야 한다 — 페이지 표면 쪽으로 튀면 안 된다.
+     */
+    it.each([...THEME_NAMES])('%s: 카드 안 표면이 페이지 표면으로 새지 않는다', (name) => {
+      const theme = getThemeDefinition(name)
+      const scope = buildThemeCss(theme).split('.media-scope {')[1]
+
+      for (const token of ['surface', 'surface-2', 'track', 'border', 'text', 'text-muted']) {
+        expect(scope, `--color-${token} 재선언 누락`).toContain(`--color-${token}:`)
+      }
+
+      // 카드 안 표면들은 카드 배경과 같은 어두운 대역에 있어야 한다.
+      const declared = Object.fromEntries(
+        [...scope.matchAll(/--color-([a-z0-9-]+): (#[0-9A-F]{6})/gi)].map((m) => [m[1], m[2]]),
+      )
+      const cardLightness = hexToOklch(theme.mediaSurface).l
+      for (const token of ['surface-2', 'track']) {
+        expect(hexToOklch(declared[token]).l, `${token} 가 카드보다 너무 밝다`).toBeLessThan(
+          cardLightness + 0.2,
+        )
+      }
+    })
+
+    it('기준 표면이 달라 결과가 갈리는 색은 스코프에서 다른 값이 된다', () => {
+      // 렌 third(창백한 하늘색)는 밝은 페이지 위에선 안 보여 보정되지만,
+      // 어두운 카드 위에선 원색 그대로도 잘 읽힌다.
+      const theme = getThemeDefinition('렌')
       const [root, scope] = buildThemeCss(theme).split('.media-scope {')
 
-      expect(root).toContain(`--color-primary-ink: ${theme.primaryInk};`)
-      expect(scope).not.toContain(`--color-primary-ink: ${theme.primaryInk};`)
+      expect(root).toContain(`--color-third-ink: ${theme.thirdInk};`)
+      expect(scope).toContain(`--color-third-ink: ${theme.third};`)
+      expect(theme.thirdInk).not.toBe(theme.third)
     })
   })
 })
