@@ -174,6 +174,18 @@ mb-3 flex items-center gap-2 rounded-[10px] bg-error-tint px-3 py-2.5
 + AlertTriangle h-4 text-error-ink + 문구 text-xs text-text + 우측 "다시 시도" text-xs font-semibold text-primary-ink
 ```
 
+### 앱 전역 폴백 (`components/ErrorBoundary`) — [[ADR-065]]
+렌더 중 예외로 화면이 죽었을 때. 이 자리에는 남는 것이 아무것도 없으므로 화면 전체를 채운다.
+```
+flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
++ AlertTriangle h-10 w-10 text-error-ink (배지 없이 단독 — ErrorState와 같은 어법)
++ 제목 text-base font-semibold text-text
++ 설명 text-sm text-text-muted (mx-auto max-w-[260px])
++ '다시 시작' 버튼 하나 (RotateCcw + bg-primary, max-w-[260px])
+```
+- **선택지를 하나만 둔다** — 설정 열기·스택트레이스 노출·브랜드 마크 모두 없다. 이 화면의 목적은 복구 도구를 주는 게 아니라 **흰 화면을 없애는 것**이고, 리로드로 안 풀리는 크래시의 탈출구(OS의 앱 데이터 삭제·재설치)는 앱 밖에 있다.
+- 크래시 리포팅은 미도입([error-resilience.md](./error-resilience.md) 원칙 7은 여전히 미구현).
+
 ### 캐릭터 관리 저장 진행률 모달 — 2026-07-16
 "저장" 시 추적 캐릭터마다 `syncSchedules` 순차 호출하는 동안 캐릭터 관리 모달 **위에** 진행률 모달을 띄우고 완료 시 함께 닫는다. 진행률 바 스타일은 온보딩 예열 바와 동일(track `h-1.5 w-full rounded-full bg-track` + fill `h-1.5 rounded-full bg-primary`) + "캐릭터 정보를 저장하고 있어요 (N/M)". 공용 `Modal` 재사용, 저장 도중 오버레이 클릭 무시(완료 시 프로그램적으로만 닫음). 콜백 `saveTrackedOcids → refresh → syncSchedules` 로 `onProgress(completed, total)` 전달. 개별 실패는 조용히 폴백, 전역 에러면 화면 에러 상태 전환.
 
@@ -258,4 +270,5 @@ style: maskImage/WebkitMaskImage: linear-gradient(to bottom, black, transparent)
 - ~~모달·바텀시트 스크림은 `bg-bg/70`~~ → `scrim` 토큰([[ADR-064]] 결정 6). 배경색을 반투명하게 깐 것이라 밝은 테마에서 스크림이 약했다.
 - ~~일러스트 카드는 앱 테마와 무관하게 레테 다크 리터럴 고정(`#1A1720`/`#37323E`/`#E8DFEC`, 23곳)~~ → `media-*` 토큰 + `.media-scope`([[ADR-064]] 결정 5). 스코프 안에서 기준 표면이 바뀌므로 카드 안팎이 같은 레시피를 쓴다. [[ADR-021]]에 미해결로 남아 있던 카드 내부 배지 AA 미달(레테 3.88:1)도 함께 닫힌다.
 - ~~`ErrorState`는 `error-tint` 토큰을 만들지 않는다~~ → `error-tint`는 `color-mix` 파생이라 테마당 추가 비용이 0이므로 신설([[ADR-064]] 결정 2가 [[ADR-062]] 결정 1의 해당 항목 폐기, 2026-07-30).
+- ~~업데이트 모달의 부 동작(`나중에`)이 주 동작과 같은 크기(`px-5 py-2.5 text-sm`)~~ → `px-4 py-1.5 text-xs` + 버튼 간격 `space-y-1`, 모달 하단 `pb-4`. `GHOST_BTN` 상수라 4개 분기에 함께 적용([[ADR-065]] 결정 2, 2026-07-30).
 - 색·컴포넌트 규칙이 `{...}` 플레이스홀더였던 초기 UI_GUIDE → 작성 완료.

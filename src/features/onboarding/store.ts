@@ -5,6 +5,7 @@ import { clearAuthConfig, getAuthConfig, setApiKey, setSelectedAccountId } from 
 import { setTrackedCharacterOcids } from '../../storage/character-selection'
 import type { TrackingMode } from '../../storage/tracking-mode'
 import { useToastStore } from '../toast/store'
+import { formatOnboardingError } from './format'
 import { seedManualTrackedContent } from '../tracking-mode/seed'
 import { useTrackingModeStore } from '../tracking-mode/store'
 import { prefetchAccountData } from './prefetch'
@@ -72,9 +73,11 @@ export const useOnboardingStore = create<OnboardingStore>()((set, get) => {
       try {
         accounts = await fetchCharacterList(authConfig.apiKey)
       } catch (error) {
-        set((state) =>
-          onboardingReducer(state, { type: 'API_KEY_REJECTED', error: toOnboardingError(error) }),
-        )
+        // ADR-065 결정 1: 전에는 이 경로에 토스트가 없어, 아무 설명 없이 API 키 입력 화면으로
+        // 되돌아갔다(status가 error인데 accounts가 비면 화면이 폼만 다시 그린다).
+        const onboardingError = toOnboardingError(error)
+        useToastStore.getState().showError(formatOnboardingError(onboardingError))
+        set((state) => onboardingReducer(state, { type: 'API_KEY_REJECTED', error: onboardingError }))
         return
       }
 
@@ -88,15 +91,25 @@ export const useOnboardingStore = create<OnboardingStore>()((set, get) => {
       try {
         accounts = await fetchCharacterList(apiKey)
       } catch (error) {
-        useToastStore.getState().showError('API 키를 확인하지 못했습니다')
-        set((state) =>
-          onboardingReducer(state, { type: 'API_KEY_REJECTED', error: toOnboardingError(error) }),
-        )
+        // ADR-065 결정 1: 원인은 이미 계산하면서도 토스트는 하드코딩 문구를 띄우고 있었다.
+        const onboardingError = toOnboardingError(error)
+        useToastStore.getState().showError(formatOnboardingError(onboardingError))
+        set((state) => onboardingReducer(state, { type: 'API_KEY_REJECTED', error: onboardingError }))
+        return
+      }
+
+      // ADR-065 결정 1: 전에는 try 밖이라 미처리 rejection이었다 — 저장이 실패해도 아무 일도
+      // 안 일어난 것처럼 보였다. settings/store.ts 의 changeApiKey 와 같은 처리로 맞춘다.
+      try {
+        await setApiKey(apiKey)
+      } catch {
+        const onboardingError = { kind: 'storageWriteFailed' } as const
+        useToastStore.getState().showError(formatOnboardingError(onboardingError))
+        set((state) => onboardingReducer(state, { type: 'API_KEY_REJECTED', error: onboardingError }))
         return
       }
 
       useToastStore.getState().showSuccess('API 키를 확인했어요')
-      await setApiKey(apiKey)
       set((state) => onboardingReducer(state, { type: 'API_KEY_VERIFIED', accounts }))
     },
 

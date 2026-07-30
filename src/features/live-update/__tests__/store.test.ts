@@ -106,14 +106,18 @@ describe('useLiveUpdateStore', () => {
       expect(s().minNativeVersion).toBe('2.0.0')
     })
 
-    it('up-to-date / error / unsupported를 그대로 상태에 반영', async () => {
+    it('up-to-date / unsupported를 그대로 상태에 반영', async () => {
       checkForLiveUpdateMock.mockResolvedValue({ kind: 'up-to-date' })
       await s().check()
       expect(s().status).toBe('up-to-date')
+    })
 
+    // ADR-065 결정 2: 매니페스트 조회 실패는 자동 확인일 수 있어 모달을 띄우지 않는다 —
+    // 다운로드 실패와 종류를 갈라 둔다.
+    it('매니페스트 조회 실패는 check-error (모달 대상 아님)', async () => {
       checkForLiveUpdateMock.mockResolvedValue({ kind: 'error' })
       await s().check()
-      expect(s().status).toBe('error')
+      expect(s().status).toBe('check-error')
     })
   })
 
@@ -154,11 +158,12 @@ describe('useLiveUpdateStore', () => {
       expect(s().status).toBe('ready-to-apply')
     })
 
-    it('다운로드 실패면 error', async () => {
+    // 사용자가 시작한 실패라 모달로 알린다.
+    it('다운로드 실패면 download-error', async () => {
       downloadLiveUpdateMock.mockRejectedValue(new Error('checksum'))
       await s().check()
       await s().startDownload()
-      expect(s().status).toBe('error')
+      expect(s().status).toBe('download-error')
     })
   })
 

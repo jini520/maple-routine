@@ -99,10 +99,14 @@ describe('AppUpdateSection', () => {
     expect(container.textContent).not.toContain('…')
   })
 
-  it('오류면 오류 문구를 표시한다', () => {
-    mockStore({ status: 'error' })
+  // ADR-065 결정 2: 실패는 두 종류다 — 확인 실패와 다운로드 실패는 문구가 다르다.
+  it.each([
+    ['check-error' as const, '확인에 실패했습니다'],
+    ['download-error' as const, '다운로드에 실패했습니다'],
+  ])('%s이면 그에 맞는 실패 문구를 표시한다', (status, expected) => {
+    mockStore({ status })
     render(<AppUpdateSection />)
-    expect(screen.getByText(/실패/)).toBeInTheDocument()
+    expect(screen.getByText(expected)).toBeInTheDocument()
   })
 
   it('지원되지 않는 플랫폼이면 안내 문구를 보여주고 확인 버튼을 감춘다', () => {

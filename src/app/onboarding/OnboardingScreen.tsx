@@ -5,7 +5,7 @@ import { ApiKeyForm } from './ApiKeyForm'
 import { AccountSelectionList } from './AccountSelectionList'
 import { ContentCharacterStep } from './ContentCharacterStep'
 import { TrackingModeStep } from './TrackingModeStep'
-import { formatOnboardingError } from './error-message'
+import { formatOnboardingError } from '../../features/onboarding/format'
 
 export function OnboardingScreen(): React.JSX.Element {
   const {

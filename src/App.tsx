@@ -5,6 +5,8 @@ import { useOnboardingStore } from './features/onboarding/store'
 import { useThemeStore } from './features/theme/store'
 import { useTrackingModeStore } from './features/tracking-mode/store'
 import { useDropEffectStore } from './features/drop-effect/store'
+import { consumePendingNotice } from './storage/pending-notice'
+import { useToastStore } from './features/toast/store'
 import { hideSplashScreen } from './native/splash-screen'
 import { refreshSafeAreaInsets } from './native/system-bars'
 import { addKeyboardVisibilityListener } from './native/keyboard'
@@ -20,6 +22,7 @@ import { DailyQuestCardPreview } from './app/content-scheduler/DailyQuestCardPre
 import { BossPortraitSizePreview } from './app/boss-profit/BossPortraitSizePreview'
 import { UpdatePromptModal } from './app/UpdatePromptModal'
 import { LoadingPreview } from './app/LoadingPreview'
+import { ErrorBoundary } from './components/ErrorBoundary/ErrorBoundary'
 import { ToastStack } from './components/Toast/ToastStack'
 
 const TAB_ITEMS = [
@@ -119,6 +122,14 @@ export function AppShell(): React.JSX.Element {
   useEffect(() => {
     restoreDropEffectFromStorage()
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // ADR-065 결정 3: 캐시 데이터 삭제는 실패해도 리로드가 실행돼 화면 신호가 파괴된다 —
+  // 삭제 쪽이 남긴 플래그를 부팅 때 읽어 토스트로 알린다(읽으면서 지우므로 한 번만 뜬다).
+  useEffect(() => {
+    if (consumePendingNotice() === 'cacheClearFailed') {
+      useToastStore.getState().showError('캐시를 일부만 삭제했습니다')
+    }
   }, [])
 
   // 안전영역 인셋(--safe-area-inset-*)을 네이티브에서 받아온다. 네이티브의 최초 인셋 적용이 DOM보다
@@ -225,9 +236,13 @@ export function AppShell(): React.JSX.Element {
 
 function App(): React.JSX.Element {
   return (
-    <BrowserRouter>
-      <AppShell />
-    </BrowserRouter>
+    // ADR-065 결정 5: 라우터 바깥에 둬 라우팅 자체가 터져도 폴백이 뜬다. 폴백의 '다시 시작'은
+    // 리로드라 라우터 상태를 되살릴 필요가 없다.
+    <ErrorBoundary>
+      <BrowserRouter>
+        <AppShell />
+      </BrowserRouter>
+    </ErrorBoundary>
   )
 }
 

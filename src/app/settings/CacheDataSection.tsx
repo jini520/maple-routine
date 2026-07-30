@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { CacheDataGroupId, CacheDataSelection } from '../../storage/cache-data'
 import { clearCacheData, getCacheDataSizes } from '../../storage/cache-data'
+import { setPendingNotice } from '../../storage/pending-notice'
 import { closeBossProfitDb } from '../../storage/sqlite/db'
 import { showSplashScreen } from '../../native/splash-screen'
 import { formatBytes } from '../../lib/format-bytes'
@@ -31,11 +32,21 @@ export function CacheDataSection(props: CacheDataSectionProps = {}): React.JSX.E
   async function handleClear(selection: CacheDataSelection): Promise<void> {
     setIsClearing(true)
     // 삭제가 실패하거나(reject) 네이티브 호출이 돌아오지 않아도(hang) 모달이 "삭제 중..."에
-    // 갇히지 않도록, 실패는 삼키고 타임아웃과 경쟁시킨 뒤 항상 리로드한다.
-    await Promise.race([
-      clearCacheData(selection).catch(() => {}),
-      new Promise((resolve) => setTimeout(resolve, CLEAR_TIMEOUT_MS)),
+    // 갇히지 않도록, 타임아웃과 경쟁시킨 뒤 항상 리로드한다.
+    //
+    // ADR-065 결정 3: 실패를 더는 삼키지 않는다. 다만 리로드가 화면 신호를 파괴하므로 여기서
+    // 토스트를 띄울 수 없다 — 플래그를 남기고 부팅 후에 띄운다. 타임아웃(응답 없음)도 삭제됐는지
+    // 알 수 없으므로 같이 알린다(타임아웃과 실패를 구분하는 안은 채택하지 않았다).
+    const outcome = await Promise.race([
+      clearCacheData(selection).then(
+        () => 'ok' as const,
+        () => 'failed' as const,
+      ),
+      new Promise<'timeout'>((resolve) => setTimeout(() => resolve('timeout'), CLEAR_TIMEOUT_MS)),
     ])
+    if (outcome !== 'ok') {
+      setPendingNotice('cacheClearFailed')
+    }
     // 리로드 동안 웹뷰 네이티브 배경색(브랜드 주황)이 깜빡 드러나므로, 앱 실행 때처럼 스플래시로
     // 덮고 리로드한다 — 리로드된 앱의 부팅 흐름이 스플래시를 내린다. 실패해도 리로드는 진행.
     await showSplashScreen().catch(() => {})

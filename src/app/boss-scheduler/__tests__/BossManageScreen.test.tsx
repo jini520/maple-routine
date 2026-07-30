@@ -417,6 +417,24 @@ describe('BossManageScreen — 주간 12개 한도 (ADR-055)', () => {
       expect(toast.duration).not.toBeNull()
     })
 
+    // ADR-065 결정 4: 전에는 try/catch가 없어 저장 실패가 무음이었다.
+    it('보스 추가 저장이 실패하면 토스트로 알린다', async () => {
+      useTrackingModeStore.setState({ mode: 'manual' })
+      useToastStore.setState({ toasts: [], queue: [] })
+      mockStore({
+        characters: [character()],
+        addManualBoss: vi.fn().mockRejectedValue(new Error('write failed')),
+      })
+
+      renderManageScreen()
+      fireEvent.click(screen.getByRole('button', { name: '자쿰' }))
+
+      await waitFor(() => expect(useToastStore.getState().toasts).toHaveLength(1))
+      const [toast] = useToastStore.getState().toasts
+      expect(toast.message).toBe('추적 목록을 저장하지 못했습니다')
+      expect(toast.variant).toBe('error')
+    })
+
     it('한도에 걸리지 않은 추가는 토스트를 띄우지 않는다', async () => {
       useTrackingModeStore.setState({ mode: 'manual' })
       useToastStore.setState({ toasts: [], queue: [] })

@@ -101,6 +101,31 @@ describe('UpdatePromptModal', () => {
     expect(a.apply).toHaveBeenCalledTimes(1)
   })
 
+  // ADR-065 결정 2: MODAL_STATUSES에 실패가 없어 모달이 소리 없이 닫히던 것을 고친다.
+  it('download-error: 실패 문구 + [다시 시도]→startDownload, [나중에]→dismiss', async () => {
+    const user = userEvent.setup()
+    const actions = mockStore({ status: 'download-error' })
+
+    render(<UpdatePromptModal />)
+
+    expect(screen.getByText('업데이트를 받지 못했습니다')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: '다시 시도' }))
+    expect(actions.startDownload).toHaveBeenCalledTimes(1)
+
+    await user.click(screen.getByRole('button', { name: '나중에' }))
+    expect(actions.dismiss).toHaveBeenCalledTimes(1)
+  })
+
+  // 자동 확인일 수 있어 모달을 띄우지 않는다 — 설정 상태 행에만 남는다.
+  it('check-error: 모달을 띄우지 않는다', () => {
+    mockStore({ status: 'check-error' })
+
+    const { container } = render(<UpdatePromptModal />)
+
+    expect(container).toBeEmptyDOMElement()
+  })
+
   it('store-required: 안내 + [스토어로 이동]→openStore', async () => {
     const user = userEvent.setup()
     const a = mockStore({ status: 'store-required', availableVersion: '2.0.0', minNativeVersion: '2.0.0' })
