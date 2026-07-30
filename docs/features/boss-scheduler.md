@@ -19,21 +19,21 @@
 ## UI
 
 ### 보스 카드 ([[ADR-018]])
-보스별 독립 카드 + 일러스트 bleed. 목록 감싸는 상위 카드 없음(`space-y-2` 나열). **카드 배경·보더·보스명 텍스트만 앱 테마와 무관하게 레테(다크) 고정** — bleed·페이드·text-shadow가 어두운 배경 전제라 렌(라이트)에서 테마 토큰을 쓰면 대비가 깨짐. 각각 `#1A1720`/`#37323E`/`#E8DFEC` 리터럴.
+보스별 독립 카드 + 일러스트 bleed. 목록 감싸는 상위 카드 없음(`space-y-2` 나열). **카드 배경·보더·보스명 텍스트는 페이지 표면이 아니라 일러스트 위 배색을 따른다** — bleed·페이드·text-shadow가 어두운 배경 전제라 라이트 테마에서 페이지 토큰(`bg-surface` 등)을 쓰면 대비가 깨짐. `media-*` 토큰 + `.media-scope`([[ADR-064]] 결정 5, [theme.md](./theme.md))를 쓴다 — 카드 루트에 스코프를 걸면 안쪽은 앱 전역과 같은 레시피를 쓰면서 자동으로 어두운 기준을 따른다.
 ```
-카드: rounded-[14px] border border-[#37323E] bg-[#1A1720](레테 고정), height 80px, overflow-hidden, relative
+카드: media-scope rounded-[14px] border border-media-border bg-media-surface, height 80px, overflow-hidden, relative
 일러스트(있는 보스만): absolute inset-0, background-size/position = boss-portrait-crops.json(없으면 cover/center),
   블러 없음, saturate(.85) brightness(.8) opacity .65, mask-image: linear-gradient(90deg,#000 0%,#000 38%,transparent 76%)
 콘텐츠 행: flex items-center justify-between, padding 0 14px(좌우 동일, 일러스트 위에 바로)
-  왼쪽: 난이도 뱃지 → 보스명 → 파티 배지(설정된 경우), 이름 text-shadow(0 1px 3px rgba(0,0,0,.9),0 0 10px rgba(0,0,0,.6))
+  왼쪽: 난이도 뱃지 → 보스명(text-media-ink) → 파티 배지(설정된 경우), 이름 text-shadow(shadow-color 기반)
   오른쪽: 완료 시에만 완료 배지, 미완료는 빈 공간
-완료 뱃지: rounded-full bg-secondary text-bg text-xs font-bold px-2.5 py-1 (테마 토큰 — 앱 전역 "완료/성공" 의미색이라 고정 안 함)
+완료 뱃지: rounded-full bg-secondary text-on-secondary text-xs font-bold px-2.5 py-1 (테마 토큰 — 앱 전역 "완료/성공" 의미색이라 고정 안 함)
 ```
 왼쪽 체크 도형(`StatusDot`) 제거.
 
-**파티 배지** ([[ADR-019]]): 파티 인원 2인 이상 설정된 카드에만. 일러스트 위 카드 로컬 요소라 레테 고정 리터럴.
+**파티 배지** ([[ADR-019]]): 파티 인원 2인 이상 설정된 카드에만. 일러스트 위 카드 로컬 요소라 `.media-scope` 안 토큰을 쓴다.
 ```
-rounded-full bg-white/20 text-[#E8DFEC] text-xs font-semibold px-2 py-1, flex items-center gap-1
+rounded-full bg-surface-2 text-text text-xs font-semibold px-2 py-1, flex items-center gap-1  ← 스코프 안이라 media 기준
 아이콘: lucide Users(size 12, strokeWidth 2), 텍스트 "n인"
 ```
 미설정/1인(솔로)이면 렌더 안 함(별도 "솔로" 뱃지 없음, 빈 공간으로 표현).
@@ -62,7 +62,7 @@ rounded-full bg-white/20 text-[#E8DFEC] text-xs font-semibold px-2 py-1, flex it
 - **목록 구성** ([[ADR-056]], 2026-07-29): 참조표 전체가 아니라 **이 캐릭터가 고를 수 있는 것만** 나열한다. ① 미출시 보스(`status: "unreleased"`, 현재 벨로나) 제외 — 보스명이 아니라 `status` 로 거르므로 출시 시 데이터에서 그 필드만 지우면 된다. ② 시즌 보스(eventWeekly)는 **선택 캐릭터의 월드가 챌린저스(1~4)일 때만** 표시(`isChallengersWorld`, 보스 스케줄러 시즌 배지와 같은 판정). 월드 미상(구버전 캐시)이면 숨긴다. 두 모드 공통이며, 12개 한도의 시즌 보스 **카운트 제외** 규칙과는 별개다(챌린저스 월드에선 목록엔 나오고 카운트엔 안 들어간다).
 - **수동 모드**: 위 규칙으로 걸러진 보스 나열(주간=weekly+시즌, 월간=monthly). 행 = 체크(추적, 탭 즉시 저장) + 체크된 행에 난이도 뱃지 목록(`boss-crystal-prices.json` 지원 난이도, 미선택 `opacity-40`)·파티 스테퍼. 난이도 변경 시 (보스,난이도) 쌍 교체.
 - **자동 모드**: 같은 행 구조에서 체크박스만 없음. 상단 안내("자동 모드에서는 목록이 게임 등록 기준이에요 — 파티 인원만 설정") + "등록된 보스만 보기" 토글(기본 ON, [[ADR-031]] 결정 4). 난이도는 등록 난이도 기본 선택.
-- **리디자인(2026-07-24) — 초상화 앵커 + 파티 스테퍼 상단 + 난이도 세그먼트**: 행 2줄 — 1줄 원형 `BossPortrait`(`size={44}`, `aria-hidden`) + 보스명(`flex-1 truncate`) + 파티 스테퍼(우상단 고정). 2줄(활성 시, `border-t`) 난이도 세그먼트. 선택 = 테두리·색(체크 원 없음, 미추적 `border-border bg-surface`, 추적 `border-primary bg-primary/15`). 수동 토글은 초상화+보스명 영역이 버튼(`aria-label={보스명}`). 난이도 세그먼트: 선택은 `DifficultyBadge` 풀컬러, 미선택은 고스트 칩(`inline-flex h-5 rounded-full border border-border px-2.5 text-[10px] font-bold text-text-disabled`). 파티 스테퍼: 보더 pill 안 `Users` 아이콘 + −/값/+, 1~`getMaxPartySize(boss, difficulty)` 경계 비활성화, 탭 즉시 저장.
+- **리디자인(2026-07-24) — 초상화 앵커 + 파티 스테퍼 상단 + 난이도 세그먼트**: 행 2줄 — 1줄 원형 `BossPortrait`(`size={44}`, `aria-hidden`) + 보스명(`flex-1 truncate`) + 파티 스테퍼(우상단 고정). 2줄(활성 시, `border-t`) 난이도 세그먼트. 선택 = 테두리·색(체크 원 없음, 미추적 `border-border bg-surface`, 추적 `border-primary bg-primary-tint`). 수동 토글은 초상화+보스명 영역이 버튼(`aria-label={보스명}`). 난이도 세그먼트: 선택은 `DifficultyBadge` 풀컬러, 미선택은 고스트 칩(`inline-flex h-5 rounded-full border border-border px-2.5 text-[10px] font-bold text-text-disabled`). 파티 스테퍼: 보더 pill 안 `Users` 아이콘 + −/값/+, 1~`getMaxPartySize(boss, difficulty)` 경계 비활성화, 탭 즉시 저장.
 
 ### 수동 선택 가드 ([[ADR-055]], 구현 완료 2026-07-29, 이슈 #62)
 수동 모드 보스 관리 페이지에서 선택을 막는 사유는 **주간 12개 한도 하나뿐**이다(요구 레벨 미달 잠금은 [[ADR-055]] 정정 2로 폐기 — 아래 history). 가드의 본체는 스토어(`addManualBoss`)이고 화면은 사전 차단만 한다 — UI에서만 막으면 난이도 교체(remove → add) 같은 다른 호출 경로가 새어나간다.

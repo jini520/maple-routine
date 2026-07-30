@@ -83,7 +83,7 @@ a11y: 링 자체가 role="img" aria-label="{주간|월간} 보스 처치 8 / 12"
 ```
 - **DropIndicator**(이름 줄 우측, [[ADR-038]]): 드롭 있으면 아이콘 스택(`h-6` 이미지 최대 3개 + `+N`), 없으면 "＋ 드롭 추가" 칩. 칩도 `inline-flex h-6 items-center`(세로 패딩 없음)로 **아이콘 스택과 같은 24px** — 같은 슬롯을 쓰므로 드롭을 추가해도 줄 높이가 튀지 않는다.
   - **반지 등급 뱃지**(2026-07-30, 사용자 요청): 특수 스킬 반지(=`ringLevel`이 기록된 드롭 — 반지 상자 드릴다운 결과 [[ADR-041]])는 아이콘 **우측 하단에 `lvN` 뱃지**를 얹는다. 드롭 시트 `ItemThumb`의 뱃지와 같은 규칙(`absolute -bottom-1 -right-0.5 rounded-full bg-primary text-[8px] font-bold text-white ring-1 ring-bg`)이되 아이콘이 24px(시트는 36px)라 좌우 패딩만 `px-1`→`px-0.5`로 줄인다. 뱃지는 `absolute`라 **줄 높이(h-6)에 영향 없음**(위 고정 높이 규칙 유지). 스택 겹침(`marginLeft:-2`)·z 순서는 그대로 — 앞 아이콘이 z가 높아 자기 뱃지가 뒤 아이콘 위에 얹힌다.
-캐릭터명은 헤더에만(행에서 제거). "가격 미확정" 행도 같은 2줄 구조 유지 — 금액 자리에 배지(`rounded-full bg-primary/15 px-2 py-0.5 text-xs font-medium text-primary`), 스테퍼는 `opacity-40` 비활성.
+캐릭터명은 헤더에만(행에서 제거). "가격 미확정" 행도 같은 2줄 구조 유지 — 금액 자리에 배지(`rounded-full bg-primary-tint px-2 py-0.5 text-xs font-medium text-primary-ink`), 스테퍼는 `opacity-40` 비활성.
 - **파티원 스테퍼(−/+)**: `inline-flex items-center gap-2 rounded-full border border-border px-1 py-0.5`, 버튼 `h-[18px] w-[18px] rounded-full bg-surface-2`, 값 `text-xs tabular-nums`. 파티 관리 모달과 동일 조작(경계 비활성화).
 - **소계 footer 없음**([[ADR-047]] 후속) — 헤더가 sticky라 캐릭터 합계가 스크롤 내내 보이므로 하단 중복 표시를 제거했다. 셸 하단에 닿는 배경 요소를 새로 추가해도 이제는 셸의 `overflow: clip`([[ADR-049]])이 잘라주므로 요소별 `rounded-b-*` 보정은 필요 없다.
 - 기본 **전부 접힘** 시작(추적 캐릭터 많을 때 과도한 길이 방지). 리스트 key `${tab}-${periodKey}-${ocid}` 로 탭/기간 이동 시 remount(펼침 상태 리셋, [[ADR-037]]).
@@ -102,14 +102,14 @@ a11y: 링 자체가 role="img" aria-label="{주간|월간} 보스 처치 8 / 12"
   라벨 옆: 결정석 판매 현황 칩(두 탭·모든 기간) — 흐름 안이지만 h-5라 줄 높이(h-6)를 밀지 않는다(아래 상세)
   우측: 기간 전체 고가 드롭 뱃지(있을 때만) — absolute right-0 top-1/2 -translate-y-1/2
 금액행: mt-1.5 flex items-center gap-2.5
-  코인 엠블럼 h-8 w-8 rounded-full bg-primary/12 text-primary + lucide Coins h-[18px] w-[18px]
+  코인 엠블럼 h-8 w-8 rounded-full bg-primary-tint text-primary-ink + lucide Coins h-[18px] w-[18px]
   금액 text-xl font-extrabold leading-none tabular-nums text-primary + 단위 "메소" text-xs font-bold text-text-muted
 헤어라인: mt-3 h-px bg-border (sticky 헤더 바닥 경계 = 카드 테두리 대체)
 ```
 
 **결정석 판매 현황 칩**([[ADR-054]] 결정 9·정정 2·3, #53) — **라벨행의 "{기간} 총 수익" 텍스트 옆**에 붙는다(`CrystalSummaryChip`). 새 줄로 두면 sticky 헤더가 그만큼 높아져 목록을 잠식한다(정정 2 — 헤더를 줄여둔 [[ADR-049]] 작업을 되돌리는 셈이었다). **라벨행 높이는 `h-6`(24px)으로 명시 고정하고**(정정 4) 칩은 그 안에 들어가는 `h-5` 다. 전에는 라벨(`text-xs` = 16px)이 우연히 높이를 정해, 그보다 큰 요소를 흐름에 넣는 순간 줄이 커졌다 — 그게 고가 드롭 뱃지(24px)를 `absolute` 로 빼낸 이유다([[ADR-049]] 결정 2). 높이를 못 박으면 그 의존이 끊긴다. 그 뱃지가 여전히 우측 끝을 `absolute` 로 쓰므로 칩은 **좌측(라벨 옆)**에 붙는다. **두 탭 · 모든 기간**에 렌더하고([[ADR-059]] 결정 1 — `isCurrentPeriod` 게이트 제거), 주간 탭은 월드당 한도 90 대비(복수 월드면 `90 × 월드 수`), 월간 탭은 **분모 없이 개수만**(90은 주간 전용 한도라 월간 보스 결정석은 포함되지 않는다 — [[ADR-054]] 결정 8은 그대로 유효하고 적용 기간만 넓어졌다).
 ```
-칩: ml-2 flex h-5 flex-none items-center gap-1 rounded-full bg-primary/12 px-1.5
+칩: ml-2 flex h-5 flex-none items-center gap-1 rounded-full bg-primary-tint px-1.5
       └ 라벨행이 h-6(24px) 고정이므로 그 안에 들어가기만 하면 된다. py-*로 높이를 만들지 말 것 —
         글꼴 line-height가 실려 칩이 24px를 넘고, 그러면 h-6 고정이 무의미해진다(leading-none과 함께 쓴다)
   아이콘 img h-4 w-4 flex-none object-contain(alt="")
@@ -153,7 +153,7 @@ a11y: 링 자체가 role="img" aria-label="{주간|월간} 보스 처치 8 / 12"
 ```
 서브섹션 라벨: px-4 pt-3 pb-1 text-[11px] font-bold tracking-wide text-text-muted bg-surface-2
 주차 행: flex items-center gap-3 p-4 border-b border-border (보스 아이콘 없음 — 합계라 이미지 없음)
-  라벨 "N주차" + 날짜 범위, 진행 중 배지(bg-primary/15 text-primary text-[10px]) "진행 중", 금액 우측 tabular-nums
+  라벨 "N주차" + 날짜 범위, 진행 중 배지(bg-primary-tint text-primary-ink text-[10px]) "진행 중", 금액 우측 tabular-nums
 아직 시작 안 한 주 행 전체: opacity-40 ("예정")
 월간 보스 상세 행: 위 아코디언 본문 레시피 그대로
 ```

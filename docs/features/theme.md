@@ -1,49 +1,124 @@
 # 테마 시스템 (Theme)
 
-> **범위**: 직업 고유 컬러 기반 다중 테마의 시맨틱 토큰 스키마·테마별 컬러 값·런타임 전환·시스템 다크 모드 연동. 기본 팔레트·시맨틱 색 체계는 [../foundation/design-system.md](../foundation/design-system.md).
+> **범위**: 캐릭터 대표 컬러 기반 다중 테마의 시맨틱 토큰 스키마·토큰 파생 규칙·테마별 컬러 값·런타임 전환·시스템 다크 모드 연동. 기본 팔레트·시맨틱 색 체계는 [../foundation/design-system.md](../foundation/design-system.md).
 > **관련 소스**: `features/theme/`(Zustand store) · `storage/theme.ts` · `src/index.css`(`@theme` + `:root[data-theme]`) · `src/data/job-themes.json` · `AppShell`(`restoreFromStorage`).
-> **관련 ADR**: [[ADR-009]] [[ADR-006]]. **관련 문서**: [../foundation/design-system.md](../foundation/design-system.md), [settings.md](./settings.md).
+> **관련 ADR**: [[ADR-009]] [[ADR-064]] [[ADR-006]]. **관련 문서**: [../foundation/design-system.md](../foundation/design-system.md), [settings.md](./settings.md).
 
 ## 정책
-테마마다 **17개 시맨틱 토큰**을 값으로 직접 갖는다(Primary 하나만 파생하는 방식은 폐기). 현재 등록: **"레테"(다크)·"렌"(라이트)·"머쉬맘"(라이트, 기본)·"혼테일"(다크, 시스템 다크 기본)**.
+테마마다 **34개 시맨틱 토큰**을 값으로 갖는다([[ADR-064]], 17토큰에서 확장). 현재 등록: **"레테"(다크)·"렌"(라이트)·"머쉬맘"(라이트, 기본)·"혼테일"(다크, 시스템 다크 기본)**. 목표는 캐릭터 대표 컬러로 **수십 개**까지 늘리는 것이고, 스키마·파생·등록 방식이 모두 그 전제로 설계돼 있다.
 
-- `src/index.css` `@theme` 기본 블록 = **머쉬맘** 값. 나머지 테마는 `:root[data-theme='레테'|'렌'|'혼테일'] { --color-*: ...; }` 오버라이드. Tailwind v4 유틸(`bg-primary`·`text-text` 등)이 이미 `var(--color-*)` 를 참조하므로 컴포넌트 코드는 그대로 두고 `data-theme` 속성만 바꾸면 전환된다.
+- `src/index.css` `@theme` 기본 블록 = **머쉬맘** 값. 나머지 테마는 `:root[data-theme='…']` 오버라이드. Tailwind v4 유틸(`bg-primary`·`text-text` 등)이 이미 `var(--color-*)` 를 참조하므로 컴포넌트 코드는 그대로 두고 `data-theme` 속성만 바꾸면 전환된다.
 - 선택 테마는 Zustand(`features/theme/store.ts`) + `storage/theme.ts`(Preferences 어댑터) 영속화, `AppShell` `restoreFromStorage` 흐름에서 앱 시작 시 hydration.
 - **시스템 다크 모드 연동(2026-07-14)**: `restoreFromStorage()` 가 저장된 테마가 없을 때 `window.matchMedia('(prefers-color-scheme: dark)')` 로 OS 설정을 확인해 라이트="머쉬맘"/다크="혼테일"을 기본값으로 씀(앱 실행 시 1회 판정, 실행 중 OS 변경은 재시작 전까지 미반영). 사용자가 설정에서 한 번이라도 명시 선택하면 그 값이 저장돼 이후 시스템과 무관.
 - 설정 화면에선 등록된 테마 중 하나를 고르는 최소 선택 UI만([settings.md](./settings.md)). 직업 기반 자동 매핑은 미정이라 범위 밖.
-- 값 소스: `src/data/job-themes.json`([[ADR-006]] — 위 표 값은 사용자 확인 완료).
+- 값 소스: `src/data/job-themes.json`([[ADR-006]] — AI가 임의로 채우지 않고 사용자 확인 후 반영).
 
-## 17토큰 컬러 값
-| 토큰 | 용도 | 레테 | 렌 | 머쉬맘 | 혼테일 |
-|---|---|---|---|---|---|
-| `bg` | 페이지 배경 | `#0C080F` | `#F6F5F5` | `#F2F0E2` | `#0B0B0B` |
-| `surface` | 카드/표면 | `#1A1720` | `#FFFFFF` | `#FDFCF6` | `#241110` |
-| `surface-2` | 2단계 표면 | `#28232E` | `#E5E6E9` | `#E4E1CE` | `#362120` |
-| `border` | 기본 보더 | `#37323E` | `#DBD3D6` | `#CFC9AE` | `#524344` |
-| `border-strong` | 강조 보더 | `#54444E` | `#C8C1C6` | `#A3996E` | `#695E5F` |
-| `primary` | 채움 배경(위 흰 글자 OK) | `#9975B3` | `#DC171D` | `#F58B0F` | `#E86A16` |
-| `primary-hover` | hover/눌림 배경 | `#85639F` | `#B33946` | `#C55907` | `#C34204` |
-| `primary-text` | 빨강 텍스트·링크 전용 | `#61417B` | `#803440` | `#9C4304` | `#F09A55` |
-| `secondary` | 보조 강조(배지 등) | `#D1C093` | `#437B71` | `#F7D00D` | `#7B777A` |
-| `secondary-text` | secondary 텍스트용 변형 | `#D1C093` | `#3E7369` | `#7A5E00` | `#B8B2B4` |
-| `third` | 3차 강조(카운트·진행률 틴트) | `#D8608F` | `#C9EEF2` | `#CA763A` | `#936E68` |
-| `third-text` | third 텍스트용 변형 | `#DA6995` | `#21808A` | `#8F4E1F` | `#C79A92` |
-| `info-tint` | 정보성 배경 틴트 전용 | `#262A3A` | `#E4F6F8` | `#FBF3D0` | `#3A3235` |
-| `error` | 에러/위험 텍스트 | `#D8608F` | `#A31118` | `#B3200B` | `#E85447` |
-| `text` | 기본 텍스트 | `#E8DFEC` | `#171721` | `#241208` | `#E6E1E2` |
-| `text-muted` | 보조 텍스트 | `#B89CBD` | `#525475` | `#645C42` | `#9F9594` |
-| `text-disabled` | 비활성 텍스트 | `#8A758D` | `#8A8089` | `#9A9070` | `#7A6E6F` |
+## 이름 규칙
+| 접두/접미 | 뜻 | 예 |
+|---|---|---|
+| `X` | 채움 배경 | `bg-primary` 버튼 |
+| `on-X` | **X 채움 위**의 전경(텍스트·아이콘) | `bg-primary text-on-primary` |
+| `X-tint` | X 계열 **옅은 배경** | `bg-primary-tint` 배지 |
+| `X-ink` | X 계열 **텍스트/아이콘** | `text-primary-ink` 링크 |
 
-- **`-text` 계열(2026-07-14)**: `primary-text` 가 "채움용 색 ≠ 텍스트용 색" 선례. 캐릭터별 대표 컬러로 테마를 늘릴 계획이라 밝기 제각각인 색이 `bg-X/15 text-X` 틴트 배지에 그대로 쓰이면 대비가 깨지는 문제 대비해 `secondary`/`third` 에도 적용. 값은 원 색상(H) 유지하고 밝기만 조정해 `bg-X/15` 틴트 배경 대비 WCAG AA(4.5:1) 이상이 되도록 AI 계산한 제안값 — 사용자 최종 확인 전까지 잠정치.
-- 마이그레이션: 기존 `gold`→`secondary`, `magenta`→`error`, `neutral-warm`→`text-muted` 통합, `gold-bright` 는 미사용 확인 후 폐기.
+`on-X` 와 `X-ink` 를 헷갈리지 말 것 — 채움 위에 얹는 전경이면 `on-X`, 표면/틴트 위에 놓이는 X색 글자면 `X-ink` 다.
+
+## 34토큰
+
+**Accent** — X ∈ `primary`·`secondary`·`third`·`error` 각각 `X` / `on-X` / `X-tint` / `X-ink`, 추가로 `primary-hover`.
+
+| 토큰 | 용도 | 대비 요구 |
+|---|---|---|
+| `primary` | 브랜드 채움 배경 | — |
+| `primary-hover` | hover/눌림 배경 | — |
+| `on-primary` | primary 채움 위 전경 | vs `primary` ≥ 4.5:1 |
+| `primary-tint` | 배지·활성 탭·선택 카드 배경 | — |
+| `primary-ink` | primary 계열 텍스트·아이콘·링크 | vs `surface` **및** `primary-tint` ≥ 4.5:1 |
+| `secondary` / `on-secondary` / `secondary-tint` / `secondary-ink` | 보조 강조(완료 배지·성공 톤) | 위와 동일 |
+| `third` / `on-third` / `third-tint` / `third-ink` | 3차 강조(카운트·카테고리) | 위와 동일 |
+| `error` / `on-error` / `error-tint` / `error-ink` | 에러·위험 | 위와 동일 |
+
+**표면·텍스트·기타**
+
+| 토큰 | 용도 | 대비 요구 |
+|---|---|---|
+| `bg` | 페이지 배경 | — |
+| `surface` | 카드/표면 | — |
+| `surface-2` | 2단계 표면 | — |
+| `track` | 진행률 바·토글 트랙 | vs `primary` ≥ 3:1 |
+| `border` | 기본 보더 | — |
+| `border-strong` | 강조 보더 | — |
+| `text` | 기본 텍스트 | vs `bg`·`surface` ≥ 4.5:1 |
+| `text-muted` | 보조 텍스트 | vs `bg`·`surface` ≥ 4.5:1 |
+| `text-disabled` | 비활성 텍스트 | vs `bg`·`surface` ≥ 3:1 |
+| `info-tint` | 정보성 배경 틴트 | — |
+| `info-ink` | `info-tint` 위 텍스트·아이콘 | vs `info-tint` ≥ 4.5:1 |
+| `media-surface` | 일러스트 카드 배경 | — |
+| `media-border` | 일러스트 카드 보더 | — |
+| `media-ink` | 일러스트 위 이름 텍스트 | vs `media-surface` ≥ 4.5:1 |
+| `media-ink-muted` | 일러스트 위 보조 텍스트 | vs `media-surface` ≥ 4.5:1 |
+| `scrim` | 모달·바텀시트 오버레이 | — |
+| `shadow-color` | 그림자·text-shadow 색 | — |
+
+별도로 **`mode: 'light' | 'dark'`** 데이터 필드(토큰 아님). 상태바(`native/status-bar.ts`)·하단 내비 글리프(`native/system-bars.ts`) 명암을 결정한다. 자동 계산하지 않고 테마마다 사람이 명시한다 — 파스텔처럼 경계가 애매한 테마에서 오분류를 막기 위해서다([[ADR-064]] 결정 8).
+
+## 값 파생
+**사람이 정하는 값은 4개**다 — `primary`·`secondary`·`third`(캐릭터 일러스트에서 추출) + `mode`. 나머지 30개는 생성 도구가 파생한다([[ADR-064]] 결정 9). 34개를 손으로 채우면 테마를 수십 개로 늘릴 수 없다.
+
+- **`on-X`**: 후보 집합 {흰색, 검정, 테마 `text`, 테마 `bg`, X의 명도 극단} 중 **X 대비가 가장 높은 것**을 고른다. 밝은 파스텔 primary면 어두운 전경이, 어두운 primary면 밝은 전경이 자동 선택된다 — **어느 쪽도 전제하지 않는 것**이 요점이다.
+- **`X-tint`**: `color-mix(in oklab, var(--color-X) 15%, var(--color-surface))`. 테마당 손튜닝 값이 늘지 않는다. 다른 농도가 필요한 테마만 명시값으로 덮는다.
+- **`X-ink`**: X의 색상(H)을 유지한 채 명도(L)만 조정해 `surface` 와 `X-tint` 양쪽 4.5:1을 만족시킨다.
+- **`track`**: `surface-2` 에서 출발해 `primary` 대비 3:1 미달이면 조정.
+- **`scrim`·`shadow-color`**: `mode` 와 `bg` 색조에서 파생.
+- **`media-*`**: 테마 색조를 띤 어두운 배색으로 파생(일러스트 페이드·text-shadow가 어두운 배경 전제).
+
+### 미디어 스코프
+일러스트 카드 안은 배경이 `surface` 가 아니라 `media-surface` 라서 **accent 토큰의 기준이 바뀐다**. `X-tint`·`X-ink` 를 그대로 쓰면 대비가 어긋난다 — [[ADR-021]] 정정에 기록된 미해결 AA 미달(카드 안 점수 배지 `bg-third/20 text-third`, 레테 **3.88:1**)이 정확히 이 문제다.
+
+카드 루트에 `.media-scope` 를 두고 그 안에서 기준 토큰을 다시 묶는다.
+
+```css
+.media-scope {
+  --color-surface: var(--color-media-surface);
+  --color-border:  var(--color-media-border);
+  --color-text:    var(--color-media-ink);
+  --color-text-muted: var(--color-media-ink-muted);
+  --color-primary-tint: /* media-surface 기준 재계산 */;
+  --color-primary-ink:  /* media-surface 기준 AA 통과값 */;
+  /* secondary·third·error 동일 */
+}
+```
+
+커스텀 프로퍼티는 **선언된 요소에서** `var()` 가 해석되므로 스코프 안에서 다시 선언해야 새 기준이 반영된다(`:root` 선언을 상속만 받으면 `surface` 기준 값이 그대로 내려온다). 생성 도구가 테마마다 accent 값을 **두 벌**(일반 / 미디어) 계산하므로 사람이 채우는 값은 늘지 않는다.
+
+이 스코프 덕에 카드 안 컴포넌트는 앱 전역과 **똑같은 레시피**(`bg-primary-tint text-primary-ink`)를 쓰면서 자동으로 어두운 기준을 따른다.
+
+**런타임이 아니라 생성 도구로 한다** — 색 값은 도메인 데이터라 [[ADR-006]] 상 사용자 확인이 필요한데, 런타임 계산은 그 확인 절차를 없앤다. 시드를 넣으면 34토큰 + 대비 검증 리포트가 나오고, 사람이 확인해 `job-themes.json` 에 커밋한다.
+
+## 테마 추가 방법
+`src/data/job-themes.json` 에 블록 하나를 추가하면 끝난다([[ADR-064]] 결정 10). `ThemeName` 은 JSON 키에서 추론되고, 타입 가드·`THEME_OPTIONS`·라이트/다크 판정·CSS 변수 주입이 모두 이 파일을 따라간다. 개별 파일을 손으로 동기화하지 않는다.
+
+회귀 테스트는 값을 나열하지 않고 **스키마(34필드 존재) + 위 표의 대비 요구**를 검사한다([[ADR-064]] 결정 11) — 테마가 늘어도 테스트가 늘지 않는다.
+
+## 테마 토큰을 쓰지 않는 영역 (의도적)
+아래는 테마를 따라가지 **않는** 것이 맞다. 정규화 대상으로 오해하지 말 것([[ADR-064]] 적용 범위 밖).
+
+- **`components/DifficultyBadge`** — 5난이도 하드코딩 팔레트. 게임 고유 난이도 색이라 테마를 따라가면 의미가 깨진다([[ADR-006]] 도메인 데이터).
+- **고가 드롭 골드 연출** — `src/index.css` 의 `.valuable-drop-*`(`#f7d00d` 계열). 전 테마 공통 네온 골드.
+- **네이티브 브랜드색 3곳** — `capacitor.config.ts` · `index.html` 부트 커버 · `native/splash-screen.ts`(전부 `#F58B0F`). 앱 실행 전이라 선택 테마를 모르는 시점이다. 선택 테마를 스플래시에 반영할지는 별도 결정.
 
 ## 열린 질문
 - 테마 이름과 실제 직업(전직) 매핑, 테마 단위(직업 대분류 vs 5차 전직 세부) 미정.
-- `-text` 계열 잠정치 사용자 최종 확인.
+- 기존 4개 테마의 신규 17토큰 값 — 생성 도구 산출 후 사용자 확인 필요([[ADR-006]]).
+- 선택 테마를 네이티브 스플래시·부트 커버에 반영할지.
 
 ## 폐기된 정책 (history)
 - ~~테마마다 Primary 하나만 바뀌고 나머지는 파생 공식~~ → 17토큰 직접 저장으로 전환([[ADR-009]], 2026-07-12).
 - ~~런타임 전환 없이 "렌" 값을 `@theme` 에 정적 반영만~~ → 런타임 전환 인프라 구현 재개([[ADR-009]], 설정 task 범위).
 - ~~기본 테마 = "렌"(`@theme` 기본 블록)~~ → "머쉬맘"이 기본 블록 대체, "렌"은 오버라이드 선택지로(2026-07-14).
-- ~~레테 `info-tint` = `#C9D6F2`(밝은 파스텔 블루)~~ → `#262A3A`(어두운 방향)로 교체(2026-07-22, `text` 대비 1.13:1 → 약 11:1). 즉석으로 채운 5토큰 중 하나가 다른 다크 테마와 방향이 달랐던 문제.
+- ~~레테 `info-tint` = `#C9D6F2`(밝은 파스텔 블루)~~ → `#262A3A`(어두운 방향)로 교체(2026-07-22, `text` 대비 1.13:1 → 약 11:1). 즉석으로 채운 5토큰 중 하나가 다른 다크 테마와 방향이 달랐던 문제. 이 실패 모드는 [[ADR-064]] 결정 7(`info-ink` 신설)과 결정 11(대비 검증 테스트)로 구조적으로 막는다.
 - ~~토큰 이름 `primary-deep`/`info`~~ → `primary-text`/`info-tint` 로 개명(2026-07-12, 스키마 전체 소급).
+- ~~17토큰 스키마 · 토큰 이름 `primary-text`/`secondary-text`/`third-text`~~ → 34토큰으로 확장, `*-text` → `*-ink` 개명([[ADR-064]], 2026-07-30). `-text` 는 "틴트 위 텍스트"와 "표면 위 링크" 두 역할을 겸해 요구 대비가 갈렸고, 이름이 배경이 아니라 역할을 가리키도록 바꿨다.
+- ~~채움 배경 위 텍스트는 흰색(`text-white`) 또는 `text-bg`~~ → `on-*` 토큰([[ADR-064]] 결정 1, 2026-07-30). 지시된 적 없이 "primary는 충분히 어둡다"를 전제한 제한이었고, 밝은 파스텔 primary 테마에서 깨진다.
+- ~~틴트 배경은 Tailwind 투명도 접미사로 합성(`bg-primary/15`)~~ → `*-tint` 값 토큰([[ADR-064]] 결정 2). 합성 비율 4종 × 배경 3종이라 대비를 보증할 수 없었다. 농도는 15%로 통일.
+- ~~`secondary-text`/`third-text` 는 `bg-X/15` 틴트 대비 AA를 만족하는 AI 계산 잠정치(사용자 최종 확인 전)~~ → `*-ink` 로 개명하며 생성 도구가 계산하고 테스트가 검증하는 값이 됐다([[ADR-064]], 2026-07-30).
