@@ -241,6 +241,20 @@ describe('AppShell', () => {
     expect(screen.getByRole('link', { name: '설정' })).toBeInTheDocument()
   })
 
+  it('"수익" 탭 아이콘은 공용 ProfitIcon이다(ADR-066 — 세 자리 통일)', () => {
+    mockStore({ status: 'completed', selectedAccountId: 'account-1' })
+
+    renderAt('/content')
+
+    // 나머지 세 탭은 lucide 그대로다 — 수익 탭만 커스텀 아이콘을 쓴다.
+    expect(
+      screen.getByRole('link', { name: '수익' }).querySelector('[data-testid="profit-icon"]'),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: '보스' }).querySelector('[data-testid="profit-icon"]'),
+    ).not.toBeInTheDocument()
+  })
+
   it('status가 completed가 아닐 때는 탭바가 렌더링되지 않는다', () => {
     mockStore({ status: 'awaitingApiKey' })
 

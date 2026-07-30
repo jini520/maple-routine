@@ -1,4 +1,3 @@
-import type { LucideIcon } from 'lucide-react'
 import { MAPLE_LEAF_PATH } from '../mapleLeafPath'
 
 // "비어있음"을 표시하는 곳이 공통으로 쓰는 컴포넌트(ADR-060). 원형 배지(컨텍스트 아이콘) +
@@ -13,8 +12,13 @@ interface EmptyStateAction {
 }
 
 interface EmptyStateProps {
-  /** 목록 빈 상태는 무엇이 비었는지 알려주는 lucide 아이콘, 캐릭터 미선택(page)은 브랜드 마크 'leaf'. */
-  icon: LucideIcon | 'leaf'
+  /**
+   * 목록 빈 상태는 무엇이 비었는지 알려주는 아이콘, 캐릭터 미선택(page)은 브랜드 마크 'leaf'.
+   * 타입이 `LucideIcon` 이 아니라 "우리가 실제로 넘기는 두 prop"인 이유는 커스텀 아이콘도 받기
+   * 위해서다([[ADR-066]] 결정 5) — `LucideIcon` 은 forwardRef 타입이라 평범한 함수 컴포넌트가
+   * 대입되지 않는다. lucide 아이콘은 이 타입에 그대로 들어온다.
+   */
+  icon: React.ComponentType<{ className?: string; strokeWidth?: number }> | 'leaf'
   title: string
   description?: string
   /** 문구가 지시하는 목적지가 앱 안에 있을 때만 준다 — 없으면 CTA를 만들지 않는다(ADR-060 결정 3). */

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { BrowserRouter, Navigate, NavLink, Route, Routes, useNavigate } from 'react-router-dom'
-import { Coins, ListChecks, Settings, Swords } from 'lucide-react'
+import { ListChecks, Settings, Swords } from 'lucide-react'
 import { useOnboardingStore } from './features/onboarding/store'
 import { useThemeStore } from './features/theme/store'
 import { useTrackingModeStore } from './features/tracking-mode/store'
@@ -23,12 +23,14 @@ import { BossPortraitSizePreview } from './app/boss-profit/BossPortraitSizePrevi
 import { UpdatePromptModal } from './app/UpdatePromptModal'
 import { LoadingPreview } from './app/LoadingPreview'
 import { ErrorBoundary } from './components/ErrorBoundary/ErrorBoundary'
+import { ProfitIcon } from './components/ProfitIcon/ProfitIcon'
 import { ToastStack } from './components/Toast/ToastStack'
 
 const TAB_ITEMS = [
   { to: '/content', label: '컨텐츠', Icon: ListChecks },
   { to: '/boss', label: '보스', Icon: Swords },
-  { to: '/profit', label: '수익', Icon: Coins },
+  // 수익만 커스텀 아이콘이다 — lucide 규격을 지켜 그렸으므로 나머지 셋과 굵기·크기가 맞는다(ADR-066).
+  { to: '/profit', label: '수익', Icon: ProfitIcon },
   { to: '/settings', label: '설정', Icon: Settings },
 ] as const
 

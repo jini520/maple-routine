@@ -5,7 +5,6 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronUp,
-  Coins,
   Minus,
   Plus,
   RefreshCw,
@@ -15,6 +14,7 @@ import { BossPortrait } from '../../components/BossPortrait/BossPortrait'
 import { DifficultyBadge } from '../../components/DifficultyBadge/DifficultyBadge'
 import { EmptyState } from '../../components/EmptyState/EmptyState'
 import { LoadingState } from '../../components/LoadingState/LoadingState'
+import { ProfitIcon } from '../../components/ProfitIcon/ProfitIcon'
 import { UnavailableNotice } from '../../components/EmptyState/UnavailableNotice'
 import weeklyBossesData from '../../data/weekly-bosses.json'
 import {
@@ -1185,7 +1185,7 @@ export function BossProfitScreen(): React.JSX.Element {
               </div>
               <div className="mt-1.5 flex items-center gap-2.5">
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-tint text-primary-ink">
-                  <Coins className="h-[18px] w-[18px]" strokeWidth={2} aria-hidden="true" />
+                  <ProfitIcon className="h-[18px] w-[18px]" strokeWidth={2} aria-hidden="true" />
                 </span>
                 {/* 단위는 별도 span으로 격하하되 숫자와 사이에 실제 공백 문자를 남긴다 — 마진만으로 띄우면
                     textContent가 "N메소"로 붙어 스크린리더가 붙여 읽는다(ADR-046 트레이드오프). */}
@@ -1218,7 +1218,7 @@ export function BossProfitScreen(): React.JSX.Element {
           characterGroups.length === 0 &&
           (periodQueryable ? (
             <EmptyState
-              icon={Coins}
+              icon={ProfitIcon}
               title="아직 처치한 보스가 없습니다"
               description="보스를 처치하면 수익이 자동으로 집계됩니다"
             />

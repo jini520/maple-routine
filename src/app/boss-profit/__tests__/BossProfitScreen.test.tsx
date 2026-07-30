@@ -1153,6 +1153,40 @@ describe('BossProfitScreen', () => {
     expect(within(indicator).queryByText(/^lv/)).not.toBeInTheDocument()
   })
 
+  // 수익 아이콘은 세 자리(탭바·헤드라인 엠블럼·빈 상태)가 한 컴포넌트를 공유한다(ADR-066).
+  // 탭바는 App 테스트가 잠그고, 이 화면의 두 자리를 여기서 잠근다 — 셋이 같은 아이콘이었던 것은
+  // 원래 우연이라, 공유가 깨지면 한쪽만 조용히 옛 아이콘으로 남는다.
+  describe('수익 아이콘(ADR-066)', () => {
+    it('총 수익 헤드라인의 엠블럼이 공용 ProfitIcon이다', () => {
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        rows: [row({ payoutMeso: 5_000_000 })],
+      })
+
+      renderBossProfitScreen()
+
+      // 금액행(엠블럼 + 금액)만 훑는다 — 화면 어딘가에 아이콘이 있다는 확인으로는 자리가 안 잡힌다.
+      const amountRow = screen.getByText('5,000,000').closest('div')
+      expect(amountRow?.querySelector('[data-testid="profit-icon"]')).toBeInTheDocument()
+    })
+
+    it('처치 0건 빈 상태의 배지도 같은 ProfitIcon이다', () => {
+      // 조회 가능한 기간이어야 "조회 불가"가 아니라 확정된 빈 상태가 뜬다(ADR-060).
+      mockStore({
+        status: 'loaded',
+        periodKey: CURRENT_WEEKLY_PERIOD_KEY,
+        trackedOcids: ['ocid-1'],
+        rows: [],
+      })
+
+      renderBossProfitScreen()
+
+      expect(screen.getByText('아직 처치한 보스가 없습니다')).toBeInTheDocument()
+      expect(within(screen.getByTestId('empty-state-badge')).getByTestId('profit-icon')).toBeInTheDocument()
+    })
+  })
+
   // 총 수익 헤드라인의 기간 전체 고가 드롭 뱃지(ADR-046) — 캐릭터 카드 배지와 같은 컴포넌트를 쓰되
   // aria-label로 구분한다("고가 드롭" = 캐릭터 카드, "이 기간 고가 드롭" = 헤드라인 요약).
   it('ADR-046: 기간에 고가 드롭이 있으면 총 수익 헤드라인에도 고가 드롭 뱃지가 표시된다', () => {

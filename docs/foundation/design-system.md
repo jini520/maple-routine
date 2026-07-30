@@ -93,7 +93,7 @@ inline: 배지 56px / 아이콘 28px / 제목 text-sm  / 설명 text-xs max-w-[2
         + 박스 rounded-[14px] border border-border bg-surface px-4 py-8 (page 는 자체 박스 없음 — 화면이 감싼다)
 CTA:    rounded-full bg-primary text-on-primary font-semibold hover:bg-primary-hover (Primary 버튼 재사용, 새 스타일 금지)
 ```
-- **배지 안 마크는 자리에 따라 둘로 갈린다**([[ADR-060]] 결정 2): **목록 빈 상태(inline)는 화면별 컨텍스트 아이콘**(lucide) — 컨텐츠 `ListChecks` · 보스 `Swords` · 필터 `SlidersHorizontal` · 수익 `Coins` · 드롭 `PackageOpen`. 목록 자리는 "무엇이 비었는지"를 알려야 하기 때문. **캐릭터 미선택(page)은 브랜드 마크(단풍잎, `icon="leaf"`)** — 화면 전체를 차지하는 자리라 앱의 얼굴 역할을 겸한다(사용자 결정).
+- **배지 안 마크는 자리에 따라 둘로 갈린다**([[ADR-060]] 결정 2): **목록 빈 상태(inline)는 화면별 컨텍스트 아이콘** — 컨텐츠 `ListChecks` · 보스 `Swords` · 필터 `SlidersHorizontal` · 수익 `ProfitIcon`(커스텀, [[ADR-066]]) · 드롭 `PackageOpen`. 목록 자리는 "무엇이 비었는지"를 알려야 하기 때문. **캐릭터 미선택(page)은 브랜드 마크(단풍잎, `icon="leaf"`)** — 화면 전체를 차지하는 자리라 앱의 얼굴 역할을 겸한다(사용자 결정).
 - **문구 규칙**: 제목은 *무엇이* 비었는지(`추적할 일간 컨텐츠가 없습니다` / `등록된 주간 보스가 없습니다`) — 탭·모드별로 문구를 나눈다(일간/주간, 주간/월간, 수동/자동이 같은 문구를 공유하지 않는다). 설명은 다음 행동 한 줄. CTA 라벨은 목적지 이름 그대로(`컨텐츠 관리`·`보스 관리`).
 - **CTA는 문구가 지시하는 곳으로 실제 이동시킨다** — 수동 모드 컨텐츠 `/content/manage`, 수동 모드 보스 `/boss/manage`, 필터 결과 없음은 필터 초기화. **갈 곳이 없으면 CTA를 만들지 않는다**: 자동 모드("게임에서 등록해주세요")는 목적지가 앱 밖이고, 보스 수익 "아직 처치한 보스가 없습니다"는 앱 안에 할 일이 없다. 억지 목적지 금지.
 - **"조회 불가"에는 이 컴포넌트를 쓰지 않는다** — 아래 `UnavailableNotice` 참고([error-resilience.md](./error-resilience.md) 원칙 2).
@@ -245,12 +245,15 @@ style: maskImage/WebkitMaskImage: linear-gradient(to bottom, black, transparent)
 - 기능 전용 연출(고가 드롭 강조 [[ADR-045]])은 [features/boss-profit.md](../features/boss-profit.md). 모든 모션은 `prefers-reduced-motion: no-preference` 에서만 재생(정적 폴백 유지)이 원칙.
 
 ## 아이콘
-- **라이브러리: `lucide-react`**(확정) — 새 아이콘은 이 라이브러리에서만. 다른 라이브러리 혼용 금지.
+- **라이브러리: `lucide-react`**(확정) — 새 아이콘은 이 라이브러리에서만. 다른 아이콘 **라이브러리** 혼용은 계속 금지다.
+- **예외: 도메인 아이덴티티 아이콘은 직접 그린다**([[ADR-066]], 2026-07-31) — 그 기능을 대표하는 자리에 한해 커스텀 SVG를 허용하되, **lucide 규격을 지키는 것이 조건**이다: 24 그리드 · `fill="none"` · `stroke="currentColor"` · `strokeLinecap`/`strokeLinejoin` `round` · 기본 `strokeWidth` 2 · 크기는 `className`이 정한다(`width`/`height` 속성은 lucide와 같은 24 폴백까지만 — CSS가 속성보다 우선하므로 `h-5 w-5`가 항상 이기고, 폴백이 없으면 `className` 없이 쓸 때 인라인 SVG 기본값 300×150으로 부푼다). 규격을 지켜야 같은 줄에 선 lucide 아이콘과 선 굵기·광학 크기가 어긋나지 않는다. 겹침 표현은 `clipPath`·`mask`가 아니라 **뒤 요소의 선을 끊어서**(한 문서에 여러 번 렌더되면 마스크 `id`가 중복된다). 현재 해당: `ProfitIcon`(수익 — 동전 더미 + 앞 동전).
 - `strokeWidth`: 하단 탭바 `1.5`, 소형 액션(새로고침 등) `2`.
 - 아이콘 컨테이너(둥근 배경 박스)로 감싸지 않는다 — 강조색 아이콘을 배경 없이 단독으로. **예외 2곳**: 빈 상태 배지(위 `EmptyState`, [[ADR-060]] — 아이콘이 아니라 일러스트 자리)와 드롭 시트 카테고리 헤더.
-- 현재 사용: 하단 탭바 `ListChecks`(컨텐츠)/`Swords`(보스), 새로고침 `RefreshCw`, 보스 카드 파티 배지 `Users`, 파티 스테퍼 `Minus`/`Plus`.
+- 현재 사용: 하단 탭바 `ListChecks`(컨텐츠)/`Swords`(보스)/`ProfitIcon`(수익, 커스텀)/`Settings`(설정), 새로고침 `RefreshCw`, 보스 카드 파티 배지 `Users`, 파티 스테퍼 `Minus`/`Plus`.
 
 ## 폐기된 정책 (history)
+- ~~새 아이콘은 예외 없이 `lucide-react` 에서만 고른다~~ → 도메인 아이덴티티 자리는 lucide 규격을 지킨 커스텀 SVG를 허용([[ADR-066]], 2026-07-31). 선택된 그림(입체 동전 더미)이 라이브러리에 없었고, `Coins` 는 같은 소재의 평면 버전이라 대체가 되지 않았다. 다른 아이콘 **라이브러리** 혼용 금지는 그대로다.
+- ~~수익을 가리키는 세 자리(탭바·총 수익 헤드라인·빈 상태)가 각자 lucide `Coins` 를 고른다~~ → 공용 `ProfitIcon` 한 곳([[ADR-066]], 2026-07-31). 셋이 같았던 것은 우연이라 한쪽만 바뀔 수 있었다.
 - ~~일부 사용처의 배경 원으로 아이콘 감싸기~~ → 배경 없이 단독 사용으로 확정(2026-07-11).
 - ~~비결정형 대기는 `MapleSpinner`(트레일 링) 한 종~~ → 크기로 2종, 24px 이상은 신규 `MapleSweepSpinner`([[ADR-061]], 2026-07-30).
 - ~~결정형 진행률은 자리에 따라 `MapleWaveProgress`(화면)·얇은 바(모달)·`h-2` 바(OTA)~~ → 얇은 바 프리미티브 하나로 통일, `MapleWaveProgress`·`h-2` 변형 폐기([[ADR-061]], 2026-07-30).

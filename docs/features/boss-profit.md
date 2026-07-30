@@ -105,7 +105,7 @@ a11y: 링 자체가 role="img" aria-label="{주간|월간} 보스 처치 8 / 12"
   라벨 옆: 결정석 판매 현황 칩(두 탭·모든 기간) — 흐름 안이지만 h-5라 줄 높이(h-6)를 밀지 않는다(아래 상세)
   우측: 기간 전체 고가 드롭 뱃지(있을 때만) — absolute right-0 top-1/2 -translate-y-1/2
 금액행: mt-1.5 flex items-center gap-2.5
-  코인 엠블럼 h-8 w-8 rounded-full bg-primary-tint text-primary-ink + lucide Coins h-[18px] w-[18px]
+  코인 엠블럼 h-8 w-8 rounded-full bg-primary-tint text-primary-ink + ProfitIcon h-[18px] w-[18px] (ADR-066 — 옛 lucide Coins)
   금액 text-xl font-extrabold leading-none tabular-nums text-primary + 단위 "메소" text-xs font-bold text-text-muted
 헤어라인: mt-3 h-px bg-border (sticky 헤더 바닥 경계 = 카드 테두리 대체)
 ```
@@ -150,7 +150,7 @@ a11y: 링 자체가 role="img" aria-label="{주간|월간} 보스 처치 8 / 12"
 라벨: 1줄 text-sm font-semibold text-text(상대/절대), 2줄 text-xs text-text-muted tabular-nums mt-0.5(정확 날짜, 항상)
 ```
 최신 기간에서 다음 버튼 `disabled`.
-- **빈 상태·조회 불가**([[ADR-060]]): 처치 기록 0건은 공용 `EmptyState`(inline, `Coins`, "아직 처치한 보스가 없습니다", **CTA 없음** — 앱 안에 할 일이 없다). 롤링 조회 윈도우 밖([[ADR-032]])은 빈 상태가 아니라 `UnavailableNotice`(정보 톤) — 기간 목록은 기본형, 캐릭터 카드 안은 `compact`. 레시피는 [design-system.md](../foundation/design-system.md).
+- **빈 상태·조회 불가**([[ADR-060]]): 처치 기록 0건은 공용 `EmptyState`(inline, `ProfitIcon` — 탭바·헤드라인과 같은 아이콘([[ADR-066]]), "아직 처치한 보스가 없습니다", **CTA 없음** — 앱 안에 할 일이 없다). 롤링 조회 윈도우 밖([[ADR-032]])은 빈 상태가 아니라 `UnavailableNotice`(정보 톤) — 기간 목록은 기본형, 캐릭터 카드 안은 `compact`. 레시피는 [design-system.md](../foundation/design-system.md).
 - **기간 미보유 자동 재조회 스피너**: 공용 셸 승계 카드 `LoadingState size="inline"`([[ADR-061]] 결정 2·3·4) — `MapleSweepSpinner size={24}` + "5월 2주차 기록을 불러오고 있어요". 백필이 끝나면 같은 자리·같은 껍데기(`rounded-[14px] border border-border bg-surface`)에 캐릭터 카드가 들어온다. 미접속 기간 문구는 미정.
 - **월간 탭 — 주차별 합계 + 월간 보스**: 보스 나열 대신 그 달 `cycle: weekly` 를 주차(시작 목요일 속한 달 기준 N주차)로 묶어 합산 후 `cycle: monthly` 상세를 이어 붙임. 아코디언 본문 셸 안 두 서브섹션:
 ```
