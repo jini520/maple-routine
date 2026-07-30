@@ -27,7 +27,7 @@ import { getCachedSchedulerState } from '../../storage/scheduler-cache'
 import { getTrackingMode, type TrackingMode } from '../../storage/tracking-mode'
 import { BOSS_DIFFICULTIES, type BossContent, type BossCycle, type BossDifficulty } from '../../types'
 import { compareByName } from '../onboarding/representative-character'
-import { syncSchedules, type ScheduleSyncError } from '../schedule-sync/schedule-sync'
+import { syncSchedules, toScheduleSyncError, type ScheduleSyncError } from '../schedule-sync/schedule-sync'
 
 export interface BossProfitRow {
   ocid: string
@@ -907,11 +907,12 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     let results: Awaited<ReturnType<typeof syncSchedules>>
     try {
       results = await syncSchedules(ocids)
-    } catch {
+    } catch (error) {
       // syncSchedules 자체가 던지는 에러(온보딩 미완료 등)는
-      // 캐릭터별 에러가 아니라 전체 조회 자체의 실패이므로 network로 취급한다.
+      // 캐릭터별 에러가 아니라 전체 조회 자체의 실패다.
+      // 원인은 toScheduleSyncError로 살린다([[ADR-063]]).
       if (myGeneration === requestGeneration) {
-        set({ status: 'error', error: { kind: 'network' } })
+        set({ status: 'error', error: toScheduleSyncError(error) })
       }
       return
     }

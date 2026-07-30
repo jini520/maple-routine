@@ -32,6 +32,7 @@
 - **로컬 우선 캐싱**: 기간 이동은 항상 `storage/boss-profit` 의 `boss_profit_records` 만 읽어 즉시 전환, API 재호출 없음. 저장 기록 없는 과거 기간 첫 이동 때만 스피너와 함께 `nexon/schedule` 을 그 기간 `date`(YYYY-MM-DD)로 자동 1회 재조회(하한 [../foundation/nexon-api.md](../foundation/nexon-api.md) 참고) 후 즉시 영구 저장 → 다음 방문부터 재조회 안 함. 그 기간 미접속이면 재조회해도 비어 있을 수 있음.
 - **이전 기간 게이트**([[ADR-037]]): 스토어 파생 `canGoPreviousPeriod`(`canReachPreviousPeriod`: MIN 하한 미만 불가 / `isPeriodQueryable` 면 가능 / 롤링 밖이어도 캐시 기록 있으면 가능)를 이전 버튼과 `goToPreviousPeriod` 가드가 공유.
 - **동기화 상태 영역**(마지막 동기화 시각·"조회 중" 로딩·새로고침 버튼)은 현재 기간(`isLatestPeriod`)에서만 노출(과거 기간은 cache-first·checked-once라 무의미).
+- **실패는 토스트로 알린다**([[ADR-063]]): 동기화 전체 실패(원인별 문구 + `invalidApiKey`는 설정 열기 / `network`는 다시 시도) · 일부 캐릭터 실패(**이름 대신 인원 수** — Toast 본문이 `truncate`라 나열하면 잘린다) · 파티원 수 저장 실패("파티원 수를 저장하지 못했습니다", 보스 관리 화면과 같은 문구). 헤더 아래·카드 안 인라인 문단은 전부 걷어냈다 — 특히 파티원 수는 `err.message` 원문(`setPartySize: …`)을 그대로 렌더하던 자리였다. 기간 백필 실패("이 기간을 불러오지 못했습니다")만 인라인으로 남는다(기간 라벨 바로 아래라 맥락과 붙어 있다).
 - **캐시 우선 표시**([[ADR-017]]): "지금" 기간에 한해 `syncSchedules` 재검증 전 `getCachedSchedulerState` 로 화면을 먼저 채움(위 기간별 캐싱과 별개).
 - 보스 표시 순서([[ADR-036]]): `sortRowsByOcidOrder` 에 `weekly-bosses.json` 정규 순서(REFERENCE_ENTRIES: weekly→eventWeekly→monthly) 2차 정렬 키로 캐시·라이브·과거기록 세 경로를 같은 순서로 고정(`getBossReferenceOrder`, `boss-matching.ts`).
 

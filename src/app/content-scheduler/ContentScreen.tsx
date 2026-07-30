@@ -1,5 +1,6 @@
 import type { CharacterPickerEntry, DailyContent, WeeklyContent } from '../../types'
 import { formatScheduleSyncError, formatSyncedAt } from '../../features/schedule-sync/format'
+import { useScheduleSyncErrorToast } from '../../features/schedule-sync/use-sync-error-toast'
 import { getBossPortraitCrop, getBossPortraitUrl } from '../../lib/boss-icons'
 import { getDailyQuestBackgroundUrl, getDailyQuestRegionCrop } from '../../lib/daily-quest-backgrounds'
 import { matchDailyQuestRegionSlug, stripDailyQuestPrefix } from '../../lib/daily-quest-matching'
@@ -700,6 +701,13 @@ export function ContentScreen(): React.JSX.Element {
   const [activeTab, setActiveTab] = useState<ContentTab>('daily')
   const [roster, setRoster] = useState<CharacterPickerEntry[]>([])
   const [isPickerOpen, setIsPickerOpen] = useState(false)
+  // ADR-063: 동기화 전체 실패는 인라인 문단이 아니라 토스트로 알린다 — 지속 상태("n분 전")는
+  // 새로고침 옆 표기가 이미 담당하고, 토스트에는 원인을 푸는 액션을 붙일 수 있다.
+  useScheduleSyncErrorToast(error, {
+    onRetry: () => refresh(trackedOcids ?? []),
+    onOpenSettings: () => navigate('/settings'),
+  })
+
   // ADR-053 결정 3: 후보 목록 조회의 로딩·실패는 조회를 소유한 화면이 관리해 피커에 내려준다.
   // 초기값은 "마운트 직후 조회가 시작되는가"(= 피커가 이미 열려 있는가)와 같다.
   const [isRosterLoading, setIsRosterLoading] = useState(isPickerOpen)
@@ -958,12 +966,6 @@ export function ContentScreen(): React.JSX.Element {
               </p>
             )}
           </div>
-
-          {status === 'error' && (
-            <p className="text-sm text-error">
-              {error !== null ? formatScheduleSyncError(error) : '오류가 발생했습니다'}
-            </p>
-          )}
 
           {/* ADR-016: 캐시된 characters가 있으면 재검증(status: 'loading') 중에도 계속 보여준다 —
               셸 승계 카드는 보여줄 데이터가 아예 없을 때만 그린다([[ADR-061]] 결정 2). */}

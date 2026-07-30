@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { syncSchedules, type ScheduleSyncError } from '../schedule-sync/schedule-sync'
+import { syncSchedules, toScheduleSyncError, type ScheduleSyncError } from '../schedule-sync/schedule-sync'
 import {
   getLastSelectedCharacter,
   getTrackedCharacterOcids,
@@ -190,11 +190,17 @@ export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, ge
         )
       ).filter((view): view is ContentCharacterView => view != null)
 
-      const results = await syncSchedules(added, onProgress).catch(() => null)
+      // .catch(() => null)로 원인을 버리지 않는다 — 아래에서 종류를 살려야 한다([[ADR-063]]).
+      const outcome = await syncSchedules(added, onProgress).then(
+        (results) => ({ results, error: null as unknown }),
+        (error: unknown) => ({ results: null, error }),
+      )
+      const results = outcome.results
       if (results === null) {
         // syncSchedules 자체가 던지는 에러(온보딩 미완료 등)는 캐릭터별 에러가 아니라
-        // 전체 조회 자체의 실패이므로 network로 취급한다(refresh와 동일).
-        set({ status: 'error', error: { kind: 'network' }, characters: await sortByCachedLevel(keptViews) })
+        // 전체 조회 자체의 실패다. 원인은 버리지 않고
+        // toScheduleSyncError로 살린다([[ADR-063]]) — 전에는 network로 하드코딩해 401/429가 화면에 도달하지 못했다.
+        set({ status: 'error', error: toScheduleSyncError(outcome.error), characters: await sortByCachedLevel(keptViews) })
       } else {
         const addedViews: ContentCharacterView[] = results.map((result) => ({
           ocid: result.ocid,
@@ -262,10 +268,11 @@ export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, ge
     let results: Awaited<ReturnType<typeof syncSchedules>>
     try {
       results = await syncSchedules(ocids, onProgress)
-    } catch {
+    } catch (error) {
       // syncSchedules 자체가 던지는 에러(온보딩 미완료 등)는
-      // 캐릭터별 에러가 아니라 전체 조회 자체의 실패이므로 network로 취급한다.
-      set({ status: 'error', error: { kind: 'network' } })
+      // 캐릭터별 에러가 아니라 전체 조회 자체의 실패다.
+      // 원인은 toScheduleSyncError로 살린다([[ADR-063]]).
+      set({ status: 'error', error: toScheduleSyncError(error) })
       return
     }
 

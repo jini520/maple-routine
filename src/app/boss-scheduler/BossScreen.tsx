@@ -1,6 +1,7 @@
 import type { BossContent, CharacterPickerEntry } from '../../types'
 import { RefreshCw, SlidersHorizontal, Swords, Users } from 'lucide-react'
 import { formatScheduleSyncError, formatSyncedAt } from '../../features/schedule-sync/format'
+import { useScheduleSyncErrorToast } from '../../features/schedule-sync/use-sync-error-toast'
 import { getBossPortraitCrop, getBossPortraitUrl } from '../../lib/boss-icons'
 import { partySizeKey, useBossSchedulerStore } from '../../features/boss-scheduler/store'
 import { useEffect, useState } from 'react'
@@ -122,6 +123,13 @@ export function BossScreen(): React.JSX.Element {
   // ADR-019 결정 6: 주간/월간 탭은 서로 독립된 필터 상태를 갖는다(한 탭의 필터 변경이
   // 다른 탭에 영향을 주지 않음).
   const [weeklyFilter, setWeeklyFilter] = useState<PartyFilter>('all')
+  // ADR-063: 동기화 전체 실패는 인라인 문단이 아니라 토스트로 알린다 — 지속 상태("n분 전")는
+  // 새로고침 옆 표기가 이미 담당하고, 토스트에는 원인을 푸는 액션을 붙일 수 있다.
+  useScheduleSyncErrorToast(error, {
+    onRetry: () => refresh(trackedOcids ?? []),
+    onOpenSettings: () => navigate('/settings'),
+  })
+
   const [monthlyFilter, setMonthlyFilter] = useState<PartyFilter>('all')
 
   useEffect(() => {
@@ -449,12 +457,6 @@ export function BossScreen(): React.JSX.Element {
               </p>
             )}
           </div>
-
-          {status === 'error' && (
-            <p className="text-sm text-error">
-              {error !== null ? formatScheduleSyncError(error) : '오류가 발생했습니다'}
-            </p>
-          )}
 
           {/* ADR-016: 캐시된 characters가 있으면 재검증(status: 'loading') 중에도 계속 보여준다 —
               셸 승계 카드는 보여줄 데이터가 아예 없을 때만 그린다([[ADR-061]] 결정 2). */}

@@ -1,10 +1,15 @@
 import { create } from 'zustand'
+import type { LucideIcon } from 'lucide-react'
 
 export type ToastVariant = 'success' | 'error' | 'info'
 
 export interface ToastAction {
   label: string
   onClick: () => void
+  // 액션 슬롯은 아이콘만 보이고 label은 aria-label로만 쓰인다. 기본값(RefreshCw)이 '다시 시도'를
+  // 전제하므로, 뜻이 다른 액션은 자기 아이콘을 넘겨야 한다([[ADR-063]] — '설정 열기'에 새로고침
+  // 아이콘을 쓰면 무엇을 하는 버튼인지 어긋난다).
+  icon?: LucideIcon
 }
 
 export interface ToastItem {
