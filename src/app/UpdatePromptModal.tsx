@@ -16,14 +16,14 @@ function formatSize(bytes: number): string {
 }
 
 const PRIMARY_BTN =
-  'w-full rounded-full bg-primary text-bg font-semibold hover:bg-primary-hover px-5 py-2.5 text-sm disabled:opacity-50'
+  'w-full rounded-full bg-primary text-on-primary font-semibold hover:bg-primary-hover px-5 py-2.5 text-sm disabled:opacity-50'
 const GHOST_BTN = 'w-full rounded-full px-5 py-2.5 text-sm font-medium text-text-muted hover:text-text'
 
 type IconTone = 'primary' | 'secondary' | 'third'
 const TONE_CLASSES: Record<IconTone, string> = {
-  primary: 'bg-primary/15 text-primary',
-  secondary: 'bg-secondary/20 text-secondary-text',
-  third: 'bg-third/20 text-third-text',
+  primary: 'bg-primary-tint text-primary-ink',
+  secondary: 'bg-secondary-tint text-secondary-ink',
+  third: 'bg-third-tint text-third-ink',
 }
 
 function IconBadge({ icon: Icon, tone }: { icon: typeof CloudDownload; tone: IconTone }): React.JSX.Element {
@@ -43,14 +43,14 @@ function VersionBadge({ version }: { version: string | null }): React.JSX.Elemen
 }
 
 function BetaBadge(): React.JSX.Element {
-  return <span className="rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary">beta</span>
+  return <span className="rounded-full bg-primary-tint px-2.5 py-1 text-xs font-semibold text-primary-ink">beta</span>
 }
 
 // info-tint 정보 콜아웃 — 부가 정보(용량, 최소 앱 버전 등)를 본문 문장과 분리해 보여준다(ADR-027).
 function InfoNote({ children }: { children: React.ReactNode }): React.JSX.Element {
   return (
     <div className="flex items-center gap-2 rounded-[10px] bg-info-tint px-3.5 py-2.5 text-left">
-      <Info className="h-4 w-4 shrink-0 text-secondary-text" strokeWidth={2} aria-hidden="true" />
+      <Info className="h-4 w-4 shrink-0 text-info-ink" strokeWidth={2} aria-hidden="true" />
       <span className="text-xs font-medium text-text">{children}</span>
     </div>
   )
@@ -132,7 +132,7 @@ export function UpdatePromptModal(): React.JSX.Element | null {
             <h2 className="text-base font-semibold text-text">다운로드 중</h2>
             {/* ADR-061 결정 6: 결정형 진행률은 예외 없이 h-1.5 프리미티브 하나 — 이 모달만
                 쓰던 h-2 변형을 없앤다. */}
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-track">
               <div
                 data-testid="update-progress-bar"
                 className="h-1.5 rounded-full bg-primary transition-[width]"

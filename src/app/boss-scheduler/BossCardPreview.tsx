@@ -179,7 +179,7 @@ function BossCropAdjuster(props: { boss: MatchedBoss }): React.JSX.Element {
             onClick={() => {
               void navigator.clipboard.writeText(valueText)
             }}
-            className="text-xs font-medium text-primary-text hover:text-primary-hover"
+            className="text-xs font-medium text-primary-ink hover:text-primary-hover"
           >
             복사
           </button>

@@ -38,24 +38,24 @@ export function EmptyState(props: EmptyStateProps): React.JSX.Element {
       <div
         data-testid="empty-state-badge"
         aria-hidden="true"
-        className={`flex items-center justify-center rounded-full bg-primary/15 ${
+        className={`flex items-center justify-center rounded-full bg-primary-tint ${
           isPage ? 'h-[84px] w-[84px]' : 'h-14 w-14'
         }`}
       >
-        {/* 마크 색은 primary 계열로 통일 — primary-text 는 라이트 테마에선 더 또렷하지만 레테(다크)에서
-            배지 배경에 묻힌다(그 테마만 primary-text 가 primary 보다 어둡다). */}
+        {/* 마크 색은 primary 계열로 통일 — primary-ink 는 라이트 테마에선 더 또렷하지만 레테(다크)에서
+            배지 배경에 묻힌다(그 테마만 primary-ink 가 primary 보다 어둡다). */}
         {Icon === 'leaf' ? (
           <svg
             data-testid="empty-state-leaf"
             width={isPage ? 42 : 28}
             height={isPage ? 43 : 29}
             viewBox="0 0 127 130"
-            className="fill-primary"
+            className="fill-primary-ink"
           >
             <path d={MAPLE_LEAF_PATH} />
           </svg>
         ) : (
-          <Icon className={`text-primary ${isPage ? 'h-10 w-10' : 'h-7 w-7'}`} strokeWidth={1.75} />
+          <Icon className={`text-primary-ink ${isPage ? 'h-10 w-10' : 'h-7 w-7'}`} strokeWidth={1.75} />
         )}
       </div>
 
@@ -84,7 +84,7 @@ export function EmptyState(props: EmptyStateProps): React.JSX.Element {
         <button
           type="button"
           onClick={action.onClick}
-          className={`rounded-full bg-primary font-semibold text-bg hover:bg-primary-hover ${
+          className={`rounded-full bg-primary font-semibold text-on-primary hover:bg-primary-hover ${
             isPage ? 'px-5 py-2.5 text-sm' : 'px-4 py-2 text-xs'
           }`}
         >

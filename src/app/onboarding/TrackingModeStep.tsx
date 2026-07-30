@@ -32,8 +32,8 @@ export function TrackingModeStep(props: TrackingModeStepProps): React.JSX.Elemen
               onClick={() => setMode(option.mode)}
               className={
                 isSelected
-                  ? 'w-full text-left rounded-[10px] border border-primary bg-primary/15 px-4 py-3'
-                  : 'w-full text-left rounded-[10px] border border-border px-4 py-3 hover:bg-primary/15'
+                  ? 'w-full text-left rounded-[10px] border border-primary bg-primary-tint px-4 py-3'
+                  : 'w-full text-left rounded-[10px] border border-border px-4 py-3 hover:bg-primary-tint'
               }
             >
               <span className="block text-sm font-semibold text-text">{option.title}</span>
@@ -49,7 +49,7 @@ export function TrackingModeStep(props: TrackingModeStepProps): React.JSX.Elemen
         onClick={() => {
           if (mode !== null) props.onSubmit(mode)
         }}
-        className="w-full rounded-full bg-primary text-bg font-semibold hover:bg-primary-hover px-5 py-2.5 disabled:opacity-50"
+        className="w-full rounded-full bg-primary text-on-primary font-semibold hover:bg-primary-hover px-5 py-2.5 disabled:opacity-50"
       >
         계속하기
       </button>

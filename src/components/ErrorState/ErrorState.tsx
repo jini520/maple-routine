@@ -35,7 +35,7 @@ export function ErrorState(props: ErrorStateProps): React.JSX.Element {
       role="alert"
       className="flex min-h-[120px] flex-1 flex-col items-center justify-center gap-3 px-4 text-center"
     >
-      <AlertTriangle className="h-7 w-7 text-error" strokeWidth={1.75} aria-hidden="true" />
+      <AlertTriangle className="h-7 w-7 text-error-ink" strokeWidth={1.75} aria-hidden="true" />
 
       <div className="space-y-1">
         <p data-testid="error-state-title" className="text-sm font-semibold text-text">
@@ -49,11 +49,11 @@ export function ErrorState(props: ErrorStateProps): React.JSX.Element {
       </div>
 
       {props.action !== undefined && (
-        // 재시도는 파괴적 동작이 아니라 진행 동작이라 primary다(삭제 버튼의 border-error text-error 와 구분).
+        // 재시도는 파괴적 동작이 아니라 진행 동작이라 primary다(삭제 버튼의 border-error text-error-ink 와 구분).
         <button
           type="button"
           onClick={props.action.onClick}
-          className="rounded-full bg-primary px-4 py-2 text-xs font-semibold text-bg hover:bg-primary-hover"
+          className="rounded-full bg-primary px-4 py-2 text-xs font-semibold text-on-primary hover:bg-primary-hover"
         >
           {props.action.label}
         </button>

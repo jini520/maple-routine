@@ -25,6 +25,7 @@ import { CONTENT_TEMPLATE } from '../../lib/scheduler-content-template'
 import { categorizeContentEntries, WEEKLY_CATEGORY_ORDER } from '../../lib/content-category'
 import { useContentSchedulerStore } from '../../features/content-scheduler/store'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
+import { MEDIA_TEXT_SHADOW } from '../../lib/media-card'
 
 type ContentTab = 'daily' | 'weekly'
 
@@ -76,9 +77,9 @@ const QUEST_STATE_LABELS: Record<0 | 1 | 2, string> = {
 }
 
 const QUEST_STATE_BADGE_CLASSES: Record<0 | 1 | 2, string> = {
-  0: 'bg-white/10 text-[#E8DFEC]/70',
-  1: 'bg-white/20 text-[#E8DFEC]',
-  2: 'bg-secondary text-bg',
+  0: 'bg-surface-2 text-text-muted',
+  1: 'bg-surface-2 text-text',
+  2: 'bg-secondary-tint text-secondary-ink',
 }
 
 export function QuestStateBadge(props: { questState: 0 | 1 | 2 }): React.JSX.Element {
@@ -107,7 +108,7 @@ export function DailyQuestCard(props: {
   // 카드 배경/보더/이름 텍스트는 BossCard와 동일하게 앱 테마와 무관하게 레테(다크) 고정 배색을
   // 쓴다 — 일러스트 bleed·페이드·text-shadow가 어두운 배경을 전제로 튜닝됐기 때문(ADR-018/020).
   return (
-    <div className="relative h-20 overflow-hidden rounded-[14px] border border-[#37323E] bg-[#1A1720]">
+    <div className="media-scope relative h-20 overflow-hidden rounded-[14px] border border-border bg-surface">
       {backgroundUrl !== null && (
         <div
           className="absolute inset-0"
@@ -130,8 +131,8 @@ export function DailyQuestCard(props: {
             <img src={iconUrl} alt="" className="h-6 w-6 shrink-0 object-contain" aria-hidden="true" />
           )}
           <span
-            className="text-sm font-medium text-[#E8DFEC]"
-            style={{ textShadow: '0 1px 3px rgba(0,0,0,.9), 0 0 10px rgba(0,0,0,.6)' }}
+            className="text-sm font-medium text-text"
+            style={{ textShadow: MEDIA_TEXT_SHADOW }}
           >
             {displayName}
           </span>
@@ -155,7 +156,7 @@ export function MonsterParkCard(props: {
   const progressPercent = content.maxCount > 0 ? Math.min((content.nowCount / content.maxCount) * 100, 100) : 0
 
   return (
-    <div className="relative h-28 overflow-hidden rounded-[14px] border border-[#37323E] bg-[#1A1720]">
+    <div className="media-scope relative h-28 overflow-hidden rounded-[14px] border border-border bg-surface">
       {backgroundUrl !== null && (
         <div
           className="absolute inset-0"
@@ -179,14 +180,14 @@ export function MonsterParkCard(props: {
               <img src={iconUrl} alt="" className="h-6 w-6 shrink-0 object-contain" aria-hidden="true" />
             )}
             <span
-              className="text-sm font-medium text-[#E8DFEC]"
-              style={{ textShadow: '0 1px 3px rgba(0,0,0,.9), 0 0 10px rgba(0,0,0,.6)' }}
+              className="text-sm font-medium text-text"
+              style={{ textShadow: MEDIA_TEXT_SHADOW }}
             >
               {content.name}
             </span>
           </div>
 
-          <span className="rounded-full bg-third/20 px-2.5 py-1 text-xs font-semibold text-third">
+          <span className="rounded-full bg-third-tint px-2.5 py-1 text-xs font-semibold text-third-ink">
             {content.nowCount}/{content.maxCount}
           </span>
         </div>
@@ -198,7 +199,7 @@ export function MonsterParkCard(props: {
               aria-valuenow={content.nowCount}
               aria-valuemin={0}
               aria-valuemax={content.maxCount}
-              className="h-1.5 w-full overflow-hidden rounded-full bg-white/15"
+              className="h-1.5 w-full overflow-hidden rounded-full bg-track"
             >
               <div className="h-1.5 rounded-full bg-third" style={{ width: `${progressPercent}%` }} />
             </div>
@@ -229,12 +230,11 @@ function CategoryBadge(props: {
 }
 
 const CARD_MASK_IMAGE = 'linear-gradient(90deg, #000 0%, #000 38%, transparent 76%)'
-const CARD_NAME_TEXT_SHADOW = '0 1px 3px rgba(0,0,0,.9), 0 0 10px rgba(0,0,0,.6)'
 
 // 진행 중(1) 뱃지와 같은 톤의 중립 라벨 — "N층"·"N회 완료"처럼 0/1/2 상태가 아닌 진행 수치를
 // 보여줘야 하는 카드에서 QuestStateBadge 대신 쓴다(2026-07-21, 사용자 지시).
 function CountLabelBadge(props: { label: string }): React.JSX.Element {
-  return <span className="rounded-full bg-white/20 px-2.5 py-1 text-xs font-semibold text-[#E8DFEC]">{props.label}</span>
+  return <span className="rounded-full bg-surface-2 px-2.5 py-1 text-xs font-semibold text-text">{props.label}</span>
 }
 
 // 무릉도장은 quest_state가 아니라 참여 시 도달한 층수(1~100+)가 now_count에 그대로 기록된다.
@@ -275,7 +275,7 @@ export function EpicDungeonCard(props: {
   const questState: 0 | 2 = content.nowCount > 0 ? 2 : 0
 
   return (
-    <div className="relative h-20 overflow-hidden rounded-[14px] border border-[#37323E] bg-[#1A1720]">
+    <div className="media-scope relative h-20 overflow-hidden rounded-[14px] border border-border bg-surface">
       {backgroundUrl !== null && (
         <div
           className="absolute inset-0"
@@ -295,7 +295,7 @@ export function EpicDungeonCard(props: {
       <div className="relative flex h-full items-center justify-between" style={{ padding: '0 14px' }}>
         <div className="flex items-center gap-2">
           <CategoryBadge label="에픽 던전" variant="epicDungeon" />
-          <span className="text-sm font-medium text-[#E8DFEC]" style={{ textShadow: CARD_NAME_TEXT_SHADOW }}>
+          <span className="text-sm font-medium text-text" style={{ textShadow: MEDIA_TEXT_SHADOW }}>
             {displayName}
           </span>
         </div>
@@ -328,7 +328,7 @@ export function WeeklyRegionalContentCard(props: {
         : 0
 
   return (
-    <div className="relative h-20 overflow-hidden rounded-[14px] border border-[#37323E] bg-[#1A1720]">
+    <div className="media-scope relative h-20 overflow-hidden rounded-[14px] border border-border bg-surface">
       {backgroundUrl !== null && (
         <div
           className="absolute inset-0"
@@ -350,7 +350,7 @@ export function WeeklyRegionalContentCard(props: {
           {iconUrl !== null && (
             <img src={iconUrl} alt="" className="h-6 w-6 shrink-0 object-contain" aria-hidden="true" />
           )}
-          <span className="text-sm font-medium text-[#E8DFEC]" style={{ textShadow: CARD_NAME_TEXT_SHADOW }}>
+          <span className="text-sm font-medium text-text" style={{ textShadow: MEDIA_TEXT_SHADOW }}>
             {displayName}
           </span>
         </div>
@@ -373,7 +373,7 @@ export function WeeklyQuestCard(props: {
   const crop = props.crop ?? getDailyQuestRegionCrop(backgroundSlug)
 
   return (
-    <div className="relative h-20 overflow-hidden rounded-[14px] border border-[#37323E] bg-[#1A1720]">
+    <div className="media-scope relative h-20 overflow-hidden rounded-[14px] border border-border bg-surface">
       {backgroundUrl !== null && (
         <div
           className="absolute inset-0"
@@ -395,7 +395,7 @@ export function WeeklyQuestCard(props: {
           {iconUrl !== null && (
             <img src={iconUrl} alt="" className="h-6 w-6 shrink-0 object-contain" aria-hidden="true" />
           )}
-          <span className="text-sm font-medium text-[#E8DFEC]" style={{ textShadow: CARD_NAME_TEXT_SHADOW }}>
+          <span className="text-sm font-medium text-text" style={{ textShadow: MEDIA_TEXT_SHADOW }}>
             {displayName}
           </span>
         </div>
@@ -418,7 +418,7 @@ export function MapleUnionDragonCard(props: {
   const crop = props.crop ?? getBossPortraitCrop(MAPLE_UNION_DRAGON_BOSS_SLUG)
 
   return (
-    <div className="relative h-20 overflow-hidden rounded-[14px] border border-[#37323E] bg-[#1A1720]">
+    <div className="media-scope relative h-20 overflow-hidden rounded-[14px] border border-border bg-surface">
       {backgroundUrl !== null && (
         <div
           className="absolute inset-0"
@@ -438,7 +438,7 @@ export function MapleUnionDragonCard(props: {
       <div className="relative flex h-full items-center justify-between" style={{ padding: '0 14px' }}>
         <div className="flex items-center gap-2">
           <CategoryBadge label="유니온" variant="mapleUnion" />
-          <span className="text-sm font-medium text-[#E8DFEC]" style={{ textShadow: CARD_NAME_TEXT_SHADOW }}>
+          <span className="text-sm font-medium text-text" style={{ textShadow: MEDIA_TEXT_SHADOW }}>
             {displayName}
           </span>
         </div>
@@ -463,7 +463,7 @@ export function GuildUndergroundWaterwayCard(props: {
   const crop = props.crop ?? getBossPortraitCrop(GUILD_UNDERGROUND_WATERWAY_BACKGROUND_SLUG)
 
   return (
-    <div className="relative h-20 overflow-hidden rounded-[14px] border border-[#37323E] bg-[#1A1720]">
+    <div className="media-scope relative h-20 overflow-hidden rounded-[14px] border border-border bg-surface">
       {backgroundUrl !== null && (
         <div
           className="absolute inset-0"
@@ -483,12 +483,12 @@ export function GuildUndergroundWaterwayCard(props: {
       <div className="relative flex h-full items-center justify-between" style={{ padding: '0 14px' }}>
         <div className="flex items-center gap-2">
           <CategoryBadge label="길드" variant="guild" />
-          <span className="text-sm font-medium text-[#E8DFEC]" style={{ textShadow: CARD_NAME_TEXT_SHADOW }}>
+          <span className="text-sm font-medium text-text" style={{ textShadow: MEDIA_TEXT_SHADOW }}>
             {displayName}
           </span>
         </div>
 
-        <span className="rounded-full bg-third/20 px-2.5 py-1 text-xs font-semibold text-third">
+        <span className="rounded-full bg-third-tint px-2.5 py-1 text-xs font-semibold text-third-ink">
           {content.nowCount}점
         </span>
       </div>
@@ -507,7 +507,7 @@ export function GuildMissionPointsCard(props: {
   const progressPercent = content.maxCount > 0 ? Math.min((content.nowCount / content.maxCount) * 100, 100) : 0
 
   return (
-    <div className="relative h-28 overflow-hidden rounded-[14px] border border-[#37323E] bg-[#1A1720]">
+    <div className="media-scope relative h-28 overflow-hidden rounded-[14px] border border-border bg-surface">
       {backgroundUrl !== null && (
         <div
           className="absolute inset-0"
@@ -528,12 +528,12 @@ export function GuildMissionPointsCard(props: {
         <div className="flex h-20 shrink-0 items-center justify-between" style={{ padding: '0 14px' }}>
           <div className="flex items-center gap-2">
             <CategoryBadge label="길드" variant="guild" />
-            <span className="text-sm font-medium text-[#E8DFEC]" style={{ textShadow: CARD_NAME_TEXT_SHADOW }}>
+            <span className="text-sm font-medium text-text" style={{ textShadow: MEDIA_TEXT_SHADOW }}>
               {displayName}
             </span>
           </div>
 
-          <span className="rounded-full bg-third/20 px-2.5 py-1 text-xs font-semibold text-third">
+          <span className="rounded-full bg-third-tint px-2.5 py-1 text-xs font-semibold text-third-ink">
             {content.nowCount}/{content.maxCount}
           </span>
         </div>
@@ -545,7 +545,7 @@ export function GuildMissionPointsCard(props: {
               aria-valuenow={content.nowCount}
               aria-valuemin={0}
               aria-valuemax={content.maxCount}
-              className="h-1.5 w-full overflow-hidden rounded-full bg-white/15"
+              className="h-1.5 w-full overflow-hidden rounded-full bg-track"
             >
               <div className="h-1.5 rounded-full bg-third" style={{ width: `${progressPercent}%` }} />
             </div>
@@ -567,7 +567,7 @@ export function GuildFlagRaceCard(props: {
   const questState: 0 | 2 = content.nowCount > 0 ? 2 : 0
 
   return (
-    <div className="relative h-20 overflow-hidden rounded-[14px] border border-[#37323E] bg-[#1A1720]">
+    <div className="media-scope relative h-20 overflow-hidden rounded-[14px] border border-border bg-surface">
       {backgroundUrl !== null && (
         <div
           className="absolute inset-0"
@@ -587,7 +587,7 @@ export function GuildFlagRaceCard(props: {
       <div className="relative flex h-full items-center justify-between" style={{ padding: '0 14px' }}>
         <div className="flex items-center gap-2">
           <CategoryBadge label="길드" variant="guild" />
-          <span className="text-sm font-medium text-[#E8DFEC]" style={{ textShadow: CARD_NAME_TEXT_SHADOW }}>
+          <span className="text-sm font-medium text-text" style={{ textShadow: MEDIA_TEXT_SHADOW }}>
             {displayName}
           </span>
         </div>
@@ -619,7 +619,7 @@ function renderDailyContentCard(content: DailyContent): React.JSX.Element {
           aria-valuenow={content.nowCount}
           aria-valuemin={0}
           aria-valuemax={content.maxCount}
-          className="h-1.5 w-full rounded-full bg-surface-2 overflow-hidden"
+          className="h-1.5 w-full rounded-full bg-track overflow-hidden"
         >
           <div
             className="h-1.5 rounded-full bg-primary"
@@ -671,7 +671,7 @@ function renderWeeklyContentCard(content: WeeklyContent): React.JSX.Element {
           aria-valuenow={content.nowCount}
           aria-valuemin={0}
           aria-valuemax={content.maxCount}
-          className="h-1.5 w-full rounded-full bg-surface-2 overflow-hidden"
+          className="h-1.5 w-full rounded-full bg-track overflow-hidden"
         >
           <div
             className="h-1.5 rounded-full bg-primary"
@@ -949,7 +949,7 @@ export function ContentScreen(): React.JSX.Element {
                   type="button"
                   onClick={() => refresh(trackedOcids ?? [])}
                   aria-label="새로고침"
-                  className="p-2 text-primary-text hover:text-primary-hover"
+                  className="p-2 text-primary-ink hover:text-primary-hover"
                 >
                   <RefreshCw
                     className={`h-4 w-4 ${status === 'loading' ? 'animate-spin' : ''}`}
@@ -961,7 +961,7 @@ export function ContentScreen(): React.JSX.Element {
             </div>
 
             {selected !== null && selected.isStale && (
-              <p className="text-sm text-error">
+              <p className="text-sm text-error-ink">
                 {selected.error !== null ? formatScheduleSyncError(selected.error) : ''}
               </p>
             )}
@@ -980,7 +980,7 @@ export function ContentScreen(): React.JSX.Element {
                 onClick={() => setActiveTab('daily')}
                 className={
                   activeTab === 'daily'
-                    ? 'rounded-full bg-primary/15 px-3 py-[5px] text-sm font-semibold text-primary'
+                    ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
                     : 'px-3 text-sm font-medium text-text-muted'
                 }
               >
@@ -991,7 +991,7 @@ export function ContentScreen(): React.JSX.Element {
                 onClick={() => setActiveTab('weekly')}
                 className={
                   activeTab === 'weekly'
-                    ? 'rounded-full bg-primary/15 px-3 py-[5px] text-sm font-semibold text-primary'
+                    ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
                     : 'px-3 text-sm font-medium text-text-muted'
                 }
               >

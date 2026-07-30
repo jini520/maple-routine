@@ -859,11 +859,11 @@ describe('BossScreen', () => {
       // 검은마법사는 파티 설정이 없어 솔로 취급이지만, 월간 탭 필터는 독립적으로 "전체"로
       // 유지되어야 하므로 그대로 보여야 한다.
       expect(screen.getByText('검은마법사')).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: '전체' })).toHaveClass('bg-primary/15')
+      expect(screen.getByRole('button', { name: '전체' })).toHaveClass('bg-primary-tint')
 
       fireEvent.click(screen.getByRole('button', { name: '주간' }))
       // 주간 탭으로 되돌아오면 이전에 선택한 "파티" 필터가 그대로 유지된다.
-      expect(screen.getByRole('button', { name: '파티' })).toHaveClass('bg-primary/15')
+      expect(screen.getByRole('button', { name: '파티' })).toHaveClass('bg-primary-tint')
       expect(screen.getByText('자쿰')).toBeInTheDocument()
       expect(screen.queryByText('루시드')).not.toBeInTheDocument()
     })
@@ -923,7 +923,7 @@ describe('BossScreen', () => {
       fireEvent.click(screen.getByRole('button', { name: '필터 초기화' }))
 
       expect(screen.queryByText('이 조건에 해당하는 보스가 없습니다')).not.toBeInTheDocument()
-      expect(screen.getByRole('button', { name: '전체' })).toHaveClass('bg-primary/15')
+      expect(screen.getByRole('button', { name: '전체' })).toHaveClass('bg-primary-tint')
     })
   })
 

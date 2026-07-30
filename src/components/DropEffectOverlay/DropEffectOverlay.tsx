@@ -205,6 +205,9 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
       data-sheet-keep-open=""
       className="pointer-events-auto fixed inset-0 z-[70] cursor-pointer overflow-hidden"
     >
+      {/* 이 오버레이의 색은 테마를 따르지 않는다(ADR-064 적용 범위 밖) — 아이템 연출 스프라이트가
+          mix-blend-screen 이라 **어두운 바탕이 있어야 그림이 성립한다**. 밝은 테마에서 이 배경을
+          표면색으로 바꾸면 연출 자체가 사라진다. 고가 드롭 골드 연출과 같은 성격이다. */}
       <div
         className="absolute inset-0"
         style={{ background: 'radial-gradient(circle at 50% 50%, #1b0f29, #05010a)' }}

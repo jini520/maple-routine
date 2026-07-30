@@ -28,7 +28,7 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
       }}
     >
       <Drawer.Portal>
-        <Drawer.Overlay className="fixed inset-0 z-[60] bg-bg/70" />
+        <Drawer.Overlay className="fixed inset-0 z-[60] bg-scrim" />
         <Drawer.Content
           data-testid={props.testId}
           aria-describedby={undefined}
@@ -39,7 +39,7 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
             const target = event.detail.originalEvent.target as Element | null
             if (target?.closest('[data-sheet-keep-open]')) event.preventDefault()
           }}
-          className="fixed inset-x-0 bottom-0 z-[60] mx-auto flex max-h-[82vh] w-full max-w-md flex-col rounded-t-[20px] border-t border-border bg-bg shadow-[0_-8px_30px_rgba(0,0,0,0.3)] outline-none"
+          className="fixed inset-x-0 bottom-0 z-[60] mx-auto flex max-h-[82vh] w-full max-w-md flex-col rounded-t-[20px] border-t border-border bg-bg shadow-[0_-8px_30px_var(--color-shadow-color)] outline-none"
         >
           <Drawer.Title className="sr-only">드롭 아이템 기록</Drawer.Title>
           <div className="flex flex-none justify-center pb-2 pt-3">

@@ -26,7 +26,7 @@
 - **프레임 픽셀·좌표 동시 교체**([[ADR-048]] 결정 6): `img.src` 교체는 비동기라(39프레임 전부 대입 직후 `complete=false`) 좌표만 먼저 옮기면 이전 프레임이 새 origin 으로 그려져 산발적으로 한 프레임 튄다. 마운트 시 DropEff 프레임을 미리 디코드해 두고(ref 로 보유), 그래도 준비 전이면 `applyDropFrame` 이 좌표를 유지한 채 반환한다(매 tick 재호출로 자동 복구). 표시 여부도 같은 함수가 관리.
 
 ### 바텀시트 = vaul(Drawer) ([[ADR-039]])
-자체 `createPortal` 바텀시트를 vaul 라이브러리로 교체(자체구현은 데스크톱 마우스 드래그 닫기 불가·스냅 복귀·fling 없음). 공개 API(`onClose`/`children`/`testId`)·시각 스킨(오버레이 `bg-bg/70`·`rounded-t-[20px]`·`z-[60]`·그랩 핸들·`max-h-[82vh]`·safe-area 패딩) 유지해 `BossDropSheet` 무변경. 부모 조건부 마운트는 내부 `open` 상태 + `onAnimationEnd`(닫힘 후 `onClose`). 포커스 트랩·Esc·`aria` vaul 내장. jsdom 폴리필(pointer capture·`scrollIntoView`·`matchMedia`·`ResizeObserver`) `setupFiles` 추가. 네이티브 변경 없어 OTA 배포 가능.
+자체 `createPortal` 바텀시트를 vaul 라이브러리로 교체(자체구현은 데스크톱 마우스 드래그 닫기 불가·스냅 복귀·fling 없음). 공개 API(`onClose`/`children`/`testId`)·시각 스킨(오버레이 `bg-scrim`·`rounded-t-[20px]`·`z-[60]`·그랩 핸들·`max-h-[82vh]`·safe-area 패딩) 유지해 `BossDropSheet` 무변경. 부모 조건부 마운트는 내부 `open` 상태 + `onAnimationEnd`(닫힘 후 `onClose`). 포커스 트랩·Esc·`aria` vaul 내장. jsdom 폴리필(pointer capture·`scrollIntoView`·`matchMedia`·`ResizeObserver`) `setupFiles` 추가. 네이티브 변경 없어 OTA 배포 가능.
 
 ## 열린 질문
 - 월간 보스(검은마법사)를 이 목록에 포함할지.

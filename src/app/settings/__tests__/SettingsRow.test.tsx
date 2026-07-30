@@ -36,7 +36,7 @@ describe('SettingsRow', () => {
   it('danger가 true면 label이 error 톤으로 렌더링된다', () => {
     render(<SettingsRow label="연결 해제" onClick={vi.fn()} danger />)
 
-    expect(screen.getByText('연결 해제')).toHaveClass('text-error')
+    expect(screen.getByText('연결 해제')).toHaveClass('text-error-ink')
   })
 
   it('showChevron이 false이고 rightContent도 없으면 chevron이 보이지 않는다', () => {

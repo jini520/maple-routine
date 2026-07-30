@@ -34,9 +34,9 @@ export function AppUpdateSection(): React.JSX.Element {
   const isBusy = status === 'checking' || status === 'downloading'
   const highlight =
     status === 'error'
-      ? 'text-sm text-error'
+      ? 'text-sm text-error-ink'
       : status === 'update-available' || status === 'ready-to-apply' || status === 'store-required'
-        ? 'text-sm font-medium text-primary'
+        ? 'text-sm font-medium text-primary-ink'
         : 'text-sm text-text-muted'
 
   return (
@@ -48,7 +48,7 @@ export function AppUpdateSection(): React.JSX.Element {
           <span className="text-sm font-medium text-text">현재 버전</span>
           <span className="flex items-center gap-2">
             {channel === 'beta' && (
-              <span className="rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">
+              <span className="rounded-full bg-primary-tint px-2 py-0.5 text-xs font-semibold text-primary-ink">
                 beta
               </span>
             )}
@@ -70,7 +70,7 @@ export function AppUpdateSection(): React.JSX.Element {
               }}
               disabled={isBusy}
               aria-busy={isBusy}
-              className="flex w-full items-center justify-center gap-2 rounded-full bg-primary text-bg font-semibold hover:bg-primary-hover px-5 py-2.5 text-sm disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-primary text-on-primary font-semibold hover:bg-primary-hover px-5 py-2.5 text-sm disabled:opacity-50"
             >
               {/* ADR-061 결정 5: 네트워크 왕복이라 disabled만으로는 진행 중인지 멈춘 건지
                   구분되지 않는다 — 스피너 + '~중' 라벨로 바꾼다. */}

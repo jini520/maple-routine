@@ -37,23 +37,24 @@
 핵심 로직 `lib/scheduler-merge`·`lib/scheduler-content-scope`·`storage/shared-progress-cache` 는 TDD 로 단위 테스트 완비([../foundation/architecture.md](../foundation/architecture.md) 테스트 전략).
 
 ## UI — 콘텐츠 카드
-카드 골격은 보스 카드([[ADR-018]], [boss-scheduler.md](./boss-scheduler.md))를 재사용 — `rounded-[14px]`, **레테 고정** 배경/보더 `bg-[#1A1720]`/`border-[#37323E]`, 80px 기본 높이, 일러스트 bleed(saturate .85 brightness .8 opacity .65, mask `linear-gradient(90deg,#000 0%,#000 38%,transparent 76%)`).
+카드 골격은 보스 카드([[ADR-018]], [boss-scheduler.md](./boss-scheduler.md))를 재사용 — `rounded-[14px]`, `.media-scope` + `bg-surface`/`border-border`(스코프가 media-* 로 다시 묶는다, [[ADR-064]] 결정 5), 80px 기본 높이, 일러스트 bleed(saturate .85 brightness .8 opacity .65, mask `linear-gradient(90deg,#000 0%,#000 38%,transparent 76%)`).
 
 ### 일일퀘스트 카드 ([[ADR-020]])
 일간 탭 `kind: 'quest'` 항목에만. 왼쪽 지역 아이콘(`assets/maps/icons/{slug}`, 없으면 생략) + 퀘스트명("[일일 퀘스트] " 접두어 제거, text-shadow `0 1px 3px rgba(0,0,0,.9),0 0 10px rgba(0,0,0,.6)`). 오른쪽 `quest_state` 3단 뱃지:
 ```
-완료(2):   rounded-full bg-secondary text-bg text-xs font-bold px-2.5 py-1 "완료" (보스 완료 뱃지와 동일)
-진행 중(1): rounded-full bg-white/20 text-[#E8DFEC] text-xs font-semibold px-2.5 py-1 "진행 중"
-시작 안함(0): rounded-full bg-white/10 text-[#E8DFEC]/70 text-xs font-semibold px-2.5 py-1 "시작 안함"
+완료(2):   rounded-full bg-secondary text-on-secondary text-xs font-bold px-2.5 py-1 "완료" (보스 완료 뱃지와 동일)
+진행 중(1): rounded-full bg-surface-2 text-text text-xs font-semibold px-2.5 py-1 "진행 중"        ← .media-scope 안
+시작 안함(0): rounded-full bg-surface-2 text-text-muted text-xs font-semibold px-2.5 py-1 "시작 안함" ← .media-scope 안
 ```
 지역 배경 매칭: `daily-quest-regions.json`(지역명→슬러그) + `daily-quest-region-crops.json`(슬러그→크롭), `lib/daily-quest-backgrounds`. 공백 제거 표시명이 공백 제거 지역명으로 `startsWith`(예 "레헬른의평온한밤".startsWith("레헬른")). 미매칭이면 일러스트 레이어 생략. 디버그 프리뷰 `/debug/quest-cards`. `kind: 'contents'` 항목은 몬스터파크 예외를 빼면 기존 "이름 · now/max + 진행률 바" 유지.
 
 ### 몬스터파크 카드 ([[ADR-020]])
 `kind: 'contents'` 중 "몬스터파크" 하나만의 예외 카드. 높이 **112px**(`h-28`). `flex flex-col`: 위 `h-20`(아이콘+이름·진행률 뱃지, 다른 카드와 같은 80px 위치) + 아래 `flex-1`(진행률 바, `items-start pt-0`).
 ```
-진행률 뱃지: rounded-full bg-third/20 text-third text-xs font-semibold px-2.5 py-1 "{now}/{max}"
-  (레테 3.88:1로 AA 미달이나 사용자 지시로 자기색 틴트 유지. 화면 헤더 n/12 배지는 계속 bg-primary/15 text-primary)
-진행률 바: maxCount>0 일 때만. 트랙 bg-white/15(고정), 채움 bg-third(불투명 솔리드라 대비 OK)
+진행률 뱃지: rounded-full bg-third-tint text-third-ink text-xs font-semibold px-2.5 py-1 "{now}/{max}"
+  (.media-scope 안이라 media-surface 기준으로 계산된 값 — [[ADR-021]]에 미해결로 남아 있던 레테 3.88:1이 여기서 닫힌다.
+   화면 헤더 n/12 배지는 스코프 밖이라 일반 기준 bg-primary-tint text-primary-ink)
+진행률 바: maxCount>0 일 때만. 트랙 bg-track, 채움 bg-third
 ```
 이름·아이콘·배경 "몬스터파크" 고정(별도 매핑 없이 이름 직접 비교). 이 "메인 행 80px + 하단 확장" 원칙은 길드 카드에도 재사용.
 
@@ -62,8 +63,8 @@
 - **① 에픽 던전**: 좌 `[카테고리 뱃지 "에픽 던전"] [던전명]`(접두어 제거), 우 `QuestStateBadge`(0→시작 안함, 완료는 2 매핑, 1 미사용). 배경 던전 일러스트(`assets/bosses/`, `boss-icons`). 80px.
 - **② 주간 지역 퀘스트**: 좌 `[지역 아이콘] [콘텐츠명]`, 우 `QuestStateBadge`(0→시작 안함, 1→완료). 배경·아이콘은 일일퀘스트 지역 에셋 재사용(`weekly-regional-quests.json` 정확 일치). 80px.
 - **③ 무릉도장**: 배경·뱃지 없음, 껍데기만 + 이름 수직 가운데. 80px.
-- **④ 길드**: 몬스터파크 레이아웃 원칙(메인 80px + 하단 확장), 112px. 메인 행 좌 `[카테고리 뱃지 "길드"] ["지하 수로"]` 우 점수 뱃지(`bg-primary/15 text-primary` "{now}점"), 하단 "주간 미션 포인트: {now} · 플래그 레이스: {now}" `text-xs text-[#E8DFEC]/70`. `grid-template-columns: auto 1fr` 로 하단 문구를 "지하 수로" 제목과 같은 x에서 시작. 배경 `arcanus`.
-- 카테고리 뱃지("에픽 던전"/"길드"): `rounded-full bg-[#4DD2FF]/20 text-[#4DD2FF] text-xs font-semibold px-2.5 py-1`(길드 배경 아르카누스 전기빛과 맞춘 파란색).
+- **④ 길드**: 몬스터파크 레이아웃 원칙(메인 80px + 하단 확장), 112px. 메인 행 좌 `[카테고리 뱃지 "길드"] ["지하 수로"]` 우 점수 뱃지(`bg-third-tint text-third-ink` "{now}점" — `.media-scope` 안이라 media 기준으로 계산된 값이 적용된다), 하단 "주간 미션 포인트: {now} · 플래그 레이스: {now}" `text-xs text-text-muted`. `grid-template-columns: auto 1fr` 로 하단 문구를 "지하 수로" 제목과 같은 x에서 시작. 배경 `arcanus`.
+- 카테고리 뱃지("에픽 던전"/"길드"): `rounded-full bg-[#4DD2FF]/20 text-[#4DD2FF] text-xs font-semibold px-2.5 py-1`(길드 배경 아르카누스 전기빛과 맞춘 파란색). **의도적으로 테마 토큰을 쓰지 않는다** — 특정 일러스트(아르카누스)에 맞춘 색이라 테마를 따라가면 의미가 깨진다([[ADR-064]] 적용 범위 밖과 같은 성격).
 - **폴백**: 길드 미션 포인트·플래그 레이스 둘 다 미등록이면 묶음 카드 대신 등록된 길드 항목만 기본 plain 카드(테마 토큰 `bg-surface`/`border-border`, "이름 · now/max")로.
 
 ## 수동 트래킹 — 화면은 읽기 전용, 편집은 관리 페이지 ([[ADR-035]] 결정 18·19)
@@ -76,10 +77,10 @@
 수동 모드 전용(자동 진입 시 `/content` 리다이렉트). 카드 박스 없는 페이지 레이아웃, 헤더~탭 sticky 고정(스케줄러와 동일 패턴, 화면 루트 `-mt-[var(--sa-top)]` 로 노치까지 `bg-bg`).
 - **헤더**: 뒤로(`ArrowLeft`) + "컨텐츠 관리" + 대상 캐릭터 칩(스케줄러 선택 승계, 이름 앞 월드 엠블럼, `inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs`).
 - **탭**: 일간/주간 pill 탭.
-- **체크리스트 — 카테고리 그룹핑(2026-07-24)**: `scheduler-content-template.json` 을 카테고리로 묶어 나열, 추적 중인 항목만 선택 상태(`aria-pressed`, 선택 시 `border-primary bg-primary/15`). 행 탭 = 추적 토글, **즉시 저장**(로컬 Preferences).
+- **체크리스트 — 카테고리 그룹핑(2026-07-24)**: `scheduler-content-template.json` 을 카테고리로 묶어 나열, 추적 중인 항목만 선택 상태(`aria-pressed`, 선택 시 `border-primary bg-primary-tint`). 행 탭 = 추적 토글, **즉시 저장**(로컬 Preferences).
   - **카테고리 도출**: (1) `content_name` 접두사(`[X] Y`→카테고리 X, `에픽 던전 : Y`→"에픽 던전"), (2) 명시적 오버라이드 맵 `CATEGORY_OVERRIDE`(게임 도메인 분류라 **사용자 지정 값만**, [[ADR-006]]). 도출 로직 공용 유틸 `lib/content-category.ts`(`categorizeContentEntries`), 단위 테스트.
   - **사용자 확정 오버라이드(2026-07-24)**: 일간 `몬스터파크`(단독 그룹화, 주간 몬파와 아이콘 통일), 주간 `무릉도장`(단독), 주간 "아케인리버 지역 퀘스트"(에르다 스펙트럼·배고픈 무토·미드나잇 체이서·스피릿 세이비어·엔하임 디펜스·프로텍트 에스페라 + `성실한 조사에 대한 보답`). **주간 그룹 순서** `WEEKLY_CATEGORY_ORDER`: 에픽 던전 → 몬스터파크 → 길드 → 아케인리버 지역 퀘스트 → 주간 퀘스트 → 무릉도장 → 메이플 유니온(일간은 첫 등장 순서 유지).
-  - **그룹 헤더**: 아이콘 배지(`h-6 w-6 rounded-lg bg-third/15 text-third-text`) + 카테고리명 + 추적 카운트(`{tracked}/{total}`). 아이콘 매핑(컴포넌트): 일일/주간 퀘스트 `MapPin`, 에픽 던전 `Castle`, 메이플 유니온 `LayoutGrid`, 몬스터파크 `Swords`, 아케인리버 지역 퀘스트 `Sparkles`, 무릉도장 `Medal`, 길드 `Flag`, 그 외 `Sparkles`. 행 왼쪽에도 같은 아이콘 작게(선택 시 `text-primary-text`).
+  - **그룹 헤더**: 아이콘 배지(`h-6 w-6 rounded-lg bg-third-tint text-third-ink`) + 카테고리명 + 추적 카운트(`{tracked}/{total}`). 아이콘 매핑(컴포넌트): 일일/주간 퀘스트 `MapPin`, 에픽 던전 `Castle`, 메이플 유니온 `LayoutGrid`, 몬스터파크 `Swords`, 아케인리버 지역 퀘스트 `Sparkles`, 무릉도장 `Medal`, 길드 `Flag`, 그 외 `Sparkles`. 행 왼쪽에도 같은 아이콘 작게(선택 시 `text-primary-ink`).
   - **카운트 태그**: `contentCountTag(entry, category)`, 우선순위 아이템 오버라이드 → 카테고리 오버라이드 → 기본(카운트형이면 "최대 {max_count}회"). 도메인 오버라이드(사용자 확정, [[ADR-006]]): 일간 몬스터파크 "월드 당 최대 14회", 주간 익스트림 몬파 "ID당 2회", 에픽 던전 "ID당 1회", 아케인리버 지역 퀘스트 태그 숨김(`null`).
 
 ### 길드 콘텐츠 — 길드 가입 캐릭터만 선택 ([[ADR-057]], 구현 완료 2026-07-29)

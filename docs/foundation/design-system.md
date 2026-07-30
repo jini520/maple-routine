@@ -2,7 +2,7 @@
 
 > **범위**: 디자인 원칙·안티패턴·기본 색 팔레트·시맨틱 색·기본 컴포넌트(카드/버튼/입력)·여러 화면이 공유하는 UI 컴포넌트·공유 레이아웃 패턴·타이포·아이콘. 테마별 토큰 표·런타임 전환은 [features/theme.md](../features/theme.md), 기능 전용 컴포넌트는 각 `features/*.md`.
 > **관련 소스**: `components/*`(Modal, CharacterTrackingPicker, BossPortrait 등) · `src/index.css` · 각 화면 공통 레이아웃 · `lib/world-emblem`.
-> **관련 ADR**: [[ADR-009]] [[ADR-015]] [[ADR-016]] [[ADR-018]]. **관련 문서**: [features/theme.md](../features/theme.md).
+> **관련 ADR**: [[ADR-009]] [[ADR-015]] [[ADR-016]] [[ADR-018]] [[ADR-064]]. **관련 문서**: [features/theme.md](../features/theme.md).
 
 ## 디자인 원칙
 1. **캐주얼하고 친근한 게임 컴패니언 톤** — 정색한 업무 대시보드가 아니라 매일 캐릭터 챙기는 가벼운 도구. 라이트 테마가 기본.
@@ -27,7 +27,8 @@
 **텍스트** — 라이트: 주 `#2B1B10`, 본문 `#5B4636`, 보조 `#8A7362`, 비활성 `#B7A490`. 다크: `text-white`/`neutral-300`/`neutral-400`/`neutral-500`.
 
 **Primary(강조)**: 채움 `#FF7033`(hover `#E6652E`, active `#C75728`). 텍스트/아이콘 — 라이트 배경 `#C2410C`, 다크 배경 `#FF7033`. Subtle 배경 라이트 `#FFE9DB`/다크 `#FF7033/15`. Border 라이트 `#FFC9A8`/다크 `#FF7033/40`.
-- **대비 주의**: 버튼처럼 **채움**으로 쓸 때 텍스트는 짙은 `#2B1206`(라이트·다크 공통). **텍스트/아이콘**은 다크 배경 위 `#FF7033`(~6.6:1), 라이트 배경 위는 대비 부족(~2.9:1)이라 `#C2410C`(~5.2:1) 사용.
+
+> **채움 위 전경색을 고정하지 않는다** ([[ADR-064]] 결정 1). 이 절의 옛 규칙("채움으로 쓸 때 텍스트는 짙은 `#2B1206`")과 코드에 굳어 있던 `text-white`·`text-bg` 는 모두 **"primary는 충분히 어둡다"를 전제**한 것이라 폐기했다. 밝은 파스텔 primary 테마도 어두운 primary 테마도 성립해야 하므로, 채움 위 전경은 항상 `on-primary`·`on-secondary`·`on-third`·`on-error` 토큰을 쓴다. 마찬가지로 accent 계열 텍스트·아이콘은 `*-ink`, 옅은 배경은 `*-tint` 다 — 이름 규칙과 대비 요구는 [features/theme.md](../features/theme.md).
 
 **데이터/시맨틱 색** (라이트 배경은 텍스트용 짙은 버전 + 배지 배경용 옅은 버전):
 | 용도 | 텍스트(라이트) | 배지 배경(라이트) | 다크 배경용 |
@@ -48,7 +49,7 @@ Primary는 브랜드 강조 전용 — 성공/에러 상태 표시에는 쓰지 
 
 **버튼**
 ```
-Primary(라이트·다크 공통): rounded-full bg-[#FF7033] text-[#2B1206] font-semibold hover:bg-[#E6652E] px-5 py-2.5
+Primary(테마 공통): rounded-full bg-primary text-on-primary font-semibold hover:bg-primary-hover px-5 py-2.5
 Text(라이트): text-[#8A7362] hover:text-[#5B4636]   Text(다크): text-neutral-500 hover:text-neutral-300
 ```
 **입력 필드**
@@ -60,12 +61,12 @@ Text(라이트): text-[#8A7362] hover:text-[#5B4636]   Text(다크): text-neutra
 ## 공유 컴포넌트 (여러 기능이 함께 씀)
 
 ### 모달 (`components/Modal`) — 2026-07-13
-`CharacterTrackingPicker`/`DisconnectConfirm` 에서 반복되던 오버레이(`fixed inset-0 flex items-center justify-center bg-bg/70`, 안쪽 카드 `onClick` `stopPropagation`)를 공용화. 기본은 카드(`rounded-[14px] border border-border bg-surface p-6`)를 제공하되, `card={false}` 면 위치 고정 래퍼만 남기고 카드 스타일 생략(자식이 자체 카드를 둘 때 카드-안-카드 방지). 설정의 계정 변경 모달·계정 선택 목록이 `card={false}` 로 재사용.
+`CharacterTrackingPicker`/`DisconnectConfirm` 에서 반복되던 오버레이(`fixed inset-0 flex items-center justify-center bg-scrim`, 안쪽 카드 `onClick` `stopPropagation`)를 공용화. 스크림은 `bg-bg/70` 이 아니라 전용 `scrim` 토큰이다([[ADR-064]] 결정 6) — 배경색을 반투명하게 깐 것은 밝은 테마에서 스크림이 약해진다. 기본은 카드(`rounded-[14px] border border-border bg-surface p-6`)를 제공하되, `card={false}` 면 위치 고정 래퍼만 남기고 카드 스타일 생략(자식이 자체 카드를 둘 때 카드-안-카드 방지). 설정의 계정 변경 모달·계정 선택 목록이 `card={false}` 로 재사용.
 
 ### 캐릭터 카드 그리드(다중 선택) — `CharacterTrackingPicker`, [[ADR-015]]
 "캐릭터 관리" 피커. 컨텐츠/보스 스케줄러가 동일 컴포넌트 공유. **3열 그리드**, 카드 자체가 토글 버튼(체크박스 없음, `aria-pressed`).
 ```
-카드: rounded-[14px] border, 선택 시 border-primary bg-primary/15, 미선택 시 border-border hover:bg-primary/15
+카드: rounded-[14px] border, 선택 시 border-primary bg-primary-tint, 미선택 시 border-border hover:bg-primary-tint
 아바타 프레임: 56px 원형 overflow-hidden, 확대된 <img> 절대 위치로 얼굴 크롭 (max-w-none 필수 — preflight img{max-width:100%}가 확대를 눌러버림)
 즐겨찾기: lucide Star, top-1.5 right-1.5. 미선택 text-text-muted 아웃라인 / 선택 fill-primary text-primary
 텍스트: 이름 text-xs font-semibold text-text + 서버 엠블럼(h-3.5), 레벨 text-xs text-text-muted (직업 미표시)
@@ -86,11 +87,11 @@ Text(라이트): text-[#8A7362] hover:text-[#5B4636]   Text(다크): text-neutra
 ### 빈 상태 (`components/EmptyState`) — [[ADR-060]], 구현 완료 2026-07-29
 "비어있음"을 표시하는 11곳이 이 컴포넌트 하나를 쓴다. `size` 두 변형만 다르고 구조는 동일 — **원형 배지(컨텍스트 아이콘) + 제목 + 설명 + CTA**, 중앙 정렬.
 ```
-공통:   flex flex-col items-center text-center, 배지 rounded-full bg-primary/15, 아이콘 text-primary strokeWidth 1.75
+공통:   flex flex-col items-center text-center, 배지 rounded-full bg-primary-tint, 아이콘 text-primary-ink strokeWidth 1.75
 page:   배지 84px / 아이콘 40px / 제목 text-base / 설명 text-sm max-w-[220px] / CTA px-5 py-2.5 text-sm / gap-4
 inline: 배지 56px / 아이콘 28px / 제목 text-sm  / 설명 text-xs max-w-[240px] / CTA px-4 py-2 text-xs / gap-3
         + 박스 rounded-[14px] border border-border bg-surface px-4 py-8 (page 는 자체 박스 없음 — 화면이 감싼다)
-CTA:    rounded-full bg-primary text-bg font-semibold hover:bg-primary-hover (Primary 버튼 재사용, 새 스타일 금지)
+CTA:    rounded-full bg-primary text-on-primary font-semibold hover:bg-primary-hover (Primary 버튼 재사용, 새 스타일 금지)
 ```
 - **배지 안 마크는 자리에 따라 둘로 갈린다**([[ADR-060]] 결정 2): **목록 빈 상태(inline)는 화면별 컨텍스트 아이콘**(lucide) — 컨텐츠 `ListChecks` · 보스 `Swords` · 필터 `SlidersHorizontal` · 수익 `Coins` · 드롭 `PackageOpen`. 목록 자리는 "무엇이 비었는지"를 알려야 하기 때문. **캐릭터 미선택(page)은 브랜드 마크(단풍잎, `icon="leaf"`)** — 화면 전체를 차지하는 자리라 앱의 얼굴 역할을 겸한다(사용자 결정).
 - **문구 규칙**: 제목은 *무엇이* 비었는지(`추적할 일간 컨텐츠가 없습니다` / `등록된 주간 보스가 없습니다`) — 탭·모드별로 문구를 나눈다(일간/주간, 주간/월간, 수동/자동이 같은 문구를 공유하지 않는다). 설명은 다음 행동 한 줄. CTA 라벨은 목적지 이름 그대로(`컨텐츠 관리`·`보스 관리`).
@@ -134,7 +135,7 @@ inline: 스피너 24px             — 보스 수익 과거 기간 백필
 확인 자체를 못 한 상태(보스 수익 롤링 조회 윈도우 밖, [[ADR-032]])는 빈 상태와 **디자인을 공유하지 않는다** — 같은 모양이면 "데이터가 없다"로 오해된다. 톤은 경고(error)가 아니라 **정보**: 사용자가 고칠 수 있는 실패가 아니라 API의 알려진 제약이라 error 색은 과하다.
 ```
 기본:    flex items-start gap-3 rounded-[14px] border border-border bg-info-tint p-4
-         + Info 아이콘(h-5 text-text-muted) + 제목 text-sm font-semibold + 설명 text-xs text-text-muted
+         + Info 아이콘(h-5 text-info-ink) + 제목 text-sm font-semibold + 설명 text-xs text-text-muted
 compact: 카드 안에 중첩될 때. rounded-[10px] bg-surface-2 px-3 py-2.5, 아이콘 h-4, 제목 한 줄만(설명 생략)
 ```
 문구 어미는 실패와 같은 `~습니다` 를 쓴다([[ADR-062]] 결정 5) — 정보 톤은 **색(info-tint)이 담당하지 어미가 담당하지 않는다**.
@@ -150,13 +151,13 @@ compact: 카드 안에 중첩될 때. rounded-[10px] bg-surface-2 px-3 py-2.5, �
 
 ```
 flex min-h-[120px] flex-col items-center justify-center gap-3 px-4 text-center
-+ AlertTriangle h-7 w-7 text-error (배지 없이 단독)
++ AlertTriangle h-7 w-7 text-error-ink (배지 없이 단독)
 + 제목 text-sm font-semibold text-text
 + 설명 text-xs text-text-muted (mx-auto max-w-[240px])
-+ 액션 rounded-full bg-primary text-bg px-4 py-2 text-xs
++ 액션 rounded-full bg-primary text-on-primary px-4 py-2 text-xs
 ```
 - **배지를 쓰지 않는다** — 아래 "아이콘" 절의 *배경 없이 단독* 규칙을 그대로 따른다(예외를 늘리지 않는다). 그 결과 배지 유무만으로 빈 상태와 즉시 갈린다.
-- **`error-tint` 토큰을 만들지 않는다** — 색은 아이콘에만, 배경은 감싸는 쪽 카드에 맡긴다. 재시도 버튼은 파괴적 동작이 아니라 진행 동작이라 `bg-primary`(삭제 버튼의 `border-error text-error` 와 구분).
+- **`ErrorState` 자신은 배경을 두지 않는다** — 색은 아이콘에만, 배경은 감싸는 쪽 카드에 맡긴다. 재시도 버튼은 파괴적 동작이 아니라 진행 동작이라 `bg-primary`(삭제 버튼의 `border-error text-error-ink` 와 구분). ~~`error-tint` 토큰을 만들지 않는다~~ 는 [[ADR-064]] 결정 2로 폐기됐다 — `error-tint` 는 `color-mix` 파생이라 테마당 추가 비용이 0이고, 아래 스탈 배너가 쓴다.
 - **자체 카드·크기 변형이 없다** — 적용처 두 곳이 모두 이미 껍데기 안이다(피커=모달 카드, 온보딩=페이지). `LoadingState` 를 이 두 자리에 씌우지 않는 것과 같은 판단([[ADR-061]]).
 - **원인별 문구·액션**은 자리에 따라 갈린다 — 피커의 `invalidApiKey` 만 **설정 열기**(401은 재시도로 안 풀린다), 나머지는 다시 시도. 온보딩은 설정 화면이 없어 전부 다시 시도. 표는 [[ADR-062]] 결정 3.
 - 429의 재시도 버튼은 비활성화하지 않는다(사용자 결정).
@@ -169,19 +170,18 @@ flex min-h-[120px] flex-col items-center justify-center gap-3 px-4 text-center
 
 **스탈 배너** — 보여줄 항목이 있는 채로 실패했을 때. 목록을 지우지 않고 그 위에 한 줄로 얹는다.
 ```
-mb-3 flex items-center gap-2 rounded-[10px] px-3 py-2.5
-bg-[color-mix(in_oklab,var(--color-error)_9%,var(--color-surface))]   ← Toast error 톤 재사용(새 토큰 없음)
-+ AlertTriangle h-4 text-error + 문구 text-xs text-text + 우측 "다시 시도" text-xs font-semibold text-primary-text
+mb-3 flex items-center gap-2 rounded-[10px] bg-error-tint px-3 py-2.5
++ AlertTriangle h-4 text-error-ink + 문구 text-xs text-text + 우측 "다시 시도" text-xs font-semibold text-primary-ink
 ```
 
 ### 캐릭터 관리 저장 진행률 모달 — 2026-07-16
-"저장" 시 추적 캐릭터마다 `syncSchedules` 순차 호출하는 동안 캐릭터 관리 모달 **위에** 진행률 모달을 띄우고 완료 시 함께 닫는다. 진행률 바 스타일은 온보딩 예열 바와 동일(track `h-1.5 w-full rounded-full bg-surface-2` + fill `h-1.5 rounded-full bg-primary`) + "캐릭터 정보를 저장하고 있어요 (N/M)". 공용 `Modal` 재사용, 저장 도중 오버레이 클릭 무시(완료 시 프로그램적으로만 닫음). 콜백 `saveTrackedOcids → refresh → syncSchedules` 로 `onProgress(completed, total)` 전달. 개별 실패는 조용히 폴백, 전역 에러면 화면 에러 상태 전환.
+"저장" 시 추적 캐릭터마다 `syncSchedules` 순차 호출하는 동안 캐릭터 관리 모달 **위에** 진행률 모달을 띄우고 완료 시 함께 닫는다. 진행률 바 스타일은 온보딩 예열 바와 동일(track `h-1.5 w-full rounded-full bg-track` + fill `h-1.5 rounded-full bg-primary`) + "캐릭터 정보를 저장하고 있어요 (N/M)". 공용 `Modal` 재사용, 저장 도중 오버레이 클릭 무시(완료 시 프로그램적으로만 닫음). 콜백 `saveTrackedOcids → refresh → syncSchedules` 로 `onProgress(completed, total)` 전달. 개별 실패는 조용히 폴백, 전역 에러면 화면 에러 상태 전환.
 
 ### 스케줄러 캐릭터 드롭다운 — 선택 캐릭터 월드 아이콘 — 2026-07-16
 `CharacterSelectDropdown` 은 네이티브 `<select>` 유지(`<option>` 이미지 불가라 펼친 목록은 텍스트만). 닫힌 상태 왼쪽에 선택 캐릭터의 **월드 엠블럼** 오버레이: `<select>` 를 `relative` 래퍼로 감싸고 `<img>` 를 `pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-[18px] w-auto object-contain`, `<select>` 에 `pl-9`. world 는 캐시 우선 뷰는 스케줄 캐시(`SchedulerCharacterState.world`)에서, 동기화 후 뷰는 sync 결과에서 — 캐시 있으면 API 응답 전 즉시 표시. 미매핑 월드 생략.
 
 ### 진행률 바 프리미티브
-`role="progressbar"` + `aria-valuenow/min/max`, track `h-1.5 w-full rounded-full bg-surface-2` + fill `h-1.5 rounded-full bg-primary`. **결정형 진행률은 예외 없이 이것 하나**([[ADR-061]] 결정 6) — 온보딩 예열·계정 변경 예열·캐릭터 관리 저장·OTA 다운로드·컨텐츠 진행률이 모두 같은 스타일이다. 새 색/모양/두께 신설 금지.
+`role="progressbar"` + `aria-valuenow/min/max`, track `h-1.5 w-full rounded-full bg-track` + fill `h-1.5 rounded-full bg-primary`. **결정형 진행률은 예외 없이 이것 하나**([[ADR-061]] 결정 6) — 온보딩 예열·계정 변경 예열·캐릭터 관리 저장·OTA 다운로드·컨텐츠 진행률이 모두 같은 스타일이다. 새 색/모양/두께 신설 금지.
 
 ## 공유 레이아웃 패턴
 
@@ -189,9 +189,9 @@ bg-[color-mix(in_oklab,var(--color-error)_9%,var(--color-surface))]   ← Toast 
 드롭다운·탭·카운트 배지를 **별도 카드로 묶지 않는다**(배경 위에 바로).
 ```
 탭 행: flex items-center gap-4
-활성 탭: rounded-full bg-primary/15 text-primary px-3 py-[5px] text-sm font-semibold (배지 pill 재사용, 새 스타일 금지)
+활성 탭: rounded-full bg-primary-tint text-primary-ink px-3 py-[5px] text-sm font-semibold (배지 pill 재사용, 새 스타일 금지)
 비활성 탭: 배경 없음, text-sm font-medium text-text-muted, 좌우 패딩 활성과 동일(px-3)
-카운트 배지(있는 화면만, 예 n/12): 같은 줄 justify-between 오른쪽 끝, rounded-full bg-primary/15 text-primary text-xs font-semibold px-2.5 py-1
+카운트 배지(있는 화면만, 예 n/12): 같은 줄 justify-between 오른쪽 끝, rounded-full bg-primary-tint text-primary-ink text-xs font-semibold px-2.5 py-1
 ```
 활성/비활성 색 차이만으로는 저채도 팔레트에서 약해 배경 pill 필수(굵기 차이만으로 대체 금지). 기능 전용 변형(솔로/파티 필터·보스 수익 네비게이터)은 각 feature 문서.
 
@@ -226,7 +226,7 @@ style: maskImage/WebkitMaskImage: linear-gradient(to bottom, black, transparent)
 | 섹션/카드 제목(h2) | `text-sm font-semibold text-[#2B1B10]` |
 | 본문 | `text-sm text-[#5B4636]` |
 | 보조/캡션 | `text-sm text-[#8A7362]` |
-| 에러 문구 | `text-sm text-[#B91C1C]` |
+| 에러 문구 | `text-sm text-error-ink` |
 
 ## 애니메이션
 - 확정 애니메이션 없음(2026-07-11) — hover 색 전환(`hover:bg-*`/`hover:text-*`) 정도만 Tailwind 기본. 페이드·슬라이드 등 명시적 트랜지션은 미도입, 필요해지면 추가.
@@ -250,4 +250,12 @@ style: maskImage/WebkitMaskImage: linear-gradient(to bottom, black, transparent)
 - ~~스케줄러 3화면이 동기화 실패를 헤더 아래 인라인 문단(`text-sm text-error`)으로 표시~~ → 토스트로 옮김. 지속 상태는 새로고침 옆 "n분 전"이 담당하고, 토스트에는 원인을 푸는 액션을 붙일 수 있다([[ADR-063]], 2026-07-30).
 - ~~보스 수익 파티원 수 저장 실패를 카드 안 인라인 문단에 `err.message` 원문으로 표시~~ → 사용자 문구 토스트. 개발자용 문구·SQLite 네이티브 원문이 새던 유일한 자리였다([[ADR-063]] 결정 4, 2026-07-30).
 - ~~일부 캐릭터 실패를 이름 나열로 표시("일부 캐릭터 동기화 실패: A, B — …")~~ → 인원 수를 담은 토스트. Toast 본문이 `truncate`라 이름은 잘렸다([[ADR-063]] 결정 5, 2026-07-30).
+- ~~채움 배경 위 텍스트는 짙은 `#2B1206`(문서) / `text-white`(코드 7곳) / `text-bg`(코드 15곳)~~ → `on-*` 토큰([[ADR-064]] 결정 1, 2026-07-30). 셋 다 "primary는 충분히 어둡다"를 전제했고 지시된 적 없는 제한이었다. 밝은 파스텔 primary 테마에서 전부 깨진다.
+- ~~틴트 배경은 Tailwind 투명도 접미사로 합성(`bg-primary/15` 등 67곳, 비율 4종)~~ → `*-tint` 값 토큰, 농도 15% 통일([[ADR-064]] 결정 2). 합성 결과가 깔리는 배경(`bg`/`surface`/`surface-2`)에 따라 달라져 대비를 보증할 수 없었다. `Toast`·`StaleBanner`가 이미 `color-mix`로 우회하던 것을 토큰으로 정식화.
+- ~~틴트 위 텍스트에 base accent를 그대로 사용(`bg-primary/15 text-primary`, 35곳)~~ → `X-ink`([[ADR-064]] 결정 3). `-text` 토큰이 이 자리를 위해 만들어졌는데 정작 이 레시피가 안 썼다.
+- ~~토큰 이름 `primary-text`/`secondary-text`/`third-text`~~ → `*-ink` 개명([[ADR-064]] 결정 3). 이름이 배경이 아니라 역할을 가리키게 했다 — `on-X`는 X 채움 위 전경, `X-ink`는 X 계열 텍스트/아이콘.
+- ~~진행률 트랙은 `bg-surface-2`~~ → `track` 토큰([[ADR-064]] 결정 4). 채움(`primary`)과의 3:1을 보증하는 주체가 없어, 파스텔 primary + 라이트 테마에서 진행률이 안 읽혔다.
+- ~~모달·바텀시트 스크림은 `bg-bg/70`~~ → `scrim` 토큰([[ADR-064]] 결정 6). 배경색을 반투명하게 깐 것이라 밝은 테마에서 스크림이 약했다.
+- ~~일러스트 카드는 앱 테마와 무관하게 레테 다크 리터럴 고정(`#1A1720`/`#37323E`/`#E8DFEC`, 23곳)~~ → `media-*` 토큰 + `.media-scope`([[ADR-064]] 결정 5). 스코프 안에서 기준 표면이 바뀌므로 카드 안팎이 같은 레시피를 쓴다. [[ADR-021]]에 미해결로 남아 있던 카드 내부 배지 AA 미달(레테 3.88:1)도 함께 닫힌다.
+- ~~`ErrorState`는 `error-tint` 토큰을 만들지 않는다~~ → `error-tint`는 `color-mix` 파생이라 테마당 추가 비용이 0이므로 신설([[ADR-064]] 결정 2가 [[ADR-062]] 결정 1의 해당 항목 폐기, 2026-07-30).
 - 색·컴포넌트 규칙이 `{...}` 플레이스홀더였던 초기 UI_GUIDE → 작성 완료.

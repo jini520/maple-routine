@@ -75,14 +75,14 @@ export function CharacterTrackingGrid(props: CharacterTrackingGridProps): React.
             onClick={() => toggle(entry.ocid)}
             className={
               isChecked
-                ? 'relative flex flex-col items-center gap-1 rounded-[14px] border border-primary bg-primary/15 px-1 py-3 text-center'
-                : 'relative flex flex-col items-center gap-1 rounded-[14px] border border-border px-1 py-3 text-center hover:bg-primary/15'
+                ? 'relative flex flex-col items-center gap-1 rounded-[14px] border border-primary bg-primary-tint px-1 py-3 text-center'
+                : 'relative flex flex-col items-center gap-1 rounded-[14px] border border-border px-1 py-3 text-center hover:bg-primary-tint'
             }
           >
             <Star
               className={
                 isChecked
-                  ? 'absolute right-1.5 top-1.5 h-4 w-4 fill-primary text-primary'
+                  ? 'absolute right-1.5 top-1.5 h-4 w-4 fill-primary-ink text-primary-ink'
                   : 'absolute right-1.5 top-1.5 h-4 w-4 text-text-muted'
               }
               strokeWidth={1.5}

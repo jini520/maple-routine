@@ -1,123 +1,131 @@
 import { describe, expect, it } from 'vitest'
-import jobThemes from '../job-themes.json'
+import jobThemesData from '../job-themes.json'
+import { contrastHex, hexToOklch } from '../../lib/color'
+import { THEME_TOKEN_KEYS, measureThemeContrast } from '../../lib/theme-derive'
+import type { JobThemes, ThemeName } from '../../types/theme'
 
-// docs/UI_GUIDE.md "테마 시스템" 표에서 그대로 옮긴 기댓값 — 데이터가 몰래 바뀌는 것을 막기 위한 회귀 테스트.
-const EXPECTED = {
-  레테: {
-    bg: '#0C080F',
-    surface: '#1A1720',
-    surface2: '#28232E',
-    border: '#37323E',
-    borderStrong: '#54444E',
-    primary: '#9975B3',
-    primaryHover: '#85639F',
-    primaryText: '#61417B',
-    secondary: '#D1C093',
-    secondaryText: '#D1C093',
-    third: '#D8608F',
-    thirdText: '#DA6995',
-    infoTint: '#262A3A',
-    error: '#D8608F',
-    text: '#E8DFEC',
-    textMuted: '#B89CBD',
-    textDisabled: '#8A758D',
-  },
-  렌: {
-    bg: '#F6F5F5',
-    surface: '#FFFFFF',
-    surface2: '#E5E6E9',
-    border: '#DBD3D6',
-    borderStrong: '#C8C1C6',
-    primary: '#DC171D',
-    primaryHover: '#B33946',
-    primaryText: '#803440',
-    secondary: '#437B71',
-    secondaryText: '#3E7369',
-    third: '#C9EEF2',
-    thirdText: '#21808A',
-    infoTint: '#E4F6F8',
-    error: '#A31118',
-    text: '#171721',
-    textMuted: '#525475',
-    textDisabled: '#8A8089',
-  },
-  머쉬맘: {
-    bg: '#F2F0E2',
-    surface: '#FDFCF6',
-    surface2: '#E4E1CE',
-    border: '#CFC9AE',
-    borderStrong: '#A3996E',
-    primary: '#F58B0F',
-    primaryHover: '#C55907',
-    primaryText: '#9C4304',
-    secondary: '#F7D00D',
-    secondaryText: '#7A5E00',
-    third: '#CA763A',
-    thirdText: '#8F4E1F',
-    infoTint: '#FBF3D0',
-    error: '#B3200B',
-    text: '#241208',
-    textMuted: '#645C42',
-    textDisabled: '#9A9070',
-  },
-  혼테일: {
-    bg: '#0B0B0B',
-    surface: '#241110',
-    surface2: '#362120',
-    border: '#524344',
-    borderStrong: '#695E5F',
-    primary: '#E86A16',
-    primaryHover: '#C34204',
-    primaryText: '#F09A55',
-    secondary: '#7B777A',
-    secondaryText: '#B8B2B4',
-    third: '#936E68',
-    thirdText: '#C79A92',
-    infoTint: '#3A3235',
-    error: '#E85447',
-    text: '#E6E1E2',
-    textMuted: '#9F9594',
-    textDisabled: '#7A6E6F',
-  },
-} as const
+const JOB_THEMES = jobThemesData as JobThemes
+const NAMES = Object.keys(JOB_THEMES) as ThemeName[]
 
-const TOKEN_FIELDS = [
-  'bg',
-  'surface',
-  'surface2',
-  'border',
-  'borderStrong',
-  'primary',
-  'primaryHover',
-  'primaryText',
-  'secondary',
-  'secondaryText',
-  'third',
-  'thirdText',
-  'infoTint',
-  'error',
-  'text',
-  'textMuted',
-  'textDisabled',
-]
-
-describe('job-themes.json', () => {
-  it('정확히 레테/렌/머쉬맘/혼테일 네 키만 가진다', () => {
-    expect(Object.keys(jobThemes).sort()).toEqual(['레테', '렌', '머쉬맘', '혼테일'].sort())
+/**
+ * 값을 나열해 비교하던 회귀 테스트를 **스키마 + 파생 규칙** 검증으로 바꿨다([[ADR-064]] 결정 11).
+ * 예전 방식은 4테마 × 17값을 하드코딩해 비교했는데, 테마를 수십 개로 늘리면 테스트가 같은 속도로
+ * 늘어난다. 아래 검사들은 테마가 몇 개든 항목 수가 그대로다.
+ *
+ * 대비비는 **관문이 아니다**([[ADR-064]] 판단 순서) — 전체 색감과 캐릭터의 컬러 컨셉이 최우선이라,
+ * 여기서도 특정 대비선을 강제하지 않는다. 다만 "이 색을 글자로 쓸 수 있게 만든 값"인 토큰
+ * (`text`·`text-muted`·`*-ink`)은 그 목적을 실제로 달성해야 하므로 그것만 확인한다.
+ */
+describe('job-themes.json — 스키마', () => {
+  it('테마가 하나 이상 있다', () => {
+    expect(NAMES.length).toBeGreaterThan(0)
   })
 
-  it.each(['레테', '렌', '머쉬맘', '혼테일'] as const)(
-    '%s 테마가 ThemeTokens의 17개 필드를 전부 가진다',
-    (themeName) => {
-      const theme = jobThemes[themeName] as Record<string, string>
-      expect(Object.keys(theme).sort()).toEqual([...TOKEN_FIELDS].sort())
-    },
-  )
+  it.each(NAMES)('%s: 34개 토큰을 빠짐없이 갖는다', (name) => {
+    const tokens = JOB_THEMES[name] as unknown as Record<string, string>
+    for (const key of THEME_TOKEN_KEYS) {
+      expect(tokens[key], `${name}.${key}`).toBeDefined()
+    }
+  })
 
-  it.each(['레테', '렌', '머쉬맘', '혼테일'] as const)(
-    '%s 테마의 값이 docs/UI_GUIDE.md 표와 정확히 일치한다',
-    (themeName) => {
-      expect(jobThemes[themeName]).toEqual(EXPECTED[themeName])
-    },
-  )
+  it.each(NAMES)('%s: 토큰 외에 mode 만 더 갖는다', (name) => {
+    const extra = Object.keys(JOB_THEMES[name]).filter(
+      (key) => !(THEME_TOKEN_KEYS as readonly string[]).includes(key),
+    )
+    expect(extra).toEqual(['mode'])
+  })
+
+  it.each(NAMES)('%s: mode 가 light 또는 dark 다', (name) => {
+    expect(['light', 'dark']).toContain(JOB_THEMES[name].mode)
+  })
+
+  it.each(NAMES)('%s: 모든 색 값이 hex 표기다', (name) => {
+    const tokens = JOB_THEMES[name] as unknown as Record<string, string>
+    for (const key of THEME_TOKEN_KEYS) {
+      // scrim·shadowColor 는 반투명이라 8자리다.
+      expect(tokens[key], `${name}.${key}`).toMatch(/^#[0-9A-F]{6}([0-9A-F]{2})?$/)
+    }
+  })
+})
+
+describe('job-themes.json — 파생 규칙', () => {
+  const ACCENTS = ['primary', 'secondary', 'third', 'error'] as const
+
+  // "이 색을 글자로 쓸 수 있게 만든 값"은 그 목적을 달성해야 한다.
+  it.each(NAMES)('%s: 본문·보조 텍스트가 배경 대비 AA 를 지킨다', (name) => {
+    const theme = JOB_THEMES[name]
+    for (const surface of [theme.bg, theme.surface]) {
+      expect(contrastHex(theme.text, surface)).toBeGreaterThanOrEqual(4.5)
+      expect(contrastHex(theme.textMuted, surface)).toBeGreaterThanOrEqual(4.5)
+    }
+  })
+
+  // 잉크는 accent 원색을 지킨다 — 보이는 색은 건드리지 않고, 안 보이는 색만 보정한다.
+  // 잉크가 놓이는 바탕은 표면과 틴트 배지 **양쪽**이라 둘 다 봐야 한다.
+  it.each(NAMES)('%s: 두 바탕에서 다 보이는 accent 는 잉크에서도 원색 그대로다', (name) => {
+    const theme = JOB_THEMES[name] as unknown as Record<string, string>
+    for (const accent of ACCENTS) {
+      const backgrounds = [theme.surface, theme[`${accent}Tint`]]
+      const ink = theme[`${accent}Ink`]
+
+      if (backgrounds.every((bg) => contrastHex(theme[accent], bg) >= 2)) {
+        expect(ink, `${name}.${accent}Ink`).toBe(theme[accent])
+      } else {
+        for (const bg of backgrounds) {
+          expect(contrastHex(ink, bg), `${name}.${accent}Ink`).toBeGreaterThanOrEqual(2)
+        }
+      }
+    }
+  })
+
+  it.each(NAMES)('%s: 일러스트 위 텍스트가 미디어 표면 대비 AA 를 지킨다', (name) => {
+    const theme = JOB_THEMES[name]
+    expect(contrastHex(theme.mediaInk, theme.mediaSurface)).toBeGreaterThanOrEqual(4.5)
+    expect(contrastHex(theme.mediaInkMuted, theme.mediaSurface)).toBeGreaterThanOrEqual(4.5)
+  })
+
+  // 채움 위 전경은 색감이 정한다 — 대비는 강제하지 않되, 흑백 이지선다로 퇴화하지는 않아야 한다.
+  // 연한 전경은 **테마의 색 하나**이고(브랜드 색상), 그게 사라지는 채움에서만 짙은 색으로 넘어간다.
+  it.each(NAMES)('%s: on-* 이 순수 흑/백이 아니다', (name) => {
+    const theme = JOB_THEMES[name] as unknown as Record<string, string>
+    for (const accent of ACCENTS) {
+      const on = theme[`on${accent[0].toUpperCase()}${accent.slice(1)}`]
+      expect(on, `${name}.on-${accent}`).not.toBe('#000000')
+      expect(on, `${name}.on-${accent}`).not.toBe('#FFFFFF')
+    }
+  })
+
+  it.each(NAMES)('%s: 연한 전경은 테마당 하나이고 브랜드 색상을 따른다', (name) => {
+    const theme = JOB_THEMES[name] as unknown as Record<string, string>
+    const brand = hexToOklch(theme.primary).h
+
+    const light = ACCENTS
+      .map((accent) => theme[`on${accent[0].toUpperCase()}${accent.slice(1)}`])
+      .filter((hex) => hexToOklch(hex).l > 0.5)
+
+    expect(new Set(light).size, `${name}: 연한 전경이 여러 톤으로 흩어짐`).toBeLessThanOrEqual(1)
+    for (const hex of light) {
+      const gap = Math.abs(((hexToOklch(hex).h - brand + 540) % 360) - 180)
+      expect(gap, `${name}: 브랜드 색상에서 벗어남`).toBeLessThan(10)
+    }
+  })
+
+  it.each(NAMES)('%s: track 이 표면 톤(surface-2)을 따른다', (name) => {
+    expect(JOB_THEMES[name].track).toBe(JOB_THEMES[name].surface2)
+  })
+
+  it.each(NAMES)('%s: 다크 테마는 배경이 어둡고, 라이트 테마는 밝다', (name) => {
+    const theme = JOB_THEMES[name]
+    const lightness = hexToOklch(theme.bg).l
+    expect(theme.mode === 'dark' ? lightness < 0.4 : lightness > 0.6, `${name}.bg L=${lightness}`).toBe(true)
+  })
+})
+
+describe('job-themes.json — 대비 계측', () => {
+  // 관문이 아니라 기록이다. 기준선 아래 항목이 있어도 실패시키지 않되, 계측 자체는 동작해야 한다.
+  it.each(NAMES)('%s: 모든 색 쌍의 대비를 잴 수 있다', (name) => {
+    const report = measureThemeContrast(JOB_THEMES[name])
+    expect(report.measurements.length).toBeGreaterThan(10)
+    expect(report.measurements.every((entry) => Number.isFinite(entry.ratio) && entry.ratio >= 1)).toBe(true)
+  })
 })

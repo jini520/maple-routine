@@ -140,7 +140,7 @@ export function ContentCharacterStep(props: ContentCharacterStepProps): React.JS
         disabled={selectedOcids.length === 0 || props.isSubmitting}
         aria-busy={props.isSubmitting}
         onClick={() => props.onSubmit(selectedOcids)}
-        className="flex w-full items-center justify-center gap-2 rounded-full bg-primary text-bg font-semibold hover:bg-primary-hover px-5 py-2.5 disabled:opacity-50"
+        className="flex w-full items-center justify-center gap-2 rounded-full bg-primary text-on-primary font-semibold hover:bg-primary-hover px-5 py-2.5 disabled:opacity-50"
       >
         {/* ADR-061 결정 5·9 — 스피너 + 말줄임표 없는 '~중' 라벨 */}
         {props.isSubmitting && <MapleSpinner size={16} />}

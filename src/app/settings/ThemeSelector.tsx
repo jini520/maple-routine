@@ -1,3 +1,4 @@
+import { THEME_NAMES } from '../../lib/theme-registry'
 import type { ThemeName } from '../../types/theme'
 import { ThemeSwatchDots } from './ThemeSwatchDots'
 
@@ -6,7 +7,7 @@ export interface ThemeSelectorProps {
   onSelect: (theme: ThemeName) => void
 }
 
-const THEME_OPTIONS: ThemeName[] = ['머쉬맘', '혼테일', '레테', '렌']
+const THEME_OPTIONS = THEME_NAMES
 
 // ThemeModal 안에 들어가는 선택 목록 — 모달 자체가 카드 역할을 하므로 여기서는
 // 카드 테두리를 다시 두르지 않는다.
@@ -23,8 +24,8 @@ export function ThemeSelector(props: ThemeSelectorProps): React.JSX.Element {
             onClick={() => props.onSelect(option)}
             className={
               isSelected
-                ? 'w-full flex items-center gap-3 rounded-[10px] border border-primary bg-primary/15 px-4 py-3'
-                : 'w-full flex items-center gap-3 rounded-[10px] border border-border px-4 py-3 hover:bg-primary/15'
+                ? 'w-full flex items-center gap-3 rounded-[10px] border border-primary bg-primary-tint px-4 py-3'
+                : 'w-full flex items-center gap-3 rounded-[10px] border border-border px-4 py-3 hover:bg-primary-tint'
             }
           >
             <ThemeSwatchDots theme={option} />
