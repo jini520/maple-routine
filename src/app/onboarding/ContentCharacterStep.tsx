@@ -56,12 +56,13 @@ function RosterBody(props: {
 
   if (props.loadError !== null) {
     const copy = formatRosterError(props.loadError, 'onboarding')
-    // place='onboarding'은 openSettings를 반환하지 않으므로 액션은 항상 재시도다.
+    // place='onboarding'은 openSettings를 반환하지 않으므로 액션이 있으면 항상 재시도다.
+    // 영구 실패(조회 불가 캐릭터)는 액션이 없다([[ADR-067]] 결정 1).
     return (
       <ErrorState
         title={copy.title}
         description={copy.description}
-        action={{ label: copy.action.label, onClick: props.onRetry }}
+        action={copy.action === undefined ? undefined : { label: copy.action.label, onClick: props.onRetry }}
       />
     )
   }

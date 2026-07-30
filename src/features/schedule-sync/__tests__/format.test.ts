@@ -7,6 +7,10 @@ describe('formatScheduleSyncError', () => {
     [{ kind: 'invalidApiKey' }, 'API 키가 유효하지 않습니다'],
     [{ kind: 'rateLimited' }, '잠시 후 다시 시도해주세요'],
     [{ kind: 'network' }, '네트워크 오류가 발생했습니다'],
+    // ADR-067 결정 1로 갈라진 세 종류
+    [{ kind: 'characterUnavailable' }, '이 캐릭터는 조회할 수 없습니다'],
+    [{ kind: 'periodOutOfRange' }, '이 기간은 조회할 수 없습니다'],
+    [{ kind: 'notCollected' }, '아직 집계되지 않았습니다'],
   ])('%o -> %s', (error, expected) => {
     expect(formatScheduleSyncError(error)).toBe(expected)
   })
@@ -15,16 +19,35 @@ describe('formatScheduleSyncError', () => {
 // ADR-062 결정 3: 같은 원인이라도 자리에 따라 줄 수 있는 행동이 다르다 —
 // 피커는 설정으로 보낼 수 있지만 온보딩 중에는 설정 화면 자체가 없다.
 describe('formatRosterError', () => {
-  it('세 원인 모두 제목과 설명을 가진다', () => {
-    const kinds: ScheduleSyncError[] = [{ kind: 'invalidApiKey' }, { kind: 'rateLimited' }, { kind: 'network' }]
+  it('모든 원인이 제목과 설명을 가진다', () => {
+    const kinds: ScheduleSyncError[] = [
+      { kind: 'invalidApiKey' },
+      { kind: 'rateLimited' },
+      { kind: 'network' },
+      { kind: 'characterUnavailable' },
+      { kind: 'periodOutOfRange' },
+      { kind: 'notCollected' },
+    ]
 
     for (const error of kinds) {
       for (const place of ['picker', 'onboarding'] as const) {
         const copy = formatRosterError(error, place)
         expect(copy.title.length).toBeGreaterThan(0)
         expect(copy.description.length).toBeGreaterThan(0)
-        expect(copy.action.label.length).toBeGreaterThan(0)
       }
+    }
+  })
+
+  // ADR-062 결정 3 + ADR-067 결정 1: 영구 실패에는 버튼을 주지 않는다.
+  it.each(['picker', 'onboarding'] as const)('%s의 characterUnavailable은 액션이 없다(영구 실패)', (place) => {
+    const copy = formatRosterError({ kind: 'characterUnavailable' }, place)
+    expect(copy.action).toBeUndefined()
+    expect(copy.description).toContain('계정')
+  })
+
+  it.each(['picker', 'onboarding'] as const)('%s의 나머지 원인은 액션이 있다', (place) => {
+    for (const kind of ['invalidApiKey', 'rateLimited', 'network', 'periodOutOfRange', 'notCollected'] as const) {
+      expect(formatRosterError({ kind }, place).action).toBeDefined()
     }
   })
 
@@ -55,8 +78,8 @@ describe('formatRosterError', () => {
   })
 
   it.each(['picker', 'onboarding'] as const)('%s의 rateLimited·network는 재시도를 준다', (place) => {
-    expect(formatRosterError({ kind: 'rateLimited' }, place).action.kind).toBe('retry')
-    expect(formatRosterError({ kind: 'network' }, place).action.kind).toBe('retry')
+    expect(formatRosterError({ kind: 'rateLimited' }, place).action?.kind).toBe('retry')
+    expect(formatRosterError({ kind: 'network' }, place).action?.kind).toBe('retry')
   })
 
   it('rateLimited와 network는 제목이 다르다 — 원인을 구분해 말해야 한다', () => {
