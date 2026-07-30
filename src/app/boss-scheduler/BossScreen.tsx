@@ -85,7 +85,7 @@ export function BossCard(props: {
 
         <div className="flex items-center gap-1.5">
           {boss.isComplete && (
-            <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-bold text-on-secondary">완료</span>
+            <span className="rounded-full bg-secondary-tint px-2.5 py-1 text-xs font-bold text-secondary-ink">완료</span>
           )}
         </div>
       </div>
@@ -499,7 +499,7 @@ export function BossScreen(): React.JSX.Element {
                       <span
                         className={
                           isSeasonBossComplete
-                            ? 'rounded-full bg-secondary px-2.5 py-1 text-xs font-bold text-on-secondary'
+                            ? 'rounded-full bg-secondary-tint px-2.5 py-1 text-xs font-bold text-secondary-ink'
                             : 'rounded-full bg-primary-tint px-2.5 py-1 text-xs font-semibold text-primary-ink'
                         }
                       >

@@ -79,7 +79,7 @@ const QUEST_STATE_LABELS: Record<0 | 1 | 2, string> = {
 const QUEST_STATE_BADGE_CLASSES: Record<0 | 1 | 2, string> = {
   0: 'bg-surface-2 text-text-muted',
   1: 'bg-surface-2 text-text',
-  2: 'bg-secondary text-on-secondary',
+  2: 'bg-secondary-tint text-secondary-ink',
 }
 
 export function QuestStateBadge(props: { questState: 0 | 1 | 2 }): React.JSX.Element {

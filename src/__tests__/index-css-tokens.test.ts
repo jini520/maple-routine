@@ -64,10 +64,15 @@ describe('index.css .media-scope 블록', () => {
     }
   })
 
-  it('표면 기준이 바뀌므로 accent 틴트·잉크를 다시 선언한다', () => {
+  // 카드 위에 직접 놓이는 것만 다시 묶는다. accent 틴트 칩은 자기 배경을 갖고 있어서
+  // 뒤의 카드 색과 무관하다 — 다시 계산하면 옅은 칩이 카드에 묻힌다([[ADR-064]] 결정 5 정정).
+  it('카드 위에 직접 놓이는 토큰만 다시 선언한다', () => {
+    for (const token of ['surface', 'surface-2', 'track', 'border', 'text', 'text-muted']) {
+      expect(SCOPE_BLOCK, token).toContain(`--color-${token}:`)
+    }
     for (const accent of ['primary', 'secondary', 'third', 'error']) {
-      expect(SCOPE_BLOCK, accent).toContain(`--color-${accent}-tint:`)
-      expect(SCOPE_BLOCK, accent).toContain(`--color-${accent}-ink:`)
+      expect(SCOPE_BLOCK, accent).not.toContain(`--color-${accent}-tint:`)
+      expect(SCOPE_BLOCK, accent).not.toContain(`--color-${accent}-ink:`)
     }
   })
 })

@@ -25,12 +25,13 @@ import {
 
 type ExistingThemeName = keyof typeof jobThemes
 
-const EXISTING_MODES: Record<ExistingThemeName, ThemeMode> = {
-  레테: 'dark',
-  렌: 'light',
-  머쉬맘: 'light',
-  혼테일: 'dark',
-}
+/**
+ * 등록된 테마와 그 `mode` — **JSON 에서 읽는다**([[ADR-064]] 결정 8·10).
+ * 한때 여기에 이름·mode 를 하드코딩했더니 신규 테마를 도구가 모르는 일이 있었다.
+ */
+const EXISTING_MODES = Object.fromEntries(
+  Object.entries(jobThemes).map(([name, theme]) => [name, (theme as { mode: ThemeMode }).mode]),
+) as Record<ExistingThemeName, ThemeMode>
 
 /** 기존 테마에서 그대로 승계하는 값 — 신규 17토큰만 생성한다(회귀 방지, [[ADR-064]] 결정 5). */
 const INHERITED_KEYS = [

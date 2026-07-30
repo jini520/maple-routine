@@ -85,15 +85,28 @@ describe('job-themes.json — 파생 규칙', () => {
   })
 
   // 채움 위 전경은 색감이 정한다 — 대비는 강제하지 않되, 흑백 이지선다로 퇴화하지는 않아야 한다.
-  it.each(NAMES)('%s: on-* 이 순수 흑/백이 아니고 채움색의 색조를 물려받는다', (name) => {
+  // 연한 전경은 **테마의 색 하나**이고(브랜드 색상), 그게 사라지는 채움에서만 짙은 색으로 넘어간다.
+  it.each(NAMES)('%s: on-* 이 순수 흑/백이 아니다', (name) => {
     const theme = JOB_THEMES[name] as unknown as Record<string, string>
     for (const accent of ACCENTS) {
       const on = theme[`on${accent[0].toUpperCase()}${accent.slice(1)}`]
       expect(on, `${name}.on-${accent}`).not.toBe('#000000')
       expect(on, `${name}.on-${accent}`).not.toBe('#FFFFFF')
+    }
+  })
 
-      const gap = Math.abs(((hexToOklch(on).h - hexToOklch(theme[accent]).h + 540) % 360) - 180)
-      expect(gap, `${name}.on-${accent} 색상차`).toBeLessThan(10)
+  it.each(NAMES)('%s: 연한 전경은 테마당 하나이고 브랜드 색상을 따른다', (name) => {
+    const theme = JOB_THEMES[name] as unknown as Record<string, string>
+    const brand = hexToOklch(theme.primary).h
+
+    const light = ACCENTS
+      .map((accent) => theme[`on${accent[0].toUpperCase()}${accent.slice(1)}`])
+      .filter((hex) => hexToOklch(hex).l > 0.5)
+
+    expect(new Set(light).size, `${name}: 연한 전경이 여러 톤으로 흩어짐`).toBeLessThanOrEqual(1)
+    for (const hex of light) {
+      const gap = Math.abs(((hexToOklch(hex).h - brand + 540) % 360) - 180)
+      expect(gap, `${name}: 브랜드 색상에서 벗어남`).toBeLessThan(10)
     }
   })
 

@@ -79,15 +79,6 @@ describe('buildThemeCss', () => {
 
     // 커스텀 프로퍼티는 선언된 요소에서 var() 가 해석되므로, 스코프 안에서 틴트·잉크를 다시
     // 선언하지 않으면 surface 기준 값이 그대로 상속된다([[ADR-021]] 의 3.88:1 이 그 사고였다).
-    it('스코프 안에서 accent 틴트·잉크를 다시 선언한다', () => {
-      const scope = buildThemeCss(getThemeDefinition('레테')).split('.media-scope {')[1]
-
-      for (const accent of ['primary', 'secondary', 'third', 'error']) {
-        expect(scope, `${accent}-tint`).toContain(`--color-${accent}-tint:`)
-        expect(scope, `${accent}-ink`).toContain(`--color-${accent}-ink:`)
-      }
-    })
-
     /**
      * 카드 안에서 쓰는 토큰을 스코프가 하나라도 빠뜨리면 **페이지 값이 그대로 내려온다**.
      * 실제로 `surface-2`·`track` 을 빠뜨려 어두운 카드 위에 페이지의 밝은 크림색 pill 이
@@ -114,15 +105,13 @@ describe('buildThemeCss', () => {
       }
     })
 
-    it('기준 표면이 달라 결과가 갈리는 색은 스코프에서 다른 값이 된다', () => {
-      // 렌 third(창백한 하늘색)는 밝은 페이지 위에선 안 보여 보정되지만,
-      // 어두운 카드 위에선 원색 그대로도 잘 읽힌다.
-      const theme = getThemeDefinition('렌')
-      const [root, scope] = buildThemeCss(theme).split('.media-scope {')
+    it('accent 틴트·잉크는 스코프가 건드리지 않는다 — 칩은 자기 배경을 갖는다', () => {
+      const scope = buildThemeCss(getThemeDefinition('머쉬맘')).split('.media-scope {')[1]
 
-      expect(root).toContain(`--color-third-ink: ${theme.thirdInk};`)
-      expect(scope).toContain(`--color-third-ink: ${theme.third};`)
-      expect(theme.thirdInk).not.toBe(theme.third)
+      for (const accent of ['primary', 'secondary', 'third', 'error']) {
+        expect(scope, `${accent}-tint`).not.toContain(`--color-${accent}-tint:`)
+        expect(scope, `${accent}-ink`).not.toContain(`--color-${accent}-ink:`)
+      }
     })
   })
 })

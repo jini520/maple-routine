@@ -10,7 +10,6 @@
  */
 
 import type { ThemeMode, ThemeTokens } from '../types/theme'
-import type { Oklch } from './color'
 import { contrastHex, hexToOklch, mixOklab, oklchToHex, withLightness } from './color'
 
 /**
@@ -188,45 +187,44 @@ function adjustForContrast(
  * 채도는 원 색상보다 크게 낮춘다. 명도를 극단으로 밀면 높은 채도를 표현 범위가 감당하지 못하고,
  * 전경은 배경이 아니라 글자라 색이 튀면 읽기 방해가 된다.
  */
-const FOREGROUND_DARK = { lightness: 0.18, chromaScale: 0.35, chromaMax: 0.06 } as const
+/**
+ * 짙은 전경은 **검정이 아니라 그 색의 진한 톤**이다. 명도를 0.18 까지 눌렀더니 파스텔 채움 위에
+ * 사실상 검은 글씨가 앉아 어울리지 않았다(사용자 지시 2026-07-30). 0.38 + 채도 유지면
+ * "진한 올리브"·"진한 틸"로 읽히면서 대비도 5~7:1 나온다.
+ */
+const FOREGROUND_DARK = { lightness: 0.38, chromaScale: 0.65, chromaMax: 0.13 } as const
 const FOREGROUND_LIGHT = { lightness: 0.96, chromaScale: 0.25, chromaMax: 0.04 } as const
 
 /**
  * 채움 위 전경색 ([[ADR-064]] 결정 1).
  *
- * 흰색도 검정도 기본으로 두지 않는다 — 채움색의 색상(H)을 물려받은 아이보리 또는 짙은 색을
- * 만든다. 색 있는 채움 위에는 **아이보리가 기본**이다(사용자 결정 2026-07-30): 대비 최댓값을
- * 따르면 밝은 주황 위에 짙은 갈색이 오는데 그 그림이 별로다.
+ * **테마의 연한 색 하나**를 만들어 모든 채움에 쓴다. 흰색도 검정도 아니고, 채움색마다 다른
+ * 색조도 아니다 — 브랜드 색상(H)에서 뽑은 연한 톤이라 테마 전체가 한 톤으로 묶인다.
+ * 엔젤릭버스터라면 아주 연한 핑크(`#FFECF6`), 머쉬맘이라면 연한 살구(`#FFEEE2`)다.
  *
- * 짙은 전경으로 넘어가는 것은 **아이보리가 글자로서 사라질 때뿐**이다. 판정은 잉크와 똑같은
- * 가시성 하한(`INK_VISIBILITY_FLOOR`)으로 한다 — "이 색이 보이는가"라는 같은 질문이라 같은 선을
- * 쓰는 게 맞고, 실제로 그 선이 모든 케이스를 제자리에 놓는다.
+ * 한때 채움색마다 그 색조의 연한 톤을 만들었는데(시안 채움엔 연한 시안), 테마가 여러 톤으로
+ * 흩어지고 채움에 따라 글자색이 갈렸다. "연한 색"은 채움이 아니라 **테마**에 맞춰야 한다
+ * (사용자 지시 2026-07-30).
  *
- *   엔젤릭 파스텔 핑크 2.02 · 머쉬맘 주황 2.16 → 아이보리 (보인다)
- *   레테 베이지 1.61 · 머쉬맘 노랑 1.34 · 렌 창백한 하늘 1.11 → 짙은 전경 (안 보인다)
- *
- * 밝기(L)로 경계를 잡던 방식은 폐기했다. 채움 밝기는 **아이보리가 읽히는지의 대리 지표**일
- * 뿐이라, 같은 밝기라도 색상에 따라 결과가 갈리는데 그걸 못 본다 — 실제로 엔젤릭 파스텔
- * 핑크(L 0.766)가 경계 0.75 를 아슬하게 넘겨 짙은 전경이 됐고, 그 그림이 어울리지 않았다.
+ * 짙은 전경으로 넘어가는 것은 그 연한 톤이 **글자로서 사라질 때뿐**이다(잉크와 같은
+ * 가시성 하한). 그 경우엔 채움색의 색조를 물려받은 짙은 색을 쓴다.
  */
-function deriveForeground(fill: string): string {
+function deriveForeground(fill: string, brandHue: number): string {
   const base = hexToOklch(fill)
 
-  const ivory = (source: Oklch): string =>
-    oklchToHex({
-      l: FOREGROUND_LIGHT.lightness,
-      c: Math.min(source.c * FOREGROUND_LIGHT.chromaScale, FOREGROUND_LIGHT.chromaMax),
-      h: source.h,
-    })
+  const light = oklchToHex({
+    l: FOREGROUND_LIGHT.lightness,
+    c: FOREGROUND_LIGHT.chromaMax,
+    h: brandHue,
+  })
+  if (contrastHex(light, fill) >= INK_VISIBILITY_FLOOR) return light
 
-  const goDark = contrastHex(ivory(base), fill) < INK_VISIBILITY_FLOOR
-  const spec = goDark ? FOREGROUND_DARK : FOREGROUND_LIGHT
-  const chroma = Math.min(base.c * spec.chromaScale, spec.chromaMax)
-
-  // 대비를 맞추려고 명도를 더 밀지 않는다. 밝은 쪽에서 끝까지 밀어봐야 대비는 거의 안 오르고
-  // (머쉬맘 primary 기준 2.38→2.45) 색조만 씻겨 흰색에 가까워진다 — 색감이 우선이므로
-  // 채움색에서 온 색조를 그대로 둔다. 실제 수치는 `measureThemeContrast` 가 보고한다.
-  return oklchToHex({ l: spec.lightness, c: chroma, h: base.h })
+  const chroma = Math.min(base.c * FOREGROUND_DARK.chromaScale, FOREGROUND_DARK.chromaMax)
+  for (let step = 0; step <= 1; step += 0.01) {
+    const candidate = oklchToHex({ l: FOREGROUND_DARK.lightness - step, c: chroma, h: base.h })
+    if (contrastHex(candidate, fill) >= INK_VISIBILITY_FLOOR) return candidate
+  }
+  return oklchToHex({ l: 0, c: chroma, h: base.h })
 }
 
 /**
@@ -279,7 +277,7 @@ export function deriveTheme(seed: ThemeSeed): DerivedTheme {
   const accent = (key: 'primary' | 'secondary' | 'third' | 'error', fill: string) => {
     const tint = pick(`${key}Tint`, mixOklab(fill, surface, TINT_RATIO))
     return {
-      on: pick(`on${key[0].toUpperCase()}${key.slice(1)}` as keyof DerivedTheme, deriveForeground(fill)),
+      on: pick(`on${key[0].toUpperCase()}${key.slice(1)}` as keyof DerivedTheme, deriveForeground(fill, hue)),
       tint,
       ink: pick(`${key}Ink`, adjustForContrast(fill, [surface, tint], INK_VISIBILITY_FLOOR, 0)),
     }
@@ -347,14 +345,6 @@ export type MediaScopeTokens = {
   border: string
   text: string
   textMuted: string
-  primaryTint: string
-  primaryInk: string
-  secondaryTint: string
-  secondaryInk: string
-  thirdTint: string
-  thirdInk: string
-  errorTint: string
-  errorInk: string
 }
 
 /**
@@ -367,17 +357,6 @@ export type MediaScopeTokens = {
  */
 export function deriveMediaScope(tokens: DerivedTheme): MediaScopeTokens {
   const surface = tokens.mediaSurface
-
-  const accent = (fill: string): { tint: string; ink: string } => {
-    const tint = mixOklab(fill, surface, TINT_RATIO)
-    return { tint, ink: adjustForContrast(fill, [surface, tint], INK_VISIBILITY_FLOOR, 0) }
-  }
-
-  const primary = accent(tokens.primary)
-  const secondary = accent(tokens.secondary)
-  const third = accent(tokens.third)
-  const error = accent(tokens.error)
-
   // 카드 안의 한 단계 위 표면. 페이지의 surface→surface-2 와 같은 폭(OKLCH L +0.09)으로 벌려
   // 카드 톤 안에 머물게 한다 — 이걸 빼면 `bg-surface-2` 가 페이지의 밝은 표면으로 해석된다.
   const surface2 = withLightness(surface, hexToOklch(surface).l + 0.09)
@@ -389,14 +368,6 @@ export function deriveMediaScope(tokens: DerivedTheme): MediaScopeTokens {
     border: tokens.mediaBorder,
     text: tokens.mediaInk,
     textMuted: tokens.mediaInkMuted,
-    primaryTint: primary.tint,
-    primaryInk: primary.ink,
-    secondaryTint: secondary.tint,
-    secondaryInk: secondary.ink,
-    thirdTint: third.tint,
-    thirdInk: third.ink,
-    errorTint: error.tint,
-    errorInk: error.ink,
   }
 }
 

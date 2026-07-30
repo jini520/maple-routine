@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import jobThemes from '../../data/job-themes.json'
-import { contrastHex, hexToOklch, mixOklab } from '../color'
+import { contrastHex, hexToOklch } from '../color'
 import {
   THEME_TOKEN_KEYS,
   deriveMediaScope,
@@ -97,14 +97,29 @@ describe('on-* — 순수 흑/백이 아니라 채움색의 색조를 물려받�
     }
   })
 
-  it.each(ALL_SEEDS)('%s: on-* 의 색상(H)이 채움색을 따라간다', (_label, seed) => {
+  // 연한 색은 **테마의 것**이다 — 채움마다 다른 색조를 만들면 테마가 여러 톤으로 흩어진다.
+  it.each(ALL_SEEDS)('%s: 연한 전경은 브랜드 색상(H)을 따르고 채움마다 같다', (_label, seed) => {
+    const tokens = deriveTheme(seed)
+    const brand = hexToOklch(tokens.primary).h
+
+    const lightOnes = ON_KEYS.map((key) => tokens[key]).filter((hex) => hexToOklch(hex).l > 0.5)
+    expect(new Set(lightOnes).size, '연한 전경은 테마당 하나여야 한다').toBeLessThanOrEqual(1)
+
+    for (const hex of lightOnes) {
+      const gap = Math.abs(((hexToOklch(hex).h - brand + 540) % 360) - 180)
+      expect(gap, '브랜드 색상에서 벗어남').toBeLessThan(10)
+    }
+  })
+
+  // 연한 색이 글자로 사라지는 채움에서만 짙은 전경으로 넘어가고, 그때는 채움 색조를 따른다.
+  it.each(ALL_SEEDS)('%s: 짙은 전경으로 넘어간 자리는 채움 색조를 따른다', (_label, seed) => {
     const tokens = deriveTheme(seed)
     for (const key of ON_KEYS) {
       const foreground = hexToOklch(tokens[key])
+      if (foreground.l > 0.5) continue
       const fill = hexToOklch(tokens[FILL_OF[key]])
-      // 색상환은 순환이라 최단 거리로 잰다.
       const gap = Math.abs(((foreground.h - fill.h + 540) % 360) - 180)
-      expect(gap).toBeLessThan(10)
+      expect(gap, key).toBeLessThan(10)
     }
   })
 
@@ -124,16 +139,20 @@ describe('on-* — 순수 흑/백이 아니라 채움색의 색조를 물려받�
     expect(onPrimary.c).toBeGreaterThan(0.004) // 순수 흰색이 아니라 주황 쪽으로 기운 아이보리
   })
 
-  // 다만 채움이 아주 밝으면 아이보리는 글자로서 사라진다 — 그 구간은 어두운 전경으로 넘긴다.
-  it('아주 밝은 채움 위에는 어두운 전경으로 넘어간다', () => {
+  // 연한 톤이 사라지는 채움에서만 짙은 전경으로 넘어간다. 그때도 검정이 아니라 그 색의 진한 톤이다.
+  it('연한 톤이 사라지는 채움 위에서는 그 색의 진한 톤으로 넘어간다', () => {
     // 머쉬맘 secondary(#F7D00D, L≈0.87)에 아이보리를 얹으면 1.46:1로 안 보인다.
     const tokens = deriveTheme(LIGHT_SEED)
     expect(hexToOklch(tokens.secondary).l).toBeGreaterThan(0.75)
-    expect(hexToOklch(tokens.onSecondary).l).toBeLessThan(0.35)
+    expect(hexToOklch(tokens.onSecondary).l).toBeLessThan(0.5)
 
     // 파스텔 primary 도 마찬가지.
     const pastel = deriveTheme(PASTEL_SEED)
-    expect(hexToOklch(pastel.onPrimary).l).toBeLessThan(0.35)
+    expect(hexToOklch(pastel.onPrimary).l).toBeLessThan(0.5)
+
+    // 검정으로 눌러버리지 않는다 — 채도가 남아 "그 색의 진한 톤"으로 읽혀야 한다.
+    expect(hexToOklch(tokens.onSecondary).l).toBeGreaterThan(0.25)
+    expect(hexToOklch(tokens.onSecondary).c).toBeGreaterThan(0.02)
   })
 })
 
@@ -206,44 +225,39 @@ describe('measureThemeContrast — 관문이 아니라 계측', () => {
   })
 })
 
-// ADR-064 결정 5 — 일러스트 카드 안은 기준 표면이 media-surface 로 바뀐다.
-describe('deriveMediaScope — 미디어 기준 두 번째 벌', () => {
-  it.each(ALL_SEEDS)('%s: 미디어 기준에서도 잉크가 보인다', (_label, seed) => {
-    const tokens = deriveTheme(seed)
-    const scope = deriveMediaScope(tokens)
-
-    expect(contrastHex(scope.primaryInk, tokens.mediaSurface)).toBeGreaterThanOrEqual(2)
-    expect(contrastHex(scope.thirdInk, scope.thirdTint)).toBeGreaterThanOrEqual(2)
-  })
-
-  it('스코프의 표면·텍스트는 media-* 를 가리킨다', () => {
+// ADR-064 결정 5 — 일러스트 카드 안은 카드 **위에 직접 놓이는** 것들만 기준을 바꾼다.
+describe('deriveMediaScope — 카드 위에 직접 놓이는 것만 다시 묶는다', () => {
+  it('표면·텍스트·보더가 media-* 를 가리킨다', () => {
     const tokens = deriveTheme(LIGHT_SEED)
     const scope = deriveMediaScope(tokens)
+
     expect(scope.surface).toBe(tokens.mediaSurface)
     expect(scope.border).toBe(tokens.mediaBorder)
     expect(scope.text).toBe(tokens.mediaInk)
     expect(scope.textMuted).toBe(tokens.mediaInkMuted)
   })
 
-  // ADR-021 에 미해결로 남아 있던 사고 — 레테 카드 안 점수 배지가 3.88:1 이었다.
-  it('레테 third 가 미디어 기준으로 다시 계산된다 (ADR-021 미해결 건)', () => {
-    const lete = jobThemes['레테']
-    const tokens = deriveTheme({
-      primary: lete.primary,
-      secondary: lete.secondary,
-      third: lete.third,
-      mode: 'dark',
-      overrides: { mediaSurface: '#1A1720', mediaBorder: '#37323E', mediaInk: '#E8DFEC' },
-    })
+  it.each(ALL_SEEDS)('%s: 카드 안 표면이 카드 톤 안에 머문다', (_label, seed) => {
+    const tokens = deriveTheme(seed)
     const scope = deriveMediaScope(tokens)
 
-    // 옛 방식은 `bg-third/20 text-third` — 배경이 카드 표면이 아니라 third 20% 틴트였고, 거기서
-    // 미달이 났다(ADR-021 기록 3.88:1, 여기 계산 약 3.98:1 — 혼합 색공간 차이).
-    const legacyTint = mixOklab('#D8608F', '#1A1720', 0.2)
-    expect(contrastHex('#D8608F', legacyTint)).toBeLessThan(4.5)
+    expect(scope.track).toBe(scope.surface2)
+    expect(hexToOklch(scope.surface2).l).toBeGreaterThan(hexToOklch(scope.surface).l)
+    expect(hexToOklch(scope.surface2).l).toBeLessThan(hexToOklch(scope.surface).l + 0.2)
+  })
 
-    // 기준 표면이 카드(어두움)로 바뀌므로 틴트도 어두워지고, 그 위에서 third 는 잘 읽힌다.
-    expect(contrastHex(scope.thirdInk, scope.thirdTint)).toBeGreaterThan(contrastHex('#D8608F', legacyTint))
+  /**
+   * accent 틴트·잉크는 **다시 묶지 않는다**. 틴트 칩은 자기 배경을 갖고 있어서 뒤의 카드 색과
+   * 무관하고, 카드 기준으로 다시 계산하면 옅은 칩이 어두운 칩으로 바뀌어 카드에 묻힌다
+   * (머쉬맘 완료 배지가 `#FCF6DD` 옅은 크림에서 `#382C14` 어두운 올리브가 됐던 문제,
+   * 사용자 보고 2026-07-30).
+   */
+  it('accent 틴트·잉크는 카드 안에서도 페이지 값을 쓴다', () => {
+    const scope = deriveMediaScope(deriveTheme(LIGHT_SEED)) as Record<string, string>
+
+    for (const key of ['primaryTint', 'primaryInk', 'secondaryTint', 'secondaryInk', 'thirdTint', 'thirdInk']) {
+      expect(scope[key], `${key} 는 스코프가 건드리지 않는다`).toBeUndefined()
+    }
   })
 })
 

@@ -97,11 +97,10 @@
   --color-border:  var(--color-media-border);
   --color-text:    var(--color-media-ink);
   --color-text-muted: var(--color-media-ink-muted);
-  --color-primary-tint: /* media-surface 기준 재계산 */;
-  --color-primary-ink:  /* media-surface 기준 재계산 */;
-  /* secondary·third·error 동일 */
 }
 ```
+
+**카드 위에 직접 놓이는 것만 다시 묶는다.** accent 틴트·잉크(`*-tint`·`*-ink`)는 건드리지 않는다 — **틴트 칩은 자기 배경을 갖고 있어서** 뒤의 카드 색과 무관하고, 카드 기준으로 다시 계산하면 옅은 칩이 어두운 칩으로 바뀌어 카드에 묻힌다(머쉬맘 완료 배지가 `#FCF6DD` 옅은 크림에서 `#382C14` 어두운 올리브가 됐던 문제, 2026-07-30). 어두운 카드 위의 옅은 칩은 오히려 잘 보인다.
 
 **카드 안에서 쓰는 토큰을 하나라도 빠뜨리면 페이지 값이 그대로 내려온다.** 실제로 `surface-2`·`track` 을 빠뜨려 어두운 카드 위에 페이지의 밝은 크림색 pill 이 얹혔다("시작 안함" 배지, 2026-07-30). 회귀 테스트가 스코프 재선언 누락과 밝기 이탈을 함께 잡는다.
 

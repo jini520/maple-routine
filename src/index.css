@@ -76,15 +76,15 @@ body {
 
   /* accent */
   --color-secondary: #f7d00d;
-  --color-on-secondary: #171100;
+  --color-on-secondary: #4f4100;
   --color-secondary-tint: #fcf6dd;
   --color-secondary-ink: #cead00;
   --color-third: #ca763a;
-  --color-on-third: #ffeee4;
+  --color-on-third: #ffeee2;
   --color-third-tint: #f7e8da;
   --color-third-ink: #ca763a;
   --color-error: #b3200b;
-  --color-on-error: #ffedea;
+  --color-on-error: #ffeee2;
   --color-error-tint: #f6ddd3;
   --color-error-ink: #b3200b;
   --color-info-tint: #fbf3d0;
@@ -117,14 +117,6 @@ body {
   --color-border: #3f3329;
   --color-text: #ece2db;
   --color-text-muted: #aea298;
-  --color-primary-tint: #382413;
-  --color-primary-ink: #f58b0f;
-  --color-secondary-tint: #382c14;
-  --color-secondary-ink: #f7d00d;
-  --color-third-tint: #332114;
-  --color-third-ink: #ca763a;
-  --color-error-tint: #32190f;
-  --color-error-ink: #b3200b;
 }
 
 /* 고가 아이템 드롭 연출 — 중앙 아이템이 위아래로 살짝 부유(ADR-038). 팝인(scale)·중앙정렬 transform과
