@@ -60,7 +60,10 @@
       └ total = 1(월간)이면 dasharray/dashoffset을 아예 걸지 않고 온전한 원(ADR-059 정정 1) — 간격은
         "칸과 칸을 나누는" 장치라 나눌 상대가 없으면 나눔이 아니라 결손으로 읽힌다. 값 0이 아니라
         속성 생략인 이유는 dash 양끝 둥근 캡이 겹치며 이음매가 비치는 것을 피하기 위함
-  채운 칸 stroke-primary / 빈 칸 stroke-border, svg에 -rotate-90(12시부터 시계방향)
+  채운 칸 stroke-primary / 빈 칸 stroke-border, svg에 rotate-90 + -scale-x-100(12시부터 반시계방향, ADR-059 정정 2)
+      └ 좌우 반전이 경로 진행 방향(circle은 3시에서 시작해 시계방향)을 뒤집고 시작점을 9시로 옮기므로,
+        반대 방향 90도 회전으로 시작점을 12시에 되돌린다. dash·dashoffset 식은 그대로 둔다 — 부호를
+        뒤집으면 round 캡 보정(ADR-054 정정 5)까지 다시 유도해야 한다
   링은 초상화 span의 형제로 두고 슬롯에 absolute — 초상화 span은 overflow-hidden이라 안에 넣으면 stroke 바깥 절반이 잘린다
 숫자(n/12): 보류 — 카드에 렌더하지 않는다(정정 7). 회귀 가드 테스트 있음
 a11y: 링 자체가 role="img" aria-label="{주간|월간} 보스 처치 8 / 12" — 링이 유일한 표현이라 여기에 레이블이 없으면

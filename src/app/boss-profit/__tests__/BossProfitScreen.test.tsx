@@ -1406,6 +1406,26 @@ describe('BossProfitScreen', () => {
       expect(segments[0]).not.toHaveAttribute('stroke-dashoffset')
     })
 
+    it('링은 12시에서 반시계 방향으로 찬다(ADR-059 정정 2)', () => {
+      mockStore({
+        status: 'loaded',
+        tab: 'weekly',
+        periodKey: CURRENT_WEEKLY_PERIOD_KEY,
+        trackedOcids: ['ocid-1'],
+        rows: [row({ boss: '자쿰' })],
+      })
+
+      renderBossProfitScreen()
+
+      // 좌우 반전이 경로 진행 방향(circle은 3시에서 시작해 시계방향)을 뒤집고 시작점을 9시로 옮기므로,
+      // 시작점을 12시에 되돌리려면 회전이 -90도가 아니라 +90도여야 한다. 둘 중 하나만 있으면 방향이나
+      // 시작점 중 하나가 틀어지므로 세 조건을 함께 잠근다.
+      const classes = clearProgress()?.getAttribute('class')?.split(/\s+/) ?? []
+      expect(classes).toContain('rotate-90')
+      expect(classes).toContain('-scale-x-100')
+      expect(classes).not.toContain('-rotate-90')
+    })
+
     it('과거 기간에서도 주간 링을 렌더한다(ADR-059 결정 2 — ADR-054 결정 4 폐기)', () => {
       mockStore({
         status: 'loaded',
@@ -1473,9 +1493,13 @@ describe('BossProfitScreen', () => {
         ],
       })
 
-      const { container } = renderBossProfitScreen()
+      renderBossProfitScreen()
 
-      const segments = container.querySelectorAll('svg.-rotate-90 circle')
+      // 링은 변환 클래스가 아니라 역할·레이블로 찾는다 — 방향(ADR-059 정정 2)이 바뀌어도
+      // 이 테스트가 대상을 놓치지 않게. 방향 자체는 전용 테스트가 잠근다.
+      const segments = screen
+        .getByRole('img', { name: /주간 보스 처치/ })
+        .querySelectorAll('circle')
       expect(segments).toHaveLength(WEEKLY_BOSS_CLEAR_LIMIT)
       // 처치한 2칸만 primary, 나머지는 border — 링이 진행률을 그대로 반영한다.
       const filled = [...segments].filter((segment) => segment.classList.contains('stroke-primary'))
@@ -1494,10 +1518,10 @@ describe('BossProfitScreen', () => {
         rows: [row({ boss: '검은마법사', difficulty: '하드', cycle: 'monthly', periodKey: '2026-06' })],
       })
 
-      const { container } = renderBossProfitScreen()
+      renderBossProfitScreen()
 
       expect(monthlyClearProgress()).toHaveAccessibleName(`월간 보스 처치 1 / ${MONTHLY_BOSS_COUNT}`)
-      expect(container.querySelectorAll('svg.-rotate-90 circle.stroke-primary')).toHaveLength(1)
+      expect(monthlyClearProgress()?.querySelectorAll('circle.stroke-primary')).toHaveLength(1)
     })
   })
 

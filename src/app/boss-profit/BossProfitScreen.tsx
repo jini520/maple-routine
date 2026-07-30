@@ -91,14 +91,18 @@ function AvatarClearRing(props: { cleared: number; total: number; cycle: BossCyc
   const isSingleSegment = props.total === 1
 
   return (
-    // -rotate-90: SVG 각도 0은 3시 방향이라 12시부터 시계방향으로 차게 돌린다.
+    // rotate-90 + -scale-x-100: 12시부터 반시계방향으로 차게 만드는 조합이다([[ADR-059]] 정정 2,
+    // 사용자 요청). SVG circle의 경로는 3시에서 시작해 시계방향으로 도는데, 좌우로 뒤집으면 진행
+    // 방향이 반시계로 바뀌면서 시작점이 9시로 간다 — 거기서 시계방향 90도를 더해 시작점만 12시로
+    // 되돌린다. 칸 배치식(dash·dashoffset)은 그대로 둔다: 부호를 뒤집으면 round 캡 보정(ADR-054
+    // 정정 5)까지 함께 다시 유도해야 한다.
     // 링이 진행률의 유일한 표현이므로(정정 7 — n/12 텍스트 보류) 레이블은 링이 갖는다. 링까지
     // aria-hidden이면 스크린리더 사용자에게는 진행률이 아예 존재하지 않게 된다. 레이블의 주기는
     // 탭을 따라간다([[ADR-059]] 결정 7) — 두 탭이 같은 컴포넌트를 쓰므로 "주간"으로 고정하면
     // 월간 탭에서 거짓말이 된다.
     <svg
       viewBox={`0 0 ${AVATAR_SLOT_SIZE} ${AVATAR_SLOT_SIZE}`}
-      className="pointer-events-none absolute inset-0 h-full w-full -rotate-90"
+      className="pointer-events-none absolute inset-0 h-full w-full rotate-90 -scale-x-100"
       role="img"
       aria-label={`${props.cycle === 'weekly' ? '주간' : '월간'} 보스 처치 ${props.cleared} / ${props.total}`}
     >
