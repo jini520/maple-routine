@@ -15,6 +15,9 @@ export interface ModalProps {
    * 절반만큼 이동해 모달이 크게 튄다(iOS는 애니메이션 없이 스냅해 특히 어색하다). 상단 고정이면
    * 뷰포트가 줄어도 위치가 그대로라 튀지 않는다. 키보드를 띄우지 않는 모달만 'center'를 쓴다. */
   align?: 'top' | 'center'
+  /** 하단 패딩만 줄인다(p-6 → pb-4). 부 동작 버튼이 작아 아래 여백이 상대적으로 커 보이는
+   * 모달에 쓴다([[ADR-065]] 결정 2 — 업데이트 모달). card=false면 의미 없다. */
+  tightBottom?: boolean
 }
 
 // CharacterTrackingPicker/DisconnectConfirm에서 반복되던 오버레이 마크업을 공용화한 것 —
@@ -43,7 +46,9 @@ export function Modal(props: ModalProps): React.JSX.Element {
         onClick={(event) => event.stopPropagation()}
         className={
           showCard
-            ? `w-full ${maxWidth} rounded-[14px] border border-border bg-surface p-6`
+            ? `w-full ${maxWidth} rounded-[14px] border border-border bg-surface ${
+                props.tightBottom === true ? 'px-6 pb-4 pt-6' : 'p-6'
+              }`
             : `w-full ${maxWidth}`
         }
       >

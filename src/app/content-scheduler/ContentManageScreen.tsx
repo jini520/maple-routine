@@ -12,6 +12,7 @@ import { worldEmblemUrl } from '../../lib/world-emblem'
 import { LoadingState } from '../../components/LoadingState/LoadingState'
 import { useContentSchedulerStore } from '../../features/content-scheduler/store'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
+import { useToastStore } from '../../features/toast/store'
 
 type ContentTab = 'daily' | 'weekly'
 
@@ -78,12 +79,18 @@ export function ContentManageScreen(): React.JSX.Element {
       .map((item) => item.contentName),
   )
 
-  function handleToggle(contentName: string): void {
+  // ADR-065 결정 4: 전에는 void로 프로미스를 버려 저장 실패가 무음이었다 — 체크가 조용히
+  // 되돌아가는 것 외에 설명이 없었다. 체크박스가 그 자리에 남으므로 토스트로 알린다.
+  async function handleToggle(contentName: string): Promise<void> {
     if (selected === null) return
-    if (trackedNames.has(contentName)) {
-      void removeManualContent(selected.ocid, contentName, activeTab)
-    } else {
-      void addManualContent(selected.ocid, contentName, activeTab)
+    try {
+      if (trackedNames.has(contentName)) {
+        await removeManualContent(selected.ocid, contentName, activeTab)
+      } else {
+        await addManualContent(selected.ocid, contentName, activeTab)
+      }
+    } catch {
+      useToastStore.getState().showError('추적 목록을 저장하지 못했습니다')
     }
   }
 
@@ -213,7 +220,7 @@ export function ContentManageScreen(): React.JSX.Element {
                             type="button"
                             aria-pressed={isTracked}
                             disabled={isLocked}
-                            onClick={() => handleToggle(entry.content_name)}
+                            onClick={() => void handleToggle(entry.content_name)}
                             className={
                               isTracked
                                 ? 'flex w-full items-center gap-3 rounded-[10px] border border-primary bg-primary-tint px-4 py-3 text-left'

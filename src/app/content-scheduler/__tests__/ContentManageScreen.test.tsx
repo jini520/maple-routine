@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ContentManageScreen } from '../ContentManageScreen'
 import { useContentSchedulerStore, type ContentCharacterView } from '../../../features/content-scheduler/store'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
+import { useToastStore } from '../../../features/toast/store'
 
 vi.mock('../../../features/content-scheduler/store', () => ({
   useContentSchedulerStore: vi.fn(),
@@ -220,6 +221,25 @@ describe('ContentManageScreen — 길드 미가입 잠금 (ADR-057)', () => {
     expect(screen.getAllByText('길드 가입 시 진행 가능')).toHaveLength(3)
     expect(screen.getByRole('button', { name: /플래그 레이스/ })).toBeDisabled()
     expect(screen.getByRole('button', { name: /주간 미션 포인트/ })).toBeDisabled()
+  })
+
+  // ADR-065 결정 4: 전에는 void로 프로미스를 버려 저장 실패가 무음이었다 — 체크가 조용히
+  // 되돌아가는 것 외에 설명이 없었다.
+  it('토글 저장이 실패하면 토스트로 알린다', async () => {
+    useTrackingModeStore.setState({ mode: 'manual' })
+    useToastStore.setState({ toasts: [], queue: [] })
+    mockStore({
+      characters: [character()],
+      addManualContent: vi.fn().mockRejectedValue(new Error('write failed')),
+    })
+
+    renderManageScreen()
+    fireEvent.click(screen.getByRole('button', { name: /소멸의 여로 조사/ }))
+
+    await waitFor(() => expect(useToastStore.getState().toasts).toHaveLength(1))
+    const [toast] = useToastStore.getState().toasts
+    expect(toast.message).toBe('추적 목록을 저장하지 못했습니다')
+    expect(toast.variant).toBe('error')
   })
 
   it('길드 미가입이어도 길드 외 콘텐츠는 잠그지 않는다', () => {

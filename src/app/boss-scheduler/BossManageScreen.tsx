@@ -141,11 +141,18 @@ export function BossManageScreen(): React.JSX.Element {
   const visibleEntries =
     mode === 'auto' && onlyRegistered && registeredDifficultyByBoss.size > 0 ? registeredEntries : allEntries
 
+  // ADR-065 결정 4: 전에는 try/catch가 없어 저장 실패가 무음이었다 — 체크가 조용히 되돌아가는
+  // 것 외에 설명이 없었다. 문구는 컨텐츠 관리 화면과 같다(같은 화면에서 무엇을 토글했는지는
+  // 사용자가 안다).
   async function handleToggleTracked(bossName: string, difficulties: BossDifficulty[]): Promise<void> {
     if (selected === null) return
     const trackedDifficulty = trackedDifficultyOf(bossName)
     if (trackedDifficulty !== null) {
-      await removeManualBoss(selected.ocid, bossName, trackedDifficulty)
+      try {
+        await removeManualBoss(selected.ocid, bossName, trackedDifficulty)
+      } catch {
+        useToastStore.getState().showError('추적 목록을 저장하지 못했습니다')
+      }
       return
     }
     const difficulty = defaultDifficultyFor(bossName, difficulties)
@@ -154,9 +161,13 @@ export function BossManageScreen(): React.JSX.Element {
     // 말하고 이유는 시도한 순간에 말한다. 판정은 스토어가 돌려주는 결과를 그대로 쓴다(조건 중복 금지).
     // showError가 아니라 showInfo다: 실패가 아니라 규칙 안내이고, error는 자동 소멸이 없어
     // (duration null) 사용자가 직접 닫아야 한다(사용자 지시 — 경고 톤 + 자동 소멸).
-    const result = await addManualBoss(selected.ocid, bossName, difficulty)
-    if (result === 'limitReached') {
-      useToastStore.getState().showInfo(`주간 ${WEEKLY_BOSS_CLEAR_LIMIT}개를 모두 선택했어요`)
+    try {
+      const result = await addManualBoss(selected.ocid, bossName, difficulty)
+      if (result === 'limitReached') {
+        useToastStore.getState().showInfo(`주간 ${WEEKLY_BOSS_CLEAR_LIMIT}개를 모두 선택했어요`)
+      }
+    } catch {
+      useToastStore.getState().showError('추적 목록을 저장하지 못했습니다')
     }
   }
 
@@ -167,8 +178,12 @@ export function BossManageScreen(): React.JSX.Element {
     to: BossDifficulty,
   ): Promise<void> {
     if (selected === null || from === to) return
-    await removeManualBoss(selected.ocid, bossName, from)
-    await addManualBoss(selected.ocid, bossName, to)
+    try {
+      await removeManualBoss(selected.ocid, bossName, from)
+      await addManualBoss(selected.ocid, bossName, to)
+    } catch {
+      useToastStore.getState().showError('추적 목록을 저장하지 못했습니다')
+    }
   }
 
   async function handleSetPartySize(

@@ -3,6 +3,7 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { CacheDataSection } from '../CacheDataSection'
+import { consumePendingNotice } from '../../../storage/pending-notice'
 import { clearCacheData, getCacheDataSizes } from '../../../storage/cache-data'
 import { closeBossProfitDb } from '../../../storage/sqlite/db'
 import { showSplashScreen } from '../../../native/splash-screen'
@@ -74,6 +75,32 @@ describe('CacheDataSection', () => {
 
     await waitFor(() => expect(reload).toHaveBeenCalled())
     expect(mockedClear).toHaveBeenCalledWith({ general: true, bossRecords: false })
+  })
+
+  // ADR-065 결정 3: 실패를 더는 삼키지 않는다. 리로드가 화면 신호를 파괴하므로 플래그를 남기고
+  // 부팅 후에 토스트로 알린다(App.tsx가 소비).
+  it('삭제가 실패하면 플래그를 남기고 리로드는 그대로 진행한다', async () => {
+    mockedClear.mockRejectedValue(new Error('native failed'))
+    const reload = vi.fn()
+    render(<CacheDataSection reload={reload} />)
+
+    fireEvent.click(screen.getByRole('button', { name: /캐시 데이터 삭제/ }))
+    fireEvent.click(screen.getByRole('button', { name: /^삭제/ }))
+
+    await waitFor(() => expect(reload).toHaveBeenCalled())
+    expect(consumePendingNotice()).toBe('cacheClearFailed')
+  })
+
+  it('삭제가 성공하면 플래그를 남기지 않는다', async () => {
+    mockedClear.mockResolvedValue(undefined)
+    const reload = vi.fn()
+    render(<CacheDataSection reload={reload} />)
+
+    fireEvent.click(screen.getByRole('button', { name: /캐시 데이터 삭제/ }))
+    fireEvent.click(screen.getByRole('button', { name: /^삭제/ }))
+
+    await waitFor(() => expect(reload).toHaveBeenCalled())
+    expect(consumePendingNotice()).toBeNull()
   })
 
   // ADR-058 결정 7: 어떤 그룹을 골라도 리로드 흐름(ADR-050)은 동일하다 — 두 그룹 모두 화면

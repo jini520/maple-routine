@@ -12,7 +12,11 @@ import { showSplashScreen } from '../../native/splash-screen'
 
 // idle: 확인 전 / checking: 확인 중 / up-to-date: 최신 / update-available: 새 버전 있음(모달)
 // store-required: 스토어 업데이트 필요 / confirm-cellular: 셀룰러 데이터 확인 대기 / downloading: 진행 중
-// ready-to-apply: 다운로드 완료·적용 대기 / error: 실패 / unsupported: web 등 미지원 (ADR-027)
+// ready-to-apply: 다운로드 완료·적용 대기 / unsupported: web 등 미지원 (ADR-027)
+//
+// 실패는 두 종류다([[ADR-065]] 결정 2) — 사용자가 시작했는지로 갈린다.
+//   check-error    매니페스트 조회·파싱 실패(자동 확인 포함). 모달을 띄우지 않고 설정 상태 행에만 남긴다.
+//   download-error 사용자가 '다운로드'를 눌러 진행하던 중 실패. 모달로 알린다.
 export type LiveUpdateStatus =
   | 'idle'
   | 'checking'
@@ -22,7 +26,8 @@ export type LiveUpdateStatus =
   | 'confirm-cellular'
   | 'downloading'
   | 'ready-to-apply'
-  | 'error'
+  | 'check-error'
+  | 'download-error'
   | 'unsupported'
 
 // 채널은 빌드 시점에 고정된다([[ADR-024]] 빌드 시점 분리).
@@ -76,7 +81,8 @@ export const useLiveUpdateStore = create<LiveUpdateStore>()((set, get) => {
       const { id } = await downloadLiveUpdate(pending, (percent) => set({ downloadProgress: percent }))
       set({ status: 'ready-to-apply', downloadProgress: 100, downloadedBundleId: id })
     } catch {
-      set({ status: 'error' })
+      // 사용자가 시작한 실패라 모달로 알린다([[ADR-065]] 결정 2).
+      set({ status: 'download-error' })
     }
   }
 
@@ -122,7 +128,8 @@ export const useLiveUpdateStore = create<LiveUpdateStore>()((set, get) => {
           set({ status: 'unsupported' })
           break
         case 'error':
-          set({ status: 'error' })
+          // 자동 확인일 수 있어 모달을 띄우지 않는다 — 설정 상태 행에만 남는다.
+          set({ status: 'check-error' })
           break
       }
     },

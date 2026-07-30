@@ -160,7 +160,9 @@ describe('useOnboardingStore.restoreFromStorage', () => {
     expect(setSelectedAccountIdMock).not.toHaveBeenCalled()
   })
 
-  it('apiKey만 있는 상태에서 재조회가 실패하면 error 상태가 된다', async () => {
+  // ADR-065 결정 1: 전에는 이 경로에 토스트가 아예 없어, 아무 설명 없이 API 키 입력 화면으로
+  // 되돌아갔다(status가 error인데 accounts가 비면 화면이 폼만 다시 그린다).
+  it('apiKey만 있는 상태에서 재조회가 실패하면 error 상태 + 원인별 토스트로 알린다', async () => {
     getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1', selectedAccountId: null })
     fetchCharacterListMock.mockRejectedValue(new NexonAuthError('invalid'))
 
@@ -169,6 +171,7 @@ describe('useOnboardingStore.restoreFromStorage', () => {
     const state = useOnboardingStore.getState()
     expect(state.status).toBe('error')
     expect(state.error).toEqual({ kind: 'invalidApiKey' })
+    expect(showErrorMock).toHaveBeenCalledWith('API 키가 유효하지 않습니다')
   })
 })
 
@@ -238,13 +241,33 @@ describe('useOnboardingStore.submitApiKey', () => {
     expect(setApiKeyMock).not.toHaveBeenCalled()
   })
 
-  it('목록 조회에 실패하면(종류 무관) 실패 토스트를 띄운다', async () => {
-    fetchCharacterListMock.mockRejectedValue(new NexonAuthError('invalid'))
+  // ADR-065 결정 1: 전에는 원인과 무관하게 한 문구였다 — 바로 아래에서 원인을 계산해 state에
+  // 넣으면서도 토스트는 그 값을 쓰지 않았다.
+  it.each([
+    [new NexonAuthError('invalid'), 'API 키가 유효하지 않습니다'],
+    [new NexonRateLimitError('rate limited'), '잠시 후 다시 시도해주세요'],
+    [new NexonNetworkError('network fail'), '네트워크 오류가 발생했습니다'],
+  ])('목록 조회 실패를 원인별 문구로 알린다 (%o)', async (error, expected) => {
+    fetchCharacterListMock.mockRejectedValue(error)
 
     await useOnboardingStore.getState().submitApiKey('key-1')
 
-    expect(showErrorMock).toHaveBeenCalledWith('API 키를 확인하지 못했습니다')
+    expect(showErrorMock).toHaveBeenCalledWith(expected)
     expect(showSuccessMock).not.toHaveBeenCalled()
+  })
+
+  // ADR-065 결정 1: 전에는 setApiKey가 try 밖이라 미처리 rejection이었다 — 아무 일도 안 일어난
+  // 것처럼 보였다. storageWriteFailed 문구가 이 경로로 처음 도달 가능해진다.
+  it('키 저장에 실패하면 storageWriteFailed 상태 + 토스트로 알린다', async () => {
+    fetchCharacterListMock.mockResolvedValue([{ accountId: 'acc-1', characters: [] }])
+    setApiKeyMock.mockRejectedValue(new Error('write failed'))
+
+    await useOnboardingStore.getState().submitApiKey('key-1')
+
+    const state = useOnboardingStore.getState()
+    expect(state.status).toBe('error')
+    expect(state.error).toEqual({ kind: 'storageWriteFailed' })
+    expect(showErrorMock).toHaveBeenCalledWith('기기에 저장하지 못했습니다. 다시 시도해주세요')
   })
 
   it('NexonRateLimitError를 만나면 rateLimited error 상태가 된다', async () => {

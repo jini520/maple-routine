@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatOnboardingError } from '../error-message'
+import { formatOnboardingError } from '../format'
 
 describe('formatOnboardingError', () => {
   it('invalidApiKey를 사람이 읽을 문구로 바꾼다', () => {

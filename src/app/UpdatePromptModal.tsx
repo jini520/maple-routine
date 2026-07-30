@@ -1,4 +1,4 @@
-import { CheckCircle2, CloudDownload, Info, Signal, Store } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, CloudDownload, Info, Signal, Store } from 'lucide-react'
 import { Modal } from '../components/Modal/Modal'
 import { useLiveUpdateStore, type LiveUpdateStatus } from '../features/live-update/store'
 
@@ -9,6 +9,9 @@ const MODAL_STATUSES: ReadonlySet<LiveUpdateStatus> = new Set([
   'downloading',
   'ready-to-apply',
   'store-required',
+  // ADR-065 결정 2: 사용자가 시작한 다운로드의 실패만 모달로 알린다. 매니페스트 조회 실패
+  // ('check-error')는 자동 확인일 수 있어 여기 넣지 않는다 — 설정 상태 행에만 남는다.
+  'download-error',
 ])
 
 function formatSize(bytes: number): string {
@@ -17,13 +20,17 @@ function formatSize(bytes: number): string {
 
 const PRIMARY_BTN =
   'w-full rounded-full bg-primary text-on-primary font-semibold hover:bg-primary-hover px-5 py-2.5 text-sm disabled:opacity-50'
-const GHOST_BTN = 'w-full rounded-full px-5 py-2.5 text-sm font-medium text-text-muted hover:text-text'
+// ADR-065 결정 2: 부 동작이 주 동작과 같은 크기(px-5 py-2.5 text-sm)라 비중이 너무 컸다.
+// 이 상수를 4개 분기가 공유하므로 줄이면 모달 전체에 함께 적용된다 — 한 모달 안에서 부 동작
+// 크기가 갈리지 않게 하려는 의도다.
+const GHOST_BTN = 'w-full rounded-full px-4 py-1.5 text-xs font-medium text-text-muted hover:text-text'
 
-type IconTone = 'primary' | 'secondary' | 'third'
+type IconTone = 'primary' | 'secondary' | 'third' | 'error'
 const TONE_CLASSES: Record<IconTone, string> = {
   primary: 'bg-primary-tint text-primary-ink',
   secondary: 'bg-secondary-tint text-secondary-ink',
   third: 'bg-third-tint text-third-ink',
+  error: 'bg-error-tint text-error-ink',
 }
 
 function IconBadge({ icon: Icon, tone }: { icon: typeof CloudDownload; tone: IconTone }): React.JSX.Element {
@@ -84,6 +91,7 @@ export function UpdatePromptModal(): React.JSX.Element | null {
       testId="update-prompt-overlay"
       maxWidth="max-w-xs"
       align="center"
+      tightBottom
     >
       <div className="space-y-5 text-center">
         {status === 'update-available' && (
@@ -189,6 +197,24 @@ export function UpdatePromptModal(): React.JSX.Element | null {
             </div>
           </>
         )}
+        {status === 'download-error' && (
+          <>
+            <IconBadge icon={AlertTriangle} tone="error" />
+            <div className="space-y-2">
+              <h2 className="text-base font-semibold text-text">업데이트를 받지 못했습니다</h2>
+              <p className="text-sm text-text-muted">네트워크 연결을 확인한 뒤 다시 시도해주세요.</p>
+            </div>
+            <div className="space-y-1">
+              <button type="button" onClick={() => void startDownload()} className={PRIMARY_BTN}>
+                다시 시도
+              </button>
+              <button type="button" onClick={dismiss} className={GHOST_BTN}>
+                나중에
+              </button>
+            </div>
+          </>
+        )}
+
       </div>
     </Modal>
   )
