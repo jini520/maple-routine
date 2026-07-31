@@ -57,7 +57,6 @@
     { "name": "창세의 뱃지", "iconFile": "dark_boss_badge.png", "note": "칠흑의 보스 세트, 슬롯 '뱃지'와 파일명 일치로 확정(사용자 확인, 2026-07-11)" },
 
     { "name": "파풀라투스 마크", "iconFile": "papulatus_mark.png", "note": "1×1 임시 빈 이미지를 실제 아이콘으로 교체(사용자 제공, 2026-07-31, [[ADR-070]])" },
-    { "name": "루인 포스실드", "iconFile": "ruin_force_shield.png", "note": "임시 빈 이미지 — 실제 아이콘 파일 필요(2026-07-11)" },
     { "name": "메이린의 에테르넬 방어구 상자", "iconFile": "box_eternel_maerin.webp", "note": "메이린 하드 드랍. 실제 아이콘 이미지 반영(사용자 제공, 2026-07-27)" },
     { "name": "운명의 에테르넬 방어구 상자", "iconFile": "box_eternel_destiny.webp", "note": "메이린 하드 드랍. 실제 아이콘 이미지 반영(사용자 제공, 2026-07-27)" },
     { "name": "메이린의 칠흑 장신구 상자", "iconFile": "dark_boss_box_maerin.webp", "note": "혼돈의 칠흑 장신구 상자와 별개의 전용 이미지. 실제 아이콘 이미지 반영(사용자 제공, 2026-07-27)" },

@@ -133,6 +133,15 @@ describe('게임 레퍼런스 데이터 정합성', () => {
     expect(names.has('프리미엄 펫장비 주문서 교환권')).toBe(false)
   })
 
+  it('루인 포스실드는 드랍 항목이 아니므로 item-drop-table에 존재하지 않는다 (사용자 지시 2026-07-31)', () => {
+    const hasRuinForceShield = itemDropTable.rewards.some((r) =>
+      Object.values(r.rewards).some((category) =>
+        (category as Array<{ name: string }>).some((item) => item.name === '루인 포스실드')
+      )
+    )
+    expect(hasRuinForceShield).toBe(false)
+  })
+
   it('황금 메소 주머니는 재화이므로 item-drop-table에 존재하지 않는다', () => {
     const hasGoldenPouch = itemDropTable.rewards.some((r) =>
       Object.values(r.rewards).some((category) =>
