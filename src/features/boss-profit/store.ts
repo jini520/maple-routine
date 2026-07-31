@@ -21,6 +21,7 @@ import { fetchSchedulerCharacterState } from '../../nexon/schedule'
 import { getAuthConfig } from '../../storage/api-key'
 import { getBossPartySize } from '../../storage/boss-party-settings'
 import {
+  fillMissingRecordWorlds,
   getBossProfitRecords,
   hasBossProfitRecordsAtOrBefore,
   upsertBossProfitRecord,
@@ -283,6 +284,9 @@ function selectProfitDisplayBosses(
   return [...kills, ...placeholders]
 }
 
+// ADR-069 결정 1(원천 규칙): **기록이 있으면 record.world, 없으면 캐시**다. 과거 기간 행은 전부
+// 기록에서 오므로 여기서 스냅샷이 이긴다 — 캐시(라이브 값)를 쓰면 월드 리프가 과거 집계를 소급
+// 이동시킨다. 컬럼 도입 전 기록(world: null)만 캐시 값으로 폴백한다.
 function buildRowFromRecord(
   record: BossProfitRecord,
   character: CharacterProfileInfo,
@@ -296,7 +300,7 @@ function buildRowFromRecord(
     ocid: record.ocid,
     characterName: character.characterName,
     imageUrl: character.imageUrl,
-    world: character.world,
+    world: record.world ?? character.world,
     boss: record.boss,
     difficulty,
     cycle: record.cycle,
@@ -597,6 +601,10 @@ async function backfillTarget(target: BackfillTarget, now: Date): Promise<Period
       getBossProfitRecords([target.ocid], [target.periodKey]),
       [],
     )
+    // ADR-069 결정 1: 백필로 만드는 delta 행에도 월드를 박는다. 그 시점 캐시의 월드를 쓰는데,
+    // **리프 이전 주는 API가 400을 주므로 백필 자체가 불가능**하고(실측) 백필로 채워지는 리프 이후
+    // 주는 현재 월드가 정답이라 실질 부정확이 없다.
+    const backfillWorld = (await getCachedCharacterBasic(target.ocid))?.profile.world ?? null
 
     for (const boss of completedBosses) {
       const bossName = boss.matchedBossName ?? boss.apiName
@@ -634,6 +642,7 @@ async function backfillTarget(target: BackfillTarget, now: Date): Promise<Period
           priceMeso: priceEntry.priceMeso,
           payoutMeso,
           recordedAt: now.toISOString(),
+          world: backfillWorld,
         }),
       )
     }
@@ -920,6 +929,16 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     // 월드도 같은 조회 결과에서 그대로 꺼내 행까지 흘린다([[ADR-054]] 결정 5).
     const worldByOcid = new Map(sortedCharacterInfo.map((info) => [info.ocid, info.world]))
 
+    // ADR-069 결정 3: `world` 컬럼을 새로 더했으므로 그전 기록에는 월드가 없다. 지금 아는 월드로
+    // 채운다 — `world IS NULL` 조건이 멱등성을 보장하므로 리프 후에 다시 실행돼도 과거 스냅샷을
+    // 덮어쓰지 않는다. 실사용자가 없는 지금만 할 수 있는 선택이다(배포 후엔 리프한 캐릭터의 과거를
+    // 잘못 고정하게 된다).
+    const knownWorlds = new Map<string, string>()
+    for (const [ocid, world] of worldByOcid) {
+      if (world !== null) knownWorlds.set(ocid, world)
+    }
+    await withSqliteFallback(fillMissingRecordWorlds(knownWorlds), undefined)
+
     // refresh는 항상 "현재 기간"을 보여주므로, 여기서 한 칸 더 과거로 갈 수 있는지도 함께 계산해
     // 이전 버튼 게이트(#29)를 세운다. refresh는 현재 기간만 갱신하고 이전 기간의 기록은 건드리지
     // 않으므로 아래 캐시·라이브 두 set() 모두 같은 값을 쓴다. 현재 기간의 이전 기간은 대개 롤링
@@ -1129,6 +1148,7 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
           priceMeso: row.priceMeso,
           payoutMeso,
           recordedAt: now.toISOString(),
+          world: row.world,
         }),
         undefined,
       )
@@ -1242,6 +1262,7 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
         priceMeso: row.priceMeso,
         payoutMeso: payoutMeso as number,
         recordedAt: new Date().toISOString(),
+        world: row.world,
       })
     }
 

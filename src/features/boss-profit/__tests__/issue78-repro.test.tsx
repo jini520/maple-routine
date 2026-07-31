@@ -34,6 +34,7 @@ const world = vi.hoisted(() => ({
     priceMeso: number
     payoutMeso: number
     recordedAt: string
+    world?: string | null
   }[],
   checks: new Set<string>(),
   schedulerCache: new Map<string, { state: unknown; syncedAt: string }>(),
@@ -53,6 +54,13 @@ vi.mock('../../../storage/boss-profit', () => ({
   getBossProfitRecords: async (ocids: string[], periodKeys: string[]) =>
     world.records.filter((r) => ocids.includes(r.ocid) && periodKeys.includes(r.periodKey)),
   // SQL의 부등호 비교를 그대로 옮긴다(ADR-068 결정 5) — 월간 탭은 그 달의 weekly 기록도 함께 본다.
+  // ADR-069 결정 3: refresh가 NULL 월드를 지금 아는 값으로 채운다(멱등 — world IS NULL 조건).
+  fillMissingRecordWorlds: async (worldByOcid: Map<string, string>) => {
+    for (const record of world.records) {
+      const known = worldByOcid.get(record.ocid)
+      if (known !== undefined && record.world == null) record.world = known
+    }
+  },
   hasBossProfitRecordsAtOrBefore: async (ocids: string[], tab: string, periodKey: string) =>
     world.records.some((r) => {
       if (!ocids.includes(r.ocid)) return false
@@ -240,6 +248,7 @@ function record(ocid: string, bossName: string, difficulty: string, cycle: BossC
     priceMeso: price,
     payoutMeso: price,
     recordedAt: `${periodKey}T12:00:00.000Z`,
+    world: null,
   }
 }
 

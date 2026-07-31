@@ -9,6 +9,7 @@ const {
   getTrackedCharacterOcidsMock,
   getBossProfitRecordsMock,
   hasBossProfitRecordsAtOrBeforeMock,
+  fillMissingRecordWorldsMock,
   upsertBossProfitRecordMock,
   getBossPartySizeMock,
   getCachedSchedulerStateMock,
@@ -26,6 +27,7 @@ const {
   getTrackedCharacterOcidsMock: vi.fn(),
   getBossProfitRecordsMock: vi.fn(),
   hasBossProfitRecordsAtOrBeforeMock: vi.fn(),
+  fillMissingRecordWorldsMock: vi.fn(),
   upsertBossProfitRecordMock: vi.fn(),
   getBossPartySizeMock: vi.fn(),
   getCachedSchedulerStateMock: vi.fn(),
@@ -54,6 +56,7 @@ vi.mock('../../../storage/boss-profit', () => ({
   getBossProfitRecords: getBossProfitRecordsMock,
   // ADR-068 결정 5: 이전 게이트가 "이 기간 또는 더 과거에 기록이 있는가"를 SQL 부등호로 묻는다.
   hasBossProfitRecordsAtOrBefore: hasBossProfitRecordsAtOrBeforeMock,
+  fillMissingRecordWorlds: fillMissingRecordWorldsMock,
   upsertBossProfitRecord: upsertBossProfitRecordMock,
 }))
 
@@ -160,6 +163,7 @@ beforeEach(() => {
   })
   getBossProfitRecordsMock.mockResolvedValue([])
   hasBossProfitRecordsAtOrBeforeMock.mockResolvedValue(false)
+  fillMissingRecordWorldsMock.mockResolvedValue(undefined)
   getBossDropRecordsMock.mockResolvedValue([])
   replaceBossDropRecordsMock.mockResolvedValue(undefined)
   upsertBossProfitRecordMock.mockResolvedValue(undefined)
@@ -626,6 +630,7 @@ describe('useBossProfitStore', () => {
       priceMeso: 8080000,
       payoutMeso: 2020000,
       recordedAt: '2026-07-09T00:00:00.000Z',
+      world: null,
     }
     getBossProfitRecordsMock.mockResolvedValue([record])
 
@@ -652,6 +657,7 @@ describe('useBossProfitStore', () => {
       priceMeso: 7_000_000, // 과거 패치 시점 시세 — 지금의 라이브 시세(8080000)와 다르다
       payoutMeso: 3_500_000,
       recordedAt: '2026-07-09T00:00:00.000Z',
+      world: null,
     }
     getBossProfitRecordsMock.mockResolvedValue([record])
 
@@ -723,6 +729,7 @@ describe('useBossProfitStore', () => {
         priceMeso: 8080000,
         payoutMeso: 2020000,
         recordedAt: '2026-07-09T00:00:00.000Z',
+        world: null,
       }
       getBossProfitRecordsMock.mockResolvedValue([record])
       getBossPartySizeMock.mockClear()
@@ -1060,6 +1067,7 @@ describe('useBossProfitStore', () => {
         priceMeso: 8080000,
         payoutMeso: 4040000,
         recordedAt: '2026-07-10T00:00:00.000Z',
+        world: null,
       }
       vi.clearAllMocks() // 위 준비용 refresh에서 쌓인 호출 기록(자동 기록 포함)을 지운다
       getBossProfitRecordsMock.mockResolvedValue([record])
@@ -1159,6 +1167,7 @@ describe('useBossProfitStore', () => {
           priceMeso: 4_000_000,
           payoutMeso: 2_000_000,
           recordedAt: '2026-07-01T00:00:00.000Z',
+          world: null,
         }
 
         vi.clearAllMocks()
@@ -1281,6 +1290,7 @@ describe('useBossProfitStore', () => {
         priceMeso: 8_080_000,
         payoutMeso: 8_080_000,
         recordedAt: '2026-07-01T00:00:00.000Z',
+        world: null,
       }
       getBossProfitRecordsMock.mockResolvedValue([pastRecord])
 
@@ -1403,6 +1413,7 @@ describe('useBossProfitStore', () => {
         priceMeso: 8_080_000,
         payoutMeso: 2_693_333,
         recordedAt: '2026-06-01T00:00:00.000Z',
+        world: null,
       }
       getBossProfitRecordsMock.mockResolvedValue([pastRecord])
       getCachedCharacterBasicMock.mockResolvedValue({
@@ -1676,6 +1687,7 @@ describe('useBossProfitStore', () => {
           priceMeso: 8_080_000,
           payoutMeso: 4_040_000,
           recordedAt: '2026-07-08T00:00:00.000Z',
+          world: null,
         }
         getBossProfitRecordsMock.mockImplementation(async (_ocids: string[], periodKeys: string[]) =>
           periodKeys.includes('2026-07-02') ? [cachedRecord] : [],
@@ -1763,6 +1775,7 @@ describe('useBossProfitStore', () => {
           priceMeso: 8_080_000,
           payoutMeso: 4_040_000,
           recordedAt: '2026-07-08T00:00:00.000Z',
+          world: null,
         }
         getBossProfitRecordsMock.mockResolvedValue([cachedRecord])
 
@@ -1845,6 +1858,7 @@ describe('useBossProfitStore', () => {
           priceMeso: 8_080_000,
           payoutMeso: 4_040_000,
           recordedAt: '2026-06-01T00:00:00.000Z',
+          world: null,
         } satisfies BossProfitRecord,
       ])
       getCachedCharacterBasicMock.mockResolvedValue({
