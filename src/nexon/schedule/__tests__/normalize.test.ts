@@ -334,7 +334,9 @@ describe('normalizeSchedulerCharacterState — 미접속으로 인한 누락 (AD
     expect(result.isMonthlyBossStale).toBe(true)
   })
 
-  it('boss_contents에 bossMonthly만 있으면 isMonthlyBossStale만 false다', () => {
+  // ADR-067 결정 4로 뒤집힌 판정: bossWeekly가 하나도 없는 응답은 축약된 것이라 남은 bossMonthly도
+  // 신뢰하지 않는다(실측 2026-07-31 — 미접속 캐릭터의 당일 응답이 정확히 이 형태다).
+  it('boss_contents에 bossMonthly만 있으면 축약 응답으로 보고 둘 다 stale이다', () => {
     const result = normalizeSchedulerCharacterState({
       ...minimalWire,
       boss_contents: [
@@ -343,6 +345,73 @@ describe('normalizeSchedulerCharacterState — 미접속으로 인한 누락 (AD
     })
 
     expect(result.isWeeklyBossStale).toBe(true)
-    expect(result.isMonthlyBossStale).toBe(false)
+    expect(result.isMonthlyBossStale).toBe(true)
+  })
+})
+
+// ADR-067 결정 4: 미접속 캐릭터의 축약 응답을 "신선한 데이터"로 신뢰하지 않는다.
+// 실측(2026-07-31) 형태 — 축약이 진행되면 bossWeekly가 먼저 사라지고 bossMonthly만 남는다.
+describe('축약 응답 판정 (isMonthlyBossStale)', () => {
+  function wireWithBosses(
+    bosses: { content_name: string; difficulty: string; cycle: string }[],
+  ): NexonSchedulerCharacterStateWire {
+    return {
+      // wire 타입은 date: string이지만 실제 당일 응답은 null이다(nexon-api.md "확인 완료된 사실").
+      // 이 테스트가 검증하는 대상이 아니므로 타입에 맞춰 문자열을 넣는다.
+      date: '2026-08-14T00:00+09:00',
+      character_name: '잠수깨비',
+      world_name: '엘리시움',
+      character_level: 262,
+      character_class: '팔라딘',
+      daily_contents: [],
+      weekly_contents: [],
+      boss_contents: bosses.map((boss) => ({
+        ...boss,
+        registration_flag: 'false',
+        complete_flag: 'false',
+      })) as NexonSchedulerCharacterStateWire['boss_contents'],
+      weekly_boss_clear_count: 0,
+      weekly_boss_clear_limit_count: 0,
+    } as NexonSchedulerCharacterStateWire
+  }
+
+  it('bossWeekly가 하나도 없으면 월간도 stale로 본다 — 축약 응답의 잔재를 신뢰하지 않는다', () => {
+    const state = normalizeSchedulerCharacterState(
+      wireWithBosses([
+        { content_name: '검은 마법사', difficulty: 'hard', cycle: 'bossMonthly' },
+        { content_name: '검은 마법사', difficulty: 'extreme', cycle: 'bossMonthly' },
+      ]),
+    )
+
+    expect(state.isWeeklyBossStale).toBe(true)
+    expect(state.isMonthlyBossStale).toBe(true)
+  })
+
+  it('bossWeekly가 있고 bossMonthly도 있으면 둘 다 신선하다', () => {
+    const state = normalizeSchedulerCharacterState(
+      wireWithBosses([
+        { content_name: '자쿰', difficulty: 'chaos', cycle: 'bossWeekly' },
+        { content_name: '검은 마법사', difficulty: 'hard', cycle: 'bossMonthly' },
+      ]),
+    )
+
+    expect(state.isWeeklyBossStale).toBe(false)
+    expect(state.isMonthlyBossStale).toBe(false)
+  })
+
+  it('bossWeekly는 있는데 bossMonthly가 없으면 월간만 stale이다 (기존 판정 유지)', () => {
+    const state = normalizeSchedulerCharacterState(
+      wireWithBosses([{ content_name: '자쿰', difficulty: 'chaos', cycle: 'bossWeekly' }]),
+    )
+
+    expect(state.isWeeklyBossStale).toBe(false)
+    expect(state.isMonthlyBossStale).toBe(true)
+  })
+
+  it('보스가 아예 없으면 둘 다 stale이다 (특수 월드·저레벨)', () => {
+    const state = normalizeSchedulerCharacterState(wireWithBosses([]))
+
+    expect(state.isWeeklyBossStale).toBe(true)
+    expect(state.isMonthlyBossStale).toBe(true)
   })
 })

@@ -2,9 +2,10 @@
 
 > **범위**: 보스별 물욕템 획득 기록, 랜덤 컨테이너 결과 선택, 드롭 입력 시트, 고가 아이템 리스트. 수익 합산·고가 드롭 연출은 [boss-profit.md](./boss-profit.md), 게임 데이터 파일은 [../foundation/game-data.md](../foundation/game-data.md).
 > **관련 소스**: `app/item-drop/` · `features/item-drop/` · `features/drop-effect/` · `storage/boss-drop-records`·`storage/drop-effect` · `lib/item-icons`·`lib/drop-effect-frames`·`lib/drop-effect-layout` · `DropEffectOverlay` · `scripts/measure-drop-effect-origins.py`(origin 재계측) · `BossDropSheet`(vaul Drawer) · `src/data/item-drop-table.json`·`boss-ring-boxes.json`·`accessory-boxes.json`·`item-icons.json`·`valuable-drops.json`.
-> **관련 ADR**: [[ADR-011]] [[ADR-010]] [[ADR-038]] [[ADR-039]] [[ADR-040]] [[ADR-041]] [[ADR-045]] [[ADR-048]]. **관련 문서**: [../foundation/game-data.md](../foundation/game-data.md), [boss-profit.md](./boss-profit.md).
+> **관련 ADR**: [[ADR-011]] [[ADR-010]] [[ADR-038]] [[ADR-039]] [[ADR-040]] [[ADR-041]] [[ADR-045]] [[ADR-048]] [[ADR-069]]. **관련 문서**: [../foundation/game-data.md](../foundation/game-data.md), [boss-profit.md](./boss-profit.md).
 
 ## 정책
+- **드롭 기록의 키는 `(ocid, boss, difficulty, period_key, drop_index)`** 이고, 그래서 **처치 난이도가 나중에 달라지면 이관이 필요하다**([[ADR-069]] 결정 4) — 익스트림으로 등록해두고 드롭까지 기록한 뒤 백필이 하드로 확정하면 그 드롭은 고아가 된다. 확정 시점에 옛 난이도 키의 드롭을 확정 키로 옮기고, **그 난이도에서 획득 불가능한 항목(`pruneUnobtainableDrops` 탈락분)은 삭제한다** — 거짓 기록이 환산 가치·고가 드롭 연출에 섞이는 것을 막는다(사용자 판단). 상세는 [boss-profit.md](./boss-profit.md) "자동 기록".
 - **화면 구조**: 2단계 — 드랍 탭 진입 시 **보스 목록** → 하나 선택 시 그 보스의 **물욕템 그리드 + 획득 히스토리**.
 - **보스 목록 출처**([[ADR-011]]): 독립 목록이 아니라 보스 스케줄러와 동일한 동기화 캐시에서 `cycle: bossWeekly` + `registration_flag: true` 인 보스만 이름 기준 dedup(수동 등록 불가). 월간 보스(검은마법사)는 현재 제외(의도 여부 확인 필요). 난이도 표기 없음.
 - **난이도 무관 아이템 노출**([[ADR-011]]): 보스 선택 시 `item-drop-table.json` 에서 그 보스명과 일치하는 **모든 난이도** 엔트리 아이템을 이름 기준 합쳐 표시 — 유저가 실제 처치 난이도를 게임에 정확히 등록 안 했을 수 있어 난이도로 거르면 실제 획득 아이템이 누락될 위험 때문.

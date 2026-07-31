@@ -8,7 +8,10 @@ import {
   getWeeklyPeriodKeysInMonth,
   isEarliestNavigablePeriod,
   isLatestPeriod,
+  getMaxQueryableDate,
   isPeriodQueryable,
+  resolvePagePeriodState,
+  resolvePeriodDataState,
   MIN_SCHEDULER_DATE,
 } from '../boss-profit-period'
 
@@ -133,8 +136,31 @@ describe('isPeriodQueryable', () => {
     expect(isPeriodQueryable('weekly', '2026-06-18', recentNow)).toBe(false) // 조회일 2026-06-24 < MIN_SCHEDULER_DATE
   })
 
-  it('monthly: 그 달의 마지막 날이 롤링 윈도우 안이면 true다', () => {
-    expect(isPeriodQueryable('monthly', '2026-07', now)).toBe(true) // 조회일 2026-07-31 >= 2026-07-09... (아직 안 지났어도 날짜 비교상 통과)
+  // ADR-067 결정 2 정정 2: 상한이 생겼다. 이 테스트는 전에 "조회일이 아직 안 지났어도 날짜
+  // 비교상 통과"를 그대로 기록하고 있었는데, 그게 바로 버그였다 — 현재 달의 조회일(그 달
+  // 마지막 날)은 미래이고 실제로 호출하면 400 OPENAPI00004다(실측).
+  it('monthly: 그 달의 마지막 날이 아직 오지 않았으면 false다 (상한)', () => {
+    expect(isPeriodQueryable('monthly', '2026-07', now)).toBe(false) // 조회일 2026-07-31 > 오늘-1일(2026-07-21)
+  })
+
+  it('monthly: 지난 달은 조회일이 하한·상한 사이라 true다', () => {
+    // now 2026-08-05 → 롤링 하한 2026-07-23 · 상한 2026-08-04. 2026-07의 조회일 2026-07-31은 그 사이다.
+    // (2026-06은 MIN_SCHEDULER_DATE(2026-07-01)에 막히므로 예시로 쓸 수 없다)
+    expect(isPeriodQueryable('monthly', '2026-07', new Date('2026-08-05T12:00:00+09:00'))).toBe(true)
+  })
+
+  it('오늘·미래 조회일은 상한에 막힌다 — 실측 400 OPENAPI00004', () => {
+    // now 2026-07-22 → 이번 주(2026-07-16)의 조회일은 2026-07-22 = 오늘
+    expect(isPeriodQueryable('weekly', '2026-07-16', now)).toBe(false)
+    expect(getMaxQueryableDate(now)).toBe('2026-07-21')
+  })
+
+  it('오늘-1일은 상한 안이다 — 새벽엔 OPENAPI00009지만 집계가 끝나면 조회된다(정정 2)', () => {
+    // 조회일이 정확히 오늘-1일(2026-07-21)인 주 = periodKey 2026-07-15? weekly는 목요일이므로
+    // 조회일 오늘-1일을 만들려면 periodKey = 2026-07-15 - 6 = 2026-07-15가 아니다. 대신 상한
+    // 경계값 자체를 확인한다.
+    expect(getMaxQueryableDate(now)).toBe('2026-07-21')
+    expect(isPeriodQueryable('weekly', '2026-07-09', now)).toBe(true) // 조회일 2026-07-15 <= 2026-07-21
   })
 
   it('monthly: 그 달의 마지막 날이 롤링 윈도우 밖이면 false다', () => {
@@ -230,5 +256,77 @@ describe('getBackfillQueryDate', () => {
     expect(getBackfillQueryDate('monthly', '2026-07')).toBe('2026-07-31') // 31일
     expect(getBackfillQueryDate('monthly', '2024-02')).toBe('2024-02-29') // 윤년 2월
     expect(getBackfillQueryDate('monthly', '2026-02')).toBe('2026-02-28') // 평년 2월
+  })
+})
+
+// ADR-067 결정 2(+정정 1·2): 기간 상태를 여섯 가지로 나눈다. 판정에 필요한 입력을 전부 인자로
+// 받는 순수 함수라 store·화면이 같은 값을 공유할 수 있다(전에는 화면은 isPeriodQueryable,
+// 백필은 target별로 따로 판정해 월간 탭에서 두 문구가 동시에 뜨는 경로가 있었다 — 이슈 #78 E).
+describe('resolvePeriodDataState', () => {
+  const base = {
+    isCurrentPeriod: false,
+    hasRecords: false,
+    isChecked: false,
+    isQueryable: true,
+    lastOutcome: null,
+  } as const
+
+  it('기록이 있으면 recorded — 조회 가능성과 무관하다', () => {
+    expect(resolvePeriodDataState({ ...base, hasRecords: true })).toBe('recorded')
+    expect(resolvePeriodDataState({ ...base, hasRecords: true, isQueryable: false })).toBe('recorded')
+  })
+
+  it('확인 기록이 있고 기록이 없으면 confirmedEmpty — 시간이 지나도 격하되지 않는다(결정 3)', () => {
+    expect(resolvePeriodDataState({ ...base, isChecked: true })).toBe('confirmedEmpty')
+    // 롤링 윈도우를 벗어난 뒤에도 "0건 확정"이 유지된다 — 전에는 여기서 조회 불가로 바뀌었다
+    expect(resolvePeriodDataState({ ...base, isChecked: true, isQueryable: false })).toBe('confirmedEmpty')
+  })
+
+  it('조회 구간 밖이면 outOfRange', () => {
+    expect(resolvePeriodDataState({ ...base, isQueryable: false })).toBe('outOfRange')
+  })
+
+  it('이번 시도가 집계 전이었으면 notCollected', () => {
+    expect(resolvePeriodDataState({ ...base, lastOutcome: 'notCollected' })).toBe('notCollected')
+  })
+
+  it('이번 시도가 그 외 실패였으면 failed', () => {
+    expect(resolvePeriodDataState({ ...base, lastOutcome: 'failed' })).toBe('failed')
+  })
+
+  it('조회 가능한데 확인도 시도도 없으면 notChecked — 조회 버튼을 주는 상태(정정 1)', () => {
+    expect(resolvePeriodDataState(base)).toBe('notChecked')
+  })
+
+  it('현재 기간은 실시간 동기화가 원천이라 recorded/confirmedEmpty뿐이다', () => {
+    // 현재 기간의 조회일은 미래라 isQueryable이 false지만, 백필이 아니라 실시간 동기화로 보므로
+    // "조회 불가"가 아니다 — 처치가 0건이면 그것이 확정된 사실이다.
+    expect(resolvePeriodDataState({ ...base, isCurrentPeriod: true, isQueryable: false })).toBe(
+      'confirmedEmpty',
+    )
+    expect(
+      resolvePeriodDataState({ ...base, isCurrentPeriod: true, isQueryable: false, hasRecords: true }),
+    ).toBe('recorded')
+  })
+})
+
+describe('resolvePagePeriodState', () => {
+  it('기록이 하나라도 있으면 recorded — 화면의 주인은 보여줄 기록이다', () => {
+    expect(resolvePagePeriodState(['outOfRange', 'recorded', 'failed'])).toBe('recorded')
+  })
+
+  it('행동이 있는 상태(failed·notChecked)가 없는 상태보다 앞선다', () => {
+    expect(resolvePagePeriodState(['outOfRange', 'failed'])).toBe('failed')
+    expect(resolvePagePeriodState(['confirmedEmpty', 'notChecked'])).toBe('notChecked')
+    expect(resolvePagePeriodState(['notCollected', 'failed'])).toBe('failed')
+  })
+
+  it('전원이 확정했을 때만 confirmedEmpty다 — 불확실을 확정으로 위장하지 않는다', () => {
+    expect(resolvePagePeriodState(['confirmedEmpty', 'confirmedEmpty'])).toBe('confirmedEmpty')
+    expect(resolvePagePeriodState(['confirmedEmpty', 'outOfRange'])).toBe('outOfRange')
+  })
+
+  it('캐릭터가 없으면 confirmedEmpty (보여줄 것도 모를 것도 없다)', () => {
+    expect(resolvePagePeriodState([])).toBe('confirmedEmpty')
   })
 })

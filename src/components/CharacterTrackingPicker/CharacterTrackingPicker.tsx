@@ -74,10 +74,16 @@ function PickerBody(props: CharacterTrackingPickerProps & { onChange: (ocids: st
       <ErrorState
         title={copy.title}
         description={copy.description}
-        action={{
-          label: copy.action.label,
-          onClick: copy.action.kind === 'openSettings' ? props.onOpenSettings : props.onRetry,
-        }}
+        // 영구 실패(조회 불가 캐릭터)에는 액션이 없다 — 눌러도 실패하는 버튼을 주지 않는다
+        // ([[ADR-062]] 결정 3, [[ADR-067]] 결정 1).
+        action={
+          copy.action === undefined
+            ? undefined
+            : {
+                label: copy.action.label,
+                onClick: copy.action.kind === 'openSettings' ? props.onOpenSettings : props.onRetry,
+              }
+        }
       />
     )
   }

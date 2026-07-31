@@ -8,6 +8,7 @@ import {
   useBossProfitStore,
   type BossProfitRow,
   type BossProfitWeeklySubtotal,
+  type WeeklySubtotalState,
 } from '../../../features/boss-profit/store'
 import { getCurrentBossProfitPeriod } from '../../../lib/boss-profit-period'
 import { WEEKLY_BOSS_CLEAR_LIMIT, WEEKLY_CRYSTAL_SALE_LIMIT } from '../../../lib/boss-matching'
@@ -45,10 +46,11 @@ function mockStore(overrides: Partial<ReturnType<typeof useBossProfitStore>>): v
     dropsByRowKey: {},
     weeklySubtotals: [],
     isPeriodLoading: false,
-    periodUnavailable: false,
+    periodState: 'confirmedEmpty' as const,
     canGoPreviousPeriod: true,
     error: null,
     staleCharacterNames: [],
+    characterIssues: {},
     trackedOcids: null,
     lastSyncedAt: null,
     loadTrackedOcids: vi.fn(),
@@ -56,6 +58,7 @@ function mockStore(overrides: Partial<ReturnType<typeof useBossProfitStore>>): v
     setTab: vi.fn(),
     goToPreviousPeriod: vi.fn(),
     goToNextPeriod: vi.fn(),
+    retryPeriod: vi.fn(),
     setPartySize: vi.fn(),
     setBossDrops: vi.fn(),
     ...overrides,
@@ -89,7 +92,7 @@ function subtotal(overrides: Partial<BossProfitWeeklySubtotal> = {}): BossProfit
     imageUrl: null,
     periodKey: '2026-07-09',
     totalMeso: 5_000_000,
-    state: 'confirmed',
+    state: 'recorded',
     ...overrides,
   }
 }
@@ -295,17 +298,265 @@ describe('BossProfitScreen', () => {
     expect(screen.queryByText(/총 수익/)).not.toBeInTheDocument()
   })
 
-  it('periodUnavailable이 true면 안내 문구를 보여준다', () => {
-    mockStore({
-      status: 'loaded',
-      trackedOcids: ['ocid-1'],
-      rows: [],
-      periodUnavailable: true,
+  // ADR-068 결정 3: 동기화가 실패한 캐릭터를 카드에서 식별한다 — 전에는 토스트가 인원 수만 알려
+  // 어느 카드인지 알 수 없었다(이슈 #78 B).
+  describe('캐릭터 카드의 실패 표식 (ADR-068 결정 3)', () => {
+    it('실패한 캐릭터 카드에만 배지를 붙인다', () => {
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1', 'ocid-2'],
+        rows: [row({ ocid: 'ocid-1', characterName: '낟낟' }), row({ ocid: 'ocid-2', characterName: '잠수깨비' })],
+        periodState: 'recorded',
+        characterIssues: { 'ocid-2': 'failed' },
+      })
+
+      renderBossProfitScreen()
+
+      expect(screen.getAllByTestId('character-issue-badge')).toHaveLength(1)
+      const failedCard = screen.getByRole('button', { name: /잠수깨비/ })
+      // 아이콘만 남아(라벨 없음) 스크린리더에는 role="img" + aria-label이 유일한 원천이다.
+      expect(within(failedCard).getByRole('img', { name: '실패' })).toBeInTheDocument()
     })
 
-    renderBossProfitScreen()
+    it('조회 불가는 영구라 다른 문구·톤을 쓴다', () => {
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        rows: [row({ ocid: 'ocid-1', characterName: '또삭제될제로' })],
+        periodState: 'recorded',
+        characterIssues: { 'ocid-1': 'unavailable' },
+      })
 
-    expect(screen.getByText('이 기간을 불러오지 못했습니다 — 다시 시도해주세요')).toBeInTheDocument()
+      renderBossProfitScreen()
+
+      expect(screen.getByRole('img', { name: '조회 불가' })).toBeInTheDocument()
+      expect(screen.queryByRole('img', { name: '실패' })).not.toBeInTheDocument()
+    })
+
+    // 실물 확인 후 확정(2026-07-31): 라벨 배지는 6자 이름부터 잘라먹어(내옆에최성일 → 내옆에…)
+    // 아이콘만 남겼다. 이름·금액·헤드라인 합계가 모두 온전하다.
+    // 사용자 지정(2026-07-31): 아이콘만으로는 원인을 말할 수 없으므로 탭하면 설명이 나와야 한다.
+    // 겹침·z-index 주의사항도 함께 검증한다 — 실물에서 팝오버가 아래 카드에 가려지는 것을 확인했다.
+    describe('설명 팝오버', () => {
+      function renderWithIssue(): void {
+        mockStore({
+          status: 'loaded',
+          trackedOcids: ['ocid-1'],
+          rows: [row({ ocid: 'ocid-1', characterName: '잠수깨비', payoutMeso: 8_080_000 })],
+          periodState: 'recorded',
+          characterIssues: { 'ocid-1': 'failed' },
+        })
+        renderBossProfitScreen()
+      }
+
+      it('배지를 탭하면 이유를 설명하고, 아코디언은 펼쳐지지 않는다', () => {
+        renderWithIssue()
+
+        expect(screen.queryByTestId('character-issue-popover')).not.toBeInTheDocument()
+        fireEvent.click(screen.getByTestId('character-issue-badge'))
+
+        expect(screen.getByText('동기화하지 못했습니다')).toBeInTheDocument()
+        // 카드 헤더 자체가 버튼이라 stopPropagation이 없으면 함께 펼쳐진다
+        expect(screen.queryByText('자쿰')).not.toBeInTheDocument()
+      })
+
+      it('다시 탭하면 닫힌다', () => {
+        renderWithIssue()
+
+        fireEvent.click(screen.getByTestId('character-issue-badge'))
+        fireEvent.click(screen.getByTestId('character-issue-badge'))
+
+        expect(screen.queryByTestId('character-issue-popover')).not.toBeInTheDocument()
+      })
+
+      it('스크롤이 시작되면 닫는다 — 스크롤 중 다른 컨텐츠를 덮지 않게 한다', () => {
+        renderWithIssue()
+
+        fireEvent.click(screen.getByTestId('character-issue-badge'))
+        expect(screen.getByTestId('character-issue-popover')).toBeInTheDocument()
+
+        fireEvent.scroll(window)
+        expect(screen.queryByTestId('character-issue-popover')).not.toBeInTheDocument()
+      })
+
+      it('카드를 펼치거나 접으면 닫힌다 — 펼침이 레이아웃을 바꿔 위치가 낡은 값이 된다', () => {
+        renderWithIssue()
+
+        fireEvent.click(screen.getByTestId('character-issue-badge'))
+        expect(screen.getByTestId('character-issue-popover')).toBeInTheDocument()
+
+        // 헤더(아코디언 토글)를 누른다 — 바깥 탭 판정은 카드 루트를 "안"으로 보므로 이 경로가 별도로 필요하다
+        fireEvent.click(screen.getByRole('button', { name: /잠수깨비/ }))
+
+        expect(screen.queryByTestId('character-issue-popover')).not.toBeInTheDocument()
+        // 아코디언은 정상적으로 펼쳐진다
+        expect(screen.getByText('자쿰')).toBeInTheDocument()
+      })
+
+      it('바깥을 누르면 닫힌다', () => {
+        renderWithIssue()
+
+        fireEvent.click(screen.getByTestId('character-issue-badge'))
+        fireEvent.pointerDown(document.body)
+
+        expect(screen.queryByTestId('character-issue-popover')).not.toBeInTheDocument()
+      })
+
+      it('열린 동안만 그 카드를 형제 카드 위로 올린다 — 페이지 헤더(z-10)보다는 낮게', () => {
+        renderWithIssue()
+        const card = screen.getByTestId('character-issue-badge').closest('.isolate') as HTMLElement
+
+        expect(card.className).not.toContain('z-[9]')
+        fireEvent.click(screen.getByTestId('character-issue-badge'))
+        expect(card.className).toContain('z-[9]')
+      })
+
+      it('조회 불가는 다른 설명을 준다 — 추적 해제 경로를 알린다', () => {
+        mockStore({
+          status: 'loaded',
+          trackedOcids: ['ocid-1'],
+          rows: [row({ ocid: 'ocid-1', characterName: '또삭제될제로' })],
+          periodState: 'recorded',
+          characterIssues: { 'ocid-1': 'unavailable' },
+        })
+        renderBossProfitScreen()
+
+        fireEvent.click(screen.getByTestId('character-issue-badge'))
+
+        expect(screen.getByText('조회할 수 없는 캐릭터입니다')).toBeInTheDocument()
+        expect(screen.getByText(/캐릭터 관리에서 추적을 해제/)).toBeInTheDocument()
+      })
+    })
+
+    it('이름과 금액을 둘 다 가리지 않는다', () => {
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        rows: [row({ ocid: 'ocid-1', characterName: '잠수깨비', payoutMeso: 8_080_000 })],
+        periodState: 'recorded',
+        characterIssues: { 'ocid-1': 'failed' },
+      })
+
+      renderBossProfitScreen()
+
+      const card = screen.getByRole('button', { name: /잠수깨비/ })
+      expect(within(card).getByRole('img', { name: '실패' })).toBeInTheDocument()
+      expect(within(card).getByText('잠수깨비')).toBeInTheDocument()
+      expect(within(card).getByText('8,080,000 메소')).toBeInTheDocument()
+    })
+  })
+
+  // ADR-068 결정 2: 월간 주차 행은 **행동이 있는 상태에만** 버튼을 준다. 조회한 적 없는 주를
+  // 0메소(확정)로 위장하던 것이 이 결정의 출발점이다.
+  describe('월간 주차 행의 상태별 표현 (ADR-068 결정 2)', () => {
+    function monthlyWith(state: WeeklySubtotalState, retryPeriod = vi.fn()): ReturnType<typeof vi.fn> {
+      mockStore({
+        status: 'loaded',
+        tab: 'monthly',
+        periodKey: '2026-07',
+        trackedOcids: ['ocid-1'],
+        rows: [],
+        periodState: 'recorded',
+        weeklySubtotals: [subtotal({ periodKey: '2026-07-09', state, totalMeso: 0 })],
+        retryPeriod,
+      })
+      renderBossProfitScreen()
+      fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
+      return retryPeriod
+    }
+
+    it('notChecked에는 "조회" 버튼을 주고 금액을 쓰지 않는다 — 0은 "0원 벌었다"로 읽힌다', () => {
+      const retryPeriod = monthlyWith('notChecked')
+
+      const button = screen.getByRole('button', { name: '조회' })
+      expect(button).toBeInTheDocument()
+      // 그 행 안에는 금액이 없다(카드 헤더 합계와 구분해 행 범위로 좁힌다)
+      const row = screen.getByText('7월 2주차').closest('li') as HTMLElement
+      expect(within(row).queryByText(/메소/)).not.toBeInTheDocument()
+
+      fireEvent.click(button)
+      expect(retryPeriod).toHaveBeenCalled()
+    })
+
+    it('failed에는 "다시 시도" 버튼을 준다', () => {
+      const retryPeriod = monthlyWith('failed')
+
+      fireEvent.click(screen.getByRole('button', { name: '다시 시도' }))
+      expect(retryPeriod).toHaveBeenCalled()
+    })
+
+    it('confirmedEmpty는 "0 메소"다 — 조회해서 확인한 사실이라 금액을 말할 수 있다', () => {
+      monthlyWith('confirmedEmpty')
+
+      const row = screen.getByText('7월 2주차').closest('li') as HTMLElement
+      expect(within(row).getByText('0 메소')).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: '조회' })).not.toBeInTheDocument()
+    })
+
+    it.each([
+      ['notCollected', '집계 전'],
+      ['outOfRange', '조회 불가'],
+    ] as const)('%s는 비활성 배지이고 버튼이 없다 — 사용자가 할 일이 없다', (state, label) => {
+      monthlyWith(state)
+
+      expect(screen.getByText(label)).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: '조회' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: '다시 시도' })).not.toBeInTheDocument()
+    })
+  })
+
+  // ADR-068 결정 1: 여섯 상태가 서로 다른 얼굴을 갖는다. 전에는 periodUnavailable(boolean) 하나로
+  // "집계 전"과 "그 외 실패"를 같은 문구로 말했다.
+  describe('기간 상태별 표현 (ADR-068 결정 1)', () => {
+    it('failed는 실패 상태 + 재시도 액션을 준다', () => {
+      const retryPeriod = vi.fn()
+      mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [], periodState: 'failed', retryPeriod })
+
+      renderBossProfitScreen()
+
+      expect(screen.getByTestId('error-state')).toBeInTheDocument()
+      expect(screen.getByText('이 기간을 불러오지 못했습니다')).toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: '다시 시도' }))
+      expect(retryPeriod).toHaveBeenCalled()
+    })
+
+    it('notCollected는 "아직 집계되지 않았습니다"이고 재시도 버튼이 없다 — 사용자가 할 일이 없다', () => {
+      mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [], periodState: 'notCollected' })
+
+      renderBossProfitScreen()
+
+      expect(screen.getByText('아직 집계되지 않았습니다')).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: '다시 시도' })).not.toBeInTheDocument()
+      expect(screen.queryByTestId('error-state')).not.toBeInTheDocument()
+    })
+
+    it('outOfRange는 조회 불가 고지이고 기간 문구는 14일이다(넥슨 한도)', () => {
+      mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [], periodState: 'outOfRange' })
+
+      renderBossProfitScreen()
+
+      expect(screen.getByTestId('unavailable-notice')).toBeInTheDocument()
+      expect(screen.getByTestId('unavailable-notice-description').textContent).toContain('14일')
+    })
+
+    it('confirmedEmpty는 빈 상태다 — 조회 불가와 디자인을 공유하지 않는다(ADR-060)', () => {
+      mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [], periodState: 'confirmedEmpty' })
+
+      renderBossProfitScreen()
+
+      expect(screen.getByText('아직 처치한 보스가 없습니다')).toBeInTheDocument()
+      expect(screen.queryByTestId('unavailable-notice')).not.toBeInTheDocument()
+    })
+
+    it('recorded면 기록이 화면의 주인이라 어떤 고지도 띄우지 않는다(결정 7)', () => {
+      mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()], periodState: 'recorded' })
+
+      renderBossProfitScreen()
+
+      expect(screen.queryByTestId('unavailable-notice')).not.toBeInTheDocument()
+      expect(screen.queryByTestId('error-state')).not.toBeInTheDocument()
+      expect(screen.queryByText(/아직 집계되지 않았습니다/)).not.toBeInTheDocument()
+    })
   })
 
   it('status가 loading이고 캐릭터 그룹이 없으면 로딩 표시를 보여준다', () => {
@@ -341,10 +592,18 @@ describe('BossProfitScreen', () => {
     expect(screen.queryByText('API 키가 유효하지 않습니다')).not.toBeInTheDocument()
   })
 
-  it('weekly 탭: 롤링 윈도우 밖(오늘-13일 이전)이고 rows가 비어있으면 "조회 불가"를 보여준다(ADR-032)', () => {
-    // periodKey 2026-07-02의 조회일은 2026-07-08 — 테스트 실행 시점(2026-07-22) 기준 롤링
-    // 하한(2026-07-09)보다 이전이라 지금은 API로 조회할 수 없는 기간이다.
-    mockStore({ status: 'loaded', tab: 'weekly', periodKey: '2026-07-02', trackedOcids: ['ocid-1'], rows: [] })
+  // ADR-067 결정 2로 판정 주체가 옮겨졌다: 전에는 이 화면이 periodKey로 isPeriodQueryable을 직접
+  // 계산했는데, 백필은 target별로 따로 판정해 둘이 어긋났다(이슈 #78 E — 두 문구 동시 출현).
+  // 이제 store가 계산한 periodState 하나를 화면과 백필이 공유한다.
+  it('weekly 탭: outOfRange이고 rows가 비어있으면 "조회 불가"를 보여준다(ADR-032)', () => {
+    mockStore({
+      status: 'loaded',
+      tab: 'weekly',
+      periodKey: '2026-07-02',
+      trackedOcids: ['ocid-1'],
+      rows: [],
+      periodState: 'outOfRange',
+    })
 
     renderBossProfitScreen()
 
@@ -671,7 +930,7 @@ describe('BossProfitScreen', () => {
         }),
       ],
       weeklySubtotals: [
-        subtotal({ periodKey: '2026-07-02', totalMeso: 5_000_000, state: 'confirmed' }),
+        subtotal({ periodKey: '2026-07-02', totalMeso: 5_000_000, state: 'recorded' }),
         subtotal({ periodKey: '2026-07-09', totalMeso: 3_000_000, state: 'inProgress' }),
         subtotal({ periodKey: '2026-07-16', totalMeso: 0, state: 'upcoming' }),
       ],
@@ -712,7 +971,7 @@ describe('BossProfitScreen', () => {
       periodKey: '2026-07',
       trackedOcids: ['ocid-1'],
       rows: [],
-      weeklySubtotals: [subtotal({ periodKey: '2026-06-25', totalMeso: 0, state: 'unavailable' })],
+      weeklySubtotals: [subtotal({ periodKey: '2026-06-25', totalMeso: 0, state: 'outOfRange' })],
     })
 
     renderBossProfitScreen()
@@ -733,7 +992,7 @@ describe('BossProfitScreen', () => {
       periodKey: '2026-06',
       trackedOcids: ['ocid-1'],
       rows: [],
-      weeklySubtotals: [subtotal({ periodKey: '2026-06-04', totalMeso: 0, state: 'unavailable' })],
+      weeklySubtotals: [subtotal({ periodKey: '2026-06-04', totalMeso: 0, state: 'outOfRange' })],
     })
 
     renderBossProfitScreen()
@@ -751,7 +1010,7 @@ describe('BossProfitScreen', () => {
       periodKey: '2026-07',
       trackedOcids: ['ocid-1'],
       rows: [],
-      weeklySubtotals: [subtotal({ periodKey: '2026-07-02', totalMeso: 5_000_000, state: 'confirmed' })],
+      weeklySubtotals: [subtotal({ periodKey: '2026-07-02', totalMeso: 5_000_000, state: 'recorded' })],
     })
 
     renderBossProfitScreen()
@@ -1848,3 +2107,4 @@ describe('BossProfitScreen', () => {
     })
   })
 })
+

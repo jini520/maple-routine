@@ -85,6 +85,8 @@ export function normalizeSchedulerCharacterState(
       .map((boss) => boss.content_name),
   )
 
+  const hasWeeklyBoss = bossContentsWire.some((boss) => boss.cycle === 'bossWeekly')
+
   return {
     asOf: wire.date,
     characterName: wire.character_name,
@@ -98,7 +100,17 @@ export function normalizeSchedulerCharacterState(
       .filter((content): content is BossContent => content !== null),
     isDailyStale: dailyContentsWire.length === 0,
     isWeeklyStale: weeklyContentsWire.length === 0,
-    isWeeklyBossStale: !bossContentsWire.some((boss) => boss.cycle === 'bossWeekly'),
-    isMonthlyBossStale: !bossContentsWire.some((boss) => boss.cycle === 'bossMonthly'),
+    isWeeklyBossStale: !hasWeeklyBoss,
+    // ADR-067 결정 4: "그 cycle 항목이 있는가"만 보면 **축약 응답을 신선한 데이터로 신뢰**한다.
+    // 실측(2026-07-31): 미접속 캐릭터의 당일 응답은 단계적으로 줄어들어 결국 bossMonthly 2건
+    // (검은마법사 하드·익스트림, 둘 다 reg=false·comp=false)만 남는다. 그 응답을 신뢰하면 그 달에
+    // 처치한 월간 보스의 완료가 "신선한 false"로 덮어써져 사라진다(재현: 6.65억 기록 보유
+    // 상태에서 "이번 달 총 수익 0메소").
+    //
+    // 축약은 **weekly 보스부터** 사라지므로, bossWeekly가 하나도 없는 응답은 boss_contents 전체를
+    // 신뢰할 수 없다고 본다 — 남은 bossMonthly는 "이번 달 안 잡았다"는 사실이 아니라 결여의 잔재다.
+    // (보스를 아예 할 수 없는 저레벨·특수 월드 캐릭터도 이 조건에 걸리지만, 그 경우 복원할 previous
+    // 자체가 없어 결과가 같다 — 잘못된 false를 덮어쓰지 않는 쪽이 안전하다.)
+    isMonthlyBossStale: !bossContentsWire.some((boss) => boss.cycle === 'bossMonthly') || !hasWeeklyBoss,
   }
 }

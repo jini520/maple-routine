@@ -8,6 +8,7 @@ const {
   syncSchedulesMock,
   getTrackedCharacterOcidsMock,
   getBossProfitRecordsMock,
+  hasBossProfitRecordsAtOrBeforeMock,
   upsertBossProfitRecordMock,
   getBossPartySizeMock,
   getCachedSchedulerStateMock,
@@ -24,6 +25,7 @@ const {
   syncSchedulesMock: vi.fn(),
   getTrackedCharacterOcidsMock: vi.fn(),
   getBossProfitRecordsMock: vi.fn(),
+  hasBossProfitRecordsAtOrBeforeMock: vi.fn(),
   upsertBossProfitRecordMock: vi.fn(),
   getBossPartySizeMock: vi.fn(),
   getCachedSchedulerStateMock: vi.fn(),
@@ -50,6 +52,8 @@ vi.mock('../../../storage/character-selection', () => ({
 
 vi.mock('../../../storage/boss-profit', () => ({
   getBossProfitRecords: getBossProfitRecordsMock,
+  // ADR-068 결정 5: 이전 게이트가 "이 기간 또는 더 과거에 기록이 있는가"를 SQL 부등호로 묻는다.
+  hasBossProfitRecordsAtOrBefore: hasBossProfitRecordsAtOrBeforeMock,
   upsertBossProfitRecord: upsertBossProfitRecordMock,
 }))
 
@@ -148,7 +152,6 @@ beforeEach(() => {
     dropsByRowKey: {},
     weeklySubtotals: [],
     isPeriodLoading: false,
-    periodUnavailable: false,
     canGoPreviousPeriod: false,
     error: null,
     staleCharacterNames: [],
@@ -156,6 +159,7 @@ beforeEach(() => {
     lastSyncedAt: null,
   })
   getBossProfitRecordsMock.mockResolvedValue([])
+  hasBossProfitRecordsAtOrBeforeMock.mockResolvedValue(false)
   getBossDropRecordsMock.mockResolvedValue([])
   replaceBossDropRecordsMock.mockResolvedValue(undefined)
   upsertBossProfitRecordMock.mockResolvedValue(undefined)
@@ -1176,7 +1180,7 @@ describe('useBossProfitStore', () => {
         const pastSubtotal = midState.weeklySubtotals.find((subtotal) => subtotal.periodKey === pastWeekKey)
         expect(pastSubtotal).toBeDefined()
         expect(pastSubtotal?.totalMeso).toBe(2_000_000)
-        expect(pastSubtotal?.state).toBe('confirmed')
+        expect(pastSubtotal?.state).toBe('recorded')
       } finally {
         vi.useRealTimers()
       }
@@ -1417,7 +1421,8 @@ describe('useBossProfitStore', () => {
       expect(state.rows[0].partySize).toBe(3)
       expect(state.rows[0].payoutMeso).toBe(2_693_333)
       expect(state.isPeriodLoading).toBe(false)
-      expect(state.periodUnavailable).toBe(false)
+      // ADR-068 결정 1: boolean 플래그가 6상태로 대체됐다 — 기록이 있으면 recorded다.
+      expect(state.periodState).toBe('recorded')
     })
 
     // 2026-07-17 실기기 재현: SQLite 커넥션이 stale하면 isPeriodChecked가 응답 없이 멈추고,
@@ -1450,7 +1455,7 @@ describe('useBossProfitStore', () => {
         expect(fetchSchedulerCharacterStateMock).toHaveBeenCalled()
         expect(markPeriodCheckedMock).toHaveBeenCalledWith('ocid-1', 'weekly', previousPeriodKey, expect.any(String))
         expect(state.isPeriodLoading).toBe(false)
-        expect(state.periodUnavailable).toBe(false)
+        expect(state.periodState).not.toBe('failed')
       } finally {
         vi.useRealTimers()
       }
@@ -1489,7 +1494,7 @@ describe('useBossProfitStore', () => {
       )
       expect(markPeriodCheckedMock).toHaveBeenCalledWith('ocid-1', 'weekly', previousPeriodKey, expect.any(String))
       expect(useBossProfitStore.getState().isPeriodLoading).toBe(false)
-      expect(useBossProfitStore.getState().periodUnavailable).toBe(false)
+      expect(useBossProfitStore.getState().periodState).not.toBe('failed')
     })
 
     it('goToPreviousPeriod: 등록 난이도와 실제 처치 난이도가 다른 과거 주는 실제 처치 난이도로 한 번만 기록한다(이중 기록 방지, ADR-032)', async () => {
@@ -1569,7 +1574,8 @@ describe('useBossProfitStore', () => {
       await useBossProfitStore.getState().goToPreviousPeriod()
 
       const state = useBossProfitStore.getState()
-      expect(state.periodUnavailable).toBe(true)
+      // ADR-068 결정 1: 알 수 없는 실패는 failed — 재시도를 줄 수 있는 유일한 기간 상태다.
+      expect(state.periodState).toBe('failed')
       expect(markPeriodCheckedMock).not.toHaveBeenCalled()
     })
 
@@ -1674,6 +1680,11 @@ describe('useBossProfitStore', () => {
         getBossProfitRecordsMock.mockImplementation(async (_ocids: string[], periodKeys: string[]) =>
           periodKeys.includes('2026-07-02') ? [cachedRecord] : [],
         )
+        // ADR-068 결정 5: 게이트는 "이 기간 또는 더 과거에 기록이 있는가"를 SQL로 묻는다 —
+        // 2026-07-02에 기록이 있으므로 그 키 이상이면 true다.
+        hasBossProfitRecordsAtOrBeforeMock.mockImplementation(
+          async (_ocids: string[], _tab: string, periodKey: string) => periodKey >= '2026-07-02',
+        )
         isPeriodCheckedMock.mockResolvedValue(true) // 이미 확인된 캐시 기간(재조회 없이 기록만 사용)
         fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState())
 
@@ -1758,7 +1769,7 @@ describe('useBossProfitStore', () => {
         await useBossProfitStore.getState().setTab('monthly')
 
         const subtotal = useBossProfitStore.getState().weeklySubtotals.find((s) => s.periodKey === pastWeekKey)
-        expect(subtotal?.state).toBe('confirmed')
+        expect(subtotal?.state).toBe('recorded')
         expect(subtotal?.totalMeso).toBe(4_040_000)
       } finally {
         vi.useRealTimers()

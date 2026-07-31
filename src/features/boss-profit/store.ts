@@ -12,11 +12,20 @@ import {
   isEarliestNavigablePeriod,
   isLatestPeriod,
   isPeriodQueryable,
+  resolvePagePeriodState,
+  resolvePeriodDataState,
+  type PeriodDataState,
+  type PeriodQueryOutcome,
 } from '../../lib/boss-profit-period'
 import { fetchSchedulerCharacterState } from '../../nexon/schedule'
 import { getAuthConfig } from '../../storage/api-key'
 import { getBossPartySize } from '../../storage/boss-party-settings'
-import { getBossProfitRecords, upsertBossProfitRecord, type BossProfitRecord } from '../../storage/boss-profit'
+import {
+  getBossProfitRecords,
+  hasBossProfitRecordsAtOrBefore,
+  upsertBossProfitRecord,
+  type BossProfitRecord,
+} from '../../storage/boss-profit'
 import { getBossDropRecords, replaceBossDropRecords } from '../../storage/boss-drops'
 import type { RecordedDrop } from '../../types/drops'
 import { isPeriodChecked, markPeriodChecked } from '../../storage/boss-profit-period-checks'
@@ -46,7 +55,16 @@ export interface BossProfitRow {
   isComplete: boolean // false면 보스 스케줄러에 등록만 되고 아직 처치 전(미완료 placeholder, ADR-032) — payoutMeso는 항상 0이고 DB에 기록되지 않는다
 }
 
-export type WeeklySubtotalState = 'confirmed' | 'inProgress' | 'upcoming' | 'unavailable'
+/**
+ * 월간 탭 주차 행의 상태([[ADR-068]] 결정 2). 기간 6상태([[ADR-067]] 결정 2)에 이 화면 고유의 두
+ * 상태를 더한다 — `inProgress`(지금 진행 중인 주)와 `upcoming`(아직 시작하지 않은 주).
+ *
+ * 전에는 `confirmed | inProgress | upcoming | unavailable` 넷이었고, **조회한 적 없는 주가
+ * `confirmed` 0메소로 위장**됐다(`기록 없음 + isPeriodQueryable` → confirmed). 백필은 과거 달로
+ * 이동할 때만 그 달의 주들을 대상에 넣으므로, 현재 달의 지난 주는 사용자가 그 주로 직접 이동한
+ * 적이 없으면 영영 조회되지 않는다 — 그 주에는 `notChecked` 로 **조회 버튼**을 준다.
+ */
+export type WeeklySubtotalState = PeriodDataState | 'inProgress' | 'upcoming'
 
 export interface BossProfitWeeklySubtotal {
   ocid: string
@@ -67,10 +85,19 @@ export interface BossProfitState {
   dropsByRowKey: Record<string, RecordedDrop[]> // 보스 행별 기록된 드롭(ADR-038). 키는 dropRowKey(ocid|boss|difficulty|periodKey). rows와 독립 상태라 탭 전환 시 loadPeriod가 DB에서 재로드
   weeklySubtotals: BossProfitWeeklySubtotal[] // monthly 탭에서만 채워짐(주차별 합계). weekly 탭에서는 항상 []
   isPeriodLoading: boolean // periodKey 이동 후 백필(과거 기간 재조회) 진행 중
-  periodUnavailable: boolean // 직전 백필 시도가 실패해 이 기간 일부를 지금 볼 수 없음(재시도 가능하도록 checked로 기록하지 않았다는 뜻)
+  // 이 기간을 화면이 어떻게 말해야 하는지([[ADR-067]] 결정 2, 표현은 [[ADR-068]]). 전에는
+  // periodUnavailable(boolean) 하나로 "집계 전"과 "그 외 실패"를 같은 문구로 말했다.
+  periodState: PeriodDataState
   canGoPreviousPeriod: boolean // 현재 선택된 기간에서 한 칸 더 과거로 이동할 수 있는지(#29) — 이전 기간이 지금 조회 가능하거나 이미 캐시된 기록이 있을 때만 true. 조회 불가·레코드 없는 기간에 착지하는 것을 막는다.
   error: ScheduleSyncError | null
   staleCharacterNames: string[]
+  /**
+   * 동기화가 실패한 캐릭터의 카드에 붙일 표식([[ADR-068]] 결정 3). 키는 ocid —
+   * `staleCharacterNames`(토스트용 이름 목록, [[ADR-063]])만으로는 어느 **카드**인지 알 수 없다.
+   *   `unavailable` 400 OPENAPI00003 — 이 캐릭터는 조회할 수 없다(영구)
+   *   `failed`      그 외 실패(네트워크·타임아웃 등)
+   */
+  characterIssues: Record<string, 'unavailable' | 'failed'>
   trackedOcids: string[] | null
   lastSyncedAt: string | null // 페이지 전체 기준 마지막으로 성공한 실시간 동기화 시각(ISO 8601). 컨텐츠/보스 스케줄러의 formatSyncedAt과 동일하게 새로고침 아이콘 옆에 표시
 }
@@ -83,6 +110,12 @@ export interface BossProfitStore extends BossProfitState {
   setTab(tab: BossCycle): Promise<void>
   goToPreviousPeriod(): Promise<void>
   goToNextPeriod(): Promise<void>
+  /**
+   * 지금 보고 있는 (tab, periodKey)를 다시 로드한다([[ADR-068]] 결정 1·2). 재시도(`failed`)와
+   * 조회(`notChecked`) 두 상태가 사용자에게 주는 유일한 행동이고 둘 다 같은 일을 한다 —
+   * 그 기간의 미확인 target을 다시 백필한다. `refresh` 로는 대신할 수 없다(현재 기간으로 되돌린다).
+   */
+  retryPeriod(): Promise<void>
   setPartySize(row: BossProfitRowKey, partySize: number): Promise<void>
   setBossDrops(row: BossProfitRowKey, drops: RecordedDrop[]): Promise<void>
 }
@@ -298,6 +331,42 @@ function mergeRecordsIntoRows(
   })
 }
 
+// ADR-067 결정 4(표시): **현재 기간의 행은 API/캐시가 원천이고 과거 기간의 행은 기록이 원천**이라는
+// 비대칭 때문에, API가 보스를 빼면 이미 저장된 수익이 현재 기간 화면에서 사라진다. 실측된 경로는
+// 미접속 캐릭터의 축약 응답이다 — 월간 보스를 처치한 뒤 1주 이상 접속하지 않으면 bossMonthly가
+// reg=false·comp=false로만 남아 `selectBossProfitBosses` 가 행을 만들지 않는다(재현: 6.65억 기록
+// 보유 상태에서 "이번 달 총 수익 0메소").
+//
+// mergeRecordsIntoRows는 **있는 행을 채우기만** 하므로, 기록만 있는 조합은 여기서 행으로 되살린다.
+// 참조 데이터에서 사라진 보스의 기록도 행이 되지만 그것이 원칙과 일치한다("과거 기록은 지우지
+// 않는다", error-resilience 원칙 5).
+function appendRecordOnlyRows(
+  rows: BossProfitRow[],
+  records: BossProfitRecord[],
+  profiles: Map<string, CharacterProfileInfo>,
+  now: Date,
+): BossProfitRow[] {
+  const seen = new Set(rows.map((row) => `${row.ocid}|${row.boss}|${row.difficulty}|${row.periodKey}`))
+  const restored: BossProfitRow[] = []
+
+  for (const record of records) {
+    const key = `${record.ocid}|${record.boss}|${record.difficulty}|${record.periodKey}`
+    if (seen.has(key)) {
+      continue
+    }
+    const profile = profiles.get(record.ocid)
+    if (profile === undefined) {
+      // 이 캐릭터의 프로필을 모르면 행을 만들 수 없다(캐릭터명·아바타가 없다) — buildRowsFromRecords가
+      // 캐시 없는 ocid를 건너뛰는 것과 같은 규약이다.
+      continue
+    }
+    seen.add(key)
+    restored.push(buildRowFromRecord(record, profile, now))
+  }
+
+  return [...rows, ...restored]
+}
+
 function matchesRowKey(row: BossProfitRow, key: BossProfitRowKey): boolean {
   return (
     row.ocid === key.ocid &&
@@ -353,6 +422,8 @@ async function buildWeeklySubtotalsForMonth(
   liveRows: BossProfitRow[],
   knownProfiles: Map<string, CharacterProfileInfo>,
   now: Date,
+  // 이번 로드에서 그 주를 백필해 본 결과(영속되지 않는다) — 키는 `${ocid}|${cycle}|${periodKey}`.
+  outcomes?: Map<string, PeriodQueryOutcome | null>,
 ): Promise<BossProfitWeeklySubtotal[]> {
   if (ocids.length === 0) {
     return []
@@ -363,6 +434,19 @@ async function buildWeeklySubtotalsForMonth(
   const pastWeekKeys = weekKeys.filter((key) => key < currentWeeklyPeriodKey)
   const pastRecords =
     pastWeekKeys.length > 0 ? await withSqliteFallback(getBossProfitRecords(ocids, pastWeekKeys), []) : []
+
+  // ADR-068 결정 2: 지난 주의 상태를 6상태로 판정하려면 **확인 기록**이 필요하다 — 기록이 없는 주가
+  // "조회해서 0건을 확인한 주"인지 "조회한 적 없는 주"인지는 그것만이 갈라준다.
+  const checkedKeys = new Set<string>()
+  await Promise.all(
+    ocids.flatMap((ocid) =>
+      pastWeekKeys.map(async (weekKey) => {
+        if (await withSqliteFallback(isPeriodChecked(ocid, 'weekly', weekKey), false)) {
+          checkedKeys.add(`${ocid}|${weekKey}`)
+        }
+      }),
+    ),
+  )
 
   const subtotals: BossProfitWeeklySubtotal[] = []
 
@@ -387,16 +471,17 @@ async function buildWeeklySubtotalsForMonth(
         const matchingRecords = pastRecords.filter(
           (record) => record.ocid === ocid && record.cycle === 'weekly' && record.periodKey === weekKey,
         )
-        // 이 조합에 이미 저장된 기록이 있으면(과거에 조회 가능했을 때 확보한 기록일 수 있음)
-        // 지금 이 주가 조회 가능한지와 무관하게 그 기록을 그대로 쓴다 — 기록이 없을 때만
-        // "지금 API로 조회할 수 있었는가"(isPeriodQueryable, MIN_SCHEDULER_DATE 고정 하한선 +
-        // 롤링 조회 윈도우 둘 다 반영)로 "조회 불가"와 "0메소 확정"을 구분한다.
-        if (matchingRecords.length === 0 && !isPeriodQueryable('weekly', weekKey, now)) {
-          subtotals.push({ ocid, characterName, imageUrl, periodKey: weekKey, totalMeso: 0, state: 'unavailable' })
-        } else {
-          const totalMeso = matchingRecords.reduce((sum, record) => sum + record.payoutMeso, 0)
-          subtotals.push({ ocid, characterName, imageUrl, periodKey: weekKey, totalMeso, state: 'confirmed' })
-        }
+        // 판정을 화면·백필과 공유하는 한 함수에 맡긴다([[ADR-067]] 결정 2) — 전에는 여기서
+        // "기록 없음 + 조회 가능"을 confirmed로 떨어뜨려 **조회한 적 없는 주를 0메소로 위장**했다.
+        const state = resolvePeriodDataState({
+          isCurrentPeriod: false,
+          hasRecords: matchingRecords.length > 0,
+          isChecked: checkedKeys.has(`${ocid}|${weekKey}`),
+          isQueryable: isPeriodQueryable('weekly', weekKey, now),
+          lastOutcome: outcomes?.get(`${ocid}|weekly|${weekKey}`) ?? null,
+        })
+        const totalMeso = matchingRecords.reduce((sum, record) => sum + record.payoutMeso, 0)
+        subtotals.push({ ocid, characterName, imageUrl, periodKey: weekKey, totalMeso, state })
       }
     }
   }
@@ -480,30 +565,22 @@ function buildBackfillTargets(tab: BossCycle, periodKey: string, ocids: string[]
 }
 
 // 과거 기간 백필: 성공하면 markPeriodChecked를 호출해 다음 방문부터 재조회하지 않게 하고,
-// 실패(네트워크/인증 등 어떤 이유든)하면 markPeriodChecked를 호출하지 않아 다음 방문 때 재시도된다.
-// 이미 기록된 보스(setPartySize로 override된 값 포함)는 건드리지 않는다 — 기존 refresh() 자동
-// 기록 로직과 동일하게 "기록이 없는 조합만" 기본값(파티 관리 설정, 없으면 1)으로 채운다.
-// 반환값은 이 target을 이번에 확인할 수 없었는지(periodUnavailable에 반영) 여부다.
-async function backfillTarget(target: BackfillTarget, now: Date): Promise<boolean> {
-  // 이 기간은 지금 API로 조회할 수 없다(ADR-032) — API가 존재하기 이전(고정 하한선) 이거나,
-  // 롤링 조회 윈도우(오늘 기준 최근 13일)를 이미 벗어났거나 둘 중 하나다. 이 함수는 애초에
-  // isPeriodChecked가 false인 대상에서만 호출되므로(loadPeriod), 여기 도달했다는 건 이 조합에
-  // 대한 기록이 아직 없다는 뜻이다 — 재시도해도 영구히 실패하므로 API를 호출하지 않고 곧바로
-  // "확인 완료, 기록 없음"으로 처리한다. periodUnavailable(재시도 유도)이 아니라 일반적인
-  // "기록 없음"과 동일하게 다룬다.
-  if (!isPeriodQueryable(target.cycle, target.periodKey, now)) {
-    await withSqliteFallback(
-      markPeriodChecked(target.ocid, target.cycle, target.periodKey, now.toISOString()),
-      undefined,
-    )
-    return false
-  }
-
+// 실패하면 호출하지 않아 다음 방문 때 재시도된다. 이미 기록된 보스(setPartySize로 override된 값
+// 포함)는 건드리지 않는다 — 기존 refresh() 자동 기록 로직과 동일하게 "기록이 없는 조합만"
+// 기본값(파티 관리 설정, 없으면 1)으로 채운다. 즉 **실시간으로 쌓인 기록이 base이고 백필은 빠진
+// 것만 채우는 delta**다.
+//
+// 반환값은 이번 시도의 결과다([[ADR-067]] 결정 2) — null이면 확인 완료(0건이든 기록을 채웠든),
+// 'notCollected'면 아직 집계 전(시간이 지나면 풀린다), 'failed'면 그 외 실패(지금 재시도 가능).
+// **조회 불가(구간 밖) 대상은 여기 들어오지 않는다** — 호출부가 걸러낸다. 전에는 이 함수가 그
+// 대상을 markPeriodChecked로 굳혔는데, 그러면 "조회해서 0건을 봤다"와 "조회 불가라 굳혔다"가
+// 같은 기록이 되어 confirmedEmpty가 outOfRange로 격하되는 원인이었다([[ADR-067]] 결정 3).
+async function backfillTarget(target: BackfillTarget, now: Date): Promise<PeriodQueryOutcome | null> {
   const date = getBackfillQueryDate(target.cycle, target.periodKey)
 
   const authConfig = await getAuthConfig()
   if (authConfig === null) {
-    return true
+    return 'failed'
   }
 
   try {
@@ -562,28 +639,17 @@ async function backfillTarget(target: BackfillTarget, now: Date): Promise<boolea
     }
 
     await withSqliteTimeout(markPeriodChecked(target.ocid, target.cycle, target.periodKey, now.toISOString()))
-    return false
-  } catch {
-    return true
+    return null
+  } catch (error) {
+    // 코드가 알려주는 사실을 상태로 옮긴다([[ADR-067]] 결정 1).
+    //  - notCollected(00009): 실패가 아니라 "아직" — 재시도 유도 문구를 띄우지 않는다.
+    //  - periodOutOfRange(00004): 우리 계산상 조회 구간 안인데 API가 거부한 것 — 월드 리프 이전·
+    //    휴면 등 그 캐릭터·날짜에 고유한 사정이라 "다시 시도"가 아니라 "조회할 수 없다"가 맞다.
+    const kind = toScheduleSyncError(error).kind
+    if (kind === 'notCollected') return 'notCollected'
+    if (kind === 'periodOutOfRange') return 'outOfRange'
+    return 'failed'
   }
-}
-
-// 이 기간(cycle, periodKey)에 대해 이미 저장된 보스 수익 기록이 하나라도 있는지 확인한다(#29).
-// 롤링 조회 윈도우를 벗어나 "지금"은 API로 다시 조회할 수 없더라도, 과거에 확보해둔 기록이 있으면
-// 그 기간을 그대로 보여줄 수 있으므로 이동을 허용해야 한다. monthly는 그 달의 monthly-cycle 기록뿐
-// 아니라 그 달에 속한 주(weekly)의 기록도 화면에 함께 표시되므로 둘 다 조회 대상에 넣는다.
-async function hasCachedRecordsForPeriod(
-  ocids: string[],
-  tab: BossCycle,
-  periodKey: string,
-): Promise<boolean> {
-  if (ocids.length === 0) {
-    return false
-  }
-  const periodKeys =
-    tab === 'monthly' ? [periodKey, ...getWeeklyPeriodKeysInMonth(periodKey)] : [periodKey]
-  const records = await withSqliteFallback(getBossProfitRecords(ocids, periodKeys), [])
-  return records.length > 0
 }
 
 // 현재 기간(periodKey)에서 한 칸 더 과거로 이동해도 되는지 판단한다(#29). 이전 버튼 게이트와
@@ -606,7 +672,11 @@ async function canReachPreviousPeriod(
   if (isPeriodQueryable(tab, prevPeriodKey, now)) {
     return true
   }
-  return hasCachedRecordsForPeriod(ocids, tab, prevPeriodKey)
+  // ADR-068 결정 5: **그 기간 또는 더 과거에** 기록이 있으면 통과시킨다. 전에는 바로 이전 한 칸의
+  // 기록만 봐서, 접속하지 않은 주가 벽이 되어 그 뒤의 기록 전체에 도달할 수 없었다(이슈 #78 —
+  // 3·4주차 미접속 캐릭터의 1·2주차 기록이 DB에 있어도 화면으로 갈 방법이 없었다).
+  // 빈 기간은 한 칸씩 지나가야 하지만(시안 A) 벽은 사라진다.
+  return hasBossProfitRecordsAtOrBefore(ocids, tab, prevPeriodKey)
 }
 
 type BossProfitSetter = (partial: Partial<BossProfitState>) => void
@@ -707,32 +777,49 @@ async function loadPeriod(
     // refresh의 'loading'은 이미 무효화된 상태다. 여기서 status를 'loaded'로 확정하지 않으면,
     // refresh 도중 기간을 이동했다가 돌아왔을 때 refresh의 최종 'loaded' set이 세대 가드에 막혀
     // status가 'loading'에 영구히 갇히는 버그가 생긴다(사용자 보고 — "조회 중..." 무한 진행).
-    set({ status: 'loaded', rows, dropsByRowKey, weeklySubtotals, isPeriodLoading: false, periodUnavailable: false, canGoPreviousPeriod })
+    set({
+      status: 'loaded',
+      rows,
+      dropsByRowKey,
+      weeklySubtotals,
+      isPeriodLoading: false,
+      // 현재 기간은 실시간 동기화가 원천이라 recorded/confirmedEmpty뿐이다([[ADR-067]] 결정 2).
+      periodState: resolvePeriodDataState({
+        isCurrentPeriod: true,
+        hasRecords: rows.length > 0,
+        isChecked: false,
+        isQueryable: false,
+        lastOutcome: null,
+      }),
+      canGoPreviousPeriod,
+    })
     return
   }
 
+  // 각 target(캐릭터×기간)의 상태를 모아 이 화면의 상태를 정한다([[ADR-067]] 결정 2).
+  // 조회 불가(구간 밖) target은 **호출하지도, checked로 굳히지도 않는다** — 날짜만 보면 언제든
+  // 다시 판정할 수 있고, 굳히면 "0건 확정"과 구분이 사라진다(결정 3).
   const targets = buildBackfillTargets(tab, periodKey, ocids, now)
+  const checkedByTarget = new Map<BackfillTarget, boolean>()
   const uncheckedTargets: BackfillTarget[] = []
   for (const target of targets) {
     const checked = await withSqliteFallback(
       isPeriodChecked(target.ocid, target.cycle, target.periodKey),
       false,
     )
-    if (!checked) {
+    checkedByTarget.set(target, checked)
+    if (!checked && isPeriodQueryable(target.cycle, target.periodKey, now)) {
       uncheckedTargets.push(target)
     }
   }
 
-  let periodUnavailable = false
+  const outcomeByTarget = new Map<BackfillTarget, PeriodQueryOutcome | null>()
 
   if (uncheckedTargets.length > 0) {
     if (generation !== requestGeneration) return
-    set({ isPeriodLoading: true, periodUnavailable: false })
+    set({ isPeriodLoading: true })
     for (const target of uncheckedTargets) {
-      const failed = await backfillTarget(target, now)
-      if (failed) {
-        periodUnavailable = true
-      }
+      outcomeByTarget.set(target, await backfillTarget(target, now))
     }
   }
 
@@ -742,10 +829,32 @@ async function loadPeriod(
   const canGoPreviousPeriod = await canReachPreviousPeriod(tab, periodKey, ocids, now)
   const dropsByRowKey = await loadDropsByRowKey(ocids, rows, now)
 
+  // target별 상태 → 이 화면의 상태. 기록 유무는 방금 읽은 rows에서 본다(같은 조회를 두 번 하지 않는다).
+  const recordedOcids = new Set(rows.map((row) => row.ocid))
+  const periodState = resolvePagePeriodState(
+    targets.map((target) =>
+      resolvePeriodDataState({
+        isCurrentPeriod: false,
+        hasRecords: recordedOcids.has(target.ocid),
+        isChecked: checkedByTarget.get(target) ?? false,
+        isQueryable: isPeriodQueryable(target.cycle, target.periodKey, now),
+        lastOutcome: outcomeByTarget.get(target) ?? null,
+      }),
+    ),
+  )
+
   if (generation !== requestGeneration) return
   // status를 'loaded'로 확정한다 — 위 "현재 기간" 분기와 같은 이유(중단된 refresh의 'loading'이
   // 세대 가드로 갇히는 것 방지).
-  set({ status: 'loaded', rows, dropsByRowKey, weeklySubtotals, isPeriodLoading: false, periodUnavailable, canGoPreviousPeriod })
+  set({
+    status: 'loaded',
+    rows,
+    dropsByRowKey,
+    weeklySubtotals,
+    isPeriodLoading: false,
+    periodState,
+    canGoPreviousPeriod,
+  })
 }
 
 const initialState: BossProfitState = {
@@ -756,10 +865,11 @@ const initialState: BossProfitState = {
   dropsByRowKey: {},
   weeklySubtotals: [],
   isPeriodLoading: false,
-  periodUnavailable: false,
+  periodState: 'confirmedEmpty',
   canGoPreviousPeriod: false,
   error: null,
   staleCharacterNames: [],
+  characterIssues: {},
   trackedOcids: null,
   lastSyncedAt: null,
 }
@@ -791,10 +901,11 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
         dropsByRowKey: {},
         weeklySubtotals: [],
         isPeriodLoading: false,
-        periodUnavailable: false,
+        periodState: 'confirmedEmpty',
         canGoPreviousPeriod: false,
         error: null,
         staleCharacterNames: [],
+        characterIssues: {},
       })
       return
     }
@@ -898,10 +1009,11 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
       dropsByRowKey: cachedDropsByRowKey,
       weeklySubtotals: cachedWeeklySubtotals,
       isPeriodLoading: false,
-      periodUnavailable: false,
+      periodState: cachedMergedRows.length > 0 ? 'recorded' : 'confirmedEmpty',
       canGoPreviousPeriod,
       error: null,
       staleCharacterNames: [],
+      characterIssues: {},
     })
 
     let results: Awaited<ReturnType<typeof syncSchedules>>
@@ -919,6 +1031,12 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
 
     const rows: BossProfitRow[] = []
     const staleCharacterNames: string[] = []
+    const characterIssues: Record<string, 'unavailable' | 'failed'> = {}
+    // 동기화가 실패한 캐릭터. buildFallbackResult가 **마지막 캐시 상태를 그대로** 돌려주므로
+    // (schedule-sync.ts) 그 state의 완료 여부는 "지금"의 사실이 아니다 — 자동 기록에서 제외한다
+    // ([[ADR-067]] 결정 7). 표시는 캐시 우선 표시 규약([[ADR-017]])을 그대로 따르고, 그 카드에
+    // 표식을 붙이는 것은 [[ADR-068]] 결정 3의 몫이다.
+    const staleOcids = new Set<string>()
     const characterProfiles = new Map<string, CharacterProfileInfo>()
 
     for (const result of results) {
@@ -931,6 +1049,11 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
 
       if (result.isStale) {
         staleCharacterNames.push(result.characterName)
+        staleOcids.add(result.ocid)
+        // 영구(조회 불가)와 일시(그 외)를 카드에서도 갈라 말한다([[ADR-068]] 결정 3) — 전자는
+        // 재시도가 무의미하고 추적 해제가 유일한 조치다.
+        characterIssues[result.ocid] =
+          result.error?.kind === 'characterUnavailable' ? 'unavailable' : 'failed'
       }
 
       const displayBosses = selectProfitDisplayBosses(
@@ -944,7 +1067,16 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
       }
     }
 
-    const periodKeys = Array.from(new Set(rows.map((row) => row.periodKey)))
+    // 행에서 파생한 기간 키만 쓰면 **행이 없는 기간의 기록을 조회조차 하지 않는다** — 축약 응답으로
+    // 월간 행이 사라지면 그 달 기록을 찾지 못해 화면에서 금액이 사라졌다(ADR-067 결정 4). 현재
+    // 주·달 키를 항상 포함해 "기록만 있는 조합"을 아래 합집합이 되살릴 수 있게 한다.
+    const periodKeys = Array.from(
+      new Set([
+        ...rows.map((row) => row.periodKey),
+        getCurrentBossProfitPeriod('weekly', now).periodKey,
+        getCurrentBossProfitPeriod('monthly', now).periodKey,
+      ]),
+    )
     // 폴백을 []가 아니라 null로 둬 "조회 실패"와 "기록 없음"을 구분한다 — 실패를 "없음"으로 읽으면
     // 아래 자동 기록이 사용자가 저장한 파티원 수를 1로 덮어쓴다([[ADR-050]] 결정 3).
     const records = await withSqliteFallback<BossProfitRecord[] | null>(
@@ -964,7 +1096,17 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
       // 계산되지 않고 0메소로 영구히 고정된다.
       // records가 null이면 조회 자체가 실패한 것이라 이 조합에 기록이 있는지 알 수 없다 —
       // 기본값으로 덮어쓰지 말고 다음 새로고침의 정상 커넥션에 맡긴다([[ADR-050]] 결정 3).
-      if (records === null || !row.isComplete || row.partySize !== null || row.priceMeso === null) {
+      // 동기화가 실패한 캐릭터도 제외한다([[ADR-067]] 결정 7) — 그 행은 낡은 캐시에서 나왔고,
+      // 여기서 기록하면 4주 전 처치가 이번 주 수익으로 **영구히** 남는다(기록이 생긴 뒤에는
+      // mergeRecordsIntoRows가 계속 복원하므로 스스로 사라지지 않는다). 캐시 우선 표시 분기가
+      // 같은 이유로 자동 기록을 하지 않는데(위 [[ADR-017]] 주석) 폴백 경로가 그 방어를 우회했다.
+      if (
+        records === null ||
+        staleOcids.has(row.ocid) ||
+        !row.isComplete ||
+        row.partySize !== null ||
+        row.priceMeso === null
+      ) {
         autoRecordedRows.push(row)
         continue
       }
@@ -994,7 +1136,9 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
       autoRecordedRows.push({ ...row, partySize, payoutMeso })
     }
 
-    const sortedRows = sortRowsByOcidOrder(autoRecordedRows, sortedOcids)
+    // 기록만 있는 조합을 행으로 되살린다(ADR-067 결정 4 — 위 appendRecordOnlyRows 주석).
+    const unionRows = appendRecordOnlyRows(autoRecordedRows, records ?? [], characterProfiles, now)
+    const sortedRows = sortRowsByOcidOrder(unionRows, sortedOcids)
     latestSyncSnapshot = { ocids: [...ocids], rows: sortedRows, characterProfiles }
 
     // 실시간 동기화가 실제로 성공했으므로 "마지막 동기화 시각"을 기록한다 — 세대 가드보다 앞에서
@@ -1021,10 +1165,11 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
       dropsByRowKey: liveDropsByRowKey,
       weeklySubtotals,
       isPeriodLoading: false,
-      periodUnavailable: false,
+      periodState: sortedRows.length > 0 ? 'recorded' : 'confirmedEmpty',
       canGoPreviousPeriod,
       error: null,
       staleCharacterNames,
+      characterIssues,
       // lastSyncedAt은 위에서 세대 가드보다 먼저 갱신했다(중단돼도 시각이 남도록).
     })
   },
@@ -1065,6 +1210,13 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     const ocids = latestSyncSnapshot?.ocids ?? get().trackedOcids ?? []
     set({ periodKey: newPeriodKey })
     await loadPeriod(set, tab, newPeriodKey, ocids, now, myGeneration)
+  },
+
+  async retryPeriod() {
+    const { tab, periodKey } = get()
+    const myGeneration = ++requestGeneration
+    const ocids = latestSyncSnapshot?.ocids ?? get().trackedOcids ?? []
+    await loadPeriod(set, tab, periodKey, ocids, new Date(), myGeneration)
   },
 
   async setPartySize(rowKey, partySize) {

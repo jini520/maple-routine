@@ -1274,3 +1274,36 @@ describe('ContentScreen — 캐릭터 관리 피커 후보 목록 로딩 (ADR-05
     expect(mockedGetCharacterPickerRoster).toHaveBeenCalledTimes(2)
   })
 })
+
+
+// 이슈 #78 B: 조건이 `selected.isStale` 하나였다 — isStale이 되는 경로가 둘인데(캐시 우선 표시는
+// 실패가 아니라 error가 null이다) 그 둘을 섞어, **화면 진입마다 내용 없는 문단이 렌더**되고 부모
+// space-y-1이 4px을 더해 동기화가 끝나면 레이아웃이 미세하게 튀었다.
+describe('선택 캐릭터 실패 문구 (이슈 #78 B)', () => {
+  it('isStale이지만 error가 없으면(캐시 우선 표시) 빈 문단을 렌더하지 않는다', () => {
+    mockStore({
+      status: 'loading',
+      trackedOcids: ['ocid-1'],
+      selectedOcid: 'ocid-1',
+      characters: [character({ isStale: true, error: null })],
+    })
+
+    renderContentScreen()
+
+    // 문구가 없을 뿐 아니라 빈 <p>도 없어야 한다(레이아웃이 튀는 원인이었다)
+    expect(document.querySelectorAll('p.text-error-ink')).toHaveLength(0)
+  })
+
+  it('실제 실패(error가 있음)면 원인 문구를 보여준다', () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      selectedOcid: 'ocid-1',
+      characters: [character({ isStale: true, error: { kind: 'network' } })],
+    })
+
+    renderContentScreen()
+
+    expect(screen.getByText('네트워크 오류가 발생했습니다')).toBeInTheDocument()
+  })
+})

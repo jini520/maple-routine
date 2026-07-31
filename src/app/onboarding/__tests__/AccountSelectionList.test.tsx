@@ -5,22 +5,22 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { MapleAccount } from '../../../types'
 import { AccountSelectionList } from '../AccountSelectionList'
-import { useRepresentativePortraits } from '../../../features/onboarding/use-representative-portraits'
+import { useAccountProbes } from '../../../features/onboarding/use-account-probes'
 import { worldEmblemUrl } from '../../../lib/world-emblem'
 
-vi.mock('../../../features/onboarding/use-representative-portraits', () => ({
-  useRepresentativePortraits: vi.fn(),
+vi.mock('../../../features/onboarding/use-account-probes', () => ({
+  useAccountProbes: vi.fn(),
 }))
 
 vi.mock('../../../lib/world-emblem', () => ({
   worldEmblemUrl: vi.fn(),
 }))
 
-const mockedUseRepresentativePortraits = vi.mocked(useRepresentativePortraits)
+const mockedUseAccountProbes = vi.mocked(useAccountProbes)
 const mockedWorldEmblemUrl = vi.mocked(worldEmblemUrl)
 
 beforeEach(() => {
-  mockedUseRepresentativePortraits.mockReturnValue({})
+  mockedUseAccountProbes.mockReturnValue({})
   // 매핑된 월드는 URL을, 미매핑 월드('리부트')는 null을 돌려 폴백을 테스트한다.
   mockedWorldEmblemUrl.mockImplementation((world) =>
     world === '리부트' ? null : `/emblems/${world}.png`,
@@ -232,9 +232,13 @@ describe('AccountSelectionList', () => {
   })
 
   it('대표 캐릭터의 초상화 URL이 있으면 이미지를 렌더링한다', () => {
-    mockedUseRepresentativePortraits.mockReturnValue({
-      'da9b2f2-account-hash-1': 'https://example.com/portrait.png',
-      '69e3525-account-hash-2': null,
+    mockedUseAccountProbes.mockReturnValue({
+      'da9b2f2-account-hash-1': {
+        representative: accounts[0].characters[0],
+        portraitUrl: 'https://example.com/portrait.png',
+        allUnavailable: false,
+      },
+      '69e3525-account-hash-2': { representative: null, portraitUrl: null, allUnavailable: false },
     })
 
     render(
@@ -245,9 +249,9 @@ describe('AccountSelectionList', () => {
   })
 
   it('초상화를 찾지 못한 계정은 "?"로 대체 표시한다', () => {
-    mockedUseRepresentativePortraits.mockReturnValue({
-      'da9b2f2-account-hash-1': null,
-      '69e3525-account-hash-2': null,
+    mockedUseAccountProbes.mockReturnValue({
+      'da9b2f2-account-hash-1': { representative: null, portraitUrl: null, allUnavailable: false },
+      '69e3525-account-hash-2': { representative: null, portraitUrl: null, allUnavailable: false },
     })
 
     render(
@@ -258,5 +262,51 @@ describe('AccountSelectionList', () => {
     // 초상화(캐릭터명 alt)는 없고, 월드 엠블럼(월드명 alt)만 존재한다
     expect(screen.queryByAltText('내옆에최성일')).not.toBeInTheDocument()
     expect(screen.queryByAltText('낟낟')).not.toBeInTheDocument()
+  })
+
+  // ADR-068 결정 4: 전원 조회 불가를 고르기 **전에** 알린다. 전에는 고른 뒤 예열이 전부 실패해
+  // 피커가 빈 목록이 되고 아무 설명이 없었다(이슈 #78).
+  describe('전원 조회 불가 계정', () => {
+    it('그 계정에만 경고를 붙인다', () => {
+      mockedUseAccountProbes.mockReturnValue({
+        'da9b2f2-account-hash-1': { representative: null, portraitUrl: null, allUnavailable: true },
+        '69e3525-account-hash-2': {
+          representative: accounts[1].characters[0],
+          portraitUrl: null,
+          allUnavailable: false,
+        },
+      })
+
+      render(
+        <AccountSelectionList accounts={accounts} isSubmitting={false} errorMessage={null} onSelect={vi.fn()} />,
+      )
+
+      expect(screen.getAllByText('이 계정의 캐릭터를 조회할 수 없습니다')).toHaveLength(1)
+    })
+
+    it('프로브가 끝나기 전에는 경고를 띄우지 않는다 — 모르는 상태를 단정하지 않는다', () => {
+      mockedUseAccountProbes.mockReturnValue({})
+
+      render(
+        <AccountSelectionList accounts={accounts} isSubmitting={false} errorMessage={null} onSelect={vi.fn()} />,
+      )
+
+      expect(screen.queryByText('이 계정의 캐릭터를 조회할 수 없습니다')).not.toBeInTheDocument()
+    })
+  })
+
+  // ADR-068 결정 4: character/list의 최고 레벨이 조회 불가일 수 있으므로, 대표는 프로브가
+  // 확인한 "조회 가능한 캐릭터 중 최고 레벨"로 교체된다.
+  it('프로브가 고른 대표 캐릭터로 표기를 교체한다', () => {
+    const second = accounts[1].characters[1] ?? accounts[1].characters[0]
+    mockedUseAccountProbes.mockReturnValue({
+      '69e3525-account-hash-2': { representative: second, portraitUrl: null, allUnavailable: false },
+    })
+
+    render(
+      <AccountSelectionList accounts={accounts} isSubmitting={false} errorMessage={null} onSelect={vi.fn()} />,
+    )
+
+    expect(screen.getByText(new RegExp(second.name))).toBeInTheDocument()
   })
 })

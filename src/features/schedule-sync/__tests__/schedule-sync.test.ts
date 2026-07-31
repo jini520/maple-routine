@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CharacterPickerEntry, MapleAccount, MapleCharacter, SchedulerCharacterState } from '../../../types'
-import { NexonAuthError, NexonNetworkError, NexonRateLimitError } from '../../../nexon/errors'
+import { NexonAuthError, NexonBadRequestError, NexonNetworkError, NexonRateLimitError } from '../../../nexon/errors'
 
 const { fetchCharacterListMock, fetchCharacterBasicMock, fetchSchedulerCharacterStateMock } = vi.hoisted(() => ({
   fetchCharacterListMock: vi.fn(),
@@ -832,6 +832,76 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
           world: '베라',
         },
       ])
+    })
+  })
+
+  // ADR-068 결정 4: 조회 불가 캐릭터(400 OPENAPI00003)를 목록에서 빼지 않는다 — 빼면 trackedOcids에
+  // 남은 그 ocid를 사용자가 해제할 방법이 없다(이슈 #78 A-1: "사용자가 스스로 벗어날 방법이 없다").
+  describe('조회 불가 캐릭터(OPENAPI00003)', () => {
+    it('목록에서 빼지 않고 unavailable 항목으로 남긴다', async () => {
+      const characters = [character('ocid-1'), character('ocid-2')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+      getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
+      getCachedCharacterBasicMock.mockResolvedValue(null)
+      fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) => {
+        if (ocid === 'ocid-2') {
+          throw new NexonBadRequestError('조회할 수 없는 ocid', 'OPENAPI00003')
+        }
+        return basicProfile({ name: '정상', level: 250 })
+      })
+
+      const onUpdate = vi.fn()
+      await getCharacterPickerRoster(onUpdate)
+
+      const emitted = onUpdate.mock.calls.at(-1)?.[0] as CharacterPickerEntry[]
+      expect(emitted.map((entry) => entry.ocid).sort()).toEqual(['ocid-1', 'ocid-2'])
+
+      const unavailable = emitted.find((entry) => entry.ocid === 'ocid-2')
+      // character/list가 준 이름·레벨·월드는 쓸 수 있다(basic만 실패한 것이다)
+      expect(unavailable).toEqual({
+        ocid: 'ocid-2',
+        name: '캐릭터-ocid-2',
+        level: 200,
+        imageUrl: null,
+        world: '베라',
+        unavailable: true,
+      })
+      expect(emitted.find((entry) => entry.ocid === 'ocid-1')?.unavailable).toBeUndefined()
+    })
+
+    it('조회 불가 항목은 목록 맨 뒤로 보낸다 — 정상 후보를 밀어내지 않는다', async () => {
+      const characters = [character('ocid-low'), character('ocid-high')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+      getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
+      getCachedCharacterBasicMock.mockResolvedValue(null)
+      fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) => {
+        // 레벨이 더 높은 쪽이 조회 불가여도 뒤로 간다
+        if (ocid === 'ocid-high') throw new NexonBadRequestError('x', 'OPENAPI00003')
+        return basicProfile({ name: '낮은레벨', level: 10 })
+      })
+
+      const onUpdate = vi.fn()
+      await getCharacterPickerRoster(onUpdate)
+
+      const emitted = onUpdate.mock.calls.at(-1)?.[0] as CharacterPickerEntry[]
+      expect(emitted.map((entry) => entry.ocid)).toEqual(['ocid-low', 'ocid-high'])
+    })
+
+    it('그 외 개별 실패(네트워크)는 지금처럼 목록에 넣지 않는다 — 조회 불가와 구분한다', async () => {
+      const characters = [character('ocid-1'), character('ocid-2')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+      getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
+      getCachedCharacterBasicMock.mockResolvedValue(null)
+      fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) => {
+        if (ocid === 'ocid-2') throw new NexonNetworkError('offline')
+        return basicProfile({ name: '정상', level: 250 })
+      })
+
+      const onUpdate = vi.fn()
+      await getCharacterPickerRoster(onUpdate)
+
+      const emitted = onUpdate.mock.calls.at(-1)?.[0] as CharacterPickerEntry[]
+      expect(emitted.map((entry) => entry.ocid)).toEqual(['ocid-1'])
     })
   })
 

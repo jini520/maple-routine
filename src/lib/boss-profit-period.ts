@@ -198,16 +198,110 @@ export function getMinQueryableDate(now: Date): string {
 }
 
 /**
- * 이 기간(cycle, periodKey)을 지금(now) 실제로 API로 조회할 수 있는지 확인한다. 캐시된 기록이
- * 이미 있는지와는 무관하게, 순수하게 "지금 API를 호출하면 성공할 수 있는가"만 본다 — 두 개의
- * 독립적인 하한선(API가 존재하기 시작한 고정 하한선 MIN_SCHEDULER_DATE, 매일 밀리는 롤링 하한선
- * getMinQueryableDate) 중 더 늦은(더 최근인) 쪽보다 이 기간의 조회일이 앞서면 false다.
+ * now(KST) 기준으로 스케줄러 API가 받아들이는 **최대** 날짜(YYYY-MM-DD) — 오늘−1일이다
+ * ([[ADR-067]] 결정 2 정정 2, 실측 2026-07-31).
+ *
+ * `date=오늘` 과 미래 날짜는 400 `OPENAPI00004` 다. `오늘−1일` 은 **집계가 끝나기 전(KST 새벽)엔
+ * 400 `OPENAPI00009`** 지만 그 뒤에는 정상 조회된다 — 그래서 상한을 오늘−2일로 낮추지 않는다.
+ * 낮추면 집계가 끝난 목요일 아침에 볼 수 있는 지난 주를 우리가 스스로 가리게 된다. 새벽의
+ * 00009는 실패가 아니라 `notCollected` 상태로 흡수한다(resolvePeriodDataState).
+ */
+export function getMaxQueryableDate(now: Date): string {
+  const kstWallClock = toKstWallClock(now)
+  const shiftedMs = Date.UTC(
+    kstWallClock.getUTCFullYear(),
+    kstWallClock.getUTCMonth(),
+    kstWallClock.getUTCDate() - 1,
+  )
+  return formatWeeklyPeriodKey(shiftedMs)
+}
+
+/**
+ * 이 기간(cycle, periodKey)을 지금(now) 실제로 **백필로 조회할 수 있는지** 확인한다. 캐시된 기록이
+ * 이미 있는지와는 무관하게, 순수하게 "지금 API를 호출하면 성공할 수 있는가"만 본다.
+ *
+ * 하한 둘(API가 존재하기 시작한 고정 하한선 MIN_SCHEDULER_DATE, 매일 밀리는 롤링 하한선
+ * getMinQueryableDate) 중 더 늦은 쪽과, 상한 하나(getMaxQueryableDate = 오늘−1일) 사이여야 한다.
+ * **상한은 [[ADR-067]] 결정 2에서 추가됐다** — 전에는 하한만 봐서 현재 기간(조회일이 미래)에도
+ * "조회 가능"이라 답했고, 그 답을 믿고 호출하면 400이었다.
+ *
+ * 주의: 이 함수는 "백필 가능성"만 답한다. **현재 기간을 볼 수 있는가는 다른 질문이다** — 그건
+ * 실시간 동기화가 담당하므로 resolvePeriodDataState의 isCurrentPeriod로 갈라 다룬다.
  */
 export function isPeriodQueryable(cycle: BossCycle, periodKey: string, now: Date): boolean {
   const date = getBackfillQueryDate(cycle, periodKey)
   const rollingFloor = getMinQueryableDate(now)
   const effectiveFloor = rollingFloor > MIN_SCHEDULER_DATE ? rollingFloor : MIN_SCHEDULER_DATE
-  return date >= effectiveFloor
+  return date >= effectiveFloor && date <= getMaxQueryableDate(now)
+}
+
+/**
+ * 한 기간을 조회하려 한 결과 중 **영속되지 않는** 것(이번 세션의 시도 결과).
+ *
+ * `outOfRange` 가 여기 있는 이유: 우리가 계산한 조회 구간 안인데도 API가 400 `OPENAPI00004` 로
+ * 거부하는 경우가 있다 — 그 날짜에 이 캐릭터가 지금 월드에 없었거나(월드 리프) 휴면이었던 경우다
+ * (실측, 구분 불가 — [[ADR-068]] 결정 6). 날짜만 보면 알 수 없으므로 **응답이 알려준 사실**로
+ * 상태를 정한다. 다만 아직 영속하지 않으므로 다음 방문에 한 번 더 호출한다(후속 과제).
+ */
+export type PeriodQueryOutcome = 'notCollected' | 'outOfRange' | 'failed'
+
+/**
+ * 한 (캐릭터, 기간)의 표시 상태([[ADR-067]] 결정 2 + 정정 1·2). 표현은 [[ADR-068]].
+ *
+ * | 상태 | 뜻 | 사용자 행동 |
+ * |---|---|---|
+ * | recorded | 기록이 있다 | — |
+ * | confirmedEmpty | 조회해서 0건을 확인했다 | 없음 |
+ * | notChecked | 조회 가능한데 아직 조회하지 않았다 | **조회** |
+ * | notCollected | 아직 집계 전(OPENAPI00009) | 없음(나중에 자동) |
+ * | outOfRange | 조회 구간 밖(윈도우 밖·월드 이전 이전) | 없음 |
+ * | failed | 그 외 실패 | **다시 시도** |
+ */
+export type PeriodDataState =
+  | 'recorded'
+  | 'confirmedEmpty'
+  | 'notChecked'
+  | 'notCollected'
+  | 'outOfRange'
+  | 'failed'
+
+export interface PeriodDataStateInput {
+  /** 그 tab의 "지금" 기간인가 — 실시간 동기화가 원천이라 백필 조회 가능성을 보지 않는다. */
+  isCurrentPeriod: boolean
+  hasRecords: boolean
+  /** boss_profit_period_checks에 확인 기록이 있는가 = **조회해서 확인했다**(조회 불가로 굳힌 것이 아니다). */
+  isChecked: boolean
+  isQueryable: boolean
+  lastOutcome: PeriodQueryOutcome | null
+}
+
+/**
+ * 판정을 한 곳에 모아 화면과 백필이 **같은 값을 공유**하게 한다 — 전에는 화면이
+ * `isPeriodQueryable` 하나로, 백필은 target별로 따로 판정해 월간 탭에서 "조회 불가"와
+ * "불러오지 못했습니다"가 동시에 뜨는 경로가 있었다(이슈 #78 E).
+ */
+export function resolvePeriodDataState(input: PeriodDataStateInput): PeriodDataState {
+  // 현재 기간은 백필 대상이 아니다. 조회일이 미래라 isQueryable이 false지만 "조회 불가"가 아니라
+  // 실시간 동기화가 방금 알려준 사실이다 — 처치가 0건이면 그것이 확정된 빈 상태다.
+  if (input.isCurrentPeriod) {
+    return input.hasRecords ? 'recorded' : 'confirmedEmpty'
+  }
+  if (input.hasRecords) {
+    return 'recorded'
+  }
+  // 확인 기록은 "조회해서 0건을 봤다"만 의미한다([[ADR-067]] 결정 3) — 조회 불가 기간을 checked로
+  // 굳히지 않도록 store를 함께 바꿨다. 그래서 이 분기가 시간이 지나도 outOfRange로 격하되지 않는다.
+  if (input.isChecked) {
+    return 'confirmedEmpty'
+  }
+  // 조회 자체가 불가능한 기간의 시도 결과는 신뢰하지 않는다(애초에 호출하지 않으므로 outcome이 남지 않는다).
+  if (!input.isQueryable) {
+    return 'outOfRange'
+  }
+  if (input.lastOutcome !== null) {
+    return input.lastOutcome
+  }
+  return 'notChecked'
 }
 
 /**
@@ -224,4 +318,29 @@ export function isPeriodQueryable(cycle: BossCycle, periodKey: string, now: Date
 export function isEarliestNavigablePeriod(cycle: BossCycle, periodKey: string): boolean {
   const prevPeriodKey = getAdjacentPeriodKey(cycle, periodKey, 'prev')
   return getBackfillQueryDate(cycle, prevPeriodKey) < MIN_SCHEDULER_DATE
+}
+
+/**
+ * 캐릭터별 상태를 화면(기간) 하나의 상태로 접는다. 캐릭터가 여러 명이면 상태가 섞이는데, 그때
+ * **불확실을 확정으로 위장하지 않는다** — `confirmedEmpty`("0건 확정")는 **전원이** 확정했을 때만
+ * 말한다. 하나라도 모르는 캐릭터가 있으면 그 사실을 우선한다(error-resilience 원칙 2).
+ *
+ * 우선순위: recorded > failed > notCollected > notChecked > outOfRange > confirmedEmpty
+ * - recorded가 최상위인 이유: 보여줄 기록이 있으면 그것이 화면의 주인이고, 나머지 캐릭터의
+ *   미확인은 목록 안 표식으로 다룬다([[ADR-068]] 결정 3).
+ * - failed·notChecked가 앞에 오는 이유: **사용자가 할 수 있는 행동이 있는 상태**라 묻히면 안 된다.
+ */
+export function resolvePagePeriodState(states: PeriodDataState[]): PeriodDataState {
+  if (states.length === 0) {
+    return 'confirmedEmpty'
+  }
+  const priority: PeriodDataState[] = [
+    'recorded',
+    'failed',
+    'notCollected',
+    'notChecked',
+    'outOfRange',
+    'confirmedEmpty',
+  ]
+  return priority.find((candidate) => states.includes(candidate)) ?? 'confirmedEmpty'
 }

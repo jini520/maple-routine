@@ -1,6 +1,7 @@
+import { AlertTriangle } from 'lucide-react'
 import type { MapleAccount } from '../../types'
 import { pickRepresentativeCharacter } from '../../features/onboarding/representative-character'
-import { useRepresentativePortraits } from '../../features/onboarding/use-representative-portraits'
+import { useAccountProbes } from '../../features/onboarding/use-account-probes'
 import { worldEmblemUrl } from '../../lib/world-emblem'
 import { useState } from 'react'
 
@@ -36,7 +37,7 @@ export function AccountSelectionList(props: AccountSelectionListProps): React.JS
   const [highlightedAccountId, setHighlightedAccountId] = useState<string | null>(
     props.accounts.length === 1 ? props.accounts[0].accountId : null,
   )
-  const portraits = useRepresentativePortraits(props.accounts)
+  const probes = useAccountProbes(props.accounts)
 
   return (
     <div className="w-full space-y-4">
@@ -46,9 +47,13 @@ export function AccountSelectionList(props: AccountSelectionListProps): React.JS
 
       <ul className="space-y-2">
         {props.accounts.map((account) => {
-          const representative = pickRepresentativeCharacter(account.characters)
+          const probe = probes[account.accountId]
+          // ADR-068 결정 4: 대표는 **조회 가능한 캐릭터 중** 최고 레벨이다. 프로브가 끝나기 전에는
+          // character/list 기준으로 잠깐 보여주고(빈 카드보다 낫다) 결과가 오면 교체된다.
+          const representative = probe?.representative ?? pickRepresentativeCharacter(account.characters)
           const emblemUrl = worldEmblemUrl(representative.world)
           const isHighlighted = account.accountId === highlightedAccountId
+          const portraitUrl = probe?.portraitUrl ?? null
 
           return (
             <li key={account.accountId}>
@@ -64,9 +69,9 @@ export function AccountSelectionList(props: AccountSelectionListProps): React.JS
                 }
               >
                 <span className="relative w-9 h-9 shrink-0 overflow-hidden rounded-full bg-surface-2 border border-border">
-                  {portraits[account.accountId] ? (
+                  {portraitUrl !== null ? (
                     <img
-                      src={portraits[account.accountId] ?? undefined}
+                      src={portraitUrl}
                       alt={representative.name}
                       className="absolute max-w-none"
                       style={portraitFaceCropStyle()}
@@ -91,6 +96,15 @@ export function AccountSelectionList(props: AccountSelectionListProps): React.JS
                     </span>
                   </span>
                   <span className="text-sm text-text-muted">캐릭터 {account.characters.length}개</span>
+                  {/* ADR-068 결정 4: 전원 조회 불가는 고른 뒤가 아니라 **고르기 전에** 알린다 —
+                      고르면 피커가 빈 목록이 되고 아무 설명이 없었다. 전수 프로브라 "이 계정
+                      전체"를 단정할 수 있다(표본 1명으로는 못 한다). */}
+                  {probe?.allUnavailable === true && (
+                    <span className="mt-0.5 flex items-start gap-1.5 text-xs font-medium text-error-ink">
+                      <AlertTriangle className="mt-px h-3.5 w-3.5 flex-none" strokeWidth={2} aria-hidden="true" />
+                      이 계정의 캐릭터를 조회할 수 없습니다
+                    </span>
+                  )}
                 </span>
               </button>
             </li>

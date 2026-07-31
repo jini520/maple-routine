@@ -1,5 +1,5 @@
 import { fetchCharacterBasic, fetchCharacterList } from '../../nexon/character'
-import { NexonAuthError, NexonRateLimitError } from '../../nexon/errors'
+import { NexonAuthError, NexonBadRequestError, NexonRateLimitError } from '../../nexon/errors'
 import { fetchSchedulerCharacterState } from '../../nexon/schedule'
 import { mergeSchedulerState, type MergeOutput } from '../../lib/scheduler-merge'
 import { getShareScope } from '../../lib/scheduler-content-scope'
@@ -20,10 +20,16 @@ import {
 } from '../../storage/shared-progress-cache'
 import type { CharacterPickerEntry, MapleCharacter, SchedulerCharacterState, SharedProgressEntry } from '../../types'
 
+// ADR-067 결정 1: 400 하나에 처방이 전혀 다른 세 실패가 들어 있어(nexon-api.md "에러 코드")
+// 종류를 갈라 담는다. 재시도 가능성이 셋 다 다르다 — characterUnavailable은 영구,
+// notCollected는 나중에 자동으로 풀리고, periodOutOfRange는 그 날짜에 대해 영구다.
 export type ScheduleSyncError =
   | { kind: 'invalidApiKey' } // 401/403
   | { kind: 'rateLimited' } // 429
-  | { kind: 'network' } // 그 외 네트워크/파싱 실패
+  | { kind: 'characterUnavailable' } // 400 OPENAPI00003 — 이 ocid를 조회할 수 없다(영구)
+  | { kind: 'periodOutOfRange' } // 400 OPENAPI00004 — 그 날짜를 조회할 수 없다(원인은 호출 측이 날짜로 판정)
+  | { kind: 'notCollected' } // 400 OPENAPI00009 — 아직 집계 전(시간이 지나면 풀린다)
+  | { kind: 'network' } // 그 외 네트워크/파싱 실패 + 코드를 모르는 400
 
 export interface CharacterScheduleSync {
   ocid: string
@@ -44,6 +50,20 @@ export function toScheduleSyncError(error: unknown): ScheduleSyncError {
   }
   if (error instanceof NexonRateLimitError) {
     return { kind: 'rateLimited' }
+  }
+  // 코드를 아는 400만 갈라내고, 모르는 코드·본문 없는 400은 network로 degrade한다 —
+  // 넥슨이 코드 체계를 바꿔도 최악의 경우 지금 동작(재시도 유도)으로 떨어지게 하는 안전판이다
+  // ([[ADR-067]] 트레이드오프).
+  if (error instanceof NexonBadRequestError) {
+    if (error.code === 'OPENAPI00003') {
+      return { kind: 'characterUnavailable' }
+    }
+    if (error.code === 'OPENAPI00004') {
+      return { kind: 'periodOutOfRange' }
+    }
+    if (error.code === 'OPENAPI00009') {
+      return { kind: 'notCollected' }
+    }
   }
   return { kind: 'network' }
 }
@@ -74,8 +94,15 @@ export async function getRegisteredCharacters(): Promise<MapleCharacter[]> {
   return characters
 }
 
+// 조회 불가 항목은 레벨과 무관하게 **맨 뒤로** 보낸다([[ADR-068]] 결정 4) — 고를 수 없는 후보가
+// 고를 수 있는 후보를 밀어내지 않아야 한다. 그 안에서는 기존 규칙(레벨 내림차순, 동레벨은 이름순).
 function sortPickerEntries(entries: CharacterPickerEntry[]): CharacterPickerEntry[] {
-  return [...entries].sort((a, b) => (b.level !== a.level ? b.level - a.level : compareByName(a.name, b.name)))
+  return [...entries].sort((a, b) => {
+    const aUnavailable = a.unavailable === true
+    const bUnavailable = b.unavailable === true
+    if (aUnavailable !== bUnavailable) return aUnavailable ? 1 : -1
+    return b.level !== a.level ? b.level - a.level : compareByName(a.name, b.name)
+  })
 }
 
 // ADR-016 결정 4: 캐시 우선 표시(Stale-While-Revalidate) — 캐시가 있으면 즉시 그 값으로 첫
@@ -190,7 +217,23 @@ export async function getCharacterPickerRoster(
           globalError = error
           return
         }
-        // 개별 실패 — 이미 있던 캐시 값을 그대로 유지
+        // ADR-068 결정 4: 조회 불가(400 OPENAPI00003)는 **숨기지 않는다**. basic만 실패한 것이므로
+        // character/list가 준 이름·레벨·월드는 그대로 쓸 수 있다 — 이미지는 없다.
+        if (toScheduleSyncError(error).kind === 'characterUnavailable') {
+          liveEntries.set(character.ocid, {
+            ocid: character.ocid,
+            name: character.name,
+            level: character.level,
+            imageUrl: null,
+            world: character.world,
+            unavailable: true,
+          })
+          if (hasVisibleView) {
+            onUpdate(sortPickerEntries(Array.from(liveEntries.values())))
+          }
+          return
+        }
+        // 그 외 개별 실패 — 이미 있던 캐시 값을 그대로 유지
       }
     }),
   )
