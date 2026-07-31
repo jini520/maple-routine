@@ -1051,9 +1051,14 @@ export function BossProfitScreen(): React.JSX.Element {
   // 이전 이동 가능 여부는 store가 매 기간 로드 시 계산해둔 canGoPreviousPeriod로 판단한다(#29) —
   // 조회 불가능하고 캐시 기록도 없는 기간에 착지하지 않도록 막는다.
   const isPrevDisabled = !canGoPreviousPeriod
-  // 캐시된 기록이 없는 상태에서 이 기간을 "지금" API로 조회할 수 있는지(ADR-032) — false면
+  // 캐시된 기록이 없는 상태에서 이 기간을 "지금" 볼 수 있는지(ADR-032) — false면
   // "아직 처치한 보스가 없습니다"(확정된 빈 상태)가 아니라 "조회 불가"(확인 자체를 못 함)를 보여준다.
-  const periodQueryable = isPeriodQueryable(tab, periodKey, now)
+  //
+  // **현재 기간은 백필 가능성을 묻지 않는다**([[ADR-067]] 결정 2 정정 2) — 조회일이 미래라
+  // isPeriodQueryable이 false지만 그건 "조회 불가"가 아니라 실시간 동기화가 원천이라는 뜻이다.
+  // 처치가 0건이면 그것이 확정된 사실이므로 빈 상태가 맞다. 이 판정의 최종 형태는
+  // resolvePeriodDataState(6상태)이고, 화면 전체를 그 상태로 옮기는 것은 [[ADR-068]] 배선 단계다.
+  const periodQueryable = isCurrentPeriod || isPeriodQueryable(tab, periodKey, now)
   const characterGroups = buildCharacterGroups(rows, weeklySubtotals)
   const totalMeso = characterGroups.reduce((sum, group) => sum + groupTotalMeso(group), 0)
   // 총 수익 헤드라인 우측 뱃지용 — 이 기간 전체 고가 드롭(ADR-046)

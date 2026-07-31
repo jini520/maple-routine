@@ -151,7 +151,7 @@ import {
   getMinQueryableDate,
   isPeriodQueryable,
 } from '../../../lib/boss-profit-period'
-import { NexonNetworkError } from '../../../nexon/errors'
+import { NexonBadRequestError } from '../../../nexon/errors'
 import type { BossContent, BossCycle, SchedulerCharacterState } from '../../../types'
 import { useBossProfitStore } from '../store'
 
@@ -291,7 +291,7 @@ function seedGapCharacter(options: { markGapWeeksChecked: boolean }): void {
       return idleState(GAP, date)
     }
     // 1·2주차: 롤링 윈도우 밖 — 실제 API라면 조회 자체가 안 된다.
-    throw new NexonNetworkError('더미: 롤링 윈도우를 벗어난 date는 조회할 수 없다')
+    throw new NexonBadRequestError('더미: 롤링 윈도우를 벗어난 date', 'OPENAPI00004')
   })
   world.schedulerCache.set(GAP.ocid, {
     state: state(GAP, [boss('자쿰', '카오스', 'weekly', true)], '2026-08-14'),
@@ -535,7 +535,9 @@ describe('이슈 #78 재현 — 2주간 미접속으로 조회할 수 없는 캐
   it('D-1: 비-2xx로 실패하는 경우 (issue #78 A의 관찰)', async () => {
     vi.setSystemTime(T_AUG14)
     seedDormant(() => {
-      throw new NexonNetworkError('더미: 비활성 캐릭터라 200이 아니다')
+      // 이슈 #78 A의 원래 관찰(비-2xx). 실측으로는 비활성 캐릭터도 200이지만, 조회 불가 ocid
+      // (OPENAPI00003)에서는 이 형태가 실제로 나온다.
+      throw new NexonBadRequestError('조회할 수 없는 ocid', 'OPENAPI00003')
     })
 
     line(`now = KST 2026-08-14 · 현재 주 = ${getCurrentBossProfitPeriod('weekly', T_AUG14).periodKey}`)
@@ -752,7 +754,7 @@ describe('이슈 #78 재현 — 백필의 "확인 완료" 판정이 굳는 자�
     expect(useBossProfitStore.getState().rows).toHaveLength(0)
   })
 
-  it('G: 목요일 00:05 — 이미 쌓아둔 지난 주 기록이 있는데도 실패 문구가 함께 뜬다', async () => {
+  it('G: 목요일 00:05 — 쌓아둔 기록이 있으면 백필이 막혀도 실패 문구를 띄우지 않는다(수정 후)', async () => {
     // KST 2026-07-30(목) 00:05 — 주간 리셋 직후. 지난 주(07-23) 조회일 = 07-29 = 오늘−1일.
     vi.setSystemTime(new Date('2026-07-29T15:05:00.000Z'))
     world.tracked = [LEAF.ocid]
@@ -772,7 +774,7 @@ describe('이슈 #78 재현 — 백필의 "확인 완료" 판정이 굳는 자�
     })
     // 실측: date=오늘−1일 → 400 OPENAPI00009 "Please wait until the data is ready"
     world.apiByOcid.set(LEAF.ocid, (date) => {
-      if (date === '2026-07-29') throw new NexonNetworkError('OPENAPI00009 / Please wait until the data is ready')
+      if (date === '2026-07-29') throw new NexonBadRequestError('아직 집계 전', 'OPENAPI00009')
       return state(LEAF, [boss('자쿰', '카오스', 'weekly', true)], date ?? '2026-07-30')
     })
 
@@ -793,16 +795,19 @@ describe('이슈 #78 재현 — 백필의 "확인 완료" 판정이 굳는 자�
     line(`   이 이동이 쏜 API: ${JSON.stringify(world.apiCalls.slice(before).map((c) => c.date))}`)
     line(`   화면 고지: ${notices()}`)
     line(`   화면: ${visibleText().slice(0, 220)}`)
+    line(`   periodState = ${store.periodState}`)
     line()
-    line('→ 기록은 정상 표시되는데(총 수익도 맞다) 실패 문단이 같이 뜬다.')
-    flush('시나리오 G — 목요일 리셋 직후, 쌓아둔 기록 + 실패 문구가 동시에')
+    line('→ 수정 후: 기록이 화면의 주인이므로 실패 문단을 띄우지 않는다(ADR-068 결정 7).')
+    line('   수정 전에는 "이 기간을 불러오지 못했습니다 — 다시 시도해주세요"가 함께 떴다.')
+    flush('시나리오 G — 목요일 리셋 직후, 쌓아둔 기록은 그대로 보인다')
 
     // 기록은 보인다
     expect(store.rows).toHaveLength(2)
-    // 그런데 백필이 실패해 실패 문단이 함께 뜬다
-    expect(store.periodUnavailable).toBe(true)
-    expect(visibleText()).toContain('이 기간을 불러오지 못했습니다')
-    // 재시도 여지는 남는다(checked로 굳히지 않았다)
+    // 기록이 있으므로 화면 상태는 recorded — 실패 문단이 뜨지 않는다
+    expect(store.periodState).toBe('recorded')
+    expect(store.periodUnavailable).toBe(false)
+    expect(visibleText()).not.toContain('이 기간을 불러오지 못했습니다')
+    // 재시도 여지는 남는다(checked로 굳히지 않았다) — 집계가 끝나면 다음 방문에 delta가 채워진다
     expect(world.checks.has(`${LEAF.ocid}|weekly|${W4}`)).toBe(false)
   })
 
@@ -869,7 +874,7 @@ describe('이슈 #78 재현 — 백필의 "확인 완료" 판정이 굳는 자�
     expect(world.checks.has(`${LEAF.ocid}|weekly|${W4}`)).toBe(true)
   })
 
-  it('F: 월드 리프 이전 기간(다른 월드 기록)은 매 방문마다 실패를 반복한다', async () => {
+  it('F: 월드 리프 이전 기간은 "조회 불가"로 말한다 — 재시도 유도가 아니다(수정 후)', async () => {
     vi.setSystemTime(T_JULY31)
     world.tracked = [LEAF.ocid]
     world.characters = [LEAF]
@@ -881,7 +886,8 @@ describe('이슈 #78 재현 — 백필의 "확인 완료" 판정이 굳는 자�
     // 월드 리프: 2026-07-23에 챌린저스2 → 엘리시움. 그 이전 date는 조회되지 않는다(사용자 관찰).
     world.apiByOcid.set(LEAF.ocid, (date) => {
       if (date !== undefined && date < '2026-07-23') {
-        throw new NexonNetworkError('더미: 월드 리프 이전 기록은 조회할 수 없다')
+        // 실측: 리프 이전 날짜는 400 OPENAPI00004 — 윈도우 밖과 코드가 같다
+        throw new NexonBadRequestError('더미: 월드 리프 이전 기록', 'OPENAPI00004')
       }
       return state(LEAF, [boss('자쿰', '카오스', 'weekly', true)], date ?? '2026-07-31')
     })
@@ -912,11 +918,15 @@ describe('이슈 #78 재현 — 백필의 "확인 완료" 판정이 굳는 자�
     await act(async () => {
       await useBossProfitStore.getState().goToPreviousPeriod()
     })
-    line(`재방문: 추가 API 호출 ${world.apiCalls.length - firstVisitCalls}회 — 영구히 실패하는데 매번 다시 호출한다`)
+    line(`재방문: 추가 API 호출 ${world.apiCalls.length - firstVisitCalls}회 — 아직 영속하지 않아 한 번 더 묻는다(후속 과제)`)
     line(`   화면 고지: ${notices()}`)
     flush('시나리오 F — 월드 리프 이전 기간(사용자 실제 ocid의 상황)')
 
-    expect(useBossProfitStore.getState().periodUnavailable).toBe(true)
+    // 수정 후: API가 알려준 400 OPENAPI00004를 그대로 "조회 불가"로 옮긴다 — 전에는 이 자리가
+    // "이 기간을 불러오지 못했습니다 — 다시 시도해주세요"였다(영구 실패에 재시도 유도).
+    expect(useBossProfitStore.getState().periodState).toBe('outOfRange')
+    expect(useBossProfitStore.getState().periodUnavailable).toBe(false)
+    // 아직 영속하지 않으므로 재방문 시 한 번 더 호출한다 — 낭비가 남아 있다(ADR-067 후속).
     expect(world.checks.has(`${LEAF.ocid}|weekly|${W3}`)).toBe(false)
     expect(world.apiCalls.length).toBeGreaterThan(firstVisitCalls)
   })
