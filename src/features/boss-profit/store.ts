@@ -305,6 +305,42 @@ function mergeRecordsIntoRows(
   })
 }
 
+// ADR-067 결정 4(표시): **현재 기간의 행은 API/캐시가 원천이고 과거 기간의 행은 기록이 원천**이라는
+// 비대칭 때문에, API가 보스를 빼면 이미 저장된 수익이 현재 기간 화면에서 사라진다. 실측된 경로는
+// 미접속 캐릭터의 축약 응답이다 — 월간 보스를 처치한 뒤 1주 이상 접속하지 않으면 bossMonthly가
+// reg=false·comp=false로만 남아 `selectBossProfitBosses` 가 행을 만들지 않는다(재현: 6.65억 기록
+// 보유 상태에서 "이번 달 총 수익 0메소").
+//
+// mergeRecordsIntoRows는 **있는 행을 채우기만** 하므로, 기록만 있는 조합은 여기서 행으로 되살린다.
+// 참조 데이터에서 사라진 보스의 기록도 행이 되지만 그것이 원칙과 일치한다("과거 기록은 지우지
+// 않는다", error-resilience 원칙 5).
+function appendRecordOnlyRows(
+  rows: BossProfitRow[],
+  records: BossProfitRecord[],
+  profiles: Map<string, CharacterProfileInfo>,
+  now: Date,
+): BossProfitRow[] {
+  const seen = new Set(rows.map((row) => `${row.ocid}|${row.boss}|${row.difficulty}|${row.periodKey}`))
+  const restored: BossProfitRow[] = []
+
+  for (const record of records) {
+    const key = `${record.ocid}|${record.boss}|${record.difficulty}|${record.periodKey}`
+    if (seen.has(key)) {
+      continue
+    }
+    const profile = profiles.get(record.ocid)
+    if (profile === undefined) {
+      // 이 캐릭터의 프로필을 모르면 행을 만들 수 없다(캐릭터명·아바타가 없다) — buildRowsFromRecords가
+      // 캐시 없는 ocid를 건너뛰는 것과 같은 규약이다.
+      continue
+    }
+    seen.add(key)
+    restored.push(buildRowFromRecord(record, profile, now))
+  }
+
+  return [...rows, ...restored]
+}
+
 function matchesRowKey(row: BossProfitRow, key: BossProfitRowKey): boolean {
   return (
     row.ocid === key.ocid &&
@@ -970,6 +1006,11 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
 
     const rows: BossProfitRow[] = []
     const staleCharacterNames: string[] = []
+    // 동기화가 실패한 캐릭터. buildFallbackResult가 **마지막 캐시 상태를 그대로** 돌려주므로
+    // (schedule-sync.ts) 그 state의 완료 여부는 "지금"의 사실이 아니다 — 자동 기록에서 제외한다
+    // ([[ADR-067]] 결정 7). 표시는 캐시 우선 표시 규약([[ADR-017]])을 그대로 따르고, 그 카드에
+    // 표식을 붙이는 것은 [[ADR-068]] 결정 3의 몫이다.
+    const staleOcids = new Set<string>()
     const characterProfiles = new Map<string, CharacterProfileInfo>()
 
     for (const result of results) {
@@ -982,6 +1023,7 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
 
       if (result.isStale) {
         staleCharacterNames.push(result.characterName)
+        staleOcids.add(result.ocid)
       }
 
       const displayBosses = selectProfitDisplayBosses(
@@ -995,7 +1037,16 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
       }
     }
 
-    const periodKeys = Array.from(new Set(rows.map((row) => row.periodKey)))
+    // 행에서 파생한 기간 키만 쓰면 **행이 없는 기간의 기록을 조회조차 하지 않는다** — 축약 응답으로
+    // 월간 행이 사라지면 그 달 기록을 찾지 못해 화면에서 금액이 사라졌다(ADR-067 결정 4). 현재
+    // 주·달 키를 항상 포함해 "기록만 있는 조합"을 아래 합집합이 되살릴 수 있게 한다.
+    const periodKeys = Array.from(
+      new Set([
+        ...rows.map((row) => row.periodKey),
+        getCurrentBossProfitPeriod('weekly', now).periodKey,
+        getCurrentBossProfitPeriod('monthly', now).periodKey,
+      ]),
+    )
     // 폴백을 []가 아니라 null로 둬 "조회 실패"와 "기록 없음"을 구분한다 — 실패를 "없음"으로 읽으면
     // 아래 자동 기록이 사용자가 저장한 파티원 수를 1로 덮어쓴다([[ADR-050]] 결정 3).
     const records = await withSqliteFallback<BossProfitRecord[] | null>(
@@ -1015,7 +1066,17 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
       // 계산되지 않고 0메소로 영구히 고정된다.
       // records가 null이면 조회 자체가 실패한 것이라 이 조합에 기록이 있는지 알 수 없다 —
       // 기본값으로 덮어쓰지 말고 다음 새로고침의 정상 커넥션에 맡긴다([[ADR-050]] 결정 3).
-      if (records === null || !row.isComplete || row.partySize !== null || row.priceMeso === null) {
+      // 동기화가 실패한 캐릭터도 제외한다([[ADR-067]] 결정 7) — 그 행은 낡은 캐시에서 나왔고,
+      // 여기서 기록하면 4주 전 처치가 이번 주 수익으로 **영구히** 남는다(기록이 생긴 뒤에는
+      // mergeRecordsIntoRows가 계속 복원하므로 스스로 사라지지 않는다). 캐시 우선 표시 분기가
+      // 같은 이유로 자동 기록을 하지 않는데(위 [[ADR-017]] 주석) 폴백 경로가 그 방어를 우회했다.
+      if (
+        records === null ||
+        staleOcids.has(row.ocid) ||
+        !row.isComplete ||
+        row.partySize !== null ||
+        row.priceMeso === null
+      ) {
         autoRecordedRows.push(row)
         continue
       }
@@ -1045,7 +1106,9 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
       autoRecordedRows.push({ ...row, partySize, payoutMeso })
     }
 
-    const sortedRows = sortRowsByOcidOrder(autoRecordedRows, sortedOcids)
+    // 기록만 있는 조합을 행으로 되살린다(ADR-067 결정 4 — 위 appendRecordOnlyRows 주석).
+    const unionRows = appendRecordOnlyRows(autoRecordedRows, records ?? [], characterProfiles, now)
+    const sortedRows = sortRowsByOcidOrder(unionRows, sortedOcids)
     latestSyncSnapshot = { ocids: [...ocids], rows: sortedRows, characterProfiles }
 
     // 실시간 동기화가 실제로 성공했으므로 "마지막 동기화 시각"을 기록한다 — 세대 가드보다 앞에서

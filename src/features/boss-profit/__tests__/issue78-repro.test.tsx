@@ -532,7 +532,7 @@ describe('이슈 #78 재현 — 2주간 미접속으로 조회할 수 없는 캐
     world.apiByOcid.set(DORMANT.ocid, handler)
   }
 
-  it('D-1: 비-2xx로 실패하는 경우 (issue #78 A의 관찰)', async () => {
+  it('D-1: 동기화가 실패한 캐릭터는 자동 기록하지 않는다 (수정 후)', async () => {
     vi.setSystemTime(T_AUG14)
     seedDormant(() => {
       // 이슈 #78 A의 원래 관찰(비-2xx). 실측으로는 비활성 캐릭터도 200이지만, 조회 불가 ocid
@@ -560,14 +560,20 @@ describe('이슈 #78 재현 — 2주간 미접속으로 조회할 수 없는 캐
     }
     line()
     line('이 새로고침이 DB에 쓴 것:')
-    for (const write of world.writes) line(`   ${write}`)
+    line(world.writes.length === 0 ? '   (없음)' : world.writes.map((w) => `   ${w}`).join('\n'))
     line()
+    line(`현재 주(${getCurrentBossProfitPeriod('weekly', T_AUG14).periodKey}) 기록: ${world.records.filter((r) => r.periodKey === getCurrentBossProfitPeriod('weekly', T_AUG14).periodKey).length}건`)
     line(`화면: ${visibleText().slice(0, 300)}`)
+    line()
+    line('→ 수정 전에는 4주 전 처치가 이번 주 수익 16,640,000메소로 영구 기록됐다(ADR-067 결정 7).')
     flush('시나리오 D-1 — 2주 미접속 캐릭터를 새로고침했을 때')
 
     expect(store.staleCharacterNames).toEqual([DORMANT.name])
-    // 실패 종류가 network로 뭉개진다 (#78 A-2)
     expect(world.toasts.some((message) => message.includes('일부 캐릭터를 불러오지 못했습니다'))).toBe(true)
+    // 수정 후: 낡은 캐시로 현재 기간에 기록을 쓰지 않는다 — DB에 이번 주 기록이 생기지 않는다
+    const currentWeek = getCurrentBossProfitPeriod('weekly', T_AUG14).periodKey
+    expect(world.records.filter((record) => record.periodKey === currentWeek)).toHaveLength(0)
+    expect(world.writes.filter((write) => write.startsWith('upsert'))).toHaveLength(0)
   })
 
   it('D-2: 200이지만 모든 섹션이 빈 경우', async () => {
@@ -611,7 +617,7 @@ const MEASURED_DORMANT_WEEKLY = [
 describe('이슈 #78 재현 — 실측 응답 형태에서 나오는 문제', () => {
   const IDLE = { ocid: 'ocid-dummy-idle', name: '묻힌달', world: '엘리시움', jobClass: '팔라딘', level: 262 }
 
-  it('H: 비활성 캐릭터의 축약 응답이 이번 달 월간 보스 수익을 화면에서 지운다', async () => {
+  it('H: 축약 응답이어도 이미 기록된 이번 달 월간 수익은 화면에 남는다 (수정 후)', async () => {
     vi.setSystemTime(T_AUG14)
     world.tracked = [IDLE.ocid]
     world.characters = [IDLE]
@@ -661,11 +667,16 @@ describe('이슈 #78 재현 — 실측 응답 형태에서 나오는 문제', ()
     for (const row of store.rows) line(`   ${row.boss}(${row.difficulty}) isComplete=${row.isComplete} payout=${row.payoutMeso}`)
     line(`DB의 2026-08 기록: ${world.records.filter((r) => r.periodKey === '2026-08').length}건`)
     line(`화면: ${visibleText().slice(0, 240)}`)
-    flush('시나리오 H — 축약 응답으로 이번 달 월간 수익이 화면에서 사라진다')
+    line()
+    line('→ 수정 전에는 rows=0건이라 "이번 달 총 수익 0 메소"로 보였다(ADR-067 결정 4 표시).')
+    flush('시나리오 H — 축약 응답이어도 기록된 월간 수익은 남는다')
 
-    // 기록은 남아 있는데 현재 기간 화면에는 행이 없다
     expect(world.records.filter((r) => r.periodKey === '2026-08')).toHaveLength(1)
-    expect(store.rows.filter((row) => row.boss === '검은마법사')).toHaveLength(0)
+    // 수정 후: 기록만 있는 조합도 행으로 되살린다(합집합) — 금액이 화면에서 사라지지 않는다
+    const blackMageRows = store.rows.filter((row) => row.boss === '검은마법사')
+    expect(blackMageRows).toHaveLength(1)
+    expect(blackMageRows[0].payoutMeso).toBe(blackMage.payoutMeso)
+    expect(visibleText()).toContain(blackMage.payoutMeso.toLocaleString())
   })
 
   it('I: 보스가 0건인 캐릭터(특수 월드·저레벨)는 매 동기화마다 14회 호출한다', async () => {
