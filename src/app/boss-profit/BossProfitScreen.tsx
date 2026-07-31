@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
+  AlertTriangle,
+  Ban,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -373,6 +375,40 @@ function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Element {
 // 소계 footer는 두지 않는다(ADR-047 후속 3) — 헤더가 sticky라 캐릭터 합계가 스크롤 내내 보여 중복이다.
 // 그 결과 셸 하단에 닿는 배경 요소가 없어 하단 모서리 보정도 불필요하다. 새로 추가한다면 셸엔
 // overflow-hidden을 걸 수 없으므로(ADR-047 결정 2) 그 요소가 직접 rounded-b-[14px]를 가져야 한다.
+
+// ADR-068 결정 3: 동기화가 실패한 캐릭터를 **카드에서** 식별한다. 전에는 토스트가 인원 수만 알려
+// 어느 카드인지 알 수 없었다([[ADR-063]]가 남긴 숙제, 이슈 #78 B).
+//
+// **시안 A(금액 자리를 배지가 대체)에서 한 걸음 물러섰다**: 배지를 금액 **옆**에 둔다. 시안을 고를
+// 때의 전제는 "그 금액이 낡은 캐시에서 나온 믿을 수 없는 값"이었는데, [[ADR-067]] 결정 7(폴백
+// 자동 기록 금지)·결정 4(기록 합집합) 이후 카드의 금액은 **DB 기록에서만** 나온다 — 가리면 실제로
+// 번 수익을 잃는다. 배지가 금액과 나란히 있어도 신호는 충분히 강하다(시안 B의 약한 아바타 표식과
+// 다르다).
+const CHARACTER_ISSUE_LABEL = {
+  unavailable: '조회 불가',
+  failed: '실패',
+} as const
+
+function CharacterIssueBadge(props: { issue: 'unavailable' | 'failed' }): React.JSX.Element {
+  const isPermanent = props.issue === 'unavailable'
+  return (
+    <span
+      data-testid="character-issue-badge"
+      className={
+        isPermanent
+          ? 'inline-flex h-5 flex-none items-center gap-1 rounded-full bg-info-tint px-2 text-[11px] font-semibold leading-none text-info-ink'
+          : 'inline-flex h-5 flex-none items-center gap-1 rounded-full bg-error-tint px-2 text-[11px] font-semibold leading-none text-error-ink'
+      }
+    >
+      {isPermanent ? (
+        <Ban className="h-3 w-3" strokeWidth={2} aria-hidden="true" />
+      ) : (
+        <AlertTriangle className="h-3 w-3" strokeWidth={2} aria-hidden="true" />
+      )}
+      {CHARACTER_ISSUE_LABEL[props.issue]}
+    </span>
+  )
+}
 
 function WeeklyAccordionBody(props: {
   rows: BossProfitRow[]
@@ -823,6 +859,8 @@ function CharacterAccordion(props: {
   isMonthlyBossQueryable: boolean
   // ADR-068 결정 2: 주차 행의 조회·다시 시도 버튼이 이 기간을 다시 로드한다(store.retryPeriod).
   onRetryPeriod: () => void
+  // ADR-068 결정 3: 이 캐릭터의 동기화가 실패했으면 그 종류(없으면 undefined).
+  issue?: 'unavailable' | 'failed'
   stickyTop: number
 }): React.JSX.Element {
   const [isExpanded, setIsExpanded] = useState(false)
@@ -969,6 +1007,7 @@ function CharacterAccordion(props: {
             clearProgress={clearProgress}
           />
           <span className="flex-1 truncate text-left text-sm font-semibold text-text">{group.characterName}</span>
+          {props.issue !== undefined && <CharacterIssueBadge issue={props.issue} />}
           {/* 숫자 표기(n/12)는 보류 상태다([[ADR-054]] 정정 7) — 헤더 가로폭을 두고 캐릭터명과 경합하는데
               둘 다 만족하는 배치를 아직 찾지 못했다. 진행률은 아바타 링이 표현하고, 정확한 수치가 필요해지면
               그때 다시 설계한다. 링 자체는 그대로 두므로 되살릴 때 파생 함수는 그대로 쓸 수 있다. */}
@@ -1017,6 +1056,7 @@ export function BossProfitScreen(): React.JSX.Element {
     canGoPreviousPeriod,
     error,
     staleCharacterNames,
+    characterIssues,
     trackedOcids,
     lastSyncedAt,
     loadTrackedOcids,
@@ -1325,6 +1365,7 @@ export function BossProfitScreen(): React.JSX.Element {
               now={now}
               isMonthlyBossQueryable={periodQueryable}
               onRetryPeriod={() => void retryPeriod()}
+              issue={characterIssues[group.ocid]}
               stickyTop={stickyHeaderHeight}
             />
           ))}

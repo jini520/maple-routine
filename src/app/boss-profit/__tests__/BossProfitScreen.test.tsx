@@ -50,6 +50,7 @@ function mockStore(overrides: Partial<ReturnType<typeof useBossProfitStore>>): v
     canGoPreviousPeriod: true,
     error: null,
     staleCharacterNames: [],
+    characterIssues: {},
     trackedOcids: null,
     lastSyncedAt: null,
     loadTrackedOcids: vi.fn(),
@@ -295,6 +296,57 @@ describe('BossProfitScreen', () => {
     expect(screen.getByText(/기록을 불러오고 있어요/)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /낟낟/ })).not.toBeInTheDocument()
     expect(screen.queryByText(/총 수익/)).not.toBeInTheDocument()
+  })
+
+  // ADR-068 결정 3: 동기화가 실패한 캐릭터를 카드에서 식별한다 — 전에는 토스트가 인원 수만 알려
+  // 어느 카드인지 알 수 없었다(이슈 #78 B).
+  describe('캐릭터 카드의 실패 표식 (ADR-068 결정 3)', () => {
+    it('실패한 캐릭터 카드에만 배지를 붙인다', () => {
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1', 'ocid-2'],
+        rows: [row({ ocid: 'ocid-1', characterName: '낟낟' }), row({ ocid: 'ocid-2', characterName: '잠수깨비' })],
+        periodState: 'recorded',
+        characterIssues: { 'ocid-2': 'failed' },
+      })
+
+      renderBossProfitScreen()
+
+      expect(screen.getAllByTestId('character-issue-badge')).toHaveLength(1)
+      const failedCard = screen.getByRole('button', { name: /잠수깨비/ })
+      expect(within(failedCard).getByText('실패')).toBeInTheDocument()
+    })
+
+    it('조회 불가는 영구라 다른 문구·톤을 쓴다', () => {
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        rows: [row({ ocid: 'ocid-1', characterName: '또삭제될제로' })],
+        periodState: 'recorded',
+        characterIssues: { 'ocid-1': 'unavailable' },
+      })
+
+      renderBossProfitScreen()
+
+      expect(screen.getByText('조회 불가')).toBeInTheDocument()
+      expect(screen.queryByText('실패')).not.toBeInTheDocument()
+    })
+
+    it('금액을 가리지 않는다 — 카드의 금액은 DB 기록에서만 나오므로 가리면 실제 수익을 잃는다', () => {
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        rows: [row({ ocid: 'ocid-1', characterName: '잠수깨비', payoutMeso: 8_080_000 })],
+        periodState: 'recorded',
+        characterIssues: { 'ocid-1': 'failed' },
+      })
+
+      renderBossProfitScreen()
+
+      const card = screen.getByRole('button', { name: /잠수깨비/ })
+      expect(within(card).getByText('실패')).toBeInTheDocument()
+      expect(within(card).getByText('8,080,000 메소')).toBeInTheDocument()
+    })
   })
 
   // ADR-068 결정 2: 월간 주차 행은 **행동이 있는 상태에만** 버튼을 준다. 조회한 적 없는 주를

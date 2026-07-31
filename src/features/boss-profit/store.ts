@@ -91,6 +91,13 @@ export interface BossProfitState {
   canGoPreviousPeriod: boolean // 현재 선택된 기간에서 한 칸 더 과거로 이동할 수 있는지(#29) — 이전 기간이 지금 조회 가능하거나 이미 캐시된 기록이 있을 때만 true. 조회 불가·레코드 없는 기간에 착지하는 것을 막는다.
   error: ScheduleSyncError | null
   staleCharacterNames: string[]
+  /**
+   * 동기화가 실패한 캐릭터의 카드에 붙일 표식([[ADR-068]] 결정 3). 키는 ocid —
+   * `staleCharacterNames`(토스트용 이름 목록, [[ADR-063]])만으로는 어느 **카드**인지 알 수 없다.
+   *   `unavailable` 400 OPENAPI00003 — 이 캐릭터는 조회할 수 없다(영구)
+   *   `failed`      그 외 실패(네트워크·타임아웃 등)
+   */
+  characterIssues: Record<string, 'unavailable' | 'failed'>
   trackedOcids: string[] | null
   lastSyncedAt: string | null // 페이지 전체 기준 마지막으로 성공한 실시간 동기화 시각(ISO 8601). 컨텐츠/보스 스케줄러의 formatSyncedAt과 동일하게 새로고침 아이콘 옆에 표시
 }
@@ -862,6 +869,7 @@ const initialState: BossProfitState = {
   canGoPreviousPeriod: false,
   error: null,
   staleCharacterNames: [],
+  characterIssues: {},
   trackedOcids: null,
   lastSyncedAt: null,
 }
@@ -897,6 +905,7 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
         canGoPreviousPeriod: false,
         error: null,
         staleCharacterNames: [],
+        characterIssues: {},
       })
       return
     }
@@ -1004,6 +1013,7 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
       canGoPreviousPeriod,
       error: null,
       staleCharacterNames: [],
+      characterIssues: {},
     })
 
     let results: Awaited<ReturnType<typeof syncSchedules>>
@@ -1021,6 +1031,7 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
 
     const rows: BossProfitRow[] = []
     const staleCharacterNames: string[] = []
+    const characterIssues: Record<string, 'unavailable' | 'failed'> = {}
     // 동기화가 실패한 캐릭터. buildFallbackResult가 **마지막 캐시 상태를 그대로** 돌려주므로
     // (schedule-sync.ts) 그 state의 완료 여부는 "지금"의 사실이 아니다 — 자동 기록에서 제외한다
     // ([[ADR-067]] 결정 7). 표시는 캐시 우선 표시 규약([[ADR-017]])을 그대로 따르고, 그 카드에
@@ -1039,6 +1050,10 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
       if (result.isStale) {
         staleCharacterNames.push(result.characterName)
         staleOcids.add(result.ocid)
+        // 영구(조회 불가)와 일시(그 외)를 카드에서도 갈라 말한다([[ADR-068]] 결정 3) — 전자는
+        // 재시도가 무의미하고 추적 해제가 유일한 조치다.
+        characterIssues[result.ocid] =
+          result.error?.kind === 'characterUnavailable' ? 'unavailable' : 'failed'
       }
 
       const displayBosses = selectProfitDisplayBosses(
@@ -1154,6 +1169,7 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
       canGoPreviousPeriod,
       error: null,
       staleCharacterNames,
+      characterIssues,
       // lastSyncedAt은 위에서 세대 가드보다 먼저 갱신했다(중단돼도 시각이 남도록).
     })
   },
