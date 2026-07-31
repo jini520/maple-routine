@@ -94,8 +94,15 @@ export async function getRegisteredCharacters(): Promise<MapleCharacter[]> {
   return characters
 }
 
+// 조회 불가 항목은 레벨과 무관하게 **맨 뒤로** 보낸다([[ADR-068]] 결정 4) — 고를 수 없는 후보가
+// 고를 수 있는 후보를 밀어내지 않아야 한다. 그 안에서는 기존 규칙(레벨 내림차순, 동레벨은 이름순).
 function sortPickerEntries(entries: CharacterPickerEntry[]): CharacterPickerEntry[] {
-  return [...entries].sort((a, b) => (b.level !== a.level ? b.level - a.level : compareByName(a.name, b.name)))
+  return [...entries].sort((a, b) => {
+    const aUnavailable = a.unavailable === true
+    const bUnavailable = b.unavailable === true
+    if (aUnavailable !== bUnavailable) return aUnavailable ? 1 : -1
+    return b.level !== a.level ? b.level - a.level : compareByName(a.name, b.name)
+  })
 }
 
 // ADR-016 결정 4: 캐시 우선 표시(Stale-While-Revalidate) — 캐시가 있으면 즉시 그 값으로 첫
@@ -210,7 +217,23 @@ export async function getCharacterPickerRoster(
           globalError = error
           return
         }
-        // 개별 실패 — 이미 있던 캐시 값을 그대로 유지
+        // ADR-068 결정 4: 조회 불가(400 OPENAPI00003)는 **숨기지 않는다**. basic만 실패한 것이므로
+        // character/list가 준 이름·레벨·월드는 그대로 쓸 수 있다 — 이미지는 없다.
+        if (toScheduleSyncError(error).kind === 'characterUnavailable') {
+          liveEntries.set(character.ocid, {
+            ocid: character.ocid,
+            name: character.name,
+            level: character.level,
+            imageUrl: null,
+            world: character.world,
+            unavailable: true,
+          })
+          if (hasVisibleView) {
+            onUpdate(sortPickerEntries(Array.from(liveEntries.values())))
+          }
+          return
+        }
+        // 그 외 개별 실패 — 이미 있던 캐시 값을 그대로 유지
       }
     }),
   )

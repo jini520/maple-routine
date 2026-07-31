@@ -1,4 +1,4 @@
-import { Star } from 'lucide-react'
+import { Ban, Star } from 'lucide-react'
 import { useState } from 'react'
 import { worldEmblemUrl } from '../../lib/world-emblem'
 import type { CharacterPickerEntry } from '../../types'
@@ -60,33 +60,43 @@ export function CharacterTrackingGrid(props: CharacterTrackingGridProps): React.
     props.onChange(next)
   }
 
-  const sortedEntries = sortForDisplay(props.entries, checkedOcids)
+  const available = props.entries.filter((entry) => entry.unavailable !== true)
+  const unavailable = props.entries.filter((entry) => entry.unavailable === true)
+  const sortedEntries = sortForDisplay(available, checkedOcids)
 
-  return (
-    <div className="grid max-h-[70vh] grid-cols-3 gap-2 overflow-y-auto">
-      {sortedEntries.map((entry) => {
+  function card(entry: CharacterPickerEntry): React.JSX.Element {
         const isChecked = checkedOcids.includes(entry.ocid)
+        // ADR-068 결정 4: 조회 불가 항목은 **해제만** 가능하다 — 고를 수 없는 후보를 새로 고르게 하면
+        // 그 즉시 매 동기화 실패로 이어진다. 이미 추적 중인 경우의 해제는 유일한 탈출구라 막지 않는다.
+        const isUnavailable = entry.unavailable === true
+        const canToggle = !isUnavailable || isChecked
         const emblemUrl = entry.world ? worldEmblemUrl(entry.world) : null
         return (
           <button
             key={entry.ocid}
             type="button"
             aria-pressed={isChecked}
-            onClick={() => toggle(entry.ocid)}
+            onClick={canToggle ? () => toggle(entry.ocid) : undefined}
             className={
-              isChecked
+              isUnavailable
+                ? `relative flex flex-col items-center gap-1 rounded-[14px] border border-border px-1 py-3 text-center ${isChecked ? 'bg-surface-2' : 'opacity-60'}`
+                : isChecked
                 ? 'relative flex flex-col items-center gap-1 rounded-[14px] border border-primary bg-primary-tint px-1 py-3 text-center'
                 : 'relative flex flex-col items-center gap-1 rounded-[14px] border border-border px-1 py-3 text-center hover:bg-primary-tint'
             }
           >
-            <Star
-              className={
-                isChecked
-                  ? 'absolute right-1.5 top-1.5 h-4 w-4 fill-primary-ink text-primary-ink'
-                  : 'absolute right-1.5 top-1.5 h-4 w-4 text-text-muted'
-              }
-              strokeWidth={1.5}
-            />
+            {isUnavailable ? (
+              <Ban className="absolute right-1.5 top-1.5 h-4 w-4 text-text-muted" strokeWidth={1.75} />
+            ) : (
+              <Star
+                className={
+                  isChecked
+                    ? 'absolute right-1.5 top-1.5 h-4 w-4 fill-primary-ink text-primary-ink'
+                    : 'absolute right-1.5 top-1.5 h-4 w-4 text-text-muted'
+                }
+                strokeWidth={1.5}
+              />
+            )}
             <span className="relative h-14 w-14">
               <span className="absolute inset-0 overflow-hidden rounded-full bg-surface-2">
                 {entry.imageUrl !== null ? (
@@ -116,7 +126,23 @@ export function CharacterTrackingGrid(props: CharacterTrackingGridProps): React.
             <span className="text-xs text-text-muted">Lv.{entry.level}</span>
           </button>
         )
-      })}
+  }
+
+  // 조회 불가 항목은 정상 후보 아래 별도 섹션으로 내린다([[ADR-068]] 결정 4) — 숨기지 않는 이유는
+  // 사용자가 추적을 해제할 자리가 필요하기 때문이다(이슈 #78 A-1).
+  return (
+    <div className="max-h-[70vh] overflow-y-auto">
+      <div className="grid grid-cols-3 gap-2">{sortedEntries.map(card)}</div>
+
+      {unavailable.length > 0 && (
+        <div data-testid="unavailable-roster" className="mt-4">
+          <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold tracking-wide text-text-muted">
+            <Ban className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" />
+            조회할 수 없는 캐릭터
+          </p>
+          <div className="grid grid-cols-3 gap-2">{unavailable.map(card)}</div>
+        </div>
+      )}
     </div>
   )
 }

@@ -507,3 +507,78 @@ describe('CharacterTrackingPicker — 로딩/빈/실패 상태 (ADR-053 · ADR-0
     expect(screen.getByRole('button', { name: '저장' })).toBeEnabled()
   })
 })
+
+// ADR-068 결정 4: 조회 불가 캐릭터(400 OPENAPI00003)를 숨기지 않고 별도 섹션에 남긴다 —
+// 숨기면 trackedOcids에 남은 그 ocid를 사용자가 해제할 방법이 없다(이슈 #78 A-1).
+describe('조회 불가 캐릭터', () => {
+  const withUnavailable: CharacterPickerEntry[] = [
+    { ocid: 'ocid-1', name: '낟낟', level: 293, imageUrl: null, world: '엘리시움' },
+    { ocid: 'ocid-x', name: '충쌕', level: 200, imageUrl: null, world: '베라', unavailable: true },
+  ]
+
+  it('별도 섹션으로 분리해 보여준다', () => {
+    render(
+      <CharacterTrackingPicker
+        entries={withUnavailable}
+        trackedOcids={[]}
+        {...loaded}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByText('조회할 수 없는 캐릭터')).toBeInTheDocument()
+    const section = screen.getByTestId('unavailable-roster')
+    expect(within(section).getByText('충쌕')).toBeInTheDocument()
+    // 정상 후보는 그 섹션에 들어가지 않는다
+    expect(within(section).queryByText('낟낟')).not.toBeInTheDocument()
+  })
+
+  it('추적 중이 아니면 눌러도 선택되지 않는다 — 고를 수 없는 후보다', async () => {
+    const user = userEvent.setup()
+    render(
+      <CharacterTrackingPicker
+        entries={withUnavailable}
+        trackedOcids={[]}
+        {...loaded}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: /충쌕/ }))
+
+    expect(screen.getByRole('button', { name: /충쌕/ })).toHaveAttribute('aria-pressed', 'false')
+    // 변경이 없으므로 저장 버튼도 활성되지 않는다(ADR-043 결정 1)
+    expect(screen.getByRole('button', { name: '저장' })).toBeDisabled()
+  })
+
+  it('추적 중이면 눌러서 해제할 수 있다 — 갇힌 상태를 벗어나는 유일한 경로다', async () => {
+    const user = userEvent.setup()
+    const onSave = vi.fn()
+    render(
+      <CharacterTrackingPicker
+        entries={withUnavailable}
+        trackedOcids={['ocid-1', 'ocid-x']}
+        {...loaded}
+        onSave={onSave}
+        onClose={vi.fn()}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: /충쌕/ }))
+    expect(screen.getByRole('button', { name: /충쌕/ })).toHaveAttribute('aria-pressed', 'false')
+
+    await user.click(screen.getByRole('button', { name: '저장' }))
+    expect(onSave).toHaveBeenCalledWith(['ocid-1'])
+  })
+
+  it('조회 불가 캐릭터가 없으면 섹션 자체를 그리지 않는다', () => {
+    render(
+      <CharacterTrackingPicker entries={entries} trackedOcids={[]} {...loaded} onSave={vi.fn()} onClose={vi.fn()} />,
+    )
+
+    expect(screen.queryByText('조회할 수 없는 캐릭터')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('unavailable-roster')).not.toBeInTheDocument()
+  })
+})
