@@ -459,7 +459,12 @@ function CharacterIssueBadge(props: {
 // 하단 fixed nav 위로는 절대 올라가지 않는다 — 다른 화면 요소를 가릴 수 없다.
 const ISSUE_POPOVER_WIDTH = 220
 const ISSUE_POPOVER_EDGE_GAP = 12
-const ISSUE_POPOVER_TOP = 56
+// 아이콘 바로 아래에 붙인다(사용자 지정 2026-07-31). 아이콘은 헤더에서 y 9~23px을 차지하고 꼬리는
+// 팝오버 위로 6px 튀어나오므로, 30px이면 꼬리 끝이 아이콘 밑변에서 1px 아래에 온다 — 닿아 보이면서
+// 아이콘을 덮지는 않는다(팝오버가 z-20이라 덮으면 아이콘이 잘려 보인다).
+// **금액 글자를 덮는 것은 허용**한다("메소 가려도 되니까 위치를 아이콘이랑 맞춰") — 열린 동안
+// 그 카드의 금액 대신 팝오버가 말한다.
+const ISSUE_POPOVER_TOP = 30
 const ISSUE_CARET_SIZE = 8
 
 /**
