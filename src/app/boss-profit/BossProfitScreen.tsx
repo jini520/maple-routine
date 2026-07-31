@@ -433,8 +433,8 @@ function CharacterIssueBadge(props: {
       }}
       className={
         isPermanent
-          ? 'absolute -top-2.5 right-0 z-[7] flex h-3.5 w-3.5 items-center justify-center rounded-full bg-info-tint text-info-ink ring-1 ring-bg'
-          : 'absolute -top-2.5 right-0 z-[7] flex h-3.5 w-3.5 items-center justify-center rounded-full bg-error-tint text-error-ink ring-1 ring-bg'
+          ? 'absolute -top-3 right-0 z-[7] flex h-3.5 w-3.5 items-center justify-center rounded-full bg-info-tint text-info-ink ring-1 ring-bg'
+          : 'absolute -top-3 right-0 z-[7] flex h-3.5 w-3.5 items-center justify-center rounded-full bg-error-tint text-error-ink ring-1 ring-bg'
       }
     >
       {isPermanent ? (
