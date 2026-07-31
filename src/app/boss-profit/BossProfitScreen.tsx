@@ -405,12 +405,16 @@ const CHARACTER_ISSUE_EXPLANATION = {
   },
 } as const
 
-// **금액의 우상단에 절대배치한다**(사용자 지정 2026-07-31) — 흐름에 두면 헤더 가로폭을 캐릭터명과
+// **금액의 좌상단에 절대배치한다**(사용자 지정 2026-07-31) — 흐름에 두면 헤더 가로폭을 캐릭터명과
 // 다투고(라벨 배지가 6자 이름을 잘라먹은 이유, [[ADR-054]] 정정 7) 화면 폭에 따라 겹침이 생긴다.
 //
-// 오른쪽 끝에 맞추는 이유: 금액은 자릿수에 따라 폭이 변하지만 **오른쪽 끝은 항상 같은 자리**다
-// (`메소` 의 마지막 글자 위). 좌상단은 금액 첫 자리를 덮어 좌측에 폭을 비워야 했는데, 우상단은
-// 글자 위쪽 여백만 쓰므로 **폭을 하나도 쓰지 않는다** — 이름 잘림 위험이 완전히 사라진다.
+// 기준은 금액 래퍼의 왼쪽 끝 = **숫자가 시작하는 위치**다. 거기서 `-left-1`(4px)만 밀어 원형 배지의
+// **시각적** 왼쪽 변이 첫 자리 글자와 한 줄로 맞게 한다(원은 사각 글리프보다 안쪽으로 들어가 보인다,
+// 사용자 미세 조정 2026-07-31).
+//
+// 처음 좌상단에 뒀을 때 숫자를 덮은 것은 위치가 아니라 **높이** 문제였다(-top-1.5, 6px) —
+// `-top-3.5`(14px)면 글자 위쪽 여백만 쓰므로 겹치지 않고, 그래서 좌측에 폭을 비울 필요도 없다
+// (초기 시도에서는 20px을 비웠다).
 function CharacterIssueBadge(props: {
   issue: 'unavailable' | 'failed'
   onToggle: () => void
@@ -433,8 +437,8 @@ function CharacterIssueBadge(props: {
       }}
       className={
         isPermanent
-          ? 'absolute -top-3 right-0 z-[7] flex h-3.5 w-3.5 items-center justify-center rounded-full bg-info-tint text-info-ink ring-1 ring-bg'
-          : 'absolute -top-3 right-0 z-[7] flex h-3.5 w-3.5 items-center justify-center rounded-full bg-error-tint text-error-ink ring-1 ring-bg'
+          ? 'absolute -top-3.5 -left-1 z-[7] flex h-3.5 w-3.5 items-center justify-center rounded-full bg-info-tint text-info-ink ring-1 ring-bg'
+          : 'absolute -top-3.5 -left-1 z-[7] flex h-3.5 w-3.5 items-center justify-center rounded-full bg-error-tint text-error-ink ring-1 ring-bg'
       }
     >
       {isPermanent ? (
