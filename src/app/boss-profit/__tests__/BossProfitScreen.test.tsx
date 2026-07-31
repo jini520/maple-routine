@@ -335,6 +335,85 @@ describe('BossProfitScreen', () => {
 
     // 실물 확인 후 확정(2026-07-31): 라벨 배지는 6자 이름부터 잘라먹어(내옆에최성일 → 내옆에…)
     // 아이콘만 남겼다. 이름·금액·헤드라인 합계가 모두 온전하다.
+    // 사용자 지정(2026-07-31): 아이콘만으로는 원인을 말할 수 없으므로 탭하면 설명이 나와야 한다.
+    // 겹침·z-index 주의사항도 함께 검증한다 — 실물에서 팝오버가 아래 카드에 가려지는 것을 확인했다.
+    describe('설명 팝오버', () => {
+      function renderWithIssue(): void {
+        mockStore({
+          status: 'loaded',
+          trackedOcids: ['ocid-1'],
+          rows: [row({ ocid: 'ocid-1', characterName: '잠수깨비', payoutMeso: 8_080_000 })],
+          periodState: 'recorded',
+          characterIssues: { 'ocid-1': 'failed' },
+        })
+        renderBossProfitScreen()
+      }
+
+      it('배지를 탭하면 이유를 설명하고, 아코디언은 펼쳐지지 않는다', () => {
+        renderWithIssue()
+
+        expect(screen.queryByTestId('character-issue-popover')).not.toBeInTheDocument()
+        fireEvent.click(screen.getByTestId('character-issue-badge'))
+
+        expect(screen.getByText('동기화하지 못했습니다')).toBeInTheDocument()
+        // 카드 헤더 자체가 버튼이라 stopPropagation이 없으면 함께 펼쳐진다
+        expect(screen.queryByText('자쿰')).not.toBeInTheDocument()
+      })
+
+      it('다시 탭하면 닫힌다', () => {
+        renderWithIssue()
+
+        fireEvent.click(screen.getByTestId('character-issue-badge'))
+        fireEvent.click(screen.getByTestId('character-issue-badge'))
+
+        expect(screen.queryByTestId('character-issue-popover')).not.toBeInTheDocument()
+      })
+
+      it('스크롤이 시작되면 닫는다 — 스크롤 중 다른 컨텐츠를 덮지 않게 한다', () => {
+        renderWithIssue()
+
+        fireEvent.click(screen.getByTestId('character-issue-badge'))
+        expect(screen.getByTestId('character-issue-popover')).toBeInTheDocument()
+
+        fireEvent.scroll(window)
+        expect(screen.queryByTestId('character-issue-popover')).not.toBeInTheDocument()
+      })
+
+      it('바깥을 누르면 닫힌다', () => {
+        renderWithIssue()
+
+        fireEvent.click(screen.getByTestId('character-issue-badge'))
+        fireEvent.pointerDown(document.body)
+
+        expect(screen.queryByTestId('character-issue-popover')).not.toBeInTheDocument()
+      })
+
+      it('열린 동안만 그 카드를 형제 카드 위로 올린다 — 페이지 헤더(z-10)보다는 낮게', () => {
+        renderWithIssue()
+        const card = screen.getByTestId('character-issue-badge').closest('.isolate') as HTMLElement
+
+        expect(card.className).not.toContain('z-[9]')
+        fireEvent.click(screen.getByTestId('character-issue-badge'))
+        expect(card.className).toContain('z-[9]')
+      })
+
+      it('조회 불가는 다른 설명을 준다 — 추적 해제 경로를 알린다', () => {
+        mockStore({
+          status: 'loaded',
+          trackedOcids: ['ocid-1'],
+          rows: [row({ ocid: 'ocid-1', characterName: '또삭제될제로' })],
+          periodState: 'recorded',
+          characterIssues: { 'ocid-1': 'unavailable' },
+        })
+        renderBossProfitScreen()
+
+        fireEvent.click(screen.getByTestId('character-issue-badge'))
+
+        expect(screen.getByText('조회할 수 없는 캐릭터입니다')).toBeInTheDocument()
+        expect(screen.getByText(/캐릭터 관리에서 추적을 해제/)).toBeInTheDocument()
+      })
+    })
+
     it('이름과 금액을 둘 다 가리지 않는다', () => {
       mockStore({
         status: 'loaded',

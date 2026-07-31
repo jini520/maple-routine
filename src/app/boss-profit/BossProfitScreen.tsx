@@ -392,26 +392,84 @@ const CHARACTER_ISSUE_LABEL = {
   failed: '실패',
 } as const
 
-function CharacterIssueBadge(props: { issue: 'unavailable' | 'failed' }): React.JSX.Element {
+// 탭했을 때 "왜 이 아이콘이 떠 있는가"를 설명한다(사용자 요청 2026-07-31). 아이콘만으로는 원인을
+// 말할 수 없고, 그 대가를 팝오버가 받는다.
+const CHARACTER_ISSUE_EXPLANATION = {
+  unavailable: {
+    title: '조회할 수 없는 캐릭터입니다',
+    body: '넥슨 API가 이 캐릭터를 조회하지 못합니다. 캐릭터 관리에서 추적을 해제할 수 있습니다.',
+  },
+  failed: {
+    title: '동기화하지 못했습니다',
+    body: '마지막으로 확인한 기록을 보여주고 있습니다. 새로고침하면 다시 시도합니다.',
+  },
+} as const
+
+// **금액의 좌상단에 절대배치한다**(사용자 지정 2026-07-31) — 흐름에 두면 헤더 가로폭을 캐릭터명과
+// 다투고(라벨 배지가 6자 이름을 잘라먹은 이유, [[ADR-054]] 정정 7) 화면 폭에 따라 겹침이 생긴다.
+// 흐름 밖으로 빼면 폭 경쟁이 원천적으로 사라지고, 64px 헤더 행에서 금액 위쪽은 비어 있어 가릴 것도 없다.
+function CharacterIssueBadge(props: {
+  issue: 'unavailable' | 'failed'
+  onToggle: () => void
+}): React.JSX.Element {
   const isPermanent = props.issue === 'unavailable'
   return (
+    // span으로 두는 이유: 카드 헤더 자체가 <button>이라 그 안에 button을 넣으면 중첩 인터랙티브가
+    // 된다(HTML 위반 + 클릭 충돌). span은 인터랙티브 콘텐츠가 아니므로 중첩이 허용되고, 클릭을
+    // stopPropagation해 아코디언 토글과 갈라낸다. 대가는 키보드 포커스를 못 받는 것 — 상태 자체는
+    // aria-label로 읽히고 원인 문구는 토스트([[ADR-063]])가 담당한다.
     <span
       data-testid="character-issue-badge"
-      // 아이콘만 남아 시각 정보가 아이콘·색뿐이므로, 스크린리더에는 이 레이블이 유일한 원천이다.
       role="img"
       aria-label={CHARACTER_ISSUE_LABEL[props.issue]}
+      title={CHARACTER_ISSUE_EXPLANATION[props.issue].title}
+      onClick={(event) => {
+        event.stopPropagation()
+        event.preventDefault()
+        props.onToggle()
+      }}
       className={
         isPermanent
-          ? 'inline-flex h-5 w-5 flex-none items-center justify-center rounded-full bg-info-tint text-info-ink'
-          : 'inline-flex h-5 w-5 flex-none items-center justify-center rounded-full bg-error-tint text-error-ink'
+          ? 'absolute left-0 -top-1.5 z-[7] flex h-4 w-4 items-center justify-center rounded-full bg-info-tint text-info-ink ring-1 ring-bg'
+          : 'absolute left-0 -top-1.5 z-[7] flex h-4 w-4 items-center justify-center rounded-full bg-error-tint text-error-ink ring-1 ring-bg'
       }
     >
       {isPermanent ? (
-        <Ban className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" />
+        <Ban className="h-2.5 w-2.5" strokeWidth={2.5} aria-hidden="true" />
       ) : (
-        <AlertTriangle className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" />
+        <AlertTriangle className="h-2.5 w-2.5" strokeWidth={2.5} aria-hidden="true" />
       )}
     </span>
+  )
+}
+
+// 팝오버는 **셸 바깥**(카드 루트 relative isolate)에 둔다 — 셸은 펼침 상태에서 overflow-clip이라
+// ([[ADR-049]]) 안에 두면 잘린다. 고가 드롭 배지를 셸 바깥에 둔 것과 같은 이유다([[ADR-047]]).
+//
+// z-[20]: 카드 안 층 순서는 드롭 아이콘 1~3 < sticky 헤더 5 < 골드 링 6 < 고가 드롭 배지 10이므로
+// 그 전부보다 위다. **카드 루트의 isolate가 이 z를 카드 안에 가두므로** 페이지 sticky 헤더(z-10)나
+// 하단 fixed nav 위로는 절대 올라가지 않는다 — 다른 화면 요소를 가릴 수 없다.
+function CharacterIssuePopover(props: {
+  issue: 'unavailable' | 'failed'
+  onClose: () => void
+}): React.JSX.Element {
+  const copy = CHARACTER_ISSUE_EXPLANATION[props.issue]
+  return (
+    <div
+      data-testid="character-issue-popover"
+      role="status"
+      className="absolute right-3 top-[54px] z-[20] w-[240px] rounded-[12px] border border-border bg-surface p-3 shadow-lg"
+    >
+      <p className="text-xs font-bold text-text">{copy.title}</p>
+      <p className="mt-1 text-[11px] leading-relaxed text-text-muted">{copy.body}</p>
+      <button
+        type="button"
+        onClick={props.onClose}
+        className="mt-2 text-[11px] font-semibold text-primary-ink underline"
+      >
+        닫기
+      </button>
+    </div>
   )
 }
 
@@ -869,6 +927,10 @@ function CharacterAccordion(props: {
   stickyTop: number
 }): React.JSX.Element {
   const [isExpanded, setIsExpanded] = useState(false)
+  // ADR-068 결정 3 정정 3: 아이콘만으로는 원인을 말할 수 없어, 탭하면 설명 팝오버를 연다.
+  const [isIssueOpen, setIsIssueOpen] = useState(false)
+  // 배지·팝오버를 함께 감싸는 앵커 — 바깥 탭 판정에 쓴다.
+  const issueAnchorRef = useRef<HTMLDivElement>(null)
   // 배지 sticky 레일의 고정 범위와 하단 페이드 위치를 헤더에 맞추기 위한 헤더 실측 높이(ADR-047 후속).
   // 글꼴 확대 시 높이가 달라질 수 있어 상수 대신 측정한다.
   // isExpanded를 의존성에 두고 다시 측정해야 한다 — 접힘 헤더는 `border border-border`가 있어 펼침보다
@@ -909,6 +971,27 @@ function CharacterAccordion(props: {
     props.tab === 'weekly'
       ? { cleared: countGroupClearedWeeklyBosses(group), total: WEEKLY_BOSS_CLEAR_LIMIT, cycle: props.tab }
       : { cleared: countGroupClearedMonthlyBosses(group), total: MONTHLY_BOSS_COUNT, cycle: props.tab }
+  // 팝오버는 열려 있는 동안 카드 아래 내용을 덮으므로, **스크롤이 시작되면 닫는다**(사용자 우려
+  // 2026-07-31 — 스크롤 중 다른 컨텐츠를 가리는 문제). 바깥 탭도 닫는다: 투명 오버레이를 쓰지 않고
+  // document 리스너로 판정한다 — 오버레이는 카드의 isolate 안에 갇혀 다른 카드 위를 덮지 못한다.
+  useEffect(() => {
+    if (!isIssueOpen) return
+
+    const closeOnOutside = (event: Event): void => {
+      const target = event.target
+      if (target instanceof Node && issueAnchorRef.current?.contains(target) === true) return
+      setIsIssueOpen(false)
+    }
+    const closeOnScroll = (): void => setIsIssueOpen(false)
+
+    document.addEventListener('pointerdown', closeOnOutside, true)
+    window.addEventListener('scroll', closeOnScroll, { passive: true })
+    return () => {
+      document.removeEventListener('pointerdown', closeOnOutside, true)
+      window.removeEventListener('scroll', closeOnScroll)
+    }
+  }, [isIssueOpen])
+
   const shellClass = [
     // overflow-hidden은 여전히 금지(ADR-047) — 스크롤포트를 만들어 헤더 sticky를 무력화한다. 대신
     // overflow-clip을 쓴다(ADR-049): 스크롤 컨테이너를 만들지 않아 sticky와 공존하면서 자식을 카드
@@ -932,7 +1015,18 @@ function CharacterAccordion(props: {
   return (
     // isolate(isolation:isolate): 우상단 배지의 z-index를 이 카드 안에 가둔다. 없으면 배지의 z-10이
     // 페이지 루트 stacking으로 새어나가 sticky 헤더(z-10)·하단 fixed nav·safe-area 위로 그려진다.
-    <div className="relative isolate">
+    // 팝오버가 열린 동안만 이 카드를 형제 카드 위로 들어올린다. 형제 카드는 각자 isolate라 z-auto
+    // 스태킹 컨텍스트이고, **나중 형제가 먼저 형제 위에 그려진다** — 그래서 카드 안의 z-20만으로는
+    // 팝오버가 아래 카드에 가려진다(실물 확인 2026-07-31). z는 9로 묶는다: 형제 카드(z-auto)보다
+    // 위지만 **페이지 sticky 헤더(z-10)보다 아래**라, 스크롤로 카드가 헤더 밑으로 들어갈 때 헤더를
+    // 덮지 않는다(스크롤 시작 시 팝오버를 닫는 것과 함께 이 두 겹의 방어를 둔다).
+    <div
+      ref={issueAnchorRef}
+      className={isIssueOpen ? 'relative isolate z-[9]' : 'relative isolate'}
+    >
+      {props.issue !== undefined && isIssueOpen && (
+        <CharacterIssuePopover issue={props.issue} onClose={() => setIsIssueOpen(false)} />
+      )}
       {hasValuable &&
         (isExpanded ? (
           // 펼침: 배지도 헤더와 함께 고정한다(ADR-047 후속). 헤더 "안"에 넣으면 헤더의 z-[5] 스택
@@ -1012,11 +1106,26 @@ function CharacterAccordion(props: {
             clearProgress={clearProgress}
           />
           <span className="flex-1 truncate text-left text-sm font-semibold text-text">{group.characterName}</span>
-          {props.issue !== undefined && <CharacterIssueBadge issue={props.issue} />}
           {/* 숫자 표기(n/12)는 보류 상태다([[ADR-054]] 정정 7) — 헤더 가로폭을 두고 캐릭터명과 경합하는데
               둘 다 만족하는 배치를 아직 찾지 못했다. 진행률은 아바타 링이 표현하고, 정확한 수치가 필요해지면
               그때 다시 설계한다. 링 자체는 그대로 두므로 되살릴 때 파생 함수는 그대로 쓸 수 있다. */}
-          <span className="text-sm font-bold text-text tabular-nums">{totalMeso.toLocaleString()} 메소</span>
+          {/* 금액을 relative 래퍼로 감싸 배지의 절대배치 기준으로 쓴다 — 래퍼는 흐름상 금액과 같은
+              크기이므로 레이아웃에 영향이 없다. */}
+          {/* 배지가 있을 때만 좌측에 배지 폭(20px)을 비워 **숫자를 덮지 않게** 한다 — 절대배치만으로는
+              금액 첫 자리를 가린다(실물 확인 2026-07-31: `8,080,000`의 8, `0 메소`의 0이 가려졌다).
+              라벨 배지가 먹던 폭(약 60px)의 1/3이라 캐릭터명 잘림은 실질적으로 생기지 않는다. */}
+          <span
+            className={
+              props.issue === undefined
+                ? 'relative text-sm font-bold text-text tabular-nums'
+                : 'relative pl-5 text-sm font-bold text-text tabular-nums'
+            }
+          >
+            {props.issue !== undefined && (
+              <CharacterIssueBadge issue={props.issue} onToggle={() => setIsIssueOpen((prev) => !prev)} />
+            )}
+            {totalMeso.toLocaleString()} 메소
+          </span>
           {isExpanded ? (
             <ChevronUp className="h-4 w-4 text-text-muted" strokeWidth={2} aria-hidden="true" />
           ) : (
