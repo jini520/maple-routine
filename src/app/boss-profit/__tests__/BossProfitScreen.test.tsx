@@ -379,6 +379,20 @@ describe('BossProfitScreen', () => {
         expect(screen.queryByTestId('character-issue-popover')).not.toBeInTheDocument()
       })
 
+      it('카드를 펼치거나 접으면 닫힌다 — 펼침이 레이아웃을 바꿔 위치가 낡은 값이 된다', () => {
+        renderWithIssue()
+
+        fireEvent.click(screen.getByTestId('character-issue-badge'))
+        expect(screen.getByTestId('character-issue-popover')).toBeInTheDocument()
+
+        // 헤더(아코디언 토글)를 누른다 — 바깥 탭 판정은 카드 루트를 "안"으로 보므로 이 경로가 별도로 필요하다
+        fireEvent.click(screen.getByRole('button', { name: /잠수깨비/ }))
+
+        expect(screen.queryByTestId('character-issue-popover')).not.toBeInTheDocument()
+        // 아코디언은 정상적으로 펼쳐진다
+        expect(screen.getByText('자쿰')).toBeInTheDocument()
+      })
+
       it('바깥을 누르면 닫힌다', () => {
         renderWithIssue()
 

@@ -1137,7 +1137,13 @@ function CharacterAccordion(props: {
         <button
           ref={headerRef}
           type="button"
-          onClick={() => setIsExpanded((prev) => !prev)}
+          onClick={() => {
+            // 카드를 펼치거나 접으면 설명 팝오버를 닫는다(사용자 지적 2026-07-31). 바깥 탭 판정은
+            // 카드 루트를 "안"으로 보므로 헤더 클릭으로는 닫히지 않았다. 게다가 펼침은 레이아웃을
+            // 바꿔 열기 직전에 실측한 팝오버 위치가 낡은 값이 된다 — 닫는 것이 두 문제를 함께 없앤다.
+            setIsIssueOpen(false)
+            setIsExpanded((prev) => !prev)
+          }}
           // 펼침 헤더는 카드 안에서 sticky로 고정한다(ADR-047) — top은 페이지 sticky 헤더 실측 높이라
           // 그 바로 아래에 붙고, bg-surface가 밑으로 지나가는 보스 행을 가린다. z-[5]는 드롭 아이콘
           // (relative + inline zIndex 1~3) 위 · 고가 드롭 배지(z-10, ADR-045) 아래 층.
