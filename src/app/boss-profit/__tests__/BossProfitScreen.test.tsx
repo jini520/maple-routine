@@ -254,15 +254,19 @@ describe('BossProfitScreen', () => {
     expect(goToNextPeriod).toHaveBeenCalledTimes(1)
   })
 
+  // **UTC로 기간 키를 만들면 안 된다**(2026-08-01 계측): 앱의 기간 키는 KST 벽시계 기준이라
+  // (`getCurrentBossProfitPeriod`) 매달 1일 KST 00:00~09:00 동안 UTC 월과 KST 월이 갈린다. 이 테스트가
+  // 손으로 `getUTCMonth()` 키를 만들어 "최신 기간"이라 넘겼더니 그 9시간 창에서 실제로는 지난 달이 되어
+  // 다음 버튼이 활성화됐다(그렇게 깨져 있었다). 파일 상단이 이미 같은 함수로 상수를 계산해 두었으므로
+  // 그것을 쓴다 — 화면과 같은 소스를 봐야 시점에 좌우되지 않는다.
   it('최신 기간에서는 다음 기간 버튼이 disabled다', () => {
-    const now = new Date()
     mockStore({
       status: 'loaded',
       tab: 'monthly',
       trackedOcids: ['ocid-1'],
       rows: [],
       weeklySubtotals: [subtotal()],
-      periodKey: `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`,
+      periodKey: CURRENT_MONTHLY_PERIOD_KEY,
     })
 
     renderBossProfitScreen()

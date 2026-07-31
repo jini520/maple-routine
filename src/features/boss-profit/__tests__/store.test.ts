@@ -1731,19 +1731,31 @@ describe('useBossProfitStore', () => {
     })
 
     it('goToPreviousPeriod: 통째로 MIN_SCHEDULER_DATE 이전인 달로는 물리적으로 이동할 수 없다(monthly)', async () => {
-      syncSchedulesMock.mockResolvedValue([syncResult()])
-      await useBossProfitStore.getState().refresh(['ocid-1'])
-      await useBossProfitStore.getState().setTab('monthly')
+      // **날짜를 고정해야 하는 테스트다**(2026-08-01 계측): 이 검증의 전제는 "지난 달이 통째로
+      // MIN_SCHEDULER_DATE(2026-07-01) 이전"이고, 그건 오늘이 2026년 7월일 때만 참이다. 실제 시각에
+      // 의존하게 두면 8월부터는 지난 달(7월)이 조회 가능 구간에 들어와 이동이 정상 허용되고, 그러면
+      // **코드가 맞는데 테스트만 영구히 실패한다**(실제로 그렇게 깨져 있었다). 옆의 롤링 윈도우
+      // 테스트들이 같은 이유로 이미 시각을 고정한다.
+      vi.useFakeTimers({ toFake: ['Date'] })
+      vi.setSystemTime(new Date('2026-07-22T12:00:00+09:00')) // 이번 달 2026-07 → 지난 달 2026-06(조회일 2026-06-30, MIN 이전)
 
-      const monthBefore = useBossProfitStore.getState().periodKey
-      fetchSchedulerCharacterStateMock.mockClear()
+      try {
+        syncSchedulesMock.mockResolvedValue([syncResult()])
+        await useBossProfitStore.getState().refresh(['ocid-1'])
+        await useBossProfitStore.getState().setTab('monthly')
 
-      // "이번 달"에서 "지난 달"로 가려고 하면, 그 달이 통째로 MIN_SCHEDULER_DATE 이전이면
-      // 아무 것도 하지 않아야 한다(periodKey 변경도, API 호출도 없음).
-      await useBossProfitStore.getState().goToPreviousPeriod()
+        const monthBefore = useBossProfitStore.getState().periodKey
+        fetchSchedulerCharacterStateMock.mockClear()
 
-      expect(useBossProfitStore.getState().periodKey).toBe(monthBefore)
-      expect(fetchSchedulerCharacterStateMock).not.toHaveBeenCalled()
+        // "이번 달"에서 "지난 달"로 가려고 하면, 그 달이 통째로 MIN_SCHEDULER_DATE 이전이면
+        // 아무 것도 하지 않아야 한다(periodKey 변경도, API 호출도 없음).
+        await useBossProfitStore.getState().goToPreviousPeriod()
+
+        expect(useBossProfitStore.getState().periodKey).toBe(monthBefore)
+        expect(fetchSchedulerCharacterStateMock).not.toHaveBeenCalled()
+      } finally {
+        vi.useRealTimers()
+      }
     })
 
     it('goToPreviousPeriod: 롤링 조회 윈도우(오늘-13일)를 벗어났고 캐시 기록도 없는 이전 주로는 이동하지 않는다(#29)', async () => {
