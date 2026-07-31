@@ -42,6 +42,43 @@ describe('getBossDropCandidates', () => {
     expect(names).toContain('백옥의 보스 반지 상자') // 익스트림
   })
 
+  // ADR-070: 옛 scroll 카테고리는 코드가 순회하지 않아 화면에 나온 적이 없다 — consumable로
+  // 흡수했으니 이제 선택 후보로 잡혀야 한다.
+  it('주문서 교환권 3종은 소비 후보로 노출된다 (가디언 엔젤 슬라임 카오스)', () => {
+    const coupons = getBossDropCandidates('가디언 엔젤 슬라임').filter((candidate) =>
+      candidate.name.endsWith('교환권'),
+    )
+
+    expect(coupons.map((candidate) => candidate.name)).toEqual([
+      '프리미엄 악세서리 스크롤 교환권',
+      '프리미엄 펫장비 스크롤 교환권',
+      '매지컬 무기 주문서 교환권',
+    ])
+    for (const coupon of coupons) {
+      expect(coupon.category).toBe('consumable')
+      expect(coupon.difficulties).toEqual(['카오스'])
+    }
+  })
+
+  it('찬란한 흉성 노멀에도 교환권 3종이 있다 (ADR-070 결정 3, 신규 추가)', () => {
+    const coupons = getBossDropCandidates('찬란한 흉성').filter((candidate) =>
+      candidate.name.endsWith('교환권'),
+    )
+
+    expect(coupons.length).toBe(3)
+    for (const coupon of coupons) {
+      expect(coupon.difficulties).toContain('노멀')
+    }
+  })
+
+  it('듄켈 하드의 교환권은 하나로 통합된다 — 옛 이름 갈림이 해소됐다', () => {
+    const names = getBossDropCandidates('듄켈')
+      .map((candidate) => candidate.name)
+      .filter((name) => name.includes('악세서리'))
+
+    expect(names).toEqual(['프리미엄 악세서리 스크롤 교환권'])
+  })
+
   it('없는 보스는 빈 배열을 반환한다', () => {
     expect(getBossDropCandidates('존재하지않는보스')).toEqual([])
   })

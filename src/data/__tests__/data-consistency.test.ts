@@ -3,6 +3,7 @@ import weeklyBosses from '../weekly-bosses.json'
 import bossCrystalPrices from '../boss-crystal-prices.json'
 import itemDropTable from '../item-drop-table.json'
 import contentTemplate from '../scheduler-content-template.json'
+import { DROP_CATEGORIES } from '../../types/drops'
 
 function key(boss: string, difficulty: string): string {
   return `${boss}::${difficulty}`
@@ -102,6 +103,34 @@ describe('게임 레퍼런스 데이터 정합성', () => {
     const missing = [...weeklyKeys].filter((k) => !dropKeys.has(k))
     const undocumented = missing.filter((k) => !KNOWN_MISSING_DROP_ENTRIES.has(k))
     expect(undocumented).toEqual([])
+  })
+
+  // ADR-070: 코드가 읽는 카테고리는 DROP_CATEGORIES(fixed·equipment·consumable) 뿐이라 그 밖의
+  // 키는 화면에 나오지 않는 죽은 데이터다. scroll(주문서 교환권 3종)은 consumable로 흡수했고,
+  // misc("태초의 정수")만 미처리로 남았다 — 새 죽은 카테고리가 늘어나면 여기서 걸린다.
+  it('item-drop-table의 카테고리 키는 코드가 읽는 3종 + 미처리 misc뿐이다', () => {
+    const known = new Set([...DROP_CATEGORIES, 'misc'])
+    const unknown = [
+      ...new Set(itemDropTable.rewards.flatMap((r) => Object.keys(r.rewards))),
+    ].filter((category) => !known.has(category as (typeof DROP_CATEGORIES)[number]))
+
+    expect(unknown).toEqual([])
+  })
+
+  it('주문서 교환권 3종은 통일된 이름으로만 존재한다 (ADR-070 결정 2)', () => {
+    const names = new Set(
+      itemDropTable.rewards.flatMap((r) =>
+        Object.values(r.rewards).flatMap((category) =>
+          (category as Array<{ name: string }>).map((item) => item.name)
+        )
+      )
+    )
+
+    expect(names.has('프리미엄 악세서리 스크롤 교환권')).toBe(true)
+    expect(names.has('프리미엄 펫장비 스크롤 교환권')).toBe(true)
+    expect(names.has('매지컬 무기 주문서 교환권')).toBe(true)
+    expect(names.has('프리미엄 악세서리 주문서 교환권')).toBe(false)
+    expect(names.has('프리미엄 펫장비 주문서 교환권')).toBe(false)
   })
 
   it('황금 메소 주머니는 재화이므로 item-drop-table에 존재하지 않는다', () => {
