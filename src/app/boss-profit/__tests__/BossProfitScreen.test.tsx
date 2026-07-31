@@ -45,7 +45,7 @@ function mockStore(overrides: Partial<ReturnType<typeof useBossProfitStore>>): v
     dropsByRowKey: {},
     weeklySubtotals: [],
     isPeriodLoading: false,
-    periodUnavailable: false,
+    periodState: 'confirmedEmpty' as const,
     canGoPreviousPeriod: true,
     error: null,
     staleCharacterNames: [],
@@ -56,6 +56,7 @@ function mockStore(overrides: Partial<ReturnType<typeof useBossProfitStore>>): v
     setTab: vi.fn(),
     goToPreviousPeriod: vi.fn(),
     goToNextPeriod: vi.fn(),
+    retryPeriod: vi.fn(),
     setPartySize: vi.fn(),
     setBossDrops: vi.fn(),
     ...overrides,
@@ -295,17 +296,58 @@ describe('BossProfitScreen', () => {
     expect(screen.queryByText(/총 수익/)).not.toBeInTheDocument()
   })
 
-  it('periodUnavailable이 true면 안내 문구를 보여준다', () => {
-    mockStore({
-      status: 'loaded',
-      trackedOcids: ['ocid-1'],
-      rows: [],
-      periodUnavailable: true,
+  // ADR-068 결정 1: 여섯 상태가 서로 다른 얼굴을 갖는다. 전에는 periodUnavailable(boolean) 하나로
+  // "집계 전"과 "그 외 실패"를 같은 문구로 말했다.
+  describe('기간 상태별 표현 (ADR-068 결정 1)', () => {
+    it('failed는 실패 상태 + 재시도 액션을 준다', () => {
+      const retryPeriod = vi.fn()
+      mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [], periodState: 'failed', retryPeriod })
+
+      renderBossProfitScreen()
+
+      expect(screen.getByTestId('error-state')).toBeInTheDocument()
+      expect(screen.getByText('이 기간을 불러오지 못했습니다')).toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: '다시 시도' }))
+      expect(retryPeriod).toHaveBeenCalled()
     })
 
-    renderBossProfitScreen()
+    it('notCollected는 "아직 집계되지 않았습니다"이고 재시도 버튼이 없다 — 사용자가 할 일이 없다', () => {
+      mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [], periodState: 'notCollected' })
 
-    expect(screen.getByText('이 기간을 불러오지 못했습니다 — 다시 시도해주세요')).toBeInTheDocument()
+      renderBossProfitScreen()
+
+      expect(screen.getByText('아직 집계되지 않았습니다')).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: '다시 시도' })).not.toBeInTheDocument()
+      expect(screen.queryByTestId('error-state')).not.toBeInTheDocument()
+    })
+
+    it('outOfRange는 조회 불가 고지이고 기간 문구는 14일이다(넥슨 한도)', () => {
+      mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [], periodState: 'outOfRange' })
+
+      renderBossProfitScreen()
+
+      expect(screen.getByTestId('unavailable-notice')).toBeInTheDocument()
+      expect(screen.getByTestId('unavailable-notice-description').textContent).toContain('14일')
+    })
+
+    it('confirmedEmpty는 빈 상태다 — 조회 불가와 디자인을 공유하지 않는다(ADR-060)', () => {
+      mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [], periodState: 'confirmedEmpty' })
+
+      renderBossProfitScreen()
+
+      expect(screen.getByText('아직 처치한 보스가 없습니다')).toBeInTheDocument()
+      expect(screen.queryByTestId('unavailable-notice')).not.toBeInTheDocument()
+    })
+
+    it('recorded면 기록이 화면의 주인이라 어떤 고지도 띄우지 않는다(결정 7)', () => {
+      mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()], periodState: 'recorded' })
+
+      renderBossProfitScreen()
+
+      expect(screen.queryByTestId('unavailable-notice')).not.toBeInTheDocument()
+      expect(screen.queryByTestId('error-state')).not.toBeInTheDocument()
+      expect(screen.queryByText(/아직 집계되지 않았습니다/)).not.toBeInTheDocument()
+    })
   })
 
   it('status가 loading이고 캐릭터 그룹이 없으면 로딩 표시를 보여준다', () => {
@@ -341,10 +383,18 @@ describe('BossProfitScreen', () => {
     expect(screen.queryByText('API 키가 유효하지 않습니다')).not.toBeInTheDocument()
   })
 
-  it('weekly 탭: 롤링 윈도우 밖(오늘-13일 이전)이고 rows가 비어있으면 "조회 불가"를 보여준다(ADR-032)', () => {
-    // periodKey 2026-07-02의 조회일은 2026-07-08 — 테스트 실행 시점(2026-07-22) 기준 롤링
-    // 하한(2026-07-09)보다 이전이라 지금은 API로 조회할 수 없는 기간이다.
-    mockStore({ status: 'loaded', tab: 'weekly', periodKey: '2026-07-02', trackedOcids: ['ocid-1'], rows: [] })
+  // ADR-067 결정 2로 판정 주체가 옮겨졌다: 전에는 이 화면이 periodKey로 isPeriodQueryable을 직접
+  // 계산했는데, 백필은 target별로 따로 판정해 둘이 어긋났다(이슈 #78 E — 두 문구 동시 출현).
+  // 이제 store가 계산한 periodState 하나를 화면과 백필이 공유한다.
+  it('weekly 탭: outOfRange이고 rows가 비어있으면 "조회 불가"를 보여준다(ADR-032)', () => {
+    mockStore({
+      status: 'loaded',
+      tab: 'weekly',
+      periodKey: '2026-07-02',
+      trackedOcids: ['ocid-1'],
+      rows: [],
+      periodState: 'outOfRange',
+    })
 
     renderBossProfitScreen()
 

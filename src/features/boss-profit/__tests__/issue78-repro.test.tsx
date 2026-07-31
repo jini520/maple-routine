@@ -359,7 +359,6 @@ function resetStore(): void {
     dropsByRowKey: {},
     weeklySubtotals: [],
     isPeriodLoading: false,
-    periodUnavailable: false,
     canGoPreviousPeriod: false,
     error: null,
     staleCharacterNames: [],
@@ -373,7 +372,7 @@ function snapshot(label: string): void {
   line(`── ${label}`)
   line(`   store   periodKey=${store.periodKey} rows=${store.rows.length}건 subtotals=${store.weeklySubtotals.length}건`)
   line(
-    `           periodUnavailable=${store.periodUnavailable} canGoPrev=${store.canGoPreviousPeriod} error=${
+    `           periodState=${store.periodState} canGoPrev=${store.canGoPreviousPeriod} error=${
       store.error === null ? 'null' : store.error.kind
     }`,
   )
@@ -751,7 +750,7 @@ describe('이슈 #78 재현 — 백필의 "확인 완료" 판정이 굳는 자�
     await act(async () => {
       await useBossProfitStore.getState().goToPreviousPeriod() // 현재 주(W4) → W3
     })
-    line(`1차 방문 ${useBossProfitStore.getState().periodKey}: rows=${useBossProfitStore.getState().rows.length}건 periodUnavailable=${useBossProfitStore.getState().periodUnavailable}`)
+    line(`1차 방문 ${useBossProfitStore.getState().periodKey}: rows=${useBossProfitStore.getState().rows.length}건 periodState=${useBossProfitStore.getState().periodState}`)
     line(`   API 호출: ${JSON.stringify(world.apiCalls.map((c) => c.date))}`)
     line(`   DB 쓰기: ${world.writes.join(' | ')}`)
     line(`   화면 고지: ${notices()}`)
@@ -818,7 +817,7 @@ describe('이슈 #78 재현 — 백필의 "확인 완료" 판정이 굳는 자�
       await useBossProfitStore.getState().goToPreviousPeriod()
     })
     const store = useBossProfitStore.getState()
-    line(`지난 주 ${store.periodKey}: rows=${store.rows.length}건 periodUnavailable=${store.periodUnavailable}`)
+    line(`지난 주 ${store.periodKey}: rows=${store.rows.length}건 periodState=${useBossProfitStore.getState().periodState}`)
     line(`   이 이동이 쏜 API: ${JSON.stringify(world.apiCalls.slice(before).map((c) => c.date))}`)
     line(`   화면 고지: ${notices()}`)
     line(`   화면: ${visibleText().slice(0, 220)}`)
@@ -832,7 +831,7 @@ describe('이슈 #78 재현 — 백필의 "확인 완료" 판정이 굳는 자�
     expect(store.rows).toHaveLength(2)
     // 기록이 있으므로 화면 상태는 recorded — 실패 문단이 뜨지 않는다
     expect(store.periodState).toBe('recorded')
-    expect(store.periodUnavailable).toBe(false)
+    expect(store.periodState).toBe('recorded')
     expect(visibleText()).not.toContain('이 기간을 불러오지 못했습니다')
     // 재시도 여지는 남는다(checked로 굳히지 않았다) — 집계가 끝나면 다음 방문에 delta가 채워진다
     expect(world.checks.has(`${LEAF.ocid}|weekly|${W4}`)).toBe(false)
@@ -927,13 +926,13 @@ describe('이슈 #78 재현 — 백필의 "확인 완료" 판정이 굳는 자�
     await act(async () => {
       await useBossProfitStore.getState().goToPreviousPeriod() // W5 → W4
     })
-    line(`4주차 ${useBossProfitStore.getState().periodKey}: rows=${useBossProfitStore.getState().rows.length}건 periodUnavailable=${useBossProfitStore.getState().periodUnavailable} 고지=${notices()}`)
+    line(`4주차 ${useBossProfitStore.getState().periodKey}: rows=${useBossProfitStore.getState().rows.length}건 periodState=${useBossProfitStore.getState().periodState} 고지=${notices()}`)
 
     await act(async () => {
       await useBossProfitStore.getState().goToPreviousPeriod() // W4 → W3 (리프 이전)
     })
     const firstVisitCalls = world.apiCalls.length
-    line(`3주차 ${useBossProfitStore.getState().periodKey}: rows=${useBossProfitStore.getState().rows.length}건 periodUnavailable=${useBossProfitStore.getState().periodUnavailable}`)
+    line(`3주차 ${useBossProfitStore.getState().periodKey}: rows=${useBossProfitStore.getState().rows.length}건 periodState=${useBossProfitStore.getState().periodState}`)
     line(`   화면 고지: ${notices()}`)
     line(`   checked 표시: ${world.checks.has(`${LEAF.ocid}|weekly|${W3}`)} (안 함 → 재시도 유도)`)
     line(`   누적 API 호출 ${firstVisitCalls}회: ${JSON.stringify(world.apiCalls.map((c) => c.date))}`)
@@ -952,7 +951,7 @@ describe('이슈 #78 재현 — 백필의 "확인 완료" 판정이 굳는 자�
     // 수정 후: API가 알려준 400 OPENAPI00004를 그대로 "조회 불가"로 옮긴다 — 전에는 이 자리가
     // "이 기간을 불러오지 못했습니다 — 다시 시도해주세요"였다(영구 실패에 재시도 유도).
     expect(useBossProfitStore.getState().periodState).toBe('outOfRange')
-    expect(useBossProfitStore.getState().periodUnavailable).toBe(false)
+    expect(useBossProfitStore.getState().periodState).toBe('outOfRange')
     // 아직 영속하지 않으므로 재방문 시 한 번 더 호출한다 — 낭비가 남아 있다(ADR-067 후속).
     expect(world.checks.has(`${LEAF.ocid}|weekly|${W3}`)).toBe(false)
     expect(world.apiCalls.length).toBeGreaterThan(firstVisitCalls)

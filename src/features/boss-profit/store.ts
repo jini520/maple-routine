@@ -76,9 +76,8 @@ export interface BossProfitState {
   dropsByRowKey: Record<string, RecordedDrop[]> // 보스 행별 기록된 드롭(ADR-038). 키는 dropRowKey(ocid|boss|difficulty|periodKey). rows와 독립 상태라 탭 전환 시 loadPeriod가 DB에서 재로드
   weeklySubtotals: BossProfitWeeklySubtotal[] // monthly 탭에서만 채워짐(주차별 합계). weekly 탭에서는 항상 []
   isPeriodLoading: boolean // periodKey 이동 후 백필(과거 기간 재조회) 진행 중
-  periodUnavailable: boolean // 직전 백필 시도가 실패해 이 기간 일부를 지금 볼 수 없음(재시도 가능하도록 checked로 기록하지 않았다는 뜻)
-  // 이 기간을 화면이 어떻게 말해야 하는지([[ADR-067]] 결정 2). periodUnavailable은 이 값에서
-  // 파생되는 하위 호환 플래그다 — 표현을 전부 이 상태로 옮기면(ADR-068 배선) 제거한다.
+  // 이 기간을 화면이 어떻게 말해야 하는지([[ADR-067]] 결정 2, 표현은 [[ADR-068]]). 전에는
+  // periodUnavailable(boolean) 하나로 "집계 전"과 "그 외 실패"를 같은 문구로 말했다.
   periodState: PeriodDataState
   canGoPreviousPeriod: boolean // 현재 선택된 기간에서 한 칸 더 과거로 이동할 수 있는지(#29) — 이전 기간이 지금 조회 가능하거나 이미 캐시된 기록이 있을 때만 true. 조회 불가·레코드 없는 기간에 착지하는 것을 막는다.
   error: ScheduleSyncError | null
@@ -95,6 +94,12 @@ export interface BossProfitStore extends BossProfitState {
   setTab(tab: BossCycle): Promise<void>
   goToPreviousPeriod(): Promise<void>
   goToNextPeriod(): Promise<void>
+  /**
+   * 지금 보고 있는 (tab, periodKey)를 다시 로드한다([[ADR-068]] 결정 1·2). 재시도(`failed`)와
+   * 조회(`notChecked`) 두 상태가 사용자에게 주는 유일한 행동이고 둘 다 같은 일을 한다 —
+   * 그 기간의 미확인 target을 다시 백필한다. `refresh` 로는 대신할 수 없다(현재 기간으로 되돌린다).
+   */
+  retryPeriod(): Promise<void>
   setPartySize(row: BossProfitRowKey, partySize: number): Promise<void>
   setBossDrops(row: BossProfitRowKey, drops: RecordedDrop[]): Promise<void>
 }
@@ -746,7 +751,6 @@ async function loadPeriod(
       dropsByRowKey,
       weeklySubtotals,
       isPeriodLoading: false,
-      periodUnavailable: false,
       // 현재 기간은 실시간 동기화가 원천이라 recorded/confirmedEmpty뿐이다([[ADR-067]] 결정 2).
       periodState: resolvePeriodDataState({
         isCurrentPeriod: true,
@@ -781,7 +785,7 @@ async function loadPeriod(
 
   if (uncheckedTargets.length > 0) {
     if (generation !== requestGeneration) return
-    set({ isPeriodLoading: true, periodUnavailable: false })
+    set({ isPeriodLoading: true })
     for (const target of uncheckedTargets) {
       outcomeByTarget.set(target, await backfillTarget(target, now))
     }
@@ -816,8 +820,6 @@ async function loadPeriod(
     dropsByRowKey,
     weeklySubtotals,
     isPeriodLoading: false,
-    // 하위 호환: 전에 이 플래그가 켜지던 두 경우(집계 전·그 외 실패)를 그대로 덮는다.
-    periodUnavailable: periodState === 'failed' || periodState === 'notCollected',
     periodState,
     canGoPreviousPeriod,
   })
@@ -831,7 +833,6 @@ const initialState: BossProfitState = {
   dropsByRowKey: {},
   weeklySubtotals: [],
   isPeriodLoading: false,
-  periodUnavailable: false,
   periodState: 'confirmedEmpty',
   canGoPreviousPeriod: false,
   error: null,
@@ -867,7 +868,6 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
         dropsByRowKey: {},
         weeklySubtotals: [],
         isPeriodLoading: false,
-        periodUnavailable: false,
         periodState: 'confirmedEmpty',
         canGoPreviousPeriod: false,
         error: null,
@@ -975,7 +975,6 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
       dropsByRowKey: cachedDropsByRowKey,
       weeklySubtotals: cachedWeeklySubtotals,
       isPeriodLoading: false,
-      periodUnavailable: false,
       periodState: cachedMergedRows.length > 0 ? 'recorded' : 'confirmedEmpty',
       canGoPreviousPeriod,
       error: null,
@@ -1126,7 +1125,6 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
       dropsByRowKey: liveDropsByRowKey,
       weeklySubtotals,
       isPeriodLoading: false,
-      periodUnavailable: false,
       periodState: sortedRows.length > 0 ? 'recorded' : 'confirmedEmpty',
       canGoPreviousPeriod,
       error: null,
@@ -1171,6 +1169,13 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     const ocids = latestSyncSnapshot?.ocids ?? get().trackedOcids ?? []
     set({ periodKey: newPeriodKey })
     await loadPeriod(set, tab, newPeriodKey, ocids, now, myGeneration)
+  },
+
+  async retryPeriod() {
+    const { tab, periodKey } = get()
+    const myGeneration = ++requestGeneration
+    const ocids = latestSyncSnapshot?.ocids ?? get().trackedOcids ?? []
+    await loadPeriod(set, tab, periodKey, ocids, new Date(), myGeneration)
   },
 
   async setPartySize(rowKey, partySize) {

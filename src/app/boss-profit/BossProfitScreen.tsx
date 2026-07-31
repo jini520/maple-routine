@@ -5,6 +5,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronUp,
+  Clock,
   Minus,
   Plus,
   RefreshCw,
@@ -13,6 +14,7 @@ import {
 import { BossPortrait } from '../../components/BossPortrait/BossPortrait'
 import { DifficultyBadge } from '../../components/DifficultyBadge/DifficultyBadge'
 import { EmptyState } from '../../components/EmptyState/EmptyState'
+import { ErrorState } from '../../components/ErrorState/ErrorState'
 import { LoadingState } from '../../components/LoadingState/LoadingState'
 import { ProfitIcon } from '../../components/ProfitIcon/ProfitIcon'
 import { UnavailableNotice } from '../../components/EmptyState/UnavailableNotice'
@@ -961,7 +963,7 @@ export function BossProfitScreen(): React.JSX.Element {
     rows,
     weeklySubtotals,
     isPeriodLoading,
-    periodUnavailable,
+    periodState,
     canGoPreviousPeriod,
     error,
     staleCharacterNames,
@@ -972,6 +974,7 @@ export function BossProfitScreen(): React.JSX.Element {
     setTab,
     goToPreviousPeriod,
     goToNextPeriod,
+    retryPeriod,
     setPartySize,
     setBossDrops,
     dropsByRowKey,
@@ -1156,8 +1159,23 @@ export function BossProfitScreen(): React.JSX.Element {
             <LoadingState size="page" message="불러오고 있어요" />
           )}
 
-          {!isPeriodLoading && periodUnavailable && (
-            <p className="text-sm text-error-ink">이 기간을 불러오지 못했습니다 — 다시 시도해주세요</p>
+          {/* ADR-068 결정 1·7: 상태마다 얼굴이 다르다. 기록이 있으면(periodState === 'recorded')
+              아무것도 띄우지 않는다 — 목요일 새벽처럼 백필만 막힌 경우 기록은 정확하고 사용자가
+              할 일도 없다. failed만 재시도를 주고, notCollected는 "아직"이라고 말한다. */}
+          {!isPeriodLoading && characterGroups.length > 0 && periodState === 'notCollected' && (
+            <p className="flex items-center gap-1.5 text-sm text-text-muted">
+              <Clock className="h-4 w-4 flex-none" strokeWidth={1.75} aria-hidden="true" />
+              아직 집계되지 않았습니다 — 준비되면 자동으로 채워집니다
+            </p>
+          )}
+          {!isPeriodLoading && characterGroups.length > 0 && periodState === 'failed' && (
+            <button
+              type="button"
+              onClick={() => void retryPeriod()}
+              className="flex items-center gap-1.5 text-left text-sm text-error-ink underline"
+            >
+              이 기간을 불러오지 못했습니다 — 다시 시도해주세요
+            </button>
           )}
 
           {/* 총 수익 요약은 카드가 아니라 헤드라인이다(ADR-046) — 아래 캐릭터 카드가 전부 같은 카드 셸이라
@@ -1218,14 +1236,25 @@ export function BossProfitScreen(): React.JSX.Element {
 
         {/* ADR-060: "확정된 빈 상태"와 "조회 자체를 못 함"은 디자인을 공유하지 않는다 — 같은 모양이면
             조회 불가가 "데이터가 없다"로 오해된다. 처치 0건은 CTA를 달지 않는다(앱 안에 할 일이 없다). */}
+        {/* ADR-060 + ADR-068 결정 1: "확정된 빈 상태"와 "확인 자체를 못 함"은 디자인을 공유하지
+            않는다. 어느 쪽인지는 store가 계산한 periodState가 답한다 — 전에는 화면이
+            isPeriodQueryable로 따로 판정해 백필과 어긋났다(이슈 #78 E). */}
         {!isPeriodLoading &&
           status === 'loaded' &&
           characterGroups.length === 0 &&
-          (periodQueryable ? (
+          (periodState === 'confirmedEmpty' ? (
             <EmptyState
               icon={ProfitIcon}
               title="아직 처치한 보스가 없습니다"
               description="보스를 처치하면 수익이 자동으로 집계됩니다"
+            />
+          ) : periodState === 'notCollected' ? (
+            <UnavailableNotice variant="notCollected" />
+          ) : periodState === 'failed' ? (
+            <ErrorState
+              title="이 기간을 불러오지 못했습니다"
+              description="네트워크 상태를 확인해주세요"
+              action={{ label: '다시 시도', onClick: () => void retryPeriod() }}
             />
           ) : (
             <UnavailableNotice />
