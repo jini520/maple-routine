@@ -35,6 +35,7 @@ import {
   useScheduleSyncErrorToast,
   useStaleCharactersToast,
 } from '../../features/schedule-sync/use-sync-error-toast'
+import { anchorPopover, type PopoverAnchorGeometry } from '../../lib/popover-anchor'
 import { isSeasonBossName, WEEKLY_BOSS_CLEAR_LIMIT, WEEKLY_CRYSTAL_SALE_LIMIT } from '../../lib/boss-matching'
 import { formatBossProfitPeriodLabel, isLatestPeriod, isPeriodQueryable } from '../../lib/boss-profit-period'
 import { getItemIconUrl, getItemIconUrlByFile } from '../../lib/item-icons'
@@ -456,8 +457,34 @@ function CharacterIssueBadge(props: {
 // z-[20]: 카드 안 층 순서는 드롭 아이콘 1~3 < sticky 헤더 5 < 골드 링 6 < 고가 드롭 배지 10이므로
 // 그 전부보다 위다. **카드 루트의 isolate가 이 z를 카드 안에 가두므로** 페이지 sticky 헤더(z-10)나
 // 하단 fixed nav 위로는 절대 올라가지 않는다 — 다른 화면 요소를 가릴 수 없다.
+const ISSUE_POPOVER_WIDTH = 220
+const ISSUE_POPOVER_EDGE_GAP = 12
+const ISSUE_POPOVER_TOP = 56
+const ISSUE_CARET_SIZE = 8
+
+/**
+ * 배지 x좌표를 실측해 팝오버 위치로 넘긴다. 금액은 자릿수에 따라 폭이 변해 **배지의 x를 고정값으로
+ * 알 수 없다** — clamp·꼬리 계산은 순수 함수(`lib/popover-anchor`)가 맡고 여기서는 측정만 한다.
+ */
+function measureIssueAnchor(card: HTMLElement | null, money: HTMLElement | null): PopoverAnchorGeometry {
+  if (card === null || money === null) {
+    return { left: ISSUE_POPOVER_EDGE_GAP, caretLeft: ISSUE_POPOVER_WIDTH / 2 }
+  }
+  const cardRect = card.getBoundingClientRect()
+  const moneyRect = money.getBoundingClientRect()
+  return anchorPopover({
+    containerWidth: cardRect.width,
+    // 배지는 금액 왼쪽 끝에서 4px 밀려 있고(-left-1) 폭이 14px이므로 중심은 그 +7px이다.
+    anchorCenterX: moneyRect.left - cardRect.left - 4 + 7,
+    popoverWidth: ISSUE_POPOVER_WIDTH,
+    edgeGap: ISSUE_POPOVER_EDGE_GAP,
+    caretSize: ISSUE_CARET_SIZE,
+  })
+}
+
 function CharacterIssuePopover(props: {
   issue: 'unavailable' | 'failed'
+  geometry: PopoverAnchorGeometry
   onClose: () => void
 }): React.JSX.Element {
   const copy = CHARACTER_ISSUE_EXPLANATION[props.issue]
@@ -465,8 +492,15 @@ function CharacterIssuePopover(props: {
     <div
       data-testid="character-issue-popover"
       role="status"
-      className="absolute right-3 top-[54px] z-[20] w-[240px] rounded-[12px] border border-border bg-surface p-3 shadow-lg"
+      style={{ left: props.geometry.left, width: ISSUE_POPOVER_WIDTH, top: ISSUE_POPOVER_TOP }}
+      className="absolute z-[20] rounded-[12px] border border-border bg-surface p-3 shadow-lg"
     >
+      {/* 꼬리: 45도 회전한 정사각형의 위·왼쪽 테두리만 남겨 카드 배경과 이어 붙인다. */}
+      <span
+        aria-hidden="true"
+        style={{ left: props.geometry.caretLeft, width: ISSUE_CARET_SIZE, height: ISSUE_CARET_SIZE }}
+        className="absolute -top-[5px] rotate-45 border-l border-t border-border bg-surface"
+      />
       <p className="text-xs font-bold text-text">{copy.title}</p>
       <p className="mt-1 text-[11px] leading-relaxed text-text-muted">{copy.body}</p>
       <button
@@ -936,8 +970,13 @@ function CharacterAccordion(props: {
   const [isExpanded, setIsExpanded] = useState(false)
   // ADR-068 결정 3 정정 3: 아이콘만으로는 원인을 말할 수 없어, 탭하면 설명 팝오버를 연다.
   const [isIssueOpen, setIsIssueOpen] = useState(false)
-  // 배지·팝오버를 함께 감싸는 앵커 — 바깥 탭 판정에 쓴다.
+  // 배지·팝오버를 함께 감싸는 앵커 — 바깥 탭 판정과 팝오버 위치 실측에 쓴다.
   const issueAnchorRef = useRef<HTMLDivElement>(null)
+  const moneyRef = useRef<HTMLSpanElement>(null)
+  const [issueGeometry, setIssueGeometry] = useState<PopoverAnchorGeometry>({
+    left: ISSUE_POPOVER_EDGE_GAP,
+    caretLeft: ISSUE_POPOVER_WIDTH / 2,
+  })
   // 배지 sticky 레일의 고정 범위와 하단 페이드 위치를 헤더에 맞추기 위한 헤더 실측 높이(ADR-047 후속).
   // 글꼴 확대 시 높이가 달라질 수 있어 상수 대신 측정한다.
   // isExpanded를 의존성에 두고 다시 측정해야 한다 — 접힘 헤더는 `border border-border`가 있어 펼침보다
@@ -1032,7 +1071,11 @@ function CharacterAccordion(props: {
       className={isIssueOpen ? 'relative isolate z-[9]' : 'relative isolate'}
     >
       {props.issue !== undefined && isIssueOpen && (
-        <CharacterIssuePopover issue={props.issue} onClose={() => setIsIssueOpen(false)} />
+        <CharacterIssuePopover
+          issue={props.issue}
+          geometry={issueGeometry}
+          onClose={() => setIsIssueOpen(false)}
+        />
       )}
       {hasValuable &&
         (isExpanded ? (
@@ -1121,9 +1164,17 @@ function CharacterAccordion(props: {
           {/* 금액을 relative 래퍼로 감싸 배지의 절대배치 기준으로 쓴다 — 배지는 우상단(글자 위쪽
               여백)에 얹히므로 **가로폭을 쓰지 않고 숫자도 덮지 않는다**. 좌상단이었을 때는 금액 첫
               자리를 가려 좌측에 20px을 비워야 했다(실물 확인 2026-07-31). */}
-          <span className="relative text-sm font-bold text-text tabular-nums">
+          <span ref={moneyRef} className="relative text-sm font-bold text-text tabular-nums">
             {props.issue !== undefined && (
-              <CharacterIssueBadge issue={props.issue} onToggle={() => setIsIssueOpen((prev) => !prev)} />
+              <CharacterIssueBadge
+                issue={props.issue}
+                onToggle={() => {
+                  // 열기 직전에 실측한다 — 금액 폭은 기간·파티원 수에 따라 바뀌므로 한 번 계산해
+                  // 두고 재사용할 수 없다.
+                  setIssueGeometry(measureIssueAnchor(issueAnchorRef.current, moneyRef.current))
+                  setIsIssueOpen((prev) => !prev)
+                }}
+              />
             )}
             {totalMeso.toLocaleString()} 메소
           </span>
