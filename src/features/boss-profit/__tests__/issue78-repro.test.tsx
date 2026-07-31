@@ -52,6 +52,15 @@ vi.mock('../../../storage/character-selection', () => ({
 vi.mock('../../../storage/boss-profit', () => ({
   getBossProfitRecords: async (ocids: string[], periodKeys: string[]) =>
     world.records.filter((r) => ocids.includes(r.ocid) && periodKeys.includes(r.periodKey)),
+  // SQL의 부등호 비교를 그대로 옮긴다(ADR-068 결정 5) — 월간 탭은 그 달의 weekly 기록도 함께 본다.
+  hasBossProfitRecordsAtOrBefore: async (ocids: string[], tab: string, periodKey: string) =>
+    world.records.some((r) => {
+      if (!ocids.includes(r.ocid)) return false
+      if (tab === 'monthly') {
+        return r.cycle === 'monthly' ? r.periodKey <= periodKey : r.periodKey.slice(0, 7) <= periodKey
+      }
+      return r.cycle === 'weekly' && r.periodKey <= periodKey
+    }),
   upsertBossProfitRecord: async (record: (typeof world.records)[number]) => {
     const index = world.records.findIndex(
       (r) =>
@@ -429,7 +438,7 @@ describe('이슈 #78 재현 — 기록이 끊긴 캐릭터', () => {
     expect(useBossProfitStore.getState().rows.length).toBe(2)
   })
 
-  it('시나리오 B: 같은 DB, 2주 뒤 (KST 2026-08-14) — 빈 주가 벽이 된다', async () => {
+  it('시나리오 B: 같은 DB, 2주 뒤 — 빈 주를 지나 1·2주차 기록에 도달할 수 있다 (수정 후)', async () => {
     vi.setSystemTime(T_AUG14)
     seedGapCharacter({ markGapWeeksChecked: true }) // 시나리오 A가 남긴 상태
 
@@ -455,21 +464,28 @@ describe('이슈 #78 재현 — 기록이 끊긴 캐릭터', () => {
     }
 
     line()
-    line('↓ 여기서 이전 버튼을 눌러도 아무 일도 일어나지 않는다(store가 자체 게이트로 차단)')
-    const stuckAt = useBossProfitStore.getState().periodKey
+    line('↓ 빈 주(4주차·3주차)를 한 칸씩 지나 기록이 있는 2주차까지 간다')
+    for (const label of [`4주차 ${W4}`, `3주차 ${W3}`, `2주차 ${W2}`]) {
+      await act(async () => {
+        await useBossProfitStore.getState().goToPreviousPeriod()
+      })
+      line()
+      snapshot(label)
+    }
+    line()
+    line('→ 수정 전에는 5주차에서 이전 버튼이 막혀 1·2주차 기록에 영구히 도달할 수 없었다.')
+    flush('시나리오 B — 빈 주를 지나 그 이전 기록에 도달한다')
+
+    // 빈 주에서도 게이트가 열려 있다(더 과거에 기록이 있으므로)
+    expect(useBossProfitStore.getState().periodKey).toBe(W2)
+    expect(useBossProfitStore.getState().rows).toHaveLength(1)
+    // 1주차까지 한 칸 더 갈 수 있다
+    expect(useBossProfitStore.getState().canGoPreviousPeriod).toBe(true)
     await act(async () => {
       await useBossProfitStore.getState().goToPreviousPeriod()
     })
-    line(`   goToPreviousPeriod() 호출 후 periodKey = ${useBossProfitStore.getState().periodKey} (그대로)`)
-    line(
-      `   그런데 DB에는 ${W1}·${W2} 기록이 ${world.records.filter((r) => r.periodKey === W1 || r.periodKey === W2).length}건 그대로 남아 있다 — 화면으로 도달할 방법이 없다`,
-    )
-    flush('시나리오 B — 빈 주 2개가 그 이전 기록 전체를 가린다')
-
-    expect(stuckAt).toBe(W5)
-    expect(useBossProfitStore.getState().periodKey).toBe(W5)
-    expect(useBossProfitStore.getState().canGoPreviousPeriod).toBe(false)
-    expect(world.records.filter((r) => r.periodKey === W1 || r.periodKey === W2)).toHaveLength(3)
+    expect(useBossProfitStore.getState().periodKey).toBe(W1)
+    expect(useBossProfitStore.getState().rows).toHaveLength(2)
   })
 
   it('시나리오 C: 월간 탭 2026-07 — 빈 주는 "조회 불가"로 표시된다', async () => {

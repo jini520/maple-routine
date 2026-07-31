@@ -20,7 +20,12 @@ import {
 import { fetchSchedulerCharacterState } from '../../nexon/schedule'
 import { getAuthConfig } from '../../storage/api-key'
 import { getBossPartySize } from '../../storage/boss-party-settings'
-import { getBossProfitRecords, upsertBossProfitRecord, type BossProfitRecord } from '../../storage/boss-profit'
+import {
+  getBossProfitRecords,
+  hasBossProfitRecordsAtOrBefore,
+  upsertBossProfitRecord,
+  type BossProfitRecord,
+} from '../../storage/boss-profit'
 import { getBossDropRecords, replaceBossDropRecords } from '../../storage/boss-drops'
 import type { RecordedDrop } from '../../types/drops'
 import { isPeriodChecked, markPeriodChecked } from '../../storage/boss-profit-period-checks'
@@ -610,24 +615,6 @@ async function backfillTarget(target: BackfillTarget, now: Date): Promise<Period
   }
 }
 
-// 이 기간(cycle, periodKey)에 대해 이미 저장된 보스 수익 기록이 하나라도 있는지 확인한다(#29).
-// 롤링 조회 윈도우를 벗어나 "지금"은 API로 다시 조회할 수 없더라도, 과거에 확보해둔 기록이 있으면
-// 그 기간을 그대로 보여줄 수 있으므로 이동을 허용해야 한다. monthly는 그 달의 monthly-cycle 기록뿐
-// 아니라 그 달에 속한 주(weekly)의 기록도 화면에 함께 표시되므로 둘 다 조회 대상에 넣는다.
-async function hasCachedRecordsForPeriod(
-  ocids: string[],
-  tab: BossCycle,
-  periodKey: string,
-): Promise<boolean> {
-  if (ocids.length === 0) {
-    return false
-  }
-  const periodKeys =
-    tab === 'monthly' ? [periodKey, ...getWeeklyPeriodKeysInMonth(periodKey)] : [periodKey]
-  const records = await withSqliteFallback(getBossProfitRecords(ocids, periodKeys), [])
-  return records.length > 0
-}
-
 // 현재 기간(periodKey)에서 한 칸 더 과거로 이동해도 되는지 판단한다(#29). 이전 버튼 게이트와
 // "조회 불가" 경계가 서로 다른 하한을 쓰던 버그를 없앤다 — 착지할 이전 기간이 실제로 데이터를
 // 보여줄 수 있을 때만 이동을 허용한다.
@@ -648,7 +635,11 @@ async function canReachPreviousPeriod(
   if (isPeriodQueryable(tab, prevPeriodKey, now)) {
     return true
   }
-  return hasCachedRecordsForPeriod(ocids, tab, prevPeriodKey)
+  // ADR-068 결정 5: **그 기간 또는 더 과거에** 기록이 있으면 통과시킨다. 전에는 바로 이전 한 칸의
+  // 기록만 봐서, 접속하지 않은 주가 벽이 되어 그 뒤의 기록 전체에 도달할 수 없었다(이슈 #78 —
+  // 3·4주차 미접속 캐릭터의 1·2주차 기록이 DB에 있어도 화면으로 갈 방법이 없었다).
+  // 빈 기간은 한 칸씩 지나가야 하지만(시안 A) 벽은 사라진다.
+  return hasBossProfitRecordsAtOrBefore(ocids, tab, prevPeriodKey)
 }
 
 type BossProfitSetter = (partial: Partial<BossProfitState>) => void

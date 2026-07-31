@@ -8,6 +8,7 @@ const {
   syncSchedulesMock,
   getTrackedCharacterOcidsMock,
   getBossProfitRecordsMock,
+  hasBossProfitRecordsAtOrBeforeMock,
   upsertBossProfitRecordMock,
   getBossPartySizeMock,
   getCachedSchedulerStateMock,
@@ -24,6 +25,7 @@ const {
   syncSchedulesMock: vi.fn(),
   getTrackedCharacterOcidsMock: vi.fn(),
   getBossProfitRecordsMock: vi.fn(),
+  hasBossProfitRecordsAtOrBeforeMock: vi.fn(),
   upsertBossProfitRecordMock: vi.fn(),
   getBossPartySizeMock: vi.fn(),
   getCachedSchedulerStateMock: vi.fn(),
@@ -50,6 +52,8 @@ vi.mock('../../../storage/character-selection', () => ({
 
 vi.mock('../../../storage/boss-profit', () => ({
   getBossProfitRecords: getBossProfitRecordsMock,
+  // ADR-068 결정 5: 이전 게이트가 "이 기간 또는 더 과거에 기록이 있는가"를 SQL 부등호로 묻는다.
+  hasBossProfitRecordsAtOrBefore: hasBossProfitRecordsAtOrBeforeMock,
   upsertBossProfitRecord: upsertBossProfitRecordMock,
 }))
 
@@ -156,6 +160,7 @@ beforeEach(() => {
     lastSyncedAt: null,
   })
   getBossProfitRecordsMock.mockResolvedValue([])
+  hasBossProfitRecordsAtOrBeforeMock.mockResolvedValue(false)
   getBossDropRecordsMock.mockResolvedValue([])
   replaceBossDropRecordsMock.mockResolvedValue(undefined)
   upsertBossProfitRecordMock.mockResolvedValue(undefined)
@@ -1673,6 +1678,11 @@ describe('useBossProfitStore', () => {
         }
         getBossProfitRecordsMock.mockImplementation(async (_ocids: string[], periodKeys: string[]) =>
           periodKeys.includes('2026-07-02') ? [cachedRecord] : [],
+        )
+        // ADR-068 결정 5: 게이트는 "이 기간 또는 더 과거에 기록이 있는가"를 SQL로 묻는다 —
+        // 2026-07-02에 기록이 있으므로 그 키 이상이면 true다.
+        hasBossProfitRecordsAtOrBeforeMock.mockImplementation(
+          async (_ocids: string[], _tab: string, periodKey: string) => periodKey >= '2026-07-02',
         )
         isPeriodCheckedMock.mockResolvedValue(true) // 이미 확인된 캐시 기간(재조회 없이 기록만 사용)
         fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState())
