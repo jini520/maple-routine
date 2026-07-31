@@ -1,8 +1,8 @@
 # 물욕 아이템 드랍 (Item Drop)
 
-> **범위**: 보스별 물욕템 획득 기록, 랜덤 컨테이너 결과 선택, 드롭 입력 시트, 고가 아이템 리스트. 수익 합산·고가 드롭 연출은 [boss-profit.md](./boss-profit.md), 게임 데이터 파일은 [../foundation/game-data.md](../foundation/game-data.md).
-> **관련 소스**: `app/item-drop/` · `features/item-drop/` · `features/drop-effect/` · `storage/boss-drop-records`·`storage/drop-effect` · `lib/item-icons`·`lib/drop-effect-frames`·`lib/drop-effect-layout`·`lib/boss-drops`(`pruneUnobtainableDrops`·`planConfirmedDifficultyDropMigration`) · `DropEffectOverlay` · `scripts/measure-drop-effect-origins.py`(origin 재계측) · `BossDropSheet`(vaul Drawer) · `src/data/item-drop-table.json`·`boss-ring-boxes.json`·`accessory-boxes.json`·`item-icons.json`·`valuable-drops.json`.
-> **관련 ADR**: [[ADR-011]] [[ADR-010]] [[ADR-038]] [[ADR-039]] [[ADR-040]] [[ADR-041]] [[ADR-045]] [[ADR-048]] [[ADR-069]] [[ADR-070]]. **관련 문서**: [../foundation/game-data.md](../foundation/game-data.md), [boss-profit.md](./boss-profit.md).
+> **범위**: 보스별 물욕템 획득 기록, 랜덤 컨테이너 결과 선택, 드롭 입력 시트, 고가 아이템 리스트, 전 기간 획득 히스토리. 수익 합산·고가 드롭 연출은 [boss-profit.md](./boss-profit.md), 게임 데이터 파일은 [../foundation/game-data.md](../foundation/game-data.md).
+> **관련 소스**: `app/item-drop/` · `features/item-drop/` · `features/drop-effect/` · `storage/boss-drop-records`·`storage/drop-effect` · `lib/item-icons`·`lib/drop-effect-frames`·`lib/drop-effect-layout`·`lib/boss-drops`(`pruneUnobtainableDrops`·`planConfirmedDifficultyDropMigration`)·`lib/drop-history`(전 기간 집계) · `DropEffectOverlay` · `scripts/measure-drop-effect-origins.py`(origin 재계측) · `BossDropSheet`(vaul Drawer) · `app/boss-profit/DropHistoryScreen.tsx`(`/profit/drops`) · `src/data/item-drop-table.json`·`boss-ring-boxes.json`·`accessory-boxes.json`·`item-icons.json`·`valuable-drops.json`.
+> **관련 ADR**: [[ADR-011]] [[ADR-010]] [[ADR-038]] [[ADR-039]] [[ADR-040]] [[ADR-041]] [[ADR-045]] [[ADR-048]] [[ADR-069]] [[ADR-070]] [[ADR-071]]. **관련 문서**: [../foundation/game-data.md](../foundation/game-data.md), [boss-profit.md](./boss-profit.md).
 
 ## 정책
 - **드롭 기록의 키는 `(ocid, boss, difficulty, period_key, drop_index)`** 이고, 그래서 **처치 난이도가 나중에 달라지면 이관이 필요하다**([[ADR-069]] 결정 4) — 익스트림으로 등록해두고 드롭까지 기록한 뒤 백필이 하드로 확정하면 그 드롭은 고아가 된다. 확정 시점에 옛 난이도 키의 드롭을 확정 키로 옮기고, **그 난이도에서 획득 불가능한 항목(`pruneUnobtainableDrops` 탈락분)은 삭제한다** — 거짓 기록이 환산 가치·고가 드롭 연출에 섞이는 것을 막는다(사용자 판단). 상세는 [boss-profit.md](./boss-profit.md) "자동 기록"(2026-07-31 구현 완료 — 계산은 `planConfirmedDifficultyDropMigration`, 쓰기는 store).
@@ -13,7 +13,7 @@
 - **드롭 테이블 카테고리는 코드가 읽는 3종뿐**([[ADR-070]]): `fixed`·`equipment`·`consumable`(`types/drops.ts` `DROP_CATEGORIES`). 원본 전사 때 들어온 `scroll`·`misc` 는 어떤 코드도 순회하지 않아 **화면에 나오지 않고 기록도 될 수 없는 죽은 데이터**다. 주문서 교환권 3종(`프리미엄 악세서리 스크롤 교환권`·`프리미엄 펫장비 스크롤 교환권`·`매지컬 무기 주문서 교환권`)은 카테고리를 신설하는 대신 `consumable` 로 흡수했다(2026-07-31). 새 항목을 추가할 땐 이 3종 중 하나로 넣어야 하고, 카테고리를 늘리려면 타입·시트 섹션·헤더 아이콘·`RecordedDrop.category` 허용값이 함께 늘어난다는 점을 감안한다. `misc`("태초의 정수" 2건)는 흡수도 삭제도 하지 않고 죽은 데이터로 두기로 확정(사용자 확인 2026-07-31) — 정합성 테스트가 이 상태를 고정한다.
 - **아이템명은 조인 키다**([[ADR-070]] 결정 2·4): 후보 dedupe·`item-icons` 매핑·기록 키가 모두 `name` 문자열이라 같은 아이템이 두 표기로 존재하면 전부 갈라진다. 이름을 바꿀 땐 그 이름으로 저장된 기록이 있는지 먼저 확인한다 — 노출된 적 없는 항목만 무이관 개명이 안전하다.
 - **아이콘 캔버스 여백 규칙**(2026-07-30): 표시부는 전부 고정 정사각 박스(`h-6`/`h-8`/`h-9`) + `object-contain`이라 **렌더 크기를 결정하는 건 파일의 절대 해상도가 아니라 "불투명 아트워크 / 캔버스" 비율**이다. 여백 없이 딱 잘린 파일은 박스를 꽉 채워 옆 아이콘보다 커 보인다. **기준 = 아트워크가 캔버스의 약 90%**(투명 여백 포함, 예: 32×32 캔버스에 29×29 아트워크). 새 아이콘을 넣을 때 크롭이 타이트하면 리샘플링 없이 **투명 테두리만 덧대** 비율을 맞춘다.
-- **획득 기록**: 버튼 탭 = "획득"(획득 일자 포함). 컨테이너형이 아닌 일반 아이템은 확인창 없이 탭 즉시 기록 + 토스트. 캐릭터별/보스별 히스토리 조회. 잘못 등록한 기록은 히스토리에서 개별 삭제/취소 가능(삭제 확인 다이얼로그 여부 미정).
+- **획득 기록**: 버튼 탭 = "획득"(획득 일자 포함). 컨테이너형이 아닌 일반 아이템은 확인창 없이 탭 즉시 기록 + 토스트. 캐릭터별/보스별 히스토리 조회. 잘못 등록한 기록은 히스토리에서 개별 삭제/취소 가능(삭제 확인 다이얼로그 여부 미정). 전 기간을 가로지르는 목록은 아래 "획득 히스토리 (전 기간)" 절이 담당한다([[ADR-071]]) — 그쪽은 **읽기 전용**이고 삭제는 드롭 입력 시트에서만 한다.
 - **랜덤 컨테이너 결과 기록**([[ADR-010]]): "OO옥의 보스 반지 상자"·"혼돈의 칠흑 장신구 상자"처럼 개봉 결과가 확률로 정해지는 아이템은 기록 시 실제로 나온 결과(레벨·반지 종류, 장신구 종류)를 후보 목록에서 선택해 함께 저장(확률 자동 추정 금지). 후보는 `boss-ring-boxes.json`·`accessory-boxes.json`.
 - 획득 기록은 아이템별 고정 시세로 환산해 [보스 수익](./boss-profit.md) 합계에 포함([[ADR-010]]).
 
@@ -28,10 +28,34 @@
 - **ScreenEff 배율 고정**([[ADR-048]] 결정 5): ScreenEff 크롭은 이미 버스트 원점 기준 중앙 정렬이라 origin 테이블이 필요 없다. 문제는 `object-fit:cover` 가 프레임마다 자기 크기로 배율을 따로 잡아 버스트가 들썩이는 것(390x844 기준 1.232~2.198, 프레임 0→1 에서 42% 점프). 기준 프레임(1146x685)이 화면을 덮는 배율 하나를 전 프레임에 적용한다 — `left-1/2 top-1/2` + `translate(-50%,-50%) scale(S)`, `max-w-none`(preflight 해제).
 - **프레임 픽셀·좌표 동시 교체**([[ADR-048]] 결정 6): `img.src` 교체는 비동기라(39프레임 전부 대입 직후 `complete=false`) 좌표만 먼저 옮기면 이전 프레임이 새 origin 으로 그려져 산발적으로 한 프레임 튄다. 마운트 시 DropEff 프레임을 미리 디코드해 두고(ref 로 보유), 그래도 준비 전이면 `applyDropFrame` 이 좌표를 유지한 채 반환한다(매 tick 재호출로 자동 복구). 표시 여부도 같은 함수가 관리.
 
+## 획득 히스토리 (전 기간) — [[ADR-071]], 이슈 #54
+보스 수익 화면이 "지금 보고 있는 기간"만 보여주는 데 반해, 히스토리는 **전 기간**의 드롭 기록을 한 목록에서 시간순으로 본다. 진입점은 보스 수익 sticky 헤더 **제목 줄 우측**의 `히스토리` 링크이고("캐릭터 관리"와 같은 패턴) 라우트는 `/profit/drops`(`DropHistoryScreen`, 화면 제목 "히스토리").
+
+- **원천은 `boss_drop_records` 하나다 — 히스토리 전용 테이블을 만들지 않는다**([[ADR-071]] 결정 1). 이 테이블은 고가 여부를 가려 저장하지 않으므로(고가 판정은 표시 시점 필터) **선택 등록 가능한 모든 아이템**이 이미 전부 들어 있고, 삭제 경로 셋(수동 편집 replace-all · `pruneUnobtainableDrops` · 난이도 확정 이관 탈락분)이 모두 이 테이블을 직접 지우므로 **삭제가 히스토리에 자동 전파된다**. 미러 테이블을 두면 prune 이 현재 화면 `rows` 의 키만 순회하는 탓에 열어본 적 없는 기간의 미러가 영구히 어긋난다.
+- **드롭의 '언제'는 `period_key` 다 — `recorded_at` 을 쓰지 않는다**([[ADR-071]] 결정 2). `recorded_at` 은 "언제 먹었는가"가 아니라 "이 그룹을 마지막으로 쓴 시각"이다: replace-all 이 그룹 전체에 호출 시점을 박고 prune·이관도 `now` 로 덮어, 드롭 하나를 더 추가하면 기존 드롭들의 날짜까지 오늘로 갱신된다. `period_key`(주간=리셋일 `YYYY-MM-DD`, 월간=`YYYY-MM`)는 불변이고 게임 주기와 일치한다. **정렬도 `period_key DESC, drop_index`** 이고 `recorded_at DESC` 는 금지다(과거 기간 재편집이 그 기록을 맨 위로 점프시킨다). `recorded_at` 은 감사 필드로만 남는다.
+- **주간·월간을 한 축에서 센다**([[ADR-071]] 결정 5): 두 형식의 `period_key` 를 각각 그 기간의 시작 시점(KST — 월간은 1일 00:00, [[ADR-030]])으로 환산해 정렬·비교하고 주 수도 그 차이로 계산한다.
+- **고가 미획득 기간**([[ADR-071]] 결정 4): 고가 전체를 **하나로** 집계해 한 요소로 표시한다(문구·외형은 아래 "요약은 기간이 길어질수록…" 항목). 아이템별·세트별로 나누지 않는다(칠흑·광휘 구성원 수십 종이 대부분 "기록 없음"으로 채워져 소음이 된다). 셈 기준은 **달력 주 경과** — "그 사이 실제로 처치한 주만 카운트"는 백필 안 된 과거 주의 처치 여부를 알 수 없어 셀 수도 뺄 수도 없는 주가 생긴다. **고가 기록이 전무하면 이 요소를 렌더하지 않는다**("∞주째"를 만들지 않는다).
+- **획득 불가 기록은 표시 단계에서도 거른다 — 확정 난이도 조합만**([[ADR-071]] 결정 6). prune 은 화면에 뜬 기간에서만 lazy 하게 돌아 열어본 적 없는 기간에는 정리 안 된 행이 남는다. 히스토리도 같은 술어를 적용하되, **같은 `(ocid, boss, difficulty, period_key)` 에 `boss_profit_records` 행이 있을 때만** 건다 — 그 행의 존재가 곧 처치 난이도 확정이다. 확정 전 행에 걸면 익스트림 등록·하드 처치 상황에서 나중에 이관되어 살아남을 기록을 미리 숨긴다([[ADR-069]] 결정 4). **히스토리는 쓰지 않는다** — 거르기만 하고 DB 정리는 기존 lazy 경로에 맡긴다.
+- **기록 한 건 = 한 줄 문장, 꾸밈은 고가에만**([[ADR-071]] 결정 8, 사용자 지정 2026-07-31 — 첫 구현 반전). 아이콘 32px + 2단 텍스트 + 난이도 배지 행은 **한 기록의 비중이 너무 커** 반려됐다(모든 아이템을 담는 결정 1과 충돌 — 매주 먹는 소비 아이템까지 그 비중이면 목록이 벽이 된다). 형식은 게임 로그체 완성 문장이다: `지내우시님이 가디언 엔젤 슬라임(카오스)에서 가디언 엔젤링을 획득하였습니다.`
+  - 난이도는 `보스(난이도)` 로 문장에 녹이고 배지를 쓰지 않는다. **조사는 계산한다**(`objectParticle` — "을(를)" 병기가 톤을 깬다). 마지막 글자가 아니라 마지막 **한글 음절**의 종성을 보는 이유는 익셉셔널 해머가 `)` 로 끝나고([[ADR-070]]) 수량·레벨이 숫자를 섞기 때문.
+  - **배경·구분선 없음 · 가운데 정렬 · 좁은 줄간격 · 띄어쓰기 단위 줄바꿈**. 고가 줄의 골드 틴트(`.valuable-drop-row`)도 쓰지 않는다 — 줄간격을 좁히면 배경 블록끼리 붙는다. **`break-keep` 만으로는 부족하다**(실측 2026-07-31): ① 괄호는 UAX #14 자체 줄바꿈 지점이라 `슬라임(카오스)⏎에서` 로 갈려 **WORD JOINER(U+2060)** 를 괄호 양옆에 넣어야 하고, ② 골드 pill(`inline-flex`)은 원자적 인라인 박스라 경계에 줄바꿈 지점이 생겨 조사만 떨어지므로 `formatDropHistoryLine` 이 `particle` 을 분리해 주고 화면이 pill+조사를 `whitespace-nowrap` 으로 묶는다. U+2060 은 `textContent` 에 섞이므로 테스트는 걷어내고 비교한다.
+  - 수량은 2 이상일 때만(`주문의 흔적 240개`), 반지 등급은 `리스트레인트 링 3레벨`([[ADR-041]]), 상자 결과는 `…에서 홍옥의 보스 반지 상자를 열어 …`.
+  - **강조 대상은 아이템명 + 상자명 둘 다**(`font-semibold`). 상자명을 강조하는 이유는 "무엇을 열었는지"가 정보의 절반이고([[ADR-010]]) 반지 상자 후보의 `기타`([[ADR-041]])는 상자명 없이는 뜻이 없기 때문. `formatDropHistoryLine` 이 `box: { name, connector }` 로 떼어 주고 조사는 `connector` 가 들고 있다. **골드 pill 은 결과에만** — 둘 다 골드면 어느 쪽이 값인지 흐려진다.
+  - **기간 라벨 = 양옆 헤어라인 사이의 가벼운 글자 + 그 아래 작은 날짜 구간**. `flex-1` 헤어라인(`h-px bg-border`) 사이에 두면 구분이 선에서 나오므로 글자는 조용한 라벨 관례(`text-xs font-semibold tracking-wide text-text-muted`)로 물러나고 `text-center` 도 불필요하다. 날짜 구간(`secondary`)은 `text-[10px] leading-tight` 으로 마진 없이 아래 붙이고, **헤어라인은 라벨 줄이 아니라 두 줄 블록 기준 세로 중앙**이다(두 줄을 한 자식으로 묶고 `items-center` — 선을 라벨과 같은 행에 두면 위로 치우쳐 보인다). **단 `secondary === primary` 면 렌더하지 않는다** — 월간 폴백이 둘을 같은 값으로 주므로(`formatBossProfitPeriodLabel`) 지난 달보다 오래된 달은 같은 글자가 두 줄로 겹친다.
+  - **고가 꾸밈에 새 색을 만들지 않는다** — 고가 골드는 테마 무관 고정이라([[ADR-045]]) 토큰으로 표현할 수 없다. 이미 있는 `.valuable-drop-row`(줄 배경 골드 틴트)와 `.valuable-drop-badge`(아이템명 골드 pill, 자체 배경·글자색이라 두 테마에서 읽힌다)를 재사용한다. [[ADR-046]] 의 "단일 구현"은 아이콘 스택 배지(`components/ValuableDropBadge`) 규약이고 이 줄은 같은 스킨의 인라인 강조다. 고가가 아닌 줄은 `text-text-muted`, 고가 줄만 `text-text`. **아이템명은 고가가 아니어도 `font-semibold`** — 문장에서 실제 정보가 아이템이라 배경·색 없이 굵기만으로 짚고, 고가 pill 이 `font-bold` 라 위계는 남는다. 조사는 두 경우 다 강조 밖이지만 평범한 인라인 `span` 은 줄바꿈 지점을 만들지 않아 고가 쪽과 달리 `whitespace-nowrap` 이 필요 없다.
+- **요약은 기간이 길어질수록 점점 슬퍼진다 — 시드는 단풍잎**([[ADR-071]] 결정 9, 사용자 확정 2026-08-01). 첫 구현의 카드는 반려됐고(유일하게 남은 배경 요소) 시안 11종 비교 끝에 브랜드 마크가 시드는 안을 택했다 — 단풍잎은 원래 색을 잃고 기울다 떨어지므로 억지 장식이 아니다.
+  - 단계 하나가 **문구와 시각 표현을 함께** 움직인다(경계·문구 = `lib/drop-history` `VALUABLE_DROUGHT_TIERS`, 잎 램프 = 화면 `DROUGHT_TIER_STYLES`, 같은 인덱스).
+  - **문구는 사용자 지정**(2026-08-01, 구현자가 톤을 다듬지 않는다). "N주차" = **미획득 N-1주**(1주차 = 먹은 그 주). `0주: 와따리! ㅇㄱㄱㄷ` / `1주: 그래, 그럴 수 있지` / `2주: 어?! 슬슬 쫌 그래!?` / `3주: 선넘네?!` / `4주+: 풀에서 무작위`(`이건 아니지...`·`적당히 해!` + 같은 톤 3개).
+  - **무작위는 `lib` 이 하지 않는다** — `formatValuableDroughtHeadline(weeks, lateIndex)` 가 인덱스를 받고 화면이 `useState` 초기화로 **마운트당 한 번** 뽑는다(렌더마다 뽑으면 문구가 깜빡인다). 범위를 벗어난 인덱스는 감싼다.
+  - 아래 줄은 `마지막 에픽 빔! {기간} · {아이템}` — "에픽 빔"은 이 앱이 구현한 고가 드롭 연출([[ADR-038]])의 플레이어 용어다. **0주는 그 접두를 뺀다**(진행 중인 주를 "마지막"이라 부르면 어색하다). 여럿이면 첫 항목 + `외 N개`. **제목에 주 수가 없다** — 지정 문구가 반응만 담기 때문이고, 결정 4의 목적과 어긋나는 지점이라 미해결로 남았다.
+  - **잎 색만 고정 hex**(고가 골드와 같은 사정, [[ADR-045]] — 램프가 테마마다 갈리면 의미를 잃는다). 글자색은 테마 토큰. 모션 없음. **크기**(2026-08-01 키움): 잎 42px(26→, 작으면 단계 차이가 읽히지 않는다) · 제목 `text-base` · 아래 줄 11px. 아래 줄을 12px 까지 올리지 않는 이유는 목록 문장이 12px 라 위계가 사라지기 때문.
+- **월간 탭의 구조적 한계를 물려받지 않는다**([[ADR-071]] 결정 10): 화면 집계(`collectAllValuableDrops`)는 주차 합계 행에 보스 행이 없어 월간 보스 드롭만 잡히지만, 히스토리는 화면 `rows` 가 아니라 DB를 직접 읽어 이 한계가 없다.
+
 ### 바텀시트 = vaul(Drawer) ([[ADR-039]])
 자체 `createPortal` 바텀시트를 vaul 라이브러리로 교체(자체구현은 데스크톱 마우스 드래그 닫기 불가·스냅 복귀·fling 없음). 공개 API(`onClose`/`children`/`testId`)·시각 스킨(오버레이 `bg-scrim`·`rounded-t-[20px]`·`z-[60]`·그랩 핸들·`max-h-[82vh]`·safe-area 패딩) 유지해 `BossDropSheet` 무변경. 부모 조건부 마운트는 내부 `open` 상태 + `onAnimationEnd`(닫힘 후 `onClose`). 포커스 트랩·Esc·`aria` vaul 내장. jsdom 폴리필(pointer capture·`scrollIntoView`·`matchMedia`·`ResizeObserver`) `setupFiles` 추가. 네이티브 변경 없어 OTA 배포 가능.
 
 ## 열린 질문
+- 히스토리에 필터가 필요한지([[ADR-071]] 트레이드오프) — 모든 아이템을 담으면 "주문의 흔적"처럼 매주 먹는 소비 아이템이 목록을 채워 고가 기록이 묻힐 수 있다. 요약 줄이 완충이 되는지 실제로 써보고 판단한다.
 - 월간 보스(검은마법사)를 이 목록에 포함할지.
 - 이미지 파일 포맷·권장 해상도.
 - 같은 아이템이 난이도별 수량만 다를 때(예 "주문의 흔적" 160개 vs 240개) 합쳐 보여줄 때 수량 표시 방식.
