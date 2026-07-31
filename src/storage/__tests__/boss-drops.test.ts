@@ -162,3 +162,82 @@ describe('getBossDropRecords', () => {
     await expect(getBossDropRecords(['ocid-1'], ['2026-W30'])).resolves.toEqual([])
   })
 })
+
+// ADR-071 결정 1: 드롭 히스토리는 히스토리 전용 테이블이 아니라 이 테이블을 전 기간 조회한다.
+describe('getAllBossDropRecords', () => {
+  it('ocids가 비면 DB를 호출하지 않고 빈 배열을 반환한다', async () => {
+    const { getAllBossDropRecords } = await import('../boss-drops')
+
+    await expect(getAllBossDropRecords([])).resolves.toEqual([])
+    expect(getBossProfitDbMock).not.toHaveBeenCalled()
+    expect(queryMock).not.toHaveBeenCalled()
+  })
+
+  it('period_key 조건 없이 ocid만 걸어 조회한다 — "전 기간"을 볼 수단이다', async () => {
+    const { getAllBossDropRecords } = await import('../boss-drops')
+
+    await getAllBossDropRecords(['ocid-1', 'ocid-2'])
+
+    const [sql, values] = queryMock.mock.calls[0]
+    expect(sql).toContain('WHERE ocid IN (?, ?)')
+    expect(sql).not.toContain('period_key IN')
+    expect(values).toEqual(['ocid-1', 'ocid-2'])
+  })
+
+  it('period_key DESC, drop_index 순으로 정렬한다 — recorded_at은 그룹 재기록으로 뒤집힌다 (ADR-071 결정 3)', async () => {
+    const { getAllBossDropRecords } = await import('../boss-drops')
+
+    await getAllBossDropRecords(['ocid-1'])
+
+    const [sql] = queryMock.mock.calls[0]
+    expect(sql).toContain('ORDER BY period_key DESC')
+    expect(sql).toContain('drop_index')
+    expect(sql).not.toContain('recorded_at DESC')
+  })
+
+  it('행을 BossDropRecord[]로 변환한다', async () => {
+    queryMock.mockResolvedValue({
+      values: [
+        {
+          ocid: 'ocid-1',
+          boss: '스우',
+          difficulty: '하드',
+          period_key: '2026-07-09',
+          drop_index: 0,
+          category: 'equipment',
+          item_name: '루즈 컨트롤 머신 마크',
+          slot: '얼굴장식',
+          box_origin: null,
+          ring_level: null,
+          quantity: 1,
+          recorded_at: '2026-07-26T00:00:00.000Z',
+        },
+      ],
+    })
+    const { getAllBossDropRecords } = await import('../boss-drops')
+
+    await expect(getAllBossDropRecords(['ocid-1'])).resolves.toEqual([
+      {
+        ocid: 'ocid-1',
+        boss: '스우',
+        difficulty: '하드',
+        periodKey: '2026-07-09',
+        dropIndex: 0,
+        category: 'equipment',
+        itemName: '루즈 컨트롤 머신 마크',
+        slot: '얼굴장식',
+        boxOrigin: null,
+        ringLevel: null,
+        quantity: 1,
+        recordedAt: '2026-07-26T00:00:00.000Z',
+      },
+    ])
+  })
+
+  it('조회 결과가 없으면 빈 배열을 반환한다', async () => {
+    queryMock.mockResolvedValue({ values: undefined })
+    const { getAllBossDropRecords } = await import('../boss-drops')
+
+    await expect(getAllBossDropRecords(['ocid-1'])).resolves.toEqual([])
+  })
+})

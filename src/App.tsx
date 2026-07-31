@@ -16,6 +16,7 @@ import { ContentManageScreen } from './app/content-scheduler/ContentManageScreen
 import { BossScreen } from './app/boss-scheduler/BossScreen'
 import { BossManageScreen } from './app/boss-scheduler/BossManageScreen'
 import { BossProfitScreen } from './app/boss-profit/BossProfitScreen'
+import { DropHistoryScreen } from './app/boss-profit/DropHistoryScreen'
 import { SettingsScreen } from './app/settings/SettingsScreen'
 import { BossCardPreview } from './app/boss-scheduler/BossCardPreview'
 import { DailyQuestCardPreview } from './app/content-scheduler/DailyQuestCardPreview'
@@ -209,6 +210,11 @@ export function AppShell(): React.JSX.Element {
           <Route
             path="/profit"
             element={isCompleted ? <BossProfitScreen /> : <Navigate to="/onboarding" replace />}
+          />
+          {/* 드롭 획득 히스토리(전 기간) — 보스 수익의 서브 화면([[ADR-071]] 결정 7, 이슈 #54) */}
+          <Route
+            path="/profit/drops"
+            element={isCompleted ? <DropHistoryScreen /> : <Navigate to="/onboarding" replace />}
           />
           <Route
             path="/settings"

@@ -118,17 +118,38 @@ export function getObtainableTileNames(boss: string, difficulty: BossDifficulty)
   )
 }
 
-// 기록 드롭에서 이 난이도(처치 난이도)에서 획득 불가한 선택 드롭을 제거한다. 상자 결과는 상자명
-// 기준. 레거시 고정(fixed) 기록은 선택 대상이 아니므로 무손실 보존한다([[ADR-040]] 결정 3).
+// 드롭 히스토리는 이 판정을 기록 한 건마다 한다([[ADR-071]] 결정 6). getObtainableTileNames는 매
+// 호출마다 그 보스의 전 난이도 후보를 다시 순회하므로 난이도별 결과를 캐시한다 — 입력이 정적
+// JSON뿐이라 결과가 바뀔 일이 없다.
+const obtainableTileNamesCache = new Map<string, Set<string>>()
+
+function obtainableTileNames(boss: string, difficulty: BossDifficulty): Set<string> {
+  const key = `${boss}|${difficulty}`
+  let cached = obtainableTileNamesCache.get(key)
+  if (cached === undefined) {
+    cached = getObtainableTileNames(boss, difficulty)
+    obtainableTileNamesCache.set(key, cached)
+  }
+  return cached
+}
+
+// 이 드롭이 그 난이도(처치 난이도)에서 획득 가능한지. 상자 결과는 상자명 기준. 레거시 고정(fixed)
+// 기록은 선택 대상이 아니므로 항상 true 다([[ADR-040]] 결정 3).
+export function isObtainableDrop(
+  boss: string,
+  difficulty: BossDifficulty,
+  drop: RecordedDrop,
+): boolean {
+  return drop.category === 'fixed' || obtainableTileNames(boss, difficulty).has(drop.boxOrigin ?? drop.itemName)
+}
+
+// 기록 드롭에서 이 난이도(처치 난이도)에서 획득 불가한 선택 드롭을 제거한다.
 export function pruneUnobtainableDrops(
   boss: string,
   difficulty: BossDifficulty,
   drops: RecordedDrop[],
 ): RecordedDrop[] {
-  const obtainable = getObtainableTileNames(boss, difficulty)
-  return drops.filter(
-    (drop) => drop.category === 'fixed' || obtainable.has(drop.boxOrigin ?? drop.itemName),
-  )
+  return drops.filter((drop) => isObtainableDrop(boss, difficulty, drop))
 }
 
 /**

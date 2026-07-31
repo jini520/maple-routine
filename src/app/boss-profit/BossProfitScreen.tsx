@@ -11,7 +11,6 @@ import {
   Minus,
   Plus,
   RefreshCw,
-  Sparkles,
 } from 'lucide-react'
 import { BossPortrait } from '../../components/BossPortrait/BossPortrait'
 import { DifficultyBadge } from '../../components/DifficultyBadge/DifficultyBadge'
@@ -20,6 +19,7 @@ import { ErrorState } from '../../components/ErrorState/ErrorState'
 import { LoadingState } from '../../components/LoadingState/LoadingState'
 import { ProfitIcon } from '../../components/ProfitIcon/ProfitIcon'
 import { UnavailableNotice } from '../../components/EmptyState/UnavailableNotice'
+import { ValuableDropBadge } from '../../components/ValuableDropBadge/ValuableDropBadge'
 import weeklyBossesData from '../../data/weekly-bosses.json'
 import {
   dropRowKey,
@@ -830,53 +830,6 @@ const MONTHLY_CRYSTAL_ICON_URL = getItemIconUrlByFile('intense_power_crystal_mon
 // stuck 시 배지가 헤더 상단선에 걸린다(ADR-047 후속).
 const BADGE_TOP_OFFSET = 8
 
-// 실제 획득한 고가 아이템 아이콘(최대 3개 + 나머지 개수)을 골드 반짝임 칩으로 보여준다.
-// 배치·라벨은 호출부가 정한다(ADR-046) — 캐릭터 카드는 우상단 절대배치(overflow-hidden에 잘리지 않도록
-// 카드 바깥 relative 래퍼에 붙인다), 총 수익 헤드라인은 라벨행 우측 인라인. 외형·아이콘 스택 규칙은 공통.
-function ValuableDropBadge(props: {
-  drops: RecordedDrop[]
-  label: string
-  className?: string
-}): React.JSX.Element {
-  const shown = props.drops.slice(0, 3)
-  const extra = props.drops.length - shown.length
-
-  return (
-    <span
-      role="img"
-      aria-label={props.label}
-      title="고가 아이템 드롭"
-      className={`valuable-drop-badge flex flex-none items-center gap-1 rounded-full py-0.5 pl-1.5 pr-2${
-        props.className !== undefined ? ` ${props.className}` : ''
-      }`}
-    >
-      <Sparkles className="h-3 w-3 flex-none" strokeWidth={2.5} aria-hidden="true" />
-      <span className="flex items-center">
-        {shown.map((drop, index) => {
-          const url = getItemIconUrl(drop.itemName, drop.slot)
-          const stackStyle = { marginLeft: index === 0 ? 0 : -6, zIndex: shown.length - index }
-          return url !== null ? (
-            <img
-              key={`${drop.itemName}-${index}`}
-              src={url}
-              alt=""
-              className="relative h-5 w-5 flex-none rounded-full bg-surface object-contain ring-[1.5px] ring-white/80"
-              style={stackStyle}
-            />
-          ) : (
-            <span
-              key={`${drop.itemName}-${index}`}
-              className="relative h-5 w-5 flex-none rounded-full bg-surface-2 ring-[1.5px] ring-white/80"
-              style={stackStyle}
-            />
-          )
-        })}
-      </span>
-      {extra > 0 && <span className="text-[10px] font-bold leading-none tabular-nums">+{extra}</span>}
-    </span>
-  )
-}
-
 // 총 수익 헤드라인의 결정석 판매 현황([[ADR-054]] 결정 9, 정정 2·3으로 배치 변경) — **라벨행의
 // "{기간} 총 수익" 텍스트 바로 옆** 칩이다(사용자 요청). 원래는 금액행 아래 새 줄이었는데 그 한 줄이
 // sticky 헤더를 그대로 높여 목록을 잠식했다(헤더를 줄여둔 [[ADR-049]] 작업을 되돌리는 셈).
@@ -1371,7 +1324,24 @@ export function BossProfitScreen(): React.JSX.Element {
           동일한 sticky 헤더 패턴(docs/UI_GUIDE.md "스크롤 영역" 참고)을 그대로 재사용한다. */}
       <div ref={stickyHeaderRef} className="sticky top-0 z-10 bg-bg px-4 pt-[calc(1rem+var(--sa-top))] pb-2">
         <div className="space-y-4">
-          <h1 className="text-lg font-semibold text-text">보스 수익</h1>
+          {/* 히스토리 진입점([[ADR-071]] 결정 7, 이슈 #54) — 이 화면의 고가 드롭 강조는 전부 "지금 보고
+              있는 기간"에 갇혀 있고, 전 기간을 가로지르는 목록은 저쪽이 담당한다.
+
+              **제목 줄 우측**에 두고, 보스/컨텐츠 스케줄러의 "캐릭터 관리"·"보스 관리"와 **같은 패턴**을
+              쓴다(사용자 지정 2026-08-01): `justify-between` 제목 줄 + `text-sm font-medium
+              text-text-muted hover:text-text`. 서브 화면으로 보내는 헤더 링크가 이미 그 어휘라 새 스타일을
+              만들 이유가 없다. 탭 줄에 있던 것을 옮긴 것이므로 그 줄의 30px 규칙([[ADR-049]])은 이제
+              무관하다 — 제목 줄 높이는 h1(28px)이 정한다. */}
+          <div className="flex items-center justify-between">
+            <h1 className="text-lg font-semibold text-text">보스 수익</h1>
+            <button
+              type="button"
+              onClick={() => navigate('/profit/drops')}
+              className="text-sm font-medium text-text-muted hover:text-text"
+            >
+              히스토리
+            </button>
+          </div>
 
           <div className="flex items-center gap-4">
             <button

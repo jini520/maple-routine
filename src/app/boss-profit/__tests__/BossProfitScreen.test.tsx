@@ -194,6 +194,34 @@ describe('BossProfitScreen', () => {
     expect(screen.getByTestId('location-probe')).toHaveTextContent('/boss?openPicker=1')
   })
 
+  // ADR-071 결정 7, 이슈 #54: 이 화면의 고가 강조는 "지금 보고 있는 기간"에 갇혀 있고, 전 기간
+  // 목록은 히스토리가 담당한다. 진입점은 **제목 줄 우측**의 글자 링크이고, 보스/컨텐츠 스케줄러의
+  // "캐릭터 관리"와 같은 패턴이다(사용자 지정 2026-08-01).
+  it('히스토리 링크는 /profit/drops로 보낸다', () => {
+    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()] })
+
+    render(
+      <MemoryRouter initialEntries={['/profit']}>
+        <Routes>
+          <Route path="/profit" element={<BossProfitScreen />} />
+          <Route path="/profit/drops" element={<LocationProbe />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '히스토리' }))
+
+    expect(screen.getByTestId('location-probe')).toHaveTextContent('/profit/drops')
+  })
+
+  it('제목 줄에 있으므로 기간과 무관하게 남는다 — 동기화 영역만 현재 기간 전용이다', () => {
+    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()], periodKey: '2026-07-09' })
+    renderBossProfitScreen()
+
+    expect(screen.getByRole('button', { name: '히스토리' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '새로고침' })).not.toBeInTheDocument()
+  })
+
   it('주간/월간 탭 클릭 시 setTab이 호출된다', () => {
     const setTab = vi.fn()
     mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()], setTab })

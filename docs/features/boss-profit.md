@@ -176,6 +176,8 @@ a11y: 링 자체가 role="img" aria-label="{주간|월간} 보스 처치 8 / 12"
 
 ### 주간/월간 탭 + 기간 네비게이터 — [[ADR-023]]
 탭은 탭 토글 레시피 재사용(주간/월간, 카운트 배지 없음). **동기화 상태 영역은 제목 줄이 아니라 탭과 같은 줄** 우측(`ml-auto`)에 붙인다([[ADR-049]]). 이 줄의 높이는 활성 탭 pill 기준 **30px**이므로 새로고침 버튼도 `h-[30px] w-[30px]`로 맞춘다 — 기본 `p-2`(32px)면 새로고침이 없는 과거 기간과 2px 어긋난다.
+
+**히스토리 진입점은 이 줄이 아니라 제목 줄 우측이다**([[ADR-071]] 결정 7, 이슈 #54, 2026-08-01 확정) — 보스/컨텐츠 스케줄러의 "캐릭터 관리"·"보스 관리"와 같은 패턴(`justify-between` 제목 줄 + `text-sm font-medium text-text-muted hover:text-text`)이다. 아이콘이 아니라 글자 `히스토리`이고(아이콘만으로는 목적지를 알 수 없었다), 제목 줄에 있으므로 이 탭 줄의 30px 규칙이나 동기화 영역의 `ml-auto`와 다투지 않는다. 캐릭터 미선택 빈 상태에는 넣지 않는다. 목적지는 `/profit/drops`(`DropHistoryScreen`)이고, **전 기간 드롭 기록을 DB에서 직접 읽는다** — 이 화면의 기간 집계(아래 "고가 드롭 강조")가 "지금 보고 있는 기간"에 갇혀 있는 것을 푸는 것이 그 화면의 존재 이유다. 정책은 [item-drop.md](./item-drop.md) "획득 히스토리 (전 기간)".
 네비게이터:
 ```
 네비게이터: flex items-center justify-center gap-4 (탭 다음 줄)
@@ -208,7 +210,8 @@ a11y: 링 자체가 role="img" aria-label="{주간|월간} 보스 처치 8 / 12"
 - `.valuable-drop-card`(접힘 캐릭터 카드): `::before` `conic-gradient`+`mask(xor)` 2px 링을 `@property --vd-angle` 로 회전(회전 샤인 테두리) + `box-shadow` 글로우 맥동. 우상단 획득 아이템 배지(`Sparkles`+아이템 아이콘). `@property` 미지원 WebView는 정적 골드 테두리로 degrade.
 - `.valuable-drop-card--expanded`(펼침): 요소 자신 glow 맥동만 정지(회전 샤인 유지). 복합 선택자로 `@media` 규칙보다 명시도 우선. 링 `::before`는 `z-index: 6` — 펼침 sticky 헤더(`z-[5]`)의 불투명 배경에 테두리가 끊기지 않도록([[ADR-047]]). 펼침에선 링 반경을 **13px**로 낮춘다([[ADR-049]]) — 셸 `overflow: clip`이 패딩 박스(반경 13px)에서 자르므로 14px면 모서리 바깥이 깎인다. 글로우는 요소 자신의 `box-shadow`라 클리핑 대상이 아니다.
 - `.valuable-drop-row`(펼침 시 고가 획득 보스 행): 테두리/글로우 아닌 **배경** — 아이템 쪽(`radial-gradient at 82% 50%`) 골드 글로우 + 미세 틴트 맥동. `<li>` 자체 `background`.
-- **총 수익 헤드라인 뱃지**([[ADR-046]]): 같은 배지 컴포넌트를 기간 전체 집계(`collectAllValuableDrops` = 캐릭터 그룹별 `collectGroupValuableDrops` 합집합)로 라벨행 우측에 재사용. 배치·라벨만 호출부가 정하고(카드 = `absolute -right-1.5 -top-2 z-10`·`aria-label="고가 드롭"`, 헤드라인 = 인라인·`aria-label="이 기간 고가 드롭"`) 외형·아이콘 스택(최대 3 + `+N`) 규칙은 단일 구현. 드롭 없으면 미렌더.
+- **총 수익 헤드라인 뱃지**([[ADR-046]]): 같은 배지 컴포넌트를 기간 전체 집계(`collectAllValuableDrops` = 캐릭터 그룹별 `collectGroupValuableDrops` 합집합)로 라벨행 우측에 재사용. 배치·라벨만 호출부가 정하고(카드 = `absolute -right-1.5 -top-2 z-10`·`aria-label="고가 드롭"`, 헤드라인 = 인라인·`aria-label="이 기간 고가 드롭"`) 외형·아이콘 스택(최대 3 + `+N`) 규칙은 단일 구현. 드롭 없으면 미렌더. 그 단일 구현은 **`components/ValuableDropBadge/`** 에 있다 — 드롭 히스토리의 미획득 기간 요약이 세 번째 호출부가 되면서 화면 파일에서 공용으로 옮겼다([[ADR-071]], 2026-07-31).
+- **이 강조는 전부 "지금 보고 있는 기간"에 갇혀 있다** — 세 집계 모두 `dropsByRowKey`(현재 기간 rows 기준 로드)에서만 읽으므로 과거 기록은 그 기간으로 이동해야 보인다. 월간 탭은 주차별 합계 행에 보스 행이 없어 월간 보스 드롭만 잡히는 한계도 있다. **전 기간을 가로지르는 조회는 드롭 히스토리(`/profit/drops`)의 몫이고 그쪽은 DB를 직접 읽어 이 두 한계가 없다**([[ADR-071]], 이슈 #54).
 
 ## SQLite 안정성
 `applyDownloadedLiveUpdate()`(`CapacitorUpdater.set()`)가 JS 컨텍스트를 파괴하는 리로드 전에 SQLite 커넥션을 정상 종료하지 않으면 stale 커넥션이 남아 과거 수익 데이터 로드가 조용히 멈춘다 → `storage/sqlite/db.ts` 의 `closeBossProfitDb()` 로 리로드 전 미리 닫음([[ADR-008]] 세 번째 정정). 읽기 조회는 `withSqliteFallback`(타임아웃 폴백), 쓰기는 `withSqliteTimeout`(타임아웃을 실패로 전파 — 성공 위장 시 영구 유실 위험).
