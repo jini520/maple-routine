@@ -1180,7 +1180,7 @@ describe('useBossProfitStore', () => {
         const pastSubtotal = midState.weeklySubtotals.find((subtotal) => subtotal.periodKey === pastWeekKey)
         expect(pastSubtotal).toBeDefined()
         expect(pastSubtotal?.totalMeso).toBe(2_000_000)
-        expect(pastSubtotal?.state).toBe('confirmed')
+        expect(pastSubtotal?.state).toBe('recorded')
       } finally {
         vi.useRealTimers()
       }
@@ -1769,7 +1769,7 @@ describe('useBossProfitStore', () => {
         await useBossProfitStore.getState().setTab('monthly')
 
         const subtotal = useBossProfitStore.getState().weeklySubtotals.find((s) => s.periodKey === pastWeekKey)
-        expect(subtotal?.state).toBe('confirmed')
+        expect(subtotal?.state).toBe('recorded')
         expect(subtotal?.totalMeso).toBe(4_040_000)
       } finally {
         vi.useRealTimers()

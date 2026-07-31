@@ -8,6 +8,7 @@ import {
   useBossProfitStore,
   type BossProfitRow,
   type BossProfitWeeklySubtotal,
+  type WeeklySubtotalState,
 } from '../../../features/boss-profit/store'
 import { getCurrentBossProfitPeriod } from '../../../lib/boss-profit-period'
 import { WEEKLY_BOSS_CLEAR_LIMIT, WEEKLY_CRYSTAL_SALE_LIMIT } from '../../../lib/boss-matching'
@@ -90,7 +91,7 @@ function subtotal(overrides: Partial<BossProfitWeeklySubtotal> = {}): BossProfit
     imageUrl: null,
     periodKey: '2026-07-09',
     totalMeso: 5_000_000,
-    state: 'confirmed',
+    state: 'recorded',
     ...overrides,
   }
 }
@@ -294,6 +295,65 @@ describe('BossProfitScreen', () => {
     expect(screen.getByText(/기록을 불러오고 있어요/)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /낟낟/ })).not.toBeInTheDocument()
     expect(screen.queryByText(/총 수익/)).not.toBeInTheDocument()
+  })
+
+  // ADR-068 결정 2: 월간 주차 행은 **행동이 있는 상태에만** 버튼을 준다. 조회한 적 없는 주를
+  // 0메소(확정)로 위장하던 것이 이 결정의 출발점이다.
+  describe('월간 주차 행의 상태별 표현 (ADR-068 결정 2)', () => {
+    function monthlyWith(state: WeeklySubtotalState, retryPeriod = vi.fn()): ReturnType<typeof vi.fn> {
+      mockStore({
+        status: 'loaded',
+        tab: 'monthly',
+        periodKey: '2026-07',
+        trackedOcids: ['ocid-1'],
+        rows: [],
+        periodState: 'recorded',
+        weeklySubtotals: [subtotal({ periodKey: '2026-07-09', state, totalMeso: 0 })],
+        retryPeriod,
+      })
+      renderBossProfitScreen()
+      fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
+      return retryPeriod
+    }
+
+    it('notChecked에는 "조회" 버튼을 주고 금액을 쓰지 않는다 — 0은 "0원 벌었다"로 읽힌다', () => {
+      const retryPeriod = monthlyWith('notChecked')
+
+      const button = screen.getByRole('button', { name: '조회' })
+      expect(button).toBeInTheDocument()
+      // 그 행 안에는 금액이 없다(카드 헤더 합계와 구분해 행 범위로 좁힌다)
+      const row = screen.getByText('7월 2주차').closest('li') as HTMLElement
+      expect(within(row).queryByText(/메소/)).not.toBeInTheDocument()
+
+      fireEvent.click(button)
+      expect(retryPeriod).toHaveBeenCalled()
+    })
+
+    it('failed에는 "다시 시도" 버튼을 준다', () => {
+      const retryPeriod = monthlyWith('failed')
+
+      fireEvent.click(screen.getByRole('button', { name: '다시 시도' }))
+      expect(retryPeriod).toHaveBeenCalled()
+    })
+
+    it('confirmedEmpty는 "0 메소"다 — 조회해서 확인한 사실이라 금액을 말할 수 있다', () => {
+      monthlyWith('confirmedEmpty')
+
+      const row = screen.getByText('7월 2주차').closest('li') as HTMLElement
+      expect(within(row).getByText('0 메소')).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: '조회' })).not.toBeInTheDocument()
+    })
+
+    it.each([
+      ['notCollected', '집계 전'],
+      ['outOfRange', '조회 불가'],
+    ] as const)('%s는 비활성 배지이고 버튼이 없다 — 사용자가 할 일이 없다', (state, label) => {
+      monthlyWith(state)
+
+      expect(screen.getByText(label)).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: '조회' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: '다시 시도' })).not.toBeInTheDocument()
+    })
   })
 
   // ADR-068 결정 1: 여섯 상태가 서로 다른 얼굴을 갖는다. 전에는 periodUnavailable(boolean) 하나로
@@ -721,7 +781,7 @@ describe('BossProfitScreen', () => {
         }),
       ],
       weeklySubtotals: [
-        subtotal({ periodKey: '2026-07-02', totalMeso: 5_000_000, state: 'confirmed' }),
+        subtotal({ periodKey: '2026-07-02', totalMeso: 5_000_000, state: 'recorded' }),
         subtotal({ periodKey: '2026-07-09', totalMeso: 3_000_000, state: 'inProgress' }),
         subtotal({ periodKey: '2026-07-16', totalMeso: 0, state: 'upcoming' }),
       ],
@@ -762,7 +822,7 @@ describe('BossProfitScreen', () => {
       periodKey: '2026-07',
       trackedOcids: ['ocid-1'],
       rows: [],
-      weeklySubtotals: [subtotal({ periodKey: '2026-06-25', totalMeso: 0, state: 'unavailable' })],
+      weeklySubtotals: [subtotal({ periodKey: '2026-06-25', totalMeso: 0, state: 'outOfRange' })],
     })
 
     renderBossProfitScreen()
@@ -783,7 +843,7 @@ describe('BossProfitScreen', () => {
       periodKey: '2026-06',
       trackedOcids: ['ocid-1'],
       rows: [],
-      weeklySubtotals: [subtotal({ periodKey: '2026-06-04', totalMeso: 0, state: 'unavailable' })],
+      weeklySubtotals: [subtotal({ periodKey: '2026-06-04', totalMeso: 0, state: 'outOfRange' })],
     })
 
     renderBossProfitScreen()
@@ -801,7 +861,7 @@ describe('BossProfitScreen', () => {
       periodKey: '2026-07',
       trackedOcids: ['ocid-1'],
       rows: [],
-      weeklySubtotals: [subtotal({ periodKey: '2026-07-02', totalMeso: 5_000_000, state: 'confirmed' })],
+      weeklySubtotals: [subtotal({ periodKey: '2026-07-02', totalMeso: 5_000_000, state: 'recorded' })],
     })
 
     renderBossProfitScreen()

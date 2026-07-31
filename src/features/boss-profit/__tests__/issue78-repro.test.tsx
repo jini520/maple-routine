@@ -487,7 +487,7 @@ describe('이슈 #78 재현 — 기록이 끊긴 캐릭터', () => {
     expect(useBossProfitStore.getState().rows).toHaveLength(2)
   })
 
-  it('시나리오 C: 월간 탭 2026-07 — 빈 주는 "조회 불가"로 표시된다', async () => {
+  it('시나리오 C: 월간 탭 2026-07 — 빈 주가 0메소로 위장되지 않는다 (수정 후)', async () => {
     vi.setSystemTime(T_AUG14)
     seedGapCharacter({ markGapWeeksChecked: true })
 
@@ -516,12 +516,13 @@ describe('이슈 #78 재현 — 기록이 끊긴 캐릭터', () => {
     const states = new Map(
       useBossProfitStore.getState().weeklySubtotals.map((subtotal) => [subtotal.periodKey, subtotal.state]),
     )
-    expect(states.get(W1)).toBe('confirmed')
-    expect(states.get(W2)).toBe('confirmed')
-    // 확인 완료(checked)로 0건이 확정된 주인데도 "조회 불가"로 표시된다
-    expect(states.get(W3)).toBe('unavailable')
-    expect(states.get(W4)).toBe('unavailable')
-    expect(states.get(W5)).toBe('confirmed')
+    expect(states.get(W1)).toBe('recorded')
+    expect(states.get(W2)).toBe('recorded')
+    // 수정 후: 확인 기록(checked)이 있으므로 "0건 확정"으로 남는다 — 시간이 지나도 조회 불가로
+    // 격하되지 않는다(ADR-067 결정 3). 수정 전에는 둘 다 'unavailable'이었다.
+    expect(states.get(W3)).toBe('confirmedEmpty')
+    expect(states.get(W4)).toBe('confirmedEmpty')
+    expect(states.get(W5)).toBe('recorded')
   })
 })
 

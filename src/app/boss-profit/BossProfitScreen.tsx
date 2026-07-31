@@ -25,6 +25,7 @@ import {
   type BossProfitRow,
   type BossProfitStore,
   type BossProfitWeeklySubtotal,
+  type WeeklySubtotalState,
 } from '../../features/boss-profit/store'
 import { formatSyncedAt } from '../../features/schedule-sync/format'
 import { useToastStore } from '../../features/toast/store'
@@ -396,14 +397,37 @@ function WeeklyAccordionBody(props: {
   )
 }
 
-function WeeklySubtotalRow(props: { subtotal: BossProfitWeeklySubtotal; now: Date }): React.JSX.Element {
+// ADR-068 결정 2: **행동이 있는 상태에만 버튼을 준다.** 여섯 상태 중 사용자가 할 수 있는 것은
+// notChecked(조회)와 failed(다시 시도) 둘뿐이고, 나머지는 금액 또는 비활성 배지로 정적이다.
+// 금액을 모르는 상태에 0을 쓰지 않는 것이 핵심이다 — 0은 "0원 벌었다"로 읽힌다.
+const SUBTOTAL_ACTION_LABEL: Partial<Record<WeeklySubtotalState, string>> = {
+  notChecked: '조회',
+  failed: '다시 시도',
+}
+
+const SUBTOTAL_STATIC_LABEL: Partial<Record<WeeklySubtotalState, string>> = {
+  upcoming: '예정',
+  outOfRange: '조회 불가',
+  notCollected: '집계 전',
+}
+
+function WeeklySubtotalRow(props: {
+  subtotal: BossProfitWeeklySubtotal
+  now: Date
+  onRetry: () => void
+}): React.JSX.Element {
   const { subtotal } = props
   const label = formatBossProfitPeriodLabel('weekly', subtotal.periodKey, props.now)
+  const actionLabel = SUBTOTAL_ACTION_LABEL[subtotal.state]
+  const staticLabel = SUBTOTAL_STATIC_LABEL[subtotal.state]
+  // 금액을 말할 수 있는 상태 — 기록이 있거나(recorded), 조회해서 0건을 확인했거나, 진행 중.
+  const showsMeso =
+    subtotal.state === 'recorded' || subtotal.state === 'confirmedEmpty' || subtotal.state === 'inProgress'
 
   return (
     <li
       className={
-        subtotal.state === 'upcoming' || subtotal.state === 'unavailable'
+        staticLabel !== undefined
           ? 'flex items-center gap-3 p-4 border-b border-border opacity-40'
           : 'flex items-center gap-3 p-4 border-b border-border'
       }
@@ -419,9 +443,26 @@ function WeeklySubtotalRow(props: { subtotal: BossProfitWeeklySubtotal; now: Dat
         </span>
       )}
 
-      {subtotal.state === 'upcoming' && <span className="text-xs text-text-muted">예정</span>}
-      {subtotal.state === 'unavailable' && <span className="text-xs text-text-muted">조회 불가</span>}
-      {(subtotal.state === 'confirmed' || subtotal.state === 'inProgress') && (
+      {staticLabel !== undefined && <span className="text-xs text-text-muted">{staticLabel}</span>}
+
+      {/* 누를 수 있는 행만 어포던스(칩)를 갖는다. 한 주를 누르면 그 달의 미확인 주를 함께 채운다 —
+          같은 백필이 그 달 전체를 대상으로 돌기 때문이고, 탭 수를 늘릴 이유가 없다. */}
+      {actionLabel !== undefined && (
+        <button
+          type="button"
+          onClick={props.onRetry}
+          className={
+            subtotal.state === 'failed'
+              ? 'inline-flex items-center gap-1.5 rounded-full bg-error-tint px-2.5 py-1 text-[11px] font-semibold text-error-ink'
+              : 'inline-flex items-center gap-1.5 rounded-full bg-primary-tint px-2.5 py-1 text-[11px] font-semibold text-primary-ink'
+          }
+        >
+          <RefreshCw className="h-3 w-3" strokeWidth={2} aria-hidden="true" />
+          {actionLabel}
+        </button>
+      )}
+
+      {showsMeso && (
         <span className="text-sm font-semibold text-text tabular-nums">{subtotal.totalMeso.toLocaleString()} 메소</span>
       )}
     </li>
@@ -436,6 +477,7 @@ function MonthlyAccordionBody(props: {
   setBossDrops: BossProfitStore['setBossDrops']
   now: Date
   isMonthlyBossQueryable: boolean
+  onRetryPeriod: () => void
 }): React.JSX.Element {
   return (
     <div className="border-t border-border">
@@ -446,7 +488,12 @@ function MonthlyAccordionBody(props: {
           </p>
           <ul>
             {props.weeklySubtotals.map((subtotal) => (
-              <WeeklySubtotalRow key={subtotal.periodKey} subtotal={subtotal} now={props.now} />
+              <WeeklySubtotalRow
+                key={subtotal.periodKey}
+                subtotal={subtotal}
+                now={props.now}
+                onRetry={props.onRetryPeriod}
+              />
             ))}
           </ul>
         </>
@@ -774,6 +821,8 @@ function CharacterAccordion(props: {
   setBossDrops: BossProfitStore['setBossDrops']
   now: Date
   isMonthlyBossQueryable: boolean
+  // ADR-068 결정 2: 주차 행의 조회·다시 시도 버튼이 이 기간을 다시 로드한다(store.retryPeriod).
+  onRetryPeriod: () => void
   stickyTop: number
 }): React.JSX.Element {
   const [isExpanded, setIsExpanded] = useState(false)
@@ -948,6 +997,7 @@ function CharacterAccordion(props: {
               setBossDrops={props.setBossDrops}
               now={props.now}
               isMonthlyBossQueryable={props.isMonthlyBossQueryable}
+              onRetryPeriod={props.onRetryPeriod}
             />
           ))}
       </div>
@@ -1274,6 +1324,7 @@ export function BossProfitScreen(): React.JSX.Element {
               setBossDrops={setBossDrops}
               now={now}
               isMonthlyBossQueryable={periodQueryable}
+              onRetryPeriod={() => void retryPeriod()}
               stickyTop={stickyHeaderHeight}
             />
           ))}

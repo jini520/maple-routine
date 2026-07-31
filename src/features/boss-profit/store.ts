@@ -55,7 +55,16 @@ export interface BossProfitRow {
   isComplete: boolean // false면 보스 스케줄러에 등록만 되고 아직 처치 전(미완료 placeholder, ADR-032) — payoutMeso는 항상 0이고 DB에 기록되지 않는다
 }
 
-export type WeeklySubtotalState = 'confirmed' | 'inProgress' | 'upcoming' | 'unavailable'
+/**
+ * 월간 탭 주차 행의 상태([[ADR-068]] 결정 2). 기간 6상태([[ADR-067]] 결정 2)에 이 화면 고유의 두
+ * 상태를 더한다 — `inProgress`(지금 진행 중인 주)와 `upcoming`(아직 시작하지 않은 주).
+ *
+ * 전에는 `confirmed | inProgress | upcoming | unavailable` 넷이었고, **조회한 적 없는 주가
+ * `confirmed` 0메소로 위장**됐다(`기록 없음 + isPeriodQueryable` → confirmed). 백필은 과거 달로
+ * 이동할 때만 그 달의 주들을 대상에 넣으므로, 현재 달의 지난 주는 사용자가 그 주로 직접 이동한
+ * 적이 없으면 영영 조회되지 않는다 — 그 주에는 `notChecked` 로 **조회 버튼**을 준다.
+ */
+export type WeeklySubtotalState = PeriodDataState | 'inProgress' | 'upcoming'
 
 export interface BossProfitWeeklySubtotal {
   ocid: string
@@ -406,6 +415,8 @@ async function buildWeeklySubtotalsForMonth(
   liveRows: BossProfitRow[],
   knownProfiles: Map<string, CharacterProfileInfo>,
   now: Date,
+  // 이번 로드에서 그 주를 백필해 본 결과(영속되지 않는다) — 키는 `${ocid}|${cycle}|${periodKey}`.
+  outcomes?: Map<string, PeriodQueryOutcome | null>,
 ): Promise<BossProfitWeeklySubtotal[]> {
   if (ocids.length === 0) {
     return []
@@ -416,6 +427,19 @@ async function buildWeeklySubtotalsForMonth(
   const pastWeekKeys = weekKeys.filter((key) => key < currentWeeklyPeriodKey)
   const pastRecords =
     pastWeekKeys.length > 0 ? await withSqliteFallback(getBossProfitRecords(ocids, pastWeekKeys), []) : []
+
+  // ADR-068 결정 2: 지난 주의 상태를 6상태로 판정하려면 **확인 기록**이 필요하다 — 기록이 없는 주가
+  // "조회해서 0건을 확인한 주"인지 "조회한 적 없는 주"인지는 그것만이 갈라준다.
+  const checkedKeys = new Set<string>()
+  await Promise.all(
+    ocids.flatMap((ocid) =>
+      pastWeekKeys.map(async (weekKey) => {
+        if (await withSqliteFallback(isPeriodChecked(ocid, 'weekly', weekKey), false)) {
+          checkedKeys.add(`${ocid}|${weekKey}`)
+        }
+      }),
+    ),
+  )
 
   const subtotals: BossProfitWeeklySubtotal[] = []
 
@@ -440,16 +464,17 @@ async function buildWeeklySubtotalsForMonth(
         const matchingRecords = pastRecords.filter(
           (record) => record.ocid === ocid && record.cycle === 'weekly' && record.periodKey === weekKey,
         )
-        // 이 조합에 이미 저장된 기록이 있으면(과거에 조회 가능했을 때 확보한 기록일 수 있음)
-        // 지금 이 주가 조회 가능한지와 무관하게 그 기록을 그대로 쓴다 — 기록이 없을 때만
-        // "지금 API로 조회할 수 있었는가"(isPeriodQueryable, MIN_SCHEDULER_DATE 고정 하한선 +
-        // 롤링 조회 윈도우 둘 다 반영)로 "조회 불가"와 "0메소 확정"을 구분한다.
-        if (matchingRecords.length === 0 && !isPeriodQueryable('weekly', weekKey, now)) {
-          subtotals.push({ ocid, characterName, imageUrl, periodKey: weekKey, totalMeso: 0, state: 'unavailable' })
-        } else {
-          const totalMeso = matchingRecords.reduce((sum, record) => sum + record.payoutMeso, 0)
-          subtotals.push({ ocid, characterName, imageUrl, periodKey: weekKey, totalMeso, state: 'confirmed' })
-        }
+        // 판정을 화면·백필과 공유하는 한 함수에 맡긴다([[ADR-067]] 결정 2) — 전에는 여기서
+        // "기록 없음 + 조회 가능"을 confirmed로 떨어뜨려 **조회한 적 없는 주를 0메소로 위장**했다.
+        const state = resolvePeriodDataState({
+          isCurrentPeriod: false,
+          hasRecords: matchingRecords.length > 0,
+          isChecked: checkedKeys.has(`${ocid}|${weekKey}`),
+          isQueryable: isPeriodQueryable('weekly', weekKey, now),
+          lastOutcome: outcomes?.get(`${ocid}|weekly|${weekKey}`) ?? null,
+        })
+        const totalMeso = matchingRecords.reduce((sum, record) => sum + record.payoutMeso, 0)
+        subtotals.push({ ocid, characterName, imageUrl, periodKey: weekKey, totalMeso, state })
       }
     }
   }

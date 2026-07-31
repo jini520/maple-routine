@@ -188,7 +188,12 @@ a11y: 링 자체가 role="img" aria-label="{주간|월간} 보스 처치 8 / 12"
 서브섹션 라벨: px-4 pt-3 pb-1 text-[11px] font-bold tracking-wide text-text-muted bg-surface-2
 주차 행: flex items-center gap-3 p-4 border-b border-border (보스 아이콘 없음 — 합계라 이미지 없음)
   라벨 "N주차" + 날짜 범위, 진행 중 배지(bg-primary-tint text-primary-ink text-[10px]) "진행 중", 금액 우측 tabular-nums
-아직 시작 안 한 주 행 전체: opacity-40 ("예정")
+  상태별 우측 슬롯([[ADR-068]] 결정 2) — **행동이 있는 상태에만 버튼**을 준다:
+    recorded·confirmedEmpty·inProgress → 금액(confirmedEmpty는 "0 메소" — 조회해서 확인한 사실이다)
+    notChecked → "조회" 칩(bg-primary-tint) · failed → "다시 시도" 칩(bg-error-tint) — 둘 다 store.retryPeriod
+    upcoming "예정" · notCollected "집계 전" · outOfRange "조회 불가" → 비활성 텍스트 + 행 opacity-40
+  **금액을 모르는 상태에 0을 쓰지 않는다** — 0은 "0원 벌었다"로 읽힌다. 한 주의 조회 버튼을 누르면
+  그 달의 미확인 주가 함께 채워진다(같은 백필이 그 달 전체를 돌기 때문 — 탭 수를 늘릴 이유가 없다)
 월간 보스 상세 행: 위 아코디언 본문 레시피 그대로
 ```
 월간 탭의 주차별 합계 집계와 임의 과거 기간 이동은 구현됨(`BossProfitScreen` monthly 탭 "주간 보스 수익 · 주차별 합계", `boss-profit-period.ts` 의 periodKey ±이동).
