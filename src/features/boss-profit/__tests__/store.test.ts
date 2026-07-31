@@ -9,6 +9,7 @@ const {
   getTrackedCharacterOcidsMock,
   getBossProfitRecordsMock,
   hasBossProfitRecordsAtOrBeforeMock,
+  fillMissingRecordWorldsMock,
   upsertBossProfitRecordMock,
   getBossPartySizeMock,
   getCachedSchedulerStateMock,
@@ -26,6 +27,7 @@ const {
   getTrackedCharacterOcidsMock: vi.fn(),
   getBossProfitRecordsMock: vi.fn(),
   hasBossProfitRecordsAtOrBeforeMock: vi.fn(),
+  fillMissingRecordWorldsMock: vi.fn(),
   upsertBossProfitRecordMock: vi.fn(),
   getBossPartySizeMock: vi.fn(),
   getCachedSchedulerStateMock: vi.fn(),
@@ -54,6 +56,7 @@ vi.mock('../../../storage/boss-profit', () => ({
   getBossProfitRecords: getBossProfitRecordsMock,
   // ADR-068 결정 5: 이전 게이트가 "이 기간 또는 더 과거에 기록이 있는가"를 SQL 부등호로 묻는다.
   hasBossProfitRecordsAtOrBefore: hasBossProfitRecordsAtOrBeforeMock,
+  fillMissingRecordWorlds: fillMissingRecordWorldsMock,
   upsertBossProfitRecord: upsertBossProfitRecordMock,
 }))
 
@@ -160,6 +163,7 @@ beforeEach(() => {
   })
   getBossProfitRecordsMock.mockResolvedValue([])
   hasBossProfitRecordsAtOrBeforeMock.mockResolvedValue(false)
+  fillMissingRecordWorldsMock.mockResolvedValue(undefined)
   getBossDropRecordsMock.mockResolvedValue([])
   replaceBossDropRecordsMock.mockResolvedValue(undefined)
   upsertBossProfitRecordMock.mockResolvedValue(undefined)
@@ -304,6 +308,117 @@ describe('처치 난이도 획득 불가 드롭 제거 (ADR-044 후속)', () => 
       '컴플리트 언더컨트롤',
     ])
     expect(replaceBossDropRecordsMock).not.toHaveBeenCalled()
+  })
+})
+
+// ADR-069 결정 4: 익스트림으로 등록해두고 드롭까지 기록한 뒤 실제 처치가 하드로 확정되면, 그
+// 드롭은 난이도가 들어간 키에 남아 어떤 행도 읽지 않는 고아가 된다.
+describe('처치 난이도 확정 시 드롭 이관 (ADR-069 결정 4)', () => {
+  function dropRecord(overrides: Record<string, unknown>): Record<string, unknown> {
+    return {
+      ocid: 'ocid-1',
+      boss: '스우',
+      difficulty: '익스트림',
+      periodKey: getCurrentBossProfitPeriod('weekly', new Date()).periodKey,
+      dropIndex: 0,
+      category: 'equipment',
+      slot: null,
+      boxOrigin: null,
+      ringLevel: null,
+      quantity: 1,
+      ...overrides,
+    }
+  }
+
+  it('실시간 동기화로 난이도가 확정되면 옛 난이도 키의 드롭을 옮기고 옛 키를 비운다', async () => {
+    const period = getCurrentBossProfitPeriod('weekly', new Date()).periodKey
+    syncSchedulesMock.mockResolvedValue([
+      syncResult({
+        state: {
+          ...syncResult().state!,
+          bossContents: [bossContent({ name: '스우', difficulty: '하드', isComplete: true, ownComplete: true })],
+        },
+      }),
+    ])
+    getBossDropRecordsMock.mockResolvedValue([
+      dropRecord({ itemName: '루즈 컨트롤 머신 마크', slot: '얼굴장식' }), // 하드+익스 → 이관
+      dropRecord({ dropIndex: 1, itemName: '컴플리트 언더컨트롤' }), // 익스 전용 → 삭제
+    ])
+
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+
+    expect(replaceBossDropRecordsMock).toHaveBeenCalledWith(
+      'ocid-1',
+      '스우',
+      '하드',
+      period,
+      [expect.objectContaining({ itemName: '루즈 컨트롤 머신 마크' })],
+      expect.any(String),
+    )
+    expect(replaceBossDropRecordsMock).toHaveBeenCalledWith(
+      'ocid-1',
+      '스우',
+      '익스트림',
+      period,
+      [],
+      expect.any(String),
+    )
+  })
+
+  it('미완료 행의 드롭은 그대로 둔다 — 아직 처치 난이도가 확정되지 않았다', async () => {
+    syncSchedulesMock.mockResolvedValue([
+      syncResult({
+        state: {
+          ...syncResult().state!,
+          bossContents: [
+            bossContent({ name: '스우', difficulty: '하드', isRegistered: true, isComplete: false, ownComplete: false }),
+          ],
+        },
+      }),
+    ])
+    getBossDropRecordsMock.mockResolvedValue([dropRecord({ itemName: '루즈 컨트롤 머신 마크', slot: '얼굴장식' })])
+
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+
+    expect(replaceBossDropRecordsMock).not.toHaveBeenCalled()
+  })
+
+  it('과거 주 백필이 난이도를 확정해도 같은 이관이 일어난다', async () => {
+    syncSchedulesMock.mockResolvedValue([syncResult()])
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+    const previousPeriodKey = getAdjacentPeriodKey('weekly', useBossProfitStore.getState().periodKey, 'prev')
+    replaceBossDropRecordsMock.mockClear()
+
+    isPeriodCheckedMock.mockResolvedValue(false)
+    getBossProfitRecordsMock.mockResolvedValue([])
+    fetchSchedulerCharacterStateMock.mockResolvedValue(
+      {
+        ...syncResult().state!,
+        bossContents: [bossContent({ name: '스우', difficulty: '하드', cycle: 'weekly', isComplete: true })],
+      },
+    )
+    getBossDropRecordsMock.mockResolvedValue([
+      dropRecord({ periodKey: previousPeriodKey, itemName: '루즈 컨트롤 머신 마크', slot: '얼굴장식' }),
+    ])
+
+    await useBossProfitStore.getState().goToPreviousPeriod()
+
+    expect(replaceBossDropRecordsMock).toHaveBeenCalledWith(
+      'ocid-1',
+      '스우',
+      '하드',
+      previousPeriodKey,
+      [expect.objectContaining({ itemName: '루즈 컨트롤 머신 마크' })],
+      expect.any(String),
+    )
+    expect(replaceBossDropRecordsMock).toHaveBeenCalledWith(
+      'ocid-1',
+      '스우',
+      '익스트림',
+      previousPeriodKey,
+      [],
+      expect.any(String),
+    )
   })
 })
 
@@ -626,6 +741,7 @@ describe('useBossProfitStore', () => {
       priceMeso: 8080000,
       payoutMeso: 2020000,
       recordedAt: '2026-07-09T00:00:00.000Z',
+      world: null,
     }
     getBossProfitRecordsMock.mockResolvedValue([record])
 
@@ -652,6 +768,7 @@ describe('useBossProfitStore', () => {
       priceMeso: 7_000_000, // 과거 패치 시점 시세 — 지금의 라이브 시세(8080000)와 다르다
       payoutMeso: 3_500_000,
       recordedAt: '2026-07-09T00:00:00.000Z',
+      world: null,
     }
     getBossProfitRecordsMock.mockResolvedValue([record])
 
@@ -723,6 +840,7 @@ describe('useBossProfitStore', () => {
         priceMeso: 8080000,
         payoutMeso: 2020000,
         recordedAt: '2026-07-09T00:00:00.000Z',
+        world: null,
       }
       getBossProfitRecordsMock.mockResolvedValue([record])
       getBossPartySizeMock.mockClear()
@@ -1060,6 +1178,7 @@ describe('useBossProfitStore', () => {
         priceMeso: 8080000,
         payoutMeso: 4040000,
         recordedAt: '2026-07-10T00:00:00.000Z',
+        world: null,
       }
       vi.clearAllMocks() // 위 준비용 refresh에서 쌓인 호출 기록(자동 기록 포함)을 지운다
       getBossProfitRecordsMock.mockResolvedValue([record])
@@ -1159,6 +1278,7 @@ describe('useBossProfitStore', () => {
           priceMeso: 4_000_000,
           payoutMeso: 2_000_000,
           recordedAt: '2026-07-01T00:00:00.000Z',
+          world: null,
         }
 
         vi.clearAllMocks()
@@ -1281,6 +1401,7 @@ describe('useBossProfitStore', () => {
         priceMeso: 8_080_000,
         payoutMeso: 8_080_000,
         recordedAt: '2026-07-01T00:00:00.000Z',
+        world: null,
       }
       getBossProfitRecordsMock.mockResolvedValue([pastRecord])
 
@@ -1403,6 +1524,7 @@ describe('useBossProfitStore', () => {
         priceMeso: 8_080_000,
         payoutMeso: 2_693_333,
         recordedAt: '2026-06-01T00:00:00.000Z',
+        world: null,
       }
       getBossProfitRecordsMock.mockResolvedValue([pastRecord])
       getCachedCharacterBasicMock.mockResolvedValue({
@@ -1676,6 +1798,7 @@ describe('useBossProfitStore', () => {
           priceMeso: 8_080_000,
           payoutMeso: 4_040_000,
           recordedAt: '2026-07-08T00:00:00.000Z',
+          world: null,
         }
         getBossProfitRecordsMock.mockImplementation(async (_ocids: string[], periodKeys: string[]) =>
           periodKeys.includes('2026-07-02') ? [cachedRecord] : [],
@@ -1763,6 +1886,7 @@ describe('useBossProfitStore', () => {
           priceMeso: 8_080_000,
           payoutMeso: 4_040_000,
           recordedAt: '2026-07-08T00:00:00.000Z',
+          world: null,
         }
         getBossProfitRecordsMock.mockResolvedValue([cachedRecord])
 
@@ -1845,6 +1969,7 @@ describe('useBossProfitStore', () => {
           priceMeso: 8_080_000,
           payoutMeso: 4_040_000,
           recordedAt: '2026-06-01T00:00:00.000Z',
+          world: null,
         } satisfies BossProfitRecord,
       ])
       getCachedCharacterBasicMock.mockResolvedValue({

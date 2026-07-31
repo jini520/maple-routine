@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { getPlatformMock } = vi.hoisted(() => ({
+const { getPlatformMock
+} = vi.hoisted(() => ({
   getPlatformMock: vi.fn(),
 }))
 
@@ -10,6 +11,7 @@ const {
   isConnectionMock,
   retrieveConnectionMock,
   createConnectionMock,
+  dbQueryMock,
   closeConnectionMock,
   sqliteConnectionCtorMock,
 } = vi.hoisted(() => ({
@@ -17,6 +19,7 @@ const {
   isConnectionMock: vi.fn(),
   retrieveConnectionMock: vi.fn(),
   createConnectionMock: vi.fn(),
+  dbQueryMock: vi.fn(),
   closeConnectionMock: vi.fn(),
   sqliteConnectionCtorMock: vi.fn(),
 }))
@@ -44,7 +47,9 @@ vi.mock('@capacitor-community/sqlite', () => ({
   },
 }))
 
-const fakeDb = { open: dbOpenMock, execute: dbExecuteMock }
+// ADR-069 결정 1: openBossProfitDb가 PRAGMA table_info로 world 컬럼 존재를 확인한다(SQLite에
+// ADD COLUMN IF NOT EXISTS가 없다) — 기본값은 "이미 있음"으로 둬 기존 케이스가 ALTER를 타지 않게 한다.
+const fakeDb = { open: dbOpenMock, execute: dbExecuteMock, query: dbQueryMock }
 
 beforeEach(() => {
   vi.resetModules()
@@ -53,6 +58,7 @@ beforeEach(() => {
   isConnectionMock.mockReset().mockResolvedValue({ result: false })
   retrieveConnectionMock.mockReset().mockResolvedValue(fakeDb)
   createConnectionMock.mockReset().mockResolvedValue(fakeDb)
+  dbQueryMock.mockReset().mockResolvedValue({ values: [{ name: 'world' }] })
   closeConnectionMock.mockReset().mockResolvedValue(undefined)
   sqliteConnectionCtorMock.mockReset()
   dbOpenMock.mockReset().mockResolvedValue(undefined)
@@ -263,5 +269,32 @@ describe('closeBossProfitDb', () => {
     await concurrentGet
 
     expect(createConnectionMock).toHaveBeenCalledTimes(1)
+  })
+})
+
+// ADR-069 결정 1: 이미 만들어진 DB에는 CREATE TABLE IF NOT EXISTS가 컬럼을 더해주지 않는다.
+// SQLite에 ADD COLUMN IF NOT EXISTS가 없으므로 PRAGMA로 확인하고 없을 때만 ALTER한다.
+describe('world 컬럼 마이그레이션 (ADR-069 결정 1)', () => {
+  it('컬럼이 없으면 ALTER TABLE로 더한다', async () => {
+    getPlatformMock.mockReturnValue('ios')
+    isConnectionMock.mockResolvedValue({ result: false })
+    dbQueryMock.mockResolvedValue({ values: [{ name: 'ocid' }, { name: 'boss' }] })
+
+    const { getBossProfitDb } = await import('../db')
+    await getBossProfitDb()
+
+    expect(dbExecuteMock).toHaveBeenCalledWith('ALTER TABLE boss_profit_records ADD COLUMN world TEXT')
+  })
+
+  it('이미 있으면 ALTER하지 않는다 — 매번 열려도 안전한 no-op이다', async () => {
+    getPlatformMock.mockReturnValue('ios')
+    isConnectionMock.mockResolvedValue({ result: false })
+    dbQueryMock.mockResolvedValue({ values: [{ name: 'world' }] })
+
+    const { getBossProfitDb } = await import('../db')
+    await getBossProfitDb()
+
+    const altered = dbExecuteMock.mock.calls.some(([sql]) => String(sql).includes('ADD COLUMN'))
+    expect(altered).toBe(false)
   })
 })

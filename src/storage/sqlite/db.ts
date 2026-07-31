@@ -21,6 +21,10 @@ const TABLE_DEFINITIONS = [
     price_meso INTEGER NOT NULL,
     payout_meso INTEGER NOT NULL,
     recorded_at TEXT NOT NULL,
+    -- 기록 시점의 월드 스냅샷(ADR-069 결정 1). NULL이면 "월드 모름"이고 월드별 결정석 집계에서
+    -- 제외된다. 월드를 파생값(캐시된 character/basic)으로 두면 월드 리프가 모든 과거 주의 귀속을
+    -- 소급 이동시킨다 — 분모(90 x 월드 수)까지 바뀐다.
+    world TEXT,
     PRIMARY KEY (ocid, boss, difficulty, period_key)
   )
 `,
@@ -89,6 +93,22 @@ const MIGRATE_MEIRIN_BOSS_KEY_PROFIT_RECORDS = `
   UPDATE boss_profit_records SET boss = '시즌 보스 메이린' WHERE boss = '메이린'
 `
 
+// ADR-069 결정 1: 이미 만들어진 DB에는 CREATE TABLE IF NOT EXISTS가 컬럼을 더해주지 않는다.
+// SQLite에 ADD COLUMN IF NOT EXISTS가 없으므로 table_info로 있는지 보고 없을 때만 더한다
+// (ALTER를 try/catch로 삼키면 다른 원인의 실패까지 숨는다).
+async function ensureColumn(
+  db: SQLiteDBConnection,
+  table: string,
+  column: string,
+  definition: string,
+): Promise<void> {
+  const { values } = await db.query(`PRAGMA table_info(${table})`)
+  const exists = (values ?? []).some((row) => (row as { name?: string }).name === column)
+  if (!exists) {
+    await db.execute(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`)
+  }
+}
+
 let sqliteConnection: SQLiteConnection | null = null
 let dbPromise: Promise<SQLiteDBConnection> | null = null
 
@@ -120,6 +140,7 @@ async function openBossProfitDb(): Promise<SQLiteDBConnection> {
   for (const table of TABLE_DEFINITIONS) {
     await db.execute(table.createSql)
   }
+  await ensureColumn(db, 'boss_profit_records', 'world', 'TEXT')
   await db.execute(MIGRATE_MEIRIN_BOSS_KEY_PARTY_SETTINGS)
   await db.execute(MIGRATE_MEIRIN_BOSS_KEY_PROFIT_RECORDS)
 

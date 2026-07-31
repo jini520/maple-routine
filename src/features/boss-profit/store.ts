@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { pruneUnobtainableDrops } from '../../lib/boss-drops'
+import { planConfirmedDifficultyDropMigration, pruneUnobtainableDrops } from '../../lib/boss-drops'
 import { DEFAULT_MAX_PARTY_SIZE, findPriceEntry } from '../../lib/boss-crystal-prices'
 import { getBossReferenceOrder, matchBossContent, selectBossProfitBosses, type MatchedBoss } from '../../lib/boss-matching'
 import { mergeManualBossList } from '../../lib/manual-boss-merge'
@@ -21,12 +21,14 @@ import { fetchSchedulerCharacterState } from '../../nexon/schedule'
 import { getAuthConfig } from '../../storage/api-key'
 import { getBossPartySize } from '../../storage/boss-party-settings'
 import {
+  fillMissingRecordWorlds,
   getBossProfitRecords,
   hasBossProfitRecordsAtOrBefore,
   upsertBossProfitRecord,
   type BossProfitRecord,
 } from '../../storage/boss-profit'
 import { getBossDropRecords, replaceBossDropRecords } from '../../storage/boss-drops'
+import type { BossDropRecord } from '../../storage/boss-drops'
 import type { RecordedDrop } from '../../types/drops'
 import { isPeriodChecked, markPeriodChecked } from '../../storage/boss-profit-period-checks'
 import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
@@ -283,6 +285,9 @@ function selectProfitDisplayBosses(
   return [...kills, ...placeholders]
 }
 
+// ADR-069 결정 1(원천 규칙): **기록이 있으면 record.world, 없으면 캐시**다. 과거 기간 행은 전부
+// 기록에서 오므로 여기서 스냅샷이 이긴다 — 캐시(라이브 값)를 쓰면 월드 리프가 과거 집계를 소급
+// 이동시킨다. 컬럼 도입 전 기록(world: null)만 캐시 값으로 폴백한다.
 function buildRowFromRecord(
   record: BossProfitRecord,
   character: CharacterProfileInfo,
@@ -296,7 +301,7 @@ function buildRowFromRecord(
     ocid: record.ocid,
     characterName: character.characterName,
     imageUrl: character.imageUrl,
-    world: character.world,
+    world: record.world ?? character.world,
     boss: record.boss,
     difficulty,
     cycle: record.cycle,
@@ -597,9 +602,28 @@ async function backfillTarget(target: BackfillTarget, now: Date): Promise<Period
       getBossProfitRecords([target.ocid], [target.periodKey]),
       [],
     )
+    // ADR-069 결정 1: 백필로 만드는 delta 행에도 월드를 박는다. 그 시점 캐시의 월드를 쓰는데,
+    // **리프 이전 주는 API가 400을 주므로 백필 자체가 불가능**하고(실측) 백필로 채워지는 리프 이후
+    // 주는 현재 월드가 정답이라 실질 부정확이 없다.
+    const backfillWorld = (await getCachedCharacterBasic(target.ocid))?.profile.world ?? null
+
+    // ADR-069 결정 4: 백필 응답이 **처치 난이도를 확정하는 지점**이다. 대상(캐릭터×기간)당 한 번만
+    // 읽어 아래 루프에서 재사용한다 — 보스마다 조회하면 같은 쿼리를 보스 수만큼 반복한다.
+    const dropRecords =
+      completedBosses.length === 0
+        ? []
+        : await withSqliteFallback(getBossDropRecords([target.ocid], [target.periodKey]), [])
 
     for (const boss of completedBosses) {
       const bossName = boss.matchedBossName ?? boss.apiName
+      // 이관은 `alreadyRecorded` 판정보다 앞에 둔다 — 이미 수익 기록이 있든 없든 이 응답이 말하는
+      // 처치 난이도는 같고, 아래 continue 들(이미 기록됨·가격 미확정)에 막히면 안 되기 때문이다.
+      await migrateDropsToConfirmedDifficulty(
+        { ocid: target.ocid, boss: bossName, difficulty: boss.difficulty, periodKey: target.periodKey },
+        dropRecords,
+        now,
+      )
+
       const alreadyRecorded = existingRecords.some(
         (record) =>
           record.ocid === target.ocid &&
@@ -634,6 +658,7 @@ async function backfillTarget(target: BackfillTarget, now: Date): Promise<Period
           priceMeso: priceEntry.priceMeso,
           payoutMeso,
           recordedAt: now.toISOString(),
+          world: backfillWorld,
         }),
       )
     }
@@ -693,6 +718,63 @@ type BossProfitSetter = (partial: Partial<BossProfitState>) => void
 // periodKey)로 저장되고 periodKey가 이미 주간/월간을 구분하므로 cycle이 불필요하다.
 export function dropRowKey(ocid: string, boss: string, difficulty: string, periodKey: string): string {
   return `${ocid}|${boss}|${difficulty}|${periodKey}`
+}
+
+function toRecordedDrop(record: BossDropRecord): RecordedDrop {
+  return {
+    category: record.category,
+    itemName: record.itemName,
+    slot: record.slot ?? undefined,
+    boxOrigin: record.boxOrigin ?? undefined,
+    ringLevel: record.ringLevel ?? undefined,
+    quantity: record.quantity,
+  }
+}
+
+/**
+ * 처치 난이도가 확정된 순간, 옛 난이도 키에 남은 드롭을 확정 난이도로 이관한다([[ADR-069]] 결정 4).
+ * 계산은 `planConfirmedDifficultyDropMigration` 이 하고 여기서는 쓰기만 한다.
+ *
+ * `dropRecords` 는 호출 측이 이미 읽어둔 것을 그대로 받는다 — 행마다 새로 조회하지 않기 위함이다.
+ * 옮길 것이 없으면 계획이 `null` 이라 쓰기도 없다(멱등).
+ *
+ * **확정 키를 먼저 쓰고 옛 키를 비운다.** 순서를 뒤집으면 중간에 앱이 죽었을 때 기록이 사라지는데,
+ * 이 순서면 최악이 "아무도 읽지 않는 옛 키에 사본이 남는다"(=이관 전과 같은 고아)로 끝난다.
+ */
+async function migrateDropsToConfirmedDifficulty(
+  row: Pick<BossProfitRow, 'ocid' | 'boss' | 'difficulty' | 'periodKey'>,
+  dropRecords: BossDropRecord[],
+  now: Date,
+): Promise<void> {
+  const plan = planConfirmedDifficultyDropMigration(
+    row.boss,
+    row.difficulty,
+    dropRecords
+      .filter(
+        (record) =>
+          record.ocid === row.ocid && record.boss === row.boss && record.periodKey === row.periodKey,
+      )
+      .map((record) => ({
+        ...toRecordedDrop(record),
+        difficulty: record.difficulty,
+        dropIndex: record.dropIndex,
+      })),
+  )
+  if (plan === null) return
+
+  const recordedAt = now.toISOString()
+  if (plan.drops.length > 0) {
+    await withSqliteFallback(
+      replaceBossDropRecords(row.ocid, row.boss, row.difficulty, row.periodKey, plan.drops, recordedAt),
+      undefined,
+    )
+  }
+  for (const staleDifficulty of plan.staleDifficulties) {
+    await withSqliteFallback(
+      replaceBossDropRecords(row.ocid, row.boss, staleDifficulty, row.periodKey, [], recordedAt),
+      undefined,
+    )
+  }
 }
 
 // rows에 등장하는 periodKey들의 드롭 기록을 dropRowKey → RecordedDrop[]로 묶어 반환한다.
@@ -920,6 +1002,16 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     // 월드도 같은 조회 결과에서 그대로 꺼내 행까지 흘린다([[ADR-054]] 결정 5).
     const worldByOcid = new Map(sortedCharacterInfo.map((info) => [info.ocid, info.world]))
 
+    // ADR-069 결정 3: `world` 컬럼을 새로 더했으므로 그전 기록에는 월드가 없다. 지금 아는 월드로
+    // 채운다 — `world IS NULL` 조건이 멱등성을 보장하므로 리프 후에 다시 실행돼도 과거 스냅샷을
+    // 덮어쓰지 않는다. 실사용자가 없는 지금만 할 수 있는 선택이다(배포 후엔 리프한 캐릭터의 과거를
+    // 잘못 고정하게 된다).
+    const knownWorlds = new Map<string, string>()
+    for (const [ocid, world] of worldByOcid) {
+      if (world !== null) knownWorlds.set(ocid, world)
+    }
+    await withSqliteFallback(fillMissingRecordWorlds(knownWorlds), undefined)
+
     // refresh는 항상 "현재 기간"을 보여주므로, 여기서 한 칸 더 과거로 갈 수 있는지도 함께 계산해
     // 이전 버튼 게이트(#29)를 세운다. refresh는 현재 기간만 갱신하고 이전 기간의 기록은 건드리지
     // 않으므로 아래 캐시·라이브 두 set() 모두 같은 값을 쓴다. 현재 기간의 이전 기간은 대개 롤링
@@ -1089,8 +1181,22 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     // 기본값은 boss_party_settings(파티 관리) 조회 결과, 없으면 1(솔로)이다.
     // upsertBossProfitRecord는 단일 공유 SQLite 커넥션에 자체 트랜잭션을 열므로,
     // Promise.all로 동시 실행하면 트랜잭션이 겹쳐 에러가 난다 — 순차 실행으로 처리한다.
+    // ADR-069 결정 4: 아래 루프에서 완료 행의 드롭 이관에 쓴다(자동 기록과 같은 순회를 쓴다).
+    const dropRecordsForMigration =
+      records === null
+        ? []
+        : await withSqliteFallback(getBossDropRecords(ocids, periodKeys), [])
+
     const autoRecordedRows: BossProfitRow[] = []
     for (const row of mergedRows) {
+      // 완료 행은 처치 난이도가 확정된 것이다 — 다른 난이도 키에 남은 드롭을 이 난이도로 옮긴다
+      // ([[ADR-069]] 결정 4). 아래 자동 기록 가드보다 조건이 넓다: 가격 미확정이거나 이미 기록된
+      // 조합도 난이도는 확정된 상태다. 낡은 캐시에서 나온 행은 제외한다([[ADR-067]] 결정 7 —
+      // 그 행의 난이도는 지금의 사실이 아니다).
+      if (records !== null && !staleOcids.has(row.ocid) && row.isComplete) {
+        await migrateDropsToConfirmedDifficulty(row, dropRecordsForMigration, now)
+      }
+
       // 미완료 placeholder(ADR-032)는 절대 자동 기록하지 않는다 — 여기서 기록해버리면
       // 나중에 실제로 완료됐을 때 "이미 기록이 있다"고 오판해 실제 처치 수익으로 다시
       // 계산되지 않고 0메소로 영구히 고정된다.
@@ -1129,6 +1235,7 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
           priceMeso: row.priceMeso,
           payoutMeso,
           recordedAt: now.toISOString(),
+          world: row.world,
         }),
         undefined,
       )
@@ -1242,6 +1349,7 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
         priceMeso: row.priceMeso,
         payoutMeso: payoutMeso as number,
         recordedAt: new Date().toISOString(),
+        world: row.world,
       })
     }
 
