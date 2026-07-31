@@ -379,11 +379,14 @@ function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Element {
 // ADR-068 결정 3: 동기화가 실패한 캐릭터를 **카드에서** 식별한다. 전에는 토스트가 인원 수만 알려
 // 어느 카드인지 알 수 없었다([[ADR-063]]가 남긴 숙제, 이슈 #78 B).
 //
-// **시안 A(금액 자리를 배지가 대체)에서 한 걸음 물러섰다**: 배지를 금액 **옆**에 둔다. 시안을 고를
-// 때의 전제는 "그 금액이 낡은 캐시에서 나온 믿을 수 없는 값"이었는데, [[ADR-067]] 결정 7(폴백
-// 자동 기록 금지)·결정 4(기록 합집합) 이후 카드의 금액은 **DB 기록에서만** 나온다 — 가리면 실제로
-// 번 수익을 잃는다. 배지가 금액과 나란히 있어도 신호는 충분히 강하다(시안 B의 약한 아바타 표식과
-// 다르다).
+// **표식은 아이콘 하나다 — 금액 옆, 라벨 없음**(시안 A에서 두 번 정정, 실물 확인 후 사용자 확정
+// 2026-07-31). 경위:
+//  ① 시안 A는 "금액 자리를 배지가 대체"였다. 전제는 그 금액이 낡은 캐시에서 온 값이라는 것.
+//  ② [[ADR-067]] 결정 7·4 구현 후 카드 금액은 **DB 기록에서만** 나온다 → 가릴 이유가 약해졌다.
+//  ③ 실물을 띄워보니 라벨 배지("조회 불가")가 캐릭터명 폭을 먹어 **6자 이름부터 잘렸다**
+//     (`내옆에최성일` → `내옆에…`). `n/12` 숫자 표기를 보류한 것과 같은 문제다([[ADR-054]] 정정 7).
+// 그래서 라벨을 버리고 아이콘만 남긴다 — 이름·금액·합계가 모두 온전하다. 원인 문구는 토스트가
+// 담당하고([[ADR-063]]) 스크린리더에는 role="img" + aria-label로 전달한다.
 const CHARACTER_ISSUE_LABEL = {
   unavailable: '조회 불가',
   failed: '실패',
@@ -394,18 +397,20 @@ function CharacterIssueBadge(props: { issue: 'unavailable' | 'failed' }): React.
   return (
     <span
       data-testid="character-issue-badge"
+      // 아이콘만 남아 시각 정보가 아이콘·색뿐이므로, 스크린리더에는 이 레이블이 유일한 원천이다.
+      role="img"
+      aria-label={CHARACTER_ISSUE_LABEL[props.issue]}
       className={
         isPermanent
-          ? 'inline-flex h-5 flex-none items-center gap-1 rounded-full bg-info-tint px-2 text-[11px] font-semibold leading-none text-info-ink'
-          : 'inline-flex h-5 flex-none items-center gap-1 rounded-full bg-error-tint px-2 text-[11px] font-semibold leading-none text-error-ink'
+          ? 'inline-flex h-5 w-5 flex-none items-center justify-center rounded-full bg-info-tint text-info-ink'
+          : 'inline-flex h-5 w-5 flex-none items-center justify-center rounded-full bg-error-tint text-error-ink'
       }
     >
       {isPermanent ? (
-        <Ban className="h-3 w-3" strokeWidth={2} aria-hidden="true" />
+        <Ban className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" />
       ) : (
-        <AlertTriangle className="h-3 w-3" strokeWidth={2} aria-hidden="true" />
+        <AlertTriangle className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" />
       )}
-      {CHARACTER_ISSUE_LABEL[props.issue]}
     </span>
   )
 }

@@ -314,7 +314,8 @@ describe('BossProfitScreen', () => {
 
       expect(screen.getAllByTestId('character-issue-badge')).toHaveLength(1)
       const failedCard = screen.getByRole('button', { name: /잠수깨비/ })
-      expect(within(failedCard).getByText('실패')).toBeInTheDocument()
+      // 아이콘만 남아(라벨 없음) 스크린리더에는 role="img" + aria-label이 유일한 원천이다.
+      expect(within(failedCard).getByRole('img', { name: '실패' })).toBeInTheDocument()
     })
 
     it('조회 불가는 영구라 다른 문구·톤을 쓴다', () => {
@@ -328,11 +329,13 @@ describe('BossProfitScreen', () => {
 
       renderBossProfitScreen()
 
-      expect(screen.getByText('조회 불가')).toBeInTheDocument()
-      expect(screen.queryByText('실패')).not.toBeInTheDocument()
+      expect(screen.getByRole('img', { name: '조회 불가' })).toBeInTheDocument()
+      expect(screen.queryByRole('img', { name: '실패' })).not.toBeInTheDocument()
     })
 
-    it('금액을 가리지 않는다 — 카드의 금액은 DB 기록에서만 나오므로 가리면 실제 수익을 잃는다', () => {
+    // 실물 확인 후 확정(2026-07-31): 라벨 배지는 6자 이름부터 잘라먹어(내옆에최성일 → 내옆에…)
+    // 아이콘만 남겼다. 이름·금액·헤드라인 합계가 모두 온전하다.
+    it('이름과 금액을 둘 다 가리지 않는다', () => {
       mockStore({
         status: 'loaded',
         trackedOcids: ['ocid-1'],
@@ -344,7 +347,8 @@ describe('BossProfitScreen', () => {
       renderBossProfitScreen()
 
       const card = screen.getByRole('button', { name: /잠수깨비/ })
-      expect(within(card).getByText('실패')).toBeInTheDocument()
+      expect(within(card).getByRole('img', { name: '실패' })).toBeInTheDocument()
+      expect(within(card).getByText('잠수깨비')).toBeInTheDocument()
       expect(within(card).getByText('8,080,000 메소')).toBeInTheDocument()
     })
   })
