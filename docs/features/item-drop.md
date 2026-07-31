@@ -2,7 +2,7 @@
 
 > **범위**: 보스별 물욕템 획득 기록, 랜덤 컨테이너 결과 선택, 드롭 입력 시트, 고가 아이템 리스트. 수익 합산·고가 드롭 연출은 [boss-profit.md](./boss-profit.md), 게임 데이터 파일은 [../foundation/game-data.md](../foundation/game-data.md).
 > **관련 소스**: `app/item-drop/` · `features/item-drop/` · `features/drop-effect/` · `storage/boss-drop-records`·`storage/drop-effect` · `lib/item-icons`·`lib/drop-effect-frames`·`lib/drop-effect-layout`·`lib/boss-drops`(`pruneUnobtainableDrops`·`planConfirmedDifficultyDropMigration`) · `DropEffectOverlay` · `scripts/measure-drop-effect-origins.py`(origin 재계측) · `BossDropSheet`(vaul Drawer) · `src/data/item-drop-table.json`·`boss-ring-boxes.json`·`accessory-boxes.json`·`item-icons.json`·`valuable-drops.json`.
-> **관련 ADR**: [[ADR-011]] [[ADR-010]] [[ADR-038]] [[ADR-039]] [[ADR-040]] [[ADR-041]] [[ADR-045]] [[ADR-048]] [[ADR-069]]. **관련 문서**: [../foundation/game-data.md](../foundation/game-data.md), [boss-profit.md](./boss-profit.md).
+> **관련 ADR**: [[ADR-011]] [[ADR-010]] [[ADR-038]] [[ADR-039]] [[ADR-040]] [[ADR-041]] [[ADR-045]] [[ADR-048]] [[ADR-069]] [[ADR-070]]. **관련 문서**: [../foundation/game-data.md](../foundation/game-data.md), [boss-profit.md](./boss-profit.md).
 
 ## 정책
 - **드롭 기록의 키는 `(ocid, boss, difficulty, period_key, drop_index)`** 이고, 그래서 **처치 난이도가 나중에 달라지면 이관이 필요하다**([[ADR-069]] 결정 4) — 익스트림으로 등록해두고 드롭까지 기록한 뒤 백필이 하드로 확정하면 그 드롭은 고아가 된다. 확정 시점에 옛 난이도 키의 드롭을 확정 키로 옮기고, **그 난이도에서 획득 불가능한 항목(`pruneUnobtainableDrops` 탈락분)은 삭제한다** — 거짓 기록이 환산 가치·고가 드롭 연출에 섞이는 것을 막는다(사용자 판단). 상세는 [boss-profit.md](./boss-profit.md) "자동 기록"(2026-07-31 구현 완료 — 계산은 `planConfirmedDifficultyDropMigration`, 쓰기는 store).
@@ -10,6 +10,8 @@
 - **보스 목록 출처**([[ADR-011]]): 독립 목록이 아니라 보스 스케줄러와 동일한 동기화 캐시에서 `cycle: bossWeekly` + `registration_flag: true` 인 보스만 이름 기준 dedup(수동 등록 불가). 월간 보스(검은마법사)는 현재 제외(의도 여부 확인 필요). 난이도 표기 없음.
 - **난이도 무관 아이템 노출**([[ADR-011]]): 보스 선택 시 `item-drop-table.json` 에서 그 보스명과 일치하는 **모든 난이도** 엔트리 아이템을 이름 기준 합쳐 표시 — 유저가 실제 처치 난이도를 게임에 정확히 등록 안 했을 수 있어 난이도로 거르면 실제 획득 아이템이 누락될 위험 때문.
 - **아이템 이미지**([[ADR-011]]): 텍스트가 아니라 이미지 버튼. `lib/item-icons` 로 `assets/items/` 조회(일반 아이템은 `item-icons.json`, 반지는 `boss-ring-boxes.json` 의 `iconFile` — "링"으로 끝나면 `items/rings/`). 매핑 없으면 플레이스홀더.
+- **드롭 테이블 카테고리는 코드가 읽는 3종뿐**([[ADR-070]]): `fixed`·`equipment`·`consumable`(`types/drops.ts` `DROP_CATEGORIES`). 원본 전사 때 들어온 `scroll`·`misc` 는 어떤 코드도 순회하지 않아 **화면에 나오지 않고 기록도 될 수 없는 죽은 데이터**다. 주문서 교환권 3종(`프리미엄 악세서리 스크롤 교환권`·`프리미엄 펫장비 스크롤 교환권`·`매지컬 무기 주문서 교환권`)은 카테고리를 신설하는 대신 `consumable` 로 흡수했다(2026-07-31). 새 항목을 추가할 땐 이 3종 중 하나로 넣어야 하고, 카테고리를 늘리려면 타입·시트 섹션·헤더 아이콘·`RecordedDrop.category` 허용값이 함께 늘어난다는 점을 감안한다. `misc`("태초의 정수" 2건)는 흡수도 삭제도 하지 않고 죽은 데이터로 두기로 확정(사용자 확인 2026-07-31) — 정합성 테스트가 이 상태를 고정한다.
+- **아이템명은 조인 키다**([[ADR-070]] 결정 2·4): 후보 dedupe·`item-icons` 매핑·기록 키가 모두 `name` 문자열이라 같은 아이템이 두 표기로 존재하면 전부 갈라진다. 이름을 바꿀 땐 그 이름으로 저장된 기록이 있는지 먼저 확인한다 — 노출된 적 없는 항목만 무이관 개명이 안전하다.
 - **아이콘 캔버스 여백 규칙**(2026-07-30): 표시부는 전부 고정 정사각 박스(`h-6`/`h-8`/`h-9`) + `object-contain`이라 **렌더 크기를 결정하는 건 파일의 절대 해상도가 아니라 "불투명 아트워크 / 캔버스" 비율**이다. 여백 없이 딱 잘린 파일은 박스를 꽉 채워 옆 아이콘보다 커 보인다. **기준 = 아트워크가 캔버스의 약 90%**(투명 여백 포함, 예: 32×32 캔버스에 29×29 아트워크). 새 아이콘을 넣을 때 크롭이 타이트하면 리샘플링 없이 **투명 테두리만 덧대** 비율을 맞춘다.
 - **획득 기록**: 버튼 탭 = "획득"(획득 일자 포함). 컨테이너형이 아닌 일반 아이템은 확인창 없이 탭 즉시 기록 + 토스트. 캐릭터별/보스별 히스토리 조회. 잘못 등록한 기록은 히스토리에서 개별 삭제/취소 가능(삭제 확인 다이얼로그 여부 미정).
 - **랜덤 컨테이너 결과 기록**([[ADR-010]]): "OO옥의 보스 반지 상자"·"혼돈의 칠흑 장신구 상자"처럼 개봉 결과가 확률로 정해지는 아이템은 기록 시 실제로 나온 결과(레벨·반지 종류, 장신구 종류)를 후보 목록에서 선택해 함께 저장(확률 자동 추정 금지). 후보는 `boss-ring-boxes.json`·`accessory-boxes.json`.

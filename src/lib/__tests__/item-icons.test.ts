@@ -49,6 +49,22 @@ describe('getItemIconUrl', () => {
     expect(url).toEqual(expect.stringContaining('whetstone_life'))
   })
 
+  it('주문서 교환권 3종은 각자의 아이콘으로 조회된다 (ADR-070)', () => {
+    expect(getItemIconUrl('프리미엄 악세서리 스크롤 교환권')).toEqual(
+      expect.stringContaining('premium_accessory_scroll_coupon'),
+    )
+    expect(getItemIconUrl('프리미엄 펫장비 스크롤 교환권')).toEqual(
+      expect.stringContaining('premium_petequip_scroll_coupon'),
+    )
+    expect(getItemIconUrl('매지컬 무기 주문서 교환권')).toEqual(
+      expect.stringContaining('magical_weapon_scroll_coupon'),
+    )
+  })
+
+  it('파풀라투스 마크는 실제 아이콘으로 조회된다 (플레이스홀더 교체, ADR-070)', () => {
+    expect(getItemIconUrl('파풀라투스 마크')).toEqual(expect.stringContaining('papulatus_mark'))
+  })
+
   it('매핑이 없는 아이템은 null을 반환한다', () => {
     expect(getItemIconUrl('존재하지 않는 아이템')).toBeNull()
   })

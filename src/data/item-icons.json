@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-07-27",
+  "updatedAt": "2026-07-31",
   "source": "src/assets/items/의 기존 파일명(사용자 제공, 영문 내부 코드명 스타일)을 item-drop-table.json의 실제 보상 데이터와 대조해 매칭([[ADR-011]]). 파일명 자체는 바꾸지 않고 그대로 쓴다 — 이 파일은 '한글 아이템명 → 기존 파일명' 매핑 전용.",
   "note": "확신도가 높은 매칭 + 사용자가 2026-07-11에 직접 확인해준 매칭을 반영했다. '익셉셔널 해머'는 슬롯(눈장식/훈장/귀고리/얼굴장식/벨트)마다 아이콘이 다른데, item-drop-table.json에서 이름 자체에 슬롯이 포함되도록 분리(2026-07-27)돼 각 이름을 iconFile로 개별 매핑한다. '솔 에르다의 기운'(가칭 sole_10/sole_200/향후 sole_500)은 수량 구간별로 아이콘이 갈리는 것으로 보이나 정확한 구간 기준이 아직 확정 안 돼 매핑을 보류했다(사용자가 추후 정리 예정). 그 외 후보가 여러 개라 확정 못 한 파일은 여기 넣지 않는다.",
   "items": [
@@ -56,7 +56,7 @@
 
     { "name": "창세의 뱃지", "iconFile": "dark_boss_badge.png", "note": "칠흑의 보스 세트, 슬롯 '뱃지'와 파일명 일치로 확정(사용자 확인, 2026-07-11)" },
 
-    { "name": "파풀라투스 마크", "iconFile": "papulatus_mark.png", "note": "임시 빈 이미지 — 실제 아이콘 파일 필요(2026-07-11)" },
+    { "name": "파풀라투스 마크", "iconFile": "papulatus_mark.png", "note": "1×1 임시 빈 이미지를 실제 아이콘으로 교체(사용자 제공, 2026-07-31, [[ADR-070]])" },
     { "name": "루인 포스실드", "iconFile": "ruin_force_shield.png", "note": "임시 빈 이미지 — 실제 아이콘 파일 필요(2026-07-11)" },
     { "name": "메이린의 에테르넬 방어구 상자", "iconFile": "box_eternel_maerin.webp", "note": "메이린 하드 드랍. 실제 아이콘 이미지 반영(사용자 제공, 2026-07-27)" },
     { "name": "운명의 에테르넬 방어구 상자", "iconFile": "box_eternel_destiny.webp", "note": "메이린 하드 드랍. 실제 아이콘 이미지 반영(사용자 제공, 2026-07-27)" },
@@ -79,6 +79,10 @@
     { "name": "이어진 고대의 결의", "iconFile": "adversary_resolve.webp", "note": "최초의 대적자 고정 드랍(사용자 제공, 2026-07-27)" },
     { "name": "이어진 고대의 결의 조각", "iconFile": "adversary_resolve_piece.webp", "note": "최초의 대적자 고정 드랍(사용자 제공, 2026-07-27)" },
     { "name": "황홀한 환상의 단편", "iconFile": "maleficstar_shard.webp", "note": "찬란한 흉성 고정 드랍(사용자 제공, 2026-07-27)" },
-    { "name": "황홀한 환상의 단편 조각", "iconFile": "maleficstar_shard_piece.webp", "note": "찬란한 흉성 고정 드랍(사용자 제공, 2026-07-27)" }
+    { "name": "황홀한 환상의 단편 조각", "iconFile": "maleficstar_shard_piece.webp", "note": "찬란한 흉성 고정 드랍(사용자 제공, 2026-07-27)" },
+
+    { "name": "프리미엄 악세서리 스크롤 교환권", "iconFile": "premium_accessory_scroll_coupon.png", "note": "옛 scroll 카테고리에서 consumable로 흡수(사용자 제공, 2026-07-31, [[ADR-070]])" },
+    { "name": "프리미엄 펫장비 스크롤 교환권", "iconFile": "premium_petequip_scroll_coupon.png", "note": "사용자 제공, 2026-07-31, [[ADR-070]]" },
+    { "name": "매지컬 무기 주문서 교환권", "iconFile": "magical_weapon_scroll_coupon.png", "note": "사용자 제공, 2026-07-31, [[ADR-070]]" }
   ]
 }
