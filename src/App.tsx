@@ -22,7 +22,6 @@ import { DailyQuestCardPreview } from './app/content-scheduler/DailyQuestCardPre
 import { BossPortraitSizePreview } from './app/boss-profit/BossPortraitSizePreview'
 import { UpdatePromptModal } from './app/UpdatePromptModal'
 import { LoadingPreview } from './app/LoadingPreview'
-import { IssueBadgePreview } from './app/IssueBadgePreview'
 import { ErrorBoundary } from './components/ErrorBoundary/ErrorBoundary'
 import { ProfitIcon } from './components/ProfitIcon/ProfitIcon'
 import { ToastStack } from './components/Toast/ToastStack'
@@ -227,8 +226,6 @@ export function AppShell(): React.JSX.Element {
           {/* 임시 — 로딩 표현 선택지 비교용 디버그 라우트([[ADR-061]]). 온보딩/API 데이터 없이 접근 가능.
               선택이 확정되면 이 라우트와 LoadingPreview.tsx를 삭제할 것 */}
           <Route path="/debug/loading" element={<LoadingPreview />} />
-          {/* 임시 — 캐릭터 카드 실패 표식([[ADR-068]] 결정 3) 세 안 비교. 확정 후 삭제할 것 */}
-          <Route path="/debug/issue-badges" element={<IssueBadgePreview />} />
         </Routes>
       </div>
       {isCompleted && !isKeyboardVisible && <BottomTabBar />}
