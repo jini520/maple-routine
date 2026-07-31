@@ -960,10 +960,12 @@ export function ContentScreen(): React.JSX.Element {
               </div>
             </div>
 
-            {selected !== null && selected.isStale && (
-              <p className="text-sm text-error-ink">
-                {selected.error !== null ? formatScheduleSyncError(selected.error) : ''}
-              </p>
+            {/* 이슈 #78 B: 조건이 `selected.isStale` 이었다 — isStale이 되는 경로가 둘인데(캐시 우선
+                표시는 실패가 아니고 error가 null이다) 그 둘을 한 조건에 섞어, **화면 진입마다 내용
+                없는 문단이 렌더**되고 부모 `space-y-1` 이 4px을 더해 동기화가 끝나면 레이아웃이
+                미세하게 튀었다. 실패한 경우(error가 있을 때)만 그린다. */}
+            {selected?.error != null && (
+              <p className="text-sm text-error-ink">{formatScheduleSyncError(selected.error)}</p>
             )}
           </div>
 
