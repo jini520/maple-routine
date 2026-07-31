@@ -405,9 +405,12 @@ const CHARACTER_ISSUE_EXPLANATION = {
   },
 } as const
 
-// **금액의 좌상단에 절대배치한다**(사용자 지정 2026-07-31) — 흐름에 두면 헤더 가로폭을 캐릭터명과
+// **금액의 우상단에 절대배치한다**(사용자 지정 2026-07-31) — 흐름에 두면 헤더 가로폭을 캐릭터명과
 // 다투고(라벨 배지가 6자 이름을 잘라먹은 이유, [[ADR-054]] 정정 7) 화면 폭에 따라 겹침이 생긴다.
-// 흐름 밖으로 빼면 폭 경쟁이 원천적으로 사라지고, 64px 헤더 행에서 금액 위쪽은 비어 있어 가릴 것도 없다.
+//
+// 오른쪽 끝에 맞추는 이유: 금액은 자릿수에 따라 폭이 변하지만 **오른쪽 끝은 항상 같은 자리**다
+// (`메소` 의 마지막 글자 위). 좌상단은 금액 첫 자리를 덮어 좌측에 폭을 비워야 했는데, 우상단은
+// 글자 위쪽 여백만 쓰므로 **폭을 하나도 쓰지 않는다** — 이름 잘림 위험이 완전히 사라진다.
 function CharacterIssueBadge(props: {
   issue: 'unavailable' | 'failed'
   onToggle: () => void
@@ -430,14 +433,14 @@ function CharacterIssueBadge(props: {
       }}
       className={
         isPermanent
-          ? 'absolute left-0 -top-1.5 z-[7] flex h-4 w-4 items-center justify-center rounded-full bg-info-tint text-info-ink ring-1 ring-bg'
-          : 'absolute left-0 -top-1.5 z-[7] flex h-4 w-4 items-center justify-center rounded-full bg-error-tint text-error-ink ring-1 ring-bg'
+          ? 'absolute -top-2.5 right-0 z-[7] flex h-3.5 w-3.5 items-center justify-center rounded-full bg-info-tint text-info-ink ring-1 ring-bg'
+          : 'absolute -top-2.5 right-0 z-[7] flex h-3.5 w-3.5 items-center justify-center rounded-full bg-error-tint text-error-ink ring-1 ring-bg'
       }
     >
       {isPermanent ? (
-        <Ban className="h-2.5 w-2.5" strokeWidth={2.5} aria-hidden="true" />
+        <Ban className="h-2 w-2" strokeWidth={3} aria-hidden="true" />
       ) : (
-        <AlertTriangle className="h-2.5 w-2.5" strokeWidth={2.5} aria-hidden="true" />
+        <AlertTriangle className="h-2 w-2" strokeWidth={3} aria-hidden="true" />
       )}
     </span>
   )
@@ -1111,16 +1114,10 @@ function CharacterAccordion(props: {
               그때 다시 설계한다. 링 자체는 그대로 두므로 되살릴 때 파생 함수는 그대로 쓸 수 있다. */}
           {/* 금액을 relative 래퍼로 감싸 배지의 절대배치 기준으로 쓴다 — 래퍼는 흐름상 금액과 같은
               크기이므로 레이아웃에 영향이 없다. */}
-          {/* 배지가 있을 때만 좌측에 배지 폭(20px)을 비워 **숫자를 덮지 않게** 한다 — 절대배치만으로는
-              금액 첫 자리를 가린다(실물 확인 2026-07-31: `8,080,000`의 8, `0 메소`의 0이 가려졌다).
-              라벨 배지가 먹던 폭(약 60px)의 1/3이라 캐릭터명 잘림은 실질적으로 생기지 않는다. */}
-          <span
-            className={
-              props.issue === undefined
-                ? 'relative text-sm font-bold text-text tabular-nums'
-                : 'relative pl-5 text-sm font-bold text-text tabular-nums'
-            }
-          >
+          {/* 금액을 relative 래퍼로 감싸 배지의 절대배치 기준으로 쓴다 — 배지는 우상단(글자 위쪽
+              여백)에 얹히므로 **가로폭을 쓰지 않고 숫자도 덮지 않는다**. 좌상단이었을 때는 금액 첫
+              자리를 가려 좌측에 20px을 비워야 했다(실물 확인 2026-07-31). */}
+          <span className="relative text-sm font-bold text-text tabular-nums">
             {props.issue !== undefined && (
               <CharacterIssueBadge issue={props.issue} onToggle={() => setIsIssueOpen((prev) => !prev)} />
             )}
