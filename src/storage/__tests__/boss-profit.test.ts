@@ -186,3 +186,44 @@ describe('world 스냅샷', () => {
     expect(getBossProfitDbMock).not.toHaveBeenCalled()
   })
 })
+
+// ADR-071 결정 6: 히스토리가 "처치 난이도가 확정된 조합"을 알아야 획득 불가 기록을 거를 수 있다.
+// 수익 기록 행의 존재가 곧 확정이므로 키만 전 기간 조회한다.
+describe('getAllBossProfitRecordKeys', () => {
+  it('ocids가 비면 DB를 호출하지 않고 빈 배열을 반환한다', async () => {
+    const { getAllBossProfitRecordKeys } = await import('../boss-profit')
+
+    await expect(getAllBossProfitRecordKeys([])).resolves.toEqual([])
+    expect(getBossProfitDbMock).not.toHaveBeenCalled()
+  })
+
+  it('period_key 조건 없이 키 컬럼만 조회한다 — 전체 행을 읽을 필요가 없다', async () => {
+    const { getAllBossProfitRecordKeys } = await import('../boss-profit')
+
+    await getAllBossProfitRecordKeys(['ocid-1', 'ocid-2'])
+
+    const [sql, values] = queryMock.mock.calls[0]
+    expect(sql).toContain('SELECT ocid, boss, difficulty, period_key FROM boss_profit_records')
+    expect(sql).toContain('WHERE ocid IN (?, ?)')
+    expect(sql).not.toContain('period_key IN')
+    expect(values).toEqual(['ocid-1', 'ocid-2'])
+  })
+
+  it('행을 키 객체로 변환한다', async () => {
+    queryMock.mockResolvedValue({
+      values: [{ ocid: 'ocid-1', boss: '스우', difficulty: '하드', period_key: '2026-07-09' }],
+    })
+    const { getAllBossProfitRecordKeys } = await import('../boss-profit')
+
+    await expect(getAllBossProfitRecordKeys(['ocid-1'])).resolves.toEqual([
+      { ocid: 'ocid-1', boss: '스우', difficulty: '하드', periodKey: '2026-07-09' },
+    ])
+  })
+
+  it('조회 결과가 없으면 빈 배열을 반환한다', async () => {
+    queryMock.mockResolvedValue({ values: undefined })
+    const { getAllBossProfitRecordKeys } = await import('../boss-profit')
+
+    await expect(getAllBossProfitRecordKeys(['ocid-1'])).resolves.toEqual([])
+  })
+})

@@ -149,3 +149,39 @@ export async function hasBossProfitRecordsAtOrBefore(
 
   return (values?.length ?? 0) > 0
 }
+
+/** `boss_profit_records` 한 행을 식별하는 키(금액·파티원 수 없음). */
+export interface BossProfitRecordKey {
+  ocid: string
+  boss: string
+  difficulty: string
+  periodKey: string
+}
+
+/**
+ * 이 캐릭터들의 **전 기간** 수익 기록 키만 읽는다([[ADR-071]] 결정 6).
+ *
+ * 드롭 히스토리는 "그 난이도에서 획득 불가한 기록"을 표시 단계에서 거르는데, **처치 난이도가 확정된
+ * 조합에만** 걸어야 한다 — 확정 전 행에 걸면 익스트림으로 등록해두고 하드를 잡은 경우처럼 나중에
+ * 이관되어 살아남을 기록을 미리 숨긴다([[ADR-069]] 결정 4). 이 테이블에 행이 있다는 것이 곧 그
+ * 확정이므로([[ADR-014]] 자동 기록은 완료 행만 만든다) 키만 알면 된다.
+ */
+export async function getAllBossProfitRecordKeys(ocids: string[]): Promise<BossProfitRecordKey[]> {
+  if (ocids.length === 0) {
+    return []
+  }
+
+  const db = await getBossProfitDb()
+  const ocidPlaceholders = ocids.map(() => '?').join(', ')
+  const { values } = await db.query(
+    `SELECT ocid, boss, difficulty, period_key FROM boss_profit_records WHERE ocid IN (${ocidPlaceholders})`,
+    [...ocids],
+  )
+
+  return (values ?? []).map((row) => ({
+    ocid: (row as Record<string, unknown>).ocid as string,
+    boss: (row as Record<string, unknown>).boss as string,
+    difficulty: (row as Record<string, unknown>).difficulty as string,
+    periodKey: (row as Record<string, unknown>).period_key as string,
+  }))
+}
