@@ -762,14 +762,44 @@ interface WorldCrystalSummary {
 // world가 null인 캐릭터(구버전 캐시)는 어느 월드 한도에도 귀속시킬 수 없어 조용히 제외한다
 // (결정 6 — "미분류" 줄을 만들지 않는다). 결과 순서는 Map 삽입 순서 = 월드가 처음 등장한 캐릭터의
 // 정렬 순서라 렌더마다 흔들리지 않는다(표시 순서 고정, [[ADR-036]]).
+// ADR-069 결정 2: 집계 단위가 **행**이다. 전에는 `group.bossRows[0]?.world` 로 캐릭터당 월드를
+// 하나로 정했는데, 주 중간에 월드를 옮기면 한 캐릭터의 행이 두 월드에 걸치므로 첫 행의 월드로
+// 전부 쏠렸다. 판매 한도(90)는 **월드마다 따로 산정**되므로(사용자 확인) 그 주의 판매량은 두
+// 월드에 각각 계상돼야 한다.
+//
+// 같은 보스는 한 주에 한 번만 처치할 수 있어(사용자 확인) 한 행은 정확히 한 월드에 속한다 —
+// 그래서 행 단위로 갈라도 "보스명 distinct"의 의미가 유지된다(캐릭터별로 세던 것과 결과가 같고,
+// 걸치는 주에서만 갈린다). 월드를 모르는 행(컬럼 도입 전 기록)은 조용히 빠진다([[ADR-054]] 결정 5).
+//
+// 캐릭터 카드의 진행 링은 이 함수를 쓰지 않는다 — 클리어 수는 캐릭터 단위로 이어지므로 월드와
+// 무관하게 그 주 전체를 센다. 두 숫자의 집계 단위가 다른 것은 게임 규칙이 그렇게 갈려 있어서다.
 function summarizeWorldCrystals(groups: CharacterGroup[]): WorldCrystalSummary[] {
-  const clearedByWorld = new Map<string, number>()
+  // 월드 → (캐릭터 → 그 월드에서 처치한 보스명 집합). 캐릭터를 한 번 더 갈라야 서로 다른
+  // 캐릭터가 같은 보스를 잡은 것이 하나로 합쳐지지 않는다.
+  const bossNamesByWorld = new Map<string, Map<string, Set<string>>>()
+
   for (const group of groups) {
-    const world = group.bossRows[0]?.world ?? null
-    if (world === null) continue
-    clearedByWorld.set(world, (clearedByWorld.get(world) ?? 0) + countGroupClearedWeeklyBosses(group))
+    for (const row of group.bossRows) {
+      if (row.world === null) {
+        continue
+      }
+      // **월드 집합과 처치 수를 분리한다**: 월드를 아는 행이 있으면 처치가 0이어도 그 월드를
+      // 목록에 넣어 `0 / 90` 을 보여준다([[ADR-054]] 결정 — "월드는 알고 처치가 0이면 0 / 90을
+      // 그대로 보여준다"). 완료 조건을 월드 판정에 섞으면 그 표시가 사라진다.
+      const byCharacter = bossNamesByWorld.get(row.world) ?? new Map<string, Set<string>>()
+      const bossNames = byCharacter.get(row.ocid) ?? new Set<string>()
+      if (row.cycle === 'weekly' && row.isComplete && !isSeasonBossName(row.boss)) {
+        bossNames.add(row.boss)
+      }
+      byCharacter.set(row.ocid, bossNames)
+      bossNamesByWorld.set(row.world, byCharacter)
+    }
   }
-  return [...clearedByWorld].map(([world, cleared]) => ({ world, cleared }))
+
+  return [...bossNamesByWorld].map(([world, byCharacter]) => ({
+    world,
+    cleared: [...byCharacter.values()].reduce((sum, bossNames) => sum + bossNames.size, 0),
+  }))
 }
 
 // 이 캐릭터가 이 달에 처치한 월간 보스 수(보스명 distinct — 같은 보스를 여러 난이도로 잡아도 1).

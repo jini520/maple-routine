@@ -311,6 +311,117 @@ describe('처치 난이도 획득 불가 드롭 제거 (ADR-044 후속)', () => 
   })
 })
 
+// ADR-069 결정 4: 익스트림으로 등록해두고 드롭까지 기록한 뒤 실제 처치가 하드로 확정되면, 그
+// 드롭은 난이도가 들어간 키에 남아 어떤 행도 읽지 않는 고아가 된다.
+describe('처치 난이도 확정 시 드롭 이관 (ADR-069 결정 4)', () => {
+  function dropRecord(overrides: Record<string, unknown>): Record<string, unknown> {
+    return {
+      ocid: 'ocid-1',
+      boss: '스우',
+      difficulty: '익스트림',
+      periodKey: getCurrentBossProfitPeriod('weekly', new Date()).periodKey,
+      dropIndex: 0,
+      category: 'equipment',
+      slot: null,
+      boxOrigin: null,
+      ringLevel: null,
+      quantity: 1,
+      ...overrides,
+    }
+  }
+
+  it('실시간 동기화로 난이도가 확정되면 옛 난이도 키의 드롭을 옮기고 옛 키를 비운다', async () => {
+    const period = getCurrentBossProfitPeriod('weekly', new Date()).periodKey
+    syncSchedulesMock.mockResolvedValue([
+      syncResult({
+        state: {
+          ...syncResult().state!,
+          bossContents: [bossContent({ name: '스우', difficulty: '하드', isComplete: true, ownComplete: true })],
+        },
+      }),
+    ])
+    getBossDropRecordsMock.mockResolvedValue([
+      dropRecord({ itemName: '루즈 컨트롤 머신 마크', slot: '얼굴장식' }), // 하드+익스 → 이관
+      dropRecord({ dropIndex: 1, itemName: '컴플리트 언더컨트롤' }), // 익스 전용 → 삭제
+    ])
+
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+
+    expect(replaceBossDropRecordsMock).toHaveBeenCalledWith(
+      'ocid-1',
+      '스우',
+      '하드',
+      period,
+      [expect.objectContaining({ itemName: '루즈 컨트롤 머신 마크' })],
+      expect.any(String),
+    )
+    expect(replaceBossDropRecordsMock).toHaveBeenCalledWith(
+      'ocid-1',
+      '스우',
+      '익스트림',
+      period,
+      [],
+      expect.any(String),
+    )
+  })
+
+  it('미완료 행의 드롭은 그대로 둔다 — 아직 처치 난이도가 확정되지 않았다', async () => {
+    syncSchedulesMock.mockResolvedValue([
+      syncResult({
+        state: {
+          ...syncResult().state!,
+          bossContents: [
+            bossContent({ name: '스우', difficulty: '하드', isRegistered: true, isComplete: false, ownComplete: false }),
+          ],
+        },
+      }),
+    ])
+    getBossDropRecordsMock.mockResolvedValue([dropRecord({ itemName: '루즈 컨트롤 머신 마크', slot: '얼굴장식' })])
+
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+
+    expect(replaceBossDropRecordsMock).not.toHaveBeenCalled()
+  })
+
+  it('과거 주 백필이 난이도를 확정해도 같은 이관이 일어난다', async () => {
+    syncSchedulesMock.mockResolvedValue([syncResult()])
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+    const previousPeriodKey = getAdjacentPeriodKey('weekly', useBossProfitStore.getState().periodKey, 'prev')
+    replaceBossDropRecordsMock.mockClear()
+
+    isPeriodCheckedMock.mockResolvedValue(false)
+    getBossProfitRecordsMock.mockResolvedValue([])
+    fetchSchedulerCharacterStateMock.mockResolvedValue(
+      {
+        ...syncResult().state!,
+        bossContents: [bossContent({ name: '스우', difficulty: '하드', cycle: 'weekly', isComplete: true })],
+      },
+    )
+    getBossDropRecordsMock.mockResolvedValue([
+      dropRecord({ periodKey: previousPeriodKey, itemName: '루즈 컨트롤 머신 마크', slot: '얼굴장식' }),
+    ])
+
+    await useBossProfitStore.getState().goToPreviousPeriod()
+
+    expect(replaceBossDropRecordsMock).toHaveBeenCalledWith(
+      'ocid-1',
+      '스우',
+      '하드',
+      previousPeriodKey,
+      [expect.objectContaining({ itemName: '루즈 컨트롤 머신 마크' })],
+      expect.any(String),
+    )
+    expect(replaceBossDropRecordsMock).toHaveBeenCalledWith(
+      'ocid-1',
+      '스우',
+      '익스트림',
+      previousPeriodKey,
+      [],
+      expect.any(String),
+    )
+  })
+})
+
 describe('useBossProfitStore', () => {
   it('초기 상태는 idle이고 rows가 비어있다', () => {
     const state = useBossProfitStore.getState()

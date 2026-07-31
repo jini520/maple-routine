@@ -2108,3 +2108,60 @@ describe('BossProfitScreen', () => {
   })
 })
 
+// ADR-069 결정 2: 결정석 집계 단위를 캐릭터 → **행**으로 바꿨다. 판매 한도(90)는 월드마다 따로
+// 산정되므로(사용자 확인) 주 중간에 월드를 옮긴 주는 두 월드에 각각 계상돼야 한다.
+describe('월드 리프가 걸친 주의 결정석 집계 (ADR-069 결정 2)', () => {
+  it('한 캐릭터의 행이 두 월드에 걸치면 월드별로 나눠 센다 — 분모도 90 × 월드 수가 된다', () => {
+    mockStore({
+      status: 'loaded',
+      tab: 'weekly',
+      trackedOcids: ['ocid-1'],
+      periodState: 'recorded',
+      rows: [
+        // 리프 전(챌린저스2)에 둘, 리프 후(엘리시움)에 하나 처치한 주
+        row({ ocid: 'ocid-1', boss: '자쿰', world: '챌린저스2' }),
+        row({ ocid: 'ocid-1', boss: '매그너스', difficulty: '하드', world: '챌린저스2' }),
+        row({ ocid: 'ocid-1', boss: '파풀라투스', world: '엘리시움' }),
+      ],
+    })
+
+    renderBossProfitScreen()
+
+    // 전에는 첫 행의 월드로 3건이 전부 쏠려 "3 / 90"이었다.
+    expect(screen.getByLabelText('주간 결정석 판매 3 / 180')).toBeInTheDocument()
+  })
+
+  it('서로 다른 캐릭터가 같은 보스를 잡으면 각각 센다 — 캐릭터를 합치지 않는다', () => {
+    mockStore({
+      status: 'loaded',
+      tab: 'weekly',
+      trackedOcids: ['ocid-1', 'ocid-2'],
+      periodState: 'recorded',
+      rows: [
+        row({ ocid: 'ocid-1', characterName: '가', boss: '자쿰', world: '엘리시움' }),
+        row({ ocid: 'ocid-2', characterName: '나', boss: '자쿰', world: '엘리시움' }),
+      ],
+    })
+
+    renderBossProfitScreen()
+
+    expect(screen.getByLabelText('주간 결정석 판매 2 / 90')).toBeInTheDocument()
+  })
+
+  it('월드를 모르는 행(컬럼 도입 전 기록)은 조용히 빠진다', () => {
+    mockStore({
+      status: 'loaded',
+      tab: 'weekly',
+      trackedOcids: ['ocid-1'],
+      periodState: 'recorded',
+      rows: [
+        row({ ocid: 'ocid-1', boss: '자쿰', world: '엘리시움' }),
+        row({ ocid: 'ocid-1', boss: '매그너스', difficulty: '하드', world: null }),
+      ],
+    })
+
+    renderBossProfitScreen()
+
+    expect(screen.getByLabelText('주간 결정석 판매 1 / 90')).toBeInTheDocument()
+  })
+})

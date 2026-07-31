@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { RecordedDrop } from '../../types/drops'
+import type { StoredDropRecord } from '../boss-drops'
 import {
   getAccessoryBoxContents,
   getBossDifficulties,
@@ -8,6 +9,7 @@ import {
   getObtainableTileNames,
   getRingBoxContents,
   isBoxItem,
+  planConfirmedDifficultyDropMigration,
   pruneUnobtainableDrops,
 } from '../boss-drops'
 
@@ -185,5 +187,72 @@ describe('getAccessoryBoxContents', () => {
 
   it('장신구 상자가 아니면 null', () => {
     expect(getAccessoryBoxContents('홍옥의 보스 반지 상자')).toBeNull()
+  })
+})
+
+// ADR-069 결정 4: 익스트림으로 등록·드롭 기록 → 백필이 하드로 확정하면, 드롭은 난이도를 포함한
+// 키에 남아 영구 고아가 된다(화면·환산 가치에서 사라지고 DB에만 남는다).
+describe('planConfirmedDifficultyDropMigration', () => {
+  const extremeDrops: StoredDropRecord[] = [
+    { difficulty: '익스트림', dropIndex: 0, category: 'equipment', itemName: '루즈 컨트롤 머신 마크', slot: '얼굴장식', quantity: 1 },
+    { difficulty: '익스트림', dropIndex: 1, category: 'equipment', itemName: '컴플리트 언더컨트롤', quantity: 1 },
+  ]
+
+  it('옛 난이도 키의 드롭을 확정 난이도로 옮기고, 그 난이도에서 못 나오는 항목은 삭제한다', () => {
+    const plan = planConfirmedDifficultyDropMigration('스우', '하드', extremeDrops)
+
+    // 컴플리트 언더컨트롤은 익스 전용 — 되살리지 않는다(거짓 기록, 사용자 판단)
+    expect(plan?.drops.map((drop) => drop.itemName)).toEqual(['루즈 컨트롤 머신 마크'])
+    expect(plan?.staleDifficulties).toEqual(['익스트림'])
+  })
+
+  it('확정 난이도에 이미 드롭이 있으면 그 뒤에 이어 붙인다', () => {
+    const plan = planConfirmedDifficultyDropMigration('스우', '하드', [
+      { difficulty: '하드', dropIndex: 0, category: 'consumable', itemName: '리스트레인트 링', boxOrigin: '홍옥의 보스 반지 상자', ringLevel: 3, quantity: 1 },
+      ...extremeDrops,
+    ])
+
+    expect(plan?.drops.map((drop) => drop.itemName)).toEqual([
+      '리스트레인트 링',
+      '루즈 컨트롤 머신 마크',
+    ])
+  })
+
+  it('이관분이 전부 삭제돼도 옛 키는 비워야 한다 — 고아를 남기지 않는다', () => {
+    const plan = planConfirmedDifficultyDropMigration('스우', '하드', [
+      { difficulty: '익스트림', dropIndex: 0, category: 'equipment', itemName: '컴플리트 언더컨트롤', quantity: 1 },
+    ])
+
+    expect(plan).toEqual({ drops: [], staleDifficulties: ['익스트림'] })
+  })
+
+  it('옛 난이도 키가 여러 개면 정규 난이도 순서로 이어 붙이고 모두 비운다', () => {
+    const plan = planConfirmedDifficultyDropMigration('스우', '하드', [
+      { difficulty: '익스트림', dropIndex: 0, category: 'equipment', itemName: '루즈 컨트롤 머신 마크', slot: '얼굴장식', quantity: 1 },
+      { difficulty: '노멀', dropIndex: 0, category: 'fixed', itemName: '주문의 흔적', quantity: 1 },
+    ])
+
+    expect(plan?.staleDifficulties).toEqual(['노멀', '익스트림'])
+    expect(plan?.drops.map((drop) => drop.itemName)).toEqual([
+      '주문의 흔적',
+      '루즈 컨트롤 머신 마크',
+    ])
+  })
+
+  it('옛 난이도 키가 없으면 null — 쓸 일이 없다는 뜻이다(멱등)', () => {
+    expect(
+      planConfirmedDifficultyDropMigration('스우', '하드', [
+        { difficulty: '하드', dropIndex: 0, category: 'equipment', itemName: '루즈 컨트롤 머신 마크', slot: '얼굴장식', quantity: 1 },
+      ]),
+    ).toBeNull()
+    expect(planConfirmedDifficultyDropMigration('스우', '하드', [])).toBeNull()
+  })
+
+  it('고정(fixed) 드롭은 난이도가 바뀌어도 보존한다', () => {
+    const plan = planConfirmedDifficultyDropMigration('스우', '하드', [
+      { difficulty: '익스트림', dropIndex: 0, category: 'fixed', itemName: '주문의 흔적', quantity: 1 },
+    ])
+
+    expect(plan?.drops).toEqual([{ category: 'fixed', itemName: '주문의 흔적', quantity: 1 }])
   })
 })

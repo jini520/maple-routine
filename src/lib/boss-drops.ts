@@ -131,6 +131,84 @@ export function pruneUnobtainableDrops(
   )
 }
 
+/**
+ * SQLite `boss_drop_records` 한 행에서 이 계산에 필요한 부분만 추린 모양. 저장 계층 타입을 쓰지
+ * 않는 이유는 `lib/` 가 `storage/` 를 의존하지 않기 위함이다([[ADR-003]]).
+ */
+export interface StoredDropRecord extends RecordedDrop {
+  difficulty: string
+  dropIndex: number
+}
+
+export interface DropMigrationPlan {
+  /** 확정 난이도 키에 새로 기록할 드롭 목록 — 기존분 뒤에 이관분을 이어 붙인 것 */
+  drops: RecordedDrop[]
+  /** 비워야 하는 옛 난이도 키들 */
+  staleDifficulties: string[]
+}
+
+function toRecordedDrop(record: StoredDropRecord): RecordedDrop {
+  return {
+    category: record.category,
+    itemName: record.itemName,
+    slot: record.slot,
+    boxOrigin: record.boxOrigin,
+    ringLevel: record.ringLevel,
+    quantity: record.quantity,
+  }
+}
+
+function compareStoredDrops(a: StoredDropRecord, b: StoredDropRecord): number {
+  const byDifficulty = difficultyOrder(a.difficulty) - difficultyOrder(b.difficulty)
+  return byDifficulty !== 0 ? byDifficulty : a.dropIndex - b.dropIndex
+}
+
+/**
+ * 처치 난이도가 확정됐을 때, 옛 난이도 키에 남은 드롭을 확정 난이도로 어떻게 옮길지 계산한다
+ * ([[ADR-069]] 결정 4).
+ *
+ * 왜 필요한가: 드롭은 `(ocid, boss, difficulty, period_key)` 로 저장된다. 익스트림으로 등록해두고
+ * 드롭까지 기록한 뒤 백필이 실제 처치를 **하드**로 확정하면, 그 드롭은 아무 행도 읽지 않는 키에
+ * 남아 영구 고아가 된다(화면·배지·환산 가치에서 사라지고 DB에만 쌓인다).
+ *
+ * - `records` 는 **같은 `(ocid, boss, period_key)`** 의 전 난이도 드롭이어야 한다(호출 측이 걸러 넘긴다).
+ * - 확정 난이도에서 획득 불가한 항목은 **되살리지 않는다** — 근거는 사용자 판단이다: 그 난이도에서
+ *   나올 수 없는 아이템은 거짓 기록이고, 표시하는 것보다 삭제가 안전하다. 잘못된 환산 가치가
+ *   계산에 섞이는 것이 기록 한 줄을 잃는 것보다 나쁘다.
+ * - 확정 난이도에 **이미 드롭이 있으면 그 뒤에 이어 붙인다**. 같은 아이템이 두 번 들어갈 수 있지만
+ *   실제로 두 개를 먹은 경우와 구분할 수 없어 임의로 합치지 않는다 — 고아를 남기지 않는 유일한 선택.
+ * - 옛 키가 없으면 `null`(할 일 없음)이라 매번 호출해도 안전하다(멱등).
+ */
+export function planConfirmedDifficultyDropMigration(
+  boss: string,
+  confirmedDifficulty: BossDifficulty,
+  records: StoredDropRecord[],
+): DropMigrationPlan | null {
+  const stale = records.filter((record) => record.difficulty !== confirmedDifficulty)
+  if (stale.length === 0) {
+    return null
+  }
+
+  // SQLite는 `ORDER BY drop_index` 만 보장하므로 난이도가 섞이면 순서가 미정이다 — 정규 난이도
+  // 순서로 정렬해 이관 결과가 실행마다 같게 한다.
+  const migrated = pruneUnobtainableDrops(
+    boss,
+    confirmedDifficulty,
+    [...stale].sort(compareStoredDrops).map(toRecordedDrop),
+  )
+  const existing = records
+    .filter((record) => record.difficulty === confirmedDifficulty)
+    .sort(compareStoredDrops)
+    .map(toRecordedDrop)
+
+  return {
+    drops: [...existing, ...migrated],
+    staleDifficulties: [...new Set(stale.map((record) => record.difficulty))].sort(
+      (a, b) => difficultyOrder(a) - difficultyOrder(b),
+    ),
+  }
+}
+
 interface RawRingBox {
   name: string
   levelProbabilities: { level: number }[]
