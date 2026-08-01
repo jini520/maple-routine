@@ -1215,3 +1215,97 @@ describe('선택 캐릭터 실패 문구 (이슈 #78 B)', () => {
     expect(screen.getByText('네트워크 오류가 발생했습니다')).toBeInTheDocument()
   })
 })
+
+// ADR-072: 목록 최상단에서 당기면 헤더 새로고침 버튼과 같은 재조회가 돈다(제스처는 추가 수단이다).
+// jsdom에는 TouchEvent 생성자가 없으므로 훅이 읽는 필드(touches[].clientY)만 가진 합성 이벤트를 만든다.
+// window.scrollY는 jsdom 기본값이 0이라 최상단 판정(window.scrollY <= 0)을 그대로 통과한다.
+function touchEvent(type: string, clientY?: number): Event {
+  const event = new Event(type, { bubbles: true, cancelable: true })
+  Object.defineProperty(event, 'touches', {
+    value: clientY === undefined ? [] : [{ clientY }],
+  })
+  return event
+}
+
+describe('당겨서 새로고침 (ADR-072)', () => {
+  it('최상단에서 임계값을 넘겨 당겼다 놓으면 refresh가 호출된다', async () => {
+    const refresh = vi.fn()
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [character({ ocid: 'ocid-1' })],
+      refresh,
+    })
+
+    renderBossScreen()
+    await screen.findByRole('combobox')
+
+    fireEvent(document, touchEvent('touchstart', 0))
+    fireEvent(document, touchEvent('touchmove', 200)) // 200 * 0.5 = 100 → 상한 80 ≥ 임계 56
+    fireEvent(document, touchEvent('touchend'))
+
+    // 결정 3: 보스 store의 refresh는 onProgress를 받을 수 있지만 세 화면이 같은 1인자 형태를 쓴다.
+    expect(refresh).toHaveBeenCalledTimes(1)
+    expect(refresh).toHaveBeenCalledWith(['ocid-1'])
+  })
+
+  it('임계값 미만으로 당겼다 놓으면 refresh가 호출되지 않는다', async () => {
+    const refresh = vi.fn()
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [character({ ocid: 'ocid-1' })],
+      refresh,
+    })
+
+    renderBossScreen()
+    await screen.findByRole('combobox')
+
+    fireEvent(document, touchEvent('touchstart', 0))
+    fireEvent(document, touchEvent('touchmove', 40)) // 40 * 0.5 = 20 < 56
+    fireEvent(document, touchEvent('touchend'))
+
+    expect(refresh).not.toHaveBeenCalled()
+  })
+
+  it('당기는 동안 배너가 sticky 헤더 안 경계 페이드 다음 형제로 그려진다', async () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [character({ ocid: 'ocid-1' })],
+    })
+
+    renderBossScreen()
+    await screen.findByRole('combobox')
+
+    fireEvent(document, touchEvent('touchstart', 0))
+    fireEvent(document, touchEvent('touchmove', 40))
+
+    const banner = screen.getByTestId('pull-to-refresh-banner')
+    expect(screen.getByText('당겨서 새로고침')).toBeInTheDocument()
+    // 배너와 페이드가 같은 자리(absolute top-full)를 쓰므로 DOM 순서로 배너가 위에 와야 한다.
+    expect(banner.previousElementSibling).toHaveClass('backdrop-blur-sm')
+    expect(banner.parentElement).toHaveClass('sticky')
+  })
+
+  it('제스처를 붙여도 헤더 새로고침 버튼은 그대로 남는다(ADR-072 결정 10)', async () => {
+    const refresh = vi.fn()
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [character({ ocid: 'ocid-1' })],
+      refresh,
+    })
+
+    renderBossScreen()
+    await screen.findByRole('combobox')
+
+    const button = screen.getByRole('button', { name: '새로고침' })
+    expect(button).toBeInTheDocument()
+
+    fireEvent.click(button)
+
+    expect(refresh).toHaveBeenCalledTimes(1)
+    expect(refresh).toHaveBeenCalledWith(['ocid-1'])
+  })
+})
