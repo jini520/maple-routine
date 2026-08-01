@@ -127,7 +127,8 @@
     },
     {
       "dir": "pull-to-refresh-motion",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-08-01T15:19:10+0900"
     }
   ]
 }
