@@ -1372,11 +1372,11 @@ describe('당겨서 새로고침 (ADR-072)', () => {
     fireEvent(document, touchEvent('touchstart', 0))
     fireEvent(document, touchEvent('touchmove', 40))
 
-    const banner = screen.getByTestId('pull-to-refresh-banner')
+    const indicator = screen.getByTestId('pull-to-refresh-indicator')
     expect(screen.getByText('당겨서 새로고침')).toBeInTheDocument()
-    // 배너와 페이드가 같은 자리(absolute top-full)를 쓰므로 DOM 순서로 배너가 위에 와야 한다.
-    expect(banner.previousElementSibling).toHaveClass('backdrop-blur-sm')
-    expect(banner.parentElement).toHaveClass('sticky')
+    // 인디케이터와 페이드가 같은 자리(absolute top-full)를 쓰므로 DOM 순서로 인디케이터가 위에 와야 한다.
+    expect(indicator.previousElementSibling).toHaveClass('backdrop-blur-sm')
+    expect(indicator.parentElement).toHaveClass('sticky')
   })
 
   it('제스처를 붙여도 헤더 새로고침 버튼은 그대로 남는다(ADR-072 결정 10)', async () => {

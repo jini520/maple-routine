@@ -2285,10 +2285,10 @@ describe('당겨서 새로고침 (ADR-072)', () => {
     fireEvent(document, touchEvent('touchstart', 0))
     fireEvent(document, touchEvent('touchmove', 200))
 
-    expect(screen.queryByTestId('pull-to-refresh-banner')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('pull-to-refresh-indicator')).not.toBeInTheDocument()
   })
 
-  it('현재 기간에서 당기는 동안 배너가 sticky 헤더 블록의 마지막 자식으로 그려진다', () => {
+  it('현재 기간에서 당기는 동안 인디케이터가 sticky 헤더 블록의 마지막 자식으로 그려진다', () => {
     mockStore({
       status: 'loaded',
       trackedOcids: ['ocid-1'],
@@ -2301,11 +2301,11 @@ describe('당겨서 새로고침 (ADR-072)', () => {
     fireEvent(document, touchEvent('touchstart', 0))
     fireEvent(document, touchEvent('touchmove', 40))
 
-    const banner = screen.getByTestId('pull-to-refresh-banner')
+    const indicator = screen.getByTestId('pull-to-refresh-indicator')
     expect(screen.getByText('당겨서 새로고침')).toBeInTheDocument()
-    // 이 화면에는 경계 페이드 오버레이가 없으므로(ADR-047 결정 6) 배너가 곧 마지막 자식이다.
-    expect(banner.parentElement).toHaveClass('sticky')
-    expect(banner.parentElement?.lastElementChild).toBe(banner)
+    // 이 화면에는 경계 페이드 오버레이가 없으므로(ADR-047 결정 6) 인디케이터가 곧 마지막 자식이다.
+    expect(indicator.parentElement).toHaveClass('sticky')
+    expect(indicator.parentElement?.lastElementChild).toBe(indicator)
   })
 
   it('제스처를 붙여도 헤더 새로고침 버튼은 현재 기간에만 남는다(ADR-072 결정 10)', () => {

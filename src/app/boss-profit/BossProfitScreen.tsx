@@ -18,7 +18,7 @@ import { EmptyState } from '../../components/EmptyState/EmptyState'
 import { ErrorState } from '../../components/ErrorState/ErrorState'
 import { LoadingState } from '../../components/LoadingState/LoadingState'
 import { ProfitIcon } from '../../components/ProfitIcon/ProfitIcon'
-import { PullToRefreshBanner } from '../../components/PullToRefreshBanner/PullToRefreshBanner'
+import { PullToRefreshIndicator } from '../../components/PullToRefreshIndicator/PullToRefreshIndicator'
 import { usePullToRefresh } from '../../lib/use-pull-to-refresh'
 import { UnavailableNotice } from '../../components/EmptyState/UnavailableNotice'
 import { ValuableDropBadge } from '../../components/ValuableDropBadge/ValuableDropBadge'
@@ -1509,10 +1509,10 @@ export function BossProfitScreen(): React.JSX.Element {
             (ADR-047 결정 6) — 펼친 카드의 sticky 헤더가 멈추는 자리가 바로 그 밴드라, z-10 페이지 헤더
             안의 오버레이가 stuck 헤더 상단을 덮어 가린다. 경계는 총 수익 헤드라인 하단 헤어라인이 담당. */}
 
-        {/* ADR-072 결정 4·5: 배너는 sticky 헤더 블록의 마지막 자식이고 absolute라 이 블록의 실측
+        {/* ADR-072 결정 4·5: 인디케이터는 sticky 헤더 블록의 마지막 자식이고 absolute라 이 블록의 실측
             높이(stickyHeaderHeight)를 바꾸지 않는다 — 흐름 자식이면 당길 때마다 ResizeObserver가
             발화해 펼친 카드의 중첩 sticky 헤더가 손가락을 따라 흔들린다(ADR-047 결정 3). */}
-        <PullToRefreshBanner distance={pullToRefresh.distance} phase={pullToRefresh.phase} />
+        <PullToRefreshIndicator distance={pullToRefresh.distance} phase={pullToRefresh.phase} />
       </div>
 
       <div className="space-y-2 px-4 pb-4">

@@ -21,7 +21,10 @@
     {
       "step": 2,
       "name": "pull-indicator",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-01T14:57:58+0900",
+      "summary": "PullToRefreshBanner → PullToRefreshIndicator 교체(표시 컴포넌트만, 목록 이동 배선은 step 3~5). 신규 src/components/PullToRefreshIndicator/PullToRefreshIndicator.tsx — props는 { distance: number; phase: PullPhase } 그대로, 루트 클래스 'pointer-events-none absolute inset-x-0 top-full z-[1] overflow-hidden'(border-b·bg-bg 제거, ADR-073 결정 7), 높이는 style={{ height: resolveContentOffsetPx(props.distance, props.phase) }} 단 하나의 산식 — step 3~5는 목록 translateY에 같은 함수·같은 인자를 걸어야 한다(결정 6). 내용 래퍼 h-14 → h-full(벌어진 틈 세로 중앙, 결정 7). testid: pull-to-refresh-banner → pull-to-refresh-indicator(잎은 pull-to-refresh-leaf 유지). 나머지(문구 3종·잎 회전 progress×180deg·불투명도 0.3+0.7×progress·MapleSweepSpinner 24px·role=status·idle이면 null)는 무변경. src/components/PullToRefreshBanner/ 디렉토리 삭제(grep 무결과). 세 화면(ContentScreen·BossScreen·BossProfitScreen)은 import·태그명·주석 '배너'→'인디케이터'만 수정 — props·배치·주변 JSX 무변경. 세 화면 테스트의 testid 참조도 개명. 테스트 12→14건(신규: 루트에 bg-bg·border-b 부재 / 내용 래퍼 h-full·h-14 부재). docs/foundation/design-system.md 구현 포인터 한 줄을 새 경로·새 testid로 갱신. npm test 1977건 전량 통과, build·lint 통과.",
+      "completed_at": "2026-08-01T15:02:40+0900"
     },
     {
       "step": 3,

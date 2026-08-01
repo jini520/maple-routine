@@ -14,7 +14,7 @@ import { DifficultyBadge } from '../../components/DifficultyBadge/DifficultyBadg
 import { EmptyState } from '../../components/EmptyState/EmptyState'
 import { LoadingState } from '../../components/LoadingState/LoadingState'
 import { ProgressModal } from '../../components/ProgressModal/ProgressModal'
-import { PullToRefreshBanner } from '../../components/PullToRefreshBanner/PullToRefreshBanner'
+import { PullToRefreshIndicator } from '../../components/PullToRefreshIndicator/PullToRefreshIndicator'
 import { usePullToRefresh } from '../../lib/use-pull-to-refresh'
 import { matchBossContent, selectDisplayBosses, type MatchedBoss } from '../../lib/boss-matching'
 import { mergeManualBossList } from '../../lib/manual-boss-merge'
@@ -562,9 +562,9 @@ export function BossScreen(): React.JSX.Element {
           aria-hidden="true"
         />
 
-        {/* ADR-072 결정 5: 배너와 위 페이드가 같은 자리(absolute top-full)를 쓰므로, z-index를 새로
-            도입하는 대신 DOM 순서(페이드 "다음" 형제)로 배너가 위에 오게 한다. */}
-        <PullToRefreshBanner distance={pullToRefresh.distance} phase={pullToRefresh.phase} />
+        {/* ADR-072 결정 5: 인디케이터와 위 페이드가 같은 자리(absolute top-full)를 쓰므로, z-index를 새로
+            도입하는 대신 DOM 순서(페이드 "다음" 형제)로 인디케이터가 위에 오게 한다. */}
+        <PullToRefreshIndicator distance={pullToRefresh.distance} phase={pullToRefresh.phase} />
       </div>
 
       {characters.length > 0 && selected !== null && (
