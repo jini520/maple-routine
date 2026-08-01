@@ -129,10 +129,12 @@ a11y: 링 자체가 role="img" aria-label="{주간|월간} 보스 처치 8 / 12"
 
 **대신 페이드는 stuck 카드 헤더 하단으로 옮겼다**([[ADR-047]] 후속) — 중첩 sticky에서는 콘텐츠가 지나가는 경계가 그쪽이기 때문. 레시피는 공용과 동일하고 배경색만 `from-surface`. 단 **헤더의 자식(`top-full`)으로 두면 안 된다** — 헤더가 카드 끝에서 릴리스될 때 페이드가 카드 밖으로 새어나오고, 페이드는 셸 바깥에 있어 셸의 `overflow: clip`([[ADR-049]])도 잡아주지 않는다. 대신 `absolute inset-x-px bottom-px` + `top` = 헤더 실측 높이인 제약 박스 안의 **sticky 요소**(`top` = `stickyTop + 헤더 높이`)로 둔다 — sticky가 자기 박스를 카드 안에 붙잡아준다. 좌우·하단 `px`(1px)는 **셸 테두리 두께만큼 들인 값** — 이 박스는 wrapper(= 셸 border-box) 기준이라 `inset-x-0`이면 페이드가 카드 테두리를 덮는다. CSS로 stuck 여부를 알 수 없어 평상시에도 존재한다.
 
-### 당겨서 새로고침 ([[ADR-072]])
+### 당겨서 새로고침 ([[ADR-072]], 구현 완료 2026-08-01)
 목록 최상단에서 아래로 당기면 헤더 새로고침 버튼과 같은 재조회(`refresh(trackedOcids ?? [])`)가 돈다. 레시피는 [foundation/design-system.md](../foundation/design-system.md) 의 '당겨서 새로고침' 절.
 
 **단 과거 기간에서는 제스처를 끈다** — 활성 조건은 `isCurrentPeriod`(= `isLatestPeriod(tab, periodKey, now)`)이고, **헤더 새로고침 버튼이 현재 기간에서만 보이는 것과 같은 근거**다(#30): `refresh` 는 `periodKey` 를 현재 기간으로 강제 리셋하고 라이브 재조회하므로, 과거 기간에서 제스처를 쓰면 보고 있던 기간이 현재 기간으로 튕겨 나간다. 이전 이동 게이트인 `canGoPreviousPeriod`(#29)는 "현재 기간 여부"가 아니라 쓰지 않는다.
+
+이 조건 때문에 **`now`·`isCurrentPeriod` 선언이 빈 상태 조기 반환보다 위에 있다** — 훅은 조기 반환 아래에서 부를 수 없고, 훅의 `enabled` 가 `isCurrentPeriod` 를 읽기 때문이다. 두 줄을 다시 아래로 내리지 말 것(`new Date()` 도 렌더당 1회 유지 — 두 번 만들면 "현재 기간 판정"과 "기간 라벨"이 기간 경계를 사이에 두고 갈릴 수 있다). 배너는 sticky 헤더 블록의 마지막 자식이지만 `absolute` 라 `stickyHeaderRef` 실측 높이를 바꾸지 않는다 — 흐름 자식으로 바꾸면 당길 때마다 `ResizeObserver` 가 발화해 펼친 카드의 중첩 sticky 헤더가 손가락을 따라 흔들린다([[ADR-047]] 결정 3).
 
 ### 총 수익 헤드라인 (sticky 헤더 최하단) — [[ADR-046]]
 `characterGroups` 합계를 보여주는 기간 요약. **카드가 아니다** — 아래 캐릭터 카드가 전부 같은 카드 셸(`rounded-[14px] bg-surface border border-border`)이라, 요약도 카드면 "동일한 흰 카드의 반복"으로 묻힌다([[ADR-046]] 배경). 카드 셸 없이 배경 위 타이포로 두고 색·크기로만 위계를 준다.

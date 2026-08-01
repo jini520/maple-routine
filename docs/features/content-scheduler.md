@@ -41,8 +41,8 @@
 ## UI — 콘텐츠 카드
 카드 골격은 보스 카드([[ADR-018]], [boss-scheduler.md](./boss-scheduler.md))를 재사용 — `rounded-[14px]`, `.media-scope` + `bg-surface`/`border-border`(스코프가 media-* 로 다시 묶는다, [[ADR-064]] 결정 5), 80px 기본 높이, 일러스트 bleed(saturate .85 brightness .8 opacity .65, mask `linear-gradient(90deg,#000 0%,#000 38%,transparent 76%)`).
 
-### 당겨서 새로고침 ([[ADR-072]])
-목록 최상단에서 아래로 당기면 헤더 새로고침 버튼과 같은 재조회(`refresh(trackedOcids ?? [])`)가 돈다. 레시피는 [foundation/design-system.md](../foundation/design-system.md) 의 '당겨서 새로고침' 절.
+### 당겨서 새로고침 ([[ADR-072]], 구현 완료 2026-08-01)
+목록 최상단에서 아래로 당기면 헤더 새로고침 버튼과 같은 재조회(`refresh(trackedOcids ?? [])`)가 돈다. 레시피는 [foundation/design-system.md](../foundation/design-system.md) 의 '당겨서 새로고침' 절. 이 화면의 활성 조건은 `!isEmpty`(추적 캐릭터 있음) 하나이고, `usePullToRefresh` 호출은 **빈 상태 조기 반환보다 위**에 있어야 한다(훅 규칙).
 
 ### 일일퀘스트 카드 ([[ADR-020]])
 일간 탭 `kind: 'quest'` 항목에만. 왼쪽 지역 아이콘(`assets/maps/icons/{slug}`, 없으면 생략) + 퀘스트명("[일일 퀘스트] " 접두어 제거, text-shadow `0 1px 3px rgba(0,0,0,.9),0 0 10px rgba(0,0,0,.6)`). 오른쪽 `quest_state` 3단 뱃지:

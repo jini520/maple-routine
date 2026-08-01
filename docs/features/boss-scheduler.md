@@ -20,8 +20,8 @@
 
 ## UI
 
-### 당겨서 새로고침 ([[ADR-072]])
-목록 최상단에서 아래로 당기면 헤더 새로고침 버튼과 같은 재조회(`refresh(trackedOcids ?? [])`)가 돈다. 레시피는 [foundation/design-system.md](../foundation/design-system.md) 의 '당겨서 새로고침' 절.
+### 당겨서 새로고침 ([[ADR-072]], 구현 완료 2026-08-01)
+목록 최상단에서 아래로 당기면 헤더 새로고침 버튼과 같은 재조회가 돈다. 레시피는 [foundation/design-system.md](../foundation/design-system.md) 의 '당겨서 새로고침' 절. 이 화면의 활성 조건은 `!isEmpty`(추적 캐릭터 있음) 하나다. 이 store의 `refresh` 는 `(ocids, onProgress?)` 지만 제스처는 세 화면 공통으로 **1인자**(`refresh(trackedOcids ?? [])`)로만 호출한다([[ADR-072]] 결정 3).
 
 ### 보스 카드 ([[ADR-018]])
 보스별 독립 카드 + 일러스트 bleed. 목록 감싸는 상위 카드 없음(`space-y-2` 나열). **카드 배경·보더·보스명 텍스트는 페이지 표면이 아니라 일러스트 위 배색을 따른다** — bleed·페이드·text-shadow가 어두운 배경 전제라 라이트 테마에서 페이지 토큰(`bg-surface` 등)을 쓰면 대비가 깨짐. `media-*` 토큰 + `.media-scope`([[ADR-064]] 결정 5, [theme.md](./theme.md))를 쓴다 — 카드 루트에 스코프를 걸면 안쪽은 앱 전역과 같은 레시피를 쓰면서 자동으로 어두운 기준을 따른다.
