@@ -13,7 +13,10 @@
     {
       "step": 1,
       "name": "indicator-ring",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-01T16:44:04+0900",
+      "summary": "PullToRefreshIndicator를 ADR-074 마크로 교체 — MESSAGE 상수·<span>·gap-2·role=\"status\"·aria-live 제거하고 루트에 aria-hidden=\"true\"(문구가 없으면 빈 라이브 리전이고 재조회는 헤더 '조회 중...'이 알린다). 당김 구간은 채움 잎 회전(rotate progress×180deg, opacity 0.3+0.7×progress, h-5 w-5)을 외곽선 링 드로잉으로 교체 — fill=\"none\" stroke=\"currentColor\" strokeWidth 9 strokeLinecap=\"round\" pathLength 300 strokeDasharray \"300 300\" strokeDashoffset = 300 × (1 − resolvePullProgress(distance)), 애니메이션 클래스·회전·불투명도 변화 없음. 재조회 구간은 MapleSweepSpinner(24px) import를 지우고 <MapleSpinner size={28} className=\"text-primary-ink\" />. 크기는 상수 MARK_SIZE_PX=28로 두 구간 공유, 당김 svg도 MapleSpinner와 같은 width={28} height={28×(130/127)} 속성 방식(정규화 상수 RING_PATH_LENGTH=300). data-testid(pull-to-refresh-indicator·pull-to-refresh-leaf)·props·높이 함수·루트 클래스는 무변경. 테스트: 문구 3건 단언을 부재 단언(+textContent 빈 문자열)으로 대체하고 aria-hidden/role 부재·fill none·stroke currentColor·dashoffset 300→150→0·클램프·애니메이션 클래스 부재·maple-spinner 존재/maple-sweep-spinner 부재·두 구간 마크 크기 동일을 추가해 14건 유지. 화면 테스트 3곳은 문구 단언 한 줄씩만 getByTestId('pull-to-refresh-indicator')로 교체(화면 구현·훅·lib 무변경). 변이 검증: strokeDashoffset을 상수 0으로 바꾸면 진행률 테스트가 실패함을 확인 후 복구. build·test(1991)·lint 통과.",
+      "completed_at": "2026-08-01T16:48:20+0900"
     },
     {
       "step": 2,

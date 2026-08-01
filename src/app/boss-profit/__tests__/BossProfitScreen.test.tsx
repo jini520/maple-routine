@@ -2309,7 +2309,7 @@ describe('당겨서 새로고침 (ADR-072)', () => {
     fireEvent(document, touchEvent('touchmove', 40))
 
     const indicator = screen.getByTestId('pull-to-refresh-indicator')
-    expect(screen.getByText('당겨서 새로고침')).toBeInTheDocument()
+    expect(screen.getByTestId('pull-to-refresh-indicator')).toBeInTheDocument()
     // 이 화면에는 경계 페이드 오버레이가 없으므로(ADR-047 결정 6) 인디케이터가 곧 마지막 자식이다.
     expect(indicator.parentElement).toHaveClass('sticky')
     expect(indicator.parentElement?.lastElementChild).toBe(indicator)
