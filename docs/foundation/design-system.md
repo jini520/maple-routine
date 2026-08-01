@@ -249,6 +249,8 @@ style: maskImage/WebkitMaskImage: linear-gradient(to bottom, black, transparent)
       PULL_MAX_PX = 80        임계값을 넘겨 더 당겨도 여기서 멈춘다
 
 문서 스크롤 기준: window.scrollY <= 0 (overflow 컨테이너가 없다 — 위 "스크롤 영역" 참고)
+제스처 무시: 스크롤 가능한 조상(overflow-y auto|scroll 이고 scrollHeight > clientHeight) 안에서
+             시작한 터치 — 모달·바텀시트 내부 스크롤을 페이지 당김이 가로채지 않게 한다([[ADR-072]] 결정 14)
 러버밴드 억제: index.css 의 html, body 에 overscroll-behavior-y: none
 ```
 - **`absolute` 인 것이 핵심이다** — 흐름 자식으로 두고 높이를 키우면 터치 프레임마다 목록 전체가 리플로우되고, 보스 수익 화면은 sticky 헤더 높이를 `ResizeObserver` 로 실측해 중첩 sticky 오프셋에 쓰므로([[ADR-047]] 결정 3) 당길 때마다 펼친 카드 헤더가 따라 움직인다.
