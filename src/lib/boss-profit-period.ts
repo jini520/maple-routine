@@ -100,6 +100,35 @@ export function isLatestPeriod(cycle: BossCycle, periodKey: string, now: Date): 
   return periodKey >= currentPeriodKey
 }
 
+/**
+ * 이 기간이 이미 지난 기간인데도 **그 안에 아직 진행 중인 주가 들어 있는지** 확인한다([[ADR-076]]).
+ *
+ * 월간 탭에서 한 주가 달 경계를 걸칠 때만 참이다 — 2026년 7월의 마지막 리셋은 7월 30일(목)이라
+ * 그 주(7/30~8/5)는 "7월 5주차"이면서 8월 5일까지 이어진다. 8월 1일 00:00에 7월은 지난 달이
+ * 되지만 그 주는 여전히 진행 중이므로, 7월 화면은 아직 "다 끝난 과거"가 아니다.
+ *
+ * weekly에서는 항상 거짓이다: 지난 주는 언제나 완전히 닫혀 있고, 진행 중인 주는 그 자체가
+ * 최신 기간이라 isLatestPeriod가 이미 참이다.
+ */
+export function containsInProgressWeek(cycle: BossCycle, periodKey: string, now: Date): boolean {
+  if (cycle !== 'monthly' || isLatestPeriod('monthly', periodKey, now)) {
+    return false
+  }
+  return getWeeklyPeriodKeysInMonth(periodKey).includes(getCurrentBossProfitPeriod('weekly', now).periodKey)
+}
+
+/**
+ * 이 기간을 화면에서 **지금 새로고침(실시간 재조회)하는 것이 의미가 있는지**([[ADR-076]]) —
+ * 헤더 동기화 상태 영역 노출과 당겨서 새로고침 활성 조건이 **이 한 플래그를 공유한다**([[ADR-072]]
+ * 결정 9). 갈라 두면 "버튼은 없는데 당기면 도는" 상태가 생긴다.
+ *
+ * 기간 네비게이션 게이트(다음 기간 비활성)는 여전히 isLatestPeriod다 — "이 기간이 최신인가"와
+ * "지금 재조회하면 숫자가 달라질 수 있는가"는 다른 질문이다.
+ */
+export function isPeriodRefreshable(cycle: BossCycle, periodKey: string, now: Date): boolean {
+  return isLatestPeriod(cycle, periodKey, now) || containsInProgressWeek(cycle, periodKey, now)
+}
+
 export interface BossProfitPeriodLabel {
   primary: string // "이번 주" | "지난 주" | "이번 달" | "지난 달" | "{M}월 {N}주차" | "{YYYY}년 {M}월"
   secondary: string // weekly: "{M}월 {D}일 ~ {M}월 {D}일" (그 주의 시작~끝 날짜), monthly: "{YYYY}년 {M}월" — primary와 무관하게 항상 정확한 날짜를 담는다

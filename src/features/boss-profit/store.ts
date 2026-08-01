@@ -4,6 +4,7 @@ import { DEFAULT_MAX_PARTY_SIZE, findPriceEntry } from '../../lib/boss-crystal-p
 import { getBossReferenceOrder, matchBossContent, selectBossProfitBosses, type MatchedBoss } from '../../lib/boss-matching'
 import { mergeManualBossList } from '../../lib/manual-boss-merge'
 import {
+  containsInProgressWeek,
   formatBossProfitPeriodLabel,
   getAdjacentPeriodKey,
   getBackfillQueryDate,
@@ -418,9 +419,17 @@ function withSqliteTimeout<T>(promise: Promise<T>): Promise<T> {
   ])
 }
 
-// tab이 'monthly'일 때 그 달에 포함된 weekly periodKey들을 주차별로 합산한다. 현재 주는
-// liveRows(방금 refresh/캐시가 계산해둔 값)에서 바로 합산하고, 지난 주는 로컬 기록을 조회하며,
-// 아직 시작하지 않은 미래 주는 0/'upcoming'으로 채운다.
+// tab이 'monthly'일 때 그 달에 포함된 weekly periodKey들을 주차별로 합산한다. 지난 주는 로컬
+// 기록을 조회하고, 아직 시작하지 않은 미래 주는 0/'upcoming'으로 채우며, 진행 중인 주는
+// liveRows(방금 refresh/캐시가 계산해둔 값)에서 바로 합산한다 — 단 **liveRows가 있을 때만**이다.
+//
+// ADR-075: liveRows는 "이번 달을 보고 있을 때"만 채워진다(지난 달을 여는 loadPeriod 분기는 []를
+// 넘긴다 — 그 화면의 행은 기록이 원천이므로, ADR-067 결정 4). 평소엔 진행 중인 주가 언제나 이번
+// 달 안에 있어 두 조건이 같은 말이지만, 한 주가 달 경계를 걸치면(7월 5주차 = 7/30~8/5) 8월 1일부터
+// "아직 진행 중인데 그 주가 속한 달은 이미 지난 달"이 되어 갈라진다. 그때는 지난 주와 똑같이
+// 기록에서 합산한다 — 그러지 않으면 DB에 기록이 있는데도 0메소로 굳는다(사용자 보고 2026-08-02).
+// 판정을 liveRows가 비었는지로 대신하지 말 것 — "이 주에 아무것도 안 잡았다"(정상적인 0)와
+// 구분되지 않아 정상적인 0을 기록으로 덮어쓴다.
 async function buildWeeklySubtotalsForMonth(
   ocids: string[],
   monthPeriodKey: string,
@@ -436,9 +445,16 @@ async function buildWeeklySubtotalsForMonth(
 
   const weekKeys = getWeeklyPeriodKeysInMonth(monthPeriodKey)
   const currentWeeklyPeriodKey = getCurrentBossProfitPeriod('weekly', now).periodKey
+  // 진행 중인 주의 금액을 liveRows에서 읽을 수 있는가(= 이번 달을 보고 있는가). ADR-075.
+  const hasLiveSource = monthPeriodKey === getCurrentBossProfitPeriod('monthly', now).periodKey
   const pastWeekKeys = weekKeys.filter((key) => key < currentWeeklyPeriodKey)
-  const pastRecords =
-    pastWeekKeys.length > 0 ? await withSqliteFallback(getBossProfitRecords(ocids, pastWeekKeys), []) : []
+  // 라이브가 없는 화면에서는 진행 중인 주의 기록도 함께 읽는다(ADR-075).
+  const recordWeekKeys =
+    !hasLiveSource && weekKeys.includes(currentWeeklyPeriodKey)
+      ? [...pastWeekKeys, currentWeeklyPeriodKey]
+      : pastWeekKeys
+  const records =
+    recordWeekKeys.length > 0 ? await withSqliteFallback(getBossProfitRecords(ocids, recordWeekKeys), []) : []
 
   // ADR-068 결정 2: 지난 주의 상태를 6상태로 판정하려면 **확인 기록**이 필요하다 — 기록이 없는 주가
   // "조회해서 0건을 확인한 주"인지 "조회한 적 없는 주"인지는 그것만이 갈라준다.
@@ -465,29 +481,38 @@ async function buildWeeklySubtotalsForMonth(
     }
 
     for (const weekKey of weekKeys) {
-      if (weekKey === currentWeeklyPeriodKey) {
-        const totalMeso = sumRowsPayout(
-          liveRows.filter((row) => row.ocid === ocid && row.cycle === 'weekly' && row.periodKey === weekKey),
-        )
-        subtotals.push({ ocid, characterName, imageUrl, periodKey: weekKey, totalMeso, state: 'inProgress' })
-      } else if (weekKey > currentWeeklyPeriodKey) {
+      if (weekKey > currentWeeklyPeriodKey) {
         subtotals.push({ ocid, characterName, imageUrl, periodKey: weekKey, totalMeso: 0, state: 'upcoming' })
-      } else {
-        const matchingRecords = pastRecords.filter(
-          (record) => record.ocid === ocid && record.cycle === 'weekly' && record.periodKey === weekKey,
-        )
-        // 판정을 화면·백필과 공유하는 한 함수에 맡긴다([[ADR-067]] 결정 2) — 전에는 여기서
-        // "기록 없음 + 조회 가능"을 confirmed로 떨어뜨려 **조회한 적 없는 주를 0메소로 위장**했다.
-        const state = resolvePeriodDataState({
-          isCurrentPeriod: false,
-          hasRecords: matchingRecords.length > 0,
-          isChecked: checkedKeys.has(`${ocid}|${weekKey}`),
-          isQueryable: isPeriodQueryable('weekly', weekKey, now),
-          lastOutcome: outcomes?.get(`${ocid}|weekly|${weekKey}`) ?? null,
-        })
-        const totalMeso = matchingRecords.reduce((sum, record) => sum + record.payoutMeso, 0)
-        subtotals.push({ ocid, characterName, imageUrl, periodKey: weekKey, totalMeso, state })
+        continue
       }
+
+      const matchingRecords = records.filter(
+        (record) => record.ocid === ocid && record.cycle === 'weekly' && record.periodKey === weekKey,
+      )
+      const recordedMeso = matchingRecords.reduce((sum, record) => sum + record.payoutMeso, 0)
+
+      if (weekKey === currentWeeklyPeriodKey) {
+        // 진행 중인 주. 라이브 원천이 있으면 그쪽이 최신이고(자동 기록이 건너뛰어진 처치까지
+        // 담는다), 없으면 이미 쌓인 기록에서 읽는다(ADR-075 — 달 경계를 걸친 주).
+        const totalMeso = hasLiveSource
+          ? sumRowsPayout(
+              liveRows.filter((row) => row.ocid === ocid && row.cycle === 'weekly' && row.periodKey === weekKey),
+            )
+          : recordedMeso
+        subtotals.push({ ocid, characterName, imageUrl, periodKey: weekKey, totalMeso, state: 'inProgress' })
+        continue
+      }
+
+      // 판정을 화면·백필과 공유하는 한 함수에 맡긴다([[ADR-067]] 결정 2) — 전에는 여기서
+      // "기록 없음 + 조회 가능"을 confirmed로 떨어뜨려 **조회한 적 없는 주를 0메소로 위장**했다.
+      const state = resolvePeriodDataState({
+        isCurrentPeriod: false,
+        hasRecords: matchingRecords.length > 0,
+        isChecked: checkedKeys.has(`${ocid}|${weekKey}`),
+        isQueryable: isPeriodQueryable('weekly', weekKey, now),
+        lastOutcome: outcomes?.get(`${ocid}|weekly|${weekKey}`) ?? null,
+      })
+      subtotals.push({ ocid, characterName, imageUrl, periodKey: weekKey, totalMeso: recordedMeso, state })
     }
   }
 
@@ -973,6 +998,12 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     const now = new Date()
     const currentPeriodKey = getCurrentBossProfitPeriod(tab, now).periodKey
 
+    // ADR-076: 보고 있는 기간이 "진행 중인 주를 품은 지난 달"(7월 5주차 = 7/30~8/5)이면 그 화면에서
+    // 새로고침할 수 있고, 그때는 **보던 기간을 유지**한다 — 동기화·자동 기록·스냅샷 갱신은 그대로
+    // 하고(그것이 진행 중인 주의 기록을 만드는 유일한 경로다) 화면 반영만 loadPeriod에 넘긴다.
+    const viewedPeriodKey = get().periodKey
+    const refreshInPlace = containsInProgressWeek(tab, viewedPeriodKey, now)
+
     if (ocids.length === 0) {
       latestSyncSnapshot = { ocids: [], rows: [], characterProfiles: new Map() }
       if (myGeneration !== requestGeneration) return
@@ -1078,35 +1109,44 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     )
     latestSyncSnapshot = { ocids: [...ocids], rows: cachedMergedRows, characterProfiles: cachedCharacterProfiles }
 
-    // monthly 탭의 주차별 합계도 캐시 단계에서 미리 채운다 — 지난 주차 합계는 로컬 기록
-    // (getBossProfitRecords) 조회만으로 구해지는 값이라 API 재검증을 기다릴 이유가 없다.
-    // 이걸 생략하면 매번 화면 진입 시 이미 확정된 지난 주차 합계까지 잠깐 사라졌다가
-    // syncSchedules 완료 후에야 다시 채워지는 것처럼 보인다.
-    const cachedWeeklySubtotals =
-      tab === 'monthly'
-        ? await buildWeeklySubtotalsForMonth(sortedOcids, currentPeriodKey, cachedMergedRows, cachedCharacterProfiles, now)
-        : []
+    // 제자리 새로고침(ADR-076 결정 2)은 캐시 우선 표시의 **화면 반영만** 건너뛴다 — 이 단계가
+    // 그리는 것은 현재 기간의 캐시 행이라, 그대로 두면 7월 화면에 8월 데이터가 한 프레임 스친다.
+    // 화면은 이미 그 기간을 그리고 있으므로 새로 그릴 것도 없다. 바로 위의 latestSyncSnapshot
+    // 갱신은 그대로 한다(동기화가 실패해도 현재 기간으로 돌아갔을 때 캐시 우선 표시가 유지돼야 한다).
+    if (refreshInPlace) {
+      if (myGeneration !== requestGeneration) return
+      set({ status: 'loading', error: null, staleCharacterNames: [], characterIssues: {} })
+    } else {
+      // monthly 탭의 주차별 합계도 캐시 단계에서 미리 채운다 — 지난 주차 합계는 로컬 기록
+      // (getBossProfitRecords) 조회만으로 구해지는 값이라 API 재검증을 기다릴 이유가 없다.
+      // 이걸 생략하면 매번 화면 진입 시 이미 확정된 지난 주차 합계까지 잠깐 사라졌다가
+      // syncSchedules 완료 후에야 다시 채워지는 것처럼 보인다.
+      const cachedWeeklySubtotals =
+        tab === 'monthly'
+          ? await buildWeeklySubtotalsForMonth(sortedOcids, currentPeriodKey, cachedMergedRows, cachedCharacterProfiles, now)
+          : []
 
-    const cachedDropsByRowKey = await loadDropsByRowKey(ocids, cachedMergedRows, now)
+      const cachedDropsByRowKey = await loadDropsByRowKey(ocids, cachedMergedRows, now)
 
-    // 이 호출보다 나중에 시작된 refresh/setTab/goToXPeriod가 이미 있다면(연타 등) 이 시점의
-    // 캐시 우선 표시조차 화면에 반영하지 않는다 — 더 최신 액션이 이미 진행 중이므로 그 결과가
-    // 우선한다.
-    if (myGeneration !== requestGeneration) return
+      // 이 호출보다 나중에 시작된 refresh/setTab/goToXPeriod가 이미 있다면(연타 등) 이 시점의
+      // 캐시 우선 표시조차 화면에 반영하지 않는다 — 더 최신 액션이 이미 진행 중이므로 그 결과가
+      // 우선한다.
+      if (myGeneration !== requestGeneration) return
 
-    set({
-      status: 'loading',
-      periodKey: currentPeriodKey,
-      rows: filterRowsForTab(cachedMergedRows, tab, currentPeriodKey),
-      dropsByRowKey: cachedDropsByRowKey,
-      weeklySubtotals: cachedWeeklySubtotals,
-      isPeriodLoading: false,
-      periodState: cachedMergedRows.length > 0 ? 'recorded' : 'confirmedEmpty',
-      canGoPreviousPeriod,
-      error: null,
-      staleCharacterNames: [],
-      characterIssues: {},
-    })
+      set({
+        status: 'loading',
+        periodKey: currentPeriodKey,
+        rows: filterRowsForTab(cachedMergedRows, tab, currentPeriodKey),
+        dropsByRowKey: cachedDropsByRowKey,
+        weeklySubtotals: cachedWeeklySubtotals,
+        isPeriodLoading: false,
+        periodState: cachedMergedRows.length > 0 ? 'recorded' : 'confirmedEmpty',
+        canGoPreviousPeriod,
+        error: null,
+        staleCharacterNames: [],
+        characterIssues: {},
+      })
+    }
 
     let results: Awaited<ReturnType<typeof syncSchedules>>
     try {
@@ -1252,9 +1292,21 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     // 갱신해야 한다. 그 사이 다른 기간으로 이동해(세대가 바뀌어) 아래 최종 set()이 건너뛰어지더라도,
     // latestSyncSnapshot(모듈 스코프)은 이미 신선한 데이터로 갱신되므로 현재 기간으로 돌아오면 그
     // 데이터가 보인다. 이때 lastSyncedAt만 함께 갱신되지 않으면 "신선한 데이터를 보여주면서도
-    // 동기화 기록 없음"이라고 표시되는 불일치가 생긴다(사용자 보고). lastSyncedAt은 현재 기간에서만
-    // 노출되므로(#30) 과거 기간을 보는 동안 이 set이 일어나도 화면에는 영향이 없다.
+    // 동기화 기록 없음"이라고 표시되는 불일치가 생긴다(사용자 보고). lastSyncedAt은 새로고침이
+    // 가능한 기간에서만 노출되므로(#30, ADR-076) 완전히 닫힌 과거 기간을 보는 동안 이 set이
+    // 일어나도 화면에는 영향이 없다.
     set({ lastSyncedAt: new Date().toISOString() })
+
+    // ADR-076 결정 2: 동기화·자동 기록은 위에서 다 끝났다. 보던 기간(지난 달)의 화면 반영은
+    // loadPeriod에 넘긴다 — 그 함수가 이미 "과거 기간은 기록이 원천"을 알고 있어(ADR-067 결정 4)
+    // 새 렌더 경로를 만들 이유가 없다. status/rows/weeklySubtotals/periodState/canGoPreviousPeriod는
+    // 전부 loadPeriod가 정한다.
+    if (refreshInPlace) {
+      if (myGeneration !== requestGeneration) return
+      set({ staleCharacterNames, characterIssues })
+      await loadPeriod(set, tab, viewedPeriodKey, ocids, now, myGeneration)
+      return
+    }
 
     const weeklySubtotals =
       tab === 'monthly'

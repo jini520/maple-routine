@@ -683,6 +683,52 @@ describe('BossProfitScreen', () => {
     expect(screen.queryByText('3분 전')).not.toBeInTheDocument() // 동기화 시각 텍스트도 숨김
   })
 
+  // ADR-076: 지난 달인데 그 달에서 시작한 주가 아직 진행 중이면(7월 5주차 = 7/30~8/5) 그 화면의
+  // 값은 지금도 늘어난다 — 새로고침 게이트가 isLatestPeriod가 아니라 isPeriodRefreshable인 이유다.
+  it('진행 중인 주를 품은 지난 달에서는 새로고침 버튼과 "조회 중..." 을 노출한다(ADR-076)', () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-08-02T12:00:00+09:00')) // 이번 주 2026-07-30 → 7월 5주차 진행 중
+
+    try {
+      mockStore({
+        status: 'loading',
+        tab: 'monthly',
+        trackedOcids: ['ocid-1'],
+        rows: [row({ boss: '검은마법사', difficulty: '익스트림', cycle: 'monthly', periodKey: '2026-07' })],
+        periodKey: '2026-07', // 지난 달이지만 5주차가 진행 중
+      })
+
+      renderBossProfitScreen()
+
+      expect(screen.getByRole('button', { name: '새로고침' })).toBeInTheDocument()
+      expect(screen.getByText('조회 중...')).toBeInTheDocument()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('그 주가 끝나면 같은 지난 달에서 새로고침 버튼이 다시 사라진다(ADR-076)', () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-08-10T12:00:00+09:00')) // 이번 주 2026-08-06 → 7월은 완전히 닫혔다
+
+    try {
+      mockStore({
+        status: 'loading',
+        tab: 'monthly',
+        trackedOcids: ['ocid-1'],
+        rows: [row({ boss: '검은마법사', difficulty: '익스트림', cycle: 'monthly', periodKey: '2026-07' })],
+        periodKey: '2026-07',
+      })
+
+      renderBossProfitScreen()
+
+      expect(screen.queryByRole('button', { name: '새로고침' })).not.toBeInTheDocument()
+      expect(screen.queryByText('조회 중...')).not.toBeInTheDocument()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('과거 기간에서는 status가 loading이어도 "조회 중..." 텍스트를 노출하지 않는다(#30)', () => {
     mockStore({
       status: 'loading',

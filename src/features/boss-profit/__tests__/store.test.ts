@@ -1912,6 +1912,134 @@ describe('useBossProfitStore', () => {
       }
     })
 
+    it('월간 탭 주차별 합계: 이번 달을 보는 동안 진행 중 주차는 기록이 아니라 라이브 스냅샷에서 합산한다(ADR-075 회귀 가드)', async () => {
+      // 라이브 원천이 있을 때까지 기록으로 갈아타면, 자동 기록이 건너뛰어진 처치(기록 조회 실패
+      // ADR-050 · 동기화 실패 캐릭터 ADR-067 결정 7)가 이번 주 합계에서 사라진다.
+      vi.useFakeTimers({ toFake: ['Date'] })
+      vi.setSystemTime(new Date('2026-07-22T12:00:00+09:00')) // 이번 주 2026-07-16, 이번 달 2026-07
+
+      try {
+        syncSchedulesMock.mockResolvedValue([syncResult()]) // 자쿰 카오스 완료
+        getBossProfitRecordsMock.mockResolvedValue([]) // 기록은 아직 없다
+        await useBossProfitStore.getState().refresh(['ocid-1'])
+        await useBossProfitStore.getState().setTab('monthly')
+
+        const subtotal = useBossProfitStore
+          .getState()
+          .weeklySubtotals.find((s) => s.periodKey === '2026-07-16')
+        expect(subtotal?.state).toBe('inProgress')
+        expect(subtotal?.totalMeso).toBe(8_080_000) // 자쿰 카오스 정가 / 파티원 1
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    it('월간 탭 주차별 합계: 달 경계를 걸친 진행 중 주차(7/30~8/5)는 그 달이 지난 달이 된 뒤에도 기록 합계가 반영된다', async () => {
+      // 2026-08-02(KST): 이번 주는 2026-07-30(목) 시작이라 "7월 5주차"이면서 8/5까지 이어진다.
+      // 달이 바뀌어 7월이 지난 달이 되면 liveRows(라이브 스냅샷)는 8월 화면의 것이라 이 주를
+      // 담지 않는다 — 그때 진행 중 주차 합계를 라이브에서만 읽으면 0메소로 굳는다.
+      vi.useFakeTimers({ toFake: ['Date'] })
+      vi.setSystemTime(new Date('2026-08-02T12:00:00+09:00'))
+
+      try {
+        syncSchedulesMock.mockResolvedValue([syncResult()])
+        await useBossProfitStore.getState().refresh(['ocid-1'])
+        await useBossProfitStore.getState().setTab('monthly')
+        expect(useBossProfitStore.getState().periodKey).toBe('2026-08')
+
+        const inProgressRecord: BossProfitRecord = {
+          ocid: 'ocid-1',
+          boss: '스우',
+          difficulty: '노멀',
+          cycle: 'weekly',
+          periodKey: '2026-07-30',
+          partySize: 2,
+          priceMeso: 4_000_000,
+          payoutMeso: 2_000_000,
+          recordedAt: '2026-08-01T00:00:00.000Z',
+          world: null,
+        }
+        getBossProfitRecordsMock.mockResolvedValue([inProgressRecord])
+        fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState())
+
+        await useBossProfitStore.getState().goToPreviousPeriod()
+        expect(useBossProfitStore.getState().periodKey).toBe('2026-07')
+
+        const subtotal = useBossProfitStore
+          .getState()
+          .weeklySubtotals.find((s) => s.periodKey === '2026-07-30')
+        expect(subtotal?.state).toBe('inProgress')
+        expect(subtotal?.totalMeso).toBe(2_000_000)
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    it('refresh: 진행 중인 주를 품은 지난 달을 보고 있으면 그 기간을 유지한 채 동기화·자동 기록만 한다(ADR-076)', async () => {
+      vi.useFakeTimers({ toFake: ['Date'] })
+      vi.setSystemTime(new Date('2026-08-02T12:00:00+09:00')) // 이번 주 2026-07-30, 이번 달 2026-08
+
+      try {
+        syncSchedulesMock.mockResolvedValue([syncResult()])
+        await useBossProfitStore.getState().refresh(['ocid-1'])
+        await useBossProfitStore.getState().setTab('monthly')
+        fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState())
+        await useBossProfitStore.getState().goToPreviousPeriod()
+        expect(useBossProfitStore.getState().periodKey).toBe('2026-07')
+
+        // 7월 화면을 보는 동안 5주차(7/30~8/5)에 자쿰을 잡았다 — 새 처치는 동기화가 알려주고
+        // 자동 기록이 DB에 남기며, 화면은 그 기록을 읽어야 한다.
+        getBossProfitRecordsMock.mockResolvedValue([
+          {
+            ocid: 'ocid-1',
+            boss: '자쿰',
+            difficulty: '카오스',
+            cycle: 'weekly',
+            periodKey: '2026-07-30',
+            partySize: 1,
+            priceMeso: 8_080_000,
+            payoutMeso: 8_080_000,
+            recordedAt: '2026-08-02T00:00:00.000Z',
+            world: null,
+          } satisfies BossProfitRecord,
+        ])
+
+        await useBossProfitStore.getState().refresh(['ocid-1'])
+
+        // 보고 있던 기간이 현재 기간(2026-08)으로 튕겨 나가지 않는다.
+        expect(useBossProfitStore.getState().periodKey).toBe('2026-07')
+        expect(useBossProfitStore.getState().status).toBe('loaded')
+        expect(syncSchedulesMock).toHaveBeenCalled() // 실시간 동기화는 그대로 돈다
+        const subtotal = useBossProfitStore
+          .getState()
+          .weeklySubtotals.find((s) => s.periodKey === '2026-07-30')
+        expect(subtotal?.state).toBe('inProgress')
+        expect(subtotal?.totalMeso).toBe(8_080_000)
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    it('refresh: 완전히 닫힌 과거 기간을 보고 있으면 종전대로 현재 기간으로 되돌린다(ADR-076 범위 밖)', async () => {
+      vi.useFakeTimers({ toFake: ['Date'] })
+      vi.setSystemTime(new Date('2026-07-22T12:00:00+09:00')) // 이번 주 2026-07-16
+
+      try {
+        syncSchedulesMock.mockResolvedValue([syncResult()])
+        await useBossProfitStore.getState().refresh(['ocid-1'])
+        const currentPeriodKey = useBossProfitStore.getState().periodKey
+        isPeriodCheckedMock.mockResolvedValue(true)
+        await useBossProfitStore.getState().goToPreviousPeriod()
+        expect(useBossProfitStore.getState().periodKey).not.toBe(currentPeriodKey)
+
+        await useBossProfitStore.getState().refresh(['ocid-1'])
+
+        expect(useBossProfitStore.getState().periodKey).toBe(currentPeriodKey)
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
     it('먼저 시작된 느린 백필이 나중에 끝나도, 그 사이 시작된 더 최신 네비게이션 결과를 덮어쓰지 않는다', async () => {
       syncSchedulesMock.mockResolvedValue([syncResult()]) // 자쿰 카오스, 이번 주
       await useBossProfitStore.getState().refresh(['ocid-1'])
