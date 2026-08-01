@@ -80,7 +80,7 @@
       "status": "completed",
       "started_at": "2026-08-01T14:25:52+0900",
       "summary": "ADR-072 결정 14 구현 — src/lib/use-pull-to-refresh.ts 한 파일 + 그 테스트만 수정(git status에 화면·컴포넌트·store 0건). 훅 파일 모듈 스코프에 DOM 헬퍼 startedInScrollableLayer(target: EventTarget | null): boolean 신설 — pull-to-refresh.ts 는 순수 모듈로 남긴다(그 테스트에 jsdom 지시 주석 없음, DOM 참조 grep 무결과). 판정 규칙: event.target 이 Element 일 때만 시작해 parentElement 로 올라가며 getComputedStyle(node).overflowY 가 auto|scroll 이고 scrollHeight > clientHeight 인 조상이 하나라도 있으면 추적 미시작, 탐색은 document.body·documentElement 에 닿으면 중단(스크롤 루트는 배제 대상 아님), scrollTop 은 보지 않음. 호출부는 handleTouchStart 의 touches.length 검사 다음·window.scrollY 검사 앞(결정 2는 무수정 — 출처 검사를 앞에 하나 더 놓는다)이라 제스처당 1회만 레이아웃을 읽는다(touchmove 조상 순회 없음). 테스트는 기존 12건 무수정 유지 + describe('스크롤 가능한 조상 안에서 시작한 터치 (ADR-072 결정 14)') 5건 선작성 — dispatchFrom(요소, 합성 이벤트) 헬퍼와 appendDiv({overflowY, scrollHeight, clientHeight}) (jsdom은 레이아웃을 계산하지 않아 두 값을 defineProperty 로 심음) 추가, afterEach 에 심은 요소·body 스타일·body scrollHeight/clientHeight 정리 추가. 항목: 스크롤 가능한 오버레이 안(body.overflow='hidden', scrollY=0, 스크롤러의 자식에서 디스패치)에서 시작한 당김은 onRefresh 미호출 / 같은 상황에서 touchmove.defaultPrevented === false(내부 스크롤 생존) / scrollHeight === clientHeight 면 정상 동작(과잉 차단 방지) / 평범한 페이지 요소 정상 동작 / document.body 자체 정상 동작. 변이 검증: 가드 호출을 `if (false && …)` 로 무력화하니 새 2건(onRefresh 1회 호출 · defaultPrevented true — 계측 결과와 동일)이 실패하고 나머지 15건은 통과, 되돌린 뒤 17건 전량 통과. AC: npm run build · npm test(135파일 1969건, step 8 대비 +5) · npm run lint 전량 통과, 세 화면 기존 제스처 테스트 317건도 그대로 통과(가드가 과하지 않음).",
-      "completed_at": "2026-08-01T14:29:00+0900"
+      "completed_at": "2026-08-01T14:29:48+0900"
     }
   ],
   "created_at": "2026-08-01T13:46:42+0900"
