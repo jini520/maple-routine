@@ -235,7 +235,8 @@ style: maskImage/WebkitMaskImage: linear-gradient(to bottom, black, transparent)
 배너 루트: pointer-events-none absolute inset-x-0 top-full z-[1] overflow-hidden border-b border-border bg-bg
            style={{ height: <픽셀> }}   ← 목록을 밀어내지 않는다(높이만 변한다)
 배너 내용: flex h-14 items-center justify-center gap-2   ← h-14(56px) 고정, 위에서부터 드러난다
-  당기는 중/임계 초과: 정적 단풍잎(MAPLE_LEAF_PATH) h-5 w-5 fill-current text-primary-ink
+  당기는 중/임계 초과: 정적 단풍잎 <svg viewBox="0 0 127 130" class="h-5 w-5 text-primary-ink">
+                      + <path d={MAPLE_LEAF_PATH} fill="currentColor" />   ← 채움은 path 속성(스피너 2종과 동일)
                       회전 = 진행률 × 180deg, 불투명도 = 0.3 + 0.7 × 진행률
   재조회 중:          <MapleSweepSpinner size={24} className="text-primary-ink" />
   문구: text-sm text-text-muted

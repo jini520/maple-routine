@@ -29,7 +29,10 @@
     {
       "step": 3,
       "name": "pull-banner",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-01T14:01:01+0900",
+      "summary": "src/components/PullToRefreshBanner/PullToRefreshBanner.tsx 신설(표시 전용 — 훅 호출·store·features/storage/native 무의존). props { distance: number; phase: PullPhase }, phase==='idle'이면 null 반환. 루트 `pointer-events-none absolute inset-x-0 top-full z-[1] overflow-hidden border-b border-border bg-bg` + style={{ height: resolveBandHeightPx(distance, phase) }} + role=\"status\" aria-live=\"polite\" data-testid=\"pull-to-refresh-banner\"(흐름 밖이라 목록을 밀어내지 않고 높이만 변한다 — step 4~6은 이 요소를 sticky 헤더 블록의 마지막 자식, 경계 페이드가 있으면 그 다음 형제로 꽂는다). 내용 래퍼 `flex h-14 items-center justify-center gap-2`(h-14=56px=PULL_THRESHOLD_PX, 주석으로 명시). pulling·ready는 정적 단풍잎 svg(viewBox 0 0 127 130, `h-5 w-5 text-primary-ink`, path fill=currentColor, data-testid=\"pull-to-refresh-leaf\" aria-hidden, 인라인 transform: rotate(progress×180deg)·opacity 0.3+0.7×progress, 애니메이션 클래스 없음), refreshing은 <MapleSweepSpinner size={24} className=\"text-primary-ink\" />(새 스피너 없음 — ADR-061 결정 1). 문구 `text-sm text-text-muted`: 당겨서 새로고침 / 놓으면 새로고침 / 새로고침하고 있어요(~중... 금지). 새 색·토큰·SVG 자산 없음. 테스트 __tests__/PullToRefreshBanner.test.tsx 12건(jsdom) 선작성 — idle 무렌더·3문구·스피너 유무·refreshing에서 distance=0이어도 높이 56px·당김에 따른 높이 증가·진행률 클램프(회전 ≤180deg)·잎 애니메이션 클래스 부재·루트 절대배치/pointer-events-none·접근성. 문서 수정 1건: design-system.md 레시피의 잎 표기를 `fill-current`(svg 클래스)에서 `path fill=\"currentColor\"`로 정정 — MapleSpinner·MapleSweepSpinner와 같은 관례(렌더 결과는 동일). npm run build · npm test(135파일 1950건) · npm run lint 전량 통과.",
+      "completed_at": "2026-08-01T14:03:30+0900"
     },
     {
       "step": 4,
