@@ -21,7 +21,10 @@
     {
       "step": 2,
       "name": "pull-gesture-hook",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-01T13:54:06+0900",
+      "summary": "src/lib/use-pull-to-refresh.ts 신설 — usePullToRefresh({ enabled, isRefreshing, onRefresh }): { distance, phase }. 계약: enabled=false면 리스너를 아예 붙이지 않고 항상 { distance: 0, phase: 'idle' }(재조회 중이어도 배너 없음) — 화면은 여기에 '추적 캐릭터 있음'(수익은 + isCurrentPeriod)을 넣는다. isRefreshing은 세 화면 공통 status === 'loading'이고, 그 동안에는 새 당김이 시작되지 않으며(ADR-072 결정 12) 배너는 제스처가 트리거한 재조회에서만 refreshing이 된다(결정 11 — didTriggerRefresh 상태, isRefreshing이 false로 돌아오면 렌더 중 조정으로 해제). onRefresh는 ref에 담아 최신 값을 읽으므로 인라인 화살표(`() => refresh(trackedOcids ?? [])`)를 그대로 넘겨도 리스너가 재등록되지 않는다. document에 touchstart/touchmove({ passive: false }, 당기는 동안 preventDefault)/touchend/touchcancel 등록, 추적 시작 조건은 enabled && !isRefreshing && touches.length === 1 && window.scrollY <= 0, 위로 움직이거나 scrollY > 0이 되면 추적 중단, cleanup에서 전 리스너 해제 + 당김 리셋. 임계값·감쇠는 step 1의 pull-to-refresh.ts 순수 함수만 사용. 테스트 src/lib/__tests__/use-pull-to-refresh.test.ts 12건(jsdom, 합성 터치 이벤트) 선작성. src/index.css의 html, body에 overscroll-behavior-y: none 추가(결정 8, contain이 아닌 이유 주석). npm test 134파일 1938건 통과 · build · lint 통과.",
+      "completed_at": "2026-08-01T14:00:30+0900"
     },
     {
       "step": 3,
