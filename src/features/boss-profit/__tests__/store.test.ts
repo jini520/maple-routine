@@ -1547,6 +1547,103 @@ describe('useBossProfitStore', () => {
       expect(state.periodState).toBe('recorded')
     })
 
+    // ADR-078 결정 2: 한 번의 기간 로드에서 캐릭터 프로필 캐시를 캐릭터당 한 번만 읽는다.
+    // 전에는 getSortedCharacterInfo가 읽은 결과를 버리고 buildRowsFromRecords가 다시,
+    // buildWeeklySubtotalsForMonth가 빈 knownProfiles를 받아 또 읽어 3배로 왕복했다.
+    it('goToPreviousPeriod: 캐릭터 프로필 캐시를 캐릭터당 한 번만 읽는다(ADR-078)', async () => {
+      syncSchedulesMock.mockResolvedValue([syncResult()])
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+      const previousPeriodKey = getAdjacentPeriodKey(
+        'weekly',
+        useBossProfitStore.getState().periodKey,
+        'prev',
+      )
+
+      isPeriodCheckedMock.mockResolvedValue(true)
+      getBossProfitRecordsMock.mockResolvedValue([
+        {
+          ocid: 'ocid-1',
+          boss: '자쿰',
+          difficulty: '카오스',
+          cycle: 'weekly',
+          periodKey: previousPeriodKey,
+          partySize: 3,
+          priceMeso: 8_080_000,
+          payoutMeso: 2_693_333,
+          recordedAt: '2026-06-01T00:00:00.000Z',
+          world: null,
+        } satisfies BossProfitRecord,
+      ])
+      getCachedCharacterBasicMock.mockResolvedValue({
+        profile: { name: '낟낟', level: 200, imageUrl: 'x', accessFlag: true },
+        cachedAt: '2026-06-01T00:00:00.000Z',
+      })
+
+      getCachedCharacterBasicMock.mockClear()
+      await useBossProfitStore.getState().goToPreviousPeriod()
+
+      expect(getCachedCharacterBasicMock).toHaveBeenCalledTimes(1)
+      // 조회를 줄여도 화면 값은 그대로다 — 캐시에서 오던 이름·이미지가 계속 채워진다.
+      expect(useBossProfitStore.getState().rows[0].characterName).toBe('낟낟')
+      expect(useBossProfitStore.getState().rows[0].imageUrl).toBe('x')
+    })
+
+    // ADR-078 결정 2 후속: 캐시가 없는 ocid를 결과에서 빼는 규칙을 조회 재사용이 깨뜨리면 안 된다.
+    // getSortedCharacterInfo는 이름을 ''로 채우므로 그대로 넘기면 "캐시 없음"이 빈 이름으로 둔갑한다.
+    it('goToPreviousPeriod: 프로필 캐시가 없는 캐릭터의 기록은 계속 제외된다(ADR-078)', async () => {
+      syncSchedulesMock.mockResolvedValue([syncResult()])
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+      const previousPeriodKey = getAdjacentPeriodKey(
+        'weekly',
+        useBossProfitStore.getState().periodKey,
+        'prev',
+      )
+
+      isPeriodCheckedMock.mockResolvedValue(true)
+      getBossProfitRecordsMock.mockResolvedValue([
+        {
+          ocid: 'ocid-1',
+          boss: '자쿰',
+          difficulty: '카오스',
+          cycle: 'weekly',
+          periodKey: previousPeriodKey,
+          partySize: 3,
+          priceMeso: 8_080_000,
+          payoutMeso: 2_693_333,
+          recordedAt: '2026-06-01T00:00:00.000Z',
+          world: null,
+        } satisfies BossProfitRecord,
+      ])
+      getCachedCharacterBasicMock.mockResolvedValue(null)
+
+      await useBossProfitStore.getState().goToPreviousPeriod()
+
+      expect(useBossProfitStore.getState().rows).toEqual([])
+    })
+
+    // ADR-078 결정 1: target별 isPeriodChecked는 서로 독립이라 병렬로 조회한다. 직렬 await 로
+    // 되돌아가면 월간 탭에서 `캐릭터 수 × (1 + 주차 수)` 만큼 네이티브 왕복이 줄줄이 늘어선다.
+    it('goToPreviousPeriod: target별 isPeriodChecked를 병렬로 조회한다(ADR-078)', async () => {
+      syncSchedulesMock.mockResolvedValue([syncResult(), syncResult({ ocid: 'ocid-2' })])
+      await useBossProfitStore.getState().refresh(['ocid-1', 'ocid-2'])
+
+      let inFlight = 0
+      let maxInFlight = 0
+      isPeriodCheckedMock.mockImplementation(async () => {
+        inFlight += 1
+        maxInFlight = Math.max(maxInFlight, inFlight)
+        await Promise.resolve()
+        inFlight -= 1
+        return true
+      })
+      getBossProfitRecordsMock.mockResolvedValue([])
+
+      await useBossProfitStore.getState().goToPreviousPeriod()
+
+      // 직렬이면 항상 1이다.
+      expect(maxInFlight).toBeGreaterThan(1)
+    })
+
     // 2026-07-17 실기기 재현: SQLite 커넥션이 stale하면 isPeriodChecked가 응답 없이 멈추고,
     // periodKey 라벨만 "지난 주"로 바뀐 채 rows는 "이번 주" 값 그대로 남는(에러도 로딩 표시도 없는)
     // 증상으로 나타났다. loadPeriod도 refresh()와 동일하게 타임아웃 후 "체크 안 됨"으로 간주해

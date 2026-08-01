@@ -153,6 +153,25 @@ interface SortedCharacterInfo {
   ocid: string
   imageUrl: string | null // character-basic-cache의 character_image. 아바타 렌더링용(ADR-023 "미확정" 해소)
   world: string | null // 같은 캐시 프로필의 world_name. 월드별 결정석 한도 집계용([[ADR-054]] 결정 5)
+  // ADR-078 결정 2: 이 조회가 이미 읽은 이름을 버리지 않고 흘려보내, 뒤따르는 함수들이 같은 캐시를
+  // 다시 읽지 않게 한다. **캐시가 없으면 null**이다 — 정렬용으로 쓰는 ''(빈 이름)를 그대로 넘기면
+  // "캐시 없음"이 "이름이 빈 캐릭터"로 둔갑해 buildRowsFromRecords의 제외 규칙이 깨진다.
+  characterName: string | null
+}
+
+// ADR-078 결정 2: 한 번의 기간 로드가 공유하는 프로필 스냅샷. 캐시가 없는 ocid는 **넣지 않는다**
+// (넣으면 이름 없는 행이 화면에 샌다).
+function toProfileSnapshot(infos: SortedCharacterInfo[]): Map<string, CharacterProfileInfo> {
+  const profiles = new Map<string, CharacterProfileInfo>()
+  for (const info of infos) {
+    if (info.characterName === null) continue
+    profiles.set(info.ocid, {
+      characterName: info.characterName,
+      imageUrl: info.imageUrl,
+      world: info.world,
+    })
+  }
+  return profiles
 }
 
 // ADR-017 결정 2와 동일한 원칙 — 캐시 단계(trackedOcids 저장 순서)와 동기화 단계(Nexon
@@ -170,7 +189,10 @@ async function getSortedCharacterInfo(ocids: string[]): Promise<SortedCharacterI
       return {
         ocid,
         level: cached?.profile.level ?? null,
+        // 정렬용 이름은 캐시가 없을 때 ''로 떨어뜨린다(compareByName이 문자열을 요구한다). 바깥으로
+        // 내보내는 characterName은 아래에서 null로 갈라 "캐시 없음"을 보존한다(ADR-078 결정 2).
         name: cached?.profile.name ?? '',
+        characterName: cached?.profile.name ?? null,
         imageUrl: cached?.profile.imageUrl ?? null,
         // profile.world는 옵셔널(string | undefined)이라 imageUrl과 같은 규약으로 null 정규화한다 —
         // 화면이 부재를 두 가지 형태로 구분할 이유가 없다.
@@ -187,7 +209,7 @@ async function getSortedCharacterInfo(ocids: string[]): Promise<SortedCharacterI
       if (b.level !== a.level) return b.level - a.level
       return compareByName(a.name, b.name)
     })
-    .map(({ ocid, imageUrl, world }) => ({ ocid, imageUrl, world }))
+    .map(({ ocid, imageUrl, world, characterName }) => ({ ocid, imageUrl, world, characterName }))
 }
 
 // rows(보스 단위, 캐릭터당 여러 개)를 sortedOcids가 정한 캐릭터 순서로 재배열하고, 같은 캐릭터
@@ -526,6 +548,9 @@ async function buildRowsFromRecords(
   cycle: BossCycle,
   periodKey: string,
   now: Date,
+  // ADR-078 결정 2: 호출부가 이미 읽어둔 프로필. 여기 있는 ocid는 캐시를 다시 읽지 않는다.
+  // 없는 ocid는 종전대로 직접 읽는다 — 이 함수가 호출부의 조회 범위에 묶이지 않게 한다.
+  knownProfiles: Map<string, CharacterProfileInfo>,
 ): Promise<BossProfitRow[]> {
   if (ocids.length === 0) {
     return []
@@ -538,7 +563,7 @@ async function buildRowsFromRecords(
     return []
   }
 
-  const profileCache = new Map<string, CharacterProfileInfo | null>()
+  const profileCache = new Map<string, CharacterProfileInfo | null>(knownProfiles)
   const rows: BossProfitRow[] = []
 
   for (const record of records) {
@@ -862,6 +887,9 @@ async function loadPeriod(
   // 같은 정렬 규칙을 적용한다(refresh()와 동일한 이유 — API 응답 순서에 좌우되지 않도록).
   const sortedCharacterInfo = await getSortedCharacterInfo(ocids)
   const sortedOcids = sortedCharacterInfo.map((info) => info.ocid)
+  // ADR-078 결정 2: 위 조회가 이미 캐릭터당 한 번씩 프로필을 읽었다. 그 결과를 아래 두 함수에
+  // 넘겨 같은 캐시를 다시 읽지 않게 한다(캐릭터 6명 기준 18회 → 6회).
+  const profileSnapshot = toProfileSnapshot(sortedCharacterInfo)
 
   if (periodKey === currentPeriodKey) {
     const rows =
@@ -906,19 +934,27 @@ async function loadPeriod(
   // 각 target(캐릭터×기간)의 상태를 모아 이 화면의 상태를 정한다([[ADR-067]] 결정 2).
   // 조회 불가(구간 밖) target은 **호출하지도, checked로 굳히지도 않는다** — 날짜만 보면 언제든
   // 다시 판정할 수 있고, 굳히면 "0건 확정"과 구분이 사라진다(결정 3).
+  // ADR-078 결정 1: target별 조회는 서로 독립이라 병렬로 던진다. 직렬 await 이면 월간 탭에서
+  // `캐릭터 수 × (1 + 그 달의 주차 수)` 만큼 네이티브 왕복이 줄줄이 늘어서고, 그동안 화면은
+  // 중간 상태(옛 기간 행 + 새 기간 라벨)에 머문다. buildWeeklySubtotalsForMonth가 같은 조회를
+  // 이미 Promise.all 로 묶고 있다.
   const targets = buildBackfillTargets(tab, periodKey, ocids, now)
+  const checkedFlags = await Promise.all(
+    targets.map((target) =>
+      withSqliteFallback(isPeriodChecked(target.ocid, target.cycle, target.periodKey), false),
+    ),
+  )
   const checkedByTarget = new Map<BackfillTarget, boolean>()
   const uncheckedTargets: BackfillTarget[] = []
-  for (const target of targets) {
-    const checked = await withSqliteFallback(
-      isPeriodChecked(target.ocid, target.cycle, target.periodKey),
-      false,
-    )
+  // 순회는 targets 순서 그대로다 — 뒤따르는 백필 루프가 순차 실행이라(ADR-067 결정 3, 호출 절약)
+  // 이 순서가 곧 화면이 채워지는 순서다.
+  targets.forEach((target, index) => {
+    const checked = checkedFlags[index]
     checkedByTarget.set(target, checked)
     if (!checked && isPeriodQueryable(target.cycle, target.periodKey, now)) {
       uncheckedTargets.push(target)
     }
-  }
+  })
 
   const outcomeByTarget = new Map<BackfillTarget, PeriodQueryOutcome | null>()
 
@@ -930,9 +966,14 @@ async function loadPeriod(
     }
   }
 
-  const rows = sortRowsByOcidOrder(await buildRowsFromRecords(ocids, tab, periodKey, now), sortedOcids)
+  const rows = sortRowsByOcidOrder(
+    await buildRowsFromRecords(ocids, tab, periodKey, now, profileSnapshot),
+    sortedOcids,
+  )
   const weeklySubtotals =
-    tab === 'monthly' ? await buildWeeklySubtotalsForMonth(sortedOcids, periodKey, [], new Map(), now) : []
+    tab === 'monthly'
+      ? await buildWeeklySubtotalsForMonth(sortedOcids, periodKey, [], profileSnapshot, now)
+      : []
   const canGoPreviousPeriod = await canReachPreviousPeriod(tab, periodKey, ocids, now)
   const dropsByRowKey = await loadDropsByRowKey(ocids, rows, now)
 
