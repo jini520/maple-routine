@@ -14,6 +14,8 @@ import type { DailyQuestRegionCrop } from '../../lib/daily-quest-backgrounds'
 import { EmptyState } from '../../components/EmptyState/EmptyState'
 import { LoadingState } from '../../components/LoadingState/LoadingState'
 import { ProgressModal } from '../../components/ProgressModal/ProgressModal'
+import { PullToRefreshBanner } from '../../components/PullToRefreshBanner/PullToRefreshBanner'
+import { usePullToRefresh } from '../../lib/use-pull-to-refresh'
 import { ListChecks, RefreshCw } from 'lucide-react'
 import { getCharacterPickerRoster, toScheduleSyncError } from '../../features/schedule-sync/schedule-sync'
 import type { ScheduleSyncError } from '../../features/schedule-sync/schedule-sync'
@@ -751,6 +753,15 @@ export function ContentScreen(): React.JSX.Element {
 
   const isEmpty = trackedOcids === null || trackedOcids.length === 0
 
+  // ADR-072: 목록 최상단에서 당기면 헤더 새로고침 버튼과 같은 재조회가 돈다(제스처는 추가 수단이다).
+  // 빈 상태에서는 당길 목록이 없어 끄고(결정 13), 재조회 중에는 새 당김을 시작하지 않는다(결정 12).
+  // 훅 호출은 아래 빈 상태 조기 반환보다 반드시 위여야 한다 — 훅 규칙.
+  const pullToRefresh = usePullToRefresh({
+    enabled: !isEmpty,
+    isRefreshing: status === 'loading',
+    onRefresh: () => refresh(trackedOcids ?? []),
+  })
+
   const effectiveSelectedOcid =
     selectedOcid !== null && characters.some((character) => character.ocid === selectedOcid)
       ? selectedOcid
@@ -1014,6 +1025,10 @@ export function ContentScreen(): React.JSX.Element {
           }}
           aria-hidden="true"
         />
+
+        {/* ADR-072 결정 5: 배너와 위 페이드가 같은 자리(absolute top-full)를 쓰므로, z-index를 새로
+            도입하는 대신 DOM 순서(페이드 "다음" 형제)로 배너가 위에 오게 한다. */}
+        <PullToRefreshBanner distance={pullToRefresh.distance} phase={pullToRefresh.phase} />
       </div>
 
       {characters.length > 0 && selected !== null && (
