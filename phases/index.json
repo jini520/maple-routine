@@ -122,7 +122,8 @@
     },
     {
       "dir": "pull-to-refresh",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-08-01T14:18:28+0900"
     }
   ]
 }
