@@ -7,6 +7,7 @@ import { BossScreen } from '../BossScreen'
 import { useBossSchedulerStore, type BossCharacterView } from '../../../features/boss-scheduler/store'
 import { getCharacterPickerRoster } from '../../../features/schedule-sync/schedule-sync'
 import { NexonAuthError } from '../../../nexon/errors'
+import { PULL_SETTLE_TRANSITION } from '../../../lib/pull-to-refresh'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 import type { CharacterPickerEntry } from '../../../types'
 import type { MatchedBoss } from '../../../lib/boss-matching'
@@ -79,15 +80,20 @@ function pickerEntry(overrides: Partial<CharacterPickerEntry> = {}): CharacterPi
 }
 
 // BossScreen이 "보스 관리" 진입에 라우터 내비게이션을 쓰므로 /boss/manage에 프로브 요소를 둔다.
-function renderBossScreen(initialEntries: string[] = ['/boss']): ReturnType<typeof render> {
-  return render(
+// 트리를 함수로 빼둔 것은 store를 바꿔 rerender하는 테스트(재조회 중 목록 위치)가 같은 트리를 다시 넘겨야 하기 때문.
+function bossScreenTree(initialEntries: string[] = ['/boss']): React.JSX.Element {
+  return (
     <MemoryRouter initialEntries={initialEntries}>
       <Routes>
         <Route path="/boss" element={<BossScreen />} />
         <Route path="/boss/manage" element={<div>보스 관리 페이지 프로브</div>} />
       </Routes>
-    </MemoryRouter>,
+    </MemoryRouter>
   )
+}
+
+function renderBossScreen(initialEntries: string[] = ['/boss']): ReturnType<typeof render> {
+  return render(bossScreenTree(initialEntries))
 }
 
 beforeEach(() => {
@@ -1307,5 +1313,74 @@ describe('당겨서 새로고침 (ADR-072)', () => {
 
     expect(refresh).toHaveBeenCalledTimes(1)
     expect(refresh).toHaveBeenCalledWith(['ocid-1'])
+  })
+})
+
+// ADR-073: 인디케이터가 불투명 배너로 열리는 대신, 헤더는 고정된 채 목록 블록만 손가락을 따라 내려간다.
+describe('당겨서 새로고침 — 목록 이동 (ADR-073)', () => {
+  function mockLoadedStore(overrides: Partial<ReturnType<typeof useBossSchedulerStore>> = {}): void {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [character({ ocid: 'ocid-1' })],
+      ...overrides,
+    })
+  }
+
+  // 결정 3 회귀 방지 — translateY(0px) 조차 containing block·stacking context를 만들어
+  // sticky 후손(ADR-047 중첩 카드 헤더)의 기준을 바꾼다. 당기지 않는 동안 DOM은 이 기능 도입 전과 같아야 한다.
+  it('쉬는 상태에서는 목록 블록에 transform 인라인 스타일이 없다', async () => {
+    mockLoadedStore()
+
+    renderBossScreen()
+    await screen.findByRole('combobox')
+
+    expect(screen.getByTestId('pull-content').style.transform).toBe('')
+  })
+
+  it('임계값 미만으로 당기는 중에는 목록 블록이 당긴 만큼 내려간다', async () => {
+    mockLoadedStore()
+
+    renderBossScreen()
+    await screen.findByRole('combobox')
+
+    fireEvent(document, touchEvent('touchstart', 0))
+    fireEvent(document, touchEvent('touchmove', 40)) // 40 * 0.5 = 20 < 56
+
+    expect(screen.getByTestId('pull-content').style.transform).toBe('translateY(20px)')
+  })
+
+  // 결정 4 — 손가락이 붙어 있는데 전환이 걸리면 목록이 전환 시간만큼 늘 뒤처져 그려진다.
+  it('당기는 중에는 전환이 꺼진다', async () => {
+    mockLoadedStore()
+
+    renderBossScreen()
+    await screen.findByRole('combobox')
+
+    fireEvent(document, touchEvent('touchstart', 0))
+    fireEvent(document, touchEvent('touchmove', 40))
+
+    expect(screen.getByTestId('pull-content').style.transition).toBe('none')
+  })
+
+  // 결정 5 — 대기 신호가 문구뿐 아니라 위치로도 남는다. 손을 뗀 뒤라 정착 애니메이션이 전환을 타야 한다.
+  it('재조회가 도는 동안 목록이 임계 위치에 머물고 전환은 살아 있다', async () => {
+    const refresh = vi.fn()
+    mockLoadedStore({ refresh })
+
+    const { rerender } = renderBossScreen()
+    await screen.findByRole('combobox')
+
+    fireEvent(document, touchEvent('touchstart', 0))
+    fireEvent(document, touchEvent('touchmove', 200)) // 200 * 0.5 = 100 → 상한 80 ≥ 임계 56
+    fireEvent(document, touchEvent('touchend'))
+    expect(refresh).toHaveBeenCalledTimes(1)
+
+    mockLoadedStore({ status: 'loading', refresh })
+    rerender(bossScreenTree())
+
+    const list = screen.getByTestId('pull-content')
+    expect(list.style.transform).toBe('translateY(56px)')
+    expect(list.style.transition).toBe(PULL_SETTLE_TRANSITION)
   })
 })
