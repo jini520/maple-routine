@@ -40,7 +40,12 @@ import {
 } from '../../features/schedule-sync/use-sync-error-toast'
 import { anchorPopover, type PopoverAnchorGeometry } from '../../lib/popover-anchor'
 import { isSeasonBossName, WEEKLY_BOSS_CLEAR_LIMIT, WEEKLY_CRYSTAL_SALE_LIMIT } from '../../lib/boss-matching'
-import { formatBossProfitPeriodLabel, isLatestPeriod, isPeriodQueryable } from '../../lib/boss-profit-period'
+import {
+  formatBossProfitPeriodLabel,
+  isLatestPeriod,
+  isPeriodQueryable,
+  isPeriodRefreshable,
+} from '../../lib/boss-profit-period'
 import { getItemIconUrl, getItemIconUrlByFile } from '../../lib/item-icons'
 import { isValuableDrop } from '../../lib/valuable-drops'
 import { worldEmblemUrl } from '../../lib/world-emblem'
@@ -1254,20 +1259,25 @@ export function BossProfitScreen(): React.JSX.Element {
 
   const isEmpty = trackedOcids === null || trackedOcids.length === 0
 
-  // 최신(=현재) 기간에서는 다음 이동을 막고, 새로고침 버튼도 이때만 노출한다(#30) — 과거 기간은
-  // cache-first·checked-once 모델이라 수동 새로고침이 무의미하고 오히려 현재 기간으로 되돌린다.
-  // 아래 빈 상태 조기 반환보다 위에 두는 것은 당겨서 새로고침 훅이 isCurrentPeriod를 필요로 하기
-  // 때문이다(훅 규칙). now는 여기서 한 번만 만든다 — 두 번 호출하면 두 시각이 기간 경계를 사이에
-  // 두고 갈려 "현재 기간 판정"과 "기간 라벨"이 서로 다른 기간을 가리킬 수 있다.
+  // 최신(=현재) 기간에서는 다음 이동을 막는다. 아래 빈 상태 조기 반환보다 위에 두는 것은 당겨서
+  // 새로고침 훅이 canRefreshPeriod를 필요로 하기 때문이다(훅 규칙). now는 여기서 한 번만 만든다 —
+  // 두 번 호출하면 두 시각이 기간 경계를 사이에 두고 갈려 "현재 기간 판정"과 "기간 라벨"이 서로
+  // 다른 기간을 가리킬 수 있다.
   const now = new Date()
   const isCurrentPeriod = isLatestPeriod(tab, periodKey, now)
+  // 동기화 상태 영역·당겨서 새로고침의 공통 게이트(ADR-076) — "이 기간이 최신인가"가 아니라
+  // "지금 재조회하면 이 화면의 숫자가 달라질 수 있는가"다. 완전히 닫힌 과거 기간은
+  // cache-first·checked-once라 무의미하지만, 진행 중인 주를 품은 지난 달(7월 5주차 = 7/30~8/5)은
+  // 지금도 값이 늘어나고 그 값을 만드는 것은 실시간 동기화뿐이다.
+  const canRefreshPeriod = isPeriodRefreshable(tab, periodKey, now)
 
   // ADR-072: 목록 최상단에서 당기면 헤더 새로고침 버튼과 같은 재조회가 돈다(제스처는 추가 수단이다).
   // 빈 상태에서는 당길 목록이 없어 끄고(결정 13), 재조회 중에는 새 당김을 시작하지 않는다(결정 12).
-  // 과거 기간에서도 끈다(결정 9) — 이 화면의 refresh는 periodKey를 현재 기간으로 강제 리셋하므로
-  // 제스처를 쓰는 순간 보고 있던 과거 기간이 튕겨 나간다(#30). 헤더 버튼과 같은 플래그를 쓴다.
+  // 새로고침이 의미 없는 과거 기간에서도 끈다(결정 9) — 그 기간에서 refresh는 periodKey를 현재
+  // 기간으로 리셋하므로 제스처를 쓰는 순간 보고 있던 기간이 튕겨 나간다(#30). 진행 중인 주를 품은
+  // 지난 달은 refresh가 그 기간을 유지하므로 예외다(ADR-076). 헤더 버튼과 같은 플래그를 쓴다.
   const pullToRefresh = usePullToRefresh({
-    enabled: !isEmpty && isCurrentPeriod,
+    enabled: !isEmpty && canRefreshPeriod,
     isRefreshing: status === 'loading',
     onRefresh: () => refresh(trackedOcids ?? []),
   })
@@ -1389,11 +1399,12 @@ export function BossProfitScreen(): React.JSX.Element {
               월간
             </button>
 
-            {/* 동기화 상태 영역(마지막 동기화 시각 텍스트 + 새로고침 버튼)은 현재 기간에서만
-                노출한다(#30) — 과거 기간은 cache-first·checked-once 모델이라 실시간 동기화 개념이
-                없어 "조회 중..."/"방금 전"/"n분 전" 표시도, 재조회 버튼도 의미가 없다.
+            {/* 동기화 상태 영역(마지막 동기화 시각 텍스트 + 새로고침 버튼)은 새로고침이 의미 있는
+                기간에서만 노출한다(#30, ADR-076) — 완전히 닫힌 과거 기간은 cache-first·checked-once
+                모델이라 실시간 동기화 개념이 없어 "조회 중..."/"방금 전"/"n분 전" 표시도, 재조회
+                버튼도 의미가 없다. 진행 중인 주를 품은 지난 달만 예외다.
                 제목 줄이 아니라 탭과 같은 줄에 둔다(ADR-049). */}
-            {isCurrentPeriod && (
+            {canRefreshPeriod && (
               <div className="ml-auto flex shrink-0 items-center gap-2">
                 <p className="text-sm text-text-muted whitespace-nowrap">
                   {status === 'loading' ? '조회 중...' : formatSyncedAt(lastSyncedAt)}

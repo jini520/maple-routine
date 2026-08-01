@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
+  containsInProgressWeek,
   formatBossProfitPeriodLabel,
   getAdjacentPeriodKey,
+  isPeriodRefreshable,
   getBackfillQueryDate,
   getCurrentBossProfitPeriod,
   getMinQueryableDate,
@@ -88,6 +90,37 @@ describe('isLatestPeriod', () => {
     const monthlyNow = new Date('2026-08-01T12:00:00+09:00') // 현재 달 periodKey: 2026-08
     expect(isLatestPeriod('monthly', '2026-08', monthlyNow)).toBe(true)
     expect(isLatestPeriod('monthly', '2026-07', monthlyNow)).toBe(false)
+  })
+})
+
+describe('containsInProgressWeek / isPeriodRefreshable (ADR-076)', () => {
+  // 2026-07-30(목)이 7월의 마지막 리셋이라 7월 5주차는 8/5까지 이어진다. 8/1에 7월은 지난 달이
+  // 되지만 그 주는 여전히 진행 중이다.
+  const inWindow = new Date('2026-08-02T12:00:00+09:00') // 이번 주 2026-07-30, 이번 달 2026-08
+  const afterWindow = new Date('2026-08-10T12:00:00+09:00') // 이번 주 2026-08-06 — 7월은 완전히 닫혔다
+
+  it('진행 중인 주가 그 달에서 시작했으면 지난 달이어도 true다', () => {
+    expect(containsInProgressWeek('monthly', '2026-07', inWindow)).toBe(true)
+  })
+
+  it('그 주가 끝나 다음 주가 시작되면 false로 돌아온다', () => {
+    expect(containsInProgressWeek('monthly', '2026-07', afterWindow)).toBe(false)
+  })
+
+  it('이번 달은 false다 — 이미 최신 기간이라 이 판정이 필요 없다', () => {
+    expect(containsInProgressWeek('monthly', '2026-08', inWindow)).toBe(false)
+  })
+
+  it('weekly 탭에서는 항상 false다 — 지난 주는 언제나 완전히 닫혀 있다', () => {
+    expect(containsInProgressWeek('weekly', '2026-07-30', inWindow)).toBe(false)
+    expect(containsInProgressWeek('weekly', '2026-07-23', inWindow)).toBe(false)
+  })
+
+  it('isPeriodRefreshable: 최신 기간이거나 진행 중인 주를 품은 기간이면 true다', () => {
+    expect(isPeriodRefreshable('monthly', '2026-08', inWindow)).toBe(true) // 최신 기간
+    expect(isPeriodRefreshable('monthly', '2026-07', inWindow)).toBe(true) // 5주차가 진행 중
+    expect(isPeriodRefreshable('monthly', '2026-07', afterWindow)).toBe(false) // 완전히 닫힘
+    expect(isPeriodRefreshable('weekly', '2026-07-23', inWindow)).toBe(false)
   })
 })
 
