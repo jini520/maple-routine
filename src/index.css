@@ -16,6 +16,16 @@ body {
   background-color: var(--color-bg);
 }
 
+/* iOS WebView는 최상단에서 아래로 당기면 페이지 전체가 탄성 바운스한다(OS 기본, Android에는 없다).
+   당겨서 새로고침 제스처와 같은 입력을 공유해 손가락 하나가 두 모션을 일으키고, 페이지가 밀리는 동안
+   window.scrollY와 touchmove 좌표의 관계가 흔들려 임계값 계산이 어긋난다(ADR-072 결정 8).
+   `contain`이 아니라 `none`인 이유: contain은 스크롤 체이닝만 막고 그 요소 자신의 바운스
+   어포던스는 남긴다 — 없애야 하는 것이 정확히 그 바운스다. */
+html,
+body {
+  overscroll-behavior-y: none;
+}
+
 /* Toast 자동 소멸 타이머 바 전용 — 지속시간이 토스트마다 달라(성공 2초/정보 2.5초) Tailwind 프리셋
    애니메이션으로 표현할 수 없어 컴포넌트에서 animation-duration을 인라인으로 지정해 재생한다. */
 @keyframes toast-shrink {

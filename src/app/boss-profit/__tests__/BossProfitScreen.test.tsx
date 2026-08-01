@@ -11,6 +11,7 @@ import {
   type WeeklySubtotalState,
 } from '../../../features/boss-profit/store'
 import { getCurrentBossProfitPeriod } from '../../../lib/boss-profit-period'
+import { PULL_SETTLE_TRANSITION } from '../../../lib/pull-to-refresh'
 import { WEEKLY_BOSS_CLEAR_LIMIT, WEEKLY_CRYSTAL_SALE_LIMIT } from '../../../lib/boss-matching'
 import weeklyBossesData from '../../../data/weekly-bosses.json'
 // ADR-063: 동기화 실패·일부 캐릭터 실패·파티원 수 저장 실패는 인라인 문단이 아니라 토스트로 알린다.
@@ -103,12 +104,18 @@ function LocationProbe(): React.JSX.Element {
   return <div data-testid="location-probe">{`${location.pathname}${location.search}`}</div>
 }
 
-function renderBossProfitScreen(initialEntries: string[] = ['/profit']): ReturnType<typeof render> {
-  return render(
+// 렌더 트리를 따로 뽑아둔 이유: 재조회 중(store status 'loading') 상태를 rerender로 주입해야
+// 하는 테스트가 있어서다(ADR-073 결정 5) — 새로 render하면 훅이 초기화돼 제스처 흔적이 사라진다.
+function bossProfitScreenTree(initialEntries: string[] = ['/profit']): React.JSX.Element {
+  return (
     <MemoryRouter initialEntries={initialEntries}>
       <BossProfitScreen />
-    </MemoryRouter>,
+    </MemoryRouter>
   )
+}
+
+function renderBossProfitScreen(initialEntries: string[] = ['/profit']): ReturnType<typeof render> {
+  return render(bossProfitScreenTree(initialEntries))
 }
 
 afterEach(() => {
@@ -2195,5 +2202,234 @@ describe('월드 리프가 걸친 주의 결정석 집계 (ADR-069 결정 2)', (
     renderBossProfitScreen()
 
     expect(screen.getByLabelText('주간 결정석 판매 1 / 90')).toBeInTheDocument()
+  })
+})
+
+// ADR-072: 목록 최상단에서 당기면 헤더 새로고침 버튼과 같은 재조회가 돈다(제스처는 추가 수단이다).
+// jsdom에는 TouchEvent 생성자가 없으므로 훅이 읽는 필드(touches[].clientY)만 가진 합성 이벤트를 만든다.
+// window.scrollY는 jsdom 기본값이 0이라 최상단 판정(window.scrollY <= 0)을 그대로 통과한다.
+function touchEvent(type: string, clientY?: number): Event {
+  const event = new Event(type, { bubbles: true, cancelable: true })
+  Object.defineProperty(event, 'touches', {
+    value: clientY === undefined ? [] : [{ clientY }],
+  })
+  return event
+}
+
+describe('당겨서 새로고침 (ADR-072)', () => {
+  it('현재 기간에서 임계값을 넘겨 당겼다 놓으면 refresh가 호출된다', () => {
+    const refresh = vi.fn()
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row({ periodKey: CURRENT_WEEKLY_PERIOD_KEY })],
+      periodKey: CURRENT_WEEKLY_PERIOD_KEY,
+      refresh,
+    })
+
+    renderBossProfitScreen()
+
+    fireEvent(document, touchEvent('touchstart', 0))
+    fireEvent(document, touchEvent('touchmove', 200)) // 200 * 0.5 = 100 → 상한 80 ≥ 임계 56
+    fireEvent(document, touchEvent('touchend'))
+
+    expect(refresh).toHaveBeenCalledTimes(1)
+    expect(refresh).toHaveBeenCalledWith(['ocid-1'])
+  })
+
+  it('현재 기간이라도 임계값 미만으로 당겼다 놓으면 refresh가 호출되지 않는다', () => {
+    const refresh = vi.fn()
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row({ periodKey: CURRENT_WEEKLY_PERIOD_KEY })],
+      periodKey: CURRENT_WEEKLY_PERIOD_KEY,
+      refresh,
+    })
+
+    renderBossProfitScreen()
+
+    fireEvent(document, touchEvent('touchstart', 0))
+    fireEvent(document, touchEvent('touchmove', 40)) // 40 * 0.5 = 20 < 56
+    fireEvent(document, touchEvent('touchend'))
+
+    expect(refresh).not.toHaveBeenCalled()
+  })
+
+  // 결정 9: refresh는 periodKey를 현재 기간으로 강제 리셋하므로(#30), 과거 기간에서 제스처가 먹으면
+  // 보고 있던 기간이 튕겨 나간다. 헤더 새로고침 버튼을 과거 기간에서 숨긴 것과 같은 근거다.
+  it('과거 기간에서는 같은 제스처로 당겨도 refresh가 호출되지 않는다(결정 9)', () => {
+    const refresh = vi.fn()
+    mockStore({
+      status: 'loaded',
+      tab: 'weekly',
+      trackedOcids: ['ocid-1'],
+      rows: [row()],
+      periodKey: '2026-07-09', // 과거 기간(현재 주가 아님)
+      refresh,
+    })
+
+    renderBossProfitScreen()
+
+    fireEvent(document, touchEvent('touchstart', 0))
+    fireEvent(document, touchEvent('touchmove', 200))
+    fireEvent(document, touchEvent('touchend'))
+
+    expect(refresh).not.toHaveBeenCalled()
+  })
+
+  it('과거 기간에서는 당겨도 배너가 렌더되지 않는다', () => {
+    mockStore({
+      status: 'loaded',
+      tab: 'weekly',
+      trackedOcids: ['ocid-1'],
+      rows: [row()],
+      periodKey: '2026-07-09', // 과거 기간
+    })
+
+    renderBossProfitScreen()
+
+    fireEvent(document, touchEvent('touchstart', 0))
+    fireEvent(document, touchEvent('touchmove', 200))
+
+    expect(screen.queryByTestId('pull-to-refresh-indicator')).not.toBeInTheDocument()
+  })
+
+  it('현재 기간에서 당기는 동안 인디케이터가 sticky 헤더 블록의 마지막 자식으로 그려진다', () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row({ periodKey: CURRENT_WEEKLY_PERIOD_KEY })],
+      periodKey: CURRENT_WEEKLY_PERIOD_KEY,
+    })
+
+    renderBossProfitScreen()
+
+    fireEvent(document, touchEvent('touchstart', 0))
+    fireEvent(document, touchEvent('touchmove', 40))
+
+    const indicator = screen.getByTestId('pull-to-refresh-indicator')
+    expect(screen.getByTestId('pull-to-refresh-indicator')).toBeInTheDocument()
+    // 이 화면에는 경계 페이드 오버레이가 없으므로(ADR-047 결정 6) 인디케이터가 곧 마지막 자식이다.
+    expect(indicator.parentElement).toHaveClass('sticky')
+    expect(indicator.parentElement?.lastElementChild).toBe(indicator)
+  })
+
+  it('제스처를 붙여도 헤더 새로고침 버튼은 현재 기간에만 남는다(ADR-072 결정 10)', () => {
+    const refresh = vi.fn()
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row({ periodKey: CURRENT_WEEKLY_PERIOD_KEY })],
+      periodKey: CURRENT_WEEKLY_PERIOD_KEY,
+      refresh,
+    })
+
+    const { unmount } = renderBossProfitScreen()
+
+    fireEvent.click(screen.getByRole('button', { name: '새로고침' }))
+    expect(refresh).toHaveBeenCalledTimes(1)
+    expect(refresh).toHaveBeenCalledWith(['ocid-1'])
+
+    unmount()
+    mockStore({
+      status: 'loaded',
+      tab: 'weekly',
+      trackedOcids: ['ocid-1'],
+      rows: [row()],
+      periodKey: '2026-07-09', // 과거 기간
+      refresh,
+    })
+
+    renderBossProfitScreen()
+
+    expect(screen.queryByRole('button', { name: '새로고침' })).not.toBeInTheDocument()
+  })
+})
+
+// ADR-073: 인디케이터가 불투명 배너로 열리는 대신, 헤더는 고정된 채 목록 블록만 손가락을 따라 내려간다.
+describe('당겨서 새로고침 — 목록 이동 (ADR-073)', () => {
+  function mockCurrentPeriodStore(
+    overrides: Partial<ReturnType<typeof useBossProfitStore>> = {},
+  ): void {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row({ periodKey: CURRENT_WEEKLY_PERIOD_KEY })],
+      periodKey: CURRENT_WEEKLY_PERIOD_KEY,
+      ...overrides,
+    })
+  }
+
+  // 결정 3 회귀 방지 — translateY(0px) 조차 containing block·stacking context를 만들어 sticky
+  // 후손의 기준을 바꾼다. 이 화면은 펼친 카드 헤더가 중첩 sticky인 유일한 화면이라(ADR-047)
+  // 당기지 않는 동안의 DOM이 이 기능 도입 전과 같아야 한다는 요구가 가장 강하다.
+  it('쉬는 상태에서는 목록 블록에 transform 인라인 스타일이 없다', () => {
+    mockCurrentPeriodStore()
+
+    renderBossProfitScreen()
+
+    expect(screen.getByTestId('pull-content').style.transform).toBe('')
+  })
+
+  it('임계값 미만으로 당기는 중에는 목록 블록이 당긴 만큼 내려간다', () => {
+    mockCurrentPeriodStore()
+
+    renderBossProfitScreen()
+
+    fireEvent(document, touchEvent('touchstart', 0))
+    fireEvent(document, touchEvent('touchmove', 40)) // 40 * 0.5 = 20 < 56
+
+    expect(screen.getByTestId('pull-content').style.transform).toBe('translateY(20px)')
+  })
+
+  // 결정 4 — 손가락이 붙어 있는데 전환이 걸리면 목록이 전환 시간만큼 늘 뒤처져 그려진다.
+  it('당기는 중에는 전환이 꺼진다', () => {
+    mockCurrentPeriodStore()
+
+    renderBossProfitScreen()
+
+    fireEvent(document, touchEvent('touchstart', 0))
+    fireEvent(document, touchEvent('touchmove', 40))
+
+    expect(screen.getByTestId('pull-content').style.transition).toBe('none')
+  })
+
+  // 결정 5 — 대기 신호가 문구뿐 아니라 위치로도 남는다. 손을 뗀 뒤라 정착 애니메이션이 전환을 타야 한다.
+  it('재조회가 도는 동안 목록이 임계 위치에 머물고 전환은 살아 있다', () => {
+    const refresh = vi.fn()
+    mockCurrentPeriodStore({ refresh })
+
+    const { rerender } = renderBossProfitScreen()
+
+    fireEvent(document, touchEvent('touchstart', 0))
+    fireEvent(document, touchEvent('touchmove', 200)) // 200 * 0.5 = 100 → 상한 80 ≥ 임계 56
+    fireEvent(document, touchEvent('touchend'))
+    expect(refresh).toHaveBeenCalledTimes(1)
+
+    mockCurrentPeriodStore({ status: 'loading', refresh })
+    rerender(bossProfitScreenTree())
+
+    const list = screen.getByTestId('pull-content')
+    expect(list.style.transform).toBe('translateY(56px)')
+    expect(list.style.transition).toBe(PULL_SETTLE_TRANSITION)
+  })
+
+  // ADR-072 결정 9 회귀 방지 — 과거 기간은 제스처 자체가 꺼져 있으므로 목록도 움직이지 않는다.
+  it('과거 기간에서는 같은 제스처로 당겨도 목록이 움직이지 않는다', () => {
+    mockStore({
+      status: 'loaded',
+      tab: 'weekly',
+      trackedOcids: ['ocid-1'],
+      rows: [row()],
+      periodKey: '2026-07-09', // 과거 기간
+    })
+
+    renderBossProfitScreen()
+
+    fireEvent(document, touchEvent('touchstart', 0))
+    fireEvent(document, touchEvent('touchmove', 40))
+
+    expect(screen.getByTestId('pull-content').style.transform).toBe('')
   })
 })

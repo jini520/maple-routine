@@ -14,6 +14,9 @@ import type { DailyQuestRegionCrop } from '../../lib/daily-quest-backgrounds'
 import { EmptyState } from '../../components/EmptyState/EmptyState'
 import { LoadingState } from '../../components/LoadingState/LoadingState'
 import { ProgressModal } from '../../components/ProgressModal/ProgressModal'
+import { PullToRefreshIndicator } from '../../components/PullToRefreshIndicator/PullToRefreshIndicator'
+import { PULL_SETTLE_TRANSITION, resolveContentOffsetPx } from '../../lib/pull-to-refresh'
+import { usePullToRefresh } from '../../lib/use-pull-to-refresh'
 import { ListChecks, RefreshCw } from 'lucide-react'
 import { getCharacterPickerRoster, toScheduleSyncError } from '../../features/schedule-sync/schedule-sync'
 import type { ScheduleSyncError } from '../../features/schedule-sync/schedule-sync'
@@ -751,6 +754,20 @@ export function ContentScreen(): React.JSX.Element {
 
   const isEmpty = trackedOcids === null || trackedOcids.length === 0
 
+  // ADR-072: 목록 최상단에서 당기면 헤더 새로고침 버튼과 같은 재조회가 돈다(제스처는 추가 수단이다).
+  // 빈 상태에서는 당길 목록이 없어 끄고(결정 13), 재조회 중에는 새 당김을 시작하지 않는다(결정 12).
+  // 훅 호출은 아래 빈 상태 조기 반환보다 반드시 위여야 한다 — 훅 규칙.
+  const pullToRefresh = usePullToRefresh({
+    enabled: !isEmpty,
+    isRefreshing: status === 'loading',
+    onRefresh: () => refresh(trackedOcids ?? []),
+  })
+
+  // ADR-073 결정 6: 목록이 내려가는 거리이자 인디케이터가 채우는 틈의 높이다 — 인디케이터와 같은
+  // 함수·같은 인자를 쓴다. 두 벌로 계산하면 값이 어긋나는 순간 인디케이터가 카드 위에 겹치거나
+  // 반대로 빈 띠가 남는다.
+  const pullOffset = resolveContentOffsetPx(pullToRefresh.distance, pullToRefresh.phase)
+
   const effectiveSelectedOcid =
     selectedOcid !== null && characters.some((character) => character.ocid === selectedOcid)
       ? selectedOcid
@@ -1014,10 +1031,28 @@ export function ContentScreen(): React.JSX.Element {
           }}
           aria-hidden="true"
         />
+
+        {/* ADR-072 결정 5: 인디케이터와 위 페이드가 같은 자리(absolute top-full)를 쓰므로, z-index를 새로
+            도입하는 대신 DOM 순서(페이드 "다음" 형제)로 인디케이터가 위에 오게 한다. */}
+        <PullToRefreshIndicator distance={pullToRefresh.distance} phase={pullToRefresh.phase} />
       </div>
 
+      {/* ADR-073 결정 1·2: 헤더는 sticky로 제자리에 두고 이 목록 블록만 손가락을 따라 내려간다.
+          마진·높이가 아니라 transform 이라 터치 프레임마다의 리플로우가 없다. 오프셋이 0이면
+          transform 을 아예 걸지 않는다(결정 3) — translateY(0px) 조차 containing block·stacking
+          context를 만들어 sticky 후손(ADR-047 중첩 카드 헤더)의 기준을 바꾼다. 반면 transition 은
+          어떤 컨텍스트도 만들지 않으므로 항상 걸어둔다. 그래야 오프셋이 0으로 돌아갈 때 복귀
+          애니메이션이 살고(붙였다 떼면 마지막 프레임에 전환이 없어 순간이동한다), 드래그 중에만
+          'none' 이다(결정 4) — 손가락이 붙어 있는데 전환이 걸리면 목록이 늘 뒤처져 그려진다. */}
       {characters.length > 0 && selected !== null && (
-        <div className="space-y-4 px-4 pb-4">
+        <div
+          data-testid="pull-content"
+          className="space-y-4 px-4 pb-4"
+          style={{
+            transform: pullOffset > 0 ? `translateY(${pullOffset}px)` : undefined,
+            transition: pullToRefresh.isDragging ? 'none' : PULL_SETTLE_TRANSITION,
+          }}
+        >
           {activeTab === 'daily' && (
             <>
               {displayDailyContents.length === 0 && (mode === 'manual' || !selected.isStale) && (

@@ -1,0 +1,32 @@
+{
+  "project": "메이플 루틴",
+  "phase": "pull-to-refresh-mark",
+  "steps": [
+    {
+      "step": 0,
+      "name": "docs-mark",
+      "status": "completed",
+      "started_at": "2026-08-01T16:37:35+0900",
+      "summary": "ADR-074 신설(설계, 구현 전, 이슈 #38) — 당김 인디케이터에서 문구 3상태 제거, 마크는 단풍잎 외곽선 링 하나로 통일. 당김 구간은 회전이 아니라 진행률 드로잉(MAPLE_LEAF_PATH, fill=none stroke=currentColor strokeWidth 9 strokeLinecap round pathLength 300, strokeDasharray \"300 300\", strokeDashoffset = 300 × (1 − resolvePullProgress(distance)), 회전·불투명도 변화 없음), 재조회 구간은 같은 링이 그대로 도는 <MapleSpinner size={28} /> — 두 구간 크기 28px 동일(틈 PULL_THRESHOLD_PX 56px의 절반), 색은 두 구간 모두 text-primary-ink. 문구가 사라져 role=\"status\"/aria-live 제거하고 루트에 aria-hidden=\"true\"(재조회는 헤더 '조회 중...'이 알린다), 내용 래퍼는 gap-2 없이 flex h-full items-center justify-center. ADR-061 결정 1('24px 이상은 스윕')에 PTR 한 자리 예외 신설(폐기 아님 — 근거는 크기가 아니라 당김→대기 연속성), ADR-073 결정 7·9와 ADR-072 결정 6·7의 문구·마크 부분만 폐기 표시(목록 이동·transform 규칙 ADR-073 결정 1~6·8은 무변경). design-system.md '당겨서 새로고침' 절 레시피 교체 + 옛 레시피는 폐기된 정책(history) 한 줄, features 3개 문서·ADR.md 인덱스(061·073 행 조각 포함) 갱신. src/ 무변경, build·test(1991)·lint 통과.",
+      "completed_at": "2026-08-01T16:44:04+0900"
+    },
+    {
+      "step": 1,
+      "name": "indicator-ring",
+      "status": "completed",
+      "started_at": "2026-08-01T16:44:04+0900",
+      "summary": "PullToRefreshIndicator를 ADR-074 마크로 교체 — MESSAGE 상수·<span>·gap-2·role=\"status\"·aria-live 제거하고 루트에 aria-hidden=\"true\"(문구가 없으면 빈 라이브 리전이고 재조회는 헤더 '조회 중...'이 알린다). 당김 구간은 채움 잎 회전(rotate progress×180deg, opacity 0.3+0.7×progress, h-5 w-5)을 외곽선 링 드로잉으로 교체 — fill=\"none\" stroke=\"currentColor\" strokeWidth 9 strokeLinecap=\"round\" pathLength 300 strokeDasharray \"300 300\" strokeDashoffset = 300 × (1 − resolvePullProgress(distance)), 애니메이션 클래스·회전·불투명도 변화 없음. 재조회 구간은 MapleSweepSpinner(24px) import를 지우고 <MapleSpinner size={28} className=\"text-primary-ink\" />. 크기는 상수 MARK_SIZE_PX=28로 두 구간 공유, 당김 svg도 MapleSpinner와 같은 width={28} height={28×(130/127)} 속성 방식(정규화 상수 RING_PATH_LENGTH=300). data-testid(pull-to-refresh-indicator·pull-to-refresh-leaf)·props·높이 함수·루트 클래스는 무변경. 테스트: 문구 3건 단언을 부재 단언(+textContent 빈 문자열)으로 대체하고 aria-hidden/role 부재·fill none·stroke currentColor·dashoffset 300→150→0·클램프·애니메이션 클래스 부재·maple-spinner 존재/maple-sweep-spinner 부재·두 구간 마크 크기 동일을 추가해 14건 유지. 화면 테스트 3곳은 문구 단언 한 줄씩만 getByTestId('pull-to-refresh-indicator')로 교체(화면 구현·훅·lib 무변경). 변이 검증: strokeDashoffset을 상수 0으로 바꾸면 진행률 테스트가 실패함을 확인 후 복구. build·test(1991)·lint 통과.",
+      "completed_at": "2026-08-01T16:48:32+0900"
+    },
+    {
+      "step": 2,
+      "name": "docs-finalize",
+      "status": "completed",
+      "started_at": "2026-08-01T16:48:32+0900",
+      "summary": "ADR-074를 (설계, 구현 전) → (구현 완료, 2026-08-01, 이슈 #38 · 실기기 검증 보류)로 갱신하고 제목·말미 상태·ADR.md 인덱스 문구를 일치시킴. '구현 메모(2026-08-01)' 신설 — 결정 1~7 전부 구현(미구현 0), 링 실제 속성값(pathLength 300 / fill none / stroke currentColor / strokeWidth 9 / strokeLinecap round / strokeDasharray \"300 300\" / strokeDashoffset = 300×(1−resolvePullProgress(distance)), 클램프는 resolvePullProgress가 이미 하므로 컴포넌트에 없음), 크기는 MARK_SIZE_PX=28 한 상수를 당김 svg width와 MapleSpinner size가 공유하고 높이 산식도 size×(130/127)로 동일하되 눈으로 같음을 고정하는 것은 테스트 '당김 구간과 재조회 구간의 마크 크기가 같다'(실제 width/height 속성 비교), 제거 목록(문구 3종·MESSAGE·<span>·gap-2·role=status·aria-live·MapleSweepSpinner import·회전·불투명도·h-5 w-5·채움), aria-hidden 대체 통로가 실재함을 실측 좌표로 명시(ContentScreen.tsx:963·BossScreen.tsx:455·BossProfitScreen.tsx:1399 + 세 화면의 '조회 중' 회귀 테스트), 세 화면 테스트는 getByText('당겨서 새로고침') → getByTestId('pull-to-refresh-indicator') 한 줄씩(:1382·:1291·:2312). '남은 검증'은 실기기 2건(28px 링이 진행률로 읽히는가 — 가독성+굴곡진 외곽선의 양 판독 / 손 뗄 때 dasharray 300 300→210 90으로 링 30%가 한 프레임에 사라지는 것이 튀어 보이는가)으로 재작성하고 ADR-072(러버밴드·56px 손맛)·ADR-073(60fps) 남은 검증과 상호 참조(다섯 항목을 제스처 한 번에 함께 확인). 문서-구현 대조: design-system.md 레시피가 코드와 전부 일치(루트 클래스·aria-hidden·flex h-full items-center justify-center·링 5속성·MapleSpinner size 28·문구 없음·색 text-primary-ink) — 정책 위반 없음, 고칠 코드 없음. 불일치는 상태 문구 stale 4곳뿐이라 문서를 코드에 맞춤(design-system.md 절 제목 '마크는 설계, 구현 전' 제거, features 3개 문서 절 제목 + 본문 '([[ADR-074]], 설계·구현 전)' → '([[ADR-074]])'), 추가로 ADR.md의 ADR-072 행이 결정 6·7 폐기를 누락하고 있어 '· 문구·마크(결정 6·7)는 [[ADR-074]]로 폐기' 보강. features 3개 문서 '열린 질문'에 PTR 항목 없음(정리 대상 없음). 생존 결정 점검 — 전부 무손상이고 각각 테스트 실재: ADR-072 결정 9(BossProfitScreen.test.tsx:2295 과거 기간 인디케이터 부재 + :2433 transform 빈 문자열)·10(세 화면 '헤더 새로고침 버튼은 그대로/현재 기간에만 남는다')·11(use-pull-to-refresh.test.ts:202)·14(describe '스크롤 가능한 조상…' 5건), ADR-073 결정 1~6·8(세 화면 describe '목록 이동 (ADR-073)' — 특히 오프셋 0에서 transform 미적용 3화면 단언)·결정 4(isDragging 5건), ADR-061 결정 1은 PTR 밖에서 유효(MapleSweepSpinner가 LoadingState 24/32px·온보딩 32px·CharacterTrackingPicker 32px·LoadingPreview에 그대로 살아 있음). 체크리스트 3종 통과(ADR-074↔인덱스 상태 문구 일치 / 옛 레시피가 design-system.md '폐기된 정책(history)'에 존치 / ADR-061 결정 1은 '이 결정 자체는 폐기가 아니다'로 예외 표시). src/ 무변경(git status에 docs/만), build·test(1991)·lint 통과. 남은 검증: 실기기 5항목 미확인.",
+      "completed_at": "2026-08-01T16:53:43+0900"
+    }
+  ],
+  "created_at": "2026-08-01T16:37:35+0900",
+  "completed_at": "2026-08-01T16:53:43+0900"
+}

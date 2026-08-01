@@ -18,6 +18,9 @@ import { EmptyState } from '../../components/EmptyState/EmptyState'
 import { ErrorState } from '../../components/ErrorState/ErrorState'
 import { LoadingState } from '../../components/LoadingState/LoadingState'
 import { ProfitIcon } from '../../components/ProfitIcon/ProfitIcon'
+import { PullToRefreshIndicator } from '../../components/PullToRefreshIndicator/PullToRefreshIndicator'
+import { PULL_SETTLE_TRANSITION, resolveContentOffsetPx } from '../../lib/pull-to-refresh'
+import { usePullToRefresh } from '../../lib/use-pull-to-refresh'
 import { UnavailableNotice } from '../../components/EmptyState/UnavailableNotice'
 import { ValuableDropBadge } from '../../components/ValuableDropBadge/ValuableDropBadge'
 import weeklyBossesData from '../../data/weekly-bosses.json'
@@ -1251,6 +1254,29 @@ export function BossProfitScreen(): React.JSX.Element {
 
   const isEmpty = trackedOcids === null || trackedOcids.length === 0
 
+  // 최신(=현재) 기간에서는 다음 이동을 막고, 새로고침 버튼도 이때만 노출한다(#30) — 과거 기간은
+  // cache-first·checked-once 모델이라 수동 새로고침이 무의미하고 오히려 현재 기간으로 되돌린다.
+  // 아래 빈 상태 조기 반환보다 위에 두는 것은 당겨서 새로고침 훅이 isCurrentPeriod를 필요로 하기
+  // 때문이다(훅 규칙). now는 여기서 한 번만 만든다 — 두 번 호출하면 두 시각이 기간 경계를 사이에
+  // 두고 갈려 "현재 기간 판정"과 "기간 라벨"이 서로 다른 기간을 가리킬 수 있다.
+  const now = new Date()
+  const isCurrentPeriod = isLatestPeriod(tab, periodKey, now)
+
+  // ADR-072: 목록 최상단에서 당기면 헤더 새로고침 버튼과 같은 재조회가 돈다(제스처는 추가 수단이다).
+  // 빈 상태에서는 당길 목록이 없어 끄고(결정 13), 재조회 중에는 새 당김을 시작하지 않는다(결정 12).
+  // 과거 기간에서도 끈다(결정 9) — 이 화면의 refresh는 periodKey를 현재 기간으로 강제 리셋하므로
+  // 제스처를 쓰는 순간 보고 있던 과거 기간이 튕겨 나간다(#30). 헤더 버튼과 같은 플래그를 쓴다.
+  const pullToRefresh = usePullToRefresh({
+    enabled: !isEmpty && isCurrentPeriod,
+    isRefreshing: status === 'loading',
+    onRefresh: () => refresh(trackedOcids ?? []),
+  })
+
+  // ADR-073 결정 6: 목록이 내려가는 거리이자 인디케이터가 채우는 틈의 높이다 — 인디케이터와 같은
+  // 함수·같은 인자를 쓴다. 두 벌로 계산하면 값이 어긋나는 순간 인디케이터가 카드 위에 겹치거나
+  // 반대로 빈 띠가 남는다.
+  const pullOffset = resolveContentOffsetPx(pullToRefresh.distance, pullToRefresh.phase)
+
   // 펼친 캐릭터 카드 헤더를 이 페이지 sticky 헤더 "아래"에 붙이기 위한 실측 높이(ADR-047).
   // 페이지 헤더는 불투명(bg-bg)하고 높이가 상태에 따라 가변이라(탭·기간 라벨·동기화 실패 경고·에러 문구·
   // 총 수익 헤드라인 유무) 상수로 둘 수 없다. 미지원 환경은 0으로 남아 top-0으로 자연 degrade한다.
@@ -1295,11 +1321,7 @@ export function BossProfitScreen(): React.JSX.Element {
     )
   }
 
-  const now = new Date()
   const periodLabel = formatBossProfitPeriodLabel(tab, periodKey, now)
-  // 최신(=현재) 기간에서는 다음 이동을 막고, 새로고침 버튼도 이때만 노출한다(#30) — 과거 기간은
-  // cache-first·checked-once 모델이라 수동 새로고침이 무의미하고 오히려 현재 기간으로 되돌린다.
-  const isCurrentPeriod = isLatestPeriod(tab, periodKey, now)
   const isNextDisabled = isCurrentPeriod
   // 이전 이동 가능 여부는 store가 매 기간 로드 시 계산해둔 canGoPreviousPeriod로 판단한다(#29) —
   // 조회 불가능하고 캐시 기록도 없는 기간에 착지하지 않도록 막는다.
@@ -1492,9 +1514,30 @@ export function BossProfitScreen(): React.JSX.Element {
         {/* 공용 레시피의 헤더-목록 경계 페이드 오버레이(absolute top-full h-8)는 이 화면에 두지 않는다
             (ADR-047 결정 6) — 펼친 카드의 sticky 헤더가 멈추는 자리가 바로 그 밴드라, z-10 페이지 헤더
             안의 오버레이가 stuck 헤더 상단을 덮어 가린다. 경계는 총 수익 헤드라인 하단 헤어라인이 담당. */}
+
+        {/* ADR-072 결정 4·5: 인디케이터는 sticky 헤더 블록의 마지막 자식이고 absolute라 이 블록의 실측
+            높이(stickyHeaderHeight)를 바꾸지 않는다 — 흐름 자식이면 당길 때마다 ResizeObserver가
+            발화해 펼친 카드의 중첩 sticky 헤더가 손가락을 따라 흔들린다(ADR-047 결정 3). */}
+        <PullToRefreshIndicator distance={pullToRefresh.distance} phase={pullToRefresh.phase} />
       </div>
 
-      <div className="space-y-2 px-4 pb-4">
+      {/* ADR-073 결정 1·2: 헤더는 sticky로 제자리에 두고 이 목록 블록만 손가락을 따라 내려간다.
+          마진·높이가 아니라 transform 이라 터치 프레임마다의 리플로우가 없고, 헤더의 실측
+          높이(stickyHeaderHeight)도 건드리지 않는다. 오프셋이 0이면 transform 을 아예 걸지
+          않는다(결정 3) — translateY(0px) 조차 containing block·stacking context를 만들어 sticky
+          후손(ADR-047 중첩 카드 헤더)의 기준을 바꾼다. 당김은 window.scrollY <= 0 에서만 시작되므로
+          (ADR-072 결정 2) 당기는 순간엔 멈춘(stuck) 카드 헤더가 없어 stickyTop 을 보정할 대상도
+          없다. 반면 transition 은 어떤 컨텍스트도 만들지 않으므로 항상 걸어둔다. 그래야 오프셋이
+          0으로 돌아갈 때 복귀 애니메이션이 살고(붙였다 떼면 마지막 프레임에 전환이 없어 순간이동한다),
+          드래그 중에만 'none' 이다(결정 4) — 손가락이 붙어 있는데 전환이 걸리면 목록이 늘 뒤처져 그려진다. */}
+      <div
+        data-testid="pull-content"
+        className="space-y-2 px-4 pb-4"
+        style={{
+          transform: pullOffset > 0 ? `translateY(${pullOffset}px)` : undefined,
+          transition: pullToRefresh.isDragging ? 'none' : PULL_SETTLE_TRANSITION,
+        }}
+      >
         {/* ADR-061 결정 2·3·4: 점선 박스(빈 상태의 어법)와 비-브랜드 CSS 링을 버리고 셸 승계
             카드를 쓴다 — 백필이 끝나면 같은 자리·같은 껍데기에 캐릭터 카드가 들어온다. */}
         {isPeriodLoading && (

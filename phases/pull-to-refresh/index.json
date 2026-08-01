@@ -1,0 +1,88 @@
+{
+  "project": "메이플 루틴",
+  "phase": "pull-to-refresh",
+  "steps": [
+    {
+      "step": 0,
+      "name": "docs-policy",
+      "status": "completed",
+      "started_at": "2026-08-01T13:46:42+0900",
+      "summary": "ADR-072(당겨서 새로고침, 설계·구현 전) 신설 — 결정 13개(커스텀 훅·window.scrollY <= 0 최상단 판정·store 액션 신설 없이 refresh(trackedOcids ?? []) 1인자 호출·sticky 헤더 안 absolute top-full 배너로 목록 밀어내지 않기·페이드 다음 형제·3상태 문구(당겨서 새로고침/놓으면 새로고침/새로고침하고 있어요)·당김은 정적 MAPLE_LEAF_PATH 회전 & 재조회는 MapleSweepSpinner 24px·html,body overscroll-behavior-y:none·수익은 isCurrentPeriod에서만·헤더 버튼 유지·배너는 제스처 발 재조회에만·status === 'loading' 중 재당김 금지·3개 탭 최상위 화면 한정). 확정 수치 PULL_RESISTANCE=0.5 / PULL_THRESHOLD_PX=56(배너 h-14와 동일) / PULL_MAX_PX=80. docs/ADR.md 인덱스 1행 추가, docs/foundation/design-system.md 에 '### 당겨서 새로고침(pull-to-refresh) — [[ADR-072]]' 절 신설(구현 단일 진실 공급원, 새 토큰·SVG 없음), features 3문서(content-scheduler·boss-scheduler·boss-profit)에 관련 ADR + UI 한 줄(수익만 과거 기간 비활성 예외) 반영. src/ 무변경.",
+      "completed_at": "2026-08-01T13:52:00+0900"
+    },
+    {
+      "step": 1,
+      "name": "pull-gesture-core",
+      "status": "completed",
+      "started_at": "2026-08-01T13:52:00+0900",
+      "summary": "src/lib/pull-to-refresh.ts 신설(순수 함수, React·DOM·store 무의존) — 상수 PULL_RESISTANCE=0.5 / PULL_THRESHOLD_PX=56(배너 h-14와 동일) / PULL_MAX_PX=80, 타입 PullPhase='idle'|'pulling'|'ready'|'refreshing', 함수 resolvePullDistance(rawDeltaY: number): number(rawDeltaY<=0이면 0, 아니면 rawDeltaY*RESISTANCE를 MAX로 클램프) · resolvePullPhase(distance: number, isRefreshing: boolean): PullPhase(isRefreshing이면 거리 무관 refreshing 우선) · shouldTriggerRefresh(distance: number): boolean(ready와 동일 경계 distance>=THRESHOLD) · resolvePullProgress(distance: number): number(distance/THRESHOLD를 0~1 클램프) · resolveBandHeightPx(distance: number, phase: PullPhase): number(refreshing→THRESHOLD, idle→0, 그 외 0~MAX 클램프). 테스트 src/lib/__tests__/pull-to-refresh.test.ts 16건(node 환경, 환경 지시 주석 없음) 선작성 후 구현. npm test 133파일 1926건 통과 · build · lint 통과.",
+      "completed_at": "2026-08-01T13:54:06+0900"
+    },
+    {
+      "step": 2,
+      "name": "pull-gesture-hook",
+      "status": "completed",
+      "started_at": "2026-08-01T13:54:06+0900",
+      "summary": "src/lib/use-pull-to-refresh.ts 신설 — usePullToRefresh({ enabled, isRefreshing, onRefresh }): { distance, phase }. 계약: enabled=false면 리스너를 아예 붙이지 않고 항상 { distance: 0, phase: 'idle' }(재조회 중이어도 배너 없음) — 화면은 여기에 '추적 캐릭터 있음'(수익은 + isCurrentPeriod)을 넣는다. isRefreshing은 세 화면 공통 status === 'loading'이고, 그 동안에는 새 당김이 시작되지 않으며(ADR-072 결정 12) 배너는 제스처가 트리거한 재조회에서만 refreshing이 된다(결정 11 — didTriggerRefresh 상태, isRefreshing이 false로 돌아오면 렌더 중 조정으로 해제). onRefresh는 ref에 담아 최신 값을 읽으므로 인라인 화살표(`() => refresh(trackedOcids ?? [])`)를 그대로 넘겨도 리스너가 재등록되지 않는다. document에 touchstart/touchmove({ passive: false }, 당기는 동안 preventDefault)/touchend/touchcancel 등록, 추적 시작 조건은 enabled && !isRefreshing && touches.length === 1 && window.scrollY <= 0, 위로 움직이거나 scrollY > 0이 되면 추적 중단, cleanup에서 전 리스너 해제 + 당김 리셋. 임계값·감쇠는 step 1의 pull-to-refresh.ts 순수 함수만 사용. 테스트 src/lib/__tests__/use-pull-to-refresh.test.ts 12건(jsdom, 합성 터치 이벤트) 선작성. src/index.css의 html, body에 overscroll-behavior-y: none 추가(결정 8, contain이 아닌 이유 주석). npm test 134파일 1938건 통과 · build · lint 통과.",
+      "completed_at": "2026-08-01T14:01:01+0900"
+    },
+    {
+      "step": 3,
+      "name": "pull-banner",
+      "status": "completed",
+      "started_at": "2026-08-01T14:01:01+0900",
+      "summary": "src/components/PullToRefreshBanner/PullToRefreshBanner.tsx 신설(표시 전용 — 훅 호출·store·features/storage/native 무의존). props { distance: number; phase: PullPhase }, phase==='idle'이면 null 반환. 루트 `pointer-events-none absolute inset-x-0 top-full z-[1] overflow-hidden border-b border-border bg-bg` + style={{ height: resolveBandHeightPx(distance, phase) }} + role=\"status\" aria-live=\"polite\" data-testid=\"pull-to-refresh-banner\"(흐름 밖이라 목록을 밀어내지 않고 높이만 변한다 — step 4~6은 이 요소를 sticky 헤더 블록의 마지막 자식, 경계 페이드가 있으면 그 다음 형제로 꽂는다). 내용 래퍼 `flex h-14 items-center justify-center gap-2`(h-14=56px=PULL_THRESHOLD_PX, 주석으로 명시). pulling·ready는 정적 단풍잎 svg(viewBox 0 0 127 130, `h-5 w-5 text-primary-ink`, path fill=currentColor, data-testid=\"pull-to-refresh-leaf\" aria-hidden, 인라인 transform: rotate(progress×180deg)·opacity 0.3+0.7×progress, 애니메이션 클래스 없음), refreshing은 <MapleSweepSpinner size={24} className=\"text-primary-ink\" />(새 스피너 없음 — ADR-061 결정 1). 문구 `text-sm text-text-muted`: 당겨서 새로고침 / 놓으면 새로고침 / 새로고침하고 있어요(~중... 금지). 새 색·토큰·SVG 자산 없음. 테스트 __tests__/PullToRefreshBanner.test.tsx 12건(jsdom) 선작성 — idle 무렌더·3문구·스피너 유무·refreshing에서 distance=0이어도 높이 56px·당김에 따른 높이 증가·진행률 클램프(회전 ≤180deg)·잎 애니메이션 클래스 부재·루트 절대배치/pointer-events-none·접근성. 문서 수정 1건: design-system.md 레시피의 잎 표기를 `fill-current`(svg 클래스)에서 `path fill=\"currentColor\"`로 정정 — MapleSpinner·MapleSweepSpinner와 같은 관례(렌더 결과는 동일). npm run build · npm test(135파일 1950건) · npm run lint 전량 통과.",
+      "completed_at": "2026-08-01T14:04:20+0900"
+    },
+    {
+      "step": 4,
+      "name": "content-screen-wiring",
+      "status": "completed",
+      "started_at": "2026-08-01T14:04:20+0900",
+      "summary": "ContentScreen.tsx 한 파일에 제스처 배선 — `const isEmpty = ...` 바로 다음(빈 상태 조기 반환보다 위, 훅 규칙)에서 usePullToRefresh({ enabled: !isEmpty, isRefreshing: status === 'loading', onRefresh: () => refresh(trackedOcids ?? []) }) 호출(store 액션·상태 신설 없음, refresh는 1인자 — ADR-072 결정 3·12·13). 배너 <PullToRefreshBanner distance={pullToRefresh.distance} phase={pullToRefresh.phase} />를 sticky 헤더 블록(`sticky top-0 z-10 bg-bg px-4 …`)의 마지막 자식 = 경계 페이드 오버레이 '다음' 형제로 삽입(결정 5, idle이면 배너가 스스로 null이라 조건부 렌더 없음). 헤더 새로고침 버튼·overflow·store 무변경. 테스트 __tests__/ContentScreen.test.tsx에 describe('당겨서 새로고침 (ADR-072)') 4건 선작성 — 합성 touchEvent 헬퍼(jsdom엔 TouchEvent 생성자 없음, window.scrollY는 기본 0이라 최상단 판정 통과)로 (1) 임계 초과 당김→놓기 시 refresh가 ['ocid-1']로 1회 호출 (2) 임계 미만이면 미호출 (3) 당기는 중 배너가 페이드 다음 형제·sticky 부모 안에 그려지고 '당겨서 새로고침' 표시 (4) 헤더 새로고침 버튼 존치·클릭 시 refresh(결정 10 회귀 방지). npm run build · npm test(135파일 1954건) · npm run lint 전량 통과.",
+      "completed_at": "2026-08-01T14:07:31+0900"
+    },
+    {
+      "step": 5,
+      "name": "boss-screen-wiring",
+      "status": "completed",
+      "started_at": "2026-08-01T14:07:31+0900",
+      "summary": "BossScreen.tsx 한 파일에 제스처 배선 — ContentScreen(step 4)과 동일한 형태로 `const isEmpty = ...` 바로 다음(빈 상태 조기 반환보다 위, 훅 규칙)에서 usePullToRefresh({ enabled: !isEmpty, isRefreshing: status === 'loading', onRefresh: () => refresh(trackedOcids ?? []) }) 호출 — 보스 store의 refresh는 (ocids, onProgress?) 시그니처지만 세 화면 공통 1인자로만 호출한다(ADR-072 결정 3·12·13, store 무변경). 배너 <PullToRefreshBanner distance={pullToRefresh.distance} phase={pullToRefresh.phase} />를 sticky 헤더 블록(`sticky top-0 z-10 bg-bg px-4 …`)의 마지막 자식 = 경계 페이드 오버레이 '다음' 형제로 삽입(결정 5). 헤더 새로고침 버튼·overflow·store·BossManageScreen 무변경. 테스트 __tests__/BossScreen.test.tsx에 describe('당겨서 새로고침 (ADR-072)') 4건 선작성(ContentScreen.test.tsx와 같은 합성 touchEvent 헬퍼 재사용) — (1) 임계 초과 당김→놓기 시 refresh가 ['ocid-1']로 1회 호출 (2) 임계 미만이면 미호출 (3) 당기는 중 배너가 페이드 다음 형제·sticky 부모 안에 '당겨서 새로고침'으로 렌더 (4) 헤더 새로고침 버튼 존치·클릭 시 refresh(결정 10 회귀 방지). npm run build · npm test(135파일 1958건) · npm run lint 전량 통과.",
+      "completed_at": "2026-08-01T14:10:03+0900"
+    },
+    {
+      "step": 6,
+      "name": "profit-screen-wiring",
+      "status": "completed",
+      "started_at": "2026-08-01T14:10:03+0900",
+      "summary": "BossProfitScreen.tsx 한 파일에 제스처 배선 — 과거 기간 게이팅이 핵심. `const now = new Date()` 와 `const isCurrentPeriod = isLatestPeriod(tab, periodKey, now)` 두 줄(설명 주석 포함)을 조기 반환 아래(`:1298`)에서 `const isEmpty = ...` 바로 다음(`:1261~1262`)으로 **이동**(복제 아님 — 조기 반환 아래 periodLabel·isNextDisabled·periodQueryable·헤더 버튼 조건은 옮긴 선언을 그대로 쓴다, `new Date()` 는 여전히 1회 호출). 그 다음(조기 반환 `:1297` 보다 위)에서 usePullToRefresh({ enabled: !isEmpty && isCurrentPeriod, isRefreshing: status === 'loading', onRefresh: () => refresh(trackedOcids ?? []) }) 호출 — 활성 조건에 **isCurrentPeriod**(헤더 새로고침 버튼 노출과 같은 플래그, ADR-072 결정 9)를 넣어 과거 기간에서 제스처를 끈다. 수익 refresh 는 periodKey 를 현재 기간으로 강제 리셋하므로(#30) 과거 기간에서 제스처가 먹으면 보던 기간이 튕겨 나간다. canGoPreviousPeriod(이전 이동 게이트 #29)·isPeriodLoading(과거 기간 백필 전용)은 쓰지 않았고, store 액션·상태 신설 없음. 배너 <PullToRefreshBanner distance phase />는 sticky 헤더 블록(ref={stickyHeaderRef})의 **마지막 자식**으로 삽입 — 이 화면은 경계 페이드 오버레이가 없고(ADR-047 결정 6) 배너가 absolute라 stickyHeaderRef 실측 높이를 바꾸지 않아 ResizeObserver·중첩 sticky 오프셋에 영향이 없다(결정 4). 테스트 __tests__/BossProfitScreen.test.tsx 에 describe('당겨서 새로고침 (ADR-072)') 6건 선작성(앞 step들의 합성 touchEvent 헬퍼 재사용) — 현재 기간 임계 초과 당김→놓기 시 refresh(['ocid-1']) 1회 / 임계 미만 미호출 / **과거 기간('2026-07-09')에서 같은 제스처로도 refresh 미호출** / 과거 기간에서 배너 미렌더 / 현재 기간 당김 중 배너가 sticky 부모의 lastElementChild / 헤더 새로고침 버튼은 현재 기간에만 노출·클릭 시 refresh(결정 10 회귀 방지). `enabled` 에서 isCurrentPeriod 를 뺀 변이 실험으로 과거 기간 테스트 2건이 실제로 실패함을 확인. npm run build · npm test(135파일 1964건) · npm run lint 전량 통과.",
+      "completed_at": "2026-08-01T14:14:01+0900"
+    },
+    {
+      "step": 7,
+      "name": "docs-finalize",
+      "status": "completed",
+      "started_at": "2026-08-01T14:14:01+0900",
+      "summary": "문서 전용(src/ 무변경). ADR-072 제목·말미 상태를 '(구현 완료, 2026-08-01, 이슈 #38 · iOS 실기기 검증 보류)'로 갱신하고 '#### 구현 메모(2026-08-01)'(파일·export 표: lib/pull-to-refresh.ts 상수 3 + 함수 5, lib/use-pull-to-refresh.ts 훅 계약(enabled=false면 리스너 미부착·didTriggerRefresh·onRefresh ref), components/PullToRefreshBanner data-testid, index.css 러버밴드 / 세 화면 호출 위치는 모두 `const isEmpty` 직후·조기 반환 위, enabled는 컨텐츠·보스 `!isEmpty` 수익 `!isEmpty && isCurrentPeriod` / 수익의 now·isCurrentPeriod를 조기 반환 위로 '이동'시킨 사실과 훅 규칙 이유 / 테스트 파일 목록)와 '#### 남은 검증'(iOS 실기기 러버밴드-배너 공존 미확인 — 시뮬레이터·jsdom 불가, 간섭 시 스크롤 루트/body 추가 조정 필요 · Android 실기기 임계 56px 손맛 미확인) 신설. docs/ADR.md 인덱스 1행 동일 문구로 동기화. 문서-구현 대조 결과: design-system.md 레시피(배너 루트 클래스·h-14 내용 래퍼·잎 viewBox/클래스/회전·불투명도 식·MapleSweepSpinner 24px·3문구·수치 3개·scrollY<=0·overscroll-behavior-y)는 코드와 한 글자도 다르지 않아 정정 없음 — 정책 위반 발견 0건. 보강만: design-system.md PTR 절에 구현 파일 포인터 1줄 + 제목에 구현 완료 표기, features 3문서 절 제목에 '구현 완료 2026-08-01' + 화면별 enabled 조건(컨텐츠)·1인자 호출 근거(보스)·now/isCurrentPeriod 선언 위치와 배너 absolute 유지 이유(수익) 한 줄씩. ADR-072 결정 9 본문의 :1302·:1374 좌표가 이동으로 낡은 점은 결정문을 고치지 않고 구현 메모에 '설계 시점 좌표, 현재는 :1261~1262·:1390'으로 명시. ADR-072 결정 13개 전부 구현 확인 — (미구현) 항목 없음, 폐기된 정책 없음(history 이동 대상 없음). AC: npm run build · npm test(135파일 1964건) · npm run lint 전량 통과, git status는 docs/ 6파일 + phases/index.json만.",
+      "completed_at": "2026-08-01T14:18:28+0900"
+    },
+    {
+      "step": 8,
+      "name": "docs-overlay-guard",
+      "status": "completed",
+      "started_at": "2026-08-01T14:22:45+0900",
+      "summary": "문서 전용(src/ 무변경). ADR-072 에 **결정 14 — 스크롤 가능한 조상 안에서 시작한 터치는 페이지 당김으로 보지 않는다** 추가(결정 1~13 본문 무수정, 결정 2 `window.scrollY <= 0` 은 폐기가 아니라 그 앞에 출처 검사를 하나 더 놓는 것). 판정 규칙(step 9가 구현할 것): `touchstart` 시점에 `event.target` 에서 위로 올라가며 **자기 스크롤을 가진 조상**(계산된 `overflow-y` 가 `auto`·`scroll` 이고 `scrollHeight > clientHeight`)이 하나라도 있으면 추적을 시작하지 않는다 — 탐색은 문서 스크롤 루트(`document.body`/`documentElement`)에 닿으면 멈춘다(페이지 자신은 당김의 대상이지 배제 대상이 아니다). `scrollTop` 값으로 조건을 걸지 않는다(내부 스크롤러가 최상단이어도 페이지 당김으로 넘기지 않음 — 오버레이가 떠 있는 동안의 배경 새로고침은 어느 경우에도 의도가 아니다). 버린 대안 2: `body.style.overflow === 'hidden'` 추측(useBodyScrollLock 구현 세부에 결합·잠금 없는 레이어 누락) / 화면 `enabled` 에 모달 상태 나열(오버레이 추가 때마다 세 화면 수정·누락이 조용한 회귀). ADR-072 에 '#### 발견된 결함과 수정 (2026-08-01)' 절 신설 — 원인 사슬(useBodyScrollLock 은 body.overflow 만 바꾸고 window.scrollY 는 그대로 → 오버레이 내부 스크롤 터치가 document 로 버블링 → preventDefault 로 내부 스크롤 차단 → 놓으면 refresh), 계측 결과(onRefresh 호출 1회 · touchmove.defaultPrevented === true), 해당 범위 세 화면 전부(CharacterTrackingGrid max-h-[70vh] overflow-y-auto · BottomSheet · Modal), 발견 시점(step 0~7 완료 직후 검증 중)과 수정 담당(step 9), '엣지가 아니라 상시 경로' 명시. ADR-072 제목·말미 상태와 docs/ADR.md 인덱스 행을 '(구현 완료, 2026-08-01, 이슈 #38 · 결정 14는 후속 수정 · iOS 실기기 검증 보류)' 로 동기화. design-system.md PTR 절 레시피 블록에 '제스처 무시:' 2줄 추가. AC: npm run build · npm test(135파일 1964건) · npm run lint 전량 통과, git status 에 src/ 파일 0건(docs 3파일 + phases 만).",
+      "completed_at": "2026-08-01T14:25:51+0900"
+    },
+    {
+      "step": 9,
+      "name": "overlay-scroll-guard",
+      "status": "completed",
+      "started_at": "2026-08-01T14:25:52+0900",
+      "summary": "ADR-072 결정 14 구현 — src/lib/use-pull-to-refresh.ts 한 파일 + 그 테스트만 수정(git status에 화면·컴포넌트·store 0건). 훅 파일 모듈 스코프에 DOM 헬퍼 startedInScrollableLayer(target: EventTarget | null): boolean 신설 — pull-to-refresh.ts 는 순수 모듈로 남긴다(그 테스트에 jsdom 지시 주석 없음, DOM 참조 grep 무결과). 판정 규칙: event.target 이 Element 일 때만 시작해 parentElement 로 올라가며 getComputedStyle(node).overflowY 가 auto|scroll 이고 scrollHeight > clientHeight 인 조상이 하나라도 있으면 추적 미시작, 탐색은 document.body·documentElement 에 닿으면 중단(스크롤 루트는 배제 대상 아님), scrollTop 은 보지 않음. 호출부는 handleTouchStart 의 touches.length 검사 다음·window.scrollY 검사 앞(결정 2는 무수정 — 출처 검사를 앞에 하나 더 놓는다)이라 제스처당 1회만 레이아웃을 읽는다(touchmove 조상 순회 없음). 테스트는 기존 12건 무수정 유지 + describe('스크롤 가능한 조상 안에서 시작한 터치 (ADR-072 결정 14)') 5건 선작성 — dispatchFrom(요소, 합성 이벤트) 헬퍼와 appendDiv({overflowY, scrollHeight, clientHeight}) (jsdom은 레이아웃을 계산하지 않아 두 값을 defineProperty 로 심음) 추가, afterEach 에 심은 요소·body 스타일·body scrollHeight/clientHeight 정리 추가. 항목: 스크롤 가능한 오버레이 안(body.overflow='hidden', scrollY=0, 스크롤러의 자식에서 디스패치)에서 시작한 당김은 onRefresh 미호출 / 같은 상황에서 touchmove.defaultPrevented === false(내부 스크롤 생존) / scrollHeight === clientHeight 면 정상 동작(과잉 차단 방지) / 평범한 페이지 요소 정상 동작 / document.body 자체 정상 동작. 변이 검증: 가드 호출을 `if (false && …)` 로 무력화하니 새 2건(onRefresh 1회 호출 · defaultPrevented true — 계측 결과와 동일)이 실패하고 나머지 15건은 통과, 되돌린 뒤 17건 전량 통과. AC: npm run build · npm test(135파일 1969건, step 8 대비 +5) · npm run lint 전량 통과, 세 화면 기존 제스처 테스트 317건도 그대로 통과(가드가 과하지 않음).",
+      "completed_at": "2026-08-01T14:29:48+0900"
+    }
+  ],
+  "created_at": "2026-08-01T13:46:42+0900",
+  "completed_at": "2026-08-01T14:29:48+0900"
+}
