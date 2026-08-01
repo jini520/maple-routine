@@ -2,7 +2,7 @@
 
 > **범위**: 주간/월간 보스 진행 상태, 캐릭터 추적, 파티 관리, 보스 카드·난이도 뱃지, 솔로/파티 필터, 보스 관리 페이지. 캐릭터 관리 피커·탭 토글은 [../foundation/design-system.md](../foundation/design-system.md), 수동/자동 트래킹 전역 토글은 [settings.md](./settings.md).
 > **관련 소스**: `app/boss-scheduler/`(`BossScreen.tsx` — `BossCard`·`DifficultyBadge` export) · `features/boss-scheduler/` · `storage/boss-party-settings`(SQLite `boss_party_settings`) · `lib/boss-icons` · `lib/boss-matching` · `PartyManagementModal` · `/boss/manage` · `src/data/weekly-bosses.json`·`boss-crystal-prices.json`·`boss-portrait-crops.json`.
-> **관련 ADR**: [[ADR-013]] [[ADR-012]] [[ADR-018]] [[ADR-019]] [[ADR-035]] [[ADR-031]] [[ADR-006]] [[ADR-053]] [[ADR-055]] [[ADR-056]] [[ADR-072]]. **관련 문서**: [../foundation/architecture.md](../foundation/architecture.md), [../foundation/nexon-api.md](../foundation/nexon-api.md), [../foundation/game-data.md](../foundation/game-data.md), [boss-profit.md](./boss-profit.md).
+> **관련 ADR**: [[ADR-013]] [[ADR-012]] [[ADR-018]] [[ADR-019]] [[ADR-035]] [[ADR-031]] [[ADR-006]] [[ADR-053]] [[ADR-055]] [[ADR-056]] [[ADR-072]] [[ADR-073]]. **관련 문서**: [../foundation/architecture.md](../foundation/architecture.md), [../foundation/nexon-api.md](../foundation/nexon-api.md), [../foundation/game-data.md](../foundation/game-data.md), [boss-profit.md](./boss-profit.md).
 
 **관리 화면 토글 저장 실패 ([[ADR-065]] 결정 4)**: 체크박스가 그 자리에 남아 맥락이 있으므로 토스트로 알린다 — 문구는 컨텐츠·보스 공통으로 "추적 목록을 저장하지 못했습니다" 하나다(같은 화면에서 무엇을 토글했는지는 사용자가 안다). 재시도 액션은 두지 않는다 — 다시 탭하면 되는 일이라 중복이다.
 
@@ -20,8 +20,8 @@
 
 ## UI
 
-### 당겨서 새로고침 ([[ADR-072]], 구현 완료 2026-08-01)
-목록 최상단에서 아래로 당기면 헤더 새로고침 버튼과 같은 재조회가 돈다. 레시피는 [foundation/design-system.md](../foundation/design-system.md) 의 '당겨서 새로고침' 절. 이 화면의 활성 조건은 `!isEmpty`(추적 캐릭터 있음) 하나다. 이 store의 `refresh` 는 `(ocids, onProgress?)` 지만 제스처는 세 화면 공통으로 **1인자**(`refresh(trackedOcids ?? [])`)로만 호출한다([[ADR-072]] 결정 3).
+### 당겨서 새로고침 ([[ADR-072]] 제스처 · [[ADR-073]] 인디케이터)
+목록 최상단에서 아래로 당기면 헤더 새로고침 버튼과 같은 재조회가 돈다. **헤더는 제자리에 고정되고 목록 블록만 손가락을 따라 내려가며, 벌어진 틈에 인디케이터가 뜬다**([[ADR-073]]). 레시피는 [foundation/design-system.md](../foundation/design-system.md) 의 '당겨서 새로고침' 절. 이 화면의 활성 조건은 `!isEmpty`(추적 캐릭터 있음) 하나다. 이 store의 `refresh` 는 `(ocids, onProgress?)` 지만 제스처는 세 화면 공통으로 **1인자**(`refresh(trackedOcids ?? [])`)로만 호출한다([[ADR-072]] 결정 3).
 
 ### 보스 카드 ([[ADR-018]])
 보스별 독립 카드 + 일러스트 bleed. 목록 감싸는 상위 카드 없음(`space-y-2` 나열). **카드 배경·보더·보스명 텍스트는 페이지 표면이 아니라 일러스트 위 배색을 따른다** — bleed·페이드·text-shadow가 어두운 배경 전제라 라이트 테마에서 페이지 토큰(`bg-surface` 등)을 쓰면 대비가 깨짐. `media-*` 토큰 + `.media-scope`([[ADR-064]] 결정 5, [theme.md](./theme.md))를 쓴다 — 카드 루트에 스코프를 걸면 안쪽은 앱 전역과 같은 레시피를 쓰면서 자동으로 어두운 기준을 따른다.

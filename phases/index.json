@@ -124,6 +124,10 @@
       "dir": "pull-to-refresh",
       "status": "completed",
       "completed_at": "2026-08-01T14:29:48+0900"
+    },
+    {
+      "dir": "pull-to-refresh-motion",
+      "status": "pending"
     }
   ]
 }
