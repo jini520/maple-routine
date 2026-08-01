@@ -13,7 +13,10 @@
     {
       "step": 1,
       "name": "pull-gesture-core",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-01T13:52:00+0900",
+      "summary": "src/lib/pull-to-refresh.ts 신설(순수 함수, React·DOM·store 무의존) — 상수 PULL_RESISTANCE=0.5 / PULL_THRESHOLD_PX=56(배너 h-14와 동일) / PULL_MAX_PX=80, 타입 PullPhase='idle'|'pulling'|'ready'|'refreshing', 함수 resolvePullDistance(rawDeltaY: number): number(rawDeltaY<=0이면 0, 아니면 rawDeltaY*RESISTANCE를 MAX로 클램프) · resolvePullPhase(distance: number, isRefreshing: boolean): PullPhase(isRefreshing이면 거리 무관 refreshing 우선) · shouldTriggerRefresh(distance: number): boolean(ready와 동일 경계 distance>=THRESHOLD) · resolvePullProgress(distance: number): number(distance/THRESHOLD를 0~1 클램프) · resolveBandHeightPx(distance: number, phase: PullPhase): number(refreshing→THRESHOLD, idle→0, 그 외 0~MAX 클램프). 테스트 src/lib/__tests__/pull-to-refresh.test.ts 16건(node 환경, 환경 지시 주석 없음) 선작성 후 구현. npm test 133파일 1926건 통과 · build · lint 통과.",
+      "completed_at": "2026-08-01T13:54:00+0900"
     },
     {
       "step": 2,
