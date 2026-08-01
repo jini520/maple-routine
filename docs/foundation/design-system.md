@@ -225,7 +225,7 @@ style: maskImage/WebkitMaskImage: linear-gradient(to bottom, black, transparent)
 
 **예외 — 보스 수익 화면은 이 페이드 오버레이를 페이지 헤더가 아니라 "중첩 sticky 요소"(펼친 캐릭터 카드 헤더) 하단에 붙인다**([[ADR-047]] 결정 6·후속, 2026-07-28). 레시피는 동일하고 배경색만 그 요소의 표면색(`from-surface`)으로 바꾼다 — **페이드는 콘텐츠가 실제로 지나가는 경계에 둔다**는 원칙. 그 화면은 펼친 캐릭터 카드 헤더가 **중첩 sticky**로 페이지 헤더 바로 아래(= 이 오버레이가 덮는 `top-full h-8` 밴드)에 멈추는데, 오버레이는 `z-10` 페이지 헤더 안에 있고 카드는 `isolate`로 그보다 아래라 stuck 헤더 상단이 가려진다. 경계는 헤어라인(`h-px bg-border`)이 대신한다. **중첩 sticky를 도입하는 화면에서는 이 레시피를 그대로 쓰면 안 된다.** 나머지 4개 화면(컨텐츠·컨텐츠 관리·보스·보스 관리)은 중첩 sticky가 없어 페이드를 유지한다. 상세는 [features/boss-profit.md](../features/boss-profit.md).
 
-### 당겨서 새로고침(pull-to-refresh) — [[ADR-072]] · 인디케이터 형태는 [[ADR-073]] (제스처 구현 완료 2026-08-01 · 목록 이동 인디케이터는 설계, 구현 전 · iOS 실기기 검증 보류)
+### 당겨서 새로고침(pull-to-refresh) — [[ADR-072]] · 인디케이터 형태는 [[ADR-073]] (구현 완료 2026-08-01 · 실기기 검증 보류)
 > **구현**: `lib/pull-to-refresh.ts`(상수·순수 함수) · `lib/use-pull-to-refresh.ts`(`usePullToRefresh({ enabled, isRefreshing, onRefresh })`) · `components/PullToRefreshIndicator/`(표시 전용, `data-testid="pull-to-refresh-indicator"`) · `src/index.css`(러버밴드 억제). 화면은 `enabled` 만 계산해 넘긴다.
 
 목록 최상단에서 아래로 당기면 그 화면의 헤더 새로고침 버튼과 **같은 재조회**가 돈다. 제스처는 버튼의 대체가 아니라 추가 수단이다. **헤더는 고정되고 목록만 손가락을 따라 내려가며, 벌어진 틈에 인디케이터가 뜬다**(RN `RefreshControl` 감각, [[ADR-073]]). 이 절이 구현의 단일 진실 공급원이며, **새 색·새 토큰·새 SVG 자산을 만들지 않는다** — 기존 토큰(`text-text-muted`·`text-primary-ink`)과 `MAPLE_LEAF_PATH` 로 전부 표현된다.
@@ -233,9 +233,10 @@ style: maskImage/WebkitMaskImage: linear-gradient(to bottom, black, transparent)
 ```
 적용 화면: 컨텐츠·보스·수익 3개 탭 최상위 화면만(서브 화면·설정 탭 제외)
 
-목록 블록(sticky 헤더의 형제, `px-4 pb-4` 를 가진 블록):
+목록 블록(sticky 헤더의 형제, `px-4 pb-4` 를 가진 블록) — data-testid="pull-content":
   style transform: translateY(<오프셋>px)   ← 오프셋이 0이면 transform 자체를 걸지 않는다
   style transition: 드래그 중 'none' / 그 외 PULL_SETTLE_TRANSITION
+  (드래그 여부는 훅이 주는 isDragging — 손을 떼면 즉시 false라 재조회 중은 전환을 탄다)
 
 인디케이터: sticky 헤더 블록의 마지막 자식(페이드가 있으면 그 다음 형제)
   루트: pointer-events-none absolute inset-x-0 top-full z-[1] overflow-hidden
@@ -252,7 +253,7 @@ style: maskImage/WebkitMaskImage: linear-gradient(to bottom, black, transparent)
 제스처 무시: 스크롤 가능한 조상 안에서 시작한 터치([[ADR-072]] 결정 14)
 러버밴드 억제: index.css 의 html, body 에 overscroll-behavior-y: none
 ```
-- **수치**: `PULL_RESISTANCE = 0.5`(감쇠 계수) · `PULL_THRESHOLD_PX = 56`(이 거리를 넘으면 놓았을 때 재조회, 재조회 중 목록이 머무는 위치이기도 하다) · `PULL_MAX_PX = 80`(더 당겨도 여기서 멈춘다).
+- **수치**: `PULL_RESISTANCE = 0.5`(감쇠 계수) · `PULL_THRESHOLD_PX = 56`(이 거리를 넘으면 놓았을 때 재조회, 재조회 중 목록이 머무는 위치이기도 하다) · `PULL_MAX_PX = 80`(더 당겨도 여기서 멈춘다) · `PULL_SETTLE_TRANSITION = 'transform 300ms cubic-bezier(0.22, 1, 0.36, 1)'`(정착·복귀 전환, 대상이 `transform` 하나로 못 박혀 있다).
 - **오프셋이 0이면 `transform` 을 걸지 않는다** — `translateY(0px)` 조차 containing block·stacking context를 만들어 `position: sticky` 후손(보스 수익의 중첩 카드 헤더, [[ADR-047]])에 영향을 줄 수 있다. 평상시 DOM은 이 기능 도입 전과 같아야 한다. `transition` 속성은 컨텍스트를 만들지 않으므로 항상 걸어둔다(그래야 복귀 애니메이션이 산다).
 - **마진·높이가 아니라 `transform` 인 이유** — 흐름을 바꾸면 터치 프레임마다 목록이 리플로우되고, 보스 수익 화면은 sticky 헤더 높이를 `ResizeObserver` 로 실측해 중첩 sticky 오프셋에 쓰므로([[ADR-047]] 결정 3) 펼친 카드 헤더가 손가락을 따라 흔들린다. `transform` 은 레이아웃을 유발하지 않아 둘 다 일어나지 않는다.
 - **드래그 중에는 전환을 끈다** — 손가락이 붙어 있는데 전환이 걸리면 목록이 늦게 따라와 "끌린다"는 감각이 죽는다. 손을 뗀 뒤(정착·복귀)에만 전환을 건다.
