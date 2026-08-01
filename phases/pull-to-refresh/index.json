@@ -64,7 +64,7 @@
       "status": "completed",
       "started_at": "2026-08-01T14:14:01+0900",
       "summary": "문서 전용(src/ 무변경). ADR-072 제목·말미 상태를 '(구현 완료, 2026-08-01, 이슈 #38 · iOS 실기기 검증 보류)'로 갱신하고 '#### 구현 메모(2026-08-01)'(파일·export 표: lib/pull-to-refresh.ts 상수 3 + 함수 5, lib/use-pull-to-refresh.ts 훅 계약(enabled=false면 리스너 미부착·didTriggerRefresh·onRefresh ref), components/PullToRefreshBanner data-testid, index.css 러버밴드 / 세 화면 호출 위치는 모두 `const isEmpty` 직후·조기 반환 위, enabled는 컨텐츠·보스 `!isEmpty` 수익 `!isEmpty && isCurrentPeriod` / 수익의 now·isCurrentPeriod를 조기 반환 위로 '이동'시킨 사실과 훅 규칙 이유 / 테스트 파일 목록)와 '#### 남은 검증'(iOS 실기기 러버밴드-배너 공존 미확인 — 시뮬레이터·jsdom 불가, 간섭 시 스크롤 루트/body 추가 조정 필요 · Android 실기기 임계 56px 손맛 미확인) 신설. docs/ADR.md 인덱스 1행 동일 문구로 동기화. 문서-구현 대조 결과: design-system.md 레시피(배너 루트 클래스·h-14 내용 래퍼·잎 viewBox/클래스/회전·불투명도 식·MapleSweepSpinner 24px·3문구·수치 3개·scrollY<=0·overscroll-behavior-y)는 코드와 한 글자도 다르지 않아 정정 없음 — 정책 위반 발견 0건. 보강만: design-system.md PTR 절에 구현 파일 포인터 1줄 + 제목에 구현 완료 표기, features 3문서 절 제목에 '구현 완료 2026-08-01' + 화면별 enabled 조건(컨텐츠)·1인자 호출 근거(보스)·now/isCurrentPeriod 선언 위치와 배너 absolute 유지 이유(수익) 한 줄씩. ADR-072 결정 9 본문의 :1302·:1374 좌표가 이동으로 낡은 점은 결정문을 고치지 않고 구현 메모에 '설계 시점 좌표, 현재는 :1261~1262·:1390'으로 명시. ADR-072 결정 13개 전부 구현 확인 — (미구현) 항목 없음, 폐기된 정책 없음(history 이동 대상 없음). AC: npm run build · npm test(135파일 1964건) · npm run lint 전량 통과, git status는 docs/ 6파일 + phases/index.json만.",
-      "completed_at": "2026-08-01T14:18:30+0900"
+      "completed_at": "2026-08-01T14:18:28+0900"
     }
   ],
   "created_at": "2026-08-01T13:46:42+0900"
