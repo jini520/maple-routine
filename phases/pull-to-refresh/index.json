@@ -72,7 +72,7 @@
       "status": "completed",
       "started_at": "2026-08-01T14:22:45+0900",
       "summary": "문서 전용(src/ 무변경). ADR-072 에 **결정 14 — 스크롤 가능한 조상 안에서 시작한 터치는 페이지 당김으로 보지 않는다** 추가(결정 1~13 본문 무수정, 결정 2 `window.scrollY <= 0` 은 폐기가 아니라 그 앞에 출처 검사를 하나 더 놓는 것). 판정 규칙(step 9가 구현할 것): `touchstart` 시점에 `event.target` 에서 위로 올라가며 **자기 스크롤을 가진 조상**(계산된 `overflow-y` 가 `auto`·`scroll` 이고 `scrollHeight > clientHeight`)이 하나라도 있으면 추적을 시작하지 않는다 — 탐색은 문서 스크롤 루트(`document.body`/`documentElement`)에 닿으면 멈춘다(페이지 자신은 당김의 대상이지 배제 대상이 아니다). `scrollTop` 값으로 조건을 걸지 않는다(내부 스크롤러가 최상단이어도 페이지 당김으로 넘기지 않음 — 오버레이가 떠 있는 동안의 배경 새로고침은 어느 경우에도 의도가 아니다). 버린 대안 2: `body.style.overflow === 'hidden'` 추측(useBodyScrollLock 구현 세부에 결합·잠금 없는 레이어 누락) / 화면 `enabled` 에 모달 상태 나열(오버레이 추가 때마다 세 화면 수정·누락이 조용한 회귀). ADR-072 에 '#### 발견된 결함과 수정 (2026-08-01)' 절 신설 — 원인 사슬(useBodyScrollLock 은 body.overflow 만 바꾸고 window.scrollY 는 그대로 → 오버레이 내부 스크롤 터치가 document 로 버블링 → preventDefault 로 내부 스크롤 차단 → 놓으면 refresh), 계측 결과(onRefresh 호출 1회 · touchmove.defaultPrevented === true), 해당 범위 세 화면 전부(CharacterTrackingGrid max-h-[70vh] overflow-y-auto · BottomSheet · Modal), 발견 시점(step 0~7 완료 직후 검증 중)과 수정 담당(step 9), '엣지가 아니라 상시 경로' 명시. ADR-072 제목·말미 상태와 docs/ADR.md 인덱스 행을 '(구현 완료, 2026-08-01, 이슈 #38 · 결정 14는 후속 수정 · iOS 실기기 검증 보류)' 로 동기화. design-system.md PTR 절 레시피 블록에 '제스처 무시:' 2줄 추가. AC: npm run build · npm test(135파일 1964건) · npm run lint 전량 통과, git status 에 src/ 파일 0건(docs 3파일 + phases 만).",
-      "completed_at": "2026-08-01T14:26:30+0900"
+      "completed_at": "2026-08-01T14:25:51+0900"
     },
     {
       "step": 9,
