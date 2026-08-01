@@ -16,6 +16,24 @@ export interface PullToRefreshState {
   phase: PullPhase
 }
 
+// 터치가 시작된 자리가 "페이지"인지 "그 위에 뜬 레이어"인지 묻는다([[ADR-072]] 결정 14). 모달·바텀시트는
+// 자기 스크롤을 가지면서 body 스크롤을 잠그므로 window.scrollY 는 0 그대로다(결정 2만으로는 최상단으로
+// 보인다). 그래서 이 검사가 없으면 오버레이 내부를 스크롤하려는 손가락이 document 까지 버블링돼
+// preventDefault 로 내부 스크롤이 막히고, 손을 떼면 뒤 페이지가 재조회된다.
+// 문서 스크롤 루트에 닿으면 멈춘다 — 페이지 자신은 당김의 대상이지 배제 대상이 아니다.
+// scrollTop 은 보지 않는다(결정 14) — 오버레이가 떠 있는 동안의 배경 새로고침은 어느 경우에도 의도가 아니다.
+function startedInScrollableLayer(target: EventTarget | null): boolean {
+  let node = target instanceof Element ? target : null
+  while (node !== null && node !== document.body && node !== document.documentElement) {
+    const { overflowY } = window.getComputedStyle(node)
+    if ((overflowY === 'auto' || overflowY === 'scroll') && node.scrollHeight > node.clientHeight) {
+      return true
+    }
+    node = node.parentElement
+  }
+  return false
+}
+
 // 목록 최상단에서 아래로 당기는 제스처를 감지한다([[ADR-072]]). 이 앱에는 overflow 스크롤 컨테이너가
 // 없고 문서 전체가 스크롤되므로(결정 1·2) 컨테이너 ref가 아니라 document 리스너 + window.scrollY 로
 // 판정한다. 임계값·감쇠 계산은 전부 pull-to-refresh.ts 의 순수 함수가 갖는다.
@@ -61,6 +79,9 @@ export function usePullToRefresh({
     const handleTouchStart = (event: TouchEvent): void => {
       if (isRefreshingRef.current) return // 결정 12 — 재조회 중에는 새 당김을 시작하지 않는다.
       if (event.touches.length !== 1) return // 멀티터치는 핀치/줌이지 당김이 아니다.
+      // 결정 14 — 출처 검사가 최상단 판정보다 앞이다. 조상 사슬 탐색은 레이아웃을 읽으므로
+      // touchmove 가 아니라 여기서 제스처당 한 번만 한다.
+      if (startedInScrollableLayer(event.target)) return
       if (window.scrollY > 0) return // 결정 2 — iOS 러버밴드에서 음수가 될 수 있어 `<= 0` 이다.
       startY = event.touches[0].clientY
       pulled = 0

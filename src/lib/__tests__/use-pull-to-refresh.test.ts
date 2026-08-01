@@ -19,14 +19,48 @@ function dispatch(event: Event): void {
   })
 }
 
+// 이벤트가 bubbles: true라 자식에서 쏘아도 document 리스너에 닿는다. 다른 점은 event.target 뿐이다.
+function dispatchFrom(target: EventTarget, event: Event): void {
+  act(() => {
+    target.dispatchEvent(event)
+  })
+}
+
 // jsdom의 window.scrollY는 읽기 전용이라 정의를 덮어쓴다.
 function setScrollY(value: number): void {
   Object.defineProperty(window, 'scrollY', { value, writable: true, configurable: true })
 }
 
+// jsdom은 레이아웃을 계산하지 않아 scrollHeight·clientHeight가 둘 다 0이다. "스크롤 가능한가"를 직접 심는다.
+// overflow-y는 인라인 스타일로 주면 getComputedStyle이 그대로 읽는다.
+const appended: HTMLElement[] = []
+function appendDiv(
+  props: { overflowY?: string; scrollHeight?: number; clientHeight?: number } = {},
+  parent: HTMLElement = document.body,
+): HTMLElement {
+  const element = document.createElement('div')
+  if (props.overflowY !== undefined) element.style.overflowY = props.overflowY
+  Object.defineProperty(element, 'scrollHeight', {
+    value: props.scrollHeight ?? 0,
+    configurable: true,
+  })
+  Object.defineProperty(element, 'clientHeight', {
+    value: props.clientHeight ?? 0,
+    configurable: true,
+  })
+  parent.appendChild(element)
+  if (parent === document.body) appended.push(element)
+  return element
+}
+
 afterEach(() => {
   cleanup()
   setScrollY(0)
+  appended.splice(0).forEach((element) => element.remove())
+  document.body.style.overflow = ''
+  document.body.style.overflowY = ''
+  Reflect.deleteProperty(document.body, 'scrollHeight')
+  Reflect.deleteProperty(document.body, 'clientHeight')
 })
 
 describe('usePullToRefresh', () => {
@@ -205,5 +239,80 @@ describe('usePullToRefresh', () => {
     dispatch(touchEvent('touchend'))
 
     expect(onRefresh).not.toHaveBeenCalled()
+  })
+
+  describe('스크롤 가능한 조상 안에서 시작한 터치 (ADR-072 결정 14)', () => {
+    it('스크롤 가능한 오버레이 안에서 시작한 당김은 onRefresh를 호출하지 않는다', () => {
+      // 모달·바텀시트가 떠 있으면 body 스크롤이 잠겨 window.scrollY는 0 그대로다. 최상단 판정만으로는
+      // 오버레이 내부 스크롤 의도까지 페이지 당김으로 흡수한다.
+      const onRefresh = vi.fn()
+      renderHook(() => usePullToRefresh({ enabled: true, isRefreshing: false, onRefresh }))
+
+      document.body.style.overflow = 'hidden'
+      const overlay = appendDiv({ overflowY: 'auto', scrollHeight: 900, clientHeight: 400 })
+      const inner = appendDiv({}, overlay) // 실제로 손가락이 닿는 곳은 스크롤러 안의 카드다
+
+      dispatchFrom(inner, touchEvent('touchstart', 0))
+      dispatchFrom(inner, touchEvent('touchmove', 200))
+      dispatchFrom(inner, touchEvent('touchend'))
+
+      expect(onRefresh).not.toHaveBeenCalled()
+    })
+
+    it('그 경우 touchmove의 기본 동작을 막지 않는다(내부 스크롤이 살아 있어야 한다)', () => {
+      renderHook(() => usePullToRefresh({ enabled: true, isRefreshing: false, onRefresh: vi.fn() }))
+
+      document.body.style.overflow = 'hidden'
+      const overlay = appendDiv({ overflowY: 'auto', scrollHeight: 900, clientHeight: 400 })
+
+      dispatchFrom(overlay, touchEvent('touchstart', 0))
+      const move = touchEvent('touchmove', 200)
+      dispatchFrom(overlay, move)
+
+      expect(move.defaultPrevented).toBe(false)
+    })
+
+    it('오버레이가 스크롤 불가면(scrollHeight === clientHeight) 당김이 정상 동작한다', () => {
+      // 검사가 과하게 잡으면 내용이 짧은 모달 뒤에서 제스처가 통째로 죽는다.
+      const onRefresh = vi.fn()
+      renderHook(() => usePullToRefresh({ enabled: true, isRefreshing: false, onRefresh }))
+
+      const overlay = appendDiv({ overflowY: 'auto', scrollHeight: 400, clientHeight: 400 })
+
+      dispatchFrom(overlay, touchEvent('touchstart', 0))
+      dispatchFrom(overlay, touchEvent('touchmove', 200))
+      dispatchFrom(overlay, touchEvent('touchend'))
+
+      expect(onRefresh).toHaveBeenCalledTimes(1)
+    })
+
+    it('평범한 페이지 요소에서 시작한 당김은 종전대로 동작한다', () => {
+      const onRefresh = vi.fn()
+      renderHook(() => usePullToRefresh({ enabled: true, isRefreshing: false, onRefresh }))
+
+      const card = appendDiv({ scrollHeight: 900, clientHeight: 400 }) // overflow가 없으니 스크롤러가 아니다
+
+      dispatchFrom(card, touchEvent('touchstart', 0))
+      dispatchFrom(card, touchEvent('touchmove', 200))
+      dispatchFrom(card, touchEvent('touchend'))
+
+      expect(onRefresh).toHaveBeenCalledTimes(1)
+    })
+
+    it('document.body에서 시작한 당김은 동작한다(문서 스크롤 루트는 배제 대상이 아니다)', () => {
+      // 페이지 자신은 당김의 대상이다 — 루트에 걸린 overflow를 보고 제스처를 끄면 안 된다.
+      const onRefresh = vi.fn()
+      renderHook(() => usePullToRefresh({ enabled: true, isRefreshing: false, onRefresh }))
+
+      document.body.style.overflowY = 'auto'
+      Object.defineProperty(document.body, 'scrollHeight', { value: 2000, configurable: true })
+      Object.defineProperty(document.body, 'clientHeight', { value: 800, configurable: true })
+
+      dispatchFrom(document.body, touchEvent('touchstart', 0))
+      dispatchFrom(document.body, touchEvent('touchmove', 200))
+      dispatchFrom(document.body, touchEvent('touchend'))
+
+      expect(onRefresh).toHaveBeenCalledTimes(1)
+    })
   })
 })
