@@ -221,6 +221,78 @@ describe('BossProfitScreen', () => {
     expect(screen.getByTestId('location-probe')).toHaveTextContent('/profit/drops')
   })
 
+  // ADR-080: 기간·탭이 바뀌면 아코디언이 전부 접혀(#27) 문서 높이가 붕괴한다. 스크롤을 내린
+  // 상태였다면 브라우저가 오프셋을 잘라내는데, 잘리기 전 1~2프레임 동안 레이아웃은 이미 짧고
+  // 오프셋은 그대로라 sticky 헤더가 화면 밖(-1154px)에 그려진다 — 그것이 깜빡임의 정체다.
+  // 줄어든 레이아웃이 그려지기 전에 최상단으로 옮겨 그 프레임을 없앤다.
+  describe('기간·탭 전환 시 스크롤 (ADR-080)', () => {
+    it('periodKey가 바뀌면 문서를 최상단으로 옮긴다', () => {
+      const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
+      mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()], periodKey: '2026-07-30' })
+      const { rerender } = renderBossProfitScreen()
+      scrollTo.mockClear()
+
+      mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()], periodKey: '2026-07-23' })
+      rerender(
+        <MemoryRouter initialEntries={['/profit']}>
+          <BossProfitScreen />
+        </MemoryRouter>,
+      )
+
+      expect(scrollTo).toHaveBeenCalledWith(0, 0)
+      scrollTo.mockRestore()
+    })
+
+    it('기간·탭이 그대로인 리렌더에서는 스크롤을 건드리지 않는다 — 히스토리 왕복의 위치 유지(ADR-077)가 깨진다', () => {
+      const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
+      mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()], periodKey: '2026-07-30' })
+      const { rerender } = renderBossProfitScreen()
+      scrollTo.mockClear()
+
+      // 같은 (tab, periodKey)로 상태만 바뀐 리렌더(동기화 완료 등)
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        rows: [row({ partySize: 3 })],
+        periodKey: '2026-07-30',
+      })
+      rerender(
+        <MemoryRouter initialEntries={['/profit']}>
+          <BossProfitScreen />
+        </MemoryRouter>,
+      )
+
+      expect(scrollTo).not.toHaveBeenCalled()
+      scrollTo.mockRestore()
+    })
+  })
+
+  // ADR-077: 히스토리는 독립 페이지가 아니라 이 화면 위에 얹히는 **스택 화면**이다. `/profit` 의 중첩
+  // 라우트라 이동해도 이 화면이 언마운트되지 않고, 그래서 펼쳐둔 아코디언·보던 기간·스크롤 위치가
+  // 저장·복원 코드 없이 그대로 남는다. 형제 라우트였을 땐 이동마다 언마운트돼 셋 다 잃었다.
+  it('히스토리로 이동해도 이 화면은 언마운트되지 않는다 — 펼쳐둔 아코디언이 그대로 남는다', () => {
+    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()] })
+
+    render(
+      <MemoryRouter initialEntries={['/profit']}>
+        <Routes>
+          <Route path="/profit" element={<BossProfitScreen />}>
+            <Route path="drops" element={<div data-testid="drops-overlay" />} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
+    expect(screen.getByText('자쿰')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: '히스토리' }))
+
+    // 오버레이가 떴는데도 아래 화면은 살아 있고, 펼침 상태(로컬 state)도 그대로다.
+    expect(screen.getByTestId('drops-overlay')).toBeInTheDocument()
+    expect(screen.getByText('자쿰')).toBeInTheDocument()
+  })
+
   it('제목 줄에 있으므로 기간과 무관하게 남는다 — 동기화 영역만 현재 기간 전용이다', () => {
     mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()], periodKey: '2026-07-09' })
     renderBossProfitScreen()

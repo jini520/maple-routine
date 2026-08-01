@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { Outlet, useNavigate } from 'react-router-dom'
 import {
   AlertTriangle,
   Ban,
@@ -1294,6 +1294,36 @@ export function BossProfitScreen(): React.JSX.Element {
   const stickyHeaderRef = useRef<HTMLDivElement>(null)
   const [stickyHeaderHeight, setStickyHeaderHeight] = useState(0)
 
+  // ADR-080: 기간·탭이 바뀌면 아코디언 key(`${tab}-${periodKey}-${ocid}`)가 바뀌어 카드가 전부
+  // 접히고(#27 펼침 리셋) **문서 높이가 붕괴한다**(실측 1939 → 874). 스크롤을 내린 상태였다면
+  // 브라우저가 오프셋을 잘라내야 하는데, 잘리기 전 1~2프레임 동안 레이아웃은 이미 짧고 오프셋은
+  // 그대로라 sticky 헤더가 화면 밖(`headerTop=-1154`)에 그려진다 — 헤더가 사라졌다 돌아오는 그것이
+  // 깜빡임의 정체다(프레임 단위 계측, 실기기 2026-08-02. 최상단에서 재현되지 않는 이유는 잘라낼
+  // 스크롤이 없어서다).
+  //
+  // useLayoutEffect 인 것이 핵심이다 — DOM 커밋 후 **페인트 전**에 돌아야 그 프레임이 그려지기
+  // 전에 스크롤이 0이 된다. useEffect 면 이미 늦다.
+  //
+  // 동작을 바꾸는 것이 아니다: 카드가 전부 접히면 문서(874px)가 뷰포트와 같아 최대 스크롤이 0이라
+  // 어차피 최상단으로 클램프된다. 도착지는 그대로 두고 가는 길의 깨진 프레임만 없앤다.
+  //
+  // 히스토리 왕복은 tab·periodKey를 바꾸지 않으므로([[ADR-077]]) 여기 걸리지 않는다 — 돌아왔을 때
+  // 스크롤 위치가 유지된다는 계약은 그대로다.
+  // ADR-080: 기간·탭이 바뀌면 **페인트 전에** 문서를 최상단으로 옮긴다.
+  //
+  // 기간이 바뀌면 아코디언 key(`${tab}-${periodKey}-${ocid}`)가 바뀌어 카드가 전부 접히고(#27 펼침
+  // 리셋) 문서 높이가 붕괴한다(실측 1939 → 874). 스크롤을 내린 상태였다면 브라우저가 오프셋을
+  // 잘라내야 하는데, 잘리기 전 1~2프레임 동안 레이아웃은 이미 짧고 오프셋은 그대로라 sticky 헤더가
+  // 화면 밖(`headerTop=-1154`)에 그려진다 — 헤더가 사라졌다 돌아오는 그것이 깜빡임의 정체다
+  // (프레임 단위 계측, 실기기 2026-08-02). `useEffect` 면 이미 늦다.
+  //
+  // **목적지가 0인 것이 중요하다**([[ADR-082]] 실패로 확인). 0은 sticky 헤더의 자연 위치라 iOS의
+  // 스크롤 스레드가 트랜스폼을 못 따라잡아도 헤더가 제자리에 그려진다. 0이 아닌 위치를 복원하면
+  // 그 트랜스폼이 한 박자 늦는 프레임에 헤더가 화면 밖으로 사라진다.
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0)
+  }, [tab, periodKey])
+
   useEffect(() => {
     const element = stickyHeaderRef.current
     if (element === null) return
@@ -1313,6 +1343,8 @@ export function BossProfitScreen(): React.JSX.Element {
   if (isEmpty) {
     return (
       <div className="flex min-h-[calc(100dvh-var(--sa-top)-var(--sa-bottom)-4rem)] flex-col p-4">
+        {/* 빈 상태에는 히스토리 진입점이 없지만(ADR-071 결정 7) 딥링크로는 닿을 수 있어 여기도 건다. */}
+        <Outlet />
         <h1 className="text-lg font-semibold text-text">보스 수익</h1>
 
         <div className="flex flex-1 flex-col items-center justify-center">
@@ -1350,6 +1382,9 @@ export function BossProfitScreen(): React.JSX.Element {
   const periodValuableDrops = collectAllValuableDrops(characterGroups, dropsByRowKey)
 
   return (
+    // ADR-077: 히스토리 오버레이(<Outlet />)는 아래 space-y-4 루트 **바깥**에 둔다 — 그 유틸리티는
+    // 형제에게 margin-top을 주는데, fixed inset-0 오버레이에 그 마진이 걸리면 1rem 밀려 그려진다.
+    <>
     <div className="-mt-[var(--sa-top)] space-y-4">
       {/* 제목~총 수익 카드까지는 화면 상단에 고정하고 그 아래 캐릭터 아코디언 목록만
           스크롤되게 한다(사용자 요청, 2026-07-14) — content-scheduler/boss-scheduler와
@@ -1602,5 +1637,7 @@ export function BossProfitScreen(): React.JSX.Element {
           ))}
       </div>
     </div>
+    <Outlet />
+    </>
   )
 }

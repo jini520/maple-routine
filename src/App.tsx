@@ -79,7 +79,9 @@ function BottomTabBar(): React.JSX.Element {
   return (
     <nav
       ref={navRef}
-      className="fixed inset-x-0 bottom-0 flex justify-around border-t border-border bg-surface pb-[var(--sa-bottom)]"
+      // z-30: 히스토리 오버레이(z-20, [[ADR-077]])보다 위라 그 화면에서도 탭바가 보인다(형제 라우트
+      // 시절과 같은 모습). 모달(z-50)·토스트(z-[60])보다는 아래다.
+      className="fixed inset-x-0 bottom-0 z-30 flex justify-around border-t border-border bg-surface pb-[var(--sa-bottom)]"
     >
       {TAB_ITEMS.map((tab) => (
         <NavLink
@@ -210,12 +212,15 @@ export function AppShell(): React.JSX.Element {
           <Route
             path="/profit"
             element={isCompleted ? <BossProfitScreen /> : <Navigate to="/onboarding" replace />}
-          />
-          {/* 드롭 획득 히스토리(전 기간) — 보스 수익의 서브 화면([[ADR-071]] 결정 7, 이슈 #54) */}
-          <Route
-            path="/profit/drops"
-            element={isCompleted ? <DropHistoryScreen /> : <Navigate to="/onboarding" replace />}
-          />
+          >
+            {/* 드롭 획득 히스토리(전 기간) — 보스 수익의 서브 화면([[ADR-071]] 결정 7, 이슈 #54).
+                **형제가 아니라 중첩 라우트**다([[ADR-077]]) — 히스토리는 독립 페이지가 아니라 보스
+                수익 위에 얹히는 스택 화면이라, 이동해도 아래 화면이 언마운트되면 안 된다. 형제였을 땐
+                이동마다 언마운트돼 아코디언 펼침·보던 기간·스크롤을 전부 잃었고, 그 언마운트가
+                iOS WKWebView에서 stuck sticky 헤더를 빈 화면으로 만들었다. 화면은
+                BossProfitScreen의 <Outlet />에 오버레이로 그려진다. */}
+            <Route path="drops" element={<DropHistoryScreen />} />
+          </Route>
           <Route
             path="/settings"
             element={isCompleted ? <SettingsScreen /> : <Navigate to="/onboarding" replace />}
