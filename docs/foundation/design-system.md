@@ -2,7 +2,7 @@
 
 > **범위**: 디자인 원칙·안티패턴·기본 색 팔레트·시맨틱 색·기본 컴포넌트(카드/버튼/입력)·여러 화면이 공유하는 UI 컴포넌트·공유 레이아웃 패턴·타이포·아이콘. 테마별 토큰 표·런타임 전환은 [features/theme.md](../features/theme.md), 기능 전용 컴포넌트는 각 `features/*.md`.
 > **관련 소스**: `components/*`(Modal, CharacterTrackingPicker, BossPortrait 등) · `src/index.css` · 각 화면 공통 레이아웃 · `lib/world-emblem`.
-> **관련 ADR**: [[ADR-009]] [[ADR-015]] [[ADR-016]] [[ADR-018]] [[ADR-064]]. **관련 문서**: [features/theme.md](../features/theme.md).
+> **관련 ADR**: [[ADR-009]] [[ADR-015]] [[ADR-016]] [[ADR-018]] [[ADR-064]] [[ADR-072]]. **관련 문서**: [features/theme.md](../features/theme.md).
 
 ## 디자인 원칙
 1. **캐주얼하고 친근한 게임 컴패니언 톤** — 정색한 업무 대시보드가 아니라 매일 캐릭터 챙기는 가벼운 도구. 라이트 테마가 기본.
@@ -224,6 +224,38 @@ style: maskImage/WebkitMaskImage: linear-gradient(to bottom, black, transparent)
 색(그라데이션)과 블러(같은 mask 그라데이션)를 동시에 옅어지게 해야 자연스럽다. `mask-image` 는 Tailwind 로 애매해 인라인 스타일(보스 카드 일러스트 페이드와 동일 패턴).
 
 **예외 — 보스 수익 화면은 이 페이드 오버레이를 페이지 헤더가 아니라 "중첩 sticky 요소"(펼친 캐릭터 카드 헤더) 하단에 붙인다**([[ADR-047]] 결정 6·후속, 2026-07-28). 레시피는 동일하고 배경색만 그 요소의 표면색(`from-surface`)으로 바꾼다 — **페이드는 콘텐츠가 실제로 지나가는 경계에 둔다**는 원칙. 그 화면은 펼친 캐릭터 카드 헤더가 **중첩 sticky**로 페이지 헤더 바로 아래(= 이 오버레이가 덮는 `top-full h-8` 밴드)에 멈추는데, 오버레이는 `z-10` 페이지 헤더 안에 있고 카드는 `isolate`로 그보다 아래라 stuck 헤더 상단이 가려진다. 경계는 헤어라인(`h-px bg-border`)이 대신한다. **중첩 sticky를 도입하는 화면에서는 이 레시피를 그대로 쓰면 안 된다.** 나머지 4개 화면(컨텐츠·컨텐츠 관리·보스·보스 관리)은 중첩 sticky가 없어 페이드를 유지한다. 상세는 [features/boss-profit.md](../features/boss-profit.md).
+
+### 당겨서 새로고침(pull-to-refresh) — [[ADR-072]]
+목록 최상단에서 아래로 당기면 그 화면의 헤더 새로고침 버튼과 **같은 재조회**가 돈다. 제스처는 버튼의 대체가 아니라 추가 수단이다. 이 절이 구현의 단일 진실 공급원이며, **새 색·새 토큰·새 SVG 자산을 만들지 않는다** — 기존 토큰(`bg-bg`·`border-border`·`text-text-muted`·`text-primary-ink`)과 `MAPLE_LEAF_PATH` 로 전부 표현된다.
+
+```
+적용 화면: 컨텐츠·보스·수익 3개 탭 최상위 화면만(서브 화면·설정 탭 제외)
+
+배너 위치: sticky 헤더 블록의 마지막 자식 — 경계 페이드 오버레이가 있으면 그 "다음" 형제
+배너 루트: pointer-events-none absolute inset-x-0 top-full z-[1] overflow-hidden border-b border-border bg-bg
+           style={{ height: <픽셀> }}   ← 목록을 밀어내지 않는다(높이만 변한다)
+배너 내용: flex h-14 items-center justify-center gap-2   ← h-14(56px) 고정, 위에서부터 드러난다
+  당기는 중/임계 초과: 정적 단풍잎(MAPLE_LEAF_PATH) h-5 w-5 fill-current text-primary-ink
+                      회전 = 진행률 × 180deg, 불투명도 = 0.3 + 0.7 × 진행률
+  재조회 중:          <MapleSweepSpinner size={24} className="text-primary-ink" />
+  문구: text-sm text-text-muted
+        당기는 중 "당겨서 새로고침" / 임계 초과 "놓으면 새로고침" / 재조회 중 "새로고침하고 있어요"
+
+수치: PULL_RESISTANCE = 0.5   손가락 이동 거리 → 당김 거리 감쇠 계수
+      PULL_THRESHOLD_PX = 56  이 거리를 넘으면 놓았을 때 재조회. 배너가 완전히 펼쳐진 높이와 같다
+      PULL_MAX_PX = 80        임계값을 넘겨 더 당겨도 여기서 멈춘다
+
+문서 스크롤 기준: window.scrollY <= 0 (overflow 컨테이너가 없다 — 위 "스크롤 영역" 참고)
+러버밴드 억제: index.css 의 html, body 에 overscroll-behavior-y: none
+```
+- **`absolute` 인 것이 핵심이다** — 흐름 자식으로 두고 높이를 키우면 터치 프레임마다 목록 전체가 리플로우되고, 보스 수익 화면은 sticky 헤더 높이를 `ResizeObserver` 로 실측해 중첩 sticky 오프셋에 쓰므로([[ADR-047]] 결정 3) 당길 때마다 펼친 카드 헤더가 따라 움직인다.
+- **페이드 "다음" 형제인 이유**: 컨텐츠·보스 헤더의 경계 페이드가 같은 자리(`absolute top-full`)를 쓴다. z-index를 새로 도입하지 않고 DOM 순서로 배너를 위에 올린다. 수익 화면은 페이드가 없어([[ADR-047]] 결정 6) 이 제약이 없다.
+- **당김 구간의 잎은 스피너가 아니다** — 스스로 움직이지 않고 손가락 위치의 함수로 회전각·불투명도가 정해지는 **제스처 진행률 표시**다. 실제 대기가 시작되는 순간 스윕 스피너로 넘기므로 위 "로딩 표현"의 스피너 2종 규칙([[ADR-061]] 결정 1)은 그대로다.
+- **문구에 `~중...` 을 쓰지 않는다** — 말줄임표가 남는 자리는 새로고침 옆 `조회 중...` 한 곳뿐이다([[ADR-061]] 결정 9).
+- **재조회 중에는 새 당김을 시작하지 않는다**(멱등성). 대기 판정은 세 화면 공통 `status === 'loading'`.
+- 빈 상태(추적 캐릭터 0명)에서는 제스처를 끈다 — 당길 목록이 없다.
+
+**헤더 버튼으로 시작한 재조회에는 배너를 열지 않는다**([[ADR-072]] 결정 11) — 그 대기는 아이콘 회전 + `조회 중...` 이 이미 말하고 있어, 배너까지 열면 같은 대기를 두 자리에서 말하게 된다.
 
 ### 레이아웃
 - 전체 너비: 모바일 단일 컬럼, max-width 제한 없음(하이브리드 앱이라 데스크톱 와이드 미고려).

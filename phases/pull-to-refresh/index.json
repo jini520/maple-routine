@@ -1,0 +1,49 @@
+{
+  "project": "메이플 루틴",
+  "phase": "pull-to-refresh",
+  "steps": [
+    {
+      "step": 0,
+      "name": "docs-policy",
+      "status": "completed",
+      "started_at": "2026-08-01T13:46:42+0900",
+      "summary": "ADR-072(당겨서 새로고침, 설계·구현 전) 신설 — 결정 13개(커스텀 훅·window.scrollY <= 0 최상단 판정·store 액션 신설 없이 refresh(trackedOcids ?? []) 1인자 호출·sticky 헤더 안 absolute top-full 배너로 목록 밀어내지 않기·페이드 다음 형제·3상태 문구(당겨서 새로고침/놓으면 새로고침/새로고침하고 있어요)·당김은 정적 MAPLE_LEAF_PATH 회전 & 재조회는 MapleSweepSpinner 24px·html,body overscroll-behavior-y:none·수익은 isCurrentPeriod에서만·헤더 버튼 유지·배너는 제스처 발 재조회에만·status === 'loading' 중 재당김 금지·3개 탭 최상위 화면 한정). 확정 수치 PULL_RESISTANCE=0.5 / PULL_THRESHOLD_PX=56(배너 h-14와 동일) / PULL_MAX_PX=80. docs/ADR.md 인덱스 1행 추가, docs/foundation/design-system.md 에 '### 당겨서 새로고침(pull-to-refresh) — [[ADR-072]]' 절 신설(구현 단일 진실 공급원, 새 토큰·SVG 없음), features 3문서(content-scheduler·boss-scheduler·boss-profit)에 관련 ADR + UI 한 줄(수익만 과거 기간 비활성 예외) 반영. src/ 무변경."
+    },
+    {
+      "step": 1,
+      "name": "pull-gesture-core",
+      "status": "pending"
+    },
+    {
+      "step": 2,
+      "name": "pull-gesture-hook",
+      "status": "pending"
+    },
+    {
+      "step": 3,
+      "name": "pull-banner",
+      "status": "pending"
+    },
+    {
+      "step": 4,
+      "name": "content-screen-wiring",
+      "status": "pending"
+    },
+    {
+      "step": 5,
+      "name": "boss-screen-wiring",
+      "status": "pending"
+    },
+    {
+      "step": 6,
+      "name": "profit-screen-wiring",
+      "status": "pending"
+    },
+    {
+      "step": 7,
+      "name": "docs-finalize",
+      "status": "pending"
+    }
+  ],
+  "created_at": "2026-08-01T13:46:42+0900"
+}

@@ -2,7 +2,7 @@
 
 > **범위**: 주간/월간 보스 진행 상태, 캐릭터 추적, 파티 관리, 보스 카드·난이도 뱃지, 솔로/파티 필터, 보스 관리 페이지. 캐릭터 관리 피커·탭 토글은 [../foundation/design-system.md](../foundation/design-system.md), 수동/자동 트래킹 전역 토글은 [settings.md](./settings.md).
 > **관련 소스**: `app/boss-scheduler/`(`BossScreen.tsx` — `BossCard`·`DifficultyBadge` export) · `features/boss-scheduler/` · `storage/boss-party-settings`(SQLite `boss_party_settings`) · `lib/boss-icons` · `lib/boss-matching` · `PartyManagementModal` · `/boss/manage` · `src/data/weekly-bosses.json`·`boss-crystal-prices.json`·`boss-portrait-crops.json`.
-> **관련 ADR**: [[ADR-013]] [[ADR-012]] [[ADR-018]] [[ADR-019]] [[ADR-035]] [[ADR-031]] [[ADR-006]] [[ADR-053]] [[ADR-055]] [[ADR-056]]. **관련 문서**: [../foundation/architecture.md](../foundation/architecture.md), [../foundation/nexon-api.md](../foundation/nexon-api.md), [../foundation/game-data.md](../foundation/game-data.md), [boss-profit.md](./boss-profit.md).
+> **관련 ADR**: [[ADR-013]] [[ADR-012]] [[ADR-018]] [[ADR-019]] [[ADR-035]] [[ADR-031]] [[ADR-006]] [[ADR-053]] [[ADR-055]] [[ADR-056]] [[ADR-072]]. **관련 문서**: [../foundation/architecture.md](../foundation/architecture.md), [../foundation/nexon-api.md](../foundation/nexon-api.md), [../foundation/game-data.md](../foundation/game-data.md), [boss-profit.md](./boss-profit.md).
 
 **관리 화면 토글 저장 실패 ([[ADR-065]] 결정 4)**: 체크박스가 그 자리에 남아 맥락이 있으므로 토스트로 알린다 — 문구는 컨텐츠·보스 공통으로 "추적 목록을 저장하지 못했습니다" 하나다(같은 화면에서 무엇을 토글했는지는 사용자가 안다). 재시도 액션은 두지 않는다 — 다시 탭하면 되는 일이라 중복이다.
 
@@ -19,6 +19,9 @@
 캐릭터+보스+난이도 단위로 파티 인원을 미리 설정하는 상시 데이터(완료 여부·주차 무관). 화면 상단 "캐릭터 관리" 옆 **"보스 관리" 버튼**([[ADR-035]] 이후 두 모드 공통, 이전엔 "파티 관리")에서 편집. 저장은 `storage/` 에 `(ocid, boss, difficulty)` 유니크 키로 `boss_party_settings` upsert(1로 저장하면 솔로 취급, 별도 삭제 API 없이 1로 덮어씀). `boss_profit_records`(주차별 완료 기록)와 별도 테이블, 같은 SQLite DB. 이 값은 보스 카드 파티 배지·솔로/파티 필터·[보스 수익](./boss-profit.md) 자동 기록 기본값에 함께 쓰인다.
 
 ## UI
+
+### 당겨서 새로고침 ([[ADR-072]])
+목록 최상단에서 아래로 당기면 헤더 새로고침 버튼과 같은 재조회(`refresh(trackedOcids ?? [])`)가 돈다. 레시피는 [foundation/design-system.md](../foundation/design-system.md) 의 '당겨서 새로고침' 절.
 
 ### 보스 카드 ([[ADR-018]])
 보스별 독립 카드 + 일러스트 bleed. 목록 감싸는 상위 카드 없음(`space-y-2` 나열). **카드 배경·보더·보스명 텍스트는 페이지 표면이 아니라 일러스트 위 배색을 따른다** — bleed·페이드·text-shadow가 어두운 배경 전제라 라이트 테마에서 페이지 토큰(`bg-surface` 등)을 쓰면 대비가 깨짐. `media-*` 토큰 + `.media-scope`([[ADR-064]] 결정 5, [theme.md](./theme.md))를 쓴다 — 카드 루트에 스코프를 걸면 안쪽은 앱 전역과 같은 레시피를 쓰면서 자동으로 어두운 기준을 따른다.

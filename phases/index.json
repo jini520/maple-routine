@@ -119,6 +119,10 @@
       "dir": "boss-profit-crystal-limit",
       "status": "completed",
       "completed_at": "2026-07-29T16:05:12+0900"
+    },
+    {
+      "dir": "pull-to-refresh",
+      "status": "pending"
     }
   ]
 }
