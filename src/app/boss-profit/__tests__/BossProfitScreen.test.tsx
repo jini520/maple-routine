@@ -2197,3 +2197,145 @@ describe('월드 리프가 걸친 주의 결정석 집계 (ADR-069 결정 2)', (
     expect(screen.getByLabelText('주간 결정석 판매 1 / 90')).toBeInTheDocument()
   })
 })
+
+// ADR-072: 목록 최상단에서 당기면 헤더 새로고침 버튼과 같은 재조회가 돈다(제스처는 추가 수단이다).
+// jsdom에는 TouchEvent 생성자가 없으므로 훅이 읽는 필드(touches[].clientY)만 가진 합성 이벤트를 만든다.
+// window.scrollY는 jsdom 기본값이 0이라 최상단 판정(window.scrollY <= 0)을 그대로 통과한다.
+function touchEvent(type: string, clientY?: number): Event {
+  const event = new Event(type, { bubbles: true, cancelable: true })
+  Object.defineProperty(event, 'touches', {
+    value: clientY === undefined ? [] : [{ clientY }],
+  })
+  return event
+}
+
+describe('당겨서 새로고침 (ADR-072)', () => {
+  it('현재 기간에서 임계값을 넘겨 당겼다 놓으면 refresh가 호출된다', () => {
+    const refresh = vi.fn()
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row({ periodKey: CURRENT_WEEKLY_PERIOD_KEY })],
+      periodKey: CURRENT_WEEKLY_PERIOD_KEY,
+      refresh,
+    })
+
+    renderBossProfitScreen()
+
+    fireEvent(document, touchEvent('touchstart', 0))
+    fireEvent(document, touchEvent('touchmove', 200)) // 200 * 0.5 = 100 → 상한 80 ≥ 임계 56
+    fireEvent(document, touchEvent('touchend'))
+
+    expect(refresh).toHaveBeenCalledTimes(1)
+    expect(refresh).toHaveBeenCalledWith(['ocid-1'])
+  })
+
+  it('현재 기간이라도 임계값 미만으로 당겼다 놓으면 refresh가 호출되지 않는다', () => {
+    const refresh = vi.fn()
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row({ periodKey: CURRENT_WEEKLY_PERIOD_KEY })],
+      periodKey: CURRENT_WEEKLY_PERIOD_KEY,
+      refresh,
+    })
+
+    renderBossProfitScreen()
+
+    fireEvent(document, touchEvent('touchstart', 0))
+    fireEvent(document, touchEvent('touchmove', 40)) // 40 * 0.5 = 20 < 56
+    fireEvent(document, touchEvent('touchend'))
+
+    expect(refresh).not.toHaveBeenCalled()
+  })
+
+  // 결정 9: refresh는 periodKey를 현재 기간으로 강제 리셋하므로(#30), 과거 기간에서 제스처가 먹으면
+  // 보고 있던 기간이 튕겨 나간다. 헤더 새로고침 버튼을 과거 기간에서 숨긴 것과 같은 근거다.
+  it('과거 기간에서는 같은 제스처로 당겨도 refresh가 호출되지 않는다(결정 9)', () => {
+    const refresh = vi.fn()
+    mockStore({
+      status: 'loaded',
+      tab: 'weekly',
+      trackedOcids: ['ocid-1'],
+      rows: [row()],
+      periodKey: '2026-07-09', // 과거 기간(현재 주가 아님)
+      refresh,
+    })
+
+    renderBossProfitScreen()
+
+    fireEvent(document, touchEvent('touchstart', 0))
+    fireEvent(document, touchEvent('touchmove', 200))
+    fireEvent(document, touchEvent('touchend'))
+
+    expect(refresh).not.toHaveBeenCalled()
+  })
+
+  it('과거 기간에서는 당겨도 배너가 렌더되지 않는다', () => {
+    mockStore({
+      status: 'loaded',
+      tab: 'weekly',
+      trackedOcids: ['ocid-1'],
+      rows: [row()],
+      periodKey: '2026-07-09', // 과거 기간
+    })
+
+    renderBossProfitScreen()
+
+    fireEvent(document, touchEvent('touchstart', 0))
+    fireEvent(document, touchEvent('touchmove', 200))
+
+    expect(screen.queryByTestId('pull-to-refresh-banner')).not.toBeInTheDocument()
+  })
+
+  it('현재 기간에서 당기는 동안 배너가 sticky 헤더 블록의 마지막 자식으로 그려진다', () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row({ periodKey: CURRENT_WEEKLY_PERIOD_KEY })],
+      periodKey: CURRENT_WEEKLY_PERIOD_KEY,
+    })
+
+    renderBossProfitScreen()
+
+    fireEvent(document, touchEvent('touchstart', 0))
+    fireEvent(document, touchEvent('touchmove', 40))
+
+    const banner = screen.getByTestId('pull-to-refresh-banner')
+    expect(screen.getByText('당겨서 새로고침')).toBeInTheDocument()
+    // 이 화면에는 경계 페이드 오버레이가 없으므로(ADR-047 결정 6) 배너가 곧 마지막 자식이다.
+    expect(banner.parentElement).toHaveClass('sticky')
+    expect(banner.parentElement?.lastElementChild).toBe(banner)
+  })
+
+  it('제스처를 붙여도 헤더 새로고침 버튼은 현재 기간에만 남는다(ADR-072 결정 10)', () => {
+    const refresh = vi.fn()
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row({ periodKey: CURRENT_WEEKLY_PERIOD_KEY })],
+      periodKey: CURRENT_WEEKLY_PERIOD_KEY,
+      refresh,
+    })
+
+    const { unmount } = renderBossProfitScreen()
+
+    fireEvent.click(screen.getByRole('button', { name: '새로고침' }))
+    expect(refresh).toHaveBeenCalledTimes(1)
+    expect(refresh).toHaveBeenCalledWith(['ocid-1'])
+
+    unmount()
+    mockStore({
+      status: 'loaded',
+      tab: 'weekly',
+      trackedOcids: ['ocid-1'],
+      rows: [row()],
+      periodKey: '2026-07-09', // 과거 기간
+      refresh,
+    })
+
+    renderBossProfitScreen()
+
+    expect(screen.queryByRole('button', { name: '새로고침' })).not.toBeInTheDocument()
+  })
+})
