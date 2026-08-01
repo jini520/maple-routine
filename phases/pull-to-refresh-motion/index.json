@@ -29,7 +29,10 @@
     {
       "step": 3,
       "name": "content-screen-motion",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-01T15:01:48+0900",
+      "summary": "ContentScreen 한 파일에만 목록 이동 배선(+테스트). 오프셋은 usePullToRefresh 호출 직후 화면 최상위에서 한 번만 계산 — const pullOffset = resolveContentOffsetPx(pullToRefresh.distance, pullToRefresh.phase) (인디케이터가 쓰는 것과 같은 함수·같은 인자, ADR-073 결정 6). 목록 블록(sticky 헤더의 형제 `space-y-4 px-4 pb-4`)에 새 래퍼 없이 style만 얹었다: transform: pullOffset > 0 ? `translateY(${pullOffset}px)` : undefined (결정 3 — 0이면 속성 자체를 걸지 않는다, 'none' 폴백도 없음) / transition: pullToRefresh.isDragging ? 'none' : PULL_SETTLE_TRANSITION (오프셋과 무관하게 항상, 결정 4). 목록 블록에 data-testid=\"pull-content\" 부여 — step 4·5도 같은 이름·같은 패턴을 반복할 것. 헤더(sticky)·{trackingModals}·경계 페이드는 무변경이며 ContentScreen 내 transform 인라인 스타일은 이 한 곳뿐(grep 확인). 테스트 5건 추가(새 describe '당겨서 새로고침 — 목록 이동 (ADR-073)', 기존 ADR-072 4건은 그대로): 쉬는 상태 transform 빈 문자열 / 임계 미만 당김 translateY(20px) / 드래그 중 transition 'none' / 재조회 중 translateY(56px)+transition === PULL_SETTLE_TRANSITION(rerender로 status 'loading' 주입 — 이를 위해 렌더 트리를 contentScreenTree() 헬퍼로 추출) / 피커 오버레이는 목록 블록 밖이고 transform 없음. 변이 검증: transform을 무조건 translateY(...)로 바꾸면 '쉬는 상태' 테스트만 실패함을 확인 후 되돌림. npm test 1982건 전량 통과, build·lint 통과.",
+      "completed_at": "2026-08-01T15:06:30+0900"
     },
     {
       "step": 4,
