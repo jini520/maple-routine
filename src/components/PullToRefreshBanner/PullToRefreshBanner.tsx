@@ -1,6 +1,10 @@
 import { MAPLE_LEAF_PATH } from '../mapleLeafPath'
 import { MapleSweepSpinner } from '../MapleSweepSpinner/MapleSweepSpinner'
-import { resolveBandHeightPx, resolvePullProgress, type PullPhase } from '../../lib/pull-to-refresh'
+import {
+  resolveContentOffsetPx,
+  resolvePullProgress,
+  type PullPhase,
+} from '../../lib/pull-to-refresh'
 
 // 당겨서 새로고침 인디케이터([[ADR-072]] 결정 4~7). 표시만 담당한다 —
 // 제스처 감지는 usePullToRefresh 훅이, "지금 제스처를 켤 것인가"는 화면이 판단한다.
@@ -34,7 +38,7 @@ export function PullToRefreshBanner(props: PullToRefreshBannerProps): React.JSX.
       role="status"
       aria-live="polite"
       className="pointer-events-none absolute inset-x-0 top-full z-[1] overflow-hidden border-b border-border bg-bg"
-      style={{ height: resolveBandHeightPx(props.distance, props.phase) }}
+      style={{ height: resolveContentOffsetPx(props.distance, props.phase) }}
     >
       {/* h-14(56px)는 PULL_THRESHOLD_PX 와 같은 값이다 — 내용 높이가 고정이라 루트의 overflow-hidden 이
           위에서부터 드러내는 효과를 내고, 배너가 꽉 차는 순간이 곧 임계값 도달이 된다. */}

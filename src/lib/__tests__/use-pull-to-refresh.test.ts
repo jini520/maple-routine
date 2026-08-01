@@ -241,6 +241,76 @@ describe('usePullToRefresh', () => {
     expect(onRefresh).not.toHaveBeenCalled()
   })
 
+  describe('isDragging (ADR-073 결정 4 — 드래그 중에는 전환을 끈다)', () => {
+    it('당기는 동안 true다', () => {
+      const { result } = renderHook(() =>
+        usePullToRefresh({ enabled: true, isRefreshing: false, onRefresh: vi.fn() }),
+      )
+
+      expect(result.current.isDragging).toBe(false)
+
+      dispatch(touchEvent('touchstart', 0))
+      expect(result.current.isDragging).toBe(true)
+
+      dispatch(touchEvent('touchmove', 40))
+      expect(result.current.isDragging).toBe(true)
+    })
+
+    it('touchend 후에는 false다 — 임계값을 넘겨 재조회가 시작돼도 마찬가지다', () => {
+      // 손을 뗀 순간부터 정착 애니메이션이 전환을 타야 한다. 재조회 대기는 드래그가 아니다.
+      const onRefresh = vi.fn()
+      const { result, rerender } = renderHook(
+        ({ isRefreshing }) => usePullToRefresh({ enabled: true, isRefreshing, onRefresh }),
+        { initialProps: { isRefreshing: false } },
+      )
+
+      dispatch(touchEvent('touchstart', 0))
+      dispatch(touchEvent('touchmove', 200))
+      dispatch(touchEvent('touchend'))
+
+      expect(onRefresh).toHaveBeenCalledTimes(1)
+      expect(result.current.isDragging).toBe(false)
+
+      rerender({ isRefreshing: true })
+      expect(result.current.phase).toBe('refreshing')
+      expect(result.current.isDragging).toBe(false)
+    })
+
+    it('touchcancel 후에는 false다', () => {
+      const { result } = renderHook(() =>
+        usePullToRefresh({ enabled: true, isRefreshing: false, onRefresh: vi.fn() }),
+      )
+
+      dispatch(touchEvent('touchstart', 0))
+      dispatch(touchEvent('touchmove', 200))
+      dispatch(touchEvent('touchcancel'))
+
+      expect(result.current.isDragging).toBe(false)
+    })
+
+    it('위로 움직여 추적이 끊기면 false다', () => {
+      const { result } = renderHook(() =>
+        usePullToRefresh({ enabled: true, isRefreshing: false, onRefresh: vi.fn() }),
+      )
+
+      dispatch(touchEvent('touchstart', 100))
+      dispatch(touchEvent('touchmove', 60)) // 위로 — 평범한 스크롤이다
+
+      expect(result.current.isDragging).toBe(false)
+    })
+
+    it('enabled가 false면 당겨도 항상 false다', () => {
+      const { result } = renderHook(() =>
+        usePullToRefresh({ enabled: false, isRefreshing: false, onRefresh: vi.fn() }),
+      )
+
+      dispatch(touchEvent('touchstart', 0))
+      dispatch(touchEvent('touchmove', 200))
+
+      expect(result.current.isDragging).toBe(false)
+    })
+  })
+
   describe('스크롤 가능한 조상 안에서 시작한 터치 (ADR-072 결정 14)', () => {
     it('스크롤 가능한 오버레이 안에서 시작한 당김은 onRefresh를 호출하지 않는다', () => {
       // 모달·바텀시트가 떠 있으면 body 스크롤이 잠겨 window.scrollY는 0 그대로다. 최상단 판정만으로는

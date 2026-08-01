@@ -13,7 +13,10 @@
     {
       "step": 1,
       "name": "motion-core",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-01T14:54:31+0900",
+      "summary": "순수 모듈·훅만 수정(컴포넌트·화면 무변경, 배너는 개명 따라가는 import/호출 한 줄만). pull-to-refresh.ts: resolveBandHeightPx → resolveContentOffsetPx 개명(계산 규칙 동일 — refreshing→PULL_THRESHOLD_PX / idle→0 / 그 외 0~PULL_MAX_PX 클램프), 별칭 미보존. 이제 이 값이 목록 translateY 오프셋이자 벌어진 틈 높이 둘 다에 쓰인다(ADR-073 결정 6). 신규 상수 PULL_SETTLE_TRANSITION = 'transform 300ms cubic-bezier(0.22, 1, 0.36, 1)' + 드래그 중 미사용 주석(결정 4). DOM 무의존 유지(document·window grep 무결과). use-pull-to-refresh.ts: PullToRefreshState에 isDragging 추가 — touchstart 가드 통과 시 true, stopTracking(touchend·touchcancel·위로 스크롤·scrollY>0·cleanup)에서 false, 손 떼면 즉시 false라 재조회 중(phase 'refreshing')에는 false, enabled:false면 항상 false. 제스처 계약(추적 시작 조건·스크롤 레이어 가드·멱등성·didTriggerRefresh)은 무변경. 테스트 33→39건(pull-to-refresh 16→17: 개명 + PULL_SETTLE_TRANSITION이 /^transform\\s/ 매칭 / use-pull-to-refresh 17→22: isDragging 5건). npm test 1975건 전량 통과, build·lint 통과.",
+      "completed_at": "2026-08-01T14:57:40+0900"
     },
     {
       "step": 2,

@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest'
 import {
   PULL_MAX_PX,
   PULL_RESISTANCE,
+  PULL_SETTLE_TRANSITION,
   PULL_THRESHOLD_PX,
-  resolveBandHeightPx,
+  resolveContentOffsetPx,
   resolvePullDistance,
   resolvePullPhase,
   resolvePullProgress,
@@ -75,22 +76,30 @@ describe('resolvePullProgress', () => {
   })
 })
 
-describe('resolveBandHeightPx', () => {
-  it('재조회 중에는 손을 떼서 distance가 0이어도 완전히 펼친 높이다', () => {
-    expect(resolveBandHeightPx(0, 'refreshing')).toBe(PULL_THRESHOLD_PX)
+describe('resolveContentOffsetPx', () => {
+  it('재조회 중에는 손을 떼서 distance가 0이어도 임계 위치에 머문다', () => {
+    // ADR-073 결정 5 — 대기 신호가 문구뿐 아니라 목록 위치로도 남는다.
+    expect(resolveContentOffsetPx(0, 'refreshing')).toBe(PULL_THRESHOLD_PX)
   })
 
   it('idle이면 0이다', () => {
-    expect(resolveBandHeightPx(0, 'idle')).toBe(0)
+    expect(resolveContentOffsetPx(0, 'idle')).toBe(0)
   })
 
   it('당기는 중에는 당김 거리를 그대로 쓴다', () => {
-    expect(resolveBandHeightPx(20, 'pulling')).toBe(20)
-    expect(resolveBandHeightPx(PULL_THRESHOLD_PX, 'ready')).toBe(PULL_THRESHOLD_PX)
+    expect(resolveContentOffsetPx(20, 'pulling')).toBe(20)
+    expect(resolveContentOffsetPx(PULL_THRESHOLD_PX, 'ready')).toBe(PULL_THRESHOLD_PX)
   })
 
   it('당기는 중에도 상한을 넘지 않는다', () => {
-    expect(resolveBandHeightPx(1000, 'ready')).toBe(PULL_MAX_PX)
-    expect(resolveBandHeightPx(-10, 'pulling')).toBe(0)
+    expect(resolveContentOffsetPx(1000, 'ready')).toBe(PULL_MAX_PX)
+    expect(resolveContentOffsetPx(-10, 'pulling')).toBe(0)
+  })
+})
+
+describe('PULL_SETTLE_TRANSITION', () => {
+  it('transform 을 대상으로 하는 전환 문자열이다', () => {
+    // 목록 이동은 transform 이라 다른 속성을 적으면 정착·복귀가 통째로 즉시 점프한다(ADR-073 결정 2·4).
+    expect(PULL_SETTLE_TRANSITION).toMatch(/^transform\s/)
   })
 })

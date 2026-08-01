@@ -14,6 +14,12 @@ export interface PullToRefreshOptions {
 export interface PullToRefreshState {
   distance: number
   phase: PullPhase
+  /**
+   * 손가락이 붙어 있고 추적 중일 때만 true. 화면은 이 값으로 목록 이동의 전환을 끈다
+   * ([[ADR-073]] 결정 4). 손을 떼면 즉시 false다 — 재조회 대기(`phase === 'refreshing'`)는
+   * 드래그가 아니라서, 임계 위치로 정착하는 애니메이션이 전환을 타야 한다.
+   */
+  isDragging: boolean
 }
 
 // 터치가 시작된 자리가 "페이지"인지 "그 위에 뜬 레이어"인지 묻는다([[ADR-072]] 결정 14). 모달·바텀시트는
@@ -43,6 +49,7 @@ export function usePullToRefresh({
   onRefresh,
 }: PullToRefreshOptions): PullToRefreshState {
   const [distance, setDistance] = useState(0)
+  const [isDragging, setIsDragging] = useState(false)
 
   // 화면이 `onRefresh: () => refresh(trackedOcids ?? [])` 같은 인라인 함수를 넘기므로 의존성에 그대로
   // 넣으면 렌더마다 리스너를 붙였다 뗀다. isRefreshing 도 같은 이유로 ref에서 최신 값만 읽는다.
@@ -74,6 +81,7 @@ export function usePullToRefresh({
       startY = null
       pulled = 0
       setDistance(0)
+      setIsDragging(false)
     }
 
     const handleTouchStart = (event: TouchEvent): void => {
@@ -85,6 +93,7 @@ export function usePullToRefresh({
       if (window.scrollY > 0) return // 결정 2 — iOS 러버밴드에서 음수가 될 수 있어 `<= 0` 이다.
       startY = event.touches[0].clientY
       pulled = 0
+      setIsDragging(true)
     }
 
     const handleTouchMove = (event: TouchEvent): void => {
@@ -133,6 +142,10 @@ export function usePullToRefresh({
     }
   }, [enabled])
 
-  if (!enabled) return { distance: 0, phase: 'idle' }
-  return { distance, phase: resolvePullPhase(distance, isRefreshing && didTriggerRefresh) }
+  if (!enabled) return { distance: 0, phase: 'idle', isDragging: false }
+  return {
+    distance,
+    phase: resolvePullPhase(distance, isRefreshing && didTriggerRefresh),
+    isDragging,
+  }
 }
