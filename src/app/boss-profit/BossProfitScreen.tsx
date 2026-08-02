@@ -24,6 +24,7 @@ import { usePullToRefresh } from '../../lib/use-pull-to-refresh'
 import { UnavailableNotice } from '../../components/EmptyState/UnavailableNotice'
 import { usePeriodLoadErrorToast } from '../../features/boss-profit/use-period-error-toast'
 import { ValuableDropBadge } from '../../components/ValuableDropBadge/ValuableDropBadge'
+import { CollapseProbeOverlay, noteProbe, startProbe } from './CollapseFrameProbe'
 import weeklyBossesData from '../../data/weekly-bosses.json'
 import {
   dropRowKey,
@@ -955,8 +956,14 @@ function CrystalSummaryChip(props: { tab: BossCycle; groups: CharacterGroup[] })
 // 이미 유효 범위 안이면 아무것도 하지 않는다: 고칠 프레임도 없는데 스크롤만 튄다.
 function clampDocumentScroll(): void {
   const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight)
-  if (window.scrollY <= maxScroll) return
+  if (window.scrollY <= maxScroll) {
+    noteProbe(`clamp skip: y=${Math.round(window.scrollY)} <= max=${maxScroll}`)
+    return
+  }
+  const before = Math.round(window.scrollY)
   window.scrollTo(0, maxScroll)
+  // scrollTo 직후 다시 읽어, iOS가 이 호출을 **동기로 반영하는지**를 본다(반영 안 되면 before와 같다).
+  noteProbe(`clamp: y=${before} → max=${maxScroll} (읽은 값 ${Math.round(window.scrollY)})`)
 }
 
 function CharacterAccordion(props: {
@@ -1158,6 +1165,11 @@ function CharacterAccordion(props: {
         <button
           ref={headerRef}
           type="button"
+          // 임시 계측(CollapseFrameProbe) — 접기 탭에서만, 상태가 바뀌기 전 프레임부터 잡는다.
+          onPointerDown={() => {
+            if (!isExpanded) return
+            startProbe(`접기: ${group.characterName}`, () => issueAnchorRef.current)
+          }}
           onClick={() => {
             // 카드를 펼치거나 접으면 설명 팝오버를 닫는다(사용자 지적 2026-07-31). 바깥 탭 판정은
             // 카드 루트를 "안"으로 보므로 헤더 클릭으로는 닫히지 않았다. 게다가 펼침은 레이아웃을
@@ -1431,7 +1443,7 @@ export function BossProfitScreen(): React.JSX.Element {
       {/* 제목~총 수익 카드까지는 화면 상단에 고정하고 그 아래 캐릭터 아코디언 목록만
           스크롤되게 한다(사용자 요청, 2026-07-14) — content-scheduler/boss-scheduler와
           동일한 sticky 헤더 패턴(docs/UI_GUIDE.md "스크롤 영역" 참고)을 그대로 재사용한다. */}
-      <div ref={stickyHeaderRef} className="sticky top-0 z-10 bg-bg px-4 pt-[calc(1rem+var(--sa-top))] pb-2">
+      <div ref={stickyHeaderRef} data-probe="page-header" className="sticky top-0 z-10 bg-bg px-4 pt-[calc(1rem+var(--sa-top))] pb-2">
         <div className="space-y-4">
           {/* 히스토리 진입점([[ADR-071]] 결정 7, 이슈 #54) — 이 화면의 고가 드롭 강조는 전부 "지금 보고
               있는 기간"에 갇혀 있고, 전 기간을 가로지르는 목록은 저쪽이 담당한다.
@@ -1672,6 +1684,7 @@ export function BossProfitScreen(): React.JSX.Element {
       </div>
     </div>
     <Outlet />
+    <CollapseProbeOverlay />
     </>
   )
 }
