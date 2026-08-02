@@ -32,11 +32,11 @@ describe('THEME_NAMES / isThemeName — JSON 키가 단일 진실 공급원', ()
 })
 
 describe('buildThemeCss', () => {
-  it.each(NAMES)('%s: 34개 토큰을 전부 커스텀 프로퍼티로 낸다', (name) => {
+  it.each(NAMES)('%s: 38개 토큰을 전부 커스텀 프로퍼티로 낸다', (name) => {
     const css = buildThemeCss(getThemeDefinition(name))
     const declared = [...css.matchAll(/--color-([a-z0-9-]+):/g)].map((match) => match[1])
     // :root 와 .media-scope 양쪽에 나오므로 중복을 걷는다.
-    expect(new Set(declared).size).toBeGreaterThanOrEqual(34)
+    expect(new Set(declared).size).toBeGreaterThanOrEqual(38)
   })
 
   it('camelCase 토큰 이름을 kebab-case 커스텀 프로퍼티로 바꾼다', () => {

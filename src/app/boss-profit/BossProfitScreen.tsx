@@ -2,6 +2,8 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
 import {
   AlertTriangle,
+  ArrowDown,
+  ArrowUp,
   Ban,
   ChevronDown,
   ChevronLeft,
@@ -12,6 +14,7 @@ import {
   Plus,
   RefreshCw,
 } from 'lucide-react'
+import { AnimatedMeso } from '../../components/AnimatedMeso/AnimatedMeso'
 import { BossPortrait } from '../../components/BossPortrait/BossPortrait'
 import { DifficultyBadge } from '../../components/DifficultyBadge/DifficultyBadge'
 import { EmptyState } from '../../components/EmptyState/EmptyState'
@@ -39,10 +42,16 @@ import {
   useScheduleSyncErrorToast,
   useStaleCharactersToast,
 } from '../../features/schedule-sync/use-sync-error-toast'
+import {
+  computeProfitDelta,
+  formatProfitDeltaBody,
+  formatProfitDeltaLabel,
+} from '../../lib/boss-profit-delta'
 import { anchorPopover, type PopoverAnchorGeometry } from '../../lib/popover-anchor'
 import { isSeasonBossName, WEEKLY_BOSS_CLEAR_LIMIT, WEEKLY_CRYSTAL_SALE_LIMIT } from '../../lib/boss-matching'
 import {
   formatBossProfitPeriodLabel,
+  getAdjacentPeriodKey,
   isLatestPeriod,
   isPeriodQueryable,
   isPeriodRefreshable,
@@ -361,7 +370,11 @@ function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Element {
             </span>
           ) : (
             <span className="text-sm font-semibold text-text tabular-nums">
-              {(row.payoutMeso ?? 0).toLocaleString()} 메소
+              <AnimatedMeso
+                identity={`boss|${row.ocid}|${row.boss}|${row.difficulty}|${row.periodKey}`}
+                value={row.payoutMeso ?? 0}
+              />{' '}
+              메소
             </span>
           )}
         </div>
@@ -617,7 +630,9 @@ function WeeklySubtotalRow(props: {
       )}
 
       {showsMeso && (
-        <span className="text-sm font-semibold text-text tabular-nums">{subtotal.totalMeso.toLocaleString()} 메소</span>
+        <span className="text-sm font-semibold text-text tabular-nums">
+          <AnimatedMeso identity={`subtotal|${subtotal.ocid}|${subtotal.periodKey}`} value={subtotal.totalMeso} /> 메소
+        </span>
       )}
     </li>
   )
@@ -950,6 +965,48 @@ function CrystalSummaryChip(props: { tab: BossCycle; groups: CharacterGroup[] })
   )
 }
 
+// 직전 기간 대비 증감 칩([[ADR-087]] 결정 1·3·5) — **금액행** 오른쪽에 붙는다. 라벨행이 아니라
+// 금액행(아이콘 32px)이라 [[ADR-054]] 정정 4의 h-6 제약과 무관하고 헤더 높이가 늘지 않는다.
+//
+// 비교 기준(`previousMeso`)은 store 가 기록 합만 넘긴 값이다 — 조회한 적 없는 기간도 0이라
+// (결정 3, 사용자 결정) 이 컴포넌트는 기간 상태를 전혀 보지 않는다.
+function DeltaChip(props: {
+  totalMeso: number
+  previousMeso: number
+  tab: BossCycle
+  periodKey: string
+  now: Date
+}): React.JSX.Element {
+  const delta = computeProfitDelta(props.totalMeso, props.previousMeso)
+  const previousLabel = formatBossProfitPeriodLabel(
+    props.tab,
+    getAdjacentPeriodKey(props.tab, props.periodKey, 'prev'),
+    props.now,
+  ).primary
+
+  // 방향이 없는 상태(같음)에는 신호색을 쓰지 않는다 — 빨강도 파랑도 거짓이다.
+  const tone =
+    delta.direction === 'same'
+      ? 'bg-primary-tint text-primary-ink'
+      : delta.direction === 'up'
+        ? 'bg-rise-tint text-rise-ink'
+        : 'bg-fall-tint text-fall-ink'
+
+  return (
+    // 화살표·색은 의미를 전하지 못하므로 칩 전체에 문장을 준다. leading-none 이 없으면 글꼴
+    // line-height 가 실려 h-5 를 넘긴다(결정석 칩과 같은 규약).
+    <span
+      aria-label={formatProfitDeltaLabel(delta, previousLabel)}
+      className={`ml-2 flex h-5 flex-none items-center gap-0.5 rounded-full px-1.5 text-[11px] font-bold leading-none tabular-nums ${tone}`}
+    >
+      {/* 'same' 에는 방향 표식을 그리지 않는다 — 표기 "-" 자체가 표식이라 겹친다. */}
+      {delta.direction === 'up' && <ArrowUp className="h-2.5 w-2.5 flex-none" strokeWidth={3} aria-hidden="true" />}
+      {delta.direction === 'down' && <ArrowDown className="h-2.5 w-2.5 flex-none" strokeWidth={3} aria-hidden="true" />}
+      {formatProfitDeltaBody(delta)}
+    </span>
+  )
+}
+
 function CharacterAccordion(props: {
   group: CharacterGroup
   tab: BossCycle
@@ -957,6 +1014,9 @@ function CharacterAccordion(props: {
   setPartySize: BossProfitStore['setPartySize']
   setBossDrops: BossProfitStore['setBossDrops']
   now: Date
+  // 카운트업 기억의 키에 들어간다([[ADR-087]] 결정 8) — 아코디언 key 가 이미 쓰는 값이지만,
+  // 기억은 언마운트를 건너 살아남으므로 컴포넌트가 자기 기간을 명시적으로 알아야 한다.
+  periodKey: string
   isMonthlyBossQueryable: boolean
   // ADR-068 결정 2: 주차 행의 조회·다시 시도 버튼이 이 기간을 다시 로드한다(store.retryPeriod).
   onRetryPeriod: () => void
@@ -1214,7 +1274,11 @@ function CharacterAccordion(props: {
                 }}
               />
             )}
-            {totalMeso.toLocaleString()} 메소
+            <AnimatedMeso
+              identity={`character|${group.ocid}|${props.tab}|${props.periodKey}`}
+              value={totalMeso}
+            />{' '}
+            메소
           </span>
           {isExpanded ? (
             <ChevronUp className="h-4 w-4 text-text-muted" strokeWidth={2} aria-hidden="true" />
@@ -1257,6 +1321,7 @@ export function BossProfitScreen(): React.JSX.Element {
     weeklySubtotals,
     isPeriodLoading,
     periodState,
+    previousPeriodTotalMeso,
     canGoPreviousPeriod,
     error,
     staleCharacterNames,
@@ -1598,9 +1663,18 @@ export function BossProfitScreen(): React.JSX.Element {
                 {/* 단위는 별도 span으로 격하하되 숫자와 사이에 실제 공백 문자를 남긴다 — 마진만으로 띄우면
                     textContent가 "N메소"로 붙어 스크린리더가 붙여 읽는다(ADR-046 트레이드오프). */}
                 <p className="text-xl font-extrabold leading-none tabular-nums text-primary-ink">
-                  {totalMeso.toLocaleString()}{' '}
+                  <AnimatedMeso identity={`total|${tab}|${periodKey}`} value={totalMeso} />{' '}
                   <span className="text-xs font-bold text-text-muted">메소</span>
                 </p>
+                {/* ADR-087 결정 1: 라벨행이 아니라 이 줄에 붙는다 — 32px 금액행 안에 들어가므로
+                    헤더 높이가 늘지 않는다(라벨행 h-6 제약과도 무관하다). */}
+                <DeltaChip
+                  totalMeso={totalMeso}
+                  previousMeso={previousPeriodTotalMeso}
+                  tab={tab}
+                  periodKey={periodKey}
+                  now={now}
+                />
               </div>
               <div className="mt-3 h-px bg-border" aria-hidden="true" />
             </div>
@@ -1679,6 +1753,7 @@ export function BossProfitScreen(): React.JSX.Element {
               key={`${tab}-${periodKey}-${group.ocid}`}
               group={group}
               tab={tab}
+              periodKey={periodKey}
               dropsByRowKey={dropsByRowKey}
               setPartySize={setPartySize}
               setBossDrops={setBossDrops}

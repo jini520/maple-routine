@@ -23,9 +23,11 @@
 
 `on-X` 와 `X-ink` 를 헷갈리지 말 것 — 채움 위에 얹는 전경이면 `on-X`, 표면/틴트 위에 놓이는 X색 글자면 `X-ink` 다.
 
-## 34토큰
+## 38토큰
 
 **Accent** — X ∈ `primary`·`secondary`·`third`·`error` 각각 `X` / `on-X` / `X-tint` / `X-ink`, 추가로 `primary-hover`.
+
+**시맨틱 색은 브랜드 시드와 무관하게 휴가 고정된다** — `error`(휴 27)·`info`(휴 235)에 이어 [[ADR-087]]이 `rise`(휴 26, 값 상승)·`fall`(휴 262, 값 하락) 2쌍을 더했다. 시드에서 파생하면 테마마다 뜻이 달라지므로 **명도·채도만 `mode` 램프로 가르고 휴는 고정**하며, 틴트는 그 색을 `surface` 에 15% 섞는다. `rise`/`fall` 은 accent 가 아니라 `info` 와 같은 **틴트+잉크 2토큰 쌍**이다(채움·`on-X` 가 없다 — 배경으로 깔 일이 없다).
 
 | 토큰 | 용도 | 대비 (참고) |
 |---|---|---|
@@ -53,6 +55,10 @@
 | `text-disabled` | 비활성 텍스트 | 참고만 (WCAG 1.4.3 제외 대상) |
 | `info-tint` | 정보성 배경 틴트 | — |
 | `info-ink` | `info-tint` 위 텍스트·아이콘 | vs `info-tint` ≥ 4.5:1 **(겨냥함)** |
+| `rise-tint` | 값이 **오른** 것을 말하는 칩 배경 | — |
+| `rise-ink` | `rise-tint` 위 텍스트·아이콘 | vs `surface`·`rise-tint` ≥ 4.5:1 **(겨냥함)** |
+| `fall-tint` | 값이 **내린** 것을 말하는 칩 배경 | — |
+| `fall-ink` | `fall-tint` 위 텍스트·아이콘 | vs `surface`·`fall-tint` ≥ 4.5:1 **(겨냥함)** |
 | `media-surface` | 일러스트 카드 배경 | — |
 | `media-border` | 일러스트 카드 보더 | — |
 | `media-ink` | 일러스트 위 이름 텍스트 | vs `media-surface` ≥ 4.5:1 **(겨냥함)** |
@@ -115,7 +121,7 @@
 
 이 스코프 덕에 카드 안 컴포넌트는 앱 전역과 **똑같은 레시피**(`bg-primary-tint text-primary-ink`)를 쓰면서 자동으로 어두운 기준을 따른다.
 
-**런타임이 아니라 생성 도구로 한다** — 색 값은 도메인 데이터라 [[ADR-006]] 상 사용자 확인이 필요한데, 런타임 계산은 그 확인 절차를 없앤다. 시드를 넣으면 34토큰 + 대비 계측 리포트가 나오고, 사람이 확인해 `job-themes.json` 에 커밋한다.
+**런타임이 아니라 생성 도구로 한다** — 색 값은 도메인 데이터라 [[ADR-006]] 상 사용자 확인이 필요한데, 런타임 계산은 그 확인 절차를 없앤다. 시드를 넣으면 38토큰 + 대비 계측 리포트가 나오고, 사람이 확인해 `job-themes.json` 에 커밋한다.
 
 ```bash
 npm run theme:gen -- --primary '#F58B0F' --secondary '#F7D00D' --third '#CA763A' --mode light

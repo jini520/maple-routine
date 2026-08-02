@@ -155,6 +155,7 @@ beforeEach(() => {
     dropsByRowKey: {},
     weeklySubtotals: [],
     isPeriodLoading: false,
+    previousPeriodTotalMeso: 0,
     canGoPreviousPeriod: false,
     error: null,
     staleCharacterNames: [],
@@ -1440,6 +1441,106 @@ describe('useBossProfitStore', () => {
         'ocid-1',
         'ocid-2',
       ])
+    })
+  })
+
+  // ADR-087 결정 2·3 — 증감 칩의 비교 기준. 기록 합만 보고 기간 상태는 묻지 않는다.
+  describe('직전 기간 총 수익 (ADR-087)', () => {
+    function record(overrides: Partial<BossProfitRecord> = {}): BossProfitRecord {
+      return {
+        ocid: 'ocid-1',
+        boss: '자쿰',
+        difficulty: '카오스',
+        cycle: 'weekly',
+        periodKey: '2026-07-09',
+        partySize: 1,
+        priceMeso: 8_080_000,
+        payoutMeso: 8_080_000,
+        recordedAt: '2026-07-10T00:00:00.000Z',
+        world: '베라',
+        ...overrides,
+      }
+    }
+
+    it('주간 탭은 직전 주 기록만 합산한다', async () => {
+      vi.useFakeTimers({ toFake: ['Date'] })
+      vi.setSystemTime(new Date('2026-07-22T12:00:00+09:00')) // 이번 주 2026-07-16, 직전 주 2026-07-09
+      try {
+        syncSchedulesMock.mockResolvedValue([syncResult()])
+        getBossProfitRecordsMock.mockImplementation(async (_ocids: string[], keys: string[]) =>
+          keys.includes('2026-07-09')
+            ? [record({ payoutMeso: 5_000_000 }), record({ boss: '매그너스', payoutMeso: 3_000_000 })]
+            : [],
+        )
+
+        await useBossProfitStore.getState().refresh(['ocid-1'])
+
+        expect(getBossProfitRecordsMock).toHaveBeenCalledWith(['ocid-1'], ['2026-07-09'])
+        expect(useBossProfitStore.getState().previousPeriodTotalMeso).toBe(8_000_000)
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    // 월간 탭 총액은 monthly 보스 행 + 그 달의 주차별 합계라(groupTotalMeso), 직전 달 합계도 같은 산식이다.
+    it('월간 탭은 직전 달 monthly 기록과 그 달에 속한 weekly 기록을 함께 합산한다', async () => {
+      vi.useFakeTimers({ toFake: ['Date'] })
+      vi.setSystemTime(new Date('2026-07-22T12:00:00+09:00')) // 이번 달 2026-07, 직전 달 2026-06
+      try {
+        syncSchedulesMock.mockResolvedValue([syncResult()])
+        getBossProfitRecordsMock.mockImplementation(async (_ocids: string[], keys: string[]) => {
+          if (!keys.includes('2026-06')) return []
+          return [
+            record({ cycle: 'monthly', boss: '검은 마법사', periodKey: '2026-06', payoutMeso: 10_000_000 }),
+            record({ periodKey: '2026-06-04', payoutMeso: 1_000_000 }),
+            record({ periodKey: '2026-06-25', payoutMeso: 2_000_000 }),
+          ]
+        })
+
+        await useBossProfitStore.getState().setTab('monthly')
+
+        const keys = getBossProfitRecordsMock.mock.calls.map((call) => call[1] as string[]).find((k) => k.includes('2026-06'))
+        expect(keys).toEqual(['2026-06', '2026-06-04', '2026-06-11', '2026-06-18', '2026-06-25'])
+        expect(useBossProfitStore.getState().previousPeriodTotalMeso).toBe(13_000_000)
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    it('직전 기간 기록이 없으면 0이다 — 조회한 적 없는 기간도 같다(결정 3)', async () => {
+      vi.useFakeTimers({ toFake: ['Date'] })
+      vi.setSystemTime(new Date('2026-07-22T12:00:00+09:00'))
+      try {
+        syncSchedulesMock.mockResolvedValue([syncResult()])
+        getBossProfitRecordsMock.mockResolvedValue([])
+        isPeriodCheckedMock.mockResolvedValue(false)
+
+        await useBossProfitStore.getState().refresh(['ocid-1'])
+
+        expect(useBossProfitStore.getState().previousPeriodTotalMeso).toBe(0)
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    it('과거 기간으로 이동하면 그 기간의 직전 기간으로 기준이 바뀐다', async () => {
+      vi.useFakeTimers({ toFake: ['Date'] })
+      vi.setSystemTime(new Date('2026-07-22T12:00:00+09:00')) // 이번 주 2026-07-16
+      try {
+        syncSchedulesMock.mockResolvedValue([syncResult()])
+        isPeriodCheckedMock.mockResolvedValue(true)
+        getBossProfitRecordsMock.mockImplementation(async (_ocids: string[], keys: string[]) =>
+          keys.includes('2026-07-02') ? [record({ periodKey: '2026-07-02', payoutMeso: 777 })] : [],
+        )
+
+        await useBossProfitStore.getState().refresh(['ocid-1'])
+        await useBossProfitStore.getState().goToPreviousPeriod() // → 2026-07-09, 직전은 2026-07-02
+
+        expect(useBossProfitStore.getState().periodKey).toBe('2026-07-09')
+        expect(useBossProfitStore.getState().previousPeriodTotalMeso).toBe(777)
+      } finally {
+        vi.useRealTimers()
+      }
     })
   })
 

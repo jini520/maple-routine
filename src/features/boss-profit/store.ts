@@ -3,6 +3,7 @@ import { planConfirmedDifficultyDropMigration, pruneUnobtainableDrops } from '..
 import { DEFAULT_MAX_PARTY_SIZE, findPriceEntry } from '../../lib/boss-crystal-prices'
 import { getBossReferenceOrder, matchBossContent, selectBossProfitBosses, type MatchedBoss } from '../../lib/boss-matching'
 import { mergeManualBossList } from '../../lib/manual-boss-merge'
+import { getComparisonPeriodKeys } from '../../lib/boss-profit-delta'
 import {
   containsInProgressWeek,
   formatBossProfitPeriodLabel,
@@ -91,6 +92,14 @@ export interface BossProfitState {
   // 이 기간을 화면이 어떻게 말해야 하는지([[ADR-067]] 결정 2, 표현은 [[ADR-068]]). 전에는
   // periodUnavailable(boolean) 하나로 "집계 전"과 "그 외 실패"를 같은 문구로 말했다.
   periodState: PeriodDataState
+  /**
+   * 직전 기간의 총 수익 ([[ADR-087]] 결정 2·3) — 증감 칩의 비교 기준.
+   *
+   * **기록 합만 담는다.** 조회한 적 없는 기간도 0이다(사용자 결정) — 그래서 이 값은 기간 상태
+   * 기계(`periodState`)와 무관하고, 화면은 이 숫자 하나만 보고 칩을 그린다. 그 대가로 "0메소였다"와
+   * "모른다"가 구분되지 않는다(의도된 손실, ADR-087 트레이드오프).
+   */
+  previousPeriodTotalMeso: number
   canGoPreviousPeriod: boolean // 현재 선택된 기간에서 한 칸 더 과거로 이동할 수 있는지(#29) — 이전 기간이 지금 조회 가능하거나 이미 캐시된 기록이 있을 때만 true. 조회 불가·레코드 없는 기간에 착지하는 것을 막는다.
   error: ScheduleSyncError | null
   staleCharacterNames: string[]
@@ -734,6 +743,30 @@ async function backfillTarget(target: BackfillTarget, now: Date): Promise<Period
 //  2) 지금 API로 조회 가능하면(롤링 윈도우 안) 도달 시 백필로 데이터를 채울 수 있다 → 가능.
 //  3) 롤링 윈도우 밖이라 지금은 조회 불가지만 과거에 저장해둔 기록이 있으면 그대로 보여줄 수 있다 → 가능.
 // (이 캐시 존중이 롤링 하한을 그대로 이전 게이트로 쓰지 않는 이유다.)
+/**
+ * 직전 기간 총 수익 ([[ADR-087]] 결정 2). SQLite 한 번이면 끝난다.
+ *
+ * `getComparisonPeriodKeys` 가 **그 화면 총액 산식과 짝을 맞춘 키 목록**을 준다 — 월간 탭이면
+ * 직전 달(monthly)과 그 달에 속한 주차들(weekly)이 함께 들어 있고, 화면 총액도 그 둘을 더하므로
+ * (`groupTotalMeso`) cycle 로 거르지 않고 전부 합치는 것이 맞다.
+ *
+ * 기간 상태를 묻지 않는다 — 기록이 없는 기간은 그냥 0이다(결정 3).
+ */
+async function loadPreviousPeriodTotal(
+  ocids: string[],
+  tab: BossCycle,
+  periodKey: string,
+): Promise<number> {
+  if (ocids.length === 0) {
+    return 0
+  }
+  const records = await withSqliteFallback(
+    getBossProfitRecords(ocids, getComparisonPeriodKeys(tab, periodKey)),
+    [],
+  )
+  return records.reduce((sum, record) => sum + record.payoutMeso, 0)
+}
+
 async function canReachPreviousPeriod(
   tab: BossCycle,
   periodKey: string,
@@ -904,8 +937,13 @@ async function loadPeriod(
             now,
           )
         : []
-    const canGoPreviousPeriod = await canReachPreviousPeriod(tab, periodKey, ocids, now)
-    const dropsByRowKey = await loadDropsByRowKey(ocids, rows, now)
+    // 서로 독립인 SQLite 조회라 병렬로 던진다. 직렬로 두면 조회 하나가 지연될 때마다
+    // withSqliteFallback 의 5초 타임아웃이 줄줄이 더해진다(ADR-078 결정 1과 같은 이유).
+    const [canGoPreviousPeriod, dropsByRowKey, previousPeriodTotalMeso] = await Promise.all([
+      canReachPreviousPeriod(tab, periodKey, ocids, now),
+      loadDropsByRowKey(ocids, rows, now),
+      loadPreviousPeriodTotal(ocids, tab, periodKey),
+    ])
     if (generation !== requestGeneration) return
     // loadPeriod는 항상 로컬 데이터(스냅샷/기록)로만 뷰를 정착시키고 실시간 동기화를 하지 않는다.
     // 또한 이 함수는 항상 requestGeneration을 올린 네비게이션 뒤에만 실행되므로, 진행 중이던
@@ -927,6 +965,7 @@ async function loadPeriod(
         lastOutcome: null,
       }),
       canGoPreviousPeriod,
+      previousPeriodTotalMeso,
     })
     return
   }
@@ -974,8 +1013,11 @@ async function loadPeriod(
     tab === 'monthly'
       ? await buildWeeklySubtotalsForMonth(sortedOcids, periodKey, [], profileSnapshot, now)
       : []
-  const canGoPreviousPeriod = await canReachPreviousPeriod(tab, periodKey, ocids, now)
-  const dropsByRowKey = await loadDropsByRowKey(ocids, rows, now)
+  const [canGoPreviousPeriod, dropsByRowKey, previousPeriodTotalMeso] = await Promise.all([
+    canReachPreviousPeriod(tab, periodKey, ocids, now),
+    loadDropsByRowKey(ocids, rows, now),
+    loadPreviousPeriodTotal(ocids, tab, periodKey),
+  ])
 
   // target별 상태 → 이 화면의 상태. 기록 유무는 방금 읽은 rows에서 본다(같은 조회를 두 번 하지 않는다).
   const recordedOcids = new Set(rows.map((row) => row.ocid))
@@ -1002,11 +1044,13 @@ async function loadPeriod(
     isPeriodLoading: false,
     periodState,
     canGoPreviousPeriod,
+    previousPeriodTotalMeso,
   })
 }
 
 const initialState: BossProfitState = {
   status: 'idle',
+  previousPeriodTotalMeso: 0,
   tab: 'weekly',
   periodKey: getCurrentBossProfitPeriod('weekly', new Date()).periodKey,
   rows: [],
@@ -1044,6 +1088,12 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     // 하고(그것이 진행 중인 주의 기록을 만드는 유일한 경로다) 화면 반영만 loadPeriod에 넘긴다.
     const viewedPeriodKey = get().periodKey
     const refreshInPlace = containsInProgressWeek(tab, viewedPeriodKey, now)
+
+    // 직전 기간 합계는 이 새로고침이 **바꾸지 않는 값**이다 — 자동 기록(upsert)은 현재 기간에만
+    // 쓰므로 직전 기간의 기록은 그대로다. 그래서 한 번만 읽고 두 단계(캐시·동기화 완료)가 나눠 쓴다.
+    // 여기서 미리 던져 다른 조회와 겹치게 한다 — 단계 사이에 끼워 넣으면 SQLite 지연 시
+    // withSqliteFallback 의 5초 창이 직렬로 하나 더 붙는다.
+    const previousPeriodTotalPromise = loadPreviousPeriodTotal(ocids, tab, currentPeriodKey)
 
     if (ocids.length === 0) {
       latestSyncSnapshot = { ocids: [], rows: [], characterProfiles: new Map() }
@@ -1169,7 +1219,12 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
           ? await buildWeeklySubtotalsForMonth(sortedOcids, currentPeriodKey, cachedMergedRows, cachedCharacterProfiles, now)
           : []
 
-      const cachedDropsByRowKey = await loadDropsByRowKey(ocids, cachedMergedRows, now)
+      // 바로 위 cachedRecords 와 **같은 게이트**를 쓴다 — 캐시 단계가 그릴 것이 없으면 총 수익
+      // 헤드라인도 없으므로 그 비교 기준을 기다릴 이유가 없다(값 자체는 아래 동기화 완료 단계가 쓴다).
+      const [cachedDropsByRowKey, previousPeriodTotalMeso] = await Promise.all([
+        loadDropsByRowKey(ocids, cachedMergedRows, now),
+        cachedRows.length > 0 ? previousPeriodTotalPromise : Promise.resolve(0),
+      ])
 
       // 이 호출보다 나중에 시작된 refresh/setTab/goToXPeriod가 이미 있다면(연타 등) 이 시점의
       // 캐시 우선 표시조차 화면에 반영하지 않는다 — 더 최신 액션이 이미 진행 중이므로 그 결과가
@@ -1185,6 +1240,7 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
         isPeriodLoading: false,
         periodState: cachedMergedRows.length > 0 ? 'recorded' : 'confirmedEmpty',
         canGoPreviousPeriod,
+        previousPeriodTotalMeso,
         error: null,
         staleCharacterNames: [],
         characterIssues: {},
@@ -1356,7 +1412,10 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
         ? await buildWeeklySubtotalsForMonth(sortedOcids, currentPeriodKey, sortedRows, characterProfiles, now)
         : []
 
-    const liveDropsByRowKey = await loadDropsByRowKey(ocids, sortedRows, now)
+    const [liveDropsByRowKey, livePreviousPeriodTotalMeso] = await Promise.all([
+      loadDropsByRowKey(ocids, sortedRows, now),
+      previousPeriodTotalPromise,
+    ])
 
     if (myGeneration !== requestGeneration) return
 
@@ -1369,6 +1428,7 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
       isPeriodLoading: false,
       periodState: sortedRows.length > 0 ? 'recorded' : 'confirmedEmpty',
       canGoPreviousPeriod,
+      previousPeriodTotalMeso: livePreviousPeriodTotalMeso,
       error: null,
       staleCharacterNames,
       characterIssues,
