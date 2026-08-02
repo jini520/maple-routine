@@ -14,8 +14,17 @@ export function characterBasicCacheKey(ocid: string): string {
   return `characterBasicCache:${ocid}`
 }
 
-export function characterBasicCacheIndexKey(): string {
-  return 'characterBasicCache:index'
+// ADR-086 결정 9: 역인덱스를 계정별로 나눈다. 전역 인덱스였을 때는 피커의 stub 단계가 그것을
+// 통째로 읽어 **이전 계정 캐릭터까지** 그렸다(계정 변경 후 관측된 증상).
+export function characterBasicCacheIndexKey(accountId: string): string {
+  return `characterBasicCache:index:${accountId}`
+}
+
+export const LEGACY_CHARACTER_BASIC_CACHE_INDEX_KEY = 'characterBasicCache:index'
+
+// ADR-086 결정 4: (ocid, 날짜) 조회 원장 — 같은 캐릭터를 같은 날짜로 두 번 조회하지 않는다.
+export function scheduleProbeKey(ocid: string): string {
+  return `scheduleProbe:${ocid}`
 }
 
 // ADR-042: 컨텐츠/보스로 갈려 있던 추적 목록·현재 선택을 앱 전역 단일 키로 통합했다.

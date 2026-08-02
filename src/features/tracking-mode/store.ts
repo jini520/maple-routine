@@ -13,8 +13,9 @@ export const useTrackingModeStore = create<TrackingModeStore>()((set, get) => ({
   mode: 'auto',
 
   async restoreFromStorage() {
-    const mode = await getTrackingMode()
-    set({ mode })
+    // ADR-086 결정 2: 미선택(null)이어도 화면 동작은 '자동'이다(ADR-035 결정 2 유지) — "골랐는가"를
+    // 구분해야 하는 곳은 온보딩 게이트뿐이고, 거기서는 저장 값을 직접 읽는다.
+    set({ mode: (await getTrackingMode()) ?? 'auto' })
   },
 
   // ADR-035 결정 14(a): auto → manual 전환 순간, 그 시점에 추적 중인 캐릭터 전원을 일괄

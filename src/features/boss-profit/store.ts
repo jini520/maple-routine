@@ -1093,7 +1093,9 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     // ADR-035 결정 21: 수동 모드에서는 게임 등록/처치가 아니라 사용자 멤버십(manualTrackedContent)이 표시 목록을
     // 결정하므로 캐시·라이브 브랜치 양쪽에서 참조할 수동 목록을 미리 조회해둔다(#33). 자동 모드는 이 조회를 하지
     // 않는다 — 자동 동작은 트래킹과 완전히 독립이다.
-    const mode = await getTrackingMode()
+    // ADR-086 결정 2: 미선택(null)은 '자동'으로 동작한다 — 동작 기본값은 그대로다(ADR-035 결정 2).
+    // null을 "아직 안 골랐다"로 읽는 곳은 온보딩 게이트 하나뿐이다.
+    const mode = (await getTrackingMode()) ?? 'auto'
     const manualItemsByOcid = new Map<string, ManualTrackedItem[]>()
     if (mode === 'manual') {
       await Promise.all(

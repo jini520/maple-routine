@@ -39,8 +39,16 @@ export const initialOnboardingState: OnboardingState = {
   prefetchProgress: null,
 }
 
+// ADR-086 결정 1: 끝내지 않은 온보딩은 그 단계부터 재개한다. 재개 지점은 저장된 값(apiKey ·
+// selectedAccountId · trackingMode · trackedCharacters)에서 파생하므로 진행 상태 전용 키가 없다.
+export type ResumableOnboardingStatus = Extract<
+  OnboardingStatus,
+  'selectingTrackingMode' | 'selectingContentCharacters'
+>
+
 export type OnboardingEvent =
   | { type: 'RESTORE_COMPLETED'; selectedAccountId: string }
+  | { type: 'RESTORE_STEP'; status: ResumableOnboardingStatus; selectedAccountId: string }
   | { type: 'SUBMIT_API_KEY' }
   | { type: 'API_KEY_VERIFIED'; accounts: MapleAccount[] }
   | { type: 'API_KEY_REJECTED'; error: OnboardingError }
@@ -62,6 +70,17 @@ export function onboardingReducer(state: OnboardingState, event: OnboardingEvent
     case 'RESTORE_COMPLETED':
       return {
         status: 'completed',
+        accounts: [],
+        selectedAccountId: event.selectedAccountId,
+        error: null,
+        prefetchProgress: null,
+      }
+
+    // ADR-086 결정 1: 뒤 두 단계는 네트워크 없이 재개된다 — 모드 선택은 순수 UI이고 캐릭터
+    // 선택은 getCharacterPickerRoster가 자체 조회한다. 그래서 accounts는 비운 채 넘어간다.
+    case 'RESTORE_STEP':
+      return {
+        status: event.status,
         accounts: [],
         selectedAccountId: event.selectedAccountId,
         error: null,

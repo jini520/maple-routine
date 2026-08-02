@@ -23,6 +23,10 @@ describe('AccountFlowStatus', () => {
         accounts={[]}
         error={null}
         prefetchProgress={null}
+        pendingAccountId={null}
+        isCommitting={false}
+        onCommitCharacters={vi.fn()}
+        onCancel={vi.fn()}
         onSelectAccount={vi.fn()}
         onRetry={vi.fn()}
       />,
@@ -38,6 +42,10 @@ describe('AccountFlowStatus', () => {
         accounts={[]}
         error={null}
         prefetchProgress={null}
+        pendingAccountId={null}
+        isCommitting={false}
+        onCommitCharacters={vi.fn()}
+        onCancel={vi.fn()}
         onSelectAccount={vi.fn()}
         onRetry={vi.fn()}
       />,
@@ -55,6 +63,10 @@ describe('AccountFlowStatus', () => {
         accounts={accounts}
         error={null}
         prefetchProgress={null}
+        pendingAccountId={null}
+        isCommitting={false}
+        onCommitCharacters={vi.fn()}
+        onCancel={vi.fn()}
         onSelectAccount={onSelectAccount}
         onRetry={vi.fn()}
       />,
@@ -79,6 +91,10 @@ describe('AccountFlowStatus', () => {
         accounts={accounts}
         error={null}
         prefetchProgress={{ completed: 3, total: 10 }}
+        pendingAccountId={null}
+        isCommitting={false}
+        onCommitCharacters={vi.fn()}
+        onCancel={vi.fn()}
         onSelectAccount={vi.fn()}
         onRetry={vi.fn()}
       />,
@@ -97,6 +113,10 @@ describe('AccountFlowStatus', () => {
         accounts={[]}
         error={{ kind: 'network' }}
         prefetchProgress={null}
+        pendingAccountId={null}
+        isCommitting={false}
+        onCommitCharacters={vi.fn()}
+        onCancel={vi.fn()}
         onSelectAccount={vi.fn()}
         onRetry={onRetry}
       />,

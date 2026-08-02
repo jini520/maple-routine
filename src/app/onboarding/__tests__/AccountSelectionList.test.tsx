@@ -280,6 +280,48 @@ describe('AccountSelectionList', () => {
 
       expect(screen.queryByText('이 계정의 캐릭터를 조회할 수 없습니다')).not.toBeInTheDocument()
     })
+
+    // ADR-086 결정 8: 경고만으로는 부족하다 — 고르면 후보가 0명이라 "최소 1명"(결정 7)을
+    // 만족할 수 없어 온보딩이 진행 불가 상태로 멈춘다. 들어갈 수 없는 문은 잠근다.
+    it('그 계정은 고를 수 없다', async () => {
+      const user = userEvent.setup()
+      const onSelect = vi.fn()
+      mockedUseAccountProbes.mockReturnValue({
+        'da9b2f2-account-hash-1': { representative: null, portraitUrl: null, allUnavailable: true },
+        '69e3525-account-hash-2': {
+          representative: accounts[1].characters[0],
+          portraitUrl: null,
+          allUnavailable: false,
+        },
+      })
+
+      render(<AccountSelectionList accounts={accounts} isSubmitting={false} onSelect={onSelect} />)
+
+      const unavailableOption = screen.getByRole('button', { name: /내옆에최성일/ })
+      expect(unavailableOption).toBeDisabled()
+
+      await user.click(screen.getByRole('button', { name: /낟낟/ }))
+      expect(screen.getByRole('button', { name: '계속하기' })).toBeEnabled()
+    })
+
+    it('계정이 1개라 초기 하이라이트된 항목이 조회 불가면 "계속하기"도 막는다', () => {
+      const single = [accounts[0]]
+      mockedUseAccountProbes.mockReturnValue({
+        'da9b2f2-account-hash-1': { representative: null, portraitUrl: null, allUnavailable: true },
+      })
+
+      render(<AccountSelectionList accounts={single} isSubmitting={false} onSelect={vi.fn()} />)
+
+      expect(screen.getByRole('button', { name: '계속하기' })).toBeDisabled()
+    })
+
+    it('프로브가 도착하기 전에는 고를 수 있다 — 모르는 것을 단정하지 않는다', () => {
+      mockedUseAccountProbes.mockReturnValue({})
+
+      render(<AccountSelectionList accounts={accounts} isSubmitting={false} onSelect={vi.fn()} />)
+
+      expect(screen.getByRole('button', { name: /내옆에최성일/ })).toBeEnabled()
+    })
   })
 
   // ADR-068 결정 4: character/list의 최고 레벨이 조회 불가일 수 있으므로, 대표는 프로브가

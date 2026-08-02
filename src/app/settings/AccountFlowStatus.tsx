@@ -1,4 +1,5 @@
 import { AccountSelectionList } from '../onboarding/AccountSelectionList'
+import { ContentCharacterStep } from '../onboarding/ContentCharacterStep'
 import { formatSettingsError } from './error-message'
 import type { SettingsError, SettingsStatus, PrefetchProgress } from '../../features/settings/state'
 import type { MapleAccount } from '../../types'
@@ -8,7 +9,12 @@ export interface AccountFlowStatusProps {
   accounts: MapleAccount[]
   error: SettingsError | null
   prefetchProgress: PrefetchProgress | null
+  // ADR-086 결정 6: 아직 저장되지 않은 후보 계정 — 캐릭터 선택 단계가 이 계정으로 목록을 그린다.
+  pendingAccountId: string | null
+  isCommitting: boolean
   onSelectAccount: (accountId: string) => void
+  onCommitCharacters: (ocids: string[]) => void
+  onCancel: () => void
   onRetry: () => void
 }
 
@@ -66,6 +72,28 @@ export function AccountFlowStatus(props: AccountFlowStatusProps): React.JSX.Elem
         </div>
       )
     }
+
+    // ADR-086 결정 6: 예열이 끝나면 닫지 않고 새 계정에서 캐릭터를 다시 고르게 한다 — 저장하는
+    // 순간에야 selectedAccountId·trackedCharacters 가 함께 커밋된다. 취소하면 이전 계정 그대로다.
+    case 'selectingCharacters':
+      return (
+        <div className="rounded-[14px] bg-surface border border-border p-6 space-y-3">
+          <ContentCharacterStep
+            accountId={props.pendingAccountId ?? undefined}
+            isSubmitting={props.isCommitting}
+            submitLabel="저장"
+            onSubmit={props.onCommitCharacters}
+          />
+          <button
+            type="button"
+            disabled={props.isCommitting}
+            onClick={props.onCancel}
+            className="w-full rounded-full px-5 py-2.5 text-sm font-medium text-text-muted hover:text-text disabled:opacity-50"
+          >
+            취소
+          </button>
+        </div>
+      )
 
     case 'error':
       return (

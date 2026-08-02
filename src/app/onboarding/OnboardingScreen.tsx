@@ -15,6 +15,7 @@ export function OnboardingScreen(): React.JSX.Element {
     selectAccount,
     selectTrackingMode,
     submitContentCharacters,
+    restartAccountSelection,
   } = useOnboardingStore()
   // 컨텐츠 캐릭터 저장(setTrackedCharacterOcids)이 끝나 다음 상태로 전이하기 전까지의 짧은
   // 구간 동안 CTA를 스피너로 바꿔 중복 클릭을 막는다 — 전용 status가 없어 로컬 상태로 다룬다.
@@ -97,6 +98,14 @@ export function OnboardingScreen(): React.JSX.Element {
           <ContentCharacterStep
             isSubmitting={isSubmittingContent}
             onSubmit={handleSubmitContentCharacters}
+            // ADR-086 결정 8: 고른 계정에 고를 수 있는 캐릭터가 하나도 없을 때의 유일한 탈출구 —
+            // 온보딩 중에는 설정 화면이 없다.
+            emptyAction={{
+              label: '계정 다시 선택',
+              onClick: () => {
+                void restartAccountSelection()
+              },
+            }}
           />
         </div>
       )

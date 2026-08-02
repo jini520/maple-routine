@@ -1,6 +1,14 @@
 import type { MapleAccount } from '../../types'
 
-export type SettingsStatus = 'idle' | 'verifying' | 'selectingAccount' | 'prefetching' | 'error'
+// ADR-086 결정 6: 계정 변경은 캐릭터를 다시 고를 때까지 커밋하지 않는다 — 예열이 끝나면
+// 곧바로 닫지 않고 'selectingCharacters' 에 머문다.
+export type SettingsStatus =
+  | 'idle'
+  | 'verifying'
+  | 'selectingAccount'
+  | 'prefetching'
+  | 'selectingCharacters'
+  | 'error'
 
 export type SettingsError =
   | { kind: 'invalidApiKey' } // 401/403
@@ -18,6 +26,9 @@ export interface SettingsState {
   accounts: MapleAccount[]
   error: SettingsError | null
   prefetchProgress: PrefetchProgress | null
+  // ADR-086 결정 6: 사용자가 고른 계정. **아직 저장되지 않았다** — 캐릭터 선택을 저장하는
+  // 시점에 selectedAccountId·trackedCharacters 두 쓰기가 함께 커밋된다.
+  pendingAccountId: string | null
 }
 
 export const initialSettingsState: SettingsState = {
@@ -25,6 +36,7 @@ export const initialSettingsState: SettingsState = {
   accounts: [],
   error: null,
   prefetchProgress: null,
+  pendingAccountId: null,
 }
 
 export type SettingsEvent =
@@ -68,6 +80,7 @@ export function settingsReducer(state: SettingsState, event: SettingsEvent): Set
         ...state,
         status: 'prefetching',
         prefetchProgress: null,
+        pendingAccountId: event.accountId,
       }
 
     case 'ACCOUNT_SELECTION_FAILED':
@@ -83,10 +96,11 @@ export function settingsReducer(state: SettingsState, event: SettingsEvent): Set
         prefetchProgress: { completed: event.completed, total: event.total },
       }
 
+    // ADR-086 결정 6: 예열이 끝나도 닫지 않는다 — 새 계정에서 캐릭터를 다시 골라야 커밋된다.
     case 'PREFETCH_FINISHED':
       return {
-        status: 'idle',
-        accounts: [],
+        ...state,
+        status: 'selectingCharacters',
         error: null,
         prefetchProgress: null,
       }

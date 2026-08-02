@@ -158,6 +158,42 @@ describe('ContentCharacterStep — 후보 목록 로딩 (ADR-053)', () => {
     expect(screen.queryByTestId('maple-sweep-spinner')).not.toBeInTheDocument()
   })
 
+  // ADR-086 결정 8: 고른 계정에 고를 수 있는 캐릭터가 하나도 없으면 "최소 1명"을 만족할 수 없어
+  // CTA가 영영 비활성이다 — 온보딩에는 설정 화면이 없으므로 계정 선택으로 되돌아가는 길을 준다.
+  it('빈 상태에서 탈출구(계정 다시 선택)를 주면 그 버튼을 함께 보여준다', async () => {
+    const roster = deferRoster()
+    const onEscape = vi.fn()
+
+    render(
+      <ContentCharacterStep
+        isSubmitting={false}
+        onSubmit={vi.fn()}
+        emptyAction={{ label: '계정 다시 선택', onClick: onEscape }}
+      />,
+    )
+    roster.emit([])
+    await roster.resolve()
+
+    await userEvent.click(screen.getByRole('button', { name: '계정 다시 선택' }))
+    expect(onEscape).toHaveBeenCalledTimes(1)
+  })
+
+  it('목록이 있으면 탈출구를 보여주지 않는다', async () => {
+    const roster = deferRoster()
+
+    render(
+      <ContentCharacterStep
+        isSubmitting={false}
+        onSubmit={vi.fn()}
+        emptyAction={{ label: '계정 다시 선택', onClick: vi.fn() }}
+      />,
+    )
+    roster.emit(entries)
+    await roster.resolve()
+
+    expect(screen.queryByRole('button', { name: '계정 다시 선택' })).not.toBeInTheDocument()
+  })
+
   it('전역 실패(401/429)로 reject되면 스피너가 걷히고 실패 안내를 보여준다', async () => {
     const roster = deferRoster()
 

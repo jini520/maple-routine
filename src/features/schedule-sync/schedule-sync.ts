@@ -2,8 +2,13 @@ import { fetchCharacterBasic, fetchCharacterList } from '../../nexon/character'
 import { NexonAuthError, NexonBadRequestError, NexonRateLimitError } from '../../nexon/errors'
 import { fetchSchedulerCharacterState } from '../../nexon/schedule'
 import { mergeSchedulerState, type MergeOutput } from '../../lib/scheduler-merge'
-import { getShareScope } from '../../lib/scheduler-content-scope'
 import { getBackfillDateKeys } from '../../lib/reset-clock'
+import {
+  isDailySectionMissing,
+  isWeeklySectionMissing,
+  toProbeObservation,
+  type SchedulerSectionPresence,
+} from '../../lib/scheduler-activity'
 import { compareByName } from '../onboarding/representative-character'
 import { getAuthConfig } from '../../storage/api-key'
 import {
@@ -11,7 +16,13 @@ import {
   getCachedCharacterBasic,
   setCachedCharacterBasic,
 } from '../../storage/character-basic-cache'
+import { getTrackedCharacterOcids } from '../../storage/character-selection'
 import { getCachedSchedulerState, setCachedSchedulerState } from '../../storage/scheduler-cache'
+import {
+  getScheduleProbeLedger,
+  markScheduleProbeUnavailable,
+  recordScheduleProbe,
+} from '../../storage/schedule-probe-ledger'
 import {
   getAccountSharedProgress,
   getWorldSharedProgress,
@@ -19,6 +30,11 @@ import {
   setWorldSharedProgressEntry,
 } from '../../storage/shared-progress-cache'
 import type { CharacterPickerEntry, MapleCharacter, SchedulerCharacterState, SharedProgressEntry } from '../../types'
+import {
+  readKnownEligibility,
+  resolveCharacterEligibility,
+  type CharacterEligibility,
+} from './character-eligibility'
 
 // ADR-067 결정 1: 400 하나에 처방이 전혀 다른 세 실패가 들어 있어(nexon-api.md "에러 코드")
 // 종류를 갈라 담는다. 재시도 가능성이 셋 다 다르다 — characterUnavailable은 영구,
@@ -68,25 +84,37 @@ export function toScheduleSyncError(error: unknown): ScheduleSyncError {
   return { kind: 'network' }
 }
 
-async function resolveRegisteredCharacters(): Promise<{
+// ADR-086 결정 6: 설정의 계정 변경은 커밋 전에 **후보 계정**으로 예열·후보 목록을 돌린다 —
+// 그래서 저장된 selectedAccountId 대신 인자로 받은 계정을 쓸 수 있어야 한다. 인자가 없으면
+// 지금까지처럼 저장된 값이다.
+async function resolveAccountContext(accountIdOverride?: string): Promise<{
   apiKey: string
   accountId: string
-  characters: MapleCharacter[]
 }> {
   const authConfig = await getAuthConfig()
-  if (authConfig === null || authConfig.selectedAccountId === null) {
+  const accountId = accountIdOverride ?? authConfig?.selectedAccountId ?? null
+  if (authConfig === null || accountId === null) {
     throw new Error(
       'getRegisteredCharacters: 온보딩이 완료되지 않았습니다 (API 키 또는 선택된 계정 없음)',
     )
   }
+  return { apiKey: authConfig.apiKey, accountId }
+}
 
-  const accounts = await fetchCharacterList(authConfig.apiKey)
-  const account = accounts.find((candidate) => candidate.accountId === authConfig.selectedAccountId)
+async function resolveRegisteredCharacters(accountIdOverride?: string): Promise<{
+  apiKey: string
+  accountId: string
+  characters: MapleCharacter[]
+}> {
+  const { apiKey, accountId } = await resolveAccountContext(accountIdOverride)
+
+  const accounts = await fetchCharacterList(apiKey)
+  const account = accounts.find((candidate) => candidate.accountId === accountId)
   if (account === undefined) {
     throw new Error('getRegisteredCharacters: 선택된 계정을 찾을 수 없습니다')
   }
 
-  return { apiKey: authConfig.apiKey, accountId: authConfig.selectedAccountId, characters: account.characters }
+  return { apiKey, accountId, characters: account.characters }
 }
 
 export async function getRegisteredCharacters(): Promise<MapleCharacter[]> {
@@ -110,17 +138,39 @@ function sortPickerEntries(entries: CharacterPickerEntry[]): CharacterPickerEntr
 // 끝나는 대로(Promise.all로 뭉쳐 기다리지 않고) 값을 patch하며 onUpdate를 다시 호출한다.
 // 401/429는 전역 실패로 보고 던지고, 그 외 개별 실패는 이미 있던 캐시 값을 그대로 둔다.
 //
-// ADR-053 결정 1·2 (2026-07-29): 목록에는 access_flag가 확인된 캐릭터만 넣는다 — 확인 경로는
-// character-basic-cache 또는 character/basic 응답 둘뿐이고, access_flag가 없는 character/list
+// ADR-086 결정 3: 목록에 넣을지는 **자격**이 정한다(access_flag 단독 게이트 폐기). 자격이 없어도
+// 추적 중이면 남긴다 — 빼면 trackedOcids에 남은 그 ocid를 해제할 방법이 없다(이슈 #78 A-1).
+// 뒤집으면 추적 중이 아닌 자격 X 캐릭터는 넣지 않는다(ADR-068 결정 4의 "조회 불가는 항상 남긴다"
+// 정정 — 남기는 목적이 해제 경로였으므로 추적 중이 아니면 남길 이유가 없다).
+function shouldShowEntry(
+  eligibility: CharacterEligibility | 'unknown',
+  isTracked: boolean,
+): boolean {
+  return isTracked || eligibility === 'eligible'
+}
+
+export interface CharacterPickerRosterOptions {
+  // ADR-086 결정 6: 설정의 계정 변경이 커밋 전에 후보 계정으로 목록을 그릴 때 쓴다.
+  accountId?: string
+}
+
+// ADR-053 결정 2 (2026-07-29): 확인되지 않은 캐릭터는 목록에 넣지 않는다 — 확인 경로는
+// character-basic-cache/조회 원장 또는 character/basic 응답뿐이고, 그 값이 없는 character/list
 // 응답으로 목록을 채우지 않는다. 그래서 ①에서 보여줄 stub이 한 건도 없는 콜드 스타트(캐시 삭제·
 // 재설치 직후)에는 흘릴 중간 결과가 추측뿐이므로 ②·③의 중간 onUpdate를 억제하고, 모든
 // character/basic이 끝난 뒤 1회만 방출한다(그동안 호출부는 스피너를 보여준다). 반대로 stub을
 // 한 건이라도 방출했다면 위 ADR-016 SWR 동작이 그대로 유지된다 — 즉시 표시 + 개별 patch.
 export async function getCharacterPickerRoster(
   onUpdate: (entries: CharacterPickerEntry[]) => void,
+  options?: CharacterPickerRosterOptions,
 ): Promise<void> {
+  const now = new Date()
+  // 계정과 추적 목록은 로컬 읽기라 stub 단계(네트워크 이전)에서도 알 수 있다.
+  const { apiKey, accountId } = await resolveAccountContext(options?.accountId)
+  const trackedOcids = new Set((await getTrackedCharacterOcids()) ?? [])
+
   // ADR-053 결정 2: 판정 기준은 "캐시 인덱스가 비었는가"가 아니라 "①에서 실제로 사용자에게
-  // 보여줄 것을 방출했는가"다 — 인덱스에 ocid가 있어도 전부 accessFlag: false면 화면에 보여줄
+  // 보여줄 것을 방출했는가"다 — 인덱스에 ocid가 있어도 전부 자격 미확인이면 화면에 보여줄
   // 게 없는 것은 마찬가지이기 때문이다.
   let hasVisibleView = false
 
@@ -128,17 +178,20 @@ export async function getCharacterPickerRoster(
   // 정확성 우선, ADR 2026-07-11 정정) 이 함수가 열릴 때마다 그 네트워크 응답을 기다려야 한다.
   // 그동안 character-basic-cache에 이미 있는 캐릭터는(추적 여부 무관 — 온보딩 예열이 계정
   // 전체 캐릭터를 채워둔다, ADR-016) 전부 즉시 후보 목록에 채워, 피커를 열 때마다 아직
-  // 캐싱되지 않은 캐릭터를 뺀 나머지가 잠깐씩 비어 보이던 문제를 없앤다. character/list
-  // 응답이 도착하면(계정 전체 캐릭터 기준) 아래 기존 흐름이 그대로 이어져 최신 값으로
-  // 교체한다 — 그 사이 개명되거나 삭제된 캐릭터가 있었다면 여기서 바로잡힌다(이 stub
-  // 단계는 잠깐의 근사치일 뿐이다).
-  const cachedOcids = await getAllCachedCharacterBasicOcids()
+  // 캐싱되지 않은 캐릭터를 뺀 나머지가 잠깐씩 비어 보이던 문제를 없앤다.
+  // ADR-086 결정 9: 인덱스가 계정별이라 이 단계가 더 이상 이전 계정 캐릭터를 그리지 않는다.
+  const cachedOcids = await getAllCachedCharacterBasicOcids(accountId)
   if (cachedOcids.length > 0) {
     const stubEntries = (
       await Promise.all(
         cachedOcids.map(async (ocid): Promise<CharacterPickerEntry | null> => {
           const cached = await getCachedCharacterBasic(ocid)
-          if (cached === null || !cached.profile.accessFlag) {
+          if (cached === null) {
+            return null
+          }
+          // 원장만 읽는 판정이라 네트워크 0회다 — stub 단계의 목적(즉시 표시)을 깨지 않는다.
+          const known = await readKnownEligibility(ocid, cached.profile.accessFlag, now)
+          if (!shouldShowEntry(known, trackedOcids.has(ocid))) {
             return null
           }
           return {
@@ -147,6 +200,7 @@ export async function getCharacterPickerRoster(
             level: cached.profile.level,
             imageUrl: cached.profile.imageUrl,
             world: cached.profile.world,
+            ...(known === 'unavailable' ? { unavailable: true } : {}),
           }
         }),
       )
@@ -158,7 +212,7 @@ export async function getCharacterPickerRoster(
     }
   }
 
-  const { apiKey, characters } = await resolveRegisteredCharacters()
+  const { characters } = await resolveRegisteredCharacters(options?.accountId)
   if (characters.length === 0) {
     onUpdate([])
     return
@@ -169,18 +223,21 @@ export async function getCharacterPickerRoster(
   await Promise.all(
     characters.map(async (character) => {
       const cached = await getCachedCharacterBasic(character.ocid)
-      if (cached !== null && cached.profile.accessFlag) {
-        liveEntries.set(character.ocid, {
-          ocid: character.ocid,
-          name: cached.profile.name,
-          level: cached.profile.level,
-          imageUrl: cached.profile.imageUrl,
-          world: character.world,
-        })
+      if (cached === null) {
+        return
       }
-      // ADR-053 결정 1: 캐시가 없거나(access_flag 미상 — character/list 응답엔 그 값이 없다)
-      // 캐시상 비공개로 알려진 캐릭터는 이 단계에서 넣지 않는다. 캐시 없는 캐릭터는 아래
-      // character/basic 응답이 활성을 확인해주면 그때 들어온다.
+      const known = await readKnownEligibility(character.ocid, cached.profile.accessFlag, now)
+      if (!shouldShowEntry(known, trackedOcids.has(character.ocid))) {
+        return
+      }
+      liveEntries.set(character.ocid, {
+        ocid: character.ocid,
+        name: cached.profile.name,
+        level: cached.profile.level,
+        imageUrl: cached.profile.imageUrl,
+        world: character.world,
+        ...(known === 'unavailable' ? { unavailable: true } : {}),
+      })
     }),
   )
   if (hasVisibleView) {
@@ -197,14 +254,26 @@ export async function getCharacterPickerRoster(
 
       try {
         const profile = await fetchCharacterBasic(apiKey, character.ocid)
-        await setCachedCharacterBasic(character.ocid, { profile, cachedAt: new Date().toISOString() })
-        if (profile.accessFlag) {
+        await setCachedCharacterBasic(accountId, character.ocid, {
+          profile,
+          cachedAt: new Date().toISOString(),
+        })
+        // ADR-086 결정 5: 여기서 스윕이 일어난다. 예열이 이미 훑었으면 원장이 채워져 있어
+        // 추가 호출이 없고, 예열이 중간에 끊겼으면 이 경로가 이어서 완성한다.
+        const eligibility = await resolveCharacterEligibility(
+          apiKey,
+          character.ocid,
+          profile.accessFlag,
+          now,
+        )
+        if (shouldShowEntry(eligibility, trackedOcids.has(character.ocid))) {
           liveEntries.set(character.ocid, {
             ocid: character.ocid,
             name: profile.name,
             level: profile.level,
             imageUrl: profile.imageUrl,
             world: character.world,
+            ...(eligibility === 'unavailable' ? { unavailable: true } : {}),
           })
         } else {
           liveEntries.delete(character.ocid)
@@ -217,17 +286,22 @@ export async function getCharacterPickerRoster(
           globalError = error
           return
         }
-        // ADR-068 결정 4: 조회 불가(400 OPENAPI00003)는 **숨기지 않는다**. basic만 실패한 것이므로
-        // character/list가 준 이름·레벨·월드는 그대로 쓸 수 있다 — 이미지는 없다.
+        // ADR-068 결정 4 + ADR-086 결정 3: 조회 불가(400 OPENAPI00003)는 **추적 중일 때만** 남긴다.
+        // basic만 실패한 것이므로 character/list가 준 이름·레벨·월드는 쓸 수 있다(이미지는 없다).
         if (toScheduleSyncError(error).kind === 'characterUnavailable') {
-          liveEntries.set(character.ocid, {
-            ocid: character.ocid,
-            name: character.name,
-            level: character.level,
-            imageUrl: null,
-            world: character.world,
-            unavailable: true,
-          })
+          await markScheduleProbeUnavailable(character.ocid)
+          if (trackedOcids.has(character.ocid)) {
+            liveEntries.set(character.ocid, {
+              ocid: character.ocid,
+              name: character.name,
+              level: character.level,
+              imageUrl: null,
+              world: character.world,
+              unavailable: true,
+            })
+          } else {
+            liveEntries.delete(character.ocid)
+          }
           if (hasVisibleView) {
             onUpdate(sortPickerEntries(Array.from(liveEntries.values())))
           }
@@ -264,28 +338,6 @@ async function buildFallbackResult(
   }
 }
 
-// ADR-034 추가 정정(2026-07-25): daily/weekly 섹션이 "완전히 비었는지(isXStale = length 0)"만으로는
-// 부족하다 — 콜드 스타트에서 당일 응답이 월드공유 항목(몬스터파크)만 남기고 character 범위 항목을
-// 통째로 누락시키면 length가 1이라 isDailyStale이 false가 되고, 로컬 캐시도 없어 항목 단위 병합이
-// 복원할 previous가 없다. 그래서 "그 섹션에 character 범위 항목이 하나라도 있는가"로 stale을 판정한다.
-// 캐릭터가 동기화되면 daily/weekly엔 항상 자기 범위 항목(일일/주간 퀘스트 등)이 들어오므로,
-// 공유 항목만 남았으면 이 캐릭터의 그 섹션은 아직 신뢰할 수 없다는 뜻이다.
-function hasCharacterScopeItem(items: { name: string }[]): boolean {
-  return items.some((item) => getShareScope(item.name) === 'character')
-}
-
-// isXStale(완전 비었을 때)은 그대로 살리고, 비지 않았어도 character 범위 항목이 하나도 없으면
-// 부분 누락으로 본다. length === 0이면 isXStale이 이미 잡으므로 두 번째 항은 length > 0에서만 의미가
-// 있다 — 테스트 스텁처럼 dailyContents가 빈 배열인데 isDailyStale이 명시적으로 false인 상태를
-// "누락"으로 오판하지 않도록 length 가드를 둔다.
-function isDailySectionMissing(state: SchedulerCharacterState): boolean {
-  return state.isDailyStale || (state.dailyContents.length > 0 && !hasCharacterScopeItem(state.dailyContents))
-}
-
-function isWeeklySectionMissing(state: SchedulerCharacterState): boolean {
-  return state.isWeeklyStale || (state.weeklyContents.length > 0 && !hasCharacterScopeItem(state.weeklyContents))
-}
-
 // ADR-034 정정(2026-07-23) + 추가 정정(2026-07-25): 4개 섹션(daily/weekly/weeklyBoss/monthlyBoss) 중
 // 하나라도 stale이면(리셋 이후 미접속) 과거 날짜 조회로 항목 단위 선채움을 시도한다. daily/weekly는
 // character 범위 항목 유무로 stale을 판정한다.
@@ -295,6 +347,25 @@ function needsBackfill(state: SchedulerCharacterState): boolean {
     isWeeklySectionMissing(state) ||
     state.isWeeklyBossStale ||
     state.isMonthlyBossStale
+  )
+}
+
+// ADR-086 결정 4: 이미 조회한 날짜를 **다시 부를 가치가 있는가**. 원장은 그 날짜에 각 섹션의
+// 내용이 있었는지만 기억하므로(값은 기억하지 않는다), 지금 비어 있는 섹션 중 하나라도 그 날짜에
+// 있었다면 값을 가져오러 다시 부른다. 하나도 없었다면 불러봐야 같은 0건이라 건너뛴다 —
+// 보스 0건 캐릭터가 매번 13일을 소진하던 고리가 여기서 끊긴다.
+function canResolveAnyStaleSection(
+  originallyStale: SchedulerSectionPresence,
+  known: { kind: 'observed'; sections: SchedulerSectionPresence } | { kind: 'outOfRange' },
+): boolean {
+  if (known.kind === 'outOfRange') {
+    return false
+  }
+  return (
+    (originallyStale.daily && known.sections.daily) ||
+    (originallyStale.weekly && known.sections.weekly) ||
+    (originallyStale.weeklyBoss && known.sections.weeklyBoss) ||
+    (originallyStale.monthlyBoss && known.sections.monthlyBoss)
   )
 }
 
@@ -329,15 +400,39 @@ async function fillMissingSections(
   const mergedWorldLedger = { ...worldLedger, ...stage1.worldLedgerUpdates }
   const mergedAccountLedger = { ...accountLedger, ...stage1.accountLedgerUpdates }
 
+  // ADR-086 결정 4(= ADR-067 결정 5): 이미 조회한 날짜를 다시 부르지 않는다. 보스가 0건인
+  // 캐릭터(특수 월드·저레벨)는 과거 날짜도 0건이라 이 루프가 13일을 다 쓰고도 해결하지
+  // 못했고, 상태가 변하지 않아 **매 동기화 14회 호출이 영구 반복**됐다(이슈 #87 문제 1).
+  const probeLedger = await getScheduleProbeLedger(ocid, now)
+  if (probeLedger.unavailable) {
+    return stage1
+  }
+
   let acc = stage1
 
   for (const dateKey of getBackfillDateKeys(now)) {
+    const known = probeLedger.dates[dateKey]
+    if (known !== undefined && !canResolveAnyStaleSection(originallyStale, known)) {
+      continue
+    }
+
     let dayResponse: SchedulerCharacterState
     try {
       dayResponse = await fetchSchedulerCharacterState(apiKey, ocid, dateKey)
-    } catch {
+    } catch (error) {
+      const kind = toScheduleSyncError(error).kind
+      if (kind === 'characterUnavailable') {
+        await markScheduleProbeUnavailable(ocid)
+        break
+      }
+      if (kind === 'periodOutOfRange') {
+        await recordScheduleProbe(ocid, dateKey, { kind: 'outOfRange' })
+      }
+      // notCollected(집계 전)·네트워크는 기록하지 않는다 — 나중에 다시 시도한다.
       continue
     }
+
+    await recordScheduleProbe(ocid, dateKey, { kind: 'observed', ...toProbeObservation(dayResponse) })
 
     const dayMerge = mergeSchedulerState({
       previous: dayResponse,

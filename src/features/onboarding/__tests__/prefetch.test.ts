@@ -7,10 +7,12 @@ const { fetchCharacterBasicMock, fetchSchedulerCharacterStateMock } = vi.hoisted
   fetchSchedulerCharacterStateMock: vi.fn(),
 }))
 
-const { setCachedCharacterBasicMock, setCachedSchedulerStateMock } = vi.hoisted(() => ({
-  setCachedCharacterBasicMock: vi.fn(),
-  setCachedSchedulerStateMock: vi.fn(),
-}))
+const { setCachedCharacterBasicMock, setCachedSchedulerStateMock, resolveCharacterEligibilityMock } =
+  vi.hoisted(() => ({
+    setCachedCharacterBasicMock: vi.fn(),
+    setCachedSchedulerStateMock: vi.fn(),
+    resolveCharacterEligibilityMock: vi.fn(),
+  }))
 
 vi.mock('../../../nexon/character', () => ({
   fetchCharacterBasic: fetchCharacterBasicMock,
@@ -28,7 +30,13 @@ vi.mock('../../../storage/scheduler-cache', () => ({
   setCachedSchedulerState: setCachedSchedulerStateMock,
 }))
 
+vi.mock('../../schedule-sync/character-eligibility', () => ({
+  resolveCharacterEligibility: resolveCharacterEligibilityMock,
+}))
+
 import { prefetchAccountData } from '../prefetch'
+
+const ACCOUNT = 'account-1'
 
 function character(ocid: string): MapleCharacter {
   return { ocid, name: `캐릭터-${ocid}`, world: '베라', jobClass: '렌', level: 200 }
@@ -58,6 +66,7 @@ function schedulerState(): SchedulerCharacterState {
 beforeEach(() => {
   setCachedCharacterBasicMock.mockResolvedValue(undefined)
   setCachedSchedulerStateMock.mockResolvedValue(undefined)
+  resolveCharacterEligibilityMock.mockResolvedValue('eligible')
 })
 
 afterEach(() => {
@@ -67,22 +76,23 @@ afterEach(() => {
 describe('prefetchAccountData', () => {
   it('캐릭터가 없으면 아무 API도 호출하지 않고 progress {0,0}만 보고한다', async () => {
     const onProgress = vi.fn()
-    await prefetchAccountData('key-1', [], onProgress)
+    await prefetchAccountData('key-1', ACCOUNT, [], onProgress)
 
     expect(fetchCharacterBasicMock).not.toHaveBeenCalled()
     expect(onProgress).toHaveBeenCalledWith({ completed: 0, total: 0 })
   })
 
-  it('access_flag: true인 캐릭터는 basic+schedule 둘 다 조회하고 캐시에 기록한다', async () => {
+  it('basic+schedule 둘 다 조회하고 계정 인덱스에 함께 캐시한다', async () => {
     fetchCharacterBasicMock.mockResolvedValue(profile({ accessFlag: true }))
     fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState())
 
     const onProgress = vi.fn()
-    await prefetchAccountData('key-1', [character('ocid-1')], onProgress)
+    await prefetchAccountData('key-1', ACCOUNT, [character('ocid-1')], onProgress)
 
     expect(fetchCharacterBasicMock).toHaveBeenCalledWith('key-1', 'ocid-1')
     expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key-1', 'ocid-1')
     expect(setCachedCharacterBasicMock).toHaveBeenCalledWith(
+      ACCOUNT,
       'ocid-1',
       expect.objectContaining({ profile: profile({ accessFlag: true }) }),
     )
@@ -94,26 +104,45 @@ describe('prefetchAccountData', () => {
     expect(last).toEqual({ completed: 2, total: 2 })
   })
 
-  it('access_flag: false인 캐릭터는 schedule을 조회하지 않고 total에서도 그만큼 뺀다', async () => {
-    fetchCharacterBasicMock.mockResolvedValue(profile({ accessFlag: false }))
+  describe('access_flag 게이트 폐기 (ADR-086 결정 3)', () => {
+    it('access_flag: false여도 scheduler를 예열한다 — 받을 수 있는 데이터를 버리지 않는다', async () => {
+      fetchCharacterBasicMock.mockResolvedValue(profile({ accessFlag: false }))
+      fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState())
 
-    const onProgress = vi.fn()
-    await prefetchAccountData('key-1', [character('ocid-1')], onProgress)
+      const onProgress = vi.fn()
+      await prefetchAccountData('key-1', ACCOUNT, [character('ocid-1')], onProgress)
 
-    expect(fetchSchedulerCharacterStateMock).not.toHaveBeenCalled()
-    expect(setCachedSchedulerStateMock).not.toHaveBeenCalled()
-    const last = onProgress.mock.calls.at(-1)?.[0]
-    expect(last).toEqual({ completed: 1, total: 1 })
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key-1', 'ocid-1')
+      expect(setCachedSchedulerStateMock).toHaveBeenCalled()
+      const last = onProgress.mock.calls.at(-1)?.[0]
+      expect(last).toEqual({ completed: 2, total: 2 })
+    })
+
+    it('오늘 응답을 자격 판정에 넘겨 같은 호출을 두 번 하지 않는다 (ADR-086 결정 5)', async () => {
+      fetchCharacterBasicMock.mockResolvedValue(profile({ accessFlag: false }))
+      fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState())
+
+      await prefetchAccountData('key-1', ACCOUNT, [character('ocid-1')], vi.fn())
+
+      expect(resolveCharacterEligibilityMock).toHaveBeenCalledWith(
+        'key-1',
+        'ocid-1',
+        false,
+        expect.any(Date),
+        schedulerState(),
+      )
+    })
   })
 
   it('character/basic 조회가 실패하면 캐시 없이 넘어가고 schedule도 조회하지 않는다', async () => {
     fetchCharacterBasicMock.mockRejectedValue(new NexonNetworkError('timeout'))
 
     const onProgress = vi.fn()
-    await prefetchAccountData('key-1', [character('ocid-1')], onProgress)
+    await prefetchAccountData('key-1', ACCOUNT, [character('ocid-1')], onProgress)
 
     expect(setCachedCharacterBasicMock).not.toHaveBeenCalled()
     expect(fetchSchedulerCharacterStateMock).not.toHaveBeenCalled()
+    expect(resolveCharacterEligibilityMock).not.toHaveBeenCalled()
     const last = onProgress.mock.calls.at(-1)?.[0]
     expect(last).toEqual({ completed: 1, total: 1 })
   })
@@ -123,7 +152,7 @@ describe('prefetchAccountData', () => {
     fetchSchedulerCharacterStateMock.mockRejectedValue(new NexonNetworkError('timeout'))
 
     const onProgress = vi.fn()
-    await prefetchAccountData('key-1', [character('ocid-1')], onProgress)
+    await prefetchAccountData('key-1', ACCOUNT, [character('ocid-1')], onProgress)
 
     expect(setCachedSchedulerStateMock).not.toHaveBeenCalled()
     const last = onProgress.mock.calls.at(-1)?.[0]
@@ -138,7 +167,7 @@ describe('prefetchAccountData', () => {
 
     const onProgress = vi.fn()
     await expect(
-      prefetchAccountData('key-1', [character('ocid-1'), character('ocid-2')], onProgress),
+      prefetchAccountData('key-1', ACCOUNT, [character('ocid-1'), character('ocid-2')], onProgress),
     ).resolves.toBeUndefined()
   })
 
@@ -155,6 +184,7 @@ describe('prefetchAccountData', () => {
     const onProgress = vi.fn()
     const promise = prefetchAccountData(
       'key-1',
+      ACCOUNT,
       [character('ocid-1'), character('ocid-2'), character('ocid-3')],
       onProgress,
     )
@@ -171,6 +201,6 @@ describe('prefetchAccountData', () => {
     await promise
 
     const last = onProgress.mock.calls.at(-1)?.[0]
-    expect(last).toEqual({ completed: 3, total: 3 })
+    expect(last).toEqual({ completed: 6, total: 6 })
   })
 })

@@ -53,13 +53,17 @@ export function AccountSelectionList(props: AccountSelectionListProps): React.JS
           const emblemUrl = worldEmblemUrl(representative.world)
           const isHighlighted = account.accountId === highlightedAccountId
           const portraitUrl = probe?.portraitUrl ?? null
+          // ADR-086 결정 8: 전원 조회 불가인 계정은 고를 수 없다 — 고르면 후보가 0명이라
+          // "최소 1명"(결정 7)을 만족할 수 없어 온보딩이 진행 불가 상태로 멈춘다.
+          // 프로브가 도착하기 전에는 고를 수 있다(모르는 것을 단정하지 않는다).
+          const isUnselectable = probe?.allUnavailable === true
 
           return (
             <li key={account.accountId}>
               <button
                 type="button"
                 aria-pressed={isHighlighted}
-                disabled={props.isSubmitting}
+                disabled={props.isSubmitting || isUnselectable}
                 onClick={() => setHighlightedAccountId(account.accountId)}
                 className={
                   isHighlighted
@@ -113,7 +117,13 @@ export function AccountSelectionList(props: AccountSelectionListProps): React.JS
 
       <button
         type="button"
-        disabled={highlightedAccountId === null || props.isSubmitting}
+        // ADR-086 결정 8: 계정이 1개라 초기 하이라이트로 지정된 항목(ADR-051 결정 3)이 나중에
+        // 조회 불가로 판명될 수 있다 — 항목 비활성만으로는 막히지 않으므로 확정 버튼도 막는다.
+        disabled={
+          highlightedAccountId === null ||
+          props.isSubmitting ||
+          probes[highlightedAccountId]?.allUnavailable === true
+        }
         onClick={() => {
           if (highlightedAccountId !== null) props.onSelect(highlightedAccountId)
         }}

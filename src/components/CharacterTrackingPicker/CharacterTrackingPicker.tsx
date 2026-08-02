@@ -99,6 +99,9 @@ export function CharacterTrackingPicker(props: CharacterTrackingPickerProps): Re
   useBodyScrollLock()
   const [selectedOcids, setSelectedOcids] = useState<string[]>(props.trackedOcids)
   const isUnchanged = isSameOcidSet(selectedOcids, props.trackedOcids)
+  // ADR-086 결정 7: 목록을 통째로 비울 수 없다 — 0명은 화면을 빈 상태로 만들 뿐 어떤 사용자
+  // 의도도 표현하지 않는다. 온보딩 캐릭터 단계와 같은 규칙이다.
+  const isEmptySelection = selectedOcids.length === 0
 
   return (
     <div
@@ -108,7 +111,9 @@ export function CharacterTrackingPicker(props: CharacterTrackingPickerProps): Re
       <div className="w-full max-w-sm rounded-[14px] border border-border bg-surface p-6">
         <div className="mb-4 space-y-1">
           <h2 className="text-lg font-semibold text-text">캐릭터 관리</h2>
-          <p className="text-sm text-text-muted">체크한 캐릭터만 스케줄러 목록에 표시됩니다.</p>
+          <p className="text-sm text-text-muted">
+            체크한 캐릭터만 스케줄러 목록에 표시됩니다. 최소 한 명은 선택해주세요.
+          </p>
         </div>
 
         {/* 상태가 바뀌어도 이 자리의 높이가 고정돼 아래 닫기·저장 버튼이 움직이지 않는다. */}
@@ -127,7 +132,7 @@ export function CharacterTrackingPicker(props: CharacterTrackingPickerProps): Re
           <button
             type="button"
             onClick={() => props.onSave(selectedOcids)}
-            disabled={isUnchanged}
+            disabled={isUnchanged || isEmptySelection}
             className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-on-primary hover:bg-primary-hover disabled:opacity-50"
           >
             저장

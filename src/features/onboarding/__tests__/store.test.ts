@@ -33,8 +33,14 @@ const { setModeMock, trackingModeRef } = vi.hoisted(() => ({
   trackingModeRef: { current: 'auto' as 'auto' | 'manual' },
 }))
 
-const { setTrackedCharacterOcidsMock } = vi.hoisted(() => ({
+const { setTrackedCharacterOcidsMock, getTrackedCharacterOcidsMock } = vi.hoisted(() => ({
   setTrackedCharacterOcidsMock: vi.fn(),
+  getTrackedCharacterOcidsMock: vi.fn(),
+}))
+
+const { getTrackingModeMock, setTrackingModeMock } = vi.hoisted(() => ({
+  getTrackingModeMock: vi.fn(),
+  setTrackingModeMock: vi.fn(),
 }))
 
 const { seedManualTrackedContentMock } = vi.hoisted(() => ({
@@ -70,6 +76,12 @@ vi.mock('../../tracking-mode/store', () => ({
 
 vi.mock('../../../storage/character-selection', () => ({
   setTrackedCharacterOcids: setTrackedCharacterOcidsMock,
+  getTrackedCharacterOcids: getTrackedCharacterOcidsMock,
+}))
+
+vi.mock('../../../storage/tracking-mode', () => ({
+  getTrackingMode: getTrackingModeMock,
+  setTrackingMode: setTrackingModeMock,
 }))
 
 vi.mock('../../tracking-mode/seed', () => ({
@@ -104,6 +116,10 @@ beforeEach(() => {
   seedManualTrackedContentMock.mockResolvedValue(undefined)
   trackingModeRef.current = 'auto'
   getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1', selectedAccountId: null })
+  // ADR-086 결정 1: 재개 판정의 기본값 = 온보딩을 끝까지 마친 상태
+  getTrackingModeMock.mockResolvedValue('auto')
+  getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-acc-1'])
+  setTrackingModeMock.mockResolvedValue(undefined)
 })
 
 afterEach(() => {
@@ -120,7 +136,7 @@ describe('useOnboardingStore.restoreFromStorage', () => {
     expect(fetchCharacterListMock).not.toHaveBeenCalled()
   })
 
-  it('selectedAccountId까지 저장돼 있으면 즉시 completed 상태가 된다', async () => {
+  it('네 단계를 모두 마쳤으면 completed 상태가 된다', async () => {
     getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1', selectedAccountId: 'acc-1' })
 
     await useOnboardingStore.getState().restoreFromStorage()
@@ -129,6 +145,57 @@ describe('useOnboardingStore.restoreFromStorage', () => {
     expect(state.status).toBe('completed')
     expect(state.selectedAccountId).toBe('acc-1')
     expect(fetchCharacterListMock).not.toHaveBeenCalled()
+  })
+
+  // ADR-086 결정 1·2: 끝내지 않은 단계는 그 지점부터 이어간다. 전에는 selectedAccountId 하나만
+  // 보고 곧바로 completed로 전이해, 모드·캐릭터를 고르지 않은 채 빈 메인으로 떨어졌다.
+  describe('끝내지 않은 온보딩 재개 (ADR-086 결정 1)', () => {
+    beforeEach(() => {
+      getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1', selectedAccountId: 'acc-1' })
+    })
+
+    it('스케줄 관리 방법을 고르지 않았으면 그 단계부터 재개한다 — 자동으로 확정하지 않는다', async () => {
+      getTrackingModeMock.mockResolvedValue(null)
+      getTrackedCharacterOcidsMock.mockResolvedValue(null)
+
+      await useOnboardingStore.getState().restoreFromStorage()
+
+      const state = useOnboardingStore.getState()
+      expect(state.status).toBe('selectingTrackingMode')
+      expect(state.selectedAccountId).toBe('acc-1')
+      expect(setTrackingModeMock).not.toHaveBeenCalled()
+      // 뒤 단계는 네트워크 없이 재개된다 — 예열을 다시 돌리지 않는다.
+      expect(fetchCharacterListMock).not.toHaveBeenCalled()
+      expect(prefetchAccountDataMock).not.toHaveBeenCalled()
+    })
+
+    it('추적 캐릭터를 고르지 않았으면(null) 캐릭터 선택 단계부터 재개한다', async () => {
+      getTrackingModeMock.mockResolvedValue('auto')
+      getTrackedCharacterOcidsMock.mockResolvedValue(null)
+
+      await useOnboardingStore.getState().restoreFromStorage()
+
+      expect(useOnboardingStore.getState().status).toBe('selectingContentCharacters')
+    })
+
+    it('추적 캐릭터가 빈 배열이어도 미완료로 본다 — 0명은 사용자 의도가 아니다', async () => {
+      getTrackingModeMock.mockResolvedValue('manual')
+      getTrackedCharacterOcidsMock.mockResolvedValue([])
+
+      await useOnboardingStore.getState().restoreFromStorage()
+
+      expect(useOnboardingStore.getState().status).toBe('selectingContentCharacters')
+    })
+
+    it('ADR-035 이전 완주자(trackingMode 키 없음 + 추적 목록 있음)는 auto로 1회 이관하고 완료로 본다', async () => {
+      getTrackingModeMock.mockResolvedValue(null)
+      getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
+
+      await useOnboardingStore.getState().restoreFromStorage()
+
+      expect(setTrackingModeMock).toHaveBeenCalledWith('auto')
+      expect(useOnboardingStore.getState().status).toBe('completed')
+    })
   })
 
   it('apiKey만 있으면 fetchCharacterList를 다시 호출해 재개하고, 계정이 1개여도 selectingAccount에서 멈춘다(ADR-051)', async () => {
@@ -201,6 +268,7 @@ describe('useOnboardingStore.submitApiKey', () => {
     expect(setSelectedAccountIdMock).toHaveBeenCalledWith('acc-1')
     expect(prefetchAccountDataMock).toHaveBeenCalledWith(
       'key-1',
+      'acc-1',
       accounts[0].characters,
       expect.any(Function),
     )
@@ -292,6 +360,31 @@ describe('useOnboardingStore.submitApiKey', () => {
 
 })
 
+// ADR-086 결정 8: 고른 계정에 고를 수 있는 캐릭터가 하나도 없을 때의 유일한 탈출구.
+describe('useOnboardingStore.restartAccountSelection', () => {
+  it('저장된 selectedAccountId를 비우고 계정 선택 화면으로 되돌아간다', async () => {
+    getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1', selectedAccountId: 'acc-1' })
+    const accounts = [account('acc-1'), account('acc-2')]
+    fetchCharacterListMock.mockResolvedValue(accounts)
+    useOnboardingStore.setState({
+      status: 'selectingContentCharacters',
+      accounts: [],
+      selectedAccountId: 'acc-1',
+      error: null,
+      prefetchProgress: null,
+    })
+
+    await useOnboardingStore.getState().restartAccountSelection()
+
+    // 안 비우면 여기서 앱을 종료했을 때 재개가 같은 막다른 길로 다시 데려온다.
+    expect(setSelectedAccountIdMock).toHaveBeenCalledWith(null)
+    const state = useOnboardingStore.getState()
+    expect(state.status).toBe('selectingAccount')
+    expect(state.accounts).toEqual(accounts)
+    expect(state.selectedAccountId).toBeNull()
+  })
+})
+
 describe('useOnboardingStore.selectAccount', () => {
   it('저장에 성공하면 예열을 거쳐 트래킹 모드 선택 단계가 된다', async () => {
     const accounts = [account('acc-1'), account('acc-2')]
@@ -308,6 +401,7 @@ describe('useOnboardingStore.selectAccount', () => {
     expect(setSelectedAccountIdMock).toHaveBeenCalledWith('acc-2')
     expect(prefetchAccountDataMock).toHaveBeenCalledWith(
       'key-1',
+      'acc-2',
       accounts[1].characters,
       expect.any(Function),
     )
@@ -343,7 +437,12 @@ describe('useOnboardingStore.selectAccount', () => {
     const progressCallbacks: Array<(progress: { completed: number; total: number }) => void> = []
     const resolvers: Array<() => void> = []
     prefetchAccountDataMock.mockImplementation(
-      (_apiKey: string, _characters: unknown, onProgress: (p: { completed: number; total: number }) => void) => {
+      (
+        _apiKey: string,
+        _accountId: string,
+        _characters: unknown,
+        onProgress: (p: { completed: number; total: number }) => void,
+      ) => {
         progressCallbacks.push(onProgress)
         return new Promise<void>((resolve) => {
           resolvers.push(resolve)

@@ -704,7 +704,7 @@ describe('이슈 #78 재현 — 실측 응답 형태에서 나오는 문제', ()
     expect(visibleText()).toContain(blackMage.payoutMeso.toLocaleString())
   })
 
-  it('I: 보스가 0건인 캐릭터(특수 월드·저레벨)는 매 동기화마다 14회 호출한다', async () => {
+  it('I: 보스가 0건인 캐릭터(특수 월드·저레벨)는 두 번째 동기화부터 백필을 돌지 않는다 (ADR-086 결정 4)', async () => {
     vi.setSystemTime(T_AUG14)
     world.tracked = [IDLE.ocid]
     world.characters = [IDLE]
@@ -726,11 +726,19 @@ describe('이슈 #78 재현 — 실측 응답 형태에서 나오는 문제', ()
     await act(async () => {
       await useBossProfitStore.getState().refresh([IDLE.ocid])
     })
-    line(`2차 동기화(새로고침): 추가 ${world.apiCalls.length - first}회 — 영구히 해결되지 않는다`)
-    flush('시나리오 I — 영구 미해결 섹션 백필 루프 (캐릭터 1명당 14회)')
+    line(`2차 동기화(새로고침): 추가 ${world.apiCalls.length - first}회`)
+    line()
+    line('→ 수정 전에는 2차도 14회였다. 과거 날짜도 0건이라 resolved가 영원히 참이 되지 않고,')
+    line('   상태가 변하지 않으므로 같은 13일을 매 동기화마다 다시 조회했다(이슈 #87 문제 1).')
+    line('→ 이제 (ocid, 날짜) 조회 원장이 "그 날짜엔 그 섹션이 없었다"를 기억해 그 날짜를 건너뛴다.')
+    line('   남는 것은 오늘 응답 1회뿐이고, 하루가 지나면 새로 윈도우에 들어온 날짜 1개가 더해진다.')
+    flush('시나리오 I — 영구 미해결 섹션 백필 루프 (ADR-086 결정 4로 해소)')
 
+    // 1차는 그대로 14회(오늘 1 + 백필 13) — 원장이 비어 있으니 실제로 훑어야 한다.
     expect(first).toBe(14)
-    expect(world.apiCalls.length - first).toBe(14)
+    // 2차는 오늘 응답 1회뿐. 같은 날짜를 두 번 부르지 않는다.
+    expect(world.apiCalls.length - first).toBe(1)
+    expect(world.apiCalls.slice(first).map((call) => call.date)).toEqual([null])
   })
 })
 
