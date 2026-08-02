@@ -951,21 +951,6 @@ function CrystalSummaryChip(props: { tab: BossCycle; groups: CharacterGroup[] })
   )
 }
 
-// ADR-084: 줄어든 문서에서 더 이상 유효하지 않은 스크롤 오프셋을 **브라우저가 잘라내기 전에** 우리가
-// 자른다. 도착지는 브라우저가 어차피 도달할 값과 같다 — 바꾸는 것은 거기 가는 길의 프레임뿐이다.
-// 이미 유효 범위 안이면 아무것도 하지 않는다: 고칠 프레임도 없는데 스크롤만 튄다.
-function clampDocumentScroll(): void {
-  const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight)
-  if (window.scrollY <= maxScroll) {
-    noteProbe(`clamp skip: y=${Math.round(window.scrollY)} <= max=${maxScroll}`)
-    return
-  }
-  const before = Math.round(window.scrollY)
-  window.scrollTo(0, maxScroll)
-  // scrollTo 직후 다시 읽어, iOS가 이 호출을 **동기로 반영하는지**를 본다(반영 안 되면 before와 같다).
-  noteProbe(`clamp: y=${before} → max=${maxScroll} (읽은 값 ${Math.round(window.scrollY)})`)
-}
-
 function CharacterAccordion(props: {
   group: CharacterGroup
   tab: BossCycle
@@ -997,6 +982,8 @@ function CharacterAccordion(props: {
   // 않는다. 접힘 측정값(66px)이 남으면 펼침 헤더(64px)와 페이드 사이에 2px 틈이 생긴다.
   const headerRef = useRef<HTMLButtonElement>(null)
   const [headerHeight, setHeaderHeight] = useState(0)
+  // ADR-085 결정 2: 접기 전에 "사라질 높이"(셸 − 헤더)를 재기 위한 셸 참조.
+  const shellRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const element = headerRef.current
@@ -1014,25 +1001,38 @@ function CharacterAccordion(props: {
     }
   }, [isExpanded])
 
-  // ADR-084: 접으면 본문이 언마운트돼 문서가 크게 줄어든다(주간 본문 ≈ 보스 행 89pt × 최대 12행).
-  // 접는 순간은 거의 항상 스크롤을 내린 상태다 — 펼친 카드 헤더가 stuck 으로 상단에 붙어 있고 그것을
-  // 탭해서 닫기 때문이다. 그러면 브라우저가 오프셋을 잘라내야 하는데, 잘리기 전 1~2프레임 동안
-  // 레이아웃은 이미 짧고 오프셋은 그대로라 그 프레임이 깨진다 — 남은 문서가 뷰포트보다 짧으면 헤더가
-  // stuck → 비-stuck 으로 풀리며 레이어가 다시 안 칠해지고([[ADR-077]] 빈 헤더), 아직 길면 sticky 가
-  // `-scrollY` 로 그려져 헤더가 화면 밖으로 나간다([[ADR-080]] 과 같은 프레임).
+  // ADR-085 결정 2: 접으면 본문이 사라져 문서가 크게 줄고, 스크롤을 내린 상태였다면 브라우저가
+  // 오프셋을 잘라낸다. 문제는 **그 잘라내기 자체**다 — iOS 스크롤 스레드가 접기 전 오프셋을 35~40ms
+  // 뒤에 되돌려 보내 2프레임 동안 페이지 전체가 옛 오프셋으로 다시 그려진다(실기기 프레임 계측:
+  // 정상 프레임 하나 뒤에 `y1065 h-1065`, 밀린 거리 = 잘린 양). 잘려야 할 오프셋이 없으면 되돌려
+  // 보낼 옛 값도 없다.
   //
-  // `useLayoutEffect` 인 것이 핵심이다([[ADR-080]] 과 같은 이유) — DOM 커밋 후 **페인트 전**에 돌아야
-  // 그 프레임이 그려지기 전에 오프셋이 유효해진다. `useEffect` 면 이미 늦다.
-  //
-  // 펼칠 때는 걸지 않는다(문서가 늘어날 때는 클램프가 없다). 마운트 시점도 마찬가지라 "펼침 → 접힘"
-  // 전이에서만 돌도록 직전 값을 ref 로 들고 간다.
-  const wasExpandedRef = useRef(false)
-  useLayoutEffect(() => {
-    const wasExpanded = wasExpandedRef.current
-    wasExpandedRef.current = isExpanded
-    if (isExpanded || !wasExpanded) return
-    clampDocumentScroll()
-  }, [isExpanded])
+  // 그래서 **접기 전에**, 문서 높이가 아직 그대로일 때 접은 뒤의 최대 스크롤로 먼저 옮기고 다음
+  // 프레임에 접는다. 이때의 scrollTo 는 레이아웃 변경과 무관한 평범한 스크롤이라 스크롤 스레드가
+  // 제 방식대로 처리하면 그만이다 — 이미 잘린 뒤에 불러 아무 일도 하지 못했던 [[ADR-084]]의 호출과
+  // 다른 점이 그것이다.
+  const collapse = (): void => {
+    const shell = shellRef.current
+    const header = headerRef.current
+    const removedHeight =
+      shell === null || header === null
+        ? 0
+        : shell.getBoundingClientRect().height - header.getBoundingClientRect().height
+    const nextMaxScroll = Math.max(
+      0,
+      document.documentElement.scrollHeight - removedHeight - window.innerHeight,
+    )
+    if (window.scrollY <= nextMaxScroll) {
+      noteProbe(`pre-scroll skip: y=${Math.round(window.scrollY)} <= next max=${nextMaxScroll}`)
+      setIsExpanded(false)
+      return
+    }
+    noteProbe(
+      `pre-scroll: y=${Math.round(window.scrollY)} → ${nextMaxScroll} (removed=${Math.round(removedHeight)})`,
+    )
+    window.scrollTo(0, nextMaxScroll)
+    requestAnimationFrame(() => setIsExpanded(false))
+  }
 
   const { group } = props
   const totalMeso = groupTotalMeso(group)
@@ -1161,7 +1161,7 @@ function CharacterAccordion(props: {
         </div>
       )}
 
-      <div className={shellClass}>
+      <div ref={shellRef} className={shellClass}>
         <button
           ref={headerRef}
           type="button"
@@ -1175,7 +1175,11 @@ function CharacterAccordion(props: {
             // 카드 루트를 "안"으로 보므로 헤더 클릭으로는 닫히지 않았다. 게다가 펼침은 레이아웃을
             // 바꿔 열기 직전에 실측한 팝오버 위치가 낡은 값이 된다 — 닫는 것이 두 문제를 함께 없앤다.
             setIsIssueOpen(false)
-            setIsExpanded((prev) => !prev)
+            if (!isExpanded) {
+              setIsExpanded(true)
+              return
+            }
+            collapse()
           }}
           // 펼침 헤더는 카드 안에서 sticky로 고정한다(ADR-047) — top은 페이지 sticky 헤더 실측 높이라
           // 그 바로 아래에 붙고, bg-surface가 밑으로 지나가는 보스 행을 가린다. z-[5]는 드롭 아이콘
@@ -1366,7 +1370,9 @@ export function BossProfitScreen(): React.JSX.Element {
     window.scrollTo(0, 0)
   }, [tab, periodKey])
 
-  useEffect(() => {
+  // ADR-085 결정 1: 헤더가 fixed 라 흐름에서 빠졌고, 목록은 이 실측 높이의 spacer 로 자리를 받는다.
+  // 그래서 **페인트 전에** 재야 한다 — useEffect 로 재면 첫 프레임에 spacer 가 0이라 목록이 위로 튄다.
+  useLayoutEffect(() => {
     const element = stickyHeaderRef.current
     if (element === null) return
 
@@ -1439,11 +1445,19 @@ export function BossProfitScreen(): React.JSX.Element {
     // ADR-077: 히스토리 오버레이(<Outlet />)는 아래 space-y-4 루트 **바깥**에 둔다 — 그 유틸리티는
     // 형제에게 margin-top을 주는데, fixed inset-0 오버레이에 그 마진이 걸리면 1rem 밀려 그려진다.
     <>
-    <div className="-mt-[var(--sa-top)] space-y-4">
       {/* 제목~총 수익 카드까지는 화면 상단에 고정하고 그 아래 캐릭터 아코디언 목록만
-          스크롤되게 한다(사용자 요청, 2026-07-14) — content-scheduler/boss-scheduler와
-          동일한 sticky 헤더 패턴(docs/UI_GUIDE.md "스크롤 영역" 참고)을 그대로 재사용한다. */}
-      <div ref={stickyHeaderRef} data-probe="page-header" className="sticky top-0 z-10 bg-bg px-4 pt-[calc(1rem+var(--sa-top))] pb-2">
+          스크롤되게 한다(사용자 요청, 2026-07-14).
+
+          **이 화면만 `fixed` 다**([[ADR-085]] 결정 1, 다른 4개 화면은 공용 sticky 레시피 그대로).
+          `sticky` 요소의 화면 위치는 스크롤 오프셋의 함수라, iOS 스크롤 스레드가 접기 전 오프셋을
+          뒤늦게 되돌려 보내는 프레임에 헤더가 화면 밖(`-1065px`)으로 날아갔다(실기기 프레임 계측).
+          `fixed` 는 뷰포트 기준이라 그 의존 자체가 없다. 이 헤더는 문서 최상단의 첫 요소라 원래도
+          모든 스크롤 위치에서 뷰포트 상단에 붙어 있었으므로 **보이는 모습은 동일**하다 — 바뀌는 것은
+          그 위치를 무엇이 정하느냐뿐이다. 흐름에서 빠진 자리는 아래 spacer 가 실측 높이로 채운다.
+
+          루트(`space-y-4`) **바깥**에 둔다 — 흐름과 무관한 것을 흐름 컨테이너에 넣으면 그 유틸리티의
+          `margin-top` 이 spacer 위에 얹혀 목록이 16px 더 내려간다([[ADR-077]] 결정 3과 같은 이유). */}
+      <div ref={stickyHeaderRef} data-probe="page-header" className="fixed inset-x-0 top-0 z-10 bg-bg px-4 pt-[calc(1rem+var(--sa-top))] pb-2">
         <div className="space-y-4">
           {/* 히스토리 진입점([[ADR-071]] 결정 7, 이슈 #54) — 이 화면의 고가 드롭 강조는 전부 "지금 보고
               있는 기간"에 갇혀 있고, 전 기간을 가로지르는 목록은 저쪽이 담당한다.
@@ -1612,6 +1626,10 @@ export function BossProfitScreen(): React.JSX.Element {
             발화해 펼친 카드의 중첩 sticky 헤더가 손가락을 따라 흔들린다(ADR-047 결정 3). */}
         <PullToRefreshIndicator distance={pullToRefresh.distance} phase={pullToRefresh.phase} />
       </div>
+
+    <div className="-mt-[var(--sa-top)] space-y-4">
+      {/* ADR-085 결정 1: fixed 헤더가 흐름에서 빠진 자리 — 실측 높이 그대로. */}
+      <div aria-hidden="true" style={{ height: stickyHeaderHeight }} />
 
       {/* ADR-073 결정 1·2: 헤더는 sticky로 제자리에 두고 이 목록 블록만 손가락을 따라 내려간다.
           마진·높이가 아니라 transform 이라 터치 프레임마다의 리플로우가 없고, 헤더의 실측

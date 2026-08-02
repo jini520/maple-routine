@@ -117,10 +117,13 @@ export function CollapseProbeOverlay(): React.JSX.Element | null {
   const layoutFrames = probe.frames.filter((frame) => frame.note === undefined)
   const brokenHeader = layoutFrames.filter((frame) => frame.hdr !== null && frame.hdr !== 0)
   const docHeights = [...new Set(layoutFrames.map((frame) => frame.doc))]
+  // 헤더(fixed 라 항상 0이어야 한다)와 카드 top(페이지 전체가 옛 오프셋으로 그려지면 함께 튄다)을
+  // 같이 본다 — ADR-085 의 두 결정이 각각 무엇을 막았는지 이 두 줄로 갈린다.
+  const cardTops = [...new Set(layoutFrames.map((frame) => frame.card))]
   const verdict =
     brokenHeader.length > 0
-      ? `A: 레이아웃이 깨진 프레임 ${brokenHeader.length}개 (hdr 최소 ${Math.min(...brokenHeader.map((f) => f.hdr ?? 0))})`
-      : 'B: 레이아웃은 내내 정상(hdr=0) — 컴포지터/페인트 쪽'
+      ? `헤더 어긋난 프레임 ${brokenHeader.length}개 (hdr 최소 ${Math.min(...brokenHeader.map((f) => f.hdr ?? 0))})`
+      : '헤더 내내 제자리(hdr=0)'
 
   return (
     <div className="fixed inset-x-2 bottom-[calc(4.5rem+var(--sa-bottom))] z-[80] max-h-[45vh] overflow-auto rounded-lg bg-black/85 p-2 font-mono text-[9px] leading-[11px] text-white">
@@ -131,7 +134,9 @@ export function CollapseProbeOverlay(): React.JSX.Element | null {
         </button>
       </div>
       <div className="mb-1 text-[10px] font-bold text-yellow-300">{verdict}</div>
-      <div className="mb-1 text-white/70">doc: {docHeights.join(' → ')}</div>
+      <div className="mb-1 text-white/70">
+        doc: {docHeights.join(' → ')} · card: {cardTops.join(' → ')}
+      </div>
       <pre className="whitespace-pre">{probe.frames.map(formatFrame).join('\n')}</pre>
     </div>
   )

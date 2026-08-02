@@ -267,61 +267,59 @@ describe('BossProfitScreen', () => {
     })
   })
 
-  // ADR-084: 아코디언을 접는 것도 같은 높이 붕괴다(주간 본문 ≈ 보스 행 89pt × 최대 12행). 접을 때는
-  // 거의 항상 스크롤이 내려가 있으므로(펼친 카드 헤더가 stuck 이라 그것을 탭해 닫는다) 브라우저가
-  // 오프셋을 잘라내야 하고, 잘리기 전 1~2프레임이 무효 오프셋으로 그려진다 — 남은 문서가 뷰포트보다
-  // 짧으면 빈 헤더(ADR-077), 아직 길면 헤더가 화면 밖(ADR-080). 도착지는 그대로 두고 그 클램프를
-  // 페인트 전으로 앞당긴다.
-  describe('아코디언 접기 시 스크롤 클램프 (ADR-084)', () => {
+  // ADR-085: 접기 깜빡임의 정체는 **스크롤 스레드가 되돌려 보내는 옛 오프셋**이다(실기기 프레임
+  // 계측 — 정상 프레임 하나 뒤에 접기 전 오프셋으로 2프레임이 다시 그려지고, 밀린 거리는 잘린 양과
+  // 같다). 잘려야 할 오프셋이 없으면 되돌려 보낼 옛 값도 없으므로, 접기 **전에** 문서 높이가 아직
+  // 그대로일 때 접은 뒤의 최대 스크롤로 먼저 옮기고 다음 프레임에 접는다. ADR-084 의 "접힌 뒤에
+  // 자른다"는 이미 잘린 뒤라 호출조차 되지 않았다(`clamp skip`).
+  describe('접기 전 사전 스크롤 (ADR-085)', () => {
+    // jsdom 은 scrollY·innerHeight 를 window 의 **own property** 로 둔다 — 지우면 이후 테스트에서
+    // undefined 가 되어(비교가 전부 false) 다른 테스트를 오염시킨다. 원래 descriptor 를 되돌린다.
+    const originals: { target: object; key: string; descriptor: PropertyDescriptor | undefined }[] = []
+
+    function stub(target: object, key: string, value: number): void {
+      originals.push({ target, key, descriptor: Object.getOwnPropertyDescriptor(target, key) })
+      Object.defineProperty(target, key, { configurable: true, value })
+    }
+
     function stubViewport(options: { scrollY: number; scrollHeight: number; innerHeight: number }): void {
-      Object.defineProperty(window, 'scrollY', { configurable: true, value: options.scrollY })
-      Object.defineProperty(document.documentElement, 'scrollHeight', {
-        configurable: true,
-        value: options.scrollHeight,
-      })
-      Object.defineProperty(window, 'innerHeight', { configurable: true, value: options.innerHeight })
+      stub(window, 'scrollY', options.scrollY)
+      stub(document.documentElement, 'scrollHeight', options.scrollHeight)
+      stub(window, 'innerHeight', options.innerHeight)
     }
 
     afterEach(() => {
-      Reflect.deleteProperty(window, 'scrollY')
-      Reflect.deleteProperty(document.documentElement, 'scrollHeight')
-      Reflect.deleteProperty(window, 'innerHeight')
+      for (const { target, key, descriptor } of originals.reverse()) {
+        if (descriptor === undefined) Reflect.deleteProperty(target, key)
+        else Object.defineProperty(target, key, descriptor)
+      }
+      originals.length = 0
     })
 
-    it('접으면 줄어든 문서의 최대 스크롤로 자른다', () => {
+    it('접은 뒤의 최대 스크롤을 넘겨 있으면, 접기 전에 그 위치로 먼저 옮긴다', async () => {
       const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
       mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()] })
       renderBossProfitScreen()
 
       const header = screen.getByRole('button', { name: /낟낟/ })
       fireEvent.click(header)
-      // 본문이 사라진 뒤의 레이아웃 — 최대 스크롤은 1500 - 800 = 700인데 오프셋은 아직 1000이다.
       stubViewport({ scrollY: 1000, scrollHeight: 1500, innerHeight: 800 })
       scrollTo.mockClear()
 
       fireEvent.click(header)
 
+      // 스크롤이 **먼저** 간다 — 이 시점에는 본문이 아직 붙어 있어야 문서 높이가 유효하다.
       expect(scrollTo).toHaveBeenCalledWith(0, 700)
+      expect(screen.getByText('자쿰')).toBeInTheDocument()
+
+      // 접기는 다음 프레임에 일어난다.
+      await waitFor(() => {
+        expect(screen.queryByText('자쿰')).not.toBeInTheDocument()
+      })
       scrollTo.mockRestore()
     })
 
-    it('남은 문서가 뷰포트보다 짧으면 최상단으로 자른다', () => {
-      const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
-      mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()] })
-      renderBossProfitScreen()
-
-      const header = screen.getByRole('button', { name: /낟낟/ })
-      fireEvent.click(header)
-      stubViewport({ scrollY: 500, scrollHeight: 600, innerHeight: 800 })
-      scrollTo.mockClear()
-
-      fireEvent.click(header)
-
-      expect(scrollTo).toHaveBeenCalledWith(0, 0)
-      scrollTo.mockRestore()
-    })
-
-    it('스크롤이 이미 유효 범위면 건드리지 않는다 — 고칠 프레임도 없이 위치만 튄다', () => {
+    it('접어도 잘릴 오프셋이 없으면 스크롤을 건드리지 않고 바로 접는다', () => {
       const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
       mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()] })
       renderBossProfitScreen()
@@ -334,10 +332,10 @@ describe('BossProfitScreen', () => {
       fireEvent.click(header)
 
       expect(scrollTo).not.toHaveBeenCalled()
-      scrollTo.mockRestore()
+      expect(screen.queryByText('자쿰')).not.toBeInTheDocument()
     })
 
-    it('펼칠 때는 자르지 않는다 — 문서가 늘어날 때는 클램프가 없다', () => {
+    it('펼칠 때는 스크롤을 건드리지 않는다 — 문서가 늘어날 때는 클램프가 없다', () => {
       const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
       mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()] })
       renderBossProfitScreen()
@@ -347,7 +345,21 @@ describe('BossProfitScreen', () => {
       fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
 
       expect(scrollTo).not.toHaveBeenCalled()
+      expect(screen.getByText('자쿰')).toBeInTheDocument()
       scrollTo.mockRestore()
+    })
+
+    // ADR-085 결정 1: sticky 는 화면 위치가 스크롤 오프셋의 함수라, 옛 오프셋이 되돌아오는 프레임에
+    // 헤더가 화면 밖으로 날아간다. fixed 는 뷰포트 기준이라 그 의존 자체가 없다. 공용 sticky 레시피를
+    // 복사해 오면서 이 화면 헤더를 sticky 로 되돌리지 말 것.
+    it('페이지 헤더는 sticky 가 아니라 fixed 이고, 목록은 실측 높이 spacer 로 자리를 받는다', () => {
+      mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()] })
+      renderBossProfitScreen()
+
+      const pageHeader = screen.getByRole('heading', { name: '보스 수익' }).closest('div[class*="fixed"]')
+      expect(pageHeader).not.toBeNull()
+      expect(pageHeader?.className).toContain('fixed')
+      expect(pageHeader?.className).not.toContain('sticky')
     })
   })
 
@@ -1410,7 +1422,8 @@ describe('BossProfitScreen', () => {
     // 페이드는 페이지 헤더(z-10) 안 top-full h-8 밴드를 bg-bg로 덮는데, 펼친 카드의 sticky 헤더가
     // 멈추는 자리가 바로 그 밴드다(카드는 isolate로 z-10 아래). 다른 4개 화면은 페이드를 유지하므로
     // 공용 레시피를 복사하다 되붙기 쉬워 가드를 둔다. 카드 헤더 자신의 페이드는 별도 테스트에서 검증.
-    const pageHeader = container.querySelector('.sticky.top-0')
+    // ADR-085 결정 1로 이 화면 헤더만 sticky → fixed 다(다른 4개 화면은 공용 레시피 그대로).
+    const pageHeader = container.querySelector('.fixed.top-0')
     expect(pageHeader).not.toBeNull()
     expect(pageHeader?.querySelector('.backdrop-blur-sm')).toBeNull()
     expect(pageHeader?.querySelector('.bg-gradient-to-b')).toBeNull()
@@ -2537,7 +2550,7 @@ describe('당겨서 새로고침 (ADR-072)', () => {
     const indicator = screen.getByTestId('pull-to-refresh-indicator')
     expect(screen.getByTestId('pull-to-refresh-indicator')).toBeInTheDocument()
     // 이 화면에는 경계 페이드 오버레이가 없으므로(ADR-047 결정 6) 인디케이터가 곧 마지막 자식이다.
-    expect(indicator.parentElement).toHaveClass('sticky')
+    expect(indicator.parentElement).toHaveClass('fixed')
     expect(indicator.parentElement?.lastElementChild).toBe(indicator)
   })
 
