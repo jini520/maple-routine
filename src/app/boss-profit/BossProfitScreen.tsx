@@ -22,6 +22,7 @@ import { PullToRefreshIndicator } from '../../components/PullToRefreshIndicator/
 import { PULL_SETTLE_TRANSITION, resolveContentOffsetPx } from '../../lib/pull-to-refresh'
 import { usePullToRefresh } from '../../lib/use-pull-to-refresh'
 import { UnavailableNotice } from '../../components/EmptyState/UnavailableNotice'
+import { usePeriodLoadErrorToast } from '../../features/boss-profit/use-period-error-toast'
 import { ValuableDropBadge } from '../../components/ValuableDropBadge/ValuableDropBadge'
 import weeklyBossesData from '../../data/weekly-bosses.json'
 import {
@@ -1340,6 +1341,19 @@ export function BossProfitScreen(): React.JSX.Element {
     }
   }, [isEmpty])
 
+  // 훅(아래 usePeriodLoadErrorToast)이 이 값을 읽으므로 isEmpty 조기 반환보다 위에서 계산한다 —
+  // 순수 함수라 위치를 올려도 결과가 같고, 토스트 조건과 화면 조건이 같은 값을 보게 된다.
+  const characterGroups = buildCharacterGroups(rows, weeklySubtotals)
+
+  // ADR-083 결정 3: 기간 로드 실패는 **카드가 있을 때만** 토스트다. 카드가 없으면 문구가 사라진
+  // 자리에 빈 칸이 남으므로 아래에서 ErrorState를 그린다(같은 실패의 두 얼굴, 문구는 통일).
+  usePeriodLoadErrorToast({
+    isFailed: periodState === 'failed' && characterGroups.length > 0,
+    isLoading: isPeriodLoading,
+    periodKey,
+    onRetry: () => void retryPeriod(),
+  })
+
   if (isEmpty) {
     return (
       <div className="flex min-h-[calc(100dvh-var(--sa-top)-var(--sa-bottom)-4rem)] flex-col p-4">
@@ -1376,7 +1390,6 @@ export function BossProfitScreen(): React.JSX.Element {
   // 처치가 0건이면 그것이 확정된 사실이므로 빈 상태가 맞다. 이 판정의 최종 형태는
   // resolvePeriodDataState(6상태)이고, 화면 전체를 그 상태로 옮기는 것은 [[ADR-068]] 배선 단계다.
   const periodQueryable = isCurrentPeriod || isPeriodQueryable(tab, periodKey, now)
-  const characterGroups = buildCharacterGroups(rows, weeklySubtotals)
   const totalMeso = characterGroups.reduce((sum, group) => sum + groupTotalMeso(group), 0)
   // 총 수익 헤드라인 우측 뱃지용 — 이 기간 전체 고가 드롭(ADR-046)
   const periodValuableDrops = collectAllValuableDrops(characterGroups, dropsByRowKey)
@@ -1496,21 +1509,13 @@ export function BossProfitScreen(): React.JSX.Element {
 
           {/* ADR-068 결정 1·7: 상태마다 얼굴이 다르다. 기록이 있으면(periodState === 'recorded')
               아무것도 띄우지 않는다 — 목요일 새벽처럼 백필만 막힌 경우 기록은 정확하고 사용자가
-              할 일도 없다. failed만 재시도를 주고, notCollected는 "아직"이라고 말한다. */}
+              할 일도 없다. notCollected는 "아직"이라고 말하고, failed는 액션이 필요해
+              토스트로 옮겼다([[ADR-083]] 결정 3 — 여기 있던 밑줄 버튼이 그것이다). */}
           {!isPeriodLoading && characterGroups.length > 0 && periodState === 'notCollected' && (
             <p className="flex items-center gap-1.5 text-sm text-text-muted">
               <Clock className="h-4 w-4 flex-none" strokeWidth={1.75} aria-hidden="true" />
               아직 집계되지 않았습니다 — 준비되면 자동으로 채워집니다
             </p>
-          )}
-          {!isPeriodLoading && characterGroups.length > 0 && periodState === 'failed' && (
-            <button
-              type="button"
-              onClick={() => void retryPeriod()}
-              className="flex items-center gap-1.5 text-left text-sm text-error-ink underline"
-            >
-              이 기간을 불러오지 못했습니다 — 다시 시도해주세요
-            </button>
           )}
 
           {/* 총 수익 요약은 카드가 아니라 헤드라인이다(ADR-046) — 아래 캐릭터 카드가 전부 같은 카드 셸이라

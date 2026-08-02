@@ -9,7 +9,7 @@
 ## 정책
 - 화면 안에 **주간 탭**(`cycle: bossWeekly`) + **월간 탭**(`cycle: bossMonthly`, 현재 검은마법사 1종). **일간 탭 없음** — `bossDaily` 는 [[ADR-007]] 정책대로 계속 무시.
 - 컨텐츠 스케줄러와 동일하게 "캐릭터 관리"로 고른 캐릭터만 표시하고 API 호출도 그 캐릭터로만 제한. 추적 목록 `trackedCharacters:boss` 는 컨텐츠와 **독립**(예: 컨텐츠에서 안 고른 캐릭터를 보스에서 고를 수 있음). 피커 UI는 동일 컴포넌트 공유([[ADR-015]]).
-- 동기화 실패 표시도 컨텐츠 스케줄러와 **동일**([[ADR-063]], 정책 원문은 [content-scheduler.md](./content-scheduler.md) "동기화 실패 표시"): 전체 조회 실패는 헤더 아래 인라인 문단이 아니라 **토스트**로 알리고, 원인별로 액션이 갈린다(`invalidApiKey` → 설정 열기 · `network` → 다시 시도 · `rateLimited` → 없음).
+- 동기화 실패 표시도 컨텐츠 스케줄러와 **동일**([[ADR-063]]·[[ADR-083]], 정책 원문은 [content-scheduler.md](./content-scheduler.md) "동기화 실패 표시"): 전체 조회 실패도 **캐릭터별 실패(`selected.error`)도** 헤더 아래 인라인 문단이 아니라 **토스트**로 알리고, 원인별로 액션이 갈린다(`invalidApiKey` → 설정 열기 · `network` → 다시 시도 · `rateLimited`·`characterUnavailable` → 없음).
 - 피커 후보 목록 로딩도 컨텐츠 스케줄러와 **동일**([[ADR-053]], 정책 원문은 [content-scheduler.md](./content-scheduler.md) "캐릭터 관리 피커 — 후보 목록 로딩"): 활성(`access_flag: true`)이 확인된 캐릭터만 표시, 표시할 캐시가 없으면 스피너 → 조회 완료 후 한 번에 목록(캐시가 있으면 기존 [[ADR-016]] 즉시 표시 + patch 유지), 조회 후 목록이 비면 "활성 캐릭터 없음"과 "조회 실패"를 구분해 안내.
 - 보스 진행 상태를 Nexon API 로 동기화해 읽기 전용 표시(컨텐츠와 동일 모델·엣지·에러). `complete_flag` 그대로 표시. `weekly-bosses.json` 은 보스명·난이도 표기 매핑 참조 테이블(주간=`weekly`+`eventWeekly`, 월간=`monthly` 섹션). 미매핑은 "알 수 없는 콘텐츠".
 - **주간 12마리 제한**: 캐릭터당 주간 보스 최대 12마리(난이도 조합 단위)가 게임 규칙, API `weekly_boss_clear_count`/`weekly_boss_clear_limit_count` 반영. **이 카운트는 주간 탭에서만** 표시(월간 보스는 무관). 시즌보스(메이린)는 예외라 "n/12" 에서 별도 처리(`weekly` 섹션만 분모·분자).

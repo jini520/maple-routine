@@ -141,7 +141,9 @@ describe('OnboardingScreen', () => {
     expect(screen.getByLabelText(/API 키/)).toBeInTheDocument()
   })
 
-  it('status가 error이고 accounts가 비어있지 않으면 AccountSelectionList가 에러 메시지와 함께 렌더링된다', () => {
+  // ADR-083 결정 4: 실패는 토스트가 알린다(스토어가 띄운다) — 목록은 고를 수 있는 상태 그대로
+  // 남아야 하므로 화면은 인라인 문구를 그리지 않는다.
+  it('status가 error이고 accounts가 비어있지 않으면 인라인 문구 없이 AccountSelectionList만 렌더링된다', () => {
     mockStore({
       status: 'error',
       accounts: [account],
@@ -151,6 +153,6 @@ describe('OnboardingScreen', () => {
     render(<OnboardingScreen />)
 
     expect(screen.getByText(/메이플 ID를 선택/)).toBeInTheDocument()
-    expect(screen.getByText('기기에 저장하지 못했습니다. 다시 시도해주세요')).toBeInTheDocument()
+    expect(screen.queryByText('기기에 저장하지 못했습니다. 다시 시도해주세요')).not.toBeInTheDocument()
   })
 })

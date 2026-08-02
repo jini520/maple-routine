@@ -51,7 +51,7 @@ const accounts: MapleAccount[] = [
 describe('AccountSelectionList', () => {
   it('각 계정을 "월드 · 닉네임 · Lv.레벨" + "캐릭터 N개" 2줄로 렌더링하고 직업은 표시하지 않는다', () => {
     render(
-      <AccountSelectionList accounts={accounts} isSubmitting={false} errorMessage={null} onSelect={vi.fn()} />,
+      <AccountSelectionList accounts={accounts} isSubmitting={false} onSelect={vi.fn()} />,
     )
 
     expect(screen.getByText('베라 · 내옆에최성일 · Lv.211')).toBeInTheDocument()
@@ -66,7 +66,7 @@ describe('AccountSelectionList', () => {
 
   it('월드 엠블럼 이미지를 월드명과 함께 표시한다', () => {
     render(
-      <AccountSelectionList accounts={accounts} isSubmitting={false} errorMessage={null} onSelect={vi.fn()} />,
+      <AccountSelectionList accounts={accounts} isSubmitting={false} onSelect={vi.fn()} />,
     )
 
     const emblem = screen.getByAltText('엘리시움')
@@ -83,7 +83,7 @@ describe('AccountSelectionList', () => {
     ]
 
     render(
-      <AccountSelectionList accounts={rebootAccount} isSubmitting={false} errorMessage={null} onSelect={vi.fn()} />,
+      <AccountSelectionList accounts={rebootAccount} isSubmitting={false} onSelect={vi.fn()} />,
     )
 
     expect(screen.getByText('리부트 · 리부트캐릭 · Lv.260')).toBeInTheDocument()
@@ -92,7 +92,7 @@ describe('AccountSelectionList', () => {
 
   it('계정이 2개 이상이면 초기에 하이라이트된 항목이 없고 "계속하기"가 비활성화 상태다', () => {
     render(
-      <AccountSelectionList accounts={accounts} isSubmitting={false} errorMessage={null} onSelect={vi.fn()} />,
+      <AccountSelectionList accounts={accounts} isSubmitting={false} onSelect={vi.fn()} />,
     )
 
     for (const button of screen.getAllByRole('button', { name: /캐릭터 \d+개/ })) {
@@ -104,7 +104,7 @@ describe('AccountSelectionList', () => {
   it('계정이 2개 이상일 때 다른 항목을 누르면 하이라이트가 옮겨간다', async () => {
     const user = userEvent.setup()
     render(
-      <AccountSelectionList accounts={accounts} isSubmitting={false} errorMessage={null} onSelect={vi.fn()} />,
+      <AccountSelectionList accounts={accounts} isSubmitting={false} onSelect={vi.fn()} />,
     )
 
     const first = screen.getByText('베라 · 내옆에최성일 · Lv.211').closest('button')
@@ -126,7 +126,7 @@ describe('AccountSelectionList', () => {
       <AccountSelectionList
         accounts={[accounts[0]]}
         isSubmitting={false}
-        errorMessage={null}
+       
         onSelect={vi.fn()}
       />,
     )
@@ -145,7 +145,7 @@ describe('AccountSelectionList', () => {
       <AccountSelectionList
         accounts={[accounts[0]]}
         isSubmitting={false}
-        errorMessage={null}
+       
         onSelect={onSelect}
       />,
     )
@@ -162,7 +162,7 @@ describe('AccountSelectionList', () => {
       <AccountSelectionList
         accounts={[accounts[0]]}
         isSubmitting={true}
-        errorMessage={null}
+       
         onSelect={vi.fn()}
       />,
     )
@@ -173,7 +173,7 @@ describe('AccountSelectionList', () => {
     unmount()
 
     render(
-      <AccountSelectionList accounts={accounts} isSubmitting={true} errorMessage={null} onSelect={vi.fn()} />,
+      <AccountSelectionList accounts={accounts} isSubmitting={true} onSelect={vi.fn()} />,
     )
 
     for (const button of screen.getAllByRole('button', { name: /캐릭터 \d+개/ })) {
@@ -186,7 +186,7 @@ describe('AccountSelectionList', () => {
     const user = userEvent.setup()
     const onSelect = vi.fn()
     render(
-      <AccountSelectionList accounts={accounts} isSubmitting={false} errorMessage={null} onSelect={onSelect} />,
+      <AccountSelectionList accounts={accounts} isSubmitting={false} onSelect={onSelect} />,
     )
 
     await user.click(screen.getByText('엘리시움 · 낟낟 · Lv.293'))
@@ -198,7 +198,7 @@ describe('AccountSelectionList', () => {
     const user = userEvent.setup()
     const onSelect = vi.fn()
     render(
-      <AccountSelectionList accounts={accounts} isSubmitting={false} errorMessage={null} onSelect={onSelect} />,
+      <AccountSelectionList accounts={accounts} isSubmitting={false} onSelect={onSelect} />,
     )
 
     await user.click(screen.getByText('엘리시움 · 낟낟 · Lv.293'))
@@ -211,24 +211,11 @@ describe('AccountSelectionList', () => {
 
   it('accountId 원본 해시 문자열을 화면에 노출하지 않는다', () => {
     render(
-      <AccountSelectionList accounts={accounts} isSubmitting={false} errorMessage={null} onSelect={vi.fn()} />,
+      <AccountSelectionList accounts={accounts} isSubmitting={false} onSelect={vi.fn()} />,
     )
 
     expect(screen.queryByText(/da9b2f2/)).not.toBeInTheDocument()
     expect(screen.queryByText(/69e3525/)).not.toBeInTheDocument()
-  })
-
-  it('errorMessage가 있으면 화면에 표시한다', () => {
-    render(
-      <AccountSelectionList
-        accounts={accounts}
-        isSubmitting={false}
-        errorMessage="기기에 저장하지 못했습니다. 다시 시도해주세요"
-        onSelect={vi.fn()}
-      />,
-    )
-
-    expect(screen.getByText('기기에 저장하지 못했습니다. 다시 시도해주세요')).toBeInTheDocument()
   })
 
   it('대표 캐릭터의 초상화 URL이 있으면 이미지를 렌더링한다', () => {
@@ -242,7 +229,7 @@ describe('AccountSelectionList', () => {
     })
 
     render(
-      <AccountSelectionList accounts={accounts} isSubmitting={false} errorMessage={null} onSelect={vi.fn()} />,
+      <AccountSelectionList accounts={accounts} isSubmitting={false} onSelect={vi.fn()} />,
     )
 
     expect(screen.getByAltText('내옆에최성일')).toHaveAttribute('src', 'https://example.com/portrait.png')
@@ -255,7 +242,7 @@ describe('AccountSelectionList', () => {
     })
 
     render(
-      <AccountSelectionList accounts={accounts} isSubmitting={false} errorMessage={null} onSelect={vi.fn()} />,
+      <AccountSelectionList accounts={accounts} isSubmitting={false} onSelect={vi.fn()} />,
     )
 
     expect(screen.getAllByText('?')).toHaveLength(2)
@@ -278,7 +265,7 @@ describe('AccountSelectionList', () => {
       })
 
       render(
-        <AccountSelectionList accounts={accounts} isSubmitting={false} errorMessage={null} onSelect={vi.fn()} />,
+        <AccountSelectionList accounts={accounts} isSubmitting={false} onSelect={vi.fn()} />,
       )
 
       expect(screen.getAllByText('이 계정의 캐릭터를 조회할 수 없습니다')).toHaveLength(1)
@@ -288,7 +275,7 @@ describe('AccountSelectionList', () => {
       mockedUseAccountProbes.mockReturnValue({})
 
       render(
-        <AccountSelectionList accounts={accounts} isSubmitting={false} errorMessage={null} onSelect={vi.fn()} />,
+        <AccountSelectionList accounts={accounts} isSubmitting={false} onSelect={vi.fn()} />,
       )
 
       expect(screen.queryByText('이 계정의 캐릭터를 조회할 수 없습니다')).not.toBeInTheDocument()
@@ -304,7 +291,7 @@ describe('AccountSelectionList', () => {
     })
 
     render(
-      <AccountSelectionList accounts={accounts} isSubmitting={false} errorMessage={null} onSelect={vi.fn()} />,
+      <AccountSelectionList accounts={accounts} isSubmitting={false} onSelect={vi.fn()} />,
     )
 
     expect(screen.getByText(new RegExp(second.name))).toBeInTheDocument()

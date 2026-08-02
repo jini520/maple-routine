@@ -22,10 +22,11 @@ function portraitFaceCropStyle(): React.CSSProperties {
   }
 }
 
+// ADR-083 결정 4: 실패 문구를 받지 않는다 — 계정 목록·"계속하기"가 그 자리에 남으므로 실패는
+// 이벤트다([[ADR-063]] 원칙 4). 스토어가 토스트로 알린다.
 export interface AccountSelectionListProps {
   accounts: MapleAccount[]
   isSubmitting: boolean
-  errorMessage: string | null
   onSelect: (accountId: string) => void
 }
 
@@ -42,8 +43,6 @@ export function AccountSelectionList(props: AccountSelectionListProps): React.JS
   return (
     <div className="w-full space-y-4">
       <p className="text-sm text-text">사용할 메이플 ID를 선택해주세요.</p>
-
-      {props.errorMessage !== null && <p className="text-sm text-error-ink">{props.errorMessage}</p>}
 
       <ul className="space-y-2">
         {props.accounts.map((account) => {

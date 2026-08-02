@@ -36,7 +36,6 @@ export function AccountFlowStatus(props: AccountFlowStatusProps): React.JSX.Elem
           <AccountSelectionList
             accounts={props.accounts}
             isSubmitting={false}
-            errorMessage={null}
             onSelect={props.onSelectAccount}
           />
         </div>

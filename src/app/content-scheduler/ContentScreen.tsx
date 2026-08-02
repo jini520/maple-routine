@@ -1,5 +1,5 @@
 import type { CharacterPickerEntry, DailyContent, WeeklyContent } from '../../types'
-import { formatScheduleSyncError, formatSyncedAt } from '../../features/schedule-sync/format'
+import { formatSyncedAt } from '../../features/schedule-sync/format'
 import { useScheduleSyncErrorToast } from '../../features/schedule-sync/use-sync-error-toast'
 import { getBossPortraitCrop, getBossPortraitUrl } from '../../lib/boss-icons'
 import { getDailyQuestBackgroundUrl, getDailyQuestRegionCrop } from '../../lib/daily-quest-backgrounds'
@@ -775,6 +775,14 @@ export function ContentScreen(): React.JSX.Element {
 
   const selected = characters.find((character) => character.ocid === effectiveSelectedOcid) ?? null
 
+  // ADR-083 결정 1: 캐릭터별 실패도 인라인 문단이 아니라 토스트다(보스 스케줄러와 동일한 배선).
+  // syncSchedules가 캐릭터 단위 실패를 던지지 않고 결과에 실어 반환하므로 실패의 대부분이 위의
+  // 전역 error가 아니라 이 값으로 온다.
+  useScheduleSyncErrorToast(selected?.error ?? null, {
+    onRetry: () => refresh(trackedOcids ?? []),
+    onOpenSettings: () => navigate('/settings'),
+  })
+
   // ADR-035 결정 3·6·19: 수동 모드에서는 게임 등록 여부(isRegistered)가 아니라 사용자가 앱에서
   // 관리하는 멤버십(manualTrackedContent)으로 표시 목록을 결정하고, 실제 값은 동기화 결과 또는
   // 템플릿에서 즉석 조회한다(mergeManualContentList). 멤버십의 kind('daily'/'weekly')가 저장
@@ -977,13 +985,6 @@ export function ContentScreen(): React.JSX.Element {
               </div>
             </div>
 
-            {/* 이슈 #78 B: 조건이 `selected.isStale` 이었다 — isStale이 되는 경로가 둘인데(캐시 우선
-                표시는 실패가 아니고 error가 null이다) 그 둘을 한 조건에 섞어, **화면 진입마다 내용
-                없는 문단이 렌더**되고 부모 `space-y-1` 이 4px을 더해 동기화가 끝나면 레이아웃이
-                미세하게 튀었다. 실패한 경우(error가 있을 때)만 그린다. */}
-            {selected?.error != null && (
-              <p className="text-sm text-error-ink">{formatScheduleSyncError(selected.error)}</p>
-            )}
           </div>
 
           {/* ADR-016: 캐시된 characters가 있으면 재검증(status: 'loading') 중에도 계속 보여준다 —
