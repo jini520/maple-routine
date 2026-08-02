@@ -1,6 +1,6 @@
 import type { BossContent, CharacterPickerEntry } from '../../types'
 import { RefreshCw, SlidersHorizontal, Swords, Users } from 'lucide-react'
-import { formatScheduleSyncError, formatSyncedAt } from '../../features/schedule-sync/format'
+import { formatSyncedAt } from '../../features/schedule-sync/format'
 import { useScheduleSyncErrorToast } from '../../features/schedule-sync/use-sync-error-toast'
 import { getBossPortraitCrop, getBossPortraitUrl } from '../../lib/boss-icons'
 import { partySizeKey, useBossSchedulerStore } from '../../features/boss-scheduler/store'
@@ -205,6 +205,15 @@ export function BossScreen(): React.JSX.Element {
       : (characters[0]?.ocid ?? null)
 
   const selected = characters.find((character) => character.ocid === effectiveSelectedOcid) ?? null
+
+  // ADR-083 결정 1: 캐릭터별 실패도 인라인 문단이 아니라 토스트다. syncSchedules는 캐릭터 단위
+  // 실패를 던지지 않고 결과에 실어 반환하므로(401/429는 나머지 캐릭터까지 같은 에러로 채운다)
+  // 실패의 대부분이 위의 전역 error가 아니라 이 값으로 온다 — 두 훅이 동시에 울릴 조합은 없다
+  // (전역 error가 채워지는 경로에서는 characters가 캐시 뷰로 교체되고 그 뷰의 error는 null이다).
+  useScheduleSyncErrorToast(selected?.error ?? null, {
+    onRetry: () => refresh(trackedOcids ?? []),
+    onOpenSettings: () => navigate('/settings'),
+  })
 
   // ADR-035 결정 3·6·12: 수동 모드에서는 게임 등록 여부가 아니라 사용자가 앱에서 관리하는
   // 멤버십(manualTrackedContent)으로 표시 목록을 결정하고, 완료 여부는 동기화 결과에서 즉석
@@ -469,13 +478,6 @@ export function BossScreen(): React.JSX.Element {
               </div>
             </div>
 
-            {/* 이슈 #78 B: 조건이 `selected.isStale` 이었다 — isStale이 되는 경로가 둘인데(캐시 우선
-                표시는 실패가 아니고 error가 null이다) 그 둘을 한 조건에 섞어, **화면 진입마다 내용
-                없는 문단이 렌더**되고 부모 `space-y-1` 이 4px을 더해 동기화가 끝나면 레이아웃이
-                미세하게 튀었다. 실패한 경우(error가 있을 때)만 그린다. */}
-            {selected?.error != null && (
-              <p className="text-sm text-error-ink">{formatScheduleSyncError(selected.error)}</p>
-            )}
           </div>
 
           {/* ADR-016: 캐시된 characters가 있으면 재검증(status: 'loading') 중에도 계속 보여준다 —

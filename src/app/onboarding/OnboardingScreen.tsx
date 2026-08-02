@@ -5,13 +5,11 @@ import { ApiKeyForm } from './ApiKeyForm'
 import { AccountSelectionList } from './AccountSelectionList'
 import { ContentCharacterStep } from './ContentCharacterStep'
 import { TrackingModeStep } from './TrackingModeStep'
-import { formatOnboardingError } from '../../features/onboarding/format'
 
 export function OnboardingScreen(): React.JSX.Element {
   const {
     status,
     accounts,
-    error,
     prefetchProgress,
     submitApiKey,
     selectAccount,
@@ -80,12 +78,7 @@ export function OnboardingScreen(): React.JSX.Element {
     case 'selectingAccount':
       return (
         <div className="flex justify-center px-4 pt-8 pb-4">
-          <AccountSelectionList
-            accounts={accounts}
-            isSubmitting={false}
-            errorMessage={null}
-            onSelect={selectAccount}
-          />
+          <AccountSelectionList accounts={accounts} isSubmitting={false} onSelect={selectAccount} />
         </div>
       )
 
@@ -135,12 +128,8 @@ export function OnboardingScreen(): React.JSX.Element {
       }
       return (
         <div className="flex justify-center px-4 pt-8 pb-4">
-          <AccountSelectionList
-            accounts={accounts}
-            isSubmitting={false}
-            errorMessage={error !== null ? formatOnboardingError(error) : null}
-            onSelect={selectAccount}
-          />
+          {/* ADR-083 결정 4: 실패는 스토어가 토스트로 알린다 — 목록은 고를 수 있는 상태 그대로 둔다. */}
+          <AccountSelectionList accounts={accounts} isSubmitting={false} onSelect={selectAccount} />
         </div>
       )
   }

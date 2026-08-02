@@ -631,6 +631,30 @@ describe('BossProfitScreen', () => {
       expect(retryPeriod).toHaveBeenCalled()
     })
 
+    // ADR-083 결정 3: 같은 실패라도 카드가 있으면 기간 라벨·카드가 그 자리에 남으므로 토스트다.
+    // 카드가 없을 때의 ErrorState(위 테스트)와 문구를 통일한다 — 두 얼굴이 다른 말을 하면 안 된다.
+    it('카드가 있는 채로 failed면 인라인 문구가 아니라 토스트로 알린다', () => {
+      const retryPeriod = vi.fn()
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        rows: [row()],
+        periodState: 'failed',
+        retryPeriod,
+      })
+
+      renderBossProfitScreen()
+
+      expect(screen.queryByText('이 기간을 불러오지 못했습니다 — 다시 시도해주세요')).not.toBeInTheDocument()
+      expect(screen.queryByTestId('error-state')).not.toBeInTheDocument()
+
+      const [message, action] = showErrorMock.mock.calls[0]
+      expect(message).toBe('이 기간을 불러오지 못했습니다')
+      expect(action.label).toBe('다시 시도')
+      action.onClick()
+      expect(retryPeriod).toHaveBeenCalled()
+    })
+
     it('notCollected는 "아직 집계되지 않았습니다"이고 재시도 버튼이 없다 — 사용자가 할 일이 없다', () => {
       mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [], periodState: 'notCollected' })
 

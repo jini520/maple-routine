@@ -56,8 +56,11 @@ export function useScheduleSyncErrorToast(
       return
     }
 
-    if (error.kind === 'rateLimited') {
-      // 지금 누르면 또 429다 — 누를 수 있는 버튼을 주지 않는다.
+    // 누를 수 있는 버튼을 주지 않는 두 종류. rateLimited는 지금 누르면 또 429이고,
+    // characterUnavailable(400 OPENAPI00003)은 **영구**라 언제 눌러도 같은 400이다
+    // ([[ADR-062]] 결정 3·[[ADR-067]] 결정 1). 후자는 캐릭터별 실패가 이 훅을 타면서
+    // 처음 도달했다([[ADR-083]] 결정 2) — 그전까지 전역 error에는 올 수 없는 종류였다.
+    if (error.kind === 'rateLimited' || error.kind === 'characterUnavailable') {
       showError(message)
       return
     }

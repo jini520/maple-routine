@@ -16,7 +16,12 @@
 - 원인별 액션: `invalidApiKey` → **설정 열기**(재시도로 안 풀린다) · `network` → **다시 시도**(`refresh`) · `rateLimited` → **없음**(지금 누르면 또 429).
 - 스토어는 `catch` 에서 잡은 에러를 `toScheduleSyncError` 로 통과시킨다 — 전에는 `{ kind: 'network' }` 하드코딩이라 401/429가 화면에 도달할 경로가 없었다.
 - 공용 훅 `useScheduleSyncErrorToast`(`features/schedule-sync/use-sync-error-toast.ts`). 스토어가 아니라 화면에서 띄우는 이유는 `설정 열기` 가 라우터를 필요로 하기 때문([[ADR-050]] — 스토어에서 `window.location` 이동은 리로드를 유발해 SQLite 커넥션을 stale하게 만든다).
-- 캐릭터 단위 실패(`selected.error`)의 stale 배너는 이 범위 밖이다(이슈 #78 B).
+- **캐릭터 단위 실패(`selected.error`)도 토스트다**([[ADR-083]] 결정 1, 2026-08-02). 헤더 아래 인라인 문단은 걷어냈다 — 같은 훅을 `selected?.error ?? null` 로 한 번 더 호출한다.
+  - **이쪽이 실제 실패의 주 경로다.** `syncSchedules` 는 캐릭터 단위 실패를 예외로 던지지 않고 결과(`CharacterScheduleSync.error`)에 실어 반환하고, 401/429는 `buildFallbackResult` 로 나머지 캐릭터까지 같은 에러로 채운다. 그동안 전역 `error` 는 `syncSchedules` 자체가 throw할 때(온보딩 미완료 등)만 채워져, 이 두 화면에서는 토스트가 뜬 적이 거의 없었다.
+  - 전역 훅과 겹치지 않는다 — 전역 `error` 가 채워지는 경로에서는 `characters` 가 캐시 뷰로 교체되고 그 뷰의 `error` 는 항상 `null` 이다.
+  - 캐릭터를 바꾸면 새 `error` 객체가 dep에 들어와 다시 뜬다(의도).
+  - `characterUnavailable` 은 **액션 없음**이다([[ADR-083]] 결정 2) — 영구 실패라 "다시 시도"는 눌러도 같은 400이다.
+- 캐릭터 카드 자체에 실패 표식을 붙이는 것(보스 수익의 [[ADR-068]] 결정 3에 해당)은 아직 이 두 화면에 없다 — 토스트가 사라지면 낡음 신호는 "n분 전"뿐이다(이슈 #78 B의 남은 몫).
 
 ## 캐릭터 관리 피커 — 후보 목록 로딩 ([[ADR-053]], 구현 완료 2026-07-29)
 `getCharacterPickerRoster`(`features/schedule-sync`)가 `onUpdate` 로 흘리는 후보 목록의 정책. 보스 스케줄러([boss-scheduler.md](./boss-scheduler.md))·온보딩 캐릭터 선택 단계([onboarding.md](./onboarding.md))가 같은 함수를 공유하므로 세 화면에 동일하게 적용된다. 카드 그리드 자체의 스타일은 [../foundation/design-system.md](../foundation/design-system.md).

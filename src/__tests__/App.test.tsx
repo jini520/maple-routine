@@ -110,6 +110,9 @@ mockedUseBossSchedulerStore.mockReturnValue({
 mockedUseBossProfitStore.mockReturnValue({
   status: 'idle',
   rows: [],
+  // ADR-083 결정 3: 기간 실패 토스트 훅이 characterGroups를 읽어야 해서 그 계산이 빈 상태 조기
+  // 반환보다 위로 올라갔다 — 이 스텁도 순회 대상을 갖고 있어야 한다.
+  weeklySubtotals: [],
   error: null,
   staleCharacterNames: [],
   trackedOcids: null,

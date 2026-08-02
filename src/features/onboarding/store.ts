@@ -117,11 +117,13 @@ export const useOnboardingStore = create<OnboardingStore>()((set, get) => {
       try {
         await setSelectedAccountId(accountId)
       } catch {
+        // ADR-083 결정 4: 목록 상단 인라인 문구를 걷어내면서 이 경로가 유일하게 신호가 없는
+        // 자리가 됐다 — 그대로 두면 계정을 눌렀는데 아무 일도 안 일어난 것처럼 보인다.
+        // 액션은 두지 않는다(다시 계정을 누르면 되는 일이라 중복이다, ADR-065 결정 1과 같은 판단).
+        const onboardingError = { kind: 'storageWriteFailed' } as const
+        useToastStore.getState().showError(formatOnboardingError(onboardingError))
         set((state) =>
-          onboardingReducer(state, {
-            type: 'ACCOUNT_SELECTION_FAILED',
-            error: { kind: 'storageWriteFailed' },
-          }),
+          onboardingReducer(state, { type: 'ACCOUNT_SELECTION_FAILED', error: onboardingError }),
         )
         return
       }

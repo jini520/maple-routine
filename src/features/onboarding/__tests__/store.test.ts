@@ -380,6 +380,23 @@ describe('useOnboardingStore.selectAccount', () => {
     expect(state.status).toBe('error')
     expect(state.error).toEqual({ kind: 'storageWriteFailed' })
   })
+
+  // ADR-083 결정 4: 인라인 문구를 걷어내면서 이 경로가 유일하게 토스트가 없는 자리가 됐다 —
+  // 그대로 두면 계정을 눌렀는데 아무 일도 안 일어난 것처럼 보인다.
+  it('저장이 실패하면 토스트로 알린다 — 액션은 두지 않는다(다시 누르면 되는 일)', async () => {
+    const accounts = [account('acc-1'), account('acc-2')]
+    useOnboardingStore.setState({
+      status: 'selectingAccount',
+      accounts,
+      selectedAccountId: null,
+      error: null,
+    })
+    setSelectedAccountIdMock.mockRejectedValue(new Error('disk full'))
+
+    await useOnboardingStore.getState().selectAccount('acc-2')
+
+    expect(showErrorMock).toHaveBeenCalledWith('기기에 저장하지 못했습니다. 다시 시도해주세요')
+  })
 })
 
 describe('useOnboardingStore.selectTrackingMode', () => {

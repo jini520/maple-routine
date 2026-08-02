@@ -1191,11 +1191,11 @@ describe('BossScreen — 캐릭터 관리 피커 후보 목록 로딩 (ADR-053)'
 })
 
 
-// 이슈 #78 B: 조건이 `selected.isStale` 하나였다 — isStale이 되는 경로가 둘인데(캐시 우선 표시는
-// 실패가 아니라 error가 null이다) 그 둘을 섞어, **화면 진입마다 내용 없는 문단이 렌더**되고 부모
-// space-y-1이 4px을 더해 동기화가 끝나면 레이아웃이 미세하게 튀었다.
-describe('선택 캐릭터 실패 문구 (이슈 #78 B)', () => {
-  it('isStale이지만 error가 없으면(캐시 우선 표시) 빈 문단을 렌더하지 않는다', () => {
+// ADR-083 결정 1: 캐릭터별 실패도 인라인 문단이 아니라 토스트다. syncSchedules가 캐릭터 단위
+// 실패를 던지지 않고 결과에 실어 반환하므로, 401/429/네트워크 실패의 대부분이 전역 error가 아니라
+// 이 경로로 온다 — 인라인으로 두면 액션 없는 빨간 줄이 실패의 유일한 신호가 된다.
+describe('선택 캐릭터 실패 (ADR-083 결정 1)', () => {
+  it('isStale이지만 error가 없으면(캐시 우선 표시) 아무것도 알리지 않는다', () => {
     mockStore({
       status: 'loading',
       trackedOcids: ['ocid-1'],
@@ -1206,19 +1206,45 @@ describe('선택 캐릭터 실패 문구 (이슈 #78 B)', () => {
     renderBossScreen()
 
     expect(document.querySelectorAll('p.text-error-ink')).toHaveLength(0)
+    expect(showErrorMock).not.toHaveBeenCalled()
   })
 
-  it('실제 실패(error가 있음)면 원인 문구를 보여준다', () => {
+  it('실제 실패는 인라인 문단이 아니라 토스트로 알린다', () => {
+    const refresh = vi.fn()
     mockStore({
       status: 'loaded',
       trackedOcids: ['ocid-1'],
       selectedOcid: 'ocid-1',
       characters: [character({ isStale: true, error: { kind: 'network' } })],
+      refresh,
     })
 
     renderBossScreen()
 
-    expect(screen.getByText('네트워크 오류가 발생했습니다')).toBeInTheDocument()
+    expect(screen.queryByText('네트워크 오류가 발생했습니다')).not.toBeInTheDocument()
+    expect(document.querySelectorAll('p.text-error-ink')).toHaveLength(0)
+
+    const [message, action] = showErrorMock.mock.calls[0]
+    expect(message).toBe('네트워크 오류가 발생했습니다')
+    expect(action.label).toBe('다시 시도')
+    action.onClick()
+    expect(refresh).toHaveBeenCalledWith(['ocid-1'])
+  })
+
+  // ADR-083 결정 2: 영구 실패라 눌러도 같은 400이다.
+  it('characterUnavailable 토스트에는 액션을 붙이지 않는다', () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      selectedOcid: 'ocid-1',
+      characters: [character({ isStale: true, error: { kind: 'characterUnavailable' } })],
+    })
+
+    renderBossScreen()
+
+    const [message, action] = showErrorMock.mock.calls[0]
+    expect(message).toBe('이 캐릭터는 조회할 수 없습니다')
+    expect(action).toBeUndefined()
   })
 })
 
