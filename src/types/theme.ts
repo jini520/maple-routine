@@ -10,7 +10,7 @@ export type ThemeName = keyof typeof import('../data/job-themes.json')
 export type ThemeMode = 'light' | 'dark'
 
 /**
- * 테마 34토큰 ([[ADR-064]]).
+ * 테마 38토큰 ([[ADR-064]], `rise`/`fall` 2쌍은 [[ADR-087]]).
  *
  * 이름 규칙 — `on-X` 는 X 채움 **위**의 전경, `X-ink` 는 X 계열 **텍스트/아이콘**,
  * `X-tint` 는 X 계열 **옅은 배경**이다. 자세한 용도·파생 규칙은 `docs/features/theme.md`.
@@ -66,6 +66,15 @@ export interface ThemeTokens {
   infoTint: string
   /** `infoTint` 위 텍스트·아이콘 */
   infoInk: string
+
+  /** 값이 **오른** 것을 말하는 칩 배경([[ADR-087]]) */
+  riseTint: string
+  /** `riseTint` 위 텍스트·아이콘 */
+  riseInk: string
+  /** 값이 **내린** 것을 말하는 칩 배경 */
+  fallTint: string
+  /** `fallTint` 위 텍스트·아이콘 */
+  fallInk: string
 
   /** 일러스트 카드 배경 */
   mediaSurface: string

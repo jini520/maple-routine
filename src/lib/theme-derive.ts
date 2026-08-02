@@ -1,8 +1,8 @@
 /**
- * 테마 34토큰 파생 ([[ADR-064]] 결정 9).
+ * 테마 38토큰 파생 ([[ADR-064]] 결정 9, `rise`/`fall` 2쌍은 [[ADR-087]]).
  *
  * 사람이 정하는 값은 **시드 3색(primary·secondary·third) + mode** 뿐이고 나머지는 여기서 만든다.
- * 34개를 손으로 채우면 테마를 수십 개로 늘릴 수 없기 때문이다. 이미 확정된 값이 있는 테마는
+ * 38개를 손으로 채우면 테마를 수십 개로 늘릴 수 없기 때문이다. 이미 확정된 값이 있는 테마는
  * `overrides` 로 그대로 승계시켜 회귀를 만들지 않는다.
  *
  * 런타임이 아니라 **생성 도구**에서 부르는 것이 전제다 — 색 값은 도메인 데이터라 [[ADR-006]] 상
@@ -13,7 +13,7 @@ import type { ThemeMode, ThemeTokens } from '../types/theme'
 import { contrastHex, hexToOklch, mixOklab, oklchToHex, withLightness } from './color'
 
 /**
- * 34토큰 스키마는 `types/theme.ts` 가 단일 진실 공급원이다(프로젝트 규칙: 타입은 `types/`).
+ * 38토큰 스키마는 `types/theme.ts` 가 단일 진실 공급원이다(프로젝트 규칙: 타입은 `types/`).
  * 여기서는 파생 규칙만 다루고, `DerivedTheme` 은 그 스키마의 별칭으로 남겨 호출부 문맥을 살린다.
  */
 export type { ThemeMode } from '../types/theme'
@@ -27,6 +27,7 @@ export const THEME_TOKEN_KEYS = [
   'third', 'onThird', 'thirdTint', 'thirdInk',
   'error', 'onError', 'errorTint', 'errorInk',
   'infoTint', 'infoInk',
+  'riseTint', 'riseInk', 'fallTint', 'fallInk',
   'mediaSurface', 'mediaBorder', 'mediaInk', 'mediaInkMuted',
   'scrim', 'shadowColor',
 ] as const satisfies ReadonlyArray<keyof DerivedTheme>
@@ -112,6 +113,22 @@ const ERROR_RAMP = { light: { l: 0.48, c: 0.19 }, dark: { l: 0.63, c: 0.17 } } a
 
 /** 정보 톤은 브랜드와 구분되도록 차가운 쪽에 둔다. */
 const INFO_HUE = 235
+
+/**
+ * 값의 **증감**을 말하는 신호색([[ADR-087]] 결정 5). `error` 와 같은 이유로 브랜드 시드와 무관하게
+ * 휴를 고정한다 — 시드에서 파생하면 "빨강 = 늘었다"가 테마마다 다른 색이 되어 뜻을 잃는다.
+ * 주식 신호 관례를 따라 상승 빨강 · 하락 파랑이고, 각각 한국 증시 관례색(#E31B23 · #2563EB)의 휴다.
+ *
+ * `error` 와 색상이 가깝지만 한 화면에서 인접하지 않는다(실패는 토스트·ErrorState, 증감은 값 옆 칩).
+ */
+const RISE_HUE = 26
+const FALL_HUE = 262
+
+/**
+ * `ERROR_RAMP` 와 같은 형태 — 다크 테마에서는 밝고 옅게 올려야 어두운 표면 위에서 읽힌다.
+ * 고정 hex 한 쌍으로는 라이트·다크 중 한쪽이 반드시 죽으므로 이 램프가 있어야 한다.
+ */
+const SIGNAL_RAMP = { light: { l: 0.5, c: 0.2 }, dark: { l: 0.7, c: 0.16 } } as const
 
 /**
  * 스크림·그림자는 반투명이라 8자리 hex(#RRGGBBAA)로 낸다([[ADR-064]] 결정 6).
@@ -291,6 +308,18 @@ export function deriveTheme(seed: ThemeSeed): DerivedTheme {
 
   const infoTint = pick('infoTint', mixOklab(tone(INFO_HUE, { l: 0.6, c: 0.12 }), surface, TINT_RATIO))
 
+  // 증감 신호는 accent 가 아니라 info 와 같은 **틴트+잉크 2토큰 쌍**이다 — 채움으로 깔 일이 없어
+  // `on-X` 가 없다. 잉크는 표면과 자기 틴트 **둘 다** 위에서 읽혀야 한다(칩 배경 위 글자이자,
+  // 틴트 없이 글자만 쓰는 자리도 열어 둔다).
+  const signal = (key: 'rise' | 'fall', hue: number) => {
+    const fill = tone(hue, SIGNAL_RAMP[mode])
+    const tint = pick(`${key}Tint`, mixOklab(fill, surface, TINT_RATIO))
+    return { tint, ink: pick(`${key}Ink`, adjustForContrast(fill, [surface, tint], AA_TEXT)) }
+  }
+
+  const riseParts = signal('rise', RISE_HUE)
+  const fallParts = signal('fall', FALL_HUE)
+
   return {
     bg,
     surface,
@@ -326,6 +355,11 @@ export function deriveTheme(seed: ThemeSeed): DerivedTheme {
 
     infoTint,
     infoInk: pick('infoInk', adjustForContrast(text, [infoTint], AA_TEXT)),
+
+    riseTint: riseParts.tint,
+    riseInk: riseParts.ink,
+    fallTint: fallParts.tint,
+    fallInk: fallParts.ink,
 
     mediaSurface: pick('mediaSurface', tone(hue, MEDIA_RAMP.surface)),
     mediaBorder: pick('mediaBorder', tone(hue, MEDIA_RAMP.border)),

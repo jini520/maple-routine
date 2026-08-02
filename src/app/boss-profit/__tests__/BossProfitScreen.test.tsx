@@ -2,7 +2,8 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { clearCountUpMemory } from '../../../lib/use-count-up'
 import { BossProfitScreen } from '../BossProfitScreen'
 import {
   useBossProfitStore,
@@ -48,6 +49,7 @@ function mockStore(overrides: Partial<ReturnType<typeof useBossProfitStore>>): v
     weeklySubtotals: [],
     isPeriodLoading: false,
     periodState: 'confirmedEmpty' as const,
+    previousPeriodTotalMeso: 0,
     canGoPreviousPeriod: true,
     error: null,
     staleCharacterNames: [],
@@ -121,6 +123,10 @@ function renderBossProfitScreen(initialEntries: string[] = ['/profit']): ReturnT
 afterEach(() => {
   cleanup()
   vi.clearAllMocks()
+  // 카운트업의 '직전 표시값' 기억은 모듈 수준이라 언마운트를 건너 산다([[ADR-087]] 결정 8).
+  // 테스트 하나는 곧 세션 하나이므로 여기서 비운다 — 안 비우면 앞 케이스의 금액이 다음
+  // 케이스의 시작값이 되어 첫 프레임에 옛 숫자가 그려진다.
+  clearCountUpMemory()
 })
 
 describe('BossProfitScreen', () => {
@@ -1162,6 +1168,96 @@ describe('BossProfitScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
 
     expect(screen.getByRole('listitem')).toHaveTextContent('5,000,000 메소')
+  })
+
+  // ADR-087 — 칩의 계산·표기는 lib/boss-profit-delta 가 다 검증한다. 여기서는 **배선**만 본다:
+  // store 의 previousPeriodTotalMeso 가 칩에 닿는지, 자리와 문장이 맞는지.
+  describe('직전 기간 대비 증감 칩 (ADR-087)', () => {
+    // 비교 대상 라벨("지난 주")은 now 기준 상대 표현이라([[ADR-023]]) 시계를 고정한다.
+    // 2026-07-22 기준 이번 주는 2026-07-16, 그 직전 주가 2026-07-09 다.
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ['Date'] })
+      vi.setSystemTime(new Date('2026-07-22T12:00:00+09:00'))
+    })
+
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it('늘었으면 퍼센트와 함께 증가를 말한다', () => {
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        periodKey: '2026-07-16',
+        rows: [row({ ocid: 'ocid-1', payoutMeso: 5_000_000 })],
+        previousPeriodTotalMeso: 4_000_000,
+      })
+
+      renderBossProfitScreen()
+
+      expect(screen.getByLabelText('지난 주 대비 25.0퍼센트 증가')).toHaveTextContent('25.0%')
+    })
+
+    it('줄었으면 감소를 말한다', () => {
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        periodKey: '2026-07-16',
+        rows: [row({ ocid: 'ocid-1', payoutMeso: 3_000_000 })],
+        previousPeriodTotalMeso: 4_000_000,
+      })
+
+      renderBossProfitScreen()
+
+      expect(screen.getByLabelText('지난 주 대비 25.0퍼센트 감소')).toHaveTextContent('25.0%')
+    })
+
+    it('같으면 사용자 지정 표기 "-" 다', () => {
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        periodKey: '2026-07-16',
+        rows: [row({ ocid: 'ocid-1', payoutMeso: 4_000_000 })],
+        previousPeriodTotalMeso: 4_000_000,
+      })
+
+      renderBossProfitScreen()
+
+      expect(screen.getByLabelText('지난 주 대비 변화 없음')).toHaveTextContent('-')
+    })
+
+    // 결정 3 — 조회한 적 없는 직전 기간도 0으로 들어온다. 퍼센트가 정의되지 않으므로 절대 증감이다.
+    it('직전 기간이 0이면 퍼센트 대신 절대 증감을 보여준다', () => {
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        periodKey: '2026-07-16',
+        rows: [row({ ocid: 'ocid-1', payoutMeso: 500_000_000 })],
+        previousPeriodTotalMeso: 0,
+      })
+
+      renderBossProfitScreen()
+
+      expect(screen.getByLabelText(/지난 주에는 수익이 없었습니다/)).toHaveTextContent('5.0억')
+    })
+
+    // 결정 1 — 칩은 라벨행이 아니라 금액행에 있다(헤더 높이 예산).
+    it('칩은 라벨행이 아니라 금액 옆에 있다', () => {
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        periodKey: '2026-07-16',
+        rows: [row({ ocid: 'ocid-1', payoutMeso: 5_000_000 })],
+        previousPeriodTotalMeso: 4_000_000,
+      })
+
+      renderBossProfitScreen()
+
+      const chip = screen.getByLabelText('지난 주 대비 25.0퍼센트 증가')
+      const amountRow = screen.getByText('5,000,000').parentElement
+      expect(amountRow?.parentElement).toContainElement(chip)
+      expect(screen.getByText(/총 수익/).parentElement).not.toContainElement(chip)
+    })
   })
 
   it('weekly 탭: 여러 캐릭터의 총 수익이 상단에 합산되어 표시된다', () => {

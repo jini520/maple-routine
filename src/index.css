@@ -100,6 +100,12 @@ body {
   --color-info-tint: #fbf3d0;
   --color-info-ink: #241208;
 
+  /* 값의 증감 신호 — 휴 고정(상승 26 · 하락 262) + mode 램프, ADR-087 */
+  --color-rise-tint: #f8ddd4;
+  --color-rise-ink: #bb081a;
+  --color-fall-tint: #dae4f3;
+  --color-fall-ink: #1957d2;
+
   /* text */
   --color-text: #241208;
   --color-text-muted: #645c42;

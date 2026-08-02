@@ -25,10 +25,10 @@ const ALL_SEEDS: Array<[string, ThemeSeed]> = [
 ]
 
 describe('deriveTheme — 스키마', () => {
-  it.each(ALL_SEEDS)('%s: 34개 토큰을 빠짐없이 만든다', (_label, seed) => {
+  it.each(ALL_SEEDS)('%s: 38개 토큰을 빠짐없이 만든다', (_label, seed) => {
     const tokens = deriveTheme(seed)
     expect(Object.keys(tokens).sort()).toEqual([...THEME_TOKEN_KEYS].sort())
-    expect(THEME_TOKEN_KEYS).toHaveLength(34)
+    expect(THEME_TOKEN_KEYS).toHaveLength(38)
   })
 
   it('시드로 준 accent 는 그대로 쓴다', () => {
@@ -190,6 +190,39 @@ describe('*-ink — accent 원색을 지킨다', () => {
 })
 
 // ADR-064 결정 4 재정정 — 트랙은 표면 톤을 따른다. 대비를 맞추려고 색을 밀지 않는다.
+// ADR-087 결정 5. 이 색이 지켜야 하는 것은 "빨강 = 늘었다"가 **모든 테마에서 같은 뜻**이라는 것과,
+// 라이트·다크 어느 쪽에서도 읽힌다는 것 둘이다. 고정 hex 한 쌍으로는 후자가 깨진다.
+describe('rise/fall — 증감 신호색은 시드와 무관하게 휴가 고정된다', () => {
+  it.each(ALL_SEEDS)('%s: rise 는 빨강, fall 은 파랑 계열이다', (_label, seed) => {
+    const tokens = deriveTheme(seed)
+    // 휴는 원형이라 빨강(≈26)은 0 부근에서 감싸 돈다 — 좁은 구간으로 못 박아 시드가 새는 것을 막는다.
+    expect(hexToOklch(tokens.riseInk).h).toBeGreaterThan(15)
+    expect(hexToOklch(tokens.riseInk).h).toBeLessThan(40)
+    expect(hexToOklch(tokens.fallInk).h).toBeGreaterThan(250)
+    expect(hexToOklch(tokens.fallInk).h).toBeLessThan(275)
+  })
+
+  it('다크 모드의 잉크가 라이트 모드보다 밝다', () => {
+    const light = deriveTheme(LIGHT_SEED)
+    const dark = deriveTheme(DARK_SEED)
+    expect(hexToOklch(dark.riseInk).l).toBeGreaterThan(hexToOklch(light.riseInk).l)
+    expect(hexToOklch(dark.fallInk).l).toBeGreaterThan(hexToOklch(light.fallInk).l)
+  })
+
+  it.each(ALL_SEEDS)('%s: 잉크가 표면과 자기 틴트 위에서 모두 AA(4.5:1) 이상이다', (_label, seed) => {
+    const tokens = deriveTheme(seed)
+    expect(contrastHex(tokens.riseInk, tokens.riseTint)).toBeGreaterThanOrEqual(4.5)
+    expect(contrastHex(tokens.riseInk, tokens.surface)).toBeGreaterThanOrEqual(4.5)
+    expect(contrastHex(tokens.fallInk, tokens.fallTint)).toBeGreaterThanOrEqual(4.5)
+    expect(contrastHex(tokens.fallInk, tokens.surface)).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it('rise 와 fall 은 서로 확실히 구분된다', () => {
+    const tokens = deriveTheme(LIGHT_SEED)
+    expect(Math.abs(hexToOklch(tokens.riseInk).h - hexToOklch(tokens.fallInk).h)).toBeGreaterThan(180)
+  })
+})
+
 describe('track — 표면 톤을 따른다', () => {
   it.each(ALL_SEEDS)('%s: track 이 surface-2 와 같다', (_label, seed) => {
     const tokens = deriveTheme(seed)
