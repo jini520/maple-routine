@@ -1,8 +1,8 @@
 # 보스 수익 (Boss Profit)
 
 > **범위**: 처치 보스 수익 계산, 파티원 수 자동 기록, 주간/월간 탭·기간 네비게이터, 아코디언 레이아웃, 고가 드롭 강조 연출. 보스 목록의 출처·파티 설정은 [boss-scheduler.md](./boss-scheduler.md), 물욕 드롭 입력은 [item-drop.md](./item-drop.md).
-> **관련 소스**: `app/boss-profit/`(`BossProfitScreen.tsx`) · `features/boss-profit/` · `storage/boss-profit`(SQLite `boss_profit_records`) · `storage/sqlite/db.ts` · `lib/boss-profit-period.ts` · `lib/boss-matching.ts`(정규 순서·`WEEKLY_BOSS_CLEAR_LIMIT`·`WEEKLY_CRYSTAL_SALE_LIMIT`·`isSeasonBossName`) · `lib/world-emblem.ts`·`lib/item-icons.ts`(결정석/월드 아이콘) · `src/data/boss-crystal-prices.json`·`weekly-bosses.json`·`boss-portrait-icon-crops.json` · `index.css`(고가 드롭 클래스).
-> **관련 ADR**: [[ADR-014]] [[ADR-017]] [[ADR-019]] [[ADR-023]] [[ADR-032]] [[ADR-033]] [[ADR-036]] [[ADR-037]] [[ADR-045]] [[ADR-049]] [[ADR-054]] [[ADR-059]] [[ADR-010]] [[ADR-067]] [[ADR-068]] [[ADR-069]] [[ADR-072]] [[ADR-073]] [[ADR-074]]. **관련 문서**: [../foundation/game-data.md](../foundation/game-data.md), [../foundation/error-resilience.md](../foundation/error-resilience.md), [../persistence/sqlite.md](../persistence/sqlite.md).
+> **관련 소스**: `app/boss-profit/`(`BossProfitScreen.tsx`) · `features/boss-profit/` · `storage/boss-profit`(SQLite `boss_profit_records`) · `storage/sqlite/db.ts` · `lib/boss-profit-period.ts` · `lib/boss-profit-delta.ts`·`lib/use-count-up.ts`·`components/AnimatedMeso/`([[ADR-087]]) · `lib/boss-matching.ts`(정규 순서·`WEEKLY_BOSS_CLEAR_LIMIT`·`WEEKLY_CRYSTAL_SALE_LIMIT`·`isSeasonBossName`) · `lib/world-emblem.ts`·`lib/item-icons.ts`(결정석/월드 아이콘) · `src/data/boss-crystal-prices.json`·`weekly-bosses.json`·`boss-portrait-icon-crops.json` · `index.css`(고가 드롭 클래스).
+> **관련 ADR**: [[ADR-014]] [[ADR-017]] [[ADR-019]] [[ADR-023]] [[ADR-032]] [[ADR-033]] [[ADR-036]] [[ADR-037]] [[ADR-045]] [[ADR-049]] [[ADR-054]] [[ADR-059]] [[ADR-010]] [[ADR-067]] [[ADR-068]] [[ADR-069]] [[ADR-072]] [[ADR-073]] [[ADR-074]] [[ADR-087]]. **관련 문서**: [../foundation/game-data.md](../foundation/game-data.md), [../foundation/error-resilience.md](../foundation/error-resilience.md), [../foundation/design-system.md](../foundation/design-system.md), [../persistence/sqlite.md](../persistence/sqlite.md).
 
 ## 정책
 - 처치 보스 목록은 Nexon API 동기화 데이터를 그대로 사용(수동 입력 없음). 등록 여부가 아니라 **처치된(`complete_flag: true`) 보스만** 구독·표시·계산(등록만 하고 안 잡은 보스는 안 나타남). 실제 처치 난이도 우선 선택은 `selectBossProfitBosses`([[ADR-033]] — 등록 난이도 ≠ 처치 난이도 오류 수정, `ownComplete` 도입).
@@ -153,6 +153,7 @@ a11y: 링 자체가 role="img" aria-label="{주간|월간} 보스 처치 8 / 12"
 금액행: mt-1.5 flex items-center gap-2.5
   코인 엠블럼 h-8 w-8 rounded-full bg-primary-tint text-primary-ink + ProfitIcon h-[18px] w-[18px] (ADR-066 — 옛 lucide Coins)
   금액 text-xl font-extrabold leading-none tabular-nums text-primary + 단위 "메소" text-xs font-bold text-text-muted
+  금액 옆: 직전 기간 대비 증감 칩(ADR-087) — h-5, 이 줄에 들어가므로 헤더 높이 불변
 헤어라인: mt-3 h-px bg-border (sticky 헤더 바닥 경계 = 카드 테두리 대체)
 ```
 
@@ -185,7 +186,34 @@ a11y: 링 자체가 role="img" aria-label="{주간|월간} 보스 처치 8 / 12"
 
 수치 파생: 주간 = `summarizeWorldCrystals(groups)`(**행 단위 집계** — 월드는 `row.world`, `null` 인 행 제외, `Map` 삽입 순서로 결정적) 의 월드별 합. **집계 단위가 캐릭터가 아니라 행인 이유**([[ADR-069]] 결정 2): 주 중간에 월드를 옮기면 한 캐릭터의 행이 두 월드에 걸치는데, 캐릭터당 월드를 하나로 정하면(옛 `bossRows[0]?.world`) 그 주 전체가 첫 행의 월드로 쏠린다 — 판매 한도가 월드별 별도 산정이라는 사실과 어긋난다. 같은 보스는 한 주에 한 번만 처치 가능하므로 한 행은 정확히 한 월드에 속하고, 행 단위로 갈라도 "보스명 distinct"의 의미는 유지된다(월드가 하나인 주에는 결과가 같다). 월드 판정은 **완료 여부와 분리**한다 — 월드를 아는 행이 있으면 처치가 0이어도 그 월드를 목록에 넣어 `0 / 90` 을 유지한다, 월간 = `countMonthlyCrystals(groups)`(그룹별 `cycle === 'monthly' && isComplete` 보스명 distinct 합 — 90 한도와 무관한 별개 수치). **주간 탭인데 월드를 아는 캐릭터가 0명이면 칩 자체를 렌더하지 않는다**(대비할 한도가 없음). 월드는 알고 처치가 0이면 `0 / 90` 을 그대로 보여준다. 월간 탭은 처치가 0이어도 `0개` 를 그대로 둔다(사용자 확정 2026-07-29 — 한 달 대부분이 0이지만 "아직 안 잡았다"도 정보다).
 뱃지는 **레이아웃 흐름 밖**(`absolute`)에 둔다([[ADR-049]]) — 흐름에 있으면 뱃지 유무로 라벨행이 16 ↔ 24px로 튀고, 뱃지에 붙일 탭 확대 애니메이션이 주변을 밀게 된다.
-새 색 신설 금지 — 기존 토큰만 쓴다(금액·엠블럼 `primary`, 라벨·단위 `text-muted`, 결정석 수치 `text`). **캐릭터 수는 표시하지 않는다**(중요 정보 아님, [[ADR-046]] 결정 5). 보스 처치 수는 같은 결정으로 한 번 배제됐다가 결정석 판매 현황 줄로 되살아났다([[ADR-054]] 결정 9 — 통계가 아니라 한도 대비 소진량이라는 새 의미를 얻었기 때문. 아래 history 참고). 단위 "메소"는 별도 span이지만 숫자와 사이에 실제 공백 문자를 남긴다(마진만으론 `textContent`가 "N메소"로 붙어 스크린리더가 붙여 읽음).
+새 색 신설 금지 — 기존 토큰만 쓴다(금액·엠블럼 `primary`, 라벨·단위 `text-muted`, 결정석 수치 `text`). 증감 칩의 `rise`/`fall` 은 이 규칙의 예외가 아니라 **토큰 체계 안에 들어온 신규 시맨틱 색**이다(아래, [[ADR-087]] 결정 5). **캐릭터 수는 표시하지 않는다**(중요 정보 아님, [[ADR-046]] 결정 5). 보스 처치 수는 같은 결정으로 한 번 배제됐다가 결정석 판매 현황 줄로 되살아났다([[ADR-054]] 결정 9 — 통계가 아니라 한도 대비 소진량이라는 새 의미를 얻었기 때문. 아래 history 참고). 단위 "메소"는 별도 span이지만 숫자와 사이에 실제 공백 문자를 남긴다(마진만으론 `textContent`가 "N메소"로 붙어 스크린리더가 붙여 읽음).
+
+### 직전 기간 대비 증감 칩 — [[ADR-087]]
+헤드라인 **금액행** 오른쪽 `h-5` 캡슐(`DeltaChip`). 라벨행이 아니라 금액행(아이콘 32px)이라 [[ADR-054]] 정정 4의 `h-6` 제약과 무관하고 **헤더 높이가 늘지 않는다** — 별도 줄을 쓰는 문장형 안은 그 예산([[ADR-049]]·[[ADR-054]]) 때문에 떨어졌다.
+
+**비교 대상은 "보고 있는 기간의 직전 기간"** 이다(지금 기준 지난 주가 아니다) — 기간 네비게이터와 같은 축(`getAdjacentPeriodKey`)을 쓴다. 직전 합계의 산식은 **그 화면 총액 산식과 같다**: 주간 탭은 직전 주 weekly 기록, 월간 탭은 `직전 달 monthly 기록 + 직전 달에 속한 weekly 기록`(`getWeeklyPeriodKeysInMonth`) — `groupTotalMeso` 가 둘을 더하는 것과 짝을 맞춘다.
+
+| 직전 기간 | 표기 | 색 |
+|---|---|---|
+| 있고 다름 | `↑ 12.4%` / `↓ 31.2%` (소수 1자리 절댓값, 부호 없음 — 화살표가 방향을 말한다) | `rise` / `fall` |
+| 있고 같음 | **`-`** (화살표 없음 — `-` 자체가 표식이라 대시 아이콘까지 얹으면 `– -` 가 된다) | `primary`(테마 색 — 방향이 없으므로 신호색은 거짓) |
+| 0메소 | `↑ 12.8억` (퍼센트가 정의되지 않아 절대 증감으로 대체, 억/만 축약) | `rise` |
+| 기록 없음 | **위와 동일** | `rise` |
+
+**"0메소"와 "기록 없음"을 구분하지 않는다**(사용자 결정, [[ADR-087]] 결정 3). 이 화면의 다른 표시는 전부 `resolvePeriodDataState` 로 둘을 가르는데([[ADR-067]] 결정 2) 증감 칩만 예외다 — 조회하지 않은 지난 기간이 0으로 취급되므로 **지난 주에 실제로 벌었지만 조회하지 않았으면 이번 주 총액 전부가 "늘어난 양"으로 표시된다**([error-resilience.md](../foundation/error-resilience.md) 원칙 2의 의도된 예외). 그 대가로 칩은 기간 상태 기계·`boss_profit_period_checks` 를 전혀 읽지 않고 기록 합산만으로 선다.
+
+**진행 중인 기간도 표식 없이 그대로 비교한다**([[ADR-087]] 결정 4) — 목요일 아침이면 항상 큰 마이너스지만, 그 화면이 "이번 주"라는 것은 기간 라벨이 이미 말한다. 매주 대부분의 시간 동안 켜져 있을 표식은 신호로서 죽는다. `recordedAt` 기반 "지난 주 같은 시점까지" 비교는 그 값이 처치 시각이 아니라 **앱이 기록한 시각**이라 폐기.
+
+a11y: 화살표는 `aria-hidden`, 색은 의미를 못 전하므로 칩 전체에 `aria-label` — `지난 주 대비 12.4퍼센트 증가` · `지난 주와 동일` · `지난 주에는 수익이 없었습니다. +12.8억 메소`.
+
+### 금액 변경 카운트업 — [[ADR-087]]
+이 화면의 **모든 메소 금액**(총 수익 헤드라인 · 캐릭터 카드 합계 · 보스 행 금액 · 월간 탭 주차별 합계)이 값이 바뀌면 목표까지 굴러간다(`AnimatedMeso`). 스테퍼 한 번이 앞의 셋을 연쇄로 바꾸므로 한 자리만 움직이면 오히려 어긋난다. 곡선·길이는 **`easeOutExpo` · 350ms**(전체 거리의 절반을 35ms에 지나가고 나머지를 끝에서 끈다). 중간 프레임은 기존 `tabular-nums` 위에서 돌아 자릿수가 바뀌어도 폭이 튀지 않는다.
+
+- **연타는 재시작이 아니라 재조준**([[ADR-087]] 결정 7) — 파티원 스테퍼는 이전 tween 이 끝나기 전에 목표를 또 바꾼다. 0이나 이전 목표에서 다시 출발하면 숫자가 튀므로 **지금 그려진 값**을 새 출발점으로 삼는다.
+- **마운트도 값 변경과 같이 다룬다**([[ADR-087]] 결정 8) — 직전에 그린 값을 모듈 수준 `Map` 에 매 프레임 기억하고 마운트 시 거기서 출발점을 꺼낸다. 기억이 없으면 출발점이 곧 목표라 저절로 안 굴러간다(`isFirstRender` 특례 없음).
+- **기억의 키에 탭·기간이 들어간다** — 지난 주 → 이번 주 이동은 같은 값이 변한 게 아니라 **다른 값을 보게 된 것**이라 굴리면 뜻이 없다. 키가 다르면 기억이 없어 자연히 안 굴러간다. 키 형식: `total|{tab}|{periodKey}` · `character|{ocid}|{tab}|{periodKey}` · `boss|{ocid}|{boss}|{difficulty}|{periodKey}` · `subtotal|{ocid}|{weekPeriodKey}`.
+- **세션 한정**(영속 저장 없음) — 콜드 스타트 첫 페인트는 안 굴리고, 그 뒤 캐시 우선 표시([[ADR-017]]) → 동기화 완료 구간은 값 변경이라 굴러간다. "앱을 껐다 켰더니 그 사이 잡은 보스가 반영됐다"는 이 경로로 덮인다.
+- 라이브 리전을 붙이지 않는다 — 도는 동안 DOM 텍스트가 매 프레임 바뀌어 350ms 동안 수십 번 읽힌다.
 
 ### 주간/월간 탭 + 기간 네비게이터 — [[ADR-023]]
 탭은 탭 토글 레시피 재사용(주간/월간, 카운트 배지 없음). **동기화 상태 영역은 제목 줄이 아니라 탭과 같은 줄** 우측(`ml-auto`)에 붙인다([[ADR-049]]). 이 줄의 높이는 활성 탭 pill 기준 **30px**이므로 새로고침 버튼도 `h-[30px] w-[30px]`로 맞춘다 — 기본 `p-2`(32px)면 새로고침이 없는 과거 기간과 2px 어긋난다.
