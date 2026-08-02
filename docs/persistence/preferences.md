@@ -22,7 +22,8 @@ flowchart TD
 
     Sync --> schedulerCache["schedulerCache:{ocid}"]
     Sync --> charBasic["characterBasicCache:{ocid}"]
-    Sync --> charBasicIdx["characterBasicCache:index"]
+    Sync --> charBasicIdx["characterBasicCache:index:{accountId}"]
+    Sync --> probe["scheduleProbe:{ocid}"]
 
     Track --> tracked["trackedCharacters"]
     Track --> last["lastSelectedCharacter"]
@@ -39,11 +40,12 @@ flowchart TD
 | `apiKey` | `string` (평문 API 키) | `storage/api-key.ts` | **보존** | Nexon Open API 개인 키. 연결 해제 시에만 삭제됨 |
 | `selectedAccountId` | `string \| null` | `storage/api-key.ts` | **보존** | 여러 메이플 ID 중 선택된 계정. `null`이면 키 자체를 제거(값 없음) |
 | `theme` | `ThemeName` (`'레테'\|'렌'\|'머쉬맘'\|'혼테일'`) | `storage/theme.ts` | **보존** | 유효하지 않은 값이면 `getTheme()`이 `null` 반환 |
-| `trackingMode` | `'auto' \| 'manual'` | `storage/tracking-mode.ts` | **보존** | 값이 없거나 알 수 없는 값이면 `'auto'`([[ADR-035]] 결정 2). 보존 결정은 [[ADR-052]] |
+| `trackingMode` | `'auto' \| 'manual'` | `storage/tracking-mode.ts` | **보존** | 값이 없거나 알 수 없는 값이면 어댑터가 **`null`(미선택)** 을 반환하고 소비처가 `?? 'auto'` 로 흡수한다([[ADR-086]] 결정 2 — 동작 기본값은 그대로 자동, [[ADR-035]] 결정 2 유지). 온보딩 게이트만 이 `null` 을 "아직 안 골랐다"로 읽는다. 보존 결정은 [[ADR-052]] |
 | `dropEffect` | `'on' \| 'off'` | `storage/drop-effect.ts` | **보존** | 고가 드롭 연출 표시 여부([[ADR-040]] 결정 6). 값이 없으면 표시(on). 보존 결정은 [[ADR-052]] |
 | `schedulerCache:{ocid}` | `{ state: SchedulerCharacterState, syncedAt: string }` (JSON) | `storage/scheduler-cache.ts` | 삭제 | 캐릭터별 마지막 동기화 스냅샷(일간/주간/보스 콘텐츠) |
 | `characterBasicCache:{ocid}` | `{ profile: CharacterBasicProfile, cachedAt: string }` (JSON) | `storage/character-basic-cache.ts` | 삭제 | 캐릭터 이미지·레벨·`access_flag` 캐시 |
-| `characterBasicCache:index` | `string[]` (ocid 목록, JSON) | `storage/character-basic-cache.ts` | 삭제 | "지금까지 캐싱된 적 있는 캐릭터가 누구인지" 역인덱스([[ADR-017]] 결정 6). 동시 쓰기 유실 방지를 위해 read-modify-write를 프로미스 체인으로 직렬화 |
+| `characterBasicCache:index:{accountId}` | `string[]` (ocid 목록, JSON) | `storage/character-basic-cache.ts` | 삭제 | "이 **계정**에서 지금까지 캐싱된 적 있는 캐릭터가 누구인지" 역인덱스([[ADR-017]] 결정 6 + [[ADR-086]] 결정 9). 동시 쓰기 유실 방지를 위해 read-modify-write를 프로미스 체인으로 직렬화. 계정별로 나뉘기 전(`characterBasicCache:index`)에는 피커 stub 단계가 **이전 계정 캐릭터까지 그렸다** — 마이그레이션은 전역 인덱스를 현재 `selectedAccountId` 것으로 이관(예열이 채운 계정은 그것 하나뿐이라 정확)하고 전역 키를 지운다 |
+| `scheduleProbe:{ocid}` | `{ unavailable?: true, dates: Record<'YYYY-MM-DD', ProbeRecord> }` (JSON) | `storage/schedule-probe-ledger.ts` | 삭제 | **(ocid, 날짜) 조회 원장**([[ADR-086]] 결정 4 = [[ADR-067]] 결정 5). "이 캐릭터를 이 날짜로 이미 조회했고 결과가 이랬다"를 기록해 ① 후보 자격 스윕과 ② 선채움([[ADR-034]])이 같은 날짜를 다시 부르지 않게 한다. 성공·`OPENAPI00003`·`OPENAPI00004` 만 기록하고 `OPENAPI00009`·네트워크 실패는 **기록하지 않는다**(나중에 풀린다). 읽을 때 14일 윈도우 밖 날짜를 prune. 재조회로 복구되는 파생 데이터라 `KEEP_KEYS` 에 넣지 않는다 |
 | `trackedCharacters` | `string[]` (ocid 목록, JSON) | `storage/character-selection.ts` | 삭제 | "캐릭터 관리"에서 추적 선택한 캐릭터. **앱 전역 단일 목록**([[ADR-042]]) — 컨텐츠/보스 화면이 같은 목록을 본다. `null`(미설정)과 `[]`(전부 해제)의 의미가 다름([[ADR-012]]) |
 | `lastSelectedCharacter` | `string` (ocid, 평문) | `storage/character-selection.ts` | 삭제 | 드롭다운의 마지막 선택 캐릭터. 이것도 화면 구분 없는 단일 키([[ADR-042]]) |
 | `manualTrackedContent:{ocid}` | `ManualTrackedItem[]` (JSON) | `storage/manual-tracked-content.ts` | 삭제 | 수동 모드에서 그 캐릭터가 추적할 항목의 **멤버십 + 사용자 입력 `maxCount`만**([[ADR-035]] 결정 6). 진행값·체크 상태는 여기 없고 `schedulerCache`가 단일 진실 공급원 |
@@ -67,7 +69,7 @@ flowchart TD
 | `profile.name` | `string` | `character_name` 그대로 |
 | `profile.level` | `number` | |
 | `profile.imageUrl` | `string` | Nexon이 호스팅하는 캐릭터 룩 이미지의 전체 URL(`character_image`) |
-| `profile.accessFlag` | `boolean` | `access_flag`. `false`면 "캐릭터 관리" 피커 후보 목록에서 제외 |
+| `profile.accessFlag` | `boolean` | `access_flag`(최근 접속 여부). **후보 목록의 배제 게이트가 아니다**([[ADR-086]] 결정 3) — `true` 면 후보 자격 즉시 통과(충분조건), `false` 는 "최근 접속 없음"일 뿐이라 최근 14일 활동 기록으로 한 번 더 본다 |
 | `profile.world?` | `string` | `world_name`. **옵셔널** — 이 필드가 추가되기 전에 캐싱된 옛 엔트리에는 없을 수 있음 |
 | `cachedAt` | `string` (ISO) | wire의 시각이 아니라 **이 기기가 캐싱한 실제 시각** |
 
@@ -213,7 +215,7 @@ flowchart TB
 
 | 시점 | 대상 캐릭터 | 쓰는 것 |
 |---|---|---|
-| 온보딩 완료 직전 예열([[ADR-016]], `features/onboarding/prefetch.ts`) | **계정의 전체 캐릭터** (추적 여부 무관) | `characterBasicCache:{ocid}` 전원. `schedulerCache:{ocid}`는 `accessFlag: true`인 캐릭터만. **`worldSharedProgress`/`accountSharedProgress`는 이 시점엔 쓰지 않는다** — 아래 참고 |
+| 온보딩 완료 직전 예열([[ADR-016]], `features/onboarding/prefetch.ts`) | **계정의 전체 캐릭터** (추적 여부 무관) | `characterBasicCache:{ocid}` 전원 + 계정 인덱스. `schedulerCache:{ocid}`도 **전원**([[ADR-086]] 결정 3 — `accessFlag: true` 게이트 폐기). `accessFlag: false` 이고 오늘 응답도 비었으면 과거 날짜를 거슬러 올라가며 `scheduleProbe:{ocid}` 를 채운다. **`worldSharedProgress`/`accountSharedProgress`는 이 시점엔 쓰지 않는다** — 아래 참고 |
 | 컨텐츠 스케줄러 새로고침 | `trackedCharacters`에 속한 캐릭터만 | 해당 캐릭터들의 `schedulerCache:{ocid}` + 그 캐릭터들의 월드/계정 원장 |
 | 보스 스케줄러/보스 수익 새로고침 | 동일(같은 단일 목록) | 동일 |
 
@@ -223,4 +225,8 @@ flowchart TB
 
 ### 엣지 케이스 — 계정을 바꾸면 이전 계정 데이터는 고아가 된다
 
-설정에서 "계정(메이플 ID) 변경"을 하면 `selectedAccountId`만 새 값으로 덮어써진다(`docs/ARCHITECTURE.md` "설정 화면" 절). 이전 계정 소속이던 캐릭터들의 `characterBasicCache:{ocid}`·`schedulerCache:{ocid}`, 이전 계정이 남긴 `trackedCharacters`의 옛 ocid들, `accountSharedProgress:{이전accountId}`는 **자동으로 정리되지 않고 그대로 남는다** — 참조 무결성을 지키지 않고 지우는 대신, 명시적인 "캐시 데이터 삭제"([lifecycle.md](./lifecycle.md) 참고)로만 정리되는 쪽을 택한 설계다. 다시 이전 계정으로 돌아가면 이 고아 데이터가 그대로 유효한 캐시로 재사용된다는 것이 장점이다.
+설정에서 "계정(메이플 ID) 변경"을 하면 이전 계정 소속이던 캐릭터들의 `characterBasicCache:{ocid}`·`schedulerCache:{ocid}`·`scheduleProbe:{ocid}`, `accountSharedProgress:{이전accountId}`는 **자동으로 정리되지 않고 그대로 남는다** — 참조 무결성을 지키지 않고 지우는 대신, 명시적인 "캐시 데이터 삭제"([lifecycle.md](./lifecycle.md) 참고)로만 정리되는 쪽을 택한 설계다. 다시 이전 계정으로 돌아가면 이 고아 데이터가 그대로 유효한 캐시로 재사용된다는 것이 장점이다.
+
+**남기되 보이지는 않게 한다** ([[ADR-086]] 결정 6·9, 2026-08-03). 전에는 `selectedAccountId` 만 갈아 끼우고 `trackedCharacters` 는 이전 계정 ocid 를 그대로 들고 있었고, 역인덱스에 계정 개념이 없어 피커 stub 단계가 그 인덱스를 통째로 읽어 **이전 계정 캐릭터를 그렸다**. 이제:
+- 역인덱스가 `characterBasicCache:index:{accountId}` 로 나뉘어 **보이는 범위만** 계정으로 좁혀진다(엔트리 자체는 그대로 남아 되돌아오면 따뜻하다).
+- `trackedCharacters` 는 계정 변경 시 **새 계정에서 다시 고른 값으로 교체**된다 — `setSelectedAccountId` 와 같은 지점에서 커밋되므로 "계정만 바뀌고 추적 목록은 옛것"인 중간 상태가 존재하지 않는다.

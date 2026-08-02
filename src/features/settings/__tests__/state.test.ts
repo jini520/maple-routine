@@ -28,6 +28,7 @@ describe('settingsReducer', () => {
       accounts: [],
       error: { kind: 'network' },
       prefetchProgress: null,
+      pendingAccountId: null,
     }
 
     const result = settingsReducer(errored, { type: 'VERIFY_START' })
@@ -37,6 +38,7 @@ describe('settingsReducer', () => {
       accounts: [],
       error: null,
       prefetchProgress: null,
+      pendingAccountId: null,
     })
   })
 
@@ -53,6 +55,7 @@ describe('settingsReducer', () => {
       accounts,
       error: null,
       prefetchProgress: null,
+      pendingAccountId: null,
     })
   })
 
@@ -67,6 +70,7 @@ describe('settingsReducer', () => {
       accounts: [],
       error: null,
       prefetchProgress: null,
+      pendingAccountId: null,
     })
   })
 
@@ -83,6 +87,7 @@ describe('settingsReducer', () => {
       accounts,
       error: null,
       prefetchProgress: null,
+      pendingAccountId: null,
     })
   })
 
@@ -92,6 +97,7 @@ describe('settingsReducer', () => {
       accounts: [account('acc-1')],
       error: null,
       prefetchProgress: null,
+      pendingAccountId: null,
     }
 
     const result = settingsReducer(verifying, {
@@ -104,6 +110,7 @@ describe('settingsReducer', () => {
       accounts: verifying.accounts,
       error: { kind: 'invalidApiKey' },
       prefetchProgress: null,
+      pendingAccountId: null,
     })
   })
 
@@ -114,6 +121,7 @@ describe('settingsReducer', () => {
       accounts,
       error: null,
       prefetchProgress: null,
+      pendingAccountId: null,
     }
 
     const result = settingsReducer(selecting, {
@@ -121,11 +129,14 @@ describe('settingsReducer', () => {
       accountId: 'acc-2',
     })
 
+    // ADR-086 결정 6: 고른 계정은 아직 저장되지 않는다 — pendingAccountId 로만 들고 있다가
+    // 캐릭터 선택을 저장하는 시점에 커밋된다.
     expect(result).toEqual<SettingsState>({
       status: 'prefetching',
       accounts,
       error: null,
       prefetchProgress: null,
+      pendingAccountId: 'acc-2',
     })
   })
 
@@ -136,6 +147,7 @@ describe('settingsReducer', () => {
       accounts,
       error: null,
       prefetchProgress: null,
+      pendingAccountId: null,
     }
 
     const result = settingsReducer(selecting, {
@@ -148,6 +160,7 @@ describe('settingsReducer', () => {
       accounts,
       error: { kind: 'storageWriteFailed' },
       prefetchProgress: null,
+      pendingAccountId: null,
     })
   })
 
@@ -157,6 +170,7 @@ describe('settingsReducer', () => {
       accounts: [account('acc-1')],
       error: null,
       prefetchProgress: null,
+      pendingAccountId: null,
     }
 
     const result = settingsReducer(prefetching, {
@@ -168,20 +182,27 @@ describe('settingsReducer', () => {
     expect(result).toEqual<SettingsState>({
       ...prefetching,
       prefetchProgress: { completed: 3, total: 10 },
+      pendingAccountId: null,
     })
   })
 
-  it('PREFETCH_FINISHED — initialSettingsState와 필드별로 동일한 idle 상태로 돌아간다', () => {
+  it('PREFETCH_FINISHED — 닫지 않고 캐릭터 선택 단계로 넘어간다 (ADR-086 결정 6)', () => {
     const prefetching: SettingsState = {
       status: 'prefetching',
       accounts: [account('acc-1')],
       error: null,
       prefetchProgress: { completed: 10, total: 10 },
+      pendingAccountId: null,
     }
 
     const result = settingsReducer(prefetching, { type: 'PREFETCH_FINISHED' })
 
-    expect(result).toEqual<SettingsState>(initialSettingsState)
+    expect(result).toEqual<SettingsState>({
+      ...prefetching,
+      status: 'selectingCharacters',
+      error: null,
+      prefetchProgress: null,
+    })
   })
 
   it('RESET — 어떤 상태에서도 initialSettingsState로 되돌아간다', () => {
@@ -190,6 +211,7 @@ describe('settingsReducer', () => {
       accounts: [account('acc-1')],
       error: { kind: 'network' },
       prefetchProgress: null,
+      pendingAccountId: null,
     }
 
     const result = settingsReducer(errored, { type: 'RESET' })

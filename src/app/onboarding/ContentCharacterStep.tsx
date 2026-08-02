@@ -15,6 +15,12 @@ import type { CharacterPickerEntry } from '../../types'
 export interface ContentCharacterStepProps {
   isSubmitting: boolean
   onSubmit: (ocids: string[]) => void
+  /** ADR-086 결정 6: 설정의 계정 변경은 **커밋 전** 후보 계정으로 목록을 그린다. 생략하면 저장된 계정. */
+  accountId?: string
+  /** 확정 CTA 라벨. 온보딩은 다음 단계로 가므로 기본값("계속하기")이고, 설정은 여기서 끝나 "저장"이다. */
+  submitLabel?: string
+  /** ADR-086 결정 8: 후보가 0명일 때의 탈출구. 온보딩은 계정 선택으로 되돌아간다. */
+  emptyAction?: { label: string; onClick: () => void }
 }
 
 // ADR-053 결정 3: 이 단계는 모달이 아니라 페이지라 그리드 자리에 직접 그린다 — 판정 순서는
@@ -31,6 +37,7 @@ function RosterBody(props: {
   loadError: ScheduleSyncError | null
   onRetry: () => void
   onChange: (ocids: string[]) => void
+  emptyAction?: { label: string; onClick: () => void }
 }): React.JSX.Element {
   if (props.roster.length > 0) {
     return (
@@ -67,10 +74,21 @@ function RosterBody(props: {
     )
   }
 
+  // ADR-060/061: 확정된 빈 상태는 실패(ErrorState)와 디자인을 공유하지 않는다 — 문구는 그대로 두고
+  // ADR-086 결정 8의 탈출구만 아래에 붙인다(고른 계정에 고를 수 있는 캐릭터가 하나도 없는 경우).
   return (
-    <p className="flex flex-1 items-center justify-center px-4 text-center text-sm text-text-muted">
-      표시할 캐릭터가 없어요
-    </p>
+    <div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 text-center">
+      <p className="text-sm text-text-muted">표시할 캐릭터가 없어요</p>
+      {props.emptyAction !== undefined && (
+        <button
+          type="button"
+          onClick={props.emptyAction.onClick}
+          className="rounded-full bg-primary px-4 py-2 text-xs font-semibold text-on-primary hover:bg-primary-hover"
+        >
+          {props.emptyAction.label}
+        </button>
+      )}
+    </div>
   )
 }
 
@@ -99,11 +117,15 @@ export function ContentCharacterStep(props: ContentCharacterStepProps): React.JS
   // 도착하는 대로 patch한다(ContentScreen의 피커 열기와 동일 패턴).
   // ADR-053 결정 3: 결과를 삼키지 않고 로딩·실패로 남긴다 — 401/429는 reject로 나오므로
   // finally에서 반드시 로딩을 해제해야 스피너가 영구히 걸리지 않는다.
+  const accountId = props.accountId
   useEffect(() => {
     let cancelled = false
-    getCharacterPickerRoster((entries) => {
-      if (!cancelled) setRoster(entries)
-    })
+    getCharacterPickerRoster(
+      (entries) => {
+        if (!cancelled) setRoster(entries)
+      },
+      accountId === undefined ? undefined : { accountId },
+    )
       .catch((error: unknown) => {
         if (!cancelled) setRosterError(toScheduleSyncError(error))
       })
@@ -113,7 +135,7 @@ export function ContentCharacterStep(props: ContentCharacterStepProps): React.JS
     return () => {
       cancelled = true
     }
-  }, [rosterReloadNonce])
+  }, [rosterReloadNonce, accountId])
 
   return (
     <div className="w-full space-y-4">
@@ -133,6 +155,7 @@ export function ContentCharacterStep(props: ContentCharacterStepProps): React.JS
           loadError={rosterError}
           onRetry={reloadRoster}
           onChange={setSelectedOcids}
+          emptyAction={props.emptyAction}
         />
       </div>
 
@@ -145,7 +168,7 @@ export function ContentCharacterStep(props: ContentCharacterStepProps): React.JS
       >
         {/* ADR-061 결정 5·9 — 스피너 + 말줄임표 없는 '~중' 라벨 */}
         {props.isSubmitting && <MapleSpinner size={16} />}
-        {props.isSubmitting ? '저장 중' : '계속하기'}
+        {props.isSubmitting ? '저장 중' : (props.submitLabel ?? '계속하기')}
       </button>
     </div>
   )

@@ -30,7 +30,27 @@ describe('CharacterTrackingPicker', () => {
     )
 
     expect(screen.getByRole('heading', { name: '캐릭터 관리' })).toBeInTheDocument()
-    expect(screen.getByText('체크한 캐릭터만 스케줄러 목록에 표시됩니다.')).toBeInTheDocument()
+    expect(
+      screen.getByText('체크한 캐릭터만 스케줄러 목록에 표시됩니다. 최소 한 명은 선택해주세요.'),
+    ).toBeInTheDocument()
+  })
+
+  // ADR-086 결정 7: 0명은 화면을 빈 상태로 만들 뿐 어떤 사용자 의도도 표현하지 않는다.
+  it('전부 해제하면 저장 버튼이 비활성이다 — 목록을 통째로 비울 수 없다', async () => {
+    const user = userEvent.setup()
+    render(
+      <CharacterTrackingPicker
+        entries={entries}
+        trackedOcids={['ocid-1']}
+        {...loaded}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: /낟낟/ }))
+
+    expect(screen.getByRole('button', { name: '저장' })).toBeDisabled()
   })
 
   it('trackedOcids에 포함된 캐릭터가 초기에 선택(즐겨찾기) 상태로 표시된다', () => {

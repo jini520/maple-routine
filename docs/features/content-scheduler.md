@@ -2,7 +2,7 @@
 
 > **범위**: 일간/주간 콘텐츠 진행 상태 표시, 캐릭터 추적, 3단 캐시 병합, 콘텐츠 카드(일일퀘스트·몬스터파크·주간 콘텐츠), 컨텐츠 관리 페이지. 캐릭터 관리 피커 컴포넌트는 [../foundation/design-system.md](../foundation/design-system.md), 수동/자동 트래킹 모드 전역 토글은 [settings.md](./settings.md).
 > **관련 소스**: `app/content-scheduler/`(`ContentScreen.tsx`) · `features/content-scheduler/` · `lib/scheduler-merge` · `lib/scheduler-content-scope` · `lib/content-category` · `lib/daily-quest-backgrounds` · `storage/scheduler-cache` · `storage/shared-progress-cache` · `src/data/scheduler-content-catalog.json`·`daily-quest-regions.json`·`daily-quest-region-crops.json`·`weekly-regional-quests.json`·`scheduler-content-template.json` · `/content/manage`.
-> **관련 ADR**: [[ADR-013]] [[ADR-012]] [[ADR-030]] [[ADR-020]] [[ADR-021]] [[ADR-035]] [[ADR-018]] [[ADR-053]] [[ADR-057]] [[ADR-072]] [[ADR-073]] [[ADR-074]]. **관련 문서**: [../foundation/architecture.md](../foundation/architecture.md), [../foundation/nexon-api.md](../foundation/nexon-api.md), [../foundation/error-resilience.md](../foundation/error-resilience.md).
+> **관련 ADR**: [[ADR-013]] [[ADR-012]] [[ADR-030]] [[ADR-020]] [[ADR-021]] [[ADR-035]] [[ADR-018]] [[ADR-053]] [[ADR-057]] [[ADR-072]] [[ADR-073]] [[ADR-074]] [[ADR-086]]. **관련 문서**: [../foundation/architecture.md](../foundation/architecture.md), [../foundation/nexon-api.md](../foundation/nexon-api.md), [../foundation/error-resilience.md](../foundation/error-resilience.md).
 
 ## 정책
 - 화면 안에 **일간 탭**(`daily_contents`) + **주간 탭**(`weekly_contents`). **월간 탭 없음**(월간 주기 일반 콘텐츠가 API에 없음).
@@ -23,15 +23,50 @@
   - `characterUnavailable` 은 **액션 없음**이다([[ADR-083]] 결정 2) — 영구 실패라 "다시 시도"는 눌러도 같은 400이다.
 - 캐릭터 카드 자체에 실패 표식을 붙이는 것(보스 수익의 [[ADR-068]] 결정 3에 해당)은 아직 이 두 화면에 없다 — 토스트가 사라지면 낡음 신호는 "n분 전"뿐이다(이슈 #78 B의 남은 몫).
 
-## 캐릭터 관리 피커 — 후보 목록 로딩 ([[ADR-053]], 구현 완료 2026-07-29)
+## 캐릭터 관리 피커 — 후보 목록 로딩 ([[ADR-053]], 구현 완료 2026-07-29 · 자격 규칙은 [[ADR-086]] 결정 3으로 대체 2026-08-03)
 `getCharacterPickerRoster`(`features/schedule-sync`)가 `onUpdate` 로 흘리는 후보 목록의 정책. 보스 스케줄러([boss-scheduler.md](./boss-scheduler.md))·온보딩 캐릭터 선택 단계([onboarding.md](./onboarding.md))가 같은 함수를 공유하므로 세 화면에 동일하게 적용된다. 카드 그리드 자체의 스타일은 [../foundation/design-system.md](../foundation/design-system.md).
-- **활성(`access_flag: true`)이 확인된 캐릭터만** 목록에 넣는다. `character/list` 응답에는 `access_flag` 가 없으므로 그 단계에서 캐시 없는 캐릭터를 채워 넣지 않는다 — 확인 경로는 `character-basic-cache` 또는 `character/basic` 응답 둘뿐이다([[ADR-015]] 결정 5를 "확인 전까지도 넣지 않는다"로 엄격 적용).
+- **후보 자격은 "활동 관측"이다**(아래 절). `character/list` 응답만으로는 자격을 알 수 없으므로 그 단계에서 캐시 없는 캐릭터를 채워 넣지 않는 것은 그대로다([[ADR-015]] 결정 5를 "확인 전까지도 넣지 않는다"로 엄격 적용).
 - **캐시가 있으면 즉시 표시 + 개별 patch**([[ADR-016]] 결정 4·[[ADR-017]] 결정 6 SWR 그대로, 변경 없음). **표시할 캐시가 한 건도 없으면(콜드 스타트 — 캐시 삭제·재설치 직후)** 중간 결과를 흘리지 않고 **스피너 → 조회 완료 후 한 번에** 목록을 그린다. 판정 기준은 "캐시 인덱스가 비었는가"가 아니라 "실제로 방출한 stub이 0건인가".
 - 조회가 끝났는데 목록이 비면 **"활성 캐릭터 없음"(정상 빈 상태 — "표시할 캐릭터가 없어요", `text-text-muted`)** 과 **"조회 실패"** 를 구분해 안내한다. 401/429는 전역 실패로 throw되므로 그 reject 경로에서 반드시 로딩을 해제한다(스피너 영구 고정 방지).
 - **실패는 원인과 행동을 함께 준다**([[ADR-062]]). 호출부가 reject를 `toScheduleSyncError` 로 변환해 `loadError: ScheduleSyncError | null` 로 내려주고(옛 `loadFailed: boolean` 대체), 공용 `ErrorState` 가 원인별 문구·액션을 그린다 — `invalidApiKey` 만 **설정 열기**(재시도로 안 풀린다), `rateLimited`·`network` 는 **다시 시도**. 재시도는 피커를 여는 경로와 같은 초기화(`reloadRoster`)를 재사용하므로 열기와 재시도가 한 코드로 수렴한다.
 - **보여줄 항목이 있는 채로 실패하면 목록을 지우지 않는다**([[ADR-062]] 결정 4). `loadError !== null` 이어도 `entries.length > 0` 이면 그리드를 그대로 두고 그 위에 스탈 배너("목록이 최신이 아닙니다" + 다시 시도)를 얹는다. 캐시 stub이 네트워크보다 먼저 방출되므로([[ADR-017]] 결정 6) 예열이 끝난 정상 경로에서는 **이쪽이 기본 분기**다 — 배너가 없으면 실패의 대다수가 무음이 된다.
 
 **관리 화면 토글 저장 실패 ([[ADR-065]] 결정 4)**: 체크박스가 그 자리에 남아 맥락이 있으므로 토스트로 알린다 — 문구는 컨텐츠·보스 공통으로 "추적 목록을 저장하지 못했습니다" 하나다(같은 화면에서 무엇을 토글했는지는 사용자가 안다). 재시도 액션은 두지 않는다 — 다시 탭하면 되는 일이라 중복이다.
+
+**최소 1명 ([[ADR-086]] 결정 7, 2026-08-03)**: 선택이 0명이면 저장이 비활성이다(피커·온보딩 캐릭터 단계 공통). 0명은 화면을 빈 상태로 만들 뿐 어떤 사용자 의도도 표현하지 않는다 — "고를 수 있는 캐릭터가 있는데 고르지 않은" 상태를 만들 경로를 UI 에서 없앤다. 저장 레이어의 `null` vs `[]` 구분([[ADR-012]])은 그대로 두되 UI 가 `[]` 를 만들지 않는다.
+
+## 후보 자격 — 활동 관측 ([[ADR-086]] 결정 3·4·5, 2026-08-03, 이슈 #87)
+목록에 넣을지 말지를 **캐릭터 속성 하나(`access_flag`)로 판정하지 않는다.**
+
+```
+자격 O  =  access_flag: true
+           또는  최근 14일(오늘 … 오늘−13) 스케줄러 응답 중
+                 캐릭터 범위 항목에 완료 기록이 하나라도 있음
+```
+
+- **완료 판정**: `dailyContents`/`weeklyContents` 는 `nowCount > 0 || questState === 2`, `bossContents` 는 `ownComplete === true`([[ADR-032]] — 승격된 `isComplete` 가 아니라 자기 난이도의 원본). "등록만 하고 완료 안 함"은 자격이 아니다.
+- **월드/계정 공유 항목은 제외한다**(`getShareScope(name) !== 'character'`). 몬스터파크·에픽 던전의 완료는 다른 캐릭터가 만들었을 수 있어 이 캐릭터의 활동 증거가 못 된다([[ADR-030]] "마지막 활성 캐릭터" 오염).
+- **리셋 없이 누적되는 개인 점수도 제외한다**(`isCumulativeScore(name)`, [[ADR-086]] 정정 2). 공유 여부와는 **다른 축**이다 — `[길드] 지하 수로` 는 개인 기록이 맞지만 `now_count` 가 주간 리셋을 넘어서도 줄지 않아(실측 73635 → 75889 → 79579) "한 번이라도 해봤음"이 영원히 "최근 14일에 했음"으로 읽힌다. 카탈로그의 `cumulativeScores` 목록이 원천이고, **자격 판정에서만** 쓴다(병합·표시는 무변경). 같은 `[길드]` 접두라도 `주간 미션 포인트`·`플래그 레이스` 는 주기마다 리셋되므로 그대로 활동 증거다.
+  - **이 제외는 카탈로그가 정확할 때만 성립한다**([[ADR-086]] 정정 1, 2026-08-03). `getShareScope` 는 공백만 제거하고 완전 일치로 비교하므로 접두가 붙은 변형(`[몬스터파크] 익스트림 몬스터파커에 도전해보겠나?`)은 **별도 항목으로 등록해야** 잡힌다 — 안 그러면 월드 공유 진행이 캐릭터 활동으로 읽혀 미접속 캐릭터가 목록에 남는다(실기기 확인). 새 항목이 의심되면 `scripts/probe-nexon-api.mjs items <캐릭터명>` 으로 이름과 현재 분류를 대조하고, 분류 자체는 반드시 사용자 확인을 거친다([[ADR-006]]).
+- **`access_flag` 는 계속 캐싱하되 배제 게이트로 쓰지 않는다.** [[ADR-067]] 계측이 "false 여도 세 엔드포인트 모두 200"을 확인했으므로 false 는 "조회 불가"가 아니라 "최근 접속 없음"이다. 자격의 **충분조건**(true 면 호출 0회로 즉시 통과)으로만 남는다.
+- **자격 X 여도 추적 중이면 목록에 남긴다**(해제 경로 — [[ADR-068]] 결정 4와 같은 이유). 뒤집으면 **추적 중이 아닌 자격 X 캐릭터는 목록에 넣지 않는다** — 조회 불가 캐릭터를 무조건 남기던 [[ADR-068]] 결정 4의 정정이다(고를 이유도 해제할 필요도 없는 항목이다).
+- 판정 함수 `resolveCharacterEligibility`(`features/schedule-sync/character-eligibility.ts`)를 **예열과 로스터가 공유한다** — 예열이 중간에 끊겨도(온보딩 재개, [onboarding.md](./onboarding.md)) 로스터가 이어서 완성한다. 아래 원장이 중복 호출을 막으므로 두 경로가 같은 함수를 불러도 비용은 한 번이다.
+
+### 조회 원장 — 같은 캐릭터를 같은 날짜로 두 번 조회하지 않는다 ([[ADR-086]] 결정 4 = [[ADR-067]] 결정 5)
+`scheduleProbe:{ocid}`(`storage/schedule-probe-ledger.ts`) = `{ unavailable?: true, dates: { 'YYYY-MM-DD': ProbeRecord } }`.
+
+| 응답 | 기록 | 이유 |
+|---|---|---|
+| 성공 | **함** — 섹션 유무 4개 + 캐릭터 범위 완료 관측 | 사실이 확정됐다 |
+| 400 `OPENAPI00003` | **함** — 캐릭터 단위 `unavailable` | 그 ocid 는 어느 날짜로도 조회 불가(영구) |
+| 400 `OPENAPI00004` | **함** — 그 날짜 `outOfRange` | 그 날짜에 대해 영구 |
+| 400 `OPENAPI00009` | **안 함** | 아직 집계 전 — 시간이 지나면 풀린다 |
+| 네트워크·타임아웃·파싱 | **안 함** | 모르는 실패를 확정으로 굳히지 않는다 |
+
+- **소비자가 둘이다.** ① 위 자격 스윕이 미조회 날짜만 호출한다. ② `fillMissingSections`(선채움, [[ADR-034]])가 "이 날짜는 이미 봤고 그 섹션이 없었다"를 알아 그 날짜를 건너뛴다.
+- **②가 이슈 #87 문제 1의 처방이다.** 보스가 0건인 캐릭터(특수 월드·저레벨)는 과거 날짜도 0건이라 백필이 13일을 다 쓰고도 해결하지 못했고, 상태가 변하지 않아 **매 동기화 14회 호출이 영구 반복**됐다(error-resilience 원칙 6 위반). 원장이 생기면 첫 회 이후로는 **그날 새로 윈도우에 들어온 날짜 1개**만 조회한다.
+- **만료는 날짜 윈도우가 스스로 굴린다 — 레벨 변화 트리거를 두지 않는다.** 캐릭터가 성장해 보스가 생기면 그 결과는 **오늘 응답**에 나타나고 백필이 채우는 것은 과거 날짜다. "2주 전 그 날짜에 그 보스가 없었다"는 기록은 성장해도 여전히 사실이다.
+- 저장은 Preferences, **캐시 삭제 시 삭제**(재조회로 복구되는 파생 데이터라 `KEEP_KEYS` 에 넣지 않는다 — [[ADR-052]] 결정 1 기준). 읽을 때 윈도우 밖 날짜를 prune 한다. 상세 [../persistence/preferences.md](../persistence/preferences.md).
 
 ## 3단 캐시 병합 ([[ADR-030]], 구현 완료)
 캐릭터 단일 스냅샷 → 캐릭터/월드/계정 3단 캐시. 응답 도착 시:
@@ -104,6 +139,9 @@
 - ~~레벨 미달 항목은 수동 선택 불가(관리 페이지 잠금) + 스케줄러 화면에 "진행 불가"~~ → **미도입, 자유 선택**([[ADR-055]] 정정 2, 2026-07-29 사용자 결정, 이슈 #32 폐기). 요구 레벨 데이터(`requiredLevel`)는 `scheduler-content-template.json` 에 남아 있으나 **읽는 코드가 없다**.
 - ~~체크박스로 캐릭터 선택~~ → 캐릭터 이미지 카드형 그리드 토글([[ADR-015]]).
 - ~~캐시가 없으면 `character/list` 응답으로 `access_flag` 미상 캐릭터까지 먼저 표시~~ → 활성 확인된 캐릭터만 표시, 콜드 스타트는 스피너([[ADR-053]], 2026-07-29).
+- ~~활성(`access_flag: true`)이 확인된 캐릭터만 후보 목록에 넣는다~~ → **활동 관측**(`access_flag: true` OR 최근 14일 캐릭터 범위 완료 기록)으로 대체([[ADR-086]] 결정 3, 2026-08-03). [[ADR-067]] 계측이 `access_flag: false` 여도 세 엔드포인트 모두 200임을 확인해 배제 게이트의 근거가 사라졌다.
+- ~~조회 불가(`OPENAPI00003`) 캐릭터는 항상 별도 섹션으로 목록에 남긴다~~ → **추적 중일 때만** 남긴다([[ADR-086]] 결정 3, 2026-08-03). 남기는 목적이 해제 경로 확보였으므로 추적 중이 아니면 남길 이유가 없다([[ADR-068]] 결정 4 정정).
+- ~~선채움(`fillMissingSections`)은 매번 오늘−1 … 오늘−13 을 순서대로 조회한다~~ → 조회 원장에 없는 날짜만([[ADR-086]] 결정 4 = [[ADR-067]] 결정 5, 2026-08-03).
 - ~~캐시가 캐릭터 단위 단일 스냅샷~~ → 캐릭터/월드/계정 3단 캐시([[ADR-030]]).
 - ~~평평한 체크리스트(관리 페이지)~~ → 카테고리 그룹핑([[ADR-035]] 2026-07-24): `[일일 퀘스트]` 접두사가 16/18줄 반복돼 지역명이 파묻히던 문제 해소.
 - ~~수동 편집 UI가 스케줄러 화면에 상주(카드 X 삭제·"+ 항목 추가")~~ → 화면은 읽기 전용, 편집은 `/content/manage`([[ADR-035]] 결정 18). 수동 항목이 일간/주간 양쪽에 섞이던 버그의 원인이 멤버십 스키마의 일간/주간 구분 부재라 `ManualTrackedItem.kind` 세분.

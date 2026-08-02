@@ -49,6 +49,15 @@ function formatKstDateKey(kstWallClock: Date): string {
 }
 
 /**
+ * KST 기준 `daysBack`일 전 날짜를 YYYY-MM-DD로 반환한다([[ADR-086]] 결정 4 — 조회 원장의
+ * 윈도우 경계 계산용). `daysBack: 0` 은 [[getCurrentKstDateKey]] 와 같다.
+ */
+export function getKstDateKeyDaysAgo(now: Date, daysBack: number): string {
+  const kstWallClock = new Date(now.getTime() + KST_OFFSET_MS - daysBack * 24 * 60 * 60 * 1000)
+  return formatKstDateKey(kstWallClock)
+}
+
+/**
  * [[ADR-034]] 스케줄러 최초 동기화·캐시 유실 대비 항목 선채움용 — Nexon 스케줄러 API에
  * 하루씩 거슬러 올라가며 넘길 과거 조회 날짜(YYYY-MM-DD) 목록을 최신순으로 반환한다.
  * 평소엔 KST 기준 어제(-1일)부터, KST 00:00~00:10 사이는 자정 직후 API 응답이 불안정하다고

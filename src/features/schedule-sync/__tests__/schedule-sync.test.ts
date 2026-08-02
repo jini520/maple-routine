@@ -75,6 +75,28 @@ vi.mock('../../../lib/scheduler-merge', () => ({
   mergeSchedulerState: mergeSchedulerStateMock,
 }))
 
+// ADR-086: 조회 원장(storage/schedule-probe-ledger)과 추적 목록(storage/character-selection)은
+// 실물을 쓰고 그 아래 Preferences만 인메모리로 바꾼다 — 원장이 "같은 날짜를 두 번 부르지 않는다"를
+// 실제로 지키는지가 이 파일이 검증해야 할 동작이라, 그 모듈까지 목으로 대체하면 검증이 사라진다.
+vi.mock('@capacitor/preferences', () => {
+  const store = new Map<string, string>()
+  return {
+    __preferencesStore: store,
+    Preferences: {
+      get: vi.fn(async ({ key }: { key: string }) => ({
+        value: store.has(key) ? (store.get(key) as string) : null,
+      })),
+      set: vi.fn(async ({ key, value }: { key: string; value: string }) => {
+        store.set(key, value)
+      }),
+      remove: vi.fn(async ({ key }: { key: string }) => {
+        store.delete(key)
+      }),
+      keys: vi.fn(async () => ({ keys: [...store.keys()] })),
+    },
+  }
+})
+
 import { getCharacterPickerRoster, getRegisteredCharacters, syncSchedules } from '../schedule-sync'
 
 function character(ocid: string): MapleCharacter {
@@ -124,9 +146,14 @@ function basicProfile(overrides: { name: string; level: number; imageUrl?: strin
 
 const NOW = '2026-07-11T00:00:00.000Z'
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.useFakeTimers()
   vi.setSystemTime(new Date(NOW))
+  const { Preferences } = (await import('@capacitor/preferences')) as unknown as {
+    Preferences: { keys(): Promise<{ keys: string[] }>; remove(o: { key: string }): Promise<void> }
+  }
+  const { keys } = await Preferences.keys()
+  await Promise.all(keys.map((key) => Preferences.remove({ key })))
   getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1', selectedAccountId: 'acc-1' })
   getCachedSchedulerStateMock.mockResolvedValue(null)
   setCachedSchedulerStateMock.mockResolvedValue(undefined)
@@ -602,6 +629,121 @@ describe('syncSchedules', () => {
       expect(results[0].state).toEqual(stage1State)
     })
 
+    // ADR-086 결정 4(= ADR-067 결정 5, 이슈 #87 문제 1): 위 14회가 **매 동기화마다 영구 반복**되던
+    // 자리다. 과거 날짜도 0건이라 resolved가 영원히 참이 되지 않고 상태가 변하지 않기 때문이다.
+    describe('조회 원장 — 같은 날짜를 두 번 조회하지 않는다 (ADR-086 결정 4)', () => {
+      it('두 번째 동기화는 오늘 응답 1회로 끝난다 — 해결하지 못한 13일을 다시 훑지 않는다', async () => {
+        const characters = [character('ocid-1')]
+        fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+
+        const stage1State = { ...schedulerState('캐릭터1'), isWeeklyBossStale: true, bossContents: [] }
+        const alwaysStaleDay = { ...schedulerState('과거'), isWeeklyBossStale: true, bossContents: [] }
+
+        fetchSchedulerCharacterStateMock
+          .mockResolvedValueOnce(schedulerState('캐릭터1'))
+          .mockResolvedValue(alwaysStaleDay)
+        mergeSchedulerStateMock.mockReturnValue({
+          characterState: stage1State,
+          worldLedgerUpdates: {},
+          accountLedgerUpdates: {},
+        })
+
+        await syncSchedules(['ocid-1'])
+        expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(14)
+
+        fetchSchedulerCharacterStateMock.mockClear()
+        await syncSchedules(['ocid-1'])
+
+        expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1)
+        expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key-1', 'ocid-1')
+      })
+
+      it('그 날짜에 그 섹션이 있었다면 다시 부른다 — 원장은 값이 아니라 유무만 기억한다', async () => {
+        const { recordScheduleProbe } = await import('../../../storage/schedule-probe-ledger')
+        await recordScheduleProbe('ocid-1', '2026-07-10', {
+          kind: 'observed',
+          hasCompletion: true,
+          sections: { daily: true, weekly: true, weeklyBoss: true, monthlyBoss: true },
+        })
+
+        const characters = [character('ocid-1')]
+        fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+
+        const stage1State = { ...schedulerState('캐릭터1'), isWeeklyBossStale: true, bossContents: [] }
+        const day1Response = {
+          ...schedulerState('-1일 응답'),
+          isWeeklyBossStale: false,
+          bossContents: [bossContent('weekly')],
+        }
+        fetchSchedulerCharacterStateMock
+          .mockResolvedValueOnce(schedulerState('캐릭터1'))
+          .mockResolvedValueOnce(day1Response)
+        mergeSchedulerStateMock.mockReturnValue({
+          characterState: stage1State,
+          worldLedgerUpdates: {},
+          accountLedgerUpdates: {},
+        })
+
+        await syncSchedules(['ocid-1'])
+
+        expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-1', '2026-07-10')
+      })
+
+      it('조회 불가(OPENAPI00003)로 확정된 캐릭터는 백필 루프에 아예 들어가지 않는다', async () => {
+        const { markScheduleProbeUnavailable } = await import('../../../storage/schedule-probe-ledger')
+        await markScheduleProbeUnavailable('ocid-1')
+
+        const characters = [character('ocid-1')]
+        fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+
+        const stage1State = { ...schedulerState('캐릭터1'), isWeeklyBossStale: true, bossContents: [] }
+        fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
+        mergeSchedulerStateMock.mockReturnValue({
+          characterState: stage1State,
+          worldLedgerUpdates: {},
+          accountLedgerUpdates: {},
+        })
+
+        await syncSchedules(['ocid-1'])
+
+        expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1)
+      })
+
+      it('네트워크 실패는 기록하지 않는다 — 다음 동기화에서 그 날짜를 다시 시도한다', async () => {
+        const characters = [character('ocid-1')]
+        fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+
+        const stage1State = { ...schedulerState('캐릭터1'), isWeeklyBossStale: true, bossContents: [] }
+        const day1Response = {
+          ...schedulerState('-1일'),
+          isWeeklyBossStale: false,
+          bossContents: [bossContent('weekly')],
+        }
+        mergeSchedulerStateMock.mockReturnValue({
+          characterState: stage1State,
+          worldLedgerUpdates: {},
+          accountLedgerUpdates: {},
+        })
+
+        // 1차: -1일이 네트워크 실패, 나머지 12일은 해결 못 함
+        fetchSchedulerCharacterStateMock
+          .mockResolvedValueOnce(schedulerState('캐릭터1'))
+          .mockRejectedValueOnce(new NexonNetworkError('offline'))
+          .mockResolvedValue({ ...schedulerState('과거'), isWeeklyBossStale: true, bossContents: [] })
+        await syncSchedules(['ocid-1'])
+
+        // 2차: 기록되지 않은 -1일만 다시 시도한다
+        fetchSchedulerCharacterStateMock.mockReset()
+        fetchSchedulerCharacterStateMock
+          .mockResolvedValueOnce(schedulerState('캐릭터1'))
+          .mockResolvedValueOnce(day1Response)
+        await syncSchedules(['ocid-1'])
+
+        expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(2)
+        expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-1', '2026-07-10')
+      })
+    })
+
     it('과거 날짜 조회가 실패해도(네트워크 등) 그 날짜만 건너뛰고 다음 날짜로 계속한다', async () => {
       const characters = [character('ocid-1')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
@@ -838,7 +980,17 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
   // ADR-068 결정 4: 조회 불가 캐릭터(400 OPENAPI00003)를 목록에서 빼지 않는다 — 빼면 trackedOcids에
   // 남은 그 ocid를 사용자가 해제할 방법이 없다(이슈 #78 A-1: "사용자가 스스로 벗어날 방법이 없다").
   describe('조회 불가 캐릭터(OPENAPI00003)', () => {
-    it('목록에서 빼지 않고 unavailable 항목으로 남긴다', async () => {
+    // ADR-086 결정 3: 남기는 목적이 **해제 경로 확보**였으므로 추적 중일 때만 남긴다.
+    // 추적 중이 아니면 고를 이유도 해제할 필요도 없어 목록에서 뺀다(ADR-068 결정 4 정정).
+    async function setTrackedOcids(ocids: string[]): Promise<void> {
+      const { Preferences } = (await import('@capacitor/preferences')) as unknown as {
+        Preferences: { set(o: { key: string; value: string }): Promise<void> }
+      }
+      await Preferences.set({ key: 'trackedCharacters', value: JSON.stringify(ocids) })
+    }
+
+    it('추적 중이면 목록에서 빼지 않고 unavailable 항목으로 남긴다 — 해제 경로', async () => {
+      await setTrackedOcids(['ocid-2'])
       const characters = [character('ocid-1'), character('ocid-2')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
@@ -869,7 +1021,27 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       expect(emitted.find((entry) => entry.ocid === 'ocid-1')?.unavailable).toBeUndefined()
     })
 
+    it('추적 중이 아니면 목록에 넣지 않는다 (ADR-086 결정 3)', async () => {
+      const characters = [character('ocid-1'), character('ocid-2')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+      getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
+      getCachedCharacterBasicMock.mockResolvedValue(null)
+      fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) => {
+        if (ocid === 'ocid-2') {
+          throw new NexonBadRequestError('조회할 수 없는 ocid', 'OPENAPI00003')
+        }
+        return basicProfile({ name: '정상', level: 250 })
+      })
+
+      const onUpdate = vi.fn()
+      await getCharacterPickerRoster(onUpdate)
+
+      const emitted = onUpdate.mock.calls.at(-1)?.[0] as CharacterPickerEntry[]
+      expect(emitted.map((entry) => entry.ocid)).toEqual(['ocid-1'])
+    })
+
     it('조회 불가 항목은 목록 맨 뒤로 보낸다 — 정상 후보를 밀어내지 않는다', async () => {
+      await setTrackedOcids(['ocid-high'])
       const characters = [character('ocid-low'), character('ocid-high')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
@@ -976,7 +1148,119 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     expect(last.map((entry) => entry.ocid)).toEqual(['ocid-2', 'ocid-1'])
   })
 
-  it('캐시상 access_flag가 false인 캐릭터는 모든 방출에서 제외된다', async () => {
+  // ADR-086 결정 3: 후보 자격은 access_flag 게이트가 아니라 활동 관측이다 —
+  // access_flag: true 면 즉시 통과(충분조건), false 면 최근 14일 완료 기록을 한 번 더 본다.
+  describe('후보 자격 — 활동 관측 (ADR-086 결정 3)', () => {
+    async function primeLedger(ocid: string, dateKey: string, hasCompletion: boolean): Promise<void> {
+      const { recordScheduleProbe } = await import('../../../storage/schedule-probe-ledger')
+      await recordScheduleProbe(ocid, dateKey, {
+        kind: 'observed',
+        hasCompletion,
+        sections: { daily: false, weekly: false, weeklyBoss: false, monthlyBoss: false },
+      })
+    }
+
+    function completedState(): SchedulerCharacterState {
+      return {
+        ...schedulerState('휴면캐릭'),
+        dailyContents: [
+          {
+            name: '[일일 퀘스트] 레헬른의 평온한 밤',
+            kind: 'quest',
+            isRegistered: true,
+            nowCount: 0,
+            maxCount: 0,
+            questState: 2,
+          },
+        ],
+      }
+    }
+
+    it('access_flag: false여도 최근 14일 완료 기록이 있으면 목록에 넣는다', async () => {
+      const characters = [character('ocid-1')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+      getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
+      getCachedCharacterBasicMock.mockResolvedValue(null)
+      fetchCharacterBasicMock.mockResolvedValue({
+        ...basicProfile({ name: '휴면캐릭', level: 250 }),
+        accessFlag: false,
+      })
+      // 원장은 비었고 오늘−1 응답에 완료가 있다 → 1회 조회로 자격 확정
+      fetchSchedulerCharacterStateMock.mockResolvedValue(completedState())
+
+      const onUpdate = vi.fn()
+      await getCharacterPickerRoster(onUpdate)
+
+      const emitted = onUpdate.mock.calls.at(-1)?.[0] as CharacterPickerEntry[]
+      expect(emitted.map((entry) => entry.ocid)).toEqual(['ocid-1'])
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1)
+    })
+
+    it('최근 14일 내내 완료 기록이 없고 추적 중도 아니면 목록에서 뺀다', async () => {
+      const characters = [character('ocid-1')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+      getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
+      getCachedCharacterBasicMock.mockResolvedValue(null)
+      fetchCharacterBasicMock.mockResolvedValue({
+        ...basicProfile({ name: '휴면캐릭', level: 250 }),
+        accessFlag: false,
+      })
+      fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('휴면캐릭'))
+
+      const onUpdate = vi.fn()
+      await getCharacterPickerRoster(onUpdate)
+
+      expect(onUpdate.mock.calls.at(-1)?.[0]).toEqual([])
+    })
+
+    it('자격이 없어도 추적 중이면 남긴다 — 해제 경로', async () => {
+      const { Preferences } = (await import('@capacitor/preferences')) as unknown as {
+        Preferences: { set(o: { key: string; value: string }): Promise<void> }
+      }
+      await Preferences.set({ key: 'trackedCharacters', value: JSON.stringify(['ocid-1']) })
+
+      const characters = [character('ocid-1')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+      getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
+      getCachedCharacterBasicMock.mockResolvedValue(null)
+      fetchCharacterBasicMock.mockResolvedValue({
+        ...basicProfile({ name: '휴면캐릭', level: 250 }),
+        accessFlag: false,
+      })
+      fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('휴면캐릭'))
+
+      const onUpdate = vi.fn()
+      await getCharacterPickerRoster(onUpdate)
+
+      const emitted = onUpdate.mock.calls.at(-1)?.[0] as CharacterPickerEntry[]
+      expect(emitted.map((entry) => entry.ocid)).toEqual(['ocid-1'])
+    })
+
+    it('stub 단계는 원장만 읽어 판정한다 — 네트워크 없이 자격 있는 캐릭터를 먼저 그린다', async () => {
+      await primeLedger('ocid-2', '2026-07-10', true)
+
+      const characters = [character('ocid-1'), character('ocid-2')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+      getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1', 'ocid-2'])
+      getCachedCharacterBasicMock.mockImplementation(async (ocid: string) => ({
+        profile: {
+          ...basicProfile({ name: ocid === 'ocid-1' ? '미접속무활동' : '미접속활동', level: 200 }),
+          accessFlag: false,
+        },
+        cachedAt: '2026-07-11T00:00:00.000Z',
+      }))
+      fetchCharacterBasicMock.mockImplementation(() => new Promise(() => {}))
+
+      const onUpdate = vi.fn()
+      void getCharacterPickerRoster(onUpdate)
+
+      await vi.waitFor(() => expect(onUpdate).toHaveBeenCalled())
+      const first = onUpdate.mock.calls[0]?.[0] as CharacterPickerEntry[]
+      expect(first.map((entry) => entry.ocid)).toEqual(['ocid-2'])
+    })
+  })
+
+  it('캐시상 access_flag가 false이고 활동 기록도 없는 캐릭터는 모든 방출에서 제외된다', async () => {
     const characters = [character('ocid-1'), character('ocid-2')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
     getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1', 'ocid-2'])
@@ -1011,7 +1295,9 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     expect(last).toEqual([
       { ocid: 'ocid-1', name: '최신캐릭', level: 293, imageUrl: basicProfile({ name: '최신캐릭', level: 293 }).imageUrl, world: '베라' },
     ])
+    // ADR-086 결정 9: 캐시 인덱스는 계정별이라 accountId가 첫 인자다.
     expect(setCachedCharacterBasicMock).toHaveBeenCalledWith(
+      'acc-1',
       'ocid-1',
       expect.objectContaining({ profile: basicProfile({ name: '최신캐릭', level: 293 }) }),
     )

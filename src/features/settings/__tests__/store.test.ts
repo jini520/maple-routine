@@ -21,6 +21,14 @@ const { onboardingResetMock } = vi.hoisted(() => ({
   onboardingResetMock: vi.fn(),
 }))
 
+const { setTrackedCharacterOcidsMock, seedManualTrackedContentMock, trackingModeRef } = vi.hoisted(
+  () => ({
+    setTrackedCharacterOcidsMock: vi.fn(),
+    seedManualTrackedContentMock: vi.fn(),
+    trackingModeRef: { current: 'auto' as 'auto' | 'manual' },
+  }),
+)
+
 vi.mock('../../../nexon/character', () => ({
   fetchCharacterList: fetchCharacterListMock,
 }))
@@ -38,6 +46,20 @@ vi.mock('../../onboarding/prefetch', () => ({
 vi.mock('../../onboarding/store', () => ({
   useOnboardingStore: {
     getState: () => ({ reset: onboardingResetMock }),
+  },
+}))
+
+vi.mock('../../../storage/character-selection', () => ({
+  setTrackedCharacterOcids: setTrackedCharacterOcidsMock,
+}))
+
+vi.mock('../../tracking-mode/seed', () => ({
+  seedManualTrackedContent: seedManualTrackedContentMock,
+}))
+
+vi.mock('../../tracking-mode/store', () => ({
+  useTrackingModeStore: {
+    getState: () => ({ mode: trackingModeRef.current }),
   },
 }))
 
@@ -64,6 +86,9 @@ beforeEach(() => {
   setSelectedAccountIdMock.mockResolvedValue(undefined)
   prefetchAccountDataMock.mockResolvedValue(undefined)
   onboardingResetMock.mockResolvedValue(undefined)
+  setTrackedCharacterOcidsMock.mockResolvedValue(undefined)
+  seedManualTrackedContentMock.mockResolvedValue(undefined)
+  trackingModeRef.current = 'auto'
   getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1', selectedAccountId: 'acc-old' })
 })
 
@@ -95,9 +120,15 @@ describe('useSettingsStore.changeApiKey', () => {
     await useSettingsStore.getState().changeApiKey('new-key')
     await useSettingsStore.getState().selectAccount('acc-1')
 
-    expect(setSelectedAccountIdMock).toHaveBeenCalledWith('acc-1')
-    expect(prefetchAccountDataMock).toHaveBeenCalledWith('new-key', accounts[0].characters, expect.any(Function))
-    expect(useSettingsStore.getState().status).toBe('idle')
+    // ADR-086 결정 6: 이 시점엔 아직 아무것도 저장하지 않는다.
+    expect(setSelectedAccountIdMock).not.toHaveBeenCalled()
+    expect(prefetchAccountDataMock).toHaveBeenCalledWith(
+      'new-key',
+      'acc-1',
+      accounts[0].characters,
+      expect.any(Function),
+    )
+    expect(useSettingsStore.getState().status).toBe('selectingCharacters')
   })
 
   it('계정이 2개 이상이면 selectingAccount에서 멈추고 prefetch는 실행되지 않는다', async () => {
@@ -182,9 +213,14 @@ describe('useSettingsStore.refreshAccounts', () => {
     await useSettingsStore.getState().refreshAccounts()
     await useSettingsStore.getState().selectAccount('acc-1')
 
-    expect(setSelectedAccountIdMock).toHaveBeenCalledWith('acc-1')
-    expect(prefetchAccountDataMock).toHaveBeenCalledWith('key-1', accounts[0].characters, expect.any(Function))
-    expect(useSettingsStore.getState().status).toBe('idle')
+    expect(setSelectedAccountIdMock).not.toHaveBeenCalled()
+    expect(prefetchAccountDataMock).toHaveBeenCalledWith(
+      'key-1',
+      'acc-1',
+      accounts[0].characters,
+      expect.any(Function),
+    )
+    expect(useSettingsStore.getState().status).toBe('selectingCharacters')
   })
 
   it('계정이 2개 이상이면 selectingAccount에서 멈춘다', async () => {
@@ -232,38 +268,86 @@ describe('useSettingsStore.refreshAccounts', () => {
 })
 
 describe('useSettingsStore.selectAccount', () => {
-  it('setSelectedAccountId 호출 후 예열이 진행되고 idle로 돌아간다', async () => {
+  // ADR-086 결정 6: 계정 변경은 캐릭터를 다시 고를 때까지 커밋하지 않는다.
+  it('아무것도 저장하지 않고 후보 계정으로 예열한 뒤 캐릭터 선택 단계로 간다', async () => {
     const accounts = [account('acc-1'), account('acc-2')]
-    useSettingsStore.setState({
-      status: 'selectingAccount',
-      accounts,
-      error: null,
-      prefetchProgress: null,
-    })
+    useSettingsStore.setState({ ...initialSettingsState, status: 'selectingAccount', accounts })
 
     await useSettingsStore.getState().selectAccount('acc-2')
 
+    expect(setSelectedAccountIdMock).not.toHaveBeenCalled()
+    expect(setTrackedCharacterOcidsMock).not.toHaveBeenCalled()
+    expect(prefetchAccountDataMock).toHaveBeenCalledWith(
+      'key-1',
+      'acc-2',
+      accounts[1].characters,
+      expect.any(Function),
+    )
+    const state = useSettingsStore.getState()
+    expect(state.status).toBe('selectingCharacters')
+    expect(state.pendingAccountId).toBe('acc-2')
+  })
+
+  it('같은 계정을 다시 고르면 아무 쓰기 없이 닫는다 — 추적 목록을 건드리지 않는다', async () => {
+    const accounts = [account('acc-old'), account('acc-2')]
+    useSettingsStore.setState({ ...initialSettingsState, status: 'selectingAccount', accounts })
+
+    await useSettingsStore.getState().selectAccount('acc-old')
+
+    expect(setSelectedAccountIdMock).not.toHaveBeenCalled()
+    expect(setTrackedCharacterOcidsMock).not.toHaveBeenCalled()
+    expect(prefetchAccountDataMock).not.toHaveBeenCalled()
+    expect(useSettingsStore.getState().status).toBe('idle')
+  })
+})
+
+describe('useSettingsStore.commitAccountChange (ADR-086 결정 6)', () => {
+  function primePending(): void {
+    useSettingsStore.setState({
+      ...initialSettingsState,
+      status: 'selectingCharacters',
+      pendingAccountId: 'acc-2',
+    })
+  }
+
+  it('계정과 추적 목록을 함께 커밋하고 닫는다 — 중간 상태가 존재하지 않는다', async () => {
+    primePending()
+
+    await useSettingsStore.getState().commitAccountChange(['ocid-a', 'ocid-b'])
+
     expect(setSelectedAccountIdMock).toHaveBeenCalledWith('acc-2')
-    expect(prefetchAccountDataMock).toHaveBeenCalledWith('key-1', accounts[1].characters, expect.any(Function))
+    expect(setTrackedCharacterOcidsMock).toHaveBeenCalledWith(['ocid-a', 'ocid-b'])
     expect(useSettingsStore.getState().status).toBe('idle')
   })
 
-  it('저장이 실패하면 storageWriteFailed error가 되고 예열은 실행되지 않는다', async () => {
-    const accounts = [account('acc-1'), account('acc-2')]
-    useSettingsStore.setState({
-      status: 'selectingAccount',
-      accounts,
-      error: null,
-      prefetchProgress: null,
-    })
+  it('수동 모드면 고른 캐릭터를 시드한다(ADR-035 결정 14(b))', async () => {
+    trackingModeRef.current = 'manual'
+    primePending()
+
+    await useSettingsStore.getState().commitAccountChange(['ocid-a', 'ocid-b'])
+
+    expect(seedManualTrackedContentMock).toHaveBeenCalledWith('ocid-a')
+    expect(seedManualTrackedContentMock).toHaveBeenCalledWith('ocid-b')
+  })
+
+  it('자동 모드에서는 시드하지 않는다', async () => {
+    primePending()
+
+    await useSettingsStore.getState().commitAccountChange(['ocid-a'])
+
+    expect(seedManualTrackedContentMock).not.toHaveBeenCalled()
+  })
+
+  it('저장이 실패하면 storageWriteFailed error가 된다', async () => {
+    primePending()
     setSelectedAccountIdMock.mockRejectedValue(new Error('disk full'))
 
-    await useSettingsStore.getState().selectAccount('acc-2')
+    await useSettingsStore.getState().commitAccountChange(['ocid-a'])
 
     const state = useSettingsStore.getState()
     expect(state.status).toBe('error')
     expect(state.error).toEqual({ kind: 'storageWriteFailed' })
-    expect(prefetchAccountDataMock).not.toHaveBeenCalled()
+    expect(setTrackedCharacterOcidsMock).not.toHaveBeenCalled()
   })
 })
 
