@@ -267,6 +267,90 @@ describe('BossProfitScreen', () => {
     })
   })
 
+  // ADR-084: 아코디언을 접는 것도 같은 높이 붕괴다(주간 본문 ≈ 보스 행 89pt × 최대 12행). 접을 때는
+  // 거의 항상 스크롤이 내려가 있으므로(펼친 카드 헤더가 stuck 이라 그것을 탭해 닫는다) 브라우저가
+  // 오프셋을 잘라내야 하고, 잘리기 전 1~2프레임이 무효 오프셋으로 그려진다 — 남은 문서가 뷰포트보다
+  // 짧으면 빈 헤더(ADR-077), 아직 길면 헤더가 화면 밖(ADR-080). 도착지는 그대로 두고 그 클램프를
+  // 페인트 전으로 앞당긴다.
+  describe('아코디언 접기 시 스크롤 클램프 (ADR-084)', () => {
+    function stubViewport(options: { scrollY: number; scrollHeight: number; innerHeight: number }): void {
+      Object.defineProperty(window, 'scrollY', { configurable: true, value: options.scrollY })
+      Object.defineProperty(document.documentElement, 'scrollHeight', {
+        configurable: true,
+        value: options.scrollHeight,
+      })
+      Object.defineProperty(window, 'innerHeight', { configurable: true, value: options.innerHeight })
+    }
+
+    afterEach(() => {
+      Reflect.deleteProperty(window, 'scrollY')
+      Reflect.deleteProperty(document.documentElement, 'scrollHeight')
+      Reflect.deleteProperty(window, 'innerHeight')
+    })
+
+    it('접으면 줄어든 문서의 최대 스크롤로 자른다', () => {
+      const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
+      mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()] })
+      renderBossProfitScreen()
+
+      const header = screen.getByRole('button', { name: /낟낟/ })
+      fireEvent.click(header)
+      // 본문이 사라진 뒤의 레이아웃 — 최대 스크롤은 1500 - 800 = 700인데 오프셋은 아직 1000이다.
+      stubViewport({ scrollY: 1000, scrollHeight: 1500, innerHeight: 800 })
+      scrollTo.mockClear()
+
+      fireEvent.click(header)
+
+      expect(scrollTo).toHaveBeenCalledWith(0, 700)
+      scrollTo.mockRestore()
+    })
+
+    it('남은 문서가 뷰포트보다 짧으면 최상단으로 자른다', () => {
+      const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
+      mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()] })
+      renderBossProfitScreen()
+
+      const header = screen.getByRole('button', { name: /낟낟/ })
+      fireEvent.click(header)
+      stubViewport({ scrollY: 500, scrollHeight: 600, innerHeight: 800 })
+      scrollTo.mockClear()
+
+      fireEvent.click(header)
+
+      expect(scrollTo).toHaveBeenCalledWith(0, 0)
+      scrollTo.mockRestore()
+    })
+
+    it('스크롤이 이미 유효 범위면 건드리지 않는다 — 고칠 프레임도 없이 위치만 튄다', () => {
+      const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
+      mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()] })
+      renderBossProfitScreen()
+
+      const header = screen.getByRole('button', { name: /낟낟/ })
+      fireEvent.click(header)
+      stubViewport({ scrollY: 100, scrollHeight: 1500, innerHeight: 800 })
+      scrollTo.mockClear()
+
+      fireEvent.click(header)
+
+      expect(scrollTo).not.toHaveBeenCalled()
+      scrollTo.mockRestore()
+    })
+
+    it('펼칠 때는 자르지 않는다 — 문서가 늘어날 때는 클램프가 없다', () => {
+      const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
+      mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()] })
+      renderBossProfitScreen()
+      stubViewport({ scrollY: 1000, scrollHeight: 1500, innerHeight: 800 })
+      scrollTo.mockClear()
+
+      fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
+
+      expect(scrollTo).not.toHaveBeenCalled()
+      scrollTo.mockRestore()
+    })
+  })
+
   // ADR-077: 히스토리는 독립 페이지가 아니라 이 화면 위에 얹히는 **스택 화면**이다. `/profit` 의 중첩
   // 라우트라 이동해도 이 화면이 언마운트되지 않고, 그래서 펼쳐둔 아코디언·보던 기간·스크롤 위치가
   // 저장·복원 코드 없이 그대로 남는다. 형제 라우트였을 땐 이동마다 언마운트돼 셋 다 잃었다.

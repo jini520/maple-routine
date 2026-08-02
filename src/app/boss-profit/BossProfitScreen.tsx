@@ -950,6 +950,15 @@ function CrystalSummaryChip(props: { tab: BossCycle; groups: CharacterGroup[] })
   )
 }
 
+// ADR-084: 줄어든 문서에서 더 이상 유효하지 않은 스크롤 오프셋을 **브라우저가 잘라내기 전에** 우리가
+// 자른다. 도착지는 브라우저가 어차피 도달할 값과 같다 — 바꾸는 것은 거기 가는 길의 프레임뿐이다.
+// 이미 유효 범위 안이면 아무것도 하지 않는다: 고칠 프레임도 없는데 스크롤만 튄다.
+function clampDocumentScroll(): void {
+  const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight)
+  if (window.scrollY <= maxScroll) return
+  window.scrollTo(0, maxScroll)
+}
+
 function CharacterAccordion(props: {
   group: CharacterGroup
   tab: BossCycle
@@ -996,6 +1005,26 @@ function CharacterAccordion(props: {
     return () => {
       observer.disconnect()
     }
+  }, [isExpanded])
+
+  // ADR-084: 접으면 본문이 언마운트돼 문서가 크게 줄어든다(주간 본문 ≈ 보스 행 89pt × 최대 12행).
+  // 접는 순간은 거의 항상 스크롤을 내린 상태다 — 펼친 카드 헤더가 stuck 으로 상단에 붙어 있고 그것을
+  // 탭해서 닫기 때문이다. 그러면 브라우저가 오프셋을 잘라내야 하는데, 잘리기 전 1~2프레임 동안
+  // 레이아웃은 이미 짧고 오프셋은 그대로라 그 프레임이 깨진다 — 남은 문서가 뷰포트보다 짧으면 헤더가
+  // stuck → 비-stuck 으로 풀리며 레이어가 다시 안 칠해지고([[ADR-077]] 빈 헤더), 아직 길면 sticky 가
+  // `-scrollY` 로 그려져 헤더가 화면 밖으로 나간다([[ADR-080]] 과 같은 프레임).
+  //
+  // `useLayoutEffect` 인 것이 핵심이다([[ADR-080]] 과 같은 이유) — DOM 커밋 후 **페인트 전**에 돌아야
+  // 그 프레임이 그려지기 전에 오프셋이 유효해진다. `useEffect` 면 이미 늦다.
+  //
+  // 펼칠 때는 걸지 않는다(문서가 늘어날 때는 클램프가 없다). 마운트 시점도 마찬가지라 "펼침 → 접힘"
+  // 전이에서만 돌도록 직전 값을 ref 로 들고 간다.
+  const wasExpandedRef = useRef(false)
+  useLayoutEffect(() => {
+    const wasExpanded = wasExpandedRef.current
+    wasExpandedRef.current = isExpanded
+    if (isExpanded || !wasExpanded) return
+    clampDocumentScroll()
   }, [isExpanded])
 
   const { group } = props
