@@ -198,28 +198,37 @@ export function ThemeBackgroundPreview(): React.JSX.Element {
       </div>
 
       <div className="space-y-3 px-4 pt-3">
-        {background === undefined ? (
-          <div className="space-y-3 rounded-[14px] border border-border bg-surface p-4">
-            <p className="text-sm text-text">
-              지금 테마({theme})는 배경 이미지가 없어 조절할 대상이 없다. 배경을 가진 테마로 전환해야
-              한다.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {themesWithBackground.map((name) => (
-                <button
-                  key={name}
-                  type="button"
-                  onClick={() => {
-                    void selectTheme(name)
-                  }}
-                  className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-on-primary hover:bg-primary-hover"
-                >
-                  {name} 로 전환
-                </button>
-              ))}
-            </div>
+        {/* 전환 버튼은 **항상** 보인다. 배경 없는 테마에서만 띄우면 배경 가진 테마가 둘 이상일 때
+            (혼테일·검은마법사, [[ADR-089]]) 서로 건너갈 방법이 없어진다 — 조절할 대상이 있는
+            상태에서 다른 대상으로 옮기는 것이 이 도구의 일이다. */}
+        <div className="space-y-3 rounded-[14px] border border-border bg-surface p-4">
+          <p className="text-sm text-text">
+            {background === undefined
+              ? `지금 테마(${theme})는 배경 이미지가 없어 조절할 대상이 없다. 배경을 가진 테마로 전환해야 한다.`
+              : `지금 조절 중인 테마: ${theme}`}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {themesWithBackground.map((name) => (
+              <button
+                key={name}
+                type="button"
+                onClick={() => {
+                  void selectTheme(name)
+                }}
+                disabled={name === theme}
+                className={
+                  name === theme
+                    ? 'rounded-full bg-primary-tint px-4 py-2 text-sm font-semibold text-primary-ink'
+                    : 'rounded-full bg-primary px-4 py-2 text-sm font-semibold text-on-primary hover:bg-primary-hover'
+                }
+              >
+                {name}
+              </button>
+            ))}
           </div>
-        ) : (
+        </div>
+
+        {background !== undefined && (
           <Controls key={theme} theme={theme} background={background} />
         )}
 

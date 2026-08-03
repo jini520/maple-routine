@@ -125,7 +125,7 @@ export interface ThemeBackground {
  */
 export interface ThemeDefinition extends ThemeTokens {
   mode: ThemeMode
-  /** 없으면 배경은 `bg` 단색이다 — 지금 값을 가진 테마는 혼테일 하나다([[ADR-088]]) */
+  /** 없으면 배경은 `bg` 단색이다 — 지금 값을 가진 테마는 혼테일·검은마법사 둘이다([[ADR-088]], [[ADR-089]]) */
   background?: ThemeBackground
 }
 
