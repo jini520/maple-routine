@@ -33,16 +33,34 @@ const INTERSTITIAL_AD_IDS = {
 } as const
 
 /**
- * 플랫폼·빌드 모드에 맞는 광고 단위 ID. 네이티브가 아니면 `null` 이고, 그 `null` 이 이 어댑터
+ * 이 빌드가 테스트 광고를 써야 하는가.
+ *
+ * **`import.meta.env.DEV` 로는 안 된다.** Vite는 `vite build` 산출물에서 그 값을 항상 `false` 로
+ * 치환하고, Capacitor 앱은 개발 중에도 **언제나 빌드된 번들**로 돈다 — 즉 `DEV` 로 가르면
+ * 실기기 테스트 빌드에도 실 광고가 나가고, 자기 광고를 한 번 누르는 순간 무효 트래픽으로
+ * 계정이 위험해진다. `DEV` 가 `true` 인 곳은 브라우저(`npm run dev`)뿐인데 거기서는 플랫폼이
+ * `web` 이라 어댑터가 어차피 no-op 이다. 그래서 **빌드 시점 환경 변수**로 가른다.
+ *
+ * 베타 채널을 함께 보는 이유는 그 빌드가 정의상 스토어에 나가지 않기 때문이다(사이드로딩).
+ */
+export function shouldUseTestAds(env: {
+  VITE_ADS_TEST?: string
+  VITE_LIVE_UPDATE_CHANNEL?: string
+}): boolean {
+  return env.VITE_ADS_TEST === '1' || env.VITE_LIVE_UPDATE_CHANNEL === 'beta'
+}
+
+/**
+ * 플랫폼·빌드에 맞는 광고 단위 ID. 네이티브가 아니면 `null` 이고, 그 `null` 이 이 어댑터
  * 전체의 no-op 스위치 역할을 한다(웹에는 AdMob이 없다).
  *
  * 순수 함수로 빼둔 것은 테스트 때문이다 — 잘못된 ID는 화면에 아무 증상도 남기지 않는다.
  */
-export function resolveInterstitialAdId(platform: string, isDev: boolean): string | null {
+export function resolveInterstitialAdId(platform: string, useTestAds: boolean): string | null {
   if (platform !== 'android' && platform !== 'ios') {
     return null
   }
-  return INTERSTITIAL_AD_IDS[isDev ? 'test' : 'production'][platform]
+  return INTERSTITIAL_AD_IDS[useTestAds ? 'test' : 'production'][platform]
 }
 
 /**
@@ -52,7 +70,7 @@ export function resolveInterstitialAdId(platform: string, isDev: boolean): strin
 let isLoaded = false
 
 function adId(): string | null {
-  return resolveInterstitialAdId(Capacitor.getPlatform(), import.meta.env.DEV)
+  return resolveInterstitialAdId(Capacitor.getPlatform(), shouldUseTestAds(import.meta.env))
 }
 
 /** SDK 초기화. 실패해도 던지지 않는다 — 광고 때문에 부팅이 막히면 안 된다. */

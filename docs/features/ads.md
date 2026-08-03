@@ -68,8 +68,24 @@
 | Android 앱 ID(`~`) | `android/…/AndroidManifest.xml` |
 | iOS 앱 ID(`~`) | `ios/App/App/Info.plist` |
 
-**개발 빌드는 항상 Google 테스트 ID를 쓴다**(`import.meta.env.DEV` 기준). 실 ID로 자기 광고를
-누르면 무효 트래픽으로 **AdMob 계정이 정지**될 수 있고 되돌리기가 매우 어렵다.
+**테스트 광고 여부는 빌드 시점 환경 변수로 가른다.** 실 ID로 자기 광고를 누르면 무효 트래픽으로
+**AdMob 계정이 정지**될 수 있고 되돌리기가 매우 어렵다.
+
+| 명령 | 광고 |
+|---|---|
+| `npm run build` | **실 광고** — 스토어에 나가는 빌드 |
+| `npm run build:test-ads` | 테스트 광고 (`VITE_ADS_TEST=1`) |
+| `npm run build:beta` | 테스트 광고 — 베타는 정의상 스토어에 안 나간다 |
+
+> **실기기에서 테스트할 때는 반드시 `build:test-ads` 나 `build:beta` 로 빌드할 것.**
+> `npm run build` 로 만든 사이드로딩 빌드는 실 광고를 띄운다.
+
+⚠️ **`import.meta.env.DEV` 로는 가를 수 없다**(초안의 오류, 2026-08-04 수정). Vite는 `vite build`
+산출물에서 그 값을 **항상 `false` 로 치환**하고, Capacitor 앱은 개발 중에도 **언제나 빌드된
+번들**로 돈다 — 즉 `DEV` 로 가르면 실기기 테스트 빌드에도 실 광고가 나간다. `DEV` 가 `true` 인
+곳은 브라우저(`npm run dev`)뿐인데 거기서는 플랫폼이 `web` 이라 어댑터가 어차피 no-op 이라,
+그 분기는 아무것도 막지 못했다. 프로덕션 번들에서 `getPlatform(), !1` 로 치환된 것을 실제로
+확인해 잡았다.
 
 플랫폼별로 갈리는 이유는 AdMob이 **Android와 iOS를 별개 앱으로 등록**하기 때문이다 — 앱 ID도
 광고 단위 ID도 서로 다르고, 한쪽 ID를 양쪽에 쓰면 정책 위반이다.

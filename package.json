@@ -8,6 +8,7 @@
     "dev:beta": "VITE_LIVE_UPDATE_CHANNEL=beta vite",
     "build": "tsc -b && vite build",
     "build:beta": "VITE_LIVE_UPDATE_CHANNEL=beta npm run build",
+    "build:test-ads": "VITE_ADS_TEST=1 npm run build",
     "lint": "eslint .",
     "test": "vitest run",
     "preview": "vite preview",
