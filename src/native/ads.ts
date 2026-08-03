@@ -10,13 +10,40 @@ import { Capacitor } from '@capacitor/core'
  */
 
 /**
- * Google 공식 **테스트** 광고 단위 — 실 ID 발급은 사용자 작업이다(AdMob 앱 등록 필요).
- * 출시 전에 반드시 교체할 것. 테스트 ID는 AdMob 계정과 무관해 무효 트래픽 위험이 없다.
+ * 전면광고 단위 ID.
+ *
+ * **개발 빌드는 항상 테스트 ID를 쓴다** — 실 ID로 자기 광고를 누르면 무효 트래픽으로 AdMob 계정이
+ * 정지될 수 있고, 그건 되돌리기가 매우 어렵다. Google 테스트 ID는 계정과 무관해 그 위험이 없다.
+ *
+ * 플랫폼별로 갈리는 이유는 AdMob이 **Android와 iOS를 별개 앱으로 등록**하기 때문이다 — 앱 ID도
+ * 광고 단위 ID도 서로 다르고, 한쪽 ID를 양쪽에 쓰면 정책 위반이다.
+ *
+ * 앱 ID(`~` 가 들어가는 값)는 여기가 아니라 `AndroidManifest.xml` · `Info.plist` 에 있다.
+ * 세 곳이 흩어져 있어 `__tests__/ads.test.ts` 가 드리프트를 잡는다.
  */
-const TEST_INTERSTITIAL_AD_ID = {
-  android: 'ca-app-pub-3940256099942544/1033173712',
-  ios: 'ca-app-pub-3940256099942544/4411468910',
+const INTERSTITIAL_AD_IDS = {
+  test: {
+    android: 'ca-app-pub-3940256099942544/1033173712',
+    ios: 'ca-app-pub-3940256099942544/4411468910',
+  },
+  production: {
+    android: 'ca-app-pub-5278246170608284/7028964814',
+    ios: 'ca-app-pub-5278246170608284/9084282510',
+  },
 } as const
+
+/**
+ * 플랫폼·빌드 모드에 맞는 광고 단위 ID. 네이티브가 아니면 `null` 이고, 그 `null` 이 이 어댑터
+ * 전체의 no-op 스위치 역할을 한다(웹에는 AdMob이 없다).
+ *
+ * 순수 함수로 빼둔 것은 테스트 때문이다 — 잘못된 ID는 화면에 아무 증상도 남기지 않는다.
+ */
+export function resolveInterstitialAdId(platform: string, isDev: boolean): string | null {
+  if (platform !== 'android' && platform !== 'ios') {
+    return null
+  }
+  return INTERSTITIAL_AD_IDS[isDev ? 'test' : 'production'][platform]
+}
 
 /**
  * 플러그인이 "로드됐는지" 묻는 API를 주지 않는다 — `prepareInterstitial`/`showInterstitial`
@@ -25,10 +52,7 @@ const TEST_INTERSTITIAL_AD_ID = {
 let isLoaded = false
 
 function adId(): string | null {
-  const platform = Capacitor.getPlatform()
-  if (platform === 'android') return TEST_INTERSTITIAL_AD_ID.android
-  if (platform === 'ios') return TEST_INTERSTITIAL_AD_ID.ios
-  return null
+  return resolveInterstitialAdId(Capacitor.getPlatform(), import.meta.env.DEV)
 }
 
 /** SDK 초기화. 실패해도 던지지 않는다 — 광고 때문에 부팅이 막히면 안 된다. */
