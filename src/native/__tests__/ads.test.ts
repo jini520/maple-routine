@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { resolveInterstitialAdId } from '../ads'
+import { resolveInterstitialAdId, shouldUseTestAds } from '../ads'
 
 /**
  * 광고 ID는 **세 곳**에 흩어져 있고(어댑터 · AndroidManifest · Info.plist), 셋 중 하나만 틀려도
@@ -23,15 +23,41 @@ function read(relative: string): string {
 const MANIFEST = read('../../../android/app/src/main/AndroidManifest.xml')
 const INFO_PLIST = read('../../../ios/App/App/Info.plist')
 
+/**
+ * 테스트 광고 게이트는 **빌드 시점 환경 변수**로만 판정한다.
+ *
+ * `import.meta.env.DEV` 를 쓰던 초안은 실제로 아무것도 막지 못했다 — Vite가 `vite build`
+ * 산출물에서 그 값을 항상 `false` 로 치환하는데, Capacitor 앱은 개발 중에도 언제나 빌드된
+ * 번들로 돌기 때문이다(프로덕션 번들에서 `Tu(getPlatform(), !1)` 로 치환된 것을 확인).
+ * 즉 실기기 테스트 빌드에도 실 광고가 나가고 있었다.
+ */
+describe('shouldUseTestAds', () => {
+  it('기본 빌드는 실 광고를 쓴다', () => {
+    expect(shouldUseTestAds({})).toBe(false)
+  })
+
+  it('VITE_ADS_TEST=1 이면 테스트 광고를 쓴다', () => {
+    expect(shouldUseTestAds({ VITE_ADS_TEST: '1' })).toBe(true)
+  })
+
+  it('베타 채널 빌드는 테스트 광고를 쓴다 — 정의상 스토어에 나가지 않는다', () => {
+    expect(shouldUseTestAds({ VITE_LIVE_UPDATE_CHANNEL: 'beta' })).toBe(true)
+  })
+
+  it('production 채널 빌드는 실 광고를 쓴다', () => {
+    expect(shouldUseTestAds({ VITE_LIVE_UPDATE_CHANNEL: 'production' })).toBe(false)
+  })
+})
+
 describe('resolveInterstitialAdId', () => {
-  it('개발 빌드는 플랫폼과 무관하게 Google 테스트 ID를 쓴다', () => {
-    // 실 ID로 자기 광고를 누르면 무효 트래픽으로 계정이 정지된다 — 개발 빌드에 실 ID가
-    // 새는 것이 이 프로젝트에서 가장 비싼 실수라 게이트를 여기 둔다.
+  it('테스트 광고 빌드는 플랫폼과 무관하게 Google 테스트 ID를 쓴다', () => {
+    // 실 ID로 자기 광고를 누르면 무효 트래픽으로 계정이 정지된다 — 이 프로젝트에서 가장
+    // 비싼 실수라 게이트를 여기 둔다.
     expect(resolveInterstitialAdId('android', true)).toContain(GOOGLE_TEST_PUBLISHER)
     expect(resolveInterstitialAdId('ios', true)).toContain(GOOGLE_TEST_PUBLISHER)
   })
 
-  it('프로덕션 빌드는 실 광고 단위를 쓴다', () => {
+  it('스토어 빌드는 실 광고 단위를 쓴다', () => {
     expect(resolveInterstitialAdId('android', false)).toBe(`ca-app-pub-${PUBLISHER}/7028964814`)
     expect(resolveInterstitialAdId('ios', false)).toBe(`ca-app-pub-${PUBLISHER}/9084282510`)
   })
