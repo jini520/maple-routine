@@ -92,7 +92,32 @@ export interface ThemeTokens {
 }
 
 /**
- * `job-themes.json` 한 항목. 34토큰 + `mode`.
+ * 테마 배경 이미지 ([[ADR-088]] 결정 3).
+ *
+ * 크기·위치·어둡기·페이드를 **값으로** 갖는 이유는 그림을 고치는 대신 JSON 한 줄로 조절하기
+ * 위해서다 — "더 어둡게"는 `dim`, "아래쪽이 보이게"는 `position` 이다. 코드를 건드릴 일이
+ * 없어야 다른 테마에도 값 한 블록으로 붙는다.
+ */
+export interface ThemeBackground {
+  /** `src/assets/themes/<slug>.webp` 의 슬러그 — 번들 경로가 아니다 */
+  image: string
+  /** `background-size` (예: `cover`) */
+  size: string
+  /** `background-position` (예: `center`) */
+  position: string
+  /** 이미지 위에 덮는 검정 불투명도 0~1 — 그림 위에서 텍스트가 읽히게 한다 */
+  dim: number
+  /**
+   * 위쪽에서 `--color-bg` 로 페이드되는 높이.
+   *
+   * 헤더가 같은 그림을 이어 그리게 되면서(결정 5-1) 이음매가 사라져 혼테일은 `0px` 다.
+   * 다른 테마가 상단을 눌러 쓰고 싶으면 값으로 남아 있다.
+   */
+  fadeTop: string
+}
+
+/**
+ * `job-themes.json` 한 항목. 38토큰 + `mode` + 선택 `background`.
  *
  * `mode` 는 색이 아니라 **의도**다 — 상태바(`native/status-bar.ts`)·하단 내비 글리프
  * (`native/system-bars.ts`) 명암을 정한다. 자동 계산하지 않고 테마마다 사람이 명시한다
@@ -100,6 +125,8 @@ export interface ThemeTokens {
  */
 export interface ThemeDefinition extends ThemeTokens {
   mode: ThemeMode
+  /** 없으면 배경은 `bg` 단색이다 — 지금 값을 가진 테마는 혼테일 하나다([[ADR-088]]) */
+  background?: ThemeBackground
 }
 
 export type JobThemes = Record<ThemeName, ThemeDefinition>

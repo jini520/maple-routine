@@ -79,3 +79,73 @@ describe('index.css .media-scope 블록', () => {
     expect(SCOPE_BLOCK).toContain('--color-secondary-tint:')
   })
 })
+
+/**
+ * 테마 배경 이미지([[ADR-088]] 결정 4·5-1)는 **JS 가 값을 내고 CSS 가 읽는** 구조라 이름이
+ * 어긋나면 조용히 배경만 사라진다. 그리고 배경은 두 자리에 그려진다 — 페이지 전체를 덮는
+ * 백드롭과, sticky 헤더가 덮는 자리의 조각. 둘이 **같은 선언을 공유**하지 않으면 이어붙인
+ * 자리에서 어긋난다.
+ */
+describe('테마 배경 CSS', () => {
+  /**
+   * 선택자가 **정확히** 일치하는 규칙의 본문을 꺼낸다. 부분 일치로 찾으면
+   * `.theme-header-backdrop::before` 가 공유 규칙(`.theme-backdrop,\n.theme-header-backdrop::before`)
+   * 에도 걸려 개별 규칙과 뒤섞인다.
+   */
+  function ruleBody(selector: string): string {
+    // 주석을 먼저 걷는다 — 안 걷으면 규칙 앞 주석이 선택자 자리에 딸려 들어와 비교가 어긋난다.
+    const stripped = CSS.replace(/\/\*[\s\S]*?\*\//g, '')
+    for (const match of stripped.matchAll(/(?<selector>[^{}]+)\{(?<body>[^{}]*)\}/g)) {
+      if (match.groups!.selector.trim() === selector) return match.groups!.body
+    }
+    return ''
+  }
+
+  const SHARED = ruleBody('.theme-backdrop,\n.theme-header-backdrop::before')
+  const BACKDROP = ruleBody('.theme-backdrop')
+  const HEADER_WRAP = ruleBody('.theme-header-backdrop')
+  const HEADER_LAYER = ruleBody('.theme-header-backdrop::before')
+
+  it('백드롭과 헤더 조각이 배경 선언을 공유한다', () => {
+    expect(SHARED).not.toBe('')
+  })
+
+  it.each(['image', 'size', 'position', 'dim', 'fade-top'])(
+    '--theme-bg-%s 를 읽는다 — buildThemeCss 가 내는 값과 짝이다',
+    (name) => {
+      expect(SHARED).toContain(`var(--theme-bg-${name}`)
+    },
+  )
+
+  it('배경이 없는 테마를 위해 폴백을 둔다 — 값이 없으면 아무것도 안 그린다', () => {
+    expect(SHARED).toContain('var(--theme-bg-image, none)')
+  })
+
+  // 헤더 조각은 스크롤된 카드를 가려야 하므로 바탕색이 있어야 한다(결정 5-1).
+  it('바탕색이 테마 배경색이다', () => {
+    expect(SHARED).toContain('background-color: var(--color-bg)')
+  })
+
+  // 벽지 고정은 position: fixed 한 장으로 한다 — background-attachment: fixed 는 iOS
+  // WKWebView 에서 불안정하고, 이 앱은 같은 계열 결함을 [[ADR-077]]·[[ADR-085]] 에서 겪었다.
+  it('백드롭은 position: fixed 이고 background-attachment 를 쓰지 않는다', () => {
+    expect(BACKDROP).toContain('position: fixed')
+    // 선언으로 쓰지 않는다는 뜻 — 왜 안 쓰는지 적은 주석은 파일에 남아 있다.
+    expect(SHARED).not.toContain('background-attachment:')
+    expect(BACKDROP).not.toContain('background-attachment:')
+  })
+
+  it('헤더 조각 래퍼가 헤더 상자를 채우고 넘치는 부분을 잘라낸다', () => {
+    expect(HEADER_WRAP).toContain('position: absolute')
+    expect(HEADER_WRAP).toContain('inset: 0')
+    expect(HEADER_WRAP).toContain('overflow: hidden')
+  })
+
+  // 조각을 헤더 상자 기준으로 그리면 cover 배율이 달라져 백드롭과 어긋난다.
+  it('헤더 조각은 뷰포트 크기로 그린다', () => {
+    expect(HEADER_LAYER).toContain('width: 100vw')
+    expect(HEADER_LAYER).toContain('height: 100dvh')
+    expect(HEADER_LAYER).toContain('top: 0')
+    expect(HEADER_LAYER).toContain('left: 0')
+  })
+})

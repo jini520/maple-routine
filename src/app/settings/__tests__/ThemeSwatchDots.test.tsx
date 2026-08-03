@@ -40,7 +40,8 @@ describe('ThemeSwatchDots', () => {
 
     const dots = screen.getAllByTestId('theme-swatch-dot')
     expect(dots[0]).toHaveStyle({ backgroundColor: '#E86A16' })
-    expect(dots[1]).toHaveStyle({ backgroundColor: '#7B777A' })
+    // secondary 는 무채색 회색(#7B777A)에서 맵의 얼음 발광으로 바뀌었다([[ADR-088]] 결정 1).
+    expect(dots[1]).toHaveStyle({ backgroundColor: '#6BB4E8' })
     expect(dots[2]).toHaveStyle({ backgroundColor: '#936E68' })
   })
 })

@@ -5,6 +5,7 @@ import { useOnboardingStore } from './features/onboarding/store'
 import { useThemeStore } from './features/theme/store'
 import { useTrackingModeStore } from './features/tracking-mode/store'
 import { useDropEffectStore } from './features/drop-effect/store'
+import { getThemeDefinition } from './lib/theme-registry'
 import { consumePendingNotice } from './storage/pending-notice'
 import { useToastStore } from './features/toast/store'
 import { hideSplashScreen } from './native/splash-screen'
@@ -23,6 +24,7 @@ import { DailyQuestCardPreview } from './app/content-scheduler/DailyQuestCardPre
 import { BossPortraitSizePreview } from './app/boss-profit/BossPortraitSizePreview'
 import { UpdatePromptModal } from './app/UpdatePromptModal'
 import { LoadingPreview } from './app/LoadingPreview'
+import { ThemeBackgroundPreview } from './app/ThemeBackgroundPreview'
 import { ErrorBoundary } from './components/ErrorBoundary/ErrorBoundary'
 import { ProfitIcon } from './components/ProfitIcon/ProfitIcon'
 import { ToastStack } from './components/Toast/ToastStack'
@@ -104,7 +106,7 @@ function BottomTabBar(): React.JSX.Element {
 // AppShell은 라우터와 분리해 MemoryRouter로도 테스트할 수 있게 한다.
 export function AppShell(): React.JSX.Element {
   const { status, restoreFromStorage } = useOnboardingStore()
-  const { restoreFromStorage: restoreThemeFromStorage } = useThemeStore()
+  const { theme, restoreFromStorage: restoreThemeFromStorage } = useThemeStore()
   const { restoreFromStorage: restoreTrackingModeFromStorage } = useTrackingModeStore()
   const { restoreFromStorage: restoreDropEffectFromStorage } = useDropEffectStore()
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false)
@@ -182,8 +184,21 @@ export function AppShell(): React.JSX.Element {
 
   const isCompleted = status === 'completed'
 
+  // 테마 배경 이미지(ADR-088) — 값을 가진 테마에서만 백드롭 한 장을 깐다. 색만 있는 테마는
+  // DOM 자체가 늘지 않는다. 실제 그림은 index.css의 .theme-backdrop이 --theme-bg-*를 읽어 그린다.
+  //
+  // 배경이 있을 땐 루트에서 bg-bg를 뺀다 — 백드롭의 z-index:-1은 부모가 스태킹 컨텍스트일 때만
+  // 부모 배경 위에 오는데 이 div는 아니라서, bg-bg를 칠하면 그 불투명 배경이 백드롭 위에 그려져
+  // 이미지가 통째로 사라진다(브라우저 확인, 2026-08-03). 바탕색은 body가 같은 값으로 이미 칠한다.
+  const hasThemeBackground = getThemeDefinition(theme).background !== undefined
+
   return (
-    <div className="min-h-screen bg-bg text-text pt-[var(--sa-top)]">
+    <div
+      className={`min-h-screen text-text pt-[var(--sa-top)]${hasThemeBackground ? '' : ' bg-bg'}`}
+    >
+      {hasThemeBackground && (
+        <div className="theme-backdrop" data-testid="theme-backdrop" aria-hidden="true" />
+      )}
       <div className={isCompleted ? 'pb-[calc(4rem+var(--sa-bottom))]' : undefined}>
         <Routes>
           <Route path="/" element={<Navigate to={isCompleted ? '/content' : '/onboarding'} replace />} />
@@ -237,6 +252,10 @@ export function AppShell(): React.JSX.Element {
           {/* 임시 — 로딩 표현 선택지 비교용 디버그 라우트([[ADR-061]]). 온보딩/API 데이터 없이 접근 가능.
               선택이 확정되면 이 라우트와 LoadingPreview.tsx를 삭제할 것 */}
           <Route path="/debug/loading" element={<LoadingPreview />} />
+          {/* 임시 — 테마 배경 이미지(ADR-088) 크기·위치·어둡기 조정용 디버그 라우트. 온보딩/API 데이터 없이
+              접근 가능. 조정이 끝나면 이 라우트와 ThemeBackgroundPreview.tsx를 삭제하고, 확정 값은
+              job-themes.json의 background 블록에 반영할 것 */}
+          <Route path="/debug/theme-background" element={<ThemeBackgroundPreview />} />
         </Routes>
       </div>
       {isCompleted && !isKeyboardVisible && <BottomTabBar />}

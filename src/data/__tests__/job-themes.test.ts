@@ -28,11 +28,29 @@ describe('job-themes.json — 스키마', () => {
     }
   })
 
-  it.each(NAMES)('%s: 토큰 외에 mode 만 더 갖는다', (name) => {
+  // 색이 아닌 필드는 둘뿐이다 — 필수 `mode` 와 선택 `background`([[ADR-088]] 결정 3).
+  it.each(NAMES)('%s: 토큰 외에 mode 와 선택 background 만 더 갖는다', (name) => {
     const extra = Object.keys(JOB_THEMES[name]).filter(
       (key) => !(THEME_TOKEN_KEYS as readonly string[]).includes(key),
     )
-    expect(extra).toEqual(['mode'])
+    expect(extra).toContain('mode')
+    expect(extra.filter((key) => key !== 'mode' && key !== 'background')).toEqual([])
+  })
+
+  /**
+   * 배경 이미지는 **그림을 고치는 대신 값을 고치는** 구조라(크기·위치·어둡기·페이드),
+   * 필드가 빠지면 CSS 폴백으로 조용히 흘러 조절이 안 먹는 것처럼 보인다. 다섯 필드를 다 요구한다.
+   */
+  it.each(NAMES)('%s: background 가 있으면 다섯 필드를 다 갖는다', (name) => {
+    const background = JOB_THEMES[name].background
+    if (background === undefined) return
+
+    expect(typeof background.image).toBe('string')
+    expect(typeof background.size).toBe('string')
+    expect(typeof background.position).toBe('string')
+    expect(typeof background.fadeTop).toBe('string')
+    expect(background.dim).toBeGreaterThanOrEqual(0)
+    expect(background.dim).toBeLessThanOrEqual(1)
   })
 
   it.each(NAMES)('%s: mode 가 light 또는 dark 다', (name) => {
