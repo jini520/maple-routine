@@ -387,6 +387,85 @@ describe('AppShell', () => {
     })
   })
 
+  /**
+   * 테마 배경 이미지([[ADR-088]] 결정 4) — 값을 가진 테마에서만 백드롭을 렌더한다.
+   * 나머지 네 테마에는 DOM 자체가 늘지 않아야 한다.
+   */
+  describe('테마 배경 백드롭', () => {
+    // vi.clearAllMocks() 는 반환값을 지우지 않는다 — 바꾼 테마가 다음 테스트로 새지 않게 되돌린다.
+    afterEach(() => {
+      mockedUseThemeStore.mockReturnValue({
+        theme: '렌',
+        restoreFromStorage: vi.fn(),
+        selectTheme: vi.fn(),
+      })
+    })
+
+    it('배경이 없는 테마에서는 백드롭을 렌더하지 않는다', () => {
+      mockedUseThemeStore.mockReturnValue({
+        theme: '렌',
+        restoreFromStorage: vi.fn(),
+        selectTheme: vi.fn(),
+      })
+      mockStore({ status: 'completed', selectedAccountId: 'account-1' })
+
+      renderAt('/content')
+
+      expect(screen.queryByTestId('theme-backdrop')).not.toBeInTheDocument()
+    })
+
+    it('배경이 있는 테마에서는 백드롭을 렌더한다', () => {
+      mockedUseThemeStore.mockReturnValue({
+        theme: '혼테일',
+        restoreFromStorage: vi.fn(),
+        selectTheme: vi.fn(),
+      })
+      mockStore({ status: 'completed', selectedAccountId: 'account-1' })
+
+      renderAt('/content')
+
+      expect(screen.getByTestId('theme-backdrop')).toBeInTheDocument()
+    })
+
+    /**
+     * 백드롭은 `z-index: -1` 인데, **음수 z-index 는 부모가 스태킹 컨텍스트를 만들 때만** 부모
+     * 배경 위에 온다. 앱 루트(`div.min-h-screen`)는 스태킹 컨텍스트가 아니라서, 루트가 `bg-bg` 로
+     * 칠하면 그 배경이 백드롭 **위**에 그려져 이미지가 통째로 사라진다(브라우저에서 실제로 확인,
+     * 2026-08-03). 바탕색은 `body` 가 이미 같은 값으로 칠하므로 루트에서 뺀다.
+     */
+    it('배경이 있는 테마에서는 루트가 배경색을 칠하지 않는다 — 칠하면 백드롭이 그 밑에 깔린다', () => {
+      mockedUseThemeStore.mockReturnValue({
+        theme: '혼테일',
+        restoreFromStorage: vi.fn(),
+        selectTheme: vi.fn(),
+      })
+      mockStore({ status: 'completed', selectedAccountId: 'account-1' })
+
+      renderAt('/content')
+
+      const root = screen.getByTestId('theme-backdrop').parentElement
+      expect(root).not.toBeNull()
+      expect(root!.className).not.toContain('bg-bg')
+    })
+
+    it('배경이 없는 테마에서는 루트가 그대로 bg-bg 를 칠한다', () => {
+      mockedUseThemeStore.mockReturnValue({
+        theme: '렌',
+        restoreFromStorage: vi.fn(),
+        selectTheme: vi.fn(),
+      })
+      mockStore({ status: 'completed', selectedAccountId: 'account-1' })
+
+      const { container } = render(
+        <MemoryRouter initialEntries={['/content']}>
+          <AppShell />
+        </MemoryRouter>,
+      )
+
+      expect(container.querySelector('div.min-h-screen')?.className).toContain('bg-bg')
+    })
+  })
+
   // ADR-050: iOS WKWebView가 두 손가락 동시 탭에서 드물게 합성하는 클릭은 React 이벤트 시스템을
   // 타지 않아 NavLink의 preventDefault가 걸리지 않는다. 그대로 두면 <a href>의 기본 동작이 실행돼
   // 문서 전체가 다시 로드되고(2026-07-28 실기기 계측: click → PAGEHIDE), 그 리로드가

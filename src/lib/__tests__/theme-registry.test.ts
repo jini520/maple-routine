@@ -61,6 +61,48 @@ describe('buildThemeCss', () => {
     expect(buildThemeCss(getThemeDefinition('머쉬맘'))).not.toContain('--color-mode')
   })
 
+  /**
+   * 배경 이미지는 **선택 필드**다([[ADR-088]] 결정 3). 값을 가진 테마에서만 `--theme-bg-*` 가
+   * 나가고, 없는 테마에서는 선언 자체가 없어야 한다 — 그래야 CSS 쪽 기본값(`none`)이 살아
+   * 배경 없는 테마의 그림이 한 픽셀도 안 바뀐다.
+   */
+  describe('배경 이미지', () => {
+    const withBackground = NAMES.filter((name) => getThemeDefinition(name).background !== undefined)
+    const withoutBackground = NAMES.filter(
+      (name) => getThemeDefinition(name).background === undefined,
+    )
+
+    it('배경을 가진 테마가 하나는 있다', () => {
+      expect(withBackground.length).toBeGreaterThan(0)
+    })
+
+    it.each(withBackground)('%s: 이미지·크기·위치·어둡기·페이드를 커스텀 프로퍼티로 낸다', (name) => {
+      const theme = getThemeDefinition(name)
+      const css = buildThemeCss(theme)
+
+      expect(css).toMatch(/--theme-bg-image: url\(.+\);/)
+      expect(css).toContain(`--theme-bg-size: ${theme.background?.size};`)
+      expect(css).toContain(`--theme-bg-position: ${theme.background?.position};`)
+      expect(css).toContain(`--theme-bg-dim: ${theme.background?.dim};`)
+      expect(css).toContain(`--theme-bg-fade-top: ${theme.background?.fadeTop};`)
+    })
+
+    it.each(withoutBackground)('%s: 배경 프로퍼티를 아예 내지 않는다', (name) => {
+      expect(buildThemeCss(getThemeDefinition(name))).not.toContain('--theme-bg-')
+    })
+
+    it('background 는 색이 아니므로 --color-background 로 새지 않는다', () => {
+      expect(buildThemeCss(getThemeDefinition(withBackground[0]))).not.toContain('--color-background')
+    })
+
+    it('슬러그에 해당하는 파일이 없으면 배경 프로퍼티를 내지 않는다', () => {
+      const theme = getThemeDefinition(withBackground[0])
+      const broken = { ...theme, background: { ...theme.background!, image: '없는파일' } }
+
+      expect(buildThemeCss(broken)).not.toContain('--theme-bg-')
+    })
+  })
+
   // ADR-064 결정 5 — 일러스트 카드 안은 기준 표면이 media-surface 로 바뀐다.
   describe('미디어 스코프', () => {
     it('.media-scope 블록을 함께 낸다', () => {

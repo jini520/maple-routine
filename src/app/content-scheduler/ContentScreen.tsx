@@ -29,6 +29,7 @@ import { categorizeContentEntries, WEEKLY_CATEGORY_ORDER } from '../../lib/conte
 import { useContentSchedulerStore } from '../../features/content-scheduler/store'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { MEDIA_TEXT_SHADOW } from '../../lib/media-card'
+import { ThemeHeaderBackdrop } from '../../components/ThemeHeaderBackdrop/ThemeHeaderBackdrop'
 
 type ContentTab = 'daily' | 'weekly'
 
@@ -945,6 +946,8 @@ export function ContentScreen(): React.JSX.Element {
           텍스트만 내려 보이게 하고, 바깥 AppShell의 padding-top과 중복되지 않도록 위
           -mt-[var(--sa-top)]로 상쇄한다. z-10으로 항상 위에 그려지게 한다. */}
       <div className="sticky top-0 z-10 bg-bg px-4 pt-[calc(1rem+var(--sa-top))] pb-2">
+        {/* ADR-088 결정 5-1: 헤더 자리의 테마 배경 조각(배경 없는 테마에선 렌더 안 됨) */}
+        <ThemeHeaderBackdrop />
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h1 className="text-lg font-semibold text-text">컨텐츠 스케줄러</h1>

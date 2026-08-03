@@ -30,7 +30,7 @@ docs/
 | 물욕 아이템 드랍 | [features/item-drop.md](./features/item-drop.md) | `app/item-drop/` · `features/item-drop/` · `lib/item-icons` · `storage/boss-drop-records` · 전 기간 히스토리: `app/boss-profit/DropHistoryScreen`(`/profit/drops`) · `features/boss-profit/drop-history-store` · `lib/drop-history` |
 | 사냥 타이머 | [features/hunting-timer.md](./features/hunting-timer.md) | `app/hunting-timer/` · `features/hunting-timer/` · `native/hunting-timer` |
 | 설정 | [features/settings.md](./features/settings.md) | `app/settings/` · `features/settings/` · `storage/api-key` · `features/tracking-mode` |
-| 테마 시스템 | [features/theme.md](./features/theme.md) | `features/theme/` · `storage/theme` · `src/index.css` · `src/data/job-themes.json` · `lib/theme-derive` · `lib/color` · `scripts/theme-gen.ts` |
+| 테마 시스템 | [features/theme.md](./features/theme.md) | `features/theme/` · `storage/theme` · `src/index.css` · `src/data/job-themes.json` · `lib/theme-derive` · `lib/theme-backgrounds` · `src/assets/themes/` · `lib/color` · `scripts/theme-gen.ts` |
 | Live Update (OTA) | [features/live-update.md](./features/live-update.md) | `native/live-update.ts` · `features/live-update/` · `native/network` |
 | 스플래시 | [features/splash.md](./features/splash.md) | `android/…/SplashActivity` · iOS 스토리보드 · `capacitor.config.ts` · `index.html` |
 

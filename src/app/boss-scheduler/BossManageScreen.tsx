@@ -17,6 +17,7 @@ import { partySizeKey, useBossSchedulerStore } from '../../features/boss-schedul
 import { useToastStore } from '../../features/toast/store'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import type { BossDifficulty } from '../../types'
+import { ThemeHeaderBackdrop } from '../../components/ThemeHeaderBackdrop/ThemeHeaderBackdrop'
 
 type BossTab = 'weekly' | 'monthly'
 
@@ -270,6 +271,8 @@ export function BossManageScreen(): React.JSX.Element {
           화면과 동일 패턴(UI_GUIDE "스크롤 영역"). AppShell의 pt-[--sa-top]을 -mt로 상쇄하고
           pt-calc로 노치까지 bg-bg가 덮게 한다. */}
       <div className="sticky top-0 z-10 bg-bg px-4 pt-[calc(1rem+var(--sa-top))] pb-2">
+        {/* ADR-088 결정 5-1: 헤더 자리의 테마 배경 조각(배경 없는 테마에선 렌더 안 됨) */}
+        <ThemeHeaderBackdrop />
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">

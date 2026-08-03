@@ -10,8 +10,9 @@
  */
 
 import jobThemesData from '../data/job-themes.json'
-import type { JobThemes, ThemeDefinition, ThemeName } from '../types/theme'
+import type { JobThemes, ThemeBackground, ThemeDefinition, ThemeName } from '../types/theme'
 import { deriveMediaScope } from './theme-derive'
+import { getThemeBackgroundUrl } from './theme-backgrounds'
 
 const JOB_THEMES = jobThemesData as JobThemes
 
@@ -50,6 +51,28 @@ function declarations(entries: Readonly<Record<string, string>>, indent: string)
 }
 
 /**
+ * 배경 이미지 프로퍼티 ([[ADR-088]] 결정 3).
+ *
+ * 배경이 없는 테마는 **한 줄도 내지 않는다** — CSS 쪽 기본값(`--theme-bg-image` 미선언 →
+ * `none`)이 그대로 살아 다른 테마의 그림이 안 바뀐다. 슬러그에 해당하는 파일이 없을 때도
+ * 마찬가지다(에셋만 사라지고 테마는 산다).
+ */
+function backgroundDeclarations(background: ThemeBackground | undefined): string[] {
+  if (background === undefined) return []
+
+  const url = getThemeBackgroundUrl(background.image)
+  if (url === null) return []
+
+  return [
+    `  --theme-bg-image: url("${url}");`,
+    `  --theme-bg-size: ${background.size};`,
+    `  --theme-bg-position: ${background.position};`,
+    `  --theme-bg-dim: ${background.dim};`,
+    `  --theme-bg-fade-top: ${background.fadeTop};`,
+  ]
+}
+
+/**
  * 한 테마의 `:root` + `.media-scope` 규칙을 만든다.
  *
  * `.media-scope` 안에서 표면·텍스트를 `media-*` 로 다시 묶고 accent 틴트·잉크도 **다시 선언**한다.
@@ -58,14 +81,15 @@ function declarations(entries: Readonly<Record<string, string>>, indent: string)
  * AA 미달(레테 3.88:1)이 정확히 그 문제였다([[ADR-064]] 결정 5).
  */
 export function buildThemeCss(theme: ThemeDefinition): string {
-  // mode 는 색이 아니라 의도라 커스텀 프로퍼티로 내보내지 않는다.
-  const { mode, ...tokens } = theme
+  // mode 는 색이 아니라 의도라, background 는 색이 아니라 에셋이라 --color-* 로 내보내지 않는다.
+  const { mode, background, ...tokens } = theme
   void mode
   const scope: Readonly<Record<string, string>> = deriveMediaScope(theme, theme.mode)
 
   return [
     ':root {',
     declarations(tokens, '  '),
+    ...backgroundDeclarations(background),
     '}',
     '.media-scope {',
     declarations(scope, '  '),

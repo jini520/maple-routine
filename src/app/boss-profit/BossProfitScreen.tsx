@@ -62,6 +62,7 @@ import { worldEmblemUrl } from '../../lib/world-emblem'
 import type { BossCycle } from '../../types'
 import type { RecordedDrop } from '../../types/drops'
 import { BossDropSheet } from './BossDropSheet'
+import { ThemeHeaderBackdrop } from '../../components/ThemeHeaderBackdrop/ThemeHeaderBackdrop'
 
 // components/CharacterTrackingPicker와 동일한 얼굴 크롭 기법(ADR-015)을 이 화면의 32px
 // 아바타 슬롯 크기에 맞춰 재사용한다 — 이 프로젝트는 화면마다 UI를 그대로 복제하는 관례를
@@ -1513,6 +1514,8 @@ export function BossProfitScreen(): React.JSX.Element {
           루트(`space-y-4`) **바깥**에 둔다 — 흐름과 무관한 것을 흐름 컨테이너에 넣으면 그 유틸리티의
           `margin-top` 이 spacer 위에 얹혀 목록이 16px 더 내려간다([[ADR-077]] 결정 3과 같은 이유). */}
       <div ref={stickyHeaderRef} className="fixed inset-x-0 top-0 z-10 bg-bg px-4 pt-[calc(1rem+var(--sa-top))] pb-2">
+        {/* ADR-088 결정 5-1: 헤더 자리의 테마 배경 조각(배경 없는 테마에선 렌더 안 됨) */}
+        <ThemeHeaderBackdrop />
         <div className="space-y-4">
           {/* 히스토리 진입점([[ADR-071]] 결정 7, 이슈 #54) — 이 화면의 고가 드롭 강조는 전부 "지금 보고
               있는 기간"에 갇혀 있고, 전 기간을 가로지르는 목록은 저쪽이 담당한다.
