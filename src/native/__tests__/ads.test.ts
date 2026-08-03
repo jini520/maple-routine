@@ -76,3 +76,31 @@ describe('네이티브 앱 ID 설정', () => {
     expect(android).not.toBe(ios)
   })
 })
+
+describe('iOS 스토어 제출 설정', () => {
+  it('SKAdNetwork 목록에 Google 식별자가 있다', () => {
+    // Google Mobile Ads SDK 필수 항목이다. 빠져도 앱은 멀쩡히 돌지만 iOS 기여 분석이
+    // 안 돼 수익이 낮게 잡힌다 — 또 하나의 "증상 없는" 실패라 여기서 잡는다.
+    expect(INFO_PLIST).toContain('cstr6suwn9.skadnetwork')
+  })
+
+  it('SKAdNetwork 식별자를 40개 이상 선언한다', () => {
+    const count = [...INFO_PLIST.matchAll(/<string>[a-z0-9]+\.skadnetwork<\/string>/g)].length
+    expect(count).toBeGreaterThanOrEqual(40)
+  })
+
+  it('ATT 문구를 넣지 않는다 — 추적 권한을 요청하지 않기로 했다', () => {
+    // 2026-08-04 결정: 추적 권한을 요청하지 않고 비개인화 광고만 받는다.
+    // 이 키가 들어왔다는 건 누군가 ATT를 붙였다는 뜻이고, 그렇다면 프롬프트 표시 시점·문구가
+    // Apple 규칙을 지키는지 다시 봐야 한다. 조용히 늘어나지 않게 여기서 막는다.
+    //
+    // `<key>` 요소로 검사하는 이유 — plist 주석이 이 이름을 언급하기 때문이다. 단순 부분
+    // 문자열로 보면 "왜 이 키를 안 넣었는지" 설명하는 주석 자체가 테스트를 깨뜨린다.
+    expect(INFO_PLIST).not.toContain('<key>NSUserTrackingUsageDescription</key>')
+  })
+
+  it('수출 규정 준수 키를 선언한다', () => {
+    // 없으면 빌드를 올릴 때마다 App Store Connect가 같은 질문을 반복한다.
+    expect(INFO_PLIST).toContain('<key>ITSAppUsesNonExemptEncryption</key>')
+  })
+})
