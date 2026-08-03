@@ -99,6 +99,14 @@ export function SettingsScreen(): React.JSX.Element {
         <p className="text-xs text-text-disabled">v{displayedVersion}</p>
         <p className="text-xs text-text-disabled">© {new Date().getFullYear()} 메이플 루틴</p>
         <p className="text-xs text-text-disabled">Data based on NEXON Open API</p>
+        {/*
+          비제휴 고지는 약관이 요구하는 것이 아니라 동종 서비스(maple.gg·chuchu.gg·maplescouter)의
+          공통 관행이다 — 출처 표기만 있으면 넥슨 공식 서비스로 오인될 여지가 남는다. 문구도 그 3사와
+          같은 영문 형태로 맞춘다(maple.gg "Maple.GG is not associated with NEXON Korea").
+        */}
+        <p className="text-xs text-text-disabled">
+          Maple Routine is not associated with NEXON Korea
+        </p>
       </div>
     </div>
   )

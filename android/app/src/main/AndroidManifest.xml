@@ -33,9 +33,17 @@
             android:grantUriPermissions="true">
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
         </provider>
+        <!-- AdMob 앱 ID (ADR-090). 이 meta-data가 없으면 Google Mobile Ads SDK가 초기화 시점에
+             앱을 크래시시킨다 — 광고 단위 ID와 다른 값이고 매니페스트에 반드시 있어야 한다.
+             지금 값은 Google 공식 **샘플 앱 ID**이며, 출시 전 실제 AdMob 앱 ID로 교체할 것. -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-3940256099942544~3347511713" />
     </application>
 
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- 광고 ID 권한 (ADR-090). Play Console 데이터 안전 섹션에도 광고 ID 수집을 신고해야 한다. -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
 </manifest>

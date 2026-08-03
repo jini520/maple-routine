@@ -19,7 +19,9 @@
 - **데이터 관리(캐시 데이터 삭제)**: 지울 데이터를 **2그룹 중 선택**해서 지운다([[ADR-058]]) — "일반 데이터"(동기화 캐시·추적 목록·수동 추적 항목·공유 진행 원장·파티 설정)와 "보스 수익·드롭 기록"(복구 불가). 인증·사용자 설정 5개(`KEEP_KEYS`)는 어떤 선택에서도 보존되므로 이 기능으로 온보딩으로 돌아가지 않는다 — 연결 해제는 별도. 범위의 정확한 정의와 그룹 경계의 근거는 [../persistence/lifecycle.md](../persistence/lifecycle.md).
 - **테마 선택**: 레테/렌/머쉬맘/혼테일 중 선택 → 즉시 반영. 상세 [theme.md](./theme.md).
 - **스케줄 관리 방법(트래킹 모드)**: 자동/수동 전역 토글([[ADR-035]]). 상세는 아래 UI.
-- **footer 표기**(확정 2026-07-13): 화면 맨 아래에 앱 버전(`package.json`)·카피라이트("© {연도} 메이플 루틴")·이용약관 제6조④ 요구 영문 문구 "Data based on NEXON Open API"(원문 그대로, 의역 금지). 앱 전역 footer는 만들지 않음.
+- **footer 표기**(확정 2026-07-13, 비제휴 고지 추가 2026-08-03): 화면 맨 아래에 앱 버전(`package.json`)·카피라이트("© {연도} 메이플 루틴")·이용약관 제6조④ 요구 영문 문구 "Data based on NEXON Open API"(원문 그대로, 의역 금지)·**비제휴 고지 "Maple Routine is not associated with NEXON Korea"**. 앱 전역 footer는 만들지 않음.
+  - 비제휴 고지는 약관이 **요구하는 것이 아니라** 동종 서비스의 공통 관행을 따른 것이다(2026-08-03 조사) — maple.gg("Maple.GG is not associated with NEXON Korea")·chuchu.gg("This site is not associated with NEXON Korea")·maplescouter.com("Maplescouter is not associated with NEXON Korea and does not provide any warranty") 셋 다 출처 표기와 **함께** 비제휴 고지를 단다. 출처 표기만 있으면 넥슨 공식 서비스로 오인될 여지가 남는다.
+  - **문구도 3사와 같은 영문 형태로 맞춘다**(사용자 결정 2026-08-04, 초안의 한글안 폐기). 같은 문구를 안내 사이트 footer(`site/template.html`)와 `PRIVACY.md` 말미도 공유한다.
 
 ## UI
 

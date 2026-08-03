@@ -4,6 +4,10 @@ export const STORAGE_KEYS = {
   theme: 'theme',
   trackingMode: 'trackingMode',
   dropEffect: 'dropEffect',
+  // ADR-090: 전면광고 마지막 노출 시각. 앱 재시작을 넘어 간격을 재야 해서 영속 저장하지만,
+  // cache-data.ts의 KEEP_KEYS에는 **넣지 않는다** — 지워져도 광고가 한 번 더 뜰 뿐이고
+  // 보존해야 할 사용자 자산이 아니다.
+  lastAdShownAt: 'lastAdShownAt',
 } as const
 
 export function schedulerCacheKey(ocid: string): string {

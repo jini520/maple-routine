@@ -49,6 +49,11 @@ vi.mock('../native/system-bars', () => ({
   refreshSafeAreaInsets: vi.fn().mockResolvedValue(undefined),
 }))
 
+vi.mock('../features/ads/tab-switch-ad', () => ({
+  startAds: vi.fn().mockResolvedValue(undefined),
+  maybeShowTabSwitchAd: vi.fn().mockResolvedValue(undefined),
+}))
+
 vi.mock('../native/keyboard', () => ({
   addKeyboardVisibilityListener: vi.fn(async (onChange: (visible: boolean) => void) => {
     keyboardListeners.push(onChange)
