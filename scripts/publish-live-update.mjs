@@ -33,6 +33,19 @@ export function resolveBuildScript(isBeta) {
   return isBeta ? 'build:beta' : 'build'
 }
 
+/**
+ * 릴리스를 **처음 만들 때** 쓰는 제목·플래그.
+ *
+ * production 채널까지 `--prerelease` 로 만들던 결함을 고친 자리다 — 두 채널이 같은 저장소의
+ * 고정 태그라, production 이 prerelease 로 남으면 GitHub 릴리스 목록에서 어느 쪽이 정식인지
+ * 구분되지 않는다. 제목도 채널별로 갈라 같은 이유를 해소한다.
+ */
+export function resolveReleaseCreateArgs(isBeta) {
+  return isBeta
+    ? { title: 'Live Update bundles (beta)', flags: ['--prerelease'] }
+    : { title: 'Live Update bundles (production)', flags: [] }
+}
+
 export function parseArgs(argv) {
   const isBeta = argv.includes('--beta')
   // --min-native <x.y.z>: 이 번들을 적용하려면 필요한 최소 네이티브 앱 버전. 있으면 매니페스트에 실어,
@@ -80,14 +93,15 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   try {
     execFileSync('gh', ['release', 'view', RELEASE_TAG, '--repo', REPO], { stdio: 'ignore' })
   } catch {
+    const { title, flags } = resolveReleaseCreateArgs(isBeta)
     execFileSync(
       'gh',
       [
         'release', 'create', RELEASE_TAG,
         '--repo', REPO,
-        '--title', 'Live Update bundles',
+        '--title', title,
         '--notes', 'OTA 번들 저장용 릴리스입니다. 앱이 자동으로 참조하며, 직접 다운로드할 필요는 없습니다.',
-        '--prerelease',
+        ...flags,
       ],
       { cwd: root, stdio: 'inherit' },
     )

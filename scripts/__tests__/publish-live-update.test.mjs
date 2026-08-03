@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { parseArgs, resolveBuildScript, resolveReleaseTag } from '../publish-live-update.mjs'
+import {
+  parseArgs,
+  resolveBuildScript,
+  resolveReleaseCreateArgs,
+  resolveReleaseTag,
+} from '../publish-live-update.mjs'
 
 describe('resolveReleaseTag', () => {
   it('isBeta가 true면 live-update-beta를 반환한다', () => {
@@ -18,6 +23,23 @@ describe('resolveBuildScript', () => {
 
   it('isBeta가 false면 build를 반환한다', () => {
     expect(resolveBuildScript(false)).toBe('build')
+  })
+})
+
+// production 채널까지 --prerelease로 만들던 결함을 고친 자리다(2026-08-04). 두 채널이 같은
+// 저장소의 고정 태그라, production이 prerelease로 남으면 GitHub 목록에서 어느 쪽이 정식인지
+// 구분되지 않는다.
+describe('resolveReleaseCreateArgs', () => {
+  it('production 채널은 prerelease가 아니다', () => {
+    expect(resolveReleaseCreateArgs(false).flags).not.toContain('--prerelease')
+  })
+
+  it('베타 채널은 prerelease다', () => {
+    expect(resolveReleaseCreateArgs(true).flags).toContain('--prerelease')
+  })
+
+  it('채널마다 제목이 다르다 — 목록에서 구분되어야 한다', () => {
+    expect(resolveReleaseCreateArgs(false).title).not.toBe(resolveReleaseCreateArgs(true).title)
   })
 })
 
