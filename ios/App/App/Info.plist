@@ -4,6 +4,10 @@
 <dict>
     <key>CAPACITOR_DEBUG</key>
 	<string>$(CAPACITOR_DEBUG)</string>
+	<!-- AdMob 앱 ID (ADR-090). 없으면 Google Mobile Ads SDK가 초기화 시점에 크래시한다.
+	     광고 단위 ID와는 다른 값이고, 지금은 Google 공식 샘플 앱 ID다 — 출시 전 교체할 것. -->
+	<key>GADApplicationIdentifier</key>
+	<string>ca-app-pub-3940256099942544~3347511713</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>ko</string>
 	<key>CFBundleDisplayName</key>

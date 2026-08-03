@@ -11,6 +11,7 @@ import { useToastStore } from './features/toast/store'
 import { hideSplashScreen } from './native/splash-screen'
 import { refreshSafeAreaInsets } from './native/system-bars'
 import { addKeyboardVisibilityListener } from './native/keyboard'
+import { maybeShowTabSwitchAd, startAds } from './features/ads/tab-switch-ad'
 import { OnboardingScreen } from './app/onboarding/OnboardingScreen'
 import { ContentScreen } from './app/content-scheduler/ContentScreen'
 import { ContentManageScreen } from './app/content-scheduler/ContentManageScreen'
@@ -69,7 +70,19 @@ function BottomTabBar(): React.JSX.Element {
         return
       }
       event.preventDefault()
+
+      // 같은 탭을 다시 누른 것은 전환이 아니다(ADR-090). react-router의 location 훅 대신
+      // window.location을 읽는 이유는 이 리스너가 React 밖의 DOM 리스너이기 때문이다 —
+      // 훅을 걸면 이동마다 재렌더·리스너 재등록이 일어난다.
+      const isTabChange = window.location.pathname !== href
+
       navigate(href)
+
+      // 광고는 이동을 **지연시키지 않는다** — navigate 뒤에 붙여 화면 전환이 먼저 일어나게 하고,
+      // 준비된 광고가 없으면 안쪽에서 조용히 건너뛴다(ADR-090 결정 3).
+      if (isTabChange) {
+        void maybeShowTabSwitchAd()
+      }
     }
 
     nav.addEventListener('click', interceptClick, true)
@@ -129,6 +142,12 @@ export function AppShell(): React.JSX.Element {
   useEffect(() => {
     restoreDropEffectFromStorage()
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // ADR-090: SDK 초기화 + 첫 광고 사전 로드. 둘 다 실패해도 던지지 않으므로 부팅을 막지 않는다.
+  // 스플래시 시퀀스와는 무관하다 — 앱 시작에 광고를 띄우지 않기 때문에 기다릴 이유가 없다.
+  useEffect(() => {
+    void startAds()
   }, [])
 
   // ADR-065 결정 3: 캐시 데이터 삭제는 실패해도 리로드가 실행돼 화면 신호가 파괴된다 —

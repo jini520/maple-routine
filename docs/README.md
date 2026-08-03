@@ -31,6 +31,7 @@ docs/
 | 사냥 타이머 | [features/hunting-timer.md](./features/hunting-timer.md) | `app/hunting-timer/` · `features/hunting-timer/` · `native/hunting-timer` |
 | 설정 | [features/settings.md](./features/settings.md) | `app/settings/` · `features/settings/` · `storage/api-key` · `features/tracking-mode` |
 | 테마 시스템 | [features/theme.md](./features/theme.md) | `features/theme/` · `storage/theme` · `src/index.css` · `src/data/job-themes.json` · `lib/theme-derive` · `lib/theme-backgrounds` · `src/assets/themes/` · `lib/color` · `scripts/theme-gen.ts` |
+| 광고 | [features/ads.md](./features/ads.md) | `native/ads.ts` · `features/ads/` · `storage/ads.ts` · `App.tsx`(탭 전환 훅) |
 | Live Update (OTA) | [features/live-update.md](./features/live-update.md) | `native/live-update.ts` · `features/live-update/` · `native/network` |
 | 스플래시 | [features/splash.md](./features/splash.md) | `android/…/SplashActivity` · iOS 스토리보드 · `capacitor.config.ts` · `index.html` |
 
