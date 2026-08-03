@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{title}}</title>
+    <meta name="description" content="{{description}}" />
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="/">메이플 루틴</a>
+      <nav>
+        <a href="/support">문의</a>
+        <a href="/privacy">개인정보 처리방침</a>
+      </nav>
+    </header>
+
+    <main>{{content}}</main>
+
+    <footer class="site-footer">
+      <p>© <span id="year">2026</span> 메이플 루틴</p>
+      <p>Data based on NEXON Open API</p>
+      <p>Maple Routine is not associated with NEXON Korea</p>
+    </footer>
+
+    <script>
+      // 연도를 손으로 고치면 반드시 잊는다 — 앱의 설정 footer와 같은 방식으로 렌더 시점에 채운다.
+      document.getElementById('year').textContent = String(new Date().getFullYear())
+    </script>
+  </body>
+</html>

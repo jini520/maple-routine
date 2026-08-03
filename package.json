@@ -12,7 +12,8 @@
     "test": "vitest run",
     "preview": "vite preview",
     "publish-live-update": "node scripts/publish-live-update.mjs",
-    "theme:gen": "vite-node scripts/theme-gen.ts"
+    "theme:gen": "vite-node scripts/theme-gen.ts",
+    "build:site": "node scripts/build-site.mjs"
   },
   "dependencies": {
     "@capacitor-community/admob": "^8.0.0",
@@ -53,6 +54,7 @@
     "eslint-plugin-react-refresh": "^0.5.3",
     "globals": "^17.7.0",
     "jsdom": "^29.1.1",
+    "marked": "^18.0.7",
     "tailwindcss": "^4.3.2",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.63.0",

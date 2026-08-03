@@ -1,0 +1,54 @@
+# mapleroutine.store 배포 (GitHub Pages).
+#
+# 앱 번들과는 무관하다 — 이 워크플로는 site/ 와 PRIVACY.md 만 본다. 스토어가 요구하는
+# 개인정보 처리방침·지원 URL을 서빙하는 것이 목적이므로, 그 파일들이 바뀔 때만 돈다.
+name: Deploy site
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'site/**'
+      - 'PRIVACY.md'
+      - 'scripts/build-site.mjs'
+      - '.github/workflows/pages.yml'
+  # 배포가 필요한데 위 경로가 안 바뀐 경우(도메인 재설정 등)를 위해 수동 실행도 열어둔다.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 배포는 하나씩. 진행 중인 배포를 취소하지 않는다 — 중간에 끊기면 사이트가 빈 상태로 남을 수 있다.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # marked 하나만 있으면 되지만, lockfile 기준으로 재현 가능하게 설치한다.
+      - run: npm ci
+
+      - run: npm run build:site
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist-site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
