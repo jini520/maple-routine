@@ -78,6 +78,26 @@
 샘플로 남으면 SDK가 초기화에서 죽는다. 그래서 `native/__tests__/ads.test.ts` 가 세 곳을 모두
 읽어 드리프트를 잡는다(ID 선택은 순수 함수 `resolveInterstitialAdId` 로 분리).
 
+### iOS — 추적 권한(ATT)을 요청하지 않는다
+
+**비개인화 광고만 받는다**(2026-08-04 결정). 추적 허용 팝업을 띄우지 않으므로
+`NSUserTrackingUsageDescription` 을 **의도적으로 넣지 않는다**.
+
+- ATT 프롬프트는 표시 시점·문구 규칙이 까다로워 첫 심사의 리젝 사유가 되기 쉽다. 초기에는
+  사용자가 적어 eCPM 차이도 미미하고, 필요해지면 나중에 붙일 수 있다.
+- 플러그인은 ATT를 **자동 요청하지 않는다** — `requestTrackingAuthorization()` 이 명시 호출
+  방식이라 부르지 않으면 프롬프트가 뜨지 않는다. 어댑터는 이 메서드를 부르지 않는다.
+- **`npa`(비개인화 강제)는 설정하지 않는다.** iOS는 ATT 미허용이면 IDFA가 없어 시스템이 알아서
+  개인화를 제한하지만, `npa` 는 전역 옵션이라 켜면 **광고 ID가 있는 Android 수익까지** 깎는다.
+
+**배포 국가는 한국 한정**(2026-08-04 결정). EU 사용자가 없으므로 **GDPR 동의 관리(Google UMP)
+구현이 불필요**하다. 국가를 늘리려면 그 흐름을 먼저 붙여야 한다.
+
+`SKAdNetworkItems` 는 Google Mobile Ads SDK **필수** 항목이다(50개, 첫 값이 Google의
+`cstr6suwn9`). 빠져도 앱은 멀쩡히 돌지만 iOS 기여 분석이 안 돼 수익이 낮게 잡힌다 — 또 하나의
+"증상 없는" 실패라 `native/__tests__/ads.test.ts` 가 지킨다. 출처는
+[3p-skadnetworks](https://developers.google.com/admob/ios/3p-skadnetworks).
+
 ## 넥슨 약관과의 관계
 
 광고는 이 앱에 처음으로 **영리 목적**을 들인다([[ADR-007]], [[ADR-090]] 맥락).
@@ -102,7 +122,8 @@
 | AdMob 앱 등록 + 광고 단위 ID | ✅ **완료**(2026-08-04) — Android·iOS 각각 등록, 실 ID 반영. 단 **스토어 미게시라 노출이 제한**된다(아래) |
 | 스토어 게시 후 AdMob 연결 + 검토 | ❌ 미게시 앱은 *"limited ad serving"* 이다. 스토어에 올리고 AdMob에서 앱을 연결해 검토(2~3일)를 통과해야 정상 노출된다 — **지금 실기기에서 광고가 안 뜨는 것은 버그가 아니다** |
 | Android `AD_ID` 권한 · 데이터 안전 · "광고 포함" 설문 | ❌ |
-| iOS ATT(`NSUserTrackingUsageDescription`) | ❌ 개인화 광고를 쓸 경우 |
+| iOS ATT | ✅ **요청하지 않기로 결정**(2026-08-04) — 아래 |
+| iOS `SKAdNetworkItems` · 수출 규정 준수 키 | ✅ 반영(2026-08-04) |
 | 스토어 출시 | ❌ AdMob 플러그인은 네이티브라 **OTA로 배포 불가** — 새 바이너리 필요 |
 
 ## 열린 질문
