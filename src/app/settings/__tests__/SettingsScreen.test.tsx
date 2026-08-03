@@ -215,7 +215,7 @@ describe('SettingsScreen', () => {
     expect(disconnect).toHaveBeenCalledTimes(1)
   })
 
-  it('하단에 앱 버전·카피라이트·NEXON Open API 출처 문구를 표시한다', () => {
+  it('하단에 앱 버전·카피라이트·NEXON Open API 출처 문구·비제휴 고지를 표시한다', () => {
     mockSettingsStore({})
     mockThemeStore({})
 
@@ -224,6 +224,9 @@ describe('SettingsScreen', () => {
     expect(screen.getByText(/^v\d+\.\d+\.\d+$/)).toBeInTheDocument()
     expect(screen.getByText(/©\s*\d{4}\s*메이플 루틴/)).toBeInTheDocument()
     expect(screen.getByText('Data based on NEXON Open API')).toBeInTheDocument()
+    expect(
+      screen.getByText('Maple Routine is not associated with NEXON Korea'),
+    ).toBeInTheDocument()
   })
 
   it('하단 앱 버전은 빌드 시점 package.json이 아니라 현재 실행 중인 OTA 번들 버전을 표시한다', () => {
