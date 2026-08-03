@@ -100,8 +100,10 @@ describe('OnboardingScreen', () => {
     render(<OnboardingScreen />)
 
     expect(screen.getByText('스케줄러를 어떻게 관리할까요?')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /자동/ })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /수동/ })).toBeInTheDocument()
+    // 수동 옵션의 주의 문구에 "자동으로 추가되지 않아요"가 들어가 /자동/ 은 두 버튼 모두에
+    // 걸린다(ADR-035 결정 22) — 접근 가능한 이름이 제목으로 시작하므로 앵커로 좁힌다.
+    expect(screen.getByRole('button', { name: /^자동/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^수동/ })).toBeInTheDocument()
   })
 
   it('status가 selectingContentCharacters이면 ContentCharacterStep이 렌더링된다', () => {
