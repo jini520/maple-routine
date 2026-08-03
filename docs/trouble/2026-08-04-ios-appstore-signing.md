@@ -78,6 +78,51 @@ xcodebuild -exportArchive -archivePath <경로>/App.xcarchive \
 codesign -dvv <경로>/export/Payload/*.app   # Authority 줄로 서명 주체 확인
 ```
 
+## 진짜 원인 — 번들 이름이 한글이었다
+
+서명 설정을 고친 뒤에도 업로드가 **같은 90034** 로 계속 막혔다. 로컬 검증은 전부 통과하는데
+Apple 서버만 거부하는 상황이었다.
+
+전수 검사에서 **서명 쪽은 모두 정상**으로 나왔다.
+
+| 검사 | 결과 |
+|---|---|
+| 인증서 체인 | `Apple Distribution`(2027-08-03 만료) → WWDR **G3**(2030) → Apple Root CA(2035) 전부 유효 |
+| `get-task-allow` | `false` |
+| 프로비저닝 프로파일 | `iOS Team Store Provisioning Profile`, `ProvisionedDevices` 없음 |
+| `codesign --verify --deep --strict` | valid on disk / satisfies its Designated Requirement |
+
+남은 변수는 하나였다 — **`PRODUCT_NAME = "메이플루틴"`**.
+
+```
+PRODUCT_NAME 이 한글
+  → .app 번들명·실행 파일명이 한글
+  → macOS 파일시스템이 NFD(분해형)로 저장
+  → IPA zip 엔트리 경로도 NFD
+  → 서명이 계산된 경로와 아카이브에 담긴 경로의 바이트가 어긋남
+  → Apple 서버가 해당 경로의 서명을 찾지 못함 → 90034
+```
+
+에러 메시지가 경로를 `Payload/\Uba54\Uc774\Ud50c\Ub8e8\Ud2f4.app` 로 이스케이프해 보여준
+것이 힌트였다. `unzip -l` 로 본 엔트리도 깨져 있었다.
+
+이 저장소는 같은 NFC/NFD 함정을 이미 겪었다 — `lib/boss-icons.ts` 가 한글 파일명을 NFC로
+정규화하는 이유가 그것이다. 이번엔 그게 파일시스템이 아니라 **코드 서명** 층에서 터졌다.
+
+### 처방
+
+**`PRODUCT_NAME` 은 ASCII 로 둔다.** 사용자에게 보이는 이름은 `CFBundleDisplayName` 이 담당하므로
+바뀌는 것이 없다.
+
+```
+PRODUCT_NAME        = MapleRoutine        (번들명·실행 파일명 — 경로가 되는 값)
+CFBundleName        = 메이플 루틴          ($(PRODUCT_NAME) 을 따라가지 않게 직접 박음)
+CFBundleDisplayName = 메이플 루틴          (홈 화면에 보이는 이름, 무변경)
+```
+
+`cap add ios` 는 `capacitor.config.ts` 의 `appName`(한글)을 그대로 `PRODUCT_NAME` 에 넣는다.
+플랫폼을 다시 추가하면 되살아나므로 그때 다시 ASCII 로 바꿀 것.
+
 ## 함께 나온 경고 — 무시해도 된다
 
 ```

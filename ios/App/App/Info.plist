@@ -236,8 +236,11 @@
 		<string>ko</string>
 		<string>en</string>
 	</array>
+	<!-- 번들명(PRODUCT_NAME)은 ASCII 여야 한다(2026-08-04, docs/trouble/) — 한글이면 .app 경로가
+	     NFD 로 저장돼 App Store 서명 검증이 깨진다. 사용자에게 보이는 이름은 여기와
+	     CFBundleDisplayName 이 담당하므로 한글을 직접 박는다. -->
 	<key>CFBundleName</key>
-	<string>$(PRODUCT_NAME)</string>
+	<string>메이플 루틴</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
