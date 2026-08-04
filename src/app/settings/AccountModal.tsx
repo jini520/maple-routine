@@ -53,25 +53,27 @@ export function AccountModal(props: AccountModalProps): React.JSX.Element {
   }, [status])
 
   return (
-    <Modal onClose={props.onClose} testId="account-modal-overlay" card={false}>
-      <AccountFlowStatus
-        status={status}
-        accounts={accounts}
-        error={error}
-        prefetchProgress={prefetchProgress}
-        pendingAccountId={pendingAccountId}
-        isCommitting={isCommitting}
-        onSelectAccount={selectAccount}
-        onCommitCharacters={handleCommit}
-        // ADR-086 결정 6: 취소는 아무것도 되돌릴 필요가 없다 — 아직 아무것도 쓰지 않았다.
-        // status가 idle로 돌아가면 아래 effect가 모달을 닫는다.
-        onCancel={reset}
-        // 이슈 #78 D: `reset` 이었다 — status를 'idle'로 되돌리므로 아래 effect의 닫힘 판정
-        // (idle로 복귀 + 한 번은 idle을 벗어난 적 있음)이 걸려 **재조회가 아니라 모달이 닫혔다**.
-        // 재시도의 뜻대로 계정 목록을 다시 조회한다(VERIFY_START는 status를 'verifying'으로 바꾸므로
-        // 닫힘 판정에 걸리지 않는다).
-        onRetry={refreshAccounts}
-      />
+    <Modal onClose={props.onClose} testId="account-modal-overlay">
+      <Modal.Panel>
+        <AccountFlowStatus
+          status={status}
+          accounts={accounts}
+          error={error}
+          prefetchProgress={prefetchProgress}
+          pendingAccountId={pendingAccountId}
+          isCommitting={isCommitting}
+          onSelectAccount={selectAccount}
+          onCommitCharacters={handleCommit}
+          // ADR-086 결정 6: 취소는 아무것도 되돌릴 필요가 없다 — 아직 아무것도 쓰지 않았다.
+          // status가 idle로 돌아가면 아래 effect가 모달을 닫는다.
+          onCancel={reset}
+          // 이슈 #78 D: `reset` 이었다 — status를 'idle'로 되돌리므로 아래 effect의 닫힘 판정
+          // (idle로 복귀 + 한 번은 idle을 벗어난 적 있음)이 걸려 **재조회가 아니라 모달이 닫혔다**.
+          // 재시도의 뜻대로 계정 목록을 다시 조회한다(VERIFY_START는 status를 'verifying'으로 바꾸므로
+          // 닫힘 판정에 걸리지 않는다).
+          onRetry={refreshAccounts}
+        />
+      </Modal.Panel>
     </Modal>
   )
 }

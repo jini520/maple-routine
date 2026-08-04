@@ -1,0 +1,31 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Modal DOM 스냅샷 (ADR-094 결정 4) > Modal.Card tight + 좁은 폭 + 중앙 정렬 — 업데이트 모달 구성 1`] = `
+"<div>
+</div>
+<div data-testid="snap-overlay" class="bg-scrim fixed flex inset-0 items-center justify-center overflow-y-auto px-4 z-50">
+<div class="bg-surface border border-border max-w-xs pb-4 pt-6 px-6 rounded-[14px] w-full">
+<p>내용</p>
+</div>
+</div>"
+`;
+
+exports[`Modal DOM 스냅샷 (ADR-094 결정 4) > Modal.Card 기본 — 상단 정렬·max-w-sm·p-6 1`] = `
+"<div>
+</div>
+<div data-testid="snap-overlay" class="bg-scrim fixed flex inset-0 items-start justify-center overflow-y-auto pt-[calc(var(--sa-top)+2rem)] px-4 z-50">
+<div class="bg-surface border border-border max-w-sm p-6 rounded-[14px] w-full">
+<p>내용</p>
+</div>
+</div>"
+`;
+
+exports[`Modal DOM 스냅샷 (ADR-094 결정 4) > Modal.Panel — 껍데기 없는 위치 래퍼(계정 모달 구성) 1`] = `
+"<div>
+</div>
+<div data-testid="snap-overlay" class="bg-scrim fixed flex inset-0 items-start justify-center overflow-y-auto pt-[calc(var(--sa-top)+2rem)] px-4 z-50">
+<div class="max-w-sm w-full">
+<p>내용</p>
+</div>
+</div>"
+`;

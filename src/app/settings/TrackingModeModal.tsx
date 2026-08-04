@@ -36,38 +36,40 @@ export function TrackingModeModal(props: TrackingModeModalProps): React.JSX.Elem
       }}
       testId="tracking-mode-modal-overlay"
     >
-      <div className="mb-4 space-y-1">
-        <h2 className="text-lg font-semibold text-text">스케줄 관리 방법</h2>
-        <p className="text-sm text-text-muted">진행 상황을 어떻게 관리할지 선택해주세요.</p>
-      </div>
-      <TrackingModeSelector mode={selected} isApplying={isApplying} onSelect={setSelected} />
+      <Modal.Card>
+        <div className="mb-4 space-y-1">
+          <h2 className="text-lg font-semibold text-text">스케줄 관리 방법</h2>
+          <p className="text-sm text-text-muted">진행 상황을 어떻게 관리할지 선택해주세요.</p>
+        </div>
+        <TrackingModeSelector mode={selected} isApplying={isApplying} onSelect={setSelected} />
 
-      {/* ADR-035 결정 23: 설정의 다른 확정 모달(DisconnectConfirm/CacheClearConfirm)과 같은 골격.
-          다른 것은 색뿐 — 모드 전환은 파괴적 동작이 아니라 진행 동작이라 border-error 가 아니다. */}
-      <div className="mt-4 flex justify-end gap-2">
-        <Button
-          variant="text"
-          disabled={isApplying}
-          onClick={props.onClose}
-          className="disabled:opacity-50"
-        >
-          취소
-        </Button>
-        <Button
-          variant="primary"
-          // 바뀐 것이 없으면 누를 것도 없다(결정 23) — 닫기는 취소·오버레이가 맡는다.
-          disabled={isUnchanged || isApplying}
-          aria-busy={isApplying}
-          onClick={() => {
-          void handleApply()
-          }}
-          className="flex items-center justify-center gap-2 text-sm disabled:opacity-50"
-        >
-          {/* ADR-061 결정 5·9 — 버튼 안 16px + 말줄임표 없는 '~중' 라벨 */}
-          {isApplying && <MapleSpinner size={16} />}
-          {isApplying ? '적용 중' : '적용'}
-        </Button>
-      </div>
+        {/* ADR-035 결정 23: 설정의 다른 확정 모달(DisconnectConfirm/CacheClearConfirm)과 같은 골격.
+            다른 것은 색뿐 — 모드 전환은 파괴적 동작이 아니라 진행 동작이라 border-error 가 아니다. */}
+        <div className="mt-4 flex justify-end gap-2">
+          <Button
+            variant="text"
+            disabled={isApplying}
+            onClick={props.onClose}
+            className="disabled:opacity-50"
+          >
+            취소
+          </Button>
+          <Button
+            variant="primary"
+            // 바뀐 것이 없으면 누를 것도 없다(결정 23) — 닫기는 취소·오버레이가 맡는다.
+            disabled={isUnchanged || isApplying}
+            aria-busy={isApplying}
+            onClick={() => {
+            void handleApply()
+            }}
+            className="flex items-center justify-center gap-2 text-sm disabled:opacity-50"
+          >
+            {/* ADR-061 결정 5·9 — 버튼 안 16px + 말줄임표 없는 '~중' 라벨 */}
+            {isApplying && <MapleSpinner size={16} />}
+            {isApplying ? '적용 중' : '적용'}
+          </Button>
+        </div>
+      </Modal.Card>
     </Modal>
   )
 }

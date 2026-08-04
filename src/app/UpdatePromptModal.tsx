@@ -90,127 +90,127 @@ export function UpdatePromptModal(): React.JSX.Element | null {
     <Modal
       onClose={isDownloading ? () => {} : dismiss}
       testId="update-prompt-overlay"
-      maxWidth="max-w-xs"
       align="center"
-      tightBottom
     >
-      <div className="space-y-5 text-center">
-        {status === 'update-available' && (
-          <>
-            <IconBadge icon={CloudDownload} tone="primary" />
-            <div className="space-y-2">
-              <h2 className="text-base font-semibold text-text">새 업데이트가 있어요</h2>
-              <div className="flex flex-wrap items-center justify-center gap-1.5">
-                {channel === 'beta' && <BetaBadge />}
-                <VersionBadge version={availableVersion} />
+      <Modal.Card maxWidth="max-w-xs" tight>
+        <div className="space-y-5 text-center">
+          {status === 'update-available' && (
+            <>
+              <IconBadge icon={CloudDownload} tone="primary" />
+              <div className="space-y-2">
+                <h2 className="text-base font-semibold text-text">새 업데이트가 있어요</h2>
+                <div className="flex flex-wrap items-center justify-center gap-1.5">
+                  {channel === 'beta' && <BetaBadge />}
+                  <VersionBadge version={availableVersion} />
+                </div>
+                <p className="text-xs text-text-muted">다운로드 크기 {sizeText}</p>
               </div>
-              <p className="text-xs text-text-muted">다운로드 크기 {sizeText}</p>
-            </div>
-            <div className="space-y-1">
-              <button type="button" onClick={() => void startDownload()} className={PRIMARY_BTN}>
-                다운로드
-              </button>
-              <button type="button" onClick={dismiss} className={GHOST_BTN}>
-                나중에
-              </button>
-            </div>
-          </>
-        )}
-
-        {status === 'confirm-cellular' && (
-          <>
-            <IconBadge icon={Signal} tone="secondary" />
-            <div className="space-y-2">
-              <h2 className="text-base font-semibold text-text">모바일 데이터를 사용해요</h2>
-              <p className="text-sm text-text-muted">Wi-Fi가 아니에요. 데이터로 받으면 요금이 나올 수 있어요.</p>
-              <InfoNote>다운로드 크기 {sizeText}</InfoNote>
-            </div>
-            <div className="space-y-1">
-              <button type="button" onClick={() => void confirmCellularDownload()} className={PRIMARY_BTN}>
-                계속
-              </button>
-              <button type="button" onClick={dismiss} className={GHOST_BTN}>
-                취소
-              </button>
-            </div>
-          </>
-        )}
-
-        {status === 'downloading' && (
-          <div className="space-y-3">
-            <h2 className="text-base font-semibold text-text">다운로드 중</h2>
-            {/* ADR-061 결정 6: 결정형 진행률은 예외 없이 h-1.5 프리미티브 하나 — 이 모달만
-                쓰던 h-2 변형을 없앤다. */}
-            <ProgressBar percent={downloadProgress} animated fillTestId="update-progress-bar" />
-            <p className="text-xs font-medium text-text-muted tabular-nums">{downloadProgress}%</p>
-          </div>
-        )}
-
-        {status === 'ready-to-apply' && (
-          <>
-            <IconBadge icon={CheckCircle2} tone="secondary" />
-            <div className="space-y-2">
-              <h2 className="text-base font-semibold text-text">업데이트 준비 완료</h2>
-              <div className="flex items-center justify-center">
-                <VersionBadge version={availableVersion} />
+              <div className="space-y-1">
+                <button type="button" onClick={() => void startDownload()} className={PRIMARY_BTN}>
+                  다운로드
+                </button>
+                <button type="button" onClick={dismiss} className={GHOST_BTN}>
+                  나중에
+                </button>
               </div>
-              <p className="text-xs text-text-muted">지금 적용하려면 앱을 재시작해요.</p>
-            </div>
-            <div className="space-y-1">
-              <button type="button" onClick={() => void apply()} className={PRIMARY_BTN}>
-                지금 적용 (재시작)
-              </button>
-              <button type="button" onClick={dismiss} className={GHOST_BTN}>
-                나중에
-              </button>
-            </div>
-          </>
-        )}
+            </>
+          )}
 
-        {status === 'store-required' && (
-          <>
-            <IconBadge icon={Store} tone="third" />
-            <div className="space-y-2">
-              <h2 className="text-base font-semibold text-text">스토어 업데이트가 필요해요</h2>
-              <div className="flex items-center justify-center">
-                <VersionBadge version={availableVersion} />
+          {status === 'confirm-cellular' && (
+            <>
+              <IconBadge icon={Signal} tone="secondary" />
+              <div className="space-y-2">
+                <h2 className="text-base font-semibold text-text">모바일 데이터를 사용해요</h2>
+                <p className="text-sm text-text-muted">Wi-Fi가 아니에요. 데이터로 받으면 요금이 나올 수 있어요.</p>
+                <InfoNote>다운로드 크기 {sizeText}</InfoNote>
               </div>
-              <p className="text-sm text-text-muted">이 업데이트는 앱 스토어에서 업데이트해야 받을 수 있어요.</p>
-              {minNativeVersion && (
-                <InfoNote>
-                  최소 앱 버전 <span className="font-semibold tabular-nums">{minNativeVersion}</span> 이상 필요
-                </InfoNote>
-              )}
-            </div>
-            <div className="space-y-1">
-              <button type="button" onClick={openStore} className={PRIMARY_BTN}>
-                스토어로 이동
-              </button>
-              <button type="button" onClick={dismiss} className={GHOST_BTN}>
-                나중에
-              </button>
-            </div>
-          </>
-        )}
-        {status === 'download-error' && (
-          <>
-            <IconBadge icon={AlertTriangle} tone="error" />
-            <div className="space-y-2">
-              <h2 className="text-base font-semibold text-text">업데이트를 받지 못했습니다</h2>
-              <p className="text-sm text-text-muted">네트워크 연결을 확인한 뒤 다시 시도해주세요.</p>
-            </div>
-            <div className="space-y-1">
-              <button type="button" onClick={() => void startDownload()} className={PRIMARY_BTN}>
-                다시 시도
-              </button>
-              <button type="button" onClick={dismiss} className={GHOST_BTN}>
-                나중에
-              </button>
-            </div>
-          </>
-        )}
+              <div className="space-y-1">
+                <button type="button" onClick={() => void confirmCellularDownload()} className={PRIMARY_BTN}>
+                  계속
+                </button>
+                <button type="button" onClick={dismiss} className={GHOST_BTN}>
+                  취소
+                </button>
+              </div>
+            </>
+          )}
 
-      </div>
+          {status === 'downloading' && (
+            <div className="space-y-3">
+              <h2 className="text-base font-semibold text-text">다운로드 중</h2>
+              {/* ADR-061 결정 6: 결정형 진행률은 예외 없이 h-1.5 프리미티브 하나 — 이 모달만
+                  쓰던 h-2 변형을 없앤다. */}
+              <ProgressBar percent={downloadProgress} animated fillTestId="update-progress-bar" />
+              <p className="text-xs font-medium text-text-muted tabular-nums">{downloadProgress}%</p>
+            </div>
+          )}
+
+          {status === 'ready-to-apply' && (
+            <>
+              <IconBadge icon={CheckCircle2} tone="secondary" />
+              <div className="space-y-2">
+                <h2 className="text-base font-semibold text-text">업데이트 준비 완료</h2>
+                <div className="flex items-center justify-center">
+                  <VersionBadge version={availableVersion} />
+                </div>
+                <p className="text-xs text-text-muted">지금 적용하려면 앱을 재시작해요.</p>
+              </div>
+              <div className="space-y-1">
+                <button type="button" onClick={() => void apply()} className={PRIMARY_BTN}>
+                  지금 적용 (재시작)
+                </button>
+                <button type="button" onClick={dismiss} className={GHOST_BTN}>
+                  나중에
+                </button>
+              </div>
+            </>
+          )}
+
+          {status === 'store-required' && (
+            <>
+              <IconBadge icon={Store} tone="third" />
+              <div className="space-y-2">
+                <h2 className="text-base font-semibold text-text">스토어 업데이트가 필요해요</h2>
+                <div className="flex items-center justify-center">
+                  <VersionBadge version={availableVersion} />
+                </div>
+                <p className="text-sm text-text-muted">이 업데이트는 앱 스토어에서 업데이트해야 받을 수 있어요.</p>
+                {minNativeVersion && (
+                  <InfoNote>
+                    최소 앱 버전 <span className="font-semibold tabular-nums">{minNativeVersion}</span> 이상 필요
+                  </InfoNote>
+                )}
+              </div>
+              <div className="space-y-1">
+                <button type="button" onClick={openStore} className={PRIMARY_BTN}>
+                  스토어로 이동
+                </button>
+                <button type="button" onClick={dismiss} className={GHOST_BTN}>
+                  나중에
+                </button>
+              </div>
+            </>
+          )}
+          {status === 'download-error' && (
+            <>
+              <IconBadge icon={AlertTriangle} tone="error" />
+              <div className="space-y-2">
+                <h2 className="text-base font-semibold text-text">업데이트를 받지 못했습니다</h2>
+                <p className="text-sm text-text-muted">네트워크 연결을 확인한 뒤 다시 시도해주세요.</p>
+              </div>
+              <div className="space-y-1">
+                <button type="button" onClick={() => void startDownload()} className={PRIMARY_BTN}>
+                  다시 시도
+                </button>
+                <button type="button" onClick={dismiss} className={GHOST_BTN}>
+                  나중에
+                </button>
+              </div>
+            </>
+          )}
+
+        </div>
+      </Modal.Card>
     </Modal>
   )
 }

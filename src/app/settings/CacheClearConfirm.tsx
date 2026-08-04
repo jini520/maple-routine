@@ -56,84 +56,86 @@ export function CacheClearConfirm(props: CacheClearConfirmProps): React.JSX.Elem
 
   return (
     <Modal onClose={props.onCancel} testId="cache-clear-confirm-overlay" align="center">
-      <div className="space-y-4">
-        <div className="space-y-1">
-          <h2 className="text-base font-bold text-text">캐시 데이터 삭제</h2>
-          <p className="text-sm text-text-muted">지울 데이터를 선택하세요.</p>
-        </div>
+      <Modal.Card>
+        <div className="space-y-4">
+          <div className="space-y-1">
+            <h2 className="text-base font-bold text-text">캐시 데이터 삭제</h2>
+            <p className="text-sm text-text-muted">지울 데이터를 선택하세요.</p>
+          </div>
 
-        <div className="border-t border-border">
-          {GROUPS.map((group) => {
-            const isSelected = selection[group.id]
-            return (
-              <button
-                key={group.id}
-                type="button"
-                role="checkbox"
-                aria-checked={isSelected}
-                disabled={props.isClearing}
-                onClick={() =>
-                  setSelection((prev) => ({ ...prev, [group.id]: !prev[group.id] }))
-                }
-                className="flex w-full items-start gap-3 border-b border-border py-3 text-left disabled:opacity-50"
-              >
-                <span
-                  aria-hidden="true"
-                  className={
-                    isSelected
-                      ? 'mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] bg-primary'
-                      : 'mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border border-border'
+          <div className="border-t border-border">
+            {GROUPS.map((group) => {
+              const isSelected = selection[group.id]
+              return (
+                <button
+                  key={group.id}
+                  type="button"
+                  role="checkbox"
+                  aria-checked={isSelected}
+                  disabled={props.isClearing}
+                  onClick={() =>
+                    setSelection((prev) => ({ ...prev, [group.id]: !prev[group.id] }))
                   }
+                  className="flex w-full items-start gap-3 border-b border-border py-3 text-left disabled:opacity-50"
                 >
-                  {isSelected && <Check size={13} strokeWidth={3} className="text-on-primary" />}
-                </span>
-
-                <span className="min-w-0 flex-1">
-                  <span className="flex items-center justify-between gap-3">
-                    <span className="text-sm font-semibold text-text">{group.label}</span>
-                    {/* ADR-061 결정 7: 조회 전에도 같은 자리·같은 타이포로 자리표시를 둬야
-                        값이 들어올 때 행 레이아웃이 점프하지 않는다. */}
-                    <span className="shrink-0 text-sm text-text-muted tabular-nums">
-                      {props.sizes !== null ? formatBytes(props.sizes[group.id]) : '- KB'}
-                    </span>
+                  <span
+                    aria-hidden="true"
+                    className={
+                      isSelected
+                        ? 'mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] bg-primary'
+                        : 'mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border border-border'
+                    }
+                  >
+                    {isSelected && <Check size={13} strokeWidth={3} className="text-on-primary" />}
                   </span>
-                  <span className="mt-1 block text-xs leading-relaxed text-text-muted">{group.detail}</span>
-                  {group.warning !== undefined && (
-                    <span className="mt-1 block text-xs leading-relaxed text-error-ink">{group.warning}</span>
-                  )}
-                </span>
-              </button>
-            )
-          })}
-        </div>
 
-        <div className="flex justify-end gap-2">
-          <Button
-            variant="text"
-            disabled={props.isClearing}
-            onClick={props.onCancel}
-            className="disabled:opacity-50"
-          >
-            취소
-          </Button>
-          <Button
-            variant="danger"
-            disabled={props.isClearing || !hasSelection}
-            aria-busy={props.isClearing}
-            onClick={() => props.onConfirm(selection)}
-            className="flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            {/* ADR-061 결정 5·9 — 스피너 + 말줄임표 없는 '~중' 라벨. 이 버튼은 최대 10초
-                (CLEAR_TIMEOUT_MS) 걸리고 되돌릴 수 없어 라벨이 특히 중요하다. */}
-            {props.isClearing && <MapleSpinner size={16} />}
-            {props.isClearing
-              ? '삭제 중'
-              : selectedBytes !== null
-                ? `삭제 (${formatBytes(selectedBytes)})`
-                : '삭제'}
-          </Button>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center justify-between gap-3">
+                      <span className="text-sm font-semibold text-text">{group.label}</span>
+                      {/* ADR-061 결정 7: 조회 전에도 같은 자리·같은 타이포로 자리표시를 둬야
+                          값이 들어올 때 행 레이아웃이 점프하지 않는다. */}
+                      <span className="shrink-0 text-sm text-text-muted tabular-nums">
+                        {props.sizes !== null ? formatBytes(props.sizes[group.id]) : '- KB'}
+                      </span>
+                    </span>
+                    <span className="mt-1 block text-xs leading-relaxed text-text-muted">{group.detail}</span>
+                    {group.warning !== undefined && (
+                      <span className="mt-1 block text-xs leading-relaxed text-error-ink">{group.warning}</span>
+                    )}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="text"
+              disabled={props.isClearing}
+              onClick={props.onCancel}
+              className="disabled:opacity-50"
+            >
+              취소
+            </Button>
+            <Button
+              variant="danger"
+              disabled={props.isClearing || !hasSelection}
+              aria-busy={props.isClearing}
+              onClick={() => props.onConfirm(selection)}
+              className="flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {/* ADR-061 결정 5·9 — 스피너 + 말줄임표 없는 '~중' 라벨. 이 버튼은 최대 10초
+                  (CLEAR_TIMEOUT_MS) 걸리고 되돌릴 수 없어 라벨이 특히 중요하다. */}
+              {props.isClearing && <MapleSpinner size={16} />}
+              {props.isClearing
+                ? '삭제 중'
+                : selectedBytes !== null
+                  ? `삭제 (${formatBytes(selectedBytes)})`
+                  : '삭제'}
+            </Button>
+          </div>
         </div>
-      </div>
+      </Modal.Card>
     </Modal>
   )
 }
