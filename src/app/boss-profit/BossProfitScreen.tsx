@@ -1,10 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
 import {
-  AlertTriangle,
-  ArrowDown,
-  ArrowUp,
-  Ban,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -32,24 +28,14 @@ import {
   useScheduleSyncErrorToast,
   useStaleCharactersToast,
 } from '../../features/schedule-sync/use-sync-error-toast'
-import {
-  computeProfitDelta,
-  formatProfitDeltaBody,
-  formatProfitDeltaLabel,
-} from '../../lib/boss-profit-delta'
-import { anchorPopover, type PopoverAnchorGeometry } from '../../lib/popover-anchor'
-import { WEEKLY_BOSS_CLEAR_LIMIT, WEEKLY_CRYSTAL_SALE_LIMIT } from '../../lib/boss-matching'
+import { type PopoverAnchorGeometry } from '../../lib/popover-anchor'
+import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../lib/boss-matching'
 import {
   formatBossProfitPeriodLabel,
-  getAdjacentPeriodKey,
   isLatestPeriod,
   isPeriodQueryable,
   isPeriodRefreshable,
 } from '../../lib/boss-profit-period'
-import { getItemIconUrlByFile } from '../../lib/item-icons'
-import { worldEmblemUrl } from '../../lib/world-emblem'
-import type { BossCycle } from '../../types'
-import { BossProfitContextProvider, useBossProfitContext } from './boss-profit-context'
 import type { BossProfitContextValue } from './boss-profit-context'
 import { ThemeHeaderBackdrop } from '../../components/templates/ThemeHeaderBackdrop/ThemeHeaderBackdrop'
 import {
@@ -58,13 +44,14 @@ import {
   collectGroupValuableDrops,
   countGroupClearedMonthlyBosses,
   countGroupClearedWeeklyBosses,
-  countMonthlyCrystals,
   groupTotalMeso,
-  summarizeWorldCrystals,
   type CharacterGroup,
 } from './character-groups'
 import { CharacterAvatar } from './CharacterAvatar'
 import { MonthlyAccordionBody, WeeklyAccordionBody } from './AccordionBody'
+import { CharacterIssueBadge, CharacterIssuePopover, measureIssueAnchor, ISSUE_POPOVER_EDGE_GAP, ISSUE_POPOVER_WIDTH } from './CharacterIssue'
+import { BossProfitContextProvider, useBossProfitContext } from './boss-profit-context'
+import { CrystalSummaryChip, DeltaChip } from './HeadlineChips'
 
 
 
@@ -92,147 +79,6 @@ const MONTHLY_BOSS_COUNT = weeklyBossesData.monthly.length
 // 그 결과 셸 하단에 닿는 배경 요소가 없어 하단 모서리 보정도 불필요하다. 새로 추가한다면 셸엔
 // overflow-hidden을 걸 수 없으므로(ADR-047 결정 2) 그 요소가 직접 rounded-b-[14px]를 가져야 한다.
 
-// ADR-068 결정 3: 동기화가 실패한 캐릭터를 **카드에서** 식별한다. 전에는 토스트가 인원 수만 알려
-// 어느 카드인지 알 수 없었다([[ADR-063]]가 남긴 숙제, 이슈 #78 B).
-//
-// **표식은 아이콘 하나다 — 금액 옆, 라벨 없음**(시안 A에서 두 번 정정, 실물 확인 후 사용자 확정
-// 2026-07-31). 경위:
-//  ① 시안 A는 "금액 자리를 배지가 대체"였다. 전제는 그 금액이 낡은 캐시에서 온 값이라는 것.
-//  ② [[ADR-067]] 결정 7·4 구현 후 카드 금액은 **DB 기록에서만** 나온다 → 가릴 이유가 약해졌다.
-//  ③ 실물을 띄워보니 라벨 배지("조회 불가")가 캐릭터명 폭을 먹어 **6자 이름부터 잘렸다**
-//     (`내옆에최성일` → `내옆에…`). `n/12` 숫자 표기를 보류한 것과 같은 문제다([[ADR-054]] 정정 7).
-// 그래서 라벨을 버리고 아이콘만 남긴다 — 이름·금액·합계가 모두 온전하다. 원인 문구는 토스트가
-// 담당하고([[ADR-063]]) 스크린리더에는 role="img" + aria-label로 전달한다.
-const CHARACTER_ISSUE_LABEL = {
-  unavailable: '조회 불가',
-  failed: '실패',
-} as const
-
-// 탭했을 때 "왜 이 아이콘이 떠 있는가"를 설명한다(사용자 요청 2026-07-31). 아이콘만으로는 원인을
-// 말할 수 없고, 그 대가를 팝오버가 받는다.
-const CHARACTER_ISSUE_EXPLANATION = {
-  unavailable: {
-    title: '조회할 수 없는 캐릭터입니다',
-    body: '넥슨 API가 이 캐릭터를 조회하지 못합니다. 캐릭터 관리에서 추적을 해제할 수 있습니다.',
-  },
-  failed: {
-    title: '동기화하지 못했습니다',
-    body: '마지막으로 확인한 기록을 보여주고 있습니다. 새로고침하면 다시 시도합니다.',
-  },
-} as const
-
-// **금액의 좌상단에 절대배치한다**(사용자 지정 2026-07-31) — 흐름에 두면 헤더 가로폭을 캐릭터명과
-// 다투고(라벨 배지가 6자 이름을 잘라먹은 이유, [[ADR-054]] 정정 7) 화면 폭에 따라 겹침이 생긴다.
-//
-// 기준은 금액 래퍼의 왼쪽 끝 = **숫자가 시작하는 위치**다. 거기서 `-left-1`(4px)만 밀어 원형 배지의
-// **시각적** 왼쪽 변이 첫 자리 글자와 한 줄로 맞게 한다(원은 사각 글리프보다 안쪽으로 들어가 보인다,
-// 사용자 미세 조정 2026-07-31).
-//
-// 처음 좌상단에 뒀을 때 숫자를 덮은 것은 위치가 아니라 **높이** 문제였다(-top-1.5, 6px) —
-// `-top-3.5`(14px)면 글자 위쪽 여백만 쓰므로 겹치지 않고, 그래서 좌측에 폭을 비울 필요도 없다
-// (초기 시도에서는 20px을 비웠다).
-function CharacterIssueBadge(props: {
-  issue: 'unavailable' | 'failed'
-  onToggle: () => void
-}): React.JSX.Element {
-  const isPermanent = props.issue === 'unavailable'
-  return (
-    // span으로 두는 이유: 카드 헤더 자체가 <button>이라 그 안에 button을 넣으면 중첩 인터랙티브가
-    // 된다(HTML 위반 + 클릭 충돌). span은 인터랙티브 콘텐츠가 아니므로 중첩이 허용되고, 클릭을
-    // stopPropagation해 아코디언 토글과 갈라낸다. 대가는 키보드 포커스를 못 받는 것 — 상태 자체는
-    // aria-label로 읽히고 원인 문구는 토스트([[ADR-063]])가 담당한다.
-    <span
-      data-testid="character-issue-badge"
-      role="img"
-      aria-label={CHARACTER_ISSUE_LABEL[props.issue]}
-      title={CHARACTER_ISSUE_EXPLANATION[props.issue].title}
-      onClick={(event) => {
-        event.stopPropagation()
-        event.preventDefault()
-        props.onToggle()
-      }}
-      className={
-        isPermanent
-          ? 'absolute -top-3.5 -left-1 z-[7] flex h-3.5 w-3.5 items-center justify-center rounded-full bg-info-tint text-info-ink ring-1 ring-bg'
-          : 'absolute -top-3.5 -left-1 z-[7] flex h-3.5 w-3.5 items-center justify-center rounded-full bg-error-tint text-error-ink ring-1 ring-bg'
-      }
-    >
-      {isPermanent ? (
-        <Ban className="h-2 w-2" strokeWidth={3} aria-hidden="true" />
-      ) : (
-        <AlertTriangle className="h-2 w-2" strokeWidth={3} aria-hidden="true" />
-      )}
-    </span>
-  )
-}
-
-// 팝오버는 **셸 바깥**(카드 루트 relative isolate)에 둔다 — 셸은 펼침 상태에서 overflow-clip이라
-// ([[ADR-049]]) 안에 두면 잘린다. 고가 드롭 배지를 셸 바깥에 둔 것과 같은 이유다([[ADR-047]]).
-//
-// z-[20]: 카드 안 층 순서는 드롭 아이콘 1~3 < sticky 헤더 5 < 골드 링 6 < 고가 드롭 배지 10이므로
-// 그 전부보다 위다. **카드 루트의 isolate가 이 z를 카드 안에 가두므로** 페이지 sticky 헤더(z-10)나
-// 하단 fixed nav 위로는 절대 올라가지 않는다 — 다른 화면 요소를 가릴 수 없다.
-const ISSUE_POPOVER_WIDTH = 220
-const ISSUE_POPOVER_EDGE_GAP = 12
-// 아이콘 바로 아래에 붙인다(사용자 지정 2026-07-31). 아이콘은 헤더에서 y 9~23px을 차지하고 꼬리는
-// 팝오버 위로 6px 튀어나오므로, 30px이면 꼬리 끝이 아이콘 밑변에서 1px 아래에 온다 — 닿아 보이면서
-// 아이콘을 덮지는 않는다(팝오버가 z-20이라 덮으면 아이콘이 잘려 보인다).
-// **금액 글자를 덮는 것은 허용**한다("메소 가려도 되니까 위치를 아이콘이랑 맞춰") — 열린 동안
-// 그 카드의 금액 대신 팝오버가 말한다.
-const ISSUE_POPOVER_TOP = 30
-const ISSUE_CARET_SIZE = 8
-
-/**
- * 배지 x좌표를 실측해 팝오버 위치로 넘긴다. 금액은 자릿수에 따라 폭이 변해 **배지의 x를 고정값으로
- * 알 수 없다** — clamp·꼬리 계산은 순수 함수(`lib/popover-anchor`)가 맡고 여기서는 측정만 한다.
- */
-function measureIssueAnchor(card: HTMLElement | null, money: HTMLElement | null): PopoverAnchorGeometry {
-  if (card === null || money === null) {
-    return { left: ISSUE_POPOVER_EDGE_GAP, caretLeft: ISSUE_POPOVER_WIDTH / 2 }
-  }
-  const cardRect = card.getBoundingClientRect()
-  const moneyRect = money.getBoundingClientRect()
-  return anchorPopover({
-    containerWidth: cardRect.width,
-    // 배지는 금액 왼쪽 끝에서 4px 밀려 있고(-left-1) 폭이 14px이므로 중심은 그 +7px이다.
-    anchorCenterX: moneyRect.left - cardRect.left - 4 + 7,
-    popoverWidth: ISSUE_POPOVER_WIDTH,
-    edgeGap: ISSUE_POPOVER_EDGE_GAP,
-    caretSize: ISSUE_CARET_SIZE,
-  })
-}
-
-function CharacterIssuePopover(props: {
-  issue: 'unavailable' | 'failed'
-  geometry: PopoverAnchorGeometry
-  onClose: () => void
-}): React.JSX.Element {
-  const copy = CHARACTER_ISSUE_EXPLANATION[props.issue]
-  return (
-    <div
-      data-testid="character-issue-popover"
-      role="status"
-      style={{ left: props.geometry.left, width: ISSUE_POPOVER_WIDTH, top: ISSUE_POPOVER_TOP }}
-      className="absolute z-[20] rounded-[12px] border border-border bg-surface p-3 shadow-lg"
-    >
-      {/* 꼬리: 45도 회전한 정사각형의 위·왼쪽 테두리만 남겨 카드 배경과 이어 붙인다. */}
-      <span
-        aria-hidden="true"
-        style={{ left: props.geometry.caretLeft, width: ISSUE_CARET_SIZE, height: ISSUE_CARET_SIZE }}
-        className="absolute -top-[5px] rotate-45 border-l border-t border-border bg-surface"
-      />
-      <p className="text-xs font-bold text-text">{copy.title}</p>
-      <p className="mt-1 text-[11px] leading-relaxed text-text-muted">{copy.body}</p>
-      <button
-        type="button"
-        onClick={props.onClose}
-        className="mt-2 text-[11px] font-semibold text-primary-ink underline"
-      >
-        닫기
-      </button>
-    </div>
-  )
-}
 
 
 
@@ -249,167 +95,17 @@ function CharacterIssuePopover(props: {
 
 
 
-// 결정석 아이콘(주간/월간). 드랍 테이블 항목이 아니라 UI 표시 전용이라 item-icons.json에 등록하지 않고
-// 파일명으로 직접 조회한다([[ADR-054]] 결정 10). 파일이 없으면 null — 아이콘만 생략하고 숫자는 그대로 둔다.
-const WEEKLY_CRYSTAL_ICON_URL = getItemIconUrlByFile('intense_power_crystal_weekly.webp')
-const MONTHLY_CRYSTAL_ICON_URL = getItemIconUrlByFile('intense_power_crystal_monthly.webp')
+
+
+
+
+
 
 // 배지가 카드 상단 밖으로 올라간 양(-top-2 = 0.5rem). sticky 레일 오프셋에서 이만큼 상쇄해야
 // stuck 시 배지가 헤더 상단선에 걸린다(ADR-047 후속).
 const BADGE_TOP_OFFSET = 8
 
-// 총 수익 헤드라인의 결정석 판매 현황([[ADR-054]] 결정 9, 정정 2·3으로 배치 변경) — **라벨행의
-// "{기간} 총 수익" 텍스트 바로 옆** 칩이다(사용자 요청). 원래는 금액행 아래 새 줄이었는데 그 한 줄이
-// sticky 헤더를 그대로 높여 목록을 잠식했다(헤더를 줄여둔 [[ADR-049]] 작업을 되돌리는 셈).
-// **칩 높이는 라벨(text-xs = 16px)과 같은 h-4로 고정한다** — 이 줄에 흐름으로 들어가는 요소가
-// 16px를 넘으면 라벨행이 튀고, 그것이 바로 고가 드롭 뱃지(24px)를 absolute로 빼낸 이유다
-// ([[ADR-049]] 결정 2). 그 뱃지가 여전히 우측 끝을 absolute로 쓰므로 칩은 좌측(라벨 옆)에 붙는다.
-// 월드별 분해는 흐름이 아니라 **absolute 팝오버**로 띄운다 — 펼쳐도 헤더 높이가 변하지 않는다.
-function CrystalSummaryChip(props: { tab: BossCycle; groups: CharacterGroup[] }): React.JSX.Element | null {
-  const [isBreakdownOpen, setIsBreakdownOpen] = useState(false)
 
-  const isWeekly = props.tab === 'weekly'
-  const worlds = isWeekly ? summarizeWorldCrystals(props.groups) : []
-  // 주간 탭인데 월드를 아는 캐릭터가 하나도 없으면(구버전 캐시만 있는 경우) 대비할 한도가 없다.
-  // 반대로 월드는 알지만 처치 수가 0이면 "0 / 90"을 그대로 보여준다(정보로서 유효하다).
-  if (isWeekly && worlds.length === 0) return null
-
-  const iconUrl = isWeekly ? WEEKLY_CRYSTAL_ICON_URL : MONTHLY_CRYSTAL_ICON_URL
-  const cleared = isWeekly
-    ? worlds.reduce((sum, summary) => sum + summary.cleared, 0)
-    : countMonthlyCrystals(props.groups)
-  // 각 월드가 각자 90을 가지므로 복수 월드의 분모는 90 × 월드 수다(결정 7).
-  const limit = WEEKLY_CRYSTAL_SALE_LIMIT * worlds.length
-  const isExpandable = worlds.length > 1
-  const label = isWeekly ? `주간 결정석 판매 ${cleared} / ${limit}` : `월간 결정석 ${cleared}개`
-
-  // 칩은 화면에 "간단히"만 — 월드 수·월드명 같은 부가 표기는 팝오버로 넘긴다(사용자 요청).
-  const chipContent = (
-    <>
-      {iconUrl !== null && <img src={iconUrl} alt="" className="h-4 w-4 flex-none object-contain" />}
-      {/* 숫자와 단위 사이는 마진이 아니라 실제 공백 문자로 띄운다 — 마진만으론 textContent가
-          "34/90"으로 붙어 스크린리더가 이어 읽는다([[ADR-046]]에서 "메소" 단위로 정한 규약).
-          "개"는 한국어 표기상 숫자에 붙으므로 공백을 넣지 않는다. */}
-      {isWeekly ? (
-        <span className="text-xs font-bold leading-none tabular-nums text-primary-ink">
-          {cleared} <span className="font-semibold opacity-70">/ {limit}</span>
-        </span>
-      ) : (
-        <span className="text-xs font-bold leading-none tabular-nums text-primary-ink">
-          {cleared}
-          <span className="font-semibold opacity-70">개</span>
-        </span>
-      )}
-    </>
-  )
-
-  // h-5(20px) — 라벨행이 h-6(24px)으로 고정돼 있으므로 그 안에 들어가기만 하면 된다. leading-none과
-  // 함께 두어야 글꼴 line-height가 칩 높이를 밀어 올리지 않는다.
-  const chipClassName = 'ml-2 flex h-5 flex-none items-center gap-1 rounded-full bg-primary-tint px-1.5'
-
-  // 단일 월드·월간 탭은 펼칠 것이 없어 버튼으로 두지 않는다. 수치만으로는 무엇의 비율인지 읽히지
-  // 않으므로 칩 전체에 레이블을 주고 아이콘은 장식(alt="")으로 남긴다(아바타 링과 동일 규약).
-  if (!isExpandable) {
-    return (
-      <span role="img" aria-label={label} className={chipClassName}>
-        {chipContent}
-      </span>
-    )
-  }
-
-  return (
-    <>
-      {/* 팝오버가 열려 있는 동안 바깥 탭으로 닫는다. 칩(z-20)보다 아래, 나머지 헤더 내용 위. */}
-      {isBreakdownOpen && (
-        <button
-          type="button"
-          aria-label="월드별 결정석 판매 현황 닫기"
-          onClick={() => setIsBreakdownOpen(false)}
-          className="fixed inset-0 z-10 cursor-default"
-        />
-      )}
-      <button
-        type="button"
-        onClick={() => setIsBreakdownOpen((prev) => !prev)}
-        aria-label={label}
-        aria-expanded={isBreakdownOpen}
-        className={`relative z-20 ${chipClassName}`}
-      >
-        {chipContent}
-        {isBreakdownOpen ? (
-          <ChevronUp className="h-3 w-3 flex-none text-primary-ink" strokeWidth={2.5} aria-hidden="true" />
-        ) : (
-          <ChevronDown className="h-3 w-3 flex-none text-primary-ink" strokeWidth={2.5} aria-hidden="true" />
-        )}
-      </button>
-      {isBreakdownOpen && (
-        // 흐름 밖(absolute)이라 헤더 높이에 영향이 없다 — 월드가 늘어도 sticky 영역은 그대로다.
-        // 기준 박스는 라벨행(relative)이고 칩이 좌측에 있으므로 left-0에 맞춘다(우측은 고가 드롭
-        // 뱃지 자리). 페이지 sticky 헤더가 z-10으로 스택 컨텍스트를 만들므로 이 z-20은 그 안에서만
-        // 겨루고, 헤더 자체가 목록 위에 있어 팝오버는 캐릭터 카드 위로 그려진다([[ADR-047]] 결정 6).
-        <div className="absolute left-0 top-full z-20 mt-1.5 min-w-[168px] rounded-[12px] border border-border bg-surface p-2 shadow-lg">
-          <p className="px-1 pb-1.5 text-[11px] font-bold tracking-wide text-text-muted">월드별 판매 현황</p>
-          <div className="space-y-1">
-            {worlds.map((summary) => {
-              const emblemUrl = worldEmblemUrl(summary.world)
-              return (
-                <div key={summary.world} className="flex items-center gap-1.5 px-1">
-                  {emblemUrl !== null && <img src={emblemUrl} alt="" className="h-4 w-4 flex-none" />}
-                  <span className="text-xs text-text-muted">{summary.world}</span>
-                  <span className="ml-auto pl-3 text-xs font-semibold tabular-nums text-text">
-                    {summary.cleared} / {WEEKLY_CRYSTAL_SALE_LIMIT}
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
-    </>
-  )
-}
-
-// 직전 기간 대비 증감 칩([[ADR-087]] 결정 1·3·5) — **금액행** 오른쪽에 붙는다. 라벨행이 아니라
-// 금액행(아이콘 32px)이라 [[ADR-054]] 정정 4의 h-6 제약과 무관하고 헤더 높이가 늘지 않는다.
-//
-// 비교 기준(`previousMeso`)은 store 가 기록 합만 넘긴 값이다 — 조회한 적 없는 기간도 0이라
-// (결정 3, 사용자 결정) 이 컴포넌트는 기간 상태를 전혀 보지 않는다.
-function DeltaChip(props: {
-  totalMeso: number
-  previousMeso: number
-  tab: BossCycle
-  periodKey: string
-  now: Date
-}): React.JSX.Element {
-  const delta = computeProfitDelta(props.totalMeso, props.previousMeso)
-  const previousLabel = formatBossProfitPeriodLabel(
-    props.tab,
-    getAdjacentPeriodKey(props.tab, props.periodKey, 'prev'),
-    props.now,
-  ).primary
-
-  // 방향이 없는 상태(같음)에는 신호색을 쓰지 않는다 — 빨강도 파랑도 거짓이다.
-  const tone =
-    delta.direction === 'same'
-      ? 'bg-primary-tint text-primary-ink'
-      : delta.direction === 'up'
-        ? 'bg-rise-tint text-rise-ink'
-        : 'bg-fall-tint text-fall-ink'
-
-  return (
-    // 화살표·색은 의미를 전하지 못하므로 칩 전체에 문장을 준다. leading-none 이 없으면 글꼴
-    // line-height 가 실려 h-5 를 넘긴다(결정석 칩과 같은 규약).
-    <span
-      aria-label={formatProfitDeltaLabel(delta, previousLabel)}
-      className={`ml-2 flex h-5 flex-none items-center gap-0.5 rounded-full px-1.5 text-[11px] font-bold leading-none tabular-nums ${tone}`}
-    >
-      {/* 'same' 에는 방향 표식을 그리지 않는다 — 표기 "-" 자체가 표식이라 겹친다. */}
-      {delta.direction === 'up' && <ArrowUp className="h-2.5 w-2.5 flex-none" strokeWidth={3} aria-hidden="true" />}
-      {delta.direction === 'down' && <ArrowDown className="h-2.5 w-2.5 flex-none" strokeWidth={3} aria-hidden="true" />}
-      {formatProfitDeltaBody(delta)}
-    </span>
-  )
-}
 
 // 프롭에는 **이 캐릭터 카드에 매인 것만** 남는다 — 기간·탭 맥락과 스토어 바인딩 8개는
 // 컨텍스트에서 읽는다(ADR-094 3단계 정정). 그 8개는 아무 중간 컴포넌트도 쓰지 않고 4단계를
