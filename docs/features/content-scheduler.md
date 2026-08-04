@@ -91,7 +91,7 @@
 진행 중(1): rounded-full bg-surface-2 text-text text-xs font-semibold px-2.5 py-1 "진행 중"        ← .media-scope 안
 시작 안함(0): rounded-full bg-surface-2 text-text-muted text-xs font-semibold px-2.5 py-1 "시작 안함" ← .media-scope 안
 ```
-지역 배경 매칭: `daily-quest-regions.json`(지역명→슬러그) + `daily-quest-region-crops.json`(슬러그→크롭), `lib/daily-quest-backgrounds`. 공백 제거 표시명이 공백 제거 지역명으로 `startsWith`(예 "레헬른의평온한밤".startsWith("레헬른")). 미매칭이면 일러스트 레이어 생략. 디버그 프리뷰 `/debug/quest-cards`. `kind: 'contents'` 항목은 몬스터파크 예외를 빼면 기존 "이름 · now/max + 진행률 바" 유지.
+지역 배경 매칭: `daily-quest-regions.json`(지역명→슬러그) + `daily-quest-region-crops.json`(슬러그→크롭), `lib/daily-quest-backgrounds`. 공백 제거 표시명이 공백 제거 지역명으로 `startsWith`(예 "레헬른의평온한밤".startsWith("레헬른")). 미매칭이면 일러스트 레이어 생략. 크롭 조정용 디버그 프리뷰는 [[ADR-092]] 에서 삭제. `kind: 'contents'` 항목은 몬스터파크 예외를 빼면 기존 "이름 · now/max + 진행률 바" 유지.
 
 ### 몬스터파크 카드 ([[ADR-020]])
 `kind: 'contents'` 중 "몬스터파크" 하나만의 예외 카드. 높이 **112px**(`h-28`). `flex flex-col`: 위 `h-20`(아이콘+이름·진행률 뱃지, 다른 카드와 같은 80px 위치) + 아래 `flex-1`(진행률 바, `items-start pt-0`).

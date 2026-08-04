@@ -24,10 +24,10 @@
 
 ## UI 표시 전용 설정 파일 ([[ADR-006]] 대상 아님 — 게임 수치 아님)
 게임 밸런스/수치가 아니라 화면 크롭 파라미터이므로 사용자가 이미지 넣을 때마다 직접 조정(디버그 프리뷰에서 값 복사).
-- **`boss-portrait-crops.json`** ([[ADR-018]]): 보스 스케줄러 새 보스 카드 bleed 일러스트의 `portraitSlug → { size, position }`(CSS background-size/position). 매핑 없으면 cover/center. `/debug/boss-cards` 에서 조정. 주간 콘텐츠 카드 배경(에픽 던전 3종·길드 지하수로)도 이 파일 재사용([[ADR-021]]).
-- **`boss-portrait-icon-crops.json`** (2026-07-14): `BossPortrait`(원형 아이콘, 보스 수익 화면)의 크롭. 형식은 위와 동일하나 값은 공유하지 않는 별도 파일(원형/사각형은 이상적 크롭이 다름). `/debug/boss-portrait-size` 에서 조정.
+- **`boss-portrait-crops.json`** ([[ADR-018]]): 보스 스케줄러 새 보스 카드 bleed 일러스트의 `portraitSlug → { size, position }`(CSS background-size/position). 매핑 없으면 cover/center. 값 조정은 전용 디버그 화면에서 눈으로 맞췄고, 그 화면은 조정을 마치고 삭제했다([[ADR-092]] — 다시 만질 일이 생기면 복원 선행). 주간 콘텐츠 카드 배경(에픽 던전 3종·길드 지하수로)도 이 파일 재사용([[ADR-021]]).
+- **`boss-portrait-icon-crops.json`** (2026-07-14): `BossPortrait`(원형 아이콘, 보스 수익 화면)의 크롭. 형식은 위와 동일하나 값은 공유하지 않는 별도 파일(원형/사각형은 이상적 크롭이 다름). 조정 화면은 [[ADR-092]] 에서 삭제.
 - **`daily-quest-regions.json`** ([[ADR-020]]): 일일퀘스트 카드 "지역명 → 배경 슬러그". 매칭은 접두어 제거 후 공백 제거 표시명이 지역명으로 `startsWith`.
-- **`daily-quest-region-crops.json`** ([[ADR-020]]): 지역 슬러그 → `{ size, position }`. `/debug/quest-cards` 에서 조정. 길드 미션 포인트(`hallOfHeroes`)·플래그 레이스(`flagRace`, jpg)도 추가([[ADR-021]]).
+- **`daily-quest-region-crops.json`** ([[ADR-020]]): 지역 슬러그 → `{ size, position }`. 조정 화면은 [[ADR-092]] 에서 삭제. 길드 미션 포인트(`hallOfHeroes`)·플래그 레이스(`flagRace`, jpg)도 추가([[ADR-021]]).
 - **`weekly-regional-quests.json`** ([[ADR-021]]): 주간 지역 콘텐츠(에르다 스펙트럼 등 6종) "콘텐츠명 → 배경 슬러그". 콘텐츠명에 지역명이 없어 `startsWith` 아닌 정확 일치. 슬러그·에셋은 `daily-quest-regions.json` 재사용(신규 에셋 없음).
 - **`job-themes.json`** ([[ADR-009]]): 테마별 17토큰 컬러 → [features/theme.md](../features/theme.md).
 
