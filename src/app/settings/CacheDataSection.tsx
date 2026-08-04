@@ -5,7 +5,7 @@ import { clearCacheDataAndReload, loadCacheDataSizes } from '../../features/sett
 import { formatBytes } from '../../lib/format-bytes'
 import { SettingsRow } from './SettingsRow'
 import { CacheClearConfirm } from './CacheClearConfirm'
-import { Card } from '../../components/Card/Card'
+import { Card } from '../../components/atoms/Card/Card'
 
 export interface CacheDataSectionProps {
   // 테스트 주입용 — 기본은 window.location.reload

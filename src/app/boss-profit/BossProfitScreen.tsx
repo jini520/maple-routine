@@ -14,19 +14,19 @@ import {
   Plus,
   RefreshCw,
 } from 'lucide-react'
-import { AnimatedMeso } from '../../components/AnimatedMeso/AnimatedMeso'
-import { BossPortrait } from '../../components/BossPortrait/BossPortrait'
-import { DifficultyBadge } from '../../components/DifficultyBadge/DifficultyBadge'
-import { EmptyState } from '../../components/EmptyState/EmptyState'
-import { ErrorState } from '../../components/ErrorState/ErrorState'
-import { LoadingState } from '../../components/LoadingState/LoadingState'
-import { ProfitIcon } from '../../components/ProfitIcon/ProfitIcon'
-import { PullToRefreshIndicator } from '../../components/PullToRefreshIndicator/PullToRefreshIndicator'
+import { AnimatedMeso } from '../../components/atoms/AnimatedMeso/AnimatedMeso'
+import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
+import { DifficultyBadge } from '../../components/atoms/DifficultyBadge/DifficultyBadge'
+import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
+import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
+import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
+import { ProfitIcon } from '../../components/atoms/ProfitIcon/ProfitIcon'
+import { PullToRefreshIndicator } from '../../components/molecules/PullToRefreshIndicator/PullToRefreshIndicator'
 import { PULL_SETTLE_TRANSITION, resolveContentOffsetPx } from '../../lib/pull-to-refresh'
 import { usePullToRefresh } from '../../lib/use-pull-to-refresh'
-import { UnavailableNotice } from '../../components/EmptyState/UnavailableNotice'
+import { UnavailableNotice } from '../../components/molecules/EmptyState/UnavailableNotice'
 import { usePeriodLoadErrorToast } from '../../features/boss-profit/use-period-error-toast'
-import { ValuableDropBadge } from '../../components/ValuableDropBadge/ValuableDropBadge'
+import { ValuableDropBadge } from '../../components/molecules/ValuableDropBadge/ValuableDropBadge'
 import weeklyBossesData from '../../data/weekly-bosses.json'
 import {
   dropRowKey,
@@ -63,7 +63,7 @@ import type { RecordedDrop } from '../../types/drops'
 import { BossProfitContextProvider, useBossProfitContext } from './boss-profit-context'
 import type { BossProfitContextValue } from './boss-profit-context'
 import { BossDropSheet } from './BossDropSheet'
-import { ThemeHeaderBackdrop } from '../../components/ThemeHeaderBackdrop/ThemeHeaderBackdrop'
+import { ThemeHeaderBackdrop } from '../../components/templates/ThemeHeaderBackdrop/ThemeHeaderBackdrop'
 
 // components/CharacterTrackingPicker와 동일한 얼굴 크롭 기법(ADR-015)을 이 화면의 32px
 // 아바타 슬롯 크기에 맞춰 재사용한다 — 이 프로젝트는 화면마다 UI를 그대로 복제하는 관례를

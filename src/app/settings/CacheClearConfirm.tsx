@@ -1,10 +1,10 @@
 import { Check } from 'lucide-react'
 import { useState } from 'react'
-import { Modal } from '../../components/Modal/Modal'
-import { MapleSpinner } from '../../components/MapleSpinner/MapleSpinner'
+import { Modal } from '../../components/organisms/Modal/Modal'
+import { MapleSpinner } from '../../components/atoms/MapleSpinner/MapleSpinner'
 import { formatBytes } from '../../lib/format-bytes'
 import type { CacheDataGroupId, CacheDataSelection } from '../../storage/cache-data'
-import { Button } from '../../components/Button/Button'
+import { Button } from '../../components/atoms/Button/Button'
 
 // 공용 Modal을 쓴다 — 직접 오버레이를 그리면 호출부의 space-y-* margin에 fixed inset-0 높이가
 // 깎여 하단 제스처 영역만 딤이 빠진다(38c6ed7과 동일 기전, 실기기 확인). Modal은 body로 포털 렌더링.

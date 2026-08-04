@@ -9,11 +9,11 @@ import {
   WEEKLY_CATEGORY_ORDER,
 } from '../../lib/content-category'
 import { worldEmblemUrl } from '../../lib/world-emblem'
-import { LoadingState } from '../../components/LoadingState/LoadingState'
+import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { useContentSchedulerStore } from '../../features/content-scheduler/store'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { useToastStore } from '../../features/toast/store'
-import { PageHeader } from '../../components/PageHeader/PageHeader'
+import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 
 type ContentTab = 'daily' | 'weekly'
 

@@ -2,16 +2,16 @@ import { useEffect, useState } from 'react'
 import {
   CharacterTrackingGrid,
   ROSTER_BODY_MIN_H,
-} from '../../components/CharacterTrackingPicker/CharacterTrackingGrid'
-import { ErrorState } from '../../components/ErrorState/ErrorState'
-import { StaleBanner } from '../../components/ErrorState/StaleBanner'
-import { MapleSpinner } from '../../components/MapleSpinner/MapleSpinner'
-import { MapleSweepSpinner } from '../../components/MapleSweepSpinner/MapleSweepSpinner'
+} from '../../components/organisms/CharacterTrackingPicker/CharacterTrackingGrid'
+import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
+import { StaleBanner } from '../../components/molecules/ErrorState/StaleBanner'
+import { MapleSpinner } from '../../components/atoms/MapleSpinner/MapleSpinner'
+import { MapleSweepSpinner } from '../../components/atoms/MapleSweepSpinner/MapleSweepSpinner'
 import { formatRosterError } from '../../features/schedule-sync/format'
 import { getCharacterPickerRoster, toScheduleSyncError } from '../../features/schedule-sync/schedule-sync'
 import type { ScheduleSyncError } from '../../features/schedule-sync/schedule-sync'
 import type { CharacterPickerEntry } from '../../types'
-import { Button } from '../../components/Button/Button'
+import { Button } from '../../components/atoms/Button/Button'
 
 export interface ContentCharacterStepProps {
   isSubmitting: boolean

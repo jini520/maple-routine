@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, ScrollText } from 'lucide-react'
-import { EmptyState } from '../../components/EmptyState/EmptyState'
-import { ErrorState } from '../../components/ErrorState/ErrorState'
-import { LoadingState } from '../../components/LoadingState/LoadingState'
+import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
+import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
+import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { MAPLE_LEAF_PATH } from '../../components/mapleLeafPath'
 import {
   useDropHistoryStore,

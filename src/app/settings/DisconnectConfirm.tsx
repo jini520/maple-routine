@@ -1,7 +1,7 @@
 import { useBodyScrollLock } from '../../lib/use-body-scroll-lock'
-import { MapleSpinner } from '../../components/MapleSpinner/MapleSpinner'
-import { Button } from '../../components/Button/Button'
-import { Card } from '../../components/Card/Card'
+import { MapleSpinner } from '../../components/atoms/MapleSpinner/MapleSpinner'
+import { Button } from '../../components/atoms/Button/Button'
+import { Card } from '../../components/atoms/Card/Card'
 
 export interface DisconnectConfirmProps {
   isOpen: boolean

@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Minus, Plus, Users } from 'lucide-react'
-import { BossPortrait } from '../../components/BossPortrait/BossPortrait'
-import { DifficultyBadge } from '../../components/DifficultyBadge/DifficultyBadge'
-import { LoadingState } from '../../components/LoadingState/LoadingState'
+import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
+import { DifficultyBadge } from '../../components/atoms/DifficultyBadge/DifficultyBadge'
+import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import weeklyBossesData from '../../data/weekly-bosses.json'
 import { getMaxPartySize } from '../../lib/boss-crystal-prices'
 import {
@@ -17,7 +17,7 @@ import { partySizeKey, useBossSchedulerStore } from '../../features/boss-schedul
 import { useToastStore } from '../../features/toast/store'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import type { BossDifficulty } from '../../types'
-import { PageHeader } from '../../components/PageHeader/PageHeader'
+import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 
 type BossTab = 'weekly' | 'monthly'
 

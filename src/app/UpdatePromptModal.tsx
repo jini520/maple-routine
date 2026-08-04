@@ -1,7 +1,7 @@
 import { AlertTriangle, CheckCircle2, CloudDownload, Info, Signal, Store } from 'lucide-react'
-import { Modal } from '../components/Modal/Modal'
+import { Modal } from '../components/organisms/Modal/Modal'
 import { useLiveUpdateStore, type LiveUpdateStatus } from '../features/live-update/store'
-import { ProgressBar } from '../components/ProgressBar/ProgressBar'
+import { ProgressBar } from '../components/atoms/ProgressBar/ProgressBar'
 
 // 사용자 동의형 업데이트 모달 — 실행 시(또는 설정에서 수동 확인 시) 새 버전이 있으면 뜬다(ADR-027).
 const MODAL_STATUSES: ReadonlySet<LiveUpdateStatus> = new Set([

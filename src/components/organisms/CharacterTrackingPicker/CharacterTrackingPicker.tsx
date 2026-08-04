@@ -1,0 +1,146 @@
+import { useState } from 'react'
+import { useBodyScrollLock } from '../../../lib/use-body-scroll-lock'
+import { formatRosterError } from '../../../features/schedule-sync/format'
+import type { ScheduleSyncError } from '../../../features/schedule-sync/schedule-sync'
+import type { CharacterPickerEntry } from '../../../types'
+import { ErrorState } from '../../molecules/ErrorState/ErrorState'
+import { StaleBanner } from '../../molecules/ErrorState/StaleBanner'
+import { MapleSweepSpinner } from '../../atoms/MapleSweepSpinner/MapleSweepSpinner'
+import { CharacterTrackingGrid, ROSTER_BODY_MIN_H } from './CharacterTrackingGrid'
+import { Button } from '../../atoms/Button/Button'
+import { Card } from '../../atoms/Card/Card'
+
+// ADR-043 결정 1: 그리드의 토글이 ocid를 배열 끝에 append하므로 같은 집합이어도 배열
+// 순서가 달라진다 — 저장 버튼 활성 여부는 반드시 멤버십(집합)으로만 판정한다.
+function isSameOcidSet(a: string[], b: string[]): boolean {
+  const left = new Set(a)
+  const right = new Set(b)
+  if (left.size !== right.size) return false
+  return [...left].every((ocid) => right.has(ocid))
+}
+
+export interface CharacterTrackingPickerProps {
+  entries: CharacterPickerEntry[]
+  trackedOcids: string[]
+  // 후보 목록 조회가 진행 중인지(ADR-053 결정 3). 호출부가 getCharacterPickerRoster의
+  // Promise 완료 시점으로 판정해 내려준다.
+  isLoading: boolean
+  // 조회가 전역 실패(401/429 등)로 끝났는지 + 그 원인(ADR-062 결정 2) — "활성 캐릭터 0명"과
+  // 구분하는 것을 넘어 원인별 문구·액션을 그리기 위해 boolean이 아니라 에러 종류를 받는다.
+  loadError: ScheduleSyncError | null
+  onSave: (ocids: string[]) => void
+  onClose: () => void
+  // 재조회. 호출부가 피커를 여는 경로와 같은 초기화를 재사용한다(ADR-062 트레이드오프).
+  onRetry: () => void
+  // 401 전용 — 재시도로는 풀리지 않으므로 설정으로 보낸다(ADR-062 결정 3).
+  onOpenSettings: () => void
+}
+
+// ADR-053 결정 3: 그리드 자리에 그릴 것을 고른다. 보여줄 항목이 하나라도 있으면 조회 중이어도
+// 그리드를 그린다 — 캐시 우선 표시(ADR-016)를 스피너로 가리지 않기 위해서다. 항목이 없을 때만
+// 조회 중(스피너) / 조회 완료 후 0건(빈 상태) / 조회 실패(에러)를 구분한다.
+//
+// ADR-062 결정 4: 항목이 있는 채로 실패했으면 그리드를 지우지 않고 위에 스탈 배너를 얹는다 —
+// 캐시 stub이 네트워크보다 먼저 방출되므로(ADR-017 결정 6) 예열이 끝난 정상 경로에서는 이쪽이
+// 기본 분기다. 배너가 없으면 실패의 대다수가 무음이 된다.
+function PickerBody(props: CharacterTrackingPickerProps & { onChange: (ocids: string[]) => void }): React.JSX.Element {
+  if (props.entries.length > 0) {
+    return (
+      <>
+        {props.loadError !== null && <StaleBanner message="목록이 최신이 아닙니다" onRetry={props.onRetry} />}
+        <CharacterTrackingGrid
+          entries={props.entries}
+          trackedOcids={props.trackedOcids}
+          onChange={props.onChange}
+        />
+      </>
+    )
+  }
+
+  if (props.isLoading) {
+    return (
+      <div
+        role="status"
+        aria-busy="true"
+        aria-label="캐릭터 목록을 불러오는 중"
+        className="flex flex-1 items-center justify-center"
+      >
+        <MapleSweepSpinner size={32} className="text-primary" />
+      </div>
+    )
+  }
+
+  if (props.loadError !== null) {
+    const copy = formatRosterError(props.loadError, 'picker')
+    return (
+      <ErrorState
+        title={copy.title}
+        description={copy.description}
+        // 영구 실패(조회 불가 캐릭터)에는 액션이 없다 — 눌러도 실패하는 버튼을 주지 않는다
+        // ([[ADR-062]] 결정 3, [[ADR-067]] 결정 1).
+        action={
+          copy.action === undefined
+            ? undefined
+            : {
+                label: copy.action.label,
+                onClick: copy.action.kind === 'openSettings' ? props.onOpenSettings : props.onRetry,
+              }
+        }
+      />
+    )
+  }
+
+  return (
+    <p className="flex flex-1 items-center justify-center px-4 text-center text-sm text-text-muted">
+      표시할 캐릭터가 없어요
+    </p>
+  )
+}
+
+export function CharacterTrackingPicker(props: CharacterTrackingPickerProps): React.JSX.Element {
+  useBodyScrollLock()
+  const [selectedOcids, setSelectedOcids] = useState<string[]>(props.trackedOcids)
+  const isUnchanged = isSameOcidSet(selectedOcids, props.trackedOcids)
+  // ADR-086 결정 7: 목록을 통째로 비울 수 없다 — 0명은 화면을 빈 상태로 만들 뿐 어떤 사용자
+  // 의도도 표현하지 않는다. 온보딩 캐릭터 단계와 같은 규칙이다.
+  const isEmptySelection = selectedOcids.length === 0
+
+  return (
+    <div
+      data-testid="character-tracking-picker-overlay"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-scrim"
+    >
+      <Card className="w-full max-w-sm p-6">
+        <div className="mb-4 space-y-1">
+          <h2 className="text-lg font-semibold text-text">캐릭터 관리</h2>
+          <p className="text-sm text-text-muted">
+            체크한 캐릭터만 스케줄러 목록에 표시됩니다. 최소 한 명은 선택해주세요.
+          </p>
+        </div>
+
+        {/* 상태가 바뀌어도 이 자리의 높이가 고정돼 아래 닫기·저장 버튼이 움직이지 않는다. */}
+        <div className={`flex flex-col ${ROSTER_BODY_MIN_H}`}>
+          <PickerBody {...props} onChange={setSelectedOcids} />
+        </div>
+
+        <div className="mt-4 flex justify-end gap-2">
+          <Button
+            variant="text"
+            onClick={props.onClose}
+            
+          >
+            닫기
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => props.onSave(selectedOcids)}
+            disabled={isUnchanged || isEmptySelection}
+            className="text-sm disabled:opacity-50"
+          >
+            저장
+          </Button>
+        </div>
+      </Card>
+    </div>
+  )
+}
