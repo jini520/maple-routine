@@ -46,6 +46,7 @@ docs/
 | 에러/복원력 | [foundation/error-resilience.md](./foundation/error-resilience.md) | 실패 처리·빈 상태·참조 무결성·멱등성·엣지 케이스 |
 | 디자인 시스템 | [foundation/design-system.md](./foundation/design-system.md) | 색·시맨틱 토큰·기본 컴포넌트(카드/버튼/입력)·공유 UI 패턴(탭/스크롤/모달)·타이포·아이콘 |
 | 게임 레퍼런스 데이터 | [foundation/game-data.md](./foundation/game-data.md) | `src/data/*.json` 을 만질 때 ([[ADR-006]] — AI 임의 추정 금지) |
+| 스토어 릴리스 | [foundation/release.md](./foundation/release.md) | 스토어에 나갈 바이너리를 만들 때 — 서명·`versionCode`·빌드 커맨드·산출물 검증·콘솔 요건 |
 
 ## 작업 유형별 길잡이
 
@@ -55,4 +56,5 @@ docs/
 - **색·토큰·테마** → `foundation/design-system.md` (기본 팔레트·시맨틱 색) + `features/theme.md` (테마별 토큰·런타임 전환).
 - **동기화·정규화·호출 제한** → `foundation/nexon-api.md` + `features/content-scheduler.md`/`boss-scheduler.md`.
 - **에러/빈 상태/엣지 처리** → `foundation/error-resilience.md`.
+- **스토어 배포·서명·버전 올리기** → `foundation/release.md` (OTA 갱신은 `features/live-update.md` — 별개 축이다).
 - **설계 결정의 배경이 궁금할 때** → `ADR.md` 에서 `[[ADR-NNN]]` 조회.
