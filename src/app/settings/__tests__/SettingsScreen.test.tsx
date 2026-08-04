@@ -229,6 +229,21 @@ describe('SettingsScreen', () => {
     ).toBeInTheDocument()
   })
 
+  // Play 사용자 데이터 정책은 스토어 등록정보와 앱 안 양쪽에 링크를 요구한다 —
+  // 콘솔에 URL을 넣는 것만으로는 충족되지 않는다(docs/foundation/release.md).
+  it('하단에 개인정보 처리방침 링크를 새 탭으로 열리게 표시한다', () => {
+    mockSettingsStore({})
+    mockThemeStore({})
+
+    render(<SettingsScreen />)
+
+    const link = screen.getByRole('link', { name: '개인정보 처리방침' })
+    expect(link).toHaveAttribute('href', 'https://mapleroutine.store/privacy')
+    expect(link).toHaveAttribute('target', '_blank')
+    // 새 탭으로 여는 링크는 opener 를 끊지 않으면 연 쪽 페이지를 조작할 수 있다.
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer')
+  })
+
   it('하단 앱 버전은 빌드 시점 package.json이 아니라 현재 실행 중인 OTA 번들 버전을 표시한다', () => {
     mockSettingsStore({})
     mockThemeStore({})

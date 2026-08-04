@@ -22,6 +22,11 @@
 - **footer 표기**(확정 2026-07-13, 비제휴 고지 추가 2026-08-03): 화면 맨 아래에 앱 버전(`package.json`)·카피라이트("© {연도} 메이플 루틴")·이용약관 제6조④ 요구 영문 문구 "Data based on NEXON Open API"(원문 그대로, 의역 금지)·**비제휴 고지 "Maple Routine is not associated with NEXON Korea"**. 앱 전역 footer는 만들지 않음.
   - 비제휴 고지는 약관이 **요구하는 것이 아니라** 동종 서비스의 공통 관행을 따른 것이다(2026-08-03 조사) — maple.gg("Maple.GG is not associated with NEXON Korea")·chuchu.gg("This site is not associated with NEXON Korea")·maplescouter.com("Maplescouter is not associated with NEXON Korea and does not provide any warranty") 셋 다 출처 표기와 **함께** 비제휴 고지를 단다. 출처 표기만 있으면 넥슨 공식 서비스로 오인될 여지가 남는다.
   - **문구도 3사와 같은 영문 형태로 맞춘다**(사용자 결정 2026-08-04, 초안의 한글안 폐기). 같은 문구를 안내 사이트 footer(`site/template.html`)와 `PRIVACY.md` 말미도 공유한다.
+- **개인정보 처리방침 링크**(2026-08-04, 스토어 요건): footer 맨 위에 `mapleroutine.store/privacy` 로 나가는 링크 한 줄. **Play 사용자 데이터 정책은 스토어 등록정보와 앱 안 양쪽에 링크를 요구한다** — 콘솔에 URL을 넣는 것만으로는 충족되지 않는다([../foundation/release.md](../foundation/release.md)).
+  - **위치는 footer 맨 위**(버전 줄보다 위). 아래 세 줄은 고지 문구라 읽고 끝나지만 이것은 **눌러야 하는 것**이라, 정적 문구 사이에 끼면 링크로 안 읽힌다.
+  - **색은 `text-text-muted` + `underline`.** 나머지 footer가 `text-text-disabled` 인데 그 톤으로 두면 "누를 수 있는 것"으로 보이지 않고, 온보딩 링크의 `text-primary-ink` 를 쓰면 footer에서 혼자 튄다. 한 단계만 밝히고 밑줄로 링크임을 표시한다.
+  - **외부 링크 열기는 `<a target="_blank" rel="noopener noreferrer">`** — `ApiKeyForm` 의 `openapi.nexon.com` 링크와 같은 방식이다. 별도 브라우저 플러그인을 들이지 않는다.
+  - URL은 `PRIVACY.md` 를 렌더링해 서빙하는 그 주소다([site.md](./site.md)) — 앱 안에 정책 본문 사본을 만들지 않는다. 사본을 두면 법적 문서가 두 벌이 된다.
 
 ## UI
 

@@ -88,7 +88,7 @@ keytool -printcert -jarfile android/app/build/outputs/bundle/release/app-release
 | 개발자 계정 | ⏳ 개인 계정 보유 | — |
 | **비공개 테스트 12명 × 14일 연속** | ❌ | 2023-11 이후 **개인** 계정의 프로덕션 출시 전제조건. 조직 계정은 면제. **전체 일정을 지배하는 항목** |
 | 개인정보 처리방침 URL | ✅ | `https://mapleroutine.store/privacy` — 게시 확인 완료(2026-08-04) |
-| 개인정보 처리방침 **앱 내 링크** | ❌ | Play 사용자 데이터 정책은 스토어 등록정보 **와 앱 안** 양쪽을 요구한다. `src/` 에 URL이 없다 — 설정 화면에 추가 필요([features/ads.md](../features/ads.md)) |
+| 개인정보 처리방침 **앱 내 링크** | ✅ | 설정 footer 맨 위(2026-08-04). Play 사용자 데이터 정책은 스토어 등록정보 **와 앱 안** 양쪽을 요구한다([features/settings.md](../features/settings.md)) |
 | **앱 액세스 권한** | ❌ | 온보딩이 넥슨 API 키 하드 게이트라([features/onboarding.md](../features/onboarding.md)) **심사자용 테스트 키 + 캐릭터 있는 계정 + 입력 절차**를 적어주지 않으면 리뷰어가 앱을 실행조차 못 한다 |
 | 데이터 안전 | ❌ | `AD_ID` 권한을 선언했으므로 **광고 ID 수집 신고 필수**. 넥슨 API 키의 취급 분류도 함께 |
 | "광고 포함" 선언 | ❌ | [[ADR-090]] |
