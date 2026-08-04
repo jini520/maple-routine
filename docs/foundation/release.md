@@ -37,14 +37,31 @@ keytool -genkeypair -v \
 - `-validity 10000`(약 27년) — Play는 **2033-10-22 이후까지** 유효한 키를 요구한다.
 - `-storetype PKCS12` — JKS는 레거시 포맷이라 `keytool` 이 변환 경고를 낸다.
 
+**인증서 소유자 정보(DN)** 를 대화형으로 묻는다. **업로드 키의 DN은 사용자에게 어디에도 보이지
+않는** 인증서 메타데이터라 값은 자유롭지만, 나중에 바꾸려면 키를 새로 만들어야 한다. 실제로
+쓴 값은 이렇다.
+
+```
+CN=MapleRoutine, O=Maple Routine, L=Seoul, ST=Seoul, C=KR
+```
+
+- **한글을 넣지 않는다.** 이 저장소는 한글 번들 이름의 NFD 인코딩 때문에 App Store 서명 검증이
+  깨진 전례가 있다([../trouble/2026-08-04-ios-appstore-signing.md](../trouble/2026-08-04-ios-appstore-signing.md)).
+- 마지막 확인(`… 이(가) 맞습니까? [아니오]:`)에서 **`y` 를 입력**한다 — 기본값이 "아니오"라
+  그냥 엔터를 치면 처음부터 다시 묻는다.
+
 그 다음 `android/keystore.properties` 를 만든다(**gitignore 대상 · 절대경로**).
 
 ```properties
 storeFile=/Users/<user>/keys/maple-routine-upload.jks
-storePassword=<store 비밀번호>
+storePassword=<비밀번호>
 keyAlias=upload
-keyPassword=<key 비밀번호>
+keyPassword=<같은 비밀번호>
 ```
+
+⚠️ **`storePassword` 와 `keyPassword` 는 같은 값이다.** PKCS12는 키 비밀번호가 키스토어
+비밀번호와 같아야 해서 `keytool` 이 키 비밀번호를 **따로 묻지 않는다**(JKS 시절의 "키 저장소
+암호와 동일한 경우 RETURN" 프롬프트가 없다). 다른 값을 적으면 빌드가 서명 단계에서 실패한다.
 
 > 업로드 키는 **분실보다 유출이 위험하다** — Play 앱 서명을 쓰므로 잃어버리면 Google에 재설정을
 > 요청할 수 있다([[ADR-091]] 결정 1).
@@ -67,8 +84,13 @@ keytool -printcert -jarfile android/app/build/outputs/bundle/release/app-release
 ```
 
 `소유자: CN=...` 이 나오면 서명된 것이고, 아무것도 안 나오면 `keystore.properties` 를 못 읽은
-것이다. 이 절차는 폐기용 임시 키로 **끝까지 한 번 돌려 검증했다**(2026-08-04) — AAB 산출과 위
-확인 명령까지 정상 동작한다.
+것이다. **실제 업로드 키로 끝까지 한 번 돌려 검증했다**(2026-08-04).
+
+```
+소유자: CN=MapleRoutine, O=Maple Routine, L=Seoul, ST=Seoul, C=KR
+종료 날짜: Sat Dec 20 18:39:09 KST 2053     ← Play 요건(2033-10-22 이후) 충족
+주체 공용 키 알고리즘: 2048비트 RSA 키       ← Play 요건(RSA 2048 이상) 충족
+```
 
 ### 버전 규칙 ([[ADR-024]], [[ADR-091]] 결정 5)
 
