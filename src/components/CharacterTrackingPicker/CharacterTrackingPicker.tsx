@@ -8,6 +8,7 @@ import { StaleBanner } from '../ErrorState/StaleBanner'
 import { MapleSweepSpinner } from '../MapleSweepSpinner/MapleSweepSpinner'
 import { CharacterTrackingGrid, ROSTER_BODY_MIN_H } from './CharacterTrackingGrid'
 import { Button } from '../Button/Button'
+import { Card } from '../Card/Card'
 
 // ADR-043 결정 1: 그리드의 토글이 ocid를 배열 끝에 append하므로 같은 집합이어도 배열
 // 순서가 달라진다 — 저장 버튼 활성 여부는 반드시 멤버십(집합)으로만 판정한다.
@@ -109,7 +110,7 @@ export function CharacterTrackingPicker(props: CharacterTrackingPickerProps): Re
       data-testid="character-tracking-picker-overlay"
       className="fixed inset-0 z-50 flex items-center justify-center bg-scrim"
     >
-      <div className="w-full max-w-sm rounded-[14px] border border-border bg-surface p-6">
+      <Card className="w-full max-w-sm p-6">
         <div className="mb-4 space-y-1">
           <h2 className="text-lg font-semibold text-text">캐릭터 관리</h2>
           <p className="text-sm text-text-muted">
@@ -139,7 +140,7 @@ export function CharacterTrackingPicker(props: CharacterTrackingPickerProps): Re
             저장
           </Button>
         </div>
-      </div>
+      </Card>
     </div>
   )
 }

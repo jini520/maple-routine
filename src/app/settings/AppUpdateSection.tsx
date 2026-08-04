@@ -3,6 +3,7 @@ import packageJson from '../../../package.json'
 import { useLiveUpdateStore, type LiveUpdateStatus } from '../../features/live-update/store'
 import { MapleSpinner } from '../../components/MapleSpinner/MapleSpinner'
 import { Button } from '../../components/Button/Button'
+import { Card } from '../../components/Card/Card'
 
 // 설정의 관찰용 섹션 — 현재 실행 번들 버전과 상태를 보여주고 수동 확인을 제공한다(ADR-026/ADR-027).
 // 새 버전을 실제로 받고 적용하는 동의 플로우는 UpdatePromptModal이 담당한다.
@@ -45,7 +46,7 @@ export function AppUpdateSection(): React.JSX.Element {
     <section className="space-y-2">
       <h2 className="px-1 text-sm font-semibold text-text-muted">앱 업데이트</h2>
 
-      <div className="rounded-[14px] bg-surface border border-border px-6 divide-y divide-border">
+      <Card className="px-6 divide-y divide-border">
         <div className="flex items-center justify-between py-4">
           <span className="text-sm font-medium text-text">현재 버전</span>
           <span className="flex items-center gap-2">
@@ -81,7 +82,7 @@ export function AppUpdateSection(): React.JSX.Element {
             </Button>
           </div>
         )}
-      </div>
+      </Card>
     </section>
   )
 }

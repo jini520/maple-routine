@@ -31,6 +31,7 @@ import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { MEDIA_TEXT_SHADOW } from '../../lib/media-card'
 import { ThemeHeaderBackdrop } from '../../components/ThemeHeaderBackdrop/ThemeHeaderBackdrop'
 import { ProgressBar } from '../../components/ProgressBar/ProgressBar'
+import { Card } from '../../components/Card/Card'
 
 type ContentTab = 'daily' | 'weekly'
 
@@ -113,7 +114,7 @@ export function DailyQuestCard(props: {
   // 카드 배경/보더/이름 텍스트는 BossCard와 동일하게 앱 테마와 무관하게 레테(다크) 고정 배색을
   // 쓴다 — 일러스트 bleed·페이드·text-shadow가 어두운 배경을 전제로 튜닝됐기 때문(ADR-018/020).
   return (
-    <div className="media-scope relative h-20 overflow-hidden rounded-[14px] border border-border bg-surface">
+    <Card className="media-scope relative h-20 overflow-hidden">
       {backgroundUrl !== null && (
         <div
           className="absolute inset-0"
@@ -145,7 +146,7 @@ export function DailyQuestCard(props: {
 
         {content.questState !== null && <QuestStateBadge questState={content.questState} />}
       </div>
-    </div>
+    </Card>
   )
 }
 
@@ -161,7 +162,7 @@ export function MonsterParkCard(props: {
   const progressPercent = content.maxCount > 0 ? Math.min((content.nowCount / content.maxCount) * 100, 100) : 0
 
   return (
-    <div className="media-scope relative h-28 overflow-hidden rounded-[14px] border border-border bg-surface">
+    <Card className="media-scope relative h-28 overflow-hidden">
       {backgroundUrl !== null && (
         <div
           className="absolute inset-0"
@@ -207,7 +208,7 @@ export function MonsterParkCard(props: {
           </div>
         )}
       </div>
-    </div>
+    </Card>
   )
 }
 
@@ -276,7 +277,7 @@ export function EpicDungeonCard(props: {
   const questState: 0 | 2 = content.nowCount > 0 ? 2 : 0
 
   return (
-    <div className="media-scope relative h-20 overflow-hidden rounded-[14px] border border-border bg-surface">
+    <Card className="media-scope relative h-20 overflow-hidden">
       {backgroundUrl !== null && (
         <div
           className="absolute inset-0"
@@ -303,7 +304,7 @@ export function EpicDungeonCard(props: {
 
         <QuestStateBadge questState={questState} />
       </div>
-    </div>
+    </Card>
   )
 }
 
@@ -329,7 +330,7 @@ export function WeeklyRegionalContentCard(props: {
         : 0
 
   return (
-    <div className="media-scope relative h-20 overflow-hidden rounded-[14px] border border-border bg-surface">
+    <Card className="media-scope relative h-20 overflow-hidden">
       {backgroundUrl !== null && (
         <div
           className="absolute inset-0"
@@ -358,7 +359,7 @@ export function WeeklyRegionalContentCard(props: {
 
         {questState !== null && <QuestStateBadge questState={questState} />}
       </div>
-    </div>
+    </Card>
   )
 }
 
@@ -374,7 +375,7 @@ export function WeeklyQuestCard(props: {
   const crop = props.crop ?? getDailyQuestRegionCrop(backgroundSlug)
 
   return (
-    <div className="media-scope relative h-20 overflow-hidden rounded-[14px] border border-border bg-surface">
+    <Card className="media-scope relative h-20 overflow-hidden">
       {backgroundUrl !== null && (
         <div
           className="absolute inset-0"
@@ -403,7 +404,7 @@ export function WeeklyQuestCard(props: {
 
         {renderWeeklyQuestStatus(content, backgroundSlug)}
       </div>
-    </div>
+    </Card>
   )
 }
 
@@ -419,7 +420,7 @@ export function MapleUnionDragonCard(props: {
   const crop = props.crop ?? getBossPortraitCrop(MAPLE_UNION_DRAGON_BOSS_SLUG)
 
   return (
-    <div className="media-scope relative h-20 overflow-hidden rounded-[14px] border border-border bg-surface">
+    <Card className="media-scope relative h-20 overflow-hidden">
       {backgroundUrl !== null && (
         <div
           className="absolute inset-0"
@@ -446,7 +447,7 @@ export function MapleUnionDragonCard(props: {
 
         {content.questState !== null && <QuestStateBadge questState={content.questState} />}
       </div>
-    </div>
+    </Card>
   )
 }
 
@@ -464,7 +465,7 @@ export function GuildUndergroundWaterwayCard(props: {
   const crop = props.crop ?? getBossPortraitCrop(GUILD_UNDERGROUND_WATERWAY_BACKGROUND_SLUG)
 
   return (
-    <div className="media-scope relative h-20 overflow-hidden rounded-[14px] border border-border bg-surface">
+    <Card className="media-scope relative h-20 overflow-hidden">
       {backgroundUrl !== null && (
         <div
           className="absolute inset-0"
@@ -493,7 +494,7 @@ export function GuildUndergroundWaterwayCard(props: {
           {content.nowCount}점
         </span>
       </div>
-    </div>
+    </Card>
   )
 }
 
@@ -508,7 +509,7 @@ export function GuildMissionPointsCard(props: {
   const progressPercent = content.maxCount > 0 ? Math.min((content.nowCount / content.maxCount) * 100, 100) : 0
 
   return (
-    <div className="media-scope relative h-28 overflow-hidden rounded-[14px] border border-border bg-surface">
+    <Card className="media-scope relative h-28 overflow-hidden">
       {backgroundUrl !== null && (
         <div
           className="absolute inset-0"
@@ -549,7 +550,7 @@ export function GuildMissionPointsCard(props: {
           </div>
         )}
       </div>
-    </div>
+    </Card>
   )
 }
 
@@ -564,7 +565,7 @@ export function GuildFlagRaceCard(props: {
   const questState: 0 | 2 = content.nowCount > 0 ? 2 : 0
 
   return (
-    <div className="media-scope relative h-20 overflow-hidden rounded-[14px] border border-border bg-surface">
+    <Card className="media-scope relative h-20 overflow-hidden">
       {backgroundUrl !== null && (
         <div
           className="absolute inset-0"
@@ -591,7 +592,7 @@ export function GuildFlagRaceCard(props: {
 
         <QuestStateBadge questState={questState} />
       </div>
-    </div>
+    </Card>
   )
 }
 
@@ -606,7 +607,7 @@ function renderDailyContentCard(content: DailyContent): React.JSX.Element {
   }
 
   return (
-    <div className="rounded-[14px] bg-surface border border-border p-4 space-y-2">
+    <Card className="p-4 space-y-2">
       <p className="text-sm text-text">
         {content.name} · {content.nowCount}/{content.maxCount}
       </p>
@@ -616,7 +617,7 @@ function renderDailyContentCard(content: DailyContent): React.JSX.Element {
           aria={{ now: content.nowCount, max: content.maxCount }}
         />
       )}
-    </div>
+    </Card>
   )
 }
 
@@ -650,7 +651,7 @@ function renderWeeklyContentCard(content: WeeklyContent): React.JSX.Element {
   }
 
   return (
-    <div className="rounded-[14px] bg-surface border border-border p-4 space-y-2">
+    <Card className="p-4 space-y-2">
       <p className="text-sm text-text">
         {content.name} · {content.nowCount}/{content.maxCount}
       </p>
@@ -660,7 +661,7 @@ function renderWeeklyContentCard(content: WeeklyContent): React.JSX.Element {
           aria={{ now: content.nowCount, max: content.maxCount }}
         />
       )}
-    </div>
+    </Card>
   )
 }
 

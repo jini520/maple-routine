@@ -7,6 +7,7 @@ import { showSplashScreen } from '../../native/splash-screen'
 import { formatBytes } from '../../lib/format-bytes'
 import { SettingsRow } from './SettingsRow'
 import { CacheClearConfirm } from './CacheClearConfirm'
+import { Card } from '../../components/Card/Card'
 
 const CLEAR_TIMEOUT_MS = 10_000
 
@@ -61,7 +62,7 @@ export function CacheDataSection(props: CacheDataSectionProps = {}): React.JSX.E
     <section className="space-y-2">
       <h2 className="px-1 text-sm font-semibold text-text-muted">데이터 관리</h2>
 
-      <div className="rounded-[14px] bg-surface border border-border px-6 divide-y divide-border">
+      <Card className="px-6 divide-y divide-border">
         <SettingsRow
           label="캐시 데이터 삭제"
           onClick={() => setIsOpen(true)}
@@ -74,7 +75,7 @@ export function CacheDataSection(props: CacheDataSectionProps = {}): React.JSX.E
             </span>
           }
         />
-      </div>
+      </Card>
 
       <CacheClearConfirm
         isOpen={isOpen}

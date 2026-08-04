@@ -1,6 +1,7 @@
 import { useBodyScrollLock } from '../../lib/use-body-scroll-lock'
 import { MapleSpinner } from '../../components/MapleSpinner/MapleSpinner'
 import { Button } from '../../components/Button/Button'
+import { Card } from '../../components/Card/Card'
 
 export interface DisconnectConfirmProps {
   isOpen: boolean
@@ -19,9 +20,9 @@ export function DisconnectConfirm(props: DisconnectConfirmProps): React.JSX.Elem
       onClick={props.onCancel}
       className="fixed inset-0 z-50 flex items-center justify-center bg-scrim"
     >
-      <div
+      <Card
         onClick={(event) => event.stopPropagation()}
-        className="w-full max-w-sm rounded-[14px] border border-border bg-surface p-6 space-y-4"
+        className="w-full max-w-sm p-6 space-y-4"
       >
         <div className="space-y-1">
           <h2 className="text-lg font-semibold text-text">연결을 해제할까요?</h2>
@@ -51,7 +52,7 @@ export function DisconnectConfirm(props: DisconnectConfirmProps): React.JSX.Elem
             {props.isDisconnecting ? '해제 중' : '연결 해제'}
           </Button>
         </div>
-      </div>
+      </Card>
     </div>
   )
 }

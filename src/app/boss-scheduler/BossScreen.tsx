@@ -25,6 +25,7 @@ import type { ScheduleSyncError } from '../../features/schedule-sync/schedule-sy
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { MEDIA_TEXT_SHADOW } from '../../lib/media-card'
 import { ThemeHeaderBackdrop } from '../../components/ThemeHeaderBackdrop/ThemeHeaderBackdrop'
+import { Card } from '../../components/Card/Card'
 
 type BossTab = 'weekly' | 'monthly'
 type PartyFilter = 'all' | 'solo' | 'party'
@@ -53,7 +54,7 @@ function BossCard(props: {
   // (ADR-064 결정 5) 안에서는 앱 전역과 같은 레시피(bg-surface·text-text)를 그대로 쓴다.
   // 완료 뱃지는 앱 전체가 공유하는 "완료/성공" 의미 색(secondary)이라 스코프 안에서도 그대로다.
   return (
-    <div className="media-scope relative h-20 overflow-hidden rounded-[14px] border border-border bg-surface">
+    <Card className="media-scope relative h-20 overflow-hidden">
       {portraitUrl !== null && (
         <div
           className="absolute inset-0"
@@ -93,7 +94,7 @@ function BossCard(props: {
           )}
         </div>
       </div>
-    </div>
+    </Card>
   )
 }
 
