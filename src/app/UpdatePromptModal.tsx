@@ -1,6 +1,7 @@
 import { AlertTriangle, CheckCircle2, CloudDownload, Info, Signal, Store } from 'lucide-react'
 import { Modal } from '../components/Modal/Modal'
 import { useLiveUpdateStore, type LiveUpdateStatus } from '../features/live-update/store'
+import { ProgressBar } from '../components/ProgressBar/ProgressBar'
 
 // 사용자 동의형 업데이트 모달 — 실행 시(또는 설정에서 수동 확인 시) 새 버전이 있으면 뜬다(ADR-027).
 const MODAL_STATUSES: ReadonlySet<LiveUpdateStatus> = new Set([
@@ -140,13 +141,7 @@ export function UpdatePromptModal(): React.JSX.Element | null {
             <h2 className="text-base font-semibold text-text">다운로드 중</h2>
             {/* ADR-061 결정 6: 결정형 진행률은 예외 없이 h-1.5 프리미티브 하나 — 이 모달만
                 쓰던 h-2 변형을 없앤다. */}
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-track">
-              <div
-                data-testid="update-progress-bar"
-                className="h-1.5 rounded-full bg-primary transition-[width]"
-                style={{ width: `${downloadProgress}%` }}
-              />
-            </div>
+            <ProgressBar percent={downloadProgress} animated fillTestId="update-progress-bar" />
             <p className="text-xs font-medium text-text-muted tabular-nums">{downloadProgress}%</p>
           </div>
         )}

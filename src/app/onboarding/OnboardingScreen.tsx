@@ -5,6 +5,7 @@ import { ApiKeyForm } from './ApiKeyForm'
 import { AccountSelectionList } from './AccountSelectionList'
 import { ContentCharacterStep } from './ContentCharacterStep'
 import { TrackingModeStep } from './TrackingModeStep'
+import { ProgressBar } from '../../components/ProgressBar/ProgressBar'
 
 export function OnboardingScreen(): React.JSX.Element {
   const {
@@ -62,15 +63,7 @@ export function OnboardingScreen(): React.JSX.Element {
               캐릭터 정보를 준비하고 있어요
               {prefetchProgress !== null ? ` (${prefetchProgress.completed}/${prefetchProgress.total})` : ''}
             </p>
-            <div
-              role="progressbar"
-              aria-valuenow={percent}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              className="h-1.5 w-full overflow-hidden rounded-full bg-track"
-            >
-              <div className="h-1.5 rounded-full bg-primary" style={{ width: `${percent}%` }} />
-            </div>
+            <ProgressBar percent={percent} aria={{ now: percent, max: 100 }} />
           </div>
         </div>
       )

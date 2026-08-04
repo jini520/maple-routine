@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Gamepad2, Info, ListChecks } from 'lucide-react'
 import type { TrackingMode } from '../../storage/tracking-mode'
 import { TRACKING_MODE_OPTIONS } from '../../features/tracking-mode/copy'
+import { Button } from '../../components/Button/Button'
 
 export interface TrackingModeStepProps {
   onSubmit: (mode: TrackingMode) => void
@@ -63,16 +64,16 @@ export function TrackingModeStep(props: TrackingModeStepProps): React.JSX.Elemen
         })}
       </div>
 
-      <button
-        type="button"
+      <Button
+        variant="primary"
         disabled={mode === null}
         onClick={() => {
-          if (mode !== null) props.onSubmit(mode)
+        if (mode !== null) props.onSubmit(mode)
         }}
-        className="w-full rounded-full bg-primary text-on-primary font-semibold hover:bg-primary-hover px-5 py-2.5 disabled:opacity-50"
+        className="w-full disabled:opacity-50"
       >
         계속하기
-      </button>
+      </Button>
     </div>
   )
 }

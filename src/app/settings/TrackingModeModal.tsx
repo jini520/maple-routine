@@ -4,6 +4,7 @@ import { MapleSpinner } from '../../components/MapleSpinner/MapleSpinner'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { TrackingModeSelector } from './TrackingModeSelector'
 import type { TrackingMode } from '../../storage/tracking-mode'
+import { Button } from '../../components/Button/Button'
 
 export interface TrackingModeModalProps {
   onClose: () => void
@@ -44,28 +45,28 @@ export function TrackingModeModal(props: TrackingModeModalProps): React.JSX.Elem
       {/* ADR-035 결정 23: 설정의 다른 확정 모달(DisconnectConfirm/CacheClearConfirm)과 같은 골격.
           다른 것은 색뿐 — 모드 전환은 파괴적 동작이 아니라 진행 동작이라 border-error 가 아니다. */}
       <div className="mt-4 flex justify-end gap-2">
-        <button
-          type="button"
+        <Button
+          variant="text"
           disabled={isApplying}
           onClick={props.onClose}
-          className="rounded-full px-5 py-2.5 text-sm font-medium text-text-muted hover:text-text disabled:opacity-50"
+          className="disabled:opacity-50"
         >
           취소
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="primary"
           // 바뀐 것이 없으면 누를 것도 없다(결정 23) — 닫기는 취소·오버레이가 맡는다.
           disabled={isUnchanged || isApplying}
           aria-busy={isApplying}
           onClick={() => {
-            void handleApply()
+          void handleApply()
           }}
-          className="flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-on-primary hover:bg-primary-hover disabled:opacity-50"
+          className="flex items-center justify-center gap-2 text-sm disabled:opacity-50"
         >
           {/* ADR-061 결정 5·9 — 버튼 안 16px + 말줄임표 없는 '~중' 라벨 */}
           {isApplying && <MapleSpinner size={16} />}
           {isApplying ? '적용 중' : '적용'}
-        </button>
+        </Button>
       </div>
     </Modal>
   )

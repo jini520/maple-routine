@@ -7,6 +7,7 @@ import { ErrorState } from '../ErrorState/ErrorState'
 import { StaleBanner } from '../ErrorState/StaleBanner'
 import { MapleSweepSpinner } from '../MapleSweepSpinner/MapleSweepSpinner'
 import { CharacterTrackingGrid, ROSTER_BODY_MIN_H } from './CharacterTrackingGrid'
+import { Button } from '../Button/Button'
 
 // ADR-043 결정 1: 그리드의 토글이 ocid를 배열 끝에 append하므로 같은 집합이어도 배열
 // 순서가 달라진다 — 저장 버튼 활성 여부는 반드시 멤버십(집합)으로만 판정한다.
@@ -122,21 +123,21 @@ export function CharacterTrackingPicker(props: CharacterTrackingPickerProps): Re
         </div>
 
         <div className="mt-4 flex justify-end gap-2">
-          <button
-            type="button"
+          <Button
+            variant="text"
             onClick={props.onClose}
-            className="rounded-full px-5 py-2.5 text-sm font-medium text-text-muted hover:text-text"
+            
           >
             닫기
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="primary"
             onClick={() => props.onSave(selectedOcids)}
             disabled={isUnchanged || isEmptySelection}
-            className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-on-primary hover:bg-primary-hover disabled:opacity-50"
+            className="text-sm disabled:opacity-50"
           >
             저장
-          </button>
+          </Button>
         </div>
       </div>
     </div>

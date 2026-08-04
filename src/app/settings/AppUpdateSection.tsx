@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import packageJson from '../../../package.json'
 import { useLiveUpdateStore, type LiveUpdateStatus } from '../../features/live-update/store'
 import { MapleSpinner } from '../../components/MapleSpinner/MapleSpinner'
+import { Button } from '../../components/Button/Button'
 
 // 설정의 관찰용 섹션 — 현재 실행 번들 버전과 상태를 보여주고 수동 확인을 제공한다(ADR-026/ADR-027).
 // 새 버전을 실제로 받고 적용하는 동의 플로우는 UpdatePromptModal이 담당한다.
@@ -64,20 +65,20 @@ export function AppUpdateSection(): React.JSX.Element {
 
         {!isUnsupported && (
           <div className="py-4">
-            <button
-              type="button"
+            <Button
+              variant="primary"
               onClick={() => {
-                void check()
+              void check()
               }}
               disabled={isBusy}
               aria-busy={isBusy}
-              className="flex w-full items-center justify-center gap-2 rounded-full bg-primary text-on-primary font-semibold hover:bg-primary-hover px-5 py-2.5 text-sm disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-2 text-sm disabled:opacity-50"
             >
               {/* ADR-061 결정 5: 네트워크 왕복이라 disabled만으로는 진행 중인지 멈춘 건지
                   구분되지 않는다 — 스피너 + '~중' 라벨로 바꾼다. */}
               {isBusy && <MapleSpinner size={16} />}
               {isBusy ? '확인 중' : '업데이트 확인'}
-            </button>
+            </Button>
           </div>
         )}
       </div>

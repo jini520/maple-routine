@@ -30,6 +30,7 @@ import { useContentSchedulerStore } from '../../features/content-scheduler/store
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { MEDIA_TEXT_SHADOW } from '../../lib/media-card'
 import { ThemeHeaderBackdrop } from '../../components/ThemeHeaderBackdrop/ThemeHeaderBackdrop'
+import { ProgressBar } from '../../components/ProgressBar/ProgressBar'
 
 type ContentTab = 'daily' | 'weekly'
 
@@ -198,15 +199,11 @@ export function MonsterParkCard(props: {
 
         {content.maxCount > 0 && (
           <div className="flex flex-1 items-start px-[14px] pt-0">
-            <div
-              role="progressbar"
-              aria-valuenow={content.nowCount}
-              aria-valuemin={0}
-              aria-valuemax={content.maxCount}
-              className="h-1.5 w-full overflow-hidden rounded-full bg-track"
-            >
-              <div className="h-1.5 rounded-full bg-third" style={{ width: `${progressPercent}%` }} />
-            </div>
+            <ProgressBar
+              percent={progressPercent}
+              tone="third"
+              aria={{ now: content.nowCount, max: content.maxCount }}
+            />
           </div>
         )}
       </div>
@@ -544,15 +541,11 @@ export function GuildMissionPointsCard(props: {
 
         {content.maxCount > 0 && (
           <div className="flex flex-1 items-start px-[14px] pt-0">
-            <div
-              role="progressbar"
-              aria-valuenow={content.nowCount}
-              aria-valuemin={0}
-              aria-valuemax={content.maxCount}
-              className="h-1.5 w-full overflow-hidden rounded-full bg-track"
-            >
-              <div className="h-1.5 rounded-full bg-third" style={{ width: `${progressPercent}%` }} />
-            </div>
+            <ProgressBar
+              percent={progressPercent}
+              tone="third"
+              aria={{ now: content.nowCount, max: content.maxCount }}
+            />
           </div>
         )}
       </div>
@@ -618,18 +611,10 @@ function renderDailyContentCard(content: DailyContent): React.JSX.Element {
         {content.name} · {content.nowCount}/{content.maxCount}
       </p>
       {content.maxCount > 0 && (
-        <div
-          role="progressbar"
-          aria-valuenow={content.nowCount}
-          aria-valuemin={0}
-          aria-valuemax={content.maxCount}
-          className="h-1.5 w-full rounded-full bg-track overflow-hidden"
-        >
-          <div
-            className="h-1.5 rounded-full bg-primary"
-            style={{ width: `${Math.min((content.nowCount / content.maxCount) * 100, 100)}%` }}
-          />
-        </div>
+        <ProgressBar
+          percent={Math.min((content.nowCount / content.maxCount) * 100, 100)}
+          aria={{ now: content.nowCount, max: content.maxCount }}
+        />
       )}
     </div>
   )
@@ -670,18 +655,10 @@ function renderWeeklyContentCard(content: WeeklyContent): React.JSX.Element {
         {content.name} · {content.nowCount}/{content.maxCount}
       </p>
       {content.maxCount > 0 && (
-        <div
-          role="progressbar"
-          aria-valuenow={content.nowCount}
-          aria-valuemin={0}
-          aria-valuemax={content.maxCount}
-          className="h-1.5 w-full rounded-full bg-track overflow-hidden"
-        >
-          <div
-            className="h-1.5 rounded-full bg-primary"
-            style={{ width: `${Math.min((content.nowCount / content.maxCount) * 100, 100)}%` }}
-          />
-        </div>
+        <ProgressBar
+          percent={Math.min((content.nowCount / content.maxCount) * 100, 100)}
+          aria={{ now: content.nowCount, max: content.maxCount }}
+        />
       )}
     </div>
   )

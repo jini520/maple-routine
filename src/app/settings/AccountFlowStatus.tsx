@@ -3,6 +3,8 @@ import { ContentCharacterStep } from '../onboarding/ContentCharacterStep'
 import { formatSettingsError } from './error-message'
 import type { SettingsError, SettingsStatus, PrefetchProgress } from '../../features/settings/state'
 import type { MapleAccount } from '../../types'
+import { ProgressBar } from '../../components/ProgressBar/ProgressBar'
+import { Button } from '../../components/Button/Button'
 
 export interface AccountFlowStatusProps {
   status: SettingsStatus
@@ -60,15 +62,7 @@ export function AccountFlowStatus(props: AccountFlowStatusProps): React.JSX.Elem
               ? ` (${props.prefetchProgress.completed}/${props.prefetchProgress.total})`
               : ''}
           </p>
-          <div
-            role="progressbar"
-            aria-valuenow={percent}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            className="h-1.5 w-full overflow-hidden rounded-full bg-track"
-          >
-            <div className="h-1.5 rounded-full bg-primary" style={{ width: `${percent}%` }} />
-          </div>
+          <ProgressBar percent={percent} aria={{ now: percent, max: 100 }} />
         </div>
       )
     }
@@ -84,14 +78,14 @@ export function AccountFlowStatus(props: AccountFlowStatusProps): React.JSX.Elem
             submitLabel="저장"
             onSubmit={props.onCommitCharacters}
           />
-          <button
-            type="button"
+          <Button
+            variant="text"
             disabled={props.isCommitting}
             onClick={props.onCancel}
-            className="w-full rounded-full px-5 py-2.5 text-sm font-medium text-text-muted hover:text-text disabled:opacity-50"
+            className="w-full disabled:opacity-50"
           >
             취소
-          </button>
+          </Button>
         </div>
       )
 
@@ -101,13 +95,13 @@ export function AccountFlowStatus(props: AccountFlowStatusProps): React.JSX.Elem
           <p className="text-sm text-error-ink">
             {props.error !== null ? formatSettingsError(props.error) : '오류가 발생했습니다'}
           </p>
-          <button
-            type="button"
+          <Button
+            variant="primary"
             onClick={props.onRetry}
-            className="rounded-full bg-primary text-on-primary font-semibold hover:bg-primary-hover px-5 py-2.5 text-sm"
+            className="text-sm"
           >
             다시 시도
-          </button>
+          </Button>
         </div>
       )
   }

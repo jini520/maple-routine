@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
 import { AlertTriangle, RotateCcw } from 'lucide-react'
+import { Button } from '../Button/Button'
 
 // 앱 전역 에러 바운더리([[ADR-065]] 결정 5). 렌더 중 예외가 나면 아무 문구 없는 흰 화면이
 // 남던 것을 폴백 화면으로 바꾼다.
@@ -66,14 +67,14 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           </p>
         </div>
 
-        <button
-          type="button"
+        <Button
+          variant="primary"
           onClick={this.handleRestart}
-          className="flex w-full max-w-[260px] items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-on-primary hover:bg-primary-hover"
+          className="flex w-full max-w-[260px] items-center justify-center gap-2 text-sm"
         >
           <RotateCcw className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
           다시 시작
-        </button>
+        </Button>
       </div>
     )
   }

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { MapleSpinner } from '../../components/MapleSpinner/MapleSpinner'
+import { Button } from '../../components/Button/Button'
 
 export interface ApiKeyFormProps {
   isSubmitting: boolean
@@ -45,17 +46,18 @@ export function ApiKeyForm(props: ApiKeyFormProps): React.JSX.Element {
         />
       </div>
 
-      <button
+      <Button
+        variant="primary"
         type="submit"
         disabled={props.isSubmitting || apiKey.trim().length === 0}
         aria-busy={props.isSubmitting}
-        className="flex w-full items-center justify-center gap-2 rounded-full bg-primary text-on-primary font-semibold hover:bg-primary-hover px-5 py-2.5 disabled:opacity-50"
+        className="flex w-full items-center justify-center gap-2 disabled:opacity-50"
       >
         {/* ADR-061 결정 5·9: 버튼 안은 스피너 + 말줄임표 없는 '~중' 라벨을 함께 둔다 — 라벨이
             남아야 무엇이 진행 중인지 글자로 확인된다(파괴적 동작과 형태를 맞춘다). */}
         {props.isSubmitting && <MapleSpinner size={16} />}
         {props.isSubmitting ? '확인 중' : '확인'}
-      </button>
+      </Button>
     </form>
   )
 }
