@@ -127,7 +127,12 @@ describe('라우트 코드 분할 (ADR-092)', () => {
       // 부모가 그려진 뒤 자식이 서스펜드하는데, 자식 경계가 부모 안쪽에 있으면 부모는 그대로 남는다.
       // 최상위 경계 하나였다면 자식의 서스펜드가 부모까지 걷어내므로 이 헤딩은 **영영 나타나지 않고**
       // findBy가 타임아웃한다 — 그것이 곧 ADR-077이 막은 언마운트다.
-      expect(await screen.findByRole('heading', { name: '보스 수익' })).toBeInTheDocument()
+      // 타임아웃을 기본값(1s)보다 넉넉히 준다 — 전체 스위트를 병렬로 돌리면 lazy 청크 해석이
+      // 간헐적으로 1s를 넘겨 이 가드가 흔들렸다(2026-08-05, 4회 중 1회). 흔들리는 가드는
+      // "또 그거네" 하고 무시당해 정작 진짜 회귀를 놓치게 만든다.
+      expect(
+        await screen.findByRole('heading', { name: '보스 수익' }, { timeout: 5000 }),
+      ).toBeInTheDocument()
 
       // 그리고 그 순간 자식 자리에는 폴백이 떠 있다(자식은 영원히 서스펜드하도록 mock했다).
       expect(screen.getByTestId('route-fallback')).toBeInTheDocument()
