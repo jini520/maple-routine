@@ -1,5 +1,17 @@
 apply plugin: 'com.android.application'
 
+// 릴리스 업로드 키 (ADR-091). 비밀번호는 이 파일에 두지 않고 android/keystore.properties 로
+// 분리한다 — 그 파일과 키스토어 자체는 .gitignore 대상이고, 키스토어 실물은 저장소 밖에 둔다.
+// 파일이 없으면 서명 없이 빌드된다(키스토어 없는 환경에서 빌드가 깨지지 않게). 서명 안 된
+// AAB는 Play가 거부하므로 그대로 스토어에 나갈 위험은 없다 — 대신 릴리스 빌드 뒤에는
+// keytool -printcert -jarfile 로 서명 여부를 직접 확인할 것(docs/foundation/release.md).
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+def hasSigningConfig = keystorePropertiesFile.exists()
+if (hasSigningConfig) {
+    keystorePropertiesFile.withInputStream { keystoreProperties.load(it) }
+}
+
 android {
     namespace = "com.mapleroutine.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -16,8 +28,21 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        if (hasSigningConfig) {
+            release {
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
+        }
+    }
     buildTypes {
         release {
+            if (hasSigningConfig) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

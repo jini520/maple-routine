@@ -53,9 +53,11 @@ captures/
 .idea/navEditor.xml
 
 # Keystore files
-# Uncomment the following lines if you do not want to check your keystore files in.
-#*.jks
-#*.keystore
+# 업로드 키는 저장소 밖(~/keys/)에 두는 것이 원칙이고(ADR-091 결정 2), 이 줄들은 실수로
+# 저장소 안에 떨어뜨렸을 때를 위한 2중 방어다. keystore.properties 에는 비밀번호가 들어간다.
+*.jks
+*.keystore
+keystore.properties
 
 # External native build folder generated in Android Studio 2.2 and later
 .externalNativeBuild
