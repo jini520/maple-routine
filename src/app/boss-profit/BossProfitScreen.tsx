@@ -32,7 +32,6 @@ import {
   dropRowKey,
   useBossProfitStore,
   type BossProfitRow,
-  type BossProfitStore,
   type BossProfitWeeklySubtotal,
   type WeeklySubtotalState,
 } from '../../features/boss-profit/store'
@@ -61,6 +60,8 @@ import { isValuableDrop } from '../../lib/valuable-drops'
 import { worldEmblemUrl } from '../../lib/world-emblem'
 import type { BossCycle } from '../../types'
 import type { RecordedDrop } from '../../types/drops'
+import { BossProfitContextProvider, useBossProfitContext } from './boss-profit-context'
+import type { BossProfitContextValue } from './boss-profit-context'
 import { BossDropSheet } from './BossDropSheet'
 import { ThemeHeaderBackdrop } from '../../components/ThemeHeaderBackdrop/ThemeHeaderBackdrop'
 
@@ -278,12 +279,11 @@ function DropIndicator(props: { drops: RecordedDrop[] }): React.JSX.Element {
 interface BossProfitBossRowProps {
   row: BossProfitRow
   drops: RecordedDrop[]
-  setPartySize: BossProfitStore['setPartySize']
-  setBossDrops: BossProfitStore['setBossDrops']
 }
 
 function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Element {
   const { row } = props
+  const { setPartySize, setBossDrops } = useBossProfitContext()
   const [isDropSheetOpen, setIsDropSheetOpen] = useState(false)
   // 이 보스에서 고가 아이템을 획득했으면 행 배경에 골드 셰인이 흐르는 강조 효과(valuable-drop-row)를 준다
   // — 캐릭터 카드를 펼쳤을 때 카드 테두리 효과 대신 실제 획득한 보스 행으로 강조가 이동하는 지점(사용자 요청).
@@ -300,7 +300,7 @@ function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Element {
   async function handleChange(delta: number): Promise<void> {
     const next = clamp(partySize + delta, 1, row.maxPartySize)
     try {
-      await props.setPartySize(row, next)
+      await setPartySize(row, next)
     } catch {
       useToastStore.getState().showError('파티원 수를 저장하지 못했습니다')
     }
@@ -388,7 +388,7 @@ function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Element {
           difficulty={row.difficulty}
           isComplete={row.isComplete}
           initialDrops={props.drops}
-          onSave={(drops) => props.setBossDrops(row, drops)}
+          onSave={(drops) => setBossDrops(row, drops)}
           onClose={() => setIsDropSheetOpen(false)}
         />
       )}
@@ -542,12 +542,9 @@ function CharacterIssuePopover(props: {
   )
 }
 
-function WeeklyAccordionBody(props: {
-  rows: BossProfitRow[]
-  dropsByRowKey: Record<string, RecordedDrop[]>
-  setPartySize: BossProfitStore['setPartySize']
-  setBossDrops: BossProfitStore['setBossDrops']
-}): React.JSX.Element {
+function WeeklyAccordionBody(props: { rows: BossProfitRow[] }): React.JSX.Element {
+  const { dropsByRowKey } = useBossProfitContext()
+
   return (
     <div className="border-t border-border">
       <ul>
@@ -555,9 +552,7 @@ function WeeklyAccordionBody(props: {
           <BossProfitBossRow
             key={rowKey(row)}
             row={row}
-            drops={props.dropsByRowKey[dropRowKey(row.ocid, row.boss, row.difficulty, row.periodKey)] ?? []}
-            setPartySize={props.setPartySize}
-            setBossDrops={props.setBossDrops}
+            drops={dropsByRowKey[dropRowKey(row.ocid, row.boss, row.difficulty, row.periodKey)] ?? []}
           />
         ))}
       </ul>
@@ -581,11 +576,10 @@ const SUBTOTAL_STATIC_LABEL: Partial<Record<WeeklySubtotalState, string>> = {
 
 function WeeklySubtotalRow(props: {
   subtotal: BossProfitWeeklySubtotal
-  now: Date
-  onRetry: () => void
 }): React.JSX.Element {
   const { subtotal } = props
-  const label = formatBossProfitPeriodLabel('weekly', subtotal.periodKey, props.now)
+  const { now, onRetryPeriod } = useBossProfitContext()
+  const label = formatBossProfitPeriodLabel('weekly', subtotal.periodKey, now)
   const actionLabel = SUBTOTAL_ACTION_LABEL[subtotal.state]
   const staticLabel = SUBTOTAL_STATIC_LABEL[subtotal.state]
   // 금액을 말할 수 있는 상태 — 기록이 있거나(recorded), 조회해서 0건을 확인했거나, 진행 중.
@@ -618,7 +612,7 @@ function WeeklySubtotalRow(props: {
       {actionLabel !== undefined && (
         <button
           type="button"
-          onClick={props.onRetry}
+          onClick={onRetryPeriod}
           className={
             subtotal.state === 'failed'
               ? 'inline-flex items-center gap-1.5 rounded-full bg-error-tint px-2.5 py-1 text-[11px] font-semibold text-error-ink'
@@ -642,13 +636,9 @@ function WeeklySubtotalRow(props: {
 function MonthlyAccordionBody(props: {
   bossRows: BossProfitRow[]
   weeklySubtotals: BossProfitWeeklySubtotal[]
-  dropsByRowKey: Record<string, RecordedDrop[]>
-  setPartySize: BossProfitStore['setPartySize']
-  setBossDrops: BossProfitStore['setBossDrops']
-  now: Date
-  isMonthlyBossQueryable: boolean
-  onRetryPeriod: () => void
 }): React.JSX.Element {
+  const { dropsByRowKey, isMonthlyBossQueryable } = useBossProfitContext()
+
   return (
     <div className="border-t border-border">
       {props.weeklySubtotals.length > 0 && (
@@ -661,15 +651,14 @@ function MonthlyAccordionBody(props: {
               <WeeklySubtotalRow
                 key={subtotal.periodKey}
                 subtotal={subtotal}
-                now={props.now}
-                onRetry={props.onRetryPeriod}
+
               />
             ))}
           </ul>
         </>
       )}
 
-      {(props.bossRows.length > 0 || !props.isMonthlyBossQueryable) && (
+      {(props.bossRows.length > 0 || !isMonthlyBossQueryable) && (
         <>
           <p className="px-4 pt-3 pb-1 text-[11px] font-bold tracking-wide text-text-muted bg-surface-2">
             월간 보스 수익
@@ -680,9 +669,7 @@ function MonthlyAccordionBody(props: {
                 <BossProfitBossRow
                   key={rowKey(row)}
                   row={row}
-                  drops={props.dropsByRowKey[dropRowKey(row.ocid, row.boss, row.difficulty, row.periodKey)] ?? []}
-                  setPartySize={props.setPartySize}
-                  setBossDrops={props.setBossDrops}
+                  drops={dropsByRowKey[dropRowKey(row.ocid, row.boss, row.difficulty, row.periodKey)] ?? []}
                 />
               ))}
             </ul>
@@ -1008,23 +995,16 @@ function DeltaChip(props: {
   )
 }
 
+// 프롭에는 **이 캐릭터 카드에 매인 것만** 남는다 — 기간·탭 맥락과 스토어 바인딩 8개는
+// 컨텍스트에서 읽는다(ADR-094 3단계 정정). 그 8개는 아무 중간 컴포넌트도 쓰지 않고 4단계를
+// 통과만 하고 있었다.
 function CharacterAccordion(props: {
   group: CharacterGroup
-  tab: BossCycle
-  dropsByRowKey: Record<string, RecordedDrop[]>
-  setPartySize: BossProfitStore['setPartySize']
-  setBossDrops: BossProfitStore['setBossDrops']
-  now: Date
-  // 카운트업 기억의 키에 들어간다([[ADR-087]] 결정 8) — 아코디언 key 가 이미 쓰는 값이지만,
-  // 기억은 언마운트를 건너 살아남으므로 컴포넌트가 자기 기간을 명시적으로 알아야 한다.
-  periodKey: string
-  isMonthlyBossQueryable: boolean
-  // ADR-068 결정 2: 주차 행의 조회·다시 시도 버튼이 이 기간을 다시 로드한다(store.retryPeriod).
-  onRetryPeriod: () => void
   // ADR-068 결정 3: 이 캐릭터의 동기화가 실패했으면 그 종류(없으면 undefined).
   issue?: 'unavailable' | 'failed'
   stickyTop: number
 }): React.JSX.Element {
+  const { tab, periodKey, dropsByRowKey } = useBossProfitContext()
   const [isExpanded, setIsExpanded] = useState(false)
   // ADR-068 결정 3 정정 3: 아이콘만으로는 원인을 말할 수 없어, 탭하면 설명 팝오버를 연다.
   const [isIssueOpen, setIsIssueOpen] = useState(false)
@@ -1096,16 +1076,16 @@ function CharacterAccordion(props: {
   // 우상단 획득 아이템 배지를 준다. 접힘/펼침 모두 회전 샤인 테두리·글로우·배지는 유지하되, 펼치면
   // 글로우 맥동만 멈춘다(valuable-drop-card--expanded → 회전 샤인은 계속 돌고 글로우 확산만 정적). 추가로
   // 펼쳤을 때는 고가 아이템을 획득한 보스 행(valuable-drop-row, 배경 효과)에도 강조가 들어간다.
-  const valuableDrops = collectGroupValuableDrops(group, props.dropsByRowKey)
+  const valuableDrops = collectGroupValuableDrops(group, dropsByRowKey)
   const hasValuable = valuableDrops.length > 0
   // 처치 진행 링은 두 탭 · 모든 기간에 그리고, 무엇을 세는지는 탭이 정한다([[ADR-059]] — 기간
   // 한정을 폐기했다. 과거 rows도 DB 기록에서 오고 그 행은 전부 isComplete: true라 파생식이 그대로
   // 성립한다). 월간 탭은 주간 처치 수를 끌어오지 않는다 — 월간 rows에는 주간 행 자체가 없고(주간분은
   // 금액 합계 행으로만 존재), 12는 주 단위로 초기화되는 한도라 월 단위로 곱한 분모는 게임에 없다.
   const clearProgress =
-    props.tab === 'weekly'
-      ? { cleared: countGroupClearedWeeklyBosses(group), total: WEEKLY_BOSS_CLEAR_LIMIT, cycle: props.tab }
-      : { cleared: countGroupClearedMonthlyBosses(group), total: MONTHLY_BOSS_COUNT, cycle: props.tab }
+    tab === 'weekly'
+      ? { cleared: countGroupClearedWeeklyBosses(group), total: WEEKLY_BOSS_CLEAR_LIMIT, cycle: tab }
+      : { cleared: countGroupClearedMonthlyBosses(group), total: MONTHLY_BOSS_COUNT, cycle: tab }
   // 팝오버는 열려 있는 동안 카드 아래 내용을 덮으므로, **스크롤이 시작되면 닫는다**(사용자 우려
   // 2026-07-31 — 스크롤 중 다른 컨텐츠를 가리는 문제). 바깥 탭도 닫는다: 투명 오버레이를 쓰지 않고
   // document 리스너로 판정한다 — 오버레이는 카드의 isolate 안에 갇혀 다른 카드 위를 덮지 못한다.
@@ -1276,7 +1256,7 @@ function CharacterAccordion(props: {
               />
             )}
             <AnimatedMeso
-              identity={`character|${group.ocid}|${props.tab}|${props.periodKey}`}
+              identity={`character|${group.ocid}|${tab}|${periodKey}`}
               value={totalMeso}
             />{' '}
             메소
@@ -1289,23 +1269,12 @@ function CharacterAccordion(props: {
         </button>
 
         {isExpanded &&
-          (props.tab === 'weekly' ? (
-            <WeeklyAccordionBody
-              rows={group.bossRows}
-              dropsByRowKey={props.dropsByRowKey}
-              setPartySize={props.setPartySize}
-              setBossDrops={props.setBossDrops}
-            />
+          (tab === 'weekly' ? (
+            <WeeklyAccordionBody rows={group.bossRows} />
           ) : (
             <MonthlyAccordionBody
               bossRows={group.bossRows}
               weeklySubtotals={group.weeklySubtotals}
-              dropsByRowKey={props.dropsByRowKey}
-              setPartySize={props.setPartySize}
-              setBossDrops={props.setBossDrops}
-              now={props.now}
-              isMonthlyBossQueryable={props.isMonthlyBossQueryable}
-              onRetryPeriod={props.onRetryPeriod}
             />
           ))}
       </div>
@@ -1497,10 +1466,25 @@ export function BossProfitScreen(): React.JSX.Element {
   // 총 수익 헤드라인 우측 뱃지용 — 이 기간 전체 고가 드롭(ADR-046)
   const periodValuableDrops = collectAllValuableDrops(characterGroups, dropsByRowKey)
 
+  // 기간·탭 맥락과 스토어 바인딩을 자손에게 내린다(ADR-094 3단계) — 이 8개는 4단계를 타고
+  // 내려가며 51지점을 만들고 있었고, 중간 컴포넌트는 어느 것도 쓰지 않고 통과만 시켰다.
+  // 참조 동일성을 위한 메모이제이션은 하지 않는다 — 성능 문제의 증거가 없고(ADR-094 결정 5),
+  // 이 값들은 어차피 렌더마다 바뀌어 소비처가 다시 그려지는 것이 정상이다.
+  const bossProfitContext: BossProfitContextValue = {
+    tab,
+    periodKey,
+    now,
+    dropsByRowKey,
+    setPartySize,
+    setBossDrops,
+    isMonthlyBossQueryable: periodQueryable,
+    onRetryPeriod: () => void retryPeriod(),
+  }
+
   return (
     // ADR-077: 히스토리 오버레이(<Outlet />)는 아래 space-y-4 루트 **바깥**에 둔다 — 그 유틸리티는
     // 형제에게 margin-top을 주는데, fixed inset-0 오버레이에 그 마진이 걸리면 1rem 밀려 그려진다.
-    <>
+    <BossProfitContextProvider value={bossProfitContext}>
       {/* 제목~총 수익 카드까지는 화면 상단에 고정하고 그 아래 캐릭터 아코디언 목록만
           스크롤되게 한다(사용자 요청, 2026-07-14).
 
@@ -1755,14 +1739,6 @@ export function BossProfitScreen(): React.JSX.Element {
             <CharacterAccordion
               key={`${tab}-${periodKey}-${group.ocid}`}
               group={group}
-              tab={tab}
-              periodKey={periodKey}
-              dropsByRowKey={dropsByRowKey}
-              setPartySize={setPartySize}
-              setBossDrops={setBossDrops}
-              now={now}
-              isMonthlyBossQueryable={periodQueryable}
-              onRetryPeriod={() => void retryPeriod()}
               issue={characterIssues[group.ocid]}
               stickyTop={stickyHeaderHeight}
             />
@@ -1770,6 +1746,6 @@ export function BossProfitScreen(): React.JSX.Element {
       </div>
     </div>
     <Outlet />
-    </>
+    </BossProfitContextProvider>
   )
 }
