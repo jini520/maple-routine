@@ -5,6 +5,7 @@ import type { SettingsError, SettingsStatus, PrefetchProgress } from '../../feat
 import type { MapleAccount } from '../../types'
 import { ProgressBar } from '../../components/ProgressBar/ProgressBar'
 import { Button } from '../../components/Button/Button'
+import { Card } from '../../components/Card/Card'
 
 export interface AccountFlowStatusProps {
   status: SettingsStatus
@@ -40,13 +41,13 @@ export function AccountFlowStatus(props: AccountFlowStatusProps): React.JSX.Elem
 
     case 'selectingAccount':
       return (
-        <div className="rounded-[14px] bg-surface border border-border p-6">
+        <Card className="p-6">
           <AccountSelectionList
             accounts={props.accounts}
             isSubmitting={false}
             onSelect={props.onSelectAccount}
           />
-        </div>
+        </Card>
       )
 
     case 'prefetching': {
@@ -55,7 +56,7 @@ export function AccountFlowStatus(props: AccountFlowStatusProps): React.JSX.Elem
           ? Math.round((props.prefetchProgress.completed / props.prefetchProgress.total) * 100)
           : 0
       return (
-        <div className="rounded-[14px] bg-surface border border-border p-6 space-y-2">
+        <Card className="p-6 space-y-2">
           <p className="text-sm text-text-muted">
             캐릭터 정보를 준비하고 있어요
             {props.prefetchProgress !== null
@@ -63,7 +64,7 @@ export function AccountFlowStatus(props: AccountFlowStatusProps): React.JSX.Elem
               : ''}
           </p>
           <ProgressBar percent={percent} aria={{ now: percent, max: 100 }} />
-        </div>
+        </Card>
       )
     }
 
@@ -71,7 +72,7 @@ export function AccountFlowStatus(props: AccountFlowStatusProps): React.JSX.Elem
     // 순간에야 selectedAccountId·trackedCharacters 가 함께 커밋된다. 취소하면 이전 계정 그대로다.
     case 'selectingCharacters':
       return (
-        <div className="rounded-[14px] bg-surface border border-border p-6 space-y-3">
+        <Card className="p-6 space-y-3">
           <ContentCharacterStep
             accountId={props.pendingAccountId ?? undefined}
             isSubmitting={props.isCommitting}
@@ -86,12 +87,12 @@ export function AccountFlowStatus(props: AccountFlowStatusProps): React.JSX.Elem
           >
             취소
           </Button>
-        </div>
+        </Card>
       )
 
     case 'error':
       return (
-        <div className="rounded-[14px] bg-surface border border-border p-6 space-y-2">
+        <Card className="p-6 space-y-2">
           <p className="text-sm text-error-ink">
             {props.error !== null ? formatSettingsError(props.error) : '오류가 발생했습니다'}
           </p>
@@ -102,7 +103,7 @@ export function AccountFlowStatus(props: AccountFlowStatusProps): React.JSX.Elem
           >
             다시 시도
           </Button>
-        </div>
+        </Card>
       )
   }
 }

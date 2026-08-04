@@ -13,6 +13,7 @@ import { ThemeModal } from './ThemeModal'
 import { TrackingModeModal } from './TrackingModeModal'
 import { DisconnectConfirm } from './DisconnectConfirm'
 import { CacheDataSection } from './CacheDataSection'
+import { Card } from '../../components/Card/Card'
 
 type OpenModal = 'account' | 'theme' | 'trackingMode' | null
 
@@ -46,7 +47,7 @@ export function SettingsScreen(): React.JSX.Element {
     <div className="p-4 space-y-4">
       <h1 className="text-lg font-semibold text-text">설정</h1>
 
-      <div className="rounded-[14px] bg-surface border border-border px-6 divide-y divide-border">
+      <Card className="px-6 divide-y divide-border">
         <SettingsRow label="계정 변경" onClick={() => setOpenModal('account')} />
         <SettingsRow
           label="스케줄 관리 방법"
@@ -75,7 +76,7 @@ export function SettingsScreen(): React.JSX.Element {
           danger
           showChevron={false}
         />
-      </div>
+      </Card>
 
       <CacheDataSection />
 
