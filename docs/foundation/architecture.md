@@ -2,7 +2,7 @@
 
 > **범위**: 디렉토리 구조·레이어 패턴·시스템 데이터 흐름·상태 관리·네이티브 연동 개요·테스트 전략. 기능별 흐름 세부는 각 `features/*.md`, 에러 처리는 [error-resilience.md](./error-resilience.md), API는 [nexon-api.md](./nexon-api.md).
 > **관련 소스**: `src/` 전체 레이어(`app/` `features/` `storage/` `native/` `nexon/` `components/` `lib/` `types/` `data/`).
-> **관련 ADR**: [[ADR-001]] [[ADR-003]] [[ADR-005]] [[ADR-007]] [[ADR-013]]. **관련 문서**: [nexon-api.md](./nexon-api.md), [error-resilience.md](./error-resilience.md), [../persistence/README.md](../persistence/README.md).
+> **관련 ADR**: [[ADR-001]] [[ADR-003]] [[ADR-005]] [[ADR-007]] [[ADR-013]] [[ADR-092]]. **관련 문서**: [nexon-api.md](./nexon-api.md), [error-resilience.md](./error-resilience.md), [../persistence/README.md](../persistence/README.md).
 
 ## 핵심 규칙 (CRITICAL)
 - `features/*` 코드는 로컬 저장소·네이티브 API에 **직접 접근하지 않는다**. 반드시 `storage/`·`native/` 어댑터를 거친다([[ADR-003]], [[ADR-005]]).
@@ -78,6 +78,16 @@ Feature 단위 구조. 각 `features/*` 폴더가 그 기능의 상태·로직�
 - `@capgo/capacitor-updater`: Live Update([[ADR-022]]) → [features/live-update.md](../features/live-update.md).
 - `@capacitor/network`: 셀룰러 감지([[ADR-027]]).
 - 플랫폼별 백그라운드 정책 차이(특히 iOS Live Activity 16.1+ 제약)는 `native/` 레이어에서 흡수해 `features/*` 가 플랫폼 분기를 모르게 한다.
+
+## 번들·코드 분할 ([[ADR-092]])
+초기 청크 크기는 **첫 페인트 속도이자 OTA 다운로드 크기**다([[ADR-022]] 가 웹 번들을 통째로 내려받으므로).
+
+- **라우트 화면은 `React.lazy` 로 분할한다.** `App.tsx` 가 화면을 정적 import 하면 8개 화면·모든 store·`src/data/*.json` 이 첫 페인트에 함께 평가된다. 새 라우트를 더할 때도 `lazy(() => import(...))` 형태를 유지할 것.
+- **Suspense 경계는 라우트별로 둔다. `<Routes>` 전체를 하나로 감싸지 말 것** — 중첩 라우트(`/profit/drops`)가 로드되는 동안 부모(`BossProfitScreen`)까지 폴백으로 대체돼 [[ADR-077]] 이 막은 언마운트 증상이 되살아난다. 중첩 자식은 `<Outlet />` 자리에서 자기 element 만 감싼다.
+- **조정용 디버그 화면(`/debug/*`)은 조정이 끝나면 지운다** — 값을 눈으로 맞추는 일회성 도구(크롭·배경·로딩 표현)는 남겨두면 프로덕션 번들에 그대로 실려 나간다. 실제로 5개 2,033 LOC 가 그렇게 쌓였다([[ADR-092]] 에서 삭제). 다시 필요해지면 그때 만들고, 옛 구현은 `git log` 로 참고한다. **남겨야 한다면 라우트를 등록하기 전에 번들에서 빠지는 경로부터 정할 것.**
+- **`import.meta.glob` 에 걸린 자산은 참조 여부와 무관하게 전부 dist 로 나간다** — `src/assets/*` 에 파일을 떨어뜨리면 아무도 안 쓰는 파일도 앱에 실린다(참조 0건 2.65 MB 고아가 실제로 있었다). **`eager` 여부와 무관하다**([[ADR-093]] 결정 3에서 측정으로 확인) — `eager` 는 URL 문자열을 JS 에 인라인할지만 정하고, 에셋 emit 판정은 그보다 앞선다. 그래서 자산에서 듣는 지렛대는 **안 쓰는 파일을 지우는 것과 쓰는 파일을 작게 만드는 것** 둘뿐이다.
+- **자산 조회 키는 디렉터리마다 다르다** — `bosses/` `maps/` `maps/icons/` `themes/` 는 **확장자를 뗀 슬러그**라 포맷을 바꿔도 코드가 안 바뀌지만, `items/`(+`rings/`)는 **확장자를 포함한 전체 파일명**([[ADR-011]] 의 `iconFile`)이라 포맷을 바꾸면 게임 데이터까지 고쳐야 한다. 자산 포맷을 만지기 전에 어느 쪽인지 확인할 것([[ADR-093]] 결정 1).
+- 검증은 추론이 아니라 **산출물로** 한다 — `npm run build` 실측 + `dist/assets/*.js` grep. 자산 최적화는 **코드를 안 바꾸므로 조용히 깨진다**(슬러그가 안 풀려도 폴백이 뜰 뿐 에러가 없다) — `lib/__tests__/asset-slug-coverage.test.ts` 가 선언된 슬러그 전수를 해석해 그 사고를 막는다.
 
 ## 테스트 전략
 - 신규 기능은 **테스트 먼저(TDD)** 작성 후 통과 구현.
