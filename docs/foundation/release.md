@@ -119,7 +119,7 @@ keytool -printcert -jarfile android/app/build/outputs/bundle/release/app-release
 | 계정 삭제 정책 | 해당 없음 | 계정 생성 기능이 없다([[ADR-003]]) |
 | 스크린샷 | ✅ | `resources/screenshots/listing/play-store-1320x2640/` 6장 |
 | 피처 그래픽 1024×500 | ✅ | `resources/play-feature-graphic-1024x500.png`(2026-08-04). **알파 채널을 뺀 24-bit PNG** — Play는 알파를 받지 않는다. 16:9로 크롭돼도(좌우 68px씩) 카피·로고가 모두 살아남는 것을 확인했다 |
-| 아이콘 512×512 | ⏳ | `ios/App/App/Assets.xcassets/` 에서 리사이즈 |
+| 아이콘 512×512 | ✅ | `resources/play-store-icon-512.png`(2026-08-04). iOS 마케팅 아이콘 1024를 **정확히 2:1로 축소**해 만든다 — Android 런처 아이콘(adaptive)은 전경에 16.7% inset이 들어가 스토어 아이콘으로 쓰면 안 된다. **모서리를 미리 둥글리지 않는다**(Play가 마스크를 씌운다) |
 
 게시 **후**에 AdMob 콘솔에서 앱을 연결해 검토(2~3일)를 통과해야 광고가 정상 노출된다 —
 미게시 앱은 *limited ad serving* 이다([features/ads.md](../features/ads.md)).
