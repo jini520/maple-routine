@@ -20,7 +20,23 @@ import type { TrackingMode } from '../../storage/tracking-mode'
 import { BOSS_DIFFICULTIES } from '../../types'
 import type { BossContent, BossCycle, BossDifficulty } from '../../types'
 import type { RecordedDrop } from '../../types/drops'
-import type { BossProfitRow } from './store'
+
+export interface BossProfitRow {
+  ocid: string
+  characterName: string
+  imageUrl: string | null // character/basic의 character_image(character-basic-cache 경유). 캐시가 없으면 null(이니셜 폴백)
+  world: string | null // character/basic의 world_name(character-basic-cache 경유). 이전 캐시엔 없을 수 있어 null 가능([[ADR-054]] 결정 5·6 — 월드를 모르는 캐릭터는 월드 집계에서 제외)
+  boss: string // matchedBossName ?? apiName (매핑 안 되면 원문 그대로, ADR-008)
+  difficulty: BossDifficulty
+  cycle: BossCycle
+  periodKey: string
+  periodLabel: string // formatBossProfitPeriodLabel(cycle, periodKey, now).primary — "이번 주"/"지난 주"/"이번 달"/"지난 달"/절대 표기
+  priceMeso: number | null // 시세표에 없으면 null ("가격 미확정"). 기록이 있으면 기록값으로 복원(라이브 재계산 방지, ADR-023)
+  maxPartySize: number
+  partySize: number | null // 사용자가 아직 입력 안 했으면 null
+  payoutMeso: number | null // partySize가 null이거나 priceMeso가 null이면 null
+  isComplete: boolean // false면 보스 스케줄러에 등록만 되고 아직 처치 전(미완료 placeholder, ADR-032) — payoutMeso는 항상 0이고 DB에 기록되지 않는다
+}
 
 export type BossProfitRowKey = Pick<BossProfitRow, 'ocid' | 'boss' | 'difficulty' | 'cycle' | 'periodKey'>
 
