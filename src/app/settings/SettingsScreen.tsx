@@ -96,6 +96,24 @@ export function SettingsScreen(): React.JSX.Element {
 
       {/* 이용약관 제6조④가 요구하는 출처 표기 — 문구를 의역하지 않고 원문 그대로 노출한다 */}
       <div className="space-y-1 pt-4 text-center">
+        {/*
+          Play 사용자 데이터 정책은 스토어 등록정보와 앱 안 양쪽에 개인정보 처리방침 링크를
+          요구한다 — 콘솔에 URL을 넣는 것만으로는 충족되지 않는다(docs/foundation/release.md).
+          아래 세 줄은 읽고 끝나는 고지 문구지만 이것은 눌러야 하는 것이라 맨 위에 둔다.
+          색도 한 단계 밝혀(text-text-muted) 밑줄과 함께 링크임을 표시한다 —
+          나머지와 같은 text-text-disabled 로 두면 누를 수 있는 것으로 보이지 않는다.
+          본문은 앱에 사본을 두지 않고 PRIVACY.md 를 렌더링한 사이트로 보낸다(법적 문서를 두 벌로 만들지 않는다).
+        */}
+        <p className="text-xs">
+          <a
+            href="https://mapleroutine.store/privacy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-text-muted underline"
+          >
+            개인정보 처리방침
+          </a>
+        </p>
         <p className="text-xs text-text-disabled">v{displayedVersion}</p>
         <p className="text-xs text-text-disabled">© {new Date().getFullYear()} 메이플 루틴</p>
         <p className="text-xs text-text-disabled">Data based on NEXON Open API</p>
