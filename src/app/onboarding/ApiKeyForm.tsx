@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { MapleSpinner } from '../../components/MapleSpinner/MapleSpinner'
-import { Button } from '../../components/Button/Button'
+import { MapleSpinner } from '../../components/atoms/MapleSpinner/MapleSpinner'
+import { Button } from '../../components/atoms/Button/Button'
 
 export interface ApiKeyFormProps {
   isSubmitting: boolean

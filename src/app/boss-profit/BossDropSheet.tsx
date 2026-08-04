@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { ChevronLeft, FlaskConical, PackageOpen, Pin, Sword, type LucideIcon } from 'lucide-react'
-import { BottomSheet } from '../../components/BottomSheet/BottomSheet'
-import { EmptyState } from '../../components/EmptyState/EmptyState'
-import { DifficultyBadge } from '../../components/DifficultyBadge/DifficultyBadge'
-import { DropEffectOverlay } from '../../components/DropEffectOverlay/DropEffectOverlay'
+import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
+import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
+import { DifficultyBadge } from '../../components/atoms/DifficultyBadge/DifficultyBadge'
+import { DropEffectOverlay } from '../../components/organisms/DropEffectOverlay/DropEffectOverlay'
 import { useDropEffectStore } from '../../features/drop-effect/store'
 import {
   getAccessoryBoxContents,

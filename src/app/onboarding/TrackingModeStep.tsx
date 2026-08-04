@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Gamepad2, Info, ListChecks } from 'lucide-react'
 import type { TrackingMode } from '../../storage/tracking-mode'
 import { TRACKING_MODE_OPTIONS } from '../../features/tracking-mode/copy'
-import { Button } from '../../components/Button/Button'
+import { Button } from '../../components/atoms/Button/Button'
 
 export interface TrackingModeStepProps {
   onSubmit: (mode: TrackingMode) => void

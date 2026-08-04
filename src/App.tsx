@@ -13,10 +13,10 @@ import { refreshSafeAreaInsets } from './native/system-bars'
 import { addKeyboardVisibilityListener } from './native/keyboard'
 import { maybeShowTabSwitchAd, startAds } from './features/ads/tab-switch-ad'
 import { UpdatePromptModal } from './app/UpdatePromptModal'
-import { ErrorBoundary } from './components/ErrorBoundary/ErrorBoundary'
-import { LoadingState } from './components/LoadingState/LoadingState'
-import { ProfitIcon } from './components/ProfitIcon/ProfitIcon'
-import { ToastStack } from './components/Toast/ToastStack'
+import { ErrorBoundary } from './components/organisms/ErrorBoundary/ErrorBoundary'
+import { LoadingState } from './components/molecules/LoadingState/LoadingState'
+import { ProfitIcon } from './components/atoms/ProfitIcon/ProfitIcon'
+import { ToastStack } from './components/organisms/Toast/ToastStack'
 
 // 라우트 화면은 지연 로딩한다([[ADR-092]]) — 정적 import 였을 때 8개 화면·모든 store·
 // src/data/*.json 이 첫 페인트에 함께 평가돼 메인 청크가 1,019kB(gzip 411kB) 단일 덩어리였다.

@@ -1,12 +1,10 @@
 import { create } from 'zustand'
 import { planConfirmedDifficultyDropMigration, pruneUnobtainableDrops } from '../../lib/boss-drops'
-import { DEFAULT_MAX_PARTY_SIZE, findPriceEntry } from '../../lib/boss-crystal-prices'
-import { getBossReferenceOrder, matchBossContent, selectBossProfitBosses, type MatchedBoss } from '../../lib/boss-matching'
-import { mergeManualBossList } from '../../lib/manual-boss-merge'
+import { findPriceEntry } from '../../lib/boss-crystal-prices'
+import { matchBossContent, selectBossProfitBosses } from '../../lib/boss-matching'
 import { getComparisonPeriodKeys } from '../../lib/boss-profit-delta'
 import {
   containsInProgressWeek,
-  formatBossProfitPeriodLabel,
   getAdjacentPeriodKey,
   getBackfillQueryDate,
   getCurrentBossProfitPeriod,
@@ -37,10 +35,27 @@ import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
 import { getManualTrackedContent, type ManualTrackedItem } from '../../storage/manual-tracked-content'
 import { getCachedSchedulerState } from '../../storage/scheduler-cache'
-import { getTrackingMode, type TrackingMode } from '../../storage/tracking-mode'
-import { BOSS_DIFFICULTIES, type BossContent, type BossCycle, type BossDifficulty } from '../../types'
+import { getTrackingMode } from '../../storage/tracking-mode'
+import { type BossCycle, type BossDifficulty } from '../../types'
 import { compareByName } from '../onboarding/representative-character'
 import { syncSchedules, toScheduleSyncError, type ScheduleSyncError } from '../schedule-sync/schedule-sync'
+import {
+  appendRecordOnlyRows,
+  buildBossProfitRow,
+  buildRowFromRecord,
+  dropRowKey,
+  filterRowsForTab,
+  matchesRowKey,
+  mergeRecordsIntoRows,
+  selectProfitDisplayBosses,
+  sortRowsByOcidOrder,
+  sumRowsPayout,
+  toProfileSnapshot,
+  toRecordedDrop,
+} from './rows'
+import type { BossProfitRowKey, CharacterProfileInfo, SortedCharacterInfo } from './rows'
+// 화면이 기존 경로로 계속 import 한다 — 옮긴 것은 구현 위치이지 공개 API 가 아니다.
+export { dropRowKey } from './rows'
 
 export interface BossProfitRow {
   ocid: string
@@ -114,7 +129,6 @@ export interface BossProfitState {
   lastSyncedAt: string | null // 페이지 전체 기준 마지막으로 성공한 실시간 동기화 시각(ISO 8601). 컨텐츠/보스 스케줄러의 formatSyncedAt과 동일하게 새로고침 아이콘 옆에 표시
 }
 
-type BossProfitRowKey = Pick<BossProfitRow, 'ocid' | 'boss' | 'difficulty' | 'cycle' | 'periodKey'>
 
 export interface BossProfitStore extends BossProfitState {
   loadTrackedOcids(): Promise<void>
@@ -132,13 +146,6 @@ export interface BossProfitStore extends BossProfitState {
   setBossDrops(row: BossProfitRowKey, drops: RecordedDrop[]): Promise<void>
 }
 
-// 행 하나에 실리는 캐릭터 정보 한 덩어리. buildBossProfitRow/buildRowFromRecord가 이 객체를 통째로
-// 받으므로, 필드가 늘어도 채우지 않은 호출부는 컴파일 단계에서 걸린다(세 경로 중 하나만 비는 것 방지).
-interface CharacterProfileInfo {
-  characterName: string
-  imageUrl: string | null
-  world: string | null
-}
 
 // refresh()가 가장 최근에 계산한 "현재 기간" 전체(모든 cycle) row와 그 시점의 캐릭터 정보를 담아둔다.
 // setTab/goToPreviousPeriod/goToNextPeriod가 "현재 기간"으로 되돌아올 때 네트워크 호출 없이
@@ -158,30 +165,7 @@ let latestSyncSnapshot: LatestSyncSnapshot | null = null
 // 캡처해두고, set() 직전에 "여전히 최신 세대인지" 확인해 stale한 결과는 조용히 버린다.
 let requestGeneration = 0
 
-interface SortedCharacterInfo {
-  ocid: string
-  imageUrl: string | null // character-basic-cache의 character_image. 아바타 렌더링용(ADR-023 "미확정" 해소)
-  world: string | null // 같은 캐시 프로필의 world_name. 월드별 결정석 한도 집계용([[ADR-054]] 결정 5)
-  // ADR-078 결정 2: 이 조회가 이미 읽은 이름을 버리지 않고 흘려보내, 뒤따르는 함수들이 같은 캐시를
-  // 다시 읽지 않게 한다. **캐시가 없으면 null**이다 — 정렬용으로 쓰는 ''(빈 이름)를 그대로 넘기면
-  // "캐시 없음"이 "이름이 빈 캐릭터"로 둔갑해 buildRowsFromRecords의 제외 규칙이 깨진다.
-  characterName: string | null
-}
 
-// ADR-078 결정 2: 한 번의 기간 로드가 공유하는 프로필 스냅샷. 캐시가 없는 ocid는 **넣지 않는다**
-// (넣으면 이름 없는 행이 화면에 샌다).
-function toProfileSnapshot(infos: SortedCharacterInfo[]): Map<string, CharacterProfileInfo> {
-  const profiles = new Map<string, CharacterProfileInfo>()
-  for (const info of infos) {
-    if (info.characterName === null) continue
-    profiles.set(info.ocid, {
-      characterName: info.characterName,
-      imageUrl: info.imageUrl,
-      world: info.world,
-    })
-  }
-  return profiles
-}
 
 // ADR-017 결정 2와 동일한 원칙 — 캐시 단계(trackedOcids 저장 순서)와 동기화 단계(Nexon
 // character/list 응답 순서)가 서로 달라 캐릭터 목록 위치가 API 응답 이후 갑자기 바뀌어 보이던
@@ -221,206 +205,14 @@ async function getSortedCharacterInfo(ocids: string[]): Promise<SortedCharacterI
     .map(({ ocid, imageUrl, world, characterName }) => ({ ocid, imageUrl, world, characterName }))
 }
 
-// rows(보스 단위, 캐릭터당 여러 개)를 sortedOcids가 정한 캐릭터 순서로 재배열하고, 같은 캐릭터
-// 안에서는 weekly-bosses.json 정규 순서(REFERENCE_ENTRIES: weekly → eventWeekly → monthly)로
-// 결정적으로 정렬한다([[ADR-036]], #28). 예전에는 캐릭터 순위(ocid)로만 정렬하고 stable sort에
-// 의존해 보스 순서를 데이터 소스가 만든 순서 그대로 물려받았는데, 그 소스 순서가 비결정적이라
-// (특히 ORDER BY 없는 getBossProfitRecords, 캐시/라이브 Map 삽입 순서) 로드/렌더마다 보스 순서가
-// 달라졌다. 모든 행 경로가 이 함수를 거치므로 여기서 2차 정렬 키를 부여하면 세 경로가 전부 같은
-// 순서로 고정된다. 참조에 없는 보스(매칭 실패 원문명, [[ADR-008]])는 맨 뒤로, 같은 보스의 여러
-// 난이도는 BOSS_DIFFICULTIES 순서로, 그래도 동률이면 보스명으로 완전 결정한다.
-function sortRowsByOcidOrder(rows: BossProfitRow[], sortedOcids: string[]): BossProfitRow[] {
-  const rank = new Map(sortedOcids.map((ocid, index) => [ocid, index]))
-  const ocidRank = (ocid: string): number => rank.get(ocid) ?? Number.MAX_SAFE_INTEGER
-  return [...rows].sort((a, b) => {
-    const rankDiff = ocidRank(a.ocid) - ocidRank(b.ocid)
-    if (rankDiff !== 0) return rankDiff
-    // 순위가 같은데 ocid가 다르면(둘 다 sortedOcids 밖인 예외) 캐릭터끼리 섞이지 않게 ocid로 묶는다.
-    if (a.ocid !== b.ocid) return a.ocid < b.ocid ? -1 : 1
-    const bossDiff = getBossReferenceOrder(a.boss) - getBossReferenceOrder(b.boss)
-    if (bossDiff !== 0) return bossDiff
-    const difficultyDiff = BOSS_DIFFICULTIES.indexOf(a.difficulty) - BOSS_DIFFICULTIES.indexOf(b.difficulty)
-    if (difficultyDiff !== 0) return difficultyDiff
-    return a.boss < b.boss ? -1 : a.boss > b.boss ? 1 : 0
-  })
-}
 
-function buildBossProfitRow(
-  ocid: string,
-  character: CharacterProfileInfo,
-  boss: MatchedBoss,
-  now: Date,
-): BossProfitRow {
-  const bossName = boss.matchedBossName ?? boss.apiName
-  const period = getCurrentBossProfitPeriod(boss.cycle, now)
-  const periodLabel = formatBossProfitPeriodLabel(boss.cycle, period.periodKey, now).primary
-  const priceEntry = findPriceEntry(bossName, boss.difficulty)
-  const priceMeso = priceEntry?.priceMeso ?? null
-  const maxPartySize = priceEntry?.maxPartySize ?? DEFAULT_MAX_PARTY_SIZE
 
-  return {
-    ocid,
-    characterName: character.characterName,
-    imageUrl: character.imageUrl,
-    world: character.world,
-    boss: bossName,
-    difficulty: boss.difficulty,
-    cycle: boss.cycle,
-    periodKey: period.periodKey,
-    periodLabel,
-    priceMeso,
-    maxPartySize,
-    partySize: null,
-    // 미완료(등록만 되고 아직 처치 전) 보스는 항상 0메소로 계산한다(ADR-032) — 완료 보스는
-    // 기존과 동일하게 null로 두고 자동 기록(위 for 루프)이나 병합(mergeRecordsIntoRows)에서 채운다.
-    // isComplete(카드 표시용 승격된 값)가 아니라 ownComplete(승격 없는 원본 완료 여부)를 써야
-    // 한다 — 여기 도달하는 boss는 이미 selectBossProfitBosses가 골라준 것이라 실제 처치 난이도
-    // (ownComplete: true) 아니면 미완료 placeholder(ownComplete: false)뿐이다.
-    payoutMeso: boss.ownComplete ? null : 0,
-    isComplete: boss.ownComplete,
-  }
-}
 
-// bossContents(API 원문/캐시)에서 이번 기간 표시할 보스 목록을 고른다. 트래킹 모드에 따라 분기한다(ADR-035 결정 21).
-// - 자동 모드: 기존 동작 그대로 — selectBossProfitBosses(그룹당 실제 처치 난이도 우선, 없으면 인게임 등록 난이도 placeholder).
-// - 수동 모드: "실제 처치한 보스 전부(처치 난이도)" ∪ "수동 추적 중이지만 미처치인 보스(고른 난이도 placeholder)".
-//   자동 모드와 대칭이며 placeholder의 출처만 인게임 등록 → 수동 멤버십으로 바뀐다.
-function selectProfitDisplayBosses(
-  bossContents: BossContent[],
-  mode: TrackingMode,
-  manualItems: ManualTrackedItem[],
-): MatchedBoss[] {
-  const matched = bossContents.map(matchBossContent)
-  if (mode !== 'manual') {
-    return selectBossProfitBosses(matched)
-  }
 
-  const nameOf = (boss: MatchedBoss): string => boss.matchedBossName ?? boss.apiName
 
-  // ① 실제 처치한 보스는 추적 여부와 무관하게 전부, 처치한 난이도·가격으로 노출한다(사용자 확정) —
-  // 보스 수익 페이지는 정산이 목적이라([[ADR-032]]) 실제로 번 것은 다 보여준다. selectBossProfitBosses가
-  // 그룹당 실제 처치 난이도를 골라주며(등록 난이도와 다르게 처치했어도 처치 난이도로 잡힌다), 인게임
-  // 등록-only(미처치) placeholder는 수동 모드에서 신뢰하지 않으므로 ownComplete인 것만 남긴다.
-  const kills = selectBossProfitBosses(matched).filter((boss) => boss.ownComplete)
-  const killedNames = new Set(kills.map(nameOf))
 
-  // ② 수동 추적 중이지만 아직 처치하지 않은 보스는 고른 난이도로 미완료 placeholder(#33). 보스 관리
-  // 페이지와 동일 규약(mergeManualBossList — 정규화 명 매칭, cycle 폴백)으로 병합하되, 이미 ①에서 처치
-  // 난이도로 나온 보스명은 중복 배제한다.
-  const placeholders = mergeManualBossList(
-    manualItems.filter((item) => item.kind === 'boss'),
-    bossContents,
-  )
-    .map(matchBossContent)
-    .filter((boss) => !boss.ownComplete && !killedNames.has(nameOf(boss)))
 
-  return [...kills, ...placeholders]
-}
 
-// ADR-069 결정 1(원천 규칙): **기록이 있으면 record.world, 없으면 캐시**다. 과거 기간 행은 전부
-// 기록에서 오므로 여기서 스냅샷이 이긴다 — 캐시(라이브 값)를 쓰면 월드 리프가 과거 집계를 소급
-// 이동시킨다. 컬럼 도입 전 기록(world: null)만 캐시 값으로 폴백한다.
-function buildRowFromRecord(
-  record: BossProfitRecord,
-  character: CharacterProfileInfo,
-  now: Date,
-): BossProfitRow {
-  const difficulty = record.difficulty as BossDifficulty
-  const priceEntry = findPriceEntry(record.boss, difficulty)
-  const maxPartySize = priceEntry?.maxPartySize ?? DEFAULT_MAX_PARTY_SIZE
-
-  return {
-    ocid: record.ocid,
-    characterName: character.characterName,
-    imageUrl: character.imageUrl,
-    world: record.world ?? character.world,
-    boss: record.boss,
-    difficulty,
-    cycle: record.cycle,
-    periodKey: record.periodKey,
-    periodLabel: formatBossProfitPeriodLabel(record.cycle, record.periodKey, now).primary,
-    priceMeso: record.priceMeso,
-    maxPartySize,
-    partySize: record.partySize,
-    payoutMeso: record.payoutMeso,
-    isComplete: true, // 기록은 항상 완료된 보스만 남는다(backfillTarget/자동 기록이 완료 보스만 upsert)
-  }
-}
-
-function mergeRecordsIntoRows(
-  rows: BossProfitRow[],
-  records: Awaited<ReturnType<typeof getBossProfitRecords>>,
-): BossProfitRow[] {
-  return rows.map((row) => {
-    const record = records.find(
-      (candidate) =>
-        candidate.ocid === row.ocid &&
-        candidate.boss === row.boss &&
-        candidate.difficulty === row.difficulty &&
-        candidate.periodKey === row.periodKey,
-    )
-    if (record === undefined) {
-      return row
-    }
-    // ADR-023: priceMeso도 기록값으로 덮어쓴다 — 그렇지 않으면 과거 기록을 다시 보여줄 때
-    // 라이브 시세로 조용히 재계산되는 데이터 무결성 버그가 생긴다.
-    return { ...row, priceMeso: record.priceMeso, partySize: record.partySize, payoutMeso: record.payoutMeso }
-  })
-}
-
-// ADR-067 결정 4(표시): **현재 기간의 행은 API/캐시가 원천이고 과거 기간의 행은 기록이 원천**이라는
-// 비대칭 때문에, API가 보스를 빼면 이미 저장된 수익이 현재 기간 화면에서 사라진다. 실측된 경로는
-// 미접속 캐릭터의 축약 응답이다 — 월간 보스를 처치한 뒤 1주 이상 접속하지 않으면 bossMonthly가
-// reg=false·comp=false로만 남아 `selectBossProfitBosses` 가 행을 만들지 않는다(재현: 6.65억 기록
-// 보유 상태에서 "이번 달 총 수익 0메소").
-//
-// mergeRecordsIntoRows는 **있는 행을 채우기만** 하므로, 기록만 있는 조합은 여기서 행으로 되살린다.
-// 참조 데이터에서 사라진 보스의 기록도 행이 되지만 그것이 원칙과 일치한다("과거 기록은 지우지
-// 않는다", error-resilience 원칙 5).
-function appendRecordOnlyRows(
-  rows: BossProfitRow[],
-  records: BossProfitRecord[],
-  profiles: Map<string, CharacterProfileInfo>,
-  now: Date,
-): BossProfitRow[] {
-  const seen = new Set(rows.map((row) => `${row.ocid}|${row.boss}|${row.difficulty}|${row.periodKey}`))
-  const restored: BossProfitRow[] = []
-
-  for (const record of records) {
-    const key = `${record.ocid}|${record.boss}|${record.difficulty}|${record.periodKey}`
-    if (seen.has(key)) {
-      continue
-    }
-    const profile = profiles.get(record.ocid)
-    if (profile === undefined) {
-      // 이 캐릭터의 프로필을 모르면 행을 만들 수 없다(캐릭터명·아바타가 없다) — buildRowsFromRecords가
-      // 캐시 없는 ocid를 건너뛰는 것과 같은 규약이다.
-      continue
-    }
-    seen.add(key)
-    restored.push(buildRowFromRecord(record, profile, now))
-  }
-
-  return [...rows, ...restored]
-}
-
-function matchesRowKey(row: BossProfitRow, key: BossProfitRowKey): boolean {
-  return (
-    row.ocid === key.ocid &&
-    row.boss === key.boss &&
-    row.difficulty === key.difficulty &&
-    row.cycle === key.cycle &&
-    row.periodKey === key.periodKey
-  )
-}
-
-function filterRowsForTab(rows: BossProfitRow[], tab: BossCycle, periodKey: string): BossProfitRow[] {
-  return rows.filter((row) => row.cycle === tab && row.periodKey === periodKey)
-}
-
-function sumRowsPayout(rows: BossProfitRow[]): number {
-  return rows.reduce((sum, row) => sum + (row.payoutMeso ?? 0), 0)
-}
 
 // 리로드(OTA 적용·디버그 데이터 초기화 등)로 dbPromise는 초기화됐지만 네이티브 SQLite 커넥션은
 // stale하게 남아있는 경우, openBossProfitDb의 "닫고 새로 생성" 보정만으로는 그 직후 첫 쿼리가
@@ -789,30 +581,7 @@ async function canReachPreviousPeriod(
 
 type BossProfitSetter = (partial: Partial<BossProfitState>) => void
 
-// "기간 로드" 규칙(ADR-023): 이동한 periodKey가 그 tab의 현재 기간이면 네트워크 호출 없이
-// 최근 refresh가 채워둔 스냅샷에서 슬라이스하고, 과거 기간이면 로컬 우선(이미 체크된 조합은
-// API 호출 없이 로컬 기록만 읽고, 체크 안 된 조합만 순차적으로 백필한다).
-//
-// generation은 호출한 쪽(setTab/goToPreviousPeriod/goToNextPeriod)이 periodKey를 동기적으로
-// 바꾸는 바로 그 순간 캡처한 requestGeneration 값이다 — 이 비동기 함수가 끝나기 전에 더 최신
-// 액션(연타 등)이 시작됐다면(requestGeneration이 그 사이 또 증가했다면) set()을 건너뛰어
-// stale한 응답이 최신 화면을 덮어쓰지 않게 한다.
-// 드롭 상태 키(ADR-038). BossProfitRow 키와 달리 cycle을 뺀다 — 드롭은 (ocid,boss,difficulty,
-// periodKey)로 저장되고 periodKey가 이미 주간/월간을 구분하므로 cycle이 불필요하다.
-export function dropRowKey(ocid: string, boss: string, difficulty: string, periodKey: string): string {
-  return `${ocid}|${boss}|${difficulty}|${periodKey}`
-}
 
-function toRecordedDrop(record: BossDropRecord): RecordedDrop {
-  return {
-    category: record.category,
-    itemName: record.itemName,
-    slot: record.slot ?? undefined,
-    boxOrigin: record.boxOrigin ?? undefined,
-    ringLevel: record.ringLevel ?? undefined,
-    quantity: record.quantity,
-  }
-}
 
 /**
  * 처치 난이도가 확정된 순간, 옛 난이도 키에 남은 드롭을 확정 난이도로 이관한다([[ADR-069]] 결정 4).

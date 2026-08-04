@@ -1,9 +1,9 @@
 import { useEffect } from 'react'
 import packageJson from '../../../package.json'
 import { useLiveUpdateStore, type LiveUpdateStatus } from '../../features/live-update/store'
-import { MapleSpinner } from '../../components/MapleSpinner/MapleSpinner'
-import { Button } from '../../components/Button/Button'
-import { Card } from '../../components/Card/Card'
+import { MapleSpinner } from '../../components/atoms/MapleSpinner/MapleSpinner'
+import { Button } from '../../components/atoms/Button/Button'
+import { Card } from '../../components/atoms/Card/Card'
 
 // 설정의 관찰용 섹션 — 현재 실행 번들 버전과 상태를 보여주고 수동 확인을 제공한다(ADR-026/ADR-027).
 // 새 버전을 실제로 받고 적용하는 동의 플로우는 UpdatePromptModal이 담당한다.

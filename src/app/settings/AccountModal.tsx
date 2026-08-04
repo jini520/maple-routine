@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Modal } from '../../components/Modal/Modal'
+import { Modal } from '../../components/organisms/Modal/Modal'
 import { useSettingsStore } from '../../features/settings/store'
 import { AccountFlowStatus } from './AccountFlowStatus'
 

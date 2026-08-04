@@ -3,9 +3,9 @@ import { ContentCharacterStep } from '../onboarding/ContentCharacterStep'
 import { formatSettingsError } from './error-message'
 import type { SettingsError, SettingsStatus, PrefetchProgress } from '../../features/settings/state'
 import type { MapleAccount } from '../../types'
-import { ProgressBar } from '../../components/ProgressBar/ProgressBar'
-import { Button } from '../../components/Button/Button'
-import { Card } from '../../components/Card/Card'
+import { ProgressBar } from '../../components/atoms/ProgressBar/ProgressBar'
+import { Button } from '../../components/atoms/Button/Button'
+import { Card } from '../../components/atoms/Card/Card'
 
 export interface AccountFlowStatusProps {
   status: SettingsStatus

@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { useOnboardingStore } from '../../features/onboarding/store'
-import { MapleSweepSpinner } from '../../components/MapleSweepSpinner/MapleSweepSpinner'
+import { MapleSweepSpinner } from '../../components/atoms/MapleSweepSpinner/MapleSweepSpinner'
 import { ApiKeyForm } from './ApiKeyForm'
 import { AccountSelectionList } from './AccountSelectionList'
 import { ContentCharacterStep } from './ContentCharacterStep'
 import { TrackingModeStep } from './TrackingModeStep'
-import { ProgressBar } from '../../components/ProgressBar/ProgressBar'
+import { ProgressBar } from '../../components/atoms/ProgressBar/ProgressBar'
 
 export function OnboardingScreen(): React.JSX.Element {
   const {

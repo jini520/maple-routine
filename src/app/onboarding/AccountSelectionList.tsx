@@ -4,7 +4,7 @@ import { pickRepresentativeCharacter } from '../../features/onboarding/represent
 import { useAccountProbes } from '../../features/onboarding/use-account-probes'
 import { worldEmblemUrl } from '../../lib/world-emblem'
 import { useState } from 'react'
-import { Button } from '../../components/Button/Button'
+import { Button } from '../../components/atoms/Button/Button'
 
 // BossProfitScreen의 CharacterAvatar와 동일한 얼굴 크롭 방식(ADR-015) — character/basic이
 // 반환하는 300x300 전신 이미지에서 얼굴 부분만 보이도록 확대·정렬한다. 아바타 크기가

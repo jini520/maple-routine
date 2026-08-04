@@ -1,4 +1,4 @@
-import { Modal } from '../../components/Modal/Modal'
+import { Modal } from '../../components/organisms/Modal/Modal'
 import { useThemeStore } from '../../features/theme/store'
 import { ThemeSelector } from './ThemeSelector'
 import type { ThemeName } from '../../types/theme'
