@@ -1,4 +1,5 @@
 import { Modal } from '../Modal/Modal'
+import { ProgressBar } from '../ProgressBar/ProgressBar'
 
 export interface ProgressModalProps {
   message: string
@@ -18,15 +19,7 @@ export function ProgressModal(props: ProgressModalProps): React.JSX.Element {
         <p className="text-sm text-text-muted">
           {props.message} ({props.completed}/{props.total})
         </p>
-        <div
-          role="progressbar"
-          aria-valuenow={percent}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          className="h-1.5 w-full overflow-hidden rounded-full bg-track"
-        >
-          <div className="h-1.5 rounded-full bg-primary" style={{ width: `${percent}%` }} />
-        </div>
+        <ProgressBar percent={percent} aria={{ now: percent, max: 100 }} />
       </div>
     </Modal>
   )

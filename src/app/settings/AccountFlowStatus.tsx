@@ -3,6 +3,7 @@ import { ContentCharacterStep } from '../onboarding/ContentCharacterStep'
 import { formatSettingsError } from './error-message'
 import type { SettingsError, SettingsStatus, PrefetchProgress } from '../../features/settings/state'
 import type { MapleAccount } from '../../types'
+import { ProgressBar } from '../../components/ProgressBar/ProgressBar'
 
 export interface AccountFlowStatusProps {
   status: SettingsStatus
@@ -60,15 +61,7 @@ export function AccountFlowStatus(props: AccountFlowStatusProps): React.JSX.Elem
               ? ` (${props.prefetchProgress.completed}/${props.prefetchProgress.total})`
               : ''}
           </p>
-          <div
-            role="progressbar"
-            aria-valuenow={percent}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            className="h-1.5 w-full overflow-hidden rounded-full bg-track"
-          >
-            <div className="h-1.5 rounded-full bg-primary" style={{ width: `${percent}%` }} />
-          </div>
+          <ProgressBar percent={percent} aria={{ now: percent, max: 100 }} />
         </div>
       )
     }
