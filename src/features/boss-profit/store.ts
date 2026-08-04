@@ -1,15 +1,9 @@
 import { create } from 'zustand'
-import { planConfirmedDifficultyDropMigration, pruneUnobtainableDrops } from '../../lib/boss-drops'
-import { findPriceEntry } from '../../lib/boss-crystal-prices'
-import { matchBossContent, selectBossProfitBosses } from '../../lib/boss-matching'
-import { getComparisonPeriodKeys } from '../../lib/boss-profit-delta'
 import {
   containsInProgressWeek,
   getAdjacentPeriodKey,
-  getBackfillQueryDate,
   getCurrentBossProfitPeriod,
   getWeeklyPeriodKeysInMonth,
-  isEarliestNavigablePeriod,
   isLatestPeriod,
   isPeriodQueryable,
   resolvePagePeriodState,
@@ -17,26 +11,22 @@ import {
   type PeriodDataState,
   type PeriodQueryOutcome,
 } from '../../lib/boss-profit-period'
-import { fetchSchedulerCharacterState } from '../../nexon/schedule'
-import { getAuthConfig } from '../../storage/api-key'
 import { getBossPartySize } from '../../storage/boss-party-settings'
 import {
   fillMissingRecordWorlds,
   getBossProfitRecords,
-  hasBossProfitRecordsAtOrBefore,
   upsertBossProfitRecord,
   type BossProfitRecord,
 } from '../../storage/boss-profit'
 import { getBossDropRecords, replaceBossDropRecords } from '../../storage/boss-drops'
-import type { BossDropRecord } from '../../storage/boss-drops'
 import type { RecordedDrop } from '../../types/drops'
-import { isPeriodChecked, markPeriodChecked } from '../../storage/boss-profit-period-checks'
+import { isPeriodChecked } from '../../storage/boss-profit-period-checks'
 import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
 import { getManualTrackedContent, type ManualTrackedItem } from '../../storage/manual-tracked-content'
 import { getCachedSchedulerState } from '../../storage/scheduler-cache'
 import { getTrackingMode } from '../../storage/tracking-mode'
-import { type BossCycle, type BossDifficulty } from '../../types'
+import { type BossCycle } from '../../types'
 import { compareByName } from '../onboarding/representative-character'
 import { syncSchedules, toScheduleSyncError, type ScheduleSyncError } from '../schedule-sync/schedule-sync'
 import {
@@ -51,28 +41,18 @@ import {
   sortRowsByOcidOrder,
   sumRowsPayout,
   toProfileSnapshot,
-  toRecordedDrop,
-} from './rows'
-import type { BossProfitRowKey, CharacterProfileInfo, SortedCharacterInfo } from './rows'
+  } from './rows'
+import type { BossProfitRow, BossProfitRowKey, CharacterProfileInfo, SortedCharacterInfo } from './rows'
+// 행 타입의 정의 위치는 rows.ts 지만 공개 경로는 그대로 둔다(ADR-094 결정 7) — 화면과 테스트가
+// store 에서 가져오고, 옮긴 것은 구현 위치일 뿐이다.
+export type { BossProfitRow } from './rows'
 // 화면이 기존 경로로 계속 import 한다 — 옮긴 것은 구현 위치이지 공개 API 가 아니다.
 export { dropRowKey } from './rows'
+import { withSqliteFallback } from './sqlite-guards'
+import { loadDropsByRowKey, migrateDropsToConfirmedDifficulty } from './drops-loader'
+import { backfillTarget, buildBackfillTargets, canReachPreviousPeriod, loadPreviousPeriodTotal } from './backfill'
+import type { BackfillTarget } from './backfill'
 
-export interface BossProfitRow {
-  ocid: string
-  characterName: string
-  imageUrl: string | null // character/basic의 character_image(character-basic-cache 경유). 캐시가 없으면 null(이니셜 폴백)
-  world: string | null // character/basic의 world_name(character-basic-cache 경유). 이전 캐시엔 없을 수 있어 null 가능([[ADR-054]] 결정 5·6 — 월드를 모르는 캐릭터는 월드 집계에서 제외)
-  boss: string // matchedBossName ?? apiName (매핑 안 되면 원문 그대로, ADR-008)
-  difficulty: BossDifficulty
-  cycle: BossCycle
-  periodKey: string
-  periodLabel: string // formatBossProfitPeriodLabel(cycle, periodKey, now).primary — "이번 주"/"지난 주"/"이번 달"/"지난 달"/절대 표기
-  priceMeso: number | null // 시세표에 없으면 null ("가격 미확정"). 기록이 있으면 기록값으로 복원(라이브 재계산 방지, ADR-023)
-  maxPartySize: number
-  partySize: number | null // 사용자가 아직 입력 안 했으면 null
-  payoutMeso: number | null // partySize가 null이거나 priceMeso가 null이면 null
-  isComplete: boolean // false면 보스 스케줄러에 등록만 되고 아직 처치 전(미완료 placeholder, ADR-032) — payoutMeso는 항상 0이고 DB에 기록되지 않는다
-}
 
 /**
  * 월간 탭 주차 행의 상태([[ADR-068]] 결정 2). 기간 6상태([[ADR-067]] 결정 2)에 이 화면 고유의 두
@@ -214,33 +194,8 @@ async function getSortedCharacterInfo(ocids: string[]): Promise<SortedCharacterI
 
 
 
-// 리로드(OTA 적용·디버그 데이터 초기화 등)로 dbPromise는 초기화됐지만 네이티브 SQLite 커넥션은
-// stale하게 남아있는 경우, openBossProfitDb의 "닫고 새로 생성" 보정만으로는 그 직후 첫 쿼리가
-// 막히는 사례가 실기기에서 재현됐다(2026-07-17 — 데이터 초기화 → 보스 스케줄러 저장 직후 보스
-// 수익 화면이 "불러오는 중..."에서 영영 멈춤). refresh()뿐 아니라 loadPeriod()(기간 이동)도 같은
-// SQLite 조회에 의존하는데, 여기서 멈추면 periodKey 라벨만 바뀌고 rows는 갱신되지 않아 이전 기간
-// 숫자가 그대로 남는(에러도 로딩 표시도 없는) 증상으로 나타난다(2026-07-17 재현). SQLite 의존 호출을
-// 타임아웃과 경쟁시켜 지연/실패 시 fallback으로 진행한다 — 기록이 안 남았을 뿐이므로 다음
-// 새로고침/재방문에서 정상 커넥션으로 재시도된다.
-const SQLITE_QUERY_TIMEOUT_MS = 5000
 
-function withSqliteFallback<T>(promise: Promise<T>, fallback: T): Promise<T> {
-  return Promise.race([
-    promise.catch(() => fallback),
-    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), SQLITE_QUERY_TIMEOUT_MS)),
-  ])
-}
 
-// upsertBossProfitRecord/markPeriodChecked(쓰기)는 withSqliteFallback처럼 타임아웃을 "성공"으로
-// 위장하면 안 된다 — 실제로는 저장되지 않았는데 markPeriodChecked까지 호출되면 그 기간이 영구히
-// "확인 완료, 기록 없음"으로 잘못 캐시돼 다시는 재시도되지 않는다. 대신 타임아웃을 실패로 전파해
-// backfillTarget의 기존 catch가 재시도 가능한 실패(periodUnavailable)로 처리하게 한다.
-function withSqliteTimeout<T>(promise: Promise<T>): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) => setTimeout(() => reject(new Error('SQLite 응답 시간 초과')), SQLITE_QUERY_TIMEOUT_MS)),
-  ])
-}
 
 // tab이 'monthly'일 때 그 달에 포함된 weekly periodKey들을 주차별로 합산한다. 지난 주는 로컬
 // 기록을 조회하고, 아직 시작하지 않은 미래 주는 0/'upcoming'으로 채우며, 진행 중인 주는
@@ -391,290 +346,16 @@ async function buildRowsFromRecords(
   return rows
 }
 
-interface BackfillTarget {
-  ocid: string
-  cycle: BossCycle
-  periodKey: string
-}
 
-function buildBackfillTargets(tab: BossCycle, periodKey: string, ocids: string[], now: Date): BackfillTarget[] {
-  const targets: BackfillTarget[] = []
 
-  if (tab === 'weekly') {
-    for (const ocid of ocids) {
-      targets.push({ ocid, cycle: 'weekly', periodKey })
-    }
-    return targets
-  }
 
-  const currentWeeklyPeriodKey = getCurrentBossProfitPeriod('weekly', now).periodKey
-  const weekKeysInMonth = getWeeklyPeriodKeysInMonth(periodKey).filter((key) => key <= currentWeeklyPeriodKey)
 
-  for (const ocid of ocids) {
-    targets.push({ ocid, cycle: 'monthly', periodKey })
-    for (const weekKey of weekKeysInMonth) {
-      targets.push({ ocid, cycle: 'weekly', periodKey: weekKey })
-    }
-  }
-
-  return targets
-}
-
-// 과거 기간 백필: 성공하면 markPeriodChecked를 호출해 다음 방문부터 재조회하지 않게 하고,
-// 실패하면 호출하지 않아 다음 방문 때 재시도된다. 이미 기록된 보스(setPartySize로 override된 값
-// 포함)는 건드리지 않는다 — 기존 refresh() 자동 기록 로직과 동일하게 "기록이 없는 조합만"
-// 기본값(파티 관리 설정, 없으면 1)으로 채운다. 즉 **실시간으로 쌓인 기록이 base이고 백필은 빠진
-// 것만 채우는 delta**다.
-//
-// 반환값은 이번 시도의 결과다([[ADR-067]] 결정 2) — null이면 확인 완료(0건이든 기록을 채웠든),
-// 'notCollected'면 아직 집계 전(시간이 지나면 풀린다), 'failed'면 그 외 실패(지금 재시도 가능).
-// **조회 불가(구간 밖) 대상은 여기 들어오지 않는다** — 호출부가 걸러낸다. 전에는 이 함수가 그
-// 대상을 markPeriodChecked로 굳혔는데, 그러면 "조회해서 0건을 봤다"와 "조회 불가라 굳혔다"가
-// 같은 기록이 되어 confirmedEmpty가 outOfRange로 격하되는 원인이었다([[ADR-067]] 결정 3).
-async function backfillTarget(target: BackfillTarget, now: Date): Promise<PeriodQueryOutcome | null> {
-  const date = getBackfillQueryDate(target.cycle, target.periodKey)
-
-  const authConfig = await getAuthConfig()
-  if (authConfig === null) {
-    return 'failed'
-  }
-
-  try {
-    const state = await fetchSchedulerCharacterState(authConfig.apiKey, target.ocid, date)
-    // selectBossProfitBosses로 그룹(content_name)당 실제 처치 난이도만 골라야 한다 — 그렇지
-    // 않으면 등록 난이도와 실제 처치 난이도가 다를 때 둘 다 완료로 잡혀 같은 보스 하나를 두 번
-    // 기록(이중 계산)하게 된다(ADR-032). 과거 기간 백필이므로 미완료 placeholder(ownComplete:
-    // false)는 기록 대상에서 제외한다.
-    const completedBosses = selectBossProfitBosses(
-      state.bossContents.map(matchBossContent).filter((boss) => boss.cycle === target.cycle),
-    ).filter((boss) => boss.ownComplete)
-
-    const existingRecords = await withSqliteFallback(
-      getBossProfitRecords([target.ocid], [target.periodKey]),
-      [],
-    )
-    // ADR-069 결정 1: 백필로 만드는 delta 행에도 월드를 박는다. 그 시점 캐시의 월드를 쓰는데,
-    // **리프 이전 주는 API가 400을 주므로 백필 자체가 불가능**하고(실측) 백필로 채워지는 리프 이후
-    // 주는 현재 월드가 정답이라 실질 부정확이 없다.
-    const backfillWorld = (await getCachedCharacterBasic(target.ocid))?.profile.world ?? null
-
-    // ADR-069 결정 4: 백필 응답이 **처치 난이도를 확정하는 지점**이다. 대상(캐릭터×기간)당 한 번만
-    // 읽어 아래 루프에서 재사용한다 — 보스마다 조회하면 같은 쿼리를 보스 수만큼 반복한다.
-    const dropRecords =
-      completedBosses.length === 0
-        ? []
-        : await withSqliteFallback(getBossDropRecords([target.ocid], [target.periodKey]), [])
-
-    for (const boss of completedBosses) {
-      const bossName = boss.matchedBossName ?? boss.apiName
-      // 이관은 `alreadyRecorded` 판정보다 앞에 둔다 — 이미 수익 기록이 있든 없든 이 응답이 말하는
-      // 처치 난이도는 같고, 아래 continue 들(이미 기록됨·가격 미확정)에 막히면 안 되기 때문이다.
-      await migrateDropsToConfirmedDifficulty(
-        { ocid: target.ocid, boss: bossName, difficulty: boss.difficulty, periodKey: target.periodKey },
-        dropRecords,
-        now,
-      )
-
-      const alreadyRecorded = existingRecords.some(
-        (record) =>
-          record.ocid === target.ocid &&
-          record.boss === bossName &&
-          record.difficulty === boss.difficulty &&
-          record.periodKey === target.periodKey,
-      )
-      if (alreadyRecorded) {
-        continue
-      }
-
-      const priceEntry = findPriceEntry(bossName, boss.difficulty)
-      if (priceEntry === undefined || priceEntry.priceMeso === null) {
-        continue
-      }
-
-      const configuredPartySize = await withSqliteFallback(
-        getBossPartySize(target.ocid, bossName, boss.difficulty),
-        null,
-      )
-      const partySize = configuredPartySize ?? 1
-      const payoutMeso = Math.floor(priceEntry.priceMeso / partySize)
-
-      await withSqliteTimeout(
-        upsertBossProfitRecord({
-          ocid: target.ocid,
-          boss: bossName,
-          difficulty: boss.difficulty,
-          cycle: target.cycle,
-          periodKey: target.periodKey,
-          partySize,
-          priceMeso: priceEntry.priceMeso,
-          payoutMeso,
-          recordedAt: now.toISOString(),
-          world: backfillWorld,
-        }),
-      )
-    }
-
-    await withSqliteTimeout(markPeriodChecked(target.ocid, target.cycle, target.periodKey, now.toISOString()))
-    return null
-  } catch (error) {
-    // 코드가 알려주는 사실을 상태로 옮긴다([[ADR-067]] 결정 1).
-    //  - notCollected(00009): 실패가 아니라 "아직" — 재시도 유도 문구를 띄우지 않는다.
-    //  - periodOutOfRange(00004): 우리 계산상 조회 구간 안인데 API가 거부한 것 — 월드 리프 이전·
-    //    휴면 등 그 캐릭터·날짜에 고유한 사정이라 "다시 시도"가 아니라 "조회할 수 없다"가 맞다.
-    const kind = toScheduleSyncError(error).kind
-    if (kind === 'notCollected') return 'notCollected'
-    if (kind === 'periodOutOfRange') return 'outOfRange'
-    return 'failed'
-  }
-}
-
-// 현재 기간(periodKey)에서 한 칸 더 과거로 이동해도 되는지 판단한다(#29). 이전 버튼 게이트와
-// "조회 불가" 경계가 서로 다른 하한을 쓰던 버그를 없앤다 — 착지할 이전 기간이 실제로 데이터를
-// 보여줄 수 있을 때만 이동을 허용한다.
-//  1) MIN_SCHEDULER_DATE 이전(스케줄러 API 존재 이전)은 어떤 경우에도 데이터가 없다 → 불가.
-//  2) 지금 API로 조회 가능하면(롤링 윈도우 안) 도달 시 백필로 데이터를 채울 수 있다 → 가능.
-//  3) 롤링 윈도우 밖이라 지금은 조회 불가지만 과거에 저장해둔 기록이 있으면 그대로 보여줄 수 있다 → 가능.
-// (이 캐시 존중이 롤링 하한을 그대로 이전 게이트로 쓰지 않는 이유다.)
-/**
- * 직전 기간 총 수익 ([[ADR-087]] 결정 2). SQLite 한 번이면 끝난다.
- *
- * `getComparisonPeriodKeys` 가 **그 화면 총액 산식과 짝을 맞춘 키 목록**을 준다 — 월간 탭이면
- * 직전 달(monthly)과 그 달에 속한 주차들(weekly)이 함께 들어 있고, 화면 총액도 그 둘을 더하므로
- * (`groupTotalMeso`) cycle 로 거르지 않고 전부 합치는 것이 맞다.
- *
- * 기간 상태를 묻지 않는다 — 기록이 없는 기간은 그냥 0이다(결정 3).
- */
-async function loadPreviousPeriodTotal(
-  ocids: string[],
-  tab: BossCycle,
-  periodKey: string,
-): Promise<number> {
-  if (ocids.length === 0) {
-    return 0
-  }
-  const records = await withSqliteFallback(
-    getBossProfitRecords(ocids, getComparisonPeriodKeys(tab, periodKey)),
-    [],
-  )
-  return records.reduce((sum, record) => sum + record.payoutMeso, 0)
-}
-
-async function canReachPreviousPeriod(
-  tab: BossCycle,
-  periodKey: string,
-  ocids: string[],
-  now: Date,
-): Promise<boolean> {
-  if (isEarliestNavigablePeriod(tab, periodKey)) {
-    return false
-  }
-  const prevPeriodKey = getAdjacentPeriodKey(tab, periodKey, 'prev')
-  if (isPeriodQueryable(tab, prevPeriodKey, now)) {
-    return true
-  }
-  // ADR-068 결정 5: **그 기간 또는 더 과거에** 기록이 있으면 통과시킨다. 전에는 바로 이전 한 칸의
-  // 기록만 봐서, 접속하지 않은 주가 벽이 되어 그 뒤의 기록 전체에 도달할 수 없었다(이슈 #78 —
-  // 3·4주차 미접속 캐릭터의 1·2주차 기록이 DB에 있어도 화면으로 갈 방법이 없었다).
-  // 빈 기간은 한 칸씩 지나가야 하지만(시안 A) 벽은 사라진다.
-  return hasBossProfitRecordsAtOrBefore(ocids, tab, prevPeriodKey)
-}
 
 type BossProfitSetter = (partial: Partial<BossProfitState>) => void
 
 
 
-/**
- * 처치 난이도가 확정된 순간, 옛 난이도 키에 남은 드롭을 확정 난이도로 이관한다([[ADR-069]] 결정 4).
- * 계산은 `planConfirmedDifficultyDropMigration` 이 하고 여기서는 쓰기만 한다.
- *
- * `dropRecords` 는 호출 측이 이미 읽어둔 것을 그대로 받는다 — 행마다 새로 조회하지 않기 위함이다.
- * 옮길 것이 없으면 계획이 `null` 이라 쓰기도 없다(멱등).
- *
- * **확정 키를 먼저 쓰고 옛 키를 비운다.** 순서를 뒤집으면 중간에 앱이 죽었을 때 기록이 사라지는데,
- * 이 순서면 최악이 "아무도 읽지 않는 옛 키에 사본이 남는다"(=이관 전과 같은 고아)로 끝난다.
- */
-async function migrateDropsToConfirmedDifficulty(
-  row: Pick<BossProfitRow, 'ocid' | 'boss' | 'difficulty' | 'periodKey'>,
-  dropRecords: BossDropRecord[],
-  now: Date,
-): Promise<void> {
-  const plan = planConfirmedDifficultyDropMigration(
-    row.boss,
-    row.difficulty,
-    dropRecords
-      .filter(
-        (record) =>
-          record.ocid === row.ocid && record.boss === row.boss && record.periodKey === row.periodKey,
-      )
-      .map((record) => ({
-        ...toRecordedDrop(record),
-        difficulty: record.difficulty,
-        dropIndex: record.dropIndex,
-      })),
-  )
-  if (plan === null) return
 
-  const recordedAt = now.toISOString()
-  if (plan.drops.length > 0) {
-    await withSqliteFallback(
-      replaceBossDropRecords(row.ocid, row.boss, row.difficulty, row.periodKey, plan.drops, recordedAt),
-      undefined,
-    )
-  }
-  for (const staleDifficulty of plan.staleDifficulties) {
-    await withSqliteFallback(
-      replaceBossDropRecords(row.ocid, row.boss, staleDifficulty, row.periodKey, [], recordedAt),
-      undefined,
-    )
-  }
-}
-
-// rows에 등장하는 periodKey들의 드롭 기록을 dropRowKey → RecordedDrop[]로 묶어 반환한다.
-// getBossDropRecords는 ORDER BY drop_index라 추가 순서가 보존된다.
-async function loadDropsByRowKey(
-  ocids: string[],
-  rows: BossProfitRow[],
-  now: Date,
-): Promise<Record<string, RecordedDrop[]>> {
-  const periodKeys = Array.from(new Set(rows.map((row) => row.periodKey)))
-  if (ocids.length === 0 || periodKeys.length === 0) return {}
-
-  const records = await withSqliteFallback(getBossDropRecords(ocids, periodKeys), [])
-  const map: Record<string, RecordedDrop[]> = {}
-  for (const record of records) {
-    const key = dropRowKey(record.ocid, record.boss, record.difficulty, record.periodKey)
-    if (map[key] === undefined) map[key] = []
-    map[key].push({
-      category: record.category,
-      itemName: record.itemName,
-      slot: record.slot ?? undefined,
-      boxOrigin: record.boxOrigin ?? undefined,
-      ringLevel: record.ringLevel ?? undefined,
-      quantity: record.quantity,
-    })
-  }
-
-  // 처치 난이도가 확정된(완료) 행에 한해, 그 난이도에서 획득 불가한 드롭을 제거한다(ADR-044 후속).
-  // 미완료 시트의 표시용 난이도 토글로 다른 난이도 전용 아이템이 행 난이도 키에 섞여 저장될 수
-  // 있기 때문. 변경이 있으면 DB에도 영구 반영한다(멱등 — 이미 정리됐으면 재기록 없음). 미완료
-  // 행은 아직 처치 난이도가 없으므로 건드리지 않는다(scratchpad).
-  for (const row of rows) {
-    if (!row.isComplete) continue
-    const key = dropRowKey(row.ocid, row.boss, row.difficulty, row.periodKey)
-    const drops = map[key]
-    if (drops === undefined || drops.length === 0) continue
-    const pruned = pruneUnobtainableDrops(row.boss, row.difficulty, drops)
-    if (pruned.length !== drops.length) {
-      map[key] = pruned
-      await withSqliteFallback(
-        replaceBossDropRecords(row.ocid, row.boss, row.difficulty, row.periodKey, pruned, now.toISOString()),
-        undefined,
-      )
-    }
-  }
-
-  return map
-}
 
 async function loadPeriod(
   set: BossProfitSetter,
