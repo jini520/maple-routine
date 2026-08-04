@@ -240,6 +240,35 @@ Xcode 자동 서명을 쓰므로 키 관리가 없다. 대신 두 가지 함정�
 `cap add ios` 를 다시 하면 `PRODUCT_NAME` 이 `capacitor.config.ts` 의 한글 `appName` 으로
 되살아난다. **플랫폼을 재생성했다면 ASCII 로 다시 바꿀 것.**
 
+### 저장소만 클론해서는 iOS를 빌드할 수 없다 (Xcode Cloud 비활성, 2026-08-04)
+
+Xcode Cloud 워크플로(`메이플루틴 | Default | Archive - iOS`)가 **main 푸시마다** 아카이브를
+시도해 머지할 때마다 실패 메일이 왔다. 간헐적 실패가 아니라 **구조적으로 성공할 수 없는
+상태**였다.
+
+```
+ios/App/CapApp-SPM/Package.swift  (저장소에 추적됨)
+  → .package(path: "../../../node_modules/@capacitor-community/admob") …
+  → node_modules 는 gitignore 대상이라 클론본에 없음
+  → SPM 의존성 해석이 컴파일 전에 실패
+```
+
+웹 번들(`ios/App/App/public`)과 `App/App/capacitor.config.json` 도 gitignore 대상이라, SPM이
+풀렸더라도 내용 없는 앱이 나온다. **`npm ci` → `npm run build` → `npx cap sync ios` 가 선행돼야
+Xcode가 이 프로젝트를 열 수 있다** — 로컬 아카이브가 되는 것은 그 세 단계가 이미 실행된 워킹
+디렉토리에서 빌드하기 때문이다. Android 도 같은 구조다(`app/src/main/assets/public` 이 gitignore).
+
+**결정: 워크플로를 비활성화하고 iOS 는 로컬 아카이브로 제출한다**(사용자 결정 2026-08-04).
+로컬 경로가 이미 성공적으로 돌고 있고, 지금은 Play 배포가 우선이다.
+
+다시 붙이려면 두 가지가 필요하다.
+
+- `ios/App/ci_scripts/ci_post_clone.sh` — **`.xcodeproj` 와 같은 디렉토리**여야 하며(저장소 루트가
+  아니다), 스크립트의 실행 위치가 `ci_scripts` 라 `cd $CI_WORKSPACE` 로 저장소 루트로 옮긴 뒤
+  위 세 단계를 돌려야 한다.
+- **트리거를 좁힐 것.** 무료 한도가 월 25 컴퓨팅 시간인데, main 푸시마다 아카이브가 돌면
+  머지가 잦은 날 하루에 한도의 상당분을 쓴다. 태그나 수동 실행이 맞다.
+
 ## 폐기된 정책 (history)
 
 (없음)
