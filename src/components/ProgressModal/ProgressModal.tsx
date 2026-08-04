@@ -15,12 +15,14 @@ export function ProgressModal(props: ProgressModalProps): React.JSX.Element {
 
   return (
     <Modal onClose={() => {}} align="center">
-      <div className="space-y-2">
-        <p className="text-sm text-text-muted">
-          {props.message} ({props.completed}/{props.total})
-        </p>
-        <ProgressBar percent={percent} aria={{ now: percent, max: 100 }} />
-      </div>
+      <Modal.Card>
+        <div className="space-y-2">
+          <p className="text-sm text-text-muted">
+            {props.message} ({props.completed}/{props.total})
+          </p>
+          <ProgressBar percent={percent} aria={{ now: percent, max: 100 }} />
+        </div>
+      </Modal.Card>
     </Modal>
   )
 }

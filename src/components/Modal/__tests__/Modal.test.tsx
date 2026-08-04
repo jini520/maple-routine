@@ -14,7 +14,9 @@ describe('Modal', () => {
   it('children을 렌더링한다', () => {
     render(
       <Modal onClose={vi.fn()}>
-        <p>모달 내용</p>
+        <Modal.Card>
+          <p>모달 내용</p>
+        </Modal.Card>
       </Modal>,
     )
 
@@ -26,7 +28,9 @@ describe('Modal', () => {
     const onClose = vi.fn()
     render(
       <Modal onClose={onClose} testId="test-modal-overlay">
-        <p>모달 내용</p>
+        <Modal.Card>
+          <p>모달 내용</p>
+        </Modal.Card>
       </Modal>,
     )
 
@@ -40,7 +44,9 @@ describe('Modal', () => {
     const onClose = vi.fn()
     render(
       <Modal onClose={onClose} testId="test-modal-overlay">
-        <p>모달 내용</p>
+        <Modal.Card>
+          <p>모달 내용</p>
+        </Modal.Card>
       </Modal>,
     )
 
@@ -49,16 +55,65 @@ describe('Modal', () => {
     expect(onClose).not.toHaveBeenCalled()
   })
 
-  it('card=false면 카드 테두리/배경 없이 위치 고정용 래퍼만 렌더링한다', () => {
+  // 예전 `card={false}` 프롭을 대신한다 — 껍데기의 유무는 켜고 끄는 속성이 아니라
+  // 어떤 패널을 쓰는가의 문제라 컴포넌트로 갈랐다(ADR-094 3단계).
+  it('Modal.Panel은 카드 테두리/배경 없이 위치 고정용 래퍼만 렌더링한다', () => {
     render(
-      <Modal onClose={vi.fn()} card={false}>
-        <p>모달 내용</p>
+      <Modal onClose={vi.fn()}>
+        <Modal.Panel>
+          <p>모달 내용</p>
+        </Modal.Panel>
       </Modal>,
     )
 
     const wrapper = screen.getByText('모달 내용').parentElement
     expect(wrapper).toHaveClass('max-w-sm')
     expect(wrapper).not.toHaveClass('border')
+  })
+
+  it('Modal.Card는 카드 껍데기(테두리·배경·패딩)를 갖는다', () => {
+    render(
+      <Modal onClose={vi.fn()}>
+        <Modal.Card>
+          <p>모달 내용</p>
+        </Modal.Card>
+      </Modal>,
+    )
+
+    const panel = screen.getByText('모달 내용').parentElement
+    expect(panel).toHaveClass('border', 'bg-surface', 'rounded-[14px]', 'p-6', 'max-w-sm')
+  })
+
+  it('Modal.Card의 tight는 하단 패딩만 줄인다(ADR-065 결정 2)', () => {
+    render(
+      <Modal onClose={vi.fn()}>
+        <Modal.Card tight maxWidth="max-w-xs">
+          <p>모달 내용</p>
+        </Modal.Card>
+      </Modal>,
+    )
+
+    const panel = screen.getByText('모달 내용').parentElement
+    expect(panel).toHaveClass('px-6', 'pb-4', 'pt-6', 'max-w-xs')
+    expect(panel).not.toHaveClass('p-6')
+  })
+
+  // 패널이 stopPropagation을 소유하므로, 패널 없이 내용을 직접 넣으면 안쪽 클릭이
+  // 오버레이까지 올라가 모달이 닫힌다. children 타입을 element로 좁혀 둔 이유다.
+  it('Modal.Panel도 안쪽 클릭을 삼킨다', async () => {
+    const user = userEvent.setup()
+    const onClose = vi.fn()
+    render(
+      <Modal onClose={onClose} testId="test-modal-overlay">
+        <Modal.Panel>
+          <p>모달 내용</p>
+        </Modal.Panel>
+      </Modal>,
+    )
+
+    await user.click(screen.getByText('모달 내용'))
+
+    expect(onClose).not.toHaveBeenCalled()
   })
 
   // 오버레이가 부모의 레이아웃 유틸리티(space-y-*의 margin 등)에 영향받으면 fixed 높이가 그만큼
@@ -69,7 +124,9 @@ describe('Modal', () => {
       <div className="p-4 space-y-4">
         <p>형제 요소</p>
         <Modal onClose={vi.fn()} testId="test-modal-overlay">
-          <p>모달 내용</p>
+          <Modal.Card>
+            <p>모달 내용</p>
+          </Modal.Card>
         </Modal>
       </div>,
     )
@@ -85,7 +142,9 @@ describe('Modal', () => {
   it('기본값은 상단 정렬이며 상태바를 피해 여백을 둔다', () => {
     render(
       <Modal onClose={vi.fn()} testId="test-modal-overlay">
-        <p>모달 내용</p>
+        <Modal.Card>
+          <p>모달 내용</p>
+        </Modal.Card>
       </Modal>,
     )
 
@@ -98,7 +157,9 @@ describe('Modal', () => {
   it('align="center"면 세로 중앙에 놓는다 — 키보드를 띄우지 않는 모달용', () => {
     render(
       <Modal onClose={vi.fn()} testId="test-modal-overlay" align="center">
-        <p>모달 내용</p>
+        <Modal.Card>
+          <p>모달 내용</p>
+        </Modal.Card>
       </Modal>,
     )
 
@@ -110,7 +171,9 @@ describe('Modal', () => {
   it('열려 있는 동안 뒷 페이지(body) 스크롤을 막는다', () => {
     const { unmount } = render(
       <Modal onClose={vi.fn()}>
-        <p>모달 내용</p>
+        <Modal.Card>
+          <p>모달 내용</p>
+        </Modal.Card>
       </Modal>,
     )
 

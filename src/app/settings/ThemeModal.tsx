@@ -17,11 +17,13 @@ export function ThemeModal(props: ThemeModalProps): React.JSX.Element {
 
   return (
     <Modal onClose={props.onClose} testId="theme-modal-overlay">
-      <div className="mb-4 space-y-1">
-        <h2 className="text-lg font-semibold text-text">테마</h2>
-        <p className="text-sm text-text-muted">원하는 테마를 선택해주세요.</p>
-      </div>
-      <ThemeSelector theme={theme} onSelect={handleSelect} />
+      <Modal.Card>
+        <div className="mb-4 space-y-1">
+          <h2 className="text-lg font-semibold text-text">테마</h2>
+          <p className="text-sm text-text-muted">원하는 테마를 선택해주세요.</p>
+        </div>
+        <ThemeSelector theme={theme} onSelect={handleSelect} />
+      </Modal.Card>
     </Modal>
   )
 }
