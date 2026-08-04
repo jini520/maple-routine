@@ -4,6 +4,7 @@ import { Modal } from '../../components/Modal/Modal'
 import { MapleSpinner } from '../../components/MapleSpinner/MapleSpinner'
 import { formatBytes } from '../../lib/format-bytes'
 import type { CacheDataGroupId, CacheDataSelection } from '../../storage/cache-data'
+import { Button } from '../../components/Button/Button'
 
 // 공용 Modal을 쓴다 — 직접 오버레이를 그리면 호출부의 space-y-* margin에 fixed inset-0 높이가
 // 깎여 하단 제스처 영역만 딤이 빠진다(38c6ed7과 동일 기전, 실기기 확인). Modal은 body로 포털 렌더링.
@@ -107,20 +108,20 @@ export function CacheClearConfirm(props: CacheClearConfirmProps): React.JSX.Elem
         </div>
 
         <div className="flex justify-end gap-2">
-          <button
-            type="button"
+          <Button
+            variant="text"
             disabled={props.isClearing}
             onClick={props.onCancel}
-            className="rounded-full px-5 py-2.5 text-sm font-medium text-text-muted hover:text-text disabled:opacity-50"
+            className="disabled:opacity-50"
           >
             취소
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="danger"
             disabled={props.isClearing || !hasSelection}
             aria-busy={props.isClearing}
             onClick={() => props.onConfirm(selection)}
-            className="flex items-center justify-center gap-2 rounded-full border border-error px-5 py-2.5 text-sm font-semibold text-error-ink hover:bg-error-tint disabled:opacity-50"
+            className="flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {/* ADR-061 결정 5·9 — 스피너 + 말줄임표 없는 '~중' 라벨. 이 버튼은 최대 10초
                 (CLEAR_TIMEOUT_MS) 걸리고 되돌릴 수 없어 라벨이 특히 중요하다. */}
@@ -130,7 +131,7 @@ export function CacheClearConfirm(props: CacheClearConfirmProps): React.JSX.Elem
               : selectedBytes !== null
                 ? `삭제 (${formatBytes(selectedBytes)})`
                 : '삭제'}
-          </button>
+          </Button>
         </div>
       </div>
     </Modal>

@@ -4,6 +4,7 @@ import { pickRepresentativeCharacter } from '../../features/onboarding/represent
 import { useAccountProbes } from '../../features/onboarding/use-account-probes'
 import { worldEmblemUrl } from '../../lib/world-emblem'
 import { useState } from 'react'
+import { Button } from '../../components/Button/Button'
 
 // BossProfitScreen의 CharacterAvatar와 동일한 얼굴 크롭 방식(ADR-015) — character/basic이
 // 반환하는 300x300 전신 이미지에서 얼굴 부분만 보이도록 확대·정렬한다. 아바타 크기가
@@ -115,22 +116,22 @@ export function AccountSelectionList(props: AccountSelectionListProps): React.JS
         })}
       </ul>
 
-      <button
-        type="button"
+      <Button
+        variant="primary"
         // ADR-086 결정 8: 계정이 1개라 초기 하이라이트로 지정된 항목(ADR-051 결정 3)이 나중에
         // 조회 불가로 판명될 수 있다 — 항목 비활성만으로는 막히지 않으므로 확정 버튼도 막는다.
         disabled={
-          highlightedAccountId === null ||
-          props.isSubmitting ||
-          probes[highlightedAccountId]?.allUnavailable === true
+        highlightedAccountId === null ||
+        props.isSubmitting ||
+        probes[highlightedAccountId]?.allUnavailable === true
         }
         onClick={() => {
-          if (highlightedAccountId !== null) props.onSelect(highlightedAccountId)
+        if (highlightedAccountId !== null) props.onSelect(highlightedAccountId)
         }}
-        className="w-full rounded-full bg-primary text-on-primary font-semibold hover:bg-primary-hover px-5 py-2.5 disabled:opacity-50"
+        className="w-full disabled:opacity-50"
       >
         계속하기
-      </button>
+      </Button>
     </div>
   )
 }
