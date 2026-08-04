@@ -18,6 +18,7 @@ import { useToastStore } from '../../features/toast/store'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import type { BossDifficulty } from '../../types'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
+import { Badge } from '../../components/atoms/Badge/Badge'
 
 type BossTab = 'weekly' | 'monthly'
 
@@ -333,9 +334,9 @@ export function BossManageScreen(): React.JSX.Element {
                   보스는 이 한도와 무관하고 자동 모드는 선택 자체가 없다. 스타일은 보스 스케줄러
                   화면의 n/12 배지 재사용(신규 스타일 금지). */}
               {mode === 'manual' && activeTab === 'weekly' && (
-                <span className="ml-auto rounded-full bg-primary-tint px-2.5 py-1 text-xs font-semibold text-primary-ink tabular-nums">
+                <Badge tone="primary" className="ml-auto tabular-nums">
                   {weeklyTrackedCount}/{WEEKLY_BOSS_CLEAR_LIMIT}
-                </span>
+                </Badge>
               )}
             </div>
 

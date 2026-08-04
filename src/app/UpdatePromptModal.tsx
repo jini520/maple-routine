@@ -2,6 +2,7 @@ import { AlertTriangle, CheckCircle2, CloudDownload, Info, Signal, Store } from 
 import { Modal } from '../components/organisms/Modal/Modal'
 import { useLiveUpdateStore, type LiveUpdateStatus } from '../features/live-update/store'
 import { ProgressBar } from '../components/atoms/ProgressBar/ProgressBar'
+import { Badge } from '../components/atoms/Badge/Badge'
 
 // 사용자 동의형 업데이트 모달 — 실행 시(또는 설정에서 수동 확인 시) 새 버전이 있으면 뜬다(ADR-027).
 const MODAL_STATUSES: ReadonlySet<LiveUpdateStatus> = new Set([
@@ -51,7 +52,7 @@ function VersionBadge({ version }: { version: string | null }): React.JSX.Elemen
 }
 
 function BetaBadge(): React.JSX.Element {
-  return <span className="rounded-full bg-primary-tint px-2.5 py-1 text-xs font-semibold text-primary-ink">beta</span>
+  return <Badge tone="primary">beta</Badge>
 }
 
 // info-tint 정보 콜아웃 — 부가 정보(용량, 최소 앱 버전 등)를 본문 문장과 분리해 보여준다(ADR-027).
