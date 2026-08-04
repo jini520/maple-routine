@@ -13,7 +13,7 @@ import { LoadingState } from '../../components/LoadingState/LoadingState'
 import { useContentSchedulerStore } from '../../features/content-scheduler/store'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { useToastStore } from '../../features/toast/store'
-import { ThemeHeaderBackdrop } from '../../components/ThemeHeaderBackdrop/ThemeHeaderBackdrop'
+import { PageHeader } from '../../components/PageHeader/PageHeader'
 
 type ContentTab = 'daily' | 'weekly'
 
@@ -109,73 +109,60 @@ export function ContentManageScreen(): React.JSX.Element {
       {/* 제목~탭까지 sticky로 상단에 고정하고 그 아래 항목 목록만 스크롤 — 스케줄러 화면과 동일
           패턴(UI_GUIDE "스크롤 영역"). AppShell의 pt-[--sa-top]을 -mt로 상쇄하고 pt-calc로
           노치까지 bg-bg가 덮게 한다. */}
-      <div className="sticky top-0 z-10 bg-bg px-4 pt-[calc(1rem+var(--sa-top))] pb-2">
-        {/* ADR-088 결정 5-1: 헤더 자리의 테마 배경 조각(배경 없는 테마에선 렌더 안 됨) */}
-        <ThemeHeaderBackdrop />
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => navigate('/content')}
-                aria-label="뒤로"
-                className="p-1 -ml-1 text-text-muted hover:text-text"
-              >
-                <ArrowLeft className="h-5 w-5" strokeWidth={2} aria-hidden="true" />
-              </button>
-              <h1 className="text-lg font-semibold text-text">컨텐츠 관리</h1>
-            </div>
-            {selected !== null && (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs font-medium text-text-muted">
-                {worldEmblem !== null && (
-                  <img
-                    src={worldEmblem}
-                    alt={selected.world ?? ''}
-                    className="h-3.5 w-auto shrink-0 object-contain"
-                  />
-                )}
-                {selected.characterName}
-              </span>
-            )}
+      <PageHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => navigate('/content')}
+              aria-label="뒤로"
+              className="p-1 -ml-1 text-text-muted hover:text-text"
+            >
+              <ArrowLeft className="h-5 w-5" strokeWidth={2} aria-hidden="true" />
+            </button>
+            <h1 className="text-lg font-semibold text-text">컨텐츠 관리</h1>
           </div>
-
           {selected !== null && (
-            <div className="flex items-center gap-4">
-              <button
-                type="button"
-                onClick={() => setActiveTab('daily')}
-                className={
-                  activeTab === 'daily'
-                    ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
-                    : 'px-3 text-sm font-medium text-text-muted'
-                }
-              >
-                일간
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('weekly')}
-                className={
-                  activeTab === 'weekly'
-                    ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
-                    : 'px-3 text-sm font-medium text-text-muted'
-                }
-              >
-                주간
-              </button>
-            </div>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs font-medium text-text-muted">
+              {worldEmblem !== null && (
+                <img
+                  src={worldEmblem}
+                  alt={selected.world ?? ''}
+                  className="h-3.5 w-auto shrink-0 object-contain"
+                />
+              )}
+              {selected.characterName}
+            </span>
           )}
         </div>
 
-        <div
-          className="pointer-events-none absolute inset-x-0 top-full h-8 bg-gradient-to-b from-bg to-transparent backdrop-blur-sm"
-          style={{
-            maskImage: 'linear-gradient(to bottom, black, transparent)',
-            WebkitMaskImage: 'linear-gradient(to bottom, black, transparent)',
-          }}
-          aria-hidden="true"
-        />
-      </div>
+        {selected !== null && (
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={() => setActiveTab('daily')}
+              className={
+                activeTab === 'daily'
+                  ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
+                  : 'px-3 text-sm font-medium text-text-muted'
+              }
+            >
+              일간
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('weekly')}
+              className={
+                activeTab === 'weekly'
+                  ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
+                  : 'px-3 text-sm font-medium text-text-muted'
+              }
+            >
+              주간
+            </button>
+          </div>
+        )}
+      </PageHeader>
 
       {/* ADR-061 결정 10: 조회가 끝나기 전(idle·loading)에는 빈 상태 문구로 위장하지 않고
           로딩 카드를 그린다 — 확정된 빈 상태는 조회가 끝난 뒤에만 말할 수 있다([[ADR-060]]). */}

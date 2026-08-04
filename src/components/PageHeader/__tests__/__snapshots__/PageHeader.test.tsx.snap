@@ -1,0 +1,9 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`PageHeader > 자식 순서 — 배경 조각 → 내용 → 페이드 1`] = `
+"<div class="bg-bg pb-2 pt-[calc(1rem+var(--sa-top))] px-4 sticky top-0 z-10">
+<div class="space-y-4">내용</div>
+<div class="absolute backdrop-blur-sm bg-gradient-to-b from-bg h-8 inset-x-0 pointer-events-none to-transparent top-full" style="mask-image: linear-gradient(black, transparent); -webkit-mask-image: linear-gradient(black, transparent);" aria-hidden="true">
+</div>
+</div>"
+`;

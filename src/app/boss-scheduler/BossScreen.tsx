@@ -24,8 +24,8 @@ import { getCharacterPickerRoster, toScheduleSyncError } from '../../features/sc
 import type { ScheduleSyncError } from '../../features/schedule-sync/schedule-sync'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { MEDIA_TEXT_SHADOW } from '../../lib/media-card'
-import { ThemeHeaderBackdrop } from '../../components/ThemeHeaderBackdrop/ThemeHeaderBackdrop'
 import { Card } from '../../components/Card/Card'
+import { PageHeader } from '../../components/PageHeader/PageHeader'
 
 type BossTab = 'weekly' | 'monthly'
 type PartyFilter = 'all' | 'solo' | 'party'
@@ -439,145 +439,125 @@ export function BossScreen(): React.JSX.Element {
           padding-top에 안전영역을 더해 텍스트만 내려 보이게 하고, 바깥 AppShell의
           padding-top과 중복되지 않도록 위 -mt-[var(--sa-top)]로 상쇄한다.
           z-10으로 항상 위에 그려지게 한다. */}
-      <div className="sticky top-0 z-10 bg-bg px-4 pt-[calc(1rem+var(--sa-top))] pb-2">
-        {/* ADR-088 결정 5-1: 헤더 자리의 테마 배경 조각(배경 없는 테마에선 렌더 안 됨) */}
-        <ThemeHeaderBackdrop />
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-lg font-semibold text-text">보스 스케줄러</h1>
-            <div className="flex items-center gap-4">
-              {selected !== null && bossManageButton}
-              {characterManageButton}
-            </div>
+      <PageHeader below={<PullToRefreshIndicator distance={pullToRefresh.distance} phase={pullToRefresh.phase} />}>
+        <div className="flex items-center justify-between">
+          <h1 className="text-lg font-semibold text-text">보스 스케줄러</h1>
+          <div className="flex items-center gap-4">
+            {selected !== null && bossManageButton}
+            {characterManageButton}
           </div>
-
-          <div className="space-y-1">
-            <div className="flex items-center gap-3">
-              {characters.length > 0 && selected !== null && (
-                <CharacterSelectDropdown
-                  characters={characters}
-                  selectedOcid={selected.ocid}
-                  onSelect={(ocid) => {
-                    void selectCharacter(ocid)
-                  }}
-                />
-              )}
-
-              <div className="ml-auto flex shrink-0 items-center gap-2">
-                <p className="text-sm text-text-muted whitespace-nowrap">
-                  {status === 'loading' ? '조회 중...' : selected !== null ? formatSyncedAt(selected.syncedAt) : ''}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => refresh(trackedOcids ?? [])}
-                  aria-label="새로고침"
-                  className="p-2 text-primary-ink hover:text-primary-hover"
-                >
-                  <RefreshCw
-                    className={`h-4 w-4 ${status === 'loading' ? 'animate-spin' : ''}`}
-                    strokeWidth={2}
-                    aria-hidden="true"
-                  />
-                </button>
-              </div>
-            </div>
-
-          </div>
-
-          {/* ADR-016: 캐시된 characters가 있으면 재검증(status: 'loading') 중에도 계속 보여준다 —
-              셸 승계 카드는 보여줄 데이터가 아예 없을 때만 그린다([[ADR-061]] 결정 2). */}
-          {(status === 'idle' || status === 'loading') && characters.length === 0 && (
-            <LoadingState size="page" message="불러오고 있어요" />
-          )}
-
-          {characters.length > 0 && selected !== null && (
-            <>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('weekly')}
-                    className={
-                      activeTab === 'weekly'
-                        ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
-                        : 'px-3 text-sm font-medium text-text-muted'
-                    }
-                  >
-                    주간
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('monthly')}
-                    className={
-                      activeTab === 'monthly'
-                        ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
-                        : 'px-3 text-sm font-medium text-text-muted'
-                    }
-                  >
-                    월간
-                  </button>
-                </div>
-
-                {activeTab === 'weekly' && (
-                  <div className="flex items-center gap-2">
-                    {seasonBosses.length > 0 && (
-                      <span
-                        className={
-                          isSeasonBossComplete
-                            ? 'rounded-full bg-secondary-tint px-2.5 py-1 text-xs font-bold text-secondary-ink'
-                            : 'rounded-full bg-primary-tint px-2.5 py-1 text-xs font-semibold text-primary-ink'
-                        }
-                      >
-                        {`season ${isSeasonBossComplete ? '완료' : '미완료'}`}
-                      </span>
-                    )}
-                    {selected.weeklyBossClearCount !== null && selected.weeklyBossClearLimitCount !== null && (
-                      <span className="rounded-full bg-primary-tint px-2.5 py-1 text-xs font-semibold text-primary-ink">
-                        {selected.weeklyBossClearCount}/{selected.weeklyBossClearLimitCount}
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2">
-                {(['all', 'solo', 'party'] as const).map((filter) => (
-                  <button
-                    key={filter}
-                    type="button"
-                    onClick={() =>
-                      activeTab === 'weekly' ? setWeeklyFilter(filter) : setMonthlyFilter(filter)
-                    }
-                    className={
-                      activeFilter === filter
-                        ? 'rounded-full bg-primary-tint px-3 py-1 text-xs font-semibold text-primary-ink'
-                        : 'px-3 text-xs font-medium text-text-muted'
-                    }
-                  >
-                    {PARTY_FILTER_LABELS[filter]}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
         </div>
 
-        {/* 헤더 아래에 살짝 겹쳐 그라데이션+블러로 카드가 잘려 보이지 않고 자연스럽게
-            사라지도록 한다 — 배경(bg-bg → transparent)과 블러 강도를 같은 마스크로 함께
-            줄여서, 색만 옅어지고 블러는 그대로인 부자연스러운 경계가 생기지 않게 한다. */}
-        <div
-          className="pointer-events-none absolute inset-x-0 top-full h-8 bg-gradient-to-b from-bg to-transparent backdrop-blur-sm"
-          style={{
-            maskImage: 'linear-gradient(to bottom, black, transparent)',
-            WebkitMaskImage: 'linear-gradient(to bottom, black, transparent)',
-          }}
-          aria-hidden="true"
-        />
+        <div className="space-y-1">
+          <div className="flex items-center gap-3">
+            {characters.length > 0 && selected !== null && (
+              <CharacterSelectDropdown
+                characters={characters}
+                selectedOcid={selected.ocid}
+                onSelect={(ocid) => {
+                  void selectCharacter(ocid)
+                }}
+              />
+            )}
 
-        {/* ADR-072 결정 5: 인디케이터와 위 페이드가 같은 자리(absolute top-full)를 쓰므로, z-index를 새로
-            도입하는 대신 DOM 순서(페이드 "다음" 형제)로 인디케이터가 위에 오게 한다. */}
-        <PullToRefreshIndicator distance={pullToRefresh.distance} phase={pullToRefresh.phase} />
-      </div>
+            <div className="ml-auto flex shrink-0 items-center gap-2">
+              <p className="text-sm text-text-muted whitespace-nowrap">
+                {status === 'loading' ? '조회 중...' : selected !== null ? formatSyncedAt(selected.syncedAt) : ''}
+              </p>
+              <button
+                type="button"
+                onClick={() => refresh(trackedOcids ?? [])}
+                aria-label="새로고침"
+                className="p-2 text-primary-ink hover:text-primary-hover"
+              >
+                <RefreshCw
+                  className={`h-4 w-4 ${status === 'loading' ? 'animate-spin' : ''}`}
+                  strokeWidth={2}
+                  aria-hidden="true"
+                />
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        {/* ADR-016: 캐시된 characters가 있으면 재검증(status: 'loading') 중에도 계속 보여준다 —
+            셸 승계 카드는 보여줄 데이터가 아예 없을 때만 그린다([[ADR-061]] 결정 2). */}
+        {(status === 'idle' || status === 'loading') && characters.length === 0 && (
+          <LoadingState size="page" message="불러오고 있어요" />
+        )}
+
+        {characters.length > 0 && selected !== null && (
+          <>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('weekly')}
+                  className={
+                    activeTab === 'weekly'
+                      ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
+                      : 'px-3 text-sm font-medium text-text-muted'
+                  }
+                >
+                  주간
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('monthly')}
+                  className={
+                    activeTab === 'monthly'
+                      ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
+                      : 'px-3 text-sm font-medium text-text-muted'
+                  }
+                >
+                  월간
+                </button>
+              </div>
+
+              {activeTab === 'weekly' && (
+                <div className="flex items-center gap-2">
+                  {seasonBosses.length > 0 && (
+                    <span
+                      className={
+                        isSeasonBossComplete
+                          ? 'rounded-full bg-secondary-tint px-2.5 py-1 text-xs font-bold text-secondary-ink'
+                          : 'rounded-full bg-primary-tint px-2.5 py-1 text-xs font-semibold text-primary-ink'
+                      }
+                    >
+                      {`season ${isSeasonBossComplete ? '완료' : '미완료'}`}
+                    </span>
+                  )}
+                  {selected.weeklyBossClearCount !== null && selected.weeklyBossClearLimitCount !== null && (
+                    <span className="rounded-full bg-primary-tint px-2.5 py-1 text-xs font-semibold text-primary-ink">
+                      {selected.weeklyBossClearCount}/{selected.weeklyBossClearLimitCount}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              {(['all', 'solo', 'party'] as const).map((filter) => (
+                <button
+                  key={filter}
+                  type="button"
+                  onClick={() =>
+                    activeTab === 'weekly' ? setWeeklyFilter(filter) : setMonthlyFilter(filter)
+                  }
+                  className={
+                    activeFilter === filter
+                      ? 'rounded-full bg-primary-tint px-3 py-1 text-xs font-semibold text-primary-ink'
+                      : 'px-3 text-xs font-medium text-text-muted'
+                  }
+                >
+                  {PARTY_FILTER_LABELS[filter]}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+      </PageHeader>
 
       {/* ADR-073 결정 1·2: 헤더는 sticky로 제자리에 두고 이 목록 블록만 손가락을 따라 내려간다.
           마진·높이가 아니라 transform 이라 터치 프레임마다의 리플로우가 없다. 오프셋이 0이면
