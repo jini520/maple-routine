@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { Suspense, lazy, useEffect, useRef, useState } from 'react'
 import { BrowserRouter, Navigate, NavLink, Route, Routes, useNavigate } from 'react-router-dom'
 import { ListChecks, Settings, Swords } from 'lucide-react'
 import { useOnboardingStore } from './features/onboarding/store'
@@ -12,23 +12,53 @@ import { hideSplashScreen } from './native/splash-screen'
 import { refreshSafeAreaInsets } from './native/system-bars'
 import { addKeyboardVisibilityListener } from './native/keyboard'
 import { maybeShowTabSwitchAd, startAds } from './features/ads/tab-switch-ad'
-import { OnboardingScreen } from './app/onboarding/OnboardingScreen'
-import { ContentScreen } from './app/content-scheduler/ContentScreen'
-import { ContentManageScreen } from './app/content-scheduler/ContentManageScreen'
-import { BossScreen } from './app/boss-scheduler/BossScreen'
-import { BossManageScreen } from './app/boss-scheduler/BossManageScreen'
-import { BossProfitScreen } from './app/boss-profit/BossProfitScreen'
-import { DropHistoryScreen } from './app/boss-profit/DropHistoryScreen'
-import { SettingsScreen } from './app/settings/SettingsScreen'
-import { BossCardPreview } from './app/boss-scheduler/BossCardPreview'
-import { DailyQuestCardPreview } from './app/content-scheduler/DailyQuestCardPreview'
-import { BossPortraitSizePreview } from './app/boss-profit/BossPortraitSizePreview'
 import { UpdatePromptModal } from './app/UpdatePromptModal'
-import { LoadingPreview } from './app/LoadingPreview'
-import { ThemeBackgroundPreview } from './app/ThemeBackgroundPreview'
 import { ErrorBoundary } from './components/ErrorBoundary/ErrorBoundary'
+import { LoadingState } from './components/LoadingState/LoadingState'
 import { ProfitIcon } from './components/ProfitIcon/ProfitIcon'
 import { ToastStack } from './components/Toast/ToastStack'
+
+// 라우트 화면은 지연 로딩한다([[ADR-092]]) — 정적 import 였을 때 8개 화면·모든 store·
+// src/data/*.json 이 첫 페인트에 함께 평가돼 메인 청크가 1,019kB(gzip 411kB) 단일 덩어리였다.
+// 네이티브에서 청크는 원격이 아니라 WebView 로컬 파일이라 탭 이동에 네트워크 지연이 없다.
+// 새 라우트를 더할 때도 이 형태를 유지할 것.
+const OnboardingScreen = lazy(() =>
+  import('./app/onboarding/OnboardingScreen').then((m) => ({ default: m.OnboardingScreen })),
+)
+const ContentScreen = lazy(() =>
+  import('./app/content-scheduler/ContentScreen').then((m) => ({ default: m.ContentScreen })),
+)
+const ContentManageScreen = lazy(() =>
+  import('./app/content-scheduler/ContentManageScreen').then((m) => ({
+    default: m.ContentManageScreen,
+  })),
+)
+const BossScreen = lazy(() =>
+  import('./app/boss-scheduler/BossScreen').then((m) => ({ default: m.BossScreen })),
+)
+const BossManageScreen = lazy(() =>
+  import('./app/boss-scheduler/BossManageScreen').then((m) => ({ default: m.BossManageScreen })),
+)
+const BossProfitScreen = lazy(() =>
+  import('./app/boss-profit/BossProfitScreen').then((m) => ({ default: m.BossProfitScreen })),
+)
+const DropHistoryScreen = lazy(() =>
+  import('./app/boss-profit/DropHistoryScreen').then((m) => ({ default: m.DropHistoryScreen })),
+)
+const SettingsScreen = lazy(() =>
+  import('./app/settings/SettingsScreen').then((m) => ({ default: m.SettingsScreen })),
+)
+
+// 청크가 로드되는 동안의 자리 — 새 로딩 표현을 만들지 않고 [[ADR-061]] 로 확정된 LoadingState 를
+// 화면 전체 크기로 재사용한다. 스플래시 시퀀스(MIN_SPLASH_MS)와는 독립이다: 첫 청크는 대개
+// 스플래시가 떠 있는 동안 로드돼 사용자가 이 폴백을 보지 못한다.
+function RouteFallback(): React.JSX.Element {
+  return (
+    <div className="p-4" data-testid="route-fallback">
+      <LoadingState message="불러오는 중" size="page" />
+    </div>
+  )
+}
 
 const TAB_ITEMS = [
   { to: '/content', label: '컨텐츠', Icon: ListChecks },
@@ -219,63 +249,67 @@ export function AppShell(): React.JSX.Element {
         <div className="theme-backdrop" data-testid="theme-backdrop" aria-hidden="true" />
       )}
       <div className={isCompleted ? 'pb-[calc(4rem+var(--sa-bottom))]' : undefined}>
-        <Routes>
-          <Route path="/" element={<Navigate to={isCompleted ? '/content' : '/onboarding'} replace />} />
-          <Route
-            path="/onboarding"
-            element={isCompleted ? <Navigate to="/content" replace /> : <OnboardingScreen />}
-          />
-          <Route
-            path="/content"
-            element={isCompleted ? <ContentScreen /> : <Navigate to="/onboarding" replace />}
-          />
-          {/* ADR-035 결정 18: 수동 추적 항목 편집 전용 관리 페이지 — 스케줄러 화면은 읽기 전용. */}
-          <Route
-            path="/content/manage"
-            element={isCompleted ? <ContentManageScreen /> : <Navigate to="/onboarding" replace />}
-          />
-          <Route
-            path="/boss"
-            element={isCompleted ? <BossScreen /> : <Navigate to="/onboarding" replace />}
-          />
-          {/* ADR-035 결정 18: 보스 추적+파티 인원 통합 관리 페이지(두 모드 공통, 파티 관리 모달 대체). */}
-          <Route
-            path="/boss/manage"
-            element={isCompleted ? <BossManageScreen /> : <Navigate to="/onboarding" replace />}
-          />
-          <Route
-            path="/profit"
-            element={isCompleted ? <BossProfitScreen /> : <Navigate to="/onboarding" replace />}
-          >
-            {/* 드롭 획득 히스토리(전 기간) — 보스 수익의 서브 화면([[ADR-071]] 결정 7, 이슈 #54).
-                **형제가 아니라 중첩 라우트**다([[ADR-077]]) — 히스토리는 독립 페이지가 아니라 보스
-                수익 위에 얹히는 스택 화면이라, 이동해도 아래 화면이 언마운트되면 안 된다. 형제였을 땐
-                이동마다 언마운트돼 아코디언 펼침·보던 기간·스크롤을 전부 잃었고, 그 언마운트가
-                iOS WKWebView에서 stuck sticky 헤더를 빈 화면으로 만들었다. 화면은
-                BossProfitScreen의 <Outlet />에 오버레이로 그려진다. */}
-            <Route path="drops" element={<DropHistoryScreen />} />
-          </Route>
-          <Route
-            path="/settings"
-            element={isCompleted ? <SettingsScreen /> : <Navigate to="/onboarding" replace />}
-          />
-          {/* 임시 — 보스 카드 크롭 조정용 디버그 라우트. 온보딩/API 데이터 없이 접근 가능.
-              크롭 조정이 끝나면 이 라우트와 BossCardPreview.tsx를 삭제할 것 */}
-          <Route path="/debug/boss-cards" element={<BossCardPreview />} />
-          {/* 임시 — 일일퀘스트 카드 지역 배경 크롭 조정용 디버그 라우트. 온보딩/API 데이터 없이 접근 가능.
-              크롭 조정이 끝나면 이 라우트와 DailyQuestCardPreview.tsx를 삭제할 것 (ADR-020) */}
-          <Route path="/debug/quest-cards" element={<DailyQuestCardPreview />} />
-          {/* 임시 — 보스 수익 화면 BossPortrait 크기 조정용 디버그 라우트. 온보딩/API 데이터 없이 접근 가능.
-              크기 조정이 끝나면 이 라우트와 BossPortraitSizePreview.tsx를 삭제할 것 */}
-          <Route path="/debug/boss-portrait-size" element={<BossPortraitSizePreview />} />
-          {/* 임시 — 로딩 표현 선택지 비교용 디버그 라우트([[ADR-061]]). 온보딩/API 데이터 없이 접근 가능.
-              선택이 확정되면 이 라우트와 LoadingPreview.tsx를 삭제할 것 */}
-          <Route path="/debug/loading" element={<LoadingPreview />} />
-          {/* 임시 — 테마 배경 이미지(ADR-088) 크기·위치·어둡기 조정용 디버그 라우트. 온보딩/API 데이터 없이
-              접근 가능. 조정이 끝나면 이 라우트와 ThemeBackgroundPreview.tsx를 삭제하고, 확정 값은
-              job-themes.json의 background 블록에 반영할 것 */}
-          <Route path="/debug/theme-background" element={<ThemeBackgroundPreview />} />
-        </Routes>
+        {/* 최상위 경계는 화면 전체가 바뀌는 이동(탭 간)만 받는다 — 탭바는 <Routes> 밖이라
+            폴백에 덮이지 않는다. 중첩 자식(/profit/drops)은 **자기 경계를 따로 갖는다**([[ADR-092]]
+            결정 3): React 는 가장 가까운 경계를 쓰므로 자식이 서스펜드해도 이 바깥 경계까지
+            올라오지 않고, 그래서 부모 BossProfitScreen 이 언마운트되지 않는다([[ADR-077]]). */}
+        <Suspense fallback={<RouteFallback />}>
+          <Routes>
+            <Route
+              path="/"
+              element={<Navigate to={isCompleted ? '/content' : '/onboarding'} replace />}
+            />
+            <Route
+              path="/onboarding"
+              element={isCompleted ? <Navigate to="/content" replace /> : <OnboardingScreen />}
+            />
+            <Route
+              path="/content"
+              element={isCompleted ? <ContentScreen /> : <Navigate to="/onboarding" replace />}
+            />
+            {/* ADR-035 결정 18: 수동 추적 항목 편집 전용 관리 페이지 — 스케줄러 화면은 읽기 전용. */}
+            <Route
+              path="/content/manage"
+              element={isCompleted ? <ContentManageScreen /> : <Navigate to="/onboarding" replace />}
+            />
+            <Route
+              path="/boss"
+              element={isCompleted ? <BossScreen /> : <Navigate to="/onboarding" replace />}
+            />
+            {/* ADR-035 결정 18: 보스 추적+파티 인원 통합 관리 페이지(두 모드 공통, 파티 관리 모달 대체). */}
+            <Route
+              path="/boss/manage"
+              element={isCompleted ? <BossManageScreen /> : <Navigate to="/onboarding" replace />}
+            />
+            <Route
+              path="/profit"
+              element={isCompleted ? <BossProfitScreen /> : <Navigate to="/onboarding" replace />}
+            >
+              {/* 드롭 획득 히스토리(전 기간) — 보스 수익의 서브 화면([[ADR-071]] 결정 7, 이슈 #54).
+                  **형제가 아니라 중첩 라우트**다([[ADR-077]]) — 히스토리는 독립 페이지가 아니라 보스
+                  수익 위에 얹히는 스택 화면이라, 이동해도 아래 화면이 언마운트되면 안 된다. 형제였을 땐
+                  이동마다 언마운트돼 아코디언 펼침·보던 기간·스크롤을 전부 잃었고, 그 언마운트가
+                  iOS WKWebView에서 stuck sticky 헤더를 빈 화면으로 만들었다. 화면은
+                  BossProfitScreen의 <Outlet />에 오버레이로 그려진다.
+
+                  **자기 Suspense 경계를 갖는다**([[ADR-092]] 결정 3) — 이 element 는 그 <Outlet />
+                  자리에 그려지므로 경계가 부모 서브트리 안쪽에 생긴다. 최상위 경계 하나로 처리하면
+                  이 청크를 받는 동안 부모까지 폴백으로 대체돼, 위 언마운트가 그대로 되살아난다. */}
+              <Route
+                path="drops"
+                element={
+                  <Suspense fallback={<RouteFallback />}>
+                    <DropHistoryScreen />
+                  </Suspense>
+                }
+              />
+            </Route>
+            <Route
+              path="/settings"
+              element={isCompleted ? <SettingsScreen /> : <Navigate to="/onboarding" replace />}
+            />
+          </Routes>
+        </Suspense>
       </div>
       {isCompleted && !isKeyboardVisible && <BottomTabBar />}
       {/* 사용자 동의형 업데이트 모달 — 실행 시(또는 설정에서 수동 확인 시) 새 버전이 있으면 뜬다(ADR-027). */}

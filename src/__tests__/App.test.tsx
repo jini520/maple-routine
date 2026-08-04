@@ -182,60 +182,60 @@ describe('AppShell', () => {
     expect(restoreTrackingModeFromStorage).toHaveBeenCalledTimes(1)
   })
 
-  it('status가 completed가 아닐 때 /content로 접근하면 온보딩으로 리다이렉트된다', () => {
+  it('status가 completed가 아닐 때 /content로 접근하면 온보딩으로 리다이렉트된다', async () => {
     mockStore({ status: 'awaitingApiKey' })
 
     renderAt('/content')
 
-    expect(screen.getByLabelText(/API 키/)).toBeInTheDocument()
+    expect(await screen.findByLabelText(/API 키/)).toBeInTheDocument()
   })
 
-  it('status가 completed가 아닐 때 /boss로 접근하면 온보딩으로 리다이렉트된다', () => {
+  it('status가 completed가 아닐 때 /boss로 접근하면 온보딩으로 리다이렉트된다', async () => {
     mockStore({ status: 'awaitingApiKey' })
 
     renderAt('/boss')
 
-    expect(screen.getByLabelText(/API 키/)).toBeInTheDocument()
+    expect(await screen.findByLabelText(/API 키/)).toBeInTheDocument()
   })
 
-  it('status가 completed가 아닐 때 /profit으로 접근하면 온보딩으로 리다이렉트된다', () => {
+  it('status가 completed가 아닐 때 /profit으로 접근하면 온보딩으로 리다이렉트된다', async () => {
     mockStore({ status: 'awaitingApiKey' })
 
     renderAt('/profit')
 
-    expect(screen.getByLabelText(/API 키/)).toBeInTheDocument()
+    expect(await screen.findByLabelText(/API 키/)).toBeInTheDocument()
   })
 
-  it('status가 completed일 때 /profit으로 접근하면 보스 수익 계산기 화면이 보인다', () => {
+  it('status가 completed일 때 /profit으로 접근하면 보스 수익 계산기 화면이 보인다', async () => {
     mockStore({ status: 'completed', selectedAccountId: 'account-1' })
 
     renderAt('/profit')
 
-    expect(screen.getByRole('heading', { name: '보스 수익' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: '보스 수익' })).toBeInTheDocument()
   })
 
-  it('status가 completed가 아닐 때 /settings로 접근하면 온보딩으로 리다이렉트된다', () => {
+  it('status가 completed가 아닐 때 /settings로 접근하면 온보딩으로 리다이렉트된다', async () => {
     mockStore({ status: 'awaitingApiKey' })
 
     renderAt('/settings')
 
-    expect(screen.getByLabelText(/API 키/)).toBeInTheDocument()
+    expect(await screen.findByLabelText(/API 키/)).toBeInTheDocument()
   })
 
-  it('status가 completed일 때 /settings로 접근하면 설정 화면이 보인다', () => {
+  it('status가 completed일 때 /settings로 접근하면 설정 화면이 보인다', async () => {
     mockStore({ status: 'completed', selectedAccountId: 'account-1' })
 
     renderAt('/settings')
 
-    expect(screen.getByRole('heading', { name: '설정' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: '설정' })).toBeInTheDocument()
   })
 
-  it('status가 completed일 때 /onboarding으로 접근하면 /content로 리다이렉트된다', () => {
+  it('status가 completed일 때 /onboarding으로 접근하면 /content로 리다이렉트된다', async () => {
     mockStore({ status: 'completed', selectedAccountId: 'account-1' })
 
     renderAt('/onboarding')
 
-    expect(screen.getByRole('heading', { name: '컨텐츠 스케줄러' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: '컨텐츠 스케줄러' })).toBeInTheDocument()
   })
 
   it('status가 completed일 때 하단 탭바(컨텐츠/보스/수익/설정 탭)가 보인다', () => {
@@ -311,20 +311,20 @@ describe('AppShell', () => {
     expect(screen.queryByText('드랍')).not.toBeInTheDocument()
   })
 
-  it('status가 completed가 아닐 때 /로 접근하면 온보딩으로 리다이렉트된다', () => {
+  it('status가 completed가 아닐 때 /로 접근하면 온보딩으로 리다이렉트된다', async () => {
     mockStore({ status: 'awaitingApiKey' })
 
     renderAt('/')
 
-    expect(screen.getByLabelText(/API 키/)).toBeInTheDocument()
+    expect(await screen.findByLabelText(/API 키/)).toBeInTheDocument()
   })
 
-  it('status가 completed일 때 /로 접근하면 /content로 리다이렉트된다', () => {
+  it('status가 completed일 때 /로 접근하면 /content로 리다이렉트된다', async () => {
     mockStore({ status: 'completed', selectedAccountId: 'account-1' })
 
     renderAt('/')
 
-    expect(screen.getByRole('heading', { name: '컨텐츠 스케줄러' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: '컨텐츠 스케줄러' })).toBeInTheDocument()
   })
 
   it('최상단 컨테이너에 top safe-area padding이 적용된다', () => {

@@ -36,7 +36,7 @@ const PARTY_FILTER_LABELS: Record<PartyFilter, string> = {
 }
 
 
-export function BossCard(props: {
+function BossCard(props: {
   boss: MatchedBoss
   crop?: BossPortraitCrop
   partySize?: number
