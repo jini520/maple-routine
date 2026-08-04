@@ -32,6 +32,7 @@ import { MEDIA_TEXT_SHADOW } from '../../lib/media-card'
 import { ProgressBar } from '../../components/atoms/ProgressBar/ProgressBar'
 import { Card } from '../../components/atoms/Card/Card'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
+import { Badge } from '../../components/atoms/Badge/Badge'
 
 type ContentTab = 'daily' | 'weekly'
 
@@ -193,9 +194,9 @@ export function MonsterParkCard(props: {
             </span>
           </div>
 
-          <span className="rounded-full bg-third-tint px-2.5 py-1 text-xs font-semibold text-third-ink">
+          <Badge tone="third">
             {content.nowCount}/{content.maxCount}
-          </span>
+          </Badge>
         </div>
 
         {content.maxCount > 0 && (
@@ -490,9 +491,9 @@ export function GuildUndergroundWaterwayCard(props: {
           </span>
         </div>
 
-        <span className="rounded-full bg-third-tint px-2.5 py-1 text-xs font-semibold text-third-ink">
+        <Badge tone="third">
           {content.nowCount}점
-        </span>
+        </Badge>
       </div>
     </Card>
   )
@@ -535,9 +536,9 @@ export function GuildMissionPointsCard(props: {
             </span>
           </div>
 
-          <span className="rounded-full bg-third-tint px-2.5 py-1 text-xs font-semibold text-third-ink">
+          <Badge tone="third">
             {content.nowCount}/{content.maxCount}
-          </span>
+          </Badge>
         </div>
 
         {content.maxCount > 0 && (

@@ -26,6 +26,7 @@ import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { MEDIA_TEXT_SHADOW } from '../../lib/media-card'
 import { Card } from '../../components/atoms/Card/Card'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
+import { Badge } from '../../components/atoms/Badge/Badge'
 
 type BossTab = 'weekly' | 'monthly'
 type PartyFilter = 'all' | 'solo' | 'party'
@@ -529,9 +530,9 @@ export function BossScreen(): React.JSX.Element {
                     </span>
                   )}
                   {selected.weeklyBossClearCount !== null && selected.weeklyBossClearLimitCount !== null && (
-                    <span className="rounded-full bg-primary-tint px-2.5 py-1 text-xs font-semibold text-primary-ink">
+                    <Badge tone="primary">
                       {selected.weeklyBossClearCount}/{selected.weeklyBossClearLimitCount}
-                    </span>
+                    </Badge>
                   )}
                 </div>
               )}
