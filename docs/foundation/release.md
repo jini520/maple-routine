@@ -118,7 +118,7 @@ keytool -printcert -jarfile android/app/build/outputs/bundle/release/app-release
 | 배포 국가 | 한국 한정 | EU 사용자가 없어 GDPR 동의(UMP) 구현이 불필요하다는 전제([features/ads.md](../features/ads.md)). 국가를 넓히려면 그 흐름부터 |
 | 계정 삭제 정책 | 해당 없음 | 계정 생성 기능이 없다([[ADR-003]]) |
 | 스크린샷 | ✅ | `resources/screenshots/listing/play-store-1320x2640/` 6장 |
-| **피처 그래픽 1024×500** | ❌ | 필수 항목인데 아직 없다 |
+| 피처 그래픽 1024×500 | ✅ | `resources/play-feature-graphic-1024x500.png`(2026-08-04). **알파 채널을 뺀 24-bit PNG** — Play는 알파를 받지 않는다. 16:9로 크롭돼도(좌우 68px씩) 카피·로고가 모두 살아남는 것을 확인했다 |
 | 아이콘 512×512 | ⏳ | `ios/App/App/Assets.xcassets/` 에서 리사이즈 |
 
 게시 **후**에 AdMob 콘솔에서 앱을 연결해 검토(2~3일)를 통과해야 광고가 정상 노출된다 —
