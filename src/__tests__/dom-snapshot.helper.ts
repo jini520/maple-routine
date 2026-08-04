@@ -29,11 +29,30 @@ function breakTags(html: string): string {
 }
 
 /**
+ * `class` 속성의 토큰을 정렬한다 — **집합으로 비교**하기 위해서다.
+ *
+ * 왜: 같은 뜻의 클래스가 파일마다 다른 순서로 적혀 있다(`rounded-[14px] border border-border
+ * bg-surface` vs `rounded-[14px] bg-surface border border-border`). 프리미티브로 묶으면 순서가
+ * 하나로 통일되는데, **속성 안의 유틸리티 순서는 CSS 에 아무 영향이 없다** — 적용 여부는
+ * 스타일시트 순서가 정하지 class 속성 순서가 정하지 않는다. 즉 순서 변화는 우리가 지키려는
+ * 성질(스태킹·흡착·측정)과 무관한 잡음이다.
+ *
+ * 정렬해도 **추가·삭제는 그대로 잡힌다** — 토큰이 하나라도 늘거나 줄면 정렬 결과가 달라진다.
+ * 잃는 것은 순서 정보뿐이고, 그것은 렌더 결과에 영향을 주지 않는다(ADR-094 결정 4의 정밀화).
+ */
+function sortClassTokens(html: string): string {
+  return html.replace(/class="([^"]*)"/g, (_full, value: string) => {
+    const sorted = value.split(/\s+/).filter(Boolean).sort().join(' ')
+    return `class="${sorted}"`
+  })
+}
+
+/**
  * 리팩터링 전후를 대조할 정규화된 DOM 문자열.
  *
  * `innerHTML` 을 쓰는 이유 — 클래스·속성·중첩·형제 순서가 **전부** 들어오기 때문이다.
  * 텍스트만 보는 단언(getByRole 등)은 이 셋 중 아무것도 지키지 못한다.
  */
 export function domSnapshot(container: HTMLElement): string {
-  return breakTags(normalizeReactIds(container.innerHTML))
+  return breakTags(sortClassTokens(normalizeReactIds(container.innerHTML)))
 }
