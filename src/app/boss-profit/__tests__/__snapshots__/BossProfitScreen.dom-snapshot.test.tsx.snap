@@ -1,7 +1,10 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`BossProfitScreen DOM 스냅샷 (ADR-094 결정 4) > 빈 상태 — 페이지 헤더·탭·기간 네비게이터의 기하 1`] = `
-"<div class="bg-bg fixed inset-x-0 pb-2 pt-[calc(1rem+var(--sa-top))] px-4 top-0 z-10">
+"<div data-testid="screen-scroll" class="bottom-[var(--tab-bar-h)] fixed inset-x-0 overflow-y-auto overscroll-y-none top-[var(--sa-top)]">
+<div class="-mt-[var(--sa-top)] space-y-4">
+<div>
+<div class="bg-bg fixed inset-x-0 pb-2 pt-[calc(1rem+var(--sa-top))] px-4 top-0 z-10">
 <div class="space-y-4">
 <div class="flex items-center justify-between">
 <h1 class="font-semibold text-lg text-text">보스 수익</h1>
@@ -31,8 +34,8 @@ exports[`BossProfitScreen DOM 스냅샷 (ADR-094 결정 4) > 빈 상태 — 페�
 </div>
 </div>
 </div>
-<div class="-mt-[var(--sa-top)] space-y-4">
 <div aria-hidden="true" style="height: 0px;">
+</div>
 </div>
 <div data-testid="pull-content" class="pb-4 px-4 space-y-2" style="transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1);">
 <div data-testid="empty-state" class="bg-surface border border-border flex flex-col gap-3 items-center px-4 py-8 rounded-[14px] text-center">
@@ -60,11 +63,15 @@ exports[`BossProfitScreen DOM 스냅샷 (ADR-094 결정 4) > 빈 상태 — 페�
 </div>
 </div>
 </div>
+</div>
 </div>"
 `;
 
 exports[`BossProfitScreen DOM 스냅샷 (ADR-094 결정 4) > 여러 캐릭터 · 펼침 — 형제 카드가 섞였을 때의 순서와 z 층 1`] = `
-"<div class="bg-bg fixed inset-x-0 pb-2 pt-[calc(1rem+var(--sa-top))] px-4 top-0 z-10">
+"<div data-testid="screen-scroll" class="bottom-[var(--tab-bar-h)] fixed inset-x-0 overflow-y-auto overscroll-y-none top-[var(--sa-top)]">
+<div class="-mt-[var(--sa-top)] space-y-4">
+<div>
+<div class="bg-bg fixed inset-x-0 pb-2 pt-[calc(1rem+var(--sa-top))] px-4 top-0 z-10">
 <div class="space-y-4">
 <div class="flex items-center justify-between">
 <h1 class="font-semibold text-lg text-text">보스 수익</h1>
@@ -130,13 +137,13 @@ exports[`BossProfitScreen DOM 스냅샷 (ADR-094 결정 4) > 여러 캐릭터 ·
 </div>
 </div>
 </div>
-<div class="-mt-[var(--sa-top)] space-y-4">
 <div aria-hidden="true" style="height: 0px;">
+</div>
 </div>
 <div data-testid="pull-content" class="pb-4 px-4 space-y-2" style="transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1);">
 <div class="isolate relative">
 <div class="bg-surface border border-border overflow-clip rounded-[14px]">
-<button type="button" class="bg-surface flex gap-3 items-center px-4 py-3 sticky w-full z-[5]" style="top: 0px;">
+<button type="button" class="bg-surface flex gap-3 items-center px-4 py-3 sticky w-full z-[5]" style="top: calc(0px - var(--sa-top));">
 <span class="flex h-10 items-center justify-center relative shrink-0 w-10">
 <span class="bg-surface-2 h-8 overflow-hidden relative rounded-full w-8">
 <span class="flex font-bold h-full items-center justify-center text-text text-xs w-full">낟</span>
@@ -256,11 +263,15 @@ exports[`BossProfitScreen DOM 스냅샷 (ADR-094 결정 4) > 여러 캐릭터 ·
 </div>
 </div>
 </div>
+</div>
 </div>"
 `;
 
 exports[`BossProfitScreen DOM 스냅샷 (ADR-094 결정 4) > 월간 탭 — 주간과 다른 본문 구조 1`] = `
-"<div class="bg-bg fixed inset-x-0 pb-2 pt-[calc(1rem+var(--sa-top))] px-4 top-0 z-10">
+"<div data-testid="screen-scroll" class="bottom-[var(--tab-bar-h)] fixed inset-x-0 overflow-y-auto overscroll-y-none top-[var(--sa-top)]">
+<div class="-mt-[var(--sa-top)] space-y-4">
+<div>
+<div class="bg-bg fixed inset-x-0 pb-2 pt-[calc(1rem+var(--sa-top))] px-4 top-0 z-10">
 <div class="space-y-4">
 <div class="flex items-center justify-between">
 <h1 class="font-semibold text-lg text-text">보스 수익</h1>
@@ -346,8 +357,8 @@ exports[`BossProfitScreen DOM 스냅샷 (ADR-094 결정 4) > 월간 탭 — 주�
 </div>
 </div>
 </div>
-<div class="-mt-[var(--sa-top)] space-y-4">
 <div aria-hidden="true" style="height: 0px;">
+</div>
 </div>
 <div data-testid="pull-content" class="pb-4 px-4 space-y-2" style="transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1);">
 <div class="isolate relative">
@@ -372,11 +383,15 @@ exports[`BossProfitScreen DOM 스냅샷 (ADR-094 결정 4) > 월간 탭 — 주�
 </div>
 </div>
 </div>
+</div>
 </div>"
 `;
 
 exports[`BossProfitScreen DOM 스냅샷 (ADR-094 결정 4) > 주간 탭 · 카드 접힘 — sticky 헤더와 카드 층 순서 1`] = `
-"<div class="bg-bg fixed inset-x-0 pb-2 pt-[calc(1rem+var(--sa-top))] px-4 top-0 z-10">
+"<div data-testid="screen-scroll" class="bottom-[var(--tab-bar-h)] fixed inset-x-0 overflow-y-auto overscroll-y-none top-[var(--sa-top)]">
+<div class="-mt-[var(--sa-top)] space-y-4">
+<div>
+<div class="bg-bg fixed inset-x-0 pb-2 pt-[calc(1rem+var(--sa-top))] px-4 top-0 z-10">
 <div class="space-y-4">
 <div class="flex items-center justify-between">
 <h1 class="font-semibold text-lg text-text">보스 수익</h1>
@@ -442,8 +457,8 @@ exports[`BossProfitScreen DOM 스냅샷 (ADR-094 결정 4) > 주간 탭 · 카�
 </div>
 </div>
 </div>
-<div class="-mt-[var(--sa-top)] space-y-4">
 <div aria-hidden="true" style="height: 0px;">
+</div>
 </div>
 <div data-testid="pull-content" class="pb-4 px-4 space-y-2" style="transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1);">
 <div class="isolate relative">
@@ -490,11 +505,15 @@ exports[`BossProfitScreen DOM 스냅샷 (ADR-094 결정 4) > 주간 탭 · 카�
 </div>
 </div>
 </div>
+</div>
 </div>"
 `;
 
 exports[`BossProfitScreen DOM 스냅샷 (ADR-094 결정 4) > 주간 탭 · 카드 펼침 — 카드 안 sticky 헤더(ADR-047)와 보스 행 1`] = `
-"<div class="bg-bg fixed inset-x-0 pb-2 pt-[calc(1rem+var(--sa-top))] px-4 top-0 z-10">
+"<div data-testid="screen-scroll" class="bottom-[var(--tab-bar-h)] fixed inset-x-0 overflow-y-auto overscroll-y-none top-[var(--sa-top)]">
+<div class="-mt-[var(--sa-top)] space-y-4">
+<div>
+<div class="bg-bg fixed inset-x-0 pb-2 pt-[calc(1rem+var(--sa-top))] px-4 top-0 z-10">
 <div class="space-y-4">
 <div class="flex items-center justify-between">
 <h1 class="font-semibold text-lg text-text">보스 수익</h1>
@@ -560,13 +579,13 @@ exports[`BossProfitScreen DOM 스냅샷 (ADR-094 결정 4) > 주간 탭 · 카�
 </div>
 </div>
 </div>
-<div class="-mt-[var(--sa-top)] space-y-4">
 <div aria-hidden="true" style="height: 0px;">
+</div>
 </div>
 <div data-testid="pull-content" class="pb-4 px-4 space-y-2" style="transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1);">
 <div class="isolate relative">
 <div class="bg-surface border border-border overflow-clip rounded-[14px]">
-<button type="button" class="bg-surface flex gap-3 items-center px-4 py-3 sticky w-full z-[5]" style="top: 0px;">
+<button type="button" class="bg-surface flex gap-3 items-center px-4 py-3 sticky w-full z-[5]" style="top: calc(0px - var(--sa-top));">
 <span class="flex h-10 items-center justify-center relative shrink-0 w-10">
 <span class="bg-surface-2 h-8 overflow-hidden relative rounded-full w-8">
 <span class="flex font-bold h-full items-center justify-center text-text text-xs w-full">낟</span>
@@ -669,6 +688,7 @@ exports[`BossProfitScreen DOM 스냅샷 (ADR-094 결정 4) > 주간 탭 · 카�
 </div>
 </li>
 </ul>
+</div>
 </div>
 </div>
 </div>

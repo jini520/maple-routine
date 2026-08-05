@@ -7,6 +7,9 @@ if (typeof Element !== 'undefined') {
   Element.prototype.setPointerCapture ??= () => {}
   Element.prototype.releasePointerCapture ??= () => {}
   Element.prototype.scrollIntoView ??= () => {}
+  // jsdom 에는 요소 스크롤 API 가 없다. 화면이 자기 스크롤 컨테이너를 소유하면서([[ADR-099]])
+  // 제품 코드가 `container.scrollTo(...)` 를 부른다 — 테스트는 이 스텁을 spy 로 덮어 검증한다.
+  Element.prototype.scrollTo ??= () => {}
 }
 
 if (typeof window !== 'undefined' && typeof window.matchMedia === 'undefined') {

@@ -41,6 +41,12 @@ export interface BossProfitContextValue {
   isMonthlyBossQueryable: boolean
   /** 주차 행의 조회·다시 시도 — 이 기간을 다시 로드한다(store.retryPeriod). */
   onRetryPeriod: () => void
+  /**
+   * 이 화면의 스크롤 컨테이너([[ADR-100]] 결정 5). 문서가 아니라 이 요소가 스크롤되므로,
+   * 접기 전 사전 스크롤([[ADR-085]] 결정 2)과 팝오버 닫기가 여기서 오프셋·이벤트를 읽는다.
+   * 프롭으로 내리면 4단계를 통과만 하는 프롭이 다시 생긴다([[ADR-094]] 3단계가 없앤 것).
+   */
+  scrollRoot: React.RefObject<HTMLDivElement | null>
 }
 
 const BossProfitContext = createContext<BossProfitContextValue | null>(null)

@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Minus, Plus, Users } from 'lucide-react'
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
 import { DifficultyBadge } from '../../components/atoms/DifficultyBadge/DifficultyBadge'
@@ -20,6 +19,8 @@ import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import type { BossDifficulty } from '../../types'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { Badge } from '../../components/atoms/Badge/Badge'
+import { useScreenNavigate } from '../../lib/use-screen-navigate'
+import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 
 interface BossReferenceEntry {
   boss: string
@@ -77,7 +78,8 @@ export function BossManageScreen(): React.JSX.Element {
     selectCharacter,
   } = useBossSchedulerStore()
   const { mode } = useTrackingModeStore()
-  const navigate = useNavigate()
+  // 화면을 통째로 바꾸는 이동은 이동 전에 스크롤을 최상단으로 옮긴다([[ADR-098]] 결정 1).
+  const navigateToScreen = useScreenNavigate()
   // ADR-096 결정 2: 이어받는 것은 **진입 시점 한 번뿐**이다 — 컨텐츠 관리 페이지와 같은 이유로,
   // 이 화면에서의 탭 전환을 스케줄러로 되돌리지 않는다.
   const [activeTab, setActiveTab] = useState<BossTab>(schedulerTab)
@@ -271,7 +273,9 @@ export function BossManageScreen(): React.JSX.Element {
   }
 
   return (
-    <div className="-mt-[var(--sa-top)] space-y-4">
+    // ADR-099: 스크롤의 소유자가 문서가 아니라 이 화면이다 — 스케줄러에서 스크롤을 내린 채 들어오는
+    // 화면이라 같은 노출을 가졌었다. 공용 셸이 스크롤포트 인셋과 그 보정을 갖는다.
+    <ScreenScroll>
       {/* 제목~탭~(자동)토글까지 sticky로 상단에 고정하고 그 아래 보스 목록만 스크롤 — 스케줄러
           화면과 동일 패턴(UI_GUIDE "스크롤 영역"). AppShell의 pt-[--sa-top]을 -mt로 상쇄하고
           pt-calc로 노치까지 bg-bg가 덮게 한다. */}
@@ -280,7 +284,7 @@ export function BossManageScreen(): React.JSX.Element {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => navigate('/boss')}
+              onClick={() => navigateToScreen('/boss')}
               aria-label="뒤로"
               className="p-1 -ml-1 text-text-muted hover:text-text"
             >
@@ -458,6 +462,6 @@ export function BossManageScreen(): React.JSX.Element {
             })}
         </ul>
       )}
-    </div>
+    </ScreenScroll>
   )
 }

@@ -55,6 +55,18 @@ function applyThemeToDocument(theme: ThemeName): void {
   document.documentElement.dataset.theme = theme
 
   const isDark = definition.mode === 'dark'
+  // 테마의 라이트/다크를 **CSS 에도** 알린다([[ADR-099]]). 브라우저는 스크롤 인디케이터·폼 컨트롤처럼
+  // 우리가 그리지 않는 UI 크롬의 색을 이 값으로 고른다 — 안 걸어두면 자기 기본값을 쓰고, 화면 스크롤
+  // 컨테이너에서는 그것이 **흰 인디케이터**로 드러났다(실기기 관측 2026-08-06). 문서 스크롤일 때는
+  // WebKit 이 페이지 배경색에서 유추해 우연히 맞았을 뿐이라, 이건 컨테이너가 만든 문제가 아니라
+  // 원래 비어 있던 선언이다. 네이티브 상태바·내비바에는 이미 같은 값을 넘기고 있었다.
+  document.documentElement.style.colorScheme = isDark ? 'dark' : 'light'
+  // `color-scheme` 만으로는 **라이트 테마에서 인디케이터가 흰색으로 남았다**(실기기 2026-08-06 —
+  // 다크 테마는 정상). 요소 스크롤러의 인디케이터 색을 WebKit 이 무엇으로 정하는지에 의존하지 말고
+  // 표준 프로퍼티로 직접 지정한다. 값은 iOS 기본 인디케이터와 같은 반투명 무채색이고 트랙은 없다.
+  document.documentElement.style.scrollbarColor = isDark
+    ? 'rgba(255, 255, 255, 0.35) transparent'
+    : 'rgba(0, 0, 0, 0.35) transparent'
   void setStatusBarStyle(isDark)
   void setNavigationBarStyle(isDark)
 }

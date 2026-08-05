@@ -4,8 +4,8 @@ import { formatSyncedAt } from '../../features/schedule-sync/format'
 import { useScheduleSyncErrorToast } from '../../features/schedule-sync/use-sync-error-toast'
 import { getBossPortraitCrop, getBossPortraitUrl } from '../../lib/boss-icons'
 import { partySizeKey, useBossSchedulerStore, type PartyFilter } from '../../features/boss-scheduler/store'
-import { useEffect, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 
 import type { BossPortraitCrop } from '../../lib/boss-icons'
 import { CharacterSelectDropdown } from '../../components/molecules/CharacterSelectDropdown/CharacterSelectDropdown'
@@ -27,6 +27,8 @@ import { MEDIA_TEXT_SHADOW } from '../../lib/media-card'
 import { Card } from '../../components/atoms/Card/Card'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { Badge } from '../../components/atoms/Badge/Badge'
+import { useScreenNavigate } from '../../lib/use-screen-navigate'
+import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 
 const PARTY_FILTER_LABELS: Record<PartyFilter, string> = {
   all: '전체',
@@ -122,7 +124,8 @@ export function BossScreen(): React.JSX.Element {
   } = useBossSchedulerStore()
   const { mode } = useTrackingModeStore()
   const [roster, setRoster] = useState<CharacterPickerEntry[]>([])
-  const navigate = useNavigate()
+  // 화면을 통째로 바꾸는 이동은 이동 전에 스크롤을 최상단으로 옮긴다([[ADR-098]] 결정 1).
+  const navigateToScreen = useScreenNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const [isPickerOpen, setIsPickerOpen] = useState(() => searchParams.get('openPicker') === '1')
   // ADR-053 결정 3: 후보 목록 조회의 로딩·실패는 조회를 소유한 화면이 관리해 피커에 내려준다.
@@ -137,7 +140,7 @@ export function BossScreen(): React.JSX.Element {
   // 새로고침 옆 표기가 이미 담당하고, 토스트에는 원인을 푸는 액션을 붙일 수 있다.
   useScheduleSyncErrorToast(error, {
     onRetry: () => refresh(trackedOcids ?? []),
-    onOpenSettings: () => navigate('/settings'),
+    onOpenSettings: () => navigateToScreen('/settings'),
   })
 
   useEffect(() => {
@@ -192,10 +195,16 @@ export function BossScreen(): React.JSX.Element {
   // ADR-072: 목록 최상단에서 당기면 헤더 새로고침 버튼과 같은 재조회가 돈다(제스처는 추가 수단이다).
   // 빈 상태에서는 당길 목록이 없어 끄고(결정 13), 재조회 중에는 새 당김을 시작하지 않는다(결정 12).
   // 훅 호출은 아래 빈 상태 조기 반환보다 반드시 위여야 한다 — 훅 규칙.
+  // ADR-099: 이 화면의 스크롤 주체. 문서가 아니라 이 요소가 스크롤되므로 스크롤 상태가 화면과
+  // 함께 태어나고 함께 죽는다 — 다른 탭이 오프셋을 물려받을 길이 없다.
+  const scrollRootRef = useRef<HTMLDivElement>(null)
+
   const pullToRefresh = usePullToRefresh({
     enabled: !isEmpty,
     isRefreshing: status === 'loading',
     onRefresh: () => refresh(trackedOcids ?? []),
+    // ADR-099: 이 화면은 문서가 아니라 자기 컨테이너를 스크롤한다 — 최상단 판정도 그 기준이다.
+    scrollRoot: scrollRootRef,
   })
 
   // ADR-073 결정 6: 목록이 내려가는 거리이자 인디케이터가 채우는 틈의 높이다 — 인디케이터와 같은
@@ -216,7 +225,7 @@ export function BossScreen(): React.JSX.Element {
   // (전역 error가 채워지는 경로에서는 characters가 캐시 뷰로 교체되고 그 뷰의 error는 null이다).
   useScheduleSyncErrorToast(selected?.error ?? null, {
     onRetry: () => refresh(trackedOcids ?? []),
-    onOpenSettings: () => navigate('/settings'),
+    onOpenSettings: () => navigateToScreen('/settings'),
   })
 
   // ADR-035 결정 3·6·12: 수동 모드에서는 게임 등록 여부가 아니라 사용자가 앱에서 관리하는
@@ -346,7 +355,7 @@ export function BossScreen(): React.JSX.Element {
       onSave={handleSaveTracking}
       onClose={() => setIsPickerOpen(false)}
       onRetry={reloadRoster}
-      onOpenSettings={() => navigate('/settings')}
+      onOpenSettings={() => navigateToScreen('/settings')}
     />
   )
 
@@ -373,7 +382,7 @@ export function BossScreen(): React.JSX.Element {
         icon: Swords,
         title: `추적할 ${label} 보스가 없습니다`,
         description: `보스 관리에서 이번 ${tab === 'weekly' ? '주' : '달'}에 잡을 보스를 골라주세요`,
-        action: { label: '보스 관리', onClick: () => navigate('/boss/manage') },
+        action: { label: '보스 관리', onClick: () => navigateToScreen('/boss/manage') },
       }
     }
     return {
@@ -401,7 +410,7 @@ export function BossScreen(): React.JSX.Element {
   const bossManageButton = (
     <button
       type="button"
-      onClick={() => navigate('/boss/manage')}
+      onClick={() => navigateToScreen('/boss/manage')}
       className="text-sm font-medium text-text-muted hover:text-text"
     >
       보스 관리
@@ -432,15 +441,15 @@ export function BossScreen(): React.JSX.Element {
   }
 
   return (
-    <div className="-mt-[var(--sa-top)] space-y-4">
-      {/* 필터까지(제목~탭~솔로/파티 필터)는 화면 상단에 고정하고 그 아래 보스 목록만 스크롤되게
-          한다 — sticky는 페이지 스크롤 위에서 동작하므로 App.tsx의 레이아웃(높이 계산)을
-          건드릴 필요가 없다. sticky 박스는 top-0으로 화면 맨 위(노치 포함)부터 bg-bg로
-          덮어야 스크롤 중에도 그 위 카드가 비치지 않는다 — top을 안전영역만큼 내리면 그 위
-          구간은 아무것도 덮지 못해 스크롤되는 카드가 노치 뒤로 비쳐 보인다. 대신
-          padding-top에 안전영역을 더해 텍스트만 내려 보이게 하고, 바깥 AppShell의
-          padding-top과 중복되지 않도록 위 -mt-[var(--sa-top)]로 상쇄한다.
-          z-10으로 항상 위에 그려지게 한다. */}
+    // ADR-099: 스크롤의 소유자가 문서가 아니라 이 화면이다 — 공용 셸이 스크롤포트 인셋(안전영역·탭바
+    // 실측)과 그 보정을 갖는다. 모달은 셸 **바깥**이다(안에 두면 z-50 이 셸의 스태킹 컨텍스트에 갇혀
+    // z-30 탭바 아래로 그려진다).
+    <>
+      <ScreenScroll ref={scrollRootRef}>
+      {/* 필터까지(제목~탭~솔로/파티 필터)는 화면 상단에 고정하고 그 아래 보스 목록만 스크롤되게 한다.
+          헤더는 `fixed` 라 이 컨테이너의 스크롤과 무관하게 뷰포트 상단에 붙어 있고([[ADR-098]] 결정 2),
+          흐름에서 빠진 자리는 PageHeader 가 내는 실측 높이 spacer 가 채운다. 노치까지 bg-bg 로 덮어야
+          스크롤 중에 그 위 카드가 비치지 않으므로 top-0 + 안전영역을 더한 padding-top 조합은 그대로다. */}
       <PageHeader below={<PullToRefreshIndicator distance={pullToRefresh.distance} phase={pullToRefresh.phase} />}>
         <div className="flex items-center justify-between">
           <h1 className="text-lg font-semibold text-text">보스 스케줄러</h1>
@@ -607,7 +616,9 @@ export function BossScreen(): React.JSX.Element {
         </div>
       )}
 
+      </ScreenScroll>
+
       {trackingModals}
-    </div>
+    </>
   )
 }

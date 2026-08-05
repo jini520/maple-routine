@@ -311,6 +311,72 @@ describe('usePullToRefresh', () => {
     })
   })
 
+  // ADR-099 결정 2 — 화면이 자기 스크롤 컨테이너를 가지면(뷰포트 크기) 최상단 판정과 오버레이
+  // 배제 판정의 기준이 그 컨테이너가 된다. 프롭을 안 주는 화면은 지금까지의 문서 기준 그대로다.
+  describe('scrollRoot 를 준 경우 (ADR-099)', () => {
+    function scrollRootOf(scrollTop: number): {
+      root: HTMLElement
+      ref: { current: HTMLElement | null }
+    } {
+      const root = appendDiv({ overflowY: 'auto', scrollHeight: 2000, clientHeight: 800 })
+      Object.defineProperty(root, 'scrollTop', { value: scrollTop, writable: true, configurable: true })
+      return { root, ref: { current: root } }
+    }
+
+    it('컨테이너가 최상단이면 당김이 동작한다 — window.scrollY 는 보지 않는다', () => {
+      const onRefresh = vi.fn()
+      const { root, ref } = scrollRootOf(0)
+      setScrollY(500) // 문서는 내려가 있어도 상관없다(컨테이너가 스크롤 주체다)
+      renderHook(() => usePullToRefresh({ enabled: true, isRefreshing: false, onRefresh, scrollRoot: ref }))
+
+      const card = appendDiv({}, root)
+      dispatchFrom(card, touchEvent('touchstart', 0))
+      dispatchFrom(card, touchEvent('touchmove', 200))
+      dispatchFrom(card, touchEvent('touchend'))
+
+      expect(onRefresh).toHaveBeenCalledTimes(1)
+    })
+
+    it('컨테이너가 내려가 있으면 당김이 시작되지 않는다', () => {
+      const onRefresh = vi.fn()
+      const { root, ref } = scrollRootOf(300)
+      renderHook(() => usePullToRefresh({ enabled: true, isRefreshing: false, onRefresh, scrollRoot: ref }))
+
+      const card = appendDiv({}, root)
+      dispatchFrom(card, touchEvent('touchstart', 0))
+      dispatchFrom(card, touchEvent('touchmove', 200))
+      dispatchFrom(card, touchEvent('touchend'))
+
+      expect(onRefresh).not.toHaveBeenCalled()
+    })
+
+    it('그 컨테이너 자신은 "스크롤 가능한 오버레이"로 취급하지 않는다 — 페이지가 당김의 대상이다', () => {
+      // 이 검사가 없으면 화면 스크롤러가 결정 14의 배제 규칙에 걸려 제스처가 통째로 죽는다.
+      const onRefresh = vi.fn()
+      const { root, ref } = scrollRootOf(0)
+      renderHook(() => usePullToRefresh({ enabled: true, isRefreshing: false, onRefresh, scrollRoot: ref }))
+
+      dispatchFrom(root, touchEvent('touchstart', 0))
+      dispatchFrom(root, touchEvent('touchmove', 200))
+      dispatchFrom(root, touchEvent('touchend'))
+
+      expect(onRefresh).toHaveBeenCalledTimes(1)
+    })
+
+    it('컨테이너 안의 오버레이(모달 등)에서 시작한 당김은 여전히 배제된다', () => {
+      const onRefresh = vi.fn()
+      const { root, ref } = scrollRootOf(0)
+      renderHook(() => usePullToRefresh({ enabled: true, isRefreshing: false, onRefresh, scrollRoot: ref }))
+
+      const overlay = appendDiv({ overflowY: 'auto', scrollHeight: 900, clientHeight: 400 }, root)
+      dispatchFrom(overlay, touchEvent('touchstart', 0))
+      dispatchFrom(overlay, touchEvent('touchmove', 200))
+      dispatchFrom(overlay, touchEvent('touchend'))
+
+      expect(onRefresh).not.toHaveBeenCalled()
+    })
+  })
+
   describe('스크롤 가능한 조상 안에서 시작한 터치 (ADR-072 결정 14)', () => {
     it('스크롤 가능한 오버레이 안에서 시작한 당김은 onRefresh를 호출하지 않는다', () => {
       // 모달·바텀시트가 떠 있으면 body 스크롤이 잠겨 window.scrollY는 0 그대로다. 최상단 판정만으로는

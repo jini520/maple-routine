@@ -197,7 +197,41 @@ describe('BossScreen', () => {
     expect(await screen.findByRole('button', { name: /내옆에최성일/ })).toBeInTheDocument()
   })
 
-  it('sticky 헤더가 top-0으로 화면 최상단부터 덮어 스크롤 시 안전영역 뒤로 카드가 비치지 않는다', async () => {
+  // ADR-099 — 이 화면도 문서가 아니라 자기 스크롤 컨테이너를 스크롤한다(컨텐츠 스케줄러에서 실기기
+  // 검증 후 확산). 기하는 공용 셸 ScreenScroll 이 갖고, 여기서는 연결만 본다.
+  describe('화면 스크롤 컨테이너 (ADR-099)', () => {
+    async function renderLoaded(): Promise<void> {
+      mockStore({
+        status: 'loaded',
+        trackedOcids: ['ocid-1'],
+        characters: [character({ ocid: 'ocid-1' })],
+      })
+      renderBossScreen()
+      await screen.findByRole('heading', { name: '보스 스케줄러' })
+    }
+
+    it('헤더와 목록이 공용 스크롤 셸 안에 있다', async () => {
+      await renderLoaded()
+
+      const scroller = screen.getByTestId('screen-scroll')
+      expect(scroller).toContainElement(screen.getByTestId('pull-content'))
+      expect(scroller).toContainElement(screen.getByRole('heading', { name: '보스 스케줄러' }))
+    })
+
+    it('모달은 셸 바깥에 그려진다 — 안에 두면 z-50 이 셸의 스태킹 컨텍스트에 갇힌다', async () => {
+      await renderLoaded()
+
+      fireEvent.click(screen.getByRole('button', { name: '캐릭터 관리' }))
+
+      const modal = await screen.findByRole('heading', { name: '캐릭터 관리' })
+      expect(screen.getByTestId('screen-scroll')).not.toContainElement(modal)
+    })
+  })
+
+  // ADR-098 결정 2: 헤더는 `sticky` 가 아니라 `fixed` 다 — sticky 요소의 화면 위치는 스크롤
+  // 오프셋의 함수라, iOS 스크롤 스레드가 옛 오프셋을 되돌려 보내는 프레임에 헤더가 화면 밖으로
+  // 날아간다(탭 복귀 시 관측). 노치까지 bg-bg 로 덮는다는 원래 계약은 그대로다.
+  it('고정 헤더가 top-0으로 화면 최상단부터 덮고, 흐름에는 실측 높이 spacer 가 남는다', async () => {
     mockStore({
       status: 'loaded',
       trackedOcids: ['ocid-1'],
@@ -206,11 +240,16 @@ describe('BossScreen', () => {
 
     renderBossScreen()
     const heading = await screen.findByRole('heading', { name: '보스 스케줄러' })
-    const stickyEl = heading.closest('.sticky')
+    const headerEl = heading.closest('.fixed')
 
-    expect(stickyEl).toHaveClass('top-0')
-    expect(stickyEl).toHaveClass('pt-[calc(1rem+var(--sa-top))]')
-    expect(stickyEl?.parentElement).toHaveClass('-mt-[var(--sa-top)]')
+    expect(headerEl).toHaveClass('top-0')
+    expect(headerEl).toHaveClass('inset-x-0')
+    expect(headerEl).toHaveClass('pt-[calc(1rem+var(--sa-top))]')
+    expect(heading.closest('.sticky')).toBeNull()
+    // 헤더가 흐름에서 빠진 자리는 래퍼 안 spacer 가 채우고, 그 래퍼가 화면 루트의 첫 자식이다.
+    const wrapper = headerEl?.parentElement
+    expect(wrapper?.parentElement).toHaveClass('-mt-[var(--sa-top)]')
+    expect(wrapper?.lastElementChild).toHaveAttribute('aria-hidden', 'true')
   })
 
   it('마운트 시 loadTrackedOcids가 호출된다', async () => {
@@ -1324,7 +1363,7 @@ describe('당겨서 새로고침 (ADR-072)', () => {
     expect(refresh).not.toHaveBeenCalled()
   })
 
-  it('당기는 동안 배너가 sticky 헤더 안 경계 페이드 다음 형제로 그려진다', async () => {
+  it('당기는 동안 배너가 고정 헤더 안 경계 페이드 다음 형제로 그려진다', async () => {
     mockStore({
       status: 'loaded',
       trackedOcids: ['ocid-1'],
@@ -1341,7 +1380,7 @@ describe('당겨서 새로고침 (ADR-072)', () => {
     expect(screen.getByTestId('pull-to-refresh-indicator')).toBeInTheDocument()
     // 인디케이터와 페이드가 같은 자리(absolute top-full)를 쓰므로 DOM 순서로 인디케이터가 위에 와야 한다.
     expect(indicator.previousElementSibling).toHaveClass('backdrop-blur-sm')
-    expect(indicator.parentElement).toHaveClass('sticky')
+    expect(indicator.parentElement).toHaveClass('fixed')
   })
 
   it('제스처를 붙여도 헤더 새로고침 버튼은 그대로 남는다(ADR-072 결정 10)', async () => {

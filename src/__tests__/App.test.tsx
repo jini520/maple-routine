@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { act, cleanup, render, screen } from '@testing-library/react'
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AppShell } from '../App'
@@ -542,6 +542,71 @@ describe('AppShell', () => {
 
       expect(screen.getByRole('heading', { name: '보스 스케줄러' })).toBeInTheDocument()
       expect(screen.getByRole('link', { name: '보스' })).toHaveAttribute('aria-current', 'page')
+    })
+  })
+
+  // ADR-099 결정 7: 화면 스크롤 컨테이너가 스크롤포트 하단을 탭바 높이만큼 줄여야 인디케이터가
+  // 탭바 뒤로 들어가지 않는다. 그 값은 가정이 아니라 실측이다 — `4rem` 으로 가정했더니 실제
+  // 높이와 어긋나 컨테이너와 탭바 사이에 띠가 생겼다(실기기 관측).
+  describe('탭바 높이 실측 (ADR-099)', () => {
+    it('탭바가 보이면 --tab-bar-h 를 실측값으로 내보낸다', () => {
+      vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+        height: 90, width: 0, top: 0, left: 0, right: 0, bottom: 90, x: 0, y: 0, toJSON: () => ({}),
+      })
+      mockStore({ status: 'completed', selectedAccountId: 'account-1' })
+
+      renderAt('/content')
+
+      expect(document.documentElement.style.getPropertyValue('--tab-bar-h')).toBe('90px')
+    })
+
+    it('탭바가 사라지면(온보딩·키보드) 0으로 되돌린다 — 컨테이너가 화면 바닥까지 쓴다', async () => {
+      mockStore({ status: 'completed', selectedAccountId: 'account-1' })
+      renderAt('/content')
+
+      act(() => {
+        emitKeyboardVisibility(true)
+      })
+
+      await waitFor(() => {
+        expect(document.documentElement.style.getPropertyValue('--tab-bar-h')).toBe('0px')
+      })
+    })
+  })
+
+  // ADR-098 결정 1: 네 탭이 문서 전체 스크롤 하나를 공유하므로(ADR-072 결정 1), 그대로 이동하면
+  // 새 화면이 옛 화면의 오프셋으로 마운트되고 문서 높이가 다르면 클램프 프레임이 생긴다.
+  // **옛 문서가 아직 높을 때** 옮겨야 잘라낼 오프셋이 없다 — 그래서 이동보다 먼저다. 단 **같은
+  // 태스크 안에서** 끝내야 한다(폐기 1: 한 프레임 미뤘더니 떠나는 화면이 올라가는 게 보였다).
+  describe('탭 이동 전 스크롤 리셋 (ADR-098)', () => {
+    it('탭을 누르면 이동하기 전에 스크롤을 최상단으로 옮기고, 이동은 미뤄지지 않는다', () => {
+      mockStore({ status: 'completed', selectedAccountId: 'account-1' })
+      const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
+      renderAt('/content')
+
+      act(() => {
+        screen.getByRole('link', { name: '보스' }).click()
+      })
+
+      expect(scrollTo).toHaveBeenCalledWith(0, 0)
+      expect(screen.getByRole('heading', { name: '보스 스케줄러' })).toBeInTheDocument()
+      scrollTo.mockRestore()
+    })
+
+    it('네 탭 모두 이동 전에 스크롤을 옮긴다', () => {
+      mockStore({ status: 'completed', selectedAccountId: 'account-1' })
+      const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
+      renderAt('/content')
+
+      for (const name of ['보스', '수익', '설정', '컨텐츠']) {
+        scrollTo.mockClear()
+        act(() => {
+          screen.getByRole('link', { name }).click()
+        })
+        expect(scrollTo, `${name} 탭`).toHaveBeenCalledWith(0, 0)
+        expect(screen.getByRole('link', { name }), `${name} 탭`).toHaveAttribute('aria-current', 'page')
+      }
+      scrollTo.mockRestore()
     })
   })
 })

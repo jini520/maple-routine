@@ -1,8 +1,10 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`BossScreen DOM 스냅샷 (ADR-094 결정 4) > 주간 탭 — 보스 카드(일러스트 bleed·난이도 배지)와 진행 링 1`] = `
-"<div class="-mt-[var(--sa-top)] space-y-4">
-<div class="bg-bg pb-2 pt-[calc(1rem+var(--sa-top))] px-4 sticky top-0 z-10">
+"<div data-testid="screen-scroll" class="bottom-[var(--tab-bar-h)] fixed inset-x-0 overflow-y-auto overscroll-y-none top-[var(--sa-top)]">
+<div class="-mt-[var(--sa-top)] space-y-4">
+<div>
+<div class="bg-bg fixed inset-x-0 pb-2 pt-[calc(1rem+var(--sa-top))] px-4 top-0 z-10">
 <div class="space-y-4">
 <div class="flex items-center justify-between">
 <h1 class="font-semibold text-lg text-text">보스 스케줄러</h1>
@@ -57,6 +59,9 @@ exports[`BossScreen DOM 스냅샷 (ADR-094 결정 4) > 주간 탭 — 보스 카
 <div class="absolute backdrop-blur-sm bg-gradient-to-b from-bg h-8 inset-x-0 pointer-events-none to-transparent top-full" style="mask-image: linear-gradient(black, transparent); -webkit-mask-image: linear-gradient(black, transparent);" aria-hidden="true">
 </div>
 </div>
+<div aria-hidden="true" style="height: 0px;">
+</div>
+</div>
 <div data-testid="pull-content" class="pb-4 px-4 space-y-4" style="transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1);">
 <div class="space-y-2">
 <div class="bg-surface border border-border h-20 media-scope overflow-hidden relative rounded-[14px]">
@@ -79,6 +84,7 @@ exports[`BossScreen DOM 스냅샷 (ADR-094 결정 4) > 주간 탭 — 보스 카
 <span class="font-medium text-sm text-text" style="text-shadow: 0 1px 3px rgba(0,0,0,.9), 0 0 10px rgba(0,0,0,.6);">스우</span>
 </div>
 <div class="flex gap-1.5 items-center">
+</div>
 </div>
 </div>
 </div>

@@ -1,5 +1,5 @@
-import { Suspense, lazy, useEffect, useRef, useState } from 'react'
-import { BrowserRouter, Navigate, NavLink, Route, Routes, useNavigate } from 'react-router-dom'
+import { Suspense, lazy, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { BrowserRouter, Navigate, NavLink, Route, Routes } from 'react-router-dom'
 import { ListChecks, Settings, Swords } from 'lucide-react'
 import { useOnboardingStore } from './features/onboarding/store'
 import { useThemeStore } from './features/theme/store'
@@ -11,6 +11,7 @@ import { useToastStore } from './features/toast/store'
 import { hideSplashScreen } from './native/splash-screen'
 import { refreshSafeAreaInsets } from './native/system-bars'
 import { addKeyboardVisibilityListener } from './native/keyboard'
+import { useScreenNavigate } from './lib/use-screen-navigate'
 import { maybeShowTabSwitchAd, startAds } from './features/ads/tab-switch-ad'
 import { UpdatePromptModal } from './app/UpdatePromptModal'
 import { ErrorBoundary } from './components/organisms/ErrorBoundary/ErrorBoundary'
@@ -73,7 +74,10 @@ const APP_START_MS = Date.now()
 const MIN_SPLASH_MS = 1000
 
 function BottomTabBar(): React.JSX.Element {
-  const navigate = useNavigate()
+  // 탭 이동은 화면을 통째로 바꾸므로 **이동 전에 스크롤을 최상단으로 옮긴다**([[ADR-098]] 결정 1).
+  // 네 탭이 문서 전체 스크롤 하나를 공유해(ADR-072 결정 1) 그러지 않으면 새 화면이 옛 오프셋으로
+  // 마운트되고, 문서 높이가 다르면 클램프 프레임이 생긴다.
+  const navigateToScreen = useScreenNavigate()
   const navRef = useRef<HTMLElement>(null)
 
   // 탭 이동의 책임은 NavLink가 아니라 이 인터셉터에 있다(NavLink는 활성 스타일·aria-current 담당).
@@ -106,7 +110,7 @@ function BottomTabBar(): React.JSX.Element {
       // 훅을 걸면 이동마다 재렌더·리스너 재등록이 일어난다.
       const isTabChange = window.location.pathname !== href
 
-      navigate(href)
+      navigateToScreen(href)
 
       // 광고는 이동을 **지연시키지 않는다** — navigate 뒤에 붙여 화면 전환이 먼저 일어나게 하고,
       // 준비된 광고가 없으면 안쪽에서 조용히 건너뛴다(ADR-090 결정 3).
@@ -119,7 +123,29 @@ function BottomTabBar(): React.JSX.Element {
     return () => {
       nav.removeEventListener('click', interceptClick, true)
     }
-  }, [navigate])
+  }, [navigateToScreen])
+
+  // 탭바가 실제로 차지하는 높이를 --tab-bar-h 로 내보낸다([[ADR-099]] 결정 7). 화면 스크롤 컨테이너가
+  // 스크롤포트 하단을 이만큼 줄여야 스크롤 인디케이터가 탭바 뒤로 들어가지 않는다. **실측인 것이
+  // 핵심이다** — `4rem` 으로 가정했더니 실제 높이(아이콘+라벨 56px + 보더)와 어긋나 컨테이너와
+  // 탭바 사이에 띠가 생겼다(실기기 관측 2026-08-06). 언마운트(온보딩·키보드로 탭바가 사라질 때)에는
+  // 0으로 되돌려, 그 상황에서 컨테이너가 화면 바닥까지 쓰게 한다.
+  useLayoutEffect(() => {
+    const nav = navRef.current
+    if (nav === null) return
+
+    const measure = (): void => {
+      document.documentElement.style.setProperty('--tab-bar-h', `${nav.getBoundingClientRect().height}px`)
+    }
+    measure()
+
+    const observer = new ResizeObserver(measure)
+    observer.observe(nav)
+    return () => {
+      observer.disconnect()
+      document.documentElement.style.setProperty('--tab-bar-h', '0px')
+    }
+  }, [])
 
   return (
     <nav

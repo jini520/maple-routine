@@ -30,6 +30,9 @@
 
 ## UI
 
+### 이 화면에는 고정 헤더가 없다 ([[ADR-098]] 결정 3, 2026-08-06)
+다른 화면들이 쓰는 `PageHeader` 셸이 없고 `p-4 space-y-4` 안의 평범한 `h1` 이다 — 그래서 스케줄러에서 관측된 **탭 복귀 프레임 튐**([[ADR-098]])이 이 화면에서는 구조적으로 일어날 수 없다(날아갈 고정 헤더가 없다). 화면 높이도 잰 값이 있다: 390px 폭 + iPhone 안전영역(59/34) 기준 **필요 높이 835pt** 라 대부분의 기기에서 스크롤 자체가 생기지 않는다(13 mini·SE 급에서만 20pt 남짓). 행이 늘어 세로가 길어지면 그때는 고정 헤더 도입 여부를 다시 판단할 것 — 도입한다면 공용 `PageHeader` 를 쓰면 되고, 그 셸이 이미 `fixed` 라 같은 결함을 물려받지 않는다.
+
 ### 설정 리스트 행 + 모달 — 2026-07-13
 카드형 섹션 나열이 아니라 **하나의 리스트 컨테이너**(`rounded-[14px] bg-surface border border-border px-6`) 안에 행(`SettingsRow`)을 `divide-y divide-border` 로 이어붙임. 각 행 `py-4`, 왼쪽 라벨(`text-sm font-medium text-text`, 위험 동작은 `text-error`) + 오른쪽(기본 `ChevronRight text-text-muted`, `showChevron={false}` 가능), 행 전체가 버튼이라 탭하면 해당 모달. "계정 변경"·"스케줄 관리 방법"·"테마" 3개 행은 이 패턴, "연결 해제"만 확인 모달 직접 연다.
 - **모달**: 공용 `components/Modal`([../foundation/design-system.md](../foundation/design-system.md)) — 계정 변경 모달·계정 선택 목록은 `card={false}` 로 자체 카드를 담음.
