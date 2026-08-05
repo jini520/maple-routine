@@ -90,6 +90,10 @@ vi.mock('../../../storage/manual-tracked-content', () => ({
 }))
 
 import { useBossSchedulerStore, type BossCharacterView } from '../store'
+import {
+  markSyncAttemptedThisRun,
+  resetSyncRunStateForTests,
+} from '../../schedule-sync/sync-run-state'
 import type { ManualTrackedItem } from '../../../storage/manual-tracked-content'
 
 function bossContent(overrides: Partial<BossContent> = {}): BossContent {
@@ -150,6 +154,8 @@ beforeEach(() => {
   seedManualTrackedContentMock.mockResolvedValue(undefined)
   getManualTrackedContentMock.mockResolvedValue([])
   setManualTrackedContentMock.mockResolvedValue(undefined)
+  // 모듈 수준 플래그라 테스트끼리 오염된다 — 매번 "앱 재시작 직후" 상태에서 시작한다.
+  resetSyncRunStateForTests()
 })
 
 afterEach(() => {
@@ -1063,6 +1069,141 @@ describe('useBossSchedulerStore', () => {
       useBossSchedulerStore.getState().setWeeklyFilter('solo')
 
       expect(syncSchedulesMock).not.toHaveBeenCalled()
+    })
+  })
+
+  // ADR-097 결정 1~5: 화면에 들어왔다는 사실만으로는 조회하지 않는다. 게이트는 자동 진입 경로에만
+  // 걸리고(결정 4), 판정 근거는 캐시 우선 표시 단계가 이미 읽은 syncedAt 이다.
+  describe('화면 진입 재조회 게이트 (ADR-097)', () => {
+    function minutesAgo(minutes: number): string {
+      return new Date(Date.now() - minutes * 60 * 1000).toISOString()
+    }
+
+    function cachedSchedulerState(syncedAt: string) {
+      return {
+        state: {
+          asOf: '2026-07-11T00:00+09:00',
+          characterName: '캐시된캐릭터',
+          world: '베라',
+          level: 200,
+          jobClass: '렌',
+          dailyContents: [],
+          weeklyContents: [],
+          bossContents: [bossContent()],
+          isDailyStale: false,
+          isWeeklyStale: false,
+          isWeeklyBossStale: false,
+          isMonthlyBossStale: false,
+        },
+        syncedAt,
+      }
+    }
+
+    it('실행 플래그가 서 있고 전원 캐시가 TTL 안이면 자동 진입은 조회하지 않는다', async () => {
+      markSyncAttemptedThisRun()
+      getCachedSchedulerStateMock.mockResolvedValue(cachedSchedulerState(minutesAgo(5)))
+
+      await useBossSchedulerStore.getState().refresh(['ocid-1'], undefined, { auto: true })
+
+      expect(syncSchedulesMock).not.toHaveBeenCalled()
+      const state = useBossSchedulerStore.getState()
+      expect(state.status).toBe('loaded')
+      expect(state.error).toBeNull()
+      // 결정 5: 재검증하지 않기로 한 값이라 "오래된 데이터"가 아니다(토스트가 뜨면 안 된다).
+      expect(state.characters.every((character) => character.isStale === false)).toBe(true)
+    })
+
+    it('건너뛴 진입에서도 syncedAt 은 캐시 값 그대로다 (방금 동기화한 것처럼 꾸미지 않는다)', async () => {
+      const syncedAt = minutesAgo(5)
+      markSyncAttemptedThisRun()
+      getCachedSchedulerStateMock.mockResolvedValue(cachedSchedulerState(syncedAt))
+
+      await useBossSchedulerStore.getState().refresh(['ocid-1'], undefined, { auto: true })
+
+      expect(useBossSchedulerStore.getState().characters[0].syncedAt).toBe(syncedAt)
+    })
+
+    it('앱 재시작 직후(실행 플래그 없음)에는 TTL 안이어도 조회한다', async () => {
+      getCachedSchedulerStateMock.mockResolvedValue(cachedSchedulerState(minutesAgo(5)))
+      syncSchedulesMock.mockResolvedValue([syncResult()])
+
+      await useBossSchedulerStore.getState().refresh(['ocid-1'], undefined, { auto: true })
+
+      expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
+    })
+
+    it('추적 캐릭터 중 캐시가 없는 캐릭터가 있으면 TTL 안이어도 조회한다', async () => {
+      markSyncAttemptedThisRun()
+      getCachedSchedulerStateMock.mockImplementation(async (ocid: string) =>
+        ocid === 'ocid-1' ? cachedSchedulerState(minutesAgo(5)) : null,
+      )
+      syncSchedulesMock.mockResolvedValue([
+        syncResult({ ocid: 'ocid-1' }),
+        syncResult({ ocid: 'ocid-2' }),
+      ])
+
+      await useBossSchedulerStore.getState().refresh(['ocid-1', 'ocid-2'], undefined, { auto: true })
+
+      expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
+    })
+
+    it('가장 오래된 캐시가 TTL 밖이면 조회한다', async () => {
+      markSyncAttemptedThisRun()
+      getCachedSchedulerStateMock.mockImplementation(async (ocid: string) =>
+        cachedSchedulerState(ocid === 'ocid-1' ? minutesAgo(5) : minutesAgo(11)),
+      )
+      syncSchedulesMock.mockResolvedValue([
+        syncResult({ ocid: 'ocid-1' }),
+        syncResult({ ocid: 'ocid-2' }),
+      ])
+
+      await useBossSchedulerStore.getState().refresh(['ocid-1', 'ocid-2'], undefined, { auto: true })
+
+      expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
+    })
+
+    // 결정 4: 강제가 기본값이다 — 옵션을 넘기지 않는 헤더 버튼·당겨서 새로고침·재시도는 항상 조회한다.
+    it('옵션 없는 refresh(명시적 재조회)는 TTL 안이어도 항상 조회한다', async () => {
+      markSyncAttemptedThisRun()
+      getCachedSchedulerStateMock.mockResolvedValue(cachedSchedulerState(minutesAgo(5)))
+      syncSchedulesMock.mockResolvedValue([syncResult()])
+
+      await useBossSchedulerStore.getState().refresh(['ocid-1'])
+
+      expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
+    })
+
+    it('자동 진입 경로인 loadTrackedOcids는 게이트에 걸린다', async () => {
+      markSyncAttemptedThisRun()
+      getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
+      getCachedSchedulerStateMock.mockResolvedValue(cachedSchedulerState(minutesAgo(5)))
+
+      await useBossSchedulerStore.getState().loadTrackedOcids()
+
+      expect(syncSchedulesMock).not.toHaveBeenCalled()
+      expect(useBossSchedulerStore.getState().status).toBe('loaded')
+    })
+
+    // 파티 설정은 로컬 SQLite 조회라 네트워크 TTL 의 대상이 아니다 — 함께 건너뛰면 추적 목록이
+    // 바뀐 진입에서 파티원 수 배지·솔로/파티 필터가 옛 값으로 남는다.
+    it('동기화를 건너뛰어도 파티 설정은 다시 조회한다', async () => {
+      markSyncAttemptedThisRun()
+      getCachedSchedulerStateMock.mockResolvedValue(cachedSchedulerState(minutesAgo(5)))
+      getBossPartySettingsMock.mockResolvedValue([
+        {
+          ocid: 'ocid-1',
+          boss: '자쿰',
+          difficulty: '카오스',
+          partySize: 4,
+          updatedAt: '2026-08-06T00:00:00.000Z',
+        },
+      ])
+
+      await useBossSchedulerStore.getState().refresh(['ocid-1'], undefined, { auto: true })
+
+      expect(syncSchedulesMock).not.toHaveBeenCalled()
+      expect(getBossPartySettingsMock).toHaveBeenCalledWith(['ocid-1'])
+      expect(useBossSchedulerStore.getState().partySizes).toEqual({ 'ocid-1:자쿰:카오스': 4 })
     })
   })
 })

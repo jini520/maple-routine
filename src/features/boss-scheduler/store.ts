@@ -10,6 +10,8 @@ import {
   type MatchedBoss,
 } from '../../lib/boss-matching'
 import { syncSchedules, toScheduleSyncError, type ScheduleSyncError } from '../schedule-sync/schedule-sync'
+import { hasSyncAttemptedThisRun } from '../schedule-sync/sync-run-state'
+import { isSyncFresh } from '../../lib/sync-freshness'
 import {
   getLastSelectedCharacter,
   getTrackedCharacterOcids,
@@ -49,6 +51,15 @@ export interface BossCharacterView {
 
 export type BossSchedulerStatus = 'idle' | 'loading' | 'loaded' | 'error'
 
+// ADR-097 결정 4: "강제"가 기본값이고 게이트가 예외다. force 인자를 두면 강제해야 할 호출부를
+// 하나라도 빠뜨리는 순간 그 자리가 조용히 게이트에 걸리므로, 자동 진입 경로인 loadTrackedOcids()만
+// auto: true 를 넘긴다. 화면(헤더 버튼·당겨서 새로고침·재시도)은 인자를 안 넘겨 자동으로 강제 경로다.
+// 컨텐츠 스케줄러 스토어와 같은 이름·같은 모양이다 — 같은 정책이 두 모양으로 존재하면 값을 바꿀 때
+// 한쪽만 고치게 된다.
+export interface RefreshOptions {
+  auto?: boolean
+}
+
 // ADR-096 결정 1: 스케줄러 화면과 관리 페이지가 함께 쓰는 탭 식별자(전에는 두 화면이 각자 선언).
 export type BossTab = 'weekly' | 'monthly'
 
@@ -79,7 +90,11 @@ export interface BossSchedulerState {
 export interface BossSchedulerStore extends BossSchedulerState {
   loadTrackedOcids(): Promise<void>
   saveTrackedOcids(ocids: string[], onProgress?: (completed: number, total: number) => void): Promise<void>
-  refresh(ocids: string[], onProgress?: (completed: number, total: number) => void): Promise<void>
+  refresh(
+    ocids: string[],
+    onProgress?: (completed: number, total: number) => void,
+    options?: RefreshOptions,
+  ): Promise<void>
   selectCharacter(ocid: string): Promise<void>
   loadPartySizes(ocids: string[]): Promise<void>
   setPartySize(ocid: string, boss: string, difficulty: string, partySize: number): Promise<void>
@@ -165,7 +180,8 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
     ])
     set({ trackedOcids: ocids, selectedOcid })
     if (ocids !== null) {
-      await get().refresh(ocids)
+      // ADR-097 결정 4: 자동 진입 경로는 여기 하나뿐이라 게이트를 놓칠 자리가 생기지 않는다.
+      await get().refresh(ocids, undefined, { auto: true })
     }
   },
 
@@ -261,7 +277,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
     useToastStore.getState().showSuccess('캐릭터 정보를 모두 불러왔어요')
   },
 
-  async refresh(ocids, onProgress) {
+  async refresh(ocids, onProgress, options) {
     if (ocids.length === 0) {
       set({ status: 'loaded', characters: [], error: null, partySizes: {} })
       return
@@ -304,16 +320,43 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
       )
     ).filter((view): view is BossCharacterView => view !== null)
 
-    set({ status: 'loading', characters: await sortByCachedLevel(cachedCharacters), manualTrackedByOcid })
-
     // ADR-019: 파티 설정은 완료 여부·주차와 무관한 상시 데이터라 스케줄 동기화(캐시 우선 표시 →
     // 재검증)와 독립적이다 — 벌크 조회 한 번으로 충분하다. 독립적이므로 조회가 실패해도(예: SQLite
     // 일시 오류) 스케줄 refresh 전체를 중단시키지 않는다 — 그러지 않으면 저장 진행률 모달이 안 닫힌다.
+    // ADR-097: 아래 TTL 게이트보다 **앞이다** — 로컬 SQLite 조회라 네트워크 TTL 의 대상이 아니고,
+    // 함께 건너뛰면 추적 목록이 바뀐 진입에서 파티원 수 배지·솔로/파티 필터가 옛 값으로 남는다.
     try {
       await get().loadPartySizes(ocids)
     } catch {
       // 파티 설정 로드 실패는 조용히 넘긴다(스케줄 표시·저장 완료를 막지 않는다)
     }
+
+    // ADR-097 결정 1~3: 화면 진입 자동 재조회는 데이터가 신선하면 건너뛴다. 판정 근거는 위
+    // 캐시 우선 표시 단계가 이미 읽은 syncedAt 이라 저장소를 다시 읽지 않는다(결정 4).
+    if (
+      options?.auto === true &&
+      hasSyncAttemptedThisRun() &&
+      isSyncFresh(
+        cachedCharacters.map((view) => view.syncedAt),
+        ocids.length,
+        new Date(),
+      )
+    ) {
+      // set 을 두 번 하지 않는다 — loading 을 거치면 건너뛰는 진입에서 로딩이 한 프레임 번쩍인다.
+      // isStale 은 false 다(결정 5): 재검증이 오지 않기로 결정된 값이라 "오래된 데이터"가 아니고,
+      // 그 표식을 남기면 탭을 옮길 때마다 스탈 토스트가 뜬다. syncedAt 은 캐시 값 그대로 둔다.
+      set({
+        status: 'loaded',
+        characters: await sortByCachedLevel(
+          cachedCharacters.map((view) => ({ ...view, isStale: false })),
+        ),
+        error: null,
+        manualTrackedByOcid,
+      })
+      return
+    }
+
+    set({ status: 'loading', characters: await sortByCachedLevel(cachedCharacters), manualTrackedByOcid })
 
     let results: Awaited<ReturnType<typeof syncSchedules>>
     try {
