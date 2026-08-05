@@ -7,7 +7,8 @@
       "name": "sync-freshness",
       "status": "completed",
       "started_at": "2026-08-06T03:20:20+0900",
-      "summary": "src/lib/sync-freshness.ts 신설 — SYNC_TTL_MS = 10 * 60 * 1000 과 isSyncFresh(syncedAts: readonly (string | null)[], trackedCount: number, now: Date): boolean (가장 오래된 값 기준, 캐시 수 불일치·null·파싱 불가·경계·미래 시각은 전부 만료). 무의존 순수 모듈, 테스트 9케이스"
+      "summary": "src/lib/sync-freshness.ts 신설 — SYNC_TTL_MS = 10 * 60 * 1000 과 isSyncFresh(syncedAts: readonly (string | null)[], trackedCount: number, now: Date): boolean (가장 오래된 값 기준, 캐시 수 불일치·null·파싱 불가·경계·미래 시각은 전부 만료). 무의존 순수 모듈, 테스트 9케이스",
+      "completed_at": "2026-08-06T03:22:48+0900"
     },
     {
       "step": 1,
