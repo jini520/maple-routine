@@ -2,13 +2,48 @@
   "project": "메이플 루틴",
   "phase": "sync-ttl-gate",
   "steps": [
-    { "step": 0, "name": "sync-freshness", "status": "pending" },
-    { "step": 1, "name": "sync-run-flag", "status": "pending" },
-    { "step": 2, "name": "content-gate", "status": "pending" },
-    { "step": 3, "name": "boss-gate", "status": "pending" },
-    { "step": 4, "name": "profit-gate", "status": "pending" },
-    { "step": 5, "name": "basic-piggyback", "status": "pending" },
-    { "step": 6, "name": "profit-profile-reread", "status": "pending" },
-    { "step": 7, "name": "docs-status", "status": "pending" }
-  ]
+    {
+      "step": 0,
+      "name": "sync-freshness",
+      "status": "completed",
+      "started_at": "2026-08-06T03:20:20+0900",
+      "summary": "src/lib/sync-freshness.ts 신설 — SYNC_TTL_MS = 10 * 60 * 1000 과 isSyncFresh(syncedAts: readonly (string | null)[], trackedCount: number, now: Date): boolean (가장 오래된 값 기준, 캐시 수 불일치·null·파싱 불가·경계·미래 시각은 전부 만료). 무의존 순수 모듈, 테스트 9케이스"
+    },
+    {
+      "step": 1,
+      "name": "sync-run-flag",
+      "status": "pending"
+    },
+    {
+      "step": 2,
+      "name": "content-gate",
+      "status": "pending"
+    },
+    {
+      "step": 3,
+      "name": "boss-gate",
+      "status": "pending"
+    },
+    {
+      "step": 4,
+      "name": "profit-gate",
+      "status": "pending"
+    },
+    {
+      "step": 5,
+      "name": "basic-piggyback",
+      "status": "pending"
+    },
+    {
+      "step": 6,
+      "name": "profit-profile-reread",
+      "status": "pending"
+    },
+    {
+      "step": 7,
+      "name": "docs-status",
+      "status": "pending"
+    }
+  ],
+  "created_at": "2026-08-06T03:20:20+0900"
 }
