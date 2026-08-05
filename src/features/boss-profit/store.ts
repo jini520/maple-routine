@@ -29,6 +29,8 @@ import { getTrackingMode } from '../../storage/tracking-mode'
 import { type BossCycle } from '../../types'
 import { compareByName } from '../onboarding/representative-character'
 import { syncSchedules, toScheduleSyncError, type ScheduleSyncError } from '../schedule-sync/schedule-sync'
+import { hasSyncAttemptedThisRun } from '../schedule-sync/sync-run-state'
+import { isSyncFresh } from '../../lib/sync-freshness'
 import {
   appendRecordOnlyRows,
   buildBossProfitRow,
@@ -75,6 +77,15 @@ export interface BossProfitWeeklySubtotal {
 }
 
 export type BossProfitStatus = 'idle' | 'loading' | 'loaded' | 'error'
+
+// ADR-097 결정 4: "강제"가 기본값이고 게이트가 예외다. force 인자를 두면 강제해야 할 호출부를
+// 하나라도 빠뜨리는 순간 그 자리가 조용히 게이트에 걸리므로, 자동 진입 경로인 loadTrackedOcids()만
+// auto: true 를 넘긴다. 화면(헤더 버튼·당겨서 새로고침·재시도)은 인자를 안 넘겨 자동으로 강제 경로다.
+// 컨텐츠·보스 스케줄러 스토어와 같은 이름·같은 모양이다 — 이 스토어의 refresh 는 onProgress 를
+// 받지 않는다는 기존 차이만 그대로 둔다([[ADR-072]] 결정 3).
+export interface RefreshOptions {
+  auto?: boolean
+}
 
 export interface BossProfitState {
   status: BossProfitStatus
@@ -126,7 +137,7 @@ export interface BossProfitState {
 
 export interface BossProfitStore extends BossProfitState {
   loadTrackedOcids(): Promise<void>
-  refresh(ocids: string[]): Promise<void>
+  refresh(ocids: string[], options?: RefreshOptions): Promise<void>
   setTab(tab: BossCycle): Promise<void>
   goToPreviousPeriod(): Promise<void>
   goToNextPeriod(): Promise<void>
@@ -543,11 +554,12 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     const ocids = await getTrackedCharacterOcids()
     set({ trackedOcids: ocids })
     if (ocids !== null) {
-      await get().refresh(ocids)
+      // ADR-097 결정 4: 자동 진입 경로는 여기 하나뿐이라 게이트를 놓칠 자리가 생기지 않는다.
+      await get().refresh(ocids, { auto: true })
     }
   },
 
-  async refresh(ocids) {
+  async refresh(ocids, options) {
     const myGeneration = ++requestGeneration
     const tab = get().tab
     const now = new Date()
@@ -633,29 +645,50 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     // 다만 기록이 없는 조합에 대한 자동 기록(upsert)은 이 단계에서 하지 않는다. 낡은
     // 캐시를 기준으로 잘못된 파티원 수를 기록해버리는 걸 막기 위해, 자동 기록은 지금처럼
     // 실제 재검증(syncSchedules) 이후에만 수행한다.
-    const cachedRows = (
-      await Promise.all(
-        ocids.map(async (ocid): Promise<BossProfitRow[]> => {
-          const cached = await getCachedSchedulerState(ocid)
-          if (cached === null) {
-            return []
-          }
-          // 자동 모드: 완료된 보스뿐 아니라 등록만 되고 아직 처치 전인 보스도 미완료 placeholder로 함께
-          // 보여준다(ADR-032) — selectBossProfitBosses가 그룹(같은 apiName)당 "실제로 처치한"
-          // 난이도(ownComplete)를 우선하고, 없으면 등록 난이도를 미완료 placeholder로 대신
-          // 고른다. boss-scheduler의 selectDisplayBosses(등록 여부 우선)와 달리, 등록 난이도와
-          // 실제 처치 난이도가 다를 수 있어([[ADR-031]]) 가격 계산에는 반드시 실제 처치 난이도를
-          // 써야 한다. 수동 모드는 사용자 멤버십을 병합해 표시한다(ADR-035 결정 21).
-          const displayBosses = selectProfitDisplayBosses(cached.state.bossContents, mode, manualItemsByOcid.get(ocid) ?? [])
-          const profile: CharacterProfileInfo = {
-            characterName: cached.state.characterName,
-            imageUrl: imageUrlByOcid.get(ocid) ?? null,
-            world: worldByOcid.get(ocid) ?? null,
-          }
-          return displayBosses.map((boss) => buildBossProfitRow(ocid, profile, boss, now))
-        }),
-      )
-    ).flat()
+    // ADR-097 결정 4: 재조회 게이트의 판정값(syncedAt)도 이 단계에서 함께 모은다 — 이 조회가
+    // 이미 추적 캐릭터 전원의 캐시 엔트리를 읽으므로 판정용 저장소 조회가 0회다. **캐릭터 단위**
+    // 배열이다: 한 캐릭터가 여러 행을 만들므로 행 배열로 세면 개수가 틀어진다.
+    const cachedByOcid = await Promise.all(
+      ocids.map(async (ocid): Promise<{ syncedAt: string | null; rows: BossProfitRow[] }> => {
+        const cached = await getCachedSchedulerState(ocid)
+        if (cached === null) {
+          return { syncedAt: null, rows: [] }
+        }
+        // 자동 모드: 완료된 보스뿐 아니라 등록만 되고 아직 처치 전인 보스도 미완료 placeholder로 함께
+        // 보여준다(ADR-032) — selectBossProfitBosses가 그룹(같은 apiName)당 "실제로 처치한"
+        // 난이도(ownComplete)를 우선하고, 없으면 등록 난이도를 미완료 placeholder로 대신
+        // 고른다. boss-scheduler의 selectDisplayBosses(등록 여부 우선)와 달리, 등록 난이도와
+        // 실제 처치 난이도가 다를 수 있어([[ADR-031]]) 가격 계산에는 반드시 실제 처치 난이도를
+        // 써야 한다. 수동 모드는 사용자 멤버십을 병합해 표시한다(ADR-035 결정 21).
+        const displayBosses = selectProfitDisplayBosses(cached.state.bossContents, mode, manualItemsByOcid.get(ocid) ?? [])
+        const profile: CharacterProfileInfo = {
+          characterName: cached.state.characterName,
+          imageUrl: imageUrlByOcid.get(ocid) ?? null,
+          world: worldByOcid.get(ocid) ?? null,
+        }
+        return {
+          syncedAt: cached.syncedAt,
+          rows: displayBosses.map((boss) => buildBossProfitRow(ocid, profile, boss, now)),
+        }
+      }),
+    )
+    const cachedRows = cachedByOcid.flatMap((entry) => entry.rows)
+
+    // ADR-097 결정 1~3: 화면 진입 자동 재조회는 데이터가 신선하면 건너뛴다. 캐시가 없는 캐릭터는
+    // 여기서 빠지므로 isSyncFresh 가 개수 불일치로 만료 판정한다(새 캐릭터가 빈 채 남지 않는다).
+    const cachedSyncedAts = cachedByOcid
+      .map((entry) => entry.syncedAt)
+      .filter((syncedAt): syncedAt is string => syncedAt !== null)
+    const skipSync =
+      options?.auto === true && hasSyncAttemptedThisRun() && isSyncFresh(cachedSyncedAts, ocids.length, now)
+    // 결정 5: 건너뛴 진입의 "n분 전"은 판정에 쓴 **가장 오래된 캐시 syncedAt** 이다 — 지금 시각으로
+    // 채우면 하지 않은 동기화를 했다고 말하게 되고, 그대로 두면(null) 신선한 데이터를 보여주면서
+    // "동기화 기록 없음"이라 말하게 된다.
+    const oldestCachedSyncedAt = cachedSyncedAts.reduce<string | null>(
+      (oldest, syncedAt) =>
+        oldest === null || new Date(syncedAt).getTime() < new Date(oldest).getTime() ? syncedAt : oldest,
+      null,
+    )
 
     const cachedPeriodKeys = Array.from(new Set(cachedRows.map((row) => row.periodKey)))
     const cachedRecords =
@@ -680,6 +713,19 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     // 갱신은 그대로 한다(동기화가 실패해도 현재 기간으로 돌아갔을 때 캐시 우선 표시가 유지돼야 한다).
     if (refreshInPlace) {
       if (myGeneration !== requestGeneration) return
+      // ADR-097: 건너뛰는 진입도 이 분기의 규약을 그대로 따른다 — 화면 반영은 loadPeriod가 하고
+      // (그 함수가 status/rows/periodState를 정한다) 여기서는 실패 표식만 비운다. 건너뛰는 것은
+      // syncSchedules(와 그에 딸린 자동 기록)뿐이고, loadPeriod의 기록 조회·백필 규칙은 무변경이다.
+      if (skipSync) {
+        set({
+          error: null,
+          staleCharacterNames: [],
+          characterIssues: {},
+          lastSyncedAt: oldestCachedSyncedAt,
+        })
+        await loadPeriod(set, tab, viewedPeriodKey, ocids, now, myGeneration)
+        return
+      }
       set({ status: 'loading', error: null, staleCharacterNames: [], characterIssues: {} })
     } else {
       // monthly 탭의 주차별 합계도 캐시 단계에서 미리 채운다 — 지난 주차 합계는 로컬 기록
@@ -693,9 +739,11 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
 
       // 바로 위 cachedRecords 와 **같은 게이트**를 쓴다 — 캐시 단계가 그릴 것이 없으면 총 수익
       // 헤드라인도 없으므로 그 비교 기준을 기다릴 이유가 없다(값 자체는 아래 동기화 완료 단계가 쓴다).
+      // ADR-097: 건너뛰는 진입에는 이 값을 다시 채울 동기화 완료 단계가 없다 — 캐시 행이 없어도
+      // (예: 주간 리셋 직후) 직전 기간 합계를 읽어야 증감 칩이 0으로 굳지 않는다.
       const [cachedDropsByRowKey, previousPeriodTotalMeso] = await Promise.all([
         loadDropsByRowKey(ocids, cachedMergedRows, now),
-        cachedRows.length > 0 ? previousPeriodTotalPromise : Promise.resolve(0),
+        cachedRows.length > 0 || skipSync ? previousPeriodTotalPromise : Promise.resolve(0),
       ])
 
       // 이 호출보다 나중에 시작된 refresh/setTab/goToXPeriod가 이미 있다면(연타 등) 이 시점의
@@ -704,7 +752,9 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
       if (myGeneration !== requestGeneration) return
 
       set({
-        status: 'loading',
+        // ADR-097: 건너뛰는 진입은 이 set 하나로 마감한다 — loading을 거쳐 두 번 set 하면
+        // 로딩이 한 프레임 번쩍인다. 이 분기가 이미 화면에 필요한 값을 전부 채운다.
+        status: skipSync ? 'loaded' : 'loading',
         periodKey: currentPeriodKey,
         rows: filterRowsForTab(cachedMergedRows, tab, currentPeriodKey),
         loadedTab: tab,
@@ -718,7 +768,9 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
         error: null,
         staleCharacterNames: [],
         characterIssues: {},
+        ...(skipSync ? { lastSyncedAt: oldestCachedSyncedAt } : {}),
       })
+      if (skipSync) return
     }
 
     let results: Awaited<ReturnType<typeof syncSchedules>>

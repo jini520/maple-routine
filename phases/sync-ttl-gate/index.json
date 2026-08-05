@@ -37,7 +37,10 @@
     {
       "step": 4,
       "name": "profit-gate",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-06T03:34:33+0900",
+      "summary": "boss-profit/store.ts — refresh(ocids, options?: RefreshOptions{auto?})로 확장하고(onProgress 없는 기존 차이 유지) loadTrackedOcids()만 { auto: true }, BossProfitScreen.tsx 무변경. 판정값은 캐시 우선 표시 단계에서 캐릭터 단위로 모은 syncedAt(cachedByOcid)이고 now 는 refresh 가 이미 만든 값. 마감은 두 분기 — refreshInPlace=false 는 기존 캐시 set 하나에 status:'loaded' + lastSyncedAt 을 얹어 한 번만 set 하고 반환(loading 경유 금지), refreshInPlace=true 는 세대 가드 뒤 error/staleCharacterNames/characterIssues/lastSyncedAt 만 set 하고 loadPeriod(보던 기간)에 화면 반영을 넘긴다. lastSyncedAt 은 '판정에 쓴 가장 오래된 캐시 syncedAt'(지금 시각 아님, 두 분기 공통). 자동 기록(upsert)은 조기 반환으로 자연히 건너뛴다(ADR-017·ADR-067 결정 7 유지). 캐시 행이 없어도 건너뛸 땐 직전 기간 합계를 읽는다(뒤에 고칠 단계가 없다). 테스트 9케이스 신규(총 98), docs/features/boss-profit.md 에 lastSyncedAt 규칙 한 줄 추가",
+      "completed_at": "2026-08-06T03:42:10+0900"
     },
     {
       "step": 5,
