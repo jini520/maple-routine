@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Castle, Flag, LayoutGrid, MapPin, Medal, Sparkles, Swords, type LucideIcon } from 'lucide-react'
 import { CONTENT_TEMPLATE } from '../../lib/scheduler-content-template'
@@ -10,7 +10,7 @@ import {
 } from '../../lib/content-category'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { CharacterSelectDropdown } from '../../components/molecules/CharacterSelectDropdown/CharacterSelectDropdown'
-import { useContentSchedulerStore } from '../../features/content-scheduler/store'
+import { useContentSchedulerStore, type ContentTab } from '../../features/content-scheduler/store'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { useToastStore } from '../../features/toast/store'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
@@ -49,14 +49,18 @@ export function ContentManageScreen(): React.JSX.Element {
     loadTrackedOcids,
     addManualContent,
     removeManualContent,
-    // ADR-096 결정 2·4: 탭과 선택 캐릭터를 스케줄러와 공유한다 — 두 화면이 서로 다른 탭·캐릭터를
-    // 보고 있을 수 있는 상태를 만들지 않는다.
-    activeTab,
-    setActiveTab,
+    // ADR-096 결정 2: 진입 시점의 스케줄러 탭을 이어받는다(일간에서 들어오면 일간).
+    activeTab: schedulerTab,
+    // ADR-096 결정 4: 선택 캐릭터는 스케줄러와 공유한다 — 탭과 달리 "지금 누구를 보고 있는가"는
+    // 두 화면이 갈라지면 안 되는 값이다.
     selectCharacter,
   } = useContentSchedulerStore()
   const { mode } = useTrackingModeStore()
   const navigate = useNavigate()
+  // ADR-096 결정 2: 이어받는 것은 **진입 시점 한 번뿐**이고, 이 화면에서의 탭 전환은 스케줄러로
+  // 되돌리지 않는다. 되돌리면 잠깐 다른 탭을 뒤져본 것 때문에 돌아갔을 때 보던 화면이 바뀌어,
+  // 애초에 고치려던 문제("보던 자리를 잃는다")를 반대 방향으로 다시 만든다.
+  const [activeTab, setActiveTab] = useState<ContentTab>(schedulerTab)
 
   // 스케줄러를 거치지 않고 직접 진입(새로고침 등)해도 스토어가 채워지도록 동일하게 로드한다.
   useEffect(() => {

@@ -8,7 +8,7 @@
 
 ## 정책
 - 화면 안에 **주간 탭**(`cycle: bossWeekly`) + **월간 탭**(`cycle: bossMonthly`, 현재 검은마법사 1종). **일간 탭 없음** — `bossDaily` 는 [[ADR-007]] 정책대로 계속 무시.
-- **탭 선택과 솔로/파티 필터는 스토어가 소유한다**([[ADR-096]]) — `features/boss-scheduler` 의 `activeTab`·`weeklyFilter`·`monthlyFilter`. 화면 로컬 state 가 아니므로 다른 탭에 다녀와도 유지되고, 관리 페이지(`/boss/manage`)가 **같은 탭 값을 읽어** 보던 탭 그대로 열린다. 앱 재시작 후에는 기본값(`'weekly'`·`'all'`)으로 돌아간다(영속화하지 않음).
+- **탭 선택과 솔로/파티 필터는 스토어가 소유한다**([[ADR-096]]) — `features/boss-scheduler` 의 `activeTab`·`weeklyFilter`·`monthlyFilter`. 화면 로컬 state 가 아니므로 다른 탭에 다녀와도 유지되고, 관리 페이지(`/boss/manage`)가 **진입 시점에 탭 값을 이어받아** 보던 탭 그대로 열린다(한 방향 — 관리 페이지의 탭 전환은 이 값을 바꾸지 않는다). 앱 재시작 후에는 기본값(`'weekly'`·`'all'`)으로 돌아간다(영속화하지 않음).
 - 컨텐츠 스케줄러와 동일하게 "캐릭터 관리"로 고른 캐릭터만 표시하고 API 호출도 그 캐릭터로만 제한. 추적 목록 `trackedCharacters:boss` 는 컨텐츠와 **독립**(예: 컨텐츠에서 안 고른 캐릭터를 보스에서 고를 수 있음). 피커 UI는 동일 컴포넌트 공유([[ADR-015]]).
 - 동기화 실패 표시도 컨텐츠 스케줄러와 **동일**([[ADR-063]]·[[ADR-083]], 정책 원문은 [content-scheduler.md](./content-scheduler.md) "동기화 실패 표시"): 전체 조회 실패도 **캐릭터별 실패(`selected.error`)도** 헤더 아래 인라인 문단이 아니라 **토스트**로 알리고, 원인별로 액션이 갈린다(`invalidApiKey` → 설정 열기 · `network` → 다시 시도 · `rateLimited`·`characterUnavailable` → 없음).
 - 피커 후보 목록 로딩도 컨텐츠 스케줄러와 **동일**([[ADR-053]], 정책 원문은 [content-scheduler.md](./content-scheduler.md) "캐릭터 관리 피커 — 후보 목록 로딩"): 활성(`access_flag: true`)이 확인된 캐릭터만 표시, 표시할 캐시가 없으면 스피너 → 조회 완료 후 한 번에 목록(캐시가 있으면 기존 [[ADR-016]] 즉시 표시 + patch 유지), 조회 후 목록이 비면 "활성 캐릭터 없음"과 "조회 실패"를 구분해 안내.
@@ -65,7 +65,7 @@ rounded-full bg-surface-2 text-text text-xs font-semibold px-2 py-1, flex items-
 공용 `EmptyState`(inline, `Swords`). 수동 모드는 "추적할 주간/월간 보스가 없습니다" + CTA "보스 관리" → `/boss/manage`, 자동 모드는 "등록된 주간/월간 보스가 없습니다"(CTA 없음 — 목적지가 앱 밖). 주간/월간 문구를 공유하지 않는다. 레시피는 [design-system.md](../foundation/design-system.md).
 
 ### 보스 관리 페이지 `/boss/manage` ([[ADR-035]] 결정 18)
-두 모드 공통 진입("보스 관리"). `PartyManagementModal` 을 완전 대체(파티원 수도 보스 단위라 추적 편집과 같은 행에 합침). 주간/월간 탭, 레이아웃·행 스타일은 컨텐츠 관리 페이지와 동일 — 헤더 캐릭터 드롭다운(`CharacterSelectDropdown size="compact"`)과 스케줄러 탭 승계도 같다([[ADR-096]] 결정 2·4). 주간에서 들어오면 주간, 월간에서 들어오면 월간.
+두 모드 공통 진입("보스 관리"). `PartyManagementModal` 을 완전 대체(파티원 수도 보스 단위라 추적 편집과 같은 행에 합침). 주간/월간 탭, 레이아웃·행 스타일은 컨텐츠 관리 페이지와 동일 — 헤더 캐릭터 드롭다운(`CharacterSelectDropdown size="compact"`)과 스케줄러 탭 승계도 같다([[ADR-096]] 결정 2·4). 주간에서 들어오면 주간, 월간에서 들어오면 월간이고, 여기서 탭을 바꿔도 스케줄러는 그대로다.
 - **목록 구성** ([[ADR-056]], 2026-07-29): 참조표 전체가 아니라 **이 캐릭터가 고를 수 있는 것만** 나열한다. ① 미출시 보스(`status: "unreleased"`, 현재 벨로나) 제외 — 보스명이 아니라 `status` 로 거르므로 출시 시 데이터에서 그 필드만 지우면 된다. ② 시즌 보스(eventWeekly)는 **선택 캐릭터의 월드가 챌린저스(1~4)일 때만** 표시(`isChallengersWorld`, 보스 스케줄러 시즌 배지와 같은 판정). 월드 미상(구버전 캐시)이면 숨긴다. 두 모드 공통이며, 12개 한도의 시즌 보스 **카운트 제외** 규칙과는 별개다(챌린저스 월드에선 목록엔 나오고 카운트엔 안 들어간다).
 - **수동 모드**: 위 규칙으로 걸러진 보스 나열(주간=weekly+시즌, 월간=monthly). 행 = 체크(추적, 탭 즉시 저장) + 체크된 행에 난이도 뱃지 목록(`boss-crystal-prices.json` 지원 난이도, 미선택 `opacity-40`)·파티 스테퍼. 난이도 변경 시 (보스,난이도) 쌍 교체.
 - **자동 모드**: 같은 행 구조에서 체크박스만 없음. 상단 안내("자동 모드에서는 목록이 게임 등록 기준이에요 — 파티 인원만 설정") + "등록된 보스만 보기" 토글(기본 ON, [[ADR-031]] 결정 4). 난이도는 등록 난이도 기본 선택.

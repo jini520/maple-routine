@@ -132,16 +132,37 @@ describe('ADR-096: 컨텐츠 스케줄러 탭 상태', () => {
     expect(screen.queryByRole('button', { name: /무릉도장/ })).not.toBeInTheDocument()
   })
 
-  it('관리 페이지에서 탭을 바꾸고 돌아가면 스케줄러도 그 탭이다', () => {
+  // ADR-096 결정 2: 이어받기는 스케줄러 → 관리 한 방향뿐이다. 되돌리면 관리 페이지에서 잠깐
+  // 다른 탭을 뒤져본 것 때문에 돌아갔을 때 보던 화면이 바뀌어, 이 이슈가 고치려던 문제를
+  // 반대 방향으로 다시 만든다.
+  it('관리 페이지에서 탭을 바꿔도 스케줄러는 진입 시점 탭 그대로다', () => {
     useTrackingModeStore.setState({ mode: 'manual' })
 
     const manage = renderManage()
+    // 진입 시점은 일간(seedStore 기본값). 여기서 주간으로 옮겨 본다.
     fireEvent.click(screen.getByRole('button', { name: '주간' }))
+    expect(screen.getByRole('button', { name: /무릉도장/ })).toBeInTheDocument()
     manage.unmount()
 
     renderScheduler()
 
-    expect(screen.getByText('추적할 주간 컨텐츠가 없습니다')).toBeInTheDocument()
+    expect(screen.getByText('추적할 일간 컨텐츠가 없습니다')).toBeInTheDocument()
+    expect(screen.queryByText('추적할 주간 컨텐츠가 없습니다')).not.toBeInTheDocument()
+  })
+
+  it('관리 페이지를 다시 열면 그때의 스케줄러 탭을 새로 이어받는다', () => {
+    useTrackingModeStore.setState({ mode: 'manual' })
+
+    // 관리 페이지에서 주간으로 옮겼다 나온다 — 스케줄러는 일간 그대로다.
+    const firstVisit = renderManage()
+    fireEvent.click(screen.getByRole('button', { name: '주간' }))
+    firstVisit.unmount()
+
+    // 다시 들어가면 직전 방문의 주간이 아니라 스케줄러의 일간을 이어받는다.
+    renderManage()
+
+    expect(screen.getByRole('button', { name: /소멸의 여로 조사/ })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /무릉도장/ })).not.toBeInTheDocument()
   })
 })
 

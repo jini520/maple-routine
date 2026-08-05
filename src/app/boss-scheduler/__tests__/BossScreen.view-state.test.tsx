@@ -127,6 +127,22 @@ describe('ADR-096: 보스 스케줄러 탭 상태', () => {
 
     expect(screen.queryByRole('button', { name: /검은마법사/ })).not.toBeInTheDocument()
   })
+
+  // ADR-096 결정 2: 이어받기는 스케줄러 → 관리 한 방향뿐이다(컨텐츠 쪽과 같은 규칙).
+  it('관리 페이지에서 탭을 바꿔도 스케줄러는 진입 시점 탭 그대로다', () => {
+    useTrackingModeStore.setState({ mode: 'manual' })
+
+    const manage = renderManage()
+    // 진입 시점은 주간(seedStore 기본값). 여기서 월간으로 옮겨 본다.
+    fireEvent.click(screen.getByRole('button', { name: '월간' }))
+    expect(screen.getByRole('button', { name: /검은마법사/ })).toBeInTheDocument()
+    manage.unmount()
+
+    renderScheduler()
+
+    expect(screen.getByText('추적할 주간 보스가 없습니다')).toBeInTheDocument()
+    expect(useBossSchedulerStore.getState().activeTab).toBe('weekly')
+  })
 })
 
 describe('ADR-096 결정 1: 솔로/파티 필터도 함께 유지된다', () => {
