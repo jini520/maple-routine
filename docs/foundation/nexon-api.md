@@ -2,7 +2,7 @@
 
 > **범위**: Nexon Open API 호출·인증·엔드포인트·정규화·호출 제한. 별도 서버/프록시 없이 사용자 개인 키로 기기에서 직접 호출한다([[ADR-003]], [[ADR-007]]).
 > **관련 소스**: `nexon/client` · `nexon/character` · `nexon/schedule`(client/normalize) · `lib/boss-matching`.
-> **관련 ADR**: [[ADR-007]] [[ADR-003]] [[ADR-006]] [[ADR-067]]. **관련 문서**: [architecture.md](./architecture.md), [error-resilience.md](./error-resilience.md), [features/content-scheduler.md](../features/content-scheduler.md), [features/boss-scheduler.md](../features/boss-scheduler.md).
+> **관련 ADR**: [[ADR-007]] [[ADR-003]] [[ADR-006]] [[ADR-067]] [[ADR-095]]. **관련 문서**: [architecture.md](./architecture.md), [error-resilience.md](./error-resilience.md), [features/content-scheduler.md](../features/content-scheduler.md), [features/boss-scheduler.md](../features/boss-scheduler.md).
 
 ## 클라이언트·인증
 - 호출 도메인은 **`https://open.api.nexon.com/`**(문서 사이트 `openapi.nexon.com` 과 다름). 모든 요청 헤더에 **`x-nxopen-api-key: <저장된 개인 API 키>`**.
@@ -10,6 +10,16 @@
 - **호출 제한**: 개발 단계 초당 5건/일 1,000건, 서비스 단계 초당 500건/일 2,000만 건. 이 앱은 사용자가 이미 승인받은 **서비스 단계 키**를 쓰므로 개발 단계 상한 검증은 불필요. 여러 캐릭터 동기화 병렬화는 [[ADR-008]] 정정 참고.
 - 별도 서버/프록시 없음 — 키는 기기에만 저장되고 호출도 기기에서 직접 나간다([[ADR-003]]).
 - 이용약관 출처 표기: 영문 원문 **"Data based on NEXON Open API"** 를 **설정 화면 하단**(앱 버전·카피라이트와 함께) 상시 노출([[ADR-007]], 앱 전역 footer는 만들지 않음).
+
+## Analytics 스크립트 (데이터 조회 API 아님, [[ADR-095]])
+- 넥슨이 개발자에게 제공하는 웹 애널리틱스. `index.html` `<head>` 에 한 줄:
+  `<script type="text/javascript" src="https://openapi.nexon.com/js/analytics.js?app_id=322698" async></script>`
+- **위 데이터 조회 API와 도메인이 반대다** — 조회는 `open.api.nexon.com`, 이 스크립트는 **문서 사이트 쪽 `openapi.nexon.com`** 에서 받는다.
+- **경로는 `/js/analytics.js`** — 가이드 본문 예시(`/analytics.js`)와 다르다. 손으로 옮겨 적지 말고 애플리케이션 상세 하단의 구문을 그대로 쓸 것.
+- `app_id` 는 공개 식별자(넥슨 마이 페이지 > 애플리케이션 상세 하단). 사용자 개인 API 키와 층이 다르다 — 그쪽은 기기 보안 영역에만 있다([[ADR-007]]).
+- 지표는 "마이 페이지 > Analytics 대시보드". 연동 성립까지 **최대 24시간**, 성립 여부는 애플리케이션 상세 하단의 "연동 완료" 표기로 본다.
+- **앱 코드는 이 기능을 모른다** — `analytics.js` 가 정의하는 전역을 아무도 참조하지 않으므로 오프라인·넥슨 장애 시 조용히 실패하고 끝난다. 참조하기 시작하면 넥슨 도메인 가용성이 앱 동작의 의존성이 된다([[ADR-003]]).
+- **미확인**: 웹뷰 origin(`https://localhost`·`capacitor://localhost`)에서 연동이 성립하는지. 가이드는 "웹 서비스" 기준이고 origin 언급이 없다.
 
 ## 엔드포인트
 - **`GET /maplestory/v1/character/list`** (`nexon/character`): 계정 소속 캐릭터 목록. 캐릭터명+월드 수동 입력 폼은 없다. 응답: `{ account_list: [{ account_id, character_list: [{ ocid, character_name, world_name, character_class, character_level }] }] }`. **하나의 키가 여러 `account_id`(메이플 ID)를 반환할 수 있다**(실측, 2026-07-09) — `account_list.length > 1` 이면 계정 선택 UI. `ocid` 는 길이가 계정마다 다르므로(32~65자 관찰) 불투명 문자열로 다룬다. 키가 등록된 Nexon 계정 캐릭터만 반환(다른 계정은 별도 키 필요).

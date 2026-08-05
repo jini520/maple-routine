@@ -4,6 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>메이플 루틴</title>
+    <!-- 넥슨 Open API Analytics([[ADR-095]]). 앱 코드는 이 스크립트를 모른다 — 전역을 아무도
+         참조하지 않으므로 오프라인·넥슨 장애 시 조용히 실패하고 끝난다. 지표는 넥슨 마이 페이지의
+         Analytics 대시보드에서 본다. `src/__tests__/index-html-analytics.test.ts` 가 이 줄을 지킨다. -->
+    <script type="text/javascript" src="https://openapi.nexon.com/js/analytics.js?app_id=322698" async></script>
   </head>
   <body>
     <!-- 부팅 커버: 리로드(OTA 적용·디버그 초기화)·콜드 스타트의 첫 페인트부터 앱 준비까지 화면 전체를
