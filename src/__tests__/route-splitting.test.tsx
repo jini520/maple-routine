@@ -64,7 +64,7 @@ const emptySchedulerStore = {
   status: 'idle',
   characters: [],
   error: null,
-  trackedOcids: null,
+  trackedOcids: [], // ADR-101: 셸 테스트는 화면을 "읽었고 0명"인 빈 상태로 세운다(null 은 "아직 안 읽음"이라 본 화면이 그려진다)
   loadTrackedOcids: vi.fn(),
   saveTrackedOcids: vi.fn(),
   refresh: vi.fn(),
@@ -79,7 +79,7 @@ vi.mocked(useBossProfitStore).mockReturnValue({
   weeklySubtotals: [],
   error: null,
   staleCharacterNames: [],
-  trackedOcids: null,
+  trackedOcids: [], // ADR-101: 셸 테스트는 화면을 "읽었고 0명"인 빈 상태로 세운다(null 은 "아직 안 읽음"이라 본 화면이 그려진다)
   loadTrackedOcids: vi.fn(),
   refresh: vi.fn(),
   setPartySize: vi.fn(),

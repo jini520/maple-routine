@@ -114,10 +114,10 @@ afterEach(() => {
 })
 
 describe('ContentScreen', () => {
-  it('추적 목록이 null이면 빈 상태 안내만 보인다', async () => {
+  it('추적 목록이 빈 배열이면 빈 상태 안내만 보인다', async () => {
     mockStore({
       status: 'loaded',
-      trackedOcids: null,
+      trackedOcids: [],
       characters: [
         character({
           ocid: 'ocid-1',
@@ -133,10 +133,21 @@ describe('ContentScreen', () => {
     expect(screen.queryByText(/몬스터파크/)).not.toBeInTheDocument()
   })
 
+  // [[ADR-101]] 결정 1: `null` 은 "0명"이 아니라 "저장소를 아직 안 읽었다"다. 둘을 같이 묶으면
+  // 콜드 스타트 첫 페인트가 아직 모르는 사실을 단정한다.
+  it('추적 목록이 null(미로드)이면 빈 상태가 아니라 로딩을 보여준다', async () => {
+    mockStore({ status: 'idle', trackedOcids: null, characters: [] })
+
+    renderContentScreen()
+
+    expect(await screen.findByText(/불러오고 있어요/)).toBeInTheDocument()
+    expect(screen.queryByText('표시할 캐릭터가 없습니다')).not.toBeInTheDocument()
+  })
+
   it('빈 상태에서 중앙 CTA 버튼을 누르면 캐릭터 관리 피커가 열린다', async () => {
     mockStore({
       status: 'loaded',
-      trackedOcids: null,
+      trackedOcids: [],
       characters: [],
     })
     mockedGetCharacterPickerRoster.mockImplementation(async (onUpdate) => {

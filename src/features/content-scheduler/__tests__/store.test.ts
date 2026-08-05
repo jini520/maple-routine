@@ -351,6 +351,31 @@ describe('useContentSchedulerStore', () => {
       expect(useContentSchedulerStore.getState().trackedOcids).toBeNull()
     })
 
+    // [[ADR-101]] 결정 4: 부팅 선하이드레이션과 화면 마운트가 반드시 겹치므로, 동시 호출은
+    // 한 회차로 합친다 — 안 그러면 같은 응답을 두 번 받는다([[ADR-097]] 이 없애려던 낭비).
+    it('loadTrackedOcids를 동시에 두 번 불러도 한 회차만 돈다', async () => {
+      getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
+      syncSchedulesMock.mockResolvedValue([syncResult()])
+
+      await Promise.all([
+        useContentSchedulerStore.getState().loadTrackedOcids(),
+        useContentSchedulerStore.getState().loadTrackedOcids(),
+      ])
+
+      expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
+    })
+
+    // "평생 한 번"이 아니라 "동시에 하나만"이다 — 영구 메모면 진입 재조회의 10분 TTL 이 죽는다.
+    it('앞 회차가 끝난 뒤에 부르면 다시 돈다', async () => {
+      getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
+      syncSchedulesMock.mockResolvedValue([syncResult()])
+
+      await useContentSchedulerStore.getState().loadTrackedOcids()
+      await useContentSchedulerStore.getState().loadTrackedOcids()
+
+      expect(syncSchedulesMock).toHaveBeenCalledTimes(2)
+    })
+
     it('saveTrackedOcids는 storage에 저장하고 trackedOcids 상태를 갱신한 뒤 그 목록으로 refresh를 호출한다', async () => {
       setTrackedCharacterOcidsMock.mockResolvedValue(undefined)
       syncSchedulesMock.mockResolvedValue([syncResult()])

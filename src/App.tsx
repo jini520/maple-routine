@@ -206,6 +206,15 @@ export function AppShell(): React.JSX.Element {
     void startAds()
   }, [])
 
+  // ADR-101 결정 2·6: 탭 스토어를 스플래시가 떠 있는 동안 미리 하이드레이션해, 첫 탭 진입이
+  // 저장소 읽기를 사용자가 보는 앞에서 치르지 않게 한다. **온보딩 완료 상태에서만 돈다** —
+  // `syncSchedules` 는 API 키·계정이 없으면 던지므로, 온보딩 중에 돌리면 스토어가 error 로
+  // 시작하고 토스트까지 울린다. 예열 모듈 자체도 동적 import 다([[ADR-092]]).
+  useEffect(() => {
+    if (status !== 'completed') return
+    void import('./features/prehydrate').then((m) => m.prehydrateTabStores())
+  }, [status])
+
   // ADR-065 결정 3: 캐시 데이터 삭제는 실패해도 리로드가 실행돼 화면 신호가 파괴된다 —
   // 삭제 쪽이 남긴 플래그를 부팅 때 읽어 토스트로 알린다(읽으면서 지우므로 한 번만 뜬다).
   useEffect(() => {

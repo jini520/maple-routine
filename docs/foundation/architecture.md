@@ -2,7 +2,7 @@
 
 > **범위**: 디렉토리 구조·레이어 패턴·시스템 데이터 흐름·상태 관리·네이티브 연동 개요·테스트 전략. 기능별 흐름 세부는 각 `features/*.md`, 에러 처리는 [error-resilience.md](./error-resilience.md), API는 [nexon-api.md](./nexon-api.md).
 > **관련 소스**: `src/` 전체 레이어(`app/` `features/` `storage/` `native/` `nexon/` `components/` `lib/` `types/` `data/`).
-> **관련 ADR**: [[ADR-001]] [[ADR-003]] [[ADR-005]] [[ADR-007]] [[ADR-013]] [[ADR-092]] [[ADR-097]]. **관련 문서**: [nexon-api.md](./nexon-api.md), [error-resilience.md](./error-resilience.md), [../persistence/README.md](../persistence/README.md).
+> **관련 ADR**: [[ADR-001]] [[ADR-003]] [[ADR-005]] [[ADR-007]] [[ADR-013]] [[ADR-092]] [[ADR-097]] [[ADR-101]]. **관련 문서**: [nexon-api.md](./nexon-api.md), [error-resilience.md](./error-resilience.md), [../persistence/README.md](../persistence/README.md).
 
 ## 핵심 규칙 (CRITICAL)
 - `features/*` 코드는 로컬 저장소·네이티브 API에 **직접 접근하지 않는다**. 반드시 `storage/`·`native/` 어댑터를 거친다([[ADR-003]], [[ADR-005]]).
@@ -83,6 +83,11 @@ Feature 단위 구조. 각 `features/*` 폴더가 그 기능의 상태·로직�
 - Nexon 스케줄러 데이터는 사용자 본인 계정 데이터이지만 앱 입장에선 "외부 동기화 읽기 전용 데이터"로 다룬다 — 동기화 상태(로딩/성공/실패)·마지막 동기화 시각·캐시 응답을 `nexon/schedule` 이 노출하고 `storage/` 에 영속화.
 - 전역 클라이언트 상태(현재 선택 캐릭터, 선택 테마, API 키 등록 여부, 타이머 진행 등)는 **Zustand**로 관리([[ADR-009]] 테마 포함).
 - 영속 데이터(API 키·동기화 캐시·보스 기록·드랍 히스토리·선택 테마)는 `storage/` 에 저장하고 앱 시작 시 hydration. 상세 스키마는 [persistence/](../persistence/README.md).
+- **탭 화면 스토어는 부팅 때 미리 하이드레이션한다**([[ADR-101]] 결정 2~6, `features/prehydrate.ts`) — 세 탭 스토어(컨텐츠·보스·보스 수익)의 `loadTrackedOcids()` 를 앱 셸 마운트 직후 백그라운드로 돌린다. 그러지 않으면 탭 첫 진입이 저장소 읽기(Preferences N회 + SQLite 오픈)를 사용자가 보는 앞에서 치러 로딩 프레임이 낀다. 지켜야 하는 성질 넷:
+  - **순차다.** [[ADR-097]] 게이트의 신선도 조건은 앞 회차가 캐시를 **쓴 뒤에야** 참이 되므로, 병렬로 띄우면 셋 다 게이트를 통과해 같은 응답을 3번 받는다.
+  - **동적 `import()` 로 가져온다.** 정적 import 면 스토어·`src/data/*.json` 이 메인 청크로 돌아와 [[ADR-092]] 가 무효가 된다.
+  - **`loadTrackedOcids()` 는 동시 호출을 한 회차로 합친다**(single-flight) — 선하이드레이션과 화면 마운트가 반드시 겹친다. "평생 한 번"이 아니라 "동시에 하나만"이다(영구 메모면 [[ADR-097]] 10분 TTL 이 죽는다).
+  - **온보딩 완료 상태에서만 돈다** — `syncSchedules` 가 API 키·계정 없이 던진다.
 
 ## 네이티브 연동 개요 ([[ADR-001]])
 - `@capacitor/local-notifications`: 일간/주간 미완료 알림 예약([[ADR-004]]).

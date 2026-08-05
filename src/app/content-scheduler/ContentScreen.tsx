@@ -134,7 +134,9 @@ export function ContentScreen(): React.JSX.Element {
     }
   }, [isPickerOpen, rosterReloadNonce])
 
-  const isEmpty = trackedOcids === null || trackedOcids.length === 0
+  // ADR-101 결정 1: `null` 은 "0명"이 아니라 **"저장소를 아직 안 읽었다"** 다. 둘을 `||` 로 묶으면
+  // 콜드 스타트 첫 페인트가 아직 모르는 사실을 단정한다 — 빈 상태는 읽고 확인한 뒤에만 그린다.
+  const isEmpty = trackedOcids !== null && trackedOcids.length === 0
 
   // ADR-072: 목록 최상단에서 당기면 헤더 새로고침 버튼과 같은 재조회가 돈다(제스처는 추가 수단이다).
   // 빈 상태에서는 당길 목록이 없어 끄고(결정 13), 재조회 중에는 새 당김을 시작하지 않는다(결정 12).
