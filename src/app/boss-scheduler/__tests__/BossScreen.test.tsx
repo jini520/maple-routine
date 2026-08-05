@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
+import { useState } from 'react'
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -34,7 +35,9 @@ const mockedUseBossSchedulerStore = vi.mocked(useBossSchedulerStore)
 const mockedGetCharacterPickerRoster = vi.mocked(getCharacterPickerRoster)
 
 function mockStore(overrides: Partial<ReturnType<typeof useBossSchedulerStore>>): void {
-  mockedUseBossSchedulerStore.mockReturnValue({
+  // ADR-096: 탭·필터가 스토어로 올라가 정적 mockReturnValue로는 전환이 렌더에 반영되지 않는다.
+  // 모킹된 훅도 렌더 중에 불리므로 useState로 실물과 같은 "값 + 세터" 쌍을 흉내 낸다.
+  const base = {
     status: 'idle',
     characters: [],
     error: null,
@@ -50,7 +53,28 @@ function mockStore(overrides: Partial<ReturnType<typeof useBossSchedulerStore>>)
     setPartySize: vi.fn(),
     addManualBoss: vi.fn(),
     removeManualBoss: vi.fn(),
+    activeTab: 'weekly' as const,
+    setActiveTab: vi.fn(),
+    weeklyFilter: 'all' as const,
+    setWeeklyFilter: vi.fn(),
+    monthlyFilter: 'all' as const,
+    setMonthlyFilter: vi.fn(),
     ...overrides,
+  } satisfies ReturnType<typeof useBossSchedulerStore>
+
+  mockedUseBossSchedulerStore.mockImplementation(() => {
+    const [activeTab, setActiveTab] = useState(base.activeTab)
+    const [weeklyFilter, setWeeklyFilter] = useState(base.weeklyFilter)
+    const [monthlyFilter, setMonthlyFilter] = useState(base.monthlyFilter)
+    return {
+      ...base,
+      activeTab,
+      setActiveTab,
+      weeklyFilter,
+      setWeeklyFilter,
+      monthlyFilter,
+      setMonthlyFilter,
+    }
   })
 }
 

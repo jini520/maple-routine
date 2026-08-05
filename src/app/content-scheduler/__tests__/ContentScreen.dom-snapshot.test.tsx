@@ -47,6 +47,10 @@ function mockStore(overrides: Partial<ReturnType<typeof useContentSchedulerStore
     selectCharacter: vi.fn(),
     addManualContent: vi.fn(),
     removeManualContent: vi.fn(),
+    // ADR-096: 탭이 스토어로 올라갔다. 이 파일은 탭을 전환하지 않고 렌더 결과만 보므로
+    // 정적 값으로 충분하다 — 기본값을 빠뜨리면 어느 탭도 활성이 아닌 DOM이 나온다.
+    activeTab: 'daily' as const,
+    setActiveTab: vi.fn(),
     ...overrides,
   })
 }

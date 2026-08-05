@@ -2,12 +2,13 @@
 
 > **범위**: 주간/월간 보스 진행 상태, 캐릭터 추적, 파티 관리, 보스 카드·난이도 뱃지, 솔로/파티 필터, 보스 관리 페이지. 캐릭터 관리 피커·탭 토글은 [../foundation/design-system.md](../foundation/design-system.md), 수동/자동 트래킹 전역 토글은 [settings.md](./settings.md).
 > **관련 소스**: `app/boss-scheduler/`(`BossScreen.tsx` — `BossCard`·`DifficultyBadge` export) · `features/boss-scheduler/` · `storage/boss-party-settings`(SQLite `boss_party_settings`) · `lib/boss-icons` · `lib/boss-matching` · `PartyManagementModal` · `/boss/manage` · `src/data/weekly-bosses.json`·`boss-crystal-prices.json`·`boss-portrait-crops.json`.
-> **관련 ADR**: [[ADR-013]] [[ADR-012]] [[ADR-018]] [[ADR-019]] [[ADR-035]] [[ADR-031]] [[ADR-006]] [[ADR-053]] [[ADR-055]] [[ADR-056]] [[ADR-072]] [[ADR-073]] [[ADR-074]]. **관련 문서**: [../foundation/architecture.md](../foundation/architecture.md), [../foundation/nexon-api.md](../foundation/nexon-api.md), [../foundation/game-data.md](../foundation/game-data.md), [boss-profit.md](./boss-profit.md).
+> **관련 ADR**: [[ADR-013]] [[ADR-012]] [[ADR-018]] [[ADR-019]] [[ADR-035]] [[ADR-031]] [[ADR-006]] [[ADR-053]] [[ADR-055]] [[ADR-056]] [[ADR-072]] [[ADR-073]] [[ADR-074]] [[ADR-096]]. **관련 문서**: [../foundation/architecture.md](../foundation/architecture.md), [../foundation/nexon-api.md](../foundation/nexon-api.md), [../foundation/game-data.md](../foundation/game-data.md), [boss-profit.md](./boss-profit.md).
 
 **관리 화면 토글 저장 실패 ([[ADR-065]] 결정 4)**: 체크박스가 그 자리에 남아 맥락이 있으므로 토스트로 알린다 — 문구는 컨텐츠·보스 공통으로 "추적 목록을 저장하지 못했습니다" 하나다(같은 화면에서 무엇을 토글했는지는 사용자가 안다). 재시도 액션은 두지 않는다 — 다시 탭하면 되는 일이라 중복이다.
 
 ## 정책
 - 화면 안에 **주간 탭**(`cycle: bossWeekly`) + **월간 탭**(`cycle: bossMonthly`, 현재 검은마법사 1종). **일간 탭 없음** — `bossDaily` 는 [[ADR-007]] 정책대로 계속 무시.
+- **탭 선택과 솔로/파티 필터는 스토어가 소유한다**([[ADR-096]]) — `features/boss-scheduler` 의 `activeTab`·`weeklyFilter`·`monthlyFilter`. 화면 로컬 state 가 아니므로 다른 탭에 다녀와도 유지되고, 관리 페이지(`/boss/manage`)가 **같은 탭 값을 읽어** 보던 탭 그대로 열린다. 앱 재시작 후에는 기본값(`'weekly'`·`'all'`)으로 돌아간다(영속화하지 않음).
 - 컨텐츠 스케줄러와 동일하게 "캐릭터 관리"로 고른 캐릭터만 표시하고 API 호출도 그 캐릭터로만 제한. 추적 목록 `trackedCharacters:boss` 는 컨텐츠와 **독립**(예: 컨텐츠에서 안 고른 캐릭터를 보스에서 고를 수 있음). 피커 UI는 동일 컴포넌트 공유([[ADR-015]]).
 - 동기화 실패 표시도 컨텐츠 스케줄러와 **동일**([[ADR-063]]·[[ADR-083]], 정책 원문은 [content-scheduler.md](./content-scheduler.md) "동기화 실패 표시"): 전체 조회 실패도 **캐릭터별 실패(`selected.error`)도** 헤더 아래 인라인 문단이 아니라 **토스트**로 알리고, 원인별로 액션이 갈린다(`invalidApiKey` → 설정 열기 · `network` → 다시 시도 · `rateLimited`·`characterUnavailable` → 없음).
 - 피커 후보 목록 로딩도 컨텐츠 스케줄러와 **동일**([[ADR-053]], 정책 원문은 [content-scheduler.md](./content-scheduler.md) "캐릭터 관리 피커 — 후보 목록 로딩"): 활성(`access_flag: true`)이 확인된 캐릭터만 표시, 표시할 캐시가 없으면 스피너 → 조회 완료 후 한 번에 목록(캐시가 있으면 기존 [[ADR-016]] 즉시 표시 + patch 유지), 조회 후 목록이 비면 "활성 캐릭터 없음"과 "조회 실패"를 구분해 안내.
@@ -57,14 +58,14 @@ rounded-full bg-surface-2 text-text text-xs font-semibold px-2 py-1, flex items-
 파티 관리 모달·보스 관리 페이지에서 그대로 재사용(새 뱃지 스타일 신설 금지).
 
 ### 솔로/파티 서브 필터 ([[ADR-019]])
-주간/월간 탭 행 바로 아래 한 줄. 탭 토글 pill 재사용하되 한 단계 낮은 위계라 `text-xs`. 옵션 전체/솔로/파티(순서 고정). 현재 활성 탭(주간/월간) 안에서만 적용, 두 탭의 필터 선택 상태는 독립. `partySizes` 맵 기반 클라이언트 필터(설정 없음=솔로 포함), API 재호출 없음. 수동 모드에서도 동일 동작([[ADR-035]]).
+주간/월간 탭 행 바로 아래 한 줄. 탭 토글 pill 재사용하되 한 단계 낮은 위계라 `text-xs`. 옵션 전체/솔로/파티(순서 고정). 현재 활성 탭(주간/월간) 안에서만 적용, 두 탭의 필터 선택 상태는 독립(**탭과 함께 스토어 소유** — [[ADR-096]] 결정 1, 탭만 살리면 필터만 초기화되는 반쪽 상태가 된다). `partySizes` 맵 기반 클라이언트 필터(설정 없음=솔로 포함), API 재호출 없음. 수동 모드에서도 동일 동작([[ADR-035]]).
 - **필터 결과 없음**: 공용 `EmptyState`(inline, `SlidersHorizontal`) — "이 조건에 해당하는 보스가 없습니다" + CTA **"필터 초기화"**(그 탭 필터를 `all` 로, [[ADR-060]]). 보스가 아예 0건인 빈 상태와는 다른 케이스라 문구·CTA를 나눈다.
 
 ### 빈 상태 ([[ADR-060]])
 공용 `EmptyState`(inline, `Swords`). 수동 모드는 "추적할 주간/월간 보스가 없습니다" + CTA "보스 관리" → `/boss/manage`, 자동 모드는 "등록된 주간/월간 보스가 없습니다"(CTA 없음 — 목적지가 앱 밖). 주간/월간 문구를 공유하지 않는다. 레시피는 [design-system.md](../foundation/design-system.md).
 
 ### 보스 관리 페이지 `/boss/manage` ([[ADR-035]] 결정 18)
-두 모드 공통 진입("보스 관리"). `PartyManagementModal` 을 완전 대체(파티원 수도 보스 단위라 추적 편집과 같은 행에 합침). 주간/월간 탭, 레이아웃·행 스타일은 컨텐츠 관리 페이지와 동일.
+두 모드 공통 진입("보스 관리"). `PartyManagementModal` 을 완전 대체(파티원 수도 보스 단위라 추적 편집과 같은 행에 합침). 주간/월간 탭, 레이아웃·행 스타일은 컨텐츠 관리 페이지와 동일 — 헤더 캐릭터 드롭다운(`CharacterSelectDropdown size="compact"`)과 스케줄러 탭 승계도 같다([[ADR-096]] 결정 2·4). 주간에서 들어오면 주간, 월간에서 들어오면 월간.
 - **목록 구성** ([[ADR-056]], 2026-07-29): 참조표 전체가 아니라 **이 캐릭터가 고를 수 있는 것만** 나열한다. ① 미출시 보스(`status: "unreleased"`, 현재 벨로나) 제외 — 보스명이 아니라 `status` 로 거르므로 출시 시 데이터에서 그 필드만 지우면 된다. ② 시즌 보스(eventWeekly)는 **선택 캐릭터의 월드가 챌린저스(1~4)일 때만** 표시(`isChallengersWorld`, 보스 스케줄러 시즌 배지와 같은 판정). 월드 미상(구버전 캐시)이면 숨긴다. 두 모드 공통이며, 12개 한도의 시즌 보스 **카운트 제외** 규칙과는 별개다(챌린저스 월드에선 목록엔 나오고 카운트엔 안 들어간다).
 - **수동 모드**: 위 규칙으로 걸러진 보스 나열(주간=weekly+시즌, 월간=monthly). 행 = 체크(추적, 탭 즉시 저장) + 체크된 행에 난이도 뱃지 목록(`boss-crystal-prices.json` 지원 난이도, 미선택 `opacity-40`)·파티 스테퍼. 난이도 변경 시 (보스,난이도) 쌍 교체.
 - **자동 모드**: 같은 행 구조에서 체크박스만 없음. 상단 안내("자동 모드에서는 목록이 게임 등록 기준이에요 — 파티 인원만 설정") + "등록된 보스만 보기" 토글(기본 ON, [[ADR-031]] 결정 4). 난이도는 등록 난이도 기본 선택.
@@ -88,6 +89,8 @@ rounded-full bg-surface-2 text-text text-xs font-semibold px-2 py-1, flex items-
 - 벨로나 출시 시 `weekly-bosses.json`·가격·아이템 데이터 갱신 필요.
 
 ## 폐기된 정책 (history)
+- ~~탭 선택과 솔로/파티 필터는 화면 로컬 `useState`(스케줄러·관리 페이지가 각자 보유, 초기값 `'weekly'`)~~ → 기능 스토어 소유([[ADR-096]] 결정 1·2, 2026-08-05, 이슈 #143). 양쪽 기본값이 같아 컨텐츠 쪽보다 덜 드러났을 뿐 구조는 동일했다(월간 탭에서만 증상이 보였다).
+- ~~관리 페이지 헤더의 대상 캐릭터는 읽기 전용 칩~~ → 컴팩트 드롭다운, 이 화면에서 캐릭터 변경 가능([[ADR-096]] 결정 4·5, 2026-08-05).
 - ~~한도로 막힌 행을 `disabled` 로 두고 그 위에 스크림 + `주간 12개를 모두 선택했어요` 문구를 얹음~~ → **흐림만 + 누르면 토스트**([[ADR-055]] 정정 3, 2026-07-29 사용자 지시). 비활성 버튼은 클릭 이벤트가 나지 않아 "누르면 알려준다"와 양립할 수 없다.
 - ~~레벨 미달 보스·난이도는 수동 선택 불가(흐리게 + 요구 레벨 표시), 표시 화면엔 "진행 불가"~~ → **미도입, 자유 선택**([[ADR-055]] 정정 2, 2026-07-29 사용자 결정, 이슈 #32 폐기). 요구 레벨 데이터(`requiredLevels`)는 `weekly-bosses.json` 에 남아 있으나 **읽는 코드가 없다**.
 - ~~보스 전체를 하나의 카드(`<ul>`)에 담고 왼쪽 체크 도형으로 완료 표시~~ → 보스별 독립 카드 + 일러스트 bleed + 오른쪽 완료 뱃지([[ADR-018]]).

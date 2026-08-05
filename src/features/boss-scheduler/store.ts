@@ -49,6 +49,12 @@ export interface BossCharacterView {
 
 export type BossSchedulerStatus = 'idle' | 'loading' | 'loaded' | 'error'
 
+// ADR-096 결정 1: 스케줄러 화면과 관리 페이지가 함께 쓰는 탭 식별자(전에는 두 화면이 각자 선언).
+export type BossTab = 'weekly' | 'monthly'
+
+// ADR-019 솔로/파티 서브 필터. 탭마다 독립된 값을 갖는다.
+export type PartyFilter = 'all' | 'solo' | 'party'
+
 export interface BossSchedulerState {
   status: BossSchedulerStatus
   characters: BossCharacterView[]
@@ -61,6 +67,13 @@ export interface BossSchedulerState {
   // ADR-035: 수동 모드에서 캐릭터별 추적 항목(멤버십). 값 필드는 여기 두지 않고 표시 시점에
   // characters의 동기화 값 또는 참조 테이블에서 조회한다(단일 진실 공급원, 결정 6).
   manualTrackedByOcid: Record<string, ManualTrackedItem[]>
+  // ADR-096 결정 1·2: 화면 로컬 state가 아니라 스토어가 소유한다 — 화면이 언마운트돼도 살아남고
+  // (탭 이동 후 복귀), 관리 페이지가 같은 탭 값을 읽어 보던 탭 그대로 열린다. 영속화하지 않는다.
+  activeTab: BossTab
+  // 필터를 탭과 함께 옮기는 이유 — 탭만 살리면 돌아왔을 때 "탭은 유지되는데 필터만 초기화"되는
+  // 반쪽 상태가 된다. 두 탭이 서로 독립이라는 기존 성질(ADR-019)은 그대로다.
+  weeklyFilter: PartyFilter
+  monthlyFilter: PartyFilter
 }
 
 export interface BossSchedulerStore extends BossSchedulerState {
@@ -72,6 +85,10 @@ export interface BossSchedulerStore extends BossSchedulerState {
   setPartySize(ocid: string, boss: string, difficulty: string, partySize: number): Promise<void>
   addManualBoss(ocid: string, contentName: string, difficulty: string): Promise<ManualBossAddResult>
   removeManualBoss(ocid: string, contentName: string, difficulty: string): Promise<void>
+  // 탭 전환에 네트워크가 없어 전부 동기 세터다(보스 수익 setTab과 다른 점).
+  setActiveTab(tab: BossTab): void
+  setWeeklyFilter(filter: PartyFilter): void
+  setMonthlyFilter(filter: PartyFilter): void
 }
 
 const initialState: BossSchedulerState = {
@@ -82,6 +99,9 @@ const initialState: BossSchedulerState = {
   selectedOcid: null,
   partySizes: {},
   manualTrackedByOcid: {},
+  activeTab: 'weekly',
+  weeklyFilter: 'all',
+  monthlyFilter: 'all',
 }
 
 export function partySizeKey(ocid: string, boss: string, difficulty: string): string {
@@ -328,6 +348,18 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
   async selectCharacter(ocid) {
     set({ selectedOcid: ocid })
     await setLastSelectedCharacter(ocid)
+  },
+
+  setActiveTab(tab) {
+    set({ activeTab: tab })
+  },
+
+  setWeeklyFilter(filter) {
+    set({ weeklyFilter: filter })
+  },
+
+  setMonthlyFilter(filter) {
+    set({ monthlyFilter: filter })
   },
 
   async loadPartySizes(ocids) {

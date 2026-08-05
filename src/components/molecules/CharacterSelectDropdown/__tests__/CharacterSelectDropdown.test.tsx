@@ -58,4 +58,46 @@ describe('CharacterSelectDropdown', () => {
 
     expect(screen.queryByAltText('리부트')).not.toBeInTheDocument()
   })
+
+  // ADR-096 결정 5: 관리 화면은 제목 줄 우측의 작은 자리라, 그 자리에 있던 읽기 전용 칩과 같은
+  // 크기감이어야 한다. 스케줄러용 기본 크기를 그대로 넣으면 헤더가 두꺼워진다.
+  describe('size 변형', () => {
+    it('기본값은 스케줄러용 크기다', () => {
+      render(<CharacterSelectDropdown characters={characters} selectedOcid="ocid-1" onSelect={vi.fn()} />)
+
+      expect(screen.getByRole('combobox')).toHaveClass('min-w-[160px]', 'py-3', 'text-sm')
+    })
+
+    it('compact는 칩과 같은 크기감(rounded-full·text-xs)이고 폭을 강제하지 않는다', () => {
+      render(
+        <CharacterSelectDropdown
+          characters={characters}
+          selectedOcid="ocid-1"
+          onSelect={vi.fn()}
+          size="compact"
+        />,
+      )
+
+      const combobox = screen.getByRole('combobox')
+      expect(combobox).toHaveClass('rounded-full', 'py-1', 'text-xs')
+      expect(combobox).not.toHaveClass('min-w-[160px]')
+    })
+
+    it('compact에서도 월드 엠블럼과 선택 동작은 같다', async () => {
+      const user = userEvent.setup()
+      const onSelect = vi.fn()
+      render(
+        <CharacterSelectDropdown
+          characters={characters}
+          selectedOcid="ocid-1"
+          onSelect={onSelect}
+          size="compact"
+        />,
+      )
+
+      expect(screen.getByAltText('엘리시움')).toBeInTheDocument()
+      await user.selectOptions(screen.getByRole('combobox'), 'ocid-2')
+      expect(onSelect).toHaveBeenCalledWith('ocid-2')
+    })
+  })
 })

@@ -12,15 +12,14 @@ import {
   isSeasonBossName,
   WEEKLY_BOSS_CLEAR_LIMIT,
 } from '../../lib/boss-matching'
-import { isChallengersWorld, worldEmblemUrl } from '../../lib/world-emblem'
+import { isChallengersWorld } from '../../lib/world-emblem'
+import { CharacterSelectDropdown } from '../../components/molecules/CharacterSelectDropdown/CharacterSelectDropdown'
 import { partySizeKey, useBossSchedulerStore } from '../../features/boss-scheduler/store'
 import { useToastStore } from '../../features/toast/store'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import type { BossDifficulty } from '../../types'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { Badge } from '../../components/atoms/Badge/Badge'
-
-type BossTab = 'weekly' | 'monthly'
 
 interface BossReferenceEntry {
   boss: string
@@ -72,10 +71,14 @@ export function BossManageScreen(): React.JSX.Element {
     setPartySize,
     addManualBoss,
     removeManualBoss,
+    // ADR-096 결정 2·4: 탭과 선택 캐릭터를 스케줄러와 공유한다 — 두 화면이 서로 다른 탭·캐릭터를
+    // 보고 있을 수 있는 상태를 만들지 않는다.
+    activeTab,
+    setActiveTab,
+    selectCharacter,
   } = useBossSchedulerStore()
   const { mode } = useTrackingModeStore()
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState<BossTab>('weekly')
   const [onlyRegistered, setOnlyRegistered] = useState(true)
   // 자동 모드에서 행마다 "어느 난이도의 파티 인원을 편집 중인지"를 담는 화면 전용 상태 —
   // 멤버십이 아니므로 저장하지 않는다(수동 모드의 난이도 선택은 멤버십 그 자체라 이걸 안 쓴다).
@@ -93,7 +96,6 @@ export function BossManageScreen(): React.JSX.Element {
       : (characters[0]?.ocid ?? null)
 
   const selected = characters.find((character) => character.ocid === effectiveSelectedOcid) ?? null
-  const worldEmblem = selected?.world != null ? worldEmblemUrl(selected.world) : null
 
   // 등록 난이도 조회 — 난이도 기본 선택(등록 난이도 우선)과 자동 모드의 "등록된 보스만 보기"에 쓴다.
   const registeredDifficultyByBoss = new Map<string, BossDifficulty>()
@@ -284,17 +286,17 @@ export function BossManageScreen(): React.JSX.Element {
             </button>
             <h1 className="text-lg font-semibold text-text">보스 관리</h1>
           </div>
+          {/* ADR-096 결정 4·5: 읽기 전용 칩이던 자리 — 컨텐츠 관리 페이지와 같은 처리다.
+              onSelect는 스케줄러와 같은 selectCharacter라 돌아갔을 때 그쪽도 같은 캐릭터다. */}
           {selected !== null && (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs font-medium text-text-muted">
-              {worldEmblem !== null && (
-                <img
-                  src={worldEmblem}
-                  alt={selected.world ?? ''}
-                  className="h-3.5 w-auto shrink-0 object-contain"
-                />
-              )}
-              {selected.characterName}
-            </span>
+            <CharacterSelectDropdown
+              characters={characters}
+              selectedOcid={selected.ocid}
+              onSelect={(ocid) => {
+                void selectCharacter(ocid)
+              }}
+              size="compact"
+            />
           )}
         </div>
 

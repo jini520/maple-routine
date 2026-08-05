@@ -138,6 +138,9 @@ beforeEach(() => {
     selectedOcid: null,
     partySizes: {},
     manualTrackedByOcid: {},
+    activeTab: 'weekly',
+    weeklyFilter: 'all',
+    monthlyFilter: 'all',
   })
   getCachedSchedulerStateMock.mockResolvedValue(null)
   getCachedCharacterBasicMock.mockResolvedValue(null)
@@ -1023,6 +1026,43 @@ describe('useBossSchedulerStore', () => {
       ).rejects.toThrow()
 
       expect(setBossPartySizeMock).not.toHaveBeenCalled()
+    })
+  })
+
+  // ADR-096 결정 1: 탭과 솔로/파티 필터를 함께 스토어가 소유한다. 탭만 살리면 돌아왔을 때
+  // 탭은 유지되는데 필터만 초기화되는 반쪽 상태가 된다.
+  describe('ADR-096: 탭·필터 상태', () => {
+    it('초기 탭은 주간이고 두 필터는 전체다', () => {
+      const initial = useBossSchedulerStore.getInitialState()
+
+      expect(initial.activeTab).toBe('weekly')
+      expect(initial.weeklyFilter).toBe('all')
+      expect(initial.monthlyFilter).toBe('all')
+    })
+
+    it('setActiveTab이 탭을 바꾼다', () => {
+      useBossSchedulerStore.getState().setActiveTab('monthly')
+
+      expect(useBossSchedulerStore.getState().activeTab).toBe('monthly')
+    })
+
+    it('두 탭의 필터는 서로 독립이다', () => {
+      useBossSchedulerStore.getState().setWeeklyFilter('solo')
+
+      expect(useBossSchedulerStore.getState().weeklyFilter).toBe('solo')
+      expect(useBossSchedulerStore.getState().monthlyFilter).toBe('all')
+
+      useBossSchedulerStore.getState().setMonthlyFilter('party')
+
+      expect(useBossSchedulerStore.getState().weeklyFilter).toBe('solo')
+      expect(useBossSchedulerStore.getState().monthlyFilter).toBe('party')
+    })
+
+    it('탭·필터를 바꿔도 동기화를 호출하지 않는다', () => {
+      useBossSchedulerStore.getState().setActiveTab('monthly')
+      useBossSchedulerStore.getState().setWeeklyFilter('solo')
+
+      expect(syncSchedulesMock).not.toHaveBeenCalled()
     })
   })
 })
