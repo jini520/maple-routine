@@ -2,7 +2,7 @@
 
 > **범위**: 디렉토리 구조·레이어 패턴·시스템 데이터 흐름·상태 관리·네이티브 연동 개요·테스트 전략. 기능별 흐름 세부는 각 `features/*.md`, 에러 처리는 [error-resilience.md](./error-resilience.md), API는 [nexon-api.md](./nexon-api.md).
 > **관련 소스**: `src/` 전체 레이어(`app/` `features/` `storage/` `native/` `nexon/` `components/` `lib/` `types/` `data/`).
-> **관련 ADR**: [[ADR-001]] [[ADR-003]] [[ADR-005]] [[ADR-007]] [[ADR-013]] [[ADR-092]]. **관련 문서**: [nexon-api.md](./nexon-api.md), [error-resilience.md](./error-resilience.md), [../persistence/README.md](../persistence/README.md).
+> **관련 ADR**: [[ADR-001]] [[ADR-003]] [[ADR-005]] [[ADR-007]] [[ADR-013]] [[ADR-092]] [[ADR-097]]. **관련 문서**: [nexon-api.md](./nexon-api.md), [error-resilience.md](./error-resilience.md), [../persistence/README.md](../persistence/README.md).
 
 ## 핵심 규칙 (CRITICAL)
 - `features/*` 코드는 로컬 저장소·네이티브 API에 **직접 접근하지 않는다**. 반드시 `storage/`·`native/` 어댑터를 거친다([[ADR-003]], [[ADR-005]]).
@@ -63,6 +63,8 @@ Feature 단위 구조. 각 `features/*` 폴더가 그 기능의 상태·로직�
 ```
 건너뛴다 = 이번 실행에서 이미 동기화함  AND  가장 오래된 syncedAt 이 10분 안
 ```
+
+두 조건이 사는 곳은 각각 **`lib/sync-freshness`**(`SYNC_TTL_MS` · `isSyncFresh(syncedAts, trackedCount, now)` — 무의존 순수 모듈. 추적 캐릭터 총수를 함께 받아 **캐시가 없는 캐릭터를 만료로** 판정한다)와 **`features/schedule-sync/sync-run-state`**(모듈 수준 플래그. 영속화하지 않는 것이 곧 "재시작하면 한 번은 다시 받는다"는 정책이고, 성공이 아니라 **시도**를 기록해 오프라인에서 탭마다 재시도하지 않게 한다)다. `SYNC_TTL_MS` 는 **잠정값이라 한 파일에서만 정의한다** — 이 정책의 근거는 값이 아니라 "새로고침 수단이 있는데도 페이지 이동마다 같은 API 를 부르는 방식이 틀렸다"이고, 값은 그 위에서 움직인다.
 
 세 화면의 네트워크는 **서로 다르지 않고**(아래 2번의 `syncSchedules` 하나를 공유한다) 결과가 **같은 캐시**에 쌓이므로, 판정 기준은 화면이 아니라 `storage/scheduler-cache` 의 `syncedAt` 이다 — 한 화면이 방금 받았으면 나머지 두 화면의 첫 진입은 네트워크 0회다. `refresh()`(헤더 새로고침·당겨서 새로고침·재시도)는 게이트 밖이라 **항상** 조회하고, 건너뛴 진입에서 캐시는 신선한 값으로 취급한다(`isStale: false` — 그러지 않으면 탭 이동마다 "오래된 데이터" 토스트가 뜬다).
 
