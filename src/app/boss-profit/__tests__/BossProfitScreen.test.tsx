@@ -232,8 +232,9 @@ describe('BossProfitScreen', () => {
   // 오프셋은 그대로라 sticky 헤더가 화면 밖(-1154px)에 그려진다 — 그것이 깜빡임의 정체다.
   // 줄어든 레이아웃이 그려지기 전에 최상단으로 옮겨 그 프레임을 없앤다.
   describe('기간·탭 전환 시 스크롤 (ADR-080)', () => {
-    it('periodKey가 바뀌면 문서를 최상단으로 옮긴다', () => {
-      const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
+    // ADR-100: 스크롤 주체가 문서가 아니라 이 화면의 컨테이너다 — 스파이도 요소 쪽이다.
+    it('periodKey가 바뀌면 스크롤 컨테이너를 최상단으로 옮긴다', () => {
+      const scrollTo = vi.spyOn(Element.prototype, 'scrollTo').mockImplementation(() => {})
       mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()], periodKey: '2026-07-30' })
       const { rerender } = renderBossProfitScreen()
       scrollTo.mockClear()
@@ -250,7 +251,7 @@ describe('BossProfitScreen', () => {
     })
 
     it('기간·탭이 그대로인 리렌더에서는 스크롤을 건드리지 않는다 — 히스토리 왕복의 위치 유지(ADR-077)가 깨진다', () => {
-      const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
+      const scrollTo = vi.spyOn(Element.prototype, 'scrollTo').mockImplementation(() => {})
       mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()], periodKey: '2026-07-30' })
       const { rerender } = renderBossProfitScreen()
       scrollTo.mockClear()
@@ -279,8 +280,8 @@ describe('BossProfitScreen', () => {
   // 그대로일 때 접은 뒤의 최대 스크롤로 먼저 옮기고 다음 프레임에 접는다. ADR-084 의 "접힌 뒤에
   // 자른다"는 이미 잘린 뒤라 호출조차 되지 않았다(`clamp skip`).
   describe('접기 전 사전 스크롤 (ADR-085)', () => {
-    // jsdom 은 scrollY·innerHeight 를 window 의 **own property** 로 둔다 — 지우면 이후 테스트에서
-    // undefined 가 되어(비교가 전부 false) 다른 테스트를 오염시킨다. 원래 descriptor 를 되돌린다.
+    // ADR-100: 스크롤 주체가 컨테이너라, 계산에 들어가는 세 값도 그 요소에서 읽는다
+    // (`scrollTop`·`scrollHeight`·`clientHeight`). jsdom 은 레이아웃이 없어 전부 0이므로 심는다.
     const originals: { target: object; key: string; descriptor: PropertyDescriptor | undefined }[] = []
 
     function stub(target: object, key: string, value: number): void {
@@ -289,9 +290,10 @@ describe('BossProfitScreen', () => {
     }
 
     function stubViewport(options: { scrollY: number; scrollHeight: number; innerHeight: number }): void {
-      stub(window, 'scrollY', options.scrollY)
-      stub(document.documentElement, 'scrollHeight', options.scrollHeight)
-      stub(window, 'innerHeight', options.innerHeight)
+      const scroller = screen.getByTestId('screen-scroll')
+      stub(scroller, 'scrollTop', options.scrollY)
+      stub(scroller, 'scrollHeight', options.scrollHeight)
+      stub(scroller, 'clientHeight', options.innerHeight)
     }
 
     afterEach(() => {
@@ -303,7 +305,7 @@ describe('BossProfitScreen', () => {
     })
 
     it('접은 뒤의 최대 스크롤을 넘겨 있으면, 접기 전에 그 위치로 먼저 옮긴다', async () => {
-      const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
+      const scrollTo = vi.spyOn(Element.prototype, 'scrollTo').mockImplementation(() => {})
       mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()] })
       renderBossProfitScreen()
 
@@ -326,7 +328,7 @@ describe('BossProfitScreen', () => {
     })
 
     it('접어도 잘릴 오프셋이 없으면 스크롤을 건드리지 않고 바로 접는다', () => {
-      const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
+      const scrollTo = vi.spyOn(Element.prototype, 'scrollTo').mockImplementation(() => {})
       mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()] })
       renderBossProfitScreen()
 
@@ -342,7 +344,7 @@ describe('BossProfitScreen', () => {
     })
 
     it('펼칠 때는 스크롤을 건드리지 않는다 — 문서가 늘어날 때는 클램프가 없다', () => {
-      const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
+      const scrollTo = vi.spyOn(Element.prototype, 'scrollTo').mockImplementation(() => {})
       mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()] })
       renderBossProfitScreen()
       stubViewport({ scrollY: 1000, scrollHeight: 1500, innerHeight: 800 })
@@ -366,6 +368,43 @@ describe('BossProfitScreen', () => {
       expect(pageHeader).not.toBeNull()
       expect(pageHeader?.className).toContain('fixed')
       expect(pageHeader?.className).not.toContain('sticky')
+    })
+  })
+
+  // ADR-100: 이 화면도 문서가 아니라 자기 스크롤 컨테이너를 스크롤한다(스케줄러 4화면과 같은 셸).
+  describe('화면 스크롤 컨테이너 (ADR-100)', () => {
+    // ADR-100 결정 2(정정): 헤더는 셸 **안**이다 — 바깥 형제로 두면 그 헤더(z-10)가 스크롤
+    // 인디케이터를 가린다(실기기 관측). 대신 spacer 와 함께 래퍼로 묶어야 셸 안쪽 space-y-4 의
+    // 마진이 spacer 에 얹히지 않는다(공용 PageHeader 와 같은 모양).
+    it('고정 헤더와 spacer 가 래퍼 하나로 묶여 셸 안에 있다', () => {
+      mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()] })
+      renderBossProfitScreen()
+
+      const scroller = screen.getByTestId('screen-scroll')
+      const pageHeader = screen
+        .getByRole('heading', { name: '보스 수익' })
+        .closest<HTMLElement>('div[class*="fixed"]')
+      expect(scroller).toContainElement(pageHeader)
+      expect(scroller).toContainElement(screen.getByRole('button', { name: /낟낟/ }))
+
+      // 래퍼는 클래스가 없는 순수 흐름 요소다 — 셸 안쪽 space-y-4 의 형제 배분을 헤더 하나로 유지한다.
+      const wrapper = pageHeader?.parentElement
+      expect(wrapper?.className).toBe('')
+      expect(wrapper?.lastElementChild).toHaveAttribute('aria-hidden', 'true')
+    })
+
+    // ADR-100 결정 3: sticky 의 top 은 스크롤포트 기준인데 셸은 top-[var(--sa-top)] 에서 시작한다.
+    // 뷰포트 기준 실측값을 그대로 쓰면 카드 헤더가 안전영역만큼 아래에 멈춘다.
+    it('중첩 sticky 오프셋에서 상단 안전영역을 뺀다', () => {
+      mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()] })
+      renderBossProfitScreen()
+
+      const cardHeader = screen.getByRole('button', { name: /낟낟/ })
+      fireEvent.click(cardHeader)
+
+      // 펼치면 stuck 대상이 되는 그 헤더의 top 이 스크롤포트 기준으로 보정돼 있어야 한다.
+      expect(cardHeader.style.top).toContain('var(--sa-top)')
+      expect(cardHeader.style.top).toMatch(/^calc\(.*- var\(--sa-top\)\)$/)
     })
   })
 
@@ -582,14 +621,25 @@ describe('BossProfitScreen', () => {
         expect(screen.queryByTestId('character-issue-popover')).not.toBeInTheDocument()
       })
 
+      // ADR-100 결정 4: 스크롤 주체가 컨테이너라 window 에는 scroll 이 오지 않는다 — 리스너를
+      // 옮기지 않으면 스크롤해도 팝오버가 안 닫힌다(조용히 죽는 회귀라 이 테스트가 가드다).
       it('스크롤이 시작되면 닫는다 — 스크롤 중 다른 컨텐츠를 덮지 않게 한다', () => {
         renderWithIssue()
 
         fireEvent.click(screen.getByTestId('character-issue-badge'))
         expect(screen.getByTestId('character-issue-popover')).toBeInTheDocument()
 
-        fireEvent.scroll(window)
+        fireEvent.scroll(screen.getByTestId('screen-scroll'))
         expect(screen.queryByTestId('character-issue-popover')).not.toBeInTheDocument()
+      })
+
+      it('window 스크롤로는 닫히지 않는다 — 이 화면은 문서를 스크롤하지 않는다', () => {
+        renderWithIssue()
+
+        fireEvent.click(screen.getByTestId('character-issue-badge'))
+        fireEvent.scroll(window)
+
+        expect(screen.getByTestId('character-issue-popover')).toBeInTheDocument()
       })
 
       it('카드를 펼치거나 접으면 닫힌다 — 펼침이 레이아웃을 바꿔 위치가 낡은 값이 된다', () => {

@@ -80,6 +80,9 @@
 
 핵심 로직 `lib/scheduler-merge`·`lib/scheduler-content-scope`·`storage/shared-progress-cache` 는 TDD 로 단위 테스트 완비([../foundation/architecture.md](../foundation/architecture.md) 테스트 전략).
 
+## UI — 화면 헤더 ([[ADR-098]], 2026-08-06)
+제목~탭은 공용 셸 `PageHeader`([[ADR-094]])로 상단 고정하고 그 아래 목록만 스크롤한다. **스크롤의 소유자는 문서가 아니라 이 화면이다**([[ADR-099]]) — 공용 셸 `ScreenScroll` 이 뷰포트 크기 스크롤 컨테이너를 내고, 그래서 다른 탭이 스크롤 오프셋을 물려받지 못한다(모달은 그 셸 바깥에 둔다). **그 헤더는 `sticky` 가 아니라 `fixed` + 실측 spacer 다** — 탭 이동이 문서 높이 붕괴 + 스크롤 클램프를 만들고(네 탭이 문서 스크롤 하나를 공유한다), iOS 스크롤 스레드가 옛 오프셋을 되돌려 보내는 프레임에 `sticky` 헤더가 화면 밖으로 날아갔다(사용자 보고 2026-08-06 + 프레임 계측). 짝이 되는 결정이 하나 더 있다 — **이 화면을 떠나는 이동은 `useScreenNavigate()` 로 스크롤을 먼저 0으로 옮긴다**(관리 페이지 진입·설정 열기 포함). 레시피 전문은 [foundation/design-system.md](../foundation/design-system.md) '스크롤 영역' 절.
+
 ## UI — 콘텐츠 카드
 카드 골격은 보스 카드([[ADR-018]], [boss-scheduler.md](./boss-scheduler.md))를 재사용 — `rounded-[14px]`, `.media-scope` + `bg-surface`/`border-border`(스코프가 media-* 로 다시 묶는다, [[ADR-064]] 결정 5), 80px 기본 높이, 일러스트 bleed(saturate .85 brightness .8 opacity .65, mask `linear-gradient(90deg,#000 0%,#000 38%,transparent 76%)`).
 
@@ -121,7 +124,7 @@
 - **탭 구분**: 수동 항목은 저장 시 확정된 `kind`(`'daily'|'weekly'`)로 해당 탭에만(표시 시점 추론 없음).
 
 ### 컨텐츠 관리 페이지 `/content/manage` ([[ADR-035]] 결정 18)
-수동 모드 전용(자동 진입 시 `/content` 리다이렉트). 카드 박스 없는 페이지 레이아웃, 헤더~탭 sticky 고정(스케줄러와 동일 패턴, 화면 루트 `-mt-[var(--sa-top)]` 로 노치까지 `bg-bg`).
+수동 모드 전용(자동 진입 시 `/content` 리다이렉트). 카드 박스 없는 페이지 레이아웃, 헤더~탭 고정(스케줄러와 동일한 공용 `PageHeader` — `fixed` + 실측 spacer, [[ADR-098]]). 스크롤 컨테이너도 스케줄러와 같다(`ScreenScroll`, [[ADR-099]]) — 스케줄러에서 스크롤을 내린 채 들어오는 화면이라 같은 노출을 가졌었다.
 - **헤더**: 뒤로(`ArrowLeft`) + "컨텐츠 관리" + 대상 캐릭터 **드롭다운**(`CharacterSelectDropdown size="compact"`, [[ADR-096]] 결정 4·5). 이 화면에서 캐릭터를 바꿀 수 있고, 스케줄러와 **같은 `selectCharacter`** 를 호출하므로 돌아갔을 때 그쪽도 같은 캐릭터다.
 - **탭**: 일간/주간 pill 탭. **진입 시점의** 스케줄러 탭을 이어받는다([[ADR-096]] 결정 2) — 일간에서 진입하면 일간, 주간에서 진입하면 주간. 이어받기는 **한 방향**이라 여기서 탭을 바꿔도 스케줄러는 그대로고, 다시 열면 그때의 스케줄러 탭을 새로 이어받는다.
 - **체크리스트 — 카테고리 그룹핑(2026-07-24)**: `scheduler-content-template.json` 을 카테고리로 묶어 나열, 추적 중인 항목만 선택 상태(`aria-pressed`, 선택 시 `border-primary bg-primary-tint`). 행 탭 = 추적 토글, **즉시 저장**(로컬 Preferences).

@@ -7,6 +7,10 @@
 :root {
   --sa-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
   --sa-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+  /* 하단 탭바가 실제로 차지하는 높이 — BottomTabBar 가 자기 상자를 실측해 덮어쓴다([[ADR-099]] 결정 7).
+     화면 스크롤 컨테이너가 스크롤포트 하단을 이만큼 줄여 인디케이터가 탭바 뒤로 들어가지 않게 한다.
+     탭바가 없을 때(온보딩·키보드 노출)는 0이라 컨테이너가 화면 바닥까지 쓴다. */
+  --tab-bar-h: 0px;
 }
 
 /* 화면 콘텐츠는 AppShell(div.bg-bg)이 덮지만, body 배경도 같은 테마색으로 맞춰둔다. WebView 바깥으로

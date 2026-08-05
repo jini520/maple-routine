@@ -52,6 +52,8 @@ import { MonthlyAccordionBody, WeeklyAccordionBody } from './AccordionBody'
 import { CharacterIssueBadge, CharacterIssuePopover, measureIssueAnchor, ISSUE_POPOVER_EDGE_GAP, ISSUE_POPOVER_WIDTH } from './CharacterIssue'
 import { BossProfitContextProvider, useBossProfitContext } from './boss-profit-context'
 import { CrystalSummaryChip, DeltaChip } from './HeadlineChips'
+import { useScreenNavigate } from '../../lib/use-screen-navigate'
+import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 
 
 
@@ -105,6 +107,14 @@ const MONTHLY_BOSS_COUNT = weeklyBossesData.monthly.length
 // stuck 시 배지가 헤더 상단선에 걸린다(ADR-047 후속).
 const BADGE_TOP_OFFSET = 8
 
+// 중첩 sticky([[ADR-047]])의 멈춤 위치. 인자는 **뷰포트 기준** 실측값(페이지 헤더 높이 등)인데
+// sticky 의 `top` 은 **스크롤포트 기준**이고, 이 화면의 스크롤포트는 `top-[var(--sa-top)]` 에서
+// 시작한다([[ADR-099]] 결정 6·[[ADR-100]] 결정 3) — 그 차이만큼 빼지 않으면 카드 헤더가 안전영역
+// 만큼 아래에 멈춘다.
+function stickyOffset(viewportPx: number): string {
+  return `calc(${viewportPx}px - var(--sa-top))`
+}
+
 
 
 // 프롭에는 **이 캐릭터 카드에 매인 것만** 남는다 — 기간·탭 맥락과 스토어 바인딩 8개는
@@ -116,7 +126,7 @@ function CharacterAccordion(props: {
   issue?: 'unavailable' | 'failed'
   stickyTop: number
 }): React.JSX.Element {
-  const { tab, loadedTab, loadedPeriodKey, dropsByRowKey } = useBossProfitContext()
+  const { tab, loadedTab, loadedPeriodKey, dropsByRowKey, scrollRoot } = useBossProfitContext()
   const [isExpanded, setIsExpanded] = useState(false)
   // ADR-068 결정 3 정정 3: 아이콘만으로는 원인을 말할 수 없어, 탭하면 설명 팝오버를 연다.
   const [isIssueOpen, setIsIssueOpen] = useState(false)
@@ -166,19 +176,22 @@ function CharacterAccordion(props: {
   const collapse = (): void => {
     const shell = shellRef.current
     const header = headerRef.current
+    const scroller = scrollRoot.current
     const removedHeight =
       shell === null || header === null
         ? 0
         : shell.getBoundingClientRect().height - header.getBoundingClientRect().height
-    const nextMaxScroll = Math.max(
-      0,
-      document.documentElement.scrollHeight - removedHeight - window.innerHeight,
-    )
-    if (window.scrollY <= nextMaxScroll) {
+    if (scroller === null) {
       setIsExpanded(false)
       return
     }
-    window.scrollTo(0, nextMaxScroll)
+    // ADR-100 결정 4: 스크롤 주체가 문서가 아니라 이 화면의 컨테이너다 — 읽는 값도 전부 그쪽이다.
+    const nextMaxScroll = Math.max(0, scroller.scrollHeight - removedHeight - scroller.clientHeight)
+    if (scroller.scrollTop <= nextMaxScroll) {
+      setIsExpanded(false)
+      return
+    }
+    scroller.scrollTo(0, nextMaxScroll)
     requestAnimationFrame(() => setIsExpanded(false))
   }
 
@@ -211,13 +224,16 @@ function CharacterAccordion(props: {
     }
     const closeOnScroll = (): void => setIsIssueOpen(false)
 
+    // ADR-100 결정 4: 문서가 아니라 컨테이너가 스크롤되므로 window 에는 scroll 이 오지 않는다 —
+    // 옮기지 않으면 스크롤해도 팝오버가 안 닫힌다(조용히 죽는 회귀).
+    const scroller = scrollRoot.current
     document.addEventListener('pointerdown', closeOnOutside, true)
-    window.addEventListener('scroll', closeOnScroll, { passive: true })
+    scroller?.addEventListener('scroll', closeOnScroll, { passive: true })
     return () => {
       document.removeEventListener('pointerdown', closeOnOutside, true)
-      window.removeEventListener('scroll', closeOnScroll)
+      scroller?.removeEventListener('scroll', closeOnScroll)
     }
-  }, [isIssueOpen])
+  }, [isIssueOpen, scrollRoot])
 
   const shellClass = [
     // overflow-hidden은 여전히 금지(ADR-047) — 스크롤포트를 만들어 헤더 sticky를 무력화한다. 대신
@@ -268,7 +284,7 @@ function CharacterAccordion(props: {
           // 바깥 absolute 박스는 레일의 고정 범위를 "카드 높이 - 헤더 높이"로 잘라 헤더와 같은 시점에
           // 떨어지게 한다(없으면 카드 끝에서 배지만 남아 어긋난다). absolute라 레이아웃엔 영향 없다.
           <div className="pointer-events-none absolute inset-x-0 top-0" style={{ bottom: headerHeight }}>
-            <div className="sticky z-10 h-0" style={{ top: props.stickyTop + BADGE_TOP_OFFSET }}>
+            <div className="sticky z-10 h-0" style={{ top: stickyOffset(props.stickyTop + BADGE_TOP_OFFSET) }}>
               <ValuableDropBadge
                 drops={valuableDrops}
                 label="고가 드롭"
@@ -301,7 +317,7 @@ function CharacterAccordion(props: {
           <div
             className="sticky h-8 bg-gradient-to-b from-surface to-transparent backdrop-blur-sm"
             style={{
-              top: props.stickyTop + headerHeight,
+              top: stickyOffset(props.stickyTop + headerHeight),
               maskImage: 'linear-gradient(to bottom, black, transparent)',
               WebkitMaskImage: 'linear-gradient(to bottom, black, transparent)',
             }}
@@ -331,7 +347,7 @@ function CharacterAccordion(props: {
           // 주면 stuck 상태에서 모서리 안쪽이 투명이라 그 아래를 지나가는 보스 행이 비친다(사용자 보고).
           // 셸 클리핑은 카드 자신의 모서리에서만 일어나므로 stuck 헤더의 라운딩을 덮어주지 못한다 —
           // 반대로 헤더가 사각이면 카드 최상단(= 클리핑 곡선과 일치)에서 클리핑이 라운딩을 만들어준다.
-          style={isExpanded ? { top: props.stickyTop } : undefined}
+          style={isExpanded ? { top: stickyOffset(props.stickyTop) } : undefined}
           // 상하 패딩은 p-4(16px)가 아니라 py-3(12px)이다([[ADR-054]] 정정 6) — 아바타 슬롯이 진행
           // 링 때문에 32 → 40px로 커진 만큼(정정 3) 패딩에서 8px을 돌려받아 헤더 높이를 링 도입
           // 전과 같은 64px로 되돌린다(12 + 40 + 12). 좌우는 보스 행(p-4)과 맞춰 16px 유지.
@@ -423,12 +439,16 @@ export function BossProfitScreen(): React.JSX.Element {
     dropsByRowKey,
   } = useBossProfitStore()
 
+  // 히스토리 오버레이(`/profit/drops`)를 여닫는 이동 전용이다 — 그 화면은 자기 스크롤 컨테이너를
+  // 갖고, 돌아왔을 때 이 화면의 스크롤이 유지되는 것이 [[ADR-077]] 의 계약이라 스크롤을 건드리면 안
+  // 된다. 화면을 통째로 바꾸는 이동은 아래 navigateToScreen 을 쓴다([[ADR-098]] 결정 1).
   const navigate = useNavigate()
+  const navigateToScreen = useScreenNavigate()
 
   // ADR-063: 동기화 전체 실패는 토스트로 알린다. 기간 라벨·"n분 전" 표기가 남아 맥락은 화면에 있다.
   useScheduleSyncErrorToast(error, {
     onRetry: () => refresh(trackedOcids ?? []),
-    onOpenSettings: () => navigate('/settings'),
+    onOpenSettings: () => navigateToScreen('/settings'),
   })
 
   // ADR-063: 일부 캐릭터만 실패한 경우도 토스트로 옮긴다. Toast 본문은 truncate(Toast.tsx)라
@@ -461,10 +481,16 @@ export function BossProfitScreen(): React.JSX.Element {
   // 새로고침이 의미 없는 과거 기간에서도 끈다(결정 9) — 그 기간에서 refresh는 periodKey를 현재
   // 기간으로 리셋하므로 제스처를 쓰는 순간 보고 있던 기간이 튕겨 나간다(#30). 진행 중인 주를 품은
   // 지난 달은 refresh가 그 기간을 유지하므로 예외다(ADR-076). 헤더 버튼과 같은 플래그를 쓴다.
+  // ADR-100: 이 화면의 스크롤 주체. 문서가 아니라 이 요소가 스크롤되므로 스크롤 상태가 화면과
+  // 함께 태어나고 함께 죽는다(히스토리 오버레이 왕복에서도 이 컨테이너는 언마운트되지 않는다).
+  const scrollRootRef = useRef<HTMLDivElement>(null)
+
   const pullToRefresh = usePullToRefresh({
     enabled: !isEmpty && canRefreshPeriod,
     isRefreshing: status === 'loading',
     onRefresh: () => refresh(trackedOcids ?? []),
+    // ADR-100 결정 4: 최상단 판정도 문서가 아니라 이 화면의 컨테이너 기준이다.
+    scrollRoot: scrollRootRef,
   })
 
   // ADR-073 결정 6: 목록이 내려가는 거리이자 인디케이터가 채우는 틈의 높이다 — 인디케이터와 같은
@@ -506,7 +532,8 @@ export function BossProfitScreen(): React.JSX.Element {
   // 스크롤 스레드가 트랜스폼을 못 따라잡아도 헤더가 제자리에 그려진다. 0이 아닌 위치를 복원하면
   // 그 트랜스폼이 한 박자 늦는 프레임에 헤더가 화면 밖으로 사라진다.
   useLayoutEffect(() => {
-    window.scrollTo(0, 0)
+    // ADR-100 결정 4: 스크롤 주체가 컨테이너다. 마운트 시점엔 ref 가 이미 붙어 있다(레이아웃 이펙트).
+    scrollRootRef.current?.scrollTo(0, 0)
   }, [tab, periodKey])
 
   // ADR-085 결정 1: 헤더가 fixed 라 흐름에서 빠졌고, 목록은 이 실측 높이의 spacer 로 자리를 받는다.
@@ -555,7 +582,7 @@ export function BossProfitScreen(): React.JSX.Element {
             description="보스 스케줄러에서 캐릭터를 선택하면 수익 현황을 확인할 수 있습니다"
             action={{
               label: '캐릭터 선택하러 가기',
-              onClick: () => navigate('/boss?openPicker=1'),
+              onClick: () => navigateToScreen('/boss?openPicker=1'),
             }}
           />
         </div>
@@ -595,217 +622,226 @@ export function BossProfitScreen(): React.JSX.Element {
     setBossDrops,
     isMonthlyBossQueryable: periodQueryable,
     onRetryPeriod: () => void retryPeriod(),
+    scrollRoot: scrollRootRef,
   }
 
   return (
     // ADR-077: 히스토리 오버레이(<Outlet />)는 아래 space-y-4 루트 **바깥**에 둔다 — 그 유틸리티는
     // 형제에게 margin-top을 주는데, fixed inset-0 오버레이에 그 마진이 걸리면 1rem 밀려 그려진다.
     <BossProfitContextProvider value={bossProfitContext}>
-      {/* 제목~총 수익 카드까지는 화면 상단에 고정하고 그 아래 캐릭터 아코디언 목록만
-          스크롤되게 한다(사용자 요청, 2026-07-14).
+    {/* ADR-100 결정 1·2(정정): 스크롤의 소유자가 문서가 아니라 이 화면이다. **고정 헤더와 spacer 는
+        래퍼 하나로 묶어 셸 *안*에 둔다** — 스크롤 인디케이터는 스크롤포트 위에 겹쳐 그려지므로,
+        헤더를 셸 바깥 형제로 두면 그 헤더(z-10)가 인디케이터를 가린다(실기기 관측 2026-08-06).
+        래퍼로 묶는 것이 요점이다: 벌거벗은 채로 넣으면 셸 안쪽 `space-y-4` 의 마진이 spacer 에
+        얹혀 목록이 16px 내려간다([[ADR-085]] 결정 1의 함정 — 공용 `PageHeader` 도 같은 이유로
+        [고정 헤더 + spacer] 를 한 <div> 로 감싼다). 히스토리 오버레이만 셸 바깥이다([[ADR-077]]). */}
+    <ScreenScroll ref={scrollRootRef}>
+      <div>
+        {/* 제목~총 수익 카드까지는 화면 상단에 고정하고 그 아래 캐릭터 아코디언 목록만
+            스크롤되게 한다(사용자 요청, 2026-07-14).
 
-          **이 화면만 `fixed` 다**([[ADR-085]] 결정 1, 다른 4개 화면은 공용 sticky 레시피 그대로).
-          `sticky` 요소의 화면 위치는 스크롤 오프셋의 함수라, iOS 스크롤 스레드가 접기 전 오프셋을
-          뒤늦게 되돌려 보내는 프레임에 헤더가 화면 밖(`-1065px`)으로 날아갔다(실기기 프레임 계측).
-          `fixed` 는 뷰포트 기준이라 그 의존 자체가 없다. 이 헤더는 문서 최상단의 첫 요소라 원래도
-          모든 스크롤 위치에서 뷰포트 상단에 붙어 있었으므로 **보이는 모습은 동일**하다 — 바뀌는 것은
-          그 위치를 무엇이 정하느냐뿐이다. 흐름에서 빠진 자리는 아래 spacer 가 실측 높이로 채운다.
+            **이 화면만 `fixed` 다**([[ADR-085]] 결정 1, 다른 4개 화면은 공용 sticky 레시피 그대로).
+            `sticky` 요소의 화면 위치는 스크롤 오프셋의 함수라, iOS 스크롤 스레드가 접기 전 오프셋을
+            뒤늦게 되돌려 보내는 프레임에 헤더가 화면 밖(`-1065px`)으로 날아갔다(실기기 프레임 계측).
+            `fixed` 는 뷰포트 기준이라 그 의존 자체가 없다. 이 헤더는 문서 최상단의 첫 요소라 원래도
+            모든 스크롤 위치에서 뷰포트 상단에 붙어 있었으므로 **보이는 모습은 동일**하다 — 바뀌는 것은
+            그 위치를 무엇이 정하느냐뿐이다. 흐름에서 빠진 자리는 아래 spacer 가 실측 높이로 채운다.
 
-          루트(`space-y-4`) **바깥**에 둔다 — 흐름과 무관한 것을 흐름 컨테이너에 넣으면 그 유틸리티의
-          `margin-top` 이 spacer 위에 얹혀 목록이 16px 더 내려간다([[ADR-077]] 결정 3과 같은 이유). */}
-      <div ref={stickyHeaderRef} className="fixed inset-x-0 top-0 z-10 bg-bg px-4 pt-[calc(1rem+var(--sa-top))] pb-2">
-        {/* ADR-088 결정 5-1: 헤더 자리의 테마 배경 조각(배경 없는 테마에선 렌더 안 됨) */}
-        <ThemeHeaderBackdrop />
-        <div className="space-y-4">
-          {/* 히스토리 진입점([[ADR-071]] 결정 7, 이슈 #54) — 이 화면의 고가 드롭 강조는 전부 "지금 보고
-              있는 기간"에 갇혀 있고, 전 기간을 가로지르는 목록은 저쪽이 담당한다.
+            루트(`space-y-4`) **바깥**에 둔다 — 흐름과 무관한 것을 흐름 컨테이너에 넣으면 그 유틸리티의
+            `margin-top` 이 spacer 위에 얹혀 목록이 16px 더 내려간다([[ADR-077]] 결정 3과 같은 이유). */}
+        <div ref={stickyHeaderRef} className="fixed inset-x-0 top-0 z-10 bg-bg px-4 pt-[calc(1rem+var(--sa-top))] pb-2">
+          {/* ADR-088 결정 5-1: 헤더 자리의 테마 배경 조각(배경 없는 테마에선 렌더 안 됨) */}
+          <ThemeHeaderBackdrop />
+          <div className="space-y-4">
+            {/* 히스토리 진입점([[ADR-071]] 결정 7, 이슈 #54) — 이 화면의 고가 드롭 강조는 전부 "지금 보고
+                있는 기간"에 갇혀 있고, 전 기간을 가로지르는 목록은 저쪽이 담당한다.
 
-              **제목 줄 우측**에 두고, 보스/컨텐츠 스케줄러의 "캐릭터 관리"·"보스 관리"와 **같은 패턴**을
-              쓴다(사용자 지정 2026-08-01): `justify-between` 제목 줄 + `text-sm font-medium
-              text-text-muted hover:text-text`. 서브 화면으로 보내는 헤더 링크가 이미 그 어휘라 새 스타일을
-              만들 이유가 없다. 탭 줄에 있던 것을 옮긴 것이므로 그 줄의 30px 규칙([[ADR-049]])은 이제
-              무관하다 — 제목 줄 높이는 h1(28px)이 정한다. */}
-          <div className="flex items-center justify-between">
-            <h1 className="text-lg font-semibold text-text">보스 수익</h1>
-            <button
-              type="button"
-              onClick={() => navigate('/profit/drops')}
-              className="text-sm font-medium text-text-muted hover:text-text"
-            >
-              히스토리
-            </button>
-          </div>
+                **제목 줄 우측**에 두고, 보스/컨텐츠 스케줄러의 "캐릭터 관리"·"보스 관리"와 **같은 패턴**을
+                쓴다(사용자 지정 2026-08-01): `justify-between` 제목 줄 + `text-sm font-medium
+                text-text-muted hover:text-text`. 서브 화면으로 보내는 헤더 링크가 이미 그 어휘라 새 스타일을
+                만들 이유가 없다. 탭 줄에 있던 것을 옮긴 것이므로 그 줄의 30px 규칙([[ADR-049]])은 이제
+                무관하다 — 제목 줄 높이는 h1(28px)이 정한다. */}
+            <div className="flex items-center justify-between">
+              <h1 className="text-lg font-semibold text-text">보스 수익</h1>
+              <button
+                type="button"
+                onClick={() => navigate('/profit/drops')}
+                className="text-sm font-medium text-text-muted hover:text-text"
+              >
+                히스토리
+              </button>
+            </div>
 
-          <div className="flex items-center gap-4">
-            <button
-              type="button"
-              onClick={() => setTab('weekly')}
-              className={
-                tab === 'weekly'
-                  ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
-                  : 'px-3 text-sm font-medium text-text-muted'
-              }
-            >
-              주간
-            </button>
-            <button
-              type="button"
-              onClick={() => setTab('monthly')}
-              className={
-                tab === 'monthly'
-                  ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
-                  : 'px-3 text-sm font-medium text-text-muted'
-              }
-            >
-              월간
-            </button>
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                onClick={() => setTab('weekly')}
+                className={
+                  tab === 'weekly'
+                    ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
+                    : 'px-3 text-sm font-medium text-text-muted'
+                }
+              >
+                주간
+              </button>
+              <button
+                type="button"
+                onClick={() => setTab('monthly')}
+                className={
+                  tab === 'monthly'
+                    ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
+                    : 'px-3 text-sm font-medium text-text-muted'
+                }
+              >
+                월간
+              </button>
 
-            {/* 동기화 상태 영역(마지막 동기화 시각 텍스트 + 새로고침 버튼)은 새로고침이 의미 있는
-                기간에서만 노출한다(#30, ADR-076) — 완전히 닫힌 과거 기간은 cache-first·checked-once
-                모델이라 실시간 동기화 개념이 없어 "조회 중..."/"방금 전"/"n분 전" 표시도, 재조회
-                버튼도 의미가 없다. 진행 중인 주를 품은 지난 달만 예외다.
-                제목 줄이 아니라 탭과 같은 줄에 둔다(ADR-049). */}
-            {canRefreshPeriod && (
-              <div className="ml-auto flex shrink-0 items-center gap-2">
-                <p className="text-sm text-text-muted whitespace-nowrap">
-                  {status === 'loading' ? '조회 중...' : formatSyncedAt(lastSyncedAt)}
-                </p>
-                {/* 이 줄의 높이는 활성 탭 pill(py-[5px] + text-sm 20px = 30px)이 정한다. 기본 p-2면
-                    아이콘 16 + 패딩 16 = 32px라 새로고침이 없는 과거 기간과 2px 어긋난다(ADR-049). */}
-                <button
-                  type="button"
-                  onClick={() => refresh(trackedOcids ?? [])}
-                  aria-label="새로고침"
-                  className="flex h-[30px] w-[30px] items-center justify-center text-primary-ink hover:text-primary-hover"
-                >
-                  <RefreshCw
-                    className={`h-4 w-4 ${status === 'loading' ? 'animate-spin' : ''}`}
-                    strokeWidth={2}
-                    aria-hidden="true"
+              {/* 동기화 상태 영역(마지막 동기화 시각 텍스트 + 새로고침 버튼)은 새로고침이 의미 있는
+                  기간에서만 노출한다(#30, ADR-076) — 완전히 닫힌 과거 기간은 cache-first·checked-once
+                  모델이라 실시간 동기화 개념이 없어 "조회 중..."/"방금 전"/"n분 전" 표시도, 재조회
+                  버튼도 의미가 없다. 진행 중인 주를 품은 지난 달만 예외다.
+                  제목 줄이 아니라 탭과 같은 줄에 둔다(ADR-049). */}
+              {canRefreshPeriod && (
+                <div className="ml-auto flex shrink-0 items-center gap-2">
+                  <p className="text-sm text-text-muted whitespace-nowrap">
+                    {status === 'loading' ? '조회 중...' : formatSyncedAt(lastSyncedAt)}
+                  </p>
+                  {/* 이 줄의 높이는 활성 탭 pill(py-[5px] + text-sm 20px = 30px)이 정한다. 기본 p-2면
+                      아이콘 16 + 패딩 16 = 32px라 새로고침이 없는 과거 기간과 2px 어긋난다(ADR-049). */}
+                  <button
+                    type="button"
+                    onClick={() => refresh(trackedOcids ?? [])}
+                    aria-label="새로고침"
+                    className="flex h-[30px] w-[30px] items-center justify-center text-primary-ink hover:text-primary-hover"
+                  >
+                    <RefreshCw
+                      className={`h-4 w-4 ${status === 'loading' ? 'animate-spin' : ''}`}
+                      strokeWidth={2}
+                      aria-hidden="true"
+                    />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-center gap-4">
+              <button
+                type="button"
+                onClick={() => goToPreviousPeriod()}
+                disabled={isPrevDisabled}
+                aria-label="이전 기간"
+                className="flex h-7 w-7 items-center justify-center rounded-full border border-border text-text disabled:opacity-30"
+              >
+                <ChevronLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+              </button>
+
+              <div className="text-center">
+                <p className="text-sm font-semibold text-text">{periodLabel.primary}</p>
+                <p className="mt-0.5 text-xs text-text-muted tabular-nums">{periodLabel.secondary}</p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => goToNextPeriod()}
+                disabled={isNextDisabled}
+                aria-label="다음 기간"
+                className="flex h-7 w-7 items-center justify-center rounded-full border border-border text-text disabled:opacity-30"
+              >
+                <ChevronRight className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+              </button>
+            </div>
+
+            {/* ADR-061 결정 2: 보여줄 데이터가 아예 없을 때만 셸 승계 카드를 그린다. */}
+            {!isPeriodLoading && (status === 'idle' || status === 'loading') && characterGroups.length === 0 && (
+              <LoadingState size="page" message="불러오고 있어요" />
+            )}
+
+            {/* ADR-068 결정 1·7: 상태마다 얼굴이 다르다. 기록이 있으면(periodState === 'recorded')
+                아무것도 띄우지 않는다 — 목요일 새벽처럼 백필만 막힌 경우 기록은 정확하고 사용자가
+                할 일도 없다. notCollected는 "아직"이라고 말하고, failed는 액션이 필요해
+                토스트로 옮겼다([[ADR-083]] 결정 3 — 여기 있던 밑줄 버튼이 그것이다). */}
+            {!isPeriodLoading && characterGroups.length > 0 && periodState === 'notCollected' && (
+              <p className="flex items-center gap-1.5 text-sm text-text-muted">
+                <Clock className="h-4 w-4 flex-none" strokeWidth={1.75} aria-hidden="true" />
+                아직 집계되지 않았습니다 — 준비되면 자동으로 채워집니다
+              </p>
+            )}
+
+            {/* 총 수익 요약은 카드가 아니라 헤드라인이다(ADR-046) — 아래 캐릭터 카드가 전부 같은 카드 셸이라
+                요약도 카드면 "동일한 흰 카드의 반복"으로 묻힌다. 카드 셸을 걷어내고 색·크기로만 위계를 주고,
+                라벨행 우측에는 이 기간 전체 고가 드롭 뱃지(ADR-045 배지 재사용)를 장식 겸 정보로 얹는다. */}
+            {!isPeriodLoading && characterGroups.length > 0 && (
+              <div>
+                {/* 뱃지는 흐름 밖(absolute)에 둔다(ADR-049) — 흐름에 있으면 라벨(16px)보다 큰
+                    뱃지(24px)가 줄 높이를 정해 뱃지 유무로 헤드라인이 8px 튄다. 뱃지에 붙일 탭 확대
+                    애니메이션도 주변 레이아웃을 밀지 않아야 한다. */}
+                {/* 라벨행 높이를 h-6(24px)으로 "명시" 고정한다([[ADR-054]] 정정 4, 사용자 요청) —
+                    전에는 라벨(text-xs = 16px)이 우연히 정하는 값이라, 그보다 큰 요소를 흐름에 넣는
+                    순간 줄이 커졌다(그래서 24px 고가 드롭 뱃지를 absolute로 빼냈다, [[ADR-049]] 결정 2).
+                    높이를 못 박아두면 그 의존이 끊긴다 — 뱃지·결정석 칩이 있든 없든 줄은 항상 24px다. */}
+                <div className="relative flex h-6 items-center">
+                  <p className="text-xs font-semibold tracking-wide text-text-muted">
+                    {periodLabel.primary} 총 수익
+                  </p>
+                  {/* 결정석 판매 현황은 라벨 텍스트 바로 옆에 둔다([[ADR-054]] 정정 3, 사용자 요청).
+                      칩은 줄 높이(24px) 안에서 h-5까지 키울 수 있다 — 24px를 넘기지만 않으면 된다.
+                      우측 끝은 여전히 고가 드롭 뱃지(absolute)의 자리이므로 침범하지 않는다. */}
+                  <CrystalSummaryChip tab={tab} groups={characterGroups} />
+                  {periodValuableDrops.length > 0 && (
+                    <ValuableDropBadge
+                      drops={periodValuableDrops}
+                      label="이 기간 고가 드롭"
+                      className="absolute right-0 top-1/2 -translate-y-1/2"
+                    />
+                  )}
+                </div>
+                <div className="mt-1.5 flex items-center gap-2.5">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-tint text-primary-ink">
+                    <ProfitIcon className="h-[18px] w-[18px]" strokeWidth={2} aria-hidden="true" />
+                  </span>
+                  {/* 단위는 별도 span으로 격하하되 숫자와 사이에 실제 공백 문자를 남긴다 — 마진만으로 띄우면
+                      textContent가 "N메소"로 붙어 스크린리더가 붙여 읽는다(ADR-046 트레이드오프). */}
+                  <p className="text-xl font-extrabold leading-none tabular-nums text-primary-ink">
+                    {/* [[ADR-087]] 정정 1: 이 키에만 기간이 없다 — 기간이 바뀌어도 같은 자리의 같은
+                        뜻을 가진 하나의 숫자로 보고 굴린다("기간 이동은 총 수익만", 사용자 결정). */}
+                    <AnimatedMeso identity={`total|${loadedTab}`} value={totalMeso} />{' '}
+                    <span className="text-xs font-bold text-text-muted">메소</span>
+                  </p>
+                  {/* ADR-087 결정 1: 라벨행이 아니라 이 줄에 붙는다 — 32px 금액행 안에 들어가므로
+                      헤더 높이가 늘지 않는다(라벨행 h-6 제약과도 무관하다). */}
+                  <DeltaChip
+                    totalMeso={totalMeso}
+                    previousMeso={previousPeriodTotalMeso}
+                    tab={tab}
+                    periodKey={periodKey}
+                    now={now}
                   />
-                </button>
+                </div>
+                <div className="mt-3 h-px bg-border" aria-hidden="true" />
               </div>
             )}
           </div>
 
-          <div className="flex items-center justify-center gap-4">
-            <button
-              type="button"
-              onClick={() => goToPreviousPeriod()}
-              disabled={isPrevDisabled}
-              aria-label="이전 기간"
-              className="flex h-7 w-7 items-center justify-center rounded-full border border-border text-text disabled:opacity-30"
-            >
-              <ChevronLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
-            </button>
+          {/* 공용 레시피의 헤더-목록 경계 페이드 오버레이(absolute top-full h-8)는 이 화면에 두지 않는다
+              (ADR-047 결정 6) — 펼친 카드의 sticky 헤더가 멈추는 자리가 바로 그 밴드라, z-10 페이지 헤더
+              안의 오버레이가 stuck 헤더 상단을 덮어 가린다. 경계는 총 수익 헤드라인 하단 헤어라인이 담당. */}
 
-            <div className="text-center">
-              <p className="text-sm font-semibold text-text">{periodLabel.primary}</p>
-              <p className="mt-0.5 text-xs text-text-muted tabular-nums">{periodLabel.secondary}</p>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => goToNextPeriod()}
-              disabled={isNextDisabled}
-              aria-label="다음 기간"
-              className="flex h-7 w-7 items-center justify-center rounded-full border border-border text-text disabled:opacity-30"
-            >
-              <ChevronRight className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
-            </button>
-          </div>
-
-          {/* ADR-061 결정 2: 보여줄 데이터가 아예 없을 때만 셸 승계 카드를 그린다. */}
-          {!isPeriodLoading && (status === 'idle' || status === 'loading') && characterGroups.length === 0 && (
-            <LoadingState size="page" message="불러오고 있어요" />
-          )}
-
-          {/* ADR-068 결정 1·7: 상태마다 얼굴이 다르다. 기록이 있으면(periodState === 'recorded')
-              아무것도 띄우지 않는다 — 목요일 새벽처럼 백필만 막힌 경우 기록은 정확하고 사용자가
-              할 일도 없다. notCollected는 "아직"이라고 말하고, failed는 액션이 필요해
-              토스트로 옮겼다([[ADR-083]] 결정 3 — 여기 있던 밑줄 버튼이 그것이다). */}
-          {!isPeriodLoading && characterGroups.length > 0 && periodState === 'notCollected' && (
-            <p className="flex items-center gap-1.5 text-sm text-text-muted">
-              <Clock className="h-4 w-4 flex-none" strokeWidth={1.75} aria-hidden="true" />
-              아직 집계되지 않았습니다 — 준비되면 자동으로 채워집니다
-            </p>
-          )}
-
-          {/* 총 수익 요약은 카드가 아니라 헤드라인이다(ADR-046) — 아래 캐릭터 카드가 전부 같은 카드 셸이라
-              요약도 카드면 "동일한 흰 카드의 반복"으로 묻힌다. 카드 셸을 걷어내고 색·크기로만 위계를 주고,
-              라벨행 우측에는 이 기간 전체 고가 드롭 뱃지(ADR-045 배지 재사용)를 장식 겸 정보로 얹는다. */}
-          {!isPeriodLoading && characterGroups.length > 0 && (
-            <div>
-              {/* 뱃지는 흐름 밖(absolute)에 둔다(ADR-049) — 흐름에 있으면 라벨(16px)보다 큰
-                  뱃지(24px)가 줄 높이를 정해 뱃지 유무로 헤드라인이 8px 튄다. 뱃지에 붙일 탭 확대
-                  애니메이션도 주변 레이아웃을 밀지 않아야 한다. */}
-              {/* 라벨행 높이를 h-6(24px)으로 "명시" 고정한다([[ADR-054]] 정정 4, 사용자 요청) —
-                  전에는 라벨(text-xs = 16px)이 우연히 정하는 값이라, 그보다 큰 요소를 흐름에 넣는
-                  순간 줄이 커졌다(그래서 24px 고가 드롭 뱃지를 absolute로 빼냈다, [[ADR-049]] 결정 2).
-                  높이를 못 박아두면 그 의존이 끊긴다 — 뱃지·결정석 칩이 있든 없든 줄은 항상 24px다. */}
-              <div className="relative flex h-6 items-center">
-                <p className="text-xs font-semibold tracking-wide text-text-muted">
-                  {periodLabel.primary} 총 수익
-                </p>
-                {/* 결정석 판매 현황은 라벨 텍스트 바로 옆에 둔다([[ADR-054]] 정정 3, 사용자 요청).
-                    칩은 줄 높이(24px) 안에서 h-5까지 키울 수 있다 — 24px를 넘기지만 않으면 된다.
-                    우측 끝은 여전히 고가 드롭 뱃지(absolute)의 자리이므로 침범하지 않는다. */}
-                <CrystalSummaryChip tab={tab} groups={characterGroups} />
-                {periodValuableDrops.length > 0 && (
-                  <ValuableDropBadge
-                    drops={periodValuableDrops}
-                    label="이 기간 고가 드롭"
-                    className="absolute right-0 top-1/2 -translate-y-1/2"
-                  />
-                )}
-              </div>
-              <div className="mt-1.5 flex items-center gap-2.5">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-tint text-primary-ink">
-                  <ProfitIcon className="h-[18px] w-[18px]" strokeWidth={2} aria-hidden="true" />
-                </span>
-                {/* 단위는 별도 span으로 격하하되 숫자와 사이에 실제 공백 문자를 남긴다 — 마진만으로 띄우면
-                    textContent가 "N메소"로 붙어 스크린리더가 붙여 읽는다(ADR-046 트레이드오프). */}
-                <p className="text-xl font-extrabold leading-none tabular-nums text-primary-ink">
-                  {/* [[ADR-087]] 정정 1: 이 키에만 기간이 없다 — 기간이 바뀌어도 같은 자리의 같은
-                      뜻을 가진 하나의 숫자로 보고 굴린다("기간 이동은 총 수익만", 사용자 결정). */}
-                  <AnimatedMeso identity={`total|${loadedTab}`} value={totalMeso} />{' '}
-                  <span className="text-xs font-bold text-text-muted">메소</span>
-                </p>
-                {/* ADR-087 결정 1: 라벨행이 아니라 이 줄에 붙는다 — 32px 금액행 안에 들어가므로
-                    헤더 높이가 늘지 않는다(라벨행 h-6 제약과도 무관하다). */}
-                <DeltaChip
-                  totalMeso={totalMeso}
-                  previousMeso={previousPeriodTotalMeso}
-                  tab={tab}
-                  periodKey={periodKey}
-                  now={now}
-                />
-              </div>
-              <div className="mt-3 h-px bg-border" aria-hidden="true" />
-            </div>
-          )}
+          {/* ADR-072 결정 4·5: 인디케이터는 sticky 헤더 블록의 마지막 자식이고 absolute라 이 블록의 실측
+              높이(stickyHeaderHeight)를 바꾸지 않는다 — 흐름 자식이면 당길 때마다 ResizeObserver가
+              발화해 펼친 카드의 중첩 sticky 헤더가 손가락을 따라 흔들린다(ADR-047 결정 3). */}
+          <PullToRefreshIndicator distance={pullToRefresh.distance} phase={pullToRefresh.phase} />
         </div>
 
-        {/* 공용 레시피의 헤더-목록 경계 페이드 오버레이(absolute top-full h-8)는 이 화면에 두지 않는다
-            (ADR-047 결정 6) — 펼친 카드의 sticky 헤더가 멈추는 자리가 바로 그 밴드라, z-10 페이지 헤더
-            안의 오버레이가 stuck 헤더 상단을 덮어 가린다. 경계는 총 수익 헤드라인 하단 헤어라인이 담당. */}
-
-        {/* ADR-072 결정 4·5: 인디케이터는 sticky 헤더 블록의 마지막 자식이고 absolute라 이 블록의 실측
-            높이(stickyHeaderHeight)를 바꾸지 않는다 — 흐름 자식이면 당길 때마다 ResizeObserver가
-            발화해 펼친 카드의 중첩 sticky 헤더가 손가락을 따라 흔들린다(ADR-047 결정 3). */}
-        <PullToRefreshIndicator distance={pullToRefresh.distance} phase={pullToRefresh.phase} />
+        {/* ADR-085 결정 1: fixed 헤더가 흐름에서 빠진 자리 — 실측 높이 그대로. */}
+        <div aria-hidden="true" style={{ height: stickyHeaderHeight }} />
       </div>
-
-    <div className="-mt-[var(--sa-top)] space-y-4">
-      {/* ADR-085 결정 1: fixed 헤더가 흐름에서 빠진 자리 — 실측 높이 그대로. */}
-      <div aria-hidden="true" style={{ height: stickyHeaderHeight }} />
 
       {/* ADR-073 결정 1·2: 헤더는 sticky로 제자리에 두고 이 목록 블록만 손가락을 따라 내려간다.
           마진·높이가 아니라 transform 이라 터치 프레임마다의 리플로우가 없고, 헤더의 실측
           높이(stickyHeaderHeight)도 건드리지 않는다. 오프셋이 0이면 transform 을 아예 걸지
           않는다(결정 3) — translateY(0px) 조차 containing block·stacking context를 만들어 sticky
-          후손(ADR-047 중첩 카드 헤더)의 기준을 바꾼다. 당김은 window.scrollY <= 0 에서만 시작되므로
-          (ADR-072 결정 2) 당기는 순간엔 멈춘(stuck) 카드 헤더가 없어 stickyTop 을 보정할 대상도
+          후손(ADR-047 중첩 카드 헤더)의 기준을 바꾼다. 당김은 컨테이너가 최상단일 때만 시작되므로
+          ([[ADR-072]] 결정 2 · [[ADR-100]] 결정 4) 당기는 순간엔 멈춘(stuck) 카드 헤더가 없어 stickyTop 을 보정할 대상도
           없다. 반면 transition 은 어떤 컨텍스트도 만들지 않으므로 항상 걸어둔다. 그래야 오프셋이
           0으로 돌아갈 때 복귀 애니메이션이 살고(붙였다 떼면 마지막 프레임에 전환이 없어 순간이동한다),
           드래그 중에만 'none' 이다(결정 4) — 손가락이 붙어 있는데 전환이 걸리면 목록이 늘 뒤처져 그려진다. */}
@@ -862,7 +898,7 @@ export function BossProfitScreen(): React.JSX.Element {
             />
           ))}
       </div>
-    </div>
+    </ScreenScroll>
     <Outlet />
     </BossProfitContextProvider>
   )

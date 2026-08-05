@@ -1,8 +1,10 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`ContentScreen DOM 스냅샷 (ADR-094 결정 4) > 수동 추적 모드 — 자동 모드와 다른 카드 구성 1`] = `
-"<div class="-mt-[var(--sa-top)] space-y-4">
-<div class="bg-bg pb-2 pt-[calc(1rem+var(--sa-top))] px-4 sticky top-0 z-10">
+"<div data-testid="screen-scroll" class="bottom-[var(--tab-bar-h)] fixed inset-x-0 overflow-y-auto overscroll-y-none top-[var(--sa-top)]">
+<div class="-mt-[var(--sa-top)] space-y-4">
+<div>
+<div class="bg-bg fixed inset-x-0 pb-2 pt-[calc(1rem+var(--sa-top))] px-4 top-0 z-10">
 <div class="space-y-4">
 <div class="flex items-center justify-between">
 <h1 class="font-semibold text-lg text-text">컨텐츠 스케줄러</h1>
@@ -47,6 +49,9 @@ exports[`ContentScreen DOM 스냅샷 (ADR-094 결정 4) > 수동 추적 모드 �
 <div class="absolute backdrop-blur-sm bg-gradient-to-b from-bg h-8 inset-x-0 pointer-events-none to-transparent top-full" style="mask-image: linear-gradient(black, transparent); -webkit-mask-image: linear-gradient(black, transparent);" aria-hidden="true">
 </div>
 </div>
+<div aria-hidden="true" style="height: 0px;">
+</div>
+</div>
 <div data-testid="pull-content" class="pb-4 px-4 space-y-4" style="transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1);">
 <ul class="space-y-2">
 <li>
@@ -72,12 +77,15 @@ exports[`ContentScreen DOM 스냅샷 (ADR-094 결정 4) > 수동 추적 모드 �
 </li>
 </ul>
 </div>
+</div>
 </div>"
 `;
 
 exports[`ContentScreen DOM 스냅샷 (ADR-094 결정 4) > 일간 탭 — 컨텐츠 카드와 진행률 바 1`] = `
-"<div class="-mt-[var(--sa-top)] space-y-4">
-<div class="bg-bg pb-2 pt-[calc(1rem+var(--sa-top))] px-4 sticky top-0 z-10">
+"<div data-testid="screen-scroll" class="bottom-[var(--tab-bar-h)] fixed inset-x-0 overflow-y-auto overscroll-y-none top-[var(--sa-top)]">
+<div class="-mt-[var(--sa-top)] space-y-4">
+<div>
+<div class="bg-bg fixed inset-x-0 pb-2 pt-[calc(1rem+var(--sa-top))] px-4 top-0 z-10">
 <div class="space-y-4">
 <div class="flex items-center justify-between">
 <h1 class="font-semibold text-lg text-text">컨텐츠 스케줄러</h1>
@@ -121,6 +129,9 @@ exports[`ContentScreen DOM 스냅샷 (ADR-094 결정 4) > 일간 탭 — 컨텐�
 <div class="absolute backdrop-blur-sm bg-gradient-to-b from-bg h-8 inset-x-0 pointer-events-none to-transparent top-full" style="mask-image: linear-gradient(black, transparent); -webkit-mask-image: linear-gradient(black, transparent);" aria-hidden="true">
 </div>
 </div>
+<div aria-hidden="true" style="height: 0px;">
+</div>
+</div>
 <div data-testid="pull-content" class="pb-4 px-4 space-y-4" style="transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1);">
 <ul class="space-y-2">
 <li>
@@ -154,6 +165,7 @@ exports[`ContentScreen DOM 스냅샷 (ADR-094 결정 4) > 일간 탭 — 컨텐�
 </div>
 </li>
 </ul>
+</div>
 </div>
 </div>"
 `;

@@ -9,6 +9,15 @@ export interface PullToRefreshOptions {
   isRefreshing: boolean
   /** 임계값을 넘겨 놓았을 때 호출된다. */
   onRefresh: () => void
+  /**
+   * 화면이 자기 스크롤 컨테이너를 가질 때 그 요소([[ADR-099]] 결정 2). 주면 최상단 판정이
+   * `scrollTop <= 0` 이 되고, 오버레이 배제 검사(결정 14)의 탐색이 이 요소에서 멈춘다 —
+   * 페이지 자신은 당김의 대상이지 배제 대상이 아니다.
+   *
+   * 안 주면 문서 스크롤 기준([[ADR-072]] 결정 1·2) 그대로다. 전환하지 않은 화면은 프롭을
+   * 넘기지 않으므로 동작이 바뀌지 않는다.
+   */
+  scrollRoot?: { current: HTMLElement | null }
 }
 
 export interface PullToRefreshState {
@@ -26,11 +35,12 @@ export interface PullToRefreshState {
 // 자기 스크롤을 가지면서 body 스크롤을 잠그므로 window.scrollY 는 0 그대로다(결정 2만으로는 최상단으로
 // 보인다). 그래서 이 검사가 없으면 오버레이 내부를 스크롤하려는 손가락이 document 까지 버블링돼
 // preventDefault 로 내부 스크롤이 막히고, 손을 떼면 뒤 페이지가 재조회된다.
-// 문서 스크롤 루트에 닿으면 멈춘다 — 페이지 자신은 당김의 대상이지 배제 대상이 아니다.
+// 스크롤 루트에 닿으면 멈춘다 — 페이지 자신은 당김의 대상이지 배제 대상이 아니다. 그 루트는 문서
+// (body·documentElement)이거나, 화면이 자기 스크롤 컨테이너를 가질 때는 그 요소다([[ADR-099]] 결정 2).
 // scrollTop 은 보지 않는다(결정 14) — 오버레이가 떠 있는 동안의 배경 새로고침은 어느 경우에도 의도가 아니다.
-function startedInScrollableLayer(target: EventTarget | null): boolean {
+function startedInScrollableLayer(target: EventTarget | null, scrollRoot: HTMLElement | null): boolean {
   let node = target instanceof Element ? target : null
-  while (node !== null && node !== document.body && node !== document.documentElement) {
+  while (node !== null && node !== document.body && node !== document.documentElement && node !== scrollRoot) {
     const { overflowY } = window.getComputedStyle(node)
     if ((overflowY === 'auto' || overflowY === 'scroll') && node.scrollHeight > node.clientHeight) {
       return true
@@ -40,13 +50,15 @@ function startedInScrollableLayer(target: EventTarget | null): boolean {
   return false
 }
 
-// 목록 최상단에서 아래로 당기는 제스처를 감지한다([[ADR-072]]). 이 앱에는 overflow 스크롤 컨테이너가
-// 없고 문서 전체가 스크롤되므로(결정 1·2) 컨테이너 ref가 아니라 document 리스너 + window.scrollY 로
-// 판정한다. 임계값·감쇠 계산은 전부 pull-to-refresh.ts 의 순수 함수가 갖는다.
+// 목록 최상단에서 아래로 당기는 제스처를 감지한다([[ADR-072]]). 리스너는 어느 쪽이든 document 에
+// 붙이고(제스처는 화면 어디서 시작해도 잡아야 한다), **최상단인지 묻는 대상만** 갈린다 —
+// 문서 스크롤이면 `window.scrollY`, 화면이 자기 스크롤 컨테이너를 가지면 그 요소의 `scrollTop`
+// ([[ADR-099]] 결정 2). 임계값·감쇠 계산은 전부 pull-to-refresh.ts 의 순수 함수가 갖는다.
 export function usePullToRefresh({
   enabled,
   isRefreshing,
   onRefresh,
+  scrollRoot,
 }: PullToRefreshOptions): PullToRefreshState {
   const [distance, setDistance] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
@@ -77,6 +89,13 @@ export function usePullToRefresh({
     let startY: number | null = null
     let pulled = 0
 
+    // 스크롤 오프셋을 어디서 읽을지 — 컨테이너를 준 화면은 그 요소, 아니면 문서다.
+    // iOS 러버밴드에서 음수가 될 수 있어 두 경로 모두 `> 0` 으로 묻는다(결정 2).
+    const isScrolledDown = (): boolean => {
+      const root = scrollRoot?.current
+      return root !== null && root !== undefined ? root.scrollTop > 0 : window.scrollY > 0
+    }
+
     const stopTracking = (): void => {
       startY = null
       pulled = 0
@@ -89,8 +108,8 @@ export function usePullToRefresh({
       if (event.touches.length !== 1) return // 멀티터치는 핀치/줌이지 당김이 아니다.
       // 결정 14 — 출처 검사가 최상단 판정보다 앞이다. 조상 사슬 탐색은 레이아웃을 읽으므로
       // touchmove 가 아니라 여기서 제스처당 한 번만 한다.
-      if (startedInScrollableLayer(event.target)) return
-      if (window.scrollY > 0) return // 결정 2 — iOS 러버밴드에서 음수가 될 수 있어 `<= 0` 이다.
+      if (startedInScrollableLayer(event.target, scrollRoot?.current ?? null)) return
+      if (isScrolledDown()) return // 결정 2 — iOS 러버밴드에서 음수가 될 수 있어 `<= 0` 이다.
       startY = event.touches[0].clientY
       pulled = 0
       setIsDragging(true)
@@ -100,7 +119,7 @@ export function usePullToRefresh({
       if (startY === null) return
 
       const rawDelta = event.touches[0].clientY - startY
-      if (rawDelta <= 0 || window.scrollY > 0) {
+      if (rawDelta <= 0 || isScrolledDown()) {
         // 사용자가 평범한 스크롤을 하려는 것이다.
         stopTracking()
         return
@@ -140,7 +159,7 @@ export function usePullToRefresh({
       // 당기는 도중 비활성화되면 touchend가 오지 않아 배너가 열린 채 남는다.
       stopTracking()
     }
-  }, [enabled])
+  }, [enabled, scrollRoot])
 
   if (!enabled) return { distance: 0, phase: 'idle', isDragging: false }
   return {

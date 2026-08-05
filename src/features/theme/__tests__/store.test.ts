@@ -46,6 +46,44 @@ describe('초기 상태', () => {
   })
 })
 
+// ADR-099: 테마의 라이트/다크를 CSS 에도 알린다. 안 알리면 브라우저가 스크롤 인디케이터·폼 컨트롤
+// 같은 UI 크롬 색을 자기 기본값으로 고르는데, 화면 스크롤 컨테이너에서 그 차이가 흰 인디케이터로
+// 드러났다(실기기 관측 2026-08-06). 네이티브 상태바·내비바에 이미 같은 값을 넘기고 있었다.
+describe('color-scheme (ADR-099)', () => {
+  it('다크 테마면 문서에 color-scheme: dark 를 건다', async () => {
+    vi.mocked(getTheme).mockResolvedValue('레테')
+
+    await useThemeStore.getState().restoreFromStorage()
+
+    expect(document.documentElement.style.colorScheme).toBe('dark')
+  })
+
+  it('라이트 테마면 color-scheme: light 다', async () => {
+    vi.mocked(getTheme).mockResolvedValue('렌')
+
+    await useThemeStore.getState().restoreFromStorage()
+
+    expect(document.documentElement.style.colorScheme).toBe('light')
+  })
+
+  it('테마를 바꾸면 함께 바뀐다', async () => {
+    await useThemeStore.getState().selectTheme('레테')
+    expect(document.documentElement.style.colorScheme).toBe('dark')
+
+    await useThemeStore.getState().selectTheme('렌')
+    expect(document.documentElement.style.colorScheme).toBe('light')
+  })
+
+  // color-scheme 만으로는 라이트 테마에서 인디케이터가 흰색으로 남았다(실기기) — 색을 직접 준다.
+  it('인디케이터 색을 테마 모드에 맞춰 직접 지정한다', async () => {
+    await useThemeStore.getState().selectTheme('렌')
+    expect(document.documentElement.style.scrollbarColor).toBe('rgba(0, 0, 0, 0.35) transparent')
+
+    await useThemeStore.getState().selectTheme('레테')
+    expect(document.documentElement.style.scrollbarColor).toBe('rgba(255, 255, 255, 0.35) transparent')
+  })
+})
+
 describe('restoreFromStorage', () => {
   it('저장된 값이 레테면 theme과 DOM을 레테로 갱신한다', async () => {
     vi.mocked(getTheme).mockResolvedValue('레테')
