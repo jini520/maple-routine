@@ -25,8 +25,10 @@ const SIZE_STYLES: Record<
   },
   compact: {
     select: 'rounded-full border border-border bg-surface py-1 text-xs font-medium text-text-muted',
-    withEmblem: 'pl-7 pr-3',
-    withoutEmblem: 'px-3',
+    // pr 은 화살표 오른쪽 여백이다 — 네이티브 <select> 는 화살표를 패딩 박스 안 오른쪽 끝에
+    // 그리므로, padding-right 를 키우면 화살표가 테두리에서 그만큼 안쪽으로 들어온다.
+    withEmblem: 'pl-7 pr-4',
+    withoutEmblem: 'pl-3 pr-4',
     emblem: 'left-2.5 h-[14px]',
   },
 }

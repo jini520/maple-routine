@@ -203,7 +203,7 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
 
 **두 가지 크기** ([[ADR-096]] 결정 5, 2026-08-05):
 - `size="default"` — 스케줄러 화면(`/content`·`/boss`). 제목 아래 **독립된 줄**의 주 컨트롤이라 `min-w-[160px] py-3 text-sm`, 엠블럼 `h-[22px] left-3`, `pl-8`.
-- `size="compact"` — 관리 화면(`/content/manage`·`/boss/manage`). 제목 줄 우측의 작은 자리라, 이 자리에 있던 읽기 전용 칩과 **같은 크기감**을 유지한다: `rounded-full border border-border py-1 text-xs`, 엠블럼 `h-[14px] left-2.5`, `pl-7 pr-3`. default 를 그대로 넣으면 헤더가 두꺼워지고 좁은 화면에서 제목과 폭을 다툰다.
+- `size="compact"` — 관리 화면(`/content/manage`·`/boss/manage`). 제목 줄 우측의 작은 자리라, 이 자리에 있던 읽기 전용 칩과 **같은 크기감**을 유지한다: `rounded-full border border-border py-1 text-xs`, 엠블럼 `h-[14px] left-2.5`, `pl-7 pr-4`. default 를 그대로 넣으면 헤더가 두꺼워지고 좁은 화면에서 제목과 폭을 다툰다. `pr` 은 **화살표 오른쪽 여백**이다 — 네이티브 `<select>` 는 화살표를 패딩 박스 안 오른쪽 끝에 그리므로 `padding-right` 를 키우면 화살표가 테두리에서 안쪽으로 들어온다(2026-08-05 조정).
 
 ### 진행률 바 프리미티브
 `role="progressbar"` + `aria-valuenow/min/max`, track `h-1.5 w-full rounded-full bg-track` + fill `h-1.5 rounded-full bg-primary`. **결정형 진행률은 예외 없이 이것 하나**([[ADR-061]] 결정 6) — 온보딩 예열·계정 변경 예열·캐릭터 관리 저장·OTA 다운로드·컨텐츠 진행률이 모두 같은 스타일이다. 새 색/모양/두께 신설 금지.
