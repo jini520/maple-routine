@@ -53,7 +53,10 @@
     {
       "step": 6,
       "name": "profit-profile-reread",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-06T03:47:24+0900",
+      "summary": "boss-profit/store.ts — syncSchedules 가 성공 반환한 직후(try/catch 밖, results 순회 앞) getSortedCharacterInfo(ocids)를 다시 불러 syncedCharacterInfo/syncedOcids/syncedImageUrlByOcid/syncedWorldByOcid 를 새 이름으로 만든다(기존 sortedCharacterInfo 계열은 캐시 우선 표시 단계 전용으로 그대로 둔다 — 거기서 기다리면 첫 페인트가 늦어진다). 갱신된 사용처 3곳: results 순회의 characterProfiles 조립(imageUrl·world) · sortRowsByOcidOrder(unionRows, syncedOcids) · buildWeeklySubtotalsForMonth(syncedOcids, …). 동기화 실패 조기 반환 경로·refreshInPlace 의 loadPeriod(자체 재조회) 는 무변경, 새 API 호출 0(로컬 character-basic-cache 읽기). 테스트 3케이스 신규(총 101), 전량 2404개 통과·lint 0 errors",
+      "completed_at": "2026-08-06T03:51:00+0900"
     },
     {
       "step": 7,

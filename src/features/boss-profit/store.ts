@@ -786,6 +786,18 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
       return
     }
 
+    // ADR-097 결정 7 후단(이슈 #139): 방금 끝난 syncSchedules 가 대상 캐릭터의 character/basic 도
+    // 함께 받아 character-basic-cache 를 갱신했다(편승 갱신). 이 화면만 프로필을 동기화 **이전에**
+    // 읽으므로(위 sortedCharacterInfo — 캐시 우선 표시가 즉시 그리려면 그래야 한다), 여기서 다시
+    // 읽지 않으면 갱신된 레벨·이미지가 이 회차 화면에 반영되지 않고 다음 진입으로 밀린다.
+    // character-basic-cache 를 읽는 로컬 조회라 네트워크는 0회다. 캐시 우선 표시 단계는 위의 옛
+    // 값을 그대로 쓴다 — 거기서 새 값을 기다리면 첫 페인트가 그만큼 늦어진다.
+    // 레벨이 바뀌어 캐릭터 순서가 바뀌는 것은 의도된 결과다(정렬 규칙은 ADR-017 결정 2 그대로).
+    const syncedCharacterInfo = await getSortedCharacterInfo(ocids)
+    const syncedOcids = syncedCharacterInfo.map((info) => info.ocid)
+    const syncedImageUrlByOcid = new Map(syncedCharacterInfo.map((info) => [info.ocid, info.imageUrl]))
+    const syncedWorldByOcid = new Map(syncedCharacterInfo.map((info) => [info.ocid, info.world]))
+
     const rows: BossProfitRow[] = []
     const staleCharacterNames: string[] = []
     const characterIssues: Record<string, 'unavailable' | 'failed'> = {}
@@ -799,8 +811,8 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     for (const result of results) {
       const profile: CharacterProfileInfo = {
         characterName: result.characterName,
-        imageUrl: imageUrlByOcid.get(result.ocid) ?? null,
-        world: worldByOcid.get(result.ocid) ?? null,
+        imageUrl: syncedImageUrlByOcid.get(result.ocid) ?? null,
+        world: syncedWorldByOcid.get(result.ocid) ?? null,
       }
       characterProfiles.set(result.ocid, profile)
 
@@ -910,7 +922,7 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
 
     // 기록만 있는 조합을 행으로 되살린다(ADR-067 결정 4 — 위 appendRecordOnlyRows 주석).
     const unionRows = appendRecordOnlyRows(autoRecordedRows, records ?? [], characterProfiles, now)
-    const sortedRows = sortRowsByOcidOrder(unionRows, sortedOcids)
+    const sortedRows = sortRowsByOcidOrder(unionRows, syncedOcids)
     latestSyncSnapshot = { ocids: [...ocids], rows: sortedRows, characterProfiles }
 
     // 실시간 동기화가 실제로 성공했으므로 "마지막 동기화 시각"을 기록한다 — 세대 가드보다 앞에서
@@ -935,7 +947,7 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
 
     const weeklySubtotals =
       tab === 'monthly'
-        ? await buildWeeklySubtotalsForMonth(sortedOcids, currentPeriodKey, sortedRows, characterProfiles, now)
+        ? await buildWeeklySubtotalsForMonth(syncedOcids, currentPeriodKey, sortedRows, characterProfiles, now)
         : []
 
     const [liveDropsByRowKey, livePreviousPeriodTotalMeso] = await Promise.all([

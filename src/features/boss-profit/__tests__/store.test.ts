@@ -2631,4 +2631,70 @@ describe('useBossProfitStore', () => {
       expect(useBossProfitStore.getState().status).toBe('loaded')
     })
   })
+
+  // ADR-097 결정 7 후단(이슈 #139): syncSchedules 가 도는 회차에 character/basic 도 함께 받아
+  // 캐시를 갱신한다(편승 갱신). 이 화면만 프로필을 동기화 **이전에** 읽으므로, 완료 분기에서 다시
+  // 읽지 않으면 새 레벨·이미지가 그 회차에 반영되지 않고 다음 진입으로 밀린다.
+  describe('동기화 완료 후 프로필 재조회 (ADR-097 결정 7)', () => {
+    // 편승 갱신이 캐시를 새로 쓴 시점을 syncSchedules 호출로 모사한다 — 그 전에 읽으면 옛 값,
+    // 그 뒤에 읽으면 새 값이다.
+    function basicCacheFlippedBySync(
+      profileFor: (ocid: string, piggybacked: boolean) => { name: string; level: number; imageUrl: string },
+      results: CharacterScheduleSync[],
+    ): void {
+      let piggybacked = false
+      getCachedCharacterBasicMock.mockImplementation(async (ocid: string) => ({
+        profile: { ...profileFor(ocid, piggybacked), accessFlag: true },
+        cachedAt: '2026-07-01T00:00:00.000Z',
+      }))
+      syncSchedulesMock.mockImplementation(async () => {
+        piggybacked = true
+        return results
+      })
+    }
+
+    it('동기화 뒤 갱신된 이미지가 그 회차 rows 에 반영된다', async () => {
+      basicCacheFlippedBySync(
+        (ocid, piggybacked) => ({
+          name: `캐릭터-${ocid}`,
+          level: 200,
+          imageUrl: piggybacked ? '갱신됨.png' : '옛날.png',
+        }),
+        [syncResult()],
+      )
+
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+
+      expect(useBossProfitStore.getState().rows[0].imageUrl).toBe('갱신됨.png')
+    })
+
+    it('레벨이 바뀌어 순서가 뒤집히면 최종 rows 는 새 레벨 기준으로 정렬된다', async () => {
+      basicCacheFlippedBySync(
+        // 동기화 전엔 ocid-1(280) > ocid-2(250), 동기화 후엔 ocid-2 가 290 으로 올라 뒤집힌다.
+        (ocid, piggybacked) => ({
+          name: `캐릭터-${ocid}`,
+          level: ocid === 'ocid-1' ? 280 : piggybacked ? 290 : 250,
+          imageUrl: 'x',
+        }),
+        [
+          syncResult({ ocid: 'ocid-1' }),
+          syncResult({ ocid: 'ocid-2', characterName: '캐릭터-ocid-2' }),
+        ],
+      )
+
+      await useBossProfitStore.getState().refresh(['ocid-1', 'ocid-2'])
+
+      expect(useBossProfitStore.getState().rows.map((row) => row.ocid)).toEqual(['ocid-2', 'ocid-1'])
+    })
+
+    // 재조회는 character-basic-cache 를 읽는 로컬 조회다 — 네트워크가 0회여야 한다.
+    it('재조회 때문에 네트워크 호출이 늘지 않는다', async () => {
+      syncSchedulesMock.mockResolvedValue([syncResult()])
+
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+
+      expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
+      expect(fetchSchedulerCharacterStateMock).not.toHaveBeenCalled()
+    })
+  })
 })
