@@ -81,6 +81,20 @@ export interface BossProfitState {
   tab: BossCycle
   periodKey: string // 현재 tab 기준으로 선택된 기간
   rows: BossProfitRow[] // 선택된 (tab, periodKey)의 보스 row. monthly 탭이면 그 달의 monthly-cycle 보스만
+  /**
+   * **지금 `rows`·`weeklySubtotals` 에 담겨 있는 데이터가 어느 (tab, periodKey) 의 것인가**
+   * ([[ADR-087]] 정정 1). 위의 `tab`·`periodKey` 는 "사용자가 보려고 누른 기간"이라 데이터보다
+   * 먼저 바뀐다(기간 라벨·네비게이션의 반응성) — 그 사이 한 커밋 동안 화면은 **새 기간 키 +
+   * 옛 기간 금액**을 그린다.
+   *
+   * 카운트업 identity 를 이 값으로 만들어야 identity 와 금액이 **같은 커밋에 도착**한다. 목표
+   * 기간으로 만들면 위의 중간 커밋이 새 identity 슬롯에 옛 금액을 기억으로 써넣어, 커밋 타이밍에
+   * 따라 굴러가기도 안 굴러가기도 한다(정정 1의 실기기 관측).
+   *
+   * 그래서 **반드시 `rows` 와 같은 `set()` 안에서** 갱신한다.
+   */
+  loadedTab: BossCycle
+  loadedPeriodKey: string
   dropsByRowKey: Record<string, RecordedDrop[]> // 보스 행별 기록된 드롭(ADR-038). 키는 dropRowKey(ocid|boss|difficulty|periodKey). rows와 독립 상태라 탭 전환 시 loadPeriod가 DB에서 재로드
   weeklySubtotals: BossProfitWeeklySubtotal[] // monthly 탭에서만 채워짐(주차별 합계). weekly 탭에서는 항상 []
   isPeriodLoading: boolean // periodKey 이동 후 백필(과거 기간 재조회) 진행 중
@@ -403,6 +417,8 @@ async function loadPeriod(
     set({
       status: 'loaded',
       rows,
+      loadedTab: tab,
+      loadedPeriodKey: periodKey,
       dropsByRowKey,
       weeklySubtotals,
       isPeriodLoading: false,
@@ -489,6 +505,8 @@ async function loadPeriod(
   set({
     status: 'loaded',
     rows,
+    loadedTab: tab,
+    loadedPeriodKey: periodKey,
     dropsByRowKey,
     weeklySubtotals,
     isPeriodLoading: false,
@@ -504,6 +522,8 @@ const initialState: BossProfitState = {
   tab: 'weekly',
   periodKey: getCurrentBossProfitPeriod('weekly', new Date()).periodKey,
   rows: [],
+  loadedTab: 'weekly',
+  loadedPeriodKey: getCurrentBossProfitPeriod('weekly', new Date()).periodKey,
   dropsByRowKey: {},
   weeklySubtotals: [],
   isPeriodLoading: false,
@@ -552,6 +572,8 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
         status: 'loaded',
         periodKey: currentPeriodKey,
         rows: [],
+        loadedTab: tab,
+        loadedPeriodKey: currentPeriodKey,
         dropsByRowKey: {},
         weeklySubtotals: [],
         isPeriodLoading: false,
@@ -685,6 +707,8 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
         status: 'loading',
         periodKey: currentPeriodKey,
         rows: filterRowsForTab(cachedMergedRows, tab, currentPeriodKey),
+        loadedTab: tab,
+        loadedPeriodKey: currentPeriodKey,
         dropsByRowKey: cachedDropsByRowKey,
         weeklySubtotals: cachedWeeklySubtotals,
         isPeriodLoading: false,
@@ -873,6 +897,8 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
       status: 'loaded',
       periodKey: currentPeriodKey,
       rows: filterRowsForTab(sortedRows, tab, currentPeriodKey),
+      loadedTab: tab,
+      loadedPeriodKey: currentPeriodKey,
       dropsByRowKey: liveDropsByRowKey,
       weeklySubtotals,
       isPeriodLoading: false,
