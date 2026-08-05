@@ -206,8 +206,8 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
 - **UA 화살표는 플랫폼마다 모양이 다르다.** Android WebView(Chrome)·iOS WKWebView(Safari) 양쪽에서 도는 하이브리드라([[ADR-001]]) 그대로 두면 같은 화면이 기기마다 다르게 보인다.
 
 **두 가지 크기**:
-- `size="default"` — 스케줄러 화면(`/content`·`/boss`). 제목 아래 **독립된 줄**의 주 컨트롤이라 `min-w-[160px] py-3 text-sm`, 엠블럼 `h-[22px] left-3`, `pl-8 pr-9`, chevron `right-4 h-4 w-4`.
-- `size="compact"` — 관리 화면(`/content/manage`·`/boss/manage`). 제목 줄 우측의 작은 자리라, 이 자리에 있던 읽기 전용 칩과 **같은 크기감**을 유지한다: `rounded-full border border-border py-1 text-xs`, 엠블럼 `h-[14px] left-2.5`, `pl-7 pr-7`, chevron `right-3 h-3 w-3`. default 를 그대로 넣으면 헤더가 두꺼워지고 좁은 화면에서 제목과 폭을 다툰다.
+- `size="default"` — 스케줄러 화면(`/content`·`/boss`). 제목 아래 **독립된 줄**의 주 컨트롤이라 `min-w-[160px] py-3 text-sm`, 엠블럼 `h-[22px] left-3`, `pl-8 pr-9`, chevron `right-3.5 h-4 w-4`.
+- `size="compact"` — 관리 화면(`/content/manage`·`/boss/manage`). 제목 줄 우측의 작은 자리라, 이 자리에 있던 읽기 전용 칩과 **같은 크기감**을 유지한다: `rounded-full border border-border py-1 text-xs`, 엠블럼 `h-[14px] left-2.5`, `pl-7 pr-7`, chevron `right-2.5 h-3 w-3`. default 를 그대로 넣으면 헤더가 두꺼워지고 좁은 화면에서 제목과 폭을 다툰다.
 
 `pr` 은 chevron 자리를 비워 두는 값이다 — chevron 크기·`right` 를 옮기면 함께 조정한다(따로 두면 글자가 화살표 밑으로 들어간다).
 

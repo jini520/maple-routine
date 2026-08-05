@@ -33,7 +33,7 @@ const SIZE_STYLES: Record<
     withEmblem: 'pl-8 pr-9',
     withoutEmblem: 'pl-4 pr-9',
     emblem: 'left-3 h-[22px]',
-    chevron: 'right-4 h-4 w-4',
+    chevron: 'right-3.5 h-4 w-4',
   },
   compact: {
     select:
@@ -41,7 +41,7 @@ const SIZE_STYLES: Record<
     withEmblem: 'pl-7 pr-7',
     withoutEmblem: 'pl-3 pr-7',
     emblem: 'left-2.5 h-[14px]',
-    chevron: 'right-3 h-3 w-3',
+    chevron: 'right-2.5 h-3 w-3',
   },
 }
 

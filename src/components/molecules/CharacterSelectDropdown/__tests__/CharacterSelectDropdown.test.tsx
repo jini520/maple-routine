@@ -89,8 +89,8 @@ describe('CharacterSelectDropdown', () => {
     // 게다가 UA 화살표는 Android WebView와 iOS WKWebView에서 모양이 달라(ADR-001 하이브리드)
     // 그대로 두면 같은 화면이 기기마다 다르게 보인다. 그래서 **두 크기 모두** 직접 그린다.
     it.each([
-      ['compact' as const, 'right-3'],
-      ['default' as const, 'right-4'],
+      ['compact' as const, 'right-2.5'],
+      ['default' as const, 'right-3.5'],
     ])('%s는 네이티브 화살표를 끄고 chevron을 직접 그린다', (size, rightClass) => {
       render(
         <CharacterSelectDropdown
@@ -109,7 +109,7 @@ describe('CharacterSelectDropdown', () => {
       render(<CharacterSelectDropdown characters={characters} selectedOcid="ocid-1" onSelect={vi.fn()} />)
 
       expect(screen.getByRole('combobox')).toHaveClass('appearance-none', 'min-w-[160px]')
-      expect(screen.getByTestId('character-select-chevron')).toHaveClass('right-4')
+      expect(screen.getByTestId('character-select-chevron')).toHaveClass('right-3.5')
     })
 
     it('compact에서도 월드 엠블럼과 선택 동작은 같다', async () => {

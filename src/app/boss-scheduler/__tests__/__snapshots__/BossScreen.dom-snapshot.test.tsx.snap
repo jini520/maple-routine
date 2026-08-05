@@ -17,7 +17,7 @@ exports[`BossScreen DOM 스냅샷 (ADR-094 결정 4) > 주간 탭 — 보스 카
 <select class="appearance-none bg-surface border border-border min-w-[160px] pl-4 pr-9 py-3 rounded-[10px] text-sm text-text">
 <option value="ocid-1">캐릭터1</option>
 </select>
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="-translate-y-1/2 absolute h-4 lucide lucide-chevron-down pointer-events-none right-4 text-text-muted top-1/2 w-4" data-testid="character-select-chevron" aria-hidden="true">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="-translate-y-1/2 absolute h-4 lucide lucide-chevron-down pointer-events-none right-3.5 text-text-muted top-1/2 w-4" data-testid="character-select-chevron" aria-hidden="true">
 <path d="m6 9 6 6 6-6">
 </path>
 </svg>
