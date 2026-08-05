@@ -14,7 +14,7 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { clearCountUpMemory } from '../../../lib/use-count-up'
 import { domSnapshot } from '../../../__tests__/dom-snapshot.helper'
 import { BossProfitScreen } from '../BossProfitScreen'
@@ -112,7 +112,19 @@ function renderScreen(): ReturnType<typeof render> {
   )
 }
 
+// 이 화면의 DOM 은 **시스템 시각의 함수**다 — 헤더 동기화 영역(마지막 동기화 시각 + 새로고침
+// 버튼)은 `isPeriodRefreshable(tab, periodKey, now)` 일 때만 렌더되고([[ADR-076]]), 그 값은
+// "지금이 몇 주차인가"로 갈린다. 시각을 고정하지 않으면 스냅샷이 **찍은 날에만 맞는다** — 실제로
+// '월간 탭' 케이스(periodKey '2026-07')가 7월 5주차(7/30~8/5)가 닫히는 순간 깨졌다.
+// 2026-08-05 은 그 주 안이라 7월 화면이 아직 새로고침 가능한 시점이다(이번 주 키 2026-07-30).
+// 타이머는 진짜를 그대로 둔다(`toFake: ['Date']`) — 카운트업(rAF)·RTL 이 실제 타이머에 기댄다.
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(new Date('2026-08-05T12:00:00+09:00'))
+})
+
 afterEach(() => {
+  vi.useRealTimers()
   cleanup()
   vi.clearAllMocks()
   clearCountUpMemory()
