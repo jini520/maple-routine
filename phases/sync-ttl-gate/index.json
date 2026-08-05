@@ -24,7 +24,7 @@
       "status": "completed",
       "started_at": "2026-08-06T03:26:16+0900",
       "summary": "content-scheduler/store.ts — refresh(ocids, onProgress, options?: RefreshOptions{auto?}) 로 시그니처 확장(force 아님, 강제가 기본값). loadTrackedOcids()만 { auto: true } 를 넘기고 ContentScreen.tsx 는 무변경. 게이트는 캐시 우선 표시 직후·status:'loading' set 앞 — auto && hasSyncAttemptedThisRun() && isSyncFresh(캐시 syncedAt들, ocids.length, now) 이면 status:'loaded'·isStale:false·error:null·manualTrackedByOcid 를 한 번만 set 하고 반환(syncedAt 은 캐시 값 유지). 테스트 7케이스 신규(총 49)",
-      "completed_at": "2026-08-06T03:29:10+0900"
+      "completed_at": "2026-08-06T03:29:45+0900"
     },
     {
       "step": 3,
