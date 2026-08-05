@@ -32,7 +32,7 @@
       "status": "completed",
       "started_at": "2026-08-06T03:29:45+0900",
       "summary": "boss-scheduler/store.ts — 컨텐츠 스토어와 같은 모양의 refresh(ocids, onProgress, options?: RefreshOptions{auto?}) 로 확장하고 loadTrackedOcids()만 { auto: true } 를 넘긴다(BossScreen.tsx 무변경). 게이트는 캐시 우선 표시 직후·status:'loading' set 앞이며 건너뛰면 status:'loaded'·isStale:false·error:null 을 한 번만 set(syncedAt 은 캐시 값 유지). 이 화면만의 차이 — loadPartySizes(ocids)를 게이트 앞으로 옮겨(try/catch 유지) 동기화를 건너뛴 진입에서도 파티원 수 배지·필터가 갱신되게 했다. 테스트 8케이스 신규(총 70), docs/features/boss-scheduler.md 게이트 줄을 실제 구현에 맞게 정정",
-      "completed_at": "2026-08-06T03:34:30+0900"
+      "completed_at": "2026-08-06T03:34:33+0900"
     },
     {
       "step": 4,
