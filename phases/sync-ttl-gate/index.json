@@ -45,7 +45,10 @@
     {
       "step": 5,
       "name": "basic-piggyback",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-06T03:42:50+0900",
+      "summary": "schedule-sync.ts — refreshCharacterBasics(apiKey, accountId, characters) 내부 함수 신설(캐릭터별 fetchCharacterBasic 병렬 → 성공한 것만 setCachedCharacterBasic(accountId, ocid, { profile, cachedAt: now })). 호출 위치는 isGlobalFailure 를 걸러 낸 뒤(ADR-008 순서 보존) 나머지 캐릭터 병렬 동기화와 같은 Promise.all 안이고 대상은 targetCharacters 전체(프리플라이트 캐릭터 포함), 반환 전 await 한다(fire-and-forget 금지 — 호출부가 직후 캐시를 읽는다). 실패 정책은 절대 throw 하지 않는 best-effort: 개별 실패는 기존 캐시 유지, 토스트·에러 상태 없음, syncOneCharacter 의 try 밖이라 스케줄 결과가 isStale 이 되지 않는다. 자격 스윕·character-roster.ts 는 손대지 않음. 테스트 5케이스 신규(총 72), 전량 2401개 통과·lint 0 errors",
+      "completed_at": "2026-08-06T03:46:30+0900"
     },
     {
       "step": 6,

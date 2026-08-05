@@ -908,6 +908,88 @@ describe('syncSchedules', () => {
       expect(mergeSchedulerStateMock).toHaveBeenCalledTimes(1)
     })
   })
+
+  // 이슈 #139: 갱신 경로가 피커 하나뿐이라 레벨·외형이 "피커를 마지막으로 연 시점"에 굳었다.
+  // 동기화가 실제로 도는 회차에 편승시켜 그 스냅샷을 푼다.
+  describe('character/basic 편승 갱신 (ADR-097 결정 7)', () => {
+    it('추적 캐릭터 N명을 동기화하면 character/basic을 N회 호출하고 cachedAt과 함께 캐시에 쓴다', async () => {
+      const characters = [character('ocid-1'), character('ocid-2')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+      fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
+      fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) =>
+        basicProfile({ name: `갱신-${ocid}`, level: 293 }),
+      )
+
+      await syncSchedules(['ocid-1', 'ocid-2'])
+
+      // 프리플라이트로 이미 동기화한 첫 캐릭터도 갱신 대상이다.
+      expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(2)
+      expect(fetchCharacterBasicMock).toHaveBeenCalledWith('key-1', 'ocid-1')
+      expect(fetchCharacterBasicMock).toHaveBeenCalledWith('key-1', 'ocid-2')
+      expect(setCachedCharacterBasicMock).toHaveBeenCalledWith('acc-1', 'ocid-1', {
+        profile: basicProfile({ name: '갱신-ocid-1', level: 293 }),
+        cachedAt: NOW,
+      })
+      expect(setCachedCharacterBasicMock).toHaveBeenCalledWith('acc-1', 'ocid-2', {
+        profile: basicProfile({ name: '갱신-ocid-2', level: 293 }),
+        cachedAt: NOW,
+      })
+    })
+
+    it('character/basic이 실패해도 스케줄 조회가 성공했으면 그 캐릭터는 isStale: false다', async () => {
+      const characters = [character('ocid-1')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+      fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
+      fetchCharacterBasicMock.mockRejectedValue(new NexonNetworkError('basic 조회 실패'))
+
+      const results = await syncSchedules(['ocid-1'])
+
+      expect(results[0].isStale).toBe(false)
+      expect(results[0].error).toBeNull()
+      // 실패는 기존 캐시를 그대로 두는 것으로 끝난다.
+      expect(setCachedCharacterBasicMock).not.toHaveBeenCalled()
+    })
+
+    it('한 캐릭터의 character/basic 실패가 다른 캐릭터의 갱신을 막지 않는다', async () => {
+      const characters = [character('ocid-1'), character('ocid-2')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+      fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
+      fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) => {
+        if (ocid === 'ocid-1') {
+          throw new NexonNetworkError('basic 조회 실패')
+        }
+        return basicProfile({ name: `갱신-${ocid}`, level: 293 })
+      })
+
+      await syncSchedules(['ocid-1', 'ocid-2'])
+
+      expect(setCachedCharacterBasicMock).toHaveBeenCalledTimes(1)
+      expect(setCachedCharacterBasicMock).toHaveBeenCalledWith('acc-1', 'ocid-2', {
+        profile: basicProfile({ name: '갱신-ocid-2', level: 293 }),
+        cachedAt: NOW,
+      })
+    })
+
+    it('프리플라이트가 401이면 character/basic을 한 번도 부르지 않는다 (ADR-008 순서 보존)', async () => {
+      const characters = [character('ocid-1'), character('ocid-2'), character('ocid-3')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+      fetchSchedulerCharacterStateMock.mockRejectedValueOnce(new NexonAuthError('invalid'))
+
+      await syncSchedules(['ocid-1', 'ocid-2', 'ocid-3'])
+
+      expect(fetchCharacterBasicMock).not.toHaveBeenCalled()
+    })
+
+    it('프리플라이트가 429면 character/basic을 한 번도 부르지 않는다', async () => {
+      const characters = [character('ocid-1'), character('ocid-2')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+      fetchSchedulerCharacterStateMock.mockRejectedValueOnce(new NexonRateLimitError('rate limited'))
+
+      await syncSchedules(['ocid-1', 'ocid-2'])
+
+      expect(fetchCharacterBasicMock).not.toHaveBeenCalled()
+    })
+  })
 })
 
 describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신)', () => {
