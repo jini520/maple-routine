@@ -51,6 +51,14 @@ function mockStore(overrides: Partial<ReturnType<typeof useBossSchedulerStore>>)
     setPartySize: vi.fn(),
     addManualBoss: vi.fn(),
     removeManualBoss: vi.fn(),
+    // ADR-096: 탭·필터가 스토어로 올라갔다. 이 파일은 전환하지 않고 렌더 결과만 보므로
+    // 정적 값으로 충분하다 — 기본값을 빠뜨리면 어느 탭도 활성이 아닌 DOM이 나온다.
+    activeTab: 'weekly' as const,
+    setActiveTab: vi.fn(),
+    weeklyFilter: 'all' as const,
+    setWeeklyFilter: vi.fn(),
+    monthlyFilter: 'all' as const,
+    setMonthlyFilter: vi.fn(),
     ...overrides,
   })
 }

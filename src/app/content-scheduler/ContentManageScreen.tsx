@@ -8,14 +8,12 @@ import {
   isGuildContent,
   WEEKLY_CATEGORY_ORDER,
 } from '../../lib/content-category'
-import { worldEmblemUrl } from '../../lib/world-emblem'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
-import { useContentSchedulerStore } from '../../features/content-scheduler/store'
+import { CharacterSelectDropdown } from '../../components/molecules/CharacterSelectDropdown/CharacterSelectDropdown'
+import { useContentSchedulerStore, type ContentTab } from '../../features/content-scheduler/store'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { useToastStore } from '../../features/toast/store'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
-
-type ContentTab = 'daily' | 'weekly'
 
 // 카테고리 → 아이콘은 표현 계층 결정이라 여기 둔다(카테고리 자체는 lib/content-category가 데이터에서 도출).
 // 매핑에 없는 카테고리·접두사 없는 단독 항목은 Sparkles로 폴백한다.
@@ -51,10 +49,18 @@ export function ContentManageScreen(): React.JSX.Element {
     loadTrackedOcids,
     addManualContent,
     removeManualContent,
+    // ADR-096 결정 2: 진입 시점의 스케줄러 탭을 이어받는다(일간에서 들어오면 일간).
+    activeTab: schedulerTab,
+    // ADR-096 결정 4: 선택 캐릭터는 스케줄러와 공유한다 — 탭과 달리 "지금 누구를 보고 있는가"는
+    // 두 화면이 갈라지면 안 되는 값이다.
+    selectCharacter,
   } = useContentSchedulerStore()
   const { mode } = useTrackingModeStore()
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState<ContentTab>('daily')
+  // ADR-096 결정 2: 이어받는 것은 **진입 시점 한 번뿐**이고, 이 화면에서의 탭 전환은 스케줄러로
+  // 되돌리지 않는다. 되돌리면 잠깐 다른 탭을 뒤져본 것 때문에 돌아갔을 때 보던 화면이 바뀌어,
+  // 애초에 고치려던 문제("보던 자리를 잃는다")를 반대 방향으로 다시 만든다.
+  const [activeTab, setActiveTab] = useState<ContentTab>(schedulerTab)
 
   // 스케줄러를 거치지 않고 직접 진입(새로고침 등)해도 스토어가 채워지도록 동일하게 로드한다.
   useEffect(() => {
@@ -72,7 +78,6 @@ export function ContentManageScreen(): React.JSX.Element {
       : (characters[0]?.ocid ?? null)
 
   const selected = characters.find((character) => character.ocid === effectiveSelectedOcid) ?? null
-  const worldEmblem = selected?.world != null ? worldEmblemUrl(selected.world) : null
 
   const trackedNames = new Set(
     (selected !== null ? (manualTrackedByOcid?.[selected.ocid] ?? []) : [])
@@ -122,17 +127,18 @@ export function ContentManageScreen(): React.JSX.Element {
             </button>
             <h1 className="text-lg font-semibold text-text">컨텐츠 관리</h1>
           </div>
+          {/* ADR-096 결정 4·5: 읽기 전용 칩이던 자리 — 이 화면에서 캐릭터를 갈아 가며 쓰는데도
+              바꾸려면 뒤로 나가야 했다. 자리와 크기감은 그대로 두고(compact) 누를 수 있게만 한다.
+              onSelect는 스케줄러와 같은 selectCharacter라 돌아갔을 때 그쪽도 같은 캐릭터다. */}
           {selected !== null && (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs font-medium text-text-muted">
-              {worldEmblem !== null && (
-                <img
-                  src={worldEmblem}
-                  alt={selected.world ?? ''}
-                  className="h-3.5 w-auto shrink-0 object-contain"
-                />
-              )}
-              {selected.characterName}
-            </span>
+            <CharacterSelectDropdown
+              characters={characters}
+              selectedOcid={selected.ocid}
+              onSelect={(ocid) => {
+                void selectCharacter(ocid)
+              }}
+              size="compact"
+            />
           )}
         </div>
 

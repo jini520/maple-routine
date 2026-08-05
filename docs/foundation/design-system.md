@@ -201,6 +201,16 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
 ### 스케줄러 캐릭터 드롭다운 — 선택 캐릭터 월드 아이콘 — 2026-07-16
 `CharacterSelectDropdown` 은 네이티브 `<select>` 유지(`<option>` 이미지 불가라 펼친 목록은 텍스트만). 닫힌 상태 왼쪽에 선택 캐릭터의 **월드 엠블럼** 오버레이: `<select>` 를 `relative` 래퍼로 감싸고 `<img>` 를 `pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-[18px] w-auto object-contain`, `<select>` 에 `pl-9`. world 는 캐시 우선 뷰는 스케줄 캐시(`SchedulerCharacterState.world`)에서, 동기화 후 뷰는 sync 결과에서 — 캐시 있으면 API 응답 전 즉시 표시. 미매핑 월드 생략.
 
+**화살표는 UA 것을 쓰지 않고 직접 그린다** — `appearance-none` + `ChevronDown`(`pointer-events-none absolute top-1/2 -translate-y-1/2 text-text-muted`, `strokeWidth 2.5`). 두 크기 모두 같다([[ADR-096]] 결정 5, 2026-08-05). 이유 둘:
+- **`padding-right` 로는 화살표를 못 옮긴다**(브라우저 실측). 네이티브 `<select>` 의 화살표는 **오른쪽 테두리에 붙어 함께 움직여서**, `padding-right` 를 12→16→32→64px 로 키워도 화살표와 테두리 사이 간격은 그대로고 상자만 넓어진다(글자만 왼쪽으로 밀린다).
+- **UA 화살표는 플랫폼마다 모양이 다르다.** Android WebView(Chrome)·iOS WKWebView(Safari) 양쪽에서 도는 하이브리드라([[ADR-001]]) 그대로 두면 같은 화면이 기기마다 다르게 보인다.
+
+**두 가지 크기**:
+- `size="default"` — 스케줄러 화면(`/content`·`/boss`). 제목 아래 **독립된 줄**의 주 컨트롤이라 `min-w-[160px] py-3 text-sm`, 엠블럼 `h-[22px] left-3`, `pl-8 pr-9`, chevron `right-3.5 h-4 w-4`.
+- `size="compact"` — 관리 화면(`/content/manage`·`/boss/manage`). 제목 줄 우측의 작은 자리라, 이 자리에 있던 읽기 전용 칩과 **같은 크기감**을 유지한다: `rounded-full border border-border py-1 text-xs`, 엠블럼 `h-[14px] left-2.5`, `pl-7 pr-7`, chevron `right-2.5 h-3 w-3`. default 를 그대로 넣으면 헤더가 두꺼워지고 좁은 화면에서 제목과 폭을 다툰다.
+
+`pr` 은 chevron 자리를 비워 두는 값이다 — chevron 크기·`right` 를 옮기면 함께 조정한다(따로 두면 글자가 화살표 밑으로 들어간다).
+
 ### 진행률 바 프리미티브
 `role="progressbar"` + `aria-valuenow/min/max`, track `h-1.5 w-full rounded-full bg-track` + fill `h-1.5 rounded-full bg-primary`. **결정형 진행률은 예외 없이 이것 하나**([[ADR-061]] 결정 6) — 온보딩 예열·계정 변경 예열·캐릭터 관리 저장·OTA 다운로드·컨텐츠 진행률이 모두 같은 스타일이다. 새 색/모양/두께 신설 금지.
 

@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
+import { useState } from 'react'
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -30,8 +31,12 @@ vi.mock('../../../features/schedule-sync/schedule-sync', async (importOriginal) 
 const mockedUseContentSchedulerStore = vi.mocked(useContentSchedulerStore)
 const mockedGetCharacterPickerRoster = vi.mocked(getCharacterPickerRoster)
 
+// ADR-096: 탭이 스토어로 올라가면서 정적 mockReturnValue로는 탭 전환이 렌더에 반영되지 않는다
+// (setActiveTab을 불러도 다시 그릴 이유가 없다). 모킹된 훅도 컴포넌트 렌더 중에 불리므로,
+// 여기서 useState로 실물 스토어와 같은 "값 + 세터" 쌍을 흉내 낸다. 탭 상태 자체의 수명은
+// ContentScreen.view-state.test.tsx가 실물 스토어로 검증한다.
 function mockStore(overrides: Partial<ReturnType<typeof useContentSchedulerStore>>): void {
-  mockedUseContentSchedulerStore.mockReturnValue({
+  const base = {
     status: 'idle',
     characters: [],
     error: null,
@@ -44,7 +49,14 @@ function mockStore(overrides: Partial<ReturnType<typeof useContentSchedulerStore
     selectCharacter: vi.fn(),
     addManualContent: vi.fn(),
     removeManualContent: vi.fn(),
+    activeTab: 'daily' as const,
+    setActiveTab: vi.fn(),
     ...overrides,
+  } satisfies ReturnType<typeof useContentSchedulerStore>
+
+  mockedUseContentSchedulerStore.mockImplementation(() => {
+    const [activeTab, setActiveTab] = useState(base.activeTab)
+    return { ...base, activeTab, setActiveTab }
   })
 }
 

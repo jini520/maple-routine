@@ -3,7 +3,7 @@ import { RefreshCw, SlidersHorizontal, Swords, Users } from 'lucide-react'
 import { formatSyncedAt } from '../../features/schedule-sync/format'
 import { useScheduleSyncErrorToast } from '../../features/schedule-sync/use-sync-error-toast'
 import { getBossPortraitCrop, getBossPortraitUrl } from '../../lib/boss-icons'
-import { partySizeKey, useBossSchedulerStore } from '../../features/boss-scheduler/store'
+import { partySizeKey, useBossSchedulerStore, type PartyFilter } from '../../features/boss-scheduler/store'
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
@@ -27,9 +27,6 @@ import { MEDIA_TEXT_SHADOW } from '../../lib/media-card'
 import { Card } from '../../components/atoms/Card/Card'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { Badge } from '../../components/atoms/Badge/Badge'
-
-type BossTab = 'weekly' | 'monthly'
-type PartyFilter = 'all' | 'solo' | 'party'
 
 const PARTY_FILTER_LABELS: Record<PartyFilter, string> = {
   all: '전체',
@@ -112,9 +109,18 @@ export function BossScreen(): React.JSX.Element {
     saveTrackedOcids,
     refresh,
     selectCharacter,
+    // ADR-096 결정 1: 탭과 두 필터는 스토어 소유다 — 이 화면이 언마운트돼도 살아남고, 관리
+    // 페이지가 같은 탭 값을 읽어 보던 탭 그대로 열린다.
+    activeTab,
+    setActiveTab,
+    // ADR-019 결정 6: 주간/월간 탭은 서로 독립된 필터 상태를 갖는다(한 탭의 필터 변경이
+    // 다른 탭에 영향을 주지 않음).
+    weeklyFilter,
+    setWeeklyFilter,
+    monthlyFilter,
+    setMonthlyFilter,
   } = useBossSchedulerStore()
   const { mode } = useTrackingModeStore()
-  const [activeTab, setActiveTab] = useState<BossTab>('weekly')
   const [roster, setRoster] = useState<CharacterPickerEntry[]>([])
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -127,17 +133,12 @@ export function BossScreen(): React.JSX.Element {
   // 이 값이 바뀌면 아래 조회 effect가 다시 돈다.
   const [rosterReloadNonce, setRosterReloadNonce] = useState(0)
   const [saveProgress, setSaveProgress] = useState<{ completed: number; total: number } | null>(null)
-  // ADR-019 결정 6: 주간/월간 탭은 서로 독립된 필터 상태를 갖는다(한 탭의 필터 변경이
-  // 다른 탭에 영향을 주지 않음).
-  const [weeklyFilter, setWeeklyFilter] = useState<PartyFilter>('all')
   // ADR-063: 동기화 전체 실패는 인라인 문단이 아니라 토스트로 알린다 — 지속 상태("n분 전")는
   // 새로고침 옆 표기가 이미 담당하고, 토스트에는 원인을 푸는 액션을 붙일 수 있다.
   useScheduleSyncErrorToast(error, {
     onRetry: () => refresh(trackedOcids ?? []),
     onOpenSettings: () => navigate('/settings'),
   })
-
-  const [monthlyFilter, setMonthlyFilter] = useState<PartyFilter>('all')
 
   useEffect(() => {
     loadTrackedOcids()

@@ -24,8 +24,6 @@ import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { renderDailyContentCard } from './DailyContentCards'
 import { renderWeeklyContentCard } from './WeeklyContentCards'
 
-type ContentTab = 'daily' | 'weekly'
-
 // ADR-035 결정 20: 수동 모드 표시 순서를 컨텐츠 관리 페이지와 동일하게 고정하려고, 템플릿을
 // 관리 페이지와 같은 categorizeContentEntries 평탄화 순서로 미리 정렬해 mergeManualContentList에
 // 넘긴다(일간은 첫 등장 순서, 주간은 WEEKLY_CATEGORY_ORDER). 캐릭터 무관 상수라 모듈 레벨에서 1회 계산.
@@ -74,10 +72,13 @@ export function ContentScreen(): React.JSX.Element {
     saveTrackedOcids,
     refresh,
     selectCharacter,
+    // ADR-096 결정 1: 탭은 스토어 소유다 — 이 화면이 언마운트돼도 살아남고, 관리 페이지가
+    // 같은 값을 읽어 보던 탭 그대로 열린다.
+    activeTab,
+    setActiveTab,
   } = useContentSchedulerStore()
   const { mode } = useTrackingModeStore()
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState<ContentTab>('daily')
   const [roster, setRoster] = useState<CharacterPickerEntry[]>([])
   const [isPickerOpen, setIsPickerOpen] = useState(false)
   // ADR-063: 동기화 전체 실패는 인라인 문단이 아니라 토스트로 알린다 — 지속 상태("n분 전")는

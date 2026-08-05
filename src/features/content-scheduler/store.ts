@@ -56,6 +56,10 @@ export interface ContentCharacterView {
 
 export type ContentSchedulerStatus = 'idle' | 'loading' | 'loaded' | 'error'
 
+// ADR-096 결정 1: 스케줄러 화면과 관리 페이지가 함께 쓰는 탭 식별자. 전에는 두 화면이 각자
+// 선언해 두 벌이었고, 그 복제가 "각자 판단해도 된다"처럼 보이게 한 원인이었다.
+export type ContentTab = 'daily' | 'weekly'
+
 export interface ContentSchedulerState {
   status: ContentSchedulerStatus
   characters: ContentCharacterView[]
@@ -65,6 +69,10 @@ export interface ContentSchedulerState {
   // ADR-035: 수동 모드에서 캐릭터별 추적 항목(멤버십). 값 필드는 여기 두지 않고 표시 시점에
   // characters의 동기화 값 또는 템플릿에서 조회한다(단일 진실 공급원, 결정 6).
   manualTrackedByOcid: Record<string, ManualTrackedItem[]>
+  // ADR-096 결정 1·2: 화면 로컬 state가 아니라 스토어가 소유한다 — 화면이 언마운트돼도 살아남고
+  // (탭 이동 후 복귀), 관리 페이지가 같은 값을 읽어 보던 탭 그대로 열린다. 영속화하지 않는다
+  // (결정 3) — 앱을 다시 켜면 아래 기본값으로 돌아온다.
+  activeTab: ContentTab
 }
 
 export interface ContentSchedulerStore extends ContentSchedulerState {
@@ -74,6 +82,9 @@ export interface ContentSchedulerStore extends ContentSchedulerState {
   selectCharacter(ocid: string): Promise<void>
   addManualContent(ocid: string, contentName: string, kind: 'daily' | 'weekly'): Promise<ManualContentAddResult>
   removeManualContent(ocid: string, contentName: string, kind: 'daily' | 'weekly'): Promise<void>
+  // 보스 수익의 setTab([[ADR-023]])과 달리 동기다 — 그쪽은 탭이 바뀌면 기간을 다시 불러와야
+  // 하지만, 여기 탭은 이미 받아 둔 데이터를 갈라 보여줄 뿐이라 네트워크가 없다.
+  setActiveTab(tab: ContentTab): void
 }
 
 const initialState: ContentSchedulerState = {
@@ -83,6 +94,7 @@ const initialState: ContentSchedulerState = {
   trackedOcids: null,
   selectedOcid: null,
   manualTrackedByOcid: {},
+  activeTab: 'daily',
 }
 
 // ADR-017 결정 2: 캐시 단계(trackedOcids 저장 순서)와 동기화 단계(계정 전체 캐릭터
@@ -293,6 +305,10 @@ export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, ge
   async selectCharacter(ocid) {
     set({ selectedOcid: ocid })
     await setLastSelectedCharacter(ocid)
+  },
+
+  setActiveTab(tab) {
+    set({ activeTab: tab })
   },
 
   // ADR-035 결정 3·6·19: 저장소(단일 진실 공급원)에서 현재 배열을 읽어 멤버십만 추가/삭제하고

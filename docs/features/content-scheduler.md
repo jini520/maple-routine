@@ -2,10 +2,11 @@
 
 > **범위**: 일간/주간 콘텐츠 진행 상태 표시, 캐릭터 추적, 3단 캐시 병합, 콘텐츠 카드(일일퀘스트·몬스터파크·주간 콘텐츠), 컨텐츠 관리 페이지. 캐릭터 관리 피커 컴포넌트는 [../foundation/design-system.md](../foundation/design-system.md), 수동/자동 트래킹 모드 전역 토글은 [settings.md](./settings.md).
 > **관련 소스**: `app/content-scheduler/`(`ContentScreen.tsx`) · `features/content-scheduler/` · `lib/scheduler-merge` · `lib/scheduler-content-scope` · `lib/content-category` · `lib/daily-quest-backgrounds` · `storage/scheduler-cache` · `storage/shared-progress-cache` · `src/data/scheduler-content-catalog.json`·`daily-quest-regions.json`·`daily-quest-region-crops.json`·`weekly-regional-quests.json`·`scheduler-content-template.json` · `/content/manage`.
-> **관련 ADR**: [[ADR-013]] [[ADR-012]] [[ADR-030]] [[ADR-020]] [[ADR-021]] [[ADR-035]] [[ADR-018]] [[ADR-053]] [[ADR-057]] [[ADR-072]] [[ADR-073]] [[ADR-074]] [[ADR-086]]. **관련 문서**: [../foundation/architecture.md](../foundation/architecture.md), [../foundation/nexon-api.md](../foundation/nexon-api.md), [../foundation/error-resilience.md](../foundation/error-resilience.md).
+> **관련 ADR**: [[ADR-013]] [[ADR-012]] [[ADR-030]] [[ADR-020]] [[ADR-021]] [[ADR-035]] [[ADR-018]] [[ADR-053]] [[ADR-057]] [[ADR-072]] [[ADR-073]] [[ADR-074]] [[ADR-086]] [[ADR-096]]. **관련 문서**: [../foundation/architecture.md](../foundation/architecture.md), [../foundation/nexon-api.md](../foundation/nexon-api.md), [../foundation/error-resilience.md](../foundation/error-resilience.md).
 
 ## 정책
 - 화면 안에 **일간 탭**(`daily_contents`) + **주간 탭**(`weekly_contents`). **월간 탭 없음**(월간 주기 일반 콘텐츠가 API에 없음).
+- **탭 선택은 스토어가 소유한다**([[ADR-096]]) — `features/content-scheduler` 의 `activeTab`. 화면 로컬 state 가 아니므로 다른 탭에 다녀와도 유지되고, 관리 페이지(`/content/manage`)가 **진입 시점에 이 값을 이어받아** 보던 탭 그대로 열린다(한 방향 — 관리 페이지의 탭 전환은 이 값을 바꾸지 않는다). 앱 재시작 후에는 기본값(`'daily'`)으로 돌아간다(영속화하지 않음).
 - 사용자가 "캐릭터 관리"에서 고른 캐릭터만 표시(저장해야 확정, 미선택이면 "캐릭터를 선택해주세요" 빈 상태). 추적 목록 `trackedCharacters:content` 는 보스 스케줄러와 **독립**. Nexon 스케줄 API 호출도 추적 캐릭터로만 제한([[ADR-012]]·[[ADR-013]]).
 - 캐릭터별 진행 상태를 Nexon Open API 로 동기화해 **읽기 전용** 표시(앱 내 수동 체크는 자동 모드엔 없음). 표시 항목은 게임 스케줄러에 실제 등록된 것만(`registration_flag: "true"`). 진행률은 `now_count`/`max_count` 그대로(예: 몬스터파크 7/14).
 - 지정 시각까지 미완료 시 로컬 알림(알림 시각에 실시간 재확인, [[ADR-004]]). 알림 시각은 설정 가능.
@@ -120,8 +121,8 @@
 
 ### 컨텐츠 관리 페이지 `/content/manage` ([[ADR-035]] 결정 18)
 수동 모드 전용(자동 진입 시 `/content` 리다이렉트). 카드 박스 없는 페이지 레이아웃, 헤더~탭 sticky 고정(스케줄러와 동일 패턴, 화면 루트 `-mt-[var(--sa-top)]` 로 노치까지 `bg-bg`).
-- **헤더**: 뒤로(`ArrowLeft`) + "컨텐츠 관리" + 대상 캐릭터 칩(스케줄러 선택 승계, 이름 앞 월드 엠블럼, `inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs`).
-- **탭**: 일간/주간 pill 탭.
+- **헤더**: 뒤로(`ArrowLeft`) + "컨텐츠 관리" + 대상 캐릭터 **드롭다운**(`CharacterSelectDropdown size="compact"`, [[ADR-096]] 결정 4·5). 이 화면에서 캐릭터를 바꿀 수 있고, 스케줄러와 **같은 `selectCharacter`** 를 호출하므로 돌아갔을 때 그쪽도 같은 캐릭터다.
+- **탭**: 일간/주간 pill 탭. **진입 시점의** 스케줄러 탭을 이어받는다([[ADR-096]] 결정 2) — 일간에서 진입하면 일간, 주간에서 진입하면 주간. 이어받기는 **한 방향**이라 여기서 탭을 바꿔도 스케줄러는 그대로고, 다시 열면 그때의 스케줄러 탭을 새로 이어받는다.
 - **체크리스트 — 카테고리 그룹핑(2026-07-24)**: `scheduler-content-template.json` 을 카테고리로 묶어 나열, 추적 중인 항목만 선택 상태(`aria-pressed`, 선택 시 `border-primary bg-primary-tint`). 행 탭 = 추적 토글, **즉시 저장**(로컬 Preferences).
   - **카테고리 도출**: (1) `content_name` 접두사(`[X] Y`→카테고리 X, `에픽 던전 : Y`→"에픽 던전"), (2) 명시적 오버라이드 맵 `CATEGORY_OVERRIDE`(게임 도메인 분류라 **사용자 지정 값만**, [[ADR-006]]). 도출 로직 공용 유틸 `lib/content-category.ts`(`categorizeContentEntries`), 단위 테스트.
   - **사용자 확정 오버라이드(2026-07-24)**: 일간 `몬스터파크`(단독 그룹화, 주간 몬파와 아이콘 통일), 주간 `무릉도장`(단독), 주간 "아케인리버 지역 퀘스트"(에르다 스펙트럼·배고픈 무토·미드나잇 체이서·스피릿 세이비어·엔하임 디펜스·프로텍트 에스페라 + `성실한 조사에 대한 보답`). **주간 그룹 순서** `WEEKLY_CATEGORY_ORDER`: 에픽 던전 → 몬스터파크 → 길드 → 아케인리버 지역 퀘스트 → 주간 퀘스트 → 무릉도장 → 메이플 유니온(일간은 첫 등장 순서 유지).
@@ -136,6 +137,8 @@
 - **이미 추적 중인 항목은 잠그지 않는다**(길드 탈퇴 후에도 해제 가능). 표시 화면(`ContentScreen`)의 `진행 불가` 표기는 이번 범위 밖 — 레벨 잠금만 표시한다.
 
 ## 폐기된 정책 (history)
+- ~~탭 선택은 화면 로컬 `useState`(스케줄러·관리 페이지가 각자 보유, 초기값 `'daily'`)~~ → 기능 스토어 소유([[ADR-096]] 결정 1·2, 2026-08-05, 이슈 #143). 다른 탭에 다녀오면 초기화되고, 주간에서 관리 페이지로 가면 일간 목록이 열렸다 — 빈 상태 CTA 는 탭을 알면서도 버렸다.
+- ~~관리 페이지 헤더의 대상 캐릭터는 읽기 전용 칩(스케줄러 선택 승계)~~ → 컴팩트 드롭다운, 이 화면에서 캐릭터 변경 가능([[ADR-096]] 결정 4·5, 2026-08-05).
 - ~~레벨 미달 항목은 수동 선택 불가(관리 페이지 잠금) + 스케줄러 화면에 "진행 불가"~~ → **미도입, 자유 선택**([[ADR-055]] 정정 2, 2026-07-29 사용자 결정, 이슈 #32 폐기). 요구 레벨 데이터(`requiredLevel`)는 `scheduler-content-template.json` 에 남아 있으나 **읽는 코드가 없다**.
 - ~~체크박스로 캐릭터 선택~~ → 캐릭터 이미지 카드형 그리드 토글([[ADR-015]]).
 - ~~캐시가 없으면 `character/list` 응답으로 `access_flag` 미상 캐릭터까지 먼저 표시~~ → 활성 확인된 캐릭터만 표시, 콜드 스타트는 스피너([[ADR-053]], 2026-07-29).
