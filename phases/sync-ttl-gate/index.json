@@ -16,7 +16,7 @@
       "status": "completed",
       "started_at": "2026-08-06T03:22:48+0900",
       "summary": "src/features/schedule-sync/sync-run-state.ts 신설 — 모듈 수준 플래그 하나로 markSyncAttemptedThisRun()/hasSyncAttemptedThisRun()/resetSyncRunStateForTests()(테스트 전용). 영속화 없음(재시작 = 새 실행), 성공이 아니라 '시도'를 기록. 표시 지점 2곳: syncSchedules 의 ocids 빈 배열 조기 반환 직후 · prefetchAccountData 의 characters 빈 배열 조기 반환 직후. 테스트 4+3+1케이스",
-      "completed_at": "2026-08-06T03:26:30+0900"
+      "completed_at": "2026-08-06T03:26:15+0900"
     },
     {
       "step": 2,
