@@ -12,28 +12,36 @@ export interface CharacterSelectDropdownProps {
   size?: CharacterSelectDropdownSize
 }
 
-// 크기별 치수. 엠블럼 크기·왼쪽 여백이 <select>의 좌측 패딩과 짝이라 한 곳에 모아 둔다 —
-// 따로 두면 한쪽만 바꿨을 때 엠블럼이 글자 위로 겹친다.
+// 화살표는 **두 크기 모두 직접 그린다**(`appearance-none` + ChevronDown). 두 가지 이유다.
+//
+// ① 네이티브 <select> 의 화살표는 **오른쪽 테두리에 붙어 함께 움직여서** padding-right 로는
+//    안쪽으로 들어오지 않는다 — 상자만 넓어지고 간격은 그대로다(2026-08-05 브라우저 실측:
+//    pr 12/16/32/64px 전부 동일). 위치를 정하려면 UA 화살표를 끄는 수밖에 없다.
+// ② UA 화살표는 플랫폼마다 모양이 다르다. 이 앱은 Android WebView(Chrome)와 iOS
+//    WKWebView(Safari) 양쪽에서 도는 하이브리드라([[ADR-001]]) 그대로 두면 같은 화면이
+//    기기마다 다르게 보인다. 직접 그리면 양쪽이 같아진다.
+//
+// 크기별 치수는 서로 짝이라 한 곳에 모아 둔다 — 엠블럼 크기·left 는 좌측 패딩과, chevron
+// 크기·right 는 우측 패딩과 짝이다. 따로 두면 한쪽만 바꿨을 때 글자 위로 겹친다.
 const SIZE_STYLES: Record<
   CharacterSelectDropdownSize,
-  { select: string; withEmblem: string; withoutEmblem: string; emblem: string }
+  { select: string; withEmblem: string; withoutEmblem: string; emblem: string; chevron: string }
 > = {
   default: {
-    select: 'min-w-[160px] rounded-[10px] border border-border bg-surface py-3 text-sm text-text',
-    withEmblem: 'pl-8 pr-4',
-    withoutEmblem: 'px-4',
+    select:
+      'appearance-none min-w-[160px] rounded-[10px] border border-border bg-surface py-3 text-sm text-text',
+    withEmblem: 'pl-8 pr-9',
+    withoutEmblem: 'pl-4 pr-9',
     emblem: 'left-3 h-[22px]',
+    chevron: 'right-4 h-4 w-4',
   },
-  // 화살표를 직접 그린다(`appearance-none`). 네이티브 <select> 의 화살표는 **오른쪽 테두리에
-  // 붙어 함께 움직여서** padding-right 로는 안쪽으로 들어오지 않는다 — 상자만 넓어지고 화살표와
-  // 테두리 사이 간격은 그대로다(2026-08-05 브라우저 실측: pr 12/16/32/64px 전부 간격 동일).
-  // 위치를 정하려면 UA 화살표를 끄는 수밖에 없다. pr-7 은 그 chevron 자리를 비워 두는 값이다.
   compact: {
     select:
       'appearance-none rounded-full border border-border bg-surface py-1 text-xs font-medium text-text-muted',
     withEmblem: 'pl-7 pr-7',
     withoutEmblem: 'pl-3 pr-7',
     emblem: 'left-2.5 h-[14px]',
+    chevron: 'right-3 h-3 w-3',
   },
 }
 
@@ -42,8 +50,7 @@ export function CharacterSelectDropdown(props: CharacterSelectDropdownProps): Re
   // 왼쪽에만 그 캐릭터의 월드 엠블럼을 겹쳐 보여준다(UI_GUIDE "스케줄러 캐릭터 드롭다운").
   const selected = props.characters.find((character) => character.ocid === props.selectedOcid)
   const emblemUrl = selected?.world ? worldEmblemUrl(selected.world) : null
-  const size = props.size ?? 'default'
-  const styles = SIZE_STYLES[size]
+  const styles = SIZE_STYLES[props.size ?? 'default']
 
   return (
     <div className="relative inline-block">
@@ -65,14 +72,12 @@ export function CharacterSelectDropdown(props: CharacterSelectDropdownProps): Re
           </option>
         ))}
       </select>
-      {size === 'compact' && (
-        <ChevronDown
-          data-testid="character-select-chevron"
-          aria-hidden="true"
-          strokeWidth={2.5}
-          className="pointer-events-none absolute right-3 top-1/2 h-3 w-3 -translate-y-1/2 text-text-muted"
-        />
-      )}
+      <ChevronDown
+        data-testid="character-select-chevron"
+        aria-hidden="true"
+        strokeWidth={2.5}
+        className={`pointer-events-none absolute top-1/2 -translate-y-1/2 text-text-muted ${styles.chevron}`}
+      />
     </div>
   )
 }
