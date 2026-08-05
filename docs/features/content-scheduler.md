@@ -2,12 +2,13 @@
 
 > **범위**: 일간/주간 콘텐츠 진행 상태 표시, 캐릭터 추적, 3단 캐시 병합, 콘텐츠 카드(일일퀘스트·몬스터파크·주간 콘텐츠), 컨텐츠 관리 페이지. 캐릭터 관리 피커 컴포넌트는 [../foundation/design-system.md](../foundation/design-system.md), 수동/자동 트래킹 모드 전역 토글은 [settings.md](./settings.md).
 > **관련 소스**: `app/content-scheduler/`(`ContentScreen.tsx`) · `features/content-scheduler/` · `lib/scheduler-merge` · `lib/scheduler-content-scope` · `lib/content-category` · `lib/daily-quest-backgrounds` · `storage/scheduler-cache` · `storage/shared-progress-cache` · `src/data/scheduler-content-catalog.json`·`daily-quest-regions.json`·`daily-quest-region-crops.json`·`weekly-regional-quests.json`·`scheduler-content-template.json` · `/content/manage`.
-> **관련 ADR**: [[ADR-013]] [[ADR-012]] [[ADR-030]] [[ADR-020]] [[ADR-021]] [[ADR-035]] [[ADR-018]] [[ADR-053]] [[ADR-057]] [[ADR-072]] [[ADR-073]] [[ADR-074]] [[ADR-086]] [[ADR-096]]. **관련 문서**: [../foundation/architecture.md](../foundation/architecture.md), [../foundation/nexon-api.md](../foundation/nexon-api.md), [../foundation/error-resilience.md](../foundation/error-resilience.md).
+> **관련 ADR**: [[ADR-013]] [[ADR-012]] [[ADR-030]] [[ADR-020]] [[ADR-021]] [[ADR-035]] [[ADR-018]] [[ADR-053]] [[ADR-057]] [[ADR-072]] [[ADR-073]] [[ADR-074]] [[ADR-086]] [[ADR-096]] [[ADR-097]]. **관련 문서**: [../foundation/architecture.md](../foundation/architecture.md), [../foundation/nexon-api.md](../foundation/nexon-api.md), [../foundation/error-resilience.md](../foundation/error-resilience.md).
 
 ## 정책
 - 화면 안에 **일간 탭**(`daily_contents`) + **주간 탭**(`weekly_contents`). **월간 탭 없음**(월간 주기 일반 콘텐츠가 API에 없음).
 - **탭 선택은 스토어가 소유한다**([[ADR-096]]) — `features/content-scheduler` 의 `activeTab`. 화면 로컬 state 가 아니므로 다른 탭에 다녀와도 유지되고, 관리 페이지(`/content/manage`)가 **진입 시점에 이 값을 이어받아** 보던 탭 그대로 열린다(한 방향 — 관리 페이지의 탭 전환은 이 값을 바꾸지 않는다). 앱 재시작 후에는 기본값(`'daily'`)으로 돌아간다(영속화하지 않음).
 - 사용자가 "캐릭터 관리"에서 고른 캐릭터만 표시(저장해야 확정, 미선택이면 "캐릭터를 선택해주세요" 빈 상태). 추적 목록 `trackedCharacters:content` 는 보스 스케줄러와 **독립**. Nexon 스케줄 API 호출도 추적 캐릭터로만 제한([[ADR-012]]·[[ADR-013]]).
+- **화면 진입은 조회 트리거가 아니다**([[ADR-097]]) — 마운트 시 `loadTrackedOcids()` 가 게이트를 먼저 통과해야 `syncSchedules` 가 돈다(`이번 실행에서 이미 동기화함 AND 가장 오래된 syncedAt 이 10분 안` 이면 건너뛴다). 판정 근거는 이 화면의 상태가 아니라 **세 화면이 공유하는 `storage/scheduler-cache` 의 `syncedAt`** 이라, 보스·수익 탭이 방금 받았으면 여기 진입은 네트워크 0회다. 건너뛴 진입에서 뷰의 `isStale` 은 **`false`** 다(재검증이 오지 않기로 결정된 값이라 "오래된 데이터" 토스트를 띄우지 않는다). 헤더 새로고침·당겨서 새로고침은 게이트 밖이라 항상 조회한다.
 - 캐릭터별 진행 상태를 Nexon Open API 로 동기화해 **읽기 전용** 표시(앱 내 수동 체크는 자동 모드엔 없음). 표시 항목은 게임 스케줄러에 실제 등록된 것만(`registration_flag: "true"`). 진행률은 `now_count`/`max_count` 그대로(예: 몬스터파크 7/14).
 - 지정 시각까지 미완료 시 로컬 알림(알림 시각에 실시간 재확인, [[ADR-004]]). 알림 시각은 설정 가능.
 - 빈 상태·에러 상태 처리는 [../foundation/error-resilience.md](../foundation/error-resilience.md).

@@ -1,0 +1,14 @@
+{
+  "project": "메이플 루틴",
+  "phase": "sync-ttl-gate",
+  "steps": [
+    { "step": 0, "name": "sync-freshness", "status": "pending" },
+    { "step": 1, "name": "sync-run-flag", "status": "pending" },
+    { "step": 2, "name": "content-gate", "status": "pending" },
+    { "step": 3, "name": "boss-gate", "status": "pending" },
+    { "step": 4, "name": "profit-gate", "status": "pending" },
+    { "step": 5, "name": "basic-piggyback", "status": "pending" },
+    { "step": 6, "name": "profit-profile-reread", "status": "pending" },
+    { "step": 7, "name": "docs-status", "status": "pending" }
+  ]
+}

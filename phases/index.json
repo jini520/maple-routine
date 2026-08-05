@@ -134,6 +134,10 @@
       "dir": "pull-to-refresh-mark",
       "status": "completed",
       "completed_at": "2026-08-01T16:53:43+0900"
+    },
+    {
+      "dir": "sync-ttl-gate",
+      "status": "pending"
     }
   ]
 }
