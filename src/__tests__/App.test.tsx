@@ -151,6 +151,12 @@ mockedUseTrackingModeStore.mockReturnValue({
   setMode: vi.fn(),
 })
 
+// 라우트 화면은 lazy 라(ADR-092) 렌더 직후가 아니라 청크 해석 뒤에 나타난다. 전체 스위트를
+// 병렬로 돌리면 그 해석이 findBy 기본 타임아웃(1s)을 간헐적으로 넘겨 이 파일이 흔들렸다
+// (2026-08-05 관측 — 단독 실행은 항상 통과). 흔들리는 테스트는 "또 그거네" 하고 무시당해
+// 정작 진짜 회귀를 놓치게 만들므로 넉넉히 준다.
+const LAZY_SCREEN_TIMEOUT = { timeout: 5000 }
+
 function renderAt(path: string): void {
   render(
     <MemoryRouter initialEntries={[path]}>
@@ -187,7 +193,7 @@ describe('AppShell', () => {
 
     renderAt('/content')
 
-    expect(await screen.findByLabelText(/API 키/)).toBeInTheDocument()
+    expect(await screen.findByLabelText(/API 키/, {}, LAZY_SCREEN_TIMEOUT)).toBeInTheDocument()
   })
 
   it('status가 completed가 아닐 때 /boss로 접근하면 온보딩으로 리다이렉트된다', async () => {
@@ -195,7 +201,7 @@ describe('AppShell', () => {
 
     renderAt('/boss')
 
-    expect(await screen.findByLabelText(/API 키/)).toBeInTheDocument()
+    expect(await screen.findByLabelText(/API 키/, {}, LAZY_SCREEN_TIMEOUT)).toBeInTheDocument()
   })
 
   it('status가 completed가 아닐 때 /profit으로 접근하면 온보딩으로 리다이렉트된다', async () => {
@@ -203,7 +209,7 @@ describe('AppShell', () => {
 
     renderAt('/profit')
 
-    expect(await screen.findByLabelText(/API 키/)).toBeInTheDocument()
+    expect(await screen.findByLabelText(/API 키/, {}, LAZY_SCREEN_TIMEOUT)).toBeInTheDocument()
   })
 
   it('status가 completed일 때 /profit으로 접근하면 보스 수익 계산기 화면이 보인다', async () => {
@@ -211,7 +217,9 @@ describe('AppShell', () => {
 
     renderAt('/profit')
 
-    expect(await screen.findByRole('heading', { name: '보스 수익' })).toBeInTheDocument()
+    expect(
+      await screen.findByRole('heading', { name: '보스 수익' }, LAZY_SCREEN_TIMEOUT),
+    ).toBeInTheDocument()
   })
 
   it('status가 completed가 아닐 때 /settings로 접근하면 온보딩으로 리다이렉트된다', async () => {
@@ -219,7 +227,7 @@ describe('AppShell', () => {
 
     renderAt('/settings')
 
-    expect(await screen.findByLabelText(/API 키/)).toBeInTheDocument()
+    expect(await screen.findByLabelText(/API 키/, {}, LAZY_SCREEN_TIMEOUT)).toBeInTheDocument()
   })
 
   it('status가 completed일 때 /settings로 접근하면 설정 화면이 보인다', async () => {
@@ -227,7 +235,9 @@ describe('AppShell', () => {
 
     renderAt('/settings')
 
-    expect(await screen.findByRole('heading', { name: '설정' })).toBeInTheDocument()
+    expect(
+      await screen.findByRole('heading', { name: '설정' }, LAZY_SCREEN_TIMEOUT),
+    ).toBeInTheDocument()
   })
 
   it('status가 completed일 때 /onboarding으로 접근하면 /content로 리다이렉트된다', async () => {
@@ -235,7 +245,9 @@ describe('AppShell', () => {
 
     renderAt('/onboarding')
 
-    expect(await screen.findByRole('heading', { name: '컨텐츠 스케줄러' })).toBeInTheDocument()
+    expect(
+      await screen.findByRole('heading', { name: '컨텐츠 스케줄러' }, LAZY_SCREEN_TIMEOUT),
+    ).toBeInTheDocument()
   })
 
   it('status가 completed일 때 하단 탭바(컨텐츠/보스/수익/설정 탭)가 보인다', () => {
@@ -316,7 +328,7 @@ describe('AppShell', () => {
 
     renderAt('/')
 
-    expect(await screen.findByLabelText(/API 키/)).toBeInTheDocument()
+    expect(await screen.findByLabelText(/API 키/, {}, LAZY_SCREEN_TIMEOUT)).toBeInTheDocument()
   })
 
   it('status가 completed일 때 /로 접근하면 /content로 리다이렉트된다', async () => {
@@ -324,7 +336,9 @@ describe('AppShell', () => {
 
     renderAt('/')
 
-    expect(await screen.findByRole('heading', { name: '컨텐츠 스케줄러' })).toBeInTheDocument()
+    expect(
+      await screen.findByRole('heading', { name: '컨텐츠 스케줄러' }, LAZY_SCREEN_TIMEOUT),
+    ).toBeInTheDocument()
   })
 
   it('최상단 컨테이너에 top safe-area padding이 적용된다', () => {
