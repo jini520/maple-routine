@@ -83,6 +83,30 @@ describe('CharacterSelectDropdown', () => {
       expect(combobox).not.toHaveClass('min-w-[160px]')
     })
 
+    // 2026-08-05 브라우저 실측: 네이티브 <select> 의 화살표는 오른쪽 테두리에 붙어 함께 움직여
+    // padding-right 로는 안쪽으로 못 옮긴다(pr 12/16/32/64px 전부 테두리와의 간격 동일 — 상자만
+    // 넓어진다). 화살표를 원하는 자리에 두려면 UA 화살표를 끄고 직접 그리는 수밖에 없다.
+    it('compact는 네이티브 화살표를 끄고 chevron을 직접 그린다', () => {
+      render(
+        <CharacterSelectDropdown
+          characters={characters}
+          selectedOcid="ocid-1"
+          onSelect={vi.fn()}
+          size="compact"
+        />,
+      )
+
+      expect(screen.getByRole('combobox')).toHaveClass('appearance-none')
+      expect(screen.getByTestId('character-select-chevron')).toHaveClass('absolute', 'right-3')
+    })
+
+    it('기본 크기는 네이티브 화살표를 그대로 쓴다', () => {
+      render(<CharacterSelectDropdown characters={characters} selectedOcid="ocid-1" onSelect={vi.fn()} />)
+
+      expect(screen.getByRole('combobox')).not.toHaveClass('appearance-none')
+      expect(screen.queryByTestId('character-select-chevron')).not.toBeInTheDocument()
+    })
+
     it('compact에서도 월드 엠블럼과 선택 동작은 같다', async () => {
       const user = userEvent.setup()
       const onSelect = vi.fn()

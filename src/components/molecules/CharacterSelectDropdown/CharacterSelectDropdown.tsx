@@ -1,3 +1,4 @@
+import { ChevronDown } from 'lucide-react'
 import { worldEmblemUrl } from '../../../lib/world-emblem'
 
 export type CharacterSelectDropdownSize = 'default' | 'compact'
@@ -23,12 +24,15 @@ const SIZE_STYLES: Record<
     withoutEmblem: 'px-4',
     emblem: 'left-3 h-[22px]',
   },
+  // 화살표를 직접 그린다(`appearance-none`). 네이티브 <select> 의 화살표는 **오른쪽 테두리에
+  // 붙어 함께 움직여서** padding-right 로는 안쪽으로 들어오지 않는다 — 상자만 넓어지고 화살표와
+  // 테두리 사이 간격은 그대로다(2026-08-05 브라우저 실측: pr 12/16/32/64px 전부 간격 동일).
+  // 위치를 정하려면 UA 화살표를 끄는 수밖에 없다. pr-7 은 그 chevron 자리를 비워 두는 값이다.
   compact: {
-    select: 'rounded-full border border-border bg-surface py-1 text-xs font-medium text-text-muted',
-    // pr 은 화살표 오른쪽 여백이다 — 네이티브 <select> 는 화살표를 패딩 박스 안 오른쪽 끝에
-    // 그리므로, padding-right 를 키우면 화살표가 테두리에서 그만큼 안쪽으로 들어온다.
-    withEmblem: 'pl-7 pr-4',
-    withoutEmblem: 'pl-3 pr-4',
+    select:
+      'appearance-none rounded-full border border-border bg-surface py-1 text-xs font-medium text-text-muted',
+    withEmblem: 'pl-7 pr-7',
+    withoutEmblem: 'pl-3 pr-7',
     emblem: 'left-2.5 h-[14px]',
   },
 }
@@ -38,7 +42,8 @@ export function CharacterSelectDropdown(props: CharacterSelectDropdownProps): Re
   // 왼쪽에만 그 캐릭터의 월드 엠블럼을 겹쳐 보여준다(UI_GUIDE "스케줄러 캐릭터 드롭다운").
   const selected = props.characters.find((character) => character.ocid === props.selectedOcid)
   const emblemUrl = selected?.world ? worldEmblemUrl(selected.world) : null
-  const styles = SIZE_STYLES[props.size ?? 'default']
+  const size = props.size ?? 'default'
+  const styles = SIZE_STYLES[size]
 
   return (
     <div className="relative inline-block">
@@ -60,6 +65,14 @@ export function CharacterSelectDropdown(props: CharacterSelectDropdownProps): Re
           </option>
         ))}
       </select>
+      {size === 'compact' && (
+        <ChevronDown
+          data-testid="character-select-chevron"
+          aria-hidden="true"
+          strokeWidth={2.5}
+          className="pointer-events-none absolute right-3 top-1/2 h-3 w-3 -translate-y-1/2 text-text-muted"
+        />
+      )}
     </div>
   )
 }
