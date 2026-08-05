@@ -24,6 +24,7 @@ import type { MapleCharacter, SchedulerCharacterState, SharedProgressEntry } fro
 import { toScheduleSyncError } from './errors'
 import type { ScheduleSyncError } from './errors'
 import { resolveRegisteredCharacters } from './character-roster'
+import { markSyncAttemptedThisRun } from './sync-run-state'
 // 공개 API 는 그대로 둔다 — 옮긴 것은 구현 위치이지 호출부가 알 바가 아니다(ADR-094 결정 7).
 export { toScheduleSyncError } from './errors'
 export type { ScheduleSyncError } from './errors'
@@ -272,6 +273,12 @@ export async function syncSchedules(
   if (ocids.length === 0) {
     return []
   }
+
+  // ADR-097 결정 3: 여기서부터 실제 네트워크가 나간다. 성공이 아니라 "시도"를 표시하므로 실패해도
+  // 표시한다 — 오프라인에서 탭을 옮길 때마다 실패 호출이 반복되지 않게. 화면 진입 재조회 말고
+  // 추적 목록 저장·수동 모드 시드에서 들어온 회차도 같은 대상이다(동기화가 일어난 사실은 같고,
+  // 캐릭터별 신선도는 isSyncFresh 가 따로 본다).
+  markSyncAttemptedThisRun()
 
   const { apiKey, accountId, characters } = await resolveRegisteredCharacters()
   const targetCharacters = characters.filter((character) => ocids.includes(character.ocid))

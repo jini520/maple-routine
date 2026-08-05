@@ -3,6 +3,7 @@ import { fetchSchedulerCharacterState } from '../../nexon/schedule'
 import { setCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { setCachedSchedulerState } from '../../storage/scheduler-cache'
 import { resolveCharacterEligibility } from '../schedule-sync/character-eligibility'
+import { markSyncAttemptedThisRun } from '../schedule-sync/sync-run-state'
 import type { MapleCharacter } from '../../types'
 
 export interface PrefetchProgress {
@@ -30,6 +31,11 @@ export async function prefetchAccountData(
     onProgress({ completed: 0, total: 0 })
     return
   }
+
+  // ADR-097 결정 3: 예열도 이번 실행의 동기화로 친다. 여기서 계정 전체 캐릭터의 character/basic +
+  // scheduler/character-state 를 받아 캐시에 쓰므로, 치지 않으면 온보딩 직후 첫 화면 진입이 방금
+  // 받은 것을 그대로 다시 받는다.
+  markSyncAttemptedThisRun()
 
   const now = new Date()
   const progress: PrefetchProgress = { completed: 0, total: characters.length * 2 }
