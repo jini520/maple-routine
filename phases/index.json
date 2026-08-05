@@ -137,7 +137,8 @@
     },
     {
       "dir": "sync-ttl-gate",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-08-06T03:58:46+0900"
     }
   ]
 }
