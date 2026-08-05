@@ -116,7 +116,7 @@ function CharacterAccordion(props: {
   issue?: 'unavailable' | 'failed'
   stickyTop: number
 }): React.JSX.Element {
-  const { tab, periodKey, dropsByRowKey } = useBossProfitContext()
+  const { tab, loadedTab, loadedPeriodKey, dropsByRowKey } = useBossProfitContext()
   const [isExpanded, setIsExpanded] = useState(false)
   // ADR-068 결정 3 정정 3: 아이콘만으로는 원인을 말할 수 없어, 탭하면 설명 팝오버를 연다.
   const [isIssueOpen, setIsIssueOpen] = useState(false)
@@ -368,7 +368,7 @@ function CharacterAccordion(props: {
               />
             )}
             <AnimatedMeso
-              identity={`character|${group.ocid}|${tab}|${periodKey}`}
+              identity={`character|${group.ocid}|${loadedTab}|${loadedPeriodKey}`}
               value={totalMeso}
             />{' '}
             메소
@@ -399,6 +399,8 @@ export function BossProfitScreen(): React.JSX.Element {
     status,
     tab,
     periodKey,
+    loadedTab,
+    loadedPeriodKey,
     rows,
     weeklySubtotals,
     isPeriodLoading,
@@ -585,6 +587,8 @@ export function BossProfitScreen(): React.JSX.Element {
   const bossProfitContext: BossProfitContextValue = {
     tab,
     periodKey,
+    loadedTab,
+    loadedPeriodKey,
     now,
     dropsByRowKey,
     setPartySize,
@@ -762,7 +766,9 @@ export function BossProfitScreen(): React.JSX.Element {
                 {/* 단위는 별도 span으로 격하하되 숫자와 사이에 실제 공백 문자를 남긴다 — 마진만으로 띄우면
                     textContent가 "N메소"로 붙어 스크린리더가 붙여 읽는다(ADR-046 트레이드오프). */}
                 <p className="text-xl font-extrabold leading-none tabular-nums text-primary-ink">
-                  <AnimatedMeso identity={`total|${tab}|${periodKey}`} value={totalMeso} />{' '}
+                  {/* [[ADR-087]] 정정 1: 이 키에만 기간이 없다 — 기간이 바뀌어도 같은 자리의 같은
+                      뜻을 가진 하나의 숫자로 보고 굴린다("기간 이동은 총 수익만", 사용자 결정). */}
+                  <AnimatedMeso identity={`total|${loadedTab}`} value={totalMeso} />{' '}
                   <span className="text-xs font-bold text-text-muted">메소</span>
                 </p>
                 {/* ADR-087 결정 1: 라벨행이 아니라 이 줄에 붙는다 — 32px 금액행 안에 들어가므로

@@ -1,3 +1,4 @@
+import { fetchCharacterBasic } from '../../nexon/character'
 import { fetchSchedulerCharacterState } from '../../nexon/schedule'
 import { mergeSchedulerState, type MergeOutput } from '../../lib/scheduler-merge'
 import { getBackfillDateKeys } from '../../lib/reset-clock'
@@ -7,6 +8,7 @@ import {
   toProbeObservation,
   type SchedulerSectionPresence,
 } from '../../lib/scheduler-activity'
+import { setCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getCachedSchedulerState, setCachedSchedulerState } from '../../storage/scheduler-cache'
 import {
   getScheduleProbeLedger,
@@ -24,6 +26,7 @@ import type { MapleCharacter, SchedulerCharacterState, SharedProgressEntry } fro
 import { toScheduleSyncError } from './errors'
 import type { ScheduleSyncError } from './errors'
 import { resolveRegisteredCharacters } from './character-roster'
+import { markSyncAttemptedThisRun } from './sync-run-state'
 // 공개 API 는 그대로 둔다 — 옮긴 것은 구현 위치이지 호출부가 알 바가 아니다(ADR-094 결정 7).
 export { toScheduleSyncError } from './errors'
 export type { ScheduleSyncError } from './errors'
@@ -196,6 +199,38 @@ async function fillMissingSections(
   return acc
 }
 
+// ADR-097 결정 7 (이슈 #139): 스케줄 동기화가 **실제로 도는 회차에** 그 대상 캐릭터의
+// character/basic 을 함께 받아 캐시를 갱신한다. 지금까지 이 갱신의 상시 경로는 피커 하나뿐이라
+// (ADR-015 결정 3) 레벨·외형이 "피커를 마지막으로 연 시점"의 스냅샷으로 굳었다. 별도 TTL 은 두지
+// 않는다 — 이 함수가 불리는 조건(ADR-097 결정 1~4)이 그대로 정책이다.
+//
+// 절대 throw 하지 않는다. 실패는 그 캐릭터의 기존 캐시를 그대로 두는 것으로 끝나고 사용자에게
+// 알리지도 않는다 — 부가 작업이라 실패해도 기존 캐시로 화면이 정상 동작한다. syncOneCharacter 의
+// try 안이 아니라 별도 경로인 이유도 같다: 거기 넣으면 basic 실패가 catch 로 떨어져 **스케줄
+// 조회는 성공했는데도** 그 캐릭터가 isStale: true 가 된다.
+//
+// 자격(eligibility) 스윕은 하지 않는다 — 추가 호출을 낳고, 추적 캐릭터는 사용자가 이미 고른
+// 대상이라 판정이 필요 없다. 그 스윕은 피커 경로의 몫이다(ADR-086 결정 5).
+async function refreshCharacterBasics(
+  apiKey: string,
+  accountId: string,
+  characters: MapleCharacter[],
+): Promise<void> {
+  await Promise.all(
+    characters.map(async (character) => {
+      try {
+        const profile = await fetchCharacterBasic(apiKey, character.ocid)
+        await setCachedCharacterBasic(accountId, character.ocid, {
+          profile,
+          cachedAt: new Date().toISOString(),
+        })
+      } catch {
+        // best-effort — 기존 캐시를 그대로 둔다.
+      }
+    }),
+  )
+}
+
 // ADR-030: fetch 자체는 성공했지만 캐릭터가 리셋 이후 미접속이라 daily/weekly/boss 섹션이
 // 비어있을 수 있고, 몬스터파크·에픽 던전처럼 월드/계정 전체가 공유하는 콘텐츠도 있다 — 이 두
 // 문제를 mergeSchedulerState(순수 함수, lib/scheduler-merge)가 흡수한 "실효 상태"를 캐싱·반환한다.
@@ -273,6 +308,12 @@ export async function syncSchedules(
     return []
   }
 
+  // ADR-097 결정 3: 여기서부터 실제 네트워크가 나간다. 성공이 아니라 "시도"를 표시하므로 실패해도
+  // 표시한다 — 오프라인에서 탭을 옮길 때마다 실패 호출이 반복되지 않게. 화면 진입 재조회 말고
+  // 추적 목록 저장·수동 모드 시드에서 들어온 회차도 같은 대상이다(동기화가 일어난 사실은 같고,
+  // 캐릭터별 신선도는 isSyncFresh 가 따로 본다).
+  markSyncAttemptedThisRun()
+
   const { apiKey, accountId, characters } = await resolveRegisteredCharacters()
   const targetCharacters = characters.filter((character) => ocids.includes(character.ocid))
   const total = targetCharacters.length
@@ -295,14 +336,21 @@ export async function syncSchedules(
     return [firstResult, ...fallbackRest]
   }
 
-  const restResults = await Promise.all(
-    rest.map(async (character) => {
-      const result = await syncOneCharacter(apiKey, character, accountId)
-      completed += 1
-      onProgress?.(completed, total)
-      return result
-    }),
-  )
+  // ADR-097 결정 7: character/basic 편승 갱신을 스케줄 병렬 구간과 **같은 Promise.all** 로 묶어
+  // 동시에 내보낸다 — 체감 대기 시간이 늘지 않는다. 자리는 isGlobalFailure 를 걸러 낸 **뒤**여야
+  // 한다(ADR-008 순서 보존 — 401/429 인데 캐릭터 수만큼 호출을 낭비하지 않는다). 대상은
+  // targetCharacters 전체다: 프리플라이트로 이미 동기화한 첫 캐릭터도 basic 갱신 대상이다.
+  const [restResults] = await Promise.all([
+    Promise.all(
+      rest.map(async (character) => {
+        const result = await syncOneCharacter(apiKey, character, accountId)
+        completed += 1
+        onProgress?.(completed, total)
+        return result
+      }),
+    ),
+    refreshCharacterBasics(apiKey, accountId, targetCharacters),
+  ])
 
   return [firstResult, ...restResults]
 }

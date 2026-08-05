@@ -35,6 +35,10 @@ vi.mock('../../schedule-sync/character-eligibility', () => ({
 }))
 
 import { prefetchAccountData } from '../prefetch'
+import {
+  hasSyncAttemptedThisRun,
+  resetSyncRunStateForTests,
+} from '../../schedule-sync/sync-run-state'
 
 const ACCOUNT = 'account-1'
 
@@ -64,6 +68,8 @@ function schedulerState(): SchedulerCharacterState {
 }
 
 beforeEach(() => {
+  // 모듈 수준 플래그라 테스트끼리 샌다(ADR-097 결정 3).
+  resetSyncRunStateForTests()
   setCachedCharacterBasicMock.mockResolvedValue(undefined)
   setCachedSchedulerStateMock.mockResolvedValue(undefined)
   resolveCharacterEligibilityMock.mockResolvedValue('eligible')
@@ -80,6 +86,16 @@ describe('prefetchAccountData', () => {
 
     expect(fetchCharacterBasicMock).not.toHaveBeenCalled()
     expect(onProgress).toHaveBeenCalledWith({ completed: 0, total: 0 })
+    expect(hasSyncAttemptedThisRun()).toBe(false)
+  })
+
+  it('예열도 이번 실행의 동기화로 친다 — 온보딩 직후 첫 진입이 방금 받은 것을 또 받지 않게 (ADR-097 결정 3)', async () => {
+    fetchCharacterBasicMock.mockResolvedValue(profile({ accessFlag: true }))
+    fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState())
+
+    await prefetchAccountData('key-1', ACCOUNT, [character('ocid-1')], vi.fn())
+
+    expect(hasSyncAttemptedThisRun()).toBe(true)
   })
 
   it('basic+schedule 둘 다 조회하고 계정 인덱스에 함께 캐시한다', async () => {

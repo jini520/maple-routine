@@ -22,6 +22,13 @@ export interface BossProfitContextValue {
   /** 보고 있는 기간의 키. */
   periodKey: string
   /**
+   * **지금 그려지고 있는 데이터의 (탭, 기간)** — 카운트업 identity 전용([[ADR-087]] 정정 1).
+   * 위의 `tab`·`periodKey` 는 데이터보다 먼저 바뀌므로 identity 에 쓰면 "새 키 + 옛 금액" 커밋이
+   * 기억을 오염시킨다. 라벨·네비게이션은 계속 위의 값을 쓴다.
+   */
+  loadedTab: BossProfitStore['tab']
+  loadedPeriodKey: string
+  /**
    * 화면이 한 번만 만든 '지금'. 두 번 호출하면 두 시각이 기간 경계를 사이에 두고 갈려
    * "현재 기간 판정"과 "기간 라벨"이 서로 다른 기간을 가리킬 수 있다.
    */

@@ -1,5 +1,7 @@
 import { create } from 'zustand'
 import { syncSchedules, toScheduleSyncError, type ScheduleSyncError } from '../schedule-sync/schedule-sync'
+import { hasSyncAttemptedThisRun } from '../schedule-sync/sync-run-state'
+import { isSyncFresh } from '../../lib/sync-freshness'
 import {
   getLastSelectedCharacter,
   getTrackedCharacterOcids,
@@ -56,6 +58,13 @@ export interface ContentCharacterView {
 
 export type ContentSchedulerStatus = 'idle' | 'loading' | 'loaded' | 'error'
 
+// ADR-097 결정 4: "강제"가 기본값이고 게이트가 예외다. force 인자를 두면 강제해야 할 호출부를
+// 하나라도 빠뜨리는 순간 그 자리가 조용히 게이트에 걸리므로, 자동 진입 경로인 loadTrackedOcids()만
+// auto: true 를 넘긴다. 화면(헤더 버튼·당겨서 새로고침·재시도)은 인자를 안 넘겨 자동으로 강제 경로다.
+export interface RefreshOptions {
+  auto?: boolean
+}
+
 // ADR-096 결정 1: 스케줄러 화면과 관리 페이지가 함께 쓰는 탭 식별자. 전에는 두 화면이 각자
 // 선언해 두 벌이었고, 그 복제가 "각자 판단해도 된다"처럼 보이게 한 원인이었다.
 export type ContentTab = 'daily' | 'weekly'
@@ -78,7 +87,11 @@ export interface ContentSchedulerState {
 export interface ContentSchedulerStore extends ContentSchedulerState {
   loadTrackedOcids(): Promise<void>
   saveTrackedOcids(ocids: string[], onProgress?: (completed: number, total: number) => void): Promise<void>
-  refresh(ocids: string[], onProgress?: (completed: number, total: number) => void): Promise<void>
+  refresh(
+    ocids: string[],
+    onProgress?: (completed: number, total: number) => void,
+    options?: RefreshOptions,
+  ): Promise<void>
   selectCharacter(ocid: string): Promise<void>
   addManualContent(ocid: string, contentName: string, kind: 'daily' | 'weekly'): Promise<ManualContentAddResult>
   removeManualContent(ocid: string, contentName: string, kind: 'daily' | 'weekly'): Promise<void>
@@ -153,7 +166,8 @@ export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, ge
     ])
     set({ trackedOcids: ocids, selectedOcid })
     if (ocids !== null) {
-      await get().refresh(ocids)
+      // ADR-097 결정 4: 자동 진입 경로는 여기 하나뿐이라 게이트를 놓칠 자리가 생기지 않는다.
+      await get().refresh(ocids, undefined, { auto: true })
     }
   },
 
@@ -235,7 +249,7 @@ export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, ge
     useToastStore.getState().showSuccess('캐릭터 정보를 모두 불러왔어요')
   },
 
-  async refresh(ocids, onProgress) {
+  async refresh(ocids, onProgress, options) {
     if (ocids.length === 0) {
       set({ status: 'loaded', characters: [], error: null })
       return
@@ -274,6 +288,31 @@ export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, ge
         }),
       )
     ).filter((view): view is ContentCharacterView => view !== null)
+
+    // ADR-097 결정 1~3: 화면 진입 자동 재조회는 데이터가 신선하면 건너뛴다. 판정 근거는 바로 위
+    // 캐시 우선 표시 단계가 이미 읽은 syncedAt 이라 저장소를 다시 읽지 않는다(결정 4).
+    if (
+      options?.auto === true &&
+      hasSyncAttemptedThisRun() &&
+      isSyncFresh(
+        cachedCharacters.map((view) => view.syncedAt),
+        ocids.length,
+        new Date(),
+      )
+    ) {
+      // set 을 두 번 하지 않는다 — loading 을 거치면 건너뛰는 진입에서 로딩이 한 프레임 번쩍인다.
+      // isStale 은 false 다(결정 5): 재검증이 오지 않기로 결정된 값이라 "오래된 데이터"가 아니고,
+      // 그 표식을 남기면 탭을 옮길 때마다 스탈 토스트가 뜬다. syncedAt 은 캐시 값 그대로 둔다.
+      set({
+        status: 'loaded',
+        characters: await sortByCachedLevel(
+          cachedCharacters.map((view) => ({ ...view, isStale: false })),
+        ),
+        error: null,
+        manualTrackedByOcid,
+      })
+      return
+    }
 
     set({ status: 'loading', characters: await sortByCachedLevel(cachedCharacters), manualTrackedByOcid })
 

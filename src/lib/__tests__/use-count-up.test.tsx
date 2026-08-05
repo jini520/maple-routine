@@ -12,14 +12,18 @@ function displayed(): number {
   return Number(screen.getByTestId('value').textContent)
 }
 
-/** rAF 을 수동으로 굴린다 — 실제 시간 대신 프레임을 우리가 준다. */
+/**
+ * rAF 을 수동으로 굴린다 — 실제 시간 대신 프레임을 우리가 준다. **취소도 실제로 동작해야 한다**:
+ * no-op 이면 재조준·identity 교체로 버려진 tween 이 계속 돌아 다음 단언의 값을 오염시킨다.
+ */
 let now = 0
-let frames: Array<(time: number) => void> = []
+let frames = new Map<number, (time: number) => void>()
+let nextFrameId = 0
 
 function advance(ms: number): void {
   now += ms
-  const pending = frames
-  frames = []
+  const pending = [...frames.values()]
+  frames.clear()
   act(() => {
     for (const frame of pending) frame(now)
   })
@@ -27,13 +31,17 @@ function advance(ms: number): void {
 
 beforeEach(() => {
   now = 0
-  frames = []
+  frames = new Map()
+  nextFrameId = 0
   clearCountUpMemory()
   vi.stubGlobal('requestAnimationFrame', (callback: (time: number) => void) => {
-    frames.push(callback)
-    return frames.length
+    nextFrameId += 1
+    frames.set(nextFrameId, callback)
+    return nextFrameId
   })
-  vi.stubGlobal('cancelAnimationFrame', () => {})
+  vi.stubGlobal('cancelAnimationFrame', (id: number) => {
+    frames.delete(id)
+  })
   vi.spyOn(performance, 'now').mockImplementation(() => now)
 })
 
@@ -57,7 +65,7 @@ describe('useCountUp', () => {
   it('기억이 없으면 첫 렌더는 굴리지 않고 목표를 그대로 그린다', () => {
     render(<Probe identity="a" value={1000} />)
     expect(displayed()).toBe(1000)
-    expect(frames).toHaveLength(0)
+    expect(frames.size).toBe(0)
   })
 
   it('값이 바뀌면 이전 값에서 목표까지 굴러가고 마지막에 정확히 목표에 닿는다', () => {
@@ -128,7 +136,7 @@ describe('useCountUp', () => {
 
     render(<Probe identity="a" value={1000} />)
     expect(displayed()).toBe(1000)
-    expect(frames).toHaveLength(0)
+    expect(frames.size).toBe(0)
   })
 
   // 기간 이동은 "같은 값이 변한 것"이 아니라 "다른 값을 보게 된 것"이다.
@@ -138,7 +146,7 @@ describe('useCountUp', () => {
 
     render(<Probe identity="total|weekly|2026-07-23" value={9000} />)
     expect(displayed()).toBe(9000)
-    expect(frames).toHaveLength(0)
+    expect(frames.size).toBe(0)
   })
 
   it('굴러가는 도중에 떠났다 돌아오면 그 자리에서 이어진다', () => {
@@ -166,5 +174,42 @@ describe('useCountUp', () => {
     render(<Probe identity="a" value={300} />)
     advance(0)
     expect(displayed()).toBe(100)
+  })
+
+  // [[ADR-087]] 정정 1 — 언마운트 없이 identity 만 바뀌는 자리가 있다(총 수익 헤드라인은 기간이
+  // 바뀌어도 재마운트되지 않는다). 마운트 때만 기억을 읽으면 그 자리는 옛 identity 의 값에서
+  // 굴러가 버린다 — identity 변경은 값 변경이 아니라 "다른 값을 보게 된 것"이므로 리셋이다.
+  it('살아 있는 인스턴스에서 identity 가 바뀌면 굴리지 않고 목표로 리셋한다', () => {
+    const view = render(<Probe identity="character|weekly|2026-07-30" value={1000} />)
+    advance(COUNT_UP_DURATION_MS)
+
+    view.rerender(<Probe identity="character|weekly|2026-07-23" value={9000} />)
+    expect(displayed()).toBe(9000)
+    expect(frames.size).toBe(0)
+  })
+
+  it('identity 가 바뀌면 굴러가던 tween 도 멈추고 새 목표로 리셋한다', () => {
+    const view = render(<Probe identity="a" value={0} />)
+    view.rerender(<Probe identity="a" value={1000} />)
+    advance(COUNT_UP_DURATION_MS / 2)
+    expect(displayed()).toBeLessThan(1000)
+
+    view.rerender(<Probe identity="b" value={7000} />)
+    expect(displayed()).toBe(7000)
+    expect(frames.size).toBe(0)
+  })
+
+  // 리셋한 값이 그 identity 의 기억이 된다 — 되돌아왔을 때 여기서 이어져야 한다.
+  it('identity 를 되돌리면 리셋 당시 값이 아니라 그 identity 의 기억에서 굴러간다', () => {
+    const view = render(<Probe identity="a" value={1000} />)
+    advance(COUNT_UP_DURATION_MS)
+
+    view.rerender(<Probe identity="b" value={9000} />)
+    view.rerender(<Probe identity="a" value={4000} />)
+    advance(0)
+    expect(displayed()).toBe(1000)
+
+    advance(COUNT_UP_DURATION_MS)
+    expect(displayed()).toBe(4000)
   })
 })

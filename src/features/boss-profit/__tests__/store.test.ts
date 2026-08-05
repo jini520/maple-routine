@@ -105,6 +105,10 @@ import {
   getWeeklyPeriodKeysInMonth,
   MIN_SCHEDULER_DATE,
 } from '../../../lib/boss-profit-period'
+import {
+  markSyncAttemptedThisRun,
+  resetSyncRunStateForTests,
+} from '../../schedule-sync/sync-run-state'
 import { useBossProfitStore } from '../store'
 
 function bossContent(overrides: Partial<BossContent> = {}): BossContent {
@@ -147,6 +151,8 @@ function syncResult(overrides: Partial<CharacterScheduleSync> = {}): CharacterSc
 }
 
 beforeEach(() => {
+  // ADR-097 결정 3: 모듈 수준 실행 플래그라 테스트끼리 오염된다.
+  resetSyncRunStateForTests()
   useBossProfitStore.setState({
     status: 'idle',
     tab: 'weekly',
@@ -2459,6 +2465,236 @@ describe('useBossProfitStore', () => {
 
       expect(useBossProfitStore.getState().rows).toEqual([])
       expect(getManualTrackedContentMock).not.toHaveBeenCalled()
+    })
+  })
+
+  // ADR-097 결정 1~6: 화면에 들어왔다는 사실만으로는 조회하지 않는다. 게이트는 자동 진입 경로에만
+  // 걸리고(결정 4), 판정 근거는 캐시 우선 표시 단계가 이미 읽은 syncedAt 이다.
+  describe('화면 진입 재조회 게이트 (ADR-097)', () => {
+    function minutesAgo(minutes: number): string {
+      return new Date(Date.now() - minutes * 60 * 1000).toISOString()
+    }
+
+    function cachedEntry(syncedAt: string): CachedSchedulerEntry {
+      return {
+        state: {
+          asOf: '2026-07-09T00:00+09:00',
+          characterName: '캐시캐릭터',
+          world: '베라',
+          level: 200,
+          jobClass: '렌',
+          dailyContents: [],
+          weeklyContents: [],
+          bossContents: [bossContent()],
+          isDailyStale: false,
+          isWeeklyStale: false,
+          isWeeklyBossStale: false,
+          isMonthlyBossStale: false,
+        },
+        syncedAt,
+      }
+    }
+
+    it('실행 플래그가 서 있고 전원 캐시가 TTL 안이면 자동 진입은 조회하지 않는다', async () => {
+      markSyncAttemptedThisRun()
+      getCachedSchedulerStateMock.mockResolvedValue(cachedEntry(minutesAgo(5)))
+
+      await useBossProfitStore.getState().refresh(['ocid-1'], { auto: true })
+
+      expect(syncSchedulesMock).not.toHaveBeenCalled()
+      const state = useBossProfitStore.getState()
+      expect(state.status).toBe('loaded')
+      expect(state.error).toBeNull()
+      // 결정 5: 화면에 흔적을 남기지 않는다 — 행은 캐시 우선 표시가 그대로 그린다.
+      expect(state.rows).toHaveLength(1)
+      expect(state.rows[0].boss).toBe('자쿰')
+      expect(state.rows[0].characterName).toBe('캐시캐릭터')
+    })
+
+    // 결정 5: 이 화면의 lastSyncedAt 은 스토어 메모리에만 있어 건너뛴 진입에서는 null 로 남는다 —
+    // 그러면 신선한 데이터를 보여주면서 "동기화 기록 없음"이라고 말하게 된다. 지금 시각으로 채우는
+    // 것도 답이 아니다(하지 않은 동기화를 했다고 말하는 것이다).
+    it('건너뛴 진입의 lastSyncedAt 은 가장 오래된 캐시 syncedAt 이다(지금 시각이 아니다)', async () => {
+      const oldest = minutesAgo(8)
+      markSyncAttemptedThisRun()
+      getCachedSchedulerStateMock.mockImplementation(async (ocid: string) =>
+        cachedEntry(ocid === 'ocid-1' ? minutesAgo(5) : oldest),
+      )
+
+      await useBossProfitStore.getState().refresh(['ocid-1', 'ocid-2'], { auto: true })
+
+      expect(syncSchedulesMock).not.toHaveBeenCalled()
+      expect(useBossProfitStore.getState().lastSyncedAt).toBe(oldest)
+    })
+
+    // 결정 6: 낡은 캐시를 기준으로 파티원 수를 영구 기록하지 않는다([[ADR-017]]·[[ADR-067]] 결정 7).
+    it('건너뛴 진입에서는 자동 기록(upsert)을 하지 않는다', async () => {
+      markSyncAttemptedThisRun()
+      getCachedSchedulerStateMock.mockResolvedValue(cachedEntry(minutesAgo(5)))
+
+      await useBossProfitStore.getState().refresh(['ocid-1'], { auto: true })
+
+      expect(upsertBossProfitRecordMock).not.toHaveBeenCalled()
+      expect(getBossPartySizeMock).not.toHaveBeenCalled()
+    })
+
+    it('앱 재시작 직후(실행 플래그 없음)에는 TTL 안이어도 조회한다', async () => {
+      getCachedSchedulerStateMock.mockResolvedValue(cachedEntry(minutesAgo(5)))
+      syncSchedulesMock.mockResolvedValue([syncResult()])
+
+      await useBossProfitStore.getState().refresh(['ocid-1'], { auto: true })
+
+      expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
+    })
+
+    it('추적 캐릭터 중 캐시가 없는 캐릭터가 있으면 TTL 안이어도 조회한다', async () => {
+      markSyncAttemptedThisRun()
+      getCachedSchedulerStateMock.mockImplementation(async (ocid: string) =>
+        ocid === 'ocid-1' ? cachedEntry(minutesAgo(5)) : null,
+      )
+      syncSchedulesMock.mockResolvedValue([
+        syncResult({ ocid: 'ocid-1' }),
+        syncResult({ ocid: 'ocid-2' }),
+      ])
+
+      await useBossProfitStore.getState().refresh(['ocid-1', 'ocid-2'], { auto: true })
+
+      expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
+    })
+
+    it('가장 오래된 캐시가 TTL 밖이면 조회한다', async () => {
+      markSyncAttemptedThisRun()
+      getCachedSchedulerStateMock.mockImplementation(async (ocid: string) =>
+        cachedEntry(ocid === 'ocid-1' ? minutesAgo(5) : minutesAgo(11)),
+      )
+      syncSchedulesMock.mockResolvedValue([
+        syncResult({ ocid: 'ocid-1' }),
+        syncResult({ ocid: 'ocid-2' }),
+      ])
+
+      await useBossProfitStore.getState().refresh(['ocid-1', 'ocid-2'], { auto: true })
+
+      expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
+    })
+
+    // 결정 4: 강제가 기본값이다 — 옵션을 넘기지 않는 헤더 버튼·당겨서 새로고침·재시도는 항상 조회한다.
+    it('옵션 없는 refresh(명시적 재조회)는 TTL 안이어도 항상 조회한다', async () => {
+      markSyncAttemptedThisRun()
+      getCachedSchedulerStateMock.mockResolvedValue(cachedEntry(minutesAgo(5)))
+      syncSchedulesMock.mockResolvedValue([syncResult()])
+
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+
+      expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
+    })
+
+    // ADR-076 제자리 새로고침(진행 중인 주를 품은 지난 달)에서도 게이트는 같다 — 화면 반영을
+    // loadPeriod에 넘기는 규약만 그대로 지킨다.
+    it('제자리 새로고침 화면에서 건너뛰면 보던 기간을 유지한 채 loadPeriod로 정착한다', async () => {
+      vi.useFakeTimers({ toFake: ['Date'] })
+      vi.setSystemTime(new Date('2026-08-02T12:00:00+09:00')) // 이번 주 2026-07-30, 이번 달 2026-08
+
+      try {
+        const syncedAt = minutesAgo(5)
+        getCachedSchedulerStateMock.mockResolvedValue(cachedEntry(syncedAt))
+        syncSchedulesMock.mockResolvedValue([syncResult()])
+        fetchSchedulerCharacterStateMock.mockResolvedValue(null)
+
+        await useBossProfitStore.getState().refresh(['ocid-1'])
+        await useBossProfitStore.getState().setTab('monthly')
+        await useBossProfitStore.getState().goToPreviousPeriod()
+        expect(useBossProfitStore.getState().periodKey).toBe('2026-07')
+
+        syncSchedulesMock.mockClear()
+        markSyncAttemptedThisRun()
+
+        await useBossProfitStore.getState().refresh(['ocid-1'], { auto: true })
+
+        expect(syncSchedulesMock).not.toHaveBeenCalled()
+        const state = useBossProfitStore.getState()
+        expect(state.periodKey).toBe('2026-07') // 보던 기간이 튕겨 나가지 않는다
+        expect(state.status).toBe('loaded') // status는 loadPeriod가 확정한다
+        expect(state.lastSyncedAt).toBe(syncedAt)
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    it('자동 진입 경로인 loadTrackedOcids는 게이트에 걸린다', async () => {
+      markSyncAttemptedThisRun()
+      getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
+      getCachedSchedulerStateMock.mockResolvedValue(cachedEntry(minutesAgo(5)))
+
+      await useBossProfitStore.getState().loadTrackedOcids()
+
+      expect(syncSchedulesMock).not.toHaveBeenCalled()
+      expect(useBossProfitStore.getState().status).toBe('loaded')
+    })
+  })
+
+  // ADR-097 결정 7 후단(이슈 #139): syncSchedules 가 도는 회차에 character/basic 도 함께 받아
+  // 캐시를 갱신한다(편승 갱신). 이 화면만 프로필을 동기화 **이전에** 읽으므로, 완료 분기에서 다시
+  // 읽지 않으면 새 레벨·이미지가 그 회차에 반영되지 않고 다음 진입으로 밀린다.
+  describe('동기화 완료 후 프로필 재조회 (ADR-097 결정 7)', () => {
+    // 편승 갱신이 캐시를 새로 쓴 시점을 syncSchedules 호출로 모사한다 — 그 전에 읽으면 옛 값,
+    // 그 뒤에 읽으면 새 값이다.
+    function basicCacheFlippedBySync(
+      profileFor: (ocid: string, piggybacked: boolean) => { name: string; level: number; imageUrl: string },
+      results: CharacterScheduleSync[],
+    ): void {
+      let piggybacked = false
+      getCachedCharacterBasicMock.mockImplementation(async (ocid: string) => ({
+        profile: { ...profileFor(ocid, piggybacked), accessFlag: true },
+        cachedAt: '2026-07-01T00:00:00.000Z',
+      }))
+      syncSchedulesMock.mockImplementation(async () => {
+        piggybacked = true
+        return results
+      })
+    }
+
+    it('동기화 뒤 갱신된 이미지가 그 회차 rows 에 반영된다', async () => {
+      basicCacheFlippedBySync(
+        (ocid, piggybacked) => ({
+          name: `캐릭터-${ocid}`,
+          level: 200,
+          imageUrl: piggybacked ? '갱신됨.png' : '옛날.png',
+        }),
+        [syncResult()],
+      )
+
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+
+      expect(useBossProfitStore.getState().rows[0].imageUrl).toBe('갱신됨.png')
+    })
+
+    it('레벨이 바뀌어 순서가 뒤집히면 최종 rows 는 새 레벨 기준으로 정렬된다', async () => {
+      basicCacheFlippedBySync(
+        // 동기화 전엔 ocid-1(280) > ocid-2(250), 동기화 후엔 ocid-2 가 290 으로 올라 뒤집힌다.
+        (ocid, piggybacked) => ({
+          name: `캐릭터-${ocid}`,
+          level: ocid === 'ocid-1' ? 280 : piggybacked ? 290 : 250,
+          imageUrl: 'x',
+        }),
+        [
+          syncResult({ ocid: 'ocid-1' }),
+          syncResult({ ocid: 'ocid-2', characterName: '캐릭터-ocid-2' }),
+        ],
+      )
+
+      await useBossProfitStore.getState().refresh(['ocid-1', 'ocid-2'])
+
+      expect(useBossProfitStore.getState().rows.map((row) => row.ocid)).toEqual(['ocid-2', 'ocid-1'])
+    })
+
+    // 재조회는 character-basic-cache 를 읽는 로컬 조회다 — 네트워크가 0회여야 한다.
+    it('재조회 때문에 네트워크 호출이 늘지 않는다', async () => {
+      syncSchedulesMock.mockResolvedValue([syncResult()])
+
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+
+      expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
+      expect(fetchSchedulerCharacterStateMock).not.toHaveBeenCalled()
     })
   })
 })
