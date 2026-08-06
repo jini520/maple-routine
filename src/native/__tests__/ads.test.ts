@@ -22,6 +22,7 @@ function read(relative: string): string {
 
 const MANIFEST = read('../../../android/app/src/main/AndroidManifest.xml')
 const INFO_PLIST = read('../../../ios/App/App/Info.plist')
+const APP_ADS = read('../../../site/app-ads.txt')
 
 /**
  * 테스트 광고 게이트는 **빌드 시점 환경 변수**로만 판정한다.
@@ -100,6 +101,45 @@ describe('네이티브 앱 ID 설정', () => {
     expect(android).toBeDefined()
     expect(ios).toBeDefined()
     expect(android).not.toBe(ios)
+  })
+})
+
+/**
+ * `app-ads.txt` 는 우리 광고 지면을 누가 팔 수 있는지 선언하는 파일이고, AdMob은 **스토어
+ * 등록정보에 적힌 개발자 웹사이트**(`mapleroutine.store`)의 루트에서 이걸 크롤링한다.
+ *
+ * 여기 적힌 퍼블리셔가 네이티브 앱 ID의 퍼블리셔와 다르면 우리 지면이 인증되지 않은 것으로
+ * 취급돼 **입찰 수요가 조용히 줄어든다** — 광고가 안 뜨는 게 아니라 덜 비싸게 팔리므로 화면
+ * 어디에도 증상이 없다. 이 파일의 나머지 검사와 같은 계열이라 여기서 함께 잡는다.
+ */
+describe('app-ads.txt', () => {
+  it('우리 퍼블리셔를 DIRECT 로 선언한다', () => {
+    expect(APP_ADS).toContain(`google.com, pub-${PUBLISHER}, DIRECT, f08c47fec0942fa0`)
+  })
+
+  it('네이티브 앱 ID와 같은 퍼블리셔다', () => {
+    // 광고 단위를 다른 AdMob 계정으로 옮기면 네 곳(어댑터·Manifest·plist·app-ads.txt)을 모두
+    // 고쳐야 한다. 이 검사가 없으면 app-ads.txt 하나만 옛 계정에 남는다.
+    const declared = /pub-(\d+)/.exec(APP_ADS)?.[1]
+    const native = /ca-app-pub-(\d+)~/.exec(MANIFEST)?.[1]
+    expect(declared).toBeDefined()
+    expect(declared).toBe(native)
+  })
+
+  it('Google 테스트 퍼블리셔를 선언하지 않는다', () => {
+    expect(APP_ADS).not.toContain(GOOGLE_TEST_PUBLISHER)
+  })
+
+  it('모든 데이터 줄이 4개 필드를 갖는다', () => {
+    // 형식이 깨진 줄은 파서가 통째로 버린다. 주석(#)과 빈 줄만 예외다.
+    const rows = APP_ADS.split('\n')
+      .map((line) => line.replace(/#.*$/, '').trim())
+      .filter((line) => line.length > 0)
+
+    expect(rows.length).toBeGreaterThan(0)
+    for (const row of rows) {
+      expect(row.split(',').map((field) => field.trim())).toHaveLength(4)
+    }
   })
 })
 

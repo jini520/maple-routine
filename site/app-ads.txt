@@ -1,0 +1,6 @@
+# 메이플 루틴 — AdMob 판매 권한 선언 (app-ads.txt)
+#
+# AdMob이 스토어 등록정보의 개발자 웹사이트 URL(mapleroutine.store)을 통해 이 파일을 찾아온다.
+# 퍼블리셔 ID는 AndroidManifest.xml / Info.plist / native/ads.ts 와 같은 계정이어야 하며,
+# native/__tests__/ads.test.ts 가 네 곳의 드리프트를 잡는다. 자세한 배경은 docs/features/site.md.
+google.com, pub-5278246170608284, DIRECT, f08c47fec0942fa0
