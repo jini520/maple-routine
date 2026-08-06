@@ -134,10 +134,10 @@ describe('buildThemeCss', () => {
     const WITH_BACKGROUND: ThemeDefinition = {
       ...getThemeDefinition('혼테일'),
       background: {
-        image: 'hontail-cave',
-        size: 'cover',
-        position: '60% 50%',
-        dim: 0.82,
+        image: 'hontail-background',
+        size: 'auto 100%',
+        position: 'center',
+        dim: 0.65,
         fadeTop: '0px',
       },
     }

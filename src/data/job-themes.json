@@ -81,7 +81,14 @@
     "mediaInk": "#EEE2DC",
     "mediaInkMuted": "#B0A19A",
     "scrim": "#010000B3",
-    "shadowColor": "#04010059"
+    "shadowColor": "#04010059",
+    "background": {
+      "image": "hontail-background",
+      "size": "cover",
+      "position": "45% bottom",
+      "dim": 0.80,
+      "fadeTop": "0px"
+    }
   },
   "레테": {
     "mode": "dark",
