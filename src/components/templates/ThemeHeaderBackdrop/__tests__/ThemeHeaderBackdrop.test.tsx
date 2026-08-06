@@ -1,16 +1,41 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { cleanup, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ThemeHeaderBackdrop } from '../ThemeHeaderBackdrop'
 import { useThemeStore } from '../../../../features/theme/store'
+import { getThemeDefinition } from '../../../../lib/theme-registry'
+import jobThemes from '../../../../data/job-themes.json'
+import type { ThemeDefinition } from '../../../../types/theme'
+
+/**
+ * **배경 있는 정의는 데이터가 아니라 여기서 주입한다**([[ADR-106]] 결정 3). 지금은 배경을 선언한
+ * 테마가 0개라 `theme: '혼테일'` 로는 "있음" 분기를 못 태우는데, 이 컴포넌트가 검사받는 것은
+ * 어느 테마가 배경을 갖느냐가 아니라 **`background` 유무로 렌더를 가르느냐**다.
+ * "없음" 쪽은 진짜 테마로 그대로 검사한다(`mockReset` 이 원래 구현으로 되돌린다).
+ */
+vi.mock('../../../../lib/theme-registry', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../../lib/theme-registry')>()
+  return { ...actual, getThemeDefinition: vi.fn(actual.getThemeDefinition) }
+})
 
 afterEach(() => {
   cleanup()
+  vi.mocked(getThemeDefinition).mockReset()
 })
 
-function withTheme(theme: '혼테일' | '렌'): void {
-  useThemeStore.setState({ theme })
+function withBackground(): void {
+  useThemeStore.setState({ theme: '혼테일' })
+  vi.mocked(getThemeDefinition).mockReturnValue({
+    ...(jobThemes.혼테일 as ThemeDefinition),
+    background: {
+      image: 'hontail-cave',
+      size: 'cover',
+      position: 'center',
+      dim: 0.82,
+      fadeTop: '0px',
+    },
+  })
 }
 
 /**
@@ -21,7 +46,7 @@ function withTheme(theme: '혼테일' | '렌'): void {
  */
 describe('ThemeHeaderBackdrop', () => {
   it('배경이 있는 테마에서는 조각을 렌더한다', () => {
-    withTheme('혼테일')
+    withBackground()
 
     render(<ThemeHeaderBackdrop />)
 
@@ -29,7 +54,7 @@ describe('ThemeHeaderBackdrop', () => {
   })
 
   it('배경이 없는 테마에서는 아무것도 렌더하지 않는다 — 헤더 DOM 이 늘지 않는다', () => {
-    withTheme('렌')
+    useThemeStore.setState({ theme: '렌' })
 
     const { container } = render(<ThemeHeaderBackdrop />)
 
@@ -38,7 +63,7 @@ describe('ThemeHeaderBackdrop', () => {
 
   // 헤더 콘텐츠를 가로채면 안 된다 — 드롭다운·버튼이 그 위에 있다.
   it('스크린 리더에서 숨기고 포인터 이벤트를 받지 않는다', () => {
-    withTheme('혼테일')
+    withBackground()
 
     render(<ThemeHeaderBackdrop />)
 

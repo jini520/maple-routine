@@ -11,6 +11,16 @@ import { useBossProfitStore } from '../features/boss-profit/store'
 import { useSettingsStore } from '../features/settings/store'
 import { useThemeStore } from '../features/theme/store'
 import { useTrackingModeStore } from '../features/tracking-mode/store'
+import { getThemeDefinition } from '../lib/theme-registry'
+import jobThemes from '../data/job-themes.json'
+import type { ThemeDefinition } from '../types/theme'
+
+// 배경 있는 테마 정의를 주입하기 위한 부분 모킹(ADR-106 결정 3) — 지금은 배경을 선언한 테마가
+// 0개라 테마 이름으로는 "있음" 분기를 못 태운다. 나머지 export 는 실물 그대로다.
+vi.mock('../lib/theme-registry', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../lib/theme-registry')>()
+  return { ...actual, getThemeDefinition: vi.fn(actual.getThemeDefinition) }
+})
 
 vi.mock('../features/onboarding/store', () => ({
   useOnboardingStore: vi.fn(),
@@ -442,7 +452,11 @@ describe('AppShell', () => {
 
   /**
    * 테마 배경 이미지([[ADR-088]] 결정 4) — 값을 가진 테마에서만 백드롭을 렌더한다.
-   * 나머지 네 테마에는 DOM 자체가 늘지 않아야 한다.
+   * 배경 없는 테마에는 DOM 자체가 늘지 않아야 한다.
+   *
+   * "있음" 쪽은 **정의를 주입해** 태운다([[ADR-106]] 결정 3) — 지금은 배경을 선언한 테마가 0개라
+   * 테마 이름으로는 이 분기에 못 들어가는데, 여기서 볼 것은 어느 테마가 배경을 갖느냐가 아니라
+   * `AppShell` 이 `background` 유무로 백드롭과 `bg-bg` 를 가르느냐다.
    */
   describe('테마 배경 백드롭', () => {
     // vi.clearAllMocks() 는 반환값을 지우지 않는다 — 바꾼 테마가 다음 테스트로 새지 않게 되돌린다.
@@ -452,7 +466,21 @@ describe('AppShell', () => {
         restoreFromStorage: vi.fn(),
         selectTheme: vi.fn(),
       })
+      vi.mocked(getThemeDefinition).mockReset()
     })
+
+    function withThemeBackground(): void {
+      vi.mocked(getThemeDefinition).mockReturnValue({
+        ...(jobThemes.혼테일 as ThemeDefinition),
+        background: {
+          image: 'hontail-cave',
+          size: 'cover',
+          position: 'center',
+          dim: 0.82,
+          fadeTop: '0px',
+        },
+      })
+    }
 
     it('배경이 없는 테마에서는 백드롭을 렌더하지 않는다', () => {
       mockedUseThemeStore.mockReturnValue({
@@ -468,11 +496,7 @@ describe('AppShell', () => {
     })
 
     it('배경이 있는 테마에서는 백드롭을 렌더한다', () => {
-      mockedUseThemeStore.mockReturnValue({
-        theme: '혼테일',
-        restoreFromStorage: vi.fn(),
-        selectTheme: vi.fn(),
-      })
+      withThemeBackground()
       mockStore({ status: 'completed', selectedAccountId: 'account-1' })
 
       renderAt('/content')
@@ -487,11 +511,7 @@ describe('AppShell', () => {
      * 2026-08-03). 바탕색은 `body` 가 이미 같은 값으로 칠하므로 루트에서 뺀다.
      */
     it('배경이 있는 테마에서는 루트가 배경색을 칠하지 않는다 — 칠하면 백드롭이 그 밑에 깔린다', () => {
-      mockedUseThemeStore.mockReturnValue({
-        theme: '혼테일',
-        restoreFromStorage: vi.fn(),
-        selectTheme: vi.fn(),
-      })
+      withThemeBackground()
       mockStore({ status: 'completed', selectedAccountId: 'account-1' })
 
       renderAt('/content')

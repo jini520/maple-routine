@@ -50,18 +50,22 @@ describe('자산 슬러그 전수 해석 (ADR-093)', () => {
     expect(unresolved).toEqual([])
   })
 
-  it('job-themes.json이 background를 선언한 테마는 그 이미지 슬러그가 URL로 해석된다', () => {
-    const declared = Object.entries(
-      jobThemesData as Record<string, { background?: { image?: string } }>,
-    )
-      .filter(([, definition]) => definition.background !== undefined)
-      .map(([name, definition]) => ({ name, image: definition.background?.image ?? '' }))
+  // 배경을 가진 테마는 현재 **0종**이다 — 그림을 바꾸는 중이라 둘 다 뗐다(ADR-106).
+  // 0건이면 이 검사는 저절로 초록이 되므로, 원래 있던 `length > 0` 가르개를 떼는 대신 skip 으로
+  // 남긴다(ADR-106 결정 4). 새 그림이 붙으면 손대지 않아도 되살아난다.
+  const declaredThemeBackgrounds = Object.entries(
+    jobThemesData as Record<string, { background?: { image?: string } }>,
+  )
+    .filter(([, definition]) => definition.background !== undefined)
+    .map(([name, definition]) => ({ name, image: definition.background?.image ?? '' }))
 
-    // 배경을 가진 테마는 현재 혼테일·검은마법사 2종(ADR-088, ADR-089).
-    expect(declared.length).toBeGreaterThan(0)
-    const unresolved = declared
-      .filter(({ image }) => getThemeBackgroundUrl(image) === null)
-      .map(({ name }) => name)
-    expect(unresolved).toEqual([])
-  })
+  it.skipIf(declaredThemeBackgrounds.length === 0)(
+    'job-themes.json이 background를 선언한 테마는 그 이미지 슬러그가 URL로 해석된다',
+    () => {
+      const unresolved = declaredThemeBackgrounds
+        .filter(({ image }) => getThemeBackgroundUrl(image) === null)
+        .map(({ name }) => name)
+      expect(unresolved).toEqual([])
+    },
+  )
 })

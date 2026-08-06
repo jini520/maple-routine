@@ -138,7 +138,7 @@ export interface ThemeDefinition extends ThemeTokens {
   mode: ThemeMode
   /** 선택 목록의 섹션을 정한다 ([[ADR-104]] 결정 1) */
   category: ThemeCategory
-  /** 없으면 배경은 `bg` 단색이다 — 지금 값을 가진 테마는 혼테일·검은마법사 둘이다([[ADR-088]], [[ADR-089]]) */
+  /** 없으면 배경은 `bg` 단색이다 — 지금은 **어느 테마도 갖지 않는다**([[ADR-088]], [[ADR-106]] 로 둘 다 뗌) */
   background?: ThemeBackground
 }
 
