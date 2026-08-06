@@ -17,10 +17,11 @@ interface DropEffectOverlayProps {
   onClose: () => void
 }
 
-// 단계별 고정 fps(ADR-038 방식, 값은 ADR-103 이 2배로 상향): ScreenEff 30(8f 시점에 아이템+pre 병렬)
-// → pre 28 → loop 23 → end 24. 아래 중앙 아이템 팝인(CSS transition)은 fps 를 안 따르므로,
-// fps 를 바꿀 땐 같은 배율로 함께 바꿔야 팝인 종료와 버스트 종료가 어긋나지 않는다(ADR-103 결정 2).
-const FPS = { screen: 30, pre: 28, loop: 23, end: 24 }
+// 단계별 고정 fps(ADR-038 방식, 값은 ADR-103 이 1.5배로 상향): ScreenEff 22.5(8f 시점에 아이템+pre
+// 병렬) → pre 21 → loop 17.25 → end 18. 2배도 시도했으나 너무 빨랐다(사용자 반려, ADR-103).
+// 아래 중앙 아이템 팝인(CSS transition)은 fps 를 안 따르므로, fps 를 바꿀 땐 같은 배율로 함께
+// 바꿔야 팝인 종료와 버스트 종료가 어긋나지 않는다(ADR-103 결정 2).
+const FPS = { screen: 22.5, pre: 21, loop: 17.25, end: 18 }
 // 등장 트리거는 시간이 아니라 ScreenEff 프레임 인덱스다 — 버스트가 최대로 벌어지는 그림에 묶여 있어
 // fps 가 바뀌어도 그대로 둔다(ADR-103 결정 3).
 const DROP_START_FRAME = 8
@@ -121,7 +122,7 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
       lastTs = ts
 
       if (!st.closing) {
-        // ScreenEff (30fps·1회, 16f=533ms) — 8f 시점에 아이템+pre 트리거
+        // ScreenEff (22.5fps·1회, 16f=711ms) — 8f 시점에 아이템+pre 트리거
         if (!st.sDone) {
           st.sAcc += dt
           const dur = 1000 / FPS.screen
@@ -138,7 +139,7 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
           }
           if (!st.sDone) elScreen!.src = frames.screen[st.sIdx]
         }
-        // DropEff (pre 28fps·8f → loop 23fps·24f ∞)
+        // DropEff (pre 21fps·8f → loop 17.25fps·24f ∞)
         if (st.dStarted) {
           st.dAcc += dt
           let guard = 0
@@ -159,7 +160,7 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
           applyDropFrame(elDrop!, st.dPhase, st.dIdx)
         }
       } else {
-        // 닫기: end (24fps·1회, 7f=292ms) → 종료
+        // 닫기: end (18fps·1회, 7f=389ms) → 종료
         st.eAcc += dt
         const dur = 1000 / FPS.end
         let guard = 0
@@ -247,8 +248,8 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
               style={{
                 opacity: 0,
                 transform: 'scale(0.5)',
-                // 프레임 재생과 같은 배율(ADR-103 결정 2) — 팝인이 버스트 종료(533ms)와 함께 끝난다.
-                transition: 'opacity .175s ease, transform .25s cubic-bezier(.2,1.3,.35,1)',
+                // 프레임 재생과 같은 배율(ADR-103 결정 2) — 팝인이 버스트 종료(711ms)와 함께 끝난다.
+                transition: 'opacity .233s ease, transform .333s cubic-bezier(.2,1.3,.35,1)',
                 filter: 'drop-shadow(0 0 10px rgba(255,214,140,.85))',
               }}
             />
