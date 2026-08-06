@@ -78,7 +78,18 @@ Text(라이트): text-[#8A7362] hover:text-[#5B4636]   Text(다크): text-neutra
 즐겨찾기: lucide Star, top-1.5 right-1.5. 미선택 text-text-muted 아웃라인 / 선택 fill-primary text-primary
 텍스트: 이름 text-xs font-semibold text-text + 서버 엠블럼(h-3.5), 레벨 text-xs text-text-muted (직업 미표시)
 ```
-정렬: **즐겨찾기(선택) 먼저, 그다음 나머지**, 각 그룹 내부 레벨 내림차순 — 즐겨찾기 토글 시 즉시 재배치. `character/basic` 실패 캐릭터는 "?" 플레이스홀더 + 이름·레벨 유지(선택 가능) — 단 [[ADR-053]] 이후 이 폴백은 **캐시가 있는 캐릭터에만** 적용된다(캐시도 없고 조회도 실패한 캐릭터는 `access_flag` 를 확인할 길이 없어 목록에 아예 넣지 않는다). 서버 엠블럼은 `lib/world-emblem`(데이터 `world-emblems.json`) 재사용, world 없거나 미매핑이면 생략. 모달 헤더(제목+설명 `mb-4 space-y-1`), 그리드 `max-h-[70vh] overflow-y-auto`, **이 모달은 오버레이 클릭으로 닫히지 않음**(닫기/저장 버튼만, 자체 오버레이라 이 모달에만 적용).
+정렬: **즐겨찾기(선택) 먼저, 그다음 나머지**, 각 그룹 내부 레벨 내림차순 — 즐겨찾기 토글 시 즉시 재배치. `character/basic` 실패 캐릭터는 "?" 플레이스홀더 + 이름·레벨 유지(선택 가능) — 단 [[ADR-053]] 이후 이 폴백은 **캐시가 있는 캐릭터에만** 적용된다(캐시도 없고 조회도 실패한 캐릭터는 `access_flag` 를 확인할 길이 없어 목록에 아예 넣지 않는다). 서버 엠블럼은 `lib/world-emblem`(데이터 `world-emblems.json`) 재사용, world 없거나 미매핑이면 생략. 모달 헤더(제목+설명 `mb-4 space-y-1`), **이 모달은 오버레이 클릭으로 닫히지 않음**(닫기/저장 버튼만, 자체 오버레이라 이 모달에만 적용).
+
+**모달 높이와 스크롤포트 ([[ADR-107]], 2026-08-06)**: 카드 높이의 상한은 **안전영역을 뺀 화면**이고, 스크롤포트는 그리드가 아니라 **쓰는 쪽**이 갖는다([[ADR-099]] 가 화면 스크롤에 세운 규칙과 같다 — 인디케이터는 콘텐츠가 아니라 스크롤포트 위에 그려지므로, 스크롤포트가 카드 `p-6` 안쪽이면 인디케이터도 24px 안쪽에 뜬다).
+```
+오버레이: fixed inset-0 z-50 flex items-center justify-center bg-scrim
+          px-4 pt-[calc(1rem+var(--sa-top))] pb-[calc(1rem+var(--sa-bottom))]   ← 안전영역 + 1rem 여백
+카드:     flex max-h-full w-full max-w-sm flex-col p-6   (헤더·푸터 shrink-0 — 줄어드는 것은 본문뿐)
+스크롤포트(모달):   -mr-6 min-h-0 overflow-y-auto pr-6   ← 음수 마진이 카드 테두리까지 넓혀 인디케이터를 끝에 붙이고,
+                                                          같은 크기 패딩이 콘텐츠 여백을 되돌린다
+스크롤포트(온보딩): max-h-[70vh] overflow-y-auto        ← 페이지라 상한이 스스로 필요하다
+```
+스탈 배너는 스크롤포트 **밖**에 둔다(목록을 굴려도 "최신이 아님"은 계속 보인다). `CharacterTrackingGrid` 자신은 상한도 스크롤도 갖지 않는다.
 
 **로딩/빈/실패 상태 ([[ADR-053]], 구현 완료 2026-07-29)**: 그리드에 항목이 없을 때 세 경우를 구분해 그린다(빈 상태로 위장 금지, [error-resilience.md](./error-resilience.md) 원칙 1·2). 항목이 하나라도 있으면 조회 중이어도 기존대로 그리드만 그린다([[ADR-016]] 캐시 우선 표시를 스피너로 가리지 않는다). 어느 상태인지는 `getCharacterPickerRoster` Promise의 resolve/reject로 호출부가 판정해 필수 props `isLoading`·`loadFailed` 로 내려준다(정책 원문 [../features/content-scheduler.md](../features/content-scheduler.md)).
 ```
@@ -88,7 +99,7 @@ Text(라이트): text-[#8A7362] hover:text-[#5B4636]   Text(다크): text-neutra
 조회 실패: 공용 ErrorState (아래 "실패 상태" 절, [[ADR-062]])
 항목 0건: text-sm text-text-muted "표시할 캐릭터가 없어요"
 ```
-**본문 자리 높이는 카드 3줄로 못 박는다** — `ROSTER_BODY_MIN_H`(`min-h-[385px]`, `CharacterTrackingGrid`에서 export). 실측 385px = 카드 123px × 3 + `gap-2` 8px × 2. 슬롯은 `flex flex-col`이고 중앙 정렬 분기(스피너·실패·빈 상태)는 `flex-1`로 그 높이를 채운다(그리드는 위쪽 정렬). 이 고정이 없으면 상태마다 높이가 달라 아래 CTA(온보딩 "계속하기", 모달 "닫기·저장")가 위아래로 움직이고, 실패 상태의 액션 버튼이 CTA에 붙어 보인다(사용자 보고 2026-07-30) — [[ADR-054]] 정정 4에서 라벨행을 `h-6`으로 명시 고정한 것과 같은 처방이다.
+**본문 자리 높이는 카드 3줄로 못 박는다** — `ROSTER_BODY_MIN_H`(`min-h-[385px]`, `CharacterTrackingGrid`에서 export). 실측 385px = 카드 123px × 3 + `gap-2` 8px × 2. 슬롯은 `flex flex-col`이고 중앙 정렬 분기(스피너·실패·빈 상태)는 `flex-1`로 그 높이를 채운다(그리드는 위쪽 정렬). **모달에서는 이 최소 높이를 클램프한다** — `min-h-[min(385px,calc(100dvh-var(--sa-top)-var(--sa-bottom)-15rem))]`. CSS 에서 `min-height` 는 `max-height` 를 이기므로 385px 를 그대로 두면 위 카드 상한이 짧은 기기에서 무효가 된다([[ADR-107]] 결정 2 — 클램프는 385px 가 애초에 안 들어가는 기기에서만 발동한다). 온보딩은 페이지라 클램프 없이 `ROSTER_BODY_MIN_H` 그대로다. 이 고정이 없으면 상태마다 높이가 달라 아래 CTA(온보딩 "계속하기", 모달 "닫기·저장")가 위아래로 움직이고, 실패 상태의 액션 버튼이 CTA에 붙어 보인다(사용자 보고 2026-07-30) — [[ADR-054]] 정정 4에서 라벨행을 `h-6`으로 명시 고정한 것과 같은 처방이다.
 실패는 원인(`loadError: ScheduleSyncError | null`)을 받아 원인별 문구·액션을 그린다 — 자세한 것은 아래 "실패 상태" 절([[ADR-062]]). **보여줄 항목이 있는 채로 실패하면** 목록을 지우지 않고 그 위에 스탈 배너를 얹는다. 온보딩 캐릭터 선택 단계(`ContentCharacterStep`)는 같은 분기를 페이지에서 직접 그리며 액션만 다르다(온보딩 중에는 설정 화면이 없다, [onboarding.md](../features/onboarding.md)).
 
 ### 빈 상태 (`components/EmptyState`) — [[ADR-060]], 구현 완료 2026-07-29
@@ -356,3 +367,4 @@ style: maskImage/WebkitMaskImage: linear-gradient(to bottom, black, transparent)
 - ~~스케줄러 두 화면의 **캐릭터별** 동기화 실패는 헤더 아래 인라인 문단(`text-sm text-error-ink`)~~ → 토스트([[ADR-083]] 결정 1, 2026-08-02). [[ADR-063]] 결정 1이 지운 것은 전역 실패 문단뿐이었고, 실패의 대부분이 오는 캐릭터별 경로는 액션 없는 인라인으로 남아 있었다.
 - ~~보스 수익 기간 로드 실패는 기간 라벨 아래 밑줄 버튼("이 기간을 불러오지 못했습니다 — 다시 시도해주세요")~~ → **카드가 있을 때만** 토스트("이 기간을 불러오지 못했습니다" + 다시 시도), 카드가 없으면 `ErrorState` 유지([[ADR-083]] 결정 3, 2026-08-02).
 - ~~온보딩 계정 선택 실패는 목록 상단 인라인 문구(`AccountSelectionList` 의 `errorMessage`)~~ → 토스트([[ADR-083]] 결정 4, 2026-08-02). 네 종류 중 셋은 이미 스토어가 토스트를 띄우고 있어 중복이었다.
+- ~~캐릭터 관리 피커의 스크롤과 높이 상한은 `CharacterTrackingGrid` 가 갖는다(`max-h-[70vh] overflow-y-auto`)~~ → 카드가 `max-h-full` 로 **안전영역 뺀 화면** 안에 갇히고, 스크롤포트는 쓰는 쪽(모달 `-mr-6 pr-6` · 온보딩 `max-h-[70vh]`)이 갖는다([[ADR-107]], 2026-08-06). `vh` 는 시스템 바를 포함한 화면 전체라 안전영역이 큰 기기일수록 더 많이 침범했고, 카드 `p-6` 안쪽 스크롤포트는 인디케이터를 모달 끝에서 24px 안으로 들여놨다.

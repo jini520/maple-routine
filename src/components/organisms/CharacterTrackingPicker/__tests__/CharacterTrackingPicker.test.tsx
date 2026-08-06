@@ -477,6 +477,8 @@ describe('CharacterTrackingPicker — 로딩/빈/실패 상태 (ADR-053 · ADR-0
 
   // 사용자 보고 2026-07-30: 실패 상태의 액션 버튼이 아래 CTA에 붙어 보였다. 상태마다 높이가
   // 달라 CTA가 움직인 것이 원인이라, 본문 자리를 카드 3줄 높이로 못 박는다.
+  // ADR-107 결정 2: 그 385px 는 모달에서 min() 으로 감싸진다 — 값은 같고, 385px 가 들어가지
+  // 않는 짧은 기기에서만 양보한다(그대로 두면 min-height 가 카드 상한을 이겨 무효로 만든다).
   it.each([
     ['조회 중', { isLoading: true, loadError: null }],
     ['빈 상태', { isLoading: false, loadError: null }],
@@ -493,7 +495,11 @@ describe('CharacterTrackingPicker — 로딩/빈/실패 상태 (ADR-053 · ADR-0
       />,
     )
 
-    expect(container.querySelector('.min-h-\\[385px\\]')).not.toBeNull()
+    expect(
+      container.querySelector(
+        '.min-h-\\[min\\(385px\\,calc\\(100dvh-var\\(--sa-top\\)-var\\(--sa-bottom\\)-15rem\\)\\)\\]',
+      ),
+    ).not.toBeNull()
   })
 
   it('로딩 중이어도 저장 버튼 비활성 판정은 ADR-043 집합 비교 그대로다', async () => {
@@ -600,5 +606,75 @@ describe('조회 불가 캐릭터', () => {
 
     expect(screen.queryByText('조회할 수 없는 캐릭터')).not.toBeInTheDocument()
     expect(screen.queryByTestId('unavailable-roster')).not.toBeInTheDocument()
+  })
+})
+
+// ADR-107: 카드 높이의 상한은 "안전영역을 뺀 화면"이고, 스크롤포트는 그리드가 아니라 이 모달이
+// 갖는다. jsdom 은 레이아웃을 계산하지 않으므로 그 규약을 클래스로 단언한다(PageHeader 와 같은 방식).
+describe('CharacterTrackingPicker — 모달 높이·스크롤포트 (ADR-107)', () => {
+  function renderPicker(): { overlay: HTMLElement; card: HTMLElement } {
+    render(
+      <CharacterTrackingPicker entries={entries} trackedOcids={[]} {...loaded} onSave={vi.fn()} onClose={vi.fn()} />,
+    )
+    const overlay = screen.getByTestId('character-tracking-picker-overlay')
+    return { overlay, card: overlay.firstElementChild as HTMLElement }
+  }
+
+  it('오버레이가 상하 안전영역 + 1rem 만큼 비운다 — 모달이 노치·제스처바에 닿지 않는다', () => {
+    const { overlay } = renderPicker()
+
+    expect(overlay).toHaveClass('px-4')
+    expect(overlay).toHaveClass('pt-[calc(1rem+var(--sa-top))]')
+    expect(overlay).toHaveClass('pb-[calc(1rem+var(--sa-bottom))]')
+  })
+
+  it('카드가 그 여백 안에 갇히고, 줄어드는 것은 본문 자리뿐이다', () => {
+    const { card } = renderPicker()
+
+    // max-h-full = 오버레이 콘텐츠 박스(= 안전영역·여백을 뺀 높이)
+    expect(card).toHaveClass('flex', 'max-h-full', 'flex-col')
+    // 헤더(제목·설명)와 푸터(닫기·저장)는 줄어들지 않는다
+    expect(card.firstElementChild).toHaveClass('shrink-0')
+    expect(card.lastElementChild).toHaveClass('shrink-0')
+  })
+
+  it('본문 자리의 3줄 최소 높이는 짧은 뷰포트에서 양보한다 — min-height 가 max-height 를 이기므로', () => {
+    renderPicker()
+    const body = screen.getByTestId('character-tracking-picker-scroll').parentElement
+
+    expect(body).toHaveClass('min-h-[min(385px,calc(100dvh-var(--sa-top)-var(--sa-bottom)-15rem))]')
+  })
+
+  it('스크롤포트가 카드 좌우 패딩을 상쇄해 인디케이터가 모달 오른쪽 끝에 온다', () => {
+    renderPicker()
+    const scroll = screen.getByTestId('character-tracking-picker-scroll')
+
+    // -mr-6 이 스크롤포트를 카드 테두리까지 넓히고(인디케이터가 그 위에 그려진다),
+    // 같은 크기 pr-6 이 콘텐츠 여백을 되돌린다. min-h-0 이 없으면 카드 상한 아래로 줄지 않는다.
+    expect(scroll).toHaveClass('-mr-6', 'pr-6', 'min-h-0', 'overflow-y-auto')
+  })
+
+  it('그리드 자신은 상한도 스크롤도 갖지 않는다 — 스크롤포트는 쓰는 쪽 소유다', () => {
+    renderPicker()
+    const grid = screen.getByTestId('character-tracking-picker-scroll').firstElementChild as HTMLElement
+
+    expect(grid).not.toHaveClass('max-h-[70vh]')
+    expect(grid).not.toHaveClass('overflow-y-auto')
+  })
+
+  it('스탈 배너는 스크롤포트 밖에 남는다 — 목록을 굴려도 계속 보인다', () => {
+    render(
+      <CharacterTrackingPicker
+        entries={entries}
+        trackedOcids={[]}
+        {...loaded}
+        loadError={{ kind: 'network' }}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+
+    const scroll = screen.getByTestId('character-tracking-picker-scroll')
+    expect(scroll).not.toContainElement(screen.getByText('목록이 최신이 아닙니다'))
   })
 })
