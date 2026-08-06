@@ -249,6 +249,13 @@
     "mediaInk": "#ECE1E8",
     "mediaInkMuted": "#AEA0A8",
     "scrim": "#010001B3",
-    "shadowColor": "#04010359"
+    "shadowColor": "#04010359",
+    "background": {
+      "image": "blackmage-background",
+      "size": "cover",
+      "position": "25% bottom",
+      "dim": 0.65,
+      "fadeTop": "0px"
+    }
   }
 }
