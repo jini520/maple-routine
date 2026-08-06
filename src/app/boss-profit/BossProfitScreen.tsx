@@ -144,8 +144,6 @@ function CharacterAccordion(props: {
   // 않는다. 접힘 측정값(66px)이 남으면 펼침 헤더(64px)와 페이드 사이에 2px 틈이 생긴다.
   const headerRef = useRef<HTMLButtonElement>(null)
   const [headerHeight, setHeaderHeight] = useState(0)
-  // ADR-085 결정 2: 접기 전에 "사라질 높이"(셸 − 헤더)를 재기 위한 셸 참조.
-  const shellRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const element = headerRef.current
@@ -162,38 +160,6 @@ function CharacterAccordion(props: {
       observer.disconnect()
     }
   }, [isExpanded])
-
-  // ADR-085 결정 2: 접으면 본문이 사라져 문서가 크게 줄고, 스크롤을 내린 상태였다면 브라우저가
-  // 오프셋을 잘라낸다. 문제는 **그 잘라내기 자체**다 — iOS 스크롤 스레드가 접기 전 오프셋을 35~40ms
-  // 뒤에 되돌려 보내 2프레임 동안 페이지 전체가 옛 오프셋으로 다시 그려진다(실기기 프레임 계측:
-  // 정상 프레임 하나 뒤에 `y1065 h-1065`, 밀린 거리 = 잘린 양). 잘려야 할 오프셋이 없으면 되돌려
-  // 보낼 옛 값도 없다.
-  //
-  // 그래서 **접기 전에**, 문서 높이가 아직 그대로일 때 접은 뒤의 최대 스크롤로 먼저 옮기고 다음
-  // 프레임에 접는다. 이때의 scrollTo 는 레이아웃 변경과 무관한 평범한 스크롤이라 스크롤 스레드가
-  // 제 방식대로 처리하면 그만이다 — 이미 잘린 뒤에 불러 아무 일도 하지 못했던 [[ADR-084]]의 호출과
-  // 다른 점이 그것이다.
-  const collapse = (): void => {
-    const shell = shellRef.current
-    const header = headerRef.current
-    const scroller = scrollRoot.current
-    const removedHeight =
-      shell === null || header === null
-        ? 0
-        : shell.getBoundingClientRect().height - header.getBoundingClientRect().height
-    if (scroller === null) {
-      setIsExpanded(false)
-      return
-    }
-    // ADR-100 결정 4: 스크롤 주체가 문서가 아니라 이 화면의 컨테이너다 — 읽는 값도 전부 그쪽이다.
-    const nextMaxScroll = Math.max(0, scroller.scrollHeight - removedHeight - scroller.clientHeight)
-    if (scroller.scrollTop <= nextMaxScroll) {
-      setIsExpanded(false)
-      return
-    }
-    scroller.scrollTo(0, nextMaxScroll)
-    requestAnimationFrame(() => setIsExpanded(false))
-  }
 
   const { group } = props
   const totalMeso = groupTotalMeso(group)
@@ -325,20 +291,22 @@ function CharacterAccordion(props: {
         </div>
       )}
 
-      <div ref={shellRef} className={shellClass}>
+      <div className={shellClass}>
         <button
           ref={headerRef}
           type="button"
+          // ADR-102 결정 1: 접기는 **상태만 바꾼다.** 사라지는 본문은 이 헤더보다 항상 아래에 있어,
+          // 스크롤을 그대로 두면 헤더와 그 위 내용이 제자리에 남는다(손가락이 있던 자리가 유지된다).
+          // 여기에 스크롤 조작을 다시 넣지 말 것 — 접기 전 사전 스크롤([[ADR-085]] 결정 2)이 정확히
+          // 그것이었고, 스크롤과 접기가 **두 프레임으로 갈려** 접히기 직전에 페이지가 튀었다
+          // (`setIsExpanded` 가 rAF 콜백 안이면 React 가 다음 매크로태스크에 렌더하므로, 그 사이
+          // "스크롤은 옮겨졌는데 본문은 아직 붙어 있는" 프레임이 반드시 한 번 그려진다).
           onClick={() => {
             // 카드를 펼치거나 접으면 설명 팝오버를 닫는다(사용자 지적 2026-07-31). 바깥 탭 판정은
             // 카드 루트를 "안"으로 보므로 헤더 클릭으로는 닫히지 않았다. 게다가 펼침은 레이아웃을
             // 바꿔 열기 직전에 실측한 팝오버 위치가 낡은 값이 된다 — 닫는 것이 두 문제를 함께 없앤다.
             setIsIssueOpen(false)
-            if (!isExpanded) {
-              setIsExpanded(true)
-              return
-            }
-            collapse()
+            setIsExpanded((expanded) => !expanded)
           }}
           // 펼침 헤더는 카드 안에서 sticky로 고정한다(ADR-047) — top은 페이지 sticky 헤더 실측 높이라
           // 그 바로 아래에 붙고, bg-surface가 밑으로 지나가는 보스 행을 가린다. z-[5]는 드롭 아이콘
