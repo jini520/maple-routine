@@ -12,10 +12,20 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { domSnapshot } from '../../../../__tests__/dom-snapshot.helper'
 import { PageHeader } from '../PageHeader'
 import { useThemeStore } from '../../../../features/theme/store'
+import { getThemeDefinition } from '../../../../lib/theme-registry'
+import jobThemes from '../../../../data/job-themes.json'
+import type { ThemeDefinition } from '../../../../types/theme'
+
+// 배경 있는 테마 정의를 주입하기 위한 부분 모킹(ADR-106 결정 3). 나머지 export 는 실물 그대로다.
+vi.mock('../../../../lib/theme-registry', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../../lib/theme-registry')>()
+  return { ...actual, getThemeDefinition: vi.fn(actual.getThemeDefinition) }
+})
 
 afterEach(() => {
   cleanup()
   vi.restoreAllMocks()
+  vi.mocked(getThemeDefinition).mockReset()
   useThemeStore.setState({ theme: '렌' })
 })
 
@@ -79,12 +89,19 @@ describe('PageHeader', () => {
 
   // 배경 조각은 배경을 가진 테마에서만 나온다(ADR-088 결정 5-1) — 색만 있는 테마는 DOM 자체가
   // 늘지 않는다. PageHeader 가 그 조건부를 그대로 물려받는지 본다.
+  //
+  // 배경 있는 정의는 **주입한다** — 지금은 배경을 선언한 테마가 0개라(ADR-106) 테마 이름으로는
+  // "있음" 분기를 못 태우는데, 여기서 볼 것은 어느 테마가 배경을 갖느냐가 아니라 PageHeader 가
+  // 그 조건부를 물려받느냐다.
   it('배경 있는 테마에서만 테마 배경 조각이 나온다', () => {
-    useThemeStore.setState({ theme: '혼테일' })
+    vi.mocked(getThemeDefinition).mockReturnValue({
+      ...(jobThemes.혼테일 as ThemeDefinition),
+      background: { image: 'hontail-cave', size: 'cover', position: 'center', dim: 0.82, fadeTop: '0px' },
+    })
     const { rerender } = render(<PageHeader>내용</PageHeader>)
     expect(screen.getByTestId('theme-header-backdrop')).toBeInTheDocument()
 
-    useThemeStore.setState({ theme: '렌' })
+    vi.mocked(getThemeDefinition).mockReset()
     rerender(<PageHeader>내용</PageHeader>)
     expect(screen.queryByTestId('theme-header-backdrop')).not.toBeInTheDocument()
   })

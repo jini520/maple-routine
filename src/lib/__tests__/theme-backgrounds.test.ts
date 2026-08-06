@@ -18,14 +18,21 @@ describe('getThemeBackgroundUrl', () => {
   })
 
   // 값(슬러그)과 파일이 어긋나면 배경만 조용히 사라진다. JSON 에 적힌 슬러그는 전부 실재해야 한다.
-  it('job-themes.json 에 적힌 배경 슬러그는 모두 실재하는 파일이다', () => {
-    const slugs = Object.values(jobThemes)
-      .map((theme) => (theme as { background?: { image: string } }).background?.image)
-      .filter((slug): slug is string => slug !== undefined)
+  //
+  // 선언이 0건이면 루프가 안 돌아 **저절로 초록**이 된다. 그래서 원래 `length > 0` 가르개가 있었는데,
+  // 지금은 그림을 바꾸는 중이라 실제로 0건이다([[ADR-106]] 결정 4). 가르개를 떼서 공허한 통과로
+  // 만들지 않고 **skip 으로 남긴다** — "검사했고 괜찮다"와 "검사할 것이 없다"는 리포트에서 달라야
+  // 하고, 새 그림이 붙는 순간 손대지 않아도 되살아난다.
+  const declaredSlugs = Object.values(jobThemes)
+    .map((theme) => (theme as { background?: { image: string } }).background?.image)
+    .filter((slug): slug is string => slug !== undefined)
 
-    expect(slugs.length).toBeGreaterThan(0)
-    for (const slug of slugs) {
-      expect(getThemeBackgroundUrl(slug), `${slug} 에 해당하는 파일이 없다`).not.toBeNull()
-    }
-  })
+  it.skipIf(declaredSlugs.length === 0)(
+    'job-themes.json 에 적힌 배경 슬러그는 모두 실재하는 파일이다',
+    () => {
+      for (const slug of declaredSlugs) {
+        expect(getThemeBackgroundUrl(slug), `${slug} 에 해당하는 파일이 없다`).not.toBeNull()
+      }
+    },
+  )
 })

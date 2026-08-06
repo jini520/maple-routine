@@ -81,14 +81,7 @@
     "mediaInk": "#EEE2DC",
     "mediaInkMuted": "#B0A19A",
     "scrim": "#010000B3",
-    "shadowColor": "#04010059",
-    "background": {
-      "image": "hontail-cave",
-      "size": "cover",
-      "position": "60% 50%",
-      "dim": 0.82,
-      "fadeTop": "0px"
-    }
+    "shadowColor": "#04010059"
   },
   "레테": {
     "mode": "dark",
@@ -256,13 +249,6 @@
     "mediaInk": "#ECE1E8",
     "mediaInkMuted": "#AEA0A8",
     "scrim": "#010001B3",
-    "shadowColor": "#04010359",
-    "background": {
-      "image": "blackmage-throne",
-      "size": "cover",
-      "position": "52% center",
-      "dim": 0.78,
-      "fadeTop": "0px"
-    }
+    "shadowColor": "#04010359"
   }
 }
