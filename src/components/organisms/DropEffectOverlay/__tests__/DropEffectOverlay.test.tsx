@@ -90,9 +90,70 @@ describe('DropEffectOverlay', () => {
     expectPillarFrameInSync(pillar)
 
     for (let i = 0; i < DROP_EFFECT_FRAMES.end.length - 1; i++) {
-      vi.advanceTimersByTime(1000 / 12)
+      vi.advanceTimersByTime(1000 / 24)
       expectPillarFrameInSync(pillar)
     }
+  })
+
+  // 재생 속도는 ADR-103 이 정한 결정이다(screen 30 · pre 28 · loop 23 · end 24). fps 를 되돌리면
+  // 아래 네 시점이 전부 두 배로 밀리므로, 상수가 아니라 실제 타임라인으로 고정한다.
+  it('ScreenEff 8프레임(≈267ms) 시점에 아이템과 기둥이 등장한다', () => {
+    vi.useFakeTimers()
+    render(<DropEffectOverlay itemName="생명의 연마석" onClose={vi.fn()} />)
+    const pillar = screen.getByTestId('drop-effect-pillar') as HTMLImageElement
+
+    vi.advanceTimersByTime(160) // 아직 8프레임 전
+    expect(pillar.getAttribute('src')).toBeNull()
+
+    vi.advanceTimersByTime(140) // 누적 300ms — 8프레임을 지났다
+    expect(DROP_EFFECT_FRAMES.pre).toContain(pillar.getAttribute('src'))
+    expect(screen.getByAltText('생명의 연마석').style.opacity).toBe('1')
+  })
+
+  it('pre 8프레임(≈286ms)을 지나 loop 로 넘어간다', () => {
+    vi.useFakeTimers()
+    render(<DropEffectOverlay itemName="칠흑의 보스 반지" onClose={vi.fn()} />)
+    const pillar = screen.getByTestId('drop-effect-pillar') as HTMLImageElement
+
+    vi.advanceTimersByTime(620) // 등장 267ms + pre 286ms = 553ms
+    expect(DROP_EFFECT_FRAMES.loop).toContain(pillar.getAttribute('src'))
+  })
+
+  it('ScreenEff 16프레임(≈533ms)이 끝나면 버스트가 사라진다', () => {
+    vi.useFakeTimers()
+    render(<DropEffectOverlay itemName="칠흑의 보스 반지" onClose={vi.fn()} />)
+    const screenEff = screen.getByTestId('drop-effect-screen')
+
+    vi.advanceTimersByTime(450)
+    expect(screenEff.style.opacity).toBe('1')
+
+    vi.advanceTimersByTime(150) // 누적 600ms
+    expect(screenEff.style.opacity).toBe('0')
+  })
+
+  it('탭하면 end 7프레임(≈292ms) 재생 후 닫힌다', () => {
+    vi.useFakeTimers()
+    const onClose = vi.fn()
+    render(<DropEffectOverlay itemName="칠흑의 보스 반지" onClose={onClose} />)
+
+    vi.advanceTimersByTime(1000)
+    fireEvent.click(screen.getByTestId('drop-effect-overlay'))
+
+    vi.advanceTimersByTime(250)
+    expect(onClose).not.toHaveBeenCalled()
+    vi.advanceTimersByTime(70) // 누적 320ms
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  // 팝인은 fps 가 아니라 CSS transition 이라 fps 를 올려도 혼자 옛 속도로 남는다. 버스트 종료(533ms)와
+  // 팝인 종료(267+250=517ms)가 함께 끝나도록 같은 배율로 줄여둔 값이다(ADR-103 결정 2).
+  it('아이템 팝인은 버스트 종료에 맞춘 절반 속도다', () => {
+    render(<DropEffectOverlay itemName="생명의 연마석" onClose={vi.fn()} />)
+    const item = screen.getByAltText('생명의 연마석')
+
+    expect(item.style.transition).toBe(
+      'opacity .175s ease, transform .25s cubic-bezier(.2,1.3,.35,1)',
+    )
   })
 
   // src 교체는 비동기다 — 새 프레임 픽셀이 아직 안 그려졌는데 transform 만 먼저 옮기면 이전 프레임이

@@ -2,7 +2,7 @@
 
 > **범위**: 보스별 물욕템 획득 기록, 랜덤 컨테이너 결과 선택, 드롭 입력 시트, 고가 아이템 리스트, 전 기간 획득 히스토리. 수익 합산·고가 드롭 연출은 [boss-profit.md](./boss-profit.md), 게임 데이터 파일은 [../foundation/game-data.md](../foundation/game-data.md).
 > **관련 소스**: `app/item-drop/` · `features/item-drop/` · `features/drop-effect/` · `storage/boss-drop-records`·`storage/drop-effect` · `lib/item-icons`·`lib/drop-effect-frames`·`lib/drop-effect-layout`·`lib/boss-drops`(`pruneUnobtainableDrops`·`planConfirmedDifficultyDropMigration`)·`lib/drop-history`(전 기간 집계) · `DropEffectOverlay` · `scripts/measure-drop-effect-origins.py`(origin 재계측) · `BossDropSheet`(vaul Drawer) · `app/boss-profit/DropHistoryScreen.tsx`(`/profit/drops`) · `src/data/item-drop-table.json`·`boss-ring-boxes.json`·`accessory-boxes.json`·`item-icons.json`·`valuable-drops.json`.
-> **관련 ADR**: [[ADR-011]] [[ADR-010]] [[ADR-038]] [[ADR-039]] [[ADR-040]] [[ADR-041]] [[ADR-045]] [[ADR-048]] [[ADR-069]] [[ADR-070]] [[ADR-071]]. **관련 문서**: [../foundation/game-data.md](../foundation/game-data.md), [boss-profit.md](./boss-profit.md).
+> **관련 ADR**: [[ADR-011]] [[ADR-010]] [[ADR-038]] [[ADR-039]] [[ADR-040]] [[ADR-041]] [[ADR-045]] [[ADR-048]] [[ADR-069]] [[ADR-070]] [[ADR-071]] [[ADR-103]]. **관련 문서**: [../foundation/game-data.md](../foundation/game-data.md), [boss-profit.md](./boss-profit.md).
 
 ## 정책
 - **드롭 기록의 키는 `(ocid, boss, difficulty, period_key, drop_index)`** 이고, 그래서 **처치 난이도가 나중에 달라지면 이관이 필요하다**([[ADR-069]] 결정 4) — 익스트림으로 등록해두고 드롭까지 기록한 뒤 백필이 하드로 확정하면 그 드롭은 고아가 된다. 확정 시점에 옛 난이도 키의 드롭을 확정 키로 옮기고, **그 난이도에서 획득 불가능한 항목(`pruneUnobtainableDrops` 탈락분)은 삭제한다** — 거짓 기록이 환산 가치·고가 드롭 연출에 섞이는 것을 막는다(사용자 판단). 상세는 [boss-profit.md](./boss-profit.md) "자동 기록"(2026-07-31 구현 완료 — 계산은 `planConfirmedDifficultyDropMigration`, 쓰기는 store).
@@ -26,6 +26,7 @@
 - **고가 연출 on/off 토글**([[ADR-040]] 결정 6): 시트 헤더에 전역 토글(`storage/drop-effect`·`features/drop-effect`, 기본 표시). 고가 아이템 드롭 시 전체화면 연출(ScreenEff/DropEff 프레임 시퀀스, 검은배경 JPEG+black-crush+`mix-blend:screen` 으로 29MB→~2MB, 원본 PNG 미커밋·최적화본만 커밋). 고가 리스트 `valuable-drops.json`([[ADR-038]] 1차 + [[ADR-040]] 익셉셔널 해머 추가). 보스 수익 목록의 고가 강조는 [boss-profit.md](./boss-profit.md) [[ADR-045]].
 - **DropEff 프레임 정렬**([[ADR-048]]): 프레임 비트맵 크기가 제각각(가로 38~285px)이라 하단-중앙 앵커로는 기둥 축이 최대 26px 흔들린다. 최적화 과정에서 유실된 WZ `origin`을 템플릿 정합으로 복원해 `lib/drop-effect-layout.ts` 테이블(39프레임 `[x, y]`)로 두고, `DropEffectOverlay`가 그 점을 화면 앵커에 맞춘다(`transformOrigin:'0 0'` + `translate(-x·S,-y·S) scale(S)`, `src`와 `transform` 동시 갱신). y는 전부 비트맵 하단(= 지면선) 고정.
 - **ScreenEff 배율 고정**([[ADR-048]] 결정 5): ScreenEff 크롭은 이미 버스트 원점 기준 중앙 정렬이라 origin 테이블이 필요 없다. 문제는 `object-fit:cover` 가 프레임마다 자기 크기로 배율을 따로 잡아 버스트가 들썩이는 것(390x844 기준 1.232~2.198, 프레임 0→1 에서 42% 점프). 기준 프레임(1146x685)이 화면을 덮는 배율 하나를 전 프레임에 적용한다 — `left-1/2 top-1/2` + `translate(-50%,-50%) scale(S)`, `max-w-none`(preflight 해제).
+- **연출 재생 속도**([[ADR-103]], 이슈 #136): 단계별 **고정 fps** — screen 30(16f·533ms, **8프레임=267ms 시점**에 아이템 팝인 + DropEff 트리거) → pre 28(8f·286ms) → loop 23(24f·1043ms/회, ∞) → 화면 탭 시 end 24(7f·292ms) 후 종료. 중앙 아이템 팝인은 fps 가 아니라 CSS transition(`opacity .175s / transform .25s`)이라 **fps 를 바꿀 땐 같은 배율로 함께 바꿔야** 버스트 종료(533ms)와 팝인 종료(517ms)가 어긋나지 않는다. 등장 트리거 `DROP_START_FRAME` 은 시간이 아니라 프레임 인덱스이므로 fps 를 바꿔도 그대로 둔다.
 - **프레임 픽셀·좌표 동시 교체**([[ADR-048]] 결정 6): `img.src` 교체는 비동기라(39프레임 전부 대입 직후 `complete=false`) 좌표만 먼저 옮기면 이전 프레임이 새 origin 으로 그려져 산발적으로 한 프레임 튄다. 마운트 시 DropEff 프레임을 미리 디코드해 두고(ref 로 보유), 그래도 준비 전이면 `applyDropFrame` 이 좌표를 유지한 채 반환한다(매 tick 재호출로 자동 복구). 표시 여부도 같은 함수가 관리.
 
 ## 획득 히스토리 (전 기간) — [[ADR-071]], 이슈 #54
@@ -68,3 +69,4 @@
 - ~~ARCHITECTURE 의 "이 기능은 Nexon API 무관" 서술~~ → 보스 목록이 동기화 캐시 구독이라 정정([[ADR-011]]).
 - ~~자체 `createPortal` 바텀시트~~ → vaul(Drawer)로 교체([[ADR-039]]).
 - ~~드롭을 난이도별로 나눠 표시 + 고정 드롭 선택 기능~~ → 난이도 무관 통합 표시, 고정 드롭 읽기 전용([[ADR-040]], [[ADR-038]] 최초 설계 반전).
+- ~~연출 fps screen 15 · pre 14 · loop 11.5 · end 12, 팝인 `.35s/.5s`~~ → 전부 2배 속도(30 · 28 · 23 · 24, 팝인 `.175s/.25s`)([[ADR-103]]).
