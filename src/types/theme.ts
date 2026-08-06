@@ -10,6 +10,17 @@ export type ThemeName = keyof typeof import('../data/job-themes.json')
 export type ThemeMode = 'light' | 'dark'
 
 /**
+ * 테마가 속한 분류 ([[ADR-104]] 결정 1).
+ *
+ * **한 테마는 하나만 갖는다** — 머쉬맘·혼테일은 보스이기도 하지만 "앱의 기본 라이트/다크"라는
+ * 역할이 우선이라 `기본` 에만 둔다. 겹침을 허용하면 배열이 되고 같은 테마가 목록에 두 번 나온다.
+ * 소속은 색에서 유도할 수 없는 **게임 도메인**이라 사람이 확인해 넣는다([[ADR-006]]).
+ *
+ * 표시 순서는 이 유니온이 아니라 `theme-registry` 의 `THEME_CATEGORIES` 가 정한다.
+ */
+export type ThemeCategory = '기본' | '직업' | '보스'
+
+/**
  * 테마 38토큰 ([[ADR-064]], `rise`/`fall` 2쌍은 [[ADR-087]]).
  *
  * 이름 규칙 — `on-X` 는 X 채움 **위**의 전경, `X-ink` 는 X 계열 **텍스트/아이콘**,
@@ -125,6 +136,8 @@ export interface ThemeBackground {
  */
 export interface ThemeDefinition extends ThemeTokens {
   mode: ThemeMode
+  /** 선택 목록의 섹션을 정한다 ([[ADR-104]] 결정 1) */
+  category: ThemeCategory
   /** 없으면 배경은 `bg` 단색이다 — 지금 값을 가진 테마는 혼테일·검은마법사 둘이다([[ADR-088]], [[ADR-089]]) */
   background?: ThemeBackground
 }

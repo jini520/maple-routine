@@ -1,8 +1,8 @@
 # 설정 (Settings)
 
 > **범위**: API 키 관리·계정(메이플 ID) 변경·연결 해제·테마 선택·스케줄 관리 방법(트래킹 모드)·데이터 관리·앱 업데이트·footer 표기. 다른 기능 설명에 흩어져 있던 요구사항을 통합 정리.
-> **관련 소스**: `app/settings/` · `features/settings/`(`changeApiKey`) · `storage/api-key`(`clearAuthConfig`) · `storage/cache-data`(`clearCacheData`/`getCacheDataSizes`) · `features/onboarding`(`RESET`) · `features/tracking-mode`(`copy.ts`) · `AccountFlowStatus` · `SettingsRow` · `TrackingModeModal`/`TrackingModeSelector` · `ThemeSelector`/`ThemeSwatchDots` · `CacheDataSection`/`CacheClearConfirm`.
-> **관련 ADR**: [[ADR-007]] [[ADR-008]] [[ADR-009]] [[ADR-004]] [[ADR-035]] [[ADR-026]] [[ADR-027]] [[ADR-050]] [[ADR-051]] [[ADR-052]] [[ADR-058]] [[ADR-086]]. **관련 문서**: [onboarding.md](./onboarding.md), [theme.md](./theme.md), [live-update.md](./live-update.md), [../foundation/nexon-api.md](../foundation/nexon-api.md), [../persistence/lifecycle.md](../persistence/lifecycle.md).
+> **관련 소스**: `app/settings/` · `features/settings/`(`changeApiKey`) · `storage/api-key`(`clearAuthConfig`) · `storage/cache-data`(`clearCacheData`/`getCacheDataSizes`) · `features/onboarding`(`RESET`) · `features/tracking-mode`(`copy.ts`) · `AccountFlowStatus` · `SettingsRow` · `TrackingModeModal`/`TrackingModeSelector` · `ThemeModal`/`ThemeSelector` · `CacheDataSection`/`CacheClearConfirm`.
+> **관련 ADR**: [[ADR-007]] [[ADR-008]] [[ADR-009]] [[ADR-004]] [[ADR-035]] [[ADR-026]] [[ADR-027]] [[ADR-050]] [[ADR-051]] [[ADR-052]] [[ADR-058]] [[ADR-086]] [[ADR-104]]. **관련 문서**: [onboarding.md](./onboarding.md), [theme.md](./theme.md), [live-update.md](./live-update.md), [../foundation/nexon-api.md](../foundation/nexon-api.md), [../persistence/lifecycle.md](../persistence/lifecycle.md).
 
 ## 정책
 진입 경로는 **하단 탭바 4번째 탭**(별도 헤더 아이콘 아님, 확정 2026-07-12).
@@ -17,7 +17,7 @@
 - **같은 계정을 다시 고르면** 아무 쓰기 없이 닫는다(추적 목록 보존).
 - **연결 해제(로그아웃)**: `storage/api-key.ts` 의 `clearAuthConfig()` + `features/onboarding` 의 `RESET` 이벤트를 재사용해 온보딩 화면으로 복귀(신규 로직 없이 기존 두 조각 연결). 키 무효화 복구 경로도 이것(재온보딩).
 - **데이터 관리(캐시 데이터 삭제)**: 지울 데이터를 **2그룹 중 선택**해서 지운다([[ADR-058]]) — "일반 데이터"(동기화 캐시·추적 목록·수동 추적 항목·공유 진행 원장·파티 설정)와 "보스 수익·드롭 기록"(복구 불가). 인증·사용자 설정 5개(`KEEP_KEYS`)는 어떤 선택에서도 보존되므로 이 기능으로 온보딩으로 돌아가지 않는다 — 연결 해제는 별도. 범위의 정확한 정의와 그룹 경계의 근거는 [../persistence/lifecycle.md](../persistence/lifecycle.md).
-- **테마 선택**: 레테/렌/머쉬맘/혼테일 중 선택 → 즉시 반영. 상세 [theme.md](./theme.md).
+- **테마 선택**: 등록된 테마 중 선택 → 즉시 반영. 목록은 카테고리 섹션(기본·직업·보스) + 2열 프리뷰 타일이고 위에 라이트·다크 필터 칩이 붙는다([[ADR-104]]). **고른다고 모달이 닫히지는 않는다** — 모달 자신이 선택 테마 색으로 그려지므로 그 자리에서 갈아입혀 보게 두고, 닫기는 "완료" 버튼과 오버레이 탭이 맡는다([[ADR-104]] 결정 7). 상세 [theme.md](./theme.md).
 - **스케줄 관리 방법(트래킹 모드)**: 자동/수동 전역 토글([[ADR-035]]). 상세는 아래 UI.
 - **footer 표기**(확정 2026-07-13, 비제휴 고지 추가 2026-08-03): 화면 맨 아래에 앱 버전(`package.json`)·카피라이트("© {연도} 메이플 루틴")·이용약관 제6조④ 요구 영문 문구 "Data based on NEXON Open API"(원문 그대로, 의역 금지)·**비제휴 고지 "Maple Routine is not associated with NEXON Korea"**. 앱 전역 footer는 만들지 않음.
   - 비제휴 고지는 약관이 **요구하는 것이 아니라** 동종 서비스의 공통 관행을 따른 것이다(2026-08-03 조사) — maple.gg("Maple.GG is not associated with NEXON Korea")·chuchu.gg("This site is not associated with NEXON Korea")·maplescouter.com("Maplescouter is not associated with NEXON Korea and does not provide any warranty") 셋 다 출처 표기와 **함께** 비제휴 고지를 단다. 출처 표기만 있으면 넥슨 공식 서비스로 오인될 여지가 남는다.
@@ -36,7 +36,9 @@
 ### 설정 리스트 행 + 모달 — 2026-07-13
 카드형 섹션 나열이 아니라 **하나의 리스트 컨테이너**(`rounded-[14px] bg-surface border border-border px-6`) 안에 행(`SettingsRow`)을 `divide-y divide-border` 로 이어붙임. 각 행 `py-4`, 왼쪽 라벨(`text-sm font-medium text-text`, 위험 동작은 `text-error`) + 오른쪽(기본 `ChevronRight text-text-muted`, `showChevron={false}` 가능), 행 전체가 버튼이라 탭하면 해당 모달. "계정 변경"·"스케줄 관리 방법"·"테마" 3개 행은 이 패턴, "연결 해제"만 확인 모달 직접 연다.
 - **모달**: 공용 `components/Modal`([../foundation/design-system.md](../foundation/design-system.md)) — 계정 변경 모달·계정 선택 목록은 `card={false}` 로 자체 카드를 담음.
-- **테마 대표 컬러 점(`ThemeSwatchDots`)**: 테마 `primary`/`secondary`/`error` 3토큰을 `h-4 w-4 rounded-full` 점으로 겹쳐(`-space-x-1`). 테마 행 오른쪽 배지(점 3개 + 현재 테마 이름)와 테마 모달 선택지에 재사용. `job-themes.json` 직접 import(비활성 테마 색도 미리보기해야 해 CSS 커스텀 프로퍼티로 부족).
+- **테마 행 오른쪽은 현재 테마 이름 배지 하나뿐이다** ([[ADR-104]] 결정 5, 2026-08-06) — 색 표식을 두지 않는다. 어떤 테마인지는 이름이 말하고, 그 색은 지금 눈앞의 화면 전체가 이미 말하고 있다.
+- **테마 선택 모달(`ThemeSelector`)**: 라이트·다크 필터 칩(전체·라이트·다크, 기본 전체, 저장 안 함) + 카테고리 섹션 헤더 + **2열 프리뷰 타일**. 타일은 그 테마의 `bg`/`surface`/`surface2`/`primary`/`text` 로 미니 화면을 그린다 — `job-themes.json` 직접 import(비활성 테마 색이라 CSS 커스텀 프로퍼티로 부족). 거른 결과가 0인 섹션은 헤더째 감춘다. 선택 계약은 그대로 `aria-pressed` + `onSelect`. 정책·카테고리 소속은 [theme.md](./theme.md).
+  - **버튼은 "완료" 하나**다(`mt-4 flex justify-end`, `TrackingModeModal`·`DisconnectConfirm` 과 같은 골격). 취소/적용 2단계를 쓰지 않는 이유는 선택이 이미 적용돼 **취소할 대상이 없기** 때문이다 — 되돌리려면 원래 테마를 다시 고르면 된다.
 - **캐시 데이터 삭제 행/모달(`CacheDataSection`/`CacheClearConfirm`)**: 행 라벨은 위험 동작이라 `text-error`, 오른쪽에 총 용량(`getCacheDataSizes()` 그룹별 값의 합). 모달은 체크박스 2행(`role="checkbox"`, 행 전체가 탭 영역) — 각 행에 그룹 이름·설명·그룹 용량, "보스 수익·드롭 기록" 행에는 복구 불가 경고. **보존 항목("유지됨") 줄은 두지 않는다**([[ADR-058]] 결정 9). **기본은 두 그룹 모두 체크**라 열고 바로 삭제하면 기존 전체 삭제와 같고, 전부 해제하면 삭제 버튼이 비활성이다([[ADR-058]] 결정 6). 삭제 중에는 두 버튼과 체크박스가 비활성(`isClearing`). 삭제 후 흐름은 선택과 무관하게 동일 — 타임아웃 경쟁 → 스플래시 → `closeBossProfitDb()` → 리로드([[ADR-050]], 결정 7). **실패·타임아웃이면 리로드 뒤에 토스트로 알린다**([[ADR-065]] 결정 3) — 리로드가 화면 신호를 파괴하므로 `storage/pending-notice`(sessionStorage)에 플래그를 남기고 부팅 후 "캐시를 일부만 삭제했습니다"를 띄운다. 리로드를 막거나 부분 삭제를 되돌리는 조치는 하지 않는다. Preferences가 아니라 sessionStorage인 이유는 "리로드는 넘기되 앱 종료와 함께 사라진다"가 이 알림의 수명이기 때문이다.
 - **스케줄 관리 방법 행/모달(`TrackingModeModal`/`TrackingModeSelector`, [[ADR-035]] 결정 1)**: 자동/수동 전역 전환. 행 라벨·모달 제목 "스케줄 관리 방법"(2026-07-25 개편, 이전 "트래킹 모드" — 내부 컴포넌트/store 이름은 `TrackingMode*` 그대로). 오른쪽 배지에 현재 모드("자동"/"수동"). 옵션 목록은 `ThemeSelector` 와 동일 선택 카드 패턴(`aria-pressed`, 선택 시 `border-primary bg-primary-tint`).
 
@@ -74,6 +76,7 @@
 - 계정 변경 시 실수 방지 확인 다이얼로그 넣을지 — [[ADR-051]] 이후 맥락이 달라졌다. 계정이 1개여도 선택 목록을 반드시 보고 "계속하기"로 확정하게 되어 확정 행위 자체가 이미 한 번 있으므로, 다이얼로그를 더한다면 "실수 방지"보다는 "기존 계정 데이터 영향 고지" 쪽 이유가 필요하다.
 
 ## 폐기된 정책 (history)
+- ~~테마 대표 컬러 점(`ThemeSwatchDots`) — `primary`/`secondary`/`third` 를 `h-4 w-4 rounded-full` 로 겹쳐(`-space-x-1`) 설정 행 배지와 모달 선택지 **양쪽에** 재사용~~ → 모달은 프리뷰 타일이 대신하고 설정 행에서는 색 표식을 **없앤다**. 사용처가 0이 되어 컴포넌트·테스트째 삭제([[ADR-104]] 결정 5, 2026-08-06).
 - ~~트래킹 모드 옵션은 탭하는 순간 `setMode` 가 실행되고(확인 단계 없음), 적용 중에는 본문 하단에 `MapleSpinner size=18` + "적용하고 있어요"를 인라인으로 띄운다. 같은 모드 재선택은 즉시 닫힘~~ → 선택 → `취소`/`적용` 2단계, 대기는 적용 버튼 안 16px + "적용 중", 같은 모드면 적용 비활성([[ADR-035]] 결정 23, 2026-08-03).
 - ~~트래킹 모드 옵션은 제목 1줄 + 긴 설명 문단 2~3문장(자동 91자·수동 84자)뿐이고, 옵션·CTA 모두 기존 선택 카드 클래스를 그대로 쓴다(신규 스타일 금지)~~ → 카피를 `title`/`description`/`caution` 세 필드로 쪼개고 카드 **안쪽**에 아이콘·정보 톤 주의 박스를 둔다([[ADR-035]] 결정 22, 2026-08-03, 이슈 #59). 바깥 카드 클래스 공유는 유지.
 - ~~계정 변경은 `accountId` 만 즉시 갱신하고 추적 목록은 그대로 둔다~~ → 캐릭터 재선택까지 커밋 보류, 저장 시점에 두 쓰기를 함께([[ADR-086]] 결정 6, 2026-08-03).

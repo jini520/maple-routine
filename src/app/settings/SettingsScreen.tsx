@@ -7,7 +7,6 @@ import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { TRACKING_MODE_LABELS } from '../../features/tracking-mode/copy'
 import { SettingsRow } from './SettingsRow'
 import { AppUpdateSection } from './AppUpdateSection'
-import { ThemeSwatchDots } from './ThemeSwatchDots'
 import { AccountModal } from './AccountModal'
 import { ThemeModal } from './ThemeModal'
 import { TrackingModeModal } from './TrackingModeModal'
@@ -62,11 +61,8 @@ export function SettingsScreen(): React.JSX.Element {
           label="테마"
           onClick={() => setOpenModal('theme')}
           rightContent={
-            <span className="flex items-center gap-2">
-              <ThemeSwatchDots theme={theme} />
-              <span className="rounded-full border border-border px-3 py-1 text-xs font-medium text-text-muted">
-                {theme}
-              </span>
+            <span className="rounded-full border border-border px-3 py-1 text-xs font-medium text-text-muted">
+              {theme}
             </span>
           }
         />

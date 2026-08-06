@@ -10,16 +10,57 @@
  */
 
 import jobThemesData from '../data/job-themes.json'
-import type { JobThemes, ThemeBackground, ThemeDefinition, ThemeName } from '../types/theme'
+import type {
+  JobThemes,
+  ThemeBackground,
+  ThemeCategory,
+  ThemeDefinition,
+  ThemeName,
+} from '../types/theme'
 import { deriveMediaScope } from './theme-derive'
 import { getThemeBackgroundUrl } from './theme-backgrounds'
 
 const JOB_THEMES = jobThemesData as JobThemes
 
 /**
- * 등록된 테마 이름. **JSON 키 순서가 설정 화면 표시 순서**이고, 기본 테마가 맨 앞이다.
+ * 카테고리 **표시 순서** ([[ADR-104]] 결정 6).
+ *
+ * 색 데이터에서 유도할 수 없는 프로덕트 결정이라 `DEFAULT_THEME` 과 같은 자리에 둔다. JSON 에
+ * 순서 번호를 넣지 않는 이유는 테마를 추가할 때마다 번호를 다시 매기게 되기 때문이다.
  */
-export const THEME_NAMES = Object.keys(JOB_THEMES) as readonly ThemeName[]
+export const THEME_CATEGORIES: readonly ThemeCategory[] = ['기본', '직업', '보스']
+
+/**
+ * 등록된 테마 이름. **표시 순서는 카테고리 순서 → 그 안에서 JSON 키 순서**다([[ADR-104]] 결정 6,
+ * 예전 규약은 "JSON 키 순서 = 표시 순서"였다). 정렬이 안정적이라 같은 카테고리 안에서는 JSON 에
+ * 적은 순서가 그대로 남는다 — 새 테마는 자기 카테고리 블록 끝에 붙는다.
+ */
+export const THEME_NAMES = (Object.keys(JOB_THEMES) as ThemeName[])
+  .slice()
+  .sort(
+    (a, b) =>
+      THEME_CATEGORIES.indexOf(JOB_THEMES[a].category) -
+      THEME_CATEGORIES.indexOf(JOB_THEMES[b].category),
+  ) as readonly ThemeName[]
+
+/** 선택 목록의 섹션 하나. */
+export interface ThemeCategoryGroup {
+  category: ThemeCategory
+  themes: readonly ThemeName[]
+}
+
+/**
+ * 테마 목록을 카테고리 섹션으로 묶는다 ([[ADR-104]] 결정 3).
+ *
+ * **항목이 없는 카테고리는 그룹째 내지 않는다** — 라이트/다크 필터가 걸러낸 뒤 헤더만 남는 것을
+ * 막는 책임이 여기 있다. 호출부는 거르고 이 함수에 넘기기만 하면 된다.
+ */
+export function groupThemesByCategory(names: readonly ThemeName[]): readonly ThemeCategoryGroup[] {
+  return THEME_CATEGORIES.map((category) => ({
+    category,
+    themes: names.filter((name) => JOB_THEMES[name].category === category),
+  })).filter((group) => group.themes.length > 0)
+}
 
 /**
  * 앱 기본 테마와 기본 다크 테마.
@@ -81,9 +122,11 @@ function backgroundDeclarations(background: ThemeBackground | undefined): string
  * AA 미달(레테 3.88:1)이 정확히 그 문제였다([[ADR-064]] 결정 5).
  */
 export function buildThemeCss(theme: ThemeDefinition): string {
-  // mode 는 색이 아니라 의도라, background 는 색이 아니라 에셋이라 --color-* 로 내보내지 않는다.
-  const { mode, background, ...tokens } = theme
+  // mode 는 색이 아니라 의도라, category 는 분류라, background 는 에셋이라 --color-* 로
+  // 내보내지 않는다.
+  const { mode, category, background, ...tokens } = theme
   void mode
+  void category
   const scope: Readonly<Record<string, string>> = deriveMediaScope(theme, theme.mode)
 
   return [

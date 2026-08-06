@@ -29,7 +29,7 @@
 - **`daily-quest-regions.json`** ([[ADR-020]]): 일일퀘스트 카드 "지역명 → 배경 슬러그". 매칭은 접두어 제거 후 공백 제거 표시명이 지역명으로 `startsWith`.
 - **`daily-quest-region-crops.json`** ([[ADR-020]]): 지역 슬러그 → `{ size, position }`. 조정 화면은 [[ADR-092]] 에서 삭제. 길드 미션 포인트(`hallOfHeroes`)·플래그 레이스(`flagRace`, jpg)도 추가([[ADR-021]]).
 - **`weekly-regional-quests.json`** ([[ADR-021]]): 주간 지역 콘텐츠(에르다 스펙트럼 등 6종) "콘텐츠명 → 배경 슬러그". 콘텐츠명에 지역명이 없어 `startsWith` 아닌 정확 일치. 슬러그·에셋은 `daily-quest-regions.json` 재사용(신규 에셋 없음).
-- **`job-themes.json`** ([[ADR-009]]): 테마별 17토큰 컬러 → [features/theme.md](../features/theme.md).
+- **`job-themes.json`** ([[ADR-009]], [[ADR-064]], [[ADR-104]]): 테마별 38토큰 컬러 + `mode` + 선택 `background` + **`category`**(기본/직업/보스 — 소속은 게임 도메인이라 사용자 확인으로 정한다) → [features/theme.md](../features/theme.md).
 
 ## 데이터 확정 현황
 - 세 게임 데이터 파일 반영 완료. 가격 갱신일: 주간/이벤트 주간 `2026-06-25`, 월간(검은마법사) `2026-07-01`. 힐라(하드)·핑크빈(카오스) 일간 격하로 제거, 벨로나 미출시 보류, 카이 시즌 종료 제외.
