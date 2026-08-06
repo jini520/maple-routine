@@ -1,6 +1,7 @@
 {
   "머쉬맘": {
     "mode": "light",
+    "category": "기본",
     "bg": "#F2F0E2",
     "surface": "#FDFCF6",
     "surface2": "#E4E1CE",
@@ -42,6 +43,7 @@
   },
   "혼테일": {
     "mode": "dark",
+    "category": "기본",
     "bg": "#0B0B0B",
     "surface": "#190707",
     "surface2": "#2A1616",
@@ -90,6 +92,7 @@
   },
   "레테": {
     "mode": "dark",
+    "category": "직업",
     "bg": "#0C080F",
     "surface": "#1A1720",
     "surface2": "#28232E",
@@ -131,6 +134,7 @@
   },
   "렌": {
     "mode": "light",
+    "category": "직업",
     "bg": "#F6F5F5",
     "surface": "#FFFFFF",
     "surface2": "#E5E6E9",
@@ -172,6 +176,7 @@
   },
   "엔젤릭버스터": {
     "mode": "light",
+    "category": "직업",
     "bg": "#F9E9F1",
     "surface": "#FEF8FB",
     "surface2": "#EBD8E2",
@@ -213,6 +218,7 @@
   },
   "검은마법사": {
     "mode": "dark",
+    "category": "보스",
     "bg": "#0C0506",
     "surface": "#1E1214",
     "surface2": "#302224",

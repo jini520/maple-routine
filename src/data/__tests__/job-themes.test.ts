@@ -28,13 +28,22 @@ describe('job-themes.json — 스키마', () => {
     }
   })
 
-  // 색이 아닌 필드는 둘뿐이다 — 필수 `mode` 와 선택 `background`([[ADR-088]] 결정 3).
-  it.each(NAMES)('%s: 토큰 외에 mode 와 선택 background 만 더 갖는다', (name) => {
+  // 색이 아닌 필드는 셋뿐이다 — 필수 `mode`·`category`([[ADR-104]] 결정 1)와 선택
+  // `background`([[ADR-088]] 결정 3).
+  it.each(NAMES)('%s: 토큰 외에 mode·category 와 선택 background 만 더 갖는다', (name) => {
     const extra = Object.keys(JOB_THEMES[name]).filter(
       (key) => !(THEME_TOKEN_KEYS as readonly string[]).includes(key),
     )
     expect(extra).toContain('mode')
-    expect(extra.filter((key) => key !== 'mode' && key !== 'background')).toEqual([])
+    expect(extra).toContain('category')
+    expect(
+      extra.filter((key) => key !== 'mode' && key !== 'category' && key !== 'background'),
+    ).toEqual([])
+  })
+
+  // 소속은 게임 도메인이라 사람이 정한다([[ADR-006]]) — 테스트는 값이 셋 중 하나인지만 본다.
+  it.each(NAMES)('%s: category 가 기본·직업·보스 중 하나다', (name) => {
+    expect(['기본', '직업', '보스']).toContain(JOB_THEMES[name].category)
   })
 
   /**

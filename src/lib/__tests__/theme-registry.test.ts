@@ -3,9 +3,11 @@ import jobThemes from '../../data/job-themes.json'
 import { contrastHex, hexToOklch } from '../color'
 import {
   DEFAULT_THEME,
+  THEME_CATEGORIES,
   THEME_NAMES,
   buildThemeCss,
   getThemeDefinition,
+  groupThemesByCategory,
   isThemeName,
 } from '../theme-registry'
 import type { ThemeName } from '../../types/theme'
@@ -13,12 +15,68 @@ import type { ThemeName } from '../../types/theme'
 const NAMES = Object.keys(jobThemes) as ThemeName[]
 
 describe('THEME_NAMES / isThemeName — JSON 키가 단일 진실 공급원', () => {
-  it('등록된 테마 이름을 JSON 에서 그대로 가져온다', () => {
-    expect([...THEME_NAMES]).toEqual(NAMES)
+  it('등록된 테마를 하나도 빠뜨리거나 더하지 않는다', () => {
+    expect([...THEME_NAMES].sort()).toEqual([...NAMES].sort())
   })
 
-  it('기본 테마가 맨 앞이다 — JSON 키 순서가 설정 화면 표시 순서다', () => {
+  it('기본 테마가 맨 앞이다', () => {
     expect(THEME_NAMES[0]).toBe(DEFAULT_THEME)
+  })
+
+  /**
+   * 표시 순서 규약이 바뀌었다([[ADR-104]] 결정 6) — 예전에는 "JSON 키 순서 = 표시 순서"였다.
+   * 지금 JSON 이 우연히 카테고리 순으로 적혀 있어 결과가 같아도, 규약은 **카테고리가 먼저**다.
+   * 그래서 나열 비교 대신 "카테고리 인덱스가 뒤로 갈수록 줄지 않는다"를 본다 — 새 테마를 JSON
+   * 아무 데나 끼워 넣어도 이 성질이 깨지면 실패한다.
+   */
+  it('카테고리 순서대로 늘어서고, 같은 카테고리 안에서는 JSON 키 순서다', () => {
+    const indexOf = (name: ThemeName): number =>
+      THEME_CATEGORIES.indexOf(getThemeDefinition(name).category)
+
+    const categoryIndexes = THEME_NAMES.map(indexOf)
+    expect([...categoryIndexes]).toEqual([...categoryIndexes].sort((a, b) => a - b))
+
+    for (const category of THEME_CATEGORIES) {
+      const inRegistry = THEME_NAMES.filter((name) => getThemeDefinition(name).category === category)
+      const inJson = NAMES.filter((name) => getThemeDefinition(name).category === category)
+      expect(inRegistry).toEqual(inJson)
+    }
+  })
+})
+
+describe('groupThemesByCategory — 선택 목록의 섹션 ([[ADR-104]] 결정 3)', () => {
+  it('카테고리 순서대로 그룹을 낸다', () => {
+    const groups = groupThemesByCategory(THEME_NAMES)
+
+    expect(groups.map((group) => group.category)).toEqual(
+      THEME_CATEGORIES.filter((category) =>
+        THEME_NAMES.some((name) => getThemeDefinition(name).category === category),
+      ),
+    )
+  })
+
+  it('모든 테마가 자기 카테고리 그룹에 정확히 한 번 들어간다', () => {
+    const grouped = groupThemesByCategory(THEME_NAMES).flatMap((group) => group.themes)
+
+    expect([...grouped].sort()).toEqual([...THEME_NAMES].sort())
+    for (const group of groupThemesByCategory(THEME_NAMES)) {
+      for (const name of group.themes) {
+        expect(getThemeDefinition(name).category).toBe(group.category)
+      }
+    }
+  })
+
+  // 필터가 걸러낸 뒤 빈 카테고리가 헤더만 남는 것을 막는다 — 감추는 책임은 이 함수에 있다.
+  it('항목이 없는 카테고리는 그룹째 나오지 않는다', () => {
+    const darkOnly = THEME_NAMES.filter((name) => getThemeDefinition(name).mode === 'dark')
+    const groups = groupThemesByCategory(darkOnly)
+
+    expect(groups.every((group) => group.themes.length > 0)).toBe(true)
+    expect(groups.flatMap((group) => group.themes)).toEqual(darkOnly)
+  })
+
+  it('빈 목록이면 그룹도 없다', () => {
+    expect(groupThemesByCategory([])).toEqual([])
   })
 
   it.each(NAMES)('%s 는 테마 이름이다', (name) => {

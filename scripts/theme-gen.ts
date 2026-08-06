@@ -22,6 +22,7 @@ import {
   type ThemeMode,
   type ThemeSeed,
 } from '../src/lib/theme-derive'
+import type { ThemeCategory } from '../src/types/theme'
 
 type ExistingThemeName = keyof typeof jobThemes
 
@@ -32,6 +33,16 @@ type ExistingThemeName = keyof typeof jobThemes
 const EXISTING_MODES = Object.fromEntries(
   Object.entries(jobThemes).map(([name, theme]) => [name, (theme as { mode: ThemeMode }).mode]),
 ) as Record<ExistingThemeName, ThemeMode>
+
+/** 등록된 테마의 카테고리 — 같은 이유로 JSON 에서 읽는다([[ADR-104]] 결정 1). */
+const EXISTING_CATEGORIES = Object.fromEntries(
+  Object.entries(jobThemes).map(([name, theme]) => [
+    name,
+    (theme as { category: ThemeCategory }).category,
+  ]),
+) as Record<ExistingThemeName, ThemeCategory>
+
+const CATEGORIES: readonly ThemeCategory[] = ['기본', '직업', '보스']
 
 /** 기존 테마에서 그대로 승계하는 값 — 신규 17토큰만 생성한다(회귀 방지, [[ADR-064]] 결정 5). */
 const INHERITED_KEYS = [
@@ -111,16 +122,16 @@ function printReport(report: ContrastReport): void {
   }
 }
 
-function run(label: string, seed: ThemeSeed): void {
+function run(label: string, seed: ThemeSeed, category: ThemeCategory): void {
   const tokens = deriveTheme(seed)
   const report = measureThemeContrast(tokens)
 
-  console.log(`\n${'─'.repeat(60)}\n  ${label}  ${DIM}(${seed.mode})${RESET}`)
+  console.log(`\n${'─'.repeat(60)}\n  ${label}  ${DIM}(${seed.mode} · ${category})${RESET}`)
   printTokens(tokens)
   printReport(report)
 
   console.log(`\n  ${DIM}job-themes.json 에 붙여넣을 블록${RESET}`)
-  console.log(JSON.stringify({ [label]: { mode: seed.mode, ...tokens } }, null, 2))
+  console.log(JSON.stringify({ [label]: { mode: seed.mode, category, ...tokens } }, null, 2))
 
   console.log(`\n  ${DIM}미디어 스코프(.media-scope) 파생값${RESET}`)
   console.log(JSON.stringify(deriveMediaScope(tokens, seed.mode), null, 2))
@@ -148,7 +159,7 @@ function main(): void {
 
   if (args.has('existing-all')) {
     for (const name of Object.keys(EXISTING_MODES) as ExistingThemeName[]) {
-      run(name, seedFromExisting(name))
+      run(name, seedFromExisting(name), EXISTING_CATEGORIES[name])
     }
   } else if (args.has('existing')) {
     const name = args.get('existing') as ExistingThemeName
@@ -156,17 +167,18 @@ function main(): void {
       console.error(`알 수 없는 테마: ${name} (가능: ${Object.keys(EXISTING_MODES).join(', ')})`)
       process.exit(1)
     }
-    run(name, seedFromExisting(name))
+    run(name, seedFromExisting(name), EXISTING_CATEGORIES[name])
   } else {
     const primary = args.get('primary')
     const secondary = args.get('secondary')
     const third = args.get('third')
     const mode = args.get('mode')
+    const category = args.get('category')
 
     if (primary === undefined || secondary === undefined || third === undefined) {
       console.error(
         '사용법:\n' +
-          "  npm run theme:gen -- --primary '#F58B0F' --secondary '#F7D00D' --third '#CA763A' --mode light\n" +
+          "  npm run theme:gen -- --primary '#F58B0F' --secondary '#F7D00D' --third '#CA763A' --mode light --category 직업\n" +
           '  npm run theme:gen -- --existing 머쉬맘\n' +
           '  npm run theme:gen -- --existing-all',
       )
@@ -176,8 +188,18 @@ function main(): void {
       console.error("--mode 는 'light' 또는 'dark' 여야 합니다")
       process.exit(1)
     }
+    // mode 와 같은 성질의 값이라 같은 방식으로 받는다 — 색에서 유도할 수 없어 사람이 정한다.
+    // 기본값을 두지 않는 것은 도구가 소속을 추정하지 않기 위해서다([[ADR-006]]).
+    if (!CATEGORIES.includes(category as ThemeCategory)) {
+      console.error(`--category 는 ${CATEGORIES.join(' / ')} 중 하나여야 합니다`)
+      process.exit(1)
+    }
 
-    run(args.get('name') ?? '새 테마', { primary, secondary, third, mode })
+    run(
+      args.get('name') ?? '새 테마',
+      { primary, secondary, third, mode },
+      category as ThemeCategory,
+    )
   }
 }
 

@@ -147,6 +147,18 @@ describe('SettingsScreen', () => {
     expect(within(screen.getByRole('button', { name: /테마/ })).getByText('레테')).toBeInTheDocument()
   })
 
+  // 행에는 이름 배지만 둔다 — 색 표식은 없앴다([[ADR-104]] 결정 5).
+  it('테마 행에 대표 컬러 표식이 없다', () => {
+    mockSettingsStore({})
+    mockThemeStore({ theme: '레테' })
+
+    render(<SettingsScreen />)
+
+    const row = screen.getByRole('button', { name: /테마/ })
+    expect(within(row).queryByTestId('theme-swatch-dot')).not.toBeInTheDocument()
+    expect(row.querySelectorAll('[style*="background"]')).toHaveLength(0)
+  })
+
   it('"계정 변경" 클릭 시 계정 모달이 열리고 refreshAccounts가 호출된다', async () => {
     const user = userEvent.setup()
     const refreshAccounts = vi.fn()
