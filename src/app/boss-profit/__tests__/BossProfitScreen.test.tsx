@@ -276,12 +276,12 @@ describe('BossProfitScreen', () => {
     })
   })
 
-  // ADR-085: 접기 깜빡임의 정체는 **스크롤 스레드가 되돌려 보내는 옛 오프셋**이다(실기기 프레임
-  // 계측 — 정상 프레임 하나 뒤에 접기 전 오프셋으로 2프레임이 다시 그려지고, 밀린 거리는 잘린 양과
-  // 같다). 잘려야 할 오프셋이 없으면 되돌려 보낼 옛 값도 없으므로, 접기 **전에** 문서 높이가 아직
-  // 그대로일 때 접은 뒤의 최대 스크롤로 먼저 옮기고 다음 프레임에 접는다. ADR-084 의 "접힌 뒤에
-  // 자른다"는 이미 잘린 뒤라 호출조차 되지 않았다(`clamp skip`).
-  describe('접기 전 사전 스크롤 (ADR-085)', () => {
+  // ADR-102: 접기는 **상태만 바꾼다.** 사라지는 본문은 탭한 헤더보다 항상 아래에 있으므로,
+  // 스크롤을 그대로 두면 그 헤더와 위쪽 내용이 제자리에 남는다. 접기 전 사전 스크롤([[ADR-085]]
+  // 결정 2)은 두 단계가 **두 프레임으로 그려져** 접히기 직전에 페이지가 튀었고(사용자 연속 프레임
+  // 2세트, 2026-08-06), 그 처방이 상대하던 문서 스크롤러 문제는 ADR-099·100 이 원천을 없앴다.
+  // **여기에 스크롤 조작을 다시 넣지 말 것** — 이 describe 가 그 회귀 가드다.
+  describe('접기는 스크롤을 건드리지 않는다 (ADR-102)', () => {
     // ADR-100: 스크롤 주체가 컨테이너라, 계산에 들어가는 세 값도 그 요소에서 읽는다
     // (`scrollTop`·`scrollHeight`·`clientHeight`). jsdom 은 레이아웃이 없어 전부 0이므로 심는다.
     const originals: { target: object; key: string; descriptor: PropertyDescriptor | undefined }[] = []
@@ -306,7 +306,9 @@ describe('BossProfitScreen', () => {
       originals.length = 0
     })
 
-    it('접은 뒤의 최대 스크롤을 넘겨 있으면, 접기 전에 그 위치로 먼저 옮긴다', async () => {
+    // 옛 처방이 사전 스크롤을 걸던 조건 그대로다(접은 뒤의 최대 스크롤 700보다 깊은 1000).
+    // 이 자리에서 `scrollTo(0, 700)` 이 다시 나타나면 튀는 프레임이 되살아난 것이다.
+    it('접은 뒤의 최대 스크롤보다 깊이 내려가 있어도 스크롤을 건드리지 않는다', () => {
       const scrollTo = vi.spyOn(Element.prototype, 'scrollTo').mockImplementation(() => {})
       mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()] })
       renderBossProfitScreen()
@@ -318,30 +320,21 @@ describe('BossProfitScreen', () => {
 
       fireEvent.click(header)
 
-      // 스크롤이 **먼저** 간다 — 이 시점에는 본문이 아직 붙어 있어야 문서 높이가 유효하다.
-      expect(scrollTo).toHaveBeenCalledWith(0, 700)
-      expect(screen.getByText('자쿰')).toBeInTheDocument()
-
-      // 접기는 다음 프레임에 일어난다.
-      await waitFor(() => {
-        expect(screen.queryByText('자쿰')).not.toBeInTheDocument()
-      })
-      scrollTo.mockRestore()
+      expect(scrollTo).not.toHaveBeenCalled()
     })
 
-    it('접어도 잘릴 오프셋이 없으면 스크롤을 건드리지 않고 바로 접는다', () => {
-      const scrollTo = vi.spyOn(Element.prototype, 'scrollTo').mockImplementation(() => {})
+    // 튀는 프레임의 정체는 "스크롤은 옮겨졌는데 본문은 아직 붙어 있는" 중간 커밋이었다.
+    // 접기가 클릭과 **같은 커밋**에 끝나면 그런 상태가 존재할 수 없다 — `await` 없이 확인한다.
+    it('접기가 클릭과 같은 커밋에 끝난다 — 본문이 남은 중간 상태가 없다', () => {
       mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()] })
       renderBossProfitScreen()
 
       const header = screen.getByRole('button', { name: /낟낟/ })
       fireEvent.click(header)
-      stubViewport({ scrollY: 100, scrollHeight: 1500, innerHeight: 800 })
-      scrollTo.mockClear()
+      stubViewport({ scrollY: 1000, scrollHeight: 1500, innerHeight: 800 })
 
       fireEvent.click(header)
 
-      expect(scrollTo).not.toHaveBeenCalled()
       expect(screen.queryByText('자쿰')).not.toBeInTheDocument()
     })
 
