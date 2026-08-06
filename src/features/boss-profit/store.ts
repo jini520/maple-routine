@@ -547,16 +547,27 @@ const initialState: BossProfitState = {
   lastSyncedAt: null,
 }
 
+// ADR-101 결정 4: 부팅 선하이드레이션(`features/prehydrate`)과 화면 마운트가 같은 회차를 부르므로,
+// 진행 중인 회차가 있으면 그 Promise 를 그대로 돌려준다. **"평생 한 번"이 아니라 "동시에 하나만"**
+// 이다 — 끝나면 잊는다. 영구 메모로 만들면 진입 재조회의 10분 TTL([[ADR-097]])이 죽는다.
+let hydration: Promise<void> | null = null
+
 export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
   ...initialState,
 
-  async loadTrackedOcids() {
-    const ocids = await getTrackedCharacterOcids()
-    set({ trackedOcids: ocids })
-    if (ocids !== null) {
-      // ADR-097 결정 4: 자동 진입 경로는 여기 하나뿐이라 게이트를 놓칠 자리가 생기지 않는다.
-      await get().refresh(ocids, { auto: true })
-    }
+  loadTrackedOcids() {
+    // ADR-101 결정 4: 동시 호출은 한 회차로 합친다(위 `hydration` 주석).
+    hydration ??= (async () => {
+      const ocids = await getTrackedCharacterOcids()
+      set({ trackedOcids: ocids })
+      if (ocids !== null) {
+        // ADR-097 결정 4: 자동 진입 경로는 여기 하나뿐이라 게이트를 놓칠 자리가 생기지 않는다.
+        await get().refresh(ocids, { auto: true })
+      }
+    })().finally(() => {
+      hydration = null
+    })
+    return hydration
   },
 
   async refresh(ocids, options) {

@@ -123,6 +123,13 @@ export function partySizeKey(ocid: string, boss: string, difficulty: string): st
   return `${ocid}:${boss}:${difficulty}`
 }
 
+// ADR-101 결정 4: 부팅 선하이드레이션(`features/prehydrate`)과 화면 마운트가 같은 회차를 부르므로,
+// 진행 중인 회차가 있으면 그 Promise 를 그대로 돌려준다. **"평생 한 번"이 아니라 "동시에 하나만"**
+// 이다 — 끝나면 잊는다. 영구 메모로 만들면 진입 재조회의 10분 TTL([[ADR-097]])이 죽는다.
+// `storage/character-selection` 의 `migrationLock` 과 같은 모양·같은 이유(락 없이 겹쳐 돌면 같은
+// 응답을 두 번 받는다).
+let hydration: Promise<void> | null = null
+
 // ADR-017 결정 2: 캐시 단계(trackedOcids 저장 순서)와 동기화 단계(계정 전체 캐릭터
 // 목록에서 필터링한 순서)가 서로 달라 생기던 불일치를 없애기 위해, character-basic-cache의
 // level을 병합해 레벨 내림차순(동레벨이면 compareByName)으로 통일한다. 레벨 캐시가 없는
@@ -173,16 +180,22 @@ async function readCachedView(ocid: string): Promise<BossCharacterView | null> {
 export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => ({
   ...initialState,
 
-  async loadTrackedOcids() {
-    const [ocids, selectedOcid] = await Promise.all([
-      getTrackedCharacterOcids(),
-      getLastSelectedCharacter(),
-    ])
-    set({ trackedOcids: ocids, selectedOcid })
-    if (ocids !== null) {
-      // ADR-097 결정 4: 자동 진입 경로는 여기 하나뿐이라 게이트를 놓칠 자리가 생기지 않는다.
-      await get().refresh(ocids, undefined, { auto: true })
-    }
+  loadTrackedOcids() {
+    // ADR-101 결정 4: 동시 호출은 한 회차로 합친다(위 `hydration` 주석).
+    hydration ??= (async () => {
+      const [ocids, selectedOcid] = await Promise.all([
+        getTrackedCharacterOcids(),
+        getLastSelectedCharacter(),
+      ])
+      set({ trackedOcids: ocids, selectedOcid })
+      if (ocids !== null) {
+        // ADR-097 결정 4: 자동 진입 경로는 여기 하나뿐이라 게이트를 놓칠 자리가 생기지 않는다.
+        await get().refresh(ocids, undefined, { auto: true })
+      }
+    })().finally(() => {
+      hydration = null
+    })
+    return hydration
   },
 
   async saveTrackedOcids(ocids, onProgress) {

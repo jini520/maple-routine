@@ -54,6 +54,16 @@ vi.mock('../features/ads/tab-switch-ad', () => ({
   maybeShowTabSwitchAd: vi.fn().mockResolvedValue(undefined),
 }))
 
+// [[ADR-101]] 결정 2·6: 부팅 선하이드레이션. 실물은 세 스토어 모듈을 동적 import 하는데 이 파일이
+// 그 셋을 훅으로 모킹해 `getState` 가 없으므로, 여기서는 호출 여부만 본다.
+const { prehydrateTabStoresMock } = vi.hoisted(() => ({
+  prehydrateTabStoresMock: vi.fn().mockResolvedValue(undefined),
+}))
+
+vi.mock('../features/prehydrate', () => ({
+  prehydrateTabStores: prehydrateTabStoresMock,
+}))
+
 vi.mock('../native/keyboard', () => ({
   addKeyboardVisibilityListener: vi.fn(async (onChange: (visible: boolean) => void) => {
     keyboardListeners.push(onChange)
@@ -96,7 +106,7 @@ mockedUseContentSchedulerStore.mockReturnValue({
   status: 'idle',
   characters: [],
   error: null,
-  trackedOcids: null,
+  trackedOcids: [], // ADR-101: 셸 테스트는 화면을 "읽었고 0명"인 빈 상태로 세운다(null 은 "아직 안 읽음"이라 본 화면이 그려진다)
   loadTrackedOcids: vi.fn(),
   saveTrackedOcids: vi.fn(),
   refresh: vi.fn(),
@@ -106,7 +116,7 @@ mockedUseBossSchedulerStore.mockReturnValue({
   status: 'idle',
   characters: [],
   error: null,
-  trackedOcids: null,
+  trackedOcids: [], // ADR-101: 셸 테스트는 화면을 "읽었고 0명"인 빈 상태로 세운다(null 은 "아직 안 읽음"이라 본 화면이 그려진다)
   loadTrackedOcids: vi.fn(),
   saveTrackedOcids: vi.fn(),
   refresh: vi.fn(),
@@ -120,7 +130,7 @@ mockedUseBossProfitStore.mockReturnValue({
   weeklySubtotals: [],
   error: null,
   staleCharacterNames: [],
-  trackedOcids: null,
+  trackedOcids: [], // ADR-101: 셸 테스트는 화면을 "읽었고 0명"인 빈 상태로 세운다(null 은 "아직 안 읽음"이라 본 화면이 그려진다)
   loadTrackedOcids: vi.fn(),
   refresh: vi.fn(),
   setPartySize: vi.fn(),
@@ -186,6 +196,30 @@ describe('AppShell', () => {
     renderAt('/')
 
     expect(restoreTrackingModeFromStorage).toHaveBeenCalledTimes(1)
+  })
+
+  // [[ADR-101]] 결정 2: 탭 첫 진입이 저장소 읽기를 사용자가 보는 앞에서 치르지 않도록 미리 돌린다.
+  it('온보딩이 완료돼 있으면 부팅 때 탭 스토어를 선하이드레이션한다', async () => {
+    mockStore({ status: 'completed' })
+
+    renderAt('/')
+
+    await waitFor(() => {
+      expect(prehydrateTabStoresMock).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  // 결정 6: `syncSchedules` 가 API 키·계정 없이 던지므로, 온보딩 중에 돌리면 스토어가 error 로
+  // 시작하고 토스트까지 울린다.
+  it('온보딩이 완료되지 않았으면 선하이드레이션을 돌리지 않는다', async () => {
+    mockStore({ status: 'awaitingApiKey' })
+
+    renderAt('/')
+    await act(async () => {
+      await Promise.resolve()
+    })
+
+    expect(prehydrateTabStoresMock).not.toHaveBeenCalled()
   })
 
   it('status가 completed가 아닐 때 /content로 접근하면 온보딩으로 리다이렉트된다', async () => {

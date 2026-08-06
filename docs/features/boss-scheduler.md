@@ -2,7 +2,7 @@
 
 > **범위**: 주간/월간 보스 진행 상태, 캐릭터 추적, 파티 관리, 보스 카드·난이도 뱃지, 솔로/파티 필터, 보스 관리 페이지. 캐릭터 관리 피커·탭 토글은 [../foundation/design-system.md](../foundation/design-system.md), 수동/자동 트래킹 전역 토글은 [settings.md](./settings.md).
 > **관련 소스**: `app/boss-scheduler/`(`BossScreen.tsx` — `BossCard`·`DifficultyBadge` export) · `features/boss-scheduler/` · `storage/boss-party-settings`(SQLite `boss_party_settings`) · `lib/boss-icons` · `lib/boss-matching` · `PartyManagementModal` · `/boss/manage` · `src/data/weekly-bosses.json`·`boss-crystal-prices.json`·`boss-portrait-crops.json`.
-> **관련 ADR**: [[ADR-013]] [[ADR-012]] [[ADR-018]] [[ADR-019]] [[ADR-035]] [[ADR-031]] [[ADR-006]] [[ADR-053]] [[ADR-055]] [[ADR-056]] [[ADR-072]] [[ADR-073]] [[ADR-074]] [[ADR-096]] [[ADR-097]]. **관련 문서**: [../foundation/architecture.md](../foundation/architecture.md), [../foundation/nexon-api.md](../foundation/nexon-api.md), [../foundation/game-data.md](../foundation/game-data.md), [boss-profit.md](./boss-profit.md).
+> **관련 ADR**: [[ADR-013]] [[ADR-012]] [[ADR-018]] [[ADR-019]] [[ADR-035]] [[ADR-031]] [[ADR-006]] [[ADR-053]] [[ADR-055]] [[ADR-056]] [[ADR-072]] [[ADR-073]] [[ADR-074]] [[ADR-096]] [[ADR-097]] [[ADR-101]]. **관련 문서**: [../foundation/architecture.md](../foundation/architecture.md), [../foundation/nexon-api.md](../foundation/nexon-api.md), [../foundation/game-data.md](../foundation/game-data.md), [boss-profit.md](./boss-profit.md).
 
 **관리 화면 토글 저장 실패 ([[ADR-065]] 결정 4)**: 체크박스가 그 자리에 남아 맥락이 있으므로 토스트로 알린다 — 문구는 컨텐츠·보스 공통으로 "추적 목록을 저장하지 못했습니다" 하나다(같은 화면에서 무엇을 토글했는지는 사용자가 안다). 재시도 액션은 두지 않는다 — 다시 탭하면 되는 일이라 중복이다.
 
@@ -67,6 +67,8 @@ rounded-full bg-surface-2 text-text text-xs font-semibold px-2 py-1, flex items-
 
 ### 빈 상태 ([[ADR-060]])
 공용 `EmptyState`(inline, `Swords`). 수동 모드는 "추적할 주간/월간 보스가 없습니다" + CTA "보스 관리" → `/boss/manage`, 자동 모드는 "등록된 주간/월간 보스가 없습니다"(CTA 없음 — 목적지가 앱 밖). 주간/월간 문구를 공유하지 않는다. 레시피는 [design-system.md](../foundation/design-system.md).
+
+**캐릭터 미선택 빈 상태의 판정은 `trackedOcids !== null && trackedOcids.length === 0` 이다**([[ADR-101]] 결정 1) — `null` 은 "0명"이 아니라 **"저장소를 아직 안 읽었다"** 다. 둘을 `||` 로 묶으면 콜드 스타트 첫 페인트가 "표시할 캐릭터가 없습니다"를 한 프레임 그린다(실기기 2026-08-06). 세 화면 공통 규칙이며 원칙은 [error-resilience.md](../foundation/error-resilience.md) 제품 원칙 2. 그 뒤에 남는 정직한 로딩 프레임은 부팅 선하이드레이션([[ADR-101]] 결정 2, [architecture.md](../foundation/architecture.md) '상태 관리')이 사용자 시야 밖으로 치운다.
 
 ### 보스 관리 페이지 `/boss/manage` ([[ADR-035]] 결정 18)
 두 모드 공통 진입("보스 관리"). `PartyManagementModal` 을 완전 대체(파티원 수도 보스 단위라 추적 편집과 같은 행에 합침). 주간/월간 탭, 레이아웃·행 스타일은 컨텐츠 관리 페이지와 동일 — 헤더 캐릭터 드롭다운(`CharacterSelectDropdown size="compact"`)과 스케줄러 탭 승계도 같다([[ADR-096]] 결정 2·4). 주간에서 들어오면 주간, 월간에서 들어오면 월간이고, 여기서 탭을 바꿔도 스케줄러는 그대로다. 헤더 고정 방식과 스크롤 컨테이너도 스케줄러와 같다([[ADR-098]]·[[ADR-099]]).

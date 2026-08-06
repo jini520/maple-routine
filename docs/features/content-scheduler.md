@@ -2,7 +2,7 @@
 
 > **범위**: 일간/주간 콘텐츠 진행 상태 표시, 캐릭터 추적, 3단 캐시 병합, 콘텐츠 카드(일일퀘스트·몬스터파크·주간 콘텐츠), 컨텐츠 관리 페이지. 캐릭터 관리 피커 컴포넌트는 [../foundation/design-system.md](../foundation/design-system.md), 수동/자동 트래킹 모드 전역 토글은 [settings.md](./settings.md).
 > **관련 소스**: `app/content-scheduler/`(`ContentScreen.tsx`) · `features/content-scheduler/` · `lib/scheduler-merge` · `lib/scheduler-content-scope` · `lib/content-category` · `lib/daily-quest-backgrounds` · `storage/scheduler-cache` · `storage/shared-progress-cache` · `src/data/scheduler-content-catalog.json`·`daily-quest-regions.json`·`daily-quest-region-crops.json`·`weekly-regional-quests.json`·`scheduler-content-template.json` · `/content/manage`.
-> **관련 ADR**: [[ADR-013]] [[ADR-012]] [[ADR-030]] [[ADR-020]] [[ADR-021]] [[ADR-035]] [[ADR-018]] [[ADR-053]] [[ADR-057]] [[ADR-072]] [[ADR-073]] [[ADR-074]] [[ADR-086]] [[ADR-096]] [[ADR-097]]. **관련 문서**: [../foundation/architecture.md](../foundation/architecture.md), [../foundation/nexon-api.md](../foundation/nexon-api.md), [../foundation/error-resilience.md](../foundation/error-resilience.md).
+> **관련 ADR**: [[ADR-013]] [[ADR-012]] [[ADR-030]] [[ADR-020]] [[ADR-021]] [[ADR-035]] [[ADR-018]] [[ADR-053]] [[ADR-057]] [[ADR-072]] [[ADR-073]] [[ADR-074]] [[ADR-086]] [[ADR-096]] [[ADR-097]] [[ADR-101]]. **관련 문서**: [../foundation/architecture.md](../foundation/architecture.md), [../foundation/nexon-api.md](../foundation/nexon-api.md), [../foundation/error-resilience.md](../foundation/error-resilience.md).
 
 ## 정책
 - 화면 안에 **일간 탭**(`daily_contents`) + **주간 탭**(`weekly_contents`). **월간 탭 없음**(월간 주기 일반 콘텐츠가 API에 없음).
@@ -122,6 +122,7 @@
 - **헤더 진입점**: 수동 모드에서만 "컨텐츠 관리" 텍스트 버튼이 "캐릭터 관리" 왼쪽에 나타남(자동은 "캐릭터 관리" 하나). 버튼 `text-sm font-medium text-text-muted hover:text-text`.
 - **빈 상태(수동)**: 공용 `EmptyState`(inline, `ListChecks`) — "추적할 일간/주간 컨텐츠가 없습니다" + CTA "컨텐츠 관리" → `/content/manage`([[ADR-060]]). 자동 모드는 "등록된 일간/주간 컨텐츠가 없습니다"(CTA 없음 — 목적지가 앱 밖). 레시피는 [design-system.md](../foundation/design-system.md).
 - **탭 구분**: 수동 항목은 저장 시 확정된 `kind`(`'daily'|'weekly'`)로 해당 탭에만(표시 시점 추론 없음).
+- **캐릭터 미선택 빈 상태의 판정은 `trackedOcids !== null && trackedOcids.length === 0`**([[ADR-101]] 결정 1) — `null` 은 "0명"이 아니라 "저장소를 아직 안 읽었다"다. 둘을 `||` 로 묶으면 콜드 스타트 첫 페인트가 "표시할 캐릭터가 없습니다"를 한 프레임 그린다. 세 화면 공통 규칙이며 원칙은 [error-resilience.md](../foundation/error-resilience.md) 제품 원칙 2, 남는 로딩 프레임을 치우는 부팅 선하이드레이션은 [architecture.md](../foundation/architecture.md) '상태 관리'.
 
 ### 컨텐츠 관리 페이지 `/content/manage` ([[ADR-035]] 결정 18)
 수동 모드 전용(자동 진입 시 `/content` 리다이렉트). 카드 박스 없는 페이지 레이아웃, 헤더~탭 고정(스케줄러와 동일한 공용 `PageHeader` — `fixed` + 실측 spacer, [[ADR-098]]). 스크롤 컨테이너도 스케줄러와 같다(`ScreenScroll`, [[ADR-099]]) — 스케줄러에서 스크롤을 내린 채 들어오는 화면이라 같은 노출을 가졌었다.

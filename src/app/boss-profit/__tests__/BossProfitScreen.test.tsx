@@ -170,8 +170,18 @@ describe('BossProfitScreen', () => {
     expect(loadTrackedOcids).toHaveBeenCalledTimes(1)
   })
 
-  it('trackedOcids가 null이면 빈 상태 안내만 보인다', () => {
-    mockStore({ status: 'loaded', trackedOcids: null, rows: [] })
+  // [[ADR-101]] 결정 1: `null` 은 "0명"이 아니라 "저장소를 아직 안 읽었다"다. 둘을 같이 묶으면
+  // 콜드 스타트 첫 페인트가 아직 모르는 사실을 단정한다(실기기 2026-08-06).
+  it('trackedOcids가 null(미로드)이면 빈 상태를 그리지 않는다', () => {
+    mockStore({ status: 'idle', trackedOcids: null, rows: [] })
+
+    renderBossProfitScreen()
+
+    expect(screen.queryByText('추적 중인 캐릭터가 없습니다')).not.toBeInTheDocument()
+  })
+
+  it('trackedOcids가 빈 배열이면 빈 상태 안내만 보인다', () => {
+    mockStore({ status: 'loaded', trackedOcids: [], rows: [] })
 
     renderBossProfitScreen()
 
@@ -181,17 +191,9 @@ describe('BossProfitScreen', () => {
     ).toBeInTheDocument()
   })
 
-  it('trackedOcids가 빈 배열이면 빈 상태 안내만 보인다', () => {
-    mockStore({ status: 'loaded', trackedOcids: [], rows: [] })
-
-    renderBossProfitScreen()
-
-    expect(screen.getByText('추적 중인 캐릭터가 없습니다')).toBeInTheDocument()
-  })
-
   // ADR-060으로 공용 EmptyState를 쓰면서 <Link> 가 버튼+navigate 로 바뀌었다 — 목적지는 그대로다.
   it('빈 상태의 CTA는 보스 스케줄러의 캐릭터 관리를 자동으로 여는 곳으로 보낸다', () => {
-    mockStore({ status: 'loaded', trackedOcids: null, rows: [] })
+    mockStore({ status: 'loaded', trackedOcids: [], rows: [] })
 
     render(
       <MemoryRouter initialEntries={['/profit']}>

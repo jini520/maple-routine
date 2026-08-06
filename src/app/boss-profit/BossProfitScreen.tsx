@@ -462,7 +462,10 @@ export function BossProfitScreen(): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const isEmpty = trackedOcids === null || trackedOcids.length === 0
+  // ADR-101 결정 1: `null` 은 "0명"이 아니라 **"저장소를 아직 안 읽었다"** 다. 둘을 `||` 로 묶으면
+  // 콜드 스타트 첫 페인트가 아직 모르는 사실을 단정한다(실기기 2026-08-06 — "추적 중인 캐릭터가
+  // 없습니다"가 목록보다 먼저 한 프레임 스쳤다). 빈 상태는 읽고 확인한 뒤에만 그린다.
+  const isEmpty = trackedOcids !== null && trackedOcids.length === 0
 
   // 최신(=현재) 기간에서는 다음 이동을 막는다. 아래 빈 상태 조기 반환보다 위에 두는 것은 당겨서
   // 새로고침 훅이 canRefreshPeriod를 필요로 하기 때문이다(훅 규칙). now는 여기서 한 번만 만든다 —
