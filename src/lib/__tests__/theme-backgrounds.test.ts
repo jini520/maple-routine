@@ -9,8 +9,11 @@ import { getThemeBackgroundUrl } from '../theme-backgrounds'
  * 해석 방식은 일일 퀘스트 지역 배경(`lib/daily-quest-backgrounds.ts`)과 같다.
  */
 describe('getThemeBackgroundUrl', () => {
+  // **실제로 쓰이는 슬러그로 잰다.** 한동안 죽은 에셋(`hontail-cave`)을 쓰고 있었는데, 그러면
+  // 그 파일을 지우는 순간 상관없는 테스트가 깨지고 그래서 못 지우게 된다([[ADR-106]] 결정 2 가
+  // 남긴 자리 — 실제로 [[ADR-109]] 에서 지울 때 이 테스트가 깨졌다).
   it('슬러그를 번들 URL 로 바꾼다', () => {
-    expect(getThemeBackgroundUrl('hontail-cave')).toEqual(expect.any(String))
+    expect(getThemeBackgroundUrl('hontail-background')).toEqual(expect.any(String))
   })
 
   it('없는 슬러그는 null 이다 — 파일을 지워도 앱이 죽지 않는다', () => {
