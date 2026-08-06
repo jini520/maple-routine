@@ -6,9 +6,17 @@ import type { CharacterPickerEntry } from '../../../types'
 import { ErrorState } from '../../molecules/ErrorState/ErrorState'
 import { StaleBanner } from '../../molecules/ErrorState/StaleBanner'
 import { MapleSweepSpinner } from '../../atoms/MapleSweepSpinner/MapleSweepSpinner'
-import { CharacterTrackingGrid, ROSTER_BODY_MIN_H } from './CharacterTrackingGrid'
+import { CharacterTrackingGrid } from './CharacterTrackingGrid'
 import { Button } from '../../atoms/Button/Button'
 import { Card } from '../../atoms/Card/Card'
+
+// 본문 자리의 최소 높이 — 값은 `ROSTER_BODY_MIN_H`(카드 3줄 385px)와 같지만, 모달에서는 **들어갈
+// 자리가 없을 때 양보하도록** 클램프한다([[ADR-107]] 결정 2). CSS 에서 min-height 는 max-height 를
+// 이기므로, 385px 를 그대로 두면 짧은 기기에서 카드 상한(결정 1)이 통째로 무효가 된다.
+// 15rem = 카드 크롬 194px(패딩 48 · 테두리 2 · 헤더 72 · 간격 32 · 버튼 40) + 오버레이 여백 32px
+// 올림값이다. 이 상수가 다소 어긋나도 안전하다 — 클램프는 385px 가 애초에 들어가지 않는 기기
+// (대략 뷰포트 625px + 안전영역 미만)에서만 발동하고, 그 위에서는 min() 이 항상 385px 를 고른다.
+const PICKER_BODY_MIN_H = 'min-h-[min(385px,calc(100dvh-var(--sa-top)-var(--sa-bottom)-15rem))]'
 
 // ADR-043 결정 1: 그리드의 토글이 ocid를 배열 끝에 append하므로 같은 집합이어도 배열
 // 순서가 달라진다 — 저장 버튼 활성 여부는 반드시 멤버십(집합)으로만 판정한다.
@@ -47,12 +55,19 @@ function PickerBody(props: CharacterTrackingPickerProps & { onChange: (ocids: st
   if (props.entries.length > 0) {
     return (
       <>
+        {/* 스탈 배너는 스크롤포트 밖이다 — 목록을 굴려도 "최신이 아님"은 계속 보여야 한다. */}
         {props.loadError !== null && <StaleBanner message="목록이 최신이 아닙니다" onRetry={props.onRetry} />}
-        <CharacterTrackingGrid
-          entries={props.entries}
-          trackedOcids={props.trackedOcids}
-          onChange={props.onChange}
-        />
+        {/* ADR-107 결정 3: 스크롤포트를 카드 패딩(p-6) 바깥까지 넓혀 인디케이터를 모달 오른쪽
+            끝에 붙이고, 같은 크기 pr-6 으로 콘텐츠 여백을 되돌린다(폭은 그대로다).
+            min-h-0 은 flex 아이템의 자동 최소 크기(콘텐츠 높이)를 풀어 카드 상한 아래로
+            줄어들 수 있게 한다 — 없으면 목록이 길 때 카드 밖으로 넘친다. */}
+        <div data-testid="character-tracking-picker-scroll" className="-mr-6 min-h-0 overflow-y-auto pr-6">
+          <CharacterTrackingGrid
+            entries={props.entries}
+            trackedOcids={props.trackedOcids}
+            onChange={props.onChange}
+          />
+        </div>
       </>
     )
   }
@@ -108,22 +123,26 @@ export function CharacterTrackingPicker(props: CharacterTrackingPickerProps): Re
   return (
     <div
       data-testid="character-tracking-picker-overlay"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-scrim"
+      // ADR-107 결정 1: 카드 높이의 상한은 화면이 아니라 **안전영역을 뺀 화면**이다. 오버레이가
+      // 인셋 + 1rem 을 비우고(인셋 0인 기기에서도 화면에 붙지 않게), 카드가 max-h-full 로 그 안에
+      // 갇힌다 — vh 로 묶으면 시스템 바가 계산에서 빠져 인셋이 큰 기기일수록 더 침범한다.
+      className="fixed inset-0 z-50 flex items-center justify-center bg-scrim px-4 pt-[calc(1rem+var(--sa-top))] pb-[calc(1rem+var(--sa-bottom))]"
     >
-      <Card className="w-full max-w-sm p-6">
-        <div className="mb-4 space-y-1">
+      <Card className="flex max-h-full w-full max-w-sm flex-col p-6">
+        <div className="mb-4 shrink-0 space-y-1">
           <h2 className="text-lg font-semibold text-text">캐릭터 관리</h2>
           <p className="text-sm text-text-muted">
             체크한 캐릭터만 스케줄러 목록에 표시됩니다. 최소 한 명은 선택해주세요.
           </p>
         </div>
 
-        {/* 상태가 바뀌어도 이 자리의 높이가 고정돼 아래 닫기·저장 버튼이 움직이지 않는다. */}
-        <div className={`flex flex-col ${ROSTER_BODY_MIN_H}`}>
+        {/* 상태가 바뀌어도 이 자리의 높이가 고정돼 아래 닫기·저장 버튼이 움직이지 않는다.
+            남는 높이를 받고 모자라면 줄어드는 것도 이 자리뿐이다(헤더·푸터는 shrink-0). */}
+        <div className={`flex flex-col ${PICKER_BODY_MIN_H}`}>
           <PickerBody {...props} onChange={setSelectedOcids} />
         </div>
 
-        <div className="mt-4 flex justify-end gap-2">
+        <div className="mt-4 flex shrink-0 justify-end gap-2">
           <Button
             variant="text"
             onClick={props.onClose}

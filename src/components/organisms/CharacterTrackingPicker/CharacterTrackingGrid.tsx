@@ -130,8 +130,12 @@ export function CharacterTrackingGrid(props: CharacterTrackingGridProps): React.
 
   // 조회 불가 항목은 정상 후보 아래 별도 섹션으로 내린다([[ADR-068]] 결정 4) — 숨기지 않는 이유는
   // 사용자가 추적을 해제할 자리가 필요하기 때문이다(이슈 #78 A-1).
+  //
+  // 높이 상한도 스크롤도 여기 없다([[ADR-107]] 결정 3) — 스크롤포트는 **쓰는 쪽**이 자기 자리에
+  // 맞게 둔다(모달은 카드 상한에 맞춰 테두리까지, 온보딩은 페이지라 max-h-[70vh]). 인디케이터는
+  // 콘텐츠가 아니라 스크롤포트 위에 그려지므로, 그 상자를 어디에 두느냐가 곧 인디케이터 위치다.
   return (
-    <div className="max-h-[70vh] overflow-y-auto">
+    <div>
       <div className="grid grid-cols-3 gap-2">{sortedEntries.map(card)}</div>
 
       {unavailable.length > 0 && (
