@@ -7,7 +7,8 @@
       "name": "adr-docs",
       "status": "completed",
       "started_at": "2026-08-08T01:37:08+0900",
-      "summary": "ADR-111 신설(TTL 로 건너뛴 진입도 자동 기록 — 게이트를 네트워크/기록 두 축으로 분리, 가드는 기간 동일성) + docs/ADR.md 인덱스 한 줄 · docs/adr/ADR-097.md 결정 6·트레이드오프·검증표에 폐기 대체 표기(본문 보존) · docs/features/boss-profit.md 자동 기록 절 재작성 + 캐시 단계 record-only 행 복원(결정 F) + history 항목 + 관련 ADR 헤더"
+      "summary": "ADR-111 신설(TTL 로 건너뛴 진입도 자동 기록 — 게이트를 네트워크/기록 두 축으로 분리, 가드는 기간 동일성) + docs/ADR.md 인덱스 한 줄 · docs/adr/ADR-097.md 결정 6·트레이드오프·검증표에 폐기 대체 표기(본문 보존) · docs/features/boss-profit.md 자동 기록 절 재작성 + 캐시 단계 record-only 행 복원(결정 F) + history 항목 + 관련 ADR 헤더",
+      "completed_at": "2026-08-08T01:43:36+0900"
     },
     {
       "step": 1,
