@@ -152,7 +152,8 @@
     },
     {
       "dir": "account-probe-gate",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-08-08T06:13:00+0900"
     }
   ]
 }
