@@ -112,6 +112,16 @@ hr {
   border-top: 1px solid var(--border);
 }
 
+/* 가이드 스크린샷은 본문 폭(46rem)보다 훨씬 넓다. 폭에 맞춰 줄이고 테두리로 본문과 구분한다. */
+main img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 1rem 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
 /* 표는 항상 스스로 스크롤한다 — 페이지 본문이 가로로 밀리면 모바일에서 읽을 수 없다. */
 .table-scroll {
   overflow-x: auto;
