@@ -11,7 +11,6 @@ import {
   type PeriodDataState,
   type PeriodQueryOutcome,
 } from '../../lib/boss-profit-period'
-import { getBossPartySize } from '../../storage/boss-party-settings'
 import {
   fillMissingRecordWorlds,
   getBossProfitRecords,
@@ -51,7 +50,8 @@ export type { BossProfitRow } from './rows'
 // 화면이 기존 경로로 계속 import 한다 — 옮긴 것은 구현 위치이지 공개 API 가 아니다.
 export { dropRowKey } from './rows'
 import { withSqliteFallback } from './sqlite-guards'
-import { loadDropsByRowKey, migrateDropsToConfirmedDifficulty } from './drops-loader'
+import { autoRecordRows } from './auto-record'
+import { loadDropsByRowKey } from './drops-loader'
 import { backfillTarget, buildBackfillTargets, canReachPreviousPeriod, loadPreviousPeriodTotal } from './backfill'
 import type { BackfillTarget } from './backfill'
 
@@ -865,71 +865,21 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     )
     const mergedRows = mergeRecordsIntoRows(rows, records ?? [])
 
-    // ADR-014/ADR-019: 기록이 없는 완료 보스는 화면 진입 전에도 즉시 기본 파티원 수로 자동 기록한다.
-    // 기본값은 boss_party_settings(파티 관리) 조회 결과, 없으면 1(솔로)이다.
-    // upsertBossProfitRecord는 단일 공유 SQLite 커넥션에 자체 트랜잭션을 열므로,
-    // Promise.all로 동시 실행하면 트랜잭션이 겹쳐 에러가 난다 — 순차 실행으로 처리한다.
-    // ADR-069 결정 4: 아래 루프에서 완료 행의 드롭 이관에 쓴다(자동 기록과 같은 순회를 쓴다).
+    // ADR-069 결정 4: 완료 행의 드롭 이관에 쓴다(자동 기록과 같은 순회를 쓴다 — auto-record.ts).
     const dropRecordsForMigration =
       records === null
         ? []
         : await withSqliteFallback(getBossDropRecords(ocids, periodKeys), [])
 
-    const autoRecordedRows: BossProfitRow[] = []
-    for (const row of mergedRows) {
-      // 완료 행은 처치 난이도가 확정된 것이다 — 다른 난이도 키에 남은 드롭을 이 난이도로 옮긴다
-      // ([[ADR-069]] 결정 4). 아래 자동 기록 가드보다 조건이 넓다: 가격 미확정이거나 이미 기록된
-      // 조합도 난이도는 확정된 상태다. 낡은 캐시에서 나온 행은 제외한다([[ADR-067]] 결정 7 —
-      // 그 행의 난이도는 지금의 사실이 아니다).
-      if (records !== null && !staleOcids.has(row.ocid) && row.isComplete) {
-        await migrateDropsToConfirmedDifficulty(row, dropRecordsForMigration, now)
-      }
-
-      // 미완료 placeholder(ADR-032)는 절대 자동 기록하지 않는다 — 여기서 기록해버리면
-      // 나중에 실제로 완료됐을 때 "이미 기록이 있다"고 오판해 실제 처치 수익으로 다시
-      // 계산되지 않고 0메소로 영구히 고정된다.
-      // records가 null이면 조회 자체가 실패한 것이라 이 조합에 기록이 있는지 알 수 없다 —
-      // 기본값으로 덮어쓰지 말고 다음 새로고침의 정상 커넥션에 맡긴다([[ADR-050]] 결정 3).
-      // 동기화가 실패한 캐릭터도 제외한다([[ADR-067]] 결정 7) — 그 행은 낡은 캐시에서 나왔고,
-      // 여기서 기록하면 4주 전 처치가 이번 주 수익으로 **영구히** 남는다(기록이 생긴 뒤에는
-      // mergeRecordsIntoRows가 계속 복원하므로 스스로 사라지지 않는다). 캐시 우선 표시 분기가
-      // 같은 이유로 자동 기록을 하지 않는데(위 [[ADR-017]] 주석) 폴백 경로가 그 방어를 우회했다.
-      if (
-        records === null ||
-        staleOcids.has(row.ocid) ||
-        !row.isComplete ||
-        row.partySize !== null ||
-        row.priceMeso === null
-      ) {
-        autoRecordedRows.push(row)
-        continue
-      }
-
-      const configuredPartySize = await withSqliteFallback(
-        getBossPartySize(row.ocid, row.boss, row.difficulty),
-        null,
-      )
-      const partySize = configuredPartySize ?? 1
-      const payoutMeso = Math.floor(row.priceMeso / partySize)
-
-      await withSqliteFallback(
-        upsertBossProfitRecord({
-          ocid: row.ocid,
-          boss: row.boss,
-          difficulty: row.difficulty,
-          cycle: row.cycle,
-          periodKey: row.periodKey,
-          partySize,
-          priceMeso: row.priceMeso,
-          payoutMeso,
-          recordedAt: now.toISOString(),
-          world: row.world,
-        }),
-        undefined,
-      )
-
-      autoRecordedRows.push({ ...row, partySize, payoutMeso })
-    }
+    // 동기화가 실패한 캐릭터의 행은 낡은 캐시에서 나온 것이라 기록·이관에서 제외한다
+    // ([[ADR-067]] 결정 7) — 이 경로가 술어에 넣는 "지금의 사실" 판정이다([[ADR-111]] 결정 1).
+    const autoRecordedRows = await autoRecordRows({
+      rows: mergedRows,
+      records,
+      dropRecords: dropRecordsForMigration,
+      now,
+      isSourceCurrent: (row) => !staleOcids.has(row.ocid),
+    })
 
     // 기록만 있는 조합을 행으로 되살린다(ADR-067 결정 4 — 위 appendRecordOnlyRows 주석).
     const unionRows = appendRecordOnlyRows(autoRecordedRows, records ?? [], characterProfiles, now)

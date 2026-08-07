@@ -13,7 +13,11 @@
     {
       "step": 1,
       "name": "autorecord-extract",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-08T01:43:36+0900",
+      "summary": "src/features/boss-profit/auto-record.ts 신설 — autoRecordRows({rows, records, dropRecords, now, isSourceCurrent}): Promise<BossProfitRow[]> 로 드롭 이관+자동 기록 루프를 순수 이동(동기화 분기는 isSourceCurrent: (row) => !staleOcids.has(row.ocid) 로 호출), __tests__/auto-record.test.ts 9케이스 신설(순차 실행·순서 보존은 Promise.all 변이로 실제 판별 확인), 기존 store.test.ts 무수정 통과",
+      "note_ac": "AC 의 `grep -c upsertBossProfitRecord src/features/boss-profit/store.ts == 0` 은 2 다 — setPartySize(사용자 직접 입력 저장)가 같은 storage 함수를 부르기 때문이고 자동 기록 루프와 무관하다. 옮기면 이 step 의 범위·동작을 벗어나므로 두었다. 루프 고유 심볼(getBossPartySize·migrateDropsToConfirmedDifficulty·autoRecordedRows.push)은 전부 0 이다.",
+      "completed_at": "2026-08-08T01:48:00+0900"
     },
     {
       "step": 2,
