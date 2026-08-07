@@ -19,8 +19,18 @@ vi.mock('../../../lib/world-emblem', () => ({
 const mockedUseAccountProbes = vi.mocked(useAccountProbes)
 const mockedWorldEmblemUrl = vi.mocked(worldEmblemUrl)
 
+// ADR-113 결정 3~5로 훅 반환이 `{ probes, isSettled, progress }` 로 넓어졌다. 이 화면은 아직
+// `probes` 만 읽으므로 나머지는 "프로브가 끝난 뒤"를 뜻하는 값으로 감싸기만 한다 — 대기 렌더링과
+// 그 계약을 뒤집는 테스트(`settle 전에는 목록을 그리지 않는다`)는 다음 단계의 몫이다.
+function settled(probes: ReturnType<typeof useAccountProbes>['probes']): ReturnType<
+  typeof useAccountProbes
+> {
+  const total = accounts.reduce((sum, account) => sum + account.characters.length, 0)
+  return { probes, isSettled: true, progress: { completed: total, total } }
+}
+
 beforeEach(() => {
-  mockedUseAccountProbes.mockReturnValue({})
+  mockedUseAccountProbes.mockReturnValue(settled({}))
   // 매핑된 월드는 URL을, 미매핑 월드('리부트')는 null을 돌려 폴백을 테스트한다.
   mockedWorldEmblemUrl.mockImplementation((world) =>
     world === '리부트' ? null : `/emblems/${world}.png`,
@@ -219,14 +229,16 @@ describe('AccountSelectionList', () => {
   })
 
   it('대표 캐릭터의 초상화 URL이 있으면 이미지를 렌더링한다', () => {
-    mockedUseAccountProbes.mockReturnValue({
-      'da9b2f2-account-hash-1': {
-        representative: accounts[0].characters[0],
-        portraitUrl: 'https://example.com/portrait.png',
-        allUnavailable: false,
-      },
-      '69e3525-account-hash-2': { representative: null, portraitUrl: null, allUnavailable: false },
-    })
+    mockedUseAccountProbes.mockReturnValue(
+      settled({
+        'da9b2f2-account-hash-1': {
+          representative: accounts[0].characters[0],
+          portraitUrl: 'https://example.com/portrait.png',
+          allUnavailable: false,
+        },
+        '69e3525-account-hash-2': { representative: null, portraitUrl: null, allUnavailable: false },
+      }),
+    )
 
     render(
       <AccountSelectionList accounts={accounts} isSubmitting={false} onSelect={vi.fn()} />,
@@ -236,10 +248,12 @@ describe('AccountSelectionList', () => {
   })
 
   it('초상화를 찾지 못한 계정은 "?"로 대체 표시한다', () => {
-    mockedUseAccountProbes.mockReturnValue({
-      'da9b2f2-account-hash-1': { representative: null, portraitUrl: null, allUnavailable: false },
-      '69e3525-account-hash-2': { representative: null, portraitUrl: null, allUnavailable: false },
-    })
+    mockedUseAccountProbes.mockReturnValue(
+      settled({
+        'da9b2f2-account-hash-1': { representative: null, portraitUrl: null, allUnavailable: false },
+        '69e3525-account-hash-2': { representative: null, portraitUrl: null, allUnavailable: false },
+      }),
+    )
 
     render(
       <AccountSelectionList accounts={accounts} isSubmitting={false} onSelect={vi.fn()} />,
@@ -255,14 +269,16 @@ describe('AccountSelectionList', () => {
   // 피커가 빈 목록이 되고 아무 설명이 없었다(이슈 #78).
   describe('전원 조회 불가 계정', () => {
     it('그 계정에만 경고를 붙인다', () => {
-      mockedUseAccountProbes.mockReturnValue({
-        'da9b2f2-account-hash-1': { representative: null, portraitUrl: null, allUnavailable: true },
-        '69e3525-account-hash-2': {
-          representative: accounts[1].characters[0],
-          portraitUrl: null,
-          allUnavailable: false,
-        },
-      })
+      mockedUseAccountProbes.mockReturnValue(
+        settled({
+          'da9b2f2-account-hash-1': { representative: null, portraitUrl: null, allUnavailable: true },
+          '69e3525-account-hash-2': {
+            representative: accounts[1].characters[0],
+            portraitUrl: null,
+            allUnavailable: false,
+          },
+        }),
+      )
 
       render(
         <AccountSelectionList accounts={accounts} isSubmitting={false} onSelect={vi.fn()} />,
@@ -272,7 +288,7 @@ describe('AccountSelectionList', () => {
     })
 
     it('프로브가 끝나기 전에는 경고를 띄우지 않는다 — 모르는 상태를 단정하지 않는다', () => {
-      mockedUseAccountProbes.mockReturnValue({})
+      mockedUseAccountProbes.mockReturnValue(settled({}))
 
       render(
         <AccountSelectionList accounts={accounts} isSubmitting={false} onSelect={vi.fn()} />,
@@ -286,14 +302,16 @@ describe('AccountSelectionList', () => {
     it('그 계정은 고를 수 없다', async () => {
       const user = userEvent.setup()
       const onSelect = vi.fn()
-      mockedUseAccountProbes.mockReturnValue({
-        'da9b2f2-account-hash-1': { representative: null, portraitUrl: null, allUnavailable: true },
-        '69e3525-account-hash-2': {
-          representative: accounts[1].characters[0],
-          portraitUrl: null,
-          allUnavailable: false,
-        },
-      })
+      mockedUseAccountProbes.mockReturnValue(
+        settled({
+          'da9b2f2-account-hash-1': { representative: null, portraitUrl: null, allUnavailable: true },
+          '69e3525-account-hash-2': {
+            representative: accounts[1].characters[0],
+            portraitUrl: null,
+            allUnavailable: false,
+          },
+        }),
+      )
 
       render(<AccountSelectionList accounts={accounts} isSubmitting={false} onSelect={onSelect} />)
 
@@ -306,9 +324,11 @@ describe('AccountSelectionList', () => {
 
     it('계정이 1개라 초기 하이라이트된 항목이 조회 불가면 "계속하기"도 막는다', () => {
       const single = [accounts[0]]
-      mockedUseAccountProbes.mockReturnValue({
-        'da9b2f2-account-hash-1': { representative: null, portraitUrl: null, allUnavailable: true },
-      })
+      mockedUseAccountProbes.mockReturnValue(
+        settled({
+          'da9b2f2-account-hash-1': { representative: null, portraitUrl: null, allUnavailable: true },
+        }),
+      )
 
       render(<AccountSelectionList accounts={single} isSubmitting={false} onSelect={vi.fn()} />)
 
@@ -316,7 +336,7 @@ describe('AccountSelectionList', () => {
     })
 
     it('프로브가 도착하기 전에는 고를 수 있다 — 모르는 것을 단정하지 않는다', () => {
-      mockedUseAccountProbes.mockReturnValue({})
+      mockedUseAccountProbes.mockReturnValue(settled({}))
 
       render(<AccountSelectionList accounts={accounts} isSubmitting={false} onSelect={vi.fn()} />)
 
@@ -328,9 +348,11 @@ describe('AccountSelectionList', () => {
   // 확인한 "조회 가능한 캐릭터 중 최고 레벨"로 교체된다.
   it('프로브가 고른 대표 캐릭터로 표기를 교체한다', () => {
     const second = accounts[1].characters[1] ?? accounts[1].characters[0]
-    mockedUseAccountProbes.mockReturnValue({
-      '69e3525-account-hash-2': { representative: second, portraitUrl: null, allUnavailable: false },
-    })
+    mockedUseAccountProbes.mockReturnValue(
+      settled({
+        '69e3525-account-hash-2': { representative: second, portraitUrl: null, allUnavailable: false },
+      }),
+    )
 
     render(
       <AccountSelectionList accounts={accounts} isSubmitting={false} onSelect={vi.fn()} />,

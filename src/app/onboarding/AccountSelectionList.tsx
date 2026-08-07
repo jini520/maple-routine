@@ -39,7 +39,7 @@ export function AccountSelectionList(props: AccountSelectionListProps): React.JS
   const [highlightedAccountId, setHighlightedAccountId] = useState<string | null>(
     props.accounts.length === 1 ? props.accounts[0].accountId : null,
   )
-  const probes = useAccountProbes(props.accounts)
+  const { probes } = useAccountProbes(props.accounts)
 
   return (
     <div className="w-full space-y-4">

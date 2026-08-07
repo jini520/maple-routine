@@ -29,7 +29,10 @@
     {
       "step": 3,
       "name": "probe-cache-progress",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-08T05:46:21+0900",
+      "summary": "`use-account-probes` 를 ① step 1 헬퍼 경유(원형 `fetchCharacterBasic` 0건 — 각 캐릭터가 **속한 계정**의 `accountId` 로 캐시에 쓴다, ADR-113 결정 2) ② 반환을 `AccountProbesState { probes, isSettled, progress }` 로 확장. `AccountProbe` 필드 3개 무변경. settle 판정은 `try/finally` 하나로 모아 세 경로(키 없음 조기 return·계정 0개·개별 실패)가 전부 `isSettled: true` 로 끝난다(결정 4). `now` 는 `load()` 시작 1회를 전 계정이 공유, `completed` 는 캐릭터 단위 함수형 증가, `total` 은 state 가 아니라 `accounts` 파생이라 첫 렌더부터 정확. **상태 초기화는 effect 가 아니라 렌더 시점에** — `ProbeRun{source,...}` 한 덩어리를 `run.source === accounts` 로 갈라 이전 세대를 버린다(effect 는 페인트 뒤에 돌아 한 프레임 동안 옛 probes+`isSettled:true` 가 새 목록에 얹히는데, 그게 결정 3 이 없애려는 장면이다 · 덤으로 `react-hooks/set-state-in-effect` 도 안 건드린다). 자격 스윕·`markScheduleProbeUnavailable` 미도입(결정 6 및 범위 밖), 실패 처리 3분기 보존(결정 7). 주석 정정: \"캐시에 쓰지 않는다\"(전역 인덱스 시절 우려) → ADR-086 결정 9 계정별 인덱스로 누출이 구조적으로 불가능해져 쓴다. 호출부는 `AccountSelectionList.tsx:42` 구조 분해 한 줄만(대기 UI·단언 뒤집기는 step 4 — `grep ProgressBar` 0건), 그 테스트는 `settled()` 헬퍼로 목 반환 **형태만** 감쌌고 단언 0줄 변경. 훅 테스트 5 → 13케이스(캐시 쓰기 계정별 분리·TTL 안 네트워크 0회·키 없음 settle·계정 0개 0/0·total 합·실패도 completed 증가·accounts 교체 시 재대기). 판별력 확인: `finally` 를 지워 성공 경로에서만 settle 하게 바꾸면 `API 키가 없어 프로브가 시작조차 못 해도 대기가 끝난다` **1건만** 실패한다(계정 0개·전부 실패는 성공 경로를 지나므로 통과) — 무한 로딩의 유일한 미방어 경로를 그 케이스가 정확히 겨눈다는 뜻이고 되돌려 13건 전부 통과 확인. build 성공·test 2,545개 통과/172파일(2,537 + 8)·lint 0 errors(17 warnings, baseline 동일).",
+      "completed_at": "2026-08-08T05:52:55+0900"
     },
     {
       "step": 4,
