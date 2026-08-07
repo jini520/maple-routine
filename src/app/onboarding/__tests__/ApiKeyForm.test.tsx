@@ -46,10 +46,30 @@ describe('ApiKeyForm', () => {
     expect(onSubmit).not.toHaveBeenCalled()
   })
 
-  it('openapi.nexon.com 링크를 안내로 제공한다', () => {
+  // ADR-110 후속(이슈 #61): 발급 절차는 안내 사이트가 담당하고 앱은 링크만 준다. 처음 쓰는
+  // 사용자를 넥슨 첫 화면에 떨궈 놓지 않도록 가이드가 1차 경로다.
+  it('API 키 발급 가이드 링크를 1차 경로로 제공한다', () => {
     render(<ApiKeyForm isSubmitting={false} onSubmit={vi.fn()} />)
 
-    const link = screen.getByRole('link')
-    expect(link).toHaveAttribute('href', expect.stringContaining('openapi.nexon.com'))
+    const guide = screen.getByRole('link', { name: 'API 키 발급 방법' })
+    expect(guide).toHaveAttribute('href', 'https://mapleroutine.store/api-key')
+  })
+
+  // 이미 키를 발급받은 사용자에게 7단계 안내를 경유시키지 않는다 — 가이드와 별개의 진입점.
+  it('openapi.nexon.com 바로 가기 링크도 함께 제공한다', () => {
+    render(<ApiKeyForm isSubmitting={false} onSubmit={vi.fn()} />)
+
+    const direct = screen.getByRole('link', { name: 'openapi.nexon.com' })
+    expect(direct).toHaveAttribute('href', 'https://openapi.nexon.com')
+  })
+
+  // 하이브리드 앱이라 외부 브라우저로 나간다 — 설정의 개인정보 처리방침 링크와 같은 패턴.
+  it('외부 링크는 새 탭으로 열고 rel 로 opener 를 끊는다', () => {
+    render(<ApiKeyForm isSubmitting={false} onSubmit={vi.fn()} />)
+
+    for (const link of screen.getAllByRole('link')) {
+      expect(link).toHaveAttribute('target', '_blank')
+      expect(link).toHaveAttribute('rel', 'noopener noreferrer')
+    }
   })
 })
