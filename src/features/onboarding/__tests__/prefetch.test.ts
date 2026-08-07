@@ -7,12 +7,17 @@ const { fetchCharacterBasicMock, fetchSchedulerCharacterStateMock } = vi.hoisted
   fetchSchedulerCharacterStateMock: vi.fn(),
 }))
 
-const { setCachedCharacterBasicMock, setCachedSchedulerStateMock, resolveCharacterEligibilityMock } =
-  vi.hoisted(() => ({
-    setCachedCharacterBasicMock: vi.fn(),
-    setCachedSchedulerStateMock: vi.fn(),
-    resolveCharacterEligibilityMock: vi.fn(),
-  }))
+const {
+  getCachedCharacterBasicMock,
+  setCachedCharacterBasicMock,
+  setCachedSchedulerStateMock,
+  resolveCharacterEligibilityMock,
+} = vi.hoisted(() => ({
+  getCachedCharacterBasicMock: vi.fn(),
+  setCachedCharacterBasicMock: vi.fn(),
+  setCachedSchedulerStateMock: vi.fn(),
+  resolveCharacterEligibilityMock: vi.fn(),
+}))
 
 vi.mock('../../../nexon/character', () => ({
   fetchCharacterBasic: fetchCharacterBasicMock,
@@ -22,7 +27,10 @@ vi.mock('../../../nexon/schedule', () => ({
   fetchSchedulerCharacterState: fetchSchedulerCharacterStateMock,
 }))
 
+// ADR-113 결정 1: 예열이 공유 통과 지점(features/schedule-sync/character-basic-fetch)을 거치므로
+// 이제 캐시 **읽기**도 이 경로를 탄다 — 목이 그 함수를 안 주면 예열이 그 캐릭터를 실패로 삼킨다.
 vi.mock('../../../storage/character-basic-cache', () => ({
+  getCachedCharacterBasic: getCachedCharacterBasicMock,
   setCachedCharacterBasic: setCachedCharacterBasicMock,
 }))
 
@@ -70,6 +78,7 @@ function schedulerState(): SchedulerCharacterState {
 beforeEach(() => {
   // 모듈 수준 플래그라 테스트끼리 샌다(ADR-097 결정 3).
   resetSyncRunStateForTests()
+  getCachedCharacterBasicMock.mockResolvedValue(null)
   setCachedCharacterBasicMock.mockResolvedValue(undefined)
   setCachedSchedulerStateMock.mockResolvedValue(undefined)
   resolveCharacterEligibilityMock.mockResolvedValue('eligible')
@@ -118,6 +127,32 @@ describe('prefetchAccountData', () => {
     )
     const last = onProgress.mock.calls.at(-1)?.[0]
     expect(last).toEqual({ completed: 2, total: 2 })
+  })
+
+  // ADR-113 결정 1: 계정 선택 프로브가 방금 같은 캐릭터를 받아 뒀으면 예열은 다시 받지 않는다.
+  it('5분 TTL 안에 캐시된 캐릭터는 character/basic 네트워크를 타지 않는다 (ADR-113 결정 1)', async () => {
+    const cached = profile({ name: '프로브가받아둠', accessFlag: false })
+    getCachedCharacterBasicMock.mockResolvedValue({
+      profile: cached,
+      cachedAt: new Date(Date.now() - 1_000).toISOString(),
+    })
+    fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState())
+
+    const onProgress = vi.fn()
+    await prefetchAccountData('key-1', ACCOUNT, [character('ocid-1')], onProgress)
+
+    expect(fetchCharacterBasicMock).not.toHaveBeenCalled()
+    expect(setCachedCharacterBasicMock).not.toHaveBeenCalled()
+    // 건너뛴 것은 basic 하나뿐이다 — scheduler 예열도 자격 판정도 그대로 돈다.
+    expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key-1', 'ocid-1')
+    expect(resolveCharacterEligibilityMock).toHaveBeenCalledWith(
+      'key-1',
+      'ocid-1',
+      false,
+      expect.any(Date),
+      schedulerState(),
+    )
+    expect(onProgress.mock.calls.at(-1)?.[0]).toEqual({ completed: 2, total: 2 })
   })
 
   describe('access_flag 게이트 폐기 (ADR-086 결정 3)', () => {

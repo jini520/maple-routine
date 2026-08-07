@@ -147,6 +147,13 @@ function basicProfile(overrides: { name: string; level: number; imageUrl?: strin
 
 const NOW = '2026-07-11T00:00:00.000Z'
 
+// ADR-113 결정 1: character/basic 이 5분 TTL 가드를 통과한다. 이 파일의 캐시 픽스처는 원래
+// "캐시가 있다"만 뜻했고 cachedAt 값은 아무도 읽지 않았는데(ADR-097 이 "쓰이기만 하고 읽는 곳이
+// 없다"고 적은 그 필드다), 이제 읽히므로 값이 곧 정책이 된다. 아래 케이스들은 **네트워크가 나가는**
+// 경로(SWR patch·콜드 스타트 억제·개별 실패)를 검증하므로 만료된 시각으로 심는다 — TTL 안에서
+// 건너뛰는 경로는 별도 케이스가 본다.
+const STALE_CACHED_AT = '2026-07-10T00:00:00.000Z'
+
 beforeEach(async () => {
   vi.useFakeTimers()
   vi.setSystemTime(new Date(NOW))
@@ -989,6 +996,26 @@ describe('syncSchedules', () => {
 
       expect(fetchCharacterBasicMock).not.toHaveBeenCalled()
     })
+
+    // ADR-113 결정 1: 이 편승 갱신도 공유 TTL 가드를 통과한다. ADR-097 결정 1~4 의 호출 조건은
+    // 그대로 서고(동기화 자체는 돈다) basic 만 5분 가드에 걸려 건너뛴다.
+    it('5분 TTL 안에 캐시된 캐릭터는 편승 갱신에서 character/basic 을 부르지 않는다 (ADR-113 결정 1)', async () => {
+      const characters = [character('ocid-1')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+      fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
+      getCachedCharacterBasicMock.mockResolvedValue({
+        profile: basicProfile({ name: '방금받음', level: 293 }),
+        cachedAt: NOW,
+      })
+
+      const results = await syncSchedules(['ocid-1'])
+
+      expect(fetchCharacterBasicMock).not.toHaveBeenCalled()
+      expect(setCachedCharacterBasicMock).not.toHaveBeenCalled()
+      // 스케줄 동기화 자체는 그대로 돈다 — 건너뛴 것은 basic 하나뿐이다.
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key-1', 'ocid-1')
+      expect(results[0].isStale).toBe(false)
+    })
   })
 })
 
@@ -999,7 +1026,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1'])
       getCachedCharacterBasicMock.mockImplementation(async (ocid: string) =>
         ocid === 'ocid-1'
-          ? { profile: basicProfile({ name: '캐싱된캐릭', level: 180 }), cachedAt: '2026-07-11T00:00:00.000Z' }
+          ? { profile: basicProfile({ name: '캐싱된캐릭', level: 180 }), cachedAt: STALE_CACHED_AT }
           : null,
       )
 
@@ -1018,7 +1045,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1', 'ocid-2'])
       getCachedCharacterBasicMock.mockImplementation(async (ocid: string) => ({
         profile: basicProfile({ name: `캐릭-${ocid}`, level: 100 }),
-        cachedAt: '2026-07-11T00:00:00.000Z',
+        cachedAt: STALE_CACHED_AT,
       }))
 
       const onUpdate = vi.fn()
@@ -1034,7 +1061,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1'])
       getCachedCharacterBasicMock.mockResolvedValue({
         profile: { ...basicProfile({ name: '비공개', level: 999 }), accessFlag: false },
-        cachedAt: '2026-07-11T00:00:00.000Z',
+        cachedAt: STALE_CACHED_AT,
       })
 
       const onUpdate = vi.fn()
@@ -1061,7 +1088,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1'])
       getCachedCharacterBasicMock.mockImplementation(async (ocid: string) =>
         ocid === 'ocid-1'
-          ? { profile: basicProfile({ name: '캐싱된캐릭', level: 180 }), cachedAt: '2026-07-11T00:00:00.000Z' }
+          ? { profile: basicProfile({ name: '캐싱된캐릭', level: 180 }), cachedAt: STALE_CACHED_AT }
           : null,
       )
       fetchCharacterBasicMock.mockImplementation(() => new Promise(() => {}))
@@ -1200,7 +1227,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1'])
     getCachedCharacterBasicMock.mockResolvedValue({
       profile: basicProfile({ name: '캐시캐릭', level: 150 }),
-      cachedAt: '2026-07-11T00:00:00.000Z',
+      cachedAt: STALE_CACHED_AT,
     })
     fetchCharacterBasicMock.mockImplementation(() => new Promise(() => {})) // 절대 resolve 안 함
 
@@ -1227,7 +1254,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1'])
     getCachedCharacterBasicMock.mockImplementation(async (ocid: string) =>
       ocid === 'ocid-1'
-        ? { profile: basicProfile({ name: '캐시캐릭', level: 150 }), cachedAt: '2026-07-11T00:00:00.000Z' }
+        ? { profile: basicProfile({ name: '캐시캐릭', level: 150 }), cachedAt: STALE_CACHED_AT }
         : null,
     )
     const resolvers: Array<(profile: ReturnType<typeof basicProfile>) => void> = []
@@ -1354,7 +1381,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
           ...basicProfile({ name: ocid === 'ocid-1' ? '미접속무활동' : '미접속활동', level: 200 }),
           accessFlag: false,
         },
-        cachedAt: '2026-07-11T00:00:00.000Z',
+        cachedAt: STALE_CACHED_AT,
       }))
       fetchCharacterBasicMock.mockImplementation(() => new Promise(() => {}))
 
@@ -1373,10 +1400,10 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1', 'ocid-2'])
     getCachedCharacterBasicMock.mockImplementation(async (ocid: string) =>
       ocid === 'ocid-1'
-        ? { profile: basicProfile({ name: '활성캐릭', level: 150 }), cachedAt: '2026-07-11T00:00:00.000Z' }
+        ? { profile: basicProfile({ name: '활성캐릭', level: 150 }), cachedAt: STALE_CACHED_AT }
         : {
             profile: { ...basicProfile({ name: '비공개', level: 999 }), accessFlag: false },
-            cachedAt: '2026-07-11T00:00:00.000Z',
+            cachedAt: STALE_CACHED_AT,
           },
     )
     fetchCharacterBasicMock.mockImplementation(() => new Promise(() => {}))
@@ -1410,6 +1437,34 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     )
   })
 
+  // ADR-113 결정 1: 온보딩 한 바퀴(프로브 → 예열 → 피커)가 5분 안에 끝나면 피커는 방금 채워진
+  // 캐시를 그대로 쓴다 — 같은 캐릭터로 세 번 나가던 요청이 한 번이 된다.
+  it('5분 TTL 안에 캐시된 캐릭터는 live 루프에서 character/basic 을 부르지 않는다 (ADR-113 결정 1)', async () => {
+    const characters = [character('ocid-1')]
+    fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+    getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1'])
+    getCachedCharacterBasicMock.mockResolvedValue({
+      profile: basicProfile({ name: '방금받음', level: 293 }),
+      cachedAt: NOW,
+    })
+
+    const onUpdate = vi.fn()
+    await getCharacterPickerRoster(onUpdate)
+
+    expect(fetchCharacterBasicMock).not.toHaveBeenCalled()
+    expect(setCachedCharacterBasicMock).not.toHaveBeenCalled()
+    // 목록은 캐시 값으로 그대로 완성된다(+ character/list 가 준 world).
+    expect(onUpdate.mock.calls.at(-1)?.[0]).toEqual([
+      {
+        ocid: 'ocid-1',
+        name: '방금받음',
+        level: 293,
+        imageUrl: basicProfile({ name: '방금받음', level: 293 }).imageUrl,
+        world: '베라',
+      },
+    ])
+  })
+
   it('character/basic 응답이 access_flag: false면 이후 목록에서 제외된다', async () => {
     const characters = [character('ocid-1')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
@@ -1430,7 +1485,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1', 'ocid-2', 'ocid-3'])
     getCachedCharacterBasicMock.mockImplementation(async (ocid: string) => ({
       profile: basicProfile({ name: `캐시-${ocid}`, level: 100 }),
-      cachedAt: '2026-07-11T00:00:00.000Z',
+      cachedAt: STALE_CACHED_AT,
     }))
     const resolvers: Array<(profile: ReturnType<typeof basicProfile>) => void> = []
     fetchCharacterBasicMock.mockImplementation(
@@ -1459,7 +1514,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
     getCachedCharacterBasicMock.mockResolvedValue({
       profile: basicProfile({ name: '캐시캐릭', level: 150 }),
-      cachedAt: '2026-07-11T00:00:00.000Z',
+      cachedAt: STALE_CACHED_AT,
     })
     fetchCharacterBasicMock.mockRejectedValue(new NexonNetworkError('timeout'))
 
@@ -1507,7 +1562,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1', 'ocid-2'])
       getCachedCharacterBasicMock.mockImplementation(async (ocid: string) => ({
         profile: basicProfile({ name: `캐시-${ocid}`, level: 100 }),
-        cachedAt: '2026-07-11T00:00:00.000Z',
+        cachedAt: STALE_CACHED_AT,
       }))
       const resolvers: Array<(profile: ReturnType<typeof basicProfile>) => void> = []
       fetchCharacterBasicMock.mockImplementation(
@@ -1585,7 +1640,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1', 'ocid-2'])
       getCachedCharacterBasicMock.mockImplementation(async () => ({
         profile: { ...basicProfile({ name: '비공개', level: 999 }), accessFlag: false },
-        cachedAt: '2026-07-11T00:00:00.000Z',
+        cachedAt: STALE_CACHED_AT,
       }))
       fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) =>
         ocid === 'ocid-1' ? basicProfile({ name: '이제활성', level: 210 }) : basicProfile({ name: '이제활성2', level: 205 }),

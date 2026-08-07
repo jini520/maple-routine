@@ -1,4 +1,3 @@
-import { fetchCharacterBasic } from '../../nexon/character'
 import { fetchSchedulerCharacterState } from '../../nexon/schedule'
 import { mergeSchedulerState, type MergeOutput } from '../../lib/scheduler-merge'
 import { getBackfillDateKeys } from '../../lib/reset-clock'
@@ -8,7 +7,6 @@ import {
   toProbeObservation,
   type SchedulerSectionPresence,
 } from '../../lib/scheduler-activity'
-import { setCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getCachedSchedulerState, setCachedSchedulerState } from '../../storage/scheduler-cache'
 import {
   getScheduleProbeLedger,
@@ -25,6 +23,7 @@ import type { MapleCharacter, SchedulerCharacterState, SharedProgressEntry } fro
 
 import { toScheduleSyncError } from './errors'
 import type { ScheduleSyncError } from './errors'
+import { fetchCharacterBasicCached } from './character-basic-fetch'
 import { resolveRegisteredCharacters } from './character-roster'
 import { markSyncAttemptedThisRun } from './sync-run-state'
 // 공개 API 는 그대로 둔다 — 옮긴 것은 구현 위치이지 호출부가 알 바가 아니다(ADR-094 결정 7).
@@ -201,8 +200,12 @@ async function fillMissingSections(
 
 // ADR-097 결정 7 (이슈 #139): 스케줄 동기화가 **실제로 도는 회차에** 그 대상 캐릭터의
 // character/basic 을 함께 받아 캐시를 갱신한다. 지금까지 이 갱신의 상시 경로는 피커 하나뿐이라
-// (ADR-015 결정 3) 레벨·외형이 "피커를 마지막으로 연 시점"의 스냅샷으로 굳었다. 별도 TTL 은 두지
-// 않는다 — 이 함수가 불리는 조건(ADR-097 결정 1~4)이 그대로 정책이다.
+// (ADR-015 결정 3) 레벨·외형이 "피커를 마지막으로 연 시점"의 스냅샷으로 굳었다.
+//
+// ADR-113 결정 1 이 그 결정의 "별도 TTL 은 두지 않는다"를 정정했다 — 이제 네 호출부가 공유하는
+// 5분 TTL 가드를 통과한다. **이 함수가 불리는 조건(ADR-097 결정 1~4)은 그대로 서고**, 가드가
+// 하나 더 앞에 붙을 뿐이다: 동기화가 실제로 도는 회차인데 basic 만 5분 가드에 걸려 건너뛰는
+// 구간이 생기고, 그 구간은 최대 5분이며 다음 동기화가 받는다(가드 5분 < 동기화 TTL 10분).
 //
 // 절대 throw 하지 않는다. 실패는 그 캐릭터의 기존 캐시를 그대로 두는 것으로 끝나고 사용자에게
 // 알리지도 않는다 — 부가 작업이라 실패해도 기존 캐시로 화면이 정상 동작한다. syncOneCharacter 의
@@ -216,14 +219,14 @@ async function refreshCharacterBasics(
   accountId: string,
   characters: MapleCharacter[],
 ): Promise<void> {
+  // 라운드 하나가 기준 시각 하나를 공유한다 — 캐릭터마다 새로 읽으면 같은 라운드 안에서 TTL
+  // 판정 기준이 흔들린다.
+  const now = new Date()
+
   await Promise.all(
     characters.map(async (character) => {
       try {
-        const profile = await fetchCharacterBasic(apiKey, character.ocid)
-        await setCachedCharacterBasic(accountId, character.ocid, {
-          profile,
-          cachedAt: new Date().toISOString(),
-        })
+        await fetchCharacterBasicCached(apiKey, accountId, character.ocid, now)
       } catch {
         // best-effort — 기존 캐시를 그대로 둔다.
       }
