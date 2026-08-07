@@ -401,6 +401,40 @@ describe('BossProfitScreen', () => {
       expect(cardHeader.style.top).toContain('var(--sa-top)')
       expect(cardHeader.style.top).toMatch(/^calc\(.*- var\(--sa-top\)\)$/)
     })
+
+    // ADR-112(이슈 #168): 기간을 이동하면 isPeriodLoading 게이트에 총 수익 헤드라인이 걸려 사라지고
+    // 헤더가 약 91px 짧아진다. spacer 가 그 커밋에서 함께 줄지 않으면 "기록을 불러오고 있어요" 카드가
+    // 한 프레임 아래에 그려졌다가 제자리로 튀어 오른다.
+    //
+    // **이 케이스의 판별력은 vitest.setup.ts 의 ResizeObserver 스텁이 콜백을 절대 부르지 않는다는
+    // 전제에서 나온다** — RO 경로가 죽어 있으므로, 통과한다는 것은 deps 없는 측정 layout effect 가
+    // 실제로 그 일을 했다는 뜻이다(갱신 경로가 RO 하나뿐이던 옛 코드에서는 반드시 실패한다).
+    it('ADR-112: 헤더 높이를 바꾸는 상태 전환에서 spacer 가 같은 커밋에 따라온다', () => {
+      // jsdom 은 레이아웃을 계산하지 않으므로(getBoundingClientRect 가 전부 0) 헤더가 짧아지는
+      // 것을 실측 스텁 값으로 재현한다. 220 → 129 는 헤드라인 블록(약 91px)이 빠지는 폭이다.
+      let stubbedHeaderHeight = 220
+      const rect = vi
+        .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+        .mockImplementation(() => ({ height: stubbedHeaderHeight }) as DOMRect)
+
+      const storeState = { status: 'loaded' as const, trackedOcids: ['ocid-1'], rows: [row()] }
+      mockStore({ ...storeState, isPeriodLoading: false })
+      const { container, rerender } = render(bossProfitScreenTree())
+
+      // spacer 는 fixed 헤더의 형제이자 래퍼의 마지막 자식이다(ADR-100 결정 2).
+      const spacer = (): HTMLElement =>
+        container.querySelector('.fixed.top-0')?.parentElement?.lastElementChild as HTMLElement
+      expect(spacer()).toHaveAttribute('aria-hidden', 'true')
+      expect(spacer().style.height).toBe('220px')
+
+      stubbedHeaderHeight = 129
+      mockStore({ ...storeState, isPeriodLoading: true })
+      rerender(bossProfitScreenTree())
+
+      expect(spacer().style.height).toBe('129px')
+
+      rect.mockRestore()
+    })
   })
 
   // ADR-077: 히스토리는 독립 페이지가 아니라 이 화면 위에 얹히는 **스택 화면**이다. `/profit` 의 중첩
