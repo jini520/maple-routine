@@ -2,10 +2,13 @@
 
 > **범위**: API 키 입력·계정(메이플 ID) 선택·전체 캐릭터 예열. 설정에서의 계정 변경/연결 해제는 [settings.md](./settings.md).
 > **관련 소스**: `app/onboarding/` · `features/onboarding/` · `nexon/character` · `storage/api-key` · `storage/character-basic-cache` · `storage/scheduler-cache` · `AccountSelectionList` · `ApiKeyForm`.
-> **관련 ADR**: [[ADR-007]] [[ADR-016]] [[ADR-015]] [[ADR-006]] [[ADR-051]] [[ADR-053]] [[ADR-086]]. **관련 문서**: [../foundation/nexon-api.md](../foundation/nexon-api.md), [../foundation/architecture.md](../foundation/architecture.md).
+> **관련 ADR**: [[ADR-007]] [[ADR-016]] [[ADR-015]] [[ADR-006]] [[ADR-051]] [[ADR-053]] [[ADR-086]] [[ADR-110]]. **관련 문서**: [../foundation/nexon-api.md](../foundation/nexon-api.md), [../foundation/architecture.md](../foundation/architecture.md), [site.md](./site.md)(가이드 페이지 본문).
 
 ## 정책
-- **키 입력**: `openapi.nexon.com` 링크 + 샘플 이미지 + 설명 문구로 가볍게 안내(앱 내 단계별 위저드 아님). 키는 `storage/` 보안 영역에 저장.
+- **키 입력**: 발급 절차는 **앱 밖 안내 사이트**(`mapleroutine.store/api-key`)가 담당하고 앱은 링크만 준다([[ADR-110]], 앱 내 단계별 위저드 아님 — 스크린샷 7장이 번들에 들어가면 최초 1회 보는 화면 때문에 모든 사용자가 1.2MB를 받고, 넥슨이 화면을 바꿀 때마다 OTA 배포가 필요하다). 키는 `storage/` 보안 영역에 저장.
+  - **`ApiKeyForm` 의 링크는 둘이다**(2026-08-08, 이슈 #61 — 사용자 확정): 1차 경로가 **`API 키 발급 방법`(가이드)**, 그 아래 보조로 **`openapi.nexon.com` 바로 가기**. 처음 쓰는 사용자를 넥슨 첫 화면에 떨궈 놓지 않는 것이 1차 경로를 가이드로 두는 이유고, 이미 발급받은 사용자에게 7단계 안내를 거쳐 가게 하지 않는 것이 바로 가기를 남기는 이유다. 가이드 1단계가 `openapi.nexon.com` 링크를 이미 품고 있어 **중복이 아니라 서로 다른 두 진입점**이다.
+  - **외부 브라우저로 이탈해도 잃는 게 없다** — 두 링크 모두 `target="_blank"`(하이브리드 앱이라 시스템 브라우저로 나간다, 설정의 개인정보 처리방침 링크와 같은 패턴)이지만, 재개 지점이 저장된 값에서 파생되므로([[ADR-086]] 결정 1, 아래 "단계 재개") 키를 넣기 전에 나갔다 돌아오면 그대로 `awaitingApiKey` 다. 입력 중이던 값은 컴포넌트 로컬 상태라 WebView가 재생성되면 사라지지만, 이 시점에 사용자가 들고 있는 키는 아직 없다.
+  - **설정 화면에는 진입점을 두지 않는다**(2026-08-08 사용자 확정) — 설정에 API 키 재입력 경로 자체가 없어(계정 변경·연결 해제뿐) 가이드 링크만 놓으면 갈 곳 없는 안내가 된다. 키 교체 경로는 별도 과제로 분리한다.
 - **계정 선택**: 키 제출 즉시 `character/list` 호출(별도 검증 엔드포인트 없이 이 호출 자체가 키 검증). **계정 수와 무관하게 항상 "어느 메이플 ID를 쓸지" 선택 화면을 보여준다**([[ADR-051]]) — 계정이 1개여도 건너뛰지 않으며, 사용자가 "계속하기"로 확정해야 예열이 시작된다. 선택은 이후 설정에서 변경 가능. `storage/` 에는 `apiKey` 와 선택 `accountId` 만 저장(캐릭터 목록은 캐싱 안 함).
 - **예열([[ADR-016]])**: 계정 확정 즉시 온보딩을 끝내지 않고, 그 계정 **전체 캐릭터**(추적 대상 무관) 데이터를 진행률 바와 함께 미리 받는다 — 이후 스케줄러·피커 첫 진입 시 로딩 없이 뜨게 하기 위함. `OnboardingStatus` 에 `'prefetching'` 추가, 각 캐릭터에 `character/basic` → `scheduler/character-state` 순서의 독립 파이프라인을 병렬 실행하고 하나 끝날 때마다 즉시 캐시 기록 + 진행률 갱신. 개별 실패는 그 캐릭터만 캐시 없이 넘어가고 전체를 막지 않는다. 전체 완료 시 `'completed'`. 캐릭터 많은 계정은 수 초 걸릴 수 있음(사용자 수용).
   - **예열은 "이번 실행의 동기화"로 친다**([[ADR-097]] 결정 3) — 화면 진입 재조회 게이트는 앱 재시작 후 첫 동기화를 TTL 무시로 강제하는데, 예열이 그 표시를 남기지 않으면 온보딩 직후 첫 화면 진입이 **방금 받은 것을 그대로 다시 받는다**.
