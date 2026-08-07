@@ -303,7 +303,7 @@ style: maskImage/WebkitMaskImage: linear-gradient(to bottom, black, transparent)
 ```
 - **수치**: `PULL_RESISTANCE = 0.5`(감쇠 계수) · `PULL_THRESHOLD_PX = 56`(이 거리를 넘으면 놓았을 때 재조회, 재조회 중 목록이 머무는 위치이기도 하다) · `PULL_MAX_PX = 80`(더 당겨도 여기서 멈춘다) · `PULL_SETTLE_TRANSITION = 'transform 300ms cubic-bezier(0.22, 1, 0.36, 1)'`(정착·복귀 전환, 대상이 `transform` 하나로 못 박혀 있다).
 - **오프셋이 0이면 `transform` 을 걸지 않는다** — `translateY(0px)` 조차 containing block·stacking context를 만들어 `position: sticky` 후손(보스 수익의 중첩 카드 헤더, [[ADR-047]])에 영향을 줄 수 있다. 평상시 DOM은 이 기능 도입 전과 같아야 한다. `transition` 속성은 컨텍스트를 만들지 않으므로 항상 걸어둔다(그래야 복귀 애니메이션이 산다).
-- **마진·높이가 아니라 `transform` 인 이유** — 흐름을 바꾸면 터치 프레임마다 목록이 리플로우되고, 보스 수익 화면은 sticky 헤더 높이를 `ResizeObserver` 로 실측해 중첩 sticky 오프셋에 쓰므로([[ADR-047]] 결정 3) 펼친 카드 헤더가 손가락을 따라 흔들린다. `transform` 은 레이아웃을 유발하지 않아 둘 다 일어나지 않는다.
+- **마진·높이가 아니라 `transform` 인 이유** — 흐름을 바꾸면 터치 프레임마다 목록이 리플로우되고, 보스 수익 화면은 페이지 헤더 높이를 실측해 중첩 sticky 오프셋에 쓰므로([[ADR-047]] 결정 3) 펼친 카드 헤더가 손가락을 따라 흔들린다. `transform` 은 레이아웃을 유발하지 않아 둘 다 일어나지 않는다. **[[ADR-112]] 이후 이 조건이 더 빡빡해졌다** — 실측이 매 커밋 도는 layout effect 라, 흐름·크기를 바꾸는 방식으로 되돌리면 당기는 동안 프레임마다 강제 리플로우가 붙는다.
 - **드래그 중에는 전환을 끈다** — 손가락이 붙어 있는데 전환이 걸리면 목록이 늦게 따라와 "끌린다"는 감각이 죽는다. 손을 뗀 뒤(정착·복귀)에만 전환을 건다.
 - **인디케이터 높이와 목록 오프셋은 같은 함수(`resolveContentOffsetPx`)에서 나온다** — 두 벌로 계산하면 인디케이터가 카드 위에 겹치거나 빈 띠가 남는다.
 - **마크 색은 두 구간 모두 `text-primary-ink`** — 문구가 없어져 `text-text-muted` 는 이 자리에서 쓰이지 않는다.
