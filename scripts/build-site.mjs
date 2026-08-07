@@ -6,7 +6,7 @@
 // **개인정보 처리방침은 저장소 루트의 PRIVACY.md 하나가 원본이다.** 웹용 사본을 따로 두면
 // 법적 문서가 두 벌이 되어 서로 다른 내용을 말하게 되므로, 여기서 렌더링해서 쓴다.
 
-import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises'
+import { cp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { marked } from 'marked'
@@ -21,6 +21,7 @@ const DOMAIN = 'mapleroutine.store'
 const PAGES = [
   { out: 'index.html', source: join(SITE, 'index.md') },
   { out: 'support/index.html', source: join(SITE, 'support.md') },
+  { out: 'api-key/index.html', source: join(SITE, 'api-key.md') },
   { out: 'privacy/index.html', source: join(ROOT, 'PRIVACY.md') },
 ]
 
@@ -87,10 +88,11 @@ async function build() {
     console.log(`  ${page.out}  ←  ${page.source.replace(ROOT + '/', '')}`)
   }
 
-  // 정적 자산 복사(현재는 style.css 하나). 마크다운·템플릿은 소스라 내보내지 않는다.
+  // 정적 자산 복사. 마크다운·템플릿은 소스라 내보내지 않는다.
+  // 재귀 복사인 이유는 images/ 때문이다 — readFile/writeFile 은 디렉터리에서 EISDIR 로 죽는다.
   for (const name of await readdir(SITE)) {
     if (name.endsWith('.md') || name === 'template.html') continue
-    await writeFile(join(OUT, name), await readFile(join(SITE, name)))
+    await cp(join(SITE, name), join(OUT, name), { recursive: true })
     console.log(`  ${name}`)
   }
 
