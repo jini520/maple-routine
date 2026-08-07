@@ -7,7 +7,8 @@
       "name": "adr-docs",
       "status": "completed",
       "started_at": "2026-08-08T03:26:33+0900",
-      "summary": "ADR-112 신설(spacer 실측 갱신 경로가 ResizeObserver 하나면 헤더 높이 전환마다 한 프레임 어긋난다 — deps 없는 측정 layout effect + 공용 훅 lib/use-measured-height.ts, 콜백 ref API) + ADR.md 인덱스 한 줄 + boss-profit.md·design-system.md 갱신(두 effect 역할 분담·훅 이름 명시, ADR-100 반영해 '보스 수익은 문서 스크롤' 낡은 문장 history 이동)"
+      "summary": "ADR-112 신설(spacer 실측 갱신 경로가 ResizeObserver 하나면 헤더 높이 전환마다 한 프레임 어긋난다 — deps 없는 측정 layout effect + 공용 훅 lib/use-measured-height.ts, 콜백 ref API) + ADR.md 인덱스 한 줄 + boss-profit.md·design-system.md 갱신(두 effect 역할 분담·훅 이름 명시, ADR-100 반영해 '보스 수익은 문서 스크롤' 낡은 문장 history 이동)",
+      "completed_at": "2026-08-08T03:32:48+0900"
     },
     {
       "step": 1,
