@@ -28,15 +28,21 @@ export function AccountFlowStatus(props: AccountFlowStatusProps): React.JSX.Elem
     case 'idle':
       return null
 
-    // 이 컴포넌트가 만드는 상태들은 모두 같은 카드 스타일(rounded-[14px] bg-surface border p-6)을
-    // 직접 둘러 일관되게 보이도록 한다 — Modal은 이 컴포넌트를 card=false로 감싸는 것이 전제.
-    // AccountSelectionList는 온보딩 페이지형 개편으로 자체 카드를 잃었으므로(w-full space-y-4만
-    // 남음), selectingAccount 케이스에서도 여기서 카드로 감싸야 배경 없이 뜨지 않는다.
+    // 이 컴포넌트가 만드는 상태들은 모두 같은 카드(Card + p-6)를 직접 둘러 일관되게 보이도록
+    // 한다 — Modal은 이 컴포넌트를 card=false로 감싸는 것이 전제. AccountSelectionList는 온보딩
+    // 페이지형 개편으로 자체 카드를 잃었으므로(w-full space-y-4만 남음), selectingAccount
+    // 케이스에서도 여기서 카드로 감싸야 배경 없이 뜨지 않는다.
+    //
+    // ADR-113 결정 5: verifying(저장된 키로 character/list 재조회) 다음에 오는 것이
+    // selectingAccount 의 프로브 대기(같은 진행률 바)라, 앞 단계가 문구면 마크가 중간에 바뀌어
+    // 사용자가 두 번 기다린 것으로 읽는다. 같은 자리에 같은 프리미티브를 둬 하나의 연속된 로딩으로
+    // 보이게 한다. 문구도 (n/total) 숫자도 붙이지 않는다 — character/list 는 한 번이라 총량이
+    // 없고, 0% 바는 "시작했다"는 사실만 말한다.
     case 'verifying':
       return (
-        <p className="rounded-[14px] bg-surface border border-border p-6 text-sm text-text-muted">
-          캐릭터 목록을 확인하고 있어요...
-        </p>
+        <Card className="p-6">
+          <ProgressBar percent={0} aria={{ now: 0, max: 100 }} />
+        </Card>
       )
 
     case 'selectingAccount':

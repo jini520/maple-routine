@@ -45,7 +45,9 @@
     {
       "step": 5,
       "name": "settings-verifying-ui",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-08T06:00:59+0900",
+      "summary": "설정 계정 변경의 `verifying` 케이스를 문구(`캐릭터 목록을 확인하고 있어요...`)에서 **`Card` + `ProgressBar percent=0`** 로 교체(ADR-113 결정 5) — 뒤따르는 `selectingAccount` 프로브 대기(step 4)와 **같은 프리미티브**라 마크가 안 바뀌어 하나의 연속된 로딩으로 읽힌다. 문구도 `(n/total)` 숫자도 붙이지 않았다 — `character/list` 는 한 번이라 총량이 없고 0% 바는 \"시작했다\"는 사실만 말한다(가짜 진행률 금지). 인라인 카드 클래스를 `Card` atom 으로 통일했고 시각적 동일성은 코드로 확인했다(`Card.tsx:12` 의 `rounded-[14px] border border-border bg-surface` = 옛 인라인 네 토큰, 순서만 다름). `aria={{now:0,max:100}}` 는 `prefetching`·온보딩과 같은 관례. 새 컴포넌트 0개, `prefetching`·`selectingCharacters`·`error`·`AccountSelectionList`·`useAccountProbes` 무변경 — 제품 코드는 `AccountFlowStatus.tsx` 한 파일뿐이고 나머지 2파일은 테스트다. 테스트: `verifying이면 안내 문구를 보여준다` 를 **문구 없이 진행률 바 0%만** 으로 교체(`container.textContent === ''` 로 숫자 없음까지 단언) + 연속성 회귀 가드 신설(`isSettled:false` 목으로 `verifying` → `selectingAccount` rerender 후에도 progressbar 가 계속 있고 `계속하기` 는 없다). 훅 목은 `vi.hoisted` + `beforeEach` 기본값으로 바꿔 케이스별로 덮을 수 있게 했다(단언 0줄 변경). 저장소 전체 grep 으로 `AccountModal.test.tsx` 의 부분 문구 단언(`/확인하고 있어요/`)도 찾아 progressbar 단언으로 갱신 — 이름·의도(`verifying 상태면 진행 상태를 보여준다`)는 유지. 판별력 확인: 옛 `<p>` 로 되돌리면 **정확히 verifying 케이스 3건만** 실패(새 2건 + AccountModal 1건)하고 나머지 8건은 통과 — 되돌려 전부 통과. 확인 절차 3: `docs/features/onboarding.md:134` history 항목이 step 0 에서 이미 해소 사실로 갱신돼 있음을 확인(문서 무변경, step 6 로 넘길 잔여 없음). build 성공·test 2,548개 통과/172파일(2,547 + 1: 신규 2 − 삭제 1)·lint 0 errors(17 warnings, baseline 동일)."
     },
     {
       "step": 6,
