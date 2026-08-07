@@ -1,0 +1,51 @@
+{
+  "project": "메이플 루틴 (Maple Routine)",
+  "phase": "boss-profit-autorecord-gate",
+  "steps": [
+    {
+      "step": 0,
+      "name": "adr-docs",
+      "status": "completed",
+      "started_at": "2026-08-08T01:37:08+0900",
+      "summary": "ADR-111 신설(TTL 로 건너뛴 진입도 자동 기록 — 게이트를 네트워크/기록 두 축으로 분리, 가드는 기간 동일성) + docs/ADR.md 인덱스 한 줄 · docs/adr/ADR-097.md 결정 6·트레이드오프·검증표에 폐기 대체 표기(본문 보존) · docs/features/boss-profit.md 자동 기록 절 재작성 + 캐시 단계 record-only 행 복원(결정 F) + history 항목 + 관련 ADR 헤더",
+      "completed_at": "2026-08-08T01:43:36+0900"
+    },
+    {
+      "step": 1,
+      "name": "autorecord-extract",
+      "status": "completed",
+      "started_at": "2026-08-08T01:43:36+0900",
+      "summary": "src/features/boss-profit/auto-record.ts 신설 — autoRecordRows({rows, records, dropRecords, now, isSourceCurrent}): Promise<BossProfitRow[]> 로 드롭 이관+자동 기록 루프를 순수 이동(동기화 분기는 isSourceCurrent: (row) => !staleOcids.has(row.ocid) 로 호출), __tests__/auto-record.test.ts 9케이스 신설(순차 실행·순서 보존은 Promise.all 변이로 실제 판별 확인), 기존 store.test.ts 무수정 통과",
+      "note_ac": "AC 의 `grep -c upsertBossProfitRecord src/features/boss-profit/store.ts == 0` 은 2 다 — setPartySize(사용자 직접 입력 저장)가 같은 storage 함수를 부르기 때문이고 자동 기록 루프와 무관하다. 옮기면 이 step 의 범위·동작을 벗어나므로 두었다. 루프 고유 심볼(getBossPartySize·migrateDropsToConfirmedDifficulty·autoRecordedRows.push)은 전부 0 이다.",
+      "completed_at": "2026-08-08T01:48:32+0900"
+    },
+    {
+      "step": 2,
+      "name": "cache-autorecord",
+      "status": "completed",
+      "started_at": "2026-08-08T01:48:32+0900",
+      "summary": "store.ts 캐시 우선 표시 단계에서 skipSync 진입만 autoRecordRows 호출 — 판정은 isSourceCurrent = getCurrentBossProfitPeriod(row.cycle, new Date(syncedAt)).periodKey === row.periodKey(syncedAt 없음·파싱 불가는 false), 선행으로 cachedRecords 폴백 [] → null(조회 안 한 경우만 []), 드롭 조회는 skipSync && cachedRecords !== null 일 때만, set 앞·refreshInPlace 앞에서 끝내고 소비처 5곳(latestSyncSnapshot·weeklySubtotals·loadDropsByRowKey·periodState·rows)을 cachedAutoRecordedRows 로 교체. store.test.ts 옛 계약 테스트 1개 삭제 + describe('건너뛴 진입의 자동 기록 (ADR-111)') 8개 신설(전부 변이로 판별 확인). 테스트 2,497개 통과·build·lint clean",
+      "note_verification": "각 새 테스트가 실제로 판별하는지 코드 변이로 확인 — isSourceCurrent를 ()=>true 로 풀면 경계 테스트 2개 실패, row.cycle 을 'monthly' 고정으로 바꾸면 4개 실패, cachedRecords 폴백을 null→[] 로 되돌리면 조회 실패 테스트 실패, set 의 rows 를 cachedMergedRows 로 되돌리면 금액 반영·set 1회 테스트 실패.",
+      "completed_at": "2026-08-08T01:56:26+0900"
+    },
+    {
+      "step": 3,
+      "name": "record-only-rows",
+      "status": "completed",
+      "started_at": "2026-08-08T01:56:26+0900",
+      "summary": "store.ts 캐시 우선 표시 단계에 appendRecordOnlyRows 도입(ADR-111 결정 6) — ① cachedPeriodKeys 를 캐시 행 파생 키 ∪ 현재 주 키 ∪ 현재 달 키로 넓히고 cachedRecords 의 `cachedRows.length > 0` 게이트 제거(행 0인 진입이 곧 복원 대상이라 게이트가 재료를 지웠다, 폴백은 null 유지) ② 프로필 맵을 캐시 행 → 캐시 엔트리에서 생성(CachedCharacterEntry.profile 추가 — 행 0인 캐릭터가 프로필 부재로 건너뛰어지던 것) ③ cachedMergedRows → autoRecordRows → appendRecordOnlyRows → sortRowsByOcidOrder 순서로 정리(복원은 skipSync 무관, 정렬은 마지막 한 번) 하고 소비처 5곳 + previousPeriodTotalMeso 게이트를 최종 행 cachedSortedRows 로 교체. describe('캐시 단계의 기록만 있는 조합 복원 (ADR-111 결정 6)') 6케이스 신설(전부 코드 변이로 판별 확인 — 프로필 맵 되돌리기·기간 키 합집합 제거·복원 제거·정렬 위치·복원/자동기록 순서). 테스트 2,503개 통과·build·lint clean",
+      "note_existing_test": "기존 'getBossProfitRecords가 응답하지 않아도(hang)…' 테스트의 타이머 진행을 5000ms 1회 → 2회로 고쳤다. 계약(조회가 멈춰도 화면이 멈추지 않고 기본값으로 덮어쓰지 않는다)은 그대로이고, 캐시 단계가 캐시 행 0 에서도 조회하게 되면서 withSqliteFallback 창이 캐시·동기화 두 번 **직렬로** 생긴 것이 이유다(캐시가 있는 일반 경로는 전부터 두 창이었다). 고치지 않으면 refreshPromise 가 영영 미해결이라 finally 의 useRealTimers 가 실행되지 않아 뒤따르는 캐시 우선 표시 테스트 5개까지 함께 죽었다.",
+      "completed_at": "2026-08-08T02:09:29+0900"
+    },
+    {
+      "step": 4,
+      "name": "docs-verify",
+      "status": "completed",
+      "started_at": "2026-08-08T02:09:29+0900",
+      "summary": "문서를 구현 상태로 마감 — ADR-111 상태를 '구현 완료, 2026-08-08, 이슈 #160(테스트 2,503개·build·lint 에러 0) · 실기기 미검증'으로 고치고 검증 절을 실제 존재하는 테스트 13행 표(store.test.ts 두 describe 14케이스 · auto-record.test.ts 9케이스 · issue78-repro.test.tsx D-1)로 재작성 + '자동 테스트가 덮지 못하는 자리' 명시(refreshInPlace 분기의 upsert 는 코드 배치로만 담보) + 구현 정정 3건(루프를 auto-record.ts 로 분리 · 결정 6이 딸고 온 것은 넷 · 옛 테스트는 갱신이 아니라 삭제) 추가, docs/ADR.md 인덱스 행 상태 갱신, boss-profit.md 관련 소스에 auto-record.ts 추가 + 공유 루프 항목 신설 + ADR-067 결정 7 문단의 '캐시 분기는 기록 안 함'을 '비-건너뛴 진입의'로 정정, ADR-097 결정 6 검증 표·실사용 항목의 폐기 표기 정밀화(결정 1~5·7·8·정정 1~3 무변경). 이슈 #160 완료 조건 5개 중 4개 충족(회귀 테스트 upsert+payoutMeso · 리셋 경계 넘은 캐시는 미기록 · syncSchedules 0회 · ADR-097 결정 6 과 feature 문서 정정+history 이동), 남은 것은 실기기 1개 — 콜드 스타트 → /content → 수익 탭에서 새로고침 없이 총 수익이 바로 맞게 나오는지",
+      "completed_at": "2026-08-08T02:16:57+0900"
+    }
+  ],
+  "created_at": "2026-08-08T01:37:08+0900",
+  "completed_at": "2026-08-08T02:16:58+0900"
+}
