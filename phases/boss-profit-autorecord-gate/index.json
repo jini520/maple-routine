@@ -22,7 +22,11 @@
     {
       "step": 2,
       "name": "cache-autorecord",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-08T01:48:32+0900",
+      "summary": "store.ts 캐시 우선 표시 단계에서 skipSync 진입만 autoRecordRows 호출 — 판정은 isSourceCurrent = getCurrentBossProfitPeriod(row.cycle, new Date(syncedAt)).periodKey === row.periodKey(syncedAt 없음·파싱 불가는 false), 선행으로 cachedRecords 폴백 [] → null(조회 안 한 경우만 []), 드롭 조회는 skipSync && cachedRecords !== null 일 때만, set 앞·refreshInPlace 앞에서 끝내고 소비처 5곳(latestSyncSnapshot·weeklySubtotals·loadDropsByRowKey·periodState·rows)을 cachedAutoRecordedRows 로 교체. store.test.ts 옛 계약 테스트 1개 삭제 + describe('건너뛴 진입의 자동 기록 (ADR-111)') 8개 신설(전부 변이로 판별 확인). 테스트 2,497개 통과·build·lint clean",
+      "note_verification": "각 새 테스트가 실제로 판별하는지 코드 변이로 확인 — isSourceCurrent를 ()=>true 로 풀면 경계 테스트 2개 실패, row.cycle 을 'monthly' 고정으로 바꾸면 4개 실패, cachedRecords 폴백을 null→[] 로 되돌리면 조회 실패 테스트 실패, set 의 rows 를 cachedMergedRows 로 되돌리면 금액 반영·set 1회 테스트 실패.",
+      "completed_at": "2026-08-08T01:55:14+0900"
     },
     {
       "step": 3,

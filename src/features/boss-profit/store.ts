@@ -653,9 +653,11 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     // ADR-017 결정 1: 캐시 우선 표시 — 재검증(syncSchedules) 전에 마지막으로 성공한
     // 스케줄 캐시가 있으면 완료된 보스만 걸러 화면을 먼저 채운다. 이미 저장된 기록이
     // 있으면 함께 조회해 partySize/payoutMeso도 바로 보여준다(단순 읽기이므로 안전) —
-    // 다만 기록이 없는 조합에 대한 자동 기록(upsert)은 이 단계에서 하지 않는다. 낡은
-    // 캐시를 기준으로 잘못된 파티원 수를 기록해버리는 걸 막기 위해, 자동 기록은 지금처럼
-    // 실제 재검증(syncSchedules) 이후에만 수행한다.
+    // 다만 기록이 없는 조합에 대한 자동 기록(upsert)은 **재검증하는 진입에서는** 이 단계에서
+    // 하지 않는다. 낡은 캐시를 기준으로 잘못된 파티원 수를 기록해버리는 걸 막기 위해, 그
+    // 경로의 자동 기록은 지금처럼 실제 재검증(syncSchedules) 이후에만 수행한다.
+    // ADR-111 결정 1: **재조회를 건너뛰는 진입**(skipSync)은 예외다 — 이 단계가 곧 최종 화면이라
+    // 여기서 기록하지 않으면 화면이 계산되지 않은 채로 선다(아래 autoRecordRows 호출).
     // ADR-097 결정 4: 재조회 게이트의 판정값(syncedAt)도 이 단계에서 함께 모은다 — 이 조회가
     // 이미 추적 캐릭터 전원의 캐시 엔트리를 읽으므로 판정용 저장소 조회가 0회다. **캐릭터 단위**
     // 배열이다: 한 캐릭터가 여러 행을 만들므로 행 배열로 세면 개수가 틀어진다.
@@ -702,9 +704,57 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     )
 
     const cachedPeriodKeys = Array.from(new Set(cachedRows.map((row) => row.periodKey)))
+    // 폴백을 []가 아니라 null로 둬 "조회 실패"와 "기록 없음"을 구분한다 — 아래 자동 기록이
+    // 실패를 "없음"으로 읽으면 사용자가 저장한 파티원 수가 1로 덮인다([[ADR-050]] 결정 3,
+    // [[ADR-111]] 결정 5-④). **조회 자체를 하지 않은 경우는 []다**(실패가 아니라 "조회할 것이 없음").
     const cachedRecords =
-      cachedRows.length > 0 ? await withSqliteFallback(getBossProfitRecords(ocids, cachedPeriodKeys), []) : []
-    const cachedMergedRows = sortRowsByOcidOrder(mergeRecordsIntoRows(cachedRows, cachedRecords), sortedOcids)
+      cachedRows.length > 0
+        ? await withSqliteFallback<BossProfitRecord[] | null>(
+            getBossProfitRecords(ocids, cachedPeriodKeys),
+            null,
+          )
+        : []
+    const cachedMergedRows = sortRowsByOcidOrder(
+      mergeRecordsIntoRows(cachedRows, cachedRecords ?? []),
+      sortedOcids,
+    )
+
+    // ADR-111 결정 2·3: 이 행의 출처 캐시가 **보스 리셋 경계를 넘었는지**만 본다. `buildBossProfitRow`
+    // 가 periodKey를 now로 계산하므로 그 경우에만 지난 기간의 처치가 이번 기간 수익으로 굳는다 —
+    // 한 기간 안에서는 "처치 완료"가 되돌아가지 않아 다른 손해 시나리오가 없다. 판정 기준은 캐시의
+    // syncedAt이다(API 응답의 asOf가 아니다) — row.periodKey를 계산한 now와 **같은 기기 시계**여야
+    // 하고, 게이트(isSyncFresh)가 이미 그 값을 쓰므로 기준이 하나로 남는다.
+    const syncedAtByOcid = new Map(ocids.map((ocid, index) => [ocid, cachedByOcid[index].syncedAt]))
+    const isCachedRowCurrent = (row: BossProfitRow): boolean => {
+      const syncedAt = syncedAtByOcid.get(row.ocid) ?? null
+      if (syncedAt === null) return false
+      const syncedAtDate = new Date(syncedAt)
+      if (Number.isNaN(syncedAtDate.getTime())) return false
+      // cycle로 갈라야 주간 행은 주간 리셋(목요일 00:00), 월간 행은 월간 리셋(1일 00:00)으로 본다 —
+      // 두 주기의 경계 시점이 다르므로 한쪽으로 뭉뚱그리면 반대쪽이 조용히 틀린다.
+      return getCurrentBossProfitPeriod(row.cycle, syncedAtDate).periodKey === row.periodKey
+    }
+
+    // ADR-111 결정 1·4: 건너뛴 진입은 이 캐시 단계가 곧 최종 화면이다 — 건너뛰는 것은 네트워크
+    // 재조회뿐이고, 수익의 "계산"인 자동 기록·드롭 이관은 여기서 한다. 자리는 아래 set()보다 앞이라
+    // 총 수익이 0으로 그려졌다가 점프하지 않고, refreshInPlace 분기보다도 앞이라 두 분기가 함께
+    // 덮인다. 건너뛰지 않는 진입은 종전대로 하지 않는다 — 그 캐시는 낡았을 수 있고 곧 실제 동기화가
+    // 오므로 [[ADR-017]]의 방어가 설 자리는 정확히 거기다(결정 5-②).
+    const cachedDropRecordsForMigration =
+      skipSync && cachedRecords !== null
+        ? await withSqliteFallback(getBossDropRecords(ocids, cachedPeriodKeys), [])
+        : []
+    // loadDropsByRowKey보다 반드시 먼저다 — 이관이 드롭의 난이도 키를 옮기므로, 먼저 읽으면
+    // 이관 전 상태가 화면에 남는다.
+    const cachedAutoRecordedRows = skipSync
+      ? await autoRecordRows({
+          rows: cachedMergedRows,
+          records: cachedRecords,
+          dropRecords: cachedDropRecordsForMigration,
+          now,
+          isSourceCurrent: isCachedRowCurrent,
+        })
+      : cachedMergedRows
 
     // latestSyncSnapshot을 캐시 데이터로 즉시 채워둔다 — 이후 syncSchedules가 실패해도(네트워크
     // 등) 이 스냅샷이 null로 남지 않아야, 그 상태에서 tab 전환/기간 이동(loadPeriod)을 해도
@@ -716,7 +766,11 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
         { characterName: row.characterName, imageUrl: row.imageUrl, world: row.world },
       ]),
     )
-    latestSyncSnapshot = { ocids: [...ocids], rows: cachedMergedRows, characterProfiles: cachedCharacterProfiles }
+    latestSyncSnapshot = {
+      ocids: [...ocids],
+      rows: cachedAutoRecordedRows,
+      characterProfiles: cachedCharacterProfiles,
+    }
 
     // 제자리 새로고침(ADR-076 결정 2)은 캐시 우선 표시의 **화면 반영만** 건너뛴다 — 이 단계가
     // 그리는 것은 현재 기간의 캐시 행이라, 그대로 두면 7월 화면에 8월 데이터가 한 프레임 스친다.
@@ -745,7 +799,13 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
       // syncSchedules 완료 후에야 다시 채워지는 것처럼 보인다.
       const cachedWeeklySubtotals =
         tab === 'monthly'
-          ? await buildWeeklySubtotalsForMonth(sortedOcids, currentPeriodKey, cachedMergedRows, cachedCharacterProfiles, now)
+          ? await buildWeeklySubtotalsForMonth(
+              sortedOcids,
+              currentPeriodKey,
+              cachedAutoRecordedRows,
+              cachedCharacterProfiles,
+              now,
+            )
           : []
 
       // 바로 위 cachedRecords 와 **같은 게이트**를 쓴다 — 캐시 단계가 그릴 것이 없으면 총 수익
@@ -753,7 +813,7 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
       // ADR-097: 건너뛰는 진입에는 이 값을 다시 채울 동기화 완료 단계가 없다 — 캐시 행이 없어도
       // (예: 주간 리셋 직후) 직전 기간 합계를 읽어야 증감 칩이 0으로 굳지 않는다.
       const [cachedDropsByRowKey, previousPeriodTotalMeso] = await Promise.all([
-        loadDropsByRowKey(ocids, cachedMergedRows, now),
+        loadDropsByRowKey(ocids, cachedAutoRecordedRows, now),
         cachedRows.length > 0 || skipSync ? previousPeriodTotalPromise : Promise.resolve(0),
       ])
 
@@ -767,13 +827,13 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
         // 로딩이 한 프레임 번쩍인다. 이 분기가 이미 화면에 필요한 값을 전부 채운다.
         status: skipSync ? 'loaded' : 'loading',
         periodKey: currentPeriodKey,
-        rows: filterRowsForTab(cachedMergedRows, tab, currentPeriodKey),
+        rows: filterRowsForTab(cachedAutoRecordedRows, tab, currentPeriodKey),
         loadedTab: tab,
         loadedPeriodKey: currentPeriodKey,
         dropsByRowKey: cachedDropsByRowKey,
         weeklySubtotals: cachedWeeklySubtotals,
         isPeriodLoading: false,
-        periodState: cachedMergedRows.length > 0 ? 'recorded' : 'confirmedEmpty',
+        periodState: cachedAutoRecordedRows.length > 0 ? 'recorded' : 'confirmedEmpty',
         canGoPreviousPeriod,
         previousPeriodTotalMeso,
         error: null,

@@ -105,6 +105,7 @@ import {
   getWeeklyPeriodKeysInMonth,
   MIN_SCHEDULER_DATE,
 } from '../../../lib/boss-profit-period'
+import { getMostRecentWeeklyResetKst } from '../../../lib/reset-clock'
 import {
   markSyncAttemptedThisRun,
   resetSyncRunStateForTests,
@@ -2552,15 +2553,197 @@ describe('useBossProfitStore', () => {
       expect(useBossProfitStore.getState().lastSyncedAt).toBe(oldest)
     })
 
-    // 결정 6: 낡은 캐시를 기준으로 파티원 수를 영구 기록하지 않는다([[ADR-017]]·[[ADR-067]] 결정 7).
-    it('건너뛴 진입에서는 자동 기록(upsert)을 하지 않는다', async () => {
-      markSyncAttemptedThisRun()
-      getCachedSchedulerStateMock.mockResolvedValue(cachedEntry(minutesAgo(5)))
+    // ADR-111([[ADR-097]] 결정 6 폐기): 건너뛴 진입은 이 캐시 단계가 곧 최종 화면이라, 여기서
+    // 기록하지 않으면 수익이 계산되지 않은 채로 뜬다(이슈 #160 — 거의 모든 콜드 스타트가 그 경로다).
+    // 건너뛰는 것은 **네트워크 재조회**뿐이고, 안전 가드는 캐시의 나이가 아니라 **기간 동일성**이다.
+    describe('건너뛴 진입의 자동 기록 (ADR-111)', () => {
+      it('기록이 없는 완료 행을 upsert 하고 그 금액이 화면 rows 에 함께 반영된다', async () => {
+        markSyncAttemptedThisRun()
+        getCachedSchedulerStateMock.mockResolvedValue(cachedEntry(minutesAgo(5)))
 
-      await useBossProfitStore.getState().refresh(['ocid-1'], { auto: true })
+        await useBossProfitStore.getState().refresh(['ocid-1'], { auto: true })
 
-      expect(upsertBossProfitRecordMock).not.toHaveBeenCalled()
-      expect(getBossPartySizeMock).not.toHaveBeenCalled()
+        // 기본 파티원 수는 boss_party_settings 조회값(없으면 1) — 캐시가 아니라 그 자리에서 읽는다([[ADR-019]]).
+        expect(getBossPartySizeMock).toHaveBeenCalledWith('ocid-1', '자쿰', '카오스')
+        expect(upsertBossProfitRecordMock).toHaveBeenCalledWith(
+          expect.objectContaining({
+            ocid: 'ocid-1',
+            boss: '자쿰',
+            difficulty: '카오스',
+            cycle: 'weekly',
+            partySize: 1,
+            priceMeso: 8080000,
+            payoutMeso: 8080000,
+          }),
+        )
+        // 기록만 남기고 화면에 안 흘리면 총 수익이 0으로 그려졌다가 점프한다(결정 4) — 둘 다 본다.
+        const state = useBossProfitStore.getState()
+        expect(state.status).toBe('loaded')
+        expect(state.rows).toHaveLength(1)
+        expect(state.rows[0].partySize).toBe(1)
+        expect(state.rows[0].payoutMeso).toBe(8080000)
+      })
+
+      // 결정 5-①: 이 ADR은 네트워크 정책을 하나도 바꾸지 않는다([[ADR-097]] 결정 1~4 무변경).
+      it('자동 기록을 해도 syncSchedules 호출 수는 0 그대로다', async () => {
+        markSyncAttemptedThisRun()
+        getCachedSchedulerStateMock.mockResolvedValue(cachedEntry(minutesAgo(5)))
+
+        await useBossProfitStore.getState().refresh(['ocid-1'], { auto: true })
+
+        expect(upsertBossProfitRecordMock).toHaveBeenCalled()
+        expect(syncSchedulesMock).not.toHaveBeenCalled()
+      })
+
+      // 결정 4: 기록을 set 뒤로 미루면 총 수익이 0으로 그려졌다가 점프하고, loading 을 경유해 두 번
+      // set 하면 로딩이 한 프레임 번쩍인다([[ADR-097]] 결정 5 정정 3) — 그래서 set 은 계속 1회다.
+      it('건너뛴 진입의 set 은 여전히 1회이고 그 시점에 이미 금액이 채워져 있다', async () => {
+        markSyncAttemptedThisRun()
+        getCachedSchedulerStateMock.mockResolvedValue(cachedEntry(minutesAgo(5)))
+
+        const payoutsPerCommit: (number | null)[] = []
+        const unsubscribe = useBossProfitStore.subscribe((state) => {
+          payoutsPerCommit.push(state.rows[0]?.payoutMeso ?? null)
+        })
+        try {
+          await useBossProfitStore.getState().refresh(['ocid-1'], { auto: true })
+        } finally {
+          unsubscribe()
+        }
+
+        expect(payoutsPerCommit).toEqual([8080000])
+      })
+
+      // 결정 2: TTL(10분) 안이면서 리셋 경계를 넘는 조합은 리셋 직후 10분 창에서만 성립한다 —
+      // 리셋 시각은 손으로 추측하지 않고 getMostRecentWeeklyResetKst 로 실제 값을 구한다.
+      it('캐시가 주간 리셋 경계를 넘었으면 TTL 안이어도 기록하지 않는다', async () => {
+        vi.useFakeTimers({ toFake: ['Date'] })
+        try {
+          const reset = getMostRecentWeeklyResetKst(new Date('2026-08-07T12:00:00+09:00'))
+          vi.setSystemTime(new Date(reset.getTime() + 5 * 60 * 1000)) // 리셋 5분 뒤
+
+          markSyncAttemptedThisRun()
+          // 리셋 2분 전 캐시 — 나이는 7분(TTL 안)인데 기간 키가 지난 주다.
+          getCachedSchedulerStateMock.mockResolvedValue(
+            cachedEntry(new Date(reset.getTime() - 2 * 60 * 1000).toISOString()),
+          )
+
+          await useBossProfitStore.getState().refresh(['ocid-1'], { auto: true })
+
+          expect(syncSchedulesMock).not.toHaveBeenCalled()
+          expect(upsertBossProfitRecordMock).not.toHaveBeenCalled()
+          expect(getBossPartySizeMock).not.toHaveBeenCalled()
+          // 표시는 그대로다 — 미룬 것은 기록이고 다음 실제 동기화가 맡는다.
+          expect(useBossProfitStore.getState().rows[0].payoutMeso).toBeNull()
+        } finally {
+          vi.useRealTimers()
+        }
+      })
+
+      // 결정 2: 판정은 row.cycle 로 갈린다 — 주간 리셋(목요일 00:00)과 월간 리셋(1일 00:00)은
+      // 시점이 달라, 한쪽으로 뭉뚱그리면 반대쪽이 조용히 틀린다.
+      it('월 경계를 넘은 캐시에서 월간 행만 빠지고 주간 행은 그대로 기록된다', async () => {
+        vi.useFakeTimers({ toFake: ['Date'] })
+        try {
+          // 2026-08-01 00:05 KST — 월은 갈렸지만(7월→8월) 주간 리셋(2026-07-30 목)은 그대로다.
+          vi.setSystemTime(new Date('2026-08-01T00:05:00+09:00'))
+
+          markSyncAttemptedThisRun()
+          const entry = cachedEntry(new Date('2026-07-31T23:58:00+09:00').toISOString())
+          getCachedSchedulerStateMock.mockResolvedValue({
+            ...entry,
+            state: {
+              ...entry.state,
+              bossContents: [
+                bossContent(),
+                bossContent({ name: '검은마법사', difficulty: '하드', cycle: 'monthly' }),
+              ],
+            },
+          })
+
+          await useBossProfitStore.getState().refresh(['ocid-1'], { auto: true })
+
+          expect(syncSchedulesMock).not.toHaveBeenCalled()
+          const recordedBosses = upsertBossProfitRecordMock.mock.calls.map((call) => call[0].boss)
+          expect(recordedBosses).toEqual(['자쿰'])
+        } finally {
+          vi.useRealTimers()
+        }
+      })
+
+      // 결정 5-④: 조회 실패를 "기록 없음"으로 읽으면 사용자가 저장한 파티원 수가 1로 덮인다
+      // ([[ADR-050]] 결정 3). 캐시 단계의 폴백을 [] 에서 null 로 바꾼 것이 이 가드의 선행 조건이다.
+      it('캐시 단계의 기록 조회가 실패하면 기록하지 않는다', async () => {
+        markSyncAttemptedThisRun()
+        getCachedSchedulerStateMock.mockResolvedValue(cachedEntry(minutesAgo(5)))
+        getBossProfitRecordsMock.mockRejectedValue(new Error('SQLite 커넥션 오류'))
+
+        await useBossProfitStore.getState().refresh(['ocid-1'], { auto: true })
+
+        expect(syncSchedulesMock).not.toHaveBeenCalled()
+        expect(upsertBossProfitRecordMock).not.toHaveBeenCalled()
+        expect(getBossPartySizeMock).not.toHaveBeenCalled()
+      })
+
+      // 결정 1: 드롭 이관([[ADR-069]] 결정 4)은 자동 기록과 같은 순회에 있으므로 함께 딸려온다.
+      it('완료 행의 드롭 이관도 함께 일어난다', async () => {
+        const periodKey = getCurrentBossProfitPeriod('weekly', new Date()).periodKey
+        markSyncAttemptedThisRun()
+        const entry = cachedEntry(minutesAgo(5))
+        getCachedSchedulerStateMock.mockResolvedValue({
+          ...entry,
+          state: { ...entry.state, bossContents: [bossContent({ name: '스우', difficulty: '하드' })] },
+        })
+        getBossDropRecordsMock.mockResolvedValue([
+          {
+            ocid: 'ocid-1',
+            boss: '스우',
+            difficulty: '익스트림', // 옛 난이도 키 — 확정 난이도(하드)로 옮겨져야 한다
+            periodKey,
+            dropIndex: 0,
+            category: 'equipment',
+            itemName: '루즈 컨트롤 머신 마크',
+            slot: '얼굴장식',
+            boxOrigin: null,
+            ringLevel: null,
+            quantity: 1,
+          },
+        ])
+
+        await useBossProfitStore.getState().refresh(['ocid-1'], { auto: true })
+
+        expect(syncSchedulesMock).not.toHaveBeenCalled()
+        expect(replaceBossDropRecordsMock).toHaveBeenCalledWith(
+          'ocid-1',
+          '스우',
+          '하드',
+          periodKey,
+          [expect.objectContaining({ itemName: '루즈 컨트롤 머신 마크' })],
+          expect.any(String),
+        )
+        expect(replaceBossDropRecordsMock).toHaveBeenCalledWith(
+          'ocid-1',
+          '스우',
+          '익스트림',
+          periodKey,
+          [],
+          expect.any(String),
+        )
+      })
+
+      // 결정 5-②: 건너뛰지 않는 진입의 캐시는 낡았을 수 있고 곧 실제 동기화가 온다 —
+      // [[ADR-017]]의 방어가 서 있어야 할 곳은 정확히 거기다. 동기화를 실패시켜 두면
+      // 기록이 남았을 때 그것을 만든 것이 캐시 단계임이 확정된다.
+      it('건너뛰지 않는 진입의 캐시 단계는 여전히 기록하지 않는다', async () => {
+        getCachedSchedulerStateMock.mockResolvedValue(cachedEntry(minutesAgo(5)))
+        syncSchedulesMock.mockRejectedValue(new Error('network'))
+
+        await useBossProfitStore.getState().refresh(['ocid-1'])
+
+        expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
+        expect(upsertBossProfitRecordMock).not.toHaveBeenCalled()
+        expect(getBossPartySizeMock).not.toHaveBeenCalled()
+      })
     })
 
     it('앱 재시작 직후(실행 플래그 없음)에는 TTL 안이어도 조회한다', async () => {
