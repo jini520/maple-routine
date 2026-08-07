@@ -1,0 +1,44 @@
+{
+  "project": "메이플 루틴 (Maple Routine)",
+  "phase": "account-probe-gate",
+  "steps": [
+    {
+      "step": 0,
+      "name": "docs-adr",
+      "status": "completed",
+      "started_at": "2026-08-08T05:26:45+0900",
+      "summary": "ADR-113 신설(결정 7개: character/basic 5분 TTL 공유 가드·프로브 결과 캐시 기록·settle 전 목록 미표시·settle 기준 완료 판정·진행률 바 대기(ADR-061 결정 1의 두 번째 예외)·자격 스윕 제외·실패 프로브 자격 유지) + ADR.md 인덱스 한 줄, onboarding.md 계정 선택 프로브 절 갱신·5분 TTL 가드 절 추가·history 3건 이관 및 verifying 문구 항목 해소 표기, settings.md 계정 검증/프로브 대기 절 추가·history 1건. docs/README.md 는 손대지 않았다 — 온보딩 행이 이미 `features/onboarding/` 을 담고 있어 `use-account-probes` 가 덮이고, 신설 예정 모듈(`features/schedule-sync/character-basic-fetch`)은 표에 `features/schedule-sync/` 자체가 없어 파일 하나만 넣으면 표의 입도를 깬다. 제품 코드 변경 0(git diff --stat -- src/ 비어 있음), build·test 2,523개 통과·lint 0 errors(17 warnings, baseline 동일)."
+    },
+    {
+      "step": 1,
+      "name": "basic-fetch-ttl",
+      "status": "pending"
+    },
+    {
+      "step": 2,
+      "name": "callsite-migration",
+      "status": "pending"
+    },
+    {
+      "step": 3,
+      "name": "probe-cache-progress",
+      "status": "pending"
+    },
+    {
+      "step": 4,
+      "name": "selection-wait-ui",
+      "status": "pending"
+    },
+    {
+      "step": 5,
+      "name": "settings-verifying-ui",
+      "status": "pending"
+    },
+    {
+      "step": 6,
+      "name": "docs-verify",
+      "status": "pending"
+    }
+  ],
+  "created_at": "2026-08-08T05:26:45+0900"
+}

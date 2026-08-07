@@ -2,7 +2,7 @@
 
 > **범위**: API 키 관리·계정(메이플 ID) 변경·연결 해제·테마 선택·스케줄 관리 방법(트래킹 모드)·데이터 관리·앱 업데이트·footer 표기. 다른 기능 설명에 흩어져 있던 요구사항을 통합 정리.
 > **관련 소스**: `app/settings/` · `features/settings/`(`changeApiKey`) · `storage/api-key`(`clearAuthConfig`) · `storage/cache-data`(`clearCacheData`/`getCacheDataSizes`) · `features/onboarding`(`RESET`) · `features/tracking-mode`(`copy.ts`) · `AccountFlowStatus` · `SettingsRow` · `TrackingModeModal`/`TrackingModeSelector` · `ThemeModal`/`ThemeSelector` · `CacheDataSection`/`CacheClearConfirm`.
-> **관련 ADR**: [[ADR-007]] [[ADR-008]] [[ADR-009]] [[ADR-004]] [[ADR-035]] [[ADR-026]] [[ADR-027]] [[ADR-050]] [[ADR-051]] [[ADR-052]] [[ADR-058]] [[ADR-086]] [[ADR-104]]. **관련 문서**: [onboarding.md](./onboarding.md), [theme.md](./theme.md), [live-update.md](./live-update.md), [../foundation/nexon-api.md](../foundation/nexon-api.md), [../persistence/lifecycle.md](../persistence/lifecycle.md).
+> **관련 ADR**: [[ADR-007]] [[ADR-008]] [[ADR-009]] [[ADR-004]] [[ADR-035]] [[ADR-026]] [[ADR-027]] [[ADR-050]] [[ADR-051]] [[ADR-052]] [[ADR-058]] [[ADR-086]] [[ADR-104]] [[ADR-113]]. **관련 문서**: [onboarding.md](./onboarding.md), [theme.md](./theme.md), [live-update.md](./live-update.md), [../foundation/nexon-api.md](../foundation/nexon-api.md), [../persistence/lifecycle.md](../persistence/lifecycle.md).
 
 ## 정책
 진입 경로는 **하단 탭바 4번째 탭**(별도 헤더 아이콘 아님, 확정 2026-07-12).
@@ -15,6 +15,12 @@
 - 전에는 `selectedAccountId` 만 갱신하고 `trackedCharacters` 는 이전 계정 ocid 를 그대로 들고 있었다. 거기에 피커의 stub 단계가 계정 구분 없는 인덱스를 읽어(결정 9) **계정은 바뀌었는데 이전 계정 캐릭터가 보이는** 상태가 만들어졌다.
 - 예열·로스터는 저장된 `selectedAccountId` 가 아니라 **후보 계정 id 를 인자로** 받는다(`resolveRegisteredCharacters(accountIdOverride?)`). 커밋 전 구간에 예열이 쓴 캐시는 **후보 계정의 인덱스**로 들어가므로 이전 계정 화면을 오염시키지 않고, 나중에 실제로 그 계정으로 전환하면 따뜻한 캐시로 재사용된다.
 - **같은 계정을 다시 고르면** 아무 쓰기 없이 닫는다(추적 목록 보존).
+
+#### 계정 검증·프로브 대기는 진행률 바 하나로 이어진다 ([[ADR-113]] 결정 3·5, 2026-08-08, 이슈 #163)
+`AccountFlowStatus` 는 온보딩과 **같은 `AccountSelectionList`** 를 쓰므로, "전수 프로브가 settle 할 때까지 목록을 그리지 않는다"([[ADR-113]] 결정 3)가 계정 변경 경로에도 그대로 적용된다 — 상세는 [onboarding.md](./onboarding.md) "계정 선택 프로브".
+- 그래서 이 모달에는 **연달아 오는 대기가 둘**이다: `verifying`(저장된 키로 `character/list` 재조회) → `selectingAccount` 진입 직후의 프로브 대기.
+- **`verifying` 단계는 문구가 아니라 진행률 바 0% 다.** 전에는 "캐릭터 목록을 확인하고 있어요..." 텍스트 한 줄이었다. 뒤따르는 프로브 대기가 진행률 바인데 앞 단계가 텍스트면 **마크가 중간에 바뀌어 사용자가 두 번 기다린 것으로 읽는다** — 같은 자리에 같은 프리미티브를 두어 **하나의 연속된 로딩**으로 보이게 한다. `character/list` 는 총량을 미리 알 수 없어 0% 로 세워 둔다(그 구간이 진행을 표현하지 않는 것은 사실 그대로다).
+- 예열(`prefetching`) 단계의 진행률 바는 그대로다 — 세 대기가 모두 같은 `ProgressBar` 프리미티브([[ADR-061]] 결정 6)를 쓰게 된다.
 - **연결 해제(로그아웃)**: `storage/api-key.ts` 의 `clearAuthConfig()` + `features/onboarding` 의 `RESET` 이벤트를 재사용해 온보딩 화면으로 복귀(신규 로직 없이 기존 두 조각 연결). 키 무효화 복구 경로도 이것(재온보딩).
 - **데이터 관리(캐시 데이터 삭제)**: 지울 데이터를 **2그룹 중 선택**해서 지운다([[ADR-058]]) — "일반 데이터"(동기화 캐시·추적 목록·수동 추적 항목·공유 진행 원장·파티 설정)와 "보스 수익·드롭 기록"(복구 불가). 인증·사용자 설정 5개(`KEEP_KEYS`)는 어떤 선택에서도 보존되므로 이 기능으로 온보딩으로 돌아가지 않는다 — 연결 해제는 별도. 범위의 정확한 정의와 그룹 경계의 근거는 [../persistence/lifecycle.md](../persistence/lifecycle.md).
 - **테마 선택**: 등록된 테마 중 선택 → 즉시 반영. 목록은 카테고리 섹션(기본·직업·보스) + 2열 프리뷰 타일이고 위에 라이트·다크 필터 칩이 붙는다([[ADR-104]]). **고른다고 모달이 닫히지는 않는다** — 모달 자신이 선택 테마 색으로 그려지므로 그 자리에서 갈아입혀 보게 두고, 닫기는 "완료" 버튼과 오버레이 탭이 맡는다([[ADR-104]] 결정 7). 상세 [theme.md](./theme.md).
@@ -79,6 +85,7 @@
 - ~~테마 대표 컬러 점(`ThemeSwatchDots`) — `primary`/`secondary`/`third` 를 `h-4 w-4 rounded-full` 로 겹쳐(`-space-x-1`) 설정 행 배지와 모달 선택지 **양쪽에** 재사용~~ → 모달은 프리뷰 타일이 대신하고 설정 행에서는 색 표식을 **없앤다**. 사용처가 0이 되어 컴포넌트·테스트째 삭제([[ADR-104]] 결정 5, 2026-08-06).
 - ~~트래킹 모드 옵션은 탭하는 순간 `setMode` 가 실행되고(확인 단계 없음), 적용 중에는 본문 하단에 `MapleSpinner size=18` + "적용하고 있어요"를 인라인으로 띄운다. 같은 모드 재선택은 즉시 닫힘~~ → 선택 → `취소`/`적용` 2단계, 대기는 적용 버튼 안 16px + "적용 중", 같은 모드면 적용 비활성([[ADR-035]] 결정 23, 2026-08-03).
 - ~~트래킹 모드 옵션은 제목 1줄 + 긴 설명 문단 2~3문장(자동 91자·수동 84자)뿐이고, 옵션·CTA 모두 기존 선택 카드 클래스를 그대로 쓴다(신규 스타일 금지)~~ → 카피를 `title`/`description`/`caution` 세 필드로 쪼개고 카드 **안쪽**에 아이콘·정보 톤 주의 박스를 둔다([[ADR-035]] 결정 22, 2026-08-03, 이슈 #59). 바깥 카드 클래스 공유는 유지.
+- ~~계정 변경 모달의 `verifying` 단계는 "캐릭터 목록을 확인하고 있어요..." 문구 한 줄이다~~ → 진행률 바 0%([[ADR-113]] 결정 5, 2026-08-08). 뒤따르는 프로브 대기와 같은 마크를 써 하나의 연속된 로딩으로 읽히게 한다.
 - ~~계정 변경은 `accountId` 만 즉시 갱신하고 추적 목록은 그대로 둔다~~ → 캐릭터 재선택까지 커밋 보류, 저장 시점에 두 쓰기를 함께([[ADR-086]] 결정 6, 2026-08-03).
 - ~~"API 키 재입력" 행/모달(`ApiKeyModal`)~~ → 제거(2026-07-25). 키 무효화 복구는 "연결 해제" 후 재온보딩. [[ADR-008]] 재입력 유도 배너는 미구현 보류(설정 store `changeApiKey` 로직은 되살릴 여지로 남겨 둠).
 - ~~"트래킹 모드" 행/모달 제목~~ → "스케줄 관리 방법"으로 개명(2026-07-25, 내부 이름은 유지).
