@@ -144,6 +144,10 @@
       "dir": "boss-profit-autorecord-gate",
       "status": "completed",
       "completed_at": "2026-08-08T02:16:58+0900"
+    },
+    {
+      "dir": "header-spacer-sync",
+      "status": "pending"
     }
   ]
 }

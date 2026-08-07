@@ -238,13 +238,13 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
 활성/비활성 색 차이만으로는 저채도 팔레트에서 약해 배경 pill 필수(굵기 차이만으로 대체 금지). 기능 전용 변형(솔로/파티 필터·보스 수익 네비게이터)은 각 feature 문서.
 
 ### 스크롤 영역 — 2026-07-13 · 헤더는 `fixed` ([[ADR-098]]) · **스크롤은 화면이 소유** ([[ADR-099]], 2026-08-06)
-컨텐츠/보스 스케줄러는 제목~탭(보스는 필터까지)을 상단 고정, 그 아래 목록만 스크롤. **스케줄러 계열 4화면(컨텐츠·컨텐츠 관리·보스·보스 관리)은 문서가 아니라 자기 스크롤 컨테이너를 스크롤한다**([[ADR-099]], 공용 셸 `components/templates/ScreenScroll`). 헤더는 공용 셸 `PageHeader`([[ADR-094]])가 `fixed` + 실측 spacer 로 낸다. 보스 수익은 아직 문서 스크롤이다(전환 범위 밖).
+컨텐츠/보스 스케줄러는 제목~탭(보스는 필터까지)을 상단 고정, 그 아래 목록만 스크롤. **스케줄러 계열 4화면(컨텐츠·컨텐츠 관리·보스·보스 관리)은 문서가 아니라 자기 스크롤 컨테이너를 스크롤한다**([[ADR-099]], 공용 셸 `components/templates/ScreenScroll`). 헤더는 공용 셸 `PageHeader`([[ADR-094]])가 `fixed` + 실측 spacer 로 낸다. **보스 수익도 같은 요소 스크롤러다**([[ADR-100]]) — 다만 `PageHeader` 를 쓰지 않고 자기 헤더를 같은 형태(`fixed` + 실측 spacer)로 낸다(경계 페이드를 페이지 헤더에 두지 않고 헤드라인 실측을 중첩 sticky 레일에 쓰기 때문, [features/boss-profit.md](../features/boss-profit.md)).
 ```
 ScreenScroll: fixed inset-x-0 top-[var(--sa-top)] bottom-[var(--tab-bar-h)] overflow-y-auto overscroll-y-none
   안쪽 래퍼: -mt-[var(--sa-top)] space-y-4          ← 상단 인셋을 되돌려 위치·스크롤 범위 보존
     헤더 래퍼: (PageHeader 가 반환하는 <div>)
       헤더 블록: fixed inset-x-0 top-0 z-10 bg-bg px-4 pt-[calc(1rem+var(--sa-top))] pb-2 (+ 페이드)
-      spacer:   흐름에서 빠진 헤더 자리 — ResizeObserver 실측 높이
+      spacer:   흐름에서 빠진 헤더 자리 — 실측 높이(측정 layout effect 매 커밋 + ResizeObserver)
     목록 블록: px-4 pb-4 space-y-4
 모달·오버레이: ScreenScroll **바깥** (안에 두면 z-50 이 그 스태킹 컨텍스트에 갇혀 z-30 탭바 아래로 간다)
 ```
@@ -253,7 +253,12 @@ ScreenScroll: fixed inset-x-0 top-[var(--sa-top)] bottom-[var(--tab-bar-h)] over
 
 `bg-bg` 는 뒤 카드가 비쳐 보이지 않게, `z-10` 은 목록이 헤더 위로 안 올라오게. 빈 목록 안내는 헤더가 아니라 목록 영역에 둔다. **패딩은 화면 루트가 아니라 헤더/목록 블록에 각각.** 헤더의 `pt-[calc(1rem+var(--sa-top))]` 과 루트의 `-mt-[var(--sa-top)]` 은 짝이다 — 헤더가 노치까지 `bg-bg` 로 덮으면서 목록은 AppShell 의 `pt-[var(--sa-top)]` 과 중복되지 않게 시작한다.
 
-**높이 실측은 `useLayoutEffect` + `ResizeObserver` 로 `PageHeader` 안에서 끝낸다** — `useEffect` 로 재면 첫 프레임에 spacer 가 0이라 목록이 위로 튄다. 화면별로 재게 만들지 말 것([[ADR-094]] 가 없앤 복붙이다).
+**높이 실측은 공용 훅 `lib/use-measured-height.ts` 로 끝낸다**([[ADR-112]] 결정 2 — `PageHeader` 와 보스 수익 헤더가 같이 쓴다). 화면별로 재게 만들지 말 것([[ADR-094]] 가 없앤 복붙이다). **훅 안에는 effect 가 둘이고 역할이 갈린다**:
+
+- **측정 effect — deps 없음.** 매 커밋 페인트 전에 `getBoundingClientRect().height` 를 잰다. `useEffect` 로 재면 첫 프레임에 spacer 가 0이라 목록이 위로 튄다([[ADR-085]] 결정 1). 그리고 **deps 를 붙이면** 헤더 안의 조건부 블록(탭 줄·로딩 카드·경고 줄)이 붙었다 떨어질 때 재실행되지 않아, 헤더는 짧아졌는데 spacer 는 옛 값인 프레임이 한 번 그려진다([[ADR-112]], 보스 수익에서 약 90px).
+- **관찰 effect — `ResizeObserver`.** 렌더 밖에서 높이가 바뀌는 경우(폰트 로드·기기 회전) 담당. **측정 effect 를 대신하지 못한다** — RO 콜백은 페인트 전에 배달되지만 그 안의 `setState` 는 React 이벤트 밖이라 Scheduler 태스크로 넘어가 다음 프레임에 렌더된다([[ADR-102]] 와 같은 성질). 둘은 담당이 다르니 어느 쪽도 지우지 말 것.
+
+훅의 API 는 `RefObject` 가 아니라 **콜백 ref** 다 — 요소를 state 로 잡아야 관찰 effect 가 요소의 등장·소멸을 따라 재부착되고, 그래야 헤더가 조건부로 언마운트되는 화면이 자기 상태를 deps 로 훅에 알려줄 필요가 없다.
 
 **라우트 이동은 스크롤을 먼저 0으로 옮긴다**([[ADR-098]] 결정 1) — 화면을 통째로 바꾸는 이동은 `useNavigate` 가 아니라 `lib/use-screen-navigate.ts` 의 `useScreenNavigate()` 를 쓴다. 스크롤과 이동은 **같은 태스크**여야 한다(`rAF` 로 미루면 그 프레임에 떠나는 화면이 최상단으로 올라간 모습이 보인다 — 실기기 반려). 네 탭이 문서 스크롤 하나를 공유하므로, 그러지 않으면 새 화면이 비-0 오프셋으로 마운트되고 문서 높이가 다르면 클램프 프레임이 생긴다. 예외는 자기 스크롤 컨테이너를 갖는 `/profit/drops` 오버레이뿐이다([[ADR-077]]).
 
@@ -337,6 +342,7 @@ style: maskImage/WebkitMaskImage: linear-gradient(to bottom, black, transparent)
 - 현재 사용: 하단 탭바 `ListChecks`(컨텐츠)/`Swords`(보스)/`ProfitIcon`(수익, 커스텀)/`Settings`(설정), 새로고침 `RefreshCw`, 보스 카드 파티 배지 `Users`, 파티 스테퍼 `Minus`/`Plus`.
 
 ## 폐기된 정책 (history)
+- ~~보스 수익은 아직 문서 스크롤(요소 스크롤러 전환 범위 밖)~~ → 보스 수익도 자기 스크롤 컨테이너를 스크롤한다([[ADR-100]], 2026-08-06). [[ADR-099]] 결정 4가 "범위 밖"으로 미뤄둔 것을 그 ADR 이 폐기했고(스케줄러 4화면이 실기기 검증을 통과한 뒤로는 스크롤 모델이 둘로 남는 비용이 더 컸다), 이 절의 문장만 그때 함께 고쳐지지 않았다.
 - ~~스크롤 영역의 헤더 블록은 `sticky top-0` 이고, 보스 수익만 `fixed`(그 화면에서만 증상이 관측됐으므로)~~ → 스케줄러 4화면도 `fixed` + 실측 spacer([[ADR-098]], 2026-08-06). 탭 이동도 같은 스크롤 클램프를 만들고, `sticky` 헤더는 그 프레임에 화면 밖으로 날아간다. [[ADR-085]] 결정 1의 조건("헤더가 문서 최상단 첫 요소라 보이는 모습이 동일")은 이 화면들에서도 성립한다.
 - ~~모드 전환 대기는 모달 본문 하단 인라인 `MapleSpinner size=18` + "적용하고 있어요"~~ → 적용 버튼 안 16px + "적용 중"([[ADR-035]] 결정 23, 2026-08-03). 18px 은 두 대역(버튼 안 16 / 그 밖 24·32) 어디에도 없던 유일한 예외였고, 그 자리에 확인 버튼이 생기면서 대기를 그릴 자리가 규칙 안으로 들어왔다. 이로써 `~하고 있어요` 예시에서 "적용하고 있어요"가 빠진다.
 - ~~당김 인디케이터는 문구 3상태(`당겨서 새로고침`/`놓으면 새로고침`/`새로고침하고 있어요`) + 채운 단풍잎 회전(진행률 × 180deg·불투명도 0.3~1), 재조회는 스윕 스피너~~ → 문구 없이 단풍잎 로고 링(진행률 드로잉 → 회전)([[ADR-074]], 2026-08-01). 지시문은 손이 이미 하는 동작을 읽어줄 뿐이고, 회전은 "얼마나 남았는지"를 못 말하며, 손을 뗄 때 마크가 바뀌면 한 동작이 둘로 끊겨 보인다.
