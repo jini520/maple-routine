@@ -25,6 +25,7 @@ vi.mock('../../../../lib/theme-registry', async (importOriginal) => {
 afterEach(() => {
   cleanup()
   vi.restoreAllMocks()
+  stubbedHeight = 0
   vi.mocked(getThemeDefinition).mockReset()
   useThemeStore.setState({ theme: '렌' })
 })
@@ -32,18 +33,30 @@ afterEach(() => {
 const SHELL = 'fixed inset-x-0 top-0 z-10 bg-bg px-4 pt-[calc(1rem+var(--sa-top))] pb-2'
 
 // jsdom 은 레이아웃이 없어 실측이 늘 0이다 — 헤더 높이를 가진 것처럼 재게 만든다.
+//
+// 값을 **여러 번 바꿀 수 있어야** 한다(높이가 바뀌는 커밋을 재현하는 케이스가 있다). 그래서 고정
+// 반환값이 아니라 가변 변수를 읽는 mock 을 한 번만 깔고, 이후 호출은 그 변수만 바꾼다 —
+// 호출 형태(`stubHeaderHeight(148)`)는 그대로다.
+let stubbedHeight = 0
+
 function stubHeaderHeight(height: number): void {
-  vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
-    height,
-    width: 0,
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: height,
-    x: 0,
-    y: 0,
-    toJSON: () => ({}),
-  })
+  stubbedHeight = height
+  if (vi.isMockFunction(Element.prototype.getBoundingClientRect)) return
+
+  vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(
+    () =>
+      ({
+        height: stubbedHeight,
+        width: 0,
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: stubbedHeight,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      }) as DOMRect,
+  )
 }
 
 function barOf(container: HTMLElement): Element {
@@ -123,6 +136,35 @@ describe('PageHeader 스페이서', () => {
     const spacer = container.firstElementChild?.lastElementChild
     expect(spacer).toHaveAttribute('aria-hidden', 'true')
     expect(spacer).toHaveStyle({ height: '148px' })
+  })
+
+  // ★ 이슈 #168 회귀 가드([[ADR-112]] 결정 1). 이 셸을 쓰는 네 화면 모두 헤더 children 안에 높이를
+  // 바꾸는 조건부 블록이 있다(탭 줄·셸 승계 로딩 카드·경고 줄) — 갱신 경로가 `ResizeObserver`
+  // 하나뿐이면 헤더는 이미 짧은데 spacer 는 옛 값인 프레임이 한 번 그려진다(RO 콜백 안의
+  // `setState` 는 React 이벤트 밖이라 Scheduler 태스크로 넘어가 다음 프레임에 렌더된다).
+  //
+  // **`vitest.setup.ts` 의 RO 스텁은 콜백을 절대 부르지 않는다** — 그 전제가 이 테스트의 판별력이다.
+  // 통과한다는 것은 RO 가 아니라 측정 layout effect 가 같은 커밋에 그 일을 했다는 뜻이다.
+  it('헤더 내용이 바뀌어 높이가 줄면 spacer 도 같은 커밋에 줄어든다', () => {
+    stubHeaderHeight(220)
+    const { container, rerender } = render(
+      <PageHeader>
+        <h1>보스 스케줄러</h1>
+        <div>일간 / 주간 탭 줄</div>
+      </PageHeader>,
+    )
+    const spacer = container.firstElementChild?.lastElementChild
+    expect(spacer).toHaveStyle({ height: '220px' })
+
+    // 탭 줄이 빠져 헤더가 짧아진 커밋.
+    stubHeaderHeight(129)
+    rerender(
+      <PageHeader>
+        <h1>보스 스케줄러</h1>
+      </PageHeader>,
+    )
+
+    expect(spacer).toHaveStyle({ height: '129px' })
   })
 
   it('실측 전(높이 0)에도 spacer 자리는 존재한다', () => {

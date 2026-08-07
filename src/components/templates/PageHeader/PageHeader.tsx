@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useMeasuredHeight } from '../../../lib/use-measured-height'
 import { ThemeHeaderBackdrop } from '../ThemeHeaderBackdrop/ThemeHeaderBackdrop'
 
 // 화면 상단 고정 헤더 셸(ADR-094 4단계). 스케줄러 계열 4화면이 **글자 하나까지 같은**
@@ -38,28 +38,17 @@ export interface PageHeaderProps {
 }
 
 export function PageHeader(props: PageHeaderProps): React.JSX.Element {
-  const barRef = useRef<HTMLDivElement>(null)
-  const [barHeight, setBarHeight] = useState(0)
-
-  // ADR-098 결정 2: 헤더가 `fixed` 라 흐름에서 빠졌고, 목록은 아래 spacer 의 실측 높이로 자리를
-  // 받는다. 그래서 **페인트 전에** 재야 한다 — `useEffect` 로 재면 첫 프레임에 spacer 가 0이라
-  // 목록이 위로 튄다([[ADR-085]] 결정 1과 같은 이유). 탭·필터·경고 줄이 늘고 주는 화면들이라
-  // `ResizeObserver` 로 계속 따라간다.
-  useLayoutEffect(() => {
-    const element = barRef.current
-    if (element === null) return
-
-    const measure = (): void => {
-      setBarHeight(element.getBoundingClientRect().height)
-    }
-    measure()
-
-    const observer = new ResizeObserver(measure)
-    observer.observe(element)
-    return () => {
-      observer.disconnect()
-    }
-  }, [])
+  // ADR-098 결정 2: 헤더가 `fixed` 라 흐름에서 빠졌고, 목록은 아래 spacer 의 **실측 높이**로 자리를
+  // 받는다. 그래서 spacer 는 헤더가 실제로 차지한 높이와 늘 같아야 한다 — 이 셸을 쓰는 네 화면 모두
+  // `children` 안에 높이를 바꾸는 조건부 블록(탭 줄·셸 승계 로딩 카드·경고 줄)을 갖고 있고, 셸은
+  // 자기 안에 무엇이 들어오는지 모른다.
+  //
+  // 측정 방식과 두 갱신 경로의 분담은 공용 훅 `lib/use-measured-height.ts` 가 갖는다([[ADR-112]]
+  // 결정 2 — 화면별로 재게 만들지 말 것. [[ADR-094]] 가 없앤 복붙이 되살아난다). 실측을
+  // `useEffect` 로 되돌리지 말 것: 첫 프레임에 spacer 가 0이라 목록이 위로 튄다([[ADR-085]] 결정 1).
+  // 갱신 경로를 `ResizeObserver` 하나로 되돌리지도 말 것: 헤더 높이를 바꾸는 커밋마다 spacer 가 옛
+  // 값인 프레임이 한 번 그려진다([[ADR-112]], 이슈 #168).
+  const { ref: barRef, height: barHeight } = useMeasuredHeight<HTMLDivElement>()
 
   // 래퍼 <div> 하나로 [고정 헤더 + spacer] 를 묶는다 — 화면 루트(`space-y-4`)에서 헤더가 차지하던
   // 자리를 그대로 유지하기 위해서다. 프래그먼트로 반환하면 그 유틸리티가 형제인 spacer 에

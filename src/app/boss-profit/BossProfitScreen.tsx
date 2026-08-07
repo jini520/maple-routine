@@ -15,6 +15,7 @@ import { LoadingState } from '../../components/molecules/LoadingState/LoadingSta
 import { ProfitIcon } from '../../components/atoms/ProfitIcon/ProfitIcon'
 import { PullToRefreshIndicator } from '../../components/molecules/PullToRefreshIndicator/PullToRefreshIndicator'
 import { PULL_SETTLE_TRANSITION, resolveContentOffsetPx } from '../../lib/pull-to-refresh'
+import { useMeasuredHeight } from '../../lib/use-measured-height'
 import { usePullToRefresh } from '../../lib/use-pull-to-refresh'
 import { UnavailableNotice } from '../../components/molecules/EmptyState/UnavailableNotice'
 import { usePeriodLoadErrorToast } from '../../features/boss-profit/use-period-error-toast'
@@ -469,12 +470,22 @@ export function BossProfitScreen(): React.JSX.Element {
   // 반대로 빈 띠가 남는다.
   const pullOffset = resolveContentOffsetPx(pullToRefresh.distance, pullToRefresh.phase)
 
-  // 펼친 캐릭터 카드 헤더를 이 페이지 sticky 헤더 "아래"에 붙이기 위한 실측 높이(ADR-047).
-  // 페이지 헤더는 불투명(bg-bg)하고 높이가 상태에 따라 가변이라(탭·기간 라벨·동기화 실패 경고·에러 문구·
-  // 총 수익 헤드라인 유무) 상수로 둘 수 없다. 미지원 환경은 0으로 남아 top-0으로 자연 degrade한다.
-  // 빈 상태에서는 헤더 자체가 렌더되지 않으므로 isEmpty가 풀릴 때 다시 붙인다.
-  const stickyHeaderRef = useRef<HTMLDivElement>(null)
-  const [stickyHeaderHeight, setStickyHeaderHeight] = useState(0)
+  // 페이지 헤더의 실측 높이. 두 곳이 이 값을 쓴다.
+  // - ADR-085 결정 1: 헤더가 fixed 라 흐름에서 빠졌고, 목록은 이 높이의 spacer 로 자리를 받는다.
+  // - ADR-047 결정 3: 펼친 캐릭터 카드 헤더를 이 불투명(bg-bg) 페이지 헤더 "아래"에 붙이는 중첩
+  //   sticky 오프셋이다(stickyTop).
+  //
+  // 상수로 둘 수 없다 — 헤더 높이가 상태에 따라 가변이다(탭·기간 라벨·동기화 실패 경고·에러 문구·
+  // 총 수익 헤드라인 유무). 미지원 환경은 0으로 남아 top-0 으로 자연 degrade 한다.
+  //
+  // 측정 방식과 두 갱신 경로의 분담(매 커밋 측정 layout effect + 렌더 밖 ResizeObserver)은 공용 훅
+  // lib/use-measured-height.ts 가 갖는다([[ADR-112]] 결정 2 — 화면별로 다시 재게 만들지 말 것).
+  // 콜백 ref 라 헤더가 언마운트되는 경로(아래 isEmpty 조기 반환)를 훅이 구조적으로 처리한다 —
+  // 전에는 이 화면이 자기 상태를 deps(`[isEmpty]`)로 알려줘야 했다([[ADR-112]] 결정 3).
+  // 실측을 useEffect 로 되돌리지 말 것: 첫 프레임에 spacer 가 0이라 목록이 위로 튄다([[ADR-085]]
+  // 결정 1). 갱신 경로를 ResizeObserver 하나로 되돌리지도 말 것: 헤더 높이를 바꾸는 커밋마다
+  // spacer 가 옛 값인 프레임이 한 번 그려진다([[ADR-112]], 이슈 #168 — 약 90px).
+  const { ref: pageHeaderRef, height: stickyHeaderHeight } = useMeasuredHeight<HTMLDivElement>()
 
   // ADR-080: 기간·탭이 바뀌면 아코디언 key(`${tab}-${periodKey}-${ocid}`)가 바뀌어 카드가 전부
   // 접히고(#27 펼침 리셋) **문서 높이가 붕괴한다**(실측 1939 → 874). 스크롤을 내린 상태였다면
@@ -506,24 +517,6 @@ export function BossProfitScreen(): React.JSX.Element {
     // ADR-100 결정 4: 스크롤 주체가 컨테이너다. 마운트 시점엔 ref 가 이미 붙어 있다(레이아웃 이펙트).
     scrollRootRef.current?.scrollTo(0, 0)
   }, [tab, periodKey])
-
-  // ADR-085 결정 1: 헤더가 fixed 라 흐름에서 빠졌고, 목록은 이 실측 높이의 spacer 로 자리를 받는다.
-  // 그래서 **페인트 전에** 재야 한다 — useEffect 로 재면 첫 프레임에 spacer 가 0이라 목록이 위로 튄다.
-  useLayoutEffect(() => {
-    const element = stickyHeaderRef.current
-    if (element === null) return
-
-    const measure = (): void => {
-      setStickyHeaderHeight(element.getBoundingClientRect().height)
-    }
-    measure()
-
-    const observer = new ResizeObserver(measure)
-    observer.observe(element)
-    return () => {
-      observer.disconnect()
-    }
-  }, [isEmpty])
 
   // 훅(아래 usePeriodLoadErrorToast)이 이 값을 읽으므로 isEmpty 조기 반환보다 위에서 계산한다 —
   // 순수 함수라 위치를 올려도 결과가 같고, 토스트 조건과 화면 조건이 같은 값을 보게 된다.
@@ -620,7 +613,7 @@ export function BossProfitScreen(): React.JSX.Element {
 
             루트(`space-y-4`) **바깥**에 둔다 — 흐름과 무관한 것을 흐름 컨테이너에 넣으면 그 유틸리티의
             `margin-top` 이 spacer 위에 얹혀 목록이 16px 더 내려간다([[ADR-077]] 결정 3과 같은 이유). */}
-        <div ref={stickyHeaderRef} className="fixed inset-x-0 top-0 z-10 bg-bg px-4 pt-[calc(1rem+var(--sa-top))] pb-2">
+        <div ref={pageHeaderRef} className="fixed inset-x-0 top-0 z-10 bg-bg px-4 pt-[calc(1rem+var(--sa-top))] pb-2">
           {/* ADR-088 결정 5-1: 헤더 자리의 테마 배경 조각(배경 없는 테마에선 렌더 안 됨) */}
           <ThemeHeaderBackdrop />
           <div className="space-y-4">
