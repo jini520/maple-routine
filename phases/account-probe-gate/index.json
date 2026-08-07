@@ -13,7 +13,10 @@
     {
       "step": 1,
       "name": "basic-fetch-ttl",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-08T05:35:26+0900",
+      "summary": "`features/schedule-sync/character-basic-fetch.ts` 신설 — `CHARACTER_BASIC_TTL_MS`(5분) + `fetchCharacterBasicCached(apiKey, accountId, ocid, now)`: 캐시가 TTL 안이면 네트워크 0회로 캐시 profile 반환, 아니면 `fetchCharacterBasic` 후 `setCachedCharacterBasic(accountId, ...)` 에 `cachedAt: now.toISOString()` 로 기록(ADR-113 결정 1). 실패는 캐시 폴백 없이 그대로 throw(호출부의 characterUnavailable·401·429 분기 보존), 파싱 불가·미래 cachedAt 은 만료 취급, 경계 배타적(정확히 5분 = 만료), single-flight 없음. 캐시 접근은 전부 `storage/character-basic-cache` 어댑터 경유(모듈에 `@capacitor/preferences` 직접 접근 0건). 테스트 11케이스 신설(sibling `character-eligibility.test.ts` 관례 그대로 — 인메모리 Preferences 목 + 실제 어댑터, `nexon/character` 는 vi.hoisted 목). 판별력 확인: TTL 가드 분기를 지우면(항상 fetch) `TTL 안이면 네트워크를 부르지 않는다` 1건이 실패하고, 반대로 `isFresh` 를 무력화하면(항상 신선) TTL 밖·경계·파싱 불가·미래 시각·만료 캐시 미덮음 5건이 실패한다 — 양방향 모두 잡힌다. 호출부 4곳·`src/nexon/`·`storage/character-basic-cache.ts` 는 한 줄도 안 고쳤다(step 2·3 몫, `git status --porcelain -- src/` 가 신규 2파일뿐). build 성공·test 2,534개 통과/172파일(2,523 + 11)·lint 0 errors(17 warnings, baseline 동일).",
+      "completed_at": "2026-08-08T05:39:00+0900"
     },
     {
       "step": 2,
