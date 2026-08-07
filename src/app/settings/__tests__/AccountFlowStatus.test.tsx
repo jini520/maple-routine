@@ -6,6 +6,16 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AccountFlowStatus } from '../AccountFlowStatus'
 import type { MapleAccount } from '../../../types'
 
+// ADR-113 결정 3: AccountSelectionList는 프로브가 settle 하기 전에는 목록 대신 진행률만 그린다.
+// 이 파일이 보는 것은 "어느 status에서 무엇이 오는가"와 카드 감싸기이므로 프로브는 끝난 것으로 둔다.
+vi.mock('../../../features/onboarding/use-account-probes', () => ({
+  useAccountProbes: vi.fn(() => ({
+    probes: {},
+    isSettled: true,
+    progress: { completed: 2, total: 2 },
+  })),
+}))
+
 afterEach(() => {
   cleanup()
 })

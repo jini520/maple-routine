@@ -15,6 +15,16 @@ vi.mock('../../../features/schedule-sync/schedule-sync', () => ({
   getCharacterPickerRoster: vi.fn().mockResolvedValue(undefined),
 }))
 
+// ADR-113 결정 3: AccountSelectionList는 프로브가 settle 하기 전에는 목록 대신 진행률만 그린다.
+// 이 파일이 보는 것은 "어느 status에서 어떤 화면이 오는가"이므로 프로브는 끝난 것으로 둔다.
+vi.mock('../../../features/onboarding/use-account-probes', () => ({
+  useAccountProbes: vi.fn(() => ({
+    probes: {},
+    isSettled: true,
+    progress: { completed: 1, total: 1 },
+  })),
+}))
+
 const mockedUseOnboardingStore = vi.mocked(useOnboardingStore)
 
 const account: MapleAccount = {

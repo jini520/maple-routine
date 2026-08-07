@@ -5,6 +5,7 @@ import { useAccountProbes } from '../../features/onboarding/use-account-probes'
 import { worldEmblemUrl } from '../../lib/world-emblem'
 import { useState } from 'react'
 import { Button } from '../../components/atoms/Button/Button'
+import { ProgressBar } from '../../components/atoms/ProgressBar/ProgressBar'
 
 // BossProfitScreen의 CharacterAvatar와 동일한 얼굴 크롭 방식(ADR-015) — character/basic이
 // 반환하는 300x300 전신 이미지에서 얼굴 부분만 보이도록 확대·정렬한다. 아바타 크기가
@@ -39,7 +40,30 @@ export function AccountSelectionList(props: AccountSelectionListProps): React.JS
   const [highlightedAccountId, setHighlightedAccountId] = useState<string | null>(
     props.accounts.length === 1 ? props.accounts[0].accountId : null,
   )
-  const { probes } = useAccountProbes(props.accounts)
+  const { probes, isSettled, progress } = useAccountProbes(props.accounts)
+
+  // ADR-113 결정 3: 전수 프로브가 settle 하기 전에는 목록을 그리지 않는다. 전에는 잠정 대표로
+  // 카드를 먼저 그렸다가 결과가 오면 경고를 붙이고 비활성으로 바꿨는데, 그것은 고를 수 없는 카드를
+  // 고를 수 있는 것처럼 보여주고 나서 뺏는 것이었다. "모르면 단정하지 않는다"를 "모르는 동안은
+  // 보여주지도 않는다"로 적용한다. 안내 문구와 "계속하기"도 함께 감춘다 — 고를 것이 없는데
+  // 고르라고 하는 화면이 된다.
+  if (!isSettled) {
+    // ADR-113 결정 5: 총량(전 계정 캐릭터 수의 합)을 시작 시점에 알 수 있어 진행률을 정확히
+    // 그린다. 설명 문구는 붙이지 않는다 — 이 대기는 사용자가 아무것도 고르기 전의 관문이라
+    // 설명할 대상이 화면에 없고, 직후 설정 `verifying` 단계와 마크가 같아야 하나의 연속된
+    // 로딩으로 읽힌다. 프리미티브는 ADR-061 결정 6의 얇은 바 하나(결정 1의 두 번째 예외 —
+    // 총량을 아는 대기에 불확정 스피너를 두는 것은 아는 것을 안 보여주는 것이다).
+    const percent =
+      progress.total > 0 ? Math.round((progress.completed / progress.total) * 100) : 0
+    return (
+      <div className="w-full space-y-4">
+        <p className="text-sm text-text-muted">
+          ({progress.completed}/{progress.total})
+        </p>
+        <ProgressBar percent={percent} aria={{ now: percent, max: 100 }} />
+      </div>
+    )
+  }
 
   return (
     <div className="w-full space-y-4">
@@ -48,15 +72,19 @@ export function AccountSelectionList(props: AccountSelectionListProps): React.JS
       <ul className="space-y-2">
         {props.accounts.map((account) => {
           const probe = probes[account.accountId]
-          // ADR-068 결정 4: 대표는 **조회 가능한 캐릭터 중** 최고 레벨이다. 프로브가 끝나기 전에는
-          // character/list 기준으로 잠깐 보여주고(빈 카드보다 낫다) 결과가 오면 교체된다.
+          // ADR-068 결정 4: 대표는 **조회 가능한 캐릭터 중** 최고 레벨이다. 목록이 그려지는
+          // 시점에는 이미 프로브 결과가 있으므로 잠정 표시는 없다(ADR-113 결정 3).
+          // `pickRepresentativeCharacter` 는 프로브 실패 시 폴백이다 — API 키를 못 읽어 프로브가
+          // 시작조차 못 한 경우에도 대기는 끝나므로(ADR-113 결정 4) 엔트리가 없을 수 있고,
+          // 그때 카드가 빈 채로 남으면 안 된다.
           const representative = probe?.representative ?? pickRepresentativeCharacter(account.characters)
           const emblemUrl = worldEmblemUrl(representative.world)
           const isHighlighted = account.accountId === highlightedAccountId
           const portraitUrl = probe?.portraitUrl ?? null
           // ADR-086 결정 8: 전원 조회 불가인 계정은 고를 수 없다 — 고르면 후보가 0명이라
           // "최소 1명"(결정 7)을 만족할 수 없어 온보딩이 진행 불가 상태로 멈춘다.
-          // 프로브가 도착하기 전에는 고를 수 있다(모르는 것을 단정하지 않는다).
+          // 목록이 프로브 뒤에 그려지므로 이 판정은 처음부터 확정이다(ADR-113 결정 3) —
+          // 나중에 비활성으로 바뀌는 카드가 없다.
           const isUnselectable = probe?.allUnavailable === true
 
           return (
