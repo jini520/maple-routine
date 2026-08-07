@@ -13,7 +13,11 @@
     {
       "step": 1,
       "name": "measured-height-hook",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-08T03:32:48+0900",
+      "summary": "공용 훅 lib/use-measured-height.ts 신설(ADR-112) — 콜백 ref + effect 둘(측정: deps 없이 매 커밋 getBoundingClientRect().height 를 페인트 전 동기 반영 / 관찰: ResizeObserver 로 렌더 밖 변화), 요소는 useState 로 잡아 등장·소멸을 훅이 처리하고 null 이 돼도 마지막 실측값 유지 + 테스트 6케이스(회귀 가드 포함). 호출부는 손대지 않음",
+      "note_verification": "코드 변이로 각 케이스 판별력 확인: ①측정 effect 에 [element, measure] deps(=ADR-112 기각안 1) → '높이를 바꾸는 리렌더에서 RO 없이 같은 커밋에 따라온다' 실패(vitest.setup 의 RO 스텁이 콜백을 안 부르는 덕에 측정 effect 만 판별된다) ②관찰 effect 삭제 → RO 콜백·disconnect·재부착 3케이스 실패 ③콜백 ref 를 인라인 화살표로 → '요소가 그대로면 관찰을 다시 붙이지 않는다' 실패. 다만 ③은 ref identity 단언이 잡은 것이고 observe 호출 횟수 단언만으로는 안 잡힌다(확인함) — React 가 커밋 중 setElement(null)→setElement(node) 를 한 배치로 합쳐 state 가 제자리로 돌아오면 bailout 해 [element] deps 가 안 바뀐다. 그래서 두 단언을 함께 둔다. lint 는 baseline 과 동일한 0 errors/17 warnings(측정 effect 의 setState 는 react-hooks/set-state-in-effect 를 그 한 줄만 사유와 함께 disable — 페인트 전 동기 반영이 이 훅의 존재 이유다). AC: build/lint/test 2,521개 통과, 변경 파일은 신규 2개뿐",
+      "completed_at": "2026-08-08T03:44:00+0900"
     },
     {
       "step": 2,
