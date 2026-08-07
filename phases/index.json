@@ -147,7 +147,8 @@
     },
     {
       "dir": "header-spacer-sync",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-08-08T04:00:11+0900"
     }
   ]
 }
