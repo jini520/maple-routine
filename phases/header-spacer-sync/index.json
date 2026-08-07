@@ -26,7 +26,7 @@
       "started_at": "2026-08-08T03:42:25+0900",
       "summary": "공용 셸 PageHeader 의 실측을 useMeasuredHeight 훅으로 갈아 끼움(ADR-112) — useRef+useState+ResizeObserver 인라인 21줄이 훅 호출 한 줄로, 갱신 경로가 RO 하나뿐이던 것이 [측정 layout effect(매 커밋) + RO(렌더 밖)] 둘로. DOM·PageHeaderProps·호출부 4화면 무변경(스냅샷 diff 0) + 회귀 가드 테스트 1케이스",
       "note_verification": "판별력 확인: 훅의 측정 effect 에 [element, measure] deps 를 달자(=ADR-112 기각안 1) 새 케이스 '헤더 내용이 바뀌어 높이가 줄면 spacer 도 같은 커밋에 줄어든다' 만 실패(220 → 129 미반영), 나머지 11케이스는 통과 — vitest.setup.ts 의 RO 스텁이 콜백을 절대 부르지 않는 덕에 측정 effect 만 판별된다. stubHeaderHeight 는 호출 형태를 유지한 채 mockReturnValue → 가변 변수를 읽는 mockImplementation 으로(값을 두 번 바꿔야 하는데 재-spyOn 은 의미가 불분명하다), 설치는 vi.isMockFunction 가드로 1회. 작업 3(전체 스위트 파급)은 결과적으로 손댈 테스트가 없었다 — getBoundingClientRect 를 전역 스텁하는 곳은 App.test.tsx '탭바 높이 실측' 하나인데 그 케이스가 단언하는 것은 --tab-bar-h CSS 변수지 spacer 가 아니라, 측정이 매 커밋 도는 것과 무관하다(BossProfitScreen.test.tsx 는 step 3 범위라 제품 코드가 아직 안 바뀜). AC: build/lint(0 errors, 17 warnings — baseline 동일)/test 2,522개 통과(2,521+새 1), 스냅샷 diff 없음, 제품 코드 변경은 PageHeader.tsx 하나",
-      "completed_at": "2026-08-08T03:46:30+0900"
+      "completed_at": "2026-08-08T03:47:29+0900"
     },
     {
       "step": 3,
