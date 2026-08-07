@@ -42,12 +42,13 @@ describe('AccountModal', () => {
     expect(refreshAccounts).toHaveBeenCalledTimes(1)
   })
 
+  // ADR-113 결정 5: verifying 의 진행 상태는 문구가 아니라 진행률 바 0% 다.
   it('verifying 상태면 진행 상태를 보여준다', () => {
     mockStore({ status: 'verifying' })
 
     render(<AccountModal onClose={vi.fn()} />)
 
-    expect(screen.getByText(/확인하고 있어요/)).toBeInTheDocument()
+    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '0')
   })
 
   it('오버레이 클릭 시 onClose가 호출된다', async () => {

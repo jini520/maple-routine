@@ -1,0 +1,65 @@
+{
+  "project": "메이플 루틴 (Maple Routine)",
+  "phase": "account-probe-gate",
+  "steps": [
+    {
+      "step": 0,
+      "name": "docs-adr",
+      "status": "completed",
+      "started_at": "2026-08-08T05:26:45+0900",
+      "summary": "ADR-113 신설(결정 7개: character/basic 5분 TTL 공유 가드·프로브 결과 캐시 기록·settle 전 목록 미표시·settle 기준 완료 판정·진행률 바 대기(ADR-061 결정 1의 두 번째 예외)·자격 스윕 제외·실패 프로브 자격 유지) + ADR.md 인덱스 한 줄, onboarding.md 계정 선택 프로브 절 갱신·5분 TTL 가드 절 추가·history 3건 이관 및 verifying 문구 항목 해소 표기, settings.md 계정 검증/프로브 대기 절 추가·history 1건. docs/README.md 는 손대지 않았다 — 온보딩 행이 이미 `features/onboarding/` 을 담고 있어 `use-account-probes` 가 덮이고, 신설 예정 모듈(`features/schedule-sync/character-basic-fetch`)은 표에 `features/schedule-sync/` 자체가 없어 파일 하나만 넣으면 표의 입도를 깬다. 제품 코드 변경 0(git diff --stat -- src/ 비어 있음), build·test 2,523개 통과·lint 0 errors(17 warnings, baseline 동일).",
+      "completed_at": "2026-08-08T05:35:26+0900"
+    },
+    {
+      "step": 1,
+      "name": "basic-fetch-ttl",
+      "status": "completed",
+      "started_at": "2026-08-08T05:35:26+0900",
+      "summary": "`features/schedule-sync/character-basic-fetch.ts` 신설 — `CHARACTER_BASIC_TTL_MS`(5분) + `fetchCharacterBasicCached(apiKey, accountId, ocid, now)`: 캐시가 TTL 안이면 네트워크 0회로 캐시 profile 반환, 아니면 `fetchCharacterBasic` 후 `setCachedCharacterBasic(accountId, ...)` 에 `cachedAt: now.toISOString()` 로 기록(ADR-113 결정 1). 실패는 캐시 폴백 없이 그대로 throw(호출부의 characterUnavailable·401·429 분기 보존), 파싱 불가·미래 cachedAt 은 만료 취급, 경계 배타적(정확히 5분 = 만료), single-flight 없음. 캐시 접근은 전부 `storage/character-basic-cache` 어댑터 경유(모듈에 `@capacitor/preferences` 직접 접근 0건). 테스트 11케이스 신설(sibling `character-eligibility.test.ts` 관례 그대로 — 인메모리 Preferences 목 + 실제 어댑터, `nexon/character` 는 vi.hoisted 목). 판별력 확인: TTL 가드 분기를 지우면(항상 fetch) `TTL 안이면 네트워크를 부르지 않는다` 1건이 실패하고, 반대로 `isFresh` 를 무력화하면(항상 신선) TTL 밖·경계·파싱 불가·미래 시각·만료 캐시 미덮음 5건이 실패한다 — 양방향 모두 잡힌다. 호출부 4곳·`src/nexon/`·`storage/character-basic-cache.ts` 는 한 줄도 안 고쳤다(step 2·3 몫, `git status --porcelain -- src/` 가 신규 2파일뿐). build 성공·test 2,534개 통과/172파일(2,523 + 11)·lint 0 errors(17 warnings, baseline 동일).",
+      "completed_at": "2026-08-08T05:39:41+0900"
+    },
+    {
+      "step": 2,
+      "name": "callsite-migration",
+      "status": "completed",
+      "started_at": "2026-08-08T05:39:41+0900",
+      "summary": "세 호출부(예열 `prefetch.ts` · 피커 `character-roster.ts` live 루프 · 동기화 편승 `schedule-sync.ts` 의 `refreshCharacterBasics`)의 `fetchCharacterBasic` + `setCachedCharacterBasic` 인라인 2줄을 step 1 헬퍼 `fetchCharacterBasicCached(apiKey, accountId, ocid, now)` 한 줄로 교체 — 캐시 쓰기가 헬퍼 안으로 들어가 세 파일 모두 `setCachedCharacterBasic` import 가 사라졌다. `now` 는 예열이 기존 `const now`(새로 만들지 않음), 피커가 기존 스코프 값, 편승 갱신만 함수 시작에 `const now = new Date()` 하나를 라운드 전체가 공유(캐릭터마다 만들면 같은 라운드 안에서 TTL 기준이 흔들린다). ADR-097 결정 7 주석의 \"별도 TTL 은 두지 않는다\"를 ADR-113 결정 1 로 정정(호출 조건 1~4 는 그대로 서고 가드가 앞에 하나 붙는다 · 가드 5분 < 동기화 TTL 10분). 보존한 것 — 예열의 `profile.accessFlag` → `resolveCharacterEligibility` 흐름(ADR-086 결정 5)·개별 실패 시 `emit({completed:1,total:-1})` 후 return, 피커의 catch 3분기(401/429 전역·`characterUnavailable` → `markScheduleProbeUnavailable`·그 외 캐시 유지)·stub 단계·SWR 방출 순서, 편승 갱신의 절대 non-throw best-effort. `use-account-probes.ts`(step 3 몫)·UI·`src/data/` 무변경. 기존 테스트 9건이 깨졌고 둘 다 목킹 문제로 판별 — ① prefetch 목이 `storage/character-basic-cache` 에서 `setCachedCharacterBasic` 만 줘 헬퍼의 캐시 **읽기**가 undefined 호출로 죽었다(→ `getCachedCharacterBasic` 목 추가, 기본 null) ② schedule-sync 픽스처 13곳의 `cachedAt` 이 하필 페이크 시계 `NOW` 와 같은 값이라(ADR-097 이 \"쓰이기만 하고 읽는 곳이 없다\"고 적은 필드라 아무 값이나 심겨 있었다) 이제 전부 TTL 안으로 읽혔다 — 네트워크가 나가는 경로를 검증하는 케이스들이므로 `STALE_CACHED_AT`(하루 전) 상수로 노화. 삭제한 테스트 0건. 회귀 가드 3건 신설(예열·피커·편승 각 1건: TTL 안이면 `fetchCharacterBasic` 0회 + 캐시 쓰기 0회, 건너뛴 것이 basic 하나뿐임을 scheduler 호출·자격 판정·`isStale:false`·최종 목록으로 함께 단언). 판별력 확인: 헬퍼의 TTL 판정을 무력화(항상 fetch)하면 정확히 그 3건만 실패하고 나머지 81건은 그대로 통과 — 가드가 실제로 그 3건만 바꾼다는 뜻이고, 이 step 이 의도한 유일한 동작 변화(\"5분 안에 캐시된 ocid 는 네트워크를 안 탄다\") 외에 관측 가능한 변화가 없음을 뒤집어 확인했다. build 성공·test 2,537개 통과/172파일(2,534 + 3)·lint 0 errors(17 warnings, baseline 동일).",
+      "completed_at": "2026-08-08T05:46:21+0900"
+    },
+    {
+      "step": 3,
+      "name": "probe-cache-progress",
+      "status": "completed",
+      "started_at": "2026-08-08T05:46:21+0900",
+      "summary": "`use-account-probes` 를 ① step 1 헬퍼 경유(원형 `fetchCharacterBasic` 0건 — 각 캐릭터가 **속한 계정**의 `accountId` 로 캐시에 쓴다, ADR-113 결정 2) ② 반환을 `AccountProbesState { probes, isSettled, progress }` 로 확장. `AccountProbe` 필드 3개 무변경. settle 판정은 `try/finally` 하나로 모아 세 경로(키 없음 조기 return·계정 0개·개별 실패)가 전부 `isSettled: true` 로 끝난다(결정 4). `now` 는 `load()` 시작 1회를 전 계정이 공유, `completed` 는 캐릭터 단위 함수형 증가, `total` 은 state 가 아니라 `accounts` 파생이라 첫 렌더부터 정확. **상태 초기화는 effect 가 아니라 렌더 시점에** — `ProbeRun{source,...}` 한 덩어리를 `run.source === accounts` 로 갈라 이전 세대를 버린다(effect 는 페인트 뒤에 돌아 한 프레임 동안 옛 probes+`isSettled:true` 가 새 목록에 얹히는데, 그게 결정 3 이 없애려는 장면이다 · 덤으로 `react-hooks/set-state-in-effect` 도 안 건드린다). 자격 스윕·`markScheduleProbeUnavailable` 미도입(결정 6 및 범위 밖), 실패 처리 3분기 보존(결정 7). 주석 정정: \"캐시에 쓰지 않는다\"(전역 인덱스 시절 우려) → ADR-086 결정 9 계정별 인덱스로 누출이 구조적으로 불가능해져 쓴다. 호출부는 `AccountSelectionList.tsx:42` 구조 분해 한 줄만(대기 UI·단언 뒤집기는 step 4 — `grep ProgressBar` 0건), 그 테스트는 `settled()` 헬퍼로 목 반환 **형태만** 감쌌고 단언 0줄 변경. 훅 테스트 5 → 13케이스(캐시 쓰기 계정별 분리·TTL 안 네트워크 0회·키 없음 settle·계정 0개 0/0·total 합·실패도 completed 증가·accounts 교체 시 재대기). 판별력 확인: `finally` 를 지워 성공 경로에서만 settle 하게 바꾸면 `API 키가 없어 프로브가 시작조차 못 해도 대기가 끝난다` **1건만** 실패한다(계정 0개·전부 실패는 성공 경로를 지나므로 통과) — 무한 로딩의 유일한 미방어 경로를 그 케이스가 정확히 겨눈다는 뜻이고 되돌려 13건 전부 통과 확인. build 성공·test 2,545개 통과/172파일(2,537 + 8)·lint 0 errors(17 warnings, baseline 동일).",
+      "completed_at": "2026-08-08T05:54:05+0900"
+    },
+    {
+      "step": 4,
+      "name": "selection-wait-ui",
+      "status": "completed",
+      "started_at": "2026-08-08T05:54:05+0900",
+      "summary": "`AccountSelectionList` 가 `isSettled === false` 이면 목록·안내 문구·\"계속하기\" 대신 **진행률만** 그린다(ADR-113 결정 3) — 바깥 래퍼 `w-full space-y-4` 유지(설정 모달 `AccountFlowStatus` 가 자기 카드 안에 넣으므로 잃으면 배경 없이 뜬다), 내용은 `(completed/total)` + `ProgressBar` 둘뿐이고 **설명 문구 없음**(결정 5 — 직후 `verifying` 과 마크가 같아야 하나의 연속된 로딩으로 읽힌다), `percent` 는 `total > 0` 일 때만 환산(0 나누기 없음)·`aria={{now: percent, max: 100}}` 로 `OnboardingScreen` `prefetching` 케이스와 같은 관례. 새 컴포넌트 0개 — 기존 atom `ProgressBar`(ADR-061 결정 6) 재사용. settle 이후 렌더는 **한 글자도 안 바꿨다**(카드 마크업·크롭 상수·경고 문구·`disabled` 조건·ADR-051 결정 3 초기 하이라이트 동일). 주석 2곳 정정 — 잠정 표시 설명 → \"목록이 그려지는 시점에는 이미 프로브 결과가 있다\" + `pickRepresentativeCharacter` 는 **프로브 실패 시 폴백**(키를 못 읽어 시작조차 못 해도 settle 하므로 엔트리가 없을 수 있다, 결정 4·7) / \"프로브 도착 전에는 고를 수 있다\" → \"이 판정은 처음부터 확정\". 테스트: 옛 계약 2건(`프로브가 끝나기 전에는 경고를 띄우지 않는다`·`프로브가 도착하기 전에는 고를 수 있다`)을 삭제하고 새 describe `프로브 settle 전 대기` 4건으로 대체(카드·계속하기·안내 문구 미렌더 / progressbar + `(1/3)` 이고 `container.textContent` 가 정확히 `(1/3)` 이라 문구 없음까지 단언 / `{12,40}` → `aria-valuenow=30` / settle 하면 목록·계속하기 등장·progressbar 소멸), `프로브가 고른 대표 캐릭터로 표기를 **교체**한다` → `표기한다` 로 이름만 정정(단언 유지), 나머지 케이스는 `settled()` 목 형태만 쓰고 단언 0줄 변경. 판별력 확인: `isSettled` 게이트를 지우면(항상 목록) 새 4건이 **정확히 그 4건만** 실패하고 기존 17건은 통과 — 되돌려 21건 전부 통과. 다른 테스트 2파일이 깨졌고 원인은 같다(실제 훅을 쓰며 목록을 **동기 렌더**로 단언) — `OnboardingScreen.test.tsx`·`AccountFlowStatus.test.tsx` 에 `use-account-probes` 목(settled)을 추가했을 뿐 단언은 0줄 변경, 제품 코드 변경은 `AccountSelectionList.tsx` 하나뿐(`git diff --stat -- src/` 4파일 중 3개가 테스트). **확인 절차 3**: `OnboardingScreen` 의 `selectingAccount` 와 `error` 는 같은 래퍼 `div`(동일 className) 안에서 같은 컴포넌트를 렌더하고 `ACCOUNT_SELECTION_FAILED` 리듀서가 `...state` 로 `accounts` 참조를 보존하므로, 실패 왕복에서 React 가 인스턴스를 유지하고 `useAccountProbes` 의 `[accounts]` deps 가 안 바뀌어 **프로브는 재실행되지 않는다**(수정 없음). build 성공·test 2,547개 통과/172파일(2,545 + 2: 신규 4 − 삭제 2)·lint 0 errors(17 warnings, baseline 동일).",
+      "completed_at": "2026-08-08T06:00:59+0900"
+    },
+    {
+      "step": 5,
+      "name": "settings-verifying-ui",
+      "status": "completed",
+      "started_at": "2026-08-08T06:00:59+0900",
+      "summary": "설정 계정 변경의 `verifying` 케이스를 문구(`캐릭터 목록을 확인하고 있어요...`)에서 **`Card` + `ProgressBar percent=0`** 로 교체(ADR-113 결정 5) — 뒤따르는 `selectingAccount` 프로브 대기(step 4)와 **같은 프리미티브**라 마크가 안 바뀌어 하나의 연속된 로딩으로 읽힌다. 문구도 `(n/total)` 숫자도 붙이지 않았다 — `character/list` 는 한 번이라 총량이 없고 0% 바는 \"시작했다\"는 사실만 말한다(가짜 진행률 금지). 인라인 카드 클래스를 `Card` atom 으로 통일했고 시각적 동일성은 코드로 확인했다(`Card.tsx:12` 의 `rounded-[14px] border border-border bg-surface` = 옛 인라인 네 토큰, 순서만 다름). `aria={{now:0,max:100}}` 는 `prefetching`·온보딩과 같은 관례. 새 컴포넌트 0개, `prefetching`·`selectingCharacters`·`error`·`AccountSelectionList`·`useAccountProbes` 무변경 — 제품 코드는 `AccountFlowStatus.tsx` 한 파일뿐이고 나머지 2파일은 테스트다. 테스트: `verifying이면 안내 문구를 보여준다` 를 **문구 없이 진행률 바 0%만** 으로 교체(`container.textContent === ''` 로 숫자 없음까지 단언) + 연속성 회귀 가드 신설(`isSettled:false` 목으로 `verifying` → `selectingAccount` rerender 후에도 progressbar 가 계속 있고 `계속하기` 는 없다). 훅 목은 `vi.hoisted` + `beforeEach` 기본값으로 바꿔 케이스별로 덮을 수 있게 했다(단언 0줄 변경). 저장소 전체 grep 으로 `AccountModal.test.tsx` 의 부분 문구 단언(`/확인하고 있어요/`)도 찾아 progressbar 단언으로 갱신 — 이름·의도(`verifying 상태면 진행 상태를 보여준다`)는 유지. 판별력 확인: 옛 `<p>` 로 되돌리면 **정확히 verifying 케이스 3건만** 실패(새 2건 + AccountModal 1건)하고 나머지 8건은 통과 — 되돌려 전부 통과. 확인 절차 3: `docs/features/onboarding.md:134` history 항목이 step 0 에서 이미 해소 사실로 갱신돼 있음을 확인(문서 무변경, step 6 로 넘길 잔여 없음). build 성공·test 2,548개 통과/172파일(2,547 + 1: 신규 2 − 삭제 1)·lint 0 errors(17 warnings, baseline 동일).",
+      "completed_at": "2026-08-08T06:05:24+0900"
+    },
+    {
+      "step": 6,
+      "name": "docs-verify",
+      "status": "completed",
+      "started_at": "2026-08-08T06:05:24+0900",
+      "summary": "ADR-113 을 '구현 완료 · 실기기 미검증'으로 마감 — 검증 절을 실측값으로 채우고(테스트 2,548개/172파일, 이 phase 순증 25 = 신규 28 − 삭제 3, 기준선 2,523개/171파일 · build 성공 · lint 0 errors 17 warnings baseline 동일), 신규 케이스가 사는 파일×담보하는 결정 대조표, '자동 테스트가 담보하는 것' 11행과 '실기기·실사용으로만 확인되는 것' 5건을 분리(그중 **이 결정의 주 목적인 429 감소가 미검증으로 남는다**는 것을 명시). '구현하며 여섯을 정정' — ①`(완료/전체)` 숫자는 남는다(없앤 것은 설명 문장, 총량을 아는 것이 결정의 근거인데 화면에서 지우면 앞뒤가 안 맞는다) ②이름이 `isLoading` 이 아니라 `isSettled`(실패로 끝난 대기를 '로딩 중'으로 읽게 하지 않는다) ③세대 교체는 effect 가 아니라 렌더 시점(effect 면 한 프레임 동안 옛 probes + isSettled:true 가 새 목록에 얹혀 결정 3 이 없애려는 그 장면이 된다) ④`now` 는 라운드 하나가 공유 ⑤`cachedAt` 에 계약이 생기자 schedule-sync 픽스처 13곳이 드러남(ADR-097 이 '읽는 곳이 없다'고 적은 필드가 페이크 시계와 같은 값이라 전부 'TTL 안'으로 읽혔다 → STALE_CACHED_AT 로 노화) ⑥뒤집힌 옛 테스트 2건은 갱신이 아니라 삭제. '미해결로 남기는 사실' 5건을 신설 — **동시성 캡 없음**(총 호출 수는 접었으나 한순간 fan-out 폭은 그대로, 429 가 남으면 다음 후보) · single-flight 없음 · 프로브의 003 원장 미기록 · 결정 6 은 테스트가 아니라 구조가 담보 · '온보딩 한 바퀴'를 통째로 도는 테스트 없음. 이슈 #163 대조표 11행(할 일 4 · 수정 방향 2 · 주의점 4 · 함께 갱신 1)을 '했다/안 했다 + 이유'로 작성. ADR.md 인덱스 행 동기화 + onboarding.md(관련 소스에 character-basic-fetch 추가, TTL 절에 `fetchCharacterBasicCached`·`CHARACTER_BASIC_TTL_MS` 실명·now 인자 계약·실패 비폴백·fan-out 미해결 추가, 대기 표현을 '문구 없음'에서 '숫자는 남기고 설명 문장만 뺀다'로 정정)·settings.md(verifying 은 숫자 없이 0% 바 — 이어지는 것은 프리미티브와 자리이지 내용이 아니다) 코드 대조 정정, 열린 질문 2건 신설(대기 체감·안 고른 계정 캐시 엔트리 정리 — 둘 다 관측 전이라 정책을 만들지 않는다).",
+      "completed_at": "2026-08-08T06:13:00+0900",
+      "note_execution": "execute.py 가 step 6 의 문서 작업을 마친 뒤 커밋 전에 중단됐다(killed, 원인 불명 — 타임아웃 아님). 산출물은 워킹트리에 온전히 남아 있었고 독립 재검증(build 성공 · vitest 2,548개 통과/172파일 · lint 0 errors/17 warnings)이 ADR 에 적힌 수치와 정확히 일치해, 재실행 대신 하네스와 같은 2단계 커밋(feat/chore) + phase 마감 커밋을 수동으로 만들었다. 폐기 후보였던 diff 는 scratchpad 에 백업했다."
+    }
+  ],
+  "created_at": "2026-08-08T05:26:45+0900",
+  "completed_at": "2026-08-08T06:13:00+0900"
+}

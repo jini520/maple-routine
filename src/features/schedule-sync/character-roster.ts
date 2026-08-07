@@ -4,14 +4,15 @@
 // 여기(로스터)와 동기화 오케스트레이션. 둘 사이 참조는 한 방향뿐이라(동기화 → 로스터)
 // 경계가 뚜렷했다.
 
-import { fetchCharacterBasic, fetchCharacterList } from '../../nexon/character'
+import { fetchCharacterList } from '../../nexon/character'
 import { NexonAuthError, NexonRateLimitError } from '../../nexon/errors'
-import { getAllCachedCharacterBasicOcids, getCachedCharacterBasic, setCachedCharacterBasic } from '../../storage/character-basic-cache'
+import { getAllCachedCharacterBasicOcids, getCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getAuthConfig } from '../../storage/api-key'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
 import { markScheduleProbeUnavailable } from '../../storage/schedule-probe-ledger'
 import type { CharacterPickerEntry, MapleCharacter } from '../../types'
 import { compareByName } from '../onboarding/representative-character'
+import { fetchCharacterBasicCached } from './character-basic-fetch'
 import { readKnownEligibility, resolveCharacterEligibility } from './character-eligibility'
 import type { CharacterEligibility } from './character-eligibility'
 import { toScheduleSyncError } from './errors'
@@ -184,11 +185,9 @@ export async function getCharacterPickerRoster(
       }
 
       try {
-        const profile = await fetchCharacterBasic(apiKey, character.ocid)
-        await setCachedCharacterBasic(accountId, character.ocid, {
-          profile,
-          cachedAt: new Date().toISOString(),
-        })
+        // ADR-113 결정 1: 캐시 쓰기까지 공유 경로 안이다. 온보딩 한 바퀴(프로브 → 예열 → 피커)가
+        // 5분 안에 끝나면 여기서는 네트워크가 나가지 않고 방금 채워진 캐시를 그대로 쓴다.
+        const profile = await fetchCharacterBasicCached(apiKey, accountId, character.ocid, now)
         // ADR-086 결정 5: 여기서 스윕이 일어난다. 예열이 이미 훑었으면 원장이 채워져 있어
         // 추가 호출이 없고, 예열이 중간에 끊겼으면 이 경로가 이어서 완성한다.
         const eligibility = await resolveCharacterEligibility(

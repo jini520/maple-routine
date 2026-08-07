@@ -19,8 +19,23 @@ vi.mock('../../../lib/world-emblem', () => ({
 const mockedUseAccountProbes = vi.mocked(useAccountProbes)
 const mockedWorldEmblemUrl = vi.mocked(worldEmblemUrl)
 
+// ADR-113 결정 3: 목록은 프로브가 settle 한 뒤에만 그려진다. 목록 렌더링을 보는 케이스는 전부
+// 이 헬퍼로 "프로브가 끝난 뒤"를 만든다.
+function settled(probes: ReturnType<typeof useAccountProbes>['probes']): ReturnType<
+  typeof useAccountProbes
+> {
+  const total = accounts.reduce((sum, account) => sum + account.characters.length, 0)
+  return { probes, isSettled: true, progress: { completed: total, total } }
+}
+
+function waiting(progress: { completed: number; total: number }): ReturnType<
+  typeof useAccountProbes
+> {
+  return { probes: {}, isSettled: false, progress }
+}
+
 beforeEach(() => {
-  mockedUseAccountProbes.mockReturnValue({})
+  mockedUseAccountProbes.mockReturnValue(settled({}))
   // 매핑된 월드는 URL을, 미매핑 월드('리부트')는 null을 돌려 폴백을 테스트한다.
   mockedWorldEmblemUrl.mockImplementation((world) =>
     world === '리부트' ? null : `/emblems/${world}.png`,
@@ -219,14 +234,16 @@ describe('AccountSelectionList', () => {
   })
 
   it('대표 캐릭터의 초상화 URL이 있으면 이미지를 렌더링한다', () => {
-    mockedUseAccountProbes.mockReturnValue({
-      'da9b2f2-account-hash-1': {
-        representative: accounts[0].characters[0],
-        portraitUrl: 'https://example.com/portrait.png',
-        allUnavailable: false,
-      },
-      '69e3525-account-hash-2': { representative: null, portraitUrl: null, allUnavailable: false },
-    })
+    mockedUseAccountProbes.mockReturnValue(
+      settled({
+        'da9b2f2-account-hash-1': {
+          representative: accounts[0].characters[0],
+          portraitUrl: 'https://example.com/portrait.png',
+          allUnavailable: false,
+        },
+        '69e3525-account-hash-2': { representative: null, portraitUrl: null, allUnavailable: false },
+      }),
+    )
 
     render(
       <AccountSelectionList accounts={accounts} isSubmitting={false} onSelect={vi.fn()} />,
@@ -236,10 +253,12 @@ describe('AccountSelectionList', () => {
   })
 
   it('초상화를 찾지 못한 계정은 "?"로 대체 표시한다', () => {
-    mockedUseAccountProbes.mockReturnValue({
-      'da9b2f2-account-hash-1': { representative: null, portraitUrl: null, allUnavailable: false },
-      '69e3525-account-hash-2': { representative: null, portraitUrl: null, allUnavailable: false },
-    })
+    mockedUseAccountProbes.mockReturnValue(
+      settled({
+        'da9b2f2-account-hash-1': { representative: null, portraitUrl: null, allUnavailable: false },
+        '69e3525-account-hash-2': { representative: null, portraitUrl: null, allUnavailable: false },
+      }),
+    )
 
     render(
       <AccountSelectionList accounts={accounts} isSubmitting={false} onSelect={vi.fn()} />,
@@ -255,14 +274,16 @@ describe('AccountSelectionList', () => {
   // 피커가 빈 목록이 되고 아무 설명이 없었다(이슈 #78).
   describe('전원 조회 불가 계정', () => {
     it('그 계정에만 경고를 붙인다', () => {
-      mockedUseAccountProbes.mockReturnValue({
-        'da9b2f2-account-hash-1': { representative: null, portraitUrl: null, allUnavailable: true },
-        '69e3525-account-hash-2': {
-          representative: accounts[1].characters[0],
-          portraitUrl: null,
-          allUnavailable: false,
-        },
-      })
+      mockedUseAccountProbes.mockReturnValue(
+        settled({
+          'da9b2f2-account-hash-1': { representative: null, portraitUrl: null, allUnavailable: true },
+          '69e3525-account-hash-2': {
+            representative: accounts[1].characters[0],
+            portraitUrl: null,
+            allUnavailable: false,
+          },
+        }),
+      )
 
       render(
         <AccountSelectionList accounts={accounts} isSubmitting={false} onSelect={vi.fn()} />,
@@ -271,29 +292,21 @@ describe('AccountSelectionList', () => {
       expect(screen.getAllByText('이 계정의 캐릭터를 조회할 수 없습니다')).toHaveLength(1)
     })
 
-    it('프로브가 끝나기 전에는 경고를 띄우지 않는다 — 모르는 상태를 단정하지 않는다', () => {
-      mockedUseAccountProbes.mockReturnValue({})
-
-      render(
-        <AccountSelectionList accounts={accounts} isSubmitting={false} onSelect={vi.fn()} />,
-      )
-
-      expect(screen.queryByText('이 계정의 캐릭터를 조회할 수 없습니다')).not.toBeInTheDocument()
-    })
-
     // ADR-086 결정 8: 경고만으로는 부족하다 — 고르면 후보가 0명이라 "최소 1명"(결정 7)을
     // 만족할 수 없어 온보딩이 진행 불가 상태로 멈춘다. 들어갈 수 없는 문은 잠근다.
     it('그 계정은 고를 수 없다', async () => {
       const user = userEvent.setup()
       const onSelect = vi.fn()
-      mockedUseAccountProbes.mockReturnValue({
-        'da9b2f2-account-hash-1': { representative: null, portraitUrl: null, allUnavailable: true },
-        '69e3525-account-hash-2': {
-          representative: accounts[1].characters[0],
-          portraitUrl: null,
-          allUnavailable: false,
-        },
-      })
+      mockedUseAccountProbes.mockReturnValue(
+        settled({
+          'da9b2f2-account-hash-1': { representative: null, portraitUrl: null, allUnavailable: true },
+          '69e3525-account-hash-2': {
+            representative: accounts[1].characters[0],
+            portraitUrl: null,
+            allUnavailable: false,
+          },
+        }),
+      )
 
       render(<AccountSelectionList accounts={accounts} isSubmitting={false} onSelect={onSelect} />)
 
@@ -306,31 +319,83 @@ describe('AccountSelectionList', () => {
 
     it('계정이 1개라 초기 하이라이트된 항목이 조회 불가면 "계속하기"도 막는다', () => {
       const single = [accounts[0]]
-      mockedUseAccountProbes.mockReturnValue({
-        'da9b2f2-account-hash-1': { representative: null, portraitUrl: null, allUnavailable: true },
-      })
+      mockedUseAccountProbes.mockReturnValue(
+        settled({
+          'da9b2f2-account-hash-1': { representative: null, portraitUrl: null, allUnavailable: true },
+        }),
+      )
 
       render(<AccountSelectionList accounts={single} isSubmitting={false} onSelect={vi.fn()} />)
 
       expect(screen.getByRole('button', { name: '계속하기' })).toBeDisabled()
     })
 
-    it('프로브가 도착하기 전에는 고를 수 있다 — 모르는 것을 단정하지 않는다', () => {
-      mockedUseAccountProbes.mockReturnValue({})
+  })
+
+  // ADR-113 결정 3: settle 전에는 목록을 그리지 않는다. 전에는 잠정 대표로 카드를 먼저 그린 뒤
+  // 결과가 오면 경고를 붙이고 비활성으로 바꿨는데(ADR-086 결정 8 "프로브 도착 전에는 선택 가능"),
+  // 그것은 고를 수 없는 카드를 고를 수 있는 것처럼 보여주고 나서 뺏는 것이었다.
+  describe('프로브 settle 전 대기', () => {
+    it('계정 카드도 "계속하기"도 안내 문구도 렌더하지 않는다', () => {
+      mockedUseAccountProbes.mockReturnValue(waiting({ completed: 0, total: 3 }))
 
       render(<AccountSelectionList accounts={accounts} isSubmitting={false} onSelect={vi.fn()} />)
 
-      expect(screen.getByRole('button', { name: /내옆에최성일/ })).toBeEnabled()
+      expect(screen.queryByRole('button', { name: /캐릭터 \d+개/ })).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: '계속하기' })).not.toBeInTheDocument()
+      expect(screen.queryByText('사용할 메이플 ID를 선택해주세요.')).not.toBeInTheDocument()
+      expect(screen.queryByText('베라 · 내옆에최성일 · Lv.211')).not.toBeInTheDocument()
+    })
+
+    // ADR-113 결정 5: 대기 표현은 진행률 바 + (완료/전체) 뿐이고 설명 문구를 붙이지 않는다 —
+    // 직후 `verifying` 단계와 마크가 달라지면 두 번의 대기로 읽힌다.
+    it('진행률 바와 (완료/전체) 표기만 그린다', () => {
+      mockedUseAccountProbes.mockReturnValue(waiting({ completed: 1, total: 3 }))
+
+      const { container } = render(
+        <AccountSelectionList accounts={accounts} isSubmitting={false} onSelect={vi.fn()} />,
+      )
+
+      expect(screen.getByRole('progressbar')).toBeInTheDocument()
+      expect(container.textContent).toBe('(1/3)')
+    })
+
+    it('진행률은 progress 를 그대로 반영한다', () => {
+      mockedUseAccountProbes.mockReturnValue(waiting({ completed: 12, total: 40 }))
+
+      render(<AccountSelectionList accounts={accounts} isSubmitting={false} onSelect={vi.fn()} />)
+
+      expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '30')
+    })
+
+    it('settle 하면 목록과 "계속하기"가 나타난다', () => {
+      mockedUseAccountProbes.mockReturnValue(waiting({ completed: 0, total: 3 }))
+      const { rerender } = render(
+        <AccountSelectionList accounts={accounts} isSubmitting={false} onSelect={vi.fn()} />,
+      )
+
+      expect(screen.queryByRole('button', { name: '계속하기' })).not.toBeInTheDocument()
+
+      mockedUseAccountProbes.mockReturnValue(settled({}))
+      rerender(
+        <AccountSelectionList accounts={accounts} isSubmitting={false} onSelect={vi.fn()} />,
+      )
+
+      expect(screen.getByRole('button', { name: '계속하기' })).toBeInTheDocument()
+      expect(screen.getByText('베라 · 내옆에최성일 · Lv.211')).toBeInTheDocument()
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument()
     })
   })
 
   // ADR-068 결정 4: character/list의 최고 레벨이 조회 불가일 수 있으므로, 대표는 프로브가
-  // 확인한 "조회 가능한 캐릭터 중 최고 레벨"로 교체된다.
-  it('프로브가 고른 대표 캐릭터로 표기를 교체한다', () => {
+  // 확인한 "조회 가능한 캐릭터 중 최고 레벨"이다.
+  it('프로브가 고른 대표 캐릭터를 표기한다', () => {
     const second = accounts[1].characters[1] ?? accounts[1].characters[0]
-    mockedUseAccountProbes.mockReturnValue({
-      '69e3525-account-hash-2': { representative: second, portraitUrl: null, allUnavailable: false },
-    })
+    mockedUseAccountProbes.mockReturnValue(
+      settled({
+        '69e3525-account-hash-2': { representative: second, portraitUrl: null, allUnavailable: false },
+      }),
+    )
 
     render(
       <AccountSelectionList accounts={accounts} isSubmitting={false} onSelect={vi.fn()} />,
