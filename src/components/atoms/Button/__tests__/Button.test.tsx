@@ -11,6 +11,7 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Button } from '../Button'
+import { BUTTON_VARIANT_CLASS } from '../variants'
 
 afterEach(() => {
   cleanup()
@@ -20,6 +21,7 @@ afterEach(() => {
 const PRIMARY = 'rounded-full bg-primary text-on-primary font-semibold hover:bg-primary-hover px-5 py-2.5'
 const TEXT = 'rounded-full px-5 py-2.5 text-sm font-medium text-text-muted hover:text-text'
 const DANGER = 'rounded-full border border-error px-5 py-2.5 text-sm font-semibold text-error-ink hover:bg-error-tint'
+const OUTLINE = 'rounded-full border border-border px-5 py-2.5 text-sm font-semibold text-text hover:bg-primary-tint'
 
 describe('Button', () => {
   it('primary 변형의 클래스가 디자인 시스템 규정과 같다', () => {
@@ -38,6 +40,22 @@ describe('Button', () => {
     render(<Button variant="danger">해제</Button>)
 
     expect(screen.getByRole('button', { name: '해제' })).toHaveAttribute('class', DANGER)
+  })
+
+  // 주 CTA 옆/아래에 서는 부 동작. danger 와 같은 테두리 pill 이되 색이 중립이라
+  // 파괴적 동작과 헷갈리지 않는다(design-system.md 「기본 컴포넌트」).
+  it('outline 변형 — 중립 테두리 pill', () => {
+    render(<Button variant="outline">발급 방법 보기</Button>)
+
+    expect(screen.getByRole('button', { name: '발급 방법 보기' })).toHaveAttribute('class', OUTLINE)
+  })
+
+  // 외부 URL로 나가는 이동은 <button> 이 아니라 <a> 여야 하므로(링크 시맨틱·target/rel),
+  // 겉모습만 입힐 수 있게 변형 클래스를 별도 모듈(variants.ts)에 둔다 — 컴포넌트 파일이
+  // 컴포넌트 아닌 값을 export 하면 fast refresh 가 깨진다. Button 자신도 같은 상수를 쓴다.
+  it('변형 클래스를 별도 모듈로 빼 <a> 도 같은 외형을 입을 수 있다', () => {
+    expect(BUTTON_VARIANT_CLASS.outline).toBe(OUTLINE)
+    expect(BUTTON_VARIANT_CLASS.primary).toBe(PRIMARY)
   })
 
   it('className은 코어 뒤에 이어 붙는다 — 레이아웃은 호출부가 소유한다', () => {

@@ -6,24 +6,19 @@
 // "이 버튼이 어떻게 생겼나"가 아니라 "이 자리에 어떻게 놓이나"라, atom 이 가지면 호출부마다
 // 예외 프롭이 생긴다. 그래서 `className` 으로 이어 붙인다.
 //
-// 라운딩이 pill 로 고정인 것은 디자인 원칙 2(컴포넌트 성격별 라운딩 차등 — 카드 14px ·
-// 버튼 pill · 인풋 10px)를 지키기 위해서다. 여기에 라운딩 옵션을 열면 그 원칙이 무너진다.
-
-const VARIANT_CLASS = {
-  primary: 'rounded-full bg-primary text-on-primary font-semibold hover:bg-primary-hover px-5 py-2.5',
-  text: 'rounded-full px-5 py-2.5 text-sm font-medium text-text-muted hover:text-text',
-  danger:
-    'rounded-full border border-error px-5 py-2.5 text-sm font-semibold text-error-ink hover:bg-error-tint',
-} as const
-
-export type ButtonVariant = keyof typeof VARIANT_CLASS
+// 외형 토큰 자체는 `variants.ts` 에 있다 — `<a>` 가 겉모습만 입어야 하는 자리가 있고, 컴포넌트
+// 파일이 컴포넌트 아닌 값을 함께 export 하면 fast refresh 가 깨지기 때문이다.
+import { BUTTON_VARIANT_CLASS, type ButtonVariant } from './variants'
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant: ButtonVariant
 }
 
 export function Button({ variant, className, type, ...rest }: ButtonProps): React.JSX.Element {
-  const classes = className === undefined ? VARIANT_CLASS[variant] : `${VARIANT_CLASS[variant]} ${className}`
+  const classes =
+    className === undefined
+      ? BUTTON_VARIANT_CLASS[variant]
+      : `${BUTTON_VARIANT_CLASS[variant]} ${className}`
 
   // type 기본값을 button 으로 둔다 — HTML 기본값은 submit 이라, 폼 안에 놓인 보조 버튼이
   // 의도치 않게 폼을 보내는 사고가 흔하다.

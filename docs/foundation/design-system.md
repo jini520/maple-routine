@@ -57,8 +57,10 @@ riseTint/riseInk · fallTint/fallInk — 테마 토큰(고정 hex 아님)
 **버튼**
 ```
 Primary(테마 공통): rounded-full bg-primary text-on-primary font-semibold hover:bg-primary-hover px-5 py-2.5
+Outline:            rounded-full border border-border px-5 py-2.5 text-sm font-semibold text-text hover:bg-primary-tint
 Text(라이트): text-[#8A7362] hover:text-[#5B4636]   Text(다크): text-neutral-500 hover:text-neutral-300
 ```
+`Outline` 은 **주 CTA 옆/아래에 서는 부 동작**용이다(2026-08-08, 온보딩 API 키 화면의 "API 키 발급 방법 보기"가 첫 사용처 — [features/onboarding.md](../features/onboarding.md)). `danger` 와 같은 테두리 pill 형태이되 색이 중립(`border`/`text`)이라 파괴적 동작과 헷갈리지 않고, hover 는 새 색을 만들지 않고 `primary-tint` 를 쓴다(선택 카드 hover 와 같은 값). **변형 클래스는 `Button.tsx` 가 아니라 `Button/variants.ts` 의 `BUTTON_VARIANT_CLASS` 에 있다** — 외부 URL로 나가는 이동은 `<button>` 이 아니라 `<a>` 여야 하므로(링크 시맨틱·`target`/`rel`) 겉모습만 입힐 길이 필요한데, 컴포넌트 파일이 컴포넌트 아닌 값을 함께 export 하면 fast refresh 가 깨진다(`react-refresh/only-export-components`). `Button` 자신도 같은 상수를 쓰므로 두 벌이 되지 않는다.
 **입력 필드**
 ```
 라이트: rounded-[10px] bg-white border border-[#F0DFD1] px-4 py-3 text-[#2B1B10]
