@@ -650,6 +650,14 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
       )
     }
 
+    // 캐시 엔트리 한 캐릭터분. 행뿐 아니라 게이트 판정값(syncedAt)과 **프로필**도 함께 나른다 —
+    // 프로필이 행에만 실려 있으면 행이 0인 캐릭터에서 그것을 꺼낼 방법이 없다([[ADR-111]] 결정 6).
+    interface CachedCharacterEntry {
+      syncedAt: string | null
+      profile: CharacterProfileInfo | null
+      rows: BossProfitRow[]
+    }
+
     // ADR-017 결정 1: 캐시 우선 표시 — 재검증(syncSchedules) 전에 마지막으로 성공한
     // 스케줄 캐시가 있으면 완료된 보스만 걸러 화면을 먼저 채운다. 이미 저장된 기록이
     // 있으면 함께 조회해 partySize/payoutMeso도 바로 보여준다(단순 읽기이므로 안전) —
@@ -662,10 +670,10 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     // 이미 추적 캐릭터 전원의 캐시 엔트리를 읽으므로 판정용 저장소 조회가 0회다. **캐릭터 단위**
     // 배열이다: 한 캐릭터가 여러 행을 만들므로 행 배열로 세면 개수가 틀어진다.
     const cachedByOcid = await Promise.all(
-      ocids.map(async (ocid): Promise<{ syncedAt: string | null; rows: BossProfitRow[] }> => {
+      ocids.map(async (ocid): Promise<CachedCharacterEntry> => {
         const cached = await getCachedSchedulerState(ocid)
         if (cached === null) {
-          return { syncedAt: null, rows: [] }
+          return { syncedAt: null, profile: null, rows: [] }
         }
         // 자동 모드: 완료된 보스뿐 아니라 등록만 되고 아직 처치 전인 보스도 미완료 placeholder로 함께
         // 보여준다(ADR-032) — selectBossProfitBosses가 그룹(같은 apiName)당 "실제로 처치한"
@@ -681,11 +689,22 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
         }
         return {
           syncedAt: cached.syncedAt,
+          profile,
           rows: displayBosses.map((boss) => buildBossProfitRow(ocid, profile, boss, now)),
         }
       }),
     )
     const cachedRows = cachedByOcid.flatMap((entry) => entry.rows)
+
+    // ADR-111 결정 6: 프로필 맵은 **행이 아니라 캐시 엔트리**에서 만든다. 행에서 만들면 축약 응답으로
+    // 행이 0인 캐릭터는 프로필이 없고, appendRecordOnlyRows 가 그 캐릭터를 통째로 건너뛴다 —
+    // 정확히 그 복원이 겨누는 시나리오가 프로필 부재로 다시 막힌다. 캐시 엔트리 자체가 없는 ocid는
+    // 여전히 제외한다(이름을 모르면 행을 만들 수 없다).
+    const cachedCharacterProfiles = new Map<string, CharacterProfileInfo>()
+    ocids.forEach((ocid, index) => {
+      const profile = cachedByOcid[index].profile
+      if (profile !== null) cachedCharacterProfiles.set(ocid, profile)
+    })
 
     // ADR-097 결정 1~3: 화면 진입 자동 재조회는 데이터가 신선하면 건너뛴다. 캐시가 없는 캐릭터는
     // 여기서 빠지므로 isSyncFresh 가 개수 불일치로 만료 판정한다(새 캐릭터가 빈 채 남지 않는다).
@@ -703,21 +722,25 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
       null,
     )
 
-    const cachedPeriodKeys = Array.from(new Set(cachedRows.map((row) => row.periodKey)))
+    // ADR-111 결정 6: 캐시 행에서 파생한 키만 쓰면 **행이 없는 기간의 기록을 조회조차 하지 않아**
+    // 되살릴 재료가 애초에 없다(축약 응답으로 월간 행이 통째로 빠지는 경로가 실측됐다 —
+    // [[ADR-067]] 결정 4). 동기화 분기와 같이 현재 주·달 키를 항상 포함한다.
+    const cachedPeriodKeys = Array.from(
+      new Set([
+        ...cachedRows.map((row) => row.periodKey),
+        getCurrentBossProfitPeriod('weekly', now).periodKey,
+        getCurrentBossProfitPeriod('monthly', now).periodKey,
+      ]),
+    )
     // 폴백을 []가 아니라 null로 둬 "조회 실패"와 "기록 없음"을 구분한다 — 아래 자동 기록이
     // 실패를 "없음"으로 읽으면 사용자가 저장한 파티원 수가 1로 덮인다([[ADR-050]] 결정 3,
-    // [[ADR-111]] 결정 5-④). **조회 자체를 하지 않은 경우는 []다**(실패가 아니라 "조회할 것이 없음").
-    const cachedRecords =
-      cachedRows.length > 0
-        ? await withSqliteFallback<BossProfitRecord[] | null>(
-            getBossProfitRecords(ocids, cachedPeriodKeys),
-            null,
-          )
-        : []
-    const cachedMergedRows = sortRowsByOcidOrder(
-      mergeRecordsIntoRows(cachedRows, cachedRecords ?? []),
-      sortedOcids,
+    // [[ADR-111]] 결정 5-④). 캐시 행이 0인 진입에서도 조회한다 — 그 진입(축약 응답으로 행이 전부
+    // 사라진 경우)이 정확히 아래 복원이 겨누는 시나리오라, 행 개수로 막으면 재료가 사라진다.
+    const cachedRecords = await withSqliteFallback<BossProfitRecord[] | null>(
+      getBossProfitRecords(ocids, cachedPeriodKeys),
+      null,
     )
+    const cachedMergedRows = mergeRecordsIntoRows(cachedRows, cachedRecords ?? [])
 
     // ADR-111 결정 2·3: 이 행의 출처 캐시가 **보스 리셋 경계를 넘었는지**만 본다. `buildBossProfitRow`
     // 가 periodKey를 now로 계산하므로 그 경우에만 지난 기간의 처치가 이번 기간 수익으로 굳는다 —
@@ -756,19 +779,23 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
         })
       : cachedMergedRows
 
+    // ADR-111 결정 6: 기록만 있는 조합을 행으로 되살린다([[ADR-067]] 결정 4 의 캐시 단계 누락 보완).
+    // **자동 기록 뒤**여야 한다 — 복원 행은 기록에서 나와 partySize 가 이미 채워져 있어 자동 기록
+    // 대상이 아니고, 앞에 두면 그 루프가 헛돈다(동기화 분기도 같은 순서다). **skipSync 여부와
+    // 무관하게** 캐시 단계 일반에 적용한다 — 두 경로가 다른 화면을 그리면 그것이 다음 결함이 된다.
+    // 정렬은 여기서 한 번만 한다 — 복원 행이 정렬 밖에 남으면 캐릭터 아코디언 순서가 흔들린다([[ADR-036]]).
+    const cachedSortedRows = sortRowsByOcidOrder(
+      appendRecordOnlyRows(cachedAutoRecordedRows, cachedRecords ?? [], cachedCharacterProfiles, now),
+      sortedOcids,
+    )
+
     // latestSyncSnapshot을 캐시 데이터로 즉시 채워둔다 — 이후 syncSchedules가 실패해도(네트워크
     // 등) 이 스냅샷이 null로 남지 않아야, 그 상태에서 tab 전환/기간 이동(loadPeriod)을 해도
     // 캐시 우선 표시(ADR-016/017)가 계속 유지된다. 실시간 동기화가 성공하면 아래에서 다시
     // 최신 데이터로 덮어쓴다.
-    const cachedCharacterProfiles = new Map(
-      cachedRows.map((row) => [
-        row.ocid,
-        { characterName: row.characterName, imageUrl: row.imageUrl, world: row.world },
-      ]),
-    )
     latestSyncSnapshot = {
       ocids: [...ocids],
-      rows: cachedAutoRecordedRows,
+      rows: cachedSortedRows,
       characterProfiles: cachedCharacterProfiles,
     }
 
@@ -802,19 +829,20 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
           ? await buildWeeklySubtotalsForMonth(
               sortedOcids,
               currentPeriodKey,
-              cachedAutoRecordedRows,
+              cachedSortedRows,
               cachedCharacterProfiles,
               now,
             )
           : []
 
-      // 바로 위 cachedRecords 와 **같은 게이트**를 쓴다 — 캐시 단계가 그릴 것이 없으면 총 수익
-      // 헤드라인도 없으므로 그 비교 기준을 기다릴 이유가 없다(값 자체는 아래 동기화 완료 단계가 쓴다).
-      // ADR-097: 건너뛰는 진입에는 이 값을 다시 채울 동기화 완료 단계가 없다 — 캐시 행이 없어도
+      // 캐시 단계가 그릴 것이 없으면 총 수익 헤드라인도 없으므로 그 비교 기준을 기다릴 이유가 없다
+      // (값 자체는 아래 동기화 완료 단계가 쓴다). 판정은 **복원까지 끝낸 최종 행**으로 한다
+      // ([[ADR-111]] 결정 6) — 캐시 행이 0이어도 기록에서 되살아난 행이 있으면 헤드라인이 있다.
+      // ADR-097: 건너뛰는 진입에는 이 값을 다시 채울 동기화 완료 단계가 없다 — 행이 하나도 없어도
       // (예: 주간 리셋 직후) 직전 기간 합계를 읽어야 증감 칩이 0으로 굳지 않는다.
       const [cachedDropsByRowKey, previousPeriodTotalMeso] = await Promise.all([
-        loadDropsByRowKey(ocids, cachedAutoRecordedRows, now),
-        cachedRows.length > 0 || skipSync ? previousPeriodTotalPromise : Promise.resolve(0),
+        loadDropsByRowKey(ocids, cachedSortedRows, now),
+        cachedSortedRows.length > 0 || skipSync ? previousPeriodTotalPromise : Promise.resolve(0),
       ])
 
       // 이 호출보다 나중에 시작된 refresh/setTab/goToXPeriod가 이미 있다면(연타 등) 이 시점의
@@ -827,13 +855,13 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
         // 로딩이 한 프레임 번쩍인다. 이 분기가 이미 화면에 필요한 값을 전부 채운다.
         status: skipSync ? 'loaded' : 'loading',
         periodKey: currentPeriodKey,
-        rows: filterRowsForTab(cachedAutoRecordedRows, tab, currentPeriodKey),
+        rows: filterRowsForTab(cachedSortedRows, tab, currentPeriodKey),
         loadedTab: tab,
         loadedPeriodKey: currentPeriodKey,
         dropsByRowKey: cachedDropsByRowKey,
         weeklySubtotals: cachedWeeklySubtotals,
         isPeriodLoading: false,
-        periodState: cachedAutoRecordedRows.length > 0 ? 'recorded' : 'confirmedEmpty',
+        periodState: cachedSortedRows.length > 0 ? 'recorded' : 'confirmedEmpty',
         canGoPreviousPeriod,
         previousPeriodTotalMeso,
         error: null,

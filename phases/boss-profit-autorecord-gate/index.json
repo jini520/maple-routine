@@ -31,7 +31,11 @@
     {
       "step": 3,
       "name": "record-only-rows",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-08T01:56:26+0900",
+      "summary": "store.ts 캐시 우선 표시 단계에 appendRecordOnlyRows 도입(ADR-111 결정 6) — ① cachedPeriodKeys 를 캐시 행 파생 키 ∪ 현재 주 키 ∪ 현재 달 키로 넓히고 cachedRecords 의 `cachedRows.length > 0` 게이트 제거(행 0인 진입이 곧 복원 대상이라 게이트가 재료를 지웠다, 폴백은 null 유지) ② 프로필 맵을 캐시 행 → 캐시 엔트리에서 생성(CachedCharacterEntry.profile 추가 — 행 0인 캐릭터가 프로필 부재로 건너뛰어지던 것) ③ cachedMergedRows → autoRecordRows → appendRecordOnlyRows → sortRowsByOcidOrder 순서로 정리(복원은 skipSync 무관, 정렬은 마지막 한 번) 하고 소비처 5곳 + previousPeriodTotalMeso 게이트를 최종 행 cachedSortedRows 로 교체. describe('캐시 단계의 기록만 있는 조합 복원 (ADR-111 결정 6)') 6케이스 신설(전부 코드 변이로 판별 확인 — 프로필 맵 되돌리기·기간 키 합집합 제거·복원 제거·정렬 위치·복원/자동기록 순서). 테스트 2,503개 통과·build·lint clean",
+      "note_existing_test": "기존 'getBossProfitRecords가 응답하지 않아도(hang)…' 테스트의 타이머 진행을 5000ms 1회 → 2회로 고쳤다. 계약(조회가 멈춰도 화면이 멈추지 않고 기본값으로 덮어쓰지 않는다)은 그대로이고, 캐시 단계가 캐시 행 0 에서도 조회하게 되면서 withSqliteFallback 창이 캐시·동기화 두 번 **직렬로** 생긴 것이 이유다(캐시가 있는 일반 경로는 전부터 두 창이었다). 고치지 않으면 refreshPromise 가 영영 미해결이라 finally 의 useRealTimers 가 실행되지 않아 뒤따르는 캐시 우선 표시 테스트 5개까지 함께 죽었다.",
+      "completed_at": "2026-08-08T02:09:00+0900"
     },
     {
       "step": 4,

@@ -971,7 +971,11 @@ describe('useBossProfitStore', () => {
         syncSchedulesMock.mockResolvedValue([syncResult()]) // 자쿰 카오스, priceMeso 8080000
 
         const refreshPromise = useBossProfitStore.getState().refresh(['ocid-1'])
-        await vi.advanceTimersByTimeAsync(5000)
+        // withSqliteFallback 창은 **조회마다 하나**이고 캐시 단계와 동기화 완료 단계가 차례로 조회한다
+        // (ADR-111 결정 6 이후 캐시 단계는 캐시 행이 0이어도 조회한다 — 그 진입이 복원이 겨누는
+        // 시나리오다). 뒤 창은 앞 창이 끝난 뒤에야 시작하므로 두 번 나눠 흘려보내야 한다.
+        await vi.advanceTimersByTimeAsync(5000) // 캐시 우선 표시 단계
+        await vi.advanceTimersByTimeAsync(5000) // 동기화 완료 단계
         await refreshPromise
 
         const state = useBossProfitStore.getState()
@@ -1337,6 +1341,209 @@ describe('useBossProfitStore', () => {
       } finally {
         vi.useRealTimers()
       }
+    })
+  })
+
+  // ADR-111 결정 6: "기록은 있는데 응답에 행이 없는" 조합의 복원([[ADR-067]] 결정 4)이 동기화 완료
+  // 분기에만 있었다. [[ADR-097]] 이후 건너뛴 진입은 캐시 단계가 곧 최종 화면이라 그 조합이 총 수익에서
+  // 통째로 빠진다 — 이슈 #160 과 같은 증상(총 수익 미달)의 별개 경로다. 실측 경로는 미접속 캐릭터의
+  // 축약 응답이다(월간 보스를 처치한 뒤 1주 이상 미접속 → bossMonthly 가 reg=false·comp=false 로만 남음).
+  describe('캐시 단계의 기록만 있는 조합 복원 (ADR-111 결정 6)', () => {
+    function minutesAgo(minutes: number): string {
+      return new Date(Date.now() - minutes * 60 * 1000).toISOString()
+    }
+
+    // bossContents 를 통째로 비운 축약 응답 — 이 캐릭터는 캐시 단계에서 행을 하나도 만들지 못한다.
+    function cachedEntry(
+      characterName: string,
+      syncedAt: string,
+      bossContents: BossContent[] = [],
+    ): CachedSchedulerEntry {
+      return {
+        state: {
+          asOf: '2026-07-09T00:00+09:00',
+          characterName,
+          world: '베라',
+          level: 200,
+          jobClass: '렌',
+          dailyContents: [],
+          weeklyContents: [],
+          bossContents,
+          isDailyStale: false,
+          isWeeklyStale: false,
+          isWeeklyBossStale: false,
+          isMonthlyBossStale: false,
+        },
+        syncedAt,
+      }
+    }
+
+    function monthlyRecord(ocid: string, periodKey: string): BossProfitRecord {
+      return {
+        ocid,
+        boss: '검은 마법사',
+        difficulty: '하드',
+        cycle: 'monthly',
+        periodKey,
+        partySize: 1,
+        priceMeso: 665_000_000,
+        payoutMeso: 665_000_000,
+        recordedAt: '2026-07-01T00:00:00.000Z',
+        world: '베라',
+      }
+    }
+
+    // 월간 탭을 보고 있는 상태에서 시작한다 — 실측 경로가 월간 보스라 그 화면이 증상이 나는 자리다.
+    // 현재 달은 최신 기간이라 containsInProgressWeek 가 false 이므로 제자리 새로고침 분기로 새지 않는다.
+    function seedMonthlyTab(): string {
+      const monthKey = getCurrentBossProfitPeriod('monthly', new Date()).periodKey
+      useBossProfitStore.setState({ tab: 'monthly', periodKey: monthKey })
+      return monthKey
+    }
+
+    it('캐시에 행이 없고 기록만 있는 조합이 캐시 단계에서 행으로 복원돼 금액이 그대로 실린다', async () => {
+      const monthKey = seedMonthlyTab()
+      markSyncAttemptedThisRun()
+      getCachedSchedulerStateMock.mockResolvedValue(cachedEntry('캐시캐릭터', minutesAgo(5)))
+      getBossProfitRecordsMock.mockImplementation(async (_ocids: string[], keys: string[]) =>
+        keys.includes(monthKey) ? [monthlyRecord('ocid-1', monthKey)] : [],
+      )
+
+      await useBossProfitStore.getState().refresh(['ocid-1'], { auto: true })
+
+      expect(syncSchedulesMock).not.toHaveBeenCalled()
+      const rows = useBossProfitStore.getState().rows
+      expect(rows).toHaveLength(1)
+      expect(rows[0].boss).toBe('검은 마법사')
+      expect(rows[0].periodKey).toBe(monthKey)
+      expect(rows[0].payoutMeso).toBe(665_000_000)
+    })
+
+    // 조회할 기간 키를 캐시 행에서만 파생하면 **행이 없는 기간의 기록을 조회조차 하지 않아** 되살릴
+    // 재료가 없다. 동기화 분기가 같은 이유로 이미 현재 주·달 키를 항상 넣는다.
+    it('캐시 행이 하나도 없어도 기록 조회 기간 키에 현재 주·달 키가 들어간다', async () => {
+      const now = new Date()
+      const weekKey = getCurrentBossProfitPeriod('weekly', now).periodKey
+      const monthKey = getCurrentBossProfitPeriod('monthly', now).periodKey
+      markSyncAttemptedThisRun()
+      getCachedSchedulerStateMock.mockResolvedValue(cachedEntry('캐시캐릭터', minutesAgo(5)))
+
+      await useBossProfitStore.getState().refresh(['ocid-1'], { auto: true })
+
+      const queried = getBossProfitRecordsMock.mock.calls.map((call) => call[1] as string[])
+      expect(queried.some((keys) => keys.includes(weekKey) && keys.includes(monthKey))).toBe(true)
+    })
+
+    // 프로필 맵을 캐시 **행**에서 만들면 축약 응답으로 행이 0인 캐릭터는 프로필이 없고,
+    // appendRecordOnlyRows 가 그 캐릭터를 통째로 건너뛴다 — 이 결정이 고치려는 시나리오가 프로필
+    // 부재로 다시 막힌다. 그래서 프로필은 캐시 **엔트리**에서 만든다.
+    it('행이 0인 캐릭터도 복원 대상이고 그 캐시 엔트리의 캐릭터명이 실린다', async () => {
+      const monthKey = seedMonthlyTab()
+      markSyncAttemptedThisRun()
+      getCachedSchedulerStateMock.mockImplementation(async (ocid: string) =>
+        ocid === 'ocid-1'
+          ? cachedEntry('행있는캐릭터', minutesAgo(5), [bossContent()])
+          : cachedEntry('행없는캐릭터', minutesAgo(5)),
+      )
+      getBossProfitRecordsMock.mockImplementation(async (_ocids: string[], keys: string[]) =>
+        keys.includes(monthKey) ? [monthlyRecord('ocid-2', monthKey)] : [],
+      )
+
+      await useBossProfitStore.getState().refresh(['ocid-1', 'ocid-2'], { auto: true })
+
+      const rows = useBossProfitStore.getState().rows
+      expect(rows).toHaveLength(1) // 월간 탭이라 ocid-1 의 주간 캐시 행은 걸러진다
+      expect(rows[0].ocid).toBe('ocid-2')
+      expect(rows[0].characterName).toBe('행없는캐릭터')
+    })
+
+    // 복원 행은 기록에서 나와 partySize 가 이미 채워져 있다 — 다시 기록하면 사용자가 저장한 값을
+    // 덮어쓸 위험만 생긴다. 그래서 복원은 자동 기록 루프보다 **뒤**다(동기화 분기도 같은 순서다).
+    // 앞에 두면 루프가 그 행들을 헛도는데, 그 헛돎은 upsert 가 아니라 **드롭 이관**으로 드러난다
+    // (복원 행도 isComplete: true 라 이관 조건은 통과한다) — 그래서 둘을 함께 본다.
+    it('복원된 행은 자동 기록 루프를 타지 않는다(기록도 드롭 이관도 캐시 행에만 일어난다)', async () => {
+      const weekKey = getCurrentBossProfitPeriod('weekly', new Date()).periodKey
+      markSyncAttemptedThisRun()
+      getCachedSchedulerStateMock.mockResolvedValue(
+        cachedEntry('캐시캐릭터', minutesAgo(5), [bossContent()]), // 자쿰 카오스 — 기록 없음
+      )
+      getBossProfitRecordsMock.mockImplementation(async (_ocids: string[], keys: string[]) =>
+        keys.includes(weekKey)
+          ? [{ ...monthlyRecord('ocid-1', weekKey), boss: '스우', difficulty: '하드', cycle: 'weekly' as const }]
+          : [],
+      )
+      getBossDropRecordsMock.mockResolvedValue([
+        {
+          ocid: 'ocid-1',
+          boss: '스우',
+          difficulty: '익스트림', // 복원 행이 루프를 타면 확정 난이도(하드)로 옮겨졌을 옛 키
+          periodKey: weekKey,
+          dropIndex: 0,
+          category: 'equipment',
+          itemName: '루즈 컨트롤 머신 마크',
+          slot: '얼굴장식',
+          boxOrigin: null,
+          ringLevel: null,
+          quantity: 1,
+        },
+      ])
+
+      await useBossProfitStore.getState().refresh(['ocid-1'], { auto: true })
+
+      expect(useBossProfitStore.getState().rows.map((row) => row.boss)).toContain('스우') // 복원은 됐다
+      const recordedBosses = upsertBossProfitRecordMock.mock.calls.map((call) => call[0].boss)
+      expect(recordedBosses).toEqual(['자쿰']) // 캐시 행만 — 복원 행(스우)은 빠진다
+      const migratedBosses = replaceBossDropRecordsMock.mock.calls.map((call) => call[1] as string)
+      expect(migratedBosses).not.toContain('스우')
+    })
+
+    // 결정 6: 복원은 skipSync 여부와 무관하게 캐시 단계 일반에 적용한다 — 두 경로가 서로 다른 화면을
+    // 그리면 그것이 다음 결함이 된다. 동기화를 실패시켜 캐시 단계가 그린 화면만 남긴다.
+    it('건너뛰지 않는 진입의 캐시 단계에서도 복원이 일어난다', async () => {
+      const monthKey = seedMonthlyTab()
+      getCachedSchedulerStateMock.mockResolvedValue(cachedEntry('캐시캐릭터', minutesAgo(5)))
+      getBossProfitRecordsMock.mockImplementation(async (_ocids: string[], keys: string[]) =>
+        keys.includes(monthKey) ? [monthlyRecord('ocid-1', monthKey)] : [],
+      )
+      syncSchedulesMock.mockRejectedValue(new Error('network'))
+
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+
+      expect(syncSchedulesMock).toHaveBeenCalledTimes(1) // 건너뛴 진입이 아니다
+      const rows = useBossProfitStore.getState().rows
+      expect(rows).toHaveLength(1)
+      expect(rows[0].boss).toBe('검은 마법사')
+    })
+
+    // 복원 행이 정렬 밖에 남으면(그냥 뒤에 붙으면) 캐릭터 아코디언 순서가 흔들린다([[ADR-036]]) —
+    // 정렬은 복원까지 끝낸 뒤 한 번만 한다.
+    it('복원된 행도 캐릭터 정렬 순서(레벨 내림차순)를 따른다', async () => {
+      const monthKey = seedMonthlyTab()
+      markSyncAttemptedThisRun()
+      // ocid-2 가 레벨이 높아 앞에 와야 한다 — 그 캐릭터의 행이 복원으로 만들어진 것이다.
+      getCachedCharacterBasicMock.mockImplementation(async (ocid: string) => ({
+        profile: {
+          name: `캐릭터-${ocid}`,
+          level: ocid === 'ocid-2' ? 280 : 200,
+          imageUrl: 'x',
+          accessFlag: true,
+        },
+        cachedAt: '2026-07-01T00:00:00.000Z',
+      }))
+      getCachedSchedulerStateMock.mockImplementation(async (ocid: string) =>
+        ocid === 'ocid-1'
+          ? cachedEntry('낮은레벨', minutesAgo(5), [
+              bossContent({ name: '검은마법사', difficulty: '하드', cycle: 'monthly' }),
+            ])
+          : cachedEntry('높은레벨', minutesAgo(5)),
+      )
+      getBossProfitRecordsMock.mockImplementation(async (_ocids: string[], keys: string[]) =>
+        keys.includes(monthKey) ? [monthlyRecord('ocid-2', monthKey)] : [],
+      )
+
+      await useBossProfitStore.getState().refresh(['ocid-1', 'ocid-2'], { auto: true })
+
+      expect(useBossProfitStore.getState().rows.map((row) => row.ocid)).toEqual(['ocid-2', 'ocid-1'])
     })
   })
 
