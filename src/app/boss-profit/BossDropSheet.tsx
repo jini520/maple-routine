@@ -100,27 +100,28 @@ function findBoxDrop(drops: RecordedDrop[], boxName: string): RecordedDrop | und
   return drops.find((drop) => drop.boxOrigin === boxName)
 }
 
-// 연출 끄기 토글(ADR-040 결정 6). 활성(ON) = 연출을 끔(고가 드롭을 추가해도 연출이 안 뜸).
-// 값은 전역 스토어라 시트 밖에서도 공유·영구 저장.
-function EffectToggle(props: { off: boolean; onToggle: () => void }): React.JSX.Element {
+// 드롭 연출 토글(ADR-040 결정 6 + 정정 4). 활성(ON) = 연출을 표시(고가 드롭을 추가하면 연출이 뜸).
+// 라벨이 긍정형이라 스토어의 positive 모델(enabled)을 반전 없이 그대로 그린다 — 부정형 라벨은
+// 토글과 겹쳐 이중 부정이 됐다. 값은 전역 스토어라 시트 밖에서도 공유·영구 저장.
+function EffectToggle(props: { on: boolean; onToggle: () => void }): React.JSX.Element {
   return (
     <button
       type="button"
       role="switch"
-      aria-checked={props.off}
-      aria-label="연출 끄기"
+      aria-checked={props.on}
+      aria-label="드롭 연출"
       onClick={props.onToggle}
       className="ml-auto flex shrink-0 items-center gap-1.5"
     >
-      <span className="text-[11px] font-semibold text-text-muted">연출 끄기</span>
+      <span className="text-[11px] font-semibold text-text-muted">드롭 연출</span>
       <span
         className={`inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors ${
-          props.off ? 'bg-primary' : 'bg-border-strong'
+          props.on ? 'bg-primary' : 'bg-border-strong'
         }`}
       >
         <span
           className={`inline-block h-3 w-3 rounded-full bg-white transition-transform ${
-            props.off ? 'translate-x-3.5' : 'translate-x-0.5'
+            props.on ? 'translate-x-3.5' : 'translate-x-0.5'
           }`}
         />
       </span>
@@ -229,7 +230,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
         <div>
           <div className="flex items-center gap-2 px-4 pb-1 pt-1">
             <span className="text-lg font-bold text-text">{props.boss}</span>
-            <EffectToggle off={!effectEnabled} onToggle={() => void setEffectEnabled(!effectEnabled)} />
+            <EffectToggle on={effectEnabled} onToggle={() => void setEffectEnabled(!effectEnabled)} />
           </div>
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 px-4 pb-3">
             <p className="text-xs text-text-muted">획득한 아이템을 선택하세요</p>

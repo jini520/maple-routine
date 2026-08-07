@@ -213,7 +213,7 @@ describe('BossDropSheet', () => {
     expect(tile.textContent).not.toContain('익')
   })
 
-  it('연출 끄기를 활성화하면(enabled=false) 고가 아이템을 추가해도 이펙트가 뜨지 않는다', async () => {
+  it('드롭 연출을 끄면(enabled=false) 고가 아이템을 추가해도 이펙트가 뜨지 않는다', async () => {
     const user = userEvent.setup()
     useDropEffectStore.setState({ enabled: false })
 
@@ -225,21 +225,36 @@ describe('BossDropSheet', () => {
     expect(screen.queryByTestId('drop-effect-overlay')).not.toBeInTheDocument()
   })
 
-  it("'연출 끄기' 토글은 연출이 켜져 있을 때 꺼짐 상태다(반전 회귀 방지)", () => {
+  // ADR-040 정정 4(이슈 #162): 라벨은 긍정형 '드롭 연출'이고 스위치 활성 = 연출 표시다. 저장
+  // 스키마는 positive 모델(enabled) 그대로이므로, UI가 그 값을 반전 없이 그리는지를 고정한다.
+  it("'드롭 연출' 토글은 연출이 켜져 있을 때 켜짐 상태다(반전 회귀 방지)", () => {
     useDropEffectStore.setState({ enabled: true })
     const { rerender } = render(
       <BossDropSheet boss="스우" difficulty="하드" isComplete initialDrops={[]} onSave={vi.fn()} onClose={vi.fn()} />,
     )
 
-    // 연출 표시 중 → '연출 끄기'는 활성(체크)이 아니어야 한다
-    expect(screen.getByRole('switch', { name: '연출 끄기' })).toHaveAttribute('aria-checked', 'false')
+    // 연출 표시 중 → '드롭 연출'은 활성(체크)이어야 한다
+    expect(screen.getByRole('switch', { name: '드롭 연출' })).toHaveAttribute('aria-checked', 'true')
 
-    // 연출을 끄면(enabled=false) → '연출 끄기'가 활성(체크)이 된다
+    // 연출을 끄면(enabled=false) → '드롭 연출'이 비활성(미체크)이 된다
     useDropEffectStore.setState({ enabled: false })
     rerender(
       <BossDropSheet boss="스우" difficulty="하드" isComplete initialDrops={[]} onSave={vi.fn()} onClose={vi.fn()} />,
     )
-    expect(screen.getByRole('switch', { name: '연출 끄기' })).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByRole('switch', { name: '드롭 연출' })).toHaveAttribute('aria-checked', 'false')
+  })
+
+  // 토글을 눌렀을 때 저장값이 "라벨이 말하는 대로" 움직이는지 — 켜져 있을 때 누르면 꺼진다.
+  // 위 회귀 테스트가 표시 방향만 보므로, 쓰기 방향은 여기서 고정한다.
+  it("'드롭 연출' 토글을 누르면 스토어 값이 반대로 뒤집힌다", async () => {
+    const user = userEvent.setup()
+    useDropEffectStore.setState({ enabled: true })
+    render(
+      <BossDropSheet boss="스우" difficulty="하드" isComplete initialDrops={[]} onSave={vi.fn()} onClose={vi.fn()} />,
+    )
+
+    await user.click(screen.getByRole('switch', { name: '드롭 연출' }))
+    expect(useDropEffectStore.getState().enabled).toBe(false)
   })
 
   // 하단 고정 바가 iOS 홈 인디케이터·Android 제스처 영역을 침범하지 않도록, 프로젝트 컨벤션인
