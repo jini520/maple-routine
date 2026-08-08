@@ -96,19 +96,28 @@ export function AccountFlowStatus(props: AccountFlowStatusProps): React.JSX.Elem
         </Card>
       )
 
+    // ADR-114 결정 2: 429에는 액션을 주지 않는다 — 문구의 처방이 재시도가 아니라 "키 단계 확인"이라
+    // 버튼이 있으면 화면이 두 말을 한다(error-resilience.md 원칙 3도 원래 429는 액션 없음이다).
+    // 여기서 재시도가 유일한 진행 수단이었으므로 429에서는 모달을 닫는 것 외에 길이 없어지는데,
+    // 지금 앱 안에서 실제로 할 수 있는 일이 없는 것이 맞다.
+    //
+    // error가 null인 폴백('오류가 발생했습니다')에는 버튼을 남긴다 — 원인을 모르는 실패는
+    // 재시도 가능이 폴백 원칙이다. `props.error?.kind` 가 undefined라 조건이 자연히 참이 된다.
     case 'error':
       return (
         <Card className="p-6 space-y-2">
           <p className="text-sm text-error-ink">
             {props.error !== null ? formatSettingsError(props.error) : '오류가 발생했습니다'}
           </p>
-          <Button
-            variant="primary"
-            onClick={props.onRetry}
-            className="text-sm"
-          >
-            다시 시도
-          </Button>
+          {props.error?.kind !== 'rateLimited' && (
+            <Button
+              variant="primary"
+              onClick={props.onRetry}
+              className="text-sm"
+            >
+              다시 시도
+            </Button>
+          )}
         </Card>
       )
   }

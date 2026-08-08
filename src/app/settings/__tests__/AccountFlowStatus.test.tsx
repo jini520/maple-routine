@@ -169,6 +169,8 @@ describe('AccountFlowStatus', () => {
     expect(progressbar).toHaveAttribute('aria-valuenow', '30')
   })
 
+  // error 픽스처가 network인 것이 중요하다 — ADR-114 결정 2로 버튼이 빠지는 것은 429뿐이라
+  // 나머지 원인에서는 이 계약이 그대로다.
   it('error면 메시지와 다시 시도 버튼을 보여주고 클릭 시 onRetry가 호출된다', async () => {
     const user = userEvent.setup()
     const onRetry = vi.fn()
@@ -190,5 +192,49 @@ describe('AccountFlowStatus', () => {
     expect(screen.getByText('네트워크 오류가 발생했습니다')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: '다시 시도' }))
     expect(onRetry).toHaveBeenCalledTimes(1)
+  })
+
+  // ADR-114 결정 1·2: 여기는 모달 본문 인라인이라 처방까지 담고(토스트는 원인만), 처방이
+  // 재시도가 아니라 "키 단계 확인"이므로 버튼을 주지 않는다 — 있으면 화면이 두 말을 한다.
+  it('error가 rateLimited면 처방까지 담은 문구를 보여주고 다시 시도 버튼을 주지 않는다', () => {
+    render(
+      <AccountFlowStatus
+        status="error"
+        accounts={[]}
+        error={{ kind: 'rateLimited' }}
+        prefetchProgress={null}
+        pendingAccountId={null}
+        isCommitting={false}
+        onCommitCharacters={vi.fn()}
+        onCancel={vi.fn()}
+        onSelectAccount={vi.fn()}
+        onRetry={vi.fn()}
+      />,
+    )
+
+    expect(
+      screen.getByText('호출 한도를 초과했습니다. 입력하신 API 키가 서비스 단계 키인지 확인해주세요'),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '다시 시도' })).toBeNull()
+  })
+
+  // 회귀 가드: 갈린 것은 429 하나다. 다른 원인까지 버튼을 잃으면 여기서 잡힌다.
+  it('error가 rateLimited가 아니면 다시 시도 버튼이 남는다', () => {
+    render(
+      <AccountFlowStatus
+        status="error"
+        accounts={[]}
+        error={{ kind: 'network' }}
+        prefetchProgress={null}
+        pendingAccountId={null}
+        isCommitting={false}
+        onCommitCharacters={vi.fn()}
+        onCancel={vi.fn()}
+        onSelectAccount={vi.fn()}
+        onRetry={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByRole('button', { name: '다시 시도' })).toBeInTheDocument()
   })
 })
