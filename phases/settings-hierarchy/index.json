@@ -21,7 +21,10 @@
     {
       "step": 2,
       "name": "release-notes-data",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-09T02:20:05+0900",
+      "summary": "ADR-119 결정 1·2·3·4 데이터 — src/types/release-notes.ts 신규(ReleaseNote/ReleaseNoteItem, requiresStoreUpdate 가 버전이 아니라 항목에 붙는 이유·minNativeVersion 과 층이 다른 이유를 주석으로) + types/index.ts 재-export 1줄 · src/data/release-notes.ts 신규(RELEASE_NOTES 내림차순 배열 + findReleaseNote — 없으면 던지지 않고 undefined, 판정은 호출부 몫). 1.0.3(2026-08-09) 한 건뿐이고 두 항목 다 OTA 라 requiresStoreUpdate 없음 — 1.0.0~1.0.2 는 결정 4 대로 지어내지 않음. package.json version 은 1.0.2 그대로(범프는 릴리스 chore). 정렬·중복 제거를 런타임에 넣지 않고 형식을 테스트로 강제(버전/날짜 형식·중복·숫자 비교 내림차순·빈 items/공백 text·findReleaseNote 2건). 판별력 확인: 버전 형식만 깨면 그 1건, 날짜·중복·순서·빈 items 를 깨면 해당 4건이 각각 실패 — 6개 가드가 전부 독립적으로 발화하고 1.0.10 을 1.0.3 앞에 둔 것은 통과(문자열 정렬이면 실패했을 자리). 테스트 2,707개/179파일 통과(기준선 2,700/178 대비 +7, 새 파일 1)·build 성공·lint 0 errors/17 warnings(baseline 동일).",
+      "completed_at": "2026-08-09T02:23:10+0900"
     },
     {
       "step": 3,
