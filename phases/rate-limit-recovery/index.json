@@ -21,7 +21,9 @@
     {
       "step": 2,
       "name": "modal-copy",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-08T21:05:49+0900",
+      "summary": "ApiKeyInvalidModal → **ApiKeyNoticeModal**(파일·테스트·App.tsx import/렌더 함께 개명, git mv 로 이력 보존). 문구를 ADR-116 결정 1 표대로 `NOTICE_COPY: Record<ApiKeyNoticeKind, {icon,title,body}>` 로 갈랐다 — invalid: '**API 키가 더 이상 유효하지 않습니다**' / '**키 입력 화면으로 이동합니다.**', rateLimited: '**호출 한도를 초과했습니다**' / '**서비스 단계 키로 다시 입력해주세요.**'. 429 본문이 토스트 한 줄과 갈리는 이유(모달은 truncate 가 아니라 줄바꿈이 되므로 처방까지 담는다 — ADR-114 결정 4)를 주석에 남겼다. 아이콘만 원인을 가리키고 톤은 둘 다 error 유지 — 429 도 어미 규칙상 실패(`~습니다`)이고 error-resilience.md 실패 표에 함께 서 있어서다; `Gauge`(계기판)를 골랐고 TimerOff 계열은 '시간이 지나면 풀린다'가 읽혀 처방(키 단계 확인)과 어긋나 배제했다(근거 주석). 버튼은 두 원인 모두 `확인` 하나, onClose no-op 유지(닫기·취소 없음). testId 는 api-key-invalid-overlay → **api-key-notice-overlay**. 테스트는 describe.each 로 두 kind × 3(문구·확인 1회 호출·오버레이 클릭해도 안 닫히고 버튼 1개) + null 케이스 = 7개. **판별력 확인**: rateLimited 분기를 invalid 문구로 바꾸자 rateLimited 테스트 2건이 실제로 실패했고 되돌렸다. 감지 배선은 하지 않았다(step 3) — 이 step 에서 429 는 아직 모달을 띄우지 않는다. 테스트 2,639개/176파일 통과(step 1 기준선 2,636 대비 +3)·build 성공·lint 0 errors/17 warnings(baseline 동일). src 변경은 src/app/ 2파일 + src/App.tsx 2줄(개명 필수분)뿐이다."
     },
     {
       "step": 3,
