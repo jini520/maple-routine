@@ -11,8 +11,10 @@ export function formatScheduleSyncError(error: ScheduleSyncError): string {
   switch (error.kind) {
     case 'invalidApiKey':
       return 'API 키가 유효하지 않습니다'
+    // 처방("서비스 단계 키인지 확인해주세요")을 붙이지 않는다 — Toast 본문이 truncate라 한 줄이
+    // 상한이고, 처방은 인라인 자리(배너·ErrorState·설정 계정 카드)가 준다([[ADR-114]] 결정 4).
     case 'rateLimited':
-      return '잠시 후 다시 시도해주세요'
+      return '호출 한도를 초과했습니다'
     // ADR-067 결정 1로 갈라진 세 종류. 문구가 서로 달라야 하는 이유는 처방이 다르기 때문이다 —
     // 아래 둘은 사용자가 지금 할 수 있는 것이 없고, characterUnavailable은 영구다.
     case 'characterUnavailable':
@@ -67,13 +69,14 @@ export function formatRosterError(error: ScheduleSyncError, place: RosterErrorPl
             description: 'API 키를 다시 확인해주세요',
             action: RETRY,
           }
+    // 액션을 주지 않는다([[ADR-114]] 결정 2 — [[ADR-062]] 결정 3의 "429의 재시도 버튼은
+    // 비활성화하지 않는다"를 폐기). 옛 결정은 "초당 한도라면 잠시 뒤 재시도가 통한다"를 전제했으나,
+    // 사용자는 개발 단계 키를 쓰므로 일 1,000건을 소진했으면 다음 날까지 안 풀린다. 게다가 새 문구의
+    // 처방이 재시도가 아니라 **키 단계 확인**이라, 버튼이 있으면 화면이 두 말을 한다.
     case 'rateLimited':
-      // 즉시 누르면 또 429지만 버튼을 잠그지 않는다 — 잠글 시각을 추적하는 상태를 새로 만들 만큼의
-      // 이익이 없다(사용자 결정 2026-07-30).
       return {
-        title: '요청이 너무 많습니다',
-        description: '잠시 후 다시 시도해주세요',
-        action: RETRY,
+        title: '호출 한도를 초과했습니다',
+        description: '입력하신 API 키가 서비스 단계 키인지 확인해주세요',
       }
     // ADR-067 결정 1 + ADR-068 결정 4: 이 계정의 캐릭터를 조회할 수 없다(영구). 재시도 버튼을
     // 주지 않는다 — 눌러도 같은 400이다. 계정을 바꾸는 것이 유일한 탈출구이고 그 경로는 설정
@@ -97,6 +100,57 @@ export function formatRosterError(error: ScheduleSyncError, place: RosterErrorPl
         description: '네트워크 연결을 확인해주세요',
         action: RETRY,
       }
+    default:
+      return assertNever(error)
+  }
+}
+
+// 스탈 배너(항목이 남아 있는 채로 실패했을 때 목록 위에 얹는 한 줄)의 문구·액션
+// ([[ADR-114]] 결정 3). 그전까지 호출부 2곳이 "목록이 최신이 아닙니다"를 하드코딩해 401·429·
+// characterUnavailable·네트워크가 전부 같은 한 줄로 보였다.
+//
+// 왜 formatRosterError를 재사용하지 않고 새 함수인가 — 두 가지가 다르다.
+//
+// 1. **담을 수 있는 양**: 배너는 한 줄이고 ErrorState는 제목 + 설명 두 줄이다.
+// 2. **액션 규칙**: 배너는 목록이 남아 있어 액션이 없어도 막다른 길이 아니지만, ErrorState는
+//    자리 전체가 실패라 온보딩 401에서 액션을 빼면 화면에 아무 길도 남지 않는다. 그래서 같은
+//    401이 여기서는 온보딩에 액션이 없고 formatRosterError에서는 재시도를 유지한다.
+//
+// 자리가 문구와 액션을 정한다는 [[ADR-063]]의 기준을 액션 쪽으로 한 번 더 적용한 것이라 예외가 아니다.
+export interface StaleRosterErrorCopy {
+  /** 배너 한 줄에 들어가는 문구. 제목·설명으로 쪼개지 않는다 — 배너는 한 줄이다. */
+  message: string
+  /** 재시도가 실제로 통하는 실패에만 준다([[ADR-114]] 결정 3). */
+  action?: { kind: 'retry' | 'openSettings'; label: string }
+}
+
+export function formatStaleRosterError(
+  error: ScheduleSyncError,
+  place: RosterErrorPlace,
+): StaleRosterErrorCopy {
+  switch (error.kind) {
+    // 재시도로는 절대 풀리지 않는다. 피커는 키를 고치러 갈 길을 주고, 온보딩은 설정 화면 자체가
+    // 없어 액션 없이 사실만 말한다([[ADR-062]] 결정 3과 같은 이유).
+    case 'invalidApiKey':
+      return {
+        message: 'API 키가 유효하지 않아 목록을 갱신하지 못했습니다',
+        action: place === 'picker' ? { kind: 'openSettings', label: '설정 열기' } : undefined,
+      }
+    // 단계를 판정하지 않고 문구로만 안내한다([[ADR-114]] 결정 1) — 429(OPENAPI00007)는 개발·서비스
+    // 두 단계에서 같은 코드로 오고 본문에도 구분이 없다. 수치는 넣지 않는다(서비스 단계 키
+    // 사용자가 봐도 어색하지 않아야 하고, 배너 한 줄에 들어가야 한다).
+    case 'rateLimited':
+      return { message: '호출 한도를 초과했습니다 — 서비스 단계 키인지 확인해주세요' }
+    // 400 OPENAPI00003은 영구다([[ADR-067]] 결정 1) — 언제 눌러도 같은 400이라 액션을 주지 않는다.
+    case 'characterUnavailable':
+      return { message: '이 계정의 캐릭터를 조회할 수 없습니다' }
+    // 현행 문구·액션 그대로다([[ADR-114]] 결정 3 — 폐기가 아니라 좁혀진 것). 뒤 둘은 date를 쓰는
+    // 보스 수익 백필에서만 나오는 종류라 여기 도달할 수 없지만, formatRosterError와 같은 이유로
+    // network에 흡수해 종류가 늘 때 조용히 undefined가 되지 않게 한다.
+    case 'periodOutOfRange':
+    case 'notCollected':
+    case 'network':
+      return { message: '목록이 최신이 아닙니다', action: RETRY }
     default:
       return assertNever(error)
   }

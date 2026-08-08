@@ -67,11 +67,13 @@ describe('useScheduleSyncErrorToast', () => {
   })
 
   // 지금 누르면 또 429다 — 누를 수 있는 버튼을 주지 않는다.
+  // 문구는 원인만 말한다. 처방("서비스 단계 키인지 확인해주세요")은 토스트 본문이 truncate라
+  // 잘리므로 인라인 자리(배너·ErrorState·설정 계정 카드)가 준다([[ADR-114]] 결정 4).
   it('rateLimited는 액션 없이 문구만 띄운다', () => {
     render(<Harness error={{ kind: 'rateLimited' }} />)
 
     const [message, action] = showErrorMock.mock.calls[0]
-    expect(message).toBe('잠시 후 다시 시도해주세요')
+    expect(message).toBe('호출 한도를 초과했습니다')
     expect(action).toBeUndefined()
   })
 
