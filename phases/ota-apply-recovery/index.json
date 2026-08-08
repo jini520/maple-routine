@@ -31,7 +31,7 @@
       "name": "native-apply-path",
       "status": "completed",
       "started_at": "2026-08-08T23:47:28+0900",
-      "completed_at": "2026-08-08T23:51:25+0900",
+      "completed_at": "2026-08-08T23:52:10+0900",
       "summary": "ADR-117 결정 1(순서 부분)·결정 4 구현 — src/native 두 파일만. ① applyDownloadedLiveUpdate 의 새 호출 순서는 closeBossProfitDb() → showSplashScreen() → CapacitorUpdater.set({id}) 다(커버를 이 함수 안으로 들여왔다 — 스토어와 나눠 가지면 순서 보장이 두 파일로 흩어진다. 시그니처·분할 없음, showSplashScreen().catch(()=>{}) 로 커버 실패가 적용을 막지 않고, closeBossProfitDb 는 step 2 가 '던지지 않는다'를 계약으로 만들어 재감싸지 않았다. 타임아웃은 넣지 않았다 — 전체 12초 상한과 실패 시 화면 복구는 step 4 의 스토어 몫). ② hideSplashScreen() 이 이제 커버 **둘 다** 걷는다 — 기존 #boot-cover 에 더해 [data-splash-cover] 를 querySelectorAll 로 전부 제거하고, 둘 다 플랫폼 가드(web 조기 반환)와 모든 await 보다 앞이라 웹 개발 서버에서도 걷히고 네이티브 hide() 가 매달려도 DOM 커버는 이미 사라진 뒤다. step 4(apply catch)·step 7(ErrorBoundary 폴백)이 이 성질에 기댄다. showSplashScreen 쪽 '문서와 함께 사라지므로 별도 정리 불필요' 주석은 지우지 않고 '리로드가 성공하면 그렇지만 실패하면 남는다 → hideSplashScreen 이 걷는다'로 정정. 테스트 +6(새 파일 0): splash 4(리로드 커버 제거 · 여러 장 전부 · 웹에서도 둘 다+native hide 미호출 · hide 무응답에도 DOM 먼저) + live-update 2(close→cover→set 호출 순서 배열 단언 · 커버 reject 해도 set 호출). 판별력 확인 2건: 옛 순서(커버→닫기→set)로 되돌리면 **순서 단언 1건만** 실패(기존 'set 전에 close' 케이스는 통과 유지), [data-splash-cover] 제거를 빼면 **새 splash 4건만** 실패 — 둘 다 확인 후 되돌렸다. 아키텍처: native/ → features|app import 0건, live-update→splash-screen 은 동일 레이어·순환 없음. **ADR-117 결정 1 의 하위 항목 '어댑터를 가른다(set 만 남기고 close 는 store 가 부른다)'와는 소유 주체가 다르다** — step 3 지시가 명시적으로 '커버를 이 함수 안으로, 쪼개지 마라'라 그쪽을 따랐고, 실행 순서 자체는 ADR 과 동일하다. docs/features/live-update.md 40행의 같은 문장은 step 9(docs-finalize)에서 정정 필요. 검증: build 성공 · 테스트 2,677개/177파일 통과(기준선 2,671/177 대비 +6) · lint 0 errors/17 warnings(baseline 동일) · git status src/ 에서 src/native 밖 변경 0건."
     },
     {
