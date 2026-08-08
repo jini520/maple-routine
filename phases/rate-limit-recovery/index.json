@@ -1,0 +1,13 @@
+{
+  "project": "메이플 루틴 (Maple Routine)",
+  "phase": "rate-limit-recovery",
+  "steps": [
+    { "step": 0, "name": "docs-adr", "status": "pending" },
+    { "step": 1, "name": "notice-generalize", "status": "pending" },
+    { "step": 2, "name": "modal-copy", "status": "pending" },
+    { "step": 3, "name": "rate-limit-wiring", "status": "pending" },
+    { "step": 4, "name": "account-probe-verdict", "status": "pending" },
+    { "step": 5, "name": "errorstate-contract", "status": "pending" },
+    { "step": 6, "name": "docs-verify", "status": "pending" }
+  ]
+}
