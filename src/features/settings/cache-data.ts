@@ -6,8 +6,9 @@ import { showSplashScreen } from '../../native/splash-screen'
 
 // 캐시 데이터 삭제의 **오케스트레이션** — 화면에서 이리로 옮겼다(ADR-094 결정 6).
 //
-// 원래 `app/settings/CacheDataSection.tsx` 가 `storage/cache-data` · `storage/pending-notice` ·
-// `storage/sqlite/db` · `native/splash-screen` 을 직접 불렀다. CLAUDE.md 의 CRITICAL 규칙과
+// 원래 화면(`app/settings/SettingsAccountDataScreen.tsx` 의 전신)이 `storage/cache-data` ·
+// `storage/pending-notice` · `storage/sqlite/db` · `native/splash-screen` 을 직접 불렀다.
+// CLAUDE.md 의 CRITICAL 규칙과
 // [[ADR-003]]·[[ADR-005]] 가 정한 레이어(화면은 `features/` 를 거치고, 저장소·네이티브 접근은
 // 어댑터가 맡는다)를 어기는 유일하게 남은 자리였다 — 다른 `app/*` → `storage/` import 는 전부
 // type-only 라 무해하다.

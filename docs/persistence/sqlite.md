@@ -107,7 +107,7 @@ sequenceDiagram
 
 이 패턴을 쓰는 두 곳:
 - `native/live-update.ts`의 `applyDownloadedLiveUpdate()` — OTA 번들 적용 직전
-- `app/settings/CacheDataSection.tsx`의 `handleClear()` — 캐시 데이터 삭제 직후 리로드 직전
+- `features/settings/cache-data.ts`의 `clearCacheDataAndReload()` — 캐시 데이터 삭제 직후 리로드 직전(호출 화면은 `app/settings/SettingsAccountDataScreen`. 옛 `app/settings/CacheDataSection.tsx` 는 2026-08-09 [[ADR-118]] 개편에서 삭제됐고, 닫기 호출은 그때도 이 파일에 있었다)
 
 **닫기에는 5초 상한이 있고 여전히 던지지 않는다** ([[ADR-117]] 결정 5, 2026-08-08) — 여는 쪽 `withOpenTimeout`(10초)과 대칭이되 더 짧다(닫기는 파일 생성·마이그레이션이 없어 정상이면 수 ms). 상한이 없던 동안 이 호출은 **리로드 앞을 막는 유일한 맨몸 대기**였고, iOS 실기기 SQLite 무응답 전례가 둘이나 있는 상태에서(위 [[ADR-050]] 결정 2 · [[ADR-008]] 2026-07-17 정정) 그대로 매달리면 리로드에 도달하지 못한다. **타임아웃이 바꾸는 것은 *"실패로 끝난다"* 가 아니라 *"끝난다"*** 이고, 실패·타임아웃은 지금처럼 삼킨다(곧 리로드될 것이고 `openBossProfitDb` 의 stale 감지가 최후 폴백으로 남는다).
 

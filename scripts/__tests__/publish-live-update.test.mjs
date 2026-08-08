@@ -1,10 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import {
+  formatReleaseNotes,
+  isPublishableReleaseNote,
   parseArgs,
   resolveBuildScript,
+  resolveManifestNotes,
   resolveReleaseCreateArgs,
   resolveReleaseTag,
 } from '../publish-live-update.mjs'
+import { RELEASE_NOTES } from '../../src/data/release-notes.ts'
+import { parseLiveUpdateManifest } from '../../src/native/live-update.ts'
 
 describe('resolveReleaseTag', () => {
   it('isBeta가 true면 live-update-beta를 반환한다', () => {
@@ -66,5 +71,111 @@ describe('parseArgs', () => {
       isBeta: true,
       minNativeVersion: '2.0.0',
     })
+  })
+})
+
+// ADR-119 결정 6: 노트 없이는 배포가 나가지 않는다. 판정을 순수 함수로 갈라 둔 이유가 이 블록이다 —
+// 스크립트 본문은 실행해 볼 수 없지만(빌드·gh 업로드를 부른다) 판정은 테스트할 수 있다.
+describe('isPublishableReleaseNote', () => {
+  it('항목이 있는 노트는 배포 가능하다', () => {
+    expect(isPublishableReleaseNote({ version: '9.9.9', date: '2026-01-01', items: [{ text: 'a' }] })).toBe(
+      true,
+    )
+  })
+
+  it('그 버전의 노트가 아예 없으면(undefined) 중단 판정이다', () => {
+    expect(isPublishableReleaseNote(undefined)).toBe(false)
+  })
+
+  // 빈 노트는 노트가 아니다 — 버전만 적어 두고 내용을 안 쓴 것을 통과시키면 결정 6이 막으려는
+  // "영영 빈 채로 남는 버전"이 그대로 나간다.
+  it('items가 비어 있으면 중단 판정이다', () => {
+    expect(isPublishableReleaseNote({ version: '9.9.9', date: '2026-01-01', items: [] })).toBe(false)
+  })
+})
+
+describe('formatReleaseNotes', () => {
+  it('모든 항목의 text가 한 덩어리 문자열에 줄 단위로 들어간다', () => {
+    const notes = formatReleaseNotes({
+      version: '9.9.9',
+      date: '2026-01-01',
+      items: [
+        { category: 'feature', text: '첫째 변경' },
+        { category: 'fix', text: '둘째 변경' },
+      ],
+    })
+
+    expect(notes).toContain('첫째 변경')
+    expect(notes).toContain('둘째 변경')
+    expect(notes.split('\n')).toHaveLength(2)
+  })
+
+  // ADR-119 결정 3: 표식이 문자열에서 사라지면 모달이 "이 항목은 OTA 로 안 온다"는 사실을 잃는다.
+  it('requiresStoreUpdate 항목의 표식이 문자열에 남고, 아닌 항목에는 붙지 않는다', () => {
+    const notes = formatReleaseNotes({
+      version: '9.9.9',
+      date: '2026-01-01',
+      items: [
+        { category: 'improvement', text: 'OTA 변경' },
+        { category: 'feature', text: '네이티브 변경', requiresStoreUpdate: true },
+      ],
+    })
+
+    const [otaLine, nativeLine] = notes.split('\n')
+    expect(nativeLine).toContain('스토어 업데이트 필요')
+    expect(otaLine).not.toContain('스토어 업데이트 필요')
+  })
+
+  // ADR-119 결정 9: 화면은 카테고리로 묶어 보여주지만 매니페스트는 평문 한 덩어리라 묶을 자리가
+  // 없다 — 줄머리 `[카테고리] ` 가 그 자리다. 이것이 빠지면 모달(#164)이 분류를 통째로 잃는다.
+  it('줄머리가 `[카테고리] ` 이고 항목마다 자기 카테고리를 단다', () => {
+    const notes = formatReleaseNotes({
+      version: '9.9.9',
+      date: '2026-01-01',
+      items: [
+        { category: 'feature', text: '새 기능' },
+        { category: 'improvement', text: '나아진 것' },
+        { category: 'fix', text: '고친 것' },
+      ],
+    })
+
+    expect(notes.split('\n')).toEqual([
+      '[기능] 새 기능',
+      '[개선] 나아진 것',
+      '[버그] 고친 것',
+    ])
+  })
+})
+
+describe('resolveManifestNotes', () => {
+  // 버전을 하드코딩하지 않는다 — 노트가 쌓이면 값이 바뀌는데, 검사하려는 것은 "실재하는 버전이
+  // 문자열로 해석된다"이지 특정 릴리스의 내용이 아니다.
+  it('노트가 있는 버전은 그 항목이 전부 담긴 문자열이 된다', () => {
+    const latest = RELEASE_NOTES[0]
+
+    const notes = resolveManifestNotes(latest.version)
+
+    expect(notes).not.toBeNull()
+    for (const item of latest.items) expect(notes).toContain(item.text)
+  })
+
+  it('노트가 없는 버전은 null이다 — 그것이 배포 중단 판정이다', () => {
+    expect(resolveManifestNotes('0.0.0')).toBeNull()
+  })
+
+  // 결정 5: notes 는 선택 필드라 파싱의 필수 검사에 없다. 실어 보낸 값이 실제로 읽히는지는
+  // 스크립트 쪽 형식과 앱 쪽 파서를 한 번에 이어 봐야 알 수 있다.
+  it('합쳐진 문자열을 실은 매니페스트가 parseLiveUpdateManifest를 통과한다', () => {
+    const notes = resolveManifestNotes(RELEASE_NOTES[0].version)
+
+    const parsed = parseLiveUpdateManifest({
+      version: '1.0.3',
+      url: 'https://example.com/1.0.3.zip',
+      checksum: 'abc',
+      size: 123,
+      notes,
+    })
+
+    expect(parsed?.notes).toBe(notes)
   })
 })

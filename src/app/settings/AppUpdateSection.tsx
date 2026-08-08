@@ -5,8 +5,11 @@ import { MapleSpinner } from '../../components/atoms/MapleSpinner/MapleSpinner'
 import { Button } from '../../components/atoms/Button/Button'
 import { Card } from '../../components/atoms/Card/Card'
 
-// 설정의 관찰용 섹션 — 현재 실행 번들 버전과 상태를 보여주고 수동 확인을 제공한다(ADR-026/ADR-027).
+// 관찰용 카드 — 현재 실행 번들 버전과 상태를 보여주고 수동 확인을 제공한다(ADR-026/ADR-027).
 // 새 버전을 실제로 받고 적용하는 동의 플로우는 UpdatePromptModal이 담당한다.
+//
+// 섹션 제목(`앱 업데이트`)을 스스로 그리지 않는다 — 이 카드가 놓이는 `/settings/about` 의 페이지
+// 제목이 이미 「앱 정보」라 같은 화면에 제목이 둘이 된다(ADR-118 결정 2). 카드만 반환한다.
 export function AppUpdateSection(): React.JSX.Element {
   const { currentVersion, status, availableVersion, downloadProgress, channel, loadCurrentVersion, check } =
     useLiveUpdateStore()
@@ -21,7 +24,9 @@ export function AppUpdateSection(): React.JSX.Element {
   const statusText: Record<LiveUpdateStatus, string> = {
     idle: '탭하여 확인',
     checking: '확인하고 있어요',
-    'up-to-date': '최신입니다',
+    // ADR-118 결정 10: `현재 버전` 행 바로 아래에 놓이는 값이라 주어가 생략되면 무엇이 최신인지가
+    // 문장 안에 없다 — 한 단어를 더해 그 자리에서 읽히게 한다.
+    'up-to-date': '최신 버전입니다',
     'update-available': `새 버전 v${availableVersion} 있음`,
     'store-required': '스토어 업데이트 필요',
     'confirm-cellular': '다운로드 대기',
@@ -45,46 +50,42 @@ export function AppUpdateSection(): React.JSX.Element {
         : 'text-sm text-text-muted'
 
   return (
-    <section className="space-y-2">
-      <h2 className="px-1 text-sm font-semibold text-text-muted">앱 업데이트</h2>
+    <Card className="px-6 divide-y divide-border">
+      <div className="flex items-center justify-between py-4">
+        <span className="text-sm font-medium text-text">현재 버전</span>
+        <span className="flex items-center gap-2">
+          {channel === 'beta' && (
+            <span className="rounded-full bg-primary-tint px-2 py-0.5 text-xs font-semibold text-primary-ink">
+              beta
+            </span>
+          )}
+          <span className="text-sm text-text-muted">{displayedVersion}</span>
+        </span>
+      </div>
 
-      <Card className="px-6 divide-y divide-border">
-        <div className="flex items-center justify-between py-4">
-          <span className="text-sm font-medium text-text">현재 버전</span>
-          <span className="flex items-center gap-2">
-            {channel === 'beta' && (
-              <span className="rounded-full bg-primary-tint px-2 py-0.5 text-xs font-semibold text-primary-ink">
-                beta
-              </span>
-            )}
-            <span className="text-sm text-text-muted">{displayedVersion}</span>
-          </span>
-        </div>
+      <div className="flex items-center justify-between py-4">
+        <span className="text-sm font-medium text-text">상태</span>
+        <span className={highlight}>{statusText[status]}</span>
+      </div>
 
-        <div className="flex items-center justify-between py-4">
-          <span className="text-sm font-medium text-text">상태</span>
-          <span className={highlight}>{statusText[status]}</span>
-        </div>
-
-        {!isUnsupported && (
-          <div className="py-4">
-            <Button
-              variant="primary"
-              onClick={() => {
+      {!isUnsupported && (
+        <div className="py-4">
+          <Button
+            variant="primary"
+            onClick={() => {
               void check()
-              }}
-              disabled={isBusy}
-              aria-busy={isBusy}
-              className="flex w-full items-center justify-center gap-2 text-sm disabled:opacity-50"
-            >
-              {/* ADR-061 결정 5: 네트워크 왕복이라 disabled만으로는 진행 중인지 멈춘 건지
-                  구분되지 않는다 — 스피너 + '~중' 라벨로 바꾼다. */}
-              {isBusy && <MapleSpinner size={16} />}
-              {isBusy ? '확인 중' : '업데이트 확인'}
-            </Button>
-          </div>
-        )}
-      </Card>
-    </section>
+            }}
+            disabled={isBusy}
+            aria-busy={isBusy}
+            className="flex w-full items-center justify-center gap-2 text-sm disabled:opacity-50"
+          >
+            {/* ADR-061 결정 5: 네트워크 왕복이라 disabled만으로는 진행 중인지 멈춘 건지
+                구분되지 않는다 — 스피너 + '~중' 라벨로 바꾼다. */}
+            {isBusy && <MapleSpinner size={16} />}
+            {isBusy ? '확인 중' : '업데이트 확인'}
+          </Button>
+        </div>
+      )}
+    </Card>
   )
 }

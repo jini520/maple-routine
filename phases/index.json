@@ -175,6 +175,11 @@
       "dir": "ota-apply-recovery",
       "status": "completed",
       "completed_at": "2026-08-09T00:40:40+0900"
+    },
+    {
+      "dir": "settings-hierarchy",
+      "status": "completed",
+      "completed_at": "2026-08-09T03:23:25+0900"
     }
   ]
 }

@@ -60,7 +60,7 @@
 | 예기치 않은 크래시 | 앱 전역 `ErrorBoundary` | 흰 화면 대신 폴백 화면(문구 + "다시 시작" 하나, [[ADR-065]] 결정 5). 크래시 리포팅은 미도입 — `lib/error-reporting` 없음 |
 
 | OTA 다운로드 실패 | `features/live-update` | 모달에 error 분기(다시 시도 / 나중에). **매니페스트 조회 실패(자동 확인)는 모달을 띄우지 않는다** — 사용자가 시작하지 않은 실패라 조용히 넘긴다([[ADR-065]] 결정 2) |
-| 캐시 데이터 삭제 실패·타임아웃 | `app/settings/CacheDataSection` | 리로드 흐름은 그대로 두고 `storage/pending-notice`(sessionStorage)에 플래그 → 부팅 후 "캐시를 일부만 삭제했습니다" 토스트([[ADR-065]] 결정 3) |
+| 캐시 데이터 삭제 실패·타임아웃 | `app/settings/SettingsAccountDataScreen` | 리로드 흐름은 그대로 두고 `storage/pending-notice`(sessionStorage)에 플래그 → 부팅 후 "캐시를 일부만 삭제했습니다" 토스트([[ADR-065]] 결정 3) |
 
 ## 참조 무결성
 `src/data/` 에서 보스가 제거돼도(카이 사례, [[ADR-006]]) 과거 로컬 기록은 삭제하지 않는다. 조회 시 참조 테이블에 없는 키를 만나면 "(더 이상 지원하지 않는 콘텐츠)"로 표시. 계정(메이플 ID) 변경 시에도 이전 계정 기준 로컬 기록(보스 수익·드랍)은 삭제하지 않고 보존, 현재 계정 캐릭터만 노출.

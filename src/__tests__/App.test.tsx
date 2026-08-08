@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import App, { AppShell } from '../App'
@@ -17,7 +18,7 @@ import { useThemeStore } from '../features/theme/store'
 import { useTrackingModeStore } from '../features/tracking-mode/store'
 import { getThemeDefinition } from '../lib/theme-registry'
 import jobThemes from '../data/job-themes.json'
-import type { ThemeDefinition } from '../types/theme'
+import type { ThemeDefinition, ThemeName } from '../types/theme'
 
 // 배경 있는 테마 정의를 주입하기 위한 부분 모킹(ADR-106 결정 3) — 지금은 배경을 선언한 테마가
 // 0개라 테마 이름으로는 "있음" 분기를 못 태운다. 나머지 export 는 실물 그대로다.
@@ -169,11 +170,17 @@ mockedUseSettingsStore.mockReturnValue({
   reset: vi.fn(),
 })
 
-mockedUseThemeStore.mockReturnValue({
-  theme: '렌',
-  restoreFromStorage: vi.fn(),
-  selectTheme: vi.fn(),
-})
+// 테마 스토어는 **셀렉터로도** 읽힌다 — `PageHeader` 안의 `ThemeHeaderBackdrop` 이
+// `useThemeStore((state) => state.theme)` 로 구독한다. 통짜 `mockReturnValue` 는 셀렉터를 무시하고
+// 상태 객체를 그대로 돌려줘, 그 객체가 `getThemeDefinition` 에 들어가 터진다(설정 하위 페이지 셋이
+// 그 헤더를 쓰면서 드러났다). 셀렉터가 오면 적용하고, 없으면 상태를 그대로 준다.
+function mockThemeStore(theme: ThemeName = '렌'): void {
+  const state = { theme, restoreFromStorage: vi.fn(), selectTheme: vi.fn() }
+  mockedUseThemeStore.mockImplementation(((selector?: (s: typeof state) => unknown) =>
+    selector === undefined ? state : selector(state)) as typeof useThemeStore)
+}
+
+mockThemeStore()
 
 const restoreTrackingModeFromStorage = vi.fn()
 mockedUseTrackingModeStore.mockReturnValue({
@@ -294,6 +301,61 @@ describe('AppShell', () => {
       await screen.findByRole('heading', { name: '설정' }, LAZY_SCREEN_TIMEOUT),
     ).toBeInTheDocument()
   })
+
+  // ADR-118 결정 2: 설정 하위 페이지 셋은 `/settings` 의 **형제** 라우트이고, 가드도 똑같이 건다.
+  it.each([
+    ['/settings/release-notes', '개발 노트'],
+    ['/settings/account-data', '계정 및 데이터'],
+    ['/settings/about', '앱 정보'],
+  ])('status가 completed일 때 %s 로 접근하면 그 화면이 보인다', async (path, heading) => {
+    mockStore({ status: 'completed', selectedAccountId: 'account-1' })
+
+    renderAt(path)
+
+    expect(
+      await screen.findByRole('heading', { name: heading }, LAZY_SCREEN_TIMEOUT),
+    ).toBeInTheDocument()
+  })
+
+  // 가드가 없으면 `연결 해제`(온보딩 복귀)를 이 화면들에서 했을 때 리다이렉트가 걸리지 않는다.
+  it.each(['/settings/release-notes', '/settings/account-data', '/settings/about'])(
+    'status가 completed가 아닐 때 %s 로 접근하면 온보딩으로 리다이렉트된다',
+    async (path) => {
+      mockStore({ status: 'awaitingApiKey' })
+
+      renderAt(path)
+
+      expect(await screen.findByLabelText(/API 키/, {}, LAZY_SCREEN_TIMEOUT)).toBeInTheDocument()
+    },
+  )
+
+  // 여기서 처음으로 화면이 이어진다 — 본화면의 이동 행이 실제로 그 화면을 띄우고, 그 화면의
+  // `뒤로` 가 설정으로 돌아온다(ADR-118 결정 1·2).
+  it.each([
+    ['개발 노트', '개발 노트'],
+    ['계정 및 데이터', '계정 및 데이터'],
+    ['앱 정보', '앱 정보'],
+  ])(
+    '설정에서 "%s" 행을 누르면 그 화면이 뜨고, 뒤로를 누르면 설정으로 돌아온다',
+    async (label, heading) => {
+      const user = userEvent.setup()
+      mockStore({ status: 'completed', selectedAccountId: 'account-1' })
+
+      renderAt('/settings')
+
+      await user.click(
+        await screen.findByRole('button', { name: new RegExp(label) }, LAZY_SCREEN_TIMEOUT),
+      )
+      expect(
+        await screen.findByRole('heading', { name: heading }, LAZY_SCREEN_TIMEOUT),
+      ).toBeInTheDocument()
+
+      await user.click(screen.getByRole('button', { name: '뒤로' }))
+      expect(
+        await screen.findByRole('heading', { name: '설정' }, LAZY_SCREEN_TIMEOUT),
+      ).toBeInTheDocument()
+    },
+  )
 
   it('status가 completed일 때 /onboarding으로 접근하면 /content로 리다이렉트된다', async () => {
     mockStore({ status: 'completed', selectedAccountId: 'account-1' })
@@ -472,11 +534,7 @@ describe('AppShell', () => {
   describe('테마 배경 백드롭', () => {
     // vi.clearAllMocks() 는 반환값을 지우지 않는다 — 바꾼 테마가 다음 테스트로 새지 않게 되돌린다.
     afterEach(() => {
-      mockedUseThemeStore.mockReturnValue({
-        theme: '렌',
-        restoreFromStorage: vi.fn(),
-        selectTheme: vi.fn(),
-      })
+      mockThemeStore()
       vi.mocked(getThemeDefinition).mockReset()
     })
 
@@ -494,11 +552,7 @@ describe('AppShell', () => {
     }
 
     it('배경이 없는 테마에서는 백드롭을 렌더하지 않는다', () => {
-      mockedUseThemeStore.mockReturnValue({
-        theme: '렌',
-        restoreFromStorage: vi.fn(),
-        selectTheme: vi.fn(),
-      })
+      mockThemeStore()
       mockStore({ status: 'completed', selectedAccountId: 'account-1' })
 
       renderAt('/content')
@@ -533,11 +587,7 @@ describe('AppShell', () => {
     })
 
     it('배경이 없는 테마에서는 루트가 그대로 bg-bg 를 칠한다', () => {
-      mockedUseThemeStore.mockReturnValue({
-        theme: '렌',
-        restoreFromStorage: vi.fn(),
-        selectTheme: vi.fn(),
-      })
+      mockThemeStore()
       mockStore({ status: 'completed', selectedAccountId: 'account-1' })
 
       const { container } = render(

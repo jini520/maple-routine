@@ -1,0 +1,88 @@
+{
+  "project": "메이플 루틴 (Maple Routine)",
+  "phase": "settings-hierarchy",
+  "steps": [
+    {
+      "step": 0,
+      "name": "docs-adr",
+      "status": "completed",
+      "started_at": "2026-08-09T02:01:22+0900",
+      "summary": "ADR-118(설정 2카드 5행 + 하위 페이지 3, 행 5종, 개인정보 처리방침 행 이동, changeApiKey 미부활)·ADR-119(release-notes.ts 원천 하나 → 개발노트 화면 + latest.json notes, 1.0.3부터, 노트 없으면 배포 중단) 신규 작성 + ADR.md 인덱스 2줄 append, settings.md(정책·UI·열린 질문 2건 제거·history 3줄)·live-update.md(notes? 선택 필드)·release.md(릴리스는 노트부터)·README.md(설정 소스 경로) 갱신. 소스 변경 0건. 기준선: 테스트 2,695개/177파일 통과, build 성공.",
+      "completed_at": "2026-08-09T02:15:28+0900"
+    },
+    {
+      "step": 1,
+      "name": "settings-row",
+      "status": "completed",
+      "started_at": "2026-08-09T02:15:28+0900",
+      "summary": "ADR-118 결정 4 프리미티브 — row-class.ts 신규(SETTINGS_ROW_CLASS, button/anchor 두 행이 공유하며 컴포넌트 파일이 아닌 이유를 주석으로: Button/variants.ts 와 같은 fast refresh 근거) · SettingsRow 우측을 `rightContent ?? chevron` 배타에서 `flex items-center gap-2` 병기로(시그니처·showChevron 기본값 불변, JSDoc '유무와 무관하게'로 정정) · SettingsLinkRow 신규(<a target=_blank rel=noopener noreferrer> + ExternalLink, 외부 링크 행). 호출부 2곳 미변경 — 스케줄 관리 방법·테마 행에 chevron 이 생기는 것이 의도한 결과(화면 재구성은 step 6). 뒤집힌 옛 테스트 1건('chevron 대신 그 내용이 보인다')은 갱신이 아니라 삭제(계약이 정반대). 판별력 확인: 병기를 옛 `??` 로 되돌리면 2,700개 중 새 병기 케이스 **1건만** 실패하고 다른 테스트는 전혀 감지하지 못함 → 그 케이스가 유일한 가드. 테스트 2,700개/178파일 통과(기준선 2,695/177 대비 +5 = 신규 6 − 삭제 1, 새 파일 1)·build 성공·lint 0 errors/17 warnings(baseline 동일, 신규 파일에 fast refresh 경고 0).",
+      "completed_at": "2026-08-09T02:20:05+0900"
+    },
+    {
+      "step": 2,
+      "name": "release-notes-data",
+      "status": "completed",
+      "started_at": "2026-08-09T02:20:05+0900",
+      "summary": "ADR-119 결정 1·2·3·4 데이터 — src/types/release-notes.ts 신규(ReleaseNote/ReleaseNoteItem, requiresStoreUpdate 가 버전이 아니라 항목에 붙는 이유·minNativeVersion 과 층이 다른 이유를 주석으로) + types/index.ts 재-export 1줄 · src/data/release-notes.ts 신규(RELEASE_NOTES 내림차순 배열 + findReleaseNote — 없으면 던지지 않고 undefined, 판정은 호출부 몫). 1.0.3(2026-08-09) 한 건뿐이고 두 항목 다 OTA 라 requiresStoreUpdate 없음 — 1.0.0~1.0.2 는 결정 4 대로 지어내지 않음. package.json version 은 1.0.2 그대로(범프는 릴리스 chore). 정렬·중복 제거를 런타임에 넣지 않고 형식을 테스트로 강제(버전/날짜 형식·중복·숫자 비교 내림차순·빈 items/공백 text·findReleaseNote 2건). 판별력 확인: 버전 형식만 깨면 그 1건, 날짜·중복·순서·빈 items 를 깨면 해당 4건이 각각 실패 — 6개 가드가 전부 독립적으로 발화하고 1.0.10 을 1.0.3 앞에 둔 것은 통과(문자열 정렬이면 실패했을 자리). 테스트 2,707개/179파일 통과(기준선 2,700/178 대비 +7, 새 파일 1)·build 성공·lint 0 errors/17 warnings(baseline 동일).",
+      "completed_at": "2026-08-09T02:23:50+0900"
+    },
+    {
+      "step": 3,
+      "name": "about-screen",
+      "status": "completed",
+      "started_at": "2026-08-09T02:23:50+0900",
+      "summary": "ADR-118 결정 2·7·10 — SettingsAboutScreen 신규(/settings/about 의 화면 컴포넌트만, 라우트 배선은 step 6): ScreenScroll + PageHeader + ArrowLeft('뒤로') + useScreenNavigate('/settings') 로 BossManageScreen 골격을 그대로 따르고, 본문은 <AppUpdateSection /> + Card 안 SettingsLinkRow(개인정보 처리방침 → mapleroutine.store/privacy). AppUpdateSection 은 <section>+<h2>앱 업데이트</h2> 껍데기를 벗고 Card 만 반환(페이지 제목 「앱 정보」와 중복) · statusText['up-to-date'] '최신입니다'→'최신 버전입니다'(결정 10) — 나머지 12개 문구·상태 로직·버튼 동작 무변경. SettingsScreen 은 footer 고지에서 개인정보 처리방침 <p> 한 줄 + 그 링크를 설명하던 주석만 제거하고 나머지 4줄·카드 구조는 그대로(grep '개인정보 처리방침' = 0). 뒤집힌 옛 테스트 2건은 갱신이 아니라 재작성 — '하단에 개인정보 처리방침 링크를 표시한다' → '고지 블록에 링크를 두지 않는다'(이사 회귀 가드), 섹션 순서 테스트의 기준점은 사라진 h2 대신 카드 첫 행('현재 버전'). 판별력 확인 4건: 문구를 되돌리면 2건(AppUpdateSection·About), h2 를 되살리면 2건(제목 가드 둘), 뒤로 목적지를 바꾸면 1건, 고지에 링크를 되살리면 1건이 각각 발화하고 다른 테스트는 감지하지 못함. 테스트 2,713개/180파일 통과(기준선 2,707/179 대비 +6 = About 5 + 제목 가드 1, 새 파일 1)·build 성공·lint 0 errors/17 warnings(baseline 동일).",
+      "completed_at": "2026-08-09T02:29:30+0900"
+    },
+    {
+      "step": 4,
+      "name": "account-data-screen",
+      "status": "completed",
+      "started_at": "2026-08-09T02:29:30+0900",
+      "summary": "ADR-118 결정 2·3·4·6 — SettingsAccountDataScreen 신규(/settings/account-data 의 화면 컴포넌트만, 라우트 배선은 step 6): SettingsAboutScreen 과 같은 헤더 골격(ScreenScroll + PageHeader + ArrowLeft '뒤로' + useScreenNavigate('/settings')) + 카드 1(계정 변경 — chevron 만, 우측 값 없음: accountId 는 불투명·대표 캐릭터는 파생·변동값이라 단정 불가) + 카드 2(캐시 데이터 삭제 + 연결 해제 — 둘 다 danger + showChevron={false}, 캐시 행 우측만 총 용량). 모달 셋은 카드 밖·셸 밖 형제(카드 안이면 divide-y 형제로 잡혀 구분선이 하나 더 그려지고, ScreenScroll 안이면 fixed 셸의 스태킹 컨텍스트에 갇혀 오버레이가 탭바 아래로 간다). 로직은 새로 만들지 않고 SettingsScreen(계정 모달·연결 해제·isDisconnecting)과 CacheDataSection(용량 로드·isClearing·clearCacheDataAndReload·reload 주입 프롭)에서 그대로 옮김 — 삭제 후 흐름(타임아웃 경쟁 → closeBossProfitDb → 스플래시 → 리로드, ADR-117 결정 8 의 순서)은 미변경. CacheDataSection.tsx + 그 테스트 삭제하고 12케이스를 전부 새 화면 테스트로 이관(커버리지 손실 0), SettingsScreen 은 import·사용 두 줄만 제거(카드·행·footer 무변경). 뒤집힌 옛 테스트 2건은 갱신이 아니라 재작성 — '데이터 관리 섹션을 업데이트 카드보다 위에'·'캐시 데이터 삭제 행을 렌더링한다' → '본화면에 두지 않는다' 하나로(이사 회귀 가드). 곁가지 1건: features/settings/cache-data.ts 주석이 지운 파일 경로를 가리켜 현재 화면으로 정정(동작 변경 0). 판별력 확인: 두 위험 행을 계정 변경과 같은 카드로 합치면 2,718개 중 '파괴적 행 둘을 계정 변경과 다른 카드로 내린다' 1건만 실패하고 나머지 2,717개는 전혀 감지하지 못함 → 그 케이스가 유일한 가드. 테스트 2,718개/180파일 통과(기준선 2,713/180 대비 +5 = 신규 18 − 삭제 12 − SettingsScreen 순감 1, 파일 수 ±0)·build 성공·lint 0 errors/17 warnings(baseline 동일).",
+      "completed_at": "2026-08-09T02:41:53+0900"
+    },
+    {
+      "step": 5,
+      "name": "release-notes-screen",
+      "status": "completed",
+      "started_at": "2026-08-09T02:41:53+0900",
+      "summary": "SettingsReleaseNotesScreen 신규 — /settings/about 과 같은 헤더 골격 + RELEASE_NOTES 를 배열 순서 그대로 카드로(버전·사용 중 배지·날짜 + 항목 목록, requiresStoreUpdate 항목에만 「스토어 업데이트 필요」 third 배지), 현재 버전은 live-update 스토어 + package.json 폴백, 빈 배열이면 EmptyState. 네트워크 0회(check 미호출). 라우트 배선은 step 6.",
+      "completed_at": "2026-08-09T02:47:25+0900"
+    },
+    {
+      "step": 6,
+      "name": "settings-shell",
+      "status": "completed",
+      "started_at": "2026-08-09T02:47:25+0900",
+      "summary": "ADR-118 결정 1·2·4·5·8 — 여기서 처음으로 화면이 이어진다. App.tsx 에 /settings 의 형제 라우트 셋(release-notes·account-data·about)을 기존 8개와 같은 lazy(...) 형태 + 같은 isCompleted 가드로 배선(중첩 아님 — ADR-077 이 /profit/drops 를 중첩으로 만든 근거인 부모 상태 보존이 설정엔 없다), TAB_ITEMS·NavLink 무변경(end 가 없어 하위 페이지에서도 설정 탭이 활성으로 남는 것을 테스트로 확인). SettingsScreen 재구성: 카드 1(스케줄 관리 방법·테마 — 배지+chevron 병기) + 카드 2(개발노트 대표값 없음 / 계정 및 데이터 캐시 총 용량, 조회 전 '- KB' / 앱 정보 currentVersion ?? packageJson.version), 이동은 전부 useScreenNavigate, 섹션 제목 0개·PageHeader 미도입(ADR-098 결정 3 재판단 조건은 순감이라 미해당). 계정 변경·연결 해제 행과 AccountModal·DisconnectConfirm·useSettingsStore·isDisconnect* 상태 제거, footer 고지 4줄·문구 원문 그대로 유지. 캐시 용량은 features/settings/cache-data 를 거치고 버전은 features/live-update 스토어를 거쳐 app/→storage/·native/ 직접 접근 0건, 새 색·크기·라운딩 0개(배지·평문값 클래스는 기존 문자열 그대로 ValueBadge/SummaryValue 로 지역 추출). 곁가지 1건: App.test.tsx 의 테마 스토어 목이 통짜 mockReturnValue 라 셀렉터를 무시해 PageHeader 안 ThemeHeaderBackdrop(useThemeStore((s)=>s.theme))이 상태 객체를 getThemeDefinition 에 넘겨 터졌다 — 셀렉터 인지 mockThemeStore() 헬퍼로 바꾸고 기존 3곳도 같은 헬퍼로 통일. 뒤집힌 옛 테스트는 갱신이 아니라 파일째 재작성(계약이 정반대: 4행 한 카드 → 5행 두 카드). 판별력 확인: 두 카드를 하나로 합치면 2,745개 중 '값을 고르는 두 행과 화면이 넘어가는 세 행이 서로 다른 카드에 있다' 1건만 실패하고 나머지 2,744개는 전혀 감지하지 못함 → 그 케이스가 유일한 가드. 테스트 2,745개/181파일 통과(기준선 2,727/181 대비 +18 = SettingsScreen 재작성 순증 9 + App 라우팅 통합 9, 파일 수 ±0)·build 성공·lint 0 errors/17 warnings(baseline 동일)·grep(CacheDataSection|AccountModal|DisconnectConfirm) = 0.",
+      "completed_at": "2026-08-09T02:58:25+0900"
+    },
+    {
+      "step": 7,
+      "name": "manifest-notes",
+      "status": "completed",
+      "started_at": "2026-08-09T02:58:25+0900",
+      "summary": "ADR-119 결정 5 — LiveUpdateManifest 에 `notes?: string` 선택 필드 추가 + parseLiveUpdateManifest 가 minNativeVersion 과 **같은 자리·같은 모양**으로 처리(필수 검사는 version·url·checksum·size 그대로, 새 분기 0개 — 조건부 스프레드 한 줄만 추가). 왜 선택 필드인지(이미 발행된 옛 매니페스트엔 필드가 없고, 필수로 만들면 그것을 읽는 기존 설치본이 전부 null → check-error 로 업데이트를 영영 못 받는다)와 원천이 src/data/release-notes.ts 이되 **여기서 읽지 않는 이유**(매니페스트는 원격에서 온 값)를 주석으로 남김 — import 0건, native/ → features/·app/ 의존 0건(imports: @capacitor/*·@capgo/*·storage/sqlite/db·./splash-screen). UpdatePromptModal·check()·다운로드·적용 흐름 무변경(src 변경 파일 1개, +8줄). TDD — 테스트 3건 먼저: ①notes 없는 매니페스트가 그대로 통과하고 결과에 notes 키 자체가 없다(핵심 회귀 가드) ②문자열이면 실린다(객체·JSON 문자열 양쪽) ③숫자·객체·null·배열이면 매니페스트를 버리지 않고 그 필드만 빠진 채 통과한다(양쪽). 구현 전 실행에서 ②만 실패해 새 계약이 정확히 그 한 줄임을 확인. **판별력 확인(이 step 최대 위험)**: notes 를 필수 검사에 넣으면 2,748개 중 **8건만** 실패하고 전부 '노트 없는 매니페스트' 한 가족이다 — parse 4건(픽스처에 notes 없음)과 checkForLiveUpdate 4건(up-to-date·update-available·store-required 2건이 전부 kind:'error' 로 떨어짐 = ADR 이 경고한 '기존 설치본의 업데이트 확인이 전부 실패' 가 실측으로 재현). 나머지 180파일 2,740개는 전혀 감지하지 못함. 확인 후 되돌림. 테스트 2,748개/181파일 통과(기준선 2,745/181 대비 +3, 새 파일 0)·build 성공·lint 0 errors/17 warnings(baseline 동일).",
+      "completed_at": "2026-08-09T03:02:10+0900"
+    },
+    {
+      "step": 8,
+      "name": "publish-notes-guard",
+      "status": "completed",
+      "started_at": "2026-08-09T03:02:11+0900",
+      "summary": "ADR-119 결정 6 + 결정 1 두 번째 갈래 — publish-live-update.mjs 가 릴리스 노트 원천을 그대로 읽어 배포를 게이트하고 매니페스트에 notes 를 싣는다. TS 를 읽는 방법은 **Node 내장 타입 스트리핑**(24.14.0 실측, 22.18+/23.6+ 부터 플래그 없이 켜짐)으로 .mjs 가 src/data/release-notes.ts 를 static import — 새 의존성 0개(package.json/lock diff 없음), 정규식 파싱 없음, 사본 없음(노트 문구 grep 결과 원천 1곳뿐). 순수 함수 셋으로 갈라 테스트 — isPublishableReleaseNote(없음/빈 items → 중단) · formatReleaseNotes(항목당 한 줄 `• text`, requiresStoreUpdate 는 줄 끝 `(스토어 업데이트 필요)`, 구분 \\n — 이슈 #164 가 그대로 읽으므로 규칙을 주석으로 고정) · resolveManifestNotes(조회+판정+합치기, 없으면 null = 중단 판정). 가드는 버전 형식 검사 바로 다음(빌드 1/5 보다 앞이라 몇 분을 안 버린다), 실패 문구는 무엇을 해야 하는지까지. 매니페스트의 notes 는 minNativeVersion 옆이지만 **조건부 전개가 아니라 평문 필드** — 그쪽은 CLI 인자라 정말 없을 수 있고 이쪽은 가드를 통과한 시점에 반드시 있어, 조건부로 쓰면 결정 6 계약과 어긋나는 죽은 분기가 된다(읽는 쪽의 선택 필드성(결정 5)은 옛 매니페스트를 읽는 기존 설치본 사정이지 이 스크립트가 비워 보낼 수 있어서가 아니다). **지금 스크립트를 돌리면 가드에 걸려 중단되는 것이 정상** — 실행해 확인: package.json 은 1.0.2 이고 release-notes.ts 에는 1.0.3 만 있어 빌드 전에 exit 1(`src/data/release-notes.ts 에 1.0.2 노트가 없습니다`). 다음 릴리스에서 version 을 1.0.3 으로 올리면 맞물린다. 판별력 확인 3건: 빈 items 가드 제거 / 표식 제거 / null 반환 제거를 각각 넣으면 2,756개 중 **해당 1건씩만** 실패하고 나머지 2,755개는 전혀 감지하지 못함. 테스트 2,756개/181파일 통과(기준선 2,748/181 대비 +8, 새 파일 0)·build 성공·lint 0 errors/17 warnings(baseline 동일)·node --check 통과.",
+      "completed_at": "2026-08-09T03:08:43+0900"
+    },
+    {
+      "step": 9,
+      "name": "docs-finalize",
+      "status": "completed",
+      "started_at": "2026-08-09T03:08:43+0900",
+      "summary": "문서 마감 — ADR-118·119 상태를 `설계 확정 · 구현 전` → `구현 완료(2026-08-09) · 실기기 미검증`/`실배포 미검증` 으로 바꾸고 결정 18개(10+8) 전부 '구현됨'으로 판정(폐기·설계 이탈 0건), **결정 본문은 한 줄도 고치지 않고** step 1~8 이 설계 공백을 메운 것만 「구현하며 정정한 것」 절로 신설(ADR-118 다섯: 외부 링크 행이 별도 컴포넌트인 이유·AppUpdateSection 이 껍데기를 벗은 방식·CacheDataSection 은 이사가 아니라 삭제·모달이 셸 밖 형제인 두 이유·대표값 조회 전 `- KB` / ADR-119 셋: .mjs 가 .ts 를 읽는 법은 Node 내장 타입 스트리핑·formatReleaseNotes 가 고정한 매니페스트 문자열 형식·쓰는 쪽 notes 는 조건부가 아닌 평문 필드). ADR.md 인덱스 2줄도 같은 상태로 갱신. **미검증을 '해소됨'으로 적지 않았다** — ADR-118 미검증 3(캐시 용량 조회)은 오히려 **1회 → 2회로 나빠진 것**을 정정 5·미검증 3·settings.md 열린 질문 세 곳에 실측 근거와 함께 남겼고(하위 화면이 직접 진입 가능한 라우트라 값을 물려 내릴 수 없다), ADR-119 미검증 2는 '가드가 발동하는 것만 확인, 노트를 실은 배포는 0회'로 방향을 갈라 적었다. settings.md 재점검 — 「설정 리스트 행 + 모달」의 *'리스트 컨테이너 하나에 행을 이어붙임 · 행 전체가 버튼'* 서술을 현행(공용 `Card` atom 둘 + `SettingsRow`(button)/`SettingsLinkRow`(anchor) + `row-class.ts`)으로 갱신하고 옛 문장은 지우지 않고 history 로 이동(곁가지: 그 문장의 `text-error` 가 ADR-064 `*-text`→`*-ink` 개명 이후 계속 어긋나 있던 것을 실제 토큰 `text-error-ink` 로 정정), 「이 화면에는 고정 헤더가 없다」→「본화면에는 없다 — 하위 페이지 셋은 쓴다」로 갈라 쓰고 **835pt 는 개편 전 구조의 값이라 개편 후는 구현 뒤에도 재지 않았음**을 명시, 개발노트 화면 절 신설, 후속 task 에 #166(전환)·#164(모달 노트) 추가. live-update.md 에 매니페스트 문자열 형식(`• text` / 줄 끝 `(스토어 업데이트 필요)` / `\\n`)과 쓰는 쪽 비조건부 계약, release.md 에 타입 스트리핑 규약(`tsx`·`ts-node` 금지·정규식 파싱 금지)과 **다음 릴리스는 1.0.3 이며 지금 돌리면 가드에 걸려 중단되는 것이 정상**이라는 경고 박스, README.md 설정 행에 실제 컴포넌트명(`Settings*Screen`)·행 프리미티브·`src/types/release-notes.ts` 반영. 곁가지 2건: 지워진 `CacheDataSection` 경로를 가리키던 error-resilience.md·persistence/sqlite.md 를 현재 파일로 정정. 문서↔코드 대조는 grep 으로 실시(`최신 버전입니다`·라우트 3개·`개인정보 처리방침`·`SETTINGS_ROW_CLASS`·`text-error-ink`·`사용 중`/`third` 배지·EmptyState 기본 inline — 전부 일치). **이슈 대조 — 닫지 않았고, 남은 것**: #135 은 네 후보 중 '섹션 제목 도입'만 **기각**(카드 경계로 대체, ADR-118 시안 C)이고 나머지 셋(파괴적 행 분리·우측 표기 통일·문서/ADR)은 해소, ⚠️범위 미정의 '새 설정 항목 추가(알림 등)'는 **미포함 확정**·연관 #61(설정에 API 키 진입점)은 결정 9⑵ 로 **부활 안 함** 확정 → 남은 것은 실기기 확인뿐. #161 은 체크박스 3건 전부 구현, ⚠️남은 결정 4(진입점=본화면 카드 2 의 행)·5(안 읽음 표시=두지 않음)도 닫혔으나 **#164(모달에 노트 그리기)는 여전히 미착수**이고 **노트를 실은 실배포가 0회**라 두 이슈 다 열어 둠. AC — build 성공 · lint 0 errors/17 warnings(baseline 동일) · 테스트 **2,756개/181파일** 통과(step 8 과 동일, 증감 0) · `git status --short src/ scripts/` 빈 출력(소스 변경 0건).",
+      "completed_at": "2026-08-09T03:23:25+0900"
+    }
+  ],
+  "created_at": "2026-08-09T02:01:22+0900",
+  "completed_at": "2026-08-09T03:23:25+0900"
+}
