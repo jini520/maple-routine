@@ -46,15 +46,16 @@ function RosterBody(props: {
   emptyAction?: { label: string; onClick: () => void }
 }): React.JSX.Element {
   if (props.roster.length > 0) {
-    const stale = props.loadError === null ? null : formatStaleRosterError(props.loadError, 'onboarding')
+    const stale = props.loadError === null ? null : formatStaleRosterError(props.loadError)
     return (
       <>
         {stale !== null && (
           <StaleBanner
             message={stale.message}
-            // place='onboarding'은 openSettings를 반환하지 않으므로(이 화면에는 설정이 없다)
-            // 액션이 있으면 항상 재시도다. 그래도 kind를 확인해 매핑한다 — 포맷터가 바뀌어
-            // openSettings가 오면 갈 곳 없는 버튼을 그리는 대신 여기서 버튼이 사라져 드러난다.
+            // 배너의 액션은 재시도뿐이다 — 401도 429도 characterUnavailable도 액션이 없다
+            // ([[ADR-114]] 결정 3, [[ADR-115]] 결정 7). 그래도 kind를 확인해 매핑한다: 지금은
+            // 타입상 'retry' 하나뿐이라 결과가 같지만, 재시도가 아닌 액션이 새로 생기면 그 자리에
+            // 갈 곳 없는 버튼을 그리는 대신 여기서 버튼이 사라져 드러난다.
             action={
               stale.action?.kind === 'retry' ? { label: stale.action.label, onClick: props.onRetry } : undefined
             }
@@ -84,8 +85,9 @@ function RosterBody(props: {
 
   if (props.loadError !== null) {
     const copy = formatRosterError(props.loadError, 'onboarding')
-    // place='onboarding'은 openSettings를 반환하지 않으므로 액션이 있으면 항상 재시도다.
-    // 영구 실패(조회 불가 캐릭터)는 액션이 없다([[ADR-067]] 결정 1).
+    // 액션이 있으면 항상 재시도다(타입상으로도 'retry' 하나뿐이다). 영구 실패(조회 불가 캐릭터)와
+    // 429는 액션이 없고([[ADR-067]] 결정 1, [[ADR-114]] 결정 2), 401은 이 자리에서만 재시도를
+    // 유지한다 — 온보딩 중에는 무효화 경로가 성립하지 않아 재시도가 실제 처방이다([[ADR-115]] 결정 6).
     return (
       <ErrorState
         title={copy.title}

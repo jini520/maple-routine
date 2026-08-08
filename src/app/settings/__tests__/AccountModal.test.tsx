@@ -51,6 +51,20 @@ describe('AccountModal', () => {
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '0')
   })
 
+  // ADR-115 결정 7: refreshAccounts 가 401을 만나면 설정 스토어는 무효화 진입점에 넘기고
+  // RESET(=idle)으로 돌아간다 — 그 복귀가 이 모달의 닫힘 판정이라 별도 배선 없이 모달이 정리된다.
+  it('status가 idle로 돌아오면 모달이 닫힌다', () => {
+    const onClose = vi.fn()
+    mockStore({ status: 'verifying' })
+    const { rerender } = render(<AccountModal onClose={onClose} />)
+    expect(onClose).not.toHaveBeenCalled()
+
+    mockStore({ status: 'idle' })
+    rerender(<AccountModal onClose={onClose} />)
+
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
   it('오버레이 클릭 시 onClose가 호출된다', async () => {
     mockStore({})
     const onClose = vi.fn()

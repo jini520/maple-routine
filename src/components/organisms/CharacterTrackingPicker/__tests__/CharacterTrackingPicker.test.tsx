@@ -21,7 +21,7 @@ const entries: CharacterPickerEntry[] = [
 // ADR-053 결정 3: 로딩/실패는 호출부가 getCharacterPickerRoster의 Promise로 판정해 내려준다.
 // ADR-062 결정 2: loadFailed(boolean)를 loadError(원인)로 바꿔 원인별 문구·액션을 그린다.
 // 아래 기존 케이스는 모두 "조회 완료 + 성공" 상태를 전제한다.
-const loaded = { isLoading: false, loadError: null, onRetry: vi.fn(), onOpenSettings: vi.fn() }
+const loaded = { isLoading: false, loadError: null, onRetry: vi.fn() }
 
 describe('CharacterTrackingPicker', () => {
   it('제목과 설명을 보여준다', () => {
@@ -394,28 +394,25 @@ describe('CharacterTrackingPicker — 로딩/빈/실패 상태 (ADR-053 · ADR-0
   })
 
   // ADR-062 결정 3: 401에 재시도를 주는 것은 눌러도 실패하는 버튼을 주는 것이다.
-  it('401 실패는 재시도가 아니라 설정 열기를 준다', async () => {
-    const user = userEvent.setup()
-    const onRetry = vi.fn()
-    const onOpenSettings = vi.fn()
+  // ADR-115 결정 1·7: 그 대신 설정으로 보내던 것도 폐기됐다 — 설정에는 키를 바꿀 자리가 없고,
+  // 이 401은 곧 키 무효화라 화면이 스스로 키 입력으로 이동한다. 그래서 누를 것이 없다.
+  it('401 실패는 액션 없이 이동을 알린다 — 모달 자체 버튼(닫기·저장) 외에는 버튼이 없다', () => {
     render(
       <CharacterTrackingPicker
         entries={[]}
         trackedOcids={[]}
         {...loaded}
         loadError={{ kind: 'invalidApiKey' }}
-        onRetry={onRetry}
-        onOpenSettings={onOpenSettings}
         onSave={vi.fn()}
         onClose={vi.fn()}
       />,
     )
 
+    const errorState = screen.getByRole('alert')
+    expect(within(errorState).getByText('키 입력 화면으로 이동합니다')).toBeInTheDocument()
+    expect(within(errorState).queryByRole('button')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: '다시 시도' })).not.toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: '설정 열기' }))
-
-    expect(onOpenSettings).toHaveBeenCalledTimes(1)
-    expect(onRetry).not.toHaveBeenCalled()
+    expect(screen.queryByRole('button', { name: '설정 열기' })).not.toBeInTheDocument()
   })
 
   // ADR-062 결정 4: 캐시 stub이 네트워크보다 먼저 방출되므로(ADR-017 결정 6) 예열이 끝난
@@ -481,18 +478,14 @@ describe('CharacterTrackingPicker — 로딩/빈/실패 상태 (ADR-053 · ADR-0
     expect(screen.getByRole('button', { name: /낟낟/ })).toBeInTheDocument()
   })
 
-  it('401 배너는 재시도가 아니라 설정 열기를 준다', async () => {
-    const user = userEvent.setup()
-    const onRetry = vi.fn()
-    const onOpenSettings = vi.fn()
+  // ADR-115 결정 7: 배너에서도 설정 열기가 사라진다 — 문구는 그대로고 액션만 없어진다.
+  it('401 배너는 원인만 말하고 액션을 주지 않는다', () => {
     render(
       <CharacterTrackingPicker
         entries={entries}
         trackedOcids={[]}
         {...loaded}
         loadError={{ kind: 'invalidApiKey' }}
-        onRetry={onRetry}
-        onOpenSettings={onOpenSettings}
         onSave={vi.fn()}
         onClose={vi.fn()}
       />,
@@ -500,12 +493,9 @@ describe('CharacterTrackingPicker — 로딩/빈/실패 상태 (ADR-053 · ADR-0
 
     const banner = screen.getByTestId('stale-banner')
     expect(within(banner).getByText('API 키가 유효하지 않아 목록을 갱신하지 못했습니다')).toBeInTheDocument()
-    expect(within(banner).queryByRole('button', { name: '다시 시도' })).not.toBeInTheDocument()
-
-    await user.click(within(banner).getByRole('button', { name: '설정 열기' }))
-
-    expect(onOpenSettings).toHaveBeenCalledTimes(1)
-    expect(onRetry).not.toHaveBeenCalled()
+    expect(within(banner).queryByRole('button')).not.toBeInTheDocument()
+    // 목록은 그대로 남는다 — 이동 직전 한 프레임이자 안전망이다.
+    expect(screen.getByRole('button', { name: /낟낟/ })).toBeInTheDocument()
   })
 
   // ADR-067 결정 1: 400 OPENAPI00003은 영구다 — 언제 눌러도 같은 400이라 액션을 주지 않는다.

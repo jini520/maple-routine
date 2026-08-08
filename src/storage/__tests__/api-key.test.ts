@@ -1,6 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { Preferences } from '@capacitor/preferences'
-import { clearAuthConfig, getAuthConfig, setApiKey, setSelectedAccountId } from '../api-key'
+import {
+  clearAuthConfig,
+  getAuthConfig,
+  removeApiKey,
+  setApiKey,
+  setSelectedAccountId,
+} from '../api-key'
+import { STORAGE_KEYS } from '../keys'
 
 vi.mock('@capacitor/preferences', () => {
   const store = new Map<string, string>()
@@ -64,6 +71,39 @@ describe('저장된 값이 없는 경우', () => {
     await setApiKey('test-api-key')
     await setSelectedAccountId('account-1')
     await clearAuthConfig()
+    await expect(getAuthConfig()).resolves.toBeNull()
+  })
+})
+
+// ADR-115 결정 3: 키 무효화(401/403)는 apiKey 하나만 지운다. clearAuthConfig(연결 해제)와
+// 섞이면 재입력 후의 재개(결정 4)가 읽을 값이 사라져 조용히 깨진다.
+describe('removeApiKey', () => {
+  it('apiKey를 제거한다', async () => {
+    await setApiKey('test-api-key')
+
+    await removeApiKey()
+
+    expect(Preferences.remove).toHaveBeenCalledWith({ key: STORAGE_KEYS.apiKey })
+    await expect(Preferences.get({ key: STORAGE_KEYS.apiKey })).resolves.toEqual({ value: null })
+  })
+
+  it('selectedAccountId는 저장소에 그대로 남는다 — 키 재입력 후의 재개가 그 값을 쓴다', async () => {
+    await setApiKey('test-api-key')
+    await setSelectedAccountId('account-1')
+
+    await removeApiKey()
+
+    await expect(Preferences.get({ key: STORAGE_KEYS.selectedAccountId })).resolves.toEqual({
+      value: 'account-1',
+    })
+  })
+
+  it('그 뒤 getAuthConfig는 null을 반환한다 — apiKey가 없으면 나머지를 읽지 않는다', async () => {
+    await setApiKey('test-api-key')
+    await setSelectedAccountId('account-1')
+
+    await removeApiKey()
+
     await expect(getAuthConfig()).resolves.toBeNull()
   })
 })

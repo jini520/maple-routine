@@ -1,6 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { MapleAccount } from '../../../types'
-import { NexonAuthError, NexonNetworkError, NexonRateLimitError } from '../../../nexon/errors'
+import {
+  NexonAuthError,
+  NexonBadRequestError,
+  NexonNetworkError,
+  NexonRateLimitError,
+} from '../../../nexon/errors'
 import { initialSettingsState } from '../state'
 
 const { fetchCharacterListMock } = vi.hoisted(() => ({
@@ -17,8 +22,9 @@ const { prefetchAccountDataMock } = vi.hoisted(() => ({
   prefetchAccountDataMock: vi.fn(),
 }))
 
-const { onboardingResetMock } = vi.hoisted(() => ({
+const { onboardingResetMock, noticeApiKeyInvalidMock } = vi.hoisted(() => ({
   onboardingResetMock: vi.fn(),
+  noticeApiKeyInvalidMock: vi.fn(),
 }))
 
 const { setTrackedCharacterOcidsMock, seedManualTrackedContentMock, trackingModeRef } = vi.hoisted(
@@ -45,7 +51,7 @@ vi.mock('../../onboarding/prefetch', () => ({
 
 vi.mock('../../onboarding/store', () => ({
   useOnboardingStore: {
-    getState: () => ({ reset: onboardingResetMock }),
+    getState: () => ({ reset: onboardingResetMock, noticeApiKeyInvalid: noticeApiKeyInvalidMock }),
   },
 }))
 
@@ -86,6 +92,7 @@ beforeEach(() => {
   setSelectedAccountIdMock.mockResolvedValue(undefined)
   prefetchAccountDataMock.mockResolvedValue(undefined)
   onboardingResetMock.mockResolvedValue(undefined)
+  noticeApiKeyInvalidMock.mockResolvedValue(undefined)
   setTrackedCharacterOcidsMock.mockResolvedValue(undefined)
   seedManualTrackedContentMock.mockResolvedValue(undefined)
   trackingModeRef.current = 'auto'
@@ -154,6 +161,17 @@ describe('useSettingsStore.changeApiKey', () => {
     expect(state.status).toBe('error')
     expect(state.error).toEqual({ kind: 'invalidApiKey' })
     expect(setApiKeyMock).not.toHaveBeenCalled()
+  })
+
+  // ADR-115 결정 8: 이 경로의 401은 "사용자가 방금 나쁜 키를 입력한 것"이라 저장된 키의 무효화와
+  // 성질이 다르다 — 같은 401이라는 이유로 무효화 진입점에 배선하면 안 된다.
+  it('401을 만나도 무효화 진입점을 부르지 않는다(ADR-115 결정 8)', async () => {
+    fetchCharacterListMock.mockRejectedValue(new NexonAuthError('invalid'))
+
+    await useSettingsStore.getState().changeApiKey('new-key')
+
+    expect(noticeApiKeyInvalidMock).not.toHaveBeenCalled()
+    expect(useSettingsStore.getState().status).toBe('error')
   })
 
   it('NexonRateLimitError(429)를 만나면 rateLimited error가 된다', async () => {
@@ -246,24 +264,54 @@ describe('useSettingsStore.refreshAccounts', () => {
     expect(state.error).toEqual({ kind: 'network' })
   })
 
-  it('NexonAuthError를 만나면 invalidApiKey error가 된다', async () => {
+  // ADR-115 결정 7: 여기 401은 사용자가 방금 입력한 키가 아니라 **저장된 키**가 무효화된 것이다.
+  // 인라인 카드에 머무르면 키를 바꿀 자리가 없어 막다른 길이라(이슈 #157) 무효화 진입점으로 넘긴다.
+  it('NexonAuthError를 만나면 무효화 진입점으로 넘기고 idle로 돌아간다(인라인 error를 남기지 않는다)', async () => {
     fetchCharacterListMock.mockRejectedValue(new NexonAuthError('invalid'))
 
     await useSettingsStore.getState().refreshAccounts()
 
+    expect(noticeApiKeyInvalidMock).toHaveBeenCalledTimes(1)
     const state = useSettingsStore.getState()
-    expect(state.status).toBe('error')
-    expect(state.error).toEqual({ kind: 'invalidApiKey' })
+    // 화면은 곧 /onboarding 으로 간다(결정 2). 지나간 실패를 남겨 두면 설정을 다시 열었을 때
+    // 되살아나고, idle 복귀는 AccountModal 의 닫힘 판정이기도 하다.
+    expect(state.status).toBe('idle')
+    expect(state.error).toBeNull()
   })
 
-  it('NexonRateLimitError를 만나면 rateLimited error가 된다', async () => {
+  // ADR-115 결정 9: 저장된 키가 폐기됐을 때 넥슨이 실제로 주는 응답이 이것이다(401 이 아니다).
+  // 사용자가 정상 키로 온보딩을 마친 뒤 그 키를 삭제해 재현한 경로가 곧 이 케이스다.
+  it('400 OPENAPI00005 도 같은 무효화 경로로 넘긴다 — 폐기된 키의 실제 응답이다', async () => {
+    fetchCharacterListMock.mockRejectedValue(new NexonBadRequestError('x', 'OPENAPI00005'))
+
+    await useSettingsStore.getState().refreshAccounts()
+
+    expect(noticeApiKeyInvalidMock).toHaveBeenCalledTimes(1)
+    expect(useSettingsStore.getState().status).toBe('idle')
+  })
+
+  // 회귀 가드: 나머지 원인은 그대로 인라인 카드(ADR-063 — 모달 본문 전체를 차지하는 자리라
+  // 토스트로 옮기면 빈 상자가 된다)에 남는다.
+  it('NexonRateLimitError를 만나면 rateLimited error가 되고 무효화 경로를 타지 않는다', async () => {
     fetchCharacterListMock.mockRejectedValue(new NexonRateLimitError('rate limited'))
 
     await useSettingsStore.getState().refreshAccounts()
 
+    expect(noticeApiKeyInvalidMock).not.toHaveBeenCalled()
     const state = useSettingsStore.getState()
     expect(state.status).toBe('error')
     expect(state.error).toEqual({ kind: 'rateLimited' })
+  })
+
+  it('그 외 에러(네트워크 등)를 만나면 network error가 되고 무효화 경로를 타지 않는다', async () => {
+    fetchCharacterListMock.mockRejectedValue(new NexonNetworkError('network fail'))
+
+    await useSettingsStore.getState().refreshAccounts()
+
+    expect(noticeApiKeyInvalidMock).not.toHaveBeenCalled()
+    const state = useSettingsStore.getState()
+    expect(state.status).toBe('error')
+    expect(state.error).toEqual({ kind: 'network' })
   })
 })
 

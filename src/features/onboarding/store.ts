@@ -1,14 +1,21 @@
 import { create } from 'zustand'
 import { fetchCharacterList } from '../../nexon/character'
-import { NexonAuthError, NexonRateLimitError } from '../../nexon/errors'
-import { clearAuthConfig, getAuthConfig, setApiKey, setSelectedAccountId } from '../../storage/api-key'
-import { getTrackedCharacterOcids, setTrackedCharacterOcids } from '../../storage/character-selection'
-import { getTrackingMode, setTrackingMode, type TrackingMode } from '../../storage/tracking-mode'
+import { isInvalidApiKeyError, NexonRateLimitError } from '../../nexon/errors'
+import {
+  clearAuthConfig,
+  getAuthConfig,
+  removeApiKey,
+  setApiKey,
+  setSelectedAccountId,
+} from '../../storage/api-key'
+import { setTrackedCharacterOcids } from '../../storage/character-selection'
+import { type TrackingMode } from '../../storage/tracking-mode'
 import { useToastStore } from '../toast/store'
 import { formatOnboardingError } from './format'
 import { seedManualTrackedContent } from '../tracking-mode/seed'
 import { useTrackingModeStore } from '../tracking-mode/store'
 import { prefetchAccountData } from './prefetch'
+import { deriveResumeTarget, type ResumeTarget } from './resume'
 import { initialOnboardingState, onboardingReducer, type OnboardingError, type OnboardingState } from './state'
 
 export interface OnboardingStore extends OnboardingState {
@@ -19,11 +26,18 @@ export interface OnboardingStore extends OnboardingState {
   submitContentCharacters(ocids: string[]): Promise<void>
   // ADR-086 결정 8: 고른 계정의 후보가 0명일 때의 유일한 탈출구 — 온보딩 중에는 설정 화면이 없다.
   restartAccountSelection(): Promise<void>
+  // ADR-115 결정 10: 저장된 키가 무효화됐을 때(400 OPENAPI00005 · 401/403) 부르는 유일한 진입점.
+  // 알리기만 하고(모달) 이동·삭제는 하지 않는다 — 그것은 아래 confirmApiKeyInvalid 가 한다.
+  noticeApiKeyInvalid(): void
+  // 그 모달의 "확인" — 키 입력 화면으로 이동하고 저장된 apiKey 를 지운다.
+  confirmApiKeyInvalid(): Promise<void>
   reset(): Promise<void>
 }
 
 function toOnboardingError(error: unknown): OnboardingError {
-  if (error instanceof NexonAuthError) {
+  // ADR-115 결정 9: 400 OPENAPI00005 도 무효 키다(판정은 nexon/errors 한 곳). 이 폼에서 키를 잘못
+  // 입력하면 전에는 "네트워크 오류가 발생했습니다"가 떴다 — 원인이 키인데 네트워크를 가리켰다.
+  if (isInvalidApiKeyError(error)) {
     return { kind: 'invalidApiKey' }
   }
   if (error instanceof NexonRateLimitError) {
@@ -74,6 +88,28 @@ export const useOnboardingStore = create<OnboardingStore>()((set, get) => {
     set((state) => onboardingReducer(state, { type: 'API_KEY_VERIFIED', accounts }))
   }
 
+  // 재개 파생(deriveResumeTarget)이 가리킨 뒤 단계로 곧바로 전이한다. 부팅(restoreFromStorage)과
+  // 키 재입력(submitApiKey)이 같은 전이를 쓴다 — 이 자리에 네트워크는 없다(ADR-115 결정 4).
+  function commitResumedStep(target: Extract<ResumeTarget, { selectedAccountId: string }>): void {
+    if (target.status === 'completed') {
+      set((state) =>
+        onboardingReducer(state, {
+          type: 'RESTORE_COMPLETED',
+          selectedAccountId: target.selectedAccountId,
+        }),
+      )
+      return
+    }
+
+    set((state) =>
+      onboardingReducer(state, {
+        type: 'RESTORE_STEP',
+        status: target.status,
+        selectedAccountId: target.selectedAccountId,
+      }),
+    )
+  }
+
   return {
     ...initialOnboardingState,
 
@@ -82,57 +118,18 @@ export const useOnboardingStore = create<OnboardingStore>()((set, get) => {
     // 진행 상태 전용 키를 두지 않는 이유: 각 단계의 산출물이 이미 영속화돼 있어서, 진행 상태를
     // 따로 쓰면 진실이 둘이 되고 한쪽만 써진 채 앱이 죽는 순간 어긋난다.
     async restoreFromStorage() {
-      const authConfig = await getAuthConfig()
-      if (authConfig === null) {
+      const target = await deriveResumeTarget()
+
+      if (target.status === 'awaitingApiKey') {
         return
       }
 
-      if (authConfig.selectedAccountId === null) {
-        await loadAccountsForSelection(authConfig.apiKey)
+      if (target.status === 'selectingAccount') {
+        await loadAccountsForSelection(target.apiKey)
         return
       }
 
-      const selectedAccountId = authConfig.selectedAccountId
-      // 뒤 두 단계 판정은 로컬 읽기뿐이다 — 예열(ADR-016)을 다시 돌리지 않는다.
-      const [trackingMode, trackedOcids] = await Promise.all([
-        getTrackingMode(),
-        getTrackedCharacterOcids(),
-      ])
-      const hasTrackedCharacters = trackedOcids !== null && trackedOcids.length > 0
-
-      // ADR-086 결정 2 마이그레이션(1회): ADR-035 이전 설치본에서 완주한 사용자는 trackingMode
-      // 키가 없다 — 그대로 두면 정상 사용자가 온보딩으로 되돌려진다.
-      if (trackingMode === null && hasTrackedCharacters) {
-        await setTrackingMode('auto')
-        set((state) => onboardingReducer(state, { type: 'RESTORE_COMPLETED', selectedAccountId }))
-        return
-      }
-
-      if (trackingMode === null) {
-        set((state) =>
-          onboardingReducer(state, {
-            type: 'RESTORE_STEP',
-            status: 'selectingTrackingMode',
-            selectedAccountId,
-          }),
-        )
-        return
-      }
-
-      // trackedCharacters가 빈 배열이면 미완료다 — "최소 1명"(결정 7)이 있으므로 빈 배열은
-      // 사용자 의도가 아니라 끝내지 않은 단계다(저장 레이어의 null vs [] 구분은 그대로 둔다).
-      if (!hasTrackedCharacters) {
-        set((state) =>
-          onboardingReducer(state, {
-            type: 'RESTORE_STEP',
-            status: 'selectingContentCharacters',
-            selectedAccountId,
-          }),
-        )
-        return
-      }
-
-      set((state) => onboardingReducer(state, { type: 'RESTORE_COMPLETED', selectedAccountId }))
+      commitResumedStep(target)
     },
 
     async submitApiKey(apiKey: string) {
@@ -161,6 +158,24 @@ export const useOnboardingStore = create<OnboardingStore>()((set, get) => {
       }
 
       useToastStore.getState().showSuccess('API 키를 확인했어요')
+
+      // ADR-115 결정 4: 키 재입력이면 뒤 단계를 저장된 값으로 재개한다 — 계정 선택·모드·캐릭터를
+      // 다시 묻지 않는다. 파생은 부팅과 같은 함수 하나가 한다(setApiKey 뒤라야 authConfig가 채워져
+      // 있다). 예열(ADR-016)은 여기서 돌지 않는다 — 계정을 확정하는 selectAccount 하나뿐이다(ADR-051).
+      const target = await deriveResumeTarget()
+      // 결정 5: 새로 넣은 키가 다른 넥슨 계정의 키일 수 있다. 저장된 selectedAccountId가 방금 받은
+      // 응답에 없으면 재개하지 않고 기존대로 계정 선택부터 간다 — 안 그러면 남의 계정 키로 이전 계정
+      // ocid 추적 목록을 그대로 쓰게 된다. 추가 호출은 없다(이미 손에 있는 응답으로 판정한다).
+      // awaitingApiKey는 setApiKey 직후라 정상적으로는 올 수 없다 — 방어적으로 기존 흐름에 떨어뜨린다.
+      if (
+        target.status !== 'awaitingApiKey' &&
+        target.status !== 'selectingAccount' &&
+        accounts.some((candidate) => candidate.accountId === target.selectedAccountId)
+      ) {
+        commitResumedStep(target)
+        return
+      }
+
       set((state) => onboardingReducer(state, { type: 'API_KEY_VERIFIED', accounts }))
     },
 
@@ -222,6 +237,48 @@ export const useOnboardingStore = create<OnboardingStore>()((set, get) => {
       }
 
       set((state) => onboardingReducer(state, { type: 'ONBOARDING_FINISHED' }))
+    },
+
+    // ADR-115 결정 10: 무효 키를 만나면 **알리기만** 한다 — 화면을 빼앗지 않는다.
+    // 결정 1 의 "토스트 + 즉시 이동"은 폐기됐다: 이동이 먼저 일어나면 사용자는 이미 바뀐 화면에서
+    // 이유를 읽게 되고, 토스트는 스스로 사라져 놓칠 수 있다. 이제 원래 화면 위에 **닫을 수 없는**
+    // 모달이 덮이고, 이동은 사용자가 "확인"을 눌러야(confirmApiKeyInvalid) 일어난다.
+    noticeApiKeyInvalid() {
+      // 결정 6: 멱등 가드. 동기 함수라 이 구간 전체가 원자적이다 — 여러 화면·여러 캐릭터에서
+      // 401(400 00005)이 동시에 터져도 모달은 하나다. 키 입력 화면에서 다시 나는 실패는 그때
+      // status가 completed가 아니라 여기 걸린다(재이동 루프가 구조적으로 불가능하다 —
+      // 그 실패는 ADR-065 결정 1의 폼 토스트로 남는다).
+      if (get().status !== 'completed' || get().apiKeyInvalidNotice) {
+        return
+      }
+
+      // status는 completed 그대로다 — 뒤에 원래 화면이 남아 있어야 사용자가 무엇을 하다 이렇게
+      // 됐는지 보면서 이유를 읽는다(결정 10). 저장소도 아직 건드리지 않는다.
+      set((state) => onboardingReducer(state, { type: 'API_KEY_INVALID_NOTICED' }))
+    },
+
+    // ADR-115 결정 10: 모달의 "확인" — 여기서야 이동과 삭제가 일어난다.
+    async confirmApiKeyInvalid() {
+      if (!get().apiKeyInvalidNotice) {
+        return
+      }
+
+      // 결정 2: 이동은 상태를 뒤집는 것으로 일어난다 — App.tsx의 isCompleted 가드가 라우터로
+      // /onboarding에 보낸다. 스토어는 라우터를 모르고 window.location도 쓰지 않는다(문서 리로드가
+      // 네이티브 SQLite 커넥션을 stale하게 만든다, ADR-050).
+      // 새 이벤트를 만들지 않고 RESET을 재사용한다 — 결과(initialOnboardingState)가 정확히 같아서,
+      // 같은 결과의 이벤트를 하나 더 두면 리듀서의 진실이 둘이 된다. 무효화와 연결 해제의 차이는
+      // 리듀서가 아니라 저장소에서 무엇을 지우는가(removeApiKey vs clearAuthConfig)에 있다.
+      set((state) => onboardingReducer(state, { type: 'RESET' }))
+
+      try {
+        await removeApiKey()
+      } catch {
+        // 결정 3의 "알려진 열화": 삭제가 실패하면 재시작 시 옛 무효 키가 되살아나지만, 그때는
+        // 다시 이 경로를 탈 뿐이라 막다른 길이 아니다. 화면은 이미 키 입력에 가 있으므로 사용자가
+        // 여기서 할 수 있는 일도 없다. rethrow하면 호출부가 전부 void 호출이라 미처리 rejection이
+        // 된다(ADR-065 결정 1이 고쳤던 그 결함과 같은 종류다).
+      }
     },
 
     async reset() {

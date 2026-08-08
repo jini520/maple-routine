@@ -13,9 +13,17 @@ import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 import type { CharacterPickerEntry } from '../../../types'
 import type { MatchedBoss } from '../../../lib/boss-matching'
 // ADR-063: 동기화 실패·일부 캐릭터 실패·파티원 수 저장 실패는 인라인 문단이 아니라 토스트로 알린다.
-const { showErrorMock } = vi.hoisted(() => ({ showErrorMock: vi.fn() }))
+const { showErrorMock, noticeApiKeyInvalidMock } = vi.hoisted(() => ({
+  showErrorMock: vi.fn(),
+  noticeApiKeyInvalidMock: vi.fn(),
+}))
 vi.mock('../../../features/toast/store', () => ({
   useToastStore: { getState: () => ({ showError: showErrorMock, showSuccess: vi.fn(), showInfo: vi.fn() }) },
+}))
+
+// ADR-115 결정 7: 401은 동기화 토스트도 피커 로스터도 이 진입점 하나로 위임한다.
+vi.mock('../../../features/onboarding/store', () => ({
+  useOnboardingStore: { getState: () => ({ noticeApiKeyInvalid: noticeApiKeyInvalidMock }) },
 }))
 
 
@@ -657,8 +665,9 @@ describe('BossScreen', () => {
     expect(screen.queryByText(/불러오고 있어요/)).not.toBeInTheDocument()
   })
 
-  // ADR-063: 인라인 문단을 걷어내고 토스트로 알린다. 401은 재시도로 안 풀리므로 설정으로 보낸다.
-  it('status가 error이면 인라인 문단이 아니라 토스트로 알린다', async () => {
+  // ADR-115 결정 1·7: 401은 이 화면이 토스트로 알리지 않는다 — 문구·이동·저장소 삭제가 전부
+  // noticeApiKeyInvalid() 안에 있다. 여기서 확인할 것은 그 진입점에 도달하는가뿐이다.
+  it('status가 error이고 401이면 토스트 대신 키 무효화 경로로 넘긴다', async () => {
     mockStore({
       status: 'error',
       trackedOcids: ['ocid-1'],
@@ -668,11 +677,10 @@ describe('BossScreen', () => {
 
     renderBossScreen()
 
-    await waitFor(() => expect(showErrorMock).toHaveBeenCalled())
-    const [message, action] = showErrorMock.mock.calls[0]
-    expect(message).toBe('API 키가 유효하지 않습니다')
-    expect(action.label).toBe('설정 열기')
+    await waitFor(() => expect(noticeApiKeyInvalidMock).toHaveBeenCalledTimes(1))
+    expect(showErrorMock).not.toHaveBeenCalled()
     expect(screen.queryByText('API 키가 유효하지 않습니다')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '설정 열기' })).not.toBeInTheDocument()
   })
 
   it('network 실패는 토스트에 다시 시도 액션을 붙이고, 누르면 refresh가 호출된다', async () => {
@@ -1237,16 +1245,40 @@ describe('BossScreen — 캐릭터 관리 피커 후보 목록 로딩 (ADR-053)'
     expect(mockedGetCharacterPickerRoster).toHaveBeenCalledTimes(2)
   })
 
-  // ADR-062 결정 3: 401은 재시도로 풀리지 않으므로 설정으로 보낸다.
-  it('401 실패는 다시 시도 대신 설정 열기를 준다', async () => {
+  // ADR-062 결정 3 + ADR-115 결정 1·7: 401은 재시도로 풀리지 않고, 이제 설정으로 보내지도
+  // 않는다(설정에는 키를 바꿀 자리가 없다) — 아래 테스트가 확인하듯 이 실패는 곧 키 무효화라
+  // 화면이 스스로 키 입력으로 이동한다. 그래서 누를 것이 없다.
+  it('401 실패는 재시도도 설정 열기도 주지 않고 이동을 알린다', async () => {
     const roster = deferRoster()
 
     await renderAndOpenPicker()
     await roster.reject(new NexonAuthError('Nexon API 키가 유효하지 않습니다'))
 
     expect(await screen.findByText('API 키가 유효하지 않습니다')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '설정 열기' })).toBeInTheDocument()
+    expect(screen.getByText('키 입력 화면으로 이동합니다')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '설정 열기' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: '다시 시도' })).not.toBeInTheDocument()
+  })
+
+  // ADR-115 결정 7: 감지 지점은 동기화 토스트만이 아니다 — 피커 로스터가 맞는 401도 같은 키
+  // 무효화이므로 같은 진입점을 부른다(다른 케이스들의 `new Error('401')`은 network로 떨어진다).
+  it('로스터 조회가 401로 실패하면 키 무효화 경로로 넘긴다', async () => {
+    const roster = deferRoster()
+
+    await renderAndOpenPicker()
+    await roster.reject(new NexonAuthError('Nexon API 키가 유효하지 않습니다'))
+
+    await waitFor(() => expect(noticeApiKeyInvalidMock).toHaveBeenCalledTimes(1))
+  })
+
+  it('로스터 조회가 401이 아닌 실패면 키 무효화 경로를 타지 않는다', async () => {
+    const roster = deferRoster()
+
+    await renderAndOpenPicker()
+    await roster.reject(new Error('network'))
+    await screen.findByText('캐릭터 목록을 불러오지 못했습니다')
+
+    expect(noticeApiKeyInvalidMock).not.toHaveBeenCalled()
   })
 
   // ADR-062 결정 4: 캐시 stub이 방출된 뒤 실패하면(예열이 끝난 정상 경로의 기본 분기) 목록을

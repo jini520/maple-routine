@@ -33,12 +33,15 @@ export function formatScheduleSyncError(error: ScheduleSyncError): string {
 
 // 후보 목록(getCharacterPickerRoster) 조회 실패의 문구·액션([[ADR-062]] 결정 3).
 //
-// 같은 원인이라도 **자리에 따라 줄 수 있는 행동이 다르다** — 피커는 설정으로 보낼 수 있지만
-// 온보딩 중에는 설정 화면 자체가 없다. 그래서 place를 받는다.
+// 같은 원인이라도 **자리에 따라 줄 수 있는 행동이 다르다** — 401이 그렇다. 피커에서는 액션이
+// 없다: 그 401은 곧 키 무효화라 화면이 스스로 키 입력으로 이동하므로 **누를 것이 없고**, 이
+// 문구는 이동 직전 한 프레임이자 안전망이다([[ADR-115]] 결정 1·7). 온보딩에서는 재시도다:
+// 그때는 status가 `completed`가 아니라 무효화 경로가 아예 성립하지 않고([[ADR-115]] 결정 6),
+// 그 실패는 방금 넣은 키에 대한 폼 자체의 에러라 재시도가 실제 처방이다. 그래서 place를 받는다.
 //
-// 401에 "다시 시도"를 주지 않는 것이 핵심이다 — 눌러도 실패하는 버튼이기 때문이고, 그 대신
-// 설정으로 보내면 error-resilience.md의 "전역 apiKeyInvalid → 설정 진입 유도"가 배너를 새로
-// 만들지 않고 해결된다.
+// 401에 "다시 시도"를 주지 않는 것(피커)이 핵심이다 — 눌러도 실패하는 버튼이기 때문이다.
+// 옛 처방이던 "설정으로 보낸다"는 폐기됐다: 설정에는 키를 바꿀 자리가 없어 그 안내가 거짓이었다
+// (`ApiKeyModal` 2026-07-25 제거).
 //
 // 문구 어미는 에러 규칙에 따라 '~습니다'/'~주세요'다([[ADR-062]] 결정 5).
 export type RosterErrorPlace = 'picker' | 'onboarding'
@@ -47,10 +50,11 @@ export interface RosterErrorCopy {
   title: string
   description: string
   /**
-   * **영구 실패에는 액션을 주지 않는다**([[ADR-062]] 결정 3) — 눌러도 실패하는 버튼을 주지 않기
-   * 위해 옵셔널이다. `characterUnavailable`(400 OPENAPI00003)이 그 경우다([[ADR-067]] 결정 1).
+   * **눌러도 실패하거나 누를 것이 없는 자리에는 액션을 주지 않는다**([[ADR-062]] 결정 3) — 그래서
+   * 옵셔널이다. `characterUnavailable`(400 OPENAPI00003, [[ADR-067]] 결정 1)과 `rateLimited`
+   * ([[ADR-114]] 결정 2)가 전자, 피커의 401이 후자다([[ADR-115]] 결정 7 — 이동이 이미 일어난다).
    */
-  action?: { kind: 'retry' | 'openSettings'; label: string }
+  action?: { kind: 'retry'; label: string }
 }
 
 const RETRY = { kind: 'retry', label: '다시 시도' } as const
@@ -61,8 +65,7 @@ export function formatRosterError(error: ScheduleSyncError, place: RosterErrorPl
       return place === 'picker'
         ? {
             title: 'API 키가 유효하지 않습니다',
-            description: '설정에서 키를 다시 등록해주세요',
-            action: { kind: 'openSettings', label: '설정 열기' },
+            description: '키 입력 화면으로 이동합니다',
           }
         : {
             title: 'API 키가 유효하지 않습니다',
@@ -112,29 +115,30 @@ export function formatRosterError(error: ScheduleSyncError, place: RosterErrorPl
 // 왜 formatRosterError를 재사용하지 않고 새 함수인가 — 두 가지가 다르다.
 //
 // 1. **담을 수 있는 양**: 배너는 한 줄이고 ErrorState는 제목 + 설명 두 줄이다.
-// 2. **액션 규칙**: 배너는 목록이 남아 있어 액션이 없어도 막다른 길이 아니지만, ErrorState는
-//    자리 전체가 실패라 온보딩 401에서 액션을 빼면 화면에 아무 길도 남지 않는다. 그래서 같은
-//    401이 여기서는 온보딩에 액션이 없고 formatRosterError에서는 재시도를 유지한다.
+// 2. **액션 규칙**: 배너는 목록이 남아 있어 액션이 없어도 막다른 길이 아니라 401·429·
+//    characterUnavailable 전부 액션이 없다. ErrorState는 자리 전체가 실패라 온보딩 401에서
+//    액션을 빼면 화면에 아무 길도 남지 않으므로, 같은 401이 formatRosterError에서는 **온보딩에만**
+//    재시도를 남긴다([[ADR-115]] 결정 7로 피커 401은 두 함수 모두 액션이 없어졌다 — 화면이 곧
+//    키 입력으로 이동해 누를 것이 없다).
 //
 // 자리가 문구와 액션을 정한다는 [[ADR-063]]의 기준을 액션 쪽으로 한 번 더 적용한 것이라 예외가 아니다.
 export interface StaleRosterErrorCopy {
   /** 배너 한 줄에 들어가는 문구. 제목·설명으로 쪼개지 않는다 — 배너는 한 줄이다. */
   message: string
   /** 재시도가 실제로 통하는 실패에만 준다([[ADR-114]] 결정 3). */
-  action?: { kind: 'retry' | 'openSettings'; label: string }
+  action?: { kind: 'retry'; label: string }
 }
 
-export function formatStaleRosterError(
-  error: ScheduleSyncError,
-  place: RosterErrorPlace,
-): StaleRosterErrorCopy {
+// place를 받지 않는다 — 401의 설정 이동 액션이 사라지면서([[ADR-115]] 결정 7) 6종이 두 자리에서
+// 전부 같아졌다. 자리별로 갈릴 것이 생기면 그때 formatRosterError처럼 다시 받는다.
+export function formatStaleRosterError(error: ScheduleSyncError): StaleRosterErrorCopy {
   switch (error.kind) {
-    // 재시도로는 절대 풀리지 않는다. 피커는 키를 고치러 갈 길을 주고, 온보딩은 설정 화면 자체가
-    // 없어 액션 없이 사실만 말한다([[ADR-062]] 결정 3과 같은 이유).
+    // 재시도로는 절대 풀리지 않고, 이제 누를 것도 없다 — 피커에서는 이 배너가 뜨는 순간 키
+    // 무효화가 화면을 키 입력으로 보내고([[ADR-115]] 결정 1·7), 온보딩은 설정 화면 자체가 없어
+    // 원래 액션이 없었다. 문구는 그대로다.
     case 'invalidApiKey':
       return {
         message: 'API 키가 유효하지 않아 목록을 갱신하지 못했습니다',
-        action: place === 'picker' ? { kind: 'openSettings', label: '설정 열기' } : undefined,
       }
     // 단계를 판정하지 않고 문구로만 안내한다([[ADR-114]] 결정 1) — 429(OPENAPI00007)는 개발·서비스
     // 두 단계에서 같은 코드로 오고 본문에도 구분이 없다. 수치는 넣지 않는다(서비스 단계 키

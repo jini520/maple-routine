@@ -2,6 +2,7 @@ import type { BossContent, CharacterPickerEntry } from '../../types'
 import { RefreshCw, SlidersHorizontal, Swords, Users } from 'lucide-react'
 import { formatSyncedAt } from '../../features/schedule-sync/format'
 import { useScheduleSyncErrorToast } from '../../features/schedule-sync/use-sync-error-toast'
+import { useApiKeyInvalidation } from '../../features/onboarding/use-api-key-invalidation'
 import { getBossPortraitCrop, getBossPortraitUrl } from '../../lib/boss-icons'
 import { partySizeKey, useBossSchedulerStore, type PartyFilter } from '../../features/boss-scheduler/store'
 import { useEffect, useRef, useState } from 'react'
@@ -138,10 +139,7 @@ export function BossScreen(): React.JSX.Element {
   const [saveProgress, setSaveProgress] = useState<{ completed: number; total: number } | null>(null)
   // ADR-063: 동기화 전체 실패는 인라인 문단이 아니라 토스트로 알린다 — 지속 상태("n분 전")는
   // 새로고침 옆 표기가 이미 담당하고, 토스트에는 원인을 푸는 액션을 붙일 수 있다.
-  useScheduleSyncErrorToast(error, {
-    onRetry: () => refresh(trackedOcids ?? []),
-    onOpenSettings: () => navigateToScreen('/settings'),
-  })
+  useScheduleSyncErrorToast(error, { onRetry: () => refresh(trackedOcids ?? []) })
 
   useEffect(() => {
     loadTrackedOcids()
@@ -190,6 +188,10 @@ export function BossScreen(): React.JSX.Element {
     }
   }, [isPickerOpen, rosterReloadNonce])
 
+  // ADR-115 결정 7: 401 감지 지점은 동기화만이 아니다 — 피커 로스터가 맞는 401도 같은 키 무효화라
+  // 같은 진입점을 부른다(동기화 쪽 위임은 useScheduleSyncErrorToast 안에 있다).
+  useApiKeyInvalidation(rosterError)
+
   // ADR-101 결정 1: `null` 은 "0명"이 아니라 **"저장소를 아직 안 읽었다"** 다. 둘을 `||` 로 묶으면
   // 콜드 스타트 첫 페인트가 아직 모르는 사실을 단정한다(실기기 2026-08-06 — "표시할 캐릭터가
   // 없습니다"가 목록보다 먼저 한 프레임 스쳤다). 빈 상태는 읽고 0명임을 **확인한 뒤에만** 그린다.
@@ -226,10 +228,7 @@ export function BossScreen(): React.JSX.Element {
   // 실패를 던지지 않고 결과에 실어 반환하므로(401/429는 나머지 캐릭터까지 같은 에러로 채운다)
   // 실패의 대부분이 위의 전역 error가 아니라 이 값으로 온다 — 두 훅이 동시에 울릴 조합은 없다
   // (전역 error가 채워지는 경로에서는 characters가 캐시 뷰로 교체되고 그 뷰의 error는 null이다).
-  useScheduleSyncErrorToast(selected?.error ?? null, {
-    onRetry: () => refresh(trackedOcids ?? []),
-    onOpenSettings: () => navigateToScreen('/settings'),
-  })
+  useScheduleSyncErrorToast(selected?.error ?? null, { onRetry: () => refresh(trackedOcids ?? []) })
 
   // ADR-035 결정 3·6·12: 수동 모드에서는 게임 등록 여부가 아니라 사용자가 앱에서 관리하는
   // 멤버십(manualTrackedContent)으로 표시 목록을 결정하고, 완료 여부는 동기화 결과에서 즉석
@@ -358,7 +357,6 @@ export function BossScreen(): React.JSX.Element {
       onSave={handleSaveTracking}
       onClose={() => setIsPickerOpen(false)}
       onRetry={reloadRoster}
-      onOpenSettings={() => navigateToScreen('/settings')}
     />
   )
 
