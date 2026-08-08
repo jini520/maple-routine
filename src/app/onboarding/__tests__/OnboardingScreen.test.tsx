@@ -104,6 +104,19 @@ describe('OnboardingScreen', () => {
     expect(screen.getByRole('button', { name: /낟낟/ })).toBeInTheDocument()
   })
 
+  // AccountSelectionList 의 프로브 대기는 `m-auto` 로 세로 중앙에 서는데, 자동 여백은 **부모가
+  // 남는 세로 공간을 줄 때만** 작동한다 — 이 min-h 가 없으면 대기가 화면 상단에 붙는다
+  // (사용자 보고 2026-08-09). 둘은 한 쌍이라 한쪽만 있으면 의미가 없다.
+  it('selectingAccount 컨테이너가 화면 높이를 줘서 프로브 대기가 중앙에 설 수 있다', () => {
+    mockStore({ status: 'selectingAccount', accounts: [account] })
+
+    const { container } = render(<OnboardingScreen />)
+
+    expect(container.firstElementChild).toHaveClass(
+      'min-h-[calc(100dvh-var(--sa-top)-var(--sa-bottom))]',
+    )
+  })
+
   it('status가 selectingTrackingMode이면 TrackingModeStep이 렌더링된다', () => {
     mockStore({ status: 'selectingTrackingMode' })
 
