@@ -88,7 +88,23 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => {
       try {
         accounts = await fetchCharacterList(authConfig.apiKey)
       } catch (error) {
-        set((state) => settingsReducer(state, { type: 'VERIFY_FAILED', error: toSettingsError(error) }))
+        const settingsError = toSettingsError(error)
+
+        // ADR-115 결정 7: 여기 401은 사용자가 방금 입력한 키가 아니라 **저장된 키**가 무효화된 것이다
+        // (이 경로는 키 재입력 없이 저장된 키로 재조회한다). 인라인 카드에 머무르면 키를 바꿀 자리가
+        // 없어 막다른 길이므로(이슈 #157) 무효화 진입점 하나로 넘긴다 — 토스트 + 키 입력 화면 자동 이동.
+        // 멱등 가드는 그 함수 안 한 곳이라(결정 6) 여기서 상태를 다시 확인하지 않는다.
+        if (settingsError.kind === 'invalidApiKey') {
+          await useOnboardingStore.getState().invalidateApiKey()
+          // 화면은 곧 /onboarding 으로 간다(결정 2). error를 남겨 두면 나중에 설정을 다시 열었을 때
+          // 지나간 실패가 되살아난다. idle 복귀는 AccountModal 의 닫힘 판정이기도 해 모달이 정리된다.
+          set((state) => settingsReducer(state, { type: 'RESET' }))
+          return
+        }
+
+        // 나머지 원인(429·네트워크·저장 실패)은 그대로 모달 안 인라인 카드다(ADR-063 — 모달 본문
+        // 전체를 차지하는 자리라 토스트로 옮기면 빈 상자가 된다).
+        set((state) => settingsReducer(state, { type: 'VERIFY_FAILED', error: settingsError }))
         return
       }
 
