@@ -16,7 +16,7 @@
       "status": "completed",
       "started_at": "2026-08-08T23:37:14+0900",
       "summary": "ADR-117 결정 3 구현 — index.html 의 #boot-cover div 바로 다음에 고전(type=module 아님) 인라인 스크립트로 실패 안전 타이머를 넣었다. setTimeout 8000ms, 콜백은 `var cover = document.getElementById('boot-cover'); if (!cover) return` 가드로 **커버가 아직 DOM 에 있을 때만** 동작하고(정상 부팅이면 아무것도 안 함 — 8초 시점에 사용자가 `지금 적용` 을 눌러 올라간 리로드 커버를 걷지 않기 위해서, 그 구간은 결정 1 의 12초 타임아웃 몫), 있을 때는 cover.remove() + `window.Capacitor?.Plugins?.SplashScreen?.hide()` 를 try/catch 로(네이티브 hide 까지 불러야 iOS isUserInteractionEnabled=false 가 풀려 터치가 산다 — DOM 커버만 걷으면 화면만 돌아오고 먹통). 컴포넌트가 아니라 문서 셸에 둔 이유(App.tsx useEffect 클린업이 커버 제거 타이머를 취소해 앱이 죽으면 걷을 주체가 사라진다)를 주석으로 남겼다. 새 테스트 src/__tests__/index-html-boot-cover.test.ts (5케이스, jsdom) — 정적 검사에 그치지 않고 인라인 스크립트 본문을 정규식으로 뽑아 new Function 으로 실행하고 가짜 타이머로 전진시킨다: A 부팅 실패(커버 제거 + hide 1회) · B 정상 부팅(hide 미호출 = 가드 회귀 테스트) · C 7,900ms 에는 미제거(상수 방어) · D window.Capacitor 부재에도 미throw. **판별력 확인**: 가드를 `if (cover) cover.remove()` 로 바꿔 '있을 때만' 조건을 지우자 **케이스 B 만** 실패(4 passed/1 failed)함을 실행으로 확인 후 되돌렸다. dist/index.html 을 열어 스크립트가 변형·최소화 없이 그대로 들어간 것도 확인(Vite 는 고전 인라인 스크립트를 건드리지 않는다). 검증: build 성공 · 테스트 2,667개/177파일 통과(기준선 2,662/176 대비 +5, 새 파일 1) · lint 0 errors/17 warnings(baseline 동일) · git status src/ 에서 새 테스트 파일 외 변경 0건.",
-      "completed_at": "2026-08-08T23:41:30+0900"
+      "completed_at": "2026-08-08T23:42:25+0900"
     },
     {
       "step": 2,
