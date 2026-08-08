@@ -42,12 +42,21 @@ afterEach(() => {
 })
 
 describe('AppUpdateSection', () => {
-  it('"앱 업데이트" 제목과 현재 번들 버전을 표시하고, 마운트 시 현재 버전을 불러온다', () => {
+  it('현재 번들 버전을 표시하고, 마운트 시 현재 버전을 불러온다', () => {
     const { loadCurrentVersion } = mockStore({ currentVersion: '1.0.3' })
     render(<AppUpdateSection />)
-    expect(screen.getByText('앱 업데이트')).toBeInTheDocument()
+    expect(screen.getByText('현재 버전')).toBeInTheDocument()
     expect(screen.getByText('1.0.3')).toBeInTheDocument()
     expect(loadCurrentVersion).toHaveBeenCalledTimes(1)
+  })
+
+  // ADR-118 결정 2: 이 카드가 놓이는 화면의 제목이 이미 「앱 정보」다 — 섹션 제목을 스스로
+  // 그리면 같은 화면에 제목이 둘이 된다.
+  it('섹션 제목을 스스로 그리지 않는다', () => {
+    mockStore({})
+    render(<AppUpdateSection />)
+    expect(screen.queryByRole('heading')).not.toBeInTheDocument()
+    expect(screen.queryByText('앱 업데이트')).not.toBeInTheDocument()
   })
 
   it('베타 채널이면 "beta" 배지를 보여준다(한글 아님)', () => {
@@ -65,10 +74,11 @@ describe('AppUpdateSection', () => {
     expect(check).toHaveBeenCalledTimes(1)
   })
 
-  it('최신이면 "최신입니다"를 표시한다', () => {
+  // ADR-118 결정 10: `현재 버전` 행 바로 아래라 주어가 생략되면 무엇이 최신인지가 문장에 없다.
+  it('최신이면 "최신 버전입니다"를 표시한다', () => {
     mockStore({ status: 'up-to-date' })
     render(<AppUpdateSection />)
-    expect(screen.getByText('최신입니다')).toBeInTheDocument()
+    expect(screen.getByText('최신 버전입니다')).toBeInTheDocument()
   })
 
   it('새 버전이 있으면 상태에 버전을 표시한다', () => {

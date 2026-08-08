@@ -29,7 +29,10 @@
     {
       "step": 3,
       "name": "about-screen",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-09T02:23:50+0900",
+      "summary": "ADR-118 결정 2·7·10 — SettingsAboutScreen 신규(/settings/about 의 화면 컴포넌트만, 라우트 배선은 step 6): ScreenScroll + PageHeader + ArrowLeft('뒤로') + useScreenNavigate('/settings') 로 BossManageScreen 골격을 그대로 따르고, 본문은 <AppUpdateSection /> + Card 안 SettingsLinkRow(개인정보 처리방침 → mapleroutine.store/privacy). AppUpdateSection 은 <section>+<h2>앱 업데이트</h2> 껍데기를 벗고 Card 만 반환(페이지 제목 「앱 정보」와 중복) · statusText['up-to-date'] '최신입니다'→'최신 버전입니다'(결정 10) — 나머지 12개 문구·상태 로직·버튼 동작 무변경. SettingsScreen 은 footer 고지에서 개인정보 처리방침 <p> 한 줄 + 그 링크를 설명하던 주석만 제거하고 나머지 4줄·카드 구조는 그대로(grep '개인정보 처리방침' = 0). 뒤집힌 옛 테스트 2건은 갱신이 아니라 재작성 — '하단에 개인정보 처리방침 링크를 표시한다' → '고지 블록에 링크를 두지 않는다'(이사 회귀 가드), 섹션 순서 테스트의 기준점은 사라진 h2 대신 카드 첫 행('현재 버전'). 판별력 확인 4건: 문구를 되돌리면 2건(AppUpdateSection·About), h2 를 되살리면 2건(제목 가드 둘), 뒤로 목적지를 바꾸면 1건, 고지에 링크를 되살리면 1건이 각각 발화하고 다른 테스트는 감지하지 못함. 테스트 2,713개/180파일 통과(기준선 2,707/179 대비 +6 = About 5 + 제목 가드 1, 새 파일 1)·build 성공·lint 0 errors/17 warnings(baseline 동일).",
+      "completed_at": "2026-08-09T02:29:40+0900"
     },
     {
       "step": 4,
