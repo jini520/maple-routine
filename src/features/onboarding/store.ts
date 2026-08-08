@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { fetchCharacterList } from '../../nexon/character'
-import { NexonAuthError, NexonRateLimitError } from '../../nexon/errors'
+import { isInvalidApiKeyError, NexonRateLimitError } from '../../nexon/errors'
 import {
   clearAuthConfig,
   getAuthConfig,
@@ -32,7 +32,9 @@ export interface OnboardingStore extends OnboardingState {
 }
 
 function toOnboardingError(error: unknown): OnboardingError {
-  if (error instanceof NexonAuthError) {
+  // ADR-115 결정 9: 400 OPENAPI00005 도 무효 키다(판정은 nexon/errors 한 곳). 이 폼에서 키를 잘못
+  // 입력하면 전에는 "네트워크 오류가 발생했습니다"가 떴다 — 원인이 키인데 네트워크를 가리켰다.
+  if (isInvalidApiKeyError(error)) {
     return { kind: 'invalidApiKey' }
   }
   if (error instanceof NexonRateLimitError) {

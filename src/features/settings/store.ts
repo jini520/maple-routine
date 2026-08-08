@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { fetchCharacterList } from '../../nexon/character'
-import { NexonAuthError, NexonRateLimitError } from '../../nexon/errors'
+import { isInvalidApiKeyError, NexonRateLimitError } from '../../nexon/errors'
 import { getAuthConfig, setApiKey, setSelectedAccountId } from '../../storage/api-key'
 import { setTrackedCharacterOcids } from '../../storage/character-selection'
 import type { MapleAccount } from '../../types'
@@ -21,7 +21,9 @@ export interface SettingsStore extends SettingsState {
 }
 
 function toSettingsError(error: unknown): SettingsError {
-  if (error instanceof NexonAuthError) {
+  // ADR-115 결정 9: 400 OPENAPI00005 도 무효 키다(판정은 nexon/errors 한 곳). 계정 변경 모달은
+  // **저장된 키**로 재조회하므로 이 경로의 00005 가 곧 "저장된 키가 폐기됐다"이다.
+  if (isInvalidApiKeyError(error)) {
     return { kind: 'invalidApiKey' }
   }
   if (error instanceof NexonRateLimitError) {

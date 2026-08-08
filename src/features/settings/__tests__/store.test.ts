@@ -1,6 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { MapleAccount } from '../../../types'
-import { NexonAuthError, NexonNetworkError, NexonRateLimitError } from '../../../nexon/errors'
+import {
+  NexonAuthError,
+  NexonBadRequestError,
+  NexonNetworkError,
+  NexonRateLimitError,
+} from '../../../nexon/errors'
 import { initialSettingsState } from '../state'
 
 const { fetchCharacterListMock } = vi.hoisted(() => ({
@@ -272,6 +277,17 @@ describe('useSettingsStore.refreshAccounts', () => {
     // 되살아나고, idle 복귀는 AccountModal 의 닫힘 판정이기도 하다.
     expect(state.status).toBe('idle')
     expect(state.error).toBeNull()
+  })
+
+  // ADR-115 결정 9: 저장된 키가 폐기됐을 때 넥슨이 실제로 주는 응답이 이것이다(401 이 아니다).
+  // 사용자가 정상 키로 온보딩을 마친 뒤 그 키를 삭제해 재현한 경로가 곧 이 케이스다.
+  it('400 OPENAPI00005 도 같은 무효화 경로로 넘긴다 — 폐기된 키의 실제 응답이다', async () => {
+    fetchCharacterListMock.mockRejectedValue(new NexonBadRequestError('x', 'OPENAPI00005'))
+
+    await useSettingsStore.getState().refreshAccounts()
+
+    expect(invalidateApiKeyMock).toHaveBeenCalledTimes(1)
+    expect(useSettingsStore.getState().status).toBe('idle')
   })
 
   // 회귀 가드: 나머지 원인은 그대로 인라인 카드(ADR-063 — 모달 본문 전체를 차지하는 자리라

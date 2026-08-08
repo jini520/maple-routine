@@ -1,6 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { MapleAccount } from '../../../types'
-import { NexonAuthError, NexonNetworkError, NexonRateLimitError } from '../../../nexon/errors'
+import {
+  NexonAuthError,
+  NexonBadRequestError,
+  NexonNetworkError,
+  NexonRateLimitError,
+} from '../../../nexon/errors'
 import { initialOnboardingState } from '../state'
 
 const { fetchCharacterListMock } = vi.hoisted(() => ({
@@ -243,6 +248,32 @@ describe('useOnboardingStore.restoreFromStorage', () => {
     expect(state.status).toBe('error')
     expect(state.error).toEqual({ kind: 'invalidApiKey' })
     expect(showErrorMock).toHaveBeenCalledWith('API 키가 유효하지 않습니다')
+  })
+})
+
+describe('useOnboardingStore.submitApiKey — 무효 키(400 OPENAPI00005)', () => {
+  // ADR-115 결정 9: 넥슨은 무효 키에 401 이 아니라 400 OPENAPI00005 를 준다(실측 2026-08-08).
+  // 전에는 이 경로가 "모르는 400"이라 network 로 degrade 돼, 키를 잘못 입력한 사용자에게
+  // 화면이 "네트워크 오류가 발생했습니다"라고 말했다 — 원인이 키인데 네트워크를 가리켰다.
+  it('400 OPENAPI00005 면 invalidApiKey 로 알린다(network 가 아니다)', async () => {
+    fetchCharacterListMock.mockRejectedValue(new NexonBadRequestError('x', 'OPENAPI00005'))
+
+    await useOnboardingStore.getState().submitApiKey('bad-key')
+
+    const state = useOnboardingStore.getState()
+    expect(state.status).toBe('error')
+    expect(state.error).toEqual({ kind: 'invalidApiKey' })
+    expect(showErrorMock).toHaveBeenCalledWith('API 키가 유효하지 않습니다')
+    expect(setApiKeyMock).not.toHaveBeenCalled()
+  })
+
+  // 회귀 가드: 키와 무관한 400 까지 무효 키로 삼으면 캐릭터·날짜 문제가 키 문제로 둔갑한다.
+  it('키와 무관한 400(OPENAPI00003)은 그대로 network 다', async () => {
+    fetchCharacterListMock.mockRejectedValue(new NexonBadRequestError('x', 'OPENAPI00003'))
+
+    await useOnboardingStore.getState().submitApiKey('key-1')
+
+    expect(useOnboardingStore.getState().error).toEqual({ kind: 'network' })
   })
 })
 

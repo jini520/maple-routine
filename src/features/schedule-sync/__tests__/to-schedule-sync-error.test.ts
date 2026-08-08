@@ -39,6 +39,14 @@ describe('toScheduleSyncError', () => {
     })
   })
 
+  // ADR-115 결정 9: 무효 키의 실제 응답이 이것이다(401/403 이 아니다, 실측 2026-08-08).
+  // 이 케이스가 없으면 키가 폐기된 사용자에게 앱이 "네트워크 오류"만 반복해 말한다.
+  it('OPENAPI00005 → invalidApiKey — 무효 키는 400으로 온다', () => {
+    expect(toScheduleSyncError(new NexonBadRequestError('x', 'OPENAPI00005'))).toEqual({
+      kind: 'invalidApiKey',
+    })
+  })
+
   it('코드를 모르는 400은 network로 degrade한다 — 최악의 경우 지금 동작(재시도 유도)으로 떨어진다', () => {
     expect(toScheduleSyncError(new NexonBadRequestError('x', null))).toEqual({ kind: 'network' })
     expect(toScheduleSyncError(new NexonBadRequestError('x', 'OPENAPI99999'))).toEqual({
