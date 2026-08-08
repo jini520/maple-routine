@@ -94,12 +94,14 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => {
 
         // ADR-115 결정 7: 여기 401은 사용자가 방금 입력한 키가 아니라 **저장된 키**가 무효화된 것이다
         // (이 경로는 키 재입력 없이 저장된 키로 재조회한다). 인라인 카드에 머무르면 키를 바꿀 자리가
-        // 없어 막다른 길이므로(이슈 #157) 무효화 진입점 하나로 넘긴다 — 토스트 + 키 입력 화면 자동 이동.
+        // 없어 막다른 길이므로(이슈 #157) 무효화 진입점 하나로 넘긴다 — 안내 모달을 띄우고,
+        // 이동은 사용자가 "확인"을 눌러야 일어난다(결정 10).
         // 멱등 가드는 그 함수 안 한 곳이라(결정 6) 여기서 상태를 다시 확인하지 않는다.
         if (settingsError.kind === 'invalidApiKey') {
-          await useOnboardingStore.getState().invalidateApiKey()
-          // 화면은 곧 /onboarding 으로 간다(결정 2). error를 남겨 두면 나중에 설정을 다시 열었을 때
-          // 지나간 실패가 되살아난다. idle 복귀는 AccountModal 의 닫힘 판정이기도 해 모달이 정리된다.
+          useOnboardingStore.getState().noticeApiKeyInvalid()
+          // 이 계정 모달은 곧 안내 모달에 덮이고 확인 뒤 /onboarding 으로 간다. error를 남겨 두면
+          // 나중에 설정을 다시 열었을 때 지나간 실패가 되살아난다. idle 복귀는 AccountModal 의
+          // 닫힘 판정이기도 해 모달이 정리된다.
           set((state) => settingsReducer(state, { type: 'RESET' }))
           return
         }

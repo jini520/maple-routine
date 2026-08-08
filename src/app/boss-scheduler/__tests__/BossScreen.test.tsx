@@ -13,9 +13,9 @@ import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 import type { CharacterPickerEntry } from '../../../types'
 import type { MatchedBoss } from '../../../lib/boss-matching'
 // ADR-063: 동기화 실패·일부 캐릭터 실패·파티원 수 저장 실패는 인라인 문단이 아니라 토스트로 알린다.
-const { showErrorMock, invalidateApiKeyMock } = vi.hoisted(() => ({
+const { showErrorMock, noticeApiKeyInvalidMock } = vi.hoisted(() => ({
   showErrorMock: vi.fn(),
-  invalidateApiKeyMock: vi.fn(),
+  noticeApiKeyInvalidMock: vi.fn(),
 }))
 vi.mock('../../../features/toast/store', () => ({
   useToastStore: { getState: () => ({ showError: showErrorMock, showSuccess: vi.fn(), showInfo: vi.fn() }) },
@@ -23,7 +23,7 @@ vi.mock('../../../features/toast/store', () => ({
 
 // ADR-115 결정 7: 401은 동기화 토스트도 피커 로스터도 이 진입점 하나로 위임한다.
 vi.mock('../../../features/onboarding/store', () => ({
-  useOnboardingStore: { getState: () => ({ invalidateApiKey: invalidateApiKeyMock }) },
+  useOnboardingStore: { getState: () => ({ noticeApiKeyInvalid: noticeApiKeyInvalidMock }) },
 }))
 
 
@@ -666,7 +666,7 @@ describe('BossScreen', () => {
   })
 
   // ADR-115 결정 1·7: 401은 이 화면이 토스트로 알리지 않는다 — 문구·이동·저장소 삭제가 전부
-  // invalidateApiKey() 안에 있다. 여기서 확인할 것은 그 진입점에 도달하는가뿐이다.
+  // noticeApiKeyInvalid() 안에 있다. 여기서 확인할 것은 그 진입점에 도달하는가뿐이다.
   it('status가 error이고 401이면 토스트 대신 키 무효화 경로로 넘긴다', async () => {
     mockStore({
       status: 'error',
@@ -677,7 +677,7 @@ describe('BossScreen', () => {
 
     renderBossScreen()
 
-    await waitFor(() => expect(invalidateApiKeyMock).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(noticeApiKeyInvalidMock).toHaveBeenCalledTimes(1))
     expect(showErrorMock).not.toHaveBeenCalled()
     expect(screen.queryByText('API 키가 유효하지 않습니다')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: '설정 열기' })).not.toBeInTheDocument()
@@ -1268,7 +1268,7 @@ describe('BossScreen — 캐릭터 관리 피커 후보 목록 로딩 (ADR-053)'
     await renderAndOpenPicker()
     await roster.reject(new NexonAuthError('Nexon API 키가 유효하지 않습니다'))
 
-    await waitFor(() => expect(invalidateApiKeyMock).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(noticeApiKeyInvalidMock).toHaveBeenCalledTimes(1))
   })
 
   it('로스터 조회가 401이 아닌 실패면 키 무효화 경로를 타지 않는다', async () => {
@@ -1278,7 +1278,7 @@ describe('BossScreen — 캐릭터 관리 피커 후보 목록 로딩 (ADR-053)'
     await roster.reject(new Error('network'))
     await screen.findByText('캐릭터 목록을 불러오지 못했습니다')
 
-    expect(invalidateApiKeyMock).not.toHaveBeenCalled()
+    expect(noticeApiKeyInvalidMock).not.toHaveBeenCalled()
   })
 
   // ADR-062 결정 4: 캐시 stub이 방출된 뒤 실패하면(예열이 끝난 정상 경로의 기본 분기) 목록을

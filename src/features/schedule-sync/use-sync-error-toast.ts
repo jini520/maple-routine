@@ -47,9 +47,10 @@ export function useScheduleSyncErrorToast(
     }
     lastShownRef.current = error
 
-    // ADR-115 결정 1: 이 훅은 401에 아무 토스트도 띄우지 않는다 — 문구(`API 키가 더 이상
-    // 유효하지 않습니다`)는 invalidateApiKey()가 띄우고, 액션은 없다(이동이 이미 일어나 누를 것이
-    // 없다). 옛 액션은 설정으로 보냈지만 그곳에는 키를 바꿀 자리가 없어 막다른 길이었다(결정 7).
+    // ADR-115 결정 10: 이 훅은 무효 키에 아무 토스트도 띄우지 않는다 — 그 원인은 토스트가 아니라
+    // **닫을 수 없는 모달**로 알린다(useApiKeyInvalidation → ApiKeyInvalidModal). 토스트는 스스로
+    // 사라져 놓칠 수 있는데, 이 실패는 확인하고 넘어가야 하는 종류다.
+    // 옛 액션(`설정 열기`)은 설정으로 보냈지만 그곳에는 키를 바꿀 자리가 없어 막다른 길이었다(결정 7).
     if (error.kind === 'invalidApiKey') {
       return
     }

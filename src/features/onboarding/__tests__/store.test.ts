@@ -481,11 +481,15 @@ describe('useOnboardingStore.submitApiKey', () => {
         selectedAccountId: 'acc-1',
         error: null,
         prefetchProgress: null,
+        apiKeyInvalidNotice: false,
       })
       getAuthConfigMock.mockResolvedValue({ apiKey: 'key-2', selectedAccountId: 'acc-1' })
       fetchCharacterListMock.mockResolvedValue([account('acc-1')])
 
-      await useOnboardingStore.getState().invalidateApiKey()
+      // ADR-115 결정 10: 알림 → 확인 두 단계를 거쳐야 키 입력 화면으로 간다.
+      useOnboardingStore.getState().noticeApiKeyInvalid()
+      expect(useOnboardingStore.getState().status).toBe('completed')
+      await useOnboardingStore.getState().confirmApiKeyInvalid()
       expect(useOnboardingStore.getState().status).toBe('awaitingApiKey')
 
       await useOnboardingStore.getState().submitApiKey('key-2')
@@ -748,8 +752,10 @@ describe('useOnboardingStore.submitContentCharacters', () => {
   })
 })
 
-// ADR-115: 저장된 키가 넥슨에서 무효화(401/403)됐을 때 부르는 유일한 진입점.
-describe('useOnboardingStore.invalidateApiKey', () => {
+// ADR-115 결정 10: 저장된 키가 무효화됐을 때(400 OPENAPI00005 · 401/403) 부르는 유일한 진입점.
+// **알리기만 하고** 이동·삭제는 사용자가 "확인"을 눌러야(confirmApiKeyInvalid) 일어난다 —
+// 결정 1의 "토스트 + 즉시 이동"은 폐기됐다(이유를 읽기 전에 화면이 바뀌면 원인과 결과가 안 이어진다).
+describe('useOnboardingStore.noticeApiKeyInvalid', () => {
   function primeCompleted(): void {
     useOnboardingStore.setState({
       status: 'completed',
@@ -757,91 +763,123 @@ describe('useOnboardingStore.invalidateApiKey', () => {
       selectedAccountId: 'acc-1',
       error: null,
       prefetchProgress: { completed: 1, total: 1 },
+      apiKeyInvalidNotice: false,
     })
   }
 
-  // 결정 2: 상태를 뒤집는 것이 곧 이동이다 — App.tsx의 isCompleted 가드가 라우터로 보낸다.
-  it('completed를 awaitingApiKey로 되돌린다 — 계정·에러·진행률도 초기값이 된다', async () => {
+  // 결정 10의 핵심 — 뒤에 원래 화면이 남아 있어야 사용자가 무엇을 하다 이렇게 됐는지 보면서 읽는다.
+  it('알림만 켜고 status는 completed 그대로다 — 화면을 빼앗지 않는다', () => {
     primeCompleted()
 
-    await useOnboardingStore.getState().invalidateApiKey()
+    useOnboardingStore.getState().noticeApiKeyInvalid()
 
-    expect(useOnboardingStore.getState()).toMatchObject(initialOnboardingState)
+    const state = useOnboardingStore.getState()
+    expect(state.apiKeyInvalidNotice).toBe(true)
+    expect(state.status).toBe('completed')
+    expect(state.selectedAccountId).toBe('acc-1')
   })
 
-  // 결정 1: 이동이 이미 일어나 누를 것이 없다.
-  it('액션 없는 토스트 한 줄로 알린다', async () => {
+  // 알리는 시점에는 아무것도 지우지 않는다 — 확인 전에 지우면 사용자가 취소할 수 없는 일이 이미 끝난다.
+  it('저장소를 건드리지 않고 토스트도 띄우지 않는다 — 문구는 모달이 말한다', () => {
     primeCompleted()
 
-    await useOnboardingStore.getState().invalidateApiKey()
+    useOnboardingStore.getState().noticeApiKeyInvalid()
 
-    expect(showErrorMock).toHaveBeenCalledTimes(1)
-    expect(showErrorMock).toHaveBeenCalledWith('API 키가 더 이상 유효하지 않습니다')
-    expect(showErrorMock.mock.calls[0][1]).toBeUndefined()
-  })
-
-  // 결정 3: clearAuthConfig는 selectedAccountId까지 지워 결정 4의 재개를 불가능하게 만든다.
-  it('저장소에서 apiKey만 지운다 — 연결 해제 경로(clearAuthConfig)를 타지 않는다', async () => {
-    primeCompleted()
-
-    await useOnboardingStore.getState().invalidateApiKey()
-
-    expect(removeApiKeyMock).toHaveBeenCalledTimes(1)
+    expect(removeApiKeyMock).not.toHaveBeenCalled()
     expect(clearAuthConfigMock).not.toHaveBeenCalled()
-    expect(setSelectedAccountIdMock).not.toHaveBeenCalled()
+    expect(showErrorMock).not.toHaveBeenCalled()
   })
 
-  // 결정 6: 가드가 await 앞이라 그 구간이 원자적이다 — 여러 화면·여러 캐릭터의 동시 401이 하나로 접힌다.
-  it('연달아 불러도 토스트·삭제는 1회다', async () => {
+  // 결정 6: 동기 함수라 이 구간이 원자적이다 — 여러 화면·여러 캐릭터의 동시 실패가 모달 하나로 접힌다.
+  it('연달아 불러도 알림은 한 번만 켜진다', () => {
     primeCompleted()
 
-    await Promise.all([
-      useOnboardingStore.getState().invalidateApiKey(),
-      useOnboardingStore.getState().invalidateApiKey(),
-    ])
-    await useOnboardingStore.getState().invalidateApiKey()
+    useOnboardingStore.getState().noticeApiKeyInvalid()
+    const afterFirst = useOnboardingStore.getState()
+    useOnboardingStore.getState().noticeApiKeyInvalid()
 
-    expect(showErrorMock).toHaveBeenCalledTimes(1)
-    expect(removeApiKeyMock).toHaveBeenCalledTimes(1)
+    expect(useOnboardingStore.getState()).toBe(afterFirst)
   })
 
-  // 결정 6: 키 입력 화면에서 다시 나는 401은 이 경로가 아니다 — 재이동 루프가 구조적으로 불가능하다.
+  // 결정 6: 키 입력 화면에서 다시 나는 실패는 이 경로가 아니다 — 재이동 루프가 구조적으로 불가능하다.
   it.each(['awaitingApiKey', 'verifyingApiKey', 'error'] as const)(
     'completed가 아니면(%s) 아무 일도 하지 않는다',
-    async (status) => {
+    (status) => {
       useOnboardingStore.setState({
         status,
         accounts: [account('acc-1')],
         selectedAccountId: 'acc-1',
         error: null,
         prefetchProgress: null,
+        apiKeyInvalidNotice: false,
       })
 
-      await useOnboardingStore.getState().invalidateApiKey()
+      useOnboardingStore.getState().noticeApiKeyInvalid()
 
       const state = useOnboardingStore.getState()
+      expect(state.apiKeyInvalidNotice).toBe(false)
       expect(state.status).toBe(status)
-      expect(state.accounts).toEqual([account('acc-1')])
-      expect(state.selectedAccountId).toBe('acc-1')
-      expect(showErrorMock).not.toHaveBeenCalled()
       expect(removeApiKeyMock).not.toHaveBeenCalled()
     },
   )
+})
+
+describe('useOnboardingStore.confirmApiKeyInvalid', () => {
+  function primeNoticed(): void {
+    useOnboardingStore.setState({
+      status: 'completed',
+      accounts: [account('acc-1')],
+      selectedAccountId: 'acc-1',
+      error: null,
+      prefetchProgress: { completed: 1, total: 1 },
+      apiKeyInvalidNotice: true,
+    })
+  }
+
+  // 결정 2: 상태를 뒤집는 것이 곧 이동이다 — App.tsx의 isCompleted 가드가 라우터로 보낸다.
+  it('completed를 awaitingApiKey로 되돌린다 — 알림도 함께 꺼진다', async () => {
+    primeNoticed()
+
+    await useOnboardingStore.getState().confirmApiKeyInvalid()
+
+    expect(useOnboardingStore.getState()).toMatchObject(initialOnboardingState)
+  })
+
+  // 결정 3: clearAuthConfig는 selectedAccountId까지 지워 결정 4의 재개를 불가능하게 만든다.
+  it('저장소에서 apiKey만 지운다 — 연결 해제 경로(clearAuthConfig)를 타지 않는다', async () => {
+    primeNoticed()
+
+    await useOnboardingStore.getState().confirmApiKeyInvalid()
+
+    expect(removeApiKeyMock).toHaveBeenCalledTimes(1)
+    expect(clearAuthConfigMock).not.toHaveBeenCalled()
+    expect(setSelectedAccountIdMock).not.toHaveBeenCalled()
+  })
+
+  // 알림이 없는데 확인이 불릴 일은 없지만, 불려도 저장된 키를 지우지 않아야 한다.
+  it('알림이 켜져 있지 않으면 아무 일도 하지 않는다', async () => {
+    useOnboardingStore.setState({ ...initialOnboardingState, status: 'completed' })
+
+    await useOnboardingStore.getState().confirmApiKeyInvalid()
+
+    expect(useOnboardingStore.getState().status).toBe('completed')
+    expect(removeApiKeyMock).not.toHaveBeenCalled()
+  })
 
   // 결정 3의 "알려진 열화": 삭제가 실패해도 같은 길을 한 번 더 돌 뿐이라 막다른 길이 아니다.
-  // rethrow하면 호출부가 전부 void 호출이라 미처리 rejection이 된다(ADR-065 결정 1의 그 결함).
+  // rethrow하면 호출부가 void 호출이라 미처리 rejection이 된다(ADR-065 결정 1의 그 결함).
   it('저장소 삭제가 실패해도 reject하지 않고 화면 이동은 그대로다', async () => {
-    primeCompleted()
+    primeNoticed()
     removeApiKeyMock.mockRejectedValue(new Error('disk full'))
 
-    await expect(useOnboardingStore.getState().invalidateApiKey()).resolves.toBeUndefined()
+    await expect(useOnboardingStore.getState().confirmApiKeyInvalid()).resolves.toBeUndefined()
 
     expect(useOnboardingStore.getState().status).toBe('awaitingApiKey')
   })
 
   // 회귀 가드: 연결 해제와 무효화는 저장소에 하는 일이 다르다 — 섞이면 재개가 조용히 깨진다.
   it('reset()은 여전히 clearAuthConfig로 selectedAccountId까지 지운다', async () => {
-    primeCompleted()
+    primeNoticed()
 
     await useOnboardingStore.getState().reset()
 

@@ -14,6 +14,7 @@ import { addKeyboardVisibilityListener } from './native/keyboard'
 import { useScreenNavigate } from './lib/use-screen-navigate'
 import { maybeShowTabSwitchAd, startAds } from './features/ads/tab-switch-ad'
 import { UpdatePromptModal } from './app/UpdatePromptModal'
+import { ApiKeyInvalidModal } from './app/ApiKeyInvalidModal'
 import { ErrorBoundary } from './components/organisms/ErrorBoundary/ErrorBoundary'
 import { LoadingState } from './components/molecules/LoadingState/LoadingState'
 import { ProfitIcon } from './components/atoms/ProfitIcon/ProfitIcon'
@@ -349,6 +350,9 @@ export function AppShell(): React.JSX.Element {
       {isCompleted && !isKeyboardVisible && <BottomTabBar />}
       {/* 사용자 동의형 업데이트 모달 — 실행 시(또는 설정에서 수동 확인 시) 새 버전이 있으면 뜬다(ADR-027). */}
       <UpdatePromptModal />
+      {/* ADR-115 결정 10: 저장된 키가 무효화되면 원래 화면 위에 닫을 수 없는 안내 모달이 덮이고,
+          "확인"을 눌러야 키 입력 화면으로 이동한다. 라우트 밖이라 어느 화면에서 감지되든 뜬다. */}
+      <ApiKeyInvalidModal />
       <ToastStack hasTabBar={isCompleted && !isKeyboardVisible} />
     </div>
   )

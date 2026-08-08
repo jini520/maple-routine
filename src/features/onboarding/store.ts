@@ -26,8 +26,11 @@ export interface OnboardingStore extends OnboardingState {
   submitContentCharacters(ocids: string[]): Promise<void>
   // ADR-086 결정 8: 고른 계정의 후보가 0명일 때의 유일한 탈출구 — 온보딩 중에는 설정 화면이 없다.
   restartAccountSelection(): Promise<void>
-  // ADR-115: 저장된 키가 넥슨에서 무효화됐을 때(401/403) 부르는 유일한 진입점.
-  invalidateApiKey(): Promise<void>
+  // ADR-115 결정 10: 저장된 키가 무효화됐을 때(400 OPENAPI00005 · 401/403) 부르는 유일한 진입점.
+  // 알리기만 하고(모달) 이동·삭제는 하지 않는다 — 그것은 아래 confirmApiKeyInvalid 가 한다.
+  noticeApiKeyInvalid(): void
+  // 그 모달의 "확인" — 키 입력 화면으로 이동하고 저장된 apiKey 를 지운다.
+  confirmApiKeyInvalid(): Promise<void>
   reset(): Promise<void>
 }
 
@@ -236,12 +239,27 @@ export const useOnboardingStore = create<OnboardingStore>()((set, get) => {
       set((state) => onboardingReducer(state, { type: 'ONBOARDING_FINISHED' }))
     },
 
-    // ADR-115 결정 1~3·6: 401/403 을 만나면 토스트 한 줄을 띄우고 곧바로 키 입력 화면으로 보낸다.
-    async invalidateApiKey() {
-      // 결정 6: 멱등 가드. await 앞이라 이 구간이 원자적이다 — 여러 화면·여러 캐릭터에서 401이
-      // 동시에 터져도 토스트 1회·이동 1회다. 키 입력 화면에서 다시 나는 401은 그때 상태가
-      // completed가 아니라 여기 걸린다(재이동 루프가 구조적으로 불가능하다, ADR-065 결정 1의 폼 에러로 남는다).
-      if (get().status !== 'completed') {
+    // ADR-115 결정 10: 무효 키를 만나면 **알리기만** 한다 — 화면을 빼앗지 않는다.
+    // 결정 1 의 "토스트 + 즉시 이동"은 폐기됐다: 이동이 먼저 일어나면 사용자는 이미 바뀐 화면에서
+    // 이유를 읽게 되고, 토스트는 스스로 사라져 놓칠 수 있다. 이제 원래 화면 위에 **닫을 수 없는**
+    // 모달이 덮이고, 이동은 사용자가 "확인"을 눌러야(confirmApiKeyInvalid) 일어난다.
+    noticeApiKeyInvalid() {
+      // 결정 6: 멱등 가드. 동기 함수라 이 구간 전체가 원자적이다 — 여러 화면·여러 캐릭터에서
+      // 401(400 00005)이 동시에 터져도 모달은 하나다. 키 입력 화면에서 다시 나는 실패는 그때
+      // status가 completed가 아니라 여기 걸린다(재이동 루프가 구조적으로 불가능하다 —
+      // 그 실패는 ADR-065 결정 1의 폼 토스트로 남는다).
+      if (get().status !== 'completed' || get().apiKeyInvalidNotice) {
+        return
+      }
+
+      // status는 completed 그대로다 — 뒤에 원래 화면이 남아 있어야 사용자가 무엇을 하다 이렇게
+      // 됐는지 보면서 이유를 읽는다(결정 10). 저장소도 아직 건드리지 않는다.
+      set((state) => onboardingReducer(state, { type: 'API_KEY_INVALID_NOTICED' }))
+    },
+
+    // ADR-115 결정 10: 모달의 "확인" — 여기서야 이동과 삭제가 일어난다.
+    async confirmApiKeyInvalid() {
+      if (!get().apiKeyInvalidNotice) {
         return
       }
 
@@ -252,9 +270,6 @@ export const useOnboardingStore = create<OnboardingStore>()((set, get) => {
       // 같은 결과의 이벤트를 하나 더 두면 리듀서의 진실이 둘이 된다. 무효화와 연결 해제의 차이는
       // 리듀서가 아니라 저장소에서 무엇을 지우는가(removeApiKey vs clearAuthConfig)에 있다.
       set((state) => onboardingReducer(state, { type: 'RESET' }))
-
-      // 결정 1: 액션은 두지 않는다 — 이동이 이미 일어났으므로 누를 것이 없다.
-      useToastStore.getState().showError('API 키가 더 이상 유효하지 않습니다')
 
       try {
         await removeApiKey()

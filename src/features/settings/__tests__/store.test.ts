@@ -22,9 +22,9 @@ const { prefetchAccountDataMock } = vi.hoisted(() => ({
   prefetchAccountDataMock: vi.fn(),
 }))
 
-const { onboardingResetMock, invalidateApiKeyMock } = vi.hoisted(() => ({
+const { onboardingResetMock, noticeApiKeyInvalidMock } = vi.hoisted(() => ({
   onboardingResetMock: vi.fn(),
-  invalidateApiKeyMock: vi.fn(),
+  noticeApiKeyInvalidMock: vi.fn(),
 }))
 
 const { setTrackedCharacterOcidsMock, seedManualTrackedContentMock, trackingModeRef } = vi.hoisted(
@@ -51,7 +51,7 @@ vi.mock('../../onboarding/prefetch', () => ({
 
 vi.mock('../../onboarding/store', () => ({
   useOnboardingStore: {
-    getState: () => ({ reset: onboardingResetMock, invalidateApiKey: invalidateApiKeyMock }),
+    getState: () => ({ reset: onboardingResetMock, noticeApiKeyInvalid: noticeApiKeyInvalidMock }),
   },
 }))
 
@@ -92,7 +92,7 @@ beforeEach(() => {
   setSelectedAccountIdMock.mockResolvedValue(undefined)
   prefetchAccountDataMock.mockResolvedValue(undefined)
   onboardingResetMock.mockResolvedValue(undefined)
-  invalidateApiKeyMock.mockResolvedValue(undefined)
+  noticeApiKeyInvalidMock.mockResolvedValue(undefined)
   setTrackedCharacterOcidsMock.mockResolvedValue(undefined)
   seedManualTrackedContentMock.mockResolvedValue(undefined)
   trackingModeRef.current = 'auto'
@@ -165,12 +165,12 @@ describe('useSettingsStore.changeApiKey', () => {
 
   // ADR-115 결정 8: 이 경로의 401은 "사용자가 방금 나쁜 키를 입력한 것"이라 저장된 키의 무효화와
   // 성질이 다르다 — 같은 401이라는 이유로 무효화 진입점에 배선하면 안 된다.
-  it('401을 만나도 invalidateApiKey는 호출하지 않는다(ADR-115 결정 8)', async () => {
+  it('401을 만나도 무효화 진입점을 부르지 않는다(ADR-115 결정 8)', async () => {
     fetchCharacterListMock.mockRejectedValue(new NexonAuthError('invalid'))
 
     await useSettingsStore.getState().changeApiKey('new-key')
 
-    expect(invalidateApiKeyMock).not.toHaveBeenCalled()
+    expect(noticeApiKeyInvalidMock).not.toHaveBeenCalled()
     expect(useSettingsStore.getState().status).toBe('error')
   })
 
@@ -266,12 +266,12 @@ describe('useSettingsStore.refreshAccounts', () => {
 
   // ADR-115 결정 7: 여기 401은 사용자가 방금 입력한 키가 아니라 **저장된 키**가 무효화된 것이다.
   // 인라인 카드에 머무르면 키를 바꿀 자리가 없어 막다른 길이라(이슈 #157) 무효화 진입점으로 넘긴다.
-  it('NexonAuthError를 만나면 invalidateApiKey로 넘기고 idle로 돌아간다(인라인 error를 남기지 않는다)', async () => {
+  it('NexonAuthError를 만나면 무효화 진입점으로 넘기고 idle로 돌아간다(인라인 error를 남기지 않는다)', async () => {
     fetchCharacterListMock.mockRejectedValue(new NexonAuthError('invalid'))
 
     await useSettingsStore.getState().refreshAccounts()
 
-    expect(invalidateApiKeyMock).toHaveBeenCalledTimes(1)
+    expect(noticeApiKeyInvalidMock).toHaveBeenCalledTimes(1)
     const state = useSettingsStore.getState()
     // 화면은 곧 /onboarding 으로 간다(결정 2). 지나간 실패를 남겨 두면 설정을 다시 열었을 때
     // 되살아나고, idle 복귀는 AccountModal 의 닫힘 판정이기도 하다.
@@ -286,7 +286,7 @@ describe('useSettingsStore.refreshAccounts', () => {
 
     await useSettingsStore.getState().refreshAccounts()
 
-    expect(invalidateApiKeyMock).toHaveBeenCalledTimes(1)
+    expect(noticeApiKeyInvalidMock).toHaveBeenCalledTimes(1)
     expect(useSettingsStore.getState().status).toBe('idle')
   })
 
@@ -297,7 +297,7 @@ describe('useSettingsStore.refreshAccounts', () => {
 
     await useSettingsStore.getState().refreshAccounts()
 
-    expect(invalidateApiKeyMock).not.toHaveBeenCalled()
+    expect(noticeApiKeyInvalidMock).not.toHaveBeenCalled()
     const state = useSettingsStore.getState()
     expect(state.status).toBe('error')
     expect(state.error).toEqual({ kind: 'rateLimited' })
@@ -308,7 +308,7 @@ describe('useSettingsStore.refreshAccounts', () => {
 
     await useSettingsStore.getState().refreshAccounts()
 
-    expect(invalidateApiKeyMock).not.toHaveBeenCalled()
+    expect(noticeApiKeyInvalidMock).not.toHaveBeenCalled()
     const state = useSettingsStore.getState()
     expect(state.status).toBe('error')
     expect(state.error).toEqual({ kind: 'network' })

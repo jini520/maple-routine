@@ -16,9 +16,9 @@ import { PULL_SETTLE_TRANSITION } from '../../../lib/pull-to-refresh'
 import { WEEKLY_BOSS_CLEAR_LIMIT, WEEKLY_CRYSTAL_SALE_LIMIT } from '../../../lib/boss-matching'
 import weeklyBossesData from '../../../data/weekly-bosses.json'
 // ADR-063: 동기화 실패·일부 캐릭터 실패·파티원 수 저장 실패는 인라인 문단이 아니라 토스트로 알린다.
-const { showErrorMock, invalidateApiKeyMock } = vi.hoisted(() => ({
+const { showErrorMock, noticeApiKeyInvalidMock } = vi.hoisted(() => ({
   showErrorMock: vi.fn(),
-  invalidateApiKeyMock: vi.fn(),
+  noticeApiKeyInvalidMock: vi.fn(),
 }))
 vi.mock('../../../features/toast/store', () => ({
   useToastStore: { getState: () => ({ showError: showErrorMock, showSuccess: vi.fn(), showInfo: vi.fn() }) },
@@ -27,7 +27,7 @@ vi.mock('../../../features/toast/store', () => ({
 // ADR-115 결정 7: 401은 토스트가 아니라 키 무효화 진입점으로 간다(이 화면에는 로스터 조회가 없어
 // 동기화 경로 하나뿐이다).
 vi.mock('../../../features/onboarding/store', () => ({
-  useOnboardingStore: { getState: () => ({ invalidateApiKey: invalidateApiKeyMock }) },
+  useOnboardingStore: { getState: () => ({ noticeApiKeyInvalid: noticeApiKeyInvalidMock }) },
 }))
 
 
@@ -907,13 +907,13 @@ describe('BossProfitScreen', () => {
   })
 
   // ADR-115 결정 1·7: 401은 이 화면이 토스트로 알리지 않는다 — 문구·이동·저장소 삭제가 전부
-  // invalidateApiKey() 안에 있다. 여기서 확인할 것은 그 진입점에 도달하는가뿐이다.
+  // noticeApiKeyInvalid() 안에 있다. 여기서 확인할 것은 그 진입점에 도달하는가뿐이다.
   it('status가 error이고 401이면 토스트 대신 키 무효화 경로로 넘긴다', async () => {
     mockStore({ status: 'error', trackedOcids: ['ocid-1'], error: { kind: 'invalidApiKey' }, rows: [] })
 
     renderBossProfitScreen()
 
-    await waitFor(() => expect(invalidateApiKeyMock).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(noticeApiKeyInvalidMock).toHaveBeenCalledTimes(1))
     expect(showErrorMock).not.toHaveBeenCalled()
     expect(screen.queryByText('API 키가 유효하지 않습니다')).not.toBeInTheDocument()
   })
@@ -926,7 +926,7 @@ describe('BossProfitScreen', () => {
 
     await waitFor(() => expect(showErrorMock).toHaveBeenCalled())
     expect(showErrorMock.mock.calls[0][0]).toBe('네트워크 오류가 발생했습니다')
-    expect(invalidateApiKeyMock).not.toHaveBeenCalled()
+    expect(noticeApiKeyInvalidMock).not.toHaveBeenCalled()
   })
 
   // ADR-067 결정 2로 판정 주체가 옮겨졌다: 전에는 이 화면이 periodKey로 isPeriodQueryable을 직접

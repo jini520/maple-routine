@@ -29,6 +29,15 @@ export interface OnboardingState {
   selectedAccountId: string | null
   error: OnboardingError | null
   prefetchProgress: PrefetchProgress | null
+  /**
+   * 키가 무효화된 것을 **알렸고 사용자의 확인을 기다리는 중**([[ADR-115]] 결정 10).
+   *
+   * `status` 와 **직교한다** — 이 값이 `true` 인 동안에도 `status` 는 `completed` 그대로여서
+   * 뒤에 원래 화면이 남아 있고, 그 위에 닫을 수 없는 모달이 덮인다. 사용자가 "확인"을 누르는
+   * 순간에야 `RESET` 이 나가 키 입력 화면으로 이동한다(그때 이 값도 함께 `false` 로 돌아간다).
+   * 상태를 먼저 뒤집으면 화면이 이미 바뀐 뒤에 이유를 설명하게 된다 — 그것이 결정 1 이 뒤집힌 이유다.
+   */
+  apiKeyInvalidNotice: boolean
 }
 
 export const initialOnboardingState: OnboardingState = {
@@ -37,6 +46,7 @@ export const initialOnboardingState: OnboardingState = {
   selectedAccountId: null,
   error: null,
   prefetchProgress: null,
+  apiKeyInvalidNotice: false,
 }
 
 // ADR-086 결정 1: 끝내지 않은 온보딩은 그 단계부터 재개한다. 재개 지점은 저장된 값(apiKey ·
@@ -63,6 +73,9 @@ export type OnboardingEvent =
   | { type: 'SUBMIT_CONTENT_CHARACTERS' }
   // ADR-035 결정 15: 수동 모드일 때 시드가 끝나면(또는 자동 모드는 곧바로) 온보딩이 완료된다.
   | { type: 'ONBOARDING_FINISHED' }
+  // ADR-115 결정 10: 무효화를 **알리기만** 한다 — status는 completed 그대로 두고 모달만 띄운다.
+  // 이동은 사용자가 "확인"을 눌러 RESET이 나갈 때 일어난다.
+  | { type: 'API_KEY_INVALID_NOTICED' }
   | { type: 'RESET' }
 
 export function onboardingReducer(state: OnboardingState, event: OnboardingEvent): OnboardingState {
@@ -74,6 +87,7 @@ export function onboardingReducer(state: OnboardingState, event: OnboardingEvent
         selectedAccountId: event.selectedAccountId,
         error: null,
         prefetchProgress: null,
+        apiKeyInvalidNotice: false,
       }
 
     // ADR-086 결정 1: 뒤 두 단계는 네트워크 없이 재개된다 — 모드 선택은 순수 UI이고 캐릭터
@@ -85,6 +99,7 @@ export function onboardingReducer(state: OnboardingState, event: OnboardingEvent
         selectedAccountId: event.selectedAccountId,
         error: null,
         prefetchProgress: null,
+        apiKeyInvalidNotice: false,
       }
 
     case 'SUBMIT_API_KEY':
@@ -103,6 +118,7 @@ export function onboardingReducer(state: OnboardingState, event: OnboardingEvent
         selectedAccountId: null,
         error: null,
         prefetchProgress: null,
+        apiKeyInvalidNotice: false,
       }
 
     case 'API_KEY_REJECTED':
@@ -161,6 +177,14 @@ export function onboardingReducer(state: OnboardingState, event: OnboardingEvent
       return {
         ...state,
         status: 'completed',
+      }
+
+    // ADR-115 결정 10: status를 바꾸지 않는 유일한 이벤트다. 뒤에 원래 화면이 그대로 남아
+    // 있어야 사용자가 "무엇을 하다 이렇게 됐는지"를 보면서 이유를 읽는다.
+    case 'API_KEY_INVALID_NOTICED':
+      return {
+        ...state,
+        apiKeyInvalidNotice: true,
       }
 
     case 'RESET':
