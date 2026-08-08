@@ -1,6 +1,7 @@
 import type { CharacterPickerEntry, DailyContent, WeeklyContent } from '../../types'
 import { formatSyncedAt } from '../../features/schedule-sync/format'
 import { useScheduleSyncErrorToast } from '../../features/schedule-sync/use-sync-error-toast'
+import { useApiKeyInvalidation } from '../../features/onboarding/use-api-key-invalidation'
 import { useEffect, useRef, useState } from 'react'
 
 import { CharacterSelectDropdown } from '../../components/molecules/CharacterSelectDropdown/CharacterSelectDropdown'
@@ -85,10 +86,7 @@ export function ContentScreen(): React.JSX.Element {
   const [isPickerOpen, setIsPickerOpen] = useState(false)
   // ADR-063: 동기화 전체 실패는 인라인 문단이 아니라 토스트로 알린다 — 지속 상태("n분 전")는
   // 새로고침 옆 표기가 이미 담당하고, 토스트에는 원인을 푸는 액션을 붙일 수 있다.
-  useScheduleSyncErrorToast(error, {
-    onRetry: () => refresh(trackedOcids ?? []),
-    onOpenSettings: () => navigateToScreen('/settings'),
-  })
+  useScheduleSyncErrorToast(error, { onRetry: () => refresh(trackedOcids ?? []) })
 
   // ADR-053 결정 3: 후보 목록 조회의 로딩·실패는 조회를 소유한 화면이 관리해 피커에 내려준다.
   // 초기값은 "마운트 직후 조회가 시작되는가"(= 피커가 이미 열려 있는가)와 같다.
@@ -134,6 +132,10 @@ export function ContentScreen(): React.JSX.Element {
     }
   }, [isPickerOpen, rosterReloadNonce])
 
+  // ADR-115 결정 7: 401 감지 지점은 동기화만이 아니다 — 피커 로스터가 맞는 401도 같은 키 무효화라
+  // 같은 진입점을 부른다(동기화 쪽 위임은 useScheduleSyncErrorToast 안에 있다).
+  useApiKeyInvalidation(rosterError)
+
   // ADR-101 결정 1: `null` 은 "0명"이 아니라 **"저장소를 아직 안 읽었다"** 다. 둘을 `||` 로 묶으면
   // 콜드 스타트 첫 페인트가 아직 모르는 사실을 단정한다 — 빈 상태는 읽고 확인한 뒤에만 그린다.
   const isEmpty = trackedOcids !== null && trackedOcids.length === 0
@@ -164,10 +166,7 @@ export function ContentScreen(): React.JSX.Element {
   // ADR-083 결정 1: 캐릭터별 실패도 인라인 문단이 아니라 토스트다(보스 스케줄러와 동일한 배선).
   // syncSchedules가 캐릭터 단위 실패를 던지지 않고 결과에 실어 반환하므로 실패의 대부분이 위의
   // 전역 error가 아니라 이 값으로 온다.
-  useScheduleSyncErrorToast(selected?.error ?? null, {
-    onRetry: () => refresh(trackedOcids ?? []),
-    onOpenSettings: () => navigateToScreen('/settings'),
-  })
+  useScheduleSyncErrorToast(selected?.error ?? null, { onRetry: () => refresh(trackedOcids ?? []) })
 
   // ADR-035 결정 3·6·19: 수동 모드에서는 게임 등록 여부(isRegistered)가 아니라 사용자가 앱에서
   // 관리하는 멤버십(manualTrackedContent)으로 표시 목록을 결정하고, 실제 값은 동기화 결과 또는

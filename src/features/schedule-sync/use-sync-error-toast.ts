@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
-import { Settings } from 'lucide-react'
 import { useToastStore } from '../toast/store'
+import { useApiKeyInvalidation } from '../onboarding/use-api-key-invalidation'
 import { formatScheduleSyncError } from './format'
 import type { ScheduleSyncError } from './schedule-sync'
 
@@ -12,9 +12,10 @@ import type { ScheduleSyncError } from './schedule-sync'
 // 문단은 실패 사실만 중복해 말하고 있었다. 게다가 인라인 문단에는 버튼을 붙일 자리가 없어
 // 사용자가 새로고침 아이콘을 스스로 찾아야 했다.
 //
-// 왜 스토어가 아니라 화면(훅)에서 띄우는가: invalidApiKey의 액션이 설정 화면으로 보내는 것이라
-// 라우터가 필요하다. 스토어에서 window.location으로 이동하면 문서 전체가 리로드돼 네이티브
-// SQLite 커넥션이 stale하게 남는다([[ADR-050]]).
+// 왜 스토어가 아니라 화면(훅)에서 띄우는가: **남은 종류들의 재시도 액션이 화면의 refresh를
+// 필요로 하기 때문**이다. 옛 근거("invalidApiKey의 액션이 설정 화면으로 보내는 것이라 라우터가
+// 필요하다")는 더 이상 사실이 아니다 — 401의 이동은 온보딩 상태를 뒤집는 것으로 일어나고 App.tsx의
+// 가드가 라우터로 보내므로([[ADR-115]] 결정 2) 이 훅도 스토어도 라우터를 모른다.
 //
 // 중복 방지: 스토어가 실패마다 **새 객체/새 배열**을 set하므로 그 값 자체를 dep과 가드 키로 쓴다.
 // 같은 종류가 연달아 실패해도 새 객체라 다시 알리고(재시도를 눌렀는데 무반응이면 안 된다), 같은
@@ -32,10 +33,13 @@ function useLatestRef<T>(value: T): { current: T } {
 
 export function useScheduleSyncErrorToast(
   error: ScheduleSyncError | null,
-  actions: { onRetry: () => void; onOpenSettings: () => void },
+  actions: { onRetry: () => void },
 ): void {
   const lastShownRef = useRef<ScheduleSyncError | null>(null)
   const actionsRef = useLatestRef(actions)
+
+  // 401/403은 이 훅이 처리하지 않고 키 무효화 경로로 넘긴다([[ADR-115]] 결정 7).
+  useApiKeyInvalidation(error)
 
   useEffect(() => {
     if (error === null || lastShownRef.current === error) {
@@ -43,18 +47,15 @@ export function useScheduleSyncErrorToast(
     }
     lastShownRef.current = error
 
-    const { showError } = useToastStore.getState()
-    const message = formatScheduleSyncError(error)
-
+    // ADR-115 결정 1: 이 훅은 401에 아무 토스트도 띄우지 않는다 — 문구(`API 키가 더 이상
+    // 유효하지 않습니다`)는 invalidateApiKey()가 띄우고, 액션은 없다(이동이 이미 일어나 누를 것이
+    // 없다). 옛 액션은 설정으로 보냈지만 그곳에는 키를 바꿀 자리가 없어 막다른 길이었다(결정 7).
     if (error.kind === 'invalidApiKey') {
-      // 재시도로는 절대 풀리지 않는다 — 키를 고치러 갈 길을 준다([[ADR-062]] 결정 3과 동일).
-      showError(message, {
-        label: '설정 열기',
-        icon: Settings,
-        onClick: () => actionsRef.current.onOpenSettings(),
-      })
       return
     }
+
+    const { showError } = useToastStore.getState()
+    const message = formatScheduleSyncError(error)
 
     // 누를 수 있는 버튼을 주지 않는 두 종류. rateLimited는 지금 누르면 또 429이고,
     // characterUnavailable(400 OPENAPI00003)은 **영구**라 언제 눌러도 같은 400이다

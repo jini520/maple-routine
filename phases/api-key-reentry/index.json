@@ -29,7 +29,9 @@
     {
       "step": 3,
       "name": "sync-toast-rewire",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-08T17:28:56+0900",
+      "summary": "동기화 401 을 무효화 진입점으로 위임. 신설 `features/onboarding/use-api-key-invalidation.ts` — `useApiKeyInvalidation(error: ScheduleSyncError | null): void`, `error?.kind === 'invalidApiKey'` 일 때만 `void useOnboardingStore.getState().invalidateApiKey()`, dep 은 `error` 하나(스토어가 실패마다 새 객체를 set 하므로 그 값이 가드 키), `ScheduleSyncError` 는 `import type` 뿐이라 런타임 의존은 `./store` 하나(순환 없음 — build 통과). **자체 ref 가드 없음** — 멱등은 `invalidateApiKey()` 안의 `status !== 'completed'` 한 곳(ADR-115 결정 6). 배선한 자리 5곳: `use-sync-error-toast.ts`(훅 맨 위 위임 + `invalidApiKey` 분기를 '토스트 없이 return' 으로 교체 · `actions` 에서 `onOpenSettings` 제거 → `{onRetry}` 만 · `Settings` import 삭제 · 상단 주석의 옛 근거를 '남은 종류의 재시도가 화면 refresh 를 필요로 한다' 로 갱신), `ContentScreen`·`BossScreen`·`BossProfitScreen` 의 `useScheduleSyncErrorToast` 호출 5개에서 `onOpenSettings` 줄 삭제, `ContentScreen`·`BossScreen` 에 `useApiKeyInvalidation(rosterError)` 추가(로스터 401 도 같은 경로 — BossProfit 은 로스터가 없어 미추가). `format.ts`·`CharacterTrackingPicker`·`onOpenSettings` prop·`features/settings/` 는 미변경(step 4·5 몫). 판별력 확인 — `kind` 검사를 `error === null` 로 무력화하자 회귀 가드 6건이 정확히 실패했다(훅 테스트의 network·rateLimited·characterUnavailable, Content·Boss 의 '로스터 401 아닌 실패', BossProfit 의 '401 아닌 error'); 확인 후 되돌림. 예정 밖 수정 1건: `BossProfitScreen.test.tsx` 의 옛 401 토스트 단언이 이 변경으로 깨져 같은 형태로 뒤집고 회귀 가드 1건을 더했다. AC 전부 통과 — build 성공, 테스트 **2,601개/173파일**(step 2 대비 +6), lint 0 errors/17 warnings(baseline 동일), `grep -c onOpenSettings use-sync-error-toast.ts`=0 · `설정 열기`=0 · Content/Boss 화면 각 1(피커 prop 잔존) · BossProfit 0."
     },
     {
       "step": 4,

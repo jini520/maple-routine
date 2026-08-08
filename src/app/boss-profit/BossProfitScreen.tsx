@@ -415,10 +415,7 @@ export function BossProfitScreen(): React.JSX.Element {
   const navigateToScreen = useScreenNavigate()
 
   // ADR-063: 동기화 전체 실패는 토스트로 알린다. 기간 라벨·"n분 전" 표기가 남아 맥락은 화면에 있다.
-  useScheduleSyncErrorToast(error, {
-    onRetry: () => refresh(trackedOcids ?? []),
-    onOpenSettings: () => navigateToScreen('/settings'),
-  })
+  useScheduleSyncErrorToast(error, { onRetry: () => refresh(trackedOcids ?? []) })
 
   // ADR-063: 일부 캐릭터만 실패한 경우도 토스트로 옮긴다. Toast 본문은 truncate(Toast.tsx)라
   // 이름을 나열하면 잘리므로 이름 대신 인원 수만 싣는다 — 어느 캐릭터인지는 잃지만, 지금은 선택된
