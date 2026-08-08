@@ -34,7 +34,7 @@ describe('onboardingReducer', () => {
       selectedAccountId: 'acc-1',
       error: null,
       prefetchProgress: null,
-      apiKeyInvalidNotice: false,
+      apiKeyNotice: null,
     })
   })
 
@@ -45,7 +45,7 @@ describe('onboardingReducer', () => {
       selectedAccountId: null,
       error: { kind: 'network' },
       prefetchProgress: null,
-      apiKeyInvalidNotice: false,
+      apiKeyNotice: null,
     }
 
     const result = onboardingReducer(errored, { type: 'SUBMIT_API_KEY' })
@@ -56,7 +56,7 @@ describe('onboardingReducer', () => {
       selectedAccountId: null,
       error: null,
       prefetchProgress: null,
-      apiKeyInvalidNotice: false,
+      apiKeyNotice: null,
     })
   })
 
@@ -74,7 +74,7 @@ describe('onboardingReducer', () => {
       selectedAccountId: null,
       error: null,
       prefetchProgress: null,
-      apiKeyInvalidNotice: false,
+      apiKeyNotice: null,
     })
   })
 
@@ -90,7 +90,7 @@ describe('onboardingReducer', () => {
       selectedAccountId: null,
       error: null,
       prefetchProgress: null,
-      apiKeyInvalidNotice: false,
+      apiKeyNotice: null,
     })
   })
 
@@ -108,7 +108,7 @@ describe('onboardingReducer', () => {
       selectedAccountId: null,
       error: null,
       prefetchProgress: null,
-      apiKeyInvalidNotice: false,
+      apiKeyNotice: null,
     })
   })
 
@@ -119,7 +119,7 @@ describe('onboardingReducer', () => {
       selectedAccountId: null,
       error: null,
       prefetchProgress: null,
-      apiKeyInvalidNotice: false,
+      apiKeyNotice: null,
     }
 
     const result = onboardingReducer(verifying, {
@@ -133,7 +133,7 @@ describe('onboardingReducer', () => {
       selectedAccountId: null,
       error: { kind: 'invalidApiKey' },
       prefetchProgress: null,
-      apiKeyInvalidNotice: false,
+      apiKeyNotice: null,
     })
   })
 
@@ -145,7 +145,7 @@ describe('onboardingReducer', () => {
       selectedAccountId: null,
       error: null,
       prefetchProgress: null,
-      apiKeyInvalidNotice: false,
+      apiKeyNotice: null,
     }
 
     const result = onboardingReducer(selecting, {
@@ -159,7 +159,7 @@ describe('onboardingReducer', () => {
       selectedAccountId: 'acc-2',
       error: null,
       prefetchProgress: null,
-      apiKeyInvalidNotice: false,
+      apiKeyNotice: null,
     })
   })
 
@@ -171,7 +171,7 @@ describe('onboardingReducer', () => {
       selectedAccountId: null,
       error: null,
       prefetchProgress: null,
-      apiKeyInvalidNotice: false,
+      apiKeyNotice: null,
     }
 
     const result = onboardingReducer(selecting, {
@@ -185,7 +185,7 @@ describe('onboardingReducer', () => {
       selectedAccountId: null,
       error: { kind: 'storageWriteFailed' },
       prefetchProgress: null,
-      apiKeyInvalidNotice: false,
+      apiKeyNotice: null,
     })
   })
 
@@ -196,7 +196,7 @@ describe('onboardingReducer', () => {
       selectedAccountId: 'acc-1',
       error: null,
       prefetchProgress: null,
-      apiKeyInvalidNotice: false,
+      apiKeyNotice: null,
     }
 
     const result = onboardingReducer(prefetching, {
@@ -208,7 +208,7 @@ describe('onboardingReducer', () => {
     expect(result).toEqual<OnboardingState>({
       ...prefetching,
       prefetchProgress: { completed: 3, total: 10 },
-      apiKeyInvalidNotice: false,
+      apiKeyNotice: null,
     })
   })
 
@@ -219,7 +219,7 @@ describe('onboardingReducer', () => {
       selectedAccountId: 'acc-1',
       error: null,
       prefetchProgress: { completed: 10, total: 10 },
-      apiKeyInvalidNotice: false,
+      apiKeyNotice: null,
     }
 
     const result = onboardingReducer(prefetching, { type: 'PREFETCH_FINISHED' })
@@ -228,7 +228,7 @@ describe('onboardingReducer', () => {
       ...prefetching,
       status: 'selectingTrackingMode',
       prefetchProgress: null,
-      apiKeyInvalidNotice: false,
+      apiKeyNotice: null,
     })
   })
 
@@ -239,7 +239,7 @@ describe('onboardingReducer', () => {
       selectedAccountId: 'acc-1',
       error: null,
       prefetchProgress: null,
-      apiKeyInvalidNotice: false,
+      apiKeyNotice: null,
     }
 
     const result = onboardingReducer(selecting, { type: 'SELECT_TRACKING_MODE', mode: 'manual' })
@@ -257,7 +257,7 @@ describe('onboardingReducer', () => {
       selectedAccountId: 'acc-1',
       error: null,
       prefetchProgress: null,
-      apiKeyInvalidNotice: false,
+      apiKeyNotice: null,
     }
 
     const result = onboardingReducer(selecting, { type: 'SUBMIT_CONTENT_CHARACTERS' })
@@ -275,7 +275,7 @@ describe('onboardingReducer', () => {
       selectedAccountId: 'acc-1',
       error: null,
       prefetchProgress: null,
-      apiKeyInvalidNotice: false,
+      apiKeyNotice: null,
     }
 
     const result = onboardingReducer(seeding, { type: 'ONBOARDING_FINISHED' })
@@ -288,19 +288,41 @@ describe('onboardingReducer', () => {
 
   // ADR-115 결정 10: status를 바꾸지 않는 유일한 이벤트다 — 뒤에 원래 화면이 남아 있어야
   // 사용자가 무엇을 하다 이렇게 됐는지 보면서 이유를 읽는다. 이동은 확인 후 RESET이 한다.
-  it('API_KEY_INVALID_NOTICED — 알림만 켜고 status·계정은 건드리지 않는다', () => {
-    const completed: OnboardingState = {
-      status: 'completed',
+  // ADR-116 결정 1: 원인 둘(무효 키·429)이 같은 사슬을 타므로 이벤트가 kind를 싣는다.
+  it.each(['invalid', 'rateLimited'] as const)(
+    'API_KEY_NOTICED(%s) — 원인만 담고 status·계정은 건드리지 않는다',
+    (kind) => {
+      const completed: OnboardingState = {
+        status: 'completed',
+        accounts: [account('acc-1')],
+        selectedAccountId: 'acc-1',
+        error: null,
+        prefetchProgress: null,
+        apiKeyNotice: null,
+      }
+
+      const result = onboardingReducer(completed, { type: 'API_KEY_NOTICED', kind })
+
+      expect(result).toEqual<OnboardingState>({ ...completed, apiKeyNotice: kind })
+    },
+  )
+
+  // ADR-116 결정 2: 처방이 같아 갈아끼울 실익이 없고, 읽던 문구가 눈앞에서 바뀌면 안 된다.
+  // 같은 객체를 돌려주는 것까지 단언한다 — 아니면 원인이 겹칠 때마다 헛렌더가 난다.
+  it('API_KEY_NOTICED — 이미 알림이 있으면 덮어쓰지 않고 같은 state를 그대로 돌려준다', () => {
+    const noticed: OnboardingState = {
+      status: 'selectingContentCharacters',
       accounts: [account('acc-1')],
       selectedAccountId: 'acc-1',
       error: null,
       prefetchProgress: null,
-      apiKeyInvalidNotice: false,
+      apiKeyNotice: 'invalid',
     }
 
-    const result = onboardingReducer(completed, { type: 'API_KEY_INVALID_NOTICED' })
+    const result = onboardingReducer(noticed, { type: 'API_KEY_NOTICED', kind: 'rateLimited' })
 
-    expect(result).toEqual<OnboardingState>({ ...completed, apiKeyInvalidNotice: true })
+    expect(result.apiKeyNotice).toBe('invalid')
+    expect(result).toBe(noticed)
   })
 
   it('RESET — 알림이 켜져 있어도 initialOnboardingState로 되돌아간다(알림도 함께 꺼진다)', () => {
@@ -310,10 +332,10 @@ describe('onboardingReducer', () => {
       selectedAccountId: 'acc-1',
       error: null,
       prefetchProgress: null,
-      apiKeyInvalidNotice: true,
+      apiKeyNotice: 'rateLimited',
     }
 
-    expect(onboardingReducer(noticed, { type: 'RESET' }).apiKeyInvalidNotice).toBe(false)
+    expect(onboardingReducer(noticed, { type: 'RESET' }).apiKeyNotice).toBeNull()
   })
 
   it('RESET — 어떤 상태에서도 initialOnboardingState로 되돌아간다', () => {
@@ -323,7 +345,7 @@ describe('onboardingReducer', () => {
       selectedAccountId: 'acc-1',
       error: null,
       prefetchProgress: null,
-      apiKeyInvalidNotice: false,
+      apiKeyNotice: null,
     }
 
     const result = onboardingReducer(completed, { type: 'RESET' })

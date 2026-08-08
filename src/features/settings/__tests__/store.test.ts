@@ -22,9 +22,9 @@ const { prefetchAccountDataMock } = vi.hoisted(() => ({
   prefetchAccountDataMock: vi.fn(),
 }))
 
-const { onboardingResetMock, noticeApiKeyInvalidMock } = vi.hoisted(() => ({
+const { onboardingResetMock, noticeApiKeyIssueMock } = vi.hoisted(() => ({
   onboardingResetMock: vi.fn(),
-  noticeApiKeyInvalidMock: vi.fn(),
+  noticeApiKeyIssueMock: vi.fn(),
 }))
 
 const { setTrackedCharacterOcidsMock, seedManualTrackedContentMock, trackingModeRef } = vi.hoisted(
@@ -51,7 +51,7 @@ vi.mock('../../onboarding/prefetch', () => ({
 
 vi.mock('../../onboarding/store', () => ({
   useOnboardingStore: {
-    getState: () => ({ reset: onboardingResetMock, noticeApiKeyInvalid: noticeApiKeyInvalidMock }),
+    getState: () => ({ reset: onboardingResetMock, noticeApiKeyIssue: noticeApiKeyIssueMock }),
   },
 }))
 
@@ -92,7 +92,7 @@ beforeEach(() => {
   setSelectedAccountIdMock.mockResolvedValue(undefined)
   prefetchAccountDataMock.mockResolvedValue(undefined)
   onboardingResetMock.mockResolvedValue(undefined)
-  noticeApiKeyInvalidMock.mockResolvedValue(undefined)
+  noticeApiKeyIssueMock.mockResolvedValue(undefined)
   setTrackedCharacterOcidsMock.mockResolvedValue(undefined)
   seedManualTrackedContentMock.mockResolvedValue(undefined)
   trackingModeRef.current = 'auto'
@@ -170,7 +170,7 @@ describe('useSettingsStore.changeApiKey', () => {
 
     await useSettingsStore.getState().changeApiKey('new-key')
 
-    expect(noticeApiKeyInvalidMock).not.toHaveBeenCalled()
+    expect(noticeApiKeyIssueMock).not.toHaveBeenCalled()
     expect(useSettingsStore.getState().status).toBe('error')
   })
 
@@ -271,7 +271,7 @@ describe('useSettingsStore.refreshAccounts', () => {
 
     await useSettingsStore.getState().refreshAccounts()
 
-    expect(noticeApiKeyInvalidMock).toHaveBeenCalledTimes(1)
+    expect(noticeApiKeyIssueMock).toHaveBeenCalledTimes(1)
     const state = useSettingsStore.getState()
     // 화면은 곧 /onboarding 으로 간다(결정 2). 지나간 실패를 남겨 두면 설정을 다시 열었을 때
     // 되살아나고, idle 복귀는 AccountModal 의 닫힘 판정이기도 하다.
@@ -286,7 +286,7 @@ describe('useSettingsStore.refreshAccounts', () => {
 
     await useSettingsStore.getState().refreshAccounts()
 
-    expect(noticeApiKeyInvalidMock).toHaveBeenCalledTimes(1)
+    expect(noticeApiKeyIssueMock).toHaveBeenCalledTimes(1)
     expect(useSettingsStore.getState().status).toBe('idle')
   })
 
@@ -297,7 +297,7 @@ describe('useSettingsStore.refreshAccounts', () => {
 
     await useSettingsStore.getState().refreshAccounts()
 
-    expect(noticeApiKeyInvalidMock).not.toHaveBeenCalled()
+    expect(noticeApiKeyIssueMock).not.toHaveBeenCalled()
     const state = useSettingsStore.getState()
     expect(state.status).toBe('error')
     expect(state.error).toEqual({ kind: 'rateLimited' })
@@ -308,7 +308,7 @@ describe('useSettingsStore.refreshAccounts', () => {
 
     await useSettingsStore.getState().refreshAccounts()
 
-    expect(noticeApiKeyInvalidMock).not.toHaveBeenCalled()
+    expect(noticeApiKeyIssueMock).not.toHaveBeenCalled()
     const state = useSettingsStore.getState()
     expect(state.status).toBe('error')
     expect(state.error).toEqual({ kind: 'network' })

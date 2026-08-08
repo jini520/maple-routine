@@ -3,9 +3,9 @@ import { cleanup, render } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ScheduleSyncError } from '../schedule-sync'
 
-const { showErrorMock, noticeApiKeyInvalidMock } = vi.hoisted(() => ({
+const { showErrorMock, noticeApiKeyIssueMock } = vi.hoisted(() => ({
   showErrorMock: vi.fn(),
-  noticeApiKeyInvalidMock: vi.fn(),
+  noticeApiKeyIssueMock: vi.fn(),
 }))
 
 vi.mock('../../toast/store', () => ({
@@ -14,7 +14,7 @@ vi.mock('../../toast/store', () => ({
 
 // ADR-115 결정 7: 401은 이 훅이 토스트로 알리는 대신 온보딩 스토어의 무효화 진입점에 위임한다.
 vi.mock('../../onboarding/store', () => ({
-  useOnboardingStore: { getState: () => ({ noticeApiKeyInvalid: noticeApiKeyInvalidMock }) },
+  useOnboardingStore: { getState: () => ({ noticeApiKeyIssue: noticeApiKeyIssueMock }) },
 }))
 
 import { useScheduleSyncErrorToast } from '../use-sync-error-toast'
@@ -26,7 +26,7 @@ function Harness(props: { error: ScheduleSyncError | null; onRetry?: () => void 
 
 beforeEach(() => {
   showErrorMock.mockClear()
-  noticeApiKeyInvalidMock.mockClear()
+  noticeApiKeyIssueMock.mockClear()
 })
 
 afterEach(() => {
@@ -52,21 +52,21 @@ describe('useScheduleSyncErrorToast', () => {
 
     action.onClick()
     expect(onRetry).toHaveBeenCalledTimes(1)
-    expect(noticeApiKeyInvalidMock).not.toHaveBeenCalled()
+    expect(noticeApiKeyIssueMock).not.toHaveBeenCalled()
   })
 
-  // ADR-115 결정 1·7: 401은 이 훅이 아무 토스트도 띄우지 않는다 — 문구는 noticeApiKeyInvalid()가
+  // ADR-115 결정 1·7: 401은 이 훅이 아무 토스트도 띄우지 않는다 — 문구는 noticeApiKeyIssue()가
   // 띄우고, 액션은 없다(이동이 이미 일어나 누를 것이 없다). 여기서는 위임만 확인한다.
   it('invalidApiKey는 토스트를 띄우지 않고 키 무효화 경로로 넘긴다', () => {
     const onRetry = vi.fn()
     render(<Harness error={{ kind: 'invalidApiKey' }} onRetry={onRetry} />)
 
-    expect(noticeApiKeyInvalidMock).toHaveBeenCalledTimes(1)
+    expect(noticeApiKeyIssueMock).toHaveBeenCalledTimes(1)
     expect(showErrorMock).not.toHaveBeenCalled()
     expect(onRetry).not.toHaveBeenCalled()
   })
 
-  // 멱등은 noticeApiKeyInvalid() 안의 status 가드가 맡지만(ADR-115 결정 6), 같은 값으로 재렌더될
+  // 멱등은 noticeApiKeyIssue() 안의 status 가드가 맡지만(ADR-115 결정 6), 같은 값으로 재렌더될
   // 때마다 부르면 그 가드가 없는 것처럼 호출이 쌓인다 — dep이 값 자체인 것이 여기서 담보된다.
   it('같은 invalidApiKey 객체로 다시 렌더되면 무효화를 다시 부르지 않는다', () => {
     const error: ScheduleSyncError = { kind: 'invalidApiKey' }
@@ -74,7 +74,7 @@ describe('useScheduleSyncErrorToast', () => {
     rerender(<Harness error={error} />)
     rerender(<Harness error={error} />)
 
-    expect(noticeApiKeyInvalidMock).toHaveBeenCalledTimes(1)
+    expect(noticeApiKeyIssueMock).toHaveBeenCalledTimes(1)
   })
 
   // 지금 누르면 또 429다 — 누를 수 있는 버튼을 주지 않는다.
@@ -87,7 +87,7 @@ describe('useScheduleSyncErrorToast', () => {
     const [message, action] = showErrorMock.mock.calls[0]
     expect(message).toBe('호출 한도를 초과했습니다')
     expect(action).toBeUndefined()
-    expect(noticeApiKeyInvalidMock).not.toHaveBeenCalled()
+    expect(noticeApiKeyIssueMock).not.toHaveBeenCalled()
   })
 
   // ADR-083 결정 2: 캐릭터별 실패가 토스트를 타면서 이 종류가 처음 여기 도달한다.
@@ -98,7 +98,7 @@ describe('useScheduleSyncErrorToast', () => {
     const [message, action] = showErrorMock.mock.calls[0]
     expect(message).toBe('이 캐릭터는 조회할 수 없습니다')
     expect(action).toBeUndefined()
-    expect(noticeApiKeyInvalidMock).not.toHaveBeenCalled()
+    expect(noticeApiKeyIssueMock).not.toHaveBeenCalled()
   })
 
   it('같은 error 객체로 다시 렌더되면 중복으로 띄우지 않는다', () => {

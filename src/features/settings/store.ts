@@ -98,7 +98,7 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => {
         // 이동은 사용자가 "확인"을 눌러야 일어난다(결정 10).
         // 멱등 가드는 그 함수 안 한 곳이라(결정 6) 여기서 상태를 다시 확인하지 않는다.
         if (settingsError.kind === 'invalidApiKey') {
-          useOnboardingStore.getState().noticeApiKeyInvalid()
+          useOnboardingStore.getState().noticeApiKeyIssue('invalid')
           // 이 계정 모달은 곧 안내 모달에 덮이고 확인 뒤 /onboarding 으로 간다. error를 남겨 두면
           // 나중에 설정을 다시 열었을 때 지나간 실패가 되살아난다. idle 복귀는 AccountModal 의
           // 닫힘 판정이기도 해 모달이 정리된다.

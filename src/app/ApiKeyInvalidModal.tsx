@@ -13,9 +13,9 @@ import { useOnboardingStore } from '../features/onboarding/store'
 // 아무것도 안 되는 화면에 사용자를 되돌려 보내는 셈이다. 진행 동작 하나만 둔다(진행 중 배경 탭을
 // 막는 `UpdatePromptModal` 과 같은 방식).
 export function ApiKeyInvalidModal(): React.JSX.Element | null {
-  const { apiKeyInvalidNotice, confirmApiKeyInvalid } = useOnboardingStore()
+  const { apiKeyNotice, confirmApiKeyNotice } = useOnboardingStore()
 
-  if (!apiKeyInvalidNotice) {
+  if (apiKeyNotice === null) {
     return null
   }
 
@@ -34,7 +34,7 @@ export function ApiKeyInvalidModal(): React.JSX.Element | null {
           </div>
           <button
             type="button"
-            onClick={() => void confirmApiKeyInvalid()}
+            onClick={() => void confirmApiKeyNotice()}
             className="w-full rounded-full bg-primary text-on-primary font-semibold hover:bg-primary-hover px-5 py-2.5 text-sm"
           >
             확인
