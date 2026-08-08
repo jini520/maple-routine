@@ -48,7 +48,7 @@
       "status": "completed",
       "started_at": "2026-08-08T15:42:09+0900",
       "summary": "남은 429 문구 2곳 + 설정 계정 카드 액션 하나. features/onboarding/format.ts 는 '호출 한도를 초과했습니다'(원인만 — 반환값이 전부 토스트 본문이고 Toast:88 이 truncate, ADR-114 결정 4), app/settings/error-message.ts 는 '호출 한도를 초과했습니다. 입력하신 API 키가 서비스 단계 키인지 확인해주세요'(모달 카드 안 인라인 <p> 라 줄바꿈되므로 처방까지). 두 파일에 '문구가 갈리는 것이 의도이니 통일하지 말 것' 주석을 서로를 가리키게 남겼다. AccountFlowStatus error 케이스는 props.error?.kind !== 'rateLimited' 로 다시 시도 버튼을 감쌌다 — invalidApiKey·network·storageWriteFailed 는 그대로이고, error === null 폴백은 undefined !== 'rateLimited' 라 자연히 버튼이 남는다('모르는 실패는 재시도 가능'). 판별력 확인: 조건을 {true &&} 로 지우자 새 케이스 1(429 버튼 없음)만 실패하고 케이스 2(network 버튼 유지)·기존 error 케이스는 통과했으며 되돌렸다. 문구 대조(테스트 제외 5자리): 토스트 2곳(schedule-sync:17·onboarding:14)은 13자 한 줄로 truncate 안, ErrorState(schedule-sync:78-79)는 제목+설명 두 줄, 스탈 배너(schedule-sync:143)는 한 줄 32자, 설정 인라인(error-message:11)은 ADR-114 결정 1 표와 한 글자까지 일치 — 나머지 1건 nexon/http.ts:44 는 사용자 문구가 아니라 NexonRateLimitError 의 내부 메시지라 미변경. 아키텍처: format.ts 는 './state' 타입 하나만 import 해 app/·storage/·native/ 접근 0건. 테스트 2,570개/172파일 통과(이 step 순증 2)·build 성공·lint 0 errors/17 warnings(baseline 동일)·src 변경 6파일(제품 3 + 테스트 3)·'잠시 후 다시 시도해주세요' 0건.",
-      "completed_at": "2026-08-08T15:47:30+0900"
+      "completed_at": "2026-08-08T15:48:37+0900"
     },
     {
       "step": 6,
