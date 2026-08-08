@@ -21,7 +21,10 @@
     {
       "step": 2,
       "name": "sqlite-close-timeout",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-08T23:42:25+0900",
+      "summary": "ADR-117 결정 5 구현 — closeBossProfitDb() 에 CLOSE_TIMEOUT_MS = 5_000 상한을 줬다. **계약: 여전히 던지지 않는다**(타임아웃이든 네이티브 에러든 항상 resolve — 이 함수 뒤에 오는 리로드가 실행되지 못하면 그게 곧 고치려는 증상이라, step 3(native-apply-path)·step 8(cache-data-order)이 이 성질에 기대어 close → 커버 → set()/reload() 로 짜인다). 타임아웃이 바꾸는 것은 '실패로 끝난다'가 아니라 '끝난다'. 구현은 기존 withOpenTimeout 의 race+clearTimeout 본체를 제네릭 withTimeout(promise, ms, message) 로 뽑아 두 상수가 한 몸으로 읽히게 하고(withOpenTimeout 은 그 얇은 래퍼로 남아 10초·에러 문구·동작 전부 불변), 닫기는 **대기 구간 전체**(dbPromise 대기 + closeConnection)를 async IIFE 로 묶어 감쌌다 — 여는 쪽이 매달리면 닫기도 그 앞에서 매달리므로 closeConnection 만 감싸면 상한이 안 선다. 기존 성질 넷 보존: 던지지 않음 · dbPromise 는 닫기가 끝난 뒤(성공·실패·타임아웃)에만 null(먼저 비우면 동시 getBossProfitDb 가 새 createConnection 을 시작해 'Connection boss_profit already exists') · dbPromise === null 이면 조기 return 이라 타이머조차 안 걺 · .finally 로 clearTimeout. 5초인 이유(여는 쪽 10초보다 짧음 — 열기는 파일 생성·마이그레이션 포함이나 닫기는 정상이면 수 ms 이고 이 값이 곧 'applying' 구간 = 사용자가 무반응을 견디는 상한)를 상수 주석에 남겼다. 새 테스트 4케이스(db.test.ts, 케이스별로만 fake timer — 파일 전역이면 기존 레이스 케이스의 마이크로태스크 순서가 흔들린다): 무응답 닫기가 5초에 resolve(reject 아님) · 타임아웃 뒤 dbPromise 가 비워져 다음 getBossProfitDb 가 createConnection 2회 · 4.9초엔 미완료/5.1초엔 완료(상수 방어) · 한 번도 연 적 없으면 vi.getTimerCount() === 0. **판별력 확인**: withTimeout race 를 걷어내자 새 3케이스가 전부 실패(2건은 vitest 5s 타임아웃=행, 1건은 assertion) 후 되돌렸다. 기존 레이스 케이스('종료 중 동시 호출')를 포함해 기존 4케이스 전부 무수정 통과. 검증: build 성공 · 테스트 2,671개/177파일 통과(기준선 2,667/177 대비 +4, 새 파일 0) · lint 0 errors/17 warnings(baseline 동일) · git status src/ 는 storage/sqlite 2파일뿐(밖 0건) · storage/ → features/·native/ import 0건(레이어 방향 유지).",
+      "completed_at": "2026-08-08T23:47:30+0900"
     },
     {
       "step": 3,
