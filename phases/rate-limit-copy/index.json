@@ -16,7 +16,7 @@
       "status": "completed",
       "started_at": "2026-08-08T15:25:14+0900",
       "summary": "format.ts만 수정 — formatScheduleSyncError의 429를 '호출 한도를 초과했습니다'로(토스트는 원인만, ADR-114 결정 4), formatRosterError의 429를 새 제목·설명 + 액션 제거(ADR-114 결정 2로 ADR-062 결정 3 폐기, RETRY 상수는 유지), formatStaleRosterError(error, place) 신설(6종 × 2자리 · assertNever 소진 가드 · network 계열은 '목록이 최신이 아닙니다' + 다시 시도 현행 유지). 판별력 확인: rateLimited 분기를 network와 같은 반환값으로 바꾸자 새 테스트 3건이 실패했고 되돌림. 어미 규칙 단언은 network 문구가 화면 하드코딩과 같아야 해 /(습니다|아닙니다|주세요)$/로 표기(같은 하십시오체 활용). 테스트 2,560개/172파일 통과(이 step 순증 12)·build 성공·lint 0 errors/17 warnings(baseline 동일)·src 변경 3파일.",
-      "completed_at": "2026-08-08T15:29:00+0900"
+      "completed_at": "2026-08-08T15:29:55+0900"
     },
     {
       "step": 2,
