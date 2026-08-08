@@ -8,13 +8,14 @@ import {
   setApiKey,
   setSelectedAccountId,
 } from '../../storage/api-key'
-import { getTrackedCharacterOcids, setTrackedCharacterOcids } from '../../storage/character-selection'
-import { getTrackingMode, setTrackingMode, type TrackingMode } from '../../storage/tracking-mode'
+import { setTrackedCharacterOcids } from '../../storage/character-selection'
+import { type TrackingMode } from '../../storage/tracking-mode'
 import { useToastStore } from '../toast/store'
 import { formatOnboardingError } from './format'
 import { seedManualTrackedContent } from '../tracking-mode/seed'
 import { useTrackingModeStore } from '../tracking-mode/store'
 import { prefetchAccountData } from './prefetch'
+import { deriveResumeTarget, type ResumeTarget } from './resume'
 import { initialOnboardingState, onboardingReducer, type OnboardingError, type OnboardingState } from './state'
 
 export interface OnboardingStore extends OnboardingState {
@@ -82,6 +83,28 @@ export const useOnboardingStore = create<OnboardingStore>()((set, get) => {
     set((state) => onboardingReducer(state, { type: 'API_KEY_VERIFIED', accounts }))
   }
 
+  // 재개 파생(deriveResumeTarget)이 가리킨 뒤 단계로 곧바로 전이한다. 부팅(restoreFromStorage)과
+  // 키 재입력(submitApiKey)이 같은 전이를 쓴다 — 이 자리에 네트워크는 없다(ADR-115 결정 4).
+  function commitResumedStep(target: Extract<ResumeTarget, { selectedAccountId: string }>): void {
+    if (target.status === 'completed') {
+      set((state) =>
+        onboardingReducer(state, {
+          type: 'RESTORE_COMPLETED',
+          selectedAccountId: target.selectedAccountId,
+        }),
+      )
+      return
+    }
+
+    set((state) =>
+      onboardingReducer(state, {
+        type: 'RESTORE_STEP',
+        status: target.status,
+        selectedAccountId: target.selectedAccountId,
+      }),
+    )
+  }
+
   return {
     ...initialOnboardingState,
 
@@ -90,57 +113,18 @@ export const useOnboardingStore = create<OnboardingStore>()((set, get) => {
     // 진행 상태 전용 키를 두지 않는 이유: 각 단계의 산출물이 이미 영속화돼 있어서, 진행 상태를
     // 따로 쓰면 진실이 둘이 되고 한쪽만 써진 채 앱이 죽는 순간 어긋난다.
     async restoreFromStorage() {
-      const authConfig = await getAuthConfig()
-      if (authConfig === null) {
+      const target = await deriveResumeTarget()
+
+      if (target.status === 'awaitingApiKey') {
         return
       }
 
-      if (authConfig.selectedAccountId === null) {
-        await loadAccountsForSelection(authConfig.apiKey)
+      if (target.status === 'selectingAccount') {
+        await loadAccountsForSelection(target.apiKey)
         return
       }
 
-      const selectedAccountId = authConfig.selectedAccountId
-      // 뒤 두 단계 판정은 로컬 읽기뿐이다 — 예열(ADR-016)을 다시 돌리지 않는다.
-      const [trackingMode, trackedOcids] = await Promise.all([
-        getTrackingMode(),
-        getTrackedCharacterOcids(),
-      ])
-      const hasTrackedCharacters = trackedOcids !== null && trackedOcids.length > 0
-
-      // ADR-086 결정 2 마이그레이션(1회): ADR-035 이전 설치본에서 완주한 사용자는 trackingMode
-      // 키가 없다 — 그대로 두면 정상 사용자가 온보딩으로 되돌려진다.
-      if (trackingMode === null && hasTrackedCharacters) {
-        await setTrackingMode('auto')
-        set((state) => onboardingReducer(state, { type: 'RESTORE_COMPLETED', selectedAccountId }))
-        return
-      }
-
-      if (trackingMode === null) {
-        set((state) =>
-          onboardingReducer(state, {
-            type: 'RESTORE_STEP',
-            status: 'selectingTrackingMode',
-            selectedAccountId,
-          }),
-        )
-        return
-      }
-
-      // trackedCharacters가 빈 배열이면 미완료다 — "최소 1명"(결정 7)이 있으므로 빈 배열은
-      // 사용자 의도가 아니라 끝내지 않은 단계다(저장 레이어의 null vs [] 구분은 그대로 둔다).
-      if (!hasTrackedCharacters) {
-        set((state) =>
-          onboardingReducer(state, {
-            type: 'RESTORE_STEP',
-            status: 'selectingContentCharacters',
-            selectedAccountId,
-          }),
-        )
-        return
-      }
-
-      set((state) => onboardingReducer(state, { type: 'RESTORE_COMPLETED', selectedAccountId }))
+      commitResumedStep(target)
     },
 
     async submitApiKey(apiKey: string) {
@@ -169,6 +153,24 @@ export const useOnboardingStore = create<OnboardingStore>()((set, get) => {
       }
 
       useToastStore.getState().showSuccess('API 키를 확인했어요')
+
+      // ADR-115 결정 4: 키 재입력이면 뒤 단계를 저장된 값으로 재개한다 — 계정 선택·모드·캐릭터를
+      // 다시 묻지 않는다. 파생은 부팅과 같은 함수 하나가 한다(setApiKey 뒤라야 authConfig가 채워져
+      // 있다). 예열(ADR-016)은 여기서 돌지 않는다 — 계정을 확정하는 selectAccount 하나뿐이다(ADR-051).
+      const target = await deriveResumeTarget()
+      // 결정 5: 새로 넣은 키가 다른 넥슨 계정의 키일 수 있다. 저장된 selectedAccountId가 방금 받은
+      // 응답에 없으면 재개하지 않고 기존대로 계정 선택부터 간다 — 안 그러면 남의 계정 키로 이전 계정
+      // ocid 추적 목록을 그대로 쓰게 된다. 추가 호출은 없다(이미 손에 있는 응답으로 판정한다).
+      // awaitingApiKey는 setApiKey 직후라 정상적으로는 올 수 없다 — 방어적으로 기존 흐름에 떨어뜨린다.
+      if (
+        target.status !== 'awaitingApiKey' &&
+        target.status !== 'selectingAccount' &&
+        accounts.some((candidate) => candidate.accountId === target.selectedAccountId)
+      ) {
+        commitResumedStep(target)
+        return
+      }
+
       set((state) => onboardingReducer(state, { type: 'API_KEY_VERIFIED', accounts }))
     },
 
