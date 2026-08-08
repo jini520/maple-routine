@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { act, cleanup, render, screen } from '@testing-library/react'
+import { act, cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { NexonAuthError, NexonRateLimitError } from '../../../nexon/errors'
 import type { CharacterPickerEntry } from '../../../types'
 
 const { getCharacterPickerRosterMock } = vi.hoisted(() => ({
@@ -35,6 +36,31 @@ afterEach(() => {
   cleanup()
   vi.resetAllMocks()
 })
+
+// resolve/reject 시점을 테스트가 제어할 수 있도록 미해결 Promise를 반환하는 모의 구현.
+function deferRoster(): {
+  emit: (entries: CharacterPickerEntry[]) => void
+  resolve: () => Promise<void>
+  reject: (error: unknown) => Promise<void>
+} {
+  let onUpdateRef: (entries: CharacterPickerEntry[]) => void = () => {}
+  let resolveRef: () => void = () => {}
+  let rejectRef: (error: unknown) => void = () => {}
+
+  getCharacterPickerRosterMock.mockImplementation((onUpdate: (e: CharacterPickerEntry[]) => void) => {
+    onUpdateRef = onUpdate
+    return new Promise<void>((resolve, reject) => {
+      resolveRef = resolve
+      rejectRef = reject
+    })
+  })
+
+  return {
+    emit: (entries) => act(() => onUpdateRef(entries)),
+    resolve: () => act(async () => resolveRef()),
+    reject: (error) => act(async () => rejectRef(error)),
+  }
+}
 
 describe('ContentCharacterStep', () => {
   it('아무도 선택하지 않으면 계속하기 버튼이 비활성화된다', () => {
@@ -91,31 +117,6 @@ describe('ContentCharacterStep', () => {
 // 정상 경로는 직전 예열(ADR-016)로 캐시가 따뜻하지만, 예열이 통째로 실패하면 이 경로를 밟는다 —
 // 그때 "조회 실패"를 빈 상태로 위장하면 CTA가 비활성인 채로 온보딩이 멈춘다.
 describe('ContentCharacterStep — 후보 목록 로딩 (ADR-053)', () => {
-  // resolve/reject 시점을 테스트가 제어할 수 있도록 미해결 Promise를 반환하는 모의 구현.
-  function deferRoster(): {
-    emit: (entries: CharacterPickerEntry[]) => void
-    resolve: () => Promise<void>
-    reject: (error: unknown) => Promise<void>
-  } {
-    let onUpdateRef: (entries: CharacterPickerEntry[]) => void = () => {}
-    let resolveRef: () => void = () => {}
-    let rejectRef: (error: unknown) => void = () => {}
-
-    getCharacterPickerRosterMock.mockImplementation((onUpdate: (e: CharacterPickerEntry[]) => void) => {
-      onUpdateRef = onUpdate
-      return new Promise<void>((resolve, reject) => {
-        resolveRef = resolve
-        rejectRef = reject
-      })
-    })
-
-    return {
-      emit: (entries) => act(() => onUpdateRef(entries)),
-      resolve: () => act(async () => resolveRef()),
-      reject: (error) => act(async () => rejectRef(error)),
-    }
-  }
-
   it('조회 중이고 보여줄 항목이 없으면 그리드 자리에 스피너를 보여준다', () => {
     deferRoster()
 
@@ -203,5 +204,60 @@ describe('ContentCharacterStep — 후보 목록 로딩 (ADR-053)', () => {
     expect(screen.getByText('캐릭터 목록을 불러오지 못했습니다')).toBeInTheDocument()
     expect(screen.queryByText('표시할 캐릭터가 없어요')).not.toBeInTheDocument()
     expect(screen.queryByTestId('maple-sweep-spinner')).not.toBeInTheDocument()
+  })
+})
+
+// ADR-114 결정 3: 항목이 남은 채 실패하면 그리드 위에 스탈 배너를 얹는데(ADR-062 결정 4), 그
+// 문구도 액션도 원인별로 갈린다. 액션을 뺄 수 있는 근거는 자리다 — 배너 아래에 목록이 그대로
+// 남아 있어 액션이 없어도 막다른 길이 아니다(같은 401이 위 ErrorState 경로에서는 재시도를
+// 유지하는 것이 그 근거의 뒷면이다).
+//
+// 이 화면은 모달이 아니라 페이지라 "계속하기"가 항상 있으므로, 버튼 유무는 배너 안에서만 단언한다.
+describe('ContentCharacterStep — 스탈 배너 (ADR-114)', () => {
+  it('429는 서비스 단계 키를 확인하라 말하고 액션을 주지 않는다', async () => {
+    const roster = deferRoster()
+
+    render(<ContentCharacterStep isSubmitting={false} onSubmit={vi.fn()} />)
+    roster.emit(entries)
+    await roster.reject(new NexonRateLimitError('429'))
+
+    const banner = screen.getByTestId('stale-banner')
+    expect(within(banner).getByText('호출 한도를 초과했습니다 — 서비스 단계 키인지 확인해주세요')).toBeInTheDocument()
+    // 눌러도 또 429인 버튼은 "고칠 수 있다"는 잘못된 신호다(ADR-114 결정 2).
+    expect(within(banner).queryByRole('button')).not.toBeInTheDocument()
+    // 목록은 그대로 남는다 — 그것이 액션을 뺄 수 있는 근거다.
+    expect(screen.getByRole('button', { name: /낟낟/ })).toBeInTheDocument()
+  })
+
+  // 온보딩에는 설정으로 보낼 길이 없고(피커는 '설정 열기'를 준다), 재시도는 같은 키를 다시 써서
+  // 또 401이다 — 그래서 이 자리의 401은 액션이 없다.
+  it('401 배너는 사실만 말하고 액션을 주지 않는다', async () => {
+    const roster = deferRoster()
+
+    render(<ContentCharacterStep isSubmitting={false} onSubmit={vi.fn()} />)
+    roster.emit(entries)
+    await roster.reject(new NexonAuthError('401'))
+
+    const banner = screen.getByTestId('stale-banner')
+    expect(within(banner).getByText('API 키가 유효하지 않아 목록을 갱신하지 못했습니다')).toBeInTheDocument()
+    expect(within(banner).queryByRole('button')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /낟낟/ })).toBeInTheDocument()
+  })
+
+  // ADR-114 결정 3: network 계열은 폐기가 아니라 좁혀진 것이다 — 문구·액션이 현행 그대로다.
+  it('네트워크 실패는 현행대로 "목록이 최신이 아닙니다" + 다시 시도이고, 누르면 재조회한다', async () => {
+    const roster = deferRoster()
+    const user = userEvent.setup()
+
+    render(<ContentCharacterStep isSubmitting={false} onSubmit={vi.fn()} />)
+    roster.emit(entries)
+    await roster.reject(new Error('boom'))
+
+    const banner = screen.getByTestId('stale-banner')
+    expect(within(banner).getByText('목록이 최신이 아닙니다')).toBeInTheDocument()
+
+    await user.click(within(banner).getByRole('button', { name: '다시 시도' }))
+
+    expect(getCharacterPickerRosterMock).toHaveBeenCalledTimes(2)
   })
 })
