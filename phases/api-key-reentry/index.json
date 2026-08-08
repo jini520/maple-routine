@@ -1,0 +1,44 @@
+{
+  "project": "메이플 루틴 (Maple Routine)",
+  "phase": "api-key-reentry",
+  "steps": [
+    {
+      "step": 0,
+      "name": "docs-adr",
+      "status": "completed",
+      "started_at": "2026-08-08T17:08:43+0900",
+      "summary": "ADR-115 신설(설계 확정·구현 전) + 인덱스 1줄 + 3개 문서 갱신. 결정 1 = 401/403 → 토스트 `API 키가 더 이상 유효하지 않습니다`(액션 없음) + 키 입력 화면 자동 이동, 결정 2 = 이동은 온보딩 상태를 awaitingApiKey 로 뒤집는 것으로 일어나고 스토어는 라우터를 모른다(App.tsx isCompleted 가드가 라우터로 보냄 → ADR-050 리로드 함정 회피, 복귀는 /content), 결정 3 = 저장소에서 `apiKey` 키 **하나만** 삭제(clearAuthConfig 금지 — selectedAccountId 까지 지워 재개 불가), 결정 4 = 키 재입력 성공 시 ADR-086 결정 1 재개 파생표를 submitApiKey 경로에도 적용(파생 판정은 함수 하나를 부팅과 공유, 예열 재실행 없음), 결정 5 = 재개 전 계정 목록 대조 가드(검증 때 받은 character/list 에 저장된 selectedAccountId 가 없으면 계정 선택부터, 추가 호출 0회), 결정 6 = 멱등성은 'completed 일 때만 무효화 성립'(동시 401 → 토스트 1회·이동 1회, 키 입력 화면의 401 은 이 경로가 아니라 재이동 루프 불가), 결정 7 = 감지 지점 셋(use-sync-error-toast · 피커 로스터 ErrorState/스탈 배너 · 설정 refreshAccounts)이 진입점 하나를 부르고 `설정 열기` 액션 전부 제거 → ADR-062 결정 3의 '401은 설정으로' 및 ADR-008의 401 배너 폐기, 결정 8 = 설정 'API 키 변경' 행 부활 안 함(changeApiKey 미배선 유지, #135 와 함께). AC 전부 통과 — src 변경 0줄, build 성공, 테스트 2,570개/172파일(baseline 동일)."
+    },
+    {
+      "step": 1,
+      "name": "invalidate-entry",
+      "status": "pending"
+    },
+    {
+      "step": 2,
+      "name": "resume-after-reentry",
+      "status": "pending"
+    },
+    {
+      "step": 3,
+      "name": "sync-toast-rewire",
+      "status": "pending"
+    },
+    {
+      "step": 4,
+      "name": "picker-copy",
+      "status": "pending"
+    },
+    {
+      "step": 5,
+      "name": "settings-account-modal",
+      "status": "pending"
+    },
+    {
+      "step": 6,
+      "name": "docs-verify",
+      "status": "pending"
+    }
+  ],
+  "created_at": "2026-08-08T17:08:43+0900"
+}

@@ -2,7 +2,7 @@
 
 > **범위**: API 키 관리·계정(메이플 ID) 변경·연결 해제·테마 선택·스케줄 관리 방법(트래킹 모드)·데이터 관리·앱 업데이트·footer 표기. 다른 기능 설명에 흩어져 있던 요구사항을 통합 정리.
 > **관련 소스**: `app/settings/` · `features/settings/`(`changeApiKey`) · `storage/api-key`(`clearAuthConfig`) · `storage/cache-data`(`clearCacheData`/`getCacheDataSizes`) · `features/onboarding`(`RESET`) · `features/tracking-mode`(`copy.ts`) · `AccountFlowStatus` · `SettingsRow` · `TrackingModeModal`/`TrackingModeSelector` · `ThemeModal`/`ThemeSelector` · `CacheDataSection`/`CacheClearConfirm`.
-> **관련 ADR**: [[ADR-007]] [[ADR-008]] [[ADR-009]] [[ADR-004]] [[ADR-035]] [[ADR-026]] [[ADR-027]] [[ADR-050]] [[ADR-051]] [[ADR-052]] [[ADR-058]] [[ADR-086]] [[ADR-104]] [[ADR-113]]. **관련 문서**: [onboarding.md](./onboarding.md), [theme.md](./theme.md), [live-update.md](./live-update.md), [../foundation/nexon-api.md](../foundation/nexon-api.md), [../persistence/lifecycle.md](../persistence/lifecycle.md).
+> **관련 ADR**: [[ADR-007]] [[ADR-008]] [[ADR-009]] [[ADR-004]] [[ADR-035]] [[ADR-026]] [[ADR-027]] [[ADR-050]] [[ADR-051]] [[ADR-052]] [[ADR-058]] [[ADR-086]] [[ADR-104]] [[ADR-113]] [[ADR-115]]. **관련 문서**: [onboarding.md](./onboarding.md), [theme.md](./theme.md), [live-update.md](./live-update.md), [../foundation/nexon-api.md](../foundation/nexon-api.md), [../persistence/lifecycle.md](../persistence/lifecycle.md).
 
 ## 정책
 진입 경로는 **하단 탭바 4번째 탭**(별도 헤더 아이콘 아님, 확정 2026-07-12).
@@ -28,7 +28,7 @@
 `AccountFlowStatus` 의 `error` 상태는 모달 본문 전체를 차지하므로 **인라인으로 남는다**([[ADR-063]] — 토스트로 옮기면 빈 상자가 된다). 다만 그 카드가 원인과 무관하게 "다시 시도" 버튼을 달던 것을 **`rateLimited` 일 때만 뺀다**.
 - 문구는 `formatSettingsError`(`app/settings/error-message.ts`)가 정한다. `rateLimited` 는 **"호출 한도를 초과했습니다. 입력하신 API 키가 서비스 단계 키인지 확인해주세요"** — 여기는 모달 본문이라 토스트와 달리 처방까지 담을 자리가 있다([[ADR-114]] 결정 4).
 - 버튼을 빼는 이유는 처방이 재시도가 아니기 때문이다. 이 카드에서는 재시도가 **유일한 진행 수단**이었으므로([[ADR-063]] "남는 인라인" 표) 429 에서는 모달을 닫는 것 외에 진행 경로가 없어지는데, **실제로 지금 할 수 있는 일이 없는 것이 맞다**. 나머지 원인(`invalidApiKey`·`network`·`storageWriteFailed`)의 "다시 시도"는 그대로다.
-- **연결 해제(로그아웃)**: `storage/api-key.ts` 의 `clearAuthConfig()` + `features/onboarding` 의 `RESET` 이벤트를 재사용해 온보딩 화면으로 복귀(신규 로직 없이 기존 두 조각 연결). 키 무효화 복구 경로도 이것(재온보딩).
+- **연결 해제(로그아웃)**: `storage/api-key.ts` 의 `clearAuthConfig()` + `features/onboarding` 의 `RESET` 이벤트를 재사용해 온보딩 화면으로 복귀(신규 로직 없이 기존 두 조각 연결). **키 무효화(401/403) 복구 경로는 더 이상 이것이 아니다**([[ADR-115]], 2026-08-08) — 401 은 토스트 한 줄과 함께 **자동으로** 키 입력 화면으로 보내고 뒤 단계는 저장된 값으로 재개하므로, 사용자가 위험 색 행을 눌러 계정 선택부터 다시 할 이유가 없다. 연결 해제는 "이 기기에서 이 계정을 떼어낸다"는 사용자 의도 전용으로 남는다. 두 경로가 지우는 범위도 다르다 — 연결 해제는 `apiKey` + `selectedAccountId` 둘 다(`clearAuthConfig`), 무효화는 **`apiKey` 하나만**([[ADR-115]] 결정 3 — `clearAuthConfig` 를 쓰면 재개가 불가능해진다).
 - **데이터 관리(캐시 데이터 삭제)**: 지울 데이터를 **2그룹 중 선택**해서 지운다([[ADR-058]]) — "일반 데이터"(동기화 캐시·추적 목록·수동 추적 항목·공유 진행 원장·파티 설정)와 "보스 수익·드롭 기록"(복구 불가). 인증·사용자 설정 5개(`KEEP_KEYS`)는 어떤 선택에서도 보존되므로 이 기능으로 온보딩으로 돌아가지 않는다 — 연결 해제는 별도. 범위의 정확한 정의와 그룹 경계의 근거는 [../persistence/lifecycle.md](../persistence/lifecycle.md).
 - **테마 선택**: 등록된 테마 중 선택 → 즉시 반영. 목록은 카테고리 섹션(기본·직업·보스) + 2열 프리뷰 타일이고 위에 라이트·다크 필터 칩이 붙는다([[ADR-104]]). **고른다고 모달이 닫히지는 않는다** — 모달 자신이 선택 테마 색으로 그려지므로 그 자리에서 갈아입혀 보게 두고, 닫기는 "완료" 버튼과 오버레이 탭이 맡는다([[ADR-104]] 결정 7). 상세 [theme.md](./theme.md).
 - **스케줄 관리 방법(트래킹 모드)**: 자동/수동 전역 토글([[ADR-035]]). 상세는 아래 UI.
@@ -95,6 +95,7 @@
 - ~~트래킹 모드 옵션은 제목 1줄 + 긴 설명 문단 2~3문장(자동 91자·수동 84자)뿐이고, 옵션·CTA 모두 기존 선택 카드 클래스를 그대로 쓴다(신규 스타일 금지)~~ → 카피를 `title`/`description`/`caution` 세 필드로 쪼개고 카드 **안쪽**에 아이콘·정보 톤 주의 박스를 둔다([[ADR-035]] 결정 22, 2026-08-03, 이슈 #59). 바깥 카드 클래스 공유는 유지.
 - ~~계정 변경 모달의 `verifying` 단계는 "캐릭터 목록을 확인하고 있어요..." 문구 한 줄이다~~ → 진행률 바 0%([[ADR-113]] 결정 5, 2026-08-08). 뒤따르는 프로브 대기와 같은 마크를 써 하나의 연속된 로딩으로 읽히게 한다.
 - ~~계정 변경은 `accountId` 만 즉시 갱신하고 추적 목록은 그대로 둔다~~ → 캐릭터 재선택까지 커밋 보류, 저장 시점에 두 쓰기를 함께([[ADR-086]] 결정 6, 2026-08-03).
-- ~~"API 키 재입력" 행/모달(`ApiKeyModal`)~~ → 제거(2026-07-25). 키 무효화 복구는 "연결 해제" 후 재온보딩. [[ADR-008]] 재입력 유도 배너는 미구현 보류(설정 store `changeApiKey` 로직은 되살릴 여지로 남겨 둠).
+- ~~"API 키 재입력" 행/모달(`ApiKeyModal`)~~ → 제거(2026-07-25). ~~키 무효화 복구는 "연결 해제" 후 재온보딩. [[ADR-008]] 재입력 유도 배너는 미구현 보류.~~ → **401/403 은 토스트 + 키 입력 화면 자동 이동**이고 뒤 단계는 저장된 값으로 재개한다([[ADR-115]] 결정 1·4, 2026-08-08, 이슈 #157). [[ADR-008]] 의 재입력 유도 배너는 **배너 없이 자동 이동**으로 대체돼 보류가 닫혔다(결정 7 — 배너를 새로 만들지 않는다). 설정에 행이 없다는 사실은 그대로다: 옛 문구가 안내하던 목적지(설정)에 실제로 아무것도 없던 것이 이슈 #157 의 출발점이었고, 그래서 [[ADR-062]] 결정 3 의 "401 은 설정으로 보낸다"까지 함께 폐기됐다.
+  - **설정 store `changeApiKey` 는 여전히 배선하지 않은 채 남는다**([[ADR-115]] 결정 8) — 로직·테스트는 살아 있으므로 되살릴 여지로 두되, 무효화가 아닌데 키를 바꾸고 싶은 경우("API 키 변경" 행 부활)는 **#135(설정 구조 개선)와 함께 본다.** 그 경로의 401 은 "사용자가 방금 나쁜 키를 입력한 것"이라 무효화 경로와 성질이 다르다.
 - ~~"트래킹 모드" 행/모달 제목~~ → "스케줄 관리 방법"으로 개명(2026-07-25, 내부 이름은 유지).
 - ~~"데이터 관리"(캐시 삭제) 섹션이 "앱 업데이트" 아래~~ → 위로 올림(2026-07-25).
