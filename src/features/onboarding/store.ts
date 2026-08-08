@@ -1,7 +1,13 @@
 import { create } from 'zustand'
 import { fetchCharacterList } from '../../nexon/character'
 import { NexonAuthError, NexonRateLimitError } from '../../nexon/errors'
-import { clearAuthConfig, getAuthConfig, setApiKey, setSelectedAccountId } from '../../storage/api-key'
+import {
+  clearAuthConfig,
+  getAuthConfig,
+  removeApiKey,
+  setApiKey,
+  setSelectedAccountId,
+} from '../../storage/api-key'
 import { getTrackedCharacterOcids, setTrackedCharacterOcids } from '../../storage/character-selection'
 import { getTrackingMode, setTrackingMode, type TrackingMode } from '../../storage/tracking-mode'
 import { useToastStore } from '../toast/store'
@@ -19,6 +25,8 @@ export interface OnboardingStore extends OnboardingState {
   submitContentCharacters(ocids: string[]): Promise<void>
   // ADR-086 결정 8: 고른 계정의 후보가 0명일 때의 유일한 탈출구 — 온보딩 중에는 설정 화면이 없다.
   restartAccountSelection(): Promise<void>
+  // ADR-115: 저장된 키가 넥슨에서 무효화됐을 때(401/403) 부르는 유일한 진입점.
+  invalidateApiKey(): Promise<void>
   reset(): Promise<void>
 }
 
@@ -222,6 +230,36 @@ export const useOnboardingStore = create<OnboardingStore>()((set, get) => {
       }
 
       set((state) => onboardingReducer(state, { type: 'ONBOARDING_FINISHED' }))
+    },
+
+    // ADR-115 결정 1~3·6: 401/403 을 만나면 토스트 한 줄을 띄우고 곧바로 키 입력 화면으로 보낸다.
+    async invalidateApiKey() {
+      // 결정 6: 멱등 가드. await 앞이라 이 구간이 원자적이다 — 여러 화면·여러 캐릭터에서 401이
+      // 동시에 터져도 토스트 1회·이동 1회다. 키 입력 화면에서 다시 나는 401은 그때 상태가
+      // completed가 아니라 여기 걸린다(재이동 루프가 구조적으로 불가능하다, ADR-065 결정 1의 폼 에러로 남는다).
+      if (get().status !== 'completed') {
+        return
+      }
+
+      // 결정 2: 이동은 상태를 뒤집는 것으로 일어난다 — App.tsx의 isCompleted 가드가 라우터로
+      // /onboarding에 보낸다. 스토어는 라우터를 모르고 window.location도 쓰지 않는다(문서 리로드가
+      // 네이티브 SQLite 커넥션을 stale하게 만든다, ADR-050).
+      // 새 이벤트를 만들지 않고 RESET을 재사용한다 — 결과(initialOnboardingState)가 정확히 같아서,
+      // 같은 결과의 이벤트를 하나 더 두면 리듀서의 진실이 둘이 된다. 무효화와 연결 해제의 차이는
+      // 리듀서가 아니라 저장소에서 무엇을 지우는가(removeApiKey vs clearAuthConfig)에 있다.
+      set((state) => onboardingReducer(state, { type: 'RESET' }))
+
+      // 결정 1: 액션은 두지 않는다 — 이동이 이미 일어났으므로 누를 것이 없다.
+      useToastStore.getState().showError('API 키가 더 이상 유효하지 않습니다')
+
+      try {
+        await removeApiKey()
+      } catch {
+        // 결정 3의 "알려진 열화": 삭제가 실패하면 재시작 시 옛 무효 키가 되살아나지만, 그때는
+        // 다시 이 경로를 탈 뿐이라 막다른 길이 아니다. 화면은 이미 키 입력에 가 있으므로 사용자가
+        // 여기서 할 수 있는 일도 없다. rethrow하면 호출부가 전부 void 호출이라 미처리 rejection이
+        // 된다(ADR-065 결정 1이 고쳤던 그 결함과 같은 종류다).
+      }
     },
 
     async reset() {

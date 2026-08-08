@@ -12,11 +12,13 @@ const {
   setApiKeyMock,
   setSelectedAccountIdMock,
   clearAuthConfigMock,
+  removeApiKeyMock,
 } = vi.hoisted(() => ({
   getAuthConfigMock: vi.fn(),
   setApiKeyMock: vi.fn(),
   setSelectedAccountIdMock: vi.fn(),
   clearAuthConfigMock: vi.fn(),
+  removeApiKeyMock: vi.fn(),
 }))
 
 const { prefetchAccountDataMock } = vi.hoisted(() => ({
@@ -56,6 +58,7 @@ vi.mock('../../../storage/api-key', () => ({
   setApiKey: setApiKeyMock,
   setSelectedAccountId: setSelectedAccountIdMock,
   clearAuthConfig: clearAuthConfigMock,
+  removeApiKey: removeApiKeyMock,
 }))
 
 vi.mock('../prefetch', () => ({
@@ -110,6 +113,7 @@ beforeEach(() => {
   setApiKeyMock.mockResolvedValue(undefined)
   setSelectedAccountIdMock.mockResolvedValue(undefined)
   clearAuthConfigMock.mockResolvedValue(undefined)
+  removeApiKeyMock.mockResolvedValue(undefined)
   prefetchAccountDataMock.mockResolvedValue(undefined)
   setModeMock.mockResolvedValue(undefined)
   setTrackedCharacterOcidsMock.mockResolvedValue(undefined)
@@ -608,6 +612,108 @@ describe('useOnboardingStore.submitContentCharacters', () => {
     await useOnboardingStore.getState().submitContentCharacters(['ocid-a'])
 
     expect(callOrder).toEqual(['setTracked', 'seed'])
+  })
+})
+
+// ADR-115: 저장된 키가 넥슨에서 무효화(401/403)됐을 때 부르는 유일한 진입점.
+describe('useOnboardingStore.invalidateApiKey', () => {
+  function primeCompleted(): void {
+    useOnboardingStore.setState({
+      status: 'completed',
+      accounts: [account('acc-1')],
+      selectedAccountId: 'acc-1',
+      error: null,
+      prefetchProgress: { completed: 1, total: 1 },
+    })
+  }
+
+  // 결정 2: 상태를 뒤집는 것이 곧 이동이다 — App.tsx의 isCompleted 가드가 라우터로 보낸다.
+  it('completed를 awaitingApiKey로 되돌린다 — 계정·에러·진행률도 초기값이 된다', async () => {
+    primeCompleted()
+
+    await useOnboardingStore.getState().invalidateApiKey()
+
+    expect(useOnboardingStore.getState()).toMatchObject(initialOnboardingState)
+  })
+
+  // 결정 1: 이동이 이미 일어나 누를 것이 없다.
+  it('액션 없는 토스트 한 줄로 알린다', async () => {
+    primeCompleted()
+
+    await useOnboardingStore.getState().invalidateApiKey()
+
+    expect(showErrorMock).toHaveBeenCalledTimes(1)
+    expect(showErrorMock).toHaveBeenCalledWith('API 키가 더 이상 유효하지 않습니다')
+    expect(showErrorMock.mock.calls[0][1]).toBeUndefined()
+  })
+
+  // 결정 3: clearAuthConfig는 selectedAccountId까지 지워 결정 4의 재개를 불가능하게 만든다.
+  it('저장소에서 apiKey만 지운다 — 연결 해제 경로(clearAuthConfig)를 타지 않는다', async () => {
+    primeCompleted()
+
+    await useOnboardingStore.getState().invalidateApiKey()
+
+    expect(removeApiKeyMock).toHaveBeenCalledTimes(1)
+    expect(clearAuthConfigMock).not.toHaveBeenCalled()
+    expect(setSelectedAccountIdMock).not.toHaveBeenCalled()
+  })
+
+  // 결정 6: 가드가 await 앞이라 그 구간이 원자적이다 — 여러 화면·여러 캐릭터의 동시 401이 하나로 접힌다.
+  it('연달아 불러도 토스트·삭제는 1회다', async () => {
+    primeCompleted()
+
+    await Promise.all([
+      useOnboardingStore.getState().invalidateApiKey(),
+      useOnboardingStore.getState().invalidateApiKey(),
+    ])
+    await useOnboardingStore.getState().invalidateApiKey()
+
+    expect(showErrorMock).toHaveBeenCalledTimes(1)
+    expect(removeApiKeyMock).toHaveBeenCalledTimes(1)
+  })
+
+  // 결정 6: 키 입력 화면에서 다시 나는 401은 이 경로가 아니다 — 재이동 루프가 구조적으로 불가능하다.
+  it.each(['awaitingApiKey', 'verifyingApiKey', 'error'] as const)(
+    'completed가 아니면(%s) 아무 일도 하지 않는다',
+    async (status) => {
+      useOnboardingStore.setState({
+        status,
+        accounts: [account('acc-1')],
+        selectedAccountId: 'acc-1',
+        error: null,
+        prefetchProgress: null,
+      })
+
+      await useOnboardingStore.getState().invalidateApiKey()
+
+      const state = useOnboardingStore.getState()
+      expect(state.status).toBe(status)
+      expect(state.accounts).toEqual([account('acc-1')])
+      expect(state.selectedAccountId).toBe('acc-1')
+      expect(showErrorMock).not.toHaveBeenCalled()
+      expect(removeApiKeyMock).not.toHaveBeenCalled()
+    },
+  )
+
+  // 결정 3의 "알려진 열화": 삭제가 실패해도 같은 길을 한 번 더 돌 뿐이라 막다른 길이 아니다.
+  // rethrow하면 호출부가 전부 void 호출이라 미처리 rejection이 된다(ADR-065 결정 1의 그 결함).
+  it('저장소 삭제가 실패해도 reject하지 않고 화면 이동은 그대로다', async () => {
+    primeCompleted()
+    removeApiKeyMock.mockRejectedValue(new Error('disk full'))
+
+    await expect(useOnboardingStore.getState().invalidateApiKey()).resolves.toBeUndefined()
+
+    expect(useOnboardingStore.getState().status).toBe('awaitingApiKey')
+  })
+
+  // 회귀 가드: 연결 해제와 무효화는 저장소에 하는 일이 다르다 — 섞이면 재개가 조용히 깨진다.
+  it('reset()은 여전히 clearAuthConfig로 selectedAccountId까지 지운다', async () => {
+    primeCompleted()
+
+    await useOnboardingStore.getState().reset()
+
+    expect(clearAuthConfigMock).toHaveBeenCalledTimes(1)
+    expect(removeApiKeyMock).not.toHaveBeenCalled()
   })
 })
 

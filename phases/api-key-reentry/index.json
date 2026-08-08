@@ -13,7 +13,10 @@
     {
       "step": 1,
       "name": "invalidate-entry",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-08T17:17:01+0900",
+      "summary": "키 무효화 진입점 2개 신설(호출부 배선 0건 — step 3~5 몫). ① `storage/api-key.ts`: `removeApiKey(): Promise<void>` — `STORAGE_KEYS.apiKey` **하나만** Preferences.remove, `selectedAccountId` 는 남긴다(ADR-115 결정 3, step 2 재개가 읽는 값). 두 함수 차이는 양쪽 주석으로 고정(clearAuthConfig = 연결 해제 전용). ② `features/onboarding/store.ts`: `invalidateApiKey(): Promise<void>` — 순서가 계약이다: (a) 멱등 가드 `if (get().status !== 'completed') return` 이 **맨 앞·await 앞**(그 구간이 원자적이라 동시 401 → 토스트 1회·이동 1회, 키 입력 화면의 401 은 status 가 completed 가 아니라 여기 걸려 재이동 루프가 구조적으로 불가능, 결정 6) → (b) 동기 `set(onboardingReducer(state, {type:'RESET'}))` — **새 이벤트 없이 RESET 재사용**(결과가 initialOnboardingState 로 정확히 같다), 이 전이 자체가 이동이고 App.tsx isCompleted 가드가 라우터로 보낸다(결정 2, 스토어는 react-router·window.location 미import) → (c) `showError('API 키가 더 이상 유효하지 않습니다')` **액션 인자 없이**(결정 1, step 3~5 가 이 문자열을 단언한다) → (d) `try { await removeApiKey() } catch {}` 로 삭제 실패를 삼킨다(rethrow 하면 void 호출부에서 미처리 rejection). state.ts 변경 0줄. 판별력 확인 — 멱등 가드를 지우자 멱등·no-op 테스트 4케이스가 실제로 실패했고(연달아 호출 1건 + awaitingApiKey/verifyingApiKey/error 3건), `removeApiKey` 가 selectedAccountId 까지 지우게 하자 storage 잔존 단언이, 스토어에서 `clearAuthConfig()` 로 갈아끼우자 store 단언 2건이 실패했다(전부 되돌림). AC 전부 통과 — build 성공, 테스트 **2,582개/172파일**(baseline 2,570 + 12: storage 3 + store 9), lint 0 errors/17 warnings(baseline 동일), src 변경 4파일, `invalidateApiKey` 호출부 0건.",
+      "completed_at": "2026-08-08T17:22:30+0900"
     },
     {
       "step": 2,
