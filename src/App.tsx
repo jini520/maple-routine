@@ -51,6 +51,19 @@ const DropHistoryScreen = lazy(() =>
 const SettingsScreen = lazy(() =>
   import('./app/settings/SettingsScreen').then((m) => ({ default: m.SettingsScreen })),
 )
+const SettingsReleaseNotesScreen = lazy(() =>
+  import('./app/settings/SettingsReleaseNotesScreen').then((m) => ({
+    default: m.SettingsReleaseNotesScreen,
+  })),
+)
+const SettingsAccountDataScreen = lazy(() =>
+  import('./app/settings/SettingsAccountDataScreen').then((m) => ({
+    default: m.SettingsAccountDataScreen,
+  })),
+)
+const SettingsAboutScreen = lazy(() =>
+  import('./app/settings/SettingsAboutScreen').then((m) => ({ default: m.SettingsAboutScreen })),
+)
 
 // 청크가 로드되는 동안의 자리 — 새 로딩 표현을 만들지 않고 [[ADR-061]] 로 확정된 LoadingState 를
 // 화면 전체 크기로 재사용한다. 스플래시 시퀀스(MIN_SPLASH_MS)와는 독립이다: 첫 청크는 대개
@@ -362,6 +375,29 @@ export function AppShell(): React.JSX.Element {
             <Route
               path="/settings"
               element={isCompleted ? <SettingsScreen /> : <Navigate to="/onboarding" replace />}
+            />
+            {/* 설정 하위 페이지 셋([[ADR-118]] 결정 2) — `/settings` 의 **형제**다. 중첩으로 두지
+                않는 이유는 [[ADR-077]] 이 `/profit/drops` 를 중첩으로 만든 근거("부모가 언마운트되면
+                펼침·기간·스크롤을 잃는다")가 여기엔 없기 때문이다: 설정 본화면은 잃을 상태가 없다.
+                가드는 `/settings` 와 똑같이 건다 — 그래야 `연결 해제` 로 온보딩에 돌아갈 때 이
+                화면들에서도 리다이렉트가 걸린다. */}
+            <Route
+              path="/settings/release-notes"
+              element={
+                isCompleted ? <SettingsReleaseNotesScreen /> : <Navigate to="/onboarding" replace />
+              }
+            />
+            <Route
+              path="/settings/account-data"
+              element={
+                isCompleted ? <SettingsAccountDataScreen /> : <Navigate to="/onboarding" replace />
+              }
+            />
+            <Route
+              path="/settings/about"
+              element={
+                isCompleted ? <SettingsAboutScreen /> : <Navigate to="/onboarding" replace />
+              }
             />
           </Routes>
         </Suspense>

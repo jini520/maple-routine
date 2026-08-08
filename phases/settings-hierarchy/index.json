@@ -53,7 +53,10 @@
     {
       "step": 6,
       "name": "settings-shell",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-09T02:47:25+0900",
+      "summary": "ADR-118 결정 1·2·4·5·8 — 여기서 처음으로 화면이 이어진다. App.tsx 에 /settings 의 형제 라우트 셋(release-notes·account-data·about)을 기존 8개와 같은 lazy(...) 형태 + 같은 isCompleted 가드로 배선(중첩 아님 — ADR-077 이 /profit/drops 를 중첩으로 만든 근거인 부모 상태 보존이 설정엔 없다), TAB_ITEMS·NavLink 무변경(end 가 없어 하위 페이지에서도 설정 탭이 활성으로 남는 것을 테스트로 확인). SettingsScreen 재구성: 카드 1(스케줄 관리 방법·테마 — 배지+chevron 병기) + 카드 2(개발노트 대표값 없음 / 계정 및 데이터 캐시 총 용량, 조회 전 '- KB' / 앱 정보 currentVersion ?? packageJson.version), 이동은 전부 useScreenNavigate, 섹션 제목 0개·PageHeader 미도입(ADR-098 결정 3 재판단 조건은 순감이라 미해당). 계정 변경·연결 해제 행과 AccountModal·DisconnectConfirm·useSettingsStore·isDisconnect* 상태 제거, footer 고지 4줄·문구 원문 그대로 유지. 캐시 용량은 features/settings/cache-data 를 거치고 버전은 features/live-update 스토어를 거쳐 app/→storage/·native/ 직접 접근 0건, 새 색·크기·라운딩 0개(배지·평문값 클래스는 기존 문자열 그대로 ValueBadge/SummaryValue 로 지역 추출). 곁가지 1건: App.test.tsx 의 테마 스토어 목이 통짜 mockReturnValue 라 셀렉터를 무시해 PageHeader 안 ThemeHeaderBackdrop(useThemeStore((s)=>s.theme))이 상태 객체를 getThemeDefinition 에 넘겨 터졌다 — 셀렉터 인지 mockThemeStore() 헬퍼로 바꾸고 기존 3곳도 같은 헬퍼로 통일. 뒤집힌 옛 테스트는 갱신이 아니라 파일째 재작성(계약이 정반대: 4행 한 카드 → 5행 두 카드). 판별력 확인: 두 카드를 하나로 합치면 2,745개 중 '값을 고르는 두 행과 화면이 넘어가는 세 행이 서로 다른 카드에 있다' 1건만 실패하고 나머지 2,744개는 전혀 감지하지 못함 → 그 케이스가 유일한 가드. 테스트 2,745개/181파일 통과(기준선 2,727/181 대비 +18 = SettingsScreen 재작성 순증 9 + App 라우팅 통합 9, 파일 수 ±0)·build 성공·lint 0 errors/17 warnings(baseline 동일)·grep(CacheDataSection|AccountModal|DisconnectConfirm) = 0.",
+      "completed_at": "2026-08-09T02:58:40+0900"
     },
     {
       "step": 7,
