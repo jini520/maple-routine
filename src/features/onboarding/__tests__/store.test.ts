@@ -313,7 +313,8 @@ describe('useOnboardingStore.submitApiKey', () => {
   // 넣으면서도 토스트는 그 값을 쓰지 않았다.
   it.each([
     [new NexonAuthError('invalid'), 'API 키가 유효하지 않습니다'],
-    [new NexonRateLimitError('rate limited'), '잠시 후 다시 시도해주세요'],
+    // ADR-114 결정 4: 토스트는 원인만 — 처방은 인라인 자리가 준다.
+    [new NexonRateLimitError('rate limited'), '호출 한도를 초과했습니다'],
     [new NexonNetworkError('network fail'), '네트워크 오류가 발생했습니다'],
   ])('목록 조회 실패를 원인별 문구로 알린다 (%o)', async (error, expected) => {
     fetchCharacterListMock.mockRejectedValue(error)

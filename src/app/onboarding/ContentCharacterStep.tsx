@@ -7,7 +7,7 @@ import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { StaleBanner } from '../../components/molecules/ErrorState/StaleBanner'
 import { MapleSpinner } from '../../components/atoms/MapleSpinner/MapleSpinner'
 import { MapleSweepSpinner } from '../../components/atoms/MapleSweepSpinner/MapleSweepSpinner'
-import { formatRosterError } from '../../features/schedule-sync/format'
+import { formatRosterError, formatStaleRosterError } from '../../features/schedule-sync/format'
 import { getCharacterPickerRoster, toScheduleSyncError } from '../../features/schedule-sync/schedule-sync'
 import type { ScheduleSyncError } from '../../features/schedule-sync/schedule-sync'
 import type { CharacterPickerEntry } from '../../types'
@@ -32,6 +32,11 @@ export interface ContentCharacterStepProps {
 // ADR-062: 실패도 피커와 같은 공용 ErrorState를 쓰고 스탈 배너 분기도 같다. 다른 것은 액션뿐 —
 // 온보딩 중에는 설정 화면이 없으므로 invalidApiKey도 재시도이고 설명만 갈린다(formatRosterError의
 // place='onboarding'). 재시도 수단이 생겼으므로 "앱을 다시 실행해주세요" 안내는 없어진다.
+//
+// ADR-114 결정 3: 다만 **배너와 ErrorState의 액션 규칙은 서로 다르다.** 배너는 아래에 목록이
+// 그대로 남아 있어 액션이 없어도 막다른 길이 아니라, 재시도가 실제로 통하는 실패에만 액션을
+// 준다(429·401·characterUnavailable은 버튼 없음). ErrorState는 자리 전체가 실패라 같은 401에서
+// 액션을 빼면 화면에 아무 길도 남지 않으므로 재시도를 유지한다 — 같은 근거의 뒷면이다.
 function RosterBody(props: {
   roster: CharacterPickerEntry[]
   isLoading: boolean
@@ -41,9 +46,20 @@ function RosterBody(props: {
   emptyAction?: { label: string; onClick: () => void }
 }): React.JSX.Element {
   if (props.roster.length > 0) {
+    const stale = props.loadError === null ? null : formatStaleRosterError(props.loadError, 'onboarding')
     return (
       <>
-        {props.loadError !== null && <StaleBanner message="목록이 최신이 아닙니다" onRetry={props.onRetry} />}
+        {stale !== null && (
+          <StaleBanner
+            message={stale.message}
+            // place='onboarding'은 openSettings를 반환하지 않으므로(이 화면에는 설정이 없다)
+            // 액션이 있으면 항상 재시도다. 그래도 kind를 확인해 매핑한다 — 포맷터가 바뀌어
+            // openSettings가 오면 갈 곳 없는 버튼을 그리는 대신 여기서 버튼이 사라져 드러난다.
+            action={
+              stale.action?.kind === 'retry' ? { label: stale.action.label, onClick: props.onRetry } : undefined
+            }
+          />
+        )}
         {/* ADR-107 결정 3: 스크롤포트는 그리드가 아니라 쓰는 쪽이 갖는다. 여기는 모달이 아니라
             페이지라 상한을 스스로 들고 있어야 한다 — 값은 그리드가 갖고 있던 것 그대로다. */}
         <div className="max-h-[70vh] overflow-y-auto">

@@ -1,0 +1,64 @@
+{
+  "project": "메이플 루틴 (Maple Routine)",
+  "phase": "rate-limit-copy",
+  "steps": [
+    {
+      "step": 0,
+      "name": "docs-adr",
+      "status": "completed",
+      "started_at": "2026-08-08T15:15:31+0900",
+      "summary": "ADR-114 신설(429는 키 단계를 판정하지 않고 문구로만 안내 · 429 액션 제거로 ADR-062 결정 3 폐기 · 스탈 배너를 formatStaleRosterError(error, place)로 원인별 분기 · 토스트는 원인만/인라인은 처방까지 · nexon-api.md 서비스 단계 키 전제 정정) + ADR.md 인덱스 한 줄 + nexon-api.md·error-resilience.md·design-system.md·content-scheduler.md·settings.md 갱신(옛 정책은 각 history 절로 이동). onboarding.md 는 429 문구를 언급하는 자리가 없고 이번 결정으로 닫히는 열린 질문도 없어 미변경. src/ 변경 0줄, 테스트 2,548개/172파일 통과·build 성공·lint 0 errors/17 warnings(baseline 동일).",
+      "completed_at": "2026-08-08T15:25:13+0900"
+    },
+    {
+      "step": 1,
+      "name": "roster-error-copy",
+      "status": "completed",
+      "started_at": "2026-08-08T15:25:14+0900",
+      "summary": "format.ts만 수정 — formatScheduleSyncError의 429를 '호출 한도를 초과했습니다'로(토스트는 원인만, ADR-114 결정 4), formatRosterError의 429를 새 제목·설명 + 액션 제거(ADR-114 결정 2로 ADR-062 결정 3 폐기, RETRY 상수는 유지), formatStaleRosterError(error, place) 신설(6종 × 2자리 · assertNever 소진 가드 · network 계열은 '목록이 최신이 아닙니다' + 다시 시도 현행 유지). 판별력 확인: rateLimited 분기를 network와 같은 반환값으로 바꾸자 새 테스트 3건이 실패했고 되돌림. 어미 규칙 단언은 network 문구가 화면 하드코딩과 같아야 해 /(습니다|아닙니다|주세요)$/로 표기(같은 하십시오체 활용). 테스트 2,560개/172파일 통과(이 step 순증 12)·build 성공·lint 0 errors/17 warnings(baseline 동일)·src 변경 3파일.",
+      "completed_at": "2026-08-08T15:29:55+0900"
+    },
+    {
+      "step": 2,
+      "name": "stale-banner-action",
+      "status": "completed",
+      "started_at": "2026-08-08T15:29:56+0900",
+      "summary": "StaleBanner 를 dumb 컴포넌트로 유지한 채 props 를 onRetry: () => void → action?: {label, onClick} 로 교체 — 라벨은 하드코딩 '다시 시도' 가 아니라 action.label 이고, action 이 없으면 버튼을 아예 렌더하지 않는다(ErrorState.tsx:51 의 선례와 같은 형태, ADR-114 결정 2·3). 마크업·클래스·data-testid·role=alert 는 한 글자도 안 바꿨고 design-system.md 스탈 배너 스펙(우측 액션이 '(선택)')과 일치. 상단 주석에 '원인별로 갈리고 액션이 없을 수 있다' + '여기에 switch 를 만들지 말고 포맷은 formatStaleRosterError 가 한다'(ADR-094 결정 2)를 명시. AC 의 두 갈래 중 **최소 치환 쪽을 택해** 호출부 2곳(CharacterTrackingPicker.tsx:59 · ContentCharacterStep.tsx:46)을 기계적으로만 고쳤다 — message 는 지금 값 '목록이 최신이 아닙니다' 그대로, onRetry={...} → action={{label:'다시 시도', onClick:props.onRetry}}. 원인별 분기(formatStaleRosterError 호출)는 step 3·4 몫이라 손대지 않았다. src 변경 4파일(컴포넌트 + 그 테스트 + 호출부 2곳). 판별력 확인: action 조건부 렌더를 지워 항상 버튼이 나오게 바꾸자 '액션이 없으면 버튼을 만들지 않는다' 1건만 정확히 실패했고 되돌림. 테스트 2,562개/172파일 통과(이 step 순증 2 = 신규 5 − 삭제 3)·build 성공·lint 0 errors/17 warnings(baseline 동일)·layer-dependencies 통과(molecule 이 feature·상위 계층을 import 하지 않는다).",
+      "completed_at": "2026-08-08T15:33:33+0900"
+    },
+    {
+      "step": 3,
+      "name": "picker-banner-wiring",
+      "status": "completed",
+      "started_at": "2026-08-08T15:33:33+0900",
+      "summary": "CharacterTrackingPicker 의 스탈 배너 하드코딩('목록이 최신이 아닙니다' + 항상 다시 시도)을 formatStaleRosterError(props.loadError, 'picker') 분기로 교체 — 액션 매핑은 같은 파일 ErrorState 경로(88~106행)와 똑같은 형태로 맞췄다(action 없음 → undefined · openSettings → onOpenSettings · retry → onRetry · label 은 항상 copy.action.label). entries.length > 0 분기 안에서 stale 을 한 번 계산해 IIFE 없이 기존 조건부 렌더 자리를 그대로 쓴다. 주석은 ADR-062 결정 4·'스크롤포트 밖' 두 개를 남기고 ADR-114 결정 3 문단을 더했다 — 재시도가 실제로 통하는 실패에만 액션을 주며(429·characterUnavailable 은 버튼 없음, 401 은 다시 시도가 아니라 설정 열기), 뺄 수 있는 근거는 자리다(배너 아래 목록이 남아 막다른 길이 아니다)·같은 401 이 ErrorState 에서 액션을 유지하는 것이 그 근거의 뒷면. 기존 network 케이스 3건은 손대지 않았고 그대로 통과 — step 1 의 network 문구가 어긋나지 않았음이 확인됐다. 새 케이스 3건은 모달의 닫기·저장에 걸리지 않도록 within(getByTestId('stale-banner')) 안에서만 버튼 유무를 단언한다. ContentCharacterStep(step 4)·ErrorState 분기·loadError 타입·PICKER_BODY_MIN_H 는 미변경. 판별력 확인: 호출을 옛 하드코딩으로 되돌리자 새 3건이 정확히 그 3건만 실패하고 기존 42건은 전부 통과했으며 되돌림. 테스트 2,565개/172파일 통과(이 step 순증 3)·build 성공·lint 0 errors/17 warnings(baseline 동일)·layer-dependencies 통과·src 변경 2파일·컴포넌트 내 '목록이 최신이 아닙니다' 0건.",
+      "completed_at": "2026-08-08T15:37:24+0900"
+    },
+    {
+      "step": 4,
+      "name": "onboarding-banner-wiring",
+      "status": "completed",
+      "started_at": "2026-08-08T15:37:24+0900",
+      "summary": "ContentCharacterStep 의 스탈 배너 하드코딩('목록이 최신이 아닙니다' + 항상 다시 시도)을 formatStaleRosterError(props.loadError, 'onboarding') 분기로 교체 — 액션은 stale.action?.kind === 'retry' 일 때만 붙인다(place='onboarding' 은 openSettings 를 반환하지 않지만 kind 를 확인해 매핑해, 포맷터가 바뀌면 갈 곳 없는 버튼 대신 버튼이 사라져 드러난다). RosterBody 주석에 ADR-114 결정 3(배너와 ErrorState 의 액션 규칙이 다른 이유 — 배너는 아래 목록이 남아 막다른 길이 아니고, ErrorState 는 자리 전체가 실패라 온보딩 401 에서 재시도를 유지)을 추가. 테스트 3건 신설(429 문구 + 배너 안 버튼 없음 + 그리드 잔존 · 401 액션 없음 · network 회귀 가드는 '목록이 최신이 아닙니다' + 다시 시도이고 누르면 getCharacterPickerRoster 2회 호출), 두 describe 가 공유하도록 deferRoster 헬퍼를 모듈 스코프로 이동. 판별력 확인: 액션을 무조건 {label:'다시 시도', onClick:onRetry} 로 되돌리자 새 케이스 1·2 만 실패하고 3 은 통과했으며 되돌림. 설정 경로 확인: AccountModal → AccountFlowStatus:82 가 같은 ContentCharacterStep 을 재사용하므로 설정의 계정 변경에서도 같은 배너가 나오고, 이미 설정 모달 안이라 '설정 열기' 액션이 무의미해 place='onboarding' 이 그 자리에서도 맞다(테스트 미신설). 테스트 2,568개/172파일 통과(이 step 순증 3)·build 성공·lint 0 errors/17 warnings(baseline 동일)·src 변경 2파일·컴포넌트 내 하드코딩 0건.",
+      "completed_at": "2026-08-08T15:42:09+0900"
+    },
+    {
+      "step": 5,
+      "name": "remaining-429-copy",
+      "status": "completed",
+      "started_at": "2026-08-08T15:42:09+0900",
+      "summary": "남은 429 문구 2곳 + 설정 계정 카드 액션 하나. features/onboarding/format.ts 는 '호출 한도를 초과했습니다'(원인만 — 반환값이 전부 토스트 본문이고 Toast:88 이 truncate, ADR-114 결정 4), app/settings/error-message.ts 는 '호출 한도를 초과했습니다. 입력하신 API 키가 서비스 단계 키인지 확인해주세요'(모달 카드 안 인라인 <p> 라 줄바꿈되므로 처방까지). 두 파일에 '문구가 갈리는 것이 의도이니 통일하지 말 것' 주석을 서로를 가리키게 남겼다. AccountFlowStatus error 케이스는 props.error?.kind !== 'rateLimited' 로 다시 시도 버튼을 감쌌다 — invalidApiKey·network·storageWriteFailed 는 그대로이고, error === null 폴백은 undefined !== 'rateLimited' 라 자연히 버튼이 남는다('모르는 실패는 재시도 가능'). 판별력 확인: 조건을 {true &&} 로 지우자 새 케이스 1(429 버튼 없음)만 실패하고 케이스 2(network 버튼 유지)·기존 error 케이스는 통과했으며 되돌렸다. 문구 대조(테스트 제외 5자리): 토스트 2곳(schedule-sync:17·onboarding:14)은 13자 한 줄로 truncate 안, ErrorState(schedule-sync:78-79)는 제목+설명 두 줄, 스탈 배너(schedule-sync:143)는 한 줄 32자, 설정 인라인(error-message:11)은 ADR-114 결정 1 표와 한 글자까지 일치 — 나머지 1건 nexon/http.ts:44 는 사용자 문구가 아니라 NexonRateLimitError 의 내부 메시지라 미변경. 아키텍처: format.ts 는 './state' 타입 하나만 import 해 app/·storage/·native/ 접근 0건. 테스트 2,570개/172파일 통과(이 step 순증 2)·build 성공·lint 0 errors/17 warnings(baseline 동일)·src 변경 6파일(제품 3 + 테스트 3)·'잠시 후 다시 시도해주세요' 0건.",
+      "completed_at": "2026-08-08T15:48:37+0900"
+    },
+    {
+      "step": 6,
+      "name": "docs-verify",
+      "status": "completed",
+      "started_at": "2026-08-08T15:48:37+0900",
+      "summary": "ADR-114 를 '설계 확정 · 구현 전' → '구현 완료 · 실기기 미검증'(2026-08-08, 이슈 #158)으로 마감. 검증 절을 실측으로 채움 — 테스트 2,570개/172파일(기준선 2,548 대비 순증 22 = 신규 25 − 삭제 3, 새 테스트 파일 0개)·build 성공·lint 0 errors/17 warnings(baseline 동일), 신규 테스트 파일 × 담보 결정 대조표(format.test.ts +12 / ErrorState +2 / 피커 +3 / 온보딩 +3 / 설정 +2, 갱신만 3파일), 자동 테스트가 담보하는 것과 실기기·실사용 몫 4건(429 실재현 미확인 · 서비스 단계 신청 도달 여부 · 429 는 한 건도 안 줄었음 · 32자 배너 줄바꿈). '구현하며 정정한 것' 7건 신설(배너 라벨도 호출부가 넘김 · 포맷터는 콜백 아닌 kind 판별자 · 온보딩의 방어적 kind 확인 · 설정 가드가 error===null 폴백에 버튼을 남김 · 어미 정규식에 아닙니다 포함 · 뒤집힌 옛 기대값 삭제 · nexon/http.ts:44 는 내부 진단이라 미변경). '미해결로 남기는 사실' 5건(자격 스윕 429 삼킴 — 문구를 고쳐도 목록은 여전히 빈다 · 프리플라이트·동시성 캡 부재 · 일/초 한도 미구분 · 서비스 단계 사용자도 같은 문구 · 토스트/인라인 문구 분기는 주석만 담보). 이슈 #158 대조표 10행(필수 2 = 1했다·1절반 — 한도 수치는 결정 1 이 명시 기각 / 열린 결정 A 채택 / 검증 3 = 1미확인·2담보 / 별건 4 = 2안함·1타 ADR 완료·1했다). ADR.md 인덱스 행 동기화. step 0 문서 5종을 코드와 대조 — error-resilience·design-system·content-scheduler·settings·nexon-api 전부 실제 구현과 일치해 정정 없음(배너 표 6종 문구·StaleBanner props message+옵셔널 action·AccountFlowStatus 429 분기 확인). 닫힌 열린 질문 없음(settings·onboarding 의 열린 질문은 전부 ADR-113 항목). src/ 변경 0줄.",
+      "completed_at": "2026-08-08T15:56:26+0900"
+    }
+  ],
+  "created_at": "2026-08-08T15:15:31+0900",
+  "completed_at": "2026-08-08T15:56:26+0900"
+}

@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { formatRosterError, formatScheduleSyncError, formatSyncedAt } from '../format'
+import { formatRosterError, formatScheduleSyncError, formatStaleRosterError, formatSyncedAt } from '../format'
 import type { ScheduleSyncError } from '../schedule-sync'
 
 describe('formatScheduleSyncError', () => {
   it.each<[ScheduleSyncError, string]>([
     [{ kind: 'invalidApiKey' }, 'API 키가 유효하지 않습니다'],
-    [{ kind: 'rateLimited' }, '잠시 후 다시 시도해주세요'],
+    // ADR-114 결정 1·4: 토스트는 한 줄이 상한이라 원인만 말하고 처방은 인라인 자리가 준다.
+    [{ kind: 'rateLimited' }, '호출 한도를 초과했습니다'],
     [{ kind: 'network' }, '네트워크 오류가 발생했습니다'],
     // ADR-067 결정 1로 갈라진 세 종류
     [{ kind: 'characterUnavailable' }, '이 캐릭터는 조회할 수 없습니다'],
@@ -46,7 +47,7 @@ describe('formatRosterError', () => {
   })
 
   it.each(['picker', 'onboarding'] as const)('%s의 나머지 원인은 액션이 있다', (place) => {
-    for (const kind of ['invalidApiKey', 'rateLimited', 'network', 'periodOutOfRange', 'notCollected'] as const) {
+    for (const kind of ['invalidApiKey', 'network', 'periodOutOfRange', 'notCollected'] as const) {
       expect(formatRosterError({ kind }, place).action).toBeDefined()
     }
   })
@@ -77,15 +78,95 @@ describe('formatRosterError', () => {
     expect(copy.action).toEqual({ kind: 'retry', label: '다시 시도' })
   })
 
-  it.each(['picker', 'onboarding'] as const)('%s의 rateLimited·network는 재시도를 준다', (place) => {
-    expect(formatRosterError({ kind: 'rateLimited' }, place).action?.kind).toBe('retry')
+  // ADR-114 결정 2([[ADR-062]] 결정 3 일부 폐기): 429의 처방은 재시도가 아니라 키 단계 확인이다.
+  // 처방이 "키를 확인하라"인데 버튼이 "다시 시도"면 화면이 두 말을 한다.
+  it.each(['picker', 'onboarding'] as const)('%s의 network는 재시도를 주지만 rateLimited는 액션이 없다', (place) => {
     expect(formatRosterError({ kind: 'network' }, place).action?.kind).toBe('retry')
+    expect(formatRosterError({ kind: 'rateLimited' }, place).action).toBeUndefined()
+  })
+
+  // ADR-114 결정 1: 문구는 확정값이다(사용자 확정 2026-08-08). 단계를 판정하지 않고 안내만 한다.
+  it.each(['picker', 'onboarding'] as const)('%s의 rateLimited는 키 단계 확인을 처방한다', (place) => {
+    const copy = formatRosterError({ kind: 'rateLimited' }, place)
+
+    expect(copy.title).toBe('호출 한도를 초과했습니다')
+    expect(copy.description).toBe('입력하신 API 키가 서비스 단계 키인지 확인해주세요')
   })
 
   it('rateLimited와 network는 제목이 다르다 — 원인을 구분해 말해야 한다', () => {
     expect(formatRosterError({ kind: 'rateLimited' }, 'picker').title).not.toBe(
       formatRosterError({ kind: 'network' }, 'picker').title,
     )
+  })
+})
+
+// ADR-114 결정 3: 스탈 배너가 원인을 무시하던 것(호출부 2곳이 "목록이 최신이 아닙니다"를
+// 하드코딩)을 원인별로 가른다. ErrorState와 갈리는 근거는 자리다 — 배너는 목록이 남아 있어
+// 액션이 없어도 막다른 길이 아니다.
+describe('formatStaleRosterError', () => {
+  const KINDS: ScheduleSyncError['kind'][] = [
+    'invalidApiKey',
+    'rateLimited',
+    'characterUnavailable',
+    'periodOutOfRange',
+    'notCollected',
+    'network',
+  ]
+  const PLACES = ['picker', 'onboarding'] as const
+
+  // 어미 규칙은 ADR-062 결정 5. '아닙니다'를 함께 허용하는 것은 규칙을 푸는 게 아니라 같은
+  // 하십시오체(~ㅂ니다)의 다른 활용이기 때문이다 — network 계열 문구 '목록이 최신이 아닙니다'는
+  // 화면 하드코딩과 같아야 해서 바꿀 수 없다(아래 회귀 가드).
+  it('6종 × 2자리 전부 문구가 있고 에러 어미 규칙(~습니다 / ~주세요)을 따른다', () => {
+    for (const kind of KINDS) {
+      for (const place of PLACES) {
+        const copy = formatStaleRosterError({ kind }, place)
+        expect(copy.message.length).toBeGreaterThan(0)
+        expect(copy.message).toMatch(/(습니다|아닙니다|주세요)$/)
+      }
+    }
+  })
+
+  it.each(PLACES)('%s의 network 계열 3종은 현행 문구 + 다시 시도를 유지한다', (place) => {
+    for (const kind of ['network', 'periodOutOfRange', 'notCollected'] as const) {
+      const copy = formatStaleRosterError({ kind }, place)
+      expect(copy.message).toBe('목록이 최신이 아닙니다')
+      expect(copy.action).toEqual({ kind: 'retry', label: '다시 시도' })
+    }
+  })
+
+  // 회귀 가드: 이 문자열은 화면(CharacterTrackingPicker·ContentCharacterStep)에 하드코딩된 값과
+  // 정확히 같아야 한다. 이 phase가 바꾸는 것은 429·401뿐임이 이 단언으로 증명된다.
+  it('network의 문구는 화면 하드코딩과 한 글자도 다르지 않다', () => {
+    expect(formatStaleRosterError({ kind: 'network' }, 'picker').message).toBe('목록이 최신이 아닙니다')
+    expect(formatStaleRosterError({ kind: 'network' }, 'onboarding').message).toBe('목록이 최신이 아닙니다')
+  })
+
+  it.each(PLACES)('%s의 rateLimited는 액션 없이 키 단계 확인만 말한다', (place) => {
+    const copy = formatStaleRosterError({ kind: 'rateLimited' }, place)
+
+    expect(copy.message).toContain('서비스 단계')
+    expect(copy.action).toBeUndefined()
+  })
+
+  it('invalidApiKey는 피커에서만 설정으로 보낸다 — 온보딩에는 설정 화면이 없다', () => {
+    expect(formatStaleRosterError({ kind: 'invalidApiKey' }, 'picker').action).toEqual({
+      kind: 'openSettings',
+      label: '설정 열기',
+    })
+    expect(formatStaleRosterError({ kind: 'invalidApiKey' }, 'onboarding').action).toBeUndefined()
+  })
+
+  it.each(PLACES)('%s의 characterUnavailable은 영구 실패라 액션이 없다', (place) => {
+    expect(formatStaleRosterError({ kind: 'characterUnavailable' }, place).action).toBeUndefined()
+  })
+
+  it('원인마다 문구가 갈린다 — 401·429·characterUnavailable·network가 서로 다르다', () => {
+    const messages = ['invalidApiKey', 'rateLimited', 'characterUnavailable', 'network'].map(
+      (kind) => formatStaleRosterError({ kind } as ScheduleSyncError, 'picker').message,
+    )
+
+    expect(new Set(messages).size).toBe(4)
   })
 })
 

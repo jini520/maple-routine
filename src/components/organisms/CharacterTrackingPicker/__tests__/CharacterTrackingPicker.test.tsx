@@ -458,6 +458,74 @@ describe('CharacterTrackingPicker — 로딩/빈/실패 상태 (ADR-053 · ADR-0
     expect(onRetry).toHaveBeenCalledTimes(1)
   })
 
+  // ADR-114 결정 3: 배너 문구·액션이 원인별로 갈린다. 액션을 뺄 수 있는 근거는 자리다 —
+  // 배너 아래에 목록이 남아 있어 액션이 없어도 막다른 길이 아니다.
+  // 모달에는 "닫기"·"저장"이 항상 있으므로 버튼 유무는 배너 안에서만 단언한다.
+  it('429는 서비스 단계 키를 확인하라 말하고 액션을 주지 않는다', () => {
+    render(
+      <CharacterTrackingPicker
+        entries={entries}
+        trackedOcids={[]}
+        {...loaded}
+        loadError={{ kind: 'rateLimited' }}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+
+    const banner = screen.getByTestId('stale-banner')
+    expect(within(banner).getByText('호출 한도를 초과했습니다 — 서비스 단계 키인지 확인해주세요')).toBeInTheDocument()
+    // 눌러도 또 429인 버튼은 "고칠 수 있다"는 잘못된 신호다(ADR-114 결정 2).
+    expect(within(banner).queryByRole('button')).not.toBeInTheDocument()
+    // 목록은 그대로 남는다 — 그것이 액션을 뺄 수 있는 근거다.
+    expect(screen.getByRole('button', { name: /낟낟/ })).toBeInTheDocument()
+  })
+
+  it('401 배너는 재시도가 아니라 설정 열기를 준다', async () => {
+    const user = userEvent.setup()
+    const onRetry = vi.fn()
+    const onOpenSettings = vi.fn()
+    render(
+      <CharacterTrackingPicker
+        entries={entries}
+        trackedOcids={[]}
+        {...loaded}
+        loadError={{ kind: 'invalidApiKey' }}
+        onRetry={onRetry}
+        onOpenSettings={onOpenSettings}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+
+    const banner = screen.getByTestId('stale-banner')
+    expect(within(banner).getByText('API 키가 유효하지 않아 목록을 갱신하지 못했습니다')).toBeInTheDocument()
+    expect(within(banner).queryByRole('button', { name: '다시 시도' })).not.toBeInTheDocument()
+
+    await user.click(within(banner).getByRole('button', { name: '설정 열기' }))
+
+    expect(onOpenSettings).toHaveBeenCalledTimes(1)
+    expect(onRetry).not.toHaveBeenCalled()
+  })
+
+  // ADR-067 결정 1: 400 OPENAPI00003은 영구다 — 언제 눌러도 같은 400이라 액션을 주지 않는다.
+  it('조회 불가(400)는 배너에 액션을 주지 않는다', () => {
+    render(
+      <CharacterTrackingPicker
+        entries={entries}
+        trackedOcids={[]}
+        {...loaded}
+        loadError={{ kind: 'characterUnavailable' }}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+
+    const banner = screen.getByTestId('stale-banner')
+    expect(within(banner).getByText('이 계정의 캐릭터를 조회할 수 없습니다')).toBeInTheDocument()
+    expect(within(banner).queryByRole('button')).not.toBeInTheDocument()
+  })
+
   it('조회가 끝나고 항목이 있으면 그리드만 보여준다', () => {
     render(
       <CharacterTrackingPicker
