@@ -246,6 +246,24 @@ describe('ContentCharacterStep — 429 배선 (ADR-116, 이슈 #176)', () => {
 
     expect(noticeApiKeyIssueMock).not.toHaveBeenCalled()
   })
+
+  // ADR-116 결정 4(이슈 #178): 이 자리의 진행 경로가 **무엇인지**를 고정한다. ErrorState 안에는
+  // 버튼이 없고(429에 재시도는 틀린 처방이다 — ADR-114 결정 2 유지), "계속하기"는 고를 캐릭터가
+  // 없어 비활성이며, 온보딩 페이지라 감쌀 껍데기(모달의 닫기·취소)도 없다. 그래서 **이 화면에서
+  // 유일하게 남는 길이 위 진입점이 띄우는 안내 모달**이다 — 액션 없는 ErrorState 가 잠금이 아닌
+  // 근거가 그 호출 하나뿐이라, 배선이 빠지면 조작 가능한 요소가 0개가 된다(#176 의 하드 잠금).
+  it('429의 진행 경로는 ErrorState 버튼이 아니라 모달이다', async () => {
+    const roster = deferRoster()
+
+    render(<ContentCharacterStep isSubmitting={false} onSubmit={vi.fn()} />)
+    await roster.reject(new NexonRateLimitError('rate limited'))
+
+    const errorState = screen.getByRole('alert')
+    expect(within(errorState).getByText('호출 한도를 초과했습니다')).toBeInTheDocument()
+    expect(within(errorState).queryByRole('button')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '계속하기' })).toBeDisabled()
+    expect(noticeApiKeyIssueMock).toHaveBeenCalledExactlyOnceWith('rateLimited')
+  })
 })
 
 // ADR-114 결정 3: 항목이 남은 채 실패하면 그리드 위에 스탈 배너를 얹는데(ADR-062 결정 4), 그

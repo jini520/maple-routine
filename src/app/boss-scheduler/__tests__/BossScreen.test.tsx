@@ -201,6 +201,21 @@ describe('BossScreen', () => {
     expect(await screen.findByRole('button', { name: /내옆에최성일/ })).toBeInTheDocument()
   })
 
+  // ADR-116 결정 4(이슈 #178의 두 번째 증상): 컨텐츠 스케줄러와 구조가 같다 — 빈 상태의 유일한
+  // 액션이 피커 열기라, 피커가 429로 0건이면 닫아도 같은 EmptyState로 돌아오는 루프였다. 여는
+  // 순간 진입점이 불려 안내 모달이 덮이므로 루프가 끊긴다.
+  it('빈 상태에서 연 피커가 429면 EmptyState 루프가 아니라 키 재입력 경로로 나간다', async () => {
+    mockStore({ status: 'loaded', trackedOcids: [], characters: [] })
+    mockedGetCharacterPickerRoster.mockRejectedValue(new NexonRateLimitError('rate limited'))
+
+    renderBossScreen()
+    await screen.findByText('표시할 캐릭터가 없습니다')
+
+    fireEvent.click(screen.getByRole('button', { name: '캐릭터 선택하기' }))
+
+    await waitFor(() => expect(noticeApiKeyIssueMock).toHaveBeenCalledExactlyOnceWith('rateLimited'))
+  })
+
   it('openPicker 쿼리 파라미터로 진입하면 캐릭터 관리 피커가 자동으로 열린다', async () => {
     mockStore({
       status: 'loaded',

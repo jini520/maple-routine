@@ -171,6 +171,22 @@ describe('ContentScreen', () => {
     expect(await screen.findByRole('button', { name: /내옆에최성일/ })).toBeInTheDocument()
   })
 
+  // ADR-116 결정 4(이슈 #178의 두 번째 증상): 빈 상태는 화면 전체가 EmptyState 하나이고 그 유일한
+  // 액션이 피커 열기다 — 피커가 429로 0건이면 본문에 버튼이 없어 닫는 순간 같은 EmptyState로
+  // 돌아오는 **루프**였다. 여는 순간 진입점이 불려 그 위에 닫을 수 없는 안내 모달이 덮이므로
+  // 루프가 끊긴다. EmptyState에 두 번째 길을 더하지 않는 근거가 이 호출이다.
+  it('빈 상태에서 연 피커가 429면 EmptyState 루프가 아니라 키 재입력 경로로 나간다', async () => {
+    mockStore({ status: 'loaded', trackedOcids: [], characters: [] })
+    mockedGetCharacterPickerRoster.mockRejectedValue(new NexonRateLimitError('rate limited'))
+
+    renderContentScreen()
+    await screen.findByText('표시할 캐릭터가 없습니다')
+
+    fireEvent.click(screen.getByRole('button', { name: '캐릭터 선택하기' }))
+
+    await waitFor(() => expect(noticeApiKeyIssueMock).toHaveBeenCalledExactlyOnceWith('rateLimited'))
+  })
+
   it('마운트 시 loadTrackedOcids가 호출된다', async () => {
     const loadTrackedOcids = vi.fn()
     mockStore({

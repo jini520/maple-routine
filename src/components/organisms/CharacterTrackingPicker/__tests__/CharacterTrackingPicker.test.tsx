@@ -415,6 +415,29 @@ describe('CharacterTrackingPicker — 로딩/빈/실패 상태 (ADR-053 · ADR-0
     expect(screen.queryByRole('button', { name: '설정 열기' })).not.toBeInTheDocument()
   })
 
+  // ADR-116 결정 4(이슈 #178): 429에도 액션은 없다(ADR-114 결정 2 유지 — 눌러도 또 429다).
+  // 잠기지 않는 근거는 **자리**다: 이 컴포넌트는 모달이라 껍데기의 "닫기"가 항상 남고, 그 위에
+  // 안내 모달이 덮인다(그 배선은 피커를 띄우는 화면에 있다 — ContentScreen·BossScreen 테스트).
+  it('429 실패는 액션 없이 처방만 말하고, 모달 껍데기의 닫기가 남는다', () => {
+    render(
+      <CharacterTrackingPicker
+        entries={[]}
+        trackedOcids={[]}
+        {...loaded}
+        loadError={{ kind: 'rateLimited' }}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+
+    const errorState = screen.getByRole('alert')
+    expect(within(errorState).getByText('호출 한도를 초과했습니다')).toBeInTheDocument()
+    expect(within(errorState).getByText('입력하신 API 키가 서비스 단계 키인지 확인해주세요')).toBeInTheDocument()
+    expect(within(errorState).queryByRole('button')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '다시 시도' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '닫기' })).toBeInTheDocument()
+  })
+
   // ADR-062 결정 4: 캐시 stub이 네트워크보다 먼저 방출되므로(ADR-017 결정 6) 예열이 끝난
   // 정상 경로에서는 이쪽이 기본 분기다 — 배너가 없으면 실패의 대다수가 무음이 된다.
   it('보여줄 항목이 있는 채로 실패하면 그리드를 지우지 않고 스탈 배너를 얹는다', () => {

@@ -25,6 +25,9 @@ describe('ErrorState', () => {
     expect(screen.queryByTestId('error-state-description')).not.toBeInTheDocument()
   })
 
+  // ADR-116 결정 4: `action` 이 옵셔널인 것은 "액션이 없어도 된다"가 아니라 **그 자리의 진행
+  // 경로를 다른 것(모달의 닫기·취소, 위에 덮이는 안내 모달)이 제공할 수 있다**는 뜻이다. 조건이
+  // 지켜지는지는 이 컴포넌트가 알 수 없으므로 각 호출부 테스트가 본다(피커·온보딩·설정 계정 변경).
   it('액션이 없으면 버튼을 만들지 않는다', () => {
     render(<ErrorState title="캐릭터 목록을 불러오지 못했습니다" />)
 
