@@ -12,7 +12,8 @@ vi.mock('../../toast/store', () => ({
   useToastStore: { getState: () => ({ showError: showErrorMock }) },
 }))
 
-// ADR-115 결정 7: 401은 이 훅이 토스트로 알리는 대신 온보딩 스토어의 무효화 진입점에 위임한다.
+// ADR-115 결정 7 · ADR-116 결정 1: 401과 429는 이 훅이 토스트로 알리는 대신 온보딩 스토어의
+// 키 재입력 진입점에 위임한다.
 vi.mock('../../onboarding/store', () => ({
   useOnboardingStore: { getState: () => ({ noticeApiKeyIssue: noticeApiKeyIssueMock }) },
 }))
@@ -77,17 +78,16 @@ describe('useScheduleSyncErrorToast', () => {
     expect(noticeApiKeyIssueMock).toHaveBeenCalledTimes(1)
   })
 
-  // 지금 누르면 또 429다 — 누를 수 있는 버튼을 주지 않는다.
-  // 문구는 원인만 말한다. 처방("서비스 단계 키인지 확인해주세요")은 토스트 본문이 truncate라
-  // 잘리므로 인라인 자리(배너·ErrorState·설정 계정 카드)가 준다([[ADR-114]] 결정 4).
-  // 회귀 가드: 이 phase가 바꾸는 것은 401뿐이라 무효화 경로를 타면 안 된다(ADR-115 범위).
-  it('rateLimited는 액션 없이 문구만 띄운다', () => {
-    render(<Harness error={{ kind: 'rateLimited' }} />)
+  // ADR-116 결정 1: 429도 401과 같은 사슬을 탄다 — 처방("키를 다시 입력한다")이 같기 때문이다.
+  // 그래서 이 훅은 429에도 토스트를 띄우지 않는다. 전에는 액션 없는 문구만 띄웠는데, 이제 같은
+  // 사실을 모달이 말하므로 토스트로 한 번 더 말하지 않는다(문구·처방은 ApiKeyNoticeModal).
+  it('rateLimited는 토스트를 띄우지 않고 키 재입력 경로로 넘긴다', () => {
+    const onRetry = vi.fn()
+    render(<Harness error={{ kind: 'rateLimited' }} onRetry={onRetry} />)
 
-    const [message, action] = showErrorMock.mock.calls[0]
-    expect(message).toBe('호출 한도를 초과했습니다')
-    expect(action).toBeUndefined()
-    expect(noticeApiKeyIssueMock).not.toHaveBeenCalled()
+    expect(noticeApiKeyIssueMock).toHaveBeenCalledExactlyOnceWith('rateLimited')
+    expect(showErrorMock).not.toHaveBeenCalled()
+    expect(onRetry).not.toHaveBeenCalled()
   })
 
   // ADR-083 결정 2: 캐릭터별 실패가 토스트를 타면서 이 종류가 처음 여기 도달한다.

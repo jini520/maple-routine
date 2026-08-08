@@ -6,8 +6,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { NexonAuthError, NexonRateLimitError } from '../../../nexon/errors'
 import type { CharacterPickerEntry } from '../../../types'
 
-const { getCharacterPickerRosterMock } = vi.hoisted(() => ({
+const { getCharacterPickerRosterMock, noticeApiKeyIssueMock } = vi.hoisted(() => ({
   getCharacterPickerRosterMock: vi.fn(),
+  noticeApiKeyIssueMock: vi.fn(),
+}))
+
+// ADR-116 결정 2: 이 화면의 429는 키 재입력 진입점으로 넘어간다(#176 하드 잠금의 유일한 출구).
+vi.mock('../../../features/onboarding/store', () => ({
+  useOnboardingStore: { getState: () => ({ noticeApiKeyIssue: noticeApiKeyIssueMock }) },
 }))
 
 // ADR-062: 화면이 toScheduleSyncError로 reject를 원인으로 변환하므로, 그 매핑은 실물을 쓰고
@@ -204,6 +210,41 @@ describe('ContentCharacterStep — 후보 목록 로딩 (ADR-053)', () => {
     expect(screen.getByText('캐릭터 목록을 불러오지 못했습니다')).toBeInTheDocument()
     expect(screen.queryByText('표시할 캐릭터가 없어요')).not.toBeInTheDocument()
     expect(screen.queryByTestId('maple-sweep-spinner')).not.toBeInTheDocument()
+  })
+})
+
+// ADR-116 결정 2: 이 화면의 429는 출구가 다섯 방향 전부 막힌 **하드 잠금**이다(이슈 #176) —
+// 계속하기는 고를 캐릭터가 없어 영구 비활성, 다시 시도는 같은 키로 또 429, 탈출구는 확정된 빈
+// 상태 가지에만 붙고, 뒤로 가기도 재시작도 같은 단계로 되돌아온다. 그 자리를 여는 것이 이 배선이다.
+describe('ContentCharacterStep — 429 배선 (ADR-116, 이슈 #176)', () => {
+  it('429로 실패하면 키 재입력 경로로 넘긴다', async () => {
+    const roster = deferRoster()
+
+    render(<ContentCharacterStep isSubmitting={false} onSubmit={vi.fn()} />)
+    await roster.reject(new NexonRateLimitError('rate limited'))
+
+    expect(noticeApiKeyIssueMock).toHaveBeenCalledExactlyOnceWith('rateLimited')
+  })
+
+  // ADR-116 결정 2: 넘기는 것은 429뿐이다. 이 자리의 401은 "방금 입력한 키가 나쁘다"는 뜻이라
+  // 성질이 다르고, 그래서 계속 폼 자체의 실패로 남는다(ADR-115 의도적 미배선 유지).
+  it('401은 넘기지 않고 종전대로 재시도가 있는 실패 안내로 남는다', async () => {
+    const roster = deferRoster()
+
+    render(<ContentCharacterStep isSubmitting={false} onSubmit={vi.fn()} />)
+    await roster.reject(new NexonAuthError('401'))
+
+    expect(noticeApiKeyIssueMock).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: '다시 시도' })).toBeInTheDocument()
+  })
+
+  it('네트워크 실패도 넘기지 않는다', async () => {
+    const roster = deferRoster()
+
+    render(<ContentCharacterStep isSubmitting={false} onSubmit={vi.fn()} />)
+    await roster.reject(new Error('boom'))
+
+    expect(noticeApiKeyIssueMock).not.toHaveBeenCalled()
   })
 })
 

@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { BossScreen } from '../BossScreen'
 import { useBossSchedulerStore, type BossCharacterView } from '../../../features/boss-scheduler/store'
 import { getCharacterPickerRoster } from '../../../features/schedule-sync/schedule-sync'
-import { NexonAuthError } from '../../../nexon/errors'
+import { NexonAuthError, NexonRateLimitError } from '../../../nexon/errors'
 import { PULL_SETTLE_TRANSITION } from '../../../lib/pull-to-refresh'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 import type { CharacterPickerEntry } from '../../../types'
@@ -683,6 +683,22 @@ describe('BossScreen', () => {
     expect(screen.queryByRole('button', { name: '설정 열기' })).not.toBeInTheDocument()
   })
 
+  // ADR-116 결정 1: 429도 같은 사슬이다 — 전에는 액션 없는 토스트 한 줄이라 그 자리에서 할 수
+  // 있는 일이 없었다. 이제 모달이 원인과 처방("서비스 단계 키로 다시 입력")을 함께 말한다.
+  it('status가 error이고 429면 토스트 대신 키 재입력 경로로 넘긴다', async () => {
+    mockStore({
+      status: 'error',
+      trackedOcids: ['ocid-1'],
+      error: { kind: 'rateLimited' },
+      characters: [character({ ocid: 'ocid-1' })],
+    })
+
+    renderBossScreen()
+
+    await waitFor(() => expect(noticeApiKeyIssueMock).toHaveBeenCalledExactlyOnceWith('rateLimited'))
+    expect(showErrorMock).not.toHaveBeenCalled()
+  })
+
   it('network 실패는 토스트에 다시 시도 액션을 붙이고, 누르면 refresh가 호출된다', async () => {
     const refresh = vi.fn()
     mockStore({
@@ -1271,7 +1287,18 @@ describe('BossScreen — 캐릭터 관리 피커 후보 목록 로딩 (ADR-053)'
     await waitFor(() => expect(noticeApiKeyIssueMock).toHaveBeenCalledTimes(1))
   })
 
-  it('로스터 조회가 401이 아닌 실패면 키 무효화 경로를 타지 않는다', async () => {
+  // ADR-116 결정 1: 429도 같은 진입점을 탄다 — 피커 본문은 목록이 없는 자리라 액션을 빼면 아무
+  // 길도 남지 않는데, 그 출구를 모달이 준다(이슈 #178).
+  it('로스터 조회가 429로 실패하면 키 재입력 경로로 넘긴다', async () => {
+    const roster = deferRoster()
+
+    await renderAndOpenPicker()
+    await roster.reject(new NexonRateLimitError('rate limited'))
+
+    await waitFor(() => expect(noticeApiKeyIssueMock).toHaveBeenCalledExactlyOnceWith('rateLimited'))
+  })
+
+  it('로스터 조회가 401·429가 아닌 실패면 키 재입력 경로를 타지 않는다', async () => {
     const roster = deferRoster()
 
     await renderAndOpenPicker()

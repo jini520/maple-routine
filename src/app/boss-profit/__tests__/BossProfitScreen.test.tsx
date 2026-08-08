@@ -918,8 +918,19 @@ describe('BossProfitScreen', () => {
     expect(screen.queryByText('API 키가 유효하지 않습니다')).not.toBeInTheDocument()
   })
 
-  // 회귀 가드: 이 phase가 바꾸는 것은 401뿐이다(ADR-115 범위).
-  it('status가 error여도 401이 아니면 키 무효화 경로를 타지 않는다', async () => {
+  // ADR-116 결정 1: 429도 같은 사슬이다 — 저장된 키로는 앞으로 갈 수 없다는 점이 같아 처방도
+  // 같다. 전에는 액션 없는 토스트 한 줄이라 그 자리에서 할 수 있는 일이 없었다.
+  it('status가 error이고 429면 토스트 대신 키 재입력 경로로 넘긴다', async () => {
+    mockStore({ status: 'error', trackedOcids: ['ocid-1'], error: { kind: 'rateLimited' }, rows: [] })
+
+    renderBossProfitScreen()
+
+    await waitFor(() => expect(noticeApiKeyIssueMock).toHaveBeenCalledExactlyOnceWith('rateLimited'))
+    expect(showErrorMock).not.toHaveBeenCalled()
+  })
+
+  // 회귀 가드: 이 phase가 더하는 것은 429뿐이라 나머지는 종전대로 토스트다.
+  it('status가 error여도 401·429가 아니면 키 재입력 경로를 타지 않는다', async () => {
     mockStore({ status: 'error', trackedOcids: ['ocid-1'], error: { kind: 'network' }, rows: [] })
 
     renderBossProfitScreen()
