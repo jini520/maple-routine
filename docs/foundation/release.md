@@ -2,7 +2,7 @@
 
 > **범위**: 스토어에 나가는 **바이너리**를 만드는 절차 — 서명·버전·빌드 커맨드·산출물 검증, 그리고 콘솔에 채워 넣어야 하는 요건. 앱 안에서 도는 OTA 갱신은 [features/live-update.md](../features/live-update.md), 광고 관련 스토어 요건의 *배경*은 [features/ads.md](../features/ads.md).
 > **관련 소스**: `android/app/build.gradle`(서명·`versionCode`) · `android/keystore.properties`(**커밋 금지**) · `android/.gitignore` · `ios/App/App.xcodeproj`(iOS 서명) · `package.json`(빌드 스크립트).
-> **관련 ADR**: [[ADR-091]](Android 서명) [[ADR-090]](광고 — 스토어 요건이 늘어난 이유) [[ADR-024]](버전 형식). **관련 문서**: [../features/ads.md](../features/ads.md), [../features/live-update.md](../features/live-update.md), [../features/site.md](../features/site.md), [../trouble/2026-08-04-ios-appstore-signing.md](../trouble/2026-08-04-ios-appstore-signing.md).
+> **관련 ADR**: [[ADR-091]](Android 서명) [[ADR-090]](광고 — 스토어 요건이 늘어난 이유) [[ADR-024]](버전 형식) [[ADR-119]](릴리스 노트). **관련 문서**: [../features/ads.md](../features/ads.md), [../features/live-update.md](../features/live-update.md), [../features/site.md](../features/site.md), [../trouble/2026-08-04-ios-appstore-signing.md](../trouble/2026-08-04-ios-appstore-signing.md).
 
 ## 빌드 커맨드는 하나뿐이다 — `npm run build`
 
@@ -17,6 +17,30 @@
 
 **틀려도 화면에는 증상이 없다**([features/ads.md](../features/ads.md)) — 테스트 광고가 박힌
 빌드도 멀쩡히 돌고 광고까지 뜬다. 수익만 0이다.
+
+## 릴리스는 노트를 쓰는 것으로 시작한다 ([[ADR-119]])
+
+**버전을 올리기 전이 아니라, 올리면서 `src/data/release-notes.ts` 에 그 버전의 항목을 먼저 쓴다.**
+OTA 배포든 스토어 바이너리든 순서는 같다.
+
+```
+1. package.json version 을 올린다              (x.y.z — 2단이면 OTA가 깨진다, [[ADR-024]])
+2. src/data/release-notes.ts 에 그 버전 항목을 쓴다   ← 이 단계를 건너뛰면 3에서 막힌다
+     · 네이티브 변경 항목에는 「스토어 업데이트 필요」 표식(항목 단위)
+3. npm run build / node scripts/publish-live-update.mjs
+```
+
+- **노트가 없으면 `publish-live-update.mjs` 가 중단한다**(`process.exit(1)`). `package.json` version 형식
+  검사와 **같은 자리**에서, `npm run build` 보다 **앞에서** 죽으므로 몇 분짜리 빌드를 버리지 않는다.
+- **경고가 아니라 중단인 이유**: 노트가 빠진 채 배포되면 그 버전은 **영영 빈 채로 남는다** —
+  [[ADR-119]] 결정 4 가 사후 재구성을 금지했으므로(릴리스 노트는 사실 기록이다) 나중에 채울 방법이
+  없다. 사후 복구가 불가능한 실수는 사전에 막는다.
+- 같은 파일이 두 곳으로 나간다 — 앱 내장 **개발노트 화면**(`/settings/release-notes`, 과거 전체)과
+  배포 스크립트가 파생시키는 **`latest.json` 의 `notes`**(업데이트 모달, 그 버전 하나).
+  상세는 [../features/live-update.md](../features/live-update.md)·[../features/settings.md](../features/settings.md).
+- 스토어 등록정보의 **출시 노트**(아래 "스토어 등록정보 문구")는 **별개 칸**이다 — 콘솔에 직접 쓰고
+  이 파일에서 파생되지 않는다. 같은 릴리스라도 담는 말이 다를 수 있다(스토어는 그 버전 한정 소개,
+  개발노트는 누적 기록).
 
 ## Android
 
@@ -67,6 +91,8 @@ keyPassword=<같은 비밀번호>
 > 요청할 수 있다([[ADR-091]] 결정 1).
 
 ### 매 릴리스
+
+**릴리스 노트가 선행한다**(위 "릴리스는 노트를 쓰는 것으로 시작한다") — 아래는 그 뒤의 빌드 절차다.
 
 ```bash
 # 1. versionCode 를 올린다 (android/app/build.gradle) — 소진된 번호는 재사용 불가

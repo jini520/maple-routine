@@ -2,7 +2,7 @@
 
 > **범위**: 스토어 심사 없이 JS/HTML/CSS 번들을 배포하는 OTA. 사용자 동의형 업데이트 UX, 베타 채널, 관찰용 UI.
 > **관련 소스**: `native/live-update.ts`(`@capgo/capacitor-updater` 래퍼) · `features/live-update/`(store, `checkOnBoot`) · `native/network`(셀룰러 감지) · `capacitor.config.ts` · GitHub Releases(`live-update-latest`/`live-update-beta`).
-> **관련 ADR**: [[ADR-022]] [[ADR-024]] [[ADR-026]] [[ADR-027]] [[ADR-008]] [[ADR-117]]. **관련 문서**: [../foundation/architecture.md](../foundation/architecture.md), [settings.md](./settings.md), [splash.md](./splash.md), [../trouble/2026-07-15-live-update-testing.md](../trouble/2026-07-15-live-update-testing.md), [../trouble/2026-08-08-ota-apply-stuck-splash.md](../trouble/2026-08-08-ota-apply-stuck-splash.md).
+> **관련 ADR**: [[ADR-022]] [[ADR-024]] [[ADR-026]] [[ADR-027]] [[ADR-008]] [[ADR-117]] [[ADR-119]]. **관련 문서**: [../foundation/architecture.md](../foundation/architecture.md), [settings.md](./settings.md), [splash.md](./splash.md), [../trouble/2026-07-15-live-update-testing.md](../trouble/2026-07-15-live-update-testing.md), [../trouble/2026-08-08-ota-apply-stuck-splash.md](../trouble/2026-08-08-ota-apply-stuck-splash.md).
 
 ## 정책 ([[ADR-022]])
 - `@capgo/capacitor-updater` 플러그인 사용(Capgo 매니지드 백엔드 미사용 — `autoUpdate`/`statsUrl` 명시적으로 끔). 번들 호스팅은 **GitHub Releases 자체 호스팅**(이 저장소 고정 릴리스 `live-update-latest`). Cloudflare R2도 검토했으나 무료 한도에서도 카드 등록 필수라 카드 없이 되는 GitHub Releases로 변경.
@@ -46,6 +46,15 @@ App Store 첫 출시를 앞두고 **버전을 1.0.0으로 리셋**했다(`packag
 - **`notifyAppReady()` 는 번들 첫 문장이 아니라 `AppShell` 마운트 `useEffect`** 에서 부른다. "정상"의 정의가 *"메인 청크가 평가됐다"* 에서 **"React 가 마운트에 성공했다"** 로 바뀌어, 렌더가 던지면 capgo 가 `appReadyTimeout`(기본 10초, config 미설정) 뒤 직전 번들로 **자동 롤백**한다. 하이드레이션 완료 뒤로 더 미루지 않는다 — `prehydrateTabStores` 가 SQLite 에 의존해 10초를 넘기면 멀쩡한 번들까지 롤백된다.
   - **`App` 이 아니라 `AppShell` 이어야 한다.** `App` 은 `ErrorBoundary` 를 *렌더하는* 쪽이라 **자식이 렌더 중에 던져도 자기 effect 는 돌아**, 부팅 크래시로 죽은 번들이 그대로 "정상"으로 찍힌다 — 옮긴 의미가 통째로 무너진다. `AppShell` 은 `ErrorBoundary` **안**이라 렌더가 던지면 커밋되지 않아 effect 도 안 돈다.
 - 커버가 걷히는 경로는 넷이다 — 정상 부팅(`hideSplashScreen`) · 위 catch · `#boot-cover` 8초 실패 안전 타이머 · ErrorBoundary 폴백. 뒤 둘은 [splash.md](./splash.md) 를 보라.
+
+## 매니페스트의 릴리스 노트 ([[ADR-119]])
+
+`LiveUpdateManifest` 에 **`notes?` 선택 필드**가 붙는다 — 사용자 동의 모달([[ADR-027]])이 *"새 버전 v1.0.3 (2.1MB)"* 까지만 말하고 **무엇이 바뀌는지는 말하지 않던** 자리를 채운다.
+
+- **값의 출처는 `src/data/release-notes.ts`** 다. 배포 스크립트가 `package.json` version 과 같은 버전의 항목을 뽑아 `latest.json` 에 싣는다 — 노트를 손으로 매니페스트에 적지 않는다. 같은 파일을 개발노트 화면(`/settings/release-notes`, [settings.md](./settings.md))이 **과거 전체**로 읽는다(원천 하나 + 소비 둘).
+- **`minNativeVersion` 과 같은 선택 필드**다 — `parseLiveUpdateManifest` 의 **필수 검사에 넣지 않는다.** 넣으면 이미 발행된 옛 매니페스트(필드 없음)가 `null` 로 떨어져 **모든 기존 설치본의 업데이트 확인이 `check-error`** 가 된다. 매니페스트는 URL 고정·내용 가변이라 옛 앱이 새 파일을 읽는 조합이 실재한다. `notes` 가 없으면 모달은 지금과 똑같이 동작한다.
+- **네이티브 변경 항목에는 「스토어 업데이트 필요」 표식**이 붙는다(버전 전체가 아니라 **항목 단위**). 매니페스트의 `minNativeVersion` 과는 다른 층이다 — 그쪽은 *"이 번들을 적용할 수 있는가"* 를 판정하는 게이트이고, 표식은 *"이 항목이 지금 내 앱에 있는가"* 를 사람에게 설명하는 글이다.
+- **노트가 없으면 배포가 중단된다** — 절차는 [../foundation/release.md](../foundation/release.md).
 
 ## SQLite 커넥션 주의
 `set()`(리로드) 전에 SQLite 커넥션을 정상 종료하지 않으면 stale 커넥션으로 과거 데이터 로드가 멈춘다 → `closeBossProfitDb()` 로 리로드 전 미리 닫음([[ADR-008]] 세 번째 정정, [boss-profit.md](./boss-profit.md)).

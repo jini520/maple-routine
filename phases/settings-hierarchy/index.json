@@ -1,0 +1,59 @@
+{
+  "project": "메이플 루틴 (Maple Routine)",
+  "phase": "settings-hierarchy",
+  "steps": [
+    {
+      "step": 0,
+      "name": "docs-adr",
+      "status": "completed",
+      "started_at": "2026-08-09T02:01:22+0900",
+      "summary": "ADR-118(설정 2카드 5행 + 하위 페이지 3, 행 5종, 개인정보 처리방침 행 이동, changeApiKey 미부활)·ADR-119(release-notes.ts 원천 하나 → 개발노트 화면 + latest.json notes, 1.0.3부터, 노트 없으면 배포 중단) 신규 작성 + ADR.md 인덱스 2줄 append, settings.md(정책·UI·열린 질문 2건 제거·history 3줄)·live-update.md(notes? 선택 필드)·release.md(릴리스는 노트부터)·README.md(설정 소스 경로) 갱신. 소스 변경 0건. 기준선: 테스트 2,695개/177파일 통과, build 성공."
+    },
+    {
+      "step": 1,
+      "name": "settings-row",
+      "status": "pending"
+    },
+    {
+      "step": 2,
+      "name": "release-notes-data",
+      "status": "pending"
+    },
+    {
+      "step": 3,
+      "name": "about-screen",
+      "status": "pending"
+    },
+    {
+      "step": 4,
+      "name": "account-data-screen",
+      "status": "pending"
+    },
+    {
+      "step": 5,
+      "name": "release-notes-screen",
+      "status": "pending"
+    },
+    {
+      "step": 6,
+      "name": "settings-shell",
+      "status": "pending"
+    },
+    {
+      "step": 7,
+      "name": "manifest-notes",
+      "status": "pending"
+    },
+    {
+      "step": 8,
+      "name": "publish-notes-guard",
+      "status": "pending"
+    },
+    {
+      "step": 9,
+      "name": "docs-finalize",
+      "status": "pending"
+    }
+  ],
+  "created_at": "2026-08-09T02:01:22+0900"
+}
