@@ -61,7 +61,10 @@
     {
       "step": 7,
       "name": "manifest-notes",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-09T02:58:25+0900",
+      "summary": "ADR-119 결정 5 — LiveUpdateManifest 에 `notes?: string` 선택 필드 추가 + parseLiveUpdateManifest 가 minNativeVersion 과 **같은 자리·같은 모양**으로 처리(필수 검사는 version·url·checksum·size 그대로, 새 분기 0개 — 조건부 스프레드 한 줄만 추가). 왜 선택 필드인지(이미 발행된 옛 매니페스트엔 필드가 없고, 필수로 만들면 그것을 읽는 기존 설치본이 전부 null → check-error 로 업데이트를 영영 못 받는다)와 원천이 src/data/release-notes.ts 이되 **여기서 읽지 않는 이유**(매니페스트는 원격에서 온 값)를 주석으로 남김 — import 0건, native/ → features/·app/ 의존 0건(imports: @capacitor/*·@capgo/*·storage/sqlite/db·./splash-screen). UpdatePromptModal·check()·다운로드·적용 흐름 무변경(src 변경 파일 1개, +8줄). TDD — 테스트 3건 먼저: ①notes 없는 매니페스트가 그대로 통과하고 결과에 notes 키 자체가 없다(핵심 회귀 가드) ②문자열이면 실린다(객체·JSON 문자열 양쪽) ③숫자·객체·null·배열이면 매니페스트를 버리지 않고 그 필드만 빠진 채 통과한다(양쪽). 구현 전 실행에서 ②만 실패해 새 계약이 정확히 그 한 줄임을 확인. **판별력 확인(이 step 최대 위험)**: notes 를 필수 검사에 넣으면 2,748개 중 **8건만** 실패하고 전부 '노트 없는 매니페스트' 한 가족이다 — parse 4건(픽스처에 notes 없음)과 checkForLiveUpdate 4건(up-to-date·update-available·store-required 2건이 전부 kind:'error' 로 떨어짐 = ADR 이 경고한 '기존 설치본의 업데이트 확인이 전부 실패' 가 실측으로 재현). 나머지 180파일 2,740개는 전혀 감지하지 못함. 확인 후 되돌림. 테스트 2,748개/181파일 통과(기준선 2,745/181 대비 +3, 새 파일 0)·build 성공·lint 0 errors/17 warnings(baseline 동일).",
+      "completed_at": "2026-08-09T03:02:40+0900"
     },
     {
       "step": 8,

@@ -100,6 +100,27 @@ describe('parseLiveUpdateManifest', () => {
     expect(parseLiveUpdateManifest(withMin)).toEqual(withMin)
   })
 
+  // ADR-119 결정 5 — 이미 발행된 옛 매니페스트에는 notes가 없다. 필수 검사에 넣으면 그 순간
+  // 기존 설치본의 업데이트 확인이 전부 check-error가 된다. 이 케이스가 그 회귀의 유일한 가드다.
+  it('notes가 없는 매니페스트를 그대로 통과시킨다', () => {
+    expect(parseLiveUpdateManifest(manifest)).toEqual(manifest)
+    expect(parseLiveUpdateManifest(JSON.stringify(manifest))).toEqual(manifest)
+    expect(parseLiveUpdateManifest(manifest)).not.toHaveProperty('notes')
+  })
+
+  it('notes가 문자열이면 함께 반환한다', () => {
+    const withNotes = { ...manifest, notes: '- 개발노트 화면 추가\n- 설정 화면 정리' }
+    expect(parseLiveUpdateManifest(withNotes)).toEqual(withNotes)
+    expect(parseLiveUpdateManifest(JSON.stringify(withNotes))).toEqual(withNotes)
+  })
+
+  it('notes가 문자열이 아니면 매니페스트를 버리지 않고 그 필드만 뺀다', () => {
+    for (const notes of [42, { text: 'x' }, null, ['a']]) {
+      expect(parseLiveUpdateManifest({ ...manifest, notes })).toEqual(manifest)
+      expect(parseLiveUpdateManifest(JSON.stringify({ ...manifest, notes }))).toEqual(manifest)
+    }
+  })
+
   it('size가 없거나 숫자가 아니면 null을 반환한다', () => {
     expect(parseLiveUpdateManifest({ version: '1.1.0', url: 'u', checksum: 'c' })).toBeNull()
     expect(parseLiveUpdateManifest({ version: '1.1.0', url: 'u', checksum: 'c', size: '8' })).toBeNull()
