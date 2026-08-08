@@ -2,7 +2,7 @@
 
 > **범위**: 스토어 심사 없이 JS/HTML/CSS 번들을 배포하는 OTA. 사용자 동의형 업데이트 UX, 베타 채널, 관찰용 UI.
 > **관련 소스**: `native/live-update.ts`(`@capgo/capacitor-updater` 래퍼) · `features/live-update/`(store, `checkOnBoot`) · `native/network`(셀룰러 감지) · `capacitor.config.ts` · GitHub Releases(`live-update-latest`/`live-update-beta`).
-> **관련 ADR**: [[ADR-022]] [[ADR-024]] [[ADR-026]] [[ADR-027]] [[ADR-008]]. **관련 문서**: [../foundation/architecture.md](../foundation/architecture.md), [settings.md](./settings.md), [../trouble/2026-07-15-live-update-testing.md](../trouble/2026-07-15-live-update-testing.md).
+> **관련 ADR**: [[ADR-022]] [[ADR-024]] [[ADR-026]] [[ADR-027]] [[ADR-008]] [[ADR-117]]. **관련 문서**: [../foundation/architecture.md](../foundation/architecture.md), [settings.md](./settings.md), [splash.md](./splash.md), [../trouble/2026-07-15-live-update-testing.md](../trouble/2026-07-15-live-update-testing.md).
 
 ## 정책 ([[ADR-022]])
 - `@capgo/capacitor-updater` 플러그인 사용(Capgo 매니지드 백엔드 미사용 — `autoUpdate`/`statsUrl` 명시적으로 끔). 번들 호스팅은 **GitHub Releases 자체 호스팅**(이 저장소 고정 릴리스 `live-update-latest`). Cloudflare R2도 검토했으나 무료 한도에서도 카드 등록 필수라 카드 없이 되는 GitHub Releases로 변경.
@@ -33,8 +33,20 @@ App Store 첫 출시를 앞두고 **버전을 1.0.0으로 리셋**했다(`packag
 ## 리로드 커버 ([[ADR-027]] 정정)
 리로드 커버 스플래시(`SplashScreen.show()`)가 Android에서 `FIT_XY` 로 눌리고 `fitsSystemWindows` 로 시스템 바를 못 덮는 문제 → `capacitor.config.ts` `androidScaleType: 'CENTER_CROP'` + `backgroundColor: '#FB8101'`. 플러그인 창이 구조적으로 못 덮는 하단 내비 바 인셋 띠는 리로드 전 DOM 오버레이 + 신 문서 정적 `#boot-cover` div(앱 준비 시 제거)로 커버(첫 렌더는 테마 비동기 복원이라 항상 라이트 플래시가 띠에 노출됨). 단색 통일은 [splash.md](./splash.md) 참고.
 
+## 적용 경로의 복구 장치 ([[ADR-117]])
+
+적용(`지금 적용 (재시작)`)은 **되돌아올 수 있어야 한다**. 테스터가 이 버튼을 누른 뒤 브랜드 주황 스플래시에서 무한 로딩에 갇혔고(이슈 #175), 원인은 적용 확률이 아니라 **적용 경로가 일방통행이라는 형태**였다 — 화면을 먼저 덮고 실패·행(hang) 가능한 작업을 catch·타임아웃 없이 실행하는데 커버를 걷는 코드가 없었다.
+
+- **순서는 `closeBossProfitDb()` → 커버(`showSplashScreen()`) → `set()`** 이다. 커버가 올라가 있는 시간을 [[ADR-027]] 2026-07-17 추가가 원래 말한 **실제 리로드 구간**으로 좁힌다 — 준비 작업까지 덮지 않는다. 이 순서를 위해 `native/live-update.ts` 어댑터에는 `set()` 만 남고, 커넥션 닫기는 스토어가 명시적으로 부른다.
+- **전체에 12초 타임아웃 + catch.** 세 고리(스플래시 `show()` 의 미완료 · 커넥션 닫기 무응답 · `set()` reject) 중 어느 것이 끊겨도 **커버를 걷고** `'apply-error'` 로 전환한다. 고리별로 타임아웃을 나누지 않는다 — 어디서 멈췄는지에 따라 사용자가 볼 화면이 달라질 이유가 없다. 성공 경로에서는 `set()` 이 그 자리에서 문서를 죽이므로 이 타임아웃에 도달할 수 없다.
+- **상태가 둘 는다**(11 → 13). `'applying'` 은 닫기가 도는 구간(최대 5초)에 정직한 피드백을 주고 중복 탭을 막는다 — 그 구간에 모달이 살아 있는데 화면이 "업데이트 준비 완료"라고 말하면 이 이슈가 지적한 *"아무 반응 없음"* 의 축소판을 새로 만드는 것이다. `'apply-error'` 는 [[ADR-065]] 결정 2 의 실패 분류표에 한 줄 더해지는 것이라 `download-error` 와 같은 골격의 모달 분기를 쓴다. 둘 다 `MODAL_STATUSES` 에 들어간다.
+- **`notifyAppReady()` 는 번들 첫 문장이 아니라 `App` 마운트 `useEffect`** 에서 부른다. "정상"의 정의가 *"메인 청크가 평가됐다"* 에서 **"React 가 마운트에 성공했다"** 로 바뀌어, 렌더가 던지면 capgo 가 `appReadyTimeout`(기본 10초, config 미설정) 뒤 직전 번들로 **자동 롤백**한다. 하이드레이션 완료 뒤로 더 미루지 않는다 — `prehydrateTabStores` 가 SQLite 에 의존해 10초를 넘기면 멀쩡한 번들까지 롤백된다.
+- 커버가 걷히는 경로는 넷이다 — 정상 부팅(`hideSplashScreen`) · 위 catch · `#boot-cover` 8초 실패 안전 타이머 · ErrorBoundary 폴백. 뒤 둘은 [splash.md](./splash.md) 를 보라.
+
 ## SQLite 커넥션 주의
 `set()`(리로드) 전에 SQLite 커넥션을 정상 종료하지 않으면 stale 커넥션으로 과거 데이터 로드가 멈춘다 → `closeBossProfitDb()` 로 리로드 전 미리 닫음([[ADR-008]] 세 번째 정정, [boss-profit.md](./boss-profit.md)).
+
+**닫기에는 5초 타임아웃이 있다**([[ADR-117]] 결정 5) — 여는 쪽 `withOpenTimeout`(10초)과 대칭이되 더 짧다. 닫기는 파일 생성·마이그레이션이 없어 정상이면 수 ms 이고, 이 값이 곧 적용 경로에서 사용자가 무반응을 견디는 상한이다(`'applying'` 구간의 길이). 실패·타임아웃은 **여전히 삼킨다**(best-effort) — 곧 리로드될 것이고 `openBossProfitDb` 의 stale 감지가 최후 폴백으로 남는다. 타임아웃이 바꾸는 것은 *"실패로 끝난다"* 가 아니라 **"끝난다"** 이다. 같은 함수를 쓰는 캐시 데이터 삭제 경로도 이 타임아웃을 함께 받고, 그쪽 순서도 `close` → 커버 → `reload()` 로 같아진다([[ADR-117]] 결정 8 — [[ADR-065]] 결정 3 의 *"항상 리로드한다"*·`pendingNotice` 정책은 그대로).
 
 ## 폐기된 정책 (history)
 - ~~번들 호스팅 = Cloudflare R2~~ → GitHub Releases(카드 등록 불필요)([[ADR-022]]).
@@ -43,3 +55,6 @@ App Store 첫 출시를 앞두고 **버전을 1.0.0으로 리셋**했다(`packag
 - ~~조용한 자동 다운로드·적용~~ → 사용자 동의형(부팅은 체크만)([[ADR-027]]).
 - ~~배포 = Play Console 내부 테스트 트랙~~ → APK 직접 사이드로딩([[ADR-024]] 정정).
 - ~~스플래시 배경색 `#FB8101`(코드 단색)~~ → 이미지 기준 `#F58B0F` 로 6곳 통일(다크 `#D06100` 유지)([[ADR-029]] 정정).
+- ~~`notifyAppReady` 를 번들 실행 직후 가장 먼저(첫 문장) 호출한다~~ → **첫 렌더 커밋 뒤**(`App` 마운트 `useEffect`)([[ADR-022]] 결정 6 → [[ADR-117]] 결정 2). 지키려던 것은 "타임아웃 안에 부른다"이지 "가능한 한 빨리 부른다"가 아니었고, 첫 문장에서 부르면 렌더가 죽는 번들이 SUCCESS 로 찍혀 **영구히 박힌다**.
+- ~~`apply()` 는 커버(`showSplashScreen()`)를 먼저 씌우고 그 뒤에 적용을 진행한다~~ → **`closeBossProfitDb()` → 커버 → `set()`**([[ADR-027]] 2026-07-17 추가 → [[ADR-117]] 결정 1). *"스플래시 표시가 실패해도 적용은 계속 진행한다"* 는 그대로 유효하다.
+- ~~적용 실패 시의 처리 없음(`void apply()` — catch·타임아웃 없음)~~ → **12초 타임아웃 + catch → 커버 걷고 `'apply-error'`**([[ADR-117]] 결정 1).
