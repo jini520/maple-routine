@@ -6,10 +6,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { MapleAccount } from '../../../types'
 import { AccountSelectionList } from '../AccountSelectionList'
 import { useAccountProbes } from '../../../features/onboarding/use-account-probes'
+import { useApiKeyNotice } from '../../../features/onboarding/use-api-key-notice'
 import { worldEmblemUrl } from '../../../lib/world-emblem'
 
 vi.mock('../../../features/onboarding/use-account-probes', () => ({
   useAccountProbes: vi.fn(),
+}))
+
+// ADR-116 결정 3: 429 판정 불가의 출구는 안내 모달이다(ADR-115 결정 10 의 사슬). 여기서는 그
+// 진입점이 불렸는지만 본다 — 모달 자체는 ApiKeyNoticeModal 테스트가 본다.
+vi.mock('../../../features/onboarding/use-api-key-notice', () => ({
+  useApiKeyNotice: vi.fn(),
 }))
 
 vi.mock('../../../lib/world-emblem', () => ({
@@ -17,7 +24,12 @@ vi.mock('../../../lib/world-emblem', () => ({
 }))
 
 const mockedUseAccountProbes = vi.mocked(useAccountProbes)
+const mockedUseApiKeyNotice = vi.mocked(useApiKeyNotice)
 const mockedWorldEmblemUrl = vi.mocked(worldEmblemUrl)
+
+const QUERYABLE = { kind: 'queryable' } as const
+const ALL_UNAVAILABLE = { kind: 'allUnavailable' } as const
+const retryMock = vi.fn()
 
 // ADR-113 결정 3: 목록은 프로브가 settle 한 뒤에만 그려진다. 목록 렌더링을 보는 케이스는 전부
 // 이 헬퍼로 "프로브가 끝난 뒤"를 만든다.
@@ -25,13 +37,13 @@ function settled(probes: ReturnType<typeof useAccountProbes>['probes']): ReturnT
   typeof useAccountProbes
 > {
   const total = accounts.reduce((sum, account) => sum + account.characters.length, 0)
-  return { probes, isSettled: true, progress: { completed: total, total } }
+  return { probes, isSettled: true, progress: { completed: total, total }, retry: retryMock }
 }
 
 function waiting(progress: { completed: number; total: number }): ReturnType<
   typeof useAccountProbes
 > {
-  return { probes: {}, isSettled: false, progress }
+  return { probes: {}, isSettled: false, progress, retry: retryMock }
 }
 
 beforeEach(() => {
@@ -239,9 +251,9 @@ describe('AccountSelectionList', () => {
         'da9b2f2-account-hash-1': {
           representative: accounts[0].characters[0],
           portraitUrl: 'https://example.com/portrait.png',
-          allUnavailable: false,
+          verdict: QUERYABLE,
         },
-        '69e3525-account-hash-2': { representative: null, portraitUrl: null, allUnavailable: false },
+        '69e3525-account-hash-2': { representative: null, portraitUrl: null, verdict: QUERYABLE },
       }),
     )
 
@@ -255,8 +267,8 @@ describe('AccountSelectionList', () => {
   it('초상화를 찾지 못한 계정은 "?"로 대체 표시한다', () => {
     mockedUseAccountProbes.mockReturnValue(
       settled({
-        'da9b2f2-account-hash-1': { representative: null, portraitUrl: null, allUnavailable: false },
-        '69e3525-account-hash-2': { representative: null, portraitUrl: null, allUnavailable: false },
+        'da9b2f2-account-hash-1': { representative: null, portraitUrl: null, verdict: QUERYABLE },
+        '69e3525-account-hash-2': { representative: null, portraitUrl: null, verdict: QUERYABLE },
       }),
     )
 
@@ -276,11 +288,11 @@ describe('AccountSelectionList', () => {
     it('그 계정에만 경고를 붙인다', () => {
       mockedUseAccountProbes.mockReturnValue(
         settled({
-          'da9b2f2-account-hash-1': { representative: null, portraitUrl: null, allUnavailable: true },
+          'da9b2f2-account-hash-1': { representative: null, portraitUrl: null, verdict: ALL_UNAVAILABLE },
           '69e3525-account-hash-2': {
             representative: accounts[1].characters[0],
             portraitUrl: null,
-            allUnavailable: false,
+            verdict: QUERYABLE,
           },
         }),
       )
@@ -299,11 +311,11 @@ describe('AccountSelectionList', () => {
       const onSelect = vi.fn()
       mockedUseAccountProbes.mockReturnValue(
         settled({
-          'da9b2f2-account-hash-1': { representative: null, portraitUrl: null, allUnavailable: true },
+          'da9b2f2-account-hash-1': { representative: null, portraitUrl: null, verdict: ALL_UNAVAILABLE },
           '69e3525-account-hash-2': {
             representative: accounts[1].characters[0],
             portraitUrl: null,
-            allUnavailable: false,
+            verdict: QUERYABLE,
           },
         }),
       )
@@ -321,7 +333,7 @@ describe('AccountSelectionList', () => {
       const single = [accounts[0]]
       mockedUseAccountProbes.mockReturnValue(
         settled({
-          'da9b2f2-account-hash-1': { representative: null, portraitUrl: null, allUnavailable: true },
+          'da9b2f2-account-hash-1': { representative: null, portraitUrl: null, verdict: ALL_UNAVAILABLE },
         }),
       )
 
@@ -387,13 +399,78 @@ describe('AccountSelectionList', () => {
     })
   })
 
+  // ADR-116 결정 3: 003이 아닌 실패는 "판정 불가"이고, 판정 못 한 계정이 하나라도 있으면 목록
+  // 자체를 그리지 않는다 — 결정 3("모르는 동안은 보여주지도 않는다")을 429에도 적용한 것이다.
+  // 전에는 429가 조용히 삼켜져 못 쓰는 계정이 정상으로 보이고 선택됐다(이슈 #177 → #176 인과).
+  describe('판정 불가 계정 (ADR-116 결정 3)', () => {
+    function withUndetermined(kind: 'rateLimited' | 'network'): void {
+      mockedUseAccountProbes.mockReturnValue(
+        settled({
+          'da9b2f2-account-hash-1': {
+            representative: null,
+            portraitUrl: null,
+            verdict: { kind: 'undetermined', error: { kind } },
+          },
+          // 나머지 계정을 확인했더라도 부분 판정으로 목록을 그리지 않는다.
+          '69e3525-account-hash-2': {
+            representative: accounts[1].characters[0],
+            portraitUrl: null,
+            verdict: QUERYABLE,
+          },
+        }),
+      )
+    }
+
+    it('목록도 "계속하기"도 안내 문구도 그리지 않는다', () => {
+      withUndetermined('rateLimited')
+
+      render(<AccountSelectionList accounts={accounts} isSubmitting={false} onSelect={vi.fn()} />)
+
+      expect(screen.queryByRole('button', { name: /캐릭터 \d+개/ })).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: '계속하기' })).not.toBeInTheDocument()
+      expect(screen.queryByText('사용할 메이플 ID를 선택해주세요.')).not.toBeInTheDocument()
+      // 확인이 끝난 계정이 있어도 그리지 않는다 — 부분 판정으로 목록을 만들지 않는다.
+      expect(screen.queryByText('엘리시움 · 낟낟 · Lv.293')).not.toBeInTheDocument()
+    })
+
+    it('429는 안내 모달 경로로 보낸다 — 그 자리의 출구는 키 재입력이다', () => {
+      withUndetermined('rateLimited')
+
+      render(<AccountSelectionList accounts={accounts} isSubmitting={false} onSelect={vi.fn()} />)
+
+      expect(mockedUseApiKeyNotice).toHaveBeenCalledWith({ kind: 'rateLimited' })
+      // 429는 눌러도 또 429라 액션을 주지 않는다(ADR-114 결정 2) — 출구는 모달이 쥔다.
+      expect(screen.getByTestId('error-state-title')).toHaveTextContent('호출 한도를 초과했습니다')
+      expect(screen.queryByRole('button', { name: '다시 시도' })).not.toBeInTheDocument()
+    })
+
+    it('429가 아닌 원인은 모달로 보내지 않고 이 자리에서 다시 시도한다', async () => {
+      const user = userEvent.setup()
+      withUndetermined('network')
+
+      render(<AccountSelectionList accounts={accounts} isSubmitting={false} onSelect={vi.fn()} />)
+
+      expect(mockedUseApiKeyNotice).toHaveBeenCalledWith(null)
+
+      await user.click(screen.getByRole('button', { name: '다시 시도' }))
+      expect(retryMock).toHaveBeenCalledTimes(1)
+    })
+
+    it('판정 불가가 없으면 모달 경로를 타지 않는다', () => {
+      render(<AccountSelectionList accounts={accounts} isSubmitting={false} onSelect={vi.fn()} />)
+
+      expect(mockedUseApiKeyNotice).toHaveBeenCalledWith(null)
+      expect(screen.queryByTestId('error-state')).not.toBeInTheDocument()
+    })
+  })
+
   // ADR-068 결정 4: character/list의 최고 레벨이 조회 불가일 수 있으므로, 대표는 프로브가
   // 확인한 "조회 가능한 캐릭터 중 최고 레벨"이다.
   it('프로브가 고른 대표 캐릭터를 표기한다', () => {
     const second = accounts[1].characters[1] ?? accounts[1].characters[0]
     mockedUseAccountProbes.mockReturnValue(
       settled({
-        '69e3525-account-hash-2': { representative: second, portraitUrl: null, allUnavailable: false },
+        '69e3525-account-hash-2': { representative: second, portraitUrl: null, verdict: QUERYABLE },
       }),
     )
 
