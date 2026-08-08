@@ -16,7 +16,13 @@ import { seedManualTrackedContent } from '../tracking-mode/seed'
 import { useTrackingModeStore } from '../tracking-mode/store'
 import { prefetchAccountData } from './prefetch'
 import { deriveResumeTarget, type ResumeTarget } from './resume'
-import { initialOnboardingState, onboardingReducer, type OnboardingError, type OnboardingState } from './state'
+import {
+  initialOnboardingState,
+  onboardingReducer,
+  type ApiKeyNoticeKind,
+  type OnboardingError,
+  type OnboardingState,
+} from './state'
 
 export interface OnboardingStore extends OnboardingState {
   restoreFromStorage(): Promise<void>
@@ -26,11 +32,12 @@ export interface OnboardingStore extends OnboardingState {
   submitContentCharacters(ocids: string[]): Promise<void>
   // ADR-086 결정 8: 고른 계정의 후보가 0명일 때의 유일한 탈출구 — 온보딩 중에는 설정 화면이 없다.
   restartAccountSelection(): Promise<void>
-  // ADR-115 결정 10: 저장된 키가 무효화됐을 때(400 OPENAPI00005 · 401/403) 부르는 유일한 진입점.
-  // 알리기만 하고(모달) 이동·삭제는 하지 않는다 — 그것은 아래 confirmApiKeyInvalid 가 한다.
-  noticeApiKeyInvalid(): void
-  // 그 모달의 "확인" — 키 입력 화면으로 이동하고 저장된 apiKey 를 지운다.
-  confirmApiKeyInvalid(): Promise<void>
+  // ADR-115 결정 10 · ADR-116 결정 1: 저장된 키로 앞으로 갈 수 없게 됐을 때 부르는 유일한 진입점.
+  // 원인은 무효 키(400 OPENAPI00005 · 401/403)와 429 둘이고, 사슬은 하나이며 문구만 갈린다.
+  // 알리기만 하고(모달) 이동·삭제는 하지 않는다 — 그것은 아래 confirmApiKeyNotice 가 한다.
+  noticeApiKeyIssue(kind: ApiKeyNoticeKind): void
+  // 그 모달의 "확인" — 키 입력 화면으로 이동하고 저장된 apiKey 를 지운다(원인과 무관하게 같다).
+  confirmApiKeyNotice(): Promise<void>
   reset(): Promise<void>
 }
 
@@ -239,27 +246,40 @@ export const useOnboardingStore = create<OnboardingStore>()((set, get) => {
       set((state) => onboardingReducer(state, { type: 'ONBOARDING_FINISHED' }))
     },
 
-    // ADR-115 결정 10: 무효 키를 만나면 **알리기만** 한다 — 화면을 빼앗지 않는다.
+    // ADR-115 결정 10: 저장된 키로 앞으로 갈 수 없게 되면 **알리기만** 한다 — 화면을 빼앗지 않는다.
     // 결정 1 의 "토스트 + 즉시 이동"은 폐기됐다: 이동이 먼저 일어나면 사용자는 이미 바뀐 화면에서
     // 이유를 읽게 되고, 토스트는 스스로 사라져 놓칠 수 있다. 이제 원래 화면 위에 **닫을 수 없는**
-    // 모달이 덮이고, 이동은 사용자가 "확인"을 눌러야(confirmApiKeyInvalid) 일어난다.
-    noticeApiKeyInvalid() {
-      // 결정 6: 멱등 가드. 동기 함수라 이 구간 전체가 원자적이다 — 여러 화면·여러 캐릭터에서
-      // 401(400 00005)이 동시에 터져도 모달은 하나다. 키 입력 화면에서 다시 나는 실패는 그때
-      // status가 completed가 아니라 여기 걸린다(재이동 루프가 구조적으로 불가능하다 —
-      // 그 실패는 ADR-065 결정 1의 폼 토스트로 남는다).
-      if (get().status !== 'completed' || get().apiKeyInvalidNotice) {
+    // 모달이 덮이고, 이동은 사용자가 "확인"을 눌러야(confirmApiKeyNotice) 일어난다.
+    // ADR-116 결정 1: 429도 이 사슬을 그대로 탄다 — 처방이 같아 화면도 같다. 갈리는 것은 문구뿐이다.
+    noticeApiKeyIssue(kind: ApiKeyNoticeKind) {
+      // ADR-115 결정 6: 멱등 가드. 동기 함수라 이 구간 전체가 원자적이다 — 여러 화면·여러 캐릭터에서
+      // 동시에 터져도 모달은 하나이고, 원인이 겹치면 **먼저 뜬 것**이 유지된다(리듀서도 같은 규칙).
+      if (get().apiKeyNotice !== null) {
         return
       }
 
-      // status는 completed 그대로다 — 뒤에 원래 화면이 남아 있어야 사용자가 무엇을 하다 이렇게
-      // 됐는지 보면서 이유를 읽는다(결정 10). 저장소도 아직 건드리지 않는다.
-      set((state) => onboardingReducer(state, { type: 'API_KEY_INVALID_NOTICED' }))
+      // ADR-116 결정 2: 가드 조건이 `status !== 'completed'` 에서 여기로 바뀌었다. 옛 조건으로는
+      // **온보딩 안에서 잠긴 사용자를 구할 수 없다** — 429 로 로스터가 비는 이슈 #176 의 잠금은
+      // selectingContentCharacters 에서 일어나는데, 그 상태가 completed 가 아니라 통째로 막혔다.
+      // 막는 대상은 그대로다: 이 두 상태가 곧 "이미 키 입력 화면"이라 보낼 곳이 없고, 그래서
+      // 재이동 루프도 여전히 불가능하다. 폼에서 다시 나는 실패는 폼 자체의 토스트가 맡는다
+      // (ADR-065 결정 1).
+      const { status } = get()
+      if (status === 'awaitingApiKey' || status === 'verifyingApiKey') {
+        return
+      }
+
+      // status는 그대로다 — 뒤에 원래 화면이 남아 있어야 사용자가 무엇을 하다 이렇게 됐는지
+      // 보면서 이유를 읽는다(결정 10). 저장소도 아직 건드리지 않는다.
+      set((state) => onboardingReducer(state, { type: 'API_KEY_NOTICED', kind }))
     },
 
     // ADR-115 결정 10: 모달의 "확인" — 여기서야 이동과 삭제가 일어난다.
-    async confirmApiKeyInvalid() {
-      if (!get().apiKeyInvalidNotice) {
+    // ADR-116 결정 1: 원인별로 갈라 처리하지 않는다 — 429도 키를 지운다(사용자 결정 2026-08-08).
+    // 안 지우면 재시작 때 같은 키로 completed 에 복귀해 또 막히고, 사용자에게는 "재시작하면 되는
+    // 것처럼 보이다가 안 되는" 상태가 된다. 같은 키를 다시 붙여넣는 것은 막지 않는다.
+    async confirmApiKeyNotice() {
+      if (get().apiKeyNotice === null) {
         return
       }
 

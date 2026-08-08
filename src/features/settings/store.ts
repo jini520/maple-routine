@@ -97,8 +97,13 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => {
         // 없어 막다른 길이므로(이슈 #157) 무효화 진입점 하나로 넘긴다 — 안내 모달을 띄우고,
         // 이동은 사용자가 "확인"을 눌러야 일어난다(결정 10).
         // 멱등 가드는 그 함수 안 한 곳이라(결정 6) 여기서 상태를 다시 확인하지 않는다.
-        if (settingsError.kind === 'invalidApiKey') {
-          useOnboardingStore.getState().noticeApiKeyInvalid()
+        // ADR-116 결정 1: 429도 같은 길이다. 이 모달의 인라인 카드는 "다시 시도"밖에 줄 수 없는데
+        // 개발 단계 키의 한도 초과는 눌러도 또 429라(ADR-114) 그 카드가 막다른 길이었다 — 처방이
+        // 무효 키와 같은 "서비스 단계 키로 다시 입력"이므로 화면도 같아야 한다.
+        if (settingsError.kind === 'invalidApiKey' || settingsError.kind === 'rateLimited') {
+          useOnboardingStore
+            .getState()
+            .noticeApiKeyIssue(settingsError.kind === 'invalidApiKey' ? 'invalid' : 'rateLimited')
           // 이 계정 모달은 곧 안내 모달에 덮이고 확인 뒤 /onboarding 으로 간다. error를 남겨 두면
           // 나중에 설정을 다시 열었을 때 지나간 실패가 되살아난다. idle 복귀는 AccountModal 의
           // 닫힘 판정이기도 해 모달이 정리된다.
@@ -106,7 +111,7 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => {
           return
         }
 
-        // 나머지 원인(429·네트워크·저장 실패)은 그대로 모달 안 인라인 카드다(ADR-063 — 모달 본문
+        // 나머지 원인(네트워크·저장 실패)은 그대로 모달 안 인라인 카드다(ADR-063 — 모달 본문
         // 전체를 차지하는 자리라 토스트로 옮기면 빈 상자가 된다).
         set((state) => settingsReducer(state, { type: 'VERIFY_FAILED', error: settingsError }))
         return

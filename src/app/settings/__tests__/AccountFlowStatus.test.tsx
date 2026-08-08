@@ -1,10 +1,25 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AccountFlowStatus } from '../AccountFlowStatus'
+import { NexonRateLimitError } from '../../../nexon/errors'
 import type { MapleAccount } from '../../../types'
+
+// selectingCharacters 단계는 ContentCharacterStep(온보딩과 같은 컴포넌트)이라 마운트 즉시
+// 로스터를 조회한다. ADR-062: 원인 매핑(toScheduleSyncError)은 실물을 쓰고 조회만 대체한다.
+const { getCharacterPickerRosterMock, noticeApiKeyIssueMock } = vi.hoisted(() => ({
+  getCharacterPickerRosterMock: vi.fn(),
+  noticeApiKeyIssueMock: vi.fn(),
+}))
+vi.mock('../../../features/schedule-sync/schedule-sync', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../../features/schedule-sync/schedule-sync')>()),
+  getCharacterPickerRoster: getCharacterPickerRosterMock,
+}))
+vi.mock('../../../features/onboarding/store', () => ({
+  useOnboardingStore: { getState: () => ({ noticeApiKeyIssue: noticeApiKeyIssueMock }) },
+}))
 
 // ADR-113 결정 3: AccountSelectionList는 프로브가 settle 하기 전에는 목록 대신 진행률만 그린다.
 // 이 파일이 보는 것은 "어느 status에서 무엇이 오는가"와 카드 감싸기이므로 기본값은 끝난 것으로 두고,
@@ -15,6 +30,8 @@ vi.mock('../../../features/onboarding/use-account-probes', () => ({
 }))
 
 beforeEach(() => {
+  vi.clearAllMocks()
+  getCharacterPickerRosterMock.mockResolvedValue(undefined)
   useAccountProbesMock.mockReturnValue({
     probes: {},
     isSettled: true,
@@ -236,5 +253,33 @@ describe('AccountFlowStatus', () => {
     )
 
     expect(screen.getByRole('button', { name: '다시 시도' })).toBeInTheDocument()
+  })
+
+  // ADR-116 결정 4(이슈 #178): 이 흐름에서 `ErrorState` 가 그려지는 자리는 error 카드가 아니라
+  // selectingCharacters 다(그 단계가 온보딩과 같은 ContentCharacterStep 을 재사용한다). 온보딩과
+  // 다른 것은 **껍데기** — 여기는 모달이라 "취소"가 항상 남고, 그 위에 안내 모달까지 덮인다.
+  it('selectingCharacters에서 로스터가 429여도 취소와 모달 경로가 남는다', async () => {
+    getCharacterPickerRosterMock.mockRejectedValue(new NexonRateLimitError('rate limited'))
+
+    render(
+      <AccountFlowStatus
+        status="selectingCharacters"
+        accounts={accounts}
+        error={null}
+        prefetchProgress={null}
+        pendingAccountId="a1"
+        isCommitting={false}
+        onCommitCharacters={vi.fn()}
+        onCancel={vi.fn()}
+        onSelectAccount={vi.fn()}
+        onRetry={vi.fn()}
+      />,
+    )
+
+    const errorState = await screen.findByRole('alert')
+    expect(within(errorState).getByText('호출 한도를 초과했습니다')).toBeInTheDocument()
+    expect(within(errorState).queryByRole('button')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '취소' })).toBeInTheDocument()
+    await waitFor(() => expect(noticeApiKeyIssueMock).toHaveBeenCalledExactlyOnceWith('rateLimited'))
   })
 })

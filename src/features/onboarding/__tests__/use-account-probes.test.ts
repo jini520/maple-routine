@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { renderHook, waitFor } from '@testing-library/react'
+import { act, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CharacterBasicProfile, MapleAccount } from '../../../types'
 
@@ -33,7 +33,7 @@ vi.mock('@capacitor/preferences', () => {
 })
 
 import { Preferences } from '@capacitor/preferences'
-import { NexonBadRequestError, NexonNetworkError } from '../../../nexon/errors'
+import { NexonBadRequestError, NexonNetworkError, NexonRateLimitError } from '../../../nexon/errors'
 import {
   getAllCachedCharacterBasicOcids,
   setCachedCharacterBasic,
@@ -104,28 +104,95 @@ describe('useAccountProbes', () => {
     await waitFor(() => expect(result.current.probes['account-1']).toBeDefined())
     expect(result.current.probes['account-1'].representative?.ocid).toBe('ocid-next')
     expect(result.current.probes['account-1'].portraitUrl).toBe('https://example.com/next.png')
-    expect(result.current.probes['account-1'].allUnavailable).toBe(false)
+    expect(result.current.probes['account-1'].verdict).toEqual({ kind: 'queryable' })
   })
 
-  it('전원 조회 불가면 대표가 없고 allUnavailable이 true다', async () => {
+  it('전원 조회 불가면 대표가 없고 판정은 allUnavailable이다', async () => {
     fetchCharacterBasicMock.mockRejectedValue(new NexonBadRequestError('조회 불가', 'OPENAPI00003'))
 
     const { result } = renderHook(() => useAccountProbes(accounts))
 
     await waitFor(() => expect(result.current.probes['account-1']).toBeDefined())
     expect(result.current.probes['account-1'].representative).toBeNull()
-    expect(result.current.probes['account-1'].allUnavailable).toBe(true)
+    expect(result.current.probes['account-1'].verdict).toEqual({ kind: 'allUnavailable' })
   })
 
-  it('네트워크 실패는 영구로 단정하지 않는다 — 후보 자격을 유지하고 초상화만 비운다', async () => {
-    fetchCharacterBasicMock.mockRejectedValue(new NexonNetworkError('offline'))
+  // ADR-116 결정 3: 003 이 아닌 실패는 "확인하지 못했다"이지 "괜찮다"가 아니다. 전에는 catch가
+  // characterUnavailable만 담고 나머지를 버려서, 아무것도 못 본 캐릭터가 전부 "조회 가능"으로
+  // 분류되고 allUnavailable이 **항상 false**가 됐다(위양성이 아니라 위음성 — 이슈 #177).
+  describe('판정 불가 (ADR-116 결정 3)', () => {
+    it('429는 판정 불가이고 allUnavailable이 false로 위장되지 않는다', async () => {
+      fetchCharacterBasicMock.mockRejectedValue(new NexonRateLimitError('429'))
 
-    const { result } = renderHook(() => useAccountProbes(accounts))
+      const { result } = renderHook(() => useAccountProbes(accounts))
 
-    await waitFor(() => expect(result.current.probes['account-1']).toBeDefined())
-    expect(result.current.probes['account-1'].representative?.ocid).toBe('ocid-top')
-    expect(result.current.probes['account-1'].portraitUrl).toBeNull()
-    expect(result.current.probes['account-1'].allUnavailable).toBe(false)
+      await waitFor(() => expect(result.current.probes['account-1']).toBeDefined())
+      expect(result.current.probes['account-1'].verdict).toEqual({
+        kind: 'undetermined',
+        error: { kind: 'rateLimited' },
+      })
+    })
+
+    // ADR-068 결정 4 회귀 가드: 대표 후보는 **성공적으로 확인된 캐릭터**뿐이다. 429로 아무것도 못 본
+    // 캐릭터가 후보로 남으면 그 ADR이 전수 프로브로 없앤 "조회 불가 캐릭터가 계정 표기가 된다"가
+    // 429 경로로 되살아난다.
+    it('429로 확인하지 못한 캐릭터는 대표로 뽑히지 않는다', async () => {
+      fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) => {
+        if (ocid === 'ocid-top') throw new NexonRateLimitError('429')
+        return profile({ name: '정상차상위', level: 250, imageUrl: 'https://example.com/next.png' })
+      })
+
+      const { result } = renderHook(() => useAccountProbes(accounts))
+
+      await waitFor(() => expect(result.current.probes['account-1']).toBeDefined())
+      expect(result.current.probes['account-1'].representative?.ocid).toBe('ocid-next')
+      // 확인한 캐릭터가 있어도 못 본 캐릭터가 남았으면 그 계정은 여전히 판정 불가다.
+      expect(result.current.probes['account-1'].verdict.kind).toBe('undetermined')
+    })
+
+    // 429만이 아니라 003이 아닌 **모든** 실패를 하나로 묶는다(사용자 결정) — 어느 쪽이든 그 계정에
+    // 대해 알아낸 것이 없다는 사실은 같다.
+    it('네트워크 실패도 판정 불가다', async () => {
+      fetchCharacterBasicMock.mockRejectedValue(new NexonNetworkError('offline'))
+
+      const { result } = renderHook(() => useAccountProbes(accounts))
+
+      await waitFor(() => expect(result.current.probes['account-1']).toBeDefined())
+      expect(result.current.probes['account-1'].representative).toBeNull()
+      expect(result.current.probes['account-1'].portraitUrl).toBeNull()
+      expect(result.current.probes['account-1'].verdict).toEqual({
+        kind: 'undetermined',
+        error: { kind: 'network' },
+      })
+    })
+
+    it('성공과 003만 있으면 판정 불가가 아니다', async () => {
+      fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) => {
+        if (ocid === 'ocid-top') throw new NexonBadRequestError('조회 불가', 'OPENAPI00003')
+        return profile()
+      })
+
+      const { result } = renderHook(() => useAccountProbes(accounts))
+
+      await waitFor(() => expect(result.current.probes['account-1']).toBeDefined())
+      expect(result.current.probes['account-1'].verdict).toEqual({ kind: 'queryable' })
+    })
+
+    it('retry 는 프로브를 처음부터 다시 돈다', async () => {
+      fetchCharacterBasicMock.mockRejectedValue(new NexonNetworkError('offline'))
+
+      const { result } = renderHook(() => useAccountProbes(accounts))
+
+      await waitFor(() => expect(result.current.isSettled).toBe(true))
+      fetchCharacterBasicMock.mockResolvedValue(profile())
+
+      act(() => {
+        result.current.retry()
+      })
+
+      await waitFor(() => expect(result.current.probes['account-1']?.verdict.kind).toBe('queryable'))
+      expect(result.current.progress).toEqual({ completed: 2, total: 2 })
+    })
   })
 
   it('API 키가 없으면 아무것도 호출하지 않는다', async () => {

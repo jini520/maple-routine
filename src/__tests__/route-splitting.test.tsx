@@ -54,6 +54,9 @@ vi.mocked(useOnboardingStore).mockReturnValue({
   accounts: [],
   selectedAccountId: 'account-1',
   error: null,
+  // ADR-116 결정 1: 이 셸 테스트는 "알림 없음" 상태를 세운다 — 빠뜨리면 ApiKeyNoticeModal 이
+  // 모든 라우트 위에 떠서 라우팅 단언이 통째로 어긋난다.
+  apiKeyNotice: null,
   restoreFromStorage: vi.fn(),
   submitApiKey: vi.fn(),
   selectAccount: vi.fn(),

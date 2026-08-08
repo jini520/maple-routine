@@ -2,9 +2,12 @@ import { AlertTriangle } from 'lucide-react'
 import type { MapleAccount } from '../../types'
 import { pickRepresentativeCharacter } from '../../features/onboarding/representative-character'
 import { useAccountProbes } from '../../features/onboarding/use-account-probes'
+import { useApiKeyNotice } from '../../features/onboarding/use-api-key-notice'
+import { formatRosterError } from '../../features/schedule-sync/format'
 import { worldEmblemUrl } from '../../lib/world-emblem'
 import { useState } from 'react'
 import { Button } from '../../components/atoms/Button/Button'
+import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { ProgressBar } from '../../components/atoms/ProgressBar/ProgressBar'
 
 // BossProfitScreen의 CharacterAvatar와 동일한 얼굴 크롭 방식(ADR-015) — character/basic이
@@ -40,7 +43,23 @@ export function AccountSelectionList(props: AccountSelectionListProps): React.JS
   const [highlightedAccountId, setHighlightedAccountId] = useState<string | null>(
     props.accounts.length === 1 ? props.accounts[0].accountId : null,
   )
-  const { probes, isSettled, progress } = useAccountProbes(props.accounts)
+  const { probes, isSettled, progress, retry } = useAccountProbes(props.accounts)
+
+  // ADR-116 결정 3: 003이 아닌 실패는 "확인하지 못했다"이지 "괜찮다"가 아니다. 판정 못 한 계정이
+  // 하나라도 있으면 목록을 그리지 않는다 — ADR-113 결정 3("모르는 동안은 보여주지도 않는다")을
+  // 429에도 적용한 것이다. 전에는 프로브가 429를 조용히 버려 못 쓰는 계정이 정상으로 보이고
+  // 선택됐고, 고르면 그대로 온보딩 캐릭터 선택의 잠금이었다(이슈 #177 → #176 인과).
+  const undetermined = Object.values(probes).flatMap((probe) =>
+    probe.verdict.kind === 'undetermined' ? [probe.verdict.error] : [],
+  )
+  // 429만 안내 모달로 보낸다 — 이 원인만 처방이 "키 교체"라 이 화면에서 할 수 있는 것이 없다
+  // (ADR-116 결정 1의 사슬: 닫을 수 없는 모달 → 확인 → 키 입력 화면). 그 외(네트워크 등)는
+  // 원인을 모르므로 키를 지울 근거가 없고, 아래 ErrorState가 재시도를 준다.
+  //
+  // 원인이 섞이면 429를 앞세운다 — 출구를 쥔 쪽이라 그것을 먼저 말해야 화면과 모달이 같은
+  // 이야기를 한다. 값은 프로브가 만든 객체 그대로라 재렌더에도 참조가 유지된다(훅의 dep).
+  const rateLimited = undetermined.find((error) => error.kind === 'rateLimited') ?? null
+  useApiKeyNotice(rateLimited)
 
   // ADR-113 결정 3: 전수 프로브가 settle 하기 전에는 목록을 그리지 않는다. 전에는 잠정 대표로
   // 카드를 먼저 그렸다가 결과가 오면 경고를 붙이고 비활성으로 바꿨는데, 그것은 고를 수 없는 카드를
@@ -65,6 +84,27 @@ export function AccountSelectionList(props: AccountSelectionListProps): React.JS
     )
   }
 
+  // ADR-116 결정 4: 이 자리에서 사용자가 앞으로 갈 수 있어야 한다. 429는 위 모달이 덮으므로
+  // 여기 액션이 없어도 막다른 길이 아니고(그래서 formatRosterError의 429에 액션이 없는 것과
+  // 어긋나지 않는다), 그 외 원인은 재시도가 실제 처방이다.
+  //
+  // 문구는 formatRosterError를 그대로 쓴다 — 이 프로브도 "계정의 캐릭터 정보를 못 불러왔다"라
+  // 같은 어휘이고, 새 포맷터를 만들면 원인별 문구 표가 세 벌이 된다(ADR-114 결정 3이 배너를
+  // 따로 뗀 근거는 "담을 수 있는 양과 액션 규칙이 다르다"였는데 여기는 둘 다 같다).
+  // place는 'onboarding' — 이 화면에는 키를 바꿀 자리가 없어 401도 재시도가 처방이다.
+  if (undetermined.length > 0) {
+    const copy = formatRosterError(rateLimited ?? undetermined[0], 'onboarding')
+    return (
+      <div className="flex w-full flex-col">
+        <ErrorState
+          title={copy.title}
+          description={copy.description}
+          action={copy.action === undefined ? undefined : { label: copy.action.label, onClick: retry }}
+        />
+      </div>
+    )
+  }
+
   return (
     <div className="w-full space-y-4">
       <p className="text-sm text-text">사용할 메이플 ID를 선택해주세요.</p>
@@ -85,7 +125,7 @@ export function AccountSelectionList(props: AccountSelectionListProps): React.JS
           // "최소 1명"(결정 7)을 만족할 수 없어 온보딩이 진행 불가 상태로 멈춘다.
           // 목록이 프로브 뒤에 그려지므로 이 판정은 처음부터 확정이다(ADR-113 결정 3) —
           // 나중에 비활성으로 바뀌는 카드가 없다.
-          const isUnselectable = probe?.allUnavailable === true
+          const isUnselectable = probe?.verdict.kind === 'allUnavailable'
 
           return (
             <li key={account.accountId}>
@@ -131,7 +171,7 @@ export function AccountSelectionList(props: AccountSelectionListProps): React.JS
                   {/* ADR-068 결정 4: 전원 조회 불가는 고른 뒤가 아니라 **고르기 전에** 알린다 —
                       고르면 피커가 빈 목록이 되고 아무 설명이 없었다. 전수 프로브라 "이 계정
                       전체"를 단정할 수 있다(표본 1명으로는 못 한다). */}
-                  {probe?.allUnavailable === true && (
+                  {isUnselectable && (
                     <span className="mt-0.5 flex items-start gap-1.5 text-xs font-medium text-error-ink">
                       <AlertTriangle className="mt-px h-3.5 w-3.5 flex-none" strokeWidth={2} aria-hidden="true" />
                       이 계정의 캐릭터를 조회할 수 없습니다
@@ -151,7 +191,7 @@ export function AccountSelectionList(props: AccountSelectionListProps): React.JS
         disabled={
         highlightedAccountId === null ||
         props.isSubmitting ||
-        probes[highlightedAccountId]?.allUnavailable === true
+        probes[highlightedAccountId]?.verdict.kind === 'allUnavailable'
         }
         onClick={() => {
         if (highlightedAccountId !== null) props.onSelect(highlightedAccountId)

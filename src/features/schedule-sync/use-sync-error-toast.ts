@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useToastStore } from '../toast/store'
-import { useApiKeyInvalidation } from '../onboarding/use-api-key-invalidation'
+import { useApiKeyNotice } from '../onboarding/use-api-key-notice'
 import { formatScheduleSyncError } from './format'
 import type { ScheduleSyncError } from './schedule-sync'
 
@@ -38,8 +38,9 @@ export function useScheduleSyncErrorToast(
   const lastShownRef = useRef<ScheduleSyncError | null>(null)
   const actionsRef = useLatestRef(actions)
 
-  // 401/403은 이 훅이 처리하지 않고 키 무효화 경로로 넘긴다([[ADR-115]] 결정 7).
-  useApiKeyInvalidation(error)
+  // 무효 키(401/403·400 00005)와 429는 이 훅이 처리하지 않고 키 재입력 경로로 넘긴다
+  // ([[ADR-115]] 결정 7 · [[ADR-116]] 결정 1).
+  useApiKeyNotice(error)
 
   useEffect(() => {
     if (error === null || lastShownRef.current === error) {
@@ -47,22 +48,24 @@ export function useScheduleSyncErrorToast(
     }
     lastShownRef.current = error
 
-    // ADR-115 결정 10: 이 훅은 무효 키에 아무 토스트도 띄우지 않는다 — 그 원인은 토스트가 아니라
-    // **닫을 수 없는 모달**로 알린다(useApiKeyInvalidation → ApiKeyInvalidModal). 토스트는 스스로
-    // 사라져 놓칠 수 있는데, 이 실패는 확인하고 넘어가야 하는 종류다.
-    // 옛 액션(`설정 열기`)은 설정으로 보냈지만 그곳에는 키를 바꿀 자리가 없어 막다른 길이었다(결정 7).
-    if (error.kind === 'invalidApiKey') {
+    // ADR-115 결정 10 · ADR-116 결정 1: 이 훅은 **저장된 키로는 앞으로 갈 수 없는** 두 원인에
+    // 아무 토스트도 띄우지 않는다 — 그 원인은 토스트가 아니라 **닫을 수 없는 모달**로 알린다
+    // (useApiKeyNotice → ApiKeyNoticeModal). 토스트는 스스로 사라져 놓칠 수 있는데, 이 실패들은
+    // 확인하고 넘어가야 하는 종류다. 옛 액션(`설정 열기`)은 설정으로 보냈지만 그곳에는 키를 바꿀
+    // 자리가 없어 막다른 길이었다(결정 7).
+    // 429가 여기 합류하면서 옛 "액션 없는 문구만" 처리가 사라진다 — 모달이 원인과 처방을 함께
+    // 말하므로 같은 사실을 토스트로 한 번 더 말하지 않는다.
+    if (error.kind === 'invalidApiKey' || error.kind === 'rateLimited') {
       return
     }
 
     const { showError } = useToastStore.getState()
     const message = formatScheduleSyncError(error)
 
-    // 누를 수 있는 버튼을 주지 않는 두 종류. rateLimited는 지금 누르면 또 429이고,
-    // characterUnavailable(400 OPENAPI00003)은 **영구**라 언제 눌러도 같은 400이다
-    // ([[ADR-062]] 결정 3·[[ADR-067]] 결정 1). 후자는 캐릭터별 실패가 이 훅을 타면서
-    // 처음 도달했다([[ADR-083]] 결정 2) — 그전까지 전역 error에는 올 수 없는 종류였다.
-    if (error.kind === 'rateLimited' || error.kind === 'characterUnavailable') {
+    // 누를 수 있는 버튼을 주지 않는 종류. characterUnavailable(400 OPENAPI00003)은 **영구**라
+    // 언제 눌러도 같은 400이다([[ADR-062]] 결정 3·[[ADR-067]] 결정 1). 캐릭터별 실패가 이 훅을
+    // 타면서 처음 도달했다([[ADR-083]] 결정 2) — 그전까지 전역 error에는 올 수 없는 종류였다.
+    if (error.kind === 'characterUnavailable') {
       showError(message)
       return
     }

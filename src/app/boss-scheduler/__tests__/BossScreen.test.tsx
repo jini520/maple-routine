@@ -7,15 +7,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { BossScreen } from '../BossScreen'
 import { useBossSchedulerStore, type BossCharacterView } from '../../../features/boss-scheduler/store'
 import { getCharacterPickerRoster } from '../../../features/schedule-sync/schedule-sync'
-import { NexonAuthError } from '../../../nexon/errors'
+import { NexonAuthError, NexonRateLimitError } from '../../../nexon/errors'
 import { PULL_SETTLE_TRANSITION } from '../../../lib/pull-to-refresh'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 import type { CharacterPickerEntry } from '../../../types'
 import type { MatchedBoss } from '../../../lib/boss-matching'
 // ADR-063: 동기화 실패·일부 캐릭터 실패·파티원 수 저장 실패는 인라인 문단이 아니라 토스트로 알린다.
-const { showErrorMock, noticeApiKeyInvalidMock } = vi.hoisted(() => ({
+const { showErrorMock, noticeApiKeyIssueMock } = vi.hoisted(() => ({
   showErrorMock: vi.fn(),
-  noticeApiKeyInvalidMock: vi.fn(),
+  noticeApiKeyIssueMock: vi.fn(),
 }))
 vi.mock('../../../features/toast/store', () => ({
   useToastStore: { getState: () => ({ showError: showErrorMock, showSuccess: vi.fn(), showInfo: vi.fn() }) },
@@ -23,7 +23,7 @@ vi.mock('../../../features/toast/store', () => ({
 
 // ADR-115 결정 7: 401은 동기화 토스트도 피커 로스터도 이 진입점 하나로 위임한다.
 vi.mock('../../../features/onboarding/store', () => ({
-  useOnboardingStore: { getState: () => ({ noticeApiKeyInvalid: noticeApiKeyInvalidMock }) },
+  useOnboardingStore: { getState: () => ({ noticeApiKeyIssue: noticeApiKeyIssueMock }) },
 }))
 
 
@@ -199,6 +199,21 @@ describe('BossScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: '캐릭터 선택하기' }))
 
     expect(await screen.findByRole('button', { name: /내옆에최성일/ })).toBeInTheDocument()
+  })
+
+  // ADR-116 결정 4(이슈 #178의 두 번째 증상): 컨텐츠 스케줄러와 구조가 같다 — 빈 상태의 유일한
+  // 액션이 피커 열기라, 피커가 429로 0건이면 닫아도 같은 EmptyState로 돌아오는 루프였다. 여는
+  // 순간 진입점이 불려 안내 모달이 덮이므로 루프가 끊긴다.
+  it('빈 상태에서 연 피커가 429면 EmptyState 루프가 아니라 키 재입력 경로로 나간다', async () => {
+    mockStore({ status: 'loaded', trackedOcids: [], characters: [] })
+    mockedGetCharacterPickerRoster.mockRejectedValue(new NexonRateLimitError('rate limited'))
+
+    renderBossScreen()
+    await screen.findByText('표시할 캐릭터가 없습니다')
+
+    fireEvent.click(screen.getByRole('button', { name: '캐릭터 선택하기' }))
+
+    await waitFor(() => expect(noticeApiKeyIssueMock).toHaveBeenCalledExactlyOnceWith('rateLimited'))
   })
 
   it('openPicker 쿼리 파라미터로 진입하면 캐릭터 관리 피커가 자동으로 열린다', async () => {
@@ -666,7 +681,7 @@ describe('BossScreen', () => {
   })
 
   // ADR-115 결정 1·7: 401은 이 화면이 토스트로 알리지 않는다 — 문구·이동·저장소 삭제가 전부
-  // noticeApiKeyInvalid() 안에 있다. 여기서 확인할 것은 그 진입점에 도달하는가뿐이다.
+  // noticeApiKeyIssue() 안에 있다. 여기서 확인할 것은 그 진입점에 도달하는가뿐이다.
   it('status가 error이고 401이면 토스트 대신 키 무효화 경로로 넘긴다', async () => {
     mockStore({
       status: 'error',
@@ -677,10 +692,26 @@ describe('BossScreen', () => {
 
     renderBossScreen()
 
-    await waitFor(() => expect(noticeApiKeyInvalidMock).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(noticeApiKeyIssueMock).toHaveBeenCalledTimes(1))
     expect(showErrorMock).not.toHaveBeenCalled()
     expect(screen.queryByText('API 키가 유효하지 않습니다')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: '설정 열기' })).not.toBeInTheDocument()
+  })
+
+  // ADR-116 결정 1: 429도 같은 사슬이다 — 전에는 액션 없는 토스트 한 줄이라 그 자리에서 할 수
+  // 있는 일이 없었다. 이제 모달이 원인과 처방("서비스 단계 키로 다시 입력")을 함께 말한다.
+  it('status가 error이고 429면 토스트 대신 키 재입력 경로로 넘긴다', async () => {
+    mockStore({
+      status: 'error',
+      trackedOcids: ['ocid-1'],
+      error: { kind: 'rateLimited' },
+      characters: [character({ ocid: 'ocid-1' })],
+    })
+
+    renderBossScreen()
+
+    await waitFor(() => expect(noticeApiKeyIssueMock).toHaveBeenCalledExactlyOnceWith('rateLimited'))
+    expect(showErrorMock).not.toHaveBeenCalled()
   })
 
   it('network 실패는 토스트에 다시 시도 액션을 붙이고, 누르면 refresh가 호출된다', async () => {
@@ -1268,17 +1299,28 @@ describe('BossScreen — 캐릭터 관리 피커 후보 목록 로딩 (ADR-053)'
     await renderAndOpenPicker()
     await roster.reject(new NexonAuthError('Nexon API 키가 유효하지 않습니다'))
 
-    await waitFor(() => expect(noticeApiKeyInvalidMock).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(noticeApiKeyIssueMock).toHaveBeenCalledTimes(1))
   })
 
-  it('로스터 조회가 401이 아닌 실패면 키 무효화 경로를 타지 않는다', async () => {
+  // ADR-116 결정 1: 429도 같은 진입점을 탄다 — 피커 본문은 목록이 없는 자리라 액션을 빼면 아무
+  // 길도 남지 않는데, 그 출구를 모달이 준다(이슈 #178).
+  it('로스터 조회가 429로 실패하면 키 재입력 경로로 넘긴다', async () => {
+    const roster = deferRoster()
+
+    await renderAndOpenPicker()
+    await roster.reject(new NexonRateLimitError('rate limited'))
+
+    await waitFor(() => expect(noticeApiKeyIssueMock).toHaveBeenCalledExactlyOnceWith('rateLimited'))
+  })
+
+  it('로스터 조회가 401·429가 아닌 실패면 키 재입력 경로를 타지 않는다', async () => {
     const roster = deferRoster()
 
     await renderAndOpenPicker()
     await roster.reject(new Error('network'))
     await screen.findByText('캐릭터 목록을 불러오지 못했습니다')
 
-    expect(noticeApiKeyInvalidMock).not.toHaveBeenCalled()
+    expect(noticeApiKeyIssueMock).not.toHaveBeenCalled()
   })
 
   // ADR-062 결정 4: 캐시 stub이 방출된 뒤 실패하면(예열이 끝난 정상 경로의 기본 분기) 목록을

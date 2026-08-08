@@ -22,9 +22,9 @@ const { prefetchAccountDataMock } = vi.hoisted(() => ({
   prefetchAccountDataMock: vi.fn(),
 }))
 
-const { onboardingResetMock, noticeApiKeyInvalidMock } = vi.hoisted(() => ({
+const { onboardingResetMock, noticeApiKeyIssueMock } = vi.hoisted(() => ({
   onboardingResetMock: vi.fn(),
-  noticeApiKeyInvalidMock: vi.fn(),
+  noticeApiKeyIssueMock: vi.fn(),
 }))
 
 const { setTrackedCharacterOcidsMock, seedManualTrackedContentMock, trackingModeRef } = vi.hoisted(
@@ -51,7 +51,7 @@ vi.mock('../../onboarding/prefetch', () => ({
 
 vi.mock('../../onboarding/store', () => ({
   useOnboardingStore: {
-    getState: () => ({ reset: onboardingResetMock, noticeApiKeyInvalid: noticeApiKeyInvalidMock }),
+    getState: () => ({ reset: onboardingResetMock, noticeApiKeyIssue: noticeApiKeyIssueMock }),
   },
 }))
 
@@ -92,7 +92,7 @@ beforeEach(() => {
   setSelectedAccountIdMock.mockResolvedValue(undefined)
   prefetchAccountDataMock.mockResolvedValue(undefined)
   onboardingResetMock.mockResolvedValue(undefined)
-  noticeApiKeyInvalidMock.mockResolvedValue(undefined)
+  noticeApiKeyIssueMock.mockResolvedValue(undefined)
   setTrackedCharacterOcidsMock.mockResolvedValue(undefined)
   seedManualTrackedContentMock.mockResolvedValue(undefined)
   trackingModeRef.current = 'auto'
@@ -170,11 +170,13 @@ describe('useSettingsStore.changeApiKey', () => {
 
     await useSettingsStore.getState().changeApiKey('new-key')
 
-    expect(noticeApiKeyInvalidMock).not.toHaveBeenCalled()
+    expect(noticeApiKeyIssueMock).not.toHaveBeenCalled()
     expect(useSettingsStore.getState().status).toBe('error')
   })
 
-  it('NexonRateLimitError(429)를 만나면 rateLimited error가 된다', async () => {
+  // ADR-115 결정 8 · ADR-116: refreshAccounts 의 429는 알림 경로로 가지만 여기는 아니다 —
+  // 이 경로의 실패는 "사용자가 방금 입력한 키"에 대한 것이라 보낼 곳(키 입력 화면)에 이미 있다.
+  it('NexonRateLimitError(429)를 만나면 rateLimited error가 되고 알림 진입점을 부르지 않는다', async () => {
     fetchCharacterListMock.mockRejectedValue(new NexonRateLimitError('rate limited'))
 
     await useSettingsStore.getState().changeApiKey('new-key')
@@ -182,6 +184,7 @@ describe('useSettingsStore.changeApiKey', () => {
     const state = useSettingsStore.getState()
     expect(state.status).toBe('error')
     expect(state.error).toEqual({ kind: 'rateLimited' })
+    expect(noticeApiKeyIssueMock).not.toHaveBeenCalled()
   })
 
   it('그 외 에러(네트워크 등)를 만나면 network error가 된다', async () => {
@@ -271,7 +274,7 @@ describe('useSettingsStore.refreshAccounts', () => {
 
     await useSettingsStore.getState().refreshAccounts()
 
-    expect(noticeApiKeyInvalidMock).toHaveBeenCalledTimes(1)
+    expect(noticeApiKeyIssueMock).toHaveBeenCalledTimes(1)
     const state = useSettingsStore.getState()
     // 화면은 곧 /onboarding 으로 간다(결정 2). 지나간 실패를 남겨 두면 설정을 다시 열었을 때
     // 되살아나고, idle 복귀는 AccountModal 의 닫힘 판정이기도 하다.
@@ -286,21 +289,22 @@ describe('useSettingsStore.refreshAccounts', () => {
 
     await useSettingsStore.getState().refreshAccounts()
 
-    expect(noticeApiKeyInvalidMock).toHaveBeenCalledTimes(1)
+    expect(noticeApiKeyIssueMock).toHaveBeenCalledTimes(1)
     expect(useSettingsStore.getState().status).toBe('idle')
   })
 
-  // 회귀 가드: 나머지 원인은 그대로 인라인 카드(ADR-063 — 모달 본문 전체를 차지하는 자리라
-  // 토스트로 옮기면 빈 상자가 된다)에 남는다.
-  it('NexonRateLimitError를 만나면 rateLimited error가 되고 무효화 경로를 타지 않는다', async () => {
+  // ADR-116 결정 1: 429도 저장된 키로는 앞으로 갈 수 없다는 점이 같다 — 인라인 카드가 줄 수 있는
+  // 것은 "다시 시도"뿐인데 눌러도 또 429라 막다른 길이었다. 처방("서비스 단계 키로 다시 입력")이
+  // 무효 키와 같으므로 화면도 같다.
+  it('NexonRateLimitError를 만나면 rateLimited 알림으로 넘기고 idle로 돌아간다', async () => {
     fetchCharacterListMock.mockRejectedValue(new NexonRateLimitError('rate limited'))
 
     await useSettingsStore.getState().refreshAccounts()
 
-    expect(noticeApiKeyInvalidMock).not.toHaveBeenCalled()
+    expect(noticeApiKeyIssueMock).toHaveBeenCalledExactlyOnceWith('rateLimited')
     const state = useSettingsStore.getState()
-    expect(state.status).toBe('error')
-    expect(state.error).toEqual({ kind: 'rateLimited' })
+    expect(state.status).toBe('idle')
+    expect(state.error).toBeNull()
   })
 
   it('그 외 에러(네트워크 등)를 만나면 network error가 되고 무효화 경로를 타지 않는다', async () => {
@@ -308,7 +312,7 @@ describe('useSettingsStore.refreshAccounts', () => {
 
     await useSettingsStore.getState().refreshAccounts()
 
-    expect(noticeApiKeyInvalidMock).not.toHaveBeenCalled()
+    expect(noticeApiKeyIssueMock).not.toHaveBeenCalled()
     const state = useSettingsStore.getState()
     expect(state.status).toBe('error')
     expect(state.error).toEqual({ kind: 'network' })

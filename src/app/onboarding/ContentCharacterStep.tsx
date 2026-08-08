@@ -8,6 +8,7 @@ import { StaleBanner } from '../../components/molecules/ErrorState/StaleBanner'
 import { MapleSpinner } from '../../components/atoms/MapleSpinner/MapleSpinner'
 import { MapleSweepSpinner } from '../../components/atoms/MapleSweepSpinner/MapleSweepSpinner'
 import { formatRosterError, formatStaleRosterError } from '../../features/schedule-sync/format'
+import { useApiKeyNotice } from '../../features/onboarding/use-api-key-notice'
 import { getCharacterPickerRoster, toScheduleSyncError } from '../../features/schedule-sync/schedule-sync'
 import type { ScheduleSyncError } from '../../features/schedule-sync/schedule-sync'
 import type { CharacterPickerEntry } from '../../types'
@@ -159,6 +160,22 @@ export function ContentCharacterStep(props: ContentCharacterStepProps): React.JS
       cancelled = true
     }
   }, [rosterReloadNonce, accountId])
+
+  // ADR-116 결정 2: 이 자리의 429는 **하드 잠금**이다(이슈 #176) — 로스터가 비어 "계속하기"가 영구
+  // 비활성이고, "다시 시도"는 같은 키로 또 429이며, 탈출구(계정 다시 선택)는 *확정된* 빈 상태
+  // 가지에만 붙고, 온보딩 단계는 라우트가 아니라 status switch라 뒤로 갈 수도 없다. 재시작해도
+  // deriveResumeTarget이 같은 단계로 되돌린다. 그 자리를 여는 것이 이 배선이다.
+  //
+  // [[ADR-115]] 시절 이 화면을 **일부러 배선하지 않은** 근거는 "온보딩 중에는 status가 completed가
+  // 아니라 어차피 no-op"이었다. 그 근거는 step 1의 가드 변경으로 무효가 됐다 — 이제 가드는
+  // "키 입력 화면(awaitingApiKey·verifyingApiKey)에서만 알리지 않는다"라 여기서도 모달이 뜬다.
+  // 되돌리지 말 것: 배선을 빼면 #176의 잠금이 그대로 되살아난다.
+  //
+  // 넘기는 것은 **429뿐**이다([[ADR-116]] 결정 2). 이 자리의 401은 "사용자가 방금 입력한 키가
+  // 나쁘다"는 뜻이라 성질이 다르고, 그래서 계속 폼 자체의 실패로 남는다 — 아래 ErrorState가 주는
+  // 재시도가 실제 처방이다([[ADR-062]] 결정 3). 근거가 "가드가 어차피 막는다"에서 "이 자리를
+  // 배선하지 않는다"로 내려온 것이지 결론이 바뀐 것이 아니다.
+  useApiKeyNotice(rosterError?.kind === 'rateLimited' ? rosterError : null)
 
   return (
     <div className="w-full space-y-4">
