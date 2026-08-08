@@ -2,6 +2,7 @@ import { AlertTriangle, CheckCircle2, CloudDownload, Info, Signal, Store } from 
 import { Modal } from '../components/organisms/Modal/Modal'
 import { useLiveUpdateStore, type LiveUpdateStatus } from '../features/live-update/store'
 import { ProgressBar } from '../components/atoms/ProgressBar/ProgressBar'
+import { MapleSweepSpinner } from '../components/atoms/MapleSweepSpinner/MapleSweepSpinner'
 import { Badge } from '../components/atoms/Badge/Badge'
 
 // 사용자 동의형 업데이트 모달 — 실행 시(또는 설정에서 수동 확인 시) 새 버전이 있으면 뜬다(ADR-027).
@@ -14,6 +15,11 @@ const MODAL_STATUSES: ReadonlySet<LiveUpdateStatus> = new Set([
   // ADR-065 결정 2: 사용자가 시작한 다운로드의 실패만 모달로 알린다. 매니페스트 조회 실패
   // ('check-error')는 자동 확인일 수 있어 여기 넣지 않는다 — 설정 상태 행에만 남는다.
   'download-error',
+  // ADR-117 결정 7: 둘 다 사용자가 [지금 적용]을 눌러 시작한 흐름이라 위 분류를 그대로 따른다.
+  // 'applying'은 커버가 닫기 뒤로 밀린 구간(최대 5초)의 정직한 피드백이고, 'apply-error'는
+  // 그 흐름의 실패라 download-error 와 같은 층이다.
+  'applying',
+  'apply-error',
 ])
 
 function formatSize(bytes: number): string {
@@ -82,14 +88,15 @@ export function UpdatePromptModal(): React.JSX.Element | null {
 
   if (!MODAL_STATUSES.has(status)) return null
 
-  const isDownloading = status === 'downloading'
+  // 다운로드·적용이 도는 동안은 되돌릴 수 없거나 되돌리면 안 되는 구간이다.
+  const isInProgress = status === 'downloading' || status === 'applying'
   const sizeText = availableSize !== null ? formatSize(availableSize) : ''
 
   return (
-    // 다운로드 중에는 배경 탭으로 닫히지 않게 한다(진행 중 취소 방지). 폭은 살짝 좁게(max-w-xs).
+    // 진행 중에는 배경 탭으로 닫히지 않게 한다(진행 중 취소 방지). 폭은 살짝 좁게(max-w-xs).
     // 입력이 없어 키보드를 띄우지 않으므로 중앙에 그대로 둔다 — 다른 모달은 상단 정렬이 기본이다.
     <Modal
-      onClose={isDownloading ? () => {} : dismiss}
+      onClose={isInProgress ? () => {} : dismiss}
       testId="update-prompt-overlay"
       align="center"
     >
@@ -143,6 +150,20 @@ export function UpdatePromptModal(): React.JSX.Element | null {
                   쓰던 h-2 변형을 없앤다. */}
               <ProgressBar percent={downloadProgress} animated fillTestId="update-progress-bar" />
               <p className="text-xs font-medium text-text-muted tabular-nums">{downloadProgress}%</p>
+            </div>
+          )}
+
+          {/* ADR-117 결정 7: 커버가 닫기 뒤로 밀린 구간(최대 5초). 적용은 퍼센트가 나오지 않아
+              결정형 진행률을 쓰지 않고(가짜로 채우면 거짓 정보다) 모달 안 대기의 규격대로
+              스윕 스피너 + 문구만 둔다(ADR-061 결정 1·2). 버튼은 두지 않는다 — 되돌릴 수 없는
+              구간이고, dismiss 가 downloadedBundleId 를 비우면 재시도할 번들 참조를 잃는다. */}
+          {status === 'applying' && (
+            <div className="space-y-3" role="status" aria-busy="true">
+              <MapleSweepSpinner size={32} className="mx-auto text-primary" />
+              <div className="space-y-2">
+                <h2 className="text-base font-semibold text-text">적용하고 있어요</h2>
+                <p className="text-xs text-text-muted">잠시 뒤 앱이 다시 시작돼요.</p>
+              </div>
             </div>
           )}
 
@@ -201,6 +222,29 @@ export function UpdatePromptModal(): React.JSX.Element | null {
               </div>
               <div className="space-y-1">
                 <button type="button" onClick={() => void startDownload()} className={PRIMARY_BTN}>
+                  다시 시도
+                </button>
+                <button type="button" onClick={dismiss} className={GHOST_BTN}>
+                  나중에
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* ADR-117 결정 1: 적용이 실패·타임아웃해도 화면은 돌아온다. download-error 와 같은
+              골격이되 주 동작이 다르다 — 받아둔 번들이 그대로 살아 있어 다시 받지 않고 apply()
+              만 다시 부른다(스토어가 downloadedBundleId 를 비우지 않는다). */}
+          {status === 'apply-error' && (
+            <>
+              <IconBadge icon={AlertTriangle} tone="error" />
+              <div className="space-y-2">
+                <h2 className="text-base font-semibold text-text">업데이트를 적용하지 못했습니다</h2>
+                <p className="text-sm text-text-muted">
+                  받아둔 파일은 그대로 있습니다. 다시 받지 않고 적용만 다시 시도합니다.
+                </p>
+              </div>
+              <div className="space-y-1">
+                <button type="button" onClick={() => void apply()} className={PRIMARY_BTN}>
                   다시 시도
                 </button>
                 <button type="button" onClick={dismiss} className={GHOST_BTN}>

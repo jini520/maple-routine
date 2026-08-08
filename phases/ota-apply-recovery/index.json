@@ -45,7 +45,10 @@
     {
       "step": 5,
       "name": "apply-error-modal",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-08T23:58:13+0900",
+      "completed_at": "2026-08-09T00:06:40+0900",
+      "summary": "ADR-117 결정 7·결정 1(UX 부분) 구현 — UpdatePromptModal.tsx 와 그 테스트 두 파일만. step 4 가 만든 두 상태에 화면을 준다(그 전까지는 MODAL_STATUSES 에 없어 `지금 적용` 을 누르면 모달이 소리 없이 사라졌다). ① MODAL_STATUSES 에 'applying'·'apply-error' 추가 — 둘 다 사용자가 [지금 적용] 을 눌러 시작한 흐름이라 ADR-065 결정 2 의 '사용자가 시작한 실패는 모달' 분류를 그대로 따른다는 근거를 주석에. ② **'applying' 분기** — 문구는 제목 `적용하고 있어요`(ADR-061 결정 9 대기 문구) + 부연 `잠시 뒤 앱이 다시 시작돼요.`, 마크는 **MapleSweepSpinner size={32} className=\"mx-auto text-primary\"**(ADR-061 결정 1 의 '모달 = 24/32px 스윕' — 모달 안이라 LoadingState 셸 카드는 씌우지 않는다, 결정 2). **ProgressBar 를 쓰지 않는다**(적용은 퍼센트가 나오지 않아 결정형 진행률은 거짓 정보) · **버튼 0개**(`나중에` 도 없다 — dismiss 가 downloadedBundleId 를 비워 재시도 경로를 없앤다). 텍스트가 유일한 신호라 래퍼에 role=\"status\" aria-busy=\"true\"(LoadingState 와 같은 계약, 스피너 자체는 aria-hidden). ③ 배경 탭 가드 확장 — `isDownloading` → **`isInProgress = status === 'downloading' || status === 'applying'`**, onClose 는 그 값으로만 갈리므로 다른 6개 분기 동작 불변. ④ **'apply-error' 분기** — download-error 와 같은 골격(IconBadge tone=\"error\" + AlertTriangle · PRIMARY_BTN + GHOST_BTN)에 제목 `업데이트를 적용하지 못했습니다` · 설명 `받아둔 파일은 그대로 있습니다. 다시 받지 않고 적용만 다시 시도합니다.`(어미 ~습니다, ADR-062 결정 5) · **주 동작 `다시 시도` → apply()**(startDownload 아님 — 번들이 살아 있다는 step 4 계약에 기댄다) · 부 동작 `나중에` → dismiss(). 테스트 +3(새 파일 0): applying 은 진행 문구 표시 + queryByRole('button') 0개 + progressbar 없음 · applying 배경 탭에 dismiss 미호출 · apply-error 는 apply 1회 **그리고 startDownload 0회** + 나중에 → dismiss. **판별력 확인**: apply-error 의 onClick 을 startDownload 로 바꾸자 **그 케이스 1건만** 실패(11 passed/1 failed)함을 실행으로 확인 후 되돌렸다(두 실패 분기를 가르는 유일한 차이라 이 단언이 곧 계약이다). 디자인 체크 통과 — 새 색·새 크기·새 로딩 표현 0개, PRIMARY_BTN·GHOST_BTN·TONE_CLASSES·IconBadge 문자열 무변경(GHOST_BTN 이 4→5개 분기 공유, ADR-065 결정 2 크기 그대로). **AC 정정 1건**: `grep -c 'ProgressBar'` 기댓값 1 은 애초에 도달 불가였다(기준선이 이미 2 — import 줄 + 사용 줄). 의도는 '사용처가 downloading 하나뿐'이므로 applying 주석에서 그 단어를 빼 기준선 2 를 유지했다(사용 1건: 151행). 검증: build 성공 · 테스트 **2,686개/177파일** 통과(기준선 2,683/177 대비 +3) · lint 0 errors/17 warnings(baseline 동일) · git status src/ 에서 UpdatePromptModal 밖 변경 0건. store.ts 무변경."
     },
     {
       "step": 6,
