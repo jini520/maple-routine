@@ -43,7 +43,9 @@ function RosterBody(props: {
   if (props.roster.length > 0) {
     return (
       <>
-        {props.loadError !== null && <StaleBanner message="목록이 최신이 아닙니다" onRetry={props.onRetry} />}
+        {props.loadError !== null && (
+          <StaleBanner message="목록이 최신이 아닙니다" action={{ label: '다시 시도', onClick: props.onRetry }} />
+        )}
         {/* ADR-107 결정 3: 스크롤포트는 그리드가 아니라 쓰는 쪽이 갖는다. 여기는 모달이 아니라
             페이지라 상한을 스스로 들고 있어야 한다 — 값은 그리드가 갖고 있던 것 그대로다. */}
         <div className="max-h-[70vh] overflow-y-auto">

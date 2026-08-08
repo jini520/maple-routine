@@ -56,7 +56,9 @@ function PickerBody(props: CharacterTrackingPickerProps & { onChange: (ocids: st
     return (
       <>
         {/* 스탈 배너는 스크롤포트 밖이다 — 목록을 굴려도 "최신이 아님"은 계속 보여야 한다. */}
-        {props.loadError !== null && <StaleBanner message="목록이 최신이 아닙니다" onRetry={props.onRetry} />}
+        {props.loadError !== null && (
+          <StaleBanner message="목록이 최신이 아닙니다" action={{ label: '다시 시도', onClick: props.onRetry }} />
+        )}
         {/* ADR-107 결정 3: 스크롤포트를 카드 패딩(p-6) 바깥까지 넓혀 인디케이터를 모달 오른쪽
             끝에 붙이고, 같은 크기 pr-6 으로 콘텐츠 여백을 되돌린다(폭은 그대로다).
             min-h-0 은 flex 아이템의 자동 최소 크기(콘텐츠 높이)를 풀어 카드 상한 아래로

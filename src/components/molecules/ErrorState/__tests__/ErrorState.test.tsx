@@ -56,24 +56,42 @@ describe('ErrorState', () => {
 })
 
 describe('StaleBanner', () => {
-  it('문구와 재시도 버튼을 렌더링한다', () => {
-    render(<StaleBanner message="목록이 최신이 아닙니다" onRetry={() => {}} />)
+  it('문구와 액션 버튼을 렌더링한다', () => {
+    render(<StaleBanner message="목록이 최신이 아닙니다" action={{ label: '다시 시도', onClick: () => {} }} />)
 
     expect(screen.getByText('목록이 최신이 아닙니다')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '다시 시도' })).toBeInTheDocument()
   })
 
-  it('재시도를 누르면 onRetry가 호출된다', async () => {
-    const onRetry = vi.fn()
-    render(<StaleBanner message="목록이 최신이 아닙니다" onRetry={onRetry} />)
+  // 라벨은 하드코딩된 "다시 시도"가 아니라 호출부가 넘긴 값이다 — 피커의 401은 "설정 열기"를
+  // 받는다(ADR-114 결정 3).
+  it('"다시 시도"가 아닌 라벨도 그대로 렌더링한다', () => {
+    render(<StaleBanner message="API 키가 유효하지 않아 목록을 갱신하지 못했습니다" action={{ label: '설정 열기', onClick: () => {} }} />)
+
+    expect(screen.getByRole('button', { name: '설정 열기' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '다시 시도' })).not.toBeInTheDocument()
+  })
+
+  it('액션을 누르면 onClick이 호출된다', async () => {
+    const onClick = vi.fn()
+    render(<StaleBanner message="목록이 최신이 아닙니다" action={{ label: '다시 시도', onClick }} />)
 
     await userEvent.click(screen.getByRole('button', { name: '다시 시도' }))
 
-    expect(onRetry).toHaveBeenCalledTimes(1)
+    expect(onClick).toHaveBeenCalledTimes(1)
+  })
+
+  // ADR-114 결정 2·3: 재시도가 통하지 않는 실패(429·characterUnavailable·온보딩 401)에는 액션이
+  // 없다. 배너는 목록이 남아 있는 자리라 액션이 없어도 막다른 길이 아니다.
+  it('액션이 없으면 버튼을 만들지 않는다', () => {
+    render(<StaleBanner message="호출 한도를 초과했습니다 — 서비스 단계 키인지 확인해주세요" />)
+
+    expect(screen.getByText('호출 한도를 초과했습니다 — 서비스 단계 키인지 확인해주세요')).toBeInTheDocument()
+    expect(screen.queryByRole('button')).not.toBeInTheDocument()
   })
 
   it('role=alert 를 갖는다', () => {
-    render(<StaleBanner message="목록이 최신이 아닙니다" onRetry={() => {}} />)
+    render(<StaleBanner message="목록이 최신이 아닙니다" />)
 
     expect(screen.getByRole('alert')).toBeInTheDocument()
   })
