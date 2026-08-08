@@ -27,16 +27,18 @@ export function AppUpdateSection(): React.JSX.Element {
     'confirm-cellular': '다운로드 대기',
     downloading: `다운로드 중 ${downloadProgress}%`,
     'ready-to-apply': '업데이트 준비됨',
+    applying: '적용하고 있어요',
     'check-error': '확인에 실패했습니다',
     'download-error': '다운로드에 실패했습니다',
+    'apply-error': '적용에 실패했습니다',
     unsupported: '이 플랫폼에서는 지원되지 않습니다',
   }
 
   const displayedVersion = currentVersion ?? packageJson.version
   const isUnsupported = status === 'unsupported'
-  const isBusy = status === 'checking' || status === 'downloading'
+  const isBusy = status === 'checking' || status === 'downloading' || status === 'applying'
   const highlight =
-    status === 'check-error' || status === 'download-error'
+    status === 'check-error' || status === 'download-error' || status === 'apply-error'
       ? 'text-sm text-error-ink'
       : status === 'update-available' || status === 'ready-to-apply' || status === 'store-required'
         ? 'text-sm font-medium text-primary-ink'
