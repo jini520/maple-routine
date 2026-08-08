@@ -162,7 +162,8 @@
     },
     {
       "dir": "api-key-reentry",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-08-08T18:04:22+0900"
     }
   ]
 }
