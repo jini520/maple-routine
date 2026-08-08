@@ -75,7 +75,14 @@ export function AccountSelectionList(props: AccountSelectionListProps): React.JS
     const percent =
       progress.total > 0 ? Math.round((progress.completed / progress.total) * 100) : 0
     return (
-      <div className="w-full space-y-4">
+      // `m-auto` 하나로 세로 중앙에 선다 — 이 대기는 화면에 자기 혼자뿐이라 온보딩의 다른 두
+      // 전체 대기(`prefetching`·`seedingTracking`)와 같은 자리에 있어야 한다. 그것들이 쓰는
+      // `items-center` 를 여기서 쓸 수 없는 이유는 **이 컴포넌트가 두 곳에 쓰이기** 때문이다:
+      // 온보딩(화면 전체)과 설정 계정 변경 모달(`AccountFlowStatus`, 카드 안). 자동 여백은
+      // **부모가 남는 세로 공간을 줄 때만** 작동하므로, 높이를 준 온보딩에서는 중앙에 서고
+      // 카드 안에서는 아무 일도 일어나지 않는다 — 한쪽을 맞추려고 다른 쪽을 깨지 않는다.
+      // (짝이 되는 변경은 `OnboardingScreen` 의 `selectingAccount`·`error` 컨테이너 min-h.)
+      <div data-testid="account-probe-wait" className="m-auto w-full space-y-4">
         <p className="text-sm text-text-muted">
           ({progress.completed}/{progress.total})
         </p>

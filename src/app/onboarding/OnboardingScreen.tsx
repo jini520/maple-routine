@@ -71,7 +71,11 @@ export function OnboardingScreen(): React.JSX.Element {
 
     case 'selectingAccount':
       return (
-        <div className="flex justify-center px-4 pt-8 pb-4">
+        // min-h 는 프로브 대기(AccountSelectionList 의 `!isSettled` 분기)를 위한 것이다 — 그 대기가
+        // `m-auto` 로 세로 중앙에 서려면 부모가 남는 공간을 줘야 하고, 그래야 `prefetching`·
+        // `seedingTracking` 과 같은 자리에 선다. 목록이 뜬 뒤에는 `items-center` 가 없어 그대로
+        // 위에서부터 그려진다(계정이 많아 화면을 넘겨도 잘리지 않는다).
+        <div className="flex min-h-[calc(100dvh-var(--sa-top)-var(--sa-bottom))] justify-center px-4 pt-8 pb-4">
           <AccountSelectionList accounts={accounts} isSubmitting={false} onSelect={selectAccount} />
         </div>
       )
@@ -129,7 +133,8 @@ export function OnboardingScreen(): React.JSX.Element {
         )
       }
       return (
-        <div className="flex justify-center px-4 pt-8 pb-4">
+        // `selectingAccount` 와 같은 골격 — 이 분기도 프로브 대기를 거쳐 목록에 도달한다.
+        <div className="flex min-h-[calc(100dvh-var(--sa-top)-var(--sa-bottom))] justify-center px-4 pt-8 pb-4">
           {/* ADR-083 결정 4: 실패는 스토어가 토스트로 알린다 — 목록은 고를 수 있는 상태 그대로 둔다. */}
           <AccountSelectionList accounts={accounts} isSubmitting={false} onSelect={selectAccount} />
         </div>

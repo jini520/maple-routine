@@ -372,6 +372,18 @@ describe('AccountSelectionList', () => {
       expect(container.textContent).toBe('(1/3)')
     })
 
+    // 이 대기는 화면에 자기 혼자뿐이라 온보딩의 다른 두 전체 대기(prefetching·seedingTracking)와
+    // 같은 자리 — 세로 중앙 — 에 서야 한다(사용자 보고 2026-08-09: 상단에 붙어 나온다).
+    // 자동 여백으로 세우는 이유는 이 컴포넌트가 설정 계정 변경 모달에서도 쓰이기 때문이다.
+    // 부모가 남는 세로 공간을 줄 때만 작동하므로 카드 안에서는 아무 일도 일어나지 않는다.
+    it('프로브 대기는 자동 여백으로 세로 중앙에 선다', () => {
+      mockedUseAccountProbes.mockReturnValue(waiting({ completed: 1, total: 3 }))
+
+      render(<AccountSelectionList accounts={accounts} isSubmitting={false} onSelect={vi.fn()} />)
+
+      expect(screen.getByTestId('account-probe-wait')).toHaveClass('m-auto')
+    })
+
     it('진행률은 progress 를 그대로 반영한다', () => {
       mockedUseAccountProbes.mockReturnValue(waiting({ completed: 12, total: 40 }))
 
