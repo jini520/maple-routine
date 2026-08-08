@@ -24,7 +24,7 @@
       "status": "completed",
       "started_at": "2026-08-08T15:29:56+0900",
       "summary": "StaleBanner 를 dumb 컴포넌트로 유지한 채 props 를 onRetry: () => void → action?: {label, onClick} 로 교체 — 라벨은 하드코딩 '다시 시도' 가 아니라 action.label 이고, action 이 없으면 버튼을 아예 렌더하지 않는다(ErrorState.tsx:51 의 선례와 같은 형태, ADR-114 결정 2·3). 마크업·클래스·data-testid·role=alert 는 한 글자도 안 바꿨고 design-system.md 스탈 배너 스펙(우측 액션이 '(선택)')과 일치. 상단 주석에 '원인별로 갈리고 액션이 없을 수 있다' + '여기에 switch 를 만들지 말고 포맷은 formatStaleRosterError 가 한다'(ADR-094 결정 2)를 명시. AC 의 두 갈래 중 **최소 치환 쪽을 택해** 호출부 2곳(CharacterTrackingPicker.tsx:59 · ContentCharacterStep.tsx:46)을 기계적으로만 고쳤다 — message 는 지금 값 '목록이 최신이 아닙니다' 그대로, onRetry={...} → action={{label:'다시 시도', onClick:props.onRetry}}. 원인별 분기(formatStaleRosterError 호출)는 step 3·4 몫이라 손대지 않았다. src 변경 4파일(컴포넌트 + 그 테스트 + 호출부 2곳). 판별력 확인: action 조건부 렌더를 지워 항상 버튼이 나오게 바꾸자 '액션이 없으면 버튼을 만들지 않는다' 1건만 정확히 실패했고 되돌림. 테스트 2,562개/172파일 통과(이 step 순증 2 = 신규 5 − 삭제 3)·build 성공·lint 0 errors/17 warnings(baseline 동일)·layer-dependencies 통과(molecule 이 feature·상위 계층을 import 하지 않는다).",
-      "completed_at": "2026-08-08T15:32:30+0900"
+      "completed_at": "2026-08-08T15:33:33+0900"
     },
     {
       "step": 3,
