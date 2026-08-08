@@ -45,7 +45,9 @@
     {
       "step": 5,
       "name": "release-notes-screen",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-09T02:41:53+0900",
+      "summary": "SettingsReleaseNotesScreen 신규 — /settings/about 과 같은 헤더 골격 + RELEASE_NOTES 를 배열 순서 그대로 카드로(버전·사용 중 배지·날짜 + 항목 목록, requiresStoreUpdate 항목에만 「스토어 업데이트 필요」 third 배지), 현재 버전은 live-update 스토어 + package.json 폴백, 빈 배열이면 EmptyState. 네트워크 0회(check 미호출). 라우트 배선은 step 6."
     },
     {
       "step": 6,
