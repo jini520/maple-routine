@@ -3,17 +3,17 @@ import { cleanup, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ScheduleSyncError } from '../../schedule-sync/schedule-sync'
 
-const { noticeApiKeyInvalidMock } = vi.hoisted(() => ({ noticeApiKeyInvalidMock: vi.fn() }))
+const { noticeApiKeyIssueMock } = vi.hoisted(() => ({ noticeApiKeyIssueMock: vi.fn() }))
 
 vi.mock('../store', () => ({
-  useOnboardingStore: { getState: () => ({ noticeApiKeyInvalid: noticeApiKeyInvalidMock }) },
+  useOnboardingStore: { getState: () => ({ noticeApiKeyIssue: noticeApiKeyIssueMock }) },
 }))
 
 const { useApiKeyInvalidation } = await import('../use-api-key-invalidation')
 
 describe('useApiKeyInvalidation', () => {
   beforeEach(() => {
-    noticeApiKeyInvalidMock.mockClear()
+    noticeApiKeyIssueMock.mockClear()
   })
 
   afterEach(() => {
@@ -23,7 +23,7 @@ describe('useApiKeyInvalidation', () => {
   it('invalidApiKey면 무효화 경로로 넘긴다', () => {
     renderHook(() => useApiKeyInvalidation({ kind: 'invalidApiKey' }))
 
-    expect(noticeApiKeyInvalidMock).toHaveBeenCalledTimes(1)
+    expect(noticeApiKeyIssueMock).toHaveBeenCalledExactlyOnceWith('invalid')
   })
 
   it.each<ScheduleSyncError['kind']>(['rateLimited', 'characterUnavailable', 'network'])(
@@ -31,14 +31,14 @@ describe('useApiKeyInvalidation', () => {
     (kind) => {
       renderHook(() => useApiKeyInvalidation({ kind } as ScheduleSyncError))
 
-      expect(noticeApiKeyInvalidMock).not.toHaveBeenCalled()
+      expect(noticeApiKeyIssueMock).not.toHaveBeenCalled()
     },
   )
 
   it('error가 null이면 넘기지 않는다', () => {
     renderHook(() => useApiKeyInvalidation(null))
 
-    expect(noticeApiKeyInvalidMock).not.toHaveBeenCalled()
+    expect(noticeApiKeyIssueMock).not.toHaveBeenCalled()
   })
 
   // 이 케이스가 없으면 키를 다시 넣어도 곧바로 튕긴다([[ADR-115]] 결정 6의 재이동 루프 금지).
@@ -48,12 +48,12 @@ describe('useApiKeyInvalidation', () => {
     const staleError: ScheduleSyncError = { kind: 'invalidApiKey' }
 
     const first = renderHook(() => useApiKeyInvalidation(staleError))
-    expect(noticeApiKeyInvalidMock).toHaveBeenCalledTimes(1)
+    expect(noticeApiKeyIssueMock).toHaveBeenCalledExactlyOnceWith('invalid')
     first.unmount()
 
     renderHook(() => useApiKeyInvalidation(staleError))
 
-    expect(noticeApiKeyInvalidMock).toHaveBeenCalledTimes(1)
+    expect(noticeApiKeyIssueMock).toHaveBeenCalledExactlyOnceWith('invalid')
   })
 
   // 위 가드가 "401이면 평생 한 번"이 되면 안 된다 — 재입력한 키가 또 무효화되는 것은 실제로
@@ -65,6 +65,6 @@ describe('useApiKeyInvalidation', () => {
 
     renderHook(() => useApiKeyInvalidation({ kind: 'invalidApiKey' }))
 
-    expect(noticeApiKeyInvalidMock).toHaveBeenCalledTimes(2)
+    expect(noticeApiKeyIssueMock).toHaveBeenCalledTimes(2)
   })
 })

@@ -13,10 +13,10 @@
     {
       "step": 1,
       "name": "notice-generalize",
-      "status": "error",
+      "status": "completed",
       "started_at": "2026-08-08T19:34:50+0900",
-      "error_message": "[3회 시도 후 실패] Step did not update status",
-      "failed_at": "2026-08-08T19:40:19+0900"
+      "failed_at": "2026-08-08T19:40:19+0900",
+      "summary": "알림 상태를 원인별로 넓히고 가드를 교체했다. state.ts: ApiKeyNoticeKind='invalid'|'rateLimited' 신설, apiKeyInvalidNotice:boolean → apiKeyNotice:ApiKeyNoticeKind|null, 이벤트 API_KEY_INVALID_NOTICED → API_KEY_NOTICED{kind}, 리듀서는 status를 안 바꾸고 **이미 알림이 있으면 같은 state 객체를 그대로 반환**(먼저 뜬 원인 유지). store.ts: noticeApiKeyInvalid→noticeApiKeyIssue(kind)(동기), confirmApiKeyInvalid→confirmApiKeyNotice(RESET+removeApiKey, 원인 무관 동일). **가드가 핵심** — 옛 `status !== 'completed'`를 버리고 `apiKeyNotice !== null` + `status가 awaitingApiKey·verifyingApiKey면 no-op`으로 바꿨다(ADR-116 결정 2 — 옛 조건으로는 selectingContentCharacters에서 나는 #176 잠금을 구할 수 없었다). 호출부는 컴파일 유지용 최소 치환(use-api-key-invalidation·settings/store가 noticeApiKeyIssue('invalid')). **실행 중 step이 status 갱신에 실패해 error로 남았고, 남은 뒷정리를 사람이 마쳤다**: 테스트 3파일의 스탈 mock 이름(noticeApiKeyInvalid/confirmApiKeyInvalid/apiKeyInvalidNotice) 교체 + route-splitting 테스트의 onboarding store mock에 apiKeyNotice:null 추가. 그 실패가 **실제 결함 하나를 드러냈다** — 모달의 `apiKeyNotice === null` 검사가 부분 모킹에서 undefined를 받아 **모든 라우트 위에 닫을 수 없는 모달이 떴다**(route-splitting 5건 실패). 차단 UI는 '켜라고 명시했을 때만' 켜지도록 falsy 검사로 바꾸고 근거를 주석에 남겼다. 테스트 2,636개/176파일 통과(baseline 2,627 대비 +9)·build 성공·lint 0 errors/17 warnings."
     },
     {
       "step": 2,

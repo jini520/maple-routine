@@ -167,7 +167,8 @@
     },
     {
       "dir": "rate-limit-recovery",
-      "status": "pending"
+      "status": "error",
+      "failed_at": "2026-08-08T19:40:19+0900"
     }
   ]
 }

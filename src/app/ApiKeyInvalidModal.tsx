@@ -15,7 +15,10 @@ import { useOnboardingStore } from '../features/onboarding/store'
 export function ApiKeyInvalidModal(): React.JSX.Element | null {
   const { apiKeyNotice, confirmApiKeyNotice } = useOnboardingStore()
 
-  if (apiKeyNotice === null) {
+  // falsy 검사인 것이 의도다 — `=== null` 이면 스토어를 부분 모킹한 테스트에서 `undefined` 가 와
+  // **모든 라우트 위에 닫을 수 없는 모달이 떠버린다**(route-splitting 테스트가 실제로 그렇게 깨졌다).
+  // 차단 UI 는 "켜라고 명시했을 때만" 켜지는 쪽이 안전하다.
+  if (!apiKeyNotice) {
     return null
   }
 
