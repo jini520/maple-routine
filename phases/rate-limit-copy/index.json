@@ -1,0 +1,44 @@
+{
+  "project": "메이플 루틴 (Maple Routine)",
+  "phase": "rate-limit-copy",
+  "steps": [
+    {
+      "step": 0,
+      "name": "docs-adr",
+      "status": "completed",
+      "started_at": "2026-08-08T15:15:31+0900",
+      "summary": "ADR-114 신설(429는 키 단계를 판정하지 않고 문구로만 안내 · 429 액션 제거로 ADR-062 결정 3 폐기 · 스탈 배너를 formatStaleRosterError(error, place)로 원인별 분기 · 토스트는 원인만/인라인은 처방까지 · nexon-api.md 서비스 단계 키 전제 정정) + ADR.md 인덱스 한 줄 + nexon-api.md·error-resilience.md·design-system.md·content-scheduler.md·settings.md 갱신(옛 정책은 각 history 절로 이동). onboarding.md 는 429 문구를 언급하는 자리가 없고 이번 결정으로 닫히는 열린 질문도 없어 미변경. src/ 변경 0줄, 테스트 2,548개/172파일 통과·build 성공·lint 0 errors/17 warnings(baseline 동일)."
+    },
+    {
+      "step": 1,
+      "name": "roster-error-copy",
+      "status": "pending"
+    },
+    {
+      "step": 2,
+      "name": "stale-banner-action",
+      "status": "pending"
+    },
+    {
+      "step": 3,
+      "name": "picker-banner-wiring",
+      "status": "pending"
+    },
+    {
+      "step": 4,
+      "name": "onboarding-banner-wiring",
+      "status": "pending"
+    },
+    {
+      "step": 5,
+      "name": "remaining-429-copy",
+      "status": "pending"
+    },
+    {
+      "step": 6,
+      "name": "docs-verify",
+      "status": "pending"
+    }
+  ],
+  "created_at": "2026-08-08T15:15:31+0900"
+}

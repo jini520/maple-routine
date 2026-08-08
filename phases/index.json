@@ -154,6 +154,10 @@
       "dir": "account-probe-gate",
       "status": "completed",
       "completed_at": "2026-08-08T06:13:00+0900"
+    },
+    {
+      "dir": "rate-limit-copy",
+      "status": "pending"
     }
   ]
 }
