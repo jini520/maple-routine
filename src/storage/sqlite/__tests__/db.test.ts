@@ -270,6 +270,93 @@ describe('closeBossProfitDb', () => {
 
     expect(createConnectionMock).toHaveBeenCalledTimes(1)
   })
+
+  // ADR-117 결정 5: 여는 쪽에는 타임아웃이 있는데(withOpenTimeout, 10초) 닫는 쪽은 맨몸이었다.
+  // 네이티브 closeConnection이 응답하지 않으면 이 함수가 영원히 resolve하지 않고, 이 뒤에 오는
+  // 리로드(CapacitorUpdater.set / window.location.reload)가 실행되지 못한다 — 그것이 곧 "주황
+  // 스플래시 무한" 증상이다. 실기기에서 SQLite 네이티브 호출이 응답 없이 멈춘 사례가 둘 있다
+  // ([[ADR-008]] 2026-07-17 정정, [[ADR-050]] 결정 2).
+  //
+  // 가짜 타이머는 케이스 안에서만 켠다 — 파일 전역으로 켜면 위 레이스 케이스가 의존하는
+  // 마이크로태스크 순서가 흔들린다.
+  it('닫기가 응답하지 않아도 5초 타임아웃으로 끝난다 — 던지지 않는다(best-effort)', async () => {
+    vi.useFakeTimers()
+    try {
+      closeConnectionMock.mockImplementation(() => new Promise<void>(() => {}))
+      const { getBossProfitDb, closeBossProfitDb } = await import('../db')
+
+      await getBossProfitDb()
+
+      let settled = false
+      const closePromise = closeBossProfitDb().then(() => {
+        settled = true
+      })
+      await vi.advanceTimersByTimeAsync(5_000)
+
+      await expect(closePromise).resolves.toBeUndefined()
+      expect(settled).toBe(true)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('닫기가 타임아웃돼도 dbPromise를 비워 다음 getBossProfitDb가 새로 연다', async () => {
+    vi.useFakeTimers()
+    try {
+      closeConnectionMock.mockImplementation(() => new Promise<void>(() => {}))
+      const { getBossProfitDb, closeBossProfitDb } = await import('../db')
+
+      await getBossProfitDb()
+      expect(createConnectionMock).toHaveBeenCalledTimes(1)
+
+      const closePromise = closeBossProfitDb()
+      await vi.advanceTimersByTimeAsync(5_000)
+      await closePromise
+
+      await getBossProfitDb()
+      expect(createConnectionMock).toHaveBeenCalledTimes(2)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  // 상한이 조용히 줄어드는 것을 막는다 — 이 값은 적용 경로에서 사용자가 무반응을 견디는 시간이다.
+  it('4.9초에는 아직 끝나지 않고, 5초를 넘겨야 끝난다', async () => {
+    vi.useFakeTimers()
+    try {
+      closeConnectionMock.mockImplementation(() => new Promise<void>(() => {}))
+      const { getBossProfitDb, closeBossProfitDb } = await import('../db')
+
+      await getBossProfitDb()
+
+      let settled = false
+      void closeBossProfitDb().then(() => {
+        settled = true
+      })
+
+      await vi.advanceTimersByTimeAsync(4_900)
+      expect(settled).toBe(false)
+
+      await vi.advanceTimersByTimeAsync(200)
+      expect(settled).toBe(true)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('한 번도 연 적 없으면 타이머조차 걸지 않는다', async () => {
+    vi.useFakeTimers()
+    try {
+      const { closeBossProfitDb } = await import('../db')
+
+      await closeBossProfitDb()
+
+      expect(vi.getTimerCount()).toBe(0)
+      expect(closeConnectionMock).not.toHaveBeenCalled()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
 })
 
 // ADR-069 결정 1: 이미 만들어진 DB에는 CREATE TABLE IF NOT EXISTS가 컬럼을 더해주지 않는다.

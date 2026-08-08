@@ -2,6 +2,7 @@ import { Capacitor, CapacitorHttp } from '@capacitor/core'
 import { CapacitorUpdater } from '@capgo/capacitor-updater'
 import { Network } from '@capacitor/network'
 import { closeBossProfitDb } from '../storage/sqlite/db'
+import { showSplashScreen } from './splash-screen'
 
 // scripts/publish-live-update.mjs가 이 저장소의 "live-update-latest" 릴리스에 latest.json을 올린다(ADR-022).
 export const LIVE_UPDATE_MANIFEST_URL =
@@ -151,8 +152,18 @@ export async function downloadLiveUpdate(
 // 네이티브 커넥션은 stale하게 남아, 재로드 후 첫 쿼리가 응답 없이 멈추는 문제가 있었다(2026-07-17,
 // 앱 업데이트 직후 과거 수익 데이터가 안 불러와지는 증상으로 사용자 보고 — storage/sqlite/db.ts의
 // closeBossProfitDb 참고).
+//
+// 순서는 닫기 → 커버 → set() 이다(ADR-117 결정 1). 커버가 닫기 **뒤**인 것이 요점이다 — 먼저 올리면
+// 닫기가 매달릴 때 사용자가 브랜드 주황 스플래시에 갇힌다(이슈 #175). 커버의 목적은 ADR-027
+// 2026-07-17 추가가 정한 대로 "리로드 동안 웹뷰 네이티브 배경색이 드러나는 것"을 덮는 것이지 그 앞의
+// 준비 작업까지 덮는 것이 아니므로, 커버가 떠 있는 구간을 실제 리로드 직전으로 좁힌다.
+// 셋을 한 함수가 순서대로 책임진다 — 나눠 가지면 순서 보장이 두 파일로 흩어진다.
+// closeBossProfitDb는 던지지 않고 5초 안에 끝난다(ADR-117 결정 5) — 여기서 또 감싸지 않는다.
+// 전체를 덮는 12초 타임아웃과 실패 시 화면 복구는 호출부(store)가 한 곳에서 맡는다(같은 결정).
 export async function applyDownloadedLiveUpdate(id: string): Promise<void> {
   await closeBossProfitDb()
+  // 커버 표시 실패가 적용을 막으면 안 된다 — 시각적 장치 때문에 set()에 도달 못 하면 본말전도다.
+  await showSplashScreen().catch(() => {})
   await CapacitorUpdater.set({ id })
 }
 

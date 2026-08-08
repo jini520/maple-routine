@@ -1,6 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
 import { AlertTriangle, RotateCcw } from 'lucide-react'
 import { Button } from '../../atoms/Button/Button'
+import { hideSplashScreen } from '../../../native/splash-screen'
 
 // 앱 전역 에러 바운더리([[ADR-065]] 결정 5). 렌더 중 예외가 나면 아무 문구 없는 흰 화면이
 // 남던 것을 폴백 화면으로 바꾼다.
@@ -37,6 +38,22 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     // 리포팅은 미도입이라 개발 중 확인용으로만 남긴다 — 프로덕션에서도 콘솔은 사용자에게
     // 보이지 않으므로 무해하고, 실기기 원격 디버깅에서는 유일한 단서가 된다.
     console.error('[ErrorBoundary]', error, info.componentStack)
+
+    // 폴백이 뜨는 것과 같은 커밋에서 스플래시를 내린다([[ADR-117]] 결정 6). 부팅 크래시에서는
+    // 셋이 겹쳐 이 폴백이 **가장 필요한 순간에 무용지물**이 되기 때문이다:
+    //   ⑴ 커버가 안 걷힌다 — `#boot-cover` 를 지우는 코드는 App.tsx 의 `useEffect` 안 타이머
+    //      하나뿐인데, 첫 1초(MIN_SPLASH_MS) 안에 렌더가 던지면 바운더리가 그 트리를 언마운트해
+    //      클린업이 타이머를 **취소한다.** 걷을 주체가 사라진다.
+    //   ⑵ 폴백이 커버 **밑에** 그려진다 — 폴백은 `#root` 안이고, 커버는 index.html 에서 32비트
+    //      정수 최댓값으로 쌓임 순서 맨 위에 고정돼 있다.
+    //   ⑶ **버튼이 눌리지 않는다.** iOS `SplashScreen.show()` 가 건
+    //      `isUserInteractionEnabled = false` 는 네이티브 `hide()` 에서만 풀린다. 이것이 이 호출의
+    //      진짜 이유이자, 폴백의 쌓임 순서를 올리는 안이 기각된 이유다 — 보이게 만들어도 '다시
+    //      시작' 은 여전히 안 눌린다(게다가 올릴 숫자가 없고 같은 매직 넘버가 두 곳에 생긴다).
+    //      `hideSplashScreen()` 은 DOM 커버 제거와 네이티브 해제를 함께 하므로 한 번으로 셋을 끊고,
+    //      커버가 사라지면 쌓임 순서를 손댈 이유 자체가 없어진다.
+    // 실패는 삼킨다 — 이 순간 사용자에게 필요한 것은 화면이지 정확한 실패 처리가 아니다.
+    hideSplashScreen().catch(() => {})
   }
 
   private handleRestart = (): void => {

@@ -117,6 +117,50 @@ describe('UpdatePromptModal', () => {
     expect(actions.dismiss).toHaveBeenCalledTimes(1)
   })
 
+  // ADR-117 결정 7: 커버가 닫기 뒤로 밀리면서 그 구간(최대 5초) 동안 모달과 버튼이 살아 있게 됐다.
+  // 그 구간에 화면이 "업데이트 준비 완료"라고 말하면 거짓말이고, 눌러도 반응 없는 버튼이 남는다.
+  it('applying: 진행 표시만 두고 버튼을 전부 치운다', () => {
+    mockStore({ status: 'applying', availableVersion: '1.0.2', downloadedBundleId: 'b1' })
+
+    render(<UpdatePromptModal />)
+
+    expect(screen.getByText('적용하고 있어요')).toBeInTheDocument()
+    expect(screen.queryByRole('button')).not.toBeInTheDocument()
+    // 되돌릴 수 없는 구간이라 [나중에]도 없다 — dismiss가 downloadedBundleId를 비우면
+    // 실패했을 때 재시도할 번들 참조를 잃는다.
+    expect(screen.queryByText('업데이트 준비 완료')).not.toBeInTheDocument()
+    // 적용은 퍼센트가 나오지 않는다 — 가짜로 채우는 결정형 진행률은 거짓 정보다(ADR-061 결정 6).
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument()
+  })
+
+  it('applying: 배경을 탭해도 닫히지 않는다(진행 중 취소 방지)', async () => {
+    const user = userEvent.setup()
+    const a = mockStore({ status: 'applying', downloadedBundleId: 'b1' })
+
+    render(<UpdatePromptModal />)
+    await user.click(screen.getByTestId('update-prompt-overlay'))
+
+    expect(a.dismiss).not.toHaveBeenCalled()
+  })
+
+  // 받아둔 번들은 그대로 살아 있다(스토어가 downloadedBundleId를 비우지 않는다) — 다시 받지 않고
+  // 적용만 다시 시도한다. download-error 와 갈리는 지점이 정확히 이 핸들러다(ADR-117 결정 1).
+  it('apply-error: [다시 시도]→apply(startDownload 아님), [나중에]→dismiss', async () => {
+    const user = userEvent.setup()
+    const a = mockStore({ status: 'apply-error', availableVersion: '1.0.2', downloadedBundleId: 'b1' })
+
+    render(<UpdatePromptModal />)
+
+    expect(screen.getByText('업데이트를 적용하지 못했습니다')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: '다시 시도' }))
+    expect(a.apply).toHaveBeenCalledTimes(1)
+    expect(a.startDownload).not.toHaveBeenCalled()
+
+    await user.click(screen.getByRole('button', { name: '나중에' }))
+    expect(a.dismiss).toHaveBeenCalledTimes(1)
+  })
+
   // 자동 확인일 수 있어 모달을 띄우지 않는다 — 설정 상태 행에만 남는다.
   it('check-error: 모달을 띄우지 않는다', () => {
     mockStore({ status: 'check-error' })

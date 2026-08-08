@@ -117,7 +117,9 @@ flowchart LR
 
 ## 리로드를 동반하는 삭제 — SQLite 커넥션 처리
 
-캐시 데이터 삭제는 `window.location.reload()`로 마무리된다. 이때도 [sqlite.md](./sqlite.md)의 "커넥션 라이프사이클"과 동일하게 리로드 직전 `closeBossProfitDb()`를 호출해야 한다 — `app/settings/CacheDataSection.tsx`의 `handleClear()`가 삭제 → 스플래시 표시 → `closeBossProfitDb()` → 리로드 순서를 지킨다. 삭제 자체가 실패하거나(reject) 네이티브 호출이 응답 없이 멈추는 경우까지 대비해 10초 타임아웃과 경쟁시킨 뒤 항상 리로드로 마무리한다.
+캐시 데이터 삭제는 `window.location.reload()`로 마무리된다. 이때도 [sqlite.md](./sqlite.md)의 "커넥션 라이프사이클"과 동일하게 리로드 직전 `closeBossProfitDb()`를 호출해야 한다 — `features/settings/cache-data.ts`의 `clearCacheDataAndReload()`가 삭제 → **`closeBossProfitDb()` → 스플래시 표시** → 리로드 순서를 지킨다. 삭제 자체가 실패하거나(reject) 네이티브 호출이 응답 없이 멈추는 경우까지 대비해 10초 타임아웃과 경쟁시킨 뒤 항상 리로드로 마무리한다.
+
+**커버(스플래시)가 닫기 뒤로 간 것은 2026-08-08 이다** ([[ADR-117]] 결정 8) — 먼저 올리면 닫기가 매달리는 동안 사용자가 브랜드색 화면에 갇히고 iOS 에서는 터치까지 죽는다(이슈 #175 의 OTA 적용과 같은 결함의 두 번째 자리였다). 닫기 자체에도 5초 상한이 생겼다(같은 ADR 결정 5, [sqlite.md](./sqlite.md)) — 여전히 던지지 않으므로 이 경로에 새 실패 분기는 없다.
 
 ## 네이티브 OS 레벨 영속 데이터
 

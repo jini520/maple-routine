@@ -9,6 +9,7 @@ import { getThemeDefinition } from './lib/theme-registry'
 import { consumePendingNotice } from './storage/pending-notice'
 import { useToastStore } from './features/toast/store'
 import { hideSplashScreen } from './native/splash-screen'
+import { notifyLiveUpdateReady } from './native/live-update'
 import { refreshSafeAreaInsets } from './native/system-bars'
 import { addKeyboardVisibilityListener } from './native/keyboard'
 import { useScreenNavigate } from './lib/use-screen-navigate'
@@ -180,6 +181,24 @@ export function AppShell(): React.JSX.Element {
   const { restoreFromStorage: restoreTrackingModeFromStorage } = useTrackingModeStore()
   const { restoreFromStorage: restoreDropEffectFromStorage } = useDropEffectStore()
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false)
+
+  // OTA 번들이 "정상"임을 capgo에 알린다([[ADR-117]] 결정 2). 이 호출이 appReadyTimeout(기본 10초,
+  // capacitor.config.ts 미설정) 안에 없으면 플러그인이 직전 정상 번들로 자동 롤백한다 — 그 롤백은
+  // 피해야 할 사고가 아니라 **깨진 번들에서 빠져나올 유일한 복구 장치**다. 번들 첫 문장
+  // (main.tsx)에서 부르던 것을 여기로 옮겨, "정상"의 정의가 "메인 청크가 평가됐다"에서
+  // **"React가 마운트에 성공했다"** 로 바뀐다.
+  //
+  // **App이 아니라 AppShell이어야 한다.** App은 ErrorBoundary를 *렌더하는* 쪽이라, 자식이 렌더
+  // 중에 던져도 App 자신은 정상 커밋돼 그 effect가 실행된다 — 부팅 크래시로 죽은 번들을 "정상"으로
+  // 찍게 되어 옮긴 의미가 사라진다. AppShell은 ErrorBoundary **안**이라 렌더가 던지면 커밋되지
+  // 않고 이 effect도 돌지 않는다.
+  //
+  // 하이드레이션(prehydrateTabStores) 완료 뒤로는 더 미루지 않는다(같은 결정, 사용자 결정) —
+  // 그쪽은 SQLite에 의존하고 이 저장소는 그 호출이 응답 없이 멈춘 사례를 두 번 기록했다
+  // ([[ADR-008]]·[[ADR-050]]). 10초를 넘기면 멀쩡한 번들까지 롤백된다.
+  useEffect(() => {
+    void notifyLiveUpdateReady()
+  }, [])
 
   useEffect(() => {
     restoreFromStorage()

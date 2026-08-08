@@ -155,18 +155,28 @@ async function openBossProfitDb(): Promise<SQLiteDBConnection> {
 // 경우엔 재시도 호출도 같은 큐에 서므로 회복되지 않지만, 그 경우까지 JS에서 할 수 있는 일은 없다.
 const OPEN_TIMEOUT_MS = 10_000
 
-function withOpenTimeout(promise: Promise<SQLiteDBConnection>): Promise<SQLiteDBConnection> {
+// 닫기에도 같은 상한을 주되 여는 쪽(10초)보다 짧다(ADR-117 결정 5). 여는 것은 파일 생성·테이블
+// 생성·마이그레이션까지 포함하지만 닫는 것은 그렇지 않아 정상이면 수 ms 다. 게다가 이 값은 곧
+// OTA 적용 경로에서 사용자가 아무 반응 없는 화면을 견디는 시간의 상한이다 — 적용은
+// closeBossProfitDb → 커버 → set() 순으로 돌고, 그 첫 구간의 길이가 정확히 이 값이다.
+const CLOSE_TIMEOUT_MS = 5_000
+
+function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined
   return Promise.race([
     promise,
     new Promise<never>((_, reject) => {
       timer = setTimeout(() => {
-        reject(new Error('SQLite 커넥션 열기 시간 초과'))
-      }, OPEN_TIMEOUT_MS)
+        reject(new Error(message))
+      }, ms)
     }),
   ]).finally(() => {
     clearTimeout(timer)
   })
+}
+
+function withOpenTimeout(promise: Promise<SQLiteDBConnection>): Promise<SQLiteDBConnection> {
+  return withTimeout(promise, OPEN_TIMEOUT_MS, 'SQLite 커넥션 열기 시간 초과')
 }
 
 // 앱 전체에서 커넥션을 하나만 열도록 모듈 스코프에서 캐싱한다 — 동일 이름 커넥션을 중복으로 열면 에러가 난다.
@@ -194,6 +204,7 @@ export async function closeBossProfitDb(): Promise<void> {
   if (dbPromise === null) {
     return
   }
+  const pending = dbPromise
   // 닫는 도중에도 dbPromise를 계속 살려둔다 — 먼저 null로 비우면, 그 사이 다른 곳에서
   // getBossProfitDb()를 동시에 호출했을 때 "아직 안 닫힌" 커넥션을 못 보고 새로 openBossProfitDb를
   // 시작해버린다. 그 경쟁 상태에서 이 함수의 closeConnection과 그 호출의 createConnection이
@@ -201,8 +212,20 @@ export async function closeBossProfitDb(): Promise<void> {
   // CapacitorSQLite.createConnection이 dbDict에 이미 등록돼 있으면 던지는 에러). 닫기가 끝난
   // 뒤(성공이든 실패든)에만 dbPromise를 비워, 그 전까지는 동시 호출도 이 커넥션을 그대로 재사용하게 한다.
   try {
-    await dbPromise
-    await getSqliteConnection().closeConnection(DB_NAME, false)
+    // 닫기가 응답하지 않으면 이 함수는 영원히 resolve하지 않고, 호출부 둘(OTA 적용의
+    // CapacitorUpdater.set·캐시 삭제의 reload)이 **그 뒤에 화면을 되살리는 일을 하므로** 그 리로드에
+    // 영영 도달하지 못한다 — 커버만 남는 "주황 스플래시 무한"이 그것이다(ADR-117 결정 5). 대기 구간
+    // 전체(dbPromise 대기 + closeConnection)를 한 번에 감싼다 — 여는 쪽이 매달리면 닫기도 그 앞에서
+    // 매달리므로 closeConnection만 감싸면 상한이 보장되지 않는다.
+    // 타임아웃이 바꾸는 것은 "실패로 끝난다"가 아니라 **"끝난다"** 이다 — 아래 catch가 그대로 삼킨다.
+    await withTimeout(
+      (async () => {
+        await pending
+        await getSqliteConnection().closeConnection(DB_NAME, false)
+      })(),
+      CLOSE_TIMEOUT_MS,
+      'SQLite 커넥션 닫기 시간 초과',
+    )
   } catch {
     // best-effort
   } finally {

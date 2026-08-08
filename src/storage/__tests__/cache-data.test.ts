@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { Preferences } from '@capacitor/preferences'
+import type { CacheDataSelection } from '../cache-data'
 import {
   BOSS_RECORD_TABLE_NAMES,
   GENERAL_TABLE_NAMES,
@@ -7,6 +8,7 @@ import {
   getCacheDataSizes,
 } from '../cache-data'
 import { BOSS_PROFIT_TABLE_NAMES, getBossProfitDb } from '../sqlite/db'
+import { clearCacheDataAndReload } from '../../features/settings/cache-data'
 
 vi.mock('@capacitor/preferences', () => {
   const store = new Map<string, string>()
@@ -26,6 +28,22 @@ vi.mock('@capacitor/preferences', () => {
   }
 })
 
+// clearCacheDataAndReload의 "닫기 → 커버 → 리로드" 순서를 잡기 위한 공유 호출 기록(ADR-117 결정 8).
+// 각 mock이 호출되는 시점에 이름을 push하므로 배열 자체가 곧 실행 순서다 — toHaveBeenCalled로는
+// 순서가 안 잡히고, 이 step이 고치는 것이 정확히 순서다.
+const { callOrder, closeDbMock, showSplashMock } = vi.hoisted(() => {
+  const callOrder: string[] = []
+  return {
+    callOrder,
+    closeDbMock: vi.fn(async () => {
+      callOrder.push('close')
+    }),
+    showSplashMock: vi.fn(async () => {
+      callOrder.push('cover')
+    }),
+  }
+})
+
 const { dbExecuteMock, dbQueryMock } = vi.hoisted(() => ({
   dbExecuteMock: vi.fn<(statement: string) => Promise<void>>(async () => {}),
   dbQueryMock: vi.fn(),
@@ -36,7 +54,10 @@ const { dbExecuteMock, dbQueryMock } = vi.hoisted(() => ({
 vi.mock('../sqlite/db', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../sqlite/db')>()),
   getBossProfitDb: vi.fn(async () => ({ execute: dbExecuteMock, query: dbQueryMock })),
+  closeBossProfitDb: closeDbMock,
 }))
+
+vi.mock('../../native/splash-screen', () => ({ showSplashScreen: showSplashMock }))
 
 const KEEP_KEY_NAMES = ['apiKey', 'selectedAccountId', 'theme', 'trackingMode', 'dropEffect']
 
@@ -225,5 +246,73 @@ describe('getCacheDataSizes', () => {
 
     expect(sizes.general).toBe(0)
     expect(sizes.bossRecords).toBe(0)
+  })
+})
+
+// ADR-117 결정 8 — 캐시 삭제 경로는 OTA 적용 경로와 **같은 결함**을 갖고 있었다: 커버를 먼저
+// 올린 뒤 매달릴 수 있는 닫기를 돌고, 화면을 되살리는 일(reload)이 그 뒤에 있었다. 닫기가 응답하지
+// 않으면 리로드에 도달하지 못하고 브랜드 주황 커버만 남는다(이슈 #175와 같은 증상, 다른 트리거).
+// 여기서 고치는 것은 순서 하나뿐이다 — 실패 UX는 만들지 않는다(ADR-065 결정 3: 항상 리로드하고
+// 실패는 pendingNotice로 부팅 후에 알린다).
+describe('clearCacheDataAndReload', () => {
+  const ALL: CacheDataSelection = { general: true, bossRecords: true }
+
+  beforeEach(() => {
+    callOrder.length = 0
+  })
+
+  it('닫기 → 커버 → 리로드 순으로 부른다', async () => {
+    const reload = vi.fn(() => {
+      callOrder.push('reload')
+    })
+
+    await clearCacheDataAndReload(ALL, reload)
+
+    expect(callOrder).toEqual(['close', 'cover', 'reload'])
+  })
+
+  // 이 순서의 값은 여기서 드러난다 — 닫기가 매달리는 동안 화면이 가려져 있지 않다(그 구간이
+  // 정확히 사용자가 주황 화면에 갇히던 자리다). 커버는 리로드 직전에만 올라간다.
+  it('닫기가 끝나기 전에는 커버를 올리지 않는다', async () => {
+    let finishClose: () => void = () => {}
+    closeDbMock.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finishClose = () => {
+            callOrder.push('close')
+            resolve()
+          }
+        }),
+    )
+    const reload = vi.fn(() => {
+      callOrder.push('reload')
+    })
+
+    const pending = clearCacheDataAndReload(ALL, reload)
+    await vi.waitFor(() => {
+      expect(closeDbMock).toHaveBeenCalled()
+    })
+
+    expect(showSplashMock).not.toHaveBeenCalled()
+    expect(reload).not.toHaveBeenCalled()
+
+    finishClose()
+    await pending
+
+    expect(callOrder).toEqual(['close', 'cover', 'reload'])
+  })
+
+  // 커버는 시각적 장치일 뿐이라, 그것이 실패했다고 리로드를 막으면 본말전도다
+  // (ADR-027 2026-07-17 추가의 "스플래시 표시가 실패해도 진행한다"가 그대로 유효하다).
+  it('커버 표시가 실패해도 리로드한다', async () => {
+    showSplashMock.mockRejectedValueOnce(new Error('splash failed'))
+    const reload = vi.fn(() => {
+      callOrder.push('reload')
+    })
+
+    await clearCacheDataAndReload(ALL, reload)
+
+    expect(reload).toHaveBeenCalledOnce()
+    expect(callOrder).toEqual(['close', 'reload'])
   })
 })

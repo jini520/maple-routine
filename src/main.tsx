@@ -4,12 +4,11 @@ import { Capacitor } from '@capacitor/core'
 import { defineCustomElements as defineJeepSqliteElements } from 'jeep-sqlite/loader'
 import './index.css'
 import App from './App.tsx'
-import { notifyLiveUpdateReady } from './native/live-update'
 import { useLiveUpdateStore } from './features/live-update/store'
 
-// notifyAppReady는 네트워크 요청 이전, 번들 실행 직후 가장 먼저 호출해야 한다 —
-// 타임아웃 안에 호출하지 않으면 플러그인이 직전 정상 번들로 자동 롤백한다(ADR-022).
-void notifyLiveUpdateReady()
+// notifyAppReady()는 여기서 부르지 않는다 — App 마운트 useEffect로 옮겼다(ADR-117 결정 2).
+// 번들 첫 문장에서 부르면 "정상"이 렌더 한 픽셀 전에 선언돼, 그 뒤에 죽는 번들이 SUCCESS로
+// 찍히고 영구히 박힌다(자동 롤백이 다시는 안 걸린다).
 // 부팅 백그라운드 체크는 스토어를 경유해, 발견된 업데이트가 설정 화면 UI에 곧바로 반영된다(ADR-026).
 void useLiveUpdateStore.getState().checkOnBoot()
 

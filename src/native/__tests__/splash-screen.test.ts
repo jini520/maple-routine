@@ -25,6 +25,20 @@ function findReloadCover(): HTMLElement | null {
   return document.querySelector('[data-splash-cover]')
 }
 
+// 걷는 쪽은 "한 장"이 아니라 "전부"를 계약으로 삼는다(ADR-117 결정 4) — 개수를 센다.
+function countReloadCovers(): number {
+  return document.querySelectorAll('[data-splash-cover]').length
+}
+
+// showSplashScreen이 붙이는 리로드 커버를 원하는 장수만큼 재현한다.
+function mountReloadCovers(count: number): void {
+  for (let i = 0; i < count; i++) {
+    const cover = document.createElement('div')
+    cover.setAttribute('data-splash-cover', '')
+    document.body.appendChild(cover)
+  }
+}
+
 beforeEach(() => {
   getPlatformMock.mockReset().mockReturnValue('ios')
   hideMock.mockReset()
@@ -73,6 +87,50 @@ describe('hideSplashScreen', () => {
 
   it('부팅 커버가 이미 없어도 오류 없이 동작한다', async () => {
     await expect(hideSplashScreen()).resolves.toBeUndefined()
+  })
+
+  // showSplashScreen이 붙이는 리로드 커버를 걷는 코드가 저장소에 아예 없었다 — "문서와 함께
+  // 사라진다"는 전제가 리로드 성공에만 성립해, 적용이 실패하면 영구히 남았다(ADR-117 결정 4).
+  it('리로드 커버([data-splash-cover])도 함께 제거한다', async () => {
+    mountReloadCovers(1)
+
+    await hideSplashScreen()
+
+    expect(findReloadCover()).toBeNull()
+  })
+
+  it('리로드 커버가 여러 장 쌓여 있어도 전부 제거한다(중복 호출로 겹칠 수 있다)', async () => {
+    mountReloadCovers(3)
+    expect(countReloadCovers()).toBe(3)
+
+    await hideSplashScreen()
+
+    expect(countReloadCovers()).toBe(0)
+  })
+
+  it('웹 플랫폼에서도 두 커버를 모두 제거한다(네이티브 hide는 호출하지 않는다)', async () => {
+    getPlatformMock.mockReturnValue('web')
+    mountBootCover()
+    mountReloadCovers(2)
+
+    await hideSplashScreen()
+
+    expect(document.getElementById('boot-cover')).toBeNull()
+    expect(countReloadCovers()).toBe(0)
+    expect(hideMock).not.toHaveBeenCalled()
+  })
+
+  // 네이티브 hide()가 매달려도 DOM 커버만큼은 이미 사라진 뒤여야 한다 — 그래야 화면이 돌아온다.
+  it('네이티브 hide가 끝나지 않아도 DOM 커버는 먼저 제거된다', async () => {
+    hideMock.mockReturnValue(new Promise(() => {}))
+    mountBootCover()
+    mountReloadCovers(1)
+
+    void hideSplashScreen()
+    await Promise.resolve()
+
+    expect(document.getElementById('boot-cover')).toBeNull()
+    expect(countReloadCovers()).toBe(0)
   })
 })
 
