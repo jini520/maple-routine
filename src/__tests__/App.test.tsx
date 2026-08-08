@@ -1,9 +1,13 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
+import { readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { AppShell } from '../App'
+import App, { AppShell } from '../App'
+import { notifyLiveUpdateReady } from '../native/live-update'
 import { useOnboardingStore } from '../features/onboarding/store'
 import { useContentSchedulerStore } from '../features/content-scheduler/store'
 import { useBossSchedulerStore } from '../features/boss-scheduler/store'
@@ -58,6 +62,13 @@ const { keyboardListeners } = vi.hoisted(() => ({
 vi.mock('../native/system-bars', () => ({
   refreshSafeAreaInsets: vi.fn().mockResolvedValue(undefined),
 }))
+
+// [[ADR-117]] 결정 2: notifyAppReady 호출 시점을 검사하려면 이 한 함수만 가로채면 된다 —
+// 나머지 export 는 실물 그대로다(같은 모듈을 live-update 스토어가 쓴다).
+vi.mock('../native/live-update', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../native/live-update')>()
+  return { ...actual, notifyLiveUpdateReady: vi.fn(async () => {}) }
+})
 
 vi.mock('../features/ads/tab-switch-ad', () => ({
   startAds: vi.fn().mockResolvedValue(undefined),
@@ -662,5 +673,64 @@ describe('AppShell', () => {
       }
       scrollTo.mockRestore()
     })
+  })
+})
+
+/**
+ * notifyAppReady 호출 시점([[ADR-117]] 결정 2).
+ *
+ * capgo 의 유일한 안전망은 *"appReadyTimeout(기본 10초) 안에 notifyAppReady 가 없으면 직전 정상
+ * 번들로 되돌린다"* 이고, 한 번 SUCCESS 로 찍힌 번들은 이후 어떤 실행에서도 롤백되지 않는다.
+ * 그래서 이 호출은 **"React 가 마운트에 성공했다"** 를 뜻해야 한다 — 번들 첫 문장에서 부르면
+ * 렌더가 죽는 번들이 SUCCESS 로 찍혀 영구히 박힌다(이슈 #175 의 안전망 ①).
+ */
+describe('notifyAppReady 호출 시점 (ADR-117 결정 2)', () => {
+  // 던지는 구현이 다음 테스트로 새지 않게 되돌린다 — vi.clearAllMocks() 는 구현을 지우지 않는다.
+  afterEach(() => {
+    mockedUseOnboardingStore.mockReset()
+  })
+
+  it('정상 마운트되면 notifyAppReady 를 1번 호출한다', async () => {
+    mockStore({ status: 'awaitingApiKey' })
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(vi.mocked(notifyLiveUpdateReady)).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  /**
+   * 이 케이스가 이 결정의 전부다. 호출을 App(ErrorBoundary 를 **렌더하는** 쪽)에 두면 자식이
+   * 렌더 중에 던져도 App 자신은 정상 커밋돼 effect 가 돌아, **부팅 크래시로 죽은 번들이
+   * "정상"으로 찍힌다.** AppShell 은 ErrorBoundary 안이라 렌더가 던지면 커밋되지 않는다.
+   */
+  it('부팅 렌더가 던지면 호출하지 않는다 — 그래야 capgo 가 직전 번들로 롤백한다', () => {
+    // React 는 바운더리가 잡은 예외를 콘솔에 한 번 더 뱉는다(ErrorBoundary 의 console.error 와 별개).
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+    mockedUseOnboardingStore.mockImplementation(() => {
+      throw new Error('부팅 크래시')
+    })
+
+    render(<App />)
+
+    expect(screen.getByTestId('error-boundary-fallback')).toBeInTheDocument()
+    expect(vi.mocked(notifyLiveUpdateReady)).not.toHaveBeenCalled()
+
+    consoleError.mockRestore()
+  })
+
+  // main.tsx 는 사이드이펙트 모듈이라 import 로 검사하기 까다롭다 — 소스를 읽어 단언한다
+  // (index-html-analytics.test.ts 와 같은 계열). 경로를 문자열로 푸는 이유는
+  // index-html-boot-cover.test.ts 와 같다 — jsdom 전역 URL 을 node 의 fileURLToPath 가 안 받는다.
+  it('main.tsx 는 더 이상 부팅 첫 문장에서 부르지 않는다', () => {
+    const source = readFileSync(
+      resolve(dirname(fileURLToPath(import.meta.url)), '../main.tsx'),
+      'utf8',
+    )
+
+    expect(source).not.toContain('notifyLiveUpdateReady')
+    // 부팅 백그라운드 체크([[ADR-026]])는 이 결정과 무관하므로 그대로 남아 있어야 한다.
+    expect(source).toContain('checkOnBoot')
   })
 })
