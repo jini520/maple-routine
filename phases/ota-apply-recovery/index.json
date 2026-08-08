@@ -61,7 +61,9 @@
     {
       "step": 7,
       "name": "error-boundary-cover",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-09T00:16:40+0900",
+      "summary": "ADR-117 결정 6 구현 — ErrorBoundary.tsx 와 그 테스트 두 파일만. 호출 자리는 **componentDidCatch**(이미 있던 훅): getDerivedStateFromError 가 hasError 를 세우면 React 가 같은 커밋에서 이 훅을 부르므로 '폴백이 화면에 뜨는 모든 경로'가 정확히 이 훅이 도는 경로다(폴백은 children 을 대체하므로 재throw 도 없다). `hideSplashScreen().catch(() => {})` 한 줄이 부팅 크래시의 세 고리를 동시에 끊는다 — ⑴ 커버 제거(걷는 코드가 App.tsx useEffect 타이머 하나뿐인데 첫 1초 안에 던지면 클린업이 그 타이머를 취소한다) ⑵ 커버가 사라져 폴백이 위에 아무것도 없이 보인다 ⑶ 네이티브 hide() 가 iOS isUserInteractionEnabled=false 를 풀어 **터치가 살아난다**(이것이 진짜 이유). **z-index 는 올리지 않았다** — 결정 6 이 기각한 안이고(올릴 숫자가 없다·매직 넘버가 두 곳·무엇보다 보이게 해도 안 눌린다) AC grep 도 0 이다. 초안 주석이 그 기각 사유를 설명하며 'z-index' 를 3회 적어 AC(0)를 리터럴로 깨뜨렸는데, step 5 의 ProgressBar 선례대로 grep 이 실제 가드로 남도록 같은 뜻을 '쌓임 순서'로 바꿔 표현했다(의미 손실 0). import 는 어댑터 경유(`../../../native/splash-screen`, @capacitor 직접 import 0건) — layer-dependencies 는 atoms/molecules/organisms/templates 사이 방향만 보므로 organism → native/ 는 대상이 아니고, templates import 0건. 폴백 내용은 한 글자도 안 늘었다(ADR-065 결정 5). 테스트 +3(새 파일 0): 폴백이 뜨면 1회 호출 · 예외 없으면 0회 · reject 해도 폴백이 그려지고 rejection 을 삼킨다. **판별력 확인 2건**: 호출 한 줄을 지우자 '폴백이 뜨면 스플래시를 내린다' **1건만** 실패(6 passed/1 failed) 후 되돌림. `.catch(() => {})` → `void` 로 바꿔도 처음엔 **아무 것도 안 깨졌다** — vitest 4 가 settledResults 추적으로 목의 반환 promise 에 자기 핸들러를 붙여 unhandledRejection 이 원리적으로 안 뜬다(별도 probe 로 이벤트 자체는 관측 가능함을 확인해 원인을 특정). 그래서 그 케이스를 '호출부가 rejection 핸들러를 붙였는가'(반환 promise 의 .catch 스파이)로 다시 써 판별력을 얻었고, 다시 void 로 바꾸자 그 1건만 실패함을 확인 후 되돌렸다. 검증: build 성공 · 테스트 **2,692개/177파일** 통과(기준선 2,689/177 대비 +3) · lint 0 errors/17 warnings(baseline 동일) · layer-dependencies 3케이스 통과 · git status src/ 는 ErrorBoundary 2파일뿐(밖 0건). native/splash-screen.ts·App.tsx 무변경."
     },
     {
       "step": 8,
