@@ -178,7 +178,8 @@
     },
     {
       "dir": "settings-hierarchy",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-08-09T03:23:25+0900"
     }
   ]
 }
