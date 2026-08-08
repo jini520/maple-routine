@@ -49,12 +49,18 @@ export async function clearCacheDataAndReload(
   if (outcome !== 'ok') {
     setPendingNotice('cacheClearFailed')
   }
-  // 리로드 동안 웹뷰 네이티브 배경색(브랜드 주황)이 깜빡 드러나므로, 앱 실행 때처럼 스플래시로
-  // 덮고 리로드한다 — 리로드된 앱의 부팅 흐름이 스플래시를 내린다. 실패해도 리로드는 진행.
-  await showSplashScreen().catch(() => {})
   // 리로드가 JS 컨텍스트를 파괴하기 전에 SQLite 커넥션을 먼저 정상 종료한다 — 안 그러면
   // OTA 적용(native/live-update.ts)과 같은 이유로 네이티브 쪽에 stale 커넥션이 남아, 리로드
   // 후 보스 수익 과거 기간 조회가 "이 기간을 불러오지 못했습니다"로 실패한다(사용자 보고).
+  // 닫기는 던지지 않고 5초 안에 끝난다(ADR-117 결정 5) — 여기서 또 감싸지 않는다.
   await closeBossProfitDb()
+  // 리로드 동안 웹뷰 네이티브 배경색(브랜드 주황)이 깜빡 드러나므로, 앱 실행 때처럼 스플래시로
+  // 덮고 리로드한다 — 리로드된 앱의 부팅 흐름이 스플래시를 내린다. 실패해도 리로드는 진행.
+  //
+  // 커버가 닫기 **뒤**인 것이 이 순서의 요점이다(ADR-117 결정 8). 먼저 올리면 닫기가 매달리는
+  // 동안 사용자가 브랜드 주황 화면에 갇히고 그 화면에서는 터치도 죽는다 — 이슈 #175(OTA 적용)와
+  // 증상이 같고 트리거만 다른 두 번째 문이었다. 커버가 떠 있는 구간을 실제 리로드 직전으로 좁혀
+  // 그 문을 닫는다. native/live-update.ts 의 applyDownloadedLiveUpdate 와 같은 순서다.
+  await showSplashScreen().catch(() => {})
   reload()
 }
