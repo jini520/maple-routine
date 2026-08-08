@@ -30,7 +30,7 @@ import { fileURLToPath } from 'node:url'
 // 배포 스크립트가 릴리스 경로의 일부라 의존성이 늘수록 릴리스가 깨질 표면이 넓어지기 때문이고,
 // 정규식으로 파일을 긁지 않은 이유는 그 방식이 원천의 형식이 바뀌는 순간 조용히 틀린 값을 내기
 // 때문이다. release-notes.ts 는 순수 데이터라 타입 선언 말고는 스트리핑할 것도 없다.
-import { findReleaseNote } from '../src/data/release-notes.ts'
+import { findReleaseNote, RELEASE_NOTE_CATEGORY_LABELS } from '../src/data/release-notes.ts'
 
 const REPO = 'jini520/maple-routine'
 
@@ -73,14 +73,20 @@ export function isPublishableReleaseNote(note) {
  *
  * **합치는 규칙을 여기서 고정한다** — 업데이트 모달(이슈 #164)이 이 문자열을 그대로 읽는다.
  *
- * - 항목 하나가 한 줄이고, 줄머리는 `• `. 줄 구분은 `\n` 하나다(읽는 쪽이 줄바꿈을 살려 그린다).
+ * - 항목 하나가 한 줄이고, 줄머리는 `[카테고리] `. 줄 구분은 `\n` 하나다(읽는 쪽이 줄바꿈을 살려 그린다).
+ *   **카테고리가 곧 줄머리다**(ADR-119 결정 9) — 화면은 배지로 그리는 그 값이고, 평문에서는 `• ` 를
+ *   대신한다. 점과 대괄호를 둘 다 두면 한 줄에 마크가 두 겹이 된다.
  * - `requiresStoreUpdate` 항목은 줄 끝에 `(스토어 업데이트 필요)` 를 붙인다. 화면은 배지로 그리지만
  *   여긴 평문 한 덩어리라 괄호 꼬리가 자리다 — **표식이 문자열에서 사라지면 모달이 "이 항목은 OTA 로
  *   안 온다"는 사실을 잃는다**(ADR-119 결정 3).
  */
 export function formatReleaseNotes(note) {
   return note.items
-    .map((item) => `• ${item.text}${item.requiresStoreUpdate === true ? ' (스토어 업데이트 필요)' : ''}`)
+    .map(
+      (item) =>
+        `[${RELEASE_NOTE_CATEGORY_LABELS[item.category]}] ${item.text}` +
+        (item.requiresStoreUpdate === true ? ' (스토어 업데이트 필요)' : ''),
+    )
     .join('\n')
 }
 

@@ -77,7 +77,7 @@ export function SettingsScreen(): React.JSX.Element {
       <Card className="px-6 divide-y divide-border" data-testid="settings-card">
         {/* 대표값을 비운다(결정 5) — "최신 버전"은 아래 `앱 정보` 행과 같은 값이라 중복이고,
             "n개"는 개수가 늘어난다고 뜻이 생기지 않는다. 없는 대표값을 지어내지 않는다. */}
-        <SettingsRow label="개발노트" onClick={() => navigateToScreen('/settings/release-notes')} />
+        <SettingsRow label="개발 노트" onClick={() => navigateToScreen('/settings/release-notes')} />
         <SettingsRow
           label="계정 및 데이터"
           onClick={() => navigateToScreen('/settings/account-data')}

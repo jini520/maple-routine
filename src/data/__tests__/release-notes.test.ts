@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { RELEASE_NOTES, findReleaseNote } from '../release-notes'
+import {
+  RELEASE_NOTES,
+  RELEASE_NOTE_CATEGORY_LABELS,
+  RELEASE_NOTE_CATEGORY_ORDER,
+  findReleaseNote,
+} from '../release-notes'
 
 // 릴리스 노트는 손으로 쓰는 파일이고, 그 형식을 배포 게이트가 읽는다(ADR-119 결정 6) —
 // 형식이 어긋난 채 커밋되면 배포 시점에야 드러나므로 여기서 형식 자체를 강제한다.
@@ -41,6 +46,25 @@ describe('release-notes 형식', () => {
         compareVersion(previous, current),
         `${previous} 가 ${current} 보다 앞에 있으려면 더 높은 버전이어야 한다`,
       ).toBeGreaterThan(0)
+    }
+  })
+
+  // ADR-119 결정 9: 카테고리는 화면의 묶음 제목이자 매니페스트의 줄머리다. 값이 어긋나면 화면에서는
+  // 묶음이 통째로 사라지고(순서 상수에 없는 값은 안 그려진다) 매니페스트에는 `[undefined]` 가 실린다.
+  it('모든 항목의 category 가 정해진 셋 중 하나다', () => {
+    for (const note of RELEASE_NOTES) {
+      for (const item of note.items) {
+        expect(
+          RELEASE_NOTE_CATEGORY_ORDER,
+          `${note.version} 의 "${item.text}" 에 알 수 없는 category "${item.category}"`,
+        ).toContain(item.category)
+      }
+    }
+  })
+
+  it('모든 카테고리에 라벨이 있다', () => {
+    for (const category of RELEASE_NOTE_CATEGORY_ORDER) {
+      expect(RELEASE_NOTE_CATEGORY_LABELS[category]?.trim()).toBeTruthy()
     }
   })
 

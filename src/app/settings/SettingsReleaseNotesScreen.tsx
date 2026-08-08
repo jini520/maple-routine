@@ -1,7 +1,11 @@
 import { useEffect } from 'react'
 import { ArrowLeft, FileText } from 'lucide-react'
 import packageJson from '../../../package.json'
-import { RELEASE_NOTES } from '../../data/release-notes'
+import {
+  RELEASE_NOTES,
+  RELEASE_NOTE_CATEGORY_LABELS,
+  RELEASE_NOTE_CATEGORY_ORDER,
+} from '../../data/release-notes'
 import { useLiveUpdateStore } from '../../features/live-update/store'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
@@ -10,7 +14,7 @@ import { Card } from '../../components/atoms/Card/Card'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { useScreenNavigate } from '../../lib/use-screen-navigate'
 
-// 설정 하위 페이지 「개발노트」(ADR-118 결정 2 · ADR-119) — 버전별 변경 목록.
+// 설정 하위 페이지 「개발 노트」(ADR-118 결정 2 · ADR-119) — 버전별 변경 목록.
 //
 // 골격은 `/settings/about`·`/settings/account-data` 와 같다: 공용 `ScreenScroll` + `PageHeader`
 // (fixed + 실측 spacer) + `useScreenNavigate`.
@@ -49,7 +53,7 @@ export function SettingsReleaseNotesScreen(): React.JSX.Element {
           >
             <ArrowLeft className="h-5 w-5" strokeWidth={2} aria-hidden="true" />
           </button>
-          <h1 className="text-lg font-semibold text-text">개발노트</h1>
+          <h1 className="text-lg font-semibold text-text">개발 노트</h1>
         </div>
       </PageHeader>
 
@@ -72,26 +76,43 @@ export function SettingsReleaseNotesScreen(): React.JSX.Element {
                 <span className="ml-auto text-xs tabular-nums text-text-disabled">{note.date}</span>
               </div>
 
-              <ul className="space-y-2">
-                {note.items.map((item) => (
-                  <li key={item.text} className="flex gap-2 text-sm text-text-muted">
-                    <span aria-hidden="true" className="text-text-disabled">
-                      ·
-                    </span>
-                    <div className="min-w-0 flex-1 space-y-1">
-                      <p>{item.text}</p>
-                      {/* ADR-119 결정 3: 표식은 버전이 아니라 이 항목에 붙는다. 톤은 스토어
-                          이동을 말하는 다른 자리(UpdatePromptModal 의 store-required)와 같은
-                          third 다. */}
-                      {item.requiresStoreUpdate === true && (
-                        <p>
-                          <Badge tone="third">스토어 업데이트 필요</Badge>
-                        </p>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              {/* ADR-119 결정 9: 항목마다 배지를 다는 대신 **카테고리로 묶는다.** 배지는 항목
+                  수만큼 반복돼 같은 말이 열 번 나오지만, 묶음 제목은 한 번만 말하고 그 아래
+                  전부에 적용된다. 순서는 데이터가 아니라 RELEASE_NOTE_CATEGORY_ORDER 가 정한다 —
+                  노트를 쓰는 사람이 항목을 어떤 순서로 적든 화면은 늘 같아야 한다.
+                  **비어 있는 묶음은 제목째 감춘다**(ThemeSelector 의 카테고리 섹션과 같은 규칙). */}
+              {RELEASE_NOTE_CATEGORY_ORDER.map((category) => {
+                const items = note.items.filter((item) => item.category === category)
+                if (items.length === 0) return null
+
+                return (
+                  <div key={category} className="space-y-1" data-testid="release-note-group">
+                    <p className="text-xs font-semibold text-text-muted">
+                      {RELEASE_NOTE_CATEGORY_LABELS[category]}
+                    </p>
+                    <ul className="space-y-2">
+                      {items.map((item) => (
+                        <li key={item.text} className="flex gap-2 text-sm text-text-muted">
+                          <span aria-hidden="true" className="text-text-disabled">
+                            ·
+                          </span>
+                          <div className="min-w-0 flex-1 space-y-1">
+                            <p>{item.text}</p>
+                            {/* ADR-119 결정 3: 표식은 버전이 아니라 이 항목에 붙는다. 톤은 스토어
+                                이동을 말하는 다른 자리(UpdatePromptModal 의 store-required)와 같은
+                                third 다. */}
+                            {item.requiresStoreUpdate === true && (
+                              <p>
+                                <Badge tone="third">스토어 업데이트 필요</Badge>
+                              </p>
+                            )}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )
+              })}
             </Card>
           ))
         )}

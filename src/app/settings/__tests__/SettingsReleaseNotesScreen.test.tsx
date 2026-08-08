@@ -75,10 +75,10 @@ afterEach(() => {
 
 describe('SettingsReleaseNotesScreen', () => {
   // 골격은 관리 페이지·`/settings/about` 과 같다(ADR-118 결정 2).
-  it('"개발노트" 제목과 뒤로 버튼을 그리고, 뒤로를 누르면 설정으로 돌아간다', () => {
+  it('"개발 노트" 제목과 뒤로 버튼을 그리고, 뒤로를 누르면 설정으로 돌아간다', () => {
     renderReleaseNotesScreen()
 
-    expect(screen.getByRole('heading', { name: '개발노트' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '개발 노트' })).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: '뒤로' }))
     expect(screen.getByText('설정 프로브')).toBeInTheDocument()
@@ -105,8 +105,8 @@ describe('SettingsReleaseNotesScreen', () => {
   // 화면이 다시 정렬하면 같은 규칙의 진실이 두 곳에 생긴다.
   it('배열 순서를 그대로 그린다 — 화면이 정렬하지 않는다', () => {
     fixture = [
-      { version: '1.0.4', date: '2026-08-20', items: [{ text: '나중 것' }] },
-      { version: '1.0.3', date: '2026-08-09', items: [{ text: '먼저 것' }] },
+      { version: '1.0.4', date: '2026-08-20', items: [{ category: 'feature', text: '나중 것' }] },
+      { version: '1.0.3', date: '2026-08-09', items: [{ category: 'feature', text: '먼저 것' }] },
     ]
     renderReleaseNotesScreen()
 
@@ -123,8 +123,8 @@ describe('SettingsReleaseNotesScreen', () => {
         version: '1.0.4',
         date: '2026-08-20',
         items: [
-          { text: 'OTA 로 가는 변경' },
-          { text: '네이티브가 필요한 변경', requiresStoreUpdate: true },
+          { category: 'improvement', text: 'OTA 로 가는 변경' },
+          { category: 'feature', text: '네이티브가 필요한 변경', requiresStoreUpdate: true },
         ],
       },
     ]
@@ -140,10 +140,51 @@ describe('SettingsReleaseNotesScreen', () => {
     expect(screen.getAllByText('스토어 업데이트 필요')).toHaveLength(1)
   })
 
+  // ADR-119 결정 9: 항목마다 배지를 반복하는 대신 카테고리로 묶는다. 순서는 데이터가 아니라
+  // RELEASE_NOTE_CATEGORY_ORDER 가 정한다 — 노트를 쓰는 사람이 어떤 순서로 적든 화면은 같아야 한다.
+  it('카테고리로 묶어 그리고, 순서는 데이터 순서가 아니라 정해진 순서다', () => {
+    fixture = [
+      {
+        version: '1.0.4',
+        date: '2026-08-20',
+        items: [
+          // 일부러 뒤섞어 둔다 — 데이터 순서를 따라가면 이 케이스가 깨진다.
+          { category: 'fix', text: '고친 것' },
+          { category: 'feature', text: '새 기능' },
+          { category: 'improvement', text: '나아진 것' },
+        ],
+      },
+    ]
+    renderReleaseNotesScreen()
+
+    const groups = screen.getAllByTestId('release-note-group')
+    expect(groups.map((node) => node.querySelector('p')?.textContent)).toEqual([
+      '기능',
+      '개선',
+      '버그',
+    ])
+    expect(within(groups[0]).getByText('새 기능')).toBeInTheDocument()
+    expect(within(groups[1]).getByText('나아진 것')).toBeInTheDocument()
+    expect(within(groups[2]).getByText('고친 것')).toBeInTheDocument()
+  })
+
+  // ThemeSelector 의 카테고리 섹션과 같은 규칙 — 거른 결과가 0이면 헤더째 감춘다.
+  it('항목이 없는 카테고리는 제목째 그리지 않는다', () => {
+    fixture = [
+      { version: '1.0.4', date: '2026-08-20', items: [{ category: 'fix', text: '고친 것' }] },
+    ]
+    renderReleaseNotesScreen()
+
+    expect(screen.getAllByTestId('release-note-group')).toHaveLength(1)
+    expect(screen.getByText('버그')).toBeInTheDocument()
+    expect(screen.queryByText('기능')).not.toBeInTheDocument()
+    expect(screen.queryByText('개선')).not.toBeInTheDocument()
+  })
+
   it('지금 실행 중인 버전에만 "사용 중" 배지를 붙인다', () => {
     fixture = [
-      { version: '1.0.4', date: '2026-08-20', items: [{ text: '나중 것' }] },
-      { version: '1.0.3', date: '2026-08-09', items: [{ text: '먼저 것' }] },
+      { version: '1.0.4', date: '2026-08-20', items: [{ category: 'feature', text: '나중 것' }] },
+      { version: '1.0.3', date: '2026-08-09', items: [{ category: 'feature', text: '먼저 것' }] },
     ]
     mockLiveUpdateStore({ currentVersion: '1.0.3' })
     renderReleaseNotesScreen()
@@ -157,7 +198,7 @@ describe('SettingsReleaseNotesScreen', () => {
   // `AppUpdateSection`·`SettingsScreen` 과 같은 폴백 — 네이티브 번들 버전을 못 읽는 환경(web)에서는
   // 빌드 시점 값이 곧 실행 중인 버전이다.
   it('currentVersion 이 없으면 package.json 버전으로 판정한다', () => {
-    fixture = [{ version: packageJson.version, date: '2026-08-09', items: [{ text: '항목' }] }]
+    fixture = [{ version: packageJson.version, date: '2026-08-09', items: [{ category: 'feature', text: '항목' }] }]
     mockLiveUpdateStore({ currentVersion: null })
     renderReleaseNotesScreen()
 
@@ -166,7 +207,7 @@ describe('SettingsReleaseNotesScreen', () => {
 
   // 없는 것을 지어내지 않는다 — 1.0.2 이전 사용자는 자기 버전이 목록에 없다(ADR-119 결정 4).
   it('일치하는 버전이 없으면 배지를 하나도 붙이지 않는다', () => {
-    fixture = [{ version: '1.0.4', date: '2026-08-20', items: [{ text: '항목' }] }]
+    fixture = [{ version: '1.0.4', date: '2026-08-20', items: [{ category: 'feature', text: '항목' }] }]
     mockLiveUpdateStore({ currentVersion: '9.9.9' })
     renderReleaseNotesScreen()
 

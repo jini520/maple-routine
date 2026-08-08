@@ -304,7 +304,7 @@ describe('AppShell', () => {
 
   // ADR-118 결정 2: 설정 하위 페이지 셋은 `/settings` 의 **형제** 라우트이고, 가드도 똑같이 건다.
   it.each([
-    ['/settings/release-notes', '개발노트'],
+    ['/settings/release-notes', '개발 노트'],
     ['/settings/account-data', '계정 및 데이터'],
     ['/settings/about', '앱 정보'],
   ])('status가 completed일 때 %s 로 접근하면 그 화면이 보인다', async (path, heading) => {
@@ -332,7 +332,7 @@ describe('AppShell', () => {
   // 여기서 처음으로 화면이 이어진다 — 본화면의 이동 행이 실제로 그 화면을 띄우고, 그 화면의
   // `뒤로` 가 설정으로 돌아온다(ADR-118 결정 1·2).
   it.each([
-    ['개발노트', '개발노트'],
+    ['개발 노트', '개발 노트'],
     ['계정 및 데이터', '계정 및 데이터'],
     ['앱 정보', '앱 정보'],
   ])(

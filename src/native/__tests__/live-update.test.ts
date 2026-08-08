@@ -109,7 +109,7 @@ describe('parseLiveUpdateManifest', () => {
   })
 
   it('notes가 문자열이면 함께 반환한다', () => {
-    const withNotes = { ...manifest, notes: '- 개발노트 화면 추가\n- 설정 화면 정리' }
+    const withNotes = { ...manifest, notes: '- 개발 노트 화면 추가\n- 설정 화면 정리' }
     expect(parseLiveUpdateManifest(withNotes)).toEqual(withNotes)
     expect(parseLiveUpdateManifest(JSON.stringify(withNotes))).toEqual(withNotes)
   })

@@ -99,7 +99,10 @@ describe('formatReleaseNotes', () => {
     const notes = formatReleaseNotes({
       version: '9.9.9',
       date: '2026-01-01',
-      items: [{ text: '첫째 변경' }, { text: '둘째 변경' }],
+      items: [
+        { category: 'feature', text: '첫째 변경' },
+        { category: 'fix', text: '둘째 변경' },
+      ],
     })
 
     expect(notes).toContain('첫째 변경')
@@ -112,12 +115,35 @@ describe('formatReleaseNotes', () => {
     const notes = formatReleaseNotes({
       version: '9.9.9',
       date: '2026-01-01',
-      items: [{ text: 'OTA 변경' }, { text: '네이티브 변경', requiresStoreUpdate: true }],
+      items: [
+        { category: 'improvement', text: 'OTA 변경' },
+        { category: 'feature', text: '네이티브 변경', requiresStoreUpdate: true },
+      ],
     })
 
     const [otaLine, nativeLine] = notes.split('\n')
     expect(nativeLine).toContain('스토어 업데이트 필요')
     expect(otaLine).not.toContain('스토어 업데이트 필요')
+  })
+
+  // ADR-119 결정 9: 화면은 카테고리로 묶어 보여주지만 매니페스트는 평문 한 덩어리라 묶을 자리가
+  // 없다 — 줄머리 `[카테고리] ` 가 그 자리다. 이것이 빠지면 모달(#164)이 분류를 통째로 잃는다.
+  it('줄머리가 `[카테고리] ` 이고 항목마다 자기 카테고리를 단다', () => {
+    const notes = formatReleaseNotes({
+      version: '9.9.9',
+      date: '2026-01-01',
+      items: [
+        { category: 'feature', text: '새 기능' },
+        { category: 'improvement', text: '나아진 것' },
+        { category: 'fix', text: '고친 것' },
+      ],
+    })
+
+    expect(notes.split('\n')).toEqual([
+      '[기능] 새 기능',
+      '[개선] 나아진 것',
+      '[버그] 고친 것',
+    ])
   })
 })
 

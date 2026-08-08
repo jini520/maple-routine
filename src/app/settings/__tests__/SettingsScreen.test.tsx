@@ -83,7 +83,7 @@ function renderSettings(): void {
     <MemoryRouter initialEntries={['/settings']}>
       <Routes>
         <Route path="/settings" element={<SettingsScreen />} />
-        <Route path="/settings/release-notes" element={<div>개발노트 프로브</div>} />
+        <Route path="/settings/release-notes" element={<div>개발 노트 프로브</div>} />
         <Route path="/settings/account-data" element={<div>계정 및 데이터 프로브</div>} />
         <Route path="/settings/about" element={<div>앱 정보 프로브</div>} />
       </Routes>
@@ -114,7 +114,7 @@ describe('SettingsScreen', () => {
     expect(rows.map((row) => row.textContent)).toEqual([
       '스케줄 관리 방법자동',
       '테마렌',
-      '개발노트',
+      '개발 노트',
       '계정 및 데이터- KB',
       '앱 정보1.0.0',
     ])
@@ -133,7 +133,7 @@ describe('SettingsScreen', () => {
       '테마렌',
     ])
     expect(within(cards[1]).getAllByRole('button').map((row) => row.textContent)).toEqual([
-      '개발노트',
+      '개발 노트',
       '계정 및 데이터- KB',
       '앱 정보1.0.0',
     ])
@@ -151,7 +151,7 @@ describe('SettingsScreen', () => {
   })
 
   it.each([
-    ['개발노트', '개발노트 프로브'],
+    ['개발 노트', '개발 노트 프로브'],
     ['계정 및 데이터', '계정 및 데이터 프로브'],
     ['앱 정보', '앱 정보 프로브'],
   ])('"%s" 행을 누르면 하위 페이지로 이동한다', async (label, probe) => {
@@ -192,10 +192,10 @@ describe('SettingsScreen', () => {
 
   // 결정 5: 후보가 전부 틀린 말을 한다 — "최신 버전"은 아래 `앱 정보` 행과 중복이고 "n개"는
   // 뜻이 없다. 없는 대표값을 지어내지 않는다.
-  it('"개발노트" 행에는 대표값을 두지 않는다', () => {
+  it('"개발 노트" 행에는 대표값을 두지 않는다', () => {
     renderSettings()
 
-    expect(screen.getByRole('button', { name: /개발노트/ })).toHaveTextContent(/^개발노트$/)
+    expect(screen.getByRole('button', { name: /개발 노트/ })).toHaveTextContent(/^개발 노트$/)
   })
 
   it('"스케줄 관리 방법" 클릭 시 트래킹 모드 모달이 열린다', async () => {
