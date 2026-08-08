@@ -11,7 +11,6 @@ import { AccountModal } from './AccountModal'
 import { ThemeModal } from './ThemeModal'
 import { TrackingModeModal } from './TrackingModeModal'
 import { DisconnectConfirm } from './DisconnectConfirm'
-import { CacheDataSection } from './CacheDataSection'
 import { Card } from '../../components/atoms/Card/Card'
 
 type OpenModal = 'account' | 'theme' | 'trackingMode' | null
@@ -73,8 +72,6 @@ export function SettingsScreen(): React.JSX.Element {
           showChevron={false}
         />
       </Card>
-
-      <CacheDataSection />
 
       <AppUpdateSection />
 

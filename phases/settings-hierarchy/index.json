@@ -37,7 +37,9 @@
     {
       "step": 4,
       "name": "account-data-screen",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-09T02:29:30+0900",
+      "summary": "ADR-118 결정 2·3·4·6 — SettingsAccountDataScreen 신규(/settings/account-data 의 화면 컴포넌트만, 라우트 배선은 step 6): SettingsAboutScreen 과 같은 헤더 골격(ScreenScroll + PageHeader + ArrowLeft '뒤로' + useScreenNavigate('/settings')) + 카드 1(계정 변경 — chevron 만, 우측 값 없음: accountId 는 불투명·대표 캐릭터는 파생·변동값이라 단정 불가) + 카드 2(캐시 데이터 삭제 + 연결 해제 — 둘 다 danger + showChevron={false}, 캐시 행 우측만 총 용량). 모달 셋은 카드 밖·셸 밖 형제(카드 안이면 divide-y 형제로 잡혀 구분선이 하나 더 그려지고, ScreenScroll 안이면 fixed 셸의 스태킹 컨텍스트에 갇혀 오버레이가 탭바 아래로 간다). 로직은 새로 만들지 않고 SettingsScreen(계정 모달·연결 해제·isDisconnecting)과 CacheDataSection(용량 로드·isClearing·clearCacheDataAndReload·reload 주입 프롭)에서 그대로 옮김 — 삭제 후 흐름(타임아웃 경쟁 → closeBossProfitDb → 스플래시 → 리로드, ADR-117 결정 8 의 순서)은 미변경. CacheDataSection.tsx + 그 테스트 삭제하고 12케이스를 전부 새 화면 테스트로 이관(커버리지 손실 0), SettingsScreen 은 import·사용 두 줄만 제거(카드·행·footer 무변경). 뒤집힌 옛 테스트 2건은 갱신이 아니라 재작성 — '데이터 관리 섹션을 업데이트 카드보다 위에'·'캐시 데이터 삭제 행을 렌더링한다' → '본화면에 두지 않는다' 하나로(이사 회귀 가드). 곁가지 1건: features/settings/cache-data.ts 주석이 지운 파일 경로를 가리켜 현재 화면으로 정정(동작 변경 0). 판별력 확인: 두 위험 행을 계정 변경과 같은 카드로 합치면 2,718개 중 '파괴적 행 둘을 계정 변경과 다른 카드로 내린다' 1건만 실패하고 나머지 2,717개는 전혀 감지하지 못함 → 그 케이스가 유일한 가드. 테스트 2,718개/180파일 통과(기준선 2,713/180 대비 +5 = 신규 18 − 삭제 12 − SettingsScreen 순감 1, 파일 수 ±0)·build 성공·lint 0 errors/17 warnings(baseline 동일)."
     },
     {
       "step": 5,

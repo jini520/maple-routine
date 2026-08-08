@@ -25,12 +25,6 @@ vi.mock('../../../features/tracking-mode/store', () => ({
   useTrackingModeStore: vi.fn(),
 }))
 
-// CacheDataSection이 마운트 시 실제 Preferences/SQLite를 호출하지 않도록 막는다.
-vi.mock('../../../storage/cache-data', () => ({
-  clearCacheData: vi.fn(),
-  getCacheDataSizes: vi.fn(async () => ({ general: 0, bossRecords: 0 })),
-}))
-
 const mockedUseSettingsStore = vi.mocked(useSettingsStore)
 const mockedUseThemeStore = vi.mocked(useThemeStore)
 const mockedUseLiveUpdateStore = vi.mocked(useLiveUpdateStore)
@@ -115,28 +109,16 @@ describe('SettingsScreen', () => {
     expect(screen.queryByRole('button', { name: /API 키 재입력/ })).not.toBeInTheDocument()
   })
 
-  // 업데이트 카드는 자기 제목을 그리지 않으므로(ADR-118 결정 2) 카드 안의 첫 행을 기준점으로 쓴다.
-  it('"데이터 관리" 섹션을 업데이트 카드보다 위에 렌더링한다', () => {
+  // ADR-118 결정 3: 캐시 데이터 삭제 행은 `/settings/account-data` 의 아래 카드로 내려갔고,
+  // 그 아래 행이 하나뿐이라 사실상 행 이름이던 「데이터 관리」 제목도 함께 사라졌다.
+  it('"캐시 데이터 삭제" 행과 "데이터 관리" 제목을 본화면에 두지 않는다', () => {
     mockSettingsStore({})
     mockThemeStore({})
 
     render(<SettingsScreen />)
 
-    const dataHeading = screen.getByRole('heading', { name: '데이터 관리' })
-    const updateRow = screen.getByText('현재 버전')
-
-    expect(
-      dataHeading.compareDocumentPosition(updateRow) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy()
-  })
-
-  it('"캐시 데이터 삭제" 행을 렌더링한다', () => {
-    mockSettingsStore({})
-    mockThemeStore({})
-
-    render(<SettingsScreen />)
-
-    expect(screen.getByRole('button', { name: /캐시 데이터 삭제/ })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /캐시 데이터 삭제/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: '데이터 관리' })).not.toBeInTheDocument()
   })
 
   it('테마 행에 현재 테마 이름이 표시된다', () => {
