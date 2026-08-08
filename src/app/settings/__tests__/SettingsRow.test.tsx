@@ -20,16 +20,36 @@ describe('SettingsRow', () => {
     expect(onClick).toHaveBeenCalledTimes(1)
   })
 
+  // 이동 행 — 대표값이 없으면 chevron 하나만 남는다(ADR-118 결정 4).
   it('rightContent를 안 주면 기본 chevron 아이콘이 보인다', () => {
     render(<SettingsRow label="계정 변경" onClick={vi.fn()} />)
 
     expect(screen.getByTestId('settings-row-chevron')).toBeInTheDocument()
   })
 
-  it('rightContent를 주면 chevron 대신 그 내용이 보인다', () => {
+  // 이 step 의 핵심 — 옛 배타(`rightContent ?? chevron`)에서는 값이 있으면 화살표가 사라져
+  // 화살표가 "동작이 아니라 값의 유무"를 말했다(ADR-118 결정 4).
+  it('rightContent를 주면 그 내용과 chevron이 함께 보인다', () => {
     render(<SettingsRow label="테마" onClick={vi.fn()} rightContent={<span>렌</span>} />)
 
     expect(screen.getByText('렌')).toBeInTheDocument()
+    expect(screen.getByTestId('settings-row-chevron')).toBeInTheDocument()
+  })
+
+  // 실행 행 — 위험 색 라벨 + 보조 수치, chevron 없음. 화살표가 붙으면 "다음 화면이 있다"로
+  // 읽혀 확인 모달이 의외가 된다.
+  it('showChevron이 false면 rightContent만 남고 chevron은 없다', () => {
+    render(
+      <SettingsRow
+        label="캐시 데이터 삭제"
+        onClick={vi.fn()}
+        danger
+        showChevron={false}
+        rightContent={<span>1.2 MB</span>}
+      />,
+    )
+
+    expect(screen.getByText('1.2 MB')).toBeInTheDocument()
     expect(screen.queryByTestId('settings-row-chevron')).not.toBeInTheDocument()
   })
 
