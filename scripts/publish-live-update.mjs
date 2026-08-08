@@ -22,6 +22,15 @@ import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+// 릴리스 노트의 진실 원천을 **그대로** 읽는다(ADR-119 결정 1) — 스크립트용 사본을 두면 노트를 고칠 때
+// 한쪽만 고쳐지고, 갈라진 순간 어느 쪽이 사실인지 알 방법이 없다.
+//
+// .mjs 가 .ts 를 그대로 import 하는 것은 Node 의 내장 타입 스트리핑 덕이다(Node 22.18+/23.6+ 부터
+// 플래그 없이 켜져 있고, 이 저장소는 24.x 에서 확인했다). 새 의존성(tsx·ts-node)을 들이지 않은 이유는
+// 배포 스크립트가 릴리스 경로의 일부라 의존성이 늘수록 릴리스가 깨질 표면이 넓어지기 때문이고,
+// 정규식으로 파일을 긁지 않은 이유는 그 방식이 원천의 형식이 바뀌는 순간 조용히 틀린 값을 내기
+// 때문이다. release-notes.ts 는 순수 데이터라 타입 선언 말고는 스트리핑할 것도 없다.
+import { findReleaseNote } from '../src/data/release-notes.ts'
 
 const REPO = 'jini520/maple-routine'
 
@@ -46,6 +55,44 @@ export function resolveReleaseCreateArgs(isBeta) {
     : { title: 'Live Update bundles (production)', flags: [] }
 }
 
+/**
+ * 이 노트로 배포해도 되는가(ADR-119 결정 6).
+ *
+ * 버전에 해당하는 노트가 아예 없거나(`undefined`) **항목이 비어 있으면** 안 된다 — 빈 노트는 노트가
+ * 아니다. 버전만 적어 두고 내용을 안 쓴 것을 통과시키면, 결정 6이 막으려는 "영영 빈 채로 남는 버전"이
+ * 그대로 나간다(결정 4가 사후 재구성을 금지하므로 나중에 채울 방법이 없다).
+ *
+ * 내용의 품질은 검사하지 않는다 — 검사할 수 없다.
+ */
+export function isPublishableReleaseNote(note) {
+  return note !== undefined && note.items.length > 0
+}
+
+/**
+ * 노트 항목들을 매니페스트에 실을 한 덩어리 문자열로 합친다.
+ *
+ * **합치는 규칙을 여기서 고정한다** — 업데이트 모달(이슈 #164)이 이 문자열을 그대로 읽는다.
+ *
+ * - 항목 하나가 한 줄이고, 줄머리는 `• `. 줄 구분은 `\n` 하나다(읽는 쪽이 줄바꿈을 살려 그린다).
+ * - `requiresStoreUpdate` 항목은 줄 끝에 `(스토어 업데이트 필요)` 를 붙인다. 화면은 배지로 그리지만
+ *   여긴 평문 한 덩어리라 괄호 꼬리가 자리다 — **표식이 문자열에서 사라지면 모달이 "이 항목은 OTA 로
+ *   안 온다"는 사실을 잃는다**(ADR-119 결정 3).
+ */
+export function formatReleaseNotes(note) {
+  return note.items
+    .map((item) => `• ${item.text}${item.requiresStoreUpdate === true ? ' (스토어 업데이트 필요)' : ''}`)
+    .join('\n')
+}
+
+/**
+ * 그 버전의 노트를 매니페스트용 문자열로 해석한다. **없으면 `null`** 이고, 그것이 곧 배포 중단
+ * 판정이다 — 조회·판정·합치기 셋을 갈라 두고 여기서 잇는다.
+ */
+export function resolveManifestNotes(version) {
+  const note = findReleaseNote(version)
+  return isPublishableReleaseNote(note) ? formatReleaseNotes(note) : null
+}
+
 export function parseArgs(argv) {
   const isBeta = argv.includes('--beta')
   // --min-native <x.y.z>: 이 번들을 적용하려면 필요한 최소 네이티브 앱 버전. 있으면 매니페스트에 실어,
@@ -62,6 +109,17 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { version } = JSON.parse(readFileSync(join(root, 'package.json'), 'utf-8'))
   if (!version || !/^\d+\.\d+\.\d+$/.test(version)) {
     console.error(`package.json의 version("${version}")이 x.y.z 형식이 아닙니다. 먼저 버전을 올려주세요.`)
+    process.exit(1)
+  }
+
+  // 노트 없이는 배포가 나가지 않는다(ADR-119 결정 6). 버전 형식 검사와 같은 자리인 것이 요점이다 —
+  // 여기는 빌드(1/5)보다 앞이라 몇 분짜리 빌드를 돌리고 나서 실패하지 않는다. 경고로 두지 않는 이유는
+  // 경고가 반드시 무시되고, 노트가 빠진 채 나간 버전은 사후 복구가 불가능하기 때문이다(결정 4).
+  const notes = resolveManifestNotes(version)
+  if (notes === null) {
+    console.error(
+      `src/data/release-notes.ts 에 ${version} 노트가 없습니다. 릴리스 노트를 먼저 작성해주세요.`,
+    )
     process.exit(1)
   }
 
@@ -86,6 +144,11 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     checksum,
     size,
     ...(minNativeVersion ? { minNativeVersion } : {}),
+    // minNativeVersion 바로 옆이지만 조건부 전개가 아니다 — 그쪽은 CLI 인자라 정말 없을 수 있고,
+    // 이쪽은 위 가드를 통과한 시점에 반드시 있다. 여기서 다시 "없을 수도 있다"고 쓰면 결정 6의
+    // 계약과 어긋나는 죽은 분기가 된다. 읽는 쪽에서 선택 필드인 것(결정 5)은 옛 매니페스트를 읽는
+    // 기존 설치본 때문이지 이 스크립트가 비워 보낼 수 있어서가 아니다.
+    notes,
   }
   writeFileSync(manifestPath, JSON.stringify(manifest, null, 2))
 
