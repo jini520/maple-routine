@@ -22,7 +22,9 @@ HyperOS 다크모드 force-dark 가 밝은 스플래시 배경색을 앱 설정 
   - 컴포넌트 밖이라는 것도 요점이다. `App.tsx` 의 스플래시 `useEffect` 는 클린업에서 `clearTimeout` 하므로 첫 1초 안에 렌더가 던지면 커버를 걷는 타이머가 **함께 죽는다.** 이 타이머는 React 트리를 모른다.
 - **ErrorBoundary 폴백은 마운트 시 `hideSplashScreen()` 을 부른다** — 커버 제거 + 네이티브 스플래시 해제(**터치 복구**)를 한 번에 얻는다. 폴백은 `#root` 안이라 `z-index: 2147483647` 인 `#boot-cover` **밑**에 그려지는데, 폴백의 z-index 를 올리는 것으로는 안 풀린다(올릴 숫자가 없고, 같은 매직 넘버가 두 곳에 생기며, 무엇보다 **보이게 만들어도 `isUserInteractionEnabled = false` 라 '다시 시작' 이 눌리지 않는다**). 커버를 지우면 위에 아무것도 없으므로 z-index 는 올릴 이유 자체가 사라진다. [[ADR-065]] 결정 5 의 *"폴백은 최소로 둔다"* 는 그대로 — 화면에 보이는 것은 하나도 늘지 않는다.
 
-**스플래시를 내리는 주체는 넷이다** — 정상 부팅(`App.tsx` 의 `MIN_SPLASH_MS` 타이머) · `apply()` 실패 catch([[ADR-117]] 결정 1) · 위 8초 인라인 타이머 · ErrorBoundary 폴백. 셋이 새로 생기지만 **전부 `hideSplashScreen()`(또는 그 DOM 부분)을 부르는 것**이라 커버 제거 로직 자체는 `native/splash-screen.ts` 한 곳에 남는다. 다만 인라인 타이머가 걷는 것은 **DOM 커버뿐**이다(모듈 밖이라 플러그인을 못 부른다) — 네이티브 스플래시 레이어는 나머지 셋이 맡고, 셋 다 실행되지 않는 경로(React 가 마운트조차 못 하는 실패)에서는 capgo 의 10초 롤백이 그 자리를 메운다.
+**스플래시를 내리는 주체는 넷이다** — 정상 부팅(`App.tsx` 의 `MIN_SPLASH_MS` 타이머) · `apply()` 실패 catch([[ADR-117]] 결정 1) · 위 8초 인라인 타이머 · ErrorBoundary 폴백. 셋이 새로 생기지만 **셋 중 둘은 `hideSplashScreen()` 을 그대로 부르는 것**이라 커버 제거 로직은 `native/splash-screen.ts` 한 곳에 남는다.
+
+**인라인 타이머만 그 모듈을 못 쓴다**(React 트리 밖·번들 밖이라 import 가 없다) — 그래서 DOM 커버는 직접 지우고 네이티브는 **전역 브릿지로** 부른다(`window.Capacitor?.Plugins?.SplashScreen?.hide()`, optional chaining + `try/catch`). **DOM 만 걷으면 iOS 는 화면만 돌아오고 터치는 죽은 채**이므로(`isUserInteractionEnabled` 는 네이티브 `tearDown()` 에서만 풀린다) 걷는 장치가 넷이면 넷 다 이 성질을 가져야 한다. 다만 **보장은 아니다** — 브릿지가 없거나(웹 개발 서버) 아직 준비되지 않았으면 optional chaining 이 조용히 통과한다. 그 경로와, 넷 다 실행되지 않는 경로(React 가 마운트조차 못 하는 실패)는 capgo 의 10초 롤백이 메운다.
 
 ## 핵심 교훈
 - **Capacitor 브릿지+플러그인 초기화가 끝나기 전엔 HTML 레이어가 그려질 시점 자체가 없다** — 그래서 "브랜드 룩을 WebView/HTML 레이어로 옮긴다"는 접근([[ADR-028]])은 실기기에서 실패했고, "Capacitor를 아예 안 거치는 별도 네이티브 액티비티 + 비트맵"([[ADR-029]])만 성공했다.
