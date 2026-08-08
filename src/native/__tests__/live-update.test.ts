@@ -32,6 +32,8 @@ const { networkGetStatusMock } = vi.hoisted(() => ({ networkGetStatusMock: vi.fn
 
 const { closeBossProfitDbMock } = vi.hoisted(() => ({ closeBossProfitDbMock: vi.fn() }))
 
+const { showSplashScreenMock } = vi.hoisted(() => ({ showSplashScreenMock: vi.fn() }))
+
 vi.mock('@capacitor/core', () => ({
   Capacitor: { getPlatform: getPlatformMock },
   CapacitorHttp: { get: httpGetMock },
@@ -51,6 +53,8 @@ vi.mock('@capacitor/network', () => ({ Network: { getStatus: networkGetStatusMoc
 
 vi.mock('../../storage/sqlite/db', () => ({ closeBossProfitDb: closeBossProfitDbMock }))
 
+vi.mock('../splash-screen', () => ({ showSplashScreen: showSplashScreenMock }))
+
 const manifest = { version: '1.1.0', url: 'https://cdn/1.1.0.zip', checksum: 'abc123', size: 8_200_000 }
 const currentAt = (bundleVersion: string, native = '1.0.0') => ({
   bundle: { id: 'builtin', version: bundleVersion, downloaded: '', checksum: '', status: 'success' },
@@ -67,6 +71,7 @@ beforeEach(() => {
   networkGetStatusMock.mockReset()
   httpGetMock.mockReset()
   closeBossProfitDbMock.mockReset().mockResolvedValue(undefined)
+  showSplashScreenMock.mockReset().mockResolvedValue(undefined)
 })
 
 describe('isNewerVersion', () => {
@@ -247,6 +252,35 @@ describe('applyDownloadedLiveUpdate', () => {
     await applyDownloadedLiveUpdate('bundle-2')
 
     expect(callOrder).toEqual(['close', 'set'])
+  })
+
+  // 커버는 실패 가능한 준비 작업(닫기)보다 **뒤에** 올라가야 한다 — 먼저 올리면 닫기가 매달릴 때
+  // 사용자가 주황 스플래시에 갇힌다(이슈 #175). 커버가 떠 있는 구간을 실제 리로드 직전으로 좁힌다
+  // (ADR-117 결정 1). 순서 자체가 이 결정이므로 호출 순서를 단언한다.
+  it('닫기 → 커버 → set() 순으로 진행한다(커버는 닫기 뒤에 올라간다)', async () => {
+    const callOrder: string[] = []
+    closeBossProfitDbMock.mockImplementation(async () => {
+      callOrder.push('close')
+    })
+    showSplashScreenMock.mockImplementation(async () => {
+      callOrder.push('cover')
+    })
+    setMock.mockImplementation(async () => {
+      callOrder.push('set')
+    })
+
+    await applyDownloadedLiveUpdate('bundle-2')
+
+    expect(callOrder).toEqual(['close', 'cover', 'set'])
+  })
+
+  // 커버는 시각적 장치일 뿐이다 — 그것 때문에 set()에 도달하지 못하면 본말이 전도된다(ADR-027).
+  it('커버 표시가 실패해도 적용은 계속 진행한다', async () => {
+    showSplashScreenMock.mockRejectedValue(new Error('splash'))
+    setMock.mockResolvedValue(undefined)
+
+    await expect(applyDownloadedLiveUpdate('bundle-2')).resolves.toBeUndefined()
+    expect(setMock).toHaveBeenCalledWith({ id: 'bundle-2' })
   })
 })
 
