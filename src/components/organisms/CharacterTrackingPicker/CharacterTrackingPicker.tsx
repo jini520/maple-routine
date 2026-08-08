@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useBodyScrollLock } from '../../../lib/use-body-scroll-lock'
-import { formatRosterError } from '../../../features/schedule-sync/format'
+import { formatRosterError, formatStaleRosterError } from '../../../features/schedule-sync/format'
 import type { ScheduleSyncError } from '../../../features/schedule-sync/schedule-sync'
 import type { CharacterPickerEntry } from '../../../types'
 import { ErrorState } from '../../molecules/ErrorState/ErrorState'
@@ -51,13 +51,32 @@ export interface CharacterTrackingPickerProps {
 // ADR-062 결정 4: 항목이 있는 채로 실패했으면 그리드를 지우지 않고 위에 스탈 배너를 얹는다 —
 // 캐시 stub이 네트워크보다 먼저 방출되므로(ADR-017 결정 6) 예열이 끝난 정상 경로에서는 이쪽이
 // 기본 분기다. 배너가 없으면 실패의 대다수가 무음이 된다.
+//
+// ADR-114 결정 3: 그 배너의 문구도 액션도 원인별로 갈린다(전에는 원인과 무관하게 "목록이 최신이
+// 아닙니다" + 다시 시도 하나였다 — 기본 분기인 이 자리가 곧 실패의 대다수가 원인을 잃던 자리다).
+// **재시도가 실제로 통하는 실패에만 액션을 준다** — 429는 눌러도 또 429고 characterUnavailable은
+// 언제 눌러도 같은 400이라 배너에 버튼이 없고, 401도 "다시 시도"가 아니라 설정 열기다(재시도로는
+// 풀리지 않는다). 액션을 뺄 수 있는 근거는 자리다: **배너 아래에 목록이 그대로 남아 있어 액션이
+// 없어도 막다른 길이 아니다.** 같은 401이 아래 ErrorState에서는 액션을 유지하는 것이 같은 근거의
+// 뒷면이다(그쪽은 목록이 없어 액션을 빼면 화면에 아무 길도 남지 않는다).
 function PickerBody(props: CharacterTrackingPickerProps & { onChange: (ocids: string[]) => void }): React.JSX.Element {
   if (props.entries.length > 0) {
+    const stale = props.loadError === null ? null : formatStaleRosterError(props.loadError, 'picker')
     return (
       <>
         {/* 스탈 배너는 스크롤포트 밖이다 — 목록을 굴려도 "최신이 아님"은 계속 보여야 한다. */}
-        {props.loadError !== null && (
-          <StaleBanner message="목록이 최신이 아닙니다" action={{ label: '다시 시도', onClick: props.onRetry }} />
+        {stale !== null && (
+          <StaleBanner
+            message={stale.message}
+            action={
+              stale.action === undefined
+                ? undefined
+                : {
+                    label: stale.action.label,
+                    onClick: stale.action.kind === 'openSettings' ? props.onOpenSettings : props.onRetry,
+                  }
+            }
+          />
         )}
         {/* ADR-107 결정 3: 스크롤포트를 카드 패딩(p-6) 바깥까지 넓혀 인디케이터를 모달 오른쪽
             끝에 붙이고, 같은 크기 pr-6 으로 콘텐츠 여백을 되돌린다(폭은 그대로다).
