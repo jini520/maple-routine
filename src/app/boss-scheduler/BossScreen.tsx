@@ -357,7 +357,6 @@ export function BossScreen(): React.JSX.Element {
       onSave={handleSaveTracking}
       onClose={() => setIsPickerOpen(false)}
       onRetry={reloadRoster}
-      onOpenSettings={() => navigateToScreen('/settings')}
     />
   )
 

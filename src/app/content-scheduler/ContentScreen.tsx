@@ -279,7 +279,6 @@ export function ContentScreen(): React.JSX.Element {
       onSave={handleSaveTracking}
       onClose={() => setIsPickerOpen(false)}
       onRetry={reloadRoster}
-      onOpenSettings={() => navigateToScreen('/settings')}
     />
   )
 

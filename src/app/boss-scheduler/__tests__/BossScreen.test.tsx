@@ -1245,16 +1245,18 @@ describe('BossScreen — 캐릭터 관리 피커 후보 목록 로딩 (ADR-053)'
     expect(mockedGetCharacterPickerRoster).toHaveBeenCalledTimes(2)
   })
 
-  // ADR-062 결정 3: 401은 재시도로 풀리지 않으므로 설정으로 보낸다.
-  // (피커 문구·액션 자체는 이 phase의 step 4가 다룬다 — 여기서는 현행 유지.)
-  it('401 실패는 다시 시도 대신 설정 열기를 준다', async () => {
+  // ADR-062 결정 3 + ADR-115 결정 1·7: 401은 재시도로 풀리지 않고, 이제 설정으로 보내지도
+  // 않는다(설정에는 키를 바꿀 자리가 없다) — 아래 테스트가 확인하듯 이 실패는 곧 키 무효화라
+  // 화면이 스스로 키 입력으로 이동한다. 그래서 누를 것이 없다.
+  it('401 실패는 재시도도 설정 열기도 주지 않고 이동을 알린다', async () => {
     const roster = deferRoster()
 
     await renderAndOpenPicker()
     await roster.reject(new NexonAuthError('Nexon API 키가 유효하지 않습니다'))
 
     expect(await screen.findByText('API 키가 유효하지 않습니다')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '설정 열기' })).toBeInTheDocument()
+    expect(screen.getByText('키 입력 화면으로 이동합니다')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '설정 열기' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: '다시 시도' })).not.toBeInTheDocument()
   })
 

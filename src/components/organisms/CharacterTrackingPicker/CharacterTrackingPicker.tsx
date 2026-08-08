@@ -40,8 +40,6 @@ export interface CharacterTrackingPickerProps {
   onClose: () => void
   // 재조회. 호출부가 피커를 여는 경로와 같은 초기화를 재사용한다(ADR-062 트레이드오프).
   onRetry: () => void
-  // 401 전용 — 재시도로는 풀리지 않으므로 설정으로 보낸다(ADR-062 결정 3).
-  onOpenSettings: () => void
 }
 
 // ADR-053 결정 3: 그리드 자리에 그릴 것을 고른다. 보여줄 항목이 하나라도 있으면 조회 중이어도
@@ -55,13 +53,15 @@ export interface CharacterTrackingPickerProps {
 // ADR-114 결정 3: 그 배너의 문구도 액션도 원인별로 갈린다(전에는 원인과 무관하게 "목록이 최신이
 // 아닙니다" + 다시 시도 하나였다 — 기본 분기인 이 자리가 곧 실패의 대다수가 원인을 잃던 자리다).
 // **재시도가 실제로 통하는 실패에만 액션을 준다** — 429는 눌러도 또 429고 characterUnavailable은
-// 언제 눌러도 같은 400이라 배너에 버튼이 없고, 401도 "다시 시도"가 아니라 설정 열기다(재시도로는
-// 풀리지 않는다). 액션을 뺄 수 있는 근거는 자리다: **배너 아래에 목록이 그대로 남아 있어 액션이
-// 없어도 막다른 길이 아니다.** 같은 401이 아래 ErrorState에서는 액션을 유지하는 것이 같은 근거의
-// 뒷면이다(그쪽은 목록이 없어 액션을 빼면 화면에 아무 길도 남지 않는다).
+// 언제 눌러도 같은 400이라 배너에 버튼이 없다. 액션을 뺄 수 있는 근거는 자리다: **배너 아래에
+// 목록이 그대로 남아 있어 액션이 없어도 막다른 길이 아니다.**
+//
+// ADR-115 결정 7: 401은 배너에도 ErrorState에도 액션이 없다 — 그 401은 곧 키 무효화라 화면이
+// 스스로 키 입력으로 이동하므로 **누를 것이 없다**(옛 설정 이동 액션은 목적지가 비어 있었다).
+// 그래서 이 화면의 401 표시는 이동 직전 한 프레임이자 안전망이다.
 function PickerBody(props: CharacterTrackingPickerProps & { onChange: (ocids: string[]) => void }): React.JSX.Element {
   if (props.entries.length > 0) {
-    const stale = props.loadError === null ? null : formatStaleRosterError(props.loadError, 'picker')
+    const stale = props.loadError === null ? null : formatStaleRosterError(props.loadError)
     return (
       <>
         {/* 스탈 배너는 스크롤포트 밖이다 — 목록을 굴려도 "최신이 아님"은 계속 보여야 한다. */}
@@ -71,10 +71,7 @@ function PickerBody(props: CharacterTrackingPickerProps & { onChange: (ocids: st
             action={
               stale.action === undefined
                 ? undefined
-                : {
-                    label: stale.action.label,
-                    onClick: stale.action.kind === 'openSettings' ? props.onOpenSettings : props.onRetry,
-                  }
+                : { label: stale.action.label, onClick: props.onRetry }
             }
           />
         )}
@@ -112,15 +109,11 @@ function PickerBody(props: CharacterTrackingPickerProps & { onChange: (ocids: st
       <ErrorState
         title={copy.title}
         description={copy.description}
-        // 영구 실패(조회 불가 캐릭터)에는 액션이 없다 — 눌러도 실패하는 버튼을 주지 않는다
-        // ([[ADR-062]] 결정 3, [[ADR-067]] 결정 1).
+        // 영구 실패(조회 불가 캐릭터)와 401에는 액션이 없다 — 눌러도 실패하는 버튼도, 이동이
+        // 이미 일어난 자리의 버튼도 주지 않는다([[ADR-062]] 결정 3, [[ADR-067]] 결정 1,
+        // [[ADR-115]] 결정 7). 남은 액션은 전부 재시도다.
         action={
-          copy.action === undefined
-            ? undefined
-            : {
-                label: copy.action.label,
-                onClick: copy.action.kind === 'openSettings' ? props.onOpenSettings : props.onRetry,
-              }
+          copy.action === undefined ? undefined : { label: copy.action.label, onClick: props.onRetry }
         }
       />
     )
