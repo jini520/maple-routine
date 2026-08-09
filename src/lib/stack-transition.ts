@@ -67,8 +67,18 @@ export function resolveLayerAboveProgress(index: number, depth: number, topProgr
 /**
  * 스택의 `index` 번째 오버레이가 걸 `transform`. 최상단이면 자기가 들어오고 나가는 값이고,
  * 아래면 위에 밀려나는 값이다 — 둘 다 `translateX` 라 한 요소에 동시에 걸릴 일이 없다.
+ *
+ * **`index >= depth` 는 "아직 등록되지 않았다"이고, 그때는 화면 밖이다.** `StackScreen` 은 마운트
+ * effect 에서 `open()` 을 부르므로 **그 컴포넌트의 첫 렌더는 자기가 세어지기 전에 돈다.** 이 갈래가
+ * 없으면 그 프레임에 `transform` 이 없어 오버레이가 **제자리에 통째로 한 번 그려지고**, 그다음
+ * effect 가 돌며 밖으로 튀었다가 들어온다 — 실기기에서 "화면이 다 그려진 뒤에 애니메이션이 시작"
+ * 으로 관측된 결함이다(2026-08-09, 보스 수익 → 히스토리에서 가장 크게 보였다).
+ *
+ * effect 를 `useLayoutEffect` 로 바꿔 페인트 전에 등록하는 처방도 있지만, 그건 **타이밍에 기대는**
+ * 해법이다. 첫 렌더가 스스로 옳은 값을 내는 편이 낫다.
  */
 export function resolveLayerTransform(index: number, depth: number, topProgress: number): string | undefined {
+  if (index >= depth) return resolveStackTransform(1)
   if (index === depth - 1) return resolveStackTransform(topProgress)
   return resolveBelowTransform(resolveLayerAboveProgress(index, depth, topProgress))
 }

@@ -194,3 +194,23 @@ describe('resolveTabPath', () => {
     expect(resolveTabPath('')).toBe('/')
   })
 })
+
+describe('resolveLayerTransform — 아직 등록되지 않은 층', () => {
+  // **첫 렌더의 자리다.** `StackScreen` 은 마운트 effect 에서 `open()` 을 부르므로, 그 컴포넌트의
+  // 첫 렌더는 아직 `depth` 에 세어지지 않은 상태로 돈다(index 0, depth 0). 여기서 `transform` 이
+  // 없으면 오버레이가 **제자리에 통째로 한 번 그려지고** 그다음에야 밖으로 튀었다가 들어온다 —
+  // 실기기에서 "화면이 다 그려진 뒤에 애니메이션이 시작"으로 관측됐다(2026-08-09).
+  it('depth 에 아직 안 세어졌으면 화면 밖이다', () => {
+    expect(resolveLayerTransform(0, 0, 1)).toBe('translateX(100%)')
+  })
+
+  it('2단의 첫 렌더도 화면 밖이다', () => {
+    // /settings/about/privacy — 아래 층이 하나 있는 상태에서 새 층이 마운트되는 프레임.
+    expect(resolveLayerTransform(1, 1, 0)).toBe('translateX(100%)')
+  })
+
+  it('등록된 뒤에는 평소대로 동작한다', () => {
+    expect(resolveLayerTransform(0, 1, 1)).toBe('translateX(100%)')
+    expect(resolveLayerTransform(0, 1, 0)).toBeUndefined()
+  })
+})
