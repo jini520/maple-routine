@@ -168,6 +168,35 @@ describe('Modal', () => {
     expect(overlay).not.toHaveClass('items-start')
   })
 
+  // ADR-122: 스크림 위 패널의 바깥 테두리는 라이트 테마에서 톤다운된다. 클래스가 어디에 붙는지가
+  // 패널 종류마다 다르다 — Card 는 자기가 테두리를 갖고, Panel 은 직계 자식이 갖는다.
+  it('Modal.Card 는 자기 자신에 panel-on-scrim 을 갖는다', () => {
+    render(
+      <Modal onClose={vi.fn()}>
+        <Modal.Card>
+          <p>모달 내용</p>
+        </Modal.Card>
+      </Modal>,
+    )
+
+    expect(screen.getByText('모달 내용').parentElement).toHaveClass('panel-on-scrim')
+  })
+
+  it('Modal.Panel 은 자기 자신이 아니라 직계 자식을 겨냥하는 panel-on-scrim-parent 를 갖는다', () => {
+    render(
+      <Modal onClose={vi.fn()}>
+        <Modal.Panel>
+          <div data-testid="자체-카드">모달 내용</div>
+        </Modal.Panel>
+      </Modal>,
+    )
+
+    const wrapper = screen.getByTestId('자체-카드').parentElement
+    expect(wrapper).toHaveClass('panel-on-scrim-parent')
+    // 래퍼 자신에는 테두리가 없으므로 self 선택자를 붙이면 아무 일도 안 일어난다.
+    expect(wrapper).not.toHaveClass('panel-on-scrim')
+  })
+
   it('열려 있는 동안 뒷 페이지(body) 스크롤을 막는다', () => {
     const { unmount } = render(
       <Modal onClose={vi.fn()}>

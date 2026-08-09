@@ -32,6 +32,7 @@ beforeEach(() => {
   vi.mocked(setStatusBarStyle).mockReset()
   vi.mocked(setNavigationBarStyle).mockReset()
   delete document.documentElement.dataset.theme
+  delete document.documentElement.dataset.mode
   useThemeStore.setState({ theme: '머쉬맘' })
   mockSystemColorScheme(false)
 })
@@ -72,6 +73,17 @@ describe('color-scheme (ADR-099)', () => {
 
     await useThemeStore.getState().selectTheme('렌')
     expect(document.documentElement.style.colorScheme).toBe('light')
+  })
+
+  // ADR-122: CSS 선택자로 모드를 알려야 하는 규칙이 있다(스크림 위 패널 테두리처럼 같은 토큰이
+  // 모드에 따라 반대 역할을 하는 자리). 테마 이름으로 분기하면 ADR-064 결정 8이 폐기한 수동
+  // 다크 목록이 CSS 쪽에 되살아난다.
+  it('테마 모드를 data-mode 로 노출한다', async () => {
+    await useThemeStore.getState().selectTheme('레테')
+    expect(document.documentElement.dataset.mode).toBe('dark')
+
+    await useThemeStore.getState().selectTheme('렌')
+    expect(document.documentElement.dataset.mode).toBe('light')
   })
 
   // color-scheme 만으로는 라이트 테마에서 인디케이터가 흰색으로 남았다(실기기) — 색을 직접 준다.

@@ -72,6 +72,56 @@ Text(라이트): text-[#8A7362] hover:text-[#5B4636]   Text(다크): text-neutra
 ### 모달 (`components/Modal`) — 2026-07-13
 `CharacterTrackingPicker`/`DisconnectConfirm` 에서 반복되던 오버레이(`fixed inset-0 flex items-center justify-center bg-scrim`, 안쪽 카드 `onClick` `stopPropagation`)를 공용화. 스크림은 `bg-bg/70` 이 아니라 전용 `scrim` 토큰이다([[ADR-064]] 결정 6) — 배경색을 반투명하게 깐 것은 밝은 테마에서 스크림이 약해진다. 기본은 카드(`rounded-[14px] border border-border bg-surface p-6`)를 제공하되, `card={false}` 면 위치 고정 래퍼만 남기고 카드 스타일 생략(자식이 자체 카드를 둘 때 카드-안-카드 방지). 설정의 계정 변경 모달·계정 선택 목록이 `card={false}` 로 재사용.
 
+**스크림 위 패널의 바깥 테두리는 라이트 테마에서 배경보다 어둡게 눌러 가라앉힌다** ([[ADR-122]], 2026-08-10). 테두리가 하는 일이 모드마다 반대이기 때문이다 — 라이트는 배경 vs 표면 대비가 **18.8~19.7** 이라 가장자리가 이미 압도적이고 테두리는 **링**으로만 읽히는 반면, 다크는 **1.07~1.18** 이라 **테두리가 유일한 경계**다.
+```
+:root[data-mode='light'] .panel-on-scrim,
+:root[data-mode='light'] .panel-on-scrim-parent > * {
+  border-color: color-mix(in srgb, var(--color-border) 40%, var(--color-text));
+}
+```
+- **방향이 핵심이다 — 표면이 아니라 텍스트 쪽으로 민다.** 라이트 테마에서 모달 뒤는 검정이 아니라 **중간 회색**이다(스크림을 페이지 `bg` 위에 합성하면 머쉬맘 `#757269` · 렌 `#787373` · 엔버 `#796E73`). 원래 테두리는 그보다 **밝아서**, 표면 쪽으로 밀면 배경에서 더 멀어져 **밝은 링**이 된다(색거리 143 → 196). 텍스트 쪽으로 민다 — 55% 면 배경과 거의 같은 색(거리 15~24)이고, 확정값 **40%** 는 배경보다 조금 더 어두워 링이 아니라 **가라앉은 가장자리**로 읽힌다.
+- **클래스가 둘이다**: `.panel-on-scrim` 은 **테두리를 가진 패널 자신**(`Modal.Card`·자체 오버레이 패널), `.panel-on-scrim-parent` 는 **직계 자식이 패널**일 때(`Modal.Panel`). 합치면 `Modal.Card` **안쪽** 요소(테마 타일 보더 등)까지 바뀌는데 그것들은 표면 위라 대상이 아니다.
+- 새 컴포넌트를 스크림 위에 올릴 때 **둘 중 맞는 것을 붙일 것.** 모드 신호는 `data-mode`(테마 스토어가 세운다) — 테마 **이름**으로 분기하지 말 것([[ADR-064]] 결정 8).
+
+### 파티 인원 모달 — `PartySizeModal`, [[ADR-121]] (2026-08-10)
+보스 스케줄러 카드를 탭하면 열린다. 난이도 + 파티 인원을 함께 다룬다. 정책은 [../features/boss-scheduler.md](../features/boss-scheduler.md) '파티 인원 모달'.
+
+```
+패널   Modal.Panel maxWidth="max-w-2xs"(288) · align="center"
+       (center 는 키보드를 안 띄우는 모달만 — Modal 기본은 'top')
+껍데기 rounded-[14px] border border-border bg-surface overflow-hidden   ← 일러스트가 모서리를 넘는다
+히어로 media-scope · h-22(88) · bg-surface(= media-surface)
+       일러스트 absolute inset-0, 카드와 같은 필터·불투명도(saturate(.85) brightness(.8) / .65)
+       마스크 linear-gradient(90deg,#000 0%,#000 42%,transparent 82%)  ← 카드는 38/76, 모달이 넓어 끝점만 뒤로
+       베일   media-surface → transparent 세로 그라디언트(0% → 62%)
+       닫기   우상단 32px 원, bg-surface/60 + text-text (스코프 안이라 media 토큰), aria-label="닫기"
+       텍스트 키커 10px text-text-muted / 이름 text-xl font-extrabold text-text, 둘 다 MEDIA_TEXT_SHADOW
+경계   본문에 border-t border-border   ← media-scope **바깥**
+본문   p-[18px] · 필드 간격 18
+난이도 라벨 + DifficultyBadge 세그먼트(미선택 = 같은 뱃지 + opacity-40)
+파티   라벨 행: Users 14 + "파티 인원"(text-xs font-bold tracking-[.06em] text-text-muted)
+              + Badge tone="primary" 로 `n / max` (tabular-nums)
+       스테퍼: 전폭 h-10(40) rounded-full border-border bg-surface p-1
+              버튼 32(아이콘 16, 채움 없음, 비활성 opacity-40) · 값 19px extrabold · 단위 "인" 12px
+              가운데 min-w-[66px] + tabular-nums  ← 1↔6 에서 −/+ 가 안 움직인다
+```
+
+- **폭 288 은 하한이다.** 4난이도 보스(칼로스·카링·최초의 대적자)의 칩 한 줄이 약 225px 라 본문 폭 252 에 여유 27px 로 들어간다. `max-w-3xs`(256)는 본문 220 이라 접히고, 접히면 그 필드만 세로로 자라 **보스마다 모달 높이가 달라진다**. 288 은 **모든 기기에서 폭이 같다**는 성질도 갖는다 — `max-w-sm`(384)은 오버레이 `px-4` 에 먼저 걸려 390 기기 358 / 360 기기 328 로 갈렸다.
+- **히어로 경계선은 `media-scope` 바깥이다.** 다크 테마는 `media-surface ≈ surface` 이고 **검은마법사는 값이 완전히 동일**(`#1C1319`)이라 이 선이 유일한 경계다. 라이트 테마에선 어차피 대비가 17:1 이라 무해하다.
+- **−/+ 버튼에 채움을 두지 않는다.** `surface-2` 는 표면과 대비 **1.14~1.30**(6테마 실측)이라 어느 테마에서도 원이 안 보인다. 경계는 pill 의 `border-border` 가 그린다.
+- **라벨은 `text-text-muted`.** `text-disabled` 는 6테마에서 3.10~4.22 로 4.5:1 미달이다.
+- **상한 표시는 `Badge tone="primary"`** — 주간 `n/12` 배지와 같은 컴포넌트다(신규 스타일 금지).
+- **일러스트 없는 보스**(`portraitSlug: null`)는 히어로를 비운다 — 단색 + 이름. 폴백 디자인 없음.
+
+**스테퍼 `size` 변형** ([[ADR-121]]) — 같은 레시피(보더 pill + `Users` + −/값/+)에 크기만 둘이다.
+```
+compact  pill 28 · 버튼 24 · 아이콘 14 · 값 14 · 안쪽 Users 14   보스 관리 페이지 행(우상단)
+default  pill 40 · 버튼 32 · 아이콘 16 · 값 19 · 단위 "인" 12    파티 인원 모달(전폭)
+```
+- `compact` 는 **기존 관리 페이지 행의 값 그대로**다(이번에 크기를 바꾸지 않았다).
+- `default` 는 단위 "인"을 함께 그리고 **`Users` 를 스테퍼 안에 두지 않는다** — 모달은 라벨 줄에 `Users` 가 이미 서 있어 한 화면에 두 번 나오면 중복이다. 값 슬롯은 `min-w-[66px]` + `tabular-nums` 라 1↔6 을 오가도 −/+ 가 제자리다.
+- 두 크기 모두 버튼이 권장 타깃 44px 보다 작으므로 **히트 영역을 패딩으로 넓힌다**(시각 크기는 유지).
+
 ### 캐릭터 카드 그리드(다중 선택) — `CharacterTrackingPicker`, [[ADR-015]]
 "캐릭터 관리" 피커. 컨텐츠/보스 스케줄러가 동일 컴포넌트 공유. **3열 그리드**, 카드 자체가 토글 버튼(체크박스 없음, `aria-pressed`).
 ```

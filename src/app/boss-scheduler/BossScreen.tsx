@@ -1,4 +1,4 @@
-import type { BossContent, CharacterPickerEntry } from '../../types'
+import type { BossContent, BossDifficulty, CharacterPickerEntry } from '../../types'
 import { RefreshCw, SlidersHorizontal, Swords, Users } from 'lucide-react'
 import { useScreenStackStore } from '../../features/screen-stack/store'
 import { formatSyncedAt } from '../../features/schedule-sync/format'
@@ -19,13 +19,26 @@ import { ProgressModal } from '../../components/organisms/ProgressModal/Progress
 import { PullToRefreshIndicator } from '../../components/molecules/PullToRefreshIndicator/PullToRefreshIndicator'
 import { PULL_SETTLE_TRANSITION, resolveContentOffsetPx } from '../../lib/pull-to-refresh'
 import { usePullToRefresh } from '../../lib/use-pull-to-refresh'
-import { matchBossContent, selectDisplayBosses, type MatchedBoss } from '../../lib/boss-matching'
+import {
+  getSupportedDifficulties,
+  matchBossContent,
+  selectDisplayBosses,
+  type MatchedBoss,
+} from '../../lib/boss-matching'
+import { getMaxPartySize } from '../../lib/boss-crystal-prices'
+import { useToastStore } from '../../features/toast/store'
+import { PartySizeModal } from '../../components/organisms/PartySizeModal/PartySizeModal'
 import { mergeManualBossList } from '../../lib/manual-boss-merge'
 import { isChallengersWorld } from '../../lib/world-emblem'
 import { getCharacterPickerRoster, toScheduleSyncError } from '../../features/schedule-sync/schedule-sync'
 import type { ScheduleSyncError } from '../../features/schedule-sync/schedule-sync'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
-import { MEDIA_TEXT_SHADOW } from '../../lib/media-card'
+import {
+  MEDIA_ART_FILTER,
+  MEDIA_ART_MASK_CARD,
+  MEDIA_ART_OPACITY,
+  MEDIA_TEXT_SHADOW,
+} from '../../lib/media-card'
 import { Card } from '../../components/atoms/Card/Card'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { Badge } from '../../components/atoms/Badge/Badge'
@@ -42,19 +55,29 @@ function BossCard(props: {
   boss: MatchedBoss
   crop?: BossPortraitCrop
   partySize?: number
+  onEdit: () => void
 }): React.JSX.Element {
   const { boss, partySize } = props
   const portraitUrl = getBossPortraitUrl(boss.portraitSlug)
   const crop = props.crop ?? getBossPortraitCrop(boss.portraitSlug)
   const bossName = boss.matchedBossName ?? boss.apiName
-  const maskImage = 'linear-gradient(90deg, #000 0%, #000 38%, transparent 76%)'
+  const maskImage = MEDIA_ART_MASK_CARD
 
   // 카드 배경/보더/보스명 텍스트는 페이지 표면이 아니라 일러스트 위 배색을 따른다 — bleed·페이드·
   // text-shadow가 어두운 배경을 전제로 튜닝됐기 때문에 라이트 테마에서 페이지 토큰(bg-surface 등)을
   // 쓰면 대비가 깨진다. `media-scope`가 카드 안쪽의 기준 표면을 media-surface로 바꾸므로
   // (ADR-064 결정 5) 안에서는 앱 전역과 같은 레시피(bg-surface·text-text)를 그대로 쓴다.
   // 완료 뱃지는 앱 전체가 공유하는 "완료/성공" 의미 색(secondary)이라 스코프 안에서도 그대로다.
+  // ADR-121 결정 1: 카드 전면(80px)이 버튼이다. **어포던스 표식을 두지 않는다** — 셰브런·연필을
+  // 얹지 않고 눌림 피드백만 준다(ADR-018 카드 규격 무변경과 맞바꾼 값). 완료된 보스도 눌린다:
+  // 파티 인원은 완료 여부와 무관한 상시 데이터다(ADR-019).
   return (
+    <button
+      type="button"
+      onClick={props.onEdit}
+      aria-label={`${bossName} 파티 설정`}
+      className="block w-full rounded-[14px] text-left transition-transform active:scale-[.985] active:brightness-110"
+    >
     <Card className="media-scope relative h-20 overflow-hidden">
       {portraitUrl !== null && (
         <div
@@ -64,8 +87,8 @@ function BossCard(props: {
             backgroundSize: crop.size,
             backgroundPosition: crop.position,
             backgroundRepeat: 'no-repeat',
-            filter: 'saturate(.85) brightness(.8)',
-            opacity: 0.65,
+            filter: MEDIA_ART_FILTER,
+            opacity: MEDIA_ART_OPACITY,
             maskImage,
             WebkitMaskImage: maskImage,
           }}
@@ -96,6 +119,7 @@ function BossCard(props: {
         </div>
       </div>
     </Card>
+    </button>
   )
 }
 
@@ -112,6 +136,10 @@ export function BossScreen(): React.JSX.Element {
     saveTrackedOcids,
     refresh,
     selectCharacter,
+    // ADR-121: 카드 탭 모달이 쓰는 두 액션. 파티 인원은 두 모드 공통이고, 난이도 교체는 수동
+    // 모드에서만 멤버십을 바꾼다.
+    setPartySize,
+    setManualBossDifficulty,
     // ADR-096 결정 1: 탭과 두 필터는 스토어 소유다 — 이 화면이 언마운트돼도 살아남고, 관리
     // 페이지가 같은 탭 값을 읽어 보던 탭 그대로 열린다.
     activeTab,
@@ -137,6 +165,9 @@ export function BossScreen(): React.JSX.Element {
   // 이 값이 바뀌면 아래 조회 effect가 다시 돈다.
   const [rosterReloadNonce, setRosterReloadNonce] = useState(0)
   const [saveProgress, setSaveProgress] = useState<{ completed: number; total: number } | null>(null)
+  // ADR-121: 카드 탭으로 여는 파티 인원 모달. 편집 중인 난이도를 함께 들고 있는 이유는
+  // openPartyModal 주석 참고.
+  const [partyModal, setPartyModal] = useState<{ boss: MatchedBoss; difficulty: BossDifficulty } | null>(null)
   // ADR-063: 동기화 전체 실패는 인라인 문단이 아니라 토스트로 알린다 — 지속 상태("n분 전")는
   // 새로고침 옆 표기가 이미 담당하고, 토스트에는 원인을 푸는 액션을 붙일 수 있다.
   useScheduleSyncErrorToast(error, { onRetry: () => refresh(trackedOcids ?? []) })
@@ -303,7 +334,6 @@ export function BossScreen(): React.JSX.Element {
   const filteredMonthlyBosses =
     selected !== null ? filterByPartySize(displayedMonthlyBosses, selected.ocid, monthlyFilter) : []
 
-  // 기존 BossCard를 그대로 재사용한다 — 추적 편집은 관리 페이지 전용(ADR-035 결정 18).
   function renderBossCards(bosses: MatchedBoss[], ocid: string): React.JSX.Element {
     return (
       <div className="space-y-2">
@@ -312,10 +342,45 @@ export function BossScreen(): React.JSX.Element {
             key={`${boss.apiName}-${boss.difficulty}`}
             boss={boss}
             partySize={getPartySize(ocid, boss)}
+            onEdit={() => openPartyModal(boss)}
           />
         ))}
       </div>
     )
+  }
+
+  // ADR-121: 카드를 탭하면 열리는 파티 인원·난이도 모달.
+  //
+  // 편집 중인 난이도를 **모달이 따로 들고 있다** — 수동 모드에서 난이도를 바꾸면 멤버십이 바뀌어
+  // 카드가 다시 그려지지만, 자동 모드에서는 카드가 그대로라 스토어만으로는 "지금 무엇을 편집
+  // 중인지"를 알 수 없다(결정 3: 자동 모드의 전환은 멤버십이 아니라 편집 대상 전환이다).
+  function openPartyModal(boss: MatchedBoss): void {
+    setPartyModal({ boss, difficulty: boss.difficulty })
+  }
+
+  const modalBossName =
+    partyModal !== null ? (partyModal.boss.matchedBossName ?? partyModal.boss.apiName) : null
+
+  async function handleModalPartySize(next: number): Promise<void> {
+    if (partyModal === null || selected === null || modalBossName === null) return
+    try {
+      await setPartySize(selected.ocid, modalBossName, partyModal.difficulty, next)
+    } catch {
+      useToastStore.getState().showError('파티원 수를 저장하지 못했습니다')
+    }
+  }
+
+  // 수동 모드에서만 멤버십이 바뀐다. 자동 모드는 편집 대상만 옮긴다 — 카드의 난이도는 게임 등록
+  // 기준이라 앱이 못 바꾼다.
+  async function handleModalDifficulty(difficulty: BossDifficulty): Promise<void> {
+    if (partyModal === null || selected === null || modalBossName === null) return
+    setPartyModal({ ...partyModal, difficulty })
+    if (mode !== 'manual') return
+    try {
+      await setManualBossDifficulty(selected.ocid, modalBossName, difficulty)
+    } catch {
+      useToastStore.getState().showError('추적 목록을 저장하지 못했습니다')
+    }
   }
 
   async function handleSaveTracking(ocids: string[]): Promise<void> {
@@ -626,6 +691,27 @@ export function BossScreen(): React.JSX.Element {
       </ScreenScroll>
 
       {trackingModals}
+
+      {partyModal !== null && selected !== null && modalBossName !== null && (
+        <PartySizeModal
+          bossName={modalBossName}
+          cycleLabel={partyModal.boss.cycle === 'monthly' ? '월간 보스' : '주간 보스'}
+          portraitSlug={partyModal.boss.portraitSlug}
+          // 참조표에 없는 보스(매칭 실패 원문명)는 후보를 알 수 없다 — 지금 난이도 하나만 그려
+          // 세그먼트가 통째로 사라지지 않게 한다.
+          difficulties={
+            getSupportedDifficulties(modalBossName).length > 0
+              ? getSupportedDifficulties(modalBossName)
+              : [partyModal.difficulty]
+          }
+          difficulty={partyModal.difficulty}
+          partySize={partySizes[partySizeKey(selected.ocid, modalBossName, partyModal.difficulty)] ?? 1}
+          maxPartySize={getMaxPartySize(modalBossName, partyModal.difficulty)}
+          onSelectDifficulty={(difficulty) => void handleModalDifficulty(difficulty)}
+          onChangePartySize={(next) => void handleModalPartySize(next)}
+          onClose={() => setPartyModal(null)}
+        />
+      )}
 
       {/* 하위 페이지가 이 자리에서 열린다([[ADR-120]] 결정 1) — 실제 DOM 은 `StackScreen` 이
           포털로 탭 레이어 밖에 붙이므로(결정 3) 이 위치가 레이아웃에 얹히지는 않는다. 트리에

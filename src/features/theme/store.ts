@@ -53,6 +53,10 @@ function applyThemeToDocument(theme: ThemeName): void {
   style.textContent = buildThemeCss(definition)
 
   document.documentElement.dataset.theme = theme
+  // 라이트/다크를 **CSS 선택자로도** 노출한다([[ADR-122]]). 토큰만으로 못 푸는 규칙이 있다 —
+  // 스크림 위 패널 테두리처럼 **같은 토큰이 모드에 따라 반대 역할**을 하는 자리다. 테마 이름으로
+  // 분기하면 [[ADR-064]] 결정 8이 폐기한 `DARK_THEMES` 수동 목록이 CSS 쪽에 되살아난다.
+  document.documentElement.dataset.mode = definition.mode
 
   const isDark = definition.mode === 'dark'
   // 테마의 라이트/다크를 **CSS 에도** 알린다([[ADR-099]]). 브라우저는 스크롤 인디케이터·폼 컨트롤처럼

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ArrowLeft, Minus, Plus, Users } from 'lucide-react'
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
-import { DifficultyBadge } from '../../components/atoms/DifficultyBadge/DifficultyBadge'
+import { DifficultySegment } from '../../components/molecules/DifficultySegment/DifficultySegment'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import weeklyBossesData from '../../data/weekly-bosses.json'
 import { getMaxPartySize } from '../../lib/boss-crystal-prices'
@@ -75,6 +75,7 @@ export function BossManageScreen(): React.JSX.Element {
     setPartySize,
     addManualBoss,
     removeManualBoss,
+    setManualBossDifficulty,
     // ADR-096 결정 2: 진입 시점의 스케줄러 탭을 이어받는다(월간에서 들어오면 월간).
     activeTab: schedulerTab,
     // ADR-096 결정 4: 선택 캐릭터는 스케줄러와 공유한다 — 탭과 달리 두 화면이 갈라지면 안 된다.
@@ -182,16 +183,14 @@ export function BossManageScreen(): React.JSX.Element {
     }
   }
 
-  // 수동 모드의 난이도 변경 = (보스, 난이도) 멤버십 교체 — 기존 쌍을 지우고 새 쌍을 추가한다.
-  async function handleSwitchDifficulty(
-    bossName: string,
-    from: BossDifficulty,
-    to: BossDifficulty,
-  ): Promise<void> {
-    if (selected === null || from === to) return
+  // 수동 모드의 난이도 변경 = (보스, 난이도) 멤버십 교체. ADR-121 결정 6: 스토어의 단일 액션이
+  // 쓰기 1회로 끝낸다 — remove → add 2단계는 커밋이 2회라 그 사이에 "보스가 목록에 없는" 상태가
+  // 저장소에 실재했고, 거기서 실패하면 보스가 통째로 사라졌다. 실패해도 아무것도 안 바뀌므로
+  // 여기서 롤백할 것이 없다.
+  async function handleSwitchDifficulty(bossName: string, to: BossDifficulty): Promise<void> {
+    if (selected === null) return
     try {
-      await removeManualBoss(selected.ocid, bossName, from)
-      await addManualBoss(selected.ocid, bossName, to)
+      await setManualBossDifficulty(selected.ocid, bossName, to)
     } catch {
       useToastStore.getState().showError('추적 목록을 저장하지 못했습니다')
     }
@@ -238,39 +237,6 @@ export function BossManageScreen(): React.JSX.Element {
         >
           <Plus className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" />
         </button>
-      </span>
-    )
-  }
-
-  // 세그먼트 컨트롤: 선택된 난이도는 풀컬러 DifficultyBadge, 미선택은 고스트 칩(뱃지와 높이 정렬).
-  // 흐린 뱃지(opacity-40) 나열을 대체한다 — 저채도 테마에서 흐린 뱃지끼리 구분이 약했다.
-  function renderDifficultyPills(
-    difficulties: BossDifficulty[],
-    selectedDifficulty: BossDifficulty | null,
-    onSelect: (difficulty: BossDifficulty) => void,
-  ): React.JSX.Element {
-    return (
-      <span className="flex flex-wrap items-center gap-2">
-        {difficulties.map((difficulty) => {
-          const isSelected = selectedDifficulty === difficulty
-          return (
-            <button
-              key={difficulty}
-              type="button"
-              onClick={() => onSelect(difficulty)}
-              aria-pressed={isSelected}
-              className="inline-flex rounded-full border-0 p-0 leading-none"
-            >
-              {isSelected ? (
-                <DifficultyBadge difficulty={difficulty} />
-              ) : (
-                <span className="inline-flex h-5 items-center rounded-full border border-border px-2.5 text-[10px] font-bold tracking-[.03em] text-text-disabled">
-                  {difficulty}
-                </span>
-              )}
-            </button>
-          )
-        })}
       </span>
     )
   }
@@ -450,13 +416,21 @@ export function BossManageScreen(): React.JSX.Element {
                   {/* 2번째 줄: 난이도 세그먼트 */}
                   {isExpanded && (
                     <div className="flex flex-wrap items-center gap-2 border-t border-border px-3 pb-2.5 pt-2.5">
-                      {mode === 'manual' && trackedDifficulty !== null
-                        ? renderDifficultyPills(entry.difficulties, trackedDifficulty, (difficulty) =>
-                            void handleSwitchDifficulty(entry.boss, trackedDifficulty, difficulty),
-                          )
-                        : renderDifficultyPills(entry.difficulties, autoDifficulty, (difficulty) =>
-                            setAutoDifficultyByBoss((prev) => ({ ...prev, [entry.boss]: difficulty })),
-                          )}
+                      {mode === 'manual' && trackedDifficulty !== null ? (
+                        <DifficultySegment
+                          difficulties={entry.difficulties}
+                          selected={trackedDifficulty}
+                          onSelect={(difficulty) => void handleSwitchDifficulty(entry.boss, difficulty)}
+                        />
+                      ) : (
+                        <DifficultySegment
+                          difficulties={entry.difficulties}
+                          selected={autoDifficulty}
+                          onSelect={(difficulty) =>
+                            setAutoDifficultyByBoss((prev) => ({ ...prev, [entry.boss]: difficulty }))
+                          }
+                        />
+                      )}
                     </div>
                   )}
 

@@ -142,7 +142,8 @@ export function CharacterTrackingPicker(props: CharacterTrackingPickerProps): Re
       // 갇힌다 — vh 로 묶으면 시스템 바가 계산에서 빠져 인셋이 큰 기기일수록 더 침범한다.
       className="fixed inset-0 z-50 flex items-center justify-center bg-scrim px-4 pt-[calc(1rem+var(--sa-top))] pb-[calc(1rem+var(--sa-bottom))]"
     >
-      <Card className="flex max-h-full w-full max-w-sm flex-col p-6">
+      {/* 자체 오버레이라 Modal.Card 를 안 쓴다 — 스크림 위 테두리 톤다운은 직접 붙인다([[ADR-122]]). */}
+      <Card className="panel-on-scrim flex max-h-full w-full max-w-sm flex-col p-6">
         <div className="mb-4 shrink-0 space-y-1">
           <h2 className="text-lg font-semibold text-text">캐릭터 관리</h2>
           <p className="text-sm text-text-muted">

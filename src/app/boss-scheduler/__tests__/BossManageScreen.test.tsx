@@ -36,6 +36,7 @@ function mockStore(overrides: Partial<ReturnType<typeof useBossSchedulerStore>>)
     setPartySize: vi.fn(),
     addManualBoss: vi.fn(),
     removeManualBoss: vi.fn(),
+    setManualBossDifficulty: vi.fn(),
     activeTab: 'weekly' as const,
     setActiveTab: vi.fn(),
     weeklyFilter: 'all' as const,
@@ -221,24 +222,29 @@ describe('BossManageScreen — 수동 모드', () => {
     expect(removeManualBoss).toHaveBeenCalledWith('ocid-1', '루시드', '이지')
   })
 
-  it('추적 중인 보스의 다른 난이도 뱃지를 누르면 (보스,난이도) 멤버십이 교체된다', async () => {
+  // ADR-121 결정 6: 교체는 remove → add 2단계가 아니라 스토어의 단일 액션이다 — 2단계는 커밋이
+  // 2회라 그 사이에 "보스가 목록에 없는" 상태가 저장소에 실재했고, 거기서 실패하면 보스가 사라졌다.
+  it('추적 중인 보스의 다른 난이도 뱃지를 누르면 단일 액션으로 난이도가 교체된다', async () => {
     useTrackingModeStore.setState({ mode: 'manual' })
     const addManualBoss = vi.fn().mockResolvedValue(undefined)
     const removeManualBoss = vi.fn().mockResolvedValue(undefined)
+    const setManualBossDifficulty = vi.fn().mockResolvedValue(undefined)
     mockStore({
       characters: [character()],
       manualTrackedByOcid: { 'ocid-1': [{ contentName: '루시드', kind: 'boss', difficulty: '이지' }] },
       addManualBoss,
       removeManualBoss,
+      setManualBossDifficulty,
     })
 
     renderManageScreen()
     fireEvent.click(within(bossRow('루시드')).getByRole('button', { name: '하드' }))
 
     await vi.waitFor(() => {
-      expect(removeManualBoss).toHaveBeenCalledWith('ocid-1', '루시드', '이지')
-      expect(addManualBoss).toHaveBeenCalledWith('ocid-1', '루시드', '하드')
+      expect(setManualBossDifficulty).toHaveBeenCalledWith('ocid-1', '루시드', '하드')
     })
+    expect(removeManualBoss).not.toHaveBeenCalled()
+    expect(addManualBoss).not.toHaveBeenCalled()
   })
 
   it('파티 스테퍼를 누르면 즉시 setPartySize가 호출되고, 경계에서 버튼이 비활성화된다', () => {

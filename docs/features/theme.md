@@ -2,7 +2,7 @@
 
 > **범위**: 캐릭터 대표 컬러 기반 다중 테마의 시맨틱 토큰 스키마·토큰 파생 규칙·테마별 컬러 값·배경 이미지·런타임 전환·시스템 다크 모드 연동. 기본 팔레트·시맨틱 색 체계는 [../foundation/design-system.md](../foundation/design-system.md).
 > **관련 소스**: `features/theme/`(Zustand store) · `storage/theme.ts` · `src/index.css`(`@theme` + `:root[data-theme]` + `.theme-backdrop`) · `src/data/job-themes.json` · `lib/theme-backgrounds.ts` · `src/assets/themes/` · `AppShell`(`restoreFromStorage`).
-> **관련 ADR**: [[ADR-009]] [[ADR-064]] [[ADR-088]] [[ADR-089]] [[ADR-105]] [[ADR-106]] [[ADR-108]] [[ADR-109]] [[ADR-006]] [[ADR-104]]. **관련 문서**: [../foundation/design-system.md](../foundation/design-system.md), [settings.md](./settings.md).
+> **관련 ADR**: [[ADR-009]] [[ADR-064]] [[ADR-088]] [[ADR-089]] [[ADR-105]] [[ADR-106]] [[ADR-108]] [[ADR-109]] [[ADR-006]] [[ADR-104]] [[ADR-122]]. **관련 문서**: [../foundation/design-system.md](../foundation/design-system.md), [settings.md](./settings.md).
 
 ## 정책
 테마마다 **34개 시맨틱 토큰**을 값으로 갖는다([[ADR-064]], 17토큰에서 확장). 현재 등록: **"머쉬맘"(라이트, 기본)·"혼테일"(다크, 시스템 다크 기본)·"레테"(다크)·"렌"(라이트)·"엔젤릭버스터"(라이트)·"검은마법사"(다크)**. 목표는 캐릭터 대표 컬러로 **수십 개**까지 늘리는 것이고, 스키마·파생·등록 방식이 모두 그 전제로 설계돼 있다.
@@ -10,6 +10,7 @@
 - `src/index.css` `@theme` 기본 블록 = **머쉬맘** 값. 나머지 테마는 `:root[data-theme='…']` 오버라이드. Tailwind v4 유틸(`bg-primary`·`text-text` 등)이 이미 `var(--color-*)` 를 참조하므로 컴포넌트 코드는 그대로 두고 `data-theme` 속성만 바꾸면 전환된다.
 - 선택 테마는 Zustand(`features/theme/store.ts`) + `storage/theme.ts`(Preferences 어댑터) 영속화, `AppShell` `restoreFromStorage` 흐름에서 앱 시작 시 hydration.
 - **시스템 다크 모드 연동(2026-07-14)**: `restoreFromStorage()` 가 저장된 테마가 없을 때 `window.matchMedia('(prefers-color-scheme: dark)')` 로 OS 설정을 확인해 라이트="머쉬맘"/다크="혼테일"을 기본값으로 씀(앱 실행 시 1회 판정, 실행 중 OS 변경은 재시작 전까지 미반영). 사용자가 설정에서 한 번이라도 명시 선택하면 그 값이 저장돼 이후 시스템과 무관.
+- **모드(라이트/다크)는 `data-mode` 로 CSS 에도 노출된다**([[ADR-122]], 2026-08-10) — `applyThemeToDocument` 가 `data-theme`(이름)·`color-scheme`·스크롤바 색과 함께 세운다. 토큰만으로 못 푸는 규칙, 즉 **같은 토큰이 모드에 따라 반대 역할을 하는 자리**(스크림 위 패널 테두리)가 이걸 쓴다. 테마 **이름**으로 분기하면 [[ADR-064]] 결정 8이 폐기한 `DARK_THEMES` 수동 목록이 CSS 쪽에 되살아나므로 금지. `color-scheme` 은 선택자로 쓸 수 없어 이 자리를 못 푼다.
 - 설정 화면에선 등록된 테마 중 하나를 고른다 — 목록은 카테고리 섹션 + 프리뷰 타일이고 위에 라이트·다크 필터가 붙는다(아래 「카테고리와 선택 목록」, UI 상세는 [settings.md](./settings.md)). 직업 기반 자동 매핑은 미정이라 범위 밖.
 - 값 소스: `src/data/job-themes.json`([[ADR-006]] — AI가 임의로 채우지 않고 사용자 확인 후 반영).
 
