@@ -1,12 +1,13 @@
 import type { BossContent, CharacterPickerEntry } from '../../types'
 import { RefreshCw, SlidersHorizontal, Swords, Users } from 'lucide-react'
+import { useScreenStackStore } from '../../features/screen-stack/store'
 import { formatSyncedAt } from '../../features/schedule-sync/format'
 import { useScheduleSyncErrorToast } from '../../features/schedule-sync/use-sync-error-toast'
 import { useApiKeyNotice } from '../../features/onboarding/use-api-key-notice'
 import { getBossPortraitCrop, getBossPortraitUrl } from '../../lib/boss-icons'
 import { partySizeKey, useBossSchedulerStore, type PartyFilter } from '../../features/boss-scheduler/store'
 import { useEffect, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Outlet, useNavigate, useSearchParams } from 'react-router-dom'
 
 import type { BossPortraitCrop } from '../../lib/boss-icons'
 import { CharacterSelectDropdown } from '../../components/molecules/CharacterSelectDropdown/CharacterSelectDropdown'
@@ -28,7 +29,6 @@ import { MEDIA_TEXT_SHADOW } from '../../lib/media-card'
 import { Card } from '../../components/atoms/Card/Card'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { Badge } from '../../components/atoms/Badge/Badge'
-import { useScreenNavigate } from '../../lib/use-screen-navigate'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 
 const PARTY_FILTER_LABELS: Record<PartyFilter, string> = {
@@ -126,7 +126,7 @@ export function BossScreen(): React.JSX.Element {
   const { mode } = useTrackingModeStore()
   const [roster, setRoster] = useState<CharacterPickerEntry[]>([])
   // 화면을 통째로 바꾸는 이동은 이동 전에 스크롤을 최상단으로 옮긴다([[ADR-098]] 결정 1).
-  const navigateToScreen = useScreenNavigate()
+  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const [isPickerOpen, setIsPickerOpen] = useState(() => searchParams.get('openPicker') === '1')
   // ADR-053 결정 3: 후보 목록 조회의 로딩·실패는 조회를 소유한 화면이 관리해 피커에 내려준다.
@@ -205,8 +205,13 @@ export function BossScreen(): React.JSX.Element {
   // 함께 태어나고 함께 죽는다 — 다른 탭이 오프셋을 물려받을 길이 없다.
   const scrollRootRef = useRef<HTMLDivElement>(null)
 
+  // 하위 페이지가 열려 있는 동안은 끈다([[ADR-120]] 결정 10). [[ADR-072]] 결정 14 의 조상 사슬
+  // 검사는 오버레이의 스크롤 컨테이너가 **실제로 넘칠 때만** 참이라 내용이 짧은 관리 페이지에서
+  // 샌다 — 스택 깊이를 아는 지금은 구조로 막는다(그 검사는 모달·바텀시트용으로 남는다).
+  const isStackOpen = useScreenStackStore((state) => state.depth > 0)
+
   const pullToRefresh = usePullToRefresh({
-    enabled: !isEmpty,
+    enabled: !isEmpty && !isStackOpen,
     isRefreshing: status === 'loading',
     onRefresh: () => refresh(trackedOcids ?? []),
     // ADR-099: 이 화면은 문서가 아니라 자기 컨테이너를 스크롤한다 — 최상단 판정도 그 기준이다.
@@ -384,7 +389,7 @@ export function BossScreen(): React.JSX.Element {
         icon: Swords,
         title: `추적할 ${label} 보스가 없습니다`,
         description: `보스 관리에서 이번 ${tab === 'weekly' ? '주' : '달'}에 잡을 보스를 골라주세요`,
-        action: { label: '보스 관리', onClick: () => navigateToScreen('/boss/manage') },
+        action: { label: '보스 관리', onClick: () => navigate('/boss/manage') },
       }
     }
     return {
@@ -412,7 +417,7 @@ export function BossScreen(): React.JSX.Element {
   const bossManageButton = (
     <button
       type="button"
-      onClick={() => navigateToScreen('/boss/manage')}
+      onClick={() => navigate('/boss/manage')}
       className="text-sm font-medium text-text-muted hover:text-text"
     >
       보스 관리
@@ -621,6 +626,11 @@ export function BossScreen(): React.JSX.Element {
       </ScreenScroll>
 
       {trackingModals}
+
+      {/* 하위 페이지가 이 자리에서 열린다([[ADR-120]] 결정 1) — 실제 DOM 은 `StackScreen` 이
+          포털로 탭 레이어 밖에 붙이므로(결정 3) 이 위치가 레이아웃에 얹히지는 않는다. 트리에
+          남아 있는 것이 계약이다: 그래야 이 화면이 언마운트되지 않는다([[ADR-077]]). */}
+      <Outlet />
     </>
   )
 }

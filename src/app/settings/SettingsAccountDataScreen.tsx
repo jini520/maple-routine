@@ -5,9 +5,9 @@ import type { CacheDataSizes } from '../../features/settings/cache-data'
 import { clearCacheDataAndReload, loadCacheDataSizes } from '../../features/settings/cache-data'
 import { useSettingsStore } from '../../features/settings/store'
 import { formatBytes } from '../../lib/format-bytes'
-import { useScreenNavigate } from '../../lib/use-screen-navigate'
+import { useStackBack } from '../../lib/use-stack-back'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
-import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
+import { StackScreen } from '../../components/templates/StackScreen/StackScreen'
 import { Card } from '../../components/atoms/Card/Card'
 import { SettingsRow } from './SettingsRow'
 import { AccountModal } from './AccountModal'
@@ -22,18 +22,21 @@ export interface SettingsAccountDataScreenProps {
 // 설정 하위 페이지 「계정 및 데이터」(ADR-118 결정 2·3) — 계정 변경 + 파괴적 행 둘.
 //
 // 골격은 새로 만들지 않고 `/boss/manage`·`/content/manage`·`/settings/about` 과 같은 것을 쓴다
-// (ADR-035 결정 18): 공용 `ScreenScroll` + `PageHeader`(fixed + 실측 spacer) + `useScreenNavigate`.
+// (ADR-035 결정 18): 공용 `StackScreen`(오버레이 + 푸시/팝 + 스와이프 백) + `PageHeader`(fixed + 실측 spacer).
 //
 // **파괴적 행 둘이 별도 카드로 내려온 것이 이 화면의 요점이다**(이슈 #135). 본화면에서 빼는
 // 것만으로는 분리가 아니다 — 옮긴 곳에서 다시 `계정 변경` 과 붙으면 같은 문제가 한 층 내려갈
 // 뿐이다. 아래 카드에 제목을 달지 않는 이유는 위험 색 라벨 둘과 카드 경계가 이미 그 말을 하고
 // 있어서다(ADR-118 결정 3).
+// 부모 탭 — 딥링크로 이 화면에 직접 들어왔을 때 뒤로가 갈 곳([[ADR-120]] 결정 9).
+const PARENT_PATH = '/settings'
+
 export function SettingsAccountDataScreen(
   props: SettingsAccountDataScreenProps = {},
 ): React.JSX.Element {
   const { disconnect } = useSettingsStore()
-  // 화면을 통째로 바꾸는 이동은 이동 전에 스크롤을 최상단으로 옮긴다(ADR-098 결정 1).
-  const navigateToScreen = useScreenNavigate()
+  // 뒤로는 진짜 pop 이다(ADR-120 결정 9) — 앞으로 새 라우트를 밀어 넣지 않는다.
+  const goBack = useStackBack(PARENT_PATH)
 
   const [isAccountOpen, setIsAccountOpen] = useState(false)
   const [isCacheClearOpen, setIsCacheClearOpen] = useState(false)
@@ -62,13 +65,42 @@ export function SettingsAccountDataScreen(
   }
 
   return (
-    <>
-      <ScreenScroll>
+    <StackScreen
+      parentPath={PARENT_PATH}
+      // 모달은 카드 밖이자 스크롤 상자 밖이다 — 카드 안에 두면 `divide-y` 가 형제로 잡아 구분선이
+      // 하나 더 그려지고, 스크롤 상자 안에 두면 그 `fixed` 셸이 만든 스태킹 컨텍스트에 갇힌다.
+      // **셸 밖의 형제로도 둘 수 없다** — 그 자리는 탭 레이어라 이 오버레이(z-20) 아래로 내려가고,
+      // 전환 중에는 아래 화면과 함께 밀린다([[ADR-120]] 결정 3·8).
+      overlays={
+        <>
+          {isAccountOpen && <AccountModal onClose={() => setIsAccountOpen(false)} />}
+
+          <CacheClearConfirm
+            isOpen={isCacheClearOpen}
+            isClearing={isClearing}
+            sizes={sizes}
+            onConfirm={(selection) => {
+              void handleClear(selection)
+            }}
+            onCancel={() => setIsCacheClearOpen(false)}
+          />
+
+          <DisconnectConfirm
+            isOpen={isDisconnectOpen}
+            isDisconnecting={isDisconnecting}
+            onConfirm={() => {
+              void handleDisconnectConfirm()
+            }}
+            onCancel={() => setIsDisconnectOpen(false)}
+          />
+        </>
+      }
+    >
         <PageHeader>
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => navigateToScreen('/settings')}
+              onClick={goBack}
               aria-label="뒤로"
               className="p-1 -ml-1 text-text-muted hover:text-text"
             >
@@ -108,31 +140,6 @@ export function SettingsAccountDataScreen(
             />
           </Card>
         </div>
-      </ScreenScroll>
-
-      {/* 모달은 카드 밖이자 셸 밖의 형제다 — 카드 안에 두면 `divide-y` 가 형제로 잡아 구분선이
-          하나 더 그려지고, `ScreenScroll` 안에 두면 그 `fixed` 셸이 만든 스태킹 컨텍스트에 갇혀
-          오버레이가 탭바 아래로 그려진다(ScreenScroll 주석). */}
-      {isAccountOpen && <AccountModal onClose={() => setIsAccountOpen(false)} />}
-
-      <CacheClearConfirm
-        isOpen={isCacheClearOpen}
-        isClearing={isClearing}
-        sizes={sizes}
-        onConfirm={(selection) => {
-          void handleClear(selection)
-        }}
-        onCancel={() => setIsCacheClearOpen(false)}
-      />
-
-      <DisconnectConfirm
-        isOpen={isDisconnectOpen}
-        isDisconnecting={isDisconnecting}
-        onConfirm={() => {
-          void handleDisconnectConfirm()
-        }}
-        onCancel={() => setIsDisconnectOpen(false)}
-      />
-    </>
+    </StackScreen>
   )
 }

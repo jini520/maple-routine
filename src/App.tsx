@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { BrowserRouter, Navigate, NavLink, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, NavLink, Route, Routes, useNavigate } from 'react-router-dom'
 import { ListChecks, Settings, Swords } from 'lucide-react'
 import { useOnboardingStore } from './features/onboarding/store'
 import { useThemeStore } from './features/theme/store'
@@ -12,7 +12,16 @@ import { hideSplashScreen } from './native/splash-screen'
 import { notifyLiveUpdateReady } from './native/live-update'
 import { refreshSafeAreaInsets } from './native/system-bars'
 import { addKeyboardVisibilityListener } from './native/keyboard'
-import { useScreenNavigate } from './lib/use-screen-navigate'
+import { useStackLocation } from './lib/use-stack-location'
+import { useDelayed } from './lib/use-delayed'
+import { useScreenStackStore } from './features/screen-stack/store'
+import {
+  resolveBelowTransform,
+  resolveLayerAboveProgress,
+  resolveScrimOpacity,
+  resolveTabPath,
+  STACK_EASING,
+} from './lib/stack-transition'
 import { maybeShowTabSwitchAd, startAds } from './features/ads/tab-switch-ad'
 import { UpdatePromptModal } from './app/UpdatePromptModal'
 import { ApiKeyNoticeModal } from './app/ApiKeyNoticeModal'
@@ -31,47 +40,110 @@ const OnboardingScreen = lazy(() =>
 const ContentScreen = lazy(() =>
   import('./app/content-scheduler/ContentScreen').then((m) => ({ default: m.ContentScreen })),
 )
-const ContentManageScreen = lazy(() =>
-  import('./app/content-scheduler/ContentManageScreen').then((m) => ({
-    default: m.ContentManageScreen,
-  })),
-)
+const loadContentManageScreen = () => import('./app/content-scheduler/ContentManageScreen')
+const ContentManageScreen = lazy(() => loadContentManageScreen().then((m) => ({ default: m.ContentManageScreen })))
 const BossScreen = lazy(() =>
   import('./app/boss-scheduler/BossScreen').then((m) => ({ default: m.BossScreen })),
 )
-const BossManageScreen = lazy(() =>
-  import('./app/boss-scheduler/BossManageScreen').then((m) => ({ default: m.BossManageScreen })),
-)
+const loadBossManageScreen = () => import('./app/boss-scheduler/BossManageScreen')
+const BossManageScreen = lazy(() => loadBossManageScreen().then((m) => ({ default: m.BossManageScreen })))
 const BossProfitScreen = lazy(() =>
   import('./app/boss-profit/BossProfitScreen').then((m) => ({ default: m.BossProfitScreen })),
 )
-const DropHistoryScreen = lazy(() =>
-  import('./app/boss-profit/DropHistoryScreen').then((m) => ({ default: m.DropHistoryScreen })),
-)
+const loadDropHistoryScreen = () => import('./app/boss-profit/DropHistoryScreen')
+const DropHistoryScreen = lazy(() => loadDropHistoryScreen().then((m) => ({ default: m.DropHistoryScreen })))
 const SettingsScreen = lazy(() =>
   import('./app/settings/SettingsScreen').then((m) => ({ default: m.SettingsScreen })),
 )
-const SettingsReleaseNotesScreen = lazy(() =>
-  import('./app/settings/SettingsReleaseNotesScreen').then((m) => ({
-    default: m.SettingsReleaseNotesScreen,
-  })),
-)
-const SettingsAccountDataScreen = lazy(() =>
-  import('./app/settings/SettingsAccountDataScreen').then((m) => ({
-    default: m.SettingsAccountDataScreen,
-  })),
-)
-const SettingsAboutScreen = lazy(() =>
-  import('./app/settings/SettingsAboutScreen').then((m) => ({ default: m.SettingsAboutScreen })),
-)
+const loadSettingsReleaseNotesScreen = () => import('./app/settings/SettingsReleaseNotesScreen')
+const SettingsReleaseNotesScreen = lazy(() => loadSettingsReleaseNotesScreen().then((m) => ({ default: m.SettingsReleaseNotesScreen })))
+const loadSettingsAccountDataScreen = () => import('./app/settings/SettingsAccountDataScreen')
+const SettingsAccountDataScreen = lazy(() => loadSettingsAccountDataScreen().then((m) => ({ default: m.SettingsAccountDataScreen })))
+const loadSettingsAboutScreen = () => import('./app/settings/SettingsAboutScreen')
+const SettingsAboutScreen = lazy(() => loadSettingsAboutScreen().then((m) => ({ default: m.SettingsAboutScreen })))
+const loadSettingsPrivacyScreen = () => import('./app/settings/SettingsPrivacyScreen')
+const SettingsPrivacyScreen = lazy(() => loadSettingsPrivacyScreen().then((m) => ({ default: m.SettingsPrivacyScreen })))
+
+// 하위 페이지 청크를 **탭에 들어온 뒤 미리 받아둔다**([[ADR-120]] 결정 13). 그러지 않으면 각 하위
+// 페이지 첫 진입에 서스펜드가 일어나 스피너가 전환 없이 툭 떴다가 그제야 화면이 밀려 들어온다
+// (계측 2026-08-09: 첫 진입에만, 재진입 0회 — 그런데 화면이 열하나라 "매번"으로 느껴진다).
+//
+// **탭 단위인 것이 핵심이다.** 일곱을 한꺼번에 받으면 안 열어 볼 화면의 의존 그래프까지 부팅 직후에
+// 평가돼 [[ADR-092]] 가 피하려던 상태로 돌아간다. 첫 페인트 이후(passive effect)에 도는 것도 같은
+// 이유다 — 그 ADR 이 지키는 것은 첫 페인트 번들의 크기다.
+//
+// **새 하위 페이지를 더하면 여기에도 넣을 것.** 빠뜨리면 그 화면만 옛 증상으로 돌아간다.
+const STACK_PRELOADERS: Record<string, ReadonlyArray<() => Promise<unknown>>> = {
+  '/content': [loadContentManageScreen],
+  '/boss': [loadBossManageScreen],
+  '/profit': [loadDropHistoryScreen],
+  '/settings': [
+    loadSettingsReleaseNotesScreen,
+    loadSettingsAccountDataScreen,
+    loadSettingsAboutScreen,
+    loadSettingsPrivacyScreen,
+  ],
+}
+
+// 이만큼 기다려도 청크가 안 오면 그때 폴백을 그린다([[ADR-120]] 결정 13). 프리페치가 끝난 청크는
+// 서스펜드가 한 프레임뿐이라(계측: +16ms 폴백 → +32ms 화면) 곧바로 그리면 전환 직전의 깜빡임만
+// 남는다. 이 값보다 오래 걸리는 진짜 대기에는 그대로 뜬다.
+const FALLBACK_DELAY_MS = 200
 
 // 청크가 로드되는 동안의 자리 — 새 로딩 표현을 만들지 않고 [[ADR-061]] 로 확정된 LoadingState 를
 // 화면 전체 크기로 재사용한다. 스플래시 시퀀스(MIN_SPLASH_MS)와는 독립이다: 첫 청크는 대개
 // 스플래시가 떠 있는 동안 로드돼 사용자가 이 폴백을 보지 못한다.
-function RouteFallback(): React.JSX.Element {
+// **탭 화면 전용이다** — 하위 페이지는 폴백을 그리지 않는다(`fallback={null}`, [[ADR-120]] 결정 13).
+// 탭 청크는 보스 수익 142kB 처럼 큰 것이 있어 진짜로 기다릴 수 있고, 그때는 화면이 통째로 비므로
+// 알려야 한다. 대신 **짧은 대기는 그리지 않는다** — 아무것도 안 그려도 탭바는 이 경계 **밖**이라
+// 남아 있어 "아직 안 바뀌었다"로 읽힌다(스피너가 한 프레임 번쩍이는 것보다 낫다).
+function RouteFallback(): React.JSX.Element | null {
+  const isSlow = useDelayed(FALLBACK_DELAY_MS)
+  if (!isSlow) return null
   return (
     <div className="p-4" data-testid="route-fallback">
       <LoadingState message="불러오는 중" size="page" />
+    </div>
+  )
+}
+
+// 탭 화면 + 탭바를 한 덩어리로 묶는다([[ADR-120]] 결정 4). 하위 페이지를 밀어 넣을 때 이 래퍼째
+// `translateX` 되므로 **탭바가 아래 화면과 함께 밀려 나가고 함께 어두워진다**(iOS
+// `hidesBottomBarWhenPushed`). 하위 페이지에는 탭바가 없다.
+//
+// **`pt-[var(--sa-top)]` 이 여기 있는 것이 중요하다.** 이 값이 바깥(AppShell 루트)에 있으면 이
+// 래퍼의 위쪽 모서리가 노치만큼 내려가는데, `transform` 이 걸린 동안 `fixed` 후손은 뷰포트가 아니라
+// **이 요소의 패딩 박스**를 기준으로 잡히므로 `ScreenScroll` 의 `top-[var(--sa-top)]` 이 두 번
+// 더해져 전환이 시작되는 프레임에 화면이 노치 높이만큼 툭 내려간다. 패딩은 박스 **안**이라 여기
+// 두면 패딩 박스가 y=0 에서 시작해 뷰포트와 정확히 겹친다.
+//
+// `isolate` 는 **항상** 스태킹 컨텍스트이게 하려는 것이다(결정 8) — `transform` 이 걸린 프레임에만
+// 컨텍스트가 생기면 탭바(`z-30`)와 오버레이의 상대 순서가 전환 시작·종료 프레임에 뒤집힌다.
+function TabLayer({ children }: { children: React.ReactNode }): React.JSX.Element {
+  const { depth, progress, isDragging, transitionMs } = useScreenStackStore()
+  const transition = isDragging ? 'none' : `transform ${transitionMs}ms ${STACK_EASING}`
+  // 탭 레이어는 스택의 맨 아래, 즉 `index: -1` 이다. 오버레이가 없으면 1이 나와 `transform` 이
+  // 아예 없고(결정 7), 2단일 때는 0이라 더 밀리지 않는다.
+  const aboveProgress = resolveLayerAboveProgress(-1, depth, progress)
+
+  return (
+    <div
+      data-testid="tab-layer"
+      className="isolate min-h-screen pt-[var(--sa-top)]"
+      style={{ transform: resolveBelowTransform(aboveProgress), transition }}
+    >
+      {children}
+      {/* 스크림은 탭바(z-30)까지 덮어야 한 덩어리로 읽힌다. 진행률이 1이면 불투명도가 0이라 존재해도
+          보이지 않는다 — 조건부 렌더로 DOM 을 붙였다 뗐다 하면 그 프레임에 전환이 끊긴다. */}
+      <div
+        aria-hidden="true"
+        data-testid="tab-layer-scrim"
+        className="pointer-events-none fixed inset-0 z-40 bg-black"
+        style={{
+          opacity: resolveScrimOpacity(aboveProgress),
+          transition: isDragging ? 'none' : `opacity ${transitionMs}ms ${STACK_EASING}`,
+        }}
+      />
     </div>
   )
 }
@@ -89,10 +161,12 @@ const APP_START_MS = Date.now()
 const MIN_SPLASH_MS = 1000
 
 function BottomTabBar(): React.JSX.Element {
-  // 탭 이동은 화면을 통째로 바꾸므로 **이동 전에 스크롤을 최상단으로 옮긴다**([[ADR-098]] 결정 1).
-  // 네 탭이 문서 전체 스크롤 하나를 공유해(ADR-072 결정 1) 그러지 않으면 새 화면이 옛 오프셋으로
-  // 마운트되고, 문서 높이가 다르면 클램프 프레임이 생긴다.
-  const navigateToScreen = useScreenNavigate()
+  // **이동 전 스크롤 리셋은 더 이상 하지 않는다**([[ADR-098]] 결정 1 폐기 — [[ADR-120]]). 그 처방은
+  // 네 탭이 **문서 전체 스크롤 하나를 공유하던** 시절의 것이라(ADR-072 결정 1), 새 화면이 옛 오프셋
+  // 으로 마운트되는 것을 막으려던 것이다. [[ADR-099]]·[[ADR-100]] 이 스크롤을 화면 소유로 옮기고
+  // [[ADR-120]] 이 마지막 남은 설정 탭까지 옮기면서 `window.scrollTo(0, 0)` 은 아무것도 스크롤하지
+  // 않는 무효 호출이 됐다 — 문서는 이제 어느 탭에서도 스크롤되지 않는다.
+  const navigate = useNavigate()
   const navRef = useRef<HTMLElement>(null)
 
   // 탭 이동의 책임은 NavLink가 아니라 이 인터셉터에 있다(NavLink는 활성 스타일·aria-current 담당).
@@ -125,7 +199,7 @@ function BottomTabBar(): React.JSX.Element {
       // 훅을 걸면 이동마다 재렌더·리스너 재등록이 일어난다.
       const isTabChange = window.location.pathname !== href
 
-      navigateToScreen(href)
+      navigate(href)
 
       // 광고는 이동을 **지연시키지 않는다** — navigate 뒤에 붙여 화면 전환이 먼저 일어나게 하고,
       // 준비된 광고가 없으면 안쪽에서 조용히 건너뛴다(ADR-090 결정 3).
@@ -138,7 +212,7 @@ function BottomTabBar(): React.JSX.Element {
     return () => {
       nav.removeEventListener('click', interceptClick, true)
     }
-  }, [navigateToScreen])
+  }, [navigate])
 
   // 탭바가 실제로 차지하는 높이를 --tab-bar-h 로 내보낸다([[ADR-099]] 결정 7). 화면 스크롤 컨테이너가
   // 스크롤포트 하단을 이만큼 줄여야 스크롤 인디케이터가 탭바 뒤로 들어가지 않는다. **실측인 것이
@@ -194,6 +268,8 @@ export function AppShell(): React.JSX.Element {
   const { restoreFromStorage: restoreTrackingModeFromStorage } = useTrackingModeStore()
   const { restoreFromStorage: restoreDropEffectFromStorage } = useDropEffectStore()
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false)
+  // 나가는 연출이 도는 동안 라우트를 붙잡아 두는 위치([[ADR-120]] 결정 9-b).
+  const displayLocation = useStackLocation()
 
   // OTA 번들이 "정상"임을 capgo에 알린다([[ADR-117]] 결정 2). 이 호출이 appReadyTimeout(기본 10초,
   // capacitor.config.ts 미설정) 안에 없으면 플러그인이 직전 정상 번들로 자동 롤백한다 — 그 롤백은
@@ -301,6 +377,17 @@ export function AppShell(): React.JSX.Element {
 
   const isCompleted = status === 'completed'
 
+  // 지금 탭의 하위 페이지 청크를 미리 받아둔다([[ADR-120]] 결정 13). passive effect 라 첫 페인트
+  // 뒤에 돌고, 이미 받은 모듈은 레지스트리가 돌려주므로 재진입에서 공짜다. 실패해도 던지지 않는다 —
+  // 못 받으면 그 화면 첫 진입에 폴백이 뜰 뿐 기능은 그대로다.
+  useEffect(() => {
+    if (!isCompleted) return
+    for (const load of STACK_PRELOADERS[resolveTabPath(displayLocation.pathname)] ?? []) {
+      void load()
+    }
+  }, [isCompleted, displayLocation.pathname])
+
+
   // 테마 배경 이미지(ADR-088) — 값을 가진 테마에서만 백드롭 한 장을 깐다. 색만 있는 테마는
   // DOM 자체가 늘지 않는다. 실제 그림은 index.css의 .theme-backdrop이 --theme-bg-*를 읽어 그린다.
   //
@@ -309,100 +396,92 @@ export function AppShell(): React.JSX.Element {
   // 이미지가 통째로 사라진다(브라우저 확인, 2026-08-03). 바탕색은 body가 같은 값으로 이미 칠한다.
   const hasThemeBackground = getThemeDefinition(theme).background !== undefined
 
+  // 하위 페이지의 중첩 자식은 **자기 Suspense 경계를 갖는다**([[ADR-092]] 결정 3): React 는 가장
+  // 가까운 경계를 쓰므로 자식이 서스펜드해도 바깥 경계까지 올라오지 않고, 그래서 부모 탭 화면이
+  // 언마운트되지 않는다([[ADR-077]]).
+  //
+  // **폴백은 `null` 이다**([[ADR-120]] 결정 13, 사용자 결정 2026-08-09). 이 화면들은 네트워크가
+  // 필요 없는데 **코드**를 기다리느라 스피너가 떴다 — 데이터를 기다리는 것처럼 보여 거짓말이었다.
+  // 청크가 작고(1.9~11.0 kB) 부모 탭 진입 때 미리 받아두므로(`STACK_PRELOADERS`) 그 사이는
+  // 한 프레임 남짓이고, 그동안 **부모 화면이 그대로 보인다** — 빈 화면이 아니라 "아직 안 밀려
+  // 들어왔다"로 읽힌다. 오래 걸려도 부모가 남아 있으므로 아무것도 안 그리는 편이 낫다.
+  const stackRoute = (element: React.ReactNode): React.JSX.Element => (
+    <Suspense fallback={null}>{element}</Suspense>
+  )
+
   return (
-    <div
-      className={`min-h-screen text-text pt-[var(--sa-top)]${hasThemeBackground ? '' : ' bg-bg'}`}
-    >
+    <div className={`min-h-screen text-text${hasThemeBackground ? '' : ' bg-bg'}`}>
       {hasThemeBackground && (
         <div className="theme-backdrop" data-testid="theme-backdrop" aria-hidden="true" />
       )}
-      <div className={isCompleted ? 'pb-[calc(4rem+var(--sa-bottom))]' : undefined}>
-        {/* 최상위 경계는 화면 전체가 바뀌는 이동(탭 간)만 받는다 — 탭바는 <Routes> 밖이라
-            폴백에 덮이지 않는다. 중첩 자식(/profit/drops)은 **자기 경계를 따로 갖는다**([[ADR-092]]
-            결정 3): React 는 가장 가까운 경계를 쓰므로 자식이 서스펜드해도 이 바깥 경계까지
-            올라오지 않고, 그래서 부모 BossProfitScreen 이 언마운트되지 않는다([[ADR-077]]). */}
-        <Suspense fallback={<RouteFallback />}>
-          <Routes>
-            <Route
-              path="/"
-              element={<Navigate to={isCompleted ? '/content' : '/onboarding'} replace />}
-            />
-            <Route
-              path="/onboarding"
-              element={isCompleted ? <Navigate to="/content" replace /> : <OnboardingScreen />}
-            />
-            <Route
-              path="/content"
-              element={isCompleted ? <ContentScreen /> : <Navigate to="/onboarding" replace />}
-            />
-            {/* ADR-035 결정 18: 수동 추적 항목 편집 전용 관리 페이지 — 스케줄러 화면은 읽기 전용. */}
-            <Route
-              path="/content/manage"
-              element={isCompleted ? <ContentManageScreen /> : <Navigate to="/onboarding" replace />}
-            />
-            <Route
-              path="/boss"
-              element={isCompleted ? <BossScreen /> : <Navigate to="/onboarding" replace />}
-            />
-            {/* ADR-035 결정 18: 보스 추적+파티 인원 통합 관리 페이지(두 모드 공통, 파티 관리 모달 대체). */}
-            <Route
-              path="/boss/manage"
-              element={isCompleted ? <BossManageScreen /> : <Navigate to="/onboarding" replace />}
-            />
-            <Route
-              path="/profit"
-              element={isCompleted ? <BossProfitScreen /> : <Navigate to="/onboarding" replace />}
-            >
-              {/* 드롭 획득 히스토리(전 기간) — 보스 수익의 서브 화면([[ADR-071]] 결정 7, 이슈 #54).
-                  **형제가 아니라 중첩 라우트**다([[ADR-077]]) — 히스토리는 독립 페이지가 아니라 보스
-                  수익 위에 얹히는 스택 화면이라, 이동해도 아래 화면이 언마운트되면 안 된다. 형제였을 땐
-                  이동마다 언마운트돼 아코디언 펼침·보던 기간·스크롤을 전부 잃었고, 그 언마운트가
-                  iOS WKWebView에서 stuck sticky 헤더를 빈 화면으로 만들었다. 화면은
-                  BossProfitScreen의 <Outlet />에 오버레이로 그려진다.
+      <TabLayer>
+        <div className={isCompleted ? 'pb-[calc(4rem+var(--sa-bottom))]' : undefined}>
+          {/* 최상위 경계는 화면 전체가 바뀌는 이동(탭 간)만 받는다 — 탭바는 <Routes> 밖이라
+              폴백에 덮이지 않는다(그래서 이 경계는 TabLayer 안, 탭바 앞에 있다).
 
-                  **자기 Suspense 경계를 갖는다**([[ADR-092]] 결정 3) — 이 element 는 그 <Outlet />
-                  자리에 그려지므로 경계가 부모 서브트리 안쪽에 생긴다. 최상위 경계 하나로 처리하면
-                  이 청크를 받는 동안 부모까지 폴백으로 대체돼, 위 언마운트가 그대로 되살아난다. */}
+              **`location` 을 명시로 넘긴다**([[ADR-120]] 결정 9-b) — 나가는 연출이 도는 동안
+              `useStackLocation` 이 옛 위치를 붙잡아 둬야 오버레이가 언마운트되지 않는다. */}
+          <Suspense fallback={<RouteFallback />}>
+            <Routes location={displayLocation}>
               <Route
-                path="drops"
-                element={
-                  <Suspense fallback={<RouteFallback />}>
-                    <DropHistoryScreen />
-                  </Suspense>
-                }
+                path="/"
+                element={<Navigate to={isCompleted ? '/content' : '/onboarding'} replace />}
               />
-            </Route>
-            <Route
-              path="/settings"
-              element={isCompleted ? <SettingsScreen /> : <Navigate to="/onboarding" replace />}
-            />
-            {/* 설정 하위 페이지 셋([[ADR-118]] 결정 2) — `/settings` 의 **형제**다. 중첩으로 두지
-                않는 이유는 [[ADR-077]] 이 `/profit/drops` 를 중첩으로 만든 근거("부모가 언마운트되면
-                펼침·기간·스크롤을 잃는다")가 여기엔 없기 때문이다: 설정 본화면은 잃을 상태가 없다.
-                가드는 `/settings` 와 똑같이 건다 — 그래야 `연결 해제` 로 온보딩에 돌아갈 때 이
-                화면들에서도 리다이렉트가 걸린다. */}
-            <Route
-              path="/settings/release-notes"
-              element={
-                isCompleted ? <SettingsReleaseNotesScreen /> : <Navigate to="/onboarding" replace />
-              }
-            />
-            <Route
-              path="/settings/account-data"
-              element={
-                isCompleted ? <SettingsAccountDataScreen /> : <Navigate to="/onboarding" replace />
-              }
-            />
-            <Route
-              path="/settings/about"
-              element={
-                isCompleted ? <SettingsAboutScreen /> : <Navigate to="/onboarding" replace />
-              }
-            />
-          </Routes>
-        </Suspense>
-      </div>
-      {isCompleted && !isKeyboardVisible && <BottomTabBar />}
+              <Route
+                path="/onboarding"
+                element={isCompleted ? <Navigate to="/content" replace /> : <OnboardingScreen />}
+              />
+              {/* 하위 페이지는 전부 부모 탭의 **중첩 라우트**다([[ADR-120]] 결정 1). 형제로 두면
+                  이동마다 부모가 언마운트돼 상태를 잃을 뿐 아니라, 전환 중 아래에 보여줄 화면
+                  자체가 없다. 화면은 부모의 <Outlet /> 자리에서 `StackScreen` 이 포털로 그린다. */}
+              <Route
+                path="/content"
+                element={isCompleted ? <ContentScreen /> : <Navigate to="/onboarding" replace />}
+              >
+                {/* ADR-035 결정 18: 수동 추적 항목 편집 전용 관리 페이지 — 스케줄러는 읽기 전용. */}
+                <Route path="manage" element={stackRoute(<ContentManageScreen />)} />
+              </Route>
+              <Route
+                path="/boss"
+                element={isCompleted ? <BossScreen /> : <Navigate to="/onboarding" replace />}
+              >
+                {/* ADR-035 결정 18: 보스 추적+파티 인원 통합 관리 페이지(파티 관리 모달 대체). */}
+                <Route path="manage" element={stackRoute(<BossManageScreen />)} />
+              </Route>
+              <Route
+                path="/profit"
+                element={isCompleted ? <BossProfitScreen /> : <Navigate to="/onboarding" replace />}
+              >
+                {/* 드롭 획득 히스토리(전 기간) — 보스 수익의 서브 화면([[ADR-071]] 결정 7, 이슈 #54).
+                    이 앱에서 중첩 라우트를 처음 쓴 자리이고([[ADR-077]]), [[ADR-120]] 이 그 형태를
+                    나머지 여섯에 넓혔다. */}
+                <Route path="drops" element={stackRoute(<DropHistoryScreen />)} />
+              </Route>
+              <Route
+                path="/settings"
+                element={isCompleted ? <SettingsScreen /> : <Navigate to="/onboarding" replace />}
+              >
+                {/* 설정 하위 페이지 넷([[ADR-118]] 결정 2 + [[ADR-120]] 결정 11 의 처방침).
+                    형제였던 것을 중첩으로 옮긴다 — 근거는 [[ADR-077]] 의 "부모 상태 보존"이 아니라
+                    **전환 중 아래 화면이 보여야 한다**는 것이다. 가드는 부모가 대신 건다: 부모가
+                    `/onboarding` 으로 리다이렉트되면 중첩 자식은 매칭될 자리가 사라진다. */}
+                <Route path="release-notes" element={stackRoute(<SettingsReleaseNotesScreen />)} />
+                <Route path="account-data" element={stackRoute(<SettingsAccountDataScreen />)} />
+                <Route path="about" element={stackRoute(<SettingsAboutScreen />)}>
+                  {/* **`/settings/about` 의 자식**이다 — 이 화면의 행에서 열리므로 스택이 2단이
+                      된다(이 앱에서 유일하다). 형제로 두면 about 이 즉시 사라진 자리에 처방침이
+                      밀려 들어와, 밀려 나가는 화면 없이 배경만 바뀌는 프레임이 보인다. */}
+                  <Route path="privacy" element={stackRoute(<SettingsPrivacyScreen />)} />
+                </Route>
+              </Route>
+            </Routes>
+          </Suspense>
+        </div>
+        {isCompleted && !isKeyboardVisible && <BottomTabBar />}
+      </TabLayer>
+      {/* 스택 오버레이의 포털 루트([[ADR-120]] 결정 3) — `TabLayer` 의 **형제**여야 그 요소의
+          `transform` 에 딸려 밀리지 않는다. 비어 있을 때 레이아웃에 영향을 주지 않는 빈 div 다. */}
+      <div id="stack-root" data-testid="stack-root" />
       {/* 사용자 동의형 업데이트 모달 — 실행 시(또는 설정에서 수동 확인 시) 새 버전이 있으면 뜬다(ADR-027). */}
       <UpdatePromptModal />
       {/* ADR-115 결정 10 · ADR-116 결정 1: 저장된 키가 무효화되거나 호출 한도를 넘기면 원래 화면

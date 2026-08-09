@@ -266,6 +266,8 @@ ScreenScroll: fixed inset-x-0 top-[var(--sa-top)] bottom-[var(--tab-bar-h)] over
 
 **라우트 이동은 스크롤을 먼저 0으로 옮긴다**([[ADR-098]] 결정 1) — 화면을 통째로 바꾸는 이동은 `useNavigate` 가 아니라 `lib/use-screen-navigate.ts` 의 `useScreenNavigate()` 를 쓴다. 스크롤과 이동은 **같은 태스크**여야 한다(`rAF` 로 미루면 그 프레임에 떠나는 화면이 최상단으로 올라간 모습이 보인다 — 실기기 반려). 네 탭이 문서 스크롤 하나를 공유하므로, 그러지 않으면 새 화면이 비-0 오프셋으로 마운트되고 문서 높이가 다르면 클램프 프레임이 생긴다. 예외는 자기 스크롤 컨테이너를 갖는 `/profit/drops` 오버레이뿐이다([[ADR-077]]).
 
+> **[[ADR-120]] 이 이 처방을 하위 페이지 이동에서 걷어낸다**(구현 전). 아래 화면이 남는 스택에서는 불필요할 뿐 아니라 **아래 화면의 스크롤을 날린다** — 히스토리만 예외였던 이유가 그것이다. 탭 이동에서의 존폐는 구현 중 판정한다: [[ADR-099]]·[[ADR-100]] 이후 탭 화면이 전부 자기 스크롤을 가지면 `window.scrollTo(0,0)` 은 무효 호출이다(설정 탭은 아직 `ScreenScroll` 을 쓰지 않아 그 조건이 미충족 — 함께 옮긴다).
+
 **헤더-목록 경계 페이드**: 고정 헤더의 불투명 배경이 스크롤 도중 경계를 딱 끊어 보이게 하는 문제 완화. 헤더 블록에 오버레이:
 ```
 pointer-events-none absolute inset-x-0 top-full h-8 bg-gradient-to-b from-bg to-transparent backdrop-blur-sm
@@ -275,6 +277,43 @@ style: maskImage/WebkitMaskImage: linear-gradient(to bottom, black, transparent)
 
 **예외 — 보스 수익 화면은 이 페이드 오버레이를 페이지 헤더가 아니라 "중첩 sticky 요소"(펼친 캐릭터 카드 헤더) 하단에 붙인다**([[ADR-047]] 결정 6·후속, 2026-07-28). 레시피는 동일하고 배경색만 그 요소의 표면색(`from-surface`)으로 바꾼다 — **페이드는 콘텐츠가 실제로 지나가는 경계에 둔다**는 원칙. 그 화면은 펼친 캐릭터 카드 헤더가 **중첩 sticky**로 페이지 헤더 바로 아래(= 이 오버레이가 덮는 `top-full h-8` 밴드)에 멈추는데, 오버레이는 `z-10` 페이지 헤더 안에 있고 카드는 `isolate`로 그보다 아래라 stuck 헤더 상단이 가려진다. 경계는 헤어라인(`h-px bg-border`)이 대신한다. **중첩 sticky를 도입하는 화면에서는 이 레시피를 그대로 쓰면 안 된다.** 나머지 4개 화면(컨텐츠·컨텐츠 관리·보스·보스 관리)은 중첩 sticky가 없어 페이드를 유지한다. 상세는 [features/boss-profit.md](../features/boss-profit.md).
 
+### 화면 스택 — 하위 페이지는 밀려 들어온다 ([[ADR-120]], **구현 완료 2026-08-09 · 실기기 프레임 확인 보류**, 이슈 #166)
+> **구현**: `components/templates/StackScreen/`(오버레이 셸) · `lib/stack-transition.ts`(상수·순수 계산) · `lib/use-swipe-back.ts`(제스처) · `lib/use-stack-back.ts`(뒤로) · `lib/use-stack-location.ts`(나가는 연출을 위한 라우트 지연) · `features/screen-stack/`(`depth`·`progress` 스토어) · `App.tsx`(`TabLayer` + 포털 루트 `#stack-root`)
+
+탭 화면 위에 열리는 **하위 페이지 일곱은 전부 같은 규약을 따른다** — `/content/manage` · `/boss/manage` · `/profit/drops` · `/settings/release-notes` · `/settings/account-data` · `/settings/about` · `/settings/about/privacy`. 새 하위 페이지도 이 규약에 들어온다. 화면 셸을 따로 짜지 말고 `StackScreen` 을 쓸 것.
+
+**깊이는 2까지 간다** — 처방침만 하위의 하위다(그 화면의 행에서 열리므로). 스토어는 층 배열이 아니라 `depth` + **최상단의** `progress` 만 갖는다: 움직이는 것은 언제나 최상단 하나이고, 나머지 층은 자기 `index` 와 `depth` 만 알면 자리가 정해진다(`resolveLayerTransform`). `index` 는 React 컨텍스트로 내려간다 — 포털은 DOM 만 옮기고 트리는 그대로라 중첩된 `StackScreen` 이 부모 값을 그대로 물려받는다.
+
+모달·바텀시트는 `children` 이 아니라 **`overlays` 프롭**에 준다 — `children` 은 스크롤 상자 안이라 `z-50` 이 갇히고, `<StackScreen>` 밖 형제는 탭 레이어라 이 오버레이 아래로 내려간다.
+
+```
+라우트: 부모 탭의 **중첩 라우트**   (형제 최상위 라우트 금지 — 부모가 언마운트된다, [[ADR-077]])
+DOM:   포털로 탭 레이어 **밖**      (트리 위치는 중첩 그대로 — 언마운트 금지·중첩 Suspense 는 트리의 성질)
+전환:  들어오는 화면 translateX(100% → 0) / 아래 화면 translateX(0 → -30%) + 스크림 0.12
+       340ms · cubic-bezier(0.32, 0.72, 0, 1) · 들어오는 화면 왼쪽 24px 경계 그림자
+제스처: 왼쪽 가장자리 28px 에서 시작한 가로 드래그 — 거리 35% 또는 속도 0.4px/ms 면 pop
+       정착 시간은 남은 거리에 비례(최소 120ms) · 세로가 먼저 이기면 스크롤에 양보
+뒤로:  navigate(-1) 진짜 pop  (딥링크 진입 = location.key === 'default' 일 때만 부모로 replace)
+탭바:  하위 페이지엔 **없다** — 탭 레이어 안에 살아 아래 화면과 함께 밀려 나간다
+```
+
+**`transform` 은 휴지 시에 걸지 않는다.** 전환·드래그 중에만 인라인으로 쓰고 끝나면 속성 자체를 제거한다(`translateX(0)` 을 남기지 않는다). `transform` 이 걸린 요소는 containing block 이라 **중첩 sticky 후손의 기준을 바꾸기** 때문이다 — [[ADR-073]] 결정 3 이 PTR 인디케이터에서 세운 것과 같은 처방이고, 보스 수익이 중첩 sticky 를 쓴다([[ADR-047]]). **`will-change: transform` 도 미리 걸지 않는다** — [[ADR-079]] 가 실기기에서 무효로 판명해 되돌린 처방이다.
+
+**겹침 순서가 두 컨텍스트로 갈린다.** `TabLayer` 에 `isolation: isolate` 를 줘 **항상** 스태킹 컨텍스트이게 한다(전환 중에만 컨텍스트가 되면 시작·종료 프레임에 순서가 뒤집힌다). 탭바의 `z-30` 은 그 안에서만 의미를 갖고, 포털 루트의 오버레이 `z-20` 이 그 위에 그려진다.
+
+| 층 | z | 사는 곳 |
+|---|---|---|
+| 페이지 sticky 헤더 | `z-10` | 탭 레이어 안 |
+| 탭바 | `z-30` | 탭 레이어 안 |
+| **스택 오버레이** | `z-20` | 포털 루트 (탭 레이어 밖) |
+| 모달·피커 | `z-50` | |
+| 토스트·바텀시트 | `z-[60]` | |
+| 드롭 연출 | `z-[70]` | |
+
+**하위 페이지는 로딩 스피너를 그리지 않는다**([[ADR-120]] 결정 13) — `<Suspense fallback={null}>`. 그 스피너는 데이터가 아니라 **코드**(청크)를 기다리는 것인데 이 화면들은 네트워크를 쓰지 않아, 뜨는 것 자체가 거짓말이었다. 안 그려도 **부모 화면이 그대로 보이므로** 빈 화면이 아니라 "아직 안 밀려 들어왔다"로 읽힌다. 청크는 탭에 들어온 뒤 미리 받아둬(`STACK_PRELOADERS`) 그 사이도 짧다 — **새 하위 페이지를 더하면 그 표에도 넣을 것.** 반대로 **탭 화면의 폴백은 남긴다**(보스 수익 142kB 처럼 큰 청크가 있고 받는 동안 화면이 통째로 빈다). 거기에도 200ms 지연을 걸어 짧은 대기는 안 그린다(`lib/use-delayed.ts`).
+
+`prefers-reduced-motion: reduce` 면 전환 시간을 0 으로 한다(구조는 그대로). **수치는 실기기 프레임 확인 뒤 확정한다** — 이 저장소는 브라우저에서 멀쩡한 것이 iOS 실기기에서 깨진 사례를 반복해 기록했다([[ADR-079]]·[[ADR-085]]·[[ADR-098]]).
+
 ### 당겨서 새로고침(pull-to-refresh) — [[ADR-072]] · 인디케이터 형태는 [[ADR-073]] · 마크는 [[ADR-074]] (구현 완료 2026-08-01 · 실기기 검증 보류)
 > **구현**: `lib/pull-to-refresh.ts`(상수·순수 함수) · `lib/use-pull-to-refresh.ts`(`usePullToRefresh({ enabled, isRefreshing, onRefresh })`) · `components/PullToRefreshIndicator/`(표시 전용, `data-testid="pull-to-refresh-indicator"`) · `src/index.css`(러버밴드 억제). 화면은 `enabled` 만 계산해 넘긴다.
 
@@ -282,6 +321,10 @@ style: maskImage/WebkitMaskImage: linear-gradient(to bottom, black, transparent)
 
 ```
 적용 화면: 컨텐츠·보스·수익 3개 탭 최상위 화면만(서브 화면·설정 탭 제외)
+          하위 페이지가 열려 있는 동안은 꺼진다 — enabled 에 `스택 깊이 === 0` 을 곱한다
+          ([[ADR-120]] 결정 10, 구현 전. [[ADR-072]] 결정 14 의 조상 사슬 검사는 오버레이의
+           스크롤 컨테이너가 실제로 넘칠 때만 참이라 내용이 짧은 관리 페이지에서 샌다 —
+           스택 깊이를 아는 지금은 구조로 막는다. 조상 검사는 모달·바텀시트용으로 남긴다)
 
 목록 블록(sticky 헤더의 형제, `px-4 pb-4` 를 가진 블록) — data-testid="pull-content":
   style transform: translateY(<오프셋>px)   ← 오프셋이 0이면 transform 자체를 걸지 않는다

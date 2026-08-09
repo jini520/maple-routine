@@ -14,8 +14,8 @@ import { useContentSchedulerStore, type ContentTab } from '../../features/conten
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { useToastStore } from '../../features/toast/store'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
-import { useScreenNavigate } from '../../lib/use-screen-navigate'
-import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
+import { useStackBack } from '../../lib/use-stack-back'
+import { StackScreen } from '../../components/templates/StackScreen/StackScreen'
 
 // 카테고리 → 아이콘은 표현 계층 결정이라 여기 둔다(카테고리 자체는 lib/content-category가 데이터에서 도출).
 // 매핑에 없는 카테고리·접두사 없는 단독 항목은 Sparkles로 폴백한다.
@@ -42,6 +42,9 @@ function categoryIcon(label: string | null): LucideIcon {
 // 스케줄러로 리다이렉트한다.
 // 리디자인(2026-07-24, 와이어프레임 리뷰): content_name에 이미 있는 접두사(lib/content-category)로
 // 카테고리 그룹핑 — 반복되는 "[일일 퀘스트] …"를 헤더로 한 번만 묶고 행에는 알맹이만 표시한다.
+// 부모 탭 — 딥링크로 이 화면에 직접 들어왔을 때 뒤로가 갈 곳([[ADR-120]] 결정 9).
+const PARENT_PATH = '/content'
+
 export function ContentManageScreen(): React.JSX.Element {
   const {
     status,
@@ -59,7 +62,7 @@ export function ContentManageScreen(): React.JSX.Element {
   } = useContentSchedulerStore()
   const { mode } = useTrackingModeStore()
   // 화면을 통째로 바꾸는 이동은 이동 전에 스크롤을 최상단으로 옮긴다([[ADR-098]] 결정 1).
-  const navigateToScreen = useScreenNavigate()
+  const goBack = useStackBack(PARENT_PATH)
   // ADR-096 결정 2: 이어받는 것은 **진입 시점 한 번뿐**이고, 이 화면에서의 탭 전환은 스케줄러로
   // 되돌리지 않는다. 되돌리면 잠깐 다른 탭을 뒤져본 것 때문에 돌아갔을 때 보던 화면이 바뀌어,
   // 애초에 고치려던 문제("보던 자리를 잃는다")를 반대 방향으로 다시 만든다.
@@ -115,7 +118,7 @@ export function ContentManageScreen(): React.JSX.Element {
   return (
     // ADR-099: 스크롤의 소유자가 문서가 아니라 이 화면이다 — 스케줄러에서 스크롤을 내린 채 들어오는
     // 화면이라 같은 노출을 가졌었다. 공용 셸이 스크롤포트 인셋과 그 보정을 갖는다.
-    <ScreenScroll>
+    <StackScreen parentPath={PARENT_PATH}>
       {/* 제목~탭까지 sticky로 상단에 고정하고 그 아래 항목 목록만 스크롤 — 스케줄러 화면과 동일
           패턴(UI_GUIDE "스크롤 영역"). AppShell의 pt-[--sa-top]을 -mt로 상쇄하고 pt-calc로
           노치까지 bg-bg가 덮게 한다. */}
@@ -124,7 +127,7 @@ export function ContentManageScreen(): React.JSX.Element {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => navigateToScreen('/content')}
+              onClick={goBack}
               aria-label="뒤로"
               className="p-1 -ml-1 text-text-muted hover:text-text"
             >
@@ -265,6 +268,6 @@ export function ContentManageScreen(): React.JSX.Element {
             })}
         </div>
       )}
-    </ScreenScroll>
+    </StackScreen>
   )
 }

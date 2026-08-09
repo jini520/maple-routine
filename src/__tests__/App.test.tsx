@@ -458,16 +458,40 @@ describe('AppShell', () => {
     ).toBeInTheDocument()
   })
 
-  it('최상단 컨테이너에 top safe-area padding이 적용된다', () => {
+  // top safe-area padding 은 **탭 레이어**가 갖는다([[ADR-120]] 결정 4). 바깥 루트에 두면 그
+  // 레이어의 위쪽 모서리가 노치만큼 내려가는데, 전환 중 `transform` 이 걸리면 `fixed` 후손이
+  // 뷰포트가 아니라 그 요소의 패딩 박스를 기준으로 잡혀 안전영역이 두 번 더해진다.
+  it('탭 레이어에 top safe-area padding이 적용된다', () => {
     mockStore({ status: 'awaitingApiKey' })
 
-    const { container } = render(
+    render(
       <MemoryRouter initialEntries={['/']}>
         <AppShell />
       </MemoryRouter>,
     )
 
-    expect(container.firstChild).toHaveClass('pt-[var(--sa-top)]')
+    expect(screen.getByTestId('tab-layer')).toHaveClass('pt-[var(--sa-top)]')
+  })
+
+  // 겹침 순서를 위해 **항상** 스태킹 컨텍스트여야 한다([[ADR-120]] 결정 8) — `transform` 이 걸린
+  // 프레임에만 컨텍스트가 생기면 탭바(z-30)와 오버레이의 상대 순서가 전환 시작·종료에 뒤집힌다.
+  it('탭 레이어는 isolate 로 스태킹 컨텍스트를 고정한다', () => {
+    mockStore({ status: 'completed', selectedAccountId: 'account-1' })
+
+    renderAt('/content')
+
+    expect(screen.getByTestId('tab-layer')).toHaveClass('isolate')
+  })
+
+  // 오버레이는 탭 레이어 **밖**에 붙어야 그 요소의 transform 에 딸려 밀리지 않는다(결정 3).
+  it('스택 오버레이의 포털 루트가 탭 레이어의 형제로 존재한다', () => {
+    mockStore({ status: 'completed', selectedAccountId: 'account-1' })
+
+    renderAt('/content')
+
+    const stackRoot = screen.getByTestId('stack-root')
+    expect(stackRoot).toBeInTheDocument()
+    expect(stackRoot.parentElement).toBe(screen.getByTestId('tab-layer').parentElement)
   })
 
   it('하단 탭바에 bottom safe-area padding이 적용된다', () => {
@@ -481,13 +505,15 @@ describe('AppShell', () => {
   it('status가 completed일 때 컨텐츠 래퍼의 하단 padding이 탭바 높이와 safe-area를 함께 반영한다', () => {
     mockStore({ status: 'completed', selectedAccountId: 'account-1' })
 
-    const { container } = render(
+    render(
       <MemoryRouter initialEntries={['/content']}>
         <AppShell />
       </MemoryRouter>,
     )
 
-    expect(container.firstChild?.firstChild).toHaveClass('pb-[calc(4rem+var(--sa-bottom))]')
+    expect(screen.getByTestId('tab-layer').firstChild).toHaveClass(
+      'pb-[calc(4rem+var(--sa-bottom))]',
+    )
   })
 
   // 키보드가 뜨면 네이티브가 WebView를 그만큼 밀어 올려 탭바가 키보드 바로 위에 얹힌다 → 그동안 숨긴다.
@@ -689,12 +715,15 @@ describe('AppShell', () => {
     })
   })
 
-  // ADR-098 결정 1: 네 탭이 문서 전체 스크롤 하나를 공유하므로(ADR-072 결정 1), 그대로 이동하면
-  // 새 화면이 옛 화면의 오프셋으로 마운트되고 문서 높이가 다르면 클램프 프레임이 생긴다.
-  // **옛 문서가 아직 높을 때** 옮겨야 잘라낼 오프셋이 없다 — 그래서 이동보다 먼저다. 단 **같은
-  // 태스크 안에서** 끝내야 한다(폐기 1: 한 프레임 미뤘더니 떠나는 화면이 올라가는 게 보였다).
-  describe('탭 이동 전 스크롤 리셋 (ADR-098)', () => {
-    it('탭을 누르면 이동하기 전에 스크롤을 최상단으로 옮기고, 이동은 미뤄지지 않는다', () => {
+  // [[ADR-120]] 이 [[ADR-098]] 결정 1(이동 전 `scrollTo(0, 0)`)을 폐기했다. 그 처방은 네 탭이
+  // **문서 전체 스크롤 하나를 공유하던** 시절의 것이고([[ADR-072]] 결정 1), [[ADR-099]]·[[ADR-100]]
+  // 이 스크롤을 화면 소유로 옮기고 [[ADR-120]] 이 마지막 남은 설정 탭까지 옮기면서 무효 호출이 됐다.
+  //
+  // 그래서 이 절이 지키는 것이 뒤집혔다 — "옮기는가"가 아니라 **"옮기지 않는가"**, 그리고 그것을
+  // 안전하게 만드는 전제(**모든 탭 화면이 자기 스크롤을 소유한다**)가 성립하는가다. 전제가 깨지면
+  // 리셋을 지운 것이 회귀가 되므로, 그 전제 쪽이 진짜 가드다.
+  describe('탭 이동과 스크롤 (ADR-120 — ADR-098 결정 1 폐기)', () => {
+    it('탭을 눌러도 문서 스크롤을 건드리지 않는다', () => {
       mockStore({ status: 'completed', selectedAccountId: 'account-1' })
       const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
       renderAt('/content')
@@ -703,26 +732,11 @@ describe('AppShell', () => {
         screen.getByRole('link', { name: '보스' }).click()
       })
 
-      expect(scrollTo).toHaveBeenCalledWith(0, 0)
+      expect(scrollTo).not.toHaveBeenCalled()
       expect(screen.getByRole('heading', { name: '보스 스케줄러' })).toBeInTheDocument()
       scrollTo.mockRestore()
     })
 
-    it('네 탭 모두 이동 전에 스크롤을 옮긴다', () => {
-      mockStore({ status: 'completed', selectedAccountId: 'account-1' })
-      const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
-      renderAt('/content')
-
-      for (const name of ['보스', '수익', '설정', '컨텐츠']) {
-        scrollTo.mockClear()
-        act(() => {
-          screen.getByRole('link', { name }).click()
-        })
-        expect(scrollTo, `${name} 탭`).toHaveBeenCalledWith(0, 0)
-        expect(screen.getByRole('link', { name }), `${name} 탭`).toHaveAttribute('aria-current', 'page')
-      }
-      scrollTo.mockRestore()
-    })
   })
 })
 

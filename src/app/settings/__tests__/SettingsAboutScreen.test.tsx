@@ -37,7 +37,9 @@ function renderAboutScreen(): ReturnType<typeof render> {
   return render(
     <MemoryRouter initialEntries={['/settings/about']}>
       <Routes>
-        <Route path="/settings/about" element={<SettingsAboutScreen />} />
+        <Route path="/settings/about" element={<SettingsAboutScreen />}>
+          <Route path="privacy" element={<div>처방침 프로브</div>} />
+        </Route>
         <Route path="/settings" element={<div>설정 프로브</div>} />
       </Routes>
     </MemoryRouter>,
@@ -91,12 +93,16 @@ describe('SettingsAboutScreen', () => {
 
   // ADR-118 결정 7: footer 고지에서 이 화면의 행으로 옮겨왔다. Play 사용자 데이터 정책이
   // 요구하는 것은 "앱 안에 링크"이지 "첫 화면에 링크"가 아니다.
-  it('개인정보 처리방침 행이 링크이고 새 컨텍스트로 연다', () => {
+  //
+  // ADR-120 결정 11: **앱을 벗어나던 링크가 앱 안 하위 페이지로 바뀌었다.** 사본을 만드는 것이
+  // 아니라 같은 사이트를 iframe 으로 싣는 것이라 "법적 문서를 두 벌로 만들지 않는다"는 그대로다.
+  it('개인정보 처리방침 행이 앱 밖으로 나가지 않고 하위 페이지를 연다', () => {
     renderAboutScreen()
 
-    const link = screen.getByRole('link', { name: /개인정보 처리방침/ })
-    expect(link).toHaveAttribute('href', 'https://mapleroutine.store/privacy')
-    expect(link).toHaveAttribute('target', '_blank')
-    expect(link).toHaveAttribute('rel', 'noopener noreferrer')
+    expect(screen.queryByRole('link', { name: /개인정보 처리방침/ })).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /개인정보 처리방침/ }))
+
+    expect(screen.getByText('처방침 프로브')).toBeInTheDocument()
   })
 })

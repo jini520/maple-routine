@@ -19,8 +19,8 @@ import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import type { BossDifficulty } from '../../types'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { Badge } from '../../components/atoms/Badge/Badge'
-import { useScreenNavigate } from '../../lib/use-screen-navigate'
-import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
+import { useStackBack } from '../../lib/use-stack-back'
+import { StackScreen } from '../../components/templates/StackScreen/StackScreen'
 
 interface BossReferenceEntry {
   boss: string
@@ -61,6 +61,9 @@ const MONTHLY_BOSSES = toListEntries(weeklyBossesData.monthly as BossReferenceEn
 // 리디자인(2026-07-24, 와이어프레임 리뷰): 행을 2줄로 — 1번째 줄은 원형 보스 초상화 + 보스명
 // + 파티 스테퍼(우상단 고정), 2번째 줄은 난이도 세그먼트(선택=뱃지/미선택=고스트 칩). 선택 상태는
 // 체크 없이 카드 테두리·색으로만 나타낸다. 수동 토글 버튼엔 aria-label로 이름을 고정한다.
+// 부모 탭 — 딥링크로 이 화면에 직접 들어왔을 때 뒤로가 갈 곳([[ADR-120]] 결정 9).
+const PARENT_PATH = '/boss'
+
 export function BossManageScreen(): React.JSX.Element {
   const {
     status,
@@ -79,7 +82,7 @@ export function BossManageScreen(): React.JSX.Element {
   } = useBossSchedulerStore()
   const { mode } = useTrackingModeStore()
   // 화면을 통째로 바꾸는 이동은 이동 전에 스크롤을 최상단으로 옮긴다([[ADR-098]] 결정 1).
-  const navigateToScreen = useScreenNavigate()
+  const goBack = useStackBack(PARENT_PATH)
   // ADR-096 결정 2: 이어받는 것은 **진입 시점 한 번뿐**이다 — 컨텐츠 관리 페이지와 같은 이유로,
   // 이 화면에서의 탭 전환을 스케줄러로 되돌리지 않는다.
   const [activeTab, setActiveTab] = useState<BossTab>(schedulerTab)
@@ -275,7 +278,7 @@ export function BossManageScreen(): React.JSX.Element {
   return (
     // ADR-099: 스크롤의 소유자가 문서가 아니라 이 화면이다 — 스케줄러에서 스크롤을 내린 채 들어오는
     // 화면이라 같은 노출을 가졌었다. 공용 셸이 스크롤포트 인셋과 그 보정을 갖는다.
-    <ScreenScroll>
+    <StackScreen parentPath={PARENT_PATH}>
       {/* 제목~탭~(자동)토글까지 sticky로 상단에 고정하고 그 아래 보스 목록만 스크롤 — 스케줄러
           화면과 동일 패턴(UI_GUIDE "스크롤 영역"). AppShell의 pt-[--sa-top]을 -mt로 상쇄하고
           pt-calc로 노치까지 bg-bg가 덮게 한다. */}
@@ -284,7 +287,7 @@ export function BossManageScreen(): React.JSX.Element {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => navigateToScreen('/boss')}
+              onClick={goBack}
               aria-label="뒤로"
               className="p-1 -ml-1 text-text-muted hover:text-text"
             >
@@ -462,6 +465,6 @@ export function BossManageScreen(): React.JSX.Element {
             })}
         </ul>
       )}
-    </ScreenScroll>
+    </StackScreen>
   )
 }

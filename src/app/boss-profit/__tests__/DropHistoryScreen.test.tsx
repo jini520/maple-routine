@@ -56,8 +56,8 @@ function LocationProbe(): React.JSX.Element {
   return <span data-testid="location">{useLocation().pathname}</span>
 }
 
-function renderScreen(): void {
-  render(
+function renderScreen(): { rerender: () => void } {
+  const view = render(
     <MemoryRouter initialEntries={['/profit/drops']}>
       <Routes>
         <Route path="/profit/drops" element={<DropHistoryScreen />} />
@@ -66,6 +66,21 @@ function renderScreen(): void {
       <LocationProbe />
     </MemoryRouter>,
   )
+  // 같은 인스턴스를 유지한 채 리렌더만 일으키는 손잡이 — 마운트당 한 번만 하는 일(무작위 문구
+  // 고정)을 확인하는 테스트가 쓴다.
+  return {
+    rerender: () => {
+      view.rerender(
+        <MemoryRouter initialEntries={['/profit/drops']}>
+          <Routes>
+            <Route path="/profit/drops" element={<DropHistoryScreen />} />
+            <Route path="/profit" element={<span>보스 수익 화면</span>} />
+          </Routes>
+          <LocationProbe />
+        </MemoryRouter>,
+      )
+    },
+  }
 }
 
 afterEach(() => {
@@ -403,7 +418,7 @@ describe('DropHistoryScreen', () => {
       groups: [{ periodKey: '2026-07-09', cycle: 'weekly', records: [record({})] }],
       drought: { periodKey: '2026-07-09', cycle: 'weekly', weeksSince: 9, records: [record({})] },
     })
-    renderScreen()
+    const { rerender } = renderScreen()
 
     const pool = Array.from({ length: VALUABLE_DROUGHT_LATE_HEADLINE_COUNT }, (_, index) =>
       formatValuableDroughtHeadline(9, index),
@@ -411,8 +426,9 @@ describe('DropHistoryScreen', () => {
     const shown = screen.getByTestId('valuable-drought').querySelector('p')?.textContent ?? ''
     expect(pool).toContain(shown)
 
-    // 같은 인스턴스를 다시 렌더해도 문구가 유지된다
-    fireEvent.click(screen.getByRole('button', { name: '뒤로' }))
+    // 같은 인스턴스를 다시 렌더해도 문구가 유지된다. **`뒤로` 를 누르는 것으로는 확인할 수 없다** —
+    // 그 버튼은 이제 진짜 pop 이라 화면이 사라진다([[ADR-120]] 결정 9).
+    rerender()
     expect(screen.getByTestId('valuable-drought').querySelector('p')?.textContent).toBe(shown)
   })
 

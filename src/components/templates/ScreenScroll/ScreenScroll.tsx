@@ -29,14 +29,28 @@ export interface ScreenScrollProps {
    * React 19 부터 `ref` 는 평범한 프롭이라 `forwardRef` 가 필요 없다.
    */
   ref?: React.Ref<HTMLDivElement>
+  /**
+   * 하단을 탭바 실측(`--tab-bar-h`)만큼 비울지. **하위 페이지는 `false` 다** — 스택 오버레이에는
+   * 탭바가 없어(아래 화면과 함께 밀려 나간다, [[ADR-120]] 결정 4) 그만큼 비우면 바닥에 빈 띠가
+   * 남는다. 그 화면들은 홈 인디케이터 자리를 콘텐츠가 직접 비운다.
+   */
+  hasTabBar?: boolean
 }
 
-export function ScreenScroll({ children, ref }: ScreenScrollProps): React.JSX.Element {
+export function ScreenScroll({
+  children,
+  ref,
+  hasTabBar = true,
+}: ScreenScrollProps): React.JSX.Element {
   return (
     <div
       ref={ref}
       data-testid="screen-scroll"
-      className="fixed inset-x-0 top-[var(--sa-top)] bottom-[var(--tab-bar-h)] overflow-y-auto overscroll-y-none"
+      className={
+        hasTabBar
+          ? 'fixed inset-x-0 top-[var(--sa-top)] bottom-[var(--tab-bar-h)] overflow-y-auto overscroll-y-none'
+          : 'fixed inset-x-0 top-[var(--sa-top)] bottom-0 overflow-y-auto overscroll-y-none'
+      }
     >
       <div className="-mt-[var(--sa-top)] space-y-4">{children}</div>
     </div>

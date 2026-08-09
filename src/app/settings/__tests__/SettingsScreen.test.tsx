@@ -105,6 +105,15 @@ afterEach(() => {
 })
 
 describe('SettingsScreen', () => {
+  // [[ADR-120]] 딸림 작업 — 문서 스크롤에 얹혀 있던 **마지막 탭 화면**이 자기 스크롤을 소유하게
+  // 됐다([[ADR-099]]). 이것이 성립해야 [[ADR-098]] 결정 1(이동 전 `scrollTo(0, 0)`)을 지운 것이
+  // 안전하고, 하위 페이지를 열었다 닫아도 보던 자리가 남는다. 되돌리지 말 것.
+  it('자기 스크롤 컨테이너를 소유한다', () => {
+    renderSettings()
+
+    expect(screen.getByTestId('screen-scroll')).toBeInTheDocument()
+  })
+
   // ADR-118 결정 1 — 본화면은 카드 둘 · 5행이다.
   it('행이 정확히 5개이고 순서가 값 카드 → 이동 카드다', () => {
     renderSettings()

@@ -7,7 +7,8 @@ import { TRACKING_MODE_LABELS } from '../../features/tracking-mode/copy'
 import type { CacheDataSizes } from '../../features/settings/cache-data'
 import { loadCacheDataSizes } from '../../features/settings/cache-data'
 import { formatBytes } from '../../lib/format-bytes'
-import { useScreenNavigate } from '../../lib/use-screen-navigate'
+import { Outlet, useNavigate } from 'react-router-dom'
+import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { SettingsRow } from './SettingsRow'
 import { ThemeModal } from './ThemeModal'
 import { TrackingModeModal } from './TrackingModeModal'
@@ -29,8 +30,9 @@ export function SettingsScreen(): React.JSX.Element {
   const { theme } = useThemeStore()
   const { mode: trackingMode } = useTrackingModeStore()
   const { currentVersion, loadCurrentVersion } = useLiveUpdateStore()
-  // 화면을 통째로 바꾸는 이동은 이동 전에 스크롤을 최상단으로 옮긴다(ADR-098 결정 1).
-  const navigateToScreen = useScreenNavigate()
+  // 하위 페이지로 **미는** 이동이라 스크롤을 리셋하지 않는다([[ADR-120]] 폐기). 이 화면은 마운트된
+  // 채 아래에 남으므로, 리셋하면 뒤로 왔을 때 보던 자리를 잃는다.
+  const navigate = useNavigate()
 
   const [openModal, setOpenModal] = useState<OpenModal>(null)
   const [sizes, setSizes] = useState<CacheDataSizes | null>(null)
@@ -56,68 +58,81 @@ export function SettingsScreen(): React.JSX.Element {
   const totalCacheBytes = sizes === null ? null : sizes.general + sizes.bossRecords
 
   return (
-    <div className="p-4 space-y-4">
-      <h1 className="text-lg font-semibold text-text">설정</h1>
+    // [[ADR-120]] 딸림 작업: 이 화면도 자기 스크롤을 소유한다([[ADR-099]]). 문서 스크롤에 얹혀 있던
+    // 마지막 탭 화면이었는데, 스택의 **아래 화면**이 되려면 스크롤이 이 DOM 요소에 붙어 있어야
+    // 한다 — 그래야 하위 페이지를 열었다 닫아도 보던 자리가 그대로다.
+    <>
+      <ScreenScroll>
+        <div className="space-y-4 p-4">
+          <h1 className="text-lg font-semibold text-text">설정</h1>
 
-      {/* 값을 고르는 행 — 배지(현재값) + chevron 병기(ADR-118 결정 4). */}
-      <Card className="px-6 divide-y divide-border" data-testid="settings-card">
-        <SettingsRow
-          label="스케줄 관리 방법"
-          onClick={() => setOpenModal('trackingMode')}
-          rightContent={<ValueBadge>{TRACKING_MODE_LABELS[trackingMode]}</ValueBadge>}
-        />
-        <SettingsRow
-          label="테마"
-          onClick={() => setOpenModal('theme')}
-          rightContent={<ValueBadge>{theme}</ValueBadge>}
-        />
-      </Card>
+          {/* 값을 고르는 행 — 배지(현재값) + chevron 병기(ADR-118 결정 4). */}
+          <Card className="px-6 divide-y divide-border" data-testid="settings-card">
+            <SettingsRow
+              label="스케줄 관리 방법"
+              onClick={() => setOpenModal('trackingMode')}
+              rightContent={<ValueBadge>{TRACKING_MODE_LABELS[trackingMode]}</ValueBadge>}
+            />
+            <SettingsRow
+              label="테마"
+              onClick={() => setOpenModal('theme')}
+              rightContent={<ValueBadge>{theme}</ValueBadge>}
+            />
+          </Card>
 
-      {/* 화면이 넘어가는 행 — 대표값(있으면) + chevron. */}
-      <Card className="px-6 divide-y divide-border" data-testid="settings-card">
-        {/* 대표값을 비운다(결정 5) — "최신 버전"은 아래 `앱 정보` 행과 같은 값이라 중복이고,
-            "n개"는 개수가 늘어난다고 뜻이 생기지 않는다. 없는 대표값을 지어내지 않는다. */}
-        <SettingsRow label="개발 노트" onClick={() => navigateToScreen('/settings/release-notes')} />
-        <SettingsRow
-          label="계정 및 데이터"
-          onClick={() => navigateToScreen('/settings/account-data')}
-          rightContent={
-            // ADR-061 결정 7: 조회 전에도 값과 같은 폭·타이포로 자리를 잡는다.
-            <SummaryValue>
-              {totalCacheBytes !== null ? formatBytes(totalCacheBytes) : '- KB'}
-            </SummaryValue>
-          }
-        />
-        <SettingsRow
-          label="앱 정보"
-          onClick={() => navigateToScreen('/settings/about')}
-          rightContent={<SummaryValue>{displayedVersion}</SummaryValue>}
-        />
-      </Card>
+          {/* 화면이 넘어가는 행 — 대표값(있으면) + chevron. */}
+          <Card className="px-6 divide-y divide-border" data-testid="settings-card">
+            {/* 대표값을 비운다(결정 5) — "최신 버전"은 아래 `앱 정보` 행과 같은 값이라 중복이고,
+                "n개"는 개수가 늘어난다고 뜻이 생기지 않는다. 없는 대표값을 지어내지 않는다. */}
+            <SettingsRow label="개발 노트" onClick={() => navigate('/settings/release-notes')} />
+            <SettingsRow
+              label="계정 및 데이터"
+              onClick={() => navigate('/settings/account-data')}
+              rightContent={
+                // ADR-061 결정 7: 조회 전에도 값과 같은 폭·타이포로 자리를 잡는다.
+                <SummaryValue>
+                  {totalCacheBytes !== null ? formatBytes(totalCacheBytes) : '- KB'}
+                </SummaryValue>
+              }
+            />
+            <SettingsRow
+              label="앱 정보"
+              onClick={() => navigate('/settings/about')}
+              rightContent={<SummaryValue>{displayedVersion}</SummaryValue>}
+            />
+          </Card>
 
+          {/* 이용약관 제6조④가 요구하는 출처 표기 — 문구를 의역하지 않고 원문 그대로 노출한다 */}
+          <div className="space-y-1 pt-4 text-center" data-testid="settings-footer">
+            {/*
+              ADR-118 결정 8: 이 블록은 전부 읽고 끝나는 정적 문구라 톤(text-text-disabled)이 균일하다 —
+              눌러야 하는 것 하나가 한 단계 밝은 색·밑줄로 섞여 있던 예외는 /settings/about 의 행으로
+              내려가면서 사라졌다.
+            */}
+            <p className="text-xs text-text-disabled">v{displayedVersion}</p>
+            <p className="text-xs text-text-disabled">© {new Date().getFullYear()} 메이플 루틴</p>
+            <p className="text-xs text-text-disabled">Data based on NEXON Open API</p>
+            {/*
+              비제휴 고지는 약관이 요구하는 것이 아니라 동종 서비스(maple.gg·chuchu.gg·maplescouter)의
+              공통 관행이다 — 출처 표기만 있으면 넥슨 공식 서비스로 오인될 여지가 남는다. 문구도 그 3사와
+              같은 영문 형태로 맞춘다(maple.gg "Maple.GG is not associated with NEXON Korea").
+            */}
+            <p className="text-xs text-text-disabled">
+              Maple Routine is not associated with NEXON Korea
+            </p>
+          </div>
+        </div>
+      </ScreenScroll>
+
+      {/* 모달은 스크롤 셸 **바깥**이다 — 안에 두면 그 `fixed` 셸이 만든 스태킹 컨텍스트에 `z-50`
+          이 갇혀 `z-30` 탭바 아래로 그려진다(`ScreenScroll` 주석). */}
       {openModal === 'trackingMode' && <TrackingModeModal onClose={() => setOpenModal(null)} />}
       {openModal === 'theme' && <ThemeModal onClose={() => setOpenModal(null)} />}
 
-      {/* 이용약관 제6조④가 요구하는 출처 표기 — 문구를 의역하지 않고 원문 그대로 노출한다 */}
-      <div className="space-y-1 pt-4 text-center" data-testid="settings-footer">
-        {/*
-          ADR-118 결정 8: 이 블록은 전부 읽고 끝나는 정적 문구라 톤(text-text-disabled)이 균일하다 —
-          눌러야 하는 것 하나가 한 단계 밝은 색·밑줄로 섞여 있던 예외는 /settings/about 의 행으로
-          내려가면서 사라졌다.
-        */}
-        <p className="text-xs text-text-disabled">v{displayedVersion}</p>
-        <p className="text-xs text-text-disabled">© {new Date().getFullYear()} 메이플 루틴</p>
-        <p className="text-xs text-text-disabled">Data based on NEXON Open API</p>
-        {/*
-          비제휴 고지는 약관이 요구하는 것이 아니라 동종 서비스(maple.gg·chuchu.gg·maplescouter)의
-          공통 관행이다 — 출처 표기만 있으면 넥슨 공식 서비스로 오인될 여지가 남는다. 문구도 그 3사와
-          같은 영문 형태로 맞춘다(maple.gg "Maple.GG is not associated with NEXON Korea").
-        */}
-        <p className="text-xs text-text-disabled">
-          Maple Routine is not associated with NEXON Korea
-        </p>
-      </div>
-    </div>
+      {/* 하위 페이지 넷이 이 자리에서 열린다([[ADR-120]] 결정 1) — 실제 DOM 은 `StackScreen` 이
+          포털로 탭 레이어 밖에 붙인다(결정 3). */}
+      <Outlet />
+    </>
   )
 }
 
