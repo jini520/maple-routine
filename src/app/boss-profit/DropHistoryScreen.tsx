@@ -280,7 +280,7 @@ export function DropHistoryScreen(): React.JSX.Element {
     // 그래서 스크롤 상자는 이 화면이 직접 갖는다 — ADR-077 이 세웠던 배치 그대로다. 상자가 노치까지
     // 덮으므로 sticky 헤더가 화면 y=0 에서 시작하고, 안전영역은 그 헤더의 `pt` 가 넣는다.
     <StackScreen parentPath={PARENT_PATH} scroll={false}>
-      <div className="absolute inset-0 space-y-4 overflow-y-auto overscroll-y-none pb-[var(--sa-bottom)]">
+      <div className="absolute inset-0 space-y-4 overflow-y-auto overscroll-y-none">
           {/* 제목 줄만 sticky로 고정하고 목록만 스크롤 — 보스 관리·컨텐츠 관리와 같은 서브 화면
               패턴이다. 스크롤 상자가 노치까지 덮으므로 **안전영역은 이 헤더가 넣는다**(`fixed` 헤더를
               쓰는 다른 하위 페이지들과 같은 규칙). */}
@@ -302,7 +302,10 @@ export function DropHistoryScreen(): React.JSX.Element {
           </div>
         </div>
 
-        <div className="space-y-4 px-4 pb-4">
+        {/* 하단 여백은 **스크롤 컨테이너가 아니라 콘텐츠 블록**이 갖는다 — 스크롤 요소의
+            `padding-bottom` 은 브라우저에 따라 넘치는 콘텐츠의 스크롤 영역에 안 잡힐 수 있다.
+            홈 인디케이터 자리를 스크롤 끝에 남긴다([[ADR-120]] 결정 16). */}
+        <div className="space-y-4 px-4 pb-[calc(1rem+var(--sa-bottom))]">
           {(status === 'idle' || status === 'loading') && (
             <LoadingState size="page" message="불러오고 있어요" />
           )}

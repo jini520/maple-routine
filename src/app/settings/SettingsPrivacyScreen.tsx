@@ -51,8 +51,9 @@ export function SettingsPrivacyScreen(): React.JSX.Element {
   return (
     <StackScreen parentPath={PARENT_PATH} scroll={false}>
       {/* 화면이 뷰포트를 꽉 채우고 `iframe` 이 자기 스크롤을 갖는다 — 그래서 셸의 스크롤 상자를
-          쓰지 않고(`scroll={false}`) 안전영역도 여기서 직접 비운다. */}
-      <div className="flex h-full flex-col pt-[var(--sa-top)]">
+          쓰지 않고(`scroll={false}`) 안전영역도 여기서 직접 비운다. 하단은 `iframe` 안쪽 문서에
+          우리가 여백을 넣을 수 없으므로 **상자 자체를 홈 인디케이터 위에서 끝낸다**. */}
+      <div className="flex h-full flex-col pt-[var(--sa-top)] pb-[var(--sa-bottom)]">
         <header className="flex items-center gap-2 px-4 pb-2 pt-4">
           <button
             type="button"
