@@ -114,6 +114,17 @@ describe('SettingsScreen', () => {
     expect(screen.getByTestId('screen-scroll')).toBeInTheDocument()
   })
 
+  // 이 화면에는 고정 헤더가 없어([[ADR-098]] 결정 3) `--sa-top` 을 넣어 줄 `PageHeader` 가 없고,
+  // `ScreenScroll` 안쪽 래퍼가 콘텐츠를 화면 y=0 으로 끌어올린다. 그래서 **이 블록이 직접 가져야**
+  // 제목이 노치 아래에 깔리지 않는다(실기기 보고 2026-08-09 — 계측: 제목 top 16px, 기대 63px).
+  it('콘텐츠 블록이 상단 안전영역을 직접 갖는다', () => {
+    renderSettings()
+
+    // `screen-scroll` > 안쪽 래퍼(-mt) > 콘텐츠 블록
+    const content = screen.getByTestId('screen-scroll').firstElementChild?.firstElementChild
+    expect(content).toHaveClass('pt-[calc(1rem+var(--sa-top))]')
+  })
+
   // ADR-118 결정 1 — 본화면은 카드 둘 · 5행이다.
   it('행이 정확히 5개이고 순서가 값 카드 → 이동 카드다', () => {
     renderSettings()

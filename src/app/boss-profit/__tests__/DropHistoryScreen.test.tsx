@@ -90,6 +90,20 @@ afterEach(() => {
 })
 
 describe('DropHistoryScreen', () => {
+  // 셸의 스크롤 박스가 이미 노치 아래에서 시작하므로, sticky 헤더가 `--sa-top` 을 또 더하면
+  // **두 번 적용된다**(실기기 보고 2026-08-09 — 계측: 제목 top 114px, 기대 63px).
+  // `PageHeader` 를 쓰는 다른 하위 페이지와 갈리는 이유는 그쪽이 `fixed top-0` 이라 화면 y=0 에서
+  // 시작해 노치까지 직접 덮기 때문이다. 이 화면의 노치 자리는 오버레이 루트의 `bg-bg` 가 덮는다.
+  it('sticky 헤더가 상단 안전영역을 더하지 않는다', () => {
+    mockStore({ status: 'ready', groups: [], drought: null })
+    renderScreen()
+
+    const header = screen.getByRole('heading', { name: '히스토리' }).closest('.sticky')
+    expect(header).not.toBeNull()
+    expect(header?.className).not.toContain('var(--sa-top)')
+    expect(header).toHaveClass('pt-4')
+  })
+
   it('마운트하면 전 기간 기록을 불러온다', () => {
     mockStore({ status: 'idle' })
     renderScreen()

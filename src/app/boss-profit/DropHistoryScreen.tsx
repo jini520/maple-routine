@@ -273,8 +273,18 @@ export function DropHistoryScreen(): React.JSX.Element {
     //
     // 하단 여백이 사라진 것은 실수가 아니다 — 하위 페이지에는 탭바가 없다([[ADR-120]] 결정 4).
     <StackScreen parentPath={PARENT_PATH}>
-      {/* 제목 줄만 sticky로 고정하고 목록만 스크롤 — 보스 관리·컨텐츠 관리와 같은 서브 화면 패턴이다. */}
-      <div className="sticky top-0 z-10 bg-bg px-4 pt-[calc(1rem+var(--sa-top))] pb-2">
+      {/* 제목 줄만 sticky로 고정하고 목록만 스크롤.
+
+          **안전영역을 여기서 더하지 않는다**(`pt-4`, [[ADR-120]]). 셸의 스크롤 박스가 이미 노치
+          아래(`top-[var(--sa-top)]`)에서 시작하고, 안쪽 래퍼의 `-mt-[var(--sa-top)]` 때문에 이
+          sticky 는 처음부터 스크롤포트 상단(= 화면 y = 안전영역)에 붙어 있다. 여기에 `--sa-top` 을
+          또 더하면 **두 번 적용돼** 제목이 47px 더 내려간다(실기기 보고 2026-08-09, 계측 재현:
+          제목 top 114px, 기대 63px).
+
+          `PageHeader` 를 쓰는 다른 하위 페이지들이 `1rem+var(--sa-top)` 을 갖는 것과 갈리는 이유는
+          그쪽이 **`fixed top-0`** 라 화면 y=0 에서 시작해 노치까지 직접 덮기 때문이다. 이 화면의
+          노치 자리는 오버레이 루트의 `bg-bg` 가 덮는다. */}
+      <div className="sticky top-0 z-10 bg-bg px-4 pt-4 pb-2">
         <div className="space-y-3">
           <div className="flex items-center gap-1">
             <button

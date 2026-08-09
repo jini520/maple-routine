@@ -63,7 +63,11 @@ export function SettingsScreen(): React.JSX.Element {
     // 한다 — 그래야 하위 페이지를 열었다 닫아도 보던 자리가 그대로다.
     <>
       <ScreenScroll>
-        <div className="space-y-4 p-4">
+        {/* **안전영역을 이 블록이 직접 갖는다.** 이 화면에는 고정 헤더가 없어([[ADR-098]] 결정 3)
+            `--sa-top` 을 넣어 줄 `PageHeader` 가 없고, `ScreenScroll` 안쪽 래퍼의
+            `-mt-[var(--sa-top)]` 이 콘텐츠를 화면 y=0 으로 끌어올리므로 그냥 두면 제목이 노치
+            아래에 깔린다(실기기 보고 2026-08-09, 계측 재현: 제목 top 16px, 기대 63px). */}
+        <div className="space-y-4 px-4 pb-4 pt-[calc(1rem+var(--sa-top))]">
           <h1 className="text-lg font-semibold text-text">설정</h1>
 
           {/* 값을 고르는 행 — 배지(현재값) + chevron 병기(ADR-118 결정 4). */}
