@@ -80,7 +80,7 @@ public class SystemBarsPlugin extends Plugin {
             // 입력 필드가 가리지 않게 한다(Capacitor 내장 구현과 동일).
             v.setPadding(0, 0, 0, keyboardVisible ? imeInsets.bottom : 0);
 
-            injectSafeAreaCSS(calcSafeAreaInsets(insets));
+            injectSafeAreaCSS(calcSafeAreaInsets(insets), calcNavSolidBottom(insets));
 
             return insets;
         });
@@ -95,12 +95,26 @@ public class SystemBarsPlugin extends Plugin {
         return safeArea;
     }
 
-    private void injectSafeAreaCSS(Insets insets) {
+    /**
+     * 하단 인셋 중 **3버튼 내비게이션이 차지하는 부분**. 제스처 내비는 0이다.
+     *
+     * <p>구분에 {@code tappableElement} 를 쓴다 — 3버튼은 그 자리가 실제로 눌리는 영역이고, 제스처
+     * 내비의 얇은 핸들은 눌리는 요소가 아니라 0으로 나온다. 웹은 이 값으로 **콘텐츠가 버튼 뒤로
+     * 지나가지 않게** 스크롤 상자를 그 위에서 끝낸다(제스처 내비에서는 지나가도 되고, 그게 네이티브
+     * 앱의 모습이다).
+     */
+    private int calcNavSolidBottom(WindowInsetsCompat insets) {
+        if (insets.isVisible(WindowInsetsCompat.Type.ime())) return 0;
+        return insets.getInsets(WindowInsetsCompat.Type.tappableElement()).bottom;
+    }
+
+    private void injectSafeAreaCSS(Insets insets, int navSolidBottom) {
         float density = getActivity().getResources().getDisplayMetrics().density;
         int top = (int) (insets.top / density);
         int right = (int) (insets.right / density);
         int bottom = (int) (insets.bottom / density);
         int left = (int) (insets.left / density);
+        int navSolid = (int) (navSolidBottom / density);
 
         getBridge()
             .executeOnMainThread(() -> {
@@ -112,11 +126,13 @@ public class SystemBarsPlugin extends Plugin {
                     "document.documentElement.style.setProperty('--safe-area-inset-right','%dpx');" +
                     "document.documentElement.style.setProperty('--safe-area-inset-bottom','%dpx');" +
                     "document.documentElement.style.setProperty('--safe-area-inset-left','%dpx');" +
+                    "document.documentElement.style.setProperty('--nav-solid-bottom','%dpx');" +
                     "} catch(e) { console.error('safe-area inject failed', e) }",
                     top,
                     right,
                     bottom,
-                    left
+                    left,
+                    navSolid
                 );
                 getBridge().getWebView().evaluateJavascript(script, null);
             });

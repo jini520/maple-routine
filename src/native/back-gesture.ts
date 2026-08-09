@@ -20,6 +20,7 @@ export interface BackProgressEvent {
 
 interface AppBackGesturePlugin {
   setEnabled(options: { enabled: boolean }): Promise<void>
+  moveToBackground(): Promise<void>
   addListener(
     event: 'backStarted' | 'backProgressed',
     handler: (data: BackProgressEvent) => void,
@@ -38,6 +39,15 @@ const isAndroid = (): boolean => Capacitor.getPlatform() === 'android'
 export async function setBackGestureEnabled(enabled: boolean): Promise<void> {
   if (!isAndroid()) return
   await AppBackGesture.setEnabled({ enabled })
+}
+
+/**
+ * 앱을 **종료하지 않고 백그라운드로** 보낸다([[ADR-120]] 결정 18) — 홈 버튼과 같다. 태스크가 살아
+ * 있어 다시 열면 보던 화면 그대로다. 완전히 끝내면 다음 실행이 콜드 스타트라 스플래시부터 다시 본다.
+ */
+export async function moveAppToBackground(): Promise<void> {
+  if (!isAndroid()) return
+  await AppBackGesture.moveToBackground()
 }
 
 export interface BackGestureHandlers {

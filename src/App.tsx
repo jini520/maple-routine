@@ -1,4 +1,13 @@
-import { Suspense, createElement, lazy, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import {
+  Suspense,
+  createElement,
+  lazy,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react'
 import { BrowserRouter, Navigate, NavLink, Route, Routes, useNavigate } from 'react-router-dom'
 import { ListChecks, Settings, Swords } from 'lucide-react'
 import { useOnboardingStore } from './features/onboarding/store'
@@ -13,12 +22,15 @@ import { notifyLiveUpdateReady } from './native/live-update'
 import { refreshSafeAreaInsets } from './native/system-bars'
 import { addKeyboardVisibilityListener } from './native/keyboard'
 import { useStackLocation } from './lib/use-stack-location'
+import { useSystemBack } from './lib/use-system-back'
+import { moveAppToBackground } from './native/back-gesture'
 import { useDelayed } from './lib/use-delayed'
 import { preloadScreen, usePreloadedScreen, type ScreenLoader } from './lib/preloaded-screen'
 import { useScreenStackStore } from './features/screen-stack/store'
 import {
   resolveBelowTransform,
   resolveLayerAboveProgress,
+  resolveParentPath,
   resolveScrimOpacity,
   resolveTabPath,
   STACK_EASING,
@@ -382,6 +394,28 @@ export function AppShell(): React.JSX.Element {
   }, [])
 
   const isCompleted = status === 'completed'
+
+  // 안드로이드 시스템 뒤로가기([[ADR-120]] 결정 17·18). **여기가 유일한 소유자다** — 탭 최상위에서도
+  // 받아야 하므로 `StackScreen`(하위 페이지가 열려 있을 때만 존재)이 가질 수 없다.
+  const navigate = useNavigate()
+  const popStackScreen = useCallback(() => {
+    // 딥링크로 하위 페이지에 직접 들어오면 되돌아갈 항목이 없어 `-1` 이 앱을 벗어난다([[ADR-120]]
+    // 결정 9). 그때만 한 단계 위 경로로 `replace` 한다.
+    if (displayLocation.key === 'default') {
+      navigate(resolveParentPath(displayLocation.pathname), { replace: true })
+      return
+    }
+    navigate(-1)
+  }, [navigate, displayLocation.key, displayLocation.pathname])
+
+  // 탭 최상위에서 뒤로가기가 오면 **묻지 않고 백그라운드로 보낸다**([[ADR-120]] 결정 18,
+  // 사용자 지정) — 확인 모달을 뒀다가 걷어냈다. 되묻는 창은 안드로이드에서 옛 앱의 인상을 준다.
+  const leaveApp = useCallback(() => {
+    void moveAppToBackground()
+  }, [])
+
+  useSystemBack({ onPop: popStackScreen, onRoot: leaveApp })
+
 
   // 지금 탭의 하위 페이지 청크를 미리 받아둔다([[ADR-120]] 결정 13). passive effect 라 첫 페인트
   // 뒤에 돌고, 이미 받은 모듈은 레지스트리가 돌려주므로 재진입에서 공짜다. 실패해도 던지지 않는다 —

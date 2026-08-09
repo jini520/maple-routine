@@ -3,6 +3,7 @@ import {
   resolveBelowTransform,
   resolveLayerAboveProgress,
   resolveLayerTransform,
+  resolveParentPath,
   resolveScrimOpacity,
   resolveSettleMs,
   resolveStackDirection,
@@ -212,5 +213,25 @@ describe('resolveLayerTransform — 아직 등록되지 않은 층', () => {
   it('등록된 뒤에는 평소대로 동작한다', () => {
     expect(resolveLayerTransform(0, 1, 1)).toBe('translateX(100%)')
     expect(resolveLayerTransform(0, 1, 0)).toBeUndefined()
+  })
+})
+
+describe('resolveParentPath', () => {
+  it('한 단계 위로 올라간다', () => {
+    expect(resolveParentPath('/content/manage')).toBe('/content')
+    expect(resolveParentPath('/settings/about/privacy')).toBe('/settings/about')
+  })
+
+  it('탭 최상위의 부모는 루트다', () => {
+    expect(resolveParentPath('/settings')).toBe('/')
+  })
+
+  it('루트는 그대로다', () => {
+    expect(resolveParentPath('/')).toBe('/')
+    expect(resolveParentPath('')).toBe('/')
+  })
+
+  it('맨 끝 슬래시에 속지 않는다', () => {
+    expect(resolveParentPath('/settings/about/')).toBe('/settings')
   })
 })

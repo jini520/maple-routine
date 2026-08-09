@@ -34,12 +34,17 @@ export interface ScreenScrollProps {
    * 탭바가 없어(아래 화면과 함께 밀려 나간다, [[ADR-120]] 결정 4) 그만큼 비우면 바닥에 빈 띠가
    * 남는다.
    *
-   * `false` 일 때는 **콘텐츠 끝에 하단 안전영역만큼 여백을 더한다.** 탭 화면에서는 탭바가 그
-   * 자리를 차지하고 자기 `pb-[var(--sa-bottom)]` 로 홈 인디케이터를 피하지만, 하위 페이지에는
-   * 탭바가 없어 스크롤을 끝까지 내리면 마지막 줄이 홈 인디케이터에 닿는다. 콘텐츠를 그 영역에
-   * **못 들어가게 막는 것이 아니라**(스크롤 중에는 지나가도 된다) 끝에 여백을 남기는 것이라,
-   * 스크롤포트를 줄이지 않고 안쪽 래퍼의 `padding-bottom` 으로 넣는다 — 그래야 스크롤 가능한
-   * 높이가 그만큼 늘어난다.
+   * `false` 일 때 하단 인셋을 **두 조각으로 나눠 다르게 다룬다**([[ADR-120]] 결정 16·19):
+   *
+   * - `--nav-solid-bottom`(안드로이드 3버튼 내비가 차지하는 높이, 제스처 내비는 0) — **콘텐츠가
+   *   그 뒤로 지나가면 안 된다.** 불투명한 버튼 사이로 글자가 비쳐 지저분하다. 스크롤포트를 그
+   *   위에서 끝낸다.
+   * - 나머지(홈 인디케이터·제스처 핸들) — **지나가도 된다.** 그게 네이티브 앱의 모습이다. 대신
+   *   스크롤 끝에 그만큼 여백을 남긴다. 스크롤포트를 줄이지 않고 안쪽 래퍼의 `padding-bottom`
+   *   으로 넣어야 스크롤 가능한 높이가 그만큼 늘어난다.
+   *
+   * 탭 화면(`true`)은 탭바가 그 자리를 차지하고 자기 `pb-[var(--sa-bottom)]` 로 처리하므로 둘 다
+   * 필요 없다.
    */
   hasTabBar?: boolean
 }
@@ -56,14 +61,14 @@ export function ScreenScroll({
       className={
         hasTabBar
           ? 'fixed inset-x-0 top-[var(--sa-top)] bottom-[var(--tab-bar-h)] overflow-y-auto overscroll-y-none'
-          : 'fixed inset-x-0 top-[var(--sa-top)] bottom-0 overflow-y-auto overscroll-y-none'
+          : 'fixed inset-x-0 top-[var(--sa-top)] bottom-[var(--nav-solid-bottom,0px)] overflow-y-auto overscroll-y-none'
       }
     >
       <div
         className={
           hasTabBar
             ? '-mt-[var(--sa-top)] space-y-4'
-            : '-mt-[var(--sa-top)] space-y-4 pb-[var(--sa-bottom)]'
+            : '-mt-[var(--sa-top)] space-y-4 pb-[calc(var(--sa-bottom)-var(--nav-solid-bottom,0px))]'
         }
       >
         {children}

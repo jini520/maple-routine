@@ -66,6 +66,19 @@ public class BackGesturePlugin extends Plugin {
         });
     }
 
+    /**
+     * 앱을 **종료하지 않고 백그라운드로** 보낸다([[ADR-120]] 결정 18). 홈 버튼과 같은 동작이라
+     * 태스크가 살아 있어 다시 열면 보던 화면 그대로다 — {@code finishAffinity()} 로 끝내면 다음
+     * 실행이 콜드 스타트가 되어 스플래시부터 다시 본다.
+     */
+    @PluginMethod
+    public void moveToBackground(PluginCall call) {
+        getActivity().runOnUiThread(() -> {
+            getActivity().moveTaskToBack(true);
+            call.resolve();
+        });
+    }
+
     private void register() {
         if (enabled) return;
         enabled = true;

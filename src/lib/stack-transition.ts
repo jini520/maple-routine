@@ -149,6 +149,16 @@ export function resolveTabPath(pathname: string): string {
   return first === undefined ? '/' : `/${first}`
 }
 
+/**
+ * 한 단계 위 경로. 딥링크로 하위 페이지에 직접 들어와 되돌아갈 히스토리 항목이 없을 때
+ * `navigate(-1)` 대신 갈 곳이다([[ADR-120]] 결정 9).
+ */
+export function resolveParentPath(pathname: string): string {
+  const segments = toSegments(pathname)
+  if (segments.length <= 1) return '/'
+  return `/${segments.slice(0, -1).join('/')}`
+}
+
 export function resolveStackDirection(from: string, to: string): StackDirection {
   const fromSegments = toSegments(from)
   const toSegments_ = toSegments(to)
