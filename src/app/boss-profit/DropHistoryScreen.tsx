@@ -272,69 +272,70 @@ export function DropHistoryScreen(): React.JSX.Element {
     // 가장자리 스와이프 백, 포털 배치(탭 레이어 `transform` 에 딸려 밀리지 않게).
     //
     // 하단 여백이 사라진 것은 실수가 아니다 — 하위 페이지에는 탭바가 없다([[ADR-120]] 결정 4).
-    <StackScreen parentPath={PARENT_PATH}>
-      {/* 제목 줄만 sticky로 고정하고 목록만 스크롤.
+    // **셸의 스크롤 상자를 쓰지 않는다**(`scroll={false}`). 이 화면의 헤더는 흐름 안의 `sticky` 인데,
+    // 공용 `ScreenScroll` 의 `-mt-[var(--sa-top)]` 은 **흐름 밖 `fixed` 헤더 + spacer** 를 전제로 한
+    // 보정이라 sticky 헤더에는 맞지 않는다: 음수 마진만큼 헤더가 아래로 밀려 **뒤 콘텐츠를 덮는다**
+    // (실기기 스크린샷 2026-08-09, 계측 재현: 겹침 31px = 47 − `space-y-4` 16).
+    //
+    // 그래서 스크롤 상자는 이 화면이 직접 갖는다 — ADR-077 이 세웠던 배치 그대로다. 상자가 노치까지
+    // 덮으므로 sticky 헤더가 화면 y=0 에서 시작하고, 안전영역은 그 헤더의 `pt` 가 넣는다.
+    <StackScreen parentPath={PARENT_PATH} scroll={false}>
+      <div className="absolute inset-0 space-y-4 overflow-y-auto overscroll-y-none pb-[var(--sa-bottom)]">
+          {/* 제목 줄만 sticky로 고정하고 목록만 스크롤 — 보스 관리·컨텐츠 관리와 같은 서브 화면
+              패턴이다. 스크롤 상자가 노치까지 덮으므로 **안전영역은 이 헤더가 넣는다**(`fixed` 헤더를
+              쓰는 다른 하위 페이지들과 같은 규칙). */}
+          <div className="sticky top-0 z-10 bg-bg px-4 pt-[calc(1rem+var(--sa-top))] pb-2">
+          <div className="space-y-3">
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={goBack}
+                aria-label="뒤로"
+                className="-ml-2 flex h-9 w-9 items-center justify-center text-text"
+              >
+                <ArrowLeft className="h-5 w-5" strokeWidth={2} aria-hidden="true" />
+              </button>
+              <h1 className="text-lg font-semibold text-text">히스토리</h1>
+            </div>
 
-          **안전영역을 여기서 더하지 않는다**(`pt-4`, [[ADR-120]]). 셸의 스크롤 박스가 이미 노치
-          아래(`top-[var(--sa-top)]`)에서 시작하고, 안쪽 래퍼의 `-mt-[var(--sa-top)]` 때문에 이
-          sticky 는 처음부터 스크롤포트 상단(= 화면 y = 안전영역)에 붙어 있다. 여기에 `--sa-top` 을
-          또 더하면 **두 번 적용돼** 제목이 47px 더 내려간다(실기기 보고 2026-08-09, 계측 재현:
-          제목 top 114px, 기대 63px).
-
-          `PageHeader` 를 쓰는 다른 하위 페이지들이 `1rem+var(--sa-top)` 을 갖는 것과 갈리는 이유는
-          그쪽이 **`fixed top-0`** 라 화면 y=0 에서 시작해 노치까지 직접 덮기 때문이다. 이 화면의
-          노치 자리는 오버레이 루트의 `bg-bg` 가 덮는다. */}
-      <div className="sticky top-0 z-10 bg-bg px-4 pt-4 pb-2">
-        <div className="space-y-3">
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={goBack}
-              aria-label="뒤로"
-              className="-ml-2 flex h-9 w-9 items-center justify-center text-text"
-            >
-              <ArrowLeft className="h-5 w-5" strokeWidth={2} aria-hidden="true" />
-            </button>
-            <h1 className="text-lg font-semibold text-text">히스토리</h1>
+            {drought !== null && <ValuableDrought summary={drought} now={now} />}
           </div>
-
-          {drought !== null && <ValuableDrought summary={drought} now={now} />}
         </div>
-      </div>
 
-      <div className="space-y-4 px-4 pb-4">
-        {(status === 'idle' || status === 'loading') && (
-          <LoadingState size="page" message="불러오고 있어요" />
-        )}
+        <div className="space-y-4 px-4 pb-4">
+          {(status === 'idle' || status === 'loading') && (
+            <LoadingState size="page" message="불러오고 있어요" />
+          )}
 
-        {/* 실패를 빈 목록으로 위장하지 않는다([[ADR-062]]) — "기록이 없습니다"는 확정된 사실일 때만
-            할 수 있는 말이고, 조회가 실패한 상태에서는 기록이 있는지조차 모른다. */}
-        {status === 'failed' && (
-          <ErrorState
-            title="히스토리를 불러오지 못했습니다"
-            description="저장된 기록을 읽지 못했습니다. 다시 시도해주세요."
-            action={{ label: '다시 시도', onClick: () => void load() }}
-          />
-        )}
-
-        {status === 'ready' && groups.length === 0 && (
-          <EmptyState
-            icon={ScrollText}
-            title="아직 기록된 드롭이 없습니다"
-            description="보스 수익 화면에서 보스를 눌러 드롭을 기록하면 여기에 쌓입니다"
-            action={{ label: '보스 수익으로', onClick: () => navigate('/profit') }}
-          />
-        )}
-
-        {status === 'ready' &&
-          groups.map((group) => (
-            <DropHistoryPeriodSection
-              key={group.periodKey}
-              group={group}
-              charactersByOcid={charactersByOcid}
-              now={now}
+          {/* 실패를 빈 목록으로 위장하지 않는다([[ADR-062]]) — "기록이 없습니다"는 확정된 사실일 때만
+              할 수 있는 말이고, 조회가 실패한 상태에서는 기록이 있는지조차 모른다. */}
+          {status === 'failed' && (
+            <ErrorState
+              title="히스토리를 불러오지 못했습니다"
+              description="저장된 기록을 읽지 못했습니다. 다시 시도해주세요."
+              action={{ label: '다시 시도', onClick: () => void load() }}
             />
-          ))}
+          )}
+
+          {status === 'ready' && groups.length === 0 && (
+            <EmptyState
+              icon={ScrollText}
+              title="아직 기록된 드롭이 없습니다"
+              description="보스 수익 화면에서 보스를 눌러 드롭을 기록하면 여기에 쌓입니다"
+              action={{ label: '보스 수익으로', onClick: () => navigate('/profit') }}
+            />
+          )}
+
+          {status === 'ready' &&
+            groups.map((group) => (
+              <DropHistoryPeriodSection
+                key={group.periodKey}
+                group={group}
+                charactersByOcid={charactersByOcid}
+                now={now}
+              />
+            ))}
+        </div>
       </div>
     </StackScreen>
   )
