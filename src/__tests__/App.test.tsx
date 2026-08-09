@@ -673,7 +673,7 @@ describe('AppShell', () => {
       }
     })
 
-    it('기본 동작을 막아도 탭 이동은 정상 동작한다', () => {
+    it('기본 동작을 막아도 탭 이동은 정상 동작한다', async () => {
       mockStore({ status: 'completed', selectedAccountId: 'account-1' })
       renderAt('/content')
 
@@ -681,7 +681,8 @@ describe('AppShell', () => {
         screen.getByRole('link', { name: '보스' }).click()
       })
 
-      expect(screen.getByRole('heading', { name: '보스 스케줄러' })).toBeInTheDocument()
+      // 도착 화면은 lazy 청크라 동기 플러시에 안 잡힌다 — 이 파일의 다른 이동 테스트와 같이 기다린다.
+      expect(await screen.findByRole('heading', { name: '보스 스케줄러' }, LAZY_SCREEN_TIMEOUT)).toBeInTheDocument()
       expect(screen.getByRole('link', { name: '보스' })).toHaveAttribute('aria-current', 'page')
     })
   })
@@ -723,7 +724,7 @@ describe('AppShell', () => {
   // 안전하게 만드는 전제(**모든 탭 화면이 자기 스크롤을 소유한다**)가 성립하는가다. 전제가 깨지면
   // 리셋을 지운 것이 회귀가 되므로, 그 전제 쪽이 진짜 가드다.
   describe('탭 이동과 스크롤 (ADR-120 — ADR-098 결정 1 폐기)', () => {
-    it('탭을 눌러도 문서 스크롤을 건드리지 않는다', () => {
+    it('탭을 눌러도 문서 스크롤을 건드리지 않는다', async () => {
       mockStore({ status: 'completed', selectedAccountId: 'account-1' })
       const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
       renderAt('/content')
@@ -733,7 +734,9 @@ describe('AppShell', () => {
       })
 
       expect(scrollTo).not.toHaveBeenCalled()
-      expect(screen.getByRole('heading', { name: '보스 스케줄러' })).toBeInTheDocument()
+      // 도착 화면이 실제로 그려졌는지까지 봐야 "스크롤을 안 건드렸다"가 의미를 갖는다(lazy 청크).
+      expect(await screen.findByRole('heading', { name: '보스 스케줄러' }, LAZY_SCREEN_TIMEOUT)).toBeInTheDocument()
+      expect(scrollTo).not.toHaveBeenCalled()
       scrollTo.mockRestore()
     })
 

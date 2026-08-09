@@ -59,6 +59,7 @@ function mockStore(overrides: Partial<ReturnType<typeof useBossSchedulerStore>>)
     selectCharacter: vi.fn(),
     loadPartySizes: vi.fn(),
     setPartySize: vi.fn(),
+    setManualBossDifficulty: vi.fn(),
     addManualBoss: vi.fn(),
     removeManualBoss: vi.fn(),
     activeTab: 'weekly' as const,
@@ -850,6 +851,140 @@ describe('BossScreen', () => {
       await screen.findByRole('combobox')
 
       expect(screen.queryByText(/^\d+인$/)).not.toBeInTheDocument()
+    })
+
+    // ADR-121: 카드 전면이 버튼이고 탭하면 파티 인원·난이도 모달이 열린다. ADR-019 결정 4가
+    // "카드 인터랙션 충돌"로 폐기했던 방식인데, ADR-035 결정 18이 카드의 인터랙션을 0개로 만들며
+    // 그 전제가 사라졌다.
+    describe('카드 탭 → 파티 인원 모달 (ADR-121)', () => {
+      function openModal(): void {
+        fireEvent.click(screen.getByRole('button', { name: /자쿰/ }))
+      }
+
+      it('보스 카드를 탭하면 파티 인원 모달이 열린다', async () => {
+        mockStore({
+          status: 'loaded',
+          trackedOcids: ['ocid-1'],
+          characters: [characterWithZakum()],
+          partySizes: { 'ocid-1:자쿰:카오스': 3 },
+        })
+
+        renderBossScreen()
+        await screen.findByRole('combobox')
+        expect(screen.queryByTestId('party-size-modal')).not.toBeInTheDocument()
+
+        openModal()
+
+        expect(screen.getByTestId('party-size-modal')).toBeInTheDocument()
+        expect(screen.getByText('3 / 6')).toBeInTheDocument()
+      })
+
+      it('완료된 보스도 탭할 수 있다 (파티 인원은 완료와 무관한 상시 데이터)', async () => {
+        mockStore({
+          status: 'loaded',
+          trackedOcids: ['ocid-1'],
+          characters: [
+            characterWithZakum({
+              weeklyBosses: [
+                {
+                  apiName: '자쿰',
+                  difficulty: '카오스',
+                  cycle: 'weekly',
+                  isRegistered: true,
+                  isComplete: true,
+                  ownComplete: true,
+                  matchedBossName: '자쿰',
+                  portraitSlug: null,
+                  isSeasonBoss: false,
+                },
+              ],
+            }),
+          ],
+        })
+
+        renderBossScreen()
+        await screen.findByRole('combobox')
+        openModal()
+
+        expect(screen.getByTestId('party-size-modal')).toBeInTheDocument()
+      })
+
+      it('스테퍼를 누르면 setPartySize 가 그 (보스, 난이도)로 즉시 호출된다', async () => {
+        const setPartySize = vi.fn().mockResolvedValue(undefined)
+        mockStore({
+          status: 'loaded',
+          trackedOcids: ['ocid-1'],
+          characters: [characterWithZakum()],
+          partySizes: { 'ocid-1:자쿰:카오스': 3 },
+          setPartySize,
+        })
+
+        renderBossScreen()
+        await screen.findByRole('combobox')
+        openModal()
+        fireEvent.click(screen.getByRole('button', { name: '자쿰 파티원 수 증가' }))
+
+        expect(setPartySize).toHaveBeenCalledWith('ocid-1', '자쿰', '카오스', 4)
+      })
+
+      it('저장이 실패하면 관리 페이지와 같은 문구로 토스트를 띄운다', async () => {
+        const setPartySize = vi.fn().mockRejectedValue(new Error('write failed'))
+        mockStore({
+          status: 'loaded',
+          trackedOcids: ['ocid-1'],
+          characters: [characterWithZakum()],
+          partySizes: { 'ocid-1:자쿰:카오스': 3 },
+          setPartySize,
+        })
+
+        renderBossScreen()
+        await screen.findByRole('combobox')
+        openModal()
+        fireEvent.click(screen.getByRole('button', { name: '자쿰 파티원 수 증가' }))
+
+        await vi.waitFor(() => {
+          expect(showErrorMock).toHaveBeenCalledWith('파티원 수를 저장하지 못했습니다')
+        })
+      })
+
+      it('닫기를 누르면 모달이 사라진다', async () => {
+        mockStore({
+          status: 'loaded',
+          trackedOcids: ['ocid-1'],
+          characters: [characterWithZakum()],
+        })
+
+        renderBossScreen()
+        await screen.findByRole('combobox')
+        openModal()
+        fireEvent.click(screen.getByRole('button', { name: '닫기' }))
+
+        expect(screen.queryByTestId('party-size-modal')).not.toBeInTheDocument()
+      })
+
+      // 자동 모드에서 난이도 전환은 멤버십이 아니라 "어느 난이도의 파티 인원을 편집할지" 스위치다
+      // (ADR-121 결정 3 — 모드 통합 대비해 세그먼트를 그리되 멤버십은 안 건드린다).
+      it('자동 모드에서 난이도를 바꿔도 멤버십 API를 부르지 않고 그 난이도의 인원을 편집한다', async () => {
+        const setPartySize = vi.fn().mockResolvedValue(undefined)
+        const setManualBossDifficulty = vi.fn()
+        mockStore({
+          status: 'loaded',
+          trackedOcids: ['ocid-1'],
+          characters: [characterWithZakum()],
+          partySizes: { 'ocid-1:자쿰:카오스': 3 },
+          setPartySize,
+          setManualBossDifficulty,
+        })
+
+        renderBossScreen()
+        await screen.findByRole('combobox')
+        openModal()
+        // 자쿰은 카오스 하나뿐이라 세그먼트에 다른 난이도가 없다 — 멤버십 호출이 없음만 확인한다.
+        fireEvent.click(screen.getByRole('button', { name: '자쿰 파티원 수 증가' }))
+
+        expect(setManualBossDifficulty).not.toHaveBeenCalled()
+        expect(setPartySize).toHaveBeenCalledWith('ocid-1', '자쿰', '카오스', 4)
+      })
     })
 
     it('"보스 관리" 버튼을 누르면 관리 페이지로 이동한다 (ADR-035 결정 18 — 파티 관리 모달 대체)', async () => {

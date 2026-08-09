@@ -54,9 +54,10 @@ function stopClickPropagation(event: React.MouseEvent): void {
 /** 카드 껍데기(테두리·배경·패딩)를 갖는 패널. 모달 대부분이 이것을 쓴다. */
 function ModalCard(props: ModalCardProps): React.JSX.Element {
   return (
+    // panel-on-scrim: 라이트 테마에서 바깥 테두리를 톤다운한다([[ADR-122]], 레시피는 index.css).
     <Card
       onClick={stopClickPropagation}
-      className={`w-full ${props.maxWidth ?? 'max-w-sm'} ${
+      className={`panel-on-scrim w-full ${props.maxWidth ?? 'max-w-sm'} ${
         props.tight === true ? 'px-6 pb-4 pt-6' : 'p-6'
       }`}
     >
@@ -71,7 +72,12 @@ function ModalCard(props: ModalCardProps): React.JSX.Element {
  */
 function ModalPanel(props: ModalPanelProps): React.JSX.Element {
   return (
-    <div onClick={stopClickPropagation} className={`w-full ${props.maxWidth ?? 'max-w-sm'}`}>
+    // panel-on-scrim 은 자기 자신이 아니라 **직계 자식**(= 자기 카드를 가진 패널)에 걸린다 —
+    // 이 래퍼에는 테두리가 없다([[ADR-122]], 선택자는 index.css).
+    <div
+      onClick={stopClickPropagation}
+      className={`panel-on-scrim-parent w-full ${props.maxWidth ?? 'max-w-sm'}`}
+    >
       {props.children}
     </div>
   )

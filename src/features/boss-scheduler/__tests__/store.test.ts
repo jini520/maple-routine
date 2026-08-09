@@ -786,6 +786,122 @@ describe('useBossSchedulerStore', () => {
       ])
     })
 
+    // weekly-bosses.json의 주간 보스 12종(시즌 보스 제외) — 12개 한도를 채우는 데 쓴다.
+    const WEEKLY_BOSS_NAMES = [
+      '자쿰',
+      '매그너스',
+      '파풀라투스',
+      '반반',
+      '피에르',
+      '블러디 퀸',
+      '벨룸',
+      '스우',
+      '데미안',
+      '가디언 엔젤 슬라임',
+      '루시드',
+      '윌',
+    ]
+
+    // ADR-121 결정 6(2026-08-10): 난이도 교체는 remove → add 2단계가 아니라 단일 액션이다.
+    // 2단계는 커밋이 2회라 첫 커밋 직후 "그 보스가 목록에 없는" 상태가 저장소에 실재했고,
+    // 두 번째가 실패하면 보스가 통째로 사라졌다.
+    describe('setManualBossDifficulty', () => {
+      it('쓰기 1회로 난이도를 교체한다 — 중간 상태(보스가 빠진 배열)를 저장하지 않는다', async () => {
+        getManualTrackedContentMock.mockResolvedValue([
+          { contentName: '스우', kind: 'boss', difficulty: '하드' },
+          { contentName: '무릉도장', kind: 'weekly' },
+        ])
+
+        await useBossSchedulerStore.getState().setManualBossDifficulty('ocid-1', '스우', '익스트림')
+
+        expect(setManualTrackedContentMock).toHaveBeenCalledTimes(1)
+        expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', [
+          { contentName: '스우', kind: 'boss', difficulty: '익스트림' },
+          { contentName: '무릉도장', kind: 'weekly' },
+        ])
+      })
+
+      it('제자리에서 교체해 배열 순서를 유지한다 (끝으로 밀지 않는다)', async () => {
+        getManualTrackedContentMock.mockResolvedValue([
+          { contentName: '스우', kind: 'boss', difficulty: '하드' },
+          { contentName: '루시드', kind: 'boss', difficulty: '노멀' },
+        ])
+
+        await useBossSchedulerStore.getState().setManualBossDifficulty('ocid-1', '스우', '익스트림')
+
+        expect(setManualTrackedContentMock.mock.calls[0][1].map((item: ManualTrackedItem) => item.contentName)).toEqual([
+          '스우',
+          '루시드',
+        ])
+      })
+
+      it('저장이 실패하면 스토어 상태를 바꾸지 않는다 (롤백이 필요 없다)', async () => {
+        getManualTrackedContentMock.mockResolvedValue([{ contentName: '스우', kind: 'boss', difficulty: '하드' }])
+        setManualTrackedContentMock.mockRejectedValueOnce(new Error('write failed'))
+
+        await expect(
+          useBossSchedulerStore.getState().setManualBossDifficulty('ocid-1', '스우', '익스트림'),
+        ).rejects.toThrow()
+
+        expect(useBossSchedulerStore.getState().manualTrackedByOcid['ocid-1']).toBeUndefined()
+      })
+
+      it('같은 보스가 두 난이도로 저장돼 있으면 하나로 수렴시킨다', async () => {
+        getManualTrackedContentMock.mockResolvedValue([
+          { contentName: '스우', kind: 'boss', difficulty: '하드' },
+          { contentName: '스우', kind: 'boss', difficulty: '노멀' },
+        ])
+
+        await useBossSchedulerStore.getState().setManualBossDifficulty('ocid-1', '스우', '익스트림')
+
+        expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', [
+          { contentName: '스우', kind: 'boss', difficulty: '익스트림' },
+        ])
+      })
+
+      it('추적 중이 아닌 보스면 아무것도 쓰지 않는다', async () => {
+        getManualTrackedContentMock.mockResolvedValue([{ contentName: '루시드', kind: 'boss', difficulty: '노멀' }])
+
+        await useBossSchedulerStore.getState().setManualBossDifficulty('ocid-1', '스우', '익스트림')
+
+        expect(setManualTrackedContentMock).not.toHaveBeenCalled()
+      })
+
+      it('같은 이름의 컨텐츠(kind가 boss가 아닌 항목)는 건드리지 않는다', async () => {
+        getManualTrackedContentMock.mockResolvedValue([
+          { contentName: '스우', kind: 'weekly' },
+          { contentName: '스우', kind: 'boss', difficulty: '하드' },
+        ])
+
+        await useBossSchedulerStore.getState().setManualBossDifficulty('ocid-1', '스우', '익스트림')
+
+        expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', [
+          { contentName: '스우', kind: 'weekly' },
+          { contentName: '스우', kind: 'boss', difficulty: '익스트림' },
+        ])
+      })
+
+      // 개수가 안 변하므로 주간 12개 한도(ADR-055)에 원리적으로 걸리지 않는다.
+      it('주간 12개가 찬 상태에서도 난이도를 바꿀 수 있다', async () => {
+        const twelve = Array.from({ length: 12 }, (_, index) => ({
+          contentName: WEEKLY_BOSS_NAMES[index],
+          kind: 'boss' as const,
+          difficulty: '노멀',
+        }))
+        getManualTrackedContentMock.mockResolvedValue(twelve)
+
+        await useBossSchedulerStore.getState().setManualBossDifficulty('ocid-1', WEEKLY_BOSS_NAMES[0], '하드')
+
+        expect(setManualTrackedContentMock).toHaveBeenCalledTimes(1)
+        expect(setManualTrackedContentMock.mock.calls[0][1]).toHaveLength(12)
+        expect(setManualTrackedContentMock.mock.calls[0][1][0]).toEqual({
+          contentName: WEEKLY_BOSS_NAMES[0],
+          kind: 'boss',
+          difficulty: '하드',
+        })
+      })
+    })
+
     it('removeManualBoss는 해당 (보스, 난이도)만 제거하고 다른 난이도·다른 kind는 보존한다', async () => {
       getManualTrackedContentMock.mockResolvedValue([
         { contentName: '루시드', kind: 'boss', difficulty: '이지' },

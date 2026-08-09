@@ -101,6 +101,24 @@ export function getBossCycleByName(bossName: string): BossCycle | null {
   return BOSS_CYCLE_BY_NAME.get(bossName) ?? null
 }
 
+// 보스 표시명 → 지원 난이도. 파티 인원 모달의 난이도 세그먼트가 쓴다([[ADR-121]]) — 보스 관리
+// 페이지가 `weekly-bosses.json` 의 `difficulties` 를 그대로 쓰는 것과 같은 소스다.
+const BOSS_DIFFICULTIES_BY_NAME = new Map<string, BossDifficulty[]>()
+for (const entry of REFERENCE_ENTRIES) {
+  if (!BOSS_DIFFICULTIES_BY_NAME.has(entry.boss)) {
+    BOSS_DIFFICULTIES_BY_NAME.set(entry.boss, entry.difficulties as BossDifficulty[])
+  }
+}
+
+/**
+ * 보스 표시명의 지원 난이도. 참조표에 없는 보스(매칭 실패 원문명, [[ADR-008]])는 후보를 알 수
+ * 없으므로 **지금 난이도 하나만** 돌려주도록 호출부가 폴백을 준다 — 빈 배열을 그리면 세그먼트가
+ * 사라져 무엇을 편집 중인지도 안 보인다.
+ */
+export function getSupportedDifficulties(bossName: string): BossDifficulty[] {
+  return BOSS_DIFFICULTIES_BY_NAME.get(bossName) ?? []
+}
+
 // ADR-055 결정 3: 수동 추적 항목 중 "주간 12개 한도에 잡히는" 보스 수. 화면의 BOSSES_BY_TAB은
 // weekly와 eventWeekly를 합치며 출처 구분을 잃고, 저장 배열은 월간 보스까지 kind: 'boss'로
 // 함께 담으므로, 주기와 시즌 여부를 참조표에서 되찾아야 한다. 제외 규칙은

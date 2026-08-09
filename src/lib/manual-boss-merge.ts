@@ -52,8 +52,18 @@ export function mergeManualBossList(
       (boss) =>
         matchBossContent(boss).matchedBossName === item.contentName && boss.difficulty === item.difficulty,
     )
+    // ADR-121 결정 5: 정확 일치 행이 없거나 그 행이 미완료면, 같은 보스명의 **다른 난이도** 완료를
+    // 완료로 승격한다. normalize.ts가 하는 보스 단위 승격(ADR-031·032)이 `isRegistered` 인 행에만
+    // 걸리고, 이 병합은 (보스명, 난이도) 정확 일치로만 찾았기 때문에 난이도를 바꾸는 순간 완료
+    // 배지가 사라졌다 — 새 정책이 아니라 그 승격 규칙을 수동 경로에도 적용하는 누락 보완이다.
+    // ownComplete는 승격하지 않는다(ADR-033 결정 1) — 보스 수익이 "실제로 어느 난이도를
+    // 처치했는가"를 판정하는 근거라 원본이어야 한다.
+    const isCompleteByAnyDifficulty = synced.some(
+      (boss) => matchBossContent(boss).matchedBossName === item.contentName && boss.isComplete,
+    )
+
     if (match !== undefined) {
-      return { ...match }
+      return { ...match, isComplete: match.isComplete || isCompleteByAnyDifficulty }
     }
 
     // 한 번도 동기화 응답에 나타난 적 없는 보스 — cycle만 참조 테이블에서 채우고 미완료로 둔다.
@@ -62,7 +72,7 @@ export function mergeManualBossList(
       difficulty: item.difficulty as BossContent['difficulty'],
       cycle: lookupCycle(item.contentName),
       isRegistered: false,
-      isComplete: false,
+      isComplete: isCompleteByAnyDifficulty,
       ownComplete: false,
     }
   })

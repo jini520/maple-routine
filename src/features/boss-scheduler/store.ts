@@ -100,6 +100,16 @@ export interface BossSchedulerStore extends BossSchedulerState {
   setPartySize(ocid: string, boss: string, difficulty: string, partySize: number): Promise<void>
   addManualBoss(ocid: string, contentName: string, difficulty: string): Promise<ManualBossAddResult>
   removeManualBoss(ocid: string, contentName: string, difficulty: string): Promise<void>
+  /**
+   * 추적 중인 보스의 난이도를 `to` 로 바꾼다 ([[ADR-121]] 결정 6).
+   *
+   * `from` 을 받지 않는 것이 의도다 — 호출부는 렌더 시점의 난이도를 넘기게 되는데, 칩을 연달아
+   * 누르면 낡은 값이 넘어와 매칭 실패로 변경이 **무음 유실**된다. "이 보스의 난이도를 to 로
+   * 만든다"는 명령형이면 그 실패 모드가 없다.
+   *
+   * 개수가 변하지 않으므로 주간 12개 한도(ADR-055)에 걸리지 않는다 — 반환값이 없는 이유다.
+   */
+  setManualBossDifficulty(ocid: string, contentName: string, to: string): Promise<void>
   // 탭 전환에 네트워크가 없어 전부 동기 세터다(보스 수익 setTab과 다른 점).
   setActiveTab(tab: BossTab): void
   setWeeklyFilter(filter: PartyFilter): void
@@ -472,6 +482,33 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
     await setManualTrackedContent(ocid, next)
     set((state) => ({ manualTrackedByOcid: { ...state.manualTrackedByOcid, [ocid]: next } }))
     return 'added'
+  },
+
+  // ADR-121 결정 6: 읽기 → 배열 계산 → **쓰기 1회**. 전에는 화면이 removeManualBoss →
+  // addManualBoss 를 이어 불렀는데, 두 액션이 각자 커밋해 **첫 커밋 직후 "그 보스가 목록에 없는"
+  // 상태가 저장소에 실재**했다. 거기서 두 번째가 실패하거나 앱이 죽으면 보스가 통째로 사라진다.
+  // Preferences 는 키 하나에 배열 전체를 덮어쓰므로 set 한 번이 이미 원자적이다 — 필요한 것은
+  // 트랜잭션이 아니라 커밋을 1회로 줄이는 것이다.
+  //
+  // 쓰기 앞은 순수 계산뿐이고 메모리 갱신은 쓰기 뒤라, 던지면 저장소도 스토어도 원래대로다
+  // (호출부에 롤백 코드가 필요 없다).
+  async setManualBossDifficulty(ocid, contentName, to) {
+    const current = await getManualTrackedContent(ocid)
+
+    // 같은 보스가 두 난이도로 저장돼 있었다면(스토어가 금지하지는 않는다) 하나로 수렴시킨다.
+    let replaced = false
+    const next = current.flatMap((item): ManualTrackedItem[] => {
+      if (item.kind !== 'boss' || item.contentName !== contentName) return [item]
+      if (replaced) return []
+      replaced = true
+      return [{ ...item, difficulty: to }]
+    })
+
+    // 추적 중이 아니면 쓸 것이 없다 — 빈 쓰기로 저장소를 건드리지 않는다.
+    if (!replaced) return
+
+    await setManualTrackedContent(ocid, next)
+    set((state) => ({ manualTrackedByOcid: { ...state.manualTrackedByOcid, [ocid]: next } }))
   },
 
   async removeManualBoss(ocid, contentName, difficulty) {
