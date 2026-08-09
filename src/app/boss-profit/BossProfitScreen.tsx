@@ -282,7 +282,11 @@ function CharacterAccordion(props: {
           aria-hidden="true"
         >
           <div
-            className="sticky h-8 bg-gradient-to-b from-surface to-transparent backdrop-blur-sm"
+            // 블러는 걸지 않는다([[ADR-123]] 결정 2) — 페이지 헤더 페이드와 **같은 레시피**라
+            // 같은 결함을 갖는다: `backdrop-filter` 가 만든 합성 레이어의 배경 스냅샷이 iOS 실기기
+            // WKWebView 에서 스탈해 잔상으로 남는다. 이 화면에서 증상이 보고된 적은 없지만
+            // 레시피의 동일성이 그 결정의 근거다(한쪽만 고치면 ADR-094 가 없앤 복붙으로 되돌아간다).
+            className="sticky h-8 bg-gradient-to-b from-surface to-transparent"
             style={{
               top: stickyOffset(props.stickyTop + headerHeight),
               maskImage: 'linear-gradient(to bottom, black, transparent)',

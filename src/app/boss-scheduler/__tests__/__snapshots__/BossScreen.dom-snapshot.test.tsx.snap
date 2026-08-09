@@ -56,7 +56,7 @@ exports[`BossScreen DOM 스냅샷 (ADR-094 결정 4) > 주간 탭 — 보스 카
 <button type="button" class="font-medium px-3 text-text-muted text-xs">파티</button>
 </div>
 </div>
-<div class="absolute backdrop-blur-sm bg-gradient-to-b from-bg h-8 inset-x-0 pointer-events-none to-transparent top-full" style="mask-image: linear-gradient(black, transparent); -webkit-mask-image: linear-gradient(black, transparent);" aria-hidden="true">
+<div class="absolute bg-gradient-to-b from-bg h-8 inset-x-0 pointer-events-none to-transparent top-full" style="mask-image: linear-gradient(black, transparent); -webkit-mask-image: linear-gradient(black, transparent);" aria-hidden="true">
 </div>
 </div>
 <div aria-hidden="true" style="height: 0px;">

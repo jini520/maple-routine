@@ -1599,7 +1599,7 @@ describe('당겨서 새로고침 (ADR-072)', () => {
     const indicator = screen.getByTestId('pull-to-refresh-indicator')
     expect(screen.getByTestId('pull-to-refresh-indicator')).toBeInTheDocument()
     // 인디케이터와 페이드가 같은 자리(absolute top-full)를 쓰므로 DOM 순서로 인디케이터가 위에 와야 한다.
-    expect(indicator.previousElementSibling).toHaveClass('backdrop-blur-sm')
+    expect(indicator.previousElementSibling).toHaveClass('top-full', 'from-bg')
     expect(indicator.parentElement).toHaveClass('fixed')
   })
 

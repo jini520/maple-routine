@@ -320,12 +320,14 @@ ScreenScroll: fixed inset-x-0 top-[var(--sa-top)] bottom-[var(--tab-bar-h)] over
 
 **헤더-목록 경계 페이드**: 고정 헤더의 불투명 배경이 스크롤 도중 경계를 딱 끊어 보이게 하는 문제 완화. 헤더 블록에 오버레이:
 ```
-pointer-events-none absolute inset-x-0 top-full h-8 bg-gradient-to-b from-bg to-transparent backdrop-blur-sm
+pointer-events-none absolute inset-x-0 top-full h-8 bg-gradient-to-b from-bg to-transparent
 style: maskImage/WebkitMaskImage: linear-gradient(to bottom, black, transparent)
 ```
-색(그라데이션)과 블러(같은 mask 그라데이션)를 동시에 옅어지게 해야 자연스럽다. `mask-image` 는 Tailwind 로 애매해 인라인 스타일(보스 카드 일러스트 페이드와 동일 패턴).
+페이드는 **그라데이션만으로 한다**([[ADR-123]], 2026-08-10). `mask-image` 는 Tailwind 로 애매해 인라인 스타일(보스 카드 일러스트 페이드와 동일 패턴).
 
-**예외 — 보스 수익 화면은 이 페이드 오버레이를 페이지 헤더가 아니라 "중첩 sticky 요소"(펼친 캐릭터 카드 헤더) 하단에 붙인다**([[ADR-047]] 결정 6·후속, 2026-07-28). 레시피는 동일하고 배경색만 그 요소의 표면색(`from-surface`)으로 바꾼다 — **페이드는 콘텐츠가 실제로 지나가는 경계에 둔다**는 원칙. 그 화면은 펼친 캐릭터 카드 헤더가 **중첩 sticky**로 페이지 헤더 바로 아래(= 이 오버레이가 덮는 `top-full h-8` 밴드)에 멈추는데, 오버레이는 `z-10` 페이지 헤더 안에 있고 카드는 `isolate`로 그보다 아래라 stuck 헤더 상단이 가려진다. 경계는 헤어라인(`h-px bg-border`)이 대신한다. **중첩 sticky를 도입하는 화면에서는 이 레시피를 그대로 쓰면 안 된다.** 나머지 4개 화면(컨텐츠·컨텐츠 관리·보스·보스 관리)은 중첩 sticky가 없어 페이드를 유지한다. 상세는 [features/boss-profit.md](../features/boss-profit.md).
+> **`backdrop-filter`(`backdrop-blur-sm`)를 되붙이지 말 것** — 그 속성은 요소를 자기 합성 레이어로 승격시키고, 그 레이어가 든 배경 스냅샷이 **iOS 실기기 WKWebView 에서 갱신되지 않는 창**이 생겨 이미 없어진 내용의 흐릿한 상이 잔상으로 남는다(당겨서 새로고침으로 목록이 `translateY` 되어 큰 빈 면이 열릴 때 가장 뚜렷하고, 스크롤이 없는 화면에서도 샌다). 시뮬레이터·Safari 에서는 재현되지 않으니 그쪽 확인으로 되돌리지 말 것. 실기기 A/B 근거와 헛다리 넷은 [trouble/2026-08-10-ios-fade-band-ghost.md](../trouble/2026-08-10-ios-fade-band-ghost.md). 회귀 가드 테스트 있음.
+
+**예외 — 보스 수익 화면은 이 페이드 오버레이를 페이지 헤더가 아니라 "중첩 sticky 요소"(펼친 캐릭터 카드 헤더) 하단에 붙인다**([[ADR-047]] 결정 6·후속, 2026-07-28). 레시피는 동일하고 배경색만 그 요소의 표면색(`from-surface`)으로 바꾼다(블러 제거도 함께 적용 — [[ADR-123]] 결정 2) — **페이드는 콘텐츠가 실제로 지나가는 경계에 둔다**는 원칙. 그 화면은 펼친 캐릭터 카드 헤더가 **중첩 sticky**로 페이지 헤더 바로 아래(= 이 오버레이가 덮는 `top-full h-8` 밴드)에 멈추는데, 오버레이는 `z-10` 페이지 헤더 안에 있고 카드는 `isolate`로 그보다 아래라 stuck 헤더 상단이 가려진다. 경계는 헤어라인(`h-px bg-border`)이 대신한다. **중첩 sticky를 도입하는 화면에서는 이 레시피를 그대로 쓰면 안 된다.** 나머지 4개 화면(컨텐츠·컨텐츠 관리·보스·보스 관리)은 중첩 sticky가 없어 페이드를 유지한다. 상세는 [features/boss-profit.md](../features/boss-profit.md).
 
 ### 화면 스택 — 하위 페이지는 밀려 들어온다 ([[ADR-120]], **구현 완료 2026-08-09 · 실기기 프레임 확인 보류**, 이슈 #166)
 > **구현**: `components/templates/StackScreen/`(오버레이 셸) · `lib/stack-transition.ts`(상수·순수 계산) · `lib/use-swipe-back.ts`(제스처) · `lib/use-stack-back.ts`(뒤로) · `lib/use-stack-location.ts`(나가는 연출을 위한 라우트 지연) · `features/screen-stack/`(`depth`·`progress` 스토어) · `App.tsx`(`TabLayer` + 포털 루트 `#stack-root`)
@@ -441,6 +443,8 @@ DOM:   포털로 탭 레이어 **밖**      (트리 위치는 중첩 그대로 �
 - 현재 사용: 하단 탭바 `ListChecks`(컨텐츠)/`Swords`(보스)/`ProfitIcon`(수익, 커스텀)/`Settings`(설정), 새로고침 `RefreshCw`, 보스 카드 파티 배지 `Users`, 파티 스테퍼 `Minus`/`Plus`.
 
 ## 폐기된 정책 (history)
+
+- ~~경계 페이드는 색(그라데이션)과 블러(`backdrop-blur-sm`)를 같은 mask 로 함께 옅어지게 한다~~ → **그라데이션만으로 페이드한다**([[ADR-123]], 2026-08-10) — `backdrop-filter` 가 만든 합성 레이어의 배경 스냅샷이 iOS 실기기에서 스탈해 잔상으로 남았다. 옛 문장이 겨눈 *"색만 옅어지고 블러는 그대로인 부자연스러운 경계"* 는 블러가 없으면 생기지 않는다.
 - ~~429의 재시도 버튼은 비활성화하지 않는다(사용자 결정 2026-07-30)~~ → **액션 자체를 주지 않는다**([[ADR-114]] 결정 2, 2026-08-08, 이슈 #158). 옛 결정은 "초당 한도라면 잠시 뒤 재시도가 통한다"를 전제했으나, 사용자가 쓰는 개발 단계 키는 일 한도를 소진하면 다음 날까지 안 풀리고 새 처방은 재시도가 아니라 키 단계 확인이다.
 - ~~스탈 배너는 문구 한 가지("목록이 최신이 아닙니다")에 "다시 시도" 고정~~ → 원인별 문구 + **옵셔널** 액션([[ADR-114]] 결정 3, 2026-08-08). `network` 계열은 옛 문구·액션 그대로라 폐기가 아니라 좁혀진 것이다.
 - ~~보스 수익은 아직 문서 스크롤(요소 스크롤러 전환 범위 밖)~~ → 보스 수익도 자기 스크롤 컨테이너를 스크롤한다([[ADR-100]], 2026-08-06). [[ADR-099]] 결정 4가 "범위 밖"으로 미뤄둔 것을 그 ADR 이 폐기했고(스케줄러 4화면이 실기기 검증을 통과한 뒤로는 스크롤 모델이 둘로 남는 비용이 더 컸다), 이 절의 문장만 그때 함께 고쳐지지 않았다.
