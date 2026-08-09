@@ -96,8 +96,20 @@ describe('PageHeader', () => {
     const { container } = render(<PageHeader>내용</PageHeader>)
 
     const fade = container.querySelector('[aria-hidden="true"].top-full')
-    expect(fade).toHaveClass('pointer-events-none', 'absolute', 'inset-x-0', 'h-8', 'backdrop-blur-sm')
+    expect(fade).toHaveClass('pointer-events-none', 'absolute', 'inset-x-0', 'h-8')
     expect(fade).toHaveStyle({ maskImage: 'linear-gradient(to bottom, black, transparent)' })
+  })
+
+  // ADR-123 회귀 가드. `backdrop-filter` 는 이 요소를 자기 합성 레이어로 승격시키는데, 그 레이어가
+  // 든 배경 스냅샷이 iOS 실기기 WKWebView 에서 갱신되지 않는 창이 생겨 **이미 없어진 내용의 흐릿한
+  // 상**이 잔상으로 남았다(실기기 A/B: 블러만 빼면 정상, 당길 때만 숨기는 것으로는 불충분).
+  //
+  // 시뮬레이터·Safari 에서는 재현되지 않으니 그쪽 확인을 근거로 되붙이지 말 것.
+  it('페이드에 backdrop-filter 를 걸지 않는다 (iOS 잔상, ADR-123)', () => {
+    const { container } = render(<PageHeader>내용</PageHeader>)
+
+    const fade = container.querySelector('[aria-hidden="true"].top-full')
+    expect(fade?.className).not.toMatch(/backdrop-blur/)
   })
 
   // 배경 조각은 배경을 가진 테마에서만 나온다(ADR-088 결정 5-1) — 색만 있는 테마는 DOM 자체가
@@ -210,6 +222,6 @@ describe('PageHeader below 슬롯', () => {
   it('below를 안 주면 아무것도 더 그리지 않는다', () => {
     const { container } = render(<PageHeader>내용</PageHeader>)
 
-    expect(barOf(container).lastElementChild).toHaveClass('top-full', 'backdrop-blur-sm')
+    expect(barOf(container).lastElementChild).toHaveClass('top-full', 'from-bg')
   })
 })

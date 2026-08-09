@@ -1632,11 +1632,10 @@ describe('BossProfitScreen', () => {
     // ADR-085 결정 1로 이 화면 헤더만 sticky → fixed 다(다른 4개 화면은 공용 레시피 그대로).
     const pageHeader = container.querySelector('.fixed.top-0')
     expect(pageHeader).not.toBeNull()
-    expect(pageHeader?.querySelector('.backdrop-blur-sm')).toBeNull()
     expect(pageHeader?.querySelector('.bg-gradient-to-b')).toBeNull()
   })
 
-  it('ADR-047 후속: stuck 헤더 하단에 경계 페이드(그라데이션+블러)를 둔다', () => {
+  it('ADR-047 후속: stuck 헤더 하단에 경계 페이드(그라데이션)를 둔다', () => {
     mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()] })
 
     // jsdom은 getBoundingClientRect가 모두 0이라 헤더 높이가 측정되지 않는다. 페이드는 측정 전에는
@@ -1659,7 +1658,10 @@ describe('BossProfitScreen', () => {
     // 카드 표면색(from-surface).
     const fade = card?.querySelector('.bg-gradient-to-b')
     expect(fade).not.toBeNull()
-    expect(fade).toHaveClass('backdrop-blur-sm', 'from-surface', 'sticky')
+    expect(fade).toHaveClass('from-surface', 'sticky')
+    // ADR-123 결정 2: 페이지 헤더 페이드와 같은 레시피라 블러도 같이 뺀다 — `backdrop-filter` 가
+    // 만든 합성 레이어의 배경 스냅샷이 iOS 실기기 WKWebView 에서 스탈해 잔상으로 남는다.
+    expect(fade?.className).not.toMatch(/backdrop-blur/)
 
     // 헤더 자식(top-full)으로 두면 헤더가 카드 끝에서 릴리스될 때 페이드가 카드 밖으로 새어나온다
     // (셸엔 overflow-hidden을 걸 수 없어 클리핑도 불가) — 본문 범위 제약 박스 안의 sticky로 둔다.

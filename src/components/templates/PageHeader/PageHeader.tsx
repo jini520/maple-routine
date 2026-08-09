@@ -66,11 +66,16 @@ export function PageHeader(props: PageHeaderProps): React.JSX.Element {
             사람에게 이것이 배경임을 알리는 자리다. */}
         <ThemeHeaderBackdrop />
         <div className="space-y-4">{props.children}</div>
-        {/* 헤더 아래에 살짝 겹쳐 그라데이션+블러로 항목이 잘려 보이지 않고 자연스럽게
-            사라지도록 한다 — 배경(bg-bg → transparent)과 블러 강도를 같은 마스크로 함께
-            줄여서, 색만 옅어지고 블러는 그대로인 부자연스러운 경계가 생기지 않게 한다. */}
+        {/* 헤더 아래에 살짝 겹쳐 그라데이션으로 항목이 잘려 보이지 않고 자연스럽게 사라지도록 한다.
+            배경(bg-bg → transparent)을 마스크로 한 번 더 옅게 해 경계가 딱 끊기지 않게 한다.
+            **`backdrop-blur-sm` 을 되붙이지 말 것**([[ADR-123]]): `backdrop-filter` 는 이 요소를 자기
+            합성 레이어로 승격시키는데, 그 레이어가 든 배경 스냅샷이 iOS 실기기 WKWebView 에서
+            갱신되지 않는 창이 생겨 **이미 없어진 내용의 흐릿한 상**이 잔상으로 남는다(당겨서
+            새로고침으로 목록이 translateY 되어 큰 빈 면이 열릴 때 가장 뚜렷하고, 스크롤이 없는
+            화면에서도 샌다). 시뮬레이터·Safari 에서는 재현되지 않으니 그쪽 확인으로 되돌리지 말 것 —
+            실기기 A/B 로 갈랐다(블러만 제거 = 정상, 당길 때만 숨김 = 불충분). */}
         <div
-          className="pointer-events-none absolute inset-x-0 top-full h-8 bg-gradient-to-b from-bg to-transparent backdrop-blur-sm"
+          className="pointer-events-none absolute inset-x-0 top-full h-8 bg-gradient-to-b from-bg to-transparent"
           style={{
             maskImage: 'linear-gradient(to bottom, black, transparent)',
             WebkitMaskImage: 'linear-gradient(to bottom, black, transparent)',
