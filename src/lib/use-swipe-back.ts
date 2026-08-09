@@ -95,6 +95,12 @@ export function useSwipeBack({ enabled, onPop }: SwipeBackOptions): React.RefObj
       setProgress(dx / width)
     }
 
+    /** 제자리로 되돌린다 — 남은 거리에 비례한 시간으로. */
+    const settleBack = (progress: number): void => {
+      setTransitionMs(resolveSettleMs(progress, false, resolveTransitionMs()))
+      setProgress(0)
+    }
+
     const handleTouchEnd = (): void => {
       if (startX === null) return
       const wasHorizontal = axis === 'horizontal'
@@ -106,22 +112,32 @@ export function useSwipeBack({ enabled, onPop }: SwipeBackOptions): React.RefObj
         onPopRef.current()
         return
       }
+      settleBack(progress)
+    }
 
-      // 취소 — 남은 거리에 비례한 시간으로 제자리에 되돌린다.
-      setTransitionMs(resolveSettleMs(progress, false, resolveTransitionMs()))
-      setProgress(0)
+    // **`touchend` 와 같은 취급을 하면 안 된다.** `touchcancel` 은 "손을 뗐다"가 아니라
+    // **"이 터치를 다른 것이 가져갔다"**이고, 그 다른 것이 대개 **안드로이드 제스처 내비게이션의
+    // 뒤로가기**다(화면 가장자리는 시스템이 먼저 노린다). 거기서 거리·속도로 pop 을 판정하면
+    // 시스템 뒤로가기와 합쳐 **두 단계가 뒤로 간다.** 판정하지 않고 제자리로 되돌린다 —
+    // 진짜 뒤로가기는 시스템이 이미 하고 있고, 그 결과는 `useStackLocation` 이 같은 연출로 받는다.
+    const handleTouchCancel = (): void => {
+      if (startX === null) return
+      const progress = useScreenStackStore.getState().progress
+      const wasHorizontal = axis === 'horizontal'
+      stop()
+      if (wasHorizontal) settleBack(progress)
     }
 
     edge.addEventListener('touchstart', handleTouchStart, { passive: true })
     document.addEventListener('touchmove', handleTouchMove, { passive: false })
     document.addEventListener('touchend', handleTouchEnd)
-    document.addEventListener('touchcancel', handleTouchEnd)
+    document.addEventListener('touchcancel', handleTouchCancel)
 
     return () => {
       edge.removeEventListener('touchstart', handleTouchStart)
       document.removeEventListener('touchmove', handleTouchMove)
       document.removeEventListener('touchend', handleTouchEnd)
-      document.removeEventListener('touchcancel', handleTouchEnd)
+      document.removeEventListener('touchcancel', handleTouchCancel)
       // 끌던 도중 화면이 사라지면 touchend 가 오지 않아 드래그 상태가 남는다.
       stop()
     }

@@ -228,6 +228,22 @@ describe('가장자리 스와이프 백', () => {
     expect(useScreenStackStore.getState().progress).toBe(0)
   })
 
+  // **안드로이드 제스처 내비게이션과 겹치는 자리다.** 시스템이 화면 가장자리를 자기 뒤로가기
+  // 제스처로 판정하면 앱에 `touchcancel` 을 보내고 터치를 가져간다. 그때 우리가 거리·속도로
+  // pop 을 판정하면 **시스템 뒤로가기와 합쳐 두 단계가 뒤로 간다.**
+  it('시스템이 제스처를 가져가면(touchcancel) pop 하지 않고 제자리로 돌아간다', () => {
+    fireEvent.touchStart(screen.getByTestId('stack-edge-zone'), {
+      touches: [{ clientX: 4, clientY: 300 }],
+    })
+    // 기준을 훌쩍 넘겨 끌어 둔다 — 놓았다면 반드시 pop 했을 거리다.
+    fireEvent.touchMove(document, { touches: [{ clientX: 4 + window.innerWidth * 0.9, clientY: 300 }] })
+    fireEvent.touchCancel(document)
+
+    expect(screen.getByTestId('location')).toHaveTextContent('/parent/child')
+    expect(useScreenStackStore.getState().progress).toBe(0)
+    expect(useScreenStackStore.getState().isDragging).toBe(false)
+  })
+
   it('기준에 못 미치게 끌고 놓으면 제자리로 돌아간다', () => {
     fireEvent.touchStart(screen.getByTestId('stack-edge-zone'), {
       touches: [{ clientX: 4, clientY: 300 }],
