@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { StackScreen } from '../../components/templates/StackScreen/StackScreen'
+import { useStackBack } from '../../lib/use-stack-back'
 import { ArrowLeft, ScrollText } from 'lucide-react'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
@@ -248,8 +250,13 @@ function DropHistoryPeriodSection(props: {
   )
 }
 
+// 부모 탭 — 딥링크로 이 화면에 직접 들어왔을 때 뒤로가 갈 곳([[ADR-120]] 결정 9).
+const PARENT_PATH = '/profit'
+
 export function DropHistoryScreen(): React.JSX.Element {
   const navigate = useNavigate()
+  // 뒤로는 진짜 pop 이다([[ADR-120]] 결정 9) — 딥링크로 직접 들어왔을 때만 부모로 replace 한다.
+  const goBack = useStackBack(PARENT_PATH)
   const { status, groups, drought, charactersByOcid, load } = useDropHistoryStore()
 
   useEffect(() => {
@@ -259,75 +266,80 @@ export function DropHistoryScreen(): React.JSX.Element {
   const now = new Date()
 
   return (
-    // ADR-077: 이 화면은 보스 수익 위에 얹히는 스택 화면이라 **자기 스크롤을 갖는 오버레이**다.
-    // - `fixed inset-0`: 아래 화면(BossProfitScreen)은 마운트된 채로 남고 문서 스크롤도 그 화면의
-    //   위치에 그대로 머문다 — 뒤로 왔을 때 스크롤을 되돌릴 필요가 없다(저장·복원 코드 없음).
-    // - `overflow-y-auto`: 문서 대신 이 컨테이너가 스크롤한다. 당겨서 새로고침 훅은 스크롤 가능한
-    //   조상 안에서 시작한 터치를 페이지 당김에서 제외하므로([[ADR-072]] 결정 14) 아래 화면의
-    //   재조회가 딸려 돌지 않는다.
-    // - `bg-bg`: 불투명해야 아래 화면이 비치지 않는다.
-    // - `z-20`: **반드시 페이지 sticky 헤더(z-10)보다 위여야 한다.** z를 안 주면(z-auto) 그 헤더가
-    //   오버레이 위에 그려져 이 화면의 `←`·제목 줄을 덮는다(실기기 확인 2026-08-02). 모달(z-50)·
-    //   토스트/시트(z-[60])·드롭 연출(z-[70])보다는 아래다 — 이건 모달이 아니라 페이지 레벨 화면이다.
-    // - 하단 여백: fixed라 AppShell의 `pb-[calc(4rem+var(--sa-bottom))]`을 물려받지 못해 직접 갖는다.
-    //   하단 탭바는 DOM 순서상 이 오버레이보다 뒤라 계속 위에 그려진다(현행 유지).
-    // `space-y-4`는 그대로 둔다 — 제목 블록과 목록 사이 1rem 간격은 이 유틸리티가 만들던 것이다.
-    // `-mt-[var(--sa-top)]`는 뺐다: AppShell의 `pt-[var(--sa-top)]`를 상쇄하려던 것인데 `fixed inset-0`은
-    // 애초에 그 패딩 바깥에서 뷰포트 기준으로 놓이므로 상쇄할 대상이 없다(마진을 두면 오히려 밀린다).
-    <div className="fixed inset-0 z-20 space-y-4 overflow-y-auto bg-bg pb-[calc(4rem+var(--sa-bottom))]">
-      {/* 제목 줄만 sticky로 고정하고 목록만 스크롤 — 보스 관리·컨텐츠 관리와 같은 서브 화면 패턴이다. */}
-      <div className="sticky top-0 z-10 bg-bg px-4 pt-[calc(1rem+var(--sa-top))] pb-2">
-        <div className="space-y-3">
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              aria-label="뒤로"
-              className="-ml-2 flex h-9 w-9 items-center justify-center text-text"
-            >
-              <ArrowLeft className="h-5 w-5" strokeWidth={2} aria-hidden="true" />
-            </button>
-            <h1 className="text-lg font-semibold text-text">히스토리</h1>
-          </div>
+    // ADR-077 이 이 앱에서 처음 만든 스택 화면이고, [[ADR-120]] 이 그 형태를 공용 셸로 묶었다.
+    // 손으로 짰던 오버레이(`fixed inset-0 z-20 overflow-y-auto bg-bg` + 하단 여백)는 전부 셸의
+    // 몫이 됐다 — 여기 남는 것은 이 화면 고유의 내용뿐이다. 셸이 함께 주는 것: 푸시/팝 전환,
+    // 가장자리 스와이프 백, 포털 배치(탭 레이어 `transform` 에 딸려 밀리지 않게).
+    //
+    // 하단 여백이 사라진 것은 실수가 아니다 — 하위 페이지에는 탭바가 없다([[ADR-120]] 결정 4).
+    // **셸의 스크롤 상자를 쓰지 않는다**(`scroll={false}`). 이 화면의 헤더는 흐름 안의 `sticky` 인데,
+    // 공용 `ScreenScroll` 의 `-mt-[var(--sa-top)]` 은 **흐름 밖 `fixed` 헤더 + spacer** 를 전제로 한
+    // 보정이라 sticky 헤더에는 맞지 않는다: 음수 마진만큼 헤더가 아래로 밀려 **뒤 콘텐츠를 덮는다**
+    // (실기기 스크린샷 2026-08-09, 계측 재현: 겹침 31px = 47 − `space-y-4` 16).
+    //
+    // 그래서 스크롤 상자는 이 화면이 직접 갖는다 — ADR-077 이 세웠던 배치 그대로다. 상자가 노치까지
+    // 덮으므로 sticky 헤더가 화면 y=0 에서 시작하고, 안전영역은 그 헤더의 `pt` 가 넣는다.
+    <StackScreen parentPath={PARENT_PATH} scroll={false}>
+      <div className="absolute inset-x-0 top-0 bottom-[var(--nav-solid-bottom,0px)] space-y-4 overflow-y-auto overscroll-y-none">
+          {/* 제목 줄만 sticky로 고정하고 목록만 스크롤 — 보스 관리·컨텐츠 관리와 같은 서브 화면
+              패턴이다. 스크롤 상자가 노치까지 덮으므로 **안전영역은 이 헤더가 넣는다**(`fixed` 헤더를
+              쓰는 다른 하위 페이지들과 같은 규칙). */}
+          <div className="sticky top-0 z-10 bg-bg px-4 pt-[calc(1rem+var(--sa-top))] pb-2">
+          <div className="space-y-3">
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={goBack}
+                aria-label="뒤로"
+                className="-ml-2 flex h-9 w-9 items-center justify-center text-text"
+              >
+                <ArrowLeft className="h-5 w-5" strokeWidth={2} aria-hidden="true" />
+              </button>
+              <h1 className="text-lg font-semibold text-text">히스토리</h1>
+            </div>
 
-          {drought !== null && <ValuableDrought summary={drought} now={now} />}
+            {drought !== null && <ValuableDrought summary={drought} now={now} />}
+          </div>
+        </div>
+
+        {/* 하단 여백은 **스크롤 컨테이너가 아니라 콘텐츠 블록**이 갖는다 — 스크롤 요소의
+            `padding-bottom` 은 브라우저에 따라 넘치는 콘텐츠의 스크롤 영역에 안 잡힐 수 있다.
+            홈 인디케이터 자리를 스크롤 끝에 남긴다([[ADR-120]] 결정 16). */}
+        <div className="space-y-4 px-4 pb-[calc(1rem+var(--sa-bottom)-var(--nav-solid-bottom,0px))]">
+          {(status === 'idle' || status === 'loading') && (
+            <LoadingState size="page" message="불러오고 있어요" />
+          )}
+
+          {/* 실패를 빈 목록으로 위장하지 않는다([[ADR-062]]) — "기록이 없습니다"는 확정된 사실일 때만
+              할 수 있는 말이고, 조회가 실패한 상태에서는 기록이 있는지조차 모른다. */}
+          {status === 'failed' && (
+            <ErrorState
+              title="히스토리를 불러오지 못했습니다"
+              description="저장된 기록을 읽지 못했습니다. 다시 시도해주세요."
+              action={{ label: '다시 시도', onClick: () => void load() }}
+            />
+          )}
+
+          {status === 'ready' && groups.length === 0 && (
+            <EmptyState
+              icon={ScrollText}
+              title="아직 기록된 드롭이 없습니다"
+              description="보스 수익 화면에서 보스를 눌러 드롭을 기록하면 여기에 쌓입니다"
+              action={{ label: '보스 수익으로', onClick: () => navigate('/profit') }}
+            />
+          )}
+
+          {status === 'ready' &&
+            groups.map((group) => (
+              <DropHistoryPeriodSection
+                key={group.periodKey}
+                group={group}
+                charactersByOcid={charactersByOcid}
+                now={now}
+              />
+            ))}
         </div>
       </div>
-
-      <div className="space-y-4 px-4 pb-4">
-        {(status === 'idle' || status === 'loading') && (
-          <LoadingState size="page" message="불러오고 있어요" />
-        )}
-
-        {/* 실패를 빈 목록으로 위장하지 않는다([[ADR-062]]) — "기록이 없습니다"는 확정된 사실일 때만
-            할 수 있는 말이고, 조회가 실패한 상태에서는 기록이 있는지조차 모른다. */}
-        {status === 'failed' && (
-          <ErrorState
-            title="히스토리를 불러오지 못했습니다"
-            description="저장된 기록을 읽지 못했습니다. 다시 시도해주세요."
-            action={{ label: '다시 시도', onClick: () => void load() }}
-          />
-        )}
-
-        {status === 'ready' && groups.length === 0 && (
-          <EmptyState
-            icon={ScrollText}
-            title="아직 기록된 드롭이 없습니다"
-            description="보스 수익 화면에서 보스를 눌러 드롭을 기록하면 여기에 쌓입니다"
-            action={{ label: '보스 수익으로', onClick: () => navigate('/profit') }}
-          />
-        )}
-
-        {status === 'ready' &&
-          groups.map((group) => (
-            <DropHistoryPeriodSection
-              key={group.periodKey}
-              group={group}
-              charactersByOcid={charactersByOcid}
-              now={now}
-            />
-          ))}
-      </div>
-    </div>
+    </StackScreen>
   )
 }

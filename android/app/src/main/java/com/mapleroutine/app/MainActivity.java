@@ -16,6 +16,8 @@ public class MainActivity extends BridgeActivity {
         // 시스템 바를 앱이 직접 그리게 만드는 로컬 플러그인(edge-to-edge + 안전영역 인셋 주입).
         // registerPlugin은 super.onCreate() 이전에 호출해야 브릿지 초기화 시점에 인식된다.
         registerPlugin(SystemBarsPlugin.class);
+        // 시스템 뒤로가기(제스처/3버튼)를 앱 안의 화면 스택에 연결한다([[ADR-120]] 결정 17).
+        registerPlugin(BackGesturePlugin.class);
 
         // installSplashScreen()은 super.onCreate() 이전에 호출해야 스플래시가 첫 프레임 이전에 제대로 hook된다.
         // setKeepOnScreenCondition으로 SPLASH_KEEP_MS 동안 유지하면, 브릿지/WebView 로딩 구간에 흰 화면 없이

@@ -8,16 +8,16 @@ import {
 } from '../../data/release-notes'
 import { useLiveUpdateStore } from '../../features/live-update/store'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
-import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
+import { StackScreen } from '../../components/templates/StackScreen/StackScreen'
 import { Badge } from '../../components/atoms/Badge/Badge'
 import { Card } from '../../components/atoms/Card/Card'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
-import { useScreenNavigate } from '../../lib/use-screen-navigate'
+import { useStackBack } from '../../lib/use-stack-back'
 
 // 설정 하위 페이지 「개발 노트」(ADR-118 결정 2 · ADR-119) — 버전별 변경 목록.
 //
-// 골격은 `/settings/about`·`/settings/account-data` 와 같다: 공용 `ScreenScroll` + `PageHeader`
-// (fixed + 실측 spacer) + `useScreenNavigate`.
+// 골격은 `/settings/about`·`/settings/account-data` 와 같다: 공용 `StackScreen`(오버레이 + 푸시/팝 + 스와이프 백) + `PageHeader`
+// (fixed + 실측 spacer).
 //
 // **데이터는 앱 번들 안에 있다**(ADR-119 결정 1) — `src/data/release-notes.ts` 를 그대로 읽으므로
 // 네트워크 0회이고 오프라인에서도 과거 전체가 보인다. 그래서 이 화면에는 로딩·에러 상태가 없다.
@@ -25,10 +25,13 @@ import { useScreenNavigate } from '../../lib/use-screen-navigate'
 //
 // **배열을 정렬하지 않는다** — "최신이 먼저"는 데이터 파일의 계약이고 그 강제는 데이터 테스트가
 // 한다. 화면이 다시 정렬하면 같은 규칙의 진실이 두 곳에 생긴다.
+// 부모 탭 — 딥링크로 이 화면에 직접 들어왔을 때 뒤로가 갈 곳([[ADR-120]] 결정 9).
+const PARENT_PATH = '/settings'
+
 export function SettingsReleaseNotesScreen(): React.JSX.Element {
   const { currentVersion, loadCurrentVersion } = useLiveUpdateStore()
-  // 화면을 통째로 바꾸는 이동은 이동 전에 스크롤을 최상단으로 옮긴다(ADR-098 결정 1).
-  const navigateToScreen = useScreenNavigate()
+  // 뒤로는 진짜 pop 이다(ADR-120 결정 9) — 앞으로 새 라우트를 밀어 넣지 않는다.
+  const goBack = useStackBack(PARENT_PATH)
 
   // 지금 실행 중인 OTA 번들 버전 — `SettingsScreen`·`AppUpdateSection` 과 같은 방식이다.
   // 이 화면 스스로 값을 채워야 다른 컴포넌트의 부수효과에 의존하지 않는다.
@@ -42,12 +45,12 @@ export function SettingsReleaseNotesScreen(): React.JSX.Element {
   const runningVersion = currentVersion ?? packageJson.version
 
   return (
-    <ScreenScroll>
+    <StackScreen parentPath={PARENT_PATH}>
       <PageHeader>
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => navigateToScreen('/settings')}
+            onClick={goBack}
             aria-label="뒤로"
             className="p-1 -ml-1 text-text-muted hover:text-text"
           >
@@ -117,6 +120,6 @@ export function SettingsReleaseNotesScreen(): React.JSX.Element {
           ))
         )}
       </div>
-    </ScreenScroll>
+    </StackScreen>
   )
 }

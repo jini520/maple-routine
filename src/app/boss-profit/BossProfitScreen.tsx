@@ -18,6 +18,7 @@ import { PULL_SETTLE_TRANSITION, resolveContentOffsetPx } from '../../lib/pull-t
 import { useMeasuredHeight } from '../../lib/use-measured-height'
 import { usePullToRefresh } from '../../lib/use-pull-to-refresh'
 import { UnavailableNotice } from '../../components/molecules/EmptyState/UnavailableNotice'
+import { useScreenStackStore } from '../../features/screen-stack/store'
 import { usePeriodLoadErrorToast } from '../../features/boss-profit/use-period-error-toast'
 import { ValuableDropBadge } from '../../components/molecules/ValuableDropBadge/ValuableDropBadge'
 import weeklyBossesData from '../../data/weekly-bosses.json'
@@ -53,7 +54,6 @@ import { MonthlyAccordionBody, WeeklyAccordionBody } from './AccordionBody'
 import { CharacterIssueBadge, CharacterIssuePopover, measureIssueAnchor, ISSUE_POPOVER_EDGE_GAP, ISSUE_POPOVER_WIDTH } from './CharacterIssue'
 import { BossProfitContextProvider, useBossProfitContext } from './boss-profit-context'
 import { CrystalSummaryChip, DeltaChip } from './HeadlineChips'
-import { useScreenNavigate } from '../../lib/use-screen-navigate'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 
 
@@ -408,11 +408,9 @@ export function BossProfitScreen(): React.JSX.Element {
     dropsByRowKey,
   } = useBossProfitStore()
 
-  // 히스토리 오버레이(`/profit/drops`)를 여닫는 이동 전용이다 — 그 화면은 자기 스크롤 컨테이너를
-  // 갖고, 돌아왔을 때 이 화면의 스크롤이 유지되는 것이 [[ADR-077]] 의 계약이라 스크롤을 건드리면 안
-  // 된다. 화면을 통째로 바꾸는 이동은 아래 navigateToScreen 을 쓴다([[ADR-098]] 결정 1).
+  // 이동은 전부 평범한 `useNavigate` 다 — 이동 전 스크롤 리셋은 [[ADR-120]] 이 걷어냈다(모든 탭
+  // 화면이 자기 스크롤을 소유하게 되어 `window.scrollTo(0, 0)` 이 무효 호출이 됐다).
   const navigate = useNavigate()
-  const navigateToScreen = useScreenNavigate()
 
   // ADR-063: 동기화 전체 실패는 토스트로 알린다. 기간 라벨·"n분 전" 표기가 남아 맥락은 화면에 있다.
   useScheduleSyncErrorToast(error, { onRetry: () => refresh(trackedOcids ?? []) })
@@ -454,8 +452,13 @@ export function BossProfitScreen(): React.JSX.Element {
   // 함께 태어나고 함께 죽는다(히스토리 오버레이 왕복에서도 이 컨테이너는 언마운트되지 않는다).
   const scrollRootRef = useRef<HTMLDivElement>(null)
 
+  // 하위 페이지가 열려 있는 동안은 끈다([[ADR-120]] 결정 10). [[ADR-072]] 결정 14 의 조상 사슬
+  // 검사는 오버레이의 스크롤 컨테이너가 **실제로 넘칠 때만** 참이라 내용이 짧은 관리 페이지에서
+  // 샌다 — 스택 깊이를 아는 지금은 구조로 막는다(그 검사는 모달·바텀시트용으로 남는다).
+  const isStackOpen = useScreenStackStore((state) => state.depth > 0)
+
   const pullToRefresh = usePullToRefresh({
-    enabled: !isEmpty && canRefreshPeriod,
+    enabled: !isEmpty && canRefreshPeriod && !isStackOpen,
     isRefreshing: status === 'loading',
     onRefresh: () => refresh(trackedOcids ?? []),
     // ADR-100 결정 4: 최상단 판정도 문서가 아니라 이 화면의 컨테이너 기준이다.
@@ -543,7 +546,7 @@ export function BossProfitScreen(): React.JSX.Element {
             description="보스 스케줄러에서 캐릭터를 선택하면 수익 현황을 확인할 수 있습니다"
             action={{
               label: '캐릭터 선택하러 가기',
-              onClick: () => navigateToScreen('/boss?openPicker=1'),
+              onClick: () => navigate('/boss?openPicker=1'),
             }}
           />
         </div>

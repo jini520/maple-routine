@@ -56,8 +56,8 @@ function LocationProbe(): React.JSX.Element {
   return <span data-testid="location">{useLocation().pathname}</span>
 }
 
-function renderScreen(): void {
-  render(
+function renderScreen(): { rerender: () => void } {
+  const view = render(
     <MemoryRouter initialEntries={['/profit/drops']}>
       <Routes>
         <Route path="/profit/drops" element={<DropHistoryScreen />} />
@@ -66,6 +66,21 @@ function renderScreen(): void {
       <LocationProbe />
     </MemoryRouter>,
   )
+  // 같은 인스턴스를 유지한 채 리렌더만 일으키는 손잡이 — 마운트당 한 번만 하는 일(무작위 문구
+  // 고정)을 확인하는 테스트가 쓴다.
+  return {
+    rerender: () => {
+      view.rerender(
+        <MemoryRouter initialEntries={['/profit/drops']}>
+          <Routes>
+            <Route path="/profit/drops" element={<DropHistoryScreen />} />
+            <Route path="/profit" element={<span>보스 수익 화면</span>} />
+          </Routes>
+          <LocationProbe />
+        </MemoryRouter>,
+      )
+    },
+  }
 }
 
 afterEach(() => {
@@ -75,6 +90,20 @@ afterEach(() => {
 })
 
 describe('DropHistoryScreen', () => {
+  // 이 화면의 헤더는 흐름 안의 `sticky` 라 **셸의 스크롤 상자를 쓰면 안 된다** — 그 상자의
+  // `-mt-[var(--sa-top)]` 은 흐름 밖 `fixed` 헤더를 전제한 보정이고, sticky 에 걸리면 헤더가 음수
+  // 마진만큼 아래로 밀려 **뒤 콘텐츠를 덮는다**(실기기 스크린샷 2026-08-09, 계측: 겹침 31px).
+  // 스크롤 상자를 이 화면이 직접 갖고, 그 상자가 노치까지 덮으므로 안전영역은 sticky 헤더가 넣는다.
+  it('셸의 스크롤 상자를 쓰지 않고 sticky 헤더가 상단 안전영역을 넣는다', () => {
+    mockStore({ status: 'ready', groups: [], drought: null })
+    renderScreen()
+
+    expect(screen.queryByTestId('screen-scroll')).not.toBeInTheDocument()
+
+    const header = screen.getByRole('heading', { name: '히스토리' }).closest('.sticky')
+    expect(header).toHaveClass('pt-[calc(1rem+var(--sa-top))]')
+  })
+
   it('마운트하면 전 기간 기록을 불러온다', () => {
     mockStore({ status: 'idle' })
     renderScreen()
@@ -403,7 +432,7 @@ describe('DropHistoryScreen', () => {
       groups: [{ periodKey: '2026-07-09', cycle: 'weekly', records: [record({})] }],
       drought: { periodKey: '2026-07-09', cycle: 'weekly', weeksSince: 9, records: [record({})] },
     })
-    renderScreen()
+    const { rerender } = renderScreen()
 
     const pool = Array.from({ length: VALUABLE_DROUGHT_LATE_HEADLINE_COUNT }, (_, index) =>
       formatValuableDroughtHeadline(9, index),
@@ -411,8 +440,9 @@ describe('DropHistoryScreen', () => {
     const shown = screen.getByTestId('valuable-drought').querySelector('p')?.textContent ?? ''
     expect(pool).toContain(shown)
 
-    // 같은 인스턴스를 다시 렌더해도 문구가 유지된다
-    fireEvent.click(screen.getByRole('button', { name: '뒤로' }))
+    // 같은 인스턴스를 다시 렌더해도 문구가 유지된다. **`뒤로` 를 누르는 것으로는 확인할 수 없다** —
+    // 그 버튼은 이제 진짜 pop 이라 화면이 사라진다([[ADR-120]] 결정 9).
+    rerender()
     expect(screen.getByTestId('valuable-drought').querySelector('p')?.textContent).toBe(shown)
   })
 

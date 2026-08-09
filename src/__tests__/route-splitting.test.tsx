@@ -137,8 +137,15 @@ describe('라우트 코드 분할 (ADR-092)', () => {
         await screen.findByRole('heading', { name: '보스 수익' }, { timeout: 5000 }),
       ).toBeInTheDocument()
 
-      // 그리고 그 순간 자식 자리에는 폴백이 떠 있다(자식은 영원히 서스펜드하도록 mock했다).
-      expect(screen.getByTestId('route-fallback')).toBeInTheDocument()
+      // 그동안 자식 자리에는 **아무것도 그려지지 않는다**([[ADR-120]] 결정 13, 사용자 결정
+      // 2026-08-09) — 하위 페이지의 폴백은 `null` 이다. 그 화면들은 네트워크가 필요 없는데 코드를
+      // 기다리느라 스피너가 떠서 데이터를 기다리는 것처럼 보였다. 부모가 그대로 남아 있으므로
+      // 빈 화면이 아니라 "아직 안 밀려 들어왔다"로 읽힌다.
+      //
+      // 자식이 영영 서스펜드하는 이 상황에서도 폴백이 없다는 것이 계약이다. 부모 헤딩이 살아 있고
+      // 오버레이가 없다 = 자식은 아직 안 왔는데 부모는 안 걷혔다 = 경계가 부모 안쪽에 있다.
+      expect(screen.queryByTestId('route-fallback')).not.toBeInTheDocument()
+      expect(screen.queryByTestId('stack-screen')).not.toBeInTheDocument()
     })
   })
 
