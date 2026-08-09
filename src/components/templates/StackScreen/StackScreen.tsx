@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect } from 'react'
 import { createPortal } from 'react-dom'
+import { Capacitor } from '@capacitor/core'
 import { useScreenStackStore } from '../../../features/screen-stack/store'
 import {
   resolveLayerAboveProgress,
@@ -11,6 +12,7 @@ import {
 } from '../../../lib/stack-transition'
 import { useStackBack } from '../../../lib/use-stack-back'
 import { useSwipeBack } from '../../../lib/use-swipe-back'
+import { useSystemBack } from '../../../lib/use-system-back'
 import { ScreenScroll } from '../ScreenScroll/ScreenScroll'
 
 // 하위 페이지의 공용 셸([[ADR-120]] 결정 2). **하위 페이지 전부가 이것을 쓴다** — 화면마다 오버레이를
@@ -74,9 +76,15 @@ export function StackScreen({
   const isTop = index === depth - 1
 
   const goBack = useStackBack(parentPath)
-  // 최상단만 제스처를 받는다 — 아래 층의 히트존은 위 오버레이에 덮여 있지만, 손가락이 어디에
-  // 닿는지를 DOM 순서에 맡기지 않는다.
-  const edgeRef = useSwipeBack({ enabled: isTop, onPop: goBack })
+
+  // **안드로이드에서는 JS 제스처를 끈다**([[ADR-120]] 결정 17). 그쪽은 시스템 뒤로가기(제스처
+  // 내비 스와이프 / 3버튼)가 인식과 **진행률까지** 주므로, 우리가 가장자리 좌표를 따로 재면
+  // 제스처가 둘이 되어 그것부터 부자연스럽다. iOS 는 대안이 없어 JS 제스처를 그대로 쓴다
+  // (WKWebView 의 `allowsBackForwardNavigationGestures` 는 same-document 이동에 전환도 진행률도
+  // 주지 않아 지금보다 후퇴한다 — 결정 6).
+  const usesSystemBack = Capacitor.getPlatform() === 'android'
+  const edgeRef = useSwipeBack({ enabled: isTop && !usesSystemBack, onPop: goBack })
+  useSystemBack(goBack)
 
   // 마운트하면 화면 밖(1)에 전환 없이 세우고, 다음 프레임에 0으로 보낸다. **두 프레임이어야 한다** —
   // 같은 프레임에 두 값을 쓰면 브라우저가 시작 상태를 커밋하지 않아 전환이 걸리지 않고 툭 나타난다.
