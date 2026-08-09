@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { Suspense, createElement, lazy, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { BrowserRouter, Navigate, NavLink, Route, Routes, useNavigate } from 'react-router-dom'
 import { ListChecks, Settings, Swords } from 'lucide-react'
 import { useOnboardingStore } from './features/onboarding/store'
@@ -14,6 +14,7 @@ import { refreshSafeAreaInsets } from './native/system-bars'
 import { addKeyboardVisibilityListener } from './native/keyboard'
 import { useStackLocation } from './lib/use-stack-location'
 import { useDelayed } from './lib/use-delayed'
+import { preloadScreen, usePreloadedScreen, type ScreenLoader } from './lib/preloaded-screen'
 import { useScreenStackStore } from './features/screen-stack/store'
 import {
   resolveBelowTransform,
@@ -40,29 +41,22 @@ const OnboardingScreen = lazy(() =>
 const ContentScreen = lazy(() =>
   import('./app/content-scheduler/ContentScreen').then((m) => ({ default: m.ContentScreen })),
 )
-const loadContentManageScreen = () => import('./app/content-scheduler/ContentManageScreen')
-const ContentManageScreen = lazy(() => loadContentManageScreen().then((m) => ({ default: m.ContentManageScreen })))
+const loadContentManageScreen: ScreenLoader = () => import('./app/content-scheduler/ContentManageScreen').then((m) => m.ContentManageScreen)
 const BossScreen = lazy(() =>
   import('./app/boss-scheduler/BossScreen').then((m) => ({ default: m.BossScreen })),
 )
-const loadBossManageScreen = () => import('./app/boss-scheduler/BossManageScreen')
-const BossManageScreen = lazy(() => loadBossManageScreen().then((m) => ({ default: m.BossManageScreen })))
+const loadBossManageScreen: ScreenLoader = () => import('./app/boss-scheduler/BossManageScreen').then((m) => m.BossManageScreen)
 const BossProfitScreen = lazy(() =>
   import('./app/boss-profit/BossProfitScreen').then((m) => ({ default: m.BossProfitScreen })),
 )
-const loadDropHistoryScreen = () => import('./app/boss-profit/DropHistoryScreen')
-const DropHistoryScreen = lazy(() => loadDropHistoryScreen().then((m) => ({ default: m.DropHistoryScreen })))
+const loadDropHistoryScreen: ScreenLoader = () => import('./app/boss-profit/DropHistoryScreen').then((m) => m.DropHistoryScreen)
 const SettingsScreen = lazy(() =>
   import('./app/settings/SettingsScreen').then((m) => ({ default: m.SettingsScreen })),
 )
-const loadSettingsReleaseNotesScreen = () => import('./app/settings/SettingsReleaseNotesScreen')
-const SettingsReleaseNotesScreen = lazy(() => loadSettingsReleaseNotesScreen().then((m) => ({ default: m.SettingsReleaseNotesScreen })))
-const loadSettingsAccountDataScreen = () => import('./app/settings/SettingsAccountDataScreen')
-const SettingsAccountDataScreen = lazy(() => loadSettingsAccountDataScreen().then((m) => ({ default: m.SettingsAccountDataScreen })))
-const loadSettingsAboutScreen = () => import('./app/settings/SettingsAboutScreen')
-const SettingsAboutScreen = lazy(() => loadSettingsAboutScreen().then((m) => ({ default: m.SettingsAboutScreen })))
-const loadSettingsPrivacyScreen = () => import('./app/settings/SettingsPrivacyScreen')
-const SettingsPrivacyScreen = lazy(() => loadSettingsPrivacyScreen().then((m) => ({ default: m.SettingsPrivacyScreen })))
+const loadSettingsReleaseNotesScreen: ScreenLoader = () => import('./app/settings/SettingsReleaseNotesScreen').then((m) => m.SettingsReleaseNotesScreen)
+const loadSettingsAccountDataScreen: ScreenLoader = () => import('./app/settings/SettingsAccountDataScreen').then((m) => m.SettingsAccountDataScreen)
+const loadSettingsAboutScreen: ScreenLoader = () => import('./app/settings/SettingsAboutScreen').then((m) => m.SettingsAboutScreen)
+const loadSettingsPrivacyScreen: ScreenLoader = () => import('./app/settings/SettingsPrivacyScreen').then((m) => m.SettingsPrivacyScreen)
 
 // 하위 페이지 청크를 **탭에 들어온 뒤 미리 받아둔다**([[ADR-120]] 결정 13). 그러지 않으면 각 하위
 // 페이지 첫 진입에 서스펜드가 일어나 스피너가 전환 없이 툭 떴다가 그제야 화면이 밀려 들어온다
@@ -73,7 +67,7 @@ const SettingsPrivacyScreen = lazy(() => loadSettingsPrivacyScreen().then((m) =>
 // 이유다 — 그 ADR 이 지키는 것은 첫 페인트 번들의 크기다.
 //
 // **새 하위 페이지를 더하면 여기에도 넣을 것.** 빠뜨리면 그 화면만 옛 증상으로 돌아간다.
-const STACK_PRELOADERS: Record<string, ReadonlyArray<() => Promise<unknown>>> = {
+const STACK_PRELOADERS: Record<string, ReadonlyArray<ScreenLoader>> = {
   '/content': [loadContentManageScreen],
   '/boss': [loadBossManageScreen],
   '/profit': [loadDropHistoryScreen],
@@ -105,6 +99,18 @@ function RouteFallback(): React.JSX.Element | null {
       <LoadingState message="불러오는 중" size="page" />
     </div>
   )
+}
+
+// 하위 페이지를 서스펜드 없이 그린다([[ADR-120]] 결정 15) — `lazy` 를 쓰지 않는 이유는
+// `lib/preloaded-screen` 주석 참고(요약: `lazy` 는 모듈이 이미 있어도 첫 렌더에 서스펜드하고,
+// React 는 fallback 을 커밋한 뒤 실제 콘텐츠 공개를 약 300ms 미룬다).
+function StackRoute({ load }: { load: ScreenLoader }): React.JSX.Element | null {
+  const screen = usePreloadedScreen(load)
+  // `createElement` 인 것은 취향이 아니라 필요다 — JSX(`<Screen />`)로 쓰면 지역 변수를 컴포넌트로
+  // 쓴다고 보는 린트 규칙(`Cannot create components during render`)에 걸린다. 그 규칙이 겨누는 것은
+  // **렌더마다 새로 만들어져 상태가 초기화되는** 컴포넌트인데, 이 값은 로더를 키로 한 캐시에서
+  // 나오므로 한 번 정해지면 바뀌지 않는다.
+  return screen === null ? null : createElement(screen)
 }
 
 // 탭 화면 + 탭바를 한 덩어리로 묶는다([[ADR-120]] 결정 4). 하위 페이지를 밀어 넣을 때 이 래퍼째
@@ -383,7 +389,7 @@ export function AppShell(): React.JSX.Element {
   useEffect(() => {
     if (!isCompleted) return
     for (const load of STACK_PRELOADERS[resolveTabPath(displayLocation.pathname)] ?? []) {
-      void load()
+      void preloadScreen(load)
     }
   }, [isCompleted, displayLocation.pathname])
 
@@ -405,8 +411,13 @@ export function AppShell(): React.JSX.Element {
   // 청크가 작고(1.9~11.0 kB) 부모 탭 진입 때 미리 받아두므로(`STACK_PRELOADERS`) 그 사이는
   // 한 프레임 남짓이고, 그동안 **부모 화면이 그대로 보인다** — 빈 화면이 아니라 "아직 안 밀려
   // 들어왔다"로 읽힌다. 오래 걸려도 부모가 남아 있으므로 아무것도 안 그리는 편이 낫다.
-  const stackRoute = (element: React.ReactNode): React.JSX.Element => (
-    <Suspense fallback={null}>{element}</Suspense>
+  const stackRoute = (load: ScreenLoader): React.JSX.Element => (
+    // `Suspense` 경계는 남긴다([[ADR-092]] 결정 3). `StackRoute` 자체는 서스펜드하지 않지만, 하위
+    // 페이지 **안**에서 무언가 서스펜드하면 이 경계가 없을 때 최상위 경계까지 올라가 부모 탭 화면이
+    // 폴백으로 대체된다 — [[ADR-077]] 이 막은 언마운트가 되살아난다.
+    <Suspense fallback={null}>
+      <StackRoute load={load} />
+    </Suspense>
   )
 
   return (
@@ -439,14 +450,14 @@ export function AppShell(): React.JSX.Element {
                 element={isCompleted ? <ContentScreen /> : <Navigate to="/onboarding" replace />}
               >
                 {/* ADR-035 결정 18: 수동 추적 항목 편집 전용 관리 페이지 — 스케줄러는 읽기 전용. */}
-                <Route path="manage" element={stackRoute(<ContentManageScreen />)} />
+                <Route path="manage" element={stackRoute(loadContentManageScreen)} />
               </Route>
               <Route
                 path="/boss"
                 element={isCompleted ? <BossScreen /> : <Navigate to="/onboarding" replace />}
               >
                 {/* ADR-035 결정 18: 보스 추적+파티 인원 통합 관리 페이지(파티 관리 모달 대체). */}
-                <Route path="manage" element={stackRoute(<BossManageScreen />)} />
+                <Route path="manage" element={stackRoute(loadBossManageScreen)} />
               </Route>
               <Route
                 path="/profit"
@@ -455,7 +466,7 @@ export function AppShell(): React.JSX.Element {
                 {/* 드롭 획득 히스토리(전 기간) — 보스 수익의 서브 화면([[ADR-071]] 결정 7, 이슈 #54).
                     이 앱에서 중첩 라우트를 처음 쓴 자리이고([[ADR-077]]), [[ADR-120]] 이 그 형태를
                     나머지 여섯에 넓혔다. */}
-                <Route path="drops" element={stackRoute(<DropHistoryScreen />)} />
+                <Route path="drops" element={stackRoute(loadDropHistoryScreen)} />
               </Route>
               <Route
                 path="/settings"
@@ -465,13 +476,13 @@ export function AppShell(): React.JSX.Element {
                     형제였던 것을 중첩으로 옮긴다 — 근거는 [[ADR-077]] 의 "부모 상태 보존"이 아니라
                     **전환 중 아래 화면이 보여야 한다**는 것이다. 가드는 부모가 대신 건다: 부모가
                     `/onboarding` 으로 리다이렉트되면 중첩 자식은 매칭될 자리가 사라진다. */}
-                <Route path="release-notes" element={stackRoute(<SettingsReleaseNotesScreen />)} />
-                <Route path="account-data" element={stackRoute(<SettingsAccountDataScreen />)} />
-                <Route path="about" element={stackRoute(<SettingsAboutScreen />)}>
+                <Route path="release-notes" element={stackRoute(loadSettingsReleaseNotesScreen)} />
+                <Route path="account-data" element={stackRoute(loadSettingsAccountDataScreen)} />
+                <Route path="about" element={stackRoute(loadSettingsAboutScreen)}>
                   {/* **`/settings/about` 의 자식**이다 — 이 화면의 행에서 열리므로 스택이 2단이
                       된다(이 앱에서 유일하다). 형제로 두면 about 이 즉시 사라진 자리에 처방침이
                       밀려 들어와, 밀려 나가는 화면 없이 배경만 바뀌는 프레임이 보인다. */}
-                  <Route path="privacy" element={stackRoute(<SettingsPrivacyScreen />)} />
+                  <Route path="privacy" element={stackRoute(loadSettingsPrivacyScreen)} />
                 </Route>
               </Route>
             </Routes>
