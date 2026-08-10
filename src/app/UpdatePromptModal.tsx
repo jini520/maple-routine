@@ -1,4 +1,15 @@
-import { AlertTriangle, CheckCircle2, CloudDownload, Info, Signal, Store } from 'lucide-react'
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ChevronDown,
+  CloudDownload,
+  Info,
+  Signal,
+  Sparkles,
+  Store,
+} from 'lucide-react'
 import { Modal } from '../components/organisms/Modal/Modal'
 import { useLiveUpdateStore, type LiveUpdateStatus } from '../features/live-update/store'
 import { ProgressBar } from '../components/atoms/ProgressBar/ProgressBar'
@@ -20,7 +31,12 @@ const MODAL_STATUSES: ReadonlySet<LiveUpdateStatus> = new Set([
   // 그 흐름의 실패라 download-error 와 같은 층이다.
   'applying',
   'apply-error',
+  // ADR-126 결정 4: 적용·재시작이 끝난 직후 1회. 부팅 때 뒤늦게 판정되는 유일한 상태다.
+  'updated',
 ])
+
+// 개발 노트 화면([[ADR-119]] · [[ADR-125]]) — 적용이 끝난 뒤에야 이 목록에 새 버전이 있다.
+const RELEASE_NOTES_PATH = '/settings/release-notes'
 
 function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)}MB`
@@ -71,11 +87,50 @@ function InfoNote({ children }: { children: React.ReactNode }): React.JSX.Elemen
   )
 }
 
+// 받기 전 모달의 「자세히 보기」 — 원격에서 온 핵심 목록을 **모달 안에서** 펼친다(ADR-126 결정 1).
+// 화면을 옮기지 않는 이유는 모달을 닫아야 하고 돌아왔을 때 다시 띄우는 처리가 필요한데, 정작 그
+// 화면(개발 노트)에는 아직 받지 않은 이 버전이 **없기** 때문이다.
+function HighlightsDisclosure({ highlights }: { highlights: string[] }): React.JSX.Element {
+  const [isOpen, setIsOpen] = useState(false)
+
+  return (
+    <div className="space-y-2">
+      <button
+        type="button"
+        onClick={() => setIsOpen((open) => !open)}
+        aria-expanded={isOpen}
+        className={`${GHOST_BTN} flex items-center justify-center gap-1`}
+      >
+        자세히 보기
+        <ChevronDown
+          className={`h-3.5 w-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          strokeWidth={2}
+          aria-hidden="true"
+        />
+      </button>
+      {isOpen && (
+        <ul className="space-y-1.5 rounded-[10px] bg-info-tint px-3.5 py-2.5 text-left">
+          {highlights.map((line) => (
+            <li key={line} className="flex gap-2 text-xs font-medium text-text">
+              <span aria-hidden="true" className="text-text-muted">
+                ·
+              </span>
+              <span className="min-w-0 flex-1">{line}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
 export function UpdatePromptModal(): React.JSX.Element | null {
   const {
     status,
+    currentVersion,
     availableVersion,
     availableSize,
+    availableHighlights,
     minNativeVersion,
     downloadProgress,
     channel,
@@ -85,12 +140,20 @@ export function UpdatePromptModal(): React.JSX.Element | null {
     openStore,
     dismiss,
   } = useLiveUpdateStore()
+  const navigate = useNavigate()
 
   if (!MODAL_STATUSES.has(status)) return null
 
   // 다운로드·적용이 도는 동안은 되돌릴 수 없거나 되돌리면 안 되는 구간이다.
   const isInProgress = status === 'downloading' || status === 'applying'
   const sizeText = availableSize !== null ? formatSize(availableSize) : ''
+
+  // 받은 뒤의 「자세히 보기」 — 여기서는 펼치지 않고 **전부 갖고 있는 화면으로 보낸다**(결정 1).
+  // 닫지 않으면 돌아왔을 때 같은 안내가 그대로 덮여 있다.
+  const openReleaseNotes = (): void => {
+    dismiss()
+    navigate(RELEASE_NOTES_PATH)
+  }
 
   return (
     // 진행 중에는 배경 탭으로 닫히지 않게 한다(진행 중 취소 방지). 폭은 살짝 좁게(max-w-xs).
@@ -113,6 +176,9 @@ export function UpdatePromptModal(): React.JSX.Element | null {
                 </div>
                 <p className="text-xs text-text-muted">다운로드 크기 {sizeText}</p>
               </div>
+              {/* ADR-126 결정 6: 없으면 **버튼째 그리지 않는다.** 옛 매니페스트에는 이 필드가 없고
+                  그것은 오류가 아니라 안 실려 온 것이라, 액션 없는 비활성 버튼을 두지 않는다. */}
+              {availableHighlights !== null && <HighlightsDisclosure highlights={availableHighlights} />}
               <div className="space-y-1">
                 <button type="button" onClick={() => void startDownload()} className={PRIMARY_BTN}>
                   다운로드
@@ -183,6 +249,30 @@ export function UpdatePromptModal(): React.JSX.Element | null {
                 </button>
                 <button type="button" onClick={dismiss} className={GHOST_BTN}>
                   나중에
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* ADR-126 결정 4: 적용 성공 경로에는 상태 전환 코드가 없으므로(ADR-117 결정 1) 이 안내는
+              **재시작 뒤 부팅에서** 뜬다. 여기서만 「자세히 보기」가 화면을 옮긴다 — 이 시점에야
+              새 버전 노트가 앱 안에 있고, 흐름이 이미 끝나 옮겨도 끊을 것이 없다. */}
+          {status === 'updated' && (
+            <>
+              <IconBadge icon={Sparkles} tone="primary" />
+              <div className="space-y-2">
+                <h2 className="text-base font-semibold text-text">업데이트를 마쳤어요</h2>
+                <div className="flex items-center justify-center">
+                  <VersionBadge version={currentVersion} />
+                </div>
+                <p className="text-xs text-text-muted">새 버전으로 다시 시작했어요.</p>
+              </div>
+              <div className="space-y-1">
+                <button type="button" onClick={dismiss} className={PRIMARY_BTN}>
+                  확인
+                </button>
+                <button type="button" onClick={openReleaseNotes} className={GHOST_BTN}>
+                  자세히 보기
                 </button>
               </div>
             </>
