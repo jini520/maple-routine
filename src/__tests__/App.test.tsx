@@ -304,7 +304,10 @@ describe('AppShell', () => {
 
   // ADR-118 결정 2: 설정 하위 페이지 셋은 `/settings` 의 **형제** 라우트이고, 가드도 똑같이 건다.
   it.each([
+    ['/settings/guide', '기능 설명'],
+    ['/settings/guide/boss-party', '파티 인원 관리'],
     ['/settings/release-notes', '개발 노트'],
+    ['/settings/release-notes/boss-party', '파티 인원 관리'],
     ['/settings/account-data', '계정 및 데이터'],
     ['/settings/about', '앱 정보'],
   ])('status가 completed일 때 %s 로 접근하면 그 화면이 보인다', async (path, heading) => {
