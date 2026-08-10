@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
-import { MemoryRouter, Route, Routes, useParams } from 'react-router-dom'
+import { MemoryRouter, Route, Routes, useParams, useSearchParams } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import packageJson from '../../../../package.json'
 import type { ReleaseNote } from '../../../types'
@@ -55,7 +55,13 @@ function mockLiveUpdateStore(overrides: Partial<ReturnType<typeof useLiveUpdateS
 // 상세 화면은 이 테스트의 관심사가 아니다 — 여기서 확인할 것은 "그 항목이 저리로 간다"까지다.
 function GuideProbe(): React.JSX.Element {
   const { guideId } = useParams()
-  return <div>안내 프로브 {guideId}</div>
+  const [searchParams] = useSearchParams()
+  return (
+    <div>
+      안내 프로브 {guideId}
+      {searchParams.get('s') !== null && <span> 마디 {searchParams.get('s')}</span>}
+    </div>
+  )
 }
 
 function renderReleaseNotesScreen(): ReturnType<typeof render> {
@@ -250,7 +256,30 @@ describe('SettingsReleaseNotesScreen', () => {
     expect(screen.getByText('안내가 없는 수정')).toBeInTheDocument()
 
     fireEvent.click(guided)
-    expect(screen.getByText('안내 프로브 파티-모달')).toBeInTheDocument()
+    expect(screen.getByText(/안내 프로브 파티-모달/)).toBeInTheDocument()
+  })
+
+  // ADR-125 결정 7: 릴리스에서 바뀐 것은 보통 기능 전체가 아니라 그중 한 마디다 — 안내 첫머리에
+  // 떨어뜨리면 읽는 사람이 그 마디를 다시 찾아야 한다.
+  it('guideSectionId 가 있으면 그 마디까지 넘긴다', () => {
+    fixture = [
+      {
+        version: '1.0.4',
+        date: '2026-08-20',
+        items: [
+          {
+            category: 'improvement',
+            text: '마디를 가리키는 항목',
+            guideId: '파티-모달',
+            guideSectionId: 'card',
+          },
+        ],
+      },
+    ]
+    renderReleaseNotesScreen()
+
+    fireEvent.click(screen.getByRole('button', { name: /마디를 가리키는 항목/ }))
+    expect(screen.getByText(/마디 card/)).toBeInTheDocument()
   })
 
   // 안내 없는 항목은 **DOM 이 종전과 같다** — 래퍼도 클래스도 만들지 않는다(ADR-125 결정 5).

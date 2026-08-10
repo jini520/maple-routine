@@ -38,22 +38,23 @@ function renderListScreen(): ReturnType<typeof render> {
 }
 
 const 보스안내: FeatureGuide = {
-  id: 'boss-card-party',
-  title: '보스 카드에서 파티 인원 고치기',
-  group: 'boss',
-  blocks: [{ text: '보스 설명' }],
+  id: 'boss-party',
+  title: '파티 인원 관리',
+  groups: ['boss'],
+  sections: [{ id: 'a', title: '마디', blocks: [{ text: '보스 설명' }] }],
 }
 const 수익안내: FeatureGuide = {
   id: 'drop-item-price',
-  title: '드롭 아이템에 판매 가격 매기기',
-  group: 'profit',
-  blocks: [{ text: '수익 설명' }],
+  title: '아이템 가격 기록 방법',
+  groups: ['profit'],
+  sections: [{ id: 'a', title: '마디', blocks: [{ text: '수익 설명' }] }],
 }
+// 「캐릭터 관리」처럼 **두 그룹에 서는** 안내 — 사본이 아니라 같은 글 한 벌이다.
 const 공통안내: FeatureGuide = {
-  id: 'stack-navigation',
-  title: '하위 화면을 쓸어서 되돌아가기',
-  group: 'common',
-  blocks: [{ text: '공통 설명' }],
+  id: 'character-manage',
+  title: '캐릭터 관리',
+  groups: ['content', 'boss'],
+  sections: [{ id: 'a', title: '마디', blocks: [{ text: '공통 설명' }] }],
 }
 
 beforeEach(() => {
@@ -81,7 +82,7 @@ describe('SettingsFeatureGuideListScreen', () => {
     renderListScreen()
 
     const tabs = screen.getAllByTestId('guide-group-tab').map((node) => node.textContent)
-    expect(tabs).toEqual(['보스', '수익', '공통'])
+    expect(tabs).toEqual(['컨텐츠', '보스', '수익'])
   })
 
   // ThemeSelector·개발 노트의 카테고리 섹션과 같은 규칙 — 거른 결과가 0이면 탭째 감춘다.
@@ -89,8 +90,21 @@ describe('SettingsFeatureGuideListScreen', () => {
   it('안내가 없는 그룹은 탭째 그리지 않는다', () => {
     renderListScreen()
 
-    expect(screen.queryByText('컨텐츠')).not.toBeInTheDocument()
+    // 지금 실제 데이터에서 `유틸리티` 가 이 처지다.
+    expect(screen.queryByText('유틸리티')).not.toBeInTheDocument()
     expect(screen.queryByText('설정')).not.toBeInTheDocument()
+  })
+
+  // 한 안내가 여러 그룹에 선다(ADR-125 결정 1 정정) — 「캐릭터 관리」가 컨텐츠·보스 양쪽에
+  // 같은 글로 서야 한다. 사본을 두면 갈라진다.
+  it('여러 그룹에 속한 안내는 그 그룹 탭마다 나온다', () => {
+    renderListScreen()
+
+    expect(screen.getByText('캐릭터 관리')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('tab', { name: '보스' }))
+    expect(screen.getByText('캐릭터 관리')).toBeInTheDocument()
+    expect(screen.getByText('파티 인원 관리')).toBeInTheDocument()
   })
 
   it('첫 탭이 처음부터 선택돼 있고, 그 그룹의 안내만 보인다', () => {
@@ -98,8 +112,9 @@ describe('SettingsFeatureGuideListScreen', () => {
 
     const tabs = screen.getAllByTestId('guide-group-tab')
     expect(tabs[0]).toHaveAttribute('aria-selected', 'true')
-    expect(screen.getByText('보스 카드에서 파티 인원 고치기')).toBeInTheDocument()
-    expect(screen.queryByText('드롭 아이템에 판매 가격 매기기')).not.toBeInTheDocument()
+    // 첫 탭은 `컨텐츠` 이고 거기엔 공통 안내만 있다.
+    expect(screen.getByText('캐릭터 관리')).toBeInTheDocument()
+    expect(screen.queryByText('아이템 가격 기록 방법')).not.toBeInTheDocument()
   })
 
   it('탭을 바꾸면 그 그룹의 안내로 갈아탄다', () => {
@@ -107,8 +122,8 @@ describe('SettingsFeatureGuideListScreen', () => {
 
     fireEvent.click(screen.getByRole('tab', { name: '수익' }))
 
-    expect(screen.getByText('드롭 아이템에 판매 가격 매기기')).toBeInTheDocument()
-    expect(screen.queryByText('보스 카드에서 파티 인원 고치기')).not.toBeInTheDocument()
+    expect(screen.getByText('아이템 가격 기록 방법')).toBeInTheDocument()
+    expect(screen.queryByText('파티 인원 관리')).not.toBeInTheDocument()
     expect(screen.getByRole('tab', { name: '수익' })).toHaveAttribute('aria-selected', 'true')
     expect(screen.getByRole('tab', { name: '보스' })).toHaveAttribute('aria-selected', 'false')
   })
@@ -116,8 +131,9 @@ describe('SettingsFeatureGuideListScreen', () => {
   it('안내를 누르면 그 상세로 간다', () => {
     renderListScreen()
 
-    fireEvent.click(screen.getByRole('button', { name: /보스 카드에서 파티 인원 고치기/ }))
-    expect(screen.getByText('안내 프로브 boss-card-party')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('tab', { name: '보스' }))
+    fireEvent.click(screen.getByRole('button', { name: /파티 인원 관리/ }))
+    expect(screen.getByText('안내 프로브 boss-party')).toBeInTheDocument()
   })
 
   it('안내가 하나도 없으면 빈 상태를 그리고 탭도 만들지 않는다', () => {
@@ -134,13 +150,13 @@ describe('SettingsFeatureGuideListScreen', () => {
     renderListScreen()
 
     expect(screen.queryAllByTestId('guide-group-tab')).toHaveLength(0)
-    expect(screen.getByText('보스 카드에서 파티 인원 고치기')).toBeInTheDocument()
+    expect(screen.getByText('파티 인원 관리')).toBeInTheDocument()
   })
 
   it('한 그룹에 여러 안내가 있으면 데이터 순서대로 나열한다', () => {
     fixture = [
-      { ...수익안내, id: 'a', title: '먼저 것' },
-      { ...수익안내, id: 'b', title: '나중 것' },
+      { ...수익안내, id: 'first', title: '먼저 것' },
+      { ...수익안내, id: 'second', title: '나중 것' },
     ]
     renderListScreen()
 

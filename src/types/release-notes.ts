@@ -41,6 +41,13 @@ export interface ReleaseNoteItem {
    * **정상이다**: 카탈로그가 원천이므로 옛 기능은 노트 없이 안내만 있는 것이 맞다.
    */
   guideId?: string
+  /**
+   * 안내 **안의 어느 마디**로 떨어질지([[ADR-125]] 결정 7). `guideId` 없이 홀로 있으면 뜻이 없다.
+   *
+   * 릴리스에서 바뀐 것은 보통 기능 전체가 아니라 그중 한 마디다 — 페이지 맨 위에 떨어뜨리면
+   * 읽는 사람이 그 마디를 다시 찾아야 한다. 비워 두면 안내 첫머리로 간다.
+   */
+  guideSectionId?: string
 }
 
 export interface ReleaseNote {

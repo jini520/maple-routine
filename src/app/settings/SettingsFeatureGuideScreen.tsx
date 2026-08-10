@@ -1,8 +1,11 @@
+import { useEffect, useRef } from 'react'
 import { ArrowLeft } from 'lucide-react'
-import { Navigate, useLocation, useParams } from 'react-router-dom'
+import { Navigate, useLocation, useParams, useSearchParams } from 'react-router-dom'
 import { findFeatureGuide } from '../../data/feature-guides'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { StackScreen } from '../../components/templates/StackScreen/StackScreen'
+import { Card } from '../../components/atoms/Card/Card'
+import { GUIDE_SECTION_PARAM } from '../../lib/guide-route'
 import { resolveParentPath } from '../../lib/stack-transition'
 import { useStackBack } from '../../lib/use-stack-back'
 
@@ -11,7 +14,7 @@ import { useStackBack } from '../../lib/use-stack-back'
 // 골격은 다른 하위 페이지와 같다: 공용 `StackScreen`(오버레이 + 푸시/팝 + 스와이프 백) +
 // `PageHeader`(fixed + 실측 spacer).
 //
-// **이 화면은 두 부모 아래 각각 라우팅된다**(결정 3 정정, 2026-08-10):
+// **이 화면은 두 부모 아래 각각 라우팅된다**(결정 3 정정):
 //
 //     /settings/guide/:guideId          기능 설명 목록에서
 //     /settings/release-notes/:guideId  개발 노트 항목에서
@@ -25,16 +28,41 @@ import { useStackBack } from '../../lib/use-stack-back'
 // 깎아** 쓴다. 어디서 왔든 그리로 돌아가야 하고(개발 노트에서 들어왔는데 기능 설명 목록으로 튀면
 // 읽던 자리를 잃는다), 딥링크 폴백도 같은 값이어야 한다.
 //
+// **마디(`?s=`)는 경로가 아니라 쿼리다**(결정 7). 세그먼트로 만들면 `resolveStackDirection` 이
+// 스택 한 단이 더 쌓인 것으로 읽어 목차를 누를 때마다 화면이 밀려 들어온다 — 같은 화면 안의
+// 이동이므로 스택은 움직이면 안 된다.
+//
 // **데이터는 앱 번들 안에 있다**(결정 4) — 글도 이미지도 `src/` 에서 온다. 그래서 이 화면에는
 // 로딩·에러·오프라인 상태가 없다.
+
+function sectionDomId(guideId: string, sectionId: string): string {
+  return `guide-${guideId}-${sectionId}`
+}
 
 export function SettingsFeatureGuideScreen(): React.JSX.Element {
   const { guideId } = useParams()
   const { pathname } = useLocation()
+  const [searchParams, setSearchParams] = useSearchParams()
   // `/settings/guide/x` → `/settings/guide` · `/settings/release-notes/x` → `/settings/release-notes`
   const parentPath = resolveParentPath(pathname)
   const goBack = useStackBack(parentPath)
   const guide = guideId === undefined ? undefined : findFeatureGuide(guideId)
+
+  const requestedSection = searchParams.get(GUIDE_SECTION_PARAM)
+  // 한 번 스크롤한 뒤에는 다시 하지 않는다 — 목차를 눌러 다른 마디로 옮겨 놓고도 이 효과가
+  // 또 돌면 처음 마디로 되끌려 간다.
+  const scrolledTo = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (guide === undefined || requestedSection === null) return
+    if (scrolledTo.current === requestedSection) return
+    const target = document.getElementById(sectionDomId(guide.id, requestedSection))
+    if (target === null) return
+    scrolledTo.current = requestedSection
+    // 즉시(`smooth` 아님) — 밀려 들어오는 전환과 부드러운 스크롤이 겹치면 둘 다 어그러진다.
+    // 들어온 순간 이미 그 마디에 서 있는 편이 낫다.
+    target.scrollIntoView({ block: 'start' })
+  }, [guide, requestedSection])
 
   // 옛 딥링크·오타의 착지점이 빈 화면이면 안 된다. 히스토리에 남겨 뒤로가기가 다시 그리로 가게 둘
   // 이유도 없으므로 push 가 아니라 **replace** 다([[ADR-125]] 결정 3).
@@ -58,24 +86,60 @@ export function SettingsFeatureGuideScreen(): React.JSX.Element {
         </div>
       </PageHeader>
 
-      {/* 블록을 **데이터 순서 그대로** 쌓는다 — 이미지만·문단만·둘 다가 모두 정상이고([[ADR-125]]
-          결정 6), 화면이 다시 배열하지 않는다. */}
       <div className="space-y-5 px-4 pb-6">
-        {guide.blocks.map((block, index) => (
-          <div key={index} data-testid="guide-block" className="space-y-2">
-            {block.image !== undefined && (
-              // 대체 텍스트는 타입이 강제한다(`FeatureGuideImage`) — 안내 화면에서 이미지는
-              // 장식이 아니라 정보를 나른다.
-              <img
-                src={block.image.src}
-                alt={block.image.alt}
-                className="w-full rounded-[14px] border border-border"
-              />
-            )}
-            {block.text !== undefined && (
-              <p className="text-sm leading-relaxed text-text-muted">{block.text}</p>
-            )}
-          </div>
+        {/* 목차. **마디가 둘 이상일 때만** 뜻이 있다 — 하나뿐이면 아래 소제목과 같은 말을 두 번
+            하는 것이다. 누르면 스택을 건드리지 않고 `?s=` 만 갈아 끼워(replace) 그 자리로 간다. */}
+        {guide.sections.length > 1 && (
+          <nav aria-label="목차">
+            <Card className="p-4">
+              <ul className="space-y-2">
+                {guide.sections.map((section) => (
+                  <li key={section.id}>
+                    <button
+                      type="button"
+                      data-testid="guide-toc-item"
+                      onClick={() => {
+                        scrolledTo.current = null
+                        setSearchParams({ [GUIDE_SECTION_PARAM]: section.id }, { replace: true })
+                      }}
+                      className="text-left text-sm text-primary-ink"
+                    >
+                      {section.title}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          </nav>
+        )}
+
+        {/* 마디도 그 안의 블록도 **데이터 순서 그대로** 쌓는다 — 이미지만·문단만·둘 다가 모두
+            정상이고([[ADR-125]] 결정 6), 화면이 다시 배열하지 않는다. */}
+        {guide.sections.map((section) => (
+          <section
+            key={section.id}
+            id={sectionDomId(guide.id, section.id)}
+            data-testid="guide-section"
+            className="scroll-mt-4 space-y-2"
+          >
+            <h2 className="text-base font-semibold text-text">{section.title}</h2>
+            {section.blocks.map((block, index) => (
+              <div key={index} data-testid="guide-block" className="space-y-2">
+                {block.image !== undefined && (
+                  // 대체 텍스트는 타입이 강제한다(`FeatureGuideImage`) — 안내 화면에서 이미지는
+                  // 장식이 아니라 정보를 나른다.
+                  <img
+                    src={block.image.src}
+                    alt={block.image.alt}
+                    className="w-full rounded-[14px] border border-border"
+                  />
+                )}
+                {block.text !== undefined && (
+                  <p className="text-sm leading-relaxed text-text-muted">{block.text}</p>
+                )}
+              </div>
+            ))}
+          </section>
         ))}
       </div>
     </StackScreen>

@@ -14,6 +14,7 @@ import { Badge } from '../../components/atoms/Badge/Badge'
 import { Card } from '../../components/atoms/Card/Card'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { useStackBack } from '../../lib/use-stack-back'
+import { buildGuidePath } from '../../lib/guide-route'
 
 // 설정 하위 페이지 「개발 노트」(ADR-118 결정 2 · ADR-119) — 버전별 변경 목록.
 //
@@ -99,6 +100,9 @@ export function SettingsReleaseNotesScreen(): React.JSX.Element {
                     </p>
                     <ul className="space-y-2">
                       {items.map((item) => {
+                        // 지역 상수로 받는다 — `item.guideId` 를 콜백 안에서 그대로 쓰면 바깥의
+                        // `undefined` 검사로 좁혀진 타입이 클로저 경계에서 풀린다.
+                        const guideId = item.guideId
                         const body = (
                           <div className="min-w-0 flex-1 space-y-1">
                             <p>{item.text}</p>
@@ -122,13 +126,15 @@ export function SettingsReleaseNotesScreen(): React.JSX.Element {
                                 정상이므로 비활성 버튼을 두지 않고, 그 항목의 DOM 은 종전 그대로다 —
                                 래퍼도 클래스도 만들지 않는다. chevron 은 설정 행과 같은 약속이다
                                 (있으면 누르면 무언가 열린다, ADR-118 결정 4). */}
-                            {item.guideId === undefined ? (
+                            {guideId === undefined ? (
                               body
                             ) : (
                               <button
                                 type="button"
                                 onClick={() => {
-                                  navigate(`${SELF_PATH}/${item.guideId}`)
+                                  // 마디까지 가리키면 그 자리로 떨어진다([[ADR-125]] 결정 7) —
+                                  // 릴리스에서 바뀐 것은 보통 기능 전체가 아니라 그중 한 마디다.
+                                  navigate(buildGuidePath(SELF_PATH, guideId, item.guideSectionId))
                                 }}
                                 className="flex min-w-0 flex-1 items-start gap-2 text-left"
                               >

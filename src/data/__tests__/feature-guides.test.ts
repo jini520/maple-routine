@@ -10,7 +10,7 @@ import {
 // 안내는 노트 항목과 **다른 파일**에 산다(ADR-125 결정 2) — 배포 스크립트가 `release-notes.ts` 를
 // Node 에서 직접 import 하는데(`scripts/publish-live-update.mjs`) 안내가 들고 오는 `.webp` import 를
 // Node 가 해석하지 못하기 때문이다. 파일이 갈린 대가로 **둘이 어긋날 자리**가 생기고, 그 방어선이
-// 이 파일이다. 타입은 `guideId` 가 실재하는 id 인지 모른다 — 문자열일 뿐이다.
+// 이 파일이다. 타입은 `guideId`·`guideSectionId` 가 실재하는지 모른다 — 문자열일 뿐이다.
 
 describe('feature-guides 형식', () => {
   it('id 에 중복이 없다', () => {
@@ -24,20 +24,22 @@ describe('feature-guides 형식', () => {
     }
   })
 
-  it('모든 안내가 블록을 최소 하나 갖는다', () => {
+  // 순서 상수에 없는 그룹은 화면에서 **탭째 사라져** 그 안내에 닿을 길이 없어진다.
+  it('모든 안내가 정해진 그룹에만 속하고, 최소 하나를 갖는다', () => {
     for (const guide of FEATURE_GUIDES) {
-      expect(guide.blocks.length, `${guide.id} 에 블록이 없음`).toBeGreaterThan(0)
+      expect(guide.groups.length, `${guide.id} 에 group 이 없음`).toBeGreaterThan(0)
+      for (const group of guide.groups) {
+        expect(FEATURE_GUIDE_GROUP_ORDER, `${guide.id} 에 알 수 없는 group "${group}"`).toContain(
+          group,
+        )
+      }
     }
   })
 
-  // 순서 상수에 없는 그룹은 화면에서 **탭째 사라져** 그 안내에 닿을 길이 없어진다
-  // (`RELEASE_NOTE_CATEGORY_ORDER` 가 카테고리에서 겪는 것과 같은 실패다).
-  it('모든 안내의 group 이 정해진 셋 중 하나다', () => {
+  // 같은 그룹을 두 번 적으면 그 탭에서 같은 행이 두 번 나온다.
+  it('한 안내의 groups 에 중복이 없다', () => {
     for (const guide of FEATURE_GUIDES) {
-      expect(
-        FEATURE_GUIDE_GROUP_ORDER,
-        `${guide.id} 에 알 수 없는 group "${guide.group}"`,
-      ).toContain(guide.group)
+      expect(new Set(guide.groups).size, `${guide.id} 의 groups 에 중복`).toBe(guide.groups.length)
     }
   })
 
@@ -47,57 +49,116 @@ describe('feature-guides 형식', () => {
     }
   })
 
+  it('모든 안내가 섹션을 최소 하나 갖고, 섹션마다 제목이 있다', () => {
+    for (const guide of FEATURE_GUIDES) {
+      expect(guide.sections.length, `${guide.id} 에 섹션이 없음`).toBeGreaterThan(0)
+      for (const section of guide.sections) {
+        expect(section.title.trim(), `${guide.id}/${section.id} 의 title 이 비어 있음`).not.toBe('')
+        expect(section.id.trim(), `${guide.id} 에 id 가 빈 섹션이 있음`).not.toBe('')
+      }
+    }
+  })
+
+  // 섹션 id 는 목차 링크이자 `?s=` 의 값이다 — 겹치면 노트가 가리킨 마디가 어디인지 정해지지 않는다.
+  it('한 안내 안에서 섹션 id 가 겹치지 않는다', () => {
+    for (const guide of FEATURE_GUIDES) {
+      const ids = guide.sections.map((section) => section.id)
+      expect(new Set(ids).size, `${guide.id} 의 섹션 id 중복: ${ids.join(', ')}`).toBe(ids.length)
+    }
+  })
+
+  it('모든 섹션이 블록을 최소 하나 갖는다', () => {
+    for (const guide of FEATURE_GUIDES) {
+      for (const section of guide.sections) {
+        expect(
+          section.blocks.length,
+          `${guide.id}/${section.id} 에 블록이 없음`,
+        ).toBeGreaterThan(0)
+      }
+    }
+  })
+
   // 이미지도 문단도 없는 블록은 그릴 것이 없다 — 타입은 둘 다 선택이라 통과시킨다.
   it('이미지도 문단도 없는 빈 블록이 없다', () => {
     for (const guide of FEATURE_GUIDES) {
-      guide.blocks.forEach((block, index) => {
-        const hasText = block.text !== undefined && block.text.trim() !== ''
-        expect(
-          hasText || block.image !== undefined,
-          `${guide.id} 의 ${index}번 블록이 비어 있음`,
-        ).toBe(true)
-      })
+      for (const section of guide.sections) {
+        section.blocks.forEach((block, index) => {
+          const hasText = block.text !== undefined && block.text.trim() !== ''
+          expect(
+            hasText || block.image !== undefined,
+            `${guide.id}/${section.id} 의 ${index}번 블록이 비어 있음`,
+          ).toBe(true)
+        })
+      }
     }
   })
 
   // 안내 화면에서 이미지는 장식이 아니라 **정보를 나른다**(ADR-125 결정 6).
   it('이미지 블록에는 공백 아닌 대체 텍스트가 있다', () => {
     for (const guide of FEATURE_GUIDES) {
-      for (const block of guide.blocks) {
-        if (block.image === undefined) continue
-        expect(block.image.alt.trim(), `${guide.id} 에 대체 텍스트 없는 이미지가 있음`).not.toBe('')
-        expect(block.image.src.trim(), `${guide.id} 에 src 가 빈 이미지가 있음`).not.toBe('')
+      for (const section of guide.sections) {
+        for (const block of section.blocks) {
+          if (block.image === undefined) continue
+          expect(block.image.alt.trim(), `${guide.id} 에 대체 텍스트 없는 이미지`).not.toBe('')
+          expect(block.image.src.trim(), `${guide.id} 에 src 가 빈 이미지`).not.toBe('')
+        }
       }
     }
   })
 })
 
-describe('노트 항목 → 안내 참조 (ADR-125 결정 1 정정)', () => {
-  const linkedIds = RELEASE_NOTES.flatMap((note) =>
-    note.items.map((item) => item.guideId).filter((id): id is string => id !== undefined),
+describe('노트 항목 → 안내 참조 (ADR-125 결정 1 정정 · 결정 7)', () => {
+  const links = RELEASE_NOTES.flatMap((note) =>
+    note.items
+      .filter((item) => item.guideId !== undefined)
+      .map((item) => ({ guideId: item.guideId as string, sectionId: item.guideSectionId })),
   )
 
   it('모든 guideId 에 대응하는 안내가 있다 — 미아 참조 금지', () => {
     const guideIds = new Set(FEATURE_GUIDES.map((guide) => guide.id))
-    for (const id of linkedIds) {
-      expect(guideIds.has(id), `노트 항목이 없는 안내 "${id}" 를 가리킨다`).toBe(true)
+    for (const link of links) {
+      expect(guideIds.has(link.guideId), `노트 항목이 없는 안내 "${link.guideId}" 를 가리킨다`).toBe(
+        true,
+      )
+    }
+  })
+
+  // 섹션까지 가리켰는데 그 마디가 없으면 **화면은 조용히 첫머리로 떨어진다** — 링크가 깨진 것을
+  // 아무도 눈치채지 못한다. 그래서 여기서 막는다.
+  it('guideSectionId 가 있으면 그 안내 안에 실재하는 섹션이다', () => {
+    for (const link of links) {
+      if (link.sectionId === undefined) continue
+      const guide = findFeatureGuide(link.guideId)
+      expect(
+        guide?.sections.some((section) => section.id === link.sectionId),
+        `"${link.guideId}" 에 "${link.sectionId}" 마디가 없다`,
+      ).toBe(true)
+    }
+  })
+
+  it('guideSectionId 만 있고 guideId 가 없는 항목은 없다', () => {
+    for (const note of RELEASE_NOTES) {
+      for (const item of note.items) {
+        if (item.guideSectionId === undefined) continue
+        expect(item.guideId, `"${item.text}" 가 guideId 없이 마디만 가리킨다`).toBeDefined()
+      }
     }
   })
 
   // **반대 방향은 강제하지 않는다** — 이것이 결정 1 정정의 핵심이다. 원천이 기능 카탈로그로
   // 옮겨갔으므로 "노트에 안 걸린 안내"는 결함이 아니라 **정상**이다: 옛 기능은 릴리스 노트가
-  // 남아 있지 않아도 사용법은 있어야 하고, 안내는 그 기능이 살아 있는 한 계속 산다.
-  // (버전 축이던 시절엔 이것이 "고아 안내"라 금지 대상이었다.)
+  // 남아 있지 않아도 사용법은 있어야 한다. (버전 축이던 시절엔 "고아 안내"라 금지 대상이었다.)
   it('노트가 가리키지 않는 안내가 있어도 된다 — 카탈로그가 원천이다', () => {
-    const linked = new Set(linkedIds)
-    const unlinked = FEATURE_GUIDES.filter((guide) => !linked.has(guide.id))
-    expect(Array.isArray(unlinked)).toBe(true)
+    const linked = new Set(links.map((link) => link.guideId))
+    expect(FEATURE_GUIDES.some((guide) => !linked.has(guide.id))).toBe(true)
   })
 
-  // 같은 안내가 두 항목에 붙으면 목록에서 같은 화면으로 가는 `›` 가 둘이 되고,
-  // 어느 항목의 설명인지가 흐려진다.
-  it('한 안내가 두 노트 항목에 물리지 않는다', () => {
-    expect(new Set(linkedIds).size, `중복 참조: ${linkedIds.join(', ')}`).toBe(linkedIds.length)
+  // 막는 것은 "같은 안내"가 아니라 **같은 (안내, 마디)** 쌍이다 — 한 릴리스가 같은 기능의 서로
+  // 다른 마디를 건드리는 것은 정상이고(예: 가격 입력과 갈라 보기), 그때 두 항목은 각자 다른
+  // 자리로 가야 한다. 같은 자리로 가는 `›` 가 둘이면 어느 항목의 설명인지 흐려진다.
+  it('같은 (안내, 마디) 를 두 노트 항목이 가리키지 않는다', () => {
+    const keys = links.map((link) => `${link.guideId}#${link.sectionId ?? ''}`)
+    expect(new Set(keys).size, `중복 참조: ${keys.join(', ')}`).toBe(keys.length)
   })
 })
 

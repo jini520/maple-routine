@@ -49,12 +49,16 @@ export const RELEASE_NOTES: ReleaseNote[] = [
       },
       {
         category: 'feature',
-        text: '개발 노트에서 새 기능 사용법 보기',
-        guideId: 'release-note-guide',
+        text: '기능 설명 추가 — 기능별 사용법을 분류해 안내',
       },
       {
         category: 'improvement',
         text: '총 수익을 결정석과 아이템으로 나눠 보기',
+        // 같은 안내의 **다른 마디**를 가리킨다(ADR-125 결정 7) — 위 「판매 가격」 항목은
+        // `where` 로, 이 항목은 갈라 보는 자리로 간다. 그래서 참조 규칙이 막는 것은
+        // "같은 안내"가 아니라 **같은 (안내, 마디)** 쌍이다.
+        guideId: 'drop-item-price',
+        guideSectionId: 'total',
       },
       {
         // 사라진 것도 적는다 — 말없이 없어지면 고장으로 읽힌다. **다시 넣겠다고 쓰지 않는다**:
@@ -66,12 +70,14 @@ export const RELEASE_NOTES: ReleaseNote[] = [
       {
         category: 'improvement',
         text: '보스 카드를 탭해 파티 인원·난이도를 그 자리에서 수정',
-        guideId: 'boss-card-party',
+        guideId: 'boss-party',
+        // 이 릴리스에서 바뀐 것은 파티 인원 기능 전체가 아니라 **카드에서 바로 고치는 것**
+        // 하나다 — 안내 첫머리에 떨어뜨리면 그 마디를 다시 찾아야 한다(ADR-125 결정 7).
+        guideSectionId: 'card',
       },
       {
         category: 'improvement',
         text: '하위 화면이 밀려 들어오고, 왼쪽 가장자리를 쓸어 되돌아가기',
-        guideId: 'stack-navigation',
       },
       {
         // 위 항목과 가른 이유가 ADR-119 결정 3 그 자체다. 스와이프 백은 OTA 로 가지만 이 항목은
