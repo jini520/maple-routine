@@ -99,6 +99,7 @@ function subtotal(overrides: Partial<BossProfitWeeklySubtotal> = {}): BossProfit
     imageUrl: null,
     periodKey: PERIOD_KEY,
     totalMeso: 5_000_000,
+    drops: [],
     state: 'recorded',
     ...overrides,
   }

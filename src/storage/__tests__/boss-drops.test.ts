@@ -65,6 +65,9 @@ describe('replaceBossDropRecords', () => {
       null,
       1,
       '2026-07-26T00:00:00.000Z',
+      null,
+      null,
+      null,
     ])
 
     const [, insValues1] = runMock.mock.calls[2]
@@ -81,6 +84,9 @@ describe('replaceBossDropRecords', () => {
       3,
       1,
       '2026-07-26T00:00:00.000Z',
+      null,
+      null,
+      null,
     ])
   })
 
@@ -151,6 +157,9 @@ describe('getBossDropRecords', () => {
         ringLevel: 3,
         quantity: 1,
         recordedAt: '2026-07-26T00:00:00.000Z',
+        priceState: null,
+        priceMeso: null,
+        priceShare: null,
       },
     ])
   })
@@ -230,6 +239,9 @@ describe('getAllBossDropRecords', () => {
         ringLevel: null,
         quantity: 1,
         recordedAt: '2026-07-26T00:00:00.000Z',
+        priceState: null,
+        priceMeso: null,
+        priceShare: null,
       },
     ])
   })
@@ -239,5 +251,84 @@ describe('getAllBossDropRecords', () => {
     const { getAllBossDropRecords } = await import('../boss-drops')
 
     await expect(getAllBossDropRecords(['ocid-1'])).resolves.toEqual([])
+  })
+})
+
+// 가격 컬럼 왕복 ([[ADR-124]] 결정 4) — 저장한 값이 그대로 읽혀야 한다. 쓰기·읽기 어느 한쪽만
+// 컬럼을 알면 값이 조용히 사라진다.
+describe('가격 컬럼 왕복 (ADR-124)', () => {
+  it('INSERT 에 price_state·price_meso·price_share 를 함께 싣는다', async () => {
+    const { replaceBossDropRecords } = await import('../boss-drops')
+
+    await replaceBossDropRecords(
+      'ocid-1',
+      '스우',
+      '하드',
+      '2026-08-06',
+      [
+        {
+          category: 'equipment',
+          itemName: '루즈 컨트롤 머신 마크',
+          slot: '얼굴장식',
+          quantity: 1,
+          priceState: 'entered',
+          priceMeso: 15_000_000_000,
+          priceShare: 3,
+        },
+      ],
+      '2026-08-10T00:00:00.000Z',
+    )
+
+    const insert = runMock.mock.calls.find(([sql]) => String(sql).includes('INSERT'))
+    expect(insert?.[0]).toContain('price_state')
+    expect(insert?.[1]).toEqual(expect.arrayContaining(['entered', 15_000_000_000, 3]))
+  })
+
+  it('가격이 없는 드롭은 세 컬럼을 NULL 로 넣는다 — 0 이 아니다', async () => {
+    const { replaceBossDropRecords } = await import('../boss-drops')
+
+    await replaceBossDropRecords(
+      'ocid-1',
+      '스우',
+      '하드',
+      '2026-08-06',
+      [{ category: 'equipment', itemName: '루즈 컨트롤 머신 마크', quantity: 1 }],
+      '2026-08-10T00:00:00.000Z',
+    )
+
+    const insert = runMock.mock.calls.find(([sql]) => String(sql).includes('INSERT'))
+    // 마지막 세 자리가 가격 컬럼이다. 0 으로 넣으면 "0메소에 팔았다"가 되어 미입력과 구분이 사라진다.
+    expect(insert?.[1].slice(-3)).toEqual([null, null, null])
+  })
+
+  it('조회 결과의 가격 컬럼을 BossDropRecord 로 옮긴다', async () => {
+    queryMock.mockResolvedValue({
+      values: [
+        {
+          ocid: 'ocid-1',
+          boss: '스우',
+          difficulty: '하드',
+          period_key: '2026-08-06',
+          drop_index: 0,
+          category: 'equipment',
+          item_name: '루즈 컨트롤 머신 마크',
+          slot: '얼굴장식',
+          box_origin: null,
+          ring_level: null,
+          quantity: 1,
+          recorded_at: '2026-08-10T00:00:00.000Z',
+          price_state: 'entered',
+          price_meso: 15_000_000_000,
+          price_share: 3,
+        },
+      ],
+    })
+    const { getBossDropRecords } = await import('../boss-drops')
+
+    const [record] = await getBossDropRecords(['ocid-1'], ['2026-08-06'])
+
+    expect(record).toEqual(
+      expect.objectContaining({ priceState: 'entered', priceMeso: 15_000_000_000, priceShare: 3 }),
+    )
   })
 })

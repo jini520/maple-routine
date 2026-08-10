@@ -71,14 +71,11 @@ export async function loadDropsByRowKey(
   for (const record of records) {
     const key = dropRowKey(record.ocid, record.boss, record.difficulty, record.periodKey)
     if (map[key] === undefined) map[key] = []
-    map[key].push({
-      category: record.category,
-      itemName: record.itemName,
-      slot: record.slot ?? undefined,
-      boxOrigin: record.boxOrigin ?? undefined,
-      ringLevel: record.ringLevel ?? undefined,
-      quantity: record.quantity,
-    })
+    // **변환은 `toRecordedDrop` 하나에 맡긴다.** 여기서 손으로 필드를 옮겨 적던 것이
+    // [[ADR-124]] 가격이 사라지던 원인이었다(사용자 보고 2026-08-10 — "지난주 갔다 오니
+    // 아이템 수익이 사라진다"): 저장은 멀쩡한데 **읽을 때마다** 가격 세 필드가 떨어져 나갔고,
+    // 시트에서 넣은 직후에는 스토어가 값을 들고 있어 보이다가 기간을 왕복하면 사라졌다.
+    map[key].push(toRecordedDrop(record))
   }
 
   // 처치 난이도가 확정된(완료) 행에 한해, 그 난이도에서 획득 불가한 드롭을 제거한다(ADR-044 후속).

@@ -8,6 +8,7 @@ import { dropRowKey } from '../../features/boss-profit/store'
 import type { BossProfitRow, BossProfitWeeklySubtotal } from '../../features/boss-profit/store'
 import { isSeasonBossName } from '../../lib/boss-matching'
 import { isValuableDrop } from '../../lib/valuable-drops'
+import { sumDropPayout } from '../../lib/drop-price'
 import type { RecordedDrop } from '../../types/drops'
 import weeklyBossesData from '../../data/weekly-bosses.json'
 
@@ -82,8 +83,26 @@ export function buildCharacterGroups(
   return groups
 }
 
-export function groupTotalMeso(group: CharacterGroup): number {
-  return sumPayout(group.bossRows) + sumSubtotals(group.weeklySubtotals)
+/**
+ * 이 캐릭터가 이 기간에 번 전부 — 결정석 + 아이템([[ADR-124]] 결정 7).
+ *
+ * **드롭을 프롭으로 받는 이유**: 보스 행의 `payoutMeso` 는 결정석만 담고(그 값이 DB 기록이라
+ * 가격을 고칠 때마다 재기록할 수 없다) 아이템은 **읽는 시점에** 더한다. 그래서 이 함수가 그
+ * 덧셈이 일어나는 **한 곳**이고, 화면(총 수익)과 카드 헤더가 같은 함수를 쓴다.
+ *
+ * `weeklySubtotals`(월간 탭)에는 아이템이 이미 들어 있다 — 스토어가 소계를 만들 때 더한다.
+ * `dropsByRowKey` 는 지금 화면의 행만 담으므로(월간 탭이면 월간 보스 행) 이중 계산이 없다.
+ */
+export function groupTotalMeso(
+  group: CharacterGroup,
+  dropsByRowKey: Record<string, RecordedDrop[]>,
+): number {
+  const drops = group.bossRows.reduce(
+    (sum, row) =>
+      sum + sumDropPayout(dropsByRowKey[dropRowKey(row.ocid, row.boss, row.difficulty, row.periodKey)] ?? []),
+    0,
+  )
+  return sumPayout(group.bossRows) + sumSubtotals(group.weeklySubtotals) + drops
 }
 
 // 이 캐릭터가 현재 기간에 기록한 고가 아이템 드롭 목록. 드롭은 dropRowKey(ocid,boss,difficulty,periodKey)로
@@ -101,6 +120,17 @@ export function collectGroupValuableDrops(
     }
   }
   return valuable
+}
+
+// 이 캐릭터가 이 기간에 기록한 드롭 전체([[ADR-124]] 결정 7) — 고가로 거르지 않는다.
+// 캐릭터 카드 내역 팝오버가 이것을 아이템 단위로 접어 보여준다.
+export function collectGroupDrops(
+  group: CharacterGroup,
+  dropsByRowKey: Record<string, RecordedDrop[]>,
+): RecordedDrop[] {
+  return group.bossRows.flatMap(
+    (row) => dropsByRowKey[dropRowKey(row.ocid, row.boss, row.difficulty, row.periodKey)] ?? [],
+  )
 }
 
 // 이 기간 전체(모든 추적 캐릭터)의 고가 드롭 — 총 수익 헤드라인 뱃지용(ADR-046). 캐릭터별 집계를

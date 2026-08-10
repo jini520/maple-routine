@@ -62,6 +62,8 @@ const BossProfitScreen = lazy(() =>
   import('./app/boss-profit/BossProfitScreen').then((m) => ({ default: m.BossProfitScreen })),
 )
 const loadDropHistoryScreen: ScreenLoader = () => import('./app/boss-profit/DropHistoryScreen').then((m) => m.DropHistoryScreen)
+const loadDropPriceScreen: ScreenLoader = () => import('./app/boss-profit/DropPriceScreen').then((m) => m.DropPriceScreen)
+
 const SettingsScreen = lazy(() =>
   import('./app/settings/SettingsScreen').then((m) => ({ default: m.SettingsScreen })),
 )
@@ -82,7 +84,7 @@ const loadSettingsPrivacyScreen: ScreenLoader = () => import('./app/settings/Set
 const STACK_PRELOADERS: Record<string, ReadonlyArray<ScreenLoader>> = {
   '/content': [loadContentManageScreen],
   '/boss': [loadBossManageScreen],
-  '/profit': [loadDropHistoryScreen],
+  '/profit': [loadDropHistoryScreen, loadDropPriceScreen],
   '/settings': [
     loadSettingsReleaseNotesScreen,
     loadSettingsAccountDataScreen,
@@ -501,6 +503,9 @@ export function AppShell(): React.JSX.Element {
                     이 앱에서 중첩 라우트를 처음 쓴 자리이고([[ADR-077]]), [[ADR-120]] 이 그 형태를
                     나머지 여섯에 넓혔다. */}
                 <Route path="drops" element={stackRoute(loadDropHistoryScreen)} />
+                {/* 가격 기록([[ADR-124]] 결정 8, 이슈 #185) — 히스토리의 형제다. 저쪽은 전 기간
+                    읽기 전용, 이쪽은 한 주를 놓고 값을 매기는 쓰기 화면이다. */}
+                <Route path="prices" element={stackRoute(loadDropPriceScreen)} />
               </Route>
               <Route
                 path="/settings"

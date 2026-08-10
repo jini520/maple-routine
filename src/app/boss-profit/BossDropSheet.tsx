@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ChevronLeft, FlaskConical, PackageOpen, Pin, Sword, type LucideIcon } from 'lucide-react'
+import { ProfitIcon } from '../../components/atoms/ProfitIcon/ProfitIcon'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { DifficultyBadge } from '../../components/atoms/DifficultyBadge/DifficultyBadge'
@@ -15,6 +16,7 @@ import {
   isBoxItem,
 } from '../../lib/boss-drops'
 import { getFixedDropIcons, type FixedDropIconSpec } from '../../lib/fixed-drops'
+import { DropPricePadContent } from './DropPricePad'
 import { getItemIconUrl, getItemIconUrlByFile } from '../../lib/item-icons'
 import { isValuableDrop } from '../../lib/valuable-drops'
 import { BOSS_DIFFICULTIES, type BossDifficulty } from '../../types'
@@ -53,6 +55,11 @@ interface BossDropSheetProps {
   initialDrops: RecordedDrop[]
   onSave: (drops: RecordedDrop[]) => void
   onClose: () => void
+  /**
+   * 이 시트 안에서 가격까지 매길 수 있게 할지(#185). 넘기지 않으면 기록 직후의 확인 줄도 타일의
+   * 수익 배지도 뜨지 않는다 — 가격 개념이 없는 호출부에 누를 수 없는 표식을 만들지 않기 위해서다.
+   */
+  pricing?: { defaultShare: number; maxShare: number; characterName: string }
 }
 
 function ItemThumb(props: { name: string; slot?: string; level?: number }): React.JSX.Element {
@@ -90,6 +97,11 @@ function FixedDropIcon(props: { icon: FixedDropIconSpec }): React.JSX.Element {
       </span>
     </span>
   )
+}
+
+/** 타일 좌상단 수익 배지가 읽는 값. 선택 안 된 후보는 `undefined` 라 배지 자체가 없다. */
+function priceStateOf(drop: RecordedDrop | undefined): RecordedDrop['priceState'] {
+  return drop?.priceState
 }
 
 // 드롭 결과 하나가 이 후보(일반 아이템/상자)와 일치하는지.
@@ -139,6 +151,20 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
   )
   // 고가 아이템을 새로 추가하면 전체화면 연출을 띄운다(ADR-038). 연출 표시 여부는 전역 토글(ADR-040).
   const [effect, setEffect] = useState<{ itemName: string; slot?: string } | null>(null)
+  // 가격을 입력하는 중인 드롭(#185). null 이면 평소의 타일 그리드다.
+  //
+  // **상자 드릴다운과 같은 자리다** — 시트를 닫고 새 시트를 여는 대신 시트 내용을 갈아 끼운다.
+  // 첫 설계(기록 직후 뜨는 확인 바)는 세 가지로 반려됐다(2026-08-10): ① 두 개를 찍으면 마지막
+  // 것의 가격밖에 못 넣고 ② 입력하면 시트가 닫혀 고르던 작업이 끊기고 ③ 어느 타일이 값을 가졌는지
+  // 알 수 없었다.
+  //
+  // 진입점은 그 뒤 두 번 더 갈렸다(2026-08-10). '선택한 드롭' 목록을 뒀다가 → 금액 뱃지가 타일
+  // 배지와 같은 말을 두 번 해서 뱃지를 떼고 → 목록 자체를 지웠다. 지금은 **기록 직후의 확인 줄**
+  // 하나이고, 셋은 이렇게 갈린다: ① 물음이 그 기록 하나에 붙어 여러 개를 찍어도 섞이지 않고
+  // ② 드릴다운이라 입력 후 시트가 살아서 그리드로 돌아오며 ③ 상태는 타일의 수익 배지가 말한다.
+  const [pricing, setPricing] = useState<RecordedDrop | null>(null)
+  // 방금 기록한 드롭 — 아래 확인 줄의 대상이다. 새로 기록하면 갈아타고, 그 기록을 취소하면 사라진다.
+  const [justAdded, setJustAdded] = useState<RecordedDrop | null>(null)
   const effectEnabled = useDropEffectStore((state) => state.enabled)
   const setEffectEnabled = useDropEffectStore((state) => state.setEnabled)
 
@@ -177,15 +203,20 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
 
   function toggleNormal(candidate: DropCandidate): void {
     const isAdding = findNormalDrop(selected, candidate.name) === undefined
+    const added: RecordedDrop = {
+      category: candidate.category,
+      itemName: candidate.name,
+      slot: candidate.slot,
+      quantity: 1,
+    }
     setSelected((prev) => {
       if (!isAdding) {
         return prev.filter((drop) => !(drop.itemName === candidate.name && drop.boxOrigin === undefined))
       }
-      return [
-        ...prev,
-        { category: candidate.category, itemName: candidate.name, slot: candidate.slot, quantity: 1 },
-      ]
+      return [...prev, added]
     })
+    // 해제한 아이템의 물음이 남아 있으면 없는 기록의 가격을 묻게 된다.
+    setJustAdded(isAdding ? added : null)
     if (isAdding && effectEnabled && isValuableDrop(candidate.name)) {
       setEffect({ itemName: candidate.name, slot: candidate.slot })
     }
@@ -197,17 +228,25 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
     itemName: string,
     ringLevel?: number,
   ): void {
-    setSelected((prev) => [
-      ...prev.filter((drop) => drop.boxOrigin !== boxName),
-      { category, itemName, boxOrigin: boxName, ringLevel, quantity: 1 },
-    ])
+    const added: RecordedDrop = { category, itemName, boxOrigin: boxName, ringLevel, quantity: 1 }
+    setSelected((prev) => [...prev.filter((drop) => drop.boxOrigin !== boxName), added])
     setActiveBox(null)
+    setJustAdded(added)
     if (effectEnabled && isValuableDrop(itemName)) {
       setEffect({ itemName })
     }
   }
   function removeBoxResult(boxName: string): void {
     setSelected((prev) => prev.filter((drop) => drop.boxOrigin !== boxName))
+    setJustAdded(null)
+  }
+
+  /**
+   * 가격 필드만 갈아 끼운다. **객체 정체(===)로 찾는다** — 같은 보스에 같은 아이템을 두 개 먹은
+   * 경우를 기록이 구분하지 않으므로([[ADR-069]] 결정 4) 이름으로 찾으면 둘 다 바뀐다.
+   */
+  function applyPrice(target: RecordedDrop, patch: Partial<RecordedDrop>): void {
+    setSelected((prev) => prev.map((drop) => (drop === target ? { ...drop, ...patch } : drop)))
   }
 
   function handleTileTap(candidate: DropCandidate): void {
@@ -226,7 +265,26 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
   return (
     <>
       <BottomSheet onClose={props.onClose} testId="boss-drop-sheet">
-      {activeBox === null ? (
+      {pricing !== null && props.pricing !== undefined ? (
+        // 가격 드릴다운 — 시트는 열린 채다. 저장·스킵 후 목록으로 돌아와 고르던 작업을 잇는다.
+        <DropPricePadContent
+          drop={pricing}
+          boss={props.boss}
+          difficulty={selectedDifficulty}
+          characterName={props.pricing.characterName}
+          defaultShare={props.pricing.defaultShare}
+          maxShare={props.pricing.maxShare}
+          onBack={() => setPricing(null)}
+          onSave={(priceMeso, share) => {
+            applyPrice(pricing, { priceState: 'entered', priceMeso, priceShare: share })
+            setPricing(null)
+          }}
+          onExclude={() => {
+            applyPrice(pricing, { priceState: 'excluded', priceMeso: undefined, priceShare: undefined })
+            setPricing(null)
+          }}
+        />
+      ) : activeBox === null ? (
         <div>
           <div className="flex items-center gap-2 px-4 pb-1 pt-1">
             <span className="text-lg font-bold text-text">{props.boss}</span>
@@ -302,6 +360,21 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                                   ✓
                                 </span>
                               )}
+                              {/* 가격이 **입력된** 타일에만 수익 배지가 붙는다(사용자 지정
+                                  2026-08-10). 자리는 좌상단 — 우상단은 선택 체크가 이미 쓴다 —
+                                  이고 크기·모양을 그 체크와 맞춰 두 배지가 한 쌍으로 읽힌다.
+                                  스킵은 "기록된 가격"이 아니므로 표식이 없다(= 미입력과 같은
+                                  얼굴). 그 구분은 가격 기록 화면이 맡는다. */}
+                              {priceStateOf(box ? boxDrop : findNormalDrop(selected, candidate.name)) ===
+                                'entered' && (
+                                <span
+                                  role="img"
+                                  aria-label="가격 입력됨"
+                                  className="absolute left-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-on-primary"
+                                >
+                                  <ProfitIcon className="h-2.5 w-2.5" strokeWidth={2.5} aria-hidden="true" />
+                                </span>
+                              )}
                               <ItemThumb
                                 name={displayName}
                                 slot={boxDrop ? undefined : candidate.slot}
@@ -359,6 +432,42 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
           )}
 
           <div className="sticky bottom-0 border-t border-border bg-bg px-4 pt-3 pb-[calc(0.75rem+var(--sa-bottom))]">
+            {/* 기록 직후 **그 아이템 하나에 대해** 값을 매길지 묻는다(사용자 지정 2026-08-10).
+                흐름은 `기록 → 확인 → (입력 →) 복귀` 이고, 어느 갈래든 타일 그리드로 돌아온다.
+                **차단하지 않는다** — 일반 아이템은 확인창 없이 탭 즉시 기록된다는 [[ADR-040]] 를
+                지키려는 것이다. 기록은 이미 끝났고 이 줄은 그 옆에 설 뿐이라, 무시하고 다음
+                아이템을 계속 골라도 된다(그러면 그 아이템의 물음으로 갈아탄다). */}
+            {justAdded !== null && props.pricing !== undefined && (
+              <div
+                data-testid="drop-price-prompt"
+                className="mb-2.5 flex items-center gap-2 rounded-[14px] border border-border bg-surface px-3 py-2 shadow-lg"
+              >
+                <p className="min-w-0 flex-1 text-[12.5px] font-semibold leading-tight text-text">
+                  <span className="block truncate">
+                    {justAdded.itemName}
+                    {justAdded.ringLevel !== undefined && ` ${justAdded.ringLevel}레벨`} 기록됨
+                  </span>
+                  <span className="block font-medium text-text-muted">판매 가격을 입력할까요?</span>
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setJustAdded(null)}
+                  className="flex-none px-1 text-[12.5px] font-semibold text-text-muted"
+                >
+                  나중에
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPricing(justAdded)
+                    setJustAdded(null)
+                  }}
+                  className="flex-none rounded-full bg-primary px-3 py-1.5 text-[12.5px] font-bold text-on-primary"
+                >
+                  가격 입력
+                </button>
+              </div>
+            )}
             <button
               type="button"
               onClick={() => {

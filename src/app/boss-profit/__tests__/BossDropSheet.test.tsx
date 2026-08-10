@@ -411,3 +411,201 @@ describe('BossDropSheet', () => {
     })
   })
 })
+
+// [[ADR-124]] 결정 6 — 시트 안에서 `기록 → 확인 → (입력 →) 복귀`. 이 흐름이 실제로 배선됐는지.
+describe('시트 안 가격 입력 (ADR-124 결정 6)', () => {
+  const pricing = { defaultShare: 3, maxShare: 6, characterName: '지내우시' }
+
+  function renderPricingSheet(): { onSave: ReturnType<typeof vi.fn> } {
+    const onSave = vi.fn()
+    render(
+      <BossDropSheet
+        boss="스우"
+        difficulty="하드"
+        isComplete
+        initialDrops={[]}
+        onSave={onSave}
+        onClose={vi.fn()}
+        pricing={pricing}
+      />,
+    )
+    return { onSave }
+  }
+
+  it('아이템을 기록하면 가격을 물어본다 — 기록 자체는 막지 않는다', async () => {
+    const user = userEvent.setup()
+    renderPricingSheet()
+
+    await user.click(screen.getByRole('button', { name: /루즈 컨트롤 머신 마크/ }))
+
+    expect(screen.getByTestId('drop-price-prompt')).toHaveTextContent('판매 가격을 입력할까요?')
+    // 기록은 이미 끝났다 — 물음이 그것을 막지 않는다([[ADR-040]] 탭 즉시 기록).
+    expect(screen.getByRole('button', { name: /추가 완료/ })).toHaveTextContent('1개')
+  })
+
+  it('"나중에" 를 누르면 물음만 사라지고 기록은 남는다', async () => {
+    const user = userEvent.setup()
+    renderPricingSheet()
+    await user.click(screen.getByRole('button', { name: /루즈 컨트롤 머신 마크/ }))
+
+    await user.click(screen.getByRole('button', { name: '나중에' }))
+
+    expect(screen.queryByTestId('drop-price-prompt')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /추가 완료/ })).toHaveTextContent('1개')
+  })
+
+  it('다른 아이템을 이어 찍으면 물음이 그쪽으로 갈아탄다 — 마지막 것만 입력되던 문제', async () => {
+    const user = userEvent.setup()
+    // 한 난이도에 선택 가능한 장비가 둘인 보스라야 이 경우를 만들 수 있다 — 스우 하드는
+    // 장비가 하나뿐이다(컴플리트 언더컨트롤은 익스트림 전용).
+    render(
+      <BossDropSheet
+        boss="더스크"
+        difficulty="카오스"
+        isComplete
+        initialDrops={[]}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+        pricing={pricing}
+      />,
+    )
+    await user.click(screen.getByRole('button', { name: /거대한 공포/ }))
+    expect(screen.getByTestId('drop-price-prompt')).toHaveTextContent('거대한 공포')
+
+    await user.click(screen.getByRole('button', { name: /에스텔라 이어링/ }))
+
+    expect(screen.getByTestId('drop-price-prompt')).toHaveTextContent('에스텔라 이어링')
+  })
+
+  it('"가격 입력" 은 시트를 닫지 않고 키패드로 들어갔다가 그리드로 돌아온다', async () => {
+    const user = userEvent.setup()
+    renderPricingSheet()
+    await user.click(screen.getByRole('button', { name: /루즈 컨트롤 머신 마크/ }))
+    await user.click(screen.getByRole('button', { name: '가격 입력' }))
+
+    // 드릴다운 — 시트는 살아 있고 내용만 갈렸다.
+    expect(screen.getByTestId('drop-price-amount')).toBeInTheDocument()
+    expect(screen.getByText('3인')).toBeInTheDocument() // 분배 기본값 = 파티원 수
+
+    await user.click(screen.getByRole('button', { name: '+1억' }))
+    await user.click(screen.getByRole('button', { name: '저장' }))
+
+    // 그리드로 복귀 — 하던 작업(다른 아이템 고르기)을 잇는다.
+    expect(screen.queryByTestId('drop-price-amount')).not.toBeInTheDocument()
+    expect(screen.getByRole('img', { name: '가격 입력됨' })).toBeInTheDocument()
+  })
+
+  it('값을 매긴 뒤 추가 완료하면 가격이 함께 저장된다', async () => {
+    const user = userEvent.setup()
+    const { onSave } = renderPricingSheet()
+    await user.click(screen.getByRole('button', { name: /루즈 컨트롤 머신 마크/ }))
+    await user.click(screen.getByRole('button', { name: '가격 입력' }))
+    await user.click(screen.getByRole('button', { name: '+1억' }))
+    await user.click(screen.getByRole('button', { name: '저장' }))
+    await user.click(screen.getByRole('button', { name: /추가 완료/ }))
+
+    expect(onSave).toHaveBeenCalledWith([
+      expect.objectContaining({
+        itemName: '루즈 컨트롤 머신 마크',
+        priceState: 'entered',
+        priceMeso: 100_000_000,
+        priceShare: 3,
+      }),
+    ])
+  })
+
+  it('pricing 을 넘기지 않으면 물음도 배지도 뜨지 않는다 — 가격 개념이 없는 호출부 보호', async () => {
+    const user = userEvent.setup()
+    render(
+      <BossDropSheet
+        boss="스우"
+        difficulty="하드"
+        isComplete
+        initialDrops={[]}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+    await user.click(screen.getByRole('button', { name: /루즈 컨트롤 머신 마크/ }))
+
+    expect(screen.queryByTestId('drop-price-prompt')).not.toBeInTheDocument()
+  })
+})
+
+// 2026-08-10 — 대상이 바뀌면 값이 따라가야 한다. 시트 드릴다운은 컴포넌트를 언마운트하지 않는다.
+describe('가격 키패드 — 대상 전환·초기화', () => {
+  const pricing = { defaultShare: 3, maxShare: 6, characterName: '지내우시' }
+
+  it('다른 아이템으로 넘어가면 치던 금액이 따라가지 않는다', async () => {
+    const user = userEvent.setup()
+    render(
+      <BossDropSheet
+        boss="더스크"
+        difficulty="카오스"
+        isComplete
+        initialDrops={[]}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+        pricing={pricing}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: /거대한 공포/ }))
+    await user.click(screen.getByRole('button', { name: '가격 입력' }))
+    await user.click(screen.getByRole('button', { name: '+1억' }))
+    expect(screen.getByTestId('drop-price-amount')).toHaveTextContent('100,000,000')
+    await user.click(screen.getByRole('button', { name: '뒤로' }))
+
+    // 두 번째 아이템 — 앞의 1억이 남아 있으면 안 된다.
+    await user.click(screen.getByRole('button', { name: /에스텔라 이어링/ }))
+    await user.click(screen.getByRole('button', { name: '가격 입력' }))
+
+    expect(screen.getByTestId('drop-price-amount')).toHaveTextContent('0')
+  })
+
+  it('초기화 버튼이 금액만 0으로 되돌린다 — 분배 인원은 그대로', async () => {
+    const user = userEvent.setup()
+    render(
+      <BossDropSheet
+        boss="스우"
+        difficulty="하드"
+        isComplete
+        initialDrops={[]}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+        pricing={pricing}
+      />,
+    )
+    await user.click(screen.getByRole('button', { name: /루즈 컨트롤 머신 마크/ }))
+    await user.click(screen.getByRole('button', { name: '가격 입력' }))
+    await user.click(screen.getByRole('button', { name: '+100억' }))
+    await user.click(screen.getByRole('button', { name: '분배 인원 감소' }))
+
+    await user.click(screen.getByRole('button', { name: '가격 초기화' }))
+
+    expect(screen.getByTestId('drop-price-amount')).toHaveTextContent('0')
+    expect(screen.getByText('2인')).toBeInTheDocument()
+  })
+
+  it('가격이 입력된 타일 배지는 수익 탭과 같은 아이콘이다', async () => {
+    const user = userEvent.setup()
+    render(
+      <BossDropSheet
+        boss="스우"
+        difficulty="하드"
+        isComplete
+        initialDrops={[]}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+        pricing={pricing}
+      />,
+    )
+    await user.click(screen.getByRole('button', { name: /루즈 컨트롤 머신 마크/ }))
+    await user.click(screen.getByRole('button', { name: '가격 입력' }))
+    await user.click(screen.getByRole('button', { name: '+1억' }))
+    await user.click(screen.getByRole('button', { name: '저장' }))
+
+    const badge = screen.getByRole('img', { name: '가격 입력됨' })
+    expect(badge.querySelector('[data-testid="profit-icon"]')).not.toBeNull()
+  })
+})
