@@ -2,8 +2,11 @@ import { getBossProfitDb } from './sqlite/db'
 import type { DropCategory, RecordedDrop } from '../types/drops'
 
 // ADR-038 결정 5: 한 보스/기간의 드롭 집합은 시트에서 통째로 편집되므로 replace-all(DELETE→INSERT)이
-// 수정에 가장 단순하다. drop_index 다중 행으로 저장하고 계산된 금액은 넣지 않는다(재평가는 별도 시세
-// 소스에서 조인). `storage/boss-profit.ts` 어댑터 패턴을 미러한다.
+// 수정에 가장 단순하다. drop_index 다중 행으로 저장한다. `storage/boss-profit.ts` 어댑터 패턴을 미러한다.
+//
+// **금액을 함께 저장한다**([[ADR-124]], [[ADR-038]] 반전) — 기록 한 건에 붙는 실판매가다. 시세표가
+// 아니라 스냅샷이라 재평가 대상이 아니고, 같은 행에 두므로 난이도 확정 이관·prune 삭제가 가격까지
+// 함께 옮기고 지운다.
 export interface BossDropRecord {
   ocid: string
   boss: string
@@ -17,6 +20,12 @@ export interface BossDropRecord {
   ringLevel: number | null
   quantity: number
   recordedAt: string // ISO 8601
+  /** `'entered'` · `'excluded'` · `null`(미입력). 상태를 금액 유무로 추론하지 않는다([[ADR-124]] 결정 4). */
+  priceState: 'entered' | 'excluded' | null
+  /** 판매 **총액**. 수량이 2 이상이어도 묶음가 하나다. */
+  priceMeso: number | null
+  /** 분배 인원 스냅샷 — 그 행의 `party_size` 와 다를 수 있다([[ADR-124]] 결정 2). */
+  priceShare: number | null
 }
 
 const DELETE_SQL = `
@@ -26,8 +35,9 @@ const DELETE_SQL = `
 
 const INSERT_SQL = `
   INSERT INTO boss_drop_records
-    (ocid, boss, difficulty, period_key, drop_index, category, item_name, slot, box_origin, ring_level, quantity, recorded_at)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    (ocid, boss, difficulty, period_key, drop_index, category, item_name, slot, box_origin, ring_level, quantity, recorded_at,
+     price_state, price_meso, price_share)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 // 한 보스/기간의 드롭 집합을 통째로 교체한다(기존 삭제 후 0..n으로 재삽입). 빈 배열이면 삭제만.
@@ -56,8 +66,20 @@ export async function replaceBossDropRecords(
       drop.ringLevel ?? null,
       drop.quantity,
       recordedAt,
+      // **미입력은 NULL 이다 — 0 이 아니다.** 0 으로 넣으면 "0메소에 팔았다"가 되어
+      // 스킵·미입력과 구분이 사라진다([[ADR-124]] 결정 4).
+      drop.priceState ?? null,
+      drop.priceMeso ?? null,
+      drop.priceShare ?? null,
     ])
   }
+}
+
+/** 저장된 상태 문자열을 도메인 값으로. 모르는 값은 미입력으로 떨어뜨린다(거짓 상태를 만들지 않는다). */
+function normalizePriceState(value: unknown): BossDropRecord['priceState'] {
+  if (value === 'entered') return 'entered'
+  if (value === 'excluded' || value === 'skipped') return 'excluded'
+  return null
 }
 
 function rowToRecord(row: Record<string, unknown>): BossDropRecord {
@@ -74,6 +96,11 @@ function rowToRecord(row: Record<string, unknown>): BossDropRecord {
     ringLevel: (row.ring_level as number | null) ?? null,
     quantity: row.quantity as number,
     recordedAt: row.recorded_at as string,
+    // 옛 값 `'skipped'` 는 지금의 `'excluded'`(기록 안함)와 같은 뜻이다 — 이름만 갈렸다
+    // ([[ADR-124]] 결정 6 정정, 2026-08-10). 읽을 때 흡수하므로 마이그레이션이 필요 없다.
+    priceState: normalizePriceState(row.price_state),
+    priceMeso: (row.price_meso as number | null | undefined) ?? null,
+    priceShare: (row.price_share as number | null | undefined) ?? null,
   }
 }
 

@@ -1,12 +1,12 @@
 # 보스 수익 (Boss Profit)
 
 > **범위**: 처치 보스 수익 계산, 파티원 수 자동 기록, 주간/월간 탭·기간 네비게이터, 아코디언 레이아웃, 고가 드롭 강조 연출. 보스 목록의 출처·파티 설정은 [boss-scheduler.md](./boss-scheduler.md), 물욕 드롭 입력은 [item-drop.md](./item-drop.md).
-> **관련 소스**: `app/boss-profit/`(`BossProfitScreen.tsx`) · `features/boss-profit/`(`store.ts` · `auto-record.ts` — 드롭 이관 + 자동 기록 루프, 동기화·캐시 두 경로가 함께 부른다([[ADR-111]])) · `storage/boss-profit`(SQLite `boss_profit_records`) · `storage/sqlite/db.ts` · `lib/boss-profit-period.ts` · `lib/boss-profit-delta.ts`·`lib/use-count-up.ts`·`components/AnimatedMeso/`([[ADR-087]]) · `lib/boss-matching.ts`(정규 순서·`WEEKLY_BOSS_CLEAR_LIMIT`·`WEEKLY_CRYSTAL_SALE_LIMIT`·`isSeasonBossName`) · `lib/world-emblem.ts`·`lib/item-icons.ts`(결정석/월드 아이콘) · `src/data/boss-crystal-prices.json`·`weekly-bosses.json`·`boss-portrait-icon-crops.json` · `index.css`(고가 드롭 클래스).
-> **관련 ADR**: [[ADR-014]] [[ADR-017]] [[ADR-019]] [[ADR-023]] [[ADR-032]] [[ADR-033]] [[ADR-036]] [[ADR-037]] [[ADR-045]] [[ADR-049]] [[ADR-054]] [[ADR-059]] [[ADR-010]] [[ADR-067]] [[ADR-068]] [[ADR-069]] [[ADR-072]] [[ADR-073]] [[ADR-074]] [[ADR-087]] [[ADR-097]] [[ADR-101]] [[ADR-102]] [[ADR-111]] [[ADR-112]]. **관련 문서**: [../foundation/game-data.md](../foundation/game-data.md), [../foundation/error-resilience.md](../foundation/error-resilience.md), [../foundation/design-system.md](../foundation/design-system.md), [../persistence/sqlite.md](../persistence/sqlite.md).
+> **관련 소스**: `app/boss-profit/`(`BossProfitScreen.tsx`) · `features/boss-profit/`(`store.ts` · `auto-record.ts` — 드롭 이관 + 자동 기록 루프, 동기화·캐시 두 경로가 함께 부른다([[ADR-111]])) · `storage/boss-profit`(SQLite `boss_profit_records`) · `storage/sqlite/db.ts` · `lib/boss-profit-period.ts` · `lib/boss-profit-delta.ts` · `lib/drop-price.ts`(드롭 환산) · `DropPriceScreen`(`/profit/prices`)·`lib/use-count-up.ts`·`components/AnimatedMeso/`([[ADR-087]]) · `lib/boss-matching.ts`(정규 순서·`WEEKLY_BOSS_CLEAR_LIMIT`·`WEEKLY_CRYSTAL_SALE_LIMIT`·`isSeasonBossName`) · `lib/world-emblem.ts`·`lib/item-icons.ts`(결정석/월드 아이콘) · `src/data/boss-crystal-prices.json`·`weekly-bosses.json`·`boss-portrait-icon-crops.json` · `index.css`(고가 드롭 클래스).
+> **관련 ADR**: [[ADR-014]] [[ADR-017]] [[ADR-019]] [[ADR-023]] [[ADR-032]] [[ADR-033]] [[ADR-036]] [[ADR-037]] [[ADR-045]] [[ADR-049]] [[ADR-054]] [[ADR-059]] [[ADR-010]] [[ADR-067]] [[ADR-068]] [[ADR-069]] [[ADR-072]] [[ADR-073]] [[ADR-074]] [[ADR-087]] [[ADR-097]] [[ADR-101]] [[ADR-102]] [[ADR-111]] [[ADR-112]] [[ADR-124]]. **관련 문서**: [../foundation/game-data.md](../foundation/game-data.md), [../foundation/error-resilience.md](../foundation/error-resilience.md), [../foundation/design-system.md](../foundation/design-system.md), [../persistence/sqlite.md](../persistence/sqlite.md).
 
 ## 정책
 - 처치 보스 목록은 Nexon API 동기화 데이터를 그대로 사용(수동 입력 없음). 등록 여부가 아니라 **처치된(`complete_flag: true`) 보스만** 구독·표시·계산(등록만 하고 안 잡은 보스는 안 나타남). 실제 처치 난이도 우선 선택은 `selectBossProfitBosses`([[ADR-033]] — 등록 난이도 ≠ 처치 난이도 오류 수정, `ownComplete` 도입).
-- **수익 계산**: `boss-crystal-prices.json` 정가 조회 → `partySizeScaling.formula`(`floor(priceMeso / partySize)`). `priceMeso` 없는 보스(벨로나)는 "가격 미확정". 물욕템 환산 가치는 확정 항목만 합산([[ADR-010]], [item-drop.md](./item-drop.md)).
+- **수익 계산**: `boss-crystal-prices.json` 정가 조회 → `partySizeScaling.formula`(`floor(priceMeso / partySize)`). `priceMeso` 없는 보스(벨로나)는 "가격 미확정". **아이템 수익은 그 위에 더한다** — 아래 "아이템 수익 합산" 절([[ADR-124]], [item-drop.md](./item-drop.md)).
 - **파티원 수**: Nexon API가 모르는 정보라 캐릭터+보스+난이도 조합별 로컬 저장. 완료 감지 시 자동 기본값이 채워지므로 값이 실제와 다를 때만 수정. 과거 기록도 파티원 편집 가능([[ADR-032]] — 스테퍼는 과거/현재 무관 항상 활성, `mergeRecordsIntoRows` 가 과거 row `priceMeso` 를 그 시점 기록값으로 복원해 재계산 문제 없음).
 - 추적 캐릭터는 `trackedCharacters:boss` 재사용(전용 추적 UI 없음).
 - **주간 보스 처치 수**([[ADR-054]]): 캐릭터당 한도 12(`weeklyBossSelectionLimit`)와 **월드당** 주간 결정석 판매 한도 90(`weeklyCrystalSaleLimit`)은 **단위가 다른 별개 지표**다 — 90은 계정이 아니라 월드마다 각각이고, 주간 보스만 포함하며(월간 보스 결정석 제외), 시즌 보스(메이린)는 빠지고, 안 판 결정석은 **이월되지 않는다**(매주 초기화). 두 상수는 `lib/boss-matching`(`WEEKLY_BOSS_CLEAR_LIMIT`·`WEEKLY_CRYSTAL_SALE_LIMIT`)에서 나란히 export.
@@ -286,6 +286,34 @@ a11y: 화살표는 `aria-hidden`, 색은 의미를 못 전하므로 칩 전체�
 
 깜빡임의 **존재**는 다른 데서 온다(아코디언 key에 `periodKey` 가 있어 매번 리마운트 · `periodKey` 를 로드 전에 동기 커밋 · `isPeriodLoading` 이 총 수익 헤드라인을 헤더에서 빼 헤더 높이를 바꿈). [[ADR-078]]은 그 상태가 **보이는 시간**만 줄인다.
 
+## 아이템 수익 합산 — [[ADR-124]], 이슈 #185
+
+드롭 가격의 저장·입력은 [item-drop.md](./item-drop.md) "가격 기록" 이 담당하고, 여기서는 **그 값이
+수익 숫자에 어떻게 들어오는지**만 정한다.
+
+```
+기록 한 건   price_state === 'entered' ? floor(price_meso / price_share) : 0   (lib/drop-price)
+보스 행      결정석 payout + 그 행 (ocid, boss, difficulty, periodKey) 의 드롭 합
+캐릭터·총액  행의 합 — 손댈 곳이 없다
+```
+
+- **`boss_profit_records.payout_meso` 에는 쓰지 않는다.** 결정석만 남기고 드롭은 **읽는 시점에** 더한다 — 안 그러면 가격을 고칠 때마다 `auto-record` 가 과거 기록을 다시 써야 한다.
+- **월간 탭 주차별 소계에는 포함한다**(사용자 결정) — 안 넣으면 주간 탭과 월간 탭의 **같은 주가 다른 숫자**가 된다. 소계는 `totalMeso` 와 `dropMeso` 를 나란히 들고 있다(총 수익에서 결정석을 갈라낼 때 쓴다).
+- **증감 칩은 총 수익에서 뺐다**([[ADR-124]] 결정 7 최종, 2026-08-10) — 이 자리에서는 뜻이 퇴색한다는 사용자 판단. 통계 기능이 생기면 옮긴다. `DeltaChip`·`previousPeriodTotalMeso` 는 남아 있고 화면이 부르지 않을 뿐이며, 그 계약은 `HeadlineChips.test.tsx` 가 지킨다.
+- **가격 화면의 쓰기는 이 화면 스냅샷에 즉시 전파된다**([[ADR-124]], 2026-08-10). 두 스토어가 같은 `boss_drop_records` 를 각자 캐시하는데 이 화면은 스택 왕복에도 마운트를 유지하므로([[ADR-077]]) 알려주지 않으면 **새로고침해야 반영된다**. `drop-price-store` 가 쓰기 성공 뒤 `applyExternalDropEdit`(쓰기 없는 스냅샷 갱신)을 부른다 — 실패한 값은 전파하지 않는다.
+- **내역은 기록 한 건이 한 줄** — 같은 아이템이라도 건마다 판 값이 다를 수 있어 `×N` 으로 접지 않는다([[ADR-124]] 결정 7, 2026-08-10 되돌림).
+- **금액행 오른쪽 `자세히 보기`** → 결정석 / 아이템 / 합계 3줄 내역(위에 아이템 목록). 보스 행·캐릭터 카드와 같은 상자(`ItemRevenuePopover`)를 쓴다. 아이템이 0이어도 버튼은 남는다 — 총 수익의 상세 진입점이라 주마다 사라지면 자리가 흔들린다.
+- **결정석 판매 한도 `n / 90` 에는 영향이 없다** — 드롭은 판매 한도 밖이다([[ADR-054]]).
+- **월간 탭은 두 층으로 말한다**([[ADR-124]], 2026-08-10) — 캐릭터 카드는 월간 보스 아이템을 낱개로 + 주간 몫을 `N주차 · 금액` 한 줄씩, 주차 소계 행은 그 주 아이템을 **낱개로**(칩·상자가 보스 행과 같다). 소계가 합이 아니라 `drops` 목록을 들고 있어 가능해졌다 — [[ADR-071]] 결정 10 이 짚은 한계를 이 축에서는 없앴다.
+
+### 보스 행 표시 ([[ADR-124]] 결정 7)
+아이템이 섞인 행에만 **금액 아래**에 `아이템 +{금액}` 칩이 선다. 그 존재가 곧 "이 숫자는 결정석만이
+아니다"라는 표시이자 내역을 여는 버튼이다. 순서는 앱 관례대로 주값(금액) 위 / 부가값(칩) 아래.
+
+- **세로로 쌓는 이유**: 금액 옆에 두었더니 화면 폭에 따라 둘이 가로를 다퉈 줄바꿈이 났다. 쌓으면 열 폭을 넓은 쪽(금액)이 정하므로 **가로는 종전과 같고**, 대가는 높이 약 18px(사용자 감수).
+- **값을 매긴 아이템이 없는 행은 DOM 이 한 글자도 달라지지 않는다** — 래퍼도 클래스도 만들지 않는다. [[ADR-094]] 결정 4 의 DOM 스냅샷이 이것을 고정하고, 구현 중 실제로 두 번(래퍼 `span`, `nowrap` 클래스 누출) 잡아냈다.
+- **내역은 포털 + `fixed` 로 화면 위에 띄운다.** 카드 셸이 펼침 상태에서 `overflow-clip` 이라([[ADR-049]]) 행 안에 절대배치하면 잘리고, 카드 루트에 붙이는 [[ADR-068]] 방식은 트리거가 헤더에 있을 때의 처방이라 목록 한가운데인 이 행에는 맞지 않는다. 가로 위치는 `anchorPopover` 를 재사용하되 컨테이너를 **뷰포트**로 준다. `fixed` 라 스크롤을 따라오지 못하므로 **스크롤·리사이즈에 닫는다**.
+
 ## 열린 질문
 - **`notChecked` 조회 버튼을 누른 뒤 실패하면** 그 행이 `failed`로 바뀌는지, 토스트로 알리고 상태를 유지하는지([[ADR-068]] 적용 범위 밖).
 - **빈 기간이 여러 개일 때의 번거로움** — 이전 게이트만 넓히는 안([[ADR-068]] 결정 5)은 빈 기간 수만큼 ‹ 를 눌러야 기록에 닿는다. 실제로 불편하면 기간 목록 시트(시안 B)를 후속으로 검토한다.
@@ -294,6 +322,8 @@ a11y: 화살표는 `aria-hidden`, 색은 의미를 못 전하므로 칩 전체�
 - 월드 결정석 한도(`n/90`)가 추적 밖 캐릭터의 처치를 못 세는 한계를 **UI 주석 문구로도 알릴지** 여부([[ADR-054]] 트레이드오프 — 헤드라인을 더 늘리지 않으려 구현 범위에서는 제외했고, 문서에는 위 "알려진 한계"로 남겼다. 사용자 문의가 실제로 생기면 후속 결정으로 다룬다).
 
 ## 폐기된 정책 (history)
+- ~~증감 칩 기준에 아이템 판매가를 포함~~ → 결정석만 → **총 수익에서 제거**([[ADR-124]] 결정 7, 2026-08-10 두 번 갈림). 통계 기능으로 옮긴다.
+- ~~물욕템 환산 가치는 확정 항목만 합산(확정 항목 0건)~~ → **기록 단위 실판매가를 보스 행에 더한다**([[ADR-124]]). [[ADR-010]]·[[ADR-038]] 이 남긴 "시세 소스 미정" 자리가 사용자 직접 입력으로 채워졌다.
 - ~~TTL 로 건너뛴 화면 진입에서는 자동 기록(upsert)을 하지 않는다([[ADR-097]] 결정 6)~~ → **건너뛴 진입에서도 자동 기록·드롭 이관을 하되, 캐시가 보스 리셋 경계를 넘었으면 하지 않는다**([[ADR-111]], 2026-08-08). 그 결정이 전제한 "낡은 캐시"가 지배 경로에는 없었다 — `hasSyncAttemptedThisRun()` 이 실행당 1회라 `/content` 의 동기화가 플래그를 세우고 그 동기화가 방금 캐시를 썼으니 신선도도 참이라, 보스 수익 첫 진입은 **항상** 건너뛰었고 수익의 계산이 곧 자동 기록 루프라 **거의 모든 콜드 스타트에서 첫 화면이 0 으로 떴다**(이슈 #160 — "최대 10분 미뤄질 뿐"이 아니었다). [[ADR-017]] 이 겨눈 위험은 캐시가 출처가 아니어서(`partySize` 는 기록 시점에 `boss_party_settings` 를 읽는다) 나이가 아니라 **기간 동일성**이 그 위험만 정확히 겨눈다. 네트워크 재조회 절감([[ADR-097]] 결정 1~4)은 한 줄도 되돌리지 않았다.
 - ~~아코디언을 접기 전에 접은 뒤의 최대 스크롤로 먼저 옮기고 다음 프레임에 접는다([[ADR-085]] 결정 2)~~ → **접기는 상태만 바꾼다**([[ADR-102]], 2026-08-06). 두 단계가 **두 프레임으로 그려져** 접히기 직전에 페이지가 튀었다 — `setIsExpanded` 가 rAF 콜백 안이라 React 18 이 Scheduler(MessageChannel)로 넘겨 다음 매크로태스크에 렌더하고, 그 사이 브라우저가 "스크롤은 옮겨졌는데 본문은 아직 붙어 있는" 상태를 반드시 한 번 페인트한다. 튀는 거리는 클램프될 양 전부라 접은 목록이 뷰포트에 들어가면 최상단까지 갔다. 이 처방이 상대하던 iOS **문서** 스크롤 스레드 문제는 [[ADR-085]] 자신이 "근본"이라 부르고 미뤄둔 결정 4(목록 전용 스크롤 컨테이너)를 [[ADR-099]]·[[ADR-100]] 이 채택하면서 원천이 사라졌고, 남은 것은 워크어라운드의 비용뿐이었다. **[[ADR-085]] 결정 1(`fixed` 페이지 헤더)은 다른 고리를 끊으므로 그대로 유지한다.**
 - ~~아코디언 펼침을 `(tab, periodKey, ocid)` 별로 기억하고, 스크롤 위치도 함께 복원한다([[ADR-081]]·[[ADR-082]])~~ → **둘 다 폐기, #27 무조건 리셋 유지**(2026-08-02, 실기기). iOS는 스크롤을 별도 스레드에서 처리해 **0이 아닌 위치를 복원하면 sticky 트랜스폼이 늦는 프레임에 헤더가 화면 밖으로 사라진다** — 원래 깜빡임보다 나빴다. 펼침만 기억하고 스크롤은 최상단이면 "보던 곳으로 다시 스크롤해야 하는 건 똑같다"(사용자 판단)라 함께 접었다. **되살리려면 헤더를 스크롤 맥락 밖으로 빼는 구조**(`fixed` 또는 목록만 스크롤 컨테이너)가 선행돼야 하고, 그건 [[ADR-072]] 의 문서 전체 스크롤 전제를 뒤집어 당겨서 새로고침 재설계가 딸려온다.

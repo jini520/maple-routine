@@ -2,7 +2,7 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { clearCountUpMemory } from '../../../lib/use-count-up'
 import { BossProfitScreen } from '../BossProfitScreen'
 import {
@@ -104,6 +104,7 @@ function subtotal(overrides: Partial<BossProfitWeeklySubtotal> = {}): BossProfit
     imageUrl: null,
     periodKey: '2026-07-09',
     totalMeso: 5_000_000,
+    drops: [],
     state: 'recorded',
     ...overrides,
   }
@@ -1283,93 +1284,9 @@ describe('BossProfitScreen', () => {
 
   // ADR-087 — 칩의 계산·표기는 lib/boss-profit-delta 가 다 검증한다. 여기서는 **배선**만 본다:
   // store 의 previousPeriodTotalMeso 가 칩에 닿는지, 자리와 문장이 맞는지.
-  describe('직전 기간 대비 증감 칩 (ADR-087)', () => {
-    // 비교 대상 라벨("지난 주")은 now 기준 상대 표현이라([[ADR-023]]) 시계를 고정한다.
-    // 2026-07-22 기준 이번 주는 2026-07-16, 그 직전 주가 2026-07-09 다.
-    beforeEach(() => {
-      vi.useFakeTimers({ toFake: ['Date'] })
-      vi.setSystemTime(new Date('2026-07-22T12:00:00+09:00'))
-    })
-
-    afterEach(() => {
-      vi.useRealTimers()
-    })
-
-    it('늘었으면 퍼센트와 함께 증가를 말한다', () => {
-      mockStore({
-        status: 'loaded',
-        trackedOcids: ['ocid-1'],
-        periodKey: '2026-07-16',
-        rows: [row({ ocid: 'ocid-1', payoutMeso: 5_000_000 })],
-        previousPeriodTotalMeso: 4_000_000,
-      })
-
-      renderBossProfitScreen()
-
-      expect(screen.getByLabelText('지난 주 대비 25.0퍼센트 증가')).toHaveTextContent('25.0%')
-    })
-
-    it('줄었으면 감소를 말한다', () => {
-      mockStore({
-        status: 'loaded',
-        trackedOcids: ['ocid-1'],
-        periodKey: '2026-07-16',
-        rows: [row({ ocid: 'ocid-1', payoutMeso: 3_000_000 })],
-        previousPeriodTotalMeso: 4_000_000,
-      })
-
-      renderBossProfitScreen()
-
-      expect(screen.getByLabelText('지난 주 대비 25.0퍼센트 감소')).toHaveTextContent('25.0%')
-    })
-
-    it('같으면 사용자 지정 표기 "-" 다', () => {
-      mockStore({
-        status: 'loaded',
-        trackedOcids: ['ocid-1'],
-        periodKey: '2026-07-16',
-        rows: [row({ ocid: 'ocid-1', payoutMeso: 4_000_000 })],
-        previousPeriodTotalMeso: 4_000_000,
-      })
-
-      renderBossProfitScreen()
-
-      expect(screen.getByLabelText('지난 주 대비 변화 없음')).toHaveTextContent('-')
-    })
-
-    // 결정 3 — 조회한 적 없는 직전 기간도 0으로 들어온다. 퍼센트가 정의되지 않으므로 절대 증감이다.
-    it('직전 기간이 0이면 퍼센트 대신 절대 증감을 보여준다', () => {
-      mockStore({
-        status: 'loaded',
-        trackedOcids: ['ocid-1'],
-        periodKey: '2026-07-16',
-        rows: [row({ ocid: 'ocid-1', payoutMeso: 500_000_000 })],
-        previousPeriodTotalMeso: 0,
-      })
-
-      renderBossProfitScreen()
-
-      expect(screen.getByLabelText(/지난 주에는 수익이 없었습니다/)).toHaveTextContent('5.0억')
-    })
-
-    // 결정 1 — 칩은 라벨행이 아니라 금액행에 있다(헤더 높이 예산).
-    it('칩은 라벨행이 아니라 금액 옆에 있다', () => {
-      mockStore({
-        status: 'loaded',
-        trackedOcids: ['ocid-1'],
-        periodKey: '2026-07-16',
-        rows: [row({ ocid: 'ocid-1', payoutMeso: 5_000_000 })],
-        previousPeriodTotalMeso: 4_000_000,
-      })
-
-      renderBossProfitScreen()
-
-      const chip = screen.getByLabelText('지난 주 대비 25.0퍼센트 증가')
-      const amountRow = screen.getByText('5,000,000').parentElement
-      expect(amountRow?.parentElement).toContainElement(chip)
-      expect(screen.getByText(/총 수익/).parentElement).not.toContainElement(chip)
-    })
-  })
+  // 증감 칩은 2026-08-10 에 총 수익에서 **뺐다**(사용자 결정 — 통계 기능으로 옮긴다). 화면
+  // 통합 테스트였던 이 자리의 케이스들은 `HeadlineChips.test.tsx` 로 옮겨 컴포넌트 단위로 남겼다
+  // — 되살릴 때 그 계약이 그대로 서 있어야 한다.
 
   it('weekly 탭: 여러 캐릭터의 총 수익이 상단에 합산되어 표시된다', () => {
     mockStore({
@@ -2879,5 +2796,437 @@ describe('당겨서 새로고침 — 목록 이동 (ADR-073)', () => {
     fireEvent(document, touchEvent('touchmove', 40))
 
     expect(screen.getByTestId('pull-content').style.transform).toBe('')
+  })
+})
+
+// [[ADR-124]] 결정 7 — 아이템 수익이 화면의 세 숫자(보스 행·캐릭터 합계·총 수익)에 전부 닿는지,
+// 그리고 값이 없는 행은 종전과 똑같이 남는지.
+describe('아이템 수익 (ADR-124)', () => {
+  const PRICED = {
+    category: 'equipment' as const,
+    itemName: '루즈 컨트롤 머신 마크',
+    quantity: 1,
+    priceState: 'entered' as const,
+    priceMeso: 6_000_000,
+    priceShare: 2,
+  }
+
+  function mockPriced(): void {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row()],
+      dropsByRowKey: { 'ocid-1|자쿰|카오스|2026-07-09': [PRICED] },
+    })
+  }
+
+  it('총 수익과 캐릭터 합계가 결정석 + 아이템이다', () => {
+    mockPriced()
+    renderBossProfitScreen()
+
+    // 결정석 5,000,000 + 아이템 floor(6,000,000 / 2) = 8,000,000
+    expect(screen.getAllByText(/8,000,000/).length).toBeGreaterThan(0)
+  })
+
+  it('아이템이 섞인 보스 행에만 칩이 붙고, 탭하면 내역 상자가 화면 위에 뜬다', () => {
+    mockPriced()
+    renderBossProfitScreen()
+    fireEvent.click(screen.getByRole('button', { name: /낟낟.*메소/ }))
+
+    const chip = screen.getByRole('button', { name: '자쿰 아이템 수익 확인' })
+    expect(chip).toHaveTextContent('아이템')
+
+    fireEvent.click(chip)
+    const popover = screen.getByTestId('item-revenue-popover')
+    expect(within(popover).getByText('루즈 컨트롤 머신 마크')).toBeInTheDocument()
+    // 카드 셸의 overflow-clip 을 피해 body 포털로 나가야 잘리지 않는다.
+    expect(popover.closest('.valuable-drop-card')).toBeNull()
+  })
+
+  it('값을 매긴 아이템이 없으면 칩이 없다 — 그 행은 종전과 같다', () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row()],
+      dropsByRowKey: {
+        'ocid-1|자쿰|카오스|2026-07-09': [{ category: 'equipment', itemName: '가디언 엔젤 링', quantity: 1 }],
+      },
+    })
+    renderBossProfitScreen()
+    fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
+
+    expect(screen.queryByRole('button', { name: /아이템 수익 확인/ })).not.toBeInTheDocument()
+  })
+
+  it('스킵한 아이템은 합계를 움직이지 않는다', () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row()],
+      dropsByRowKey: {
+        'ocid-1|자쿰|카오스|2026-07-09': [{ ...PRICED, priceState: 'excluded' as const }],
+      },
+    })
+    renderBossProfitScreen()
+
+    expect(screen.getAllByText(/5,000,000/).length).toBeGreaterThan(0)
+    expect(screen.queryByText(/8,000,000/)).not.toBeInTheDocument()
+  })
+})
+
+// 2026-08-10 사용자 요청 — 아이템이 섞인 캐릭터 합계는 색으로 갈린다, 팝오버에 기록 안함은 안 나온다.
+describe('아이템 수익 표시 정정 (2026-08-10)', () => {
+  it('아이템이 섞인 캐릭터 합계는 결정석만인 카드와 글자색이 다르다', () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row()],
+      dropsByRowKey: {
+        'ocid-1|자쿰|카오스|2026-07-09': [
+          { category: 'equipment', itemName: '가디언 엔젤 링', quantity: 1, priceState: 'entered', priceMeso: 6_000_000, priceShare: 2 },
+        ],
+      },
+    })
+    renderBossProfitScreen()
+
+    // 총 수익 헤드라인에도 같은 숫자가 뜨므로 **카드 안**으로 좁힌다.
+    const card = screen.getByRole('button', { name: /낟낟.*메소/ })
+    expect(within(card).getByText(/8,000,000/).closest('span')).toHaveClass('text-primary-ink')
+  })
+
+  it('결정석만인 카드는 종전 글자색 그대로다', () => {
+    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()], dropsByRowKey: {} })
+    renderBossProfitScreen()
+
+    const card = screen.getByRole('button', { name: /낟낟.*메소/ })
+    expect(within(card).getByText(/5,000,000/).closest('span')).toHaveClass('text-text')
+  })
+
+  it('아이템이 섞인 보스 행도 금액 색이 달라진다 — 캐릭터 합계와 같은 규칙', () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row()],
+      dropsByRowKey: {
+        'ocid-1|자쿰|카오스|2026-07-09': [
+          { category: 'equipment', itemName: '가디언 엔젤 링', quantity: 1, priceState: 'entered', priceMeso: 6_000_000, priceShare: 2 },
+        ],
+      },
+    })
+    renderBossProfitScreen()
+    fireEvent.click(screen.getByRole('button', { name: /낟낟.*메소/ }))
+
+    const bossRow = screen.getByRole('button', { name: /자쿰 카오스 드롭 아이템 관리/ }).closest('li')
+    expect(within(bossRow as HTMLElement).getByText(/8,000,000/).closest('span')).toHaveClass(
+      'text-primary-ink',
+    )
+  })
+
+  it('값이 없는 보스 행은 금액 색이 종전 그대로다', () => {
+    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()], dropsByRowKey: {} })
+    renderBossProfitScreen()
+    fireEvent.click(screen.getByRole('button', { name: /낟낟.*메소/ }))
+
+    const bossRow = screen.getByRole('button', { name: /자쿰 카오스 드롭 아이템 관리/ }).closest('li')
+    expect(within(bossRow as HTMLElement).getByText(/5,000,000/).closest('span')).toHaveClass('text-text')
+  })
+
+  it('팝오버는 스킵한 아이템을 싣지 않는다 — 값을 매기지 않기로 한 것이라 할 말이 없다', () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row()],
+      dropsByRowKey: {
+        'ocid-1|자쿰|카오스|2026-07-09': [
+          { category: 'equipment', itemName: '가디언 엔젤 링', quantity: 1, priceState: 'entered', priceMeso: 6_000_000, priceShare: 2 },
+          { category: 'equipment', itemName: '거대한 공포', quantity: 1, priceState: 'excluded' },
+        ],
+      },
+    })
+    renderBossProfitScreen()
+    fireEvent.click(screen.getByRole('button', { name: /낟낟.*메소/ }))
+    fireEvent.click(screen.getByRole('button', { name: '자쿰 아이템 수익 확인' }))
+
+    const popover = screen.getByTestId('item-revenue-popover')
+    expect(within(popover).getByText('가디언 엔젤 링')).toBeInTheDocument()
+    expect(within(popover).queryByText('거대한 공포')).not.toBeInTheDocument()
+  })
+})
+
+// 2026-08-10 — 캐릭터 카드에도 아이템 칩과 내역 팝오버.
+describe('캐릭터 카드 아이템 내역', () => {
+  function mockTwoMarks(): void {
+    const mark = {
+      category: 'equipment' as const,
+      itemName: '루즈 컨트롤 머신 마크',
+      quantity: 1,
+      priceState: 'entered' as const,
+      priceMeso: 4_000_000,
+      priceShare: 2,
+    }
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row(), row({ boss: '스우', difficulty: '하드' })],
+      dropsByRowKey: {
+        'ocid-1|자쿰|카오스|2026-07-09': [mark],
+        'ocid-1|스우|하드|2026-07-09': [mark, { ...mark, itemName: '가디언 엔젤 링' }],
+      },
+    })
+  }
+
+  it('아이템이 섞이면 카드에 칩이 붙는다 — 없으면 안 붙는다', () => {
+    mockTwoMarks()
+    renderBossProfitScreen()
+
+    expect(screen.getByRole('button', { name: '낟낟 아이템 수익 확인' })).toBeInTheDocument()
+  })
+
+  it('결정석만인 카드에는 칩이 없다', () => {
+    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()], dropsByRowKey: {} })
+    renderBossProfitScreen()
+
+    expect(screen.queryByRole('button', { name: /아이템 수익 확인/ })).not.toBeInTheDocument()
+  })
+
+  it('같은 아이템이라도 기록마다 한 줄이다 — 건마다 판 값이 다를 수 있다', () => {
+    // 같은 마크 2개인데 판 값이 다르다. 접으면 그 차이가 합계 하나로 뭉개진다(2026-08-10 사용자
+    // 지적으로 `×N` 집계를 되돌린 이유).
+    const mark = {
+      category: 'equipment' as const,
+      itemName: '루즈 컨트롤 머신 마크',
+      quantity: 1,
+      priceState: 'entered' as const,
+      priceShare: 1,
+    }
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row(), row({ boss: '스우', difficulty: '하드' })],
+      dropsByRowKey: {
+        'ocid-1|자쿰|카오스|2026-07-09': [{ ...mark, priceMeso: 3_000_000 }],
+        'ocid-1|스우|하드|2026-07-09': [{ ...mark, priceMeso: 7_000_000 }],
+      },
+    })
+    renderBossProfitScreen()
+    fireEvent.click(screen.getByRole('button', { name: '낟낟 아이템 수익 확인' }))
+
+    const popover = screen.getByTestId('item-revenue-popover')
+    expect(within(popover).getAllByText('루즈 컨트롤 머신 마크')).toHaveLength(2)
+    expect(within(popover).getByText('300만')).toBeInTheDocument()
+    expect(within(popover).getByText('700만')).toBeInTheDocument()
+    // 어느 보스에서 나왔는지는 말하지 않는다(사용자 지정).
+    expect(within(popover).queryByText(/자쿰|스우/)).not.toBeInTheDocument()
+  })
+
+  it('카드 칩을 눌러도 아코디언이 펼쳐지지 않는다 — 헤더 버튼과 갈라져 있다', () => {
+    mockTwoMarks()
+    renderBossProfitScreen()
+
+    fireEvent.click(screen.getByRole('button', { name: '낟낟 아이템 수익 확인' }))
+
+    expect(screen.queryByRole('button', { name: /드롭 아이템 관리/ })).not.toBeInTheDocument()
+  })
+})
+
+// 2026-08-10 — 총 수익에서 결정석과 아이템을 갈라 본다. 증감은 결정석만 본다.
+describe('총 수익 — 결정석·아이템 구분', () => {
+  function mockWithItems(): void {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row()],
+      previousPeriodTotalMeso: 4_000_000,
+      dropsByRowKey: {
+        'ocid-1|자쿰|카오스|2026-07-09': [
+          { category: 'equipment', itemName: '가디언 엔젤 링', quantity: 1, priceState: 'entered', priceMeso: 6_000_000, priceShare: 2 },
+        ],
+      },
+    })
+  }
+
+  it('자세히 보기를 누르면 결정석·아이템·합계가 갈려 나온다', () => {
+    mockWithItems()
+    renderBossProfitScreen()
+
+    fireEvent.click(screen.getByRole('button', { name: '총 수익 자세히 보기' }))
+
+    const popover = screen.getByTestId('item-revenue-popover')
+    expect(within(popover).getByText('결정석')).toBeInTheDocument()
+    expect(within(popover).getByText('5,000,000')).toBeInTheDocument()
+    expect(within(popover).getByText('3,000,000')).toBeInTheDocument()
+    expect(within(popover).getByText('8,000,000')).toBeInTheDocument()
+  })
+
+  it('아이템이 없어도 자세히 보기는 있다 — 총 수익의 상세 진입점이라 주마다 사라지면 자리가 흔들린다', () => {
+    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()], dropsByRowKey: {} })
+    renderBossProfitScreen()
+
+    fireEvent.click(screen.getByRole('button', { name: '총 수익 자세히 보기' }))
+
+    const popover = screen.getByTestId('item-revenue-popover')
+    expect(within(popover).getByText('아이템')).toBeInTheDocument()
+    // 결정석 5,000,000 · 아이템 0 · 합계 5,000,000
+    expect(within(popover).getAllByText('5,000,000')).toHaveLength(2)
+    expect(within(popover).getByText('0')).toBeInTheDocument()
+  })
+})
+
+// 2026-08-10 — 내역은 값이 큰 것부터.
+describe('아이템 내역 정렬', () => {
+  it('값이 큰 것부터 내고 미입력은 바닥으로 간다', () => {
+    const base = { category: 'equipment' as const, quantity: 1, priceShare: 1 }
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row()],
+      dropsByRowKey: {
+        'ocid-1|자쿰|카오스|2026-07-09': [
+          { ...base, itemName: '싼 것', priceState: 'entered', priceMeso: 1_000_000 },
+          { ...base, itemName: '미입력인 것' },
+          { ...base, itemName: '비싼 것', priceState: 'entered', priceMeso: 9_000_000 },
+        ],
+      },
+    })
+    renderBossProfitScreen()
+    fireEvent.click(screen.getByRole('button', { name: /낟낟.*메소/ }))
+    fireEvent.click(screen.getByRole('button', { name: '자쿰 아이템 수익 확인' }))
+
+    const names = within(screen.getByTestId('item-revenue-popover'))
+      .getAllByText(/싼 것|비싼 것|미입력인 것/)
+      .map((node) => node.textContent)
+    expect(names).toEqual(['비싼 것', '싼 것', '미입력인 것'])
+  })
+})
+
+// 2026-08-10 — 세 층 팝오버 모두 결정석/아이템을 갈라 낸다. 아이템이 없으면 목록 자리가 말한다.
+describe('내역 상자 — 결정석·아이템 구분 (세 층)', () => {
+  const priced = {
+    category: 'equipment' as const,
+    itemName: '가디언 엔젤 링',
+    quantity: 1,
+    priceState: 'entered' as const,
+    priceMeso: 6_000_000,
+    priceShare: 2,
+  }
+
+  function mockPriced(): void {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row()],
+      dropsByRowKey: { 'ocid-1|자쿰|카오스|2026-07-09': [priced] },
+    })
+  }
+
+  it('보스 행 상자도 결정석·아이템·합계를 낸다', () => {
+    mockPriced()
+    renderBossProfitScreen()
+    fireEvent.click(screen.getByRole('button', { name: /낟낟.*메소/ }))
+    fireEvent.click(screen.getByRole('button', { name: '자쿰 아이템 수익 확인' }))
+
+    const popover = screen.getByTestId('item-revenue-popover')
+    expect(within(popover).getByText('결정석')).toBeInTheDocument()
+    // 결정석 5,000,000 · 아이템 3,000,000 · 합계 8,000,000
+    expect(within(popover).getByText('5,000,000')).toBeInTheDocument()
+    expect(within(popover).getByText('3,000,000')).toBeInTheDocument()
+    expect(within(popover).getByText('8,000,000')).toBeInTheDocument()
+  })
+
+  it('캐릭터 카드 상자도 마찬가지다', () => {
+    mockPriced()
+    renderBossProfitScreen()
+    fireEvent.click(screen.getByRole('button', { name: '낟낟 아이템 수익 확인' }))
+
+    const popover = screen.getByTestId('item-revenue-popover')
+    expect(within(popover).getByText('결정석')).toBeInTheDocument()
+    expect(within(popover).getByText('8,000,000')).toBeInTheDocument()
+  })
+
+  it('아이템이 없으면 목록 자리에 그 사실을 쓴다', () => {
+    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], rows: [row()], dropsByRowKey: {} })
+    renderBossProfitScreen()
+    fireEvent.click(screen.getByRole('button', { name: '총 수익 자세히 보기' }))
+
+    const popover = screen.getByTestId('item-revenue-popover')
+    expect(within(popover).getByText('기록된 아이템이 없어요')).toBeInTheDocument()
+    // 그래도 결정석·합계는 말한다 — 상자가 뜨는 이유가 그것이다.
+    expect(within(popover).getAllByText('5,000,000')).toHaveLength(2)
+  })
+
+  it('스킵만 있으면 목록은 비고 아이템은 0이다', () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      rows: [row()],
+      dropsByRowKey: {
+        'ocid-1|자쿰|카오스|2026-07-09': [{ ...priced, priceState: 'excluded' as const }],
+      },
+    })
+    renderBossProfitScreen()
+    fireEvent.click(screen.getByRole('button', { name: '총 수익 자세히 보기' }))
+
+    const popover = screen.getByTestId('item-revenue-popover')
+    expect(within(popover).getByText('기록된 아이템이 없어요')).toBeInTheDocument()
+    expect(within(popover).getByText('0')).toBeInTheDocument()
+  })
+})
+
+// 2026-08-10 — 월간 탭의 아이템은 두 층에서 보인다: 캐릭터 카드는 **주차 한 줄씩**, 주차 행은
+// **아이템 낱개**. [[ADR-071]] 결정 10 이 짚은 월간 탭의 한계를 실제로 메우는 자리다.
+describe('월간 탭 아이템 내역', () => {
+  const weekDrop = {
+    category: 'equipment' as const,
+    itemName: '거대한 공포',
+    quantity: 1,
+    priceState: 'entered' as const,
+    priceMeso: 8_000_000,
+    priceShare: 2,
+  }
+
+  function mockMonthly(): void {
+    mockStore({
+      status: 'loaded',
+      tab: 'monthly',
+      periodKey: '2026-07',
+      trackedOcids: ['ocid-1'],
+      rows: [],
+      weeklySubtotals: [
+        subtotal({ periodKey: '2026-07-02', totalMeso: 9_000_000, drops: [weekDrop] }),
+        subtotal({ periodKey: '2026-07-09', totalMeso: 5_000_000, drops: [] }),
+      ],
+    })
+  }
+
+  it('주차 소계 행에도 아이템 칩이 붙는다 — 아이템이 있는 주에만', () => {
+    mockMonthly()
+    renderBossProfitScreen()
+    fireEvent.click(screen.getByRole('button', { name: /낟낟.*메소/ }))
+
+    expect(screen.getAllByRole('button', { name: /아이템 수익 확인/ })).toHaveLength(2) // 카드 + 그 주차
+  })
+
+  it('주차 행 팝오버는 아이템을 낱개로 보여준다', () => {
+    mockMonthly()
+    renderBossProfitScreen()
+    fireEvent.click(screen.getByRole('button', { name: /낟낟.*메소/ }))
+    fireEvent.click(screen.getByRole('button', { name: /7월 1주차 아이템 수익 확인/ }))
+
+    const popover = screen.getByTestId('item-revenue-popover')
+    expect(within(popover).getByText('거대한 공포')).toBeInTheDocument()
+    expect(within(popover).getByText('400만')).toBeInTheDocument()
+  })
+
+  it('캐릭터 카드 팝오버는 주차별 한 줄로 말한다 — 그 층에는 낱개가 없다', () => {
+    mockMonthly()
+    renderBossProfitScreen()
+    fireEvent.click(screen.getByRole('button', { name: '낟낟 아이템 수익 확인' }))
+
+    const popover = screen.getByTestId('item-revenue-popover')
+    expect(within(popover).getByText('주차별')).toBeInTheDocument()
+    expect(within(popover).getByText('1주차')).toBeInTheDocument()
+    expect(within(popover).getByText('4,000,000 메소')).toBeInTheDocument()
+    // 아이템이 0인 주는 줄을 만들지 않는다.
+    expect(within(popover).queryByText('2주차')).not.toBeInTheDocument()
   })
 })

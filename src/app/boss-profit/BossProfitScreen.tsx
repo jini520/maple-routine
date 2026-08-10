@@ -32,6 +32,9 @@ import {
 } from '../../features/schedule-sync/use-sync-error-toast'
 import { type PopoverAnchorGeometry } from '../../lib/popover-anchor'
 import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../lib/boss-matching'
+import { formatMesoShort } from '../../lib/boss-profit-delta'
+import { sumDropPayout } from '../../lib/drop-price'
+import { ItemRevenuePopover } from './ItemRevenuePopover'
 import {
   formatBossProfitPeriodLabel,
   isLatestPeriod,
@@ -46,6 +49,7 @@ import {
   collectGroupValuableDrops,
   countGroupClearedMonthlyBosses,
   countGroupClearedWeeklyBosses,
+  collectGroupDrops,
   groupTotalMeso,
   type CharacterGroup,
 } from './character-groups'
@@ -53,7 +57,9 @@ import { CharacterAvatar } from './CharacterAvatar'
 import { MonthlyAccordionBody, WeeklyAccordionBody } from './AccordionBody'
 import { CharacterIssueBadge, CharacterIssuePopover, measureIssueAnchor, ISSUE_POPOVER_EDGE_GAP, ISSUE_POPOVER_WIDTH } from './CharacterIssue'
 import { BossProfitContextProvider, useBossProfitContext } from './boss-profit-context'
-import { CrystalSummaryChip, DeltaChip } from './HeadlineChips'
+// `DeltaChip` 은 증감 표시를 통계 기능으로 옮길 때까지 쓰이지 않는다(2026-08-10) — 컴포넌트와
+// 테스트는 그대로 두고 여기서 부르지만 않는다.
+import { CrystalSummaryChip } from './HeadlineChips'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 
 
@@ -121,6 +127,12 @@ function stickyOffset(viewportPx: number): string {
 // 프롭에는 **이 캐릭터 카드에 매인 것만** 남는다 — 기간·탭 맥락과 스토어 바인딩 8개는
 // 컨텍스트에서 읽는다(ADR-094 3단계 정정). 그 8개는 아무 중간 컴포넌트도 쓰지 않고 4단계를
 // 통과만 하고 있었다.
+/** 아이템 칩이 있을 때만 금액을 세로 스택으로 감싼다 — 없으면 자식을 그대로 흘려보낸다. */
+function ItemAwareMoney(props: { wrap: boolean; children: React.ReactNode }): React.JSX.Element {
+  if (!props.wrap) return <>{props.children}</>
+  return <span className="flex flex-col items-end gap-1">{props.children}</span>
+}
+
 function CharacterAccordion(props: {
   group: CharacterGroup
   // ADR-068 결정 3: 이 캐릭터의 동기화가 실패했으면 그 종류(없으면 undefined).
@@ -134,6 +146,9 @@ function CharacterAccordion(props: {
   // 배지·팝오버를 함께 감싸는 앵커 — 바깥 탭 판정과 팝오버 위치 실측에 쓴다.
   const issueAnchorRef = useRef<HTMLDivElement>(null)
   const moneyRef = useRef<HTMLSpanElement>(null)
+  // 아이템 내역 상자 — 보스 행과 같은 방식(열 때 실측한 칩 위치에 `fixed` 로 붙는다).
+  const [itemAnchor, setItemAnchor] = useState<DOMRect | null>(null)
+  const itemChipRef = useRef<HTMLSpanElement>(null)
   const [issueGeometry, setIssueGeometry] = useState<PopoverAnchorGeometry>({
     left: ISSUE_POPOVER_EDGE_GAP,
     caretLeft: ISSUE_POPOVER_WIDTH / 2,
@@ -145,6 +160,24 @@ function CharacterAccordion(props: {
   // 않는다. 접힘 측정값(66px)이 남으면 펼침 헤더(64px)와 페이드 사이에 2px 틈이 생긴다.
   const headerRef = useRef<HTMLButtonElement>(null)
   const [headerHeight, setHeaderHeight] = useState(0)
+
+  function toggleItemPopover(): void {
+    const rect = itemChipRef.current?.getBoundingClientRect()
+    if (rect !== undefined) setItemAnchor((prev) => (prev === null ? rect : null))
+  }
+
+  // 스크롤·리사이즈에 닫는다 — `fixed` 상자는 스크롤을 따라오지 않아 어느 카드의 것인지 잃는다.
+  useEffect(() => {
+    if (itemAnchor === null) return
+    const close = (): void => setItemAnchor(null)
+    const scroller = scrollRoot.current
+    scroller?.addEventListener('scroll', close, { passive: true })
+    window.addEventListener('resize', close)
+    return () => {
+      scroller?.removeEventListener('scroll', close)
+      window.removeEventListener('resize', close)
+    }
+  }, [itemAnchor, scrollRoot])
 
   useEffect(() => {
     const element = headerRef.current
@@ -163,12 +196,30 @@ function CharacterAccordion(props: {
   }, [isExpanded])
 
   const { group } = props
-  const totalMeso = groupTotalMeso(group)
+  const totalMeso = groupTotalMeso(group, dropsByRowKey)
   // 이 주차에 고가 아이템 드롭이 기록됐을 때: 카드에 골드 회전샤인 테두리/글로우(valuable-drop-card) +
   // 우상단 획득 아이템 배지를 준다. 접힘/펼침 모두 회전 샤인 테두리·글로우·배지는 유지하되, 펼치면
   // 글로우 맥동만 멈춘다(valuable-drop-card--expanded → 회전 샤인은 계속 돌고 글로우 확산만 정적). 추가로
   // 펼쳤을 때는 고가 아이템을 획득한 보스 행(valuable-drop-row, 배경 효과)에도 강조가 들어간다.
   const valuableDrops = collectGroupValuableDrops(group, dropsByRowKey)
+  // 합계가 결정석만인지 아이템이 섞였는지 — 금액 색이 이 값을 읽는다.
+  const groupDrops = collectGroupDrops(group, dropsByRowKey)
+  // 월간 탭에서는 주간 보스 수익이 **주차 소계로 뭉쳐** 들어오므로 그 안의 아이템분(`dropMeso`)도
+  // 더해야 카드 합계와 맞는다 — 낱개로는 못 꺼내지만 합은 안다.
+  const itemTotal =
+    sumDropPayout(groupDrops) +
+    group.weeklySubtotals.reduce((sum, subtotal) => sum + sumDropPayout(subtotal.drops), 0)
+  const hasItemRevenue = itemTotal > 0
+  // 월간 탭에서 주간 몫은 소계로 뭉쳐 들어와 낱개가 없다 — **주차 한 줄씩** 말한다(사용자 요청).
+  // 라벨은 `N주차` 로 고정한다: `formatBossProfitPeriodLabel` 은 최근 두 주를 "이번 주"/"지난 주"로
+  // 부르는데, 한 달을 나열하는 자리에서는 그 둘만 어휘가 달라져 줄이 어긋난다.
+  const weeklyItemLines = group.weeklySubtotals
+    .map((subtotal, index) => ({
+      periodKey: subtotal.periodKey,
+      label: `${index + 1}주차`,
+      meso: sumDropPayout(subtotal.drops),
+    }))
+    .filter((line) => line.meso > 0)
   const hasValuable = valuableDrops.length > 0
   // 처치 진행 링은 두 탭 · 모든 기간에 그리고, 무엇을 세는지는 탭이 정한다([[ADR-059]] — 기간
   // 한정을 폐기했다. 과거 rows도 DB 기록에서 오고 그 행은 전부 isComplete: true라 파생식이 그대로
@@ -239,6 +290,18 @@ function CharacterAccordion(props: {
           issue={props.issue}
           geometry={issueGeometry}
           onClose={() => setIsIssueOpen(false)}
+        />
+      )}
+      {/* 아이템 내역은 **포털로 화면 위에** 뜬다 — 카드 셸의 `overflow-clip`([[ADR-049]])과
+          `isolate` 를 함께 피한다. 보스 행이 쓰는 것과 같은 컴포넌트다. */}
+      {itemAnchor !== null && (
+        <ItemRevenuePopover
+          drops={groupDrops}
+          weeklyLines={weeklyItemLines}
+          crystalMeso={totalMeso - itemTotal}
+          itemMeso={itemTotal}
+          anchor={itemAnchor}
+          onClose={() => setItemAnchor(null)}
         />
       )}
       {hasValuable &&
@@ -344,7 +407,18 @@ function CharacterAccordion(props: {
           {/* 금액을 relative 래퍼로 감싸 배지의 절대배치 기준으로 쓴다 — 배지는 우상단(글자 위쪽
               여백)에 얹히므로 **가로폭을 쓰지 않고 숫자도 덮지 않는다**. 좌상단이었을 때는 금액 첫
               자리를 가려 좌측에 20px을 비워야 했다(실물 확인 2026-07-31). */}
-          <span ref={moneyRef} className="relative text-sm font-bold text-text tabular-nums">
+          {/* 아이템 가격이 섞이면 **금액 색이 달라진다**([[ADR-124]] 결정 7, 2026-08-10 사용자 요청) —
+              결정석만인 카드와 한눈에 갈린다. 새 색을 만들지 않고 `primary-ink` 를 쓴다: 보스 행의
+              `아이템 +N억` 칩이 이미 그 잉크라 두 표시가 같은 것을 가리킨다는 것이 읽힌다. */}
+          {/* 아이템이 없으면 **래퍼를 만들지 않는다** — 그 카드의 DOM 이 종전과 한 글자도
+              달라지지 않아야 보스 행과 같은 약속이 유지된다([[ADR-094]] 결정 4 스냅샷). */}
+          <ItemAwareMoney wrap={hasItemRevenue}>
+          <span
+            ref={moneyRef}
+            className={`relative text-sm font-bold tabular-nums ${
+              hasItemRevenue ? 'text-primary-ink' : 'text-text'
+            }`}
+          >
             {props.issue !== undefined && (
               <CharacterIssueBadge
                 issue={props.issue}
@@ -362,6 +436,34 @@ function CharacterAccordion(props: {
             />{' '}
             메소
           </span>
+          {/* 아이템 내역 칩 — 보스 행의 것과 같은 모양·같은 잉크다(2026-08-10 사용자 요청).
+              **`<span>` 이다**: 카드 헤더 자체가 `<button>` 이라 그 안에 button 을 넣으면 중첩
+              인터랙티브가 된다(실패 배지가 같은 이유로 span 이다). 클릭을 `stopPropagation` 해
+              아코디언 토글과 갈라내고, 키보드는 `tabIndex` + Enter/Space 로 직접 받는다. */}
+          {hasItemRevenue && (
+            <span
+              ref={itemChipRef}
+              role="button"
+              tabIndex={0}
+              aria-label={`${group.characterName} 아이템 수익 확인`}
+              aria-expanded={itemAnchor !== null}
+              onClick={(event) => {
+                event.stopPropagation()
+                event.preventDefault()
+                toggleItemPopover()
+              }}
+              onKeyDown={(event) => {
+                if (event.key !== 'Enter' && event.key !== ' ') return
+                event.stopPropagation()
+                event.preventDefault()
+                toggleItemPopover()
+              }}
+              className="flex h-5 flex-none cursor-pointer items-center whitespace-nowrap rounded-full bg-primary-tint px-2 text-[11px] font-bold leading-none tabular-nums text-primary-ink"
+            >
+              아이템 +{formatMesoShort(itemTotal)}
+            </span>
+          )}
+          </ItemAwareMoney>
           {isExpanded ? (
             <ChevronUp className="h-4 w-4 text-text-muted" strokeWidth={2} aria-hidden="true" />
           ) : (
@@ -394,7 +496,6 @@ export function BossProfitScreen(): React.JSX.Element {
     weeklySubtotals,
     isPeriodLoading,
     periodState,
-    previousPeriodTotalMeso,
     canGoPreviousPeriod,
     error,
     staleCharacterNames,
@@ -455,6 +556,15 @@ export function BossProfitScreen(): React.JSX.Element {
   // ADR-100: 이 화면의 스크롤 주체. 문서가 아니라 이 요소가 스크롤되므로 스크롤 상태가 화면과
   // 함께 태어나고 함께 죽는다(히스토리 오버레이 왕복에서도 이 컨테이너는 언마운트되지 않는다).
   const scrollRootRef = useRef<HTMLDivElement>(null)
+  // 총 수익 내역 상자 — 카드·행과 같은 방식(열 때 실측한 칩 위치에 `fixed` 로 붙는다).
+  // **훅은 아래 빈 상태 early return 보다 위에 있어야 한다** — 렌더마다 호출 순서가 같아야
+  // 하고, 아래로 내려두면 빈 상태일 때만 호출이 빠져 훅 순서가 어긋난다(lint 가 잡았다).
+  const [periodItemAnchor, setPeriodItemAnchor] = useState<DOMRect | null>(null)
+  const periodItemChipRef = useRef<HTMLButtonElement>(null)
+  const togglePeriodItemPopover = (): void => {
+    const rect = periodItemChipRef.current?.getBoundingClientRect()
+    if (rect !== undefined) setPeriodItemAnchor((prev) => (prev === null ? rect : null))
+  }
 
   // 하위 페이지가 열려 있는 동안은 끈다([[ADR-120]] 결정 10). [[ADR-072]] 결정 14 의 조상 사슬
   // 검사는 오버레이의 스크롤 컨테이너가 **실제로 넘칠 때만** 참이라 내용이 짧은 관리 페이지에서
@@ -571,7 +681,19 @@ export function BossProfitScreen(): React.JSX.Element {
   // 처치가 0건이면 그것이 확정된 사실이므로 빈 상태가 맞다. 이 판정의 최종 형태는
   // resolvePeriodDataState(6상태)이고, 화면 전체를 그 상태로 옮기는 것은 [[ADR-068]] 배선 단계다.
   const periodQueryable = isCurrentPeriod || isPeriodQueryable(tab, periodKey, now)
-  const totalMeso = characterGroups.reduce((sum, group) => sum + groupTotalMeso(group), 0)
+  const totalMeso = characterGroups.reduce((sum, group) => sum + groupTotalMeso(group, dropsByRowKey), 0)
+  // 이 기간의 아이템 몫. 월간 탭은 주간 수익이 소계로만 들어오므로 그쪽의 `dropMeso` 도 더해야
+  // 결정석과 정확히 갈린다([[ADR-124]] 결정 7 정정).
+  const periodItemMeso = characterGroups.reduce(
+    (sum, group) =>
+      sum +
+      sumDropPayout(collectGroupDrops(group, dropsByRowKey)) +
+      group.weeklySubtotals.reduce((weekSum, subtotal) => weekSum + sumDropPayout(subtotal.drops), 0),
+    0,
+  )
+  // **증감은 결정석만 본다**(2026-08-10 사용자 지정) — 아이템 판매가는 주마다 들쭉날쭉해서
+  // 섞으면 증감이 "보스를 얼마나 돌았나"가 아니라 "비싼 게 떴나"를 말하게 된다.
+  const crystalTotalMeso = totalMeso - periodItemMeso
   // 총 수익 헤드라인 우측 뱃지용 — 이 기간 전체 고가 드롭(ADR-046)
   const periodValuableDrops = collectAllValuableDrops(characterGroups, dropsByRowKey)
 
@@ -631,13 +753,25 @@ export function BossProfitScreen(): React.JSX.Element {
                 무관하다 — 제목 줄 높이는 h1(28px)이 정한다. */}
             <div className="flex items-center justify-between">
               <h1 className="text-lg font-semibold text-text">보스 수익</h1>
-              <button
-                type="button"
-                onClick={() => navigate('/profit/drops')}
-                className="text-sm font-medium text-text-muted hover:text-text"
-              >
-                히스토리
-              </button>
+              {/* 진입점 둘은 같은 어휘를 쓴다 — `가격`(쓰기)이 `히스토리`(읽기) 왼쪽이다
+                  ([[ADR-124]] 결정 8). 값을 매기는 쪽을 먼저 두는 이유는 주마다 들르는 자리이기
+                  때문이고, 히스토리는 가끔 돌아보는 곳이다. */}
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => navigate('/profit/prices')}
+                  className="text-sm font-medium text-text-muted hover:text-text"
+                >
+                  아이템 가격
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate('/profit/drops')}
+                  className="text-sm font-medium text-text-muted hover:text-text"
+                >
+                  히스토리
+                </button>
+              </div>
             </div>
 
             <div className="flex items-center gap-4">
@@ -775,18 +909,37 @@ export function BossProfitScreen(): React.JSX.Element {
                     <AnimatedMeso identity={`total|${loadedTab}`} value={totalMeso} />{' '}
                     <span className="text-xs font-bold text-text-muted">메소</span>
                   </p>
-                  {/* ADR-087 결정 1: 라벨행이 아니라 이 줄에 붙는다 — 32px 금액행 안에 들어가므로
-                      헤더 높이가 늘지 않는다(라벨행 h-6 제약과도 무관하다). */}
-                  <DeltaChip
-                    totalMeso={totalMeso}
-                    previousMeso={previousPeriodTotalMeso}
-                    tab={tab}
-                    periodKey={periodKey}
-                    now={now}
-                  />
+                  {/* **증감 칩은 이번 패치에서 뺐다**(2026-08-10 사용자 결정) — 총 수익에서는 뜻이
+                      퇴색한다고 봤고, 나중에 통계 기능이 생기면 그쪽으로 옮긴다. `DeltaChip` 과
+                      스토어의 `previousPeriodTotalMeso` 는 **지우지 않고 남긴다**(그때 그대로 쓴다).
+
+                      그 자리를 자세히 보기가 받는다 — 결정석과 아이템을 갈라 보여주는 자리다.
+                      금액행(32px)이라 h-6 이 들어가고 헤더 높이가 늘지 않는다([[ADR-087]] 결정 1이
+                      증감 칩을 이 줄에 둔 것과 같은 사정). */}
+                  <button
+                    ref={periodItemChipRef}
+                    type="button"
+                    onClick={togglePeriodItemPopover}
+                    aria-label="총 수익 자세히 보기"
+                    aria-expanded={periodItemAnchor !== null}
+                    className="ml-auto flex h-6 flex-none items-center gap-0.5 rounded-full border border-border px-2.5 text-[11px] font-semibold text-text-muted"
+                  >
+                    자세히 보기
+                    <ChevronDown className="h-3 w-3 flex-none" strokeWidth={2.5} aria-hidden="true" />
+                  </button>
                 </div>
                 <div className="mt-3 h-px bg-border" aria-hidden="true" />
               </div>
+            )}
+
+            {periodItemAnchor !== null && (
+              <ItemRevenuePopover
+                drops={characterGroups.flatMap((group) => collectGroupDrops(group, dropsByRowKey))}
+                crystalMeso={crystalTotalMeso}
+                itemMeso={periodItemMeso}
+                anchor={periodItemAnchor}
+                onClose={() => setPeriodItemAnchor(null)}
+              />
             )}
           </div>
 

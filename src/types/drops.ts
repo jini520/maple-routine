@@ -41,7 +41,8 @@ export interface BoxResult {
 }
 
 // 한 보스에서 기록된 드롭 하나. 상자 개봉 결과면 itemName은 실제 나온 아이템(반지/장신구)이고
-// boxOrigin에 상자명이 남는다. 금액은 저장하지 않는다(시세는 별도 소스에서 조인 — ADR-038).
+// boxOrigin에 상자명이 남는다. 가격은 기록 한 건에 붙는 실제 판매가다(#185) — ADR-038의
+// "금액을 저장하지 않는다"를 뒤집은 자리이고, 그래서 세 필드가 전부 optional이다(옛 기록엔 없다).
 export interface RecordedDrop {
   category: DropCategory
   itemName: string
@@ -49,4 +50,16 @@ export interface RecordedDrop {
   boxOrigin?: string
   ringLevel?: number
   quantity: number
+  /**
+   * 가격 상태(#185). `undefined` = **미입력**.
+   *
+   * `'excluded'`(기록 안함)는 "이 아이템은 값을 매길 만하지 않다"는 **사용자의 결정**이다.
+   * 화면의 **스킵**과 다르다 — 스킵은 "아직 안 팔렸다, 팔리면 그때 넣겠다"라 상태를 바꾸지 않고
+   * **미입력에 머문다**(사용자 지정 2026-08-10). 그래서 스킵은 저장되는 값이 없다.
+   */
+  priceState?: 'entered' | 'excluded'
+  /** 입력한 판매 **총액**(메소). 수량이 2 이상이어도 묶음가 하나다. */
+  priceMeso?: number
+  /** 분배 인원 스냅샷. 입력 시 그 행의 파티원 수로 씨를 뿌리고 저장 후 독립한다. */
+  priceShare?: number
 }
