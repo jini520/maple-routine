@@ -54,8 +54,9 @@ const TABLE_DEFINITIONS = [
   )
 `,
   },
-  // 보스별/기간별 드롭 기록(ADR-038). 한 보스가 여러 드롭을 가지므로 drop_index로 다중 행. 금액은
-  // 저장하지 않고 재평가 가능한 구조(아이템명·카테고리·상자 출처·반지 등급·수량)만 담는다.
+  // 보스별/기간별 드롭 기록(ADR-038). 한 보스가 여러 드롭을 가지므로 drop_index로 다중 행.
+  // 금액도 여기 담는다 — 기록 한 건에 붙는 실판매가다([[ADR-124]], ADR-038 반전). 같은 행에 두면
+  // 난이도 확정 이관·prune 삭제가 가격까지 함께 옮기고 지운다.
   {
     name: 'boss_drop_records',
     createSql: `
@@ -72,6 +73,11 @@ const TABLE_DEFINITIONS = [
     ring_level INTEGER,
     quantity INTEGER NOT NULL,
     recorded_at TEXT NOT NULL,
+    -- 가격([[ADR-124]] 결정 4). 셋 다 nullable 이고 NULL 은 '미입력'이다 — 0 을 쓰면
+    -- '0메소에 팔았다'가 되어 스킵·미입력과 구분이 사라진다.
+    price_state TEXT,
+    price_meso INTEGER,
+    price_share INTEGER,
     PRIMARY KEY (ocid, boss, difficulty, period_key, drop_index)
   )
 `,
@@ -141,6 +147,10 @@ async function openBossProfitDb(): Promise<SQLiteDBConnection> {
     await db.execute(table.createSql)
   }
   await ensureColumn(db, 'boss_profit_records', 'world', 'TEXT')
+  // 이미 만들어진 DB에는 위 CREATE 가 컬럼을 더해주지 않는다([[ADR-069]] 결정 1과 같은 사정).
+  await ensureColumn(db, 'boss_drop_records', 'price_state', 'TEXT')
+  await ensureColumn(db, 'boss_drop_records', 'price_meso', 'INTEGER')
+  await ensureColumn(db, 'boss_drop_records', 'price_share', 'INTEGER')
   await db.execute(MIGRATE_MEIRIN_BOSS_KEY_PARTY_SETTINGS)
   await db.execute(MIGRATE_MEIRIN_BOSS_KEY_PROFIT_RECORDS)
 

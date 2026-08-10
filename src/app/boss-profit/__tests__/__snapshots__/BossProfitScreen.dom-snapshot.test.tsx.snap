@@ -8,7 +8,10 @@ exports[`BossProfitScreen DOM 스냅샷 (ADR-094 결정 4) > 빈 상태 — 페�
 <div class="space-y-4">
 <div class="flex items-center justify-between">
 <h1 class="font-semibold text-lg text-text">보스 수익</h1>
+<div class="flex gap-3 items-center">
+<button type="button" class="font-medium hover:text-text text-sm text-text-muted">아이템 가격</button>
 <button type="button" class="font-medium hover:text-text text-sm text-text-muted">히스토리</button>
+</div>
 </div>
 <div class="flex gap-4 items-center">
 <button type="button" class="bg-primary-tint font-semibold px-3 py-[5px] rounded-full text-primary-ink text-sm">주간</button>
@@ -75,7 +78,10 @@ exports[`BossProfitScreen DOM 스냅샷 (ADR-094 결정 4) > 여러 캐릭터 ·
 <div class="space-y-4">
 <div class="flex items-center justify-between">
 <h1 class="font-semibold text-lg text-text">보스 수익</h1>
+<div class="flex gap-3 items-center">
+<button type="button" class="font-medium hover:text-text text-sm text-text-muted">아이템 가격</button>
 <button type="button" class="font-medium hover:text-text text-sm text-text-muted">히스토리</button>
+</div>
 </div>
 <div class="flex gap-4 items-center">
 <button type="button" class="bg-primary-tint font-semibold px-3 py-[5px] rounded-full text-primary-ink text-sm">주간</button>
@@ -124,13 +130,11 @@ exports[`BossProfitScreen DOM 스냅샷 (ADR-094 결정 4) > 여러 캐릭터 ·
 </span>
 <p class="font-extrabold leading-none tabular-nums text-primary-ink text-xl">22,000,000 <span class="font-bold text-text-muted text-xs">메소</span>
 </p>
-<span aria-label="7월 1주차에는 수익이 없었습니다. 2,200만 메소 증가" class="bg-rise-tint flex flex-none font-bold gap-0.5 h-5 items-center leading-none ml-2 px-1.5 rounded-full tabular-nums text-[11px] text-rise-ink">
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="flex-none h-2.5 lucide lucide-arrow-up w-2.5" aria-hidden="true">
-<path d="m5 12 7-7 7 7">
+<button type="button" aria-label="총 수익 자세히 보기" aria-expanded="false" class="border border-border flex flex-none font-semibold gap-0.5 h-6 items-center ml-auto px-2.5 rounded-full text-[11px] text-text-muted">자세히 보기<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="flex-none h-3 lucide lucide-chevron-down w-3" aria-hidden="true">
+<path d="m6 9 6 6 6-6">
 </path>
-<path d="M12 19V5">
-</path>
-</svg>2,200만</span>
+</svg>
+</button>
 </div>
 <div class="bg-border h-px mt-3" aria-hidden="true">
 </div>
@@ -275,7 +279,10 @@ exports[`BossProfitScreen DOM 스냅샷 (ADR-094 결정 4) > 월간 탭 — 주�
 <div class="space-y-4">
 <div class="flex items-center justify-between">
 <h1 class="font-semibold text-lg text-text">보스 수익</h1>
+<div class="flex gap-3 items-center">
+<button type="button" class="font-medium hover:text-text text-sm text-text-muted">아이템 가격</button>
 <button type="button" class="font-medium hover:text-text text-sm text-text-muted">히스토리</button>
+</div>
 </div>
 <div class="flex gap-4 items-center">
 <button type="button" class="font-medium px-3 text-sm text-text-muted">주간</button>
@@ -344,13 +351,11 @@ exports[`BossProfitScreen DOM 스냅샷 (ADR-094 결정 4) > 월간 탭 — 주�
 </span>
 <p class="font-extrabold leading-none tabular-nums text-primary-ink text-xl">5,000,000 <span class="font-bold text-text-muted text-xs">메소</span>
 </p>
-<span aria-label="2026년 6월에는 수익이 없었습니다. 500만 메소 증가" class="bg-rise-tint flex flex-none font-bold gap-0.5 h-5 items-center leading-none ml-2 px-1.5 rounded-full tabular-nums text-[11px] text-rise-ink">
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="flex-none h-2.5 lucide lucide-arrow-up w-2.5" aria-hidden="true">
-<path d="m5 12 7-7 7 7">
+<button type="button" aria-label="총 수익 자세히 보기" aria-expanded="false" class="border border-border flex flex-none font-semibold gap-0.5 h-6 items-center ml-auto px-2.5 rounded-full text-[11px] text-text-muted">자세히 보기<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="flex-none h-3 lucide lucide-chevron-down w-3" aria-hidden="true">
+<path d="m6 9 6 6 6-6">
 </path>
-<path d="M12 19V5">
-</path>
-</svg>500만</span>
+</svg>
+</button>
 </div>
 <div class="bg-border h-px mt-3" aria-hidden="true">
 </div>
@@ -395,7 +400,10 @@ exports[`BossProfitScreen DOM 스냅샷 (ADR-094 결정 4) > 주간 탭 · 카�
 <div class="space-y-4">
 <div class="flex items-center justify-between">
 <h1 class="font-semibold text-lg text-text">보스 수익</h1>
+<div class="flex gap-3 items-center">
+<button type="button" class="font-medium hover:text-text text-sm text-text-muted">아이템 가격</button>
 <button type="button" class="font-medium hover:text-text text-sm text-text-muted">히스토리</button>
+</div>
 </div>
 <div class="flex gap-4 items-center">
 <button type="button" class="bg-primary-tint font-semibold px-3 py-[5px] rounded-full text-primary-ink text-sm">주간</button>
@@ -444,13 +452,11 @@ exports[`BossProfitScreen DOM 스냅샷 (ADR-094 결정 4) > 주간 탭 · 카�
 </span>
 <p class="font-extrabold leading-none tabular-nums text-primary-ink text-xl">13,000,000 <span class="font-bold text-text-muted text-xs">메소</span>
 </p>
-<span aria-label="7월 1주차에는 수익이 없었습니다. 1,300만 메소 증가" class="bg-rise-tint flex flex-none font-bold gap-0.5 h-5 items-center leading-none ml-2 px-1.5 rounded-full tabular-nums text-[11px] text-rise-ink">
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="flex-none h-2.5 lucide lucide-arrow-up w-2.5" aria-hidden="true">
-<path d="m5 12 7-7 7 7">
+<button type="button" aria-label="총 수익 자세히 보기" aria-expanded="false" class="border border-border flex flex-none font-semibold gap-0.5 h-6 items-center ml-auto px-2.5 rounded-full text-[11px] text-text-muted">자세히 보기<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="flex-none h-3 lucide lucide-chevron-down w-3" aria-hidden="true">
+<path d="m6 9 6 6 6-6">
 </path>
-<path d="M12 19V5">
-</path>
-</svg>1,300만</span>
+</svg>
+</button>
 </div>
 <div class="bg-border h-px mt-3" aria-hidden="true">
 </div>
@@ -517,7 +523,10 @@ exports[`BossProfitScreen DOM 스냅샷 (ADR-094 결정 4) > 주간 탭 · 카�
 <div class="space-y-4">
 <div class="flex items-center justify-between">
 <h1 class="font-semibold text-lg text-text">보스 수익</h1>
+<div class="flex gap-3 items-center">
+<button type="button" class="font-medium hover:text-text text-sm text-text-muted">아이템 가격</button>
 <button type="button" class="font-medium hover:text-text text-sm text-text-muted">히스토리</button>
+</div>
 </div>
 <div class="flex gap-4 items-center">
 <button type="button" class="bg-primary-tint font-semibold px-3 py-[5px] rounded-full text-primary-ink text-sm">주간</button>
@@ -566,13 +575,11 @@ exports[`BossProfitScreen DOM 스냅샷 (ADR-094 결정 4) > 주간 탭 · 카�
 </span>
 <p class="font-extrabold leading-none tabular-nums text-primary-ink text-xl">13,000,000 <span class="font-bold text-text-muted text-xs">메소</span>
 </p>
-<span aria-label="7월 1주차에는 수익이 없었습니다. 1,300만 메소 증가" class="bg-rise-tint flex flex-none font-bold gap-0.5 h-5 items-center leading-none ml-2 px-1.5 rounded-full tabular-nums text-[11px] text-rise-ink">
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="flex-none h-2.5 lucide lucide-arrow-up w-2.5" aria-hidden="true">
-<path d="m5 12 7-7 7 7">
+<button type="button" aria-label="총 수익 자세히 보기" aria-expanded="false" class="border border-border flex flex-none font-semibold gap-0.5 h-6 items-center ml-auto px-2.5 rounded-full text-[11px] text-text-muted">자세히 보기<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="flex-none h-3 lucide lucide-chevron-down w-3" aria-hidden="true">
+<path d="m6 9 6 6 6-6">
 </path>
-<path d="M12 19V5">
-</path>
-</svg>1,300만</span>
+</svg>
+</button>
 </div>
 <div class="bg-border h-px mt-3" aria-hidden="true">
 </div>

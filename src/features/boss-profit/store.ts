@@ -18,6 +18,7 @@ import {
   type BossProfitRecord,
 } from '../../storage/boss-profit'
 import { getBossDropRecords, replaceBossDropRecords } from '../../storage/boss-drops'
+import { sumDropPayout } from '../../lib/drop-price'
 import type { RecordedDrop } from '../../types/drops'
 import { isPeriodChecked } from '../../storage/boss-profit-period-checks'
 import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
@@ -42,6 +43,7 @@ import {
   sortRowsByOcidOrder,
   sumRowsPayout,
   toProfileSnapshot,
+  toRecordedDrop,
   } from './rows'
 import type { BossProfitRow, BossProfitRowKey, CharacterProfileInfo, SortedCharacterInfo } from './rows'
 // 행 타입의 정의 위치는 rows.ts 지만 공개 경로는 그대로 둔다(ADR-094 결정 7) — 화면과 테스트가
@@ -73,6 +75,15 @@ export interface BossProfitWeeklySubtotal {
   imageUrl: string | null
   periodKey: string
   totalMeso: number
+  /**
+   * 그 주에 기록된 드롭([[ADR-124]] 결정 7 정정). `totalMeso` 에 이미 환산돼 들어 있다.
+   *
+   * **합이 아니라 목록으로 들고 있는 이유**: 월간 탭에서는 소계가 유일한 주간 수익 원천이라
+   * ① 총 수익에서 결정석/아이템을 가르는 데 쓰이고(합이면 충분했다) ② 주차 소계 행의 내역
+   * 팝오버가 **아이템을 낱개로** 보여줘야 한다(2026-08-10 사용자 요청). 합만 들고 있으면 ②를
+   * 할 수 없어 [[ADR-071]] 결정 10 이 짚은 월간 탭의 한계가 그대로 남는다.
+   */
+  drops: RecordedDrop[]
   state: WeeklySubtotalState
 }
 
@@ -149,6 +160,23 @@ export interface BossProfitStore extends BossProfitState {
   retryPeriod(): Promise<void>
   setPartySize(row: BossProfitRowKey, partySize: number): Promise<void>
   setBossDrops(row: BossProfitRowKey, drops: RecordedDrop[]): Promise<void>
+  /**
+   * **다른 화면이 같은 그룹을 DB에 쓴 뒤** 이 스토어의 스냅샷만 맞춘다(쓰기 없음).
+   *
+   * 가격 기록 화면(`drop-price-store`)이 부른다 — 두 스토어가 같은 `boss_drop_records` 를 각자
+   * 캐시하는데, 이 화면은 스택 왕복에도 마운트를 유지하므로([[ADR-077]]) 알려주지 않으면 **옛
+   * 스냅샷을 계속 그린다**(사용자 보고 2026-08-10: "새로고침해야 반영된다").
+   *
+   * `setBossDrops` 를 쓸 수 없는 이유가 둘이다: DB 에 **두 번 쓰게 되고**, 그 함수는 현재 로드된
+   * `rows` 에서 행을 찾는데 가격 화면은 **다른 기간**을 열고 있을 수 있다.
+   */
+  applyExternalDropEdit(
+    ocid: string,
+    boss: string,
+    difficulty: string,
+    periodKey: string,
+    drops: RecordedDrop[],
+  ): void
 }
 
 
@@ -272,6 +300,17 @@ async function buildWeeklySubtotalsForMonth(
     ),
   )
 
+  // 아이템 수익도 소계에 넣는다([[ADR-124]] 결정 7) — 안 넣으면 **주간 탭과 월간 탭의 같은 주가
+  // 다른 숫자**가 된다(주간 탭은 보스 행에 더해 보여주므로). 주차 전체를 한 번에 읽어 접는다.
+  const weekDrops = await withSqliteFallback(getBossDropRecords(ocids, weekKeys), [])
+  const dropsByOcidWeek = new Map<string, RecordedDrop[]>()
+  for (const record of weekDrops) {
+    const key = `${record.ocid}|${record.periodKey}`
+    const list = dropsByOcidWeek.get(key) ?? []
+    list.push(toRecordedDrop(record))
+    dropsByOcidWeek.set(key, list)
+  }
+
   const subtotals: BossProfitWeeklySubtotal[] = []
 
   for (const ocid of ocids) {
@@ -285,7 +324,7 @@ async function buildWeeklySubtotalsForMonth(
 
     for (const weekKey of weekKeys) {
       if (weekKey > currentWeeklyPeriodKey) {
-        subtotals.push({ ocid, characterName, imageUrl, periodKey: weekKey, totalMeso: 0, state: 'upcoming' })
+        subtotals.push({ ocid, characterName, imageUrl, periodKey: weekKey, totalMeso: 0, drops: [], state: 'upcoming' })
         continue
       }
 
@@ -297,12 +336,21 @@ async function buildWeeklySubtotalsForMonth(
       if (weekKey === currentWeeklyPeriodKey) {
         // 진행 중인 주. 라이브 원천이 있으면 그쪽이 최신이고(자동 기록이 건너뛰어진 처치까지
         // 담는다), 없으면 이미 쌓인 기록에서 읽는다(ADR-075 — 달 경계를 걸친 주).
-        const totalMeso = hasLiveSource
+        const crystalMeso = hasLiveSource
           ? sumRowsPayout(
               liveRows.filter((row) => row.ocid === ocid && row.cycle === 'weekly' && row.periodKey === weekKey),
             )
           : recordedMeso
-        subtotals.push({ ocid, characterName, imageUrl, periodKey: weekKey, totalMeso, state: 'inProgress' })
+        const drops = dropsByOcidWeek.get(`${ocid}|${weekKey}`) ?? []
+        subtotals.push({
+          ocid,
+          characterName,
+          imageUrl,
+          periodKey: weekKey,
+          totalMeso: crystalMeso + sumDropPayout(drops),
+          drops,
+          state: 'inProgress',
+        })
         continue
       }
 
@@ -315,7 +363,16 @@ async function buildWeeklySubtotalsForMonth(
         isQueryable: isPeriodQueryable('weekly', weekKey, now),
         lastOutcome: outcomes?.get(`${ocid}|weekly|${weekKey}`) ?? null,
       })
-      subtotals.push({ ocid, characterName, imageUrl, periodKey: weekKey, totalMeso: recordedMeso, state })
+      const drops = dropsByOcidWeek.get(`${ocid}|${weekKey}`) ?? []
+      subtotals.push({
+        ocid,
+        characterName,
+        imageUrl,
+        periodKey: weekKey,
+        totalMeso: recordedMeso + sumDropPayout(drops),
+        drops,
+        state,
+      })
     }
   }
 
@@ -1132,5 +1189,14 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     // 필요 없다 — 탭 전환/기간 이동 시 loadPeriod가 DB(방금 replace한 결과)에서 다시 로드한다.
     const key = dropRowKey(row.ocid, row.boss, row.difficulty, row.periodKey)
     set({ dropsByRowKey: { ...get().dropsByRowKey, [key]: drops } })
+  },
+
+  applyExternalDropEdit(ocid, boss, difficulty, periodKey, drops) {
+    set({
+      dropsByRowKey: {
+        ...get().dropsByRowKey,
+        [dropRowKey(ocid, boss, difficulty, periodKey)]: drops,
+      },
+    })
   },
 }))

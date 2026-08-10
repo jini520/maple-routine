@@ -180,6 +180,9 @@ export async function loadPreviousPeriodTotal(
   if (ocids.length === 0) {
     return 0
   }
+  // **결정석만 센다**([[ADR-124]] 결정 7 정정, 2026-08-10 사용자 지정). 아이템 판매가는 그 주에
+  // 실제로 판 값이라 주마다 들쭉날쭉하고, 섞으면 증감이 "이번 주 보스를 얼마나 돌았나"가 아니라
+  // "비싼 게 떴나"를 말하게 된다. 화면도 같은 잣대로 이번 기간의 결정석 합만 넘긴다.
   const records = await withSqliteFallback(
     getBossProfitRecords(ocids, getComparisonPeriodKeys(tab, periodKey)),
     [],

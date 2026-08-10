@@ -293,3 +293,80 @@ describe('planConfirmedDifficultyDropMigration', () => {
     expect(plan?.drops).toEqual([{ category: 'fixed', itemName: '주문의 흔적', quantity: 1 }])
   })
 })
+
+// ⚠️ 가격이 조용히 사라지는 자리 그 ① ([[ADR-124]] 결정 4)
+//
+// `toRecordedDrop` 이 필드를 손으로 옮겨 적으므로, 새 컬럼을 빠뜨려도 **타입 에러 없이 통과하고**
+// 값만 `undefined` 가 된다. 화면에는 "미입력"으로 보여 버그로 인지되기까지 오래 걸린다 — 그래서
+// 이관 계산에 가격 생존을 직접 못 박는다.
+describe('planConfirmedDifficultyDropMigration — 가격 생존 (ADR-124)', () => {
+  it('이관된 드롭이 가격 세 필드를 그대로 들고 간다', () => {
+    const plan = planConfirmedDifficultyDropMigration('스우', '하드', [
+      {
+        difficulty: '익스트림',
+        dropIndex: 0,
+        category: 'equipment',
+        itemName: '루즈 컨트롤 머신 마크',
+        slot: '얼굴장식',
+        quantity: 1,
+        priceState: 'entered',
+        priceMeso: 15_000_000_000,
+        priceShare: 3,
+      },
+    ])
+
+    expect(plan?.drops).toEqual([
+      expect.objectContaining({
+        itemName: '루즈 컨트롤 머신 마크',
+        priceState: 'entered',
+        priceMeso: 15_000_000_000,
+        priceShare: 3,
+      }),
+    ])
+  })
+
+  it('스킵 상태도 이관에서 살아남는다 — 미입력으로 되돌아가면 다시 묻게 된다', () => {
+    const plan = planConfirmedDifficultyDropMigration('스우', '하드', [
+      {
+        difficulty: '익스트림',
+        dropIndex: 0,
+        category: 'equipment',
+        itemName: '루즈 컨트롤 머신 마크',
+        slot: '얼굴장식',
+        quantity: 1,
+        priceState: 'excluded',
+      },
+    ])
+
+    expect(plan?.drops[0].priceState).toBe('excluded')
+  })
+
+  it('확정 난이도에 이미 있던 드롭의 가격도 보존한다', () => {
+    const plan = planConfirmedDifficultyDropMigration('스우', '하드', [
+      {
+        difficulty: '하드',
+        dropIndex: 0,
+        category: 'consumable',
+        itemName: '리스트레인트 링',
+        boxOrigin: '홍옥의 보스 반지 상자',
+        ringLevel: 3,
+        quantity: 1,
+        priceState: 'entered',
+        priceMeso: 1_200_000_000,
+        priceShare: 1,
+      },
+      {
+        difficulty: '익스트림',
+        dropIndex: 0,
+        category: 'equipment',
+        itemName: '루즈 컨트롤 머신 마크',
+        slot: '얼굴장식',
+        quantity: 1,
+      },
+    ])
+
+    expect(plan?.drops[0]).toEqual(
+      expect.objectContaining({ priceMeso: 1_200_000_000, priceShare: 1 }),
+    )
+  })
+})

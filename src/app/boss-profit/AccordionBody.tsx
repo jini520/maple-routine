@@ -13,6 +13,10 @@ import { BossProfitBossRow } from './BossProfitBossRow'
 import { useBossProfitContext } from './boss-profit-context'
 import { rowKey } from './character-groups'
 import { RefreshCw } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { formatMesoShort } from '../../lib/boss-profit-delta'
+import { sumDropPayout } from '../../lib/drop-price'
+import { ItemRevenuePopover } from './ItemRevenuePopover'
 
 // ADR-068 결정 2: **행동이 있는 상태에만 버튼을 준다.** 여섯 상태 중 사용자가 할 수 있는 것은
 // notChecked(조회)와 failed(다시 시도) 둘뿐이고, 나머지는 금액 또는 비활성 배지로 정적이다.
@@ -49,13 +53,48 @@ export function WeeklySubtotalRow(props: {
   subtotal: BossProfitWeeklySubtotal
 }): React.JSX.Element {
   const { subtotal } = props
-  const { now, onRetryPeriod } = useBossProfitContext()
+  const { now, onRetryPeriod, scrollRoot } = useBossProfitContext()
   const label = formatBossProfitPeriodLabel('weekly', subtotal.periodKey, now)
   const actionLabel = SUBTOTAL_ACTION_LABEL[subtotal.state]
   const staticLabel = SUBTOTAL_STATIC_LABEL[subtotal.state]
   // 금액을 말할 수 있는 상태 — 기록이 있거나(recorded), 조회해서 0건을 확인했거나, 진행 중.
   const showsMeso =
     subtotal.state === 'recorded' || subtotal.state === 'confirmedEmpty' || subtotal.state === 'inProgress'
+
+  const itemMeso = sumDropPayout(subtotal.drops)
+  const [anchor, setAnchor] = useState<DOMRect | null>(null)
+  const chipRef = useRef<HTMLButtonElement>(null)
+
+  function togglePopover(): void {
+    const rect = chipRef.current?.getBoundingClientRect()
+    if (rect !== undefined) setAnchor((prev) => (prev === null ? rect : null))
+  }
+
+  // 스크롤·리사이즈에 닫는다 — `fixed` 상자는 스크롤을 따라오지 않아 어느 주차의 것인지 잃는다.
+  useEffect(() => {
+    if (anchor === null) return
+    const close = (): void => setAnchor(null)
+    const scroller = scrollRoot.current
+    scroller?.addEventListener('scroll', close, { passive: true })
+    window.addEventListener('resize', close)
+    return () => {
+      scroller?.removeEventListener('scroll', close)
+      window.removeEventListener('resize', close)
+    }
+  }, [anchor, scrollRoot])
+
+  // 아이템이 없으면 금액 마크업이 종전과 한 글자도 다르지 않아야 한다(DOM 스냅샷, [[ADR-094]] 결정 4).
+  const amount = (
+    <span
+      className={
+        itemMeso > 0
+          ? 'whitespace-nowrap text-sm font-semibold text-primary-ink tabular-nums'
+          : 'text-sm font-semibold text-text tabular-nums'
+      }
+    >
+      <AnimatedMeso identity={`subtotal|${subtotal.ocid}|${subtotal.periodKey}`} value={subtotal.totalMeso} /> 메소
+    </span>
+  )
 
   return (
     <li
@@ -95,10 +134,35 @@ export function WeeklySubtotalRow(props: {
         </button>
       )}
 
-      {showsMeso && (
-        <span className="text-sm font-semibold text-text tabular-nums">
-          <AnimatedMeso identity={`subtotal|${subtotal.ocid}|${subtotal.periodKey}`} value={subtotal.totalMeso} /> 메소
-        </span>
+      {showsMeso &&
+        (itemMeso === 0 ? (
+          amount
+        ) : (
+          // 아이템이 섞이면 금액 아래에 칩을 쌓는다 — 보스 행·캐릭터 카드와 **같은 규칙·같은 잉크**다
+          // (2026-08-10 사용자 요청). 이 주의 아이템을 낱개로 보려면 여기서 연다.
+          <span className="flex flex-col items-end gap-1">
+            {amount}
+            <button
+              ref={chipRef}
+              type="button"
+              onClick={togglePopover}
+              aria-label={`${label.primary} 아이템 수익 확인`}
+              aria-expanded={anchor !== null}
+              className="flex h-5 flex-none items-center whitespace-nowrap rounded-full bg-primary-tint px-2 text-[11px] font-bold leading-none tabular-nums text-primary-ink"
+            >
+              아이템 +{formatMesoShort(itemMeso)}
+            </button>
+          </span>
+        ))}
+
+      {anchor !== null && (
+        <ItemRevenuePopover
+          drops={subtotal.drops}
+          crystalMeso={subtotal.totalMeso - itemMeso}
+          itemMeso={itemMeso}
+          anchor={anchor}
+          onClose={() => setAnchor(null)}
+        />
       )}
     </li>
   )

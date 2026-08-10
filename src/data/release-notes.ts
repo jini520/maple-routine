@@ -37,16 +37,31 @@ export const RELEASE_NOTE_CATEGORY_ORDER: readonly ReleaseNoteCategory[] = [
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
     version: '1.0.4',
-    // ⚠️ **아직 배포되지 않은 버전이다** — 이 노트는 마일스톤 v1.0.4 의 닫힌 이슈(#156·#166·#191)를
-    // 근거로 **미리** 썼다(이슈 #198, 사용자 결정). `date` 는 작성일이므로 **릴리스 때
-    // `chore(release)` 커밋 날짜로 정정해야 한다**(ADR-119 — 날짜의 근거는 그 커밋이다).
-    // #185(드롭 판매가)는 PR #195 가 아직 열려 있어 여기 없다 — 머지될 때 항목을 더한다.
+    // ⚠️ **아직 배포되지 않은 버전이다** — 이 노트는 마일스톤 v1.0.4 의 닫힌 이슈
+    // (#156·#166·#185·#191)를 근거로 **미리** 썼다(이슈 #198, 사용자 결정). `date` 는 작성일이므로
+    // **릴리스 때 `chore(release)` 커밋 날짜로 정정해야 한다**(ADR-119 — 날짜의 근거는 그 커밋이다).
     date: '2026-08-10',
     items: [
       {
         category: 'feature',
+        text: '드롭한 아이템에 판매 가격을 입력해 주간·월간 수익에 합산',
+        guideId: 'drop-item-price',
+      },
+      {
+        category: 'feature',
         text: '개발 노트에서 새 기능 사용법 보기',
         guideId: 'release-note-guide',
+      },
+      {
+        category: 'improvement',
+        text: '총 수익을 결정석과 아이템으로 나눠 보기',
+      },
+      {
+        // 사라진 것도 적는다 — 말없이 없어지면 고장으로 읽힌다. **다시 넣겠다고 쓰지 않는다**:
+        // ADR-124 결정 7 은 "통계 기능이 생기면 그쪽으로 옮긴다"까지만 정했고, 노트에 적는 순간
+        // 그것은 계획이 아니라 약속이 된다.
+        category: 'improvement',
+        text: '총 수익의 지난 기간 대비 증감 표시 제거',
       },
       {
         category: 'improvement',

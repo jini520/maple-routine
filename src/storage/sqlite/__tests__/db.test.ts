@@ -381,7 +381,46 @@ describe('world 컬럼 마이그레이션 (ADR-069 결정 1)', () => {
     const { getBossProfitDb } = await import('../db')
     await getBossProfitDb()
 
-    const altered = dbExecuteMock.mock.calls.some(([sql]) => String(sql).includes('ADD COLUMN'))
+    // **컬럼을 지목해 센다.** `ADD COLUMN` 전체를 세면 같은 `ensureColumn` 을 쓰는 다른 컬럼이
+    // 늘어날 때마다 이 테스트가 엉뚱하게 깨진다(실제로 [[ADR-124]] 가격 컬럼에서 그랬다).
+    const altered = dbExecuteMock.mock.calls.some(([sql]) => String(sql).includes('ADD COLUMN world'))
     expect(altered).toBe(false)
+  })
+})
+
+// [[ADR-124]] 결정 4 — 가격 세 컬럼도 같은 사정이다. 이미 드롭을 기록해 둔 사용자의 DB에는
+// `boss_drop_records` 가 이미 있으므로 CREATE 로는 컬럼이 붙지 않는다.
+describe('가격 컬럼 마이그레이션 (ADR-124 결정 4)', () => {
+  it('없으면 price_state·price_meso·price_share 를 ALTER 로 더한다', async () => {
+    getPlatformMock.mockReturnValue('ios')
+    isConnectionMock.mockResolvedValue({ result: false })
+    dbQueryMock.mockResolvedValue({ values: [{ name: 'ocid' }] })
+
+    const { getBossProfitDb } = await import('../db')
+    await getBossProfitDb()
+
+    expect(dbExecuteMock).toHaveBeenCalledWith(
+      'ALTER TABLE boss_drop_records ADD COLUMN price_state TEXT',
+    )
+    expect(dbExecuteMock).toHaveBeenCalledWith(
+      'ALTER TABLE boss_drop_records ADD COLUMN price_meso INTEGER',
+    )
+    expect(dbExecuteMock).toHaveBeenCalledWith(
+      'ALTER TABLE boss_drop_records ADD COLUMN price_share INTEGER',
+    )
+  })
+
+  it('이미 있으면 더하지 않는다', async () => {
+    getPlatformMock.mockReturnValue('ios')
+    isConnectionMock.mockResolvedValue({ result: false })
+    dbQueryMock.mockResolvedValue({
+      values: [{ name: 'price_state' }, { name: 'price_meso' }, { name: 'price_share' }],
+    })
+
+    const { getBossProfitDb } = await import('../db')
+    await getBossProfitDb()
+
+    const altered = dbExecuteMock.mock.calls.filter(([sql]) => String(sql).includes('ADD COLUMN price_'))
+    expect(altered).toEqual([])
   })
 })
