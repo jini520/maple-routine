@@ -2,7 +2,7 @@
 
 > **범위**: 스토어 심사 없이 JS/HTML/CSS 번들을 배포하는 OTA. 사용자 동의형 업데이트 UX, 베타 채널, 관찰용 UI.
 > **관련 소스**: `native/live-update.ts`(`@capgo/capacitor-updater` 래퍼) · `features/live-update/`(store, `checkOnBoot`) · `native/network`(셀룰러 감지) · `capacitor.config.ts` · GitHub Releases(`live-update-latest`/`live-update-beta`).
-> **관련 ADR**: [[ADR-022]] [[ADR-024]] [[ADR-026]] [[ADR-027]] [[ADR-008]] [[ADR-117]] [[ADR-119]]. **관련 문서**: [../foundation/architecture.md](../foundation/architecture.md), [settings.md](./settings.md), [splash.md](./splash.md), [../trouble/2026-07-15-live-update-testing.md](../trouble/2026-07-15-live-update-testing.md), [../trouble/2026-08-08-ota-apply-stuck-splash.md](../trouble/2026-08-08-ota-apply-stuck-splash.md).
+> **관련 ADR**: [[ADR-022]] [[ADR-024]] [[ADR-026]] [[ADR-027]] [[ADR-008]] [[ADR-117]] [[ADR-119]] [[ADR-126]]. **관련 문서**: [../foundation/architecture.md](../foundation/architecture.md), [settings.md](./settings.md), [splash.md](./splash.md), [../trouble/2026-07-15-live-update-testing.md](../trouble/2026-07-15-live-update-testing.md), [../trouble/2026-08-08-ota-apply-stuck-splash.md](../trouble/2026-08-08-ota-apply-stuck-splash.md).
 
 ## 정책 ([[ADR-022]])
 - `@capgo/capacitor-updater` 플러그인 사용(Capgo 매니지드 백엔드 미사용 — `autoUpdate`/`statsUrl` 명시적으로 끔). 번들 호스팅은 **GitHub Releases 자체 호스팅**(이 저장소 고정 릴리스 `live-update-latest`). Cloudflare R2도 검토했으나 무료 한도에서도 카드 등록 필수라 카드 없이 되는 GitHub Releases로 변경.
@@ -49,19 +49,30 @@ App Store 첫 출시를 앞두고 **버전을 1.0.0으로 리셋**했다(`packag
 
 ## 매니페스트의 릴리스 노트 ([[ADR-119]])
 
-`LiveUpdateManifest` 에 **`notes?` 선택 필드**가 붙는다 — 사용자 동의 모달([[ADR-027]])이 *"새 버전 v1.0.3 (2.1MB)"* 까지만 말하고 **무엇이 바뀌는지는 말하지 않던** 자리를 채운다.
+`LiveUpdateManifest` 에 **`highlights?: string[]` 선택 필드**가 붙는다 — 사용자 동의 모달([[ADR-027]])이 *"새 버전 v1.0.3 (2.1MB)"* 까지만 말하고 **무엇이 바뀌는지는 말하지 않던** 자리를 채운다. 실리는 것은 **전체 노트가 아니라 핵심 목록 3~4줄**이다([[ADR-126]] 결정 2 — 원래는 항목 전체를 이어 붙인 평문 `notes` 였고, 그 형식은 아래 «폐기된 정책» 으로 갔다).
 
-- **값의 출처는 `src/data/release-notes.ts`** 다. 배포 스크립트가 `package.json` version 과 같은 버전의 항목을 뽑아 `latest.json` 에 싣는다 — 노트를 손으로 매니페스트에 적지 않는다. 같은 파일을 개발 노트 화면(`/settings/release-notes`, [settings.md](./settings.md))이 **과거 전체**로 읽는다(원천 하나 + 소비 둘).
-- **`minNativeVersion` 과 같은 선택 필드**다 — `parseLiveUpdateManifest` 의 **필수 검사에 넣지 않는다.** 넣으면 이미 발행된 옛 매니페스트(필드 없음)가 `null` 로 떨어져 **모든 기존 설치본의 업데이트 확인이 `check-error`** 가 된다. 매니페스트는 URL 고정·내용 가변이라 옛 앱이 새 파일을 읽는 조합이 실재한다. `notes` 가 없으면 모달은 지금과 똑같이 동작한다.
-- **네이티브 변경 항목에는 「스토어 업데이트 필요」 표식**이 붙는다(버전 전체가 아니라 **항목 단위**). 매니페스트의 `minNativeVersion` 과는 다른 층이다 — 그쪽은 *"이 번들을 적용할 수 있는가"* 를 판정하는 게이트이고, 표식은 *"이 항목이 지금 내 앱에 있는가"* 를 사람에게 설명하는 글이다.
-- **매니페스트에 실리는 문자열 형식은 `publish-live-update.mjs` 의 `formatReleaseNotes` 가 고정한다**(구현 확인 2026-08-09). `notes` 는 구조가 아니라 **평문 한 덩어리**라(위 선택 필드) 항목 단위 표식이 문자열에서 어떤 모습이 되는지를 정해야 했다.
-  ```
-  • 설정 화면을 항목별로 나눠 정리했어요.
-  [기능] 위젯 추가 (스토어 업데이트 필요)
-  ```
-  항목 하나가 한 줄, 줄머리 **`[카테고리] `**([[ADR-119]] 결정 9 — 화면이 묶음 제목으로 쓰는 그 값이고, 평문에는 묶을 자리가 없어 줄머리가 된다), 줄 구분 `\n` 하나. **모달(이슈 #164)이 이 문자열을 그대로 읽는다** — 개발 노트 화면은 「스토어 업데이트 필요」를 배지로 그리고 매니페스트는 괄호 꼬리로 싣는다. 꼬리가 사라지면 모달이 *"이 항목은 OTA 로 안 온다"* 는 사실을 잃는다.
-- **쓰는 쪽에서는 조건부 필드가 아니다** — 읽는 쪽(`parseLiveUpdateManifest`)은 `minNativeVersion` 과 같은 조건부 전개지만, 배포 스크립트는 아래 가드를 통과한 시점에 `notes` 를 **반드시** 갖고 있다. `minNativeVersion` 은 CLI 인자라 정말 없을 수 있고 이쪽은 아니라, 조건부로 쓰면 계약과 어긋나는 죽은 분기가 된다.
-- **노트가 없으면 배포가 중단된다** — 절차는 [../foundation/release.md](../foundation/release.md).
+- **값의 출처는 `src/data/release-notes.ts`** 다. 배포 스크립트가 `package.json` version 과 같은 버전의 `highlights` 를 뽑아 `latest.json` 에 싣는다 — 노트를 손으로 매니페스트에 적지 않는다. 같은 파일을 개발 노트 화면(`/settings/release-notes`, [settings.md](./settings.md))이 **과거 전체**로 읽는다(원천 하나 + 소비 둘).
+- **핵심 목록은 항목에서 파생하지 않고 손으로 쓴다**([[ADR-126]] 결정 3). 앞 N개를 자르거나 `category === 'feature'` 만 거르지 않는다 — "핵심"은 데이터가 아니라 판단이고(1.0.4 의 첫 변경은 `improvement` 로 적힌 보스 카드 인원 수정이다), `일부 버그 및 사용성 개선` 처럼 **여러 항목을 한 줄로 뭉치는 것**은 어떤 파생 규칙으로도 안 나온다.
+- **`minNativeVersion` 과 같은 선택 필드**다 — `parseLiveUpdateManifest` 의 **필수 검사에 넣지 않는다.** 넣으면 이미 발행된 옛 매니페스트(필드 없음)가 `null` 로 떨어져 **모든 기존 설치본의 업데이트 확인이 `check-error`** 가 된다. 매니페스트는 URL 고정·내용 가변이라 옛 앱이 새 파일을 읽는 조합이 실재한다. `highlights` 가 없으면 모달은 지금과 똑같이 동작한다(버튼째 안 뜬다 — [[ADR-126]] 결정 6).
+- **네이티브 변경 항목의 「스토어 업데이트 필요」 표식은 개발 노트 화면에만 남는다**(버전 전체가 아니라 **항목 단위** — [[ADR-119]] 결정 3 은 그대로다). 매니페스트에서는 사라지고, 그 자리에서 *"이 번들을 적용할 수 있는가"* 를 판정하는 것은 원래부터 `minNativeVersion` 이다.
+- **쓰는 쪽에서는 조건부 필드가 아니다** — 읽는 쪽(`parseLiveUpdateManifest`)은 `minNativeVersion` 과 같은 조건부 전개지만, 배포 스크립트는 아래 가드를 통과한 시점에 `highlights` 를 **반드시** 갖고 있다. `minNativeVersion` 은 CLI 인자라 정말 없을 수 있고 이쪽은 아니라, 조건부로 쓰면 계약과 어긋나는 죽은 분기가 된다.
+- **노트·핵심 목록이 없으면 배포가 중단된다**([[ADR-119]] 결정 6 → [[ADR-126]] 결정 8 확장 — `items` 와 `highlights` 를 함께 보고 어느 쪽이 비었는지 문구가 말한다). 절차는 [../foundation/release.md](../foundation/release.md).
+
+## 모달의 「자세히 보기」 ([[ADR-126]])
+
+같은 이름의 버튼이 **두 자리에 있고 하는 일이 다르다.** 갈리는 근거는 하나 — 모달이 뜨는 시점마다 앱이 가진 것이 다르다.
+
+| 시점 | 새 버전 노트가 앱 안에 있나 | 「자세히 보기」 |
+|---|---|---|
+| `update-available`(받기 전) | **없다** — 아직 안 받은 번들 안에 있다 | **모달 안에서 펼친다**(매니페스트 `highlights`) |
+| 적용·재시작 후(`updated`) | **있다** — 지금 도는 번들이 그 번들이다 | **`/settings/release-notes` 로 이동** |
+
+- **받기 전에 화면을 옮기지 않는 이유**: 모달을 닫아야 하고 돌아왔을 때 다시 띄우는 처리가 필요한데, 정작 그 화면에는 새 버전이 **없다**. 판단 재료를 주려다 판단하던 흐름을 끊는다.
+- **`store-required`·`ready-to-apply` 에는 붙이지 않는다**([[ADR-126]] 결정 7). `ready-to-apply` 는 받아만 뒀고 아직 그 번들이 돌지 않아 개발 노트 목록에 새 버전이 없다. `store-required` 는 노트가 있어도 OTA 로 못 받아 판단이 안 바뀐다.
+- **`'updated'` 상태**(14번째)는 부팅 때 판정한다 — `Preferences` 에 적어 둔 **마지막으로 실행된 번들 버전**과 지금 도는 번들 버전을 비교한다(적용 성공 경로에는 상태 전환 코드가 없다 — [[ADR-117]] 결정 1). 저장값이 **없으면 안 띄우고**(근거 없이 "업데이트했다"고 말하지 않는다) 판정은 `isNewerVersion` 이라 **자동 롤백이 걸러진다**(되돌아간 것을 완료라고 부를 수 없다). 스토어 업데이트로 내장 번들이 올라가는 것도 같은 신호로 함께 잡힌다.
+- **판정은 확인보다 앞이고 전환은 확인보다 뒤다** — `loadCurrentVersion` → 완료 여부 판정(기록은 여기서 끝낸다) → `check()` → 결과가 `up-to-date`·`check-error` 일 때만 `'updated'`. 새 업데이트가 또 있으면 **그쪽이 이긴다**(회고보다 행동이 먼저다). 밀린 완료 안내는 다시 오지 않는다 — 큐를 만들면 "언젠가 뜨는 안내"라는 지속 상태가 생긴다([[ADR-119]] 결정 7 이 싫어한 것).
+- **키는 `KEEP_KEYS` 에 넣지 않는다**([[ADR-052]]). 캐시 삭제로 지워져도 다음 부팅이 조용히 다시 기록할 뿐이고, 없어져서 생기는 것은 거짓 안내가 아니라 **안내 없음**이다.
+- ⚠️ **완료 안내는 1.0.4 → 1.0.5 부터 실제로 보인다.** 1.0.3 은 마지막 실행 버전을 기록하지 않으므로, 1.0.4 로 올라오는 그 순간에는 저장값이 없어 뜨지 않는다(위 첫 줄 규칙).
 
 ## SQLite 커넥션 주의
 `set()`(리로드) 전에 SQLite 커넥션을 정상 종료하지 않으면 stale 커넥션으로 과거 데이터 로드가 멈춘다 → `closeBossProfitDb()` 로 리로드 전 미리 닫음([[ADR-008]] 세 번째 정정, [boss-profit.md](./boss-profit.md)).
@@ -76,5 +87,6 @@ App Store 첫 출시를 앞두고 **버전을 1.0.0으로 리셋**했다(`packag
 - ~~배포 = Play Console 내부 테스트 트랙~~ → APK 직접 사이드로딩([[ADR-024]] 정정).
 - ~~스플래시 배경색 `#FB8101`(코드 단색)~~ → 이미지 기준 `#F58B0F` 로 6곳 통일(다크 `#D06100` 유지)([[ADR-029]] 정정).
 - ~~`notifyAppReady` 를 번들 실행 직후 가장 먼저(첫 문장) 호출한다~~ → **첫 렌더 커밋 뒤**(`AppShell` 마운트 `useEffect` — `ErrorBoundary` **안**이라야 렌더가 던졌을 때 effect 가 안 돈다)([[ADR-022]] 결정 6 → [[ADR-117]] 결정 2). 지키려던 것은 "타임아웃 안에 부른다"이지 "가능한 한 빨리 부른다"가 아니었고, 첫 문장에서 부르면 렌더가 죽는 번들이 SUCCESS 로 찍혀 **영구히 박힌다**.
+- ~~매니페스트 `notes?: string` — 항목 전체를 `[카테고리] 텍스트 (스토어 업데이트 필요)` 줄로 이어 붙인 **평문 한 덩어리**(`formatReleaseNotes` 가 형식을 고정)~~ → **`highlights?: string[]`(핵심 목록 3~4줄)**([[ADR-119]] 구현 확정 → [[ADR-126]] 결정 2). 그 형식이 겨냥한 소비자가 바로 업데이트 모달이었고, **그리는 방식이 정해지면서 형식도 함께 정해졌다** — 1.0.3 은 10줄·1.0.4 는 8줄이라 `max-w-xs` 모달에 펼치면 읽지 않고 닫는다. 둘 다 싣지 않는 이유는 같은 릴리스를 한 파일이 두 번 설명하게 되어서다([[ADR-119]] 결정 1 의 이중관리가 산출물 쪽에서 되살아난다). 「스토어 업데이트 필요」 표식(**항목 단위**, [[ADR-119]] 결정 3)과 카테고리 묶음(결정 9)은 **폐기가 아니다** — 개발 노트 화면에서 그대로 산다.
 - ~~`apply()` 는 커버(`showSplashScreen()`)를 먼저 씌우고 그 뒤에 적용을 진행한다~~ → **`closeBossProfitDb()` → 커버 → `set()`**([[ADR-027]] 2026-07-17 추가 → [[ADR-117]] 결정 1). *"스플래시 표시가 실패해도 적용은 계속 진행한다"* 는 그대로 유효하다.
 - ~~적용 실패 시의 처리 없음(`void apply()` — catch·타임아웃 없음)~~ → **12초 타임아웃 + catch → 커버 걷고 `'apply-error'`**([[ADR-117]] 결정 1).

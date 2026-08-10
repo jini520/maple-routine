@@ -1,10 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
-  formatReleaseNotes,
-  isPublishableReleaseNote,
+  describeReleaseNoteGap,
   parseArgs,
   resolveBuildScript,
-  resolveManifestNotes,
   resolveReleaseCreateArgs,
   resolveReleaseTag,
 } from '../publish-live-update.mjs'
@@ -74,97 +72,56 @@ describe('parseArgs', () => {
   })
 })
 
-// ADR-119 결정 6: 노트 없이는 배포가 나가지 않는다. 판정을 순수 함수로 갈라 둔 이유가 이 블록이다 —
-// 스크립트 본문은 실행해 볼 수 없지만(빌드·gh 업로드를 부른다) 판정은 테스트할 수 있다.
-describe('isPublishableReleaseNote', () => {
-  it('항목이 있는 노트는 배포 가능하다', () => {
-    expect(isPublishableReleaseNote({ version: '9.9.9', date: '2026-01-01', items: [{ text: 'a' }] })).toBe(
-      true,
-    )
+// ADR-119 결정 6 + ADR-126 결정 8: 노트도 핵심 목록도 없이는 배포가 나가지 않는다. 판정을 순수
+// 함수로 갈라 둔 이유가 이 블록이다 — 스크립트 본문은 실행해 볼 수 없지만(빌드·gh 업로드를
+// 부른다) 판정은 테스트할 수 있다.
+describe('describeReleaseNoteGap', () => {
+  const full = {
+    version: '9.9.9',
+    date: '2026-01-01',
+    items: [{ category: 'feature', text: '무언가 바뀌었다' }],
+    highlights: ['핵심 한 줄'],
+  }
+
+  it('항목과 핵심 목록이 다 있으면 null — 그것이 배포 통과 판정이다', () => {
+    expect(describeReleaseNoteGap(full)).toBeNull()
   })
 
   it('그 버전의 노트가 아예 없으면(undefined) 중단 판정이다', () => {
-    expect(isPublishableReleaseNote(undefined)).toBe(false)
+    expect(describeReleaseNoteGap(undefined)).not.toBeNull()
   })
 
   // 빈 노트는 노트가 아니다 — 버전만 적어 두고 내용을 안 쓴 것을 통과시키면 결정 6이 막으려는
   // "영영 빈 채로 남는 버전"이 그대로 나간다.
   it('items가 비어 있으면 중단 판정이다', () => {
-    expect(isPublishableReleaseNote({ version: '9.9.9', date: '2026-01-01', items: [] })).toBe(false)
-  })
-})
-
-describe('formatReleaseNotes', () => {
-  it('모든 항목의 text가 한 덩어리 문자열에 줄 단위로 들어간다', () => {
-    const notes = formatReleaseNotes({
-      version: '9.9.9',
-      date: '2026-01-01',
-      items: [
-        { category: 'feature', text: '첫째 변경' },
-        { category: 'fix', text: '둘째 변경' },
-      ],
-    })
-
-    expect(notes).toContain('첫째 변경')
-    expect(notes).toContain('둘째 변경')
-    expect(notes.split('\n')).toHaveLength(2)
+    expect(describeReleaseNoteGap({ ...full, items: [] })).not.toBeNull()
   })
 
-  // ADR-119 결정 3: 표식이 문자열에서 사라지면 모달이 "이 항목은 OTA 로 안 온다"는 사실을 잃는다.
-  it('requiresStoreUpdate 항목의 표식이 문자열에 남고, 아닌 항목에는 붙지 않는다', () => {
-    const notes = formatReleaseNotes({
-      version: '9.9.9',
-      date: '2026-01-01',
-      items: [
-        { category: 'improvement', text: 'OTA 변경' },
-        { category: 'feature', text: '네이티브 변경', requiresStoreUpdate: true },
-      ],
-    })
-
-    const [otaLine, nativeLine] = notes.split('\n')
-    expect(nativeLine).toContain('스토어 업데이트 필요')
-    expect(otaLine).not.toContain('스토어 업데이트 필요')
+  // ADR-126 결정 8: 핵심 목록을 선택 사항으로 두면 안 쓰게 되고, 안 쓰면 모달이 다시 "버전 +
+  // 용량"만 말하는 자리로 돌아간다 — 이 ADR 이 고치려던 상태 그 자체다.
+  it('highlights가 없거나 비어 있으면 중단 판정이다', () => {
+    expect(describeReleaseNoteGap({ ...full, highlights: undefined })).not.toBeNull()
+    expect(describeReleaseNoteGap({ ...full, highlights: [] })).not.toBeNull()
   })
 
-  // ADR-119 결정 9: 화면은 카테고리로 묶어 보여주지만 매니페스트는 평문 한 덩어리라 묶을 자리가
-  // 없다 — 줄머리 `[카테고리] ` 가 그 자리다. 이것이 빠지면 모달(#164)이 분류를 통째로 잃는다.
-  it('줄머리가 `[카테고리] ` 이고 항목마다 자기 카테고리를 단다', () => {
-    const notes = formatReleaseNotes({
-      version: '9.9.9',
-      date: '2026-01-01',
-      items: [
-        { category: 'feature', text: '새 기능' },
-        { category: 'improvement', text: '나아진 것' },
-        { category: 'fix', text: '고친 것' },
-      ],
-    })
+  it('문구가 어느 쪽이 비었는지 갈라 말한다 — 무엇을 쓰라는 것인지 알 수 있어야 한다', () => {
+    const itemsGap = describeReleaseNoteGap({ ...full, items: [] })
+    const highlightsGap = describeReleaseNoteGap({ ...full, highlights: [] })
 
-    expect(notes.split('\n')).toEqual([
-      '[기능] 새 기능',
-      '[개선] 나아진 것',
-      '[버그] 고친 것',
-    ])
+    expect(itemsGap).not.toBe(highlightsGap)
+    expect(highlightsGap).toContain('highlights')
   })
 
-  // ADR-125 결정 2: 사용법 안내는 **번들 안에만** 있다. 업데이트 모달은 번들을 받기 **전**에 뜨므로
-  // 이미지를 그릴 수 없고, `guideId` 는 그쪽에서 아무것도 가리키지 못한다 — 매니페스트에 실으면
-  // 뜻 없는 문자열로 용량만 늘린다.
-  it('guideId 는 매니페스트 문자열에 실리지 않는다', () => {
-    const notes = formatReleaseNotes({
-      version: '9.9.9',
-      date: '2026-01-01',
-      items: [{ category: 'feature', text: '안내가 붙은 기능', guideId: '어떤-안내' }],
-    })
-
-    expect(notes).toBe('[기능] 안내가 붙은 기능')
-    expect(notes).not.toContain('어떤-안내')
+  // 배포 직전이 아니라 지금 걸리게 한다 — 목록 맨 앞은 다음에 나갈 버전의 노트다.
+  it('데이터 파일의 최신 노트는 그대로 배포 가능하다', () => {
+    expect(describeReleaseNoteGap(RELEASE_NOTES[0])).toBeNull()
   })
 })
 
 // ADR-125 결정 2 의 존재 이유 그 자체 — 이 스크립트는 `release-notes.ts` 를 **Node 에서 직접**
 // import 한다(타입 스트리핑). 그 파일에 `.webp` import 가 들어오면 Node 가 해석하지 못해 배포가
-// 그 자리에서 죽는다. 안내 본문을 `release-note-guides.ts` 로 가른 것이 그것을 막고 있고,
-// 이 테스트가 그 경계를 지킨다 — 여기가 깨지면 릴리스 경로가 깨진 것이다.
+// 그 자리에서 죽는다. 안내 본문을 기능 카탈로그로 가른 것이 그것을 막고 있고, 이 테스트가 그
+// 경계를 지킨다 — 여기가 깨지면 릴리스 경로가 깨진 것이다.
 describe('release-notes.ts 는 Node 가 읽을 수 있는 순수 데이터로 남는다', () => {
   it('노트 항목이 안내를 id 문자열로만 들고 있다 — 본문·이미지를 들고 있지 않다', () => {
     for (const note of RELEASE_NOTES) {
@@ -179,35 +136,21 @@ describe('release-notes.ts 는 Node 가 읽을 수 있는 순수 데이터로 �
   })
 })
 
-describe('resolveManifestNotes', () => {
-  // 버전을 하드코딩하지 않는다 — 노트가 쌓이면 값이 바뀌는데, 검사하려는 것은 "실재하는 버전이
-  // 문자열로 해석된다"이지 특정 릴리스의 내용이 아니다.
-  it('노트가 있는 버전은 그 항목이 전부 담긴 문자열이 된다', () => {
-    const latest = RELEASE_NOTES[0]
-
-    const notes = resolveManifestNotes(latest.version)
-
-    expect(notes).not.toBeNull()
-    for (const item of latest.items) expect(notes).toContain(item.text)
-  })
-
-  it('노트가 없는 버전은 null이다 — 그것이 배포 중단 판정이다', () => {
-    expect(resolveManifestNotes('0.0.0')).toBeNull()
-  })
-
-  // 결정 5: notes 는 선택 필드라 파싱의 필수 검사에 없다. 실어 보낸 값이 실제로 읽히는지는
-  // 스크립트 쪽 형식과 앱 쪽 파서를 한 번에 이어 봐야 알 수 있다.
-  it('합쳐진 문자열을 실은 매니페스트가 parseLiveUpdateManifest를 통과한다', () => {
-    const notes = resolveManifestNotes(RELEASE_NOTES[0].version)
+// ADR-126 결정 2: highlights 는 읽는 쪽에서 선택 필드라 파싱의 필수 검사에 없다. 실어 보낸 값이
+// 실제로 읽히는지는 스크립트 쪽 형식과 앱 쪽 파서를 한 번에 이어 봐야 알 수 있다.
+describe('매니페스트 왕복', () => {
+  it('highlights를 실은 매니페스트가 parseLiveUpdateManifest를 통과하고 값이 그대로 읽힌다', () => {
+    const { highlights } = RELEASE_NOTES[0]
 
     const parsed = parseLiveUpdateManifest({
-      version: '1.0.3',
-      url: 'https://example.com/1.0.3.zip',
+      version: '9.9.9',
+      url: 'https://example.com/9.9.9.zip',
       checksum: 'abc',
       size: 123,
-      notes,
+      highlights,
     })
 
-    expect(parsed?.notes).toBe(notes)
+    expect(parsed?.highlights).toEqual(highlights)
   })
 })
+

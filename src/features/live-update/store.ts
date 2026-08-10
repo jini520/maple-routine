@@ -5,15 +5,23 @@ import {
   downloadLiveUpdate,
   getCurrentBundleVersion,
   getNetworkType,
+  isNewerVersion,
   openStoreForUpdate,
   resolveLiveUpdateManifestUrl,
 } from '../../native/live-update'
 import { hideSplashScreen } from '../../native/splash-screen'
+import {
+  getLastRunBundleVersion,
+  setLastRunBundleVersion,
+} from '../../storage/last-run-bundle-version'
 
 // idle: 확인 전 / checking: 확인 중 / up-to-date: 최신 / update-available: 새 버전 있음(모달)
 // store-required: 스토어 업데이트 필요 / confirm-cellular: 셀룰러 데이터 확인 대기 / downloading: 진행 중
 // ready-to-apply: 다운로드 완료·적용 대기 / unsupported: web 등 미지원 (ADR-027)
 // applying: 적용 진행 중 — 되돌릴 수 없는 구간에 들어갔다([[ADR-117]] 결정 7)
+// updated: 적용·재시작이 끝난 직후 1회 — 「업데이트를 마쳤어요」 안내([[ADR-126]] 결정 4).
+//          적용 성공 경로에는 상태 전환 코드가 없으므로(set()이 그 자리에서 JS 컨텍스트를 파괴한다)
+//          이 상태만은 **부팅 때 뒤늦게** 판정된다.
 //
 // 실패는 세 종류다([[ADR-065]] 결정 2) — 사용자가 시작했는지로 갈린다.
 //   check-error    매니페스트 조회·파싱 실패(자동 확인 포함). 모달을 띄우지 않고 설정 상태 행에만 남긴다.
@@ -31,6 +39,7 @@ export type LiveUpdateStatus =
   | 'downloading'
   | 'ready-to-apply'
   | 'applying'
+  | 'updated'
   | 'check-error'
   | 'download-error'
   | 'apply-error'
@@ -58,6 +67,9 @@ export interface LiveUpdateStore {
   status: LiveUpdateStatus
   availableVersion: string | null
   availableSize: number | null // bytes
+  // 받기 전 모달의 「자세히 보기」가 펼치는 핵심 목록([[ADR-126]] 결정 1). 원격에서 온 값이라
+  // 없을 수 있고(옛 매니페스트), 없으면 모달이 버튼째 그리지 않는다(결정 6).
+  availableHighlights: string[] | null
   minNativeVersion: string | null // store-required일 때만
   downloadProgress: number // 0~100
   channel: 'beta' | 'production'
@@ -77,10 +89,34 @@ export interface LiveUpdateStore {
 const CLEARED = {
   availableVersion: null,
   availableSize: null,
+  availableHighlights: null,
   minNativeVersion: null,
   downloadProgress: 0,
   pending: null,
   downloadedBundleId: null,
+}
+
+/**
+ * *"방금 업데이트했는가"* 를 판정하고, **그 자리에서 기록을 갱신한다**([[ADR-126]] 결정 4).
+ * 읽고 나면 소비되므로 같은 사건이 두 번 뜨지 않는다.
+ *
+ * - 저장값이 없으면 `false` 다 — "모른다"이지 "업데이트했다"가 아니다. 근거 없이 안내하지 않는다.
+ * - 판정이 `isNewerVersion` 인 것이 요점이다: "달라졌다"가 아니라 **"올라갔다"** 여야 자동 롤백
+ *   (되돌아간 것)이 걸러진다. 되돌아간 것을 "완료"라고 부를 수 없다.
+ * - 스토어 업데이트로 내장 번들이 올라가는 것도 같은 신호라 함께 잡힌다 — 사용자에게 OTA 와
+ *   스토어 업데이트는 그냥 "업데이트"다.
+ * - 저장소 실패는 삼킨다. 완료 안내는 곁가지고, 그것 때문에 **업데이트 확인 자체가 죽으면**
+ *   본말전도다(호출부가 이 함수를 await 한 뒤에 check() 를 부른다).
+ */
+async function consumeJustUpdated(current: string | null): Promise<boolean> {
+  if (current === null) return false
+  try {
+    const last = await getLastRunBundleVersion()
+    if (last !== current) await setLastRunBundleVersion(current)
+    return last !== null && isNewerVersion(last, current)
+  } catch {
+    return false
+  }
 }
 
 export const useLiveUpdateStore = create<LiveUpdateStore>()((set, get) => {
@@ -123,6 +159,7 @@ export const useLiveUpdateStore = create<LiveUpdateStore>()((set, get) => {
             status: 'update-available',
             availableVersion: result.version,
             availableSize: result.size,
+            availableHighlights: result.highlights ?? null,
             pending: { version: result.version, url: result.url, checksum: result.checksum },
           })
           break
@@ -147,10 +184,25 @@ export const useLiveUpdateStore = create<LiveUpdateStore>()((set, get) => {
     },
 
     // 부팅 시퀀스 — 현재 버전을 싣고 체크만 한다. 업데이트가 있으면 실행 시 모달이 뜬다(자동 다운로드/적용 없음).
+    //
+    // 여기서 완료 안내([[ADR-126]] 결정 4·5)도 함께 판정한다. 순서가 규칙이다 —
+    // **판정(기록 포함)은 체크보다 앞이고, 전환은 체크보다 뒤다.**
+    //  · 앞인 이유: 기록을 판정과 같은 자리에서 끝내야 체크 결과에 밀려 안내를 못 띄웠어도
+    //    다음 부팅에 되풀이되지 않는다(큐를 만들면 "언젠가 뜨는 안내"라는 지속 상태가 생긴다).
+    //  · 뒤인 이유: `check()` 가 첫 문장에서 status 를 'checking' 으로 덮으므로, 먼저 전환하면
+    //    그대로 지워진다. 그리고 새 업데이트가 또 있다면 **그쪽이 이겨야** 한다(결정 5) —
+    //    회고를 먼저 띄우면 안내를 두 번 닫아야 하고 두 번째가 첫 번째를 무효로 만드는 것처럼 읽힌다.
     async checkOnBoot() {
       await get().loadCurrentVersion()
       if (get().status === 'unsupported') return
+      const justUpdated = await consumeJustUpdated(get().currentVersion)
       await get().check()
+      // 확인이 실패해도(check-error) 띄운다 — 완료는 네트워크와 무관한 사실이라, 확인이 안 됐다는
+      // 이유로 이미 일어난 일을 못 말할 이유가 없다.
+      const status = get().status
+      if (justUpdated && (status === 'up-to-date' || status === 'check-error')) {
+        set({ status: 'updated' })
+      }
     },
 
     // [다운로드] 탭 — 셀룰러면 데이터 경고를 먼저 띄우고, 아니면 바로 받는다(ADR-027 결정 6).

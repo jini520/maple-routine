@@ -8,6 +8,11 @@ export const STORAGE_KEYS = {
   // cache-data.ts의 KEEP_KEYS에는 **넣지 않는다** — 지워져도 광고가 한 번 더 뜰 뿐이고
   // 보존해야 할 사용자 자산이 아니다.
   lastAdShownAt: 'lastAdShownAt',
+  // ADR-126 결정 4: 마지막으로 실행된 OTA 번들 버전. 부팅 때 지금 도는 버전과 비교해 "방금
+  // 업데이트했다"를 판정한다. `lastAdShownAt`과 같은 이유로 cache-data.ts의 KEEP_KEYS에는
+  // **넣지 않는다** — 지워져도 다음 부팅이 조용히 다시 기록할 뿐이고, 그때 생기는 것은
+  // 거짓 안내가 아니라 안내 없음이다.
+  lastRunBundleVersion: 'lastRunBundleVersion',
 } as const
 
 export function schedulerCacheKey(ocid: string): string {
