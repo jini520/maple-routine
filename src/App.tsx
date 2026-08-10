@@ -66,6 +66,7 @@ const SettingsScreen = lazy(() =>
   import('./app/settings/SettingsScreen').then((m) => ({ default: m.SettingsScreen })),
 )
 const loadSettingsReleaseNotesScreen: ScreenLoader = () => import('./app/settings/SettingsReleaseNotesScreen').then((m) => m.SettingsReleaseNotesScreen)
+const loadSettingsFeatureGuideScreen: ScreenLoader = () => import('./app/settings/SettingsFeatureGuideScreen').then((m) => m.SettingsFeatureGuideScreen)
 const loadSettingsAccountDataScreen: ScreenLoader = () => import('./app/settings/SettingsAccountDataScreen').then((m) => m.SettingsAccountDataScreen)
 const loadSettingsAboutScreen: ScreenLoader = () => import('./app/settings/SettingsAboutScreen').then((m) => m.SettingsAboutScreen)
 const loadSettingsPrivacyScreen: ScreenLoader = () => import('./app/settings/SettingsPrivacyScreen').then((m) => m.SettingsPrivacyScreen)
@@ -85,6 +86,7 @@ const STACK_PRELOADERS: Record<string, ReadonlyArray<ScreenLoader>> = {
   '/profit': [loadDropHistoryScreen],
   '/settings': [
     loadSettingsReleaseNotesScreen,
+    loadSettingsFeatureGuideScreen,
     loadSettingsAccountDataScreen,
     loadSettingsAboutScreen,
     loadSettingsPrivacyScreen,
@@ -510,11 +512,16 @@ export function AppShell(): React.JSX.Element {
                     형제였던 것을 중첩으로 옮긴다 — 근거는 [[ADR-077]] 의 "부모 상태 보존"이 아니라
                     **전환 중 아래 화면이 보여야 한다**는 것이다. 가드는 부모가 대신 건다: 부모가
                     `/onboarding` 으로 리다이렉트되면 중첩 자식은 매칭될 자리가 사라진다. */}
-                <Route path="release-notes" element={stackRoute(loadSettingsReleaseNotesScreen)} />
+                <Route path="release-notes" element={stackRoute(loadSettingsReleaseNotesScreen)}>
+                  {/* **개발 노트의 자식**이다([[ADR-125]] 결정 3) — 안내를 가진 노트 항목에서
+                      열리므로 아래 처방침과 같은 사정이다. `:guideId` 는 버전이 아니라 **항목**
+                      식별자이고, 없는 id 는 화면이 목록으로 `replace` 한다. */}
+                  <Route path=":guideId" element={stackRoute(loadSettingsFeatureGuideScreen)} />
+                </Route>
                 <Route path="account-data" element={stackRoute(loadSettingsAccountDataScreen)} />
                 <Route path="about" element={stackRoute(loadSettingsAboutScreen)}>
                   {/* **`/settings/about` 의 자식**이다 — 이 화면의 행에서 열리므로 스택이 2단이
-                      된다(이 앱에서 유일하다). 형제로 두면 about 이 즉시 사라진 자리에 처방침이
+                      된다. 형제로 두면 about 이 즉시 사라진 자리에 처방침이
                       밀려 들어와, 밀려 나가는 화면 없이 배경만 바뀌는 프레임이 보인다. */}
                   <Route path="privacy" element={stackRoute(loadSettingsPrivacyScreen)} />
                 </Route>

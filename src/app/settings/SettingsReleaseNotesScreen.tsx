@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
-import { ArrowLeft, FileText } from 'lucide-react'
+import { Outlet, useNavigate } from 'react-router-dom'
+import { ArrowLeft, ChevronRight, FileText } from 'lucide-react'
 import packageJson from '../../../package.json'
 import {
   RELEASE_NOTES,
@@ -27,9 +28,12 @@ import { useStackBack } from '../../lib/use-stack-back'
 // 한다. 화면이 다시 정렬하면 같은 규칙의 진실이 두 곳에 생긴다.
 // 부모 탭 — 딥링크로 이 화면에 직접 들어왔을 때 뒤로가 갈 곳([[ADR-120]] 결정 9).
 const PARENT_PATH = '/settings'
+// 이 화면 자신의 경로 — 안내(ADR-125)는 그 **자식**이다.
+const SELF_PATH = '/settings/release-notes'
 
 export function SettingsReleaseNotesScreen(): React.JSX.Element {
   const { currentVersion, loadCurrentVersion } = useLiveUpdateStore()
+  const navigate = useNavigate()
   // 뒤로는 진짜 pop 이다(ADR-120 결정 9) — 앞으로 새 라우트를 밀어 넣지 않는다.
   const goBack = useStackBack(PARENT_PATH)
 
@@ -94,11 +98,8 @@ export function SettingsReleaseNotesScreen(): React.JSX.Element {
                       {RELEASE_NOTE_CATEGORY_LABELS[category]}
                     </p>
                     <ul className="space-y-2">
-                      {items.map((item) => (
-                        <li key={item.text} className="flex gap-2 text-sm text-text-muted">
-                          <span aria-hidden="true" className="text-text-disabled">
-                            ·
-                          </span>
+                      {items.map((item) => {
+                        const body = (
                           <div className="min-w-0 flex-1 space-y-1">
                             <p>{item.text}</p>
                             {/* ADR-119 결정 3: 표식은 버전이 아니라 이 항목에 붙는다. 톤은 스토어
@@ -110,8 +111,39 @@ export function SettingsReleaseNotesScreen(): React.JSX.Element {
                               </p>
                             )}
                           </div>
-                        </li>
-                      ))}
+                        )
+
+                        return (
+                          <li key={item.text} className="flex gap-2 text-sm text-text-muted">
+                            <span aria-hidden="true" className="text-text-disabled">
+                              ·
+                            </span>
+                            {/* ADR-125 결정 5: **안내가 있는 항목만** 눌린다. 없는 것은 결함이 아니라
+                                정상이므로 비활성 버튼을 두지 않고, 그 항목의 DOM 은 종전 그대로다 —
+                                래퍼도 클래스도 만들지 않는다. chevron 은 설정 행과 같은 약속이다
+                                (있으면 누르면 무언가 열린다, ADR-118 결정 4). */}
+                            {item.guideId === undefined ? (
+                              body
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  navigate(`${SELF_PATH}/${item.guideId}`)
+                                }}
+                                className="flex min-w-0 flex-1 items-start gap-2 text-left"
+                              >
+                                {body}
+                                <ChevronRight
+                                  data-testid="release-note-item-chevron"
+                                  className="mt-0.5 h-4 w-4 shrink-0 text-text-muted"
+                                  strokeWidth={2}
+                                  aria-hidden="true"
+                                />
+                              </button>
+                            )}
+                          </li>
+                        )
+                      })}
                     </ul>
                   </div>
                 )
@@ -120,6 +152,10 @@ export function SettingsReleaseNotesScreen(): React.JSX.Element {
           ))
         )}
       </div>
+
+      {/* 기능 안내([[ADR-125]])가 이 화면 **위로** 밀려 들어온다 — 자식 라우트라 부모가 언마운트되지
+          않아야 전환 중 아래 화면이 보인다(`/settings/about` 이 처방침을 여는 것과 같다). */}
+      <Outlet />
     </StackScreen>
   )
 }
