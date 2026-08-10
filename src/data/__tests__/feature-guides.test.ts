@@ -12,6 +12,35 @@ import {
 // Node 가 해석하지 못하기 때문이다. 파일이 갈린 대가로 **둘이 어긋날 자리**가 생기고, 그 방어선이
 // 이 파일이다. 타입은 `guideId`·`guideSectionId` 가 실재하는지 모른다 — 문자열일 뿐이다.
 
+// 안내 하나가 파일 하나다(2026-08-11) — 그래서 **파일은 만들었는데 `index.ts` 에 안 넣는** 실패가
+// 새로 생긴다. 화면에 안 나오는데 파일은 멀쩡히 있어 눈으로는 알아채기 어렵다.
+describe('안내 파일과 index 가 어긋나지 않는다', () => {
+  // `import.meta.glob` 은 Vite 가 정적으로 훑으므로 인자가 인라인 리터럴이어야 한다.
+  const modules = import.meta.glob<Record<string, unknown>>(
+    '../feature-guides/*/*.ts',
+    { eager: true },
+  )
+
+  it('폴더의 모든 안내 파일이 FEATURE_GUIDES 에 들어 있다', () => {
+    const listed = new Set(FEATURE_GUIDES.map((guide) => guide.id))
+
+    for (const [path, module] of Object.entries(modules)) {
+      const exported = Object.values(module).filter(
+        (value): value is { id: string } =>
+          typeof value === 'object' && value !== null && 'id' in value,
+      )
+      expect(exported.length, `${path} 가 안내를 export 하지 않는다`).toBeGreaterThan(0)
+      for (const guide of exported) {
+        expect(listed.has(guide.id), `${path} 의 "${guide.id}" 가 index.ts 에 없다`).toBe(true)
+      }
+    }
+  })
+
+  it('FEATURE_GUIDES 의 안내 수가 파일 수와 같다 — 한 파일에 몰아 넣지 않는다', () => {
+    expect(FEATURE_GUIDES.length).toBe(Object.keys(modules).length)
+  })
+})
+
 describe('feature-guides 형식', () => {
   it('id 에 중복이 없다', () => {
     const ids = FEATURE_GUIDES.map((guide) => guide.id)
