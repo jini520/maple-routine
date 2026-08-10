@@ -157,6 +157,20 @@ describe('SettingsFeatureGuideScreen', () => {
     ])
   })
 
+  // 카드 껍데기 없이 제목 + 번호 목록이다(2026-08-11 사용자 지정). 번호는 **버튼 밖**이라
+  // 누를 수 있는 이름이 제목 그대로 남는다 — 개발 노트가 가리키는 이름과 어긋나면 안 된다.
+  it('목차는 상자 없이 「목차」 제목 + 번호 목록이다', () => {
+    renderGuideScreen('파티-모달')
+
+    const toc = screen.getByRole('navigation', { name: '목차' })
+    expect(within(toc).getByText('목차')).toBeInTheDocument()
+    expect(within(toc).getByRole('list').tagName).toBe('OL')
+    expect(within(toc).getByText('1.')).toBeInTheDocument()
+    expect(within(toc).getByText('2.')).toBeInTheDocument()
+    // 번호가 버튼 안으로 들어가면 이 이름이 "1. 카드에서 바로 고치기" 가 된다.
+    expect(within(toc).getByRole('button', { name: '카드에서 바로 고치기' })).toBeInTheDocument()
+  })
+
   // 마디가 하나뿐이면 목차는 아래 소제목과 같은 말을 두 번 하는 것이다.
   it('마디가 하나뿐이면 목차를 그리지 않는다', () => {
     fixture = [

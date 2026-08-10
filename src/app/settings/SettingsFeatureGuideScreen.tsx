@@ -4,7 +4,6 @@ import { Navigate, useLocation, useParams, useSearchParams } from 'react-router-
 import { findFeatureGuide } from '../../data/feature-guides'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { StackScreen } from '../../components/templates/StackScreen/StackScreen'
-import { Card } from '../../components/atoms/Card/Card'
 import { GUIDE_SECTION_PARAM } from '../../lib/guide-route'
 import { resolveParentPath } from '../../lib/stack-transition'
 import { useStackBack } from '../../lib/use-stack-back'
@@ -90,26 +89,35 @@ export function SettingsFeatureGuideScreen(): React.JSX.Element {
         {/* 목차. **마디가 둘 이상일 때만** 뜻이 있다 — 하나뿐이면 아래 소제목과 같은 말을 두 번
             하는 것이다. 누르면 스택을 건드리지 않고 `?s=` 만 갈아 끼워(replace) 그 자리로 간다. */}
         {guide.sections.length > 1 && (
-          <nav aria-label="목차">
-            <Card className="p-4">
-              <ul className="space-y-2">
-                {guide.sections.map((section) => (
-                  <li key={section.id}>
-                    <button
-                      type="button"
-                      data-testid="guide-toc-item"
-                      onClick={() => {
-                        scrolledTo.current = null
-                        setSearchParams({ [GUIDE_SECTION_PARAM]: section.id }, { replace: true })
-                      }}
-                      className="text-left text-sm text-primary-ink"
-                    >
-                      {section.title}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </Card>
+          // **카드 껍데기를 두르지 않는다**(사용자 지정, 2026-08-11) — 아래가 전부 같은 글이라
+          // 목차만 상자에 담기면 본문이 아니라 위젯으로 읽힌다. 제목 + 번호 목록으로 충분하다.
+          // 묶음 제목의 생김새는 개발 노트의 카테고리 제목과 같다.
+          <nav aria-labelledby="guide-toc-heading" className="space-y-1.5">
+            <p id="guide-toc-heading" className="text-xs font-semibold text-text-muted">
+              목차
+            </p>
+            <ol className="space-y-1">
+              {guide.sections.map((section, index) => (
+                <li key={section.id} className="flex gap-1.5 text-sm">
+                  {/* 번호는 **버튼 밖**이다 — 안에 넣으면 누를 수 있는 이름이 "1. 제목"이 되고,
+                      `<ol>` 이 이미 순서를 읽어 주므로 화면 낭독에는 중복이다. */}
+                  <span aria-hidden="true" className="tabular-nums text-text-disabled">
+                    {index + 1}.
+                  </span>
+                  <button
+                    type="button"
+                    data-testid="guide-toc-item"
+                    onClick={() => {
+                      scrolledTo.current = null
+                      setSearchParams({ [GUIDE_SECTION_PARAM]: section.id }, { replace: true })
+                    }}
+                    className="min-w-0 flex-1 text-left text-primary-ink"
+                  >
+                    {section.title}
+                  </button>
+                </li>
+              ))}
+            </ol>
           </nav>
         )}
 
