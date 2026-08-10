@@ -22,12 +22,16 @@ export interface LiveUpdateManifest {
   checksum: string
   size: number // zip 바이트 — 다운로드 전 사용자에게 용량을 안내(ADR-027)
   minNativeVersion?: string // 이 번들을 적용하려면 필요한 최소 네이티브 버전(스토어 업데이트 게이트, ADR-027)
-  // 이 버전의 변경 내역(ADR-119). 원천은 src/data/release-notes.ts 한 벌이고, 배포 스크립트가
-  // 배포하는 버전의 항목만 뽑아 여기로 파생시킨다 — 여기서 그 파일을 읽지 않는다(원격에서 온 값이다).
+  // 이 버전의 **핵심 목록** 3~4줄(ADR-119 → ADR-126 결정 2). 원천은 src/data/release-notes.ts 한
+  // 벌이고, 배포 스크립트가 배포하는 버전의 highlights 만 뽑아 여기로 파생시킨다 — 여기서 그 파일을
+  // 읽지 않는다(원격에서 온 값이다). 항목 전체가 아닌 이유는 이 값을 읽는 자리가 **받기 전 모달**,
+  // 즉 "받을까 말까"를 정하는 자리라서다. 전체는 받은 뒤 개발 노트 화면이 번들 안에서 읽는다.
+  //
   // minNativeVersion과 같은 이유로 **선택 필드**다: 이미 발행된 옛 매니페스트에는 이 필드가 없고,
   // 필수로 만들면 그것을 읽는 기존 설치본이 전부 파싱 실패(null → check-error)해 업데이트를 못 받는다.
   // 매니페스트는 URL 고정·내용 가변이라 옛 앱이 새 파일을, 새 앱이 옛 파일을 읽는 조합이 둘 다 실재한다.
-  notes?: string
+  // (옛 매니페스트의 notes 필드는 ADR-126 결정 2로 폐기됐다 — 읽는 쪽이 없으므로 싣지 않는다.)
+  highlights?: string[]
 }
 
 export function resolveLiveUpdateManifestUrl(channel: string | undefined): string {
@@ -53,14 +57,17 @@ export function parseLiveUpdateManifest(data: unknown): LiveUpdateManifest | nul
     typeof (parsed as LiveUpdateManifest).size === 'number'
   ) {
     const minNativeVersion = (parsed as LiveUpdateManifest).minNativeVersion
-    const notes = (parsed as LiveUpdateManifest).notes
+    const highlights = (parsed as LiveUpdateManifest).highlights
+    // 빈 배열은 "핵심 목록이 없다"와 같게 다룬다 — 실어 보내면 모달이 빈 목록을 여는 버튼을 그린다.
+    const hasHighlights =
+      Array.isArray(highlights) && highlights.length > 0 && highlights.every((line) => typeof line === 'string')
     return {
       version: (parsed as LiveUpdateManifest).version,
       url: (parsed as LiveUpdateManifest).url,
       checksum: (parsed as LiveUpdateManifest).checksum,
       size: (parsed as LiveUpdateManifest).size,
       ...(typeof minNativeVersion === 'string' ? { minNativeVersion } : {}),
-      ...(typeof notes === 'string' ? { notes } : {}),
+      ...(hasHighlights ? { highlights } : {}),
     }
   }
   return null
@@ -101,7 +108,15 @@ export type LiveUpdateCheckResult =
   | { kind: 'error' } // 매니페스트 조회·파싱 실패
   | { kind: 'up-to-date' } // 최신
   | { kind: 'store-required'; version: string; minNativeVersion: string } // 라이브로 못 받음 → 스토어 업데이트 필요
-  | { kind: 'update-available'; version: string; size: number; url: string; checksum: string } // 라이브 다운로드 가능
+  // 라이브 다운로드 가능. highlights는 받기 전 모달의 「자세히 보기」가 그리는 핵심 목록이다(ADR-126).
+  | {
+      kind: 'update-available'
+      version: string
+      size: number
+      url: string
+      checksum: string
+      highlights?: string[]
+    }
 
 export async function checkForLiveUpdate(manifestUrl: string): Promise<LiveUpdateCheckResult> {
   if (Capacitor.getPlatform() === 'web') return { kind: 'unsupported' }
@@ -132,6 +147,7 @@ export async function checkForLiveUpdate(manifestUrl: string): Promise<LiveUpdat
       size: manifest.size,
       url: manifest.url,
       checksum: manifest.checksum,
+      ...(manifest.highlights ? { highlights: manifest.highlights } : {}),
     }
   } catch {
     return { kind: 'error' }

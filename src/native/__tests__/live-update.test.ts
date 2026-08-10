@@ -100,25 +100,39 @@ describe('parseLiveUpdateManifest', () => {
     expect(parseLiveUpdateManifest(withMin)).toEqual(withMin)
   })
 
-  // ADR-119 결정 5 — 이미 발행된 옛 매니페스트에는 notes가 없다. 필수 검사에 넣으면 그 순간
-  // 기존 설치본의 업데이트 확인이 전부 check-error가 된다. 이 케이스가 그 회귀의 유일한 가드다.
-  it('notes가 없는 매니페스트를 그대로 통과시킨다', () => {
+  // ADR-119 결정 5(ADR-126 결정 2가 필드 이름만 바꿔 승계) — 이미 발행된 옛 매니페스트에는
+  // highlights가 없다. 필수 검사에 넣으면 그 순간 기존 설치본의 업데이트 확인이 전부
+  // check-error가 된다. 이 케이스가 그 회귀의 유일한 가드다.
+  it('highlights가 없는 매니페스트를 그대로 통과시킨다', () => {
     expect(parseLiveUpdateManifest(manifest)).toEqual(manifest)
     expect(parseLiveUpdateManifest(JSON.stringify(manifest))).toEqual(manifest)
-    expect(parseLiveUpdateManifest(manifest)).not.toHaveProperty('notes')
+    expect(parseLiveUpdateManifest(manifest)).not.toHaveProperty('highlights')
   })
 
-  it('notes가 문자열이면 함께 반환한다', () => {
-    const withNotes = { ...manifest, notes: '- 개발 노트 화면 추가\n- 설정 화면 정리' }
-    expect(parseLiveUpdateManifest(withNotes)).toEqual(withNotes)
-    expect(parseLiveUpdateManifest(JSON.stringify(withNotes))).toEqual(withNotes)
+  // 옛 매니페스트에 실려 있던 notes(평문 한 덩어리)는 ADR-126 결정 2로 폐기됐다 — 읽는 쪽이
+  // 사라졌으므로 파서도 싣지 않는다. 그래도 그 필드가 있는 옛 파일을 **버리지는 않는다**.
+  it('폐기된 notes 필드가 있어도 매니페스트를 버리지 않고 그 필드만 뺀다', () => {
+    const withNotes = { ...manifest, notes: '[기능] 개발 노트 추가' }
+    expect(parseLiveUpdateManifest(withNotes)).toEqual(manifest)
+    expect(parseLiveUpdateManifest(JSON.stringify(withNotes))).toEqual(manifest)
   })
 
-  it('notes가 문자열이 아니면 매니페스트를 버리지 않고 그 필드만 뺀다', () => {
-    for (const notes of [42, { text: 'x' }, null, ['a']]) {
-      expect(parseLiveUpdateManifest({ ...manifest, notes })).toEqual(manifest)
-      expect(parseLiveUpdateManifest(JSON.stringify({ ...manifest, notes }))).toEqual(manifest)
+  it('highlights가 문자열 배열이면 함께 반환한다', () => {
+    const withHighlights = { ...manifest, highlights: ['보스 카드에서 인원 변경', '아이템 가격 입력'] }
+    expect(parseLiveUpdateManifest(withHighlights)).toEqual(withHighlights)
+    expect(parseLiveUpdateManifest(JSON.stringify(withHighlights))).toEqual(withHighlights)
+  })
+
+  it('highlights가 문자열 배열이 아니면 매니페스트를 버리지 않고 그 필드만 뺀다', () => {
+    for (const highlights of [42, 'a\nb', { text: 'x' }, null, ['ok', 7]]) {
+      expect(parseLiveUpdateManifest({ ...manifest, highlights })).toEqual(manifest)
+      expect(parseLiveUpdateManifest(JSON.stringify({ ...manifest, highlights }))).toEqual(manifest)
     }
+  })
+
+  // 빈 배열은 "핵심 목록이 없다"와 같다 — 실어 보내면 모달이 빈 아코디언을 여는 버튼을 그린다.
+  it('highlights가 빈 배열이면 필드를 뺀다', () => {
+    expect(parseLiveUpdateManifest({ ...manifest, highlights: [] })).toEqual(manifest)
   })
 
   it('size가 없거나 숫자가 아니면 null을 반환한다', () => {
@@ -206,6 +220,22 @@ describe('checkForLiveUpdate (체크만, 다운로드 안 함)', () => {
     httpGetMock.mockResolvedValue({ status: 200, data: { ...manifest, minNativeVersion: '1.0.0' } })
     currentMock.mockResolvedValue(currentAt('1.0.0', '1.0.0'))
     expect((await checkForLiveUpdate(manifestUrl)).kind).toBe('update-available')
+  })
+
+  // ADR-126 결정 1: 받기 전 모달이 보여줄 유일한 재료다 — 매니페스트에서 여기까지 오지 못하면
+  // 모달은 다시 "버전 + 용량"만 말하는 자리로 돌아간다.
+  it('highlights가 있으면 update-available 결과에 그대로 실린다', async () => {
+    const highlights = ['보스 카드에서 인원 변경', '아이템 가격 입력']
+    httpGetMock.mockResolvedValue({ status: 200, data: { ...manifest, highlights } })
+    currentMock.mockResolvedValue(currentAt('1.0.0'))
+    expect(await checkForLiveUpdate(manifestUrl)).toEqual({
+      kind: 'update-available',
+      version: '1.1.0',
+      size: 8_200_000,
+      url: 'https://cdn/1.1.0.zip',
+      checksum: 'abc123',
+      highlights,
+    })
   })
 })
 

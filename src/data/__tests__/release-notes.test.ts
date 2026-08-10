@@ -76,6 +76,25 @@ describe('release-notes 형식', () => {
       }
     }
   })
+
+  // ADR-126 결정 2·3: 매니페스트에 실려 업데이트 모달이 그리는 유일한 재료다. 있으면서 비어
+  // 있거나 공백만인 줄이 섞이면 모달이 빈 아코디언을 연다.
+  it('highlights 가 있으면 비어 있지 않고 공백만인 줄이 없다', () => {
+    for (const note of RELEASE_NOTES) {
+      if (note.highlights === undefined) continue
+      expect(note.highlights.length, `${note.version} 의 highlights 가 빈 배열`).toBeGreaterThan(0)
+      for (const line of note.highlights) {
+        expect(line.trim(), `${note.version} 에 공백만인 highlights 줄이 있음`).not.toBe('')
+      }
+    }
+  })
+
+  // 배포 스크립트가 막는 것과 같은 조건이지만(ADR-126 결정 8) **여기서 먼저 걸린다** — 배포
+  // 직전이 아니라 커밋 시점에 알아야 고칠 시간이 있다. 과거 버전에는 없는 것이 정상이라
+  // (이미 발행됐고 다시 매니페스트에 실리지 않는다) 맨 앞 하나만 본다.
+  it('최신 노트에는 highlights 가 있다 — 다음 배포가 그것을 싣는다', () => {
+    expect(RELEASE_NOTES[0].highlights?.length ?? 0).toBeGreaterThan(0)
+  })
 })
 
 describe('findReleaseNote', () => {
