@@ -68,6 +68,7 @@ const SettingsScreen = lazy(() =>
   import('./app/settings/SettingsScreen').then((m) => ({ default: m.SettingsScreen })),
 )
 const loadSettingsReleaseNotesScreen: ScreenLoader = () => import('./app/settings/SettingsReleaseNotesScreen').then((m) => m.SettingsReleaseNotesScreen)
+const loadSettingsFeatureGuideListScreen: ScreenLoader = () => import('./app/settings/SettingsFeatureGuideListScreen').then((m) => m.SettingsFeatureGuideListScreen)
 const loadSettingsFeatureGuideScreen: ScreenLoader = () => import('./app/settings/SettingsFeatureGuideScreen').then((m) => m.SettingsFeatureGuideScreen)
 const loadSettingsAccountDataScreen: ScreenLoader = () => import('./app/settings/SettingsAccountDataScreen').then((m) => m.SettingsAccountDataScreen)
 const loadSettingsAboutScreen: ScreenLoader = () => import('./app/settings/SettingsAboutScreen').then((m) => m.SettingsAboutScreen)
@@ -88,6 +89,7 @@ const STACK_PRELOADERS: Record<string, ReadonlyArray<ScreenLoader>> = {
   '/profit': [loadDropHistoryScreen, loadDropPriceScreen],
   '/settings': [
     loadSettingsReleaseNotesScreen,
+    loadSettingsFeatureGuideListScreen,
     loadSettingsFeatureGuideScreen,
     loadSettingsAccountDataScreen,
     loadSettingsAboutScreen,
@@ -517,10 +519,16 @@ export function AppShell(): React.JSX.Element {
                     형제였던 것을 중첩으로 옮긴다 — 근거는 [[ADR-077]] 의 "부모 상태 보존"이 아니라
                     **전환 중 아래 화면이 보여야 한다**는 것이다. 가드는 부모가 대신 건다: 부모가
                     `/onboarding` 으로 리다이렉트되면 중첩 자식은 매칭될 자리가 사라진다. */}
+                {/* **같은 상세 화면이 두 부모 아래 각각 라우팅된다**([[ADR-125]] 결정 3 정정) —
+                    기능 설명 목록에서도, 개발 노트 항목에서도 열린다. 한쪽으로 몰고 다른 쪽에서
+                    그리로 보내는 방법은 쓸 수 없다: `resolveStackDirection` 이 push/pop 을 **경로의
+                    접두 관계**로 판정하므로 `/settings/release-notes` → `/settings/guide/x` 는 서로
+                    접두가 아니라 `replace` 로 떨어져 밀려 들어오는 전환이 사라진다. 화면과 데이터는
+                    한 벌이고 경로만 둘이라, 상세는 부모를 현재 경로에서 깎아 쓴다. */}
+                <Route path="guide" element={stackRoute(loadSettingsFeatureGuideListScreen)}>
+                  <Route path=":guideId" element={stackRoute(loadSettingsFeatureGuideScreen)} />
+                </Route>
                 <Route path="release-notes" element={stackRoute(loadSettingsReleaseNotesScreen)}>
-                  {/* **개발 노트의 자식**이다([[ADR-125]] 결정 3) — 안내를 가진 노트 항목에서
-                      열리므로 아래 처방침과 같은 사정이다. `:guideId` 는 버전이 아니라 **항목**
-                      식별자이고, 없는 id 는 화면이 목록으로 `replace` 한다. */}
                   <Route path=":guideId" element={stackRoute(loadSettingsFeatureGuideScreen)} />
                 </Route>
                 <Route path="account-data" element={stackRoute(loadSettingsAccountDataScreen)} />

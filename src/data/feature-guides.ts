@@ -1,31 +1,58 @@
-import type { ReleaseNoteGuide } from '../types'
+import type { FeatureGuide, FeatureGuideGroup } from '../types'
 
-// 개발 노트 항목의 **사용법 안내**(ADR-125). 노트 한 줄은 *"바뀐 것이 있다"* 까지만 말하고, 그것이
-// 화면 어디에 있고 어떻게 쓰는지는 말하지 않는다 — 그 간극을 메우는 것이 이 파일이다.
+// 기능 사용법 안내의 **진실 원천 한 벌**([[ADR-125]] 결정 1 정정, 2026-08-10). 두 곳에서 읽는다 —
+// 기능 설명 화면(`/settings/guide`)이 기능 축으로 전체를 나열하고, 개발 노트 항목이 `guideId` 로
+// 그중 하나를 가리켜 같은 화면을 연다.
 //
-// **`release-notes.ts` 와 갈라져 있는 이유는 배포다**(ADR-125 결정 2). 배포 스크립트가
+// **처음엔 버전 축이었다.** 노트 항목마다 안내를 붙이는 구조였는데, 그러면 *"지금 이 앱을 어떻게
+// 쓰나"* 에 답할 자리가 없다 — 오래된 기능이 옛 버전 카드 안에 묻힌다. 축을 기능으로 옮기고
+// 노트는 링크만 걸게 하면 **설명이 한 벌로 남으면서** 두 질문에 다 답한다.
+//
+// **`release-notes.ts` 와 갈라져 있는 이유는 배포다**([[ADR-125]] 결정 2). 배포 스크립트가
 // `release-notes.ts` 를 **Node 에서 직접 import** 하는데(ADR-119 결정 1,
 // `scripts/publish-live-update.mjs`), 아래 이미지 import 를 그 파일에 넣으면 Node 가 `.webp` 를
-// 해석하지 못해 그 자리에서 배포가 죽는다. 그래서 노트 항목은 `guideId` **문자열만** 들고,
-// 본문은 여기 있다. 갈라짐은 `__tests__/release-note-guides.test.ts` 의 양방향 참조 무결성이 막는다.
+// 해석하지 못해 그 자리에서 배포가 죽는다.
 //
-// **이미지는 `import.meta.glob` 이 아니라 명시적 import 다**(ADR-125 결정 4) — glob 조회는 파일명이
-// 틀리면 `undefined` 를 돌려주고 이미지만 빠진 채 통과하지만, 명시적 import 는 **빌드가 실패한다.**
-// 넣을 자리는 `src/assets/guide/` 이고, 형식은 `.webp` 다.
+// **이미지는 `import.meta.glob` 이 아니라 명시적 import 다**([[ADR-125]] 결정 4) — glob 조회는
+// 파일명이 틀리면 `undefined` 를 돌려주고 이미지만 빠진 채 통과하지만, 명시적 import 는 **빌드가
+// 실패한다.** 넣을 자리는 `src/assets/guide/` 이고 형식은 `.webp` 다.
 //
 // **OTA 는 dist 전체를 압축해 내려주므로 이미지가 곧 번들 용량이다**(지연 로드가 깎아 주지 않는다).
-// 릴리스마다 누적되는 자산이라 한 장당·누적 상한을 정해 관리한다.
 //
 // 이 파일은 순수 데이터다 — `features/`·`storage/`·`native/` 를 import 하지 않는다.
 //
 // ---
-// ⚠️ **v1.0.4 안내 넷은 아직 글만 있고 스크린샷이 비어 있다**(이슈 #198). 아래 안내들에 이미지가
-// 들어갈 자리를 `TODO(#198)` 주석으로 표시해 뒀다 — 이미지가 준비되면 `import` 를 더하고 해당
-// 블록에 `image: { src, alt }` 를 넣으면 된다. 대체 텍스트는 타입이 강제한다.
-export const RELEASE_NOTE_GUIDES: ReleaseNoteGuide[] = [
+// ⚠️ **안내 넷은 아직 글만 있고 스크린샷이 비어 있다**(이슈 #198). 이미지가 들어갈 자리를
+// `TODO(#198)` 로 표시해 뒀다 — 준비되면 `import` 를 더하고 해당 블록에 `image: { src, alt }` 를
+// 넣으면 된다. 대체 텍스트는 타입이 강제한다.
+
+/** 그룹 탭에 서는 이름. 넷은 하단 탭바와 **글자까지 같다** — 사용자가 이미 아는 구획이다. */
+export const FEATURE_GUIDE_GROUP_LABELS: Record<FeatureGuideGroup, string> = {
+  content: '컨텐츠',
+  boss: '보스',
+  profit: '수익',
+  settings: '설정',
+  common: '공통',
+}
+
+/**
+ * 탭이 서는 순서. **데이터 순서와 무관하게 이 순서로 그린다** — 안내를 쓰는 사람이 어떤 순서로
+ * 적든 화면은 늘 같아야 한다(`RELEASE_NOTE_CATEGORY_ORDER` 와 같은 규칙).
+ * 앞 넷은 하단 탭바 순서 그대로이고, `공통` 은 어느 탭에도 없는 것이라 마지막이다.
+ */
+export const FEATURE_GUIDE_GROUP_ORDER: readonly FeatureGuideGroup[] = [
+  'content',
+  'boss',
+  'profit',
+  'settings',
+  'common',
+]
+
+export const FEATURE_GUIDES: FeatureGuide[] = [
   {
     id: 'drop-item-price',
     title: '드롭 아이템에 판매 가격 매기기',
+    group: 'profit',
     blocks: [
       // TODO(#198): 보스 수익 화면 제목 줄의 `아이템 가격` 링크가 보이는 화면
       {
@@ -53,6 +80,7 @@ export const RELEASE_NOTE_GUIDES: ReleaseNoteGuide[] = [
   {
     id: 'boss-card-party',
     title: '보스 카드에서 파티 인원 고치기',
+    group: 'boss',
     blocks: [
       // TODO(#198): 보스 스케줄러 목록에서 보스 카드가 보이는 화면
       {
@@ -70,10 +98,11 @@ export const RELEASE_NOTE_GUIDES: ReleaseNoteGuide[] = [
   {
     id: 'stack-navigation',
     title: '하위 화면을 쓸어서 되돌아가기',
+    group: 'common',
     blocks: [
       // TODO(#198): 하위 페이지가 오른쪽에서 밀려 들어오는 전환 중간 프레임
       {
-        text: '설정 안의 화면들, 보스 관리, 드롭 히스토리처럼 한 단계 안쪽으로 들어가는 화면은 이제 오른쪽에서 밀려 들어옵니다.',
+        text: '설정 안의 화면들, 보스 관리, 드롭 히스토리처럼 한 단계 안쪽으로 들어가는 화면은 오른쪽에서 밀려 들어옵니다.',
       },
       // TODO(#198): 화면 왼쪽 가장자리에서 오른쪽으로 쓰는 동작
       {
@@ -84,10 +113,11 @@ export const RELEASE_NOTE_GUIDES: ReleaseNoteGuide[] = [
   {
     id: 'release-note-guide',
     title: '개발 노트에서 사용법 보기',
+    group: 'settings',
     blocks: [
       // TODO(#198): 개발 노트 목록에서 `›` 가 붙은 항목이 보이는 화면
       {
-        text: '지금 보고 계신 이 화면입니다. 개발 노트에서 오른쪽에 화살표가 붙은 항목을 누르면, 그 기능이 어디에 있고 어떻게 쓰는지 볼 수 있습니다.',
+        text: '개발 노트에서 오른쪽에 화살표가 붙은 항목을 누르면, 그 기능이 어디에 있고 어떻게 쓰는지 볼 수 있습니다. 「기능 설명」에서 보는 것과 같은 글입니다.',
       },
       {
         text: '모든 항목에 설명이 붙는 것은 아닙니다. 화살표가 없는 항목은 한 줄로 충분한 변경입니다.',
@@ -98,8 +128,8 @@ export const RELEASE_NOTE_GUIDES: ReleaseNoteGuide[] = [
 
 /**
  * 그 id 의 안내를 찾는다. `findReleaseNote` 와 같은 계약이다 — 없으면 **던지지 않고 `undefined`**
- * 이고, "없다"의 판정은 호출부가 한다(화면은 개발 노트 목록으로 되돌린다).
+ * 이고, "없다"의 판정은 호출부가 한다(상세 화면은 목록으로 되돌린다).
  */
-export function findReleaseNoteGuide(id: string): ReleaseNoteGuide | undefined {
-  return RELEASE_NOTE_GUIDES.find((guide) => guide.id === id)
+export function findFeatureGuide(id: string): FeatureGuide | undefined {
+  return FEATURE_GUIDES.find((guide) => guide.id === id)
 }

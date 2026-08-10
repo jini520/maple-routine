@@ -1,13 +1,13 @@
 # 설정 (Settings)
 
 > **범위**: API 키 관리·계정(메이플 ID) 변경·연결 해제·테마 선택·스케줄 관리 방법(트래킹 모드)·데이터 관리·앱 업데이트·개발 노트·footer 표기. 다른 기능 설명에 흩어져 있던 요구사항을 통합 정리.
-> **관련 소스**: `app/settings/`(`SettingsScreen` + 하위 화면 `SettingsReleaseNotesScreen`/`SettingsFeatureGuideScreen`/`SettingsAccountDataScreen`/`SettingsAboutScreen`/`SettingsPrivacyScreen`) · `src/App.tsx`(라우트 셋 — `/settings` 의 형제) · `src/data/release-notes.ts` · `src/data/release-note-guides.ts` · `src/types/release-notes.ts` · `src/assets/guide/` · `features/settings/`(`changeApiKey`·`cache-data`) · `storage/api-key`(`clearAuthConfig`) · `storage/cache-data`(`clearCacheData`/`getCacheDataSizes`) · `features/onboarding`(`RESET`) · `features/tracking-mode`(`copy.ts`) · `AccountFlowStatus` · `SettingsRow`/`SettingsLinkRow`/`row-class.ts`(`SETTINGS_ROW_CLASS`) · `TrackingModeModal`/`TrackingModeSelector` · `ThemeModal`/`ThemeSelector` · `AccountModal`/`CacheClearConfirm`/`DisconnectConfirm` · `AppUpdateSection`.
+> **관련 소스**: `app/settings/`(`SettingsScreen` + 하위 화면 `SettingsReleaseNotesScreen`/`SettingsFeatureGuideListScreen`/`SettingsFeatureGuideScreen`/`SettingsAccountDataScreen`/`SettingsAboutScreen`/`SettingsPrivacyScreen`) · `src/App.tsx`(라우트 셋 — `/settings` 의 형제) · `src/data/release-notes.ts` · `src/data/feature-guides.ts` · `src/types/release-notes.ts` · `src/assets/guide/` · `features/settings/`(`changeApiKey`·`cache-data`) · `storage/api-key`(`clearAuthConfig`) · `storage/cache-data`(`clearCacheData`/`getCacheDataSizes`) · `features/onboarding`(`RESET`) · `features/tracking-mode`(`copy.ts`) · `AccountFlowStatus` · `SettingsRow`/`SettingsLinkRow`/`row-class.ts`(`SETTINGS_ROW_CLASS`) · `TrackingModeModal`/`TrackingModeSelector` · `ThemeModal`/`ThemeSelector` · `AccountModal`/`CacheClearConfirm`/`DisconnectConfirm` · `AppUpdateSection`.
 > **관련 ADR**: [[ADR-007]] [[ADR-008]] [[ADR-009]] [[ADR-004]] [[ADR-035]] [[ADR-026]] [[ADR-027]] [[ADR-050]] [[ADR-051]] [[ADR-052]] [[ADR-058]] [[ADR-086]] [[ADR-104]] [[ADR-113]] [[ADR-115]] [[ADR-118]] [[ADR-119]] [[ADR-120]] [[ADR-125]]. **관련 문서**: [onboarding.md](./onboarding.md), [theme.md](./theme.md), [live-update.md](./live-update.md), [../foundation/nexon-api.md](../foundation/nexon-api.md), [../persistence/lifecycle.md](../persistence/lifecycle.md).
 
 ## 정책
 진입 경로는 **하단 탭바 4번째 탭**(별도 헤더 아이콘 아님, 확정 2026-07-12).
 
-### 화면 구조 — 본화면 2카드 5행 + 하위 페이지 4 ([[ADR-118]], 구현 완료 2026-08-09, 이슈 #135·#161)
+### 화면 구조 — 본화면 2카드 6행 + 하위 페이지 5 ([[ADR-118]], 구현 완료 2026-08-09, 이슈 #135·#161 · 6번째 행은 [[ADR-125]], 2026-08-10)
 
 설정은 **한 화면이 아니라 얕은 계층**이다. 가르는 기준은 "행이 몇 개인가"가 아니라 **성격이 다른 것을 붙여 두지 않는다**이다.
 
@@ -15,16 +15,19 @@
 설정 (본화면 — 고정 헤더 없음)
  [카드 1]  스케줄 관리 방법            자동 ›      ← 값을 고르는 행(모달)
            테마                      혼테일 ›
- [카드 2]  개발 노트                        ›      ← 화면이 넘어가는 행
+ [카드 2]  기능 설명                        ›      ← 화면이 넘어가는 행
+           개발 노트                        ›
            계정 및 데이터            1.2 MB ›
            앱 정보                    1.0.3 ›
  [footer]  v1.0.3 / © 2026 메이플 루틴 / Data based on NEXON Open API / 비제휴 고지
 
+/settings/guide          기능 설명     — 앱 기능을 기능 축으로 나열한 카탈로그. 사용법 설명의
+                                          **원천**([[ADR-125]] 결정 1 정정). 그룹 탭 = 하단 탭바
+                                          축(컨텐츠·보스·수익·설정) + 공통
+/settings/guide/:guideId 기능 안내     — 그 기능이 어디 있고 어떻게 쓰는지(이미지 + 문단)
 /settings/release-notes  개발 노트     — 버전별 변경 목록(데이터·배포 연동은 [[ADR-119]])
 /settings/release-notes/:guideId
-                         기능 안내     — 그 기능이 어디 있고 어떻게 쓰는지(이미지 + 문단)
-                                          ([[ADR-125]], 이슈 #198). release-notes 의 **자식**이다 —
-                                          안내를 가진 노트 항목을 눌러 들어간다. 2단 스택 둘째
+                         기능 안내     — **위와 같은 화면·같은 데이터.** 라우트만 둘이다(아래 참조)
 /settings/account-data   계정 및 데이터 — [카드1] 계정 변경 / [카드2] 캐시 데이터 삭제 · 연결 해제(둘 다 위험 색)
 /settings/about          앱 정보      — 현재 버전 · 상태 · 업데이트 확인 · 개인정보 처리방침 ›
 /settings/about/privacy  개인정보 처리방침 — 사이트를 iframe 으로 실은 앱 내 화면
@@ -33,25 +36,29 @@
                                           2단 스택. 오프라인이면 안내 + 브라우저로 열기
 ```
 
-#### 기능 안내 — 개발 노트의 드릴다운 ([[ADR-125]], 구현 전, 이슈 #198)
-
-개발 노트 한 줄은 *"바뀐 것이 있다"* 까지만 말한다. **안내를 가진 항목만** 눌러 들어갈 수 있고 `›` 가 붙는다 — 나머지 항목은 DOM 이 종전과 같다(버그 수정 한 줄에 붙일 사용법은 없고, 액션 없는 자리에 비활성 버튼을 두지 않는다).
-
-- **축은 버전이다** — 기능 카탈로그를 따로 두지 않는다(두 축은 반드시 어긋난다). 오래된 기능이 옛 버전 카드에 묻히는 것이 대가이고, 그 요구가 실제로 생기면 그때 얹는다.
-- **본문은 `release-notes.ts` 밖에 산다** — `scripts/publish-live-update.mjs` 가 그 파일을 **Node 에서 직접 import** 하므로(`.webp` import 를 넣으면 배포가 죽는다) 항목엔 `guideId?: string` 만 남기고 본문은 `src/data/release-note-guides.ts` 다. 갈라짐은 **양방향 참조 무결성 테스트**가 막는다(모든 `guideId` 에 가이드가 있고, 모든 가이드가 어느 항목엔가 물려 있다).
-- **이미지는 앱 번들**(`src/assets/guide/`, 명시적 import) — 원격 로드는 오프라인에서 안내가 통째로 비어 기각. `import.meta.glob` 을 안 쓰는 이유는 파일명이 틀렸을 때 `undefined` 로 조용히 통과하는 대신 **빌드가 실패해야** 하기 때문이다.
-- **OTA 는 dist 전체를 압축**하므로 지연 로드가 용량을 깎아 주지 않는다 — 한 장당·누적 상한을 정해 관리한다(값은 첫 촬영분 실측 후).
-- `:guideId` 는 버전이 아니라 **항목** 식별자다. 없는 id 로 들어오면 `/settings/release-notes` 로 `replace`.
-
 - **섹션 제목은 달지 않는다** — 두 무리를 덮는 제목(「동작·표시」/「관리·정보」)은 행 이름보다 덜 구체적이라 읽는 사람이 얻는 것이 없다. 카드 경계만으로 가른다. 기존 「데이터 관리」·「앱 업데이트」 제목은 그 아래 행이 하나뿐이라 사실상 행 이름이었고, 두 섹션이 하위 페이지로 내려가면서 함께 사라진다.
 - **파괴적 행은 `/settings/account-data` 안에서 별도 카드로 내린다.** 본화면에서 빼는 것만으로는 분리가 아니다 — 옮긴 곳에서 다시 `계정 변경` 과 붙으면 같은 문제가 한 층 내려갈 뿐이다. 아래 카드에도 제목을 달지 않는다(위험 색 + 카드 경계가 이미 말한다).
-- **하위 페이지 넷은 `/boss/manage`·`/content/manage` 와 같은 골격**이다 — 공용 `StackScreen`([[ADR-120]]) + `PageHeader`([[ADR-094]]) + 좌측 `ArrowLeft`(`aria-label="뒤로"`). 라우트는 `/settings` 의 **중첩 자식**이고 가드는 부모가 대신 건다(부모가 `/onboarding` 으로 리다이렉트되면 자식은 매칭될 자리가 사라진다). 중첩인 이유는 [[ADR-077]] 의 "부모 상태 보존"이 아니라 **전환 중 아래 화면이 보여야 하기 때문**이다 — 그러려면 언마운트되면 안 된다.
+- **하위 페이지 다섯은 `/boss/manage`·`/content/manage` 와 같은 골격**이다 — 공용 `StackScreen`([[ADR-120]]) + `PageHeader`([[ADR-094]]) + 좌측 `ArrowLeft`(`aria-label="뒤로"`). 라우트는 `/settings` 의 **중첩 자식**이고 가드는 부모가 대신 건다(부모가 `/onboarding` 으로 리다이렉트되면 자식은 매칭될 자리가 사라진다). 중첩인 이유는 [[ADR-077]] 의 "부모 상태 보존"이 아니라 **전환 중 아래 화면이 보여야 하기 때문**이다 — 그러려면 언마운트되면 안 된다.
   - 뒤로는 `navigate(-1)` **진짜 pop** 이고(딥링크 진입만 부모로 `replace`), 왼쪽 가장자리 스와이프로도 돌아온다. 하위 페이지에는 **탭바가 없다**.
   - **`SettingsScreen` 도 `ScreenScroll` 로 옮겨갔다**([[ADR-120]] 딸림 작업) — 문서 스크롤에 얹혀 있던 마지막 탭 화면이었다. 그래야 스택의 아래 화면이 되고, 하위 페이지를 열었다 닫아도 보던 자리가 남는다.
-- **카테고리 행은 대표값 하나를 미리 보여준다** — `계정 및 데이터` = 캐시 총 용량(`getCacheDataSizes()` 두 그룹의 합), `앱 정보` = 현재 버전(`currentVersion ?? packageJson.version`). `개발 노트` 는 보여줄 대표값이 없어 **비운다**("최신 버전"은 바로 아래 행과 같은 값이고 "n개"는 뜻이 없다 — 없는 대표값을 지어내지 않는다).
+- **카테고리 행은 대표값 하나를 미리 보여준다** — `계정 및 데이터` = 캐시 총 용량(`getCacheDataSizes()` 두 그룹의 합), `앱 정보` = 현재 버전(`currentVersion ?? packageJson.version`). `기능 설명`·`개발 노트` 는 보여줄 대표값이 없어 **비운다**(개발 노트의 "최신 버전"은 바로 아래 행과 같은 값이고, 둘 다 "n개"는 뜻이 없다 — 없는 대표값을 지어내지 않는다).
   - **조회 전 자리는 `- KB` 로 잡는다**([[ADR-061]] 결정 7) — 빈 문자열이면 값이 툭 나타나며 행이 밀린다. 조회 실패도 같은 자리표시로 남는다(설정을 못 여는 실패가 아니다).
   - **캐시 용량은 본화면과 `/settings/account-data` 가 각각 마운트 시 읽어, 드릴다운하면 조회가 2회다**(구현 확인 2026-08-09 — 옛 구조는 `CacheDataSection` 마운트 1회). 값을 프롭·스토어로 물려 내리지 않은 이유는 하위 화면이 **직접 진입 가능한 라우트**라 본화면을 거치지 않으면 물려받을 값이 없기 때문이다. **체감 지연은 미측정**이고, 확인되면 그때 캐싱 위치를 정한다([[ADR-118]] 미검증 3).
 - **`계정 변경` 행에는 현재값을 두지 않는다** — `accountId` 는 불투명 문자열이고 대표 캐릭터 이름은 파생·변동값이다(프로브·캐시 상태에 따라 달라지고 429·조회 불가에서는 아예 없다 — [[ADR-113]]·[[ADR-116]]). 대표값 규칙은 "확실히 아는 값이 있으면 보여준다"이지 "칸을 채운다"가 아니다.
+
+#### 기능 설명 — 사용법의 원천은 기능 카탈로그다 ([[ADR-125]], 구현 완료(글만) 2026-08-10, 이슈 #198)
+
+개발 노트 한 줄은 *"바뀐 것이 있다"* 까지만 말한다. 사용법은 **기능 축 카탈로그 한 벌**(`/settings/guide`)에 살고, **개발 노트는 거기로 링크만 건다** — 같은 설명이 두 벌 있으면 반드시 갈라지고, 버전 축만으로는 *"지금 이 앱을 어떻게 쓰나"* 에 답할 자리가 없다.
+
+- **그룹 탭은 하단 탭바와 같은 축**(컨텐츠·보스·수익·설정) + `공통`. 사용자가 이미 아는 구획이라 새로 배울 것이 없고, 어느 탭에도 속하지 않는 앱 전반의 동작(화면 전환·제스처)만 `공통` 이다.
+  - **비어 있는 그룹은 탭째 감춘다**(개발 노트 카테고리 묶음·`ThemeSelector` 와 같은 규칙). 지금 `컨텐츠` 에 안내가 없어 그 탭이 안 보인다.
+  - **그룹이 하나면 탭 줄 자체를 안 그린다** — 선택지가 둘 이상일 때만 탭이 뜻을 갖는다. 스타일은 「탭 토글」절 그대로([[ADR-018]]).
+- **개발 노트에서는 안내를 가진 항목만** 눌러 들어갈 수 있고 `›` 가 붙는다 — 나머지 항목은 DOM 이 종전과 같다(버그 수정 한 줄에 붙일 사용법은 없고, 액션 없는 자리에 비활성 버튼을 두지 않는다).
+- **상세는 두 부모 아래 각각 라우팅된다**(`/settings/guide/:guideId`·`/settings/release-notes/:guideId`). 한쪽으로 몰 수 없는 이유는 `resolveStackDirection`(`lib/stack-transition.ts`)이 push/pop 을 **경로 접두 관계**로 판정하기 때문이다 — 형제로 건너뛰면 `replace` 가 되어 밀려 들어오는 전환이 사라진다. 화면·데이터는 한 벌이고 경로만 둘이라, 상세는 부모를 `resolveParentPath(pathname)` 로 **깎아 쓴다**(어디서 왔든 그리로 돌아가야 한다).
+- **본문은 `release-notes.ts` 밖에 산다** — `scripts/publish-live-update.mjs` 가 그 파일을 **Node 에서 직접 import** 하므로(`.webp` import 를 넣으면 배포가 죽는다) 노트 항목엔 `guideId?: string` 만 남기고 본문은 `src/data/feature-guides.ts` 다. 갈라짐은 **미아 참조 금지** 테스트가 막는다. **반대 방향은 강제하지 않는다** — 카탈로그가 원천이므로 노트가 가리키지 않는 안내는 정상이다.
+- **이미지는 앱 번들**(`src/assets/guide/`, 명시적 import) — 원격 로드는 오프라인에서 안내가 통째로 비어 기각. `import.meta.glob` 을 안 쓰는 이유는 파일명이 틀렸을 때 `undefined` 로 조용히 통과하는 대신 **빌드가 실패해야** 하기 때문이다.
+- **OTA 는 dist 전체를 압축**하므로 지연 로드가 용량을 깎아 주지 않는다 — 한 장당·누적 상한을 정해 관리한다(값은 첫 촬영분 실측 후). 기준선(이미지 0장): zip 5.6MB · `screen-settings` 52.77kB.
+- 없는 `:guideId` 로 들어오면 **들어온 쪽 목록**으로 `replace`.
 
 ### "API 키 변경" 행은 되살리지 않는다 ([[ADR-118]] 결정 9, 2026-08-09)
 
