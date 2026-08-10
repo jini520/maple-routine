@@ -2,7 +2,7 @@
 
 > **범위**: 스토어에 나가는 **바이너리**를 만드는 절차 — 서명·버전·빌드 커맨드·산출물 검증, 그리고 콘솔에 채워 넣어야 하는 요건. 앱 안에서 도는 OTA 갱신은 [features/live-update.md](../features/live-update.md), 광고 관련 스토어 요건의 *배경*은 [features/ads.md](../features/ads.md).
 > **관련 소스**: `android/app/build.gradle`(서명·`versionCode`) · `android/keystore.properties`(**커밋 금지**) · `android/.gitignore` · `ios/App/App.xcodeproj`(iOS 서명) · `package.json`(빌드 스크립트).
-> **관련 ADR**: [[ADR-091]](Android 서명) [[ADR-090]](광고 — 스토어 요건이 늘어난 이유) [[ADR-024]](버전 형식) [[ADR-119]](릴리스 노트). **관련 문서**: [../features/ads.md](../features/ads.md), [../features/live-update.md](../features/live-update.md), [../features/site.md](../features/site.md), [../trouble/2026-08-04-ios-appstore-signing.md](../trouble/2026-08-04-ios-appstore-signing.md).
+> **관련 ADR**: [[ADR-091]](Android 서명) [[ADR-090]](광고 — 스토어 요건이 늘어난 이유) [[ADR-024]](버전 형식) [[ADR-119]](릴리스 노트) [[ADR-126]](핵심 목록·모달). **관련 문서**: [../features/ads.md](../features/ads.md), [../features/live-update.md](../features/live-update.md), [../features/site.md](../features/site.md), [../trouble/2026-08-04-ios-appstore-signing.md](../trouble/2026-08-04-ios-appstore-signing.md).
 
 ## 빌드 커맨드는 하나뿐이다 — `npm run build`
 
@@ -26,16 +26,22 @@ OTA 배포든 스토어 바이너리든 순서는 같다.
 ```
 1. package.json version 을 올린다              (x.y.z — 2단이면 OTA가 깨진다, [[ADR-024]])
 2. src/data/release-notes.ts 에 그 버전 항목을 쓴다   ← 이 단계를 건너뛰면 3에서 막힌다
+     · items      — 변경 전부. 개발 노트 화면이 읽는다
+     · highlights — 핵심 3~4줄. **업데이트 모달**이 받기 전에 읽는다([[ADR-126]] 결정 2·3)
      · 네이티브 변경 항목에는 「스토어 업데이트 필요」 표식(항목 단위)
 3. npm run build / node scripts/publish-live-update.mjs
 ```
 
-> ⚠️ **다음 릴리스는 `1.0.3` 이다.** 지금 `package.json` 은 `1.0.2` 인데 노트는 `1.0.3` 한 건뿐이라,
-> **스크립트를 그대로 돌리면 가드에 걸려 중단된다**(`src/data/release-notes.ts 에 1.0.2 노트가 없습니다`).
-> 이건 결함이 아니라 [[ADR-119]] 결정 4·6 이 맞물린 결과다 — 버전을 1.0.3 으로 올리면 풀린다.
+> ⚠️ **다음 릴리스는 `1.0.4` 다.** 지금 `package.json` 은 `1.0.3`(발행 완료)이고 노트 맨 앞은 `1.0.4` 라,
+> **스크립트를 그대로 돌리면 가드에 걸려 중단된다** — `1.0.3` 노트에는 `highlights` 가 없다
+> (이미 발행된 버전이라 다시 매니페스트에 실릴 일이 없어 채우지 않았다). 결함이 아니라
+> [[ADR-119]] 결정 6 + [[ADR-126]] 결정 8 이 맞물린 결과이고, 버전을 1.0.4 로 올리면 풀린다.
 
-- **노트가 없으면 `publish-live-update.mjs` 가 중단한다**(`process.exit(1)`). `package.json` version 형식
-  검사와 **같은 자리**에서, `npm run build` 보다 **앞에서** 죽으므로 몇 분짜리 빌드를 버리지 않는다.
+- **노트나 핵심 목록이 없으면 `publish-live-update.mjs` 가 중단한다**(`process.exit(1)`, 문구가 어느
+  쪽이 비었는지 말한다). `package.json` version 형식 검사와 **같은 자리**에서, `npm run build` 보다
+  **앞에서** 죽으므로 몇 분짜리 빌드를 버리지 않는다.
+- **`highlights` 를 `items` 에서 베끼지 말 것**([[ADR-126]] 결정 3). *"무엇이 바뀌었나"* 가 아니라
+  *"받으면 무엇이 생기나"* 를 쓰고, 자잘한 것은 `일부 버그 및 사용성 개선` 처럼 한 줄로 뭉친다.
 - **스크립트가 `.ts` 를 읽는 방법은 Node 내장 타입 스트리핑이다** — `.mjs` 가
   `src/data/release-notes.ts` 를 **그대로 `import`** 한다(Node 22.18+/23.6+ 부터 플래그 없이 켜져 있고
   이 저장소는 24.x 에서 확인했다). **이 자리를 만질 때 `tsx`·`ts-node` 를 들이지 말 것** — 배포
@@ -46,7 +52,7 @@ OTA 배포든 스토어 바이너리든 순서는 같다.
   [[ADR-119]] 결정 4 가 사후 재구성을 금지했으므로(릴리스 노트는 사실 기록이다) 나중에 채울 방법이
   없다. 사후 복구가 불가능한 실수는 사전에 막는다.
 - 같은 파일이 두 곳으로 나간다 — 앱 내장 **개발 노트 화면**(`/settings/release-notes`, 과거 전체)과
-  배포 스크립트가 파생시키는 **`latest.json` 의 `notes`**(업데이트 모달, 그 버전 하나).
+  배포 스크립트가 파생시키는 **`latest.json` 의 `highlights`**(업데이트 모달, 그 버전의 핵심 3~4줄).
   상세는 [../features/live-update.md](../features/live-update.md)·[../features/settings.md](../features/settings.md).
 - 스토어 등록정보의 **출시 노트**(아래 "스토어 등록정보 문구")는 **별개 칸**이다 — 콘솔에 직접 쓰고
   이 파일에서 파생되지 않는다. 같은 릴리스라도 담는 말이 다를 수 있다(스토어는 그 버전 한정 소개,
