@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { MemoryRouter, Route, Routes, useParams, useSearchParams } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import packageJson from '../../../../package.json'
 import type { ReleaseNote } from '../../../types'
@@ -52,11 +52,24 @@ function mockLiveUpdateStore(overrides: Partial<ReturnType<typeof useLiveUpdateS
   })
 }
 
+// 상세 화면은 이 테스트의 관심사가 아니다 — 여기서 확인할 것은 "그 항목이 저리로 간다"까지다.
+function GuideProbe(): React.JSX.Element {
+  const { guideId } = useParams()
+  const [searchParams] = useSearchParams()
+  return (
+    <div>
+      안내 프로브 {guideId}
+      {searchParams.get('s') !== null && <span> 마디 {searchParams.get('s')}</span>}
+    </div>
+  )
+}
+
 function renderReleaseNotesScreen(): ReturnType<typeof render> {
   return render(
     <MemoryRouter initialEntries={['/settings/release-notes']}>
       <Routes>
         <Route path="/settings/release-notes" element={<SettingsReleaseNotesScreen />} />
+        <Route path="/settings/release-notes/:guideId" element={<GuideProbe />} />
         <Route path="/settings" element={<div>설정 프로브</div>} />
       </Routes>
     </MemoryRouter>,
@@ -221,6 +234,71 @@ describe('SettingsReleaseNotesScreen', () => {
 
     expect(screen.getByTestId('empty-state')).toBeInTheDocument()
     expect(screen.queryByTestId('release-note')).not.toBeInTheDocument()
+  })
+
+  // ADR-125 결정 5: 안내가 있는 항목만 눌린다. 버그 수정 한 줄에 붙일 사용법은 없고, 액션이 없는
+  // 자리에 액션처럼 보이는 것을 두지 않는다.
+  it('guideId 가 있는 항목만 눌리고, 누르면 그 안내로 간다', () => {
+    fixture = [
+      {
+        version: '1.0.4',
+        date: '2026-08-20',
+        items: [
+          { category: 'feature', text: '안내가 있는 기능', guideId: '파티-모달' },
+          { category: 'fix', text: '안내가 없는 수정' },
+        ],
+      },
+    ]
+    renderReleaseNotesScreen()
+
+    const guided = screen.getByRole('button', { name: /안내가 있는 기능/ })
+    expect(screen.queryByRole('button', { name: /안내가 없는 수정/ })).not.toBeInTheDocument()
+    expect(screen.getByText('안내가 없는 수정')).toBeInTheDocument()
+
+    fireEvent.click(guided)
+    expect(screen.getByText(/안내 프로브 파티-모달/)).toBeInTheDocument()
+  })
+
+  // ADR-125 결정 7: 릴리스에서 바뀐 것은 보통 기능 전체가 아니라 그중 한 마디다 — 안내 첫머리에
+  // 떨어뜨리면 읽는 사람이 그 마디를 다시 찾아야 한다.
+  it('guideSectionId 가 있으면 그 마디까지 넘긴다', () => {
+    fixture = [
+      {
+        version: '1.0.4',
+        date: '2026-08-20',
+        items: [
+          {
+            category: 'improvement',
+            text: '마디를 가리키는 항목',
+            guideId: '파티-모달',
+            guideSectionId: 'card',
+          },
+        ],
+      },
+    ]
+    renderReleaseNotesScreen()
+
+    fireEvent.click(screen.getByRole('button', { name: /마디를 가리키는 항목/ }))
+    expect(screen.getByText(/마디 card/)).toBeInTheDocument()
+  })
+
+  // 안내 없는 항목은 **DOM 이 종전과 같다** — 래퍼도 클래스도 만들지 않는다(ADR-125 결정 5).
+  it('안내가 하나도 없으면 눌리는 항목이 하나도 없다', () => {
+    fixture = [
+      {
+        version: '1.0.4',
+        date: '2026-08-20',
+        items: [
+          { category: 'fix', text: '수정 하나' },
+          { category: 'fix', text: '수정 둘' },
+        ],
+      },
+    ]
+    renderReleaseNotesScreen()
+
+    // 헤더의 「뒤로」 하나만 남는다.
+    expect(screen.getAllByRole('button')).toHaveLength(1)
+    expect(screen.getByRole('button', { name: '뒤로' })).toBeInTheDocument()
   })
 
   // ADR-119 결정 1: 이 화면은 이미 받은 번들 안의 데이터만 읽는다 — 매니페스트 조회는 업데이트

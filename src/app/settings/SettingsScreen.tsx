@@ -86,6 +86,10 @@ export function SettingsScreen(): React.JSX.Element {
 
           {/* 화면이 넘어가는 행 — 대표값(있으면) + chevron. */}
           <Card className="px-6 divide-y divide-border" data-testid="settings-card">
+            {/* 「기능 설명」이 「개발 노트」 위다([[ADR-125]] 결정 1 정정) — *"이 앱을 어떻게 쓰나"*
+                가 *"무엇이 바뀌었나"* 보다 자주 묻는 질문이고, 설명의 원천도 이쪽이다.
+                대표값을 비우는 것은 개발 노트와 같은 이유다(결정 5). */}
+            <SettingsRow label="기능 설명" onClick={() => navigate('/settings/guide')} />
             {/* 대표값을 비운다(결정 5) — "최신 버전"은 아래 `앱 정보` 행과 같은 값이라 중복이고,
                 "n개"는 개수가 늘어난다고 뜻이 생기지 않는다. 없는 대표값을 지어내지 않는다. */}
             <SettingsRow label="개발 노트" onClick={() => navigate('/settings/release-notes')} />

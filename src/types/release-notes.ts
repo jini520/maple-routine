@@ -26,6 +26,28 @@ export interface ReleaseNoteItem {
    * 무엇이 네이티브 변경인지는 스크립트가 아니라 **사람이 판정해 붙인다**.
    */
   requiresStoreUpdate?: boolean
+  /**
+   * 이 항목이 설명하는 기능의 사용법 안내([[ADR-125]]). 값이 있으면 목록에서 그 항목만 눌리고
+   * `›` 가 붙는다.
+   *
+   * **본문이 아니라 id 다.** 안내의 원천은 기능 카탈로그(`src/data/feature-guides.ts`)이고 노트는
+   * 거기로 **링크만** 건다(결정 1 정정) — 같은 설명이 버전 축과 기능 축에 두 벌 있으면 반드시
+   * 갈라진다. 그리고 본문을 여기 둘 수도 없다: 배포 스크립트가 이 파일을 **Node 에서 직접
+   * import** 하는데(ADR-119 결정 1, `scripts/publish-live-update.mjs`), 안내가 들고 오는 `.webp`
+   * import 를 Node 가 해석하지 못해 그 자리에서 배포가 죽는다.
+   *
+   * 그래서 이 참조는 **타입이 지켜 주지 못한다**(문자열일 뿐이다) — 미아 참조는
+   * `src/data/__tests__/feature-guides.test.ts` 가 막는다. 반대 방향(노트가 안 가리키는 안내)은
+   * **정상이다**: 카탈로그가 원천이므로 옛 기능은 노트 없이 안내만 있는 것이 맞다.
+   */
+  guideId?: string
+  /**
+   * 안내 **안의 어느 마디**로 떨어질지([[ADR-125]] 결정 7). `guideId` 없이 홀로 있으면 뜻이 없다.
+   *
+   * 릴리스에서 바뀐 것은 보통 기능 전체가 아니라 그중 한 마디다 — 페이지 맨 위에 떨어뜨리면
+   * 읽는 사람이 그 마디를 다시 찾아야 한다. 비워 두면 안내 첫머리로 간다.
+   */
+  guideSectionId?: string
 }
 
 export interface ReleaseNote {

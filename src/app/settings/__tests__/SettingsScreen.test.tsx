@@ -125,15 +125,19 @@ describe('SettingsScreen', () => {
     expect(content).toHaveClass('pt-[calc(1rem+var(--sa-top))]')
   })
 
-  // ADR-118 결정 1 — 본화면은 카드 둘 · 5행이다.
-  it('행이 정확히 5개이고 순서가 값 카드 → 이동 카드다', () => {
+  // ADR-118 결정 1 — 본화면은 카드 둘. **행은 5 → 6이 됐다**([[ADR-125]] 결정 1 정정,
+  // 2026-08-10): 사용법 설명의 원천이 기능 카탈로그로 옮겨오면서 그 입구가 필요해졌다.
+  // 「기능 설명」이 「개발 노트」 **위**인 것은 *"이 앱을 어떻게 쓰나"* 가 *"무엇이 바뀌었나"*
+  // 보다 자주 묻는 질문이기 때문이다.
+  it('행이 정확히 6개이고 순서가 값 카드 → 이동 카드다', () => {
     renderSettings()
 
     const rows = screen.getAllByRole('button')
-    expect(rows).toHaveLength(5)
+    expect(rows).toHaveLength(6)
     expect(rows.map((row) => row.textContent)).toEqual([
       '스케줄 관리 방법자동',
       '테마렌',
+      '기능 설명',
       '개발 노트',
       '계정 및 데이터- KB',
       '앱 정보1.0.0',
@@ -142,7 +146,7 @@ describe('SettingsScreen', () => {
 
   // **이 step 의 핵심.** 두 무리를 가르는 것은 카드 경계뿐이다(결정 1) — 한 카드에 5행을 넣는
   // 시안 A 는 "성격이 다른 것이 한 덩어리로 읽힌다"는 이 개편의 문제를 그대로 둔다.
-  it('값을 고르는 두 행과 화면이 넘어가는 세 행이 서로 다른 카드에 있다', () => {
+  it('값을 고르는 두 행과 화면이 넘어가는 네 행이 서로 다른 카드에 있다', () => {
     renderSettings()
 
     const cards = screen.getAllByTestId('settings-card')
@@ -153,6 +157,7 @@ describe('SettingsScreen', () => {
       '테마렌',
     ])
     expect(within(cards[1]).getAllByRole('button').map((row) => row.textContent)).toEqual([
+      '기능 설명',
       '개발 노트',
       '계정 및 데이터- KB',
       '앱 정보1.0.0',

@@ -36,6 +36,65 @@ export const RELEASE_NOTE_CATEGORY_ORDER: readonly ReleaseNoteCategory[] = [
 // 이 파일은 순수 데이터다 — `features/`·`storage/`·`native/` 를 import 하지 않는다.
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '1.0.4',
+    // ⚠️ **아직 배포되지 않은 버전이다** — 이 노트는 마일스톤 v1.0.4 의 닫힌 이슈
+    // (#156·#166·#185·#191)를 근거로 **미리** 썼다(이슈 #198, 사용자 결정). `date` 는 작성일이므로
+    // **릴리스 때 `chore(release)` 커밋 날짜로 정정해야 한다**(ADR-119 — 날짜의 근거는 그 커밋이다).
+    date: '2026-08-10',
+    items: [
+      {
+        category: 'feature',
+        text: '드롭한 아이템에 판매 가격을 입력해 주간·월간 수익에 합산',
+        guideId: 'drop-item-price',
+      },
+      {
+        category: 'feature',
+        text: '기능 설명 추가 — 기능별 사용법을 분류해 안내',
+      },
+      {
+        category: 'improvement',
+        text: '총 수익을 결정석과 아이템으로 나눠 보기',
+        // 같은 안내의 **다른 마디**를 가리킨다(ADR-125 결정 7) — 위 「판매 가격」 항목은
+        // `where` 로, 이 항목은 갈라 보는 자리로 간다. 그래서 참조 규칙이 막는 것은
+        // "같은 안내"가 아니라 **같은 (안내, 마디)** 쌍이다.
+        guideId: 'drop-item-price',
+        guideSectionId: 'total',
+      },
+      {
+        // 사라진 것도 적는다 — 말없이 없어지면 고장으로 읽힌다. **다시 넣겠다고 쓰지 않는다**:
+        // ADR-124 결정 7 은 "통계 기능이 생기면 그쪽으로 옮긴다"까지만 정했고, 노트에 적는 순간
+        // 그것은 계획이 아니라 약속이 된다.
+        category: 'improvement',
+        text: '총 수익의 지난 기간 대비 증감 표시 제거',
+      },
+      {
+        category: 'improvement',
+        text: '보스 카드를 탭해 파티 인원·난이도를 그 자리에서 수정',
+        guideId: 'boss-party',
+        // 이 릴리스에서 바뀐 것은 파티 인원 기능 전체가 아니라 **카드에서 바로 고치는 것**
+        // 하나다 — 안내 첫머리에 떨어뜨리면 그 마디를 다시 찾아야 한다(ADR-125 결정 7).
+        guideSectionId: 'card',
+      },
+      {
+        category: 'improvement',
+        text: '하위 화면이 밀려 들어오고, 왼쪽 가장자리를 쓸어 되돌아가기',
+      },
+      {
+        // 위 항목과 가른 이유가 ADR-119 결정 3 그 자체다. 스와이프 백은 OTA 로 가지만 이 항목은
+        // `AndroidManifest.xml` 의 `enableOnBackInvokedCallback` 이라 **번들로 못 간다**(커밋
+        // b51f5a1). 둘을 한 항목으로 묶으면 OTA 로 이미 받은 스와이프 백까지 "스토어 업데이트
+        // 필요"로 읽힌다.
+        category: 'improvement',
+        text: '안드로이드 시스템 뒤로가기가 화면 순서를 따라감',
+        requiresStoreUpdate: true,
+      },
+      {
+        category: 'fix',
+        text: 'iOS 에서 당겨서 새로고침할 때 화면 위쪽에 흐릿한 띠가 남던 문제 수정',
+      },
+    ],
+  },
+  {
     version: '1.0.3',
     date: '2026-08-09',
     items: [

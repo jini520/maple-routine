@@ -145,6 +145,38 @@ describe('formatReleaseNotes', () => {
       '[버그] 고친 것',
     ])
   })
+
+  // ADR-125 결정 2: 사용법 안내는 **번들 안에만** 있다. 업데이트 모달은 번들을 받기 **전**에 뜨므로
+  // 이미지를 그릴 수 없고, `guideId` 는 그쪽에서 아무것도 가리키지 못한다 — 매니페스트에 실으면
+  // 뜻 없는 문자열로 용량만 늘린다.
+  it('guideId 는 매니페스트 문자열에 실리지 않는다', () => {
+    const notes = formatReleaseNotes({
+      version: '9.9.9',
+      date: '2026-01-01',
+      items: [{ category: 'feature', text: '안내가 붙은 기능', guideId: '어떤-안내' }],
+    })
+
+    expect(notes).toBe('[기능] 안내가 붙은 기능')
+    expect(notes).not.toContain('어떤-안내')
+  })
+})
+
+// ADR-125 결정 2 의 존재 이유 그 자체 — 이 스크립트는 `release-notes.ts` 를 **Node 에서 직접**
+// import 한다(타입 스트리핑). 그 파일에 `.webp` import 가 들어오면 Node 가 해석하지 못해 배포가
+// 그 자리에서 죽는다. 안내 본문을 `release-note-guides.ts` 로 가른 것이 그것을 막고 있고,
+// 이 테스트가 그 경계를 지킨다 — 여기가 깨지면 릴리스 경로가 깨진 것이다.
+describe('release-notes.ts 는 Node 가 읽을 수 있는 순수 데이터로 남는다', () => {
+  it('노트 항목이 안내를 id 문자열로만 들고 있다 — 본문·이미지를 들고 있지 않다', () => {
+    for (const note of RELEASE_NOTES) {
+      for (const item of note.items) {
+        if (item.guideId === undefined) continue
+        expect(typeof item.guideId).toBe('string')
+      }
+    }
+
+    // 노트 전체가 JSON 으로 왕복 가능하다 = 모듈 참조·번들 URL 같은 것이 섞여 있지 않다.
+    expect(() => JSON.parse(JSON.stringify(RELEASE_NOTES))).not.toThrow()
+  })
 })
 
 describe('resolveManifestNotes', () => {
