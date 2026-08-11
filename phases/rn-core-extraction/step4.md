@@ -79,7 +79,7 @@ step 3 과 동일하다. `src/native/*.ts` 가 export 하는 함수의 이름·�
 
 ```bash
 npm run build      # tsc -b && vite build — 컴파일 에러 없음
-npm test           # vitest run — 197개 전부 통과 (이 step 이전과 동일한 수)
+npm test           # vitest run — 199파일 / 3044개 전부 통과 (이 step 이전과 동일한 수)
 npm run lint       # ESLint 통과
 ```
 

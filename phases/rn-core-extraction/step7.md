@@ -73,7 +73,7 @@ packages/
 ```
 
 `npm test` 가 루트에서 `packages/**` 전체 테스트를 도는 구조를 **유지하라.** 이유: 이 task 의
-게이트가 "197개 전부 통과"이고, 테스트가 패키지별로 쪼개지면 그 수를 한 번에 확인할 수 없다.
+게이트가 "199파일 / 3044개 전부 통과"이고, 테스트가 패키지별로 쪼개지면 그 수를 한 번에 확인할 수 없다.
 
 ### 5. 경로 참조를 전수 수정하라
 
@@ -102,7 +102,7 @@ packages/
 ```bash
 npm install
 npm run build      # 루트에서 위임되어 app-capacitor 빌드 — 컴파일 에러 없음
-npm test           # 197개 전부 통과
+npm test           # 199파일 / 3044개 전부 통과
 npm run lint       # 통과
 ```
 
@@ -144,7 +144,7 @@ git diff HEAD~1 -- '*build.gradle' | grep -E "^[+-].*(versionCode|applicationId|
   지우면 재현 경로가 없다.
 - **루트 `package.json` 의 script 키 이름을 바꾸지 마라.** 이유: step 8 의 AC 와 harness 검증이
   `npm run build` / `npm test` 에 의존한다.
-- **테스트를 패키지별로 쪼개지 마라.** 이유: "197개 전부 통과"라는 게이트를 한 번에 확인할 수 없게 된다.
+- **테스트를 패키지별로 쪼개지 마라.** 이유: "199파일 / 3044개 전부 통과"라는 게이트를 한 번에 확인할 수 없게 된다.
 - **`npm run build` 산출물 경로를 바꾸면서 `publish-live-update.mjs` 를 안 고치지 마라.** 이유: OTA
   배포가 조용히 잘못된 번들을 올린다 — 테스트가 절대 못 잡는 종류의 실패다.
 - 기존 테스트를 깨뜨리지 마라.

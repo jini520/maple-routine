@@ -117,7 +117,7 @@ export function setSqlitePort(port: SqlitePort): void
 
 ```bash
 npm run build      # tsc -b && vite build — 컴파일 에러 없음
-npm test           # vitest run — 197개 전부 통과 (이 step 이전과 동일한 수)
+npm test           # vitest run — 199파일 / 3044개 전부 통과 (이 step 이전과 동일한 수)
 npm run lint       # ESLint 통과
 ```
 

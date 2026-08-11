@@ -73,7 +73,7 @@ step 7 에서 `packages/app-capacitor` 로 간다.
 
 ```bash
 npm run build      # 컴파일 에러 없음
-npm test           # 197개 전부 통과 (이 step 이전과 동일한 수)
+npm test           # 199파일 / 3044개 전부 통과 (이 step 이전과 동일한 수)
 npm run lint       # 통과
 npm run dev        # 브라우저에서 부팅되는지 (Ctrl-C 로 종료. 부팅 중 크래시하면 실패)
 ```

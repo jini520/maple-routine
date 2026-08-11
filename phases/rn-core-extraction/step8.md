@@ -77,7 +77,7 @@ RN 의 Metro 번들러는 모노레포 심링크를 기본으로 못 따라간�
 ```bash
 npm install
 npm run build      # 여전히 app-capacitor 를 빌드 — 컴파일 에러 없음
-npm test           # 197개 전부 통과 (RN 추가로 줄거나 늘지 않아야 한다)
+npm test           # 199파일 / 3044개 전부 통과 (RN 추가로 줄거나 늘지 않아야 한다)
 npm run lint       # 통과
 ```
 
@@ -117,7 +117,7 @@ grep -rn "com.mapleroutine.app" packages/app-rn/app.json packages/app-rn/android
 - **RN 앱을 실기기나 에뮬레이터에 설치하지 마라.** 이유: `appId` 가 기존 앱과 같고 서명이 달라,
   설치하면 기존 앱이 밀려나거나 설치가 거부된다. 이 step 의 검증은 번들 생성까지다.
 - **`packages/core` 나 `packages/app-capacitor` 를 수정하지 마라.** 이유: 이 step 은 신규 패키지
-  추가다. 앞 8개 step 이 확보한 "197개 통과" 상태를 건드릴 이유가 없고, 건드리면 실패 원인이
+  추가다. 앞 8개 step 이 확보한 "3044개 통과" 상태를 건드릴 이유가 없고, 건드리면 실패 원인이
   RN 설정인지 기존 코드인지 갈리지 않는다.
 - **저장소·네이티브 포트의 RN 구현을 만들지 마라.** 이유: 다음 task(`migration/README.md` 1단계)
   대상이다. 여기서 시작하면 이 step 의 게이트("core 가 RN 번들에 들어간다")가 흐려진다.

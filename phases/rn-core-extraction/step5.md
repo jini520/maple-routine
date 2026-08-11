@@ -53,7 +53,7 @@ step 3 의 역전이 불완전한 것이니 **그 파일을 옮기지 말고 남
 
 ```bash
 npm run build      # 컴파일 에러 없음
-npm test           # 197개 전부 통과 (이 step 이전과 동일한 수)
+npm test           # 199파일 / 3044개 전부 통과 (이 step 이전과 동일한 수)
 npm run lint       # 통과
 ```
 
