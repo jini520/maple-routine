@@ -21,8 +21,10 @@
     {
       "step": 2,
       "name": "core-lib",
-      "status": "pending",
-      "started_at": "2026-08-11T15:51:30+0900"
+      "status": "completed",
+      "started_at": "2026-08-11T15:51:30+0900",
+      "completed_at": "2026-08-11T16:07:00+0900",
+      "summary": "`git mv` 로 `src/lib` 41개(+테스트) → `packages/core/src/lib/` 이동, 8개 잔류(stack-transition · use-stack-location · use-swipe-back · use-pull-to-refresh · use-body-scroll-lock · use-measured-height · use-delayed = DOM 의존 [[ADR-120]] 삭제 대상 / use-system-back = Capacitor 직접 import, step 4 대상). 41+8=49 로 회계 일치. **에셋도 함께 이동** — `src/assets/{bosses,items,maps,themes,worlds,drop-effect}` → `packages/core/src/assets/`: `lib/{boss-icons,item-icons,theme-backgrounds}` 가 유일한 소비자라 함께 옮겨야 상대 경로가 유지되고, 덤으로 step 1 이 남긴 임시 core→app 참조 4건이 전부 해소됐다(현재 core→app 역참조 0). src/ 92파일의 import 를 `@core/lib/*` 로 갱신. `scripts/theme-gen.ts` 의 마지막 잔여 경로도 `@core/lib/theme-derive` 로 수정(step 1 에서 미뤄둔 것). AC — build 성공 · 테스트 **199파일/3044개 통과**(step 0·1 과 동일, 증감 0) · lint 0 errors/17 warnings(baseline 동일) · `grep -rE \"document\\.|window\\.|@capacitor\" packages/core/src` 빈 출력 · core→app 역참조 빈 출력. **주의(다음 step 참고)**: 이 step 은 harness 실행이 외부 종료되어 커밋 직전에 멈췄고, AC·아키텍처 체크리스트를 수동 재검증한 뒤 완료 처리했다. 작업 내용 자체는 step 파일 지시대로다."
     },
     {
       "step": 3,
