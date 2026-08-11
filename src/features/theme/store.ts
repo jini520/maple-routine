@@ -4,7 +4,7 @@ import {
   DEFAULT_THEME,
   buildThemeCss,
   getThemeDefinition,
-} from '../../lib/theme-registry'
+} from '@core/lib/theme-registry'
 import type { ThemeName } from '@core/types'
 import { getTheme, setTheme } from '../../storage/theme'
 import { setStatusBarStyle } from '../../native/status-bar'

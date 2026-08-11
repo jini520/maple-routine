@@ -71,7 +71,7 @@ vi.mock('../../../storage/shared-progress-cache', () => ({
   setAccountSharedProgressEntry: setAccountSharedProgressEntryMock,
 }))
 
-vi.mock('../../../lib/scheduler-merge', () => ({
+vi.mock('@core/lib/scheduler-merge', () => ({
   mergeSchedulerState: mergeSchedulerStateMock,
 }))
 

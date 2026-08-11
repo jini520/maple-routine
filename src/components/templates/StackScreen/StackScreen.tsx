@@ -10,7 +10,7 @@ import {
   STACK_EASING,
   STACK_EDGE_ZONE_PX,
 } from '../../../lib/stack-transition'
-import { useStackBack } from '../../../lib/use-stack-back'
+import { useStackBack } from '@core/lib/use-stack-back'
 import { useSwipeBack } from '../../../lib/use-swipe-back'
 import { ScreenScroll } from '../ScreenScroll/ScreenScroll'
 

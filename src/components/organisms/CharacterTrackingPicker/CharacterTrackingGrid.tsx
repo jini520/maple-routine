@@ -1,6 +1,6 @@
 import { Ban, Star } from 'lucide-react'
 import { useState } from 'react'
-import { worldEmblemUrl } from '../../../lib/world-emblem'
+import { worldEmblemUrl } from '@core/lib/world-emblem'
 import type { CharacterPickerEntry } from '@core/types'
 
 // ADR-015: character/basic이 반환하는 기본 300x300 전신 룩 이미지에서 얼굴만 보이도록

@@ -1,5 +1,5 @@
 import { Preferences } from '@capacitor/preferences'
-import { getKstDateKeyDaysAgo } from '../lib/reset-clock'
+import { getKstDateKeyDaysAgo } from '@core/lib/reset-clock'
 import { scheduleProbeKey } from './keys'
 
 /**

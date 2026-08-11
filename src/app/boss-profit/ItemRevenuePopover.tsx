@@ -14,11 +14,11 @@
 // 그 차이가 합계 하나로 뭉개진다. 접는 순간 이 기능이 애초에 왜 기록 단위인지를 배신한다.
 
 import { createPortal } from 'react-dom'
-import { formatMesoShort } from '../../lib/boss-profit-delta'
-import { dropPayoutMeso } from '../../lib/drop-price'
+import { formatMesoShort } from '@core/lib/boss-profit-delta'
+import { dropPayoutMeso } from '@core/lib/drop-price'
 import type { RecordedDrop } from '@core/types/drops'
-import { getItemIconUrl } from '../../lib/item-icons'
-import { anchorPopover } from '../../lib/popover-anchor'
+import { getItemIconUrl } from '@core/lib/item-icons'
+import { anchorPopover } from '@core/lib/popover-anchor'
 
 export const ITEM_POPOVER_WIDTH = 248
 const ITEM_POPOVER_EDGE_GAP = 12

@@ -2,13 +2,13 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { DROP_EFFECT_FRAMES } from '../../../../lib/drop-effect-frames'
+import { DROP_EFFECT_FRAMES } from '@core/lib/drop-effect-frames'
 import {
   DROP_EFFECT_ORIGINS,
   DROP_PILLAR_SCALE,
   dropFrameTransform,
   screenEffectScale,
-} from '../../../../lib/drop-effect-layout'
+} from '@core/lib/drop-effect-layout'
 import { DropEffectOverlay } from '../DropEffectOverlay'
 
 // jsdom 은 이미지를 실제로 로드하지 않아 src 를 넣으면 complete 가 계속 false 다. 연출은 프레임을

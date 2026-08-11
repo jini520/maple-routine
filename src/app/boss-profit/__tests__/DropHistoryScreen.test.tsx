@@ -5,13 +5,13 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { DropHistoryScreen } from '../DropHistoryScreen'
 import { useDropHistoryStore } from '../../../features/boss-profit/drop-history-store'
-import { formatBossProfitPeriodLabel } from '../../../lib/boss-profit-period'
+import { formatBossProfitPeriodLabel } from '@core/lib/boss-profit-period'
 import {
   formatValuableDroughtHeadline,
   VALUABLE_DROUGHT_LATE_HEADLINE_COUNT,
   WORD_JOINER,
   type DropHistoryRecord,
-} from '../../../lib/drop-history'
+} from '@core/lib/drop-history'
 
 // 문장에는 줄바꿈 금지용 zero-width 문자가 섞여 있다(ADR-071 결정 8) — 사람이 읽는 문장으로 비교한다.
 function sentenceOf(element: HTMLElement): string {

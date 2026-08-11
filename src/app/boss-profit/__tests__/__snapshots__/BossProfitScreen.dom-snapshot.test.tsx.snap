@@ -189,7 +189,7 @@ exports[`BossProfitScreen DOM 스냅샷 (ADR-094 결정 4) > 여러 캐릭터 ·
 <div class="border-border border-t">
 <ul>
 <li class="border-b border-border flex gap-3 items-start last:border-b-transparent p-4">
-<div role="img" aria-label="자쿰" title="자쿰" style="width: 40px; height: 40px; background-image: url(&quot;/src/assets/bosses/zakum.webp&quot;); background-size: 220%; background-position: 60% 40%; background-repeat: no-repeat;" class="rounded-full shrink-0">
+<div role="img" aria-label="자쿰" title="자쿰" style="width: 40px; height: 40px; background-image: url(&quot;/packages/core/src/assets/bosses/zakum.webp&quot;); background-size: 220%; background-position: 60% 40%; background-repeat: no-repeat;" class="rounded-full shrink-0">
 </div>
 <div class="flex-1 min-w-0">
 <button type="button" aria-label="자쿰 카오스 드롭 아이템 관리" class="flex gap-1.5 h-6 items-center text-left w-full">
@@ -325,7 +325,7 @@ exports[`BossProfitScreen DOM 스냅샷 (ADR-094 결정 4) > 월간 탭 — 주�
 <div class="flex h-6 items-center relative">
 <p class="font-semibold text-text-muted text-xs tracking-wide">지난 달 총 수익</p>
 <span role="img" aria-label="월간 결정석 1개" class="bg-primary-tint flex flex-none gap-1 h-5 items-center ml-2 px-1.5 rounded-full">
-<img alt="" class="flex-none h-4 object-contain w-4" src="/src/assets/items/intense_power_crystal_monthly.webp">
+<img alt="" class="flex-none h-4 object-contain w-4" src="/packages/core/src/assets/items/intense_power_crystal_monthly.webp">
 <span class="font-bold leading-none tabular-nums text-primary-ink text-xs">1<span class="font-semibold opacity-70">개</span>
 </span>
 </span>
@@ -634,7 +634,7 @@ exports[`BossProfitScreen DOM 스냅샷 (ADR-094 결정 4) > 주간 탭 · 카�
 <div class="border-border border-t">
 <ul>
 <li class="border-b border-border flex gap-3 items-start last:border-b-transparent p-4">
-<div role="img" aria-label="자쿰" title="자쿰" style="width: 40px; height: 40px; background-image: url(&quot;/src/assets/bosses/zakum.webp&quot;); background-size: 220%; background-position: 60% 40%; background-repeat: no-repeat;" class="rounded-full shrink-0">
+<div role="img" aria-label="자쿰" title="자쿰" style="width: 40px; height: 40px; background-image: url(&quot;/packages/core/src/assets/bosses/zakum.webp&quot;); background-size: 220%; background-position: 60% 40%; background-repeat: no-repeat;" class="rounded-full shrink-0">
 </div>
 <div class="flex-1 min-w-0">
 <button type="button" aria-label="자쿰 카오스 드롭 아이템 관리" class="flex gap-1.5 h-6 items-center text-left w-full">

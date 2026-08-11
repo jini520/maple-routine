@@ -1,5 +1,5 @@
 import { ChevronDown } from 'lucide-react'
-import { worldEmblemUrl } from '../../../lib/world-emblem'
+import { worldEmblemUrl } from '@core/lib/world-emblem'
 
 export type CharacterSelectDropdownSize = 'default' | 'compact'
 

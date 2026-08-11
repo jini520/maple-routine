@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { resolvePullDistance, resolvePullPhase, shouldTriggerRefresh } from './pull-to-refresh'
-import type { PullPhase } from './pull-to-refresh'
+import { resolvePullDistance, resolvePullPhase, shouldTriggerRefresh } from '@core/lib/pull-to-refresh'
+import type { PullPhase } from '@core/lib/pull-to-refresh'
 
 export interface PullToRefreshOptions {
   /** false면 리스너를 아예 붙이지 않고 항상 idle을 반환한다. */

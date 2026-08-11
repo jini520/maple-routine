@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { AlertCircle, CheckCircle2, Info, RefreshCw, X } from 'lucide-react'
 import type { ToastItem, ToastVariant } from '../../../features/toast/store'
-import { shouldDismissFromSwipe } from '../../../lib/swipe-dismiss'
+import { shouldDismissFromSwipe } from '@core/lib/swipe-dismiss'
 
 export interface ToastProps {
   toast: ToastItem

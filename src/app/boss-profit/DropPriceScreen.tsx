@@ -22,18 +22,18 @@ import { DropPricePad } from './DropPricePad'
 import { useBossProfitStore } from '../../features/boss-profit/store'
 import { useDropPriceStore } from '../../features/boss-profit/drop-price-store'
 import { useToastStore } from '../../features/toast/store'
-import { DEFAULT_MAX_PARTY_SIZE, findPriceEntry } from '../../lib/boss-crystal-prices'
+import { DEFAULT_MAX_PARTY_SIZE, findPriceEntry } from '@core/lib/boss-crystal-prices'
 import {
   formatBossProfitPeriodLabel,
   getAdjacentPeriodKey,
   isEarliestNavigablePeriod,
   isLatestPeriod,
-} from '../../lib/boss-profit-period'
-import { useStackBack } from '../../lib/use-stack-back'
-import { formatMesoShort } from '../../lib/boss-profit-delta'
-import { dropPayoutMeso } from '../../lib/drop-price'
-import { getItemIconUrl } from '../../lib/item-icons'
-import { isValuableDrop } from '../../lib/valuable-drops'
+} from '@core/lib/boss-profit-period'
+import { useStackBack } from '@core/lib/use-stack-back'
+import { formatMesoShort } from '@core/lib/boss-profit-delta'
+import { dropPayoutMeso } from '@core/lib/drop-price'
+import { getItemIconUrl } from '@core/lib/item-icons'
+import { isValuableDrop } from '@core/lib/valuable-drops'
 import type { DropPriceEntry, DropPriceGroup } from '../../features/boss-profit/drop-price-store'
 import type { RecordedDrop } from '@core/types/drops'
 

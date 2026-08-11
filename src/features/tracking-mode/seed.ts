@@ -1,6 +1,6 @@
 import { setManualTrackedContent, type ManualTrackedItem } from '../../storage/manual-tracked-content'
-import { matchBossContent } from '../../lib/boss-matching'
-import { TEMPLATE_DAILY_NAMES, TEMPLATE_WEEKLY_NAMES } from '../../lib/scheduler-content-template'
+import { matchBossContent } from '@core/lib/boss-matching'
+import { TEMPLATE_DAILY_NAMES, TEMPLATE_WEEKLY_NAMES } from '@core/lib/scheduler-content-template'
 import { syncSchedules } from '../schedule-sync/schedule-sync'
 
 // ADR-035 결정 3·15: ocid 하나에 대해 최신 동기화 결과를 기준으로 manualTrackedContent를

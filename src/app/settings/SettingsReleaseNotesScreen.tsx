@@ -13,8 +13,8 @@ import { StackScreen } from '../../components/templates/StackScreen/StackScreen'
 import { Badge } from '../../components/atoms/Badge/Badge'
 import { Card } from '../../components/atoms/Card/Card'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
-import { useStackBack } from '../../lib/use-stack-back'
-import { buildGuidePath } from '../../lib/guide-route'
+import { useStackBack } from '@core/lib/use-stack-back'
+import { buildGuidePath } from '@core/lib/guide-route'
 
 // 설정 하위 페이지 「개발 노트」(ADR-118 결정 2 · ADR-119) — 버전별 변경 목록.
 //

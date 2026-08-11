@@ -1,5 +1,5 @@
 import weeklyBossesData from '@core/data/weekly-bosses.json'
-import type { ManualTrackedItem } from '../storage/manual-tracked-content'
+import type { ManualTrackedItem } from '@core/types/scheduler'
 import type { BossContent, BossCycle, BossDifficulty } from '@core/types'
 
 export interface MatchedBoss {

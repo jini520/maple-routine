@@ -1,8 +1,9 @@
+/// <reference types="node" />
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { THEME_TOKEN_KEYS, deriveMediaScope } from '../lib/theme-derive'
-import { DEFAULT_THEME, getThemeDefinition } from '../lib/theme-registry'
+import { THEME_TOKEN_KEYS, deriveMediaScope } from '@core/lib/theme-derive'
+import { DEFAULT_THEME, getThemeDefinition } from '@core/lib/theme-registry'
 
 /**
  * `index.css` 의 `@theme` 블록은 **유일하게 남은 수동 동기화 지점**이다([[ADR-064]] 결정 10).

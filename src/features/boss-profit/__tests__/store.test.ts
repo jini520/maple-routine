@@ -104,8 +104,8 @@ import {
   getCurrentBossProfitPeriod,
   getWeeklyPeriodKeysInMonth,
   MIN_SCHEDULER_DATE,
-} from '../../../lib/boss-profit-period'
-import { getMostRecentWeeklyResetKst } from '../../../lib/reset-clock'
+} from '@core/lib/boss-profit-period'
+import { getMostRecentWeeklyResetKst } from '@core/lib/reset-clock'
 import {
   markSyncAttemptedThisRun,
   resetSyncRunStateForTests,

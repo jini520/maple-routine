@@ -1,12 +1,12 @@
 import { fetchSchedulerCharacterState } from '@core/nexon/schedule'
-import { mergeSchedulerState, type MergeOutput } from '../../lib/scheduler-merge'
-import { getBackfillDateKeys } from '../../lib/reset-clock'
+import { mergeSchedulerState, type MergeOutput } from '@core/lib/scheduler-merge'
+import { getBackfillDateKeys } from '@core/lib/reset-clock'
 import {
   isDailySectionMissing,
   isWeeklySectionMissing,
   toProbeObservation,
   type SchedulerSectionPresence,
-} from '../../lib/scheduler-activity'
+} from '@core/lib/scheduler-activity'
 import { getCachedSchedulerState, setCachedSchedulerState } from '../../storage/scheduler-cache'
 import {
   getScheduleProbeLedger,

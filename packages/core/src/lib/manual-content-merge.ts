@@ -1,5 +1,5 @@
 import type { DailyContent, WeeklyContent } from '@core/types'
-import type { ManualTrackedItem } from '../storage/manual-tracked-content'
+import type { ManualTrackedItem } from '@core/types/scheduler'
 
 // scheduler-content-template.json의 항목 shape — Nexon wire 응답(NexonDailyContentWire/
 // NexonWeeklyContentWire)과 동일하다(ADR-035 결정 8). 값은 개발자가 직접 채운다(ADR-006).

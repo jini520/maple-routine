@@ -10,7 +10,7 @@ import {
   resolvePeriodDataState,
   type PeriodDataState,
   type PeriodQueryOutcome,
-} from '../../lib/boss-profit-period'
+} from '@core/lib/boss-profit-period'
 import {
   fillMissingRecordWorlds,
   getBossProfitRecords,
@@ -18,7 +18,7 @@ import {
   type BossProfitRecord,
 } from '../../storage/boss-profit'
 import { getBossDropRecords, replaceBossDropRecords } from '../../storage/boss-drops'
-import { sumDropPayout } from '../../lib/drop-price'
+import { sumDropPayout } from '@core/lib/drop-price'
 import type { RecordedDrop } from '@core/types/drops'
 import { isPeriodChecked } from '../../storage/boss-profit-period-checks'
 import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
@@ -30,7 +30,7 @@ import { type BossCycle } from '@core/types'
 import { compareByName } from '../onboarding/representative-character'
 import { syncSchedules, toScheduleSyncError, type ScheduleSyncError } from '../schedule-sync/schedule-sync'
 import { hasSyncAttemptedThisRun } from '../schedule-sync/sync-run-state'
-import { isSyncFresh } from '../../lib/sync-freshness'
+import { isSyncFresh } from '@core/lib/sync-freshness'
 import {
   appendRecordOnlyRows,
   buildBossProfitRow,

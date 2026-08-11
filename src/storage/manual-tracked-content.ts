@@ -1,17 +1,11 @@
 import { Preferences } from '@capacitor/preferences'
 import { manualTrackedContentKey } from './keys'
-import { TEMPLATE_DAILY_NAMES, TEMPLATE_WEEKLY_NAMES } from '../lib/scheduler-content-template'
+import { TEMPLATE_DAILY_NAMES, TEMPLATE_WEEKLY_NAMES } from '@core/lib/scheduler-content-template'
+import type { ManualTrackedItem } from '@core/types/scheduler'
 
-// ADR-035 결정 6: 멤버십(+사용자 입력 max_count)만 저장한다 — nowCount/questState/isComplete 같은
-// 동기화 유래 값은 절대 여기 두지 않고, 표시 시점에 schedulerCache에서 조회한다(단일 진실 공급원).
-// ADR-035 결정 19: 컨텐츠는 일간/주간 탭 표시 구분을 저장 시점에 확정하기 위해 kind를
-// 'daily' | 'weekly'로 세분한다(표시 시점 추론 없음).
-export interface ManualTrackedItem {
-  contentName: string
-  kind: 'daily' | 'weekly' | 'boss'
-  difficulty?: string // kind: 'boss'일 때만 사용(보스명만으로는 유일하지 않음)
-  maxCount?: number // 컨텐츠이고 카운트형일 때만. 템플릿(scheduler-content-template.json)의 확정값을 복사해 저장(ADR-035 결정 7)
-}
+// 타입 선언은 `@core/types/scheduler` 에 있다(병합 순수 함수들이 core 에 있어서다 — 그쪽 주석 참고).
+// 이 모듈에서 계속 export 하므로 `storage/manual-tracked-content` 를 쓰던 import 는 그대로다.
+export type { ManualTrackedItem }
 
 // 결정 19 이전에는 컨텐츠가 일간/주간 구분 없이 kind: 'content'로 저장됐다.
 type StoredManualTrackedItem = Omit<ManualTrackedItem, 'kind'> & {

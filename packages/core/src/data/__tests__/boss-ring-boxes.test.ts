@@ -6,9 +6,7 @@ import { describe, expect, it } from 'vitest'
 import bossRingBoxes from '../boss-ring-boxes.json'
 import itemDropTable from '../item-drop-table.json'
 
-// 반지 아이콘 에셋은 아직 앱(`src/assets/`)에 있다 — 그것을 읽는 `lib/item-icons` 가 다음 step 에서
-// core 로 넘어올 때 함께 정리된다([[ADR-127]] 0단계).
-const ringsDir = join(dirname(fileURLToPath(import.meta.url)), '../../../../../src/assets/items/rings')
+const ringsDir = join(dirname(fileURLToPath(import.meta.url)), '../../assets/items/rings')
 
 function sum(values: number[]): number {
   return values.reduce((total, value) => total + value, 0)
@@ -59,7 +57,7 @@ describe('보스 반지 상자 확률 데이터 정합성', () => {
     expect(missing).toEqual([])
   })
 
-  it('iconFile이 지정된 항목은 실제로 src/assets/items/rings/에 파일이 존재한다', () => {
+  it('iconFile이 지정된 항목은 실제로 assets/items/rings/에 파일이 존재한다', () => {
     const missingFiles: string[] = []
 
     for (const box of bossRingBoxes.boxes) {

@@ -7,7 +7,7 @@ import type { MapleAccount } from '@core/types'
 import { AccountSelectionList } from '../AccountSelectionList'
 import { useAccountProbes } from '../../../features/onboarding/use-account-probes'
 import { useApiKeyNotice } from '../../../features/onboarding/use-api-key-notice'
-import { worldEmblemUrl } from '../../../lib/world-emblem'
+import { worldEmblemUrl } from '@core/lib/world-emblem'
 
 vi.mock('../../../features/onboarding/use-account-probes', () => ({
   useAccountProbes: vi.fn(),
@@ -19,7 +19,7 @@ vi.mock('../../../features/onboarding/use-api-key-notice', () => ({
   useApiKeyNotice: vi.fn(),
 }))
 
-vi.mock('../../../lib/world-emblem', () => ({
+vi.mock('@core/lib/world-emblem', () => ({
   worldEmblemUrl: vi.fn(),
 }))
 

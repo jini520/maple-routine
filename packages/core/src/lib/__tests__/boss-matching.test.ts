@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { BossContent } from '@core/types'
-import type { ManualTrackedItem } from '../../storage/manual-tracked-content'
+import type { ManualTrackedItem } from '@core/types/scheduler'
 import {
   countClearedWeeklyBosses,
   countManualWeeklyBosses,

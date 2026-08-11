@@ -15,7 +15,7 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { clearCountUpMemory } from '../../../lib/use-count-up'
+import { clearCountUpMemory } from '@core/lib/use-count-up'
 import { domSnapshot } from '../../../__tests__/dom-snapshot.helper'
 import { BossProfitScreen } from '../BossProfitScreen'
 import {

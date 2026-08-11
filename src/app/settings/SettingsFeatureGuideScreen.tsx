@@ -4,9 +4,9 @@ import { Navigate, useLocation, useParams, useSearchParams } from 'react-router-
 import { findFeatureGuide } from '@core/data/feature-guides'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { StackScreen } from '../../components/templates/StackScreen/StackScreen'
-import { GUIDE_SECTION_PARAM } from '../../lib/guide-route'
+import { GUIDE_SECTION_PARAM } from '@core/lib/guide-route'
 import { resolveParentPath } from '../../lib/stack-transition'
-import { useStackBack } from '../../lib/use-stack-back'
+import { useStackBack } from '@core/lib/use-stack-back'
 
 // 기능 사용법 안내 상세([[ADR-125]]) — 그 기능이 어디 있고 어떻게 쓰는지.
 //

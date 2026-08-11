@@ -14,11 +14,11 @@ import {
   getObtainableTileNames,
   getRingBoxContents,
   isBoxItem,
-} from '../../lib/boss-drops'
-import { getFixedDropIcons, type FixedDropIconSpec } from '../../lib/fixed-drops'
+} from '@core/lib/boss-drops'
+import { getFixedDropIcons, type FixedDropIconSpec } from '@core/lib/fixed-drops'
 import { DropPricePadContent } from './DropPricePad'
-import { getItemIconUrl, getItemIconUrlByFile } from '../../lib/item-icons'
-import { isValuableDrop } from '../../lib/valuable-drops'
+import { getItemIconUrl, getItemIconUrlByFile } from '@core/lib/item-icons'
+import { isValuableDrop } from '@core/lib/valuable-drops'
 import { BOSS_DIFFICULTIES, type BossDifficulty } from '@core/types'
 import type {
   DropCandidate,

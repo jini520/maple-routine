@@ -162,12 +162,12 @@ vi.mock('../../../features/toast/store', () => ({
 }))
 
 import { BossProfitScreen } from '../../../app/boss-profit/BossProfitScreen'
-import { findPriceEntry } from '../../../lib/boss-crystal-prices'
+import { findPriceEntry } from '@core/lib/boss-crystal-prices'
 import {
   getCurrentBossProfitPeriod,
   getMinQueryableDate,
   isPeriodQueryable,
-} from '../../../lib/boss-profit-period'
+} from '@core/lib/boss-profit-period'
 import { NexonBadRequestError } from '@core/nexon/errors'
 import type { BossContent, BossCycle, SchedulerCharacterState } from '@core/types'
 import { useBossProfitStore } from '../store'

@@ -66,7 +66,7 @@ exports[`BossScreen DOM 스냅샷 (ADR-094 결정 4) > 주간 탭 — 보스 카
 <div class="space-y-2">
 <button type="button" aria-label="자쿰 파티 설정" class="active:brightness-110 active:scale-[.985] block rounded-[14px] text-left transition-transform w-full">
 <div class="bg-surface border border-border h-20 media-scope overflow-hidden relative rounded-[14px]">
-<div class="absolute inset-0" style="background-image: url(&quot;/src/assets/bosses/zakum.webp&quot;); background-size: 100%; background-position: 50% 45%; background-repeat: no-repeat; filter: saturate(.85) brightness(.8); opacity: 0.65; mask-image: linear-gradient(90deg, rgb(0, 0, 0) 0%, rgb(0, 0, 0) 38%, transparent 76%); -webkit-mask-image: linear-gradient(90deg, rgb(0, 0, 0) 0%, rgb(0, 0, 0) 38%, transparent 76%);">
+<div class="absolute inset-0" style="background-image: url(&quot;/packages/core/src/assets/bosses/zakum.webp&quot;); background-size: 100%; background-position: 50% 45%; background-repeat: no-repeat; filter: saturate(.85) brightness(.8); opacity: 0.65; mask-image: linear-gradient(90deg, rgb(0, 0, 0) 0%, rgb(0, 0, 0) 38%, transparent 76%); -webkit-mask-image: linear-gradient(90deg, rgb(0, 0, 0) 0%, rgb(0, 0, 0) 38%, transparent 76%);">
 </div>
 <div class="flex h-full items-center justify-between relative" style="padding: 0px 14px;">
 <div class="flex gap-2 items-center">

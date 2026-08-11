@@ -4,7 +4,7 @@ import { pickRepresentativeCharacter } from '../../features/onboarding/represent
 import { useAccountProbes } from '../../features/onboarding/use-account-probes'
 import { useApiKeyNotice } from '../../features/onboarding/use-api-key-notice'
 import { formatRosterError } from '../../features/schedule-sync/format'
-import { worldEmblemUrl } from '../../lib/world-emblem'
+import { worldEmblemUrl } from '@core/lib/world-emblem'
 import { useState } from 'react'
 import { Button } from '../../components/atoms/Button/Button'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'

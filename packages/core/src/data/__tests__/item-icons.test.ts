@@ -6,11 +6,9 @@ import { describe, expect, it } from 'vitest'
 import itemIcons from '../item-icons.json'
 import itemDropTable from '../item-drop-table.json'
 
-// 아이템 아이콘 에셋은 아직 앱(`src/assets/`)에 있다 — 그것을 읽는 `lib/item-icons` 가 다음 step 에서
-// core 로 넘어올 때 함께 정리된다([[ADR-127]] 0단계).
-const itemsDir = join(dirname(fileURLToPath(import.meta.url)), '../../../../../src/assets/items')
+const itemsDir = join(dirname(fileURLToPath(import.meta.url)), '../../assets/items')
 
-// src/lib/item-icons.ts와 동일: 현재 데이터엔 iconFileBySlot이 없지만 로더가 하위호환으로
+// lib/item-icons.ts와 동일: 현재 데이터엔 iconFileBySlot이 없지만 로더가 하위호환으로
 // 지원하므로 옵셔널 필드를 포함한 타입으로 캐스트해 검증 분기를 유지한다.
 type ItemIconEntry = { name: string; iconFile?: string; iconFileBySlot?: Record<string, string> }
 const iconItems = itemIcons.items as ItemIconEntry[]
@@ -21,7 +19,7 @@ describe('아이템 아이콘 매핑 정합성', () => {
     expect(new Set(names).size).toBe(names.length)
   })
 
-  it('모든 iconFile / iconFileBySlot 파일이 src/assets/items/에 실제로 존재한다', () => {
+  it('모든 iconFile / iconFileBySlot 파일이 assets/items/에 실제로 존재한다', () => {
     const missingFiles: string[] = []
 
     for (const item of iconItems) {

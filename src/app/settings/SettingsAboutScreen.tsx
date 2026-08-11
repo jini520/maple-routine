@@ -3,7 +3,7 @@ import { Outlet, useNavigate } from 'react-router-dom'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { StackScreen } from '../../components/templates/StackScreen/StackScreen'
 import { Card } from '../../components/atoms/Card/Card'
-import { useStackBack } from '../../lib/use-stack-back'
+import { useStackBack } from '@core/lib/use-stack-back'
 import { AppUpdateSection } from './AppUpdateSection'
 import { SettingsRow } from './SettingsRow'
 

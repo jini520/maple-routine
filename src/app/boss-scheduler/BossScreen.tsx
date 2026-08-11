@@ -4,12 +4,12 @@ import { useScreenStackStore } from '../../features/screen-stack/store'
 import { formatSyncedAt } from '../../features/schedule-sync/format'
 import { useScheduleSyncErrorToast } from '../../features/schedule-sync/use-sync-error-toast'
 import { useApiKeyNotice } from '../../features/onboarding/use-api-key-notice'
-import { getBossPortraitCrop, getBossPortraitUrl } from '../../lib/boss-icons'
+import { getBossPortraitCrop, getBossPortraitUrl } from '@core/lib/boss-icons'
 import { partySizeKey, useBossSchedulerStore, type PartyFilter } from '../../features/boss-scheduler/store'
 import { useEffect, useRef, useState } from 'react'
 import { Outlet, useNavigate, useSearchParams } from 'react-router-dom'
 
-import type { BossPortraitCrop } from '../../lib/boss-icons'
+import type { BossPortraitCrop } from '@core/lib/boss-icons'
 import { CharacterSelectDropdown } from '../../components/molecules/CharacterSelectDropdown/CharacterSelectDropdown'
 import { CharacterTrackingPicker } from '../../components/organisms/CharacterTrackingPicker/CharacterTrackingPicker'
 import { DifficultyBadge } from '../../components/atoms/DifficultyBadge/DifficultyBadge'
@@ -17,19 +17,19 @@ import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { ProgressModal } from '../../components/organisms/ProgressModal/ProgressModal'
 import { PullToRefreshIndicator } from '../../components/molecules/PullToRefreshIndicator/PullToRefreshIndicator'
-import { PULL_SETTLE_TRANSITION, resolveContentOffsetPx } from '../../lib/pull-to-refresh'
+import { PULL_SETTLE_TRANSITION, resolveContentOffsetPx } from '@core/lib/pull-to-refresh'
 import { usePullToRefresh } from '../../lib/use-pull-to-refresh'
 import {
   getSupportedDifficulties,
   matchBossContent,
   selectDisplayBosses,
   type MatchedBoss,
-} from '../../lib/boss-matching'
-import { getMaxPartySize } from '../../lib/boss-crystal-prices'
+} from '@core/lib/boss-matching'
+import { getMaxPartySize } from '@core/lib/boss-crystal-prices'
 import { useToastStore } from '../../features/toast/store'
 import { PartySizeModal } from '../../components/organisms/PartySizeModal/PartySizeModal'
-import { mergeManualBossList } from '../../lib/manual-boss-merge'
-import { isChallengersWorld } from '../../lib/world-emblem'
+import { mergeManualBossList } from '@core/lib/manual-boss-merge'
+import { isChallengersWorld } from '@core/lib/world-emblem'
 import { getCharacterPickerRoster, toScheduleSyncError } from '../../features/schedule-sync/schedule-sync'
 import type { ScheduleSyncError } from '../../features/schedule-sync/schedule-sync'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
@@ -38,7 +38,7 @@ import {
   MEDIA_ART_MASK_CARD,
   MEDIA_ART_OPACITY,
   MEDIA_TEXT_SHADOW,
-} from '../../lib/media-card'
+} from '@core/lib/media-card'
 import { Card } from '../../components/atoms/Card/Card'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { Badge } from '../../components/atoms/Badge/Badge'

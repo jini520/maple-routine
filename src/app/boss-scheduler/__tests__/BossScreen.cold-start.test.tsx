@@ -73,7 +73,7 @@ vi.mock('../../../features/schedule-sync/sync-run-state', () => ({
   markSyncAttemptedThisRun: () => {},
 }))
 
-vi.mock('../../../lib/sync-freshness', () => ({ isSyncFresh: () => true }))
+vi.mock('@core/lib/sync-freshness', () => ({ isSyncFresh: () => true }))
 
 vi.mock('../../../features/schedule-sync/schedule-sync', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../../features/schedule-sync/schedule-sync')>()),

@@ -11,8 +11,8 @@ import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { StackScreen } from '../../components/templates/StackScreen/StackScreen'
 import { Card } from '../../components/atoms/Card/Card'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
-import { buildGuidePath } from '../../lib/guide-route'
-import { useStackBack } from '../../lib/use-stack-back'
+import { buildGuidePath } from '@core/lib/guide-route'
+import { useStackBack } from '@core/lib/use-stack-back'
 
 // 설정 하위 페이지 「기능 설명」([[ADR-125]] 결정 1 정정, 2026-08-10) — 앱 기능을 **기능 축**으로
 // 나열한 카탈로그이고, 사용법 설명의 **원천**이다.

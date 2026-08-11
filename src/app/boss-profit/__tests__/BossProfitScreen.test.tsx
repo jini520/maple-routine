@@ -3,7 +3,7 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { clearCountUpMemory } from '../../../lib/use-count-up'
+import { clearCountUpMemory } from '@core/lib/use-count-up'
 import { BossProfitScreen } from '../BossProfitScreen'
 import {
   useBossProfitStore,
@@ -11,9 +11,9 @@ import {
   type BossProfitWeeklySubtotal,
   type WeeklySubtotalState,
 } from '../../../features/boss-profit/store'
-import { getCurrentBossProfitPeriod } from '../../../lib/boss-profit-period'
-import { PULL_SETTLE_TRANSITION } from '../../../lib/pull-to-refresh'
-import { WEEKLY_BOSS_CLEAR_LIMIT, WEEKLY_CRYSTAL_SALE_LIMIT } from '../../../lib/boss-matching'
+import { getCurrentBossProfitPeriod } from '@core/lib/boss-profit-period'
+import { PULL_SETTLE_TRANSITION } from '@core/lib/pull-to-refresh'
+import { WEEKLY_BOSS_CLEAR_LIMIT, WEEKLY_CRYSTAL_SALE_LIMIT } from '@core/lib/boss-matching'
 import weeklyBossesData from '@core/data/weekly-bosses.json'
 // ADR-063: 동기화 실패·일부 캐릭터 실패·파티원 수 저장 실패는 인라인 문단이 아니라 토스트로 알린다.
 const { showErrorMock, noticeApiKeyIssueMock } = vi.hoisted(() => ({

@@ -2,7 +2,7 @@
  * 테마 토큰 생성 도구 ([[ADR-064]] 결정 9).
  *
  * 시드 3색 + mode 를 넣으면 34토큰과 대비 검증 리포트를 낸다. 파생 규칙 본체는
- * `src/lib/theme-derive.ts` 에 있고 이 파일은 CLI 껍데기다 — 대비 검증 테스트가 같은 함수를
+ * `packages/core/src/lib/theme-derive.ts` 에 있고 이 파일은 CLI 껍데기다 — 대비 검증 테스트가 같은 함수를
  * 재사용하므로 도구와 테스트가 갈라지지 않는다.
  *
  * 값은 **사람이 확인한 뒤** `packages/core/src/data/job-themes.json` 에 커밋한다([[ADR-006]]).
@@ -21,7 +21,7 @@ import {
   type DerivedTheme,
   type ThemeMode,
   type ThemeSeed,
-} from '../src/lib/theme-derive'
+} from '@core/lib/theme-derive'
 import type { ThemeCategory } from '../packages/core/src/types/theme'
 
 type ExistingThemeName = keyof typeof jobThemes

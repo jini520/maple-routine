@@ -4,14 +4,14 @@ import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortra
 import { DifficultySegment } from '../../components/molecules/DifficultySegment/DifficultySegment'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import weeklyBossesData from '@core/data/weekly-bosses.json'
-import { getMaxPartySize } from '../../lib/boss-crystal-prices'
+import { getMaxPartySize } from '@core/lib/boss-crystal-prices'
 import {
   countManualWeeklyBosses,
   getBossCycleByName,
   isSeasonBossName,
   WEEKLY_BOSS_CLEAR_LIMIT,
-} from '../../lib/boss-matching'
-import { isChallengersWorld } from '../../lib/world-emblem'
+} from '@core/lib/boss-matching'
+import { isChallengersWorld } from '@core/lib/world-emblem'
 import { CharacterSelectDropdown } from '../../components/molecules/CharacterSelectDropdown/CharacterSelectDropdown'
 import { partySizeKey, useBossSchedulerStore, type BossTab } from '../../features/boss-scheduler/store'
 import { useToastStore } from '../../features/toast/store'
@@ -19,7 +19,7 @@ import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import type { BossDifficulty } from '@core/types'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { Badge } from '../../components/atoms/Badge/Badge'
-import { useStackBack } from '../../lib/use-stack-back'
+import { useStackBack } from '@core/lib/use-stack-back'
 import { StackScreen } from '../../components/templates/StackScreen/StackScreen'
 
 interface BossReferenceEntry {

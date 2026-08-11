@@ -7,7 +7,7 @@ import {
   type DropHistoryPeriodGroup,
   type DropHistoryRecord,
   type ValuableDroughtSummary,
-} from '../../lib/drop-history'
+} from '@core/lib/drop-history'
 import { getAllBossDropRecords, type BossDropRecord } from '../../storage/boss-drops'
 import { getAllBossProfitRecordKeys } from '../../storage/boss-profit'
 import { getCachedCharacterBasic } from '../../storage/character-basic-cache'

@@ -1,4 +1,4 @@
-// 고가 아이템 드롭 연출 프레임(ADR-038). 검은배경 최적화본(src/assets/drop-effect/*)을
+// 고가 아이템 드롭 연출 프레임(ADR-038). 검은배경 최적화본(`packages/core/src/assets/drop-effect/*`)을
 // import.meta.glob로 모아 숫자 순으로 정렬한다(파일명 렉시코 정렬 함정 방지: 10 < 2).
 //
 // 확장자를 둘 다 받는다 — 프레임은 JPEG 였다가 WebP 로 바꿨고([[ADR-093]] 결정 2 정정),

@@ -1,3 +1,4 @@
+/// <reference types="node" />
 // @vitest-environment jsdom
 import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'

@@ -1,4 +1,4 @@
-import { getBossPortraitIconCrop, getBossPortraitUrl, type BossPortraitCrop } from '../../../lib/boss-icons'
+import { getBossPortraitIconCrop, getBossPortraitUrl, type BossPortraitCrop } from '@core/lib/boss-icons'
 
 export interface BossPortraitProps {
   portraitSlug: string | null

@@ -1,3 +1,4 @@
+/// <reference types="node" />
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { readFileSync } from 'node:fs'
@@ -16,14 +17,14 @@ import { useBossProfitStore } from '../features/boss-profit/store'
 import { useSettingsStore } from '../features/settings/store'
 import { useThemeStore } from '../features/theme/store'
 import { useTrackingModeStore } from '../features/tracking-mode/store'
-import { getThemeDefinition } from '../lib/theme-registry'
+import { getThemeDefinition } from '@core/lib/theme-registry'
 import jobThemes from '@core/data/job-themes.json'
 import type { ThemeDefinition, ThemeName } from '@core/types/theme'
 
 // 배경 있는 테마 정의를 주입하기 위한 부분 모킹(ADR-106 결정 3) — 지금은 배경을 선언한 테마가
 // 0개라 테마 이름으로는 "있음" 분기를 못 태운다. 나머지 export 는 실물 그대로다.
-vi.mock('../lib/theme-registry', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../lib/theme-registry')>()
+vi.mock('@core/lib/theme-registry', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@core/lib/theme-registry')>()
   return { ...actual, getThemeDefinition: vi.fn(actual.getThemeDefinition) }
 })
 

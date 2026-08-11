@@ -14,7 +14,7 @@ import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { ProfitIcon } from '../../components/atoms/ProfitIcon/ProfitIcon'
 import { PullToRefreshIndicator } from '../../components/molecules/PullToRefreshIndicator/PullToRefreshIndicator'
-import { PULL_SETTLE_TRANSITION, resolveContentOffsetPx } from '../../lib/pull-to-refresh'
+import { PULL_SETTLE_TRANSITION, resolveContentOffsetPx } from '@core/lib/pull-to-refresh'
 import { useMeasuredHeight } from '../../lib/use-measured-height'
 import { usePullToRefresh } from '../../lib/use-pull-to-refresh'
 import { UnavailableNotice } from '../../components/molecules/EmptyState/UnavailableNotice'
@@ -30,17 +30,17 @@ import {
   useScheduleSyncErrorToast,
   useStaleCharactersToast,
 } from '../../features/schedule-sync/use-sync-error-toast'
-import { type PopoverAnchorGeometry } from '../../lib/popover-anchor'
-import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../lib/boss-matching'
-import { formatMesoShort } from '../../lib/boss-profit-delta'
-import { sumDropPayout } from '../../lib/drop-price'
+import { type PopoverAnchorGeometry } from '@core/lib/popover-anchor'
+import { WEEKLY_BOSS_CLEAR_LIMIT } from '@core/lib/boss-matching'
+import { formatMesoShort } from '@core/lib/boss-profit-delta'
+import { sumDropPayout } from '@core/lib/drop-price'
 import { ItemRevenuePopover } from './ItemRevenuePopover'
 import {
   formatBossProfitPeriodLabel,
   isLatestPeriod,
   isPeriodQueryable,
   isPeriodRefreshable,
-} from '../../lib/boss-profit-period'
+} from '@core/lib/boss-profit-period'
 import type { BossProfitContextValue } from './boss-profit-context'
 import { ThemeHeaderBackdrop } from '../../components/templates/ThemeHeaderBackdrop/ThemeHeaderBackdrop'
 import {

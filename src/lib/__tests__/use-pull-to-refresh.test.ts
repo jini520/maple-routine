@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, cleanup, renderHook } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { PULL_MAX_PX } from '../pull-to-refresh'
+import { PULL_MAX_PX } from '@core/lib/pull-to-refresh'
 import { usePullToRefresh } from '../use-pull-to-refresh'
 
 // jsdom에는 TouchEvent·Touch 생성자가 없다. 훅이 읽는 필드(touches[].clientY)만 가진 합성 이벤트를 만든다.

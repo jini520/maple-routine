@@ -1,5 +1,5 @@
 import { useThemeStore } from '../../../features/theme/store'
-import { getThemeDefinition } from '../../../lib/theme-registry'
+import { getThemeDefinition } from '@core/lib/theme-registry'
 
 /**
  * 페이지 상단 sticky/fixed 헤더가 덮는 자리에 **테마 배경 이미지 조각**을 그린다

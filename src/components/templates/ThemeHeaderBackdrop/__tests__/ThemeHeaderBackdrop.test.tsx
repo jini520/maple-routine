@@ -4,7 +4,7 @@ import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ThemeHeaderBackdrop } from '../ThemeHeaderBackdrop'
 import { useThemeStore } from '../../../../features/theme/store'
-import { getThemeDefinition } from '../../../../lib/theme-registry'
+import { getThemeDefinition } from '@core/lib/theme-registry'
 import jobThemes from '@core/data/job-themes.json'
 import type { ThemeDefinition } from '@core/types/theme'
 
@@ -14,8 +14,8 @@ import type { ThemeDefinition } from '@core/types/theme'
  * 어느 테마가 배경을 갖느냐가 아니라 **`background` 유무로 렌더를 가르느냐**다.
  * "없음" 쪽은 진짜 테마로 그대로 검사한다(`mockReset` 이 원래 구현으로 되돌린다).
  */
-vi.mock('../../../../lib/theme-registry', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../../../lib/theme-registry')>()
+vi.mock('@core/lib/theme-registry', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@core/lib/theme-registry')>()
   return { ...actual, getThemeDefinition: vi.fn(actual.getThemeDefinition) }
 })
 

@@ -8,11 +8,11 @@
 // 여기 있는 것의 공통점: **행을 만들고·합치고·거르고·정렬한다.** 비동기 오케스트레이션,
 // SQLite 복원력 래퍼, 백필 대상 계산은 스토어의 흐름에 붙어 있어 그대로 남겼다.
 
-import { DEFAULT_MAX_PARTY_SIZE, findPriceEntry } from '../../lib/boss-crystal-prices'
-import { getBossReferenceOrder, matchBossContent, selectBossProfitBosses } from '../../lib/boss-matching'
-import type { MatchedBoss } from '../../lib/boss-matching'
-import { formatBossProfitPeriodLabel, getCurrentBossProfitPeriod } from '../../lib/boss-profit-period'
-import { mergeManualBossList } from '../../lib/manual-boss-merge'
+import { DEFAULT_MAX_PARTY_SIZE, findPriceEntry } from '@core/lib/boss-crystal-prices'
+import { getBossReferenceOrder, matchBossContent, selectBossProfitBosses } from '@core/lib/boss-matching'
+import type { MatchedBoss } from '@core/lib/boss-matching'
+import { formatBossProfitPeriodLabel, getCurrentBossProfitPeriod } from '@core/lib/boss-profit-period'
+import { mergeManualBossList } from '@core/lib/manual-boss-merge'
 import type { BossDropRecord } from '../../storage/boss-drops'
 import type { BossProfitRecord, getBossProfitRecords } from '../../storage/boss-profit'
 import type { ManualTrackedItem } from '../../storage/manual-tracked-content'

@@ -61,3 +61,19 @@ export interface SharedProgressEntry {
   questState: 0 | 1 | 2 | null
   lastUpdatedBucket: string // 리셋 경계 판단용(주간은 lib/boss-profit-period의 periodKey, 일간은 lib/reset-clock의 getCurrentKstDateKey)
 }
+
+// ADR-035 결정 6: 멤버십(+사용자 입력 max_count)만 저장한다 — nowCount/questState/isComplete 같은
+// 동기화 유래 값은 절대 여기 두지 않고, 표시 시점에 schedulerCache에서 조회한다(단일 진실 공급원).
+// ADR-035 결정 19: 컨텐츠는 일간/주간 탭 표시 구분을 저장 시점에 확정하기 위해 kind를
+// 'daily' | 'weekly'로 세분한다(표시 시점 추론 없음).
+//
+// 선언이 `storage/manual-tracked-content` 가 아니라 여기 있는 이유: 그 값을 병합하는 순수 함수
+// (`lib/manual-boss-merge`·`lib/manual-content-merge`·`lib/boss-matching`)가 core 로 오면서
+// core → app 방향 참조가 생기기 때문이다([[ADR-127]] 결정 3). 저장 모듈은 이 타입을 그대로
+// 재-export 하므로 기존 import 경로는 전부 그대로 쓴다.
+export interface ManualTrackedItem {
+  contentName: string
+  kind: 'daily' | 'weekly' | 'boss'
+  difficulty?: string // kind: 'boss'일 때만 사용(보스명만으로는 유일하지 않음)
+  maxCount?: number // 컨텐츠이고 카운트형일 때만. 템플릿(scheduler-content-template.json)의 확정값을 복사해 저장(ADR-035 결정 7)
+}

@@ -56,12 +56,12 @@ exports[`ContentScreen DOM 스냅샷 (ADR-094 결정 4) > 수동 추적 모드 �
 <ul class="space-y-2">
 <li>
 <div class="bg-surface border border-border h-28 media-scope overflow-hidden relative rounded-[14px]">
-<div class="absolute inset-0" style="background-image: url(&quot;/src/assets/maps/monsterPark.webp&quot;); background-size: 250%; background-position: 5% 60%; background-repeat: no-repeat; filter: saturate(.85) brightness(.8); opacity: 0.65; mask-image: linear-gradient(90deg, rgb(0, 0, 0) 0%, rgb(0, 0, 0) 38%, transparent 76%); -webkit-mask-image: linear-gradient(90deg, rgb(0, 0, 0) 0%, rgb(0, 0, 0) 38%, transparent 76%);">
+<div class="absolute inset-0" style="background-image: url(&quot;/packages/core/src/assets/maps/monsterPark.webp&quot;); background-size: 250%; background-position: 5% 60%; background-repeat: no-repeat; filter: saturate(.85) brightness(.8); opacity: 0.65; mask-image: linear-gradient(90deg, rgb(0, 0, 0) 0%, rgb(0, 0, 0) 38%, transparent 76%); -webkit-mask-image: linear-gradient(90deg, rgb(0, 0, 0) 0%, rgb(0, 0, 0) 38%, transparent 76%);">
 </div>
 <div class="flex flex-col h-full relative">
 <div class="flex h-20 items-center justify-between shrink-0" style="padding: 0px 14px;">
 <div class="flex gap-2 items-center">
-<img alt="" class="h-6 object-contain shrink-0 w-6" aria-hidden="true" src="/src/assets/maps/icons/monsterPark.png">
+<img alt="" class="h-6 object-contain shrink-0 w-6" aria-hidden="true" src="/packages/core/src/assets/maps/icons/monsterPark.png">
 <span class="font-medium text-sm text-text" style="text-shadow: 0 1px 3px rgba(0,0,0,.9), 0 0 10px rgba(0,0,0,.6);">몬스터파크</span>
 </div>
 <span class="bg-third-tint font-semibold px-2.5 py-1 rounded-full text-third-ink text-xs">0/14</span>
@@ -136,12 +136,12 @@ exports[`ContentScreen DOM 스냅샷 (ADR-094 결정 4) > 일간 탭 — 컨텐�
 <ul class="space-y-2">
 <li>
 <div class="bg-surface border border-border h-28 media-scope overflow-hidden relative rounded-[14px]">
-<div class="absolute inset-0" style="background-image: url(&quot;/src/assets/maps/monsterPark.webp&quot;); background-size: 250%; background-position: 5% 60%; background-repeat: no-repeat; filter: saturate(.85) brightness(.8); opacity: 0.65; mask-image: linear-gradient(90deg, rgb(0, 0, 0) 0%, rgb(0, 0, 0) 38%, transparent 76%); -webkit-mask-image: linear-gradient(90deg, rgb(0, 0, 0) 0%, rgb(0, 0, 0) 38%, transparent 76%);">
+<div class="absolute inset-0" style="background-image: url(&quot;/packages/core/src/assets/maps/monsterPark.webp&quot;); background-size: 250%; background-position: 5% 60%; background-repeat: no-repeat; filter: saturate(.85) brightness(.8); opacity: 0.65; mask-image: linear-gradient(90deg, rgb(0, 0, 0) 0%, rgb(0, 0, 0) 38%, transparent 76%); -webkit-mask-image: linear-gradient(90deg, rgb(0, 0, 0) 0%, rgb(0, 0, 0) 38%, transparent 76%);">
 </div>
 <div class="flex flex-col h-full relative">
 <div class="flex h-20 items-center justify-between shrink-0" style="padding: 0px 14px;">
 <div class="flex gap-2 items-center">
-<img alt="" class="h-6 object-contain shrink-0 w-6" aria-hidden="true" src="/src/assets/maps/icons/monsterPark.png">
+<img alt="" class="h-6 object-contain shrink-0 w-6" aria-hidden="true" src="/packages/core/src/assets/maps/icons/monsterPark.png">
 <span class="font-medium text-sm text-text" style="text-shadow: 0 1px 3px rgba(0,0,0,.9), 0 0 10px rgba(0,0,0,.6);">몬스터파크</span>
 </div>
 <span class="bg-third-tint font-semibold px-2.5 py-1 rounded-full text-third-ink text-xs">7/14</span>

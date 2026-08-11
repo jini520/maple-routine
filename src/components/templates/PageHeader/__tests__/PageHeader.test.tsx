@@ -12,13 +12,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { domSnapshot } from '../../../../__tests__/dom-snapshot.helper'
 import { PageHeader } from '../PageHeader'
 import { useThemeStore } from '../../../../features/theme/store'
-import { getThemeDefinition } from '../../../../lib/theme-registry'
+import { getThemeDefinition } from '@core/lib/theme-registry'
 import jobThemes from '@core/data/job-themes.json'
 import type { ThemeDefinition } from '@core/types/theme'
 
 // 배경 있는 테마 정의를 주입하기 위한 부분 모킹(ADR-106 결정 3). 나머지 export 는 실물 그대로다.
-vi.mock('../../../../lib/theme-registry', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../../../lib/theme-registry')>()
+vi.mock('@core/lib/theme-registry', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@core/lib/theme-registry')>()
   return { ...actual, getThemeDefinition: vi.fn(actual.getThemeDefinition) }
 })
 

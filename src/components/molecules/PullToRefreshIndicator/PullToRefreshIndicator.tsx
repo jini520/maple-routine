@@ -4,7 +4,7 @@ import {
   resolveContentOffsetPx,
   resolvePullProgress,
   type PullPhase,
-} from '../../../lib/pull-to-refresh'
+} from '@core/lib/pull-to-refresh'
 
 // 당겨서 새로고침 인디케이터(형태는 [[ADR-073]], 마크는 [[ADR-074]]). 표시만 담당한다 —
 // 제스처 감지는 usePullToRefresh 훅이, "지금 제스처를 켤 것인가"는 화면이 판단하고,

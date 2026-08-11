@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { getMaxPartySize } from '../../lib/boss-crystal-prices'
+import { getMaxPartySize } from '@core/lib/boss-crystal-prices'
 import {
   countClearedWeeklyBosses,
   countManualWeeklyBosses,
@@ -8,10 +8,10 @@ import {
   matchBossContent,
   WEEKLY_BOSS_CLEAR_LIMIT,
   type MatchedBoss,
-} from '../../lib/boss-matching'
+} from '@core/lib/boss-matching'
 import { syncSchedules, toScheduleSyncError, type ScheduleSyncError } from '../schedule-sync/schedule-sync'
 import { hasSyncAttemptedThisRun } from '../schedule-sync/sync-run-state'
-import { isSyncFresh } from '../../lib/sync-freshness'
+import { isSyncFresh } from '@core/lib/sync-freshness'
 import {
   getLastSelectedCharacter,
   getTrackedCharacterOcids,

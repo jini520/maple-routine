@@ -1,15 +1,15 @@
 import { useEffect, useRef } from 'react'
 
-import { DROP_EFFECT_FRAMES } from '../../../lib/drop-effect-frames'
+import { DROP_EFFECT_FRAMES } from '@core/lib/drop-effect-frames'
 import {
   DROP_EFFECT_ORIGINS,
   DROP_PILLAR_SCALE,
   dropFrameTransform,
   screenEffectScale,
-} from '../../../lib/drop-effect-layout'
-import type { DropEffectPhase } from '../../../lib/drop-effect-layout'
+} from '@core/lib/drop-effect-layout'
+import type { DropEffectPhase } from '@core/lib/drop-effect-layout'
 import { createPortal } from 'react-dom'
-import { getItemIconUrl } from '../../../lib/item-icons'
+import { getItemIconUrl } from '@core/lib/item-icons'
 
 interface DropEffectOverlayProps {
   itemName: string

@@ -7,8 +7,8 @@
 // z-[20] 은 **카드 루트의 isolate 가 카드 안에 가둔다** — 페이지 sticky 헤더(z-10)나 하단
 // fixed nav 위로 올라가지 않는다. 그 관계는 CharacterAccordion 이 소유하고 여기는 층 번호만 안다.
 
-import { anchorPopover } from '../../lib/popover-anchor'
-import type { PopoverAnchorGeometry } from '../../lib/popover-anchor'
+import { anchorPopover } from '@core/lib/popover-anchor'
+import type { PopoverAnchorGeometry } from '@core/lib/popover-anchor'
 import { AlertTriangle, Ban } from 'lucide-react'
 
 // ADR-068 결정 3: 동기화가 실패한 캐릭터를 **카드에서** 식별한다. 전에는 토스트가 인원 수만 알려

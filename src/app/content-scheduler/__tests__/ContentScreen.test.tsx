@@ -5,7 +5,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ContentScreen } from '../ContentScreen'
-import { PULL_SETTLE_TRANSITION } from '../../../lib/pull-to-refresh'
+import { PULL_SETTLE_TRANSITION } from '@core/lib/pull-to-refresh'
 import { useContentSchedulerStore, type ContentCharacterView } from '../../../features/content-scheduler/store'
 import { getCharacterPickerRoster } from '../../../features/schedule-sync/schedule-sync'
 import { NexonAuthError, NexonRateLimitError } from '@core/nexon/errors'

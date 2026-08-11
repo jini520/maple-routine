@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { mergeManualBossList } from '../manual-boss-merge'
 import type { BossContent } from '@core/types'
-import type { ManualTrackedItem } from '../../storage/manual-tracked-content'
+import type { ManualTrackedItem } from '@core/types/scheduler'
 
 function bossItem(contentName: string, difficulty: string): ManualTrackedItem {
   return { contentName, kind: 'boss', difficulty }

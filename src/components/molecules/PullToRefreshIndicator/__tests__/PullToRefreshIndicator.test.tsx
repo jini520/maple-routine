@@ -2,7 +2,7 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
-import { PULL_THRESHOLD_PX } from '../../../../lib/pull-to-refresh'
+import { PULL_THRESHOLD_PX } from '@core/lib/pull-to-refresh'
 import { PullToRefreshIndicator } from '../PullToRefreshIndicator'
 
 afterEach(() => {

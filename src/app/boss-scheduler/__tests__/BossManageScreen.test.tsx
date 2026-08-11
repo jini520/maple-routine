@@ -8,7 +8,7 @@ import { BossManageScreen } from '../BossManageScreen'
 import { useBossSchedulerStore, type BossCharacterView } from '../../../features/boss-scheduler/store'
 import { useToastStore } from '../../../features/toast/store'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
-import type { MatchedBoss } from '../../../lib/boss-matching'
+import type { MatchedBoss } from '@core/lib/boss-matching'
 
 vi.mock('../../../features/boss-scheduler/store', () => ({
   useBossSchedulerStore: vi.fn(),

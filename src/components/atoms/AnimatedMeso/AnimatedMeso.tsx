@@ -1,4 +1,4 @@
-import { useCountUp } from '../../../lib/use-count-up'
+import { useCountUp } from '@core/lib/use-count-up'
 
 /**
  * 값이 바뀌면 목표까지 굴러가는 메소 숫자 ([[ADR-087]] 결정 6).

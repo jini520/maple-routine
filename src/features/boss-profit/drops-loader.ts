@@ -3,7 +3,7 @@
 // 기록은 처치 난이도가 확정되기 전에도 남을 수 있어, 확정된 뒤 옛 키의 드롭을 옮겨 붙이는
 // 마이그레이션이 함께 산다 — 그 둘은 같은 문제의 앞뒤라 한 모듈이다.
 
-import { planConfirmedDifficultyDropMigration, pruneUnobtainableDrops } from '../../lib/boss-drops'
+import { planConfirmedDifficultyDropMigration, pruneUnobtainableDrops } from '@core/lib/boss-drops'
 import { getBossDropRecords, replaceBossDropRecords } from '../../storage/boss-drops'
 import type { BossDropRecord } from '../../storage/boss-drops'
 import type { RecordedDrop } from '@core/types/drops'

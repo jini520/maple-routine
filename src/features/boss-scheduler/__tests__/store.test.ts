@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { matchBossContent } from '../../../lib/boss-matching'
+import { matchBossContent } from '@core/lib/boss-matching'
 import type { CharacterScheduleSync } from '../../schedule-sync/schedule-sync'
 import type { BossContent } from '@core/types'
 

@@ -10,7 +10,7 @@ import '@testing-library/jest-dom/vitest'
 import { act, cleanup, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { clearCountUpMemory } from '../../../lib/use-count-up'
+import { clearCountUpMemory } from '@core/lib/use-count-up'
 import { BossProfitScreen } from '../BossProfitScreen'
 import { useBossProfitStore, type BossProfitRow } from '../../../features/boss-profit/store'
 

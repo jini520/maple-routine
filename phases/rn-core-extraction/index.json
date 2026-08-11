@@ -21,7 +21,8 @@
     {
       "step": 2,
       "name": "core-lib",
-      "status": "pending"
+      "status": "pending",
+      "started_at": "2026-08-11T15:51:30+0900"
     },
     {
       "step": 3,

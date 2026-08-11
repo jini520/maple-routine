@@ -3,7 +3,7 @@ import { ArrowLeft } from 'lucide-react'
 import { StackScreen } from '../../components/templates/StackScreen/StackScreen'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
-import { useStackBack } from '../../lib/use-stack-back'
+import { useStackBack } from '@core/lib/use-stack-back'
 
 // 설정 하위 페이지 「개인정보 처리방침」([[ADR-120]] 결정 11) — **사이트를 그대로 싣는다.**
 //

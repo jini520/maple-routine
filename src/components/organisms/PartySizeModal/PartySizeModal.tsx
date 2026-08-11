@@ -1,12 +1,12 @@
 import { Users, X } from 'lucide-react'
 import type { BossDifficulty } from '@core/types'
-import { getBossPortraitCrop, getBossPortraitUrl } from '../../../lib/boss-icons'
+import { getBossPortraitCrop, getBossPortraitUrl } from '@core/lib/boss-icons'
 import {
   MEDIA_ART_FILTER,
   MEDIA_ART_MASK_HERO,
   MEDIA_ART_OPACITY,
   MEDIA_TEXT_SHADOW,
-} from '../../../lib/media-card'
+} from '@core/lib/media-card'
 import { Badge } from '../../atoms/Badge/Badge'
 import { DifficultySegment } from '../../molecules/DifficultySegment/DifficultySegment'
 import { PartySizeStepper } from '../../molecules/PartySizeStepper/PartySizeStepper'

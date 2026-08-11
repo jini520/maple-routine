@@ -1,20 +1,20 @@
 import { useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { ArrowLeft, Castle, Flag, LayoutGrid, MapPin, Medal, Sparkles, Swords, type LucideIcon } from 'lucide-react'
-import { CONTENT_TEMPLATE } from '../../lib/scheduler-content-template'
+import { CONTENT_TEMPLATE } from '@core/lib/scheduler-content-template'
 import {
   categorizeContentEntries,
   contentCountTag,
   isGuildContent,
   WEEKLY_CATEGORY_ORDER,
-} from '../../lib/content-category'
+} from '@core/lib/content-category'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { CharacterSelectDropdown } from '../../components/molecules/CharacterSelectDropdown/CharacterSelectDropdown'
 import { useContentSchedulerStore, type ContentTab } from '../../features/content-scheduler/store'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { useToastStore } from '../../features/toast/store'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
-import { useStackBack } from '../../lib/use-stack-back'
+import { useStackBack } from '@core/lib/use-stack-back'
 import { StackScreen } from '../../components/templates/StackScreen/StackScreen'
 
 // 카테고리 → 아이콘은 표현 계층 결정이라 여기 둔다(카테고리 자체는 lib/content-category가 데이터에서 도출).

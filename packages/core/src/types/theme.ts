@@ -110,7 +110,7 @@ export interface ThemeTokens {
  * 없어야 다른 테마에도 값 한 블록으로 붙는다.
  */
 export interface ThemeBackground {
-  /** `src/assets/themes/<slug>.webp` 의 슬러그 — 번들 경로가 아니다 */
+  /** `packages/core/src/assets/themes/<slug>.webp` 의 슬러그 — 번들 경로가 아니다 */
   image: string
   /** `background-size` (예: `cover`) */
   size: string

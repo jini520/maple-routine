@@ -1,5 +1,5 @@
 import { Preferences } from '@capacitor/preferences'
-import { isThemeName } from '../lib/theme-registry'
+import { isThemeName } from '@core/lib/theme-registry'
 import type { ThemeName } from '@core/types'
 import { STORAGE_KEYS } from './keys'
 

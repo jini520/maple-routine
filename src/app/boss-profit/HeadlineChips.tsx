@@ -3,11 +3,11 @@
 // 결정석 판매 한도 요약([[ADR-054]] 결정 5 — 월드별로 집계한다)과 직전 기간 대비 증감
 // ([[ADR-087]] — 상승 빨강·하락 파랑, 방향이 없으면 테마 색). 둘 다 자기 상자 안에서 끝난다.
 
-import { getItemIconUrlByFile } from '../../lib/item-icons'
-import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../lib/boss-matching'
-import { computeProfitDelta, formatProfitDeltaBody, formatProfitDeltaLabel } from '../../lib/boss-profit-delta'
-import { formatBossProfitPeriodLabel, getAdjacentPeriodKey } from '../../lib/boss-profit-period'
-import { worldEmblemUrl } from '../../lib/world-emblem'
+import { getItemIconUrlByFile } from '@core/lib/item-icons'
+import { WEEKLY_CRYSTAL_SALE_LIMIT } from '@core/lib/boss-matching'
+import { computeProfitDelta, formatProfitDeltaBody, formatProfitDeltaLabel } from '@core/lib/boss-profit-delta'
+import { formatBossProfitPeriodLabel, getAdjacentPeriodKey } from '@core/lib/boss-profit-period'
+import { worldEmblemUrl } from '@core/lib/world-emblem'
 import type { BossCycle } from '@core/types'
 import { countMonthlyCrystals, summarizeWorldCrystals } from './character-groups'
 import type { CharacterGroup } from './character-groups'

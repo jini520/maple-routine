@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { StackScreen } from '../../components/templates/StackScreen/StackScreen'
-import { useStackBack } from '../../lib/use-stack-back'
+import { useStackBack } from '@core/lib/use-stack-back'
 import { ArrowLeft, ScrollText } from 'lucide-react'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
@@ -11,17 +11,17 @@ import {
   useDropHistoryStore,
   type DropHistoryCharacter,
 } from '../../features/boss-profit/drop-history-store'
-import { formatBossProfitPeriodLabel } from '../../lib/boss-profit-period'
+import { formatBossProfitPeriodLabel } from '@core/lib/boss-profit-period'
 import {
   formatDropHistoryLine,
   formatValuableDroughtHeadline,
   formatValuableDroughtItems,
   getValuableDroughtTier,
   VALUABLE_DROUGHT_LATE_HEADLINE_COUNT,
-} from '../../lib/drop-history'
-import { getItemIconUrl } from '../../lib/item-icons'
-import { isValuableDrop } from '../../lib/valuable-drops'
-import type { DropHistoryPeriodGroup, DropHistoryRecord, ValuableDroughtSummary } from '../../lib/drop-history'
+} from '@core/lib/drop-history'
+import { getItemIconUrl } from '@core/lib/item-icons'
+import { isValuableDrop } from '@core/lib/valuable-drops'
+import type { DropHistoryPeriodGroup, DropHistoryRecord, ValuableDroughtSummary } from '@core/lib/drop-history'
 
 // 드롭 획득 히스토리 — 전 기간을 가로지르는 읽기 전용 목록([[ADR-071]], 이슈 #54). 보스 수익 화면의
 // 고가 강조는 전부 "지금 보고 있는 기간"에 갇혀 있어(`dropsByRowKey`) 과거 기록은 그 기간으로

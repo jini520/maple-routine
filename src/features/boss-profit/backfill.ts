@@ -4,11 +4,11 @@
 // [[ADR-086]] 결정 4의 조회 원장(같은 날짜 재조회 금지)이 여기서 읽고 쓰인다.
 
 import { getAuthConfig } from '../../storage/api-key'
-import { findPriceEntry } from '../../lib/boss-crystal-prices'
-import { matchBossContent, selectBossProfitBosses } from '../../lib/boss-matching'
-import { getComparisonPeriodKeys } from '../../lib/boss-profit-delta'
-import { getAdjacentPeriodKey, getBackfillQueryDate, getCurrentBossProfitPeriod, getWeeklyPeriodKeysInMonth, isEarliestNavigablePeriod, isPeriodQueryable } from '../../lib/boss-profit-period'
-import type { PeriodQueryOutcome } from '../../lib/boss-profit-period'
+import { findPriceEntry } from '@core/lib/boss-crystal-prices'
+import { matchBossContent, selectBossProfitBosses } from '@core/lib/boss-matching'
+import { getComparisonPeriodKeys } from '@core/lib/boss-profit-delta'
+import { getAdjacentPeriodKey, getBackfillQueryDate, getCurrentBossProfitPeriod, getWeeklyPeriodKeysInMonth, isEarliestNavigablePeriod, isPeriodQueryable } from '@core/lib/boss-profit-period'
+import type { PeriodQueryOutcome } from '@core/lib/boss-profit-period'
 import { fetchSchedulerCharacterState } from '@core/nexon/schedule'
 import { getBossDropRecords } from '../../storage/boss-drops'
 import { getBossPartySize } from '../../storage/boss-party-settings'

@@ -4,7 +4,7 @@ import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ThemeSelector } from '../ThemeSelector'
-import { THEME_NAMES, getThemeDefinition } from '../../../lib/theme-registry'
+import { THEME_NAMES, getThemeDefinition } from '@core/lib/theme-registry'
 import type { ThemeName } from '@core/types/theme'
 
 afterEach(() => {

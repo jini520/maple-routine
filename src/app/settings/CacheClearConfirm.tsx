@@ -2,7 +2,7 @@ import { Check } from 'lucide-react'
 import { useState } from 'react'
 import { Modal } from '../../components/organisms/Modal/Modal'
 import { MapleSpinner } from '../../components/atoms/MapleSpinner/MapleSpinner'
-import { formatBytes } from '../../lib/format-bytes'
+import { formatBytes } from '@core/lib/format-bytes'
 import type { CacheDataGroupId, CacheDataSelection } from '../../storage/cache-data'
 import { Button } from '../../components/atoms/Button/Button'
 
