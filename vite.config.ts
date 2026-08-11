@@ -1,6 +1,13 @@
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+
+// `@core/*` → `packages/core/src/*` ([[ADR-127]] 결정 3).
+// 같은 매핑이 `tsconfig.app.json` 의 `paths` 에도 있어야 한다 — 한쪽만 있으면 타입은 맞는데 번들이
+// 깨지거나(혹은 그 반대) 조용히 어긋난다. **vitest 는 이 `resolve.alias` 를 그대로 공유하므로**
+// 테스트용 별도 설정은 두지 않는다.
+const coreSrc = fileURLToPath(new URL('./packages/core/src', import.meta.url))
 
 // https://vite.dev/config/
 // 화면 청크는 **라우트 단위가 아니라 탭 단위**로 묶는다([[ADR-120]] 결정 14).
@@ -26,6 +33,11 @@ function screenChunk(id: string): string | undefined {
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  resolve: {
+    // 접두 문자열이 아니라 정규식으로 잡는다 — `'@core'` 문자열 alias 는 `@core-foo` 같은 이름까지
+    // 함께 삼킨다.
+    alias: [{ find: /^@core\//, replacement: `${coreSrc}/` }],
+  },
   build: {
     rollupOptions: {
       output: {

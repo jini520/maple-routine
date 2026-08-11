@@ -3,6 +3,9 @@
   "private": true,
   "version": "1.0.4",
   "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "dev": "vite",
     "dev:beta": "VITE_LIVE_UPDATE_CHANNEL=beta vite",
