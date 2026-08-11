@@ -1,0 +1,14 @@
+{
+  "project": "maple-routine",
+  "phase": "rn-components",
+  "steps": [
+    { "step": 0, "name": "nativewind-setup", "status": "pending" },
+    { "step": 1, "name": "theme-system", "status": "pending" },
+    { "step": 2, "name": "navigation", "status": "pending" },
+    { "step": 3, "name": "atoms", "status": "pending" },
+    { "step": 4, "name": "molecules", "status": "pending" },
+    { "step": 5, "name": "organisms", "status": "pending" },
+    { "step": 6, "name": "templates", "status": "pending" },
+    { "step": 7, "name": "animations", "status": "pending" }
+  ]
+}
