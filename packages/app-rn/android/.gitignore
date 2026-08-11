@@ -17,6 +17,3 @@ app/src/main/java/inline/
 
 # Bundle artifacts
 *.jsbundle
-
-# 릴리스 서명 (ADR-091) — 저장소 밖 키스토어를 가리키는 설정. 절대 커밋 금지
-keystore.properties

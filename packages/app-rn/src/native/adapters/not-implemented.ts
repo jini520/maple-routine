@@ -1,7 +1,7 @@
-import type { BackGesturePort, LiveUpdatePort, SystemBarsPort } from '@core/native/ports'
+import type { LiveUpdatePort, SystemBarsPort } from '@core/native/ports'
 
 /**
- * **RN 으로 아직 매핑되지 않은 포트 셋** — 부팅 배선이 이것들도 주입하되, 부르면 **던진다**.
+ * **RN 으로 아직 매핑되지 않은 포트 둘** — 부팅 배선이 이것들도 주입하되, 부르면 **던진다**.
  *
  * 조용한 no-op 이 아닌 이유는 `native/ports.ts` 헤더가 이미 정해 두었다: *"no-op 으로 두면 '이
  * 플랫폼엔 그 기능이 없다'와 '포트가 없다'가 구분되지 않아, 스플래시가 안 걷히거나 광고가 안 뜨는
@@ -18,27 +18,27 @@ import type { BackGesturePort, LiveUpdatePort, SystemBarsPort } from '@core/nati
  *
  * ---
  *
- * ## 왜 매핑이 안 되는가 — 둘은 뷰 레이어의 문제다
+ * ## 왜 매핑이 안 되는가 — 하나는 뷰 레이어의 문제다
  *
- * 이 둘은 어댑터를 잘 짜면 되는 종류가 아니다. **웹뷰에서 side-effect 였던 것이 RN 에서는 렌더
- * 트리의 일부**라, 지금 어댑터로 흉내 내 봐야 뷰가 붙는 3단계에 전부 버려진다
- * (`docs/migration/README.md` — 3단계 «내비게이션 + `components/`»).
+ * **`SystemBarsPort`** 는 어댑터를 잘 짜면 되는 종류가 아니다. `refreshSafeAreaInsets()` 가 하는
+ * 일은 `--safe-area-inset-*` **CSS 변수를 주입**하는 것인데([[ADR-099]] 가 스크롤포트를 그 값에
+ * 맞췄다) RN 은 `react-native-safe-area-context` 가 같은 값을 컴포넌트로 내려준다 — **주입할 대상이
+ * 없다.** 지금 흉내 내 봐야 뷰가 붙는 3단계에 버려진다(`docs/migration/README.md`).
  *
- * **테마 적용 포트는 여기서 나갔다**(step 1, theme-system). 예상대로 어댑터를 잘 짜는 문제가
- * 아니었고 — 값이 흐르는 방향이 반대라 — 포트가 놓은 값을 React 가 구독하는 구조로 옮겼다
- * (`rn-theme-appearance.ts` + `src/theme/`). 남은 둘도 같은 성질이라 같은 방식으로 풀린다.
+ * **이 목록을 떠난 것이 둘이다.** 둘 다 예상대로 "어댑터를 잘 짜는 문제"가 아니었다:
  *
- * - **`SystemBarsPort`** — `refreshSafeAreaInsets()` 가 하는 일은 `--safe-area-inset-*` **CSS 변수를
- *   주입**하는 것이다([[ADR-099]] 가 스크롤포트를 그 값에 맞췄다). RN 은
- *   `react-native-safe-area-context` 가 같은 값을 컴포넌트로 내려준다 — **주입할 대상이 없다.**
- * - **`BackGesturePort`** — [[ADR-120]] 결정 17·18 이 손으로 만든 것(진행률·가장자리·3버튼 수렴)을
- *   react-navigation 네이티브 스택이 **OS 수준에서** 한다. 어댑터가 아니라 내비게이션 구조의
- *   문제이고, `parity-inventory.md` 도 이 자리를 *"삭제 — 네이티브 스택 기본"* 으로 적어 두었다.
+ * - **`ThemeAppearancePort`**(step 1) — 값이 흐르는 방향이 반대라, 포트가 놓은 값을 React 가
+ *   구독하는 구조로 옮겼다(`rn-theme-appearance.ts` + `src/theme/`).
+ * - **`BackGesturePort`**(step 2) — 예상은 *"삭제 — 네이티브 스택 기본"* 이었고 셋 중 둘은 실제로
+ *   그렇게 됐지만, **`moveToBackground()` 는 남았다.** [[ADR-120]] 결정 18 이 정한 *"종료가 아니라
+ *   백그라운드"* 를 내비게이션 라이브러리가 대신해 주지 않기 때문이다(RN 의 기본 폴백이 정확히
+ *   그 결정이 거부한 종료다). 그래서 그 포트는 `rn-back-gesture.ts` 로 갔고, 거기서 던지는 두
+ *   메서드의 사유는 *"아직 안 했다"* 가 아니라 *"이제 다른 것이 소유한다"* 라 메시지가 갈린다.
  *
- * **다만 버리는 것은 구현이지 결정이 아니다.** [[ADR-120]] 이 정한 동작(탭바 동반 이동·시차·3버튼
+ * **버리는 것은 구현이지 결정이 아니다.** [[ADR-120]] 이 정한 동작(탭바 동반 이동·시차·3버튼
  * 수렴)은 새 구조에서도 성립해야 하고, 기본값이 그것과 다르면 기본값이 아니라 [[ADR-120]] 을 따른다.
  *
- * ## 셋째는 성격이 다르다 — `LiveUpdatePort`
+ * ## 둘째는 성격이 다르다 — `LiveUpdatePort`
  *
  * 이쪽은 뷰 레이어가 아니라 **프로토콜**이 없다. 다른 어댑터는 같은 일을 하는 다른 SDK 로 바꾸는
  * 것이지만 OTA 는 @capgo 자체 호스팅 매니페스트 → `expo-updates` 로 **형식 자체가 바뀌고**,
@@ -46,7 +46,7 @@ import type { BackGesturePort, LiveUpdatePort, SystemBarsPort } from '@core/nati
  * `minNativeVersion` · 채널)을 새 프로토콜에 어떻게 싣는지는 **[[ADR-127]] 결정 7 이 별도 ADR 로
  * 미뤄 둔 결정**이다. 그래서 3단계가 아니라 그 ADR 을 가리킨다.
  *
- * (포트는 13종이고 그중 실구현이 10, 이 파일이 3 이다. 하나를 비워 두면
+ * (포트는 13종이고 그중 실구현이 11, 이 파일이 2 다. 하나를 비워 두면
  * `installPorts()` 가 *"전부를 한 자리에서 보장한다"* 는 자기 목적을 못 지키고, 그 자리는 슬롯의
  * 일반 메시지(*"주입되지 않았습니다"*)로 떨어져 **왜** 없는지를 말하지 않는다.)
  */
@@ -64,8 +64,6 @@ function notImplementedMessage(port: string, method: string, reason: string): st
 
 const SYSTEM_BARS_REASON =
   '안전영역·시스템 바는 단계 3(뷰 레이어)에서 react-native-safe-area-context 가 컴포넌트로 값을 내려줍니다(주입할 CSS 변수가 없습니다).'
-const BACK_GESTURE_REASON =
-  '시스템 뒤로가기는 단계 3(뷰 레이어)에서 react-navigation 네이티브 스택이 OS 수준으로 처리합니다([[ADR-120]] 동작은 그대로 지켜야 합니다).'
 const LIVE_UPDATE_REASON =
   'OTA 는 프로토콜 자체가 바뀌어(@capgo → expo-updates) [[ADR-127]] 결정 7 이 별도 ADR 로 미뤄 둔 결정입니다.'
 
@@ -91,12 +89,6 @@ export const notImplementedSystemBarsPort: SystemBarsPort = {
     throwAsync('SystemBarsPort', 'setNavigationBarStyle', SYSTEM_BARS_REASON),
   refreshSafeAreaInsets: () =>
     throwAsync('SystemBarsPort', 'refreshSafeAreaInsets', SYSTEM_BARS_REASON),
-}
-
-export const notImplementedBackGesturePort: BackGesturePort = {
-  setEnabled: () => throwAsync('BackGesturePort', 'setEnabled', BACK_GESTURE_REASON),
-  moveToBackground: () => throwAsync('BackGesturePort', 'moveToBackground', BACK_GESTURE_REASON),
-  addListeners: () => throwAsync('BackGesturePort', 'addListeners', BACK_GESTURE_REASON),
 }
 
 export const notImplementedLiveUpdatePort: LiveUpdatePort = {

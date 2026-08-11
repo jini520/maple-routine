@@ -50,7 +50,7 @@
 | `/settings/release-notes/:guideId` | `SettingsFeatureGuideScreen` | 위에 push | **같은 상세 화면** |
 | `/settings/account-data` | `SettingsAccountDataScreen` | 탭 4 위 push | |
 | `/settings/about` | `SettingsAboutScreen` | 탭 4 위 push | |
-| `/settings/privacy` | `SettingsPrivacyScreen` | 탭 4 위 push | |
+| `/settings/about/privacy` | `SettingsPrivacyScreen` | `/settings/about` 위 push | 이 앱에서 **유일한 2단 스택** |
 
 **보존해야 할 라우팅 동작**
 

@@ -14,6 +14,7 @@ import {
 import { setPreferencesPort, setSqlitePort } from '@core/storage/ports'
 
 import { rnAdsPort } from './native/adapters/rn-ads'
+import { rnBackGesturePort } from './native/adapters/rn-back-gesture'
 import { rnColorSchemePort } from './native/adapters/rn-color-scheme'
 import { rnHuntingTimerPort } from './native/adapters/rn-hunting-timer'
 import { rnKeyboardPort } from './native/adapters/rn-keyboard'
@@ -22,7 +23,6 @@ import { rnSplashScreenPort } from './native/adapters/rn-splash-screen'
 import { rnStatusBarPort } from './native/adapters/rn-status-bar'
 import { rnThemeAppearancePort } from './native/adapters/rn-theme-appearance'
 import {
-  notImplementedBackGesturePort,
   notImplementedLiveUpdatePort,
   notImplementedSystemBarsPort,
 } from './native/adapters/not-implemented'
@@ -53,22 +53,27 @@ import { rnSqlitePort } from './storage/adapters/rn-sqlite'
  * 자리에서 보장한다(`installCapacitorNativePorts` 와 같은 판단). 주입 순서는 서로 무관하다 —
  * 포트끼리 참조하지 않는다.
  *
- * ## 셋은 아직 구현이 아니라 **거부**다
+ * ## 둘은 아직 구현이 아니라 **거부**다
  *
- * `SystemBarsPort`·`BackGesturePort` 는 3단계(뷰 레이어)에서, `LiveUpdatePort` 는 [[ADR-127]] 결정 7 의
- * 별도 ADR 에서 채워진다. 그때까지 비워 두지 않고 **던지는 구현**을 넣는 이유는 `not-implemented.ts` 가
- * 적어 두었다 — 슬롯의 일반 메시지는 *"주입을 잊었다"* 로 읽히지 *"아직 안 만들었다"* 로 읽히지 않는다.
+ * `SystemBarsPort` 는 3단계(뷰 레이어)에서, `LiveUpdatePort` 는 [[ADR-127]] 결정 7 의 별도 ADR 에서
+ * 채워진다. 그때까지 비워 두지 않고 **던지는 구현**을 넣는 이유는 `not-implemented.ts` 가 적어
+ * 두었다 — 슬롯의 일반 메시지는 *"주입을 잊었다"* 로 읽히지 *"아직 안 만들었다"* 로 읽히지 않는다.
  *
- * `ThemeAppearancePort` 는 그 목록에서 **나갔다**(step 1, theme-system) — 던지는 구현이 있던 자리에
- * `rn-theme-appearance.ts` 가 들어왔다.
+ * 그 목록을 떠난 것이 둘이다:
+ * - `ThemeAppearancePort`(step 1, theme-system) — `rn-theme-appearance.ts` 가 자리를 채웠다.
+ * - `BackGesturePort`(step 2, navigation) — **절반만 구현이다.** `moveToBackground` 는 실구현이고
+ *   (그 하나는 내비게이션 라이브러리가 대신해 주지 않는다, [[ADR-120]] 결정 18) 나머지 둘은 계속
+ *   던지되 사유가 갈린다: *"아직 안 했다"* 가 아니라 *"이제 네이티브 스택이 소유한다."*
+ *   그래서 메시지도 `not-implemented.ts` 가 아니라 `rn-back-gesture.ts` 가 갖는다.
  */
 export function installPorts(): void {
   // 저장소 먼저 — 웹 쪽 `main.tsx` 와 같은 순서다(기술적 의존은 없고, 두 앱을 나란히 읽기 위한 것).
   setPreferencesPort(rnPreferencesPort)
   setSqlitePort(rnSqlitePort)
 
-  // RN 구현이 있는 여덟.
+  // RN 구현이 있는 아홉.
   setAdsPort(rnAdsPort)
+  setBackGesturePort(rnBackGesturePort)
   setColorSchemePort(rnColorSchemePort)
   setHuntingTimerPort(rnHuntingTimerPort)
   setKeyboardPort(rnKeyboardPort)
@@ -77,8 +82,7 @@ export function installPorts(): void {
   setStatusBarPort(rnStatusBarPort)
   setThemeAppearancePort(rnThemeAppearancePort)
 
-  // 아직 매핑되지 않은 셋 — 부르면 왜 없는지를 말하며 던진다.
-  setBackGesturePort(notImplementedBackGesturePort)
+  // 아직 매핑되지 않은 둘 — 부르면 왜 없는지를 말하며 던진다.
   setLiveUpdatePort(notImplementedLiveUpdatePort)
   setSystemBarsPort(notImplementedSystemBarsPort)
 }

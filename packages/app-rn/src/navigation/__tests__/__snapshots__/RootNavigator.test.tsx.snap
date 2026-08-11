@@ -1,0 +1,1304 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`렌더 트리 스냅샷 온보딩 골격 1`] = `
+<RNCSafeAreaProvider
+  onInsetsChange={[Function]}
+  style={
+    [
+      {
+        "flex": 1,
+      },
+      undefined,
+    ]
+  }
+>
+  <View
+    onLayout={[Function]}
+    style={
+      [
+        {
+          "flex": 1,
+        },
+        undefined,
+      ]
+    }
+  >
+    <RNSScreenStack
+      style={
+        {
+          "flex": 1,
+        }
+      }
+    >
+      <RNSScreen
+        activityState={2}
+        androidResetScreenShadowStateOnOrientationChangeEnabled={true}
+        aria-hidden={false}
+        bottomScrollEdgeEffect="automatic"
+        collapsable={false}
+        fullScreenSwipeEnabled="undefined"
+        fullScreenSwipeShadowEnabled={true}
+        gestureEnabled={true}
+        gestureResponseDistance={
+          {
+            "bottom": -1,
+            "end": -1,
+            "start": -1,
+            "top": -1,
+          }
+        }
+        hasLargeHeader={false}
+        leftScrollEdgeEffect="automatic"
+        nativeBackButtonDismissalEnabled={false}
+        onAppear={[Function]}
+        onDisappear={[Function]}
+        onDismissed={[Function]}
+        onGestureCancel={[Function]}
+        onHeaderBackButtonClicked={[Function]}
+        onHeaderHeightChange={[Function]}
+        onNativeDismissCancelled={[Function]}
+        onSheetDetentChanged={[Function]}
+        onTransitionProgress={[Function]}
+        onWillAppear={[Function]}
+        onWillDisappear={[Function]}
+        replaceAnimation="push"
+        rightScrollEdgeEffect="automatic"
+        screenId="<screenId>"
+        sheetAllowedDetents={
+          [
+            1,
+          ]
+        }
+        sheetCornerRadius={-1}
+        sheetDefaultResizeAnimationEnabled={true}
+        sheetElevation={24}
+        sheetExpandsWhenScrolledToEdge={true}
+        sheetGrabberVisible={false}
+        sheetInitialDetent={0}
+        sheetInitialDetentIndex={0}
+        sheetLargestUndimmedDetent={-1}
+        sheetLargestUndimmedDetentIndex={-1}
+        sheetShouldOverflowTopInset={false}
+        stackAnimation="ios_from_right"
+        stackPresentation="push"
+        style={
+          {
+            "bottom": 0,
+            "left": 0,
+            "position": "absolute",
+            "right": 0,
+            "top": 0,
+            "zIndex": undefined,
+          }
+        }
+        swipeDirection="horizontal"
+        synchronousShadowStateUpdatesEnabled={true}
+        topScrollEdgeEffect="automatic"
+      >
+        <RNSScreenContentWrapper
+          collapsable={false}
+          style={
+            [
+              {
+                "flex": 1,
+              },
+              [
+                {
+                  "backgroundColor": "rgb(242, 242, 242)",
+                },
+                undefined,
+              ],
+            ]
+          }
+        >
+          <View
+            style={
+              {
+                "alignItems": "center",
+                "flexBasis": "0%",
+                "flexGrow": 1,
+                "flexShrink": 1,
+                "justifyContent": "center",
+              }
+            }
+            testID="screen-Onboarding"
+          >
+            <Text
+              style={
+                {
+                  "color": undefined,
+                  "fontSize": 16,
+                  "lineHeight": 24,
+                }
+              }
+            >
+              Onboarding
+            </Text>
+          </View>
+        </RNSScreenContentWrapper>
+        <RNSScreenStackHeaderConfig
+          backButtonInCustomView={false}
+          backTitleFontFamily="System"
+          backTitleVisible={true}
+          backgroundColor="rgb(255, 255, 255)"
+          color="rgb(0, 122, 255)"
+          consumeBottomInset={true}
+          consumeLeftInset={true}
+          consumeRightInset={true}
+          consumeTopInset={false}
+          direction="ltr"
+          disableBackButtonMenu={false}
+          disableTopInsetApplication={false}
+          experimental_userInterfaceStyle="light"
+          hidden={true}
+          hideBackButton={false}
+          largeTitleFontFamily="System"
+          largeTitleFontWeight="700"
+          largeTitleHideShadow={false}
+          legacyTopInsetBehavior={false}
+          pointerEvents="box-none"
+          style={
+            {
+              "alignItems": "center",
+              "flexDirection": "row",
+              "justifyContent": "space-between",
+              "position": "absolute",
+              "width": "100%",
+            }
+          }
+          synchronousShadowStateUpdatesEnabled={true}
+          title="Onboarding"
+          titleColor="rgb(28, 28, 30)"
+          titleFontFamily="System"
+          titleFontWeight="600"
+          topInsetEnabled={true}
+          translucent={false}
+          userInterfaceStyle="light"
+        />
+      </RNSScreen>
+    </RNSScreenStack>
+  </View>
+</RNCSafeAreaProvider>
+`;
+
+exports[`렌더 트리 스냅샷 탭 골격 1`] = `
+<RNCSafeAreaProvider
+  onInsetsChange={[Function]}
+  style={
+    [
+      {
+        "flex": 1,
+      },
+      undefined,
+    ]
+  }
+>
+  <View
+    onLayout={[Function]}
+    style={
+      [
+        {
+          "flex": 1,
+        },
+        undefined,
+      ]
+    }
+  >
+    <RNSScreenStack
+      style={
+        {
+          "flex": 1,
+        }
+      }
+    >
+      <RNSScreen
+        activityState={2}
+        androidResetScreenShadowStateOnOrientationChangeEnabled={true}
+        aria-hidden={false}
+        bottomScrollEdgeEffect="automatic"
+        collapsable={false}
+        fullScreenSwipeEnabled="undefined"
+        fullScreenSwipeShadowEnabled={true}
+        gestureEnabled={true}
+        gestureResponseDistance={
+          {
+            "bottom": -1,
+            "end": -1,
+            "start": -1,
+            "top": -1,
+          }
+        }
+        hasLargeHeader={false}
+        leftScrollEdgeEffect="automatic"
+        nativeBackButtonDismissalEnabled={false}
+        onAppear={[Function]}
+        onDisappear={[Function]}
+        onDismissed={[Function]}
+        onGestureCancel={[Function]}
+        onHeaderBackButtonClicked={[Function]}
+        onHeaderHeightChange={[Function]}
+        onNativeDismissCancelled={[Function]}
+        onSheetDetentChanged={[Function]}
+        onTransitionProgress={[Function]}
+        onWillAppear={[Function]}
+        onWillDisappear={[Function]}
+        replaceAnimation="push"
+        rightScrollEdgeEffect="automatic"
+        screenId="<screenId>"
+        sheetAllowedDetents={
+          [
+            1,
+          ]
+        }
+        sheetCornerRadius={-1}
+        sheetDefaultResizeAnimationEnabled={true}
+        sheetElevation={24}
+        sheetExpandsWhenScrolledToEdge={true}
+        sheetGrabberVisible={false}
+        sheetInitialDetent={0}
+        sheetInitialDetentIndex={0}
+        sheetLargestUndimmedDetent={-1}
+        sheetLargestUndimmedDetentIndex={-1}
+        sheetShouldOverflowTopInset={false}
+        stackAnimation="ios_from_right"
+        stackPresentation="push"
+        style={
+          {
+            "bottom": 0,
+            "left": 0,
+            "position": "absolute",
+            "right": 0,
+            "top": 0,
+            "zIndex": undefined,
+          }
+        }
+        swipeDirection="horizontal"
+        synchronousShadowStateUpdatesEnabled={true}
+        topScrollEdgeEffect="automatic"
+      >
+        <RNSScreenContentWrapper
+          collapsable={false}
+          style={
+            [
+              {
+                "flex": 1,
+              },
+              [
+                {
+                  "backgroundColor": "rgb(242, 242, 242)",
+                },
+                undefined,
+              ],
+            ]
+          }
+        >
+          <View
+            onLayout={[Function]}
+            style={
+              [
+                {
+                  "flex": 1,
+                },
+                {
+                  "flexDirection": "column",
+                },
+              ]
+            }
+          >
+            <RNSScreenNavigationContainer
+              style={
+                {
+                  "flex": 1,
+                  "overflow": "hidden",
+                }
+              }
+            >
+              <RNSScreen
+                activityState={2}
+                androidResetScreenShadowStateOnOrientationChangeEnabled={true}
+                collapsable={false}
+                fullScreenSwipeEnabled="undefined"
+                gestureResponseDistance={
+                  {
+                    "bottom": -1,
+                    "end": -1,
+                    "start": -1,
+                    "top": -1,
+                  }
+                }
+                onGestureCancel={[Function]}
+                pointerEvents="box-none"
+                screenId="<screenId>"
+                sheetAllowedDetents={
+                  [
+                    1,
+                  ]
+                }
+                sheetCornerRadius={-1}
+                sheetDefaultResizeAnimationEnabled={true}
+                sheetElevation={24}
+                sheetExpandsWhenScrolledToEdge={true}
+                sheetGrabberVisible={false}
+                sheetInitialDetent={0}
+                sheetLargestUndimmedDetent={-1}
+                sheetShouldOverflowTopInset={false}
+                style={
+                  {
+                    "bottom": 0,
+                    "left": 0,
+                    "position": "absolute",
+                    "right": 0,
+                    "top": 0,
+                    "zIndex": undefined,
+                  }
+                }
+                synchronousShadowStateUpdatesEnabled={true}
+              >
+                <View
+                  aria-hidden={false}
+                  collapsable={false}
+                  style={
+                    {
+                      "backgroundColor": "rgb(242, 242, 242)",
+                      "flex": 1,
+                    }
+                  }
+                >
+                  <View
+                    style={
+                      {
+                        "flex": 1,
+                      }
+                    }
+                  >
+                    <View
+                      style={
+                        {
+                          "alignItems": "center",
+                          "flexBasis": "0%",
+                          "flexGrow": 1,
+                          "flexShrink": 1,
+                          "justifyContent": "center",
+                        }
+                      }
+                      testID="screen-Content"
+                    >
+                      <Text
+                        style={
+                          {
+                            "color": undefined,
+                            "fontSize": 16,
+                            "lineHeight": 24,
+                          }
+                        }
+                      >
+                        Content
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              </RNSScreen>
+            </RNSScreenNavigationContainer>
+            <View
+              collapsable={false}
+              onLayout={[Function]}
+              pointerEvents="auto"
+              style={
+                {
+                  "backgroundColor": "rgb(255, 255, 255)",
+                  "borderColor": "rgb(216, 216, 216)",
+                  "borderTopWidth": 0.5,
+                  "bottom": 0,
+                  "elevation": 8,
+                  "end": 0,
+                  "height": 83,
+                  "paddingBottom": 34,
+                  "paddingHorizontal": 0,
+                  "paddingTop": 0,
+                  "position": undefined,
+                  "start": 0,
+                  "transform": [
+                    {
+                      "translateY": 0,
+                    },
+                  ],
+                }
+              }
+            >
+              <View
+                pointerEvents="none"
+                style={
+                  {
+                    "bottom": 0,
+                    "left": 0,
+                    "position": "absolute",
+                    "right": 0,
+                    "top": 0,
+                  }
+                }
+              />
+              <View
+                role="tablist"
+                style={
+                  {
+                    "flex": 1,
+                    "flexDirection": "row",
+                  }
+                }
+              >
+                <View
+                  style={
+                    [
+                      {
+                        "borderRadius": 0,
+                        "overflow": "visible",
+                      },
+                      [
+                        {
+                          "flex": 1,
+                        },
+                        undefined,
+                      ],
+                    ]
+                  }
+                >
+                  <View
+                    accessibilityLabel="컨텐츠, tab, 1 of 4"
+                    accessibilityLargeContentTitle="컨텐츠"
+                    accessibilityShowsLargeContentViewer={true}
+                    accessibilityState={
+                      {
+                        "busy": undefined,
+                        "checked": undefined,
+                        "disabled": undefined,
+                        "expanded": undefined,
+                        "selected": true,
+                      }
+                    }
+                    accessibilityValue={
+                      {
+                        "max": undefined,
+                        "min": undefined,
+                        "now": undefined,
+                        "text": undefined,
+                      }
+                    }
+                    accessible={true}
+                    collapsable={false}
+                    focusable={true}
+                    href="/Tabs/Content"
+                    onBlur={[Function]}
+                    onClick={[Function]}
+                    onFocus={[Function]}
+                    onResponderGrant={[Function]}
+                    onResponderMove={[Function]}
+                    onResponderRelease={[Function]}
+                    onResponderTerminate={[Function]}
+                    onResponderTerminationRequest={[Function]}
+                    onStartShouldSetResponder={[Function]}
+                    role="button"
+                    style={
+                      {
+                        "alignItems": "center",
+                        "backgroundColor": "transparent",
+                        "borderCurve": "continuous",
+                        "borderRadius": 0,
+                        "cursor": "pointer",
+                        "flex": 1,
+                        "flexDirection": "column",
+                        "justifyContent": "flex-start",
+                        "opacity": 1,
+                        "padding": 5,
+                      }
+                    }
+                  >
+                    <View
+                      style={
+                        [
+                          {
+                            "height": 28,
+                            "width": 31,
+                          },
+                          undefined,
+                        ]
+                      }
+                    >
+                      <View
+                        style={
+                          [
+                            {
+                              "alignItems": "center",
+                              "alignSelf": "center",
+                              "height": "100%",
+                              "justifyContent": "center",
+                              "position": "absolute",
+                              "width": "100%",
+                            },
+                            {
+                              "minWidth": 25,
+                              "opacity": 1,
+                            },
+                          ]
+                        }
+                      >
+                        <Text
+                          style={
+                            [
+                              {
+                                "color": "rgb(28, 28, 30)",
+                              },
+                              {
+                                "fontFamily": "System",
+                                "fontWeight": "400",
+                              },
+                              [
+                                {
+                                  "backgroundColor": "transparent",
+                                },
+                                {
+                                  "color": "rgb(0, 122, 255)",
+                                  "fontSize": 25,
+                                },
+                                undefined,
+                              ],
+                            ]
+                          }
+                        >
+                          ⏷
+                        </Text>
+                      </View>
+                      <View
+                        style={
+                          [
+                            {
+                              "alignItems": "center",
+                              "alignSelf": "center",
+                              "height": "100%",
+                              "justifyContent": "center",
+                              "position": "absolute",
+                              "width": "100%",
+                            },
+                            {
+                              "opacity": 0,
+                            },
+                          ]
+                        }
+                      >
+                        <Text
+                          style={
+                            [
+                              {
+                                "color": "rgb(28, 28, 30)",
+                              },
+                              {
+                                "fontFamily": "System",
+                                "fontWeight": "400",
+                              },
+                              [
+                                {
+                                  "backgroundColor": "transparent",
+                                },
+                                {
+                                  "color": "#8E8E8F",
+                                  "fontSize": 25,
+                                },
+                                undefined,
+                              ],
+                            ]
+                          }
+                        >
+                          ⏷
+                        </Text>
+                      </View>
+                    </View>
+                    <Text
+                      numberOfLines={1}
+                      style={
+                        [
+                          {
+                            "color": "rgb(28, 28, 30)",
+                          },
+                          {
+                            "fontFamily": "System",
+                            "fontWeight": "400",
+                          },
+                          [
+                            {
+                              "backgroundColor": "transparent",
+                              "textAlign": "center",
+                            },
+                            {
+                              "color": "rgb(0, 122, 255)",
+                            },
+                            [
+                              {
+                                "fontSize": 10,
+                              },
+                              {
+                                "fontFamily": "System",
+                                "fontWeight": "500",
+                              },
+                              undefined,
+                            ],
+                          ],
+                        ]
+                      }
+                    >
+                      컨텐츠
+                    </Text>
+                  </View>
+                </View>
+                <View
+                  style={
+                    [
+                      {
+                        "borderRadius": 0,
+                        "overflow": "visible",
+                      },
+                      [
+                        {
+                          "flex": 1,
+                        },
+                        undefined,
+                      ],
+                    ]
+                  }
+                >
+                  <View
+                    accessibilityLabel="보스, tab, 2 of 4"
+                    accessibilityLargeContentTitle="보스"
+                    accessibilityShowsLargeContentViewer={true}
+                    accessibilityState={
+                      {
+                        "busy": undefined,
+                        "checked": undefined,
+                        "disabled": undefined,
+                        "expanded": undefined,
+                        "selected": false,
+                      }
+                    }
+                    accessibilityValue={
+                      {
+                        "max": undefined,
+                        "min": undefined,
+                        "now": undefined,
+                        "text": undefined,
+                      }
+                    }
+                    accessible={true}
+                    collapsable={false}
+                    focusable={true}
+                    href="/Tabs/Boss"
+                    onBlur={[Function]}
+                    onClick={[Function]}
+                    onFocus={[Function]}
+                    onResponderGrant={[Function]}
+                    onResponderMove={[Function]}
+                    onResponderRelease={[Function]}
+                    onResponderTerminate={[Function]}
+                    onResponderTerminationRequest={[Function]}
+                    onStartShouldSetResponder={[Function]}
+                    role="button"
+                    style={
+                      {
+                        "alignItems": "center",
+                        "backgroundColor": "transparent",
+                        "borderCurve": "continuous",
+                        "borderRadius": 0,
+                        "cursor": "pointer",
+                        "flex": 1,
+                        "flexDirection": "column",
+                        "justifyContent": "flex-start",
+                        "opacity": 1,
+                        "padding": 5,
+                      }
+                    }
+                  >
+                    <View
+                      style={
+                        [
+                          {
+                            "height": 28,
+                            "width": 31,
+                          },
+                          undefined,
+                        ]
+                      }
+                    >
+                      <View
+                        style={
+                          [
+                            {
+                              "alignItems": "center",
+                              "alignSelf": "center",
+                              "height": "100%",
+                              "justifyContent": "center",
+                              "position": "absolute",
+                              "width": "100%",
+                            },
+                            {
+                              "minWidth": 25,
+                              "opacity": 0,
+                            },
+                          ]
+                        }
+                      >
+                        <Text
+                          style={
+                            [
+                              {
+                                "color": "rgb(28, 28, 30)",
+                              },
+                              {
+                                "fontFamily": "System",
+                                "fontWeight": "400",
+                              },
+                              [
+                                {
+                                  "backgroundColor": "transparent",
+                                },
+                                {
+                                  "color": "rgb(0, 122, 255)",
+                                  "fontSize": 25,
+                                },
+                                undefined,
+                              ],
+                            ]
+                          }
+                        >
+                          ⏷
+                        </Text>
+                      </View>
+                      <View
+                        style={
+                          [
+                            {
+                              "alignItems": "center",
+                              "alignSelf": "center",
+                              "height": "100%",
+                              "justifyContent": "center",
+                              "position": "absolute",
+                              "width": "100%",
+                            },
+                            {
+                              "opacity": 1,
+                            },
+                          ]
+                        }
+                      >
+                        <Text
+                          style={
+                            [
+                              {
+                                "color": "rgb(28, 28, 30)",
+                              },
+                              {
+                                "fontFamily": "System",
+                                "fontWeight": "400",
+                              },
+                              [
+                                {
+                                  "backgroundColor": "transparent",
+                                },
+                                {
+                                  "color": "#8E8E8F",
+                                  "fontSize": 25,
+                                },
+                                undefined,
+                              ],
+                            ]
+                          }
+                        >
+                          ⏷
+                        </Text>
+                      </View>
+                    </View>
+                    <Text
+                      numberOfLines={1}
+                      style={
+                        [
+                          {
+                            "color": "rgb(28, 28, 30)",
+                          },
+                          {
+                            "fontFamily": "System",
+                            "fontWeight": "400",
+                          },
+                          [
+                            {
+                              "backgroundColor": "transparent",
+                              "textAlign": "center",
+                            },
+                            {
+                              "color": "#8E8E8F",
+                            },
+                            [
+                              {
+                                "fontSize": 10,
+                              },
+                              {
+                                "fontFamily": "System",
+                                "fontWeight": "500",
+                              },
+                              undefined,
+                            ],
+                          ],
+                        ]
+                      }
+                    >
+                      보스
+                    </Text>
+                  </View>
+                </View>
+                <View
+                  style={
+                    [
+                      {
+                        "borderRadius": 0,
+                        "overflow": "visible",
+                      },
+                      [
+                        {
+                          "flex": 1,
+                        },
+                        undefined,
+                      ],
+                    ]
+                  }
+                >
+                  <View
+                    accessibilityLabel="수익, tab, 3 of 4"
+                    accessibilityLargeContentTitle="수익"
+                    accessibilityShowsLargeContentViewer={true}
+                    accessibilityState={
+                      {
+                        "busy": undefined,
+                        "checked": undefined,
+                        "disabled": undefined,
+                        "expanded": undefined,
+                        "selected": false,
+                      }
+                    }
+                    accessibilityValue={
+                      {
+                        "max": undefined,
+                        "min": undefined,
+                        "now": undefined,
+                        "text": undefined,
+                      }
+                    }
+                    accessible={true}
+                    collapsable={false}
+                    focusable={true}
+                    href="/Tabs/Profit"
+                    onBlur={[Function]}
+                    onClick={[Function]}
+                    onFocus={[Function]}
+                    onResponderGrant={[Function]}
+                    onResponderMove={[Function]}
+                    onResponderRelease={[Function]}
+                    onResponderTerminate={[Function]}
+                    onResponderTerminationRequest={[Function]}
+                    onStartShouldSetResponder={[Function]}
+                    role="button"
+                    style={
+                      {
+                        "alignItems": "center",
+                        "backgroundColor": "transparent",
+                        "borderCurve": "continuous",
+                        "borderRadius": 0,
+                        "cursor": "pointer",
+                        "flex": 1,
+                        "flexDirection": "column",
+                        "justifyContent": "flex-start",
+                        "opacity": 1,
+                        "padding": 5,
+                      }
+                    }
+                  >
+                    <View
+                      style={
+                        [
+                          {
+                            "height": 28,
+                            "width": 31,
+                          },
+                          undefined,
+                        ]
+                      }
+                    >
+                      <View
+                        style={
+                          [
+                            {
+                              "alignItems": "center",
+                              "alignSelf": "center",
+                              "height": "100%",
+                              "justifyContent": "center",
+                              "position": "absolute",
+                              "width": "100%",
+                            },
+                            {
+                              "minWidth": 25,
+                              "opacity": 0,
+                            },
+                          ]
+                        }
+                      >
+                        <Text
+                          style={
+                            [
+                              {
+                                "color": "rgb(28, 28, 30)",
+                              },
+                              {
+                                "fontFamily": "System",
+                                "fontWeight": "400",
+                              },
+                              [
+                                {
+                                  "backgroundColor": "transparent",
+                                },
+                                {
+                                  "color": "rgb(0, 122, 255)",
+                                  "fontSize": 25,
+                                },
+                                undefined,
+                              ],
+                            ]
+                          }
+                        >
+                          ⏷
+                        </Text>
+                      </View>
+                      <View
+                        style={
+                          [
+                            {
+                              "alignItems": "center",
+                              "alignSelf": "center",
+                              "height": "100%",
+                              "justifyContent": "center",
+                              "position": "absolute",
+                              "width": "100%",
+                            },
+                            {
+                              "opacity": 1,
+                            },
+                          ]
+                        }
+                      >
+                        <Text
+                          style={
+                            [
+                              {
+                                "color": "rgb(28, 28, 30)",
+                              },
+                              {
+                                "fontFamily": "System",
+                                "fontWeight": "400",
+                              },
+                              [
+                                {
+                                  "backgroundColor": "transparent",
+                                },
+                                {
+                                  "color": "#8E8E8F",
+                                  "fontSize": 25,
+                                },
+                                undefined,
+                              ],
+                            ]
+                          }
+                        >
+                          ⏷
+                        </Text>
+                      </View>
+                    </View>
+                    <Text
+                      numberOfLines={1}
+                      style={
+                        [
+                          {
+                            "color": "rgb(28, 28, 30)",
+                          },
+                          {
+                            "fontFamily": "System",
+                            "fontWeight": "400",
+                          },
+                          [
+                            {
+                              "backgroundColor": "transparent",
+                              "textAlign": "center",
+                            },
+                            {
+                              "color": "#8E8E8F",
+                            },
+                            [
+                              {
+                                "fontSize": 10,
+                              },
+                              {
+                                "fontFamily": "System",
+                                "fontWeight": "500",
+                              },
+                              undefined,
+                            ],
+                          ],
+                        ]
+                      }
+                    >
+                      수익
+                    </Text>
+                  </View>
+                </View>
+                <View
+                  style={
+                    [
+                      {
+                        "borderRadius": 0,
+                        "overflow": "visible",
+                      },
+                      [
+                        {
+                          "flex": 1,
+                        },
+                        undefined,
+                      ],
+                    ]
+                  }
+                >
+                  <View
+                    accessibilityLabel="설정, tab, 4 of 4"
+                    accessibilityLargeContentTitle="설정"
+                    accessibilityShowsLargeContentViewer={true}
+                    accessibilityState={
+                      {
+                        "busy": undefined,
+                        "checked": undefined,
+                        "disabled": undefined,
+                        "expanded": undefined,
+                        "selected": false,
+                      }
+                    }
+                    accessibilityValue={
+                      {
+                        "max": undefined,
+                        "min": undefined,
+                        "now": undefined,
+                        "text": undefined,
+                      }
+                    }
+                    accessible={true}
+                    collapsable={false}
+                    focusable={true}
+                    href="/Tabs/Settings"
+                    onBlur={[Function]}
+                    onClick={[Function]}
+                    onFocus={[Function]}
+                    onResponderGrant={[Function]}
+                    onResponderMove={[Function]}
+                    onResponderRelease={[Function]}
+                    onResponderTerminate={[Function]}
+                    onResponderTerminationRequest={[Function]}
+                    onStartShouldSetResponder={[Function]}
+                    role="button"
+                    style={
+                      {
+                        "alignItems": "center",
+                        "backgroundColor": "transparent",
+                        "borderCurve": "continuous",
+                        "borderRadius": 0,
+                        "cursor": "pointer",
+                        "flex": 1,
+                        "flexDirection": "column",
+                        "justifyContent": "flex-start",
+                        "opacity": 1,
+                        "padding": 5,
+                      }
+                    }
+                  >
+                    <View
+                      style={
+                        [
+                          {
+                            "height": 28,
+                            "width": 31,
+                          },
+                          undefined,
+                        ]
+                      }
+                    >
+                      <View
+                        style={
+                          [
+                            {
+                              "alignItems": "center",
+                              "alignSelf": "center",
+                              "height": "100%",
+                              "justifyContent": "center",
+                              "position": "absolute",
+                              "width": "100%",
+                            },
+                            {
+                              "minWidth": 25,
+                              "opacity": 0,
+                            },
+                          ]
+                        }
+                      >
+                        <Text
+                          style={
+                            [
+                              {
+                                "color": "rgb(28, 28, 30)",
+                              },
+                              {
+                                "fontFamily": "System",
+                                "fontWeight": "400",
+                              },
+                              [
+                                {
+                                  "backgroundColor": "transparent",
+                                },
+                                {
+                                  "color": "rgb(0, 122, 255)",
+                                  "fontSize": 25,
+                                },
+                                undefined,
+                              ],
+                            ]
+                          }
+                        >
+                          ⏷
+                        </Text>
+                      </View>
+                      <View
+                        style={
+                          [
+                            {
+                              "alignItems": "center",
+                              "alignSelf": "center",
+                              "height": "100%",
+                              "justifyContent": "center",
+                              "position": "absolute",
+                              "width": "100%",
+                            },
+                            {
+                              "opacity": 1,
+                            },
+                          ]
+                        }
+                      >
+                        <Text
+                          style={
+                            [
+                              {
+                                "color": "rgb(28, 28, 30)",
+                              },
+                              {
+                                "fontFamily": "System",
+                                "fontWeight": "400",
+                              },
+                              [
+                                {
+                                  "backgroundColor": "transparent",
+                                },
+                                {
+                                  "color": "#8E8E8F",
+                                  "fontSize": 25,
+                                },
+                                undefined,
+                              ],
+                            ]
+                          }
+                        >
+                          ⏷
+                        </Text>
+                      </View>
+                    </View>
+                    <Text
+                      numberOfLines={1}
+                      style={
+                        [
+                          {
+                            "color": "rgb(28, 28, 30)",
+                          },
+                          {
+                            "fontFamily": "System",
+                            "fontWeight": "400",
+                          },
+                          [
+                            {
+                              "backgroundColor": "transparent",
+                              "textAlign": "center",
+                            },
+                            {
+                              "color": "#8E8E8F",
+                            },
+                            [
+                              {
+                                "fontSize": 10,
+                              },
+                              {
+                                "fontFamily": "System",
+                                "fontWeight": "500",
+                              },
+                              undefined,
+                            ],
+                          ],
+                        ]
+                      }
+                    >
+                      설정
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+          </View>
+        </RNSScreenContentWrapper>
+        <RNSScreenStackHeaderConfig
+          backButtonInCustomView={false}
+          backTitleFontFamily="System"
+          backTitleVisible={true}
+          backgroundColor="rgb(255, 255, 255)"
+          color="rgb(0, 122, 255)"
+          consumeBottomInset={true}
+          consumeLeftInset={true}
+          consumeRightInset={true}
+          consumeTopInset={false}
+          direction="ltr"
+          disableBackButtonMenu={false}
+          disableTopInsetApplication={false}
+          experimental_userInterfaceStyle="light"
+          hidden={true}
+          hideBackButton={false}
+          largeTitleFontFamily="System"
+          largeTitleFontWeight="700"
+          largeTitleHideShadow={false}
+          legacyTopInsetBehavior={false}
+          pointerEvents="box-none"
+          style={
+            {
+              "alignItems": "center",
+              "flexDirection": "row",
+              "justifyContent": "space-between",
+              "position": "absolute",
+              "width": "100%",
+            }
+          }
+          synchronousShadowStateUpdatesEnabled={true}
+          title="Tabs"
+          titleColor="rgb(28, 28, 30)"
+          titleFontFamily="System"
+          titleFontWeight="600"
+          topInsetEnabled={true}
+          translucent={false}
+          userInterfaceStyle="light"
+        />
+      </RNSScreen>
+    </RNSScreenStack>
+  </View>
+</RNCSafeAreaProvider>
+`;

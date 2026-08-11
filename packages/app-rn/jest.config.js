@@ -23,10 +23,16 @@
 // Metro 와 공유한다 — 따로 적으면 "앱은 도는데 테스트만 죽는"(또는 반대) 어긋남이 조용히 생긴다.
 // jest 는 preset 의 매퍼와 여기 매퍼를 **합치므로** `@core/*` 매핑은 그대로 살아 있고, 이 항목들이
 // 먼저 검사된다.
+// `testMatch` 를 **파일 이름으로** 좁힌다. `jest-expo` 기본값은 `**/__tests__/**/*.[jt]s?(x)` 라
+// 그 디렉터리에 둔 **보조 파일까지 테스트 스위트로 집어** *"must contain at least one test"* 로
+// 빨개진다(`src/navigation/__tests__/harness.tsx`). 보조 파일을 밖으로 빼는 대신 규칙을 좁힌 이유는
+// 그 파일이 테스트 전용이라 소스 트리에 있으면 어디에도 안 어울리기 때문이고, 이 저장소의 테스트가
+// 이미 전부 `*.test.ts(x)` 라 잃는 것이 없기 때문이다.
 const { coreShimModuleNameMapper } = require('./core-shims')
 
 module.exports = {
   preset: 'jest-expo',
+  testMatch: ['**/*.test.[jt]s?(x)'],
   globalSetup: '<rootDir>/jest.global-setup.js',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   moduleNameMapper: coreShimModuleNameMapper(),
