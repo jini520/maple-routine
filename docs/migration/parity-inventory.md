@@ -156,17 +156,22 @@
 
 ### atoms (9)
 
-| 컴포넌트 | ADR 계약 |
-|---|---|
-| `AnimatedMeso` | 046, 087 |
-| `Badge` | 094 |
-| `Button` (+ `variants.ts`) | 094 |
-| `Card` | 094 |
-| `DifficultyBadge` | — |
-| `MapleSpinner` | — |
-| `MapleSweepSpinner` | 061 |
-| `ProfitIcon` | 066 |
-| `ProgressBar` | 061, 094 |
+**전부 옮겼다**(3단계 step 3, 2026-08-12 — `packages/app-rn/src/components/atoms/`). 각 행의 ADR 을
+다시 읽고 그 동작이 새 코드에 있음을 확인한 결과가 «확인» 열이고, RN 에서 갈린 자리는 컴포넌트
+주석과 [README «3-3단계 결과»](./README.md) 에 있다. 계층 규칙은 RN 쪽 `layer-dependencies.test.ts`
+가 강제한다.
+
+| 컴포넌트 | ADR 계약 | 확인 |
+|---|---|---|
+| `AnimatedMeso` | 046, 087 | 046 숫자만 냄 + **실제 공백 문자** ✅ / 087 결정 6·7·8·정정 1 은 core `use-count-up` 과 **호출부 identity 키**에 산다 — 훅을 그대로 부르므로 유지(키는 step 4 몫) |
+| `Badge` | 094 | 결정 3 재정정(만든다)·`*-tint`/`*-ink` 6곳만 덮는 좁은 범위 ✅ |
+| `Button` (+ `variants.ts`) | 094 | 결정 3(design-system 규정만)·외형만 갖고 레이아웃은 호출부 ✅ / **결정 4(DOM 보존)는 RN 에서 성립 불가** — 상자/글자를 갈라야 해서, 그 자리를 새 스냅샷 기준선이 대신한다 |
+| `Card` | 094 | 결정 3·`rounded-[14px]` 를 한곳에 ✅ |
+| `DifficultyBadge` | — | (계약 없음) 웹의 색·그림자 값 그대로 |
+| `MapleSpinner` | — | (계약 없음) **모션은 step 7** — `maple-trail` 이 `@keyframes` 8종 중 하나다 |
+| `MapleSweepSpinner` | 061 | 결정 1 크기 규칙(16px=트레일 링 / 24px 이상=스윕)·아래→위 방향 ✅ / **모션은 step 7**, `motion-reduce` 짝도 그때 |
+| `ProfitIcon` | 066 | 결정 3 lucide 규격 6항목·결정 4 좌표로 겹침(clipPath·mask 0개) ✅ |
+| `ProgressBar` | 061, 094 | 061 결정 6 `h-1.5` 단일 프리미티브 ✅ / 094 결정 3 ✅ · `animated` 는 **프롭만 남고 아직 안 움직인다**(step 7) |
 
 ### molecules (11)
 

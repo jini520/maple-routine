@@ -324,6 +324,53 @@ function`). core 는 배포 중인 웹과 공유돼 못 고치므로(원칙 3), 
 **아예 생성하지 않는다**(실측). 웹에 두 자리 있다(`bg-surface/60`·`bg-secondary/10`) — 컴포넌트를
 옮길 때 명시 토큰이나 임의값으로 바꿔야 하고, 그냥 옮기면 **배경이 조용히 없어진다**.
 
+#### 3-3단계 결과 — atoms 9개 (2026-08-12, **첫 컴포넌트 이동**)
+
+`packages/app-rn/src/components/atoms/` 로 9개가 옮겨졌다. `app-capacitor` 의 원본은 그대로 둔다
+(원칙 3). 계층 규칙은 RN 쪽에도 테스트로 세웠다 — 웹판과 다른 점은 **"네 계층이 다 있다"가 아니라
+"있는 계층은 아래에서부터 끊기지 않는다"** 로 적은 것뿐이다(계층이 step 4~6 에 차례로 도착하므로,
+숫자를 적으면 나중에 그것을 되돌릴 사람이 필요하다).
+
+**`className` 은 대체로 그대로 옮겨졌다.** 아래가 **바꿔야 했던 전부**이고, 셋 다 "웹에서 되던 것이
+RN 에서 조용히 안 된다"는 같은 성질을 갖는다 — step 4~6 이 같은 자리를 다시 만난다.
+
+| 자리 | 웹 | RN | 왜 |
+|---|---|---|---|
+| 버튼·모든 상자 | 글자 유틸을 상자에 함께 걸었다 | **상자/글자 두 벌**로 가른다 | RN 은 글자 스타일이 상자에서 자식 `Text` 로 **상속되지 않는다**(실측). 상자에 남은 `text-*`·`font-*` 는 그 View 의 style 에 앉아 있기만 한다 |
+| 모든 인터랙션 | `hover:*` | **뺀다** | 터치 기기에 hover 가 없고 NativeWind 도 네이티브에서 버린다. 눌림 피드백은 `active:` 라는 다른 축이다 |
+| `ProgressBar` | `` `bg-${tone}` `` | 정적 클래스 표 | Tailwind 는 소스를 문자열로 훑는다. 웹은 `bg-primary`·`bg-third` 가 다른 파일에 있어 우연히 살았고, RN 은 스캔 범위가 이 패키지뿐이라 그 우연이 없다 — **색 없는 막대**가 된다 |
+| `ProgressBar` | `transition-[width]` | **뺀다**(step 7) | NativeWind 의 `transition-*` 은 Reanimated 워클릿을 타는데 그 배선이 아직 없어 **렌더가 즉시 죽는다**(실측) |
+
+**SVG 는 `className` 이 그냥 무시된다 — 배선을 따로 걸어야 한다**(`src/lib/nativewind-interop.ts`).
+NativeWind 가 자동으로 가로채는 것은 `react-native` 기본 컴포넌트뿐이라, `Svg` 에 준 클래스는 **모르는
+프롭으로 흘러가고 스타일이 안 붙는다**(실측 — 렌더 트리에 `className` 문자열이 그대로 남아 있었다).
+`cssInterop` 으로 `style.color` → `color` 프롭을 옮기면 자식의 `currentColor` 가 그 값을 읽어,
+**웹과 같은 호출부 API**(`className="text-primary"` 하나로 색이 정해진다)가 유지된다.
+`expo-linear-gradient` 도 같은 이유로 등록한다.
+
+**SVG 에서 웹과 갈린 값 셋** — 전부 `react-native-svg` 가 그 기능을 안 갖고 있어서다.
+
+- **`pathLength` 없음** → 단풍잎 둘레를 300 으로 정규화하던 것을 **실측 둘레(601.3157)에 비율을
+  곱하는** 방식으로 바꿨다(`components/mapleLeafPath.ts`). 같은 그림의 다른 계산이다.
+- **그라디언트 정지점이 `currentColor` 를 못 받는다** → 경고만 찍고 **그라디언트가 통째로 빈다**
+  (실측). `MapleSweepSpinner` 의 띠는 색을 `fill="currentColor"` 가, 페이드를 **흰색 알파 램프
+  마스크**가 맡도록 갈랐다(흰색은 구체적인 색이라 정지점에 넣을 수 있고, 루미넌스가 1이라 결국
+  `stopOpacity` 가 그대로 알파가 된다 — 웹과 같은 램프).
+- **`clipPathUnits` 없음** → 웹에서 기본값을 피하려고 명시하던 값인데 RN 에서는 **그것이 유일한
+  동작**이라 적을 자리가 없다.
+
+**아직 안 움직이는 것 둘** — `MapleSpinner`(`maple-trail`)·`MapleSweepSpinner`(`maple-sweep`). 둘 다
+`@keyframes` 8종에 걸려 있어 step 7 몫이고, 지금 그리는 것은 **그 애니메이션의 0프레임**이다.
+반대로 `AnimatedMeso` 는 **모션이 그대로 산다** — 카운트업이 CSS 가 아니라 `@core/lib/use-count-up`
+(rAF + `performance.now`)이라 옮길 것이 없었다. step 7 이 함께 처리해야 할 것이 하나 더 있다:
+**`motion-reduce:` 의 RN 짝이 없다**(`AccessibilityInfo.isReduceMotionEnabled`). 모션이 없는 지금은
+지킬 계약도 없지만, 모션을 붙이는 순간 그 자리가 빈다.
+
+**RN 트리 스냅샷 12장을 새로 떴다**(step 0 관례). 색이 `var()` 라 `ThemeProvider` 밖에서는 스타일이
+통째로 빠지므로 스냅샷은 전부 프로바이더로 감싸 찍는다 — 안 감싸면 *"색이 없는 트리"* 를 기준선으로
+굳혀서, 나중에 색이 진짜로 빠져도 초록으로 남는다. **이 스냅샷은 여전히 "예전과 같은가"에 답하지
+않는다.**
+
 ### 4단계 — `app/` 화면 재작성
 
 - 화면 15개 + 하위 컴포넌트. **파일별 ADR 계약 체크리스트를 소진**하며 진행(원칙 2)

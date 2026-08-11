@@ -1,0 +1,44 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ProgressBar 렌더 트리 스냅샷 — 이후 변경을 잡는 기준선(예전 화면과의 대조가 아니다) 1`] = `
+<View
+  style={
+    {
+      "flexBasis": "0%",
+      "flexGrow": 1,
+      "flexShrink": 1,
+    }
+  }
+>
+  <View
+    accessibilityRole="progressbar"
+    accessibilityValue={
+      {
+        "max": 14,
+        "min": 0,
+        "now": 7,
+      }
+    }
+    style={
+      {
+        "backgroundColor": "#E4E1CE",
+        "borderRadius": 9999,
+        "height": 6,
+        "overflow": "hidden",
+        "width": "100%",
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "backgroundColor": "#F58B0F",
+          "borderRadius": 9999,
+          "height": 6,
+          "width": "40%",
+        }
+      }
+    />
+  </View>
+</View>
+`;
