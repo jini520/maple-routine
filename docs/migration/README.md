@@ -184,6 +184,12 @@ packages/
 - `storage/*` 21파일 · `native/*` 11파일의 RN 구현. **시그니처 고정**(원칙 1)
 - **게이트**: `core` 의 로직 테스트 119개가 RN 어댑터 위에서 전부 통과
 
+주입은 `packages/app-rn/src/boot.ts` 의 `installPorts()` 한 함수이고 진입점 `index.ts` 가
+`registerRootComponent(App)` 앞에서 부른다. **포트 13종 중 넷은 아직 구현이 아니라 «던지는 구현»** 이다
+(`native/adapters/not-implemented.ts`) — 셋은 3단계 몫, `LiveUpdatePort` 는 [[ADR-127]] 결정 7 의 별도
+ADR 몫이다. 조용한 no-op 으로 두지 않는 이유와 각 자리의 근거는
+[parity-inventory.md](./parity-inventory.md) «부팅 배선».
+
 **테스트 러너는 둘이다**(사용자 결정, 2026-08-11). `packages/app-rn` 은 **jest**(`jest-expo` 프리셋),
 `core` 와 `app-capacitor` 는 그대로 **vitest**. RN 을 vitest 에 억지로 태우지 않는 이유는 전환의 최종
 상태가 RN-only 이고 그때 `app-capacitor` 와 함께 vitest 도 걷히기 때문이다 — 지금 태우면 나중에 한 번
@@ -205,6 +211,9 @@ packages/
 ### 3단계 — 내비게이션 + `components/` 34개
 
 - react-navigation 골격 + 4계층 컴포넌트(atoms 9 · molecules 11 · organisms 10 · templates 4)
+- **여기서 «던지는 구현» 셋이 채워진다** — `ThemeAppearancePort`(테마를 React 상태로) ·
+  `SystemBarsPort`(safe-area-context) · `BackGesturePort`(네이티브 스택). 지금은 부르면 던지므로
+  그 자리가 남아 있다는 사실이 첫 호출에서 드러난다
 - **게이트**: [[ADR-120]] 동작(탭바 동반 이동·시차·3버튼 수렴)이 실기기에서 재현될 것
 
 ### 4단계 — `app/` 화면 재작성
