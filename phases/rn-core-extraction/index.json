@@ -7,7 +7,8 @@
       "name": "workspace-setup",
       "status": "completed",
       "started_at": "2026-08-11T15:37:24+0900",
-      "summary": "npm workspaces(`packages/*`) 도입 + `packages/core` 뼈대 3파일(package.json `@maple-routine/core`(main/exports 가 TS 소스 직행, 빌드 단계 없음) · src/index.ts(빈 진입점 — 배럴 아님) · tsconfig.json(tsconfig.app.json 상속, buildinfo 충돌 회피용 override)) 생성. `@core/*` → `packages/core/src/*` alias 를 tsconfig.app.json `paths` · vite.config.ts `resolve.alias`(정규식 find) · tsconfig.json `references` 세 곳에 배선하고 tsc·vitest 양쪽에서 실제 해석되는 것을 임시 프로브로 확인 후 삭제. eslint(`eslint .`)·vitest 는 설정 변경 없이 packages/ 를 이미 커버함을 실측. 파일 이동 0건 — 테스트 199파일/3044개로 이전과 동일(동작 변화 0)."
+      "summary": "npm workspaces(`packages/*`) 도입 + `packages/core` 뼈대 3파일(package.json `@maple-routine/core`(main/exports 가 TS 소스 직행, 빌드 단계 없음) · src/index.ts(빈 진입점 — 배럴 아님) · tsconfig.json(tsconfig.app.json 상속, buildinfo 충돌 회피용 override)) 생성. `@core/*` → `packages/core/src/*` alias 를 tsconfig.app.json `paths` · vite.config.ts `resolve.alias`(정규식 find) · tsconfig.json `references` 세 곳에 배선하고 tsc·vitest 양쪽에서 실제 해석되는 것을 임시 프로브로 확인 후 삭제. eslint(`eslint .`)·vitest 는 설정 변경 없이 packages/ 를 이미 커버함을 실측. 파일 이동 0건 — 테스트 199파일/3044개로 이전과 동일(동작 변화 0).",
+      "completed_at": "2026-08-11T15:42:34+0900"
     },
     {
       "step": 1,
