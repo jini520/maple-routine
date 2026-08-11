@@ -1,0 +1,17 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "resolveJsonModule": true,
+    /* `@core/*` → `packages/core/src/*` ([[ADR-127]] 결정 3).
+
+       웹 쪽은 `tsconfig.base.json` 의 `paths` 와 `vite.config.ts` 의 `resolve.alias` 가 **짝**이지만,
+       RN 쪽은 이 선언 하나가 tsc 와 Metro 를 **둘 다** 푼다(Expo `experiments.tsconfigPaths` —
+       `app.json` 에 명시). 짝이 없으니 한쪽만 고쳐져 어긋나는 일도 없다.
+       경로는 이 tsconfig 기준으로 풀린다. */
+    "paths": {
+      "@core/*": ["../core/src/*"]
+    }
+  },
+  "include": ["*.ts", "*.tsx", "src/**/*.ts", "src/**/*.tsx", "expo-env.d.ts"]
+}
