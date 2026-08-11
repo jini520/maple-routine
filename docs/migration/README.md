@@ -219,17 +219,17 @@ ADR 몫이다. 조용한 no-op 으로 두지 않는 이유와 각 자리의 근�
 ### 3단계 — 내비게이션 + `components/` 34개
 
 - react-navigation 골격 + 4계층 컴포넌트(atoms 9 · molecules 11 · organisms 10 · templates 4)
-- **여기서 «던지는 구현» 셋이 채워진다** — `ThemeAppearancePort`(테마를 React 상태로) ·
-  `SystemBarsPort`(safe-area-context) · `BackGesturePort`(네이티브 스택). 지금은 부르면 던지므로
-  그 자리가 남아 있다는 사실이 첫 호출에서 드러난다
+- **여기서 «던지는 구현» 셋이 채워진다** — `ThemeAppearancePort`(테마를 React 상태로, **완료** ✅
+  아래 «3-1단계 결과») · `SystemBarsPort`(safe-area-context) · `BackGesturePort`(네이티브 스택).
+  남은 둘은 부르면 던지므로 그 자리가 있다는 사실이 첫 호출에서 드러난다
 - **게이트**: [[ADR-120]] 동작(탭바 동반 이동·시차·3버튼 수렴)이 실기기에서 재현될 것
 
 **스타일링은 NativeWind 다**(사용자 결정, 2026-08-11). `components/` 33파일에 `className` 이 163곳
 있어 그대로 옮기는 편이 압도적으로 싸다. 대가는 임의 CSS·pseudo 셀렉터·`@keyframes` 를 못 쓰는 것인데,
 `@keyframes` 8종은 어차피 Reanimated 재구현 대상이라 새로 잃는 것이 아니다.
 
-**`ThemeAppearancePort` 가 여기서 해소된다.** 지금 RN 구현이 "단계 3에서 재설계된다"며 던지고 있다
-— CSS 변수 51개를 `<style>` 에 주입하던 구조를 React 상태로 옮기는 것이 이 단계의 일이다.
+**`ThemeAppearancePort` 는 여기서 해소됐다**(아래 «3-1단계 결과»). CSS 변수를 `<style>` 에 주입하던
+구조를 React 상태로 옮겼다.
 
 #### 3-0단계 결과 — NativeWind 기반 (2026-08-11, 컴포넌트 이동 없음)
 
@@ -272,6 +272,57 @@ CSS 변수는 테마 시스템의 뼈대라 이 하나로 못 쓴다. 마지막 
 
 **`babel.config.js` 가 0단계에서 지웠던 자리에 돌아왔다.** NativeWind 가 babel 프리셋을 요구하고,
 없으면 `className` 이 **에러 없이 무시**된다. 되살린 이유는 파일 주석에 적혀 있다.
+
+#### 3-1단계 결과 — 테마 시스템 (2026-08-12, 컴포넌트 이동 없음)
+
+**`ThemeAppearancePort` 가 채워졌다**(`packages/app-rn/src/native/adapters/rn-theme-appearance.ts` +
+`src/theme/`). 진단은 맞았다 — 어댑터를 잘 짜는 문제가 아니라 **값이 흐르는 방향이 반대**였다.
+
+| 웹뷰가 하던 일 | RN |
+|---|---|
+| `buildThemeCss` 로 38토큰을 `<style>` 에 주입 | **문자열로 굳히지 않는다** — `ThemeDefinition extends ThemeTokens` 라 값이 이미 객체다. NativeWind `vars()` 로 렌더 트리에 내린다 |
+| `data-theme`(눈으로 확인용) | 없다 — 테마 이름이 값으로 흐른다 |
+| `data-mode` 선택자 ([[ADR-122]]) | **선택자가 없어 파생 토큰으로** 만든다(아래) |
+| `color-scheme`·`scrollbar-color` ([[ADR-099]]) | 스크롤 인디케이터는 RN 에서 **프롭**이라 뷰가 정한다(`useScrollIndicatorStyle`) |
+
+- **`className` 을 그대로 쓸 수 있다.** `tailwind.config.js` 의 색을 값이 아니라 `var(--color-*)` 로
+  두어 웹과 **같은 모양**이 됐다(v4 `@theme` 이 만든 유틸리티 + 런타임 변수 주입). 색 이름은 손으로
+  적지 않고 `job-themes.json` 키에서 판다([[ADR-064]] 결정 10). v3 기본 팔레트는 **교체로 없앴다** —
+  남겨 두면 테마를 안 따라가는 색을 쓰고도 빌드가 성공한다.
+- **`vars()` 는 렌더 트리를 따라 상속되고 하위 재선언이 그 서브트리만 덮는다**(실측). 그래서
+  `.media-scope`([[ADR-064]] 결정 5)가 `<MediaScope>` 한 컴포넌트로 그대로 옮겨졌다 — 카드 안에서
+  같은 레시피(`bg-primary-tint`)가 카드 기준을 보는 성질이 유지된다.
+- **테마는 side-effect 가 아니라 렌더 트리의 일부다 — 그 대가는 View 한 개**다. 웹에서는 변수가
+  `documentElement` 에 붙어 레이아웃과 무관했지만 RN 에서는 변수를 얹는 요소가 레이아웃 노드가 된다.
+- **변수를 못 찾으면 색이 조용히 사라진다**(스타일 속성 자체가 빠진다 — 에러도 경고도 없다). 웹은 그
+  자리를 `index.css` `@theme` 기본 블록(머쉬맘)이 메우므로, RN 도 appearance 저장소의 **초기값을 기본
+  테마로** 두어 같은 순서를 만든다(첫 페인트 → `restoreFromStorage()` → 갈아탐).
+- **[[ADR-122]] 는 값으로 푼다.** 라이트에서만 테두리를 `text` 쪽으로 미는 규칙을
+  `--color-panel-border` 파생 토큰으로 미리 계산해, 호출부는 `border-panel-border` 만 쓴다. 분기는
+  반드시 `definition.mode` 이고 테마 **이름**은 보지 않는다([[ADR-064]] 결정 8). 색 공간은 `in srgb`
+  여야 한다(틴트 파생의 `in oklab` 과 다르다) — ADR 본문 표의 세 확정값을 테스트가 그대로 지킨다.
+
+**막힌 것 하나 — core 가 Vite 를 전제로 쓰여 있다.** `@core/lib/theme-registry` 를 import 하는 것만으로
+RN 이 부팅에 실패한다: 그 파일이 부르는 `lib/theme-backgrounds.ts` 가 `import.meta.glob` 으로 에셋
+목록을 만드는데 Metro 엔 짝이 없어 **모듈 평가 시점에** 던진다(`__ExpoImportMetaRegistry.glob is not a
+function`). core 는 배포 중인 웹과 공유돼 못 고치므로(원칙 3), **앱이 자기 번들러에게 대체 모듈을
+알려주는** 방식으로 뒀다 — `packages/app-rn/core-shims.js` 한 표를 Metro 와 jest 가 공유한다.
+
+- 대체 구현은 `null` 을 돌려준다 — 원본이 이미 정의한 정상 경로이고([[ADR-088]] 결정 3), 그래서 색
+  38토큰은 그대로 흐르고 **배경만 없다**. 배경을 가진 두 테마(혼테일·검은마법사)가 RN 에서 단색으로
+  열린다. RN 은 벽지를 URL 이 아니라 `<Image source={require(...)}>` 로 그려 반환 타입 자체가 웹
+  전용이므로, 그 자리는 백드롭을 만들 때 함께 정해진다.
+- `tsc` 는 상대 import 를 `paths` 로 못 돌려 core 원본을 계속 따라가므로 `ImportMeta.glob`
+  **타입 선언**도 필요했다(`core-import-meta.d.ts`). 그 선언의 부작용이 함정이다 — **치환되지 않은
+  glob 모듈을 import 하면 타입·lint 는 초록이고 런타임에만 죽는다.** core 의 glob 모듈 **여덟 개**
+  목록을 테스트가 고정해, 하나가 늘면 그때 알게 한다.
+- **제대로 된 답은 에셋 해석을 포트로 뒤집는 것**이고 그건 core 인터페이스를 늘리는 별도 결정이다.
+  나머지 일곱(`item-icons`·`boss-icons`·`drop-effect-frames`·`daily-quest-*`·`world-emblem`·
+  `feature-guides`)은 그 소비자를 옮길 때 같은 처리가 필요하다.
+
+**옮길 때 걸릴 것 하나 더 — 투명도 접미사가 안 먹는다.** v3 는 `var()` 색에 `/60` 을 붙인 유틸리티를
+**아예 생성하지 않는다**(실측). 웹에 두 자리 있다(`bg-surface/60`·`bg-secondary/10`) — 컴포넌트를
+옮길 때 명시 토큰이나 임의값으로 바꿔야 하고, 그냥 옮기면 **배경이 조용히 없어진다**.
 
 ### 4단계 — `app/` 화면 재작성
 

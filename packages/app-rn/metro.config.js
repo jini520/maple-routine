@@ -11,6 +11,7 @@ const path = require('node:path')
 const { getDefaultConfig } = require('expo/metro-config')
 const { withNativeWind } = require('nativewind/metro')
 
+const { resolveCoreShim } = require('./core-shims')
 const { CSS_ENTRY, INLINE_REM } = require('./nativewind.config')
 
 const projectRoot = __dirname
@@ -33,7 +34,18 @@ config.resolver.nodeModulesPaths = [
 // 켜면 버전 충돌로 중첩된 `.../node_modules/<pkg>/node_modules/<dep>` 를 못 찾게 된다.
 // 위 둘만으로 `packages/core` 가 해석되는 것을 `expo export` 로 확인했다.
 
-// ③ NativeWind 를 **맨 마지막에** 씌운다([[ADR-127]] 3단계). 이 래퍼는 트랜스포머를 갈아끼우고
+// ③ Vite 전용 API 를 쓰는 core 모듈을 RN 구현으로 갈아끼운다(표와 근거는 `core-shims.js`).
+//    체인을 끊지 않는 것이 요점이다 — 아래 `withNativeWind` 도 `resolveRequest` 를 감싸는데,
+//    그쪽은 기존 것을 물려받아 부르므로(`react-native-css-interop/dist/metro/index.js`) 이 훅을
+//    **먼저** 걸어야 둘이 함께 산다.
+const upstreamResolveRequest = config.resolver.resolveRequest
+config.resolver.resolveRequest = (context, moduleName, platform) => {
+  const shim = resolveCoreShim(moduleName)
+  if (shim !== undefined) return { type: 'sourceFile', filePath: shim }
+  return (upstreamResolveRequest ?? context.resolveRequest)(context, moduleName, platform)
+}
+
+// ④ NativeWind 를 **맨 마지막에** 씌운다([[ADR-127]] 3단계). 이 래퍼는 트랜스포머를 갈아끼우고
 //    설정을 새로 만들어 돌려주므로, 위 ①·② 를 마친 객체를 넘겨야 한다 — 순서를 뒤집어 래퍼 결과에
 //    `config.resolver` 를 통째로 대입하면 그쪽이 심어 둔 것이 지워진다. 순서가 곧 계약이다.
 module.exports = withNativeWind(config, {

@@ -20,11 +20,11 @@ import { rnKeyboardPort } from './native/adapters/rn-keyboard'
 import { rnNotificationsPort } from './native/adapters/rn-notifications'
 import { rnSplashScreenPort } from './native/adapters/rn-splash-screen'
 import { rnStatusBarPort } from './native/adapters/rn-status-bar'
+import { rnThemeAppearancePort } from './native/adapters/rn-theme-appearance'
 import {
   notImplementedBackGesturePort,
   notImplementedLiveUpdatePort,
   notImplementedSystemBarsPort,
-  notImplementedThemeAppearancePort,
 } from './native/adapters/not-implemented'
 import { rnPreferencesPort } from './storage/adapters/rn-preferences'
 import { rnSqlitePort } from './storage/adapters/rn-sqlite'
@@ -32,6 +32,9 @@ import { rnSqlitePort } from './storage/adapters/rn-sqlite'
 /**
  * 포트 13종을 한 번에 주입한다([[ADR-127]] 결정 4 — `packages/core` 는 인터페이스만 갖고 구현은
  * 앱이 넣는다). `app-capacitor` 의 짝은 `main.tsx` + `native/adapters/index.ts` 다.
+ *
+ * (아래 `setThemeAppearancePort` 가 값을 놓는 자리는 `src/theme/appearance-store.ts` 이고 그것을
+ * 읽는 것은 `ThemeProvider` 다 — 이 포트만 부팅 배선과 렌더 트리가 함께 있어야 성립한다.)
  *
  * ## 언제 불러야 하는가 — **저장소·네이티브를 처음 만지는 코드보다 먼저**
  *
@@ -50,19 +53,21 @@ import { rnSqlitePort } from './storage/adapters/rn-sqlite'
  * 자리에서 보장한다(`installCapacitorNativePorts` 와 같은 판단). 주입 순서는 서로 무관하다 —
  * 포트끼리 참조하지 않는다.
  *
- * ## 넷은 아직 구현이 아니라 **거부**다
+ * ## 셋은 아직 구현이 아니라 **거부**다
  *
- * `ThemeAppearancePort`·`SystemBarsPort`·`BackGesturePort` 는 3단계(뷰 레이어)에서, `LiveUpdatePort`
- * 는 [[ADR-127]] 결정 7 의 별도 ADR 에서 채워진다. 그때까지 비워 두지 않고 **던지는 구현**을 넣는
- * 이유는 `not-implemented.ts` 가 적어 두었다 — 슬롯의 일반 메시지는 *"주입을 잊었다"* 로 읽히지
- * *"아직 안 만들었다"* 로 읽히지 않는다.
+ * `SystemBarsPort`·`BackGesturePort` 는 3단계(뷰 레이어)에서, `LiveUpdatePort` 는 [[ADR-127]] 결정 7 의
+ * 별도 ADR 에서 채워진다. 그때까지 비워 두지 않고 **던지는 구현**을 넣는 이유는 `not-implemented.ts` 가
+ * 적어 두었다 — 슬롯의 일반 메시지는 *"주입을 잊었다"* 로 읽히지 *"아직 안 만들었다"* 로 읽히지 않는다.
+ *
+ * `ThemeAppearancePort` 는 그 목록에서 **나갔다**(step 1, theme-system) — 던지는 구현이 있던 자리에
+ * `rn-theme-appearance.ts` 가 들어왔다.
  */
 export function installPorts(): void {
   // 저장소 먼저 — 웹 쪽 `main.tsx` 와 같은 순서다(기술적 의존은 없고, 두 앱을 나란히 읽기 위한 것).
   setPreferencesPort(rnPreferencesPort)
   setSqlitePort(rnSqlitePort)
 
-  // RN 구현이 있는 일곱.
+  // RN 구현이 있는 여덟.
   setAdsPort(rnAdsPort)
   setColorSchemePort(rnColorSchemePort)
   setHuntingTimerPort(rnHuntingTimerPort)
@@ -70,10 +75,10 @@ export function installPorts(): void {
   setNotificationsPort(rnNotificationsPort)
   setSplashScreenPort(rnSplashScreenPort)
   setStatusBarPort(rnStatusBarPort)
+  setThemeAppearancePort(rnThemeAppearancePort)
 
-  // 아직 매핑되지 않은 넷 — 부르면 왜 없는지를 말하며 던진다.
+  // 아직 매핑되지 않은 셋 — 부르면 왜 없는지를 말하며 던진다.
   setBackGesturePort(notImplementedBackGesturePort)
   setLiveUpdatePort(notImplementedLiveUpdatePort)
   setSystemBarsPort(notImplementedSystemBarsPort)
-  setThemeAppearancePort(notImplementedThemeAppearancePort)
 }

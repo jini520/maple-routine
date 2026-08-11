@@ -245,7 +245,7 @@
 | `hunting-timer/` | 005 | **옮길 구현이 없다** — 아래 |
 | `keyboard.ts` · `status-bar.ts` | — | RN 내장(`Keyboard`·`StatusBar`) — 아래 |
 | `system-bars.ts` | 099 | 3단계 — safe-area-context 가 값을 내려준다. 그때까지 **던지는 구현** |
-| (`ThemeAppearancePort`) | 064, 099, 122 | 3단계 — React 상태로 재설계. 그때까지 **던지는 구현** |
+| (`ThemeAppearancePort`) | 064, 099, 122 | **완료**(3단계 step 1) — `vars()` 로 렌더 트리에 값을 내린다(`rn-theme-appearance.ts` + `src/theme/`) |
 | (`ColorSchemePort`) | 009, 104 | RN 내장 `Appearance` — 아래 |
 
 `hunting-timer/` 는 **옮길 것이 없다**(2026-08-11 확인). [[ADR-005]] 가 정한 Android Foreground
@@ -307,31 +307,34 @@ Kotlin 메타데이터 2.3 이라 RN 0.86(Kotlin 2.1)에서 컴파일이 깨지�
 [[ADR-119]]·[[ADR-126]] 이 정한 매니페스트 형식(`highlights` · `minNativeVersion` · 채널)을 새 프로토콜에
 어떻게 싣는지는 **별도 ADR이 필요하다.**
 
-### 부팅 배선 — 포트 13종, 그중 넷은 «던지는 구현» (2026-08-11)
+### 부팅 배선 — 포트 13종, 그중 셋은 «던지는 구현» (2026-08-11 · 테마 해소 2026-08-12)
 
 주입은 `packages/app-rn/src/boot.ts` 의 `installPorts()` 한 함수이고, 진입점 `index.ts` 가
 `registerRootComponent(App)` **앞에서** 부른다(웹 쪽 짝은 `main.tsx` + `native/adapters/index.ts`).
 세터를 한 자리에 모으는 이유는 하나가 빠지면 **그 기능만** 던지고 나머지는 멀쩡히 돌아 발견이 늦기
 때문이다.
 
-포트는 **13종**이고 RN 구현이 있는 것은 아홉이다. 나머지 넷은 `native/adapters/not-implemented.ts`
-가 채우되 **부르면 던진다** — 조용한 no-op 으로 두면 나중에 테마가 안 먹힐 때 원인을 못 찾는다.
+포트는 **13종**이고 RN 구현이 있는 것은 열이다. 나머지 셋은 `native/adapters/not-implemented.ts`
+가 채우되 **부르면 던진다** — 조용한 no-op 으로 두면 나중에 안전영역이 0 일 때 원인을 못 찾는다.
 같은 «아무것도 안 함»이라도 둘은 구분해야 한다:
 
 | | 예 | 처리 |
 |---|---|---|
 | 이 플랫폼에 개념이 없다 | `SplashScreenPort.show()` — RN 엔 웹뷰 리로드가 없어 덮을 구간이 안 생긴다 | **정당한 no-op** |
-| 해야 하는데 아직 안 했다 | 아래 넷 | **던진다** — 무엇이·왜·어디를 보면 되는지를 담아서 |
+| 해야 하는데 아직 안 했다 | 아래 셋 | **던진다** — 무엇이·왜·어디를 보면 되는지를 담아서 |
 
-- **`ThemeAppearancePort`·`SystemBarsPort`·`BackGesturePort` — 3단계(뷰 레이어)** 몫이다. 어댑터를 잘
-  짜면 되는 종류가 아니라 **웹뷰에서 side-effect 였던 것이 RN 에서는 렌더 트리의 일부**다(34토큰
-  `<style>` 주입 → React 상태 / `--safe-area-inset-*` 주입 → safe-area-context 가 컴포넌트로 / 손으로
-  만든 뒤로가기 → 네이티브 스택). 지금 흉내 내 봐야 3단계에 전부 버려진다.
+- **`SystemBarsPort`·`BackGesturePort` — 3단계(뷰 레이어)** 몫이다. 어댑터를 잘 짜면 되는 종류가
+  아니라 **웹뷰에서 side-effect 였던 것이 RN 에서는 렌더 트리의 일부**다(`--safe-area-inset-*` 주입 →
+  safe-area-context 가 컴포넌트로 / 손으로 만든 뒤로가기 → 네이티브 스택). 지금 흉내 내 봐야 3단계에
+  전부 버려진다.
 - **`LiveUpdatePort` — 별도 ADR** 몫이다(위 문단). 그래서 이 하나만 메시지가 «3단계»가 아니라
   [[ADR-127]] 결정 7 을 가리킨다 — 3단계라고 말하면 틀린 안내가 된다.
+- **`ThemeAppearancePort` 는 이 목록을 떠났다**(3단계 step 1, 2026-08-12). 진단은 맞았다 — 어댑터를 잘
+  짜는 문제가 아니라 값이 흐르는 방향이 반대였고, 그래서 포트가 놓은 값을 React 가 구독하는 구조가
+  됐다(아래 «3-1단계 결과»는 [README.md](./README.md)).
 
-> step 사양은 «미구현 3종»으로 적었지만 실제로 매핑되지 않은 포트는 **넷**이다(9 + 4 = 13).
-> `LiveUpdatePort` 를 빼 두면 `installPorts()` 가 *"전부를 한 자리에서 보장한다"* 는 자기 목적을 못
+> 매핑되지 않은 포트는 처음 **넷**이었다(9 + 4 = 13, step 사양의 «미구현 3종»은 `LiveUpdatePort` 를
+> 빼고 센 것이다). `LiveUpdatePort` 를 빼 두면 `installPorts()` 가 *"전부를 한 자리에서 보장한다"* 는 자기 목적을 못
 > 지키고, 그 자리는 슬롯의 일반 메시지(*"주입되지 않았습니다"*)로 떨어져 **왜** 없는지를 말하지
 > 않는다. 기대 목록을 손으로 적지 않고 **core 가 내보내는 `get*Port` 전부와 대조**하는 테스트를 둔
 > 것도 같은 이유다 — core 에 포트가 늘면 배선을 고칠 때까지 빨개진다.

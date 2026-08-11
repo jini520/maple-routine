@@ -1,12 +1,7 @@
-import type {
-  BackGesturePort,
-  LiveUpdatePort,
-  SystemBarsPort,
-  ThemeAppearancePort,
-} from '@core/native/ports'
+import type { BackGesturePort, LiveUpdatePort, SystemBarsPort } from '@core/native/ports'
 
 /**
- * **RN 으로 아직 매핑되지 않은 포트 넷** — 부팅 배선이 이것들도 주입하되, 부르면 **던진다**.
+ * **RN 으로 아직 매핑되지 않은 포트 셋** — 부팅 배선이 이것들도 주입하되, 부르면 **던진다**.
  *
  * 조용한 no-op 이 아닌 이유는 `native/ports.ts` 헤더가 이미 정해 두었다: *"no-op 으로 두면 '이
  * 플랫폼엔 그 기능이 없다'와 '포트가 없다'가 구분되지 않아, 스플래시가 안 걷히거나 광고가 안 뜨는
@@ -16,23 +11,23 @@ import type {
  * | | 예 | 처리 |
  * |---|---|---|
  * | 이 플랫폼에 개념이 없다 | `SplashScreenPort.show()` — RN 엔 웹뷰 리로드가 없어 덮을 구간이 안 생긴다 | **정당한 no-op** |
- * | 해야 하는데 아직 안 했다 | 이 파일의 넷 | **던진다** |
+ * | 해야 하는데 아직 안 했다 | 이 파일의 셋 | **던진다** |
  *
- * 그래서 `rn-splash-screen.ts` 의 `show()` 는 조용하고 이 파일은 시끄럽다. 나중에 테마가 안 먹히거나
- * 안전영역이 0 일 때, 원인이 "구현이 아직 없다"는 것이 **첫 호출에서** 드러나야 한다.
+ * 그래서 `rn-splash-screen.ts` 의 `show()` 는 조용하고 이 파일은 시끄럽다. 나중에 안전영역이 0 이거나
+ * 뒤로가기가 안 먹힐 때, 원인이 "구현이 아직 없다"는 것이 **첫 호출에서** 드러나야 한다.
  *
  * ---
  *
- * ## 왜 매핑이 안 되는가 — 셋은 뷰 레이어의 문제다
+ * ## 왜 매핑이 안 되는가 — 둘은 뷰 레이어의 문제다
  *
- * 이 셋은 어댑터를 잘 짜면 되는 종류가 아니다. **웹뷰에서 side-effect 였던 것이 RN 에서는 렌더
+ * 이 둘은 어댑터를 잘 짜면 되는 종류가 아니다. **웹뷰에서 side-effect 였던 것이 RN 에서는 렌더
  * 트리의 일부**라, 지금 어댑터로 흉내 내 봐야 뷰가 붙는 3단계에 전부 버려진다
  * (`docs/migration/README.md` — 3단계 «내비게이션 + `components/`»).
  *
- * - **`ThemeAppearancePort`** — 웹뷰 구현은 34토큰을 `<style>` 하나로 주입하고
- *   `data-theme`/`data-mode`·`color-scheme`·`scrollbar-color` 를 문서에 건다([[ADR-064]] 결정 10 ·
- *   [[ADR-099]] · [[ADR-122]]). RN 에는 CSS 도 DOM 도 없고, **테마는 side-effect 가 아니라 React
- *   상태로 적용된다** — 값이 흐르는 방향 자체가 반대다.
+ * **테마 적용 포트는 여기서 나갔다**(step 1, theme-system). 예상대로 어댑터를 잘 짜는 문제가
+ * 아니었고 — 값이 흐르는 방향이 반대라 — 포트가 놓은 값을 React 가 구독하는 구조로 옮겼다
+ * (`rn-theme-appearance.ts` + `src/theme/`). 남은 둘도 같은 성질이라 같은 방식으로 풀린다.
+ *
  * - **`SystemBarsPort`** — `refreshSafeAreaInsets()` 가 하는 일은 `--safe-area-inset-*` **CSS 변수를
  *   주입**하는 것이다([[ADR-099]] 가 스크롤포트를 그 값에 맞췄다). RN 은
  *   `react-native-safe-area-context` 가 같은 값을 컴포넌트로 내려준다 — **주입할 대상이 없다.**
@@ -43,7 +38,7 @@ import type {
  * **다만 버리는 것은 구현이지 결정이 아니다.** [[ADR-120]] 이 정한 동작(탭바 동반 이동·시차·3버튼
  * 수렴)은 새 구조에서도 성립해야 하고, 기본값이 그것과 다르면 기본값이 아니라 [[ADR-120]] 을 따른다.
  *
- * ## 넷째는 성격이 다르다 — `LiveUpdatePort`
+ * ## 셋째는 성격이 다르다 — `LiveUpdatePort`
  *
  * 이쪽은 뷰 레이어가 아니라 **프로토콜**이 없다. 다른 어댑터는 같은 일을 하는 다른 SDK 로 바꾸는
  * 것이지만 OTA 는 @capgo 자체 호스팅 매니페스트 → `expo-updates` 로 **형식 자체가 바뀌고**,
@@ -51,10 +46,9 @@ import type {
  * `minNativeVersion` · 채널)을 새 프로토콜에 어떻게 싣는지는 **[[ADR-127]] 결정 7 이 별도 ADR 로
  * 미뤄 둔 결정**이다. 그래서 3단계가 아니라 그 ADR 을 가리킨다.
  *
- * (step 사양은 "미구현 3종"이라고 적었지만 실제로 매핑되지 않은 포트는 넷이다 — 어댑터 9종 +
- * 이 파일의 4종 = 포트 13종. 하나를 빼 두면 `installPorts()` 가 *"전부를 한 자리에서 보장한다"* 는
- * 자기 목적을 못 지키고, 그 자리는 슬롯의 일반 메시지(*"주입되지 않았습니다"*)로 떨어져 **왜**
- * 없는지를 말하지 않는다.)
+ * (포트는 13종이고 그중 실구현이 10, 이 파일이 3 이다. 하나를 비워 두면
+ * `installPorts()` 가 *"전부를 한 자리에서 보장한다"* 는 자기 목적을 못 지키고, 그 자리는 슬롯의
+ * 일반 메시지(*"주입되지 않았습니다"*)로 떨어져 **왜** 없는지를 말하지 않는다.)
  */
 
 const MIGRATION_DOC = 'docs/migration/README.md'
@@ -68,8 +62,6 @@ function notImplementedMessage(port: string, method: string, reason: string): st
   return `${port}.${method}() 는 RN 에서 아직 구현되지 않았습니다 — ${reason} ${MIGRATION_DOC} 참고.`
 }
 
-const THEME_REASON =
-  '테마 적용은 단계 3(뷰 레이어)에서 React 상태로 재설계됩니다(RN 에는 CSS 도 DOM 도 없습니다).'
 const SYSTEM_BARS_REASON =
   '안전영역·시스템 바는 단계 3(뷰 레이어)에서 react-native-safe-area-context 가 컴포넌트로 값을 내려줍니다(주입할 CSS 변수가 없습니다).'
 const BACK_GESTURE_REASON =
@@ -78,9 +70,9 @@ const LIVE_UPDATE_REASON =
   'OTA 는 프로토콜 자체가 바뀌어(@capgo → expo-updates) [[ADR-127]] 결정 7 이 별도 ADR 로 미뤄 둔 결정입니다.'
 
 /**
- * 동기 시그니처(`apply` · `isSupported` · `openStore`)는 **동기로** 던진다. 여기서 Promise 를 쓸
- * 방법이 없기도 하지만, `isSupported()` 가 동기인 것 자체가 계약이다 — 매니페스트를 받기 **전에**
- * 판정해야 지원하지 않는 환경에서 네트워크가 안 나간다(`native/ports.ts`).
+ * 동기 시그니처(`isSupported` · `openStore`)는 **동기로** 던진다. 여기서 Promise 를 쓸 방법이 없기도
+ * 하지만, `isSupported()` 가 동기인 것 자체가 계약이다 — 매니페스트를 받기 **전에** 판정해야
+ * 지원하지 않는 환경에서 네트워크가 안 나간다(`native/ports.ts`).
  */
 function throwSync(port: string, method: string, reason: string): never {
   throw new Error(notImplementedMessage(port, method, reason))
@@ -92,10 +84,6 @@ function throwSync(port: string, method: string, reason: string): never {
  */
 async function throwAsync(port: string, method: string, reason: string): Promise<never> {
   throw new Error(notImplementedMessage(port, method, reason))
-}
-
-export const notImplementedThemeAppearancePort: ThemeAppearancePort = {
-  apply: () => throwSync('ThemeAppearancePort', 'apply', THEME_REASON),
 }
 
 export const notImplementedSystemBarsPort: SystemBarsPort = {

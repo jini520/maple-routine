@@ -17,8 +17,17 @@
 // NativeWind 배선은 두 파일로 나뉜다([[ADR-127]] 3단계) — `globalSetup` 이 `global.css` 를 실행당
 // 한 번 컴파일하고, `setupFilesAfterEnv` 가 그 결과를 테스트마다 주입한다. 나눈 이유는 컴파일이
 // 비동기라 `setupFiles`(동기)에 못 들어가고, 매 테스트 파일마다 다시 하면 느리기 때문이다.
+//
+// `moduleNameMapper` 가 여기 있는 것은 `@core/*` 때문이 **아니다**(그건 위 문단대로 tsconfig 이 푼다).
+// Vite 전용 API 를 쓰는 core 모듈을 RN 구현으로 갈아끼우는 표이고, 그 표는 `core-shims.js` 에 있어
+// Metro 와 공유한다 — 따로 적으면 "앱은 도는데 테스트만 죽는"(또는 반대) 어긋남이 조용히 생긴다.
+// jest 는 preset 의 매퍼와 여기 매퍼를 **합치므로** `@core/*` 매핑은 그대로 살아 있고, 이 항목들이
+// 먼저 검사된다.
+const { coreShimModuleNameMapper } = require('./core-shims')
+
 module.exports = {
   preset: 'jest-expo',
   globalSetup: '<rootDir>/jest.global-setup.js',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+  moduleNameMapper: coreShimModuleNameMapper(),
 }
