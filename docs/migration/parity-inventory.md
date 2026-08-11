@@ -234,7 +234,7 @@
 
 | 파일 | ADR 계약 | RN 구현 |
 |---|---|---|
-| `ads.ts` | 005, 090 | `react-native-google-mobile-ads` |
+| `ads.ts` | 005, 090 | `react-native-google-mobile-ads` **16.0.3 고정** — 아래 |
 | `live-update.ts` | 022, 024, 026, 027, 117, 119, 126 | `expo-updates` — **재설계 필요** |
 | `back-gesture.ts` | 003, 120 | **삭제** — 네이티브 스택 기본 |
 | `splash-screen.ts` | 025, 027, 117 | `react-native-bootsplash` |
@@ -251,6 +251,15 @@ Service·iOS Live Activity 커스텀 플러그인은 **작성된 적이 없다**
 옮기면 웹 전용 동작을 네이티브로 승격시키는 것이고, `start()` 가 조용히 resolve 하면 화면은 타이머가
 도는 줄 아는데 알림도 소리도 없다. **[[ADR-005]] 를 실제로 구현할지는 전환과 별개 결정이다**(소비자도
 없다 — `app/hunting-timer/`·`features/hunting-timer/` 는 디렉터리 자체가 없다).
+
+`ads.ts` 는 **판정을 옮기지 않는다**(2026-08-11 구현). 광고 단위 ID·테스트 광고 여부는
+`packages/core` 의 순수 함수 둘이 계속 갖고, RN 어댑터는 그것을 부르기만 한다 — 실 ID로 자기 광고를
+누르면 AdMob 계정이 정지되는데 그 방어선이 플랫폼마다 두 벌이 되면 한쪽만 틀려도 사고가 난다.
+어댑터가 새로 정한 것은 **인자를 무엇으로 채우는가** 하나이고(`EXPO_PUBLIC_*` + `__DEV__`,
+`ads-env.ts`), 앱 ID(`~`)는 `app.json` 의 config plugin 인자에 두어 `expo prebuild` 가 두 네이티브
+설정에 쓴다. 버전을 **16.0.3 으로 고정**한 이유는 최신 16.4.0 이 끌어오는 play-services-ads 25.4.0 이
+Kotlin 메타데이터 2.3 이라 RN 0.86(Kotlin 2.1)에서 컴파일이 깨지기 때문이고, 16.0.3 의 24.9.0 은
+지금 배포 중인 Capacitor 앱과 같은 라인이다. 자세한 내용은 [features/ads.md](../features/ads.md).
 
 `live-update.ts` 만 성격이 다르다. 다른 어댑터는 같은 일을 하는 다른 SDK로 바꾸는 것이지만, 이쪽은
 **OTA 프로토콜 자체가 바뀐다**(@capgo 자체 호스팅 매니페스트 → expo-updates). [[ADR-022]]·[[ADR-026]]·
