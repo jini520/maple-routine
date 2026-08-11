@@ -9,8 +9,8 @@ import type { BossProfitRow, BossProfitWeeklySubtotal } from '../../features/bos
 import { isSeasonBossName } from '../../lib/boss-matching'
 import { isValuableDrop } from '../../lib/valuable-drops'
 import { sumDropPayout } from '../../lib/drop-price'
-import type { RecordedDrop } from '../../types/drops'
-import weeklyBossesData from '../../data/weekly-bosses.json'
+import type { RecordedDrop } from '@core/types/drops'
+import weeklyBossesData from '@core/data/weekly-bosses.json'
 
 export interface BossReferenceEntry {
   boss: string

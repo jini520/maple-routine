@@ -14,8 +14,8 @@ import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import { DifficultyBadge } from '../../components/atoms/DifficultyBadge/DifficultyBadge'
 import { formatMesoUnits } from '../../lib/drop-price'
 import { getItemIconUrl } from '../../lib/item-icons'
-import type { BossDifficulty } from '../../types'
-import type { RecordedDrop } from '../../types/drops'
+import type { BossDifficulty } from '@core/types'
+import type { RecordedDrop } from '@core/types/drops'
 
 /** 자릿수 상한 — 조 단위를 넘기면 `Number` 정밀도가 아니라 화면이 먼저 깨진다. */
 const MAX_MESO = 9_999_999_999_999

@@ -4,7 +4,7 @@ import {
   NexonBadRequestError,
   NexonNetworkError,
   NexonRateLimitError,
-} from '../../../nexon/errors'
+} from '@core/nexon/errors'
 import { formatScheduleSyncError } from '../format'
 import { toScheduleSyncError } from '../schedule-sync'
 

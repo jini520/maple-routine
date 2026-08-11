@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { MapleCharacter } from '../../../types'
+import type { MapleCharacter } from '@core/types'
 import { pickRepresentativeCharacter } from '../representative-character'
 
 function character(overrides: Partial<MapleCharacter> & { name: string; level: number }): MapleCharacter {

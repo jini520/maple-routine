@@ -3,8 +3,8 @@ import '@testing-library/jest-dom/vitest'
 import { act, cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { NexonAuthError, NexonRateLimitError } from '../../../nexon/errors'
-import type { CharacterPickerEntry } from '../../../types'
+import { NexonAuthError, NexonRateLimitError } from '@core/nexon/errors'
+import type { CharacterPickerEntry } from '@core/types'
 
 const { getCharacterPickerRosterMock, noticeApiKeyIssueMock } = vi.hoisted(() => ({
   getCharacterPickerRosterMock: vi.fn(),

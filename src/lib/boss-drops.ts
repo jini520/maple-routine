@@ -1,14 +1,14 @@
-import accessoryBoxesData from '../data/accessory-boxes.json'
-import bossRingBoxesData from '../data/boss-ring-boxes.json'
-import itemDropTableData from '../data/item-drop-table.json'
+import accessoryBoxesData from '@core/data/accessory-boxes.json'
+import bossRingBoxesData from '@core/data/boss-ring-boxes.json'
+import itemDropTableData from '@core/data/item-drop-table.json'
 import {
   SELECTABLE_DROP_CATEGORIES,
   type DropCandidate,
   type DropCategory,
   type FixedDropGroup,
   type RecordedDrop,
-} from '../types/drops'
-import { BOSS_DIFFICULTIES, type BossDifficulty } from '../types/scheduler'
+} from '@core/types/drops'
+import { BOSS_DIFFICULTIES, type BossDifficulty } from '@core/types/scheduler'
 
 // item-drop-table.json / boss-ring-boxes.json / accessory-boxes.json 조회 헬퍼(ADR-038). 게임
 // 수치 데이터는 여기서 읽기만 하고 추정하지 않는다([[ADR-006]]).

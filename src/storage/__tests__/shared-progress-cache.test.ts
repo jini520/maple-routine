@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { Preferences } from '@capacitor/preferences'
-import type { SharedProgressEntry } from '../../types'
+import type { SharedProgressEntry } from '@core/types'
 import {
   getAccountSharedProgress,
   getWorldSharedProgress,

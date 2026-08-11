@@ -3,7 +3,7 @@ import { ArrowLeft, Minus, Plus, Users } from 'lucide-react'
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
 import { DifficultySegment } from '../../components/molecules/DifficultySegment/DifficultySegment'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
-import weeklyBossesData from '../../data/weekly-bosses.json'
+import weeklyBossesData from '@core/data/weekly-bosses.json'
 import { getMaxPartySize } from '../../lib/boss-crystal-prices'
 import {
   countManualWeeklyBosses,
@@ -16,7 +16,7 @@ import { CharacterSelectDropdown } from '../../components/molecules/CharacterSel
 import { partySizeKey, useBossSchedulerStore, type BossTab } from '../../features/boss-scheduler/store'
 import { useToastStore } from '../../features/toast/store'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
-import type { BossDifficulty } from '../../types'
+import type { BossDifficulty } from '@core/types'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { Badge } from '../../components/atoms/Badge/Badge'
 import { useStackBack } from '../../lib/use-stack-back'

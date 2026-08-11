@@ -7,7 +7,7 @@ import type {
   DailyContent,
   SchedulerCharacterState,
   WeeklyContent,
-} from '../../../types'
+} from '@core/types'
 import { seedManualTrackedContent } from '../seed'
 
 vi.mock('../../schedule-sync/schedule-sync', () => ({

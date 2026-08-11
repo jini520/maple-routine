@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { BossContent, DailyContent, SchedulerCharacterState, WeeklyContent } from '../../types'
+import type { BossContent, DailyContent, SchedulerCharacterState, WeeklyContent } from '@core/types'
 import { getSectionPresence, hasCharacterScopeCompletion } from '../scheduler-activity'
 
 function daily(overrides: Partial<DailyContent> = {}): DailyContent {

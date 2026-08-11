@@ -3,7 +3,7 @@
 // 아바타 이미지를 얼굴 기준으로 크롭하고(원본이 전신이라 그대로 쓰면 얼굴이 작다), 그 둘레에
 // 주간/월간 처치 수를 링으로 그린다. 자기 상자 안에서 끝나 화면의 sticky·스태킹과 무관하다.
 
-import type { BossCycle } from '../../types'
+import type { BossCycle } from '@core/types'
 
 // components/CharacterTrackingPicker와 동일한 얼굴 크롭 기법(ADR-015)을 이 화면의 32px
 // 아바타 슬롯 크기에 맞춰 재사용한다 — 이 프로젝트는 화면마다 UI를 그대로 복제하는 관례를

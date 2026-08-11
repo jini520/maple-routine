@@ -30,7 +30,7 @@ import { fileURLToPath } from 'node:url'
 // 배포 스크립트가 릴리스 경로의 일부라 의존성이 늘수록 릴리스가 깨질 표면이 넓어지기 때문이고,
 // 정규식으로 파일을 긁지 않은 이유는 그 방식이 원천의 형식이 바뀌는 순간 조용히 틀린 값을 내기
 // 때문이다. release-notes.ts 는 순수 데이터라 타입 선언 말고는 스트리핑할 것도 없다.
-import { findReleaseNote } from '../src/data/release-notes.ts'
+import { findReleaseNote } from '../packages/core/src/data/release-notes.ts'
 
 const REPO = 'jini520/maple-routine'
 
@@ -107,7 +107,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const note = findReleaseNote(version)
   const gap = describeReleaseNoteGap(note)
   if (gap !== null) {
-    console.error(`src/data/release-notes.ts 의 ${version}: ${gap}`)
+    console.error(`packages/core/src/data/release-notes.ts 의 ${version}: ${gap}`)
     process.exit(1)
   }
 

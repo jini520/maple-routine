@@ -15,8 +15,8 @@ import type { BossDropRecord } from '../../storage/boss-drops'
 import { getBossProfitRecords } from '../../storage/boss-profit'
 import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
-import type { BossDifficulty } from '../../types'
-import type { RecordedDrop } from '../../types/drops'
+import type { BossDifficulty } from '@core/types'
+import type { RecordedDrop } from '@core/types/drops'
 
 /** 목록의 한 줄 = 기록 한 건. 어느 보스·누구의 것인지가 함께 붙어야 값을 매길 수 있다. */
 export interface DropPriceEntry {

@@ -1,5 +1,5 @@
 import { getBossProfitDb } from './sqlite/db'
-import type { BossCycle } from '../types/scheduler'
+import type { BossCycle } from '@core/types/scheduler'
 
 export interface BossProfitRecord {
   ocid: string

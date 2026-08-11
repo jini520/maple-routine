@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import jobThemes from '../../data/job-themes.json'
+import jobThemes from '@core/data/job-themes.json'
 import { contrastHex, hexToOklch } from '../color'
 import {
   DEFAULT_THEME,
@@ -10,7 +10,7 @@ import {
   groupThemesByCategory,
   isThemeName,
 } from '../theme-registry'
-import type { ThemeDefinition, ThemeName } from '../../types/theme'
+import type { ThemeDefinition, ThemeName } from '@core/types/theme'
 
 const NAMES = Object.keys(jobThemes) as ThemeName[]
 

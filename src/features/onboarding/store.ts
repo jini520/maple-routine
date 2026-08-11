@@ -1,6 +1,6 @@
 import { create } from 'zustand'
-import { fetchCharacterList } from '../../nexon/character'
-import { isInvalidApiKeyError, NexonRateLimitError } from '../../nexon/errors'
+import { fetchCharacterList } from '@core/nexon/character'
+import { isInvalidApiKeyError, NexonRateLimitError } from '@core/nexon/errors'
 import {
   clearAuthConfig,
   getAuthConfig,

@@ -1,6 +1,6 @@
-import weeklyBossesData from '../data/weekly-bosses.json'
+import weeklyBossesData from '@core/data/weekly-bosses.json'
 import { getBossReferenceOrder, matchBossContent } from './boss-matching'
-import type { BossContent, BossCycle } from '../types'
+import type { BossContent, BossCycle } from '@core/types'
 import type { ManualTrackedItem } from '../storage/manual-tracked-content'
 
 interface BossReferenceEntry {

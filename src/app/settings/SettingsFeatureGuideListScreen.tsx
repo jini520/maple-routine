@@ -5,8 +5,8 @@ import {
   FEATURE_GUIDES,
   FEATURE_GUIDE_GROUP_LABELS,
   FEATURE_GUIDE_GROUP_ORDER,
-} from '../../data/feature-guides'
-import type { FeatureGuideGroup } from '../../types'
+} from '@core/data/feature-guides'
+import type { FeatureGuideGroup } from '@core/types'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { StackScreen } from '../../components/templates/StackScreen/StackScreen'
 import { Card } from '../../components/atoms/Card/Card'

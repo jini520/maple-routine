@@ -1,5 +1,5 @@
-import bossRingBoxesData from '../data/boss-ring-boxes.json'
-import itemIconsData from '../data/item-icons.json'
+import bossRingBoxesData from '@core/data/boss-ring-boxes.json'
+import itemIconsData from '@core/data/item-icons.json'
 
 // ADR-011 결정 6 / ADR-038 결정 4: "이름 → 파일명 계산"이 아니라 "매핑 테이블에서 조회, 없으면
 // 폴백(null)". 반지·일반 아이템 모두 `iconFile`(전체 파일명)로 명시 매핑돼 있으므로 링 접미사

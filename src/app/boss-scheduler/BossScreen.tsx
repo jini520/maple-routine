@@ -1,4 +1,4 @@
-import type { BossContent, BossDifficulty, CharacterPickerEntry } from '../../types'
+import type { BossContent, BossDifficulty, CharacterPickerEntry } from '@core/types'
 import { RefreshCw, SlidersHorizontal, Swords, Users } from 'lucide-react'
 import { useScreenStackStore } from '../../features/screen-stack/store'
 import { formatSyncedAt } from '../../features/schedule-sync/format'

@@ -17,8 +17,8 @@ import { useSettingsStore } from '../features/settings/store'
 import { useThemeStore } from '../features/theme/store'
 import { useTrackingModeStore } from '../features/tracking-mode/store'
 import { getThemeDefinition } from '../lib/theme-registry'
-import jobThemes from '../data/job-themes.json'
-import type { ThemeDefinition, ThemeName } from '../types/theme'
+import jobThemes from '@core/data/job-themes.json'
+import type { ThemeDefinition, ThemeName } from '@core/types/theme'
 
 // 배경 있는 테마 정의를 주입하기 위한 부분 모킹(ADR-106 결정 3) — 지금은 배경을 선언한 테마가
 // 0개라 테마 이름으로는 "있음" 분기를 못 태운다. 나머지 export 는 실물 그대로다.

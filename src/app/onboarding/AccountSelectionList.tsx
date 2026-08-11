@@ -1,5 +1,5 @@
 import { AlertTriangle } from 'lucide-react'
-import type { MapleAccount } from '../../types'
+import type { MapleAccount } from '@core/types'
 import { pickRepresentativeCharacter } from '../../features/onboarding/representative-character'
 import { useAccountProbes } from '../../features/onboarding/use-account-probes'
 import { useApiKeyNotice } from '../../features/onboarding/use-api-key-notice'

@@ -21,7 +21,7 @@ import {
 import { getBossPartySettings, setBossPartySize } from '../../storage/boss-party-settings'
 import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getCachedSchedulerState } from '../../storage/scheduler-cache'
-import type { BossDifficulty } from '../../types'
+import type { BossDifficulty } from '@core/types'
 import { compareByName } from '../onboarding/representative-character'
 import { useToastStore } from '../toast/store'
 import { seedManualTrackedContent } from '../tracking-mode/seed'

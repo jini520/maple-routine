@@ -11,7 +11,7 @@ import type { DailyQuestRegionCrop } from '../../lib/daily-quest-backgrounds'
 import { getDailyQuestRegionIconUrl } from '../../lib/daily-quest-icons'
 import { matchDailyQuestRegionSlug, stripDailyQuestPrefix } from '../../lib/daily-quest-matching'
 import { MEDIA_TEXT_SHADOW } from '../../lib/media-card'
-import type { DailyContent } from '../../types'
+import type { DailyContent } from '@core/types'
 import { QuestStateBadge } from './content-badges'
 
 // "몬스터파크"만 배경+아이콘 카드로 확장한다 — 다른 kind: 'contents' 항목이 생기면 그때

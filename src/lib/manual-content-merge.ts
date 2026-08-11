@@ -1,4 +1,4 @@
-import type { DailyContent, WeeklyContent } from '../types'
+import type { DailyContent, WeeklyContent } from '@core/types'
 import type { ManualTrackedItem } from '../storage/manual-tracked-content'
 
 // scheduler-content-template.json의 항목 shape — Nexon wire 응답(NexonDailyContentWire/

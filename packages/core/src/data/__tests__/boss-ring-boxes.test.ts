@@ -6,7 +6,9 @@ import { describe, expect, it } from 'vitest'
 import bossRingBoxes from '../boss-ring-boxes.json'
 import itemDropTable from '../item-drop-table.json'
 
-const ringsDir = join(dirname(fileURLToPath(import.meta.url)), '../../assets/items/rings')
+// 반지 아이콘 에셋은 아직 앱(`src/assets/`)에 있다 — 그것을 읽는 `lib/item-icons` 가 다음 step 에서
+// core 로 넘어올 때 함께 정리된다([[ADR-127]] 0단계).
+const ringsDir = join(dirname(fileURLToPath(import.meta.url)), '../../../../../src/assets/items/rings')
 
 function sum(values: number[]): number {
   return values.reduce((total, value) => total + value, 0)

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { NexonBadRequestError, NexonNetworkError } from '../../../nexon/errors'
+import { NexonBadRequestError, NexonNetworkError } from '@core/nexon/errors'
 import { clearScheduleProbeLedger, getScheduleProbeLedger } from '../../../storage/schedule-probe-ledger'
-import type { SchedulerCharacterState } from '../../../types'
+import type { SchedulerCharacterState } from '@core/types'
 import { resolveCharacterEligibility } from '../character-eligibility'
 
 vi.mock('@capacitor/preferences', () => {
@@ -25,7 +25,7 @@ const { fetchSchedulerCharacterStateMock } = vi.hoisted(() => ({
   fetchSchedulerCharacterStateMock: vi.fn(),
 }))
 
-vi.mock('../../../nexon/schedule', () => ({
+vi.mock('@core/nexon/schedule', () => ({
   fetchSchedulerCharacterState: fetchSchedulerCharacterStateMock,
 }))
 

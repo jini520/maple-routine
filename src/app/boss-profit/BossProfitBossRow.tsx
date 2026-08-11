@@ -9,7 +9,7 @@ import { DifficultyBadge } from '../../components/atoms/DifficultyBadge/Difficul
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
 import { useToastStore } from '../../features/toast/store'
 import { getItemIconUrl } from '../../lib/item-icons'
-import type { RecordedDrop } from '../../types/drops'
+import type { RecordedDrop } from '@core/types/drops'
 import { BossDropSheet } from './BossDropSheet'
 import { useBossProfitContext } from './boss-profit-context'
 import { clamp, findPortraitSlug } from './character-groups'

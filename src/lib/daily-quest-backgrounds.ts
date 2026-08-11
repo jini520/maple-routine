@@ -1,4 +1,4 @@
-import cropsData from '../data/daily-quest-region-crops.json'
+import cropsData from '@core/data/daily-quest-region-crops.json'
 
 export interface DailyQuestRegionCrop {
   size: string

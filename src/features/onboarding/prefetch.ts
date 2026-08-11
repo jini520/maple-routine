@@ -1,9 +1,9 @@
-import { fetchSchedulerCharacterState } from '../../nexon/schedule'
+import { fetchSchedulerCharacterState } from '@core/nexon/schedule'
 import { setCachedSchedulerState } from '../../storage/scheduler-cache'
 import { fetchCharacterBasicCached } from '../schedule-sync/character-basic-fetch'
 import { resolveCharacterEligibility } from '../schedule-sync/character-eligibility'
 import { markSyncAttemptedThisRun } from '../schedule-sync/sync-run-state'
-import type { MapleCharacter } from '../../types'
+import type { MapleCharacter } from '@core/types'
 
 export interface PrefetchProgress {
   completed: number

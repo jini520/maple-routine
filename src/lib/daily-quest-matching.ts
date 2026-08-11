@@ -1,4 +1,4 @@
-import dailyQuestRegionsData from '../data/daily-quest-regions.json'
+import dailyQuestRegionsData from '@core/data/daily-quest-regions.json'
 
 const DAILY_QUEST_PREFIX = '[일일 퀘스트] '
 

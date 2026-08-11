@@ -131,7 +131,7 @@ vi.mock('../../../storage/tracking-mode', () => ({ getTrackingMode: async () => 
 
 vi.mock('../../../storage/manual-tracked-content', () => ({ getManualTrackedContent: async () => [] }))
 
-vi.mock('../../../nexon/character', () => ({
+vi.mock('@core/nexon/character', () => ({
   fetchCharacterList: async () => [{ accountId: 'account-1', characters: world.characters }],
   fetchCharacterBasic: async (_apiKey: string, ocid: string) => {
     const cached = world.basicCache.get(ocid)
@@ -140,7 +140,7 @@ vi.mock('../../../nexon/character', () => ({
   },
 }))
 
-vi.mock('../../../nexon/schedule', () => ({
+vi.mock('@core/nexon/schedule', () => ({
   fetchSchedulerCharacterState: async (_apiKey: string, ocid: string, date?: string) => {
     world.apiCalls.push({ ocid, date: date ?? null })
     const handler = world.apiByOcid.get(ocid)
@@ -168,8 +168,8 @@ import {
   getMinQueryableDate,
   isPeriodQueryable,
 } from '../../../lib/boss-profit-period'
-import { NexonBadRequestError } from '../../../nexon/errors'
-import type { BossContent, BossCycle, SchedulerCharacterState } from '../../../types'
+import { NexonBadRequestError } from '@core/nexon/errors'
+import type { BossContent, BossCycle, SchedulerCharacterState } from '@core/types'
 import { useBossProfitStore } from '../store'
 
 // ── 더미 세계 ────────────────────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-import weeklyRegionalQuestsData from '../data/weekly-regional-quests.json'
+import weeklyRegionalQuestsData from '@core/data/weekly-regional-quests.json'
 
 interface WeeklyRegionalQuestEntry {
   name: string

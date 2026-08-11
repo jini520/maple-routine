@@ -8,9 +8,9 @@
 // 파일명은 macOS가 NFD로 저장하고 소스 리터럴은 보통 NFC라, 조회 함수들이 양쪽을 NFC로
 // 정규화한다 — 이 테스트는 그 정규화까지 함께 검증하는 셈이다.
 import { describe, expect, it } from 'vitest'
-import weeklyBossesData from '../../data/weekly-bosses.json'
-import dailyQuestRegionCrops from '../../data/daily-quest-region-crops.json'
-import jobThemesData from '../../data/job-themes.json'
+import weeklyBossesData from '@core/data/weekly-bosses.json'
+import dailyQuestRegionCrops from '@core/data/daily-quest-region-crops.json'
+import jobThemesData from '@core/data/job-themes.json'
 import { getBossPortraitUrl } from '../boss-icons'
 import { getDailyQuestBackgroundUrl } from '../daily-quest-backgrounds'
 import { getThemeBackgroundUrl } from '../theme-backgrounds'

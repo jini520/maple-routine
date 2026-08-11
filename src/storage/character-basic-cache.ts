@@ -1,5 +1,5 @@
 import { Preferences } from '@capacitor/preferences'
-import type { CharacterBasicProfile } from '../types'
+import type { CharacterBasicProfile } from '@core/types'
 import {
   characterBasicCacheIndexKey,
   characterBasicCacheKey,

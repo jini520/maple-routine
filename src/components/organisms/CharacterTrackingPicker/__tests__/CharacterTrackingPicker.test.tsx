@@ -4,7 +4,7 @@ import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { CharacterTrackingPicker } from '../CharacterTrackingPicker'
-import type { CharacterPickerEntry } from '../../../../types'
+import type { CharacterPickerEntry } from '@core/types'
 
 afterEach(() => {
   cleanup()

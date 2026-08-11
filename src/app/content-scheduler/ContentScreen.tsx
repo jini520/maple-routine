@@ -1,4 +1,4 @@
-import type { CharacterPickerEntry, DailyContent, WeeklyContent } from '../../types'
+import type { CharacterPickerEntry, DailyContent, WeeklyContent } from '@core/types'
 import { Outlet, useNavigate } from 'react-router-dom'
 import { useScreenStackStore } from '../../features/screen-stack/store'
 import { formatSyncedAt } from '../../features/schedule-sync/format'

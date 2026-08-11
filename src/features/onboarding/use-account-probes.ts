@@ -3,7 +3,7 @@ import { fetchCharacterBasicCached } from '../schedule-sync/character-basic-fetc
 import { toScheduleSyncError } from '../schedule-sync/schedule-sync'
 import type { ScheduleSyncError } from '../schedule-sync/schedule-sync'
 import { getAuthConfig } from '../../storage/api-key'
-import type { MapleAccount, MapleCharacter } from '../../types'
+import type { MapleAccount, MapleCharacter } from '@core/types'
 import { pickRepresentativeCharacter } from './representative-character'
 
 /**

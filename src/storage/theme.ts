@@ -1,6 +1,6 @@
 import { Preferences } from '@capacitor/preferences'
 import { isThemeName } from '../lib/theme-registry'
-import type { ThemeName } from '../types'
+import type { ThemeName } from '@core/types'
 import { STORAGE_KEYS } from './keys'
 
 export async function getTheme(): Promise<ThemeName | null> {

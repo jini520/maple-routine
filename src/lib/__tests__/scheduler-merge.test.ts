@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { SchedulerCharacterState, SharedProgressEntry } from '../../types'
+import type { SchedulerCharacterState, SharedProgressEntry } from '@core/types'
 import { mergeSchedulerState } from '../scheduler-merge'
 
 function baseState(overrides: Partial<SchedulerCharacterState> = {}): SchedulerCharacterState {

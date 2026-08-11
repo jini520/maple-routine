@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { CharacterPickerEntry, MapleAccount, MapleCharacter, SchedulerCharacterState } from '../../../types'
-import { NexonAuthError, NexonBadRequestError, NexonNetworkError, NexonRateLimitError } from '../../../nexon/errors'
+import type { CharacterPickerEntry, MapleAccount, MapleCharacter, SchedulerCharacterState } from '@core/types'
+import { NexonAuthError, NexonBadRequestError, NexonNetworkError, NexonRateLimitError } from '@core/nexon/errors'
 
 const { fetchCharacterListMock, fetchCharacterBasicMock, fetchSchedulerCharacterStateMock } = vi.hoisted(() => ({
   fetchCharacterListMock: vi.fn(),
@@ -40,12 +40,12 @@ const { mergeSchedulerStateMock } = vi.hoisted(() => ({
   mergeSchedulerStateMock: vi.fn(),
 }))
 
-vi.mock('../../../nexon/character', () => ({
+vi.mock('@core/nexon/character', () => ({
   fetchCharacterList: fetchCharacterListMock,
   fetchCharacterBasic: fetchCharacterBasicMock,
 }))
 
-vi.mock('../../../nexon/schedule', () => ({
+vi.mock('@core/nexon/schedule', () => ({
   fetchSchedulerCharacterState: fetchSchedulerCharacterStateMock,
 }))
 

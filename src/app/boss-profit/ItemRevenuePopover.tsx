@@ -16,7 +16,7 @@
 import { createPortal } from 'react-dom'
 import { formatMesoShort } from '../../lib/boss-profit-delta'
 import { dropPayoutMeso } from '../../lib/drop-price'
-import type { RecordedDrop } from '../../types/drops'
+import type { RecordedDrop } from '@core/types/drops'
 import { getItemIconUrl } from '../../lib/item-icons'
 import { anchorPopover } from '../../lib/popover-anchor'
 

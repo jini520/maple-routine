@@ -5,7 +5,7 @@ import { groupTotalMeso } from '../character-groups'
 import type { CharacterGroup } from '../character-groups'
 import { dropRowKey } from '../../../features/boss-profit/store'
 import type { BossProfitRow } from '../../../features/boss-profit/store'
-import type { RecordedDrop } from '../../../types/drops'
+import type { RecordedDrop } from '@core/types/drops'
 
 const PERIOD = '2026-08-06'
 

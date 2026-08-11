@@ -1,5 +1,5 @@
 import { Preferences } from '@capacitor/preferences'
-import type { SharedProgressEntry } from '../types'
+import type { SharedProgressEntry } from '@core/types'
 import { accountSharedProgressKey, worldSharedProgressKey } from './keys'
 
 type SharedProgressMap = Record<string, SharedProgressEntry>

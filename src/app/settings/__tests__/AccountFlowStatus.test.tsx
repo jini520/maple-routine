@@ -4,8 +4,8 @@ import { cleanup, render, screen, waitFor, within } from '@testing-library/react
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AccountFlowStatus } from '../AccountFlowStatus'
-import { NexonRateLimitError } from '../../../nexon/errors'
-import type { MapleAccount } from '../../../types'
+import { NexonRateLimitError } from '@core/nexon/errors'
+import type { MapleAccount } from '@core/types'
 
 // selectingCharacters 단계는 ContentCharacterStep(온보딩과 같은 컴포넌트)이라 마운트 즉시
 // 로스터를 조회한다. ADR-062: 원인 매핑(toScheduleSyncError)은 실물을 쓰고 조회만 대체한다.

@@ -1,5 +1,5 @@
-import cropsData from '../data/boss-portrait-crops.json'
-import iconCropsData from '../data/boss-portrait-icon-crops.json'
+import cropsData from '@core/data/boss-portrait-crops.json'
+import iconCropsData from '@core/data/boss-portrait-icon-crops.json'
 
 export interface BossPortraitCrop {
   size: string

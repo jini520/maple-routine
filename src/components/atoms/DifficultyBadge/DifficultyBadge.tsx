@@ -1,4 +1,4 @@
-import type { BossDifficulty } from '../../../types'
+import type { BossDifficulty } from '@core/types'
 
 const DIFFICULTY_BADGE_STYLES: Record<BossDifficulty, React.CSSProperties> = {
   이지: {

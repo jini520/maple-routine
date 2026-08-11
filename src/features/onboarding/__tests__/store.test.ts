@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { MapleAccount } from '../../../types'
+import type { MapleAccount } from '@core/types'
 import {
   NexonAuthError,
   NexonBadRequestError,
   NexonNetworkError,
   NexonRateLimitError,
-} from '../../../nexon/errors'
+} from '@core/nexon/errors'
 import { initialOnboardingState } from '../state'
 
 const { fetchCharacterListMock } = vi.hoisted(() => ({
@@ -54,7 +54,7 @@ const { seedManualTrackedContentMock } = vi.hoisted(() => ({
   seedManualTrackedContentMock: vi.fn(),
 }))
 
-vi.mock('../../../nexon/character', () => ({
+vi.mock('@core/nexon/character', () => ({
   fetchCharacterList: fetchCharacterListMock,
 }))
 

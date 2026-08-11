@@ -1,6 +1,6 @@
 import type { FeatureGuide } from '../../../types'
 
-// 이미지를 넣을 때: `src/assets/guide/drop-history/` 에 두고 여기서 import 한다.
+// 이미지를 넣을 때: `packages/core/src/assets/guide/drop-history/` 에 두고 여기서 import 한다.
 
 export const dropHistoryGuide: FeatureGuide = {
   id: 'drop-history',

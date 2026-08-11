@@ -15,7 +15,7 @@ export type FeatureGuideGroup = 'content' | 'boss' | 'profit' | 'utility' | 'set
 
 /** 안내에 실리는 이미지. `alt` 를 `src` 와 한 덩이로 묶어 **빠뜨릴 수 없게** 한다([[ADR-125]] 결정 6). */
 export interface FeatureGuideImage {
-  /** `src/assets/guide/` 에서 import 한 번들 자산 URL */
+  /** `packages/core/src/assets/guide/` 에서 import 한 번들 자산 URL */
   src: string
   /** 안내 화면에서 이미지는 장식이 아니라 정보를 나른다 — 비워 둘 수 없다 */
   alt: string

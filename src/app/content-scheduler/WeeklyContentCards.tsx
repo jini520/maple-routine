@@ -15,7 +15,7 @@ import { getDailyQuestRegionIconUrl } from '../../lib/daily-quest-icons'
 import { MEDIA_TEXT_SHADOW } from '../../lib/media-card'
 import { matchWeeklyQuestRegionSlug, stripWeeklyQuestPrefix } from '../../lib/weekly-quest-matching'
 import { matchWeeklyRegionalQuestSlug } from '../../lib/weekly-regional-quest-matching'
-import type { WeeklyContent } from '../../types'
+import type { WeeklyContent } from '@core/types'
 import { CategoryBadge, QuestStateBadge, renderWeeklyQuestStatus, stripGuildPrefix } from './content-badges'
 import { MONSTER_PARK_BACKGROUND_SLUG } from './DailyContentCards'
 

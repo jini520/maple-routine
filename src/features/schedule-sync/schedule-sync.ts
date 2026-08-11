@@ -1,4 +1,4 @@
-import { fetchSchedulerCharacterState } from '../../nexon/schedule'
+import { fetchSchedulerCharacterState } from '@core/nexon/schedule'
 import { mergeSchedulerState, type MergeOutput } from '../../lib/scheduler-merge'
 import { getBackfillDateKeys } from '../../lib/reset-clock'
 import {
@@ -19,7 +19,7 @@ import {
   setAccountSharedProgressEntry,
   setWorldSharedProgressEntry,
 } from '../../storage/shared-progress-cache'
-import type { MapleCharacter, SchedulerCharacterState, SharedProgressEntry } from '../../types'
+import type { MapleCharacter, SchedulerCharacterState, SharedProgressEntry } from '@core/types'
 
 import { toScheduleSyncError } from './errors'
 import type { ScheduleSyncError } from './errors'

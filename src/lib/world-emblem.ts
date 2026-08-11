@@ -1,4 +1,4 @@
-import worldEmblems from '../data/world-emblems.json'
+import worldEmblems from '@core/data/world-emblems.json'
 
 // assets/worlds/*의 월드 엠블럼을 번들해 파일 basename → URL 맵을 만든다.
 const emblemUrlByPath = import.meta.glob('../assets/worlds/*.{png,webp}', {

@@ -1,5 +1,5 @@
-import bossCrystalPricesData from '../data/boss-crystal-prices.json'
-import type { BossDifficulty } from '../types'
+import bossCrystalPricesData from '@core/data/boss-crystal-prices.json'
+import type { BossDifficulty } from '@core/types'
 
 export interface CrystalPriceEntry {
   boss: string

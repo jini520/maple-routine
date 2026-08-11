@@ -11,7 +11,7 @@ import { formatRosterError, formatStaleRosterError } from '../../features/schedu
 import { useApiKeyNotice } from '../../features/onboarding/use-api-key-notice'
 import { getCharacterPickerRoster, toScheduleSyncError } from '../../features/schedule-sync/schedule-sync'
 import type { ScheduleSyncError } from '../../features/schedule-sync/schedule-sync'
-import type { CharacterPickerEntry } from '../../types'
+import type { CharacterPickerEntry } from '@core/types'
 import { Button } from '../../components/atoms/Button/Button'
 
 export interface ContentCharacterStepProps {

@@ -1,6 +1,6 @@
-import { fetchCharacterBasic } from '../../nexon/character'
+import { fetchCharacterBasic } from '@core/nexon/character'
 import { getCachedCharacterBasic, setCachedCharacterBasic } from '../../storage/character-basic-cache'
-import type { CharacterBasicProfile } from '../../types'
+import type { CharacterBasicProfile } from '@core/types'
 
 /**
  * `character/basic` 의 **공유 통과 지점**([[ADR-113]] 결정 1).

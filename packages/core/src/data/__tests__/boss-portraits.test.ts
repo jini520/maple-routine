@@ -5,7 +5,9 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import weeklyBosses from '../weekly-bosses.json'
 
-const bossesDir = join(dirname(fileURLToPath(import.meta.url)), '../../assets/bosses')
+// 초상화 에셋은 아직 앱(`src/assets/`)에 있다 — 그것을 읽는 `lib/boss-icons` 가 다음 step 에서
+// core 로 넘어올 때 함께 정리된다([[ADR-127]] 0단계).
+const bossesDir = join(dirname(fileURLToPath(import.meta.url)), '../../../../../src/assets/bosses')
 
 describe('보스 초상화 파일 정합성', () => {
   it('portraitSlug가 있는 보스는 통합 초상화 파일(난이도 무관 1장)이 실제로 존재한다', () => {

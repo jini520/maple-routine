@@ -21,7 +21,7 @@ import { UnavailableNotice } from '../../components/molecules/EmptyState/Unavail
 import { useScreenStackStore } from '../../features/screen-stack/store'
 import { usePeriodLoadErrorToast } from '../../features/boss-profit/use-period-error-toast'
 import { ValuableDropBadge } from '../../components/molecules/ValuableDropBadge/ValuableDropBadge'
-import weeklyBossesData from '../../data/weekly-bosses.json'
+import weeklyBossesData from '@core/data/weekly-bosses.json'
 import {
   useBossProfitStore,
 } from '../../features/boss-profit/store'

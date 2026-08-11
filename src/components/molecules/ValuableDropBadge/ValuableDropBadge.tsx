@@ -1,6 +1,6 @@
 import { Sparkles } from 'lucide-react'
 import { getItemIconUrl } from '../../../lib/item-icons'
-import type { RecordedDrop } from '../../../types/drops'
+import type { RecordedDrop } from '@core/types/drops'
 
 // 실제 획득한 고가 아이템 아이콘(최대 3개 + 나머지 개수)을 골드 반짝임 칩으로 보여준다([[ADR-045]]).
 // 배치·라벨은 호출부가 정한다([[ADR-046]]) — 캐릭터 카드는 우상단 절대배치(overflow-hidden에 잘리지

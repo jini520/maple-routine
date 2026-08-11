@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CharacterScheduleSync } from '../../schedule-sync/schedule-sync'
-import type { DailyContent, WeeklyContent } from '../../../types'
+import type { DailyContent, WeeklyContent } from '@core/types'
 
 const {
   syncSchedulesMock,

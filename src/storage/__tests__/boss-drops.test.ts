@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { RecordedDrop } from '../../types/drops'
+import type { RecordedDrop } from '@core/types/drops'
 
 const { runMock, queryMock, getBossProfitDbMock } = vi.hoisted(() => ({
   runMock: vi.fn(),

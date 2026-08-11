@@ -1,5 +1,5 @@
 import type { FeatureGuide } from '../../../types'
-// 이미지는 `src/assets/guide/boss-profit-record/` 에 두고 여기서 import 한다.
+// 이미지는 `packages/core/src/assets/guide/boss-profit-record/` 에 두고 여기서 import 한다.
 import listImage from '../../../assets/guide/boss-profit-record/01-list.webp'
 
 export const bossProfitRecordGuide: FeatureGuide = {

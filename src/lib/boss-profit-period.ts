@@ -1,4 +1,4 @@
-import type { BossCycle } from '../types'
+import type { BossCycle } from '@core/types'
 import { getMostRecentWeeklyResetKst } from './reset-clock'
 
 const KST_OFFSET_MS = 9 * 60 * 60 * 1000

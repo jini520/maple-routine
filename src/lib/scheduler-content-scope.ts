@@ -1,4 +1,4 @@
-import catalog from '../data/scheduler-content-catalog.json'
+import catalog from '@core/data/scheduler-content-catalog.json'
 
 export type ShareScope = 'character' | 'world' | 'account'
 

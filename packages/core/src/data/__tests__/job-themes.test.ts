@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import jobThemesData from '../job-themes.json'
-import { contrastHex, hexToOklch } from '../../lib/color'
-import { THEME_TOKEN_KEYS, measureThemeContrast } from '../../lib/theme-derive'
+// `lib/` 은 아직 앱에 있다 — 다음 step 에서 core 로 넘어오면 `../../lib/…` 로 되돌린다([[ADR-127]] 0단계).
+import { contrastHex, hexToOklch } from '../../../../../src/lib/color'
+import { THEME_TOKEN_KEYS, measureThemeContrast } from '../../../../../src/lib/theme-derive'
 import type { JobThemes, ThemeName } from '../../types/theme'
 
 const JOB_THEMES = jobThemesData as JobThemes

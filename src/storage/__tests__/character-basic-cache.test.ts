@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Preferences } from '@capacitor/preferences'
-import type { CharacterBasicProfile } from '../../types'
+import type { CharacterBasicProfile } from '@core/types'
 import {
   clearCachedCharacterBasic,
   getAllCachedCharacterBasicOcids,

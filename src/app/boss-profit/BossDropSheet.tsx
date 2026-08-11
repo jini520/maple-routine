@@ -19,13 +19,13 @@ import { getFixedDropIcons, type FixedDropIconSpec } from '../../lib/fixed-drops
 import { DropPricePadContent } from './DropPricePad'
 import { getItemIconUrl, getItemIconUrlByFile } from '../../lib/item-icons'
 import { isValuableDrop } from '../../lib/valuable-drops'
-import { BOSS_DIFFICULTIES, type BossDifficulty } from '../../types'
+import { BOSS_DIFFICULTIES, type BossDifficulty } from '@core/types'
 import type {
   DropCandidate,
   DropCategory,
   RecordedDrop,
   SelectableDropCategory,
-} from '../../types/drops'
+} from '@core/types/drops'
 
 // 선택 가능한 카테고리(장비·소비)의 라벨과 아이콘(ADR-040 결정 4 — 노란 점 대신 아이콘). 고정은
 // 읽기 전용 별도 섹션이라 여기 없다.

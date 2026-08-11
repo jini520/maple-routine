@@ -1,6 +1,6 @@
-import weeklyBossesData from '../data/weekly-bosses.json'
+import weeklyBossesData from '@core/data/weekly-bosses.json'
 import type { ManualTrackedItem } from '../storage/manual-tracked-content'
-import type { BossContent, BossCycle, BossDifficulty } from '../types'
+import type { BossContent, BossCycle, BossDifficulty } from '@core/types'
 
 export interface MatchedBoss {
   apiName: string

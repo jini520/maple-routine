@@ -17,9 +17,9 @@ import type { BossDropRecord } from '../../storage/boss-drops'
 import type { BossProfitRecord, getBossProfitRecords } from '../../storage/boss-profit'
 import type { ManualTrackedItem } from '../../storage/manual-tracked-content'
 import type { TrackingMode } from '../../storage/tracking-mode'
-import { BOSS_DIFFICULTIES } from '../../types'
-import type { BossContent, BossCycle, BossDifficulty } from '../../types'
-import type { RecordedDrop } from '../../types/drops'
+import { BOSS_DIFFICULTIES } from '@core/types'
+import type { BossContent, BossCycle, BossDifficulty } from '@core/types'
+import type { RecordedDrop } from '@core/types/drops'
 
 export interface BossProfitRow {
   ocid: string

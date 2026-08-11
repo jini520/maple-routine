@@ -1,5 +1,5 @@
 import { Preferences } from '@capacitor/preferences'
-import type { SchedulerCharacterState } from '../types'
+import type { SchedulerCharacterState } from '@core/types'
 import { schedulerCacheKey } from './keys'
 
 export interface CachedSchedulerEntry {

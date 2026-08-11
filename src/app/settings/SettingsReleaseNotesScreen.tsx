@@ -6,7 +6,7 @@ import {
   RELEASE_NOTES,
   RELEASE_NOTE_CATEGORY_LABELS,
   RELEASE_NOTE_CATEGORY_ORDER,
-} from '../../data/release-notes'
+} from '@core/data/release-notes'
 import { useLiveUpdateStore } from '../../features/live-update/store'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { StackScreen } from '../../components/templates/StackScreen/StackScreen'

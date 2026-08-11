@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import jobThemes from '../../data/job-themes.json'
+import jobThemes from '@core/data/job-themes.json'
 import { contrastHex, hexToOklch } from '../color'
 import {
   THEME_TOKEN_KEYS,

@@ -3,15 +3,15 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { FeatureGuide } from '../../../types'
+import type { FeatureGuide } from '@core/types'
 import { SettingsFeatureGuideScreen } from '../SettingsFeatureGuideScreen'
 
 // 안내 데이터는 화면이 아니라 데이터 파일이 소유한다 — 블록 조합을 훑는 케이스를 위해
 // `src/data/feature-guides.ts` 를 늘리지 않고 여기서 픽스처를 주입한다.
 let fixture: FeatureGuide[] | null = null
 
-vi.mock('../../../data/feature-guides', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../../data/feature-guides')>()
+vi.mock('@core/data/feature-guides', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@core/data/feature-guides')>()
   return {
     ...actual,
     get FEATURE_GUIDES(): FeatureGuide[] {

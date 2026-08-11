@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Check, Moon, Sun } from 'lucide-react'
 import { THEME_NAMES, getThemeDefinition, groupThemesByCategory } from '../../lib/theme-registry'
-import type { ThemeName } from '../../types/theme'
+import type { ThemeName } from '@core/types/theme'
 
 export interface ThemeSelectorProps {
   theme: ThemeName

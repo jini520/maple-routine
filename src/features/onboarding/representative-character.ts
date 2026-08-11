@@ -1,4 +1,4 @@
-import type { MapleCharacter } from '../../types'
+import type { MapleCharacter } from '@core/types'
 
 type NameGroup = 0 | 1 | 2 | 3 // 한글 > 알파벳 > 숫자 > 그 외
 

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { ArrowLeft } from 'lucide-react'
 import { Navigate, useLocation, useParams, useSearchParams } from 'react-router-dom'
-import { findFeatureGuide } from '../../data/feature-guides'
+import { findFeatureGuide } from '@core/data/feature-guides'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { StackScreen } from '../../components/templates/StackScreen/StackScreen'
 import { GUIDE_SECTION_PARAM } from '../../lib/guide-route'

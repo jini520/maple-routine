@@ -6,7 +6,7 @@
 import { planConfirmedDifficultyDropMigration, pruneUnobtainableDrops } from '../../lib/boss-drops'
 import { getBossDropRecords, replaceBossDropRecords } from '../../storage/boss-drops'
 import type { BossDropRecord } from '../../storage/boss-drops'
-import type { RecordedDrop } from '../../types/drops'
+import type { RecordedDrop } from '@core/types/drops'
 import { dropRowKey, toRecordedDrop } from './rows'
 import { withSqliteFallback } from './sqlite-guards'
 import type { BossProfitRow } from './rows'

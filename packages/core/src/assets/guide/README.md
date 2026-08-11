@@ -1,10 +1,10 @@
-# 기능 설명 이미지 (`src/assets/guide/`)
+# 기능 설명 이미지 (`packages/core/src/assets/guide/`)
 
-`src/data/feature-guides/**` 의 안내가 **직접 import** 하는 스크린샷 자리다([[ADR-125]] 결정 4).
+`packages/core/src/data/feature-guides/**` 의 안내가 **직접 import** 하는 스크린샷 자리다([[ADR-125]] 결정 4).
 
 ```
-src/assets/guide/<안내 id>/<번호>-<무엇>.webp
-예) src/assets/guide/boss-party/01-card.webp
+packages/core/src/assets/guide/<안내 id>/<번호>-<무엇>.webp
+예) packages/core/src/assets/guide/boss-party/01-card.webp
 ```
 
 - 폴더 이름은 **안내 id** 다(`FeatureGuide.id`). 안내가 두 그룹에 서기도 하므로 그룹으로 나누지 않는다.

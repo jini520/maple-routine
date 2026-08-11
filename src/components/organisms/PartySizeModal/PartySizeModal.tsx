@@ -1,5 +1,5 @@
 import { Users, X } from 'lucide-react'
-import type { BossDifficulty } from '../../../types'
+import type { BossDifficulty } from '@core/types'
 import { getBossPortraitCrop, getBossPortraitUrl } from '../../../lib/boss-icons'
 import {
   MEDIA_ART_FILTER,

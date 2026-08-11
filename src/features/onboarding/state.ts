@@ -1,4 +1,4 @@
-import type { MapleAccount } from '../../types'
+import type { MapleAccount } from '@core/types'
 import type { TrackingMode } from '../../storage/tracking-mode'
 
 export type OnboardingStatus =

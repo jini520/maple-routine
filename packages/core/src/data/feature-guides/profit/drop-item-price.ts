@@ -1,5 +1,5 @@
 import type { FeatureGuide } from '../../../types'
-// 이미지는 `src/assets/guide/drop-item-price/` 에 두고 여기서 import 한다.
+// 이미지는 `packages/core/src/assets/guide/drop-item-price/` 에 두고 여기서 import 한다.
 import button2Image from '../../../assets/guide/drop-item-price/03-button.webp'
 import buttonImage from '../../../assets/guide/drop-item-price/02-button.webp'
 import padImage from '../../../assets/guide/drop-item-price/04-pad.webp'

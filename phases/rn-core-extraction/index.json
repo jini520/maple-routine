@@ -13,7 +13,10 @@
     {
       "step": 1,
       "name": "core-pure",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-11T15:42:35+0900",
+      "summary": "`git mv` 로 `src/{data,types,nexon}` → `packages/core/src/` 이동(47파일 = data 30 + types 9 + nexon 8, 각 `__tests__` 포함 · 전부 R 로 기록돼 `git log --follow` 유지). **JSON 게임 데이터 17개는 rename 유사도 100%로 내용 변경 0**([[ADR-006]]). 딸려 옮긴 것 하나 — `src/assets/guide/`(21 webp + README): `data/feature-guides/**` 만이 유일한 소비자이고, 함께 옮기면 상대 경로(`../../../assets/guide/…`)가 그대로 맞아 안내 파일 import 를 한 줄도 안 고치면서 core→app 의존이 생기지 않는다. src/ 127파일의 상대 import 를 `@core/*` 로 일괄 치환(`vi.mock`·`importActual` 의 문자열 지정자 12건 포함), 옮긴 파일 내부 상호 참조는 디렉터리를 통째로 옮겨 그대로 해석됨(무변경). scripts 3개 경로 수정 — `theme-gen.ts`(`../packages/core/src/data/job-themes.json`·`../packages/core/src/types/theme`, `src/lib/theme-derive` 는 step 2 대상이라 유지) · `publish-live-update.mjs`(`release-notes.ts` import + 실패 메시지 경로) · `scripts/__tests__/publish-live-update.test.mjs`(단계 지시에 없던 세 번째 참조 — 안 고치면 테스트가 깨진다). `tsconfig.node.json` 에 `@core/*` paths 추가(그 프로젝트가 `scripts/theme-gen.ts` → `src/lib/theme-derive.ts` 를 끌어오는데 그 파일이 `@core/types/theme` 를 쓴다). **남긴 한시적 core→app 참조 4건**(전부 테스트, 주석으로 표시): `data/__tests__/job-themes.test.ts` → `src/lib/{color,theme-derive}`(step 2 에서 해소) · `boss-portraits`·`item-icons`·`boss-ring-boxes` 테스트의 `src/assets/{bosses,items}` 경로(그 에셋을 읽는 `lib/*-icons` 가 core 로 올 때 정리). 옮긴 파일 안의 낡은 경로 문구도 함께 갱신(`src/assets/guide`·`src/data/feature-guides`·`src/data/release-notes` → `packages/core/…`, 19파일 주석·README). AC — build 성공 · 테스트 **199파일/3044개** 통과(step 0 과 동일, 증감 0) · lint 0 errors/17 warnings(baseline 동일) · `vite-node scripts/theme-gen.ts` 사용법 출력 + `--existing 머쉬맘` 실제 토큰 출력 · `publish-live-update.mjs` Node 타입 스트리핑 import 무에러 · `grep -rE \"document\\.|window\\.|@capacitor\" packages/core/src` 빈 출력 · 청크 구성 무변화(`screenChunk` 는 `/src/app/` 만 보고 옮긴 파일은 이전에도 매칭되지 않았다).",
+      "completed_at": "2026-08-11T15:58:00+0900"
     },
     {
       "step": 2,

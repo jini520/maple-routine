@@ -13,8 +13,8 @@ import { domSnapshot } from '../../../../__tests__/dom-snapshot.helper'
 import { PageHeader } from '../PageHeader'
 import { useThemeStore } from '../../../../features/theme/store'
 import { getThemeDefinition } from '../../../../lib/theme-registry'
-import jobThemes from '../../../../data/job-themes.json'
-import type { ThemeDefinition } from '../../../../types/theme'
+import jobThemes from '@core/data/job-themes.json'
+import type { ThemeDefinition } from '@core/types/theme'
 
 // 배경 있는 테마 정의를 주입하기 위한 부분 모킹(ADR-106 결정 3). 나머지 export 는 실물 그대로다.
 vi.mock('../../../../lib/theme-registry', async (importOriginal) => {

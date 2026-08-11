@@ -4,7 +4,7 @@ import {
   orderContentsByTemplate,
   type SchedulerContentTemplateEntry,
 } from '../manual-content-merge'
-import type { DailyContent } from '../../types'
+import type { DailyContent } from '@core/types'
 import type { ManualTrackedItem } from '../../storage/manual-tracked-content'
 
 function contentItem(contentName: string): ManualTrackedItem {

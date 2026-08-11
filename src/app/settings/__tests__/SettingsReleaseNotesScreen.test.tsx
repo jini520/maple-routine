@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { MemoryRouter, Route, Routes, useParams, useSearchParams } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import packageJson from '../../../../package.json'
-import type { ReleaseNote } from '../../../types'
+import type { ReleaseNote } from '@core/types'
 import { SettingsReleaseNotesScreen } from '../SettingsReleaseNotesScreen'
 import { useLiveUpdateStore } from '../../../features/live-update/store'
 
@@ -15,8 +15,8 @@ vi.mock('../../../features/live-update/store', () => ({ useLiveUpdateStore: vi.f
 // 주입한다. 픽스처를 안 넣으면 진짜 데이터가 그대로 온다.
 let fixture: ReleaseNote[] | null = null
 
-vi.mock('../../../data/release-notes', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../../data/release-notes')>()
+vi.mock('@core/data/release-notes', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@core/data/release-notes')>()
   return {
     ...actual,
     get RELEASE_NOTES(): ReleaseNote[] {
@@ -99,8 +99,8 @@ describe('SettingsReleaseNotesScreen', () => {
 
   // 앱 번들에 실린 진짜 데이터를 그대로 그린다 — 이 화면의 계약이 "네트워크 0회, 과거 전체"다.
   it('RELEASE_NOTES 의 모든 버전과 모든 항목 문구를 그린다', async () => {
-    const actual = await vi.importActual<typeof import('../../../data/release-notes')>(
-      '../../../data/release-notes',
+    const actual = await vi.importActual<typeof import('@core/data/release-notes')>(
+      '@core/data/release-notes',
     )
     renderReleaseNotesScreen()
 

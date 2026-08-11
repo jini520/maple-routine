@@ -35,7 +35,7 @@ import { dropPayoutMeso } from '../../lib/drop-price'
 import { getItemIconUrl } from '../../lib/item-icons'
 import { isValuableDrop } from '../../lib/valuable-drops'
 import type { DropPriceEntry, DropPriceGroup } from '../../features/boss-profit/drop-price-store'
-import type { RecordedDrop } from '../../types/drops'
+import type { RecordedDrop } from '@core/types/drops'
 
 const PARENT_PATH = '/profit'
 

@@ -1,5 +1,5 @@
 import type { FeatureGuide } from '../../../types'
-// 이미지는 `src/assets/guide/boss-party/` 에 두고 여기서 import 한다. 명시적 import 라
+// 이미지는 `packages/core/src/assets/guide/boss-party/` 에 두고 여기서 import 한다. 명시적 import 라
 // 파일명이 틀리면 **빌드가 실패한다**([[ADR-125]] 결정 4).
 import manageImage from '../../../assets/guide/boss-party/03-manage.webp'
 import modalImage from '../../../assets/guide/boss-party/02-modal.webp'

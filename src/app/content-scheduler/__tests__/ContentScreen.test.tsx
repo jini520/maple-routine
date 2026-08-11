@@ -8,9 +8,9 @@ import { ContentScreen } from '../ContentScreen'
 import { PULL_SETTLE_TRANSITION } from '../../../lib/pull-to-refresh'
 import { useContentSchedulerStore, type ContentCharacterView } from '../../../features/content-scheduler/store'
 import { getCharacterPickerRoster } from '../../../features/schedule-sync/schedule-sync'
-import { NexonAuthError, NexonRateLimitError } from '../../../nexon/errors'
+import { NexonAuthError, NexonRateLimitError } from '@core/nexon/errors'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
-import type { CharacterPickerEntry } from '../../../types'
+import type { CharacterPickerEntry } from '@core/types'
 // ADR-063: 동기화 실패·일부 캐릭터 실패·파티원 수 저장 실패는 인라인 문단이 아니라 토스트로 알린다.
 const { showErrorMock, noticeApiKeyIssueMock } = vi.hoisted(() => ({
   showErrorMock: vi.fn(),

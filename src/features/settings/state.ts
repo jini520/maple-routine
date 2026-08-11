@@ -1,4 +1,4 @@
-import type { MapleAccount } from '../../types'
+import type { MapleAccount } from '@core/types'
 
 // ADR-086 결정 6: 계정 변경은 캐릭터를 다시 고를 때까지 커밋하지 않는다 — 예열이 끝나면
 // 곧바로 닫지 않고 'selectingCharacters' 에 머문다.

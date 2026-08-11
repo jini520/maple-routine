@@ -5,8 +5,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ThemeHeaderBackdrop } from '../ThemeHeaderBackdrop'
 import { useThemeStore } from '../../../../features/theme/store'
 import { getThemeDefinition } from '../../../../lib/theme-registry'
-import jobThemes from '../../../../data/job-themes.json'
-import type { ThemeDefinition } from '../../../../types/theme'
+import jobThemes from '@core/data/job-themes.json'
+import type { ThemeDefinition } from '@core/types/theme'
 
 /**
  * **배경 있는 정의는 데이터가 아니라 여기서 주입한다**([[ADR-106]] 결정 3). 지금은 배경을 선언한

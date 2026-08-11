@@ -1,4 +1,4 @@
-import weeklyQuestRegionsData from '../data/weekly-quest-regions.json'
+import weeklyQuestRegionsData from '@core/data/weekly-quest-regions.json'
 
 const WEEKLY_QUEST_PREFIX = '[주간 퀘스트] '
 

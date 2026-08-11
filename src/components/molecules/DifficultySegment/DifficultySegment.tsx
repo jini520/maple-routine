@@ -1,4 +1,4 @@
-import type { BossDifficulty } from '../../../types'
+import type { BossDifficulty } from '@core/types'
 import { DifficultyBadge } from '../../atoms/DifficultyBadge/DifficultyBadge'
 
 // 난이도 세그먼트 — 보스 관리 페이지 행과 파티 인원 모달이 공유한다(ADR-121 결정 4).

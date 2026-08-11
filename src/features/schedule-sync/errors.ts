@@ -3,7 +3,7 @@
 // 별도 모듈인 이유는 순환 때문이다: 로스터 조회와 동기화 오케스트레이션이 둘 다 이 어휘를
 // 쓰는데, 어느 한쪽에 두면 다른 쪽이 그쪽을 import 하면서 서로를 가리키게 된다.
 
-import { isInvalidApiKeyError, NexonBadRequestError, NexonRateLimitError } from '../../nexon/errors'
+import { isInvalidApiKeyError, NexonBadRequestError, NexonRateLimitError } from '@core/nexon/errors'
 // ADR-067 결정 1: 400 하나에 처방이 전혀 다른 세 실패가 들어 있어(nexon-api.md "에러 코드")
 // 종류를 갈라 담는다. 재시도 가능성이 셋 다 다르다 — characterUnavailable은 영구,
 // notCollected는 나중에 자동으로 풀리고, periodOutOfRange는 그 날짜에 대해 영구다.

@@ -6,7 +6,7 @@ import {
   resolveReleaseCreateArgs,
   resolveReleaseTag,
 } from '../publish-live-update.mjs'
-import { RELEASE_NOTES } from '../../src/data/release-notes.ts'
+import { RELEASE_NOTES } from '../../packages/core/src/data/release-notes.ts'
 import { parseLiveUpdateManifest } from '../../src/native/live-update.ts'
 
 describe('resolveReleaseTag', () => {

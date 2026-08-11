@@ -1,9 +1,9 @@
 import { isObtainableDrop } from './boss-drops'
 import { getCurrentBossProfitPeriod } from './boss-profit-period'
 import { isValuableDrop } from './valuable-drops'
-import type { BossCycle } from '../types'
-import type { RecordedDrop } from '../types/drops'
-import type { BossDifficulty } from '../types/scheduler'
+import type { BossCycle } from '@core/types'
+import type { RecordedDrop } from '@core/types/drops'
+import type { BossDifficulty } from '@core/types/scheduler'
 
 // 드롭 획득 히스토리(전 기간)의 순수 집계([[ADR-071]], 이슈 #54).
 //

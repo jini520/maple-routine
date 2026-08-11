@@ -21,8 +21,8 @@ import {
 } from '../../storage/manual-tracked-content'
 import { isGuildContent } from '../../lib/content-category'
 import type { SchedulerContentTemplateEntry } from '../../lib/manual-content-merge'
-import schedulerContentTemplate from '../../data/scheduler-content-template.json'
-import type { DailyContent, WeeklyContent } from '../../types'
+import schedulerContentTemplate from '@core/data/scheduler-content-template.json'
+import type { DailyContent, WeeklyContent } from '@core/types'
 
 const contentTemplate = schedulerContentTemplate as {
   daily: SchedulerContentTemplateEntry[]

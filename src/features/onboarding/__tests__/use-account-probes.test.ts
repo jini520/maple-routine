@@ -1,13 +1,13 @@
 // @vitest-environment jsdom
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { CharacterBasicProfile, MapleAccount } from '../../../types'
+import type { CharacterBasicProfile, MapleAccount } from '@core/types'
 
 const { getAuthConfigMock } = vi.hoisted(() => ({ getAuthConfigMock: vi.fn() }))
 vi.mock('../../../storage/api-key', () => ({ getAuthConfig: getAuthConfigMock }))
 
 const { fetchCharacterBasicMock } = vi.hoisted(() => ({ fetchCharacterBasicMock: vi.fn() }))
-vi.mock('../../../nexon/character', () => ({ fetchCharacterBasic: fetchCharacterBasicMock }))
+vi.mock('@core/nexon/character', () => ({ fetchCharacterBasic: fetchCharacterBasicMock }))
 
 // 캐시는 목이 아니라 **실제 어댑터**를 쓴다 — ADR-113 결정 2가 정한 것은 "쓴다"가 아니라
 // "**그 캐릭터가 속한 계정의 accountId 로** 쓴다"이고, 계정별 인덱스(ADR-086 결정 9)를 통과해야
@@ -33,7 +33,7 @@ vi.mock('@capacitor/preferences', () => {
 })
 
 import { Preferences } from '@capacitor/preferences'
-import { NexonBadRequestError, NexonNetworkError, NexonRateLimitError } from '../../../nexon/errors'
+import { NexonBadRequestError, NexonNetworkError, NexonRateLimitError } from '@core/nexon/errors'
 import {
   getAllCachedCharacterBasicOcids,
   setCachedCharacterBasic,

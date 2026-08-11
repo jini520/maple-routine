@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CharacterScheduleSync } from '../../schedule-sync/schedule-sync'
-import type { BossContent, SchedulerCharacterState } from '../../../types'
+import type { BossContent, SchedulerCharacterState } from '@core/types'
 import type { BossProfitRecord } from '../../../storage/boss-profit'
 import type { CachedSchedulerEntry } from '../../../storage/scheduler-cache'
 
@@ -81,7 +81,7 @@ vi.mock('../../../storage/api-key', () => ({
   getAuthConfig: getAuthConfigMock,
 }))
 
-vi.mock('../../../nexon/schedule', () => ({
+vi.mock('@core/nexon/schedule', () => ({
   fetchSchedulerCharacterState: fetchSchedulerCharacterStateMock,
 }))
 

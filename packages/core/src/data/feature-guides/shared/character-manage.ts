@@ -3,7 +3,7 @@ import type { FeatureGuide } from '../../../types'
 // (컨텐츠와 보스가 같은 피커를 쓰므로 같은 글 한 벌이어야 한다, [[ADR-125]] 결정 1 정정).
 // 그래서 `content/` 든 `boss/` 든 한쪽 폴더에 두면 나머지 한쪽에서 찾을 수 없다.
 //
-// 이미지는 `src/assets/guide/character-manage/` 에 두고 여기서 import 한다.
+// 이미지는 `packages/core/src/assets/guide/character-manage/` 에 두고 여기서 import 한다.
 import openImage from '../../../assets/guide/character-manage/01-open.webp'
 
 export const characterManageGuide: FeatureGuide = {

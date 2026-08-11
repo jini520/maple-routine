@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { Preferences } from '@capacitor/preferences'
-import type { SchedulerCharacterState } from '../../types'
+import type { SchedulerCharacterState } from '@core/types'
 import {
   clearCachedSchedulerState,
   getCachedSchedulerState,

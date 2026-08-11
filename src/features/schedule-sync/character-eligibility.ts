@@ -1,13 +1,13 @@
 import { getBackfillDateKeys } from '../../lib/reset-clock'
 import { hasCharacterScopeCompletion, toProbeObservation } from '../../lib/scheduler-activity'
-import { fetchSchedulerCharacterState } from '../../nexon/schedule'
+import { fetchSchedulerCharacterState } from '@core/nexon/schedule'
 import {
   getScheduleProbeLedger,
   markScheduleProbeUnavailable,
   recordScheduleProbe,
   type ScheduleProbeLedger,
 } from '../../storage/schedule-probe-ledger'
-import type { SchedulerCharacterState } from '../../types'
+import type { SchedulerCharacterState } from '@core/types'
 import { toScheduleSyncError } from './schedule-sync'
 
 /**

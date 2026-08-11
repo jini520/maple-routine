@@ -4,13 +4,13 @@
 // 여기(로스터)와 동기화 오케스트레이션. 둘 사이 참조는 한 방향뿐이라(동기화 → 로스터)
 // 경계가 뚜렷했다.
 
-import { fetchCharacterList } from '../../nexon/character'
-import { NexonAuthError, NexonRateLimitError } from '../../nexon/errors'
+import { fetchCharacterList } from '@core/nexon/character'
+import { NexonAuthError, NexonRateLimitError } from '@core/nexon/errors'
 import { getAllCachedCharacterBasicOcids, getCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getAuthConfig } from '../../storage/api-key'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
 import { markScheduleProbeUnavailable } from '../../storage/schedule-probe-ledger'
-import type { CharacterPickerEntry, MapleCharacter } from '../../types'
+import type { CharacterPickerEntry, MapleCharacter } from '@core/types'
 import { compareByName } from '../onboarding/representative-character'
 import { fetchCharacterBasicCached } from './character-basic-fetch'
 import { readKnownEligibility, resolveCharacterEligibility } from './character-eligibility'
