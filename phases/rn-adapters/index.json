@@ -1,0 +1,14 @@
+{
+  "project": "maple-routine",
+  "phase": "rn-adapters",
+  "steps": [
+    { "step": 0, "name": "rn-test-setup", "status": "pending" },
+    { "step": 1, "name": "rn-preferences", "status": "pending" },
+    { "step": 2, "name": "rn-sqlite", "status": "pending" },
+    { "step": 3, "name": "rn-notifications", "status": "pending" },
+    { "step": 4, "name": "rn-hunting-timer", "status": "pending" },
+    { "step": 5, "name": "rn-ads", "status": "pending" },
+    { "step": 6, "name": "rn-system", "status": "pending" },
+    { "step": 7, "name": "rn-port-wiring", "status": "pending" }
+  ]
+}
