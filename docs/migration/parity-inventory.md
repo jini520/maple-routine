@@ -376,21 +376,25 @@ Kotlin 메타데이터 2.3 이라 RN 0.86(Kotlin 2.1)에서 컴파일이 깨지�
 
 ### DOM 스냅샷 3종 — 대체 장치를 먼저 정할 것
 
-| 파일 |
-|---|
-| `app/boss-profit/__tests__/BossProfitScreen.dom-snapshot.test.tsx` |
-| `app/boss-scheduler/__tests__/BossScreen.dom-snapshot.test.tsx` |
-| `app/content-scheduler/__tests__/ContentScreen.dom-snapshot.test.tsx` |
-| (공용 `src/__tests__/dom-snapshot.helper.ts`) |
+| 스냅샷 | 줄 |
+|---|---|
+| `BossProfitScreen.dom-snapshot.test.tsx.snap` | **725** |
+| `ContentScreen.dom-snapshot.test.tsx.snap` | 195 |
+| `BossScreen.dom-snapshot.test.tsx.snap` | 122 |
+| `Modal.dom-snapshot.test.tsx.snap` | 31 |
+| `PageHeader.test.tsx.snap` | 13 |
+| (공용 `src/__tests__/dom-snapshot.helper.ts`) | — |
 
 **이식이 불가능하다** — 스냅샷 내용이 DOM 트리다. 그런데 이 셋은 하필 **화면 셋 중 가장 복잡한
 셋**이고, 이 전환이 가장 많이 하게 될 질문("예전과 같은가")에 기계적으로 답하던 유일한 장치다.
 
-3단계 시작 **전에** 무엇이 그 자리를 대신할지 정한다. 후보:
+**결정(2026-08-11)**: RN 렌더 트리 스냅샷(`@testing-library/react-native` 의 `toJSON()`)을 **새
+기준선**으로 잡고, 예전과의 대조는 두 앱을 나란히 띄워 **사람이 판정**한다.
 
-- RN 렌더 트리 스냅샷(`@testing-library/react-native` 의 `toJSON()`) — 성격이 가장 가깝다
-- 화면 스크린샷 회귀(실기기/시뮬레이터) — 시각 패리티까지 잡지만 운용 비용이 크다
-- 둘 다 안 하기 — **그럼 패리티 주장에 근거가 없다는 것을 문서에 남길 것**
+완전한 대체가 아니라는 점을 분명히 해둔다 — RN 트리는 DOM 트리와 구조가 달라 기존 `.snap` 과 대조가
+안 되고, 픽셀 비교도 폰트 래스터라이징 차이로 실패한다. 새 스냅샷이 답하는 것은 *"앞으로 안 바뀌는가"*
+이지 *"예전과 같은가"* 가 아니다. 뒤엣것은 육안 검증의 몫이고, 그래서 **화면마다 두 앱을 나란히 본
+기록을 남긴다**(`migration/README.md` «잃는 안전망»).
 
 ---
 
