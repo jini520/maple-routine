@@ -10,13 +10,16 @@
 // 아는" 것이 아니게 되고, 재사용하려 할 때마다 organism 이 딸려온다.
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 
 const LAYERS = ['atoms', 'molecules', 'organisms', 'templates'] as const
 type Layer = (typeof LAYERS)[number]
 
 const RANK: Record<Layer, number> = { atoms: 0, molecules: 1, organisms: 2, templates: 3 }
-const ROOT = 'src/components'
+// cwd 가 아니라 **이 파일** 기준이다 — 저장소 전체를 도는 `npm test` 는 루트에서, 패키지의
+// `npm test` 는 패키지에서 돌기 때문에 cwd 상대 경로면 한쪽에서 디렉터리를 못 찾는다.
+const ROOT = fileURLToPath(new URL('..', import.meta.url))
 
 function sourceFilesIn(dir: string): string[] {
   const out: string[] = []

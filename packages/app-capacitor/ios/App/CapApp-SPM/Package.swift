@@ -12,15 +12,15 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/ionic-team/capacitor-swift-pm.git", exact: "8.4.1"),
-        .package(name: "CapacitorCommunityAdmob", path: "../../../node_modules/@capacitor-community/admob"),
-        .package(name: "CapacitorCommunitySqlite", path: "../../../node_modules/@capacitor-community/sqlite"),
-        .package(name: "CapacitorKeyboard", path: "../../../node_modules/@capacitor/keyboard"),
-        .package(name: "CapacitorLocalNotifications", path: "../../../node_modules/@capacitor/local-notifications"),
-        .package(name: "CapacitorNetwork", path: "../../../node_modules/@capacitor/network"),
-        .package(name: "CapacitorPreferences", path: "../../../node_modules/@capacitor/preferences"),
-        .package(name: "CapacitorSplashScreen", path: "../../../node_modules/@capacitor/splash-screen"),
-        .package(name: "CapacitorStatusBar", path: "../../../node_modules/@capacitor/status-bar"),
-        .package(name: "CapgoCapacitorUpdater", path: "../../../node_modules/@capgo/capacitor-updater")
+        .package(name: "CapacitorCommunityAdmob", path: "../../../../../node_modules/@capacitor-community/admob"),
+        .package(name: "CapacitorCommunitySqlite", path: "../../../../../node_modules/@capacitor-community/sqlite"),
+        .package(name: "CapacitorKeyboard", path: "../../../../../node_modules/@capacitor/keyboard"),
+        .package(name: "CapacitorLocalNotifications", path: "../../../../../node_modules/@capacitor/local-notifications"),
+        .package(name: "CapacitorNetwork", path: "../../../../../node_modules/@capacitor/network"),
+        .package(name: "CapacitorPreferences", path: "../../../../../node_modules/@capacitor/preferences"),
+        .package(name: "CapacitorSplashScreen", path: "../../../../../node_modules/@capacitor/splash-screen"),
+        .package(name: "CapacitorStatusBar", path: "../../../../../node_modules/@capacitor/status-bar"),
+        .package(name: "CapgoCapacitorUpdater", path: "../../../../../node_modules/@capgo/capacitor-updater")
     ],
     targets: [
         .target(

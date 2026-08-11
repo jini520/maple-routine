@@ -1,7 +1,7 @@
 # 스토어 릴리스 (Play · App Store)
 
 > **범위**: 스토어에 나가는 **바이너리**를 만드는 절차 — 서명·버전·빌드 커맨드·산출물 검증, 그리고 콘솔에 채워 넣어야 하는 요건. 앱 안에서 도는 OTA 갱신은 [features/live-update.md](../features/live-update.md), 광고 관련 스토어 요건의 *배경*은 [features/ads.md](../features/ads.md).
-> **관련 소스**: `android/app/build.gradle`(서명·`versionCode`) · `android/keystore.properties`(**커밋 금지**) · `android/.gitignore` · `ios/App/App.xcodeproj`(iOS 서명) · `package.json`(빌드 스크립트).
+> **관련 소스**(전부 `packages/app-capacitor/` 아래 — [[ADR-127]] 0단계): `android/app/build.gradle`(서명·`versionCode`) · `android/keystore.properties`(**커밋 금지**) · `android/.gitignore` · `ios/App/App.xcodeproj`(iOS 서명) · `package.json`(**버전 원천** — OTA 매니페스트와 설정 화면 표시가 같은 파일을 읽는다). 빌드 스크립트 진입점은 저장소 루트 `package.json`(위임).
 > **관련 ADR**: [[ADR-091]](Android 서명) [[ADR-090]](광고 — 스토어 요건이 늘어난 이유) [[ADR-024]](버전 형식) [[ADR-119]](릴리스 노트) [[ADR-126]](핵심 목록·모달). **관련 문서**: [../features/ads.md](../features/ads.md), [../features/live-update.md](../features/live-update.md), [../features/site.md](../features/site.md), [../trouble/2026-08-04-ios-appstore-signing.md](../trouble/2026-08-04-ios-appstore-signing.md).
 
 ## 빌드 커맨드는 하나뿐이다 — `npm run build`
@@ -20,30 +20,31 @@
 
 ## 릴리스는 노트를 쓰는 것으로 시작한다 ([[ADR-119]])
 
-**버전을 올리기 전이 아니라, 올리면서 `src/data/release-notes.ts` 에 그 버전의 항목을 먼저 쓴다.**
-OTA 배포든 스토어 바이너리든 순서는 같다.
+**버전을 올리기 전이 아니라, 올리면서 `packages/core/src/data/release-notes.ts` 에 그 버전의 항목을
+먼저 쓴다.** OTA 배포든 스토어 바이너리든 순서는 같다.
 
 ```
-1. package.json version 을 올린다              (x.y.z — 2단이면 OTA가 깨진다, [[ADR-024]])
-2. src/data/release-notes.ts 에 그 버전 항목을 쓴다   ← 이 단계를 건너뛰면 3에서 막힌다
+1. packages/app-capacitor/package.json version 을 올린다  (x.y.z — 2단이면 OTA가 깨진다, [[ADR-024]])
+     ↑ 저장소 루트 package.json 이 아니다. 루트는 워크스페이스 오케스트레이션용이라 version 이 없다
+2. packages/core/src/data/release-notes.ts 에 그 버전 항목을 쓴다   ← 이 단계를 건너뛰면 3에서 막힌다
      · items      — 변경 전부. 개발 노트 화면이 읽는다
      · highlights — 핵심 3~4줄. **업데이트 모달**이 받기 전에 읽는다([[ADR-126]] 결정 2·3)
      · 네이티브 변경 항목에는 「스토어 업데이트 필요」 표식(항목 단위)
 3. npm run build / node scripts/publish-live-update.mjs
 ```
 
-> ⚠️ **다음 릴리스는 `1.0.5` 다.** 지금 `package.json` 은 `1.0.4`(2026-08-11 발행 완료 — `highlights`
+> ⚠️ **다음 릴리스는 `1.0.5` 다.** 지금 `packages/app-capacitor/package.json` 은 `1.0.4`(2026-08-11 발행 완료 — `highlights`
 > 를 실은 첫 배포다). 노트를 안 쓴 채 스크립트를 돌리면 가드에 걸려 중단되는 것이 정상이고
 > ([[ADR-119]] 결정 6 + [[ADR-126]] 결정 8), 위 1·2 를 먼저 하면 풀린다. **`highlights` 를 빠뜨리는
 > 것도 같은 중단**이다 — 문구가 어느 쪽이 비었는지 말해 준다.
 
 - **노트나 핵심 목록이 없으면 `publish-live-update.mjs` 가 중단한다**(`process.exit(1)`, 문구가 어느
-  쪽이 비었는지 말한다). `package.json` version 형식 검사와 **같은 자리**에서, `npm run build` 보다
+  쪽이 비었는지 말한다). 앱 `package.json` version 형식 검사와 **같은 자리**에서, `npm run build` 보다
   **앞에서** 죽으므로 몇 분짜리 빌드를 버리지 않는다.
 - **`highlights` 를 `items` 에서 베끼지 말 것**([[ADR-126]] 결정 3). *"무엇이 바뀌었나"* 가 아니라
   *"받으면 무엇이 생기나"* 를 쓰고, 자잘한 것은 `일부 버그 및 사용성 개선` 처럼 한 줄로 뭉친다.
 - **스크립트가 `.ts` 를 읽는 방법은 Node 내장 타입 스트리핑이다** — `.mjs` 가
-  `src/data/release-notes.ts` 를 **그대로 `import`** 한다(Node 22.18+/23.6+ 부터 플래그 없이 켜져 있고
+  `packages/core/src/data/release-notes.ts` 를 **그대로 `import`** 한다(Node 22.18+/23.6+ 부터 플래그 없이 켜져 있고
   이 저장소는 24.x 에서 확인했다). **이 자리를 만질 때 `tsx`·`ts-node` 를 들이지 말 것** — 배포
   스크립트는 릴리스 경로의 일부라 의존성이 늘수록 릴리스가 깨질 표면이 넓어진다. 정규식으로 파일을
   긁는 것도 안 된다(원천 형식이 바뀌는 순간 조용히 틀린 값을 낸다). `release-notes.ts` 는 순수
@@ -90,7 +91,7 @@ CN=MapleRoutine, O=Maple Routine, L=Seoul, ST=Seoul, C=KR
 - 마지막 확인(`… 이(가) 맞습니까? [아니오]:`)에서 **`y` 를 입력**한다 — 기본값이 "아니오"라
   그냥 엔터를 치면 처음부터 다시 묻는다.
 
-그 다음 `android/keystore.properties` 를 만든다(**gitignore 대상 · 절대경로**).
+그 다음 `packages/app-capacitor/android/keystore.properties` 를 만든다(**gitignore 대상 · 절대경로**).
 
 ```properties
 storeFile=/Users/<user>/keys/maple-routine-upload.jks
@@ -110,19 +111,23 @@ keyPassword=<같은 비밀번호>
 
 **릴리스 노트가 선행한다**(위 "릴리스는 노트를 쓰는 것으로 시작한다") — 아래는 그 뒤의 빌드 절차다.
 
+**네이티브 프로젝트는 `packages/app-capacitor/` 안에 있다**([[ADR-127]] 0단계) — `npx cap` 은 반드시
+그 디렉터리에서 돈다(`capacitor.config.ts` 와 `android/`·`ios/` 가 거기 있다). `npm run build` 만
+저장소 루트에서 위임으로 돈다.
+
 ```bash
-# 1. versionCode 를 올린다 (android/app/build.gradle) — 소진된 번호는 재사용 불가
+# 1. versionCode 를 올린다 (packages/app-capacitor/android/app/build.gradle) — 소진된 번호는 재사용 불가
 # 2. 웹 번들 → 네이티브 동기화
-npm run build && npx cap sync android
+npm run build && (cd packages/app-capacitor && npx cap sync android)
 # 3. AAB (APK 아님 — Play는 AAB만 받는다)
-cd android && ./gradlew bundleRelease
-# 4. 산출물: android/app/build/outputs/bundle/release/app-release.aab
+cd packages/app-capacitor/android && ./gradlew bundleRelease
+# 4. 산출물: packages/app-capacitor/android/app/build/outputs/bundle/release/app-release.aab
 ```
 
 **서명 확인** — 서명이 안 붙어도 빌드는 성공하므로([[ADR-091]] 결정 4) 산출물을 직접 본다.
 
 ```bash
-keytool -printcert -jarfile android/app/build/outputs/bundle/release/app-release.aab
+keytool -printcert -jarfile packages/app-capacitor/android/app/build/outputs/bundle/release/app-release.aab
 ```
 
 `소유자: CN=...` 이 나오면 서명된 것이고, 아무것도 안 나오면 `keystore.properties` 를 못 읽은

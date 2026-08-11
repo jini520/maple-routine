@@ -23,7 +23,8 @@ function read(relative: string): string {
 
 const MANIFEST = read('../../../android/app/src/main/AndroidManifest.xml')
 const INFO_PLIST = read('../../../ios/App/App/Info.plist')
-const APP_ADS = read('../../../site/app-ads.txt')
+// 안내 사이트는 앱 패키지가 아니라 **저장소 루트**에 있다(`site/` — 앱 번들과 별개로 배포된다).
+const APP_ADS = read('../../../../../site/app-ads.txt')
 
 /**
  * 테스트 광고 게이트는 **빌드 시점 환경 변수**로만 판정한다.

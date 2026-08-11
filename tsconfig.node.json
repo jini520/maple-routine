@@ -7,8 +7,8 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
 
-    /* `scripts/theme-gen.ts` 가 `src/lib/theme-derive.ts` 를 끌어오고, 그 파일이 `@core/*` 를 쓴다.
-       그래서 이 프로젝트도 같은 매핑을 알아야 한다 — `tsconfig.app.json`·`vite.config.ts` 와 세 벌이다. */
+    /* `scripts/theme-gen.ts` 가 `@core/lib/theme-derive.ts` 를 끌어온다. 그래서 이 프로젝트도 같은
+       매핑을 알아야 한다 — `tsconfig.base.json`·`vite.config.ts` 와 세 벌이다. */
     "paths": {
       "@core/*": ["./packages/core/src/*"]
     },
@@ -27,5 +27,5 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["vite.config.ts", "scripts/**/*.ts"]
+  "include": ["vite.config.ts", "packages/app-capacitor/vite.config.ts", "scripts/**/*.ts"]
 }
