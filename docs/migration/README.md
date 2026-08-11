@@ -184,6 +184,18 @@ packages/
 - `storage/*` 21파일 · `native/*` 11파일의 RN 구현. **시그니처 고정**(원칙 1)
 - **게이트**: `core` 의 로직 테스트 119개가 RN 어댑터 위에서 전부 통과
 
+**테스트 러너는 둘이다**(사용자 결정, 2026-08-11). `packages/app-rn` 은 **jest**(`jest-expo` 프리셋),
+`core` 와 `app-capacitor` 는 그대로 **vitest**. RN 을 vitest 에 억지로 태우지 않는 이유는 전환의 최종
+상태가 RN-only 이고 그때 `app-capacitor` 와 함께 vitest 도 걷히기 때문이다 — 지금 태우면 나중에 한 번
+더 옮겨야 한다. 3,044개를 러너 사이로 옮기는 것은 전환 마지막 단계의 별도 작업이다.
+
+- 루트 `npm test` 가 **둘 다** 돌리고 한쪽만 실패해도 전체가 실패한다
+- vitest 는 `packages/app-rn/**` 를 탐색에서 제외한다(`packages/app-capacitor/vite.config.ts` —
+  루트 설정이 이 파일을 re-export 하므로 규칙은 한 벌이다). 없으면 vitest 가 RN 테스트를 집어삼킨다
+- `@core/*` 는 jest 에서도 **`packages/app-rn/tsconfig.json` 의 `paths` 하나**로 풀린다
+  (`jest-expo` 가 그 `paths` 를 `moduleNameMapper` 로 옮긴다 — Metro 와 같은 성질이라 갈라질 자리가 없다).
+  단 그 파생이 **cwd 기준**이라 이 패키지의 jest 는 반드시 자기 디렉터리에서 돌려야 한다
+
 ### 2단계 — 데이터 보존 ([data.md](./data.md))
 
 - Preferences·SQLite를 **옮기지 않고 그대로 읽는** 구현

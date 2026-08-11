@@ -3,6 +3,10 @@
   "compilerOptions": {
     "strict": true,
     "resolveJsonModule": true,
+    /* jest 전역(`describe`·`it`·`expect`)의 타입. tsc 는 `@types/*` 를 더 이상 알아서 전부 끌어오지
+       않아(TS 6) 이 선언이 없으면 테스트 파일이 `Cannot find name 'describe'` 로 죽는다.
+       런타임 쪽 짝은 `jest.config.js` 의 `preset: 'jest-expo'` 다. */
+    "types": ["jest"],
     /* `@core/*` → `packages/core/src/*` ([[ADR-127]] 결정 3).
 
        웹 쪽은 `tsconfig.base.json` 의 `paths` 와 `vite.config.ts` 의 `resolve.alias` 가 **짝**이지만,

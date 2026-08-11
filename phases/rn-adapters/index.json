@@ -2,13 +2,48 @@
   "project": "maple-routine",
   "phase": "rn-adapters",
   "steps": [
-    { "step": 0, "name": "rn-test-setup", "status": "pending" },
-    { "step": 1, "name": "rn-preferences", "status": "pending" },
-    { "step": 2, "name": "rn-sqlite", "status": "pending" },
-    { "step": 3, "name": "rn-notifications", "status": "pending" },
-    { "step": 4, "name": "rn-hunting-timer", "status": "pending" },
-    { "step": 5, "name": "rn-ads", "status": "pending" },
-    { "step": 6, "name": "rn-system", "status": "pending" },
-    { "step": 7, "name": "rn-port-wiring", "status": "pending" }
-  ]
+    {
+      "step": 0,
+      "name": "rn-test-setup",
+      "status": "completed",
+      "started_at": "2026-08-11T19:16:06+0900",
+      "summary": "app-rn 에 jest+jest-expo(SDK57) 도입 — `packages/app-rn/jest.config.js` 는 `preset: 'jest-expo'` 한 줄이고 `@core/*` 는 jest-expo 가 그 패키지 tsconfig `paths` 를 moduleNameMapper 로 옮겨 푼다(`^@core/(.*)$` → `packages/core/src/$1`, tsc·Metro 와 같은 선언 한 벌). tsconfig 에 `types:[\"jest\"]` 추가. vitest 제외 규칙은 `packages/app-capacitor/vite.config.ts` 의 `test.exclude`(`configDefaults.exclude` + `packages/app-rn/**`) 한 곳 — 루트 설정이 re-export 한다. 루트 script 는 `\"test\": \"vitest run && npm run test -w @maple-routine/app-rn\"`. 배선 검증 테스트 `packages/app-rn/src/__tests__/core-wiring.test.ts` 2케이스."
+    },
+    {
+      "step": 1,
+      "name": "rn-preferences",
+      "status": "pending"
+    },
+    {
+      "step": 2,
+      "name": "rn-sqlite",
+      "status": "pending"
+    },
+    {
+      "step": 3,
+      "name": "rn-notifications",
+      "status": "pending"
+    },
+    {
+      "step": 4,
+      "name": "rn-hunting-timer",
+      "status": "pending"
+    },
+    {
+      "step": 5,
+      "name": "rn-ads",
+      "status": "pending"
+    },
+    {
+      "step": 6,
+      "name": "rn-system",
+      "status": "pending"
+    },
+    {
+      "step": 7,
+      "name": "rn-port-wiring",
+      "status": "pending"
+    }
+  ],
+  "created_at": "2026-08-11T19:16:06+0900"
 }
