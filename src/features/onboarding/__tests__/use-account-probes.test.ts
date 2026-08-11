@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
 import type { CharacterBasicProfile, MapleAccount } from '@core/types'
 
 const { getAuthConfigMock } = vi.hoisted(() => ({ getAuthConfigMock: vi.fn() }))
@@ -12,27 +13,7 @@ vi.mock('@core/nexon/character', () => ({ fetchCharacterBasic: fetchCharacterBas
 // 캐시는 목이 아니라 **실제 어댑터**를 쓴다 — ADR-113 결정 2가 정한 것은 "쓴다"가 아니라
 // "**그 캐릭터가 속한 계정의 accountId 로** 쓴다"이고, 계정별 인덱스(ADR-086 결정 9)를 통과해야
 // 그것을 확인할 수 있다. 인메모리 Preferences 목은 sibling character-basic-fetch.test.ts 관례다.
-vi.mock('@capacitor/preferences', () => {
-  const store = new Map<string, string>()
-  return {
-    Preferences: {
-      get: vi.fn(async ({ key }: { key: string }) => ({
-        value: store.has(key) ? (store.get(key) as string) : null,
-      })),
-      set: vi.fn(async ({ key, value }: { key: string; value: string }) => {
-        store.set(key, value)
-      }),
-      remove: vi.fn(async ({ key }: { key: string }) => {
-        store.delete(key)
-      }),
-      clear: vi.fn(async () => {
-        store.clear()
-      }),
-    },
-  }
-})
 
-import { Preferences } from '@capacitor/preferences'
 import { NexonBadRequestError, NexonNetworkError, NexonRateLimitError } from '@core/nexon/errors'
 import {
   getAllCachedCharacterBasicOcids,
@@ -74,8 +55,8 @@ const twoAccounts: MapleAccount[] = [
 const noAccounts: MapleAccount[] = []
 
 beforeEach(async () => {
+  installFakePreferences()
   getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1', selectedAccountId: null })
-  await Preferences.clear()
 })
 
 afterEach(() => {

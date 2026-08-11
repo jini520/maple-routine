@@ -1,34 +1,17 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { Preferences } from '@capacitor/preferences'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { installFakePreferences } from './fake-preferences'
 import {
   getManualTrackedContent,
   setManualTrackedContent,
   type ManualTrackedItem,
 } from '../manual-tracked-content'
 
-vi.mock('@capacitor/preferences', () => {
-  const store = new Map<string, string>()
-  return {
-    Preferences: {
-      get: vi.fn(async ({ key }: { key: string }) => ({
-        value: store.has(key) ? (store.get(key) as string) : null,
-      })),
-      set: vi.fn(async ({ key, value }: { key: string; value: string }) => {
-        store.set(key, value)
-      }),
-      remove: vi.fn(async ({ key }: { key: string }) => {
-        store.delete(key)
-      }),
-    },
-  }
-})
+let prefs = installFakePreferences()
 
 beforeEach(async () => {
-  vi.mocked(Preferences.get).mockClear()
-  vi.mocked(Preferences.set).mockClear()
-  vi.mocked(Preferences.remove).mockClear()
-  await Preferences.remove({ key: 'manualTrackedContent:ocid-1' })
-  await Preferences.remove({ key: 'manualTrackedContent:ocid-2' })
+  prefs = installFakePreferences()
+  await prefs.remove('manualTrackedContent:ocid-1')
+  await prefs.remove('manualTrackedContent:ocid-2')
 })
 
 const SAMPLE_ITEMS: ManualTrackedItem[] = [
@@ -81,14 +64,11 @@ describe('ocid 독립성', () => {
 
 describe('레거시 kind 마이그레이션 (ADR-035 결정 19)', () => {
   it("결정 19 이전의 kind: 'content' 항목은 템플릿 조회로 daily/weekly로 재분류된다", async () => {
-    await Preferences.set({
-      key: 'manualTrackedContent:ocid-1',
-      value: JSON.stringify([
+    await prefs.set('manualTrackedContent:ocid-1', JSON.stringify([
         { contentName: '몬스터파크', kind: 'content', maxCount: 14 },
         { contentName: '무릉도장', kind: 'content' },
         { contentName: '루시드', kind: 'boss', difficulty: '이지' },
-      ]),
-    })
+      ]))
 
     await expect(getManualTrackedContent('ocid-1')).resolves.toEqual([
       { contentName: '몬스터파크', kind: 'daily', maxCount: 14 },
@@ -98,13 +78,10 @@ describe('레거시 kind 마이그레이션 (ADR-035 결정 19)', () => {
   })
 
   it("템플릿에 없는 레거시 'content' 항목은 목록에서 제외된다 (결정 11 일관 적용)", async () => {
-    await Preferences.set({
-      key: 'manualTrackedContent:ocid-1',
-      value: JSON.stringify([
+    await prefs.set('manualTrackedContent:ocid-1', JSON.stringify([
         { contentName: '템플릿에 없는 콘텐츠', kind: 'content' },
         { contentName: '몬스터파크', kind: 'content' },
-      ]),
-    })
+      ]))
 
     await expect(getManualTrackedContent('ocid-1')).resolves.toEqual([
       { contentName: '몬스터파크', kind: 'daily' },
@@ -114,14 +91,14 @@ describe('레거시 kind 마이그레이션 (ADR-035 결정 19)', () => {
 
 describe('손상된 JSON', () => {
   it('저장된 값이 손상된 JSON이면 예외를 던지지 않고 빈 배열을 반환한다', async () => {
-    await Preferences.set({ key: 'manualTrackedContent:ocid-1', value: 'not-valid-json{' })
+    await prefs.set('manualTrackedContent:ocid-1', 'not-valid-json{')
     await expect(getManualTrackedContent('ocid-1')).resolves.toEqual([])
   })
 })
 
 describe('쓰기 실패 전파', () => {
   it('Preferences.set이 reject되면 setManualTrackedContent도 에러를 그대로 전파한다', async () => {
-    vi.mocked(Preferences.set).mockRejectedValueOnce(new Error('disk full'))
+    prefs.set.mockRejectedValueOnce(new Error('disk full'))
     await expect(setManualTrackedContent('ocid-1', SAMPLE_ITEMS)).rejects.toThrow('disk full')
   })
 })

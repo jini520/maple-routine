@@ -1,4 +1,4 @@
-import { Preferences } from '@capacitor/preferences'
+import { preferences } from './ports'
 import { STORAGE_KEYS } from './keys'
 import { BOSS_PROFIT_TABLE_NAMES, getBossProfitDb } from './sqlite/db'
 
@@ -50,9 +50,9 @@ function tablesFor(selection: CacheDataSelection): readonly string[] {
 // 선택한 그룹만 지운다. 인자를 생략하면 두 그룹 모두 — 선택 삭제 도입 전과 같은 전체 삭제다.
 export async function clearCacheData(selection: CacheDataSelection = ALL_GROUPS): Promise<void> {
   if (selection.general) {
-    const { keys } = await Preferences.keys()
+    const keys = await preferences.keys()
     await Promise.all(
-      keys.filter((key) => !KEEP_KEYS.has(key)).map((key) => Preferences.remove({ key })),
+      keys.filter((key) => !KEEP_KEYS.has(key)).map((key) => preferences.remove(key)),
     )
   }
 
@@ -73,10 +73,10 @@ export async function clearCacheData(selection: CacheDataSelection = ALL_GROUPS)
 export async function getCacheDataSizes(): Promise<Record<CacheDataGroupId, number>> {
   let general = 0
 
-  const { keys } = await Preferences.keys()
+  const keys = await preferences.keys()
   for (const key of keys) {
     if (KEEP_KEYS.has(key)) continue
-    const { value } = await Preferences.get({ key })
+    const value = await preferences.get(key)
     if (value !== null) general += byteLength(value)
   }
 

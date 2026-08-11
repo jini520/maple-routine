@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { Preferences } from '@capacitor/preferences'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { installFakePreferences } from './fake-preferences'
 import type { SharedProgressEntry } from '@core/types'
 import {
   getAccountSharedProgress,
@@ -7,23 +7,6 @@ import {
   setAccountSharedProgressEntry,
   setWorldSharedProgressEntry,
 } from '../shared-progress-cache'
-
-vi.mock('@capacitor/preferences', () => {
-  const store = new Map<string, string>()
-  return {
-    Preferences: {
-      get: vi.fn(async ({ key }: { key: string }) => ({
-        value: store.has(key) ? (store.get(key) as string) : null,
-      })),
-      set: vi.fn(async ({ key, value }: { key: string; value: string }) => {
-        store.set(key, value)
-      }),
-      remove: vi.fn(async ({ key }: { key: string }) => {
-        store.delete(key)
-      }),
-    },
-  }
-})
 
 const sampleEntry: SharedProgressEntry = {
   active: true,
@@ -43,10 +26,11 @@ const KEYS_USED_IN_TESTS = [
   'accountSharedProgress:acc-unknown',
 ]
 
+let prefs = installFakePreferences()
+
 beforeEach(async () => {
-  vi.mocked(Preferences.get).mockClear()
-  vi.mocked(Preferences.set).mockClear()
-  await Promise.all(KEYS_USED_IN_TESTS.map((key) => Preferences.remove({ key })))
+  prefs = installFakePreferences()
+  await Promise.all(KEYS_USED_IN_TESTS.map((key) => prefs.remove(key)))
 })
 
 describe('world 원장', () => {
@@ -94,7 +78,7 @@ describe('account 원장', () => {
 
 describe('손상된 JSON', () => {
   it('저장된 값이 손상된 JSON이면 예외를 던지지 않고 빈 객체를 반환한다', async () => {
-    await Preferences.set({ key: 'worldSharedProgress:깨짐', value: 'not-valid-json{' })
+    await prefs.set('worldSharedProgress:깨짐', 'not-valid-json{')
     await expect(getWorldSharedProgress('깨짐')).resolves.toEqual({})
   })
 })

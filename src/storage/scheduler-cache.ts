@@ -1,4 +1,4 @@
-import { Preferences } from '@capacitor/preferences'
+import { preferences } from './ports'
 import type { SchedulerCharacterState } from '@core/types'
 import { schedulerCacheKey } from './keys'
 
@@ -10,7 +10,7 @@ export interface CachedSchedulerEntry {
 export async function getCachedSchedulerState(
   ocid: string,
 ): Promise<CachedSchedulerEntry | null> {
-  const { value } = await Preferences.get({ key: schedulerCacheKey(ocid) })
+  const value = await preferences.get(schedulerCacheKey(ocid))
   if (value === null) {
     return null
   }
@@ -26,9 +26,9 @@ export async function setCachedSchedulerState(
   ocid: string,
   entry: CachedSchedulerEntry,
 ): Promise<void> {
-  await Preferences.set({ key: schedulerCacheKey(ocid), value: JSON.stringify(entry) })
+  await preferences.set(schedulerCacheKey(ocid), JSON.stringify(entry))
 }
 
 export async function clearCachedSchedulerState(ocid: string): Promise<void> {
-  await Preferences.remove({ key: schedulerCacheKey(ocid) })
+  await preferences.remove(schedulerCacheKey(ocid))
 }

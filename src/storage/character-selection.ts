@@ -1,4 +1,4 @@
-import { Preferences } from '@capacitor/preferences'
+import { preferences } from './ports'
 import { lastSelectedCharacterKey, trackedCharactersKey } from './keys'
 
 const LEGACY_TRACKED_KEYS = [
@@ -32,13 +32,13 @@ function dedupeByOcid(ocids: string[]): string[] {
 // content 키를 더 이상 쓰지 않아 기존 daily/weekly → content/boss 이관 체인이 끊기므로,
 // 그 시대에서 바로 올라오는 설치본의 목록이 통째로 유실된다.
 async function runUnifyMigration(): Promise<void> {
-  const existing = await Preferences.get({ key: trackedCharactersKey() })
-  if (existing.value !== null) {
+  const existing = await preferences.get(trackedCharactersKey())
+  if (existing !== null) {
     return
   }
 
   const legacyLists = await Promise.all(
-    LEGACY_TRACKED_KEYS.map(async (key) => parseOcids((await Preferences.get({ key })).value)),
+    LEGACY_TRACKED_KEYS.map(async (key) => parseOcids(await preferences.get(key))),
   )
 
   if (legacyLists.every((list) => list === null)) {
@@ -46,15 +46,15 @@ async function runUnifyMigration(): Promise<void> {
   }
 
   const merged = dedupeByOcid(legacyLists.flatMap((list) => list ?? []))
-  await Preferences.set({ key: trackedCharactersKey(), value: JSON.stringify(merged) })
+  await preferences.set(trackedCharactersKey(), JSON.stringify(merged))
 
   const [legacyContentSelected, legacyBossSelected] = await Promise.all([
-    Preferences.get({ key: LEGACY_LAST_SELECTED_CONTENT_KEY }),
-    Preferences.get({ key: LEGACY_LAST_SELECTED_BOSS_KEY }),
+    preferences.get(LEGACY_LAST_SELECTED_CONTENT_KEY),
+    preferences.get(LEGACY_LAST_SELECTED_BOSS_KEY),
   ])
-  const lastSelected = legacyContentSelected.value ?? legacyBossSelected.value
+  const lastSelected = legacyContentSelected ?? legacyBossSelected
   if (lastSelected !== null) {
-    await Preferences.set({ key: lastSelectedCharacterKey(), value: lastSelected })
+    await preferences.set(lastSelectedCharacterKey(), lastSelected)
   }
 
   await Promise.all(
@@ -62,7 +62,7 @@ async function runUnifyMigration(): Promise<void> {
       ...LEGACY_TRACKED_KEYS,
       LEGACY_LAST_SELECTED_CONTENT_KEY,
       LEGACY_LAST_SELECTED_BOSS_KEY,
-    ].map((key) => Preferences.remove({ key })),
+    ].map((key) => preferences.remove(key)),
   )
 }
 
@@ -83,29 +83,29 @@ function migrateLegacyCharacterSelection(): Promise<void> {
 export async function getTrackedCharacterOcids(): Promise<string[] | null> {
   await migrateLegacyCharacterSelection()
 
-  const { value } = await Preferences.get({ key: trackedCharactersKey() })
+  const value = await preferences.get(trackedCharactersKey())
   return parseOcids(value)
 }
 
 export async function setTrackedCharacterOcids(ocids: string[]): Promise<void> {
-  await Preferences.set({ key: trackedCharactersKey(), value: JSON.stringify(ocids) })
+  await preferences.set(trackedCharactersKey(), JSON.stringify(ocids))
 }
 
 export async function clearTrackedCharacterOcids(): Promise<void> {
-  await Preferences.remove({ key: trackedCharactersKey() })
+  await preferences.remove(trackedCharactersKey())
 }
 
 export async function getLastSelectedCharacter(): Promise<string | null> {
   await migrateLegacyCharacterSelection()
 
-  const { value } = await Preferences.get({ key: lastSelectedCharacterKey() })
+  const value = await preferences.get(lastSelectedCharacterKey())
   return value
 }
 
 export async function setLastSelectedCharacter(ocid: string): Promise<void> {
-  await Preferences.set({ key: lastSelectedCharacterKey(), value: ocid })
+  await preferences.set(lastSelectedCharacterKey(), ocid)
 }
 
 export async function clearLastSelectedCharacter(): Promise<void> {
-  await Preferences.remove({ key: lastSelectedCharacterKey() })
+  await preferences.remove(lastSelectedCharacterKey())
 }

@@ -3,13 +3,16 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
 import { useDropEffectStore } from '../../../features/drop-effect/store'
 import { BossDropSheet } from '../BossDropSheet'
 
 // vitest globals 미설정이라 자동 cleanup이 없다 — 포털 시트가 body에 누적되지 않도록 수동 정리.
 afterEach(cleanup)
 // 연출 토글은 전역 스토어라 테스트 간 오염을 막기 위해 매번 기본값(연출 표시)으로 되돌린다.
+// 토글은 저장소까지 내려가므로(storage/drop-effect) 포트도 함께 주입한다([[ADR-127]]).
 beforeEach(() => {
+  installFakePreferences()
   useDropEffectStore.setState({ enabled: true })
 })
 

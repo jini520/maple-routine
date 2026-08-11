@@ -1,4 +1,4 @@
-import { Preferences } from '@capacitor/preferences'
+import { preferences } from './ports'
 import { STORAGE_KEYS } from './keys'
 
 export type TrackingMode = 'auto' | 'manual'
@@ -9,7 +9,7 @@ export type TrackingMode = 'auto' | 'manual'
 // **동작 기본값은 그대로 자동이다**(ADR-035 결정 2) — 소비처가 `?? 'auto'`로 흡수한다.
 // 이 null을 "아직 안 골랐다"로 읽는 곳은 온보딩 게이트 하나뿐이다.
 export async function getTrackingMode(): Promise<TrackingMode | null> {
-  const { value } = await Preferences.get({ key: STORAGE_KEYS.trackingMode })
+  const value = await preferences.get(STORAGE_KEYS.trackingMode)
   if (value === 'manual' || value === 'auto') {
     return value
   }
@@ -17,5 +17,5 @@ export async function getTrackingMode(): Promise<TrackingMode | null> {
 }
 
 export async function setTrackingMode(mode: TrackingMode): Promise<void> {
-  await Preferences.set({ key: STORAGE_KEYS.trackingMode, value: mode })
+  await preferences.set(STORAGE_KEYS.trackingMode, mode)
 }

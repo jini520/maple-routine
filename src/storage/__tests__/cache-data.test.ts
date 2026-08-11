@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { Preferences } from '@capacitor/preferences'
+import { installFakePreferences } from './fake-preferences'
 import type { CacheDataSelection } from '../cache-data'
 import {
   BOSS_RECORD_TABLE_NAMES,
@@ -9,24 +9,6 @@ import {
 } from '../cache-data'
 import { BOSS_PROFIT_TABLE_NAMES, getBossProfitDb } from '../sqlite/db'
 import { clearCacheDataAndReload } from '../../features/settings/cache-data'
-
-vi.mock('@capacitor/preferences', () => {
-  const store = new Map<string, string>()
-  return {
-    Preferences: {
-      keys: vi.fn(async () => ({ keys: [...store.keys()] })),
-      get: vi.fn(async ({ key }: { key: string }) => ({
-        value: store.has(key) ? (store.get(key) as string) : null,
-      })),
-      set: vi.fn(async ({ key, value }: { key: string; value: string }) => {
-        store.set(key, value)
-      }),
-      remove: vi.fn(async ({ key }: { key: string }) => {
-        store.delete(key)
-      }),
-    },
-  }
-})
 
 // clearCacheDataAndReload의 "닫기 → 커버 → 리로드" 순서를 잡기 위한 공유 호출 기록(ADR-117 결정 8).
 // 각 mock이 호출되는 시점에 이름을 push하므로 배열 자체가 곧 실행 순서다 — toHaveBeenCalled로는
@@ -65,18 +47,19 @@ function deleteCalls(): string[] {
   return dbExecuteMock.mock.calls.map(([statement]) => statement)
 }
 
+let prefs = installFakePreferences()
+
 beforeEach(async () => {
-  const { keys } = await Preferences.keys()
-  await Promise.all(keys.map((key) => Preferences.remove({ key })))
-  await Preferences.set({ key: 'apiKey', value: 'test-key' })
-  await Preferences.set({ key: 'selectedAccountId', value: 'acc-1' })
-  await Preferences.set({ key: 'theme', value: '렌' })
-  await Preferences.set({ key: 'trackingMode', value: 'manual' })
-  await Preferences.set({ key: 'dropEffect', value: 'off' })
-  await Preferences.set({ key: 'schedulerCache:ocid-1', value: '{}' })
-  await Preferences.set({ key: 'characterBasicCache:index', value: '[]' })
-  await Preferences.set({ key: 'trackedCharacters', value: '[]' })
-  await Preferences.set({ key: 'lastSelectedCharacter', value: 'ocid-1' })
+  prefs = installFakePreferences()
+  await prefs.set('apiKey', 'test-key')
+  await prefs.set('selectedAccountId', 'acc-1')
+  await prefs.set('theme', '렌')
+  await prefs.set('trackingMode', 'manual')
+  await prefs.set('dropEffect', 'off')
+  await prefs.set('schedulerCache:ocid-1', '{}')
+  await prefs.set('characterBasicCache:index', '[]')
+  await prefs.set('trackedCharacters', '[]')
+  await prefs.set('lastSelectedCharacter', 'ocid-1')
   dbQueryMock.mockResolvedValue({ values: [] })
   vi.clearAllMocks()
 })
@@ -117,11 +100,11 @@ describe('clearCacheData', () => {
   it('apiKey·selectedAccountId·theme·trackingMode·dropEffect는 남긴다', async () => {
     await clearCacheData()
 
-    expect((await Preferences.get({ key: 'apiKey' })).value).toBe('test-key')
-    expect((await Preferences.get({ key: 'selectedAccountId' })).value).toBe('acc-1')
-    expect((await Preferences.get({ key: 'theme' })).value).toBe('렌')
-    expect((await Preferences.get({ key: 'trackingMode' })).value).toBe('manual')
-    expect((await Preferences.get({ key: 'dropEffect' })).value).toBe('off')
+    expect(await prefs.get('apiKey')).toBe('test-key')
+    expect(await prefs.get('selectedAccountId')).toBe('acc-1')
+    expect(await prefs.get('theme')).toBe('렌')
+    expect(await prefs.get('trackingMode')).toBe('manual')
+    expect(await prefs.get('dropEffect')).toBe('off')
   })
 
   it('보존 키는 어떤 그룹 조합에서도 남는다', async () => {
@@ -130,7 +113,7 @@ describe('clearCacheData', () => {
     await clearCacheData({ general: false, bossRecords: true })
 
     for (const key of KEEP_KEY_NAMES) {
-      expect((await Preferences.get({ key })).value).not.toBeNull()
+      expect(await prefs.get(key)).not.toBeNull()
     }
   })
 
@@ -138,10 +121,10 @@ describe('clearCacheData', () => {
   it('인자 없이 호출하면 두 그룹을 모두 지운다', async () => {
     await clearCacheData()
 
-    expect((await Preferences.get({ key: 'schedulerCache:ocid-1' })).value).toBeNull()
-    expect((await Preferences.get({ key: 'characterBasicCache:index' })).value).toBeNull()
-    expect((await Preferences.get({ key: 'trackedCharacters' })).value).toBeNull()
-    expect((await Preferences.get({ key: 'lastSelectedCharacter' })).value).toBeNull()
+    expect(await prefs.get('schedulerCache:ocid-1')).toBeNull()
+    expect(await prefs.get('characterBasicCache:index')).toBeNull()
+    expect(await prefs.get('trackedCharacters')).toBeNull()
+    expect(await prefs.get('lastSelectedCharacter')).toBeNull()
     for (const table of BOSS_PROFIT_TABLE_NAMES) {
       expect(dbExecuteMock).toHaveBeenCalledWith(`DELETE FROM ${table};`)
     }
@@ -153,10 +136,10 @@ describe('clearCacheData', () => {
     it('보존 키를 제외한 Preferences를 모두 지운다', async () => {
       await clearCacheData({ general: true, bossRecords: false })
 
-      expect((await Preferences.get({ key: 'schedulerCache:ocid-1' })).value).toBeNull()
-      expect((await Preferences.get({ key: 'characterBasicCache:index' })).value).toBeNull()
-      expect((await Preferences.get({ key: 'trackedCharacters' })).value).toBeNull()
-      expect((await Preferences.get({ key: 'lastSelectedCharacter' })).value).toBeNull()
+      expect(await prefs.get('schedulerCache:ocid-1')).toBeNull()
+      expect(await prefs.get('characterBasicCache:index')).toBeNull()
+      expect(await prefs.get('trackedCharacters')).toBeNull()
+      expect(await prefs.get('lastSelectedCharacter')).toBeNull()
     })
 
     it('일반 그룹 테이블만 비우고 수익·드롭 기록은 건드리지 않는다', async () => {
@@ -176,11 +159,11 @@ describe('clearCacheData', () => {
     it('Preferences는 한 개도 지우지 않는다', async () => {
       await clearCacheData({ general: false, bossRecords: true })
 
-      expect((await Preferences.get({ key: 'schedulerCache:ocid-1' })).value).toBe('{}')
-      expect((await Preferences.get({ key: 'characterBasicCache:index' })).value).toBe('[]')
-      expect((await Preferences.get({ key: 'trackedCharacters' })).value).toBe('[]')
-      expect((await Preferences.get({ key: 'lastSelectedCharacter' })).value).toBe('ocid-1')
-      expect(Preferences.remove).not.toHaveBeenCalled()
+      expect(await prefs.get('schedulerCache:ocid-1')).toBe('{}')
+      expect(await prefs.get('characterBasicCache:index')).toBe('[]')
+      expect(await prefs.get('trackedCharacters')).toBe('[]')
+      expect(await prefs.get('lastSelectedCharacter')).toBe('ocid-1')
+      expect(prefs.remove).not.toHaveBeenCalled()
     })
 
     it('수익·드롭 기록 테이블만 비운다', async () => {
@@ -199,7 +182,7 @@ describe('clearCacheData', () => {
   it('아무 그룹도 선택하지 않으면 아무것도 지우지 않는다', async () => {
     await clearCacheData({ general: false, bossRecords: false })
 
-    expect(Preferences.remove).not.toHaveBeenCalled()
+    expect(prefs.remove).not.toHaveBeenCalled()
     expect(dbExecuteMock).not.toHaveBeenCalled()
     // 지울 것이 없으면 커넥션도 열지 않는다.
     expect(getBossProfitDb).not.toHaveBeenCalled()
@@ -237,9 +220,9 @@ describe('getCacheDataSizes', () => {
   })
 
   it('보존 키만 남아 있으면 일반 그룹이 0이다', async () => {
-    const { keys } = await Preferences.keys()
+    const keys = await prefs.keys()
     await Promise.all(
-      keys.filter((key) => !KEEP_KEY_NAMES.includes(key)).map((key) => Preferences.remove({ key })),
+      keys.filter((key) => !KEEP_KEY_NAMES.includes(key)).map((key) => prefs.remove(key)),
     )
 
     const sizes = await getCacheDataSizes()

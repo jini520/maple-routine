@@ -1,4 +1,4 @@
-import { Preferences } from '@capacitor/preferences'
+import { preferences } from './ports'
 import { getKstDateKeyDaysAgo } from '@core/lib/reset-clock'
 import { scheduleProbeKey } from './keys'
 
@@ -55,7 +55,7 @@ function parseLedger(value: string | null): ScheduleProbeLedger {
 }
 
 async function readLedger(ocid: string): Promise<ScheduleProbeLedger> {
-  const { value } = await Preferences.get({ key: scheduleProbeKey(ocid) })
+  const value = await preferences.get(scheduleProbeKey(ocid))
   return parseLedger(value)
 }
 
@@ -103,28 +103,25 @@ export async function recordScheduleProbe(
 ): Promise<void> {
   await withLedgerLock(ocid, async () => {
     const ledger = await readLedger(ocid)
-    await Preferences.set({
-      key: scheduleProbeKey(ocid),
-      value: JSON.stringify({
+    await preferences.set(
+      scheduleProbeKey(ocid),
+      JSON.stringify({
         ...ledger,
         dates: { ...ledger.dates, [dateKey]: record },
       }),
-    })
+    )
   })
 }
 
 export async function markScheduleProbeUnavailable(ocid: string): Promise<void> {
   await withLedgerLock(ocid, async () => {
     const ledger = await readLedger(ocid)
-    await Preferences.set({
-      key: scheduleProbeKey(ocid),
-      value: JSON.stringify({ ...ledger, unavailable: true }),
-    })
+    await preferences.set(scheduleProbeKey(ocid), JSON.stringify({ ...ledger, unavailable: true }))
   })
 }
 
 export async function clearScheduleProbeLedger(ocid: string): Promise<void> {
   await withLedgerLock(ocid, async () => {
-    await Preferences.remove({ key: scheduleProbeKey(ocid) })
+    await preferences.remove(scheduleProbeKey(ocid))
   })
 }

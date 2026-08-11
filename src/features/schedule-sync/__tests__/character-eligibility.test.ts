@@ -1,25 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
 import { NexonBadRequestError, NexonNetworkError } from '@core/nexon/errors'
 import { clearScheduleProbeLedger, getScheduleProbeLedger } from '../../../storage/schedule-probe-ledger'
 import type { SchedulerCharacterState } from '@core/types'
 import { resolveCharacterEligibility } from '../character-eligibility'
-
-vi.mock('@capacitor/preferences', () => {
-  const store = new Map<string, string>()
-  return {
-    Preferences: {
-      get: vi.fn(async ({ key }: { key: string }) => ({
-        value: store.has(key) ? (store.get(key) as string) : null,
-      })),
-      set: vi.fn(async ({ key, value }: { key: string; value: string }) => {
-        store.set(key, value)
-      }),
-      remove: vi.fn(async ({ key }: { key: string }) => {
-        store.delete(key)
-      }),
-    },
-  }
-})
 
 const { fetchSchedulerCharacterStateMock } = vi.hoisted(() => ({
   fetchSchedulerCharacterStateMock: vi.fn(),
@@ -65,6 +49,7 @@ const COMPLETED = state({
 })
 
 beforeEach(async () => {
+  installFakePreferences()
   fetchSchedulerCharacterStateMock.mockReset()
   await clearScheduleProbeLedger('ocid-1')
 })

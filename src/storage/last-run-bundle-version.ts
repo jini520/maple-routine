@@ -1,4 +1,4 @@
-import { Preferences } from '@capacitor/preferences'
+import { preferences } from './ports'
 import { STORAGE_KEYS } from './keys'
 
 // 마지막으로 **실행된** OTA 번들 버전(ADR-126 결정 4). 적용 성공 경로에는 상태 전환 코드가 없으므로
@@ -13,10 +13,10 @@ import { STORAGE_KEYS } from './keys'
 // 안내를 띄우지 않는다.
 
 export async function getLastRunBundleVersion(): Promise<string | null> {
-  const { value } = await Preferences.get({ key: STORAGE_KEYS.lastRunBundleVersion })
+  const value = await preferences.get(STORAGE_KEYS.lastRunBundleVersion)
   return value ?? null
 }
 
 export async function setLastRunBundleVersion(version: string): Promise<void> {
-  await Preferences.set({ key: STORAGE_KEYS.lastRunBundleVersion, value: version })
+  await preferences.set(STORAGE_KEYS.lastRunBundleVersion, version)
 }

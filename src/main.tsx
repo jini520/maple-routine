@@ -5,6 +5,15 @@ import { defineCustomElements as defineJeepSqliteElements } from 'jeep-sqlite/lo
 import './index.css'
 import App from './App.tsx'
 import { useLiveUpdateStore } from './features/live-update/store'
+import { setPreferencesPort, setSqlitePort } from './storage/ports'
+import { capacitorPreferencesPort } from './storage/adapters/capacitor-preferences'
+import { capacitorSqlitePort } from './storage/adapters/capacitor-sqlite'
+
+// 저장소 포트 주입은 **저장소를 건드리는 어떤 코드보다 먼저** 와야 한다([[ADR-127]]) — 바로 아래
+// checkOnBoot()부터 Preferences를 읽는다. 주입 전 접근은 조용히 넘어가지 않고 던지므로, 순서가
+// 틀리면 무음 데이터 손실이 아니라 에러로 드러난다.
+setPreferencesPort(capacitorPreferencesPort)
+setSqlitePort(capacitorSqlitePort)
 
 // notifyAppReady()는 여기서 부르지 않는다 — App 마운트 useEffect로 옮겼다(ADR-117 결정 2).
 // 번들 첫 문장에서 부르면 "정상"이 렌더 한 픽셀 전에 선언돼, 그 뒤에 죽는 번들이 SUCCESS로

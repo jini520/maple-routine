@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { Preferences } from '@capacitor/preferences'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { installFakePreferences } from './fake-preferences'
 import type { CharacterBasicProfile } from '@core/types'
 import {
   clearCachedCharacterBasic,
@@ -8,23 +8,6 @@ import {
   setCachedCharacterBasic,
   type CachedCharacterBasicEntry,
 } from '../character-basic-cache'
-
-vi.mock('@capacitor/preferences', () => {
-  const store = new Map<string, string>()
-  return {
-    Preferences: {
-      get: vi.fn(async ({ key }: { key: string }) => ({
-        value: store.has(key) ? (store.get(key) as string) : null,
-      })),
-      set: vi.fn(async ({ key, value }: { key: string; value: string }) => {
-        store.set(key, value)
-      }),
-      remove: vi.fn(async ({ key }: { key: string }) => {
-        store.delete(key)
-      }),
-    },
-  }
-})
 
 const ACCOUNT = 'account-1'
 
@@ -40,10 +23,10 @@ const sampleEntry: CachedCharacterBasicEntry = {
   cachedAt: '2026-07-12T00:05:00.000Z',
 }
 
+let prefs = installFakePreferences()
+
 beforeEach(async () => {
-  vi.mocked(Preferences.get).mockClear()
-  vi.mocked(Preferences.set).mockClear()
-  vi.mocked(Preferences.remove).mockClear()
+  prefs = installFakePreferences()
   await clearCachedCharacterBasic(ACCOUNT, 'ocid-1')
 })
 
@@ -68,14 +51,14 @@ describe('저장된 값이 없는 경우', () => {
 
 describe('손상된 JSON', () => {
   it('저장된 값이 손상된 JSON이면 예외를 던지지 않고 null을 반환한다', async () => {
-    await Preferences.set({ key: 'characterBasicCache:ocid-broken', value: 'not-valid-json{' })
+    await prefs.set('characterBasicCache:ocid-broken', 'not-valid-json{')
     await expect(getCachedCharacterBasic('ocid-broken')).resolves.toBeNull()
   })
 })
 
 describe('쓰기 실패 전파', () => {
   it('Preferences.set이 reject되면 setCachedCharacterBasic도 에러를 그대로 전파한다', async () => {
-    vi.mocked(Preferences.set).mockRejectedValueOnce(new Error('disk full'))
+    prefs.set.mockRejectedValueOnce(new Error('disk full'))
     await expect(setCachedCharacterBasic(ACCOUNT, 'ocid-1', sampleEntry)).rejects.toThrow('disk full')
   })
 })
@@ -122,8 +105,8 @@ describe('계정별 인덱스 (ADR-086 결정 9)', () => {
   afterEach(async () => {
     await clearCachedCharacterBasic(ACCOUNT, 'ocid-1')
     await clearCachedCharacterBasic(OTHER, 'ocid-9')
-    await Preferences.remove({ key: 'characterBasicCache:index' })
-    await Preferences.remove({ key: 'selectedAccountId' })
+    await prefs.remove('characterBasicCache:index')
+    await prefs.remove('selectedAccountId')
   })
 
   it('다른 계정에 캐싱한 ocid는 이 계정 인덱스에 나타나지 않는다', async () => {
@@ -140,18 +123,16 @@ describe('계정별 인덱스 (ADR-086 결정 9)', () => {
   })
 
   it('전역 인덱스(레거시)를 저장된 selectedAccountId의 인덱스로 1회 이관하고 전역 키를 지운다', async () => {
-    await Preferences.set({ key: 'selectedAccountId', value: ACCOUNT })
-    await Preferences.set({ key: 'characterBasicCache:index', value: JSON.stringify(['ocid-1']) })
+    await prefs.set('selectedAccountId', ACCOUNT)
+    await prefs.set('characterBasicCache:index', JSON.stringify(['ocid-1']))
 
     await expect(getAllCachedCharacterBasicOcids(ACCOUNT)).resolves.toEqual(['ocid-1'])
-    await expect(Preferences.get({ key: 'characterBasicCache:index' })).resolves.toEqual({
-      value: null,
-    })
+    await expect(prefs.get('characterBasicCache:index')).resolves.toBeNull()
   })
 
   it('이관은 인자가 아니라 저장된 selectedAccountId를 따른다 — 커밋 전 후보 계정에 흘러들지 않는다', async () => {
-    await Preferences.set({ key: 'selectedAccountId', value: ACCOUNT })
-    await Preferences.set({ key: 'characterBasicCache:index', value: JSON.stringify(['ocid-1']) })
+    await prefs.set('selectedAccountId', ACCOUNT)
+    await prefs.set('characterBasicCache:index', JSON.stringify(['ocid-1']))
 
     // 계정 변경 도중 후보 계정(OTHER)으로 먼저 조회해도 이관 대상은 ACCOUNT다.
     await expect(getAllCachedCharacterBasicOcids(OTHER)).resolves.toEqual([])
@@ -159,12 +140,10 @@ describe('계정별 인덱스 (ADR-086 결정 9)', () => {
   })
 
   it('selectedAccountId가 아직 없으면 이관을 미루고 전역 키를 남긴다', async () => {
-    await Preferences.set({ key: 'characterBasicCache:index', value: JSON.stringify(['ocid-1']) })
+    await prefs.set('characterBasicCache:index', JSON.stringify(['ocid-1']))
 
     await expect(getAllCachedCharacterBasicOcids(ACCOUNT)).resolves.toEqual([])
-    await expect(Preferences.get({ key: 'characterBasicCache:index' })).resolves.toEqual({
-      value: JSON.stringify(['ocid-1']),
-    })
+    await expect(prefs.get('characterBasicCache:index')).resolves.toBe(JSON.stringify(['ocid-1']))
   })
 })
 

@@ -1,5 +1,5 @@
-import { Preferences } from '@capacitor/preferences'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
 import { NexonBadRequestError, NexonRateLimitError } from '@core/nexon/errors'
 import {
   getAllCachedCharacterBasicOcids,
@@ -8,26 +8,6 @@ import {
 } from '../../../storage/character-basic-cache'
 import type { CharacterBasicProfile } from '@core/types'
 import { CHARACTER_BASIC_TTL_MS, fetchCharacterBasicCached } from '../character-basic-fetch'
-
-vi.mock('@capacitor/preferences', () => {
-  const store = new Map<string, string>()
-  return {
-    Preferences: {
-      get: vi.fn(async ({ key }: { key: string }) => ({
-        value: store.has(key) ? (store.get(key) as string) : null,
-      })),
-      set: vi.fn(async ({ key, value }: { key: string; value: string }) => {
-        store.set(key, value)
-      }),
-      remove: vi.fn(async ({ key }: { key: string }) => {
-        store.delete(key)
-      }),
-      clear: vi.fn(async () => {
-        store.clear()
-      }),
-    },
-  }
-})
 
 const { fetchCharacterBasicMock } = vi.hoisted(() => ({
   fetchCharacterBasicMock: vi.fn(),
@@ -60,8 +40,8 @@ async function seedCache(elapsedMs: number, cached: CharacterBasicProfile): Prom
 }
 
 beforeEach(async () => {
+  installFakePreferences()
   fetchCharacterBasicMock.mockReset()
-  await Preferences.clear()
 })
 
 describe('캐시가 없으면 네트워크로 받고 그 결과를 캐시에 쓴다', () => {

@@ -1,29 +1,12 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { Preferences } from '@capacitor/preferences'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { installFakePreferences } from './fake-preferences'
 import { getTheme, setTheme } from '../theme'
 
-vi.mock('@capacitor/preferences', () => {
-  const store = new Map<string, string>()
-  return {
-    Preferences: {
-      get: vi.fn(async ({ key }: { key: string }) => ({
-        value: store.has(key) ? (store.get(key) as string) : null,
-      })),
-      set: vi.fn(async ({ key, value }: { key: string; value: string }) => {
-        store.set(key, value)
-      }),
-      remove: vi.fn(async ({ key }: { key: string }) => {
-        store.delete(key)
-      }),
-    },
-  }
-})
+let prefs = installFakePreferences()
 
 beforeEach(async () => {
-  vi.mocked(Preferences.get).mockClear()
-  vi.mocked(Preferences.set).mockClear()
-  vi.mocked(Preferences.remove).mockClear()
-  await Preferences.remove({ key: 'theme' })
+  prefs = installFakePreferences()
+  await prefs.remove('theme')
 })
 
 describe('저장된 값이 없는 경우', () => {
@@ -56,7 +39,7 @@ describe('round-trip', () => {
 
 describe('손상되거나 알 수 없는 값', () => {
   it('레테/렌이 아닌 임의의 문자열이 저장되어 있으면 null을 반환한다', async () => {
-    await Preferences.set({ key: 'theme', value: 'not-a-theme' })
+    await prefs.set('theme', 'not-a-theme')
     await expect(getTheme()).resolves.toBeNull()
   })
 })

@@ -1,10 +1,10 @@
-import { Preferences } from '@capacitor/preferences'
+import { preferences } from './ports'
 import { isThemeName } from '@core/lib/theme-registry'
 import type { ThemeName } from '@core/types'
 import { STORAGE_KEYS } from './keys'
 
 export async function getTheme(): Promise<ThemeName | null> {
-  const { value } = await Preferences.get({ key: STORAGE_KEYS.theme })
+  const value = await preferences.get(STORAGE_KEYS.theme)
   if (value === null || !isThemeName(value)) {
     return null
   }
@@ -12,5 +12,5 @@ export async function getTheme(): Promise<ThemeName | null> {
 }
 
 export async function setTheme(theme: ThemeName): Promise<void> {
-  await Preferences.set({ key: STORAGE_KEYS.theme, value: theme })
+  await preferences.set(STORAGE_KEYS.theme, theme)
 }

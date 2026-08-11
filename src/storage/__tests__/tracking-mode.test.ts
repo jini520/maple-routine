@@ -1,29 +1,12 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { Preferences } from '@capacitor/preferences'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { installFakePreferences } from './fake-preferences'
 import { getTrackingMode, setTrackingMode } from '../tracking-mode'
 
-vi.mock('@capacitor/preferences', () => {
-  const store = new Map<string, string>()
-  return {
-    Preferences: {
-      get: vi.fn(async ({ key }: { key: string }) => ({
-        value: store.has(key) ? (store.get(key) as string) : null,
-      })),
-      set: vi.fn(async ({ key, value }: { key: string; value: string }) => {
-        store.set(key, value)
-      }),
-      remove: vi.fn(async ({ key }: { key: string }) => {
-        store.delete(key)
-      }),
-    },
-  }
-})
+let prefs = installFakePreferences()
 
 beforeEach(async () => {
-  vi.mocked(Preferences.get).mockClear()
-  vi.mocked(Preferences.set).mockClear()
-  vi.mocked(Preferences.remove).mockClear()
-  await Preferences.remove({ key: 'trackingMode' })
+  prefs = installFakePreferences()
+  await prefs.remove('trackingMode')
 })
 
 describe('미선택 (ADR-086 결정 2)', () => {
@@ -47,14 +30,14 @@ describe('round-trip', () => {
 
 describe('손상된 값', () => {
   it('저장된 값이 알 수 없는 문자열이면 null(미선택)로 폴백한다', async () => {
-    await Preferences.set({ key: 'trackingMode', value: 'something-else' })
+    await prefs.set('trackingMode', 'something-else')
     await expect(getTrackingMode()).resolves.toBeNull()
   })
 })
 
 describe('쓰기 실패 전파', () => {
   it('Preferences.set이 reject되면 setTrackingMode도 에러를 그대로 전파한다', async () => {
-    vi.mocked(Preferences.set).mockRejectedValueOnce(new Error('disk full'))
+    prefs.set.mockRejectedValueOnce(new Error('disk full'))
     await expect(setTrackingMode('manual')).rejects.toThrow('disk full')
   })
 })

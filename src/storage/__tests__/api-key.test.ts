@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { Preferences } from '@capacitor/preferences'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { installFakePreferences } from './fake-preferences'
 import {
   clearAuthConfig,
   getAuthConfig,
@@ -9,27 +9,10 @@ import {
 } from '../api-key'
 import { STORAGE_KEYS } from '../keys'
 
-vi.mock('@capacitor/preferences', () => {
-  const store = new Map<string, string>()
-  return {
-    Preferences: {
-      get: vi.fn(async ({ key }: { key: string }) => ({
-        value: store.has(key) ? (store.get(key) as string) : null,
-      })),
-      set: vi.fn(async ({ key, value }: { key: string; value: string }) => {
-        store.set(key, value)
-      }),
-      remove: vi.fn(async ({ key }: { key: string }) => {
-        store.delete(key)
-      }),
-    },
-  }
-})
+let prefs = installFakePreferences()
 
 beforeEach(async () => {
-  vi.mocked(Preferences.get).mockClear()
-  vi.mocked(Preferences.set).mockClear()
-  vi.mocked(Preferences.remove).mockClear()
+  prefs = installFakePreferences()
   await clearAuthConfig()
 })
 
@@ -83,8 +66,8 @@ describe('removeApiKey', () => {
 
     await removeApiKey()
 
-    expect(Preferences.remove).toHaveBeenCalledWith({ key: STORAGE_KEYS.apiKey })
-    await expect(Preferences.get({ key: STORAGE_KEYS.apiKey })).resolves.toEqual({ value: null })
+    expect(prefs.remove).toHaveBeenCalledWith(STORAGE_KEYS.apiKey)
+    await expect(prefs.get(STORAGE_KEYS.apiKey)).resolves.toBeNull()
   })
 
   it('selectedAccountId는 저장소에 그대로 남는다 — 키 재입력 후의 재개가 그 값을 쓴다', async () => {
@@ -93,9 +76,7 @@ describe('removeApiKey', () => {
 
     await removeApiKey()
 
-    await expect(Preferences.get({ key: STORAGE_KEYS.selectedAccountId })).resolves.toEqual({
-      value: 'account-1',
-    })
+    await expect(prefs.get(STORAGE_KEYS.selectedAccountId)).resolves.toBe('account-1')
   })
 
   it('그 뒤 getAuthConfig는 null을 반환한다 — apiKey가 없으면 나머지를 읽지 않는다', async () => {
@@ -110,12 +91,12 @@ describe('removeApiKey', () => {
 
 describe('쓰기 실패 전파', () => {
   it('Preferences.set이 reject되면 setApiKey도 에러를 그대로 전파한다', async () => {
-    vi.mocked(Preferences.set).mockRejectedValueOnce(new Error('disk full'))
+    prefs.set.mockRejectedValueOnce(new Error('disk full'))
     await expect(setApiKey('test-api-key')).rejects.toThrow('disk full')
   })
 
   it('Preferences.set이 reject되면 setSelectedAccountId도 에러를 그대로 전파한다', async () => {
-    vi.mocked(Preferences.set).mockRejectedValueOnce(new Error('disk full'))
+    prefs.set.mockRejectedValueOnce(new Error('disk full'))
     await expect(setSelectedAccountId('account-1')).rejects.toThrow('disk full')
   })
 })

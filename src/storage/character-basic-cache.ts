@@ -1,4 +1,4 @@
-import { Preferences } from '@capacitor/preferences'
+import { preferences } from './ports'
 import type { CharacterBasicProfile } from '@core/types'
 import {
   characterBasicCacheIndexKey,
@@ -21,7 +21,7 @@ export interface CachedCharacterBasicEntry {
 // 캐릭터를 먼저 그렸다. 이제 계정별로 나눈다 — 엔트리(characterBasicCache:{ocid}) 자체는 그대로
 // 두고 보이는 범위만 좁히므로, 그 계정으로 돌아가면 인덱스가 되살아나 따뜻한 캐시를 재사용한다.
 async function getIndexedOcids(accountId: string): Promise<string[]> {
-  const { value } = await Preferences.get({ key: characterBasicCacheIndexKey(accountId) })
+  const value = await preferences.get(characterBasicCacheIndexKey(accountId))
   if (value === null) {
     return []
   }
@@ -34,10 +34,7 @@ async function getIndexedOcids(accountId: string): Promise<string[]> {
 }
 
 async function setIndexedOcids(accountId: string, ocids: string[]): Promise<void> {
-  await Preferences.set({
-    key: characterBasicCacheIndexKey(accountId),
-    value: JSON.stringify(ocids),
-  })
+  await preferences.set(characterBasicCacheIndexKey(accountId), JSON.stringify(ocids))
 }
 
 // ADR-086 결정 9 마이그레이션(1회): 전역 인덱스를 **저장된 selectedAccountId** 의 것으로 이관한다.
@@ -46,14 +43,12 @@ async function setIndexedOcids(accountId: string, ocids: string[]): Promise<void
 // (ADR-086 결정 6), 그 값으로 이관하면 아직 고르지도 않은 계정에 이전 계정 목록이 들어간다.
 // selectedAccountId가 아직 없으면(온보딩 전) 이관을 미룬다 — 전역 키가 그대로 남아 다음에 다시 시도한다.
 async function runLegacyIndexMigration(): Promise<void> {
-  const { value: legacy } = await Preferences.get({ key: LEGACY_CHARACTER_BASIC_CACHE_INDEX_KEY })
+  const legacy = await preferences.get(LEGACY_CHARACTER_BASIC_CACHE_INDEX_KEY)
   if (legacy === null) {
     return
   }
 
-  const { value: selectedAccountId } = await Preferences.get({
-    key: STORAGE_KEYS.selectedAccountId,
-  })
+  const selectedAccountId = await preferences.get(STORAGE_KEYS.selectedAccountId)
   if (selectedAccountId === null) {
     return
   }
@@ -67,7 +62,7 @@ async function runLegacyIndexMigration(): Promise<void> {
   }
 
   await setIndexedOcids(selectedAccountId, Array.from(new Set([...existing, ...legacyOcids])))
-  await Preferences.remove({ key: LEGACY_CHARACTER_BASIC_CACHE_INDEX_KEY })
+  await preferences.remove(LEGACY_CHARACTER_BASIC_CACHE_INDEX_KEY)
 }
 
 // 2026-07-14 정정: 인덱스는 읽고-수정하고-쓰는(read-modify-write) 방식이라, 여러 캐릭터를
@@ -87,7 +82,7 @@ function withIndexLock(task: () => Promise<void>): Promise<void> {
 }
 
 export async function getCachedCharacterBasic(ocid: string): Promise<CachedCharacterBasicEntry | null> {
-  const { value } = await Preferences.get({ key: characterBasicCacheKey(ocid) })
+  const value = await preferences.get(characterBasicCacheKey(ocid))
   if (value === null) {
     return null
   }
@@ -109,7 +104,7 @@ export async function setCachedCharacterBasic(
   ocid: string,
   entry: CachedCharacterBasicEntry,
 ): Promise<void> {
-  await Preferences.set({ key: characterBasicCacheKey(ocid), value: JSON.stringify(entry) })
+  await preferences.set(characterBasicCacheKey(ocid), JSON.stringify(entry))
 
   await withIndexLock(async () => {
     await runLegacyIndexMigration()
@@ -121,7 +116,7 @@ export async function setCachedCharacterBasic(
 }
 
 export async function clearCachedCharacterBasic(accountId: string, ocid: string): Promise<void> {
-  await Preferences.remove({ key: characterBasicCacheKey(ocid) })
+  await preferences.remove(characterBasicCacheKey(ocid))
 
   await withIndexLock(async () => {
     const index = await getIndexedOcids(accountId)

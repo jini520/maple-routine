@@ -1,4 +1,4 @@
-import { Preferences } from '@capacitor/preferences'
+import { preferences } from './ports'
 import { manualTrackedContentKey } from './keys'
 import { TEMPLATE_DAILY_NAMES, TEMPLATE_WEEKLY_NAMES } from '@core/lib/scheduler-content-template'
 import type { ManualTrackedItem } from '@core/types/scheduler'
@@ -33,7 +33,7 @@ function migrateLegacyKinds(items: StoredManualTrackedItem[]): ManualTrackedItem
 
 // 저장된 값이 없거나 손상된 JSON이면 빈 배열을 반환한다.
 export async function getManualTrackedContent(ocid: string): Promise<ManualTrackedItem[]> {
-  const { value } = await Preferences.get({ key: manualTrackedContentKey(ocid) })
+  const value = await preferences.get(manualTrackedContentKey(ocid))
   if (value === null) {
     return []
   }
@@ -50,5 +50,5 @@ export async function setManualTrackedContent(
   ocid: string,
   items: ManualTrackedItem[],
 ): Promise<void> {
-  await Preferences.set({ key: manualTrackedContentKey(ocid), value: JSON.stringify(items) })
+  await preferences.set(manualTrackedContentKey(ocid), JSON.stringify(items))
 }

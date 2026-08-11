@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
 import type { CharacterPickerEntry, MapleAccount, MapleCharacter, SchedulerCharacterState } from '@core/types'
 import { NexonAuthError, NexonBadRequestError, NexonNetworkError, NexonRateLimitError } from '@core/nexon/errors'
 
@@ -76,26 +77,8 @@ vi.mock('@core/lib/scheduler-merge', () => ({
 }))
 
 // ADR-086: 조회 원장(storage/schedule-probe-ledger)과 추적 목록(storage/character-selection)은
-// 실물을 쓰고 그 아래 Preferences만 인메모리로 바꾼다 — 원장이 "같은 날짜를 두 번 부르지 않는다"를
+// 실물을 쓰고 그 아래 PreferencesPort만 인메모리로 바꾼다 — 원장이 "같은 날짜를 두 번 부르지 않는다"를
 // 실제로 지키는지가 이 파일이 검증해야 할 동작이라, 그 모듈까지 목으로 대체하면 검증이 사라진다.
-vi.mock('@capacitor/preferences', () => {
-  const store = new Map<string, string>()
-  return {
-    __preferencesStore: store,
-    Preferences: {
-      get: vi.fn(async ({ key }: { key: string }) => ({
-        value: store.has(key) ? (store.get(key) as string) : null,
-      })),
-      set: vi.fn(async ({ key, value }: { key: string; value: string }) => {
-        store.set(key, value)
-      }),
-      remove: vi.fn(async ({ key }: { key: string }) => {
-        store.delete(key)
-      }),
-      keys: vi.fn(async () => ({ keys: [...store.keys()] })),
-    },
-  }
-})
 
 import { getCharacterPickerRoster, getRegisteredCharacters, syncSchedules } from '../schedule-sync'
 import { hasSyncAttemptedThisRun, resetSyncRunStateForTests } from '../sync-run-state'
@@ -154,16 +137,14 @@ const NOW = '2026-07-11T00:00:00.000Z'
 // 건너뛰는 경로는 별도 케이스가 본다.
 const STALE_CACHED_AT = '2026-07-10T00:00:00.000Z'
 
+let prefs = installFakePreferences()
+
 beforeEach(async () => {
   vi.useFakeTimers()
   vi.setSystemTime(new Date(NOW))
   // 모듈 수준 플래그라 테스트끼리 샌다(ADR-097 결정 3).
   resetSyncRunStateForTests()
-  const { Preferences } = (await import('@capacitor/preferences')) as unknown as {
-    Preferences: { keys(): Promise<{ keys: string[] }>; remove(o: { key: string }): Promise<void> }
-  }
-  const { keys } = await Preferences.keys()
-  await Promise.all(keys.map((key) => Preferences.remove({ key })))
+  prefs = installFakePreferences()
   getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1', selectedAccountId: 'acc-1' })
   getCachedSchedulerStateMock.mockResolvedValue(null)
   setCachedSchedulerStateMock.mockResolvedValue(undefined)
@@ -1117,10 +1098,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     // ADR-086 결정 3: 남기는 목적이 **해제 경로 확보**였으므로 추적 중일 때만 남긴다.
     // 추적 중이 아니면 고를 이유도 해제할 필요도 없어 목록에서 뺀다(ADR-068 결정 4 정정).
     async function setTrackedOcids(ocids: string[]): Promise<void> {
-      const { Preferences } = (await import('@capacitor/preferences')) as unknown as {
-        Preferences: { set(o: { key: string; value: string }): Promise<void> }
-      }
-      await Preferences.set({ key: 'trackedCharacters', value: JSON.stringify(ocids) })
+      await prefs.set('trackedCharacters', JSON.stringify(ocids))
     }
 
     it('추적 중이면 목록에서 빼지 않고 unavailable 항목으로 남긴다 — 해제 경로', async () => {
@@ -1348,10 +1326,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     })
 
     it('자격이 없어도 추적 중이면 남긴다 — 해제 경로', async () => {
-      const { Preferences } = (await import('@capacitor/preferences')) as unknown as {
-        Preferences: { set(o: { key: string; value: string }): Promise<void> }
-      }
-      await Preferences.set({ key: 'trackedCharacters', value: JSON.stringify(['ocid-1']) })
+      await prefs.set('trackedCharacters', JSON.stringify(['ocid-1']))
 
       const characters = [character('ocid-1')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])

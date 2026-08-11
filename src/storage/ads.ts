@@ -1,4 +1,4 @@
-import { Preferences } from '@capacitor/preferences'
+import { preferences } from './ports'
 import { STORAGE_KEYS } from './keys'
 
 /**
@@ -7,7 +7,7 @@ import { STORAGE_KEYS } from './keys'
  * 메모리로는 부족하다 — 앱을 껐다 켜는 것으로 30분 간격이 우회되면 안 되기 때문이다.
  */
 export async function getLastAdShownAt(): Promise<number | null> {
-  const { value } = await Preferences.get({ key: STORAGE_KEYS.lastAdShownAt })
+  const value = await preferences.get(STORAGE_KEYS.lastAdShownAt)
   if (value === null) {
     return null
   }
@@ -18,5 +18,5 @@ export async function getLastAdShownAt(): Promise<number | null> {
 }
 
 export async function setLastAdShownAt(at: number): Promise<void> {
-  await Preferences.set({ key: STORAGE_KEYS.lastAdShownAt, value: String(at) })
+  await preferences.set(STORAGE_KEYS.lastAdShownAt, String(at))
 }

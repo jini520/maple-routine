@@ -1,6 +1,5 @@
-import { Capacitor } from '@capacitor/core'
-import { CapacitorSQLite, SQLiteConnection } from '@capacitor-community/sqlite'
-import type { SQLiteDBConnection } from '@capacitor-community/sqlite'
+import { getSqlitePort } from '../ports'
+import type { SqliteDbConnection } from '../ports'
 
 const DB_NAME = 'boss_profit'
 
@@ -103,7 +102,7 @@ const MIGRATE_MEIRIN_BOSS_KEY_PROFIT_RECORDS = `
 // SQLite에 ADD COLUMN IF NOT EXISTS가 없으므로 table_info로 있는지 보고 없을 때만 더한다
 // (ALTER를 try/catch로 삼키면 다른 원인의 실패까지 숨는다).
 async function ensureColumn(
-  db: SQLiteDBConnection,
+  db: SqliteDbConnection,
   table: string,
   column: string,
   definition: string,
@@ -115,20 +114,12 @@ async function ensureColumn(
   }
 }
 
-let sqliteConnection: SQLiteConnection | null = null
-let dbPromise: Promise<SQLiteDBConnection> | null = null
+let dbPromise: Promise<SqliteDbConnection> | null = null
 
-function getSqliteConnection(): SQLiteConnection {
-  if (sqliteConnection === null) {
-    sqliteConnection = new SQLiteConnection(CapacitorSQLite)
-  }
-  return sqliteConnection
-}
+async function openBossProfitDb(): Promise<SqliteDbConnection> {
+  const connection = getSqlitePort()
 
-async function openBossProfitDb(): Promise<SQLiteDBConnection> {
-  const connection = getSqliteConnection()
-
-  if (Capacitor.getPlatform() === 'web') {
+  if (connection.isWebPlatform()) {
     await connection.initWebStore()
   }
 
@@ -136,11 +127,11 @@ async function openBossProfitDb(): Promise<SQLiteDBConnection> {
   // 파괴하고 재로드, ADR-027) 이전 로드의 네이티브 SQLite 연결이 남는다. dbPromise는 로드마다
   // 초기화되므로 isConnection이 true라는 건 그 stale 연결이라는 뜻 — 그대로 retrieve+open하면 첫
   // 쿼리가 막히므로, 닫고 새로 만든다.
-  const { result: alreadyConnected } = await connection.isConnection(DB_NAME, false)
+  const alreadyConnected = await connection.isConnection(DB_NAME)
   if (alreadyConnected) {
-    await connection.closeConnection(DB_NAME, false)
+    await connection.closeConnection(DB_NAME)
   }
-  const db = await connection.createConnection(DB_NAME, false, 'no-encryption', 1, false)
+  const db = await connection.createConnection(DB_NAME, 'no-encryption', 1)
 
   await db.open()
   for (const table of TABLE_DEFINITIONS) {
@@ -185,12 +176,12 @@ function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promi
   })
 }
 
-function withOpenTimeout(promise: Promise<SQLiteDBConnection>): Promise<SQLiteDBConnection> {
+function withOpenTimeout(promise: Promise<SqliteDbConnection>): Promise<SqliteDbConnection> {
   return withTimeout(promise, OPEN_TIMEOUT_MS, 'SQLite 커넥션 열기 시간 초과')
 }
 
 // 앱 전체에서 커넥션을 하나만 열도록 모듈 스코프에서 캐싱한다 — 동일 이름 커넥션을 중복으로 열면 에러가 난다.
-export function getBossProfitDb(): Promise<SQLiteDBConnection> {
+export function getBossProfitDb(): Promise<SqliteDbConnection> {
   if (dbPromise === null) {
     dbPromise = withOpenTimeout(openBossProfitDb()).catch((error: unknown) => {
       // 실패한 시도를 캐시하면 이후 모든 SQLite 접근이 재시도 없이 같은 실패를 영구히 돌려받는다
@@ -231,7 +222,7 @@ export async function closeBossProfitDb(): Promise<void> {
     await withTimeout(
       (async () => {
         await pending
-        await getSqliteConnection().closeConnection(DB_NAME, false)
+        await getSqlitePort().closeConnection(DB_NAME)
       })(),
       CLOSE_TIMEOUT_MS,
       'SQLite 커넥션 닫기 시간 초과',

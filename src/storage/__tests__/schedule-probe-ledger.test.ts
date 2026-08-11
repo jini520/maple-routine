@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { Preferences } from '@capacitor/preferences'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { installFakePreferences } from './fake-preferences'
 import {
   clearScheduleProbeLedger,
   getScheduleProbeLedger,
@@ -7,23 +7,6 @@ import {
   recordScheduleProbe,
   type ProbeSectionPresence,
 } from '../schedule-probe-ledger'
-
-vi.mock('@capacitor/preferences', () => {
-  const store = new Map<string, string>()
-  return {
-    Preferences: {
-      get: vi.fn(async ({ key }: { key: string }) => ({
-        value: store.has(key) ? (store.get(key) as string) : null,
-      })),
-      set: vi.fn(async ({ key, value }: { key: string; value: string }) => {
-        store.set(key, value)
-      }),
-      remove: vi.fn(async ({ key }: { key: string }) => {
-        store.delete(key)
-      }),
-    },
-  }
-})
 
 // KST 2026-08-03 12:00 → 윈도우는 2026-07-21 ~ 2026-08-03
 const NOW = new Date('2026-08-03T03:00:00.000Z')
@@ -42,10 +25,10 @@ const NONE_PRESENT: ProbeSectionPresence = {
   monthlyBoss: false,
 }
 
+let prefs = installFakePreferences()
+
 beforeEach(async () => {
-  vi.mocked(Preferences.get).mockClear()
-  vi.mocked(Preferences.set).mockClear()
-  vi.mocked(Preferences.remove).mockClear()
+  prefs = installFakePreferences()
   await clearScheduleProbeLedger('ocid-1')
 })
 
@@ -58,7 +41,7 @@ describe('빈 원장', () => {
   })
 
   it('손상된 JSON이면 예외 없이 빈 원장을 반환한다', async () => {
-    await Preferences.set({ key: 'scheduleProbe:ocid-broken', value: 'not-json{' })
+    await prefs.set('scheduleProbe:ocid-broken', 'not-json{')
     await expect(getScheduleProbeLedger('ocid-broken', NOW)).resolves.toEqual({
       unavailable: false,
       dates: {},

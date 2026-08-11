@@ -1,11 +1,11 @@
-import { Preferences } from '@capacitor/preferences'
+import { preferences } from './ports'
 import type { SharedProgressEntry } from '@core/types'
 import { accountSharedProgressKey, worldSharedProgressKey } from './keys'
 
 type SharedProgressMap = Record<string, SharedProgressEntry>
 
 async function getSharedProgress(key: string): Promise<SharedProgressMap> {
-  const { value } = await Preferences.get({ key })
+  const value = await preferences.get(key)
   if (value === null) {
     return {}
   }
@@ -24,7 +24,7 @@ async function setSharedProgressEntry(
 ): Promise<void> {
   const current = await getSharedProgress(key)
   current[itemName] = entry
-  await Preferences.set({ key, value: JSON.stringify(current) })
+  await preferences.set(key, JSON.stringify(current))
 }
 
 export async function getWorldSharedProgress(world: string): Promise<SharedProgressMap> {

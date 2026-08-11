@@ -2,27 +2,24 @@
 import { readFileSync } from 'node:fs'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { getPlatformMock
-} = vi.hoisted(() => ({
-  getPlatformMock: vi.fn(),
-}))
-
+// 포트 역전 후([[ADR-127]]) db.ts는 플러그인이 아니라 SqlitePort에만 의존한다 — 가로채는 지점이
+// `vi.mock('@capacitor-community/sqlite')` 에서 주입된 가짜 포트로 바뀌었을 뿐, 검증 대상(어떤
+// 인자로 커넥션을 여는가·stale 커넥션을 닫는가·스키마와 마이그레이션을 도는가)은 그대로다.
+// `retrieveConnection` 을 쓰지 않는다는 것은 이제 포트 표면에 그 연산이 없어 구조적으로 보장된다.
 const {
+  isWebPlatformMock,
   initWebStoreMock,
   isConnectionMock,
-  retrieveConnectionMock,
   createConnectionMock,
   dbQueryMock,
   closeConnectionMock,
-  sqliteConnectionCtorMock,
 } = vi.hoisted(() => ({
+  isWebPlatformMock: vi.fn(),
   initWebStoreMock: vi.fn(),
   isConnectionMock: vi.fn(),
-  retrieveConnectionMock: vi.fn(),
   createConnectionMock: vi.fn(),
   dbQueryMock: vi.fn(),
   closeConnectionMock: vi.fn(),
-  sqliteConnectionCtorMock: vi.fn(),
 }))
 
 const { dbOpenMock, dbExecuteMock } = vi.hoisted(() => ({
@@ -30,40 +27,30 @@ const { dbOpenMock, dbExecuteMock } = vi.hoisted(() => ({
   dbExecuteMock: vi.fn(),
 }))
 
-vi.mock('@capacitor/core', () => ({
-  Capacitor: { getPlatform: getPlatformMock },
-}))
-
-vi.mock('@capacitor-community/sqlite', () => ({
-  CapacitorSQLite: {},
-  SQLiteConnection: class {
-    constructor(...args: unknown[]) {
-      sqliteConnectionCtorMock(...args)
-    }
-    initWebStore = initWebStoreMock
-    isConnection = isConnectionMock
-    retrieveConnection = retrieveConnectionMock
-    createConnection = createConnectionMock
-    closeConnection = closeConnectionMock
-  },
-}))
-
 // ADR-069 결정 1: openBossProfitDb가 PRAGMA table_info로 world 컬럼 존재를 확인한다(SQLite에
 // ADD COLUMN IF NOT EXISTS가 없다) — 기본값은 "이미 있음"으로 둬 기존 케이스가 ALTER를 타지 않게 한다.
-const fakeDb = { open: dbOpenMock, execute: dbExecuteMock, query: dbQueryMock }
+const fakeDb = { open: dbOpenMock, execute: dbExecuteMock, query: dbQueryMock, run: vi.fn() }
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.resetModules()
-  getPlatformMock.mockReset().mockReturnValue('android')
+  isWebPlatformMock.mockReset().mockReturnValue(false)
   initWebStoreMock.mockReset().mockResolvedValue(undefined)
-  isConnectionMock.mockReset().mockResolvedValue({ result: false })
-  retrieveConnectionMock.mockReset().mockResolvedValue(fakeDb)
+  isConnectionMock.mockReset().mockResolvedValue(false)
   createConnectionMock.mockReset().mockResolvedValue(fakeDb)
   dbQueryMock.mockReset().mockResolvedValue({ values: [{ name: 'world' }] })
   closeConnectionMock.mockReset().mockResolvedValue(undefined)
-  sqliteConnectionCtorMock.mockReset()
   dbOpenMock.mockReset().mockResolvedValue(undefined)
   dbExecuteMock.mockReset().mockResolvedValue({ changes: { changes: 0 } })
+
+  // resetModules 뒤에 주입한다 — db.ts가 그때 새로 만들어지는 ports 인스턴스를 읽기 때문이다.
+  const { setSqlitePort } = await import('../../ports')
+  setSqlitePort({
+    isWebPlatform: isWebPlatformMock,
+    initWebStore: initWebStoreMock,
+    isConnection: isConnectionMock,
+    closeConnection: closeConnectionMock,
+    createConnection: createConnectionMock,
+  })
 })
 
 describe('getBossProfitDb', () => {
@@ -73,13 +60,7 @@ describe('getBossProfitDb', () => {
     const db = await getBossProfitDb()
 
     expect(initWebStoreMock).not.toHaveBeenCalled()
-    expect(createConnectionMock).toHaveBeenCalledWith(
-      'boss_profit',
-      false,
-      'no-encryption',
-      1,
-      false,
-    )
+    expect(createConnectionMock).toHaveBeenCalledWith('boss_profit', 'no-encryption', 1)
     expect(dbOpenMock).toHaveBeenCalled()
     expect(dbExecuteMock).toHaveBeenCalledWith(
       expect.stringContaining('CREATE TABLE IF NOT EXISTS boss_profit_records'),
@@ -114,7 +95,7 @@ describe('getBossProfitDb', () => {
   })
 
   it('웹 플랫폼에서는 커넥션을 열기 전에 initWebStore를 먼저 호출한다', async () => {
-    getPlatformMock.mockReturnValue('web')
+    isWebPlatformMock.mockReturnValue(true)
     const { getBossProfitDb } = await import('../db')
 
     await getBossProfitDb()
@@ -124,14 +105,13 @@ describe('getBossProfitDb', () => {
   })
 
   it('이전 페이지 로드의 stale 커넥션이 있으면 닫고 새로 createConnection한다(리로드 대응)', async () => {
-    isConnectionMock.mockResolvedValue({ result: true })
+    isConnectionMock.mockResolvedValue(true)
     const { getBossProfitDb } = await import('../db')
 
     await getBossProfitDb()
 
-    expect(closeConnectionMock).toHaveBeenCalledWith('boss_profit', false)
-    expect(createConnectionMock).toHaveBeenCalledWith('boss_profit', false, 'no-encryption', 1, false)
-    expect(retrieveConnectionMock).not.toHaveBeenCalled()
+    expect(closeConnectionMock).toHaveBeenCalledWith('boss_profit')
+    expect(createConnectionMock).toHaveBeenCalledWith('boss_profit', 'no-encryption', 1)
   })
 
   it('커넥션 열기에 실패하면 실패를 캐시하지 않고 다음 호출에서 재시도한다', async () => {
@@ -145,14 +125,15 @@ describe('getBossProfitDb', () => {
     expect(createConnectionMock).toHaveBeenCalledTimes(2)
   })
 
-  it('여러 번 호출해도 커넥션과 SQLiteConnection 인스턴스를 한 번만 만든다(싱글턴)', async () => {
+  // 커넥션 매니저 인스턴스 자체를 한 번만 만드는 것은 이제 어댑터(adapters/capacitor-sqlite)의
+  // 몫이다 — db.ts가 지는 계약은 "같은 이름 커넥션을 두 번 열지 않는다" 하나로 남는다.
+  it('여러 번 호출해도 커넥션을 한 번만 만든다(싱글턴)', async () => {
     const { getBossProfitDb } = await import('../db')
 
     const [first, second] = await Promise.all([getBossProfitDb(), getBossProfitDb()])
 
     expect(first).toBe(second)
     expect(createConnectionMock).toHaveBeenCalledTimes(1)
-    expect(sqliteConnectionCtorMock).toHaveBeenCalledTimes(1)
   })
 
   // ADR-050 결정 2: 예기치 않은 리로드(탭 링크 기본 동작 누출, WebKit 콘텐츠 프로세스 사망 시
@@ -219,7 +200,7 @@ describe('closeBossProfitDb', () => {
     await getBossProfitDb()
     await closeBossProfitDb()
 
-    expect(closeConnectionMock).toHaveBeenCalledWith('boss_profit', false)
+    expect(closeConnectionMock).toHaveBeenCalledWith('boss_profit')
 
     await getBossProfitDb()
     expect(createConnectionMock).toHaveBeenCalledTimes(2)
@@ -364,8 +345,7 @@ describe('closeBossProfitDb', () => {
 // SQLite에 ADD COLUMN IF NOT EXISTS가 없으므로 PRAGMA로 확인하고 없을 때만 ALTER한다.
 describe('world 컬럼 마이그레이션 (ADR-069 결정 1)', () => {
   it('컬럼이 없으면 ALTER TABLE로 더한다', async () => {
-    getPlatformMock.mockReturnValue('ios')
-    isConnectionMock.mockResolvedValue({ result: false })
+    isConnectionMock.mockResolvedValue(false)
     dbQueryMock.mockResolvedValue({ values: [{ name: 'ocid' }, { name: 'boss' }] })
 
     const { getBossProfitDb } = await import('../db')
@@ -375,8 +355,7 @@ describe('world 컬럼 마이그레이션 (ADR-069 결정 1)', () => {
   })
 
   it('이미 있으면 ALTER하지 않는다 — 매번 열려도 안전한 no-op이다', async () => {
-    getPlatformMock.mockReturnValue('ios')
-    isConnectionMock.mockResolvedValue({ result: false })
+    isConnectionMock.mockResolvedValue(false)
     dbQueryMock.mockResolvedValue({ values: [{ name: 'world' }] })
 
     const { getBossProfitDb } = await import('../db')
@@ -393,8 +372,7 @@ describe('world 컬럼 마이그레이션 (ADR-069 결정 1)', () => {
 // `boss_drop_records` 가 이미 있으므로 CREATE 로는 컬럼이 붙지 않는다.
 describe('가격 컬럼 마이그레이션 (ADR-124 결정 4)', () => {
   it('없으면 price_state·price_meso·price_share 를 ALTER 로 더한다', async () => {
-    getPlatformMock.mockReturnValue('ios')
-    isConnectionMock.mockResolvedValue({ result: false })
+    isConnectionMock.mockResolvedValue(false)
     dbQueryMock.mockResolvedValue({ values: [{ name: 'ocid' }] })
 
     const { getBossProfitDb } = await import('../db')
@@ -412,8 +390,7 @@ describe('가격 컬럼 마이그레이션 (ADR-124 결정 4)', () => {
   })
 
   it('이미 있으면 더하지 않는다', async () => {
-    getPlatformMock.mockReturnValue('ios')
-    isConnectionMock.mockResolvedValue({ result: false })
+    isConnectionMock.mockResolvedValue(false)
     dbQueryMock.mockResolvedValue({
       values: [{ name: 'price_state' }, { name: 'price_meso' }, { name: 'price_share' }],
     })
