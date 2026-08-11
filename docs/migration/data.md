@@ -108,14 +108,22 @@ connection.createConnection(DB_NAME, false, 'no-encryption', 1, false)
 | | 경로 |
 |---|---|
 | **Android** | `/data/data/com.mapleroutine.app/databases/boss_profitSQLite.db` |
-| **iOS** | `Library/CapacitorDatabase/boss_profitSQLite.db` ⚠️ **미검증** |
+| **iOS** | `<앱 컨테이너>/Documents/boss_profitSQLite.db` ⚠️ **실기기 미확인** |
 
 파일명 규칙은 플러그인이 `dbName + "SQLite.db"` 로 만든다(`CapacitorSQLite.java:346`). DB 이름은
 `boss_profit` 이므로 `boss_profitSQLite.db` 다.
 
-⚠️ **iOS 경로는 이 문서에서 유일한 미검증 항목이다.** `capacitor.config.ts` 에 `iosDatabaseLocation` 을
-두지 않아 플러그인 기본값이 적용되는데, 그 기본값을 소스에서 확정하지 못했다(README 예시는
-`Library/CapacitorDatabase`). **실기기 앱 컨테이너를 한 번 열어 확인하고 이 표를 갱신할 것.**
+⚠️ **iOS 경로 정정(2026-08-11)** — 이 표는 원래 `Library/CapacitorDatabase` 였고 **그것은 틀렸다.**
+그 값은 플러그인 README 가 `iosDatabaseLocation` 을 *설정하는 예시*로 든 경로이고,
+`capacitor.config.ts` 에는 그 설정이 없다. 설정이 없으면 플러그인은 `"Documents"` 를 쓰고
+(`CapacitorSQLite.swift:98`) `UtilsFile.getFolderURL` 이 그것을 `NSDocumentDirectory` 로 푼다
+(`UtilsFile.swift:161-162`) — 즉 `<앱 컨테이너>/Documents` 다(`Database.swift:75` 가 그 디렉터리에
+파일명을 붙인다).
+
+근거는 플러그인 소스지만 **실기기 앱 컨테이너를 열어 확인한 것은 아니다.** 여기가 틀리면 빈 DB 가
+조용히 새로 생기고 사용자에게는 기록이 전부 사라진 것으로 보이므로, **실기기 검증에서 반드시 눈으로
+확인할 것.** RN 어댑터는 이 경로를 op-sqlite 의 `IOS_DOCUMENT_PATH` 상수로 잡는다
+(`packages/app-rn/src/storage/adapters/capacitor-sqlite-open.ts`).
 
 ### 보존 대상 테이블 (4)
 
@@ -160,25 +168,39 @@ connection.createConnection(DB_NAME, false, 'no-encryption', 1, false)
 `@capacitor/local-notifications` 로 예약한 알림은 **OS의 알림 스케줄러에 등록돼 있다.** 앱 코드가
 아니라 OS가 들고 있으므로, 플러그인이 `notifee` 로 바뀌어도 **그대로 남아 발화한다.**
 
-문제는 새 구현이 그것들을 **취소도 갱신도 못 한다**는 점이다 — ID 체계와 채널이 다르다. 결과:
+문제는 새 구현이 그것들을 **취소도 갱신도 못 한다**는 점이다 — 예약을 들고 있는 저장소가 다르다. 결과:
 
 | 증상 | 원인 |
 |---|---|
 | **중복 알림** | 옛 예약 + 새 예약이 둘 다 발화 |
 | **유령 알림** | 사용자가 끈 항목의 옛 예약이 계속 뜸 |
-| 취소 불능 | 새 코드의 `cancel(id)` 가 옛 ID를 모름 |
+| 취소 불능 | notifee 의 `cancel` 은 자기가 만든 예약만 안다 |
+
+### 확인된 사실 (2026-08-11, 플러그인 소스)
+
+옛 ID 체계는 **앱이 넘긴 정수 그대로**다 — 변환이 없다. Android 는 그 정수를 `PendingIntent` 의
+request code 로 쓰고(`LocalNotificationManager.java:411-419`), 채널은 `"default"` 하나다
+(`:48` `DEFAULT_NOTIFICATION_CHANNEL_ID`, 중요도 `IMPORTANCE_DEFAULT` · 소리는 채널 생성자 기본값인
+시스템 기본음).
+
+**그래서 갈리는 것은 ID 규칙이 아니라 예약 저장소다.** RN 어댑터도 같은 채널 ID 를 쓰고 같은 정수를
+문자열로만 바꿔 쓰지만(`packages/app-rn/src/native/adapters/notification-request.ts`), 옛 예약은
+`AlarmManager`/`UNUserNotificationCenter` 에 그대로 남아 있고 notifee 는 자기 저장소만 본다 —
+`cancel(id)` 로도, `getPendingCount()` 로도 닿지 않는다. 아래 1의 두 갈래 중 **플랫폼 API 로 통째로
+비우는 쪽**이 남는 이유다.
 
 ### 처리
 
-1. 전환 후 **첫 실행에서 옛 예약을 전량 취소**한다. 새 SDK로는 못 하므로 **Capacitor 시절과 같은
-   ID 규칙으로 네이티브에서 직접 취소**하거나, 플랫폼 API로 이 앱의 예약을 통째로 비운다
-   (Android `AlarmManager` / iOS `removeAllPendingNotificationRequests`)
+1. 전환 후 **첫 실행에서 옛 예약을 전량 취소**한다. 새 SDK로는 못 하므로 플랫폼 API로 이 앱의
+   예약을 통째로 비운다 (Android `AlarmManager` / iOS `removeAllPendingNotificationRequests`)
 2. 그 다음 현재 설정에 맞춰 **전부 새로 예약**한다
 3. 완료를 Preferences 키로 기록해 두 번 돌지 않게 한다
 
 `native/notifications.ts` 에는 ADR 참조가 없지만, 동작 계약은 [[ADR-004]](서버 푸시 없이 로컬 알림만)와
-`features/hunting-timer.md` 에 있다. **사냥 타이머의 상시 표시 알림([[ADR-005]])은 성격이 달라 별도
-확인이 필요하다** — 예약 알림이 아니라 지속 알림이다.
+`features/hunting-timer.md` 에 있다. **사냥 타이머의 상시 표시 알림([[ADR-005]])은 성격이 다르지만
+(예약 알림이 아니라 지속 알림) 옮길 것이 없다** — 그 커스텀 플러그인은 작성된 적이 없어 네이티브에서
+거부돼 왔고, 그래서 남아 있는 예약도 정리할 상태도 없다(2026-08-11 확인,
+[parity-inventory](./parity-inventory.md)).
 
 ---
 
@@ -254,9 +276,9 @@ connection.createConnection(DB_NAME, false, 'no-encryption', 1, false)
 
 | 항목 | 확인 방법 |
 |---|---|
-| iOS SQLite 기본 경로 | 실기기 앱 컨테이너를 내려받아 `boss_profitSQLite.db` 위치 확인 |
-| 사냥 타이머 상시 알림의 네이티브 구현 | `native/hunting-timer/` 와 `features/hunting-timer.md` 대조, RN 대응 SDK 결정 |
-| 옛 로컬 알림 ID 체계 | Capacitor 플러그인의 ID 생성 규칙 확인 (결정 4의 취소 전략이 여기 달림) |
+| iOS SQLite 기본 경로 — **플러그인 소스로는 `Documents` 확정**(결정 2), 실물만 남음 | 실기기 앱 컨테이너를 내려받아 `boss_profitSQLite.db` 위치 확인 |
+| ~~사냥 타이머 상시 알림의 네이티브 구현~~ — **확정**: 구현이 존재한 적 없다(네이티브는 `UNIMPLEMENTED` 거부, 인메모리 폴백은 웹 전용). 옮길 데이터도 SDK 결정도 없고 RN 도 거부한다 ([parity-inventory](./parity-inventory.md), 2026-08-11) | — |
+| ~~옛 로컬 알림 ID 체계~~ — **확정**(결정 4 «확인된 사실», 2026-08-11) | — |
 
 ---
 

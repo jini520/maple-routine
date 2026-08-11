@@ -12,7 +12,7 @@
     "build:beta": "npm run build:beta -w @maple-routine/app-capacitor",
     "build:test-ads": "npm run build:test-ads -w @maple-routine/app-capacitor",
     "lint": "eslint .",
-    "test": "vitest run",
+    "test": "vitest run && npm run test -w @maple-routine/app-rn",
     "preview": "npm run preview -w @maple-routine/app-capacitor",
     "publish-live-update": "node scripts/publish-live-update.mjs",
     "theme:gen": "vite-node scripts/theme-gen.ts",

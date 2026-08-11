@@ -1,5 +1,5 @@
 import { fileURLToPath } from 'node:url'
-import { defineConfig } from 'vitest/config'
+import { configDefaults, defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
@@ -62,5 +62,9 @@ export default defineConfig({
     root: repoRoot,
     environment: 'node',
     setupFiles: [setupFile],
+    // `packages/app-rn` 은 **jest** 로 돈다(그 패키지의 `jest.config.js` 참고). root 가 저장소
+    // 루트라 여기서 빼지 않으면 vitest 가 RN 테스트까지 집어삼키고 `react-native` import 에서 죽는다.
+    // 기본 제외 목록을 덮어쓰지 않도록 `configDefaults.exclude` 위에 얹는다.
+    exclude: [...configDefaults.exclude, 'packages/app-rn/**'],
   },
 })

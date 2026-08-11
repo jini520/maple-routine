@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["CapacitorStorageModule"]
+  },
+  "android": {
+    "modules": ["com.mapleroutine.capacitorstorage.CapacitorStorageModule"]
+  }
+}

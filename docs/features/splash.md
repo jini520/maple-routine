@@ -1,7 +1,7 @@
 # 스플래시 (Splash Screen)
 
 > **범위**: 앱 실행 스플래시. iOS 런치 스토리보드, Android 경량 `SplashActivity` + 비트맵, MIUI/HyperOS force-dark 대응.
-> **관련 소스**: Android `SplashActivity`(진짜 런처) + `MainActivity` · `@drawable/splash`(비트맵) · `values-night` · iOS 런치 스토리보드 · Capacitor SplashScreen 플러그인 · `capacitor.config.ts`(`backgroundColor`/`androidScaleType`) · `index.html`(`#boot-cover`).
+> **관련 소스**: Android `SplashActivity`(진짜 런처) + `MainActivity` · `@drawable/splash`(비트맵) · `values-night` · iOS 런치 스토리보드 · Capacitor SplashScreen 플러그인 · `capacitor.config.ts`(`backgroundColor`/`androidScaleType`) · `index.html`(`#boot-cover`) · RN 어댑터 `packages/app-rn/src/native/adapters/rn-splash-screen.ts`(아래 「RN 어댑터」).
 > **관련 ADR**: [[ADR-025]] [[ADR-028]] [[ADR-029]] [[ADR-117]]. **관련 문서**: [../trouble/2026-07-16-splash-darkmode-native-activity.md](../trouble/2026-07-16-splash-darkmode-native-activity.md), [live-update.md](./live-update.md).
 
 ## 정책 ([[ADR-025]] → [[ADR-029]])
@@ -25,6 +25,34 @@ HyperOS 다크모드 force-dark 가 밝은 스플래시 배경색을 앱 설정 
 **스플래시를 내리는 주체는 넷이다** — 정상 부팅(`App.tsx` 의 `MIN_SPLASH_MS` 타이머) · `apply()` 실패 catch([[ADR-117]] 결정 1) · 위 8초 인라인 타이머 · ErrorBoundary 폴백. 셋이 새로 생기지만 **셋 중 둘은 `hideSplashScreen()` 을 그대로 부르는 것**이라 커버 제거 로직은 `native/splash-screen.ts` 한 곳에 남는다.
 
 **인라인 타이머만 그 모듈을 못 쓴다**(React 트리 밖·번들 밖이라 import 가 없다) — 그래서 DOM 커버는 직접 지우고 네이티브는 **전역 브릿지로** 부른다(`window.Capacitor?.Plugins?.SplashScreen?.hide()`, optional chaining + `try/catch`). **DOM 만 걷으면 iOS 는 화면만 돌아오고 터치는 죽은 채**이므로(`isUserInteractionEnabled` 는 네이티브 `tearDown()` 에서만 풀린다) 걷는 장치가 넷이면 넷 다 이 성질을 가져야 한다. 다만 **보장은 아니다** — 브릿지가 없거나(웹 개발 서버) 아직 준비되지 않았으면 optional chaining 이 조용히 통과한다. 그 경로와, 넷 다 실행되지 않는 경로(React 가 마운트조차 못 하는 실패)는 capgo 의 10초 롤백이 메운다.
+
+## RN 어댑터 ([[ADR-127]], 2026-08-11)
+
+위 정책은 전부 **웹뷰 사정**이다. RN 구현(`packages/app-rn/src/native/adapters/rn-splash-screen.ts`)이
+다루는 것은 **네이티브 스플래시 한 장뿐**이다.
+
+- 라이브러리는 **`expo-splash-screen` `~57.0.6`** — 버전이 SDK 에 묶여 있어 고른 것이다(`expo` 의
+  `bundledNativeModules.json` 이 SDK 57 짝으로 지정한 값, 이미 있는 `expo-status-bar` 와 같은 라인).
+  후보였던 `react-native-bootsplash` 는 SDK 와 독립적으로 움직이고 에셋 생성 CLI 가 따로 필요하다.
+- **`hide()` 는 `SplashScreen.hideAsync()` 하나다.** 걷을 DOM 커버가 없다 —
+  `#boot-cover`·`[data-splash-cover]` 는 정의상 웹뷰 구현이고([[ADR-117]] 결정 4) RN 에는 문서가 없다.
+  위 «스플래시를 내리는 주체는 넷이다» 도 웹뷰 이야기다(`index.html` 인라인 타이머는 RN 에 자리 자체가
+  없다).
+- **`show()` 는 no-op 이다.** 그 함수가 존재한 이유는 웹뷰 리로드 하나였는데(OTA 적용·캐시 초기화
+  직전에 드러나는 웹뷰 배경색을 덮는다 — [[ADR-027]] 정정 · [[ADR-117]] 결정 1·8) RN 에는 **문서를 다시
+  로드하는 일 자체가 없어** 덮을 구간이 생기지 않는다. `preventAutoHideAsync()` 로 흉내 내는 것은
+  **답이 아니다** — 이미 내려간 스플래시에는 아무 효과가 없어 화면은 그대로인데 호출부만 덮였다고
+  믿는다. OTA 프로토콜은 [[ADR-127]] 결정 7 대로 재설계 대상이라, 새 적용 경로가 화면을 덮어야 하면
+  그 결정에서 이 자리를 다시 본다.
+- **계속 띄워 두는 일은 어댑터 밖이다.** Capacitor 에서 그것은 코드가 아니라 설정이었고
+  (`capacitor.config.ts` `launchAutoHide: false`), RN 짝은 앱 진입점 **전역 스코프**에서 부르는
+  `SplashScreen.preventAutoHideAsync()` 다(라이브러리 문서가 컴포넌트·훅 안에서 부르지 말라고 명시 —
+  늦으면 이미 내려간 뒤다).
+
+**미검증**: 실기기에서 스플래시가 실제로 뜨고 걷히는 것. 지금까지 확인된 것은 빌드
+(`expo prebuild` + `assembleDebug` · `pod install` + `xcodebuild -scheme ExpoSplashScreen`)와 포트
+계약(jest)까지다. 브랜드 색·이미지([[ADR-025]]·[[ADR-029]])를 RN 스플래시에 옮기는 것도 아직이다 —
+지금 `expo prebuild` 가 만드는 것은 기본 흰 배경이다(`colors.xml` `splashscreen_background` `#FFFFFF`).
 
 ## 핵심 교훈
 - **Capacitor 브릿지+플러그인 초기화가 끝나기 전엔 HTML 레이어가 그려질 시점 자체가 없다** — 그래서 "브랜드 룩을 WebView/HTML 레이어로 옮긴다"는 접근([[ADR-028]])은 실기기에서 실패했고, "Capacitor를 아예 안 거치는 별도 네이티브 액티비티 + 비트맵"([[ADR-029]])만 성공했다.

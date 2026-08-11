@@ -213,7 +213,10 @@
 `ads` · `boss-profit` · `boss-scheduler` · `content-scheduler` · `drop-effect` · `live-update` ·
 `onboarding` · `schedule-sync` · `settings` · `theme` · `toast` · `tracking-mode` · `prehydrate.ts`
 
-- **수정 필요 2개**: `theme/store.ts`(`matchMedia` → `Appearance`) · `onboarding/store.ts`
+- **수정 필요 1개**: `onboarding/store.ts`
+  - ~~`theme/store.ts`(`matchMedia` → `Appearance`)~~ → **`ColorSchemePort` 로 해결**(2026-08-11).
+    store 는 `getColorSchemePort().get()` 만 부르고 `matchMedia`/`Appearance` 는 어댑터가 갖는다
+    (`rn-color-scheme.ts`) — store 자체는 무수정이다
 - **삭제 1개**: `screen-stack/` — react-navigation이 대체
 
 ### lib/ · data/ · types/ · nexon/
@@ -234,18 +237,104 @@
 
 | 파일 | ADR 계약 | RN 구현 |
 |---|---|---|
-| `ads.ts` | 005, 090 | `react-native-google-mobile-ads` |
-| `live-update.ts` | 022, 024, 026, 027, 117, 119, 126 | `expo-updates` — **재설계 필요** |
-| `back-gesture.ts` | 003, 120 | **삭제** — 네이티브 스택 기본 |
-| `splash-screen.ts` | 025, 027, 117 | `react-native-bootsplash` |
+| `ads.ts` | 005, 090 | `react-native-google-mobile-ads` **16.0.3 고정** — 아래 |
+| `live-update.ts` | 022, 024, 026, 027, 117, 119, 126 | `expo-updates` — **재설계 필요**([[ADR-127]] 결정 7). 그때까지 **던지는 구현** |
+| `back-gesture.ts` | 003, 120 | **삭제** — 네이티브 스택 기본. 3단계까지 **던지는 구현** |
+| `splash-screen.ts` | 025, 027, 117 | `expo-splash-screen` **~57.0.6** — 아래 |
 | `notifications.ts` | — | `notifee` — [data.md](./data.md) 결정 4 |
-| `hunting-timer/` | 005 | 상시 알림 — 별도 확인 필요 |
-| `keyboard.ts` · `status-bar.ts` · `system-bars.ts` | — | 대부분 내장으로 대체 |
+| `hunting-timer/` | 005 | **옮길 구현이 없다** — 아래 |
+| `keyboard.ts` · `status-bar.ts` | — | RN 내장(`Keyboard`·`StatusBar`) — 아래 |
+| `system-bars.ts` | 099 | 3단계 — safe-area-context 가 값을 내려준다. 그때까지 **던지는 구현** |
+| (`ThemeAppearancePort`) | 064, 099, 122 | 3단계 — React 상태로 재설계. 그때까지 **던지는 구현** |
+| (`ColorSchemePort`) | 009, 104 | RN 내장 `Appearance` — 아래 |
+
+`hunting-timer/` 는 **옮길 것이 없다**(2026-08-11 확인). [[ADR-005]] 가 정한 Android Foreground
+Service·iOS Live Activity 커스텀 플러그인은 **작성된 적이 없다** — 저장소 전체에서 `HuntingTimer` 를
+담은 `.java`/`.kt`/`.swift` 가 0건이고, Capacitor 쪽에 있는 것은 `registerPlugin('HuntingTimer',
+{ web })` 한 줄뿐이다. `@capacitor/core` 를 따라가면 네이티브에는 등록된 구현도 `PluginHeaders`
+항목도 없어 세 메서드가 **`UNIMPLEMENTED` 로 거부**되고, 인메모리 폴백(`HuntingTimerWeb`)은
+브라우저에서만 쓰인다. 그래서 RN 어댑터도 **거부한다**(`rn-hunting-timer.ts`) — 인메모리 폴백을
+옮기면 웹 전용 동작을 네이티브로 승격시키는 것이고, `start()` 가 조용히 resolve 하면 화면은 타이머가
+도는 줄 아는데 알림도 소리도 없다. **[[ADR-005]] 를 실제로 구현할지는 전환과 별개 결정이다**(소비자도
+없다 — `app/hunting-timer/`·`features/hunting-timer/` 는 디렉터리 자체가 없다).
+
+`ads.ts` 는 **판정을 옮기지 않는다**(2026-08-11 구현). 광고 단위 ID·테스트 광고 여부는
+`packages/core` 의 순수 함수 둘이 계속 갖고, RN 어댑터는 그것을 부르기만 한다 — 실 ID로 자기 광고를
+누르면 AdMob 계정이 정지되는데 그 방어선이 플랫폼마다 두 벌이 되면 한쪽만 틀려도 사고가 난다.
+어댑터가 새로 정한 것은 **인자를 무엇으로 채우는가** 하나이고(`EXPO_PUBLIC_*` + `__DEV__`,
+`ads-env.ts`), 앱 ID(`~`)는 `app.json` 의 config plugin 인자에 두어 `expo prebuild` 가 두 네이티브
+설정에 쓴다. 버전을 **16.0.3 으로 고정**한 이유는 최신 16.4.0 이 끌어오는 play-services-ads 25.4.0 이
+Kotlin 메타데이터 2.3 이라 RN 0.86(Kotlin 2.1)에서 컴파일이 깨지기 때문이고, 16.0.3 의 24.9.0 은
+지금 배포 중인 Capacitor 앱과 같은 라인이다. 자세한 내용은 [features/ads.md](../features/ads.md).
+
+**시스템 어댑터 넷은 RN 내장으로 끝난다**(2026-08-11 구현 — `ColorSchemePort`·`KeyboardPort`·
+`StatusBarPort`·`SplashScreenPort`). 새 의존성은 `expo-splash-screen` **하나**뿐이고 나머지 셋은
+`Appearance`·`Keyboard`·`StatusBar` 다. 각 자리에서 실제로 정한 것:
+
+- **`ColorSchemePort`** — `Appearance.getColorScheme()` 이 **`null` 을 줄 수 있어**(네이티브 모듈이
+  없거나 OS가 판정을 안 준 경우) 라이트로 폴백한다. Capacitor 가 `matchMedia` 부재에 내린 것과 같은
+  판단이고, 모르는 것을 다크로 읽으면 **저장된 테마가 없는 첫 실행이 통째로 다크로 열린다.**
+  `addChangeListener` 는 **쓰지 않는다** — 이 값은 1회성 판정에만 쓰이고([[ADR-104]]) 부를 곳이 없는
+  구독 API는 구현마다 죽은 코드가 된다(포트 주석의 판단).
+- **`StatusBarPort`** — **다크 테마 → 밝은 글리프**(`'light-content'`). Capacitor 의
+  `isDarkTheme ? Style.Dark : Style.Light` 와 같은 방향인데, 그 enum 이름은 글리프가 아니라 **배경**을
+  가리키기 때문이다(`Style.Dark` = *"Light text for dark backgrounds"*). 이름만 보고 옮기면 정확히
+  뒤집히고, 그러면 어두운 배경에 어두운 글자가 되어 **실기기에서만** 드러난다. `'default'` 는 OS
+  설정을 따라가 앱이 고른 테마와 어긋나므로 쓰지 않는다.
+- **`KeyboardPort`** — `keyboardDidShow`/`keyboardDidHide` 다. Capacitor 는 `will` 계열이었지만 RN 에서
+  그 둘은 **iOS 에서만** 오고, 안드로이드에서 안 오는 이벤트에 매달리면 그 플랫폼에서 탭바가 키보드
+  위에 남는다(둘 다 듣는 것도 답이 아니다 — iOS 에서 두 번 불린다). 안드로이드는 그마저도
+  `windowSoftInputMode` 에 따라 안 올 수 있는데, 그때는 **아무것도 부르지 않는다** — 타이머·포커스
+  추적으로 거짓 신호를 만들면 키보드가 없는데 탭바가 사라지고 원인을 못 짚는다.
+- **`SplashScreenPort`** — `expo-splash-screen` 을 고른 것은 버전이 **SDK 에 묶이기** 때문이다
+  (`bundledNativeModules.json` 이 SDK 57 짝으로 지정한 `~57.0.6`, 이미 있는 `expo-status-bar` 와 같은
+  라인). 후보였던 `react-native-bootsplash`(같은 파일이 `^6.3.10`)는 SDK 와 독립적으로 움직이고 에셋
+  생성 CLI 를 따로 돌려야 하는데, 바로 위 `ads.ts` 가 그 독립 버저닝 때문에 빌드를 깨뜨렸다. **둘 다
+  다시 띄우는 API 가 없어** 그 축은 선택에 영향을 주지 않았다.
+  - **`show()` 는 no-op 이다** — 웹뷰 리로드가 없어 덮을 구간 자체가 생기지 않는다([[ADR-117]] 결정
+    1·8 이 덮으려던 그 구간). `preventAutoHideAsync()` 로 흉내 내면 **이미 내려간 스플래시에는 아무
+    효과가 없어** 화면은 그대로인데 호출부만 덮였다고 믿는다. step 7 의 미구현 포트(거부)와 성격이
+    다르다 — 이쪽은 *"이 플랫폼에 그 개념이 없다"* 라서 정당한 no-op 이다.
+  - **DOM 커버는 옮기지 않는다** — `#boot-cover`·`[data-splash-cover]` 는 정의상 웹뷰 구현이고
+    ([[ADR-117]] 결정 4) RN 에는 문서가 없다.
+  - **스플래시를 계속 띄워 두는 일은 어댑터 밖이다.** Capacitor 에서 그것은 코드가 아니라 설정이었고
+    (`launchAutoHide: false`), RN 짝은 앱 진입점 **전역 스코프**의 `preventAutoHideAsync()` 다
+    (라이브러리 문서가 컴포넌트·훅 안에서 부르지 말라고 명시 — 늦으면 이미 내려간 뒤다). 부팅 흐름
+    배선 단계의 몫이다.
 
 `live-update.ts` 만 성격이 다르다. 다른 어댑터는 같은 일을 하는 다른 SDK로 바꾸는 것이지만, 이쪽은
 **OTA 프로토콜 자체가 바뀐다**(@capgo 자체 호스팅 매니페스트 → expo-updates). [[ADR-022]]·[[ADR-026]]·
 [[ADR-119]]·[[ADR-126]] 이 정한 매니페스트 형식(`highlights` · `minNativeVersion` · 채널)을 새 프로토콜에
 어떻게 싣는지는 **별도 ADR이 필요하다.**
+
+### 부팅 배선 — 포트 13종, 그중 넷은 «던지는 구현» (2026-08-11)
+
+주입은 `packages/app-rn/src/boot.ts` 의 `installPorts()` 한 함수이고, 진입점 `index.ts` 가
+`registerRootComponent(App)` **앞에서** 부른다(웹 쪽 짝은 `main.tsx` + `native/adapters/index.ts`).
+세터를 한 자리에 모으는 이유는 하나가 빠지면 **그 기능만** 던지고 나머지는 멀쩡히 돌아 발견이 늦기
+때문이다.
+
+포트는 **13종**이고 RN 구현이 있는 것은 아홉이다. 나머지 넷은 `native/adapters/not-implemented.ts`
+가 채우되 **부르면 던진다** — 조용한 no-op 으로 두면 나중에 테마가 안 먹힐 때 원인을 못 찾는다.
+같은 «아무것도 안 함»이라도 둘은 구분해야 한다:
+
+| | 예 | 처리 |
+|---|---|---|
+| 이 플랫폼에 개념이 없다 | `SplashScreenPort.show()` — RN 엔 웹뷰 리로드가 없어 덮을 구간이 안 생긴다 | **정당한 no-op** |
+| 해야 하는데 아직 안 했다 | 아래 넷 | **던진다** — 무엇이·왜·어디를 보면 되는지를 담아서 |
+
+- **`ThemeAppearancePort`·`SystemBarsPort`·`BackGesturePort` — 3단계(뷰 레이어)** 몫이다. 어댑터를 잘
+  짜면 되는 종류가 아니라 **웹뷰에서 side-effect 였던 것이 RN 에서는 렌더 트리의 일부**다(34토큰
+  `<style>` 주입 → React 상태 / `--safe-area-inset-*` 주입 → safe-area-context 가 컴포넌트로 / 손으로
+  만든 뒤로가기 → 네이티브 스택). 지금 흉내 내 봐야 3단계에 전부 버려진다.
+- **`LiveUpdatePort` — 별도 ADR** 몫이다(위 문단). 그래서 이 하나만 메시지가 «3단계»가 아니라
+  [[ADR-127]] 결정 7 을 가리킨다 — 3단계라고 말하면 틀린 안내가 된다.
+
+> step 사양은 «미구현 3종»으로 적었지만 실제로 매핑되지 않은 포트는 **넷**이다(9 + 4 = 13).
+> `LiveUpdatePort` 를 빼 두면 `installPorts()` 가 *"전부를 한 자리에서 보장한다"* 는 자기 목적을 못
+> 지키고, 그 자리는 슬롯의 일반 메시지(*"주입되지 않았습니다"*)로 떨어져 **왜** 없는지를 말하지
+> 않는다. 기대 목록을 손으로 적지 않고 **core 가 내보내는 `get*Port` 전부와 대조**하는 테스트를 둔
+> 것도 같은 이유다 — core 에 포트가 늘면 배선을 고칠 때까지 빨개진다.
 
 ### storage/ (21 파일, 1,554줄)
 
