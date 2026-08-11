@@ -1,7 +1,5 @@
-import { Capacitor, CapacitorHttp } from '@capacitor/core'
-import { CapacitorUpdater } from '@capgo/capacitor-updater'
-import { Network } from '@capacitor/network'
 import { closeBossProfitDb } from '../storage/sqlite/db'
+import { getLiveUpdatePort, type NetworkType } from './ports'
 import { showSplashScreen } from './splash-screen'
 
 // scripts/publish-live-update.mjs가 이 저장소의 "live-update-latest" 릴리스에 latest.json을 올린다(ADR-022).
@@ -11,10 +9,6 @@ export const LIVE_UPDATE_MANIFEST_URL =
 // 베타 채널은 별도 고정 릴리스 태그("live-update-beta")로 배포된다 — 빌드 시점 분리, 런타임 토글 없음(ADR-024).
 export const LIVE_UPDATE_MANIFEST_URL_BETA =
   'https://github.com/jini520/maple-routine/releases/download/live-update-beta/latest.json'
-
-const APP_ID = 'com.mapleroutine.app'
-// TODO(출시): 실제 App Store 앱 ID로 교체. 아직 스토어 미출시라 placeholder다(ADR-024/ADR-027).
-const APP_STORE_ID = '0000000000'
 
 export interface LiveUpdateManifest {
   version: string
@@ -91,15 +85,16 @@ export function isNewerVersion(current: string, candidate: string): boolean {
 }
 
 export async function notifyLiveUpdateReady(): Promise<void> {
-  await CapacitorUpdater.notifyAppReady()
+  await getLiveUpdatePort().notifyAppReady()
 }
 
 // 현재 실행 중인 번들 버전 — OTA 적용 후 값이 바뀌므로 관찰용 UI에서 반영의 "증거"가 된다(ADR-026).
-// web/개발 서버에는 네이티브 플러그인이 없으므로 null을 반환한다.
+// 라이브 업데이트 런타임이 없는 환경(web/개발 서버)에서는 null을 반환한다.
 export async function getCurrentBundleVersion(): Promise<string | null> {
-  if (Capacitor.getPlatform() === 'web') return null
-  const { bundle } = await CapacitorUpdater.current()
-  return bundle.version
+  const port = getLiveUpdatePort()
+  if (!port.isSupported()) return null
+  const { bundleVersion } = await port.getCurrent()
+  return bundleVersion
 }
 
 // checkForLiveUpdate 결과 — 부팅/수동 체크가 공유한다. "체크만" 하고 다운로드는 하지 않는다(ADR-027 결정 1).
@@ -119,12 +114,14 @@ export type LiveUpdateCheckResult =
     }
 
 export async function checkForLiveUpdate(manifestUrl: string): Promise<LiveUpdateCheckResult> {
-  if (Capacitor.getPlatform() === 'web') return { kind: 'unsupported' }
+  const port = getLiveUpdatePort()
+  if (!port.isSupported()) return { kind: 'unsupported' }
 
   try {
     // latest.json은 URL 고정·내용 가변이라 캐시(iOS URLSession·CDN 엣지)가 옛 버전을 돌려줄 수 있다 →
-    // 유니크 쿼리 파라미터 + no-cache로 모든 캐시 층 우회(ADR-026). CORS는 CapacitorHttp가 네이티브 요청이라 무관.
-    const response = await CapacitorHttp.get({
+    // 유니크 쿼리 파라미터 + no-cache로 모든 캐시 층 우회(ADR-026). 그 결정은 HTTP 클라이언트가 아니라
+    // 여기 있어야 한다 — 플랫폼을 바꿔도 캐시를 우회해야 하는 이유는 그대로다.
+    const response = await port.httpGet({
       url: manifestUrl,
       params: { t: String(Date.now()) },
       headers: { 'Cache-Control': 'no-cache' },
@@ -133,11 +130,11 @@ export async function checkForLiveUpdate(manifestUrl: string): Promise<LiveUpdat
     const manifest = parseLiveUpdateManifest(response.data)
     if (manifest === null) return { kind: 'error' }
 
-    const { bundle, native } = await CapacitorUpdater.current()
-    if (!isNewerVersion(bundle.version, manifest.version)) return { kind: 'up-to-date' }
+    const { bundleVersion, nativeVersion } = await port.getCurrent()
+    if (!isNewerVersion(bundleVersion, manifest.version)) return { kind: 'up-to-date' }
 
     // 새 번들이 요구하는 네이티브 버전이 설치본보다 높으면 라이브로 못 받는다 → 스토어 업데이트(ADR-027 결정 7).
-    if (manifest.minNativeVersion && isNewerVersion(native, manifest.minNativeVersion)) {
+    if (manifest.minNativeVersion && isNewerVersion(nativeVersion, manifest.minNativeVersion)) {
       return { kind: 'store-required', version: manifest.version, minNativeVersion: manifest.minNativeVersion }
     }
 
@@ -160,15 +157,7 @@ export async function downloadLiveUpdate(
   params: { url: string; version: string; checksum: string },
   onProgress: (percent: number) => void,
 ): Promise<{ id: string }> {
-  const handle = await CapacitorUpdater.addListener('download', (state) => {
-    if (state.bundle?.version === params.version) onProgress(state.percent)
-  })
-  try {
-    const downloaded = await CapacitorUpdater.download(params)
-    return { id: downloaded.id }
-  } finally {
-    await handle.remove()
-  }
+  return getLiveUpdatePort().download(params, onProgress)
 }
 
 // 내려받아 둔 번들을 즉시 적용한다(set은 JS 컨텍스트를 파괴하고 재로드 — 이후 코드는 실행되지 않음, ADR-027).
@@ -188,29 +177,22 @@ export async function applyDownloadedLiveUpdate(id: string): Promise<void> {
   await closeBossProfitDb()
   // 커버 표시 실패가 적용을 막으면 안 된다 — 시각적 장치 때문에 set()에 도달 못 하면 본말전도다.
   await showSplashScreen().catch(() => {})
-  await CapacitorUpdater.set({ id })
+  await getLiveUpdatePort().applyBundle(id)
 }
 
-export type NetworkType = 'wifi' | 'cellular' | 'none' | 'unknown'
+export type { NetworkType }
 
 // 현재 네트워크 종류 — 셀룰러면 다운로드 전에 데이터 사용 경고를 띄운다(ADR-027 결정 6).
-// web/구버전 네이티브 셸엔 플러그인이 없어 'unknown'으로 폴백(경고 생략).
+// 조회에 실패하면 'unknown'으로 폴백해 경고를 생략한다 — 알 수 없다는 이유로 다운로드를 막지 않는다.
 export async function getNetworkType(): Promise<NetworkType> {
-  if (Capacitor.getPlatform() === 'web') return 'unknown'
   try {
-    const status = await Network.getStatus()
-    return status.connectionType as NetworkType
+    return await getLiveUpdatePort().getNetworkType()
   } catch {
     return 'unknown'
   }
 }
 
-// 스토어 업데이트가 필요할 때 스토어로 보낸다(ADR-027 결정 7). window.open(_system)은 Capacitor가
-// 외부 앱/브라우저로 넘겨 플러그인이 필요 없다. 아직 미출시라 URL/ID는 placeholder.
+// 스토어 업데이트가 필요할 때 스토어로 보낸다(ADR-027 결정 7).
 export function openStoreForUpdate(): void {
-  const url =
-    Capacitor.getPlatform() === 'ios'
-      ? `itms-apps://apps.apple.com/app/id${APP_STORE_ID}`
-      : `market://details?id=${APP_ID}`
-  window.open(url, '_system')
+  getLiveUpdatePort().openStore()
 }

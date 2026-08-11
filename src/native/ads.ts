@@ -1,12 +1,12 @@
-import { AdMob } from '@capacitor-community/admob'
-import { Capacitor } from '@capacitor/core'
+import { getAdsPort } from './ports'
 
 /**
  * AdMob 어댑터 ([[ADR-090]] 결정 4, [[ADR-005]]).
  *
  * `features/*`·`app/*` 은 이 파일만 부른다 — 플러그인을 직접 import 하지 않는다.
- * 웹(`npm run dev`)에서는 전부 no-op 이다. 가드가 없으면 개발 서버가 부팅 중 죽는다
- * (`native/splash-screen.ts` 와 같은 패턴).
+ * 웹(`npm run dev`)에서는 전부 no-op 이다. 가드가 없으면 개발 서버가 부팅 중 죽는데, 그 판정은
+ * 포트 구현(`adapters/capacitor-ads.ts`)이 아래 두 순수 함수로 내린다 — 광고를 쓸 수 없는 환경이면
+ * `prepareInterstitial()` 이 `false` 를 돌려주므로 이 파일은 플랫폼을 알 필요가 없다.
  */
 
 /**
@@ -69,15 +69,10 @@ export function resolveInterstitialAdId(platform: string, useTestAds: boolean): 
  */
 let isLoaded = false
 
-function adId(): string | null {
-  return resolveInterstitialAdId(Capacitor.getPlatform(), shouldUseTestAds(import.meta.env))
-}
-
 /** SDK 초기화. 실패해도 던지지 않는다 — 광고 때문에 부팅이 막히면 안 된다. */
 export async function initializeAds(): Promise<void> {
-  if (adId() === null) return
   try {
-    await AdMob.initialize()
+    await getAdsPort().initialize()
   } catch {
     // 초기화 실패는 광고 없음으로 끝난다. isLoaded 가 false 로 남아 게이트가 알아서 막는다.
   }
@@ -88,11 +83,10 @@ export async function initializeAds(): Promise<void> {
  * 요청하면 왕복 동안 화면이 먼저 바뀌고 그 위를 광고가 덮는다(정책 위반 형태).
  */
 export async function loadInterstitial(): Promise<void> {
-  const id = adId()
-  if (id === null || isLoaded) return
+  if (isLoaded) return
   try {
-    await AdMob.prepareInterstitial({ adId: id })
-    isLoaded = true
+    // 광고를 쓸 수 없는 환경이면 포트가 false 를 돌려준다 — 그 자리가 옛 `adId() === null` 게이트다.
+    isLoaded = await getAdsPort().prepareInterstitial()
   } catch {
     isLoaded = false
   }
@@ -107,10 +101,9 @@ export function isInterstitialLoaded(): boolean {
  * 마지막 노출 시각을 기록할 수 있다(안 떴는데 기록하면 30분간 광고가 통째로 죽는다).
  */
 export async function showInterstitial(): Promise<boolean> {
-  if (adId() === null || !isLoaded) return false
+  if (!isLoaded) return false
   try {
-    await AdMob.showInterstitial()
-    return true
+    return await getAdsPort().showInterstitial()
   } catch {
     return false
   } finally {

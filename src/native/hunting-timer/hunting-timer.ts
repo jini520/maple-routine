@@ -1,19 +1,14 @@
-import { registerPlugin } from '@capacitor/core'
+import { getHuntingTimerPort, type HuntingTimerPort, type HuntingTimerState } from '../ports'
 
-export interface HuntingTimerState {
-  isRunning: boolean
-  startedAt: string | null
-  soundIntervalMinutes: number | null
+export type { HuntingTimerState }
+
+/** 웹 폴백(`HuntingTimerWeb`)이 구현하는 표면. 포트와 같은 모양이다. */
+export type HuntingTimerPlugin = HuntingTimerPort
+
+const HuntingTimer: HuntingTimerPlugin = {
+  start: (options) => getHuntingTimerPort().start(options),
+  stop: () => getHuntingTimerPort().stop(),
+  getState: () => getHuntingTimerPort().getState(),
 }
-
-export interface HuntingTimerPlugin {
-  start(options: { soundIntervalMinutes: number }): Promise<void>
-  stop(): Promise<void>
-  getState(): Promise<HuntingTimerState>
-}
-
-const HuntingTimer = registerPlugin<HuntingTimerPlugin>('HuntingTimer', {
-  web: () => import('./hunting-timer.web').then((m) => new m.HuntingTimerWeb()),
-})
 
 export default HuntingTimer

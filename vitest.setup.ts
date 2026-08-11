@@ -1,4 +1,5 @@
 import { installFakePreferences } from './src/storage/__tests__/fake-preferences'
+import { installNoopNativePorts } from './src/native/__tests__/fake-native-ports'
 
 // 저장소 포트의 테스트 기본값([[ADR-127]]). 포트 역전 전에는 `@capacitor/preferences` 모듈이 어느
 // 테스트에서나 그냥 import돼 동작했다 — 그 자리를 인메모리 포트가 대신한다. 이것이 없으면 앱을
@@ -6,6 +7,11 @@ import { installFakePreferences } from './src/storage/__tests__/fake-preferences
 // 저장 동작 자체를 검증하는 테스트는 자기 beforeEach에서 다시 설치해 격리된 store를 받는다.
 // setupFiles는 테스트 파일마다 한 번 도므로 파일 간에는 이미 격리된다.
 installFakePreferences()
+
+// 네이티브 포트도 같은 이유로 기본값을 깐다 — 옛 어댑터들이 테스트 환경(플랫폼 `web`)에서 no-op
+// 이었던 그 동작을 그대로 재현한다. 네이티브 어댑터를 검사하는 테스트는 자기 파일에서 Capacitor
+// 구현을 주입해 덮는다.
+installNoopNativePorts()
 
 // vaul(Drawer)은 Radix 기반이라 jsdom에 없는 브라우저 API를 요구한다(ADR-039).
 // 전역 test env가 'node'이고 컴포넌트 테스트만 파일 주석으로 jsdom을 켜므로, 이 setupFiles는

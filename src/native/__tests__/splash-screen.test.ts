@@ -18,7 +18,12 @@ vi.mock('@capacitor/splash-screen', () => ({
   SplashScreen: { hide: hideMock, show: showMock },
 }))
 
+// 포트 역전([[ADR-127]]) 후에도 검사 대상은 그대로다 — 플랫폼 가드와 DOM 커버(웹뷰 구현이다)가
+// 어댑터로 옮겨갔으므로 실제 Capacitor 구현을 주입해 한 단위로 본다.
 const { hideSplashScreen, showSplashScreen } = await import('../splash-screen')
+const { setSplashScreenPort } = await import('../ports')
+const { capacitorSplashScreenPort } = await import('../adapters/capacitor-splash-screen')
+setSplashScreenPort(capacitorSplashScreenPort)
 
 // 리로드 커버 오버레이(전체 화면·브랜드 주황, ADR-027 정정)를 DOM에서 찾는다.
 function findReloadCover(): HTMLElement | null {

@@ -55,6 +55,13 @@ vi.mock('../../storage/sqlite/db', () => ({ closeBossProfitDb: closeBossProfitDb
 
 vi.mock('../splash-screen', () => ({ showSplashScreen: showSplashScreenMock }))
 
+// 포트 역전([[ADR-127]]) 후에도 검사 대상은 그대로다 — 플러그인 호출과 플랫폼 가드가 어댑터로
+// 옮겨갔으므로 실제 Capacitor(@capgo) 구현을 주입해 한 단위로 본다. 매니페스트 형식·버전 비교·
+// 적용 순서는 여전히 `live-update.ts` 에 있고, 그것이 이 파일이 검사하는 대부분이다.
+const { setLiveUpdatePort } = await import('../ports')
+const { capacitorLiveUpdatePort } = await import('../adapters/capacitor-live-update')
+setLiveUpdatePort(capacitorLiveUpdatePort)
+
 const manifest = { version: '1.1.0', url: 'https://cdn/1.1.0.zip', checksum: 'abc123', size: 8_200_000 }
 const currentAt = (bundleVersion: string, native = '1.0.0') => ({
   bundle: { id: 'builtin', version: bundleVersion, downloaded: '', checksum: '', status: 'success' },

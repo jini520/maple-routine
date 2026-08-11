@@ -1,40 +1,23 @@
-import { LocalNotifications } from '@capacitor/local-notifications'
+import { getNotificationsPort, type LocalNotificationRequest } from './ports'
 
-export interface LocalNotificationRequest {
-  id: number
-  title: string
-  body: string
-  scheduleAt: Date
-}
+export type { LocalNotificationRequest }
 
 export async function requestNotificationPermission(): Promise<boolean> {
-  const { display } = await LocalNotifications.requestPermissions()
-  return display === 'granted'
+  return getNotificationsPort().requestPermission()
 }
 
 export async function hasNotificationPermission(): Promise<boolean> {
-  const { display } = await LocalNotifications.checkPermissions()
-  return display === 'granted'
+  return getNotificationsPort().hasPermission()
 }
 
 export async function scheduleLocalNotification(request: LocalNotificationRequest): Promise<void> {
-  await LocalNotifications.schedule({
-    notifications: [
-      {
-        id: request.id,
-        title: request.title,
-        body: request.body,
-        schedule: { at: request.scheduleAt },
-      },
-    ],
-  })
+  await getNotificationsPort().schedule(request)
 }
 
 export async function cancelLocalNotification(id: number): Promise<void> {
-  await LocalNotifications.cancel({ notifications: [{ id }] })
+  await getNotificationsPort().cancel(id)
 }
 
 export async function getPendingNotificationCount(): Promise<number> {
-  const { notifications } = await LocalNotifications.getPending()
-  return notifications.length
+  return getNotificationsPort().getPendingCount()
 }
