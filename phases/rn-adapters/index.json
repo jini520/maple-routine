@@ -13,7 +13,10 @@
     {
       "step": 1,
       "name": "rn-preferences",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-11T19:23:50+0900",
+      "summary": "로컬 Expo 모듈 `packages/app-rn/modules/capacitor-storage`(Kotlin·Swift·podspec·`expo-module.config.json`)가 Capacitor 저장소를 그대로 연다 — Android 는 `getSharedPreferences(\"CapacitorStorage\", MODE_PRIVATE)`, iOS 는 `UserDefaults.standard`, 네 연산(`getValue`/`setValue`/`removeValue`/`getAllKeys`) 전부 `AsyncFunction` 이고 같은 저장소를 본다. 마이그레이션·복사 코드 0줄. **키 변환은 네이티브가 아니라 TS 에 있다** — 두 플랫폼의 네임스페이스 방식이 달라서다(Android=별도 SharedPreferences 파일이라 네이티브만 가능 / iOS=키 접두사라 문자열 연산이 전부). 그래서 네이티브 모듈은 날 것의 키만 다루고(iOS `getAllKeys` 는 남의 UserDefaults 키까지 그대로 반환), `src/storage/adapters/capacitor-storage-keys.ts` 의 순수 함수 `toNativeKey`/`toAppKeys` 가 `IOS_KEY_PREFIX = 'CapacitorStorage.'`(점 포함)를 붙이고 뗀다 — 실기기 없이 검증되는 자리로 옮긴 것이다. `PreferencesPort` 구현은 `src/storage/adapters/rn-preferences.ts`(`Platform.OS` 로 갈라 두 순수 함수에 위임, `keys()` 포함). 테스트 15개 추가(총 17): 접두사 리터럴 고정 · 붙였다 떼면 항등 · 남의/닮은 UserDefaults 키 배제 · Android 무변환 · 저장소를 맵으로 흉내 낸 어댑터 합성 6케이스(jest 기본 플랫폼이 ios 라 접두사 붙는 쪽이 검사된다). 판별력 실측 — 접두사에서 점을 빼면 9건, `set` 만 접두사를 안 붙이면 2건이 깨진다. `packages/core` 무수정. **검증한 것은 \"컴파일된다\"와 \"순수 로직이 맞다\"까지다** — Android `expo prebuild --no-install --platform android` + `./gradlew assembleDebug` BUILD SUCCESSFUL(`:capacitor-storage` 오토링킹 확인, `CapacitorStorageModule` 클래스가 dex 까지 들어감), iOS 는 `pod install`(CapacitorStorage 0.1.0 통합) 후 `xcodebuild -scheme CapacitorStorage -sdk iphonesimulator` BUILD SUCCEEDED. pod install 이 만든 `ios/` 변경(Podfile.lock·app.xcworkspace·pbxproj·PrivacyInfo)은 이 step 범위 밖이라 되돌렸다 — `expo prebuild` 만으로는 커밋된 `ios/`·`android/` 가 그대로임을 확인했다. **실기기에서 기존 데이터를 실제로 읽는 것은 증명되지 않았다**(구버전 설치본 → RN 빌드 `install -r` 시나리오, `docs/migration/data.md` 검증 절차). 곁가지: 모듈 Gradle 산출물(`modules/*/android/build|.cxx`)을 `packages/app-rn/.gitignore` 에 추가.",
+      "completed_at": "2026-08-11T19:41:08+0900"
     },
     {
       "step": 2,

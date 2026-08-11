@@ -8,5 +8,10 @@ expo-env.d.ts
 # 서명 설정과 커스텀 네이티브 모듈(Preferences 어댑터)이 거기 들어간다.
 # 빌드 산출물만 제외하고, 그 목록은 `expo prebuild` 가 android/.gitignore · ios/.gitignore 로 만든다.
 
+# 로컬 네이티브 모듈(modules/*)은 소스만 커밋한다 — `expo prebuild` 가 만들어 주는 자리가 아니라
+# 우리가 직접 쓰는 소스라 위 두 .gitignore 가 안 덮는다.
+modules/*/android/build/
+modules/*/android/.cxx/
+
 # macOS
 .DS_Store
