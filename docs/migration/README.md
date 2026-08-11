@@ -115,7 +115,7 @@ CLAUDE.md의 TDD 원칙을 전환에도 적용한다. 화면 하나를 재작성
 |---|---|---|---|
 | `zustand` | 그대로 | 없음 | 전 `features/*/store.ts` 무수정 |
 | `react-router-dom` | `@react-navigation/native` + `native-stack` | 중 | 라우트 → 스크린 매핑은 parity-inventory 참고 |
-| Tailwind (`index.css` 384줄) | NativeWind | 중 | 임의 CSS·pseudo 셀렉터·`@keyframes` 불가 |
+| Tailwind v4 (`index.css` 384줄) | NativeWind 4 (**Tailwind v3**) | 중 | 임의 CSS·pseudo 셀렉터·`@keyframes` 불가. 메이저가 갈리는 이유와 대처는 «3-0단계 결과» |
 | `lucide-react` | `lucide-react-native` | 낮음 | `react-native-svg` 필요 |
 | `vaul` (BottomSheet) | `@gorhom/bottom-sheet` | 중 | [[ADR-039]] 동작 보존 확인 |
 | `@capacitor-community/sqlite` + `jeep-sqlite` + `sql.js` | `op-sqlite` | 중 | **파일 그대로 사용** — [data.md](./data.md) |
@@ -231,6 +231,48 @@ ADR 몫이다. 조용한 no-op 으로 두지 않는 이유와 각 자리의 근�
 **`ThemeAppearancePort` 가 여기서 해소된다.** 지금 RN 구현이 "단계 3에서 재설계된다"며 던지고 있다
 — CSS 변수 51개를 `<style>` 에 주입하던 구조를 React 상태로 옮기는 것이 이 단계의 일이다.
 
+#### 3-0단계 결과 — NativeWind 기반 (2026-08-11, 컴포넌트 이동 없음)
+
+**저장소가 Tailwind 메이저를 둘 문다.** NativeWind 안정판(4.2.6)이 v4 를 **명시적으로 거부하고**
+(`"NativeWind only supports Tailwind CSS v3"`), 웹은 이미 v4 로 배포 중이라 어느 쪽도 못 옮긴다.
+v5 preview(v4 지원)는 **실측으로 탈락** — `var()` 가 들어간 CSS를 컴파일하다 lightningcss 방문자
+API 에서 죽는다(`failed to deserialize … Specifier`, Node 24 · lightningcss 1.27~1.32 전부 동일).
+CSS 변수는 테마 시스템의 뼈대라 이 하나로 못 쓴다. 마지막 발행도 안정판보다 3개월 앞선다.
+
+배치는 **루트가 v3, 웹 패키지가 v4** 다. 뒤집힌 것처럼 보이지만 강제된 순서다 — `nativewind` 는
+의존성이 하나뿐이라 루트로 호이스팅되고, Node 해석은 **위로만** 걷기 때문에 그가 집는 것은 언제나
+루트다. `npm overrides` 로 peer 를 중첩시키는 안은 실측으로 안 먹혔다.
+
+| 자리 | Tailwind | 누가 쓰나 |
+|---|---|---|
+| `node_modules/` (루트) | **3.4.19** | `nativewind` |
+| `packages/app-capacitor/node_modules/` | **4.3.x** | 웹 빌드(`@tailwindcss/vite`) |
+
+- 웹 산출물이 안 바뀌었음은 **빌드 CSS 를 바이트 단위로 대조**해 확인했다(변경 전후 md5 동일).
+- 두 배치가 어긋나면 `packages/app-rn/src/__tests__/tailwind-axes.test.ts` 가 빨개진다. 웹이 v3 를
+  집는 경우가 특히 위험하다 — `@theme` 이 미지원 at-rule 이 되어 **유틸리티가 거의 안 나온 채 빌드가
+  성공**한다.
+
+**테마와 무관한 축은 베끼지 않고 웹의 v4 기본값에서 판다** — `tailwind-v4-axes.cjs`(저장소 루트)가
+`tailwindcss/theme.css` 를 읽어 v3 `theme` 조각으로 바꾸고, `packages/app-rn/tailwind.config.js` 가
+그것을 `extend` 가 아니라 **교체**로 얹는다. 실제로 갈리는 축은 셋뿐이다(실측):
+
+| 축 | 왜 |
+|---|---|
+| `spacing` | v4 는 배수로 모든 정수를 만든다. v3 엔 `h-13`(2곳)·`h-22`(1곳)가 **없는 클래스** — 조용히 무시된다 |
+| `container` | `max-w-2xs`(288 — 파티 인원 모달 폭 하한, [[ADR-121]])가 v4 에만 있다 |
+| `borderRadius` | v4 가 계단 이름을 한 칸 밀었다(v3 `rounded-sm` 2px / v4 4px). 지금 영향 0, step 3~6 의 함정 |
+
+나머지(`fontSize`·`fontWeight`·`leading`·`tracking`·`screens`)는 두 메이저의 값이 **같아** 건드리지
+않는다. 같은 것을 파생시키면 파생 코드가 새 오차원이 된다.
+
+**`rem` 은 16 으로 못박는다**(`packages/app-rn/nativewind.config.js`). NativeWind 기본값은 14 인데
+웹은 브라우저 기본 16px 로 돈다 — 그대로 두면 rem 을 쓰는 유틸리티 **전부**가 RN 에서만 12.5%
+작아진다. 이름은 같은데 값이 다른, 가장 알아채기 어려운 종류의 어긋남이다.
+
+**`babel.config.js` 가 0단계에서 지웠던 자리에 돌아왔다.** NativeWind 가 babel 프리셋을 요구하고,
+없으면 `className` 이 **에러 없이 무시**된다. 되살린 이유는 파일 주석에 적혀 있다.
+
 ### 4단계 — `app/` 화면 재작성
 
 - 화면 15개 + 하위 컴포넌트. **파일별 ADR 계약 체크리스트를 소진**하며 진행(원칙 2)
@@ -274,6 +316,25 @@ ADR 몫이다. 조용한 no-op 으로 두지 않는 이유와 각 자리의 근�
 
 DOM 스냅샷 3종이 가장 아프다. **이 저장소에서 "화면이 예전과 같은가"를 기계적으로 판정하던 유일한
 장치**이고, 하필 이 전환이 그 질문을 가장 많이 하게 만든다.
+
+### RN 트리 스냅샷 관례 (3단계에서 확정, 2026-08-11)
+
+| 항목 | 규칙 |
+|---|---|
+| 배치·이름 | 테스트 파일 옆 `__snapshots__/<파일명>.snap` — jest 기본값 그대로. 도구가 정해 둔 자리가 있으면 규칙을 새로 만들지 않는다 |
+| 찍는 법 | `expect((await render(<X />)).toJSON()).toMatchSnapshot()` — `@testing-library/react-native` 14 의 `render` 는 **비동기**다. `await` 를 빠뜨리면 Promise 에 대고 단언하게 되고, 그때 나는 에러가 배선 문제처럼 보인다 |
+| 무엇을 찍나 | 렌더 트리 **전체**. `className` 이 풀린 `style` 이 그 안에 들어 있어야 한다 |
+
+**스타일 값이 스냅샷에 실리게 하는 것이 이 관례의 전제다.** 그냥 두면 `className` 이 스타일 없이
+렌더돼 트리에 클래스 이름만 남고, 그러면 `p-4` 를 `p-5` 로 바꿔도 초록이다 — 회귀를 잡으라고 만든
+기준선이 정작 스타일 회귀를 못 잡는다. 그래서 `jest.global-setup.js` 가 앱이 실제로 쓰는
+`tailwind.config.js` 로 `global.css` 를 **실행당 한 번** 컴파일하고 `jest.setup.js` 가 테스트마다
+주입한다. NativeWind 가 주는 `nativewind/test` 의 `render()` 를 안 쓰는 이유는 둘이다 — 그 파일이
+JSX 가 트랜스파일되지 않은 채 배포돼 jest 에서 `SyntaxError` 로 죽고, 설령 돌아도 **넘긴 JSX 에 직접
+적힌 `className` 만** 훑어 컴포넌트 **안쪽** 클래스는 빈 스타일이 된다.
+
+> **이 스냅샷은 "예전과 같은가"에 답하지 않는다.** 답하는 것은 오직 *"앞으로 안 바뀌는가"* 다.
+> 웹뷰 앱과의 대조는 위에 적은 대로 **사람 눈**이 한다 — 초록색을 보고 패리티가 검증됐다고 읽지 말 것.
 
 ---
 

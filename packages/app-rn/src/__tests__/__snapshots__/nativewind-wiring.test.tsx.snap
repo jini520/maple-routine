@@ -1,0 +1,27 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`NativeWind 배선 렌더 트리 스냅샷 — 이후 변경을 잡는 기준선(예전 화면과의 대조가 아니다) 1`] = `
+<View
+  style={
+    {
+      "columnGap": 8,
+      "height": 88,
+      "padding": 16,
+      "rowGap": 8,
+    }
+  }
+  testID="probe"
+>
+  <Text
+    style={
+      {
+        "fontSize": 14,
+        "fontWeight": "600",
+        "lineHeight": 20,
+      }
+    }
+  >
+    배선 확인
+  </Text>
+</View>
+`;

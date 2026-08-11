@@ -9,6 +9,9 @@
 const path = require('node:path')
 
 const { getDefaultConfig } = require('expo/metro-config')
+const { withNativeWind } = require('nativewind/metro')
+
+const { CSS_ENTRY, INLINE_REM } = require('./nativewind.config')
 
 const projectRoot = __dirname
 const workspaceRoot = path.resolve(projectRoot, '../..')
@@ -30,4 +33,10 @@ config.resolver.nodeModulesPaths = [
 // 켜면 버전 충돌로 중첩된 `.../node_modules/<pkg>/node_modules/<dep>` 를 못 찾게 된다.
 // 위 둘만으로 `packages/core` 가 해석되는 것을 `expo export` 로 확인했다.
 
-module.exports = config
+// ③ NativeWind 를 **맨 마지막에** 씌운다([[ADR-127]] 3단계). 이 래퍼는 트랜스포머를 갈아끼우고
+//    설정을 새로 만들어 돌려주므로, 위 ①·② 를 마친 객체를 넘겨야 한다 — 순서를 뒤집어 래퍼 결과에
+//    `config.resolver` 를 통째로 대입하면 그쪽이 심어 둔 것이 지워진다. 순서가 곧 계약이다.
+module.exports = withNativeWind(config, {
+  input: CSS_ENTRY,
+  inlineRem: INLINE_REM,
+})

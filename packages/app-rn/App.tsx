@@ -1,6 +1,10 @@
 import { StatusBar } from 'expo-status-bar'
 import { StyleSheet, Text, View } from 'react-native'
 
+// NativeWind 배선의 **유일한 진입점**([[ADR-127]] 3단계). Metro 가 이 import 를 보고 Tailwind 를
+// 돌려 RN 스타일시트를 주입한다 — 없으면 `className` 이 조용히 아무것도 안 한다.
+import './global.css'
+
 // 이 화면의 목적은 둘이다 — **`packages/core` 가 RN 번들에 들어간다**([[ADR-127]] 0단계)와
 // **부팅 배선이 실제로 돈다**(1단계). 앞엣것은 부작용 없는 순수 모듈로, 뒤엣것은 포트를 실제로
 // 거치는 호출 하나로 확인한다.

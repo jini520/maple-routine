@@ -13,6 +13,12 @@
 // 대신 그 파생은 **cwd 기준**이다(jest-expo 가 `path.resolve('tsconfig.json')` 을 쓴다). 그래서 이
 // 패키지는 반드시 자기 디렉터리에서 돌려야 한다 — 루트 `npm test` 가 `-w @maple-routine/app-rn` 로
 // 부르는 이유이기도 하다. 매핑이 실제로 풀리는지는 `src/__tests__/core-wiring.test.ts` 가 지킨다.
+//
+// NativeWind 배선은 두 파일로 나뉜다([[ADR-127]] 3단계) — `globalSetup` 이 `global.css` 를 실행당
+// 한 번 컴파일하고, `setupFilesAfterEnv` 가 그 결과를 테스트마다 주입한다. 나눈 이유는 컴파일이
+// 비동기라 `setupFiles`(동기)에 못 들어가고, 매 테스트 파일마다 다시 하면 느리기 때문이다.
 module.exports = {
   preset: 'jest-expo',
+  globalSetup: '<rootDir>/jest.global-setup.js',
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
 }
