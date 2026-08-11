@@ -11,7 +11,7 @@
 // 사전 준비: `gh auth login`으로 GitHub CLI 인증만 되어 있으면 된다(추가 계정 가입·결제 수단 불필요).
 // 이 저장소(REPO)에 고정 릴리스 태그를 하나 만들어 두고(--beta 없으면 live-update-latest,
 // 있으면 live-update-beta), 배포할 때마다 그 릴리스에 번들 zip을 추가하고 latest.json을 덮어쓴다.
-// src/native/live-update.ts의 LIVE_UPDATE_MANIFEST_URL/LIVE_UPDATE_MANIFEST_URL_BETA가
+// packages/core/src/native/live-update.ts의 LIVE_UPDATE_MANIFEST_URL/LIVE_UPDATE_MANIFEST_URL_BETA가
 // 각 릴리스의 latest.json을 가리킨다.
 //
 // 동작: npm run build → dist/ 압축 → sha256 계산 → latest.json 갱신 → gh release upload

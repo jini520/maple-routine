@@ -1,5 +1,5 @@
 import { LocalNotifications } from '@capacitor/local-notifications'
-import type { NotificationsPort } from '../ports'
+import type { NotificationsPort } from '@core/native/ports'
 
 /** `NotificationsPort` 의 Capacitor 구현([[ADR-127]]). */
 export const capacitorNotificationsPort: NotificationsPort = {

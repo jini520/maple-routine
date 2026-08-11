@@ -10,20 +10,20 @@ import {
 } from 'react'
 import { BrowserRouter, Navigate, NavLink, Route, Routes, useNavigate } from 'react-router-dom'
 import { ListChecks, Settings, Swords } from 'lucide-react'
-import { useOnboardingStore } from './features/onboarding/store'
-import { useThemeStore } from './features/theme/store'
-import { useTrackingModeStore } from './features/tracking-mode/store'
-import { useDropEffectStore } from './features/drop-effect/store'
+import { useOnboardingStore } from '@core/features/onboarding/store'
+import { useThemeStore } from '@core/features/theme/store'
+import { useTrackingModeStore } from '@core/features/tracking-mode/store'
+import { useDropEffectStore } from '@core/features/drop-effect/store'
 import { getThemeDefinition } from '@core/lib/theme-registry'
 import { consumePendingNotice } from '@core/storage/pending-notice'
-import { useToastStore } from './features/toast/store'
-import { hideSplashScreen } from './native/splash-screen'
-import { notifyLiveUpdateReady } from './native/live-update'
-import { refreshSafeAreaInsets } from './native/system-bars'
-import { addKeyboardVisibilityListener } from './native/keyboard'
+import { useToastStore } from '@core/features/toast/store'
+import { hideSplashScreen } from '@core/native/splash-screen'
+import { notifyLiveUpdateReady } from '@core/native/live-update'
+import { refreshSafeAreaInsets } from '@core/native/system-bars'
+import { addKeyboardVisibilityListener } from '@core/native/keyboard'
 import { useStackLocation } from './lib/use-stack-location'
 import { useSystemBack } from './lib/use-system-back'
-import { moveAppToBackground } from './native/back-gesture'
+import { moveAppToBackground } from '@core/native/back-gesture'
 import { useDelayed } from './lib/use-delayed'
 import { preloadScreen, usePreloadedScreen, type ScreenLoader } from '@core/lib/preloaded-screen'
 import { useScreenStackStore } from './features/screen-stack/store'
@@ -35,7 +35,7 @@ import {
   resolveTabPath,
   STACK_EASING,
 } from './lib/stack-transition'
-import { maybeShowTabSwitchAd, startAds } from './features/ads/tab-switch-ad'
+import { maybeShowTabSwitchAd, startAds } from '@core/features/ads/tab-switch-ad'
 import { UpdatePromptModal } from './app/UpdatePromptModal'
 import { ApiKeyNoticeModal } from './app/ApiKeyNoticeModal'
 import { ErrorBoundary } from './components/organisms/ErrorBoundary/ErrorBoundary'
@@ -345,7 +345,7 @@ export function AppShell(): React.JSX.Element {
   // 시작하고 토스트까지 울린다. 예열 모듈 자체도 동적 import 다([[ADR-092]]).
   useEffect(() => {
     if (status !== 'completed') return
-    void import('./features/prehydrate').then((m) => m.prehydrateTabStores())
+    void import('@core/features/prehydrate').then((m) => m.prehydrateTabStores())
   }, [status])
 
   // ADR-065 결정 3: 캐시 데이터 삭제는 실패해도 리로드가 실행돼 화면 신호가 파괴된다 —

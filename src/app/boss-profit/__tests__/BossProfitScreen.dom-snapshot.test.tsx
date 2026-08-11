@@ -22,15 +22,15 @@ import {
   useBossProfitStore,
   type BossProfitRow,
   type BossProfitWeeklySubtotal,
-} from '../../../features/boss-profit/store'
+} from '@core/features/boss-profit/store'
 
-vi.mock('../../../features/toast/store', () => ({
+vi.mock('@core/features/toast/store', () => ({
   useToastStore: {
     getState: () => ({ showError: vi.fn(), showSuccess: vi.fn(), showInfo: vi.fn() }),
   },
 }))
 
-vi.mock('../../../features/boss-profit/store', () => ({
+vi.mock('@core/features/boss-profit/store', () => ({
   useBossProfitStore: vi.fn(),
   dropRowKey: (ocid: string, boss: string, difficulty: string, periodKey: string) =>
     `${ocid}|${boss}|${difficulty}|${periodKey}`,

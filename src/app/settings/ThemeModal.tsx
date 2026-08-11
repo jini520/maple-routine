@@ -1,6 +1,6 @@
 import { Modal } from '../../components/organisms/Modal/Modal'
 import { Button } from '../../components/atoms/Button/Button'
-import { useThemeStore } from '../../features/theme/store'
+import { useThemeStore } from '@core/features/theme/store'
 import { ThemeSelector } from './ThemeSelector'
 
 export interface ThemeModalProps {

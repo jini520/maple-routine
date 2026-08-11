@@ -6,9 +6,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import packageJson from '../../../../package.json'
 import type { ReleaseNote } from '@core/types'
 import { SettingsReleaseNotesScreen } from '../SettingsReleaseNotesScreen'
-import { useLiveUpdateStore } from '../../../features/live-update/store'
+import { useLiveUpdateStore } from '@core/features/live-update/store'
 
-vi.mock('../../../features/live-update/store', () => ({ useLiveUpdateStore: vi.fn() }))
+vi.mock('@core/features/live-update/store', () => ({ useLiveUpdateStore: vi.fn() }))
 
 // 노트 데이터는 **화면이 아니라 데이터 파일이 소유한다**(ADR-119 결정 4) — 여러 건이 필요한
 // 케이스(순서·항목 단위 표식)를 위해 `src/data/release-notes.ts` 를 늘리지 않고 여기서 픽스처를

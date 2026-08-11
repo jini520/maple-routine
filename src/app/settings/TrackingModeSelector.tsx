@@ -1,6 +1,6 @@
 import { Gamepad2, Info, ListChecks } from 'lucide-react'
 import type { TrackingMode } from '@core/storage/tracking-mode'
-import { TRACKING_MODE_OPTIONS } from '../../features/tracking-mode/copy'
+import { TRACKING_MODE_OPTIONS } from '@core/features/tracking-mode/copy'
 
 export interface TrackingModeSelectorProps {
   mode: TrackingMode

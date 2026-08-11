@@ -1,7 +1,7 @@
 import { AccountSelectionList } from '../onboarding/AccountSelectionList'
 import { ContentCharacterStep } from '../onboarding/ContentCharacterStep'
 import { formatSettingsError } from './error-message'
-import type { SettingsError, SettingsStatus, PrefetchProgress } from '../../features/settings/state'
+import type { SettingsError, SettingsStatus, PrefetchProgress } from '@core/features/settings/state'
 import type { MapleAccount } from '@core/types'
 import { ProgressBar } from '../../components/atoms/ProgressBar/ProgressBar'
 import { Button } from '../../components/atoms/Button/Button'

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useOnboardingStore } from '../../features/onboarding/store'
+import { useOnboardingStore } from '@core/features/onboarding/store'
 import { MapleSweepSpinner } from '../../components/atoms/MapleSweepSpinner/MapleSweepSpinner'
 import { ApiKeyForm } from './ApiKeyForm'
 import { AccountSelectionList } from './AccountSelectionList'

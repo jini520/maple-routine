@@ -1,11 +1,11 @@
 import type { BossContent, BossDifficulty, CharacterPickerEntry } from '@core/types'
 import { RefreshCw, SlidersHorizontal, Swords, Users } from 'lucide-react'
 import { useScreenStackStore } from '../../features/screen-stack/store'
-import { formatSyncedAt } from '../../features/schedule-sync/format'
-import { useScheduleSyncErrorToast } from '../../features/schedule-sync/use-sync-error-toast'
-import { useApiKeyNotice } from '../../features/onboarding/use-api-key-notice'
+import { formatSyncedAt } from '@core/features/schedule-sync/format'
+import { useScheduleSyncErrorToast } from '@core/features/schedule-sync/use-sync-error-toast'
+import { useApiKeyNotice } from '@core/features/onboarding/use-api-key-notice'
 import { getBossPortraitCrop, getBossPortraitUrl } from '@core/lib/boss-icons'
-import { partySizeKey, useBossSchedulerStore, type PartyFilter } from '../../features/boss-scheduler/store'
+import { partySizeKey, useBossSchedulerStore, type PartyFilter } from '@core/features/boss-scheduler/store'
 import { useEffect, useRef, useState } from 'react'
 import { Outlet, useNavigate, useSearchParams } from 'react-router-dom'
 
@@ -26,13 +26,13 @@ import {
   type MatchedBoss,
 } from '@core/lib/boss-matching'
 import { getMaxPartySize } from '@core/lib/boss-crystal-prices'
-import { useToastStore } from '../../features/toast/store'
+import { useToastStore } from '@core/features/toast/store'
 import { PartySizeModal } from '../../components/organisms/PartySizeModal/PartySizeModal'
 import { mergeManualBossList } from '@core/lib/manual-boss-merge'
 import { isChallengersWorld } from '@core/lib/world-emblem'
-import { getCharacterPickerRoster, toScheduleSyncError } from '../../features/schedule-sync/schedule-sync'
-import type { ScheduleSyncError } from '../../features/schedule-sync/schedule-sync'
-import { useTrackingModeStore } from '../../features/tracking-mode/store'
+import { getCharacterPickerRoster, toScheduleSyncError } from '@core/features/schedule-sync/schedule-sync'
+import type { ScheduleSyncError } from '@core/features/schedule-sync/schedule-sync'
+import { useTrackingModeStore } from '@core/features/tracking-mode/store'
 import {
   MEDIA_ART_FILTER,
   MEDIA_ART_MASK_CARD,

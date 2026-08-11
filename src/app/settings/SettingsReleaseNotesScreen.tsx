@@ -7,7 +7,7 @@ import {
   RELEASE_NOTE_CATEGORY_LABELS,
   RELEASE_NOTE_CATEGORY_ORDER,
 } from '@core/data/release-notes'
-import { useLiveUpdateStore } from '../../features/live-update/store'
+import { useLiveUpdateStore } from '@core/features/live-update/store'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { StackScreen } from '../../components/templates/StackScreen/StackScreen'
 import { Badge } from '../../components/atoms/Badge/Badge'

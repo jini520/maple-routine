@@ -16,7 +16,7 @@ export interface LiveUpdateManifest {
   checksum: string
   size: number // zip 바이트 — 다운로드 전 사용자에게 용량을 안내(ADR-027)
   minNativeVersion?: string // 이 번들을 적용하려면 필요한 최소 네이티브 버전(스토어 업데이트 게이트, ADR-027)
-  // 이 버전의 **핵심 목록** 3~4줄(ADR-119 → ADR-126 결정 2). 원천은 src/data/release-notes.ts 한
+  // 이 버전의 **핵심 목록** 3~4줄(ADR-119 → ADR-126 결정 2). 원천은 packages/core/src/data/release-notes.ts 한
   // 벌이고, 배포 스크립트가 배포하는 버전의 highlights 만 뽑아 여기로 파생시킨다 — 여기서 그 파일을
   // 읽지 않는다(원격에서 온 값이다). 항목 전체가 아닌 이유는 이 값을 읽는 자리가 **받기 전 모달**,
   // 즉 "받을까 말까"를 정하는 자리라서다. 전체는 받은 뒤 개발 노트 화면이 번들 안에서 읽는다.

@@ -4,9 +4,9 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { SettingsAboutScreen } from '../SettingsAboutScreen'
-import { useLiveUpdateStore } from '../../../features/live-update/store'
+import { useLiveUpdateStore } from '@core/features/live-update/store'
 
-vi.mock('../../../features/live-update/store', () => ({ useLiveUpdateStore: vi.fn() }))
+vi.mock('@core/features/live-update/store', () => ({ useLiveUpdateStore: vi.fn() }))
 
 const mockedUseLiveUpdateStore = vi.mocked(useLiveUpdateStore)
 

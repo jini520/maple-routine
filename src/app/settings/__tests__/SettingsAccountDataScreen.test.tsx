@@ -4,13 +4,13 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { SettingsAccountDataScreen } from '../SettingsAccountDataScreen'
-import { useSettingsStore } from '../../../features/settings/store'
+import { useSettingsStore } from '@core/features/settings/store'
 import { consumePendingNotice } from '@core/storage/pending-notice'
 import { clearCacheData, getCacheDataSizes } from '@core/storage/cache-data'
 import { closeBossProfitDb } from '@core/storage/sqlite/db'
-import { showSplashScreen } from '../../../native/splash-screen'
+import { showSplashScreen } from '@core/native/splash-screen'
 
-vi.mock('../../../features/settings/store', () => ({
+vi.mock('@core/features/settings/store', () => ({
   useSettingsStore: vi.fn(),
 }))
 
@@ -23,7 +23,7 @@ vi.mock('@core/storage/sqlite/db', () => ({
   closeBossProfitDb: vi.fn(async () => {}),
 }))
 
-vi.mock('../../../native/splash-screen', () => ({
+vi.mock('@core/native/splash-screen', () => ({
   showSplashScreen: vi.fn(async () => {}),
 }))
 

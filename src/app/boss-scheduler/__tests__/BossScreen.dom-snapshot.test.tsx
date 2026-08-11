@@ -12,22 +12,22 @@ import { BossScreen } from '../BossScreen'
 import {
   useBossSchedulerStore,
   type BossCharacterView,
-} from '../../../features/boss-scheduler/store'
-import { getCharacterPickerRoster } from '../../../features/schedule-sync/schedule-sync'
+} from '@core/features/boss-scheduler/store'
+import { getCharacterPickerRoster } from '@core/features/schedule-sync/schedule-sync'
 
-vi.mock('../../../features/toast/store', () => ({
+vi.mock('@core/features/toast/store', () => ({
   useToastStore: {
     getState: () => ({ showError: vi.fn(), showSuccess: vi.fn(), showInfo: vi.fn() }),
   },
 }))
 
-vi.mock('../../../features/boss-scheduler/store', () => ({
+vi.mock('@core/features/boss-scheduler/store', () => ({
   useBossSchedulerStore: vi.fn(),
   partySizeKey: (ocid: string, boss: string, difficulty: string) => `${ocid}:${boss}:${difficulty}`,
 }))
 
-vi.mock('../../../features/schedule-sync/schedule-sync', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../../../features/schedule-sync/schedule-sync')>()),
+vi.mock('@core/features/schedule-sync/schedule-sync', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@core/features/schedule-sync/schedule-sync')>()),
   getCharacterPickerRoster: vi.fn(),
 }))
 

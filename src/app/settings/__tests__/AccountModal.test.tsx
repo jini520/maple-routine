@@ -4,9 +4,9 @@ import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AccountModal } from '../AccountModal'
-import { useSettingsStore } from '../../../features/settings/store'
+import { useSettingsStore } from '@core/features/settings/store'
 
-vi.mock('../../../features/settings/store', () => ({
+vi.mock('@core/features/settings/store', () => ({
   useSettingsStore: vi.fn(),
 }))
 

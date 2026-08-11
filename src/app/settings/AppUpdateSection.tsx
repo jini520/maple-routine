@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import packageJson from '../../../package.json'
-import { useLiveUpdateStore, type LiveUpdateStatus } from '../../features/live-update/store'
+import { useLiveUpdateStore, type LiveUpdateStatus } from '@core/features/live-update/store'
 import { MapleSpinner } from '../../components/atoms/MapleSpinner/MapleSpinner'
 import { Button } from '../../components/atoms/Button/Button'
 import { Card } from '../../components/atoms/Card/Card'

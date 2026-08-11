@@ -1,5 +1,5 @@
 import { registerPlugin } from '@capacitor/core'
-import type { HuntingTimerPort } from '../ports'
+import type { HuntingTimerPort } from '@core/native/ports'
 
 /**
  * `HuntingTimerPort` 의 Capacitor 구현([[ADR-127]], [[ADR-005]]).
@@ -10,6 +10,7 @@ import type { HuntingTimerPort } from '../ports'
 export const capacitorHuntingTimerPort: HuntingTimerPort = registerPlugin<HuntingTimerPort>(
   'HuntingTimer',
   {
-    web: () => import('../hunting-timer/hunting-timer.web').then((m) => new m.HuntingTimerWeb()),
+    web: () =>
+      import('@core/native/hunting-timer/hunting-timer.web').then((m) => new m.HuntingTimerWeb()),
   },
 )

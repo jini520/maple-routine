@@ -1,14 +1,14 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { ApiKeyNoticeKind } from '../../features/onboarding/state'
+import type { ApiKeyNoticeKind } from '@core/features/onboarding/state'
 
 const { confirmApiKeyNoticeMock, storeRef } = vi.hoisted(() => ({
   confirmApiKeyNoticeMock: vi.fn(),
   storeRef: { current: { apiKeyNotice: null as ApiKeyNoticeKind | null } },
 }))
 
-vi.mock('../../features/onboarding/store', () => ({
+vi.mock('@core/features/onboarding/store', () => ({
   useOnboardingStore: () => ({
     apiKeyNotice: storeRef.current.apiKeyNotice,
     confirmApiKeyNotice: confirmApiKeyNoticeMock,

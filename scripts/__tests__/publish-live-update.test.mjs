@@ -7,7 +7,7 @@ import {
   resolveReleaseTag,
 } from '../publish-live-update.mjs'
 import { RELEASE_NOTES } from '../../packages/core/src/data/release-notes.ts'
-import { parseLiveUpdateManifest } from '../../src/native/live-update.ts'
+import { parseLiveUpdateManifest } from '../../packages/core/src/native/live-update.ts'
 
 describe('resolveReleaseTag', () => {
   it('isBeta가 true면 live-update-beta를 반환한다', () => {

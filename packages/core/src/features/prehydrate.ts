@@ -12,7 +12,7 @@
 // 바로 그 낭비다. 순서는 사용자가 실제로 밟는 순서(첫 화면인 컨텐츠부터)다.
 //
 // **동적 `import()` 인 것이 핵심이다**(결정 5). 정적 import 로 바꾸면 세 스토어와 그들이 끌고 오는
-// `src/data/*.json` 이 메인 청크로 돌아와 [[ADR-092]] 번들 스플리팅이 통째로 무효가 된다. 첫 페인트
+// `packages/core/src/data/*.json` 이 메인 청크로 돌아와 [[ADR-092]] 번들 스플리팅이 통째로 무효가 된다. 첫 페인트
 // 이후에 도는 이펙트에서 부르므로 청크는 그대로 갈라져 있고, 덤으로 라우트 청크가 미리 받아져
 // 탭 전환의 `RouteFallback` 도 대개 사라진다.
 const LOADERS: ReadonlyArray<() => Promise<{ loadTrackedOcids(): Promise<void> }>> = [

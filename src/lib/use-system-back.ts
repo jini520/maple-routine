@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { addBackGestureListeners, setBackGestureEnabled } from '../native/back-gesture'
+import { addBackGestureListeners, setBackGestureEnabled } from '@core/native/back-gesture'
 import { useScreenStackStore } from '../features/screen-stack/store'
 import { resolveSettleMs, resolveTransitionMs } from './stack-transition'
 

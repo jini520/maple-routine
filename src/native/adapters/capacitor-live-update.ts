@@ -1,7 +1,7 @@
 import { Capacitor, CapacitorHttp } from '@capacitor/core'
 import { CapacitorUpdater } from '@capgo/capacitor-updater'
 import { Network } from '@capacitor/network'
-import type { LiveUpdatePort, NetworkType } from '../ports'
+import type { LiveUpdatePort, NetworkType } from '@core/native/ports'
 
 /**
  * `LiveUpdatePort` 의 Capacitor(@capgo) 구현([[ADR-127]]).

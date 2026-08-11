@@ -16,6 +16,32 @@
  * 스플래시가 안 걷히거나 광고가 안 뜨는 것이 정상 동작처럼 보인다(`storage/ports.ts` 와 같은 판단).
  */
 
+import type { ThemeDefinition, ThemeName } from '@core/types/theme'
+
+/**
+ * OS 라이트/다크 설정 ([[ADR-009]] 2026-07-14 · [[ADR-104]]).
+ *
+ * 저장된 테마가 없을 때의 **1회성 판정**에만 쓴다 — 실행 중 OS 설정 변경을 실시간으로 따라가지
+ * 않는다(범위 밖). 그래서 구독 API를 두지 않았다: 부를 곳이 없는 인터페이스는 구현마다 죽은
+ * 코드가 된다. 필요해지는 날 추가하면 된다.
+ */
+export interface ColorSchemePort {
+  get(): 'light' | 'dark'
+}
+
+/**
+ * 고른 테마를 플랫폼 표면에 반영한다 ([[ADR-064]] 결정 10 · [[ADR-099]] · [[ADR-122]]).
+ *
+ * 웹뷰에서는 34토큰을 `<style>` 하나로 주입하고 `data-theme`/`data-mode` · `color-scheme` ·
+ * `scrollbar-color` 를 문서에 건다 — 전부 DOM 이라 구현이 갖는다. 상태바·내비바 명암은 이 포트가
+ * 아니라 호출부(`features/theme/store.ts`)가 계속 맡는다: 그건 이미 자기 포트가 있다.
+ *
+ * 타입 두 개를 import 하는 유일한 자리다(둘 다 `import type` 이라 런타임 의존은 여전히 0).
+ */
+export interface ThemeAppearancePort {
+  apply(theme: ThemeName, definition: ThemeDefinition): void
+}
+
 /**
  * 전면광고 ([[ADR-090]] 결정 4).
  *
@@ -172,7 +198,7 @@ export interface LiveUpdatePort {
 
 /**
  * 포트 하나의 보관함. `storage/ports.ts` 와 같은 계약이다 — 주입 전 접근은 던지고, 테스트는
- * 되돌릴 수 있다. 포트가 아홉이라 그 계약을 손으로 아홉 번 베끼는 대신 한 곳에 두었다.
+ * 되돌릴 수 있다. 포트가 여럿이라 그 계약을 포트마다 손으로 베끼는 대신 한 곳에 두었다.
  */
 function createPortSlot<T>(name: string): {
   set: (port: T) => void
@@ -198,6 +224,8 @@ function createPortSlot<T>(name: string): {
   }
 }
 
+const colorSchemeSlot = createPortSlot<ColorSchemePort>('ColorSchemePort')
+const themeAppearanceSlot = createPortSlot<ThemeAppearancePort>('ThemeAppearancePort')
 const adsSlot = createPortSlot<AdsPort>('AdsPort')
 const splashScreenSlot = createPortSlot<SplashScreenPort>('SplashScreenPort')
 const statusBarSlot = createPortSlot<StatusBarPort>('StatusBarPort')
@@ -207,6 +235,12 @@ const notificationsSlot = createPortSlot<NotificationsPort>('NotificationsPort')
 const backGestureSlot = createPortSlot<BackGesturePort>('BackGesturePort')
 const huntingTimerSlot = createPortSlot<HuntingTimerPort>('HuntingTimerPort')
 const liveUpdateSlot = createPortSlot<LiveUpdatePort>('LiveUpdatePort')
+
+export const setColorSchemePort = colorSchemeSlot.set
+export const getColorSchemePort = colorSchemeSlot.get
+
+export const setThemeAppearancePort = themeAppearanceSlot.set
+export const getThemeAppearancePort = themeAppearanceSlot.get
 
 export const setAdsPort = adsSlot.set
 export const getAdsPort = adsSlot.get
@@ -238,6 +272,8 @@ export const getLiveUpdatePort = liveUpdateSlot.get
 /** 테스트 전용 — 주입된 포트를 전부 비운다(`storage/ports.ts` 의 `__resetStoragePortsForTest` 관례). */
 export function __resetNativePortsForTest(): void {
   for (const slot of [
+    colorSchemeSlot,
+    themeAppearanceSlot,
     adsSlot,
     splashScreenSlot,
     statusBarSlot,

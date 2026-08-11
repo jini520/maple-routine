@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const { hideSplashScreenMock } = vi.hoisted(() => ({ hideSplashScreenMock: vi.fn() }))
 
-vi.mock('../../../../native/splash-screen', () => ({
+vi.mock('@core/native/splash-screen', () => ({
   hideSplashScreen: hideSplashScreenMock,
 }))
 

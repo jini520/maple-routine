@@ -1,5 +1,5 @@
 import { Capacitor, registerPlugin } from '@capacitor/core'
-import type { SystemBarsPort } from '../ports'
+import type { SystemBarsPort } from '@core/native/ports'
 
 /** `SystemBarsPort` 의 Capacitor 구현([[ADR-127]]). 안드로이드 전용 플러그인이다. */
 interface AppSystemBarsPlugin {

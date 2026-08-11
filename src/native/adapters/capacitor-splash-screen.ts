@@ -1,6 +1,6 @@
 import { Capacitor } from '@capacitor/core'
 import { SplashScreen } from '@capacitor/splash-screen'
-import type { SplashScreenPort } from '../ports'
+import type { SplashScreenPort } from '@core/native/ports'
 
 /**
  * `SplashScreenPort` 의 Capacitor 구현([[ADR-127]], [[ADR-025]]·[[ADR-027]]·[[ADR-117]]).

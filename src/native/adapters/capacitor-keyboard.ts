@@ -1,6 +1,6 @@
 import { Capacitor } from '@capacitor/core'
 import { Keyboard } from '@capacitor/keyboard'
-import type { KeyboardPort } from '../ports'
+import type { KeyboardPort } from '@core/native/ports'
 
 /**
  * `KeyboardPort` 의 Capacitor 구현([[ADR-127]]).

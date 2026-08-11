@@ -5,11 +5,11 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ContentManageScreen } from '../ContentManageScreen'
-import { useContentSchedulerStore, type ContentCharacterView } from '../../../features/content-scheduler/store'
-import { useTrackingModeStore } from '../../../features/tracking-mode/store'
-import { useToastStore } from '../../../features/toast/store'
+import { useContentSchedulerStore, type ContentCharacterView } from '@core/features/content-scheduler/store'
+import { useTrackingModeStore } from '@core/features/tracking-mode/store'
+import { useToastStore } from '@core/features/toast/store'
 
-vi.mock('../../../features/content-scheduler/store', () => ({
+vi.mock('@core/features/content-scheduler/store', () => ({
   useContentSchedulerStore: vi.fn(),
 }))
 

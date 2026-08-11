@@ -6,34 +6,34 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ContentScreen } from '../ContentScreen'
 import { PULL_SETTLE_TRANSITION } from '@core/lib/pull-to-refresh'
-import { useContentSchedulerStore, type ContentCharacterView } from '../../../features/content-scheduler/store'
-import { getCharacterPickerRoster } from '../../../features/schedule-sync/schedule-sync'
+import { useContentSchedulerStore, type ContentCharacterView } from '@core/features/content-scheduler/store'
+import { getCharacterPickerRoster } from '@core/features/schedule-sync/schedule-sync'
 import { NexonAuthError, NexonRateLimitError } from '@core/nexon/errors'
-import { useTrackingModeStore } from '../../../features/tracking-mode/store'
+import { useTrackingModeStore } from '@core/features/tracking-mode/store'
 import type { CharacterPickerEntry } from '@core/types'
 // ADR-063: 동기화 실패·일부 캐릭터 실패·파티원 수 저장 실패는 인라인 문단이 아니라 토스트로 알린다.
 const { showErrorMock, noticeApiKeyIssueMock } = vi.hoisted(() => ({
   showErrorMock: vi.fn(),
   noticeApiKeyIssueMock: vi.fn(),
 }))
-vi.mock('../../../features/toast/store', () => ({
+vi.mock('@core/features/toast/store', () => ({
   useToastStore: { getState: () => ({ showError: showErrorMock, showSuccess: vi.fn(), showInfo: vi.fn() }) },
 }))
 
 // ADR-115 결정 7: 401은 동기화 토스트도 피커 로스터도 이 진입점 하나로 위임한다.
-vi.mock('../../../features/onboarding/store', () => ({
+vi.mock('@core/features/onboarding/store', () => ({
   useOnboardingStore: { getState: () => ({ noticeApiKeyIssue: noticeApiKeyIssueMock }) },
 }))
 
 
-vi.mock('../../../features/content-scheduler/store', () => ({
+vi.mock('@core/features/content-scheduler/store', () => ({
   useContentSchedulerStore: vi.fn(),
 }))
 
 // ADR-062: 화면이 toScheduleSyncError로 reject를 원인으로 변환하므로, 그 매핑은 실물을 쓰고
 // getCharacterPickerRoster만 대체한다(부분 모킹).
-vi.mock('../../../features/schedule-sync/schedule-sync', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../../../features/schedule-sync/schedule-sync')>()),
+vi.mock('@core/features/schedule-sync/schedule-sync', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@core/features/schedule-sync/schedule-sync')>()),
   getCharacterPickerRoster: vi.fn(),
 }))
 

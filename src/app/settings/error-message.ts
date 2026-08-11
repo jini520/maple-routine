@@ -1,4 +1,4 @@
-import type { SettingsError } from '../../features/settings/state'
+import type { SettingsError } from '@core/features/settings/state'
 
 export function formatSettingsError(error: SettingsError): string {
   switch (error.kind) {

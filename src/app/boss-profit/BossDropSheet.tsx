@@ -5,7 +5,7 @@ import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { DifficultyBadge } from '../../components/atoms/DifficultyBadge/DifficultyBadge'
 import { DropEffectOverlay } from '../../components/organisms/DropEffectOverlay/DropEffectOverlay'
-import { useDropEffectStore } from '../../features/drop-effect/store'
+import { useDropEffectStore } from '@core/features/drop-effect/store'
 import {
   getAccessoryBoxContents,
   getBossDifficulties,

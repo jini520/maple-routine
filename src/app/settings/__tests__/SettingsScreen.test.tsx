@@ -5,26 +5,26 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { SettingsScreen } from '../SettingsScreen'
-import { useThemeStore } from '../../../features/theme/store'
-import { useLiveUpdateStore } from '../../../features/live-update/store'
-import { useTrackingModeStore } from '../../../features/tracking-mode/store'
-import { loadCacheDataSizes } from '../../../features/settings/cache-data'
+import { useThemeStore } from '@core/features/theme/store'
+import { useLiveUpdateStore } from '@core/features/live-update/store'
+import { useTrackingModeStore } from '@core/features/tracking-mode/store'
+import { loadCacheDataSizes } from '@core/features/settings/cache-data'
 
-vi.mock('../../../features/theme/store', () => ({
+vi.mock('@core/features/theme/store', () => ({
   useThemeStore: vi.fn(),
 }))
 
-vi.mock('../../../features/live-update/store', () => ({
+vi.mock('@core/features/live-update/store', () => ({
   useLiveUpdateStore: vi.fn(),
 }))
 
-vi.mock('../../../features/tracking-mode/store', () => ({
+vi.mock('@core/features/tracking-mode/store', () => ({
   useTrackingModeStore: vi.fn(),
 }))
 
 // 본화면이 대표값으로 캐시 총 용량을 읽는다(ADR-118 결정 5) — 화면은 `features/` 를 거치고
 // 저장소·SQLite 는 그 아래가 맡는다(CLAUDE.md CRITICAL).
-vi.mock('../../../features/settings/cache-data', () => ({
+vi.mock('@core/features/settings/cache-data', () => ({
   loadCacheDataSizes: vi.fn(),
 }))
 

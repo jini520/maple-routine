@@ -11,7 +11,7 @@ import {
   Store,
 } from 'lucide-react'
 import { Modal } from '../components/organisms/Modal/Modal'
-import { useLiveUpdateStore, type LiveUpdateStatus } from '../features/live-update/store'
+import { useLiveUpdateStore, type LiveUpdateStatus } from '@core/features/live-update/store'
 import { ProgressBar } from '../components/atoms/ProgressBar/ProgressBar'
 import { MapleSweepSpinner } from '../components/atoms/MapleSweepSpinner/MapleSweepSpinner'
 import { Badge } from '../components/atoms/Badge/Badge'

@@ -13,13 +13,13 @@ import { cleanup, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AppShell } from '../App'
-import { useOnboardingStore } from '../features/onboarding/store'
-import { useContentSchedulerStore } from '../features/content-scheduler/store'
-import { useBossSchedulerStore } from '../features/boss-scheduler/store'
-import { useBossProfitStore } from '../features/boss-profit/store'
-import { useSettingsStore } from '../features/settings/store'
-import { useThemeStore } from '../features/theme/store'
-import { useTrackingModeStore } from '../features/tracking-mode/store'
+import { useOnboardingStore } from '@core/features/onboarding/store'
+import { useContentSchedulerStore } from '@core/features/content-scheduler/store'
+import { useBossSchedulerStore } from '@core/features/boss-scheduler/store'
+import { useBossProfitStore } from '@core/features/boss-profit/store'
+import { useSettingsStore } from '@core/features/settings/store'
+import { useThemeStore } from '@core/features/theme/store'
+import { useTrackingModeStore } from '@core/features/tracking-mode/store'
 
 // 드랍 히스토리 화면을 **영원히 서스펜드**시킨다 — resolve되지 않는 프라미스를 throw하는 것이
 // React의 서스펜스 프로토콜이라, 이 컴포넌트는 가장 가까운 <Suspense> 폴백을 띄운 채로 멈춘다.
@@ -30,22 +30,22 @@ vi.mock('../app/boss-profit/DropHistoryScreen', () => ({
   },
 }))
 
-vi.mock('../features/onboarding/store', () => ({ useOnboardingStore: vi.fn() }))
-vi.mock('../features/content-scheduler/store', () => ({ useContentSchedulerStore: vi.fn() }))
-vi.mock('../features/boss-scheduler/store', () => ({ useBossSchedulerStore: vi.fn() }))
-vi.mock('../features/boss-profit/store', () => ({ useBossProfitStore: vi.fn() }))
-vi.mock('../features/settings/store', () => ({ useSettingsStore: vi.fn() }))
-vi.mock('../features/theme/store', () => ({ useThemeStore: vi.fn() }))
-vi.mock('../features/tracking-mode/store', () => ({ useTrackingModeStore: vi.fn() }))
+vi.mock('@core/features/onboarding/store', () => ({ useOnboardingStore: vi.fn() }))
+vi.mock('@core/features/content-scheduler/store', () => ({ useContentSchedulerStore: vi.fn() }))
+vi.mock('@core/features/boss-scheduler/store', () => ({ useBossSchedulerStore: vi.fn() }))
+vi.mock('@core/features/boss-profit/store', () => ({ useBossProfitStore: vi.fn() }))
+vi.mock('@core/features/settings/store', () => ({ useSettingsStore: vi.fn() }))
+vi.mock('@core/features/theme/store', () => ({ useThemeStore: vi.fn() }))
+vi.mock('@core/features/tracking-mode/store', () => ({ useTrackingModeStore: vi.fn() }))
 
-vi.mock('../native/system-bars', () => ({
+vi.mock('@core/native/system-bars', () => ({
   refreshSafeAreaInsets: vi.fn().mockResolvedValue(undefined),
 }))
-vi.mock('../features/ads/tab-switch-ad', () => ({
+vi.mock('@core/features/ads/tab-switch-ad', () => ({
   startAds: vi.fn().mockResolvedValue(undefined),
   maybeShowTabSwitchAd: vi.fn().mockResolvedValue(undefined),
 }))
-vi.mock('../native/keyboard', () => ({
+vi.mock('@core/native/keyboard', () => ({
   addKeyboardVisibilityListener: vi.fn(async () => () => {}),
 }))
 

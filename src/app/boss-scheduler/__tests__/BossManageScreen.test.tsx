@@ -5,12 +5,12 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { BossManageScreen } from '../BossManageScreen'
-import { useBossSchedulerStore, type BossCharacterView } from '../../../features/boss-scheduler/store'
-import { useToastStore } from '../../../features/toast/store'
-import { useTrackingModeStore } from '../../../features/tracking-mode/store'
+import { useBossSchedulerStore, type BossCharacterView } from '@core/features/boss-scheduler/store'
+import { useToastStore } from '@core/features/toast/store'
+import { useTrackingModeStore } from '@core/features/tracking-mode/store'
 import type { MatchedBoss } from '@core/lib/boss-matching'
 
-vi.mock('../../../features/boss-scheduler/store', () => ({
+vi.mock('@core/features/boss-scheduler/store', () => ({
   useBossSchedulerStore: vi.fn(),
   partySizeKey: (ocid: string, boss: string, difficulty: string) => `${ocid}:${boss}:${difficulty}`,
 }))

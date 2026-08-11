@@ -10,7 +10,7 @@ import {
   type BossProfitRow,
   type BossProfitWeeklySubtotal,
   type WeeklySubtotalState,
-} from '../../../features/boss-profit/store'
+} from '@core/features/boss-profit/store'
 import { getCurrentBossProfitPeriod } from '@core/lib/boss-profit-period'
 import { PULL_SETTLE_TRANSITION } from '@core/lib/pull-to-refresh'
 import { WEEKLY_BOSS_CLEAR_LIMIT, WEEKLY_CRYSTAL_SALE_LIMIT } from '@core/lib/boss-matching'
@@ -20,13 +20,13 @@ const { showErrorMock, noticeApiKeyIssueMock } = vi.hoisted(() => ({
   showErrorMock: vi.fn(),
   noticeApiKeyIssueMock: vi.fn(),
 }))
-vi.mock('../../../features/toast/store', () => ({
+vi.mock('@core/features/toast/store', () => ({
   useToastStore: { getState: () => ({ showError: showErrorMock, showSuccess: vi.fn(), showInfo: vi.fn() }) },
 }))
 
 // ADR-115 결정 7: 401은 토스트가 아니라 키 무효화 진입점으로 간다(이 화면에는 로스터 조회가 없어
 // 동기화 경로 하나뿐이다).
-vi.mock('../../../features/onboarding/store', () => ({
+vi.mock('@core/features/onboarding/store', () => ({
   useOnboardingStore: { getState: () => ({ noticeApiKeyIssue: noticeApiKeyIssueMock }) },
 }))
 
@@ -40,7 +40,7 @@ const MONTHLY_BOSS_COUNT = weeklyBossesData.monthly.length
 const CURRENT_WEEKLY_PERIOD_KEY = getCurrentBossProfitPeriod('weekly', new Date()).periodKey
 const CURRENT_MONTHLY_PERIOD_KEY = getCurrentBossProfitPeriod('monthly', new Date()).periodKey
 
-vi.mock('../../../features/boss-profit/store', () => ({
+vi.mock('@core/features/boss-profit/store', () => ({
   useBossProfitStore: vi.fn(),
   dropRowKey: (ocid: string, boss: string, difficulty: string, periodKey: string) =>
     `${ocid}|${boss}|${difficulty}|${periodKey}`,

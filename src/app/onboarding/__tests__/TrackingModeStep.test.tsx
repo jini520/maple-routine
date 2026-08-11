@@ -3,7 +3,7 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { TrackingModeStep } from '../TrackingModeStep'
-import { TRACKING_MODE_OPTIONS } from '../../../features/tracking-mode/copy'
+import { TRACKING_MODE_OPTIONS } from '@core/features/tracking-mode/copy'
 
 afterEach(() => {
   cleanup()

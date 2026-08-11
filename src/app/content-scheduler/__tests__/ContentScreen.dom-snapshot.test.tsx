@@ -11,22 +11,22 @@ import { ContentScreen } from '../ContentScreen'
 import {
   useContentSchedulerStore,
   type ContentCharacterView,
-} from '../../../features/content-scheduler/store'
-import { getCharacterPickerRoster } from '../../../features/schedule-sync/schedule-sync'
-import { useTrackingModeStore } from '../../../features/tracking-mode/store'
+} from '@core/features/content-scheduler/store'
+import { getCharacterPickerRoster } from '@core/features/schedule-sync/schedule-sync'
+import { useTrackingModeStore } from '@core/features/tracking-mode/store'
 
-vi.mock('../../../features/toast/store', () => ({
+vi.mock('@core/features/toast/store', () => ({
   useToastStore: {
     getState: () => ({ showError: vi.fn(), showSuccess: vi.fn(), showInfo: vi.fn() }),
   },
 }))
 
-vi.mock('../../../features/content-scheduler/store', () => ({
+vi.mock('@core/features/content-scheduler/store', () => ({
   useContentSchedulerStore: vi.fn(),
 }))
 
-vi.mock('../../../features/schedule-sync/schedule-sync', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../../../features/schedule-sync/schedule-sync')>()),
+vi.mock('@core/features/schedule-sync/schedule-sync', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@core/features/schedule-sync/schedule-sync')>()),
   getCharacterPickerRoster: vi.fn(),
 }))
 

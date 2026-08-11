@@ -6,11 +6,11 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DropPriceScreen } from '../DropPriceScreen'
-import { useDropPriceStore } from '../../../features/boss-profit/drop-price-store'
-import { useBossProfitStore } from '../../../features/boss-profit/store'
+import { useDropPriceStore } from '@core/features/boss-profit/drop-price-store'
+import { useBossProfitStore } from '@core/features/boss-profit/store'
 
 const { showErrorMock } = vi.hoisted(() => ({ showErrorMock: vi.fn() }))
-vi.mock('../../../features/toast/store', () => ({
+vi.mock('@core/features/toast/store', () => ({
   useToastStore: { getState: () => ({ showError: showErrorMock, showSuccess: vi.fn(), showInfo: vi.fn() }) },
 }))
 

@@ -9,14 +9,14 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import App, { AppShell } from '../App'
-import { notifyLiveUpdateReady } from '../native/live-update'
-import { useOnboardingStore } from '../features/onboarding/store'
-import { useContentSchedulerStore } from '../features/content-scheduler/store'
-import { useBossSchedulerStore } from '../features/boss-scheduler/store'
-import { useBossProfitStore } from '../features/boss-profit/store'
-import { useSettingsStore } from '../features/settings/store'
-import { useThemeStore } from '../features/theme/store'
-import { useTrackingModeStore } from '../features/tracking-mode/store'
+import { notifyLiveUpdateReady } from '@core/native/live-update'
+import { useOnboardingStore } from '@core/features/onboarding/store'
+import { useContentSchedulerStore } from '@core/features/content-scheduler/store'
+import { useBossSchedulerStore } from '@core/features/boss-scheduler/store'
+import { useBossProfitStore } from '@core/features/boss-profit/store'
+import { useSettingsStore } from '@core/features/settings/store'
+import { useThemeStore } from '@core/features/theme/store'
+import { useTrackingModeStore } from '@core/features/tracking-mode/store'
 import { getThemeDefinition } from '@core/lib/theme-registry'
 import jobThemes from '@core/data/job-themes.json'
 import type { ThemeDefinition, ThemeName } from '@core/types/theme'
@@ -28,31 +28,31 @@ vi.mock('@core/lib/theme-registry', async (importOriginal) => {
   return { ...actual, getThemeDefinition: vi.fn(actual.getThemeDefinition) }
 })
 
-vi.mock('../features/onboarding/store', () => ({
+vi.mock('@core/features/onboarding/store', () => ({
   useOnboardingStore: vi.fn(),
 }))
 
-vi.mock('../features/content-scheduler/store', () => ({
+vi.mock('@core/features/content-scheduler/store', () => ({
   useContentSchedulerStore: vi.fn(),
 }))
 
-vi.mock('../features/boss-scheduler/store', () => ({
+vi.mock('@core/features/boss-scheduler/store', () => ({
   useBossSchedulerStore: vi.fn(),
 }))
 
-vi.mock('../features/boss-profit/store', () => ({
+vi.mock('@core/features/boss-profit/store', () => ({
   useBossProfitStore: vi.fn(),
 }))
 
-vi.mock('../features/settings/store', () => ({
+vi.mock('@core/features/settings/store', () => ({
   useSettingsStore: vi.fn(),
 }))
 
-vi.mock('../features/theme/store', () => ({
+vi.mock('@core/features/theme/store', () => ({
   useThemeStore: vi.fn(),
 }))
 
-vi.mock('../features/tracking-mode/store', () => ({
+vi.mock('@core/features/tracking-mode/store', () => ({
   useTrackingModeStore: vi.fn(),
 }))
 
@@ -61,18 +61,18 @@ const { keyboardListeners } = vi.hoisted(() => ({
   keyboardListeners: [] as ((visible: boolean) => void)[],
 }))
 
-vi.mock('../native/system-bars', () => ({
+vi.mock('@core/native/system-bars', () => ({
   refreshSafeAreaInsets: vi.fn().mockResolvedValue(undefined),
 }))
 
 // [[ADR-117]] 결정 2: notifyAppReady 호출 시점을 검사하려면 이 한 함수만 가로채면 된다 —
 // 나머지 export 는 실물 그대로다(같은 모듈을 live-update 스토어가 쓴다).
-vi.mock('../native/live-update', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../native/live-update')>()
+vi.mock('@core/native/live-update', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@core/native/live-update')>()
   return { ...actual, notifyLiveUpdateReady: vi.fn(async () => {}) }
 })
 
-vi.mock('../features/ads/tab-switch-ad', () => ({
+vi.mock('@core/features/ads/tab-switch-ad', () => ({
   startAds: vi.fn().mockResolvedValue(undefined),
   maybeShowTabSwitchAd: vi.fn().mockResolvedValue(undefined),
 }))
@@ -83,11 +83,11 @@ const { prehydrateTabStoresMock } = vi.hoisted(() => ({
   prehydrateTabStoresMock: vi.fn().mockResolvedValue(undefined),
 }))
 
-vi.mock('../features/prehydrate', () => ({
+vi.mock('@core/features/prehydrate', () => ({
   prehydrateTabStores: prehydrateTabStoresMock,
 }))
 
-vi.mock('../native/keyboard', () => ({
+vi.mock('@core/native/keyboard', () => ({
   addKeyboardVisibilityListener: vi.fn(async (onChange: (visible: boolean) => void) => {
     keyboardListeners.push(onChange)
     return () => {

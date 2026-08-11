@@ -3,11 +3,11 @@
 // 주간은 보스 행 목록만, 월간은 주차별 소계 + 월간 보스 행이다. 소계 행은 그 주를 조회할 수
 // 있는지에 따라 얼굴이 갈린다([[ADR-068]]).
 
-import type { WeeklySubtotalState } from '../../features/boss-profit/store'
+import type { WeeklySubtotalState } from '@core/features/boss-profit/store'
 import { AnimatedMeso } from '../../components/atoms/AnimatedMeso/AnimatedMeso'
 import { UnavailableNotice } from '../../components/molecules/EmptyState/UnavailableNotice'
-import { dropRowKey } from '../../features/boss-profit/store'
-import type { BossProfitRow, BossProfitWeeklySubtotal } from '../../features/boss-profit/store'
+import { dropRowKey } from '@core/features/boss-profit/store'
+import type { BossProfitRow, BossProfitWeeklySubtotal } from '@core/features/boss-profit/store'
 import { formatBossProfitPeriodLabel } from '@core/lib/boss-profit-period'
 import { BossProfitBossRow } from './BossProfitBossRow'
 import { useBossProfitContext } from './boss-profit-context'

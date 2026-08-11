@@ -1,7 +1,7 @@
 import { AdMob } from '@capacitor-community/admob'
 import { Capacitor } from '@capacitor/core'
-import { resolveInterstitialAdId, shouldUseTestAds } from '../ads'
-import type { AdsPort } from '../ports'
+import { resolveInterstitialAdId, shouldUseTestAds } from '@core/native/ads'
+import type { AdsPort } from '@core/native/ports'
 
 /**
  * `AdsPort` 의 Capacitor 구현([[ADR-127]], [[ADR-090]] 결정 4).

@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event'
 import { Settings } from 'lucide-react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Toast } from '../Toast'
-import type { ToastItem } from '../../../../features/toast/store'
+import type { ToastItem } from '@core/features/toast/store'
 
 afterEach(() => {
   cleanup()

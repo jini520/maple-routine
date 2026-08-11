@@ -7,9 +7,9 @@ import { act, cleanup, render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { BossScreen } from '../BossScreen'
-import { useBossSchedulerStore } from '../../../features/boss-scheduler/store'
+import { useBossSchedulerStore } from '@core/features/boss-scheduler/store'
 
-vi.mock('../../../features/toast/store', () => ({
+vi.mock('@core/features/toast/store', () => ({
   useToastStore: { getState: () => ({ showError: vi.fn(), showSuccess: vi.fn(), showInfo: vi.fn() }) },
 }))
 
@@ -68,15 +68,15 @@ vi.mock('@core/storage/manual-tracked-content', () => ({
 
 // 컨텐츠 스케줄러가 이번 실행에서 이미 동기화를 끝낸 상태 — ADR-097 TTL 게이트가 걸려
 // 이 화면은 네트워크를 아예 타지 않는다(그래서 로딩이 뜰 이유가 더더욱 없다).
-vi.mock('../../../features/schedule-sync/sync-run-state', () => ({
+vi.mock('@core/features/schedule-sync/sync-run-state', () => ({
   hasSyncAttemptedThisRun: () => true,
   markSyncAttemptedThisRun: () => {},
 }))
 
 vi.mock('@core/lib/sync-freshness', () => ({ isSyncFresh: () => true }))
 
-vi.mock('../../../features/schedule-sync/schedule-sync', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../../../features/schedule-sync/schedule-sync')>()),
+vi.mock('@core/features/schedule-sync/schedule-sync', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@core/features/schedule-sync/schedule-sync')>()),
   syncSchedules: vi.fn(async () => {
     throw new Error('TTL 게이트가 걸려 있어 네트워크 동기화가 일어나면 안 된다')
   }),

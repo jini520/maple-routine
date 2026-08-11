@@ -4,10 +4,10 @@ import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ToastStack } from '../ToastStack'
-import { useToastStore } from '../../../../features/toast/store'
-import type { ToastItem } from '../../../../features/toast/store'
+import { useToastStore } from '@core/features/toast/store'
+import type { ToastItem } from '@core/features/toast/store'
 
-vi.mock('../../../../features/toast/store', () => ({ useToastStore: vi.fn() }))
+vi.mock('@core/features/toast/store', () => ({ useToastStore: vi.fn() }))
 
 const mockedStore = vi.mocked(useToastStore)
 

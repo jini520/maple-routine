@@ -284,7 +284,7 @@ export const useOnboardingStore = create<OnboardingStore>()((set, get) => {
       }
 
       // 결정 2: 이동은 상태를 뒤집는 것으로 일어난다 — App.tsx의 isCompleted 가드가 라우터로
-      // /onboarding에 보낸다. 스토어는 라우터를 모르고 window.location도 쓰지 않는다(문서 리로드가
+      // /onboarding에 보낸다. 스토어는 라우터를 모르고 브라우저 주소를 직접 갈아끼우지도 않는다(문서 리로드가
       // 네이티브 SQLite 커넥션을 stale하게 만든다, ADR-050).
       // 새 이벤트를 만들지 않고 RESET을 재사용한다 — 결과(initialOnboardingState)가 정확히 같아서,
       // 같은 결과의 이벤트를 하나 더 두면 리듀서의 진실이 둘이 된다. 무효화와 연결 해제의 차이는

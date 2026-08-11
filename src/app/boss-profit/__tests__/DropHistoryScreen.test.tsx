@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { DropHistoryScreen } from '../DropHistoryScreen'
-import { useDropHistoryStore } from '../../../features/boss-profit/drop-history-store'
+import { useDropHistoryStore } from '@core/features/boss-profit/drop-history-store'
 import { formatBossProfitPeriodLabel } from '@core/lib/boss-profit-period'
 import {
   formatValuableDroughtHeadline,
@@ -18,7 +18,7 @@ function sentenceOf(element: HTMLElement): string {
   return (element.textContent ?? '').replaceAll(WORD_JOINER, '')
 }
 
-vi.mock('../../../features/boss-profit/drop-history-store', () => ({
+vi.mock('@core/features/boss-profit/drop-history-store', () => ({
   useDropHistoryStore: vi.fn(),
 }))
 

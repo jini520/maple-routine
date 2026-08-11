@@ -8,8 +8,8 @@ import { ContentManageScreen } from '../ContentManageScreen'
 import {
   useContentSchedulerStore,
   type ContentCharacterView,
-} from '../../../features/content-scheduler/store'
-import { useTrackingModeStore } from '../../../features/tracking-mode/store'
+} from '@core/features/content-scheduler/store'
+import { useTrackingModeStore } from '@core/features/tracking-mode/store'
 
 // [[ADR-096]] 이슈 #143 — 탭 선택이 화면 로컬 state 라 ① 다른 탭에 다녀오면 초기화되고
 // ② 스케줄러와 관리 페이지가 서로의 탭을 몰랐다. 두 증상 모두 **화면이 사라졌다 다시 그려지는**
@@ -17,12 +17,12 @@ import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 // 화면 테스트와 달리 **스토어를 모킹하지 않고 실물을 쓰고**, 언마운트 후 재마운트를 직접 한다.
 // 네트워크를 타는 loadTrackedOcids 만 setState 로 무력화한다.
 
-vi.mock('../../../features/toast/store', () => ({
+vi.mock('@core/features/toast/store', () => ({
   useToastStore: { getState: () => ({ showError: vi.fn(), showSuccess: vi.fn(), showInfo: vi.fn() }) },
 }))
 
-vi.mock('../../../features/schedule-sync/schedule-sync', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../../../features/schedule-sync/schedule-sync')>()),
+vi.mock('@core/features/schedule-sync/schedule-sync', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@core/features/schedule-sync/schedule-sync')>()),
   getCharacterPickerRoster: vi.fn(async (onUpdate: (entries: []) => void) => {
     onUpdate([])
   }),

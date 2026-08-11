@@ -4,10 +4,10 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { TrackingModeModal } from '../TrackingModeModal'
-import { useTrackingModeStore } from '../../../features/tracking-mode/store'
-import { TRACKING_MODE_OPTIONS } from '../../../features/tracking-mode/copy'
+import { useTrackingModeStore } from '@core/features/tracking-mode/store'
+import { TRACKING_MODE_OPTIONS } from '@core/features/tracking-mode/copy'
 
-vi.mock('../../../features/tracking-mode/store', () => ({
+vi.mock('@core/features/tracking-mode/store', () => ({
   useTrackingModeStore: vi.fn(),
 }))
 

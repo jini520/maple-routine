@@ -150,7 +150,7 @@ vi.mock('@core/nexon/schedule', () => ({
   },
 }))
 
-vi.mock('../../../features/toast/store', () => ({
+vi.mock('@core/features/toast/store', () => ({
   useToastStore: {
     getState: () => ({
       showError: (message: string) => {
@@ -171,7 +171,7 @@ import {
 } from '@core/lib/boss-profit-period'
 import { NexonBadRequestError } from '@core/nexon/errors'
 import type { BossContent, BossCycle, SchedulerCharacterState } from '@core/types'
-import { useBossProfitStore } from '../store'
+import { useBossProfitStore } from '@core/features/boss-profit/store'
 
 // ── 더미 세계 ────────────────────────────────────────────────────────────────
 const W1 = '2026-07-02'

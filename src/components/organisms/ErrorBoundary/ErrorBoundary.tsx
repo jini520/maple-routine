@@ -1,7 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
 import { AlertTriangle, RotateCcw } from 'lucide-react'
 import { Button } from '../../atoms/Button/Button'
-import { hideSplashScreen } from '../../../native/splash-screen'
+import { hideSplashScreen } from '@core/native/splash-screen'
 
 // 앱 전역 에러 바운더리([[ADR-065]] 결정 5). 렌더 중 예외가 나면 아무 문구 없는 흰 화면이
 // 남던 것을 폴백 화면으로 바꾼다.

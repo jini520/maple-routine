@@ -4,7 +4,7 @@ import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { installFakePreferences } from '@core/storage/__tests__/fake-preferences'
-import { useDropEffectStore } from '../../../features/drop-effect/store'
+import { useDropEffectStore } from '@core/features/drop-effect/store'
 import { BossDropSheet } from '../BossDropSheet'
 
 // vitest globals 미설정이라 자동 cleanup이 없다 — 포털 시트가 body에 누적되지 않도록 수동 정리.

@@ -12,14 +12,14 @@ const { getCharacterPickerRosterMock, noticeApiKeyIssueMock } = vi.hoisted(() =>
 }))
 
 // ADR-116 결정 2: 이 화면의 429는 키 재입력 진입점으로 넘어간다(#176 하드 잠금의 유일한 출구).
-vi.mock('../../../features/onboarding/store', () => ({
+vi.mock('@core/features/onboarding/store', () => ({
   useOnboardingStore: { getState: () => ({ noticeApiKeyIssue: noticeApiKeyIssueMock }) },
 }))
 
 // ADR-062: 화면이 toScheduleSyncError로 reject를 원인으로 변환하므로, 그 매핑은 실물을 쓰고
 // getCharacterPickerRoster만 대체한다(부분 모킹).
-vi.mock('../../../features/schedule-sync/schedule-sync', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../../../features/schedule-sync/schedule-sync')>()),
+vi.mock('@core/features/schedule-sync/schedule-sync', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@core/features/schedule-sync/schedule-sync')>()),
   getCharacterPickerRoster: getCharacterPickerRosterMock,
 }))
 

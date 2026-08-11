@@ -8,8 +8,8 @@ import {
   isNewerVersion,
   openStoreForUpdate,
   resolveLiveUpdateManifestUrl,
-} from '../../native/live-update'
-import { hideSplashScreen } from '../../native/splash-screen'
+} from '@core/native/live-update'
+import { hideSplashScreen } from '@core/native/splash-screen'
 import {
   getLastRunBundleVersion,
   setLastRunBundleVersion,

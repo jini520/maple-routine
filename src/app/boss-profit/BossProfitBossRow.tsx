@@ -3,11 +3,11 @@
 // 파티원 수 조절, 드롭 기록 시트 열기, 획득 아이템 아이콘 스택이 여기 산다. 아코디언을 펼쳤을 때
 // 카드 안에 나열되는 단위이고, 자기 행 안에서 끝나 카드의 sticky 헤더와는 무관하다.
 
-import type { BossProfitRow } from '../../features/boss-profit/store'
+import type { BossProfitRow } from '@core/features/boss-profit/store'
 import { AnimatedMeso } from '../../components/atoms/AnimatedMeso/AnimatedMeso'
 import { DifficultyBadge } from '../../components/atoms/DifficultyBadge/DifficultyBadge'
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
-import { useToastStore } from '../../features/toast/store'
+import { useToastStore } from '@core/features/toast/store'
 import { getItemIconUrl } from '@core/lib/item-icons'
 import type { RecordedDrop } from '@core/types/drops'
 import { BossDropSheet } from './BossDropSheet'

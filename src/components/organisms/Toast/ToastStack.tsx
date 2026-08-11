@@ -1,6 +1,6 @@
 import { createPortal } from 'react-dom'
 import { Toast } from './Toast'
-import { useToastStore } from '../../../features/toast/store'
+import { useToastStore } from '@core/features/toast/store'
 
 export interface ToastStackProps {
   /** 하단 탭바(h-16=4rem)가 떠 있는 화면인지 — AppShell의 pb-[calc(4rem+var(--sa-bottom))]과 같은 기준. 기본 true. */

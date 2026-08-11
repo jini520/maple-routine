@@ -4,20 +4,20 @@ import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { MapleAccount } from '@core/types'
 import { OnboardingScreen } from '../OnboardingScreen'
-import { useOnboardingStore } from '../../../features/onboarding/store'
+import { useOnboardingStore } from '@core/features/onboarding/store'
 
-vi.mock('../../../features/onboarding/store', () => ({
+vi.mock('@core/features/onboarding/store', () => ({
   useOnboardingStore: vi.fn(),
 }))
 
 // ContentCharacterStep이 마운트 시 호출한다 — 후보 목록은 비워둔다(렌더 확인만).
-vi.mock('../../../features/schedule-sync/schedule-sync', () => ({
+vi.mock('@core/features/schedule-sync/schedule-sync', () => ({
   getCharacterPickerRoster: vi.fn().mockResolvedValue(undefined),
 }))
 
 // ADR-113 결정 3: AccountSelectionList는 프로브가 settle 하기 전에는 목록 대신 진행률만 그린다.
 // 이 파일이 보는 것은 "어느 status에서 어떤 화면이 오는가"이므로 프로브는 끝난 것으로 둔다.
-vi.mock('../../../features/onboarding/use-account-probes', () => ({
+vi.mock('@core/features/onboarding/use-account-probes', () => ({
   useAccountProbes: vi.fn(() => ({
     probes: {},
     isSettled: true,

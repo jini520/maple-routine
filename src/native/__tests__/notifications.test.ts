@@ -6,8 +6,8 @@ import {
   hasNotificationPermission,
   requestNotificationPermission,
   scheduleLocalNotification,
-} from '../notifications'
-import { setNotificationsPort } from '../ports'
+} from '@core/native/notifications'
+import { setNotificationsPort } from '@core/native/ports'
 import { capacitorNotificationsPort } from '../adapters/capacitor-notifications'
 
 // 포트 역전([[ADR-127]]) 후에도 검사 대상은 그대로다 — 플러그인 호출은 어댑터가 하므로 실제

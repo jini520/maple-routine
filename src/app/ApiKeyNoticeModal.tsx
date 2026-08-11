@@ -1,7 +1,7 @@
 import { Gauge, KeyRound } from 'lucide-react'
 import { Modal } from '../components/organisms/Modal/Modal'
-import { useOnboardingStore } from '../features/onboarding/store'
-import type { ApiKeyNoticeKind } from '../features/onboarding/state'
+import { useOnboardingStore } from '@core/features/onboarding/store'
+import type { ApiKeyNoticeKind } from '@core/features/onboarding/state'
 
 // ADR-115 결정 10: 저장된 키로는 앞으로 갈 수 없게 된 것을 **알리고 확인을 받는** 모달.
 //

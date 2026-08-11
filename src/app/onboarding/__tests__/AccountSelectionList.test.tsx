@@ -5,17 +5,17 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { MapleAccount } from '@core/types'
 import { AccountSelectionList } from '../AccountSelectionList'
-import { useAccountProbes } from '../../../features/onboarding/use-account-probes'
-import { useApiKeyNotice } from '../../../features/onboarding/use-api-key-notice'
+import { useAccountProbes } from '@core/features/onboarding/use-account-probes'
+import { useApiKeyNotice } from '@core/features/onboarding/use-api-key-notice'
 import { worldEmblemUrl } from '@core/lib/world-emblem'
 
-vi.mock('../../../features/onboarding/use-account-probes', () => ({
+vi.mock('@core/features/onboarding/use-account-probes', () => ({
   useAccountProbes: vi.fn(),
 }))
 
 // ADR-116 결정 3: 429 판정 불가의 출구는 안내 모달이다(ADR-115 결정 10 의 사슬). 여기서는 그
 // 진입점이 불렸는지만 본다 — 모달 자체는 ApiKeyNoticeModal 테스트가 본다.
-vi.mock('../../../features/onboarding/use-api-key-notice', () => ({
+vi.mock('@core/features/onboarding/use-api-key-notice', () => ({
   useApiKeyNotice: vi.fn(),
 }))
 

@@ -19,17 +19,17 @@ import { useMeasuredHeight } from '../../lib/use-measured-height'
 import { usePullToRefresh } from '../../lib/use-pull-to-refresh'
 import { UnavailableNotice } from '../../components/molecules/EmptyState/UnavailableNotice'
 import { useScreenStackStore } from '../../features/screen-stack/store'
-import { usePeriodLoadErrorToast } from '../../features/boss-profit/use-period-error-toast'
+import { usePeriodLoadErrorToast } from '@core/features/boss-profit/use-period-error-toast'
 import { ValuableDropBadge } from '../../components/molecules/ValuableDropBadge/ValuableDropBadge'
 import weeklyBossesData from '@core/data/weekly-bosses.json'
 import {
   useBossProfitStore,
-} from '../../features/boss-profit/store'
-import { formatSyncedAt } from '../../features/schedule-sync/format'
+} from '@core/features/boss-profit/store'
+import { formatSyncedAt } from '@core/features/schedule-sync/format'
 import {
   useScheduleSyncErrorToast,
   useStaleCharactersToast,
-} from '../../features/schedule-sync/use-sync-error-toast'
+} from '@core/features/schedule-sync/use-sync-error-toast'
 import { type PopoverAnchorGeometry } from '@core/lib/popover-anchor'
 import { WEEKLY_BOSS_CLEAR_LIMIT } from '@core/lib/boss-matching'
 import { formatMesoShort } from '@core/lib/boss-profit-delta'

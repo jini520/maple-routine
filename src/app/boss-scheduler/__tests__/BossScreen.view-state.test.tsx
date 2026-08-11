@@ -5,20 +5,20 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { BossScreen } from '../BossScreen'
 import { BossManageScreen } from '../BossManageScreen'
-import { useBossSchedulerStore, type BossCharacterView } from '../../../features/boss-scheduler/store'
-import { useTrackingModeStore } from '../../../features/tracking-mode/store'
+import { useBossSchedulerStore, type BossCharacterView } from '@core/features/boss-scheduler/store'
+import { useTrackingModeStore } from '@core/features/tracking-mode/store'
 
 // [[ADR-096]] 이슈 #143 — 컨텐츠 쪽과 같은 결함이다. 양쪽 기본값이 모두 'weekly' 라 증상이
 // 월간 탭에서만 드러났을 뿐 구조는 동일했다. 솔로/파티 필터도 같은 로컬 state 라 함께 옮긴다
 // (결정 1 — 탭만 살리면 "탭은 기억하는데 필터만 초기화"되는 반쪽 상태가 된다).
 // 컨텐츠 view-state 테스트와 같은 이유로 스토어를 모킹하지 않고 실물을 쓴다.
 
-vi.mock('../../../features/toast/store', () => ({
+vi.mock('@core/features/toast/store', () => ({
   useToastStore: { getState: () => ({ showError: vi.fn(), showSuccess: vi.fn(), showInfo: vi.fn() }) },
 }))
 
-vi.mock('../../../features/schedule-sync/schedule-sync', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../../../features/schedule-sync/schedule-sync')>()),
+vi.mock('@core/features/schedule-sync/schedule-sync', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@core/features/schedule-sync/schedule-sync')>()),
   getCharacterPickerRoster: vi.fn(async (onUpdate: (entries: []) => void) => {
     onUpdate([])
   }),

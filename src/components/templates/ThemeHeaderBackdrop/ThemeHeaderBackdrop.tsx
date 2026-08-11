@@ -1,4 +1,4 @@
-import { useThemeStore } from '../../../features/theme/store'
+import { useThemeStore } from '@core/features/theme/store'
 import { getThemeDefinition } from '@core/lib/theme-registry'
 
 /**

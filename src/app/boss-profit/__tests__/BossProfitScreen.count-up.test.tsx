@@ -12,12 +12,12 @@ import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { clearCountUpMemory } from '@core/lib/use-count-up'
 import { BossProfitScreen } from '../BossProfitScreen'
-import { useBossProfitStore, type BossProfitRow } from '../../../features/boss-profit/store'
+import { useBossProfitStore, type BossProfitRow } from '@core/features/boss-profit/store'
 
-vi.mock('../../../features/toast/store', () => ({
+vi.mock('@core/features/toast/store', () => ({
   useToastStore: { getState: () => ({ showError: vi.fn(), showSuccess: vi.fn(), showInfo: vi.fn() }) },
 }))
-vi.mock('../../../features/boss-profit/store', () => ({
+vi.mock('@core/features/boss-profit/store', () => ({
   useBossProfitStore: vi.fn(),
   dropRowKey: (ocid: string, boss: string, difficulty: string, periodKey: string) =>
     `${ocid}|${boss}|${difficulty}|${periodKey}`,

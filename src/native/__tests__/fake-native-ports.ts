@@ -1,6 +1,7 @@
 import {
   setAdsPort,
   setBackGesturePort,
+  setColorSchemePort,
   setHuntingTimerPort,
   setKeyboardPort,
   setLiveUpdatePort,
@@ -8,7 +9,8 @@ import {
   setSplashScreenPort,
   setStatusBarPort,
   setSystemBarsPort,
-} from '../ports'
+  setThemeAppearancePort,
+} from '@core/native/ports'
 
 /**
  * 네이티브 포트의 테스트 기본값([[ADR-127]]).
@@ -23,6 +25,13 @@ import {
  * 구현을 다시 주입해 이 기본값을 덮는다.
  */
 export function installNoopNativePorts(): void {
+  // `matchMedia` 없는 환경의 폴백과 같다 — 테스트 기본 환경은 `node` 라 문서도 미디어 쿼리도 없다.
+  setColorSchemePort({ get: () => 'light' })
+
+  // 기본 환경에 `document` 가 없으므로 아무것도 칠하지 않는다. 문서에 실제로 반영되는지는
+  // `features/theme/__tests__/store.test.ts` 가 jsdom 에서 진짜 어댑터를 주입해 검사한다.
+  setThemeAppearancePort({ apply: () => {} })
+
   setAdsPort({
     initialize: async () => {},
     prepareInterstitial: async () => false,

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Modal } from '../../components/organisms/Modal/Modal'
-import { useSettingsStore } from '../../features/settings/store'
+import { useSettingsStore } from '@core/features/settings/store'
 import { AccountFlowStatus } from './AccountFlowStatus'
 
 export interface AccountModalProps {

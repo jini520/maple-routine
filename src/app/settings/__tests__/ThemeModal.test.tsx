@@ -4,9 +4,9 @@ import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ThemeModal } from '../ThemeModal'
-import { useThemeStore } from '../../../features/theme/store'
+import { useThemeStore } from '@core/features/theme/store'
 
-vi.mock('../../../features/theme/store', () => ({
+vi.mock('@core/features/theme/store', () => ({
   useThemeStore: vi.fn(),
 }))
 

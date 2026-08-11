@@ -4,9 +4,9 @@ import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AppUpdateSection } from '../AppUpdateSection'
-import { useLiveUpdateStore } from '../../../features/live-update/store'
+import { useLiveUpdateStore } from '@core/features/live-update/store'
 
-vi.mock('../../../features/live-update/store', () => ({ useLiveUpdateStore: vi.fn() }))
+vi.mock('@core/features/live-update/store', () => ({ useLiveUpdateStore: vi.fn() }))
 
 const mockedUseLiveUpdateStore = vi.mocked(useLiveUpdateStore)
 

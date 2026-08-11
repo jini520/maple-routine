@@ -13,11 +13,11 @@ const { getCharacterPickerRosterMock, noticeApiKeyIssueMock } = vi.hoisted(() =>
   getCharacterPickerRosterMock: vi.fn(),
   noticeApiKeyIssueMock: vi.fn(),
 }))
-vi.mock('../../../features/schedule-sync/schedule-sync', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../../../features/schedule-sync/schedule-sync')>()),
+vi.mock('@core/features/schedule-sync/schedule-sync', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@core/features/schedule-sync/schedule-sync')>()),
   getCharacterPickerRoster: getCharacterPickerRosterMock,
 }))
-vi.mock('../../../features/onboarding/store', () => ({
+vi.mock('@core/features/onboarding/store', () => ({
   useOnboardingStore: { getState: () => ({ noticeApiKeyIssue: noticeApiKeyIssueMock }) },
 }))
 
@@ -25,7 +25,7 @@ vi.mock('../../../features/onboarding/store', () => ({
 // 이 파일이 보는 것은 "어느 status에서 무엇이 오는가"와 카드 감싸기이므로 기본값은 끝난 것으로 두고,
 // 대기가 이어지는지 보는 케이스만 settle 전으로 덮는다.
 const useAccountProbesMock = vi.hoisted(() => vi.fn())
-vi.mock('../../../features/onboarding/use-account-probes', () => ({
+vi.mock('@core/features/onboarding/use-account-probes', () => ({
   useAccountProbes: useAccountProbesMock,
 }))
 

@@ -1,5 +1,5 @@
 import { Capacitor, registerPlugin, type PluginListenerHandle } from '@capacitor/core'
-import type { BackGesturePort, BackProgressEvent } from '../ports'
+import type { BackGesturePort, BackProgressEvent } from '@core/native/ports'
 
 /**
  * `BackGesturePort` 의 Capacitor 구현([[ADR-127]], [[ADR-120]] 결정 17·18).

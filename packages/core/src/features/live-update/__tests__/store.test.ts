@@ -20,8 +20,8 @@ const {
 
 // isNewerVersion 은 실물을 그대로 쓴다 — 완료 안내가 자동 롤백을 거르는 근거가 바로 이 비교라
 // (ADR-126 결정 4), 가짜로 바꾸면 그 규칙을 검사하지 못한다.
-vi.mock('../../../native/live-update', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../../../native/live-update')>()),
+vi.mock('@core/native/live-update', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@core/native/live-update')>()),
   applyDownloadedLiveUpdate: applyDownloadedLiveUpdateMock,
   checkForLiveUpdate: checkForLiveUpdateMock,
   downloadLiveUpdate: downloadLiveUpdateMock,
@@ -46,7 +46,7 @@ const { showSplashScreenMock, hideSplashScreenMock } = vi.hoisted(() => ({
   hideSplashScreenMock: vi.fn(),
 }))
 
-vi.mock('../../../native/splash-screen', () => ({
+vi.mock('@core/native/splash-screen', () => ({
   showSplashScreen: showSplashScreenMock,
   hideSplashScreen: hideSplashScreenMock,
 }))

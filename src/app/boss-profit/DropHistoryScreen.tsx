@@ -10,7 +10,7 @@ import { MAPLE_LEAF_PATH } from '../../components/mapleLeafPath'
 import {
   useDropHistoryStore,
   type DropHistoryCharacter,
-} from '../../features/boss-profit/drop-history-store'
+} from '@core/features/boss-profit/drop-history-store'
 import { formatBossProfitPeriodLabel } from '@core/lib/boss-profit-period'
 import {
   formatDropHistoryLine,

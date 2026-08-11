@@ -1,6 +1,6 @@
 import { Capacitor } from '@capacitor/core'
 import { StatusBar, Style } from '@capacitor/status-bar'
-import type { StatusBarPort } from '../ports'
+import type { StatusBarPort } from '@core/native/ports'
 
 /** `StatusBarPort` 의 Capacitor 구현([[ADR-127]]). 웹에는 상태바가 없어 no-op 이다. */
 export const capacitorStatusBarPort: StatusBarPort = {

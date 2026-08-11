@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { resolveInterstitialAdId, shouldUseTestAds } from '../ads'
+import { resolveInterstitialAdId, shouldUseTestAds } from '@core/native/ads'
 
 /**
  * 광고 ID는 **세 곳**에 흩어져 있고(어댑터 · AndroidManifest · Info.plist), 셋 중 하나만 틀려도

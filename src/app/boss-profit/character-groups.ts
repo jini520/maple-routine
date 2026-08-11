@@ -4,8 +4,8 @@
 // DOM 을 만들지 않으므로 화면의 취약 구조(sticky·실측·스태킹)와 무관하고, 그래서 옮겨도
 // 렌더 결과가 바뀌지 않는다 — DOM 스냅샷 6케이스가 그것을 확인한다.
 
-import { dropRowKey } from '../../features/boss-profit/store'
-import type { BossProfitRow, BossProfitWeeklySubtotal } from '../../features/boss-profit/store'
+import { dropRowKey } from '@core/features/boss-profit/store'
+import type { BossProfitRow, BossProfitWeeklySubtotal } from '@core/features/boss-profit/store'
 import { isSeasonBossName } from '@core/lib/boss-matching'
 import { isValuableDrop } from '@core/lib/valuable-drops'
 import { sumDropPayout } from '@core/lib/drop-price'
