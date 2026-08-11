@@ -108,14 +108,22 @@ connection.createConnection(DB_NAME, false, 'no-encryption', 1, false)
 | | 경로 |
 |---|---|
 | **Android** | `/data/data/com.mapleroutine.app/databases/boss_profitSQLite.db` |
-| **iOS** | `Library/CapacitorDatabase/boss_profitSQLite.db` ⚠️ **미검증** |
+| **iOS** | `<앱 컨테이너>/Documents/boss_profitSQLite.db` ⚠️ **실기기 미확인** |
 
 파일명 규칙은 플러그인이 `dbName + "SQLite.db"` 로 만든다(`CapacitorSQLite.java:346`). DB 이름은
 `boss_profit` 이므로 `boss_profitSQLite.db` 다.
 
-⚠️ **iOS 경로는 이 문서에서 유일한 미검증 항목이다.** `capacitor.config.ts` 에 `iosDatabaseLocation` 을
-두지 않아 플러그인 기본값이 적용되는데, 그 기본값을 소스에서 확정하지 못했다(README 예시는
-`Library/CapacitorDatabase`). **실기기 앱 컨테이너를 한 번 열어 확인하고 이 표를 갱신할 것.**
+⚠️ **iOS 경로 정정(2026-08-11)** — 이 표는 원래 `Library/CapacitorDatabase` 였고 **그것은 틀렸다.**
+그 값은 플러그인 README 가 `iosDatabaseLocation` 을 *설정하는 예시*로 든 경로이고,
+`capacitor.config.ts` 에는 그 설정이 없다. 설정이 없으면 플러그인은 `"Documents"` 를 쓰고
+(`CapacitorSQLite.swift:98`) `UtilsFile.getFolderURL` 이 그것을 `NSDocumentDirectory` 로 푼다
+(`UtilsFile.swift:161-162`) — 즉 `<앱 컨테이너>/Documents` 다(`Database.swift:75` 가 그 디렉터리에
+파일명을 붙인다).
+
+근거는 플러그인 소스지만 **실기기 앱 컨테이너를 열어 확인한 것은 아니다.** 여기가 틀리면 빈 DB 가
+조용히 새로 생기고 사용자에게는 기록이 전부 사라진 것으로 보이므로, **실기기 검증에서 반드시 눈으로
+확인할 것.** RN 어댑터는 이 경로를 op-sqlite 의 `IOS_DOCUMENT_PATH` 상수로 잡는다
+(`packages/app-rn/src/storage/adapters/capacitor-sqlite-open.ts`).
 
 ### 보존 대상 테이블 (4)
 
@@ -254,7 +262,7 @@ connection.createConnection(DB_NAME, false, 'no-encryption', 1, false)
 
 | 항목 | 확인 방법 |
 |---|---|
-| iOS SQLite 기본 경로 | 실기기 앱 컨테이너를 내려받아 `boss_profitSQLite.db` 위치 확인 |
+| iOS SQLite 기본 경로 — **플러그인 소스로는 `Documents` 확정**(결정 2), 실물만 남음 | 실기기 앱 컨테이너를 내려받아 `boss_profitSQLite.db` 위치 확인 |
 | 사냥 타이머 상시 알림의 네이티브 구현 | `native/hunting-timer/` 와 `features/hunting-timer.md` 대조, RN 대응 SDK 결정 |
 | 옛 로컬 알림 ID 체계 | Capacitor 플러그인의 ID 생성 규칙 확인 (결정 4의 취소 전략이 여기 달림) |
 
