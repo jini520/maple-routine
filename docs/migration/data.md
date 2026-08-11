@@ -299,11 +299,46 @@ request code 로 쓰고(`LocalNotificationManager.java:411-419`), 채널은 `"de
 | RN 이 Preferences 를 읽는가 | ✅ **171개** — 접두사 붙은 앱 키 수와 정확히 일치 |
 | 접두사 필터링 | ✅ 접두사 없는 10개(`CapacitorUpdater.*` 7 · `LatestNativeBuildVersion` · `pastVersion` · `RCTI18nUtil_…`)를 **정확히 제외**. 전부 앱 데이터가 아니다 |
 
+### Android 실기기 (2026-08-11, 같은 날 추가)
+
+**기기**: Galaxy Z Flip3 (`SM-F711N`) · Android 15 / One UI 7 · 무선 디버깅
+
+**먼저 막힌 것 — Play 앱 서명**. 기기에 깔려 있던 앱은 Play 에서 받은 것이었고
+(`installer=com.android.vending`), 그 서명은 **Google 이 보관하는 앱 서명 키**다
+(`24291ecc…`). 로컬 업로드 키(`40ca5578…`)로 서명한 APK 는 `INSTALL_FAILED_UPDATE_INCOMPATIBLE`
+로 거부된다 — **Play 로 배포된 설치본 위에는 로컬 빌드를 얹을 수 없다.** 실패한 설치가 기존 앱을
+건드리지 않는 것은 확인했다.
+
+> **이것은 전환 릴리스 자체의 제약이기도 하다.** RN 앱이 사용자에게 나가는 경로는 Play 뿐이고,
+> 그 마지막 확인(진짜 사용자 데이터가 살아남는지)은 **Play 내부 테스트 트랙에서만** 할 수 있다.
+
+그래서 사용자가 Play 버전을 지우고, **업로드 키로 서명한 Capacitor 빌드**를 설치해 데이터를 새로
+만든 뒤 같은 키로 서명한 RN 빌드를 얹는 방식으로 진행했다. 두 빌드 모두 `debuggable` 로 만들어
+`run-as` 로 `/data/data` 를 직접 읽었다 — **앱의 자기 보고와 디스크의 진실을 따로 확인**하기 위해서다.
+
+| 확인 항목 | 결과 |
+|---|---|
+| Android SQLite 경로 | ✅ `/data/data/com.mapleroutine.app/databases/boss_profitSQLite.db` |
+| Android Preferences 경로 | ✅ `shared_prefs/CapacitorStorage.xml` |
+| 앱 교체 시 데이터 보존 | ✅ `install -r` 로 vc 19 → 20, `firstInstallTime` 불변 = 업데이트로 처리됨 |
+| 디스크 — 행 수 | ✅ 228 / 2 / 18 → **전부 동일** |
+| 디스크 — Preferences | ✅ 170 → **170** |
+| **디스크 — `NULL ≠ 0`** | ✅ `price_meso` 가 **NULL 로 보존**([[ADR-124]]) |
+| 앱 읽기 — 전 항목 | ✅ 170 · 228 · 18 · 2 · 입력 1 · **NULL 1** 전부 기대값과 일치 |
+
+**`NULL` 행은 주입한 것이다.** 사용자가 만든 드랍 기록은 가격이 전부 채워져 있어 미입력 케이스가
+없었다. [[ADR-124]] 의 `NULL ≠ 0` 이 이 문서 검증 절차의 미해결 항목이라, `drop_index=99` 로 가격
+세 컬럼이 전부 `NULL` 인 행을 하나 넣고 확인했다. 검증 대상 자체는 진짜다 — RN 어댑터가 `NULL` 을
+`0` 으로 바꾸거나 잃으면 여기서 드러난다.
+
+---
+
 **아직 확인 못 한 것**
 
-- **Android** — 같은 절차를 안 돌렸다. 경로 체계가 다르므로(`getDatabasePath`) 별도 확인이 필요하다
-- **실기기** — 시뮬레이터는 서명·컨테이너 규칙이 실기기와 다르다. 특히 **RN 앱이 debug 서명이라 릴리스
-  서명된 기존 앱 위에 설치되지 않는다** — 실기기 검증 전에 서명 정리가 선행돼야 한다
+- **Play 로 배포된 설치본 위의 업데이트** — 위 «Android 실기기» 참고. 로컬 빌드로는 원리적으로 불가하고
+  **Play 내부 테스트 트랙**에서만 확인된다. 전환 릴리스 전 마지막 관문이다
+- **RN 앱의 서명** — 지금 `app-rn` 의 release 는 Expo 기본값인 **debug 키스토어**를 쓴다. 실제 배포
+  전에 반드시 업로드 키로 바꿔야 한다(안 바꾸면 Play 가 거부하고, 바꿔도 기존 설치본 위에는 못 얹는다)
 - **쓰기 경로** — 읽기만 확인했다. RN 이 쓴 값을 Capacitor 가 읽는(혹은 그 반대) 왕복은 안 봤다
 - **예약 알림 재등록**(결정 4) · **가격 미입력 행 보존**(NULL≠0, [[ADR-124]]) — 대상 DB 의
   `boss_drop_records` 가 0행이라 시험할 데이터가 없었다
