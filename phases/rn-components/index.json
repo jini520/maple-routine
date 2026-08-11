@@ -37,7 +37,10 @@
     {
       "step": 4,
       "name": "molecules",
-      "status": "pending"
+      "status": "error",
+      "started_at": "2026-08-12T01:40:12+0900",
+      "error_message": "[3회 시도 후 실패] Step did not update status",
+      "failed_at": "2026-08-12T01:45:49+0900"
     },
     {
       "step": 5,
