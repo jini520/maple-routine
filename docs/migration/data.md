@@ -197,8 +197,10 @@ request code 로 쓰고(`LocalNotificationManager.java:411-419`), 채널은 `"de
 3. 완료를 Preferences 키로 기록해 두 번 돌지 않게 한다
 
 `native/notifications.ts` 에는 ADR 참조가 없지만, 동작 계약은 [[ADR-004]](서버 푸시 없이 로컬 알림만)와
-`features/hunting-timer.md` 에 있다. **사냥 타이머의 상시 표시 알림([[ADR-005]])은 성격이 달라 별도
-확인이 필요하다** — 예약 알림이 아니라 지속 알림이다.
+`features/hunting-timer.md` 에 있다. **사냥 타이머의 상시 표시 알림([[ADR-005]])은 성격이 다르지만
+(예약 알림이 아니라 지속 알림) 옮길 것이 없다** — 그 커스텀 플러그인은 작성된 적이 없어 네이티브에서
+거부돼 왔고, 그래서 남아 있는 예약도 정리할 상태도 없다(2026-08-11 확인,
+[parity-inventory](./parity-inventory.md)).
 
 ---
 
@@ -275,7 +277,7 @@ request code 로 쓰고(`LocalNotificationManager.java:411-419`), 채널은 `"de
 | 항목 | 확인 방법 |
 |---|---|
 | iOS SQLite 기본 경로 — **플러그인 소스로는 `Documents` 확정**(결정 2), 실물만 남음 | 실기기 앱 컨테이너를 내려받아 `boss_profitSQLite.db` 위치 확인 |
-| 사냥 타이머 상시 알림의 네이티브 구현 | `native/hunting-timer/` 와 `features/hunting-timer.md` 대조, RN 대응 SDK 결정 |
+| ~~사냥 타이머 상시 알림의 네이티브 구현~~ — **확정**: 구현이 존재한 적 없다(네이티브는 `UNIMPLEMENTED` 거부, 인메모리 폴백은 웹 전용). 옮길 데이터도 SDK 결정도 없고 RN 도 거부한다 ([parity-inventory](./parity-inventory.md), 2026-08-11) | — |
 | ~~옛 로컬 알림 ID 체계~~ — **확정**(결정 4 «확인된 사실», 2026-08-11) | — |
 
 ---

@@ -239,8 +239,18 @@
 | `back-gesture.ts` | 003, 120 | **삭제** — 네이티브 스택 기본 |
 | `splash-screen.ts` | 025, 027, 117 | `react-native-bootsplash` |
 | `notifications.ts` | — | `notifee` — [data.md](./data.md) 결정 4 |
-| `hunting-timer/` | 005 | 상시 알림 — 별도 확인 필요 |
+| `hunting-timer/` | 005 | **옮길 구현이 없다** — 아래 |
 | `keyboard.ts` · `status-bar.ts` · `system-bars.ts` | — | 대부분 내장으로 대체 |
+
+`hunting-timer/` 는 **옮길 것이 없다**(2026-08-11 확인). [[ADR-005]] 가 정한 Android Foreground
+Service·iOS Live Activity 커스텀 플러그인은 **작성된 적이 없다** — 저장소 전체에서 `HuntingTimer` 를
+담은 `.java`/`.kt`/`.swift` 가 0건이고, Capacitor 쪽에 있는 것은 `registerPlugin('HuntingTimer',
+{ web })` 한 줄뿐이다. `@capacitor/core` 를 따라가면 네이티브에는 등록된 구현도 `PluginHeaders`
+항목도 없어 세 메서드가 **`UNIMPLEMENTED` 로 거부**되고, 인메모리 폴백(`HuntingTimerWeb`)은
+브라우저에서만 쓰인다. 그래서 RN 어댑터도 **거부한다**(`rn-hunting-timer.ts`) — 인메모리 폴백을
+옮기면 웹 전용 동작을 네이티브로 승격시키는 것이고, `start()` 가 조용히 resolve 하면 화면은 타이머가
+도는 줄 아는데 알림도 소리도 없다. **[[ADR-005]] 를 실제로 구현할지는 전환과 별개 결정이다**(소비자도
+없다 — `app/hunting-timer/`·`features/hunting-timer/` 는 디렉터리 자체가 없다).
 
 `live-update.ts` 만 성격이 다르다. 다른 어댑터는 같은 일을 하는 다른 SDK로 바꾸는 것이지만, 이쪽은
 **OTA 프로토콜 자체가 바뀐다**(@capgo 자체 호스팅 매니페스트 → expo-updates). [[ADR-022]]·[[ADR-026]]·

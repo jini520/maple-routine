@@ -25,4 +25,5 @@ Capacitor 공식 플러그인이 커버 못 해 Swift/Kotlin 커스텀 플러그
 
 ## 구현 현황
 - 아직 인터페이스만 정의됨. 실제 Android Foreground Service / iOS Live Activity 구현은 별도 task. 현재 web 폴백(`hunting-timer.web.ts`)은 메모리 변수라 새로고침하면 사라지며, 어떤 feature 도 아직 이 플러그인을 소비하지 않는다.
+- **실기기에서는 폴백조차 안 쓰인다 — 세 메서드가 거부된다**(2026-08-11 확인). `registerPlugin('HuntingTimer', { web })` 에 등록된 것이 `web` 하나뿐이라 android·ios 는 구현을 못 찾고, 네이티브 플러그인도 없어 `PluginHeaders` 에도 없다 → `CapacitorException(UNIMPLEMENTED)` 이 **거부된 Promise** 로 나온다. 인메모리 폴백은 브라우저(`platform === 'web'`) 전용이다. RN 전환 어댑터(`packages/app-rn/.../rn-hunting-timer.ts`)도 같은 이유로 거부한다 — 폴백을 옮기면 웹 전용 동작을 네이티브로 승격시키는 것이고, `start()` 가 조용히 resolve 하면 화면은 타이머가 도는 줄 아는데 알림도 소리도 없다.
 - 정식 구현 전 기술 스파이크(PoC)로 두 플랫폼 실현 가능성과 배터리 영향 검증 필요.
