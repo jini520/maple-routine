@@ -213,7 +213,10 @@
 `ads` · `boss-profit` · `boss-scheduler` · `content-scheduler` · `drop-effect` · `live-update` ·
 `onboarding` · `schedule-sync` · `settings` · `theme` · `toast` · `tracking-mode` · `prehydrate.ts`
 
-- **수정 필요 2개**: `theme/store.ts`(`matchMedia` → `Appearance`) · `onboarding/store.ts`
+- **수정 필요 1개**: `onboarding/store.ts`
+  - ~~`theme/store.ts`(`matchMedia` → `Appearance`)~~ → **`ColorSchemePort` 로 해결**(2026-08-11).
+    store 는 `getColorSchemePort().get()` 만 부르고 `matchMedia`/`Appearance` 는 어댑터가 갖는다
+    (`rn-color-scheme.ts`) — store 자체는 무수정이다
 - **삭제 1개**: `screen-stack/` — react-navigation이 대체
 
 ### lib/ · data/ · types/ · nexon/
@@ -237,10 +240,12 @@
 | `ads.ts` | 005, 090 | `react-native-google-mobile-ads` **16.0.3 고정** — 아래 |
 | `live-update.ts` | 022, 024, 026, 027, 117, 119, 126 | `expo-updates` — **재설계 필요** |
 | `back-gesture.ts` | 003, 120 | **삭제** — 네이티브 스택 기본 |
-| `splash-screen.ts` | 025, 027, 117 | `react-native-bootsplash` |
+| `splash-screen.ts` | 025, 027, 117 | `expo-splash-screen` **~57.0.6** — 아래 |
 | `notifications.ts` | — | `notifee` — [data.md](./data.md) 결정 4 |
 | `hunting-timer/` | 005 | **옮길 구현이 없다** — 아래 |
-| `keyboard.ts` · `status-bar.ts` · `system-bars.ts` | — | 대부분 내장으로 대체 |
+| `keyboard.ts` · `status-bar.ts` | — | RN 내장(`Keyboard`·`StatusBar`) — 아래 |
+| `system-bars.ts` | 099 | 미착수 |
+| (`ColorSchemePort`) | 009, 104 | RN 내장 `Appearance` — 아래 |
 
 `hunting-timer/` 는 **옮길 것이 없다**(2026-08-11 확인). [[ADR-005]] 가 정한 Android Foreground
 Service·iOS Live Activity 커스텀 플러그인은 **작성된 적이 없다** — 저장소 전체에서 `HuntingTimer` 를
@@ -260,6 +265,41 @@ Service·iOS Live Activity 커스텀 플러그인은 **작성된 적이 없다**
 설정에 쓴다. 버전을 **16.0.3 으로 고정**한 이유는 최신 16.4.0 이 끌어오는 play-services-ads 25.4.0 이
 Kotlin 메타데이터 2.3 이라 RN 0.86(Kotlin 2.1)에서 컴파일이 깨지기 때문이고, 16.0.3 의 24.9.0 은
 지금 배포 중인 Capacitor 앱과 같은 라인이다. 자세한 내용은 [features/ads.md](../features/ads.md).
+
+**시스템 어댑터 넷은 RN 내장으로 끝난다**(2026-08-11 구현 — `ColorSchemePort`·`KeyboardPort`·
+`StatusBarPort`·`SplashScreenPort`). 새 의존성은 `expo-splash-screen` **하나**뿐이고 나머지 셋은
+`Appearance`·`Keyboard`·`StatusBar` 다. 각 자리에서 실제로 정한 것:
+
+- **`ColorSchemePort`** — `Appearance.getColorScheme()` 이 **`null` 을 줄 수 있어**(네이티브 모듈이
+  없거나 OS가 판정을 안 준 경우) 라이트로 폴백한다. Capacitor 가 `matchMedia` 부재에 내린 것과 같은
+  판단이고, 모르는 것을 다크로 읽으면 **저장된 테마가 없는 첫 실행이 통째로 다크로 열린다.**
+  `addChangeListener` 는 **쓰지 않는다** — 이 값은 1회성 판정에만 쓰이고([[ADR-104]]) 부를 곳이 없는
+  구독 API는 구현마다 죽은 코드가 된다(포트 주석의 판단).
+- **`StatusBarPort`** — **다크 테마 → 밝은 글리프**(`'light-content'`). Capacitor 의
+  `isDarkTheme ? Style.Dark : Style.Light` 와 같은 방향인데, 그 enum 이름은 글리프가 아니라 **배경**을
+  가리키기 때문이다(`Style.Dark` = *"Light text for dark backgrounds"*). 이름만 보고 옮기면 정확히
+  뒤집히고, 그러면 어두운 배경에 어두운 글자가 되어 **실기기에서만** 드러난다. `'default'` 는 OS
+  설정을 따라가 앱이 고른 테마와 어긋나므로 쓰지 않는다.
+- **`KeyboardPort`** — `keyboardDidShow`/`keyboardDidHide` 다. Capacitor 는 `will` 계열이었지만 RN 에서
+  그 둘은 **iOS 에서만** 오고, 안드로이드에서 안 오는 이벤트에 매달리면 그 플랫폼에서 탭바가 키보드
+  위에 남는다(둘 다 듣는 것도 답이 아니다 — iOS 에서 두 번 불린다). 안드로이드는 그마저도
+  `windowSoftInputMode` 에 따라 안 올 수 있는데, 그때는 **아무것도 부르지 않는다** — 타이머·포커스
+  추적으로 거짓 신호를 만들면 키보드가 없는데 탭바가 사라지고 원인을 못 짚는다.
+- **`SplashScreenPort`** — `expo-splash-screen` 을 고른 것은 버전이 **SDK 에 묶이기** 때문이다
+  (`bundledNativeModules.json` 이 SDK 57 짝으로 지정한 `~57.0.6`, 이미 있는 `expo-status-bar` 와 같은
+  라인). 후보였던 `react-native-bootsplash`(같은 파일이 `^6.3.10`)는 SDK 와 독립적으로 움직이고 에셋
+  생성 CLI 를 따로 돌려야 하는데, 바로 위 `ads.ts` 가 그 독립 버저닝 때문에 빌드를 깨뜨렸다. **둘 다
+  다시 띄우는 API 가 없어** 그 축은 선택에 영향을 주지 않았다.
+  - **`show()` 는 no-op 이다** — 웹뷰 리로드가 없어 덮을 구간 자체가 생기지 않는다([[ADR-117]] 결정
+    1·8 이 덮으려던 그 구간). `preventAutoHideAsync()` 로 흉내 내면 **이미 내려간 스플래시에는 아무
+    효과가 없어** 화면은 그대로인데 호출부만 덮였다고 믿는다. step 7 의 미구현 포트(거부)와 성격이
+    다르다 — 이쪽은 *"이 플랫폼에 그 개념이 없다"* 라서 정당한 no-op 이다.
+  - **DOM 커버는 옮기지 않는다** — `#boot-cover`·`[data-splash-cover]` 는 정의상 웹뷰 구현이고
+    ([[ADR-117]] 결정 4) RN 에는 문서가 없다.
+  - **스플래시를 계속 띄워 두는 일은 어댑터 밖이다.** Capacitor 에서 그것은 코드가 아니라 설정이었고
+    (`launchAutoHide: false`), RN 짝은 앱 진입점 **전역 스코프**의 `preventAutoHideAsync()` 다
+    (라이브러리 문서가 컴포넌트·훅 안에서 부르지 말라고 명시 — 늦으면 이미 내려간 뒤다). 부팅 흐름
+    배선 단계의 몫이다.
 
 `live-update.ts` 만 성격이 다르다. 다른 어댑터는 같은 일을 하는 다른 SDK로 바꾸는 것이지만, 이쪽은
 **OTA 프로토콜 자체가 바뀐다**(@capgo 자체 호스팅 매니페스트 → expo-updates). [[ADR-022]]·[[ADR-026]]·

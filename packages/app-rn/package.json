@@ -16,6 +16,7 @@
     "@notifee/react-native": "^9.1.8",
     "@op-engineering/op-sqlite": "^17.1.5",
     "expo": "~57.0.12",
+    "expo-splash-screen": "~57.0.6",
     "expo-status-bar": "~57.0.1",
     "react": "^19.2.3",
     "react-native": "0.86.2",
