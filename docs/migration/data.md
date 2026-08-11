@@ -168,19 +168,31 @@ connection.createConnection(DB_NAME, false, 'no-encryption', 1, false)
 `@capacitor/local-notifications` 로 예약한 알림은 **OS의 알림 스케줄러에 등록돼 있다.** 앱 코드가
 아니라 OS가 들고 있으므로, 플러그인이 `notifee` 로 바뀌어도 **그대로 남아 발화한다.**
 
-문제는 새 구현이 그것들을 **취소도 갱신도 못 한다**는 점이다 — ID 체계와 채널이 다르다. 결과:
+문제는 새 구현이 그것들을 **취소도 갱신도 못 한다**는 점이다 — 예약을 들고 있는 저장소가 다르다. 결과:
 
 | 증상 | 원인 |
 |---|---|
 | **중복 알림** | 옛 예약 + 새 예약이 둘 다 발화 |
 | **유령 알림** | 사용자가 끈 항목의 옛 예약이 계속 뜸 |
-| 취소 불능 | 새 코드의 `cancel(id)` 가 옛 ID를 모름 |
+| 취소 불능 | notifee 의 `cancel` 은 자기가 만든 예약만 안다 |
+
+### 확인된 사실 (2026-08-11, 플러그인 소스)
+
+옛 ID 체계는 **앱이 넘긴 정수 그대로**다 — 변환이 없다. Android 는 그 정수를 `PendingIntent` 의
+request code 로 쓰고(`LocalNotificationManager.java:411-419`), 채널은 `"default"` 하나다
+(`:48` `DEFAULT_NOTIFICATION_CHANNEL_ID`, 중요도 `IMPORTANCE_DEFAULT` · 소리는 채널 생성자 기본값인
+시스템 기본음).
+
+**그래서 갈리는 것은 ID 규칙이 아니라 예약 저장소다.** RN 어댑터도 같은 채널 ID 를 쓰고 같은 정수를
+문자열로만 바꿔 쓰지만(`packages/app-rn/src/native/adapters/notification-request.ts`), 옛 예약은
+`AlarmManager`/`UNUserNotificationCenter` 에 그대로 남아 있고 notifee 는 자기 저장소만 본다 —
+`cancel(id)` 로도, `getPendingCount()` 로도 닿지 않는다. 아래 1의 두 갈래 중 **플랫폼 API 로 통째로
+비우는 쪽**이 남는 이유다.
 
 ### 처리
 
-1. 전환 후 **첫 실행에서 옛 예약을 전량 취소**한다. 새 SDK로는 못 하므로 **Capacitor 시절과 같은
-   ID 규칙으로 네이티브에서 직접 취소**하거나, 플랫폼 API로 이 앱의 예약을 통째로 비운다
-   (Android `AlarmManager` / iOS `removeAllPendingNotificationRequests`)
+1. 전환 후 **첫 실행에서 옛 예약을 전량 취소**한다. 새 SDK로는 못 하므로 플랫폼 API로 이 앱의
+   예약을 통째로 비운다 (Android `AlarmManager` / iOS `removeAllPendingNotificationRequests`)
 2. 그 다음 현재 설정에 맞춰 **전부 새로 예약**한다
 3. 완료를 Preferences 키로 기록해 두 번 돌지 않게 한다
 
@@ -264,7 +276,7 @@ connection.createConnection(DB_NAME, false, 'no-encryption', 1, false)
 |---|---|
 | iOS SQLite 기본 경로 — **플러그인 소스로는 `Documents` 확정**(결정 2), 실물만 남음 | 실기기 앱 컨테이너를 내려받아 `boss_profitSQLite.db` 위치 확인 |
 | 사냥 타이머 상시 알림의 네이티브 구현 | `native/hunting-timer/` 와 `features/hunting-timer.md` 대조, RN 대응 SDK 결정 |
-| 옛 로컬 알림 ID 체계 | Capacitor 플러그인의 ID 생성 규칙 확인 (결정 4의 취소 전략이 여기 달림) |
+| ~~옛 로컬 알림 ID 체계~~ — **확정**(결정 4 «확인된 사실», 2026-08-11) | — |
 
 ---
 
