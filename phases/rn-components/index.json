@@ -21,7 +21,10 @@
     {
       "step": 2,
       "name": "navigation",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-12T00:20:47+0900",
+      "summary": "react-navigation 골격 — 루트 네이티브 스택(탭 레이어 1 + 하위 페이지 11) + bottom-tabs 4, 화면은 전부 자리표시자(4단계 몫). 계획서 §1 17경로를 `routes.ts` 에 **데이터로** 두고 내비게이터가 그 목록에서 파생 — 손으로 적으면 계획서와 두 벌이 되어 빠뜨려도 안 드러난다. 하위 페이지를 탭 **안**이 아니라 **위**에 쌓아 ADR-120 결정 4(탭바가 아래 화면과 한 덩어리로 밀려 나감)를 구조로 성립시켰다(탭 안 스택 + tabBarStyle:none 이면 탭바가 함께 안 밀리고 제자리에서 사라진다). 온보딩 분기는 리다이렉트가 아니라 **화면 목록 자체를 갈아 끼움** — 딥링크가 없어 도달 경로가 없으므로 계약(도달 불가·히스토리 없음)을 더 강하게 만족. 광고 게이트는 탭 `listeners.tabPress` 로: `preventDefault()` 없이 `void maybeShowTabSwitchAd()`(이동을 지연시키지 않음, ADR-090 결정 3) + `isFocused()` 로 같은 탭 연타 제외. `tab-switch-ad.ts` 무수정. **BackGesturePort 는 삭제가 아니라 1/3 구현**: 계획서 예상(전부 삭제)과 달리 `moveToBackground` 는 남는다 — ADR-120 결정 18(종료가 아니라 백그라운드)을 내비게이션 라이브러리가 대신해 주지 않고 RN 기본 폴백이 정확히 그 결정이 거부한 finish 다. Expo 모듈 `app-background`(Kotlin, `moveTaskToBack(true)`·`Queues.MAIN`) 신설. 나머지 둘(setEnabled·addListeners)은 계속 던지되 사유가 *'아직 안 했다'* 가 아니라 *'이제 네이티브 스택이 소유한다'* 라 메시지를 `rn-back-gesture.ts` 가 갖는다. `use-root-back` 은 판정을 `canGoBack()` **하나**로 둬 BackHandler 등록 순서와 무관하게 같은 결과를 낸다. ADR-120 결정 5·6 은 기본값이 아니라 ADR 을 따름 — `animation: 'ios_from_right'`(안드로이드도 iOS 식 슬라이드: 웹뷰 앱이 두 플랫폼에 같은 전환을 그렸다), `gestureResponseDistance` 는 **주지 않음**(28px·35% 가 UIKit 가장자리 인식기를 흉내 낸 값이라 숫자를 얹으면 흉내가 원본을 덮는다). screen-stack·stack-transition 미이식(주석 참조만). **계획서 §1 오류 1건 정정**: `/settings/privacy` → `/settings/about/privacy`(실제 라우트가 about 의 자식, ADR-120 결정 11) — 이 앱 유일의 2단 스택. jest.config 에 `testMatch: ['**/*.test.[jt]s?(x)']` 추가(jest-expo 기본값이 `__tests__` 의 보조 파일까지 스위트로 집어 빨개짐). **육안 확인 대기(코드로 확인 불가)**: 탭바 동반 이동·아래 화면 시차·3버튼과 제스처 수렴·전환 340ms 체감 — 값이 이제 OS/react-native-screens 쪽이라 결정 12 의 실기기 확인은 값 확정이 아니라 채택 판정이 된다. 모달 뒤로가기(결정 18 후반)는 organisms 단계 몫. vitest 199파일/3044개 증감 0, jest 283→318",
+      "completed_at": "2026-08-12T01:12:00+0900"
     },
     {
       "step": 3,
