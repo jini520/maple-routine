@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "메이플 루틴",
+    "slug": "maple-routine",
+    "version": "1.0.0",
+    "orientation": "default",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "bundleIdentifier": "com.mapleroutine.app",
+      "buildNumber": "12",
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.mapleroutine.app",
+      "versionCode": 20
+    },
+    "experiments": {
+      "tsconfigPaths": true
+    }
+  }
+}

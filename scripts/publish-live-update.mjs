@@ -3,18 +3,18 @@
 //
 // 사용법: node scripts/publish-live-update.mjs [--beta] [--min-native <x.y.z>]
 //
-// 배포 버전은 CLI 인자로 받지 않고 package.json의 version을 그대로 쓴다 — 버전을 CLI 인자로
-// 자유롭게 받으면 package.json을 안 올린 채 OTA만 배포할 수 있어, 빌드된 번들에 박히는
-// package.json 버전 표시(설정 화면 하단)가 실제 배포된 OTA 버전과 어긋나는 문제가 있었다.
-// 배포 전 package.json의 version부터 올려야 한다.
+// 배포 버전은 CLI 인자로 받지 않고 packages/app-capacitor/package.json의 version을 그대로 쓴다 —
+// 버전을 CLI 인자로 자유롭게 받으면 package.json을 안 올린 채 OTA만 배포할 수 있어, 빌드된 번들에
+// 박히는 package.json 버전 표시(설정 화면 하단 — 앱이 같은 파일을 import 한다)가 실제 배포된 OTA
+// 버전과 어긋나는 문제가 있었다. 배포 전 그 파일의 version부터 올려야 한다.
 //
 // 사전 준비: `gh auth login`으로 GitHub CLI 인증만 되어 있으면 된다(추가 계정 가입·결제 수단 불필요).
 // 이 저장소(REPO)에 고정 릴리스 태그를 하나 만들어 두고(--beta 없으면 live-update-latest,
 // 있으면 live-update-beta), 배포할 때마다 그 릴리스에 번들 zip을 추가하고 latest.json을 덮어쓴다.
-// src/native/live-update.ts의 LIVE_UPDATE_MANIFEST_URL/LIVE_UPDATE_MANIFEST_URL_BETA가
+// packages/core/src/native/live-update.ts의 LIVE_UPDATE_MANIFEST_URL/LIVE_UPDATE_MANIFEST_URL_BETA가
 // 각 릴리스의 latest.json을 가리킨다.
 //
-// 동작: npm run build → dist/ 압축 → sha256 계산 → latest.json 갱신 → gh release upload
+// 동작: npm run build → packages/app-capacitor/dist/ 압축 → sha256 계산 → latest.json 갱신 → gh release upload
 
 import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
@@ -30,7 +30,7 @@ import { fileURLToPath } from 'node:url'
 // 배포 스크립트가 릴리스 경로의 일부라 의존성이 늘수록 릴리스가 깨질 표면이 넓어지기 때문이고,
 // 정규식으로 파일을 긁지 않은 이유는 그 방식이 원천의 형식이 바뀌는 순간 조용히 틀린 값을 내기
 // 때문이다. release-notes.ts 는 순수 데이터라 타입 선언 말고는 스트리핑할 것도 없다.
-import { findReleaseNote } from '../src/data/release-notes.ts'
+import { findReleaseNote } from '../packages/core/src/data/release-notes.ts'
 
 const REPO = 'jini520/maple-routine'
 
@@ -94,9 +94,16 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { isBeta, minNativeVersion } = parseArgs(process.argv.slice(2))
 
   const root = join(import.meta.dirname, '..')
-  const { version } = JSON.parse(readFileSync(join(root, 'package.json'), 'utf-8'))
+  // OTA 번들 버전은 **앱 패키지의** package.json 에서 읽는다([[ADR-024]] — 버전 축은 하나여야 한다).
+  // 저장소 루트의 package.json 은 워크스페이스 오케스트레이션용이라 version 자체를 갖지 않는다.
+  // 여기가 어긋나면 매니페스트에 실리는 버전과 설정 화면 하단 표시값(앱이 같은 파일을 import 한다)이
+  // 갈리는데, 그건 배포되고 나서야 드러난다.
+  const appDir = join(root, 'packages', 'app-capacitor')
+  const { version } = JSON.parse(readFileSync(join(appDir, 'package.json'), 'utf-8'))
   if (!version || !/^\d+\.\d+\.\d+$/.test(version)) {
-    console.error(`package.json의 version("${version}")이 x.y.z 형식이 아닙니다. 먼저 버전을 올려주세요.`)
+    console.error(
+      `packages/app-capacitor/package.json의 version("${version}")이 x.y.z 형식이 아닙니다. 먼저 버전을 올려주세요.`,
+    )
     process.exit(1)
   }
 
@@ -107,7 +114,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const note = findReleaseNote(version)
   const gap = describeReleaseNoteGap(note)
   if (gap !== null) {
-    console.error(`src/data/release-notes.ts 의 ${version}: ${gap}`)
+    console.error(`packages/core/src/data/release-notes.ts 의 ${version}: ${gap}`)
     process.exit(1)
   }
 
@@ -121,7 +128,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   execFileSync('npm', ['run', resolveBuildScript(isBeta)], { cwd: root, stdio: 'inherit' })
 
   console.log('[2/5] dist/ 압축 중...')
-  execFileSync('zip', ['-r', zipPath, '.'], { cwd: join(root, 'dist'), stdio: 'inherit' })
+  execFileSync('zip', ['-r', zipPath, '.'], { cwd: join(appDir, 'dist'), stdio: 'inherit' })
 
   console.log('[3/5] 체크섬·용량 계산 중...')
   const checksum = createHash('sha256').update(readFileSync(zipPath)).digest('hex')

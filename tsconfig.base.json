@@ -1,0 +1,38 @@
+{
+  /* 패키지들이 공유하는 컴파일러 옵션. 이 파일 자체는 프로젝트가 아니다(`include` 없음).
+
+     `packages/core` 가 이전에는 `tsconfig.app.json`(앱 프로젝트)을 상속했는데, 그 파일이 앱과 함께
+     `packages/app-capacitor/` 로 내려가면서 core → app 방향의 의존이 생기게 됐다. 옵션만 따로 떼어
+     두면 두 패키지가 **서로를 모르는 채** 같은 규칙을 쓴다 — `packages/app-rn` 이 붙을 때도 같다. */
+  "compilerOptions": {
+    "target": "es2023",
+    "lib": ["ES2023", "DOM"],
+    "module": "esnext",
+    "types": ["vite/client"],
+    "allowArbitraryExtensions": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+
+    /* `packages/core` 로 옮긴 파일은 상대 경로가 아니라 이 alias 로 import 한다([[ADR-127]] 결정 3).
+       같은 매핑이 `packages/app-capacitor/vite.config.ts` 의 `resolve.alias` 에도 있어야 한다
+       (vitest 도 그것을 공유한다). 여기 적힌 상대 경로는 **이 파일 기준**으로 풀리므로, 상속받는
+       패키지가 어느 깊이에 있든 그대로 맞는다. */
+    "paths": {
+      "@core/*": ["./packages/core/src/*"]
+    },
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    /* Linting */
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true
+  }
+}
