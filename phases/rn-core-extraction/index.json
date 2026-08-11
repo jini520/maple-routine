@@ -1,0 +1,15 @@
+{
+  "project": "maple-routine",
+  "phase": "rn-core-extraction",
+  "steps": [
+    { "step": 0, "name": "workspace-setup", "status": "pending" },
+    { "step": 1, "name": "core-pure", "status": "pending" },
+    { "step": 2, "name": "core-lib", "status": "pending" },
+    { "step": 3, "name": "storage-ports", "status": "pending" },
+    { "step": 4, "name": "native-ports", "status": "pending" },
+    { "step": 5, "name": "core-storage", "status": "pending" },
+    { "step": 6, "name": "core-features", "status": "pending" },
+    { "step": 7, "name": "app-capacitor", "status": "pending" },
+    { "step": 8, "name": "rn-scaffold", "status": "pending" }
+  ]
+}

@@ -180,6 +180,10 @@
       "dir": "settings-hierarchy",
       "status": "completed",
       "completed_at": "2026-08-09T03:23:25+0900"
+    },
+    {
+      "dir": "rn-core-extraction",
+      "status": "pending"
     }
   ]
 }
