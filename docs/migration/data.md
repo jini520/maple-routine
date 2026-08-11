@@ -108,7 +108,7 @@ connection.createConnection(DB_NAME, false, 'no-encryption', 1, false)
 | | 경로 |
 |---|---|
 | **Android** | `/data/data/com.mapleroutine.app/databases/boss_profitSQLite.db` |
-| **iOS** | `<앱 컨테이너>/Documents/boss_profitSQLite.db` ⚠️ **실기기 미확인** |
+| **iOS** | `<앱 컨테이너>/Documents/boss_profitSQLite.db` ✅ **시뮬레이터 실측 확인**(2026-08-11) |
 
 파일명 규칙은 플러그인이 `dbName + "SQLite.db"` 로 만든다(`CapacitorSQLite.java:346`). DB 이름은
 `boss_profit` 이므로 `boss_profitSQLite.db` 다.
@@ -120,9 +120,10 @@ connection.createConnection(DB_NAME, false, 'no-encryption', 1, false)
 (`UtilsFile.swift:161-162`) — 즉 `<앱 컨테이너>/Documents` 다(`Database.swift:75` 가 그 디렉터리에
 파일명을 붙인다).
 
-근거는 플러그인 소스지만 **실기기 앱 컨테이너를 열어 확인한 것은 아니다.** 여기가 틀리면 빈 DB 가
-조용히 새로 생기고 사용자에게는 기록이 전부 사라진 것으로 보이므로, **실기기 검증에서 반드시 눈으로
-확인할 것.** RN 어댑터는 이 경로를 op-sqlite 의 `IOS_DOCUMENT_PATH` 상수로 잡는다
+**그리고 실측으로 확인됐다**(2026-08-11, iOS 26.5 시뮬레이터) — Capacitor 앱을 빌드·설치·실행한 뒤
+앱 데이터 컨테이너를 열자 `Documents/boss_profitSQLite.db`(98,304 B) 가 있었고 `Library/` 아래에는
+`CapacitorDatabase` 디렉터리 자체가 없었다. 원래 표대로 갔다면 RN 앱이 빈 DB 를 새로 만들고 사용자에게는
+기록이 전부 사라진 것으로 보였을 것이다. 아래 «실측 검증 기록» 참고. RN 어댑터는 이 경로를 op-sqlite 의 `IOS_DOCUMENT_PATH` 상수로 잡는다
 (`packages/app-rn/src/storage/adapters/capacitor-sqlite-open.ts`).
 
 ### 보존 대상 테이블 (4)
@@ -270,13 +271,52 @@ request code 로 쓰고(`LocalNotificationManager.java:411-419`), 채널은 `"de
 
 ---
 
+## 실측 검증 기록 — iOS 시뮬레이터 (2026-08-11)
+
+이 문서의 설계가 **실제로 되는지**를 처음으로 확인한 기록이다. 이전까지 검증된 것은 "컴파일된다"와
+"순수 로직이 맞다"까지였다.
+
+**환경**: Xcode 26.6 · iPhone 17 Pro (iOS 26.5) 시뮬레이터 · 두 앱 모두 `com.mapleroutine.app`
+
+**절차**
+1. `app-capacitor` 를 시뮬레이터용으로 빌드(SPM, `pod install` 불필요)·설치·실행
+2. 앱 데이터 컨테이너를 열어 파일 위치와 UserDefaults 키를 **눈으로 확인**
+3. `app-rn` 을 **Release** 로 빌드(JS 번들 내장 — Metro 불필요) 후 **같은 번들 ID 로 덮어 설치**
+4. 임시 검증 화면이 core 의 진짜 `getBossProfitDb()`·`preferences` 로 읽은 값을 화면에 표시
+
+**대상 데이터**: 2026-08-08 세션이 남긴 실제 기록. `boss_profit_records` 206행 ·
+`boss_profit_period_checks` 18행 · `boss_drop_records` 0행. **`boss_drop_records` 는 구버전 스키마**로
+`price_state`·`price_meso`·`price_share` 가 없었다([[ADR-124]] 이전) — `ensureColumn` 을 시험하기에
+이상적인 조건이었다.
+
+| 확인 항목 | 결과 |
+|---|---|
+| iOS SQLite 경로 | ✅ `Documents/boss_profitSQLite.db`. `Library/CapacitorDatabase` 는 **존재하지 않음** |
+| UserDefaults 접두사 | ✅ `CapacitorStorage.` — 앱 키 171개가 전부 이 접두사 |
+| 앱 교체 시 컨테이너 보존 | ✅ 컨테이너 UUID 는 바뀌었으나 **DB inode 동일**(`29024211`) — 물리적으로 같은 파일 |
+| RN 이 SQLite 를 읽는가 | ✅ **206행** 그대로. 표본 레코드가 `sqlite3` 직접 조회와 일치(`스우/하드 2026-08-06 51500000 엘리시움`) |
+| `ensureColumn` 동작 | ✅ `boss_drop_records` 컬럼 **12 → 15**. `price_state`·`price_meso`·`price_share` 추가됨 |
+| RN 이 Preferences 를 읽는가 | ✅ **171개** — 접두사 붙은 앱 키 수와 정확히 일치 |
+| 접두사 필터링 | ✅ 접두사 없는 10개(`CapacitorUpdater.*` 7 · `LatestNativeBuildVersion` · `pastVersion` · `RCTI18nUtil_…`)를 **정확히 제외**. 전부 앱 데이터가 아니다 |
+
+**아직 확인 못 한 것**
+
+- **Android** — 같은 절차를 안 돌렸다. 경로 체계가 다르므로(`getDatabasePath`) 별도 확인이 필요하다
+- **실기기** — 시뮬레이터는 서명·컨테이너 규칙이 실기기와 다르다. 특히 **RN 앱이 debug 서명이라 릴리스
+  서명된 기존 앱 위에 설치되지 않는다** — 실기기 검증 전에 서명 정리가 선행돼야 한다
+- **쓰기 경로** — 읽기만 확인했다. RN 이 쓴 값을 Capacitor 가 읽는(혹은 그 반대) 왕복은 안 봤다
+- **예약 알림 재등록**(결정 4) · **가격 미입력 행 보존**(NULL≠0, [[ADR-124]]) — 대상 DB 의
+  `boss_drop_records` 가 0행이라 시험할 데이터가 없었다
+
+---
+
 ## 미검증 항목
 
 이 문서에서 확정하지 못한 것. **착수 전에 지울 것.**
 
 | 항목 | 확인 방법 |
 |---|---|
-| iOS SQLite 기본 경로 — **플러그인 소스로는 `Documents` 확정**(결정 2), 실물만 남음 | 실기기 앱 컨테이너를 내려받아 `boss_profitSQLite.db` 위치 확인 |
+| ~~iOS SQLite 기본 경로~~ — **확정**: 시뮬레이터 컨테이너에서 `Documents/boss_profitSQLite.db` 실측(2026-08-11, «실측 검증 기록») | — |
 | ~~사냥 타이머 상시 알림의 네이티브 구현~~ — **확정**: 구현이 존재한 적 없다(네이티브는 `UNIMPLEMENTED` 거부, 인메모리 폴백은 웹 전용). 옮길 데이터도 SDK 결정도 없고 RN 도 거부한다 ([parity-inventory](./parity-inventory.md), 2026-08-11) | — |
 | ~~옛 로컬 알림 ID 체계~~ — **확정**(결정 4 «확인된 사실», 2026-08-11) | — |
 
