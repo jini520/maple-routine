@@ -1,6 +1,6 @@
-import { getAuthConfig } from '../../storage/api-key'
-import { getTrackedCharacterOcids } from '../../storage/character-selection'
-import { getTrackingMode, setTrackingMode } from '../../storage/tracking-mode'
+import { getAuthConfig } from '@core/storage/api-key'
+import { getTrackedCharacterOcids } from '@core/storage/character-selection'
+import { getTrackingMode, setTrackingMode } from '@core/storage/tracking-mode'
 import type { ResumableOnboardingStatus } from './state'
 
 export type ResumeTarget =

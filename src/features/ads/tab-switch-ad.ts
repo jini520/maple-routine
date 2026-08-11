@@ -4,7 +4,7 @@ import {
   loadInterstitial,
   showInterstitial,
 } from '../../native/ads'
-import { getLastAdShownAt, setLastAdShownAt } from '../../storage/ads'
+import { getLastAdShownAt, setLastAdShownAt } from '@core/storage/ads'
 import { canShowInterstitial } from './policy'
 
 /**

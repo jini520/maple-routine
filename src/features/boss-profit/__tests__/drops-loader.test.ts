@@ -5,7 +5,7 @@
 // 시트에서 값을 넣은 직후에는 스토어가 들고 있는 값이라 보이고, 기간을 왕복하면 DB에서 다시
 // 읽으면서 가격만 떨어져 나갔다.
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { BossDropRecord } from '../../../storage/boss-drops'
+import type { BossDropRecord } from '@core/storage/boss-drops'
 import type { BossProfitRow } from '../rows'
 
 const { getBossDropRecordsMock, replaceBossDropRecordsMock } = vi.hoisted(() => ({
@@ -13,7 +13,7 @@ const { getBossDropRecordsMock, replaceBossDropRecordsMock } = vi.hoisted(() => 
   replaceBossDropRecordsMock: vi.fn(),
 }))
 
-vi.mock('../../../storage/boss-drops', () => ({
+vi.mock('@core/storage/boss-drops', () => ({
   getBossDropRecords: getBossDropRecordsMock,
   replaceBossDropRecords: replaceBossDropRecordsMock,
 }))

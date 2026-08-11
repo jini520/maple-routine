@@ -7,9 +7,9 @@ import {
   getTrackedCharacterOcids,
   setLastSelectedCharacter,
   setTrackedCharacterOcids,
-} from '../../storage/character-selection'
-import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
-import { getCachedSchedulerState } from '../../storage/scheduler-cache'
+} from '@core/storage/character-selection'
+import { getCachedCharacterBasic } from '@core/storage/character-basic-cache'
+import { getCachedSchedulerState } from '@core/storage/scheduler-cache'
 import { compareByName } from '../onboarding/representative-character'
 import { useToastStore } from '../toast/store'
 import { seedManualTrackedContent } from '../tracking-mode/seed'
@@ -18,7 +18,7 @@ import {
   getManualTrackedContent,
   setManualTrackedContent,
   type ManualTrackedItem,
-} from '../../storage/manual-tracked-content'
+} from '@core/storage/manual-tracked-content'
 import { isGuildContent } from '@core/lib/content-category'
 import type { SchedulerContentTemplateEntry } from '@core/lib/manual-content-merge'
 import schedulerContentTemplate from '@core/data/scheduler-content-template.json'

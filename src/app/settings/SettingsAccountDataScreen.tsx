@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { ArrowLeft } from 'lucide-react'
-import type { CacheDataSelection } from '../../storage/cache-data'
+import type { CacheDataSelection } from '@core/storage/cache-data'
 import type { CacheDataSizes } from '../../features/settings/cache-data'
 import { clearCacheDataAndReload, loadCacheDataSizes } from '../../features/settings/cache-data'
 import { useSettingsStore } from '../../features/settings/store'

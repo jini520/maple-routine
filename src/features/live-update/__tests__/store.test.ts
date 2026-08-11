@@ -36,7 +36,7 @@ const { getLastRunBundleVersionMock, setLastRunBundleVersionMock } = vi.hoisted(
   setLastRunBundleVersionMock: vi.fn(),
 }))
 
-vi.mock('../../../storage/last-run-bundle-version', () => ({
+vi.mock('@core/storage/last-run-bundle-version', () => ({
   getLastRunBundleVersion: getLastRunBundleVersionMock,
   setLastRunBundleVersion: setLastRunBundleVersionMock,
 }))

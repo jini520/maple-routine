@@ -1,6 +1,6 @@
 import { Capacitor } from '@capacitor/core'
 import { CapacitorSQLite, SQLiteConnection } from '@capacitor-community/sqlite'
-import type { SqliteDbConnection, SqlitePort } from '../ports'
+import type { SqliteDbConnection, SqlitePort } from '@core/storage/ports'
 
 /**
  * `SqlitePort` 의 Capacitor 구현([[ADR-127]]).

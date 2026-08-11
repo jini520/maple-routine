@@ -58,7 +58,7 @@ vi.mock('@core/nexon/character', () => ({
   fetchCharacterList: fetchCharacterListMock,
 }))
 
-vi.mock('../../../storage/api-key', () => ({
+vi.mock('@core/storage/api-key', () => ({
   getAuthConfig: getAuthConfigMock,
   setApiKey: setApiKeyMock,
   setSelectedAccountId: setSelectedAccountIdMock,
@@ -82,12 +82,12 @@ vi.mock('../../tracking-mode/store', () => ({
   },
 }))
 
-vi.mock('../../../storage/character-selection', () => ({
+vi.mock('@core/storage/character-selection', () => ({
   setTrackedCharacterOcids: setTrackedCharacterOcidsMock,
   getTrackedCharacterOcids: getTrackedCharacterOcidsMock,
 }))
 
-vi.mock('../../../storage/tracking-mode', () => ({
+vi.mock('@core/storage/tracking-mode', () => ({
   getTrackingMode: getTrackingModeMock,
   setTrackingMode: setTrackingModeMock,
 }))

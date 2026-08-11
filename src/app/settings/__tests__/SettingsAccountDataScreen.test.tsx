@@ -5,21 +5,21 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { SettingsAccountDataScreen } from '../SettingsAccountDataScreen'
 import { useSettingsStore } from '../../../features/settings/store'
-import { consumePendingNotice } from '../../../storage/pending-notice'
-import { clearCacheData, getCacheDataSizes } from '../../../storage/cache-data'
-import { closeBossProfitDb } from '../../../storage/sqlite/db'
+import { consumePendingNotice } from '@core/storage/pending-notice'
+import { clearCacheData, getCacheDataSizes } from '@core/storage/cache-data'
+import { closeBossProfitDb } from '@core/storage/sqlite/db'
 import { showSplashScreen } from '../../../native/splash-screen'
 
 vi.mock('../../../features/settings/store', () => ({
   useSettingsStore: vi.fn(),
 }))
 
-vi.mock('../../../storage/cache-data', () => ({
+vi.mock('@core/storage/cache-data', () => ({
   clearCacheData: vi.fn(),
   getCacheDataSizes: vi.fn(async () => ({ general: 0, bossRecords: 0 })),
 }))
 
-vi.mock('../../../storage/sqlite/db', () => ({
+vi.mock('@core/storage/sqlite/db', () => ({
   closeBossProfitDb: vi.fn(async () => {}),
 }))
 

@@ -4,8 +4,8 @@
 // 마이그레이션이 함께 산다 — 그 둘은 같은 문제의 앞뒤라 한 모듈이다.
 
 import { planConfirmedDifficultyDropMigration, pruneUnobtainableDrops } from '@core/lib/boss-drops'
-import { getBossDropRecords, replaceBossDropRecords } from '../../storage/boss-drops'
-import type { BossDropRecord } from '../../storage/boss-drops'
+import { getBossDropRecords, replaceBossDropRecords } from '@core/storage/boss-drops'
+import type { BossDropRecord } from '@core/storage/boss-drops'
 import type { RecordedDrop } from '@core/types/drops'
 import { dropRowKey, toRecordedDrop } from './rows'
 import { withSqliteFallback } from './sqlite-guards'

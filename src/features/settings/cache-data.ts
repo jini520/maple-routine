@@ -1,7 +1,7 @@
-import type { CacheDataGroupId, CacheDataSelection } from '../../storage/cache-data'
-import { clearCacheData, getCacheDataSizes } from '../../storage/cache-data'
-import { setPendingNotice } from '../../storage/pending-notice'
-import { closeBossProfitDb } from '../../storage/sqlite/db'
+import type { CacheDataGroupId, CacheDataSelection } from '@core/storage/cache-data'
+import { clearCacheData, getCacheDataSizes } from '@core/storage/cache-data'
+import { setPendingNotice } from '@core/storage/pending-notice'
+import { closeBossProfitDb } from '@core/storage/sqlite/db'
 import { showSplashScreen } from '../../native/splash-screen'
 
 // 캐시 데이터 삭제의 **오케스트레이션** — 화면에서 이리로 옮겼다(ADR-094 결정 6).

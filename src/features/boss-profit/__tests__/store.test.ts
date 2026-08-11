@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CharacterScheduleSync } from '../../schedule-sync/schedule-sync'
 import type { BossContent, SchedulerCharacterState } from '@core/types'
-import type { BossProfitRecord } from '../../../storage/boss-profit'
-import type { CachedSchedulerEntry } from '../../../storage/scheduler-cache'
+import type { BossProfitRecord } from '@core/storage/boss-profit'
+import type { CachedSchedulerEntry } from '@core/storage/scheduler-cache'
 
 const {
   syncSchedulesMock,
@@ -48,11 +48,11 @@ vi.mock('../../schedule-sync/schedule-sync', async (importOriginal) => ({
   syncSchedules: syncSchedulesMock,
 }))
 
-vi.mock('../../../storage/character-selection', () => ({
+vi.mock('@core/storage/character-selection', () => ({
   getTrackedCharacterOcids: getTrackedCharacterOcidsMock,
 }))
 
-vi.mock('../../../storage/boss-profit', () => ({
+vi.mock('@core/storage/boss-profit', () => ({
   getBossProfitRecords: getBossProfitRecordsMock,
   // ADR-068 결정 5: 이전 게이트가 "이 기간 또는 더 과거에 기록이 있는가"를 SQL 부등호로 묻는다.
   hasBossProfitRecordsAtOrBefore: hasBossProfitRecordsAtOrBeforeMock,
@@ -60,24 +60,24 @@ vi.mock('../../../storage/boss-profit', () => ({
   upsertBossProfitRecord: upsertBossProfitRecordMock,
 }))
 
-vi.mock('../../../storage/boss-party-settings', () => ({
+vi.mock('@core/storage/boss-party-settings', () => ({
   getBossPartySize: getBossPartySizeMock,
 }))
 
-vi.mock('../../../storage/scheduler-cache', () => ({
+vi.mock('@core/storage/scheduler-cache', () => ({
   getCachedSchedulerState: getCachedSchedulerStateMock,
 }))
 
-vi.mock('../../../storage/character-basic-cache', () => ({
+vi.mock('@core/storage/character-basic-cache', () => ({
   getCachedCharacterBasic: getCachedCharacterBasicMock,
 }))
 
-vi.mock('../../../storage/boss-profit-period-checks', () => ({
+vi.mock('@core/storage/boss-profit-period-checks', () => ({
   isPeriodChecked: isPeriodCheckedMock,
   markPeriodChecked: markPeriodCheckedMock,
 }))
 
-vi.mock('../../../storage/api-key', () => ({
+vi.mock('@core/storage/api-key', () => ({
   getAuthConfig: getAuthConfigMock,
 }))
 
@@ -85,15 +85,15 @@ vi.mock('@core/nexon/schedule', () => ({
   fetchSchedulerCharacterState: fetchSchedulerCharacterStateMock,
 }))
 
-vi.mock('../../../storage/tracking-mode', () => ({
+vi.mock('@core/storage/tracking-mode', () => ({
   getTrackingMode: getTrackingModeMock,
 }))
 
-vi.mock('../../../storage/manual-tracked-content', () => ({
+vi.mock('@core/storage/manual-tracked-content', () => ({
   getManualTrackedContent: getManualTrackedContentMock,
 }))
 
-vi.mock('../../../storage/boss-drops', () => ({
+vi.mock('@core/storage/boss-drops', () => ({
   getBossDropRecords: getBossDropRecordsMock,
   replaceBossDropRecords: replaceBossDropRecordsMock,
 }))

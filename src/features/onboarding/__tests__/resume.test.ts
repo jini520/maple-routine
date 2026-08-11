@@ -13,15 +13,15 @@ const { getTrackingModeMock, setTrackingModeMock } = vi.hoisted(() => ({
   setTrackingModeMock: vi.fn(),
 }))
 
-vi.mock('../../../storage/api-key', () => ({
+vi.mock('@core/storage/api-key', () => ({
   getAuthConfig: getAuthConfigMock,
 }))
 
-vi.mock('../../../storage/character-selection', () => ({
+vi.mock('@core/storage/character-selection', () => ({
   getTrackedCharacterOcids: getTrackedCharacterOcidsMock,
 }))
 
-vi.mock('../../../storage/tracking-mode', () => ({
+vi.mock('@core/storage/tracking-mode', () => ({
   getTrackingMode: getTrackingModeMock,
   setTrackingMode: setTrackingModeMock,
 }))

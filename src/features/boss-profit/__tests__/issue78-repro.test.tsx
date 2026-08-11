@@ -20,7 +20,7 @@ import '@testing-library/jest-dom/vitest'
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
+import { installFakePreferences } from '@core/storage/__tests__/fake-preferences'
 
 const world = vi.hoisted(() => ({
   tracked: [] as string[],
@@ -47,11 +47,11 @@ const world = vi.hoisted(() => ({
   toasts: [] as string[],
 }))
 
-vi.mock('../../../storage/character-selection', () => ({
+vi.mock('@core/storage/character-selection', () => ({
   getTrackedCharacterOcids: async () => world.tracked,
 }))
 
-vi.mock('../../../storage/boss-profit', () => ({
+vi.mock('@core/storage/boss-profit', () => ({
   getBossProfitRecords: async (ocids: string[], periodKeys: string[]) =>
     world.records.filter((r) => ocids.includes(r.ocid) && periodKeys.includes(r.periodKey)),
   // SQL의 부등호 비교를 그대로 옮긴다(ADR-068 결정 5) — 월간 탭은 그 달의 weekly 기록도 함께 본다.
@@ -86,7 +86,7 @@ vi.mock('../../../storage/boss-profit', () => ({
   },
 }))
 
-vi.mock('../../../storage/boss-profit-period-checks', () => ({
+vi.mock('@core/storage/boss-profit-period-checks', () => ({
   isPeriodChecked: async (ocid: string, cycle: string, periodKey: string) =>
     world.checks.has(`${ocid}|${cycle}|${periodKey}`),
   markPeriodChecked: async (ocid: string, cycle: string, periodKey: string) => {
@@ -95,21 +95,21 @@ vi.mock('../../../storage/boss-profit-period-checks', () => ({
   },
 }))
 
-vi.mock('../../../storage/boss-party-settings', () => ({ getBossPartySize: async () => null }))
+vi.mock('@core/storage/boss-party-settings', () => ({ getBossPartySize: async () => null }))
 
-vi.mock('../../../storage/boss-drops', () => ({
+vi.mock('@core/storage/boss-drops', () => ({
   getBossDropRecords: async () => [],
   replaceBossDropRecords: async () => undefined,
 }))
 
-vi.mock('../../../storage/scheduler-cache', () => ({
+vi.mock('@core/storage/scheduler-cache', () => ({
   getCachedSchedulerState: async (ocid: string) => world.schedulerCache.get(ocid) ?? null,
   setCachedSchedulerState: async (ocid: string, entry: { state: unknown; syncedAt: string }) => {
     world.schedulerCache.set(ocid, entry)
   },
 }))
 
-vi.mock('../../../storage/character-basic-cache', () => ({
+vi.mock('@core/storage/character-basic-cache', () => ({
   getCachedCharacterBasic: async (ocid: string) => world.basicCache.get(ocid) ?? null,
   setCachedCharacterBasic: async (ocid: string, entry: { profile: unknown; cachedAt: string }) => {
     world.basicCache.set(ocid, entry)
@@ -117,20 +117,20 @@ vi.mock('../../../storage/character-basic-cache', () => ({
   getAllCachedCharacterBasicOcids: async () => [...world.basicCache.keys()],
 }))
 
-vi.mock('../../../storage/shared-progress-cache', () => ({
+vi.mock('@core/storage/shared-progress-cache', () => ({
   getWorldSharedProgress: async () => ({}),
   getAccountSharedProgress: async () => ({}),
   setWorldSharedProgressEntry: async () => undefined,
   setAccountSharedProgressEntry: async () => undefined,
 }))
 
-vi.mock('../../../storage/api-key', () => ({
+vi.mock('@core/storage/api-key', () => ({
   getAuthConfig: async () => ({ apiKey: 'dummy-key', selectedAccountId: 'account-1' }),
 }))
 
-vi.mock('../../../storage/tracking-mode', () => ({ getTrackingMode: async () => 'auto' }))
+vi.mock('@core/storage/tracking-mode', () => ({ getTrackingMode: async () => 'auto' }))
 
-vi.mock('../../../storage/manual-tracked-content', () => ({ getManualTrackedContent: async () => [] }))
+vi.mock('@core/storage/manual-tracked-content', () => ({ getManualTrackedContent: async () => [] }))
 
 vi.mock('@core/nexon/character', () => ({
   fetchCharacterList: async () => [{ accountId: 'account-1', characters: world.characters }],

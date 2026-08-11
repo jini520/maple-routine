@@ -1,7 +1,7 @@
 // 가격 기록 화면의 상태([[ADR-124]] 결정 8). 한 주를 놓고 값을 매기는 **쓰기** 화면이라,
 // 히스토리(읽기 전용)와 달리 저장 경로가 함께 검증돼야 한다.
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { BossDropRecord } from '../../../storage/boss-drops'
+import type { BossDropRecord } from '@core/storage/boss-drops'
 
 const {
   getBossDropRecordsMock,
@@ -17,15 +17,15 @@ const {
   getCachedCharacterBasicMock: vi.fn(),
 }))
 
-vi.mock('../../../storage/boss-drops', () => ({
+vi.mock('@core/storage/boss-drops', () => ({
   getBossDropRecords: getBossDropRecordsMock,
   replaceBossDropRecords: replaceBossDropRecordsMock,
 }))
-vi.mock('../../../storage/boss-profit', () => ({ getBossProfitRecords: getBossProfitRecordsMock }))
-vi.mock('../../../storage/character-selection', () => ({
+vi.mock('@core/storage/boss-profit', () => ({ getBossProfitRecords: getBossProfitRecordsMock }))
+vi.mock('@core/storage/character-selection', () => ({
   getTrackedCharacterOcids: getTrackedCharacterOcidsMock,
 }))
-vi.mock('../../../storage/character-basic-cache', () => ({
+vi.mock('@core/storage/character-basic-cache', () => ({
   getCachedCharacterBasic: getCachedCharacterBasicMock,
 }))
 

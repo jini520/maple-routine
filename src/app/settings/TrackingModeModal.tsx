@@ -3,7 +3,7 @@ import { Modal } from '../../components/organisms/Modal/Modal'
 import { MapleSpinner } from '../../components/atoms/MapleSpinner/MapleSpinner'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { TrackingModeSelector } from './TrackingModeSelector'
-import type { TrackingMode } from '../../storage/tracking-mode'
+import type { TrackingMode } from '@core/storage/tracking-mode'
 import { Button } from '../../components/atoms/Button/Button'
 
 export interface TrackingModeModalProps {

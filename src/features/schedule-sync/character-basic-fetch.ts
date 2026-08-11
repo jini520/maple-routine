@@ -1,5 +1,5 @@
 import { fetchCharacterBasic } from '@core/nexon/character'
-import { getCachedCharacterBasic, setCachedCharacterBasic } from '../../storage/character-basic-cache'
+import { getCachedCharacterBasic, setCachedCharacterBasic } from '@core/storage/character-basic-cache'
 import type { CharacterBasicProfile } from '@core/types'
 
 /**

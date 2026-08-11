@@ -1,4 +1,4 @@
-import { installFakePreferences } from './src/storage/__tests__/fake-preferences'
+import { installFakePreferences } from '@core/storage/__tests__/fake-preferences'
 import { installNoopNativePorts } from './src/native/__tests__/fake-native-ports'
 
 // 저장소 포트의 테스트 기본값([[ADR-127]]). 포트 역전 전에는 `@capacitor/preferences` 모듈이 어느

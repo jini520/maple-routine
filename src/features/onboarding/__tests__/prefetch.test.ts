@@ -29,12 +29,12 @@ vi.mock('@core/nexon/schedule', () => ({
 
 // ADR-113 결정 1: 예열이 공유 통과 지점(features/schedule-sync/character-basic-fetch)을 거치므로
 // 이제 캐시 **읽기**도 이 경로를 탄다 — 목이 그 함수를 안 주면 예열이 그 캐릭터를 실패로 삼킨다.
-vi.mock('../../../storage/character-basic-cache', () => ({
+vi.mock('@core/storage/character-basic-cache', () => ({
   getCachedCharacterBasic: getCachedCharacterBasicMock,
   setCachedCharacterBasic: setCachedCharacterBasicMock,
 }))
 
-vi.mock('../../../storage/scheduler-cache', () => ({
+vi.mock('@core/storage/scheduler-cache', () => ({
   setCachedSchedulerState: setCachedSchedulerStateMock,
 }))
 

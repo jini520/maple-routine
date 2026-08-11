@@ -1,15 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { getTrackedCharacterOcids } from '../../../storage/character-selection'
-import { getTrackingMode, setTrackingMode } from '../../../storage/tracking-mode'
+import { getTrackedCharacterOcids } from '@core/storage/character-selection'
+import { getTrackingMode, setTrackingMode } from '@core/storage/tracking-mode'
 import { seedManualTrackedContent } from '../seed'
 import { useTrackingModeStore } from '../store'
 
-vi.mock('../../../storage/tracking-mode', () => ({
+vi.mock('@core/storage/tracking-mode', () => ({
   getTrackingMode: vi.fn(),
   setTrackingMode: vi.fn(),
 }))
 
-vi.mock('../../../storage/character-selection', () => ({
+vi.mock('@core/storage/character-selection', () => ({
   getTrackedCharacterOcids: vi.fn(),
 }))
 

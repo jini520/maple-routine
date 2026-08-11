@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { getDropEffectEnabled, setDropEffectEnabled } from '../../../storage/drop-effect'
+import { getDropEffectEnabled, setDropEffectEnabled } from '@core/storage/drop-effect'
 import { useDropEffectStore } from '../store'
 
-vi.mock('../../../storage/drop-effect', () => ({
+vi.mock('@core/storage/drop-effect', () => ({
   getDropEffectEnabled: vi.fn(),
   setDropEffectEnabled: vi.fn(),
 }))

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Gamepad2, Info, ListChecks } from 'lucide-react'
-import type { TrackingMode } from '../../storage/tracking-mode'
+import type { TrackingMode } from '@core/storage/tracking-mode'
 import { TRACKING_MODE_OPTIONS } from '../../features/tracking-mode/copy'
 import { Button } from '../../components/atoms/Button/Button'
 

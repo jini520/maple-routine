@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { syncSchedules, type CharacterScheduleSync } from '../../schedule-sync/schedule-sync'
-import { setManualTrackedContent } from '../../../storage/manual-tracked-content'
+import { setManualTrackedContent } from '@core/storage/manual-tracked-content'
 import type {
   BossContent,
   BossDifficulty,
@@ -14,7 +14,7 @@ vi.mock('../../schedule-sync/schedule-sync', () => ({
   syncSchedules: vi.fn(),
 }))
 
-vi.mock('../../../storage/manual-tracked-content', () => ({
+vi.mock('@core/storage/manual-tracked-content', () => ({
   setManualTrackedContent: vi.fn(),
 }))
 

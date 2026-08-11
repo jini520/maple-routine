@@ -23,14 +23,14 @@ const { bridge } = vi.hoisted(() => ({
     }),
 }))
 
-vi.mock('../../../storage/character-selection', () => ({
+vi.mock('@core/storage/character-selection', () => ({
   getTrackedCharacterOcids: vi.fn(() => bridge(['ocid-1'])),
   getLastSelectedCharacter: vi.fn(() => bridge('ocid-1')),
   setTrackedCharacterOcids: vi.fn(() => bridge(undefined)),
   setLastSelectedCharacter: vi.fn(() => bridge(undefined)),
 }))
 
-vi.mock('../../../storage/scheduler-cache', () => ({
+vi.mock('@core/storage/scheduler-cache', () => ({
   getCachedSchedulerState: vi.fn(() =>
     bridge({
       state: {
@@ -52,16 +52,16 @@ vi.mock('../../../storage/scheduler-cache', () => ({
   ),
 }))
 
-vi.mock('../../../storage/character-basic-cache', () => ({
+vi.mock('@core/storage/character-basic-cache', () => ({
   getCachedCharacterBasic: vi.fn(() => bridge({ profile: { level: 275 } })),
 }))
 
-vi.mock('../../../storage/boss-party-settings', () => ({
+vi.mock('@core/storage/boss-party-settings', () => ({
   getBossPartySettings: vi.fn(() => bridge([])),
   setBossPartySize: vi.fn(() => bridge(undefined)),
 }))
 
-vi.mock('../../../storage/manual-tracked-content', () => ({
+vi.mock('@core/storage/manual-tracked-content', () => ({
   getManualTrackedContent: vi.fn(() => bridge([])),
   setManualTrackedContent: vi.fn(() => bridge(undefined)),
 }))

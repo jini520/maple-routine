@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // 포트 역전 후([[ADR-127]]) db.ts는 플러그인이 아니라 SqlitePort에만 의존한다 — 가로채는 지점이
-// `vi.mock('@capacitor-community/sqlite')` 에서 주입된 가짜 포트로 바뀌었을 뿐, 검증 대상(어떤
+// SQLite 플러그인 모듈 목에서 주입된 가짜 포트로 바뀌었을 뿐, 검증 대상(어떤
 // 인자로 커넥션을 여는가·stale 커넥션을 닫는가·스키마와 마이그레이션을 도는가)은 그대로다.
 // `retrieveConnection` 을 쓰지 않는다는 것은 이제 포트 표면에 그 연산이 없어 구조적으로 보장된다.
 const {
@@ -125,7 +125,7 @@ describe('getBossProfitDb', () => {
     expect(createConnectionMock).toHaveBeenCalledTimes(2)
   })
 
-  // 커넥션 매니저 인스턴스 자체를 한 번만 만드는 것은 이제 어댑터(adapters/capacitor-sqlite)의
+  // 커넥션 매니저 인스턴스 자체를 한 번만 만드는 것은 이제 어댑터(capacitor-sqlite)의
   // 몫이다 — db.ts가 지는 계약은 "같은 이름 커넥션을 두 번 열지 않는다" 하나로 남는다.
   it('여러 번 호출해도 커넥션을 한 번만 만든다(싱글턴)', async () => {
     const { getBossProfitDb } = await import('../db')
@@ -255,7 +255,7 @@ describe('closeBossProfitDb', () => {
 
   // ADR-117 결정 5: 여는 쪽에는 타임아웃이 있는데(withOpenTimeout, 10초) 닫는 쪽은 맨몸이었다.
   // 네이티브 closeConnection이 응답하지 않으면 이 함수가 영원히 resolve하지 않고, 이 뒤에 오는
-  // 리로드(CapacitorUpdater.set / window.location.reload)가 실행되지 못한다 — 그것이 곧 "주황
+  // 리로드(라이브 업데이트 set · 페이지 리로드)가 실행되지 못한다 — 그것이 곧 "주황
   // 스플래시 무한" 증상이다. 실기기에서 SQLite 네이티브 호출이 응답 없이 멈춘 사례가 둘 있다
   // ([[ADR-008]] 2026-07-17 정정, [[ADR-050]] 결정 2).
   //

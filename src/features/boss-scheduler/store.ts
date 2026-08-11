@@ -17,10 +17,10 @@ import {
   getTrackedCharacterOcids,
   setLastSelectedCharacter,
   setTrackedCharacterOcids,
-} from '../../storage/character-selection'
-import { getBossPartySettings, setBossPartySize } from '../../storage/boss-party-settings'
-import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
-import { getCachedSchedulerState } from '../../storage/scheduler-cache'
+} from '@core/storage/character-selection'
+import { getBossPartySettings, setBossPartySize } from '@core/storage/boss-party-settings'
+import { getCachedCharacterBasic } from '@core/storage/character-basic-cache'
+import { getCachedSchedulerState } from '@core/storage/scheduler-cache'
 import type { BossDifficulty } from '@core/types'
 import { compareByName } from '../onboarding/representative-character'
 import { useToastStore } from '../toast/store'
@@ -30,7 +30,7 @@ import {
   getManualTrackedContent,
   setManualTrackedContent,
   type ManualTrackedItem,
-} from '../../storage/manual-tracked-content'
+} from '@core/storage/manual-tracked-content'
 
 // ADR-055 결정 1·2: 추가 시도의 결과. 'duplicate'는 이미 같은 (보스, 난이도)를 추적 중이라
 // 아무 일도 일어나지 않은 경우이고, 'limitReached'는 주간 12개 한도가 막은 경우다.

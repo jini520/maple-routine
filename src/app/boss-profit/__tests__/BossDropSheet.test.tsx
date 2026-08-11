@@ -3,7 +3,7 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
+import { installFakePreferences } from '@core/storage/__tests__/fake-preferences'
 import { useDropEffectStore } from '../../../features/drop-effect/store'
 import { BossDropSheet } from '../BossDropSheet'
 

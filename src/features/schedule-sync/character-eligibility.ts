@@ -6,7 +6,7 @@ import {
   markScheduleProbeUnavailable,
   recordScheduleProbe,
   type ScheduleProbeLedger,
-} from '../../storage/schedule-probe-ledger'
+} from '@core/storage/schedule-probe-ledger'
 import type { SchedulerCharacterState } from '@core/types'
 import { toScheduleSyncError } from './schedule-sync'
 

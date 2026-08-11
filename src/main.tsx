@@ -5,7 +5,7 @@ import { defineCustomElements as defineJeepSqliteElements } from 'jeep-sqlite/lo
 import './index.css'
 import App from './App.tsx'
 import { useLiveUpdateStore } from './features/live-update/store'
-import { setPreferencesPort, setSqlitePort } from './storage/ports'
+import { setPreferencesPort, setSqlitePort } from '@core/storage/ports'
 import { capacitorPreferencesPort } from './storage/adapters/capacitor-preferences'
 import { capacitorSqlitePort } from './storage/adapters/capacitor-sqlite'
 import { installCapacitorNativePorts } from './native/adapters'

@@ -8,7 +8,10 @@ import {
   getCacheDataSizes,
 } from '../cache-data'
 import { BOSS_PROFIT_TABLE_NAMES, getBossProfitDb } from '../sqlite/db'
-import { clearCacheDataAndReload } from '../../features/settings/cache-data'
+// 한시적 core→app 참조([[ADR-127]]) — `features/settings/cache-data` 가 core 로 오면(step 6) 상대
+// 경로로 돌아온다. 이 파일이 검사하는 「닫기 → 커버 → 리로드」 순서(ADR-117 결정 8)와 storage 쪽
+// 삭제 범위(ADR-052·058)는 같은 계약의 앞뒤라 떼어 놓지 않는다.
+import { clearCacheDataAndReload } from '../../../../../src/features/settings/cache-data'
 
 // clearCacheDataAndReload의 "닫기 → 커버 → 리로드" 순서를 잡기 위한 공유 호출 기록(ADR-117 결정 8).
 // 각 mock이 호출되는 시점에 이름을 push하므로 배열 자체가 곧 실행 순서다 — toHaveBeenCalled로는
@@ -39,7 +42,9 @@ vi.mock('../sqlite/db', async (importOriginal) => ({
   closeBossProfitDb: closeDbMock,
 }))
 
-vi.mock('../../native/splash-screen', () => ({ showSplashScreen: showSplashMock }))
+// 위 import와 같은 한시적 참조다 — `features/settings/cache-data` 가 부르는 그 모듈을 가리켜야
+// 목이 걸린다(경로가 어긋나면 실물이 로드돼 커버가 진짜로 올라간다).
+vi.mock('../../../../../src/native/splash-screen', () => ({ showSplashScreen: showSplashMock }))
 
 const KEEP_KEY_NAMES = ['apiKey', 'selectedAccountId', 'theme', 'trackingMode', 'dropEffect']
 

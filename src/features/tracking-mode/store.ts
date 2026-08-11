@@ -1,6 +1,6 @@
 import { create } from 'zustand'
-import { getTrackedCharacterOcids } from '../../storage/character-selection'
-import { getTrackingMode, setTrackingMode, type TrackingMode } from '../../storage/tracking-mode'
+import { getTrackedCharacterOcids } from '@core/storage/character-selection'
+import { getTrackingMode, setTrackingMode, type TrackingMode } from '@core/storage/tracking-mode'
 import { seedManualTrackedContent } from './seed'
 
 export interface TrackingModeStore {

@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
+import { installFakePreferences } from '@core/storage/__tests__/fake-preferences'
 import { NexonBadRequestError, NexonRateLimitError } from '@core/nexon/errors'
 import {
   getAllCachedCharacterBasicOcids,
   getCachedCharacterBasic,
   setCachedCharacterBasic,
-} from '../../../storage/character-basic-cache'
+} from '@core/storage/character-basic-cache'
 import type { CharacterBasicProfile } from '@core/types'
 import { CHARACTER_BASIC_TTL_MS, fetchCharacterBasicCached } from '../character-basic-fetch'
 

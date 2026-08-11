@@ -51,7 +51,7 @@ vi.mock('@capgo/capacitor-updater', () => ({
 
 vi.mock('@capacitor/network', () => ({ Network: { getStatus: networkGetStatusMock } }))
 
-vi.mock('../../storage/sqlite/db', () => ({ closeBossProfitDb: closeBossProfitDbMock }))
+vi.mock('@core/storage/sqlite/db', () => ({ closeBossProfitDb: closeBossProfitDbMock }))
 
 vi.mock('../splash-screen', () => ({ showSplashScreen: showSplashScreenMock }))
 

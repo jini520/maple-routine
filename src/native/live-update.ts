@@ -1,4 +1,4 @@
-import { closeBossProfitDb } from '../storage/sqlite/db'
+import { closeBossProfitDb } from '@core/storage/sqlite/db'
 import { getLiveUpdatePort, type NetworkType } from './ports'
 import { showSplashScreen } from './splash-screen'
 

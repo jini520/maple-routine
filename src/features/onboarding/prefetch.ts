@@ -1,5 +1,5 @@
 import { fetchSchedulerCharacterState } from '@core/nexon/schedule'
-import { setCachedSchedulerState } from '../../storage/scheduler-cache'
+import { setCachedSchedulerState } from '@core/storage/scheduler-cache'
 import { fetchCharacterBasicCached } from '../schedule-sync/character-basic-fetch'
 import { resolveCharacterEligibility } from '../schedule-sync/character-eligibility'
 import { markSyncAttemptedThisRun } from '../schedule-sync/sync-run-state'

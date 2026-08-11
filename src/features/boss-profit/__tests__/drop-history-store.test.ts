@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { BossDropRecord } from '../../../storage/boss-drops'
+import type { BossDropRecord } from '@core/storage/boss-drops'
 
 const {
   getAllBossDropRecordsMock,
@@ -13,16 +13,16 @@ const {
   getCachedCharacterBasicMock: vi.fn(),
 }))
 
-vi.mock('../../../storage/boss-drops', () => ({
+vi.mock('@core/storage/boss-drops', () => ({
   getAllBossDropRecords: getAllBossDropRecordsMock,
 }))
-vi.mock('../../../storage/boss-profit', () => ({
+vi.mock('@core/storage/boss-profit', () => ({
   getAllBossProfitRecordKeys: getAllBossProfitRecordKeysMock,
 }))
-vi.mock('../../../storage/character-selection', () => ({
+vi.mock('@core/storage/character-selection', () => ({
   getTrackedCharacterOcids: getTrackedCharacterOcidsMock,
 }))
-vi.mock('../../../storage/character-basic-cache', () => ({
+vi.mock('@core/storage/character-basic-cache', () => ({
   getCachedCharacterBasic: getCachedCharacterBasicMock,
 }))
 

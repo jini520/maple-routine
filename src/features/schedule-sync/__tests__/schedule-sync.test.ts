@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
+import { installFakePreferences } from '@core/storage/__tests__/fake-preferences'
 import type { CharacterPickerEntry, MapleAccount, MapleCharacter, SchedulerCharacterState } from '@core/types'
 import { NexonAuthError, NexonBadRequestError, NexonNetworkError, NexonRateLimitError } from '@core/nexon/errors'
 
@@ -50,22 +50,22 @@ vi.mock('@core/nexon/schedule', () => ({
   fetchSchedulerCharacterState: fetchSchedulerCharacterStateMock,
 }))
 
-vi.mock('../../../storage/api-key', () => ({
+vi.mock('@core/storage/api-key', () => ({
   getAuthConfig: getAuthConfigMock,
 }))
 
-vi.mock('../../../storage/scheduler-cache', () => ({
+vi.mock('@core/storage/scheduler-cache', () => ({
   getCachedSchedulerState: getCachedSchedulerStateMock,
   setCachedSchedulerState: setCachedSchedulerStateMock,
 }))
 
-vi.mock('../../../storage/character-basic-cache', () => ({
+vi.mock('@core/storage/character-basic-cache', () => ({
   getCachedCharacterBasic: getCachedCharacterBasicMock,
   setCachedCharacterBasic: setCachedCharacterBasicMock,
   getAllCachedCharacterBasicOcids: getAllCachedCharacterBasicOcidsMock,
 }))
 
-vi.mock('../../../storage/shared-progress-cache', () => ({
+vi.mock('@core/storage/shared-progress-cache', () => ({
   getWorldSharedProgress: getWorldSharedProgressMock,
   getAccountSharedProgress: getAccountSharedProgressMock,
   setWorldSharedProgressEntry: setWorldSharedProgressEntryMock,
@@ -672,7 +672,7 @@ describe('syncSchedules', () => {
       })
 
       it('그 날짜에 그 섹션이 있었다면 다시 부른다 — 원장은 값이 아니라 유무만 기억한다', async () => {
-        const { recordScheduleProbe } = await import('../../../storage/schedule-probe-ledger')
+        const { recordScheduleProbe } = await import('@core/storage/schedule-probe-ledger')
         await recordScheduleProbe('ocid-1', '2026-07-10', {
           kind: 'observed',
           hasCompletion: true,
@@ -703,7 +703,7 @@ describe('syncSchedules', () => {
       })
 
       it('조회 불가(OPENAPI00003)로 확정된 캐릭터는 백필 루프에 아예 들어가지 않는다', async () => {
-        const { markScheduleProbeUnavailable } = await import('../../../storage/schedule-probe-ledger')
+        const { markScheduleProbeUnavailable } = await import('@core/storage/schedule-probe-ledger')
         await markScheduleProbeUnavailable('ocid-1')
 
         const characters = [character('ocid-1')]
@@ -1264,7 +1264,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
   // access_flag: true 면 즉시 통과(충분조건), false 면 최근 14일 완료 기록을 한 번 더 본다.
   describe('후보 자격 — 활동 관측 (ADR-086 결정 3)', () => {
     async function primeLedger(ocid: string, dateKey: string, hasCompletion: boolean): Promise<void> {
-      const { recordScheduleProbe } = await import('../../../storage/schedule-probe-ledger')
+      const { recordScheduleProbe } = await import('@core/storage/schedule-probe-ledger')
       await recordScheduleProbe(ocid, dateKey, {
         kind: 'observed',
         hasCompletion,

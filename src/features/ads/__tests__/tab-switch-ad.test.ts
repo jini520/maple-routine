@@ -7,13 +7,13 @@ vi.mock('../../../native/ads', () => ({
   showInterstitial: vi.fn(async () => true),
 }))
 
-vi.mock('../../../storage/ads', () => ({
+vi.mock('@core/storage/ads', () => ({
   getLastAdShownAt: vi.fn(async () => null),
   setLastAdShownAt: vi.fn(async () => {}),
 }))
 
 const native = await import('../../../native/ads')
-const storage = await import('../../../storage/ads')
+const storage = await import('@core/storage/ads')
 const { AD_MIN_UPTIME_MS } = await import('../policy')
 const { maybeShowTabSwitchAd, __resetAdsForTest } = await import('../tab-switch-ad')
 

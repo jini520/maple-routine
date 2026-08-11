@@ -42,18 +42,18 @@ vi.mock('../../schedule-sync/schedule-sync', async (importOriginal) => ({
   syncSchedules: syncSchedulesMock,
 }))
 
-vi.mock('../../../storage/character-selection', () => ({
+vi.mock('@core/storage/character-selection', () => ({
   getTrackedCharacterOcids: getTrackedCharacterOcidsMock,
   setTrackedCharacterOcids: setTrackedCharacterOcidsMock,
   getLastSelectedCharacter: getLastSelectedCharacterMock,
   setLastSelectedCharacter: setLastSelectedCharacterMock,
 }))
 
-vi.mock('../../../storage/scheduler-cache', () => ({
+vi.mock('@core/storage/scheduler-cache', () => ({
   getCachedSchedulerState: getCachedSchedulerStateMock,
 }))
 
-vi.mock('../../../storage/character-basic-cache', () => ({
+vi.mock('@core/storage/character-basic-cache', () => ({
   getCachedCharacterBasic: getCachedCharacterBasicMock,
 }))
 
@@ -73,7 +73,7 @@ vi.mock('../../tracking-mode/seed', () => ({
   seedManualTrackedContent: seedManualTrackedContentMock,
 }))
 
-vi.mock('../../../storage/manual-tracked-content', () => ({
+vi.mock('@core/storage/manual-tracked-content', () => ({
   getManualTrackedContent: getManualTrackedContentMock,
   setManualTrackedContent: setManualTrackedContentMock,
 }))

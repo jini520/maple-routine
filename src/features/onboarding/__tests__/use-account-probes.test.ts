@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
+import { installFakePreferences } from '@core/storage/__tests__/fake-preferences'
 import type { CharacterBasicProfile, MapleAccount } from '@core/types'
 
 const { getAuthConfigMock } = vi.hoisted(() => ({ getAuthConfigMock: vi.fn() }))
-vi.mock('../../../storage/api-key', () => ({ getAuthConfig: getAuthConfigMock }))
+vi.mock('@core/storage/api-key', () => ({ getAuthConfig: getAuthConfigMock }))
 
 const { fetchCharacterBasicMock } = vi.hoisted(() => ({ fetchCharacterBasicMock: vi.fn() }))
 vi.mock('@core/nexon/character', () => ({ fetchCharacterBasic: fetchCharacterBasicMock }))
@@ -18,7 +18,7 @@ import { NexonBadRequestError, NexonNetworkError, NexonRateLimitError } from '@c
 import {
   getAllCachedCharacterBasicOcids,
   setCachedCharacterBasic,
-} from '../../../storage/character-basic-cache'
+} from '@core/storage/character-basic-cache'
 import { useAccountProbes } from '../use-account-probes'
 
 function profile(overrides: Partial<CharacterBasicProfile> = {}): CharacterBasicProfile {

@@ -7,9 +7,9 @@ import {
   removeApiKey,
   setApiKey,
   setSelectedAccountId,
-} from '../../storage/api-key'
-import { setTrackedCharacterOcids } from '../../storage/character-selection'
-import { type TrackingMode } from '../../storage/tracking-mode'
+} from '@core/storage/api-key'
+import { setTrackedCharacterOcids } from '@core/storage/character-selection'
+import { type TrackingMode } from '@core/storage/tracking-mode'
 import { useToastStore } from '../toast/store'
 import { formatOnboardingError } from './format'
 import { seedManualTrackedContent } from '../tracking-mode/seed'

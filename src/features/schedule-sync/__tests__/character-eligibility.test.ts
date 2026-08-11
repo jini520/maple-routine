@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
+import { installFakePreferences } from '@core/storage/__tests__/fake-preferences'
 import { NexonBadRequestError, NexonNetworkError } from '@core/nexon/errors'
-import { clearScheduleProbeLedger, getScheduleProbeLedger } from '../../../storage/schedule-probe-ledger'
+import { clearScheduleProbeLedger, getScheduleProbeLedger } from '@core/storage/schedule-probe-ledger'
 import type { SchedulerCharacterState } from '@core/types'
 import { resolveCharacterEligibility } from '../character-eligibility'
 

@@ -39,7 +39,7 @@ vi.mock('@core/nexon/character', () => ({
   fetchCharacterList: fetchCharacterListMock,
 }))
 
-vi.mock('../../../storage/api-key', () => ({
+vi.mock('@core/storage/api-key', () => ({
   getAuthConfig: getAuthConfigMock,
   setApiKey: setApiKeyMock,
   setSelectedAccountId: setSelectedAccountIdMock,
@@ -55,7 +55,7 @@ vi.mock('../../onboarding/store', () => ({
   },
 }))
 
-vi.mock('../../../storage/character-selection', () => ({
+vi.mock('@core/storage/character-selection', () => ({
   setTrackedCharacterOcids: setTrackedCharacterOcidsMock,
 }))
 

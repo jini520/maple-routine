@@ -1,4 +1,4 @@
-import type { TrackingMode } from '../../storage/tracking-mode'
+import type { TrackingMode } from '@core/storage/tracking-mode'
 
 export interface TrackingModeOptionCopy {
   mode: TrackingMode

@@ -13,7 +13,7 @@ import { hideSplashScreen } from '../../native/splash-screen'
 import {
   getLastRunBundleVersion,
   setLastRunBundleVersion,
-} from '../../storage/last-run-bundle-version'
+} from '@core/storage/last-run-bundle-version'
 
 // idle: 확인 전 / checking: 확인 중 / up-to-date: 최신 / update-available: 새 버전 있음(모달)
 // store-required: 스토어 업데이트 필요 / confirm-cellular: 셀룰러 데이터 확인 대기 / downloading: 진행 중

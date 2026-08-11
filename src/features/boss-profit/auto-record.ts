@@ -7,9 +7,9 @@
 //
 // 두 경로가 다른 것은 **"이 행의 출처가 지금의 사실인가"** 하나뿐이라, 그 자리만 술어로 주입받는다.
 
-import { getBossPartySize } from '../../storage/boss-party-settings'
-import { upsertBossProfitRecord, type BossProfitRecord } from '../../storage/boss-profit'
-import type { BossDropRecord } from '../../storage/boss-drops'
+import { getBossPartySize } from '@core/storage/boss-party-settings'
+import { upsertBossProfitRecord, type BossProfitRecord } from '@core/storage/boss-profit'
+import type { BossDropRecord } from '@core/storage/boss-drops'
 import { migrateDropsToConfirmedDifficulty } from './drops-loader'
 import type { BossProfitRow } from './rows'
 import { withSqliteFallback } from './sqlite-guards'

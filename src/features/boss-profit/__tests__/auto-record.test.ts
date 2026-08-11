@@ -4,8 +4,8 @@
 // 조회 실패를 "기록 없음"으로 읽으면 사용자가 저장한 파티원 수가 1로 덮인다) 가드 하나하나에
 // 테스트를 붙인다. 전에는 스토어를 거쳐야만 이 경우들을 만들 수 있었다.
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { BossProfitRecord } from '../../../storage/boss-profit'
-import type { BossDropRecord } from '../../../storage/boss-drops'
+import type { BossProfitRecord } from '@core/storage/boss-profit'
+import type { BossDropRecord } from '@core/storage/boss-drops'
 import type { BossProfitRow } from '../rows'
 
 const { getBossPartySizeMock, upsertBossProfitRecordMock, migrateDropsMock } = vi.hoisted(() => ({
@@ -14,11 +14,11 @@ const { getBossPartySizeMock, upsertBossProfitRecordMock, migrateDropsMock } = v
   migrateDropsMock: vi.fn(),
 }))
 
-vi.mock('../../../storage/boss-party-settings', () => ({
+vi.mock('@core/storage/boss-party-settings', () => ({
   getBossPartySize: getBossPartySizeMock,
 }))
 
-vi.mock('../../../storage/boss-profit', () => ({
+vi.mock('@core/storage/boss-profit', () => ({
   upsertBossProfitRecord: upsertBossProfitRecordMock,
 }))
 

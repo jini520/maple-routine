@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { Modal } from '../../components/organisms/Modal/Modal'
 import { MapleSpinner } from '../../components/atoms/MapleSpinner/MapleSpinner'
 import { formatBytes } from '@core/lib/format-bytes'
-import type { CacheDataGroupId, CacheDataSelection } from '../../storage/cache-data'
+import type { CacheDataGroupId, CacheDataSelection } from '@core/storage/cache-data'
 import { Button } from '../../components/atoms/Button/Button'
 
 // 공용 Modal을 쓴다 — 직접 오버레이를 그리면 호출부의 space-y-* margin에 fixed inset-0 높이가

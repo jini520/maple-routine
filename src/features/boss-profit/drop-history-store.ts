@@ -8,10 +8,10 @@ import {
   type DropHistoryRecord,
   type ValuableDroughtSummary,
 } from '@core/lib/drop-history'
-import { getAllBossDropRecords, type BossDropRecord } from '../../storage/boss-drops'
-import { getAllBossProfitRecordKeys } from '../../storage/boss-profit'
-import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
-import { getTrackedCharacterOcids } from '../../storage/character-selection'
+import { getAllBossDropRecords, type BossDropRecord } from '@core/storage/boss-drops'
+import { getAllBossProfitRecordKeys } from '@core/storage/boss-profit'
+import { getCachedCharacterBasic } from '@core/storage/character-basic-cache'
+import { getTrackedCharacterOcids } from '@core/storage/character-selection'
 
 // 드롭 획득 히스토리(전 기간) 상태([[ADR-071]], 이슈 #54). **읽기 전용이다** — 삭제·수정은 드롭 입력
 // 시트(보스 수익 화면)만 하고 여기서는 DB에 쓰지 않는다.

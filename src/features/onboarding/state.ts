@@ -1,5 +1,5 @@
 import type { MapleAccount } from '@core/types'
-import type { TrackingMode } from '../../storage/tracking-mode'
+import type { TrackingMode } from '@core/storage/tracking-mode'
 
 export type OnboardingStatus =
   | 'awaitingApiKey'

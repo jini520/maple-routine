@@ -10,11 +10,11 @@ const { getBossProfitRecordsMock, getBossDropRecordsMock } = vi.hoisted(() => ({
   getBossDropRecordsMock: vi.fn(),
 }))
 
-vi.mock('../../../storage/boss-profit', () => ({
+vi.mock('@core/storage/boss-profit', () => ({
   getBossProfitRecords: getBossProfitRecordsMock,
   getAllBossProfitRecordKeys: vi.fn(),
 }))
-vi.mock('../../../storage/boss-drops', () => ({
+vi.mock('@core/storage/boss-drops', () => ({
   getBossDropRecords: getBossDropRecordsMock,
 }))
 

@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { getTheme, setTheme } from '../../../storage/theme'
+import { getTheme, setTheme } from '@core/storage/theme'
 import { setStatusBarStyle } from '../../../native/status-bar'
 import { setNavigationBarStyle } from '../../../native/system-bars'
 import { useThemeStore } from '../store'
 
-vi.mock('../../../storage/theme', () => ({
+vi.mock('@core/storage/theme', () => ({
   getTheme: vi.fn(),
   setTheme: vi.fn(),
 }))
