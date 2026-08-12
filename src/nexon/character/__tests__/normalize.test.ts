@@ -64,6 +64,58 @@ describe('normalizeCharacterList', () => {
   it('account_list가 빈 배열이면 빈 배열을 반환한다', () => {
     expect(normalizeCharacterList({ account_list: [] })).toEqual([])
   })
+
+  // ADR-127: 캐릭터가 0명인 메이플 ID는 **고를 수 있는 계정이 아니다**. 그대로 올리면 계정 선택
+  // 화면이 대표 캐릭터를 세우지 못해 렌더 중에 던지고, 키가 이미 저장된 뒤라 재시작해도 같은
+  // 단계로 되돌아온다(영구 크래시, 2026-08-12 테스터 보고).
+  it('character_list가 빈 계정은 걸러낸다', () => {
+    const wire: NexonCharacterListResponse = {
+      account_list: [
+        {
+          account_id: 'empty-account',
+          character_list: [],
+        },
+        {
+          account_id: 'da9b2f2...',
+          character_list: [
+            {
+              ocid: '50119a0...',
+              character_name: '내옆에최성일',
+              world_name: '베라',
+              character_class: '아크메이지(썬,콜)',
+              character_level: 211,
+            },
+          ],
+        },
+      ],
+    }
+
+    expect(normalizeCharacterList(wire)).toEqual([
+      {
+        accountId: 'da9b2f2...',
+        characters: [
+          {
+            ocid: '50119a0...',
+            name: '내옆에최성일',
+            world: '베라',
+            jobClass: '아크메이지(썬,콜)',
+            level: 211,
+          },
+        ],
+      },
+    ])
+  })
+
+  it('모든 계정의 character_list가 비면 빈 배열이 된다', () => {
+    expect(
+      normalizeCharacterList({
+        account_list: [
+          { account_id: 'a', character_list: [] },
+          { account_id: 'b', character_list: [] },
+        ],
+      }),
+    ).toEqual([])
+  })
 })
 
 describe('normalizeCharacterBasic', () => {
