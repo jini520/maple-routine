@@ -22,7 +22,7 @@ import { useTrackingModeStore } from '@core/features/tracking-mode/store'
 
 import { NavigationHarness } from './harness'
 import { installMemoryPreferences } from './memory-preferences'
-import { normalizeNavigationTree } from './normalize-tree'
+import { normalizeRenderedTree } from '../../__tests__/normalize-tree'
 import { FEATURE_GUIDE_ROUTE_NAMES, STACK_ROUTE_NAMES, type RootStackParamList } from '../routes'
 
 jest.mock('@core/features/ads/tab-switch-ad', () => ({
@@ -189,12 +189,12 @@ describe('렌더 트리 스냅샷', () => {
   it('탭 골격', async () => {
     useOnboardingStore.setState({ status: 'completed' })
 
-    expect(normalizeNavigationTree((await render(<NavigationHarness />)).toJSON())).toMatchSnapshot()
+    expect(normalizeRenderedTree((await render(<NavigationHarness />)).toJSON())).toMatchSnapshot()
   })
 
   it('온보딩 골격', async () => {
     useOnboardingStore.setState({ status: 'awaitingApiKey' })
 
-    expect(normalizeNavigationTree((await render(<NavigationHarness />)).toJSON())).toMatchSnapshot()
+    expect(normalizeRenderedTree((await render(<NavigationHarness />)).toJSON())).toMatchSnapshot()
   })
 })

@@ -1,6 +1,10 @@
 /**
  * 스냅샷을 찍기 전에 **실행마다 달라지는 값**을 지운다.
  *
+ * **step 7 에서 `navigation/__tests__/` 밖으로 나왔다** — 보스 수익 화면이 `ScreenScroll` 에
+ * `header`·`refreshControl` 을 **엘리먼트로** 넘겨 두 번째 호출부가 됐고, 그 순간 이름의
+ * "Navigation" 이 사실과 어긋났다(`MediaCardArt` 가 step 5 에서 올라간 것과 같은 이유).
+ *
  * `react-native-screens` 의 `RNSScreen` 은 `screenId` 로 nanoid 를 달아(`Tabs-li8hgy1X8G8eOXrt6sInC`)
  * 같은 트리를 두 번 찍어도 diff 가 난다. 그대로 두면 스냅샷이 **매번 빨개져 아무도 안 읽게 되고**,
  * 그러면 이 기준선이 답하기로 한 질문(*"앞으로 안 바뀌는가"*)에 답할 수 없다.
@@ -39,9 +43,9 @@ export interface RenderedNode {
   children: (RenderedNode | string)[] | null
 }
 
-export type NavigationTree = RenderedNode | string | null
+export type RenderedTree = RenderedNode | string | null
 
-export function normalizeNavigationTree(node: NavigationTree): NavigationTree {
+export function normalizeRenderedTree(node: RenderedTree): RenderedTree {
   if (node === null || typeof node === 'string') return node
 
   const props: Record<string, unknown> = { ...node.props }
@@ -55,6 +59,6 @@ export function normalizeNavigationTree(node: NavigationTree): NavigationTree {
   return {
     ...node,
     props,
-    children: node.children?.map((child) => normalizeNavigationTree(child) as RenderedNode | string) ?? null,
+    children: node.children?.map((child) => normalizeRenderedTree(child) as RenderedNode | string) ?? null,
   }
 }
