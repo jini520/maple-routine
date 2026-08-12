@@ -198,7 +198,8 @@
     },
     {
       "dir": "rn-screens",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-08-13T06:21:12+0900"
     }
   ]
 }

@@ -65,11 +65,15 @@
 
 ### 2.1 최상위
 
-| 파일 | ADR 계약 |
-|---|---|
-| `App.tsx` (573줄) | 스택·탭·라우팅·광고 인터셉터 — **분해 대상**, 아래 참조 |
-| `ApiKeyNoticeModal.tsx` | 114, 115, 116 |
-| `UpdatePromptModal.tsx` | 027, 061, 065, 117, 119, 125, 126 |
+**셋 다 옮겼다**(4단계 step 0, 2026-08-12 — `packages/app-rn/App.tsx` · `src/app/`). 각 행의 ADR 을
+다시 읽고 그 동작이 새 코드에 있음을 확인한 결과가 «확인» 열이고, 웹이 하던 것과의 **전수 대조표**는
+[README «4-0단계 결과»](./README.md) 에 있다.
+
+| 파일 | ADR 계약 | 확인 |
+|---|---|---|
+| `App.tsx` (573줄) | 스택·탭·라우팅·광고 인터셉터 — **분해 대상**, 아래 참조 | 부팅 순서는 `src/app/AppShell.tsx`, 프로바이더·에러 경계는 `App.tsx`, 나머지는 3-2단계가 이미 가져갔다. 순서는 `src/__tests__/boot-order.test.tsx` 가 계약으로 든다 |
+| `ApiKeyNoticeModal.tsx` | 114, 115, 116 | 114 결정 1(단계를 판정하지 않는다)·결정 4(모달은 처방까지) ✅ / 115 결정 10(닫을 수 없다·확인해야 이동) ✅ — 이동 수단만 갈렸다(라우트 가드 → **화면 목록 교체**, 3-2단계) / 116 결정 1(429 가 같은 사슬·문구만 갈림)·「구현하며 정한 것」의 falsy 가드 ✅ |
+| `UpdatePromptModal.tsx` | 027, 061, 065, 117, 119, 125, 126 | 상태 아홉·문구·분기 전부 옮겼고 **마운트만 없다**(OTA 미연결 — README). 027 동의형 흐름 ✅ / 061 결정 1·2·6(결정형 진행률은 `ProgressBar`, 적용 중은 스윕 스피너) ✅ / 065 결정 2(`check-error` 는 모달 아님 · `GHOST_*` 축소를 네 분기가 공유) ✅ / 117 결정 1·7(`apply-error` 는 다시 받지 않고 `apply()` 만 · `applying` 은 버튼 0개) ✅ / 126 결정 1·6·7(받기 전 아코디언 · 없으면 버튼째 없음 · `ready-to-apply` 엔 안 붙음)·결정 4(`updated` 는 개발 노트로 이동) ✅ — **119·125 는 이 모달 밖**(개발 노트·기능 설명 화면, step 3) |
 
 `App.tsx` 는 통째로 옮기지 않는다. 현재 다섯 가지가 한 파일에 있다 — 라우팅 · 탭바 · 스택 오버레이
 합성 · 시스템 뒤로가기 · 광고 인터셉터. RN에서는 스택 오버레이 합성과 시스템 뒤로가기가 사라지므로
@@ -77,75 +81,106 @@
 
 ### 2.2 온보딩 (`features/onboarding.md`)
 
-| 파일 | ADR 계약 |
-|---|---|
-| `onboarding/OnboardingScreen.tsx` | 016, 035, 061, 083, 086 |
-| `onboarding/ApiKeyForm.tsx` | 003, 007, 061, 086, 110 |
-| `onboarding/AccountSelectionList.tsx` | 015, 051, 061, 063, 068, 083, 086, 113, 114, 116 |
-| `onboarding/ContentCharacterStep.tsx` | 016, 035, 053, 060, 061, 062, 067, 086, 107, 114, 115, 116 |
-| `onboarding/TrackingModeStep.tsx` | 035, 060 |
+**다섯 다 옮겼다**(4단계 step 2, 2026-08-12 — `packages/app-rn/src/app/onboarding/`). 자리표시자를
+치우고 `RootNavigator` 의 `Onboarding` 라우트가 진짜 화면을 그린다. RN 에서 갈린 것과 **육안 대조
+목록**은 [README «4-2단계 결과»](./README.md) 에 있다.
+
+| 파일 | ADR 계약 | 확인 |
+|---|---|---|
+| `onboarding/OnboardingScreen.tsx` | 016, 035, 061, 083, 086 | 016 예열 진행률 화면 ✅ / 035 결정 13(모드·캐릭터 단계)·15(`seedingTracking` 은 숫자 없는 스피너) ✅ / 061 결정 6(진행률은 얇은 바)·결정 1(24px 이상은 스윕) ✅ / 083 결정 4(실패는 토스트 — 화면에 인라인 문구 0개) ✅ / 086 결정 8(후보 0명의 탈출구를 `emptyAction` 으로) ✅ — 재개 파생(결정 1)은 **core 스토어가 그대로 갖는다** |
+| `onboarding/ApiKeyForm.tsx` | 003, 007, 061, 086, 110 | 003·007 안심 문구를 **한 글자도 안 바꿨다**(키는 기기에 저장되고, 사실인 것은 우리가 수집하지 않는다는 것뿐) ✅ / 061 결정 5·9 버튼 안 스피너 + `확인 중` ✅ / 110 두 진입점(가이드 1차 + 넥슨 바로 가기)·구분선·7단계 예고 ✅ — 시맨틱은 `role="link"` 로 남고 이동은 `Linking.openURL` / 086 결정 1(나갔다 돌아와도 `awaitingApiKey`)은 스토어 소관이고, **RN 에서는 오히려 더 잘 성립한다**(브라우저로 나가도 JS 컨텍스트가 살아 입력 중이던 값까지 남는다 — 웹뷰는 재생성될 수 있었다) |
+| `onboarding/AccountSelectionList.tsx` | 015, 051, 061, 063, 068, 083, 086, 113, 114, 116 | 015 얼굴 크롭 36px·월드 엠블럼·직업 미표시 ✅ / 051 결정 3(1개면 초기 하이라이트, 확정은 사용자) ✅ / 061 결정 6 + 결정 1 의 **두 번째 예외**(총량을 아는 대기는 바) ✅ / 063 원칙 4(문구가 사라진 자리에 목록이 남으므로 인라인 없음) ✅ / 068 결정 4(대표는 **확인된** 캐릭터 중 최고 레벨·전원 조회 불가는 고르기 전에 경고) ✅ / 083 결정 4(`errorMessage` 프롭 없음) ✅ / 086 결정 8(조회 불가 계정은 항목도 CTA 도 잠금) ✅ / 113 결정 3(settle 전에는 목록 자체를 안 그림)·결정 5(숫자 + 바, 설명 문장 없음) ✅ / 114 결정 2(429 에 액션 없음 — `formatRosterError` 를 그대로 쓴다) ✅ / 116 결정 3(판정 불가가 하나라도 있으면 목록을 안 그림)·결정 1(429 만 모달로)·결정 4(그 외는 이 자리에서 재시도) ✅ |
+| `onboarding/ContentCharacterStep.tsx` | 016, 035, 053, 060, 061, 062, 067, 086, 107, 114, 115, 116 | 016·017 캐시 우선 표시(항목이 있으면 조회 중이어도 그리드) ✅ / 035 결정 13 ✅ / 053 결정 3 판정 순서(그리드 → 스피너 → 실패 → 빈 상태) ✅ / 060 확정된 빈 상태는 `ErrorState` 와 디자인을 안 나눔 ✅ / 061 결정 1·5·9 ✅ / 062 결정 2 원인을 들고 있음·결정 4 스탈 배너 ✅ / 067 결정 1(영구 실패엔 액션 없음)은 `formatRosterError` 안 ✅ / 086 결정 7(최소 1명)·결정 8(`emptyAction`) ✅ / 107 결정 3 스크롤포트는 쓰는 쪽이 소유 ✅ — **결정 2 클램프는 모달 전용이라 여기 없다**(페이지는 상한이 없어 `ROSTER_BODY_MIN_H_PX` 그대로) / 114 결정 3 배너의 문구·액션은 호출부가 넘김 ✅ / 115 결정 7 의 **의도적 미배선 유지**(이 자리의 401 은 폼 자체의 실패라 재시도가 처방) ✅ / 116 결정 2 **429 만** 진입점으로 ✅ |
+| `onboarding/TrackingModeStep.tsx` | 035, 060 | 035 결정 13·16(바깥 카드 클래스 공유)·17(기본 선택 없음·추천 배지 없음)·22(아이콘 단독·설명/주의를 접지 않음·공용 카피) ✅ / 060 결정 5 주의는 실패가 아니라 **정보 톤 고지** ✅ |
 
 ### 2.3 컨텐츠 스케줄러 (`features/content-scheduler.md`)
 
-| 파일 | ADR 계약 |
-|---|---|
-| `content-scheduler/ContentScreen.tsx` | 015, 016, 017, 035, 047, 053, 060, 061, 062, 063, 072, 073, 077, 083, 096, 098, 099, 101, 115, 116, 120 |
-| `content-scheduler/ContentManageScreen.tsx` | 035, 055, 057, 060, 061, 065, 096, 098, 099, 120 |
-| `content-scheduler/DailyContentCards.tsx` | 018, 020, 094 |
-| `content-scheduler/WeeklyContentCards.tsx` | 021, 094 |
-| `content-scheduler/content-badges.tsx` | 094 |
+**다섯 다 옮겼다**(4단계 step 4, 2026-08-13 — `packages/app-rn/src/app/content-scheduler/`). `TabNavigator`
+의 첫 탭과 `RootNavigator` 의 `ContentManage` 가 자리표시자를 벗었다. RN 에서 갈린 것과 **육안 대조
+목록**은 [README «4-4단계 결과»](./README.md) 에 있다.
+
+| 파일 | ADR 계약 | 확인 |
+|---|---|---|
+| `content-scheduler/ContentScreen.tsx` | 015, 016, 017, 035, 047, 053, 060, 061, 062, 063, 072, 073, 077, 083, 096, 098, 099, 101, 115, 116, 120 | **21개를 한 줄씩 확인했다.** 015 피커를 **열 때만** 로스터 조회 ✅ / 016·017 결정 6 캐시 우선 표시 — 재검증 중에도 목록을 안 지우고, 재조회 시작 때 `roster` 도 안 비운다 ✅ / 035 결정 3·6·19 수동 멤버십으로 목록 결정 + 결정 20 템플릿 순서 고정 ✅ / 053 결정 3 로딩·실패를 화면이 소유하고 `finally` 로 반드시 해제 ✅ / 060 빈 상태 넷(캐릭터 0명 · 자동/수동 × 일간/주간)과 CTA 의 목적지 ✅ / 061 결정 2 셸 승계 카드는 **보여줄 데이터가 아예 없을 때만** ✅ / 062 여는 경로와 재시도가 같은 초기화(`reloadRoster`) ✅ / 063 전역 실패는 토스트 ✅ / 083 결정 1·2 캐릭터별 실패도 토스트, `characterUnavailable` 은 액션 없음 ✅ / 096 결정 1 탭은 스토어 소유 ✅ / 101 결정 1 `trackedOcids !== null && length === 0` ✅ / 115 결정 7 · 116 결정 1 401·429 는 동기화·로스터 **둘 다** 같은 진입점 ✅ / **072·073 은 [[ADR-130]] 으로 형태가 갈렸다** — 결정 2(같은 재조회)·10(버튼 존치)·073 결정 1(헤더 제자리)은 지켜지고, 073 결정 6 의 목록 오프셋과 072 결정 14 는 **OS 와 구조가 가져갔다** / **047·077·098·099·120 은 코드가 아니라 구조가 만족한다** — 헤더는 스크롤 뷰의 형제(047·098), 관리 페이지는 루트 스택 push 라 언마운트가 없고(077·120), 스크롤은 화면이 소유한다(099) |
+| `content-scheduler/ContentManageScreen.tsx` | 035, 055, 057, 060, 061, 065, 096, 098, 099, 120 | 035 결정 18 편집은 이 화면에서만 · 카테고리 그룹핑·카운트 태그 ✅ / 055 정정 1 사유는 배지가 아니라 **행 위를 덮는 한 줄** ✅(블러만 빠진다 — RN 에 `backdrop-filter` 가 없고 [[ADR-123]] 이 웹에서도 걷어냈다) / 057 결정 2·5 `null` 만 잠그고 `undefined` 는 안 잠근다 · 추적 중이면 안 잠근다 ✅ / 061 결정 10 조회 전에는 빈 상태로 위장하지 않는다 ✅ / 065 결정 4 토글 저장 실패는 토스트 ✅ / 096 결정 2 **진입 시점 한 번만** 탭 승계(한 방향) · 결정 4·5 컴팩트 드롭다운이 같은 `selectCharacter` ✅ / 098·099·120 은 셸 교체로 만족(`StackScreen` → 루트 스택 + `ScreenScroll(hasTabBar={false})`) — **자동 모드 리다이렉트는 도달 불가능해졌지만 계약은 남겼다**(`goBack`) |
+| `content-scheduler/DailyContentCards.tsx` | 018, 020, 094 | 018 카드 규격(`rounded-[14px]`·80px·bleed 레시피)과 **`.media-scope` 재선언**([[ADR-064]] 결정 5)을 `MediaCard` 가 진다 ✅ / 020 접두어 제거·지역 배경 매칭·`quest_state` 3단 배지·몬스터파크 112px 예외 ✅ / 094 결정 7 화면에서 분리된 상태 유지 ✅ — **bleed 네 줄은 `MediaCardArt` 로 접혔다**(CSS 배경 → RN 기하, README) |
+| `content-scheduler/WeeklyContentCards.tsx` | 021, 094 | 021 4변형 + 길드 3종 독립·카테고리 배지 색이 **테마 토큰이 아닌 고정 hex** 인 것까지 ✅ / 094 결정 7 ✅ |
+| `content-scheduler/content-badges.tsx` | 094 | 094 결정 3 의 **좁은 범위**를 지킨다 — `Badge` atom 은 `*-tint`/`*-ink` × `font-semibold` 만 덮으므로 여기 셋(완료의 `font-bold` · `bg-surface-2` 위 두 종 · 고정 hex 카테고리)은 웹과 같은 이유로 인라인이다 ✅ |
 
 ### 2.4 보스 스케줄러 (`features/boss-scheduler.md`)
 
-| 파일 | ADR 계약 |
-|---|---|
-| `boss-scheduler/BossScreen.tsx` | 015, 016, 017, 018, 019, 031, 035, 047, 053, 060, 061, 062, 063, 064, 072, 073, 077, 083, 096, 098, 099, 101, 115, 116, 120, 121 |
-| `boss-scheduler/BossManageScreen.tsx` | 031, 035, 055, 056, 061, 065, 096, 098, 099, 120, 121 |
+**둘 다 옮겼다**(4단계 step 5, 2026-08-13 — `packages/app-rn/src/app/boss-scheduler/`). `TabNavigator`
+두 번째 탭과 `RootNavigator` 의 `BossManage` 가 자리표시자를 치우고 진짜 화면을 그린다. RN 에서 갈린
+것과 **육안 대조 목록**은 [README «4-5단계 결과»](./README.md) 에 있다.
+
+| 파일 | ADR 계약 | 확인 |
+|---|---|---|
+| `boss-scheduler/BossScreen.tsx` | 015, 016, 017, 018, 019, 031, 035, 047, 053, 060, 061, 062, 063, 064, 072, 073, 077, 083, 096, 098, 099, 101, 115, 116, 120, 121 | **26개를 한 줄씩 확인했다.** 015 피커를 **열 때만** 로스터 조회 ✅ / 016·017 결정 6 캐시 우선 표시 — 재검증 중에도 목록을 안 지우고 재조회 시작 때 `roster` 도 안 비운다 ✅ / 018 카드 규격(80px·`rounded-[14px]`·bleed·오른쪽 완료 배지·`StatusDot` 없음) ✅ — **그림이 이제 실제로 그려진다**(`MediaCardArt`, [[ADR-129]] + step 4 의 기하) / 019 결정 3 미설정 = 솔로 · 결정 6 두 탭 필터 독립 · 2인 이상만 `n인` 배지 ✅ / 031 결정 3 시즌 배지는 **`isChallengersWorld` 가 판정**(화면이 월드 이름을 안 뜯는다) · 결정 5 미등록이어도 완료면 표시(`selectDisplayBosses`) ✅ / 035 결정 3·6·12 수동 멤버십으로 목록 결정(`mergeManualBossList`) · 결정 18 편집은 관리 페이지 전용 ✅ / 053 결정 3 로딩·실패를 화면이 소유하고 `finally` 로 반드시 해제 ✅ / 060 빈 상태 다섯(캐릭터 0명 · 자동/수동 × 주간/월간 · **필터 결과 0**)과 CTA 의 목적지 — 필터 CTA 는 그 탭 필터만 되돌린다 ✅ / 061 결정 2 셸 승계 카드는 **보여줄 데이터가 아예 없을 때만** ✅ / 062 여는 경로와 재시도가 같은 초기화(`reloadRoster`) ✅ / 063 전역 실패는 토스트 ✅ / 064 결정 5 `media-scope` 재선언을 `MediaCard` 가 진다 — **테마 이름으로 분기하지 않는다**(결정 8) ✅ / 083 결정 1·2 캐릭터별 실패도 토스트, `characterUnavailable` 은 액션 없음 ✅ / 096 결정 1 탭 **과 두 필터**가 스토어 소유 ✅ / 101 결정 1 `trackedOcids !== null && length === 0` ✅ / 115 결정 7 · 116 결정 1 401·429 는 동기화·로스터 **둘 다** 같은 진입점 ✅ / 121 결정 1 카드 전면이 버튼·어포던스 표식 없음·완료된 보스도 눌림 ✅(**눌림 피드백은 축소만 온다** — NativeWind 가 `brightness-*` 를 안 내고 `style` 함수를 삼킨다, README 표) · 결정 3 자동 모드도 세그먼트를 그리되 멤버십을 안 바꾼다 · 결정 6 난이도 교체는 단일 액션 ✅ / **072·073 은 [[ADR-130]] 으로 형태가 갈렸다** — 결정 2(같은 재조회)·10(버튼 존치)·073 결정 1(헤더 제자리)은 지켜지고, 073 결정 6 의 목록 오프셋과 072 결정 14 는 **OS 와 구조가 가져갔다**. 배선은 컨텐츠 스케줄러와 **글자 그대로 같다** / **047·077·098·099·120 은 코드가 아니라 구조가 만족한다** — 헤더는 스크롤 뷰의 형제(047·098), 관리 페이지는 루트 스택 push 라 언마운트가 없고(077·120), 스크롤은 화면이 소유한다(099). **`?openPicker=1` 은 라우트 파라미터가 됐다**(받는 쪽만 — 보내는 쪽은 step 7) |
+| `boss-scheduler/BossManageScreen.tsx` | 031, 035, 055, 056, 061, 065, 096, 098, 099, 120, 121 | 031 결정 4 "등록된 보스만 보기"(기본 ON) — **등록이 0이면 전체로 대체** ✅ / 035 결정 18 두 모드 공통 진입 · 수동은 체크리스트 · 자동은 안내 + 파티 인원만 ✅ / 055 결정 3 카운트는 `countManualWeeklyBosses` 한 곳 · 정정 3 한도 도달 행은 **흐림만, `disabled` 아님** · 누르면 `showInfo`(실패가 아니라 규칙 안내) ✅ / 056 결정 1 미출시는 **이름이 아니라 `status`** 로 제외 · 결정 2 시즌 보스는 챌린저스 월드만이고 월드 미상은 숨김 — **스케줄러 배지와 같은 `isChallengersWorld`** ✅ / 061 결정 10 조회 전에는 빈 상태로 위장하지 않는다 ✅ / 065 결정 4 토글·파티원 수 저장 실패는 토스트(문구는 컨텐츠 관리와 공통) ✅ / 096 결정 2 **진입 시점 한 번만** 탭 승계(한 방향) · 결정 4·5 컴팩트 드롭다운이 같은 `selectCharacter` ✅ / 121 결정 4 미선택 칩은 같은 뱃지 + `opacity-40`(`DifficultySegment` 가 진다) · 결정 6 난이도 교체 단일 액션 · 결정 7 스테퍼 두 크기(`PartySizeStepper`) ✅ / 098·099·120 은 셸 교체로 만족(`StackScreen` → 루트 스택 + `ScreenScroll(hasTabBar={false})`) — **`PARENT_PATH` 상수가 사라진다**(딥링크가 없어 "돌아갈 곳이 없는 경우"가 없다). 원형 초상이 그림을 그린다(`BossPortrait`) |
 
 ### 2.5 보스 수익 (`features/boss-profit.md`) — **최고 위험 구역**
 
-| 파일 | ADR 계약 |
-|---|---|
-| **`boss-profit/BossProfitScreen.tsx`** | **032, 045, 046, 047, 049, 054, 059, 060, 061, 063, 067, 068, 071, 072, 073, 076, 077, 080, 082, 083, 085, 087, 088, 094, 099, 100, 101, 102, 112, 120, 123, 124** |
-| `boss-profit/boss-profit-context.tsx` | 068, 085, 087, 094, 100 |
-| `boss-profit/character-groups.ts` | 036, 038, 046, 054, 059, 069, 094, 124 |
-| `boss-profit/BossProfitBossRow.tsx` | 032, 038, 041, 049, 063, 094, 100, 124 |
-| `boss-profit/BossDropSheet.tsx` | 038, 040, 041, 069 |
-| `boss-profit/DropHistoryScreen.tsx` | 010, 045, 046, 062, 069, 071, 077, 120 |
-| `boss-profit/DropPriceScreen.tsx` | 046, 063, 124 |
-| `boss-profit/DropPricePad.tsx` | 046, 121 |
-| `boss-profit/HeadlineChips.tsx` | 046, 047, 049, 054, 087, 094 |
-| `boss-profit/ItemRevenuePopover.tsx` | 049, 068, 071, 124 |
-| `boss-profit/AccordionBody.tsx` | 068, 094 |
-| `boss-profit/CharacterAvatar.tsx` | 015, 018, 049, 054, 059, 094 |
-| `boss-profit/CharacterIssue.tsx` | 047, 049, 054, 063, 067, 068, 094 |
+**열여섯을 다 옮겼다** — 공유 조각 아홉(step 6) → 화면과 카드(step 7) → **드롭 화면 셋(step 8,
+2026-08-13)**, 전부 `packages/app-rn/src/app/boss-profit/`. RN 에서 갈린 것과 **육안 대조 목록**은
+[README «4-6»·«4-7»·«4-8단계 결과»](./README.md) 에 있다.
+
+> **`BossProfitScreen` 은 «확인» 칸에 한 줄로 못 담는다.** ADR 32개를 한 줄씩 적고 판정 기호를 붙인
+> 표가 **화면 파일 옆**에 있다 — [`BossProfitScreen.contract.md`](../../packages/app-rn/src/app/boss-profit/BossProfitScreen.contract.md).
+> 아래 칸은 그 요약이다.
+
+| 파일 | ADR 계약 | 확인 |
+|---|---|---|
+| **`boss-profit/BossProfitScreen.tsx`** | **032, 045, 046, 047, 049, 054, 059, 060, 061, 063, 067, 068, 071, 072, 073, 076, 077, 080, 082, 083, 085, 087, 088, 094, 099, 100, 101, 102, 112, 120, 123, 124** | **32개를 한 줄씩 확인해 [`BossProfitScreen.contract.md`](../../packages/app-rn/src/app/boss-profit/BossProfitScreen.contract.md) 에 판정을 적었다** — 코드로 지킨 것 · **구조가 대신 지킨 것 여섯**(077 루트 스택 push · 085·112 헤더가 스크롤 뷰의 형제라 spacer·실측이 없다 · 099 `ScrollView` 가 기본값 · 100 결정 2 헤더가 `header` 프롭 · 073·120 결정 10 은 [[ADR-130]]·덮임) · **못 옮긴 것 둘**로 갈린다. ⚠️ **047 중첩 sticky**(딸린 셋 — 배지 레일·stuck 헤더 페이드·`stickyTop` — 도 함께 없다): `stickyHeaderIndices` 는 **직계 자식만** 붙어 카드를 펴야 하는데 그러면 **045 의 카드 링이 두 조각으로 갈리고 049 의 셸 클리핑이 자를 상자를 잃는다**, 손수 만드는 길은 공용 셸을 `Animated.ScrollView` 로 바꿔야 하고 **jest 가 한 줄도 검증하지 못한다**(레이아웃이 없어 sticky 가 발동하지 않는다) — 잃는 것은 *"스크롤 내내 보이던 캐릭터 합계"*([[ADR-047]] 후속 3 이 소계 footer 를 지운 근거)이고 **육안 대조 1순위**다. ⚠️ **088 테마 배경**: `ThemeHeaderBackdrop` 을 첫 자식으로 부르지만 그 컴포넌트가 아직 두 갈래 모두 `null` 이다 — **전면 백드롭이 없어** 헤더 조각만 그리면 화면 맨 위에 그림 띠 하나만 뜬다(반쪽만 만들지 않았다). / 045 는 **CSS 한 덩어리에서 값 셋**으로 내려왔다(회전 링 → [[ADR-045]] 가 설계해 둔 **degrade** 정적 골드 2px · 글로우 맥동 → `boxShadow` 두 겹 **교차 페이드**, 끝점 둘은 정확히 같다 · 펼침은 정적 폴백 하나) / 124 는 **합계·정렬·빈 상태 전부**에서 지켜진다(미입력 드롭이 총액을 한 푼도 안 움직이는 것을 케이스가 고정) / 080 은 **동작만** 남는다(깨진 프레임 사슬이 RN 에 없다 — `ScreenScroll` 의 `ref`) / 082 는 되살리지 않았다 / 047 결정 6(페이지 헤더에 페이드 없음)이 **공용 `PageHeader` 를 안 쓰는 이유**이고 회귀 가드가 있다 |
+| `boss-profit/CharacterAccordion.tsx` | 023, 037, 045, 047, 049, 054, 059, 068, 094, 102, 124 | **웹에서는 화면 안 인라인이던 것이 파일로 나왔다** — 나눈 이유는 줄 수가 아니라 관심사다([[ADR-094]] 결정 7) / 049 접힘·펼침 셸이 갈리고 펼침만 자식을 잘라낸다 ✅ / 054 정정 6 헤더 64px(`py-3` + 40px 슬롯) · 정정 7 `n/12` 는 **보류 그대로** ✅ / 059 링이 두 탭·모든 기간, 월간 분모는 `weekly-bosses.json` 파생 ✅ / 037·#27 key 에 탭·기간이 들어가 이동하면 펼침이 리셋된다 ✅ / **102 접기는 상태만 바꾼다 — 스크롤 코드가 아예 없다** ✅ / 068 결정 3 배지 탭 → 팝오버, 두 상자의 **비동기 측정**이 여기로 왔다 ✅ / 124 결정 7 아이템 칩·금액 잉크·`ItemAwareMoney` 는 **값이 없으면 뷰가 한 겹도 안 는다** ✅ / ⚠️ 047 sticky 는 위 칸 참고 |
+| `boss-profit/valuable-card-glow.ts` | 045, 049 | 웹 `index.css` 의 `.valuable-drop-card` 값이 내려온 자리 — **컴포넌트 파일이 아닌 이유는 fast refresh**(`Button/variants.ts` 와 같은 판단)이고, 밖으로 내보내는 이유는 `keyframes-parity.test.ts` 가 **웹 CSS 를 실제로 읽어** 대조하기 때문이다 / 049 결정 3 링 반경 펼침 13 · 접힘 14 ✅ |
+| `boss-profit/boss-profit-context.tsx` | 068, 085, 087, 094, 100 | 068·094 통과 전용 프롭 51지점을 그대로 접었다 ✅ / 087 정정 1 `loadedTab`·`loadedPeriodKey` 필드가 남아 카운트업 identity 와 라벨이 갈린다 ✅(테스트가 두 값이 어긋나는 순간을 고정) / **085·100 은 `scrollRoot` 와 함께 사라졌다** — 그 필드를 자손이 읽던 목적은 `fixed` 팝오버를 스크롤 시작 시 닫는 것 하나뿐인데, RN 팝오버는 별도 네이티브 윈도우라 **아래 화면이 스크롤될 수 없다**(구조가 계약을 대신 지킨다). [[ADR-080]] 의 `scrollTo(0,0)` 은 원래도 컨텍스트를 안 썼다(화면 로컬 ref → `ScreenScroll` 의 `ref`, step 7) |
+| `boss-profit/character-groups.ts` | 036, 038, 046, 054, 059, 069, 094, 124 | **웹판과 한 줄도 다르지 않다**(주석 제외) — 뷰가 없어 옮길 것이 없었다. 036 `weekly-bosses.json` 정규 순서 · 054 결정 1·3 처치 수 파생과 계산 두 벌 금지 · 059 결정 5 월간 대칭 · 069 결정 2 월드 집계가 **행 단위** · 124 결정 7 아이템 합산이 한 곳 ✅. **`packages/core` 로 갈 후보이고 그 사실을 파일 머리에 적었다** — 이 단계 규칙이 core 무수정이라 옮기지 않았다 |
+| `boss-profit/BossProfitBossRow.tsx` | 032, 038, 041, 049, 063, 094, 100, 124 | 032 미완료 placeholder 는 **금액이 아니라 배지**·스테퍼 비활성 ✅ / 038 드롭 지시자(아이콘 3 + `+N` / `＋ 드롭 추가`) ✅ / 041 상자 결과의 `lv` 뱃지 ✅ / 049 이름 줄 `h-6` 고정 · 마지막 행은 **테두리를 빼지 않고 색만** 지운다(`:last-child` 가 없어 `isLast` 프롭) ✅ / 063 파티원 수 저장 실패는 토스트 ✅ / **124 값을 안 매긴 드롭은 금액도 칩도 안 만든다**(테스트 고정) / 100 결정 4 스크롤 닫기는 구조가 대신한다. **[[ADR-121]] 결정 7 의 `PartySizeStepper` 로 접지 않았다** — 이 행은 셋째 크기다(18px·`Users` 없음·`bg-surface-2` 채움) |
+| `boss-profit/BossDropSheet.tsx` | 038, 040, 041, 069 | 038 탭 즉시 기록 + 고가 연출 ✅ / 040 결정 3 고정 드롭 읽기 전용 · 결정 4 카테고리 아이콘 · 결정 6 연출 토글(positive 모델) ✅ / 041 반지 → 레벨 순서 · 연마석은 레벨 비활성 ✅ / **069 결정 4 는 `applyPrice` 가 객체 정체(`===`)로 찾는 것으로 지켜진다**(같은 아이템 두 개를 이름으로 찾으면 둘 다 바뀐다) / 시트 껍데기는 3단계 organism 그대로. **가격 키패드 자리는 step 8 이 채웠다** — `drop-price-pad-seam` 자리표시자에 `DropPricePadContent` 가 들어갔고, 흐름(`기록 → 확인 → 입력 → 복귀`)과 상태(`pricing`·`justAdded`)는 step 6 부터 그대로였다([[ADR-124]] 결정 6 의 *"시트가 살아서 하던 작업을 잇는다"* — 시트를 닫는 형태로 임시 구현했다면 그 계약이 사라졌을 것이다). **`onLater`(스킵)는 안 넘긴다**: 순차 모드 전용이고 여기는 방금 기록한 한 건이라 뒤로 누르는 것이 곧 같은 일이다 |
+| `boss-profit/DropHistoryScreen.tsx` | 010, 045, 046, 062, 069, 071, 077, 120 | **쿼리를 화면이 짜지 않는다** — `useDropHistoryStore.load()` 가 전 기간 조회·획득 불가 필터·가뭄 집계를 전부 갖는다([[ADR-071]] 결정 1 의 단일 원천이 그대로 온다) ✅ / 010 상자명이 아이템과 **같은 굵기**(무엇을 열었는지가 정보의 절반) · 069 결정 4 확정 난이도 조합만, **임의로 합치지 않는다** ✅ / 071 결정 5 기간 라벨 + 날짜 구간(라벨과 같으면 안 그림) · 결정 6 획득 불가 필터 · 결정 9 **단풍잎 5단**(0단계만 글로우 · 문구가 리렌더에 안 바뀜 · 고가 기록이 0이면 «∞주째» 를 만들지 않음) ✅ / 062 실패를 **빈 목록으로 위장하지 않는다**(`ErrorState` + 다시 시도) ✅ / 077·120 은 **구조가 지킨다**(루트 스택 push — `StackScreen` 이 통째로 소멸) / ⚠️ **045 고가 pill 이 degrade** — RN 문장 안 중첩 `Text` 는 `backgroundColor` 하나만 받아 **그라디언트·라운드·글로우가 못 온다**(그라디언트 **끝 정지점** `#f7c400` 단색 + 같은 잉크 — 새 골드를 뽑지 않는 것이 결정 8 의 요구다). 딸려서 그 결정의 **줄바꿈 처방 하나가 통째로 필요 없어진다**(pill 이 원자적 인라인 박스가 아니게 되어 "조사만 다음 줄로 떨어지는" 일이 구조적으로 안 일어난다 — `particle` 은 그대로 받고 `whitespace-nowrap` 묶음만 사라진다) / **결정 8 이 명시적으로 뺀 `.valuable-drop-row` 배경은 여기에도 없다**(줄간격이 좁아 배경 블록끼리 잡아먹는다 — 회귀 가드 2케이스) |
+| `boss-profit/DropPriceScreen.tsx` | 046, 063, 124 | **[[ADR-124]] 가 가장 직접적으로 드러나는 자리이고 그것이 이 화면의 중심이다** — 상태 pill 셋을 색이 아니라 **형태**로 가르고(채움 / 회색 / 점선) 미입력 행의 금액 자리에는 **`0` 이 아니라 `입력`** 이 선다. 합산 층은 core 가 이미 지키므로(`dropPayoutMeso`) 여기서 지키는 것은 **표시**다 — 가장 강한 반례인 **`priceMeso` 는 있고 `priceState` 가 없는 기록**을 케이스가 고정한다(`priceMeso ?? 0` 계열이면 거기서 금액이 샌다) ✅ / 결정 2 분배 인원은 드롭마다 따로, 기본값만 그 행의 파티원 수 · **값을 매긴 행만 인원을 말한다**(미입력에 `1인` 이 서면 정해진 값처럼 읽힌다) ✅ / 결정 8 **보던 기간을 주기까지 통째로 이어받는다**(주 단위로만 열면 **월간 보스 드롭에 닿을 길이 없다** — `period_key` 가 `YYYY-MM` 이라 어느 주차 조회에도 안 걸린다) ✅ / 063 저장 실패는 **토스트**(조용히 삼키면 저장된 줄 알고 떠난다) · 조회 실패는 빈 목록으로 위장하지 않는다 ✅ / 046 금액 어휘·`formatMesoShort` ✅ — **`overlays` 프롭이 사라진다**(RN 시트는 별도 네이티브 호스트라 갇힐 상자가 없다), `<li class="valuable-drop-row">` 는 **`ValuableRowBackground`** 로(보스 행에 이어 **두 번째 호출부**라 step 8 이 그 컴포넌트를 `BossProfitBossRow` 밖으로 꺼냈다 — [[ADR-094]] 결정 1) |
+| `boss-profit/DropPricePad.tsx` | 046, 121 | **OS 키보드를 부르지 않는다**([[ADR-124]] 결정 5) — 웹의 근거(*"키보드가 뜨면 WebView 가 줄어 시트가 밀린다"*)는 RN 에 없지만 **결론은 그대로 선다**: 메소는 자릿수가 커서 시스템 숫자 키패드로는 0을 세게 되고(`keyboardType="numeric"` 이 못 고치는 것이 그것이다), `KeyboardAvoidingView` 는 플랫폼마다 갈리는 데다 시트의 동적 높이와 겹친다. 앱이 자기 키패드를 그리면 **보정할 것이 애초에 없다** ✅ / 주 표기는 **자릿수 전체**(억/만로 접으면 한 자마다 단위가 갈아엎여 안 읽힌다) · 억/만은 보조 줄이고 **0이어도 자리를 지킨다**(사라지면 첫 타건에 아래가 통째로 밀린다) · `0` 은 저장 불가 ✅ / **[[ADR-121]] 결정 7 의 `PartySizeStepper` 로 접지 않는다** — 22px·`Users` 없음이라 그 molecule 이 정한 두 크기 어느 쪽도 아니다(보스 행이 셋째인 것과 같은 사정이라 넷째 모양을 만들지 않는다) ✅ / **본문(`DropPricePadContent`)과 시트 껍데기를 가른 것이 계약이다** — 가격 기록 화면은 `BottomSheet` 로 띄우고 드롭 입력 시트는 **드릴다운으로 갈아 끼운다**([[ADR-124]] 결정 6 의 *"시트가 살아서 하던 작업을 잇는다"*, step 6 의 `drop-price-pad-seam` 자리표시자를 이것이 채웠다) · **스킵은 순차 모드에만 넘긴다**(단건 편집은 뒤로 누르는 것이 곧 같은 일이다) ✅ — `invisible` → `opacity-0` + `pointerEvents="none"`(RN 에 `visibility` 가 없어 **투명한 버튼이 눌리지 않도록 터치를 함께 끈다**), `disabled:opacity-40` 은 NativeWind 가 안 내 JS 조건으로(`BossProfitBossRow` ③이 먼저 밟았다), 하단 안전영역은 **시트 껍데기가 이미 준다**(두 번 주면 두 겹) |
+| `boss-profit/HeadlineChips.tsx` | 046, 047, 049, 054, 087, 094 | 054 결정 5·7 월드별 집계와 `90 × 월드 수` 분모 · 결정 10 결정석 아이콘을 파일명으로 조회 ✅ / 049 칩이 라벨행 높이를 안 넘기고 분해는 **흐름 밖**이라 헤더 높이 불변 ✅ / 087 결정 5 상승·하락·같음 세 톤과 문장 라벨 ✅(웹 테스트 다섯을 그대로 옮겼다) / **바깥 탭으로 닫는 판이 `fixed inset-0` → 투명 `Modal`** — RN 에는 `fixed` 가 없어 앱 트리 안에서 화면 전체를 덮을 수 없다 |
+| `boss-profit/ItemRevenuePopover.tsx` | 049, 068, 071, 124 | **`react-native` 의 `Modal` 로 그렸다** — 049 가 막는 클리핑과 탭바 덮기를 웹의 포털+`fixed` 와 같은 성질로 해결한다(organism 은 스크림+중앙 정렬을 소유해 못 쓴다) / 068 결정 3 의 `anchorPopover` 를 컨테이너만 뷰포트로 바꿔 재사용 ✅ / 071 결정 10 의 한계를 그대로 승계해 **합계는 목록이 아니라 넘겨받은 두 값**으로 만든다 ✅ / **124 미입력은 `미입력`, 스킵은 목록에서 제외** — 이 파일의 중심 계약이고 테스트 여덟이 고정한다 |
+| `boss-profit/AccordionBody.tsx` | 068, 094 | 068 결정 2 여섯 상태 중 **행동이 있는 둘만 버튼**이고 나머지는 정적 라벨 · `0 메소` 는 `confirmedEmpty` 에만 ✅(상태별 케이스로 고정) / 094 컨텍스트에서 읽고 프롭을 통과시키지 않는다 ✅ / `<ul>`·`<li>` 가 사라져 마지막 보스 행을 부모가 알려 준다 |
+| `boss-profit/CharacterAvatar.tsx` | 015, 018, 049, 054, 059, 094 | 015 얼굴 크롭 기법·좌표 그대로 ✅ / 049 슬롯 40px 고정(탭마다 크기가 달라지면 카드가 튄다) ✅ / 054 정정 1·3·5 링 칸·바깥 여백·round 캡 보정 ✅ / 059 정정 1 한 칸이면 dash 없이 온전한 원 · 결정 7 이름의 주기가 탭을 따라간다 ✅ / **링 두 색이 `className` 이 아니라 `stroke` 프롭으로 온다** — 한 `<Svg>` 안 두 색이라 테마에서 직접 읽는다 |
+| `boss-profit/CharacterIssue.tsx` | 047, 049, 054, 063, 067, 068, 094 | 068 결정 3 아이콘 하나·라벨 없음(054 정정 7 이 라벨을 버린 이유 그대로) ✅ / 047·049 팝오버는 셸 **바깥** · 카드 안 `zIndex` 20 ✅ / 063 원인 문구는 토스트가 맡고 여기는 상태만 ✅ / **배지가 `<span>` → `Pressable`** — RN 은 터치를 가장 깊은 곳이 가져가 중첩이 정상이라 웹이 감수한 "키보드 포커스 없음"이 사라진다(부모 아코디언이 안 열리는 것을 테스트가 고정) / **`measureIssueAnchor` → `resolveIssueAnchor`** — RN 측정이 비동기라 재는 일은 호출부(step 7)로 나가고 좌표 환산만 남는다 |
 
 **`BossProfitScreen.tsx` 는 ADR 32개를 진다.** 이 저장소에서 가장 밀도 높은 파일이고, 전환 실패가
 가장 먼저 드러날 곳이다. 다른 화면과 같은 취급을 하지 말 것 — 단독으로 계획을 세우고, 재작성 전에
 32개 ADR을 먼저 읽고 **동작 명세를 따로 뽑아 두는 것**을 권한다.
 
+**step 6 이 만들어 두고 배선만 남겼던 자리 넷은 step 7 이 전부 이었다**:
+`BossProfitContextProvider` 의 값 열 개 ✅ · `ScreenScroll` 의 `ref`([[ADR-080]] 최상단 이동) ✅ ·
+`resolveIssueAnchor` 에 넘길 두 상자의 **비동기 측정** ✅ · 보스 스케줄러가 이미 받고 있는
+`openPicker` 라우트 파라미터를 **보내는 쪽**([[ADR-068]] 결정 4) ✅.
+
 ### 2.6 설정 (`features/settings.md`)
 
-| 파일 | ADR 계약 |
-|---|---|
-| `settings/SettingsScreen.tsx` | 058, 061, 098, 099, 118, 120, 125 |
-| `settings/SettingsAboutScreen.tsx` | 035, 085, 099, 112, 118, 120 |
-| `settings/SettingsAccountDataScreen.tsx` | 035, 058, 061, 118, 120 |
-| `settings/SettingsPrivacyScreen.tsx` | 062, 118, 120 |
-| `settings/SettingsReleaseNotesScreen.tsx` | 060, 118, 119, 120, 125 |
-| `settings/SettingsFeatureGuideListScreen.tsx` | 018, 060, 125 |
-| `settings/SettingsFeatureGuideScreen.tsx` | 125 |
-| `settings/AppUpdateSection.tsx` | 026, 027, 061, 118, 126 |
-| `settings/AccountModal.tsx` | 086 |
-| `settings/AccountFlowStatus.tsx` | 086, 113, 114 |
-| `settings/ThemeModal.tsx` | 035, 104 |
-| `settings/ThemeSelector.tsx` | 018, 064, 104 |
-| `settings/TrackingModeModal.tsx` | 035, 061 |
-| `settings/TrackingModeSelector.tsx` | 035, 060 |
-| `settings/CacheClearConfirm.tsx` | 052, 058, 061 |
-| `settings/DisconnectConfirm.tsx` | 061 |
-| `settings/SettingsRow.tsx` · `SettingsLinkRow.tsx` · `row-class.ts` | 118 |
-| `settings/error-message.ts` | 114 |
+**스물 다 옮겼다**(4단계 step 3, 2026-08-12 — `packages/app-rn/src/app/settings/`). 하위 페이지 일곱
+라우트가 자리표시자를 치우고 진짜 화면을 그린다(`RootNavigator` 의 `SETTINGS_SCREENS` 표). RN 에서
+갈린 것과 **육안 대조 목록**은 [README «4-3단계 결과»](./README.md) 에 있다.
+
+| 파일 | ADR 계약 | 확인 |
+|---|---|---|
+| `settings/SettingsScreen.tsx` | 058, 061, 098, 099, 118, 120, 125 | 058 결정 8(총합은 그룹별 합에서 파생) ✅ / 061 결정 7(조회 전 `- KB` 자리표시 — 실패도 같은 자리) ✅ / 098 결정 3(고정 헤더 없음)·099(자기 스크롤 소유) ✅ — **상단 안전영역 트릭은 사라진다**(RN `ScreenScroll` 이 헤더 없는 화면에서 스크롤포트 상자를 내린다) / 118 결정 1(카드 둘)·4(값 배지 + chevron **병기**)·5(대표값 둘만)·8(고지 4줄·링크 0개) ✅ / 120(하위 페이지로 밀 때 스크롤 리셋 안 함 — RN 은 이 화면이 언마운트되지 않아 `ScrollView` 가 자리를 그대로 든다) ✅ / 125 결정 1 정정(「기능 설명」이 「개발 노트」 위) ✅ — **`Outlet` 이 사라지고**(루트 스택 push) **버전은 빌드 시점 값으로 좁혀진다**(OTA 미연결) |
+| `settings/SettingsAboutScreen.tsx` | 035, 085, 099, 112, 118, 120 | 035 결정 18(관리 페이지와 같은 골격) ✅ / 085 결정 1 · 112(`fixed` 헤더 + 실측 spacer)는 **RN 에서 구조가 대신한다** — `PageHeader` 가 스크롤 뷰의 형제라 spacer 도 실측도 없다(그 파일 머리) ✅ / 099 `ScreenScroll`(`hasTabBar={false}`) ✅ / 118 결정 2(하위 페이지 골격)·7(처방침이 이 화면의 행)·10(`최신 버전입니다`) ✅ / 120 결정 11(처방침을 앱 안에서 연다 — 이 앱 유일의 2단 스택) ✅ — **OTA 상태는 `unsupported` 상수**를 심는다([[ADR-128]] 결정 7), 도달 불가 상태 표는 그 파일 머리 |
+| `settings/SettingsAccountDataScreen.tsx` | 035, 058, 061, 118, 120 | 035 결정 18 ✅ / 058 결정 6(기본 전체 선택)·8(총합 파생) ✅ / 061 결정 7 ✅ / 118 결정 2·3(파괴적 행 둘을 별도 카드로)·4(위험 색 행엔 chevron 없음)·6(`계정 변경` 에 현재값 없음) ✅ / 120 ✅ — **`overlays` 프롭이 사라진다**(RN `Modal` 은 별도 네이티브 윈도우라 갇힐 상자가 없다), 리로드는 `reloadAppAsync()`. **삭제 범위와 순서(052·117 결정 8)는 core 가 그대로 소유한다 — 이 화면은 두 불리언만 넘긴다** |
+| `settings/SettingsPrivacyScreen.tsx` | 062, 118, 120 | 062 결정 3(실패의 원인을 실제로 푸는 행동 — `브라우저로 열기`) ✅ / 118 결정 7(단일 원본 유지) ✅ / 120 결정 11(사본이 아니라 사이트를 싣는다) ✅ — **`iframe` → `WebView` 로 실패 신호가 하나 는다**(`onError` 가 즉시 오고, 8초 타임아웃은 매달림 전용 보조 신호로 내려간다). `navigator.onLine` 사전 검사는 **없앴다**(웹 API 이고, 대체할 `getNetworkType` 은 지금 던진다). `X-Frame-Options` 의존도 함께 사라진다(최상위 탐색이라 프레임 조상 정책 대상이 아니다) |
+| `settings/SettingsReleaseNotesScreen.tsx` | 060, 118, 119, 120, 125 | 060(0건이면 컨텍스트 아이콘 + inline 빈 상태) ✅ / 118 결정 2 ✅ / 119 결정 1(번들 내장·네트워크 0회)·3(표식은 **항목**에)·4(없는 버전은 배지 없음)·9(카테고리로 묶고 순서는 상수가 정함·빈 묶음은 제목째 감춤) ✅ — **배열을 다시 정렬하지 않는다** / 120 ✅ / 125 결정 5(안내가 있는 항목만 눌림)·7(마디까지 가리킴) ✅ — 웹의 `?s=` 가 `section` 파라미터다. **`사용 중` 기준이 빌드 시점 버전으로 좁혀진다**(OTA 미연결) |
+| `settings/SettingsFeatureGuideListScreen.tsx` | 018, 060, 125 | 018 탭 토글 스타일 그대로(새 스타일 0개 — 배경·글자가 상자/`Text` 로 갈릴 뿐) ✅ / 060 ✅ / 125 결정 1 정정(기능 축 카탈로그가 원천)·비어 있는 그룹은 탭째 감춤·그룹이 하나면 탭 줄 자체를 안 그림·한 안내가 **여러 그룹에 선다**(`groups` 배열) ✅ — `role="tablist"` 는 RN 에 짝이 없어 사라지고 **선택 상태는 `aria-selected` 가 그대로 나른다** |
+| `settings/SettingsFeatureGuideScreen.tsx` | 125 | 결정 3(**두 라우트가 한 컴포넌트** — `RootNavigator` 의 `SETTINGS_SCREENS` 가 같은 것을 두 이름에 꽂는다) ✅ / 결정 6(이미지만·문단만·둘 다 · 대체 텍스트 필수) ✅ / 결정 7(마디 목차 · 둘 이상일 때만 · 즉시 스크롤 · 한 번만) ✅ — **부모를 계산하지 않는다**(웹의 `resolveParentPath` 자리를 pop 이 대신한다), **마디는 쿼리가 아니라 파라미터**이고 목차 클릭은 `setParams` 라 스택을 안 건드린다, 스크롤 목적지는 `onLayout` 으로 우리가 잰다(`scroll-mt-4` 몫 16px 포함) |
+| `settings/AppUpdateSection.tsx` | 026, 027, 061, 118, 126 | 026·027·126 의 **표시 상태 열넷을 한 글자도 안 지웠다** ✅(도달 가능한 것은 `unsupported` 하나 — 그 표는 `SettingsAboutScreen` 파일 머리) / 061 결정 5·9(버튼 안 16px 스피너 + `확인 중` · `…` 1글자 금지) ✅ / 118 결정 2(섹션 제목을 스스로 안 그림)·10 ✅ — **스토어를 값으로 import 하지 않고 프롭으로 받는다**([[ADR-128]] 결정 7 · `import.meta.env` 벽), `loadCurrentVersion` 이펙트는 그 포트라 사라졌다 |
+| `settings/AccountModal.tsx` | 086 | 결정 6(마운트 즉시 `refreshAccounts` 1회 · 닫힘 판정은 *"idle 을 벗어난 적이 있다"* · 취소는 되돌릴 것이 없다) ✅ — **로직은 한 줄도 안 바뀌었고** 갈린 것은 껍데기(`Modal`)뿐이다. 이슈 #78 D(재시도는 `reset` 이 아니라 `refreshAccounts`)도 그대로 ✅ |
+| `settings/AccountFlowStatus.tsx` | 086, 113, 114 | 086 결정 6(예열 뒤 캐릭터 재선택 · 후보 계정 id 를 인자로) ✅ / 113 결정 5(`verifying` 은 문구가 아니라 **진행률 바 0%** · 숫자도 안 붙임) ✅ / 114 결정 1·2(429 는 처방까지 담고 **액션을 주지 않는다**, `error === null` 폴백엔 재시도 유지) ✅ — [[ADR-122]] 결정 3 의 `.panel-on-scrim-parent > *` 는 RN 에 자손 선택자가 없어 **카드가 `border-panel-border` 를 직접 쓴다** |
+| `settings/ThemeModal.tsx` | 035, 104 | 104 결정 7(**적용은 즉시, 닫기는 따라오지 않는다** · 버튼은 「완료」 하나 · 취소 없음) ✅ / 035(설정 모달 공통 골격) ✅ — **미검증**: 네이티브 윈도우인 이 모달이 `ThemeProvider` 의 `vars()` 아래에 있어 즉시 갈아입혀지는지는 눈으로 봐야 한다(육안 대조 목록) |
+| `settings/ThemeSelector.tsx` | 018, 064, 104 | 018 필터 칩이 탭 토글 스타일 그대로 ✅ / 064 결정 10(**테마 목록을 손으로 안 적는다** — `THEME_NAMES`·`groupThemesByCategory` 에서 온다, 테스트도 `it.each(THEME_NAMES)`) ✅ / 104 결정 1·3(카테고리 섹션 + 모드 필터는 직교하는 두 축 · 필터 저장 안 함 · 결과 0인 섹션은 헤더째 감춤)·2(타일이 **레지스트리에서 직접 읽은** 색으로 자기를 칠함)·4(배경 이미지를 목록에 노출하지 않음) ✅ |
+| `settings/TrackingModeModal.tsx` | 035, 061 | 035 결정 23(**선택 → 확인 2단계** · 같은 모드면 적용 비활성 · 시드 중 옵션·취소·오버레이 모두 잠금) ✅ / 061 결정 5·9(`적용 중`) ✅ — 오버레이 잠금이 RN 에서는 **안드로이드 뒤로가기까지** 막는다(`onRequestClose`, 웹에 없던 진입 경로) |
+| `settings/TrackingModeSelector.tsx` | 035, 060 | 035 결정 22(공용 카피 `title`/`description`/`caution` · 아이콘 단독 · 접지 않음 · 온보딩과 카드 안쪽 구조 공유) ✅ / 060 결정 5(주의는 실패가 아니라 **정보 톤 고지**) ✅ |
+| `settings/CacheClearConfirm.tsx` | 052, 058, 061 | 052 결정 3(그룹 문구가 실제 삭제 범위와 같아야 한다 — **범위 자체는 core `storage/cache-data.ts` 가 혼자 정하고 이 파일엔 없다**) ✅ / 058 결정 6(기본 전체 선택 · 전부 해제면 삭제 비활성 · 닫았다 열면 기본값 복귀)·9(「유지됨」 줄 없음) ✅ / 061 결정 5·7·9 ✅ — `role="checkbox"`·`aria-checked` 는 **갈리지 않는다**(진짜 다중 선택이라 RN 에도 같은 역할이 있다) |
+| `settings/DisconnectConfirm.tsx` | 061 | 결정 5·9(`해제 중` + 스피너) ✅ — **`useBodyScrollLock` 이 사라진다**(네이티브 윈도우가 구조적으로 한다 · 대체가 아니라 필요가 없어진 것이라 짝을 안 만든다), 자체 오버레이도 공용 `Modal` 로(고른 것이 아니라 `absolute inset-0` 이 부모 상자에 갇혀 **짝이 없다**) |
+| `settings/SettingsRow.tsx` · `SettingsLinkRow.tsx` · `row-class.ts` | 118 | 결정 4(값과 chevron **병기** · `showChevron={false}` 는 위험 색 행 전용 · 외부 링크 행은 chevron 이 아니라 외부 링크 표식) ✅ / 결정 7(행 컴포넌트 둘을 안 합친다 — 합치면 `onPress` 가 선택 필드가 된다) ✅ — `divide-y` 짝이 없어 **구분선을 호출부가 형제마다 얹는다**(`SETTINGS_ROW_DIVIDER_CLASS`), `SettingsLinkRow` 의 `rel="noopener"` 는 **RN 에 그 위험 자체가 없어** 사라진다 |
+| `settings/error-message.ts` | 114 | 결정 4(모달 본문이라 **처방까지** 담는다 — 같은 429 가 토스트에서 짧은 것은 그 자리가 `truncate` 라서다, 통일하지 말 것) ✅ — 순수 함수라 **한 글자도 안 바뀌었다** |
 
 ---
 
@@ -173,19 +208,25 @@
 | `ProfitIcon` | 066 | 결정 3 lucide 규격 6항목·결정 4 좌표로 겹침(clipPath·mask 0개) ✅ |
 | `ProgressBar` | 061, 094 | 061 결정 6 `h-1.5` 단일 프리미티브 ✅ / 094 결정 3 ✅ · `animated` **동작함**(step 7) — 웹의 `transition-[width]` 한 클래스를 Reanimated CSS 트랜지션으로 폈다. NativeWind 의 `transition-*` 을 안 쓴 이유는 그쪽이 지속시간·곡선을 **RN 에 없는 Tailwind 프리셋 변수**에서 읽어 값이 조용히 달라지기 때문이고, 그래서 웹이 실제로 쓰던 두 기본값(150ms · `cubic-bezier(.4,0,.2,1)`)을 값으로 적고 그 대조를 `keyframes-parity.test.ts` 가 `tailwindcss/theme.css` 를 읽어 한다 |
 
-### molecules (11)
+### molecules (12)
 
 **전부 옮겼다**(3단계 step 4, 2026-08-12 — `packages/app-rn/src/components/molecules/`). 각 행의 ADR 을
 다시 읽고 그 동작이 새 코드에 있음을 확인한 결과가 «확인» 열이고, RN 에서 갈린 자리는 컴포넌트
 주석과 [README «3-4단계 결과»](./README.md) 에 있다.
 
-**셋은 절반만 왔다** — `BossPortrait`(그림 분기) · `ValuableDropBadge`(아이콘) ·
-`CharacterSelectDropdown`(엠블럼·목록). 앞의 둘은 **에셋 레이어**를, 마지막은 **목록 UI 결정**을
-기다린다(아래 표의 «확인» 열에 무엇이 없는지 적어 뒀다).
+**남은 절반은 둘이다**(4단계 step 5 가 하나를 채웠다) — `ValuableDropBadge`(아이콘) ·
+`CharacterSelectDropdown`(엠블럼·목록). 앞은 **에셋 레이어**를, 뒤는 **목록 UI 결정**을 기다린다
+(아래 표의 «확인» 열에 무엇이 없는지 적어 뒀다).
+
+**열둘째가 생겼다 — `MediaCardArt`.** 4단계 step 4 가 `app/content-scheduler/` 에 만들며
+*"세 번째 호출부가 붙는 단계에서 `components/` 로 올릴 자리"* 라고 적어 둔 것을 step 5 가 옮겼다
+(보스 카드 · 파티 인원 모달 히어로 · 원형 초상이 붙었다). **웹에 짝이 없는 컴포넌트다** — 웹에서는
+bleed 가 인라인 style 네 줄이었고 RN 에서만 기하 계산이 된다.
 
 | 컴포넌트 | ADR 계약 | 확인 |
 |---|---|---|
-| `BossPortrait` | — | (계약 없음) **플레이스홀더 분기만** — RN 번들에 보스 일러스트가 없어 `getBossPortraitUrl` 이 항상 `null` 이다. 그림 분기는 슬러그→에셋 매핑과 CSS `background-size/position` → RN 기하 변환이 함께 필요해 **에셋 레이어 몫**(`src/lib/rn-boss-icons.ts` 파일 머리) |
+| `BossPortrait` | — | (계약 없음) **네 케이스가 다 선다**(4단계 step 5). 3단계는 플레이스홀더만 그렸고 막던 것이 둘이었다 — 에셋은 [[ADR-129]] 가, 크롭 기하는 step 4 의 `resolveMediaArtLayout` 이 풀었다. **변환을 여기서 다시 하지 않는다**(카드 bleed 와 표만 다르고 값의 형태가 같아, 두 벌이 되면 한쪽만 고쳐지는 사고가 열린다) / **원형 클리핑은 우리가 명시한다** — 웹은 `background-image` 라 둥근 모서리가 배경을 저절로 잘랐지만 RN 의 `<Image>` 는 자식이다(`overflow-hidden`) / 접근성 역할은 웹과 **같은 `img`** |
+| `MediaCardArt` (+ `media-card-art.ts`) | 018, 020, 021, 064, 094, 129 | **웹에 짝이 없다** — CSS `background-size`/`position`/`filter`/`mask-image` 네 줄이 RN 에서 기하 계산이 되어, 일곱 호출부에 복붙하면 한 곳만 어긋나도 그림이 조용히 다르게 잘린다([[ADR-094]] 결정 1 의 두 조건을 넘긴다) / 018·020·021 의 bleed 레시피와 `MediaCard` 껍데기(= 웹 `<Card className="media-scope …">`) ✅ / 064 결정 5 스코프 재선언은 `buildMediaScopeVariables` 한 곳에서 온다 ✅ / 129 로 들어온 에셋의 **고유 크기**가 기하의 유일한 실측 입력이고, 못 읽으면 `cover` 로 떨어진다(`Number.isFinite` — step 5 가 `undefined <= 0` 이 false 라 `aspectRatio: NaN` 이 나가던 것을 고쳤다) / 페이드 끝점은 카드(38%/76%)와 모달 히어로(42%/82%)가 달라 `variant` 로 가른다(core 의 두 마스크가 그렇게 갈라져 있다) |
 | `CharacterSelectDropdown` | 001, 096 | 001 은 **웹뷰 사정**이라 사라진다(네이티브 `<select>`·UA 화살표 억제) / 096 결정 5 두 크기의 치수·엠블럼 자리·chevron 직접 그리기 ✅ / **목록(열린 상태)은 미도착** — RN 에 `<select>` 짝이 없고 무엇으로 그릴지가 디자인 결정이라 step 5(오버레이)와 함께. `onSelect` 는 시그니처만 유지 |
 | `DifficultySegment` | 121 | 결정 4 미선택 = 같은 뱃지 + `opacity-40`(고스트 칩 회귀 가드) ✅ / 같은 값 재탭이 저장을 안 부른다 ✅ / `aria-pressed` → **`aria-selected`**(RN 접근성 상태에 *pressed* 가 없다 — 전달되는 사실은 같다) |
 | `EmptyState` (+ `UnavailableNotice`) | 060, 066 / 060, 067, 068 | 060 결정 1 두 변형·결정 2 배지 마크(leaf/컨텍스트)·**결정 3 액션 없는 자리에 버튼 없음** ✅ / 066 결정 5 `icon` 타입이 커스텀 아이콘도 받는다 ✅ / 068 결정 1 `notCollected` 넷째 얼굴(중립 톤 + Clock)·067 트레이드오프대로 **시각을 암시하지 않는 문구** ✅ · **문구는 한 글자도 안 바꿨다** |
@@ -220,7 +261,7 @@ step 4 와 같은 벽). `Toast` 의 남은 시간 바·진입 트랜지션은 st
 | `DropEffectOverlay` | 038, 039, 048, 064, 103 | **부유(`fx-drop-float`)만 왔고 엔진·팝인은 아직**(step 7). 038 구성(ScreenEff 전면 + 8프레임에 아이템 팝인 + DropEff pre→loop∞ · 탭하면 end 재생 후 닫힘)의 **레이어·쌓임 순서·props 계약**만 세웠다 ✅ / 064 **적용 범위 밖**을 지켰다 — 오버레이 색이 테마를 안 따른다(스프라이트가 어두운 바탕 전제라 밝은 테마에서 표면색을 쓰면 연출이 사라진다), 웹과 같은 고정 hex ✅ / 039 정정 1·2 가 다루던 문제가 **사라진다**(시트 위에 서는 것을 네이티브 윈도우가 보장 — `pointer-events-auto` 마커도 `data-sheet-keep-open` 가드도 불필요) ✅ / **중앙 아이템의 부유는 step 7 이 붙였다** — `fx-drop-float` 을 Reanimated CSS 애니메이션으로(`2.6s ease-in-out infinite` · `translateY −5 → 5 → −5`). 웹이 이것을 **별도 래퍼**에 걸어 둔 이유가 RN 에서도 그대로다(중앙정렬·부유·팝인 세 transform 이 한 요소에 겹치면 서로를 덮어쓴다). 다만 그 래퍼는 `itemUrl !== null` 안쪽이고 RN 의 아이템 아이콘이 전부 `null` 이라 **한 번도 렌더되지 않으므로**, 값의 대조는 렌더 트리가 아니라 `keyframes-parity.test.ts` 가 상수를 직접 읽어 한다 / **048·103 은 엔진과 함께 온다 — 막은 것은 시간이 아니라 에셋이다**(step 7 이 확인). 프레임 에셋이 네 단계 모두 빈 배열이고(`rn-drop-effect-frames.ts`, 빈 배열은 원본이 정의한 정상 경로) 재생 루프가 DOM(`new Image()`·`el.complete`·`el.style.transform`) 위에 서 있어 다시 써야 하는데, **RN 의 `Image` 는 원격 URI 의 고유 크기를 모른다**(`require()` 로 번들에 든 에셋만 스스로 안다). 048 의 배치는 origin 을 **그 프레임 비트맵 크기 위에서** 되미는 일이라, 에셋이 어떤 모양으로 오는지가 정해지기 전에 배치 코드를 쓰면 그 결정을 코드가 몰래 대신 내리게 된다(크기 표는 `DROP_EFFECT_ORIGINS` 의 **주석에만** 있어 데이터로 읽을 수도 없다). 팝인도 같은 이유로 못 붙였다 — 대상이 아직 없는 `<Image>` 이고 그것을 켜는 트리거가 그 엔진이다. 103 의 **판정 근거가 성능이 아니라 눈**이라는 점을 주석에 박아 뒀다(2배 → 사용자 반려 → 1.5배) — 되살릴 때도 «단계별 fps 표 + 한 배율» 구조를 먼저 세우고 값은 실기기에서 확정하며, 팝인은 fps 가 아니라 트랜지션이라 **같은 배율로 함께** 바꿔야 한다(결정 2) / **RN 에서 갈린 것**: `radial-gradient` → `react-native-svg`(반지름은 `farthest-corner` 의 근사 √2/2) · **`mix-blend-screen` 짝이 없다**(가산 합성이 빠지면 검은 사각형이 그대로 보인다 — 프레임이 올 때 함께 풀 자리) |
 | `ErrorBoundary` | 065, 117 | 065 결정 5 폴백은 **'다시 시작' 하나뿐**(설정 열기·스택트레이스·브랜드 마크 없음 — 목적은 복구 도구가 아니라 빈 화면을 없애는 것) ✅ / **117 결정 6 은 셋 중 하나만 대응된다** — ⑴ *"커버가 안 걷힌다"* **대응 없음**(`#boot-cover` 는 `index.html` 의 DOM 이고 RN 엔 문서가 없다) · ⑵ *"폴백이 커버 밑에 그려진다"* **대응됨**(`expo-splash-screen` 도 JS 트리 위 네이티브 뷰라 마운트 시 내린다) · ⑶ *"버튼이 눌리지 않는다"* **대응 없음**(`isUserInteractionEnabled=false` 는 Capacitor 플러그인의 동작). 그래서 호출은 남되 **이유가 ⑵ 하나로 줄고**, z-index 를 안 올린다는 결정은 그 숫자가 애초에 없어 그대로 ✅ / **'다시 시작'이 필수 프롭이 됐다** — 웹 기본값 `location.reload()` 의 짝이 없고(번들 재실행은 OTA 런타임 `expo-updates` 의 일, [[ADR-128]] 결정 7 이 별도 ADR 로 미뤘다) 없는 기본값을 지어내면 같은 예외로 즉시 되돌아오는 버튼이 되어 065 결정 5 의 *"그 하나가 분명해진다"* 를 깬다 |
 | `Modal` | 065, 094, 122 | 094 3단계 compound(`Modal.Card`/`Modal.Panel`) — `card={false}` 부정 불리언이 사라지고 `maxWidth`·`tight` 가 의미를 갖는 패널에만 붙는다 ✅ / 결정 1 오버레이가 취약 구조(전체 화면·스크림·안전영역·바깥 탭)를 소유 ✅ / 065 결정 2 `tight` 는 하단 패딩만 ✅ / **122 는 이 계층의 핵심 확인 항목이었다** — `:root[data-mode]` 선택자가 RN 에 없어 그 규칙이 계산하던 결과를 **파생 토큰 `--color-panel-border`** 로 미리 만들었고(step 1), 분기는 `theme-vars.ts` 에서 `definition.mode` 로 **딱 한 번** 일어난다. **테마 이름으로 가르지 않는다**([[ADR-064]] 결정 8 이 폐기한 수동 목록이 CSS 쪽에 되살아나는 것을 막는다) ✅ / **122 결정 3 의 두 클래스 중 `panel-on-scrim-parent` 짝은 RN 에 없다** — 자손 선택자가 없어 부모가 자식 스타일을 정할 방법이 없다. 그 결정이 지키려던 것을 **자식이 `border-panel-border` 를 직접 쓰는 것**으로 대신한다(스크림 없는 화면과 공유되는 자식은 프롭으로 받아야 — 화면 단계) / **RN 에서 갈린 것**: 포털 → `Modal` · `stopPropagation` → **`onStartShouldSetResponder`**(RN 엔 버블링이 없고 responder 를 안 가져가면 바깥 `Pressable` 이 받아 닫힌다 — 웹이 `stopClickPropagation` 을 걸던 **같은 자리**) · `overflow-y-auto` **안 옮김**(오버레이가 스크롤을 가지면 바깥 탭이 죽는다 → 107 결정 3 규칙대로 길어질 모달이 자기 스크롤포트를 갖는다) |
-| `PartySizeModal` | 018, 064, 121, 122 | 121 결정 2 난이도+파티 인원을 함께·결정 3 **표시 전용**(모드를 모르고 난이도 선택의 뜻은 호출부가 정한다 — 두 모드를 통합할 때 지울 코드를 만들지 않는다)·결정 7 `Modal.Panel maxWidth="max-w-2xs"`(288 = 4난이도 칩이 안 접히는 하한)·전폭 스테퍼 ✅ / 064 결정 5 `MediaScope` 안에서 `bg-surface`·`text-text` 가 media-* 로 해석 ✅ / 018 bleed 레시피 + **`border-t` 는 `media-scope` 바깥**(검은마법사는 media-surface 가 surface 와 값이 같아 이 선이 유일한 경계) ✅ / 122 는 `Modal.Panel` 자식이라 **이 View 가 직접** `border-panel-border` 를 쓴다 ✅ / **RN 에서 갈린 것**: `bg-surface/60` 이 **안 나온다**(NativeWind v3 엔진은 `var()` 색에 투명도 접미사를 못 만든다 — step 3 이 남긴 함정) → 값에서 rgba 를 만들고, 그 값이 `surface` 가 아니라 **`mediaSurface`** 인 것도 같은 이유 · `textShadow` 두 겹을 **하나만**(RN 은 세 프롭이라 겹칠 수 없다) · `linear-gradient` 베일 → `expo-linear-gradient` / **일러스트 미도착**(에셋 레이어 — `crop` 값은 지금도 진짜다, `MEDIA_ART_FILTER`·`MEDIA_ART_MASK_HERO` 는 CSS 문자열이라 그때 함께 풀 자리) |
+| `PartySizeModal` | 018, 064, 121, 122 | 121 결정 2 난이도+파티 인원을 함께·결정 3 **표시 전용**(모드를 모르고 난이도 선택의 뜻은 호출부가 정한다 — 두 모드를 통합할 때 지울 코드를 만들지 않는다)·결정 7 `Modal.Panel maxWidth="max-w-2xs"`(288 = 4난이도 칩이 안 접히는 하한)·전폭 스테퍼 ✅ / 064 결정 5 `MediaScope` 안에서 `bg-surface`·`text-text` 가 media-* 로 해석 ✅ / 018 bleed 레시피 + **`border-t` 는 `media-scope` 바깥**(검은마법사는 media-surface 가 surface 와 값이 같아 이 선이 유일한 경계) ✅ / 122 는 `Modal.Panel` 자식이라 **이 View 가 직접** `border-panel-border` 를 쓴다 ✅ / **RN 에서 갈린 것**: `bg-surface/60` 이 **안 나온다**(NativeWind v3 엔진은 `var()` 색에 투명도 접미사를 못 만든다 — step 3 이 남긴 함정) → 값에서 rgba 를 만들고, 그 값이 `surface` 가 아니라 **`mediaSurface`** 인 것도 같은 이유 · `textShadow` 두 겹을 **하나만**(RN 은 세 프롭이라 겹칠 수 없다) · `linear-gradient` 베일 → `expo-linear-gradient` / **일러스트가 앉았다**(4단계 step 5) — 보스 카드와 **같은 `MediaCardArt`** 를 `variant="hero"` 로 부른다([[ADR-121]] 결정 7 의 "같은 값"이 컴포넌트 공유로 성립한다). 화면 전용 testID(`party-size-modal-art`)는 사라졌다 — 아트와 베일이 둘 다 `absolute inset-0` 이라 감싸는 순간 기준 상자가 바뀌어 그림이 사라진다 |
 | `ProgressModal` | 016 | 016 예열 진행률 바를 그대로 재사용(신규 스타일 0) ✅ / 완료 시점에만 프로그램적으로 닫히므로 `onClose` 가 no-op — **안드로이드 뒤로가기도 아무 일이 없다**(웹에서 오버레이 클릭이 무시되던 것과 같은 뜻) ✅ / 바뀐 것은 `space-y-2`→`gap-2`·`<p>`→`<Text>` 둘뿐 |
 | `Toast` | 063, 064 | 064 결정 2 톤 배경이 `*-tint` **토큰**(웹이 `color-mix` 로 우회하던 자리) ✅ / 063 액션은 아이콘만 보이고 라벨은 접근성 이름 · 뜻이 다른 액션은 자기 아이콘을 넘긴다(기본이 '다시 시도' 전제) ✅ / **스와이프 해제는 responder 프롭으로 그대로** — `@core/lib/swipe-dismiss` 의 임계 판정을 그대로 부르고 **`PanResponder` 를 안 쓴다**(그것은 터치 히스토리에서 제스처를 스스로 계산해 웹이 갖던 "시작점 + 현재 x" 모델을 대신 세우고, 테스트에서 `touchHistory` 를 지어내야 한다). **`onMove…` 에서만 responder 를 가져오는 것이 요점** — 시작에서 가져가면 안쪽 버튼이 안 눌린다(웹이 `closest('button')` 로 걸러내던 목적을 규칙이 구조로 해 준다) / **모션 완료**(step 7): `toast-shrink` 는 Reanimated CSS 애니메이션이고 웹이 인라인으로 넣던 지속시간(토스트마다 다르다 — 성공 2초/정보 2.5초)이 그대로 `animationDuration` 에 간다. `origin-left` → `transformOrigin` / 진입 트랜지션도 CSS 트랜지션으로 — 웹이 `transition-opacity` 라 **흐르는 것은 투명도뿐**이고 `translate-y-3 → 0` 은 즉시 튄다(투명도 0 이라 안 보인다), 드래그 중에는 프롭을 빼 손가락을 그대로 따라간다 / `motion-reduce:hidden` 짝 ✅ — 켜지면 남은 시간 바가 통째로 없다(줄지 않는 막대는 "시간이 안 간다"로 읽힌다) / **남은 어긋남**: core 의 `ToastAction.icon` 타입이 `lucide-react`(웹)라 RN 아이콘이 타입상 안 들어간다 — 렌더만 하는 이 파일은 무사하고 **아이콘을 넘기는 쪽**이 화면 단계에서 걸린다(core 무수정 원칙이라 사실만 적어 둔다) |
 | `Toast/ToastStack` | 063 | 063 결정 4 자리(탭바 위 12px)·아래에서부터 쌓기 ✅ / **포털의 짝을 여기서 만들지 않았다** — 웹이 포털을 쓴 이유는 *"토스트는 항상 최상단"* 인데 RN 에서 그것을 주는 것은 `Modal` 뿐이고 안드로이드에서 그것은 화면 전체의 터치를 삼키는 다이얼로그다. 그래서 **자기가 놓인 자리에 절대 배치**로 그리고 어디에 마운트할지는 앱 셸이 정한다(화면 단계) / **남는 한계**: 그래도 `Modal` 이 열려 있는 동안 새로 뜬 토스트는 그 네이티브 윈도우 **뒤**에 가린다(웹은 z-60 으로 항상 앞). 실제로 걸리는 자리가 있다 — 파티 인원 모달이 열린 채 저장이 실패하면 그 토스트가 안 보인다. 오버레이를 한 루트 호스트로 모으면 풀리고, 그것은 화면 배선의 결정이라 미리 정하지 않았다 / 탭바 높이 `4rem` 가정은 [[ADR-099]] 가 웹에서 실측으로 바꾼 그 지점이라 셸 단계에서 다시 잰다 |
@@ -457,7 +498,7 @@ Kotlin 메타데이터 2.3 이라 RN 0.86(Kotlin 2.1)에서 컴파일이 깨지�
 | 2 | `native/live-update.ts` | OTA 프로토콜 자체가 바뀜 — 별도 ADR 필요 |
 | 3 | 데이터 보존 | 실패 시 복구 불가([data.md](./data.md)) |
 | 4 | `BossScreen.tsx` | ADR 26개 |
-| 5 | ~~CSS `@keyframes` 8종~~ → **7종 중 4종 이식 완료**(3단계 step 7) | 선언형 → 명령형 재구현, 판정이 주관적. 남은 셋(`valuable-drop-*`)은 **화면 계층**이라 4단계 몫이고, 판정(육안 대조)은 여전히 남았다 |
+| 5 | ~~CSS `@keyframes` 8종~~ → ~~7종 중 4종 이식(3단계 step 7)~~ → **7종 전부 처리 완료**(4단계 step 6·7·8 — 이식 6 · degrade 1) | 선언형 → 명령형 재구현, 판정이 주관적. **코드는 끝났고 남은 것은 판정 하나다** — 값은 `keyframes-parity.test.ts` 가 웹 `index.css` 를 읽어 붙들지만 *"같아 보이는가"* 는 육안 대조 몫이고, 그중 `valuable-drop-spin`(회전 샤인 링 → 정적 골드)은 **degrade 라 애초에 같아 보이지 않는 것이 맞다** — 물을 것은 그 열등 경로가 견딜 만한가다 |
 | 6 | `ContentScreen.tsx` | ADR 21개 |
 | 7 | DOM 스냅샷 대체 장치 | 없으면 나머지 전부의 검증 근거가 사라짐 |
 | 8 | `CharacterTrackingPicker` | ADR 11개 + 계정 전환 이력([[ADR-086]]) |

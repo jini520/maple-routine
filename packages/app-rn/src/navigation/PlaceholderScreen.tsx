@@ -24,29 +24,6 @@ export function PlaceholderScreen({
   )
 }
 
-/**
- * 기능 안내 상세의 자리표시자 — **두 라우트가 이것 하나를 함께 쓴다**([[ADR-125]] 결정 3).
- *
- * 따로 두는 이유는 파라미터가 있기 때문이다. 그냥 `PlaceholderScreen` 을 두 자리에 꽂으면 "같은
- * 화면인가"가 자동으로 참이 되어(전부 같은 컴포넌트다) 계약을 검사하지 못한다. `guideId` 를 찍으면
- * 두 경로가 **같은 화면에 같은 데이터를 실어 보내는지**를 실제로 물을 수 있다.
- */
-export function FeatureGuidePlaceholderScreen({
-  route,
-}: {
-  route: {
-    name: 'SettingsFeatureGuide' | 'SettingsReleaseNoteGuide'
-    params: { guideId: string; section?: string }
-  }
-}): React.JSX.Element {
-  return (
-    <View className="flex-1 items-center justify-center" testID={`screen-${route.name}`}>
-      <Text className="text-base text-text" testID="feature-guide-id">
-        {route.params.guideId}
-      </Text>
-      <Text className="text-sm text-text-muted" testID="feature-guide-section">
-        {route.params.section ?? ''}
-      </Text>
-    </View>
-  )
-}
+// 기능 안내 상세에는 파라미터를 찍는 전용 자리표시자가 따로 있었다 — **step 3 에서 지웠다.**
+// 그 자리를 진짜 화면(`SettingsFeatureGuideScreen`)이 맡았고, 그 화면이 자기 라우트 이름을
+// 그대로 찍으므로([[ADR-125]] 결정 3 을 테스트가 물을 수 있는 형태) 대역이 할 일이 남지 않았다.

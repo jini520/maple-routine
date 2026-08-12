@@ -13,170 +13,936 @@ exports[`렌더 트리 스냅샷 온보딩 골격 1`] = `
   }
 >
   <View
-    onLayout={[Function]}
     style={
-      [
-        {
-          "flex": 1,
-        },
-        undefined,
-      ]
+      {
+        "flexBasis": "0%",
+        "flexGrow": 1,
+        "flexShrink": 1,
+      }
     }
   >
-    <RNSScreenStack
+    <View
+      onLayout={[Function]}
       style={
-        {
-          "flex": 1,
-        }
+        [
+          {
+            "flex": 1,
+          },
+          undefined,
+        ]
       }
     >
-      <RNSScreen
-        activityState={2}
-        androidResetScreenShadowStateOnOrientationChangeEnabled={true}
-        aria-hidden={false}
-        bottomScrollEdgeEffect="automatic"
-        collapsable={false}
-        fullScreenSwipeEnabled="undefined"
-        fullScreenSwipeShadowEnabled={true}
-        gestureEnabled={true}
-        gestureResponseDistance={
-          {
-            "bottom": -1,
-            "end": -1,
-            "start": -1,
-            "top": -1,
-          }
-        }
-        hasLargeHeader={false}
-        leftScrollEdgeEffect="automatic"
-        nativeBackButtonDismissalEnabled={false}
-        onAppear={[Function]}
-        onDisappear={[Function]}
-        onDismissed={[Function]}
-        onGestureCancel={[Function]}
-        onHeaderBackButtonClicked={[Function]}
-        onHeaderHeightChange={[Function]}
-        onNativeDismissCancelled={[Function]}
-        onSheetDetentChanged={[Function]}
-        onTransitionProgress={[Function]}
-        onWillAppear={[Function]}
-        onWillDisappear={[Function]}
-        replaceAnimation="push"
-        rightScrollEdgeEffect="automatic"
-        screenId="<screenId>"
-        sheetAllowedDetents={
-          [
-            1,
-          ]
-        }
-        sheetCornerRadius={-1}
-        sheetDefaultResizeAnimationEnabled={true}
-        sheetElevation={24}
-        sheetExpandsWhenScrolledToEdge={true}
-        sheetGrabberVisible={false}
-        sheetInitialDetent={0}
-        sheetInitialDetentIndex={0}
-        sheetLargestUndimmedDetent={-1}
-        sheetLargestUndimmedDetentIndex={-1}
-        sheetShouldOverflowTopInset={false}
-        stackAnimation="ios_from_right"
-        stackPresentation="push"
+      <RNSScreenStack
         style={
           {
-            "bottom": 0,
-            "left": 0,
-            "position": "absolute",
-            "right": 0,
-            "top": 0,
-            "zIndex": undefined,
+            "flex": 1,
           }
         }
-        swipeDirection="horizontal"
-        synchronousShadowStateUpdatesEnabled={true}
-        topScrollEdgeEffect="automatic"
       >
-        <RNSScreenContentWrapper
+        <RNSScreen
+          activityState={2}
+          androidResetScreenShadowStateOnOrientationChangeEnabled={true}
+          aria-hidden={false}
+          bottomScrollEdgeEffect="automatic"
           collapsable={false}
-          style={
+          fullScreenSwipeEnabled="undefined"
+          fullScreenSwipeShadowEnabled={true}
+          gestureEnabled={true}
+          gestureResponseDistance={
+            {
+              "bottom": -1,
+              "end": -1,
+              "start": -1,
+              "top": -1,
+            }
+          }
+          hasLargeHeader={false}
+          leftScrollEdgeEffect="automatic"
+          nativeBackButtonDismissalEnabled={false}
+          onAppear={[Function]}
+          onDisappear={[Function]}
+          onDismissed={[Function]}
+          onGestureCancel={[Function]}
+          onHeaderBackButtonClicked={[Function]}
+          onHeaderHeightChange={[Function]}
+          onNativeDismissCancelled={[Function]}
+          onSheetDetentChanged={[Function]}
+          onTransitionProgress={[Function]}
+          onWillAppear={[Function]}
+          onWillDisappear={[Function]}
+          replaceAnimation="push"
+          rightScrollEdgeEffect="automatic"
+          screenId="<screenId>"
+          sheetAllowedDetents={
             [
-              {
-                "flex": 1,
-              },
-              [
-                {
-                  "backgroundColor": "rgb(242, 242, 242)",
-                },
-                undefined,
-              ],
+              1,
             ]
           }
+          sheetCornerRadius={-1}
+          sheetDefaultResizeAnimationEnabled={true}
+          sheetElevation={24}
+          sheetExpandsWhenScrolledToEdge={true}
+          sheetGrabberVisible={false}
+          sheetInitialDetent={0}
+          sheetInitialDetentIndex={0}
+          sheetLargestUndimmedDetent={-1}
+          sheetLargestUndimmedDetentIndex={-1}
+          sheetShouldOverflowTopInset={false}
+          stackAnimation="ios_from_right"
+          stackPresentation="push"
+          style={
+            {
+              "bottom": 0,
+              "left": 0,
+              "position": "absolute",
+              "right": 0,
+              "top": 0,
+              "zIndex": undefined,
+            }
+          }
+          swipeDirection="horizontal"
+          synchronousShadowStateUpdatesEnabled={true}
+          topScrollEdgeEffect="automatic"
         >
-          <View
+          <RNSScreenContentWrapper
+            collapsable={false}
+            style={
+              [
+                {
+                  "flex": 1,
+                },
+                [
+                  {
+                    "backgroundColor": "rgb(242, 242, 242)",
+                  },
+                  undefined,
+                ],
+              ]
+            }
+          >
+            <View
+              style={
+                {
+                  "flexBasis": "0%",
+                  "flexGrow": 1,
+                  "flexShrink": 1,
+                }
+              }
+              testID="screen-Onboarding"
+            >
+              <RCTScrollView
+                automaticallyAdjustKeyboardInsets={true}
+                contentContainerStyle={
+                  {
+                    "flexGrow": 1,
+                    "paddingBottom": 34,
+                    "paddingLeft": 16,
+                    "paddingRight": 16,
+                    "paddingTop": 32,
+                  }
+                }
+                indicatorStyle="black"
+                keyboardShouldPersistTaps="handled"
+                style={
+                  {
+                    "flexBasis": "0%",
+                    "flexGrow": 1,
+                    "flexShrink": 1,
+                    "marginTop": 59,
+                  }
+                }
+                testID="onboarding-scroll"
+              >
+                <View>
+                  <View
+                    style={
+                      {
+                        "columnGap": 16,
+                        "rowGap": 16,
+                        "width": "100%",
+                      }
+                    }
+                  >
+                    <View
+                      style={
+                        {
+                          "columnGap": 4,
+                          "rowGap": 4,
+                        }
+                      }
+                    >
+                      <Text
+                        style={
+                          {
+                            "color": "#241208",
+                            "fontSize": 18,
+                            "fontWeight": "600",
+                            "lineHeight": 28,
+                          }
+                        }
+                      >
+                        넥슨 API 키를 입력해주세요
+                      </Text>
+                      <Text
+                        style={
+                          {
+                            "color": "#645C42",
+                            "fontSize": 14,
+                            "lineHeight": 20,
+                          }
+                        }
+                      >
+                        스케줄러 API를 사용하려면 개인 API 키가 필요해요
+                      </Text>
+                      <Text
+                        style={
+                          {
+                            "color": "#645C42",
+                            "fontSize": 12,
+                            "lineHeight": 16,
+                          }
+                        }
+                      >
+                        입력한 키는 이 기기에만 저장되고 넥슨 외 어디로도 전송되지 않아요
+                      </Text>
+                    </View>
+                    <View
+                      style={
+                        {
+                          "columnGap": 4,
+                          "rowGap": 4,
+                        }
+                      }
+                    >
+                      <Text
+                        style={
+                          {
+                            "color": "#241208",
+                            "fontSize": 14,
+                            "fontWeight": "500",
+                            "lineHeight": 20,
+                          }
+                        }
+                      >
+                        Nexon Open API 키
+                      </Text>
+                      <View
+                        style={
+                          {
+                            "alignItems": "center",
+                            "flexDirection": "row",
+                            "position": "relative",
+                          }
+                        }
+                      >
+                        <TextInput
+                          aria-label="Nexon Open API 키"
+                          autoCapitalize="none"
+                          autoCorrect={false}
+                          onChangeText={[Function]}
+                          onSubmitEditing={[Function]}
+                          placeholder="발급받은 API 키를 입력하세요"
+                          secureTextEntry={true}
+                          spellCheck={false}
+                          style={
+                            {
+                              "backgroundColor": "#FDFCF6",
+                              "borderColor": "#CFC9AE",
+                              "borderRadius": 10,
+                              "borderWidth": 1,
+                              "color": "#241208",
+                              "paddingBottom": 12,
+                              "paddingLeft": 16,
+                              "paddingRight": 44,
+                              "paddingTop": 12,
+                              "width": "100%",
+                            }
+                          }
+                          value=""
+                        />
+                        <View
+                          accessibilityLabel="키 표시"
+                          accessibilityState={
+                            {
+                              "busy": undefined,
+                              "checked": undefined,
+                              "disabled": undefined,
+                              "expanded": undefined,
+                              "selected": undefined,
+                            }
+                          }
+                          accessibilityValue={
+                            {
+                              "max": undefined,
+                              "min": undefined,
+                              "now": undefined,
+                              "text": undefined,
+                            }
+                          }
+                          accessible={true}
+                          collapsable={false}
+                          focusable={true}
+                          onBlur={[Function]}
+                          onClick={[Function]}
+                          onFocus={[Function]}
+                          onResponderGrant={[Function]}
+                          onResponderMove={[Function]}
+                          onResponderRelease={[Function]}
+                          onResponderTerminate={[Function]}
+                          onResponderTerminationRequest={[Function]}
+                          onStartShouldSetResponder={[Function]}
+                          role="button"
+                          style={
+                            {
+                              "display": "flex",
+                              "position": "absolute",
+                              "right": 12,
+                            }
+                          }
+                        >
+                          <RNSVGSvgView
+                            align="xMidYMid"
+                            aria-hidden={true}
+                            bbHeight={18}
+                            bbWidth={18}
+                            fill="none"
+                            focusable={false}
+                            height={18}
+                            meetOrSlice={0}
+                            minX={0}
+                            minY={0}
+                            stroke="#645C42"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            style={
+                              [
+                                {
+                                  "backgroundColor": "transparent",
+                                  "borderWidth": 0,
+                                },
+                                {},
+                                {
+                                  "flex": 0,
+                                  "height": 18,
+                                  "width": 18,
+                                },
+                              ]
+                            }
+                            vbHeight={24}
+                            vbWidth={24}
+                            width={18}
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <RNSVGGroup
+                              fill={null}
+                              propList={
+                                [
+                                  "fill",
+                                  "stroke",
+                                  "strokeWidth",
+                                  "strokeLinecap",
+                                  "strokeLinejoin",
+                                ]
+                              }
+                              stroke={
+                                {
+                                  "payload": 4284767298,
+                                  "type": 0,
+                                }
+                              }
+                              strokeLinecap={1}
+                              strokeLinejoin={1}
+                              strokeWidth={2}
+                            >
+                              <RNSVGPath
+                                d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"
+                                fill={null}
+                                propList={
+                                  [
+                                    "fill",
+                                    "stroke",
+                                    "strokeWidth",
+                                    "strokeLinecap",
+                                    "strokeLinejoin",
+                                  ]
+                                }
+                                stroke={
+                                  {
+                                    "payload": 4284767298,
+                                    "type": 0,
+                                  }
+                                }
+                                strokeLinecap={1}
+                                strokeLinejoin={1}
+                                strokeWidth={2}
+                              />
+                              <RNSVGCircle
+                                cx="12"
+                                cy="12"
+                                fill={null}
+                                propList={
+                                  [
+                                    "fill",
+                                    "stroke",
+                                    "strokeWidth",
+                                    "strokeLinecap",
+                                    "strokeLinejoin",
+                                  ]
+                                }
+                                r="3"
+                                stroke={
+                                  {
+                                    "payload": 4284767298,
+                                    "type": 0,
+                                  }
+                                }
+                                strokeLinecap={1}
+                                strokeLinejoin={1}
+                                strokeWidth={2}
+                              />
+                            </RNSVGGroup>
+                          </RNSVGSvgView>
+                        </View>
+                      </View>
+                      <View
+                        accessibilityState={
+                          {
+                            "busy": undefined,
+                            "checked": undefined,
+                            "disabled": undefined,
+                            "expanded": undefined,
+                            "selected": undefined,
+                          }
+                        }
+                        accessibilityValue={
+                          {
+                            "max": undefined,
+                            "min": undefined,
+                            "now": undefined,
+                            "text": undefined,
+                          }
+                        }
+                        accessible={true}
+                        collapsable={false}
+                        focusable={true}
+                        onBlur={[Function]}
+                        onClick={[Function]}
+                        onFocus={[Function]}
+                        onResponderGrant={[Function]}
+                        onResponderMove={[Function]}
+                        onResponderRelease={[Function]}
+                        onResponderTerminate={[Function]}
+                        onResponderTerminationRequest={[Function]}
+                        onStartShouldSetResponder={[Function]}
+                        role="link"
+                        style={
+                          {
+                            "alignItems": "center",
+                            "columnGap": 4,
+                            "flexDirection": "row",
+                            "paddingTop": 2,
+                            "rowGap": 4,
+                          }
+                        }
+                      >
+                        <Text
+                          style={
+                            {
+                              "color": "#F58B0F",
+                              "fontSize": 12,
+                              "lineHeight": 16,
+                            }
+                          }
+                        >
+                          openapi.nexon.com에서 확인
+                        </Text>
+                        <RNSVGSvgView
+                          align="xMidYMid"
+                          aria-hidden={true}
+                          bbHeight={12}
+                          bbWidth={12}
+                          fill="none"
+                          focusable={false}
+                          height={12}
+                          meetOrSlice={0}
+                          minX={0}
+                          minY={0}
+                          stroke="#F58B0F"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          style={
+                            [
+                              {
+                                "backgroundColor": "transparent",
+                                "borderWidth": 0,
+                              },
+                              {},
+                              {
+                                "flex": 0,
+                                "height": 12,
+                                "width": 12,
+                              },
+                            ]
+                          }
+                          vbHeight={24}
+                          vbWidth={24}
+                          width={12}
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <RNSVGGroup
+                            fill={null}
+                            propList={
+                              [
+                                "fill",
+                                "stroke",
+                                "strokeWidth",
+                                "strokeLinecap",
+                                "strokeLinejoin",
+                              ]
+                            }
+                            stroke={
+                              {
+                                "payload": 4294281999,
+                                "type": 0,
+                              }
+                            }
+                            strokeLinecap={1}
+                            strokeLinejoin={1}
+                            strokeWidth={2}
+                          >
+                            <RNSVGPath
+                              d="M15 3h6v6"
+                              fill={null}
+                              propList={
+                                [
+                                  "fill",
+                                  "stroke",
+                                  "strokeWidth",
+                                  "strokeLinecap",
+                                  "strokeLinejoin",
+                                ]
+                              }
+                              stroke={
+                                {
+                                  "payload": 4294281999,
+                                  "type": 0,
+                                }
+                              }
+                              strokeLinecap={1}
+                              strokeLinejoin={1}
+                              strokeWidth={2}
+                            />
+                            <RNSVGPath
+                              d="M10 14 21 3"
+                              fill={null}
+                              propList={
+                                [
+                                  "fill",
+                                  "stroke",
+                                  "strokeWidth",
+                                  "strokeLinecap",
+                                  "strokeLinejoin",
+                                ]
+                              }
+                              stroke={
+                                {
+                                  "payload": 4294281999,
+                                  "type": 0,
+                                }
+                              }
+                              strokeLinecap={1}
+                              strokeLinejoin={1}
+                              strokeWidth={2}
+                            />
+                            <RNSVGPath
+                              d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
+                              fill={null}
+                              propList={
+                                [
+                                  "fill",
+                                  "stroke",
+                                  "strokeWidth",
+                                  "strokeLinecap",
+                                  "strokeLinejoin",
+                                ]
+                              }
+                              stroke={
+                                {
+                                  "payload": 4294281999,
+                                  "type": 0,
+                                }
+                              }
+                              strokeLinecap={1}
+                              strokeLinejoin={1}
+                              strokeWidth={2}
+                            />
+                          </RNSVGGroup>
+                        </RNSVGSvgView>
+                      </View>
+                    </View>
+                    <View
+                      accessibilityState={
+                        {
+                          "busy": false,
+                          "checked": undefined,
+                          "disabled": true,
+                          "expanded": undefined,
+                          "selected": undefined,
+                        }
+                      }
+                      accessibilityValue={
+                        {
+                          "max": undefined,
+                          "min": undefined,
+                          "now": undefined,
+                          "text": undefined,
+                        }
+                      }
+                      accessible={true}
+                      collapsable={false}
+                      focusable={true}
+                      onBlur={[Function]}
+                      onClick={[Function]}
+                      onFocus={[Function]}
+                      onResponderGrant={[Function]}
+                      onResponderMove={[Function]}
+                      onResponderRelease={[Function]}
+                      onResponderTerminate={[Function]}
+                      onResponderTerminationRequest={[Function]}
+                      onStartShouldSetResponder={[Function]}
+                      role="button"
+                      style={
+                        {
+                          "alignItems": "center",
+                          "backgroundColor": "#F58B0F",
+                          "borderRadius": 9999,
+                          "columnGap": 8,
+                          "flexDirection": "row",
+                          "justifyContent": "center",
+                          "opacity": 0.5,
+                          "paddingBottom": 10,
+                          "paddingLeft": 20,
+                          "paddingRight": 20,
+                          "paddingTop": 10,
+                          "rowGap": 8,
+                          "width": "100%",
+                        }
+                      }
+                    >
+                      <Text
+                        style={
+                          {
+                            "color": "#FFEEE2",
+                            "fontSize": 16,
+                            "fontWeight": "600",
+                            "lineHeight": 24,
+                          }
+                        }
+                      >
+                        확인
+                      </Text>
+                    </View>
+                    <View
+                      style={
+                        {
+                          "alignItems": "center",
+                          "columnGap": 10,
+                          "flexDirection": "row",
+                          "rowGap": 10,
+                        }
+                      }
+                    >
+                      <View
+                        aria-hidden={true}
+                        style={
+                          {
+                            "backgroundColor": "#CFC9AE",
+                            "flexBasis": "0%",
+                            "flexGrow": 1,
+                            "flexShrink": 1,
+                            "height": 1,
+                          }
+                        }
+                      />
+                      <Text
+                        style={
+                          {
+                            "color": "#645C42",
+                            "fontSize": 12,
+                            "lineHeight": 16,
+                          }
+                        }
+                      >
+                        아직 API 키가 없나요?
+                      </Text>
+                      <View
+                        aria-hidden={true}
+                        style={
+                          {
+                            "backgroundColor": "#CFC9AE",
+                            "flexBasis": "0%",
+                            "flexGrow": 1,
+                            "flexShrink": 1,
+                            "height": 1,
+                          }
+                        }
+                      />
+                    </View>
+                    <View
+                      style={
+                        {
+                          "columnGap": 4,
+                          "rowGap": 4,
+                        }
+                      }
+                    >
+                      <View
+                        accessibilityState={
+                          {
+                            "busy": undefined,
+                            "checked": undefined,
+                            "disabled": undefined,
+                            "expanded": undefined,
+                            "selected": undefined,
+                          }
+                        }
+                        accessibilityValue={
+                          {
+                            "max": undefined,
+                            "min": undefined,
+                            "now": undefined,
+                            "text": undefined,
+                          }
+                        }
+                        accessible={true}
+                        collapsable={false}
+                        focusable={true}
+                        onBlur={[Function]}
+                        onClick={[Function]}
+                        onFocus={[Function]}
+                        onResponderGrant={[Function]}
+                        onResponderMove={[Function]}
+                        onResponderRelease={[Function]}
+                        onResponderTerminate={[Function]}
+                        onResponderTerminationRequest={[Function]}
+                        onStartShouldSetResponder={[Function]}
+                        role="link"
+                        style={
+                          {
+                            "alignItems": "center",
+                            "borderColor": "#CFC9AE",
+                            "borderRadius": 9999,
+                            "borderWidth": 1,
+                            "columnGap": 6,
+                            "flexDirection": "row",
+                            "justifyContent": "center",
+                            "paddingBottom": 10,
+                            "paddingLeft": 20,
+                            "paddingRight": 20,
+                            "paddingTop": 10,
+                            "rowGap": 6,
+                            "width": "100%",
+                          }
+                        }
+                      >
+                        <Text
+                          style={
+                            {
+                              "color": "#241208",
+                              "fontSize": 14,
+                              "fontWeight": "600",
+                              "lineHeight": 20,
+                            }
+                          }
+                        >
+                          API 키 발급 방법 보기
+                        </Text>
+                        <RNSVGSvgView
+                          align="xMidYMid"
+                          aria-hidden={true}
+                          bbHeight={14}
+                          bbWidth={14}
+                          fill="none"
+                          focusable={false}
+                          height={14}
+                          meetOrSlice={0}
+                          minX={0}
+                          minY={0}
+                          stroke="#241208"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          style={
+                            [
+                              {
+                                "backgroundColor": "transparent",
+                                "borderWidth": 0,
+                              },
+                              {},
+                              {
+                                "flex": 0,
+                                "height": 14,
+                                "width": 14,
+                              },
+                            ]
+                          }
+                          vbHeight={24}
+                          vbWidth={24}
+                          width={14}
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <RNSVGGroup
+                            fill={null}
+                            propList={
+                              [
+                                "fill",
+                                "stroke",
+                                "strokeWidth",
+                                "strokeLinecap",
+                                "strokeLinejoin",
+                              ]
+                            }
+                            stroke={
+                              {
+                                "payload": 4280553992,
+                                "type": 0,
+                              }
+                            }
+                            strokeLinecap={1}
+                            strokeLinejoin={1}
+                            strokeWidth={2}
+                          >
+                            <RNSVGPath
+                              d="M15 3h6v6"
+                              fill={null}
+                              propList={
+                                [
+                                  "fill",
+                                  "stroke",
+                                  "strokeWidth",
+                                  "strokeLinecap",
+                                  "strokeLinejoin",
+                                ]
+                              }
+                              stroke={
+                                {
+                                  "payload": 4280553992,
+                                  "type": 0,
+                                }
+                              }
+                              strokeLinecap={1}
+                              strokeLinejoin={1}
+                              strokeWidth={2}
+                            />
+                            <RNSVGPath
+                              d="M10 14 21 3"
+                              fill={null}
+                              propList={
+                                [
+                                  "fill",
+                                  "stroke",
+                                  "strokeWidth",
+                                  "strokeLinecap",
+                                  "strokeLinejoin",
+                                ]
+                              }
+                              stroke={
+                                {
+                                  "payload": 4280553992,
+                                  "type": 0,
+                                }
+                              }
+                              strokeLinecap={1}
+                              strokeLinejoin={1}
+                              strokeWidth={2}
+                            />
+                            <RNSVGPath
+                              d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
+                              fill={null}
+                              propList={
+                                [
+                                  "fill",
+                                  "stroke",
+                                  "strokeWidth",
+                                  "strokeLinecap",
+                                  "strokeLinejoin",
+                                ]
+                              }
+                              stroke={
+                                {
+                                  "payload": 4280553992,
+                                  "type": 0,
+                                }
+                              }
+                              strokeLinecap={1}
+                              strokeLinejoin={1}
+                              strokeWidth={2}
+                            />
+                          </RNSVGGroup>
+                        </RNSVGSvgView>
+                      </View>
+                      <Text
+                        style={
+                          {
+                            "color": "#645C42",
+                            "fontSize": 12,
+                            "lineHeight": 16,
+                            "textAlign": "center",
+                          }
+                        }
+                      >
+                        넥슨 오픈 API에서 키를 받는 7단계 안내
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              </RCTScrollView>
+            </View>
+          </RNSScreenContentWrapper>
+          <RNSScreenStackHeaderConfig
+            backButtonInCustomView={false}
+            backTitleFontFamily="System"
+            backTitleVisible={true}
+            backgroundColor="rgb(255, 255, 255)"
+            color="rgb(0, 122, 255)"
+            consumeBottomInset={true}
+            consumeLeftInset={true}
+            consumeRightInset={true}
+            consumeTopInset={false}
+            direction="ltr"
+            disableBackButtonMenu={false}
+            disableTopInsetApplication={false}
+            experimental_userInterfaceStyle="light"
+            hidden={true}
+            hideBackButton={false}
+            largeTitleFontFamily="System"
+            largeTitleFontWeight="700"
+            largeTitleHideShadow={false}
+            legacyTopInsetBehavior={false}
+            pointerEvents="box-none"
             style={
               {
                 "alignItems": "center",
-                "flexBasis": "0%",
-                "flexGrow": 1,
-                "flexShrink": 1,
-                "justifyContent": "center",
+                "flexDirection": "row",
+                "justifyContent": "space-between",
+                "position": "absolute",
+                "width": "100%",
               }
             }
-            testID="screen-Onboarding"
-          >
-            <Text
-              style={
-                {
-                  "color": undefined,
-                  "fontSize": 16,
-                  "lineHeight": 24,
-                }
-              }
-            >
-              Onboarding
-            </Text>
-          </View>
-        </RNSScreenContentWrapper>
-        <RNSScreenStackHeaderConfig
-          backButtonInCustomView={false}
-          backTitleFontFamily="System"
-          backTitleVisible={true}
-          backgroundColor="rgb(255, 255, 255)"
-          color="rgb(0, 122, 255)"
-          consumeBottomInset={true}
-          consumeLeftInset={true}
-          consumeRightInset={true}
-          consumeTopInset={false}
-          direction="ltr"
-          disableBackButtonMenu={false}
-          disableTopInsetApplication={false}
-          experimental_userInterfaceStyle="light"
-          hidden={true}
-          hideBackButton={false}
-          largeTitleFontFamily="System"
-          largeTitleFontWeight="700"
-          largeTitleHideShadow={false}
-          legacyTopInsetBehavior={false}
-          pointerEvents="box-none"
-          style={
-            {
-              "alignItems": "center",
-              "flexDirection": "row",
-              "justifyContent": "space-between",
-              "position": "absolute",
-              "width": "100%",
-            }
-          }
-          synchronousShadowStateUpdatesEnabled={true}
-          title="Onboarding"
-          titleColor="rgb(28, 28, 30)"
-          titleFontFamily="System"
-          titleFontWeight="600"
-          topInsetEnabled={true}
-          translucent={false}
-          userInterfaceStyle="light"
-        />
-      </RNSScreen>
-    </RNSScreenStack>
+            synchronousShadowStateUpdatesEnabled={true}
+            title="Onboarding"
+            titleColor="rgb(28, 28, 30)"
+            titleFontFamily="System"
+            titleFontWeight="600"
+            topInsetEnabled={true}
+            translucent={false}
+            userInterfaceStyle="light"
+          />
+        </RNSScreen>
+      </RNSScreenStack>
+    </View>
   </View>
 </RNCSafeAreaProvider>
 `;
@@ -194,179 +960,181 @@ exports[`렌더 트리 스냅샷 탭 골격 1`] = `
   }
 >
   <View
-    onLayout={[Function]}
     style={
-      [
-        {
-          "flex": 1,
-        },
-        undefined,
-      ]
+      {
+        "flexBasis": "0%",
+        "flexGrow": 1,
+        "flexShrink": 1,
+      }
     }
   >
-    <RNSScreenStack
+    <View
+      onLayout={[Function]}
       style={
-        {
-          "flex": 1,
-        }
+        [
+          {
+            "flex": 1,
+          },
+          undefined,
+        ]
       }
     >
-      <RNSScreen
-        activityState={2}
-        androidResetScreenShadowStateOnOrientationChangeEnabled={true}
-        aria-hidden={false}
-        bottomScrollEdgeEffect="automatic"
-        collapsable={false}
-        fullScreenSwipeEnabled="undefined"
-        fullScreenSwipeShadowEnabled={true}
-        gestureEnabled={true}
-        gestureResponseDistance={
-          {
-            "bottom": -1,
-            "end": -1,
-            "start": -1,
-            "top": -1,
-          }
-        }
-        hasLargeHeader={false}
-        leftScrollEdgeEffect="automatic"
-        nativeBackButtonDismissalEnabled={false}
-        onAppear={[Function]}
-        onDisappear={[Function]}
-        onDismissed={[Function]}
-        onGestureCancel={[Function]}
-        onHeaderBackButtonClicked={[Function]}
-        onHeaderHeightChange={[Function]}
-        onNativeDismissCancelled={[Function]}
-        onSheetDetentChanged={[Function]}
-        onTransitionProgress={[Function]}
-        onWillAppear={[Function]}
-        onWillDisappear={[Function]}
-        replaceAnimation="push"
-        rightScrollEdgeEffect="automatic"
-        screenId="<screenId>"
-        sheetAllowedDetents={
-          [
-            1,
-          ]
-        }
-        sheetCornerRadius={-1}
-        sheetDefaultResizeAnimationEnabled={true}
-        sheetElevation={24}
-        sheetExpandsWhenScrolledToEdge={true}
-        sheetGrabberVisible={false}
-        sheetInitialDetent={0}
-        sheetInitialDetentIndex={0}
-        sheetLargestUndimmedDetent={-1}
-        sheetLargestUndimmedDetentIndex={-1}
-        sheetShouldOverflowTopInset={false}
-        stackAnimation="ios_from_right"
-        stackPresentation="push"
+      <RNSScreenStack
         style={
           {
-            "bottom": 0,
-            "left": 0,
-            "position": "absolute",
-            "right": 0,
-            "top": 0,
-            "zIndex": undefined,
+            "flex": 1,
           }
         }
-        swipeDirection="horizontal"
-        synchronousShadowStateUpdatesEnabled={true}
-        topScrollEdgeEffect="automatic"
       >
-        <RNSScreenContentWrapper
+        <RNSScreen
+          activityState={2}
+          androidResetScreenShadowStateOnOrientationChangeEnabled={true}
+          aria-hidden={false}
+          bottomScrollEdgeEffect="automatic"
           collapsable={false}
-          style={
+          fullScreenSwipeEnabled="undefined"
+          fullScreenSwipeShadowEnabled={true}
+          gestureEnabled={true}
+          gestureResponseDistance={
+            {
+              "bottom": -1,
+              "end": -1,
+              "start": -1,
+              "top": -1,
+            }
+          }
+          hasLargeHeader={false}
+          leftScrollEdgeEffect="automatic"
+          nativeBackButtonDismissalEnabled={false}
+          onAppear={[Function]}
+          onDisappear={[Function]}
+          onDismissed={[Function]}
+          onGestureCancel={[Function]}
+          onHeaderBackButtonClicked={[Function]}
+          onHeaderHeightChange={[Function]}
+          onNativeDismissCancelled={[Function]}
+          onSheetDetentChanged={[Function]}
+          onTransitionProgress={[Function]}
+          onWillAppear={[Function]}
+          onWillDisappear={[Function]}
+          replaceAnimation="push"
+          rightScrollEdgeEffect="automatic"
+          screenId="<screenId>"
+          sheetAllowedDetents={
             [
-              {
-                "flex": 1,
-              },
-              [
-                {
-                  "backgroundColor": "rgb(242, 242, 242)",
-                },
-                undefined,
-              ],
+              1,
             ]
           }
+          sheetCornerRadius={-1}
+          sheetDefaultResizeAnimationEnabled={true}
+          sheetElevation={24}
+          sheetExpandsWhenScrolledToEdge={true}
+          sheetGrabberVisible={false}
+          sheetInitialDetent={0}
+          sheetInitialDetentIndex={0}
+          sheetLargestUndimmedDetent={-1}
+          sheetLargestUndimmedDetentIndex={-1}
+          sheetShouldOverflowTopInset={false}
+          stackAnimation="ios_from_right"
+          stackPresentation="push"
+          style={
+            {
+              "bottom": 0,
+              "left": 0,
+              "position": "absolute",
+              "right": 0,
+              "top": 0,
+              "zIndex": undefined,
+            }
+          }
+          swipeDirection="horizontal"
+          synchronousShadowStateUpdatesEnabled={true}
+          topScrollEdgeEffect="automatic"
         >
-          <View
-            onLayout={[Function]}
+          <RNSScreenContentWrapper
+            collapsable={false}
             style={
               [
                 {
                   "flex": 1,
                 },
-                {
-                  "flexDirection": "column",
-                },
+                [
+                  {
+                    "backgroundColor": "rgb(242, 242, 242)",
+                  },
+                  undefined,
+                ],
               ]
             }
           >
-            <RNSScreenNavigationContainer
+            <View
+              onLayout={[Function]}
               style={
-                {
-                  "flex": 1,
-                  "overflow": "hidden",
-                }
+                [
+                  {
+                    "flex": 1,
+                  },
+                  {
+                    "flexDirection": "column",
+                  },
+                ]
               }
             >
-              <RNSScreen
-                activityState={2}
-                androidResetScreenShadowStateOnOrientationChangeEnabled={true}
-                collapsable={false}
-                fullScreenSwipeEnabled="undefined"
-                gestureResponseDistance={
-                  {
-                    "bottom": -1,
-                    "end": -1,
-                    "start": -1,
-                    "top": -1,
-                  }
-                }
-                onGestureCancel={[Function]}
-                pointerEvents="box-none"
-                screenId="<screenId>"
-                sheetAllowedDetents={
-                  [
-                    1,
-                  ]
-                }
-                sheetCornerRadius={-1}
-                sheetDefaultResizeAnimationEnabled={true}
-                sheetElevation={24}
-                sheetExpandsWhenScrolledToEdge={true}
-                sheetGrabberVisible={false}
-                sheetInitialDetent={0}
-                sheetLargestUndimmedDetent={-1}
-                sheetShouldOverflowTopInset={false}
+              <RNSScreenNavigationContainer
                 style={
                   {
-                    "bottom": 0,
-                    "left": 0,
-                    "position": "absolute",
-                    "right": 0,
-                    "top": 0,
-                    "zIndex": undefined,
+                    "flex": 1,
+                    "overflow": "hidden",
                   }
                 }
-                synchronousShadowStateUpdatesEnabled={true}
               >
-                <View
-                  aria-hidden={false}
+                <RNSScreen
+                  activityState={2}
+                  androidResetScreenShadowStateOnOrientationChangeEnabled={true}
                   collapsable={false}
-                  style={
+                  fullScreenSwipeEnabled="undefined"
+                  gestureResponseDistance={
                     {
-                      "backgroundColor": "rgb(242, 242, 242)",
-                      "flex": 1,
+                      "bottom": -1,
+                      "end": -1,
+                      "start": -1,
+                      "top": -1,
                     }
                   }
+                  onGestureCancel={[Function]}
+                  pointerEvents="box-none"
+                  screenId="<screenId>"
+                  sheetAllowedDetents={
+                    [
+                      1,
+                    ]
+                  }
+                  sheetCornerRadius={-1}
+                  sheetDefaultResizeAnimationEnabled={true}
+                  sheetElevation={24}
+                  sheetExpandsWhenScrolledToEdge={true}
+                  sheetGrabberVisible={false}
+                  sheetInitialDetent={0}
+                  sheetLargestUndimmedDetent={-1}
+                  sheetShouldOverflowTopInset={false}
+                  style={
+                    {
+                      "bottom": 0,
+                      "left": 0,
+                      "position": "absolute",
+                      "right": 0,
+                      "top": 0,
+                      "zIndex": undefined,
+                    }
+                  }
+                  synchronousShadowStateUpdatesEnabled={true}
                 >
                   <View
+                    aria-hidden={false}
+                    collapsable={false}
                     style={
                       {
+                        "backgroundColor": "rgb(242, 242, 242)",
                         "flex": 1,
                       }
                     }
@@ -374,931 +1142,1567 @@ exports[`렌더 트리 스냅샷 탭 골격 1`] = `
                     <View
                       style={
                         {
-                          "alignItems": "center",
-                          "flexBasis": "0%",
-                          "flexGrow": 1,
-                          "flexShrink": 1,
-                          "justifyContent": "center",
+                          "flex": 1,
                         }
                       }
-                      testID="screen-Content"
                     >
-                      <Text
+                      <View
                         style={
                           {
-                            "color": undefined,
-                            "fontSize": 16,
-                            "lineHeight": 24,
+                            "flexBasis": "0%",
+                            "flexGrow": 1,
+                            "flexShrink": 1,
                           }
                         }
+                        testID="screen-Content"
                       >
-                        Content
+                        <View
+                          style={
+                            {
+                              "flexBasis": "0%",
+                              "flexGrow": 1,
+                              "flexShrink": 1,
+                            }
+                          }
+                        >
+                          <View
+                            style={
+                              {
+                                "backgroundColor": "#F2F0E2",
+                                "paddingBottom": 8,
+                                "paddingLeft": 16,
+                                "paddingRight": 16,
+                                "paddingTop": 75,
+                                "zIndex": 10,
+                              }
+                            }
+                            testID="page-header"
+                          >
+                            <View
+                              style={
+                                {
+                                  "columnGap": 16,
+                                  "rowGap": 16,
+                                }
+                              }
+                            >
+                              <View
+                                style={
+                                  {
+                                    "alignItems": "center",
+                                    "flexDirection": "row",
+                                    "justifyContent": "space-between",
+                                  }
+                                }
+                              >
+                                <Text
+                                  style={
+                                    {
+                                      "color": "#241208",
+                                      "fontSize": 18,
+                                      "fontWeight": "600",
+                                      "lineHeight": 28,
+                                    }
+                                  }
+                                >
+                                  컨텐츠 스케줄러
+                                </Text>
+                                <View
+                                  style={
+                                    {
+                                      "alignItems": "center",
+                                      "columnGap": 16,
+                                      "flexDirection": "row",
+                                      "rowGap": 16,
+                                    }
+                                  }
+                                >
+                                  <View
+                                    accessibilityState={
+                                      {
+                                        "busy": undefined,
+                                        "checked": undefined,
+                                        "disabled": undefined,
+                                        "expanded": undefined,
+                                        "selected": undefined,
+                                      }
+                                    }
+                                    accessibilityValue={
+                                      {
+                                        "max": undefined,
+                                        "min": undefined,
+                                        "now": undefined,
+                                        "text": undefined,
+                                      }
+                                    }
+                                    accessible={true}
+                                    collapsable={false}
+                                    focusable={true}
+                                    onBlur={[Function]}
+                                    onClick={[Function]}
+                                    onFocus={[Function]}
+                                    onResponderGrant={[Function]}
+                                    onResponderMove={[Function]}
+                                    onResponderRelease={[Function]}
+                                    onResponderTerminate={[Function]}
+                                    onResponderTerminationRequest={[Function]}
+                                    onStartShouldSetResponder={[Function]}
+                                    role="button"
+                                  >
+                                    <Text
+                                      style={
+                                        {
+                                          "color": "#645C42",
+                                          "fontSize": 14,
+                                          "fontWeight": "500",
+                                          "lineHeight": 20,
+                                        }
+                                      }
+                                    >
+                                      컨텐츠 관리
+                                    </Text>
+                                  </View>
+                                  <View
+                                    accessibilityState={
+                                      {
+                                        "busy": undefined,
+                                        "checked": undefined,
+                                        "disabled": undefined,
+                                        "expanded": undefined,
+                                        "selected": undefined,
+                                      }
+                                    }
+                                    accessibilityValue={
+                                      {
+                                        "max": undefined,
+                                        "min": undefined,
+                                        "now": undefined,
+                                        "text": undefined,
+                                      }
+                                    }
+                                    accessible={true}
+                                    collapsable={false}
+                                    focusable={true}
+                                    onBlur={[Function]}
+                                    onClick={[Function]}
+                                    onFocus={[Function]}
+                                    onResponderGrant={[Function]}
+                                    onResponderMove={[Function]}
+                                    onResponderRelease={[Function]}
+                                    onResponderTerminate={[Function]}
+                                    onResponderTerminationRequest={[Function]}
+                                    onStartShouldSetResponder={[Function]}
+                                    role="button"
+                                  >
+                                    <Text
+                                      style={
+                                        {
+                                          "color": "#645C42",
+                                          "fontSize": 14,
+                                          "fontWeight": "500",
+                                          "lineHeight": 20,
+                                        }
+                                      }
+                                    >
+                                      캐릭터 관리
+                                    </Text>
+                                  </View>
+                                </View>
+                              </View>
+                              <View
+                                style={
+                                  {
+                                    "columnGap": 4,
+                                    "rowGap": 4,
+                                  }
+                                }
+                              >
+                                <View
+                                  style={
+                                    {
+                                      "alignItems": "center",
+                                      "columnGap": 12,
+                                      "flexDirection": "row",
+                                      "rowGap": 12,
+                                    }
+                                  }
+                                >
+                                  <View
+                                    style={
+                                      {
+                                        "alignItems": "center",
+                                        "columnGap": 8,
+                                        "flexDirection": "row",
+                                        "flexShrink": 0,
+                                        "marginLeft": "auto",
+                                        "rowGap": 8,
+                                      }
+                                    }
+                                  >
+                                    <Text
+                                      style={
+                                        {
+                                          "color": "#645C42",
+                                          "fontSize": 14,
+                                          "lineHeight": 20,
+                                        }
+                                      }
+                                    />
+                                    <View
+                                      accessibilityLabel="새로고침"
+                                      accessibilityState={
+                                        {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": undefined,
+                                          "expanded": undefined,
+                                          "selected": undefined,
+                                        }
+                                      }
+                                      accessibilityValue={
+                                        {
+                                          "max": undefined,
+                                          "min": undefined,
+                                          "now": undefined,
+                                          "text": undefined,
+                                        }
+                                      }
+                                      accessible={true}
+                                      collapsable={false}
+                                      focusable={true}
+                                      onBlur={[Function]}
+                                      onClick={[Function]}
+                                      onFocus={[Function]}
+                                      onResponderGrant={[Function]}
+                                      onResponderMove={[Function]}
+                                      onResponderRelease={[Function]}
+                                      onResponderTerminate={[Function]}
+                                      onResponderTerminationRequest={[Function]}
+                                      onStartShouldSetResponder={[Function]}
+                                      role="button"
+                                      style={
+                                        {
+                                          "padding": 8,
+                                        }
+                                      }
+                                    >
+                                      <View
+                                        collapsable={false}
+                                        jestAnimatedProps={
+                                          {
+                                            "value": {},
+                                          }
+                                        }
+                                        jestAnimatedStyle={
+                                          {
+                                            "value": {},
+                                          }
+                                        }
+                                        style={[]}
+                                        testID="refresh-icon"
+                                      >
+                                        <RNSVGSvgView
+                                          align="xMidYMid"
+                                          aria-hidden={true}
+                                          bbHeight={16}
+                                          bbWidth={16}
+                                          fill="none"
+                                          focusable={false}
+                                          height={16}
+                                          meetOrSlice={0}
+                                          minX={0}
+                                          minY={0}
+                                          stroke="#F58B0F"
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          style={
+                                            [
+                                              {
+                                                "backgroundColor": "transparent",
+                                                "borderWidth": 0,
+                                              },
+                                              {},
+                                              {
+                                                "flex": 0,
+                                                "height": 16,
+                                                "width": 16,
+                                              },
+                                            ]
+                                          }
+                                          vbHeight={24}
+                                          vbWidth={24}
+                                          width={16}
+                                          xmlns="http://www.w3.org/2000/svg"
+                                        >
+                                          <RNSVGGroup
+                                            fill={null}
+                                            propList={
+                                              [
+                                                "fill",
+                                                "stroke",
+                                                "strokeWidth",
+                                                "strokeLinecap",
+                                                "strokeLinejoin",
+                                              ]
+                                            }
+                                            stroke={
+                                              {
+                                                "payload": 4294281999,
+                                                "type": 0,
+                                              }
+                                            }
+                                            strokeLinecap={1}
+                                            strokeLinejoin={1}
+                                            strokeWidth={2}
+                                          >
+                                            <RNSVGPath
+                                              d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"
+                                              fill={null}
+                                              propList={
+                                                [
+                                                  "fill",
+                                                  "stroke",
+                                                  "strokeWidth",
+                                                  "strokeLinecap",
+                                                  "strokeLinejoin",
+                                                ]
+                                              }
+                                              stroke={
+                                                {
+                                                  "payload": 4294281999,
+                                                  "type": 0,
+                                                }
+                                              }
+                                              strokeLinecap={1}
+                                              strokeLinejoin={1}
+                                              strokeWidth={2}
+                                            />
+                                            <RNSVGPath
+                                              d="M21 3v5h-5"
+                                              fill={null}
+                                              propList={
+                                                [
+                                                  "fill",
+                                                  "stroke",
+                                                  "strokeWidth",
+                                                  "strokeLinecap",
+                                                  "strokeLinejoin",
+                                                ]
+                                              }
+                                              stroke={
+                                                {
+                                                  "payload": 4294281999,
+                                                  "type": 0,
+                                                }
+                                              }
+                                              strokeLinecap={1}
+                                              strokeLinejoin={1}
+                                              strokeWidth={2}
+                                            />
+                                            <RNSVGPath
+                                              d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"
+                                              fill={null}
+                                              propList={
+                                                [
+                                                  "fill",
+                                                  "stroke",
+                                                  "strokeWidth",
+                                                  "strokeLinecap",
+                                                  "strokeLinejoin",
+                                                ]
+                                              }
+                                              stroke={
+                                                {
+                                                  "payload": 4294281999,
+                                                  "type": 0,
+                                                }
+                                              }
+                                              strokeLinecap={1}
+                                              strokeLinejoin={1}
+                                              strokeWidth={2}
+                                            />
+                                            <RNSVGPath
+                                              d="M8 16H3v5"
+                                              fill={null}
+                                              propList={
+                                                [
+                                                  "fill",
+                                                  "stroke",
+                                                  "strokeWidth",
+                                                  "strokeLinecap",
+                                                  "strokeLinejoin",
+                                                ]
+                                              }
+                                              stroke={
+                                                {
+                                                  "payload": 4294281999,
+                                                  "type": 0,
+                                                }
+                                              }
+                                              strokeLinecap={1}
+                                              strokeLinejoin={1}
+                                              strokeWidth={2}
+                                            />
+                                          </RNSVGGroup>
+                                        </RNSVGSvgView>
+                                      </View>
+                                    </View>
+                                  </View>
+                                </View>
+                              </View>
+                              <View
+                                aria-busy={true}
+                                role="status"
+                                style={
+                                  {
+                                    "alignItems": "center",
+                                    "backgroundColor": "#FDFCF6",
+                                    "borderColor": "#CFC9AE",
+                                    "borderRadius": 14,
+                                    "borderWidth": 1,
+                                    "columnGap": 12,
+                                    "justifyContent": "center",
+                                    "minHeight": 132,
+                                    "padding": 24,
+                                    "rowGap": 12,
+                                  }
+                                }
+                                testID="loading-state"
+                              >
+                                <RNSVGSvgView
+                                  align="xMidYMid"
+                                  aria-hidden={true}
+                                  bbHeight={32.75590551181102}
+                                  bbWidth={32}
+                                  color="#F58B0F"
+                                  focusable={false}
+                                  height={32.75590551181102}
+                                  meetOrSlice={0}
+                                  minX={0}
+                                  minY={0}
+                                  style={
+                                    [
+                                      {
+                                        "backgroundColor": "transparent",
+                                        "borderWidth": 0,
+                                      },
+                                      {},
+                                      {
+                                        "flex": 0,
+                                        "height": 32,
+                                        "width": 32,
+                                      },
+                                    ]
+                                  }
+                                  testID="maple-sweep-spinner"
+                                  vbHeight={130}
+                                  vbWidth={127}
+                                  width={32}
+                                >
+                                  <RNSVGGroup
+                                    fill={
+                                      {
+                                        "payload": 4278190080,
+                                        "type": 0,
+                                      }
+                                    }
+                                  >
+                                    <RNSVGDefs>
+                                      <RNSVGClipPath
+                                        fill={
+                                          {
+                                            "payload": 4278190080,
+                                            "type": 0,
+                                          }
+                                        }
+                                        name="maple-sweep-clip-ro"
+                                      >
+                                        <RNSVGPath
+                                          d="M60.4426 107.504L59.1392 127.924C59.1024 128.5 59.5598 128.987 60.1372 128.987H65.9593C66.5534 128.987 67.0165 128.472 66.9537 127.882L64.785 107.496C64.6975 106.673 65.5908 106.106 66.2984 106.536L78.2704 113.805C78.4651 113.923 78.6944 113.971 78.9203 113.941L103.215 110.732C104.008 110.628 104.363 109.681 103.835 109.081L91.452 94.9894C91.0117 94.4885 91.1759 93.7052 91.7802 93.4231L118.529 80.9405C119.315 80.5738 119.293 79.4491 118.494 79.1126L112.061 76.4041C111.526 76.1789 111.295 75.5471 111.558 75.0296L125.96 46.675C126.366 45.8757 125.596 44.9873 124.747 45.275L98.4688 54.1831C97.9655 54.3537 97.4167 54.1008 97.2193 53.6074L95.2595 48.7079C94.9641 47.9693 93.9662 47.8547 93.5109 48.5071L82.408 64.4213C81.7836 65.3163 80.3814 64.7067 80.6101 63.6396L88.1353 28.5217C88.311 27.7019 87.4603 27.0428 86.7103 27.4178L81.4218 30.062C80.9453 30.3003 80.3657 30.1231 80.1038 29.6592L63.9299 1.00826C63.5499 0.335101 62.5824 0.329222 62.1943 0.997712L45.543 29.6749C45.2779 30.1315 44.7033 30.3033 44.231 30.0672L38.9323 27.4178C38.1823 27.0428 37.3315 27.7018 37.5072 28.5217L44.9884 63.4338C45.2189 64.5095 43.7966 65.1145 43.1815 64.2025L32.5593 48.4523C32.1246 47.8077 31.1528 47.884 30.824 48.5885L28.4482 53.6797C28.2334 54.14 27.7076 54.3661 27.2258 54.2055L1.8202 45.7369C0.98094 45.4572 0.218491 46.3249 0.603813 47.1212L14.1413 75.0988C14.3797 75.5913 14.1779 76.184 13.6884 76.4287L7.43998 79.553C6.68865 79.9286 6.70724 81.0071 7.47107 81.3567L33.8706 93.4379C34.4733 93.7136 34.6458 94.4888 34.217 94.9941L22.2282 109.124C21.7222 109.72 22.0657 110.64 22.8386 110.759L46.6876 114.428C46.9344 114.466 47.1865 114.41 47.3943 114.272L58.8899 106.608C59.5787 106.149 60.4953 106.678 60.4426 107.504Z"
+                                          fill={
+                                            {
+                                              "payload": 4278190080,
+                                              "type": 0,
+                                            }
+                                          }
+                                        />
+                                      </RNSVGClipPath>
+                                      <RNSVGLinearGradient
+                                        gradient={
+                                          [
+                                            0,
+                                            16777215,
+                                            0.5,
+                                            -1,
+                                            1,
+                                            16777215,
+                                          ]
+                                        }
+                                        gradientTransform={null}
+                                        gradientUnits={0}
+                                        name="maple-sweep-gradient-ro"
+                                        x1="0"
+                                        x2="0"
+                                        y1="0"
+                                        y2="1"
+                                      />
+                                      <RNSVGMask
+                                        fill={
+                                          {
+                                            "payload": 4278190080,
+                                            "type": 0,
+                                          }
+                                        }
+                                        height="100%"
+                                        maskContentUnits={0}
+                                        maskType={0}
+                                        maskUnits={0}
+                                        name="maple-sweep-mask-ro"
+                                        width="100%"
+                                        x="0%"
+                                        y="0%"
+                                      >
+                                        <RNSVGRect
+                                          fill={
+                                            {
+                                              "brushRef": "maple-sweep-gradient-ro",
+                                              "type": 1,
+                                            }
+                                          }
+                                          height={1}
+                                          propList={
+                                            [
+                                              "fill",
+                                            ]
+                                          }
+                                          width={1}
+                                          x={0}
+                                          y={0}
+                                        />
+                                      </RNSVGMask>
+                                    </RNSVGDefs>
+                                    <RNSVGPath
+                                      d="M60.4426 107.504L59.1392 127.924C59.1024 128.5 59.5598 128.987 60.1372 128.987H65.9593C66.5534 128.987 67.0165 128.472 66.9537 127.882L64.785 107.496C64.6975 106.673 65.5908 106.106 66.2984 106.536L78.2704 113.805C78.4651 113.923 78.6944 113.971 78.9203 113.941L103.215 110.732C104.008 110.628 104.363 109.681 103.835 109.081L91.452 94.9894C91.0117 94.4885 91.1759 93.7052 91.7802 93.4231L118.529 80.9405C119.315 80.5738 119.293 79.4491 118.494 79.1126L112.061 76.4041C111.526 76.1789 111.295 75.5471 111.558 75.0296L125.96 46.675C126.366 45.8757 125.596 44.9873 124.747 45.275L98.4688 54.1831C97.9655 54.3537 97.4167 54.1008 97.2193 53.6074L95.2595 48.7079C94.9641 47.9693 93.9662 47.8547 93.5109 48.5071L82.408 64.4213C81.7836 65.3163 80.3814 64.7067 80.6101 63.6396L88.1353 28.5217C88.311 27.7019 87.4603 27.0428 86.7103 27.4178L81.4218 30.062C80.9453 30.3003 80.3657 30.1231 80.1038 29.6592L63.9299 1.00826C63.5499 0.335101 62.5824 0.329222 62.1943 0.997712L45.543 29.6749C45.2779 30.1315 44.7033 30.3033 44.231 30.0672L38.9323 27.4178C38.1823 27.0428 37.3315 27.7018 37.5072 28.5217L44.9884 63.4338C45.2189 64.5095 43.7966 65.1145 43.1815 64.2025L32.5593 48.4523C32.1246 47.8077 31.1528 47.884 30.824 48.5885L28.4482 53.6797C28.2334 54.14 27.7076 54.3661 27.2258 54.2055L1.8202 45.7369C0.98094 45.4572 0.218491 46.3249 0.603813 47.1212L14.1413 75.0988C14.3797 75.5913 14.1779 76.184 13.6884 76.4287L7.43998 79.553C6.68865 79.9286 6.70724 81.0071 7.47107 81.3567L33.8706 93.4379C34.4733 93.7136 34.6458 94.4888 34.217 94.9941L22.2282 109.124C21.7222 109.72 22.0657 110.64 22.8386 110.759L46.6876 114.428C46.9344 114.466 47.1865 114.41 47.3943 114.272L58.8899 106.608C59.5787 106.149 60.4953 106.678 60.4426 107.504Z"
+                                      fill={
+                                        {
+                                          "type": 2,
+                                        }
+                                      }
+                                      opacity={0.32}
+                                      propList={
+                                        [
+                                          "fill",
+                                        ]
+                                      }
+                                    />
+                                    <RNSVGGroup
+                                      clipPath="maple-sweep-clip-ro"
+                                      fill={
+                                        {
+                                          "payload": 4278190080,
+                                          "type": 0,
+                                        }
+                                      }
+                                    >
+                                      <RNSVGRect
+                                        fill={
+                                          {
+                                            "type": 2,
+                                          }
+                                        }
+                                        height={80}
+                                        mask="maple-sweep-mask-ro"
+                                        propList={
+                                          [
+                                            "fill",
+                                          ]
+                                        }
+                                        width={147}
+                                        x={-10}
+                                        y={140}
+                                      />
+                                    </RNSVGGroup>
+                                  </RNSVGGroup>
+                                </RNSVGSvgView>
+                                <Text
+                                  style={
+                                    {
+                                      "color": "#645C42",
+                                      "fontSize": 14,
+                                      "lineHeight": 20,
+                                      "textAlign": "center",
+                                    }
+                                  }
+                                >
+                                  불러오고 있어요
+                                </Text>
+                              </View>
+                            </View>
+                            <ViewManagerAdapter_ExpoLinearGradient
+                              aria-hidden={true}
+                              colors={
+                                [
+                                  4294111458,
+                                  2415063266,
+                                  1089663202,
+                                  284356834,
+                                  15921378,
+                                ]
+                              }
+                              locations={
+                                [
+                                  0,
+                                  0.25,
+                                  0.5,
+                                  0.75,
+                                  1,
+                                ]
+                              }
+                              pointerEvents="none"
+                              style={
+                                {
+                                  "height": 32,
+                                  "left": 0,
+                                  "position": "absolute",
+                                  "right": 0,
+                                  "top": "100%",
+                                }
+                              }
+                              testID="page-header-fade"
+                            />
+                          </View>
+                          <RCTScrollView
+                            contentContainerStyle={
+                              {
+                                "columnGap": 16,
+                                "paddingBottom": 0,
+                                "rowGap": 16,
+                              }
+                            }
+                            indicatorStyle="black"
+                            refreshControl="<element:RefreshControlMock>"
+                            style={
+                              {
+                                "flexBasis": "0%",
+                                "flexGrow": 1,
+                                "flexShrink": 1,
+                                "marginBottom": 0,
+                                "marginTop": 0,
+                              }
+                            }
+                            testID="screen-scroll"
+                          >
+                            <RCTRefreshControl />
+                            <View />
+                          </RCTScrollView>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                </RNSScreen>
+              </RNSScreenNavigationContainer>
+              <View
+                collapsable={false}
+                onLayout={[Function]}
+                pointerEvents="auto"
+                style={
+                  {
+                    "backgroundColor": "rgb(255, 255, 255)",
+                    "borderColor": "rgb(216, 216, 216)",
+                    "borderTopWidth": 0.5,
+                    "bottom": 0,
+                    "elevation": 8,
+                    "end": 0,
+                    "height": 83,
+                    "paddingBottom": 34,
+                    "paddingHorizontal": 0,
+                    "paddingTop": 0,
+                    "position": undefined,
+                    "start": 0,
+                    "transform": [
+                      {
+                        "translateY": 0,
+                      },
+                    ],
+                  }
+                }
+              >
+                <View
+                  pointerEvents="none"
+                  style={
+                    {
+                      "bottom": 0,
+                      "left": 0,
+                      "position": "absolute",
+                      "right": 0,
+                      "top": 0,
+                    }
+                  }
+                />
+                <View
+                  role="tablist"
+                  style={
+                    {
+                      "flex": 1,
+                      "flexDirection": "row",
+                    }
+                  }
+                >
+                  <View
+                    style={
+                      [
+                        {
+                          "borderRadius": 0,
+                          "overflow": "visible",
+                        },
+                        [
+                          {
+                            "flex": 1,
+                          },
+                          undefined,
+                        ],
+                      ]
+                    }
+                  >
+                    <View
+                      accessibilityLabel="컨텐츠, tab, 1 of 4"
+                      accessibilityLargeContentTitle="컨텐츠"
+                      accessibilityShowsLargeContentViewer={true}
+                      accessibilityState={
+                        {
+                          "busy": undefined,
+                          "checked": undefined,
+                          "disabled": undefined,
+                          "expanded": undefined,
+                          "selected": true,
+                        }
+                      }
+                      accessibilityValue={
+                        {
+                          "max": undefined,
+                          "min": undefined,
+                          "now": undefined,
+                          "text": undefined,
+                        }
+                      }
+                      accessible={true}
+                      collapsable={false}
+                      focusable={true}
+                      href="/Tabs/Content"
+                      onBlur={[Function]}
+                      onClick={[Function]}
+                      onFocus={[Function]}
+                      onResponderGrant={[Function]}
+                      onResponderMove={[Function]}
+                      onResponderRelease={[Function]}
+                      onResponderTerminate={[Function]}
+                      onResponderTerminationRequest={[Function]}
+                      onStartShouldSetResponder={[Function]}
+                      role="button"
+                      style={
+                        {
+                          "alignItems": "center",
+                          "backgroundColor": "transparent",
+                          "borderCurve": "continuous",
+                          "borderRadius": 0,
+                          "cursor": "pointer",
+                          "flex": 1,
+                          "flexDirection": "column",
+                          "justifyContent": "flex-start",
+                          "opacity": 1,
+                          "padding": 5,
+                        }
+                      }
+                    >
+                      <View
+                        style={
+                          [
+                            {
+                              "height": 28,
+                              "width": 31,
+                            },
+                            undefined,
+                          ]
+                        }
+                      >
+                        <View
+                          style={
+                            [
+                              {
+                                "alignItems": "center",
+                                "alignSelf": "center",
+                                "height": "100%",
+                                "justifyContent": "center",
+                                "position": "absolute",
+                                "width": "100%",
+                              },
+                              {
+                                "minWidth": 25,
+                                "opacity": 1,
+                              },
+                            ]
+                          }
+                        >
+                          <Text
+                            style={
+                              [
+                                {
+                                  "color": "rgb(28, 28, 30)",
+                                },
+                                {
+                                  "fontFamily": "System",
+                                  "fontWeight": "400",
+                                },
+                                [
+                                  {
+                                    "backgroundColor": "transparent",
+                                  },
+                                  {
+                                    "color": "rgb(0, 122, 255)",
+                                    "fontSize": 25,
+                                  },
+                                  undefined,
+                                ],
+                              ]
+                            }
+                          >
+                            ⏷
+                          </Text>
+                        </View>
+                        <View
+                          style={
+                            [
+                              {
+                                "alignItems": "center",
+                                "alignSelf": "center",
+                                "height": "100%",
+                                "justifyContent": "center",
+                                "position": "absolute",
+                                "width": "100%",
+                              },
+                              {
+                                "opacity": 0,
+                              },
+                            ]
+                          }
+                        >
+                          <Text
+                            style={
+                              [
+                                {
+                                  "color": "rgb(28, 28, 30)",
+                                },
+                                {
+                                  "fontFamily": "System",
+                                  "fontWeight": "400",
+                                },
+                                [
+                                  {
+                                    "backgroundColor": "transparent",
+                                  },
+                                  {
+                                    "color": "#8E8E8F",
+                                    "fontSize": 25,
+                                  },
+                                  undefined,
+                                ],
+                              ]
+                            }
+                          >
+                            ⏷
+                          </Text>
+                        </View>
+                      </View>
+                      <Text
+                        numberOfLines={1}
+                        style={
+                          [
+                            {
+                              "color": "rgb(28, 28, 30)",
+                            },
+                            {
+                              "fontFamily": "System",
+                              "fontWeight": "400",
+                            },
+                            [
+                              {
+                                "backgroundColor": "transparent",
+                                "textAlign": "center",
+                              },
+                              {
+                                "color": "rgb(0, 122, 255)",
+                              },
+                              [
+                                {
+                                  "fontSize": 10,
+                                },
+                                {
+                                  "fontFamily": "System",
+                                  "fontWeight": "500",
+                                },
+                                undefined,
+                              ],
+                            ],
+                          ]
+                        }
+                      >
+                        컨텐츠
+                      </Text>
+                    </View>
+                  </View>
+                  <View
+                    style={
+                      [
+                        {
+                          "borderRadius": 0,
+                          "overflow": "visible",
+                        },
+                        [
+                          {
+                            "flex": 1,
+                          },
+                          undefined,
+                        ],
+                      ]
+                    }
+                  >
+                    <View
+                      accessibilityLabel="보스, tab, 2 of 4"
+                      accessibilityLargeContentTitle="보스"
+                      accessibilityShowsLargeContentViewer={true}
+                      accessibilityState={
+                        {
+                          "busy": undefined,
+                          "checked": undefined,
+                          "disabled": undefined,
+                          "expanded": undefined,
+                          "selected": false,
+                        }
+                      }
+                      accessibilityValue={
+                        {
+                          "max": undefined,
+                          "min": undefined,
+                          "now": undefined,
+                          "text": undefined,
+                        }
+                      }
+                      accessible={true}
+                      collapsable={false}
+                      focusable={true}
+                      href="/Tabs/Boss"
+                      onBlur={[Function]}
+                      onClick={[Function]}
+                      onFocus={[Function]}
+                      onResponderGrant={[Function]}
+                      onResponderMove={[Function]}
+                      onResponderRelease={[Function]}
+                      onResponderTerminate={[Function]}
+                      onResponderTerminationRequest={[Function]}
+                      onStartShouldSetResponder={[Function]}
+                      role="button"
+                      style={
+                        {
+                          "alignItems": "center",
+                          "backgroundColor": "transparent",
+                          "borderCurve": "continuous",
+                          "borderRadius": 0,
+                          "cursor": "pointer",
+                          "flex": 1,
+                          "flexDirection": "column",
+                          "justifyContent": "flex-start",
+                          "opacity": 1,
+                          "padding": 5,
+                        }
+                      }
+                    >
+                      <View
+                        style={
+                          [
+                            {
+                              "height": 28,
+                              "width": 31,
+                            },
+                            undefined,
+                          ]
+                        }
+                      >
+                        <View
+                          style={
+                            [
+                              {
+                                "alignItems": "center",
+                                "alignSelf": "center",
+                                "height": "100%",
+                                "justifyContent": "center",
+                                "position": "absolute",
+                                "width": "100%",
+                              },
+                              {
+                                "minWidth": 25,
+                                "opacity": 0,
+                              },
+                            ]
+                          }
+                        >
+                          <Text
+                            style={
+                              [
+                                {
+                                  "color": "rgb(28, 28, 30)",
+                                },
+                                {
+                                  "fontFamily": "System",
+                                  "fontWeight": "400",
+                                },
+                                [
+                                  {
+                                    "backgroundColor": "transparent",
+                                  },
+                                  {
+                                    "color": "rgb(0, 122, 255)",
+                                    "fontSize": 25,
+                                  },
+                                  undefined,
+                                ],
+                              ]
+                            }
+                          >
+                            ⏷
+                          </Text>
+                        </View>
+                        <View
+                          style={
+                            [
+                              {
+                                "alignItems": "center",
+                                "alignSelf": "center",
+                                "height": "100%",
+                                "justifyContent": "center",
+                                "position": "absolute",
+                                "width": "100%",
+                              },
+                              {
+                                "opacity": 1,
+                              },
+                            ]
+                          }
+                        >
+                          <Text
+                            style={
+                              [
+                                {
+                                  "color": "rgb(28, 28, 30)",
+                                },
+                                {
+                                  "fontFamily": "System",
+                                  "fontWeight": "400",
+                                },
+                                [
+                                  {
+                                    "backgroundColor": "transparent",
+                                  },
+                                  {
+                                    "color": "#8E8E8F",
+                                    "fontSize": 25,
+                                  },
+                                  undefined,
+                                ],
+                              ]
+                            }
+                          >
+                            ⏷
+                          </Text>
+                        </View>
+                      </View>
+                      <Text
+                        numberOfLines={1}
+                        style={
+                          [
+                            {
+                              "color": "rgb(28, 28, 30)",
+                            },
+                            {
+                              "fontFamily": "System",
+                              "fontWeight": "400",
+                            },
+                            [
+                              {
+                                "backgroundColor": "transparent",
+                                "textAlign": "center",
+                              },
+                              {
+                                "color": "#8E8E8F",
+                              },
+                              [
+                                {
+                                  "fontSize": 10,
+                                },
+                                {
+                                  "fontFamily": "System",
+                                  "fontWeight": "500",
+                                },
+                                undefined,
+                              ],
+                            ],
+                          ]
+                        }
+                      >
+                        보스
+                      </Text>
+                    </View>
+                  </View>
+                  <View
+                    style={
+                      [
+                        {
+                          "borderRadius": 0,
+                          "overflow": "visible",
+                        },
+                        [
+                          {
+                            "flex": 1,
+                          },
+                          undefined,
+                        ],
+                      ]
+                    }
+                  >
+                    <View
+                      accessibilityLabel="수익, tab, 3 of 4"
+                      accessibilityLargeContentTitle="수익"
+                      accessibilityShowsLargeContentViewer={true}
+                      accessibilityState={
+                        {
+                          "busy": undefined,
+                          "checked": undefined,
+                          "disabled": undefined,
+                          "expanded": undefined,
+                          "selected": false,
+                        }
+                      }
+                      accessibilityValue={
+                        {
+                          "max": undefined,
+                          "min": undefined,
+                          "now": undefined,
+                          "text": undefined,
+                        }
+                      }
+                      accessible={true}
+                      collapsable={false}
+                      focusable={true}
+                      href="/Tabs/Profit"
+                      onBlur={[Function]}
+                      onClick={[Function]}
+                      onFocus={[Function]}
+                      onResponderGrant={[Function]}
+                      onResponderMove={[Function]}
+                      onResponderRelease={[Function]}
+                      onResponderTerminate={[Function]}
+                      onResponderTerminationRequest={[Function]}
+                      onStartShouldSetResponder={[Function]}
+                      role="button"
+                      style={
+                        {
+                          "alignItems": "center",
+                          "backgroundColor": "transparent",
+                          "borderCurve": "continuous",
+                          "borderRadius": 0,
+                          "cursor": "pointer",
+                          "flex": 1,
+                          "flexDirection": "column",
+                          "justifyContent": "flex-start",
+                          "opacity": 1,
+                          "padding": 5,
+                        }
+                      }
+                    >
+                      <View
+                        style={
+                          [
+                            {
+                              "height": 28,
+                              "width": 31,
+                            },
+                            undefined,
+                          ]
+                        }
+                      >
+                        <View
+                          style={
+                            [
+                              {
+                                "alignItems": "center",
+                                "alignSelf": "center",
+                                "height": "100%",
+                                "justifyContent": "center",
+                                "position": "absolute",
+                                "width": "100%",
+                              },
+                              {
+                                "minWidth": 25,
+                                "opacity": 0,
+                              },
+                            ]
+                          }
+                        >
+                          <Text
+                            style={
+                              [
+                                {
+                                  "color": "rgb(28, 28, 30)",
+                                },
+                                {
+                                  "fontFamily": "System",
+                                  "fontWeight": "400",
+                                },
+                                [
+                                  {
+                                    "backgroundColor": "transparent",
+                                  },
+                                  {
+                                    "color": "rgb(0, 122, 255)",
+                                    "fontSize": 25,
+                                  },
+                                  undefined,
+                                ],
+                              ]
+                            }
+                          >
+                            ⏷
+                          </Text>
+                        </View>
+                        <View
+                          style={
+                            [
+                              {
+                                "alignItems": "center",
+                                "alignSelf": "center",
+                                "height": "100%",
+                                "justifyContent": "center",
+                                "position": "absolute",
+                                "width": "100%",
+                              },
+                              {
+                                "opacity": 1,
+                              },
+                            ]
+                          }
+                        >
+                          <Text
+                            style={
+                              [
+                                {
+                                  "color": "rgb(28, 28, 30)",
+                                },
+                                {
+                                  "fontFamily": "System",
+                                  "fontWeight": "400",
+                                },
+                                [
+                                  {
+                                    "backgroundColor": "transparent",
+                                  },
+                                  {
+                                    "color": "#8E8E8F",
+                                    "fontSize": 25,
+                                  },
+                                  undefined,
+                                ],
+                              ]
+                            }
+                          >
+                            ⏷
+                          </Text>
+                        </View>
+                      </View>
+                      <Text
+                        numberOfLines={1}
+                        style={
+                          [
+                            {
+                              "color": "rgb(28, 28, 30)",
+                            },
+                            {
+                              "fontFamily": "System",
+                              "fontWeight": "400",
+                            },
+                            [
+                              {
+                                "backgroundColor": "transparent",
+                                "textAlign": "center",
+                              },
+                              {
+                                "color": "#8E8E8F",
+                              },
+                              [
+                                {
+                                  "fontSize": 10,
+                                },
+                                {
+                                  "fontFamily": "System",
+                                  "fontWeight": "500",
+                                },
+                                undefined,
+                              ],
+                            ],
+                          ]
+                        }
+                      >
+                        수익
+                      </Text>
+                    </View>
+                  </View>
+                  <View
+                    style={
+                      [
+                        {
+                          "borderRadius": 0,
+                          "overflow": "visible",
+                        },
+                        [
+                          {
+                            "flex": 1,
+                          },
+                          undefined,
+                        ],
+                      ]
+                    }
+                  >
+                    <View
+                      accessibilityLabel="설정, tab, 4 of 4"
+                      accessibilityLargeContentTitle="설정"
+                      accessibilityShowsLargeContentViewer={true}
+                      accessibilityState={
+                        {
+                          "busy": undefined,
+                          "checked": undefined,
+                          "disabled": undefined,
+                          "expanded": undefined,
+                          "selected": false,
+                        }
+                      }
+                      accessibilityValue={
+                        {
+                          "max": undefined,
+                          "min": undefined,
+                          "now": undefined,
+                          "text": undefined,
+                        }
+                      }
+                      accessible={true}
+                      collapsable={false}
+                      focusable={true}
+                      href="/Tabs/Settings"
+                      onBlur={[Function]}
+                      onClick={[Function]}
+                      onFocus={[Function]}
+                      onResponderGrant={[Function]}
+                      onResponderMove={[Function]}
+                      onResponderRelease={[Function]}
+                      onResponderTerminate={[Function]}
+                      onResponderTerminationRequest={[Function]}
+                      onStartShouldSetResponder={[Function]}
+                      role="button"
+                      style={
+                        {
+                          "alignItems": "center",
+                          "backgroundColor": "transparent",
+                          "borderCurve": "continuous",
+                          "borderRadius": 0,
+                          "cursor": "pointer",
+                          "flex": 1,
+                          "flexDirection": "column",
+                          "justifyContent": "flex-start",
+                          "opacity": 1,
+                          "padding": 5,
+                        }
+                      }
+                    >
+                      <View
+                        style={
+                          [
+                            {
+                              "height": 28,
+                              "width": 31,
+                            },
+                            undefined,
+                          ]
+                        }
+                      >
+                        <View
+                          style={
+                            [
+                              {
+                                "alignItems": "center",
+                                "alignSelf": "center",
+                                "height": "100%",
+                                "justifyContent": "center",
+                                "position": "absolute",
+                                "width": "100%",
+                              },
+                              {
+                                "minWidth": 25,
+                                "opacity": 0,
+                              },
+                            ]
+                          }
+                        >
+                          <Text
+                            style={
+                              [
+                                {
+                                  "color": "rgb(28, 28, 30)",
+                                },
+                                {
+                                  "fontFamily": "System",
+                                  "fontWeight": "400",
+                                },
+                                [
+                                  {
+                                    "backgroundColor": "transparent",
+                                  },
+                                  {
+                                    "color": "rgb(0, 122, 255)",
+                                    "fontSize": 25,
+                                  },
+                                  undefined,
+                                ],
+                              ]
+                            }
+                          >
+                            ⏷
+                          </Text>
+                        </View>
+                        <View
+                          style={
+                            [
+                              {
+                                "alignItems": "center",
+                                "alignSelf": "center",
+                                "height": "100%",
+                                "justifyContent": "center",
+                                "position": "absolute",
+                                "width": "100%",
+                              },
+                              {
+                                "opacity": 1,
+                              },
+                            ]
+                          }
+                        >
+                          <Text
+                            style={
+                              [
+                                {
+                                  "color": "rgb(28, 28, 30)",
+                                },
+                                {
+                                  "fontFamily": "System",
+                                  "fontWeight": "400",
+                                },
+                                [
+                                  {
+                                    "backgroundColor": "transparent",
+                                  },
+                                  {
+                                    "color": "#8E8E8F",
+                                    "fontSize": 25,
+                                  },
+                                  undefined,
+                                ],
+                              ]
+                            }
+                          >
+                            ⏷
+                          </Text>
+                        </View>
+                      </View>
+                      <Text
+                        numberOfLines={1}
+                        style={
+                          [
+                            {
+                              "color": "rgb(28, 28, 30)",
+                            },
+                            {
+                              "fontFamily": "System",
+                              "fontWeight": "400",
+                            },
+                            [
+                              {
+                                "backgroundColor": "transparent",
+                                "textAlign": "center",
+                              },
+                              {
+                                "color": "#8E8E8F",
+                              },
+                              [
+                                {
+                                  "fontSize": 10,
+                                },
+                                {
+                                  "fontFamily": "System",
+                                  "fontWeight": "500",
+                                },
+                                undefined,
+                              ],
+                            ],
+                          ]
+                        }
+                      >
+                        설정
                       </Text>
                     </View>
                   </View>
                 </View>
-              </RNSScreen>
-            </RNSScreenNavigationContainer>
-            <View
-              collapsable={false}
-              onLayout={[Function]}
-              pointerEvents="auto"
-              style={
-                {
-                  "backgroundColor": "rgb(255, 255, 255)",
-                  "borderColor": "rgb(216, 216, 216)",
-                  "borderTopWidth": 0.5,
-                  "bottom": 0,
-                  "elevation": 8,
-                  "end": 0,
-                  "height": 83,
-                  "paddingBottom": 34,
-                  "paddingHorizontal": 0,
-                  "paddingTop": 0,
-                  "position": undefined,
-                  "start": 0,
-                  "transform": [
-                    {
-                      "translateY": 0,
-                    },
-                  ],
-                }
-              }
-            >
-              <View
-                pointerEvents="none"
-                style={
-                  {
-                    "bottom": 0,
-                    "left": 0,
-                    "position": "absolute",
-                    "right": 0,
-                    "top": 0,
-                  }
-                }
-              />
-              <View
-                role="tablist"
-                style={
-                  {
-                    "flex": 1,
-                    "flexDirection": "row",
-                  }
-                }
-              >
-                <View
-                  style={
-                    [
-                      {
-                        "borderRadius": 0,
-                        "overflow": "visible",
-                      },
-                      [
-                        {
-                          "flex": 1,
-                        },
-                        undefined,
-                      ],
-                    ]
-                  }
-                >
-                  <View
-                    accessibilityLabel="컨텐츠, tab, 1 of 4"
-                    accessibilityLargeContentTitle="컨텐츠"
-                    accessibilityShowsLargeContentViewer={true}
-                    accessibilityState={
-                      {
-                        "busy": undefined,
-                        "checked": undefined,
-                        "disabled": undefined,
-                        "expanded": undefined,
-                        "selected": true,
-                      }
-                    }
-                    accessibilityValue={
-                      {
-                        "max": undefined,
-                        "min": undefined,
-                        "now": undefined,
-                        "text": undefined,
-                      }
-                    }
-                    accessible={true}
-                    collapsable={false}
-                    focusable={true}
-                    href="/Tabs/Content"
-                    onBlur={[Function]}
-                    onClick={[Function]}
-                    onFocus={[Function]}
-                    onResponderGrant={[Function]}
-                    onResponderMove={[Function]}
-                    onResponderRelease={[Function]}
-                    onResponderTerminate={[Function]}
-                    onResponderTerminationRequest={[Function]}
-                    onStartShouldSetResponder={[Function]}
-                    role="button"
-                    style={
-                      {
-                        "alignItems": "center",
-                        "backgroundColor": "transparent",
-                        "borderCurve": "continuous",
-                        "borderRadius": 0,
-                        "cursor": "pointer",
-                        "flex": 1,
-                        "flexDirection": "column",
-                        "justifyContent": "flex-start",
-                        "opacity": 1,
-                        "padding": 5,
-                      }
-                    }
-                  >
-                    <View
-                      style={
-                        [
-                          {
-                            "height": 28,
-                            "width": 31,
-                          },
-                          undefined,
-                        ]
-                      }
-                    >
-                      <View
-                        style={
-                          [
-                            {
-                              "alignItems": "center",
-                              "alignSelf": "center",
-                              "height": "100%",
-                              "justifyContent": "center",
-                              "position": "absolute",
-                              "width": "100%",
-                            },
-                            {
-                              "minWidth": 25,
-                              "opacity": 1,
-                            },
-                          ]
-                        }
-                      >
-                        <Text
-                          style={
-                            [
-                              {
-                                "color": "rgb(28, 28, 30)",
-                              },
-                              {
-                                "fontFamily": "System",
-                                "fontWeight": "400",
-                              },
-                              [
-                                {
-                                  "backgroundColor": "transparent",
-                                },
-                                {
-                                  "color": "rgb(0, 122, 255)",
-                                  "fontSize": 25,
-                                },
-                                undefined,
-                              ],
-                            ]
-                          }
-                        >
-                          ⏷
-                        </Text>
-                      </View>
-                      <View
-                        style={
-                          [
-                            {
-                              "alignItems": "center",
-                              "alignSelf": "center",
-                              "height": "100%",
-                              "justifyContent": "center",
-                              "position": "absolute",
-                              "width": "100%",
-                            },
-                            {
-                              "opacity": 0,
-                            },
-                          ]
-                        }
-                      >
-                        <Text
-                          style={
-                            [
-                              {
-                                "color": "rgb(28, 28, 30)",
-                              },
-                              {
-                                "fontFamily": "System",
-                                "fontWeight": "400",
-                              },
-                              [
-                                {
-                                  "backgroundColor": "transparent",
-                                },
-                                {
-                                  "color": "#8E8E8F",
-                                  "fontSize": 25,
-                                },
-                                undefined,
-                              ],
-                            ]
-                          }
-                        >
-                          ⏷
-                        </Text>
-                      </View>
-                    </View>
-                    <Text
-                      numberOfLines={1}
-                      style={
-                        [
-                          {
-                            "color": "rgb(28, 28, 30)",
-                          },
-                          {
-                            "fontFamily": "System",
-                            "fontWeight": "400",
-                          },
-                          [
-                            {
-                              "backgroundColor": "transparent",
-                              "textAlign": "center",
-                            },
-                            {
-                              "color": "rgb(0, 122, 255)",
-                            },
-                            [
-                              {
-                                "fontSize": 10,
-                              },
-                              {
-                                "fontFamily": "System",
-                                "fontWeight": "500",
-                              },
-                              undefined,
-                            ],
-                          ],
-                        ]
-                      }
-                    >
-                      컨텐츠
-                    </Text>
-                  </View>
-                </View>
-                <View
-                  style={
-                    [
-                      {
-                        "borderRadius": 0,
-                        "overflow": "visible",
-                      },
-                      [
-                        {
-                          "flex": 1,
-                        },
-                        undefined,
-                      ],
-                    ]
-                  }
-                >
-                  <View
-                    accessibilityLabel="보스, tab, 2 of 4"
-                    accessibilityLargeContentTitle="보스"
-                    accessibilityShowsLargeContentViewer={true}
-                    accessibilityState={
-                      {
-                        "busy": undefined,
-                        "checked": undefined,
-                        "disabled": undefined,
-                        "expanded": undefined,
-                        "selected": false,
-                      }
-                    }
-                    accessibilityValue={
-                      {
-                        "max": undefined,
-                        "min": undefined,
-                        "now": undefined,
-                        "text": undefined,
-                      }
-                    }
-                    accessible={true}
-                    collapsable={false}
-                    focusable={true}
-                    href="/Tabs/Boss"
-                    onBlur={[Function]}
-                    onClick={[Function]}
-                    onFocus={[Function]}
-                    onResponderGrant={[Function]}
-                    onResponderMove={[Function]}
-                    onResponderRelease={[Function]}
-                    onResponderTerminate={[Function]}
-                    onResponderTerminationRequest={[Function]}
-                    onStartShouldSetResponder={[Function]}
-                    role="button"
-                    style={
-                      {
-                        "alignItems": "center",
-                        "backgroundColor": "transparent",
-                        "borderCurve": "continuous",
-                        "borderRadius": 0,
-                        "cursor": "pointer",
-                        "flex": 1,
-                        "flexDirection": "column",
-                        "justifyContent": "flex-start",
-                        "opacity": 1,
-                        "padding": 5,
-                      }
-                    }
-                  >
-                    <View
-                      style={
-                        [
-                          {
-                            "height": 28,
-                            "width": 31,
-                          },
-                          undefined,
-                        ]
-                      }
-                    >
-                      <View
-                        style={
-                          [
-                            {
-                              "alignItems": "center",
-                              "alignSelf": "center",
-                              "height": "100%",
-                              "justifyContent": "center",
-                              "position": "absolute",
-                              "width": "100%",
-                            },
-                            {
-                              "minWidth": 25,
-                              "opacity": 0,
-                            },
-                          ]
-                        }
-                      >
-                        <Text
-                          style={
-                            [
-                              {
-                                "color": "rgb(28, 28, 30)",
-                              },
-                              {
-                                "fontFamily": "System",
-                                "fontWeight": "400",
-                              },
-                              [
-                                {
-                                  "backgroundColor": "transparent",
-                                },
-                                {
-                                  "color": "rgb(0, 122, 255)",
-                                  "fontSize": 25,
-                                },
-                                undefined,
-                              ],
-                            ]
-                          }
-                        >
-                          ⏷
-                        </Text>
-                      </View>
-                      <View
-                        style={
-                          [
-                            {
-                              "alignItems": "center",
-                              "alignSelf": "center",
-                              "height": "100%",
-                              "justifyContent": "center",
-                              "position": "absolute",
-                              "width": "100%",
-                            },
-                            {
-                              "opacity": 1,
-                            },
-                          ]
-                        }
-                      >
-                        <Text
-                          style={
-                            [
-                              {
-                                "color": "rgb(28, 28, 30)",
-                              },
-                              {
-                                "fontFamily": "System",
-                                "fontWeight": "400",
-                              },
-                              [
-                                {
-                                  "backgroundColor": "transparent",
-                                },
-                                {
-                                  "color": "#8E8E8F",
-                                  "fontSize": 25,
-                                },
-                                undefined,
-                              ],
-                            ]
-                          }
-                        >
-                          ⏷
-                        </Text>
-                      </View>
-                    </View>
-                    <Text
-                      numberOfLines={1}
-                      style={
-                        [
-                          {
-                            "color": "rgb(28, 28, 30)",
-                          },
-                          {
-                            "fontFamily": "System",
-                            "fontWeight": "400",
-                          },
-                          [
-                            {
-                              "backgroundColor": "transparent",
-                              "textAlign": "center",
-                            },
-                            {
-                              "color": "#8E8E8F",
-                            },
-                            [
-                              {
-                                "fontSize": 10,
-                              },
-                              {
-                                "fontFamily": "System",
-                                "fontWeight": "500",
-                              },
-                              undefined,
-                            ],
-                          ],
-                        ]
-                      }
-                    >
-                      보스
-                    </Text>
-                  </View>
-                </View>
-                <View
-                  style={
-                    [
-                      {
-                        "borderRadius": 0,
-                        "overflow": "visible",
-                      },
-                      [
-                        {
-                          "flex": 1,
-                        },
-                        undefined,
-                      ],
-                    ]
-                  }
-                >
-                  <View
-                    accessibilityLabel="수익, tab, 3 of 4"
-                    accessibilityLargeContentTitle="수익"
-                    accessibilityShowsLargeContentViewer={true}
-                    accessibilityState={
-                      {
-                        "busy": undefined,
-                        "checked": undefined,
-                        "disabled": undefined,
-                        "expanded": undefined,
-                        "selected": false,
-                      }
-                    }
-                    accessibilityValue={
-                      {
-                        "max": undefined,
-                        "min": undefined,
-                        "now": undefined,
-                        "text": undefined,
-                      }
-                    }
-                    accessible={true}
-                    collapsable={false}
-                    focusable={true}
-                    href="/Tabs/Profit"
-                    onBlur={[Function]}
-                    onClick={[Function]}
-                    onFocus={[Function]}
-                    onResponderGrant={[Function]}
-                    onResponderMove={[Function]}
-                    onResponderRelease={[Function]}
-                    onResponderTerminate={[Function]}
-                    onResponderTerminationRequest={[Function]}
-                    onStartShouldSetResponder={[Function]}
-                    role="button"
-                    style={
-                      {
-                        "alignItems": "center",
-                        "backgroundColor": "transparent",
-                        "borderCurve": "continuous",
-                        "borderRadius": 0,
-                        "cursor": "pointer",
-                        "flex": 1,
-                        "flexDirection": "column",
-                        "justifyContent": "flex-start",
-                        "opacity": 1,
-                        "padding": 5,
-                      }
-                    }
-                  >
-                    <View
-                      style={
-                        [
-                          {
-                            "height": 28,
-                            "width": 31,
-                          },
-                          undefined,
-                        ]
-                      }
-                    >
-                      <View
-                        style={
-                          [
-                            {
-                              "alignItems": "center",
-                              "alignSelf": "center",
-                              "height": "100%",
-                              "justifyContent": "center",
-                              "position": "absolute",
-                              "width": "100%",
-                            },
-                            {
-                              "minWidth": 25,
-                              "opacity": 0,
-                            },
-                          ]
-                        }
-                      >
-                        <Text
-                          style={
-                            [
-                              {
-                                "color": "rgb(28, 28, 30)",
-                              },
-                              {
-                                "fontFamily": "System",
-                                "fontWeight": "400",
-                              },
-                              [
-                                {
-                                  "backgroundColor": "transparent",
-                                },
-                                {
-                                  "color": "rgb(0, 122, 255)",
-                                  "fontSize": 25,
-                                },
-                                undefined,
-                              ],
-                            ]
-                          }
-                        >
-                          ⏷
-                        </Text>
-                      </View>
-                      <View
-                        style={
-                          [
-                            {
-                              "alignItems": "center",
-                              "alignSelf": "center",
-                              "height": "100%",
-                              "justifyContent": "center",
-                              "position": "absolute",
-                              "width": "100%",
-                            },
-                            {
-                              "opacity": 1,
-                            },
-                          ]
-                        }
-                      >
-                        <Text
-                          style={
-                            [
-                              {
-                                "color": "rgb(28, 28, 30)",
-                              },
-                              {
-                                "fontFamily": "System",
-                                "fontWeight": "400",
-                              },
-                              [
-                                {
-                                  "backgroundColor": "transparent",
-                                },
-                                {
-                                  "color": "#8E8E8F",
-                                  "fontSize": 25,
-                                },
-                                undefined,
-                              ],
-                            ]
-                          }
-                        >
-                          ⏷
-                        </Text>
-                      </View>
-                    </View>
-                    <Text
-                      numberOfLines={1}
-                      style={
-                        [
-                          {
-                            "color": "rgb(28, 28, 30)",
-                          },
-                          {
-                            "fontFamily": "System",
-                            "fontWeight": "400",
-                          },
-                          [
-                            {
-                              "backgroundColor": "transparent",
-                              "textAlign": "center",
-                            },
-                            {
-                              "color": "#8E8E8F",
-                            },
-                            [
-                              {
-                                "fontSize": 10,
-                              },
-                              {
-                                "fontFamily": "System",
-                                "fontWeight": "500",
-                              },
-                              undefined,
-                            ],
-                          ],
-                        ]
-                      }
-                    >
-                      수익
-                    </Text>
-                  </View>
-                </View>
-                <View
-                  style={
-                    [
-                      {
-                        "borderRadius": 0,
-                        "overflow": "visible",
-                      },
-                      [
-                        {
-                          "flex": 1,
-                        },
-                        undefined,
-                      ],
-                    ]
-                  }
-                >
-                  <View
-                    accessibilityLabel="설정, tab, 4 of 4"
-                    accessibilityLargeContentTitle="설정"
-                    accessibilityShowsLargeContentViewer={true}
-                    accessibilityState={
-                      {
-                        "busy": undefined,
-                        "checked": undefined,
-                        "disabled": undefined,
-                        "expanded": undefined,
-                        "selected": false,
-                      }
-                    }
-                    accessibilityValue={
-                      {
-                        "max": undefined,
-                        "min": undefined,
-                        "now": undefined,
-                        "text": undefined,
-                      }
-                    }
-                    accessible={true}
-                    collapsable={false}
-                    focusable={true}
-                    href="/Tabs/Settings"
-                    onBlur={[Function]}
-                    onClick={[Function]}
-                    onFocus={[Function]}
-                    onResponderGrant={[Function]}
-                    onResponderMove={[Function]}
-                    onResponderRelease={[Function]}
-                    onResponderTerminate={[Function]}
-                    onResponderTerminationRequest={[Function]}
-                    onStartShouldSetResponder={[Function]}
-                    role="button"
-                    style={
-                      {
-                        "alignItems": "center",
-                        "backgroundColor": "transparent",
-                        "borderCurve": "continuous",
-                        "borderRadius": 0,
-                        "cursor": "pointer",
-                        "flex": 1,
-                        "flexDirection": "column",
-                        "justifyContent": "flex-start",
-                        "opacity": 1,
-                        "padding": 5,
-                      }
-                    }
-                  >
-                    <View
-                      style={
-                        [
-                          {
-                            "height": 28,
-                            "width": 31,
-                          },
-                          undefined,
-                        ]
-                      }
-                    >
-                      <View
-                        style={
-                          [
-                            {
-                              "alignItems": "center",
-                              "alignSelf": "center",
-                              "height": "100%",
-                              "justifyContent": "center",
-                              "position": "absolute",
-                              "width": "100%",
-                            },
-                            {
-                              "minWidth": 25,
-                              "opacity": 0,
-                            },
-                          ]
-                        }
-                      >
-                        <Text
-                          style={
-                            [
-                              {
-                                "color": "rgb(28, 28, 30)",
-                              },
-                              {
-                                "fontFamily": "System",
-                                "fontWeight": "400",
-                              },
-                              [
-                                {
-                                  "backgroundColor": "transparent",
-                                },
-                                {
-                                  "color": "rgb(0, 122, 255)",
-                                  "fontSize": 25,
-                                },
-                                undefined,
-                              ],
-                            ]
-                          }
-                        >
-                          ⏷
-                        </Text>
-                      </View>
-                      <View
-                        style={
-                          [
-                            {
-                              "alignItems": "center",
-                              "alignSelf": "center",
-                              "height": "100%",
-                              "justifyContent": "center",
-                              "position": "absolute",
-                              "width": "100%",
-                            },
-                            {
-                              "opacity": 1,
-                            },
-                          ]
-                        }
-                      >
-                        <Text
-                          style={
-                            [
-                              {
-                                "color": "rgb(28, 28, 30)",
-                              },
-                              {
-                                "fontFamily": "System",
-                                "fontWeight": "400",
-                              },
-                              [
-                                {
-                                  "backgroundColor": "transparent",
-                                },
-                                {
-                                  "color": "#8E8E8F",
-                                  "fontSize": 25,
-                                },
-                                undefined,
-                              ],
-                            ]
-                          }
-                        >
-                          ⏷
-                        </Text>
-                      </View>
-                    </View>
-                    <Text
-                      numberOfLines={1}
-                      style={
-                        [
-                          {
-                            "color": "rgb(28, 28, 30)",
-                          },
-                          {
-                            "fontFamily": "System",
-                            "fontWeight": "400",
-                          },
-                          [
-                            {
-                              "backgroundColor": "transparent",
-                              "textAlign": "center",
-                            },
-                            {
-                              "color": "#8E8E8F",
-                            },
-                            [
-                              {
-                                "fontSize": 10,
-                              },
-                              {
-                                "fontFamily": "System",
-                                "fontWeight": "500",
-                              },
-                              undefined,
-                            ],
-                          ],
-                        ]
-                      }
-                    >
-                      설정
-                    </Text>
-                  </View>
-                </View>
               </View>
             </View>
-          </View>
-        </RNSScreenContentWrapper>
-        <RNSScreenStackHeaderConfig
-          backButtonInCustomView={false}
-          backTitleFontFamily="System"
-          backTitleVisible={true}
-          backgroundColor="rgb(255, 255, 255)"
-          color="rgb(0, 122, 255)"
-          consumeBottomInset={true}
-          consumeLeftInset={true}
-          consumeRightInset={true}
-          consumeTopInset={false}
-          direction="ltr"
-          disableBackButtonMenu={false}
-          disableTopInsetApplication={false}
-          experimental_userInterfaceStyle="light"
-          hidden={true}
-          hideBackButton={false}
-          largeTitleFontFamily="System"
-          largeTitleFontWeight="700"
-          largeTitleHideShadow={false}
-          legacyTopInsetBehavior={false}
-          pointerEvents="box-none"
-          style={
-            {
-              "alignItems": "center",
-              "flexDirection": "row",
-              "justifyContent": "space-between",
-              "position": "absolute",
-              "width": "100%",
+          </RNSScreenContentWrapper>
+          <RNSScreenStackHeaderConfig
+            backButtonInCustomView={false}
+            backTitleFontFamily="System"
+            backTitleVisible={true}
+            backgroundColor="rgb(255, 255, 255)"
+            color="rgb(0, 122, 255)"
+            consumeBottomInset={true}
+            consumeLeftInset={true}
+            consumeRightInset={true}
+            consumeTopInset={false}
+            direction="ltr"
+            disableBackButtonMenu={false}
+            disableTopInsetApplication={false}
+            experimental_userInterfaceStyle="light"
+            hidden={true}
+            hideBackButton={false}
+            largeTitleFontFamily="System"
+            largeTitleFontWeight="700"
+            largeTitleHideShadow={false}
+            legacyTopInsetBehavior={false}
+            pointerEvents="box-none"
+            style={
+              {
+                "alignItems": "center",
+                "flexDirection": "row",
+                "justifyContent": "space-between",
+                "position": "absolute",
+                "width": "100%",
+              }
             }
-          }
-          synchronousShadowStateUpdatesEnabled={true}
-          title="Tabs"
-          titleColor="rgb(28, 28, 30)"
-          titleFontFamily="System"
-          titleFontWeight="600"
-          topInsetEnabled={true}
-          translucent={false}
-          userInterfaceStyle="light"
-        />
-      </RNSScreen>
-    </RNSScreenStack>
+            synchronousShadowStateUpdatesEnabled={true}
+            title="Tabs"
+            titleColor="rgb(28, 28, 30)"
+            titleFontFamily="System"
+            titleFontWeight="600"
+            topInsetEnabled={true}
+            translucent={false}
+            userInterfaceStyle="light"
+          />
+        </RNSScreen>
+      </RNSScreenStack>
+    </View>
   </View>
 </RNCSafeAreaProvider>
 `;

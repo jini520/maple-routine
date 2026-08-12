@@ -15,3 +15,20 @@
 import type { TextStyle } from 'react-native'
 
 export const TABULAR_NUMS: TextStyle = { fontVariant: ['tabular-nums'] }
+
+/**
+ * 일러스트 위 글자의 **가독성 스크림** — `@core/lib/media-card` 의 `MEDIA_TEXT_SHADOW` 짝
+ * ([[ADR-018]]·[[ADR-020]]).
+ *
+ * 테마 토큰이 아니라 검정 고정인 이유는 core 쪽 주석이 갖는다 — 무슨 그림이 깔리든 글자가 읽혀야
+ * 하므로 `shadow-color`(elevation 용)로 바꾸면 밝은 일러스트 위에서 묻힌다.
+ *
+ * **웹은 그림자를 둘 겹쳤지만 RN 의 `Text` 는 `textShadow*` 세 프롭으로 하나만 표현할 수 있어**
+ * 강한 쪽(`0 1px 3px rgba(0,0,0,.9)`)을 남긴다. 여기 있는 이유는 쓰는 자리가 셋이기 때문이다 —
+ * 파티 인원 모달 히어로 + 일간 카드 + 주간 카드([[ADR-094]] 결정 1 의 "호출부 2곳 이상").
+ */
+export const MEDIA_TEXT_SHADOW_STYLE: TextStyle = {
+  textShadowColor: 'rgba(0,0,0,0.9)',
+  textShadowOffset: { width: 0, height: 1 },
+  textShadowRadius: 3,
+}

@@ -16,10 +16,13 @@
 //     반영되지 않은 채 통과한다(단언이 옛 화면을 보고도 초록이 된다)
 import { act, render, screen } from '@testing-library/react-native'
 import { createNavigationContainerRef } from '@react-navigation/native'
+import { FEATURE_GUIDES } from '@core/data/feature-guides'
 import { useOnboardingStore } from '@core/features/onboarding/store'
+import { useTrackingModeStore } from '@core/features/tracking-mode/store'
 
 import { NavigationHarness } from './harness'
-import { normalizeNavigationTree } from './normalize-tree'
+import { installMemoryPreferences } from './memory-preferences'
+import { normalizeRenderedTree } from '../../__tests__/normalize-tree'
 import { FEATURE_GUIDE_ROUTE_NAMES, STACK_ROUTE_NAMES, type RootStackParamList } from '../routes'
 
 jest.mock('@core/features/ads/tab-switch-ad', () => ({
@@ -30,8 +33,22 @@ jest.mock('@core/features/ads/tab-switch-ad', () => ({
 
 type Status = 'awaitingApiKey' | 'completed'
 
+/**
+ * 안내 상세를 여는 데 쓰는 표본. **카탈로그에서 뽑는다** — 문자열을 손으로 적으면 안내가 개명될
+ * 때 이 테스트가 *"두 경로가 같은 화면을 그리는가"* 대신 *"그 id 가 아직 있는가"* 를 묻게 되고,
+ * 그 실패는 원인이 전혀 다른데 같은 자리에서 빨개진다.
+ */
+const GUIDE = FEATURE_GUIDES[0]
+const GUIDE_ID = GUIDE.id
+// 웹의 `?s=` 자리([[ADR-125]] 결정 7) — 경로가 아니라 파라미터라 스택 한 단으로 읽히지 않는다.
+const GUIDE_SECTION_ID = GUIDE.sections[0].id
+
 beforeEach(() => {
+  installMemoryPreferences()
   useOnboardingStore.setState({ status: 'awaitingApiKey' })
+  // `ContentManage` 는 **수동 모드 전용**이라([[ADR-035]] 결정 18) 자동 모드로 두면 열리자마자
+  // 물러난다 — 그러면 이 파일의 «열하나가 전부 열린다» 가 배선이 아니라 모드 때문에 빨개진다.
+  useTrackingModeStore.setState({ mode: 'manual' })
 })
 
 describe('온보딩 분기', () => {
@@ -78,9 +95,12 @@ describe('온보딩 분기', () => {
 })
 
 describe('하위 페이지 — 계획서 §1 의 열하나', () => {
+  // **`guideId` 가 실재해야 한다**(step 3 에서 갈린 것). 자리표시자는 받은 문자열을 그냥 찍어
+  // 아무 값이나 통했지만, 진짜 상세는 없는 id 면 조용히 pop 한다([[ADR-125]] 결정 3 — 옛 링크의
+  // 착지점이 빈 화면이면 안 된다). 그래서 여기 값이 카탈로그와 어긋나면 이 테스트가 먼저 깨진다.
   const params: Partial<Record<(typeof STACK_ROUTE_NAMES)[number], object>> = {
-    SettingsFeatureGuide: { guideId: 'boss-card-party' },
-    SettingsReleaseNoteGuide: { guideId: 'boss-card-party' },
+    SettingsFeatureGuide: { guideId: GUIDE_ID },
+    SettingsReleaseNoteGuide: { guideId: GUIDE_ID },
   }
 
   it.each(STACK_ROUTE_NAMES)('%s 로 push 하면 그 화면이 열린다', async (name) => {
@@ -135,35 +155,46 @@ describe('하위 페이지 — 계획서 §1 의 열하나', () => {
 })
 
 // 앞엣것은 기능 설명 목록에서, 뒤엣것은 개발 노트에서 열리는 경로다.
+//
+// **자리표시자가 찍던 `guideId`·`section` 대신 실제로 그려진 글을 본다**(step 3). 자리표시자는
+// 파라미터를 그대로 찍어 "같은 데이터가 실렸는가"를 물었는데, 진짜 상세가 들어온 뒤에는 그보다
+// 강한 질문을 할 수 있다 — **두 경로가 같은 안내의 본문을 그리는가.** 마디 파라미터가 하는 일
+// (그 자리로 스크롤)은 레이아웃이 있어야 관측되므로 화면 자신의 테스트가 본다.
 describe('안내 상세는 두 경로가 같은 화면을 그린다 ([[ADR-125]] 결정 3)', () => {
-  it.each(FEATURE_GUIDE_ROUTE_NAMES)('%s 로 열어도 같은 상세에 같은 guideId 가 실린다', async (routeName) => {
+  it.each(FEATURE_GUIDE_ROUTE_NAMES)('%s 로 열어도 같은 안내가 그려진다', async (routeName) => {
     useOnboardingStore.setState({ status: 'completed' })
     const navigationRef = createNavigationContainerRef<RootStackParamList>()
 
     await render(<NavigationHarness navigationRef={navigationRef} />)
     await act(async () => {
-      navigationRef.navigate(routeName, { guideId: 'boss-card-party', section: 'party-size' })
+      navigationRef.navigate(routeName, { guideId: GUIDE_ID, section: GUIDE_SECTION_ID })
     })
 
     expect(screen.getByTestId(`screen-${routeName}`)).toBeTruthy()
-    expect(screen.getByTestId('feature-guide-id')).toHaveTextContent('boss-card-party')
-    // 웹의 `?s=` 자리([[ADR-125]] 결정 7) — 경로가 아니라 파라미터라 스택 한 단으로 읽히지 않는다.
-    expect(screen.getByTestId('feature-guide-section')).toHaveTextContent('party-size')
+    expect(screen.getAllByText(GUIDE.title).length).toBeGreaterThan(0)
+    // 마디 제목이 그려진다는 것이 곧 **같은 데이터**라는 뜻이다 — 두 경로가 다른 카탈로그를 읽고
+    // 있었다면 여기서 갈린다.
+    expect(screen.getAllByText(GUIDE.sections[0].title).length).toBeGreaterThan(0)
   })
 })
 
 // 이 스냅샷이 답하는 것은 *"앞으로 안 바뀌는가"* 뿐이다 — 웹뷰 앱과의 대조가 아니다
 // (`docs/migration/README.md` «잃는 안전망»). 탭 넷과 탭바가 실제로 그려진 트리를 고정한다.
+//
+// **온보딩 쪽은 step 2 부터 진짜 화면이 들어 있다**(자리표시자 → `OnboardingScreen`). 그래서 이
+// 스냅샷은 그 화면이 바뀌면 함께 움직인다 — 자리표시자였을 때보다 시끄럽지만, 그것이 이 기준선이
+// 실제로 고정하기로 한 것이다(내비게이터가 그 자리에 무엇을 그리는가). 화면 내부의 계약은
+// `src/app/onboarding/__tests__` 가 따로 본다.
 describe('렌더 트리 스냅샷', () => {
   it('탭 골격', async () => {
     useOnboardingStore.setState({ status: 'completed' })
 
-    expect(normalizeNavigationTree((await render(<NavigationHarness />)).toJSON())).toMatchSnapshot()
+    expect(normalizeRenderedTree((await render(<NavigationHarness />)).toJSON())).toMatchSnapshot()
   })
 
   it('온보딩 골격', async () => {
     useOnboardingStore.setState({ status: 'awaitingApiKey' })
 
-    expect(normalizeNavigationTree((await render(<NavigationHarness />)).toJSON())).toMatchSnapshot()
+    expect(normalizeRenderedTree((await render(<NavigationHarness />)).toJSON())).toMatchSnapshot()
   })
 })

@@ -78,19 +78,28 @@ describe('DropEffectOverlay — 구조', () => {
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
-  // **아직 정적이라는 사실 자체를 계약으로 남긴다** — 에셋이 들어오면 이 단언이 깨지고, 그때
-  // 엔진(step 7)이 없으면 그 사실이 드러난다.
-  it('프레임 에셋이 아직 없다 — 연출은 정적이다', () => {
-    expect(DROP_EFFECT_FRAMES.loop).toHaveLength(0)
-    expect(DROP_EFFECT_FRAMES.end).toHaveLength(0)
-  })
-
   it('트리 스냅샷', async () => {
     const { toJSON } = await renderOverlay(
       <DropEffectOverlay itemName="칠흑의 보스 반지 상자" onClose={noop} />,
     )
 
     expect(toJSON()).toMatchSnapshot()
+  })
+
+  // **에셋은 왔는데 재생 엔진이 아직 없다** — [[ADR-129]] 로 네 단계가 전부 찼지만(그래서 옛 단언이
+  // 깨졌고, 그게 그 단언이 있던 이유다) 이 오버레이는 여전히 정적이다. 두 사실을 **함께** 적어야
+  // "왜 프레임이 있는데 안 움직이나"가 계약에서 읽힌다(파일 머리 ⓑ · [[ADR-048]] 기하 변환 대기).
+  it('프레임 에셋은 왔지만 연출은 아직 정적이다', async () => {
+    expect(DROP_EFFECT_FRAMES.loop.length).toBeGreaterThan(0)
+    expect(DROP_EFFECT_FRAMES.end.length).toBeGreaterThan(0)
+
+    const { getByTestId } = await renderOverlay(
+      <DropEffectOverlay itemName="흑옥의 보스 반지 상자" onClose={noop} />,
+    )
+
+    // 기둥·ScreenEff 자리는 아직 **빈 View** 다. 프레임을 그리기 시작하면 자식이 생긴다.
+    expect(getByTestId('drop-effect-pillar').props.children).toBeUndefined()
+    expect(getByTestId('drop-effect-screen').props.children).toBeUndefined()
   })
 })
 

@@ -10,11 +10,12 @@
 //
 // ── RN 으로 옮기며 갈린 것 다섯 ─────────────────────────────────────────────────────
 //
-// ① **일러스트는 아직 안 나온다** — `getBossPortraitUrl` 이 RN 에서 항상 `null` 이다(에셋 레이어,
-//    `src/lib/rn-boss-icons.ts`). 그림 없는 보스가 타던 분기("단색 띠에 이름만")를 그대로 타므로
-//    코드는 웹과 같고, 에셋이 오면 `crop`(`getBossPortraitCrop`, 값은 지금도 진짜다)을 RN 기하로
-//    바꾸는 일만 남는다 — `MEDIA_ART_FILTER`·`MEDIA_ART_MASK_HERO` 는 CSS 문자열이라 그때 함께
-//    풀어야 할 자리다([[ADR-018]] bleed 레시피).
+// ① **그림이 앉았다(step 5).** 3단계가 *"셋이 한 덩어리라 따로 못 옮긴다"* 며 미뤄 둔 자리 —
+//    크롭의 CSS 값(`background-size: "100% auto"` / `position: "50% 45%"`)을 RN 기하로 바꾸고,
+//    `MEDIA_ART_FILTER`·`MEDIA_ART_MASK_HERO` 를 각각 `filter` 스타일과 **뒤집은 그라데이션**으로
+//    푸는 일이다. 그 셋을 step 4 가 컨텐츠 카드에서 이미 한 벌 풀어 두었으므로 여기서는
+//    `MediaCardArt` 를 **부르기만 한다**(`variant="hero"` — 마스크 끝점이 카드와 다르다).
+//    보스 카드와 같은 컴포넌트를 쓰는 것이 [[ADR-121]] 결정 7 이 요구하는 *"같은 값"* 이다.
 // ② **`bg-surface/60` 이 안 나온다.** NativeWind(v3 엔진)는 `var()` 색에 투명도 접미사를 만들지
 //    못한다(step 3 이 남긴 함정 둘 중 하나) — 클래스는 조용히 사라지고 닫기 버튼 배경이 없어진다.
 //    그래서 값에서 직접 rgba 를 만든다(`lib/color-alpha.ts` — step 6 의 경계 페이드가 같은 함정을
@@ -35,24 +36,16 @@ import type { BossDifficulty } from '@core/types'
 import { withAlpha } from '../../../lib/color-alpha'
 import { LinearGradient } from '../../../lib/nativewind-interop'
 import { UsersIcon, XIcon } from '../../../lib/icons'
-import { TABULAR_NUMS } from '../../../lib/text-styles'
+// 히어로 글자의 그림자는 카드 둘과 같은 값을 쓴다 — 세 번째 호출부가 생기며 `lib/text-styles.ts`
+// 로 올라갔다([[ADR-094]] 결정 1). 값·근거는 그 파일이 갖는다.
+import { MEDIA_TEXT_SHADOW_STYLE, TABULAR_NUMS } from '../../../lib/text-styles'
 import { useThemeAppearance } from '../../../theme/context'
 import { MediaScope } from '../../../theme/MediaScope'
 import { Badge } from '../../atoms/Badge/Badge'
 import { DifficultySegment } from '../../molecules/DifficultySegment/DifficultySegment'
+import { MediaCardArt } from '../../molecules/MediaCardArt/MediaCardArt'
 import { PartySizeStepper } from '../../molecules/PartySizeStepper/PartySizeStepper'
 import { Modal } from '../Modal/Modal'
-
-/**
- * `MEDIA_TEXT_SHADOW`(core)의 RN 짝 — **테마 토큰이 아니라 가독성 스크림**이라 값이 검정 고정이다
- * ([[ADR-018]]·[[ADR-020]], `@core/lib/media-card`). 웹은 그림자를 둘 겹쳤지만 RN 의 `Text` 는
- * `textShadow*` 세 프롭으로 **하나만** 표현할 수 있어 강한 쪽(`0 1px 3px rgba(0,0,0,.9)`)을 남긴다.
- */
-const MEDIA_TEXT_SHADOW_STYLE = {
-  textShadowColor: 'rgba(0,0,0,0.9)',
-  textShadowOffset: { width: 0, height: 1 },
-  textShadowRadius: 3,
-} as const
 
 export function PartySizeModal(props: {
   bossName: string
@@ -73,8 +66,8 @@ export function PartySizeModal(props: {
   const mediaSurface = definition.mediaSurface
 
   const portraitUrl = getBossPortraitUrl(props.portraitSlug)
-  // 값은 지금도 진짜다(JSON 두 표는 살아 있다 — `rn-boss-icons.ts`). 그림이 오면 쓴다.
-  void getBossPortraitCrop(props.portraitSlug)
+  // 카드 bleed 와 **같은 표**다(`boss-portrait-crops.json`) — 원형 초상의 `…-icon-crops` 가 아니다.
+  const crop = getBossPortraitCrop(props.portraitSlug)
 
   return (
     // align="center": 이 모달은 키보드를 띄우지 않는다(`Modal` 기본은 'top').
@@ -87,8 +80,16 @@ export function PartySizeModal(props: {
         <View className="overflow-hidden rounded-[14px] border border-panel-border bg-surface">
           {/* 히어로 — 카드와 같은 bleed 레시피([[ADR-018]]). `MediaScope` 안이라 `bg-surface`·
               `text-text` 가 media-* 로 해석된다([[ADR-064]] 결정 5). */}
-          <MediaScope className="relative h-22 bg-surface">
-            {portraitUrl !== null && <View testID="party-size-modal-art" className="absolute inset-0" />}
+          <MediaScope className="relative h-22 overflow-hidden bg-surface">
+            {/* 일러스트 없는 보스(`portraitSlug: null`)는 히어로를 **비운다** — 폴백 디자인을 따로
+                만들지 않는다(`boss-scheduler.md`). 그 판정은 `MediaCardArt` 가 이미 갖고 있어
+                여기서 다시 `null` 을 검사하지 않는다.
+
+                **감싸지 않는다.** 아트와 베일이 둘 다 `absolute inset-0` 이라 흐름 자식인 래퍼로
+                감싸면 그 래퍼가 크기 0 인 상자가 되어 기준이 히어로에서 그리로 옮겨간다(그림이
+                사라진다). 그래서 화면 전용 testID(`party-size-modal-art`)도 함께 없어지고,
+                이 자리의 계약은 공용 `media-card-art` 가 나른다. */}
+            <MediaCardArt source={portraitUrl} crop={crop} variant="hero" />
 
             {/* 글자를 앉히는 베일 — 하드코딩 rgba 가 아니라 스코프의 표면색을 쓴다. */}
             <LinearGradient

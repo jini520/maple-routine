@@ -38,6 +38,21 @@ function declarationsIn(css: string, selector: string): Record<string, string> {
 /** 파생 토큰은 core 의 CSS 에 없다 — RN 이 선택자 대신 값으로 푸는 자리다([[ADR-122]]). */
 const PANEL_BORDER_VARIABLE = toColorVariableName(PANEL_BORDER_TOKEN)
 
+/**
+ * `--color-*` 만 남긴다 — `:root` 블록에는 배경 이미지(`--theme-bg-*`)도 섞여 있다.
+ *
+ * [[ADR-129]] 전에는 RN 에서 배경 슬러그가 **아무것도 해석되지 않아** 그 줄이 애초에 안 나왔고,
+ * 그래서 두 맵을 통째로 비교해도 맞았다. 지금은 에셋이 있어 `buildThemeCss` 가 그 줄을 낸다 —
+ * 그런데 RN 은 벽지를 CSS 배경이 아니라 `<Image>` 로 그리므로 **값의 형태가 다르고**
+ * (`theme-vars.ts` 파일 머리) 변수로 내지 않는 것이 여전히 맞다. 그 «내지 않는다»는 아래에서
+ * 따로 단언하고, 여기서는 색만 견준다.
+ */
+function colorDeclarationsIn(css: string, selector: string): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(declarationsIn(css, selector)).filter(([name]) => name.startsWith('--color-')),
+  )
+}
+
 describe('변수 이름 규칙', () => {
   it.each([
     ['bg', '--color-bg'],
@@ -53,7 +68,9 @@ describe('변수 이름 규칙', () => {
   // 유틸리티가 참조하는 변수와 우리가 내는 변수가 어긋나 색이 **조용히 사라지므로**, 토큰 이름
   // 전부를 core 의 실제 출력과 대조한다.
   it('38토큰 전부가 core 의 `buildThemeCss` 와 같은 이름으로 나온다', () => {
-    const fromCore = Object.keys(declarationsIn(buildThemeCss(getThemeDefinition('머쉬맘')), ':root'))
+    const fromCore = Object.keys(
+      colorDeclarationsIn(buildThemeCss(getThemeDefinition('머쉬맘')), ':root'),
+    )
 
     expect(fromCore).toHaveLength(THEME_TOKEN_KEYS.length)
     expect(THEME_TOKEN_KEYS.map(toColorVariableName).sort()).toEqual([...fromCore].sort())
@@ -69,7 +86,18 @@ describe.each(THEME_NAMES as readonly ThemeName[])('%s', (name) => {
     const { [PANEL_BORDER_VARIABLE]: panelBorder, ...tokens } = variables
 
     expect(panelBorder).toBe(resolvePanelBorder(definition))
-    expect(tokens).toEqual(declarationsIn(css, ':root'))
+    expect(tokens).toEqual(colorDeclarationsIn(css, ':root'))
+  })
+
+  // **배경 이미지는 변수로 내지 않는다**(`theme-vars.ts` 파일 머리). [[ADR-129]] 이후 core 는 그 줄을
+  // 내고 에셋도 실재하지만, RN 에서 그 값은 URL 문자열이 아니라 에셋 id 라 `url("…")` 이 뜻을 잃는다 —
+  // 벽지를 `<Image>` 로 그리는 것은 뷰 레이어 몫으로 남아 있다. 여기서 새어 나가면 조용히 죽는
+  // 스타일이 하나 생기므로 계약으로 막는다.
+  it('배경 이미지는 변수 맵에 새어 나오지 않는다', () => {
+    const names = Object.keys(buildThemeVariables(definition))
+
+    expect(names.some((name) => name.startsWith('--theme-bg'))).toBe(false)
+    expect(names.every((name) => name.startsWith('--color-'))).toBe(true)
   })
 
   it('값이 `job-themes.json` 그대로다(변환·보정이 없다)', () => {

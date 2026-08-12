@@ -32,7 +32,7 @@ docs/
 | 아이템 드랍 | [features/item-drop.md](./features/item-drop.md) | `app/item-drop/` · `features/item-drop/` · `lib/item-icons` · `storage/boss-drop-records` · 전 기간 히스토리: `app/boss-profit/DropHistoryScreen`(`/profit/drops`) · `features/boss-profit/drop-history-store` · `lib/drop-history` |
 | 사냥 타이머 | [features/hunting-timer.md](./features/hunting-timer.md) | `app/hunting-timer/` · `features/hunting-timer/` · `native/hunting-timer` |
 | 설정 | [features/settings.md](./features/settings.md) | `app/settings/`(`SettingsScreen` + 하위 화면 `SettingsReleaseNotesScreen`/`SettingsFeatureGuideListScreen`/`SettingsFeatureGuideScreen`/`SettingsAccountDataScreen`/`SettingsAboutScreen` — 라우트 `/settings/guide`·`/settings/release-notes`(둘 다 자식 `:guideId` — 같은 상세 화면)·`/settings/account-data`·`/settings/about`, `/settings` 의 **형제**) · 행 프리미티브 `SettingsRow`/`SettingsLinkRow`/`row-class.ts` · `src/data/release-notes.ts`·`src/data/feature-guides/`(안내 하나 = 파일 하나)(+`src/types/release-notes.ts`·`src/types/feature-guides.ts` · `lib/guide-route.ts`, 이미지 `src/assets/guide/<안내 id>/`) · `features/settings/`(`cache-data`) · `storage/api-key` · `features/tracking-mode` |
-| 테마 시스템 | [features/theme.md](./features/theme.md) | `features/theme/` · `storage/theme` · `src/index.css` · `src/data/job-themes.json` · `lib/theme-derive` · `lib/theme-backgrounds` · `src/assets/themes/` · `lib/color` · `scripts/theme-gen.ts` |
+| 테마 시스템 | [features/theme.md](./features/theme.md) | `features/theme/` · `storage/theme` · `src/index.css` · `src/data/job-themes.json` · `lib/theme-derive` · `lib/theme-backgrounds` · `src/assets/themes/`(+ `src/assets/generated/themes.ts`) · `lib/color` · `scripts/theme-gen.ts` |
 | 광고 | [features/ads.md](./features/ads.md) | `native/ads.ts` · `features/ads/` · `storage/ads.ts` · `App.tsx`(탭 전환 훅) |
 | Live Update (OTA) | [features/live-update.md](./features/live-update.md) | `native/live-update.ts` · `features/live-update/` · `native/network` · `app/UpdatePromptModal.tsx` · `storage/last-run-bundle-version.ts` |
 | 스플래시 | [features/splash.md](./features/splash.md) | `android/…/SplashActivity` · iOS 스토리보드 · `capacitor.config.ts` · `index.html` |
@@ -54,6 +54,7 @@ docs/
 
 - **새 화면·기능 구현** → 해당 `features/*.md` (정책) + `foundation/architecture.md` (레이어 규칙) + 관련 `foundation/design-system.md` 컴포넌트. TDD 원칙상 테스트 먼저([[ADR]] 프로세스).
 - **게임 수치 데이터 변경** → `foundation/game-data.md` 먼저, 값은 반드시 사용자 확인([[ADR-006]]).
+- **에셋(그림) 추가·삭제** → 파일을 `packages/core/src/assets/` 에 넣거나 지운 뒤 **`npm run assets:gen`** ([[ADR-129]]). 목록(`assets/generated/*.ts`)은 커밋되는 생성물이라 안 돌리면 화면이 **에러 없이 폴백만** 그린다 — `assets/generated/__tests__/asset-manifest.test.ts` 가 그 낡음을 잡는다.
 - **저장 스키마 변경** → `persistence/` (해당 매체 문서) + 해당 `features/*.md`.
 - **색·토큰·테마** → `foundation/design-system.md` (기본 팔레트·시맨틱 색) + `features/theme.md` (테마별 토큰·런타임 전환).
 - **동기화·정규화·호출 제한** → `foundation/nexon-api.md` + `features/content-scheduler.md`/`boss-scheduler.md`.

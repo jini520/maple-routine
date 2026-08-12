@@ -307,11 +307,13 @@ describe('CharacterTrackingPicker', () => {
     expect(getAllByText('?').length).toBe(2)
   })
 
-  // **월드 엠블럼은 RN 번들에 아직 없다** — `worldEmblemUrl` 이 항상 `null` 이라 웹의 두 케이스
-  // ("엠블럼을 표시한다" / "매핑에 없는 월드는 생략한다")가 지금은 한 사실로 합쳐진다. 폴백 분기는
-  // 웹과 같은 것을 그대로 타므로, 에셋이 오면 앞의 케이스가 되살아난다(step 4 의 세 자리와 같다).
-  it('월드 엠블럼 자리는 아직 비어 있다 — 에셋 레이어 몫', async () => {
-    const { queryByTestId } = await renderOverlay(
+  // 웹의 두 케이스("엠블럼을 표시한다" / "매핑에 없는 월드는 생략한다")가 [[ADR-129]] 로 되살아났다 —
+  // 3단계에서는 `worldEmblemUrl` 이 항상 `null` 이라 둘이 한 사실로 합쳐져 있었다.
+  //
+  // `리부트`(ocid-3)는 `world-emblems.json` 에 없어 **지금도** 생략되는 쪽이다. 그 한 케이스가
+  // 남아 있어야 "에셋이 왔으니 무조건 그린다"로 굳지 않는다.
+  it('엠블럼이 있는 월드는 그리고, 매핑에 없는 월드는 생략한다', async () => {
+    const { getByTestId, queryByTestId } = await renderOverlay(
       <CharacterTrackingPicker
         entries={entries}
         trackedOcids={[]}
@@ -321,7 +323,27 @@ describe('CharacterTrackingPicker', () => {
       />,
     )
 
-    expect(queryByTestId('world-emblem-ocid-1')).toBeNull()
+    expect(getByTestId('world-emblem-ocid-1')).toBeTruthy() // 엘리시움
+    expect(queryByTestId('world-emblem-ocid-3')).toBeNull() // 리부트 — 매핑 없음
+  })
+
+  // 얼굴은 넥슨이 주는 **원격 URI** 이고 엠블럼은 **번들 에셋**이라 `source` 형태가 갈린다
+  // (`CharacterTrackingGrid` 주석 ⑤). 감싸는 쪽을 바꿔 놓으면 그림만 조용히 안 뜨므로 계약으로 둔다.
+  it('얼굴은 `{ uri }`, 엠블럼은 에셋 참조 그대로 넘긴다', async () => {
+    const { getByTestId } = await renderOverlay(
+      <CharacterTrackingPicker
+        entries={entries}
+        trackedOcids={[]}
+        {...loaded}
+        onSave={noop}
+        onClose={noop}
+      />,
+    )
+
+    expect(getByTestId('character-face-ocid-1').props.source).toEqual({
+      uri: 'https://example.com/1.png',
+    })
+    expect(getByTestId('world-emblem-ocid-1').props.source).not.toHaveProperty('uri')
   })
 })
 

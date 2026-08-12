@@ -98,3 +98,49 @@ cd packages/app-rn && npx expo export --platform android --output-dir /tmp/rn-se
 - **문구를 다듬지 마라.**
 - **`packages/core`·`packages/app-capacitor` 를 수정하지 마라.**
 - 기존 테스트를 깨뜨리지 마라.
+
+---
+
+## 재개 안내 (2026-08-12 추가 — 세션 한도로 중단됐다가 이어짐)
+
+앞선 실행이 **20개 중 14개**를 만들고 커밋(`97e8fa7`)한 뒤 세션 사용량 한도(HTTP 429)로 끊겼다.
+작업 실패가 아니라 호출이 거부된 것이다.
+
+### 지금 **빌드가 깨져 있다** — 이것부터 고쳐라
+
+```
+src/app/settings/SettingsScreen.tsx:44 - TS2307
+  Cannot find module './use-settings-navigation'
+```
+
+`SettingsScreen` 이 import 하는 `use-settings-navigation` 이 **아직 없다**(쓰기 직전에 끊겼다).
+`npx tsc --noEmit` 이 이것 하나로 실패한다.
+
+### 이미 있는 것 (14 — 다시 만들지 마라)
+
+`AccountFlowStatus` · `AccountModal` · `AppUpdateSection` · `CacheClearConfirm` ·
+`DisconnectConfirm` · `error-message.ts` · `row-class.ts` · `SettingsLinkRow` · `SettingsRow` ·
+`SettingsScreen` · `ThemeModal` · `ThemeSelector` · `TrackingModeModal` · `TrackingModeSelector`
+
+### 없는 것 (6 — 전부 화면이다)
+
+- `SettingsAboutScreen` (035, 085, 099, 112, 118, 120)
+- `SettingsAccountDataScreen` (035, 058, 061, 118, 120)
+- `SettingsPrivacyScreen` (062, 118, 120) — **`/settings/about` 위 2단 스택**
+- `SettingsReleaseNotesScreen` (060, 118, 119, 120, 125)
+- `SettingsFeatureGuideListScreen` (018, 060, 125)
+- `SettingsFeatureGuideScreen` (125) — **위 목록과 개발 노트 둘이 공유하는 한 벌**
+
+### 테스트가 하나도 없다
+
+커밋된 14개에 대한 RN 테스트가 **한 파일도 없다**(jest 스위트 72개는 전부 이전 step 것이다).
+웹 테스트 16개를 **명세로 읽고** 새로 써라 — 본문 «작업 6» 그대로다.
+
+### 그 외
+
+- step 0 이 규명한 **NativeWind transform 함정**을 기억하라(`migration/README.md` «4-0단계 결과»):
+  조건부 `className` 에서 transform 이 첫 렌더에 없다가 나중에 생기면 **힙을 다 쓴다.** 두 상태
+  모두 transform 을 갖게 하라(`rotate-0` ↔ `rotate-180`). 설정 화면에는 펼침 화살표가 여럿이다.
+- step 1 이 에셋 코드젠을 끝냈다 — `feature-guides` 가 이제 **실제로 온다.** 안내 목록·상세가
+  빈 화면이 아닌지 확인하라.
+- AC 를 처음부터 끝까지 다시 돌려라.

@@ -14,10 +14,9 @@
 // ③ `hover:bg-primary-tint` 제거(터치 기기에 hover 가 없다 — atoms 와 같은 규칙).
 // ④ `truncate` → `numberOfLines={1}`. 웹의 `truncate` 는 `overflow:hidden`+`text-overflow:ellipsis`
 //    인데 RN 은 그 둘을 스타일이 아니라 `Text` 의 프롭으로 받는다.
-// ⑤ **월드 엠블럼은 아직 안 나온다** — `worldEmblemUrl` 이 RN 에서 항상 `null` 이다(에셋 레이어,
-//    `src/lib/rn-world-emblem.ts`). 분기는 웹과 같은 것을 그대로 타므로, 에셋이 오면 여기는 안
-//    바뀐다. 다만 이름 줄 높이를 정하던 것이 엠블럼(`h-[17px]`)이라 지금은 16px 로 선다
-//    (`roster-body.ts` 의 385px 계산에 들어가는 그 자리다).
+// ⑤ **`source` 가 둘로 갈린다** — 얼굴은 넥슨이 주는 **원격 URI** 라 `{ uri }` 로 감싸지만, 월드
+//    엠블럼은 [[ADR-129]] 이후 **번들 에셋 id** 라 숫자를 그대로 넘긴다. 감싸면 안 뜬다(`{uri: 3}`
+//    은 RN 에게 주소가 아니다). 웹에서는 둘 다 문자열 URL 이라 이 구분이 없었다.
 // ⑥ 얼굴 크롭은 `<img className="absolute max-w-none" style={…}>` → `<Image>` + 같은 절대 좌표다.
 //    `max-w-none` 은 웹 preflight 의 `img{max-width:100%}` 를 지우는 리셋이라 RN 에는 짝이 없다.
 // ⑦ **`fill-primary-ink` 는 RN 에 짝이 없다.** `fill` 은 CSS 속성이라 NativeWind 가 RN 스타일로
@@ -151,7 +150,7 @@ export function CharacterTrackingGrid(props: CharacterTrackingGridProps): React.
               <Image
                 testID={`world-emblem-${entry.ocid}`}
                 accessibilityLabel={entry.world ?? ''}
-                source={{ uri: emblemUrl }}
+                source={emblemUrl}
                 className="h-[17px] shrink-0"
                 resizeMode="contain"
               />

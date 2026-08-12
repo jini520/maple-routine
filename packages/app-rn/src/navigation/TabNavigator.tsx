@@ -1,10 +1,33 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { maybeShowTabSwitchAd } from '@core/features/ads/tab-switch-ad'
 
+import { BossProfitScreen } from '../app/boss-profit/BossProfitScreen'
+import { BossScreen } from '../app/boss-scheduler/BossScreen'
+import { ContentScreen } from '../app/content-scheduler/ContentScreen'
 import { PlaceholderScreen } from './PlaceholderScreen'
-import { INITIAL_TAB_ROUTE, TAB_ITEMS, type TabParamList } from './routes'
+import { INITIAL_TAB_ROUTE, TAB_ITEMS, type TabParamList, type TabRouteName } from './routes'
 
 const Tab = createBottomTabNavigator<TabParamList>()
+
+/**
+ * 진짜 화면이 들어온 탭. **여기 없는 이름은 아직 자리표시자다** — `RootNavigator` 의 같은 이름 표와
+ * 짝이고, 비어 있는 자리가 곧 남은 일이다(step 7 수익 · 설정은 step 3 이 하위 페이지만 옮겼고
+ * 본화면은 그 뒤다).
+ */
+const TAB_SCREENS = {
+  Content: ContentScreen,
+  Boss: BossScreen,
+  Profit: BossProfitScreen,
+} as const satisfies Partial<Record<TabRouteName, React.ComponentType>>
+
+function screenFor(name: TabRouteName): React.ComponentType<Record<string, never>> {
+  const screen: React.ComponentType =
+    name in TAB_SCREENS
+      ? TAB_SCREENS[name as keyof typeof TAB_SCREENS]
+      : (PlaceholderScreen as React.ComponentType)
+
+  return screen as React.ComponentType<Record<string, never>>
+}
 
 /**
  * 탭 넷 + 탭바.
@@ -25,6 +48,16 @@ const Tab = createBottomTabNavigator<TabParamList>()
  * 그러지 않았다 — 뒤로가기 처리는 **스택 깊이 하나**만 봤고(`use-system-back.ts` 의 `depth > 0`),
  * 깊이가 0 이면 어느 탭이든 [[ADR-120]] 결정 18 대로 백그라운드로 나갔다. 탭 사이를 뒤로가기로
  * 오가는 동작은 이 앱에 없던 것이라 기본값을 끈다(그 처리는 `use-root-back.ts`).
+ *
+ * ## 키보드가 뜨면 탭바를 숨긴다 (4단계 step 0)
+ *
+ * 웹 `AppShell` 은 `isKeyboardVisible` 로 `<BottomTabBar />` 를 **언마운트**했다(네이티브가 웹뷰를
+ * 밀어 올리면 탭바가 키보드 바로 위에 얹혀, 입력 중엔 의미도 없고 시야만 가린다). RN 에서 같은
+ * 일을 하는 것이 `tabBarHideOnKeyboard` 이고, 라이브러리가 자기 `Keyboard` 구독으로 판정한다
+ * (iOS 는 `keyboardWillShow`, 안드로이드는 `keyboardDidShow` — 실측: `useIsKeyboardShown.tsx`).
+ * 우리 어댑터(`rn-keyboard.ts`)는 양쪽 다 `did` 라 **iOS 에서 한 프레임 어긋나지만**, 하나로
+ * 합치려면 셸의 값을 내비게이터까지 프롭으로 꿰어야 해서 그 대가가 어긋남보다 크다. 셸 쪽 구독이
+ * 남는 이유는 토스트 하나다(`app/use-keyboard-visible.ts`).
  */
 export function TabNavigator(): React.JSX.Element {
   return (
@@ -33,13 +66,13 @@ export function TabNavigator(): React.JSX.Element {
       backBehavior="none"
       // 헤더는 앱이 직접 그린다(`PageHeader`, templates) — [[ADR-085]] 결정 1 의 `fixed` 헤더 +
       // 실측 spacer 가 그 자리에 온다. 라이브러리 헤더를 켜 두면 두 겹이 된다.
-      screenOptions={{ headerShown: false }}
+      screenOptions={{ headerShown: false, tabBarHideOnKeyboard: true }}
     >
       {TAB_ITEMS.map((tab) => (
         <Tab.Screen
           key={tab.route}
           name={tab.route}
-          component={PlaceholderScreen}
+          component={screenFor(tab.route)}
           options={{ title: tab.label }}
           // **탭 이동의 책임은 링크가 아니라 인터셉터에 있다** — 전면광고 게이트가 여기 걸린다
           // ([[ADR-090]] 결정 3, `docs/migration/parity-inventory.md` §1 «보존해야 할 라우팅 동작»).

@@ -12,30 +12,36 @@ exports[`BossPortrait 렌더 트리 스냅샷 — 이후 변경을 잡는 기준
 >
   <View
     accessibilityLabel="루시드"
+    role="img"
     style={
       {
-        "alignItems": "center",
-        "backgroundColor": "#E4E1CE",
         "borderRadius": 9999,
         "flexShrink": 0,
         "height": 40,
-        "justifyContent": "center",
+        "overflow": "hidden",
         "width": 40,
       }
     }
     testID="boss-portrait"
   >
-    <Text
-      style={
+    <Image
+      resizeMode="cover"
+      source={
         {
-          "color": "#645C42",
-          "fontSize": 12,
-          "lineHeight": 16,
+          "testUri": "../../../packages/core/src/assets/bosses/lucid.webp",
         }
       }
-    >
-      ?
-    </Text>
+      style={
+        {
+          "bottom": 0,
+          "left": 0,
+          "position": "absolute",
+          "right": 0,
+          "top": 0,
+        }
+      }
+      testID="boss-portrait-image"
+    />
   </View>
 </View>
 `;

@@ -24,7 +24,18 @@ export type TabRouteName = 'Content' | 'Boss' | 'Profit' | 'Settings'
 
 export type TabParamList = {
   Content: undefined
-  Boss: undefined
+  /**
+   * `openPicker` 는 웹의 **`/boss?openPicker=1`** 이다 — 보스 수익 화면의 "캐릭터 선택하러 가기"
+   * ([[ADR-068]] 결정 4)가 캐릭터 관리 피커를 열어 둔 채로 이 탭에 보낸다.
+   *
+   * URL 이 없어 "새로고침·뒤로가기마다 피커가 다시 열린다"는 웹의 걱정은 사라지지만 **파라미터는
+   * 스택에 남는다** — 탭을 떠났다 돌아오면 그대로 살아 있으므로 화면이 `setParams` 로 지우는 일은
+   * 그대로 필요하다(`BossScreen`).
+   *
+   * **보내는 쪽은 step 7(보스 수익)이 온다.** 받는 쪽을 먼저 두는 이유는 이것이 이 탭의 계약이기
+   * 때문이고, 안 두면 그 화면을 옮기다 여기로 되돌아와야 한다.
+   */
+  Boss: { openPicker?: boolean } | undefined
   Profit: undefined
   Settings: undefined
 }

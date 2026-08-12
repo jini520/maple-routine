@@ -49,12 +49,15 @@ import { resolveScreenBottomInset } from './bottom-inset'
 // ② **배경색.** 웹과 같은 이유로 칠하지 않는다 — 불투명 배경은 [[ADR-088]] 테마 배경 이미지를
 //    가린다(그 ADR 이 앱 루트에서 `bg-bg` 를 빼야 했던 것과 같은 자리).
 //
-// ── 당겨서 새로고침은 아직 배선하지 않는다 ──────────────────────────────────────────
+// ── 당겨서 새로고침은 `RefreshControl` 이다 ([[ADR-130]]) ────────────────────────────
 //
-// `RefreshControl` 과 커스텀 인디케이터([[ADR-074]]) 중 **무엇을 쓸지가 제품 결정**이라
-// (`PullToRefreshIndicator` 파일 머리의 갈래표 — `RefreshControl` 을 고르면 그 ADR 의 결정 넷을
-// 폐기해야 한다) 이 셸은 어느 쪽도 고르지 않는다. `ref` 는 웹과 같은 자리에 그대로 두어, 화면이
-// 붙는 단계에서 어느 쪽으로 가든 붙일 자리가 있게 한다.
+// step 6 이 *"화면이 붙는 단계에서 고른다"* 로 남겨 둔 갈래를 step 4 가 닫았다. 결정적 근거는
+// 갈래표에 없던 사실 하나다 — **안드로이드에는 당김 거리 신호 자체가 없다**(iOS 는 `bounces` 로
+// `contentOffset.y` 가 음수가 되지만 안드로이드 `ScrollView` 는 콘텐츠를 안 움직이고 글로우만
+// 그린다). 커스텀 마크를 고르면 그 플랫폼에서는 제스처 계층을 처음부터 새로 만들어야 한다.
+//
+// 그래서 이 셸은 `refreshControl` 을 그대로 `ScrollView` 에 넘기기만 한다. [[ADR-074]] 의 마크
+// 결정 넷이 폐기되는 자리이고, 그 폐기의 기록이 [[ADR-130]] 이다.
 //
 // ── 리스트 성능은 여기서 앞당기지 않는다 ────────────────────────────────────────────
 //
@@ -77,9 +80,18 @@ export interface ScreenScrollProps {
   header?: React.ReactNode
   /**
    * 스크롤 뷰 자체의 ref. 웹에서는 당김 판정이 이 요소의 `scrollTop` 을 읽었고([[ADR-099]] 결정 2),
-   * RN 에서 무엇이 될지는 제스처 방식을 고를 때 정해진다(파일 머리).
+   * RN 에서는 **당김 판정에 쓰이지 않는다**([[ADR-130]] 결정 1 — 스크롤 컨테이너가 제스처를 소유한다).
+   * 프로그램적 스크롤이 필요한 화면(보스 수익의 [[ADR-080]] 최상단 이동)이 쓸 자리로 남겨 둔다.
    */
   ref?: React.Ref<ScrollViewType>
+  /**
+   * 당겨서 새로고침 ([[ADR-130]] 결정 1) — `<RefreshControl … />` 을 그대로 넘긴다.
+   *
+   * 셸이 **만들지 않고 받는** 이유는 `refreshing` 이 각 화면 스토어의 상태이고 `onRefresh` 가 그
+   * 화면의 재조회이기 때문이다([[ADR-072]] 결정 2 — 당김과 헤더 버튼은 같은 재조회를 부른다).
+   * 안 주면 당김이 없는 화면이다(설정 계열·하위 페이지).
+   */
+  refreshControl?: React.ComponentProps<typeof ScrollView>['refreshControl']
   /**
    * 아래에 탭바가 있는가 — 하단 인셋 처리만 가른다(`bottom-inset.ts`).
    *
@@ -93,6 +105,7 @@ export function ScreenScroll({
   children,
   header,
   ref,
+  refreshControl,
   hasTabBar = true,
 }: ScreenScrollProps): React.JSX.Element {
   const insets = useSafeAreaInsets()
@@ -120,6 +133,7 @@ export function ScreenScroll({
         // 때 라이트 테마에 흰 인디케이터가 나왔고(실기기 2026-08-06), RN 의 기본값 `'default'` 도
         // 같은 종류의 실패다: 그 값은 OS 설정을 따라가지 우리 테마를 따라가지 않는다.
         indicatorStyle={indicatorStyle}
+        refreshControl={refreshControl}
         className="flex-1"
         style={port}
         // 웹 안쪽 래퍼의 `space-y-4` 짝. RN 에 `space-y-*` 가 없어 `gap-*` 이고, 그래서 래퍼 뷰가

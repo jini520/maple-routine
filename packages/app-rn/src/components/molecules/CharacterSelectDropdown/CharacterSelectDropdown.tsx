@@ -1,5 +1,5 @@
 import { worldEmblemUrl } from '@core/lib/world-emblem'
-import { Pressable, Text, View } from 'react-native'
+import { Image, Pressable, Text, View } from 'react-native'
 
 import { ChevronDownIcon } from '../../../lib/icons'
 
@@ -54,12 +54,12 @@ export interface CharacterSelectDropdownProps {
 //    (`lib/nativewind-interop.ts`).
 // ② 글자 유틸이 상자에서 `Text` 로 내려왔다(atoms 와 같은 규칙).
 //
-// **월드 엠블럼은 지금 그려지지 않는다** — `worldEmblemUrl` 이 RN 에서 항상 `null` 이고
-// (`src/lib/rn-world-emblem.ts`), 그것은 원본이 정의해 둔 폴백("엠블럼 생략") 그대로다. 매핑에 없는
-// 월드에서 웹이 타던 분기와 **같은 분기**라 새로 만든 동작이 아니다. **좌측 패딩이 엠블럼 유무를
-// 따라 갈리는 규칙은 코드에 그대로 남겨 둔다**(제품 결정이고, 그림이 들어오면 그날 바로 맞는다).
-// 엠블럼 요소 자체는 `<Image source>` 에 무엇을 넣을지가 정해진 뒤에 붙는다
-// (`ValuableDropBadge` 주석의 같은 사정).
+// ③ **엠블럼이 [[ADR-129]] 에서 붙었다.** 3단계는 *"`<Image source>` 에 무엇을 넣을지가 정해진 뒤에
+//    붙인다"* 며 좌측 패딩 규칙만 남겨 뒀는데, 이제 `worldEmblemUrl` 이 번들 에셋 참조를 돌려주므로
+//    그 자리가 채워진다. 여기서 안 채우면 **패딩만 엠블럼용으로 벌어지고 그림은 없는** 상태가 된다.
+//    `source` 에는 값을 그대로 넣는다 — 번들 에셋이라 원격 URI 처럼 `{ uri }` 로 감싸지 않는다.
+//    세로 중앙 정렬은 ①과 같은 이유로 `inset-y-0` + `justify-center` 래퍼이고, 웹의
+//    `w-auto object-contain` 은 `resizeMode="contain"` 이 대신한다.
 //
 // 치수는 크기별로 짝이라 한 곳에 모아 둔다 — 엠블럼 크기·left 는 좌측 패딩과, chevron 크기·right 는
 // 우측 패딩과 짝이다. 따로 두면 한쪽만 바꿨을 때 글자 위로 겹친다.
@@ -70,6 +70,8 @@ const SIZE_STYLES: Record<
     label: string
     withEmblem: string
     withoutEmblem: string
+    emblemAnchor: string
+    emblemSize: string
     chevronAnchor: string
     chevronSize: string
   }
@@ -79,6 +81,8 @@ const SIZE_STYLES: Record<
     label: 'text-sm text-text',
     withEmblem: 'pl-8 pr-9',
     withoutEmblem: 'pl-4 pr-9',
+    emblemAnchor: 'left-3',
+    emblemSize: 'h-[22px]',
     chevronAnchor: 'right-3.5',
     chevronSize: 'h-4 w-4',
   },
@@ -87,13 +91,15 @@ const SIZE_STYLES: Record<
     label: 'text-xs font-medium text-text-muted',
     withEmblem: 'pl-7 pr-7',
     withoutEmblem: 'pl-3 pr-7',
+    emblemAnchor: 'left-2.5',
+    emblemSize: 'h-[14px]',
     chevronAnchor: 'right-2.5',
     chevronSize: 'h-3 w-3',
   },
 }
 
-/** 세로 중앙 정렬(위 ①) — `right-*` 만 크기마다 다르다. */
-const CHEVRON_ANCHOR_BASE = 'absolute inset-y-0 justify-center'
+/** 세로 중앙 정렬(위 ①) — 좌우 앵커(`left-*`/`right-*`)만 크기마다 다르다. */
+const ANCHOR_BASE = 'absolute inset-y-0 justify-center'
 
 export function CharacterSelectDropdown(props: CharacterSelectDropdownProps): React.JSX.Element {
   const selected = props.characters.find((character) => character.ocid === props.selectedOcid)
@@ -102,6 +108,21 @@ export function CharacterSelectDropdown(props: CharacterSelectDropdownProps): Re
 
   return (
     <View className="self-start">
+      {emblemUrl !== null && (
+        <View
+          testID="character-select-emblem"
+          className={`${ANCHOR_BASE} ${styles.emblemAnchor}`}
+          pointerEvents="none"
+        >
+          <Image
+            source={emblemUrl}
+            accessibilityLabel={selected?.world ?? ''}
+            className={styles.emblemSize}
+            resizeMode="contain"
+          />
+        </View>
+      )}
+
       <Pressable
         testID="character-select-trigger"
         role="button"
@@ -112,7 +133,7 @@ export function CharacterSelectDropdown(props: CharacterSelectDropdownProps): Re
 
       <View
         testID="character-select-chevron"
-        className={`${CHEVRON_ANCHOR_BASE} ${styles.chevronAnchor}`}
+        className={`${ANCHOR_BASE} ${styles.chevronAnchor}`}
         pointerEvents="none"
       >
         <ChevronDownIcon

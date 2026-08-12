@@ -246,12 +246,12 @@ npm run theme:gen -- --existing-all         # 기존 4테마 일괄
   사람이 한다). 이 조정에 쓰던 `/debug/theme-background`(슬라이더가 진짜 백드롭·헤더 조각의 커스텀
   프로퍼티를 실시간으로 바꿔 보고 있는 화면이 곧 결과였다)는 **[[ADR-092]] 에서 삭제**했다 —
   값을 다시 만질 일이 생기면 도구 복원이 선행돼야 한다(옛 구현은 `git log` 참고).
-- **에셋 해석**: `lib/theme-backgrounds.ts` 가 `import.meta.glob` 로 `src/assets/themes/*` 를
-  읽어 슬러그→URL 맵을 만든다(일일 퀘스트 지역 배경 `lib/daily-quest-backgrounds.ts` 와 같은
-  방식 — 확장자 혼재와 macOS NFD 파일명까지 같은 이유로 같은 처리를 한다). JSON 은 번들 경로를
-  모른다. **glob 이 `eager` 라 어느 테마도 안 쓰는 파일까지 번들에 실린다** — 쓰지 않게 된 그림은
-  파일째 지워야 실제로 빠진다(지금 `hontail-cave`·`blackmage-throne` 둘이 그 상태로 남아 있다,
-  [[ADR-106]] 결정 2).
+- **에셋 해석**: `lib/theme-backgrounds.ts` 가 **커밋된 목록**(`src/assets/generated/themes.ts`)에서
+  슬러그→에셋을 찾는다([[ADR-129]] — 일일 퀘스트 지역 배경 `lib/daily-quest-backgrounds.ts` 와 같은
+  방식이고, 확장자 혼재와 macOS NFD 파일명도 같은 이유로 같은 처리를 한다). JSON 은 번들 경로를
+  모른다. 그림을 넣거나 지우면 **`npm run assets:gen` 을 돌려야** 목록이 따라오고, 안 돌리면
+  `src/assets/generated/__tests__/asset-manifest.test.ts` 가 빨개진다. **목록에 든 파일은 어느 테마도
+  안 써도 번들에 실리므로** 쓰지 않게 된 그림은 파일째 지워야 실제로 빠진다([[ADR-106]] 결정 2).
 - **테스트는 "배경 있는 테마"를 데이터에서 고르지 않는다**([[ADR-106]] 결정 3·4). 선언이 0건이어도
   기계장치(`--theme-bg-*` 방출 · 슬러그 미해석 폴백 · 백드롭 렌더 분기)는 계속 검사돼야 하므로,
   있음 쪽 사례는 **테스트가 픽스처로 만들고**(`theme-registry.test.ts`) 컴포넌트 쪽은
@@ -307,6 +307,10 @@ npm run theme:gen -- --existing-all         # 기존 4테마 일괄
 - 선택 테마를 네이티브 스플래시·부트 커버에 반영할지.
 
 ## 폐기된 정책 (history)
+- ~~`lib/theme-backgrounds.ts` 가 `import.meta.glob` 로 `src/assets/themes/*` 를 읽어 슬러그→URL 맵을
+  만든다~~ → **커밋된 목록**(`src/assets/generated/themes.ts`)에서 찾는다([[ADR-129]], 2026-08-12).
+  해석 결과는 웹에서 그대로 URL 문자열이라 `buildThemeCss` 도 안 바뀐다 — 바뀐 것은 목록을 만드는
+  방법뿐이고, 대신 그림을 넣거나 지우면 `npm run assets:gen` 을 돌려야 한다.
 - ~~혼테일 배경 = `hontail-cave`(밤 수정 동굴, `cover`, `dim` 0.82)~~ → 얼음 동굴 프레임
   `hontail-background`(`cover`, `45% bottom`, `dim` 0.8)([[ADR-109]], 2026-08-07). 옛 에셋은 삭제했고,
   이로써 [[ADR-106]] 이 만든 "죽은 에셋을 남겨 둔 임시 상태"가 완전히 닫혔다(에셋 폴더에 안 쓰는

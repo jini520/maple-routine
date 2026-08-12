@@ -16,6 +16,7 @@
     "preview": "npm run preview -w @maple-routine/app-capacitor",
     "publish-live-update": "node scripts/publish-live-update.mjs",
     "theme:gen": "vite-node scripts/theme-gen.ts",
+    "assets:gen": "node scripts/generate-asset-manifest.mjs",
     "build:site": "node scripts/build-site.mjs"
   },
   "devDependencies": {

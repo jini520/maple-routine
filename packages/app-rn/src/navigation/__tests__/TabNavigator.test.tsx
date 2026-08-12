@@ -8,6 +8,7 @@ import { maybeShowTabSwitchAd } from '@core/features/ads/tab-switch-ad'
 import { useOnboardingStore } from '@core/features/onboarding/store'
 
 import { NavigationHarness } from './harness'
+import { installMemoryPreferences } from './memory-preferences'
 
 jest.mock('@core/features/ads/tab-switch-ad', () => ({
   __esModule: true,
@@ -22,6 +23,7 @@ const maybeShowTabSwitchAdMock = maybeShowTabSwitchAd as jest.MockedFunction<
 // **`act()` 로 감싸지 않는다.** 이 시점에는 마운트된 컴포넌트가 없어 감쌀 이유가 없고, 렌더 *전*의
 // `act` 는 뒤따르는 `render()` 가 `null` 을 내게 만든다(실측 — `RootNavigator.test.tsx` 머리말).
 beforeEach(() => {
+  installMemoryPreferences()
   maybeShowTabSwitchAdMock.mockClear()
   useOnboardingStore.setState({ status: 'completed' })
 })

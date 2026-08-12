@@ -110,3 +110,33 @@ grep -c "@keyframes" packages/app-capacitor/src/index.css   # 7
 - **"애니메이션이 예전과 같다"고 summary 에 쓰지 마라.** 육안 대조는 사람 몫이다.
 - **`packages/core`·`packages/app-capacitor` 를 수정하지 마라.**
 - 기존 테스트를 깨뜨리지 마라.
+
+---
+
+## 재개 안내 (2026-08-13 추가 — 실행이 중단됐다가 이어짐)
+
+**코드는 다 있고 통과한다.** 앞선 실행이 아래를 만든 뒤(커밋 전, 작업 트리) 중단됐다:
+
+- `DropHistoryScreen` · `DropPriceScreen` · `DropPricePad` (+ 각 테스트)
+- `ValuableRowBackground.tsx` · `valuable-row-glow.ts` (모션 셋의 두 번째 호출부)
+- `keyframes-parity.test.ts` · `BossDropSheet` · `BossProfitBossRow` · `RootNavigator` · `icons.ts` 수정
+
+확인했다: **jest 109스위트/1382개 전부 통과 · `tsc --noEmit` 통과 ·
+`keyframes-parity.test.ts` 의 `screenLayer` 가 비었다.** `degraded` 칸이 새로 생겨
+`valuable-drop-spin` 이 [[ADR-045]] 의 기설계 폴백(정적 골드 테두리)으로 갔다는 것도 적혀 있다.
+
+### 남은 것은 **문서와 마무리**뿐이다 (본문 «작업 6»)
+
+1. `docs/migration/README.md` 에 **«4-8단계 결과»** 를 쓴다 — 4-0~4-7 이 이미 그 형식으로 있으니
+   그대로 따르라. 모션 셋이 어디로 갔는지(둘은 이식, `valuable-drop-spin` 은 degrade)와 그 근거,
+   육안 대조 목록을 담아라.
+2. `docs/migration/README.md` 에 **«4단계 결과»**(단계 전체를 닫는 절)를 쓰고,
+   **5단계(실기기 검증·롤아웃)로 넘어가는 데 필요한 것**을 적어라.
+3. `docs/migration/parity-inventory.md` §2.5 의 세 화면(`DropHistoryScreen`·`DropPriceScreen`·
+   `DropPricePad`) **«확인» 열**을 채워라(§2.6 등 앞 절과 같은 형식).
+4. **`docs/adr/ADR-128.md` 의 상태 줄을 «단계 0~4 구현 완료» 로 갱신하라.** 지금 «0~3» 이다.
+   `docs/ADR.md` 인덱스 줄도 함께 보라.
+5. `phases/rn-screens/index.json` 의 step 8 을 `completed` 로.
+
+**코드를 다시 쓰지 마라.** 이미 통과했고, 다시 쓰면 통과한 것을 되돌릴 위험만 있다.
+정말로 틀린 것을 발견하면 고치되 그 사실을 summary 에 적어라.

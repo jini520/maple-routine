@@ -102,13 +102,29 @@ describe('CharacterSelectDropdown', () => {
     })
   })
 
-  // 웹은 매핑에 없는 월드에서 엠블럼을 생략했다. RN 은 **모든 월드**가 그 분기다(에셋이 없다) —
-  // 그래서 좌측 패딩이 항상 "엠블럼 없음" 쪽이다. 그림이 들어오면 여기가 갈린다.
-  it('엠블럼이 없으면 좌측 패딩이 좁은 쪽이다', async () => {
+  // 웹의 두 케이스가 [[ADR-129]] 로 되살아났다 — 3단계에서는 에셋이 없어 **모든 월드**가 "엠블럼
+  // 없음" 분기였다. 엠블럼과 좌측 패딩은 **짝이어야 한다**(컴포넌트 주석 ③): 하나만 맞으면
+  // 패딩만 벌어지고 그림이 없거나, 그림이 글자를 덮는다. 그래서 둘을 한 케이스에서 함께 본다.
+  it('엠블럼이 있으면 그리고, 좌측 패딩도 넓은 쪽이다', async () => {
     const { getByTestId } = await renderAtom(
       <CharacterSelectDropdown characters={characters} selectedOcid="ocid-1" onSelect={jest.fn()} />,
     )
 
+    expect(getByTestId('character-select-emblem')).toBeTruthy()
+    expect(flattenStyle(getByTestId('character-select-trigger').props.style).paddingLeft).toBe(32) // pl-8
+  })
+
+  // 매핑에 없는 월드는 여전히 생략한다(웹과 같은 폴백) — 그때는 패딩도 좁은 쪽이다.
+  it('매핑에 없는 월드는 엠블럼을 생략하고 좌측 패딩이 좁은 쪽이다', async () => {
+    const { getByTestId, queryByTestId } = await renderAtom(
+      <CharacterSelectDropdown
+        characters={[{ ocid: 'ocid-9', characterName: '무월드', world: '없는월드' }]}
+        selectedOcid="ocid-9"
+        onSelect={jest.fn()}
+      />,
+    )
+
+    expect(queryByTestId('character-select-emblem')).toBeNull()
     expect(flattenStyle(getByTestId('character-select-trigger').props.style).paddingLeft).toBe(16) // pl-4
   })
 

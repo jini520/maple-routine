@@ -2,7 +2,7 @@
 
 > **범위**: 일간/주간 콘텐츠 진행 상태 표시, 캐릭터 추적, 3단 캐시 병합, 콘텐츠 카드(일일퀘스트·몬스터파크·주간 콘텐츠), 컨텐츠 관리 페이지. 캐릭터 관리 피커 컴포넌트는 [../foundation/design-system.md](../foundation/design-system.md), 수동/자동 트래킹 모드 전역 토글은 [settings.md](./settings.md).
 > **관련 소스**: `app/content-scheduler/`(`ContentScreen.tsx`) · `features/content-scheduler/` · `lib/scheduler-merge` · `lib/scheduler-content-scope` · `lib/content-category` · `lib/daily-quest-backgrounds` · `storage/scheduler-cache` · `storage/shared-progress-cache` · `src/data/scheduler-content-catalog.json`·`daily-quest-regions.json`·`daily-quest-region-crops.json`·`weekly-regional-quests.json`·`scheduler-content-template.json` · `/content/manage`.
-> **관련 ADR**: [[ADR-013]] [[ADR-012]] [[ADR-030]] [[ADR-020]] [[ADR-021]] [[ADR-035]] [[ADR-018]] [[ADR-053]] [[ADR-057]] [[ADR-072]] [[ADR-073]] [[ADR-074]] [[ADR-086]] [[ADR-096]] [[ADR-097]] [[ADR-101]]. **관련 문서**: [../foundation/architecture.md](../foundation/architecture.md), [../foundation/nexon-api.md](../foundation/nexon-api.md), [../foundation/error-resilience.md](../foundation/error-resilience.md).
+> **관련 ADR**: [[ADR-013]] [[ADR-012]] [[ADR-030]] [[ADR-020]] [[ADR-021]] [[ADR-035]] [[ADR-018]] [[ADR-053]] [[ADR-057]] [[ADR-072]] [[ADR-073]] [[ADR-074]] [[ADR-086]] [[ADR-096]] [[ADR-097]] [[ADR-101]] [[ADR-130]]. **관련 문서**: [../foundation/architecture.md](../foundation/architecture.md), [../foundation/nexon-api.md](../foundation/nexon-api.md), [../foundation/error-resilience.md](../foundation/error-resilience.md).
 
 ## 정책
 - 화면 안에 **일간 탭**(`daily_contents`) + **주간 탭**(`weekly_contents`). **월간 탭 없음**(월간 주기 일반 콘텐츠가 API에 없음).
@@ -103,6 +103,8 @@
 카드 골격은 보스 카드([[ADR-018]], [boss-scheduler.md](./boss-scheduler.md))를 재사용 — `rounded-[14px]`, `.media-scope` + `bg-surface`/`border-border`(스코프가 media-* 로 다시 묶는다, [[ADR-064]] 결정 5), 80px 기본 높이, 일러스트 bleed(saturate .85 brightness .8 opacity .65, mask `linear-gradient(90deg,#000 0%,#000 38%,transparent 76%)`).
 
 ### 당겨서 새로고침 ([[ADR-072]] 제스처 · [[ADR-073]] 인디케이터 · [[ADR-074]] 마크, 구현 완료 2026-08-01 · 실기기 검증 보류)
+> **RN 앱은 이 자리를 `RefreshControl` 로 그린다**([[ADR-130]], 2026-08-13 — [[ADR-128]] 전환 4단계). 재조회 계약([[ADR-072]] 결정 2·10)과 "헤더는 제자리, 목록만 내려간다"([[ADR-073]] 결정 1)는 그대로이고, **[[ADR-074]] 의 마크 결정 넷(외곽선 링·진행률 드로잉·두 구간 연속성·28px)과 [[ADR-061]] 의 PTR 예외가 그 앱에서 폐기된다** — 두 플랫폼 다 인디케이터에 커스텀 뷰를 넣을 수 없고, 안드로이드에는 당김 거리 신호 자체가 없어 커스텀은 제스처 계층을 새로 만드는 일이 된다. 아래 서술은 **웹뷰 앱의 현행 동작**이다.
+
 목록 최상단에서 아래로 당기면 헤더 새로고침 버튼과 같은 재조회(`refresh(trackedOcids ?? [])`)가 돈다. **헤더는 제자리에 고정되고 목록 블록만 손가락을 따라 내려가며, 벌어진 틈에 인디케이터가 뜬다**([[ADR-073]]). **인디케이터 안에는 문구 없이 단풍잎 외곽선 링 하나가 있고, 당김 구간은 진행률만큼 그려지다 손을 떼면 그대로 회전한다**([[ADR-074]]). 레시피는 [foundation/design-system.md](../foundation/design-system.md) 의 '당겨서 새로고침' 절. 이 화면의 활성 조건은 `!isEmpty`(추적 캐릭터 있음) 하나이고, `usePullToRefresh` 호출은 **빈 상태 조기 반환보다 위**에 있어야 한다(훅 규칙).
 
 ### 일일퀘스트 카드 ([[ADR-020]])
