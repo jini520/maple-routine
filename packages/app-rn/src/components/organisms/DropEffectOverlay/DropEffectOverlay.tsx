@@ -6,23 +6,20 @@
 //
 // 3단계 step 5 의 범위는 *"구조·레이어·props 계약까지"* 이고, 실제로 두 축이 통째로 빠져 있다.
 //
-//   ⓐ **프레임 에셋이 없다.** `DROP_EFFECT_FRAMES` 가 RN 에서 네 단계 모두 빈 배열이다
-//      (`src/lib/rn-drop-effect-frames.ts`). 빈 배열은 원본이 정의해 둔 정상 경로라
-//      (*"프레임이 없으면 연출 없이 닫기만 가능하게 둔다"*) 웹과 **같은 분기**를 탄다.
+//   ⓐ ~~**프레임 에셋이 없다.**~~ → [[ADR-129]] 가 채웠다. `DROP_EFFECT_FRAMES` 는 이제 네 단계가
+//      전부 차 있다(웹과 같은 목록·같은 순서). 남은 것은 ⓑ 하나다.
 //   ⓑ **재생 엔진이 없다.** 웹은 `requestAnimationFrame` 루프가 단계별 고정 fps
 //      ([[ADR-103]] 이 1.5배로 올린 값 — screen 22.5 / pre 21 / loop 17.25 / end 18)로 `img.src` 를
 //      갈아끼우고, 프레임마다 [[ADR-048]] 의 origin 테이블로 좌표를 함께 옮긴다. 그 엔진은 DOM
 //      (`new Image()` 프리로드 · `el.complete` · `el.style.transform`) 위에 서 있어 RN 에서는
 //      다시 써야 한다.
 //
-//      **step 7(animations)도 이것을 못 되살렸고, 막은 것은 시간이 아니라 ⓐ다.** RN 의 `Image` 는
-//      원격 URI 를 주면 **고유 크기를 모른다** — `require()` 로 번들에 든 에셋만 크기를 스스로 안다.
-//      프레임 배치는 [[ADR-048]] 의 origin 을 **그 프레임 비트맵 크기** 위에서 해석하는 일이라
-//      (`dropFrameTransform` 은 origin 을 되미는 것이고, 되밀 대상의 크기가 필요하다) 에셋이 어떤
-//      모양으로 오는지가 정해지기 전에는 배치 코드를 쓸 수 없다. 크기 표는 `DROP_EFFECT_ORIGINS` 의
-//      **주석에만** 있고 데이터가 아니라, core 를 고치지 않는 한 읽을 수도 없다([[ADR-128]] 원칙 3).
-//      그래서 엔진은 **에셋 레이어가 그 모양을 정한 뒤**에 쓴다 — 지금 쓰면 그 결정을 코드가 몰래
-//      대신 내리게 된다.
+//      **step 7(animations)이 이것을 못 되살린 이유는 ⓐ였고, 그 벽은 사라졌다.** RN 의 `Image` 는
+//      원격 URI 를 주면 고유 크기를 모르지만 **번들 에셋은 스스로 안다** — 프레임이 번들에 들어온
+//      지금은 `Image.resolveAssetSource` 로 그 크기를 읽을 수 있다. 프레임 배치는 [[ADR-048]] 의
+//      origin 을 **그 프레임 비트맵 크기** 위에서 해석하는 일이므로(`dropFrameTransform` 은 origin 을
+//      되미는 것이고, 되밀 대상의 크기가 필요하다) 이제 쓸 수 있는 조건이 갖춰졌다. 크기 표는
+//      `DROP_EFFECT_ORIGINS` 의 **주석에만** 있고 데이터가 아니라는 것은 그대로다.
 //
 //   중앙 아이템의 **부유(`fx-drop-float`)는 step 7 에서 붙였다** — `@keyframes` 이고 붙일 자리(래퍼)가
 //   이미 있다. **팝인(scale/opacity 트랜지션)은 안 붙였다**: 그 대상이 아직 없는 `<Image>` 이고,
@@ -118,8 +115,9 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
           style={{ top: ITEM_CENTER_TOP, marginTop: ITEM_SIZE_PX / 2 + DROP_OFFSET_Y_PX, zIndex: 2 }}
         />
 
-        {/* 중앙 아이템(투명 PNG). 지금은 `getItemIconUrl` 이 항상 `null` 이라 그려지지 않는다 —
-            웹에서 아이콘 매핑이 없는 아이템이 타던 분기 그대로다(에셋 레이어). */}
+        {/* 중앙 아이템(투명 PNG). [[ADR-129]] 이후 매핑이 있는 아이템은 여기까지 오지만, 그림을
+            앉히는 `<Image>` 는 재생 엔진(파일 머리 ⓑ)과 함께 온다 — 팝인 트리거가 8프레임 시점이라
+            엔진 없이는 켤 것이 없다. 매핑이 없는 아이템은 웹과 같은 분기로 그대로 비어 있다. */}
         {itemUrl !== null && (
           <View
             testID="drop-effect-item"

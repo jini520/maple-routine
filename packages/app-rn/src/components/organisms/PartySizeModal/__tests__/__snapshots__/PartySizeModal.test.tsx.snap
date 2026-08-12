@@ -103,6 +103,15 @@ exports[`PartySizeModal 트리 스냅샷 1`] = `
                 }
               }
             >
+              <View
+                style={
+                  {
+                    "inset": 0,
+                    "position": "absolute",
+                  }
+                }
+                testID="party-size-modal-art"
+              />
               <ViewManagerAdapter_ExpoLinearGradient
                 colors={
                   [

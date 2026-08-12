@@ -320,6 +320,22 @@ exports[`트리 스냅샷 그리드가 있는 기본 상태 1`] = `
                             }
                           }
                         >
+                          <Image
+                            accessibilityLabel="엘리시움"
+                            resizeMode="contain"
+                            source={
+                              {
+                                "testUri": "../../../packages/core/src/assets/worlds/elysium.png",
+                              }
+                            }
+                            style={
+                              {
+                                "flexShrink": 0,
+                                "height": 17,
+                              }
+                            }
+                            testID="world-emblem-ocid-1"
+                          />
                           <Text
                             numberOfLines={1}
                             style={
@@ -530,6 +546,22 @@ exports[`트리 스냅샷 그리드가 있는 기본 상태 1`] = `
                             }
                           }
                         >
+                          <Image
+                            accessibilityLabel="베라"
+                            resizeMode="contain"
+                            source={
+                              {
+                                "testUri": "../../../packages/core/src/assets/worlds/bera.png",
+                              }
+                            }
+                            style={
+                              {
+                                "flexShrink": 0,
+                                "height": 17,
+                              }
+                            }
+                            testID="world-emblem-ocid-2"
+                          />
                           <Text
                             numberOfLines={1}
                             style={
@@ -1212,6 +1244,22 @@ exports[`트리 스냅샷 조회 불가 섹션이 있는 상태 1`] = `
                             }
                           }
                         >
+                          <Image
+                            accessibilityLabel="엘리시움"
+                            resizeMode="contain"
+                            source={
+                              {
+                                "testUri": "../../../packages/core/src/assets/worlds/elysium.png",
+                              }
+                            }
+                            style={
+                              {
+                                "flexShrink": 0,
+                                "height": 17,
+                              }
+                            }
+                            testID="world-emblem-ocid-1"
+                          />
                           <Text
                             numberOfLines={1}
                             style={
@@ -1422,6 +1470,22 @@ exports[`트리 스냅샷 조회 불가 섹션이 있는 상태 1`] = `
                             }
                           }
                         >
+                          <Image
+                            accessibilityLabel="베라"
+                            resizeMode="contain"
+                            source={
+                              {
+                                "testUri": "../../../packages/core/src/assets/worlds/bera.png",
+                              }
+                            }
+                            style={
+                              {
+                                "flexShrink": 0,
+                                "height": 17,
+                              }
+                            }
+                            testID="world-emblem-ocid-2"
+                          />
                           <Text
                             numberOfLines={1}
                             style={
@@ -2012,6 +2076,22 @@ exports[`트리 스냅샷 조회 불가 섹션이 있는 상태 1`] = `
                               }
                             }
                           >
+                            <Image
+                              accessibilityLabel="스카니아"
+                              resizeMode="contain"
+                              source={
+                                {
+                                  "testUri": "../../../packages/core/src/assets/worlds/scania.png",
+                                }
+                              }
+                              style={
+                                {
+                                  "flexShrink": 0,
+                                  "height": 17,
+                                }
+                              }
+                              testID="world-emblem-ocid-4"
+                            />
                             <Text
                               numberOfLines={1}
                               style={

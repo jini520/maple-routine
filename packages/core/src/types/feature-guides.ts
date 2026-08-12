@@ -4,6 +4,8 @@
 // 노트 항목은 이 안내를 `ReleaseNoteItem.guideId`(+ `guideSectionId`) 문자열로 가리킨다. 본문이
 // 아니라 id 인 이유는 배포 스크립트가 `release-notes.ts` 를 Node 에서 직접 import 하기 때문이다.
 
+import type { ImageAssetRef } from './image-asset'
+
 /**
  * 안내가 걸리는 앱의 영역(사용자 지정, 2026-08-10). 앞 넷은 **하단 탭바와 같은 축**이라 사용자가
  * 이미 아는 구획이고, 그래서 안내를 찾을 때 새로 배울 것이 없다.
@@ -15,8 +17,12 @@ export type FeatureGuideGroup = 'content' | 'boss' | 'profit' | 'utility' | 'set
 
 /** 안내에 실리는 이미지. `alt` 를 `src` 와 한 덩이로 묶어 **빠뜨릴 수 없게** 한다([[ADR-125]] 결정 6). */
 export interface FeatureGuideImage {
-  /** `packages/core/src/assets/guide/` 에서 import 한 번들 자산 URL */
-  src: string
+  /**
+   * `packages/core/src/assets/guide/` 에서 import 한 번들 자산. 웹은 URL 문자열, RN 은 에셋 id 라
+   * 타입이 `string` 이 아니라 `ImageAssetRef` 다([[ADR-129]]) — 안내 파일이 하는 일(에셋을 그냥
+   * import 한다)은 그대로다.
+   */
+  src: ImageAssetRef
   /** 안내 화면에서 이미지는 장식이 아니라 정보를 나른다 — 비워 둘 수 없다 */
   alt: string
 }

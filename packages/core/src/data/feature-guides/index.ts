@@ -31,8 +31,9 @@ import { characterManageGuide } from './shared/character-manage'
 // ```
 //
 // **이미지는 안내 파일이 직접 import 한다** — `packages/core/src/assets/guide/<안내 id>/` 에 두고 그 파일
-// 상단에서 `import`. `import.meta.glob` 을 쓰지 않는 이유는 파일명이 틀렸을 때 `undefined` 로
-// 조용히 통과하는 대신 **빌드가 실패해야** 하기 때문이다(결정 4).
+// 상단에서 `import`. 디렉터리를 통째로 훑는 방식을 쓰지 않는 이유는 파일명이 틀렸을 때 `undefined`
+// 로 조용히 통과하는 대신 **빌드가 실패해야** 하기 때문이다(결정 4). 그래서 `guide/` 는
+// [[ADR-129]] 의 생성 목록에도 들어가지 않는다 — 이 폴더는 슬러그로 찾는 곳이 아니다.
 //
 // **`release-notes.ts` 와 갈라져 있는 이유는 배포다**(결정 2). 배포 스크립트가 `release-notes.ts` 를
 // **Node 에서 직접 import** 하는데(ADR-119 결정 1), 이미지 import 를 그 파일에 넣으면 Node 가

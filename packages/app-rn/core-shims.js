@@ -1,22 +1,24 @@
 // `packages/core` 의 일부 모듈을 **RN 쪽 구현으로 갈아끼우는 표**. Metro 와 jest 가 같은 표를 읽는다.
 //
-// ── 왜 필요한가 ────────────────────────────────────────────────────────────────────
+// ── 지금 이 표는 비어 있다 ────────────────────────────────────────────────────────
 //
-// core 는 Vite 를 전제로 쓰여 있고, 에셋 목록을 `import.meta.glob` 로 만든다(`lib/theme-backgrounds.ts`
-// 외 6개). 그것은 **번들러의 컴파일 타임 API** 라 Metro 에는 짝이 없다 — Expo 가 `import.meta` 자체는
-// 채워 주지만 `glob` 은 없어서 모듈을 **평가하는 순간** 이렇게 죽는다(실측 2026-08-11):
+// 원래 이 자리를 채우던 다섯은 전부 **에셋 목록을 `import.meta.glob` 으로 만드는** core 모듈이었다
+// (`theme-backgrounds`·`boss-icons`·`world-emblem`·`item-icons`·`drop-effect-frames`). 그것은
+// 번들러의 컴파일 타임 API 라 Metro 에 짝이 없어, 모듈을 **평가하는 순간** 이렇게 죽었다:
 //
 //     TypeError: globalThis.__ExpoImportMetaRegistry.glob is not a function
 //
-// 그래서 `@core/lib/theme-registry` 를 import 하는 것만으로 RN 이 부팅에 실패한다(그 파일이
-// `./theme-backgrounds` 를 부른다). 테마 시스템은 `getThemeDefinition`·`DEFAULT_THEME` 을 그 레지스트리
-// 에서 가져와야 하므로([[ADR-064]] 결정 10 — "개별 파일을 손으로 동기화하지 않는다") 피해 갈 수 없다.
+// [[ADR-129]] 가 그 목록을 **빌드 타임이 아니라 커밋 타임에** 만들기로 하면서 glob 자체가 저장소에서
+// 사라졌고, 그래서 다섯 모듈이 웹·RN 양쪽에서 그대로 돈다 — 치환할 것이 없어졌다.
 //
-// ── 왜 core 를 안 고치는가 ─────────────────────────────────────────────────────────
+// ── 그런데도 이 파일을 지우지 않는 이유 ───────────────────────────────────────────
 //
-// core 는 `app-capacitor` 와 공유되고 그쪽은 지금 배포 중이다([[ADR-128]] 원칙 3). 에셋 해석을 포트로
-// 뒤집는 것이 제대로 된 답이지만 그건 core 의 인터페이스를 늘리는 일이라 별도 결정이다. 그때까지는
-// **앱이 자기 번들러에게 대체 모듈을 알려주는** 방식으로 둔다 — core 는 한 글자도 안 바뀐다.
+// **벽이 하나 더 남아 있다.** `import.meta.env` 도 Vite 전용이고(`features/live-update/store.ts` 가
+// 모듈 최상위에서 `VITE_LIVE_UPDATE_CHANNEL` 을 읽는다 — [[ADR-024]]), RN 런타임에서 `import.meta.env`
+// 는 `undefined` 라 그 스토어를 **값으로 import 하면 그 자리에서 죽는다**(4단계 step 0 실측). 지금은
+// 아무도 값으로 import 하지 않아 조용하지만, OTA 를 이을 때([[ADR-128]] 결정 7) 이 표가 그 자리를
+// 맡을 가능성이 크다. 배선(Metro `resolveRequest` + jest `moduleNameMapper`)을 지웠다 다시 만드는
+// 것보다, 표를 비워 두고 **비어 있다는 사실을 테스트로 적어 두는** 편이 정직하다.
 //
 // ── 한 벌로 두는 이유 ─────────────────────────────────────────────────────────────
 //
@@ -29,38 +31,15 @@
 const path = require('node:path')
 
 /**
- * 갈아끼우는 모듈 목록.
+ * 갈아끼우는 모듈 목록 — **지금은 비어 있다**(파일 머리).
  *
  * `core` 는 `packages/core/src/` 기준 경로, `shim` 은 이 패키지 기준 경로다. 하나를 더할 때는
- * **왜** 갈아끼우는지를 `why` 에 적는다 — 나중에 포트로 뒤집을 때 그 목록이 곧 작업 명세가 된다.
+ * **왜** 갈아끼우는지를 `why` 에 적는다 — 나중에 되돌릴 때 그 목록이 곧 작업 명세가 된다.
+ *
+ * 그리고 더하기 전에 한 번 물어라: **core 를 고쳐서 두 번들러가 같은 파일을 볼 수는 없는가.**
+ * [[ADR-129]] 가 다섯을 한꺼번에 걷어낸 방법이 그것이었고, 치환은 그것이 불가능할 때의 차선이다.
  */
-const SHIMMED_CORE_MODULES = [
-  {
-    core: 'lib/theme-backgrounds',
-    shim: 'src/lib/rn-theme-backgrounds.ts',
-    why: 'import.meta.glob 으로 테마 배경 에셋 목록을 만든다 — Metro 에 짝이 없다.',
-  },
-  {
-    core: 'lib/boss-icons',
-    shim: 'src/lib/rn-boss-icons.ts',
-    why: 'import.meta.glob 으로 보스 일러스트 목록을 만든다. 크롭 두 표(JSON)는 대체 구현이 그대로 답하고 URL 만 null 이다.',
-  },
-  {
-    core: 'lib/world-emblem',
-    shim: 'src/lib/rn-world-emblem.ts',
-    why: 'import.meta.glob 으로 월드 엠블럼 목록을 만든다. isChallengersWorld(JSON 판정)는 그대로 살고 URL 만 null 이다.',
-  },
-  {
-    core: 'lib/item-icons',
-    shim: 'src/lib/rn-item-icons.ts',
-    why: 'import.meta.glob 으로 아이템 아이콘 목록을 만든다 — 모듈 전체가 이름→파일→URL 한 사슬이라 URL 이 없으면 남는 것이 없다.',
-  },
-  {
-    core: 'lib/drop-effect-frames',
-    shim: 'src/lib/rn-drop-effect-frames.ts',
-    why: 'import.meta.glob 으로 고가 드롭 연출 프레임 목록을 만든다. 빈 배열은 원본이 정의한 정상 경로("연출 없이 닫기만")라 DropEffectOverlay 가 웹과 같은 분기를 탄다.',
-  },
-]
+const SHIMMED_CORE_MODULES = []
 
 /**
  * 한 모듈이 요청될 수 있는 두 형태.

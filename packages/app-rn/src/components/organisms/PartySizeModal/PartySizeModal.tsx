@@ -10,11 +10,11 @@
 //
 // ── RN 으로 옮기며 갈린 것 다섯 ─────────────────────────────────────────────────────
 //
-// ① **일러스트는 아직 안 나온다** — `getBossPortraitUrl` 이 RN 에서 항상 `null` 이다(에셋 레이어,
-//    `src/lib/rn-boss-icons.ts`). 그림 없는 보스가 타던 분기("단색 띠에 이름만")를 그대로 타므로
-//    코드는 웹과 같고, 에셋이 오면 `crop`(`getBossPortraitCrop`, 값은 지금도 진짜다)을 RN 기하로
-//    바꾸는 일만 남는다 — `MEDIA_ART_FILTER`·`MEDIA_ART_MASK_HERO` 는 CSS 문자열이라 그때 함께
-//    풀어야 할 자리다([[ADR-018]] bleed 레시피).
+// ① **에셋은 왔고 그림은 아직 안 앉는다** — [[ADR-129]] 로 `getBossPortraitUrl` 이 진짜 번들 에셋을
+//    돌려주므로 히어로 **자리**는 생기지만, 그 자리에 그림을 앉히려면 `crop`(`getBossPortraitCrop`)의
+//    CSS 값(`background-size: "220% auto"` / `position: "60% 40%"`)을 RN 기하로 바꿔야 하고 그
+//    계산에는 **그림의 고유 종횡비**가 필요하다. `MEDIA_ART_FILTER`·`MEDIA_ART_MASK_HERO` 도 CSS
+//    문자열이라 함께 풀어야 한다([[ADR-018]] bleed 레시피) — 셋이 한 덩어리라 따로 못 옮긴다.
 // ② **`bg-surface/60` 이 안 나온다.** NativeWind(v3 엔진)는 `var()` 색에 투명도 접미사를 만들지
 //    못한다(step 3 이 남긴 함정 둘 중 하나) — 클래스는 조용히 사라지고 닫기 버튼 배경이 없어진다.
 //    그래서 값에서 직접 rgba 를 만든다(`lib/color-alpha.ts` — step 6 의 경계 페이드가 같은 함정을
@@ -73,7 +73,7 @@ export function PartySizeModal(props: {
   const mediaSurface = definition.mediaSurface
 
   const portraitUrl = getBossPortraitUrl(props.portraitSlug)
-  // 값은 지금도 진짜다(JSON 두 표는 살아 있다 — `rn-boss-icons.ts`). 그림이 오면 쓴다.
+  // 크롭 값은 진짜다(JSON 표 그대로). 쓰려면 RN 기하 변환이 먼저다(위 ①).
   void getBossPortraitCrop(props.portraitSlug)
 
   return (

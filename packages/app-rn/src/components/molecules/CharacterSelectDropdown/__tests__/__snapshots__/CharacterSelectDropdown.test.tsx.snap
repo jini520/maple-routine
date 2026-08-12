@@ -18,6 +18,34 @@ exports[`CharacterSelectDropdown 렌더 트리 스냅샷 — 이후 변경을 �
     }
   >
     <View
+      pointerEvents="none"
+      style={
+        {
+          "bottom": 0,
+          "justifyContent": "center",
+          "left": 12,
+          "position": "absolute",
+          "top": 0,
+        }
+      }
+      testID="character-select-emblem"
+    >
+      <Image
+        accessibilityLabel="엘리시움"
+        resizeMode="contain"
+        source={
+          {
+            "testUri": "../../../packages/core/src/assets/worlds/elysium.png",
+          }
+        }
+        style={
+          {
+            "height": 22,
+          }
+        }
+      />
+    </View>
+    <View
       accessibilityState={
         {
           "busy": undefined,
@@ -56,7 +84,7 @@ exports[`CharacterSelectDropdown 렌더 트리 스냅샷 — 이후 변경을 �
           "borderWidth": 1,
           "minWidth": 160,
           "paddingBottom": 12,
-          "paddingLeft": 16,
+          "paddingLeft": 32,
           "paddingRight": 36,
           "paddingTop": 12,
         }
@@ -190,6 +218,34 @@ exports[`CharacterSelectDropdown 렌더 트리 스냅샷 — 이후 변경을 �
     }
   >
     <View
+      pointerEvents="none"
+      style={
+        {
+          "bottom": 0,
+          "justifyContent": "center",
+          "left": 10,
+          "position": "absolute",
+          "top": 0,
+        }
+      }
+      testID="character-select-emblem"
+    >
+      <Image
+        accessibilityLabel="엘리시움"
+        resizeMode="contain"
+        source={
+          {
+            "testUri": "../../../packages/core/src/assets/worlds/elysium.png",
+          }
+        }
+        style={
+          {
+            "height": 14,
+          }
+        }
+      />
+    </View>
+    <View
       accessibilityState={
         {
           "busy": undefined,
@@ -227,7 +283,7 @@ exports[`CharacterSelectDropdown 렌더 트리 스냅샷 — 이후 변경을 �
           "borderRadius": 9999,
           "borderWidth": 1,
           "paddingBottom": 4,
-          "paddingLeft": 12,
+          "paddingLeft": 28,
           "paddingRight": 28,
           "paddingTop": 4,
         }

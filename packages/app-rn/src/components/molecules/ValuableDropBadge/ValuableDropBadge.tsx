@@ -35,15 +35,13 @@ import { LinearGradient } from '../../../lib/nativewind-interop'
 // ⑤ `tabular-nums` 는 클래스로 안 나와 스타일 값으로 준다(`lib/text-styles.ts` — NativeWind 가 그
 //    클래스를 스타일 없이 통과시킨다). `+N` 이 한 자리에서 두 자리로 늘 때 배지 폭이 튀지 않는다.
 //
-// **아이콘 자리는 지금 전부 회색 원이다** — `getItemIconUrl` 이 RN 에서 항상 `null` 이기 때문이고
-// (`src/lib/rn-item-icons.ts`), 그것은 원본이 정의해 둔 폴백 경로 그대로다. 스택 규칙(겹침 −6 ·
-// 앞선 것이 위 · 흰 링)은 그 폴백에서도 그대로 확인된다.
+// **아이콘 자리는 지금도 전부 회색 원이다** — 이 컴포넌트가 `getItemIconUrl` 을 아예 부르지 않는다.
+// 스택 규칙(겹침 −6 · 앞선 것이 위 · 흰 링)은 그 폴백에서도 그대로 확인된다.
 //
-// **이미지 분기를 미리 써 두지 않는다** — `BossPortrait` 와 같은 이유이고, 여기서는 이유가 하나
-// 더 좁다. 이 자리의 변환 자체는 기계적이지만(`object-contain` → `resizeMode="contain"`),
-// **`<Image source>` 에 무엇을 넣을지가 아직 정해지지 않았다** — 웹의 `string` URL 과 달리 RN 의
-// 정적 에셋은 `require()` 결과(숫자)라, 에셋 레지스트리가 어떤 값을 돌려줄지에 따라 이 세 줄이
-// 달라진다. 그 결정 전에 쓰면 두 번 쓴다.
+// **막고 있던 물음은 [[ADR-129]] 가 답했다** — *"`<Image source>` 에 무엇을 넣나"* 의 답은 **조회
+// 결과를 그대로**이고(번들 에셋이라 원격 URI 처럼 `{ uri }` 로 감싸지 않는다, `CharacterTrackingGrid`
+// 주석 ⑤가 실물이다), 나머지 변환은 기계적이다(`object-contain` → `resizeMode="contain"`).
+// 그래도 여기서 붙이지 않는 것은 **화면 작업의 범위**여서다 — 에셋 레이어는 값을 대는 데까지다.
 
 /** `.valuable-drop-badge` — 전 테마 공통 골드([[ADR-045]] 결정 3). 테마 토큰이 아니라 고정 신호색이다. */
 const BADGE_GRADIENT = ['#ffe98a', '#f7c400'] as const
