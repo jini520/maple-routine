@@ -20,7 +20,10 @@
     {
       "step": 2,
       "name": "onboarding",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-12T21:03:23+0900",
+      "summary": "온보딩 5개(775줄)를 src/app/onboarding/ 으로 옮기고 RootNavigator 의 Onboarding 라우트를 자리표시자에서 진짜 화면으로 교체 · 파일별 ADR 계약을 전부 다시 읽고 확인해 parity-inventory §2.2 에 «확인» 열로 기록 · 캐릭터 0명 계정(ADR-127)은 화면 층에서 다시 거르지 않고(core normalize 가 사슬의 위 고리를 이미 끊었다) «목록이 통째로 빌 수 있다»만 테스트 계약으로 박음 · TextInput 으로 갈린 것 일곱(form 소멸·제출 경로 둘·secureTextEntry·autoCorrect boolean·label→aria-label·a→role=link+Linking.openURL·placeholder 색 미지정) + 키보드 둘(keyboardShouldPersistTaps·iOS automaticallyAdjustKeyboardInsets) · ScreenScroll 대신 자체 스크롤(헤더도 탭바도 없고 min-h-100dvh 의 짝인 contentContainer flexGrow 가 그 셸에 없다) · 하네스에 ThemeProvider 추가(진짜 화면이 테마를 읽는다) → 내비 스냅샷 1,304→2,080줄 · RNTL 14 함정 셋(render/rerender 비동기 · 한 케이스 두 렌더면 다음 케이스가 빈다 · UNSAFE_*ByProps 없음)과 jest.mock ...requireActual 순환 참조 회피 · 육안 대조 목록 8단계를 README «4-2단계 결과» 에 기록(키 저장 전에 볼 것을 먼저 본다) · jest 705→791, vitest 3056 증감 0",
+      "completed_at": "2026-08-12T22:05:00+0900"
     },
     {
       "step": 3,

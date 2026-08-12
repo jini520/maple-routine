@@ -1,6 +1,7 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { useOnboardingStore } from '@core/features/onboarding/store'
 
+import { OnboardingScreen } from '../app/onboarding/OnboardingScreen'
 import { FeatureGuidePlaceholderScreen, PlaceholderScreen } from './PlaceholderScreen'
 import { TabNavigator } from './TabNavigator'
 import {
@@ -92,7 +93,9 @@ export function RootNavigator(): React.JSX.Element {
           ))}
         </Stack.Group>
       ) : (
-        <Stack.Screen name="Onboarding" component={PlaceholderScreen} />
+        // 4단계 첫 화면 — 자리표시자를 진짜 화면으로 갈아 끼웠다. 온보딩 분기 테스트가 쓰는
+        // `screen-Onboarding` testID 는 `OnboardingScreen` 루트가 그대로 이어받는다.
+        <Stack.Screen name="Onboarding" component={OnboardingScreen} />
       )}
     </Stack.Navigator>
   )

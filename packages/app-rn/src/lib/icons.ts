@@ -38,9 +38,14 @@ import CircleAlert from 'lucide-react-native/icons/circle-alert'
 import CircleCheckBig from 'lucide-react-native/icons/circle-check-big'
 import Clock from 'lucide-react-native/icons/clock'
 import CloudDownload from 'lucide-react-native/icons/cloud-download'
+import ExternalLink from 'lucide-react-native/icons/external-link'
+import Eye from 'lucide-react-native/icons/eye'
+import EyeOff from 'lucide-react-native/icons/eye-off'
+import Gamepad2 from 'lucide-react-native/icons/gamepad-2'
 import Gauge from 'lucide-react-native/icons/gauge'
 import Info from 'lucide-react-native/icons/info'
 import KeyRound from 'lucide-react-native/icons/key-round'
+import ListChecks from 'lucide-react-native/icons/list-checks'
 import Minus from 'lucide-react-native/icons/minus'
 import Plus from 'lucide-react-native/icons/plus'
 import RefreshCw from 'lucide-react-native/icons/refresh-cw'
@@ -70,12 +75,22 @@ export const ChevronDownIcon = withIconInterop(ChevronDown)
 export const ClockIcon = withIconInterop(Clock)
 /** 새 업데이트 있음 — `UpdatePromptModal`(update-available). */
 export const CloudDownloadIcon = withIconInterop(CloudDownload)
+/** 앱 밖으로 나가는 이동 — `ApiKeyForm` 의 두 링크([[ADR-110]]). */
+export const ExternalLinkIcon = withIconInterop(ExternalLink)
+/** API 키 표시 토글(가림 상태) — `ApiKeyForm`. */
+export const EyeIcon = withIconInterop(Eye)
+/** API 키 표시 토글(표시 상태) — `ApiKeyForm`. */
+export const EyeOffIcon = withIconInterop(EyeOff)
+/** 자동 트래킹 모드 — `TrackingModeStep`([[ADR-035]] 결정 22: "게임에서 정한 것을 따른다"). */
+export const Gamepad2Icon = withIconInterop(Gamepad2)
 /** 호출 한도 초과 — `ApiKeyNoticeModal`(rateLimited). 타이머 계열을 피한 근거는 그 파일에 있다. */
 export const GaugeIcon = withIconInterop(Gauge)
 /** 조회 불가(정보 톤) — `UnavailableNotice` · 정보 토스트 `Toast`(info). */
 export const InfoIcon = withIconInterop(Info)
 /** API 키 무효 — `ApiKeyNoticeModal`(invalid). */
 export const KeyRoundIcon = withIconInterop(KeyRound)
+/** 수동 트래킹 모드 — `TrackingModeStep`([[ADR-035]] 결정 22: "앱에서 고른다"). */
+export const ListChecksIcon = withIconInterop(ListChecks)
 /** 파티원 수 감소 — `PartySizeStepper`. */
 export const MinusIcon = withIconInterop(Minus)
 /** 파티원 수 증가 — `PartySizeStepper`. */
