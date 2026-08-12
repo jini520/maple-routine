@@ -441,6 +441,79 @@ Metro 엔 있어도 jest 에 없어**(실측: `require.context is not a function
 
 **RN 트리 스냅샷 16장을 새로 떴다.** 이 스냅샷도 여전히 *"앞으로 안 바뀌는가"* 에만 답한다.
 
+#### 3-5단계 결과 — organisms 10개 (2026-08-12, **떠 있는 것을 무엇으로 그리는가**)
+
+`packages/app-rn/src/components/organisms/` 로 10개가 옮겨졌다(원본은 그대로 — 원칙 3). 각 컴포넌트의
+ADR 확인 결과는 [parity-inventory §3](./parity-inventory.md) 의 «확인» 열에 있다. **커밋을 둘로
+쪼갰다** — `CharacterTrackingPicker`(ADR 11개)를 먼저 끝내고, 나머지 일곱을 뒤에 뒀다.
+
+**이 계층의 벽은 하나다: 웹의 오버레이 넷이 전부 `createPortal(document.body)` + `z-*` 인데 RN 에는
+문서도 z-index 도 없다.** `absolute inset-0` 은 **부모 상자에 갇혀** 탭 화면 안에서 열면 탭바조차 못
+덮는다. 화면 전체를 덮는 방법은 `react-native` 의 `Modal`(별도 네이티브 윈도우) 하나뿐이라 셋이 그리로
+갔고, 그 대가로 **웹이 손으로 만들던 것 둘이 공짜가 됐다** — `useBodyScrollLock` 은 *대체가 아니라
+필요 자체가 사라졌고*, [[ADR-039]] 정정 1·2(`pointer-events-auto` · `data-sheet-keep-open`)는 원인이
+Radix `dismissable-layer` 였어서 **문제 자체가 없다**.
+
+**`ToastStack` 만 그 길로 갈 수 없다.** 안드로이드에서 `Modal` 은 화면 전체의 터치를 삼키는
+다이얼로그다. 그래서 자기가 놓인 자리에 절대 배치로 그리고 마운트 위치는 앱 셸이 정하는데, **남는
+한계를 적어 둔다** — `Modal` 이 열려 있는 동안 뜬 토스트는 그 윈도우 뒤에 가린다(웹은 z-60 으로 항상
+앞이었다). 실제로 걸리는 자리가 있다: 파티 인원 모달이 열린 채 저장이 실패하면 그 토스트가 안 보인다.
+오버레이를 한 루트 호스트로 모으면 풀리지만 그것은 화면 배선의 결정이라 여기서 미리 정하지 않았다.
+
+**터치를 누가 가져가는지가 `stopPropagation` 의 자리를 대신한다.** RN 에는 이벤트 버블링이 없다 —
+자식이 responder 를 선언하지 않으면 바깥 `Pressable` 이 받아 모달이 닫힌다. 그래서 두 패널이 웹에서
+`onClick={stopClickPropagation}` 을 갖던 **바로 그 자리**에 `onStartShouldSetResponder` 가 선다.
+`Toast` 의 스와이프도 같은 축이다 — **`onMove…` 에서만** responder 를 가져오는 것이 요점이고(시작에서
+가져가면 안쪽 버튼이 안 눌린다), 웹이 `closest('button')` 로 걸러내던 목적을 규칙이 구조로 해 준다.
+`PanResponder` 는 일부러 안 썼다(터치 히스토리에서 제스처를 스스로 계산해, 웹이 갖던 *"시작점 하나와
+현재 x"* 라는 단순한 모델을 대신 세운다).
+
+**[[ADR-120]] 결정 18 후반(2단계가 organisms 몫으로 남긴 자리)이 여기서 채워졌다** — 오버레이의
+안드로이드 뒤로가기는 `onRequestClose` 로, **스택을 pop 하는 대신 그 오버레이만 닫는다**.
+
+**라이브러리 기본값을 세 자리에서 거부했다**(`BottomSheet`, [[ADR-039]]). 고정 `snapPoints`(그 ADR 의
+`max-h-[82vh]` 는 *상한*이지 높이가 아니다) · 전폭(→ `max-w-md` 448 중앙) · 백드롭 기본 알파(→ `bg-scrim`
+토큰 + `opacity={1}`, 안 끄면 라이트 테마에서 스크림이 두 겹이 된다). 라이브러리를 바꿔도 *"스킨과
+공개 API 는 그대로"* 라는 [[ADR-039]] 의 판단이 그대로 선다.
+
+**[[ADR-122]] 모드 분기는 이 단계에서 값을 쓸 뿐이다.** step 1 이 파생 토큰 `--color-panel-border` 를
+만들어 두어 분기가 `theme-vars.ts` 에서 `definition.mode` 로 **딱 한 번** 일어나고, 컴포넌트는
+`border-panel-border` 한 클래스를 쓴다 — **테마 이름으로 가르지 않는다**([[ADR-064]] 결정 8 이 폐기한
+수동 목록이 CSS 쪽에 되살아나는 것을 막는다). 다만 그 결정의 **두 클래스 중 하나는 짝이 없다**:
+`.panel-on-scrim-parent > *` 는 자손 선택자라 RN 에서 부모가 자식 스타일을 정할 방법이 없어, 자식이
+직접 그 클래스를 쓰는 것으로 대신했다.
+
+**새로 대체한 `className` 셋**(step 3·4 목록에 이어서).
+
+| 자리 | 웹 | RN | 왜 |
+|---|---|---|---|
+| `CharacterTrackingGrid` | `grid grid-cols-3 gap-2` | 셀 `w-1/3 p-1` + 줄 `-m-1` | Yoga 에 **CSS Grid 가 없다**. `flex-wrap`+`gap` 으로 옮기면 3열 폭이 `calc((100% − 16px) / 3)` 여야 하는데 그 식을 줄 방법이 없어 **좁은 폭에서 조용히 2열로 접힌다** |
+| `PartySizeModal` 닫기 버튼 | `bg-surface/60` | 값에서 `rgba()` | NativeWind(v3 엔진)는 `var()` 색에 **투명도 접미사를 못 만든다**(step 3 이 남긴 함정) — 클래스가 사라지고 배경이 없어진다 |
+| `CharacterTrackingGrid` 별 | `fill-primary-ink` | lucide `fill` 프롭에 **테마 값** | `fill` 은 CSS 속성이라 RN 스타일로 안 나간다. 여기서는 `currentColor` 로도 안 된다 — 그 값의 출처는 `Svg` 의 `color` 프롭인데 **lucide 는 색을 `stroke` 로만 넘긴다** |
+
+**`@keyframes` 두 개가 또 밀렸다** — `toast-shrink`(남은 시간 바)와 `DropEffectOverlay` 의 재생·팝인.
+Toast 는 구조가 다 서 있어 step 7 이 값만 굴리면 되지만, **드롭 연출은 그 이상이다**: 프레임 에셋이
+네 단계 모두 빈 배열이고(에셋 레이어) 재생 루프가 DOM(`new Image()` · `el.complete` ·
+`el.style.transform`) 위에 서 있어 통째로 다시 써야 한다. [[ADR-103]] 의 **판정 근거가 성능이 아니라
+눈**이라는 사실을 주석에 박아 뒀다(2배 → 사용자 반려 → 1.5배) — 되살릴 때도 «단계별 fps 표 + 한 배율»
+구조를 먼저 세우고 값은 실기기에서 확정한다.
+
+**[[ADR-117]] 결정 6 은 셋 중 하나만 대응된다**(`ErrorBoundary`). 웹판의 `hideSplashScreen()` 한
+호출이 웹뷰의 사슬 셋을 끊었는데, RN 에는 ⑵ *"폴백이 커버 밑에 그려진다"* 만 남는다 — ⑴ 의 `#boot-cover`
+는 `index.html` 의 DOM 이고, ⑶ 의 `isUserInteractionEnabled=false` 는 Capacitor 플러그인의 동작이다.
+그래서 **호출은 남되 이유가 하나로 줄었다.** 함께 갈린 것이 하나 더 있다 — **'다시 시작'이 필수
+프롭이 됐다.** 웹 기본값 `location.reload()` 의 짝이 RN 에 없고(번들 재실행은 OTA 런타임의 일,
+[[ADR-127]] 결정 7), 없는 기본값을 지어내면 같은 예외로 즉시 되돌아오는 버튼이 되어 [[ADR-065]]
+결정 5 가 세운 *"선택지가 하나여서 그 하나가 분명해진다"* 를 깬다.
+
+**남은 어긋남 하나를 적어 둔다** — core 의 `ToastAction.icon` 이 `lucide-react`(웹) 타입이라
+`lucide-react-native` 아이콘이 **타입상 들어가지 않는다**. 렌더만 하는 `Toast` 는 무사하고, **아이콘을
+넘기는 쪽**(설정 열기 토스트 등)이 화면 단계에서 걸린다. 이 단계는 core 무수정이라(원칙 3) 사실만
+남긴다 — 푸는 방법은 그 필드를 플랫폼 중립 컴포넌트 타입으로 넓히는 것이다.
+
+**RN 트리 스냅샷 11장을 새로 떴다**(파일 8개 — `CharacterTrackingPicker` 만 상태 둘). 여전히
+*"앞으로 안 바뀌는가"* 에만 답한다.
+
 ### 4단계 — `app/` 화면 재작성
 
 - 화면 15개 + 하위 컴포넌트. **파일별 ADR 계약 체크리스트를 소진**하며 진행(원칙 2)
