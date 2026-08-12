@@ -12,8 +12,13 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
 
+import bossPortraitIconCrops from '@core/data/boss-portrait-icon-crops.json'
+import worldEmblems from '@core/data/world-emblems.json'
+import { getBossPortraitIconCrop, getBossPortraitUrl } from '@core/lib/boss-icons'
+import { getItemIconUrl, getItemIconUrlByFile } from '@core/lib/item-icons'
 import { getThemeBackgroundUrl } from '@core/lib/theme-backgrounds'
 import { DEFAULT_THEME, buildThemeCss, getThemeDefinition } from '@core/lib/theme-registry'
+import { isChallengersWorld, worldEmblemUrl } from '@core/lib/world-emblem'
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { SHIMMED_CORE_MODULES } = require('../../core-shims') as {
@@ -34,8 +39,13 @@ function coreSourceFiles(dir: string): string[] {
 }
 
 describe('core 모듈 치환', () => {
-  it('치환 대상은 지금 하나이고, 그 대체 파일이 실재한다', () => {
-    expect(SHIMMED_CORE_MODULES.map(({ core }) => core)).toEqual(['lib/theme-backgrounds'])
+  it('치환 대상은 지금 넷이고, 그 대체 파일이 실재한다', () => {
+    expect(SHIMMED_CORE_MODULES.map(({ core }) => core)).toEqual([
+      'lib/theme-backgrounds',
+      'lib/boss-icons',
+      'lib/world-emblem',
+      'lib/item-icons',
+    ])
 
     for (const { shim, why } of SHIMMED_CORE_MODULES) {
       expect(statSync(path.resolve(__dirname, '../..', shim)).isFile()).toBe(true)
@@ -63,6 +73,43 @@ describe('core 모듈 치환', () => {
     expect(css).not.toContain('--theme-bg')
     expect(css).toContain('--color-primary')
   })
+
+  // step 4(molecules)가 더한 세 치환. **에셋 URL 만 없고 나머지는 진짜다** — 그 경계를 계약으로
+  // 적어 둔다(에셋 레이어가 오면 위 배경 테스트와 함께 여기가 바뀐다).
+  describe('에셋 URL 세 자리 — 지금은 전부 null 이다', () => {
+    it.each([
+      ['보스 일러스트', () => getBossPortraitUrl('lucid')],
+      ['월드 엠블럼', () => worldEmblemUrl('엘리시움')],
+      ['아이템 아이콘(이름)', () => getItemIconUrl('칠흑의 보스 반지 상자')],
+      ['아이템 아이콘(파일명)', () => getItemIconUrlByFile('Limit_Ring.webp')],
+    ])('%s 은 RN 번들에 없다', (_label, resolve) => {
+      expect(resolve()).toBeNull()
+    })
+  })
+
+  // 반대쪽 — 에셋과 무관한 로직은 **대체 구현에서도 그대로 답해야 한다**. 기대값은 손으로 적지 않고
+  // 같은 JSON 에서 뽑는다([[ADR-006]] · `render-atom.tsx` 와 같은 규칙).
+  describe('에셋이 아닌 것은 그대로 산다', () => {
+    it('보스 원형 아이콘 크롭 표는 JSON 그대로다 ([[ADR-018]])', () => {
+      const [slug, crop] = Object.entries(bossPortraitIconCrops)[0]
+
+      expect(getBossPortraitIconCrop(slug)).toEqual(crop)
+      expect(getBossPortraitIconCrop('없는슬러그')).toEqual({ size: 'cover', position: 'center' })
+      expect(getBossPortraitIconCrop(null)).toEqual({ size: 'cover', position: 'center' })
+    })
+
+    // 이 판정이 조용히 틀리면 보스 스케줄러의 시즌 보스 표시가 무너진다([[ADR-031]]).
+    it('챌린저스 월드 판정은 매핑값을 그대로 본다 ([[ADR-031]])', () => {
+      const emblems = worldEmblems as Record<string, string>
+      const challengers = Object.keys(emblems).filter((world) => emblems[world] === 'challengers')
+      const others = Object.keys(emblems).filter((world) => emblems[world] !== 'challengers')
+
+      expect(challengers.length).toBeGreaterThan(0)
+      expect(challengers.every(isChallengersWorld)).toBe(true)
+      expect(others.some(isChallengersWorld)).toBe(false)
+      expect(isChallengersWorld('없는월드')).toBe(false)
+    })
+  })
 })
 
 describe('아직 치환되지 않은 glob 모듈', () => {
@@ -87,13 +134,23 @@ describe('아직 치환되지 않은 glob 모듈', () => {
     expect(found).toEqual(KNOWN_GLOB_MODULES)
   })
 
-  // 여덟 중 하나만 치환됐다. 나머지 일곱은 **쓰기 시작할 때** 같은 처리가 필요하다(에셋 해석을
-  // 포트로 뒤집는 것이 제대로 된 답이고, 그건 core 인터페이스를 늘리는 별도 결정이다).
-  it('여덟 중 치환된 것은 테마 배경 하나뿐이다', () => {
+  // 여덟 중 넷이 치환됐다(step 3 은 하나였고 step 4 가 셋을 더했다 — molecules 셋이 그 모듈을
+  // 부른다). 남은 넷은 **쓰기 시작할 때** 같은 처리가 필요하다(에셋 해석을 포트로 뒤집는 것이
+  // 제대로 된 답이고, 그건 core 인터페이스를 늘리는 별도 결정이다).
+  it('여덟 중 치환된 것은 넷이다', () => {
     const shimmed = SHIMMED_CORE_MODULES.map(({ core }) => `${core}.ts`)
 
     expect(KNOWN_GLOB_MODULES.filter((module) => shimmed.includes(module))).toEqual([
+      'lib/boss-icons.ts',
+      'lib/item-icons.ts',
       'lib/theme-backgrounds.ts',
+      'lib/world-emblem.ts',
+    ])
+    expect(KNOWN_GLOB_MODULES.filter((module) => !shimmed.includes(module))).toEqual([
+      'data/feature-guides/index.ts',
+      'lib/daily-quest-backgrounds.ts',
+      'lib/daily-quest-icons.ts',
+      'lib/drop-effect-frames.ts',
     ])
   })
 })

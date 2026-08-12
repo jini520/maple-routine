@@ -40,6 +40,21 @@ const SHIMMED_CORE_MODULES = [
     shim: 'src/lib/rn-theme-backgrounds.ts',
     why: 'import.meta.glob 으로 테마 배경 에셋 목록을 만든다 — Metro 에 짝이 없다.',
   },
+  {
+    core: 'lib/boss-icons',
+    shim: 'src/lib/rn-boss-icons.ts',
+    why: 'import.meta.glob 으로 보스 일러스트 목록을 만든다. 크롭 두 표(JSON)는 대체 구현이 그대로 답하고 URL 만 null 이다.',
+  },
+  {
+    core: 'lib/world-emblem',
+    shim: 'src/lib/rn-world-emblem.ts',
+    why: 'import.meta.glob 으로 월드 엠블럼 목록을 만든다. isChallengersWorld(JSON 판정)는 그대로 살고 URL 만 null 이다.',
+  },
+  {
+    core: 'lib/item-icons',
+    shim: 'src/lib/rn-item-icons.ts',
+    why: 'import.meta.glob 으로 아이템 아이콘 목록을 만든다 — 모듈 전체가 이름→파일→URL 한 사슬이라 URL 이 없으면 남는 것이 없다.',
+  },
 ]
 
 /**

@@ -175,17 +175,25 @@
 
 ### molecules (11)
 
-| 컴포넌트 | ADR 계약 |
-|---|---|
-| `BossPortrait` | — |
-| `CharacterSelectDropdown` | 001, 096 |
-| `DifficultySegment` | 121 |
-| `EmptyState` (+ `UnavailableNotice`) | 060, 066 / 060, 067, 068 |
-| `ErrorState` (+ `StaleBanner`) | 060, 061, 062, 114, 116 / 016, 017, 062, 094, 114 |
-| `LoadingState` | 016, 061 |
-| `PartySizeStepper` | 121 |
-| `PullToRefreshIndicator` | 047, 061, 073, 074 |
-| `ValuableDropBadge` | 045, 046, 071 |
+**전부 옮겼다**(3단계 step 4, 2026-08-12 — `packages/app-rn/src/components/molecules/`). 각 행의 ADR 을
+다시 읽고 그 동작이 새 코드에 있음을 확인한 결과가 «확인» 열이고, RN 에서 갈린 자리는 컴포넌트
+주석과 [README «3-4단계 결과»](./README.md) 에 있다.
+
+**셋은 절반만 왔다** — `BossPortrait`(그림 분기) · `ValuableDropBadge`(아이콘) ·
+`CharacterSelectDropdown`(엠블럼·목록). 앞의 둘은 **에셋 레이어**를, 마지막은 **목록 UI 결정**을
+기다린다(아래 표의 «확인» 열에 무엇이 없는지 적어 뒀다).
+
+| 컴포넌트 | ADR 계약 | 확인 |
+|---|---|---|
+| `BossPortrait` | — | (계약 없음) **플레이스홀더 분기만** — RN 번들에 보스 일러스트가 없어 `getBossPortraitUrl` 이 항상 `null` 이다. 그림 분기는 슬러그→에셋 매핑과 CSS `background-size/position` → RN 기하 변환이 함께 필요해 **에셋 레이어 몫**(`src/lib/rn-boss-icons.ts` 파일 머리) |
+| `CharacterSelectDropdown` | 001, 096 | 001 은 **웹뷰 사정**이라 사라진다(네이티브 `<select>`·UA 화살표 억제) / 096 결정 5 두 크기의 치수·엠블럼 자리·chevron 직접 그리기 ✅ / **목록(열린 상태)은 미도착** — RN 에 `<select>` 짝이 없고 무엇으로 그릴지가 디자인 결정이라 step 5(오버레이)와 함께. `onSelect` 는 시그니처만 유지 |
+| `DifficultySegment` | 121 | 결정 4 미선택 = 같은 뱃지 + `opacity-40`(고스트 칩 회귀 가드) ✅ / 같은 값 재탭이 저장을 안 부른다 ✅ / `aria-pressed` → **`aria-selected`**(RN 접근성 상태에 *pressed* 가 없다 — 전달되는 사실은 같다) |
+| `EmptyState` (+ `UnavailableNotice`) | 060, 066 / 060, 067, 068 | 060 결정 1 두 변형·결정 2 배지 마크(leaf/컨텍스트)·**결정 3 액션 없는 자리에 버튼 없음** ✅ / 066 결정 5 `icon` 타입이 커스텀 아이콘도 받는다 ✅ / 068 결정 1 `notCollected` 넷째 얼굴(중립 톤 + Clock)·067 트레이드오프대로 **시각을 암시하지 않는 문구** ✅ · **문구는 한 글자도 안 바꿨다** |
+| `ErrorState` (+ `StaleBanner`) | 060, 061, 062, 114, 116 / 016, 017, 062, 094, 114 | 062 결정 1 배지 없는 단독 아이콘(빈 상태와의 구분 근거) ✅ / 116 결정 4 `action` 옵셔널 + 그 조건을 주석 계약으로 ✅ / 114 결정 2·3 배너의 문구·라벨·액션은 **전부 호출부가 넘긴다**(molecule 이 `ScheduleSyncError` 를 모른다 — 094 결정 2) ✅ / 016·017 은 이 배너가 서는 **이유**(캐시 stub 이 먼저 방출돼 실패가 무음이 된다)라 코드가 아니라 주석에 산다 |
+| `LoadingState` | 016, 061 | 061 결정 2 셸 승계 카드(`Card` atom)·크기별 스피너 32/24 ✅ / 결정 3 점선 미사용 ✅ / 016 "캐시가 있으면 가리지 않는다"는 호출부 규칙이라 주석에 ✅ / **스피너는 아직 0프레임**(step 7) |
+| `PartySizeStepper` | 121 | 결정 7 두 크기·−/+ 채움 없음·`compact` 단위 생략 ✅ / `disabled:opacity-40` → **JS 조건**(NativeWind 변형이 `Pressable disabled` 와 안 이어진다 — 그대로 두면 비활성이 멀쩡해 보인다) / `-m-1 p-1` → `hitSlop` |
+| `PullToRefreshIndicator` | 047, 061, 073, 074 | 073 결정 6·7 높이와 목록 오프셋이 한 함수·배경/테두리 없음·틈 세로 중앙 ✅ / 074 결정 1 문구 없음·2·3 외곽선 링 진행률 드로잉·4·6 두 구간 같은 마크 28px·7 `aria-hidden` ✅ / 061 결정 1 의 PTR 예외(28px 트레일 링) ✅ / 047 은 이 인디케이터가 **절대 배치**여야 하는 이유(부모 실측 높이를 안 바꾼다) ✅ / **`RefreshControl` 과 겹치는 물건**이라 화면 배선에서 하나를 골라야 한다 — 갈래는 컴포넌트 주석 |
+| `ValuableDropBadge` | 045, 046, 071 | 045 결정 2 골드 pill + Sparkles + 아이콘 최대 3 + `+N`·결정 3 **전 테마 공통 고정 골드** ✅ / 046 결정 4 배치·라벨은 호출부 ✅ / 071 결정 4 는 호출 자리(히스토리 요약 줄)라 컴포넌트 무관 ✅ / **아이콘 그림은 미도착**(에셋 레이어) — 스택 규칙은 폴백 원으로 확인 / **모션은 이 배지에 없다**(step 사양 정정 — `@keyframes` 셋은 전부 카드·행 쪽이다) |
 
 ### organisms (10)
 

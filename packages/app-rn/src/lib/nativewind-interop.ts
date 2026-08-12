@@ -30,6 +30,7 @@
  */
 
 import { LinearGradient } from 'expo-linear-gradient'
+import type { LucideIcon } from 'lucide-react-native'
 import { cssInterop } from 'nativewind'
 import { Svg } from 'react-native-svg'
 
@@ -42,4 +43,46 @@ cssInterop(Svg, {
 
 cssInterop(LinearGradient, { className: 'style' })
 
-export { LinearGradient, Svg }
+/**
+ * lucide 아이콘 하나를 `className` 을 받는 컴포넌트로 등록한다 — **웹 호출부를 한 글자도 안 고치기
+ * 위해서다**(`<AlertTriangle className="h-4 w-4 text-error-ink" strokeWidth={1.75} />`).
+ *
+ * `lucide-react-native` 는 `color`·`size` 프롭으로 색과 크기를 받고 `className` 은 그대로 안쪽
+ * `Svg` 로 흘려보낸다. 그 `Svg` 는 위에서 등록해 뒀지만 **그 자리에서는 안 풀린다** — NativeWind 는
+ * JSX 호출 시점에 컴포넌트가 등록됐는지 보는데, 그 `createElement` 는 우리 코드가 아니라
+ * 라이브러리 안에 있다. 그래서 **아이콘 컴포넌트 자체**를 등록해 우리 JSX 에서 풀리게 한다.
+ *
+ * 매핑이 셋인 이유는 lucide 의 프롭 이름과 짝을 맞추기 위해서다.
+ *   `text-*`   → `style.color`  → `color` 프롭 → `stroke`(아이콘 본체와 자식 도형 모두)
+ *   `h-*`/`w-*` → `style.height`/`width` → `Svg` 의 상자. lucide 는 `size` 로 계산한 width/height
+ *                 **뒤에** 나머지 프롭을 펼치므로 클래스가 이긴다(웹에서 CSS 가 속성을 이겼던 것과
+ *                 같은 순서다).
+ * 나머지 유틸리티(`shrink-0` 등)는 `target: 'style'` 로 `style` 프롭에 남아 lucide 의 `...rest` 를
+ * 타고 `Svg` 에 닿는다 — `target: false` 로 두면 **그것들이 조용히 사라진다**(실측).
+ *
+ * 등록은 **부수 효과**다(`cssInterop` 은 감싼 것을 돌려주는 대신 그 컴포넌트를 등록한다). 그래서
+ * 반환값을 쓰지 않고 원본을 그대로 다시 내보낸다 — 타입(`LucideIcon`)이 살아 있어야 `EmptyState` 의
+ * `icon` 프롭에 그대로 들어간다.
+ *
+ * **여기서 내보내지 않은 lucide 아이콘을 직접 import 하면 `className` 이 조용히 무시된다** — SVG
+ * 와 정확히 같은 실패 모양이다(에러도 경고도 없다). 아이콘을 새로 쓸 때는 반드시 `lib/icons.ts` 에
+ * 더할 것.
+ *
+ * **`testID` 는 통하지 않는다** — lucide 의 `Icon` 이 그것을 가로채 `data-testid` 로 바꿔 넘기므로
+ * (웹판과 코드를 공유하는 흔적) RNTL 의 `getByTestId` 로 못 찾는다. 아이콘을 테스트에서 지목해야
+ * 하면 감싸는 `View` 에 `testID` 를 준다.
+ */
+function withIconInterop<T extends LucideIcon>(Icon: T): T {
+  // `Icon as LucideIcon` — `cssInterop` 의 매핑 타입은 컴포넌트 프롭에서 파생되는데, 제네릭 `T` 로는
+  // TS 가 그 조건부 타입을 못 푼다(`target: 'style'` 이 거부된다). 구체 타입으로 좁혀 주면 풀리고,
+  // 모든 lucide 아이콘이 같은 프롭을 갖는다는 사실은 `LucideIcon` 자체가 보장한다.
+  cssInterop(Icon as LucideIcon, {
+    className: {
+      target: 'style',
+      nativeStyleToProp: { width: true, height: true, color: true },
+    },
+  })
+  return Icon
+}
+
+export { LinearGradient, Svg, withIconInterop }

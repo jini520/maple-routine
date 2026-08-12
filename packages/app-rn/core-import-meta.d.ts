@@ -22,5 +22,11 @@
  * 남지 않도록 `src/__tests__/core-shims.test.ts` 가 core 의 glob 모듈 전수 목록을 고정한다.
  */
 interface ImportMeta {
-  glob(pattern: string, options?: { eager?: boolean; import?: string }): Record<string, unknown>
+  // `query` 는 step 4 에서 더했다 — `lib/world-emblem.ts` 가 `query: '?url'` 를 쓰는데, 그 파일이
+  // molecules 를 통해 타입 그래프에 들어오면서 드러났다. 옵션을 좁게 적어 둘수록 이렇게 **core 가
+  // 실제로 쓰는 형태**가 하나씩 밝혀진다(넓게 `any` 로 열면 그 정보가 사라진다).
+  glob(
+    pattern: string,
+    options?: { eager?: boolean; import?: string; query?: string },
+  ): Record<string, unknown>
 }

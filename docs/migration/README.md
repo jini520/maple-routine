@@ -371,6 +371,76 @@ NativeWind 가 자동으로 가로채는 것은 `react-native` 기본 컴포넌�
 굳혀서, 나중에 색이 진짜로 빠져도 초록으로 남는다. **이 스냅샷은 여전히 "예전과 같은가"에 답하지
 않는다.**
 
+#### 3-4단계 결과 — molecules 11개 (2026-08-12, **에셋 벽에 처음 부딪힘**)
+
+`packages/app-rn/src/components/molecules/` 로 11개가 옮겨졌다(원본은 그대로 — 원칙 3). 각 컴포넌트의
+ADR 확인 결과는 [parity-inventory §3](./parity-inventory.md) 의 «확인» 열에 있다.
+
+**이 단계에서 새로 알게 된 것은 대부분 "옮길 수 없는 것"이다.** 셋으로 갈린다.
+
+**① 에셋이 없다 — 셋이 절반만 왔다.** core 는 에셋 목록을 `import.meta.glob` 으로 만드는데
+(`boss-icons` · `world-emblem` · `item-icons`), Metro 에는 그 짝이 없다. **`require.context` 는
+Metro 엔 있어도 jest 에 없어**(실측: `require.context is not a function`) 이 저장소가 이미 거부한
+형태(*"앱은 도는데 테스트만 죽는"* — `core-shims.js`)라 쓸 수 없다. 그래서 step 1 이 만든 치환 표에
+셋을 더하고 **URL 만 `null`** 로 둔다(치환 1 → 4). 그 `null` 은 원본이 정의해 둔 폴백 경로라
+컴포넌트는 웹과 같은 분기를 탄다 — 보스 초상은 `?` 원, 아이템 아이콘은 회색 원, 월드 엠블럼은 생략.
+
+> **에셋이 아닌 것은 그대로 살렸다** — 보스 크롭 두 표(JSON)와 `isChallengersWorld`([[ADR-031]] 시즌
+> 보스 판정)는 대체 구현이 같은 JSON 을 읽어 답하고, 기대값을 JSON 에서 뽑는 테스트가 지킨다.
+> `item-icons` 만 통째로 `null` 이다(모듈 전체가 "이름 → 파일 → URL" 한 사슬이라 끝이 없으면 남는
+> 것도 없다).
+
+**이미지 분기를 미리 써 두지 않았다.** 죽은 코드라서만이 아니라 **`<Image source>` 에 무엇을 넣을지가
+아직 결정되지 않았기 때문**이다 — 웹의 `string` URL 과 달리 RN 정적 에셋은 `require()` 결과(숫자)다.
+`BossPortrait` 은 거기에 더해 CSS `background-size: "220% auto"` / `position: "60% 40%"` → RN 기하
+변환이 필요한데, 그 계산에는 **그림의 고유 종횡비**가 있어야 해서 에셋이 들어온 뒤에야 쓸 수 있다.
+두 결정에는 순서가 있다.
+
+**② 목록을 그릴 방법이 없다 — `CharacterSelectDropdown` 은 닫힌 상태만.** [[ADR-001]] 이 이 컴포넌트에
+걸린 이유가 여기서 갈렸다. **웹뷰 사정**(네이티브 `<select>` 메커니즘 · UA 화살표 억제 · `<option>` 에
+이미지를 못 넣어 생긴 엠블럼 겹치기)은 RN 에서 문제 자체가 사라지고, **제품 결정**([[ADR-096]] 결정 5
+두 크기의 치수 · 선택된 캐릭터의 엠블럼만 · chevron · `onSelect(ocid)`)은 그대로 지킨다. 다만
+**RN 에는 `<select>` 의 짝이 없어 앱이 목록을 직접 그려야 하고, 무엇으로 그리는지가 곧 디자인
+결정이다**(중앙 모달 · 바텀시트 · 트리거 아래 팝오버 — 셋 다 이 앱의 어법이다). 웹이 그 자리를 OS 에
+넘겼으므로 **참고할 옛 디자인이 없다** → step 5(오버레이 계층)와 함께 정한다. 여기서 조용히 새 화면을
+만들지 않는다.
+
+**③ `RefreshControl` 과 `PullToRefreshIndicator` 는 겹치는 물건이다.** 갈래를 적어 둔다 —
+`RefreshControl` 이 공짜로 주는 것은 [[ADR-072]]·[[ADR-073]] 이 손으로 만든 것 대부분이고(감쇠·임계·
+정착·UI 스레드 이동 → [[ADR-073]] 「남은 검증」의 *60fps* 질문이 **사라진다**), 줄 수 없는 것은
+정확히 [[ADR-074]] 가 정한 마크다(커스텀 그림 불가 · 당김 진행률을 안 알려줘 **드로잉이 원리적으로
+불가능** · 두 구간 연속성). 그래서 컴포넌트는 그대로 옮겨 두고, **고르는 것은 화면 배선(step 6)의
+제품 결정**으로 남긴다 — `RefreshControl` 을 고르면 [[ADR-074]] 결정 넷을 폐기하는 새 결정이 필요하다.
+
+**새로 대체한 `className` 넷**(step 3 의 목록에 이어서). 넷 다 **에러 없이 조용히 사라지는** 종류다.
+
+| 자리 | 웹 | RN | 왜 |
+|---|---|---|---|
+| `PartySizeStepper` | `disabled:opacity-40` | **JS 조건** | NativeWind 의 `disabled:` 는 CSS 의사 클래스라 `Pressable disabled` 프롭과 이어져 있지 않다 — 비활성 버튼이 **멀쩡한 색으로 보인다** |
+| 숫자 두 자리 | `tabular-nums` | `fontVariant`(`lib/text-styles.ts`) | NativeWind 가 그 클래스를 **스타일 없이 통과시킨다**(실측). 폭이 흔들려도 에러가 안 난다 |
+| `EmptyState` 단풍잎 | `fill-primary-ink` | `text-primary-ink` + `fill="currentColor"` | RN style 에 `fill` 이 없다. 색은 `Svg` 의 `color` 프롭에서 온다(step 3 배선) |
+| 절대 배치 세로 중앙 | `top-1/2 -translate-y-1/2` | `inset-y-0` + `justify-center` | 퍼센트 `translate` 는 RN 에서 해석이 갈린다. 같은 결과를 **레이아웃만으로** 낸다 |
+
+**아이콘은 `lucide-react-native` 1.24.0**(웹의 `lucide-react` 와 같은 버전 — 그림이 갈리면 같은
+아이콘이 두 앱에서 다르게 보인다). 두 가지를 실측으로 정했다.
+
+- **배럴이 아니라 아이콘별 경로로** 가져온다. `import { Users } from 'lucide-react-native'` 는 아이콘
+  1,900개를 전부 그래프에 넣고 Metro 는 트리셰이킹을 하지 않는다 — 같은 8개를 쓰는데
+  **배럴 3,365 모듈·5.5 MB vs 개별 1,626 모듈·3.7 MB**(1.8 MB 차이, `expo export`). OTA 로 나가는 앱이라
+  이 차이가 매 배포의 다운로드 크기다.
+- **`className` 은 아이콘마다 `cssInterop` 등록이 필요하다**(`lib/icons.ts` 한 파일에 모았다). 등록을
+  빼먹으면 SVG 와 같은 실패 모양 — 색·크기 없는 아이콘이 조용히 그려진다. 덤으로 알게 된 것:
+  lucide 의 `Icon` 이 `testID` 를 가로채 `data-testid` 로 바꾸므로 **아이콘에는 `testID` 를 줄 수 없다**
+  (지목해야 하면 감싸는 `View` 에 준다).
+
+**jest 설정 두 곳을 고쳤다** — `lucide-react-native` 가 `react-native` 조건에서 **ESM 만** 내보내는데
+`transformIgnorePatterns`(node_modules 제외)와 `transform`(`\.[jt]sx?$` 라 `.mjs` 는 트랜스포머가 없다)
+둘 다 막고 있었다. CJS 빌드로 매핑하는 대신 프리셋 값을 고친 것은 *"두 도구가 같은 파일을 본다"* 를
+지키기 위해서다. **`fireEvent` 는 RNTL 14 에서 Promise 를 돌려준다** — `await` 를 빠뜨리면 act 범위가
+겹쳐 **그 뒤 테스트들이 무관해 보이는 이유로 깨진다**(실측, 이 단계에서 한 번 겪었다).
+
+**RN 트리 스냅샷 16장을 새로 떴다.** 이 스냅샷도 여전히 *"앞으로 안 바뀌는가"* 에만 답한다.
+
 ### 4단계 — `app/` 화면 재작성
 
 - 화면 15개 + 하위 컴포넌트. **파일별 ADR 계약 체크리스트를 소진**하며 진행(원칙 2)
