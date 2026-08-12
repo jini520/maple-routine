@@ -32,30 +32,51 @@
  * `triangle-alert` 다. 그림은 같고, 이 파일에서 웹과 같은 이름으로 다시 내보낸다.
  */
 
+import Ban from 'lucide-react-native/icons/ban'
 import ChevronDown from 'lucide-react-native/icons/chevron-down'
+import CircleAlert from 'lucide-react-native/icons/circle-alert'
+import CircleCheckBig from 'lucide-react-native/icons/circle-check-big'
 import Clock from 'lucide-react-native/icons/clock'
 import Info from 'lucide-react-native/icons/info'
 import Minus from 'lucide-react-native/icons/minus'
 import Plus from 'lucide-react-native/icons/plus'
+import RefreshCw from 'lucide-react-native/icons/refresh-cw'
+import RotateCcw from 'lucide-react-native/icons/rotate-ccw'
 import Sparkles from 'lucide-react-native/icons/sparkles'
+import Star from 'lucide-react-native/icons/star'
 import TriangleAlert from 'lucide-react-native/icons/triangle-alert'
 import Users from 'lucide-react-native/icons/users'
+import X from 'lucide-react-native/icons/x'
 
 import { withIconInterop } from './nativewind-interop'
 
-/** 실패·경고 — `ErrorState` · `StaleBanner`. */
+/** 실패 토스트 — `Toast`(error). 웹의 `AlertCircle` 은 옛 별칭이고 실물이 `circle-alert` 다. */
+export const AlertCircleIcon = withIconInterop(CircleAlert)
+/** 실패·경고 — `ErrorState` · `StaleBanner` · `ErrorBoundary`. */
 export const AlertTriangleIcon = withIconInterop(TriangleAlert)
+/** 조회 불가 캐릭터 — `CharacterTrackingGrid`. */
+export const BanIcon = withIconInterop(Ban)
+/** 성공 토스트 — `Toast`(success). 웹의 `CheckCircle2` 실물은 `circle-check-big` 이다. */
+export const CheckCircle2Icon = withIconInterop(CircleCheckBig)
 /** 드롭다운 화살표 — `CharacterSelectDropdown`. */
 export const ChevronDownIcon = withIconInterop(ChevronDown)
 /** 아직 집계 전(pending 톤) — `UnavailableNotice`. */
 export const ClockIcon = withIconInterop(Clock)
-/** 조회 불가(정보 톤) — `UnavailableNotice`. */
+/** 조회 불가(정보 톤) — `UnavailableNotice` · 정보 토스트 `Toast`(info). */
 export const InfoIcon = withIconInterop(Info)
 /** 파티원 수 감소 — `PartySizeStepper`. */
 export const MinusIcon = withIconInterop(Minus)
 /** 파티원 수 증가 — `PartySizeStepper`. */
 export const PlusIcon = withIconInterop(Plus)
+/** 토스트 액션의 기본 아이콘('다시 시도' 전제 — [[ADR-063]]) — `Toast`. */
+export const RefreshCwIcon = withIconInterop(RefreshCw)
+/** '다시 시작' — `ErrorBoundary` 폴백. */
+export const RotateCcwIcon = withIconInterop(RotateCcw)
 /** 고가 드롭 반짝임 — `ValuableDropBadge`. */
 export const SparklesIcon = withIconInterop(Sparkles)
-/** 파티원 표식 — `PartySizeStepper`(compact). */
+/** 즐겨찾기(추적 중) 표식 — `CharacterTrackingGrid`. */
+export const StarIcon = withIconInterop(Star)
+/** 파티원 표식 — `PartySizeStepper`(compact) · 파티 인원 라벨 `PartySizeModal`. */
 export const UsersIcon = withIconInterop(Users)
+/** 닫기 — `Toast` · `PartySizeModal`. */
+export const XIcon = withIconInterop(X)

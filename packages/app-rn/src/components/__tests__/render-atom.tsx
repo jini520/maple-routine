@@ -16,6 +16,7 @@
 import { getThemeDefinition } from '@core/lib/theme-registry'
 import { render } from '@testing-library/react-native'
 import type { ReactElement } from 'react'
+import { SafeAreaProvider, type Metrics } from 'react-native-safe-area-context'
 
 import { ThemeProvider } from '../../theme/ThemeProvider'
 
@@ -24,6 +25,33 @@ export const 기본테마 = getThemeDefinition('머쉬맘')
 
 export function renderAtom(ui: ReactElement): ReturnType<typeof render> {
   return render(<ThemeProvider>{ui}</ThemeProvider>)
+}
+
+/**
+ * 오버레이(organisms)용 렌더 — `renderAtom` 에 `SafeAreaProvider` 를 하나 더 두른다.
+ *
+ * 안전영역을 **읽는 컴포넌트만** 이것을 쓴다. `renderAtom` 에 합치지 않은 이유는 그 프로바이더가
+ * 뷰를 하나 더 그려 **기존 스냅샷 전부가 흔들리기** 때문이고, 안전영역이 필요 없는 컴포넌트에까지
+ * 그 값을 흘려보내면 "왜 여기 있나"가 안 읽히기 때문이다.
+ *
+ * `initialMetrics` 를 주는 것은 선택이 아니라 필수다 — 없으면 실제 측정이 올 때까지 프로바이더가
+ * 자식을 아예 렌더하지 않아 테스트가 빈 트리를 본다(react-navigation 의 테스트 권장 방식과 같다).
+ * 값은 iPhone 계열의 인셋(상 59 · 하 34)이라 [[ADR-107]] 이 실측한 표와 같은 자리를 검사한다.
+ */
+export const 테스트_안전영역: Metrics = {
+  frame: { x: 0, y: 0, width: 390, height: 844 },
+  insets: { top: 59, left: 0, right: 0, bottom: 34 },
+}
+
+export function renderOverlay(
+  ui: ReactElement,
+  metrics: Metrics = 테스트_안전영역,
+): ReturnType<typeof render> {
+  return render(
+    <SafeAreaProvider initialMetrics={metrics}>
+      <ThemeProvider>{ui}</ThemeProvider>
+    </SafeAreaProvider>,
+  )
 }
 
 /**
