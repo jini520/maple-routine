@@ -105,3 +105,43 @@ cd packages/app-rn && npx expo prebuild --no-install --platform android && cd an
   진행한다. 여기서 손대면 그 규율이 무너진다.
 - **`packages/core`·`packages/app-capacitor` 를 수정하지 마라.**
 - 기존 테스트를 깨뜨리지 마라.
+
+---
+
+## 재개 안내 (2026-08-12 추가 — 실행이 중단됐다가 이어짐)
+
+앞선 실행이 아래를 만든 뒤 중단됐다. **커밋 전, 작업 트리에만 있다.**
+
+- `src/app/AppShell.tsx` · `ApiKeyNoticeModal.tsx`(+테스트·스냅샷) · `UpdatePromptModal.tsx`(503줄, +테스트)
+- `src/app/use-keyboard-visible.ts` · `src/boot-splash.ts` · `App.tsx` · `index.ts` 수정
+- `core-import-meta.d.ts` · `src/lib/icons.ts` · `TabNavigator.tsx` · `ErrorBoundary.tsx`(주석 정정) 수정
+
+### 반드시 고쳐야 하는 것 — **테스트 하나가 OOM 으로 죽는다**
+
+`src/app/__tests__/UpdatePromptModal.test.tsx` 가 **JavaScript heap out of memory** 로 스위트째
+실패한다(단독 실행 `--runInBand` 에서도 재현). 네이티브 스택에 같은 프레임이 반복돼 **무한 재귀
+또는 무한 렌더 루프**다. 전체 실행에서는 워커가 SIGTERM 으로 죽어 *"terminated by another
+process"* 로 보이는데, **그것은 증상이지 원인이 아니다.**
+
+이미 확인해 배제한 것(다시 보지 마라):
+
+- `renderOverlay` · `flattenStyle`(`components/__tests__/render-atom.tsx`) — **이 step 에서 안 바뀌었고**
+  다른 스위트 65개가 같은 헬퍼로 통과한다.
+- `ErrorBoundary.tsx` 변경 — **주석뿐이다**(로직 무변경).
+- `UpdatePromptModal` 본체에 `useEffect` 가 없고 `useState` 는 175행 한 곳(하위 컴포넌트)뿐이다.
+
+나머지 65 스위트 660개는 통과한다.
+
+### 안 끝난 것
+
+- **`src/__tests__/boot-order.test.ts` 가 없다.** `UpdatePromptModal.test.tsx` 머리 주석이 *"이 모달이
+  아직 아무 데도 마운트되지 않는다는 사실은 `boot-order.test.ts` 가 셸 쪽에서 본다"* 고 가리키는데
+  그 파일이 아직 없다. **부팅 순서 표(작업 1)를 코드로 고정하는 것이 이 step 의 핵심 산출물이다.**
+- 부팅 순서 표를 문서/주석에 남겼는지 확인하고, 없으면 만들어라.
+- AC 를 처음부터 끝까지 다시 돌려라(Android `assembleDebug` 포함 — 아직 한 번도 안 돌았다).
+
+### 살릴 만한 발견 하나 — 그대로 유지하라
+
+`ErrorBoundary.tsx` 주석의 **정정**: *"RN 에는 웹뷰 리로드의 짝이 없다"* 가 **사실이 아니다.**
+`expo` 의 `reloadAppAsync()` 가 지금 도는 번들을 다시 실행하며 OTA(`Updates.reloadAsync()`)와
+무관하다. [[ADR-065]] 결정 5 의 복구 수단이 실제로 존재한다는 뜻이라, 이 step 의 결과에 반드시 적어라.
