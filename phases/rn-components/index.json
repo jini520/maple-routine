@@ -45,7 +45,8 @@
     {
       "step": 5,
       "name": "organisms",
-      "status": "pending"
+      "status": "pending",
+      "started_at": "2026-08-12T14:01:41+0900"
     },
     {
       "step": 6,

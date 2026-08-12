@@ -110,3 +110,32 @@ grep -rnE "from '.*templates/" packages/app-rn/src/components/organisms | grep -
 - **`vitest.setup.ts` 등 웹 테스트 설정을 건드리지 마라.**
 - **`packages/core`·`packages/app-capacitor` 를 수정하지 마라.**
 - 기존 테스트를 깨뜨리지 마라.
+
+---
+
+## 재개 안내 (2026-08-12 추가 — 실행이 중단됐다가 이어짐)
+
+**코드는 이미 다 있다.** 앞선 실행이 컴포넌트 10개를 전부 만들고 커밋까지 마친 뒤 중단됐다.
+
+- `7a7edf5` — `CharacterTrackingPicker` (+ `CharacterTrackingGrid`)
+- `1bbb3cd` — 나머지 일곱(`BottomSheet` · `DropEffectOverlay` · `ErrorBoundary` · `Modal` ·
+  `PartySizeModal` · `ProgressModal` · `Toast` + `ToastStack`)
+
+AC 는 **전부 통과함을 확인했다**: vitest 199파일/3046개 · jest 58스위트/600개 · lint 0 errors ·
+`tsc --noEmit` · `expo export` · **Android `assembleDebug` BUILD SUCCESSFUL**. 계층 규칙 위반 0.
+
+`packages/core` 에 수정이 하나 보이면 그것은 **이 단계의 작업이 아니다** — `main` 에서 병행된
+온보딩 크래시 수정(6fb8ee9)을 옮긴 것이고 `35e56dc` 로 이미 별도 커밋됐다. 건드리지 마라.
+
+### 그래서 남은 일은 **문서**뿐이다
+
+1. **`docs/migration/parity-inventory.md` §3 «organisms (10)» 표에 «확인» 열을 채워라.**
+   atoms(step 3)·molecules(step 4)가 이미 그 형식으로 되어 있으니 **그대로 따르라.** 각 행의 ADR 을
+   실제로 열어 읽고, 구현이 그 결정을 어떻게 지켰는지 · RN 에서 갈린 자리가 무엇인지 · 무엇이
+   아직 안 왔는지(모션은 step 7, 에셋 레이어 등)를 적어라. 컴포넌트 파일 머리 주석에 그 근거가
+   이미 정리돼 있다.
+2. **`docs/migration/README.md` 에 «3-5단계 결과» 를 앞 단계들과 같은 형식으로 더하라.**
+3. `phases/rn-components/index.json` 의 step 5 를 `completed` 로 하고 summary 를 적어라.
+
+**컴포넌트 코드를 다시 쓰지 마라.** 이미 검증됐고, 다시 쓰면 통과한 것을 되돌릴 위험만 있다.
+정말로 틀린 것을 발견하면 고치되, 그 사실을 summary 에 적어라.
