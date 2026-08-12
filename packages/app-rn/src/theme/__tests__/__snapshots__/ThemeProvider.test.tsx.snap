@@ -1,0 +1,44 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`렌더 트리 스냅샷 — 이후 변경을 잡는 기준선(예전 화면과의 대조가 아니다) 기본 테마 1`] = `
+<View
+  style={
+    {
+      "flexBasis": "0%",
+      "flexGrow": 1,
+      "flexShrink": 1,
+    }
+  }
+>
+  <View
+    style={
+      {
+        "backgroundColor": "#FDFCF6",
+        "borderColor": "#CFC9AE",
+        "borderWidth": 1,
+      }
+    }
+    testID="card"
+  >
+    <Text
+      style={
+        {
+          "color": "#645C42",
+        }
+      }
+      testID="label"
+    >
+      토큰
+    </Text>
+    <View
+      style={
+        {
+          "backgroundColor": "#FCF6DD",
+          "borderColor": "#685B4A",
+        }
+      }
+      testID="badge"
+    />
+  </View>
+</View>
+`;

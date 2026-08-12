@@ -113,3 +113,34 @@ grep -c "@keyframes" packages/app-capacitor/src/index.css
   단계 4의 몫이고, 과장하면 아무도 다시 안 본다.
 - **`packages/core`·`packages/app-capacitor` 를 수정하지 마라.**
 - 기존 테스트를 깨뜨리지 마라.
+
+---
+
+## 재개 안내 (2026-08-12 추가 — 실행이 중단됐다가 이어짐)
+
+**모션 구현은 대부분 이미 있다.** 앞선 실행이 아래를 고친 뒤 중단됐다(**커밋 전, 작업 트리에만 있다**):
+
+`MapleSpinner` · `MapleSweepSpinner` · `ProgressBar` · `PullToRefreshIndicator` ·
+`DropEffectOverlay` · `Toast` · `lib/nativewind-interop.ts`
+
+확인한 것:
+
+- `setInterval`/`setTimeout` 로 프레임을 만드는 코드 **없음** ✅
+- [[ADR-103]] 의 1.5배 유지 ✅
+- `useReducedMotion()` 이 9곳에 배선됨(웹의 `motion-reduce:animate-none` 짝) ✅
+- SVG 속성은 `useAnimatedProps`, View 스타일은 CSS API — 두 갈래인 이유가 파일 주석에 있다
+
+### 남은 일
+
+1. **스냅샷 10개가 낡았다.** 8개 스위트에서 실패하는데 **전부 트리 불일치이고 동작 실패는 하나도
+   없다** — 애니메이션 노드가 트리에 들어와서다. 새 트리가 의도한 모양인지 확인한 뒤 갱신하라.
+   (`jest -u` 로 한 번에 덮기 전에, 늘어난 노드가 실제로 애니메이션 배선인지 눈으로 보라.)
+2. `@keyframes` 원본 8종과 구현 목록을 대조하라. 아직 안 온 것이 있으면 그 사실을 적어라.
+3. **문서**: `docs/migration/parity-inventory.md` 의 해당 행들과 `docs/migration/README.md` 의
+   «3-7단계 결과» 를 앞 단계들과 같은 형식으로 쓴다.
+4. `phases/rn-components/index.json` 의 step 7 을 `completed` 로.
+
+`src/__tests__/anim-probe.test.tsx` 는 `console.log` 만 있고 단언이 없는 조사용 임시 파일이라
+지웠다. 필요하면 다시 만들되 **커밋에 남기지 마라.**
+
+**이 단계의 판정은 여전히 눈이다.** "애니메이션이 예전과 같다"고 쓰지 마라 — 화면이 없다.

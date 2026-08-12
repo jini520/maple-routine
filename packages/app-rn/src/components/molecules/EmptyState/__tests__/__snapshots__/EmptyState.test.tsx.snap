@@ -1,0 +1,506 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`EmptyState 렌더 트리 스냅샷 — 이후 변경을 잡는 기준선(예전 화면과의 대조가 아니다) 1`] = `
+<View
+  style={
+    {
+      "flexBasis": "0%",
+      "flexGrow": 1,
+      "flexShrink": 1,
+    }
+  }
+>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "backgroundColor": "#FDFCF6",
+        "borderColor": "#CFC9AE",
+        "borderRadius": 14,
+        "borderWidth": 1,
+        "columnGap": 12,
+        "paddingBottom": 32,
+        "paddingLeft": 16,
+        "paddingRight": 16,
+        "paddingTop": 32,
+        "rowGap": 12,
+      }
+    }
+    testID="empty-state"
+  >
+    <View
+      aria-hidden={true}
+      style={
+        {
+          "alignItems": "center",
+          "backgroundColor": "#FEECDA",
+          "borderRadius": 9999,
+          "height": 56,
+          "justifyContent": "center",
+          "width": 56,
+        }
+      }
+      testID="empty-state-badge"
+    >
+      <RNSVGSvgView
+        align="xMidYMid"
+        bbHeight={28}
+        bbWidth={28}
+        fill="none"
+        focusable={false}
+        height={28}
+        meetOrSlice={0}
+        minX={0}
+        minY={0}
+        stroke="#F58B0F"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.75}
+        style={
+          [
+            {
+              "backgroundColor": "transparent",
+              "borderWidth": 0,
+            },
+            {},
+            {
+              "flex": 0,
+              "height": 28,
+              "width": 28,
+            },
+          ]
+        }
+        vbHeight={24}
+        vbWidth={24}
+        width={28}
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <RNSVGGroup
+          fill={null}
+          propList={
+            [
+              "fill",
+              "stroke",
+              "strokeWidth",
+              "strokeLinecap",
+              "strokeLinejoin",
+            ]
+          }
+          stroke={
+            {
+              "payload": 4294281999,
+              "type": 0,
+            }
+          }
+          strokeLinecap={1}
+          strokeLinejoin={1}
+          strokeWidth={1.75}
+        >
+          <RNSVGPath
+            d="M14.5 17.5 3 6 3 3 6 3 17.5 14.5"
+            fill={null}
+            propList={
+              [
+                "fill",
+                "stroke",
+                "strokeWidth",
+                "strokeLinecap",
+                "strokeLinejoin",
+              ]
+            }
+            stroke={
+              {
+                "payload": 4294281999,
+                "type": 0,
+              }
+            }
+            strokeLinecap={1}
+            strokeLinejoin={1}
+            strokeWidth={1.75}
+          />
+          <RNSVGLine
+            fill={null}
+            propList={
+              [
+                "fill",
+                "stroke",
+                "strokeWidth",
+                "strokeLinecap",
+                "strokeLinejoin",
+              ]
+            }
+            stroke={
+              {
+                "payload": 4294281999,
+                "type": 0,
+              }
+            }
+            strokeLinecap={1}
+            strokeLinejoin={1}
+            strokeWidth={1.75}
+            x1="13"
+            x2="19"
+            y1="19"
+            y2="13"
+          />
+          <RNSVGLine
+            fill={null}
+            propList={
+              [
+                "fill",
+                "stroke",
+                "strokeWidth",
+                "strokeLinecap",
+                "strokeLinejoin",
+              ]
+            }
+            stroke={
+              {
+                "payload": 4294281999,
+                "type": 0,
+              }
+            }
+            strokeLinecap={1}
+            strokeLinejoin={1}
+            strokeWidth={1.75}
+            x1="16"
+            x2="20"
+            y1="16"
+            y2="20"
+          />
+          <RNSVGLine
+            fill={null}
+            propList={
+              [
+                "fill",
+                "stroke",
+                "strokeWidth",
+                "strokeLinecap",
+                "strokeLinejoin",
+              ]
+            }
+            stroke={
+              {
+                "payload": 4294281999,
+                "type": 0,
+              }
+            }
+            strokeLinecap={1}
+            strokeLinejoin={1}
+            strokeWidth={1.75}
+            x1="19"
+            x2="21"
+            y1="21"
+            y2="19"
+          />
+          <RNSVGPath
+            d="M14.5 6.5 18 3 21 3 21 6 17.5 9.5"
+            fill={null}
+            propList={
+              [
+                "fill",
+                "stroke",
+                "strokeWidth",
+                "strokeLinecap",
+                "strokeLinejoin",
+              ]
+            }
+            stroke={
+              {
+                "payload": 4294281999,
+                "type": 0,
+              }
+            }
+            strokeLinecap={1}
+            strokeLinejoin={1}
+            strokeWidth={1.75}
+          />
+          <RNSVGLine
+            fill={null}
+            propList={
+              [
+                "fill",
+                "stroke",
+                "strokeWidth",
+                "strokeLinecap",
+                "strokeLinejoin",
+              ]
+            }
+            stroke={
+              {
+                "payload": 4294281999,
+                "type": 0,
+              }
+            }
+            strokeLinecap={1}
+            strokeLinejoin={1}
+            strokeWidth={1.75}
+            x1="5"
+            x2="9"
+            y1="14"
+            y2="18"
+          />
+          <RNSVGLine
+            fill={null}
+            propList={
+              [
+                "fill",
+                "stroke",
+                "strokeWidth",
+                "strokeLinecap",
+                "strokeLinejoin",
+              ]
+            }
+            stroke={
+              {
+                "payload": 4294281999,
+                "type": 0,
+              }
+            }
+            strokeLinecap={1}
+            strokeLinejoin={1}
+            strokeWidth={1.75}
+            x1="7"
+            x2="4"
+            y1="17"
+            y2="20"
+          />
+          <RNSVGLine
+            fill={null}
+            propList={
+              [
+                "fill",
+                "stroke",
+                "strokeWidth",
+                "strokeLinecap",
+                "strokeLinejoin",
+              ]
+            }
+            stroke={
+              {
+                "payload": 4294281999,
+                "type": 0,
+              }
+            }
+            strokeLinecap={1}
+            strokeLinejoin={1}
+            strokeWidth={1.75}
+            x1="3"
+            x2="5"
+            y1="19"
+            y2="21"
+          />
+        </RNSVGGroup>
+      </RNSVGSvgView>
+    </View>
+    <View
+      style={
+        {
+          "columnGap": 4,
+          "rowGap": 4,
+        }
+      }
+    >
+      <Text
+        style={
+          {
+            "color": "#241208",
+            "fontSize": 14,
+            "fontWeight": "600",
+            "lineHeight": 20,
+            "textAlign": "center",
+          }
+        }
+        testID="empty-state-title"
+      >
+        추적할 주간 보스가 없습니다
+      </Text>
+      <Text
+        style={
+          {
+            "color": "#645C42",
+            "fontSize": 12,
+            "lineHeight": 16,
+            "marginLeft": "auto",
+            "marginRight": "auto",
+            "maxWidth": 240,
+            "textAlign": "center",
+          }
+        }
+        testID="empty-state-description"
+      >
+        보스 관리에서 이번 주에 잡을 보스를 골라주세요
+      </Text>
+    </View>
+    <View
+      accessibilityState={
+        {
+          "busy": undefined,
+          "checked": undefined,
+          "disabled": undefined,
+          "expanded": undefined,
+          "selected": undefined,
+        }
+      }
+      accessibilityValue={
+        {
+          "max": undefined,
+          "min": undefined,
+          "now": undefined,
+          "text": undefined,
+        }
+      }
+      accessible={true}
+      collapsable={false}
+      focusable={true}
+      onBlur={[Function]}
+      onClick={[Function]}
+      onFocus={[Function]}
+      onResponderGrant={[Function]}
+      onResponderMove={[Function]}
+      onResponderRelease={[Function]}
+      onResponderTerminate={[Function]}
+      onResponderTerminationRequest={[Function]}
+      onStartShouldSetResponder={[Function]}
+      role="button"
+      style={
+        {
+          "backgroundColor": "#F58B0F",
+          "borderRadius": 9999,
+          "paddingBottom": 8,
+          "paddingLeft": 16,
+          "paddingRight": 16,
+          "paddingTop": 8,
+        }
+      }
+    >
+      <Text
+        style={
+          {
+            "color": "#FFEEE2",
+            "fontSize": 12,
+            "fontWeight": "600",
+            "lineHeight": 16,
+          }
+        }
+      >
+        보스 관리
+      </Text>
+    </View>
+  </View>
+</View>
+`;
+
+exports[`EmptyState 렌더 트리 스냅샷 — 이후 변경을 잡는 기준선(예전 화면과의 대조가 아니다) 2`] = `
+<View
+  style={
+    {
+      "flexBasis": "0%",
+      "flexGrow": 1,
+      "flexShrink": 1,
+    }
+  }
+>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "columnGap": 16,
+        "rowGap": 16,
+      }
+    }
+    testID="empty-state"
+  >
+    <View
+      aria-hidden={true}
+      style={
+        {
+          "alignItems": "center",
+          "backgroundColor": "#FEECDA",
+          "borderRadius": 9999,
+          "height": 84,
+          "justifyContent": "center",
+          "width": 84,
+        }
+      }
+      testID="empty-state-badge"
+    >
+      <RNSVGSvgView
+        align="xMidYMid"
+        bbHeight={43}
+        bbWidth={42}
+        color="#F58B0F"
+        focusable={false}
+        height={43}
+        meetOrSlice={0}
+        minX={0}
+        minY={0}
+        style={
+          [
+            {
+              "backgroundColor": "transparent",
+              "borderWidth": 0,
+            },
+            {},
+            {
+              "flex": 0,
+              "height": 43,
+              "width": 42,
+            },
+          ]
+        }
+        testID="empty-state-leaf"
+        vbHeight={130}
+        vbWidth={127}
+        width={42}
+      >
+        <RNSVGGroup
+          fill={
+            {
+              "payload": 4278190080,
+              "type": 0,
+            }
+          }
+        >
+          <RNSVGPath
+            d="M60.4426 107.504L59.1392 127.924C59.1024 128.5 59.5598 128.987 60.1372 128.987H65.9593C66.5534 128.987 67.0165 128.472 66.9537 127.882L64.785 107.496C64.6975 106.673 65.5908 106.106 66.2984 106.536L78.2704 113.805C78.4651 113.923 78.6944 113.971 78.9203 113.941L103.215 110.732C104.008 110.628 104.363 109.681 103.835 109.081L91.452 94.9894C91.0117 94.4885 91.1759 93.7052 91.7802 93.4231L118.529 80.9405C119.315 80.5738 119.293 79.4491 118.494 79.1126L112.061 76.4041C111.526 76.1789 111.295 75.5471 111.558 75.0296L125.96 46.675C126.366 45.8757 125.596 44.9873 124.747 45.275L98.4688 54.1831C97.9655 54.3537 97.4167 54.1008 97.2193 53.6074L95.2595 48.7079C94.9641 47.9693 93.9662 47.8547 93.5109 48.5071L82.408 64.4213C81.7836 65.3163 80.3814 64.7067 80.6101 63.6396L88.1353 28.5217C88.311 27.7019 87.4603 27.0428 86.7103 27.4178L81.4218 30.062C80.9453 30.3003 80.3657 30.1231 80.1038 29.6592L63.9299 1.00826C63.5499 0.335101 62.5824 0.329222 62.1943 0.997712L45.543 29.6749C45.2779 30.1315 44.7033 30.3033 44.231 30.0672L38.9323 27.4178C38.1823 27.0428 37.3315 27.7018 37.5072 28.5217L44.9884 63.4338C45.2189 64.5095 43.7966 65.1145 43.1815 64.2025L32.5593 48.4523C32.1246 47.8077 31.1528 47.884 30.824 48.5885L28.4482 53.6797C28.2334 54.14 27.7076 54.3661 27.2258 54.2055L1.8202 45.7369C0.98094 45.4572 0.218491 46.3249 0.603813 47.1212L14.1413 75.0988C14.3797 75.5913 14.1779 76.184 13.6884 76.4287L7.43998 79.553C6.68865 79.9286 6.70724 81.0071 7.47107 81.3567L33.8706 93.4379C34.4733 93.7136 34.6458 94.4888 34.217 94.9941L22.2282 109.124C21.7222 109.72 22.0657 110.64 22.8386 110.759L46.6876 114.428C46.9344 114.466 47.1865 114.41 47.3943 114.272L58.8899 106.608C59.5787 106.149 60.4953 106.678 60.4426 107.504Z"
+            fill={
+              {
+                "type": 2,
+              }
+            }
+            propList={
+              [
+                "fill",
+              ]
+            }
+          />
+        </RNSVGGroup>
+      </RNSVGSvgView>
+    </View>
+    <View
+      style={
+        {
+          "columnGap": 4,
+          "rowGap": 4,
+        }
+      }
+    >
+      <Text
+        style={
+          {
+            "color": "#241208",
+            "fontSize": 16,
+            "fontWeight": "600",
+            "lineHeight": 24,
+            "textAlign": "center",
+          }
+        }
+        testID="empty-state-title"
+      >
+        표시할 캐릭터가 없습니다
+      </Text>
+    </View>
+  </View>
+</View>
+`;

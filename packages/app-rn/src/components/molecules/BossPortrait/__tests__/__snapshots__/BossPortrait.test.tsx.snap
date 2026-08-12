@@ -1,0 +1,41 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`BossPortrait 렌더 트리 스냅샷 — 이후 변경을 잡는 기준선(예전 화면과의 대조가 아니다) 1`] = `
+<View
+  style={
+    {
+      "flexBasis": "0%",
+      "flexGrow": 1,
+      "flexShrink": 1,
+    }
+  }
+>
+  <View
+    accessibilityLabel="루시드"
+    style={
+      {
+        "alignItems": "center",
+        "backgroundColor": "#E4E1CE",
+        "borderRadius": 9999,
+        "flexShrink": 0,
+        "height": 40,
+        "justifyContent": "center",
+        "width": 40,
+      }
+    }
+    testID="boss-portrait"
+  >
+    <Text
+      style={
+        {
+          "color": "#645C42",
+          "fontSize": 12,
+          "lineHeight": 16,
+        }
+      }
+    >
+      ?
+    </Text>
+  </View>
+</View>
+`;

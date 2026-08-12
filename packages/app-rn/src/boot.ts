@@ -14,24 +14,25 @@ import {
 import { setPreferencesPort, setSqlitePort } from '@core/storage/ports'
 
 import { rnAdsPort } from './native/adapters/rn-ads'
+import { rnBackGesturePort } from './native/adapters/rn-back-gesture'
 import { rnColorSchemePort } from './native/adapters/rn-color-scheme'
 import { rnHuntingTimerPort } from './native/adapters/rn-hunting-timer'
 import { rnKeyboardPort } from './native/adapters/rn-keyboard'
 import { rnNotificationsPort } from './native/adapters/rn-notifications'
 import { rnSplashScreenPort } from './native/adapters/rn-splash-screen'
 import { rnStatusBarPort } from './native/adapters/rn-status-bar'
-import {
-  notImplementedBackGesturePort,
-  notImplementedLiveUpdatePort,
-  notImplementedSystemBarsPort,
-  notImplementedThemeAppearancePort,
-} from './native/adapters/not-implemented'
+import { rnSystemBarsPort } from './native/adapters/rn-system-bars'
+import { rnThemeAppearancePort } from './native/adapters/rn-theme-appearance'
+import { notImplementedLiveUpdatePort } from './native/adapters/not-implemented'
 import { rnPreferencesPort } from './storage/adapters/rn-preferences'
 import { rnSqlitePort } from './storage/adapters/rn-sqlite'
 
 /**
  * 포트 13종을 한 번에 주입한다([[ADR-127]] 결정 4 — `packages/core` 는 인터페이스만 갖고 구현은
  * 앱이 넣는다). `app-capacitor` 의 짝은 `main.tsx` + `native/adapters/index.ts` 다.
+ *
+ * (아래 `setThemeAppearancePort` 가 값을 놓는 자리는 `src/theme/appearance-store.ts` 이고 그것을
+ * 읽는 것은 `ThemeProvider` 다 — 이 포트만 부팅 배선과 렌더 트리가 함께 있어야 성립한다.)
  *
  * ## 언제 불러야 하는가 — **저장소·네이티브를 처음 만지는 코드보다 먼저**
  *
@@ -50,30 +51,39 @@ import { rnSqlitePort } from './storage/adapters/rn-sqlite'
  * 자리에서 보장한다(`installCapacitorNativePorts` 와 같은 판단). 주입 순서는 서로 무관하다 —
  * 포트끼리 참조하지 않는다.
  *
- * ## 넷은 아직 구현이 아니라 **거부**다
+ * ## 하나는 아직 구현이 아니라 **거부**다
  *
- * `ThemeAppearancePort`·`SystemBarsPort`·`BackGesturePort` 는 3단계(뷰 레이어)에서, `LiveUpdatePort`
- * 는 [[ADR-127]] 결정 7 의 별도 ADR 에서 채워진다. 그때까지 비워 두지 않고 **던지는 구현**을 넣는
- * 이유는 `not-implemented.ts` 가 적어 두었다 — 슬롯의 일반 메시지는 *"주입을 잊었다"* 로 읽히지
- * *"아직 안 만들었다"* 로 읽히지 않는다.
+ * `LiveUpdatePort` 는 [[ADR-127]] 결정 7 의 별도 ADR 에서 채워진다. 그때까지 비워 두지 않고
+ * **던지는 구현**을 넣는 이유는 `not-implemented.ts` 가 적어 두었다 — 슬롯의 일반 메시지는
+ * *"주입을 잊었다"* 로 읽히지 *"아직 안 만들었다"* 로 읽히지 않는다.
+ *
+ * 그 목록을 떠난 것이 셋이다:
+ * - `ThemeAppearancePort`(step 1, theme-system) — `rn-theme-appearance.ts` 가 자리를 채웠다.
+ * - `BackGesturePort`(step 2, navigation) — **절반만 구현이다.** `moveToBackground` 는 실구현이고
+ *   (그 하나는 내비게이션 라이브러리가 대신해 주지 않는다, [[ADR-120]] 결정 18) 나머지 둘은 계속
+ *   던지되 사유가 갈린다: *"아직 안 했다"* 가 아니라 *"이제 네이티브 스택이 소유한다."*
+ *   그래서 메시지도 `not-implemented.ts` 가 아니라 `rn-back-gesture.ts` 가 갖는다.
+ * - `SystemBarsPort`(step 6, templates) — 이쪽도 절반씩이다. `setNavigationBarStyle` 은 로컬 Expo
+ *   모듈로 그대로 옮겼고, `refreshSafeAreaInsets` 는 **의도적인 no-op** 이다(던지지 않는다 —
+ *   `SafeAreaProvider` 가 그 갱신을 이미 자동으로 하므로 거부가 진짜 고장과 구분을 없앤다).
  */
 export function installPorts(): void {
   // 저장소 먼저 — 웹 쪽 `main.tsx` 와 같은 순서다(기술적 의존은 없고, 두 앱을 나란히 읽기 위한 것).
   setPreferencesPort(rnPreferencesPort)
   setSqlitePort(rnSqlitePort)
 
-  // RN 구현이 있는 일곱.
+  // RN 구현이 있는 열.
   setAdsPort(rnAdsPort)
+  setBackGesturePort(rnBackGesturePort)
   setColorSchemePort(rnColorSchemePort)
   setHuntingTimerPort(rnHuntingTimerPort)
   setKeyboardPort(rnKeyboardPort)
   setNotificationsPort(rnNotificationsPort)
   setSplashScreenPort(rnSplashScreenPort)
   setStatusBarPort(rnStatusBarPort)
+  setSystemBarsPort(rnSystemBarsPort)
+  setThemeAppearancePort(rnThemeAppearancePort)
 
-  // 아직 매핑되지 않은 넷 — 부르면 왜 없는지를 말하며 던진다.
-  setBackGesturePort(notImplementedBackGesturePort)
+  // 아직 매핑되지 않은 하나 — 부르면 왜 없는지를 말하며 던진다.
   setLiveUpdatePort(notImplementedLiveUpdatePort)
-  setSystemBarsPort(notImplementedSystemBarsPort)
-  setThemeAppearancePort(notImplementedThemeAppearancePort)
 }

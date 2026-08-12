@@ -1,0 +1,289 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`DifficultySegment 렌더 트리 스냅샷 — 이후 변경을 잡는 기준선(예전 화면과의 대조가 아니다) 1`] = `
+<View
+  style={
+    {
+      "flexBasis": "0%",
+      "flexGrow": 1,
+      "flexShrink": 1,
+    }
+  }
+>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "columnGap": 8,
+        "flexDirection": "row",
+        "flexWrap": "wrap",
+        "rowGap": 8,
+      }
+    }
+  >
+    <View
+      accessibilityState={
+        {
+          "busy": undefined,
+          "checked": undefined,
+          "disabled": false,
+          "expanded": undefined,
+          "selected": false,
+        }
+      }
+      accessibilityValue={
+        {
+          "max": undefined,
+          "min": undefined,
+          "now": undefined,
+          "text": undefined,
+        }
+      }
+      accessible={true}
+      collapsable={false}
+      focusable={true}
+      onBlur={[Function]}
+      onClick={[Function]}
+      onFocus={[Function]}
+      onResponderGrant={[Function]}
+      onResponderMove={[Function]}
+      onResponderRelease={[Function]}
+      onResponderTerminate={[Function]}
+      onResponderTerminationRequest={[Function]}
+      onStartShouldSetResponder={[Function]}
+      role="button"
+      style={
+        {
+          "borderRadius": 9999,
+          "opacity": 0.4000000059604645,
+        }
+      }
+    >
+      <ViewManagerAdapter_ExpoLinearGradient
+        colors={
+          [
+            4284269277,
+            4281045936,
+          ]
+        }
+        endPoint={
+          [
+            0.5,
+            1,
+          ]
+        }
+        startPoint={
+          [
+            0.5,
+            0,
+          ]
+        }
+        style={
+          {
+            "alignItems": "center",
+            "borderColor": "#1f7690",
+            "borderRadius": 9999,
+            "borderWidth": 1,
+            "flexDirection": "row",
+            "height": 20,
+            "paddingLeft": 10,
+            "paddingRight": 10,
+          }
+        }
+      >
+        <Text
+          style={
+            {
+              "color": "#ffffff",
+              "fontSize": 10,
+              "fontWeight": "800",
+              "letterSpacing": 0.3,
+              "textShadowColor": "rgba(0,0,0,0.25)",
+              "textShadowOffset": {
+                "height": 1,
+                "width": 0,
+              },
+              "textShadowRadius": 1,
+            }
+          }
+        >
+          노멀
+        </Text>
+      </ViewManagerAdapter_ExpoLinearGradient>
+    </View>
+    <View
+      accessibilityState={
+        {
+          "busy": undefined,
+          "checked": undefined,
+          "disabled": false,
+          "expanded": undefined,
+          "selected": true,
+        }
+      }
+      accessibilityValue={
+        {
+          "max": undefined,
+          "min": undefined,
+          "now": undefined,
+          "text": undefined,
+        }
+      }
+      accessible={true}
+      collapsable={false}
+      focusable={true}
+      onBlur={[Function]}
+      onClick={[Function]}
+      onFocus={[Function]}
+      onResponderGrant={[Function]}
+      onResponderMove={[Function]}
+      onResponderRelease={[Function]}
+      onResponderTerminate={[Function]}
+      onResponderTerminationRequest={[Function]}
+      onStartShouldSetResponder={[Function]}
+      role="button"
+      style={
+        {
+          "borderRadius": 9999,
+        }
+      }
+    >
+      <ViewManagerAdapter_ExpoLinearGradient
+        colors={
+          [
+            4293362854,
+            4290792308,
+          ]
+        }
+        endPoint={
+          [
+            0.5,
+            1,
+          ]
+        }
+        startPoint={
+          [
+            0.5,
+            0,
+          ]
+        }
+        style={
+          {
+            "alignItems": "center",
+            "borderColor": "#9c3a5c",
+            "borderRadius": 9999,
+            "borderWidth": 1,
+            "flexDirection": "row",
+            "height": 20,
+            "paddingLeft": 10,
+            "paddingRight": 10,
+          }
+        }
+      >
+        <Text
+          style={
+            {
+              "color": "#ffffff",
+              "fontSize": 10,
+              "fontWeight": "800",
+              "letterSpacing": 0.3,
+              "textShadowColor": "rgba(0,0,0,0.25)",
+              "textShadowOffset": {
+                "height": 1,
+                "width": 0,
+              },
+              "textShadowRadius": 1,
+            }
+          }
+        >
+          하드
+        </Text>
+      </ViewManagerAdapter_ExpoLinearGradient>
+    </View>
+    <View
+      accessibilityState={
+        {
+          "busy": undefined,
+          "checked": undefined,
+          "disabled": false,
+          "expanded": undefined,
+          "selected": false,
+        }
+      }
+      accessibilityValue={
+        {
+          "max": undefined,
+          "min": undefined,
+          "now": undefined,
+          "text": undefined,
+        }
+      }
+      accessible={true}
+      collapsable={false}
+      focusable={true}
+      onBlur={[Function]}
+      onClick={[Function]}
+      onFocus={[Function]}
+      onResponderGrant={[Function]}
+      onResponderMove={[Function]}
+      onResponderRelease={[Function]}
+      onResponderTerminate={[Function]}
+      onResponderTerminationRequest={[Function]}
+      onStartShouldSetResponder={[Function]}
+      role="button"
+      style={
+        {
+          "borderRadius": 9999,
+          "opacity": 0.4000000059604645,
+        }
+      }
+    >
+      <ViewManagerAdapter_ExpoLinearGradient
+        colors={
+          [
+            4282137660,
+            4280426271,
+          ]
+        }
+        endPoint={
+          [
+            0.5,
+            1,
+          ]
+        }
+        startPoint={
+          [
+            0.5,
+            0,
+          ]
+        }
+        style={
+          {
+            "alignItems": "center",
+            "borderColor": "#caa87f",
+            "borderRadius": 9999,
+            "borderWidth": 1,
+            "flexDirection": "row",
+            "height": 20,
+            "paddingLeft": 10,
+            "paddingRight": 10,
+          }
+        }
+      >
+        <Text
+          style={
+            {
+              "color": "#f0d8b8",
+              "fontSize": 10,
+              "fontWeight": "800",
+              "letterSpacing": 0.3,
+            }
+          }
+        >
+          카오스
+        </Text>
+      </ViewManagerAdapter_ExpoLinearGradient>
+    </View>
+  </View>
+</View>
+`;
