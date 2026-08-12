@@ -55,6 +55,11 @@ const SHIMMED_CORE_MODULES = [
     shim: 'src/lib/rn-item-icons.ts',
     why: 'import.meta.glob 으로 아이템 아이콘 목록을 만든다 — 모듈 전체가 이름→파일→URL 한 사슬이라 URL 이 없으면 남는 것이 없다.',
   },
+  {
+    core: 'lib/drop-effect-frames',
+    shim: 'src/lib/rn-drop-effect-frames.ts',
+    why: 'import.meta.glob 으로 고가 드롭 연출 프레임 목록을 만든다. 빈 배열은 원본이 정의한 정상 경로("연출 없이 닫기만")라 DropEffectOverlay 가 웹과 같은 분기를 탄다.',
+  },
 ]
 
 /**

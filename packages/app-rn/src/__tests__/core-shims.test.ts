@@ -15,6 +15,7 @@ import path from 'node:path'
 import bossPortraitIconCrops from '@core/data/boss-portrait-icon-crops.json'
 import worldEmblems from '@core/data/world-emblems.json'
 import { getBossPortraitIconCrop, getBossPortraitUrl } from '@core/lib/boss-icons'
+import { DROP_EFFECT_FRAMES } from '@core/lib/drop-effect-frames'
 import { getItemIconUrl, getItemIconUrlByFile } from '@core/lib/item-icons'
 import { getThemeBackgroundUrl } from '@core/lib/theme-backgrounds'
 import { DEFAULT_THEME, buildThemeCss, getThemeDefinition } from '@core/lib/theme-registry'
@@ -39,12 +40,13 @@ function coreSourceFiles(dir: string): string[] {
 }
 
 describe('core 모듈 치환', () => {
-  it('치환 대상은 지금 넷이고, 그 대체 파일이 실재한다', () => {
+  it('치환 대상은 지금 다섯이고, 그 대체 파일이 실재한다', () => {
     expect(SHIMMED_CORE_MODULES.map(({ core }) => core)).toEqual([
       'lib/theme-backgrounds',
       'lib/boss-icons',
       'lib/world-emblem',
       'lib/item-icons',
+      'lib/drop-effect-frames',
     ])
 
     for (const { shim, why } of SHIMMED_CORE_MODULES) {
@@ -84,6 +86,13 @@ describe('core 모듈 치환', () => {
       ['아이템 아이콘(파일명)', () => getItemIconUrlByFile('Limit_Ring.webp')],
     ])('%s 은 RN 번들에 없다', (_label, resolve) => {
       expect(resolve()).toBeNull()
+    })
+
+    // step 5(organisms)가 더한 넷째 자리. 여기만 `null` 이 아니라 **빈 배열**인 이유는 원본이
+    // 그렇게 정의해 뒀기 때문이다 — `DropEffectOverlay` 는 `loop.length === 0` 을 보고 "연출 없이
+    // 닫기만" 분기로 간다([[ADR-038]]).
+    it('고가 드롭 연출 프레임은 네 단계 모두 비어 있다', () => {
+      expect(DROP_EFFECT_FRAMES).toEqual({ screen: [], pre: [], loop: [], end: [] })
     })
   })
 
@@ -134,14 +143,16 @@ describe('아직 치환되지 않은 glob 모듈', () => {
     expect(found).toEqual(KNOWN_GLOB_MODULES)
   })
 
-  // 여덟 중 넷이 치환됐다(step 3 은 하나였고 step 4 가 셋을 더했다 — molecules 셋이 그 모듈을
-  // 부른다). 남은 넷은 **쓰기 시작할 때** 같은 처리가 필요하다(에셋 해석을 포트로 뒤집는 것이
-  // 제대로 된 답이고, 그건 core 인터페이스를 늘리는 별도 결정이다).
-  it('여덟 중 치환된 것은 넷이다', () => {
+  // 여덟 중 다섯이 치환됐다(step 3 하나 → step 4 가 셋 → step 5 가 `drop-effect-frames` 하나 —
+  // 그 컴포넌트를 옮길 때마다 필요한 것이 하나씩 드러났다). 남은 셋은 **쓰기 시작할 때** 같은
+  // 처리가 필요하다(에셋 해석을 포트로 뒤집는 것이 제대로 된 답이고, 그건 core 인터페이스를
+  // 늘리는 별도 결정이다).
+  it('여덟 중 치환된 것은 다섯이다', () => {
     const shimmed = SHIMMED_CORE_MODULES.map(({ core }) => `${core}.ts`)
 
     expect(KNOWN_GLOB_MODULES.filter((module) => shimmed.includes(module))).toEqual([
       'lib/boss-icons.ts',
+      'lib/drop-effect-frames.ts',
       'lib/item-icons.ts',
       'lib/theme-backgrounds.ts',
       'lib/world-emblem.ts',
@@ -150,7 +161,6 @@ describe('아직 치환되지 않은 glob 모듈', () => {
       'data/feature-guides/index.ts',
       'lib/daily-quest-backgrounds.ts',
       'lib/daily-quest-icons.ts',
-      'lib/drop-effect-frames.ts',
     ])
   })
 })

@@ -55,7 +55,14 @@ const NEGATIVE_LOOKAHEAD = '(?!('
 module.exports = {
   preset: 'jest-expo',
   testMatch: ['**/*.test.[jt]s?(x)'],
+  // reanimated 4 가 `react-native-worklets` 위에 서 있고 그 패키지의 `.native.*` 변형이 jest 에서
+  // 즉시 죽는다 — 프리셋의 해석기를 대체하는 것이 아니라 **겹친다**(`jest.resolver.js`).
+  resolver: '<rootDir>/jest.resolver.js',
   globalSetup: '<rootDir>/jest.global-setup.js',
+  // `react-native-gesture-handler` 의 네이티브 모듈 목 — 프리셋의 `setupFiles` **뒤에** 붙인다
+  // (`GestureHandlerRootView` 가 렌더 시 `RNGestureHandlerModule.install()` 을 부르는데, 목이
+  // 없으면 *"install is not a function"* 으로 죽는다). 라이브러리가 공식으로 주는 파일이다.
+  setupFiles: [...expoPreset.setupFiles, require.resolve('react-native-gesture-handler/jestSetup')],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   moduleNameMapper: coreShimModuleNameMapper(),
   transformIgnorePatterns: expoPreset.transformIgnorePatterns.map((pattern) =>

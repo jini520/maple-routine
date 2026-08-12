@@ -1,0 +1,206 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`DropEffectOverlay — 구조 트리 스냅샷 1`] = `
+<RNCSafeAreaProvider
+  onInsetsChange={[Function]}
+  style={
+    [
+      {
+        "flex": 1,
+      },
+      undefined,
+    ]
+  }
+>
+  <View
+    style={
+      {
+        "flexBasis": "0%",
+        "flexGrow": 1,
+        "flexShrink": 1,
+      }
+    }
+  >
+    <Modal
+      animationType="none"
+      navigationBarTranslucent={true}
+      onRequestClose={[Function]}
+      statusBarTranslucent={true}
+      testID="drop-effect-overlay-modal"
+      transparent={true}
+      visible={true}
+    >
+      <View
+        accessibilityState={
+          {
+            "busy": undefined,
+            "checked": undefined,
+            "disabled": undefined,
+            "expanded": undefined,
+            "selected": undefined,
+          }
+        }
+        accessibilityValue={
+          {
+            "max": undefined,
+            "min": undefined,
+            "now": undefined,
+            "text": undefined,
+          }
+        }
+        accessible={true}
+        collapsable={false}
+        focusable={true}
+        onBlur={[Function]}
+        onClick={[Function]}
+        onFocus={[Function]}
+        onResponderGrant={[Function]}
+        onResponderMove={[Function]}
+        onResponderRelease={[Function]}
+        onResponderTerminate={[Function]}
+        onResponderTerminationRequest={[Function]}
+        onStartShouldSetResponder={[Function]}
+        style={
+          {
+            "flexBasis": "0%",
+            "flexGrow": 1,
+            "flexShrink": 1,
+            "overflow": "hidden",
+          }
+        }
+        testID="drop-effect-overlay"
+      >
+        <RNSVGSvgView
+          bbHeight="100%"
+          bbWidth="100%"
+          focusable={false}
+          height="100%"
+          style={
+            [
+              {
+                "backgroundColor": "transparent",
+                "borderWidth": 0,
+              },
+              {
+                "inset": 0,
+                "position": "absolute",
+              },
+              {
+                "flex": 0,
+                "height": "100%",
+                "width": "100%",
+              },
+            ]
+          }
+          width="100%"
+        >
+          <RNSVGGroup
+            fill={
+              {
+                "payload": 4278190080,
+                "type": 0,
+              }
+            }
+          >
+            <RNSVGDefs>
+              <RNSVGRadialGradient
+                cx="50%"
+                cy="50%"
+                fx="50%"
+                fy="50%"
+                gradient={
+                  [
+                    0,
+                    -15003863,
+                    1,
+                    -16449270,
+                  ]
+                }
+                gradientTransform={null}
+                gradientUnits={0}
+                name="drop-effect-backdrop-r6"
+                rx="70.7%"
+                ry="70.7%"
+              />
+            </RNSVGDefs>
+            <RNSVGRect
+              fill={
+                {
+                  "brushRef": "drop-effect-backdrop-r6",
+                  "type": 1,
+                }
+              }
+              height="100%"
+              propList={
+                [
+                  "fill",
+                ]
+              }
+              width="100%"
+              x="0"
+              y="0"
+            />
+          </RNSVGGroup>
+        </RNSVGSvgView>
+        <View
+          pointerEvents="none"
+          style={
+            {
+              "left": "50%",
+              "marginTop": 44,
+              "position": "absolute",
+              "top": "66%",
+              "zIndex": 2,
+            }
+          }
+          testID="drop-effect-pillar"
+        />
+        <View
+          pointerEvents="none"
+          style={
+            {
+              "left": "50%",
+              "position": "absolute",
+              "top": "50%",
+              "zIndex": 4,
+            }
+          }
+          testID="drop-effect-screen"
+        />
+        <View
+          pointerEvents="none"
+          style={
+            {
+              "bottom": 24,
+              "left": 0,
+              "position": "absolute",
+              "right": 0,
+              "zIndex": 5,
+            }
+          }
+        >
+          <Text
+            style={
+              {
+                "color": "rgba(255,255,255,0.8)",
+                "fontSize": 12,
+                "fontWeight": "600",
+                "lineHeight": 16,
+                "textAlign": "center",
+                "textShadowColor": "rgba(0,0,0,0.7)",
+                "textShadowOffset": {
+                  "height": 1,
+                  "width": 0,
+                },
+                "textShadowRadius": 4,
+              }
+            }
+          >
+            화면을 터치하면 닫힙니다
+          </Text>
+        </View>
+      </View>
+    </Modal>
+  </View>
+</RNCSafeAreaProvider>
+`;

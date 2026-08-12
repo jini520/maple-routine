@@ -1,0 +1,719 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ToastStack 트리 스냅샷 1`] = `
+<RNCSafeAreaProvider
+  onInsetsChange={[Function]}
+  style={
+    [
+      {
+        "flex": 1,
+      },
+      undefined,
+    ]
+  }
+>
+  <View
+    style={
+      {
+        "flexBasis": "0%",
+        "flexGrow": 1,
+        "flexShrink": 1,
+      }
+    }
+  >
+    <View
+      pointerEvents="box-none"
+      style={
+        {
+          "bottom": 110,
+          "columnGap": 8,
+          "left": 0,
+          "paddingLeft": 16,
+          "paddingRight": 16,
+          "position": "absolute",
+          "right": 0,
+          "rowGap": 8,
+        }
+      }
+      testID="toast-stack"
+    >
+      <View
+        aria-live="polite"
+        onMoveShouldSetResponder={[Function]}
+        onResponderGrant={[Function]}
+        onResponderMove={[Function]}
+        onResponderRelease={[Function]}
+        onResponderTerminate={[Function]}
+        role="status"
+        style={
+          {
+            "alignItems": "center",
+            "backgroundColor": "#FCF6DD",
+            "borderColor": "#CFC9AE",
+            "borderRadius": 14,
+            "borderWidth": 1,
+            "columnGap": 8,
+            "flexDirection": "row",
+            "opacity": 0,
+            "overflow": "hidden",
+            "paddingBottom": 8,
+            "paddingLeft": 10,
+            "paddingRight": 10,
+            "paddingTop": 8,
+            "position": "relative",
+            "rowGap": 8,
+            "transform": [
+              {
+                "translateX": 0,
+              },
+              {
+                "translateY": 12,
+              },
+              {
+                "rotate": 0,
+              },
+              {
+                "skewX": 0,
+              },
+              {
+                "skewY": 0,
+              },
+              {
+                "scaleX": 1,
+              },
+              {
+                "scaleY": 1,
+              },
+            ],
+          }
+        }
+        testID="toast"
+      >
+        <RNSVGSvgView
+          align="xMidYMid"
+          aria-hidden={true}
+          bbHeight={16}
+          bbWidth={16}
+          fill="none"
+          focusable={false}
+          height={16}
+          meetOrSlice={0}
+          minX={0}
+          minY={0}
+          stroke="#CEAD00"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          style={
+            [
+              {
+                "backgroundColor": "transparent",
+                "borderWidth": 0,
+              },
+              {
+                "flexShrink": 0,
+              },
+              {
+                "flex": 0,
+                "height": 16,
+                "width": 16,
+              },
+            ]
+          }
+          vbHeight={24}
+          vbWidth={24}
+          width={16}
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <RNSVGGroup
+            fill={null}
+            propList={
+              [
+                "fill",
+                "stroke",
+                "strokeWidth",
+                "strokeLinecap",
+                "strokeLinejoin",
+              ]
+            }
+            stroke={
+              {
+                "payload": 4291734784,
+                "type": 0,
+              }
+            }
+            strokeLinecap={1}
+            strokeLinejoin={1}
+            strokeWidth={2}
+          >
+            <RNSVGPath
+              d="M21.801 10A10 10 0 1 1 17 3.335"
+              fill={null}
+              propList={
+                [
+                  "fill",
+                  "stroke",
+                  "strokeWidth",
+                  "strokeLinecap",
+                  "strokeLinejoin",
+                ]
+              }
+              stroke={
+                {
+                  "payload": 4291734784,
+                  "type": 0,
+                }
+              }
+              strokeLinecap={1}
+              strokeLinejoin={1}
+              strokeWidth={2}
+            />
+            <RNSVGPath
+              d="m9 11 3 3L22 4"
+              fill={null}
+              propList={
+                [
+                  "fill",
+                  "stroke",
+                  "strokeWidth",
+                  "strokeLinecap",
+                  "strokeLinejoin",
+                ]
+              }
+              stroke={
+                {
+                  "payload": 4291734784,
+                  "type": 0,
+                }
+              }
+              strokeLinecap={1}
+              strokeLinejoin={1}
+              strokeWidth={2}
+            />
+          </RNSVGGroup>
+        </RNSVGSvgView>
+        <Text
+          numberOfLines={1}
+          style={
+            {
+              "color": "#241208",
+              "flexBasis": "0%",
+              "flexGrow": 1,
+              "flexShrink": 1,
+              "fontSize": 14,
+              "fontWeight": "500",
+              "lineHeight": 20,
+            }
+          }
+        >
+          첫째
+        </Text>
+        <View
+          accessibilityLabel="닫기"
+          accessibilityState={
+            {
+              "busy": undefined,
+              "checked": undefined,
+              "disabled": undefined,
+              "expanded": undefined,
+              "selected": undefined,
+            }
+          }
+          accessibilityValue={
+            {
+              "max": undefined,
+              "min": undefined,
+              "now": undefined,
+              "text": undefined,
+            }
+          }
+          accessible={true}
+          collapsable={false}
+          focusable={true}
+          onBlur={[Function]}
+          onClick={[Function]}
+          onFocus={[Function]}
+          onResponderGrant={[Function]}
+          onResponderMove={[Function]}
+          onResponderRelease={[Function]}
+          onResponderTerminate={[Function]}
+          onResponderTerminationRequest={[Function]}
+          onStartShouldSetResponder={[Function]}
+          role="button"
+          style={
+            {
+              "alignItems": "center",
+              "flexShrink": 0,
+              "height": 24,
+              "justifyContent": "center",
+              "width": 24,
+            }
+          }
+        >
+          <RNSVGSvgView
+            align="xMidYMid"
+            aria-hidden={true}
+            bbHeight={14}
+            bbWidth={14}
+            fill="none"
+            focusable={false}
+            height={14}
+            meetOrSlice={0}
+            minX={0}
+            minY={0}
+            stroke="#645C42"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            style={
+              [
+                {
+                  "backgroundColor": "transparent",
+                  "borderWidth": 0,
+                },
+                {},
+                {
+                  "flex": 0,
+                  "height": 14,
+                  "width": 14,
+                },
+              ]
+            }
+            vbHeight={24}
+            vbWidth={24}
+            width={14}
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <RNSVGGroup
+              fill={null}
+              propList={
+                [
+                  "fill",
+                  "stroke",
+                  "strokeWidth",
+                  "strokeLinecap",
+                  "strokeLinejoin",
+                ]
+              }
+              stroke={
+                {
+                  "payload": 4284767298,
+                  "type": 0,
+                }
+              }
+              strokeLinecap={1}
+              strokeLinejoin={1}
+              strokeWidth={2}
+            >
+              <RNSVGPath
+                d="M18 6 6 18"
+                fill={null}
+                propList={
+                  [
+                    "fill",
+                    "stroke",
+                    "strokeWidth",
+                    "strokeLinecap",
+                    "strokeLinejoin",
+                  ]
+                }
+                stroke={
+                  {
+                    "payload": 4284767298,
+                    "type": 0,
+                  }
+                }
+                strokeLinecap={1}
+                strokeLinejoin={1}
+                strokeWidth={2}
+              />
+              <RNSVGPath
+                d="m6 6 12 12"
+                fill={null}
+                propList={
+                  [
+                    "fill",
+                    "stroke",
+                    "strokeWidth",
+                    "strokeLinecap",
+                    "strokeLinejoin",
+                  ]
+                }
+                stroke={
+                  {
+                    "payload": 4284767298,
+                    "type": 0,
+                  }
+                }
+                strokeLinecap={1}
+                strokeLinejoin={1}
+                strokeWidth={2}
+              />
+            </RNSVGGroup>
+          </RNSVGSvgView>
+        </View>
+        <View
+          style={
+            {
+              "bottom": 0,
+              "height": 2.5,
+              "left": 0,
+              "position": "absolute",
+              "right": 0,
+            }
+          }
+          testID="toast-timer"
+        >
+          <View
+            style={
+              {
+                "backgroundColor": "#CEAD00",
+                "height": "100%",
+                "width": "100%",
+              }
+            }
+          />
+        </View>
+      </View>
+      <View
+        aria-live="polite"
+        onMoveShouldSetResponder={[Function]}
+        onResponderGrant={[Function]}
+        onResponderMove={[Function]}
+        onResponderRelease={[Function]}
+        onResponderTerminate={[Function]}
+        role="status"
+        style={
+          {
+            "alignItems": "center",
+            "backgroundColor": "#FCF6DD",
+            "borderColor": "#CFC9AE",
+            "borderRadius": 14,
+            "borderWidth": 1,
+            "columnGap": 8,
+            "flexDirection": "row",
+            "opacity": 0,
+            "overflow": "hidden",
+            "paddingBottom": 8,
+            "paddingLeft": 10,
+            "paddingRight": 10,
+            "paddingTop": 8,
+            "position": "relative",
+            "rowGap": 8,
+            "transform": [
+              {
+                "translateX": 0,
+              },
+              {
+                "translateY": 12,
+              },
+              {
+                "rotate": 0,
+              },
+              {
+                "skewX": 0,
+              },
+              {
+                "skewY": 0,
+              },
+              {
+                "scaleX": 1,
+              },
+              {
+                "scaleY": 1,
+              },
+            ],
+          }
+        }
+        testID="toast"
+      >
+        <RNSVGSvgView
+          align="xMidYMid"
+          aria-hidden={true}
+          bbHeight={16}
+          bbWidth={16}
+          fill="none"
+          focusable={false}
+          height={16}
+          meetOrSlice={0}
+          minX={0}
+          minY={0}
+          stroke="#CEAD00"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          style={
+            [
+              {
+                "backgroundColor": "transparent",
+                "borderWidth": 0,
+              },
+              {
+                "flexShrink": 0,
+              },
+              {
+                "flex": 0,
+                "height": 16,
+                "width": 16,
+              },
+            ]
+          }
+          vbHeight={24}
+          vbWidth={24}
+          width={16}
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <RNSVGGroup
+            fill={null}
+            propList={
+              [
+                "fill",
+                "stroke",
+                "strokeWidth",
+                "strokeLinecap",
+                "strokeLinejoin",
+              ]
+            }
+            stroke={
+              {
+                "payload": 4291734784,
+                "type": 0,
+              }
+            }
+            strokeLinecap={1}
+            strokeLinejoin={1}
+            strokeWidth={2}
+          >
+            <RNSVGPath
+              d="M21.801 10A10 10 0 1 1 17 3.335"
+              fill={null}
+              propList={
+                [
+                  "fill",
+                  "stroke",
+                  "strokeWidth",
+                  "strokeLinecap",
+                  "strokeLinejoin",
+                ]
+              }
+              stroke={
+                {
+                  "payload": 4291734784,
+                  "type": 0,
+                }
+              }
+              strokeLinecap={1}
+              strokeLinejoin={1}
+              strokeWidth={2}
+            />
+            <RNSVGPath
+              d="m9 11 3 3L22 4"
+              fill={null}
+              propList={
+                [
+                  "fill",
+                  "stroke",
+                  "strokeWidth",
+                  "strokeLinecap",
+                  "strokeLinejoin",
+                ]
+              }
+              stroke={
+                {
+                  "payload": 4291734784,
+                  "type": 0,
+                }
+              }
+              strokeLinecap={1}
+              strokeLinejoin={1}
+              strokeWidth={2}
+            />
+          </RNSVGGroup>
+        </RNSVGSvgView>
+        <Text
+          numberOfLines={1}
+          style={
+            {
+              "color": "#241208",
+              "flexBasis": "0%",
+              "flexGrow": 1,
+              "flexShrink": 1,
+              "fontSize": 14,
+              "fontWeight": "500",
+              "lineHeight": 20,
+            }
+          }
+        >
+          둘째
+        </Text>
+        <View
+          accessibilityLabel="닫기"
+          accessibilityState={
+            {
+              "busy": undefined,
+              "checked": undefined,
+              "disabled": undefined,
+              "expanded": undefined,
+              "selected": undefined,
+            }
+          }
+          accessibilityValue={
+            {
+              "max": undefined,
+              "min": undefined,
+              "now": undefined,
+              "text": undefined,
+            }
+          }
+          accessible={true}
+          collapsable={false}
+          focusable={true}
+          onBlur={[Function]}
+          onClick={[Function]}
+          onFocus={[Function]}
+          onResponderGrant={[Function]}
+          onResponderMove={[Function]}
+          onResponderRelease={[Function]}
+          onResponderTerminate={[Function]}
+          onResponderTerminationRequest={[Function]}
+          onStartShouldSetResponder={[Function]}
+          role="button"
+          style={
+            {
+              "alignItems": "center",
+              "flexShrink": 0,
+              "height": 24,
+              "justifyContent": "center",
+              "width": 24,
+            }
+          }
+        >
+          <RNSVGSvgView
+            align="xMidYMid"
+            aria-hidden={true}
+            bbHeight={14}
+            bbWidth={14}
+            fill="none"
+            focusable={false}
+            height={14}
+            meetOrSlice={0}
+            minX={0}
+            minY={0}
+            stroke="#645C42"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            style={
+              [
+                {
+                  "backgroundColor": "transparent",
+                  "borderWidth": 0,
+                },
+                {},
+                {
+                  "flex": 0,
+                  "height": 14,
+                  "width": 14,
+                },
+              ]
+            }
+            vbHeight={24}
+            vbWidth={24}
+            width={14}
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <RNSVGGroup
+              fill={null}
+              propList={
+                [
+                  "fill",
+                  "stroke",
+                  "strokeWidth",
+                  "strokeLinecap",
+                  "strokeLinejoin",
+                ]
+              }
+              stroke={
+                {
+                  "payload": 4284767298,
+                  "type": 0,
+                }
+              }
+              strokeLinecap={1}
+              strokeLinejoin={1}
+              strokeWidth={2}
+            >
+              <RNSVGPath
+                d="M18 6 6 18"
+                fill={null}
+                propList={
+                  [
+                    "fill",
+                    "stroke",
+                    "strokeWidth",
+                    "strokeLinecap",
+                    "strokeLinejoin",
+                  ]
+                }
+                stroke={
+                  {
+                    "payload": 4284767298,
+                    "type": 0,
+                  }
+                }
+                strokeLinecap={1}
+                strokeLinejoin={1}
+                strokeWidth={2}
+              />
+              <RNSVGPath
+                d="m6 6 12 12"
+                fill={null}
+                propList={
+                  [
+                    "fill",
+                    "stroke",
+                    "strokeWidth",
+                    "strokeLinecap",
+                    "strokeLinejoin",
+                  ]
+                }
+                stroke={
+                  {
+                    "payload": 4284767298,
+                    "type": 0,
+                  }
+                }
+                strokeLinecap={1}
+                strokeLinejoin={1}
+                strokeWidth={2}
+              />
+            </RNSVGGroup>
+          </RNSVGSvgView>
+        </View>
+        <View
+          style={
+            {
+              "bottom": 0,
+              "height": 2.5,
+              "left": 0,
+              "position": "absolute",
+              "right": 0,
+            }
+          }
+          testID="toast-timer"
+        >
+          <View
+            style={
+              {
+                "backgroundColor": "#CEAD00",
+                "height": "100%",
+                "width": "100%",
+              }
+            }
+          />
+        </View>
+      </View>
+    </View>
+  </View>
+</RNCSafeAreaProvider>
+`;

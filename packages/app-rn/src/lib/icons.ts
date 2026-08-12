@@ -42,6 +42,7 @@ import Minus from 'lucide-react-native/icons/minus'
 import Plus from 'lucide-react-native/icons/plus'
 import RefreshCw from 'lucide-react-native/icons/refresh-cw'
 import RotateCcw from 'lucide-react-native/icons/rotate-ccw'
+import Settings from 'lucide-react-native/icons/settings'
 import Sparkles from 'lucide-react-native/icons/sparkles'
 import Star from 'lucide-react-native/icons/star'
 import TriangleAlert from 'lucide-react-native/icons/triangle-alert'
@@ -72,6 +73,8 @@ export const PlusIcon = withIconInterop(Plus)
 export const RefreshCwIcon = withIconInterop(RefreshCw)
 /** '다시 시작' — `ErrorBoundary` 폴백. */
 export const RotateCcwIcon = withIconInterop(RotateCcw)
+/** 토스트 액션이 기본 아이콘을 덮을 수 있음을 지키는 자리 — `Toast` 테스트([[ADR-063]]). */
+export const SettingsIcon = withIconInterop(Settings)
 /** 고가 드롭 반짝임 — `ValuableDropBadge`. */
 export const SparklesIcon = withIconInterop(Sparkles)
 /** 즐겨찾기(추적 중) 표식 — `CharacterTrackingGrid`. */
