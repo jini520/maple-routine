@@ -2,14 +2,53 @@
   "project": "maple-routine",
   "phase": "rn-screens",
   "steps": [
-    { "step": 0, "name": "app-shell", "status": "pending" },
-    { "step": 1, "name": "asset-codegen", "status": "pending" },
-    { "step": 2, "name": "onboarding", "status": "pending" },
-    { "step": 3, "name": "settings", "status": "pending" },
-    { "step": 4, "name": "content-scheduler", "status": "pending" },
-    { "step": 5, "name": "boss-scheduler", "status": "pending" },
-    { "step": 6, "name": "profit-shared", "status": "pending" },
-    { "step": 7, "name": "boss-profit-screen", "status": "pending" },
-    { "step": 8, "name": "drop-screens", "status": "pending" }
-  ]
+    {
+      "step": 0,
+      "name": "app-shell",
+      "status": "completed",
+      "started_at": "2026-08-12T19:22:01+0900",
+      "summary": "부팅 순서 전수 대조표(그대로/바뀜/사라짐/OTA 미연결, README «4-0단계 결과»)를 세우고 boot-order.test.tsx 로 고정 · AppShell/App.tsx 배선 · 모달 둘(ApiKeyNotice 배선 완료, UpdatePrompt 는 그렸으나 OTA 미연결로 마운트 없음) · ErrorBoundary 는 프로바이더 안, 복구 수단은 expo reloadAppAsync() · NativeWind 조건부 transform OOM 함정 규명·수정"
+    },
+    {
+      "step": 1,
+      "name": "asset-codegen",
+      "status": "pending"
+    },
+    {
+      "step": 2,
+      "name": "onboarding",
+      "status": "pending"
+    },
+    {
+      "step": 3,
+      "name": "settings",
+      "status": "pending"
+    },
+    {
+      "step": 4,
+      "name": "content-scheduler",
+      "status": "pending"
+    },
+    {
+      "step": 5,
+      "name": "boss-scheduler",
+      "status": "pending"
+    },
+    {
+      "step": 6,
+      "name": "profit-shared",
+      "status": "pending"
+    },
+    {
+      "step": 7,
+      "name": "boss-profit-screen",
+      "status": "pending"
+    },
+    {
+      "step": 8,
+      "name": "drop-screens",
+      "status": "pending"
+    }
+  ],
+  "created_at": "2026-08-12T19:22:01+0900"
 }

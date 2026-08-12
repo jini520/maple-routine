@@ -738,6 +738,93 @@ RN 은 형제 순서가 곧 그리는 순서라, 없으면 페이드가 목록 *
 - 화면 15개 + 하위 컴포넌트. **파일별 ADR 계약 체크리스트를 소진**하며 진행(원칙 2)
 - **게이트**: 각 화면의 테스트 통과 + 그 화면에 걸린 ADR 전부 확인 완료
 
+#### 4-0단계 결과 — 앱 셸 (2026-08-12, **화면이 아니라 순서가 산출물이다**)
+
+웹 `AppShell`(573줄)의 짝을 세웠다. 그 파일이 하던 일은 **화면 배치보다 부팅 순서**였고, 순서가
+틀렸을 때 드러나는 모습이 *"흰 화면"* · *"스플래시가 안 걷힘"* · *"광고가 안 뜸"* 이라 어느 것도
+스택 트레이스를 남기지 않는다. 그래서 이 단계의 가장 오래 쓰일 산출물이 아래 표다.
+
+**전수 대조 — 웹이 하던 열아홉을 넷으로 가른다.**
+
+| 웹 `App.tsx` 가 하던 것 | RN | 어디에 |
+|---|---|---|
+| **그대로** | | |
+| 저장소 복원 넷(온보딩·테마·트래킹 모드·드롭 연출) | 이펙트 넷, 각자 하나씩 | `AppShell` |
+| 광고 SDK 초기화 + 첫 광고 사전 로드([[ADR-090]]) | 그대로 | `AppShell` |
+| 탭 스토어 선하이드레이션([[ADR-101]]) — 완료 상태에서만 · 동적 import | 그대로 | `AppShell` → `app/prehydrate.ts` |
+| 최소 표시 시간 뒤 스플래시 내리기([[ADR-025]]) | 그대로 | `AppShell` |
+| 실패 안전 타이머로 스플래시 내리기([[ADR-117]] 결정 3) | 그대로(8초) | `boot-splash.ts` |
+| `ErrorBoundary` 폴백이 스플래시를 내린다([[ADR-117]] 결정 6) | 그대로 — **단 이유가 셋 중 하나로 줄었다**(3-5단계) | `ErrorBoundary` |
+| 키 무효화·429 안내 모달([[ADR-115]]·[[ADR-116]]) | 그대로, 내비게이터 **밖** | `AppShell` |
+| 토스트 스택 | 그대로 | `AppShell` |
+| **바뀜** | | |
+| 스플래시 붙들기 = `capacitor.config.ts` 의 `launchAutoHide:false` | `SplashScreen.preventAutoHideAsync()` — **전역 스코프**여야 한다 | `boot-splash.ts` |
+| 키보드 뜨면 `<BottomTabBar />` 언마운트 | `tabBarHideOnKeyboard`(라이브러리가 자기 구독으로 판정) | `TabNavigator` |
+| 그 값을 셸이 state 로 들고 있음 | 남는다 — **토스트가 탭바 위에 서야 하는지** 하나 때문에 | `use-keyboard-visible.ts` |
+| 라우팅·탭바·`lazy`·`Suspense`·`STACK_PRELOADERS`·`TabLayer` | react-navigation(3-2단계) | `navigation/` |
+| 시스템 뒤로가기(`useSystemBack`) | `use-root-back.ts` + 네이티브 스택 | `navigation/` |
+| 탭 클릭 인터셉터([[ADR-050]] 문서 리로드 방어) | **`listeners.tabPress`**(3-2단계) — 방어할 `<a href>` 가 없다 | `TabNavigator` |
+| 전역 에러 경계 위치 = 라우터 **밖**([[ADR-065]] 결정 5) | 프로바이더 **안** — 밖에 두면 폴백이 `var(--color-*)` 를 못 찾아 **색이 통째로 빠진다**(3-1단계 실측) | `App.tsx` |
+| **사라짐** | | |
+| `refreshSafeAreaInsets()` | 의도적 no-op — `SafeAreaProvider` 가 이미 한다(3-6단계) | — |
+| `--tab-bar-h` 실측·`theme-backdrop`·`min-h-screen` | 3-6·3-1단계가 각각 흡수 | — |
+| `consumePendingNotice()` → 캐시 삭제 실패 토스트([[ADR-065]] 결정 3) | **짝이 없다**(아래) | — |
+| **안 이어짐 (OTA)** | | |
+| `checkOnBoot()`([[ADR-027]]) · `notifyLiveUpdateReady()`([[ADR-117]] 결정 2) | **부르지 않는다** | — |
+| `<UpdatePromptModal />` 마운트 | 컴포넌트는 있고 **마운트는 없다** | — |
+
+**«그대로» 칸이 «바뀜»보다 많은 것이 이 단계의 결과다.** 부팅 순서는 웹뷰 사정이 아니라 제품
+결정이었고, 그래서 대부분 옮겨졌다. 바뀐 것들은 하나같이 *"웹이 문서·CSS 로 하던 일을 RN 에서는
+다른 층이 한다"* 이지 결정이 바뀐 것이 아니다.
+
+**OTA 는 화면은 있고 값이 없다.** `UpdatePromptModal`(상태 아홉·[[ADR-126]] 결정 1 의 아코디언
+포함)을 다 그려 놓고 **마운트하지 않았다.** 벽이 둘인데 둘 다 [[ADR-128]] 결정 7 이 미뤄 둔
+프로토콜 재설계에 걸린다 — `LiveUpdatePort` 가 던지고, 그보다 앞서 core 의 live-update 스토어는
+**import 하는 것만으로** 죽는다(`import.meta.env` 를 모듈 최상위에서 읽는다 — `import.meta.glob`
+과 같은 종류의 벽이고, 이쪽은 아직 치환 대상이 아니다. 대체 구현이 곧 "가짜 OTA 스토어"라
+프로토콜을 정하기 전에 만들면 그 결정을 코드가 몰래 대신 내린다). 그래서 모달은 **스토어를 부르지
+않고 값을 프롭으로 받고**, 타입만 `import type` 으로 가져와 상태 아홉이 두 벌이 되지 않게 했다 —
+OTA 가 붙는 날 배선은 `state={useLiveUpdateStore()}` 한 줄이다.
+
+딸려 오는 공백 셋을 적어 둔다. ① [[ADR-117]] 결정 2 의 **자동 롤백이 없다**(되돌릴 번들 자체가
+아직 없다). ② [[ADR-126]] 결정 4 의 **「업데이트를 마쳤어요」가 안 뜬다**(판정이 스토어의
+`checkOnBoot` 안에 있다). ③ [[ADR-065]] 결정 3 의 **캐시 삭제 실패 토스트가 리로드를 못 넘는다** —
+`consumePendingNotice` 가 `sessionStorage` 위에 서 있어 RN 에는 짝이 없다(`reloadAppAsync()` 는 JS
+런타임을 통째로 다시 실행한다). 부르면 항상 `null` 이라 *"있는데 안 도는 코드"* 가 되므로 **셸에
+넣지 않았다.** 그 삭제 흐름 자체가 설정 화면(step 3) 몫이라, 대체 수단은 그때 함께 정한다.
+
+**부팅 순서는 이제 테스트가 들고 있다**(`src/__tests__/boot-order.test.tsx`). 셋을 본다 — ① 셸이
+무엇을 언제 하는가(렌더 관측) ② 진입점 순서(`installPorts()` → `holdSplashUntilAppReady()` →
+`registerRootComponent`, 소스 읽기 — 트리 밖이라 렌더로는 못 본다) ③ **OTA 가 아직 아무 데도 안
+이어져 있는가**(소스 스캔: live-update 스토어는 `import type` 으로만 · `@core/native/live-update`
+호출 0건 · `UpdatePromptModal` import 0건). ③이 스캔인 이유는 값 import 가 하나 생기면 **그 순간
+앱도 테스트도 안 떠서** 호출 관측이 성립하지 않기 때문이다.
+
+**'다시 시작' 의 짝은 있었다 — 3-5단계 주석을 정정한다.** 그때 *"RN 에는 `location.reload()` 의
+짝이 없고 번들 재실행은 OTA 런타임의 일"* 이라 적었는데 **사실이 아니다.** `expo` 의
+`reloadAppAsync()`(expo-modules-core)가 release·debug 양쪽에서 **지금 도는 것과 같은 번들**을 다시
+실행한다 — 새 업데이트를 집는 `Updates.reloadAsync()` 와 갈리는 지점이 정확히 그것이라 [[ADR-128]]
+결정 7 을 기다릴 필요가 없다. 즉 [[ADR-065]] 결정 5 의 복구 수단이 **실제로 존재한다.** 프롭으로
+받는 구조는 그대로 둔다(폴백을 그리는 것과 재시작 수단을 아는 것은 다른 관심사다).
+
+**함정 둘을 실측으로 찾았다.** 둘 다 이 단계에서 실제로 걸렸다.
+
+| 자리 | 무슨 일이 | 왜 |
+|---|---|---|
+| `UpdatePromptModal` 「자세히 보기」 화살표 | 펼치는 순간 **힙을 다 써서 죽는다**(jest OOM · dev 번들 동일) | transform 이 **첫 렌더에 없다가 나중에 생기면** NativeWind 는 호스트를 `Animated.View` 로 올려야 하는데 리마운트라 포기하고 **개발 경고**를 찍는다. 그 경고가 `originalProps` 를 직렬화하는데(`stringify`) 순환 가드가 **경로 단위**뿐이라 React 엘리먼트 그래프를 헤맨다. 처방은 두 상태 모두 transform 을 갖는 것(`rotate-0` ↔ `rotate-180`) — 라이브러리 경고문의 *"기본 스타일을 두라"* 가 이것이다 |
+| 셸 안의 동적 `import()` | jest 에서 **동기적으로 던져** 마운트가 통째로 죽는다 | `--experimental-vm-modules` 없이는 Node 가 거부한다. 정적 import 로 되돌리면 평가 시점이 바뀌므로(이 패키지 Metro 는 `inlineRequires: false` — 실측) **형태를 유지한 채 `app/prehydrate.ts` 로 가뒀다.** 그 경계 덕에 [[ADR-101]] 결정 6 게이트를 처음으로 붙들 수 있다 |
+
+> 첫 줄은 **step 3~7 이 모은 «조용히 안 되는 것» 목록과 같은 가족이되 반대**다 — 그 넷은 에러 없이
+> 사라졌지만 이것은 앱을 멈춰 세운다. 조건도 좁다(*상태에 따라 transform 이 생겼다 사라진다*).
+> 이미 있는 `Toast` 의 `translate-y-3` ↔ `translate-y-0` 은 양쪽 다 transform 이라 무사하고,
+> 화면 단계에서 새로 쓰는 조건부 transform 은 전부 이 규칙을 따라야 한다.
+
+- **결과**: jest **67파일/693개** 통과(step 0 순증 33 = `UpdatePromptModal` 26 + `boot-order` 7) ·
+  vitest 199파일/3046개 증감 0 · lint 0 errors/17 warnings(baseline 동일) · `tsc --noEmit` 0 ·
+  `expo export`(android 1,678 모듈) · `gradlew assembleDebug` 성공.
+- **실기기 미검증**: 스플래시가 실제로 1초 떠 있다 걷히는지 · 실패 안전 타이머가 오탐하지 않는지 ·
+  `ErrorBoundary` 폴백의 '다시 시작' 이 정말 되살리는지 · 광고 초기화. 전부 **눈으로만** 판정된다.
+
 ### 5단계 — 실기기 검증 · 단계적 롤아웃
 
 - Play Console staged rollout 1% → 확대, iOS Phased Release

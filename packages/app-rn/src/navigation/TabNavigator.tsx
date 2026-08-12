@@ -25,6 +25,16 @@ const Tab = createBottomTabNavigator<TabParamList>()
  * 그러지 않았다 — 뒤로가기 처리는 **스택 깊이 하나**만 봤고(`use-system-back.ts` 의 `depth > 0`),
  * 깊이가 0 이면 어느 탭이든 [[ADR-120]] 결정 18 대로 백그라운드로 나갔다. 탭 사이를 뒤로가기로
  * 오가는 동작은 이 앱에 없던 것이라 기본값을 끈다(그 처리는 `use-root-back.ts`).
+ *
+ * ## 키보드가 뜨면 탭바를 숨긴다 (4단계 step 0)
+ *
+ * 웹 `AppShell` 은 `isKeyboardVisible` 로 `<BottomTabBar />` 를 **언마운트**했다(네이티브가 웹뷰를
+ * 밀어 올리면 탭바가 키보드 바로 위에 얹혀, 입력 중엔 의미도 없고 시야만 가린다). RN 에서 같은
+ * 일을 하는 것이 `tabBarHideOnKeyboard` 이고, 라이브러리가 자기 `Keyboard` 구독으로 판정한다
+ * (iOS 는 `keyboardWillShow`, 안드로이드는 `keyboardDidShow` — 실측: `useIsKeyboardShown.tsx`).
+ * 우리 어댑터(`rn-keyboard.ts`)는 양쪽 다 `did` 라 **iOS 에서 한 프레임 어긋나지만**, 하나로
+ * 합치려면 셸의 값을 내비게이터까지 프롭으로 꿰어야 해서 그 대가가 어긋남보다 크다. 셸 쪽 구독이
+ * 남는 이유는 토스트 하나다(`app/use-keyboard-visible.ts`).
  */
 export function TabNavigator(): React.JSX.Element {
   return (
@@ -33,7 +43,7 @@ export function TabNavigator(): React.JSX.Element {
       backBehavior="none"
       // 헤더는 앱이 직접 그린다(`PageHeader`, templates) — [[ADR-085]] 결정 1 의 `fixed` 헤더 +
       // 실측 spacer 가 그 자리에 온다. 라이브러리 헤더를 켜 두면 두 겹이 된다.
-      screenOptions={{ headerShown: false }}
+      screenOptions={{ headerShown: false, tabBarHideOnKeyboard: true }}
     >
       {TAB_ITEMS.map((tab) => (
         <Tab.Screen

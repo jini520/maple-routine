@@ -29,4 +29,20 @@ interface ImportMeta {
     pattern: string,
     options?: { eager?: boolean; import?: string; query?: string },
   ): Record<string, unknown>
+
+  /**
+   * Vite 가 빌드 시점에 치환하는 환경 변수 — **`glob` 만이 Vite 전용 API 가 아니었다**(4단계 step 0).
+   *
+   * core 에서 이것을 쓰는 곳은 `features/live-update/store.ts` 한 곳이고, **모듈 최상위**에서
+   * `VITE_LIVE_UPDATE_CHANNEL` 을 읽는다([[ADR-024]] 빌드 시점 채널 분리). 그 스토어의 타입을
+   * 가져오려면(`app/UpdatePromptModal.tsx` 가 상태 아홉을 두 벌로 만들지 않으려고 `import type`
+   * 한다) 이 선언이 있어야 tsc 가 core 원본을 검사할 수 있다.
+   *
+   * **`glob` 과 똑같이, 이 선언도 사실이 아니다.** RN 런타임에서 `import.meta.env` 는 `undefined`
+   * 라, 그 스토어를 값으로 import 하면 그 자리에서 `TypeError` 로 죽는다(실측 2026-08-12).
+   * 그래서 앱 코드에서 `import.meta.env` 를 쓰면 안 된다 — 빌드 시점 값이 필요하면
+   * `process.env.EXPO_PUBLIC_*`(`native/adapters/rn-ads.ts` 가 쓰는 방식)이다.
+   * 이 사실은 `src/__tests__/core-shims.test.ts` 가 계약으로 들고 있다.
+   */
+  readonly env: Record<string, string | undefined>
 }

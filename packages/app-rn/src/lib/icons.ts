@@ -37,14 +37,19 @@ import ChevronDown from 'lucide-react-native/icons/chevron-down'
 import CircleAlert from 'lucide-react-native/icons/circle-alert'
 import CircleCheckBig from 'lucide-react-native/icons/circle-check-big'
 import Clock from 'lucide-react-native/icons/clock'
+import CloudDownload from 'lucide-react-native/icons/cloud-download'
+import Gauge from 'lucide-react-native/icons/gauge'
 import Info from 'lucide-react-native/icons/info'
+import KeyRound from 'lucide-react-native/icons/key-round'
 import Minus from 'lucide-react-native/icons/minus'
 import Plus from 'lucide-react-native/icons/plus'
 import RefreshCw from 'lucide-react-native/icons/refresh-cw'
 import RotateCcw from 'lucide-react-native/icons/rotate-ccw'
 import Settings from 'lucide-react-native/icons/settings'
+import Signal from 'lucide-react-native/icons/signal'
 import Sparkles from 'lucide-react-native/icons/sparkles'
 import Star from 'lucide-react-native/icons/star'
+import Store from 'lucide-react-native/icons/store'
 import TriangleAlert from 'lucide-react-native/icons/triangle-alert'
 import Users from 'lucide-react-native/icons/users'
 import X from 'lucide-react-native/icons/x'
@@ -63,8 +68,14 @@ export const CheckCircle2Icon = withIconInterop(CircleCheckBig)
 export const ChevronDownIcon = withIconInterop(ChevronDown)
 /** 아직 집계 전(pending 톤) — `UnavailableNotice`. */
 export const ClockIcon = withIconInterop(Clock)
+/** 새 업데이트 있음 — `UpdatePromptModal`(update-available). */
+export const CloudDownloadIcon = withIconInterop(CloudDownload)
+/** 호출 한도 초과 — `ApiKeyNoticeModal`(rateLimited). 타이머 계열을 피한 근거는 그 파일에 있다. */
+export const GaugeIcon = withIconInterop(Gauge)
 /** 조회 불가(정보 톤) — `UnavailableNotice` · 정보 토스트 `Toast`(info). */
 export const InfoIcon = withIconInterop(Info)
+/** API 키 무효 — `ApiKeyNoticeModal`(invalid). */
+export const KeyRoundIcon = withIconInterop(KeyRound)
 /** 파티원 수 감소 — `PartySizeStepper`. */
 export const MinusIcon = withIconInterop(Minus)
 /** 파티원 수 증가 — `PartySizeStepper`. */
@@ -75,10 +86,14 @@ export const RefreshCwIcon = withIconInterop(RefreshCw)
 export const RotateCcwIcon = withIconInterop(RotateCcw)
 /** 토스트 액션이 기본 아이콘을 덮을 수 있음을 지키는 자리 — `Toast` 테스트([[ADR-063]]). */
 export const SettingsIcon = withIconInterop(Settings)
-/** 고가 드롭 반짝임 — `ValuableDropBadge`. */
+/** 모바일 데이터 확인 — `UpdatePromptModal`(confirm-cellular). */
+export const SignalIcon = withIconInterop(Signal)
+/** 고가 드롭 반짝임 — `ValuableDropBadge` · 업데이트 완료 안내 `UpdatePromptModal`(updated). */
 export const SparklesIcon = withIconInterop(Sparkles)
 /** 즐겨찾기(추적 중) 표식 — `CharacterTrackingGrid`. */
 export const StarIcon = withIconInterop(Star)
+/** 스토어 업데이트 필요 — `UpdatePromptModal`(store-required). */
+export const StoreIcon = withIconInterop(Store)
 /** 파티원 표식 — `PartySizeStepper`(compact) · 파티 인원 라벨 `PartySizeModal`. */
 export const UsersIcon = withIconInterop(Users)
 /** 닫기 — `Toast` · `PartySizeModal`. */
