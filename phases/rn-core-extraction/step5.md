@@ -6,7 +6,7 @@
 - `/docs/migration/README.md` (원칙)
 - `/docs/migration/parity-inventory.md` §5 (`storage/` 파일별 ADR 계약 표)
 - `/docs/persistence/README.md`
-- `/docs/ADR.md` 에서 **[[ADR-127]] · [[ADR-003]]** 만 열어라
+- `/docs/ADR.md` 에서 **[[ADR-128]] · [[ADR-003]]** 만 열어라
 - **이전 step 산출물**: `src/storage/ports.ts`(포트 정의·주입) · `src/storage/adapters/`(Capacitor 구현) ·
   포트를 경유하도록 고쳐진 `src/storage/*.ts` 14개 · `@core/*` alias
 
@@ -83,5 +83,5 @@ grep -rE "document\.|window\.|matchMedia" packages/core/src/storage
   그것을 물면 RN 앱이 `packages/core` 를 설치할 수 없게 된다.
 - **파일 내용을 리팩터링하지 마라. import 경로만 고쳐라.**
 - **`mv` 나 복사+삭제를 쓰지 마라. `git mv` 를 써라.**
-- **export 시그니처를 바꾸지 마라.** 이유: [[ADR-127]] 결정 4.
+- **export 시그니처를 바꾸지 마라.** 이유: [[ADR-128]] 결정 4.
 - 기존 테스트를 깨뜨리지 마라.

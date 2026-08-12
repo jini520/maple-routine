@@ -96,7 +96,7 @@
 
 ### RN 어댑터 (`packages/app-rn`) — 같은 판정, 다른 채우는 값
 
-RN 전환([[ADR-127]])의 `AdsPort` 구현은 `react-native-google-mobile-ads` 를 쓴다. **판정 함수는
+RN 전환([[ADR-128]])의 `AdsPort` 구현은 `react-native-google-mobile-ads` 를 쓴다. **판정 함수는
 공유한다** — `packages/core` 의 `shouldUseTestAds`·`resolveInterstitialAdId` 를 그대로 부르고,
 `packages/app-rn/src` 에는 광고 단위 ID 문자열이 한 글자도 없다(저장소 검색으로 지킨다).
 

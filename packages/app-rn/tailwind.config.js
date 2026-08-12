@@ -9,7 +9,7 @@
 // (`bg-primary` → `background-color: var(--color-primary)`), 실제 값은 `ThemeProvider` 가
 // NativeWind 의 `vars()` 로 렌더 트리에 내려보낸다. 웹의 구조(`@theme` 이 만든 유틸리티 +
 // `<style id="theme-vars">` 가 덮는 변수)와 **같은 모양**이라, `className` 을 그대로 옮길 수 있다 —
-// 그것이 step 3~6 의 163곳을 싸게 만드는 전제다([[ADR-127]] 3단계).
+// 그것이 step 3~6 의 163곳을 싸게 만드는 전제다([[ADR-128]] 3단계).
 //
 // 이름은 손으로 적지 않고 **`job-themes.json` 의 키에서 판다**([[ADR-064]] 결정 10 — 테마 추가는
 // JSON 한 블록이고 개별 파일을 손으로 동기화하지 않는다). 베껴 두면 토큰이 하나 늘 때 여기만 빠져

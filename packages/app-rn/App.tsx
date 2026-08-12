@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { useOnboardingStore } from '@core/features/onboarding/store'
 
-// NativeWind 배선의 **유일한 진입점**([[ADR-127]] 3단계). Metro 가 이 import 를 보고 Tailwind 를
+// NativeWind 배선의 **유일한 진입점**([[ADR-128]] 3단계). Metro 가 이 import 를 보고 Tailwind 를
 // 돌려 RN 스타일시트를 주입한다 — 없으면 `className` 이 조용히 아무것도 안 한다.
 import './global.css'
 

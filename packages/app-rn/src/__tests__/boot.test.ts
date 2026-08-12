@@ -187,7 +187,7 @@ describe('아직 매핑되지 않은 포트 — LiveUpdatePort', () => {
   it.each(cases)('LiveUpdatePort.%s() 는 단계 3 이 아니라 별도 ADR 을 가리킨다', async (method, fn) => {
     const error = await captureFailure(fn)
 
-    expect(error.message).toContain('ADR-127')
+    expect(error.message).toContain('ADR-128')
     expect(error.message).toContain('결정 7')
     expect(error.message).toContain(`LiveUpdatePort.${method}()`)
     expect(error.message).not.toContain('단계 3')

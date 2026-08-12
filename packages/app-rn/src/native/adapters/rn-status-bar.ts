@@ -3,7 +3,7 @@ import { StatusBar } from 'react-native'
 import type { StatusBarPort } from '@core/native/ports'
 
 /**
- * `StatusBarPort` 의 RN 구현([[ADR-127]] 결정 4 — 밖으로 나가는 시그니처는 Capacitor 구현과 한
+ * `StatusBarPort` 의 RN 구현([[ADR-128]] 결정 4 — 밖으로 나가는 시그니처는 Capacitor 구현과 한
  * 글자도 다르지 않다).
  *
  * **명암의 방향이 이 파일의 전부다.** 인자 `isDarkTheme` 은 "테마가 어두운가"이고 상태바 글리프는 그
@@ -28,7 +28,7 @@ import type { StatusBarPort } from '@core/native/ports'
  */
 export const rnStatusBarPort: StatusBarPort = {
   // RN 쪽은 동기 API 다. 포트가 Promise 인 것은 Capacitor 브릿지 사정이었고, 그 차이는 여기서
-  // 흡수한다([[ADR-127]] 결정 4 — 시그니처는 안 바꾼다).
+  // 흡수한다([[ADR-128]] 결정 4 — 시그니처는 안 바꾼다).
   async setStyle(isDarkTheme) {
     StatusBar.setBarStyle(isDarkTheme ? 'light-content' : 'dark-content')
   },

@@ -1,7 +1,7 @@
 import { requireNativeModule } from 'expo'
 
 /**
- * Capacitor 시절 저장소를 **그대로** 여는 로컬 네이티브 모듈([[ADR-127]] 결정 5,
+ * Capacitor 시절 저장소를 **그대로** 여는 로컬 네이티브 모듈([[ADR-128]] 결정 5,
  * `docs/migration/data.md` 결정 1).
  *
  * 이 앱의 기존 데이터는 "Capacitor 안"이 아니라 **OS 가 앱 번들 ID 마다 주는 표준 저장소**에 있다.

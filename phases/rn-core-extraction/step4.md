@@ -7,7 +7,7 @@
 - `/docs/README.md` (문서 인덱스)
 - `/docs/migration/README.md` — 원칙 1(어댑터 시그니처 고정)
 - `/docs/migration/parity-inventory.md` §5 (`native/` 파일별 ADR 계약 표)
-- `/docs/ADR.md` 에서 **[[ADR-127]] · [[ADR-003]] · [[ADR-005]] · [[ADR-090]] · [[ADR-120]]** 만 열어라
+- `/docs/ADR.md` 에서 **[[ADR-128]] · [[ADR-003]] · [[ADR-005]] · [[ADR-090]] · [[ADR-120]]** 만 열어라
 - `/docs/features/ads.md` · `/docs/features/live-update.md` · `/docs/features/hunting-timer.md`
 - **작업 대상 전 파일**: `src/native/**` (11개 소스 + 9개 테스트) · `src/lib/use-system-back.ts`
 - **이전 step 산출물**: `src/storage/ports.ts` 의 포트 정의·주입 방식 — **같은 패턴을 따르라**
@@ -45,7 +45,7 @@ step 3 과 동일하다. `src/native/*.ts` 가 export 하는 함수의 이름·�
 | 파일 | 비고 |
 |---|---|
 | `ads.ts` | [[ADR-090]] 게이트가 `features/ads/policy.ts` 에 있고 그쪽은 순수 함수다. 포트는 SDK 호출만 |
-| `live-update.ts` | **주의**: OTA 프로토콜 재설계는 이 task 범위 밖([[ADR-127]] 결정 7). 지금은 현재 동작 그대로 포트화만 하라 |
+| `live-update.ts` | **주의**: OTA 프로토콜 재설계는 이 task 범위 밖([[ADR-128]] 결정 7). 지금은 현재 동작 그대로 포트화만 하라 |
 | `splash-screen.ts` · `status-bar.ts` · `system-bars.ts` · `keyboard.ts` | |
 | `notifications.ts` | |
 | `hunting-timer/hunting-timer.ts` · `hunting-timer/hunting-timer.web.ts` | 웹 폴백이 있는 구조를 유지하라 |
@@ -112,10 +112,10 @@ git diff --stat src/features    # 비어 있거나 거의 비어 있어야 한�
 
 ## 금지사항
 
-- **`src/native/*.ts` 가 export 하는 함수의 시그니처를 바꾸지 마라.** 이유: [[ADR-127]] 결정 4.
+- **`src/native/*.ts` 가 export 하는 함수의 시그니처를 바꾸지 마라.** 이유: [[ADR-128]] 결정 4.
   `features/` 6개 지점이 이것에 의존한다.
 - **`native/live-update.ts` 의 OTA 동작을 바꾸지 마라. 포트화만 하라.** 이유: @capgo → expo-updates
-  프로토콜 재설계는 별도 ADR 대상이고([[ADR-127]] 결정 7), 여기서 손대면 **현재 배포 중인 앱의
+  프로토콜 재설계는 별도 ADR 대상이고([[ADR-128]] 결정 7), 여기서 손대면 **현재 배포 중인 앱의
   업데이트 경로가 깨진다.**
 - **`native/ads.ts` 의 광고 단위 ID 와 `shouldUseTestAds` 로직을 바꾸지 마라.** 이유: 실 ID 로 자기
   광고를 누르면 무효 트래픽으로 AdMob 계정이 정지될 수 있고 되돌리기가 매우 어렵다. 개발 빌드가

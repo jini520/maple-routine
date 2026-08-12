@@ -4,11 +4,11 @@ import { Network } from '@capacitor/network'
 import type { LiveUpdatePort, NetworkType } from '@core/native/ports'
 
 /**
- * `LiveUpdatePort` 의 Capacitor(@capgo) 구현([[ADR-127]]).
+ * `LiveUpdatePort` 의 Capacitor(@capgo) 구현([[ADR-128]]).
  *
  * **여기 남는 것은 플러그인 호출 규약뿐이다.** 매니페스트 형식·버전 비교·6상태 판정·적용 순서
  * (닫기 → 커버 → set)는 전부 `native/live-update.ts` 가 갖고 있다 — @capgo → expo-updates 프로토콜
- * 재설계는 별도 결정이고([[ADR-127]] 결정 7), 그때 갈아끼우는 것이 이 파일이다.
+ * 재설계는 별도 결정이고([[ADR-128]] 결정 7), 그때 갈아끼우는 것이 이 파일이다.
  */
 
 const APP_ID = 'com.mapleroutine.app'

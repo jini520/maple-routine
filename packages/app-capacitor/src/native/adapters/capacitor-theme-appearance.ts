@@ -5,7 +5,7 @@ import type { ThemeAppearancePort } from '@core/native/ports'
 const THEME_STYLE_ID = 'theme-vars'
 
 /**
- * 테마를 문서에 반영한다 — 웹뷰 구현([[ADR-127]]). 전에는 `features/theme/store.ts` 안에 있었다.
+ * 테마를 문서에 반영한다 — 웹뷰 구현([[ADR-128]]). 전에는 `features/theme/store.ts` 안에 있었다.
  *
  * 선택한 테마의 34토큰을 `<style>` 태그 하나로 주입한다([[ADR-064]] 결정 10). 전에는 `index.css` 에
  * 테마별 `:root[data-theme]` 블록을 손으로 적었는데, 테마를 수십 개로 늘릴 계획이라 그 방식으로는

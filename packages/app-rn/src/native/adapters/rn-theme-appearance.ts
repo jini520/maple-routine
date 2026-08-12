@@ -3,7 +3,7 @@ import type { ThemeAppearancePort } from '@core/native/ports'
 import { setThemeAppearance } from '../../theme/appearance-store'
 
 /**
- * `ThemeAppearancePort` 의 RN 구현([[ADR-127]] 결정 4 — 밖으로 나가는 시그니처는 Capacitor 구현과
+ * `ThemeAppearancePort` 의 RN 구현([[ADR-128]] 결정 4 — 밖으로 나가는 시그니처는 Capacitor 구현과
  * 한 글자도 다르지 않다).
  *
  * ## 웹뷰 구현이 하던 넷 중 무엇이 여기 남는가

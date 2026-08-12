@@ -24,7 +24,7 @@ import { capacitorSystemBarsPort } from './capacitor-system-bars'
 import { capacitorThemeAppearancePort } from './capacitor-theme-appearance'
 
 /**
- * 네이티브 포트를 한 번에 주입한다([[ADR-127]]).
+ * 네이티브 포트를 한 번에 주입한다([[ADR-128]]).
  *
  * 저장소 포트는 둘이라 `main.tsx` 가 직접 세터를 불렀지만, 이쪽은 하나라도 빠지면 그 기능만 조용히
  * 던지므로 "전부"를 한 자리에서 보장한다. 주입 순서는 서로 무관하다 — 포트끼리 참조하지 않는다.

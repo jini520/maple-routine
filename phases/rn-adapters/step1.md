@@ -5,7 +5,7 @@
 - `/docs/README.md` (문서 인덱스)
 - **`/docs/migration/data.md`** — **이 step 의 설계가 전부 여기 있다. 반드시 정독하라**
 - `/docs/persistence/README.md` · `/docs/persistence/preferences.md`
-- `/docs/ADR.md` 에서 **[[ADR-127]] · [[ADR-003]] · [[ADR-052]] · [[ADR-058]]** 만 열어라
+- `/docs/ADR.md` 에서 **[[ADR-128]] · [[ADR-003]] · [[ADR-052]] · [[ADR-058]]** 만 열어라
 - `packages/core/src/storage/ports.ts` (**`PreferencesPort` 계약**)
 - `packages/app-capacitor/src/storage/adapters/capacitor-preferences.ts` (**참조 구현**)
 - `packages/core/src/storage/keys.ts` · `packages/core/src/storage/cache-data.ts`

@@ -23,7 +23,7 @@ import type { LiveUpdatePort } from '@core/native/ports'
  * 다른 어댑터는 같은 일을 하는 다른 SDK 로 바꾸는 것이지만 OTA 는 @capgo 자체 호스팅 매니페스트 →
  * `expo-updates` 로 **형식 자체가 바뀌고**, [[ADR-022]]·[[ADR-026]]·[[ADR-119]]·[[ADR-126]] 이 정한
  * 매니페스트 항목(`highlights` · `minNativeVersion` · 채널)을 새 프로토콜에 어떻게 싣는지는
- * **[[ADR-127]] 결정 7 이 별도 ADR 로 미뤄 둔 결정**이다. 그래서 3단계가 아니라 그 ADR 을 가리킨다.
+ * **[[ADR-128]] 결정 7 이 별도 ADR 로 미뤄 둔 결정**이다. 그래서 3단계가 아니라 그 ADR 을 가리킨다.
  *
  * ## 이 목록을 떠난 것이 셋이다 — 셋 다 "어댑터를 잘 짜는 문제"가 아니었다
  *
@@ -60,7 +60,7 @@ function notImplementedMessage(port: string, method: string, reason: string): st
 }
 
 const LIVE_UPDATE_REASON =
-  'OTA 는 프로토콜 자체가 바뀌어(@capgo → expo-updates) [[ADR-127]] 결정 7 이 별도 ADR 로 미뤄 둔 결정입니다.'
+  'OTA 는 프로토콜 자체가 바뀌어(@capgo → expo-updates) [[ADR-128]] 결정 7 이 별도 ADR 로 미뤄 둔 결정입니다.'
 
 /**
  * 동기 시그니처(`isSupported` · `openStore`)는 **동기로** 던진다. 여기서 Promise 를 쓸 방법이 없기도

@@ -3,7 +3,7 @@ import { SplashScreen } from '@capacitor/splash-screen'
 import type { SplashScreenPort } from '@core/native/ports'
 
 /**
- * `SplashScreenPort` 의 Capacitor 구현([[ADR-127]], [[ADR-025]]·[[ADR-027]]·[[ADR-117]]).
+ * `SplashScreenPort` 의 Capacitor 구현([[ADR-128]], [[ADR-025]]·[[ADR-027]]·[[ADR-117]]).
  *
  * 웹뷰에서 "화면을 덮는다"는 일은 **네이티브 스플래시 + DOM 커버 두 장**이 함께 한다. 그 두 장은
  * 정의상 웹뷰 구현이므로(다른 프레임워크에는 `#boot-cover` 라는 것이 없다) 포트가 아니라 여기 있다.

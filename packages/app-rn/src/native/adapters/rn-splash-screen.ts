@@ -3,7 +3,7 @@ import * as SplashScreen from 'expo-splash-screen'
 import type { SplashScreenPort } from '@core/native/ports'
 
 /**
- * `SplashScreenPort` 의 RN 구현([[ADR-127]] 결정 4 — 밖으로 나가는 시그니처는 Capacitor 구현과 한
+ * `SplashScreenPort` 의 RN 구현([[ADR-128]] 결정 4 — 밖으로 나가는 시그니처는 Capacitor 구현과 한
  * 글자도 다르지 않다). 정책은 [[ADR-025]]·[[ADR-027]]·[[ADR-117]].
  *
  * **`expo-splash-screen` 을 고른 근거**는 버전이 SDK 에 묶인다는 것이다(`~57.0.6` — `expo` 의
@@ -44,7 +44,7 @@ export const rnSplashScreenPort: SplashScreenPort = {
    * 는 `preventAutoHideAsync`·`setOptions`·`hide`·`hideAsync` 넷뿐이고 다시 띄우는 것은 없다
    * (`react-native-bootsplash` 도 같다).
    *
-   * OTA 는 [[ADR-127]] 결정 7 대로 프로토콜째 재설계 대상이라(@capgo → expo-updates), 그때 적용
+   * OTA 는 [[ADR-128]] 결정 7 대로 프로토콜째 재설계 대상이라(@capgo → expo-updates), 그때 적용
    * 경로가 화면을 덮어야 한다면 그 결정에서 이 자리를 다시 본다.
    */
   async show() {},

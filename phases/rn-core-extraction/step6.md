@@ -5,7 +5,7 @@
 - `/docs/README.md` (문서 인덱스 — `features/*.md` 중 관련된 것을 골라 읽어라)
 - `/docs/migration/README.md` (원칙)
 - `/docs/migration/parity-inventory.md` §4
-- `/docs/ADR.md` 에서 **[[ADR-127]] · [[ADR-003]] · [[ADR-005]] · [[ADR-120]] · [[ADR-104]]** 만 열어라
+- `/docs/ADR.md` 에서 **[[ADR-128]] · [[ADR-003]] · [[ADR-005]] · [[ADR-120]] · [[ADR-104]]** 만 열어라
 - `/docs/features/theme.md` (`features/theme/store.ts` 를 만지므로)
 - **이전 step 산출물**: `packages/core/src/storage/` · `src/storage/adapters/` · `src/native/ports.ts` ·
   `src/native/adapters/` · `@core/*` alias

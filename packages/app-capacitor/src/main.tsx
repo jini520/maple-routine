@@ -10,7 +10,7 @@ import { capacitorPreferencesPort } from './storage/adapters/capacitor-preferenc
 import { capacitorSqlitePort } from './storage/adapters/capacitor-sqlite'
 import { installCapacitorNativePorts } from './native/adapters'
 
-// 저장소·네이티브 포트 주입은 **그것을 건드리는 어떤 코드보다 먼저** 와야 한다([[ADR-127]]) — 바로
+// 저장소·네이티브 포트 주입은 **그것을 건드리는 어떤 코드보다 먼저** 와야 한다([[ADR-128]]) — 바로
 // 아래 checkOnBoot()부터 Preferences를 읽고 라이브 업데이트를 확인한다(그 실패 경로는 스플래시까지
 // 건드린다, [[ADR-117]]). 주입 전 접근은 조용히 넘어가지 않고 던지므로, 순서가 틀리면 무음 실패가
 // 아니라 에러로 드러난다.

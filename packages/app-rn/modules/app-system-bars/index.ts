@@ -1,7 +1,7 @@
 import { requireOptionalNativeModule } from 'expo'
 
 /**
- * 하단 시스템 내비게이션 바 글리프의 명암([[ADR-127]] 3단계 — `SystemBarsPort` 의 절반).
+ * 하단 시스템 내비게이션 바 글리프의 명암([[ADR-128]] 3단계 — `SystemBarsPort` 의 절반).
  *
  * ## 왜 네이티브 코드가 필요한가
  *

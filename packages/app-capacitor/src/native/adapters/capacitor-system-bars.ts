@@ -1,7 +1,7 @@
 import { Capacitor, registerPlugin } from '@capacitor/core'
 import type { SystemBarsPort } from '@core/native/ports'
 
-/** `SystemBarsPort` 의 Capacitor 구현([[ADR-127]]). 안드로이드 전용 플러그인이다. */
+/** `SystemBarsPort` 의 Capacitor 구현([[ADR-128]]). 안드로이드 전용 플러그인이다. */
 interface AppSystemBarsPlugin {
   // dark: 어두운 표면(다크 테마)이면 true → 하단 내비 글리프를 밝게 그린다.
   setStyle(options: { dark: boolean }): Promise<void>

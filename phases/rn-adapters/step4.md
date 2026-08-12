@@ -4,7 +4,7 @@
 
 - `/docs/README.md` (문서 인덱스)
 - **`/docs/features/hunting-timer.md`** (기능 정책)
-- `/docs/ADR.md` 에서 **[[ADR-127]] · [[ADR-005]]** 만 열어라 — **[[ADR-005]] 가 이 기능의 근거 결정이다**
+- `/docs/ADR.md` 에서 **[[ADR-128]] · [[ADR-005]]** 만 열어라 — **[[ADR-005]] 가 이 기능의 근거 결정이다**
 - `packages/core/src/native/ports.ts` (**`HuntingTimerPort` · `HuntingTimerState` 계약**)
 - `packages/core/src/native/hunting-timer/hunting-timer.ts` · `hunting-timer.web.ts`
 - `packages/app-capacitor/src/native/adapters/capacitor-hunting-timer.ts` (**참조 구현**)

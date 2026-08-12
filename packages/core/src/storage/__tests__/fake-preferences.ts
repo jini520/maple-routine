@@ -2,7 +2,7 @@ import { vi } from 'vitest'
 import { setPreferencesPort, type PreferencesPort } from '../ports'
 
 /**
- * 테스트용 인메모리 `PreferencesPort`([[ADR-127]]).
+ * 테스트용 인메모리 `PreferencesPort`([[ADR-128]]).
  *
  * 포트 역전 전에는 각 테스트가 Preferences 플러그인 모듈 자체를 `vi.mock` 으로 가로챘다.
  * 이제 가짜 포트를 주입한다 — 검증 대상(어떤 키로 무엇을 쓰는가, 실패가 어떻게 전파되는가)은

@@ -1,5 +1,5 @@
 // Metro 모노레포 설정. RN 번들러는 프로젝트 디렉터리 **밖**의 파일을 기본으로 읽지 않으므로,
-// `packages/core` 를 쓰려면 아래 둘을 직접 알려줘야 한다([[ADR-127]] 결정 3).
+// `packages/core` 를 쓰려면 아래 둘을 직접 알려줘야 한다([[ADR-128]] 결정 3).
 //
 // `@core/*` alias 자체는 여기 없다 — **`tsconfig.json` 의 `paths` 하나가 tsc 와 Metro 양쪽을 다 푼다**
 // (Expo 의 `experiments.tsconfigPaths`, `app.json` 에 명시해 뒀다). 그래서 "타입은 통과하는데
@@ -45,7 +45,7 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
   return (upstreamResolveRequest ?? context.resolveRequest)(context, moduleName, platform)
 }
 
-// ④ NativeWind 를 **맨 마지막에** 씌운다([[ADR-127]] 3단계). 이 래퍼는 트랜스포머를 갈아끼우고
+// ④ NativeWind 를 **맨 마지막에** 씌운다([[ADR-128]] 3단계). 이 래퍼는 트랜스포머를 갈아끼우고
 //    설정을 새로 만들어 돌려주므로, 위 ①·② 를 마친 객체를 넘겨야 한다 — 순서를 뒤집어 래퍼 결과에
 //    `config.resolver` 를 통째로 대입하면 그쪽이 심어 둔 것이 지워진다. 순서가 곧 계약이다.
 module.exports = withNativeWind(config, {

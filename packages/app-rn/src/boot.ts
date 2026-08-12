@@ -28,7 +28,7 @@ import { rnPreferencesPort } from './storage/adapters/rn-preferences'
 import { rnSqlitePort } from './storage/adapters/rn-sqlite'
 
 /**
- * 포트 13종을 한 번에 주입한다([[ADR-127]] 결정 4 — `packages/core` 는 인터페이스만 갖고 구현은
+ * 포트 13종을 한 번에 주입한다([[ADR-128]] 결정 4 — `packages/core` 는 인터페이스만 갖고 구현은
  * 앱이 넣는다). `app-capacitor` 의 짝은 `main.tsx` + `native/adapters/index.ts` 다.
  *
  * (아래 `setThemeAppearancePort` 가 값을 놓는 자리는 `src/theme/appearance-store.ts` 이고 그것을
@@ -53,7 +53,7 @@ import { rnSqlitePort } from './storage/adapters/rn-sqlite'
  *
  * ## 하나는 아직 구현이 아니라 **거부**다
  *
- * `LiveUpdatePort` 는 [[ADR-127]] 결정 7 의 별도 ADR 에서 채워진다. 그때까지 비워 두지 않고
+ * `LiveUpdatePort` 는 [[ADR-128]] 결정 7 의 별도 ADR 에서 채워진다. 그때까지 비워 두지 않고
  * **던지는 구현**을 넣는 이유는 `not-implemented.ts` 가 적어 두었다 — 슬롯의 일반 메시지는
  * *"주입을 잊었다"* 로 읽히지 *"아직 안 만들었다"* 로 읽히지 않는다.
  *

@@ -11,7 +11,7 @@ vi.mock('@capacitor/core', () => ({
   registerPlugin: () => ({ setStyle: setStyleMock, refreshInsets: refreshInsetsMock }),
 }))
 
-// 포트 역전([[ADR-127]]) 후에도 검사 대상은 그대로다 — 플랫폼 가드가 어댑터로 옮겨갔으므로
+// 포트 역전([[ADR-128]]) 후에도 검사 대상은 그대로다 — 플랫폼 가드가 어댑터로 옮겨갔으므로
 // 실제 Capacitor 구현을 주입해 「어댑터 함수 → 어댑터 → 플러그인」을 한 단위로 본다.
 const { setNavigationBarStyle, refreshSafeAreaInsets } = await import('@core/native/system-bars')
 const { setSystemBarsPort } = await import('@core/native/ports')

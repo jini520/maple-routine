@@ -13,7 +13,7 @@ import { toAppKeys, toNativeKey, type PreferencesPlatform } from './capacitor-st
 const platform: PreferencesPlatform = Platform.OS === 'ios' ? 'ios' : 'android'
 
 /**
- * `PreferencesPort` 의 RN 구현([[ADR-127]] 결정 4 — 밖으로 나가는 시그니처는 Capacitor 구현과
+ * `PreferencesPort` 의 RN 구현([[ADR-128]] 결정 4 — 밖으로 나가는 시그니처는 Capacitor 구현과
  * 한 글자도 다르지 않다).
  *
  * **기존 저장소를 그대로 쓴다**(`docs/migration/data.md` 결정 1). 새 백엔드(MMKV 등)를 도입하지

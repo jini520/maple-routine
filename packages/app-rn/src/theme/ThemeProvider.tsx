@@ -8,7 +8,7 @@ import { ThemeContext } from './context'
 import { buildThemeVariables } from './theme-vars'
 
 /**
- * 고른 테마의 38토큰을 화면 전체에 내려보낸다 — **웹의 `:root` 에 해당하는 자리**([[ADR-127]] 3단계).
+ * 고른 테마의 38토큰을 화면 전체에 내려보낸다 — **웹의 `:root` 에 해당하는 자리**([[ADR-128]] 3단계).
  *
  * 하는 일 둘:
  *   ① `vars()` 를 얹은 View 로 감싼다 → 그 아래 모든 `className`(`bg-primary` 등)이 색을 얻는다.

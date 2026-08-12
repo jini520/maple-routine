@@ -4,7 +4,7 @@
 
 - `/docs/README.md` (문서 인덱스)
 - `/docs/migration/README.md` — 단계 3(내비게이션 + `components/`)에 무엇이 남는지
-- `/docs/ADR.md` 에서 **[[ADR-127]] · [[ADR-120]] · [[ADR-104]] · [[ADR-064]] · [[ADR-099]]** 만 열어라
+- `/docs/ADR.md` 에서 **[[ADR-128]] · [[ADR-120]] · [[ADR-104]] · [[ADR-064]] · [[ADR-099]]** 만 열어라
 - `packages/core/src/native/ports.ts` — **`ThemeAppearancePort` · `SystemBarsPort` ·
   `BackGesturePort` 의 주석을 특히 정독하라**
 - `packages/core/src/storage/ports.ts` (주입 계약)

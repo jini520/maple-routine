@@ -2,7 +2,7 @@
 //
 // 스토어는 core 에 있지만(`@core/features/theme/store`) **이 테스트는 app 쪽에 남는다** — 검사하는
 // 것이 "문서에 실제로 반영되는가"라서 웹뷰 구현(`native/adapters/capacitor-theme-appearance`)을
-// 함께 세워야 성립하고, DOM 단언이 들어간 파일은 core 에 둘 수 없다([[ADR-127]]).
+// 함께 세워야 성립하고, DOM 단언이 들어간 파일은 core 에 둘 수 없다([[ADR-128]]).
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { getTheme, setTheme } from '@core/storage/theme'
 import { setColorSchemePort, setThemeAppearancePort } from '@core/native/ports'

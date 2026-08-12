@@ -7,7 +7,7 @@
 - `/docs/README.md` (문서 인덱스)
 - `/docs/migration/README.md` — 특히 «삭제되는 화면 전환 machinery» 표
 - `/docs/migration/parity-inventory.md` §4
-- `/docs/ADR.md` 에서 **[[ADR-127]] · [[ADR-120]]** 두 개만 열어라
+- `/docs/ADR.md` 에서 **[[ADR-128]] · [[ADR-120]]** 두 개만 열어라
 - **이전 step 산출물**: `packages/core/src/{data,types,nexon}/` · `@core/*` alias 설정 ·
   `scripts/theme-gen.ts`(경로가 일부만 고쳐진 상태)
 

@@ -1,7 +1,7 @@
 import { LocalNotifications } from '@capacitor/local-notifications'
 import type { NotificationsPort } from '@core/native/ports'
 
-/** `NotificationsPort` 의 Capacitor 구현([[ADR-127]]). */
+/** `NotificationsPort` 의 Capacitor 구현([[ADR-128]]). */
 export const capacitorNotificationsPort: NotificationsPort = {
   async requestPermission() {
     const { display } = await LocalNotifications.requestPermissions()

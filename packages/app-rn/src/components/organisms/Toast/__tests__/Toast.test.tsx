@@ -96,7 +96,7 @@ describe('Toast', () => {
             // **core 의 타입이 웹을 향해 있다** — `ToastAction.icon` 이 `lucide-react` 의
             // `LucideIcon` 이라 `lucide-react-native` 아이콘이 그대로 안 들어간다(SVG DOM 프롭이
             // 달라 `fillRule` 에서 갈린다). core 는 이 단계에서 손대지 않는 것이 원칙이라
-            // ([[ADR-127]] 원칙 3) 여기서는 캐스팅으로 넘기고, **호출부가 아이콘을 넘기는 화면
+            // ([[ADR-128]] 원칙 3) 여기서는 캐스팅으로 넘기고, **호출부가 아이콘을 넘기는 화면
             // 단계에서 core 타입을 풀어야 한다**는 사실을 여기 남긴다.
             action: { label: '설정 열기', onClick: noop, icon: SettingsIcon as unknown as ToastAction['icon'] },
           })}

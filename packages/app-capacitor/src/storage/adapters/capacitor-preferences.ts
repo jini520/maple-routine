@@ -3,7 +3,7 @@ import { Preferences } from '@capacitor/preferences'
 import type { PreferencesPort } from '@core/storage/ports'
 
 /**
- * `PreferencesPort` 의 Capacitor 구현([[ADR-127]]).
+ * `PreferencesPort` 의 Capacitor 구현([[ADR-128]]).
  *
  * 저장 위치는 프레임워크가 아니라 **앱 번들 ID에 귀속된다** — Android `CapacitorStorage`
  * SharedPreferences / iOS `UserDefaults` 의 `"CapacitorStorage."` 접두사(`docs/migration/data.md`

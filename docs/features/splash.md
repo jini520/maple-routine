@@ -26,7 +26,7 @@ HyperOS 다크모드 force-dark 가 밝은 스플래시 배경색을 앱 설정 
 
 **인라인 타이머만 그 모듈을 못 쓴다**(React 트리 밖·번들 밖이라 import 가 없다) — 그래서 DOM 커버는 직접 지우고 네이티브는 **전역 브릿지로** 부른다(`window.Capacitor?.Plugins?.SplashScreen?.hide()`, optional chaining + `try/catch`). **DOM 만 걷으면 iOS 는 화면만 돌아오고 터치는 죽은 채**이므로(`isUserInteractionEnabled` 는 네이티브 `tearDown()` 에서만 풀린다) 걷는 장치가 넷이면 넷 다 이 성질을 가져야 한다. 다만 **보장은 아니다** — 브릿지가 없거나(웹 개발 서버) 아직 준비되지 않았으면 optional chaining 이 조용히 통과한다. 그 경로와, 넷 다 실행되지 않는 경로(React 가 마운트조차 못 하는 실패)는 capgo 의 10초 롤백이 메운다.
 
-## RN 어댑터 ([[ADR-127]], 2026-08-11)
+## RN 어댑터 ([[ADR-128]], 2026-08-11)
 
 위 정책은 전부 **웹뷰 사정**이다. RN 구현(`packages/app-rn/src/native/adapters/rn-splash-screen.ts`)이
 다루는 것은 **네이티브 스플래시 한 장뿐**이다.
@@ -42,7 +42,7 @@ HyperOS 다크모드 force-dark 가 밝은 스플래시 배경색을 앱 설정 
   직전에 드러나는 웹뷰 배경색을 덮는다 — [[ADR-027]] 정정 · [[ADR-117]] 결정 1·8) RN 에는 **문서를 다시
   로드하는 일 자체가 없어** 덮을 구간이 생기지 않는다. `preventAutoHideAsync()` 로 흉내 내는 것은
   **답이 아니다** — 이미 내려간 스플래시에는 아무 효과가 없어 화면은 그대로인데 호출부만 덮였다고
-  믿는다. OTA 프로토콜은 [[ADR-127]] 결정 7 대로 재설계 대상이라, 새 적용 경로가 화면을 덮어야 하면
+  믿는다. OTA 프로토콜은 [[ADR-128]] 결정 7 대로 재설계 대상이라, 새 적용 경로가 화면을 덮어야 하면
   그 결정에서 이 자리를 다시 본다.
 - **계속 띄워 두는 일은 어댑터 밖이다.** Capacitor 에서 그것은 코드가 아니라 설정이었고
   (`capacitor.config.ts` `launchAutoHide: false`), RN 짝은 앱 진입점 **전역 스코프**에서 부르는

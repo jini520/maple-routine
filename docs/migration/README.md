@@ -5,7 +5,7 @@
 
 **관련 소스(read/write)**: `src/**` 전체 · `android/` · `ios/` · `capacitor.config.ts` · `package.json`
 
-**관련 ADR**: [[ADR-127]](전환 결정 — 배경·대안·기각 근거) · [[ADR-001]](Capacitor 채택, 이 전환이 뒤집는 결정) ·
+**관련 ADR**: [[ADR-128]](전환 결정 — 배경·대안·기각 근거) · [[ADR-001]](Capacitor 채택, 이 전환이 뒤집는 결정) ·
 [[ADR-002]](Vite React SPA) · [[ADR-003]]·[[ADR-005]](어댑터 레이어 — 전환 비용을 낮춘 원인) ·
 [[ADR-120]](화면 스택 — 전환으로 **삭제**되는 코드의 근거)
 
@@ -65,7 +65,7 @@ CLAUDE.md의 TDD 원칙을 전환에도 적용한다. 화면 하나를 재작성
 
 ### 원칙 5 — "한 번에 성공해야 하는 것"을 최소화한다
 
-전환 릴리스에는 OTA 안전망이 없다([[ADR-127]] 트레이드오프). 그래서 단발 실행 코드를 최대한 만들지
+전환 릴리스에는 OTA 안전망이 없다([[ADR-128]] 트레이드오프). 그래서 단발 실행 코드를 최대한 만들지
 않는다 — 데이터를 **옮기는** 대신 **그대로 읽는** 선택이 여기서 나온다([data.md](./data.md) 결정 1).
 
 ---
@@ -206,7 +206,7 @@ packages/
 
 주입은 `packages/app-rn/src/boot.ts` 의 `installPorts()` 한 함수이고 진입점 `index.ts` 가
 `registerRootComponent(App)` 앞에서 부른다. **포트 13종 중 넷은 아직 구현이 아니라 «던지는 구현»** 이다
-(`native/adapters/not-implemented.ts`) — 셋은 3단계 몫, `LiveUpdatePort` 는 [[ADR-127]] 결정 7 의 별도
+(`native/adapters/not-implemented.ts`) — 셋은 3단계 몫, `LiveUpdatePort` 는 [[ADR-128]] 결정 7 의 별도
 ADR 몫이다. 조용한 no-op 으로 두지 않는 이유와 각 자리의 근거는
 [parity-inventory.md](./parity-inventory.md) «부팅 배선».
 
@@ -236,7 +236,7 @@ ADR 몫이다. 조용한 no-op 으로 두지 않는 이유와 각 자리의 근�
   `BackGesturePort`(네이티브 스택 + `moveToBackground` 한 메서드는 로컬 모듈, step 2) ·
   `SystemBarsPort`(`setNavigationBarStyle` 은 로컬 모듈, `refreshSafeAreaInsets` 는 의도적 no-op,
   step 6). **남은 «던지는 구현»은 `LiveUpdatePort` 하나**이고 그것은 3단계가 아니라
-  [[ADR-127]] 결정 7 의 별도 ADR 몫이다
+  [[ADR-128]] 결정 7 의 별도 ADR 몫이다
 - **게이트**: [[ADR-120]] 동작(탭바 동반 이동·시차·3버튼 수렴)이 실기기에서 재현될 것
 
 **스타일링은 NativeWind 다**(사용자 결정, 2026-08-11). `components/` 33파일에 `className` 이 163곳
@@ -573,7 +573,7 @@ Toast 는 구조가 다 서 있어 step 7 이 값만 굴리면 되지만, **드�
 는 `index.html` 의 DOM 이고, ⑶ 의 `isUserInteractionEnabled=false` 는 Capacitor 플러그인의 동작이다.
 그래서 **호출은 남되 이유가 하나로 줄었다.** 함께 갈린 것이 하나 더 있다 — **'다시 시작'이 필수
 프롭이 됐다.** 웹 기본값 `location.reload()` 의 짝이 RN 에 없고(번들 재실행은 OTA 런타임의 일,
-[[ADR-127]] 결정 7), 없는 기본값을 지어내면 같은 예외로 즉시 되돌아오는 버튼이 되어 [[ADR-065]]
+[[ADR-128]] 결정 7), 없는 기본값을 지어내면 같은 예외로 즉시 되돌아오는 버튼이 되어 [[ADR-065]]
 결정 5 가 세운 *"선택지가 하나여서 그 하나가 분명해진다"* 를 깬다.
 
 **남은 어긋남 하나를 적어 둔다** — core 의 `ToastAction.icon` 이 `lucide-react`(웹) 타입이라
@@ -800,4 +800,4 @@ JSX 가 트랜스파일되지 않은 채 배포돼 jest 에서 `SyntaxError` 로
 
 ## 폐기된 정책 (history)
 
-- (아직 없음 — 이 문서는 [[ADR-127]] 과 함께 신설됐다)
+- (아직 없음 — 이 문서는 [[ADR-128]] 과 함께 신설됐다)

@@ -4,7 +4,7 @@
 
 - `/docs/README.md` (문서 인덱스)
 - `/docs/migration/README.md` — 원칙·단계·**브랜치 전략**
-- `/docs/ADR.md` 에서 **[[ADR-127]]** 만 `/docs/adr/ADR-127.md` 로 열어라. 전체를 올리지 말 것
+- `/docs/ADR.md` 에서 **[[ADR-128]]** 만 `/docs/adr/ADR-128.md` 로 열어라. 전체를 올리지 말 것
 - `/CLAUDE.md`
 - `packages/app-rn/package.json` · `packages/app-rn/tsconfig.json` · `packages/app-rn/app.json` ·
   `packages/app-rn/metro.config.js`

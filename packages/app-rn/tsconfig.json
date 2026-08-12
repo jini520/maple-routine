@@ -11,7 +11,7 @@
        import 하기 때문에 필요하다. Expo 가 만드는 `expo-env.d.ts` 도 같은 참조를 갖지만 그 파일은
        생성물이라 gitignore 되어 있어(= 새로 받은 저장소에는 없다) 여기 직접 적는다. */
     "types": ["jest", "expo/types"],
-    /* `@core/*` → `packages/core/src/*` ([[ADR-127]] 결정 3).
+    /* `@core/*` → `packages/core/src/*` ([[ADR-128]] 결정 3).
 
        웹 쪽은 `tsconfig.base.json` 의 `paths` 와 `vite.config.ts` 의 `resolve.alias` 가 **짝**이지만,
        RN 쪽은 이 선언 하나가 tsc 와 Metro 를 **둘 다** 푼다(Expo `experiments.tsconfigPaths` —

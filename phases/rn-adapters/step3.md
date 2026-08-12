@@ -4,7 +4,7 @@
 
 - `/docs/README.md` (문서 인덱스)
 - `/docs/migration/data.md` — **결정 4(예약된 로컬 알림 재등록)**. 이 step 이 그 문제의 절반을 만든다
-- `/docs/ADR.md` 에서 **[[ADR-127]] · [[ADR-004]]** 만 열어라
+- `/docs/ADR.md` 에서 **[[ADR-128]] · [[ADR-004]]** 만 열어라
 - `/docs/features/content-scheduler.md` · `/docs/features/boss-scheduler.md` (알림을 거는 쪽)
 - `packages/core/src/native/ports.ts` (**`NotificationsPort` · `LocalNotificationRequest` 계약**)
 - `packages/core/src/native/notifications.ts` (포트를 부르는 곳)

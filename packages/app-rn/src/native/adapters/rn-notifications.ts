@@ -1,5 +1,5 @@
 /**
- * `NotificationsPort` 의 RN 구현([[ADR-127]] 결정 4 — 밖으로 나가는 시그니처는 Capacitor 구현과
+ * `NotificationsPort` 의 RN 구현([[ADR-128]] 결정 4 — 밖으로 나가는 시그니처는 Capacitor 구현과
  * 한 글자도 다르지 않다). 정책은 [[ADR-004]](서버 푸시 없이 로컬 알림만).
  *
  * **notifee 를 고른 근거는 "실제로 붙는다"이다.** 이 저장소의 Expo SDK 57(RN 0.86)에서

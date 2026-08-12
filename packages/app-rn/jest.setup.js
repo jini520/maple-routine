@@ -1,4 +1,4 @@
-// NativeWind 런타임을 테스트 환경에 붙인다([[ADR-127]] 3단계).
+// NativeWind 런타임을 테스트 환경에 붙인다([[ADR-128]] 3단계).
 //
 // **`nativewind/test` 가 아니라 그 아래 `react-native-css-interop/test` 를 쓴다.** 두 가지 이유가
 // 있는데 둘 다 실측이다:

@@ -5,7 +5,7 @@
 - `/docs/README.md` (문서 인덱스)
 - **`/docs/features/theme.md`** (테마 정책 — 정독하라)
 - `/docs/foundation/design-system.md`
-- `/docs/ADR.md` 에서 **[[ADR-127]] · [[ADR-009]] · [[ADR-064]] · [[ADR-099]] · [[ADR-104]] · [[ADR-122]]** 만 열어라
+- `/docs/ADR.md` 에서 **[[ADR-128]] · [[ADR-009]] · [[ADR-064]] · [[ADR-099]] · [[ADR-104]] · [[ADR-122]]** 만 열어라
 - `packages/core/src/features/theme/store.ts` (**포트를 부르는 쪽**)
 - `packages/core/src/lib/theme-registry.ts` (`buildThemeCss` — 웹이 쓰는 것)
 - `packages/core/src/types/theme.ts` (`ThemeDefinition extends ThemeTokens`)
@@ -43,7 +43,7 @@ RN 에서 테마 적용은 **side-effect 가 아니라 상태**다. `ThemeProvid
 그것을 읽는 구조로 만들어라.
 
 **`features/theme/store.ts` 를 고치지 마라.** 그 파일은 `packages/core` 에 있고 `app-capacitor` 와
-공유된다. 시그니처도 동작도 그대로다([[ADR-127]] 결정 4).
+공유된다. 시그니처도 동작도 그대로다([[ADR-128]] 결정 4).
 
 ### 2. `ThemeAppearancePort` 의 RN 구현
 

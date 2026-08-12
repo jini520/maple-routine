@@ -32,7 +32,7 @@ export function useSystemBack({ onPop, onRoot }: SystemBackHandlers): void {
   }, [])
 
   // 시스템 뒤로가기가 없는 플랫폼(iOS·웹)에서는 어댑터가 아무것도 구독하지 않고 no-op 해제 함수를
-  // 돌려준다 — 여기서 플랫폼을 다시 묻지 않는다([[ADR-127]]).
+  // 돌려준다 — 여기서 플랫폼을 다시 묻지 않는다([[ADR-128]]).
   useEffect(() => {
     let dispose: (() => void) | undefined
     let cancelled = false

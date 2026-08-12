@@ -1,5 +1,5 @@
 /**
- * 라우트 표 — `docs/migration/parity-inventory.md` §1 을 **데이터로** 옮긴 것([[ADR-127]] 3단계).
+ * 라우트 표 — `docs/migration/parity-inventory.md` §1 을 **데이터로** 옮긴 것([[ADR-128]] 3단계).
  *
  * ## 왜 표를 코드에 두는가
  *

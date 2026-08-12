@@ -5,7 +5,7 @@
 - `/docs/README.md` (문서 인덱스)
 - **`/docs/migration/data.md`** — 결정 2(SQLite 를 그대로 연다) · «미검증 항목» · «검증 절차»
 - `/docs/persistence/sqlite.md`
-- `/docs/ADR.md` 에서 **[[ADR-127]] · [[ADR-050]] · [[ADR-069]] · [[ADR-117]] · [[ADR-124]]** 만 열어라
+- `/docs/ADR.md` 에서 **[[ADR-128]] · [[ADR-050]] · [[ADR-069]] · [[ADR-117]] · [[ADR-124]]** 만 열어라
 - `packages/core/src/storage/ports.ts` (**`SqlitePort` · `SqliteDbConnection` 계약**)
 - **`packages/core/src/storage/sqlite/db.ts`** (이 포트를 부르는 유일한 곳 — 무엇을 어떤 순서로
   부르는지 읽어라)

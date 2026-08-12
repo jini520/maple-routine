@@ -4,7 +4,7 @@
 
 - `/docs/README.md` (문서 인덱스)
 - **`/docs/migration/parity-inventory.md` §1** (라우트 → 스크린 매핑표 · 보존해야 할 라우팅 동작)
-- `/docs/ADR.md` 에서 **[[ADR-127]] · [[ADR-120]] · [[ADR-090]] · [[ADR-099]] · [[ADR-125]]** 만 열어라
+- `/docs/ADR.md` 에서 **[[ADR-128]] · [[ADR-120]] · [[ADR-090]] · [[ADR-099]] · [[ADR-125]]** 만 열어라
   — **[[ADR-120]] 은 전문을 정독하라. 이 step 의 게이트가 그 문서다**
 - `packages/app-capacitor/src/App.tsx` (573줄 — 라우팅·탭바·스택 오버레이·시스템 뒤로가기·광고 인터셉터)
 - `packages/core/src/features/screen-stack/store.ts` · `packages/app-capacitor/src/lib/stack-transition.ts`

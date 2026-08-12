@@ -11,7 +11,7 @@ docs/
 ├── foundation/           기능을 가로지르는 공통 토대 — 여러 기능이 함께 지키는 규칙
 ├── ADR.md                결정 원장(연대기). 개별 결정의 "왜/트레이드오프"는 항상 여기
 ├── persistence/          기기 영속 데이터 지도(저장 매체 축으로 조직 — feature 계층과 별개)
-├── migration/            React Native 전환 계획·패리티 인벤토리·데이터 보존([[ADR-127]])
+├── migration/            React Native 전환 계획·패리티 인벤토리·데이터 보존([[ADR-128]])
 └── trouble/              날짜별 트러블슈팅 로그(네이티브·실기기 이슈)
 ```
 
@@ -19,7 +19,7 @@ docs/
 - 각 문서 하단에는 **`## 폐기된 정책 (history)`** 섹션이 있다. 본문은 항상 **현재 유효한 정책만** 담고, 대체·폐기된 결정은 `~~옛 정책~~ → 새 정책 (ADR-N)` 한 줄로 이 섹션에 모은다. 정책을 바꿀 때 옛 내용을 지우지 말고 이 섹션으로 내려라.
 - **ADR.md** 는 쪼개지 않는다. `[[ADR-NNN]]` 은 경로가 아니라 논리적 참조이므로 문서 위치와 무관하게 그대로 쓴다. 새 결정은 ADR.md 말미에 append 한다.
 - **persistence/** 는 "무엇이 어디에 저장되는가"를 저장 매체(Preferences/SQLite/네이티브) 축으로 조직한 별개 문서다. feature 계층으로 편입하지 않는다 — 저장 스키마를 만질 때만 참고.
-- **migration/** 은 React Native 전환([[ADR-127]])의 실행 문서다. **한시적**이다 — 전환이 끝나면 문서도 함께 정리한다. feature 계층을 가로지르므로 `features/`·`foundation/` 어디에도 넣지 않는다. 전환 작업을 할 때만 참고하고, 그 밖의 작업에서는 열지 않는다.
+- **migration/** 은 React Native 전환([[ADR-128]])의 실행 문서다. **한시적**이다 — 전환이 끝나면 문서도 함께 정리한다. feature 계층을 가로지르므로 `features/`·`foundation/` 어디에도 넣지 않는다. 전환 작업을 할 때만 참고하고, 그 밖의 작업에서는 열지 않는다.
 
 ## 기능별 인덱스
 
@@ -59,5 +59,5 @@ docs/
 - **동기화·정규화·호출 제한** → `foundation/nexon-api.md` + `features/content-scheduler.md`/`boss-scheduler.md`.
 - **에러/빈 상태/엣지 처리** → `foundation/error-resilience.md`.
 - **스토어 배포·서명·버전 올리기** → `foundation/release.md` (OTA 갱신은 `features/live-update.md` — 별개 축이다).
-- **React Native 전환 작업** → `migration/README.md`(원칙·단계·게이트) → `migration/parity-inventory.md`(옮길 파일과 그 파일에 걸린 ADR 계약) → `migration/data.md`(기존 사용자 데이터 보존). 배경과 기각안은 [[ADR-127]].
+- **React Native 전환 작업** → `migration/README.md`(원칙·단계·게이트) → `migration/parity-inventory.md`(옮길 파일과 그 파일에 걸린 ADR 계약) → `migration/data.md`(기존 사용자 데이터 보존). 배경과 기각안은 [[ADR-128]].
 - **설계 결정의 배경이 궁금할 때** → `ADR.md` 에서 `[[ADR-NNN]]` 조회.

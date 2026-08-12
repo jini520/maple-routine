@@ -6,7 +6,7 @@
 - `/docs/migration/README.md` (원칙·«되돌릴 수 없는 지점»)
 - `/docs/foundation/release.md` (**서명·`versionCode`·빌드 커맨드 — 이 step 이 그것들을 옮긴다**)
 - `/docs/features/splash.md` (`android/…/SplashActivity` · iOS 스토리보드 · `capacitor.config.ts`)
-- `/docs/ADR.md` 에서 **[[ADR-127]] · [[ADR-001]] · [[ADR-025]] · [[ADR-024]]** 만 열어라
+- `/docs/ADR.md` 에서 **[[ADR-128]] · [[ADR-001]] · [[ADR-025]] · [[ADR-024]]** 만 열어라
 - **이전 step 산출물**: `packages/core/src/**` 전체 · `src/` 에 남은 것들 · `@core/*` alias ·
   루트 `package.json` scripts
 

@@ -5,7 +5,7 @@
 - `/docs/README.md` (문서 인덱스)
 - `/docs/migration/README.md` — 원칙 · **3단계 절**(스타일링 결정) · «잃는 안전망»
 - `/docs/foundation/design-system.md` (색·시맨틱 토큰·타이포)
-- `/docs/ADR.md` 에서 **[[ADR-127]] · [[ADR-094]]** 만 열어라. 전체를 올리지 말 것
+- `/docs/ADR.md` 에서 **[[ADR-128]] · [[ADR-094]]** 만 열어라. 전체를 올리지 말 것
 - `/CLAUDE.md`
 - `packages/app-capacitor/src/index.css` (**토큰 선언 51개가 여기 있다**)
 - `packages/app-capacitor/vite.config.ts` (Tailwind 플러그인 설정)

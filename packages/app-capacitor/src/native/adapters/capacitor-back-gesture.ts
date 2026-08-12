@@ -2,7 +2,7 @@ import { Capacitor, registerPlugin, type PluginListenerHandle } from '@capacitor
 import type { BackGesturePort, BackProgressEvent } from '@core/native/ports'
 
 /**
- * `BackGesturePort` 의 Capacitor 구현([[ADR-127]], [[ADR-120]] 결정 17·18).
+ * `BackGesturePort` 의 Capacitor 구현([[ADR-128]], [[ADR-120]] 결정 17·18).
  *
  * **왜 `@capacitor/app` 이 아닌가** — 그 플러그인은 뒤로가기를 무조건 가로채므로 탭 최상위에서도
  * 우리가 종료/최소화를 직접 불러야 하고, 그러면 시스템이 홈으로 돌아가며 그리는 predictive back

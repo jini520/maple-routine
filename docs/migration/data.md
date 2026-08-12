@@ -5,7 +5,7 @@
 
 **관련 소스(read/write)**: `src/storage/**` · `capacitor.config.ts` · `android/` · `ios/`
 
-**관련 ADR**: [[ADR-127]] · [[ADR-003]](로컬 저장소만 사용) · [[ADR-052]](캐시 삭제 범위·`KEEP_KEYS`) ·
+**관련 ADR**: [[ADR-128]] · [[ADR-003]](로컬 저장소만 사용) · [[ADR-052]](캐시 삭제 범위·`KEEP_KEYS`) ·
 [[ADR-050]](SQLite 도입) · [[ADR-058]](계정 데이터 삭제) · [[ADR-124]](드랍 가격 컬럼) · [[ADR-069]](월드 스냅샷)
 
 **관련 문서**: `persistence/README.md` · `persistence/preferences.md` · `persistence/sqlite.md` ·
@@ -361,5 +361,5 @@ request code 로 쓰고(`LocalNotificationManager.java:411-419`), 채널은 `"de
 
 - ~~Preferences를 MMKV로 1회 복사하고 SQLite 파일을 새 경로로 옮긴다~~ → **양쪽 다 기존 저장소를 그대로
   사용한다**(결정 1·2). 저장 위치가 프레임워크가 아니라 앱 번들 ID에 귀속된다는 것을 네이티브 소스에서
-  확인한 결과다(2026-08-11). 단발 마이그레이션 코드가 사라지면서 [[ADR-127]] 의 최대 위험 항목이
+  확인한 결과다(2026-08-11). 단발 마이그레이션 코드가 사라지면서 [[ADR-128]] 의 최대 위험 항목이
   "실패하면 복구 불가"에서 "실패해도 원본 보존"으로 내려갔다.

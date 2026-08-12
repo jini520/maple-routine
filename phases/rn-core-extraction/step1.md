@@ -7,7 +7,7 @@
 - `/docs/README.md` (문서 인덱스)
 - `/docs/migration/README.md` (원칙·단계)
 - `/docs/migration/parity-inventory.md` §4 (`core` 로 이식할 대상)
-- `/docs/ADR.md` 에서 **[[ADR-127]] · [[ADR-006]]** 두 개만 `/docs/adr/` 에서 열어라
+- `/docs/ADR.md` 에서 **[[ADR-128]] · [[ADR-006]]** 두 개만 `/docs/adr/` 에서 열어라
 - `/docs/foundation/game-data.md` (**`src/data/` 를 만지므로 필수**)
 - **이전 step 산출물**: 루트 `package.json`(workspaces) · `packages/core/` · `tsconfig.app.json`·
   `vite.config.ts` 의 `@core/*` alias · 루트 `tsconfig.json` references

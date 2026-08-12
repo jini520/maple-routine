@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// 포트 역전 후([[ADR-127]]) db.ts는 플러그인이 아니라 SqlitePort에만 의존한다 — 가로채는 지점이
+// 포트 역전 후([[ADR-128]]) db.ts는 플러그인이 아니라 SqlitePort에만 의존한다 — 가로채는 지점이
 // SQLite 플러그인 모듈 목에서 주입된 가짜 포트로 바뀌었을 뿐, 검증 대상(어떤
 // 인자로 커넥션을 여는가·stale 커넥션을 닫는가·스키마와 마이그레이션을 도는가)은 그대로다.
 // `retrieveConnection` 을 쓰지 않는다는 것은 이제 포트 표면에 그 연산이 없어 구조적으로 보장된다.

@@ -3,7 +3,7 @@ import { Platform } from 'react-native'
 import type { HuntingTimerPort } from '@core/native/ports'
 
 /**
- * `HuntingTimerPort` 의 RN 구현([[ADR-127]] 결정 4 — 밖으로 나가는 시그니처는 Capacitor 구현과
+ * `HuntingTimerPort` 의 RN 구현([[ADR-128]] 결정 4 — 밖으로 나가는 시그니처는 Capacitor 구현과
  * 한 글자도 다르지 않다). 정책은 [[ADR-005]](상시 표시 알림 + 주기적 사운드).
  *
  * ---

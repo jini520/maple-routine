@@ -4,7 +4,7 @@
 
 - `/docs/README.md` (문서 인덱스)
 - **`/docs/features/ads.md`** (광고 정책)
-- `/docs/ADR.md` 에서 **[[ADR-127]] · [[ADR-090]]** 만 열어라
+- `/docs/ADR.md` 에서 **[[ADR-128]] · [[ADR-090]]** 만 열어라
 - `packages/core/src/native/ports.ts` (**`AdsPort` 계약**)
 - **`packages/core/src/native/ads.ts`** — **이 파일의 순수 함수를 반드시 재사용한다. 정독하라**
 - `packages/core/src/features/ads/policy.ts` · `tab-switch-ad.ts` (게이트 — 이미 순수 함수다)

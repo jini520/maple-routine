@@ -4,7 +4,7 @@ import { resolveInterstitialAdId, shouldUseTestAds } from '@core/native/ads'
 import type { AdsPort } from '@core/native/ports'
 
 /**
- * `AdsPort` 의 Capacitor 구현([[ADR-127]], [[ADR-090]] 결정 4).
+ * `AdsPort` 의 Capacitor 구현([[ADR-128]], [[ADR-090]] 결정 4).
  *
  * 웹(`npm run dev`)에서는 전부 no-op 이다 — 가드가 없으면 개발 서버가 부팅 중 죽는다. 그 판정은
  * `adId()` 하나로 모인다: 광고 단위 ID가 없는 플랫폼이 곧 광고를 쓸 수 없는 플랫폼이다.

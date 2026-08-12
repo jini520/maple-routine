@@ -399,7 +399,7 @@ function expandCharacterCard(name: string): void {
 beforeEach(() => {
   resetWorld()
   resetStore()
-  // 조회 원장(storage/schedule-probe-ledger)이 실물이라 저장소 포트가 필요하다([[ADR-127]]).
+  // 조회 원장(storage/schedule-probe-ledger)이 실물이라 저장소 포트가 필요하다([[ADR-128]]).
   installFakePreferences()
   vi.useFakeTimers({ toFake: ['Date'] })
 })

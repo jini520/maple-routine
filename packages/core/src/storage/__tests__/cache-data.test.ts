@@ -8,7 +8,7 @@ import {
   getCacheDataSizes,
 } from '../cache-data'
 import { BOSS_PROFIT_TABLE_NAMES, getBossProfitDb } from '../sqlite/db'
-// 한시적 core→app 참조([[ADR-127]]) — `features/settings/cache-data` 가 core 로 오면(step 6) 상대
+// 한시적 core→app 참조([[ADR-128]]) — `features/settings/cache-data` 가 core 로 오면(step 6) 상대
 // 경로로 돌아온다. 이 파일이 검사하는 「닫기 → 커버 → 리로드」 순서(ADR-117 결정 8)와 storage 쪽
 // 삭제 범위(ADR-052·058)는 같은 계약의 앞뒤라 떼어 놓지 않는다.
 import { clearCacheDataAndReload } from '../../features/settings/cache-data'

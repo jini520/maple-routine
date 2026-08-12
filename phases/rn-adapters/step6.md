@@ -3,7 +3,7 @@
 ## 읽어야 할 파일
 
 - `/docs/README.md` (문서 인덱스)
-- `/docs/ADR.md` 에서 **[[ADR-127]] · [[ADR-009]] · [[ADR-104]] · [[ADR-025]] · [[ADR-117]]** 만 열어라
+- `/docs/ADR.md` 에서 **[[ADR-128]] · [[ADR-009]] · [[ADR-104]] · [[ADR-025]] · [[ADR-117]]** 만 열어라
 - `/docs/features/theme.md`(색 구성 판정) · `/docs/features/splash.md`
 - `packages/core/src/native/ports.ts` — **`ColorSchemePort` · `KeyboardPort` · `StatusBarPort` ·
   `SplashScreenPort` 계약**

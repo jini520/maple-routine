@@ -69,7 +69,7 @@ export interface SharedProgressEntry {
 //
 // 선언이 `storage/manual-tracked-content` 가 아니라 여기 있는 이유: 그 값을 병합하는 순수 함수
 // (`lib/manual-boss-merge`·`lib/manual-content-merge`·`lib/boss-matching`)가 core 로 오면서
-// core → app 방향 참조가 생기기 때문이다([[ADR-127]] 결정 3). 저장 모듈은 이 타입을 그대로
+// core → app 방향 참조가 생기기 때문이다([[ADR-128]] 결정 3). 저장 모듈은 이 타입을 그대로
 // 재-export 하므로 기존 import 경로는 전부 그대로 쓴다.
 export interface ManualTrackedItem {
   contentName: string

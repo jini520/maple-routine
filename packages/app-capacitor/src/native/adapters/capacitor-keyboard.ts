@@ -3,7 +3,7 @@ import { Keyboard } from '@capacitor/keyboard'
 import type { KeyboardPort } from '@core/native/ports'
 
 /**
- * `KeyboardPort` 의 Capacitor 구현([[ADR-127]]).
+ * `KeyboardPort` 의 Capacitor 구현([[ADR-128]]).
  *
  * 키보드가 뜨면 두 플랫폼 모두 WebView가 그만큼 줄어드는데(안드로이드는 Capacitor가 컨테이너에
  * 패딩, iOS는 이 플러그인의 resize:native가 WebView 프레임 축소), 그러면 화면 하단에 고정된 탭바가

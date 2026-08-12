@@ -1,7 +1,7 @@
 # 스토어 릴리스 (Play · App Store)
 
 > **범위**: 스토어에 나가는 **바이너리**를 만드는 절차 — 서명·버전·빌드 커맨드·산출물 검증, 그리고 콘솔에 채워 넣어야 하는 요건. 앱 안에서 도는 OTA 갱신은 [features/live-update.md](../features/live-update.md), 광고 관련 스토어 요건의 *배경*은 [features/ads.md](../features/ads.md).
-> **관련 소스**(전부 `packages/app-capacitor/` 아래 — [[ADR-127]] 0단계): `android/app/build.gradle`(서명·`versionCode`) · `android/keystore.properties`(**커밋 금지**) · `android/.gitignore` · `ios/App/App.xcodeproj`(iOS 서명) · `package.json`(**버전 원천** — OTA 매니페스트와 설정 화면 표시가 같은 파일을 읽는다). 빌드 스크립트 진입점은 저장소 루트 `package.json`(위임).
+> **관련 소스**(전부 `packages/app-capacitor/` 아래 — [[ADR-128]] 0단계): `android/app/build.gradle`(서명·`versionCode`) · `android/keystore.properties`(**커밋 금지**) · `android/.gitignore` · `ios/App/App.xcodeproj`(iOS 서명) · `package.json`(**버전 원천** — OTA 매니페스트와 설정 화면 표시가 같은 파일을 읽는다). 빌드 스크립트 진입점은 저장소 루트 `package.json`(위임).
 > **관련 ADR**: [[ADR-091]](Android 서명) [[ADR-090]](광고 — 스토어 요건이 늘어난 이유) [[ADR-024]](버전 형식) [[ADR-119]](릴리스 노트) [[ADR-126]](핵심 목록·모달). **관련 문서**: [../features/ads.md](../features/ads.md), [../features/live-update.md](../features/live-update.md), [../features/site.md](../features/site.md), [../trouble/2026-08-04-ios-appstore-signing.md](../trouble/2026-08-04-ios-appstore-signing.md).
 
 ## 빌드 커맨드는 하나뿐이다 — `npm run build`
@@ -111,7 +111,7 @@ keyPassword=<같은 비밀번호>
 
 **릴리스 노트가 선행한다**(위 "릴리스는 노트를 쓰는 것으로 시작한다") — 아래는 그 뒤의 빌드 절차다.
 
-**네이티브 프로젝트는 `packages/app-capacitor/` 안에 있다**([[ADR-127]] 0단계) — `npx cap` 은 반드시
+**네이티브 프로젝트는 `packages/app-capacitor/` 안에 있다**([[ADR-128]] 0단계) — `npx cap` 은 반드시
 그 디렉터리에서 돈다(`capacitor.config.ts` 와 `android/`·`ios/` 가 거기 있다). `npm run build` 만
 저장소 루트에서 위임으로 돈다.
 

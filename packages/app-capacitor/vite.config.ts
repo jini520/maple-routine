@@ -3,7 +3,7 @@ import { configDefaults, defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
-// `@core/*` → `packages/core/src/*` ([[ADR-127]] 결정 3).
+// `@core/*` → `packages/core/src/*` ([[ADR-128]] 결정 3).
 // 같은 매핑이 `tsconfig.base.json` 의 `paths` 에도 있어야 한다 — 한쪽만 있으면 타입은 맞는데 번들이
 // 깨지거나(혹은 그 반대) 조용히 어긋난다. **vitest 는 이 `resolve.alias` 를 그대로 공유하므로**
 // 테스트용 별도 설정은 두지 않는다(저장소 루트의 `vite.config.ts` 가 이 파일을 그대로 쓴다).

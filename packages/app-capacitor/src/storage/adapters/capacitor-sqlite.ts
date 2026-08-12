@@ -3,7 +3,7 @@ import { CapacitorSQLite, SQLiteConnection } from '@capacitor-community/sqlite'
 import type { SqliteDbConnection, SqlitePort } from '@core/storage/ports'
 
 /**
- * `SqlitePort` 의 Capacitor 구현([[ADR-127]]).
+ * `SqlitePort` 의 Capacitor 구현([[ADR-128]]).
  *
  * 여기 남는 것은 플러그인 호출 규약뿐이다 — 커넥션 매니저 인스턴스, `readonly` 플래그(항상 false),
  * 웹 플랫폼 판정. 스키마·마이그레이션·복구·타임아웃은 전부 `storage/sqlite/db.ts` 가 갖고 있다.

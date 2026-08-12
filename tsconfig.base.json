@@ -13,7 +13,7 @@
     "resolveJsonModule": true,
     "skipLibCheck": true,
 
-    /* `packages/core` 로 옮긴 파일은 상대 경로가 아니라 이 alias 로 import 한다([[ADR-127]] 결정 3).
+    /* `packages/core` 로 옮긴 파일은 상대 경로가 아니라 이 alias 로 import 한다([[ADR-128]] 결정 3).
        같은 매핑이 `packages/app-capacitor/vite.config.ts` 의 `resolve.alias` 에도 있어야 한다
        (vitest 도 그것을 공유한다). 여기 적힌 상대 경로는 **이 파일 기준**으로 풀리므로, 상속받는
        패키지가 어느 깊이에 있든 그대로 맞는다. */

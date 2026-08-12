@@ -8,7 +8,7 @@
 - `/docs/migration/README.md` — **원칙 1(어댑터 시그니처 고정)이 이 step 의 핵심 제약이다**
 - `/docs/migration/data.md` — 기존 사용자 데이터 보존 설계. 포트 인터페이스의 모양이 여기서 나온다
 - `/docs/persistence/README.md` · `/docs/persistence/preferences.md` · `/docs/persistence/sqlite.md`
-- `/docs/ADR.md` 에서 **[[ADR-127]] · [[ADR-003]] · [[ADR-005]] · [[ADR-050]] · [[ADR-052]]** 만 열어라
+- `/docs/ADR.md` 에서 **[[ADR-128]] · [[ADR-003]] · [[ADR-005]] · [[ADR-050]] · [[ADR-052]]** 만 열어라
 - **작업 대상 전 파일**: `src/storage/**` (21개 소스 + 18개 테스트)
 - **이전 step 산출물**: `packages/core/src/{data,types,nexon,lib}/` · `@core/*` alias
 
@@ -49,7 +49,7 @@ export async function getLastAdShownAt(): Promise<number | null>
 ```
 
 이유: `packages/core` 로 갈 `features/` 39개 파일이 이 시그니처에 의존한다. 하나라도 바꾸면
-이식이 재작성이 된다([[ADR-127]] 결정 4). 개선하고 싶은 것이 보여도 **이 task 에서는 하지 마라.**
+이식이 재작성이 된다([[ADR-128]] 결정 4). 개선하고 싶은 것이 보여도 **이 task 에서는 하지 마라.**
 
 ### 1. 포트 인터페이스를 정의하라
 
@@ -149,7 +149,7 @@ git diff src/storage | grep "^-export"   # export 시그니처 삭제가 없어�
 
 ## 금지사항
 
-- **`src/storage/*.ts` 가 export 하는 함수의 이름·인자·반환 타입을 바꾸지 마라.** 이유: [[ADR-127]]
+- **`src/storage/*.ts` 가 export 하는 함수의 이름·인자·반환 타입을 바꾸지 마라.** 이유: [[ADR-128]]
   결정 4. `features/` 39개가 이 시그니처에 의존하고, 바꾸는 순간 이식이 재작성이 된다.
 - **파일을 `packages/core` 로 옮기지 마라.** 이유: 이동은 step 5 다. 역전과 이동이 한 커밋에 섞이면
   테스트가 깨졌을 때 원인이 갈리지 않는다.

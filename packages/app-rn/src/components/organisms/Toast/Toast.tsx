@@ -37,7 +37,7 @@
 // core 의 `ToastAction.icon` 은 `lucide-react`(웹)의 `LucideIcon` 이라 `lucide-react-native` 의
 // 같은 아이콘이 **타입상 들어가지 않는다**(SVG DOM 프롭이 달라 `fillRule` 에서 갈린다). 이 파일은
 // 그것을 *렌더만* 하므로 지금은 문제가 없지만, **아이콘을 넘기는 쪽**(설정 열기 토스트 등)은 화면
-// 단계에서 걸린다. core 를 이 단계에서 고치지 않는 것이 원칙이라([[ADR-127]] 원칙 3) 사실만 적어
+// 단계에서 걸린다. core 를 이 단계에서 고치지 않는 것이 원칙이라([[ADR-128]] 원칙 3) 사실만 적어
 // 둔다 — 푸는 방법은 core 의 그 필드를 플랫폼 중립 컴포넌트 타입으로 넓히는 것이다.
 import { useEffect, useRef, useState } from 'react'
 import { Pressable, Text, View, type GestureResponderEvent } from 'react-native'

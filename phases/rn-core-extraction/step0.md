@@ -6,7 +6,7 @@
 
 - `/docs/README.md` (문서 인덱스)
 - `/docs/migration/README.md` (**이 task 전체의 원칙·단계. 반드시 읽어라**)
-- `/docs/ADR.md` 에서 **[[ADR-127]] 한 개만** `/docs/adr/ADR-127.md` 로 열어라. 전체를 컨텍스트에 올리지 말 것
+- `/docs/ADR.md` 에서 **[[ADR-128]] 한 개만** `/docs/adr/ADR-128.md` 로 열어라. 전체를 컨텍스트에 올리지 말 것
 - `/CLAUDE.md`
 - `package.json` · `vite.config.ts` · `tsconfig.json` · `tsconfig.app.json` · `tsconfig.node.json` · `vitest.setup.ts` · `eslint.config.js`
 

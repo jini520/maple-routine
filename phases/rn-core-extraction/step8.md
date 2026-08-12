@@ -5,7 +5,7 @@
 - `/docs/README.md` (문서 인덱스)
 - `/docs/migration/README.md` — «의존성 대응표» · 단계 0 게이트
 - `/docs/migration/data.md` — **«전제» 절. `appId` 가 왜 고정이어야 하는지**
-- `/docs/ADR.md` 에서 **[[ADR-127]]** 만 열어라 (특히 결정 3·5·7)
+- `/docs/ADR.md` 에서 **[[ADR-128]]** 만 열어라 (특히 결정 3·5·7)
 - **이전 step 산출물**: `packages/core/**` · `packages/app-capacitor/**` · 루트 `package.json`
   (위임 scripts) · 루트 `tsconfig.json`
 
@@ -18,7 +18,7 @@ React Native 앱의 **뼈대만** 세운다. 화면을 옮기지 않는다 — �
 
 이 step 의 성공 기준은 하나다: **`packages/app-rn` 이 `packages/core` 를 import 해서 번들이 만들어진다.**
 
-`[[ADR-127]]` 결정에 따라 **Expo bare** 로 간다 — `android/` `ios/` 를 git 에 커밋해 직접 관리한다.
+`[[ADR-128]]` 결정에 따라 **Expo bare** 로 간다 — `android/` `ios/` 를 git 에 커밋해 직접 관리한다.
 이유: 서명키·`appId` 유지, 기존 네이티브 리소스 재사용, 커스텀 네이티브 모듈(Preferences 어댑터)
 작성이 전부 네이티브 프로젝트 직접 통제를 요구하고, 데이터 보존이 걸린 전환에서 변수를 줄여야 한다.
 
@@ -124,7 +124,7 @@ grep -rn "com.mapleroutine.app" packages/app-rn/app.json packages/app-rn/android
 - **화면을 옮기지 마라.** 이유: 단계 3·4 대상이고, 각 화면은 `migration/parity-inventory.md` 의
   ADR 계약 체크리스트를 소진하며 진행해야 한다. 뼈대 단계에서 손대면 그 규율이 무너진다.
 - **`expo prebuild` 로 생성된 `android/` `ios/` 를 `.gitignore` 에 넣지 마라.** 이유: bare 로 가기로
-  했고([[ADR-127]]), 서명 설정과 커스텀 네이티브 모듈이 거기 들어간다.
+  했고([[ADR-128]]), 서명 설정과 커스텀 네이티브 모듈이 거기 들어간다.
 - **루트 `npm run build` 를 RN 빌드로 바꾸지 마라.** 이유: Capacitor 앱은 패리티까지 계속 배포된다
-  ([[ADR-127]] 결정 3).
+  ([[ADR-128]] 결정 3).
 - 기존 테스트를 깨뜨리지 마라.
