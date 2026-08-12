@@ -120,25 +120,34 @@
 
 ### 2.5 보스 수익 (`features/boss-profit.md`) — **최고 위험 구역**
 
-| 파일 | ADR 계약 |
-|---|---|
-| **`boss-profit/BossProfitScreen.tsx`** | **032, 045, 046, 047, 049, 054, 059, 060, 061, 063, 067, 068, 071, 072, 073, 076, 077, 080, 082, 083, 085, 087, 088, 094, 099, 100, 101, 102, 112, 120, 123, 124** |
-| `boss-profit/boss-profit-context.tsx` | 068, 085, 087, 094, 100 |
-| `boss-profit/character-groups.ts` | 036, 038, 046, 054, 059, 069, 094, 124 |
-| `boss-profit/BossProfitBossRow.tsx` | 032, 038, 041, 049, 063, 094, 100, 124 |
-| `boss-profit/BossDropSheet.tsx` | 038, 040, 041, 069 |
-| `boss-profit/DropHistoryScreen.tsx` | 010, 045, 046, 062, 069, 071, 077, 120 |
-| `boss-profit/DropPriceScreen.tsx` | 046, 063, 124 |
-| `boss-profit/DropPricePad.tsx` | 046, 121 |
-| `boss-profit/HeadlineChips.tsx` | 046, 047, 049, 054, 087, 094 |
-| `boss-profit/ItemRevenuePopover.tsx` | 049, 068, 071, 124 |
-| `boss-profit/AccordionBody.tsx` | 068, 094 |
-| `boss-profit/CharacterAvatar.tsx` | 015, 018, 049, 054, 059, 094 |
-| `boss-profit/CharacterIssue.tsx` | 047, 049, 054, 063, 067, 068, 094 |
+**공유 조각 아홉을 먼저 옮겼다**(4단계 step 6, 2026-08-13 — `packages/app-rn/src/app/boss-profit/`).
+화면 넷은 step 7·8 몫이라 아직 자리표시자도 없다. RN 에서 갈린 것과 **육안 대조 목록**은
+[README «4-6단계 결과»](./README.md) 에 있다.
+
+| 파일 | ADR 계약 | 확인 |
+|---|---|---|
+| **`boss-profit/BossProfitScreen.tsx`** | **032, 045, 046, 047, 049, 054, 059, 060, 061, 063, 067, 068, 071, 072, 073, 076, 077, 080, 082, 083, 085, 087, 088, 094, 099, 100, 101, 102, 112, 120, 123, 124** | step 7 |
+| `boss-profit/boss-profit-context.tsx` | 068, 085, 087, 094, 100 | 068·094 통과 전용 프롭 51지점을 그대로 접었다 ✅ / 087 정정 1 `loadedTab`·`loadedPeriodKey` 필드가 남아 카운트업 identity 와 라벨이 갈린다 ✅(테스트가 두 값이 어긋나는 순간을 고정) / **085·100 은 `scrollRoot` 와 함께 사라졌다** — 그 필드를 자손이 읽던 목적은 `fixed` 팝오버를 스크롤 시작 시 닫는 것 하나뿐인데, RN 팝오버는 별도 네이티브 윈도우라 **아래 화면이 스크롤될 수 없다**(구조가 계약을 대신 지킨다). [[ADR-080]] 의 `scrollTo(0,0)` 은 원래도 컨텍스트를 안 썼다(화면 로컬 ref → `ScreenScroll` 의 `ref`, step 7) |
+| `boss-profit/character-groups.ts` | 036, 038, 046, 054, 059, 069, 094, 124 | **웹판과 한 줄도 다르지 않다**(주석 제외) — 뷰가 없어 옮길 것이 없었다. 036 `weekly-bosses.json` 정규 순서 · 054 결정 1·3 처치 수 파생과 계산 두 벌 금지 · 059 결정 5 월간 대칭 · 069 결정 2 월드 집계가 **행 단위** · 124 결정 7 아이템 합산이 한 곳 ✅. **`packages/core` 로 갈 후보이고 그 사실을 파일 머리에 적었다** — 이 단계 규칙이 core 무수정이라 옮기지 않았다 |
+| `boss-profit/BossProfitBossRow.tsx` | 032, 038, 041, 049, 063, 094, 100, 124 | 032 미완료 placeholder 는 **금액이 아니라 배지**·스테퍼 비활성 ✅ / 038 드롭 지시자(아이콘 3 + `+N` / `＋ 드롭 추가`) ✅ / 041 상자 결과의 `lv` 뱃지 ✅ / 049 이름 줄 `h-6` 고정 · 마지막 행은 **테두리를 빼지 않고 색만** 지운다(`:last-child` 가 없어 `isLast` 프롭) ✅ / 063 파티원 수 저장 실패는 토스트 ✅ / **124 값을 안 매긴 드롭은 금액도 칩도 안 만든다**(테스트 고정) / 100 결정 4 스크롤 닫기는 구조가 대신한다. **[[ADR-121]] 결정 7 의 `PartySizeStepper` 로 접지 않았다** — 이 행은 셋째 크기다(18px·`Users` 없음·`bg-surface-2` 채움) |
+| `boss-profit/BossDropSheet.tsx` | 038, 040, 041, 069 | 038 탭 즉시 기록 + 고가 연출 ✅ / 040 결정 3 고정 드롭 읽기 전용 · 결정 4 카테고리 아이콘 · 결정 6 연출 토글(positive 모델) ✅ / 041 반지 → 레벨 순서 · 연마석은 레벨 비활성 ✅ / **069 결정 4 는 `applyPrice` 가 객체 정체(`===`)로 찾는 것으로 지켜진다**(같은 아이템 두 개를 이름으로 찾으면 둘 다 바뀐다) / 시트 껍데기는 3단계 organism 그대로. **가격 키패드는 자리표시자**(step 8) |
+| `boss-profit/DropHistoryScreen.tsx` | 010, 045, 046, 062, 069, 071, 077, 120 | step 8 |
+| `boss-profit/DropPriceScreen.tsx` | 046, 063, 124 | step 8 |
+| `boss-profit/DropPricePad.tsx` | 046, 121 | step 8 |
+| `boss-profit/HeadlineChips.tsx` | 046, 047, 049, 054, 087, 094 | 054 결정 5·7 월드별 집계와 `90 × 월드 수` 분모 · 결정 10 결정석 아이콘을 파일명으로 조회 ✅ / 049 칩이 라벨행 높이를 안 넘기고 분해는 **흐름 밖**이라 헤더 높이 불변 ✅ / 087 결정 5 상승·하락·같음 세 톤과 문장 라벨 ✅(웹 테스트 다섯을 그대로 옮겼다) / **바깥 탭으로 닫는 판이 `fixed inset-0` → 투명 `Modal`** — RN 에는 `fixed` 가 없어 앱 트리 안에서 화면 전체를 덮을 수 없다 |
+| `boss-profit/ItemRevenuePopover.tsx` | 049, 068, 071, 124 | **`react-native` 의 `Modal` 로 그렸다** — 049 가 막는 클리핑과 탭바 덮기를 웹의 포털+`fixed` 와 같은 성질로 해결한다(organism 은 스크림+중앙 정렬을 소유해 못 쓴다) / 068 결정 3 의 `anchorPopover` 를 컨테이너만 뷰포트로 바꿔 재사용 ✅ / 071 결정 10 의 한계를 그대로 승계해 **합계는 목록이 아니라 넘겨받은 두 값**으로 만든다 ✅ / **124 미입력은 `미입력`, 스킵은 목록에서 제외** — 이 파일의 중심 계약이고 테스트 여덟이 고정한다 |
+| `boss-profit/AccordionBody.tsx` | 068, 094 | 068 결정 2 여섯 상태 중 **행동이 있는 둘만 버튼**이고 나머지는 정적 라벨 · `0 메소` 는 `confirmedEmpty` 에만 ✅(상태별 케이스로 고정) / 094 컨텍스트에서 읽고 프롭을 통과시키지 않는다 ✅ / `<ul>`·`<li>` 가 사라져 마지막 보스 행을 부모가 알려 준다 |
+| `boss-profit/CharacterAvatar.tsx` | 015, 018, 049, 054, 059, 094 | 015 얼굴 크롭 기법·좌표 그대로 ✅ / 049 슬롯 40px 고정(탭마다 크기가 달라지면 카드가 튄다) ✅ / 054 정정 1·3·5 링 칸·바깥 여백·round 캡 보정 ✅ / 059 정정 1 한 칸이면 dash 없이 온전한 원 · 결정 7 이름의 주기가 탭을 따라간다 ✅ / **링 두 색이 `className` 이 아니라 `stroke` 프롭으로 온다** — 한 `<Svg>` 안 두 색이라 테마에서 직접 읽는다 |
+| `boss-profit/CharacterIssue.tsx` | 047, 049, 054, 063, 067, 068, 094 | 068 결정 3 아이콘 하나·라벨 없음(054 정정 7 이 라벨을 버린 이유 그대로) ✅ / 047·049 팝오버는 셸 **바깥** · 카드 안 `zIndex` 20 ✅ / 063 원인 문구는 토스트가 맡고 여기는 상태만 ✅ / **배지가 `<span>` → `Pressable`** — RN 은 터치를 가장 깊은 곳이 가져가 중첩이 정상이라 웹이 감수한 "키보드 포커스 없음"이 사라진다(부모 아코디언이 안 열리는 것을 테스트가 고정) / **`measureIssueAnchor` → `resolveIssueAnchor`** — RN 측정이 비동기라 재는 일은 호출부(step 7)로 나가고 좌표 환산만 남는다 |
 
 **`BossProfitScreen.tsx` 는 ADR 32개를 진다.** 이 저장소에서 가장 밀도 높은 파일이고, 전환 실패가
 가장 먼저 드러날 곳이다. 다른 화면과 같은 취급을 하지 말 것 — 단독으로 계획을 세우고, 재작성 전에
 32개 ADR을 먼저 읽고 **동작 명세를 따로 뽑아 두는 것**을 권한다.
+
+**step 7 이 이어받는 자리 넷**(step 6 이 만들어 두고 배선만 남긴 것):
+`BossProfitContextProvider` 의 값 열 개 · `ScreenScroll` 의 `ref`([[ADR-080]] 최상단 이동) ·
+`resolveIssueAnchor` 에 넘길 두 상자의 **비동기 측정** · 보스 스케줄러가 이미 받고 있는
+`openPicker` 라우트 파라미터를 **보내는 쪽**([[ADR-068]] 결정 4).
 
 ### 2.6 설정 (`features/settings.md`)
 

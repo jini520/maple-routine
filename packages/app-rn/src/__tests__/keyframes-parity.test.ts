@@ -30,6 +30,7 @@ import {
 } from '../components/atoms/MapleSweepSpinner/MapleSweepSpinner'
 import { WIDTH_TRANSITION } from '../components/atoms/ProgressBar/width-transition'
 import { MAPLE_LEAF_PATH_LENGTH } from '../components/mapleLeafPath'
+import { VALUABLE_ROW_PULSE, VALUABLE_ROW_TINT } from '../app/boss-profit/BossProfitBossRow'
 import { FLOAT_ANIMATION } from '../components/organisms/DropEffectOverlay/float-animation'
 import { TIMER_ANIMATION_BASE } from '../components/organisms/Toast/timer-animation'
 
@@ -53,8 +54,11 @@ const KEYFRAMES = {
   /** 컴포넌트 계층(atoms·organisms)에 붙어 이 phase 가 옮겼다. */
   ported: ['toast-shrink', 'maple-trail', 'maple-sweep', 'fx-drop-float'],
   /**
-   * `app/boss-profit/*` 의 화면·행에만 붙는다([[ADR-045]]·[[ADR-071]]) — 그 화면이 아직 없으므로
-   * **4단계 몫**이다. 컴포넌트 계층에는 이 셋을 쓰는 자리가 하나도 없다.
+   * `app/boss-profit/*` 의 화면·행에만 붙는다([[ADR-045]]·[[ADR-071]]) — **4단계 몫**이고,
+   * 컴포넌트 계층에는 이 셋을 쓰는 자리가 하나도 없다.
+   *
+   * 셋 중 `valuable-drop-row-pulse` 는 **4단계 step 6 이 보스 행과 함께 옮겼다**(아래 전용
+   * describe). 나머지 둘은 캐릭터 카드에 붙어 step 7 을 기다린다 — 분류는 그대로 화면 층이다.
    */
   screenLayer: ['valuable-drop-glow', 'valuable-drop-spin', 'valuable-drop-row-pulse'],
 } as const
@@ -199,5 +203,37 @@ describe('transition-[width] — ProgressBar', () => {
     const bezier = /cubic-bezier\(([^)]+)\)/.exec(themeValue('default-transition-timing-function'))
     const [x1, y1, x2, y2] = (bezier?.[1] ?? '').split(',').map((n) => Number(n.trim()))
     expect({ x1, y1, x2, y2 }).toMatchObject(WIDTH_TRANSITION.transitionTimingFunction)
+  })
+})
+
+describe('valuable-drop-row-pulse — BossProfitBossRow', () => {
+  it('지속시간·이징·반복이 웹과 같다', () => {
+    const [duration, ...rest] = animationShorthand(INDEX_CSS, 'valuable-drop-row-pulse').split(/\s+/)
+
+    expect(toMs(duration)).toBe(toMs(VALUABLE_ROW_PULSE.animationDuration))
+    expect(rest).toEqual([
+      VALUABLE_ROW_PULSE.animationTimingFunction,
+      VALUABLE_ROW_PULSE.animationIterationCount,
+    ])
+  })
+
+  it('맥동하는 두 색이 웹의 키프레임과 같다', () => {
+    const block = /@keyframes valuable-drop-row-pulse\s*\{([\s\S]*?)\n\}/.exec(INDEX_CSS)?.[1] ?? ''
+    const colors = [...block.matchAll(/background-color:\s*([^;]+);/g)].map((m) => m[1].trim())
+
+    // 웹은 `0%,100%` 를 한 블록으로 묶어 두 값만 적는다. RN 은 `from`·`50%`·`to` 세 마디다.
+    expect(colors).toHaveLength(2)
+    expect([
+      VALUABLE_ROW_PULSE.animationName.from.backgroundColor,
+      VALUABLE_ROW_PULSE.animationName['50%'].backgroundColor,
+      VALUABLE_ROW_PULSE.animationName.to.backgroundColor,
+    ]).toEqual([colors[0], colors[1], colors[0]])
+  })
+
+  it('정적 폴백 틴트도 웹의 `.valuable-drop-row` 와 같다 — 모션을 끈 사용자가 보는 색이다', () => {
+    const block = /\.valuable-drop-row\s*\{([\s\S]*?)\n\}/.exec(INDEX_CSS)?.[1] ?? ''
+    const fallback = /background-color:\s*([^;]+);/.exec(block)?.[1].trim()
+
+    expect(fallback).toBe(VALUABLE_ROW_TINT)
   })
 })
