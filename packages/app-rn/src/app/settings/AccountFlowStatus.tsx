@@ -13,7 +13,7 @@
 // ② `<p>` → `Text`, `space-y-*` → `gap-*`, `Button` 의 글자 클래스는 `textClassName` 으로.
 // ③ 「취소」 버튼의 `w-full` 은 상자(레이아웃)라 그대로 `className` 이다 — 가운데 정렬은 RN 에서
 //    `items-center` 가 맡는다(웹은 `<button>` 의 기본 정렬이 가운데였다).
-import { Text, View } from 'react-native'
+import { Text } from 'react-native'
 
 import type {
   PrefetchProgress,

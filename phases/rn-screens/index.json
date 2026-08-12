@@ -28,8 +28,11 @@
     {
       "step": 3,
       "name": "settings",
-      "status": "pending",
-      "started_at": "2026-08-12T21:32:47+0900"
+      "status": "completed",
+      "started_at": "2026-08-12T21:32:47+0900",
+      "summary": "설정 20개(1,849줄)를 src/app/settings/ 로 옮기고 하위 페이지 7라우트의 자리표시자를 진짜 화면으로 교체(RootNavigator 의 SETTINGS_SCREENS 표) · 끊긴 자리였던 use-settings-navigation.ts 를 써서 빌드 복구 — 웹의 useNavigate + useStackBack + resolveParentPath 셋이 goBack() 하나로 접힌다(딥링크가 없어 «돌아갈 곳이 없는 경우»가 존재하지 않는다) · 파일별 ADR 계약을 전부 다시 읽고 확인해 parity-inventory §2.6 에 «확인» 열로 기록 · StackScreen 이 통째로 사라진다(포털·전환·스와이프·탭바 밀어내기 넷이 전부 루트 스택의 성질) → Outlet·PARENT_PATH 상수 5개·useStackBack 소멸, overlays 프롭도(RN Modal 은 별도 네이티브 윈도우) · 안내 상세는 사본 없이 한 컴포넌트가 두 라우트에 걸리고(ADR-125 결정 3) 마디는 ?s= 쿼리가 아니라 section 파라미터 + setParams(스택 무변) · 스크롤 목적지는 onLayout 으로 직접 잰다(scroll-mt-4 몫 16px 포함) · 처방침은 iframe→WebView 라 onError 가 즉시 오고 8초 타임아웃이 «유일한 신호»에서 «매달림 전용 보조 신호»로 내려감, navigator.onLine 사전 검사·X-Frame-Options 의존은 소멸 · 캐시 삭제 범위는 core storage/cache-data 가 그대로 소유(화면은 두 불리언만 전달, ADR-052 무변) · 테마 목록은 THEME_NAMES/groupThemesByCategory 에서만(ADR-064 결정 10, 테스트도 it.each(THEME_NAMES)) · OTA 미도달 상태 13종을 표로 명시(도달하는 것은 unsupported 하나 — idle/checking/up-to-date/check-error 는 check() 없음, update-available/store-required/confirm-cellular 는 매니페스트 조회 없음, downloading/ready-to-apply/download-error 는 다운로드 경로 없음, applying/apply-error 는 적용 경로 없음, updated 는 마지막 실행 번들 기록 주체 없음) 대신 문구 열넷은 하나도 안 지움 · 버전 3자리(본화면·앱 정보 행·footer)와 개발 노트 «사용 중» 배지가 빌드 시점 package.json 으로 좁혀짐 · 테마 배경은 값까지 왔으나(getThemeBackgroundUrl 이 혼테일·검은마법사 둘 다 진짜 에셋 참조를 돌려주는 것 실측) 화면엔 아직 안 뜬다 — 남은 셋(ThemeHeaderBackdrop 두 번째 갈래 몸통 · 전면 백드롭 RN 컴포넌트 부재 · CSS size/position/dim → Image resizeMode+오버레이 기하 변환)은 components/templates 몫 · 테스트 17파일 신규(웹 16 + 웹에 없던 SettingsPrivacyScreen) · RNTL 14 함정 셋 규명(fireEvent 는 갱신을 예약만 해 직후 질의가 «누르기 전 화면»을 본다 → act 로 감쌈 / rerender 는 루트를 통째로 갈아치워 프로바이더 소멸 → 부모가 상태를 든다 / 픽스처 getter 는 한 번만 평가돼 배열 정체성 고정 방식으로, 그 배열은 팩토리가 만들어야 한다) · react-native-webview 는 import 만으로 TurboModule 죽어 __mocks__ 대역 추가 · 자리표시자 FeatureGuidePlaceholderScreen 은 고아가 되어 삭제 · AccountFlowStatus 의 미사용 View import(직전 커밋 잔재) 제거로 lint 0 errors 복구 · 육안 대조 목록 9항목을 README «4-3단계 결과» 에 기록(최우선은 테마 모달의 즉시 적용 — 네이티브 윈도우가 ThemeProvider vars() 아래인지가 구조상 자명하지 않다) · jest 791→984(89파일), vitest 3056 증감 0",
+      "notes": "AC 중 vitest 에서 packages/core/features/boss-profit/__tests__/store.test.ts 5건이 실패하나 **이 step 과 무관한 선재 실패**다 — HEAD(e60d391) 무수정 상태에서도 같은 5건이 깨진다(확인함). 원인은 ADR-111 결정 2 의 «기간 동일성» 가드에 걸리는 하드코딩 날짜 픽스처(2026-07-09)가 실제 시각이 흐르며 현재 기간을 벗어난 것으로 보인다. packages/core 수정은 이 step 의 금지사항이라 손대지 않았다.",
+      "completed_at": "2026-08-13T00:05:00+0900"
     },
     {
       "step": 4,

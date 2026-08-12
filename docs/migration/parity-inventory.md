@@ -134,26 +134,30 @@
 
 ### 2.6 설정 (`features/settings.md`)
 
-| 파일 | ADR 계약 |
-|---|---|
-| `settings/SettingsScreen.tsx` | 058, 061, 098, 099, 118, 120, 125 |
-| `settings/SettingsAboutScreen.tsx` | 035, 085, 099, 112, 118, 120 |
-| `settings/SettingsAccountDataScreen.tsx` | 035, 058, 061, 118, 120 |
-| `settings/SettingsPrivacyScreen.tsx` | 062, 118, 120 |
-| `settings/SettingsReleaseNotesScreen.tsx` | 060, 118, 119, 120, 125 |
-| `settings/SettingsFeatureGuideListScreen.tsx` | 018, 060, 125 |
-| `settings/SettingsFeatureGuideScreen.tsx` | 125 |
-| `settings/AppUpdateSection.tsx` | 026, 027, 061, 118, 126 |
-| `settings/AccountModal.tsx` | 086 |
-| `settings/AccountFlowStatus.tsx` | 086, 113, 114 |
-| `settings/ThemeModal.tsx` | 035, 104 |
-| `settings/ThemeSelector.tsx` | 018, 064, 104 |
-| `settings/TrackingModeModal.tsx` | 035, 061 |
-| `settings/TrackingModeSelector.tsx` | 035, 060 |
-| `settings/CacheClearConfirm.tsx` | 052, 058, 061 |
-| `settings/DisconnectConfirm.tsx` | 061 |
-| `settings/SettingsRow.tsx` · `SettingsLinkRow.tsx` · `row-class.ts` | 118 |
-| `settings/error-message.ts` | 114 |
+**스물 다 옮겼다**(4단계 step 3, 2026-08-12 — `packages/app-rn/src/app/settings/`). 하위 페이지 일곱
+라우트가 자리표시자를 치우고 진짜 화면을 그린다(`RootNavigator` 의 `SETTINGS_SCREENS` 표). RN 에서
+갈린 것과 **육안 대조 목록**은 [README «4-3단계 결과»](./README.md) 에 있다.
+
+| 파일 | ADR 계약 | 확인 |
+|---|---|---|
+| `settings/SettingsScreen.tsx` | 058, 061, 098, 099, 118, 120, 125 | 058 결정 8(총합은 그룹별 합에서 파생) ✅ / 061 결정 7(조회 전 `- KB` 자리표시 — 실패도 같은 자리) ✅ / 098 결정 3(고정 헤더 없음)·099(자기 스크롤 소유) ✅ — **상단 안전영역 트릭은 사라진다**(RN `ScreenScroll` 이 헤더 없는 화면에서 스크롤포트 상자를 내린다) / 118 결정 1(카드 둘)·4(값 배지 + chevron **병기**)·5(대표값 둘만)·8(고지 4줄·링크 0개) ✅ / 120(하위 페이지로 밀 때 스크롤 리셋 안 함 — RN 은 이 화면이 언마운트되지 않아 `ScrollView` 가 자리를 그대로 든다) ✅ / 125 결정 1 정정(「기능 설명」이 「개발 노트」 위) ✅ — **`Outlet` 이 사라지고**(루트 스택 push) **버전은 빌드 시점 값으로 좁혀진다**(OTA 미연결) |
+| `settings/SettingsAboutScreen.tsx` | 035, 085, 099, 112, 118, 120 | 035 결정 18(관리 페이지와 같은 골격) ✅ / 085 결정 1 · 112(`fixed` 헤더 + 실측 spacer)는 **RN 에서 구조가 대신한다** — `PageHeader` 가 스크롤 뷰의 형제라 spacer 도 실측도 없다(그 파일 머리) ✅ / 099 `ScreenScroll`(`hasTabBar={false}`) ✅ / 118 결정 2(하위 페이지 골격)·7(처방침이 이 화면의 행)·10(`최신 버전입니다`) ✅ / 120 결정 11(처방침을 앱 안에서 연다 — 이 앱 유일의 2단 스택) ✅ — **OTA 상태는 `unsupported` 상수**를 심는다([[ADR-128]] 결정 7), 도달 불가 상태 표는 그 파일 머리 |
+| `settings/SettingsAccountDataScreen.tsx` | 035, 058, 061, 118, 120 | 035 결정 18 ✅ / 058 결정 6(기본 전체 선택)·8(총합 파생) ✅ / 061 결정 7 ✅ / 118 결정 2·3(파괴적 행 둘을 별도 카드로)·4(위험 색 행엔 chevron 없음)·6(`계정 변경` 에 현재값 없음) ✅ / 120 ✅ — **`overlays` 프롭이 사라진다**(RN `Modal` 은 별도 네이티브 윈도우라 갇힐 상자가 없다), 리로드는 `reloadAppAsync()`. **삭제 범위와 순서(052·117 결정 8)는 core 가 그대로 소유한다 — 이 화면은 두 불리언만 넘긴다** |
+| `settings/SettingsPrivacyScreen.tsx` | 062, 118, 120 | 062 결정 3(실패의 원인을 실제로 푸는 행동 — `브라우저로 열기`) ✅ / 118 결정 7(단일 원본 유지) ✅ / 120 결정 11(사본이 아니라 사이트를 싣는다) ✅ — **`iframe` → `WebView` 로 실패 신호가 하나 는다**(`onError` 가 즉시 오고, 8초 타임아웃은 매달림 전용 보조 신호로 내려간다). `navigator.onLine` 사전 검사는 **없앴다**(웹 API 이고, 대체할 `getNetworkType` 은 지금 던진다). `X-Frame-Options` 의존도 함께 사라진다(최상위 탐색이라 프레임 조상 정책 대상이 아니다) |
+| `settings/SettingsReleaseNotesScreen.tsx` | 060, 118, 119, 120, 125 | 060(0건이면 컨텍스트 아이콘 + inline 빈 상태) ✅ / 118 결정 2 ✅ / 119 결정 1(번들 내장·네트워크 0회)·3(표식은 **항목**에)·4(없는 버전은 배지 없음)·9(카테고리로 묶고 순서는 상수가 정함·빈 묶음은 제목째 감춤) ✅ — **배열을 다시 정렬하지 않는다** / 120 ✅ / 125 결정 5(안내가 있는 항목만 눌림)·7(마디까지 가리킴) ✅ — 웹의 `?s=` 가 `section` 파라미터다. **`사용 중` 기준이 빌드 시점 버전으로 좁혀진다**(OTA 미연결) |
+| `settings/SettingsFeatureGuideListScreen.tsx` | 018, 060, 125 | 018 탭 토글 스타일 그대로(새 스타일 0개 — 배경·글자가 상자/`Text` 로 갈릴 뿐) ✅ / 060 ✅ / 125 결정 1 정정(기능 축 카탈로그가 원천)·비어 있는 그룹은 탭째 감춤·그룹이 하나면 탭 줄 자체를 안 그림·한 안내가 **여러 그룹에 선다**(`groups` 배열) ✅ — `role="tablist"` 는 RN 에 짝이 없어 사라지고 **선택 상태는 `aria-selected` 가 그대로 나른다** |
+| `settings/SettingsFeatureGuideScreen.tsx` | 125 | 결정 3(**두 라우트가 한 컴포넌트** — `RootNavigator` 의 `SETTINGS_SCREENS` 가 같은 것을 두 이름에 꽂는다) ✅ / 결정 6(이미지만·문단만·둘 다 · 대체 텍스트 필수) ✅ / 결정 7(마디 목차 · 둘 이상일 때만 · 즉시 스크롤 · 한 번만) ✅ — **부모를 계산하지 않는다**(웹의 `resolveParentPath` 자리를 pop 이 대신한다), **마디는 쿼리가 아니라 파라미터**이고 목차 클릭은 `setParams` 라 스택을 안 건드린다, 스크롤 목적지는 `onLayout` 으로 우리가 잰다(`scroll-mt-4` 몫 16px 포함) |
+| `settings/AppUpdateSection.tsx` | 026, 027, 061, 118, 126 | 026·027·126 의 **표시 상태 열넷을 한 글자도 안 지웠다** ✅(도달 가능한 것은 `unsupported` 하나 — 그 표는 `SettingsAboutScreen` 파일 머리) / 061 결정 5·9(버튼 안 16px 스피너 + `확인 중` · `…` 1글자 금지) ✅ / 118 결정 2(섹션 제목을 스스로 안 그림)·10 ✅ — **스토어를 값으로 import 하지 않고 프롭으로 받는다**([[ADR-128]] 결정 7 · `import.meta.env` 벽), `loadCurrentVersion` 이펙트는 그 포트라 사라졌다 |
+| `settings/AccountModal.tsx` | 086 | 결정 6(마운트 즉시 `refreshAccounts` 1회 · 닫힘 판정은 *"idle 을 벗어난 적이 있다"* · 취소는 되돌릴 것이 없다) ✅ — **로직은 한 줄도 안 바뀌었고** 갈린 것은 껍데기(`Modal`)뿐이다. 이슈 #78 D(재시도는 `reset` 이 아니라 `refreshAccounts`)도 그대로 ✅ |
+| `settings/AccountFlowStatus.tsx` | 086, 113, 114 | 086 결정 6(예열 뒤 캐릭터 재선택 · 후보 계정 id 를 인자로) ✅ / 113 결정 5(`verifying` 은 문구가 아니라 **진행률 바 0%** · 숫자도 안 붙임) ✅ / 114 결정 1·2(429 는 처방까지 담고 **액션을 주지 않는다**, `error === null` 폴백엔 재시도 유지) ✅ — [[ADR-122]] 결정 3 의 `.panel-on-scrim-parent > *` 는 RN 에 자손 선택자가 없어 **카드가 `border-panel-border` 를 직접 쓴다** |
+| `settings/ThemeModal.tsx` | 035, 104 | 104 결정 7(**적용은 즉시, 닫기는 따라오지 않는다** · 버튼은 「완료」 하나 · 취소 없음) ✅ / 035(설정 모달 공통 골격) ✅ — **미검증**: 네이티브 윈도우인 이 모달이 `ThemeProvider` 의 `vars()` 아래에 있어 즉시 갈아입혀지는지는 눈으로 봐야 한다(육안 대조 목록) |
+| `settings/ThemeSelector.tsx` | 018, 064, 104 | 018 필터 칩이 탭 토글 스타일 그대로 ✅ / 064 결정 10(**테마 목록을 손으로 안 적는다** — `THEME_NAMES`·`groupThemesByCategory` 에서 온다, 테스트도 `it.each(THEME_NAMES)`) ✅ / 104 결정 1·3(카테고리 섹션 + 모드 필터는 직교하는 두 축 · 필터 저장 안 함 · 결과 0인 섹션은 헤더째 감춤)·2(타일이 **레지스트리에서 직접 읽은** 색으로 자기를 칠함)·4(배경 이미지를 목록에 노출하지 않음) ✅ |
+| `settings/TrackingModeModal.tsx` | 035, 061 | 035 결정 23(**선택 → 확인 2단계** · 같은 모드면 적용 비활성 · 시드 중 옵션·취소·오버레이 모두 잠금) ✅ / 061 결정 5·9(`적용 중`) ✅ — 오버레이 잠금이 RN 에서는 **안드로이드 뒤로가기까지** 막는다(`onRequestClose`, 웹에 없던 진입 경로) |
+| `settings/TrackingModeSelector.tsx` | 035, 060 | 035 결정 22(공용 카피 `title`/`description`/`caution` · 아이콘 단독 · 접지 않음 · 온보딩과 카드 안쪽 구조 공유) ✅ / 060 결정 5(주의는 실패가 아니라 **정보 톤 고지**) ✅ |
+| `settings/CacheClearConfirm.tsx` | 052, 058, 061 | 052 결정 3(그룹 문구가 실제 삭제 범위와 같아야 한다 — **범위 자체는 core `storage/cache-data.ts` 가 혼자 정하고 이 파일엔 없다**) ✅ / 058 결정 6(기본 전체 선택 · 전부 해제면 삭제 비활성 · 닫았다 열면 기본값 복귀)·9(「유지됨」 줄 없음) ✅ / 061 결정 5·7·9 ✅ — `role="checkbox"`·`aria-checked` 는 **갈리지 않는다**(진짜 다중 선택이라 RN 에도 같은 역할이 있다) |
+| `settings/DisconnectConfirm.tsx` | 061 | 결정 5·9(`해제 중` + 스피너) ✅ — **`useBodyScrollLock` 이 사라진다**(네이티브 윈도우가 구조적으로 한다 · 대체가 아니라 필요가 없어진 것이라 짝을 안 만든다), 자체 오버레이도 공용 `Modal` 로(고른 것이 아니라 `absolute inset-0` 이 부모 상자에 갇혀 **짝이 없다**) |
+| `settings/SettingsRow.tsx` · `SettingsLinkRow.tsx` · `row-class.ts` | 118 | 결정 4(값과 chevron **병기** · `showChevron={false}` 는 위험 색 행 전용 · 외부 링크 행은 chevron 이 아니라 외부 링크 표식) ✅ / 결정 7(행 컴포넌트 둘을 안 합친다 — 합치면 `onPress` 가 선택 필드가 된다) ✅ — `divide-y` 짝이 없어 **구분선을 호출부가 형제마다 얹는다**(`SETTINGS_ROW_DIVIDER_CLASS`), `SettingsLinkRow` 의 `rel="noopener"` 는 **RN 에 그 위험 자체가 없어** 사라진다 |
+| `settings/error-message.ts` | 114 | 결정 4(모달 본문이라 **처방까지** 담는다 — 같은 429 가 토스트에서 짧은 것은 그 자리가 `truncate` 라서다, 통일하지 말 것) ✅ — 순수 함수라 **한 글자도 안 바뀌었다** |
 
 ---
 

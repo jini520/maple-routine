@@ -2,33 +2,51 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { useOnboardingStore } from '@core/features/onboarding/store'
 
 import { OnboardingScreen } from '../app/onboarding/OnboardingScreen'
-import { FeatureGuidePlaceholderScreen, PlaceholderScreen } from './PlaceholderScreen'
+import { SettingsAboutScreen } from '../app/settings/SettingsAboutScreen'
+import { SettingsAccountDataScreen } from '../app/settings/SettingsAccountDataScreen'
+import { SettingsFeatureGuideListScreen } from '../app/settings/SettingsFeatureGuideListScreen'
+import { SettingsFeatureGuideScreen } from '../app/settings/SettingsFeatureGuideScreen'
+import { SettingsPrivacyScreen } from '../app/settings/SettingsPrivacyScreen'
+import { SettingsReleaseNotesScreen } from '../app/settings/SettingsReleaseNotesScreen'
+import { PlaceholderScreen } from './PlaceholderScreen'
 import { TabNavigator } from './TabNavigator'
-import {
-  FEATURE_GUIDE_ROUTE_NAMES,
-  STACK_ROUTE_NAMES,
-  type RootStackParamList,
-  type StackRouteName,
-} from './routes'
+import { STACK_ROUTE_NAMES, type RootStackParamList, type StackRouteName } from './routes'
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
 
-const FEATURE_GUIDE_ROUTES = new Set<string>(FEATURE_GUIDE_ROUTE_NAMES)
+/**
+ * 진짜 화면이 들어온 라우트. **여기 없는 이름은 아직 자리표시자다** — 4단계가 step 마다 이 표를
+ * 채우고, 비어 있는 자리가 곧 남은 일이다.
+ *
+ * **안내 상세 둘이 같은 컴포넌트를 가리키는 것이 계약이다**([[ADR-125]] 결정 3) — 기능 설명
+ * 목록에서도, 개발 노트 항목에서도 같은 상세가 열린다. 사본을 두면 같은 글이 두 벌이 된다.
+ */
+const SETTINGS_SCREENS = {
+  SettingsFeatureGuideList: SettingsFeatureGuideListScreen,
+  SettingsFeatureGuide: SettingsFeatureGuideScreen,
+  SettingsReleaseNotes: SettingsReleaseNotesScreen,
+  SettingsReleaseNoteGuide: SettingsFeatureGuideScreen,
+  SettingsAccountData: SettingsAccountDataScreen,
+  SettingsAbout: SettingsAboutScreen,
+  SettingsPrivacy: SettingsPrivacyScreen,
+} as const satisfies Partial<Record<StackRouteName, React.ComponentType>>
 
 /**
- * 라우트 이름 → 자리표시자. 안내 상세 **둘만** 같은 컴포넌트를 공유한다([[ADR-125]] 결정 3) —
- * 나머지는 이름만 찍으면 되므로 하나로 족하다.
+ * 라우트 이름 → 화면. 아직 안 옮긴 자리는 자리표시자다.
  *
  * 반환 타입을 넓게 두는 것은 화면 목록을 **데이터에서 돌리기 위한 대가**다. `<Stack.Screen>` 의
  * `component` 타입은 그 자리의 `name` 리터럴에 묶이는데 여기서는 이름이 유니온이라 하나로 좁혀지지
  * 않는다. 열하나를 손으로 적으면 타입이 맞지만, 그러면 계획서 §1 과 화면 목록이 다시 두 벌이 된다
- * (`routes.ts` 가 데이터인 이유). 자리표시자가 받는 프롭은 `route` 뿐이라 실제 위험은 없고,
- * 진짜 화면이 들어오는 4단계에는 이 파일도 함께 다시 쓰인다.
+ * (`routes.ts` 가 데이터인 이유). 진짜 화면이 받는 프롭은 내비게이터가 주는 `route`·`navigation`
+ * 뿐이고 그것들은 훅으로 읽으므로(`use-settings-navigation.ts`) 실제 위험은 없다.
  */
 function screenFor(name: StackRouteName): React.ComponentType<Record<string, never>> {
-  return (
-    FEATURE_GUIDE_ROUTES.has(name) ? FeatureGuidePlaceholderScreen : PlaceholderScreen
-  ) as unknown as React.ComponentType<Record<string, never>>
+  const screen: React.ComponentType =
+    name in SETTINGS_SCREENS
+      ? SETTINGS_SCREENS[name as keyof typeof SETTINGS_SCREENS]
+      : (PlaceholderScreen as React.ComponentType)
+
+  return screen as React.ComponentType<Record<string, never>>
 }
 
 /**
