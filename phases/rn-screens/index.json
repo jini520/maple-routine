@@ -14,7 +14,8 @@
       "name": "asset-codegen",
       "status": "completed",
       "started_at": "2026-08-12T20:23:48+0900",
-      "summary": "npm run assets:gen(scripts/generate-asset-manifest.mjs)이 assets/asset-groups.ts 표대로 훑어 core/src/assets/generated/*.ts 7벌을 커밋 생성 · 플랫폼별로 «가르지 않는다» — 생성물은 평범한 ESM 에셋 import 한 벌이고 번들러가 이미 값을 가르므로 갈리는 것은 타입 한 줄(types/image-asset.ts ↔ .native.ts + tsc moduleSuffixes)뿐 · 낡음은 디렉터리를 직접 읽어 키 집합·프레임 개수를 대조하는 asset-manifest.test.ts 가 잡는다(판별력 실측) · core-shims 표는 []로 비우고 rn-*.ts 5개 삭제하되 배선은 유지(import.meta.env 벽이 남음), 「glob 모듈 8개」 테스트는 「0이어야 한다」로 뒤집고 ImportMeta.glob 선언 삭제 · 8번째(feature-guides/index.ts)는 주석이 걸린 오탐이었고 src 타입만 ImageAssetRef 로 · ADR-129"
+      "summary": "npm run assets:gen(scripts/generate-asset-manifest.mjs)이 assets/asset-groups.ts 표대로 훑어 core/src/assets/generated/*.ts 7벌을 커밋 생성 · 플랫폼별로 «가르지 않는다» — 생성물은 평범한 ESM 에셋 import 한 벌이고 번들러가 이미 값을 가르므로 갈리는 것은 타입 한 줄(types/image-asset.ts ↔ .native.ts + tsc moduleSuffixes)뿐 · 낡음은 디렉터리를 직접 읽어 키 집합·프레임 개수를 대조하는 asset-manifest.test.ts 가 잡는다(판별력 실측) · core-shims 표는 []로 비우고 rn-*.ts 5개 삭제하되 배선은 유지(import.meta.env 벽이 남음), 「glob 모듈 8개」 테스트는 「0이어야 한다」로 뒤집고 ImportMeta.glob 선언 삭제 · 8번째(feature-guides/index.ts)는 주석이 걸린 오탐이었고 src 타입만 ImageAssetRef 로 · ADR-129",
+      "completed_at": "2026-08-12T21:03:23+0900"
     },
     {
       "step": 2,
