@@ -1,17 +1,21 @@
 // 웹판을 옮긴 것. 갈린 케이스 둘만 적는다.
 //
-// · *"일러스트가 있으면 카드와 같은 필터·불투명도로 그린다"* → **아직 반만 성립한다.**
-//   [[ADR-129]] 로 `getBossPortraitUrl` 이 진짜 에셋을 돌려주게 돼 히어로 **자리**는 생기지만,
-//   그 자리에 그림을 앉히려면 CSS `background-size: "220% auto"` / `position: "60% 40%"`
-//   ([[ADR-018]] 크롭 표)을 RN 기하로 옮겨야 하고 그 계산에는 **그림의 고유 종횡비**가 필요하다.
-//   그래서 지금 케이스는 **"에셋은 왔고 자리도 생겼지만 아직 그림은 안 앉는다"** 이다 — 크롭
-//   변환이 붙는 날 이 단언이 깨지면서 그 작업이 드러난다.
+// · *"일러스트가 있으면 카드와 같은 필터·불투명도로 그린다"* → **step 5 에서 온전히 성립한다.**
+//   3단계는 자리만 만들고 그림을 못 앉혔는데(크롭의 CSS 값을 RN 기하로 옮기는 일이 남아 있었다),
+//   step 4 가 컨텐츠 카드에서 그 변환을 풀어 두어 이제 **보스 카드와 같은 `MediaCardArt`** 를
+//   부른다([[ADR-121]] 결정 7 이 요구하는 "같은 값"이 컴포넌트 공유로 성립한다).
+//   화면 전용 testID(`party-size-modal-art`)는 사라졌다 — 아트와 베일이 둘 다 `absolute inset-0`
+//   이라 감싸는 순간 기준 상자가 바뀌어 그림이 사라진다(컴포넌트 주석).
 // · `aria-pressed` → **`accessibilityState.selected`**(`DifficultySegment` 가 `aria-selected` 를
 //   쓴다 — RN 접근성 상태에 *pressed* 가 없다).
 import { fireEvent } from '@testing-library/react-native'
 
 import { renderOverlay, type AtomElement } from '../../../__tests__/render-atom'
+import { MEDIA_ART_VEIL_LOCATIONS_HERO } from '../../../molecules/MediaCardArt/media-card-art'
 import { PartySizeModal } from '../PartySizeModal'
+
+/** 아트·베일은 `aria-hidden` 이라 기본 질의에서 빠진다(장식이라 그것이 옳다). */
+const HIDDEN = { includeHiddenElements: true } as const
 
 type Props = React.ComponentProps<typeof PartySizeModal>
 
@@ -116,26 +120,33 @@ describe('PartySizeModal', () => {
     )
 
     expect(getByText('스우')).toBeTruthy()
-    expect(queryByTestId('party-size-modal-art')).toBeNull()
+    expect(queryByTestId('media-card-art', HIDDEN)).toBeNull()
   })
 
-  // 파일 머리의 계약. 자리는 생겼고(에셋이 해석된다) 그림은 아직 없다 — 크롭 변환 몫이다.
-  it('에셋이 있는 슬러그는 일러스트 «자리»를 만든다 (그림은 크롭 변환 몫)', async () => {
+  it('에셋이 있는 슬러그는 히어로에 일러스트를 그린다', async () => {
     const { getByTestId } = await renderOverlay(<PartySizeModal {...props()} />)
 
-    const art = getByTestId('party-size-modal-art')
-    expect(art).toBeTruthy()
-    // 그림이 앉으면 자식이 생긴다 — 지금은 빈 View 다.
-    expect(art.props.children).toBeUndefined()
+    expect(getByTestId('media-card-art', HIDDEN)).toBeTruthy()
+    expect(getByTestId('media-card-art-veil', HIDDEN)).toBeTruthy()
   })
 
-  // 반대쪽 — 매핑에 없는 슬러그는 자리도 안 만든다(그림 없는 보스가 타던 분기 그대로).
-  it('에셋이 없는 슬러그는 일러스트 자리를 만들지 않는다', async () => {
+  // 페이드 끝점이 카드와 다르다(`MEDIA_ART_MASK_HERO` — 42%/82%). 같은 값을 쓰면 넓고 낮은
+  // 히어로에서 그림이 너무 일찍 끊긴다.
+  it('베일은 카드가 아니라 히어로 정지점을 쓴다', async () => {
+    const { getByTestId } = await renderOverlay(<PartySizeModal {...props()} />)
+
+    expect(getByTestId('media-card-art-veil', HIDDEN).props.locations).toEqual([
+      ...MEDIA_ART_VEIL_LOCATIONS_HERO,
+    ])
+  })
+
+  // 반대쪽 — 매핑에 없는 슬러그는 아트를 안 만든다(그림 없는 보스가 타던 분기 그대로).
+  it('에셋이 없는 슬러그는 일러스트를 그리지 않는다', async () => {
     const { queryByTestId } = await renderOverlay(
       <PartySizeModal {...props({ portraitSlug: '없는보스' })} />,
     )
 
-    expect(queryByTestId('party-size-modal-art')).toBeNull()
+    expect(queryByTestId('media-card-art', HIDDEN)).toBeNull()
   })
 
   it('난이도가 하나뿐인 보스도 세그먼트를 그린다', async () => {

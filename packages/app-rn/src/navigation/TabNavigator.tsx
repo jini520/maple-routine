@@ -1,6 +1,7 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { maybeShowTabSwitchAd } from '@core/features/ads/tab-switch-ad'
 
+import { BossScreen } from '../app/boss-scheduler/BossScreen'
 import { ContentScreen } from '../app/content-scheduler/ContentScreen'
 import { PlaceholderScreen } from './PlaceholderScreen'
 import { INITIAL_TAB_ROUTE, TAB_ITEMS, type TabParamList, type TabRouteName } from './routes'
@@ -9,11 +10,12 @@ const Tab = createBottomTabNavigator<TabParamList>()
 
 /**
  * 진짜 화면이 들어온 탭. **여기 없는 이름은 아직 자리표시자다** — `RootNavigator` 의 같은 이름 표와
- * 짝이고, 비어 있는 자리가 곧 남은 일이다(step 5 보스 · step 7 수익 · step 3 설정은 하위 페이지만
- * 왔고 본화면은 다음 차례다).
+ * 짝이고, 비어 있는 자리가 곧 남은 일이다(step 7 수익 · 설정은 step 3 이 하위 페이지만 옮겼고
+ * 본화면은 그 뒤다).
  */
 const TAB_SCREENS = {
   Content: ContentScreen,
+  Boss: BossScreen,
 } as const satisfies Partial<Record<TabRouteName, React.ComponentType>>
 
 function screenFor(name: TabRouteName): React.ComponentType<Record<string, never>> {

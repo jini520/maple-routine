@@ -26,7 +26,7 @@ import { Card } from '../../components/atoms/Card/Card'
 import { ProgressBar } from '../../components/atoms/ProgressBar/ProgressBar'
 import { MEDIA_TEXT_SHADOW_STYLE } from '../../lib/text-styles'
 import { QuestStateBadge } from './content-badges'
-import { MediaCard, MediaCardArt } from './MediaCardArt'
+import { MediaCard, MediaCardArt } from '../../components/molecules/MediaCardArt/MediaCardArt'
 
 // "몬스터파크"만 배경+아이콘 카드로 확장한다 — 다른 kind: 'contents' 항목이 생기면 그때
 // 매핑 테이블로 일반화할지 재검토한다(현재는 인스턴스가 하나뿐이라 과설계 방지, ADR-020).

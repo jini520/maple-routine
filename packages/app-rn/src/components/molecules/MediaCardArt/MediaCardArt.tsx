@@ -5,40 +5,36 @@ import type { ImageAssetRef } from '@core/types/image-asset'
 import { Image, View } from 'react-native'
 import { vars } from 'nativewind'
 
-import { Card } from '../../components/atoms/Card/Card'
-import { withAlpha } from '../../lib/color-alpha'
-import { LinearGradient } from '../../lib/nativewind-interop'
-import { useThemeAppearance } from '../../theme/context'
-import { buildMediaScopeVariables } from '../../theme/theme-vars'
+import { withAlpha } from '../../../lib/color-alpha'
+import { LinearGradient } from '../../../lib/nativewind-interop'
+import { useThemeAppearance } from '../../../theme/context'
+import { buildMediaScopeVariables } from '../../../theme/theme-vars'
+import { Card } from '../../atoms/Card/Card'
 import {
   MEDIA_ART_FILTER_STYLE,
   MEDIA_ART_VEIL_ALPHAS,
   MEDIA_ART_VEIL_LOCATIONS,
   mediaArtImageStyle,
+  mediaArtNaturalSize,
   resolveMediaArtLayout,
   type MediaArtCrop,
-  type MediaArtNaturalSize,
+  type MediaArtVariant,
 } from './media-card-art'
-
-function naturalSizeOf(source: ImageAssetRef): MediaArtNaturalSize | null {
-  // jest 에서는 에셋이 `{ testUri }` 대역이라 크기가 없다([[ADR-129]] 의 `image-asset.native.ts`) —
-  // 그때는 `cover` 로 떨어지고, 기하 계약은 위 순수 함수의 케이스가 지킨다.
-  const resolved = Image.resolveAssetSource(source)
-  if (resolved === null || resolved === undefined) return null
-  return { width: resolved.width, height: resolved.height }
-}
 
 export interface MediaCardArtProps {
   /** 없으면 **아무것도 그리지 않는다** — 웹이 아트 `div` 자체를 안 그리던 것과 같다. */
   source: ImageAssetRef | null
   crop: MediaArtCrop
+  /** 페이드 끝점을 고른다 — 기본은 카드(`MEDIA_ART_MASK_CARD`), 모달 히어로는 `'hero'`. */
+  variant?: MediaArtVariant
 }
 
 export function MediaCardArt(props: MediaCardArtProps): React.JSX.Element | null {
   const { definition } = useThemeAppearance()
   if (props.source === null) return null
 
-  const layout = resolveMediaArtLayout(props.crop, naturalSizeOf(props.source))
+  const veilLocations = MEDIA_ART_VEIL_LOCATIONS[props.variant ?? 'card']
+  const layout = resolveMediaArtLayout(props.crop, mediaArtNaturalSize(props.source))
   // 베일은 카드 자신의 표면색이어야 한다 — 이 카드가 `.media-scope` 안이라 그 값은 `surface` 가
   // 아니라 `mediaSurface` 다([[ADR-064]] 결정 5). 클래스로는 못 낸다(그라데이션 색은 값이다).
   const veil = definition.mediaSurface
@@ -76,7 +72,7 @@ export function MediaCardArt(props: MediaCardArtProps): React.JSX.Element | null
           withAlpha(veil, MEDIA_ART_VEIL_ALPHAS[2]),
           withAlpha(veil, MEDIA_ART_VEIL_ALPHAS[3]),
         ]}
-        locations={[...MEDIA_ART_VEIL_LOCATIONS]}
+        locations={[...veilLocations]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
       />

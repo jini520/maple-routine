@@ -23,7 +23,7 @@ import { ProgressBar } from '../../components/atoms/ProgressBar/ProgressBar'
 import { MEDIA_TEXT_SHADOW_STYLE } from '../../lib/text-styles'
 import { CategoryBadge, QuestStateBadge, renderWeeklyQuestStatus, stripGuildPrefix } from './content-badges'
 import { MONSTER_PARK_BACKGROUND_SLUG } from './DailyContentCards'
-import { MediaCard, MediaCardArt } from './MediaCardArt'
+import { MediaCard, MediaCardArt } from '../../components/molecules/MediaCardArt/MediaCardArt'
 
 // 주간 탭 카테고리 분류 상수 (ADR-021)
 export const EPIC_DUNGEON_PREFIX = '에픽 던전 : '

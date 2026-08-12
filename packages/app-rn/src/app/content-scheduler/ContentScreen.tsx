@@ -25,8 +25,9 @@
 //    문서 스크롤 하나를 공유하던 문제이고([[ADR-099]]), RN 에서는 스크롤이 화면과 함께 죽어
 //    계승할 오프셋이 없다(`ScreenScroll` 파일 머리).
 // ② `<button>` → `Pressable` + `Text`, `hover:` 는 사라진다(RN 에 호버가 없다).
-// ③ `animate-spin` → Reanimated CSS 애니메이션(아래 `REFRESH_SPIN`). NativeWind 에 그 클래스가
-//    없고, **없는 클래스는 에러가 아니라 안 도는 아이콘**이라 값으로 준다.
+// ③ `animate-spin` → Reanimated CSS 애니메이션(`lib/animation.ts` 의 `SPIN_ANIMATION`).
+//    NativeWind 에 그 클래스가 없고, **없는 클래스는 에러가 아니라 안 도는 아이콘**이라 값으로 준다.
+//    step 5 에서 보스 스케줄러가 두 번째 호출부가 되며 화면 안 상수에서 `lib/` 로 올라갔다.
 // ④ 모달은 셸 **바깥의 형제**다. 웹에서 그래야 했던 이유(`z-50` 이 셸의 스태킹 컨텍스트에 갇혀
 //    탭바 아래로 간다)는 RN 에 없지만 — `Modal` 이 별도 네이티브 윈도우다 — 자리는 같다.
 import { useEffect, useState } from 'react'
@@ -53,6 +54,7 @@ import { LoadingState } from '../../components/molecules/LoadingState/LoadingSta
 import { ProgressModal } from '../../components/organisms/ProgressModal/ProgressModal'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
+import { SPIN_ANIMATION } from '../../lib/animation'
 import { AnimatedView } from '../../lib/nativewind-interop'
 import { ListChecksIcon, RefreshCwIcon } from '../../lib/icons'
 import { useThemeAppearance } from '../../theme/context'
@@ -69,23 +71,6 @@ const ORDERED_DAILY_TEMPLATE = categorizeContentEntries(CONTENT_TEMPLATE.daily).
 const ORDERED_WEEKLY_TEMPLATE = categorizeContentEntries(CONTENT_TEMPLATE.weekly, WEEKLY_CATEGORY_ORDER).flatMap(
   (group) => group.items.map((item) => item.entry),
 )
-
-/**
- * 웹 `animate-spin`(Tailwind 기본 유틸)의 짝 — 1초 선형 무한 회전.
- *
- * **export 하지 않는다.** 지금 호출부가 하나뿐이라 [[ADR-094]] 결정 1 의 기준을 아직 못 넘겼고
- * (보스 스케줄러가 붙는 step 5 에서 둘이 된다), 컴포넌트 파일이 값을 export 하면 fast refresh 가
- * 깨진다(`Button/variants.ts` 와 같은 판단). 그때 `lib/` 로 올린다.
- */
-const REFRESH_SPIN = {
-  animationName: {
-    from: { transform: [{ rotate: '0deg' }] },
-    to: { transform: [{ rotate: '360deg' }] },
-  },
-  animationDuration: '1000ms',
-  animationTimingFunction: 'linear',
-  animationIterationCount: 'infinite',
-} as const
 
 export function ContentScreen(): React.JSX.Element {
   const {
@@ -374,7 +359,7 @@ export function ContentScreen(): React.JSX.Element {
                   >
                     <AnimatedView
                       testID="refresh-icon"
-                      style={status === 'loading' && !reduceMotion ? REFRESH_SPIN : undefined}
+                      style={status === 'loading' && !reduceMotion ? SPIN_ANIMATION : undefined}
                     >
                       <RefreshCwIcon className="h-4 w-4 text-primary-ink" strokeWidth={2} aria-hidden />
                     </AnimatedView>

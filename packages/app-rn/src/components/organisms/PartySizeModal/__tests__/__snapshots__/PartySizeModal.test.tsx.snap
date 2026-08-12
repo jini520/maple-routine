@@ -99,18 +99,87 @@ exports[`PartySizeModal 트리 스냅샷 1`] = `
                 {
                   "backgroundColor": "#1D140D",
                   "height": 88,
+                  "overflow": "hidden",
                   "position": "relative",
                 }
               }
             >
               <View
+                aria-hidden={true}
+                pointerEvents="none"
+                style={
+                  {
+                    "filter": [
+                      {
+                        "saturate": 0.85,
+                      },
+                      {
+                        "brightness": 0.8,
+                      },
+                    ],
+                    "inset": 0,
+                    "opacity": 0.65,
+                    "position": "absolute",
+                  }
+                }
+                testID="media-card-art"
+              >
+                <Image
+                  resizeMode="cover"
+                  source={
+                    {
+                      "testUri": "../../../packages/core/src/assets/bosses/lotus.webp",
+                    }
+                  }
+                  style={
+                    {
+                      "bottom": 0,
+                      "left": 0,
+                      "position": "absolute",
+                      "right": 0,
+                      "top": 0,
+                    }
+                  }
+                />
+              </View>
+              <ViewManagerAdapter_ExpoLinearGradient
+                aria-hidden={true}
+                colors={
+                  [
+                    1905677,
+                    1905677,
+                    4280095757,
+                    4280095757,
+                  ]
+                }
+                endPoint={
+                  [
+                    1,
+                    0,
+                  ]
+                }
+                locations={
+                  [
+                    0,
+                    0.42,
+                    0.82,
+                    1,
+                  ]
+                }
+                pointerEvents="none"
+                startPoint={
+                  [
+                    0,
+                    0,
+                  ]
+                }
                 style={
                   {
                     "inset": 0,
                     "position": "absolute",
                   }
                 }
-                testID="party-size-modal-art"
+                testID="media-card-art-veil"
               />
               <ViewManagerAdapter_ExpoLinearGradient
                 colors={

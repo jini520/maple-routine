@@ -45,7 +45,10 @@
     {
       "step": 5,
       "name": "boss-scheduler",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-13T00:49:55+0900",
+      "completed_at": "2026-08-13T02:05:00+0900",
+      "summary": "보스 스케줄러 2개(1,166줄)를 src/app/boss-scheduler/ 로 옮기고 TabNavigator 두 번째 탭 + RootNavigator 의 BossManage 를 자리표시자에서 진짜 화면으로 교체 · **파일 둘에 ADR 26+11개** — BossScreen 26개를 한 줄씩 확인해 parity-inventory §2.4 에 «확인» 열로 기록(047·077·098·099·120 은 코드가 아니라 구조가 만족: 헤더가 스크롤 뷰의 형제 · 관리 페이지가 루트 스택 push · 스크롤을 화면이 소유) · **step 4 의 선택을 그대로 물려받았다** — PTR 은 RefreshControl(ADR-130), 헤더는 PageHeader 형제, 스크롤은 ScreenScroll. 두 탭이 같은 제스처에 다르게 반응하면 그 자체가 회귀라 배선이 글자 그대로 같다 · **step 4 가 예고한 이사 둘 실행**: MediaCardArt·media-card-art.ts → components/molecules/MediaCardArt/(세 번째 호출부가 붙었고, 화면 폴더에 두면 app/boss-scheduler → app/content-scheduler import 가 되는데 계층 테스트가 못 보는 사각이다) · SPIN_ANIMATION → lib/animation.ts(두 번째 호출부) · **그림 셋이 한꺼번에 살아났다**(보스 카드 bleed · 파티 인원 모달 히어로 · 관리 페이지 원형 초상) — 셋 다 step 4 가 푼 resolveMediaArtLayout 을 부르기만 하고, 갈린 것은 페이드 끝점(카드 38/76 vs 히어로 42/82 → variant 프롭)과 원형의 overflow-hidden(웹은 background-image 라 저절로 잘렸다) 둘뿐 · **step 4 코드의 실측 결함 하나 수정** — jest 에셋 대역이 크기 없이 와도 `undefined <= 0` 이 false 라 가드를 통과해 aspectRatio: NaN 이 나가고 있었다(문서는 cover 폴백이라 적혀 있었다), Number.isFinite 로 교체 · **NativeWind 함정 규명** — Pressable 의 style 함수는 className 없어도 통째로 삼켜지고 active:brightness-110 은 조용히 사라진다(active:scale-[.985] 와 객체 style 은 된다) → ADR-121 결정 1 의 눌림 피드백이 축소만 오고 밝기는 못 온다(육안 대조 목록) · ?openPicker=1 쿼리 → 라우트 파라미터(받는 쪽만, 보내는 쪽은 step 7) — URL 이 없어 새로고침 걱정은 사라지지만 파라미터가 스택에 남아 setParams 로 지우는 일은 그대로 필요 · 사라진 것: StackScreen 통째·PARENT_PATH·usePullToRefresh 배선·resolveContentOffsetPx transform·useScreenStackStore 깊이 게이트·Outlet·renderPartyStepper 인라인 마크업(PartySizeStepper molecule 이 대신) · 웹 테스트 6개(2,772줄)는 명세로만 읽고 다시 씀(제스처 시뮬레이션 넷·DOM 스냅샷 둘은 옮길 계약이 아니다, 콜드 스타트는 AppShell 선하이드레이션 테스트가 이미 가짐) · 테스트 픽스처의 보스 이름·난이도는 전부 weekly-bosses.json 에서 뽑는다(ADR-006) · 육안 대조 목록 10항목을 README «4-5단계 결과» 에 기록(최우선은 카드 일러스트 크롭 + 눌림 피드백이 축소만으로 읽히는가) · jest 1057→1153(95파일), vitest 3056 증감 0, lint 0 errors/25 warnings(baseline 동일)"
     },
     {
       "step": 6,

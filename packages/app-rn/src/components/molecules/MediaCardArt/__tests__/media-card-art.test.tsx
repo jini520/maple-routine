@@ -6,16 +6,22 @@
 //
 // 값(필터·마스크·투명도)은 **core 의 상수에서 읽어 대조한다** — 여기 손으로 적으면 두 벌이 되고,
 // 웹이 값을 바꿔도 이 테스트는 조용히 통과한다(`render-atom.tsx` 의 색 규칙과 같은 이유).
-import { MEDIA_ART_FILTER, MEDIA_ART_MASK_CARD, MEDIA_ART_OPACITY } from '@core/lib/media-card'
+import {
+  MEDIA_ART_FILTER,
+  MEDIA_ART_MASK_CARD,
+  MEDIA_ART_MASK_HERO,
+  MEDIA_ART_OPACITY,
+} from '@core/lib/media-card'
 import { processColor, View } from 'react-native'
 
-import { 기본테마, flattenStyle, renderAtom } from '../../../components/__tests__/render-atom'
-import { withAlpha } from '../../../lib/color-alpha'
+import { 기본테마, flattenStyle, renderAtom } from '../../../__tests__/render-atom'
+import { withAlpha } from '../../../../lib/color-alpha'
 import { MediaCard, MediaCardArt } from '../MediaCardArt'
 import {
   MEDIA_ART_FILTER_STYLE,
   MEDIA_ART_VEIL_ALPHAS,
-  MEDIA_ART_VEIL_LOCATIONS,
+  MEDIA_ART_VEIL_LOCATIONS_CARD,
+  MEDIA_ART_VEIL_LOCATIONS_HERO,
   mediaArtImageStyle,
   resolveMediaArtLayout,
 } from '../media-card-art'
@@ -60,6 +66,19 @@ describe('resolveMediaArtLayout — CSS 배경 크롭 → RN 배치', () => {
     expect(resolveMediaArtLayout(CROP, { width: 0, height: 0 })).toEqual({ kind: 'cover' })
   })
 
+  // step 5 실측 — jest 의 에셋 대역(`{ testUri }`)이 크기 없이 오는데 `undefined <= 0` 은 false 라
+  // 가드를 통과했고 `aspectRatio: NaN` 이 나갔다. NaN 은 에러가 아니라 레이아웃이 조용히 무너지는 값이다.
+  it.each([
+    ['둘 다 없음', { width: undefined, height: undefined }],
+    ['높이만 없음', { width: 800, height: undefined }],
+    ['NaN', { width: Number.NaN, height: 400 }],
+    ['무한대', { width: 800, height: Number.POSITIVE_INFINITY }],
+  ])('크기가 숫자가 아니면(%s) cover 다 — NaN 종횡비를 내보내지 않는다', (_label, natural) => {
+    expect(resolveMediaArtLayout(CROP, natural as unknown as { width: number; height: number })).toEqual({
+      kind: 'cover',
+    })
+  })
+
   it('`cover`/`center` 기본 크롭도 cover 다', () => {
     expect(resolveMediaArtLayout({ size: 'cover', position: 'center' }, NATURAL)).toEqual({ kind: 'cover' })
   })
@@ -100,16 +119,24 @@ describe('core 의 bleed 값과 대조', () => {
   })
 
   // 베일은 마스크를 **뒤집은** 것이다 — 마스크가 1(불투명 검정)인 구간에서 덧칠이 0이어야 한다.
-  it('베일 정지점은 웹 마스크의 정지점을 뒤집은 것이다', () => {
-    const stops = [...MEDIA_ART_MASK_CARD.matchAll(/(\d+)%/g)].map(([, value]) => Number(value) / 100)
+  // 두 자리(카드·모달 히어로)가 **끝점만 다르다** — 같은 값을 쓰면 히어로에서 그림이 일찍 끊긴다.
+  it.each([
+    ['카드', MEDIA_ART_MASK_CARD, MEDIA_ART_VEIL_LOCATIONS_CARD, [0, 0.38, 0.76]],
+    ['모달 히어로', MEDIA_ART_MASK_HERO, MEDIA_ART_VEIL_LOCATIONS_HERO, [0, 0.42, 0.82]],
+  ])('%s 베일 정지점은 웹 마스크의 정지점을 뒤집은 것이다', (_label, mask, locations, expected) => {
+    const stops = [...mask.matchAll(/(\d+)%/g)].map(([, value]) => Number(value) / 100)
 
-    // 웹 마스크: #000 0% · #000 38% · transparent 76% → 알파 1, 1, 0
-    expect(stops).toEqual([0, 0.38, 0.76])
-    expect(MEDIA_ART_VEIL_LOCATIONS.slice(0, 3)).toEqual(stops)
+    // 웹 마스크: #000 0% · #000 N% · transparent M% → 알파 1, 1, 0
+    expect(stops).toEqual(expected)
+    expect(locations.slice(0, 3)).toEqual(stops)
     expect(MEDIA_ART_VEIL_ALPHAS.slice(0, 3)).toEqual([0, 0, 1])
     // 마지막 한 쌍은 웹에 없다 — CSS 마스크는 끝 값을 유지하지만 네이티브 그라데이션은 보간만 한다.
-    expect(MEDIA_ART_VEIL_LOCATIONS[3]).toBe(1)
+    expect(locations[3]).toBe(1)
     expect(MEDIA_ART_VEIL_ALPHAS[3]).toBe(1)
+  })
+
+  it('두 정지점이 실제로 다르다 — 한 벌로 합치면 히어로가 카드 끝점을 쓴다', () => {
+    expect([...MEDIA_ART_VEIL_LOCATIONS_HERO]).not.toEqual([...MEDIA_ART_VEIL_LOCATIONS_CARD])
   })
 })
 
@@ -147,6 +174,18 @@ describe('MediaCardArt', () => {
     expect(colors).toHaveLength(4)
     expect(colors[3]).toBe(processColor(withAlpha(기본테마.mediaSurface, 1)))
     expect(colors[0]).toBe(processColor(withAlpha(기본테마.mediaSurface, 0)))
+  })
+
+  it('variant 로 베일 정지점이 갈린다 — 기본은 카드다', async () => {
+    const 카드 = await renderAtom(<MediaCardArt source={7} crop={CROP} />)
+    const 히어로 = await renderAtom(<MediaCardArt source={7} crop={CROP} variant="hero" />)
+
+    expect(카드.getByTestId('media-card-art-veil', HIDDEN).props.locations).toEqual([
+      ...MEDIA_ART_VEIL_LOCATIONS_CARD,
+    ])
+    expect(히어로.getByTestId('media-card-art-veil', HIDDEN).props.locations).toEqual([
+      ...MEDIA_ART_VEIL_LOCATIONS_HERO,
+    ])
   })
 })
 

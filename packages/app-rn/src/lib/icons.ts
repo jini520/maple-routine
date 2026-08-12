@@ -63,6 +63,7 @@ import RefreshCw from 'lucide-react-native/icons/refresh-cw'
 import RotateCcw from 'lucide-react-native/icons/rotate-ccw'
 import Settings from 'lucide-react-native/icons/settings'
 import Signal from 'lucide-react-native/icons/signal'
+import SlidersHorizontal from 'lucide-react-native/icons/sliders-horizontal'
 import Sparkles from 'lucide-react-native/icons/sparkles'
 import Star from 'lucide-react-native/icons/star'
 import Store from 'lucide-react-native/icons/store'
@@ -138,6 +139,8 @@ export const RotateCcwIcon = withIconInterop(RotateCcw)
 export const SettingsIcon = withIconInterop(Settings)
 /** 모바일 데이터 확인 — `UpdatePromptModal`(confirm-cellular). */
 export const SignalIcon = withIconInterop(Signal)
+/** 솔로·파티 필터가 가린 빈 상태 — `BossScreen`([[ADR-060]] 결정 2 의 컨텍스트 아이콘). */
+export const SlidersHorizontalIcon = withIconInterop(SlidersHorizontal)
 /** 고가 드롭 반짝임 — `ValuableDropBadge` · 업데이트 완료 안내 `UpdatePromptModal`(updated). */
 export const SparklesIcon = withIconInterop(Sparkles)
 /** 즐겨찾기(추적 중) 표식 — `CharacterTrackingGrid`. */

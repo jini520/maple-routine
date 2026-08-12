@@ -1,6 +1,7 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { useOnboardingStore } from '@core/features/onboarding/store'
 
+import { BossManageScreen } from '../app/boss-scheduler/BossManageScreen'
 import { ContentManageScreen } from '../app/content-scheduler/ContentManageScreen'
 import { OnboardingScreen } from '../app/onboarding/OnboardingScreen'
 import { SettingsAboutScreen } from '../app/settings/SettingsAboutScreen'
@@ -23,6 +24,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>()
  * 목록에서도, 개발 노트 항목에서도 같은 상세가 열린다. 사본을 두면 같은 글이 두 벌이 된다.
  */
 const STACK_SCREENS = {
+  BossManage: BossManageScreen,
   ContentManage: ContentManageScreen,
   SettingsFeatureGuideList: SettingsFeatureGuideListScreen,
   SettingsFeatureGuide: SettingsFeatureGuideScreen,

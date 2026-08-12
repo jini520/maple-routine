@@ -7,8 +7,20 @@
 // 웹에서는 그 네 줄이 **인라인 style 객체**라 카드 일곱 개에 그대로 복붙돼 있었다(값도 전부 같다).
 // 옮기면 한 벌이 15줄이 아니라 30줄짜리 기하 계산이 되고, 그것이 일곱 벌이면 한 곳만 어긋나도
 // 그림이 조용히 다르게 잘린다. **호출부 일곱 + 취약 구조**라 [[ADR-094]] 결정 1 의 두 조건을 넉넉히
-// 넘긴다. 화면 폴더 안에 두는 것은 이 레시피가 컨텐츠 카드 둘만의 것이기 때문이고, 세 번째 호출부
-// (보스 카드·파티 인원 모달 히어로)가 붙는 단계에서 `components/` 로 올릴 자리다.
+// 넘긴다.
+//
+// **step 4 가 예고한 이사를 step 5 가 실행했다** — 이 파일은 `app/content-scheduler/` 에 있었고
+// 그 파일 머리에 *"세 번째 호출부(보스 카드·파티 인원 모달 히어로)가 붙는 단계에서 `components/`
+// 로 올릴 자리"* 라고 적혀 있었다. 그 셋이 붙었다(보스 카드 · 파티 인원 모달 히어로 · 보스 원형
+// 초상). 화면 폴더에 남겨 두면 `app/boss-scheduler/` 가 `app/content-scheduler/` 를 import 하게
+// 되는데, 그것은 계층 규칙이 잡아 주지 않는 사각이다(`layer-dependencies.test.ts` 는 `components/`
+// 안만 본다).
+//
+// ══ 정지점이 자리마다 다르다 ═══════════════════════════════════════════════════════
+//
+// 페이드 끝점은 카드(38%/82%가 아니라 38%/76%)와 모달 히어로(42%/82%)가 다르다 — core 의
+// `MEDIA_ART_MASK_CARD`·`MEDIA_ART_MASK_HERO` 가 그렇게 갈라 두었고, 같은 값을 쓰면 히어로에서
+// 그림이 너무 일찍 끊긴다. 그래서 이 파일도 정지점을 두 벌 갖고 컴포넌트가 `variant` 로 고른다.
 //
 // ══ CSS 배경 → RN `<Image>` 로 옮기는 법 ═══════════════════════════════════════════
 //
@@ -43,8 +55,9 @@
 // **값과 기하만 있는 절반이다.** 컴포넌트는 `MediaCardArt.tsx` 에 있다 — 컴포넌트 파일이 값을
 // 함께 export 하면 fast refresh 가 깨진다(`Button/variants.ts`·`row-class.ts` 와 같은 판단).
 //
-import type { ImageStyle } from 'react-native'
+import { Image, type ImageStyle } from 'react-native'
 
+import type { ImageAssetRef } from '@core/types/image-asset'
 
 /** 크롭 표의 한 줄. 두 조회 함수(`daily-quest-backgrounds`·`boss-icons`)가 같은 모양을 돌려준다. */
 export interface MediaArtCrop {
@@ -59,6 +72,18 @@ export interface MediaArtNaturalSize {
 }
 
 /**
+ * 번들 에셋의 고유 크기 — 크롭 기하의 유일한 실측 입력이다(파일 머리).
+ *
+ * jest 에서는 에셋이 `{ testUri }` 대역이라 크기가 없다([[ADR-129]] 의 `image-asset.native.ts`) —
+ * 그때는 `null` 이라 호출부가 `cover` 로 떨어지고, 기하 계약은 순수 함수 케이스가 지킨다.
+ */
+export function mediaArtNaturalSize(source: ImageAssetRef): MediaArtNaturalSize | null {
+  const resolved = Image.resolveAssetSource(source)
+  if (resolved === null || resolved === undefined) return null
+  return { width: resolved.width, height: resolved.height }
+}
+
+/**
  * 웹 `MEDIA_ART_FILTER`(`'saturate(.85) brightness(.8)'`)의 RN 짝.
  *
  * 문자열을 런타임에 파싱하지 않는 대신 **테스트가 core 의 그 상수를 읽어 이 값과 대조한다** —
@@ -68,14 +93,29 @@ export interface MediaArtNaturalSize {
 export const MEDIA_ART_FILTER_STYLE = [{ saturate: 0.85 }, { brightness: 0.8 }] as const
 
 /**
- * 웹 `MEDIA_ART_MASK_CARD`(`linear-gradient(90deg, #000 0%, #000 38%, transparent 76%)`)를
- * **뒤집은** 정지점 — 마스크가 1인 구간은 덧칠이 0이다.
+ * 웹 `MEDIA_ART_MASK_CARD`(`linear-gradient(90deg, #000 0%, #000 38%, transparent 76%)`)와
+ * `MEDIA_ART_MASK_HERO`(`… 42%, transparent 82%`)를 **뒤집은** 정지점 — 마스크가 1인 구간은
+ * 덧칠이 0이다.
  *
  * 마지막 정지점 `1` 은 웹에 없다. CSS 마스크는 마지막 정지점 뒤를 그 값으로 유지하지만
- * `expo-linear-gradient` 는 정지점 사이만 보간하므로, 76% 이후에도 완전히 덮이도록 끝을 못 박는다.
+ * `expo-linear-gradient` 는 정지점 사이만 보간하므로, 끝점 이후에도 완전히 덮이도록 못 박는다.
+ *
+ * **알파는 두 자리가 같다** — 갈리는 것은 정지점뿐이다(core 의 두 마스크도 그렇다).
  */
-export const MEDIA_ART_VEIL_LOCATIONS = [0, 0.38, 0.76, 1] as const
+export const MEDIA_ART_VEIL_LOCATIONS_CARD = [0, 0.38, 0.76, 1] as const
+export const MEDIA_ART_VEIL_LOCATIONS_HERO = [0, 0.42, 0.82, 1] as const
 export const MEDIA_ART_VEIL_ALPHAS = [0, 0, 1, 1] as const
+
+/** 베일 정지점을 고르는 자리 — 카드(80px 높이·화면 폭)와 모달 히어로(넓고 낮다). */
+export type MediaArtVariant = 'card' | 'hero'
+
+export const MEDIA_ART_VEIL_LOCATIONS: Record<
+  MediaArtVariant,
+  typeof MEDIA_ART_VEIL_LOCATIONS_CARD | typeof MEDIA_ART_VEIL_LOCATIONS_HERO
+> = {
+  card: MEDIA_ART_VEIL_LOCATIONS_CARD,
+  hero: MEDIA_ART_VEIL_LOCATIONS_HERO,
+}
 
 /** `cover`/`center` — 크롭 표에 없는 슬러그의 기본값이자, 고유 크기를 모를 때의 폴백. */
 export type MediaArtLayout =
@@ -100,12 +140,19 @@ const POSITION_PATTERN = /^(-?\d+(?:\.\d+)?)%\s+(-?\d+(?:\.\d+)?)%$/
  *
  * **모르면 `cover` 로 떨어진다.** 형식이 다르거나(`cover`) 고유 크기를 못 읽으면 그림을 안 그리는
  * 대신 덮어서 그린다 — 크롭은 "어디를 보여줄까"의 조정값이지 그림의 존재 조건이 아니다.
+ *
+ * 크기 검사가 `<= 0` 이 아니라 **`Number.isFinite`** 인 것은 실측으로 고친 자리다(step 5). jest 의
+ * 에셋 대역은 `{ testUri }` 뿐이라 `resolveAssetSource` 가 `width`/`height` 없이 돌아오는데,
+ * `undefined <= 0` 은 **false** 라 그 값이 가드를 통과해 `aspectRatio: NaN` 이 나갔다. NaN 은 에러가
+ * 아니라 **레이아웃이 조용히 무너지는 값**이고, 기기에서도 크기를 모르는 소스가 오면 같은 길이다.
  */
 export function resolveMediaArtLayout(
   crop: MediaArtCrop,
   natural: MediaArtNaturalSize | null,
 ): MediaArtLayout {
-  if (natural === null || natural.width <= 0 || natural.height <= 0) return { kind: 'cover' }
+  if (natural === null) return { kind: 'cover' }
+  if (!Number.isFinite(natural.width) || natural.width <= 0) return { kind: 'cover' }
+  if (!Number.isFinite(natural.height) || natural.height <= 0) return { kind: 'cover' }
 
   const size = SIZE_PATTERN.exec(crop.size)
   const position = POSITION_PATTERN.exec(crop.position)
