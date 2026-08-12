@@ -1,10 +1,29 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { maybeShowTabSwitchAd } from '@core/features/ads/tab-switch-ad'
 
+import { ContentScreen } from '../app/content-scheduler/ContentScreen'
 import { PlaceholderScreen } from './PlaceholderScreen'
-import { INITIAL_TAB_ROUTE, TAB_ITEMS, type TabParamList } from './routes'
+import { INITIAL_TAB_ROUTE, TAB_ITEMS, type TabParamList, type TabRouteName } from './routes'
 
 const Tab = createBottomTabNavigator<TabParamList>()
+
+/**
+ * 진짜 화면이 들어온 탭. **여기 없는 이름은 아직 자리표시자다** — `RootNavigator` 의 같은 이름 표와
+ * 짝이고, 비어 있는 자리가 곧 남은 일이다(step 5 보스 · step 7 수익 · step 3 설정은 하위 페이지만
+ * 왔고 본화면은 다음 차례다).
+ */
+const TAB_SCREENS = {
+  Content: ContentScreen,
+} as const satisfies Partial<Record<TabRouteName, React.ComponentType>>
+
+function screenFor(name: TabRouteName): React.ComponentType<Record<string, never>> {
+  const screen: React.ComponentType =
+    name in TAB_SCREENS
+      ? TAB_SCREENS[name as keyof typeof TAB_SCREENS]
+      : (PlaceholderScreen as React.ComponentType)
+
+  return screen as React.ComponentType<Record<string, never>>
+}
 
 /**
  * 탭 넷 + 탭바.
@@ -49,7 +68,7 @@ export function TabNavigator(): React.JSX.Element {
         <Tab.Screen
           key={tab.route}
           name={tab.route}
-          component={PlaceholderScreen}
+          component={screenFor(tab.route)}
           options={{ title: tab.label }}
           // **탭 이동의 책임은 링크가 아니라 인터셉터에 있다** — 전면광고 게이트가 여기 걸린다
           // ([[ADR-090]] 결정 3, `docs/migration/parity-inventory.md` §1 «보존해야 할 라우팅 동작»).

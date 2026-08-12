@@ -14,6 +14,25 @@
  */
 const UNSTABLE_PROPS = ['screenId'] as const
 
+/**
+ * **React 엘리먼트를 값으로 받는 프롭은 접는다**(step 4 — `ScrollView` 의 `refreshControl`,
+ * [[ADR-130]] 결정 1).
+ *
+ * 그런 프롭이 하나라도 있으면 스냅샷이 **찍히지 않는다** — 엘리먼트에 딸린 `_owner` 가 파이버
+ * 트리를 가리켜 기본 직렬화기가 앱 전체를 따라가고, `RangeError: Invalid string length` 로
+ * 죽는다(실측). 값이 아니라 **형태만** 남기면 "그 프롭이 붙어 있는가"라는 계약은 그대로 지켜진다.
+ */
+function isReactElement(value: unknown): value is { type: unknown } {
+  return typeof value === 'object' && value !== null && '$$typeof' in value && 'props' in value
+}
+
+function elementLabel(value: { type: unknown }): string {
+  const { type } = value
+  if (typeof type === 'string') return `<element:${type}>`
+  if (typeof type === 'function' && type.name !== '') return `<element:${type.name}>`
+  return '<element>'
+}
+
 export interface RenderedNode {
   type: string
   props: Record<string, unknown>
@@ -28,6 +47,9 @@ export function normalizeNavigationTree(node: NavigationTree): NavigationTree {
   const props: Record<string, unknown> = { ...node.props }
   for (const key of UNSTABLE_PROPS) {
     if (key in props) props[key] = `<${key}>`
+  }
+  for (const [key, value] of Object.entries(props)) {
+    if (isReactElement(value)) props[key] = elementLabel(value)
   }
 
   return {

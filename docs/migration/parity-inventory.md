@@ -95,13 +95,17 @@
 
 ### 2.3 컨텐츠 스케줄러 (`features/content-scheduler.md`)
 
-| 파일 | ADR 계약 |
-|---|---|
-| `content-scheduler/ContentScreen.tsx` | 015, 016, 017, 035, 047, 053, 060, 061, 062, 063, 072, 073, 077, 083, 096, 098, 099, 101, 115, 116, 120 |
-| `content-scheduler/ContentManageScreen.tsx` | 035, 055, 057, 060, 061, 065, 096, 098, 099, 120 |
-| `content-scheduler/DailyContentCards.tsx` | 018, 020, 094 |
-| `content-scheduler/WeeklyContentCards.tsx` | 021, 094 |
-| `content-scheduler/content-badges.tsx` | 094 |
+**다섯 다 옮겼다**(4단계 step 4, 2026-08-13 — `packages/app-rn/src/app/content-scheduler/`). `TabNavigator`
+의 첫 탭과 `RootNavigator` 의 `ContentManage` 가 자리표시자를 벗었다. RN 에서 갈린 것과 **육안 대조
+목록**은 [README «4-4단계 결과»](./README.md) 에 있다.
+
+| 파일 | ADR 계약 | 확인 |
+|---|---|---|
+| `content-scheduler/ContentScreen.tsx` | 015, 016, 017, 035, 047, 053, 060, 061, 062, 063, 072, 073, 077, 083, 096, 098, 099, 101, 115, 116, 120 | **21개를 한 줄씩 확인했다.** 015 피커를 **열 때만** 로스터 조회 ✅ / 016·017 결정 6 캐시 우선 표시 — 재검증 중에도 목록을 안 지우고, 재조회 시작 때 `roster` 도 안 비운다 ✅ / 035 결정 3·6·19 수동 멤버십으로 목록 결정 + 결정 20 템플릿 순서 고정 ✅ / 053 결정 3 로딩·실패를 화면이 소유하고 `finally` 로 반드시 해제 ✅ / 060 빈 상태 넷(캐릭터 0명 · 자동/수동 × 일간/주간)과 CTA 의 목적지 ✅ / 061 결정 2 셸 승계 카드는 **보여줄 데이터가 아예 없을 때만** ✅ / 062 여는 경로와 재시도가 같은 초기화(`reloadRoster`) ✅ / 063 전역 실패는 토스트 ✅ / 083 결정 1·2 캐릭터별 실패도 토스트, `characterUnavailable` 은 액션 없음 ✅ / 096 결정 1 탭은 스토어 소유 ✅ / 101 결정 1 `trackedOcids !== null && length === 0` ✅ / 115 결정 7 · 116 결정 1 401·429 는 동기화·로스터 **둘 다** 같은 진입점 ✅ / **072·073 은 [[ADR-130]] 으로 형태가 갈렸다** — 결정 2(같은 재조회)·10(버튼 존치)·073 결정 1(헤더 제자리)은 지켜지고, 073 결정 6 의 목록 오프셋과 072 결정 14 는 **OS 와 구조가 가져갔다** / **047·077·098·099·120 은 코드가 아니라 구조가 만족한다** — 헤더는 스크롤 뷰의 형제(047·098), 관리 페이지는 루트 스택 push 라 언마운트가 없고(077·120), 스크롤은 화면이 소유한다(099) |
+| `content-scheduler/ContentManageScreen.tsx` | 035, 055, 057, 060, 061, 065, 096, 098, 099, 120 | 035 결정 18 편집은 이 화면에서만 · 카테고리 그룹핑·카운트 태그 ✅ / 055 정정 1 사유는 배지가 아니라 **행 위를 덮는 한 줄** ✅(블러만 빠진다 — RN 에 `backdrop-filter` 가 없고 [[ADR-123]] 이 웹에서도 걷어냈다) / 057 결정 2·5 `null` 만 잠그고 `undefined` 는 안 잠근다 · 추적 중이면 안 잠근다 ✅ / 061 결정 10 조회 전에는 빈 상태로 위장하지 않는다 ✅ / 065 결정 4 토글 저장 실패는 토스트 ✅ / 096 결정 2 **진입 시점 한 번만** 탭 승계(한 방향) · 결정 4·5 컴팩트 드롭다운이 같은 `selectCharacter` ✅ / 098·099·120 은 셸 교체로 만족(`StackScreen` → 루트 스택 + `ScreenScroll(hasTabBar={false})`) — **자동 모드 리다이렉트는 도달 불가능해졌지만 계약은 남겼다**(`goBack`) |
+| `content-scheduler/DailyContentCards.tsx` | 018, 020, 094 | 018 카드 규격(`rounded-[14px]`·80px·bleed 레시피)과 **`.media-scope` 재선언**([[ADR-064]] 결정 5)을 `MediaCard` 가 진다 ✅ / 020 접두어 제거·지역 배경 매칭·`quest_state` 3단 배지·몬스터파크 112px 예외 ✅ / 094 결정 7 화면에서 분리된 상태 유지 ✅ — **bleed 네 줄은 `MediaCardArt` 로 접혔다**(CSS 배경 → RN 기하, README) |
+| `content-scheduler/WeeklyContentCards.tsx` | 021, 094 | 021 4변형 + 길드 3종 독립·카테고리 배지 색이 **테마 토큰이 아닌 고정 hex** 인 것까지 ✅ / 094 결정 7 ✅ |
+| `content-scheduler/content-badges.tsx` | 094 | 094 결정 3 의 **좁은 범위**를 지킨다 — `Badge` atom 은 `*-tint`/`*-ink` × `font-semibold` 만 덮으므로 여기 셋(완료의 `font-bold` · `bg-surface-2` 위 두 종 · 고정 hex 카테고리)은 웹과 같은 이유로 인라인이다 ✅ |
 
 ### 2.4 보스 스케줄러 (`features/boss-scheduler.md`)
 

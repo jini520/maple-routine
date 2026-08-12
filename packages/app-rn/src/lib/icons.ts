@@ -35,6 +35,7 @@
 import ArrowLeft from 'lucide-react-native/icons/arrow-left'
 import Ban from 'lucide-react-native/icons/ban'
 import BookOpen from 'lucide-react-native/icons/book-open'
+import Castle from 'lucide-react-native/icons/castle'
 import Check from 'lucide-react-native/icons/check'
 import ChevronDown from 'lucide-react-native/icons/chevron-down'
 import ChevronRight from 'lucide-react-native/icons/chevron-right'
@@ -46,11 +47,15 @@ import ExternalLink from 'lucide-react-native/icons/external-link'
 import Eye from 'lucide-react-native/icons/eye'
 import EyeOff from 'lucide-react-native/icons/eye-off'
 import FileText from 'lucide-react-native/icons/file-text'
+import Flag from 'lucide-react-native/icons/flag'
 import Gamepad2 from 'lucide-react-native/icons/gamepad-2'
 import Gauge from 'lucide-react-native/icons/gauge'
 import Info from 'lucide-react-native/icons/info'
 import KeyRound from 'lucide-react-native/icons/key-round'
+import LayoutGrid from 'lucide-react-native/icons/layout-grid'
 import ListChecks from 'lucide-react-native/icons/list-checks'
+import MapPin from 'lucide-react-native/icons/map-pin'
+import Medal from 'lucide-react-native/icons/medal'
 import Minus from 'lucide-react-native/icons/minus'
 import Moon from 'lucide-react-native/icons/moon'
 import Plus from 'lucide-react-native/icons/plus'
@@ -62,6 +67,7 @@ import Sparkles from 'lucide-react-native/icons/sparkles'
 import Star from 'lucide-react-native/icons/star'
 import Store from 'lucide-react-native/icons/store'
 import Sun from 'lucide-react-native/icons/sun'
+import Swords from 'lucide-react-native/icons/swords'
 import TriangleAlert from 'lucide-react-native/icons/triangle-alert'
 import Users from 'lucide-react-native/icons/users'
 import X from 'lucide-react-native/icons/x'
@@ -78,6 +84,8 @@ export const ArrowLeftIcon = withIconInterop(ArrowLeft)
 export const BanIcon = withIconInterop(Ban)
 /** 안내가 하나도 없을 때 — `SettingsFeatureGuideListScreen` 빈 상태([[ADR-060]]). */
 export const BookOpenIcon = withIconInterop(BookOpen)
+/** 에픽 던전 카테고리 — `ContentManageScreen` 그룹 헤더·행([[ADR-035]] 결정 18). */
+export const CastleIcon = withIconInterop(Castle)
 /** 선택 표식 — `CacheClearConfirm` 체크박스 · `ThemeSelector` 선택 타일. */
 export const CheckIcon = withIconInterop(Check)
 /** 성공 토스트 — `Toast`(success). 웹의 `CheckCircle2` 실물은 `circle-check-big` 이다. */
@@ -98,6 +106,8 @@ export const EyeIcon = withIconInterop(Eye)
 export const EyeOffIcon = withIconInterop(EyeOff)
 /** 기록된 변경 내역이 없을 때 — `SettingsReleaseNotesScreen` 빈 상태([[ADR-060]]). */
 export const FileTextIcon = withIconInterop(FileText)
+/** 길드 카테고리 — `ContentManageScreen` 그룹 헤더·행. */
+export const FlagIcon = withIconInterop(Flag)
 /** 자동 트래킹 모드 — `TrackingModeStep`([[ADR-035]] 결정 22: "게임에서 정한 것을 따른다"). */
 export const Gamepad2Icon = withIconInterop(Gamepad2)
 /** 호출 한도 초과 — `ApiKeyNoticeModal`(rateLimited). 타이머 계열을 피한 근거는 그 파일에 있다. */
@@ -106,8 +116,14 @@ export const GaugeIcon = withIconInterop(Gauge)
 export const InfoIcon = withIconInterop(Info)
 /** API 키 무효 — `ApiKeyNoticeModal`(invalid). */
 export const KeyRoundIcon = withIconInterop(KeyRound)
+/** 메이플 유니온 카테고리 — `ContentManageScreen` 그룹 헤더·행. */
+export const LayoutGridIcon = withIconInterop(LayoutGrid)
 /** 수동 트래킹 모드 — `TrackingModeStep`([[ADR-035]] 결정 22: "앱에서 고른다"). */
 export const ListChecksIcon = withIconInterop(ListChecks)
+/** 일일/주간 퀘스트 카테고리 — `ContentManageScreen` 그룹 헤더·행. */
+export const MapPinIcon = withIconInterop(MapPin)
+/** 무릉도장 카테고리 — `ContentManageScreen` 그룹 헤더·행. */
+export const MedalIcon = withIconInterop(Medal)
 /** 파티원 수 감소 — `PartySizeStepper`. */
 export const MinusIcon = withIconInterop(Minus)
 /** 다크 테마 표식 — `ThemeSelector` 타일([[ADR-104]] 결정 2). */
@@ -130,6 +146,8 @@ export const StarIcon = withIconInterop(Star)
 export const StoreIcon = withIconInterop(Store)
 /** 라이트 테마 표식 — `ThemeSelector` 타일([[ADR-104]] 결정 2). */
 export const SunIcon = withIconInterop(Sun)
+/** 몬스터파크 카테고리 — `ContentManageScreen` 그룹 헤더·행. */
+export const SwordsIcon = withIconInterop(Swords)
 /** 파티원 표식 — `PartySizeStepper`(compact) · 파티 인원 라벨 `PartySizeModal`. */
 export const UsersIcon = withIconInterop(Users)
 /** 닫기 — `Toast` · `PartySizeModal`. */

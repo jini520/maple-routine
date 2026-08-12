@@ -18,8 +18,10 @@ import { act, render, screen } from '@testing-library/react-native'
 import { createNavigationContainerRef } from '@react-navigation/native'
 import { FEATURE_GUIDES } from '@core/data/feature-guides'
 import { useOnboardingStore } from '@core/features/onboarding/store'
+import { useTrackingModeStore } from '@core/features/tracking-mode/store'
 
 import { NavigationHarness } from './harness'
+import { installMemoryPreferences } from './memory-preferences'
 import { normalizeNavigationTree } from './normalize-tree'
 import { FEATURE_GUIDE_ROUTE_NAMES, STACK_ROUTE_NAMES, type RootStackParamList } from '../routes'
 
@@ -42,7 +44,11 @@ const GUIDE_ID = GUIDE.id
 const GUIDE_SECTION_ID = GUIDE.sections[0].id
 
 beforeEach(() => {
+  installMemoryPreferences()
   useOnboardingStore.setState({ status: 'awaitingApiKey' })
+  // `ContentManage` 는 **수동 모드 전용**이라([[ADR-035]] 결정 18) 자동 모드로 두면 열리자마자
+  // 물러난다 — 그러면 이 파일의 «열하나가 전부 열린다» 가 배선이 아니라 모드 때문에 빨개진다.
+  useTrackingModeStore.setState({ mode: 'manual' })
 })
 
 describe('온보딩 분기', () => {

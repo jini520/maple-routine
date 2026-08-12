@@ -1,6 +1,7 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { useOnboardingStore } from '@core/features/onboarding/store'
 
+import { ContentManageScreen } from '../app/content-scheduler/ContentManageScreen'
 import { OnboardingScreen } from '../app/onboarding/OnboardingScreen'
 import { SettingsAboutScreen } from '../app/settings/SettingsAboutScreen'
 import { SettingsAccountDataScreen } from '../app/settings/SettingsAccountDataScreen'
@@ -15,13 +16,14 @@ import { STACK_ROUTE_NAMES, type RootStackParamList, type StackRouteName } from 
 const Stack = createNativeStackNavigator<RootStackParamList>()
 
 /**
- * 진짜 화면이 들어온 라우트. **여기 없는 이름은 아직 자리표시자다** — 4단계가 step 마다 이 표를
- * 채우고, 비어 있는 자리가 곧 남은 일이다.
+ * 진짜 화면이 들어온 하위 페이지. **여기 없는 이름은 아직 자리표시자다** — 4단계가 step 마다 이
+ * 표를 채우고, 비어 있는 자리가 곧 남은 일이다.
  *
  * **안내 상세 둘이 같은 컴포넌트를 가리키는 것이 계약이다**([[ADR-125]] 결정 3) — 기능 설명
  * 목록에서도, 개발 노트 항목에서도 같은 상세가 열린다. 사본을 두면 같은 글이 두 벌이 된다.
  */
-const SETTINGS_SCREENS = {
+const STACK_SCREENS = {
+  ContentManage: ContentManageScreen,
   SettingsFeatureGuideList: SettingsFeatureGuideListScreen,
   SettingsFeatureGuide: SettingsFeatureGuideScreen,
   SettingsReleaseNotes: SettingsReleaseNotesScreen,
@@ -42,8 +44,8 @@ const SETTINGS_SCREENS = {
  */
 function screenFor(name: StackRouteName): React.ComponentType<Record<string, never>> {
   const screen: React.ComponentType =
-    name in SETTINGS_SCREENS
-      ? SETTINGS_SCREENS[name as keyof typeof SETTINGS_SCREENS]
+    name in STACK_SCREENS
+      ? STACK_SCREENS[name as keyof typeof STACK_SCREENS]
       : (PlaceholderScreen as React.ComponentType)
 
   return screen as React.ComponentType<Record<string, never>>

@@ -35,24 +35,15 @@ import type { BossDifficulty } from '@core/types'
 import { withAlpha } from '../../../lib/color-alpha'
 import { LinearGradient } from '../../../lib/nativewind-interop'
 import { UsersIcon, XIcon } from '../../../lib/icons'
-import { TABULAR_NUMS } from '../../../lib/text-styles'
+// 히어로 글자의 그림자는 카드 둘과 같은 값을 쓴다 — 세 번째 호출부가 생기며 `lib/text-styles.ts`
+// 로 올라갔다([[ADR-094]] 결정 1). 값·근거는 그 파일이 갖는다.
+import { MEDIA_TEXT_SHADOW_STYLE, TABULAR_NUMS } from '../../../lib/text-styles'
 import { useThemeAppearance } from '../../../theme/context'
 import { MediaScope } from '../../../theme/MediaScope'
 import { Badge } from '../../atoms/Badge/Badge'
 import { DifficultySegment } from '../../molecules/DifficultySegment/DifficultySegment'
 import { PartySizeStepper } from '../../molecules/PartySizeStepper/PartySizeStepper'
 import { Modal } from '../Modal/Modal'
-
-/**
- * `MEDIA_TEXT_SHADOW`(core)의 RN 짝 — **테마 토큰이 아니라 가독성 스크림**이라 값이 검정 고정이다
- * ([[ADR-018]]·[[ADR-020]], `@core/lib/media-card`). 웹은 그림자를 둘 겹쳤지만 RN 의 `Text` 는
- * `textShadow*` 세 프롭으로 **하나만** 표현할 수 있어 강한 쪽(`0 1px 3px rgba(0,0,0,.9)`)을 남긴다.
- */
-const MEDIA_TEXT_SHADOW_STYLE = {
-  textShadowColor: 'rgba(0,0,0,0.9)',
-  textShadowOffset: { width: 0, height: 1 },
-  textShadowRadius: 3,
-} as const
 
 export function PartySizeModal(props: {
   bossName: string
