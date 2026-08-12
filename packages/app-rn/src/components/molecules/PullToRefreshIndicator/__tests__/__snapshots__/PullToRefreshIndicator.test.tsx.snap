@@ -189,6 +189,7 @@ exports[`PullToRefreshIndicator 렌더 트리 스냅샷 — 이후 변경을 잡
                 "stroke",
                 "strokeWidth",
                 "strokeDasharray",
+                "strokeDashoffset",
                 "strokeLinecap",
               ]
             }
@@ -203,6 +204,7 @@ exports[`PullToRefreshIndicator 렌더 트리 스냅샷 — 이후 변경을 잡
                 180.39471000000003,
               ]
             }
+            strokeDashoffset={null}
             strokeLinecap={1}
             strokeWidth={9}
           />

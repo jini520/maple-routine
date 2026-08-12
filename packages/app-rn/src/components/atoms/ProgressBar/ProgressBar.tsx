@@ -12,10 +12,30 @@
 //    다른 파일에 있어 우연히 살아 있었고, RN 은 스캔 범위가 이 패키지뿐이라 **그 우연이 없다**.
 //    없는 클래스는 에러가 아니라 **색 없는 막대**가 되므로 조립을 없앤다.
 // ② `role`·`aria-*` → `accessibilityRole`·`accessibilityValue`(RN 의 같은 뜻 프롭).
-// ③ `transition-[width]` 를 **뺐다** — 아래 `animated` 설명 참고.
+// ③ `transition-[width]` → Reanimated 의 **CSS 트랜지션**(step 7). Tailwind 의 기본값을 값으로 적는다 —
+//    아래 `WIDTH_TRANSITION` 참고.
 import { View } from 'react-native'
+import { cubicBezier } from 'react-native-reanimated'
+
+import { AnimatedView } from '../../../lib/nativewind-interop'
 
 const TRACK_CLASS = 'h-1.5 w-full overflow-hidden rounded-full bg-track'
+
+/**
+ * 웹의 `transition-[width]` 한 클래스가 펼쳐진 값.
+ *
+ * Tailwind v4 의 `transition-*` 은 지속시간·곡선을 유틸리티로 따로 주지 않으면 프리셋 기본값을 쓴다
+ * (`--default-transition-duration: 150ms` · `--default-transition-timing-function:
+ * cubic-bezier(0.4, 0, 0.2, 1)`). 웹 호출부에 `duration-*`·`ease-*` 가 없으므로 그 두 기본값이 곧
+ * 이 프리미티브의 실제 값이고, RN 에는 프리셋이 없으니 여기 적는다.
+ *
+ * `as const` 인 이유는 `DropEffectOverlay` 의 `FLOAT_ANIMATION` 과 같다(그 파일 주석).
+ */
+export const WIDTH_TRANSITION = {
+  transitionProperty: 'width',
+  transitionDuration: '150ms',
+  transitionTimingFunction: cubicBezier(0.4, 0, 0.2, 1),
+} as const
 
 /** 조립하지 않는다 — 이유는 파일 머리 ①. */
 const FILL_CLASS = {
@@ -41,11 +61,10 @@ export interface ProgressBarProps {
   /**
    * 폭 변화에 트랜지션을 건다 — 값이 연속으로 흐르는 다운로드 진행률용.
    *
-   * ⚠️ **아직 아무 일도 하지 않는다.** 웹은 `transition-[width]` 한 클래스였지만 RN 에는 CSS
-   * 트랜지션이 없다(NativeWind 의 `transition-*` 은 Reanimated 워클릿을 타는데, 그 배선은
-   * **step 7(animations)** 몫이다 — 지금 그 클래스를 쓰면 테스트 런타임에서 즉시 죽는다, 실측).
-   * 프롭을 남겨 두는 것은 step 4~6 이 옮길 호출부가 계약을 안 바꾸게 하기 위해서다. 폭은 값이
-   * 바뀌는 즉시 그 자리로 점프한다.
+   * 웹의 `transition-[width]` 자리이고, RN 에서는 Reanimated 의 CSS 트랜지션이 그 일을 한다
+   * (`WIDTH_TRANSITION`). NativeWind 의 `transition-*` 클래스를 쓰지 않는 이유는 그쪽이 지속시간·곡선을
+   * 프리셋 변수에서 읽는데 RN 에는 그 프리셋이 없어 **값이 조용히 달라지기** 때문이다 — 여기서는
+   * 웹이 실제로 쓰던 두 값을 직접 적는다.
    */
   animated?: boolean
   /** 채움 요소에 붙일 test id. */
@@ -63,10 +82,14 @@ export function ProgressBar(props: ProgressBarProps): React.JSX.Element {
       }
       className={TRACK_CLASS}
     >
-      <View
+      <AnimatedView
         testID={props.fillTestId}
         className={FILL_CLASS[tone]}
-        style={{ width: `${props.percent}%` }}
+        style={
+          props.animated === true
+            ? { width: `${props.percent}%`, ...WIDTH_TRANSITION }
+            : { width: `${props.percent}%` }
+        }
       />
     </View>
   )

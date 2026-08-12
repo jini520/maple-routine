@@ -18,11 +18,17 @@
 //    합성하려면 `touchHistory` 를 통째로 지어내야 한다). **`onMove…` 에서만 responder 를 가져오는
 //    것이 요점** — 시작에서 가져가면 안쪽 버튼(액션·닫기)이 눌리지 않는다. 웹이 `closest('button')`
 //    로 걸러내던 것과 같은 목적이고, RN 에서는 responder 규칙이 그것을 구조로 해 준다.
-// ② **`toast-shrink` 는 아직 안 움직인다** — `@keyframes` 8종 중 하나라 **step 7(animations)** 몫이다.
-//    지금은 남은 시간 바가 폭 100% 로 서 있고 줄지 않는다. 구조(자리·두께·색·`duration === null`
-//    이면 아예 없음)는 그대로라 step 7 이 값만 굴리면 된다.
-// ③ **진입 트랜지션도 마찬가지다.** `isEntered` 상태와 두 클래스는 남겼지만 CSS 트랜지션이 없어
-//    지금은 한 프레임 뒤 즉시 최종 상태로 튄다(웹은 `transition-opacity duration-200`).
+// ② **`toast-shrink` 는 Reanimated 의 CSS 애니메이션이다**(step 7). 웹은 인라인
+//    `animation: toast-shrink ${duration}ms linear forwards` 였고 — 지속시간이 토스트마다 달라
+//    (`@keyframes` 주석: 성공 2초/정보 2.5초) 클래스로 표현할 수 없던 자리다 — 그 성질이 그대로
+//    `animationDuration` 에 들어간다. `origin-left` 는 RN 의 `transformOrigin` 이 받는다.
+//    **모션 줄이기면 바가 통째로 사라진다**(웹 `motion-reduce:hidden`) — 줄지 않는 막대를 남기면
+//    "시간이 안 간다"로 읽히므로 없애는 쪽이 맞다는 웹의 판단을 그대로 옮긴다.
+// ③ **진입 트랜지션도 CSS 트랜지션으로 옮겼다.** 웹은 `transition-opacity duration-200 ease-out` 이라
+//    **투명도만** 흐르고 `translate-y-3 → translate-y-0` 은 즉시 튄다(투명도 0 이라 안 보인다).
+//    드래그 중에는 웹이 `transition: 'none'` 으로 껐으므로 여기서도 트랜지션 프롭을 빼 손가락을
+//    그대로 따라간다. 모션 줄이기면 시작 위치의 `translate-y-3` 만 없어진다(웹
+//    `motion-reduce:translate-y-0` — 투명도 트랜지션은 그쪽에서도 유지된다).
 // ④ **`truncate` → `numberOfLines={1}`**(RN 은 그 둘을 스타일이 아니라 `Text` 프롭으로 받는다).
 // ⑤ `role`·`aria-live` 는 그대로 — RN 이 같은 이름의 ARIA 값을 받는다(error 는 즉시 알림).
 //
@@ -35,6 +41,7 @@
 // 둔다 — 푸는 방법은 core 의 그 필드를 플랫폼 중립 컴포넌트 타입으로 넓히는 것이다.
 import { useEffect, useRef, useState } from 'react'
 import { Pressable, Text, View, type GestureResponderEvent } from 'react-native'
+import { useReducedMotion } from 'react-native-reanimated'
 
 import type { ToastItem, ToastVariant } from '@core/features/toast/store'
 import { shouldDismissFromSwipe } from '@core/lib/swipe-dismiss'
@@ -46,6 +53,7 @@ import {
   RefreshCwIcon,
   XIcon,
 } from '../../../lib/icons'
+import { AnimatedView } from '../../../lib/nativewind-interop'
 
 export interface ToastProps {
   toast: ToastItem
@@ -70,14 +78,47 @@ const ICON_CLASSES: Record<ToastVariant, string> = {
   info: 'text-info-ink',
 }
 
+/**
+ * 웹의 `transition-opacity duration-200 ease-out` — 흐르는 것은 투명도 하나뿐이다.
+ *
+ * `as const` 인 이유는 `DropEffectOverlay` 의 `FLOAT_ANIMATION` 과 같다(Reanimated 의 CSS 타입으로
+ * 주석을 달면 `Animated.View` 의 `style` 과 안 맞물린다 — 그 파일 주석 참고).
+ */
+const ENTER_TRANSITION = {
+  transitionProperty: 'opacity',
+  transitionDuration: '200ms',
+  transitionTimingFunction: 'ease-out',
+} as const
+
+/**
+ * `index.css` 의 `@keyframes toast-shrink`(`scaleX(1) → scaleX(0)`) + 웹이 인라인으로 붙이던
+ * `linear forwards`. **지속시간만 빠져 있다** — 토스트마다 다르고(성공 2초/정보 2.5초) 그래서 웹도
+ * 클래스로 못 적고 인라인 `style` 로 넣던 자리다.
+ *
+ * 나눠 둔 이유는 `src/__tests__/keyframes-parity.test.ts` 가 이 고정 부분을 웹 선언과 직접 견주기
+ * 때문이다 — 지속시간은 런타임 값이라 견줄 상수가 없다.
+ */
+export const TIMER_ANIMATION_BASE = {
+  animationName: {
+    from: { transform: [{ scaleX: 1 }] },
+    to: { transform: [{ scaleX: 0 }] },
+  },
+  animationTimingFunction: 'linear',
+  animationFillMode: 'forwards',
+} as const
+
+function timerAnimation(durationMs: number) {
+  return { ...TIMER_ANIMATION_BASE, animationDuration: `${durationMs}ms` } as const
+}
+
 export function Toast(props: ToastProps): React.JSX.Element {
   const { toast, onDismiss } = props
   const [isEntered, setIsEntered] = useState(false)
   const [dragX, setDragX] = useState<number | null>(null)
   const dragStartX = useRef(0)
+  const reduceMotion = useReducedMotion()
 
   // 마운트 직후 바로 최종 상태를 주면 트랜지션이 재생되지 않는다 — 한 프레임 뒤로 미룬다.
-  // (지금은 그 트랜지션 자체가 없다 — 파일 머리 ③.)
   useEffect(() => {
     const raf = requestAnimationFrame(() => setIsEntered(true))
     return () => cancelAnimationFrame(raf)
@@ -101,11 +142,13 @@ export function Toast(props: ToastProps): React.JSX.Element {
   const Icon = ICONS[toast.variant]
   const isDragging = dragX !== null
   const dragOpacity = isDragging ? Math.max(0.15, 1 - Math.abs(dragX) / 140) : undefined
-  const enterClasses = isEntered ? 'translate-y-0 opacity-100' : 'translate-y-3 opacity-0'
+  // 모션 줄이기면 시작 위치의 `translate-y-3` 이 빠진다(웹 `motion-reduce:translate-y-0`).
+  const restingClasses = reduceMotion ? 'translate-y-0 opacity-0' : 'translate-y-3 opacity-0'
+  const enterClasses = isEntered ? 'translate-y-0 opacity-100' : restingClasses
   const ActionIcon = toast.action?.icon ?? RefreshCwIcon
 
   return (
-    <View
+    <AnimatedView
       testID="toast"
       role={toast.variant === 'error' ? 'alert' : 'status'}
       aria-live={toast.variant === 'error' ? 'assertive' : 'polite'}
@@ -116,7 +159,12 @@ export function Toast(props: ToastProps): React.JSX.Element {
       onResponderRelease={handleRelease}
       onResponderTerminate={() => setDragX(null)}
       className={`relative flex-row items-center gap-2 overflow-hidden rounded-[14px] border border-border px-2.5 py-2 ${TONE_CLASSES[toast.variant]} ${enterClasses}`}
-      style={isDragging ? { transform: [{ translateX: dragX }], opacity: dragOpacity } : undefined}
+      // 드래그 중에는 트랜지션을 주지 않는다 — 웹의 `transition: 'none'` 자리다(파일 머리 ③).
+      style={
+        isDragging
+          ? { transform: [{ translateX: dragX }], opacity: dragOpacity }
+          : ENTER_TRANSITION
+      }
     >
       <Icon className={`h-4 w-4 shrink-0 ${ICON_CLASSES[toast.variant]}`} strokeWidth={2} aria-hidden />
       <Text
@@ -153,11 +201,16 @@ export function Toast(props: ToastProps): React.JSX.Element {
 
       {toast.duration !== null && (
         <View testID="toast-timer" className="absolute inset-x-0 bottom-0 h-[2.5px]">
-          {/* 폭이 줄어드는 것은 step 7(파일 머리 ②) — 지금은 가득 찬 채로 서 있다. */}
-          <View className={`h-full w-full ${TIMER_CLASSES[toast.variant]}`} />
+          {/* 모션 줄이기면 이 안쪽이 통째로 없다 — 웹 `motion-reduce:hidden`(파일 머리 ②). */}
+          {!reduceMotion && (
+            <AnimatedView
+              className={`h-full w-full ${TIMER_CLASSES[toast.variant]}`}
+              style={{ transformOrigin: 'left', ...timerAnimation(toast.duration) }}
+            />
+          )}
         </View>
       )}
-    </View>
+    </AnimatedView>
   )
 }
 

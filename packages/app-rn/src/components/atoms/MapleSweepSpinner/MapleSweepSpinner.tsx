@@ -2,14 +2,20 @@
 // 24px 이상 자리 전용이고, 16px 버튼 안에서는 띠가 잎보다 커져 움직임이 안 읽히므로 그 크기에는
 // `MapleSpinner`(트레일 링)를 쓴다.
 //
-// ⚠️ **아직 움직이지 않는다.** 웹은 `animate-maple-sweep`(1.4s ease-in-out infinite, 띠를
-// `translateY(-230px)` 까지 올린다)로 돌렸고, RN 에는 `@keyframes` 가 없어 **step 7(animations)**
-// 에서 Reanimated 로 다시 만든다. 지금 그리는 것은 **0프레임** — 띠가 `y=140`, 즉 viewBox(높이 130)
-// 밖에 있어 화면에는 바탕 잎만 보인다. 이것은 웹에서 모션이 꺼진 환경(`motion-reduce`)이 보여주던
-// 그림과 같다. 흉내로 움직이게 하지 않는 이유는 step 7 이 두 벌을 갖게 되기 때문이다.
-//
 // 차오르는 방향인 것은 의도다 — 폐기된 `MapleWaveProgress`(잎 안에 물이 차오르던 결정형 진행률)의
 // 감각을 비결정형 쪽에서 이어받는다([[ADR-061]] 결정 1).
+//
+// ── 모션: `maple-sweep` (step 7) ─────────────────────────────────────────────────
+//
+// 웹은 `animation: maple-sweep 1.4s ease-in-out infinite` 으로 띠에 `translateY(0 → −230px)` 를
+// 걸었다. RN 은 **띠 `<Rect>` 의 `y` 속성 자체를 굴린다**(140 → −90, 이동량 230 동일) — `Rect` 는
+// `y` 를 손대지 않고 네이티브 노드로 흘려보내므로(`react-native-svg` 의 `Rect.js`) `useAnimatedProps`
+// 가 UI 스레드에서 곧장 갱신할 수 있다. 반대로 `<G>` 의 transform 은 JS 에서 matrix 로 접혀 나가
+// UI 스레드 갱신이 그 접기를 건너뛴다 — 그래서 옮길 대상을 transform 이 아니라 좌표로 골랐다.
+// 왜 CSS API 가 아니라 `useAnimatedProps` 인지는 `MapleSpinner` 파일 머리에 적었다(SVG 속성).
+//
+// 모션 줄이기(`motion-reduce:animate-none`)면 띠는 `y=140`(viewBox 밖)에 머물러 **바탕 잎만** 남는다 —
+// 웹에서 `animation: none` 이 보여주던 그림 그대로다.
 //
 // ── RN 으로 옮기며 바뀐 것 ────────────────────────────────────────────────────────
 //
@@ -24,10 +30,17 @@
 // 루미넌스 마스크에서 흰색의 루미넌스는 1이라 결국 `stopOpacity` 가 그대로 알파가 된다 —
 // **웹과 같은 램프**다. 호출부 API 는 웹 그대로 유지된다(`className="text-*"` 하나로 색이 정해진다).
 //
+// **①-b 그래서 마스크는 띠의 바운딩 박스에 매인다(step 7 에서 고쳤다).** 처음 옮길 때는 마스크를
+// `userSpaceOnUse` 로 두고 띠와 같은 좌표를 손으로 적었는데, 띠가 **움직이는 순간 그 방식은 깨진다** —
+// 램프는 제자리에 서 있고 띠만 그 아래를 지나가 "고정된 창으로 내다보는" 그림이 된다. `maskUnits` 와
+// `maskContentUnits` 를 **둘 다 `objectBoundingBox`** 로 두면 마스크 영역과 내용이 참조하는 도형의
+// 바운딩 박스 비율로 표현되므로, 띠가 어디로 가든 램프가 **딸려 간다**(움직이는 프롭이 하나로 줄고,
+// `<Defs>` 안의 노드를 애니메이션하지 않아도 된다). 웹이 `objectBoundingBox` 그라디언트를 띠의
+// `fill` 에 직접 걸어 공짜로 얻던 성질을, 마스크 쪽에서 같은 방식으로 얻는 것이다.
+//
 // **②** `clipPathUnits="userSpaceOnUse"` 를 뺐다 — `react-native-svg` 의 `ClipPath` 는 그 속성을 받지
 // 않고, 받지 않는 이유는 **그것이 이미 유일한 동작**이기 때문이다(웹에서 기본값
-// `objectBoundingBox` 를 피하려고 명시하던 값이라 RN 에서는 적을 자리가 없다). 마스크 쪽은 기본값이
-// 여전히 `objectBoundingBox` 라 거기서는 명시한다.
+// `objectBoundingBox` 를 피하려고 명시하던 값이라 RN 에서는 적을 자리가 없다).
 //
 // **③** `<clipPath>` 의 직접 자식을 도형으로 두는 규칙은 그대로 지킨다 — 웹에서 `<g>` 로 묶으면
 // Chrome 이 조용히 빈 클립을 만들어 잎이 통째로 사라졌다(`MapleWaveProgress` 에서 겪은 트랩).
@@ -36,7 +49,16 @@
 // **④** id 에서 영숫자 아닌 문자를 턴다 — `useId()` 가 내는 값에는 구분자가 들어 있고(React 19 는
 // `«r0»`), `url(#...)` 를 문자열로 맞춰 보는 `react-native-svg` 의 defs 조회에 그 문자가 어떻게 걸릴지
 // 보장이 없다. 숫자 부분이 남으므로 인스턴스마다 다르다는 성질은 그대로다.
-import { useId } from 'react'
+import { useEffect, useId } from 'react'
+import Animated, {
+  Easing,
+  cancelAnimation,
+  useAnimatedProps,
+  useReducedMotion,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated'
 import { ClipPath, Defs, G, LinearGradient, Mask, Path, Rect, Stop } from 'react-native-svg'
 
 import { Svg } from '../../../lib/nativewind-interop'
@@ -47,6 +69,21 @@ const BAND_START_Y = 140
 const BAND_HEIGHT = 80
 const BAND_X = -10
 const BAND_WIDTH = 147
+/**
+ * 웹의 `@keyframes maple-sweep { to { transform: translateY(-230px) } }` 의 **이동 거리**.
+ *
+ * 부호가 없는 것은 RN 이 transform 이 아니라 `<Rect>` 의 `y` 를 굴리기 때문이다 — 좌표는 아래로
+ * 갈수록 커지므로 위로 올리려면 **빼야** 한다(웹의 음수 translateY 와 방향은 같고 부호만 반대).
+ */
+export const MAPLE_SWEEP_TRAVEL = 230
+
+/** `index.css` 의 `animate-maple-sweep` — `maple-sweep 1.4s ease-in-out infinite`. */
+export const MAPLE_SWEEP_DURATION_MS = 1400
+
+/** CSS `ease-in-out` = `cubic-bezier(0.42, 0, 0.58, 1)`. `Easing.inOut(Easing.ease)` 는 다른 곡선이다. */
+const EASE_IN_OUT = Easing.bezier(0.42, 0, 0.58, 1)
+
+const AnimatedRect = Animated.createAnimatedComponent(Rect)
 
 export interface MapleSweepSpinnerProps {
   size?: number
@@ -59,6 +96,29 @@ export function MapleSweepSpinner(props: MapleSweepSpinnerProps): React.JSX.Elem
   const clipId = `maple-sweep-clip-${uid}`
   const gradientId = `maple-sweep-gradient-${uid}`
   const maskId = `maple-sweep-mask-${uid}`
+
+  const reduceMotion = useReducedMotion()
+  const bandY = useSharedValue(BAND_START_Y)
+
+  useEffect(() => {
+    if (reduceMotion) return
+
+    bandY.value = withRepeat(
+      withTiming(BAND_START_Y - MAPLE_SWEEP_TRAVEL, {
+        duration: MAPLE_SWEEP_DURATION_MS,
+        easing: EASE_IN_OUT,
+      }),
+      -1,
+      false,
+    )
+
+    return () => {
+      cancelAnimation(bandY)
+      bandY.value = BAND_START_Y
+    }
+  }, [bandY, reduceMotion])
+
+  const bandProps = useAnimatedProps(() => ({ y: bandY.value }))
 
   return (
     <Svg
@@ -79,21 +139,10 @@ export function MapleSweepSpinner(props: MapleSweepSpinnerProps): React.JSX.Elem
           <Stop offset="50%" stopColor="#ffffff" stopOpacity="1" />
           <Stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
         </LinearGradient>
-        <Mask
-          id={maskId}
-          maskUnits="userSpaceOnUse"
-          x={BAND_X}
-          y={BAND_START_Y}
-          width={BAND_WIDTH}
-          height={BAND_HEIGHT}
-        >
-          <Rect
-            x={BAND_X}
-            y={BAND_START_Y}
-            width={BAND_WIDTH}
-            height={BAND_HEIGHT}
-            fill={`url(#${gradientId})`}
-          />
+        {/* 좌표가 아니라 **비율**이다(위 ①-b) — 0~1 은 마스크를 참조하는 도형(= 띠)의 바운딩 박스라,
+            띠가 위로 올라가면 램프도 함께 올라간다. */}
+        <Mask id={maskId} maskUnits="objectBoundingBox" maskContentUnits="objectBoundingBox">
+          <Rect x={0} y={0} width={1} height={1} fill={`url(#${gradientId})`} />
         </Mask>
       </Defs>
 
@@ -101,13 +150,14 @@ export function MapleSweepSpinner(props: MapleSweepSpinnerProps): React.JSX.Elem
       <Path d={MAPLE_LEAF_PATH} fill="currentColor" opacity={0.32} />
 
       <G clipPath={`url(#${clipId})`}>
-        <Rect
+        <AnimatedRect
           x={BAND_X}
           y={BAND_START_Y}
           width={BAND_WIDTH}
           height={BAND_HEIGHT}
           fill="currentColor"
           mask={`url(#${maskId})`}
+          animatedProps={bandProps}
         />
       </G>
     </Svg>

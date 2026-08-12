@@ -130,13 +130,34 @@ exports[`ProgressModal 트리 스냅샷 1`] = `
               }
             >
               <View
-                style={
+                collapsable={false}
+                jestAnimatedProps={
+                  {
+                    "value": {},
+                  }
+                }
+                jestAnimatedStyle={
+                  {
+                    "value": {},
+                  }
+                }
+                jestInlineStyle={
                   {
                     "backgroundColor": "#F58B0F",
                     "borderRadius": 9999,
                     "height": 6,
                     "width": "40%",
                   }
+                }
+                style={
+                  [
+                    {
+                      "backgroundColor": "#F58B0F",
+                      "borderRadius": 9999,
+                      "height": 6,
+                      "width": "40%",
+                    },
+                  ]
                 }
               />
             </View>

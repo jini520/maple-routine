@@ -113,14 +113,14 @@ exports[`LoadingState 렌더 트리 스냅샷 — 이후 변경을 잡는 기준
                 "type": 0,
               }
             }
-            height={80}
-            maskContentUnits={1}
+            height="100%"
+            maskContentUnits={0}
             maskType={0}
-            maskUnits={1}
+            maskUnits={0}
             name="maple-sweep-mask-r6"
-            width={147}
-            x={-10}
-            y={140}
+            width="100%"
+            x="0%"
+            y="0%"
           >
             <RNSVGRect
               fill={
@@ -129,15 +129,15 @@ exports[`LoadingState 렌더 트리 스냅샷 — 이후 변경을 잡는 기준
                   "type": 1,
                 }
               }
-              height={80}
+              height={1}
               propList={
                 [
                   "fill",
                 ]
               }
-              width={147}
-              x={-10}
-              y={140}
+              width={1}
+              x={0}
+              y={0}
             />
           </RNSVGMask>
         </RNSVGDefs>

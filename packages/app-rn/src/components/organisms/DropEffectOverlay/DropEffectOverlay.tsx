@@ -9,12 +9,24 @@
 //   ⓐ **프레임 에셋이 없다.** `DROP_EFFECT_FRAMES` 가 RN 에서 네 단계 모두 빈 배열이다
 //      (`src/lib/rn-drop-effect-frames.ts`). 빈 배열은 원본이 정의해 둔 정상 경로라
 //      (*"프레임이 없으면 연출 없이 닫기만 가능하게 둔다"*) 웹과 **같은 분기**를 탄다.
-//   ⓑ **재생 엔진과 모션이 없다.** 웹은 `requestAnimationFrame` 루프가 단계별 고정 fps
+//   ⓑ **재생 엔진이 없다.** 웹은 `requestAnimationFrame` 루프가 단계별 고정 fps
 //      ([[ADR-103]] 이 1.5배로 올린 값 — screen 22.5 / pre 21 / loop 17.25 / end 18)로 `img.src` 를
 //      갈아끼우고, 프레임마다 [[ADR-048]] 의 origin 테이블로 좌표를 함께 옮긴다. 그 엔진은 DOM
 //      (`new Image()` 프리로드 · `el.complete` · `el.style.transform`) 위에 서 있어 RN 에서는
-//      다시 써야 하고, 중앙 아이템의 팝인·부유(`fx-drop-float`)는 `@keyframes` 8종에 속한다 —
-//      **step 7(animations)** 몫이다.
+//      다시 써야 한다.
+//
+//      **step 7(animations)도 이것을 못 되살렸고, 막은 것은 시간이 아니라 ⓐ다.** RN 의 `Image` 는
+//      원격 URI 를 주면 **고유 크기를 모른다** — `require()` 로 번들에 든 에셋만 크기를 스스로 안다.
+//      프레임 배치는 [[ADR-048]] 의 origin 을 **그 프레임 비트맵 크기** 위에서 해석하는 일이라
+//      (`dropFrameTransform` 은 origin 을 되미는 것이고, 되밀 대상의 크기가 필요하다) 에셋이 어떤
+//      모양으로 오는지가 정해지기 전에는 배치 코드를 쓸 수 없다. 크기 표는 `DROP_EFFECT_ORIGINS` 의
+//      **주석에만** 있고 데이터가 아니라, core 를 고치지 않는 한 읽을 수도 없다([[ADR-127]] 원칙 3).
+//      그래서 엔진은 **에셋 레이어가 그 모양을 정한 뒤**에 쓴다 — 지금 쓰면 그 결정을 코드가 몰래
+//      대신 내리게 된다.
+//
+//   중앙 아이템의 **부유(`fx-drop-float`)는 step 7 에서 붙였다** — `@keyframes` 이고 붙일 자리(래퍼)가
+//   이미 있다. **팝인(scale/opacity 트랜지션)은 안 붙였다**: 그 대상이 아직 없는 `<Image>` 이고,
+//   그것을 켜는 트리거가 위의 엔진(8프레임 시점)이라 지금은 걸 곳도 켤 것도 없다.
 //
 // **[[ADR-103]] 의 판정 근거는 성능이 아니라 눈이다.** 그 ADR 은 2배로 올렸다가 *"너무 빨랐다"* 는
 // 사용자 반려로 1.5배로 되돌아왔고("배율은 계측이 아니라 눈으로 정하는 값임이 확인됐다"), 네 단계에
@@ -42,11 +54,12 @@
 //    고정 hex 를 그대로 쓴다.
 import { useId } from 'react'
 import { Modal, Pressable, Text, View } from 'react-native'
+import { useReducedMotion } from 'react-native-reanimated'
 import { Defs, RadialGradient, Rect, Stop } from 'react-native-svg'
 
 import { getItemIconUrl } from '@core/lib/item-icons'
 
-import { Svg } from '../../../lib/nativewind-interop'
+import { AnimatedView, Svg } from '../../../lib/nativewind-interop'
 
 /** 중앙 아이템 세로 위치(값 ↑ = 아래로). DropEff 지면 앵커도 이 값 기준으로 계산한다. */
 const ITEM_CENTER_TOP = '66%'
@@ -60,6 +73,34 @@ const BACKDROP_OUTER = '#05010a'
 /** CSS `farthest-corner` 의 근사(파일 머리 ②). */
 const BACKDROP_RADIUS = '70.7%'
 
+/**
+ * `index.css` 의 `@keyframes fx-drop-float` — `2.6s ease-in-out infinite`, `translateY(-5 → 5 → -5)`.
+ *
+ * 웹이 이 부유를 **별도 래퍼**에 걸어 둔 이유가 RN 에서도 그대로다 — 중앙정렬(바깥)·부유(가운데)·
+ * 팝인(안쪽) 세 transform 이 한 요소에 겹치면 서로를 덮어쓴다.
+ *
+ * `as const` 인 것은 취향이 아니다 — `CSSAnimationProperties` 로 **주석을 달면 타입이 깨진다**(실측).
+ * 그 타입의 `animationDelay` 는 `TimeUnit | TimeUnit[]` 인데 `Animated.View` 의 `style` 이 거치는
+ * `MaybeSharedValueRecursive` 가 그 배열을 `string[] | number[]` 로 갈라 놓아, 섞인 배열이 어느 쪽에도
+ * 안 들어간다. 리터럴로 두면 없는 키라 애초에 부딪히지 않는다.
+ *
+ * **`export` 인 이유는 이 값이 렌더 트리로 검사될 수 없기 때문이다.** 이 애니메이션이 붙는 래퍼는
+ * `itemUrl !== null` 안쪽인데 RN 의 아이템 아이콘 URL 은 아직 전부 `null` 이라(step 4 의 에셋 벽,
+ * `core-shims`) **그 노드가 한 번도 렌더되지 않는다**. 값이 웹의 `@keyframes` 와 같은지는
+ * `src/__tests__/keyframes-parity.test.ts` 가 이 상수를 직접 읽어 지킨다 — 에셋이 도착해 노드가
+ * 살아나면 그때 렌더로도 검사할 수 있다.
+ */
+export const FLOAT_ANIMATION = {
+  animationName: {
+    from: { transform: [{ translateY: -5 }] },
+    '50%': { transform: [{ translateY: 5 }] },
+    to: { transform: [{ translateY: -5 }] },
+  },
+  animationDuration: '2600ms',
+  animationTimingFunction: 'ease-in-out',
+  animationIterationCount: 'infinite',
+} as const
+
 interface DropEffectOverlayProps {
   itemName: string
   slot?: string
@@ -69,6 +110,7 @@ interface DropEffectOverlayProps {
 export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Element {
   const gradientId = `drop-effect-backdrop-${useId().replace(/[^a-zA-Z0-9]/g, '')}`
   const itemUrl = getItemIconUrl(props.itemName, props.slot)
+  const reduceMotion = useReducedMotion()
 
   // 탭하면 곧바로 닫는다 — 웹도 `frames.end.length === 0` 이면 재생 없이 `finish()` 로 간다.
   // 엔진이 붙으면 이 자리에서 end 를 재생한 뒤 `onClose` 를 부른다(파일 머리 ⓑ).
@@ -111,7 +153,14 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
             pointerEvents="none"
             className="absolute left-1/2"
             style={{ top: ITEM_CENTER_TOP, zIndex: 3 }}
-          />
+          >
+            {/* 웹의 `<div className="fx-drop-float">` 자리. 모션 줄이기면 애니메이션을 안 건다
+                (웹의 `@media (prefers-reduced-motion: reduce) { animation: none }`). */}
+            <AnimatedView
+              testID="drop-effect-item-float"
+              style={reduceMotion ? undefined : FLOAT_ANIMATION}
+            />
+          </View>
         )}
 
         {/* ScreenEff 자리 — 전 프레임 동일 배율 + 중앙 정렬([[ADR-048]] 결정 5). */}

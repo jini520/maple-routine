@@ -43,9 +43,28 @@ describe('ProgressBar', () => {
     expect(flattenStyle(fill.parent?.props.style).backgroundColor).toBe(기본테마.track)
   })
 
-  // 폭 트랜지션은 step 7 몫이라 아직 아무 일도 하지 않는다(컴포넌트 주석). 프롭을 받아도
-  // **모습이 달라지지 않는다**는 것이 지금의 계약이다 — 여기서 초록이라고 부드럽게 흐르는 게 아니다.
-  it('animated 를 줘도 지금은 모습이 같다 — 트랜지션은 step 7', async () => {
+  // `animated` 는 **폭 트랜지션의 on/off** 다(step 7). Reanimated 는 CSS 트랜지션 키를 `style` 에서
+  // 걷어 자기가 들고 가므로 `props.style` 로는 있으나 없으나 같아 보인다 — 그래서 그 키가 실제로
+  // 전달됐는지는 `jestInlineStyle`(Reanimated 가 테스트용으로 남기는 원본)로 본다. 값 자체가 웹의
+  // Tailwind 기본값과 같은지는 `src/__tests__/keyframes-parity.test.ts` 가 프리셋을 읽어 지킨다.
+  it('animated 면 폭 트랜지션이 붙는다', async () => {
+    const { getByTestId } = await renderAtom(
+      <ProgressBar percent={10} animated fillTestId="fill" />,
+    )
+
+    expect(getByTestId('fill').props.jestInlineStyle).toMatchObject({
+      transitionProperty: 'width',
+      transitionDuration: '150ms',
+    })
+  })
+
+  it('animated 가 없으면 트랜지션 키가 아예 없다 — 값이 바뀌면 그 자리로 점프한다', async () => {
+    const { getByTestId } = await renderAtom(<ProgressBar percent={10} fillTestId="fill" />)
+
+    expect(getByTestId('fill').props.jestInlineStyle).not.toHaveProperty('transitionProperty')
+  })
+
+  it('트랜지션이 붙어도 그려지는 스타일은 같다 — 폭만 흐르고 모습은 안 바뀐다', async () => {
     const plain = await renderAtom(<ProgressBar percent={10} fillTestId="fill" />)
     const animated = await renderAtom(<ProgressBar percent={10} animated fillTestId="fill" />)
 

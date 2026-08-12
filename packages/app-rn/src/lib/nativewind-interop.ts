@@ -1,6 +1,6 @@
 /**
- * NativeWind 를 **써드파티 컴포넌트**에 붙이는 자리 — `react-native-svg` 의 `Svg` 와
- * `expo-linear-gradient` 의 `LinearGradient`.
+ * NativeWind 를 **써드파티 컴포넌트**에 붙이는 자리 — `react-native-svg` 의 `Svg`,
+ * `expo-linear-gradient` 의 `LinearGradient`, `react-native-reanimated` 의 `Animated.View`.
  *
  * ## 왜 필요한가
  *
@@ -32,6 +32,7 @@
 import { LinearGradient } from 'expo-linear-gradient'
 import type { LucideIcon } from 'lucide-react-native'
 import { cssInterop } from 'nativewind'
+import Animated from 'react-native-reanimated'
 import { Svg } from 'react-native-svg'
 
 cssInterop(Svg, {
@@ -42,6 +43,31 @@ cssInterop(Svg, {
 })
 
 cssInterop(LinearGradient, { className: 'style' })
+
+/**
+ * Reanimated 의 `Animated.View` — **step 7(animations)이 들여왔다.**
+ *
+ * ## 왜 `View` 로는 안 되나
+ *
+ * Reanimated 의 CSS 애니메이션(`animationName`·`transitionProperty` …)은 **애니메이션 컴포넌트에만**
+ * 붙는다. `createAnimatedComponent` 가 감싸면서 프롭 레지스트리를 달아 주고, UI 스레드가 그 레지스트리를
+ * 통해 스타일을 직접 갱신한다. 평범한 `View` 에 같은 스타일 키를 주면 **RN 이 모르는 키라 조용히 버린다**
+ * — 이 파일이 내내 경고하는 그 실패 모양이다.
+ *
+ * ## 왜 여기에 등록하나
+ *
+ * `Animated.View` 는 `react-native` 의 기본 컴포넌트가 아니라 NativeWind 가 자동으로 안 가로챈다.
+ * 등록을 다른 파일에 두면 **레지스트리가 둘**이 되어, 어느 쪽을 거쳐 import 했느냐로 클래스가 풀리기도
+ * 안 풀리기도 한다(그리고 안 풀려도 에러가 없다). 그래서 `Svg` 와 같은 자리에 둔다 —
+ * **애니메이션이 붙는 컴포넌트는 반드시 여기서 `AnimatedView` 를 가져올 것.**
+ *
+ * 매핑이 `'style'` 하나뿐인 것은 `Svg` 와 달리 옮겨 줄 프롭이 없기 때문이다(`View` 는 크기·색을 전부
+ * `style` 로 받는다). 클래스가 만든 스타일과 애니메이션 스타일은 **같은 `style` 객체로 합쳐진다** —
+ * `opacity-0`/`opacity-100` 같은 클래스 변화가 그대로 `transitionProperty: 'opacity'` 의 대상이 된다.
+ */
+cssInterop(Animated.View, { className: 'style' })
+
+const AnimatedView = Animated.View
 
 /**
  * lucide 아이콘 하나를 `className` 을 받는 컴포넌트로 등록한다 — **웹 호출부를 한 글자도 안 고치기
@@ -85,4 +111,4 @@ function withIconInterop<T extends LucideIcon>(Icon: T): T {
   return Icon
 }
 
-export { LinearGradient, Svg, withIconInterop }
+export { AnimatedView, LinearGradient, Svg, withIconInterop }

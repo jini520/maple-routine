@@ -12,13 +12,18 @@ exports[`Toast — 트리 스냅샷 error 1`] = `
 >
   <View
     aria-live="assertive"
-    onMoveShouldSetResponder={[Function]}
-    onResponderGrant={[Function]}
-    onResponderMove={[Function]}
-    onResponderRelease={[Function]}
-    onResponderTerminate={[Function]}
-    role="alert"
-    style={
+    collapsable={false}
+    jestAnimatedProps={
+      {
+        "value": {},
+      }
+    }
+    jestAnimatedStyle={
+      {
+        "value": {},
+      }
+    }
+    jestInlineStyle={
       {
         "alignItems": "center",
         "backgroundColor": "#F6DDD3",
@@ -58,7 +63,60 @@ exports[`Toast — 트리 스냅샷 error 1`] = `
             "scaleY": 1,
           },
         ],
+        "transitionDuration": "200ms",
+        "transitionProperty": "opacity",
+        "transitionTimingFunction": "ease-out",
       }
+    }
+    onMoveShouldSetResponder={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    role="alert"
+    style={
+      [
+        {
+          "alignItems": "center",
+          "backgroundColor": "#F6DDD3",
+          "borderColor": "#CFC9AE",
+          "borderRadius": 14,
+          "borderWidth": 1,
+          "columnGap": 8,
+          "flexDirection": "row",
+          "opacity": 0,
+          "overflow": "hidden",
+          "paddingBottom": 8,
+          "paddingLeft": 10,
+          "paddingRight": 10,
+          "paddingTop": 8,
+          "position": "relative",
+          "rowGap": 8,
+          "transform": [
+            {
+              "translateX": 0,
+            },
+            {
+              "translateY": 12,
+            },
+            {
+              "rotate": 0,
+            },
+            {
+              "skewX": 0,
+            },
+            {
+              "skewY": 0,
+            },
+            {
+              "scaleX": 1,
+            },
+            {
+              "scaleY": 1,
+            },
+          ],
+        },
+      ]
     }
     testID="toast"
   >
@@ -556,12 +614,53 @@ exports[`Toast — 트리 스냅샷 error 1`] = `
       testID="toast-timer"
     >
       <View
-        style={
+        collapsable={false}
+        jestAnimatedProps={
           {
+            "value": {},
+          }
+        }
+        jestAnimatedStyle={
+          {
+            "value": {},
+          }
+        }
+        jestInlineStyle={
+          {
+            "animationDuration": "2000ms",
+            "animationFillMode": "forwards",
+            "animationName": {
+              "from": {
+                "transform": [
+                  {
+                    "scaleX": 1,
+                  },
+                ],
+              },
+              "to": {
+                "transform": [
+                  {
+                    "scaleX": 0,
+                  },
+                ],
+              },
+            },
+            "animationTimingFunction": "linear",
             "backgroundColor": "#B3200B",
             "height": "100%",
+            "transformOrigin": "left",
             "width": "100%",
           }
+        }
+        style={
+          [
+            {
+              "backgroundColor": "#B3200B",
+              "height": "100%",
+              "transformOrigin": "left",
+              "width": "100%",
+            },
+          ]
         }
       />
     </View>
@@ -581,13 +680,18 @@ exports[`Toast — 트리 스냅샷 info 1`] = `
 >
   <View
     aria-live="polite"
-    onMoveShouldSetResponder={[Function]}
-    onResponderGrant={[Function]}
-    onResponderMove={[Function]}
-    onResponderRelease={[Function]}
-    onResponderTerminate={[Function]}
-    role="status"
-    style={
+    collapsable={false}
+    jestAnimatedProps={
+      {
+        "value": {},
+      }
+    }
+    jestAnimatedStyle={
+      {
+        "value": {},
+      }
+    }
+    jestInlineStyle={
       {
         "alignItems": "center",
         "backgroundColor": "#FBF3D0",
@@ -627,7 +731,60 @@ exports[`Toast — 트리 스냅샷 info 1`] = `
             "scaleY": 1,
           },
         ],
+        "transitionDuration": "200ms",
+        "transitionProperty": "opacity",
+        "transitionTimingFunction": "ease-out",
       }
+    }
+    onMoveShouldSetResponder={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    role="status"
+    style={
+      [
+        {
+          "alignItems": "center",
+          "backgroundColor": "#FBF3D0",
+          "borderColor": "#CFC9AE",
+          "borderRadius": 14,
+          "borderWidth": 1,
+          "columnGap": 8,
+          "flexDirection": "row",
+          "opacity": 0,
+          "overflow": "hidden",
+          "paddingBottom": 8,
+          "paddingLeft": 10,
+          "paddingRight": 10,
+          "paddingTop": 8,
+          "position": "relative",
+          "rowGap": 8,
+          "transform": [
+            {
+              "translateX": 0,
+            },
+            {
+              "translateY": 12,
+            },
+            {
+              "rotate": 0,
+            },
+            {
+              "skewX": 0,
+            },
+            {
+              "skewY": 0,
+            },
+            {
+              "scaleX": 1,
+            },
+            {
+              "scaleY": 1,
+            },
+          ],
+        },
+      ]
     }
     testID="toast"
   >
@@ -1119,12 +1276,53 @@ exports[`Toast — 트리 스냅샷 info 1`] = `
       testID="toast-timer"
     >
       <View
-        style={
+        collapsable={false}
+        jestAnimatedProps={
           {
+            "value": {},
+          }
+        }
+        jestAnimatedStyle={
+          {
+            "value": {},
+          }
+        }
+        jestInlineStyle={
+          {
+            "animationDuration": "2000ms",
+            "animationFillMode": "forwards",
+            "animationName": {
+              "from": {
+                "transform": [
+                  {
+                    "scaleX": 1,
+                  },
+                ],
+              },
+              "to": {
+                "transform": [
+                  {
+                    "scaleX": 0,
+                  },
+                ],
+              },
+            },
+            "animationTimingFunction": "linear",
             "backgroundColor": "#241208",
             "height": "100%",
+            "transformOrigin": "left",
             "width": "100%",
           }
+        }
+        style={
+          [
+            {
+              "backgroundColor": "#241208",
+              "height": "100%",
+              "transformOrigin": "left",
+              "width": "100%",
+            },
+          ]
         }
       />
     </View>
@@ -1144,13 +1342,18 @@ exports[`Toast — 트리 스냅샷 success 1`] = `
 >
   <View
     aria-live="polite"
-    onMoveShouldSetResponder={[Function]}
-    onResponderGrant={[Function]}
-    onResponderMove={[Function]}
-    onResponderRelease={[Function]}
-    onResponderTerminate={[Function]}
-    role="status"
-    style={
+    collapsable={false}
+    jestAnimatedProps={
+      {
+        "value": {},
+      }
+    }
+    jestAnimatedStyle={
+      {
+        "value": {},
+      }
+    }
+    jestInlineStyle={
       {
         "alignItems": "center",
         "backgroundColor": "#FCF6DD",
@@ -1190,7 +1393,60 @@ exports[`Toast — 트리 스냅샷 success 1`] = `
             "scaleY": 1,
           },
         ],
+        "transitionDuration": "200ms",
+        "transitionProperty": "opacity",
+        "transitionTimingFunction": "ease-out",
       }
+    }
+    onMoveShouldSetResponder={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    role="status"
+    style={
+      [
+        {
+          "alignItems": "center",
+          "backgroundColor": "#FCF6DD",
+          "borderColor": "#CFC9AE",
+          "borderRadius": 14,
+          "borderWidth": 1,
+          "columnGap": 8,
+          "flexDirection": "row",
+          "opacity": 0,
+          "overflow": "hidden",
+          "paddingBottom": 8,
+          "paddingLeft": 10,
+          "paddingRight": 10,
+          "paddingTop": 8,
+          "position": "relative",
+          "rowGap": 8,
+          "transform": [
+            {
+              "translateX": 0,
+            },
+            {
+              "translateY": 12,
+            },
+            {
+              "rotate": 0,
+            },
+            {
+              "skewX": 0,
+            },
+            {
+              "skewY": 0,
+            },
+            {
+              "scaleX": 1,
+            },
+            {
+              "scaleY": 1,
+            },
+          ],
+        },
+      ]
     }
     testID="toast"
   >
@@ -1658,12 +1914,53 @@ exports[`Toast — 트리 스냅샷 success 1`] = `
       testID="toast-timer"
     >
       <View
-        style={
+        collapsable={false}
+        jestAnimatedProps={
           {
+            "value": {},
+          }
+        }
+        jestAnimatedStyle={
+          {
+            "value": {},
+          }
+        }
+        jestInlineStyle={
+          {
+            "animationDuration": "2000ms",
+            "animationFillMode": "forwards",
+            "animationName": {
+              "from": {
+                "transform": [
+                  {
+                    "scaleX": 1,
+                  },
+                ],
+              },
+              "to": {
+                "transform": [
+                  {
+                    "scaleX": 0,
+                  },
+                ],
+              },
+            },
+            "animationTimingFunction": "linear",
             "backgroundColor": "#CEAD00",
             "height": "100%",
+            "transformOrigin": "left",
             "width": "100%",
           }
+        }
+        style={
+          [
+            {
+              "backgroundColor": "#CEAD00",
+              "height": "100%",
+              "transformOrigin": "left",
+              "width": "100%",
+            },
+          ]
         }
       />
     </View>

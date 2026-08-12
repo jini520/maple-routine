@@ -44,8 +44,11 @@ import { MAPLE_LEAF_PATH, MAPLE_LEAF_PATH_LENGTH } from '../../mapleLeafPath'
 // ③ `aria-hidden` 은 남고 `role`/`aria-live` 는 없다([[ADR-074]] 결정 7) — 문구가 없어 빈 라이브
 //    리전이 되는 것은 RN 에서도 같다.
 //
-// **재조회 구간의 링은 아직 돌지 않는다** — `MapleSpinner` 가 `maple-trail`(@keyframes 8종 중 하나)에
-// 걸려 step 7 몫이다. 당김 구간의 드로잉은 애니메이션이 아니라 **손가락 위치의 함수**라 지금도 산다.
+// **두 구간이 이제 둘 다 산다**(step 7). 재조회 구간의 링은 `MapleSpinner` 가 `maple-trail` 을
+// Reanimated 로 되살리면서 함께 돌기 시작했고 — 이 파일은 한 줄도 안 바뀌었다 — 당김 구간의 드로잉은
+// 애니메이션이 아니라 **손가락 위치의 함수**라 원래부터 살아 있었다. 그래서 [[ADR-074]] 결정 4·5 의
+// "같은 마크가 그대로 이어진다"가 코드 위에서는 성립한다. **눈으로는 아직 못 봤다** — 두 구간의
+// 연속성은 4단계에서 실기기로 볼 대상이다.
 
 export interface PullToRefreshIndicatorProps {
   distance: number
