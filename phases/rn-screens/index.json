@@ -1,0 +1,15 @@
+{
+  "project": "maple-routine",
+  "phase": "rn-screens",
+  "steps": [
+    { "step": 0, "name": "app-shell", "status": "pending" },
+    { "step": 1, "name": "asset-codegen", "status": "pending" },
+    { "step": 2, "name": "onboarding", "status": "pending" },
+    { "step": 3, "name": "settings", "status": "pending" },
+    { "step": 4, "name": "content-scheduler", "status": "pending" },
+    { "step": 5, "name": "boss-scheduler", "status": "pending" },
+    { "step": 6, "name": "profit-shared", "status": "pending" },
+    { "step": 7, "name": "boss-profit-screen", "status": "pending" },
+    { "step": 8, "name": "drop-screens", "status": "pending" }
+  ]
+}
