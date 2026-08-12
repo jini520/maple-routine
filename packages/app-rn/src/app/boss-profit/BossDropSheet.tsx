@@ -16,10 +16,10 @@
 //    내용 맨 끝에 흐르게 두고, 실기기에서 "긴 시트에서 버튼이 멀다"가 확인되면 그때 껍데기에
 //    붙인다(육안 대조 목록). 안전영역 하단 패딩은 **껍데기가 이미 준다**(`BottomSheet` 의
 //    `contentContainerStyle`) — 여기서 또 주면 두 겹이 된다.
-// ③ **가격 키패드가 아직 없다** — `DropPricePad` 는 step 8 몫이다. 흐름(`기록 → 확인 → 입력 →
-//    복귀`)과 상태(`pricing`·`justAdded`)는 전부 여기 살아 있고, 그 안쪽 화면만 자리표시자다.
-//    가르지 않고 자리를 남긴 이유는 [[ADR-124]] 결정 6 이 **"시트가 살아서 하던 작업을 잇는다"**
-//    이기 때문이다 — 시트를 닫는 형태로 임시 구현하면 그 계약이 사라진다.
+// ③ **가격 키패드는 step 8 이 채웠다** — 자리표시자였던 드릴다운에 `DropPricePadContent` 가 들어간다.
+//    흐름(`기록 → 확인 → 입력 → 복귀`)과 상태(`pricing`·`justAdded`)는 step 6 부터 그대로였고,
+//    가르지 않고 자리만 남겨 둔 이유가 [[ADR-124]] 결정 6 의 **"시트가 살아서 하던 작업을 잇는다"**
+//    였다 — 시트를 닫는 형태로 임시 구현했다면 그 계약이 사라졌을 것이다.
 // ④ `transition-colors`/`transition-transform`(연출 토글) → **없다.** 값이 즉시 바뀐다.
 // ⑤ `<button aria-pressed>` → **`aria-selected`**. RN 의 접근성 매핑에 `aria-pressed` 가 없어
 //    그대로 두면 **선택 상태가 조용히 사라진다**(에러 없이 — 이 저장소가 반복해 만난 실패 모양,
@@ -52,6 +52,7 @@ import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import { DropEffectOverlay } from '../../components/organisms/DropEffectOverlay/DropEffectOverlay'
 import { ChevronLeftIcon, FlaskConicalIcon, PackageOpenIcon, PinIcon, SwordIcon } from '../../lib/icons'
 import { TABULAR_NUMS } from '../../lib/text-styles'
+import { DropPricePadContent } from './DropPricePad'
 
 // 선택 가능한 카테고리(장비·소비)의 라벨과 아이콘([[ADR-040]] 결정 4 — 노란 점 대신 아이콘). 고정은
 // 읽기 전용 별도 섹션이라 여기 없다.
@@ -137,34 +138,6 @@ function EffectToggle(props: { on: boolean; onToggle: () => void }): React.JSX.E
         <View className="h-3 w-3 rounded-full bg-white" style={{ transform: [{ translateX: props.on ? 14 : 2 }] }} />
       </View>
     </Pressable>
-  )
-}
-
-/**
- * 가격 키패드 자리 — **step 8(`DropPricePad`) 이 채운다**(파일 머리 ③).
- *
- * 지금은 드릴다운의 껍데기만 있다. 흐름이 여기서 끊기지 않는다는 것(뒤로 누르면 그리드로
- * 돌아오고 시트는 살아 있다)이 이 자리표시자가 지키는 계약이고, 값을 기록하는 세 콜백은
- * 그대로 받아 둔다 — step 8 은 이 자리에 `DropPricePadContent` 를 끼우기만 하면 된다.
- */
-function DropPricePadSeam(props: {
-  drop: RecordedDrop
-  onBack: () => void
-  onSave: (priceMeso: number, share: number) => void
-  onExclude: () => void
-}): React.JSX.Element {
-  return (
-    <View testID="drop-price-pad-seam">
-      <View className="flex-row items-center gap-2 px-4 pb-3 pt-1">
-        <Pressable role="button" onPress={props.onBack} aria-label="뒤로">
-          <ChevronLeftIcon className="h-6 w-6 text-text" aria-hidden />
-        </Pressable>
-        <Text className="text-lg font-bold text-text">
-          {props.drop.itemName}
-          {props.drop.ringLevel !== undefined && ` ${props.drop.ringLevel}레벨`}
-        </Text>
-      </View>
-    </View>
   )
 }
 
@@ -290,9 +263,16 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
     <>
       <BottomSheet onClose={props.onClose} testId="boss-drop-sheet">
         {pricing !== null && props.pricing !== undefined ? (
-          // 가격 드릴다운 — 시트는 열린 채다. 저장·스킵 후 목록으로 돌아와 고르던 작업을 잇는다.
-          <DropPricePadSeam
+          // 가격 드릴다운 — 시트는 열린 채다. 저장·기록 안함 후 목록으로 돌아와 고르던 작업을 잇는다.
+          // **`onLater`(스킵)는 넘기지 않는다**: 그 버튼은 순차 모드 전용이고([[ADR-124]] 결정 6
+          // 정정) 여기는 방금 기록한 한 건이라, 뒤로 누르는 것이 곧 같은 일이다.
+          <DropPricePadContent
             drop={pricing}
+            boss={props.boss}
+            difficulty={selectedDifficulty}
+            characterName={props.pricing.characterName}
+            defaultShare={props.pricing.defaultShare}
+            maxShare={props.pricing.maxShare}
             onBack={() => setPricing(null)}
             onSave={(priceMeso, share) => {
               applyPrice(pricing, { priceState: 'entered', priceMeso, priceShare: share })

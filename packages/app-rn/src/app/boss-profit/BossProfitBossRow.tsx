@@ -6,10 +6,9 @@
 // ══ RN 으로 옮기며 갈린 것 여섯 ═══════════════════════════════════════════════════
 //
 // ① **`.valuable-drop-row` 가 클래스에서 값이 된다**([[ADR-045]] 결정 5). 웹은 `index.css` 의 한
-//    클래스가 셋을 했다 — 정적 골드 틴트 · 오른쪽에서 배어나오는 radial 글로우 · 2.6s 맥동.
-//    RN 에는 그 셋의 짝이 전부 따로 있다: 틴트는 `backgroundColor`, 글로우는 **`react-native-svg`
-//    의 `RadialGradient`**(RN 에 배경 그라디언트가 없다), 맥동은 Reanimated CSS 애니메이션이다.
-//    `@media (prefers-reduced-motion)` 짝은 `useReducedMotion()` 이다.
+//    클래스가 셋을 했고 RN 에는 그 셋의 짝이 전부 따로 있다 — 그 사정은 `ValuableRowBackground`
+//    가 갖는다. **step 8 에서 그 컴포넌트가 이 파일 밖으로 나갔다**(가격 기록 화면의 행이 두 번째
+//    호출부다 — [[ADR-094]] 결정 1).
 // ② **파티 스테퍼를 `PartySizeStepper` 로 접지 않는다.** 그 molecule 은 [[ADR-121]] 결정 7 이
 //    정한 **두 크기**(관리 페이지 행 · 모달)이고 이 행은 셋째 모양이다 — 버튼 18px(그쪽 24·32),
 //    `Users` 표식 없음, −/+ 에 `bg-surface-2` 채움(그쪽은 "채움을 두지 않는다"가 명시된 결정).
@@ -21,10 +20,8 @@
 // ⑤ `<li>` → `View`, `<button>` → `Pressable` + `Text`. 목록 시맨틱(`ul`/`li`)은 RN 에 없다.
 // ⑥ **드롭 아이콘 스택의 겹침(`marginLeft: -2`)과 층 순서(`zIndex`)는 그대로다** — 둘 다 RN 스타일에
 //    같은 이름으로 있다.
-import { useId, useState } from 'react'
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native'
-import { useReducedMotion } from 'react-native-reanimated'
-import { Defs, RadialGradient, Rect, Stop } from 'react-native-svg'
+import { useState } from 'react'
+import { Image, Pressable, Text, View } from 'react-native'
 
 import type { BossProfitRow } from '@core/features/boss-profit/store'
 import { useToastStore } from '@core/features/toast/store'
@@ -38,44 +35,15 @@ import { AnimatedMeso } from '../../components/atoms/AnimatedMeso/AnimatedMeso'
 import { DifficultyBadge } from '../../components/atoms/DifficultyBadge/DifficultyBadge'
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
 import { MinusIcon, PlusIcon } from '../../lib/icons'
-import { AnimatedView, Svg } from '../../lib/nativewind-interop'
 import { TABULAR_NUMS } from '../../lib/text-styles'
 import { BossDropSheet } from './BossDropSheet'
 import { useBossProfitContext } from './boss-profit-context'
 import { clamp, findPortraitSlug } from './character-groups'
 import { ItemRevenuePopover, useAnchoredPopover } from './ItemRevenuePopover'
+import { ValuableRowBackground } from './ValuableRowBackground'
 
 // BossPortrait의 size prop 기본값(40px, 기존 h-10 관례)과 동일하게 시작값을 맞춘다.
 export const BOSS_PORTRAIT_SIZE = 40
-
-/** `.valuable-drop-row` 의 정적 폴백 틴트 — 모션을 끈 사용자가 보는 색이기도 하다. */
-export const VALUABLE_ROW_TINT = 'rgba(247, 208, 13, 0.05)'
-
-/**
- * `@keyframes valuable-drop-row-pulse` + `animation: … 2.6s ease-in-out infinite`.
- *
- * 웹은 `0%,100%` 를 한 블록으로 묶어 두 값만 적는다(0.03 → 0.1). RN 은 `from`·`50%`·`to` 세 마디라
- * 첫 값이 두 번 나온다 — `FLOAT_ANIMATION` 과 같은 형태이고, `keyframes-parity.test.ts` 가 웹
- * `index.css` 를 실제로 읽어 이 값들과 대조한다.
- */
-export const VALUABLE_ROW_PULSE = {
-  animationName: {
-    from: { backgroundColor: 'rgba(247, 208, 13, 0.03)' },
-    '50%': { backgroundColor: 'rgba(247, 208, 13, 0.1)' },
-    to: { backgroundColor: 'rgba(247, 208, 13, 0.03)' },
-  },
-  animationDuration: '2600ms',
-  animationTimingFunction: 'ease-in-out',
-  animationIterationCount: 'infinite',
-} as const
-
-/** `radial-gradient(70% 160% at 82% 50%, …)` 의 세 정지점. 색은 전 테마 공통 골드(`#F7D00D`). */
-const GLOW_COLOR = '#F7D00D'
-const GLOW_STOPS = [
-  { offset: '0', opacity: 0.22 },
-  { offset: '0.58', opacity: 0.06 },
-  { offset: '0.78', opacity: 0 },
-] as const
 
 export interface BossProfitBossRowProps {
   row: BossProfitRow
@@ -87,41 +55,6 @@ export interface BossProfitBossRowProps {
    * 테두리를 아예 빼지 않고 **색만 지우는** 것이 요점이다: 빼면 그 행만 1px 짧아진다.
    */
   isLast?: boolean
-}
-
-/**
- * 고가 아이템을 획득한 행의 배경([[ADR-045]] 결정 5) — 테두리·글로우가 아니라 **배경** 효과다
- * (사용자 요청). 콘텐츠보다 먼저 그려지므로 자연히 뒤에 깔린다(웹이 `li` 자체 배경으로 둔 것과
- * 같은 자리 — z-index 다툼 없음).
- */
-function ValuableRowBackground(): React.JSX.Element {
-  const reduceMotion = useReducedMotion()
-  // 한 문서에 여러 행이 뜨므로 그라디언트 id 가 겹치면 안 된다(`DropEffectOverlay` 와 같은 이유 —
-  // `react-native-svg` 의 defs 조회도 id 문자열로 한다).
-  const gradientId = `valuable-row-glow-${useId().replace(/[^a-zA-Z0-9]/g, '')}`
-
-  return (
-    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-      <AnimatedView
-        testID="valuable-drop-row-tint"
-        style={[
-          StyleSheet.absoluteFill,
-          { backgroundColor: VALUABLE_ROW_TINT },
-          reduceMotion ? null : VALUABLE_ROW_PULSE,
-        ]}
-      />
-      <Svg testID="valuable-drop-row-glow" width="100%" height="100%" style={StyleSheet.absoluteFill}>
-        <Defs>
-          <RadialGradient id={gradientId} cx="82%" cy="50%" rx="70%" ry="160%">
-            {GLOW_STOPS.map((stop) => (
-              <Stop key={stop.offset} offset={stop.offset} stopColor={GLOW_COLOR} stopOpacity={stop.opacity} />
-            ))}
-          </RadialGradient>
-        </Defs>
-        <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${gradientId})`} />
-      </Svg>
-    </View>
-  )
 }
 
 // 접힌 보스 행의 이름 라인 오른쪽에 붙는 드롭 지시자([[ADR-038]]). 있으면 아이콘 스택+개수, 없으면

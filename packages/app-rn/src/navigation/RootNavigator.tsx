@@ -1,6 +1,8 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { useOnboardingStore } from '@core/features/onboarding/store'
 
+import { DropHistoryScreen } from '../app/boss-profit/DropHistoryScreen'
+import { DropPriceScreen } from '../app/boss-profit/DropPriceScreen'
 import { BossManageScreen } from '../app/boss-scheduler/BossManageScreen'
 import { ContentManageScreen } from '../app/content-scheduler/ContentManageScreen'
 import { OnboardingScreen } from '../app/onboarding/OnboardingScreen'
@@ -17,8 +19,9 @@ import { STACK_ROUTE_NAMES, type RootStackParamList, type StackRouteName } from 
 const Stack = createNativeStackNavigator<RootStackParamList>()
 
 /**
- * 진짜 화면이 들어온 하위 페이지. **여기 없는 이름은 아직 자리표시자다** — 4단계가 step 마다 이
- * 표를 채우고, 비어 있는 자리가 곧 남은 일이다.
+ * 진짜 화면이 들어온 하위 페이지. **step 8 로 전부 찼다** — 4단계가 step 마다 이 표를 채웠고,
+ * 비어 있던 자리가 곧 남은 일이었다. 이제 `PlaceholderScreen` 으로 떨어지는 이름이 없다(그 분기와
+ * 컴포넌트는 남긴다 — 라우트가 늘 때 다시 쓰인다).
  *
  * **안내 상세 둘이 같은 컴포넌트를 가리키는 것이 계약이다**([[ADR-125]] 결정 3) — 기능 설명
  * 목록에서도, 개발 노트 항목에서도 같은 상세가 열린다. 사본을 두면 같은 글이 두 벌이 된다.
@@ -26,6 +29,8 @@ const Stack = createNativeStackNavigator<RootStackParamList>()
 const STACK_SCREENS = {
   BossManage: BossManageScreen,
   ContentManage: ContentManageScreen,
+  DropHistory: DropHistoryScreen,
+  DropPrice: DropPriceScreen,
   SettingsFeatureGuideList: SettingsFeatureGuideListScreen,
   SettingsFeatureGuide: SettingsFeatureGuideScreen,
   SettingsReleaseNotes: SettingsReleaseNotesScreen,

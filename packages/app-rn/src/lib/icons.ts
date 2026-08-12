@@ -68,6 +68,7 @@ import Pin from 'lucide-react-native/icons/pin'
 import Plus from 'lucide-react-native/icons/plus'
 import RefreshCw from 'lucide-react-native/icons/refresh-cw'
 import RotateCcw from 'lucide-react-native/icons/rotate-ccw'
+import ScrollText from 'lucide-react-native/icons/scroll-text'
 import Settings from 'lucide-react-native/icons/settings'
 import Signal from 'lucide-react-native/icons/signal'
 import SlidersHorizontal from 'lucide-react-native/icons/sliders-horizontal'
@@ -155,8 +156,10 @@ export const PinIcon = withIconInterop(Pin)
 export const PlusIcon = withIconInterop(Plus)
 /** 토스트 액션의 기본 아이콘('다시 시도' 전제 — [[ADR-063]]) — `Toast`. */
 export const RefreshCwIcon = withIconInterop(RefreshCw)
-/** '다시 시작' — `ErrorBoundary` 폴백. */
+/** '다시 시작' — `ErrorBoundary` 폴백 · 가격 초기화 `DropPricePad`. */
 export const RotateCcwIcon = withIconInterop(RotateCcw)
+/** 기록된 드롭이 하나도 없을 때 — `DropHistoryScreen` 빈 상태([[ADR-060]] 결정 2 의 컨텍스트 아이콘). */
+export const ScrollTextIcon = withIconInterop(ScrollText)
 /** 토스트 액션이 기본 아이콘을 덮을 수 있음을 지키는 자리 — `Toast` 테스트([[ADR-063]]). */
 export const SettingsIcon = withIconInterop(Settings)
 /** 모바일 데이터 확인 — `UpdatePromptModal`(confirm-cellular). */

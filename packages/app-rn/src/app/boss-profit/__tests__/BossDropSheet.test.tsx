@@ -6,8 +6,9 @@
 // **시트 안에서 무엇을 고르게 하는가**만 본다.
 //
 // 옮기지 않은 것 셋 — ① 하단 바의 안전영역 패딩(웹은 시트 내용이 직접 줬고 RN 은 **껍데기가
-// 준다**) ② 가격 키패드 내부(step 8 몫 — 여기서는 그 자리로 들어갔다 나오는 흐름만 본다)
-// ③ 난이도 뱃지의 흐림 정도(값이 아니라 그림이라 육안 대조 목록).
+// 준다**) ② 가격 키패드 **내부**(`DropPricePad.test.tsx` 가 갖는다 — 여기서는 그 자리로 들어갔다
+// 나오는 흐름과 값이 그 기록 하나에 붙는지만 본다) ③ 난이도 뱃지의 흐림 정도(값이 아니라 그림이라
+// 육안 대조 목록).
 import type { ReactNode } from 'react'
 import { act, fireEvent } from '@testing-library/react-native'
 
@@ -296,8 +297,8 @@ describe('BossDropSheet — 시트 안 가격 입력 ([[ADR-124]] 결정 6)', ()
     expect(getByText(/에스텔라 이어링 기록됨/)).toBeTruthy()
   })
 
-  // 키패드 자체는 step 8 이 채운다 — 여기서 지키는 것은 **시트가 살아서 하던 작업을 잇는다** 는
-  // 계약이다([[ADR-124]] 결정 6). 그 계약이 없으면 임시 구현이 시트를 닫는 형태로 흘러간다.
+  // step 8 이 자리표시자를 `DropPricePadContent` 로 갈아 끼웠다. 지키는 계약은 그대로다 —
+  // **시트가 살아서 하던 작업을 잇는다**([[ADR-124]] 결정 6).
   it('"가격 입력" 은 시트를 닫지 않고 들어갔다가 그리드로 돌아온다', async () => {
     const { result, onClose } = renderSheet({ pricing: PRICING })
     const { getByLabelText, getByTestId, getByText, queryByTestId } = await result
@@ -309,15 +310,68 @@ describe('BossDropSheet — 시트 안 가격 입력 ([[ADR-124]] 결정 6)', ()
       fireEvent.press(getByText('가격 입력'))
     })
 
-    expect(getByTestId('drop-price-pad-seam')).toBeTruthy()
+    expect(getByTestId('drop-price-amount')).toBeTruthy()
     expect(onClose).not.toHaveBeenCalled()
 
     await act(async () => {
       fireEvent.press(getByLabelText('뒤로'))
     })
 
-    expect(queryByTestId('drop-price-pad-seam')).toBeNull()
+    expect(queryByTestId('drop-price-amount')).toBeNull()
     expect(getByText('추가 완료 · 1개')).toBeTruthy()
+  })
+
+  // 드릴다운은 **순차 모드가 아니다** — 방금 기록한 한 건이라 뒤로가 곧 스킵이고, 그래서 그 버튼을
+  // 늘리지 않는다([[ADR-124]] 결정 6 정정). 저장 버튼 문구도 `다음` 이 아니라 `저장` 이다.
+  it('드릴다운에는 스킵이 없고 저장 버튼은 "저장" 이다', async () => {
+    const { result } = renderSheet({ pricing: PRICING })
+    const { getByLabelText, getByText, queryByText } = await result
+
+    await act(async () => {
+      fireEvent.press(getByLabelText('루즈 컨트롤 머신 마크'))
+    })
+    await act(async () => {
+      fireEvent.press(getByText('가격 입력'))
+    })
+
+    expect(queryByText('스킵')).toBeNull()
+    expect(getByText('저장')).toBeTruthy()
+  })
+
+  it('키패드에서 값을 매기면 그 기록에만 붙고 그리드로 돌아온다 — 배지가 그 사실을 말한다', async () => {
+    const { result, onSave } = renderSheet({ pricing: PRICING })
+    const { getByLabelText, getAllByLabelText, getByText } = await result
+
+    await act(async () => {
+      fireEvent.press(getByLabelText('루즈 컨트롤 머신 마크'))
+    })
+    await act(async () => {
+      fireEvent.press(getByText('가격 입력'))
+    })
+    // `1` `00` → 100 메소. 자릿수 전체가 주 표기다([[ADR-124]] 결정 5).
+    await act(async () => {
+      fireEvent.press(getByLabelText('1'))
+    })
+    await act(async () => {
+      fireEvent.press(getByLabelText('00'))
+    })
+    await act(async () => {
+      fireEvent.press(getByText('저장'))
+    })
+
+    expect(getAllByLabelText('가격 입력됨')).toHaveLength(1)
+
+    await act(async () => {
+      fireEvent.press(getByText('추가 완료 · 1개'))
+    })
+    expect(onSave).toHaveBeenCalledWith([
+      expect.objectContaining({
+        itemName: '루즈 컨트롤 머신 마크',
+        priceState: 'entered',
+        priceMeso: 100,
+        priceShare: PRICING.defaultShare,
+      }),
+    ])
   })
 
   it('pricing 을 넘기지 않으면 물음도 배지도 뜨지 않는다 — 가격 개념이 없는 호출부 보호', async () => {

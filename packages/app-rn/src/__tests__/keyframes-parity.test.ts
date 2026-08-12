@@ -30,7 +30,7 @@ import {
 } from '../components/atoms/MapleSweepSpinner/MapleSweepSpinner'
 import { WIDTH_TRANSITION } from '../components/atoms/ProgressBar/width-transition'
 import { MAPLE_LEAF_PATH_LENGTH } from '../components/mapleLeafPath'
-import { VALUABLE_ROW_PULSE, VALUABLE_ROW_TINT } from '../app/boss-profit/BossProfitBossRow'
+import { VALUABLE_ROW_PULSE, VALUABLE_ROW_TINT } from '../app/boss-profit/valuable-row-glow'
 import {
   VALUABLE_CARD_GLOW_DURATION_MS,
   VALUABLE_CARD_GLOW_HIGH,
@@ -55,18 +55,27 @@ const V4_THEME_CSS = readFileSync(
 )
 
 /**
- * 웹 `index.css` 의 `@keyframes` 전부. **이 phase 에서 옮긴 것과 4단계(화면) 몫이 갈린다** —
- * 갈리는 기준은 난이도가 아니라 **그 애니메이션이 붙는 요소가 어느 계층에 사는가** 다.
+ * 웹 `index.css` 의 `@keyframes` 전부. 갈리는 기준은 난이도가 아니라 **그 애니메이션이 붙는 요소가
+ * 어느 계층에 사는가** 다.
+ *
+ * **`screenLayer` 는 «아직 4단계가 손대지 않은 것» 이고, step 8(4단계 마지막)로 비었다.** 셋이 어디로
+ * 갔는지는 아래 두 칸이 말한다 — 그래서 이 목록은 진행 상황이 아니라 **결과**를 적은 표가 됐다.
  */
 const KEYFRAMES = {
   /** 컴포넌트 계층(atoms·organisms)에 붙어 3단계가 옮겼다. */
   ported: ['toast-shrink', 'maple-trail', 'maple-sweep', 'fx-drop-float'],
   /**
    * `app/boss-profit/*` 의 화면·행에만 붙어 **4단계가 옮겼다**([[ADR-045]]·[[ADR-071]]) —
-   * `valuable-drop-row-pulse` 는 step 6(보스 행), `valuable-drop-glow` 는 step 7(캐릭터 카드)이다.
-   * 컴포넌트 계층에는 이 둘을 쓰는 자리가 하나도 없다(아래 둘째 케이스).
+   * `valuable-drop-row-pulse` 는 step 6(보스 행)이 옮기고 step 8(가격 기록 행)이 두 번째 호출부가
+   * 되어 `valuable-row-glow.ts` 로 나왔다. `valuable-drop-glow` 는 step 7(캐릭터 카드)이다.
+   * 컴포넌트 계층에는 이 둘을 쓰는 자리가 하나도 없다(아래 셋째 케이스).
    */
-  screenLayer: ['valuable-drop-glow', 'valuable-drop-row-pulse'],
+  portedByScreens: ['valuable-drop-glow', 'valuable-drop-row-pulse'],
+  /**
+   * **4단계가 아직 안 옮긴 것 — 비어 있어야 한다.** step 8 이 4단계의 마지막이므로 여기 이름이
+   * 남아 있다면 그것이 곧 미완이고, 아래 둘째 케이스가 그것을 잡는다.
+   */
+  screenLayer: [] as readonly string[],
   /**
    * **옮기지 않고 degrade 시킨 것** — RN 에 conic-gradient 도 `mask-composite: xor` 도 없어
    * 회전 샤인 링을 그릴 방법이 없다. 임시방편이 아니라 [[ADR-045]] 가 `@property` 미지원 WebView
@@ -130,20 +139,29 @@ function toMs(duration: string): number {
 }
 
 describe('@keyframes 인벤토리', () => {
-  it('웹 CSS 의 @keyframes 는 이 phase 몫과 화면 몫으로 남김없이 갈린다', () => {
+  it('웹 CSS 의 @keyframes 는 네 칸으로 남김없이 갈린다', () => {
     // 새 `@keyframes` 가 생기면 여기서 잡힌다 — 분류하지 않고 지나갈 수 없다.
     expect(keyframeNames(INDEX_CSS).sort()).toEqual(
-      [...KEYFRAMES.ported, ...KEYFRAMES.screenLayer, ...KEYFRAMES.degraded].sort(),
+      [
+        ...KEYFRAMES.ported,
+        ...KEYFRAMES.portedByScreens,
+        ...KEYFRAMES.screenLayer,
+        ...KEYFRAMES.degraded,
+      ].sort(),
     )
   })
 
-  it('화면 몫은 컴포넌트 계층 어디에도 안 쓰인다 — 4단계가 소유한다는 근거', () => {
+  it('«화면 몫» 이 비었다 — step 8 이 4단계의 마지막이라 남은 이름이 곧 미완이다', () => {
+    expect(KEYFRAMES.screenLayer).toEqual([])
+  })
+
+  it('화면이 소유하는 셋은 컴포넌트 계층 어디에도 안 쓰인다 — 4단계 몫이라는 근거', () => {
     const webComponents = readFileSync(
       join(WEB_SRC, 'components/organisms/DropEffectOverlay/DropEffectOverlay.tsx'),
       'utf8',
     )
-    // 웹에서도 이 셋을 쓰는 곳은 `app/` 뿐이라, 컴포넌트를 옮긴 이 phase 가 건드릴 자리가 없었다.
-    for (const name of [...KEYFRAMES.screenLayer, ...KEYFRAMES.degraded]) {
+    // 웹에서도 이 셋을 쓰는 곳은 `app/` 뿐이라, 컴포넌트를 옮긴 3단계가 건드릴 자리가 없었다.
+    for (const name of [...KEYFRAMES.portedByScreens, ...KEYFRAMES.degraded]) {
       expect(webComponents).not.toContain(name)
     }
   })
