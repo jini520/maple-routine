@@ -193,7 +193,8 @@
     },
     {
       "dir": "rn-components",
-      "status": "pending"
+      "status": "completed",
+      "completed_at": "2026-08-12T18:40:50+0900"
     }
   ]
 }
