@@ -1,14 +1,31 @@
-// 웹판이 지키던 셋 중 둘(장식용 숨김 · `size` 반영)은 그대로고, 셋째("motion-reduce 클래스가 있다")는
-// **여기서 지킬 것이 없다** — 아직 모션 자체가 없다(step 7). 대신 그 자리를 웹에 없던 계약이 채운다:
-// `pathLength` 정규화가 사라진 만큼 **대시가 실측 둘레의 70/30 이어야 한다**(컴포넌트 주석 참고).
+// 웹판이 지키던 셋(장식용 숨김 · `size` 반영 · motion-reduce)이 전부 산다. 셋째는 **보는 방법이
+// 바뀌었다** — 웹은 `motion-reduce:animate-none` 클래스를 렌더 결과에서 읽었지만 RN 에는 그 문자열이
+// 없어, *"반복 애니메이션을 걸었는가"* 를 본다(`reduced-motion.ts` 의 `withRepeatSpy` 주석).
+//
+// 여기에 웹에 없던 계약 하나가 더해진다: `pathLength` 정규화가 사라진 만큼 **대시가 실측 둘레의
+// 70/30 이어야 한다**(컴포넌트 주석 참고). 지속시간·이징은 이 파일이 아니라
+// `src/__tests__/keyframes-parity.test.ts` 가 웹 원본을 읽어 대조한다.
 //
 // 쿼리에 `includeHiddenElements` 를 주는 것 자체가 `aria-hidden` 이 먹었다는 증거다 — RNTL 은 숨긴
 // 요소를 기본적으로 못 찾는다(플래그를 빼면 첫 케이스가 "찾을 수 없다"로 떨어진다, 실측).
+jest.mock('react-native-reanimated', () =>
+  // `jest.mock` 팩토리는 import 위로 끌어올려져 **밖의 값을 참조할 수 없다** — 그래서 `require` 가
+  // 선택이 아니라 유일한 길이다(`reduced-motion.ts` 「쓰는 법」).
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  require('../../../__tests__/reduced-motion').reanimatedWithReducedMotion(),
+)
+
+import { mockReducedMotion, withRepeatSpy } from '../../../__tests__/reduced-motion'
 import { findAllOfType, flattenStyle, renderAtom, 기본테마 } from '../../../__tests__/render-atom'
 import { MAPLE_LEAF_PATH_LENGTH } from '../../../mapleLeafPath'
 import { MapleSpinner } from '../MapleSpinner'
 
 const HIDDEN = { includeHiddenElements: true } as const
+
+afterEach(() => {
+  mockReducedMotion(false)
+  withRepeatSpy.mockClear()
+})
 
 describe('MapleSpinner', () => {
   it('장식용 아이콘이라 스크린리더에서 숨겨진다', async () => {
@@ -51,5 +68,24 @@ describe('MapleSpinner', () => {
 
   it('렌더 트리 스냅샷 — 이후 변경을 잡는 기준선(예전 화면과의 대조가 아니다)', async () => {
     expect((await renderAtom(<MapleSpinner className="text-primary" />)).toJSON()).toMatchSnapshot()
+  })
+})
+
+describe('MapleSpinner — 모션 줄이기', () => {
+  it('켜져 있으면 애니메이션을 아예 걸지 않는다 — 웹의 `motion-reduce:animate-none`', async () => {
+    mockReducedMotion(true)
+
+    await renderAtom(<MapleSpinner />)
+
+    // 오프셋이 0 에 머물러 웹에서 `animation: none` 이 남기던 정지 그림이 된다.
+    expect(withRepeatSpy).not.toHaveBeenCalled()
+  })
+
+  it('꺼져 있으면 되감기 없이 무한 반복한다 — 웹의 `infinite`(alternate 가 아니다)', async () => {
+    await renderAtom(<MapleSpinner />)
+
+    // 한 주기가 둘레 한 바퀴라 되감으면 트레일이 왕복한다 — 웹은 같은 방향으로 계속 돈다.
+    expect(withRepeatSpy).toHaveBeenCalledTimes(1)
+    expect(withRepeatSpy.mock.calls[0].slice(1)).toEqual([-1, false])
   })
 })

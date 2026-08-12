@@ -8,14 +8,28 @@
 // · **스와이프**: `fireEvent.pointer` → responder 이벤트. 좌표가 `clientX` → `pageX` 로 바뀔 뿐
 //   임계값 판정은 같은 `shouldDismissFromSwipe` 다.
 // · `role`·`aria-live` 는 그대로 남았다(RN 이 같은 이름의 프롭을 받는다).
-// · 타이머 바는 **아직 안 줄어든다**(step 7) — 있고 없음만 지킨다.
+// · 타이머 바는 **있고 없음만** 지킨다 — 줄어드는 것은 Reanimated 가 UI 스레드에서 하는 일이라
+//   렌더 트리에는 선언(`animationName`·`animationDuration`)만 남는다. 그 선언이 웹의
+//   `@keyframes toast-shrink` 와 같은지는 `src/__tests__/keyframes-parity.test.ts` 가 원본을 읽어 본다.
+jest.mock('react-native-reanimated', () =>
+  // `jest.mock` 팩토리는 import 위로 끌어올려져 **밖의 값을 참조할 수 없다** — 그래서 `require` 가
+  // 선택이 아니라 유일한 길이다(`reduced-motion.ts` 「쓰는 법」).
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  require('../../../__tests__/reduced-motion').reanimatedWithReducedMotion(),
+)
+
 import { fireEvent } from '@testing-library/react-native'
 
 import type { ToastAction, ToastItem } from '@core/features/toast/store'
 
-import { renderAtom, type AtomElement } from '../../../__tests__/render-atom'
+import { mockReducedMotion } from '../../../__tests__/reduced-motion'
+import { flushEnterFrame, renderAtom, type AtomElement } from '../../../__tests__/render-atom'
 import { SettingsIcon } from '../../../../lib/icons'
 import { Toast } from '../Toast'
+
+afterEach(() => {
+  mockReducedMotion(false)
+})
 
 function makeToast(overrides: Partial<ToastItem> = {}): ToastItem {
   return {
@@ -167,6 +181,33 @@ describe('Toast — 스와이프로 닫기', () => {
   })
 })
 
+// 모션 줄이기 — 웹의 `motion-reduce:hidden`(파일 머리 ②). 줄지 않는 막대를 남기면 "시간이 안 간다"로
+// 읽히므로 통째로 없앤다. **바깥 껍데기(`toast-timer`)는 남는다** — 자리를 차지하지 않는 절대 배치라
+// 있고 없고가 레이아웃을 바꾸지 않고, 웹도 `motion-reduce:hidden` 을 안쪽 바에만 걸었다.
+describe('Toast — 모션 줄이기', () => {
+  it('켜져 있으면 남은 시간 바가 그려지지 않는다', async () => {
+    mockReducedMotion(true)
+    const { getByTestId } = await renderAtom(<Toast toast={makeToast()} onDismiss={noop} />)
+
+    expect(getByTestId('toast-timer').children).toHaveLength(0)
+  })
+
+  it('꺼져 있으면 남은 시간 바가 toast-shrink 를 그 토스트의 지속시간으로 재생한다', async () => {
+    mockReducedMotion(false)
+    const { getByTestId } = await renderAtom(
+      <Toast toast={makeToast({ duration: 2500 })} onDismiss={noop} />,
+    )
+
+    const [bar] = getByTestId('toast-timer').children as AtomElement[]
+    // 지속시간만 런타임 값이라 여기서 보고, 나머지(키프레임·이징·채우기)는 웹 원본과의 대조가
+    // `src/__tests__/keyframes-parity.test.ts` 몫이다.
+    expect(bar.props.jestInlineStyle).toMatchObject({
+      animationDuration: '2500ms',
+      transformOrigin: 'left',
+    })
+  })
+})
+
 describe('Toast — 트리 스냅샷', () => {
   it.each(['success', 'error', 'info'] as const)('%s', async (variant) => {
     const { toJSON } = await renderAtom(
@@ -175,6 +216,9 @@ describe('Toast — 트리 스냅샷', () => {
         onDismiss={noop}
       />,
     )
+
+    // 진입 프레임을 흘리지 않으면 이 스냅샷이 회차마다 갈린다(`flushEnterFrame` 주석).
+    await flushEnterFrame()
 
     expect(toJSON()).toMatchSnapshot()
   })

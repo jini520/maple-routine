@@ -13,29 +13,13 @@
 //    없는 클래스는 에러가 아니라 **색 없는 막대**가 되므로 조립을 없앤다.
 // ② `role`·`aria-*` → `accessibilityRole`·`accessibilityValue`(RN 의 같은 뜻 프롭).
 // ③ `transition-[width]` → Reanimated 의 **CSS 트랜지션**(step 7). Tailwind 의 기본값을 값으로 적는다 —
-//    아래 `WIDTH_TRANSITION` 참고.
+//    `width-transition.ts` 참고(그 값이 왜 별도 파일에 있는지도 거기 적혀 있다).
 import { View } from 'react-native'
-import { cubicBezier } from 'react-native-reanimated'
 
 import { AnimatedView } from '../../../lib/nativewind-interop'
+import { WIDTH_TRANSITION } from './width-transition'
 
 const TRACK_CLASS = 'h-1.5 w-full overflow-hidden rounded-full bg-track'
-
-/**
- * 웹의 `transition-[width]` 한 클래스가 펼쳐진 값.
- *
- * Tailwind v4 의 `transition-*` 은 지속시간·곡선을 유틸리티로 따로 주지 않으면 프리셋 기본값을 쓴다
- * (`--default-transition-duration: 150ms` · `--default-transition-timing-function:
- * cubic-bezier(0.4, 0, 0.2, 1)`). 웹 호출부에 `duration-*`·`ease-*` 가 없으므로 그 두 기본값이 곧
- * 이 프리미티브의 실제 값이고, RN 에는 프리셋이 없으니 여기 적는다.
- *
- * `as const` 인 이유는 `DropEffectOverlay` 의 `FLOAT_ANIMATION` 과 같다(그 파일 주석).
- */
-export const WIDTH_TRANSITION = {
-  transitionProperty: 'width',
-  transitionDuration: '150ms',
-  transitionTimingFunction: cubicBezier(0.4, 0, 0.2, 1),
-} as const
 
 /** 조립하지 않는다 — 이유는 파일 머리 ①. */
 const FILL_CLASS = {

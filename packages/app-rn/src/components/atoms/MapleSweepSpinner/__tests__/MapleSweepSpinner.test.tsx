@@ -1,13 +1,28 @@
-// 웹판의 다섯 중 넷이 그대로 산다(숨김 · `size` · clipPath 자식은 도형뿐 · id 충돌 없음).
-// "motion-reduce 클래스" 하나는 지킬 것이 없다 — 아직 모션이 없다(step 7).
+// 웹판의 다섯이 전부 산다(숨김 · `size` · clipPath 자식은 도형뿐 · id 충돌 없음 · motion-reduce).
+// 다섯째는 **보는 방법이 바뀌었다** — 클래스 문자열이 없어 *"반복 애니메이션을 걸었는가"* 를 본다
+// (`reduced-motion.ts` 의 `withRepeatSpy` 주석). 이동 거리·지속시간·이징은 여기가 아니라
+// `src/__tests__/keyframes-parity.test.ts` 가 웹 원본을 읽어 대조한다.
 //
-// 대신 RN 에서 새로 생긴 계약 하나를 지킨다: **띠의 색이 `currentColor`, 페이드가 마스크**라는 것.
+// 여기에 RN 에서 새로 생긴 계약 하나가 더해진다: **띠의 색이 `currentColor`, 페이드가 마스크**라는 것.
 // 웹처럼 그라디언트 정지점에 `currentColor` 를 쓰면 `react-native-svg` 가 경고만 찍고 그라디언트를
 // **비운다** — 색 없는 띠는 조용한 실패라, 되돌아가는 것을 여기서 막는다(컴포넌트 주석 ①).
+jest.mock('react-native-reanimated', () =>
+  // `jest.mock` 팩토리는 import 위로 끌어올려져 **밖의 값을 참조할 수 없다** — 그래서 `require` 가
+  // 선택이 아니라 유일한 길이다(`reduced-motion.ts` 「쓰는 법」).
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  require('../../../__tests__/reduced-motion').reanimatedWithReducedMotion(),
+)
+
+import { mockReducedMotion, withRepeatSpy } from '../../../__tests__/reduced-motion'
 import { findAllOfType, renderAtom, type TreeNode, 기본테마 } from '../../../__tests__/render-atom'
 import { MapleSweepSpinner } from '../MapleSweepSpinner'
 
 const HIDDEN = { includeHiddenElements: true } as const
+
+afterEach(() => {
+  mockReducedMotion(false)
+  withRepeatSpy.mockClear()
+})
 
 function childTypes(node: TreeNode): string[] {
   return (node.children ?? [])
@@ -78,5 +93,26 @@ describe('MapleSweepSpinner', () => {
     expect(
       (await renderAtom(<MapleSweepSpinner className="text-primary" />)).toJSON(),
     ).toMatchSnapshot()
+  })
+})
+
+describe('MapleSweepSpinner — 모션 줄이기', () => {
+  it('켜져 있으면 애니메이션을 아예 걸지 않는다 — 웹의 `motion-reduce:animate-none`', async () => {
+    mockReducedMotion(true)
+
+    const tree = (await renderAtom(<MapleSweepSpinner />)).toJSON()
+
+    expect(withRepeatSpy).not.toHaveBeenCalled()
+    // 띠가 시작 위치(잎 아래·viewBox 밖)에 머물러 **바탕 잎만** 남는다 — 웹에서 `animation: none` 이
+    // 보여주던 그림 그대로다. 이 좌표는 렌더 트리에 남으므로 여기서 볼 수 있다.
+    const band = findAllOfType(tree, 'RNSVGRect').find((rect) => rect.props.mask !== undefined)
+    expect(band?.props.y).toBe(140)
+  })
+
+  it('꺼져 있으면 되감기 없이 무한 반복한다 — 웹의 `infinite`(alternate 가 아니다)', async () => {
+    await renderAtom(<MapleSweepSpinner />)
+
+    expect(withRepeatSpy).toHaveBeenCalledTimes(1)
+    expect(withRepeatSpy.mock.calls[0].slice(1)).toEqual([-1, false])
   })
 })

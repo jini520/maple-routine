@@ -28,10 +28,10 @@ import {
   MAPLE_SWEEP_DURATION_MS,
   MAPLE_SWEEP_TRAVEL,
 } from '../components/atoms/MapleSweepSpinner/MapleSweepSpinner'
-import { WIDTH_TRANSITION } from '../components/atoms/ProgressBar/ProgressBar'
+import { WIDTH_TRANSITION } from '../components/atoms/ProgressBar/width-transition'
 import { MAPLE_LEAF_PATH_LENGTH } from '../components/mapleLeafPath'
-import { FLOAT_ANIMATION } from '../components/organisms/DropEffectOverlay/DropEffectOverlay'
-import { TIMER_ANIMATION_BASE } from '../components/organisms/Toast/Toast'
+import { FLOAT_ANIMATION } from '../components/organisms/DropEffectOverlay/float-animation'
+import { TIMER_ANIMATION_BASE } from '../components/organisms/Toast/timer-animation'
 
 const WEB_SRC = join(__dirname, '../../../app-capacitor/src')
 

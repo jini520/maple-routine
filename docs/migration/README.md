@@ -134,13 +134,19 @@ CLAUDE.md의 TDD 원칙을 전환에도 적용한다. 화면 하나를 재작성
 | `@capacitor/keyboard` | `KeyboardAvoidingView` + `react-native-keyboard-controller` | 중 | `autoBackdropColor: 'dom'` 대응 확인 |
 | `@capacitor/splash-screen` | `react-native-bootsplash` | 중 | [[ADR-025]] values-night 다크 대응 유지 |
 | `@capacitor/status-bar` | `react-native-edge-to-edge` | 낮음 | |
-| CSS `@keyframes` (8종) | `react-native-reanimated` | **높음** | 단풍잎 스피너·드랍 연출 — 아래 참고 |
+| CSS `@keyframes` (**7종**) | `react-native-reanimated` | **높음** | 단풍잎 스피너·드랍 연출 — 아래 참고 |
 
 ### 애니메이션이 이 전환의 숨은 비용이다
 
-`src/index.css` 에 `@keyframes` 가 8종 있다 — `toast-shrink` · `maple-trail` · `maple-sweep` ·
-`fx-drop-float` · `valuable-drop-glow` · `valuable-drop-spin` · `valuable-drop-row-pulse` 외.
+`src/index.css` 에 `@keyframes` 가 **7종** 있다 — `toast-shrink` · `maple-trail` · `maple-sweep` ·
+`fx-drop-float` · `valuable-drop-glow` · `valuable-drop-spin` · `valuable-drop-row-pulse`.
 [[ADR-048]]·[[ADR-103]](드랍 연출) 과 단풍잎 스피너([[ADR-061]])가 여기 산다.
+
+> **"8종"은 틀린 수였다**(3단계 step 7 에서 정정). 이 문단이 원래 일곱을 적고 *"외"* 를 붙여
+> 어림잡았는데 실제로는 그 일곱이 전부다. 이제 세는 일을 사람이 하지 않는다 —
+> `packages/app-rn/src/__tests__/keyframes-parity.test.ts` 가 **원본 CSS 를 읽어** 이름 목록을
+> 「이 단계에서 옮긴 것」과 「화면 계층 몫」으로 남김없이 가르고, 웹에 새 `@keyframes` 가 생기면
+> **분류될 때까지 빨개진다**. 조용히 누락되는 것이 이 전환에서 가장 비싼 실패라서다.
 
 CSS 애니메이션은 선언 한 덩어리지만 Reanimated는 **명령형 코드**다. 1:1 변환이 아니라 재구현이고,
 "같아 보이는가"를 눈으로 판정해야 한다. 표의 다른 항목과 성격이 다르니 일정에서 따로 잡는다.
@@ -235,7 +241,7 @@ ADR 몫이다. 조용한 no-op 으로 두지 않는 이유와 각 자리의 근�
 
 **스타일링은 NativeWind 다**(사용자 결정, 2026-08-11). `components/` 33파일에 `className` 이 163곳
 있어 그대로 옮기는 편이 압도적으로 싸다. 대가는 임의 CSS·pseudo 셀렉터·`@keyframes` 를 못 쓰는 것인데,
-`@keyframes` 8종은 어차피 Reanimated 재구현 대상이라 새로 잃는 것이 아니다.
+`@keyframes` 7종은 어차피 Reanimated 재구현 대상이라 새로 잃는 것이 아니다.
 
 **`ThemeAppearancePort` 는 여기서 해소됐다**(아래 «3-1단계 결과»). CSS 변수를 `<style>` 에 주입하던
 구조를 React 상태로 옮겼다.
@@ -369,7 +375,7 @@ NativeWind 가 자동으로 가로채는 것은 `react-native` 기본 컴포넌�
   동작**이라 적을 자리가 없다.
 
 **아직 안 움직이는 것 둘** — `MapleSpinner`(`maple-trail`)·`MapleSweepSpinner`(`maple-sweep`). 둘 다
-`@keyframes` 8종에 걸려 있어 step 7 몫이고, 지금 그리는 것은 **그 애니메이션의 0프레임**이다.
+`@keyframes` 7종에 걸려 있어 step 7 몫이고, 지금 그리는 것은 **그 애니메이션의 0프레임**이다.
 반대로 `AnimatedMeso` 는 **모션이 그대로 산다** — 카운트업이 CSS 가 아니라 `@core/lib/use-count-up`
 (rAF + `performance.now`)이라 옮길 것이 없었다. step 7 이 함께 처리해야 할 것이 하나 더 있다:
 **`motion-reduce:` 의 RN 짝이 없다**(`AccessibilityInfo.isReduceMotionEnabled`). 모션이 없는 지금은
@@ -594,6 +600,83 @@ RN 은 형제 순서가 곧 그리는 순서라, 없으면 페이드가 목록 *
 **제품 결정**이라 이 셸이 어느 쪽도 배선하지 않았다(그 갈래표는 step 4 가
 `PullToRefreshIndicator` 주석에 적어 뒀고, `RefreshControl` 을 고르면 그 ADR 의 결정 넷을 폐기해야
 한다).
+
+#### 3-7단계 결과 — `@keyframes` 7종 (2026-08-12, **눈으로 판정할 것을 숫자로 붙들어 둔다**)
+
+넷을 옮기고 셋은 4단계로 넘겼다. 갈리는 기준은 난이도가 아니라 **그 애니메이션이 붙는 요소가 어느
+계층에 사는가** 다.
+
+| 키프레임 | 어디에 | RN 에서 | 상태 |
+|---|---|---|---|
+| `maple-trail` | `MapleSpinner` | `useAnimatedProps` 로 `strokeDashoffset` | ✅ |
+| `maple-sweep` | `MapleSweepSpinner` | `useAnimatedProps` 로 띠 `<Rect>` 의 `y` | ✅ |
+| `toast-shrink` | `Toast` 남은 시간 바 | Reanimated **CSS 애니메이션** | ✅ |
+| `fx-drop-float` | `DropEffectOverlay` 중앙 아이템 | Reanimated **CSS 애니메이션** | ✅ (렌더는 에셋 대기) |
+| `valuable-drop-glow`·`-spin`·`-row-pulse` | `app/boss-profit/*` 의 카드·행 | — | **4단계** |
+
+곁가지 둘도 함께 왔다 — `ProgressBar` 의 `transition-[width]`(CSS 트랜지션)와 `Toast` 의 진입
+트랜지션. 그리고 **아무것도 안 고쳤는데 살아난 것이 둘** 있다: `LoadingState` 의 스피너와
+`PullToRefreshIndicator` 의 재조회 링은 파일이 한 줄도 안 바뀌었는데 스피너가 돌기 시작하며 따라왔다.
+
+**"8종"은 틀린 수였다.** 이 문서가 일곱을 적고 *"외"* 를 붙여 어림잡았는데 실제로는 그 일곱이
+전부다. 고친 것은 숫자가 아니라 **세는 주체**다 — `keyframes-parity.test.ts` 가 `index.css` 를 읽어
+목록을 「이 단계 몫」과 「화면 몫」으로 남김없이 가르고, 새 `@keyframes` 가 생기면 분류될 때까지
+빨개진다. 지속시간·이징·이동 거리도 같은 방식으로 **원본 파일에서 읽어** 대조한다(`transition-[width]`
+는 Tailwind 프리셋 기본값이라 `tailwindcss/theme.css` 를 읽는다 — `tailwind-v4-axes.cjs` 와 같은
+방식·같은 이유). 값을 테스트에 손으로 적으면 웹이 바뀌어도 조용히 통과한다.
+
+**이 저장소의 모션은 두 갈래다: View 스타일 = CSS API · SVG 속성 = `useAnimatedProps`.** Reanimated 4
+는 `@keyframes` 를 거의 그대로 옮길 수 있는 CSS API 를 갖고 있고 SVG 지원도 코드 안에 들어 있지만
+(`css/svg` 의 `initSvgCssSupport`) **패키지 진입점에서 내보내지 않아** 내부 경로를 파고들어야 닿는다
+(실측 — `react-native-reanimated/css/svg` 는 해석되지 않는다). 사설 경로에 기대는 대신 SVG 속성에는
+문서화된 `useAnimatedProps` 를 쓴다.
+
+**같은 그림을 다른 속성으로 만든 자리가 둘이다.** ① `maple-trail` 은 웹이 `pathLength={300}` 으로
+둘레를 정규화해 `-300` 까지 굴렸는데 `react-native-svg` 에 그 속성이 없어 **실측 둘레**까지 굴린다 —
+숫자를 맞출 수 없으므로 *"한 주기 = 둘레 한 바퀴"* 라는 **성질**을 대신 지킨다(깨지면 반복이
+이어붙는 자리에서 트레일이 튄다). ② `maple-sweep` 은 웹이 띠에 `translateY` 를 걸었지만 RN 은
+**`<Rect>` 의 `y` 자체**를 굴린다 — `<G>` 의 transform 은 JS 에서 matrix 로 접혀 나가 UI 스레드
+갱신이 그 접기를 건너뛰기 때문이다. 그래서 옮길 대상을 transform 이 아니라 좌표로 골랐다.
+
+**`motion-reduce:` 의 RN 짝이 이 단계에서 붙었다**(step 3 이 남긴 숙제). `useReducedMotion()` 이 4곳에
+배선됐고 — 두 스피너는 애니메이션을 아예 안 걸어 0프레임에 머물고, `Toast` 는 남은 시간 바가 통째로
+사라지며(줄지 않는 막대는 *"시간이 안 간다"* 로 읽힌다), 드랍 연출은 부유가 빠진다 — 웹의 각
+`motion-reduce:` 변형이 남기던 그림과 같다.
+
+**그런데 그 계약을 보는 방법이 바뀌었다.** 웹은 `motion-reduce:animate-none` 이 **클래스 문자열**이라
+렌더 결과에서 그대로 읽혔지만 RN 에는 그 문자열이 없고, SVG 속성 애니메이션은 UI 스레드가 갱신하므로
+**jest 의 렌더 트리는 켜 놨을 때나 꺼 놨을 때나 문자 단위로 같다**(실측). 그래서 *"반복 애니메이션을
+걸었는가"* 를 본다(`components/__tests__/reduced-motion.ts`). 판별력은 구현을 일부러 뒤집어
+확인했다 — 가드를 지우고 되감기를 켜자 두 케이스가 실패했고 **스냅샷은 그대로 통과했다**(그 통과가
+이 창이 따로 필요한 이유다).
+
+**스냅샷 하나가 애니메이션과 경주하고 있었다.** `Toast` 는 마운트 뒤 한 프레임 미뤄 진입 상태로
+가는데(바로 최종 상태를 주면 트랜지션이 재생되지 않는다) 그 프레임이 `render` 의 await 와 경주해
+스냅샷이 회차마다 갈렸다 — **전체 실행 3회 중 1회 실패, 단독 실행은 늘 통과**. step 7 이 만든 것이
+아니라 원래 있던 성질이고, 그 자리에 실제 트랜지션이 들어오며 드러났다. `flushEnterFrame()` 으로
+최종 상태에 고정했다(시작 상태로 고정하려면 이미 예약된 프레임을 **막아야** 하는데 그건 런타임과
+싸우는 일이고, 무엇보다 그 한 프레임은 사용자가 보는 그림이 아니다). 그 시작 프레임은 **결정적으로
+관측할 수 없다는 것도 확인했다** — 그것을 단언하는 케이스를 써 봤더니 그 케이스가 먼저 깨졌다.
+
+**[[ADR-103]] 의 1.5배는 그대로 옮겼다.** 그 배율은 계측이 아니라 **눈**으로 정해진 값이라(2배 →
+사용자 반려 → 1.5배) RN 에서 다시 정하려면 실기기에서 다시 보는 것이 선행돼야 한다. 이 단계는 옮기는
+작업이다.
+
+**당겨서 새로고침은 새로 만들지 않았다.** [[ADR-074]] 의 두 구간이 이제 코드 위에서는 둘 다 산다 —
+재조회 링은 스피너가 살아나며 따라왔고, 당김 드로잉은 애니메이션이 아니라 **손가락 위치의 함수**라
+원래부터 살아 있었다. `RefreshControl` 과의 갈래는 여전히 **제품 결정**이라 step 6 이 남긴 그대로 둔다.
+
+**남은 하나는 시간이 아니라 에셋에 막혔다** — `DropEffectOverlay` 의 재생 엔진과 팝인. RN 의 `Image`
+는 **원격 URI 의 고유 크기를 모르고**(`require()` 로 번들에 든 에셋만 스스로 안다) [[ADR-048]] 의
+배치는 origin 을 *그 프레임 비트맵 크기 위에서* 되미는 일이라, 에셋이 어떤 모양으로 오는지가
+정해지기 전에 배치 코드를 쓰면 그 결정을 코드가 몰래 대신 내리게 된다(크기 표는
+`DROP_EFFECT_ORIGINS` 의 **주석에만** 있어 데이터로 읽을 수도 없다). 팝인도 같은 이유다 — 대상이
+아직 없는 `<Image>` 이고 그것을 켜는 트리거가 그 엔진이다.
+
+**판정은 여전히 눈이고, 이 단계에서는 한 번도 못 봤다.** 화면이 없어 볼 대상이 없다 — 두 스피너의
+실제 움직임, 스윕 마스크가 띠를 따라가는지, `toast-shrink` 가 지속시간과 맞는지, PTR 두 구간의
+연속성, 진행률 바 트랜지션의 체감은 전부 4단계에서 두 앱을 나란히 놓고 볼 대상이다(«잃는 안전망»).
+자동 테스트가 담보하는 것은 **숫자와 on/off** 이지 그림이 아니다.
 
 ### 4단계 — `app/` 화면 재작성
 

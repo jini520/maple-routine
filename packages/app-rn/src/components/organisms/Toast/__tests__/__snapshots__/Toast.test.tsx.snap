@@ -32,7 +32,7 @@ exports[`Toast — 트리 스냅샷 error 1`] = `
         "borderWidth": 1,
         "columnGap": 8,
         "flexDirection": "row",
-        "opacity": 0,
+        "opacity": 1,
         "overflow": "hidden",
         "paddingBottom": 8,
         "paddingLeft": 10,
@@ -45,7 +45,7 @@ exports[`Toast — 트리 스냅샷 error 1`] = `
             "translateX": 0,
           },
           {
-            "translateY": 12,
+            "translateY": 0,
           },
           {
             "rotate": 0,
@@ -84,7 +84,7 @@ exports[`Toast — 트리 스냅샷 error 1`] = `
           "borderWidth": 1,
           "columnGap": 8,
           "flexDirection": "row",
-          "opacity": 0,
+          "opacity": 1,
           "overflow": "hidden",
           "paddingBottom": 8,
           "paddingLeft": 10,
@@ -97,7 +97,7 @@ exports[`Toast — 트리 스냅샷 error 1`] = `
               "translateX": 0,
             },
             {
-              "translateY": 12,
+              "translateY": 0,
             },
             {
               "rotate": 0,
@@ -700,7 +700,7 @@ exports[`Toast — 트리 스냅샷 info 1`] = `
         "borderWidth": 1,
         "columnGap": 8,
         "flexDirection": "row",
-        "opacity": 0,
+        "opacity": 1,
         "overflow": "hidden",
         "paddingBottom": 8,
         "paddingLeft": 10,
@@ -713,7 +713,7 @@ exports[`Toast — 트리 스냅샷 info 1`] = `
             "translateX": 0,
           },
           {
-            "translateY": 12,
+            "translateY": 0,
           },
           {
             "rotate": 0,
@@ -752,7 +752,7 @@ exports[`Toast — 트리 스냅샷 info 1`] = `
           "borderWidth": 1,
           "columnGap": 8,
           "flexDirection": "row",
-          "opacity": 0,
+          "opacity": 1,
           "overflow": "hidden",
           "paddingBottom": 8,
           "paddingLeft": 10,
@@ -765,7 +765,7 @@ exports[`Toast — 트리 스냅샷 info 1`] = `
               "translateX": 0,
             },
             {
-              "translateY": 12,
+              "translateY": 0,
             },
             {
               "rotate": 0,
@@ -1362,7 +1362,7 @@ exports[`Toast — 트리 스냅샷 success 1`] = `
         "borderWidth": 1,
         "columnGap": 8,
         "flexDirection": "row",
-        "opacity": 0,
+        "opacity": 1,
         "overflow": "hidden",
         "paddingBottom": 8,
         "paddingLeft": 10,
@@ -1375,7 +1375,7 @@ exports[`Toast — 트리 스냅샷 success 1`] = `
             "translateX": 0,
           },
           {
-            "translateY": 12,
+            "translateY": 0,
           },
           {
             "rotate": 0,
@@ -1414,7 +1414,7 @@ exports[`Toast — 트리 스냅샷 success 1`] = `
           "borderWidth": 1,
           "columnGap": 8,
           "flexDirection": "row",
-          "opacity": 0,
+          "opacity": 1,
           "overflow": "hidden",
           "paddingBottom": 8,
           "paddingLeft": 10,
@@ -1427,7 +1427,7 @@ exports[`Toast — 트리 스냅샷 success 1`] = `
               "translateX": 0,
             },
             {
-              "translateY": 12,
+              "translateY": 0,
             },
             {
               "rotate": 0,

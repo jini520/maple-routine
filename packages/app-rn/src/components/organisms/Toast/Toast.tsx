@@ -54,6 +54,7 @@ import {
   XIcon,
 } from '../../../lib/icons'
 import { AnimatedView } from '../../../lib/nativewind-interop'
+import { timerAnimation } from './timer-animation'
 
 export interface ToastProps {
   toast: ToastItem
@@ -89,27 +90,6 @@ const ENTER_TRANSITION = {
   transitionDuration: '200ms',
   transitionTimingFunction: 'ease-out',
 } as const
-
-/**
- * `index.css` 의 `@keyframes toast-shrink`(`scaleX(1) → scaleX(0)`) + 웹이 인라인으로 붙이던
- * `linear forwards`. **지속시간만 빠져 있다** — 토스트마다 다르고(성공 2초/정보 2.5초) 그래서 웹도
- * 클래스로 못 적고 인라인 `style` 로 넣던 자리다.
- *
- * 나눠 둔 이유는 `src/__tests__/keyframes-parity.test.ts` 가 이 고정 부분을 웹 선언과 직접 견주기
- * 때문이다 — 지속시간은 런타임 값이라 견줄 상수가 없다.
- */
-export const TIMER_ANIMATION_BASE = {
-  animationName: {
-    from: { transform: [{ scaleX: 1 }] },
-    to: { transform: [{ scaleX: 0 }] },
-  },
-  animationTimingFunction: 'linear',
-  animationFillMode: 'forwards',
-} as const
-
-function timerAnimation(durationMs: number) {
-  return { ...TIMER_ANIMATION_BASE, animationDuration: `${durationMs}ms` } as const
-}
 
 export function Toast(props: ToastProps): React.JSX.Element {
   const { toast, onDismiss } = props

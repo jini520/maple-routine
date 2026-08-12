@@ -8,7 +8,12 @@ import { fireEvent } from '@testing-library/react-native'
 
 import { useToastStore, type ToastItem } from '@core/features/toast/store'
 
-import { flattenStyle, renderOverlay, type AtomElement } from '../../../__tests__/render-atom'
+import {
+  flattenStyle,
+  flushEnterFrame,
+  renderOverlay,
+  type AtomElement,
+} from '../../../__tests__/render-atom'
 import { ToastStack } from '../ToastStack'
 
 jest.mock('@core/features/toast/store', () => ({ useToastStore: jest.fn() }))
@@ -112,6 +117,9 @@ describe('ToastStack', () => {
   it('트리 스냅샷', async () => {
     mockStore([toast('t1', '첫째'), toast('t2', '둘째')])
     const { toJSON } = await renderOverlay(<ToastStack />)
+
+    // 안에 든 `Toast` 들의 진입 프레임을 흘린다 — 안 흘리면 회차마다 갈린다(`flushEnterFrame` 주석).
+    await flushEnterFrame()
 
     expect(toJSON()).toMatchSnapshot()
   })

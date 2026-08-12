@@ -14,7 +14,7 @@
 // 확인해 커밋한 값이고, 테스트가 베끼면 두 벌이 된다). `theme/__tests__/ThemeProvider.test.tsx` 와
 // 같은 방식이다.
 import { getThemeDefinition } from '@core/lib/theme-registry'
-import { render } from '@testing-library/react-native'
+import { act, render } from '@testing-library/react-native'
 import type { ReactElement } from 'react'
 import { SafeAreaProvider, type Metrics } from 'react-native-safe-area-context'
 
@@ -52,6 +52,33 @@ export function renderOverlay(
       <ThemeProvider>{ui}</ThemeProvider>
     </SafeAreaProvider>,
   )
+}
+
+/**
+ * 마운트 뒤 **한 프레임 미뤄 최종 상태로 가는** 진입 트랜지션을 흘려보낸다(`Toast`).
+ *
+ * ## 왜 필요한가 — 스냅샷이 회차마다 갈렸다
+ *
+ * 진입 트랜지션은 마운트 직후 바로 최종 상태를 주면 재생되지 않으므로, 컴포넌트가 `useEffect` 안의
+ * `requestAnimationFrame` 으로 한 프레임을 미룬다. 그 프레임이 `render` 의 await 와 **경주해서**,
+ * 스냅샷이 시작 상태(`translateY 12`·`opacity 0`)로 찍히기도 최종 상태(`0`·`1`)로 찍히기도 했다
+ * (실측 — 전체 실행 3회 중 1회 실패, 단독 실행에서는 늘 통과). 애니메이션이 붙기 전에도 있던
+ * 성질이고, step 7 이 그 자리에 실제 트랜지션을 넣으면서 드러났다.
+ *
+ * ## 왜 시작 상태가 아니라 최종 상태로 고정하나
+ *
+ * 시작 상태로 고정하려면 이미 예약된 프레임을 **막아야** 하는데(가짜 타이머 등) 그것은 런타임과
+ * 싸우는 일이고, 무엇보다 그 한 프레임은 사용자가 보는 그림이 아니다. 최종 상태는 토스트가 살아
+ * 있는 내내 유지되는 모습이라 *"앞으로 안 바뀌는가"* 를 묻는 이 스냅샷의 목적에 맞는다
+ * (step 0 이 정한 스냅샷 관례). 시작 상태의 계약(`translate-y-3 opacity-0` · 모션 줄이기면
+ * `translate-y-0`)은 스냅샷이 아니라 별도 케이스가 지킨다.
+ */
+export async function flushEnterFrame(): Promise<void> {
+  await act(async () => {
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => resolve())
+    })
+  })
 }
 
 /**
