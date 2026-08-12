@@ -61,7 +61,8 @@
     {
       "step": 7,
       "name": "boss-profit-screen",
-      "status": "pending"
+      "status": "pending",
+      "started_at": "2026-08-13T04:54:10+0900"
     },
     {
       "step": 8,
