@@ -31,6 +31,14 @@ import {
 import { WIDTH_TRANSITION } from '../components/atoms/ProgressBar/width-transition'
 import { MAPLE_LEAF_PATH_LENGTH } from '../components/mapleLeafPath'
 import { VALUABLE_ROW_PULSE, VALUABLE_ROW_TINT } from '../app/boss-profit/BossProfitBossRow'
+import {
+  VALUABLE_CARD_GLOW_DURATION_MS,
+  VALUABLE_CARD_GLOW_HIGH,
+  VALUABLE_CARD_GLOW_LOW,
+  VALUABLE_CARD_GLOW_STATIC,
+  VALUABLE_CARD_GLOW_TIMING,
+  VALUABLE_CARD_RING_COLOR,
+} from '../app/boss-profit/valuable-card-glow'
 import { FLOAT_ANIMATION } from '../components/organisms/DropEffectOverlay/float-animation'
 import { TIMER_ANIMATION_BASE } from '../components/organisms/Toast/timer-animation'
 
@@ -51,16 +59,21 @@ const V4_THEME_CSS = readFileSync(
  * 갈리는 기준은 난이도가 아니라 **그 애니메이션이 붙는 요소가 어느 계층에 사는가** 다.
  */
 const KEYFRAMES = {
-  /** 컴포넌트 계층(atoms·organisms)에 붙어 이 phase 가 옮겼다. */
+  /** 컴포넌트 계층(atoms·organisms)에 붙어 3단계가 옮겼다. */
   ported: ['toast-shrink', 'maple-trail', 'maple-sweep', 'fx-drop-float'],
   /**
-   * `app/boss-profit/*` 의 화면·행에만 붙는다([[ADR-045]]·[[ADR-071]]) — **4단계 몫**이고,
-   * 컴포넌트 계층에는 이 셋을 쓰는 자리가 하나도 없다.
-   *
-   * 셋 중 `valuable-drop-row-pulse` 는 **4단계 step 6 이 보스 행과 함께 옮겼다**(아래 전용
-   * describe). 나머지 둘은 캐릭터 카드에 붙어 step 7 을 기다린다 — 분류는 그대로 화면 층이다.
+   * `app/boss-profit/*` 의 화면·행에만 붙어 **4단계가 옮겼다**([[ADR-045]]·[[ADR-071]]) —
+   * `valuable-drop-row-pulse` 는 step 6(보스 행), `valuable-drop-glow` 는 step 7(캐릭터 카드)이다.
+   * 컴포넌트 계층에는 이 둘을 쓰는 자리가 하나도 없다(아래 둘째 케이스).
    */
-  screenLayer: ['valuable-drop-glow', 'valuable-drop-spin', 'valuable-drop-row-pulse'],
+  screenLayer: ['valuable-drop-glow', 'valuable-drop-row-pulse'],
+  /**
+   * **옮기지 않고 degrade 시킨 것** — RN 에 conic-gradient 도 `mask-composite: xor` 도 없어
+   * 회전 샤인 링을 그릴 방법이 없다. 임시방편이 아니라 [[ADR-045]] 가 `@property` 미지원 WebView
+   * 를 위해 **이미 설계해 둔 폴백**(정적 골드 테두리)을 그대로 쓴다 — 그래서 «못 옮김» 이 아니라
+   * 별도 칸이고, 아래 전용 describe 가 *"웹에도 그 폴백이 실재하는가"* 를 본다.
+   */
+  degraded: ['valuable-drop-spin'],
 } as const
 
 /** `@keyframes <name>` 의 이름만 뽑는다. */
@@ -82,6 +95,33 @@ function themeValue(name: string): string {
   return match[1].trim()
 }
 
+/**
+ * 웹 `box-shadow` 선언을 겹 단위 문자열 배열로 — `0 0 6px 0 rgba(…)` 처럼 공백이 정규화된다.
+ * 여러 겹은 `),` 로 갈린다(색이 `rgba(…)` 라 단순 콤마 분리로는 색 안이 잘린다).
+ */
+function webShadowLayers(declaration: string): string[] {
+  return declaration
+    .split(/\),\s*/)
+    .map((layer, index, all) => {
+      const text = index === all.length - 1 ? layer : `${layer})`
+      // 웹은 0 에 단위를 안 붙인다(`0 0 8px 0`) — 대조 전에 그 한 가지만 맞춘다.
+      return text.trim().replace(/\s+/g, ' ').replace(/\b0px\b/g, '0')
+    })
+    .filter((layer) => layer.length > 0)
+}
+
+/** RN `boxShadow` 겹 하나를 웹 문법으로 — 대조는 이 문자열끼리 한다. */
+function shadowLayerText(layer: {
+  offsetX: number
+  offsetY: number
+  blurRadius: number
+  spreadDistance: number
+  color: string
+}): string {
+  const px = (value: number): string => (value === 0 ? '0' : `${value}px`)
+  return `${px(layer.offsetX)} ${px(layer.offsetY)} ${px(layer.blurRadius)} ${px(layer.spreadDistance)} ${layer.color}`
+}
+
 /** CSS 의 `2.6s`·`900ms` 를 ms 숫자로. */
 function toMs(duration: string): number {
   const match = /^([\d.]+)(ms|s)$/.exec(duration)
@@ -93,17 +133,17 @@ describe('@keyframes 인벤토리', () => {
   it('웹 CSS 의 @keyframes 는 이 phase 몫과 화면 몫으로 남김없이 갈린다', () => {
     // 새 `@keyframes` 가 생기면 여기서 잡힌다 — 분류하지 않고 지나갈 수 없다.
     expect(keyframeNames(INDEX_CSS).sort()).toEqual(
-      [...KEYFRAMES.ported, ...KEYFRAMES.screenLayer].sort(),
+      [...KEYFRAMES.ported, ...KEYFRAMES.screenLayer, ...KEYFRAMES.degraded].sort(),
     )
   })
 
-  it('화면 몫 셋은 컴포넌트 계층 어디에도 안 쓰인다 — 4단계로 넘어간다는 근거', () => {
+  it('화면 몫은 컴포넌트 계층 어디에도 안 쓰인다 — 4단계가 소유한다는 근거', () => {
     const webComponents = readFileSync(
       join(WEB_SRC, 'components/organisms/DropEffectOverlay/DropEffectOverlay.tsx'),
       'utf8',
     )
     // 웹에서도 이 셋을 쓰는 곳은 `app/` 뿐이라, 컴포넌트를 옮긴 이 phase 가 건드릴 자리가 없었다.
-    for (const name of KEYFRAMES.screenLayer) {
+    for (const name of [...KEYFRAMES.screenLayer, ...KEYFRAMES.degraded]) {
       expect(webComponents).not.toContain(name)
     }
   })
@@ -235,5 +275,53 @@ describe('valuable-drop-row-pulse — BossProfitBossRow', () => {
     const fallback = /background-color:\s*([^;]+);/.exec(block)?.[1].trim()
 
     expect(fallback).toBe(VALUABLE_ROW_TINT)
+  })
+})
+
+describe('valuable-drop-glow — CharacterAccordion (step 7)', () => {
+  it('지속시간·이징·반복이 웹과 같다', () => {
+    const [duration, ...rest] = animationShorthand(INDEX_CSS, 'valuable-drop-glow').split(/\s+/)
+
+    expect(toMs(duration)).toBe(VALUABLE_CARD_GLOW_DURATION_MS)
+    expect(rest).toEqual([VALUABLE_CARD_GLOW_TIMING, 'infinite'])
+  })
+
+  it('맥동 두 끝점이 웹의 키프레임과 같다 — 중간만 알파 교차다', () => {
+    // RN 은 `box-shadow` 를 보간하지 않아 파라미터를 굴릴 수 없다. 두 끝점을 각각 가진 겹을
+    // 반대 방향 `opacity` 로 교차시키므로, **지켜야 하는 것은 그 두 끝점**이다.
+    const block = /@keyframes valuable-drop-glow\s*\{([\s\S]*?)\n\}/.exec(INDEX_CSS)?.[1] ?? ''
+    const shadows = [...block.matchAll(/box-shadow:([\s\S]*?);/g)].map((m) => m[1])
+
+    // 웹은 `0%,100%` 를 한 블록으로 묶어 두 마디만 적는다.
+    expect(shadows).toHaveLength(2)
+    expect(shadows.map(webShadowLayers)).toEqual([
+      VALUABLE_CARD_GLOW_LOW.map(shadowLayerText),
+      VALUABLE_CARD_GLOW_HIGH.map(shadowLayerText),
+    ])
+  })
+
+  it('정적 폴백 글로우도 웹의 `.valuable-drop-card` 와 같다 — 펼침·모션 줄이기가 보는 값이다', () => {
+    // 웹은 이 값을 세 자리에서 보여 준다: `@property` 미지원 · `prefers-reduced-motion` ·
+    // 펼침(`animation: none`, [[ADR-045]] 결정 4). RN 도 뒤의 둘에서 이 그림 하나로 간다.
+    const block = /\.valuable-drop-card\s*\{([\s\S]*?)\n\}/.exec(INDEX_CSS)?.[1] ?? ''
+    const shadow = /box-shadow:([\s\S]*?);/.exec(block)?.[1] ?? ''
+
+    expect(webShadowLayers(shadow)).toEqual(VALUABLE_CARD_GLOW_STATIC.map(shadowLayerText))
+  })
+})
+
+describe('valuable-drop-spin — degrade (step 7)', () => {
+  it('웹이 정한 폴백 각도에서 링은 베이스 골드 한 색이다 — RN 이 그리는 그림이 그것이다', () => {
+    // [[ADR-045]] 는 `@property` 미지원 WebView 를 위해 `--vd-angle: 0deg` 폴백을 명시했고, 그
+    // 각도에서 conic 링의 시작·끝 정지점이 모두 베이스 골드다. RN 에 conic gradient 가 없어
+    // 우리가 그리는 것이 정확히 그 폴백이므로, **웹에 그 폴백이 실재하는지**를 여기서 붙든다.
+    const block = /\.valuable-drop-card::before\s*\{([\s\S]*?)\n\}/.exec(INDEX_CSS)?.[1] ?? ''
+
+    expect(block).toContain('--vd-angle: 0deg')
+    expect(/from var\(--vd-angle\),\s*(#[0-9a-f]{6}) 0deg/i.exec(block)?.[1]).toBe(
+      VALUABLE_CARD_RING_COLOR,
+    )
+    // 링 두께 — 웹은 `padding: 2px` + mask(xor) 로 2px 만 남긴다.
+    expect(block).toContain('padding: 2px')
   })
 })

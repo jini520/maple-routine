@@ -1,6 +1,7 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { maybeShowTabSwitchAd } from '@core/features/ads/tab-switch-ad'
 
+import { BossProfitScreen } from '../app/boss-profit/BossProfitScreen'
 import { BossScreen } from '../app/boss-scheduler/BossScreen'
 import { ContentScreen } from '../app/content-scheduler/ContentScreen'
 import { PlaceholderScreen } from './PlaceholderScreen'
@@ -16,6 +17,7 @@ const Tab = createBottomTabNavigator<TabParamList>()
 const TAB_SCREENS = {
   Content: ContentScreen,
   Boss: BossScreen,
+  Profit: BossProfitScreen,
 } as const satisfies Partial<Record<TabRouteName, React.ComponentType>>
 
 function screenFor(name: TabRouteName): React.ComponentType<Record<string, never>> {
