@@ -1,0 +1,135 @@
+import { View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+
+import { withAlpha } from '../../../lib/color-alpha'
+import { LinearGradient } from '../../../lib/nativewind-interop'
+import { useThemeAppearance } from '../../../theme/context'
+import { ThemeHeaderBackdrop } from '../ThemeHeaderBackdrop/ThemeHeaderBackdrop'
+
+// 화면 상단 헤더 셸([[ADR-094]] 4단계). 스케줄러 계열 4화면이 **글자 하나까지 같은** 마크업을
+// 복붙하고 있었다 — 셸 클래스, 테마 배경 조각, 하단 페이드까지. 취약 구조를 한곳에 가두는 것이
+// 목적이고([[ADR-094]] 결정 1), 그 취약함의 내용이 RN 에서 통째로 바뀐다.
+//
+// ══ 이 컴포넌트에서 가장 크게 갈린 것: **`fixed` 도 spacer 도 없다** ═══════════════════════
+//
+// 웹에서 이 헤더는 `fixed inset-x-0 top-0` + **실측 높이 spacer** 였다([[ADR-098]] 결정 2 ·
+// [[ADR-085]] 결정 1). 그 형태가 필요했던 이유는 하나다 — 화면 전체가 문서 스크롤 하나를 공유하니
+// 헤더도 그 안에 있었고, `sticky` 로 붙이면 **화면 위치가 스크롤 오프셋의 함수**가 되어 iOS 스크롤
+// 스레드가 옛 오프셋을 뒤늦게 되돌려 보내는 프레임에 헤더가 화면 밖으로 날아갔다.
+//
+// RN 에는 그 사슬의 첫 고리가 없다. 화면은 문서가 아니고, 스크롤은 `ScrollView` 라는 **다른 뷰**가
+// 소유한다([[ADR-099]] 가 웹에서 힘들여 만든 상태가 여기서는 기본값이다). 그래서 *"헤더는 스크롤과
+// 무관하게 화면 위에 있다"* 를 표현하는 가장 곧은 방법이 **스크롤 뷰의 형제로 두는 것**이고,
+// 그러면 헤더 위치는 스크롤 오프셋의 함수이기는커녕 **함수가 아니다**(레이아웃이 정한다).
+//
+// 딸려서 사라지는 것 셋:
+//
+// ① **spacer 가 없다.** 그것은 `fixed` 가 헤더를 흐름에서 빼기 때문에 필요했던 자리다. 헤더가
+//    흐름 안에 있으면 뺄 자리가 없다.
+// ② **실측(`useMeasuredHeight`)이 없다.** spacer 가 없으니 맞출 대상이 없다. [[ADR-112]] 가 이슈
+//    #168 에서 잡은 결함(*"헤더는 이미 짧은데 spacer 는 옛 값인 프레임"*)은 여기서 **구조적으로
+//    불가능**하다 — 헤더와 그 아래 스크롤 뷰가 같은 레이아웃 패스에서 배치되므로 서로 어긋난
+//    프레임이라는 것이 존재하지 않는다. 그 ADR 이 지키려던 계약을 코드가 아니라 구조가 만족한다.
+//    (`useLayoutEffect` 로 재던 이유도 함께 사라진다 — RN 의 `onLayout` 은 레이아웃 **뒤**에 오는
+//    비동기 통보라 애초에 그 계약을 만족시킬 수 없었다. 그래서 웹 형태를 그대로 옮기는 쪽이
+//    오히려 [[ADR-085]] 결정 1 이 금지한 "첫 프레임에 spacer 0" 을 되살렸을 것이다.)
+// ③ **콘텐츠가 헤더 밑으로 지나가지 않는다.** 웹은 불투명 헤더 아래로 카드가 흘러 들어갔고
+//    RN 에서는 스크롤포트가 헤더 아래에서 시작해 그 자리에서 잘린다. **보이는 모습은 같다** —
+//    헤더가 불투명했으므로 밑으로 들어간 것은 어차피 안 보였다. 오히려 스크롤 인디케이터가
+//    헤더 뒤에 가려지지 않아 [[ADR-099]] 결정 6 의 취지("스크롤포트를 실제로 보이는 영역에
+//    맞춘다")에 더 맞는다.
+//
+// 대신 **하나가 새로 생긴다: 그리는 순서.** 헤더는 스크롤 뷰의 **앞** 형제라 기본 순서로는 뒤에
+// 오는 스크롤 뷰가 위에 그려진다. 그래서 `z-10` 을 준다 — 웹에도 있던 그 클래스가 여기서는
+// "목록 위에 그린다"가 아니라 **"헤더의 삐져나온 자식(페이드·당김 인디케이터)이 목록 위에
+// 그려진다"** 를 뜻한다.
+//
+// ── 안전영역 ─────────────────────────────────────────────────────────────────────
+//
+// `pt-[calc(1rem+var(--sa-top))]` → `paddingTop: insets.top + 16`. 값의 출처가 CSS 변수 주입에서
+// `SafeAreaProvider` 로 바뀔 뿐 뜻은 같다(그래서 `SystemBarsPort.refreshSafeAreaInsets()` 가 RN 에서
+// 할 일이 없다 — `native/adapters/rn-system-bars.ts`). **헤더가 상단 안전영역을 먹는 쪽이라는
+// 사실이 계약이다** — `ScreenScroll` 은 헤더가 있으면 그 위쪽을 건드리지 않는다.
+//
+// ── 보스 수익은 여전히 여기 포함하지 않는다 ────────────────────────────────────────
+//
+// 같은 형태지만 페이지 헤더에 경계 페이드를 두지 않고([[ADR-047]] 결정 6) 헤드라인 실측을 중첩
+// sticky 레일에 쓴다. 다만 RN 에서는 그 실측의 쓰임도 달라질 공산이 크다 — `ScrollView` 의 sticky
+// 헤더는 **스크롤포트 상단**에 붙는데 그 상단이 이미 페이지 헤더 아래라, [[ADR-047]] 결정 3 과
+// [[ADR-100]] 결정 3 이 계산하던 오프셋이 0 이 된다. 그 화면을 옮기는 단계에서 확인할 일이다.
+
+export interface PageHeaderProps {
+  /** 헤더 내용. 안에서 `gap-4` 로 세로 간격이 잡힌다(웹 `space-y-4` 의 짝). */
+  children: React.ReactNode
+  /**
+   * 헤더 **바로 아래 띠**(`top-full`)에 겹쳐 그릴 것 — 현재는 당겨서 새로고침 인디케이터
+   * 하나다(스케줄러 2화면).
+   *
+   * 프롭으로 받는 이유는 웹과 같다 — 그 인디케이터는 `absolute inset-x-0 top-full` 이라 **이 셸이
+   * 기준 상자여야** 한다. `children` 에 섞으면 `gap-4` 안으로 들어가 흐름 자식이 되어 위치가
+   * 완전히 달라진다.
+   */
+  below?: React.ReactNode
+}
+
+/** `pt-[calc(1rem+var(--sa-top))]` 의 상수 몫. */
+const HEADER_TOP_PADDING_PX = 16
+
+/**
+ * 경계 페이드의 알파 램프 — 웹의 **그라데이션 × 마스크**를 한 그라데이션으로 접은 것이다.
+ *
+ * 웹은 색 그라데이션(`from-bg to-transparent`) 위에 같은 방향 마스크
+ * (`linear-gradient(to bottom, black, transparent)`)를 한 겹 더 얹었다. 두 알파가 곱해지므로 실제
+ * 프로파일은 선형이 아니라 **(1−t)²** 이고, RN 에는 마스크가 없으니 그 결과를 정지점으로 직접 적는다.
+ *
+ * 끝 색이 `transparent`(= 투명 **검정**)가 아니라 **알파 0 인 `bg`** 인 것도 중요하다. 브라우저는
+ * 그라데이션을 미리 곱해진 알파로 보간해 검게 물들지 않지만, 네이티브 그라데이션은 그렇지 않아
+ * 중간이 어두워진다. 같은 색의 알파만 움직이면 그 차이가 생길 자리가 없다.
+ */
+const FADE_LOCATIONS = [0, 0.25, 0.5, 0.75, 1] as const
+const FADE_ALPHAS = [1, 0.5625, 0.25, 0.0625, 0] as const
+
+/**
+ * 라이브러리 타입이 **정지점 둘 이상**을 요구하는데(`readonly [T, T, ...T[]]`) `map` 은 길이를
+ * 잃는다. 앞의 둘을 따로 꺼내면 캐스트 없이 그 모양이 그대로 나온다.
+ */
+function fadeColors(bg: string): readonly [string, string, ...string[]] {
+  const [first, second, ...rest] = FADE_ALPHAS
+  return [withAlpha(bg, first), withAlpha(bg, second), ...rest.map((alpha) => withAlpha(bg, alpha))]
+}
+
+export function PageHeader(props: PageHeaderProps): React.JSX.Element {
+  const insets = useSafeAreaInsets()
+  const { definition } = useThemeAppearance()
+
+  return (
+    <View
+      testID="page-header"
+      className="z-10 bg-bg px-4 pb-2"
+      style={{ paddingTop: insets.top + HEADER_TOP_PADDING_PX }}
+    >
+      {/* [[ADR-088]] 결정 5-1: 헤더 자리의 테마 배경 조각(배경 없는 테마에선 렌더 안 됨).
+          **첫 자식이어야 한다** — RN 은 형제 순서가 곧 그리는 순서라, 이 자리가 웹의
+          `z-index: -1`(헤더 배경 위·콘텐츠 아래)을 대신한다. */}
+      <ThemeHeaderBackdrop />
+
+      <View className="gap-4">{props.children}</View>
+
+      {/* 헤더 아래 32px 에 겹쳐 그려, 목록이 헤더 경계에서 딱 끊기지 않고 사라지게 한다.
+          **블러를 되붙이지 말 것**([[ADR-123]]) — 웹에서 그 처방이 나온 이유(`backdrop-filter` 가
+          만든 합성 레이어의 배경 스냅샷이 iOS WKWebView 에서 갱신되지 않아 잔상이 남았다)는
+          RN 에 없지만, `backdrop-filter` 자체가 없어 되붙일 방법도 없다. 결과가 같으므로
+          그 결정은 여기서 **구조로** 지켜진다. */}
+      <LinearGradient
+        testID="page-header-fade"
+        aria-hidden
+        pointerEvents="none"
+        className="absolute inset-x-0 top-full h-8"
+        colors={fadeColors(definition.bg)}
+        locations={FADE_LOCATIONS}
+      />
+
+      {props.below}
+    </View>
+  )
+}

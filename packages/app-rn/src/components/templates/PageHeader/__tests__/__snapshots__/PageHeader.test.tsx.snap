@@ -1,0 +1,87 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`렌더 트리 스냅샷 — 이후 변경을 잡는 기준선(예전 화면과의 대조가 아니다) 기본 테마 · 헤더 + 당김 인디케이터 자리 1`] = `
+<RNCSafeAreaProvider
+  onInsetsChange={[Function]}
+  style={
+    [
+      {
+        "flex": 1,
+      },
+      undefined,
+    ]
+  }
+>
+  <View
+    style={
+      {
+        "flexBasis": "0%",
+        "flexGrow": 1,
+        "flexShrink": 1,
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "backgroundColor": "#F2F0E2",
+          "paddingBottom": 8,
+          "paddingLeft": 16,
+          "paddingRight": 16,
+          "paddingTop": 75,
+          "zIndex": 10,
+        }
+      }
+      testID="page-header"
+    >
+      <View
+        style={
+          {
+            "columnGap": 16,
+            "rowGap": 16,
+          }
+        }
+      >
+        <Text>
+          컨텐츠 스케줄러
+        </Text>
+      </View>
+      <ViewManagerAdapter_ExpoLinearGradient
+        aria-hidden={true}
+        colors={
+          [
+            4294111458,
+            2415063266,
+            1089663202,
+            284356834,
+            15921378,
+          ]
+        }
+        locations={
+          [
+            0,
+            0.25,
+            0.5,
+            0.75,
+            1,
+          ]
+        }
+        pointerEvents="none"
+        style={
+          {
+            "height": 32,
+            "left": 0,
+            "position": "absolute",
+            "right": 0,
+            "top": "100%",
+          }
+        }
+        testID="page-header-fade"
+      />
+      <View
+        testID="ptr"
+      />
+    </View>
+  </View>
+</RNCSafeAreaProvider>
+`;

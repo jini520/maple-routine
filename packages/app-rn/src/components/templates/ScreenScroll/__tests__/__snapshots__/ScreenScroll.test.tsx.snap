@@ -1,0 +1,126 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`렌더 트리 스냅샷 — 이후 변경을 잡는 기준선(예전 화면과의 대조가 아니다) 탭 화면 · 헤더 있음 1`] = `
+<RNCSafeAreaProvider
+  onInsetsChange={[Function]}
+  style={
+    [
+      {
+        "flex": 1,
+      },
+      undefined,
+    ]
+  }
+>
+  <View
+    style={
+      {
+        "flexBasis": "0%",
+        "flexGrow": 1,
+        "flexShrink": 1,
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "flexBasis": "0%",
+          "flexGrow": 1,
+          "flexShrink": 1,
+        }
+      }
+    >
+      <View
+        testID="header"
+      />
+      <RCTScrollView
+        contentContainerStyle={
+          {
+            "columnGap": 16,
+            "paddingBottom": 0,
+            "rowGap": 16,
+          }
+        }
+        indicatorStyle="black"
+        style={
+          {
+            "flexBasis": "0%",
+            "flexGrow": 1,
+            "flexShrink": 1,
+            "marginBottom": 0,
+            "marginTop": 0,
+          }
+        }
+        testID="screen-scroll"
+      >
+        <View>
+          <Text>
+            목록
+          </Text>
+        </View>
+      </RCTScrollView>
+    </View>
+  </View>
+</RNCSafeAreaProvider>
+`;
+
+exports[`렌더 트리 스냅샷 — 이후 변경을 잡는 기준선(예전 화면과의 대조가 아니다) 하위 페이지 · 헤더 없음 1`] = `
+<RNCSafeAreaProvider
+  onInsetsChange={[Function]}
+  style={
+    [
+      {
+        "flex": 1,
+      },
+      undefined,
+    ]
+  }
+>
+  <View
+    style={
+      {
+        "flexBasis": "0%",
+        "flexGrow": 1,
+        "flexShrink": 1,
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "flexBasis": "0%",
+          "flexGrow": 1,
+          "flexShrink": 1,
+        }
+      }
+    >
+      <RCTScrollView
+        contentContainerStyle={
+          {
+            "columnGap": 16,
+            "paddingBottom": 34,
+            "rowGap": 16,
+          }
+        }
+        indicatorStyle="black"
+        style={
+          {
+            "flexBasis": "0%",
+            "flexGrow": 1,
+            "flexShrink": 1,
+            "marginBottom": 0,
+            "marginTop": 59,
+          }
+        }
+        testID="screen-scroll"
+      >
+        <View>
+          <Text>
+            목록
+          </Text>
+        </View>
+      </RCTScrollView>
+    </View>
+  </View>
+</RNCSafeAreaProvider>
+`;

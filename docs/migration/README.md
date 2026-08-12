@@ -98,10 +98,17 @@ CLAUDE.md의 TDD 원칙을 전환에도 적용한다. 화면 하나를 재작성
 | `lib/use-swipe-back.ts` | — | iOS 엣지 스와이프 기본 동작 |
 | `lib/use-system-back.ts` | — | Android 뒤로가기 기본 동작 |
 | `lib/use-body-scroll-lock.ts` | — | 불필요 |
-| `lib/use-measured-height.ts` | — | `onLayout` |
-| `lib/use-pull-to-refresh.ts` | — | `RefreshControl` |
-| `android/…/BackGesturePlugin.java` | 154 | predictive back 내장 |
-| `android/…/SystemBarsPlugin.java` | 174 | edge-to-edge 내장 |
+| `lib/use-measured-height.ts` | — | ~~`onLayout`~~ → **불필요**(step 6 정정) |
+| `lib/use-pull-to-refresh.ts` | — | `RefreshControl` **또는** 커스텀 유지 — step 6 이 미결로 남김 |
+| `android/…/BackGesturePlugin.java` | 154 | predictive back 내장 — 단 `moveToBackground` 는 `modules/app-background`(step 2 정정) |
+| `android/…/SystemBarsPlugin.java` | 174 | edge-to-edge·인셋 주입은 내장 — 단 내비 바 글리프 명암은 `modules/app-system-bars`(step 6 정정) |
+
+**정정 넷 중 셋이 같은 모양이다** — 계획서가 *"프레임워크가 대신한다"* 로 적은 자리 대부분은 맞았지만
+**끝의 한 조각씩이 남았다**(뒤로가기의 `moveToBackground` · 시스템 바의 글리프 명암). 남은 조각은
+공교롭게도 둘 다 *"프레임워크가 정해 주지 않는 제품 결정"* 이라 로컬 Expo 모듈로 갔다.
+`use-measured-height` 는 반대 방향의 정정이다 — `onLayout` 으로 **대체하는** 것이 아니라 그 훅이
+풀던 문제(`fixed` 가 만든 spacer)가 통째로 없어졌고, 실제로 `onLayout` 은 그 계약([[ADR-112]] 의
+*"페인트 전 동기 반영"*)을 원리적으로 만족시키지 못한다.
 
 **주의**: 버리는 것은 *구현*이지 *결정*이 아니다. [[ADR-120]] 이 정한 **동작**(스택 깊이에 따른 탭바
 동반 이동, 제스처 진행률에 따른 아래 화면 시차, 3버튼과 제스처가 같은 결과로 수렴)은 새 구현에서도
@@ -219,9 +226,11 @@ ADR 몫이다. 조용한 no-op 으로 두지 않는 이유와 각 자리의 근�
 ### 3단계 — 내비게이션 + `components/` 34개
 
 - react-navigation 골격 + 4계층 컴포넌트(atoms 9 · molecules 11 · organisms 10 · templates 4)
-- **여기서 «던지는 구현» 셋이 채워진다** — `ThemeAppearancePort`(테마를 React 상태로, **완료** ✅
-  아래 «3-1단계 결과») · `SystemBarsPort`(safe-area-context) · `BackGesturePort`(네이티브 스택).
-  남은 둘은 부르면 던지므로 그 자리가 있다는 사실이 첫 호출에서 드러난다
+- **여기서 «던지는 구현» 셋이 전부 채워졌다** ✅ — `ThemeAppearancePort`(테마를 React 상태로, step 1) ·
+  `BackGesturePort`(네이티브 스택 + `moveToBackground` 한 메서드는 로컬 모듈, step 2) ·
+  `SystemBarsPort`(`setNavigationBarStyle` 은 로컬 모듈, `refreshSafeAreaInsets` 는 의도적 no-op,
+  step 6). **남은 «던지는 구현»은 `LiveUpdatePort` 하나**이고 그것은 3단계가 아니라
+  [[ADR-127]] 결정 7 의 별도 ADR 몫이다
 - **게이트**: [[ADR-120]] 동작(탭바 동반 이동·시차·3버튼 수렴)이 실기기에서 재현될 것
 
 **스타일링은 NativeWind 다**(사용자 결정, 2026-08-11). `components/` 33파일에 `className` 이 163곳
@@ -513,6 +522,78 @@ Toast 는 구조가 다 서 있어 step 7 이 값만 굴리면 되지만, **드�
 
 **RN 트리 스냅샷 11장을 새로 떴다**(파일 8개 — `CharacterTrackingPicker` 만 상태 둘). 여전히
 *"앞으로 안 바뀌는가"* 에만 답한다.
+
+#### 3-6단계 결과 — templates 4개 (2026-08-12, **`position: fixed` 가 없다**)
+
+셋을 옮기고 하나를 버렸다. ADR 확인 결과는 [parity-inventory §3](./parity-inventory.md) 의 «확인»
+열에 있다.
+
+**이 계층의 벽은 하나다: 웹 셸 셋이 전부 `position: fixed` 위에 서 있었다.** `PageHeader` 는 고정
+헤더 + 실측 spacer, `ScreenScroll` 은 뷰포트 크기 상자, `StackScreen` 은 `fixed inset-0` 오버레이 +
+포털이었다. RN 에는 문서도 뷰포트 기준 위치도 없어 셋 다 그대로 옮길 수 없는데, **그 셋이 원래
+표현하려던 것은 `fixed` 가 아니라 각각 다른 사실**이었다 — *"헤더는 스크롤과 무관하다"* ·
+*"이 화면이 자기 스크롤을 소유한다"* · *"이 화면은 다른 화면 위에 얹혀 있다"*. RN 에는 셋 다 원래
+수단이 있다: **형제 뷰 · `ScrollView` 자신 · 네이티브 스택.**
+
+**그래서 이 단계에서 사라진 코드가 옮겨온 코드보다 많다.** 없어진 것은 전부 `fixed`/포털이 만든
+문제를 푸는 machinery 였다.
+
+| 사라진 것 | 그것이 풀던 문제 | RN 에서 |
+|---|---|---|
+| spacer + `useMeasuredHeight`([[ADR-112]]) | `fixed` 헤더가 흐름에서 빠진 자리를 채우고, 그 값이 헤더와 **같은 커밋에** 갱신되게 한다 | 헤더가 흐름 안이라 **맞출 대상이 없다** |
+| `StackScreen` 전부([[ADR-120]]) | 오버레이 레이어·전환·스와이프·층 스크림·깊이 스토어 | 네이티브 스택(2단계) |
+| `--tab-bar-h` 실측([[ADR-099]] 결정 7) | 스크롤포트를 탭바 위에서 끝낸다 | 탭 내비게이터가 **이미 뺀 상자**를 준다 |
+| 안쪽 래퍼의 `-mt-[var(--sa-top)]` | 상자를 내린 만큼 콘텐츠를 되돌린다(spacer 가 흡수) | spacer 가 없으니 되돌릴 것도 없다 |
+
+**[[ADR-112]] 를 흉내 냈다면 그 ADR 이 고친 결함을 되살렸을 것이다.** 그 결정의 핵심은 *"측정
+`setState` 가 페인트 **전에** 동기 반영된다"*(`useLayoutEffect`)인데, RN 의 `onLayout` 은 레이아웃
+**뒤**에 오는 비동기 통보라 그 계약을 원리적으로 만족시킬 수 없다 — 웹 형태를 그대로 옮겼다면
+[[ADR-085]] 결정 1 이 금지한 *"첫 프레임에 spacer 0"* 이 그대로 났다. 형태를 바꾼 것이 계약을
+지키는 길이었다.
+
+**대신 새로 생긴 것이 둘이다.** ① `PageHeader` 의 `z-10` 은 이제 *"목록 위에 그린다"* 가 아니라
+**"헤더의 삐져나온 자식(페이드·당김 인디케이터)이 뒤 형제인 스크롤 뷰 위에 그려진다"** 를 뜻한다 —
+RN 은 형제 순서가 곧 그리는 순서라, 없으면 페이드가 목록 **밑**에 깔려 조용히 사라진다. ②
+`ScreenScroll` 에 **`header` 프롭**이 생겼다. 헤더가 형제여야 하니 둘을 나란히 놓는 일을 누군가
+해야 하는데, 화면마다 하면 [[ADR-094]] 가 `PageHeader` 로 없앤 복붙이 한 겹 위에서 되살아난다.
+
+**같은 뿌리에서 [[ADR-088]]·[[ADR-123]] 은 오히려 구조로 지켜진다.** 배경 조각의 `z-index: -1` 은
+*"헤더 자신의 배경 위, 콘텐츠 아래"* 를 만들려던 것인데 RN 에서는 **첫 자식**이면 같은 결과라 값이
+필요 없고, 페이드의 블러 금지는 `backdrop-filter` 자체가 없어 되붙일 방법이 없다.
+
+**웹의 마스크는 값으로 접었다.** 경계 페이드는 색 그라데이션 위에 같은 방향 마스크를 겹쳐 알파가
+**(1−t)²** 였는데, RN 에는 마스크가 없어 그 결과를 정지점 다섯으로 직접 적는다. 끝 색을
+`transparent`(= 투명 **검정**)로 두지 않고 **알파 0 인 `bg`** 로 둔 것도 짝이 되는 결정이다 —
+브라우저는 그라데이션을 미리 곱해진 알파로 보간하지만 네이티브는 그렇지 않아 중간이 어두워진다.
+
+**하나는 RN 이 웹뷰만큼 못 한다** — [[ADR-120]] 결정 19 의 하단 인셋 두 조각. 웹뷰 플러그인은
+`tappableElement` 인셋으로 3버튼과 제스처를 갈랐는데(*"높이로 어림잡지 않는다"*)
+`react-native-safe-area-context` 는 그 구분을 주지 않는다. 그래서 **플랫폼으로 가르고**(iOS = 홈
+인디케이터라 전부 통과 · 안드로이드 = 모르므로 보수적으로 막음) 그 대가를 `bottom-inset.ts` 에
+이름과 함께 적어 뒀다 — 되살리려면 `modules/app-system-bars` 에 그 값을 얹으면 되지만 인셋은
+변하므로 값 하나가 아니라 **구독**이 필요하다.
+
+**`SystemBarsPort` 가 이 단계에서 해소됐고, 두 메서드의 답이 정반대였다.** `setNavigationBarStyle`
+은 뷰 레이어와 무관한 창(window) 설정이라 웹뷰 플러그인의 그 한 줄
+(`setAppearanceLightNavigationBars(!dark)`)을 로컬 Expo 모듈로 그대로 옮겼다 — RN·Expo 어디에도 이걸
+여는 API 가 없고(`expo-status-bar` 는 상단만), 의존성을 하나 더 들이는 대신 `app-background`
+(2단계)와 같은 방식을 썼다. **핵심은 이것이 `core` 가 매 테마 적용마다 부르는 경로라는 것이다** —
+던지게 두면 테마를 바꿀 때마다 처리되지 않은 거부가 남는다.
+
+반대로 `refreshSafeAreaInsets` 는 **의도적 no-op** 이다. 그 함수의 존재 이유는 *"못 하는 일"* 이
+아니라 **유실 복구**였고(네이티브의 최초 인셋 주입이 DOM 준비보다 빠르면 값이 사라진다), RN 에는
+주입도 유실도 없이 `SafeAreaProvider` 가 회전·접힘·키보드까지 스스로 다시 내려준다. 즉 *"이미 되고
+있다."* 던지면 **정상 동작을 고장으로 보고**하게 되므로, `not-implemented.ts` 의 기준으로 이쪽은
+*"이 플랫폼에 개념이 없다"* 칸이고 그 칸의 처리는 조용한 no-op 이 아니라 **이유가 적힌 no-op** 이다
+(그 이유를 테스트가 계약으로 들고 있다).
+
+**RN 트리 스냅샷 3장을 새로 떴고**(`PageHeader` 1 · `ScreenScroll` 2), `withAlpha` 는 두 번째
+호출부가 생겨 `lib/color-alpha.ts` 로 뺐다([[ADR-094]] 결정 1).
+
+**남긴 미결 하나** — 당겨서 새로고침을 `RefreshControl` 로 갈지 [[ADR-074]] 의 커스텀 마크로 갈지는
+**제품 결정**이라 이 셸이 어느 쪽도 배선하지 않았다(그 갈래표는 step 4 가
+`PullToRefreshIndicator` 주석에 적어 뒀고, `RefreshControl` 을 고르면 그 ADR 의 결정 넷을 폐기해야
+한다).
 
 ### 4단계 — `app/` 화면 재작성
 

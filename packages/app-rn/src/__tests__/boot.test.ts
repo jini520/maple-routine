@@ -5,8 +5,8 @@
 //    전부**와 대조한다 — core 에 포트가 하나 늘면 배선을 고칠 때까지 여기가 빨개진다.
 // 2. **주입된 것이 진짜 그 어댑터인가.** `toBe` 로 참조를 본다(어느 세터에 어느 어댑터를 넣었는지가
 //    뒤바뀌어도 "던지지 않는다"는 통과한다).
-// 3. **아직 매핑되지 않은 셋이 조용한 no-op 이 아니라 던지는가**, 그리고 그 메시지가 *왜* 없는지를
-//    말하는가. 나중에 안전영역이 0 일 때 원인이 첫 호출에서 드러나야 한다.
+// 3. **아직 매핑되지 않은 것이 조용한 no-op 이 아니라 던지는가**, 그리고 그 메시지가 *왜* 없는지를
+//    말하는가. 나중에 업데이트가 안 올 때 원인이 첫 호출에서 드러나야 한다.
 //
 // 목으로 바꾸는 것은 **네이티브 SDK 진입점뿐**이다. 넷 다 import 시점에 네이티브 모듈을 잡아
 // jest 에서는 그냥 던지므로(로컬 Expo 모듈의 `requireNativeModule`, notifee 의 `NotifeeNativeModule`
@@ -16,6 +16,8 @@
 jest.mock('../../modules/capacitor-storage', () => ({ __esModule: true, default: {} }))
 
 jest.mock('../../modules/app-background', () => ({ __esModule: true, default: {} }))
+
+jest.mock('../../modules/app-system-bars', () => ({ __esModule: true, default: {} }))
 
 jest.mock('@op-engineering/op-sqlite', () => ({
   __esModule: true,
@@ -44,10 +46,7 @@ import * as nativePorts from '@core/native/ports'
 import * as storagePorts from '@core/storage/ports'
 
 import { installPorts } from '../boot'
-import {
-  notImplementedLiveUpdatePort,
-  notImplementedSystemBarsPort,
-} from '../native/adapters/not-implemented'
+import { notImplementedLiveUpdatePort } from '../native/adapters/not-implemented'
 import { rnAdsPort } from '../native/adapters/rn-ads'
 import { rnBackGesturePort } from '../native/adapters/rn-back-gesture'
 import { rnColorSchemePort } from '../native/adapters/rn-color-scheme'
@@ -56,6 +55,7 @@ import { rnKeyboardPort } from '../native/adapters/rn-keyboard'
 import { rnNotificationsPort } from '../native/adapters/rn-notifications'
 import { rnSplashScreenPort } from '../native/adapters/rn-splash-screen'
 import { rnStatusBarPort } from '../native/adapters/rn-status-bar'
+import { rnSystemBarsPort } from '../native/adapters/rn-system-bars'
 import { rnThemeAppearancePort } from '../native/adapters/rn-theme-appearance'
 import { rnPreferencesPort } from '../storage/adapters/rn-preferences'
 import { rnSqlitePort } from '../storage/adapters/rn-sqlite'
@@ -71,10 +71,10 @@ const WIRED: [string, () => unknown, unknown][] = [
   ['getNotificationsPort', nativePorts.getNotificationsPort, rnNotificationsPort],
   ['getSplashScreenPort', nativePorts.getSplashScreenPort, rnSplashScreenPort],
   ['getStatusBarPort', nativePorts.getStatusBarPort, rnStatusBarPort],
+  ['getSystemBarsPort', nativePorts.getSystemBarsPort, rnSystemBarsPort],
   ['getThemeAppearancePort', nativePorts.getThemeAppearancePort, rnThemeAppearancePort],
   ['getBackGesturePort', nativePorts.getBackGesturePort, rnBackGesturePort],
   ['getLiveUpdatePort', nativePorts.getLiveUpdatePort, notImplementedLiveUpdatePort],
-  ['getSystemBarsPort', nativePorts.getSystemBarsPort, notImplementedSystemBarsPort],
 ]
 
 function resetPorts(): void {
@@ -150,39 +150,14 @@ async function captureFailure(fn: unknown): Promise<Error> {
   throw new Error('던지지도 거부하지도 않았다 — 조용한 no-op 이다')
 }
 
-// 이 목록을 떠난 것이 둘이다. `ThemeAppearancePort` 는 step 1(theme-system)에서, `BackGesturePort`
-// 는 step 2(navigation)에서 — 둘 다 이제 실구현이 배선되므로 위 `WIRED` 가 그 자리를 본다.
-// (`BackGesturePort` 는 셋 중 둘이 여전히 던지지만 사유가 *"아직 안 했다"* 가 아니라 *"네이티브
-// 스택이 소유한다"* 라, 검사도 이 파일이 아니라 `rn-back-gesture.test.ts` 가 한다.)
-const STAGE_THREE_PORTS: [string, Record<string, unknown>][] = [
-  ['SystemBarsPort', notImplementedSystemBarsPort as unknown as Record<string, unknown>],
-]
-
-describe('아직 매핑되지 않은 포트 — 3단계(뷰 레이어) 몫', () => {
-  const cases = STAGE_THREE_PORTS.flatMap(([portName, port]) =>
-    Object.keys(port).map((method) => [portName, method, port[method]] as const),
-  )
-
-  it('메서드를 빠짐없이 검사한다', () => {
-    expect(cases.map(([portName, method]) => `${portName}.${method}`)).toEqual([
-      'SystemBarsPort.setNavigationBarStyle',
-      'SystemBarsPort.refreshSafeAreaInsets',
-    ])
-  })
-
-  it.each(cases)('%s.%s() 는 조용히 넘어가지 않고 던진다', async (_portName, _method, fn) => {
-    await expect(captureFailure(fn)).resolves.toBeInstanceOf(Error)
-  })
-
-  // 메시지가 없으면 "왜 안 되는지"를 코드에서 찾아야 한다. 이쪽은 3단계에서 채워진다.
-  it.each(cases)('%s.%s() 의 메시지가 단계 3 을 가리킨다', async (portName, method, fn) => {
-    const error = await captureFailure(fn)
-
-    expect(error.message).toContain('단계 3')
-    expect(error.message).toContain(`${portName}.${method}()`)
-    expect(error.message).toContain('docs/migration/README.md')
-  })
-})
+// 이 목록을 떠난 것이 셋이다. `ThemeAppearancePort` 는 step 1(theme-system)에서, `BackGesturePort`
+// 는 step 2(navigation)에서, `SystemBarsPort` 는 step 6(templates)에서 — 셋 다 이제 실구현이
+// 배선되므로 위 `WIRED` 가 그 자리를 본다. 셋 다 **절반씩 갈렸고**(한쪽은 실구현, 다른 쪽은 던지거나
+// 의도적 no-op) 그 갈림은 이 파일이 아니라 각 어댑터의 테스트가 본다 — 사유가 *"아직 안 했다"* 가
+// 아니라서(`rn-back-gesture.test.ts` · `rn-system-bars.test.ts`) 메시지 규약도 다르다.
+//
+// 그래서 *"3단계 몫"* 으로 남은 포트는 **하나도 없다.** 이 자리에 있던 describe 블록은 지웠다 —
+// 빈 목록을 돌리는 테스트는 언제나 초록이라 아무것도 지키지 않는다.
 
 describe('아직 매핑되지 않은 포트 — LiveUpdatePort', () => {
   const cases = Object.keys(notImplementedLiveUpdatePort).map(
@@ -234,14 +209,6 @@ describe('시그니처에 맞는 실패 모양', () => {
   // 중간에서 동기로 던졌을 때 앞엣것들이 처리되지 않은 거부로 남아 러너 자체가 죽는다(깨끗한
   // 실패로 안 보인다).
   const ASYNC_CALLS: [string, () => unknown][] = [
-    [
-      'SystemBarsPort.setNavigationBarStyle',
-      () => notImplementedSystemBarsPort.setNavigationBarStyle(true),
-    ],
-    [
-      'SystemBarsPort.refreshSafeAreaInsets',
-      () => notImplementedSystemBarsPort.refreshSafeAreaInsets(),
-    ],
     ['LiveUpdatePort.notifyAppReady', () => notImplementedLiveUpdatePort.notifyAppReady()],
     ['LiveUpdatePort.getCurrent', () => notImplementedLiveUpdatePort.getCurrent()],
     [

@@ -17,8 +17,9 @@
 //    풀어야 할 자리다([[ADR-018]] bleed 레시피).
 // ② **`bg-surface/60` 이 안 나온다.** NativeWind(v3 엔진)는 `var()` 색에 투명도 접미사를 만들지
 //    못한다(step 3 이 남긴 함정 둘 중 하나) — 클래스는 조용히 사라지고 닫기 버튼 배경이 없어진다.
-//    그래서 값에서 직접 rgba 를 만든다. 그 값이 `surface` 가 아니라 **`mediaSurface`** 인 것도
-//    같은 이유다 — 버튼이 `media-scope` 안이라 웹에서는 `var(--color-surface)` 가 이미 그것으로
+//    그래서 값에서 직접 rgba 를 만든다(`lib/color-alpha.ts` — step 6 의 경계 페이드가 같은 함정을
+//    밟아 두 번째 호출부가 됐다). 그 값이 `surface` 가 아니라 **`mediaSurface`** 인 것도 같은
+//    이유다 — 버튼이 `media-scope` 안이라 웹에서는 `var(--color-surface)` 가 이미 그것으로
 //    재선언돼 있었다([[ADR-064]] 결정 5).
 // ③ **글자 그림자·베일이 스타일이 아니라 컴포넌트가 된다.** `textShadow` 는 RN 에서
 //    `textShadowColor/Offset/Radius` 세 프롭이라 두 겹(웹은 그림자 둘)을 못 겹친다 — 강한 쪽
@@ -28,10 +29,10 @@
 // ⑤ `space-y`/`gap-[18px]` 은 `gap-*` 로, `tabular-nums` 는 스타일로(`lib/text-styles.ts`).
 import { Pressable, Text, View } from 'react-native'
 
-import { parseHex } from '@core/lib/color'
 import { getBossPortraitCrop, getBossPortraitUrl } from '@core/lib/boss-icons'
 import type { BossDifficulty } from '@core/types'
 
+import { withAlpha } from '../../../lib/color-alpha'
 import { LinearGradient } from '../../../lib/nativewind-interop'
 import { UsersIcon, XIcon } from '../../../lib/icons'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
@@ -52,12 +53,6 @@ const MEDIA_TEXT_SHADOW_STYLE = {
   textShadowOffset: { width: 0, height: 1 },
   textShadowRadius: 3,
 } as const
-
-/** 웹 `bg-surface/60` 의 짝(파일 머리 ②). */
-function withAlpha(hex: string, alpha: number): string {
-  const { r, g, b } = parseHex(hex)
-  return `rgba(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}, ${alpha})`
-}
 
 export function PartySizeModal(props: {
   bossName: string
