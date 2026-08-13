@@ -1,7 +1,10 @@
-// 웹판 열둘 중 **재생을 보는 아홉은 여기 없다.** 그 케이스들(프레임별 origin 정합·8프레임 등장·
-// pre→loop 전환·1.5배속 팝인·픽셀 준비 전 좌표 고정)은 전부 프레임 에셋과 재생 엔진을 전제하는데,
-// RN 에는 둘 다 아직 없다(`DropEffectOverlay.tsx` 파일 머리 ⓐ·ⓑ) — **step 7 이 그 엔진을 되살릴
-// 때 함께 온다.** 지금 흉내 낸 단언을 적어 두면 "검사했다"고 읽히므로 적지 않는다.
+// **재생을 보는 케이스는 이 파일이 아니라 `drop-effect-player.test.ts` 에 있다.** 웹판은 그 로직이
+// `useEffect` 클로저 + DOM 변이와 한 덩어리라 단위로 검사할 수 없었는데, RN 으로 옮기며 상태 전이를
+// 순수 함수로 떼어내면서 **시간을 인자로 받는 검사**가 가능해졌다(8프레임 등장·pre→loop·end 종료…).
+//
+// 여기 남는 것은 **렌더가 아니면 못 보는 것들**이다 — 레이어 순서, 가산 합성이 걸린 자리, 닫기 배선.
+// 프레임 «그림» 은 여기서 못 본다: jest 의 에셋 대역이 크기를 안 줘서 좌표가 안 잡히고, 그러면
+// `frame-layout.ts` 계약대로 아예 안 그린다.
 //
 // 남는 것은 웹의 정정 둘이 다루던 자리와 구조·레이어·닫기 계약이다. 그 정정 둘은 **RN 에 없는
 // 문제**라(Radix `dismissable-layer` 가 만든 웹 전용 결함) 케이스도 뒤집힌다 — `pointer-events-auto`
@@ -45,8 +48,23 @@ describe('DropEffectOverlay — 구조', () => {
     expect(getByTestId('drop-effect-screen').props.style).toMatchObject({ zIndex: 4 })
   })
 
-  // 아이템 아이콘도 프레임과 같은 이유로 아직 없다 — 웹에서 매핑 없는 아이템이 타던 분기 그대로다.
-  it('중앙 아이템은 아직 그리지 않는다 — 아이콘 에셋 몫', async () => {
+  // ★ 회귀 가드 — **블렌드는 `zIndex` 를 가진 앵커가 져야 한다.**
+  //
+  // 안쪽(프레임 상자) View 에 걸면 그 `zIndex` 가 만든 스태킹 컨텍스트에 블렌드가 갇혀, 스프라이트의
+  // 검은 배경이 **순검정 사각형으로 그대로 보인다**(2026-08-13 실측). 눈으로만 잡히는 종류라 값이
+  // 아니라 **어디에 걸렸는지**를 고정한다.
+  it('가산 합성은 zIndex 를 가진 앵커에 걸린다 — 안쪽에 걸면 스태킹 컨텍스트에 갇힌다', async () => {
+    const { getByTestId } = await renderOverlay(
+      <DropEffectOverlay itemName="칠흑의 보스 반지 상자" onClose={noop} />,
+    )
+
+    expect(getByTestId('drop-effect-pillar').props.style).toMatchObject({ mixBlendMode: 'screen' })
+    expect(getByTestId('drop-effect-screen').props.style).toMatchObject({ mixBlendMode: 'screen' })
+  })
+
+  // 중앙 아이템은 **엔진이 8프레임 시점에 켠다**([[ADR-103]] 결정 3). 마운트 직후에는 아직 꺼져
+  // 있고, 매핑 없는 아이템은 웹과 같은 분기로 영영 안 그려진다.
+  it('중앙 아이템은 마운트 직후엔 그리지 않는다 — 엔진이 8프레임에 켠다', async () => {
     const { queryByTestId } = await renderOverlay(
       <DropEffectOverlay itemName="칠흑의 보스 반지 상자" onClose={noop} />,
     )

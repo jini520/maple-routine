@@ -18,8 +18,8 @@
 // · **그랩 핸들·배경**: `h-1 w-9 bg-border-strong` / `rounded-t-[20px] border-t border-border bg-bg`.
 //   핸들은 라이브러리 것을 **쓰지 않고 시트 첫 자식으로 직접 그린다**(사유는 아래 핸들 주석).
 //   배경 라운딩은 `backgroundStyle` 이 준다.
-// · **스크림**: `bg-scrim` 토큰을 **직접 그린다.** 라이브러리 백드롭은 스냅 포인트가 하나인 이
-//   배치에서 불투명도가 0 으로 굳어 아예 안 보였다(실기기 확인) — 사유는 `renderBackdrop` 주석.
+// · **스크림**: `bg-scrim` 토큰을 **직접 그리고 페이드도 직접 보간한다.** 라이브러리 백드롭은
+//   스냅 포인트가 하나인 이 배치에서 불투명도가 0 으로 굳어 아예 안 보였다 — 사유는 `SheetScrim` 주석.
 //
 // ── 웹의 정정 둘은 RN 에 **없는 문제**다 ───────────────────────────────────────────
 //
@@ -38,6 +38,7 @@
 // 웹의 `fixed inset-x-0 bottom-0 z-[60]` 이 하던 일을 프로바이더의 호스트가 대신한다.
 import { useCallback, useEffect, useRef, type ReactNode } from 'react'
 import { Pressable, View } from 'react-native'
+import Animated, { useAnimatedStyle, type SharedValue } from 'react-native-reanimated'
 import { useSafeAreaFrame, useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
   BottomSheetModal,
@@ -51,6 +52,42 @@ import { useThemeAppearance } from '../../../theme/context'
 const MAX_HEIGHT_RATIO = 0.82
 /** 시트 최대 너비 — 웹 `max-w-md`. */
 const MAX_WIDTH = 448
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
+
+/**
+ * 스크림 — **`BottomSheetBackdrop` 을 쓰지 않되, 페이드는 되살린다.**
+ *
+ * 라이브러리 백드롭이 안 보였던 이유는 불투명도를 `interpolate(animatedIndex, [-1,
+ * disappearsOnIndex, appearsOnIndex], …)` 로 만드는데 스냅 포인트가 하나뿐인 우리 시트에서는 그
+ * 입력 구간이 `[-1, -1, 0]` — **첫 구간의 폭이 0** 인 퇴화 구간이 되기 때문이다(`BottomSheet` 주석).
+ *
+ * 그래서 한동안 애니메이션 없이 그냥 덮었는데, 그러면 **시트가 닫히는 동안 스크림이 불투명하게
+ * 남아 늦게 사라진다**(2026-08-13 실기기 보고). 페이드가 장식이 아니라 «닫히는 중»을 말해 주는
+ * 신호였던 것이다.
+ *
+ * 보간을 직접 한다 — 스냅 포인트가 하나이므로 인덱스는 **-1(닫힘) ↔ 0(열림)** 뿐이고, 그 사이를
+ * 잇는 식은 `index + 1` 을 0~1 로 자르는 것이 전부다. `interpolate` 를 안 쓰니 퇴화 구간도 없다.
+ */
+function SheetScrim(props: {
+  animatedIndex: SharedValue<number>
+  style: BottomSheetBackdropProps['style']
+  color: string
+  onPress: () => void
+}): React.JSX.Element {
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: Math.min(Math.max(props.animatedIndex.value + 1, 0), 1),
+  }))
+
+  return (
+    <AnimatedPressable
+      accessibilityRole="button"
+      accessibilityLabel="닫기"
+      onPress={props.onPress}
+      style={[props.style, { backgroundColor: props.color }, animatedStyle]}
+    />
+  )
+}
 
 interface BottomSheetProps {
   onClose: () => void
@@ -71,30 +108,13 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
     ref.current?.present()
   }, [])
 
-  /**
-   * 스크림 — **`BottomSheetBackdrop` 을 쓰지 않는다.**
-   *
-   * 그쪽은 불투명도를 `useAnimatedStyle` 안에서 `interpolate(animatedIndex, [-1, disappearsOnIndex,
-   * appearsOnIndex], …)` 로 만드는데, 스냅 포인트가 **하나뿐인 시트**(`enableDynamicSizing`)에서는
-   * 그 입력 구간이 `[-1, -1, 0]` 이 되어 **첫 구간의 폭이 0** 이다. 실기기에서 스크림이 아예 안
-   * 그려졌고(2026-08-13 — 색을 불투명 빨강으로 바꿔도 안 나왔다. 즉 색이 아니라 불투명도 문제다),
-   * 라이브러리 기본값(`appearsOnIndex: 1` · `disappearsOnIndex: 0`)은 스냅 포인트가 **둘 이상**인
-   * 시트를 전제한 값이라 우리 배치에는 맞는 조합이 없다.
-   *
-   * 그래서 애니메이션 없이 **그냥 덮는다.** 웹도 `vaul` 의 오버레이가 사실상 그랬고([[ADR-039]]
-   * 결정 2 의 스킨에 페이드가 없다), 시트 자체의 진입·이탈은 라이브러리가 그대로 한다 — 잃는 것은
-   * 스크림이 함께 밝아졌다 어두워지는 것 하나다. 그 대가로 **스크림이 실제로 보인다.**
-   *
-   * `pressBehavior="close"` 의 짝은 `onPress` 다 — 바깥을 눌러 닫는 것은 [[ADR-039]] 결정 3 이다.
-   */
   const renderBackdrop = useCallback(
     (backdropProps: BottomSheetBackdropProps) => (
-      <Pressable
-        {...backdropProps}
-        accessibilityRole="button"
-        accessibilityLabel="닫기"
+      <SheetScrim
+        animatedIndex={backdropProps.animatedIndex}
+        style={backdropProps.style}
+        color={definition.scrim}
         onPress={() => ref.current?.dismiss()}
-        style={[backdropProps.style, { backgroundColor: definition.scrim }]}
       />
     ),
     [definition.scrim],

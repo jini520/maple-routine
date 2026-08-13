@@ -43,9 +43,12 @@
 // ② **`radial-gradient` 는 `react-native-svg` 로 그린다.** RN 의 스타일에는 그라디언트가 없고
 //    `expo-linear-gradient` 는 이름 그대로 선형뿐이다. CSS 의 `farthest-corner` 기본값을 SVG 의
 //    비율 반지름으로 옮기는 것이라 반지름은 **근사**다(정사각형 기준 √2/2 ≈ 0.707).
-// ③ **`mix-blend-screen` 짝이 없다.** 빛 효과 스프라이트가 검은 배경 위 가산 합성이라 그 블렌드가
-//    빠지면 검은 사각형이 그대로 보인다 — 프레임이 도착할 때 함께 풀어야 하는 자리라 지금은
-//    레이어 자리만 잡아 둔다(`react-native-svg` 의 마스크나 `experimental_mixBlendMode` 가 후보).
+// ③ ~~**`mix-blend-screen` 짝이 없다.**~~ → **RN 0.86 의 `mixBlendMode: 'screen'` 이 그 짝이다.**
+//    다만 **어느 요소에 거는지가 값보다 중요하다** — 처음엔 프레임을 감싸는 안쪽 View 에 걸었는데
+//    검은 사각형이 그대로 보였다(2026-08-13 실측: 프레임 상자 안이 순검정 `rgb(0,0,0)`, 바깥은
+//    그라디언트). 앵커 View 의 `zIndex` 가 **스태킹 컨텍스트**를 만들어 블렌드가 그 안에 갇히고,
+//    빈 배경과 합성되니 검정이 검정으로 남은 것이다. 그래서 블렌드를 **앵커 자신**에 건다 —
+//    그러면 합성 상대가 오버레이의 방사 그라디언트가 된다.
 // ④ 오버레이의 색은 **테마를 따르지 않는다**([[ADR-064]] 적용 범위 밖) — 스프라이트가 어두운
 //    바탕을 전제로 그려져서, 밝은 테마에서 표면색으로 바꾸면 연출 자체가 사라진다. 웹과 같은
 //    고정 hex 를 그대로 쓴다.
@@ -207,15 +210,21 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
         {/* DropEff 기둥 — 이 View 의 좌상단이 **기둥의 지면 앵커**이고, 프레임은 자기 origin 이 그
             점에 오도록 음수 좌표로 놓인다([[ADR-048]] · `frame-layout.ts`). 검은 배경 위 가산 합성
             스프라이트라 `mixBlendMode: 'screen'` 이 필수다 — 없으면 검은 사각형이 그대로 보인다.
-            블렌드는 `ViewStyle` 에만 있어 **감싸는 View 가 진다**(웹은 `<img>` 하나가 졌다). */}
+            **블렌드는 이 앵커가 진다**(안쪽 View 에 걸면 `zIndex` 가 만든 스태킹 컨텍스트에 갇힌다,
+            파일 머리 ③). 웹에서는 `<img>` 하나가 지던 자리다. */}
         <View
           testID="drop-effect-pillar"
           pointerEvents="none"
           className="absolute left-1/2"
-          style={{ top: ITEM_CENTER_TOP, marginTop: ITEM_SIZE_PX / 2 + DROP_OFFSET_Y_PX, zIndex: 2 }}
+          style={{
+            top: ITEM_CENTER_TOP,
+            marginTop: ITEM_SIZE_PX / 2 + DROP_OFFSET_Y_PX,
+            zIndex: 2,
+            mixBlendMode: 'screen',
+          }}
         >
           {pillarSource !== null && pillarPlacement !== null && (
-            <View style={{ position: 'absolute', ...pillarPlacement, mixBlendMode: 'screen' }}>
+            <View style={{ position: 'absolute', ...pillarPlacement }}>
               <Image
                 testID="drop-effect-pillar-frame"
                 source={pillarSource}
@@ -271,10 +280,10 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
           testID="drop-effect-screen"
           pointerEvents="none"
           className="absolute left-1/2 top-1/2"
-          style={{ zIndex: 4 }}
+          style={{ zIndex: 4, mixBlendMode: 'screen' }}
         >
           {screenSource !== null && screenPlacement !== null && (
-            <View style={{ position: 'absolute', ...screenPlacement, mixBlendMode: 'screen' }}>
+            <View style={{ position: 'absolute', ...screenPlacement }}>
               <Image
                 testID="drop-effect-screen-frame"
                 source={screenSource}

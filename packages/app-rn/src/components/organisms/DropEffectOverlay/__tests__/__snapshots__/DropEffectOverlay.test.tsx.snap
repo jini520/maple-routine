@@ -118,7 +118,7 @@ exports[`DropEffectOverlay — 구조 트리 스냅샷 1`] = `
                 }
                 gradientTransform={null}
                 gradientUnits={0}
-                name="drop-effect-backdrop-r6"
+                name="drop-effect-backdrop-r7"
                 rx="70.7%"
                 ry="70.7%"
               />
@@ -126,7 +126,7 @@ exports[`DropEffectOverlay — 구조 트리 스냅샷 1`] = `
             <RNSVGRect
               fill={
                 {
-                  "brushRef": "drop-effect-backdrop-r6",
+                  "brushRef": "drop-effect-backdrop-r7",
                   "type": 1,
                 }
               }
@@ -148,6 +148,7 @@ exports[`DropEffectOverlay — 구조 트리 스냅샷 1`] = `
             {
               "left": "50%",
               "marginTop": 44,
+              "mixBlendMode": "screen",
               "position": "absolute",
               "top": "66%",
               "zIndex": 2,
@@ -160,6 +161,7 @@ exports[`DropEffectOverlay — 구조 트리 스냅샷 1`] = `
           style={
             {
               "left": "50%",
+              "mixBlendMode": "screen",
               "position": "absolute",
               "top": "50%",
               "zIndex": 4,
