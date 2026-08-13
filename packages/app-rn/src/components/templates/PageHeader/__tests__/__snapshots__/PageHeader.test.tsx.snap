@@ -24,7 +24,6 @@ exports[`렌더 트리 스냅샷 — 이후 변경을 잡는 기준선(예전 �
     <View
       style={
         {
-          "backgroundColor": "#F2F0E2",
           "paddingBottom": 8,
           "paddingLeft": 16,
           "paddingRight": 16,

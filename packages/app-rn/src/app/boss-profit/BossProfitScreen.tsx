@@ -13,10 +13,9 @@
 //    공용 셸을 바꿔야 하는 데다 jest 가 한 줄도 검증하지 못한다.
 //    **육안 대조 1순위다** — [[ADR-047]] 후속 3 이 소계 footer 를 지운 근거가 sticky 였으므로,
 //    없으면 보스 행을 스크롤하는 동안 그 캐릭터의 합계가 화면에서 사라진다.
-// ② **테마 배경 조각**([[ADR-088]] 결정 5-1). `ThemeHeaderBackdrop` 을 헤더 첫 자식으로 부르기는
-//    하지만 그 컴포넌트가 아직 두 갈래 모두 `null` 이다. 헤더 조각은 *"전면 백드롭과 이어 붙이는"*
-//    물건이라 백드롭 없이 조각만 그리면 화면 맨 위에 그림 띠 하나만 뜨고 아래는 단색이 된다 —
-//    그 결정이 없애려던 이음매를 오히려 만들므로 **반쪽만 만들지 않는다.**
+// ② **테마 배경 조각은 없앴다**([[ADR-133]]). 한때 [[ADR-088]] 결정 5-1 을 따라 헤더 첫 자식으로
+//    조각을 그렸는데, 그 구조가 서 있던 전제(«헤더가 불투명하고 화면에 고정») 를 [[ADR-131]] 이
+//    없앴다. 지금은 벽지 한 장(`ThemeBackdrop`)만 있고 헤더는 아무것도 안 칠한다.
 //
 // ══ 구조가 대신 지키는 것 여섯 ═════════════════════════════════════════════════════
 //
@@ -34,8 +33,9 @@
 // ① **공용 `PageHeader` 를 쓰지 않는다** — 그 셸은 하단 경계 페이드를 항상 그리는데 이 화면은
 //    [[ADR-047]] 결정 6 이 **그 페이드를 금지한다**(웹 시절 근거는 stuck 카드 헤더를 가린다는
 //    것이었고, 지금은 sticky 가 없어 그 증상이 없지만 **경계 표현의 계약**은 그대로다 — 이 화면의
-//    경계는 총 수익 헤드라인 하단 헤어라인이 담당한다). 나머지 셸 값(`z-10 bg-bg px-4 pb-2` +
-//    상단 안전영역 + `gap-4` + `ThemeHeaderBackdrop` 첫 자식)은 그 컴포넌트와 글자 그대로 같다.
+//    경계는 총 수익 헤드라인 하단 헤어라인이 담당한다). 나머지 셸 값(`z-10 px-4 pb-2` +
+//    상단 안전영역 + `gap-4`)은 그 컴포넌트와 글자 그대로 같다 — 배경을 안 칠하는 것도 함께다
+//    ([[ADR-133]]).
 // ② **[[ADR-080]] 의 최상단 이동은 남기되 이유가 바뀐다.** 웹에서 그것은 *"문서 높이가 붕괴하며
 //    sticky 헤더가 화면 밖에 그려지는 프레임"* 을 없애는 처방이었고 RN 에는 그 사슬이 없다. 남는
 //    것은 **관찰 가능한 동작**이다 — 기간을 옮기면 최상단에서 시작한다. 그것까지 없애면 웹과
@@ -75,7 +75,6 @@ import { LoadingState } from '../../components/molecules/LoadingState/LoadingSta
 import { UnavailableNotice } from '../../components/molecules/EmptyState/UnavailableNotice'
 import { ValuableDropBadge } from '../../components/molecules/ValuableDropBadge/ValuableDropBadge'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
-import { ThemeHeaderBackdrop } from '../../components/templates/ThemeHeaderBackdrop/ThemeHeaderBackdrop'
 import { SPIN_ANIMATION } from '../../lib/animation'
 import {
   ChevronDownIcon,
@@ -268,12 +267,9 @@ export function BossProfitScreen(): React.JSX.Element {
     // ([[ADR-047]] 결정 6). 나머지 값은 그 컴포넌트와 같다.
     <View
       testID="page-header"
-      className="z-10 bg-bg px-4 pb-2"
+      className="z-10 px-4 pb-2"
       style={{ paddingTop: insets.top + HEADER_TOP_PADDING_PX }}
     >
-      {/* [[ADR-088]] 결정 5-1: 헤더 자리의 테마 배경 조각. **첫 자식이어야 한다** — RN 은 형제
-          순서가 곧 그리는 순서라 이 자리가 웹의 `z-index: -1` 을 대신한다(오늘은 아직 `null`, 파일 머리 ②). */}
-      <ThemeHeaderBackdrop />
 
       <View className="gap-4">
         {/* 히스토리 진입점은 탭 줄이 아니라 **제목 줄 우측**이고 아이콘이 아니라 글자다

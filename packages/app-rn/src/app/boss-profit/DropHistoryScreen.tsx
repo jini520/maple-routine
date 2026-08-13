@@ -330,7 +330,7 @@ export function DropHistoryScreen(): React.JSX.Element {
         // 헤더가 먹는다는 계약은 그대로다(`ScreenScroll` 은 헤더가 있으면 위를 안 건드린다).
         <View
           testID="page-header"
-          className="z-10 bg-bg px-4 pb-2"
+          className="z-10 px-4 pb-2"
           style={{ paddingTop: insets.top + HEADER_TOP_PADDING_PX }}
         >
           <View className="gap-3">
