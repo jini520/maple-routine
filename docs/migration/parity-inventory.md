@@ -52,11 +52,23 @@
 | `/settings/about` | `SettingsAboutScreen` | 탭 4 위 push | |
 | `/settings/about/privacy` | `SettingsPrivacyScreen` | `/settings/about` 위 push | 이 앱에서 **유일한 2단 스택** |
 
+**RN 에서 새로 생긴 화면 넷** ([[ADR-132]], 2026-08-13) — 웹에는 없다. 위 17행은 그대로이고, 이 넷이
+`routes.ts` 의 표에 `origin: 'rn'` 으로 함께 산다(대조 테스트가 둘을 갈라 본다).
+
+| 화면 | RN 대응 | 비고 |
+|---|---|---|
+| `TodayScreen` | **첫 화면** (`INITIAL_TAB_ROUTE`) | 오늘 현황 대시보드 — 지금은 «개발 진행중» 껍데기 |
+| `HuntingProfitScreen` | 가계부 하위 | 껍데기 |
+| `SpendScreen` | 가계부 하위 | 껍데기 |
+| `UtilityScreen` | 그룹 자신이 페이지 | 껍데기 |
+
 **보존해야 할 라우팅 동작**
 
 - 온보딩 미완료 시 모든 탭이 `/onboarding` 으로 `replace` (완료 시 그 반대)
 - 탭 이동은 `NavLink` 가 아니라 **인터셉터**가 책임진다(`App.tsx:196`) — 전면광고 게이트([[ADR-090]])가
-  거기 걸려 있다. RN에서는 탭 `listeners` 로 옮긴다
+  거기 걸려 있다. ~~RN에서는 탭 `listeners` 로 옮긴다~~ → **하단바가 맡는다**([[ADR-132]] 결정 9):
+  이제 그룹 이동·하위 이동·뒤로가기가 전부 탭 전환이라 `tabPress` 에 걸면 셋이 다 게이트를 탄다.
+  게이트는 «그룹 이동» 에만 걸리고, 그 판정은 `bar-model.ts` 의 `shouldGateAd` 가 한다
 - `/settings/guide/:guideId` 와 `/settings/release-notes/:guideId` 가 **같은 화면**을 그린다([[ADR-125]])
 
 ---
