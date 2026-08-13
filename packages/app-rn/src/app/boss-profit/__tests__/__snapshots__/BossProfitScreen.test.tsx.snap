@@ -40,336 +40,563 @@ exports[`렌더 트리 기준선 기록이 있는 현재 주 1`] = `
           }
         }
       >
-        <View
-          style={
+        <RCTScrollView
+          contentContainerStyle={
             {
-              "backgroundColor": "#F2F0E2",
-              "paddingBottom": 8,
-              "paddingLeft": 16,
-              "paddingRight": 16,
-              "paddingTop": 75,
-              "zIndex": 10,
+              "columnGap": 16,
+              "paddingBottom": 0,
+              "rowGap": 16,
             }
           }
-          testID="page-header"
-        >
-          <View
-            style={
-              {
-                "columnGap": 16,
-                "rowGap": 16,
-              }
+          indicatorStyle="black"
+          refreshControl="<element:RefreshControlMock>"
+          style={
+            {
+              "flexBasis": "0%",
+              "flexGrow": 1,
+              "flexShrink": 1,
+              "marginBottom": 0,
+              "marginTop": 0,
             }
-          >
+          }
+          testID="screen-scroll"
+        >
+          <RCTRefreshControl />
+          <View>
             <View
               style={
                 {
-                  "alignItems": "center",
-                  "flexDirection": "row",
-                  "justifyContent": "space-between",
+                  "backgroundColor": "#F2F0E2",
+                  "paddingBottom": 8,
+                  "paddingLeft": 16,
+                  "paddingRight": 16,
+                  "paddingTop": 75,
+                  "zIndex": 10,
                 }
               }
-            >
-              <Text
-                style={
-                  {
-                    "color": "#241208",
-                    "fontSize": 18,
-                    "fontWeight": "600",
-                    "lineHeight": 28,
-                  }
-                }
-              >
-                보스 수익
-              </Text>
-              <View
-                style={
-                  {
-                    "alignItems": "center",
-                    "columnGap": 12,
-                    "flexDirection": "row",
-                    "rowGap": 12,
-                  }
-                }
-              >
-                <View
-                  accessibilityState={
-                    {
-                      "busy": undefined,
-                      "checked": undefined,
-                      "disabled": undefined,
-                      "expanded": undefined,
-                      "selected": undefined,
-                    }
-                  }
-                  accessibilityValue={
-                    {
-                      "max": undefined,
-                      "min": undefined,
-                      "now": undefined,
-                      "text": undefined,
-                    }
-                  }
-                  accessible={true}
-                  collapsable={false}
-                  focusable={true}
-                  onBlur={[Function]}
-                  onClick={[Function]}
-                  onFocus={[Function]}
-                  onResponderGrant={[Function]}
-                  onResponderMove={[Function]}
-                  onResponderRelease={[Function]}
-                  onResponderTerminate={[Function]}
-                  onResponderTerminationRequest={[Function]}
-                  onStartShouldSetResponder={[Function]}
-                  role="button"
-                >
-                  <Text
-                    style={
-                      {
-                        "color": "#645C42",
-                        "fontSize": 14,
-                        "fontWeight": "500",
-                        "lineHeight": 20,
-                      }
-                    }
-                  >
-                    아이템 가격
-                  </Text>
-                </View>
-                <View
-                  accessibilityState={
-                    {
-                      "busy": undefined,
-                      "checked": undefined,
-                      "disabled": undefined,
-                      "expanded": undefined,
-                      "selected": undefined,
-                    }
-                  }
-                  accessibilityValue={
-                    {
-                      "max": undefined,
-                      "min": undefined,
-                      "now": undefined,
-                      "text": undefined,
-                    }
-                  }
-                  accessible={true}
-                  collapsable={false}
-                  focusable={true}
-                  onBlur={[Function]}
-                  onClick={[Function]}
-                  onFocus={[Function]}
-                  onResponderGrant={[Function]}
-                  onResponderMove={[Function]}
-                  onResponderRelease={[Function]}
-                  onResponderTerminate={[Function]}
-                  onResponderTerminationRequest={[Function]}
-                  onStartShouldSetResponder={[Function]}
-                  role="button"
-                >
-                  <Text
-                    style={
-                      {
-                        "color": "#645C42",
-                        "fontSize": 14,
-                        "fontWeight": "500",
-                        "lineHeight": 20,
-                      }
-                    }
-                  >
-                    히스토리
-                  </Text>
-                </View>
-              </View>
-            </View>
-            <View
-              style={
-                {
-                  "alignItems": "center",
-                  "columnGap": 16,
-                  "flexDirection": "row",
-                  "rowGap": 16,
-                }
-              }
+              testID="page-header"
             >
               <View
-                accessibilityState={
-                  {
-                    "busy": undefined,
-                    "checked": undefined,
-                    "disabled": undefined,
-                    "expanded": undefined,
-                    "selected": true,
-                  }
-                }
-                accessibilityValue={
-                  {
-                    "max": undefined,
-                    "min": undefined,
-                    "now": undefined,
-                    "text": undefined,
-                  }
-                }
-                accessible={true}
-                collapsable={false}
-                focusable={true}
-                onBlur={[Function]}
-                onClick={[Function]}
-                onFocus={[Function]}
-                onResponderGrant={[Function]}
-                onResponderMove={[Function]}
-                onResponderRelease={[Function]}
-                onResponderTerminate={[Function]}
-                onResponderTerminationRequest={[Function]}
-                onStartShouldSetResponder={[Function]}
-                role="button"
-              >
-                <Text
-                  style={
-                    {
-                      "backgroundColor": "#FEECDA",
-                      "borderRadius": 9999,
-                      "color": "#F58B0F",
-                      "fontSize": 14,
-                      "fontWeight": "600",
-                      "lineHeight": 20,
-                      "paddingBottom": 5,
-                      "paddingLeft": 12,
-                      "paddingRight": 12,
-                      "paddingTop": 5,
-                    }
-                  }
-                >
-                  주간
-                </Text>
-              </View>
-              <View
-                accessibilityState={
-                  {
-                    "busy": undefined,
-                    "checked": undefined,
-                    "disabled": undefined,
-                    "expanded": undefined,
-                    "selected": false,
-                  }
-                }
-                accessibilityValue={
-                  {
-                    "max": undefined,
-                    "min": undefined,
-                    "now": undefined,
-                    "text": undefined,
-                  }
-                }
-                accessible={true}
-                collapsable={false}
-                focusable={true}
-                onBlur={[Function]}
-                onClick={[Function]}
-                onFocus={[Function]}
-                onResponderGrant={[Function]}
-                onResponderMove={[Function]}
-                onResponderRelease={[Function]}
-                onResponderTerminate={[Function]}
-                onResponderTerminationRequest={[Function]}
-                onStartShouldSetResponder={[Function]}
-                role="button"
-              >
-                <Text
-                  style={
-                    {
-                      "color": "#645C42",
-                      "fontSize": 14,
-                      "fontWeight": "500",
-                      "lineHeight": 20,
-                      "paddingLeft": 12,
-                      "paddingRight": 12,
-                    }
-                  }
-                >
-                  월간
-                </Text>
-              </View>
-              <View
                 style={
                   {
-                    "alignItems": "center",
-                    "columnGap": 8,
-                    "flexDirection": "row",
-                    "flexShrink": 0,
-                    "marginLeft": "auto",
-                    "rowGap": 8,
+                    "columnGap": 16,
+                    "rowGap": 16,
                   }
                 }
               >
-                <Text
-                  style={
-                    {
-                      "color": "#645C42",
-                      "fontSize": 14,
-                      "lineHeight": 20,
-                    }
-                  }
-                >
-                  동기화 기록 없음
-                </Text>
                 <View
-                  accessibilityLabel="새로고침"
-                  accessibilityState={
-                    {
-                      "busy": undefined,
-                      "checked": undefined,
-                      "disabled": undefined,
-                      "expanded": undefined,
-                      "selected": undefined,
-                    }
-                  }
-                  accessibilityValue={
-                    {
-                      "max": undefined,
-                      "min": undefined,
-                      "now": undefined,
-                      "text": undefined,
-                    }
-                  }
-                  accessible={true}
-                  collapsable={false}
-                  focusable={true}
-                  onBlur={[Function]}
-                  onClick={[Function]}
-                  onFocus={[Function]}
-                  onResponderGrant={[Function]}
-                  onResponderMove={[Function]}
-                  onResponderRelease={[Function]}
-                  onResponderTerminate={[Function]}
-                  onResponderTerminationRequest={[Function]}
-                  onStartShouldSetResponder={[Function]}
-                  role="button"
                   style={
                     {
                       "alignItems": "center",
-                      "height": 30,
-                      "justifyContent": "center",
-                      "width": 30,
+                      "flexDirection": "row",
+                      "justifyContent": "space-between",
+                    }
+                  }
+                >
+                  <Text
+                    style={
+                      {
+                        "color": "#241208",
+                        "fontSize": 18,
+                        "fontWeight": "600",
+                        "lineHeight": 28,
+                      }
+                    }
+                  >
+                    보스 수익
+                  </Text>
+                  <View
+                    style={
+                      {
+                        "alignItems": "center",
+                        "columnGap": 12,
+                        "flexDirection": "row",
+                        "rowGap": 12,
+                      }
+                    }
+                  >
+                    <View
+                      accessibilityState={
+                        {
+                          "busy": undefined,
+                          "checked": undefined,
+                          "disabled": undefined,
+                          "expanded": undefined,
+                          "selected": undefined,
+                        }
+                      }
+                      accessibilityValue={
+                        {
+                          "max": undefined,
+                          "min": undefined,
+                          "now": undefined,
+                          "text": undefined,
+                        }
+                      }
+                      accessible={true}
+                      collapsable={false}
+                      focusable={true}
+                      onBlur={[Function]}
+                      onClick={[Function]}
+                      onFocus={[Function]}
+                      onResponderGrant={[Function]}
+                      onResponderMove={[Function]}
+                      onResponderRelease={[Function]}
+                      onResponderTerminate={[Function]}
+                      onResponderTerminationRequest={[Function]}
+                      onStartShouldSetResponder={[Function]}
+                      role="button"
+                    >
+                      <Text
+                        style={
+                          {
+                            "color": "#645C42",
+                            "fontSize": 14,
+                            "fontWeight": "500",
+                            "lineHeight": 20,
+                          }
+                        }
+                      >
+                        아이템 가격
+                      </Text>
+                    </View>
+                    <View
+                      accessibilityState={
+                        {
+                          "busy": undefined,
+                          "checked": undefined,
+                          "disabled": undefined,
+                          "expanded": undefined,
+                          "selected": undefined,
+                        }
+                      }
+                      accessibilityValue={
+                        {
+                          "max": undefined,
+                          "min": undefined,
+                          "now": undefined,
+                          "text": undefined,
+                        }
+                      }
+                      accessible={true}
+                      collapsable={false}
+                      focusable={true}
+                      onBlur={[Function]}
+                      onClick={[Function]}
+                      onFocus={[Function]}
+                      onResponderGrant={[Function]}
+                      onResponderMove={[Function]}
+                      onResponderRelease={[Function]}
+                      onResponderTerminate={[Function]}
+                      onResponderTerminationRequest={[Function]}
+                      onStartShouldSetResponder={[Function]}
+                      role="button"
+                    >
+                      <Text
+                        style={
+                          {
+                            "color": "#645C42",
+                            "fontSize": 14,
+                            "fontWeight": "500",
+                            "lineHeight": 20,
+                          }
+                        }
+                      >
+                        히스토리
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+                <View
+                  style={
+                    {
+                      "alignItems": "center",
+                      "columnGap": 16,
+                      "flexDirection": "row",
+                      "rowGap": 16,
                     }
                   }
                 >
                   <View
+                    accessibilityState={
+                      {
+                        "busy": undefined,
+                        "checked": undefined,
+                        "disabled": undefined,
+                        "expanded": undefined,
+                        "selected": true,
+                      }
+                    }
+                    accessibilityValue={
+                      {
+                        "max": undefined,
+                        "min": undefined,
+                        "now": undefined,
+                        "text": undefined,
+                      }
+                    }
+                    accessible={true}
                     collapsable={false}
-                    jestAnimatedProps={
+                    focusable={true}
+                    onBlur={[Function]}
+                    onClick={[Function]}
+                    onFocus={[Function]}
+                    onResponderGrant={[Function]}
+                    onResponderMove={[Function]}
+                    onResponderRelease={[Function]}
+                    onResponderTerminate={[Function]}
+                    onResponderTerminationRequest={[Function]}
+                    onStartShouldSetResponder={[Function]}
+                    role="button"
+                  >
+                    <Text
+                      style={
+                        {
+                          "backgroundColor": "#FEECDA",
+                          "borderRadius": 9999,
+                          "color": "#F58B0F",
+                          "fontSize": 14,
+                          "fontWeight": "600",
+                          "lineHeight": 20,
+                          "paddingBottom": 5,
+                          "paddingLeft": 12,
+                          "paddingRight": 12,
+                          "paddingTop": 5,
+                        }
+                      }
+                    >
+                      주간
+                    </Text>
+                  </View>
+                  <View
+                    accessibilityState={
                       {
-                        "value": {},
+                        "busy": undefined,
+                        "checked": undefined,
+                        "disabled": undefined,
+                        "expanded": undefined,
+                        "selected": false,
                       }
                     }
-                    jestAnimatedStyle={
+                    accessibilityValue={
                       {
-                        "value": {},
+                        "max": undefined,
+                        "min": undefined,
+                        "now": undefined,
+                        "text": undefined,
                       }
                     }
-                    style={[]}
-                    testID="refresh-icon"
+                    accessible={true}
+                    collapsable={false}
+                    focusable={true}
+                    onBlur={[Function]}
+                    onClick={[Function]}
+                    onFocus={[Function]}
+                    onResponderGrant={[Function]}
+                    onResponderMove={[Function]}
+                    onResponderRelease={[Function]}
+                    onResponderTerminate={[Function]}
+                    onResponderTerminationRequest={[Function]}
+                    onStartShouldSetResponder={[Function]}
+                    role="button"
+                  >
+                    <Text
+                      style={
+                        {
+                          "color": "#645C42",
+                          "fontSize": 14,
+                          "fontWeight": "500",
+                          "lineHeight": 20,
+                          "paddingLeft": 12,
+                          "paddingRight": 12,
+                        }
+                      }
+                    >
+                      월간
+                    </Text>
+                  </View>
+                  <View
+                    style={
+                      {
+                        "alignItems": "center",
+                        "columnGap": 8,
+                        "flexDirection": "row",
+                        "flexShrink": 0,
+                        "marginLeft": "auto",
+                        "rowGap": 8,
+                      }
+                    }
+                  >
+                    <Text
+                      style={
+                        {
+                          "color": "#645C42",
+                          "fontSize": 14,
+                          "lineHeight": 20,
+                        }
+                      }
+                    >
+                      동기화 기록 없음
+                    </Text>
+                    <View
+                      accessibilityLabel="새로고침"
+                      accessibilityState={
+                        {
+                          "busy": undefined,
+                          "checked": undefined,
+                          "disabled": undefined,
+                          "expanded": undefined,
+                          "selected": undefined,
+                        }
+                      }
+                      accessibilityValue={
+                        {
+                          "max": undefined,
+                          "min": undefined,
+                          "now": undefined,
+                          "text": undefined,
+                        }
+                      }
+                      accessible={true}
+                      collapsable={false}
+                      focusable={true}
+                      onBlur={[Function]}
+                      onClick={[Function]}
+                      onFocus={[Function]}
+                      onResponderGrant={[Function]}
+                      onResponderMove={[Function]}
+                      onResponderRelease={[Function]}
+                      onResponderTerminate={[Function]}
+                      onResponderTerminationRequest={[Function]}
+                      onStartShouldSetResponder={[Function]}
+                      role="button"
+                      style={
+                        {
+                          "alignItems": "center",
+                          "height": 30,
+                          "justifyContent": "center",
+                          "width": 30,
+                        }
+                      }
+                    >
+                      <View
+                        collapsable={false}
+                        jestAnimatedProps={
+                          {
+                            "value": {},
+                          }
+                        }
+                        jestAnimatedStyle={
+                          {
+                            "value": {},
+                          }
+                        }
+                        style={[]}
+                        testID="refresh-icon"
+                      >
+                        <RNSVGSvgView
+                          align="xMidYMid"
+                          aria-hidden={true}
+                          bbHeight={16}
+                          bbWidth={16}
+                          fill="none"
+                          focusable={false}
+                          height={16}
+                          meetOrSlice={0}
+                          minX={0}
+                          minY={0}
+                          stroke="#F58B0F"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          style={
+                            [
+                              {
+                                "backgroundColor": "transparent",
+                                "borderWidth": 0,
+                              },
+                              {},
+                              {
+                                "flex": 0,
+                                "height": 16,
+                                "width": 16,
+                              },
+                            ]
+                          }
+                          vbHeight={24}
+                          vbWidth={24}
+                          width={16}
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <RNSVGGroup
+                            fill={null}
+                            propList={
+                              [
+                                "fill",
+                                "stroke",
+                                "strokeWidth",
+                                "strokeLinecap",
+                                "strokeLinejoin",
+                              ]
+                            }
+                            stroke={
+                              {
+                                "payload": 4294281999,
+                                "type": 0,
+                              }
+                            }
+                            strokeLinecap={1}
+                            strokeLinejoin={1}
+                            strokeWidth={2}
+                          >
+                            <RNSVGPath
+                              d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"
+                              fill={null}
+                              propList={
+                                [
+                                  "fill",
+                                  "stroke",
+                                  "strokeWidth",
+                                  "strokeLinecap",
+                                  "strokeLinejoin",
+                                ]
+                              }
+                              stroke={
+                                {
+                                  "payload": 4294281999,
+                                  "type": 0,
+                                }
+                              }
+                              strokeLinecap={1}
+                              strokeLinejoin={1}
+                              strokeWidth={2}
+                            />
+                            <RNSVGPath
+                              d="M21 3v5h-5"
+                              fill={null}
+                              propList={
+                                [
+                                  "fill",
+                                  "stroke",
+                                  "strokeWidth",
+                                  "strokeLinecap",
+                                  "strokeLinejoin",
+                                ]
+                              }
+                              stroke={
+                                {
+                                  "payload": 4294281999,
+                                  "type": 0,
+                                }
+                              }
+                              strokeLinecap={1}
+                              strokeLinejoin={1}
+                              strokeWidth={2}
+                            />
+                            <RNSVGPath
+                              d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"
+                              fill={null}
+                              propList={
+                                [
+                                  "fill",
+                                  "stroke",
+                                  "strokeWidth",
+                                  "strokeLinecap",
+                                  "strokeLinejoin",
+                                ]
+                              }
+                              stroke={
+                                {
+                                  "payload": 4294281999,
+                                  "type": 0,
+                                }
+                              }
+                              strokeLinecap={1}
+                              strokeLinejoin={1}
+                              strokeWidth={2}
+                            />
+                            <RNSVGPath
+                              d="M8 16H3v5"
+                              fill={null}
+                              propList={
+                                [
+                                  "fill",
+                                  "stroke",
+                                  "strokeWidth",
+                                  "strokeLinecap",
+                                  "strokeLinejoin",
+                                ]
+                              }
+                              stroke={
+                                {
+                                  "payload": 4294281999,
+                                  "type": 0,
+                                }
+                              }
+                              strokeLinecap={1}
+                              strokeLinejoin={1}
+                              strokeWidth={2}
+                            />
+                          </RNSVGGroup>
+                        </RNSVGSvgView>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+                <View
+                  style={
+                    {
+                      "alignItems": "center",
+                      "columnGap": 16,
+                      "flexDirection": "row",
+                      "justifyContent": "center",
+                      "rowGap": 16,
+                    }
+                  }
+                >
+                  <View
+                    accessibilityLabel="이전 기간"
+                    accessibilityState={
+                      {
+                        "busy": undefined,
+                        "checked": undefined,
+                        "disabled": false,
+                        "expanded": undefined,
+                        "selected": undefined,
+                      }
+                    }
+                    accessibilityValue={
+                      {
+                        "max": undefined,
+                        "min": undefined,
+                        "now": undefined,
+                        "text": undefined,
+                      }
+                    }
+                    accessible={true}
+                    collapsable={false}
+                    focusable={true}
+                    onBlur={[Function]}
+                    onClick={[Function]}
+                    onFocus={[Function]}
+                    onResponderGrant={[Function]}
+                    onResponderMove={[Function]}
+                    onResponderRelease={[Function]}
+                    onResponderTerminate={[Function]}
+                    onResponderTerminationRequest={[Function]}
+                    onStartShouldSetResponder={[Function]}
+                    role="button"
+                    style={
+                      {
+                        "alignItems": "center",
+                        "borderColor": "#CFC9AE",
+                        "borderRadius": 9999,
+                        "borderWidth": 1,
+                        "height": 28,
+                        "justifyContent": "center",
+                        "width": 28,
+                      }
+                    }
                   >
                     <RNSVGSvgView
                       align="xMidYMid"
@@ -382,7 +609,7 @@ exports[`렌더 트리 기준선 기록이 있는 현재 주 1`] = `
                       meetOrSlice={0}
                       minX={0}
                       minY={0}
-                      stroke="#F58B0F"
+                      stroke="#241208"
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
@@ -418,7 +645,7 @@ exports[`렌더 트리 기준선 기록이 있는 현재 주 1`] = `
                         }
                         stroke={
                           {
-                            "payload": 4294281999,
+                            "payload": 4280553992,
                             "type": 0,
                           }
                         }
@@ -427,7 +654,7 @@ exports[`렌더 트리 기준선 기록이 있는 현재 주 1`] = `
                         strokeWidth={2}
                       >
                         <RNSVGPath
-                          d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"
+                          d="m15 18-6-6 6-6"
                           fill={null}
                           propList={
                             [
@@ -440,73 +667,7 @@ exports[`렌더 트리 기준선 기록이 있는 현재 주 1`] = `
                           }
                           stroke={
                             {
-                              "payload": 4294281999,
-                              "type": 0,
-                            }
-                          }
-                          strokeLinecap={1}
-                          strokeLinejoin={1}
-                          strokeWidth={2}
-                        />
-                        <RNSVGPath
-                          d="M21 3v5h-5"
-                          fill={null}
-                          propList={
-                            [
-                              "fill",
-                              "stroke",
-                              "strokeWidth",
-                              "strokeLinecap",
-                              "strokeLinejoin",
-                            ]
-                          }
-                          stroke={
-                            {
-                              "payload": 4294281999,
-                              "type": 0,
-                            }
-                          }
-                          strokeLinecap={1}
-                          strokeLinejoin={1}
-                          strokeWidth={2}
-                        />
-                        <RNSVGPath
-                          d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"
-                          fill={null}
-                          propList={
-                            [
-                              "fill",
-                              "stroke",
-                              "strokeWidth",
-                              "strokeLinecap",
-                              "strokeLinejoin",
-                            ]
-                          }
-                          stroke={
-                            {
-                              "payload": 4294281999,
-                              "type": 0,
-                            }
-                          }
-                          strokeLinecap={1}
-                          strokeLinejoin={1}
-                          strokeWidth={2}
-                        />
-                        <RNSVGPath
-                          d="M8 16H3v5"
-                          fill={null}
-                          propList={
-                            [
-                              "fill",
-                              "stroke",
-                              "strokeWidth",
-                              "strokeLinecap",
-                              "strokeLinejoin",
-                            ]
-                          }
-                          stroke={
-                            {
-                              "payload": 4294281999,
+                              "payload": 4280553992,
                               "type": 0,
                             }
                           }
@@ -517,690 +678,121 @@ exports[`렌더 트리 기준선 기록이 있는 현재 주 1`] = `
                       </RNSVGGroup>
                     </RNSVGSvgView>
                   </View>
-                </View>
-              </View>
-            </View>
-            <View
-              style={
-                {
-                  "alignItems": "center",
-                  "columnGap": 16,
-                  "flexDirection": "row",
-                  "justifyContent": "center",
-                  "rowGap": 16,
-                }
-              }
-            >
-              <View
-                accessibilityLabel="이전 기간"
-                accessibilityState={
-                  {
-                    "busy": undefined,
-                    "checked": undefined,
-                    "disabled": false,
-                    "expanded": undefined,
-                    "selected": undefined,
-                  }
-                }
-                accessibilityValue={
-                  {
-                    "max": undefined,
-                    "min": undefined,
-                    "now": undefined,
-                    "text": undefined,
-                  }
-                }
-                accessible={true}
-                collapsable={false}
-                focusable={true}
-                onBlur={[Function]}
-                onClick={[Function]}
-                onFocus={[Function]}
-                onResponderGrant={[Function]}
-                onResponderMove={[Function]}
-                onResponderRelease={[Function]}
-                onResponderTerminate={[Function]}
-                onResponderTerminationRequest={[Function]}
-                onStartShouldSetResponder={[Function]}
-                role="button"
-                style={
-                  {
-                    "alignItems": "center",
-                    "borderColor": "#CFC9AE",
-                    "borderRadius": 9999,
-                    "borderWidth": 1,
-                    "height": 28,
-                    "justifyContent": "center",
-                    "width": 28,
-                  }
-                }
-              >
-                <RNSVGSvgView
-                  align="xMidYMid"
-                  aria-hidden={true}
-                  bbHeight={16}
-                  bbWidth={16}
-                  fill="none"
-                  focusable={false}
-                  height={16}
-                  meetOrSlice={0}
-                  minX={0}
-                  minY={0}
-                  stroke="#241208"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  style={
-                    [
-                      {
-                        "backgroundColor": "transparent",
-                        "borderWidth": 0,
-                      },
-                      {},
-                      {
-                        "flex": 0,
-                        "height": 16,
-                        "width": 16,
-                      },
-                    ]
-                  }
-                  vbHeight={24}
-                  vbWidth={24}
-                  width={16}
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <RNSVGGroup
-                    fill={null}
-                    propList={
-                      [
-                        "fill",
-                        "stroke",
-                        "strokeWidth",
-                        "strokeLinecap",
-                        "strokeLinejoin",
-                      ]
-                    }
-                    stroke={
-                      {
-                        "payload": 4280553992,
-                        "type": 0,
-                      }
-                    }
-                    strokeLinecap={1}
-                    strokeLinejoin={1}
-                    strokeWidth={2}
-                  >
-                    <RNSVGPath
-                      d="m15 18-6-6 6-6"
-                      fill={null}
-                      propList={
-                        [
-                          "fill",
-                          "stroke",
-                          "strokeWidth",
-                          "strokeLinecap",
-                          "strokeLinejoin",
-                        ]
-                      }
-                      stroke={
-                        {
-                          "payload": 4280553992,
-                          "type": 0,
-                        }
-                      }
-                      strokeLinecap={1}
-                      strokeLinejoin={1}
-                      strokeWidth={2}
-                    />
-                  </RNSVGGroup>
-                </RNSVGSvgView>
-              </View>
-              <View
-                style={
-                  {
-                    "alignItems": "center",
-                  }
-                }
-              >
-                <Text
-                  style={
-                    {
-                      "color": "#241208",
-                      "fontSize": 14,
-                      "fontWeight": "600",
-                      "lineHeight": 20,
-                    }
-                  }
-                >
-                  이번 주
-                </Text>
-                <Text
-                  style={
-                    {
-                      "color": "#645C42",
-                      "fontSize": 12,
-                      "fontVariant": [
-                        "tabular-nums",
-                      ],
-                      "lineHeight": 16,
-                      "marginTop": 2,
-                    }
-                  }
-                >
-                  8월 13일 ~ 8월 19일
-                </Text>
-              </View>
-              <View
-                accessibilityLabel="다음 기간"
-                accessibilityState={
-                  {
-                    "busy": undefined,
-                    "checked": undefined,
-                    "disabled": true,
-                    "expanded": undefined,
-                    "selected": undefined,
-                  }
-                }
-                accessibilityValue={
-                  {
-                    "max": undefined,
-                    "min": undefined,
-                    "now": undefined,
-                    "text": undefined,
-                  }
-                }
-                accessible={true}
-                collapsable={false}
-                focusable={true}
-                onBlur={[Function]}
-                onClick={[Function]}
-                onFocus={[Function]}
-                onResponderGrant={[Function]}
-                onResponderMove={[Function]}
-                onResponderRelease={[Function]}
-                onResponderTerminate={[Function]}
-                onResponderTerminationRequest={[Function]}
-                onStartShouldSetResponder={[Function]}
-                role="button"
-                style={
-                  {
-                    "alignItems": "center",
-                    "borderColor": "#CFC9AE",
-                    "borderRadius": 9999,
-                    "borderWidth": 1,
-                    "height": 28,
-                    "justifyContent": "center",
-                    "opacity": 0.30000001192092896,
-                    "width": 28,
-                  }
-                }
-              >
-                <RNSVGSvgView
-                  align="xMidYMid"
-                  aria-hidden={true}
-                  bbHeight={16}
-                  bbWidth={16}
-                  fill="none"
-                  focusable={false}
-                  height={16}
-                  meetOrSlice={0}
-                  minX={0}
-                  minY={0}
-                  stroke="#241208"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  style={
-                    [
-                      {
-                        "backgroundColor": "transparent",
-                        "borderWidth": 0,
-                      },
-                      {},
-                      {
-                        "flex": 0,
-                        "height": 16,
-                        "width": 16,
-                      },
-                    ]
-                  }
-                  vbHeight={24}
-                  vbWidth={24}
-                  width={16}
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <RNSVGGroup
-                    fill={null}
-                    propList={
-                      [
-                        "fill",
-                        "stroke",
-                        "strokeWidth",
-                        "strokeLinecap",
-                        "strokeLinejoin",
-                      ]
-                    }
-                    stroke={
-                      {
-                        "payload": 4280553992,
-                        "type": 0,
-                      }
-                    }
-                    strokeLinecap={1}
-                    strokeLinejoin={1}
-                    strokeWidth={2}
-                  >
-                    <RNSVGPath
-                      d="m9 18 6-6-6-6"
-                      fill={null}
-                      propList={
-                        [
-                          "fill",
-                          "stroke",
-                          "strokeWidth",
-                          "strokeLinecap",
-                          "strokeLinejoin",
-                        ]
-                      }
-                      stroke={
-                        {
-                          "payload": 4280553992,
-                          "type": 0,
-                        }
-                      }
-                      strokeLinecap={1}
-                      strokeLinejoin={1}
-                      strokeWidth={2}
-                    />
-                  </RNSVGGroup>
-                </RNSVGSvgView>
-              </View>
-            </View>
-            <View>
-              <View
-                style={
-                  {
-                    "alignItems": "center",
-                    "flexDirection": "row",
-                    "height": 24,
-                    "position": "relative",
-                  }
-                }
-              >
-                <Text
-                  style={
-                    {
-                      "color": "#645C42",
-                      "fontSize": 12,
-                      "fontWeight": "600",
-                      "letterSpacing": 0.3,
-                      "lineHeight": 16,
-                    }
-                  }
-                >
-                  이번 주
-                   총 수익
-                </Text>
-                <View
-                  aria-label="주간 결정석 판매 1 / 90"
-                  role="img"
-                  style={
-                    {
-                      "alignItems": "center",
-                      "backgroundColor": "#FEECDA",
-                      "borderRadius": 9999,
-                      "columnGap": 4,
-                      "flexDirection": "row",
-                      "flexShrink": 0,
-                      "height": 20,
-                      "marginLeft": 8,
-                      "paddingLeft": 6,
-                      "paddingRight": 6,
-                      "rowGap": 4,
-                    }
-                  }
-                >
-                  <Image
-                    resizeMode="contain"
-                    source={
-                      {
-                        "testUri": "../../../packages/core/src/assets/items/intense_power_crystal_weekly.webp",
-                      }
-                    }
+                  <View
                     style={
                       {
-                        "flexShrink": 0,
-                        "height": 16,
-                        "width": 16,
-                      }
-                    }
-                  />
-                  <Text
-                    style={
-                      {
-                        "color": "#F58B0F",
-                        "fontSize": 12,
-                        "fontVariant": [
-                          "tabular-nums",
-                        ],
-                        "fontWeight": "700",
-                        "lineHeight": 12,
+                        "alignItems": "center",
                       }
                     }
                   >
-                    1
-                     
                     <Text
                       style={
                         {
+                          "color": "#241208",
+                          "fontSize": 14,
                           "fontWeight": "600",
-                          "opacity": 0.699999988079071,
+                          "lineHeight": 20,
                         }
                       }
                     >
-                      / 
-                      90
+                      이번 주
                     </Text>
-                  </Text>
-                </View>
-              </View>
-              <View
-                style={
-                  {
-                    "alignItems": "center",
-                    "columnGap": 10,
-                    "flexDirection": "row",
-                    "marginTop": 6,
-                    "rowGap": 10,
-                  }
-                }
-              >
-                <View
-                  style={
-                    {
-                      "alignItems": "center",
-                      "backgroundColor": "#FEECDA",
-                      "borderRadius": 9999,
-                      "flexShrink": 0,
-                      "height": 32,
-                      "justifyContent": "center",
-                      "width": 32,
-                    }
-                  }
-                >
-                  <RNSVGSvgView
-                    align="xMidYMid"
-                    aria-hidden={true}
-                    bbHeight={18}
-                    bbWidth={18}
-                    color="#F58B0F"
-                    fill="none"
-                    focusable={false}
-                    height={18}
-                    meetOrSlice={0}
-                    minX={0}
-                    minY={0}
-                    stroke="currentColor"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    style={
-                      [
+                    <Text
+                      style={
                         {
-                          "backgroundColor": "transparent",
-                          "borderWidth": 0,
-                        },
-                        {},
-                        {
-                          "flex": 0,
-                          "height": 18,
-                          "width": 18,
-                        },
-                      ]
-                    }
-                    testID="profit-icon"
-                    vbHeight={24}
-                    vbWidth={24}
-                    width={18}
-                  >
-                    <RNSVGGroup
-                      fill={null}
-                      propList={
-                        [
-                          "fill",
-                          "stroke",
-                          "strokeWidth",
-                          "strokeLinecap",
-                          "strokeLinejoin",
-                        ]
-                      }
-                      stroke={
-                        {
-                          "type": 2,
+                          "color": "#645C42",
+                          "fontSize": 12,
+                          "fontVariant": [
+                            "tabular-nums",
+                          ],
+                          "lineHeight": 16,
+                          "marginTop": 2,
                         }
                       }
-                      strokeLinecap={1}
-                      strokeLinejoin={1}
+                    >
+                      8월 13일 ~ 8월 19일
+                    </Text>
+                  </View>
+                  <View
+                    accessibilityLabel="다음 기간"
+                    accessibilityState={
+                      {
+                        "busy": undefined,
+                        "checked": undefined,
+                        "disabled": true,
+                        "expanded": undefined,
+                        "selected": undefined,
+                      }
+                    }
+                    accessibilityValue={
+                      {
+                        "max": undefined,
+                        "min": undefined,
+                        "now": undefined,
+                        "text": undefined,
+                      }
+                    }
+                    accessible={true}
+                    collapsable={false}
+                    focusable={true}
+                    onBlur={[Function]}
+                    onClick={[Function]}
+                    onFocus={[Function]}
+                    onResponderGrant={[Function]}
+                    onResponderMove={[Function]}
+                    onResponderRelease={[Function]}
+                    onResponderTerminate={[Function]}
+                    onResponderTerminationRequest={[Function]}
+                    onStartShouldSetResponder={[Function]}
+                    role="button"
+                    style={
+                      {
+                        "alignItems": "center",
+                        "borderColor": "#CFC9AE",
+                        "borderRadius": 9999,
+                        "borderWidth": 1,
+                        "height": 28,
+                        "justifyContent": "center",
+                        "opacity": 0.30000001192092896,
+                        "width": 28,
+                      }
+                    }
+                  >
+                    <RNSVGSvgView
+                      align="xMidYMid"
+                      aria-hidden={true}
+                      bbHeight={16}
+                      bbWidth={16}
+                      fill="none"
+                      focusable={false}
+                      height={16}
+                      meetOrSlice={0}
+                      minX={0}
+                      minY={0}
+                      stroke="#241208"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                       strokeWidth={2}
-                    >
-                      <RNSVGEllipse
-                        cx="16.3"
-                        cy="6.4"
-                        fill={
-                          {
-                            "payload": 4278190080,
-                            "type": 0,
-                          }
-                        }
-                        rx="5.2"
-                        ry="2.2"
-                      />
-                      <RNSVGPath
-                        d="M11.1 6.4v3.7"
-                        fill={
-                          {
-                            "payload": 4278190080,
-                            "type": 0,
-                          }
-                        }
-                      />
-                      <RNSVGPath
-                        d="M21.5 6.4v8.2"
-                        fill={
-                          {
-                            "payload": 4278190080,
-                            "type": 0,
-                          }
-                        }
-                      />
-                      <RNSVGPath
-                        d="M11.1 9.1a5.2 2.2 0 0 0 10.4 0"
-                        fill={
-                          {
-                            "payload": 4278190080,
-                            "type": 0,
-                          }
-                        }
-                      />
-                      <RNSVGPath
-                        d="M13.4 13.7A5.2 2.2 0 0 0 21.5 11.85"
-                        fill={
-                          {
-                            "payload": 4278190080,
-                            "type": 0,
-                          }
-                        }
-                      />
-                      <RNSVGPath
-                        d="M13.7 16.5A5.2 2.2 0 0 0 21.5 14.6"
-                        fill={
-                          {
-                            "payload": 4278190080,
-                            "type": 0,
-                          }
-                        }
-                      />
-                      <RNSVGCircle
-                        cx="8"
-                        cy="15"
-                        fill={
-                          {
-                            "payload": 4278190080,
-                            "type": 0,
-                          }
-                        }
-                        r="5.5"
-                      />
-                    </RNSVGGroup>
-                  </RNSVGSvgView>
-                </View>
-                <Text
-                  style={
-                    {
-                      "color": "#F58B0F",
-                      "fontSize": 20,
-                      "fontVariant": [
-                        "tabular-nums",
-                      ],
-                      "fontWeight": "800",
-                      "lineHeight": 20,
-                    }
-                  }
-                >
-                  5,000,000
-                   
-                  <Text
-                    style={
-                      {
-                        "color": "#645C42",
-                        "fontSize": 12,
-                        "fontWeight": "700",
-                        "lineHeight": 16,
-                      }
-                    }
-                  >
-                    메소
-                  </Text>
-                </Text>
-                <View
-                  accessibilityLabel="총 수익 자세히 보기"
-                  accessibilityState={
-                    {
-                      "busy": undefined,
-                      "checked": undefined,
-                      "disabled": undefined,
-                      "expanded": false,
-                      "selected": undefined,
-                    }
-                  }
-                  accessibilityValue={
-                    {
-                      "max": undefined,
-                      "min": undefined,
-                      "now": undefined,
-                      "text": undefined,
-                    }
-                  }
-                  accessible={true}
-                  collapsable={false}
-                  focusable={true}
-                  onBlur={[Function]}
-                  onClick={[Function]}
-                  onFocus={[Function]}
-                  onResponderGrant={[Function]}
-                  onResponderMove={[Function]}
-                  onResponderRelease={[Function]}
-                  onResponderTerminate={[Function]}
-                  onResponderTerminationRequest={[Function]}
-                  onStartShouldSetResponder={[Function]}
-                  role="button"
-                  style={
-                    {
-                      "alignItems": "center",
-                      "borderColor": "#CFC9AE",
-                      "borderRadius": 9999,
-                      "borderWidth": 1,
-                      "columnGap": 2,
-                      "flexDirection": "row",
-                      "flexShrink": 0,
-                      "height": 24,
-                      "marginLeft": "auto",
-                      "paddingLeft": 10,
-                      "paddingRight": 10,
-                      "rowGap": 2,
-                    }
-                  }
-                >
-                  <Text
-                    style={
-                      {
-                        "color": "#645C42",
-                        "fontSize": 11,
-                        "fontWeight": "600",
-                      }
-                    }
-                  >
-                    자세히 보기
-                  </Text>
-                  <RNSVGSvgView
-                    align="xMidYMid"
-                    aria-hidden={true}
-                    bbHeight={12}
-                    bbWidth={12}
-                    fill="none"
-                    focusable={false}
-                    height={12}
-                    meetOrSlice={0}
-                    minX={0}
-                    minY={0}
-                    stroke="#645C42"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2.5}
-                    style={
-                      [
-                        {
-                          "backgroundColor": "transparent",
-                          "borderWidth": 0,
-                        },
-                        {
-                          "flexShrink": 0,
-                        },
-                        {
-                          "flex": 0,
-                          "height": 12,
-                          "width": 12,
-                        },
-                      ]
-                    }
-                    vbHeight={24}
-                    vbWidth={24}
-                    width={12}
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <RNSVGGroup
-                      fill={null}
-                      propList={
+                      style={
                         [
-                          "fill",
-                          "stroke",
-                          "strokeWidth",
-                          "strokeLinecap",
-                          "strokeLinejoin",
+                          {
+                            "backgroundColor": "transparent",
+                            "borderWidth": 0,
+                          },
+                          {},
+                          {
+                            "flex": 0,
+                            "height": 16,
+                            "width": 16,
+                          },
                         ]
                       }
-                      stroke={
-                        {
-                          "payload": 4284767298,
-                          "type": 0,
-                        }
-                      }
-                      strokeLinecap={1}
-                      strokeLinejoin={1}
-                      strokeWidth={2.5}
+                      vbHeight={24}
+                      vbWidth={24}
+                      width={16}
+                      xmlns="http://www.w3.org/2000/svg"
                     >
-                      <RNSVGPath
-                        d="m6 9 6 6 6-6"
+                      <RNSVGGroup
                         fill={null}
                         propList={
                           [
@@ -1213,54 +805,462 @@ exports[`렌더 트리 기준선 기록이 있는 현재 주 1`] = `
                         }
                         stroke={
                           {
-                            "payload": 4284767298,
+                            "payload": 4280553992,
                             "type": 0,
                           }
                         }
                         strokeLinecap={1}
                         strokeLinejoin={1}
-                        strokeWidth={2.5}
+                        strokeWidth={2}
+                      >
+                        <RNSVGPath
+                          d="m9 18 6-6-6-6"
+                          fill={null}
+                          propList={
+                            [
+                              "fill",
+                              "stroke",
+                              "strokeWidth",
+                              "strokeLinecap",
+                              "strokeLinejoin",
+                            ]
+                          }
+                          stroke={
+                            {
+                              "payload": 4280553992,
+                              "type": 0,
+                            }
+                          }
+                          strokeLinecap={1}
+                          strokeLinejoin={1}
+                          strokeWidth={2}
+                        />
+                      </RNSVGGroup>
+                    </RNSVGSvgView>
+                  </View>
+                </View>
+                <View>
+                  <View
+                    style={
+                      {
+                        "alignItems": "center",
+                        "flexDirection": "row",
+                        "height": 24,
+                        "position": "relative",
+                      }
+                    }
+                  >
+                    <Text
+                      style={
+                        {
+                          "color": "#645C42",
+                          "fontSize": 12,
+                          "fontWeight": "600",
+                          "letterSpacing": 0.3,
+                          "lineHeight": 16,
+                        }
+                      }
+                    >
+                      이번 주
+                       총 수익
+                    </Text>
+                    <View
+                      aria-label="주간 결정석 판매 1 / 90"
+                      role="img"
+                      style={
+                        {
+                          "alignItems": "center",
+                          "backgroundColor": "#FEECDA",
+                          "borderRadius": 9999,
+                          "columnGap": 4,
+                          "flexDirection": "row",
+                          "flexShrink": 0,
+                          "height": 20,
+                          "marginLeft": 8,
+                          "paddingLeft": 6,
+                          "paddingRight": 6,
+                          "rowGap": 4,
+                        }
+                      }
+                    >
+                      <Image
+                        resizeMode="contain"
+                        source={
+                          {
+                            "testUri": "../../../packages/core/src/assets/items/intense_power_crystal_weekly.webp",
+                          }
+                        }
+                        style={
+                          {
+                            "flexShrink": 0,
+                            "height": 16,
+                            "width": 16,
+                          }
+                        }
                       />
-                    </RNSVGGroup>
-                  </RNSVGSvgView>
+                      <Text
+                        style={
+                          {
+                            "color": "#F58B0F",
+                            "fontSize": 12,
+                            "fontVariant": [
+                              "tabular-nums",
+                            ],
+                            "fontWeight": "700",
+                            "lineHeight": 12,
+                          }
+                        }
+                      >
+                        1
+                         
+                        <Text
+                          style={
+                            {
+                              "fontWeight": "600",
+                              "opacity": 0.699999988079071,
+                            }
+                          }
+                        >
+                          / 
+                          90
+                        </Text>
+                      </Text>
+                    </View>
+                  </View>
+                  <View
+                    style={
+                      {
+                        "alignItems": "center",
+                        "columnGap": 10,
+                        "flexDirection": "row",
+                        "marginTop": 6,
+                        "rowGap": 10,
+                      }
+                    }
+                  >
+                    <View
+                      style={
+                        {
+                          "alignItems": "center",
+                          "backgroundColor": "#FEECDA",
+                          "borderRadius": 9999,
+                          "flexShrink": 0,
+                          "height": 32,
+                          "justifyContent": "center",
+                          "width": 32,
+                        }
+                      }
+                    >
+                      <RNSVGSvgView
+                        align="xMidYMid"
+                        aria-hidden={true}
+                        bbHeight={18}
+                        bbWidth={18}
+                        color="#F58B0F"
+                        fill="none"
+                        focusable={false}
+                        height={18}
+                        meetOrSlice={0}
+                        minX={0}
+                        minY={0}
+                        stroke="currentColor"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        style={
+                          [
+                            {
+                              "backgroundColor": "transparent",
+                              "borderWidth": 0,
+                            },
+                            {},
+                            {
+                              "flex": 0,
+                              "height": 18,
+                              "width": 18,
+                            },
+                          ]
+                        }
+                        testID="profit-icon"
+                        vbHeight={24}
+                        vbWidth={24}
+                        width={18}
+                      >
+                        <RNSVGGroup
+                          fill={null}
+                          propList={
+                            [
+                              "fill",
+                              "stroke",
+                              "strokeWidth",
+                              "strokeLinecap",
+                              "strokeLinejoin",
+                            ]
+                          }
+                          stroke={
+                            {
+                              "type": 2,
+                            }
+                          }
+                          strokeLinecap={1}
+                          strokeLinejoin={1}
+                          strokeWidth={2}
+                        >
+                          <RNSVGEllipse
+                            cx="16.3"
+                            cy="6.4"
+                            fill={
+                              {
+                                "payload": 4278190080,
+                                "type": 0,
+                              }
+                            }
+                            rx="5.2"
+                            ry="2.2"
+                          />
+                          <RNSVGPath
+                            d="M11.1 6.4v3.7"
+                            fill={
+                              {
+                                "payload": 4278190080,
+                                "type": 0,
+                              }
+                            }
+                          />
+                          <RNSVGPath
+                            d="M21.5 6.4v8.2"
+                            fill={
+                              {
+                                "payload": 4278190080,
+                                "type": 0,
+                              }
+                            }
+                          />
+                          <RNSVGPath
+                            d="M11.1 9.1a5.2 2.2 0 0 0 10.4 0"
+                            fill={
+                              {
+                                "payload": 4278190080,
+                                "type": 0,
+                              }
+                            }
+                          />
+                          <RNSVGPath
+                            d="M13.4 13.7A5.2 2.2 0 0 0 21.5 11.85"
+                            fill={
+                              {
+                                "payload": 4278190080,
+                                "type": 0,
+                              }
+                            }
+                          />
+                          <RNSVGPath
+                            d="M13.7 16.5A5.2 2.2 0 0 0 21.5 14.6"
+                            fill={
+                              {
+                                "payload": 4278190080,
+                                "type": 0,
+                              }
+                            }
+                          />
+                          <RNSVGCircle
+                            cx="8"
+                            cy="15"
+                            fill={
+                              {
+                                "payload": 4278190080,
+                                "type": 0,
+                              }
+                            }
+                            r="5.5"
+                          />
+                        </RNSVGGroup>
+                      </RNSVGSvgView>
+                    </View>
+                    <Text
+                      style={
+                        {
+                          "color": "#F58B0F",
+                          "fontSize": 20,
+                          "fontVariant": [
+                            "tabular-nums",
+                          ],
+                          "fontWeight": "800",
+                          "lineHeight": 20,
+                        }
+                      }
+                    >
+                      5,000,000
+                       
+                      <Text
+                        style={
+                          {
+                            "color": "#645C42",
+                            "fontSize": 12,
+                            "fontWeight": "700",
+                            "lineHeight": 16,
+                          }
+                        }
+                      >
+                        메소
+                      </Text>
+                    </Text>
+                    <View
+                      accessibilityLabel="총 수익 자세히 보기"
+                      accessibilityState={
+                        {
+                          "busy": undefined,
+                          "checked": undefined,
+                          "disabled": undefined,
+                          "expanded": false,
+                          "selected": undefined,
+                        }
+                      }
+                      accessibilityValue={
+                        {
+                          "max": undefined,
+                          "min": undefined,
+                          "now": undefined,
+                          "text": undefined,
+                        }
+                      }
+                      accessible={true}
+                      collapsable={false}
+                      focusable={true}
+                      onBlur={[Function]}
+                      onClick={[Function]}
+                      onFocus={[Function]}
+                      onResponderGrant={[Function]}
+                      onResponderMove={[Function]}
+                      onResponderRelease={[Function]}
+                      onResponderTerminate={[Function]}
+                      onResponderTerminationRequest={[Function]}
+                      onStartShouldSetResponder={[Function]}
+                      role="button"
+                      style={
+                        {
+                          "alignItems": "center",
+                          "borderColor": "#CFC9AE",
+                          "borderRadius": 9999,
+                          "borderWidth": 1,
+                          "columnGap": 2,
+                          "flexDirection": "row",
+                          "flexShrink": 0,
+                          "height": 24,
+                          "marginLeft": "auto",
+                          "paddingLeft": 10,
+                          "paddingRight": 10,
+                          "rowGap": 2,
+                        }
+                      }
+                    >
+                      <Text
+                        style={
+                          {
+                            "color": "#645C42",
+                            "fontSize": 11,
+                            "fontWeight": "600",
+                          }
+                        }
+                      >
+                        자세히 보기
+                      </Text>
+                      <RNSVGSvgView
+                        align="xMidYMid"
+                        aria-hidden={true}
+                        bbHeight={12}
+                        bbWidth={12}
+                        fill="none"
+                        focusable={false}
+                        height={12}
+                        meetOrSlice={0}
+                        minX={0}
+                        minY={0}
+                        stroke="#645C42"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2.5}
+                        style={
+                          [
+                            {
+                              "backgroundColor": "transparent",
+                              "borderWidth": 0,
+                            },
+                            {
+                              "flexShrink": 0,
+                            },
+                            {
+                              "flex": 0,
+                              "height": 12,
+                              "width": 12,
+                            },
+                          ]
+                        }
+                        vbHeight={24}
+                        vbWidth={24}
+                        width={12}
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <RNSVGGroup
+                          fill={null}
+                          propList={
+                            [
+                              "fill",
+                              "stroke",
+                              "strokeWidth",
+                              "strokeLinecap",
+                              "strokeLinejoin",
+                            ]
+                          }
+                          stroke={
+                            {
+                              "payload": 4284767298,
+                              "type": 0,
+                            }
+                          }
+                          strokeLinecap={1}
+                          strokeLinejoin={1}
+                          strokeWidth={2.5}
+                        >
+                          <RNSVGPath
+                            d="m6 9 6 6 6-6"
+                            fill={null}
+                            propList={
+                              [
+                                "fill",
+                                "stroke",
+                                "strokeWidth",
+                                "strokeLinecap",
+                                "strokeLinejoin",
+                              ]
+                            }
+                            stroke={
+                              {
+                                "payload": 4284767298,
+                                "type": 0,
+                              }
+                            }
+                            strokeLinecap={1}
+                            strokeLinejoin={1}
+                            strokeWidth={2.5}
+                          />
+                        </RNSVGGroup>
+                      </RNSVGSvgView>
+                    </View>
+                  </View>
+                  <View
+                    aria-hidden={true}
+                    style={
+                      {
+                        "backgroundColor": "#CFC9AE",
+                        "height": 1,
+                        "marginTop": 12,
+                      }
+                    }
+                  />
                 </View>
               </View>
-              <View
-                aria-hidden={true}
-                style={
-                  {
-                    "backgroundColor": "#CFC9AE",
-                    "height": 1,
-                    "marginTop": 12,
-                  }
-                }
-              />
             </View>
-          </View>
-        </View>
-        <RCTScrollView
-          contentContainerStyle={
-            {
-              "columnGap": 16,
-              "paddingBottom": 0,
-              "rowGap": 16,
-            }
-          }
-          indicatorStyle="black"
-          refreshControl="<element:RefreshControlMock>"
-          style={
-            {
-              "flexBasis": "0%",
-              "flexGrow": 1,
-              "flexShrink": 1,
-              "marginBottom": 0,
-              "marginTop": 0,
-            }
-          }
-          testID="screen-scroll"
-        >
-          <RCTRefreshControl />
-          <View>
             <View
               style={
                 {

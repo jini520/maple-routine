@@ -28,7 +28,7 @@ import { resolveScreenBottomInset } from './bottom-inset'
 //
 // 웹은 스크롤포트를 `top-[var(--sa-top)]` 으로 내리고 안쪽 래퍼의 `-mt` 로 같은 양을 되돌렸다.
 // 그 음수 마진은 **`fixed` 헤더의 spacer 가 그만큼을 흡수해 주기 때문에** 성립하는 트릭이었다.
-// RN 에서 헤더는 스크롤 뷰의 **형제**라(`PageHeader` 파일 머리) 자기 안전영역 패딩으로 노치를
+// RN 에서 헤더는 스크롤 뷰의 **첫 자식**이라([[ADR-131]] 후속) 자기 안전영역 패딩으로 노치를
 // 직접 먹고, 스크롤포트는 그 아래에서 시작한다 — 되돌릴 것이 없으니 트릭도 없다.
 //
 // 헤더가 없는 화면(설정 계열)에서는 이 셸이 상자를 그만큼 내린다. **콘텐츠 패딩이 아니라 상자**여야
@@ -125,7 +125,6 @@ export function ScreenScroll({
 
   return (
     <View className="flex-1">
-      {header}
       <ScrollView
         ref={ref}
         testID="screen-scroll"
@@ -141,6 +140,14 @@ export function ScreenScroll({
         contentContainerClassName="gap-4"
         contentContainerStyle={{ paddingBottom: bottom.contentBottomPx }}
       >
+        {/* **헤더가 스크롤 뷰 «안»에 있다**([[ADR-131]] 후속) — 첫 자식이라 목록과 함께 흘러
+            올라간다. 예전에는 스크롤 뷰의 **형제**라 영원히 화면에 붙어 있었는데, 정책이
+            «최상단 헤더만 고정» 에서 **«고정을 푼다»** 로 다시 바뀌었다(사용자 판정 2026-08-13 —
+            *"지금 페이지에 고정된 영역을 풀라는 거야. 스크롤 가능하도록"*).
+
+            안전영역은 여전히 헤더가 먹는다(자기 `paddingTop`) — 스크롤 0 에서 노치를 비우고,
+            굴리면 그 패딩째 올라간다. */}
+        {header}
         {children}
       </ScrollView>
     </View>

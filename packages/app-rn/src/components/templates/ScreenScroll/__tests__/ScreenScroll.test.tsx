@@ -15,6 +15,7 @@
 // 그 구분이 곧 [[ADR-099]] 결정 6 이 실기기에서 잡은 회귀다.
 
 import { getThemeDefinition } from '@core/lib/theme-registry'
+import { within } from '@testing-library/react-native'
 import { Text, View } from 'react-native'
 
 import { flattenStyle, renderOverlay, 테스트_안전영역 } from '../../../__tests__/render-atom'
@@ -85,8 +86,8 @@ describe('스크롤 인디케이터 색 ([[ADR-099]] 결정 5)', () => {
 
 describe('상단 안전영역 — 헤더가 있으면 헤더가 먹는다', () => {
   // 웹은 스크롤포트를 내리고 안쪽 래퍼의 `-mt` 로 되돌렸는데, 그 음수 마진은 `fixed` 헤더의 spacer 가
-  // 그만큼을 흡수해 주기 때문에 성립하는 트릭이었다. RN 에서 헤더는 스크롤 뷰의 형제라 자기 패딩으로
-  // 노치를 직접 먹고, 스크롤포트는 그 아래에서 시작한다 — 되돌릴 것이 없다.
+  // 그만큼을 흡수해 주기 때문에 성립하는 트릭이었다. RN 에서 헤더는 스크롤 뷰의 **첫 자식**이라
+  // 자기 패딩으로 노치를 직접 먹고, 굴리면 그 패딩째 올라간다 — 되돌릴 것이 없다.
   it('헤더를 주면 상자를 내리지 않는다 (두 번 비우지 않는다)', async () => {
     const { getByTestId } = await renderOverlay(
       <ScreenScroll header={<View testID="header" />}>{목록}</ScreenScroll>,
@@ -147,5 +148,21 @@ describe('렌더 트리 스냅샷 — 이후 변경을 잡는 기준선(예전 �
     expect(
       (await renderOverlay(<ScreenScroll hasTabBar={false}>{목록}</ScreenScroll>)).toJSON(),
     ).toMatchSnapshot()
+  })
+})
+
+// ★ 회귀 가드 — **헤더는 스크롤 뷰 «안»에 있다**([[ADR-131]] 후속, 사용자 판정 2026-08-13).
+//
+// 예전에는 스크롤 뷰의 **형제**라 영원히 화면에 붙어 있었다. 정책이 «고정을 푼다» 로 바뀌면서
+// 안으로 들어왔는데, 이 차이는 **렌더 트리에서만 보이고 화면에서는 굴려 봐야 안다** — 스크롤 0
+// 에서는 두 배치가 똑같이 생겼다. 그래서 위치를 트리로 고정한다.
+describe('[[ADR-131]] 헤더도 함께 스크롤된다', () => {
+  it('헤더가 스크롤 뷰의 자식이다 — 형제로 되돌리면 다시 고정된다', async () => {
+    const { getByTestId } = await renderOverlay(
+      <ScreenScroll header={<View testID="header" />}>{목록}</ScreenScroll>,
+    )
+
+    // `screen-scroll` 아래에서 찾을 수 있으면 자식이다. 형제였다면 못 찾는다.
+    expect(within(getByTestId('screen-scroll')).getByTestId('header')).toBeTruthy()
   })
 })
