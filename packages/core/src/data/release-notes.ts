@@ -36,6 +36,19 @@ export const RELEASE_NOTE_CATEGORY_ORDER: readonly ReleaseNoteCategory[] = [
 // 이 파일은 순수 데이터다 — `features/`·`storage/`·`native/` 를 import 하지 않는다.
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '1.0.5',
+    date: '2026-08-12',
+    // 긴급 수정 한 건뿐이라 핵심 목록도 한 줄이다(ADR-126 결정 2 의 "3~4줄"은 상한이지 채워야 할
+    // 칸이 아니다 — 뭉칠 것이 없는데 줄을 늘리면 없는 변경을 지어내게 된다).
+    highlights: ['API 키 입력 후 화면이 넘어가지 않던 문제 수정'],
+    items: [
+      {
+        category: 'fix',
+        text: 'API 키를 입력한 뒤 화면이 넘어가지 않고 「화면을 표시하지 못했습니다」에서 멈추던 문제 수정',
+      },
+    ],
+  },
+  {
     version: '1.0.4',
     // 이 노트는 마일스톤 v1.0.4 의 닫힌 이슈(#156·#166·#185·#191·#164)를 근거로 릴리스 **전에**
     // 미리 썼고(이슈 #198, 사용자 결정), 배포하며 `date` 를 작성일에서 `chore(release)` 커밋
