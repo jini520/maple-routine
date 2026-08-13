@@ -179,3 +179,27 @@ describe('ThemeSelector — 프리뷰 타일 ([[ADR-104]] 결정 2·4)', () => {
     expect(view.queryAllByRole('image')).toHaveLength(0)
   })
 })
+
+// ★ 회귀 가드 — **한 줄에 둘**([[ADR-104]] 결정 1 의 `grid-cols-2`).
+//
+// 원래는 카드에 `w-[calc(50%-5px)]` 를 줬는데 **NativeWind 가 그 `calc()` 를 만들지 않아** 폭이
+// 통째로 빠졌고, 카드가 글자 길이대로 늘어나 한 줄에 셋이 서기도 했다(2026-08-13 실기기 관측:
+// 「엔젤릭버스터」만 넓었다). **에러도 경고도 없다** — 이 저장소가 이번 전환에서 반복해서 밟은
+// «조용히 안 먹는 스타일» 부류다.
+//
+// 그래서 «둘씩 선다» 를 **셀의 폭**으로 고정한다. 값이 `50%` 라는 것이 곧 2열이라는 뜻이고,
+// 퍼센트 하나뿐이라 NativeWind 가 그대로 내보낸다.
+describe('ThemeSelector — 2열 배치 ([[ADR-104]] 결정 1)', () => {
+  it('카드는 감싸는 셀이 절반 폭을 정한다 — 글자 길이가 폭을 정하지 않는다', async () => {
+    const { getByLabelText } = await renderAtom(
+      <ThemeSelector theme={THEME_NAMES[0]} onSelect={() => {}} />,
+    )
+
+    // 이름이 가장 긴 테마와 가장 짧은 테마가 **같은 폭**이어야 한다.
+    const byLength = [...THEME_NAMES].sort((a, b) => a.length - b.length)
+    for (const name of [byLength[0], byLength[byLength.length - 1]]) {
+      const cell = (getByLabelText(name) as AtomElement).parent
+      expect(flattenStyle(cell?.props.style).width).toBe('50%')
+    }
+  })
+})

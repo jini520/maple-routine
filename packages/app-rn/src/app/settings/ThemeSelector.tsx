@@ -90,10 +90,13 @@ export function ThemeSelector(props: ThemeSelectorProps): React.JSX.Element {
           >
             {group.category}
           </Text>
-          {/* CSS Grid 가 없어 `grid-cols-2` 를 폭으로 만든다 — 래핑 행 + 자식 절반 폭
-              (`CharacterTrackingGrid` 가 3열을 만든 방식과 같다). 웹의 `gap-2.5` 는 가로·세로
-              양쪽이라 그대로 둔다. */}
-          <View className="flex-row flex-wrap gap-2.5">
+          {/* CSS Grid 가 없어 `grid-cols-2` 를 **셀 패딩 + 줄 음수 마진**으로 만든다
+              (`CharacterTrackingGrid` 가 3열을 만든 방식과 같다).
+              **`w-[calc(50%-5px)]` + `gap` 으로 두면 안 된다** — NativeWind 가 그 `calc()` 를
+              만들지 않아 폭이 통째로 빠지고, 카드가 **글자 길이대로** 늘어나 한 줄에 셋이 서기도
+              한다(2026-08-13 실기기 관측: 「엔젤릭버스터」만 넓었다). 에러도 경고도 없다.
+              간격 10px 은 셀 패딩 5px 두 개가 만들고, 바깥으로 삐져나온 5px 은 줄의 `-m` 이 뺀다. */}
+          <View className="-m-[5px] flex-row flex-wrap">
             {group.themes.map((name) => (
               <ThemeTile
                 key={name}
@@ -129,48 +132,52 @@ function ThemeTile(props: ThemeTileProps): React.JSX.Element {
   const ModeIcon = tokens.mode === 'dark' ? MoonIcon : SunIcon
 
   return (
-    <Pressable
-      role="button"
-      aria-label={props.name}
-      aria-selected={props.isSelected}
-      onPress={() => props.onSelect(props.name)}
-      style={{
-        backgroundColor: tokens.bg,
-        borderColor: props.isSelected ? tokens.primary : tokens.border,
-        borderWidth: props.isSelected ? 2 : 1,
-      }}
-      // 2열 — `gap-2.5`(10px) 를 두 칸이 나눠 가지므로 절반에서 5px 을 뺀다.
-      className="relative h-[92px] w-[calc(50%-5px)] gap-[7px] rounded-[12px] p-2.5"
-    >
-      <View
-        style={{ backgroundColor: tokens.surface, borderColor: tokens.border }}
-        className="flex-row items-center gap-1.5 rounded-[7px] border p-1.5"
+    // 셀 — **한 줄에 둘**을 만드는 자리다. `w-1/2` 는 퍼센트 하나뿐이라 NativeWind 가 그대로
+    // 내보내고(`calc()` 와 달리), 패딩 5px 이 칸 사이 10px 을 만든다.
+    <View className="w-1/2 p-[5px]">
+        <Pressable
+          role="button"
+          aria-label={props.name}
+          aria-selected={props.isSelected}
+          onPress={() => props.onSelect(props.name)}
+        style={{
+          backgroundColor: tokens.bg,
+          borderColor: props.isSelected ? tokens.primary : tokens.border,
+          borderWidth: props.isSelected ? 2 : 1,
+        }}
+        // 폭은 **감싸는 셀**이 정한다(`w-1/2`) — 여기서 다시 정하지 않는다. 위 컨테이너 주석 참고.
+        className="relative h-[92px] w-full gap-[7px] rounded-[12px] p-2.5"
       >
-        <View style={{ backgroundColor: tokens.surface2 }} className="h-[5px] flex-1 rounded-full" />
-        <View style={{ backgroundColor: tokens.primary }} className="h-3.5 w-8 rounded-full" />
-      </View>
-
-      <View className="flex-row items-center gap-1">
-        <Text style={{ color: tokens.text }} className="text-xs font-bold leading-tight">
-          {props.name}
-        </Text>
-        <ModeIcon
-          aria-hidden
-          color={tokens.text}
-          className="h-2.5 w-2.5 shrink-0 opacity-70"
-          strokeWidth={2}
-        />
-      </View>
-
-      {props.isSelected && (
         <View
-          aria-hidden
-          style={{ backgroundColor: tokens.primary }}
-          className="absolute right-1.5 top-1.5 h-[17px] w-[17px] items-center justify-center rounded-full"
+          style={{ backgroundColor: tokens.surface, borderColor: tokens.border }}
+          className="flex-row items-center gap-1.5 rounded-[7px] border p-1.5"
         >
-          <CheckIcon color={tokens.onPrimary} className="h-2.5 w-2.5" strokeWidth={3} />
+          <View style={{ backgroundColor: tokens.surface2 }} className="h-[5px] flex-1 rounded-full" />
+          <View style={{ backgroundColor: tokens.primary }} className="h-3.5 w-8 rounded-full" />
         </View>
-      )}
-    </Pressable>
+
+        <View className="flex-row items-center gap-1">
+          <Text style={{ color: tokens.text }} className="text-xs font-bold leading-tight">
+            {props.name}
+          </Text>
+          <ModeIcon
+            aria-hidden
+            color={tokens.text}
+            className="h-2.5 w-2.5 shrink-0 opacity-70"
+            strokeWidth={2}
+          />
+        </View>
+
+        {props.isSelected && (
+          <View
+            aria-hidden
+            style={{ backgroundColor: tokens.primary }}
+            className="absolute right-1.5 top-1.5 h-[17px] w-[17px] items-center justify-center rounded-full"
+          >
+            <CheckIcon color={tokens.onPrimary} className="h-2.5 w-2.5" strokeWidth={3} />
+          </View>
+        )}
+      </Pressable>
+    </View>
   )
 }
