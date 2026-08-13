@@ -12,6 +12,23 @@
 import type { ReactNode } from 'react'
 import { act, fireEvent } from '@testing-library/react-native'
 
+// **드랍 연출도 세워 둔다.** 그 오버레이는 `requestAnimationFrame` 루프로 스프라이트를 돌리고
+// loop 단계가 **설계상 무한**이라(웹도 그렇다 — 탭해야 끝난다), jest 의 `requestAnimationFrame`
+// 대역이 `setTimeout` 이라 테스트가 영원히 안 끝난다. 이 파일이 보는 것은 타일 선택과 `onSave` 라
+// 연출은 대상이 아니다 — 재생 순서는 `drop-effect-player.test.ts` 가 따로 본다.
+// 목이 **같은 testID 를 낸다** — 이 파일에는 "연출이 뜨는가" 를 보는 케이스가 있고, 그 계약은
+// 여전히 지켜야 한다. 세우는 것은 재생일 뿐 존재가 아니다.
+jest.mock('../../../components/organisms/DropEffectOverlay/DropEffectOverlay', () => {
+  const { View } = jest.requireActual<typeof import('react-native')>('react-native')
+  const React = jest.requireActual<typeof import('react')>('react')
+  return {
+    __esModule: true,
+    // `accessibilityLabel` 은 안 붙인다 — 아이템 이름을 그대로 쓰면 같은 이름의 타일과 충돌해
+    // `getByLabelText` 가 둘을 찾는다(실측).
+    DropEffectOverlay: () => React.createElement(View, { testID: 'drop-effect-overlay-modal' }),
+  }
+})
+
 jest.mock('@gorhom/bottom-sheet', () => {
   const ReactNative = jest.requireActual<typeof import('react-native')>('react-native')
   const React = jest.requireActual<typeof import('react')>('react')

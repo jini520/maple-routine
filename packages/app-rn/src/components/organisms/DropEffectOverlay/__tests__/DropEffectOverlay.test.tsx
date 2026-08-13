@@ -54,7 +54,13 @@ describe('DropEffectOverlay — 구조', () => {
     expect(queryByTestId('drop-effect-item')).toBeNull()
   })
 
-  // 프레임이 없으면 재생할 것이 없다 — 웹도 `frames.end.length === 0` 이면 곧바로 닫는다.
+  // 탭하면 닫힌다 — **다만 «언제»는 여기서 안 본다.**
+  //
+  // 엔진이 붙은 뒤로 첫 탭은 `end` 재생을 시작하고 그것이 끝나야 `onClose` 가 온다(웹과 같다).
+  // 그 두 단계를 이 렌더 테스트로 재려 했더니 jest 의 `requestAnimationFrame` 이 한 flush 안에서
+  // 재생을 통째로 흘려보내 첫 탭에 이미 닫혀 있었다 — **시간을 통제하지 않는 곳에서 시간에 기댄
+  // 단언**이라 신뢰할 수 없다. 순서(탭 → end → 끝, 두 번째 탭은 건너뛰기)는 시간을 인자로 받는
+  // `drop-effect-player.test.ts` 가 정확히 본다. 여기서는 **닫히기는 하는가**만 남긴다.
   it('화면을 탭하면 닫힌다', async () => {
     const onClose = jest.fn()
     const { getByTestId } = await renderOverlay(
@@ -62,8 +68,9 @@ describe('DropEffectOverlay — 구조', () => {
     )
 
     await fireEvent.press(getByTestId('drop-effect-overlay'))
+    await fireEvent.press(getByTestId('drop-effect-overlay'))
 
-    expect(onClose).toHaveBeenCalledTimes(1)
+    expect(onClose).toHaveBeenCalled()
   })
 
   it('안드로이드 뒤로가기도 같은 자리로 이어진다', async () => {
@@ -86,10 +93,12 @@ describe('DropEffectOverlay — 구조', () => {
     expect(toJSON()).toMatchSnapshot()
   })
 
-  // **에셋은 왔는데 재생 엔진이 아직 없다** — [[ADR-129]] 로 네 단계가 전부 찼지만(그래서 옛 단언이
-  // 깨졌고, 그게 그 단언이 있던 이유다) 이 오버레이는 여전히 정적이다. 두 사실을 **함께** 적어야
-  // "왜 프레임이 있는데 안 움직이나"가 계약에서 읽힌다(파일 머리 ⓑ · [[ADR-048]] 기하 변환 대기).
-  it('프레임 에셋은 왔지만 연출은 아직 정적이다', async () => {
+  // **엔진이 붙었다.** 다만 이 렌더 테스트가 프레임 그림을 볼 수는 없다 — jest 의 에셋 대역은
+  // `{ testUri }` 뿐이라 `Image.resolveAssetSource` 가 크기를 안 준다. 크기를 모르면 아예 안 그리는
+  // 것이 `frame-layout.ts` 의 계약이므로(크기 없이 그리면 프레임마다 최대 26px 튄다, [[ADR-048]])
+  // 여기서는 **자리와 계약**만 보고, 재생 순서는 `drop-effect-player.test.ts` 가 본다.
+  it('프레임 에셋이 네 단계 다 있고, 기둥·ScreenEff 자리가 서 있다', async () => {
+    expect(DROP_EFFECT_FRAMES.screen.length).toBeGreaterThan(0)
     expect(DROP_EFFECT_FRAMES.loop.length).toBeGreaterThan(0)
     expect(DROP_EFFECT_FRAMES.end.length).toBeGreaterThan(0)
 
@@ -97,9 +106,8 @@ describe('DropEffectOverlay — 구조', () => {
       <DropEffectOverlay itemName="흑옥의 보스 반지 상자" onClose={noop} />,
     )
 
-    // 기둥·ScreenEff 자리는 아직 **빈 View** 다. 프레임을 그리기 시작하면 자식이 생긴다.
-    expect(getByTestId('drop-effect-pillar').props.children).toBeUndefined()
-    expect(getByTestId('drop-effect-screen').props.children).toBeUndefined()
+    expect(getByTestId('drop-effect-pillar')).toBeTruthy()
+    expect(getByTestId('drop-effect-screen')).toBeTruthy()
   })
 })
 

@@ -49,15 +49,28 @@
 // ④ 오버레이의 색은 **테마를 따르지 않는다**([[ADR-064]] 적용 범위 밖) — 스프라이트가 어두운
 //    바탕을 전제로 그려져서, 밝은 테마에서 표면색으로 바꾸면 연출 자체가 사라진다. 웹과 같은
 //    고정 hex 를 그대로 쓴다.
-import { useId } from 'react'
-import { Modal, Pressable, Text, View } from 'react-native'
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
+import { Image, Modal, Pressable, Text, View, useWindowDimensions } from 'react-native'
 import { useReducedMotion } from 'react-native-reanimated'
 import { Defs, RadialGradient, Rect, Stop } from 'react-native-svg'
 
+import { DROP_EFFECT_FRAMES } from '@core/lib/drop-effect-frames'
+import {
+  DROP_EFFECT_ORIGINS,
+  DROP_PILLAR_SCALE,
+  screenEffectScale,
+} from '@core/lib/drop-effect-layout'
 import { getItemIconUrl } from '@core/lib/item-icons'
 
 import { AnimatedView, Svg } from '../../../lib/nativewind-interop'
-import { FLOAT_ANIMATION } from './float-animation'
+import {
+  advanceDropEffect,
+  createDropEffectState,
+  requestDropEffectClose,
+  type DropEffectFrameCounts,
+} from './drop-effect-player'
+import { FLOAT_ANIMATION, POP_IN_ANIMATION } from './float-animation'
+import { centerDropFrame, placeDropFrame, type FrameBitmapSize } from './frame-layout'
 
 /** 중앙 아이템 세로 위치(값 ↑ = 아래로). DropEff 지면 앵커도 이 값 기준으로 계산한다. */
 const ITEM_CENTER_TOP = '66%'
@@ -77,13 +90,98 @@ interface DropEffectOverlayProps {
   onClose: () => void
 }
 
+/**
+ * 프레임 비트맵 크기 — 번들 에셋은 스스로 안다([[ADR-129]] 이후). 모르면 `null` 이고, 그때는
+ * 아예 안 그린다(`frame-layout.ts` — 크기 없이 그리면 프레임마다 최대 26px 튄다).
+ */
+function bitmapSizeOf(source: number | { uri?: string }): FrameBitmapSize | null {
+  const resolved = Image.resolveAssetSource(source as never)
+  if (resolved === null || resolved === undefined) return null
+  if (!Number.isFinite(resolved.width) || !Number.isFinite(resolved.height)) return null
+  return { width: resolved.width, height: resolved.height }
+}
+
 export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Element {
   const gradientId = `drop-effect-backdrop-${useId().replace(/[^a-zA-Z0-9]/g, '')}`
   const itemUrl = getItemIconUrl(props.itemName, props.slot)
   const reduceMotion = useReducedMotion()
+  const { width: viewportW, height: viewportH } = useWindowDimensions()
 
-  // 탭하면 곧바로 닫는다 — 웹도 `frames.end.length === 0` 이면 재생 없이 `finish()` 로 간다.
-  // 엔진이 붙으면 이 자리에서 end 를 재생한 뒤 `onClose` 를 부른다(파일 머리 ⓑ).
+  const counts: DropEffectFrameCounts = useMemo(
+    () => ({
+      screen: DROP_EFFECT_FRAMES.screen.length,
+      pre: DROP_EFFECT_FRAMES.pre.length,
+      loop: DROP_EFFECT_FRAMES.loop.length,
+      end: DROP_EFFECT_FRAMES.end.length,
+    }),
+    [],
+  )
+
+  const [state, setState] = useState(createDropEffectState)
+
+  // 상태를 ref 로도 들고 있는 이유: tick 은 `requestAnimationFrame` 콜백이라 **자기 클로저의 옛
+  // state 를 본다.** 웹판이 `st` 객체 하나를 변이하며 돌던 자리와 같은 역할이다.
+  //
+  // **ref 가 원본이고 state 는 그림자다** — 렌더 때 `stateRef.current = state` 로 되맞추지 않는다.
+  // 그 방향이면 렌더 중 ref 를 건드리게 되고(React 규칙 위반), 무엇보다 필요가 없다: 값을 바꾸는
+  // 곳이 tick 과 탭 둘뿐이고 둘 다 ref 를 먼저 고친 뒤 `setState` 로 화면에 흘린다.
+  const stateRef = useRef(state)
+
+  const onCloseRef = useRef(props.onClose)
+  useEffect(() => {
+    onCloseRef.current = props.onClose
+  }, [props.onClose])
+
+  // 재생 루프. **`requestAnimationFrame` 인 이유는 `drop-effect-player.ts` 머리에 적었다** —
+  // 스프라이트 재생은 «몇 번째 그림인가» 를 정하는 일이라 JS 스레드를 벗어날 수 없다.
+  useEffect(() => {
+    let raf = 0
+    let last = 0
+
+    const tick = (ts: number): void => {
+      if (last === 0) last = ts
+      const dt = ts - last
+      last = ts
+
+      const next = advanceDropEffect(stateRef.current, dt, counts)
+      stateRef.current = next
+      setState(next)
+
+      if (next.finished) {
+        onCloseRef.current()
+        return
+      }
+      raf = requestAnimationFrame(tick)
+    }
+
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [counts])
+
+  // 탭 → end 재생 → 닫힘. 이미 닫는 중이면 즉시 끝난다(웹과 같은 «두 번 탭하면 건너뛴다»).
+  const handlePress = useCallback(() => {
+    const next = requestDropEffectClose(stateRef.current, counts)
+    stateRef.current = next
+    setState(next)
+    if (next.finished) onCloseRef.current()
+  }, [counts])
+
+  // ── 이번 프레임에 그릴 것들
+  const screenScale = screenEffectScale(viewportW, viewportH)
+  const screenSource = state.screenDone ? null : (DROP_EFFECT_FRAMES.screen[state.screenIndex] ?? null)
+  const screenPlacement =
+    screenSource === null ? null : centerDropFrame(screenScale, bitmapSizeOf(screenSource))
+
+  const pillarPhase = state.pillarPhase
+  const pillarSource = pillarPhase === null ? null : (DROP_EFFECT_FRAMES[pillarPhase][state.pillarIndex] ?? null)
+  const pillarPlacement =
+    pillarPhase === null || pillarSource === null
+      ? null
+      : placeDropFrame(
+          DROP_EFFECT_ORIGINS[pillarPhase][state.pillarIndex] ?? [0, 0],
+          DROP_PILLAR_SCALE,
+          bitmapSizeOf(pillarSource),
+        )
 
   return (
     <Modal
@@ -95,7 +193,7 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
       navigationBarTranslucent
       onRequestClose={props.onClose}
     >
-      <Pressable testID="drop-effect-overlay" onPress={props.onClose} className="flex-1 overflow-hidden">
+      <Pressable testID="drop-effect-overlay" onPress={handlePress} className="flex-1 overflow-hidden">
         <Svg className="absolute inset-0" width="100%" height="100%">
           <Defs>
             <RadialGradient id={gradientId} cx="50%" cy="50%" r={BACKDROP_RADIUS}>
@@ -106,41 +204,87 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
           <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${gradientId})`} />
         </Svg>
 
-        {/* DropEff 기둥 자리 — `left/top` 이 기둥의 지면 앵커다. 프레임별 origin 정합
-            ([[ADR-048]])과 그림은 엔진과 함께 온다(파일 머리 ⓑ). */}
+        {/* DropEff 기둥 — 이 View 의 좌상단이 **기둥의 지면 앵커**이고, 프레임은 자기 origin 이 그
+            점에 오도록 음수 좌표로 놓인다([[ADR-048]] · `frame-layout.ts`). 검은 배경 위 가산 합성
+            스프라이트라 `mixBlendMode: 'screen'` 이 필수다 — 없으면 검은 사각형이 그대로 보인다.
+            블렌드는 `ViewStyle` 에만 있어 **감싸는 View 가 진다**(웹은 `<img>` 하나가 졌다). */}
         <View
           testID="drop-effect-pillar"
           pointerEvents="none"
           className="absolute left-1/2"
           style={{ top: ITEM_CENTER_TOP, marginTop: ITEM_SIZE_PX / 2 + DROP_OFFSET_Y_PX, zIndex: 2 }}
-        />
+        >
+          {pillarSource !== null && pillarPlacement !== null && (
+            <View style={{ position: 'absolute', ...pillarPlacement, mixBlendMode: 'screen' }}>
+              <Image
+                testID="drop-effect-pillar-frame"
+                source={pillarSource}
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+                style={{ width: '100%', height: '100%' }}
+              />
+            </View>
+          )}
+        </View>
 
         {/* 중앙 아이템(투명 PNG). [[ADR-129]] 이후 매핑이 있는 아이템은 여기까지 오지만, 그림을
             앉히는 `<Image>` 는 재생 엔진(파일 머리 ⓑ)과 함께 온다 — 팝인 트리거가 8프레임 시점이라
             엔진 없이는 켤 것이 없다. 매핑이 없는 아이템은 웹과 같은 분기로 그대로 비어 있다. */}
-        {itemUrl !== null && (
+        {itemUrl !== null && state.itemVisible && (
           <View
             testID="drop-effect-item"
             pointerEvents="none"
             className="absolute left-1/2"
-            style={{ top: ITEM_CENTER_TOP, zIndex: 3 }}
+            style={{
+              top: ITEM_CENTER_TOP,
+              zIndex: 3,
+              marginLeft: -ITEM_SIZE_PX / 2,
+              marginTop: -ITEM_SIZE_PX / 2,
+            }}
           >
-            {/* 웹의 `<div className="fx-drop-float">` 자리. 모션 줄이기면 애니메이션을 안 건다
-                (웹의 `@media (prefers-reduced-motion: reduce) { animation: none }`). */}
+            {/* 웹이 레이어를 셋으로 가른 이유가 RN 에서도 그대로다 — 중앙정렬(바깥)·부유(가운데)·
+                팝인(안쪽)이 한 요소에 겹치면 서로의 transform 을 덮어쓴다.
+                모션 줄이기면 둘 다 안 건다(웹의 `prefers-reduced-motion` 짝). */}
             <AnimatedView
               testID="drop-effect-item-float"
               style={reduceMotion ? undefined : FLOAT_ANIMATION}
-            />
+            >
+              <AnimatedView
+                testID="drop-effect-item-pop"
+                style={reduceMotion ? undefined : POP_IN_ANIMATION}
+              >
+                <Image
+                  testID="drop-effect-item-image"
+                  source={itemUrl}
+                  accessibilityLabel={props.itemName}
+                  resizeMode="contain"
+                  style={{ width: ITEM_SIZE_PX, height: ITEM_SIZE_PX }}
+                />
+              </AnimatedView>
+            </AnimatedView>
           </View>
         )}
 
-        {/* ScreenEff 자리 — 전 프레임 동일 배율 + 중앙 정렬([[ADR-048]] 결정 5). */}
+        {/* ScreenEff — 전 프레임 동일 배율 + 화면 중앙([[ADR-048]] 결정 5). 기둥과 같은 이유로
+            가산 합성이다. */}
         <View
           testID="drop-effect-screen"
           pointerEvents="none"
           className="absolute left-1/2 top-1/2"
           style={{ zIndex: 4 }}
-        />
+        >
+          {screenSource !== null && screenPlacement !== null && (
+            <View style={{ position: 'absolute', ...screenPlacement, mixBlendMode: 'screen' }}>
+              <Image
+                testID="drop-effect-screen-frame"
+                source={screenSource}
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+                style={{ width: '100%', height: '100%' }}
+              />
+            </View>
+          )}
+        </View>
 
         <View className="absolute inset-x-0 bottom-6" pointerEvents="none" style={{ zIndex: 5 }}>
           <Text

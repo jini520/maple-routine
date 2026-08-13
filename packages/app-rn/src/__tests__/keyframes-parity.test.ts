@@ -39,7 +39,7 @@ import {
   VALUABLE_CARD_GLOW_TIMING,
   VALUABLE_CARD_RING_COLOR,
 } from '../app/boss-profit/valuable-card-glow'
-import { FLOAT_ANIMATION } from '../components/organisms/DropEffectOverlay/float-animation'
+import { FLOAT_ANIMATION, POP_IN_ANIMATION } from '../components/organisms/DropEffectOverlay/float-animation'
 import { TIMER_ANIMATION_BASE } from '../components/organisms/Toast/timer-animation'
 
 const WEB_SRC = join(__dirname, '../../../app-capacitor/src')
@@ -341,5 +341,35 @@ describe('valuable-drop-spin — degrade (step 7)', () => {
     )
     // 링 두께 — 웹은 `padding: 2px` + mask(xor) 로 2px 만 남긴다.
     expect(block).toContain('padding: 2px')
+  })
+})
+
+// ── 회귀 가드: CSS 애니메이션의 이징은 **문자열 `cubic-bezier(...)` 가 될 수 없다** ─────────────
+//
+// Reanimated 의 CSS API 는 미리 정의된 이름만 문자열로 받고, 임의 곡선은 `cubicBezier()` 헬퍼가
+// 만든 값을 받는다. 문자열로 두면 타입은 통과하고 **런타임에 던져 화면이 ErrorBoundary 로 떨어진다**
+// (2026-08-13 실측 — 드랍 연출 팝인에서 실제로 그랬다). 웹 CSS 를 그대로 베껴 오면 반드시 밟는
+// 자리라, 값을 하나씩 검사하는 대신 **형태**를 고정한다.
+describe('이징은 Reanimated 가 받는 형태여야 한다', () => {
+  const PREDEFINED = [
+    'linear',
+    'ease',
+    'ease-in',
+    'ease-out',
+    'ease-in-out',
+    'step-start',
+    'step-end',
+  ]
+
+  const TIMINGS: Array<[string, unknown]> = [
+    ['FLOAT_ANIMATION', FLOAT_ANIMATION.animationTimingFunction],
+    ['POP_IN_ANIMATION', POP_IN_ANIMATION.animationTimingFunction],
+    ['TIMER_ANIMATION_BASE', TIMER_ANIMATION_BASE.animationTimingFunction],
+    ['VALUABLE_ROW_PULSE', VALUABLE_ROW_PULSE.animationTimingFunction],
+  ]
+
+  it.each(TIMINGS)('%s 의 이징이 문자열이면 미리 정의된 이름이다', (_name, timing) => {
+    if (typeof timing !== 'string') return // `cubicBezier()` 결과 — 헬퍼가 만든 값이면 통과
+    expect(PREDEFINED).toContain(timing)
   })
 })
