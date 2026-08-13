@@ -58,7 +58,7 @@ describe('온보딩 분기', () => {
     await render(<NavigationHarness />)
 
     expect(screen.getByTestId('screen-Onboarding')).toBeTruthy()
-    expect(screen.queryByTestId('screen-Content', { includeHiddenElements: true })).toBeNull()
+    expect(screen.queryByTestId('screen-Today', { includeHiddenElements: true })).toBeNull()
   })
 
   it('완료면 탭이 그려지고 온보딩은 사라진다', async () => {
@@ -66,7 +66,7 @@ describe('온보딩 분기', () => {
 
     await render(<NavigationHarness />)
 
-    expect(screen.getByTestId('screen-Content')).toBeTruthy()
+    expect(screen.getByTestId('screen-Today')).toBeTruthy()
     expect(screen.queryByTestId('screen-Onboarding', { includeHiddenElements: true })).toBeNull()
   })
 
@@ -85,12 +85,12 @@ describe('온보딩 분기', () => {
     }
 
     await setStatus('completed')
-    expect(screen.getByTestId('screen-Content')).toBeTruthy()
+    expect(screen.getByTestId('screen-Today')).toBeTruthy()
     expect(screen.queryByTestId('screen-Onboarding', { includeHiddenElements: true })).toBeNull()
 
     await setStatus('awaitingApiKey')
     expect(screen.getByTestId('screen-Onboarding')).toBeTruthy()
-    expect(screen.queryByTestId('screen-Content', { includeHiddenElements: true })).toBeNull()
+    expect(screen.queryByTestId('screen-Today', { includeHiddenElements: true })).toBeNull()
   })
 })
 
@@ -134,7 +134,7 @@ describe('하위 페이지 — 계획서 §1 의 열하나', () => {
     })
 
     expect(screen.getByTestId('screen-ContentManage')).toBeTruthy()
-    expect(screen.getByTestId('screen-Content', { includeHiddenElements: true })).toBeTruthy()
+    expect(screen.getByTestId('screen-Today', { includeHiddenElements: true })).toBeTruthy()
   })
 
   it('뒤로 가면 하위 페이지만 사라진다', async () => {
@@ -150,7 +150,7 @@ describe('하위 페이지 — 계획서 §1 의 열하나', () => {
     })
 
     expect(screen.queryByTestId('screen-ContentManage', { includeHiddenElements: true })).toBeNull()
-    expect(screen.getByTestId('screen-Content')).toBeTruthy()
+    expect(screen.getByTestId('screen-Today')).toBeTruthy()
   })
 })
 

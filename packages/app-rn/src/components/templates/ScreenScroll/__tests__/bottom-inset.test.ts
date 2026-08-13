@@ -2,22 +2,29 @@
 // 걸려 있어 렌더로 검사하려면 `Platform.OS` 를 조작해야 하고(그러면 무엇을 지키는 테스트인지가
 // 흐려진다), 무엇보다 **RN 이 웹뷰만큼 못 가르는 자리**라 그 대가가 이름을 갖고 드러나야 한다.
 
-import { resolveScreenBottomInset } from '../bottom-inset'
+import { FLOATING_BAR_SPACE_PX, resolveScreenBottomInset } from '../bottom-inset'
 
 const 홈인디케이터 = 34
 const 안드로이드_3버튼 = 48
 
-describe('탭바가 있으면 둘 다 0 이다', () => {
-  // 웹은 `--tab-bar-h` 를 실측해 스크롤포트를 줄였다([[ADR-099]] 결정 7 — `4rem` 가정과 실제 높이가
-  // 어긋나 띠가 생겼다). RN 에서는 탭 내비게이터가 **이미 탭바를 뺀 상자**를 화면에 주므로 잴 것도,
-  // 어긋날 것도 없다. 여기서 값을 더하면 그만큼 두 번 빼는 셈이다.
-  it.each([홈인디케이터, 안드로이드_3버튼])('바닥 인셋 %ipx 를 무시한다', (bottomInsetPx) => {
+describe('떠 있는 바가 있으면 «콘텐츠 끝»에 그 몫을 남긴다 ([[ADR-132]] 결정 11)', () => {
+  // **[[ADR-132]] 로 뜻이 바뀐 자리다.** 옛 탭바는 화면 상자 «밖»이라 둘 다 0 이면 됐지만(탭
+  // 내비게이터가 탭바를 뺀 상자를 줬다), 새 바는 화면 «위»에 떠 있어 콘텐츠가 그 아래로 지나간다.
+  // 스크롤포트를 줄이면 떠 있는 의미가 사라지므로(그냥 화면이 작아진다) 여백은 콘텐츠 쪽이다 —
+  // 결정 16 이 홈 인디케이터에 대해 세운 «지나가도 되는 여백» 과 같은 형태다.
+  it.each([홈인디케이터, 안드로이드_3버튼])('바닥 인셋 %ipx + 바의 몫을 콘텐츠 끝에 남긴다', (bottomInsetPx) => {
     for (const platform of ['ios', 'android']) {
       expect(resolveScreenBottomInset({ hasTabBar: true, bottomInsetPx, platform })).toEqual({
         portBottomPx: 0,
-        contentBottomPx: 0,
+        contentBottomPx: bottomInsetPx + FLOATING_BAR_SPACE_PX,
       })
     }
+  })
+
+  // 이 값이 `BottomBar.tsx` 의 `BAR_HEIGHT + LIFT` 와 어긋나면 콘텐츠가 바 뒤로 들어가거나(작으면)
+  // 바닥에 빈 띠가 남는다(크면). 한쪽만 고치는 사고를 막으려고 상수 자체를 고정한다.
+  it('바의 몫은 72 다 — 높이 72 + 띄움 0 (합이 같아 구성이 바뀌어도 이 값은 안 움직인다)', () => {
+    expect(FLOATING_BAR_SPACE_PX).toBe(72)
   })
 })
 

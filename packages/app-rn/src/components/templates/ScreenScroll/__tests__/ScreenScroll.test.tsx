@@ -21,6 +21,7 @@ import { Text, View } from 'react-native'
 import { flattenStyle, renderOverlay, 테스트_안전영역 } from '../../../__tests__/render-atom'
 import { rnThemeAppearancePort } from '../../../../native/adapters/rn-theme-appearance'
 import { __resetThemeAppearanceForTest } from '../../../../theme/appearance-store'
+import { FLOATING_BAR_SPACE_PX } from '../bottom-inset'
 import { ScreenScroll } from '../ScreenScroll'
 
 beforeEach(__resetThemeAppearanceForTest)
@@ -123,13 +124,17 @@ describe('하단 인셋이 들어가는 자리', () => {
     expect(flattenStyle(scroller.props.style).marginBottom).toBe(0)
   })
 
-  // 탭 화면은 탭 내비게이터가 이미 탭바를 뺀 상자를 준다 — 여기서 또 비우면 두 번 빼는 셈이다.
-  it('탭 화면(기본값)은 하단을 비우지 않는다', async () => {
+  // 탭 화면의 바는 **떠 있다**([[ADR-132]] 결정 11) — 콘텐츠가 그 아래로 지나가므로 스크롤포트는
+  // 그대로 두고(`marginBottom` 0) 콘텐츠 끝에 «바의 몫 + 안전영역» 을 남긴다. 스크롤포트를 줄이면
+  // 떠 있는 의미가 사라진다(그냥 화면이 작아진다).
+  it('탭 화면(기본값)은 떠 있는 바의 몫을 콘텐츠 끝에 남긴다', async () => {
     const { getByTestId } = await renderOverlay(<ScreenScroll>{목록}</ScreenScroll>)
 
     const scroller = getByTestId('screen-scroll')
     expect(flattenStyle(scroller.props.style).marginBottom).toBe(0)
-    expect(flattenStyle(scroller.props.contentContainerStyle).paddingBottom).toBe(0)
+    expect(flattenStyle(scroller.props.contentContainerStyle).paddingBottom).toBe(
+      테스트_안전영역.insets.bottom + FLOATING_BAR_SPACE_PX,
+    )
   })
 })
 
