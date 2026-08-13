@@ -225,7 +225,7 @@ export function DropPriceScreen(): React.JSX.Element {
           // (배경 조각도 하단 페이드도 없는 서브 화면이다).
           <View
             testID="page-header"
-            className="z-10 bg-bg px-4 pb-2"
+            className="z-10 px-4 pb-2"
             style={{ paddingTop: insets.top + HEADER_TOP_PADDING_PX }}
           >
             <View className="flex-row items-center gap-1">

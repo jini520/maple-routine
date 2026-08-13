@@ -12,7 +12,6 @@
 //
 // 안전영역은 `renderOverlay` 가 넣는 실측 인셋(상 59)을 쓴다 — [[ADR-107]] 이 실측한 표와 같은 값이다.
 
-import { getThemeDefinition } from '@core/lib/theme-registry'
 import { Text, View } from 'react-native'
 
 import { flattenStyle, renderOverlay, 테스트_안전영역 } from '../../../__tests__/render-atom'
@@ -21,8 +20,6 @@ import { PageHeader } from '../PageHeader'
 
 beforeEach(__resetThemeAppearanceForTest)
 afterEach(__resetThemeAppearanceForTest)
-
-const 기본테마 = getThemeDefinition('머쉬맘')
 
 /** RN 은 벌거벗은 문자열을 View 자식으로 못 그린다 — 웹판 테스트의 `내용` 자리. */
 const 내용 = <Text>내용</Text>
@@ -36,8 +33,21 @@ describe('PageHeader', () => {
 
     expect(flattenStyle(getByTestId('page-header').props.style)).toMatchObject({
       paddingTop: 테스트_안전영역.insets.top + 16,
-      backgroundColor: 기본테마.bg,
     })
+  })
+
+  // ★ [[ADR-133]] 회귀 가드 — **헤더는 자기 배경을 칠하지 않는다.**
+  //
+  // 예전에는 여기서 헤더의 `backgroundColor` 가 테마 `bg` 인지 확인했다. 그때는 헤더가 불투명해야 했고
+  // (화면에 고정돼 있었으므로) 그 위에 테마 배경 조각을 이어 그렸다([[ADR-088]] 결정 5-1).
+  // [[ADR-131]] 이 고정 영역을 없애면서 전제가 사라졌고, 남은 것은 벽지 위의 검은 띠였다.
+  //
+  // 배경 없는 테마에서는 **보이는 그림이 바뀌지 않는다** — 내비게이션 테마가 화면을 같은 `bg` 로
+  // 칠하므로 뒤에 같은 색이 있다. 그래서 이 검사는 «색이 무엇인가» 가 아니라 «칠하지 않는가» 다.
+  it('자기 배경을 칠하지 않는다 — 배경은 벽지 한 장이 진다', async () => {
+    const { getByTestId } = await renderOverlay(<PageHeader>{내용}</PageHeader>)
+
+    expect(flattenStyle(getByTestId('page-header').props.style).backgroundColor).toBeUndefined()
   })
 
   // ★ [[ADR-098]] 결정 2 · [[ADR-112]] 회귀 가드 — **웹의 형태를 되살리지 말 것.**

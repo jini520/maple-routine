@@ -261,7 +261,7 @@
       "image": "blackmage-background",
       "size": "cover",
       "position": "25% bottom",
-      "dim": 0.65,
+      "dim": 0.55,
       "fadeTop": "0px"
     }
   }

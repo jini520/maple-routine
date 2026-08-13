@@ -66,7 +66,6 @@ exports[`렌더 트리 기준선 기록이 있는 현재 주 1`] = `
             <View
               style={
                 {
-                  "backgroundColor": "#F2F0E2",
                   "paddingBottom": 8,
                   "paddingLeft": 16,
                   "paddingRight": 16,

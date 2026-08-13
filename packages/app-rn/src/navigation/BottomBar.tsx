@@ -175,6 +175,14 @@ const EASE = Easing.bezier(0.32, 0.72, 0, 1)
  * 프롭**이기 때문이다(`lib/nativewind-interop`). 항목 아이콘과 ← 가 같은 값을 써야 해서 이름을 준다.
  */
 const ICON_STROKE = 1.5
+/**
+ * 활성인데 **채울 수 없는** 그림의 획 굵기 ([[ADR-132]] 정정 27).
+ *
+ * 채우기가 통하는 다섯(대시보드·렌치·장바구니·톱니·수익)은 면으로 활성을 말한다. 나머지
+ * (달력·지갑·목록·검·조준경)는 안쪽 선이 의미를 져서 채울 수 없으므로 **굵기**로 말한다.
+ * 둘을 같이 주면 채운 그림이 과해지므로 **배타**다 — `activeStroke` 가 그것을 한 자리에서 고른다.
+ */
+const ICON_STROKE_ACTIVE = 2.75
 
 type IconComponent = React.ComponentType<{
   className?: string
@@ -213,9 +221,10 @@ const ICONS: Readonly<Record<GroupId | TabRouteName, IconComponent>> = {
  * 선이 있는 아이콘은 채우는 순간 그 선이 통째로 사라진다 — 시뮬레이터에서 열 개를 다 채워 보고
  * 골랐다.
  *
- *   살아남음  대시보드(사각 넷) · 렌치(실루엣 하나) · 장바구니(윤곽 자체가 그림)
+ *   살아남음  대시보드(사각 넷) · 렌치(실루엣 하나) · 장바구니(윤곽 자체가 그림) ·
+ *             검(칼날이 면으로 차고 손잡이 선은 남는다 — 사용자 판정으로 뒤늦게 편입)
  *   무너짐    톱니 → 가운데 구멍이 메워져 덩어리 · 조준경 → 십자선이 사라져 원판
- *             달력·지갑 → 안쪽 체크·주머니를 잃음 · 목록/검 → 선뿐이라 채울 «면» 이 없음
+ *             달력·지갑 → 안쪽 체크·주머니를 잃음 · 목록 → 선뿐이라 채울 «면» 이 없음
  *             수익(`ProfitIcon`) → 열린 호로 그린 커스텀이라 `fill="none"` 이 규격이다([[ADR-066]])
  *
  * 아이콘 **컴포넌트**로 잡는 이유는 같은 그림이 두 자리에 쓰이기 때문이다(today 는 그룹과 페이지,
@@ -225,6 +234,7 @@ const FILLED_ICONS: ReadonlySet<IconComponent> = new Set([
   LayoutDashboardIcon,
   WrenchIcon,
   ShoppingCartIcon,
+  SwordsIcon,
   // 아래 둘은 우리가 그린 아이콘이라 **채울 자리를 고를 수 있다** — 수익은 동전 두 개만 면이
   // 되고 단을 그리는 호는 선으로 남으며, 톱니는 몸통만 차고 가운데가 구멍으로 남는다.
   ProfitIcon,
@@ -234,6 +244,11 @@ const FILLED_ICONS: ReadonlySet<IconComponent> = new Set([
 /** 활성 아이콘이 쓸 `fill` — 채우지 않는 그림은 `none` 그대로다. */
 function activeFill(Icon: IconComponent, active: boolean, accent: string): string {
   return active && FILLED_ICONS.has(Icon) ? accent : 'none'
+}
+
+/** 채우지 못하는 그림만 활성일 때 굵어진다 — 채우는 그림은 기본 굵기 그대로다(배타). */
+function activeStroke(Icon: IconComponent, active: boolean): number {
+  return active && !FILLED_ICONS.has(Icon) ? ICON_STROKE_ACTIVE : ICON_STROKE
 }
 
 interface BarItemProps {
@@ -282,7 +297,7 @@ function BarItem({
           className="h-[25px] w-[25px]"
           color={active ? accent : muted}
           fill={activeFill(Icon, active, accent)}
-          strokeWidth={ICON_STROKE}
+          strokeWidth={activeStroke(Icon, active)}
         />
         <Text
           numberOfLines={1}
@@ -421,7 +436,14 @@ export function BottomBar({ state, navigation }: BottomTabBarProps): React.JSX.E
     outputRange: [itemWidth + ROW_SHIFT, itemWidth],
   })
   // ← 는 전환의 **뒷절반에만** 존재한다 — 나갈 땐 먼저 비키고, 들어올 땐 자리가 다 생긴 뒤에 든다.
-  const backOpacity = visual.interpolate({ inputRange: [0, 0.45, 1], outputRange: [0, 0, 1] })
+  // ← 는 **투명도가 아니라 마운트로** 나타나고 사라진다 ([[ADR-132]] 정정 26).
+  //
+  // 판이 `opacity: 0` 인 채로 마운트되면 iOS 가 그 `GlassView` 의 효과를 끄고, 뒤에 1 로 돌아와도
+  // **되살리지 않는다.** 앱은 늘 그룹 행(← 없음)에서 시작하므로 매 실행마다 ← 만 재질을 잃었다 —
+  // 콜드 재시작 실측: `opacity: 0` 출발이면 안 그려지고(들림 +0), `1` 로 두면 +34.3 이다.
+  // 0.01 로 «0 만 피하는» 판도 안 통했다(마운트 시점에 **정확히 1** 이어야 한다).
+  //
+  // 그래서 `hasBack` 으로 마운트를 가른다. 잃는 것은 페이드고, 등장·퇴장은 `backScale` 이 진다.
   const backScale = visual.interpolate({ inputRange: [0, 0.45, 1], outputRange: [0.82, 0.82, 1] })
   const backShift = visual.interpolate({ inputRange: [0, 1], outputRange: [-ROW_SHIFT, 0] })
 
@@ -678,6 +700,7 @@ export function BottomBar({ state, navigation }: BottomTabBarProps): React.JSX.E
           남은 차이가 **트리에서의 자리** 하나였다. 알약은 바 루트의 직계 자식이고 ← 판만 두 겹
           안쪽(`Animated.View` → `Pressable` → `View`)에 있었다. 그래서 판을 꺼내 **알약과 같은
           층**에 놓고, `Pressable` 은 그 위에 투명한 과녁으로만 남긴다([[ADR-132]] 정정 21). */}
+      {hasBack ? (
       <Animated.View
         testID="bar-back-plate"
         pointerEvents="none"
@@ -688,7 +711,6 @@ export function BottomBar({ state, navigation }: BottomTabBarProps): React.JSX.E
           width: BACK_CIRCLE,
           height: BACK_CIRCLE,
           borderRadius: 999,
-          opacity: backOpacity,
           transform: [{ translateX: backShift }, { scale: backScale }],
           backgroundColor: glass ? 'transparent' : colors.pill,
           shadowColor: definition.shadowColor,
@@ -718,14 +740,15 @@ export function BottomBar({ state, navigation }: BottomTabBarProps): React.JSX.E
           </>
         ) : null}
       </Animated.View>
+      ) : null}
 
+      {hasBack ? (
       <Animated.View
         pointerEvents={hasBack ? 'auto' : 'none'}
         style={{
           position: 'absolute',
           left: backCircleMargin,
           top: BAR_PADDING,
-          opacity: backOpacity,
           transform: [{ translateX: backShift }, { scale: backScale }],
         }}
       >
@@ -763,6 +786,7 @@ export function BottomBar({ state, navigation }: BottomTabBarProps): React.JSX.E
           </View>
         </Pressable>
       </Animated.View>
+      ) : null}
     </View>
   )
 }

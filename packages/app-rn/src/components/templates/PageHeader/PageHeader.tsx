@@ -1,7 +1,6 @@
 import { View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { ThemeHeaderBackdrop } from '../ThemeHeaderBackdrop/ThemeHeaderBackdrop'
 
 // 화면 상단 헤더 셸([[ADR-094]] 4단계). 스케줄러 계열 4화면이 **글자 하나까지 같은** 마크업을
 // 복붙하고 있었다 — 셸 클래스, 테마 배경 조각, 하단 페이드까지. 취약 구조를 한곳에 가두는 것이
@@ -87,13 +86,9 @@ export function PageHeader(props: PageHeaderProps): React.JSX.Element {
   return (
     <View
       testID="page-header"
-      className="z-10 bg-bg px-4 pb-2"
+      className="z-10 px-4 pb-2"
       style={{ paddingTop: insets.top + HEADER_TOP_PADDING_PX }}
     >
-      {/* [[ADR-088]] 결정 5-1: 헤더 자리의 테마 배경 조각(배경 없는 테마에선 렌더 안 됨).
-          **첫 자식이어야 한다** — RN 은 형제 순서가 곧 그리는 순서라, 이 자리가 웹의
-          `z-index: -1`(헤더 배경 위·콘텐츠 아래)을 대신한다. */}
-      <ThemeHeaderBackdrop />
 
       <View className="gap-4">{props.children}</View>
 
