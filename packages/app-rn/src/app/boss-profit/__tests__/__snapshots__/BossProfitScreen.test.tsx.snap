@@ -44,7 +44,7 @@ exports[`렌더 트리 기준선 기록이 있는 현재 주 1`] = `
           contentContainerStyle={
             {
               "columnGap": 16,
-              "paddingBottom": 0,
+              "paddingBottom": 106,
               "rowGap": 16,
             }
           }
@@ -1009,11 +1009,11 @@ exports[`렌더 트리 기준선 기록이 있는 현재 주 1`] = `
                           <RNSVGEllipse
                             cx="16.3"
                             cy="6.4"
-                            fill={
-                              {
-                                "payload": 4278190080,
-                                "type": 0,
-                              }
+                            fill={null}
+                            propList={
+                              [
+                                "fill",
+                              ]
                             }
                             rx="5.2"
                             ry="2.2"
@@ -1066,11 +1066,11 @@ exports[`렌더 트리 기준선 기록이 있는 현재 주 1`] = `
                           <RNSVGCircle
                             cx="8"
                             cy="15"
-                            fill={
-                              {
-                                "payload": 4278190080,
-                                "type": 0,
-                              }
+                            fill={null}
+                            propList={
+                              [
+                                "fill",
+                              ]
                             }
                             r="5.5"
                           />
