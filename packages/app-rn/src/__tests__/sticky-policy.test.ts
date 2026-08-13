@@ -1,8 +1,9 @@
 // sticky 정책 가드 — [[ADR-131]].
 //
-// **화면 최상단 헤더에만 sticky 를 둔다.** RN 에서 그 자리(`PageHeader`)는 sticky 가 아니라
-// 스크롤 뷰의 **형제**라 구조적으로 이미 최상단이므로, 결과적으로 이 패키지에는 sticky 를 쓰는
-// 코드가 **하나도 없어야 한다.**
+// **화면에 고정되는 영역을 두지 않는다.** 판정이 두 번에 걸쳐 좁혀졌지만(«최상단 헤더만 남긴다»
+// → «그 헤더도 푼다») 이 가드가 지키는 것은 **최종 상태 하나**다 — 이 패키지에는 sticky 를 쓰는
+// 코드가 **하나도 없어야 한다.** `PageHeader` 조차 이제 스크롤 뷰의 **첫 자식**이라 목록과 함께
+// 흘러 올라간다(`ScreenScroll`).
 //
 // ## 왜 «없음» 을 테스트하나
 //
@@ -56,7 +57,7 @@ const FORBIDDEN: Array<{ pattern: RegExp; what: string }> = [
   { pattern: /\bstickyTop\b/, what: '[[ADR-047]] 의 sticky 오프셋 프롭' },
 ]
 
-describe('[[ADR-131]] sticky 는 최상단 헤더에만 — 코드에는 하나도 없다', () => {
+describe('[[ADR-131]] 고정되는 영역이 없다 — sticky 가 코드에 하나도 없다', () => {
   const files = sourceFiles(SRC)
 
   it('검사 대상 파일을 실제로 찾는다', () => {

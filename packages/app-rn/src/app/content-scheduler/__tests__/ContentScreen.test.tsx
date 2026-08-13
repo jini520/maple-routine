@@ -10,8 +10,9 @@
 //    (임계 넘김/미달·배너 위치·목록 transform)은 **옮길 계약이 아니다** — 그 값들을 이제 OS 가
 //    갖는다. 남는 계약은 *"당김이 헤더 버튼과 같은 재조회를 부르는가"*([[ADR-072]] 결정 2)와
 //    *"버튼이 그대로 남는가"*(결정 10) 둘이고, 그것을 스크롤 셸에 붙은 프롭으로 본다.
-// ④ **고정 헤더 실측·spacer 계약이 사라진다** — RN 에서 헤더는 스크롤 뷰의 형제다
-//    (`PageHeader` 파일 머리). 대신 *"헤더가 셸의 `header` 로 들어가고 목록은 그 안에 있다"* 를 본다.
+// ④ **고정 헤더 실측·spacer 계약이 사라진다** — `fixed` 도 spacer 도 옮길 자리가 없고
+//    ([[ADR-085]]·[[ADR-112]], `PageHeader` 파일 머리), [[ADR-131]] 뒤로는 헤더가 고정되지도
+//    않는다. 대신 *"헤더가 셸의 `header` 로 들어가고 목록은 그 안에 있다"* 를 본다.
 // ⑤ `getByRole('combobox')`(웹 `<select>`) → **드롭다운 트리거의 캐릭터 이름**으로 기다린다.
 // ⑥ DOM 스냅샷 셋은 옮기지 않는다(전환 계획서 «잃는 안전망») — 대신 각 가지를 케이스로 적는다.
 import { act, fireEvent, screen } from '@testing-library/react-native'
@@ -245,7 +246,8 @@ describe('ContentScreen — 목록', () => {
     withContents()
     await renderScreen()
 
-    // 셸의 `header` 프롭으로 들어간 헤더는 스크롤 뷰의 **형제**라 트리에서 자식이 아니다.
+    // 둘 다 셸이 그린다 — 헤더는 `header` 프롭으로, 목록은 자식으로. 이 케이스가 보는 것은
+    // **모달이 그 바깥이라는 것**이고, 헤더가 스크롤 뷰 «안» 인지는 `ScreenScroll` 테스트가 본다.
     expect(screen.getByTestId('page-header')).toBeTruthy()
     expect(screen.getByTestId('screen-scroll')).toBeTruthy()
 
