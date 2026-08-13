@@ -1,4 +1,9 @@
+import { Image, View, useWindowDimensions } from 'react-native'
+
+import { getThemeBackgroundUrl } from '@core/lib/theme-backgrounds'
+
 import { useThemeAppearance } from '../../../theme/context'
+import { resolveThemeBackdropLayout } from '../ThemeBackdrop/theme-backdrop-layout'
 
 /**
  * 페이지 상단 헤더가 덮는 자리에 **테마 배경 이미지 조각**을 그린다([[ADR-088]] 결정 5-1).
@@ -8,26 +13,16 @@ import { useThemeAppearance } from '../../../theme/context'
  * 이어 붙인다. 정렬은 조각을 **뷰포트 크기**로 그리고 부모가 잘라내는 방식으로 보장한다(`cover` 는
  * 그리는 상자 기준이라 헤더 상자에 주면 배율이 어긋난다).
  *
- * ## 지금은 **항상 아무것도 그리지 않는다** — 에셋 레이어를 기다린다
+ * ## 정합은 **같은 기하**로 보장한다 — 크기를 헤더에 맞추면 안 된다
  *
- * 두 갈래로 갈리고 오늘은 둘 다 `null` 이다.
+ * 조각은 **뷰포트 크기**로 그리고 부모가 헤더 높이만큼 잘라낸다. `cover` 는 그리는 상자를 기준으로
+ * 계산되므로 헤더 상자(예: 390×120)에 주면 배율이 달라져 백드롭과 어긋난다([[ADR-088]] 결정 5-1).
  *
- * | 테마 | 웹 | RN |
- * |---|---|---|
- * | 배경 선언 없음(넷) | 조각 없음 | **같다** — DOM 이 늘지 않는다 |
- * | 배경 선언 있음(혼테일·검은마법사) | 조각을 그린다 | **아직 안 그린다** |
+ * 그래서 좌표 계산을 백드롭과 **한 함수에서** 가져온다(`ThemeBackdrop/theme-backdrop-layout.ts`).
+ * 값을 두 벌로 두면 한쪽만 고쳐도 이음매가 생기고, 그 이음매는 이 컴포넌트가 존재하는 이유다.
  *
- * 두 번째 칸의 이유가 [[ADR-129]] 로 바뀌었다. **그림은 이제 번들에 있다** —
- * `getThemeBackgroundUrl` 이 진짜 에셋 참조를 돌려준다(전에는 항상 `null` 이었다). 남은 것은
- * **그리는 일**이다: RN 은 벽지를 CSS 배경이 아니라 `<Image>` 로 앉히므로 `buildThemeCss` 의
- * `--theme-bg-*` 를 그대로 쓸 수 없고(그 값이 RN 에선 URL 문자열이 아니다), RN 쪽 변수 맵은 색만
- * 낸다(`theme/theme-vars.ts`). 그래서 앱은 여전히 그 두 테마를 `bg` 단색으로 연다.
- *
- * 첫 번째 칸의 판정은 **지금도 진짜로 한다.** 그것이 이 파일이 `return null` 한 줄이 아닌 이유다 —
- * 조건은 웹과 같은 곳(`definition.background`)에서 읽고, 두 번째 칸의 몸통만 채우면 된다. 그리는
- * 형태는 `absolute inset-0 overflow-hidden` 안에 뷰포트 크기 `<Image resizeMode="cover">` +
- * `dim` 오버레이이고, `source` 에는 `getThemeBackgroundUrl(slug)` 을 그대로 넘긴다.
- * `size`·`position`·`dim` 값은 지금도 진짜다.
+ * 헤더는 화면 최상단 요소라 좌상단이 백드롭의 좌상단과 같은 점이다 — RN 에서는 헤더가 스크롤 뷰의
+ * **형제**라 스크롤과 무관하게 늘 거기 있다(웹은 `sticky`/`fixed` 로 그것을 만들어야 했다).
  *
  * ## 순서만으로 충분하다 — `z-index: -1` 이 필요 없다
  *
@@ -37,10 +32,41 @@ import { useThemeAppearance } from '../../../theme/context'
  */
 export function ThemeHeaderBackdrop(): React.JSX.Element | null {
   const { definition } = useThemeAppearance()
+  const viewport = useWindowDimensions()
 
+  const background = definition.background
   // 배경을 선언하지 않은 테마 — 웹과 같은 이유로 아무것도 그리지 않는다(뷰가 늘지 않는다).
-  if (definition.background === undefined) return null
+  if (background === undefined) return null
 
-  // 선언한 둘도 오늘은 그릴 것이 없다(파일 머리). 여기가 에셋 레이어의 자리다.
-  return null
+  const source = getThemeBackgroundUrl(background.image)
+  if (source === null) return null
+
+  const resolved = Image.resolveAssetSource(source)
+  const layout = resolveThemeBackdropLayout(
+    viewport,
+    resolved === null || resolved === undefined
+      ? null
+      : { width: resolved.width, height: resolved.height },
+    background.position,
+  )
+  if (layout === null) return null
+
+  return (
+    <View
+      testID="theme-header-backdrop"
+      pointerEvents="none"
+      className="absolute inset-0 overflow-hidden"
+    >
+      <Image
+        source={source}
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+        style={{ position: 'absolute', ...layout }}
+      />
+      <View
+        className="absolute inset-0"
+        style={{ backgroundColor: `rgba(0,0,0,${background.dim})` }}
+      />
+    </View>
+  )
 }

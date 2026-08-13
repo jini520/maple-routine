@@ -9,6 +9,7 @@ import { hideSplashScreen } from '@core/native/splash-screen'
 
 import { ToastStack } from '../components/organisms/Toast/ToastStack'
 import { AppNavigation } from '../navigation/AppNavigation'
+import { ThemeBackdrop } from '../components/templates/ThemeBackdrop/ThemeBackdrop'
 import { ApiKeyNoticeModal } from './ApiKeyNoticeModal'
 import { prehydrateTabStores } from './prehydrate'
 import { useKeyboardVisible } from './use-keyboard-visible'
@@ -127,6 +128,10 @@ export function AppShell(): React.JSX.Element {
 
   return (
     <>
+      {/* 테마 벽지 — **첫 자식이어야 한다.** RN 은 형제 순서가 곧 그리는 순서라, 이 자리가 웹의
+          `z-index: -1`(앱 루트 첫 자식)을 대신한다([[ADR-088]] 결정 4). 배경을 선언하지 않은
+          테마에서는 아무것도 그리지 않는다. */}
+      <ThemeBackdrop />
       <AppNavigation />
       {/* [[ADR-115]] 결정 10 · [[ADR-116]] 결정 1: 저장된 키가 무효화되거나 호출 한도를 넘기면
           원래 화면 위에 닫을 수 없는 안내 모달이 덮이고, "확인"을 눌러야 키 입력 화면으로
