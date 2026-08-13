@@ -9,7 +9,7 @@ import {
   INITIAL_TAB_ROUTE,
   ROUTE_TABLE,
   STACK_ROUTE_NAMES,
-  TAB_ITEMS,
+  TAB_ROUTE_NAMES,
 } from '../routes'
 
 /**
@@ -39,37 +39,60 @@ const PARITY_PATHS = [
 ]
 
 describe('ROUTE_TABLE — 계획서 §1 대조', () => {
-  it('17개 경로를 하나도 빠뜨리지 않고 순서까지 같다', () => {
-    expect(ROUTE_TABLE.map((row) => row.path)).toEqual(PARITY_PATHS)
+  // **`origin` 으로 갈라 본다**([[ADR-132]] 결정 1). RN 에서 새로 생긴 화면 넷은 웹에 없으므로 이
+  // 대조에 섞이면 안 된다 — 섞으면 «계획서와 같은가» 라는 이 테스트의 질문이 답할 수 없는 것이 된다.
+  it('웹에서 온 17개 경로를 하나도 빠뜨리지 않고 순서까지 같다', () => {
+    expect(ROUTE_TABLE.filter((row) => row.origin === 'web').map((row) => row.path)).toEqual(
+      PARITY_PATHS,
+    )
   })
 
   it('경로가 중복되지 않는다', () => {
-    expect(new Set(PARITY_PATHS).size).toBe(PARITY_PATHS.length)
+    const paths = ROUTE_TABLE.map((row) => row.path)
+
+    expect(new Set(paths).size).toBe(paths.length)
   })
 
-  // 웹의 `/` 는 리디렉트였다. RN 에는 URL 이 없으므로 그 자리는 "처음 서 있는 탭"이고, 그 탭은
-  // `/content` 여야 한다 — 리디렉트 목적지와 같은 화면이다.
-  it('`/` 는 컨텐츠 탭에 서는 것으로 대응된다', () => {
+  it('RN 에서 새로 생긴 화면은 넷이고 전부 탭이다 ([[ADR-132]] 결정 1)', () => {
+    const rnRows = ROUTE_TABLE.filter((row) => row.origin === 'rn')
+
+    expect(rnRows.map((row) => row.target)).toEqual([
+      { kind: 'tab', route: 'Today' },
+      { kind: 'tab', route: 'HuntingProfit' },
+      { kind: 'tab', route: 'Spend' },
+      { kind: 'tab', route: 'Utility' },
+    ])
+  })
+
+  // **`/` 행과 첫 화면이 갈렸다**([[ADR-132]] 결정 7). `/` 행은 *"웹이 그 경로에서 무엇을 보여
+  // 줬는가"* 라는 기록이라 그대로 컨텐츠이고, *"이 앱이 어디서 시작하는가"* 는 새 `today` 다.
+  // 한쪽만 고치면 이 테스트가 운다 — 갈린 것 자체가 결정이므로 둘을 함께 고정한다.
+  it('`/` 행은 웹 기록이라 컨텐츠 그대로다', () => {
     const root = ROUTE_TABLE.find((row) => row.path === '/')
 
     expect(root?.target).toEqual({ kind: 'initial', route: 'Content' })
-    expect(INITIAL_TAB_ROUTE).toBe('Content')
-    expect(root?.screen).toBe(
-      ROUTE_TABLE.find((row) => row.path === '/content')?.screen,
-    )
+    expect(root?.screen).toBe(ROUTE_TABLE.find((row) => row.path === '/content')?.screen)
   })
 
-  it('탭은 넷이고 라벨은 웹 TAB_ITEMS 와 같다', () => {
-    expect(TAB_ITEMS).toEqual([
-      { route: 'Content', label: '컨텐츠' },
-      { route: 'Boss', label: '보스' },
-      { route: 'Profit', label: '수익' },
-      { route: 'Settings', label: '설정' },
-    ])
+  it('첫 화면은 `/` 가 아니라 today 다', () => {
+    expect(INITIAL_TAB_ROUTE).toBe('Today')
+    expect(ROUTE_TABLE.find((row) => row.target.kind === 'tab' && row.target.route === 'Today')).toBeDefined()
+  })
 
-    expect(ROUTE_TABLE.flatMap((row) => (row.target.kind === 'tab' ? [row.target.route] : []))).toEqual(
-      TAB_ITEMS.map((tab) => tab.route),
-    )
+  // 라벨은 여기 없다 — 바가 라벨을 두 층에서 쓰므로 `bar-model.ts` 의 `BAR_GROUPS` 가 갖는다
+  // ([[ADR-132]] 결정 1). 그 표와 이 목록이 같은 집합인지는 `bar-model.test.ts` 가 본다.
+  it('탭 화면은 여덟이고 표에서 파생된다', () => {
+    expect(TAB_ROUTE_NAMES).toEqual([
+      'Content',
+      'Boss',
+      'Profit',
+      'Settings',
+      'Today',
+      'HuntingProfit',
+      'Spend',
+      'Utility',
+    ])
+    expect(new Set(TAB_ROUTE_NAMES).size).toBe(TAB_ROUTE_NAMES.length)
   })
 
   it('하위 페이지는 열하나이고 이름이 겹치지 않는다', () => {

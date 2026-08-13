@@ -66,11 +66,11 @@ exports[`ProfitIcon ([[ADR-066]]) 렌더 트리 스냅샷 — 이후 변경을 �
       <RNSVGEllipse
         cx="16.3"
         cy="6.4"
-        fill={
-          {
-            "payload": 4278190080,
-            "type": 0,
-          }
+        fill={null}
+        propList={
+          [
+            "fill",
+          ]
         }
         rx="5.2"
         ry="2.2"
@@ -123,11 +123,11 @@ exports[`ProfitIcon ([[ADR-066]]) 렌더 트리 스냅샷 — 이후 변경을 �
       <RNSVGCircle
         cx="8"
         cy="15"
-        fill={
-          {
-            "payload": 4278190080,
-            "type": 0,
-          }
+        fill={null}
+        propList={
+          [
+            "fill",
+          ]
         }
         r="5.5"
       />

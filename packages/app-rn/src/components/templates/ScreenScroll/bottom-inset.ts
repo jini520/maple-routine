@@ -34,11 +34,26 @@ export interface ScreenBottomInset {
   contentBottomPx: number
 }
 
+/**
+ * 떠 있는 바가 먹는 세로 몫 — `BottomBar.tsx` 의 **`BAR_HEIGHT + LIFT`** 와 같은 값이어야 한다
+ * ([[ADR-132]] 결정 11). 한쪽만 고치면 콘텐츠가 바 뒤로 들어가거나(작으면) 바닥에 빈 띠가 남는다(크면).
+ *
+ * 값은 72 인데 **구성이 두 번 바뀌었다** — 처음 «높이 60 + 띄움 12», 지금은 «높이 72 + 띄움 0»
+ * (안전영역에 붙였다, 2026-08-13). 합이 같아서 이 상수는 그대로다.
+ */
+export const FLOATING_BAR_SPACE_PX = 72
+
 export function resolveScreenBottomInset(options: {
   /**
-   * 아래에 탭바가 있는가. `true` 면 **둘 다 0 이다** — 탭 내비게이터가 이미 탭바를 뺀 상자를 화면에
-   * 주고, 홈 인디케이터는 탭바가 자기 패딩으로 처리한다. 웹에서 `--tab-bar-h` 를 실측해 스크롤포트를
-   * 줄이던 일([[ADR-099]] 결정 7)이 RN 에서는 구조로 해결된다 — 잴 것도, 어긋날 것도 없다.
+   * 아래에 탭바가 있는가.
+   *
+   * **`true` 의 뜻이 [[ADR-132]] 로 바뀌었다.** 예전 탭바는 화면 상자 밖에 있어 둘 다 0이면 됐지만
+   * (탭 내비게이터가 탭바를 뺀 상자를 줬다), 새 바는 **화면 위에 떠 있어** 콘텐츠가 그 아래로
+   * 지나간다. 그래서 스크롤포트는 그대로 두고(`portBottomPx: 0`) **콘텐츠 끝에** 바의 몫 + 안전영역을
+   * 남긴다 — 결정 16 이 홈 인디케이터에 대해 세운 «지나가도 되는 여백» 과 같은 형태다.
+   *
+   * 안드로이드 3버튼 내비가 «지나가면 안 되는» 조각인 것은 그대로지만, **떠 있는 바가 그 위에 있어**
+   * 콘텐츠가 거기까지 닿지 않는다 — 그래서 여기서도 조각을 가르지 않고 한 값으로 더한다.
    */
   hasTabBar: boolean
   /** `useSafeAreaInsets().bottom`. */
@@ -46,7 +61,9 @@ export function resolveScreenBottomInset(options: {
   /** `Platform.OS`. */
   platform: string
 }): ScreenBottomInset {
-  if (options.hasTabBar) return { portBottomPx: 0, contentBottomPx: 0 }
+  if (options.hasTabBar) {
+    return { portBottomPx: 0, contentBottomPx: options.bottomInsetPx + FLOATING_BAR_SPACE_PX }
+  }
 
   return options.platform === 'ios'
     ? { portBottomPx: 0, contentBottomPx: options.bottomInsetPx }

@@ -30,6 +30,15 @@ import { Svg } from '../../../lib/nativewind-interop'
 interface ProfitIconProps {
   className?: string
   color?: string
+  /**
+   * **닫힌 모양(동전 두 개)만** 채우는 색 — 열린 호는 선으로 남는다.
+   *
+   * 기본은 `fill none` 이고 그것이 lucide 규격이다([[ADR-066]] 결정 3). 예외는 하단바의 활성
+   * 항목 하나뿐인데, 거기서 전체를 채우면 동전 사이의 «단» 을 그리는 호가 면에 묻혀 그림이
+   * 뭉개진다(사용자 판정 — *"보스 수익은 이상하잖아"*). 그래서 채우는 자리를 고른다 —
+   * 더미의 윗면과 앞 동전만 면이 되고, 단을 그리는 호 셋은 선으로 남는다([[ADR-132]] 정정 25).
+   */
+  fill?: string
   size?: number
   strokeWidth?: number
   'aria-hidden'?: boolean
@@ -55,7 +64,7 @@ export function ProfitIcon(props: ProfitIconProps): React.JSX.Element {
       aria-hidden={props['aria-hidden']}
     >
       {/* 더미: 윗면 타원 + 양 옆선 + 앞쪽 호 3개(호가 곧 동전 사이의 단이다). */}
-      <Ellipse cx="16.3" cy="6.4" rx="5.2" ry="2.2" />
+      <Ellipse cx="16.3" cy="6.4" rx="5.2" ry="2.2" fill={props.fill ?? 'none'} />
       {/* 왼쪽 옆선은 앞 동전에 가리는 y=10.4 직전에서 끊는다 — 겹침을 mask 가 아니라 좌표로
           표현한다([[ADR-066]] 결정 4). 오른쪽 옆선은 가리는 것이 없어 바닥까지 내려간다. */}
       <Path d="M11.1 6.4v3.7" />
@@ -66,7 +75,7 @@ export function ProfitIcon(props: ProfitIconProps): React.JSX.Element {
       <Path d="M13.4 13.7A5.2 2.2 0 0 0 21.5 11.85" />
       <Path d="M13.7 16.5A5.2 2.2 0 0 0 21.5 14.6" />
       {/* 앞 동전: 더미보다 뒤에 그리면 위 선들이 위로 지나가므로 반드시 마지막에 둔다. */}
-      <Circle cx="8" cy="15" r="5.5" />
+      <Circle cx="8" cy="15" r="5.5" fill={props.fill ?? 'none'} />
     </Svg>
   )
 }
