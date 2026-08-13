@@ -7,8 +7,8 @@
 // | 셸 클래스 문자열 동일 | **스냅샷 기준선**으로 대체(값 대조가 불가능하다) |
 // | `fixed` 이지 `sticky` 가 아니다([[ADR-098]] 결정 2) | **스크롤 뷰 밖에 있다** — 위치가 스크롤의 함수가 아닌 것이 요점이고, RN 은 그것을 레이아웃으로 얻는다 |
 // | spacer 가 실측 높이와 같은 커밋에 갱신된다([[ADR-112]]) | **spacer 자체가 없다** — 아래 회귀 가드 |
-// | 페이드에 `backdrop-filter` 가 없다([[ADR-123]]) | 그대로 검사한다 |
-// | `below` 는 페이드 뒤, 셸의 마지막 자식 | 그대로 검사한다 |
+// | 페이드에 `backdrop-filter` 가 없다([[ADR-123]]) | **페이드째 걷어냈다**(아래) — 검사할 대상이 없다 |
+// | `below` 는 페이드 뒤, 셸의 마지막 자식 | `below` 가 마지막인 것만 검사한다 |
 //
 // 안전영역은 `renderOverlay` 가 넣는 실측 인셋(상 59)을 쓴다 — [[ADR-107]] 이 실측한 표와 같은 값이다.
 
@@ -16,7 +16,6 @@ import { getThemeDefinition } from '@core/lib/theme-registry'
 import { Text, View } from 'react-native'
 
 import { flattenStyle, renderOverlay, 테스트_안전영역 } from '../../../__tests__/render-atom'
-import { rnThemeAppearancePort } from '../../../../native/adapters/rn-theme-appearance'
 import { __resetThemeAppearanceForTest } from '../../../../theme/appearance-store'
 import { PageHeader } from '../PageHeader'
 
@@ -55,9 +54,9 @@ describe('PageHeader', () => {
     const { toJSON } = await renderOverlay(<PageHeader>{내용}</PageHeader>)
 
     const header = findByTestID(toJSON(), 'page-header')
-    // 내용 래퍼 + 페이드 둘뿐이다(배경 조각은 이 테마에서 안 나온다). spacer 도, 그것을 감싸는
-    // 래퍼 `<div>` 도 없다.
-    expect(header?.children).toHaveLength(2)
+    // 내용 래퍼 **하나**뿐이다(배경 조각은 이 테마에서 안 나오고, 경계 페이드는 걷어냈다).
+    // spacer 도, 그것을 감싸는 래퍼 `<div>` 도 없다.
+    expect(header?.children).toHaveLength(1)
   })
 
   it('children 을 gap-4 래퍼 안에 넣는다 (웹 `space-y-4` 의 짝)', async () => {
@@ -81,63 +80,18 @@ describe('PageHeader', () => {
   })
 })
 
+// **경계 페이드는 걷어냈다**(2026-08-13, 사용자 판정 — 실기기에서 띠가 엉뚱한 자리에 보였고
+// 제거 승인). 예전에는 이 자리에 여섯 케이스(위치·알파 프로파일·색 파생·테마 추종·[[ADR-123]]
+// 블러 금지)가 있었고, 전부 «그 띠가 있다» 를 전제로 했다.
+//
+// 남기는 것은 **없다는 사실 하나**다. 되살릴 때 지켜야 할 값(알파 (1−t)² 프로파일 · 테마 `bg`
+// 알파 변주 · 블러 금지)은 **웹 원본**에 그대로 있고, 되살릴 조건은 컴포넌트 주석에 적어 뒀다 —
+// [[ADR-047]] 의 중첩 sticky 가 먼저다.
 describe('경계 페이드', () => {
-  it('헤더 바로 아래 32px 띠에 겹쳐 그리고 터치를 가로채지 않는다', async () => {
-    const { getByTestId } = await renderOverlay(<PageHeader>{내용}</PageHeader>)
+  it('그리지 않는다 — 되살리려면 [[ADR-047]] 중첩 sticky 가 먼저다', async () => {
+    const { queryByTestId } = await renderOverlay(<PageHeader>{내용}</PageHeader>)
 
-    const fade = getByTestId('page-header-fade', HIDDEN)
-    expect(flattenStyle(fade.props.style)).toMatchObject({
-      position: 'absolute',
-      top: '100%',
-      height: 32,
-    })
-    expect(fade.props.pointerEvents).toBe('none')
-  })
-
-  // 웹은 색 그라데이션 위에 같은 방향 마스크를 겹쳐 알파가 **(1−t)²** 였다. RN 에는 마스크가 없어
-  // 그 결과를 정지점으로 직접 적는다 — 선형 두 정지점으로 줄이면 경계가 더 또렷해진다.
-  //
-  // 기대값을 상수로 베끼지 않고 정지점 위치에서 **계산해** 대조한다 — 그래야 이 테스트가 값이
-  // 아니라 프로파일을 지킨다.
-  it('알파 램프가 웹의 그라데이션 × 마스크와 같은 (1−t)² 프로파일이다', async () => {
-    const { getByTestId } = await renderOverlay(<PageHeader>{내용}</PageHeader>)
-
-    const fade = getByTestId('page-header-fade', HIDDEN)
-    const locations = fade.props.locations as number[]
-    expect(locations).toEqual([0, 0.25, 0.5, 0.75, 1])
-    expect(alphaBytesOf(fade.props.colors as number[])).toEqual(
-      locations.map((t) => Math.round(255 * (1 - t) ** 2)),
-    )
-  })
-
-  // 끝 색이 `transparent`(투명 **검정**)이면 네이티브 그라데이션 보간에서 중간이 어두워진다.
-  // 같은 색의 알파만 움직이면 그 차이가 생길 자리가 없다.
-  it('정지점이 전부 테마 `bg` 의 알파 변주다 — 투명 검정으로 끝내지 않는다', async () => {
-    const { getByTestId } = await renderOverlay(<PageHeader>{내용}</PageHeader>)
-
-    const rgb = rgbHexesOf(getByTestId('page-header-fade', HIDDEN).props.colors as number[])
-    expect(rgb).toEqual(Array(5).fill(기본테마.bg.toUpperCase()))
-  })
-
-  it('테마가 바뀌면 페이드 색도 따라간다', async () => {
-    const 검은마법사 = getThemeDefinition('검은마법사')
-    rnThemeAppearancePort.apply('검은마법사', 검은마법사)
-    const { getByTestId } = await renderOverlay(<PageHeader>{내용}</PageHeader>)
-
-    const rgb = rgbHexesOf(getByTestId('page-header-fade', HIDDEN).props.colors as number[])
-    expect(rgb).toEqual(Array(5).fill(검은마법사.bg.toUpperCase()))
-    expect(검은마법사.bg).not.toBe(기본테마.bg)
-  })
-
-  // [[ADR-123]] 회귀 가드. 웹에서 이 처방이 나온 이유(합성 레이어의 배경 스냅샷이 iOS WKWebView 에서
-  // 갱신되지 않아 잔상이 남았다)는 RN 에 없지만, 되붙일 방법도 없다는 것이 그 결정을 **구조로**
-  // 지킨다. 나중에 블러 라이브러리를 이 자리에 얹으면 같은 계열의 문제를 새로 들이는 것이다.
-  it('블러를 얹지 않는다 (iOS 잔상, [[ADR-123]])', async () => {
-    const { getByTestId } = await renderOverlay(<PageHeader>{내용}</PageHeader>)
-
-    const style = flattenStyle(getByTestId('page-header-fade', HIDDEN).props.style)
-    expect(style.backdropFilter).toBeUndefined()
-    expect(style.experimental_backgroundImage).toBeUndefined()
+    expect(queryByTestId('page-header-fade', HIDDEN)).toBeNull()
   })
 })
 
@@ -154,12 +108,14 @@ describe('below 슬롯', () => {
     expect(last.props.testID).toBe('ptr')
   })
 
-  it('below 를 안 주면 페이드가 마지막이다 — 아무것도 더 그리지 않는다', async () => {
+  // 페이드를 걷어낸 뒤로 `below` 가 없으면 **내용이 곧 마지막**이다(예전엔 페이드가 그 자리였다).
+  it('below 를 안 주면 내용이 마지막이다 — 아무것도 더 그리지 않는다', async () => {
     const { toJSON } = await renderOverlay(<PageHeader>{내용}</PageHeader>)
 
     const header = findByTestID(toJSON(), 'page-header')
     const last = header?.children.at(-1) as TreeNode
-    expect(last.props.testID).toBe('page-header-fade')
+    expect(last.props.testID).not.toBe('ptr')
+    expect(last.props.testID).not.toBe('page-header-fade')
   })
 })
 
@@ -177,17 +133,7 @@ describe('렌더 트리 스냅샷 — 이후 변경을 잡는 기준선(예전 �
   })
 })
 
-/**
- * `LinearGradient` 는 `colors` 를 **ARGB 정수**로 정규화해 넘긴다(`processColor`) — 문자열 그대로
- * 비교할 수 없다. 두 축(색·알파)을 갈라 읽어야 단언이 무엇을 지키는지 읽힌다.
- */
-function rgbHexesOf(colors: number[]): string[] {
-  return colors.map((argb) => `#${(argb & 0xffffff).toString(16).toUpperCase().padStart(6, '0')}`)
-}
 
-function alphaBytesOf(colors: number[]): number[] {
-  return colors.map((argb) => argb >>> 24)
-}
 
 interface TreeNode {
   type: string

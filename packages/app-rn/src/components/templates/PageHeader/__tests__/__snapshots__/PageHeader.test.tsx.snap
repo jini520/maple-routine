@@ -46,38 +46,6 @@ exports[`렌더 트리 스냅샷 — 이후 변경을 잡는 기준선(예전 �
           컨텐츠 스케줄러
         </Text>
       </View>
-      <ViewManagerAdapter_ExpoLinearGradient
-        aria-hidden={true}
-        colors={
-          [
-            4294111458,
-            2415063266,
-            1089663202,
-            284356834,
-            15921378,
-          ]
-        }
-        locations={
-          [
-            0,
-            0.25,
-            0.5,
-            0.75,
-            1,
-          ]
-        }
-        pointerEvents="none"
-        style={
-          {
-            "height": 32,
-            "left": 0,
-            "position": "absolute",
-            "right": 0,
-            "top": "100%",
-          }
-        }
-        testID="page-header-fade"
-      />
       <View
         testID="ptr"
       />

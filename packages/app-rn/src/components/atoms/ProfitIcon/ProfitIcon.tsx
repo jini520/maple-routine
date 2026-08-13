@@ -18,8 +18,19 @@ import { Circle, Ellipse, Path } from 'react-native-svg'
 
 import { Svg } from '../../../lib/nativewind-interop'
 
+/**
+ * `color`·`size` 는 **lucide 와 같은 프롭이다.** [[ADR-066]] 결정 3 이 이 아이콘을 lucide 규격에
+ * 맞춘 이유가 *"같은 줄에 선 lucide 아이콘과 굵기·광학 크기가 어긋나지 않게"* 인데, 그 «같은 줄»
+ * 중 하나인 **하단 탭바는 색과 크기를 `className` 이 아니라 값으로 준다**(react-navigation 이
+ * 활성/비활성에 맞춰 `tabBarIcon` 에 넘긴다). 그 자리에서 lucide 셋과 바꿔 끼우려면 프롭 모양도
+ * 같아야 한다 — 이것이 없어서 탭바에 아이콘을 못 달고 넘어갔다(2026-08-13 실기기 관측).
+ *
+ * `className` 과 겹치면 **`className` 이 이긴다** — 웹에서 CSS 가 속성을 이기던 순서 그대로다.
+ */
 interface ProfitIconProps {
   className?: string
+  color?: string
+  size?: number
   strokeWidth?: number
   'aria-hidden'?: boolean
 }
@@ -31,8 +42,9 @@ export function ProfitIcon(props: ProfitIconProps): React.JSX.Element {
       // 크기는 호출부의 className 이 정한다. width/height 는 lucide 와 같은 폴백일 뿐이고
       // (`h-5 w-5` 가 오면 그쪽이 이긴다 — 웹에서 CSS 가 속성을 이기던 것과 같은 순서를
       // `nativeStyleToProp` 이 만든다), 이게 없으면 className 없이 쓰는 순간 상자가 사라진다.
-      width={24}
-      height={24}
+      color={props.color}
+      width={props.size ?? 24}
+      height={props.size ?? 24}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"

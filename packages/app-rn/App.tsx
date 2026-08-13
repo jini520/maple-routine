@@ -1,4 +1,6 @@
 import { reloadAppAsync } from 'expo'
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet'
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 
 // NativeWind 배선의 **유일한 진입점**([[ADR-128]] 3단계). Metro 가 이 import 를 보고 Tailwind 를
@@ -15,7 +17,16 @@ import { ThemeProvider } from './src/theme/ThemeProvider'
  *
  * ## 감싸는 순서가 계약이다
  *
- *   `SafeAreaProvider` → `ThemeProvider` → `ErrorBoundary` → `AppShell`
+ *   `GestureHandlerRootView` → `SafeAreaProvider` → `ThemeProvider` → `BottomSheetModalProvider`
+ *   → `ErrorBoundary` → `AppShell`
+ *
+ * - **`GestureHandlerRootView` 와 `BottomSheetModalProvider` 는 3단계가 여기로 넘긴 것이다.**
+ *   `BottomSheet.tsx` 파일 머리가 *"`BottomSheetModal` 은 `BottomSheetModalProvider` 아래에서만
+ *   뜨고, 제스처는 `GestureHandlerRootView` 안에서만 돈다 — 둘 다 앱 셸이 소유한다(화면 단계)"*
+ *   라고 적어 두었는데 그 인수인계가 **누락됐다.** 없으면 시트가 조용히 안 열린다(에러도 없다) —
+ *   실기기에서 «드롭 아이템 기록 시트가 안 열림» 으로 관측됐다(2026-08-13).
+ *   `BottomSheetModalProvider` 가 `ThemeProvider` **안**인 것은 시트 스킨이 테마 토큰을 쓰기
+ *   때문이고, `GestureHandlerRootView` 가 가장 밖인 것은 라이브러리 요구사항이다(`flex: 1` 필수).
  *
  * - `SafeAreaProvider` 가 가장 밖인 것은 bottom-tabs·native-stack 이 그 값을 읽기 때문이고
  *   (탭바가 홈 인디케이터를 피하는 자리), `ThemeProvider` 가 그 안인 것은 내비게이션 테마
@@ -44,12 +55,16 @@ import { ThemeProvider } from './src/theme/ThemeProvider'
  */
 export default function App(): React.JSX.Element {
   return (
-    <SafeAreaProvider>
-      <ThemeProvider>
-        <ErrorBoundary onRestart={() => void reloadAppAsync('ErrorBoundary 폴백의 다시 시작')}>
-          <AppShell />
-        </ErrorBoundary>
-      </ThemeProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <ThemeProvider>
+          <BottomSheetModalProvider>
+            <ErrorBoundary onRestart={() => void reloadAppAsync('ErrorBoundary 폴백의 다시 시작')}>
+              <AppShell />
+            </ErrorBoundary>
+          </BottomSheetModalProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   )
 }

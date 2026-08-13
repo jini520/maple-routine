@@ -1,9 +1,6 @@
 import { View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { withAlpha } from '../../../lib/color-alpha'
-import { LinearGradient } from '../../../lib/nativewind-interop'
-import { useThemeAppearance } from '../../../theme/context'
 import { ThemeHeaderBackdrop } from '../ThemeHeaderBackdrop/ThemeHeaderBackdrop'
 
 // 화면 상단 헤더 셸([[ADR-094]] 4단계). 스케줄러 계열 4화면이 **글자 하나까지 같은** 마크업을
@@ -75,32 +72,8 @@ export interface PageHeaderProps {
 /** `pt-[calc(1rem+var(--sa-top))]` 의 상수 몫. */
 const HEADER_TOP_PADDING_PX = 16
 
-/**
- * 경계 페이드의 알파 램프 — 웹의 **그라데이션 × 마스크**를 한 그라데이션으로 접은 것이다.
- *
- * 웹은 색 그라데이션(`from-bg to-transparent`) 위에 같은 방향 마스크
- * (`linear-gradient(to bottom, black, transparent)`)를 한 겹 더 얹었다. 두 알파가 곱해지므로 실제
- * 프로파일은 선형이 아니라 **(1−t)²** 이고, RN 에는 마스크가 없으니 그 결과를 정지점으로 직접 적는다.
- *
- * 끝 색이 `transparent`(= 투명 **검정**)가 아니라 **알파 0 인 `bg`** 인 것도 중요하다. 브라우저는
- * 그라데이션을 미리 곱해진 알파로 보간해 검게 물들지 않지만, 네이티브 그라데이션은 그렇지 않아
- * 중간이 어두워진다. 같은 색의 알파만 움직이면 그 차이가 생길 자리가 없다.
- */
-const FADE_LOCATIONS = [0, 0.25, 0.5, 0.75, 1] as const
-const FADE_ALPHAS = [1, 0.5625, 0.25, 0.0625, 0] as const
-
-/**
- * 라이브러리 타입이 **정지점 둘 이상**을 요구하는데(`readonly [T, T, ...T[]]`) `map` 은 길이를
- * 잃는다. 앞의 둘을 따로 꺼내면 캐스트 없이 그 모양이 그대로 나온다.
- */
-function fadeColors(bg: string): readonly [string, string, ...string[]] {
-  const [first, second, ...rest] = FADE_ALPHAS
-  return [withAlpha(bg, first), withAlpha(bg, second), ...rest.map((alpha) => withAlpha(bg, alpha))]
-}
-
 export function PageHeader(props: PageHeaderProps): React.JSX.Element {
   const insets = useSafeAreaInsets()
-  const { definition } = useThemeAppearance()
 
   return (
     <View
@@ -115,19 +88,23 @@ export function PageHeader(props: PageHeaderProps): React.JSX.Element {
 
       <View className="gap-4">{props.children}</View>
 
-      {/* 헤더 아래 32px 에 겹쳐 그려, 목록이 헤더 경계에서 딱 끊기지 않고 사라지게 한다.
-          **블러를 되붙이지 말 것**([[ADR-123]]) — 웹에서 그 처방이 나온 이유(`backdrop-filter` 가
-          만든 합성 레이어의 배경 스냅샷이 iOS WKWebView 에서 갱신되지 않아 잔상이 남았다)는
-          RN 에 없지만, `backdrop-filter` 자체가 없어 되붙일 방법도 없다. 결과가 같으므로
-          그 결정은 여기서 **구조로** 지켜진다. */}
-      <LinearGradient
-        testID="page-header-fade"
-        aria-hidden
-        pointerEvents="none"
-        className="absolute inset-x-0 top-full h-8"
-        colors={fadeColors(definition.bg)}
-        locations={FADE_LOCATIONS}
-      />
+      {/* **경계 페이드를 걷어냈다**(2026-08-13, 사용자 판정 — 실기기에서 «띠가 엉뚱한 자리에
+          있다», 제거 승인).
+
+          웹에서 이 띠는 헤더 아래 32px 에 겹쳐 그려 목록이 경계에서 딱 끊기지 않게 하는 것이었다.
+          RN 에서 그 자리를 `absolute … top-full h-8` 로 옮겼는데, 그 배치는 **부모(헤더) 높이를
+          기준으로 100% 아래**를 뜻하므로 헤더가 스크롤에 맞춰 높이를 바꾸는 자리에서는 띠가 함께
+          움직여 의도한 경계와 어긋난다.
+
+          위치를 고치는 대신 없앤 이유: 이 띠는 [[ADR-047]] 결정 6 이 **페이지 헤더에는 두지
+          않기로** 한 것과 같은 부류의 장식이고([[ADR-123]] 이 블러를 걷어낸 것도 같은 방향),
+          지금은 [[ADR-047]] 의 중첩 sticky 자체가 RN 에 없어(«4단계 결과» ⓐ) 이 띠가 덮어 줄
+          경계도 없다. 되살릴 거면 sticky 를 먼저 세우고 그 위에서 정해야 한다.
+
+          되살릴 때 필요한 값(알파 **(1−t)²** 프로파일 · 정지점이 전부 테마 `bg` 의 알파 변주 ·
+          블러 금지 [[ADR-123]])은 **웹 원본**(`app-capacitor` 의 같은 헤더)에 그대로 있다. 여기
+          상수로 남겨 두지 않는 이유는 쓰는 데가 없는 값이 lint 를 깨고, 그 상태로 두면 다음
+          사람이 "왜 있는데 안 쓰지"를 먼저 풀어야 하기 때문이다. */}
 
       {props.below}
     </View>

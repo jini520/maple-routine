@@ -3,39 +3,25 @@
   "compilerOptions": {
     "strict": true,
     "resolveJsonModule": true,
-    /* `./x` 를 `x.native.ts` → `x.ts` 순으로 찾는다 ([[ADR-129]]).
-
-       Metro 와 jest 는 원래 `.native.*` 를 먼저 고르는데 tsc 만 그 규칙을 몰라서, 이것이 없으면
-       core 의 `types/image-asset.ts`(웹 = `string`)를 보고 **타입만 웹 것을 믿는다.** 셋을 같은
-       규칙으로 맞춰 두면 "타입은 통과하는데 런타임에 죽는" 어긋남이 생길 자리가 없다. */
-    "moduleSuffixes": [".native", ""],
-    /* jest 전역(`describe`·`it`·`expect`)의 타입. tsc 는 `@types/*` 를 더 이상 알아서 전부 끌어오지
-       않아(TS 6) 이 선언이 없으면 테스트 파일이 `Cannot find name 'describe'` 로 죽는다.
-       런타임 쪽 짝은 `jest.config.js` 의 `preset: 'jest-expo'` 다.
-
-       `expo/types` 는 `declare module '*.css'` 를 준다 — `App.tsx` 가 NativeWind 진입 CSS 를
-       import 하기 때문에 필요하다. Expo 가 만드는 `expo-env.d.ts` 도 같은 참조를 갖지만 그 파일은
-       생성물이라 gitignore 되어 있어(= 새로 받은 저장소에는 없다) 여기 직접 적는다. */
-    "types": ["jest", "expo/types"],
-    /* `@core/*` → `packages/core/src/*` ([[ADR-128]] 결정 3).
-
-       웹 쪽은 `tsconfig.base.json` 의 `paths` 와 `vite.config.ts` 의 `resolve.alias` 가 **짝**이지만,
-       RN 쪽은 이 선언 하나가 tsc 와 Metro 를 **둘 다** 푼다(Expo `experiments.tsconfigPaths` —
-       `app.json` 에 명시). 짝이 없으니 한쪽만 고쳐져 어긋나는 일도 없다.
-       경로는 이 tsconfig 기준으로 풀린다. */
+    "moduleSuffixes": [
+      ".native",
+      ""
+    ],
+    "types": [
+      "jest",
+      "expo/types"
+    ],
     "paths": {
-      "@core/*": ["../core/src/*"]
+      "@core/*": [
+        "../core/src/*"
+      ]
     }
   },
-  /* `nativewind-env.d.ts` 는 `*.ts` 에 이미 걸리지만 **이름을 그대로 적어 둔다** — Metro 가 켜질 때마다
-     이 목록에 그 이름이 있는지 보고 없으면 파일을 다시 쓰기 때문이다(그때 JSON 이 통째로 재포맷돼
-     주석 없는 diff 가 남는다). 적어 두면 그 재작성이 안 일어난다. */
   "include": [
     "*.ts",
     "*.tsx",
     "src/**/*.ts",
     "src/**/*.tsx",
-    "expo-env.d.ts",
     "nativewind-env.d.ts",
     "asset-modules.d.ts"
   ]

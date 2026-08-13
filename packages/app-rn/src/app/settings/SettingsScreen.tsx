@@ -73,7 +73,10 @@ export function SettingsScreen(): React.JSX.Element {
   return (
     <>
       <ScreenScroll>
-        <View className="gap-4 px-4 pb-4 pt-4">
+        {/* `screen-Settings` 는 나머지 세 탭 화면과 같은 관례다(`screen-Content`·`-Boss`·`-Profit`).
+            이것이 없어서 내비게이션 테스트가 **자리표시자의 같은 testID 를 보고 초록**이었고,
+            설정 탭이 통째로 빠진 것을 아무도 못 잡았다(2026-08-13 실기기 관측). */}
+        <View className="gap-4 px-4 pb-4 pt-4" testID="screen-Settings">
           <Text className="text-lg font-semibold text-text">설정</Text>
 
           {/* 값을 고르는 행 — 배지(현재값) + chevron 병기(ADR-118 결정 4). */}

@@ -4,7 +4,10 @@ import { maybeShowTabSwitchAd } from '@core/features/ads/tab-switch-ad'
 import { BossProfitScreen } from '../app/boss-profit/BossProfitScreen'
 import { BossScreen } from '../app/boss-scheduler/BossScreen'
 import { ContentScreen } from '../app/content-scheduler/ContentScreen'
-import { PlaceholderScreen } from './PlaceholderScreen'
+import { SettingsScreen } from '../app/settings/SettingsScreen'
+import { ProfitIcon } from '../components/atoms/ProfitIcon/ProfitIcon'
+import { ListChecksIcon, SettingsIcon, SwordsIcon } from '../lib/icons'
+import { useThemeAppearance } from '../theme/context'
 import { INITIAL_TAB_ROUTE, TAB_ITEMS, type TabParamList, type TabRouteName } from './routes'
 
 const Tab = createBottomTabNavigator<TabParamList>()
@@ -18,15 +21,31 @@ const TAB_SCREENS = {
   Content: ContentScreen,
   Boss: BossScreen,
   Profit: BossProfitScreen,
-} as const satisfies Partial<Record<TabRouteName, React.ComponentType>>
+  Settings: SettingsScreen,
+} as const satisfies Record<TabRouteName, React.ComponentType>
 
+/**
+ * 탭 아이콘 — 웹 `TAB_ITEMS` 의 `Icon` 과 같은 넷이다(`app-capacitor/src/App.tsx`).
+ *
+ * **수익만 커스텀이다** — lucide 규격(24×24 · `strokeWidth` 2)을 지켜 그린 것이라 나머지 셋과
+ * 굵기·크기가 맞는다([[ADR-066]] 결정 3). 그 결정이 명시적으로 금지한 것이 *"도메인 아이덴티티를
+ * 임의로 고른 lucide 그림으로 대체하는 것"* 이라, 여기서 비슷한 아이콘으로 갈음하지 않는다.
+ */
+const TAB_ICONS = {
+  Content: ListChecksIcon,
+  Boss: SwordsIcon,
+  Profit: ProfitIcon,
+  Settings: SettingsIcon,
+} as const satisfies Record<TabRouteName, React.ComponentType<{ color?: string; size?: number }>>
+
+/**
+ * 자리표시자 폴백이 **없다** — `TAB_SCREENS` 가 `Partial` 이 아니라 `Record<TabRouteName, …>` 라
+ * 넷을 다 적지 않으면 타입이 거부한다. 예전에는 `Partial` + 폴백이었고, 그래서 `Settings` 를
+ * 빠뜨렸을 때 **타입도 테스트도 통과한 채 설정 탭만 자리표시자**로 떴다(2026-08-13 실기기 관측).
+ * 폴백을 없앤 것이 그 사고의 처방이다 — 빠진 자리를 런타임이 아니라 컴파일러가 말한다.
+ */
 function screenFor(name: TabRouteName): React.ComponentType<Record<string, never>> {
-  const screen: React.ComponentType =
-    name in TAB_SCREENS
-      ? TAB_SCREENS[name as keyof typeof TAB_SCREENS]
-      : (PlaceholderScreen as React.ComponentType)
-
-  return screen as React.ComponentType<Record<string, never>>
+  return TAB_SCREENS[name] as React.ComponentType<Record<string, never>>
 }
 
 /**
@@ -60,20 +79,39 @@ function screenFor(name: TabRouteName): React.ComponentType<Record<string, never
  * 남는 이유는 토스트 하나다(`app/use-keyboard-visible.ts`).
  */
 export function TabNavigator(): React.JSX.Element {
+  const { definition } = useThemeAppearance()
+
   return (
     <Tab.Navigator
       initialRouteName={INITIAL_TAB_ROUTE}
       backBehavior="none"
       // 헤더는 앱이 직접 그린다(`PageHeader`, templates) — [[ADR-085]] 결정 1 의 `fixed` 헤더 +
       // 실측 spacer 가 그 자리에 온다. 라이브러리 헤더를 켜 두면 두 겹이 된다.
-      screenOptions={{ headerShown: false, tabBarHideOnKeyboard: true }}
+      screenOptions={{
+        headerShown: false,
+        tabBarHideOnKeyboard: true,
+        // 웹 `BottomTabBar` 의 값 그대로 — 활성 `text-primary-ink` · 비활성 `text-text-muted` ·
+        // 바탕 `bg-surface` + `border-t border-border` · 라벨 `text-xs font-medium`.
+        // `className` 이 아니라 값인 것은 라이브러리가 칠하는 자리라서다(`navigation-theme.ts` 와 같은 부류).
+        tabBarActiveTintColor: definition.primaryInk,
+        tabBarInactiveTintColor: definition.textMuted,
+        tabBarStyle: { backgroundColor: definition.surface, borderTopColor: definition.border },
+        tabBarLabelStyle: { fontSize: 12, fontWeight: '500' },
+      }}
     >
-      {TAB_ITEMS.map((tab) => (
+      {TAB_ITEMS.map((tab) => {
+        const Icon = TAB_ICONS[tab.route]
+
+        return (
         <Tab.Screen
           key={tab.route}
           name={tab.route}
           component={screenFor(tab.route)}
-          options={{ title: tab.label }}
+          options={{
+            title: tab.label,
+            // 웹은 `h-5 w-5`(20) · `strokeWidth={1.5}`. 색은 라이브러리가 활성/비활성에 맞춰 넘긴다.
+            tabBarIcon: ({ color }) => <Icon color={color} size={20} strokeWidth={1.5} />,
+          }}
           // **탭 이동의 책임은 링크가 아니라 인터셉터에 있다** — 전면광고 게이트가 여기 걸린다
           // ([[ADR-090]] 결정 3, `docs/migration/parity-inventory.md` §1 «보존해야 할 라우팅 동작»).
           //
@@ -94,7 +132,8 @@ export function TabNavigator(): React.JSX.Element {
             },
           })}
         />
-      ))}
+        )
+      })}
     </Tab.Navigator>
   )
 }
