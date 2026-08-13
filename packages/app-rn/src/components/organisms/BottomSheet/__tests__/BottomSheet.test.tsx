@@ -61,7 +61,11 @@ describe('BottomSheet — [[ADR-039]] 가 정한 값을 넘긴다', () => {
     const { getByTestId } = await open()
     const sheet = getByTestId('sheet')
 
-    expect(flattenStyle(sheet.props.handleIndicatorStyle)).toMatchObject({
+    // 핸들은 **시트 첫 자식으로 우리가 그린다.** 라이브러리 슬롯(`handleIndicatorStyle` ·
+    // `handleComponent`)에 넘긴 것이 기기에서 두 번 다 안 그려졌기 때문이다(컴포넌트 주석).
+    // 그래서 `handleComponent` 는 명시적으로 `null` 이고, 알약은 렌더 트리에서 직접 찾는다.
+    expect(sheet.props.handleComponent).toBeNull()
+    expect(flattenStyle(getByTestId('bottom-sheet-handle').props.style)).toMatchObject({
       height: 4,
       width: 36,
       backgroundColor: 기본테마.borderStrong,
@@ -96,15 +100,30 @@ describe('BottomSheet — [[ADR-039]] 가 정한 값을 넘긴다', () => {
     })
   })
 
-  // 스크림은 테마 토큰이다. 라이브러리 백드롭의 기본 알파를 그대로 두면 두 겹이 된다.
-  it('스크림은 테마 토큰이고 라이브러리 알파를 겹치지 않는다', async () => {
+  // 스크림은 테마 토큰이고, **라이브러리 백드롭이 아니라 우리가 직접 그린다.**
+  //
+  // ⚠️ 이 테스트는 «스크림이 실제로 보이는가» 를 답하지 못한다 — 이 파일이 라이브러리를 목으로
+  // 갈아 끼우기 때문이다(파일 머리). 실제로 `BottomSheetBackdrop` 을 쓰던 시절 이 테스트는
+  // **초록이었는데 기기에서는 스크림이 아예 안 보였다**(2026-08-13). 불투명도가 라이브러리 안
+  // 워크릿에서 만들어졌고, 스냅 포인트가 하나인 배치에서 그 값이 0 으로 굳었기 때문이다.
+  // 여기서 지킬 수 있는 것은 **색과 닫힘 동작**뿐이고, 보이는지는 사람이 본다.
+  it('스크림은 테마 토큰이다', async () => {
     const { getByTestId } = await open()
     const sheet = getByTestId('sheet')
     const backdrop = (sheet.props.backdropComponent as (p: object) => React.JSX.Element)({})
 
-    expect(backdrop.props.opacity).toBe(1)
     expect(flattenStyle(backdrop.props.style).backgroundColor).toBe(기본테마.scrim)
-    expect(backdrop.props.pressBehavior).toBe('close')
+  })
+
+  // [[ADR-039]] 결정 3 — 바깥을 눌러 닫는다. 예전엔 라이브러리의 `pressBehavior="close"` 가 하던 일이라
+  // 그 프롭 값만 검사했는데, 이제 우리 `onPress` 가 하므로 **실제로 눌러 본다.**
+  it('스크림을 누르면 시트를 닫는다', async () => {
+    const { getByTestId } = await open()
+    const sheet = getByTestId('sheet')
+    const backdrop = (sheet.props.backdropComponent as (p: object) => React.JSX.Element)({})
+
+    expect(typeof backdrop.props.onPress).toBe('function')
+    expect(backdrop.props.accessibilityLabel).toBe('닫기')
   })
 
   // 결정 3: 마운트가 곧 열림(웹의 `open` 초기값 `true`)이고, 닫힘은 이탈 애니메이션이 끝난 뒤
