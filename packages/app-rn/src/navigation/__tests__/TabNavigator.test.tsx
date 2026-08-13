@@ -67,6 +67,45 @@ async function press(testID: string): Promise<void> {
 // 다룬다 — 그 둘은 뿌리에 자기 `fill="none"` 을 갖고 채우기는 안쪽 도형에만 걸려서 이 검사의
 // 눈에 안 보인다. 각자의 테스트가 더 정확하게 잡는다(`GearIcon` 은 evenodd 로 가운데를 비우는지,
 // `ProfitIcon` 은 동전 둘에만 걸리고 호에는 안 새는지).
+// 채우지 못하는 그림은 **굵기로** 활성을 말한다 ([[ADR-132]] 정정 27).
+//
+// 채우기가 통하는 셋(대시보드·렌치·장바구니)과 커스텀 둘(톱니·수익)은 면으로 활성을 표시하는데,
+// 나머지(달력·지갑·목록·검·조준경)는 안쪽 선이 의미를 져서 채울 수 없다 — 그쪽만 획을 키운다.
+// 둘 다 하면 채운 그림이 과해지므로 **배타**여야 하고, 그 배타성을 여기서 건다.
+describe('채우지 못하는 아이콘은 활성일 때 굵어진다 ([[ADR-132]] 정정 27)', () => {
+  const strokes = (id: string): number[] =>
+    [...JSON.stringify(screen.getByTestId(id)).matchAll(/"strokeWidth":([0-9.]+)/g)].map(
+      ([, value]) => Number(value),
+    )
+
+  // 활성이 되는 자리로 고른다 — 그룹 행에서 ← 를 누르면 기록이 있어 **today 로 돌아가므로**
+  // 그 경로로는 스케줄이 활성이 되지 않는다([[ADR-132]] 결정 4).
+  it.each([
+    ['bar-sub-Content', 'bar-group-schedule', true],   // 목록 — 선뿐이라 못 채운다
+    ['bar-sub-HuntingProfit', 'bar-group-ledger', true], // 조준경 — 채우면 원판이 된다
+    ['bar-sub-Boss', 'bar-group-schedule', false],     // 검 — 칼날이 면으로 찬다(채우는 쪽)
+    ['bar-sub-Spend', 'bar-group-ledger', false],      // 장바구니 — 채운다
+    ['bar-group-utility', 'bar-group-utility', false], // 렌치 — 채운다
+  ] as const)('%s 가 활성일 때 굵어지는가: %s', async (target, entry, thicker) => {
+    await render(<NavigationHarness />)
+    await press(entry)
+    if (target !== entry) await press(target)
+
+    const active = strokes(target)
+    expect(active.length).toBeGreaterThan(0)
+    expect(active.some((width) => width > 1.5)).toBe(thicker)
+  })
+
+  it('비활성은 어느 그림이든 기본 굵기다', async () => {
+    await render(<NavigationHarness />)
+
+    // 같은 값이 컴포넌트·호스트 양쪽에 실려 여러 번 잡힌다 — 개수가 아니라 «전부 기본인가» 다.
+    const widths = strokes('bar-group-schedule')
+    expect(widths.length).toBeGreaterThan(0)
+    expect(widths.every((width) => width === 1.5)).toBe(true)
+  })
+})
+
 describe('활성 아이콘 채우기는 가려서 한다 ([[ADR-132]] 정정 25)', () => {
   it.each([
     ['today', true],
