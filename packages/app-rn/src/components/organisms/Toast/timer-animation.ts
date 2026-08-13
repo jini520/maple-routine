@@ -23,3 +23,15 @@ export const TIMER_ANIMATION_BASE = {
 export function timerAnimation(durationMs: number) {
   return { ...TIMER_ANIMATION_BASE, animationDuration: `${durationMs}ms` } as const
 }
+
+/**
+ * 웹의 `transition-opacity duration-200 ease-out` — 흐르는 것은 투명도 하나뿐이다.
+ *
+ * `as const` 인 이유는 `DropEffectOverlay` 의 `FLOAT_ANIMATION` 과 같다(Reanimated 의 CSS 타입으로
+ * 주석을 달면 `Animated.View` 의 `style` 과 안 맞물린다 — 그 파일 주석 참고).
+ */
+export const ENTER_TRANSITION = {
+  transitionProperty: 'opacity',
+  transitionDuration: '200ms',
+  transitionTimingFunction: 'ease-out',
+} as const

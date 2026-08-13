@@ -12,16 +12,18 @@ import { SettingsFeatureGuideListScreen } from '../app/settings/SettingsFeatureG
 import { SettingsFeatureGuideScreen } from '../app/settings/SettingsFeatureGuideScreen'
 import { SettingsPrivacyScreen } from '../app/settings/SettingsPrivacyScreen'
 import { SettingsReleaseNotesScreen } from '../app/settings/SettingsReleaseNotesScreen'
-import { PlaceholderScreen } from './PlaceholderScreen'
 import { TabNavigator } from './TabNavigator'
 import { STACK_ROUTE_NAMES, type RootStackParamList, type StackRouteName } from './routes'
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
 
 /**
- * 진짜 화면이 들어온 하위 페이지. **step 8 로 전부 찼다** — 4단계가 step 마다 이 표를 채웠고,
- * 비어 있던 자리가 곧 남은 일이었다. 이제 `PlaceholderScreen` 으로 떨어지는 이름이 없다(그 분기와
- * 컴포넌트는 남긴다 — 라우트가 늘 때 다시 쓰인다).
+ * 진짜 화면이 들어온 하위 페이지 열하나. **step 8 로 전부 찼다** — 4단계가 step 마다 이 표를
+ * 채웠고, 비어 있던 자리가 곧 남은 일이었다.
+ *
+ * 표가 `Partial` 이 아니라 **`Record<StackRouteName, …>`** 인 것이 계약이다. 열하나를 다 적지
+ * 않으면 컴파일이 안 된다 — 자리표시자로 조용히 떨어지는 길을 없앴다(그 길이 `TabNavigator` 에서
+ * 실제로 설정 탭을 통째로 삼켰다, 2026-08-13).
  *
  * **안내 상세 둘이 같은 컴포넌트를 가리키는 것이 계약이다**([[ADR-125]] 결정 3) — 기능 설명
  * 목록에서도, 개발 노트 항목에서도 같은 상세가 열린다. 사본을 두면 같은 글이 두 벌이 된다.
@@ -38,10 +40,15 @@ const STACK_SCREENS = {
   SettingsAccountData: SettingsAccountDataScreen,
   SettingsAbout: SettingsAboutScreen,
   SettingsPrivacy: SettingsPrivacyScreen,
-} as const satisfies Partial<Record<StackRouteName, React.ComponentType>>
+} as const satisfies Record<StackRouteName, React.ComponentType>
 
 /**
- * 라우트 이름 → 화면. 아직 안 옮긴 자리는 자리표시자다.
+ * 라우트 이름 → 화면. **자리표시자 폴백이 없다.**
+ *
+ * 예전에는 `Partial` + 폴백이었다. 그 형태가 `TabNavigator` 에서 실제로 사고를 냈다 — `Settings`
+ * 를 빠뜨렸는데 **타입도 테스트도 통과한 채 설정 탭만 자리표시자**로 떴고, 기기에서 열어 보고서야
+ * 알았다(2026-08-13). 여기도 같은 형태였으므로 같이 고친다: `Record<StackRouteName, …>` 는 열하나를
+ * 다 적지 않으면 **컴파일이 안 된다.**
  *
  * 반환 타입을 넓게 두는 것은 화면 목록을 **데이터에서 돌리기 위한 대가**다. `<Stack.Screen>` 의
  * `component` 타입은 그 자리의 `name` 리터럴에 묶이는데 여기서는 이름이 유니온이라 하나로 좁혀지지
@@ -50,12 +57,7 @@ const STACK_SCREENS = {
  * 뿐이고 그것들은 훅으로 읽으므로(`use-settings-navigation.ts`) 실제 위험은 없다.
  */
 function screenFor(name: StackRouteName): React.ComponentType<Record<string, never>> {
-  const screen: React.ComponentType =
-    name in STACK_SCREENS
-      ? STACK_SCREENS[name as keyof typeof STACK_SCREENS]
-      : (PlaceholderScreen as React.ComponentType)
-
-  return screen as React.ComponentType<Record<string, never>>
+  return STACK_SCREENS[name] as React.ComponentType<Record<string, never>>
 }
 
 /**

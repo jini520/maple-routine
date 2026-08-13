@@ -29,6 +29,7 @@ import {
   MAPLE_SWEEP_TRAVEL,
 } from '../components/atoms/MapleSweepSpinner/MapleSweepSpinner'
 import { WIDTH_TRANSITION } from '../components/atoms/ProgressBar/width-transition'
+import { SPIN_ANIMATION } from '../lib/animation'
 import { MAPLE_LEAF_PATH_LENGTH } from '../components/mapleLeafPath'
 import { VALUABLE_ROW_PULSE, VALUABLE_ROW_TINT } from '../app/boss-profit/valuable-row-glow'
 import {
@@ -40,7 +41,7 @@ import {
   VALUABLE_CARD_RING_COLOR,
 } from '../app/boss-profit/valuable-card-glow'
 import { FLOAT_ANIMATION, POP_IN_ANIMATION } from '../components/organisms/DropEffectOverlay/float-animation'
-import { TIMER_ANIMATION_BASE } from '../components/organisms/Toast/timer-animation'
+import { ENTER_TRANSITION, TIMER_ANIMATION_BASE } from '../components/organisms/Toast/timer-animation'
 
 const WEB_SRC = join(__dirname, '../../../app-capacitor/src')
 
@@ -361,11 +362,17 @@ describe('이징은 Reanimated 가 받는 형태여야 한다', () => {
     'step-end',
   ]
 
+  // **여덟을 다 적는다.** 넷만 적었다가 전수 조사에서 나머지 넷을 빠뜨린 것을 발견했다 —
+  // 가드는 «검사한 것» 이 아니라 «있는 것 전부» 를 덮어야 뜻이 있다.
   const TIMINGS: Array<[string, unknown]> = [
     ['FLOAT_ANIMATION', FLOAT_ANIMATION.animationTimingFunction],
     ['POP_IN_ANIMATION', POP_IN_ANIMATION.animationTimingFunction],
     ['TIMER_ANIMATION_BASE', TIMER_ANIMATION_BASE.animationTimingFunction],
     ['VALUABLE_ROW_PULSE', VALUABLE_ROW_PULSE.animationTimingFunction],
+    ['WIDTH_TRANSITION', WIDTH_TRANSITION.transitionTimingFunction],
+    ['VALUABLE_CARD_GLOW_TIMING', VALUABLE_CARD_GLOW_TIMING],
+    ['ENTER_TRANSITION', ENTER_TRANSITION.transitionTimingFunction],
+    ['SPIN_ANIMATION', SPIN_ANIMATION.animationTimingFunction],
   ]
 
   it.each(TIMINGS)('%s 의 이징이 문자열이면 미리 정의된 이름이다', (_name, timing) => {
