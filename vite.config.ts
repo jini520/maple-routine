@@ -1,40 +1,16 @@
-import { defineConfig } from 'vitest/config'
-import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
+// 저장소 루트에는 앱이 없다([[ADR-128]] 0단계 — 앱은 `packages/app-capacitor` 로 내려갔다).
+// 이 파일이 남아 있는 이유는 둘뿐이다.
+//
+//   ① `npm test` — 저장소 **전체**를 한 번에 도는 vitest 실행(패키지별로 쪼개면 "몇 파일 / 몇 개"를
+//      한 번에 확인할 수 없다). vitest 는 cwd 에서 설정을 찾으므로 루트에 하나가 있어야 한다.
+//   ② `npm run theme:gen` — `vite-node` 로 도는 스크립트. `@core/*` 를 해석해야 하는데 vite-node 도
+//      cwd 의 `vite.config.*` 만 본다(`vitest.config.ts` 라는 이름은 못 찾는다).
+//
+// 둘 다 앱과 **같은 해석 규칙**(`@core/*` alias · JSX 변환 · 테스트 setup)을 써야 하므로 규칙을 두
+// 벌로 두지 않고 앱 설정을 그대로 쓴다. 두 벌이면 한쪽만 고쳐져도 아무도 모른다.
+//
+// 앱 빌드는 이 파일을 보지 않는다 — `vite build` 는 자기 패키지 디렉터리에서 돌며 그쪽 설정을 읽는다.
+// (그래서 `vite` 를 루트에서 직접 띄우지 말 것 — 여기엔 `index.html` 이 없다.)
+import appConfig from './packages/app-capacitor/vite.config'
 
-// https://vite.dev/config/
-// 화면 청크는 **라우트 단위가 아니라 탭 단위**로 묶는다([[ADR-120]] 결정 14).
-//
-// [[ADR-092]] 는 화면마다 청크를 쪼갰다. 그 목적(첫 페인트 번들 축소)은 그대로 유효하지만, 하위
-// 페이지까지 따로 쪼갠 탓에 **탭에서 하위 페이지로 밀어 넣을 때 파일을 한 번 더 읽는다** — 실기기
-// (iPhone 17, 2026-08-09)에서 그 읽기가 체감될 만큼 느려 전환이 늦게 시작됐다.
-//
-// 하위 페이지는 **부모 탭에서만 열린다.** 그러니 부모와 같은 청크에 두면 그 탭에 들어올 때 이미 함께
-// 와 있어 추가 읽기가 없다. **첫 페인트 번들은 늘지 않는다** — 이 청크들은 어차피 그 탭에 들어갈 때
-// 받는 것이고, 진입 번들(`index-*.js`)에는 들어가지 않는다.
-//
-// 정적 import 로 바꾸는 방법은 쓸 수 없다 — `App.tsx` 는 진입점이라 그 화면들이 첫 페인트 번들로
-// 딸려 들어가 [[ADR-092]] 가 무효가 된다. `lazy()` + 동적 `import()` 는 그대로 두고 **번들 경계만**
-// 바꾼다.
-function screenChunk(id: string): string | undefined {
-  if (id.includes('/src/app/content-scheduler/')) return 'screen-content'
-  if (id.includes('/src/app/boss-scheduler/')) return 'screen-boss'
-  if (id.includes('/src/app/boss-profit/')) return 'screen-profit'
-  if (id.includes('/src/app/settings/')) return 'screen-settings'
-  return undefined
-}
-
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks: (id) => screenChunk(id),
-      },
-    },
-  },
-  test: {
-    environment: 'node',
-    setupFiles: ['./vitest.setup.ts'],
-  },
-})
+export default appConfig

@@ -1,0 +1,18 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'com.mapleroutine.appsystembars'
+version = '0.1.0'
+
+android {
+  namespace "com.mapleroutine.appsystembars"
+  defaultConfig {
+    versionCode 1
+    versionName "0.1.0"
+  }
+}
+
+// `androidx.core` 를 따로 적지 않는다 — `expo-modules-core` 가 `api "androidx.core:core-ktx"` 로
+// 내보내므로 `WindowCompat` 이 그대로 잡힌다(`app-background` 와 같은 이유로 dependencies 블록이 없다).

@@ -1,0 +1,32 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Badge 렌더 트리 스냅샷 — 이후 변경을 잡는 기준선(예전 화면과의 대조가 아니다) 1`] = `
+<View
+  style={
+    {
+      "flexBasis": "0%",
+      "flexGrow": 1,
+      "flexShrink": 1,
+    }
+  }
+>
+  <Text
+    style={
+      {
+        "backgroundColor": "#FEECDA",
+        "borderRadius": 9999,
+        "color": "#F58B0F",
+        "fontSize": 12,
+        "fontWeight": "600",
+        "lineHeight": 16,
+        "paddingBottom": 4,
+        "paddingLeft": 10,
+        "paddingRight": 10,
+        "paddingTop": 4,
+      }
+    }
+  >
+    3
+  </Text>
+</View>
+`;

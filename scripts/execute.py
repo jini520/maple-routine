@@ -237,7 +237,7 @@ class StepExecutor:
         prompt = preamble + step_file.read_text()
         result = subprocess.run(
             ["claude", "-p", "--dangerously-skip-permissions", "--output-format", "json", prompt],
-            cwd=self._root, capture_output=True, text=True, timeout=1800,
+            cwd=self._root, capture_output=True, text=True, timeout=5400,
         )
 
         if result.returncode != 0:
@@ -255,6 +255,24 @@ class StepExecutor:
             json.dump(output, f, indent=2, ensure_ascii=False)
 
         return output
+
+    @staticmethod
+    def _quota_block_reason(output: dict) -> Optional[str]:
+        """사용량 한도로 호출이 거부됐으면 그 사유를, 아니면 None.
+
+        `claude -p --output-format json` 은 한도에 걸려도 **종료 코드 1 + JSON 한 줄**로 끝나므로
+        stdout 을 읽는다. 판정은 `api_error_status == 429` 하나로 한다 — 문구("resets 4:10am")는
+        사람에게 보여줄 값이지 판정 근거가 아니다(문구가 바뀌면 조용히 안 잡힌다).
+        """
+        if output.get("exitCode") == 0:
+            return None
+        try:
+            payload = json.loads(output.get("stdout", "").strip() or "{}")
+        except json.JSONDecodeError:
+            return None
+        if payload.get("api_error_status") != 429:
+            return None
+        return str(payload.get("result") or "사용량 한도(429)").strip()
 
     # --- 헤더 & 검증 ---
 
@@ -306,8 +324,24 @@ class StepExecutor:
                 tag += f" [retry {attempt}/{self.MAX_RETRIES}]"
 
             with progress_indicator(tag) as pi:
-                self._invoke_claude(step, preamble)
+                output = self._invoke_claude(step, preamble)
                 elapsed = int(pi.elapsed)
+
+            # 사용량 한도(429)는 **작업 실패가 아니라 호출 거부**다. 재시도로 풀리지 않고(한도가
+            # 풀릴 때까지 몇 시간이다) 그냥 두면 3회가 몇 초 만에 소진돼 step 이 "error" 로 남는데,
+            # 고칠 것이 하나도 없는 상태다. blocked 가 이 자리에 맞는 상태다 — 사람이 개입해야
+            # 풀리고(시간이 지나기를 기다린다), 재개 방법은 error 와 같다.
+            quota = self._quota_block_reason(output)
+            if quota:
+                for s in index["steps"]:
+                    if s["step"] == step_num:
+                        s["status"], s["blocked_reason"], s["blocked_at"] = "blocked", quota, self._stamp()
+                self._write_json(self._index_file, index)
+                print(f"\n  ⏸ Step {step_num}: {step_name} — 사용량 한도")
+                print(f"  {quota}")
+                print(f"  한도가 풀린 뒤 status 를 'pending' 으로 되돌리고 다시 실행하라.")
+                self._update_top_index("blocked")
+                return False
 
             index = self._read_json(self._index_file)
             status = next((s.get("status", "pending") for s in index["steps"] if s["step"] == step_num), "pending")

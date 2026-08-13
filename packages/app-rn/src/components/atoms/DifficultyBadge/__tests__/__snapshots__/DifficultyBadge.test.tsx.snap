@@ -1,0 +1,65 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`DifficultyBadge 렌더 트리 스냅샷 — 이후 변경을 잡는 기준선(예전 화면과의 대조가 아니다) 1`] = `
+<View
+  style={
+    {
+      "flexBasis": "0%",
+      "flexGrow": 1,
+      "flexShrink": 1,
+    }
+  }
+>
+  <ViewManagerAdapter_ExpoLinearGradient
+    colors={
+      [
+        4293362854,
+        4290792308,
+      ]
+    }
+    endPoint={
+      [
+        0.5,
+        1,
+      ]
+    }
+    startPoint={
+      [
+        0.5,
+        0,
+      ]
+    }
+    style={
+      {
+        "alignItems": "center",
+        "borderColor": "#9c3a5c",
+        "borderRadius": 9999,
+        "borderWidth": 1,
+        "flexDirection": "row",
+        "height": 20,
+        "paddingLeft": 10,
+        "paddingRight": 10,
+      }
+    }
+  >
+    <Text
+      style={
+        {
+          "color": "#ffffff",
+          "fontSize": 10,
+          "fontWeight": "800",
+          "letterSpacing": 0.3,
+          "textShadowColor": "rgba(0,0,0,0.25)",
+          "textShadowOffset": {
+            "height": 1,
+            "width": 0,
+          },
+          "textShadowRadius": 1,
+        }
+      }
+    >
+      하드
+    </Text>
+  </ViewManagerAdapter_ExpoLinearGradient>
+</View>
+`;

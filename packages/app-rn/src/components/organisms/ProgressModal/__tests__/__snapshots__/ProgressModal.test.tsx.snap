@@ -1,0 +1,170 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ProgressModal 트리 스냅샷 1`] = `
+<RNCSafeAreaProvider
+  onInsetsChange={[Function]}
+  style={
+    [
+      {
+        "flex": 1,
+      },
+      undefined,
+    ]
+  }
+>
+  <View
+    style={
+      {
+        "flexBasis": "0%",
+        "flexGrow": 1,
+        "flexShrink": 1,
+      }
+    }
+  >
+    <Modal
+      animationType="none"
+      navigationBarTranslucent={true}
+      onRequestClose={[Function]}
+      statusBarTranslucent={true}
+      transparent={true}
+      visible={true}
+    >
+      <View
+        accessibilityState={
+          {
+            "busy": undefined,
+            "checked": undefined,
+            "disabled": undefined,
+            "expanded": undefined,
+            "selected": undefined,
+          }
+        }
+        accessibilityValue={
+          {
+            "max": undefined,
+            "min": undefined,
+            "now": undefined,
+            "text": undefined,
+          }
+        }
+        accessible={true}
+        collapsable={false}
+        focusable={true}
+        onBlur={[Function]}
+        onClick={[Function]}
+        onFocus={[Function]}
+        onResponderGrant={[Function]}
+        onResponderMove={[Function]}
+        onResponderRelease={[Function]}
+        onResponderTerminate={[Function]}
+        onResponderTerminationRequest={[Function]}
+        onStartShouldSetResponder={[Function]}
+        style={
+          {
+            "alignItems": "center",
+            "backgroundColor": "#0F0A068C",
+            "flexBasis": "0%",
+            "flexGrow": 1,
+            "flexShrink": 1,
+            "justifyContent": "center",
+            "paddingLeft": 16,
+            "paddingRight": 16,
+          }
+        }
+      >
+        <View
+          onStartShouldSetResponder={[Function]}
+          style={
+            {
+              "backgroundColor": "#FDFCF6",
+              "borderColor": "#685B4A",
+              "borderRadius": 14,
+              "borderWidth": 1,
+              "maxWidth": 384,
+              "padding": 24,
+              "width": "100%",
+            }
+          }
+        >
+          <View
+            style={
+              {
+                "columnGap": 8,
+                "rowGap": 8,
+              }
+            }
+          >
+            <Text
+              style={
+                {
+                  "color": "#645C42",
+                  "fontSize": 14,
+                  "lineHeight": 20,
+                }
+              }
+            >
+              저장 중
+               (
+              2
+              /
+              5
+              )
+            </Text>
+            <View
+              accessibilityRole="progressbar"
+              accessibilityValue={
+                {
+                  "max": 100,
+                  "min": 0,
+                  "now": 40,
+                }
+              }
+              style={
+                {
+                  "backgroundColor": "#E4E1CE",
+                  "borderRadius": 9999,
+                  "height": 6,
+                  "overflow": "hidden",
+                  "width": "100%",
+                }
+              }
+            >
+              <View
+                collapsable={false}
+                jestAnimatedProps={
+                  {
+                    "value": {},
+                  }
+                }
+                jestAnimatedStyle={
+                  {
+                    "value": {},
+                  }
+                }
+                jestInlineStyle={
+                  {
+                    "backgroundColor": "#F58B0F",
+                    "borderRadius": 9999,
+                    "height": 6,
+                    "width": "40%",
+                  }
+                }
+                style={
+                  [
+                    {
+                      "backgroundColor": "#F58B0F",
+                      "borderRadius": 9999,
+                      "height": 6,
+                      "width": "40%",
+                    },
+                  ]
+                }
+              />
+            </View>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  </View>
+</RNCSafeAreaProvider>
+`;

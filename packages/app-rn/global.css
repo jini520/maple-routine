@@ -1,0 +1,13 @@
+/* NativeWind 진입 CSS — Metro 가 이 파일을 Tailwind 로 컴파일해 RN 스타일시트로 바꾼다
+   ([[ADR-127]] 3단계). `App.tsx` 가 이 파일을 import 하고, 거기서부터 `className` 이 살아난다.
+
+   토큰이 여기 없는 것이 요점이다 — 테마와 무관한 축은 `tailwind.config.js` 가 웹의 Tailwind v4
+   기본값에서 파생시키고(`tailwind-v4-axes.cjs`), 테마별 색 34종은 step 1(theme-system) 몫이다.
+
+   웹(`packages/app-capacitor/src/index.css`)이 `@import "tailwindcss"` 한 줄인 것과 문법이 다른
+   이유는 단순하다 — 그쪽은 Tailwind v4 이고 이쪽은 v3 다(NativeWind 안정판이 v4 를 거부한다).
+   `base` 는 브라우저 리셋이라 RN 에서 대부분 버려지지만, NativeWind 가 여기에 자기 기본 변수도
+   함께 싣기 때문에 빼지 않는다. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

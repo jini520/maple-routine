@@ -1,7 +1,7 @@
 # 광고 (Ads)
 
 > **범위**: 광고 포맷·노출 지점·노출 게이트·어댑터 경계·스토어 부수 요건. 결정의 배경과 폐기된 대안은 [[ADR-090]].
-> **관련 소스**: `native/ads.ts`(어댑터) · `features/ads/`(게이트 판정·오케스트레이션) · `storage/ads.ts`(마지막 노출 시각) · `App.tsx`(초기화·탭 전환 훅) · `android/…/AndroidManifest.xml` · `ios/App/App/Info.plist`.
+> **관련 소스**: `native/ads.ts`(어댑터) · `features/ads/`(게이트 판정·오케스트레이션) · `storage/ads.ts`(마지막 노출 시각) · `App.tsx`(초기화·탭 전환 훅) · `android/…/AndroidManifest.xml` · `ios/App/App/Info.plist` · RN: `packages/app-rn/src/native/adapters/rn-ads.ts`·`ads-env.ts`·`app.json`.
 > **관련 ADR**: [[ADR-090]] [[ADR-005]] [[ADR-003]] [[ADR-013]] [[ADR-007]]. **관련 문서**: [settings.md](./settings.md), [../foundation/product.md](../foundation/product.md), [../foundation/architecture.md](../foundation/architecture.md).
 
 ## 정책
@@ -93,6 +93,34 @@
 **틀려도 화면에는 아무 증상이 없다** — 테스트 ID가 남으면 광고는 뜨는데 수익만 0이고, 앱 ID가
 샘플로 남으면 SDK가 초기화에서 죽는다. 그래서 `native/__tests__/ads.test.ts` 가 세 곳을 모두
 읽어 드리프트를 잡는다(ID 선택은 순수 함수 `resolveInterstitialAdId` 로 분리).
+
+### RN 어댑터 (`packages/app-rn`) — 같은 판정, 다른 채우는 값
+
+RN 전환([[ADR-128]])의 `AdsPort` 구현은 `react-native-google-mobile-ads` 를 쓴다. **판정 함수는
+공유한다** — `packages/core` 의 `shouldUseTestAds`·`resolveInterstitialAdId` 를 그대로 부르고,
+`packages/app-rn/src` 에는 광고 단위 ID 문자열이 한 글자도 없다(저장소 검색으로 지킨다).
+
+| 값 | 위치 |
+|---|---|
+| 광고 단위 ID(`/`) | `packages/core/src/native/ads.ts` — 웹과 **공유** |
+| Android·iOS 앱 ID(`~`) | `packages/app-rn/app.json` 의 config plugin 인자 → `expo prebuild` 가 `AndroidManifest.xml`·`Info.plist` 에 쓴다 |
+
+환경 변수는 Vite 이름을 Expo 이름으로 바꿔 채운다(`src/native/adapters/ads-env.ts`) —
+`VITE_ADS_TEST` → **`EXPO_PUBLIC_ADS_TEST`**, `VITE_LIVE_UPDATE_CHANNEL` →
+**`EXPO_PUBLIC_LIVE_UPDATE_CHANNEL`**. 둘 다 빌드 시점에 번들로 박히는 값이라 성질이 같다.
+여기에 RN 의 `__DEV__` 를 **더한다** — 켜져 있으면 테스트 광고를 강제하고 꺼져 있으면 아무것도
+하지 않으므로, 바꿀 수 있는 방향이 "실 광고 → 테스트 광고" 한 쪽뿐이다.
+
+> ⚠️ **Metro 트랜스폼 캐시가 `EXPO_PUBLIC_*` 을 무효화하지 않는다**(2026-08-11 실측). 프로덕션
+> 번들을 만든 직후 `EXPO_PUBLIC_ADS_TEST=1` 로 다시 빌드하면 **캐시가 이겨서 실 광고 번들이
+> 그대로 나온다**(번들 해시 동일). 즉 **테스트 빌드는 캐시를 비우고 만들어야 한다**
+> (`--clear`/`--reset-cache`). app-rn 에는 아직 릴리스 빌드 경로가 없으므로, 그 경로를 만들 때
+> 명령에 박을 것. 측정표는 `ads-env.ts` 상단.
+
+**play-services-ads 는 24.9 라인으로 맞춘다**(`react-native-google-mobile-ads` **16.0.3** 고정).
+최신 16.4.0 이 끌어오는 25.4.0 은 Kotlin 메타데이터 2.3 이라 RN 0.86 의 Kotlin 2.1 에서
+**컴파일이 실패**하고, 24.9 는 지금 배포 중인 Capacitor 앱(`@capacitor-community/admob` 의
+`24.9.+`)과 같은 라인이다 — 전환은 같은 일을 다른 SDK로 하는 것이지 SDK를 올리는 것이 아니다.
 
 ### iOS — 추적 권한(ATT)을 요청하지 않는다
 

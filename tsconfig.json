@@ -1,7 +1,8 @@
 {
   "files": [],
   "references": [
-    { "path": "./tsconfig.app.json" },
+    { "path": "./packages/app-capacitor" },
+    { "path": "./packages/core" },
     { "path": "./tsconfig.node.json" }
   ]
 }

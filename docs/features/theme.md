@@ -9,8 +9,9 @@
 
 - `src/index.css` `@theme` 기본 블록 = **머쉬맘** 값. 나머지 테마는 `:root[data-theme='…']` 오버라이드. Tailwind v4 유틸(`bg-primary`·`text-text` 등)이 이미 `var(--color-*)` 를 참조하므로 컴포넌트 코드는 그대로 두고 `data-theme` 속성만 바꾸면 전환된다.
 - 선택 테마는 Zustand(`features/theme/store.ts`) + `storage/theme.ts`(Preferences 어댑터) 영속화, `AppShell` `restoreFromStorage` 흐름에서 앱 시작 시 hydration.
-- **시스템 다크 모드 연동(2026-07-14)**: `restoreFromStorage()` 가 저장된 테마가 없을 때 `window.matchMedia('(prefers-color-scheme: dark)')` 로 OS 설정을 확인해 라이트="머쉬맘"/다크="혼테일"을 기본값으로 씀(앱 실행 시 1회 판정, 실행 중 OS 변경은 재시작 전까지 미반영). 사용자가 설정에서 한 번이라도 명시 선택하면 그 값이 저장돼 이후 시스템과 무관.
+- **시스템 다크 모드 연동(2026-07-14)**: `restoreFromStorage()` 가 저장된 테마가 없을 때 `window.matchMedia('(prefers-color-scheme: dark)')` 로 OS 설정을 확인해 라이트="머쉬맘"/다크="혼테일"을 기본값으로 씀(앱 실행 시 1회 판정, 실행 중 OS 변경은 재시작 전까지 미반영). 사용자가 설정에서 한 번이라도 명시 선택하면 그 값이 저장돼 이후 시스템과 무관. **"OS가 지금 무엇인가"는 `ColorSchemePort` 가 답한다**([[ADR-128]]) — 묻는 법이 플랫폼마다 달라서다(웹뷰=위 미디어 쿼리 / RN=`Appearance.getColorScheme()`). 어느 쪽이든 **판정을 못 하면 라이트로 폴백한다**(웹뷰는 `matchMedia` 부재, RN 은 `null` 반환) — 모르는 것을 다크로 읽으면 저장된 테마가 없는 첫 실행이 통째로 다크로 열린다. 구독 API 는 두지 않는다(실행 중 변경 미반영이 정책이라 부를 곳이 없다).
 - **모드(라이트/다크)는 `data-mode` 로 CSS 에도 노출된다**([[ADR-122]], 2026-08-10) — `applyThemeToDocument` 가 `data-theme`(이름)·`color-scheme`·스크롤바 색과 함께 세운다. 토큰만으로 못 푸는 규칙, 즉 **같은 토큰이 모드에 따라 반대 역할을 하는 자리**(스크림 위 패널 테두리)가 이걸 쓴다. 테마 **이름**으로 분기하면 [[ADR-064]] 결정 8이 폐기한 `DARK_THEMES` 수동 목록이 CSS 쪽에 되살아나므로 금지. `color-scheme` 은 선택자로 쓸 수 없어 이 자리를 못 푼다.
+- **토큰을 화면에 칠하는 방법은 플랫폼마다 다르다** — 위 셋(`<style>` 주입·`data-*`·`color-scheme`)은 전부 DOM 작업이라 `ThemeAppearancePort` 구현이 갖는다([[ADR-128]]). RN 쪽은 문자열로 굳히지 않고 같은 38토큰을 NativeWind `vars()` 로 렌더 트리에 내리며, **선택자가 없어 [[ADR-122]] 규칙을 `--color-panel-border` 파생 토큰으로** 만든다(분기는 여전히 `mode` 다). 상속·재선언 성질이 같아 `.media-scope` 도 컴포넌트 하나로 옮겨졌고, 배경 이미지는 URL 이 아니라 `<Image>` 라서 **아직 없다**. 구조와 대가는 `docs/migration/README.md` «3-1단계 결과».
 - 설정 화면에선 등록된 테마 중 하나를 고른다 — 목록은 카테고리 섹션 + 프리뷰 타일이고 위에 라이트·다크 필터가 붙는다(아래 「카테고리와 선택 목록」, UI 상세는 [settings.md](./settings.md)). 직업 기반 자동 매핑은 미정이라 범위 밖.
 - 값 소스: `src/data/job-themes.json`([[ADR-006]] — AI가 임의로 채우지 않고 사용자 확인 후 반영).
 
@@ -245,12 +246,12 @@ npm run theme:gen -- --existing-all         # 기존 4테마 일괄
   사람이 한다). 이 조정에 쓰던 `/debug/theme-background`(슬라이더가 진짜 백드롭·헤더 조각의 커스텀
   프로퍼티를 실시간으로 바꿔 보고 있는 화면이 곧 결과였다)는 **[[ADR-092]] 에서 삭제**했다 —
   값을 다시 만질 일이 생기면 도구 복원이 선행돼야 한다(옛 구현은 `git log` 참고).
-- **에셋 해석**: `lib/theme-backgrounds.ts` 가 `import.meta.glob` 로 `src/assets/themes/*` 를
-  읽어 슬러그→URL 맵을 만든다(일일 퀘스트 지역 배경 `lib/daily-quest-backgrounds.ts` 와 같은
-  방식 — 확장자 혼재와 macOS NFD 파일명까지 같은 이유로 같은 처리를 한다). JSON 은 번들 경로를
-  모른다. **glob 이 `eager` 라 어느 테마도 안 쓰는 파일까지 번들에 실린다** — 쓰지 않게 된 그림은
-  파일째 지워야 실제로 빠진다(지금 `hontail-cave`·`blackmage-throne` 둘이 그 상태로 남아 있다,
-  [[ADR-106]] 결정 2).
+- **에셋 해석**: `lib/theme-backgrounds.ts` 가 **커밋된 목록**(`src/assets/generated/themes.ts`)에서
+  슬러그→에셋을 찾는다([[ADR-129]] — 일일 퀘스트 지역 배경 `lib/daily-quest-backgrounds.ts` 와 같은
+  방식이고, 확장자 혼재와 macOS NFD 파일명도 같은 이유로 같은 처리를 한다). JSON 은 번들 경로를
+  모른다. 그림을 넣거나 지우면 **`npm run assets:gen` 을 돌려야** 목록이 따라오고, 안 돌리면
+  `src/assets/generated/__tests__/asset-manifest.test.ts` 가 빨개진다. **목록에 든 파일은 어느 테마도
+  안 써도 번들에 실리므로** 쓰지 않게 된 그림은 파일째 지워야 실제로 빠진다([[ADR-106]] 결정 2).
 - **테스트는 "배경 있는 테마"를 데이터에서 고르지 않는다**([[ADR-106]] 결정 3·4). 선언이 0건이어도
   기계장치(`--theme-bg-*` 방출 · 슬러그 미해석 폴백 · 백드롭 렌더 분기)는 계속 검사돼야 하므로,
   있음 쪽 사례는 **테스트가 픽스처로 만들고**(`theme-registry.test.ts`) 컴포넌트 쪽은
@@ -306,6 +307,10 @@ npm run theme:gen -- --existing-all         # 기존 4테마 일괄
 - 선택 테마를 네이티브 스플래시·부트 커버에 반영할지.
 
 ## 폐기된 정책 (history)
+- ~~`lib/theme-backgrounds.ts` 가 `import.meta.glob` 로 `src/assets/themes/*` 를 읽어 슬러그→URL 맵을
+  만든다~~ → **커밋된 목록**(`src/assets/generated/themes.ts`)에서 찾는다([[ADR-129]], 2026-08-12).
+  해석 결과는 웹에서 그대로 URL 문자열이라 `buildThemeCss` 도 안 바뀐다 — 바뀐 것은 목록을 만드는
+  방법뿐이고, 대신 그림을 넣거나 지우면 `npm run assets:gen` 을 돌려야 한다.
 - ~~혼테일 배경 = `hontail-cave`(밤 수정 동굴, `cover`, `dim` 0.82)~~ → 얼음 동굴 프레임
   `hontail-background`(`cover`, `45% bottom`, `dim` 0.8)([[ADR-109]], 2026-08-07). 옛 에셋은 삭제했고,
   이로써 [[ADR-106]] 이 만든 "죽은 에셋을 남겨 둔 임시 상태"가 완전히 닫혔다(에셋 폴더에 안 쓰는

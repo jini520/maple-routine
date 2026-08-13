@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // `extends` 로 물려받는 상대 경로는 **원본 설정 파일 기준**으로 풀리므로, 덮지 않으면
+    // 다른 프로젝트와 같은 buildinfo 파일을 함께 쓴다.
+    "tsBuildInfoFile": "../../node_modules/.tmp/tsconfig.core.tsbuildinfo"
+  },
+  "include": ["src"]
+}
