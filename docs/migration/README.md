@@ -866,7 +866,7 @@ OTA 가 붙는 날 배선은 `state={useLiveUpdateStore()}` 한 줄이다.
 | 보스 초상(`BossPortrait`·`PartySizeModal`) | 자리만 | `background-size: "220% auto"` / `position: "60% 40%"` → RN 기하. **그림의 고유 종횡비**가 필요하다(번들 에셋이라 이제 읽을 수 있다) |
 | 테마 배경(`ThemeHeaderBackdrop`) | 안 그림 | RN 변수 맵은 색만 낸다 — 벽지는 `<Image resizeMode="cover">` + `dim` 으로 직접 앉혀야 한다 |
 | 드롭 연출(`DropEffectOverlay`) | 정적 | 재생 엔진. **막던 것이 프레임 부재였고 그것은 풀렸다** — [[ADR-048]] origin 은 프레임 비트맵 크기 위에서 해석되는데 번들 에셋은 크기를 스스로 안다 |
-| 아이템 아이콘(`ValuableDropBadge`) | 회색 원 | 조회만 붙이면 된다(변환은 기계적) |
+| 아이템 아이콘(`ValuableDropBadge`) | ~~회색 원~~ → **그린다**(2026-08-14) | — 예고대로 조회만 붙였다. **오래 남은 이유는 «값을 대는 데까지» 라는 이 표의 선 긋기 자체였고**, 그 폴백 원이 어두운 테마에서 **새까맣게** 보여 «아이템 이미지가 안 나온다» 로 보고돼서야 걷혔다 |
 
 - **`source` 의 형태가 두 가지가 됐다.** `CharacterTrackingGrid` 한 컴포넌트 안에 **얼굴 = 넥슨의
   원격 URI(`{ uri }`)** 와 **엠블럼 = 번들 에셋(값 그대로)** 이 공존한다. 감싸는 쪽을 바꾸면 **에러 없이

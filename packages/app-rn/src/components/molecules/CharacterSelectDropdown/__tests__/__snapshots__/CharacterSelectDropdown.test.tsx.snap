@@ -4,6 +4,7 @@ exports[`CharacterSelectDropdown 렌더 트리 스냅샷 — 이후 변경을 �
 <View
   style={
     {
+      "backgroundColor": "#F2F0E2",
       "flexBasis": "0%",
       "flexGrow": 1,
       "flexShrink": 1,
@@ -204,6 +205,7 @@ exports[`CharacterSelectDropdown 렌더 트리 스냅샷 — 이후 변경을 �
 <View
   style={
     {
+      "backgroundColor": "#F2F0E2",
       "flexBasis": "0%",
       "flexGrow": 1,
       "flexShrink": 1,

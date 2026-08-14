@@ -15,6 +15,7 @@ exports[`트리 스냅샷 그리드가 있는 기본 상태 1`] = `
   <View
     style={
       {
+        "backgroundColor": "#F2F0E2",
         "flexBasis": "0%",
         "flexGrow": 1,
         "flexShrink": 1,
@@ -950,6 +951,7 @@ exports[`트리 스냅샷 조회 불가 섹션이 있는 상태 1`] = `
   <View
     style={
       {
+        "backgroundColor": "#F2F0E2",
         "flexBasis": "0%",
         "flexGrow": 1,
         "flexShrink": 1,
