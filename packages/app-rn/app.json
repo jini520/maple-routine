@@ -2,9 +2,18 @@
   "expo": {
     "name": "메이플 루틴",
     "slug": "maple-routine",
-    "version": "1.0.0",
+    "version": "1.0.6",
     "orientation": "default",
     "userInterfaceStyle": "automatic",
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "updates": {
+      "url": "https://maple-routine-ota.dev-jinni520.workers.dev/manifest",
+      "enabled": true,
+      "checkAutomatically": "NEVER",
+      "fallbackToCacheTimeout": 0
+    },
     "ios": {
       "bundleIdentifier": "com.mapleroutine.app",
       "buildNumber": "12",

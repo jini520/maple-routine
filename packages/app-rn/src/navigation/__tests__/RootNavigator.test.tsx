@@ -19,6 +19,7 @@ import { createNavigationContainerRef } from '@react-navigation/native'
 import { FEATURE_GUIDES } from '@core/data/feature-guides'
 import { useOnboardingStore } from '@core/features/onboarding/store'
 import { useTrackingModeStore } from '@core/features/tracking-mode/store'
+import { setLiveUpdatePort } from '@core/native/ports'
 
 import { NavigationHarness } from './harness'
 import { installMemoryPreferences } from './memory-preferences'
@@ -45,6 +46,20 @@ const GUIDE_SECTION_ID = GUIDE.sections[0].id
 
 beforeEach(() => {
   installMemoryPreferences()
+  // `SettingsAbout` 이 마운트에서 실행 중인 번들 버전을 묻는다([[ADR-137]] 배선). 주입이 없으면
+  // 슬롯이 던져 **그 화면이 열리는가** 를 묻는 케이스가 배선과 무관한 이유로 빨개진다.
+  // 지원하지 않는 환경으로 두는 것이 이 파일에 맞다 — 여기서 보는 것은 라우팅이지 OTA 가 아니다.
+  setLiveUpdatePort({
+    isSupported: () => false,
+    notifyAppReady: async () => {},
+    getCurrentVersion: async () => null,
+    getChannel: () => 'production',
+    check: async () => ({ kind: 'unsupported' }),
+    download: async () => {},
+    apply: async () => {},
+    getNetworkType: async () => 'unknown',
+    openStore: () => {},
+  })
   useOnboardingStore.setState({ status: 'awaitingApiKey' })
   // `ContentManage` 는 **수동 모드 전용**이라([[ADR-035]] 결정 18) 자동 모드로 두면 열리자마자
   // 물러난다 — 그러면 이 파일의 «열하나가 전부 열린다» 가 배선이 아니라 모드 때문에 빨개진다.

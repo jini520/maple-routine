@@ -1,18 +1,15 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
-  applyDownloadedLiveUpdate,
+  applyLiveUpdate,
   checkForLiveUpdate,
   downloadLiveUpdate,
   getCurrentBundleVersion,
+  getLiveUpdateChannel,
   getNetworkType,
   isNewerVersion,
-  LIVE_UPDATE_MANIFEST_URL,
-  LIVE_UPDATE_MANIFEST_URL_BETA,
   notifyLiveUpdateReady,
   openStoreForUpdate,
-  parseLiveUpdateManifest,
-  resolveLiveUpdateManifestUrl,
 } from '@core/native/live-update'
 
 const { getPlatformMock, httpGetMock } = vi.hoisted(() => ({
@@ -59,7 +56,12 @@ vi.mock('@core/native/splash-screen', () => ({ showSplashScreen: showSplashScree
 // 옮겨갔으므로 실제 Capacitor(@capgo) 구현을 주입해 한 단위로 본다. 매니페스트 형식·버전 비교·
 // 적용 순서는 여전히 `live-update.ts` 에 있고, 그것이 이 파일이 검사하는 대부분이다.
 const { setLiveUpdatePort } = await import('@core/native/ports')
-const { capacitorLiveUpdatePort } = await import('../adapters/capacitor-live-update')
+const {
+  capacitorLiveUpdatePort,
+  LIVE_UPDATE_MANIFEST_URL,
+  parseLiveUpdateManifest,
+  resetCapacitorLiveUpdateState,
+} = await import('../adapters/capacitor-live-update')
 setLiveUpdatePort(capacitorLiveUpdatePort)
 
 const manifest = { version: '1.1.0', url: 'https://cdn/1.1.0.zip', checksum: 'abc123', size: 8_200_000 }
@@ -79,7 +81,24 @@ beforeEach(() => {
   httpGetMock.mockReset()
   closeBossProfitDbMock.mockReset().mockResolvedValue(undefined)
   showSplashScreenMock.mockReset().mockResolvedValue(undefined)
+  // 어댑터가 «직전 확인이 찾은 것»과 «받아둔 번들 id»를 모듈 스코프에 든다([[ADR-137]] 결정 6).
+  // 안 지우면 앞 케이스가 남긴 값으로 뒤 케이스가 **우연히** 통과한다 — 실제로 그랬다.
+  resetCapacitorLiveUpdateState()
 })
+
+/**
+ * 적용 케이스가 쓰는 준비 — 확인 → 다운로드를 **실제로** 태워 어댑터에 번들 id 를 남긴다.
+ *
+ * 값을 손으로 심지 않는 이유는 그 심는 행위 자체가 «확인 없이 받을 수 없다»는 계약을 우회하기
+ * 때문이다. 여기를 지나야만 적용에 도달한다는 것이 [[ADR-027]] 결정 4 의 형태다.
+ */
+async function armDownloadedBundle(): Promise<void> {
+  httpGetMock.mockResolvedValue({ status: 200, data: manifest })
+  currentMock.mockResolvedValue(currentAt('1.0.0'))
+  downloadMock.mockResolvedValue({ id: 'bundle-2', version: '1.1.0' })
+  await checkForLiveUpdate()
+  await downloadLiveUpdate(vi.fn())
+}
 
 describe('isNewerVersion', () => {
   it('patch/minor/major가 더 크면 true, 같거나 낮으면 false', () => {
@@ -164,18 +183,18 @@ describe('getCurrentBundleVersion', () => {
 })
 
 describe('checkForLiveUpdate (체크만, 다운로드 안 함)', () => {
-  const manifestUrl = 'https://example.com/latest.json'
+  const manifestUrl = LIVE_UPDATE_MANIFEST_URL
 
   it("web이면 'unsupported'", async () => {
     getPlatformMock.mockReturnValue('web')
-    expect(await checkForLiveUpdate(manifestUrl)).toEqual({ kind: 'unsupported' })
+    expect(await checkForLiveUpdate()).toEqual({ kind: 'unsupported' })
     expect(httpGetMock).not.toHaveBeenCalled()
   })
 
   it('매니페스트 요청은 캐시를 우회한다(쿼리 파라미터 + no-cache)', async () => {
     httpGetMock.mockResolvedValue({ status: 200, data: { ...manifest, version: '1.0.0' } })
     currentMock.mockResolvedValue(currentAt('1.0.0'))
-    await checkForLiveUpdate(manifestUrl)
+    await checkForLiveUpdate()
     const options = httpGetMock.mock.calls[0][0]
     expect(options.url).toBe(manifestUrl)
     expect(options.params?.t).toBeTruthy()
@@ -184,30 +203,28 @@ describe('checkForLiveUpdate (체크만, 다운로드 안 함)', () => {
 
   it("네트워크 오류/비정상 상태/파싱 실패면 'error'", async () => {
     httpGetMock.mockRejectedValueOnce(new Error('net'))
-    expect(await checkForLiveUpdate(manifestUrl)).toEqual({ kind: 'error' })
+    expect(await checkForLiveUpdate()).toEqual({ kind: 'error' })
     httpGetMock.mockResolvedValueOnce({ status: 404, data: null })
-    expect(await checkForLiveUpdate(manifestUrl)).toEqual({ kind: 'error' })
+    expect(await checkForLiveUpdate()).toEqual({ kind: 'error' })
     httpGetMock.mockResolvedValueOnce({ status: 200, data: 'not-json' })
     currentMock.mockResolvedValue(currentAt('1.0.0'))
-    expect(await checkForLiveUpdate(manifestUrl)).toEqual({ kind: 'error' })
+    expect(await checkForLiveUpdate()).toEqual({ kind: 'error' })
   })
 
   it("최신이면 'up-to-date'", async () => {
     httpGetMock.mockResolvedValue({ status: 200, data: { ...manifest, version: '1.0.0' } })
     currentMock.mockResolvedValue(currentAt('1.0.0'))
-    expect(await checkForLiveUpdate(manifestUrl)).toEqual({ kind: 'up-to-date' })
+    expect(await checkForLiveUpdate()).toEqual({ kind: 'up-to-date' })
     expect(downloadMock).not.toHaveBeenCalled()
   })
 
-  it("새 버전이 있으면 다운로드 없이 'update-available'(버전·용량·url·checksum)", async () => {
+  it("새 버전이 있으면 다운로드 없이 'update-available'(버전·용량 — 주소·체크섬은 어댑터가 든다)", async () => {
     httpGetMock.mockResolvedValue({ status: 200, data: manifest })
     currentMock.mockResolvedValue(currentAt('1.0.0'))
-    expect(await checkForLiveUpdate(manifestUrl)).toEqual({
+    expect(await checkForLiveUpdate()).toEqual({
       kind: 'update-available',
       version: '1.1.0',
       size: 8_200_000,
-      url: 'https://cdn/1.1.0.zip',
-      checksum: 'abc123',
     })
     expect(downloadMock).not.toHaveBeenCalled()
   })
@@ -215,7 +232,7 @@ describe('checkForLiveUpdate (체크만, 다운로드 안 함)', () => {
   it("minNativeVersion이 설치 네이티브보다 높으면 'store-required'", async () => {
     httpGetMock.mockResolvedValue({ status: 200, data: { ...manifest, minNativeVersion: '2.0.0' } })
     currentMock.mockResolvedValue(currentAt('1.0.0', '1.0.0'))
-    expect(await checkForLiveUpdate(manifestUrl)).toEqual({
+    expect(await checkForLiveUpdate()).toEqual({
       kind: 'store-required',
       version: '1.1.0',
       minNativeVersion: '2.0.0',
@@ -226,7 +243,7 @@ describe('checkForLiveUpdate (체크만, 다운로드 안 함)', () => {
   it('minNativeVersion을 설치 네이티브가 충족하면 update-available', async () => {
     httpGetMock.mockResolvedValue({ status: 200, data: { ...manifest, minNativeVersion: '1.0.0' } })
     currentMock.mockResolvedValue(currentAt('1.0.0', '1.0.0'))
-    expect((await checkForLiveUpdate(manifestUrl)).kind).toBe('update-available')
+    expect((await checkForLiveUpdate()).kind).toBe('update-available')
   })
 
   // ADR-126 결정 1: 받기 전 모달이 보여줄 유일한 재료다 — 매니페스트에서 여기까지 오지 못하면
@@ -235,12 +252,10 @@ describe('checkForLiveUpdate (체크만, 다운로드 안 함)', () => {
     const highlights = ['보스 카드에서 인원 변경', '아이템 가격 입력']
     httpGetMock.mockResolvedValue({ status: 200, data: { ...manifest, highlights } })
     currentMock.mockResolvedValue(currentAt('1.0.0'))
-    expect(await checkForLiveUpdate(manifestUrl)).toEqual({
+    expect(await checkForLiveUpdate()).toEqual({
       kind: 'update-available',
       version: '1.1.0',
       size: 8_200_000,
-      url: 'https://cdn/1.1.0.zip',
-      checksum: 'abc123',
       highlights,
     })
   })
@@ -262,12 +277,14 @@ describe('downloadLiveUpdate (진행률, next 미사용)', () => {
     })
     const onProgress = vi.fn()
 
-    const result = await downloadLiveUpdate(
-      { url: 'https://cdn/1.1.0.zip', version: '1.1.0', checksum: 'abc123' },
-      onProgress,
-    )
+    // 「무엇을」 받을지는 직전 확인이 어댑터 안에 남겨 둔다([[ADR-137]] 결정 6) — 그래서
+    // 확인 없이 받는 경로가 없다.
+    httpGetMock.mockResolvedValue({ status: 200, data: manifest })
+    currentMock.mockResolvedValue(currentAt('1.0.0'))
+    await checkForLiveUpdate()
 
-    expect(result).toEqual({ id: 'bundle-2' })
+    await downloadLiveUpdate(onProgress)
+
     expect(downloadMock).toHaveBeenCalledWith({ url: 'https://cdn/1.1.0.zip', version: '1.1.0', checksum: 'abc123' })
     expect(onProgress).toHaveBeenCalledWith(40)
     expect(onProgress).toHaveBeenCalledWith(100)
@@ -280,17 +297,20 @@ describe('downloadLiveUpdate (진행률, next 미사용)', () => {
     addListenerMock.mockResolvedValue({ remove: removeMock })
     downloadMock.mockRejectedValue(new Error('checksum'))
 
-    await expect(
-      downloadLiveUpdate({ url: 'u', version: '1.1.0', checksum: 'c' }, vi.fn()),
-    ).rejects.toThrow()
+    httpGetMock.mockResolvedValue({ status: 200, data: manifest })
+    currentMock.mockResolvedValue(currentAt('1.0.0'))
+    await checkForLiveUpdate()
+
+    await expect(downloadLiveUpdate(vi.fn())).rejects.toThrow()
     expect(removeMock).toHaveBeenCalled()
   })
 })
 
-describe('applyDownloadedLiveUpdate', () => {
+describe('applyLiveUpdate', () => {
   it('CapacitorUpdater.set(id)로 즉시 적용한다', async () => {
+    await armDownloadedBundle()
     setMock.mockResolvedValue(undefined)
-    await applyDownloadedLiveUpdate('bundle-2')
+    await applyLiveUpdate()
     expect(setMock).toHaveBeenCalledWith({ id: 'bundle-2' })
   })
 
@@ -298,6 +318,7 @@ describe('applyDownloadedLiveUpdate', () => {
   // 종료해둬야 한다 — 안 그러면 네이티브 쪽에 stale 커넥션이 남아 리로드 후 첫 쿼리가 멈춘다
   // (2026-07-17, 앱 업데이트 직후 과거 수익 데이터가 안 불러와지는 증상으로 사용자 보고).
   it('set()으로 리로드하기 전에 SQLite 커넥션을 먼저 정상 종료한다', async () => {
+    await armDownloadedBundle()
     setMock.mockResolvedValue(undefined)
     const callOrder: string[] = []
     closeBossProfitDbMock.mockImplementation(async () => {
@@ -307,7 +328,7 @@ describe('applyDownloadedLiveUpdate', () => {
       callOrder.push('set')
     })
 
-    await applyDownloadedLiveUpdate('bundle-2')
+    await applyLiveUpdate()
 
     expect(callOrder).toEqual(['close', 'set'])
   })
@@ -316,6 +337,7 @@ describe('applyDownloadedLiveUpdate', () => {
   // 사용자가 주황 스플래시에 갇힌다(이슈 #175). 커버가 떠 있는 구간을 실제 리로드 직전으로 좁힌다
   // (ADR-117 결정 1). 순서 자체가 이 결정이므로 호출 순서를 단언한다.
   it('닫기 → 커버 → set() 순으로 진행한다(커버는 닫기 뒤에 올라간다)', async () => {
+    await armDownloadedBundle()
     const callOrder: string[] = []
     closeBossProfitDbMock.mockImplementation(async () => {
       callOrder.push('close')
@@ -327,17 +349,18 @@ describe('applyDownloadedLiveUpdate', () => {
       callOrder.push('set')
     })
 
-    await applyDownloadedLiveUpdate('bundle-2')
+    await applyLiveUpdate()
 
     expect(callOrder).toEqual(['close', 'cover', 'set'])
   })
 
   // 커버는 시각적 장치일 뿐이다 — 그것 때문에 set()에 도달하지 못하면 본말이 전도된다(ADR-027).
   it('커버 표시가 실패해도 적용은 계속 진행한다', async () => {
+    await armDownloadedBundle()
     showSplashScreenMock.mockRejectedValue(new Error('splash'))
     setMock.mockResolvedValue(undefined)
 
-    await expect(applyDownloadedLiveUpdate('bundle-2')).resolves.toBeUndefined()
+    await expect(applyLiveUpdate()).resolves.toBeUndefined()
     expect(setMock).toHaveBeenCalledWith({ id: 'bundle-2' })
   })
 })
@@ -379,11 +402,11 @@ describe('openStoreForUpdate', () => {
   })
 })
 
-describe('resolveLiveUpdateManifestUrl / notifyLiveUpdateReady', () => {
-  it("channel 'beta'면 베타 URL, 그 외엔 프로덕션 URL", () => {
-    expect(resolveLiveUpdateManifestUrl('beta')).toBe(LIVE_UPDATE_MANIFEST_URL_BETA)
-    expect(resolveLiveUpdateManifestUrl(undefined)).toBe(LIVE_UPDATE_MANIFEST_URL)
-    expect(resolveLiveUpdateManifestUrl('production')).toBe(LIVE_UPDATE_MANIFEST_URL)
+describe('getLiveUpdateChannel / notifyLiveUpdateReady', () => {
+  // 채널 값을 읽는 자리가 core 에서 어댑터로 내려왔다([[ADR-137]] 결정 7) — core 가
+  // `import.meta.env` 를 읽으면 RN 이 그 모듈을 평가하는 순간 죽기 때문이다.
+  it('채널은 어댑터가 빌드 시점 값에서 정한다(기본은 production)', () => {
+    expect(getLiveUpdateChannel()).toBe('production')
   })
 
   it('notifyLiveUpdateReady는 notifyAppReady를 호출한다', async () => {

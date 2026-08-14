@@ -86,6 +86,19 @@ jest.mock('../app/prehydrate', () => ({
   },
 }))
 
+// OTA 부팅 확인도 포트를 거친다([[ADR-137]]). 다른 스토어와 같은 방식으로 대체해 **순서만** 본다 —
+// 확인이 실제로 무엇을 하는지는 어댑터·스토어 테스트의 몫이다.
+jest.mock('@core/features/live-update/store', () => ({
+  __esModule: true,
+  useLiveUpdateStore: {
+    getState: () => ({
+      checkOnBoot: async () => {
+        mockCalls.push('checkOnBoot')
+      },
+    }),
+  },
+}))
+
 // 키보드 구독은 포트를 거친다(`app/use-keyboard-visible.ts`). 주입 없이 렌더하면 슬롯이 던지고,
 // 그 던짐이 이 파일에서는 배선 문제가 아니라 **관측 대상이 아닌 것**이다(어댑터는 자기 테스트가 있다).
 jest.mock('@core/native/keyboard', () => ({
@@ -194,7 +207,7 @@ describe('② 진입점이 무엇을 먼저 하는가', () => {
   })
 })
 
-describe('③ OTA 는 아직 아무 데도 이어져 있지 않다', () => {
+describe('③ OTA 배선 — 벽이 사라졌고, 사라진 채로 있어야 한다', () => {
   /** `packages/app-rn` 의 **제품 소스** 전부(테스트·스냅샷 제외). */
   const sources = ((): string[] => {
     const walk = (dir: string): string[] =>
@@ -215,45 +228,33 @@ describe('③ OTA 는 아직 아무 데도 이어져 있지 않다', () => {
 
   const relative = (file: string): string => path.relative(RN_ROOT, file)
 
-  // `import type` 은 컴파일에서 지워져 **모듈이 평가되지 않는다** — `UpdatePromptModal` 이 상태
-  // 아홉과 필드 이름을 두 벌로 만들지 않으려고 그 형태로 타입만 가져온다. 값으로 가져오는 순간
-  // 부팅이 죽으므로, 계약은 "쓰지 마라"가 아니라 **"타입으로만 써라"** 다.
-  it('core 의 live-update 스토어는 타입으로만 가져온다', () => {
-    const valueImports = sources.filter((file) =>
-      readFileSync(file, 'utf8')
-        .split('\n')
-        .some(
-          (line) =>
-            line.includes("from '@core/features/live-update/store'") &&
-            !line.trimStart().startsWith('import type '),
-        ),
-    )
-
-    expect(valueImports.map(relative)).toEqual([])
-  })
-
-  // 셸은 웹이 부팅에서 하던 둘을 안 한다 — `checkOnBoot()`([[ADR-027]])와
-  // `notifyLiveUpdateReady()`([[ADR-117]] 결정 2). 그 공백이 무엇을 뜻하는지(자동 롤백 없음 ·
-  // [[ADR-126]] 결정 4 의 완료 안내 안 뜸)는 `AppShell.tsx` 파일 머리에 적혀 있다.
-  it('`@core/native/live-update` 를 부르는 제품 코드가 없다', () => {
-    const callers = sources.filter((file) =>
-      readFileSync(file, 'utf8').includes("'@core/native/live-update'"),
-    )
-
-    expect(callers.map(relative)).toEqual([])
-  })
-
-  // 모달은 **그릴 줄은 알지만 그릴 값을 얻을 방법이 없다**(`UpdatePromptModal.tsx` 파일 머리).
-  // 값 없이 마운트해 두면 상태가 늘 `idle` 이라 **아무것도 안 뜨는 것이 정상처럼 보여**, OTA 가
-  // 붙는 날 배선을 빠뜨려도 아무 데서도 안 드러난다.
+  // 여기 있던 세 케이스는 **«아직 안 이어져 있다»를 고정**하고 있었다(스토어를 타입으로만 import ·
+  // `@core/native/live-update` 호출 0 · 모달 마운트 0). [[ADR-137]] 이 셋 다 뒤집었으므로 그대로
+  // 두면 «구현하면 실패하는 테스트»가 된다. [[ADR-129]] 가 글롭 고정 테스트를 「0이어야 한다」로
+  // 뒤집었을 때와 같은 처리다 — 감시 대상이 사라진 게 아니라 **묻는 질문이 바뀐 것**이다.
   //
-  // 이름 언급이 아니라 **import 구문**을 본다 — `lib/icons.ts` 가 아이콘마다 쓰이는 자리를 주석에
-  // 적어 두어(그 파일의 관례) 단순 문자열 검사로는 그것까지 걸린다.
-  it('`UpdatePromptModal` 은 아직 어디에도 마운트되지 않는다', () => {
+  // 이제 묻는 것은 «벽이 정말 사라졌는가» 다. 벽은 core 가 **Vite 전용 API** 를 쓰는 것이었고,
+  // 그것이 되살아나면 RN 은 다시 «import 하는 것만으로 죽는» 상태로 돌아간다. 그때 실패해야 하는
+  // 자리는 이 모듈을 쓰는 화면 하나가 아니라 여기다.
+  it('core 의 live-update 스토어에 `import.meta` 가 없다 — 그것이 벽이었다', () => {
+    const store = readFileSync(
+      path.join(RN_ROOT, '..', 'core', 'src', 'features', 'live-update', 'store.ts'),
+      'utf8',
+    )
+
+    // 주석에서 그 이름을 **설명**하는 것은 막지 않는다(이 저장소는 왜 없앴는지를 코드 옆에 적는다).
+    const codeLines = store.split('\n').filter((line) => !line.trimStart().startsWith('//'))
+
+    expect(codeLines.filter((line) => line.includes('import.meta'))).toEqual([])
+  })
+
+  // 배선이 실제로 있는가 — 없으면 모달은 «그릴 줄은 알지만 아무것도 안 뜨는» 상태로 조용히
+  // 되돌아간다(그 상태가 정상처럼 보이는 것이 원래 이 describe 가 걱정하던 것이다).
+  it('`UpdatePromptModal` 이 마운트돼 있다', () => {
     const importers = sources.filter((file) =>
       /from '[^']*UpdatePromptModal'/.test(readFileSync(file, 'utf8')),
     )
 
-    expect(importers.map(relative)).toEqual([])
+    expect(importers.map(relative)).toEqual(['src/navigation/AppNavigation.tsx'])
   })
 })

@@ -1,34 +1,34 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const {
-  applyDownloadedLiveUpdateMock,
+  applyLiveUpdateMock,
   checkForLiveUpdateMock,
   downloadLiveUpdateMock,
   getCurrentBundleVersionMock,
   getNetworkTypeMock,
   openStoreForUpdateMock,
-  resolveLiveUpdateManifestUrlMock,
+  getLiveUpdateChannelMock,
 } = vi.hoisted(() => ({
-  applyDownloadedLiveUpdateMock: vi.fn(),
+  applyLiveUpdateMock: vi.fn(),
   checkForLiveUpdateMock: vi.fn(),
   downloadLiveUpdateMock: vi.fn(),
   getCurrentBundleVersionMock: vi.fn(),
   getNetworkTypeMock: vi.fn(),
   openStoreForUpdateMock: vi.fn(),
-  resolveLiveUpdateManifestUrlMock: vi.fn(() => 'https://manifest.test/latest.json'),
+  getLiveUpdateChannelMock: vi.fn(() => 'production'),
 }))
 
 // isNewerVersion 은 실물을 그대로 쓴다 — 완료 안내가 자동 롤백을 거르는 근거가 바로 이 비교라
 // (ADR-126 결정 4), 가짜로 바꾸면 그 규칙을 검사하지 못한다.
 vi.mock('@core/native/live-update', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@core/native/live-update')>()),
-  applyDownloadedLiveUpdate: applyDownloadedLiveUpdateMock,
+  applyLiveUpdate: applyLiveUpdateMock,
   checkForLiveUpdate: checkForLiveUpdateMock,
   downloadLiveUpdate: downloadLiveUpdateMock,
   getCurrentBundleVersion: getCurrentBundleVersionMock,
   getNetworkType: getNetworkTypeMock,
   openStoreForUpdate: openStoreForUpdateMock,
-  resolveLiveUpdateManifestUrl: resolveLiveUpdateManifestUrlMock,
+  getLiveUpdateChannel: getLiveUpdateChannelMock,
 }))
 
 const { getLastRunBundleVersionMock, setLastRunBundleVersionMock } = vi.hoisted(() => ({
@@ -61,8 +61,7 @@ const INITIAL = {
   availableHighlights: null,
   minNativeVersion: null,
   downloadProgress: 0,
-  pending: null,
-  downloadedBundleId: null,
+  hasDownloadedBundle: false,
 }
 
 const s = () => useLiveUpdateStore.getState()
@@ -71,12 +70,10 @@ const AVAILABLE = {
   kind: 'update-available' as const,
   version: '1.0.2',
   size: 8_200_000,
-  url: 'https://cdn/1.0.2.zip',
-  checksum: 'abc',
 }
 
 beforeEach(() => {
-  applyDownloadedLiveUpdateMock.mockReset()
+  applyLiveUpdateMock.mockReset()
   checkForLiveUpdateMock.mockReset()
   downloadLiveUpdateMock.mockReset()
   getCurrentBundleVersionMock.mockReset()
@@ -109,13 +106,12 @@ describe('useLiveUpdateStore', () => {
   })
 
   describe('check', () => {
-    it('update-available면 버전·용량·pending을 담고 상태 전환(다운로드 안 함)', async () => {
+    it('update-available면 버전·용량을 담고 상태 전환(다운로드 안 함)', async () => {
       checkForLiveUpdateMock.mockResolvedValue(AVAILABLE)
       await s().check()
       expect(s().status).toBe('update-available')
       expect(s().availableVersion).toBe('1.0.2')
       expect(s().availableSize).toBe(8_200_000)
-      expect(s().pending).toEqual({ version: '1.0.2', url: 'https://cdn/1.0.2.zip', checksum: 'abc' })
       expect(downloadLiveUpdateMock).not.toHaveBeenCalled()
     })
 
@@ -160,16 +156,15 @@ describe('useLiveUpdateStore', () => {
 
     it('wifi면 바로 다운로드하고 진행률→ready-to-apply', async () => {
       getNetworkTypeMock.mockResolvedValue('wifi')
-      downloadLiveUpdateMock.mockImplementation(async (_p, onProgress) => {
+      downloadLiveUpdateMock.mockImplementation(async (onProgress) => {
         onProgress(50)
         onProgress(100)
-        return { id: 'bundle-2' }
       })
       await s().check()
       await s().startDownload()
       expect(s().status).toBe('ready-to-apply')
       expect(s().downloadProgress).toBe(100)
-      expect(s().downloadedBundleId).toBe('bundle-2')
+      expect(s().hasDownloadedBundle).toBe(true)
     })
 
     it('셀룰러면 다운로드 전에 confirm-cellular로 멈춘다', async () => {
@@ -182,7 +177,7 @@ describe('useLiveUpdateStore', () => {
 
     it('confirm-cellular에서 [계속]하면 다운로드를 진행한다', async () => {
       getNetworkTypeMock.mockResolvedValue('cellular')
-      downloadLiveUpdateMock.mockResolvedValue({ id: 'bundle-2' })
+      downloadLiveUpdateMock.mockResolvedValue(undefined)
       await s().check()
       await s().startDownload()
       await s().confirmCellularDownload()
@@ -201,30 +196,30 @@ describe('useLiveUpdateStore', () => {
 
   describe('apply', () => {
     it('받아둔 번들 id로 즉시 적용(set)을 호출한다', async () => {
-      useLiveUpdateStore.setState({ downloadedBundleId: 'bundle-2' })
-      applyDownloadedLiveUpdateMock.mockResolvedValue(undefined)
+      useLiveUpdateStore.setState({ hasDownloadedBundle: true })
+      applyLiveUpdateMock.mockResolvedValue(undefined)
       await s().apply()
-      expect(applyDownloadedLiveUpdateMock).toHaveBeenCalledWith('bundle-2')
+      expect(applyLiveUpdateMock).toHaveBeenCalled()
     })
 
     it('받아둔 번들이 없으면 아무 것도 안 한다', async () => {
       await s().apply()
-      expect(applyDownloadedLiveUpdateMock).not.toHaveBeenCalled()
+      expect(applyLiveUpdateMock).not.toHaveBeenCalled()
       expect(s().status).toBe('idle')
     })
 
     // ADR-117 결정 7: 커버가 닫기 뒤로 밀리며 최대 5초 동안 모달이 살아 있게 됐다. 그 구간에
     // 화면이 "업데이트 준비 완료"라고 말하지 않도록 어댑터를 부르기 **전에** 상태를 옮긴다.
     it('어댑터를 부르기 전에 applying 으로 전환한다', async () => {
-      useLiveUpdateStore.setState({ downloadedBundleId: 'bundle-2' })
+      useLiveUpdateStore.setState({ hasDownloadedBundle: true })
       let statusAtCall: string | null = null
-      applyDownloadedLiveUpdateMock.mockImplementation(async () => {
+      applyLiveUpdateMock.mockImplementation(async () => {
         statusAtCall = s().status
       })
 
       await s().apply()
 
-      expect(applyDownloadedLiveUpdateMock).toHaveBeenCalledWith('bundle-2')
+      expect(applyLiveUpdateMock).toHaveBeenCalled()
       expect(statusAtCall).toBe('applying')
       // 성공 경로에서는 set()이 JS 컨텍스트를 파괴하므로 그 뒤 상태를 바꾸지 않는다.
       expect(s().status).toBe('applying')
@@ -233,8 +228,8 @@ describe('useLiveUpdateStore', () => {
     // ADR-117 결정 1: 커버는 어댑터(closeBossProfitDb → showSplashScreen → set)가 붙인다.
     // 스토어가 같이 부르면 커버가 두 장 쌓이고 순서 보장이 두 파일로 흩어진다.
     it('스토어는 커버를 직접 붙이지 않는다', async () => {
-      useLiveUpdateStore.setState({ downloadedBundleId: 'bundle-2' })
-      applyDownloadedLiveUpdateMock.mockResolvedValue(undefined)
+      useLiveUpdateStore.setState({ hasDownloadedBundle: true })
+      applyLiveUpdateMock.mockResolvedValue(undefined)
 
       await s().apply()
 
@@ -242,9 +237,9 @@ describe('useLiveUpdateStore', () => {
     })
 
     it('applying 중에 다시 누르면 어댑터를 두 번 부르지 않는다', async () => {
-      useLiveUpdateStore.setState({ downloadedBundleId: 'bundle-2' })
+      useLiveUpdateStore.setState({ hasDownloadedBundle: true })
       let release: () => void = () => {}
-      applyDownloadedLiveUpdateMock.mockReturnValue(
+      applyLiveUpdateMock.mockReturnValue(
         new Promise<void>((resolve) => {
           release = resolve
         }),
@@ -252,7 +247,7 @@ describe('useLiveUpdateStore', () => {
 
       const first = s().apply()
       await s().apply()
-      expect(applyDownloadedLiveUpdateMock).toHaveBeenCalledTimes(1)
+      expect(applyLiveUpdateMock).toHaveBeenCalledTimes(1)
 
       release()
       await first
@@ -260,8 +255,8 @@ describe('useLiveUpdateStore', () => {
 
     // ADR-117 결정 1 — 이 phase 의 핵심. 실패해도 화면이 돌아온다.
     it('적용이 실패하면 커버를 걷고 apply-error 로 되돌아온다', async () => {
-      useLiveUpdateStore.setState({ downloadedBundleId: 'bundle-2' })
-      applyDownloadedLiveUpdateMock.mockRejectedValue(new Error("Update failed, id doesn't exist"))
+      useLiveUpdateStore.setState({ hasDownloadedBundle: true })
+      applyLiveUpdateMock.mockRejectedValue(new Error("Update failed, id doesn't exist"))
 
       await s().apply()
 
@@ -271,19 +266,19 @@ describe('useLiveUpdateStore', () => {
 
     // 다시 받지 않고 재시도할 수 있어야 한다 — download-error 와 다른 점이다.
     it('apply-error 여도 받아둔 번들 id는 남는다', async () => {
-      useLiveUpdateStore.setState({ downloadedBundleId: 'bundle-2' })
-      applyDownloadedLiveUpdateMock.mockRejectedValue(new Error('set failed'))
+      useLiveUpdateStore.setState({ hasDownloadedBundle: true })
+      applyLiveUpdateMock.mockRejectedValue(new Error('set failed'))
 
       await s().apply()
 
-      expect(s().downloadedBundleId).toBe('bundle-2')
+      expect(s().hasDownloadedBundle).toBe(true)
     })
 
     it('12초 안에 끝나지 않으면 커버를 걷고 apply-error (11.9초에는 아직 applying)', async () => {
       vi.useFakeTimers()
       try {
-        useLiveUpdateStore.setState({ downloadedBundleId: 'bundle-2' })
-        applyDownloadedLiveUpdateMock.mockReturnValue(new Promise<void>(() => {}))
+        useLiveUpdateStore.setState({ hasDownloadedBundle: true })
+        applyLiveUpdateMock.mockReturnValue(new Promise<void>(() => {}))
 
         const pending = s().apply()
 
@@ -301,18 +296,18 @@ describe('useLiveUpdateStore', () => {
     })
 
     it('apply-error 에서 다시 시도하면 applying 으로 들어간다(가드가 재시도를 막지 않는다)', async () => {
-      useLiveUpdateStore.setState({ downloadedBundleId: 'bundle-2', status: 'apply-error' })
-      applyDownloadedLiveUpdateMock.mockResolvedValue(undefined)
+      useLiveUpdateStore.setState({ hasDownloadedBundle: true, status: 'apply-error' })
+      applyLiveUpdateMock.mockResolvedValue(undefined)
 
       await s().apply()
 
-      expect(applyDownloadedLiveUpdateMock).toHaveBeenCalledWith('bundle-2')
+      expect(applyLiveUpdateMock).toHaveBeenCalled()
       expect(s().status).toBe('applying')
     })
 
     it('커버 걷기가 실패해도 apply-error 로 전환한다', async () => {
-      useLiveUpdateStore.setState({ downloadedBundleId: 'bundle-2' })
-      applyDownloadedLiveUpdateMock.mockRejectedValue(new Error('set failed'))
+      useLiveUpdateStore.setState({ hasDownloadedBundle: true })
+      applyLiveUpdateMock.mockRejectedValue(new Error('set failed'))
       hideSplashScreenMock.mockRejectedValue(new Error('hide fail'))
 
       await s().apply()
@@ -328,11 +323,15 @@ describe('useLiveUpdateStore', () => {
     })
 
     it('dismiss는 idle로 되돌리고 대기 정보를 비운다(현 버전 유지)', () => {
-      useLiveUpdateStore.setState({ status: 'update-available', availableVersion: '1.0.2', pending: { version: '1.0.2', url: 'u', checksum: 'c' } })
+      useLiveUpdateStore.setState({
+        status: 'update-available',
+        availableVersion: '1.0.2',
+        hasDownloadedBundle: true,
+      })
       s().dismiss()
       expect(s().status).toBe('idle')
       expect(s().availableVersion).toBeNull()
-      expect(s().pending).toBeNull()
+      expect(s().hasDownloadedBundle).toBe(false)
     })
   })
 

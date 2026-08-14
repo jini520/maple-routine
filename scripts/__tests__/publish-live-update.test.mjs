@@ -7,7 +7,9 @@ import {
   resolveReleaseTag,
 } from '../publish-live-update.mjs'
 import { RELEASE_NOTES } from '../../packages/core/src/data/release-notes.ts'
-import { parseLiveUpdateManifest } from '../../packages/core/src/native/live-update.ts'
+// 이 왕복 검사가 보는 것은 «capacitor 배포 스크립트가 쓴 매니페스트를 capacitor 앱이 읽는가» 라,
+// 파서가 core 에서 그 앱의 어댑터로 내려간 뒤에도([[ADR-137]] 결정 6) 대상은 그대로다.
+import { parseLiveUpdateManifest } from '../../packages/app-capacitor/src/native/adapters/capacitor-live-update.ts'
 
 describe('resolveReleaseTag', () => {
   it('isBeta가 true면 live-update-beta를 반환한다', () => {

@@ -36,6 +36,22 @@ export const RELEASE_NOTE_CATEGORY_ORDER: readonly ReleaseNoteCategory[] = [
 // 이 파일은 순수 데이터다 — `features/`·`storage/`·`native/` 를 import 하지 않는다.
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '1.0.6',
+    // 아직 `chore(release)` 커밋이 없어 **작성일**이다 — 배포하며 그 커밋 날짜로 정정할 것
+    // (1.0.4 가 같은 순서를 밟았다, 위 주석).
+    date: '2026-08-14',
+    // 한 줄이다(사용자가 정한 문장). [[ADR-126]] 결정 2 의 "3~4줄"은 상한이지 채워야 할 칸이
+    // 아니고, 이 버전은 사용자에게 보이는 화면이 바뀐 릴리스가 아니라 **그 아래가 통째로 바뀐**
+    // 릴리스라 뭉칠 항목 자체가 없다.
+    highlights: ['앱 기능 확장을 위한 구조 업데이트 및 마이그레이션'],
+    items: [
+      {
+        category: 'improvement',
+        text: '앱 기능 확장을 위한 구조 업데이트 및 마이그레이션',
+      },
+    ],
+  },
+  {
     version: '1.0.5',
     date: '2026-08-12',
     // 긴급 수정 한 건뿐이라 핵심 목록도 한 줄이다(ADR-126 결정 2 의 "3~4줄"은 상한이지 채워야 할

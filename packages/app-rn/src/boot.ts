@@ -23,7 +23,7 @@ import { rnSplashScreenPort } from './native/adapters/rn-splash-screen'
 import { rnStatusBarPort } from './native/adapters/rn-status-bar'
 import { rnSystemBarsPort } from './native/adapters/rn-system-bars'
 import { rnThemeAppearancePort } from './native/adapters/rn-theme-appearance'
-import { notImplementedLiveUpdatePort } from './native/adapters/not-implemented'
+import { rnLiveUpdatePort } from './native/adapters/rn-live-update'
 import { rnPreferencesPort } from './storage/adapters/rn-preferences'
 import { rnSqlitePort } from './storage/adapters/rn-sqlite'
 
@@ -51,13 +51,13 @@ import { rnSqlitePort } from './storage/adapters/rn-sqlite'
  * 자리에서 보장한다(`installCapacitorNativePorts` 와 같은 판단). 주입 순서는 서로 무관하다 —
  * 포트끼리 참조하지 않는다.
  *
- * ## 하나는 아직 구현이 아니라 **거부**다
+ * ## 이제 열셋이 전부 실구현이다
  *
- * `LiveUpdatePort` 는 [[ADR-128]] 결정 7 의 별도 ADR 에서 채워진다. 그때까지 비워 두지 않고
- * **던지는 구현**을 넣는 이유는 `not-implemented.ts` 가 적어 두었다 — 슬롯의 일반 메시지는
- * *"주입을 잊었다"* 로 읽히지 *"아직 안 만들었다"* 로 읽히지 않는다.
+ * 마지막까지 던지던 `LiveUpdatePort` 가 [[ADR-137]] 로 채워졌다(`rn-live-update.ts`) — 그 하나가
+ * 「아직 안 만들었다」로 남아 있던 이유는 다른 열둘과 달리 **프로토콜 자체가 바뀌기** 때문이었고
+ * ([[ADR-128]] 결정 7), 그래서 `not-implemented.ts` 는 이제 비었다.
  *
- * 그 목록을 떠난 것이 셋이다:
+ * 그 목록을 먼저 떠난 것이 셋이다:
  * - `ThemeAppearancePort`(step 1, theme-system) — `rn-theme-appearance.ts` 가 자리를 채웠다.
  * - `BackGesturePort`(step 2, navigation) — **절반만 구현이다.** `moveToBackground` 는 실구현이고
  *   (그 하나는 내비게이션 라이브러리가 대신해 주지 않는다, [[ADR-120]] 결정 18) 나머지 둘은 계속
@@ -84,6 +84,5 @@ export function installPorts(): void {
   setSystemBarsPort(rnSystemBarsPort)
   setThemeAppearancePort(rnThemeAppearancePort)
 
-  // 아직 매핑되지 않은 하나 — 부르면 왜 없는지를 말하며 던진다.
-  setLiveUpdatePort(notImplementedLiveUpdatePort)
+  setLiveUpdatePort(rnLiveUpdatePort)
 }
