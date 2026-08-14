@@ -8,7 +8,10 @@ import {
   type ScheduleProbeLedger,
 } from '@core/storage/schedule-probe-ledger'
 import type { SchedulerCharacterState } from '@core/types'
-import { toScheduleSyncError } from './schedule-sync'
+// 정의처에서 직접 가져온다 — `schedule-sync.ts` 는 이것을 재수출만 하는데, 그 파일이 다시
+// `character-roster.ts` → 이 파일을 부르므로 거기서 가져오면 런타임 import 사이클이 된다
+// (`character-roster.ts` 도 같은 이유로 `./errors` 를 직접 본다).
+import { toScheduleSyncError } from './errors'
 
 /**
  * 후보 목록에 넣을 자격 — [[ADR-086]] 결정 3·5.
