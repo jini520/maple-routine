@@ -1,6 +1,7 @@
 import { worldEmblemUrl } from '@core/lib/world-emblem'
 import { Image, Pressable, Text, View } from 'react-native'
 
+import { naturalAspectStyle } from '../../../lib/image-aspect'
 import { ChevronDownIcon } from '../../../lib/icons'
 
 export type CharacterSelectDropdownSize = 'default' | 'compact'
@@ -58,8 +59,14 @@ export interface CharacterSelectDropdownProps {
 //    붙인다"* 며 좌측 패딩 규칙만 남겨 뒀는데, 이제 `worldEmblemUrl` 이 번들 에셋 참조를 돌려주므로
 //    그 자리가 채워진다. 여기서 안 채우면 **패딩만 엠블럼용으로 벌어지고 그림은 없는** 상태가 된다.
 //    `source` 에는 값을 그대로 넣는다 — 번들 에셋이라 원격 URI 처럼 `{ uri }` 로 감싸지 않는다.
-//    세로 중앙 정렬은 ①과 같은 이유로 `inset-y-0` + `justify-center` 래퍼이고, 웹의
-//    `w-auto object-contain` 은 `resizeMode="contain"` 이 대신한다.
+//    세로 중앙 정렬은 ①과 같은 이유로 `inset-y-0` + `justify-center` 래퍼다.
+//
+// ④ **웹의 `w-auto` 는 `resizeMode="contain"` 이 대신하지 못한다**([[ADR-135]] — ③이 그렇게 적어
+//    두었던 것을 정정한다). `contain` 은 **상자 안에서 어떻게 맞출지**를 정할 뿐 상자를 만들지
+//    않는데, RN 은 우리가 안 적은 축에 **에셋의 고유 픽셀 크기**를 남긴다 — 46×50 엠블럼의 폭 46 이
+//    살아남아 그림이 앵커 안에서 가운데로 밀리고, ③이 짝을 맞춰 둔 좌측 패딩이 그만큼 어긋난다.
+//    그래서 치수 표가 클래스(`h-[22px]`)가 아니라 **숫자**를 갖고, `naturalAspectStyle` 이 나머지
+//    축을 지운다(`lib/image-aspect.ts`).
 //
 // 치수는 크기별로 짝이라 한 곳에 모아 둔다 — 엠블럼 크기·left 는 좌측 패딩과, chevron 크기·right 는
 // 우측 패딩과 짝이다. 따로 두면 한쪽만 바꿨을 때 글자 위로 겹친다.
@@ -71,7 +78,8 @@ const SIZE_STYLES: Record<
     withEmblem: string
     withoutEmblem: string
     emblemAnchor: string
-    emblemSize: string
+    /** px. 클래스가 아니라 숫자인 이유는 파일 머리 ④ — 폭은 그림이 정한다. */
+    emblemHeight: number
     chevronAnchor: string
     chevronSize: string
   }
@@ -82,7 +90,7 @@ const SIZE_STYLES: Record<
     withEmblem: 'pl-8 pr-9',
     withoutEmblem: 'pl-4 pr-9',
     emblemAnchor: 'left-3',
-    emblemSize: 'h-[22px]',
+    emblemHeight: 22,
     chevronAnchor: 'right-3.5',
     chevronSize: 'h-4 w-4',
   },
@@ -92,7 +100,7 @@ const SIZE_STYLES: Record<
     withEmblem: 'pl-7 pr-7',
     withoutEmblem: 'pl-3 pr-7',
     emblemAnchor: 'left-2.5',
-    emblemSize: 'h-[14px]',
+    emblemHeight: 14,
     chevronAnchor: 'right-2.5',
     chevronSize: 'h-3 w-3',
   },
@@ -117,7 +125,7 @@ export function CharacterSelectDropdown(props: CharacterSelectDropdownProps): Re
           <Image
             source={emblemUrl}
             accessibilityLabel={selected?.world ?? ''}
-            className={styles.emblemSize}
+            style={naturalAspectStyle(emblemUrl, { height: styles.emblemHeight })}
             resizeMode="contain"
           />
         </View>

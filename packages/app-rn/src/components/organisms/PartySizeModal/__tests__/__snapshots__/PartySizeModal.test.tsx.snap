@@ -134,10 +134,12 @@ exports[`PartySizeModal 트리 스냅샷 1`] = `
                   style={
                     {
                       "bottom": 0,
+                      "height": undefined,
                       "left": 0,
                       "position": "absolute",
                       "right": 0,
                       "top": 0,
+                      "width": undefined,
                     }
                   }
                 />

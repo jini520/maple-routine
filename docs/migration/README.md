@@ -1085,7 +1085,7 @@ step 6·7 이 *"화면이 붙는 단계에서 고른다"* 로 두 번 미룬 자
 
 | 웹 | RN | 어떻게 |
 |---|---|---|
-| `background-size: "220% auto"` | 배경 이미지가 없다 | `<Image>` 를 앉히고 `width: '220%'` + `aspectRatio`(고유 크기는 `Image.resolveAssetSource`) |
+| `background-size: "220% auto"` | 배경 이미지가 없다 | `<Image>` 를 앉히고 `width: '220%'` + `aspectRatio`(고유 크기는 `Image.resolveAssetSource`) — **`height: undefined` 를 함께 적어야 한다, 아래 정정** |
 | `background-position: "60% 40%"` | 퍼센트 배치가 없다 | **`left: 60%` + `translateX: -60%`** — CSS 정의(`(W−dw)×X%`)를 두 기준의 뺄셈으로 푼 것이라 **컨테이너를 재지 않는다** |
 | `mask-image` 로 오른쪽 페이드 | 마스크가 없다 | 아트 위에 **표면색 그라데이션을 반대 알파로 덧칠** — 카드 배경이 불투명 단색이라 색이 **근사가 아니라 정확히 같다** |
 
@@ -1160,6 +1160,17 @@ string length` 가 난다. `normalize-tree.ts` 가 그런 프롭을 `<element:�
 > 렌더 트리에서 실물로 확인했고, 검사를 `Number.isFinite` 로 고쳤다. **NaN 은 에러가 아니라
 > 레이아웃이 조용히 무너지는 값**이고 기기에서도 크기를 모르는 소스가 오면 같은 길이다. 이제는
 > 문서가 적은 대로 `cover` 로 떨어진다.
+>
+> **정정 2 (2026-08-14 — 실기기 보고, [[ADR-135]])** — 위 표의 첫 줄이 **반쪽이었다.** `width` +
+> `aspectRatio` 만 적으면 **높이에 그림의 고유 픽셀값이 남는다** — RN 의 `<Image>` 는 스타일을
+> `[{source.width, source.height}, styles.base, props.style]` 세 겹으로 쌓고 **우리가 안 적은 축은
+> 맨 아래 층이 이긴다**([[ADR-129]] 이후 번들 에셋은 늘 자기 크기를 싣고 온다). 두 축이 다 정해지면
+> Yoga 가 `aspectRatio` 를 **버리므로**, 이 표대로 옮긴 카드·원형 초상이 전부 세로로 늘어나 있었다
+> (보스 카드 358×255.8 → 358×**556**). 처방은 **나머지 축을 명시적 `undefined` 로 지우는 것**이고,
+> 그 한 줄이 «`background-size` 를 옮기는 법» 의 빠진 절반이다. 같은 병이 `w-full`(안내 이미지)·
+> `h-[17px] w-auto`(월드 엠블럼)에도 있었다 — 웹에서 그 자리를 메우던 것이 preflight 의
+> `img{height:auto}` 였고 **RN 에 짝이 없다.** 아래 «미확인» 이 예고한 대로 `sized` 분기는 실기기에서
+> 처음 그려졌고, 그리자마자 이것이 나왔다.
 
 #### 4-5단계 결과 — 보스 스케줄러 2개 (2026-08-13, **파일 둘에 ADR 스물여섯**)
 

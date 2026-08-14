@@ -92,6 +92,8 @@ describe('mediaArtImageStyle', () => {
       right: 0,
       bottom: 0,
       left: 0,
+      width: undefined,
+      height: undefined,
     })
   })
 
@@ -99,11 +101,28 @@ describe('mediaArtImageStyle', () => {
     expect(mediaArtImageStyle(resolveMediaArtLayout(CROP, NATURAL))).toEqual({
       position: 'absolute',
       width: '220%',
+      height: undefined,
       aspectRatio: 2,
       left: '60%',
       top: '40%',
       transform: [{ translateX: '-60%' }, { translateY: '-40%' }],
     })
+  })
+
+  // **두 갈래 다 두 축의 이름이 나와야 한다**([[ADR-135]]). 안 적은 축에는 에셋의 고유 픽셀
+  // 크기가 남고(RN 이 스타일 맨 아래에 그것을 깐다), 그러면 `sized` 는 `aspectRatio` 를 잃어
+  // 늘어나고 `cover` 는 `right`/`bottom` 을 잃어 상자를 못 채운다 — 둘 다 **에러 없이** 그렇게 된다.
+  //
+  // 값이 아니라 **키의 존재**를 묻는다: `toEqual` 은 `{height: undefined}` 와 `{}` 를 같게 보므로
+  // 위 두 케이스만으로는 이 계약이 안 적힌다(둘 다 통과한다).
+  it.each([
+    ['cover', { kind: 'cover' } as const],
+    ['sized', resolveMediaArtLayout(CROP, NATURAL)],
+  ])('%s 는 두 축을 다 이름 부른다 — 안 적은 축은 고유 크기가 살아남는다', (_label, layout) => {
+    const style = mediaArtImageStyle(layout)
+
+    expect(Object.keys(style)).toContain('width')
+    expect(Object.keys(style)).toContain('height')
   })
 })
 
