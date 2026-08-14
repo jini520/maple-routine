@@ -333,7 +333,7 @@ machinery 와 [[ADR-120]] 전환 machinery 가 통째로 사라진다**(둘 다 
 | 파일 | ADR 계약 | RN 구현 |
 |---|---|---|
 | `ads.ts` | 005, 090 | `react-native-google-mobile-ads` **16.0.3 고정** — 아래 |
-| `live-update.ts` | 022, 024, 026, 027, 117, 119, 126 | `expo-updates` — **재설계 필요**([[ADR-128]] 결정 7). 그때까지 **던지는 구현** |
+| `live-update.ts` | 022, 024, 026, 027, 117, 119, 126 | `expo-updates` — **재설계 완료**([[ADR-137]], 2026-08-14). `rn-live-update.ts` 실구현 · 매니페스트는 Cloudflare Worker · 번들은 GitHub Releases(`live-update-rn`) |
 | `back-gesture.ts` | 003, 120 | **삭제** — 네이티브 스택 기본. 3단계까지 **던지는 구현** |
 | `splash-screen.ts` | 025, 027, 117 | `expo-splash-screen` **~57.0.6** — 아래 |
 | `notifications.ts` | — | `notifee` — [data.md](./data.md) 결정 4 |
@@ -508,7 +508,7 @@ Kotlin 메타데이터 2.3 이라 RN 0.86(Kotlin 2.1)에서 컴파일이 깨지�
 | 순위 | 대상 | 이유 |
 |---|---|---|
 | 1 | `BossProfitScreen.tsx` | ADR 32개. 단독 계획 필요 |
-| 2 | `native/live-update.ts` | OTA 프로토콜 자체가 바뀜 — 별도 ADR 필요 |
+| 2 | `native/live-update.ts` | OTA 프로토콜 자체가 바뀜 — ~~별도 ADR 필요~~ → **[[ADR-137]] 로 닫힘**(2026-08-14) |
 | 3 | 데이터 보존 | 실패 시 복구 불가([data.md](./data.md)) |
 | 4 | `BossScreen.tsx` | ADR 26개 |
 | 5 | ~~CSS `@keyframes` 8종~~ → ~~7종 중 4종 이식(3단계 step 7)~~ → **7종 전부 처리 완료**(4단계 step 6·7·8 — 이식 6 · degrade 1) | 선언형 → 명령형 재구현, 판정이 주관적. **코드는 끝났고 남은 것은 판정 하나다** — 값은 `keyframes-parity.test.ts` 가 웹 `index.css` 를 읽어 붙들지만 *"같아 보이는가"* 는 육안 대조 몫이고, 그중 `valuable-drop-spin`(회전 샤인 링 → 정적 골드)은 **degrade 라 애초에 같아 보이지 않는 것이 맞다** — 물을 것은 그 열등 경로가 견딜 만한가다 |
