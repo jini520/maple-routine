@@ -516,6 +516,17 @@ DOM:   포털로 탭 레이어 **밖**      (트리 위치는 중첩 그대로 �
   안 걸 때 두 값이 다 0이면 마스크를 아예 안 건다(오프스크린 합성 비용을 페이드가 보이는 화면으로
           좁힌다) — 안드로이드 3버튼 내비의 하위 페이지가 그 경우다
   ```
+- **그림의 상자 — RN 에서는 «두 축을 다 이름 부른다»** ([[ADR-135]], 2026-08-14). 웹의 `w-full`·`h-[17px] w-auto object-contain` 을 그대로 옮기면 **안 적은 축에 에셋의 고유 픽셀 크기가 남는다** — RN 의 `<Image>` 가 스타일을 `[{source.width, source.height}, styles.base, props.style]` 세 겹으로 쌓기 때문이고, 웹에서 그 자리를 메우던 preflight `img{height:auto}` 에 짝이 없기 때문이다. **두 축이 다 정해지면 Yoga 가 `aspectRatio` 를 버리므로** 비율에 맞춘 상자를 전제한 `resizeMode="stretch"` 자리도 함께 무너진다.
+  ```
+  규칙    한 축만 정하고 싶으면 나머지 축을 **명시적 undefined 로 지우고** aspectRatio 를 준다.
+          «안 적음» ≠ «undefined» — 후자만 앞 층의 값을 덮는다(RN 스타일 병합의 계약).
+  자리    lib/image-aspect.ts 의 naturalAspectStyle(source, { height } | { width }) 하나.
+          className 은 그대로 둬도 된다 — NativeWind 가 undefined 키를 보존한다(실측)
+  증상    엠블럼 좌우 여백 · 안내 이미지 상하 여백 · 원형 초상과 카드 일러스트의 일그러짐.
+          전부 «CSS 속성이 안 먹는» 것처럼 보이지만 원인은 **안 적은 축 하나**다
+  주의    jest 는 이것을 **원리적으로 못 본다**(프리셋이 Image 를 통째로 목으로 갈아 끼운다).
+          테스트가 물을 수 있는 것은 «두 축을 이름 불렀는가»(`'height' in style`)까지다
+  ```
 
 ## 타이포그래피
 | 용도 | 스타일 |

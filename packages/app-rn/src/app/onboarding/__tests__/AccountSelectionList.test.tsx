@@ -159,6 +159,14 @@ describe('AccountSelectionList', () => {
     const emblem = view.getByTestId('world-emblem-69e3525-account-hash-2')
     expect(emblem.props.accessibilityLabel).toBe('엘리시움')
     expect(emblem.props.source).toBe('엘리시움'.length)
+
+    // 웹은 `h-[22px] w-auto object-contain` — 폭은 그림이 정한다. RN 에서 폭을 **이름 부르지
+    // 않으면** 고유 폭(46)이 살아남아 이름 줄 왼쪽에 빈자리가 생긴다([[ADR-135]]).
+    const style = flattenStyle(emblem.props.style)
+    expect(style.height).toBe(22)
+    expect(Object.keys(style)).toContain('width')
+    expect(style.width).toBeUndefined()
+    expect(style.aspectRatio).toBeDefined()
   })
 
   it('매핑에 없는 월드는 엠블럼 없이 월드명 텍스트만 표시한다', async () => {

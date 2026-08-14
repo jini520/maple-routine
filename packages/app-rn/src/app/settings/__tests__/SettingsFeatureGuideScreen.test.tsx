@@ -18,7 +18,7 @@ import { ScrollView } from 'react-native'
 
 import type { FeatureGuide } from '@core/types'
 
-import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
+import { flattenStyle, renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { SettingsFeatureGuideScreen } from '../SettingsFeatureGuideScreen'
 import { useSettingsNavigation } from '../use-settings-navigation'
 
@@ -287,6 +287,21 @@ describe('SettingsFeatureGuideScreen', () => {
 
     expect(view.getByLabelText('보스 카드를 탭해 연 파티 모달').props.source).toBe(1)
     expect(view.getByLabelText('난이도 세그먼트')).toBeTruthy()
+  })
+
+  // 웹은 `w-full` 한 줄이었다 — 높이는 preflight 의 `img { height: auto }` 가 정했다. RN 에 그
+  // 짝이 없어 **높이를 이름 부르지 않으면** 스크린샷의 고유 픽셀 높이가 상자 높이로 남고,
+  // `contain` 이 그 안에 그림을 넣어 **위아래로 큰 여백**이 생긴다(746×274 안내는 각 71px, 세로로
+  // 긴 780×1438 안내는 각 389px — [[ADR-135]] 보고 ②).
+  it('이미지는 폭을 채우고 높이를 그림에 맡긴다 — 두 축의 이름이 다 나온다', async () => {
+    const view = await renderOverlay(<SettingsFeatureGuideScreen />)
+
+    const style = flattenStyle(view.getByLabelText('보스 카드를 탭해 연 파티 모달').props.style)
+
+    expect(style.width).toBe('100%')
+    expect(Object.keys(style)).toContain('height')
+    expect(style.height).toBeUndefined()
+    expect(style.aspectRatio).toBeDefined()
   })
 
   it('문단만 있는 블록에는 이미지를 만들지 않는다', async () => {

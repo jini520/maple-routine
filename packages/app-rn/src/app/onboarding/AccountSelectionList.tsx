@@ -29,6 +29,8 @@
 // ④ `hover:`·`disabled:opacity-50` 제거 — 앞은 터치 기기에 없고, 뒤는 CSS 의사 클래스라 RN 의
 //    `disabled` 프롭과 이어지지 않아 조건부 클래스가 된다(그대로 두면 비활성 카드가 멀쩡해 보인다).
 // ⑤ `truncate` → `numberOfLines={1}`.
+// ⑥ **월드 엠블럼의 `w-auto` 에 짝이 없다**([[ADR-135]]) — RN 은 안 적은 축에 에셋의 고유 픽셀
+//    크기를 남기므로 «높이만 정한다» 를 `naturalAspectStyle` 로 적어야 한다.
 import { useState } from 'react'
 import { Image, Pressable, Text, View } from 'react-native'
 
@@ -42,6 +44,7 @@ import type { MapleAccount } from '@core/types'
 import { Button } from '../../components/atoms/Button/Button'
 import { ProgressBar } from '../../components/atoms/ProgressBar/ProgressBar'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
+import { naturalAspectStyle } from '../../lib/image-aspect'
 import { AlertTriangleIcon } from '../../lib/icons'
 
 // `CharacterTrackingGrid` 와 동일한 얼굴 크롭 방식([[ADR-015]]) — character/basic 이 반환하는
@@ -215,7 +218,10 @@ export function AccountSelectionList(props: AccountSelectionListProps): React.JS
                       testID={`world-emblem-${account.accountId}`}
                       accessibilityLabel={representative.world}
                       source={emblemUrl}
-                      className="h-[22px] shrink-0"
+                      // 웹 `h-[22px] w-auto` 의 짝 — 폭은 그림이 정한다([[ADR-135]]). 폭을 안 적으면
+                      // 엠블럼(46×50)의 고유 폭이 남아 이름 줄 왼쪽이 벌어진다.
+                      style={naturalAspectStyle(emblemUrl, { height: 22 })}
+                      className="shrink-0"
                       resizeMode="contain"
                     />
                   )}

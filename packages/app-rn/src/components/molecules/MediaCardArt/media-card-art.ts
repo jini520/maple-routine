@@ -173,15 +173,33 @@ export function resolveMediaArtLayout(
   }
 }
 
-/** 배치를 `<Image>` 스타일로. 분리해 두는 이유는 위 함수가 순수하게 남아 단위 테스트가 되기 때문. */
+/**
+ * 배치를 `<Image>` 스타일로. 분리해 두는 이유는 위 함수가 순수하게 남아 단위 테스트가 되기 때문.
+ *
+ * **두 갈래 다 두 축의 이름을 부른다**([[ADR-135]]). RN 의 `<Image>` 는 스타일 맨 아래에 **그림의
+ * 고유 픽셀 크기**를 깔아 두므로(`lib/image-aspect.ts` 파일 머리), 안 적은 축은 그 값이 살아남아
+ * `sized` 는 `aspectRatio` 를 잃고(Yoga 는 두 축이 정해지면 종횡비를 버린다 — 그림이 늘어난다)
+ * `cover` 는 `right`/`bottom` 을 잃는다(절대 배치에서 `left`+`width` 가 이기므로 그림이 상자를
+ * 채우는 대신 고유 크기 그대로 왼쪽 위에 앉는다). **둘 다 에러 없이** 그렇게 된다.
+ */
 export function mediaArtImageStyle(layout: MediaArtLayout): ImageStyle {
   if (layout.kind === 'cover') {
-    return { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 }
+    return {
+      position: 'absolute',
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0,
+      width: undefined,
+      height: undefined,
+    }
   }
 
   return {
     position: 'absolute',
     width: layout.width,
+    // 높이는 `aspectRatio` 가 정한다 — 그러려면 고유 크기를 **지워야** 한다(파일 머리 위 문단).
+    height: undefined,
     aspectRatio: layout.aspectRatio,
     left: layout.left,
     top: layout.top,

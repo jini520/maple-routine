@@ -7,6 +7,8 @@
 //
 // 마지막 줄이 이 파일에서 가장 중요한 사실이다. **여기서 초록이라고 캐릭터를 고를 수 있는 것이
 // 아니다.**
+import { Image } from 'react-native'
+
 import { flattenStyle, renderAtom, 기본테마 } from '../../../__tests__/render-atom'
 import { CharacterSelectDropdown } from '../CharacterSelectDropdown'
 
@@ -14,6 +16,11 @@ const characters = [
   { ocid: 'ocid-1', characterName: '낟낟', world: '엘리시움' },
   { ocid: 'ocid-2', characterName: '내옆에최성일', world: '베라' },
 ]
+
+// 위 케이스들이 심는 `resolveAssetSource` 스파이만 되돌린다(모듈 목은 건드리지 않는다).
+afterEach(() => {
+  jest.restoreAllMocks()
+})
 
 describe('CharacterSelectDropdown', () => {
   it('선택된 캐릭터의 이름을 트리거에 그린다', async () => {
@@ -112,6 +119,36 @@ describe('CharacterSelectDropdown', () => {
 
     expect(getByTestId('character-select-emblem')).toBeTruthy()
     expect(flattenStyle(getByTestId('character-select-trigger').props.style).paddingLeft).toBe(32) // pl-8
+  })
+
+  // 웹은 `w-auto object-contain` 으로 폭을 그림에 맡겼다. RN 에서 폭을 **이름 부르지 않으면**
+  // 엠블럼(46×50)의 고유 폭 46 이 살아남아 좌측 앵커 안에서 그림이 가운데로 밀린다 — 패딩과
+  // 짝을 맞춰 둔 자리(위 케이스)가 그만큼 어긋난다([[ADR-135]]).
+  // **고유 크기를 테스트가 넣어 준다.** jest 에서 번들 에셋은 `{ testUri }` 대역이라
+  // `resolveAssetSource` 가 크기를 못 읽고([[ADR-129]]), 그러면 `naturalAspectStyle` 이 «준 축만»
+  // 폴백으로 떨어져 이 계약이 안 보인다. 값은 실제 엠블럼(46×50)이다.
+  it.each([
+    ['default' as const, 22],
+    ['compact' as const, 14],
+  ])('%s 엠블럼은 높이만 정하고 폭을 그림에 맡긴다', async (size, height) => {
+    jest
+      .spyOn(Image, 'resolveAssetSource')
+      .mockReturnValue({ uri: 'emblem', scale: 1, width: 46, height: 50 })
+    const { getByLabelText } = await renderAtom(
+      <CharacterSelectDropdown
+        characters={characters}
+        selectedOcid="ocid-1"
+        onSelect={jest.fn()}
+        size={size}
+      />,
+    )
+
+    const style = flattenStyle(getByLabelText('엘리시움').props.style)
+
+    expect(style.height).toBe(height)
+    expect(Object.keys(style)).toContain('width')
+    expect(style.width).toBeUndefined()
+    expect(style.aspectRatio).toBe(46 / 50)
   })
 
   // 매핑에 없는 월드는 여전히 생략한다(웹과 같은 폴백) — 그때는 패딩도 좁은 쪽이다.
