@@ -17,6 +17,7 @@
 import { getThemeDefinition } from '@core/lib/theme-registry'
 import { within } from '@testing-library/react-native'
 import { Text, View } from 'react-native'
+import type { Metrics } from 'react-native-safe-area-context'
 
 import { flattenStyle, renderOverlay, 테스트_안전영역 } from '../../../__tests__/render-atom'
 import { rnThemeAppearancePort } from '../../../../native/adapters/rn-theme-appearance'
@@ -169,5 +170,112 @@ describe('[[ADR-131]] 헤더도 함께 스크롤된다', () => {
 
     // `screen-scroll` 아래에서 찾을 수 있으면 자식이다. 형제였다면 못 찾는다.
     expect(within(getByTestId('screen-scroll')).getByTestId('header')).toBeTruthy()
+  })
+})
+
+// ★ 안전영역 페이드 — **덮는 것이 아니라 깎는 것**이다 ([[ADR-134]]).
+//
+// 어디를 깎는지의 판정은 `safe-area-fade.test.ts` 가 본다. 여기서는 그 값이 **실제로 마스크로
+// 나가는지**와, 이 결정의 핵심인 «스크림이 아니다» 가 지켜지는지를 본다 — 마스크를 배경색
+// 그라디언트로 바꿔도 화면은 그럴듯해 보이지만(벽지 없는 테마 넷에서는 구분도 안 된다) 벽지
+// 테마에서는 [[ADR-133]] 이 걷어낸 띠가 정지 상태로 돌아온다.
+describe('[[ADR-134]] 안전영역 페이드', () => {
+  const 인셋없는_기기: Metrics = {
+    frame: { x: 0, y: 0, width: 360, height: 640 },
+    insets: { top: 0, left: 0, right: 0, bottom: 0 },
+  }
+
+  // 하단이 안전영역 **위로** 올라가는 것이 정정 1 이다 — 안전영역까지만 깎으면 콘텐츠가 선명한
+  // 채로 캡슐 밑에 들어가고, 녹는 것은 이미 바가 가린 뒤가 된다. 올리는 양은 바 몫의 절반이다
+  // (전부 올렸더니 «너무 높다» — 정정 3, 둘 다 사용자 판정 2026-08-14).
+  it('헤더가 있는 탭 화면은 위아래를 둘 다 깎는다 — 하단은 바의 절반까지', async () => {
+    const { getByTestId } = await renderOverlay(
+      <ScreenScroll header={<View testID="header" />}>{목록}</ScreenScroll>,
+    )
+
+    expect(flattenStyle(getByTestId('screen-fade-top').props.style).height).toBe(
+      테스트_안전영역.insets.top,
+    )
+    expect(flattenStyle(getByTestId('screen-fade-bottom').props.style).height).toBe(
+      테스트_안전영역.insets.bottom + FLOATING_BAR_SPACE_PX / 2,
+    )
+  })
+
+  // 하위 페이지에는 바가 없다 — 정정 1 이 늘린 것은 «바가 가리는 몫» 뿐이라 여기서는 그대로다.
+  it('하위 페이지의 하단은 안전영역까지다 — 바가 없으니 올라갈 몫도 없다', async () => {
+    const { getByTestId } = await renderOverlay(
+      <ScreenScroll hasTabBar={false} header={<View testID="header" />}>
+        {목록}
+      </ScreenScroll>,
+    )
+
+    expect(flattenStyle(getByTestId('screen-fade-bottom').props.style).height).toBe(
+      테스트_안전영역.insets.bottom,
+    )
+  })
+
+  // 설정 계열 — 셸이 스크롤포트를 내렸으므로 그 자리에 올 콘텐츠가 없다. 그래도 깎으면 **콘텐츠의
+  // 첫 줄**이 흐려진다.
+  it('헤더가 없으면 상단은 깎지 않는다', async () => {
+    const { queryByTestId } = await renderOverlay(<ScreenScroll>{목록}</ScreenScroll>)
+
+    expect(queryByTestId('screen-fade-top')).toBeNull()
+    expect(queryByTestId('screen-fade-bottom')).not.toBeNull()
+  })
+
+  // 결정 5 — 마스킹은 오프스크린 합성이라 공짜가 아니다. 겹치는 것이 없으면 예전 그대로다.
+  // 그 «없음» 은 정정 1 뒤로 **안전영역도 바도 없을 때**다(인셋 0 + 하위 페이지).
+  it('겹치는 것이 없으면 마스크를 아예 걸지 않는다', async () => {
+    const { queryByTestId, getByText } = await renderOverlay(
+      <ScreenScroll hasTabBar={false}>{목록}</ScreenScroll>,
+      인셋없는_기기,
+    )
+
+    expect(queryByTestId('screen-fade')).toBeNull()
+    expect(getByText('목록')).toBeTruthy()
+  })
+
+  // 결정 1 의 회귀 가드. 마스크는 **알파만** 나른다 — 색이 하나라도 검정이 아니면 그것은 콘텐츠를
+  // 깎는 것이 아니라 화면을 덮는 스크림이고, 벽지 위에 띠를 만든다.
+  it('마스크가 나르는 것은 검정의 알파뿐이다 — 배경색 스크림이 아니다', async () => {
+    const { getByTestId } = await renderOverlay(
+      <ScreenScroll header={<View testID="header" />}>{목록}</ScreenScroll>,
+    )
+
+    for (const testID of ['screen-fade-top', 'screen-fade-bottom']) {
+      const colors = getByTestId(testID).props.colors as number[]
+      // 네이티브 정수는 ARGB 다. 하위 24비트(=RGB)가 전부 0이어야 «검정의 알파» 다.
+      expect(colors.map((color) => color & 0x00ffffff)).toEqual(colors.map(() => 0))
+    }
+  })
+
+  // 방향이 뒤집히면 **정확히 반대**가 된다 — 화면 끝이 불투명하고 안쪽이 투명해져, 콘텐츠가
+  // 상태바 밑에서 선명하고 목록 한가운데가 사라진다.
+  it('화면 끝이 알파 0이다 — 위는 올라가고 아래는 내려간다', async () => {
+    const { getByTestId } = await renderOverlay(
+      <ScreenScroll header={<View testID="header" />}>{목록}</ScreenScroll>,
+    )
+
+    const alphasOf = (testID: string): number[] =>
+      (getByTestId(testID).props.colors as number[]).map((color) => (color >>> 24) & 0xff)
+
+    const top = alphasOf('screen-fade-top')
+    expect(top[0]).toBe(0)
+    expect(top[top.length - 1]).toBe(255)
+
+    const bottom = alphasOf('screen-fade-bottom')
+    expect(bottom[0]).toBe(255)
+    expect(bottom[bottom.length - 1]).toBe(0)
+  })
+
+  // 마스크 상자는 **스크롤포트와 같은 상자**여야 한다 — 마스크가 화면을 덮고 스크롤 뷰가 그 안에
+  // 있어야 페이드 구간이 안전영역과 맞는다(둘이 어긋나면 페이드가 엉뚱한 자리에 뜬다 —
+  // `PageHeader` 가 «띠가 엉뚱한 자리에 있다» 로 반려된 그 실패다).
+  it('스크롤 뷰가 마스크 «안»에 있다', async () => {
+    const { getByTestId } = await renderOverlay(
+      <ScreenScroll header={<View testID="header" />}>{목록}</ScreenScroll>,
+    )
+
+    expect(within(getByTestId('screen-fade')).getByTestId('screen-scroll')).toBeTruthy()
   })
 })
