@@ -5,6 +5,7 @@
     "version": "1.0.6",
     "orientation": "default",
     "userInterfaceStyle": "automatic",
+    "icon": "./assets/icon.png",
     "runtimeVersion": {
       "policy": "fingerprint"
     },
@@ -21,12 +22,25 @@
     },
     "android": {
       "package": "com.mapleroutine.app",
-      "versionCode": 20
+      "versionCode": 20,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#E6DECF"
+      }
     },
     "experiments": {
       "tsconfigPaths": true
     },
     "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "backgroundColor": "#F58B0F",
+          "resizeMode": "contain",
+          "imageWidth": 200
+        }
+      ],
       [
         "react-native-google-mobile-ads",
         {
