@@ -1,5 +1,6 @@
+import { getItemIconUrl } from '@core/lib/item-icons'
 import type { RecordedDrop } from '@core/types/drops'
-import { Text, View } from 'react-native'
+import { Image, Text, View } from 'react-native'
 
 import { SparklesIcon } from '../../../lib/icons'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
@@ -19,7 +20,7 @@ import { LinearGradient } from '../../../lib/nativewind-interop'
 // `valuable-drop-row-pulse`(보스 행 틴트, 결정 5). 전부 캐릭터 카드와 보스 행이라 step 5~6 이
 // 만나고, 그때 step 7 의 몫이 된다. **그래서 이 컴포넌트는 정지 상태가 아니라 완성된 상태다.**
 //
-// ── RN 으로 옮기며 바뀐 것 다섯 ─────────────────────────────────────────────────────
+// ── RN 으로 옮기며 바뀐 것 여섯 ─────────────────────────────────────────────────────
 //
 // ① `linear-gradient(135deg, …)` → `LinearGradient` 의 대각선 두 점. CSS 135deg 는 "왼쪽 위 →
 //    오른쪽 아래"라 `start {0,0}` · `end {1,1}` 이다. 두 점을 **둘 다 명시**한다(기본값에 기대면
@@ -34,14 +35,24 @@ import { LinearGradient } from '../../../lib/nativewind-interop'
 //    짝이 없어 사라진다 — 터치 기기에서는 웹에서도 뜨지 않았다.
 // ⑤ `tabular-nums` 는 클래스로 안 나와 스타일 값으로 준다(`lib/text-styles.ts` — NativeWind 가 그
 //    클래스를 스타일 없이 통과시킨다). `+N` 이 한 자리에서 두 자리로 늘 때 배지 폭이 튀지 않는다.
+// ⑥ **아이콘이 붙었다 (2026-08-14)** — 이 자리는 오래 «전부 회색 원» 이었다. 이 컴포넌트가
+//    `getItemIconUrl` 을 **아예 부르지 않았기** 때문이고, [[ADR-129]] 로 에셋이 온 뒤에도 *"에셋
+//    레이어는 값을 대는 데까지"* 라며 그림 붙이기를 화면 작업 몫으로 미뤄 둔 자리다. 그 폴백 원은
+//    **어두운 테마에서 새까맣게** 보여 «아이템 이미지가 안 나온다» 로 보고됐다(사용자).
 //
-// **아이콘 자리는 지금도 전부 회색 원이다** — 이 컴포넌트가 `getItemIconUrl` 을 아예 부르지 않는다.
-// 스택 규칙(겹침 −6 · 앞선 것이 위 · 흰 링)은 그 폴백에서도 그대로 확인된다.
+//    변환은 예고된 대로 기계적이었다 — `source` 에는 **조회 결과를 그대로** 넣고(번들 에셋이라
+//    원격 URI 처럼 `{ uri }` 로 감싸지 않는다, `CharacterTrackingGrid` 주석 ⑤), `object-contain` 은
+//    `resizeMode="contain"` 이다. **바탕색이 갈리는 것까지 웹과 같다** — 그림이 있으면 `bg-surface`,
+//    폴백 원만 `bg-surface-2` 다. 매핑에 없는 이름은 **여전히 폴백**이라 «에셋이 왔으니 무조건
+//    그린다» 로 굳지 않는다.
 //
-// **막고 있던 물음은 [[ADR-129]] 가 답했다** — *"`<Image source>` 에 무엇을 넣나"* 의 답은 **조회
-// 결과를 그대로**이고(번들 에셋이라 원격 URI 처럼 `{ uri }` 로 감싸지 않는다, `CharacterTrackingGrid`
-// 주석 ⑤가 실물이다), 나머지 변환은 기계적이다(`object-contain` → `resizeMode="contain"`).
-// 그래도 여기서 붙이지 않는 것은 **화면 작업의 범위**여서다 — 에셋 레이어는 값을 대는 데까지다.
+//    상자는 `h-5 w-5` 로 **두 축이 다 적혀 있어** [[ADR-135]] 의 «안 적은 축에 고유 크기가 남는»
+//    함정에 걸리지 않는다.
+//
+//    **`aria-hidden` 을 달지 않는다.** 웹의 `alt=""` 짝은 «접근성 트리에서 숨김» 이 아니라 «이름이
+//    없음» 이고, 이름 없는 RN `<Image>` 는 애초에 접근성 요소가 아니다(배지 전체가 ④의 `aria-label`
+//    을 이미 진다). 달면 폴백 `View` 와 **두 갈래의 접근성이 갈리고**, RNTL 기본 질의에서도 한쪽만
+//    빠져 테스트가 갈래마다 다른 질의를 써야 한다.
 
 /** `.valuable-drop-badge` — 전 테마 공통 골드([[ADR-045]] 결정 3). 테마 토큰이 아니라 고정 신호색이다. */
 const BADGE_GRADIENT = ['#ffe98a', '#f7c400'] as const
@@ -76,18 +87,33 @@ export function ValuableDropBadge(props: {
     >
       <SparklesIcon className="h-3 w-3 shrink-0" color={BADGE_INK} strokeWidth={2.5} aria-hidden />
       <View className="flex-row items-center">
-        {shown.map((drop, index) => (
-          <View
-            key={`${drop.itemName}-${index}`}
-            testID="valuable-drop-icon"
-            style={{
-              marginLeft: index === 0 ? 0 : -6,
-              zIndex: shown.length - index,
-              boxShadow: ICON_RING,
-            }}
-            className="h-5 w-5 shrink-0 rounded-full bg-surface-2"
-          />
-        ))}
+        {shown.map((drop, index) => {
+          const url = getItemIconUrl(drop.itemName, drop.slot)
+          // 스택·링은 **두 갈래가 같다**(파일 머리 ⑥) — 웹도 두 분기에 같은 클래스를 적어 두었다.
+          const stackStyle = {
+            marginLeft: index === 0 ? 0 : -6,
+            zIndex: shown.length - index,
+            boxShadow: ICON_RING,
+          }
+
+          return url === null ? (
+            <View
+              key={`${drop.itemName}-${index}`}
+              testID="valuable-drop-icon"
+              style={stackStyle}
+              className="h-5 w-5 shrink-0 rounded-full bg-surface-2"
+            />
+          ) : (
+            <Image
+              key={`${drop.itemName}-${index}`}
+              testID="valuable-drop-icon"
+              source={url}
+              resizeMode="contain"
+              style={stackStyle}
+              className="h-5 w-5 shrink-0 rounded-full bg-surface"
+            />
+          )
+        })}
       </View>
       {extra > 0 && (
         <Text
