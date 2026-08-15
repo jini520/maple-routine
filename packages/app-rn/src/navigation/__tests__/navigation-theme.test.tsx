@@ -4,13 +4,16 @@
 // 결정 4 의 RN 짝). 안 비우면 벽지가 **통째로 사라진다** — 웹에서도 같은 실수를 했고
 // (2026-08-03, 앱 루트의 `bg-bg`), 그때 증상이 "어둡게 깔림"이 아니라 "아예 안 보임"이라
 // **원인을 짚기 어려웠다.** 그 자리를 값으로 고정한다.
-import { renderHook } from '@testing-library/react-native'
+import { render, renderHook } from '@testing-library/react-native'
+import { Text } from 'react-native'
 
 import { getThemeDefinition } from '@core/lib/theme-registry'
 
+import { ScreenBackdrop } from '../../components/templates/ThemeBackdrop/ScreenBackdrop'
 import { rnThemeAppearancePort } from '../../native/adapters/rn-theme-appearance'
 import { ThemeProvider } from '../../theme/ThemeProvider'
 import { __resetThemeAppearanceForTest } from '../../theme/appearance-store'
+import { SCREENS_CARRY_BACKDROP } from '../../theme/screen-backdrop-policy'
 import { useNavigationTheme } from '../navigation-theme'
 
 beforeEach(__resetThemeAppearanceForTest)
@@ -37,5 +40,23 @@ describe('useNavigationTheme — 배경 이미지가 있으면 화면 배경을 
     const { result } = await renderHook(() => useNavigationTheme(), { wrapper: ThemeProvider })
 
     expect(result.current.colors.background).toBe(머쉬맘.bg)
+  })
+})
+
+// [[ADR-134]] 정정 5 의 **반대쪽 갈래** — 화면이 벽지를 들지 않는 플랫폼(iOS, 이 러너의 기본)에서는
+// `ScreenBackdrop` 이 뷰를 하나도 늘리지 않고 자식을 그대로 통과시킨다. 여기서 벽지를 그리면
+// 셸의 벽지와 **두 겹**이 되고, 그것이 [[ADR-133]] 결정 1 이 없앤 «그리는 곳이 둘» 이다.
+describe('[[ADR-134]] 정정 5 — 화면이 벽지를 들지 않는 플랫폼', () => {
+  it('`ScreenBackdrop` 이 자식을 그대로 통과시킨다', async () => {
+    expect(SCREENS_CARRY_BACKDROP).toBe(false) // 전제
+
+    const { toJSON } = await render(
+      <ScreenBackdrop>
+        <Text>화면</Text>
+      </ScreenBackdrop>,
+    )
+
+    // 래퍼 View 가 없다 — 자식 하나가 그대로 루트다(있으면 셸의 벽지와 두 겹이 된다).
+    expect((toJSON() as { type: string }).type).toBe('Text')
   })
 })
