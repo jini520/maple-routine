@@ -147,50 +147,81 @@ export interface HuntingTimerPort {
 
 export type NetworkType = 'wifi' | 'cellular' | 'none' | 'unknown'
 
-export interface LiveUpdateHttpRequest {
-  url: string
-  params?: Record<string, string>
-  headers?: Record<string, string>
-}
-
-export interface LiveUpdateHttpResponse {
-  status: number
-  /** 파싱 전 원문. CDN이 octet-stream으로 내려주면 문자열이 온다([[ADR-026]]). */
-  data: unknown
-}
-
-export interface LiveUpdateDownloadParams {
-  url: string
-  version: string
-  checksum: string
-}
+/**
+ * 확인 한 번의 결과 — **프로토콜과 무관한 «앱이 무엇을 할 수 있나» 의 분류**다([[ADR-137]] 결정 6).
+ *
+ * @capgo 와 `expo-updates` 는 매니페스트 형식도 다운로드 단위도 다르지만 이 다섯 갈래는 같다.
+ * 그래서 이 타입은 포트와 함께 남고, 두 어댑터가 각자의 프로토콜을 여기로 번역한다.
+ */
+export type LiveUpdateCheckResult =
+  | { kind: 'unsupported' } // web·개발 서버 등 라이브 업데이트 런타임이 없는 환경
+  | { kind: 'error' } // 매니페스트 조회·파싱 실패
+  | { kind: 'up-to-date' } // 최신
+  /**
+   * 새 버전은 있는데 **라이브로 못 받는다** — 네이티브가 낮아 스토어를 거쳐야 한다([[ADR-027]] 결정 7).
+   *
+   * `expo-updates` 에서는 프로토콜이 이것을 **204(업데이트 없음)로 삼킨다.** 그래서 RN 어댑터는
+   * 확인이 «최신» 으로 떨어졌을 때 한 번 더 물어 이 갈래를 되살린다([[ADR-137]] 결정 4) —
+   * 삼켜진 채로 두면 사용자에게 *"최신 버전입니다"* 라는 **거짓**이 보인다.
+   */
+  /**
+   * `minNativeVersion` 은 **선택**이다 — @capgo 는 우리가 손으로 적은 최소 네이티브 버전을 실어
+   * 모달이 *"최소 앱 버전 1.0.7 이상 필요"* 라고 말할 수 있었지만, `expo-updates` 의
+   * `runtimeVersion` 은 fingerprint 해시라 사용자에게 보여 줄 이름이 아니다([[ADR-137]] 결정 3).
+   * 그래서 RN 은 이 값을 비우고, 모달은 그 줄을 **안 그린다**(원래부터 조건부였다) — 없는 숫자를
+   * 지어내지 않는다.
+   */
+  | { kind: 'store-required'; version: string; minNativeVersion?: string }
+  /** 라이브로 받을 수 있다. `highlights` 는 받기 전 모달의 「자세히 보기」가 펼친다([[ADR-126]]). */
+  | { kind: 'update-available'; version: string; size: number; highlights?: string[] }
 
 /**
- * Live Update (OTA) ([[ADR-022]]·[[ADR-024]]·[[ADR-026]]·[[ADR-027]]·[[ADR-117]]).
+ * Live Update (OTA) ([[ADR-022]]·[[ADR-026]]·[[ADR-027]]·[[ADR-117]]·[[ADR-137]]).
  *
- * **매니페스트 형식·버전 비교·적용 순서는 이 포트 밖(`native/live-update.ts`)에 있다** — 프로토콜
- * 재설계(@capgo → expo-updates)는 별도 결정이고([[ADR-128]] 결정 7), 그때 갈아끼우는 것은 이 인터페이스
- * 구현이지 그 정책이 아니다.
+ * ## 경계는 «프로토콜» 이 아니라 **«행위»** 다 ([[ADR-137]] 결정 6)
+ *
+ * 이 인터페이스는 한때 @capgo 의 모양을 그대로 드러냈다 — `httpGet`(매니페스트를 **호출부가 직접
+ * 판다**) · `download({url, checksum})` · `applyBundle(id)`. 셋 다 `expo-updates` 에 짝이 없다:
+ * 주소·체크섬·번들 id 를 런타임이 자기 안에서 다루고 우리에게 안 보여준다.
+ *
+ * 그래서 포트가 말하는 것을 **무엇을 하는가**(확인·받기·적용)로 좁혔다. 갈리는 것은 그 아래다.
+ *
+ * | 여기 남는 것 | 어댑터로 간 것 |
+ * |---|---|
+ * | 상태 14개 · 셀룰러 확인 · 12초 타임아웃 · 완료 안내 판정 | 매니페스트 형식 · 버전 비교 · 채널 |
+ *
+ * 즉 [[ADR-027]]·[[ADR-061]]·[[ADR-065]]·[[ADR-117]]·[[ADR-126]] 이 정한 **UX 는 전부 스토어에
+ * 남는다.** 프로토콜이 바뀌어도 사용자가 보는 것은 안 바뀐다는 것이 이 경계의 목적이다.
  */
 export interface LiveUpdatePort {
   /**
    * 이 실행 환경에 라이브 업데이트 런타임이 있는가(개발 서버에는 없다).
    *
-   * 동기인 것이 중요하다 — 매니페스트를 받기 **전에** 판정해야 지원하지 않는 환경에서 네트워크
+   * 동기인 것이 중요하다 — 확인을 시작하기 **전에** 판정해야 지원하지 않는 환경에서 네트워크
    * 요청이 나가지 않는다.
    */
   isSupported(): boolean
   notifyAppReady(): Promise<void>
-  /** 지금 도는 번들과 설치된 네이티브 셸의 버전. */
-  getCurrent(): Promise<{ bundleVersion: string; nativeVersion: string }>
-  /** 매니페스트 조회. 캐시 우회 파라미터·헤더는 호출부가 정한다([[ADR-026]]). */
-  httpGet(request: LiveUpdateHttpRequest): Promise<LiveUpdateHttpResponse>
-  download(
-    params: LiveUpdateDownloadParams,
-    onProgress: (percent: number) => void,
-  ): Promise<{ id: string }>
-  /** 내려받아 둔 번들로 갈아끼우고 리로드한다. 이후 코드는 실행되지 않는다. */
-  applyBundle(id: string): Promise<void>
+  /** 지금 도는 번들의 **사용자 표시 버전**(`1.0.6`). 런타임이 없으면 `null`. */
+  getCurrentVersion(): Promise<string | null>
+  /**
+   * 빌드 시점에 고정된 채널 표시값([[ADR-026]] 관찰용 UI).
+   *
+   * 어댑터가 갖는 이유는 그것이 **빌드 시점 값**이기 때문이다 — core 가 `import.meta.env` 를
+   * 읽던 자리가 여기였고, 그 한 줄이 RN 에서 모듈을 평가하는 순간 죽였다([[ADR-137]] 결정 7).
+   */
+  getChannel(): string
+  /** 확인. 매니페스트 조회·파싱·버전 비교까지 **어댑터가** 끝낸다. */
+  check(): Promise<LiveUpdateCheckResult>
+  /** 사용자 동의 후 받는다. 진행률은 0~100 으로 흘린다([[ADR-061]] 결정 1). */
+  download(onProgress: (percent: number) => void): Promise<void>
+  /**
+   * 받아둔 번들로 갈아끼우고 리로드한다. **이후 코드는 실행되지 않는다.**
+   *
+   * 앞뒤 순서(커넥션 닫기 → 커버 → 이 호출)는 여전히 `native/live-update.ts` 한 함수가 통째로
+   * 소유한다([[ADR-117]] 결정 1) — 그 순서가 곧 그 결정이라 두 곳으로 나누지 않는다.
+   */
+  apply(): Promise<void>
   getNetworkType(): Promise<NetworkType>
   /** 스토어 업데이트가 필요할 때 스토어를 연다([[ADR-027]] 결정 7). */
   openStore(): void

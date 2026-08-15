@@ -1,5 +1,9 @@
 # Live Update (OTA)
 
+> ⚠️ **이 문서는 두 앱을 함께 설명한다.** 아래 「정책」부터 「SQLite 커넥션 주의」까지는 **capacitor
+> 앱(@capgo)** 의 것이고, RN 앱은 **프로토콜이 다르다**([[ADR-137]] — `expo-updates`). 전환이 끝날
+> 때까지 배포 절차가 두 벌이다. RN 쪽은 맨 아래 「RN — expo-updates」 절을 보라.
+
 > **범위**: 스토어 심사 없이 JS/HTML/CSS 번들을 배포하는 OTA. 사용자 동의형 업데이트 UX, 베타 채널, 관찰용 UI.
 > **관련 소스**: `native/live-update.ts`(`@capgo/capacitor-updater` 래퍼) · `features/live-update/`(store, `checkOnBoot`) · `native/network`(셀룰러 감지) · `capacitor.config.ts` · GitHub Releases(`live-update-latest`/`live-update-beta`).
 > **관련 ADR**: [[ADR-022]] [[ADR-024]] [[ADR-026]] [[ADR-027]] [[ADR-008]] [[ADR-117]] [[ADR-119]] [[ADR-126]]. **관련 문서**: [../foundation/architecture.md](../foundation/architecture.md), [settings.md](./settings.md), [splash.md](./splash.md), [../trouble/2026-07-15-live-update-testing.md](../trouble/2026-07-15-live-update-testing.md), [../trouble/2026-08-08-ota-apply-stuck-splash.md](../trouble/2026-08-08-ota-apply-stuck-splash.md).
@@ -79,10 +83,62 @@ App Store 첫 출시를 앞두고 **버전을 1.0.0으로 리셋**했다(`packag
 
 **닫기에는 5초 타임아웃이 있다**([[ADR-117]] 결정 5) — 여는 쪽 `withOpenTimeout`(10초)과 대칭이되 더 짧다. 닫기는 파일 생성·마이그레이션이 없어 정상이면 수 ms 이고, 이 값이 곧 적용 경로에서 사용자가 무반응을 견디는 상한이다(`'applying'` 구간의 길이). 실패·타임아웃은 **여전히 삼킨다**(best-effort) — 곧 리로드될 것이고 `openBossProfitDb` 의 stale 감지가 최후 폴백으로 남는다. 타임아웃이 바꾸는 것은 *"실패로 끝난다"* 가 아니라 **"끝난다"** 이다. 같은 함수를 쓰는 캐시 데이터 삭제 경로도 이 타임아웃을 함께 받고, 그쪽 순서도 `close` → 커버 → `reload()` 로 같아진다([[ADR-117]] 결정 8 — [[ADR-065]] 결정 3 의 *"항상 리로드한다"*·`pendingNotice` 정책은 그대로).
 
+## RN — expo-updates ([[ADR-137]])
+
+> **관련 소스**: `app-rn/src/native/adapters/rn-live-update.ts` · `workers/ota-manifest/` ·
+> `scripts/publish-rn-ota.mjs` · GitHub Releases(`live-update-rn`) · `app-rn/app.json` 의 `updates`.
+
+- **프로토콜은 Expo Updates v1**, 호스팅은 **자체**다(EAS Update 미사용 — [[ADR-022]] 의 근거가 그대로
+  유효). 갈리는 지점은 하나뿐이다: `expo-updates` 는 매니페스트 응답에 `expo-protocol-version` 헤더를
+  요구하는데 **GitHub Releases 도 Pages 도 커스텀 헤더를 못 붙인다.**
+- **두 층으로 가른다** — 매니페스트는 **Cloudflare Worker**(`workers/ota-manifest/`, 상태 없음),
+  번들·에셋은 **GitHub Releases** (`live-update-rn`). `launchAsset.url` 이 GitHub 을 직접 가리켜
+  **대역폭이 Worker 를 안 지나간다**(Worker 는 수 KB JSON 만 낸다).
+- **배포는 `node scripts/publish-rn-ota.mjs`.** `expo export` → 에셋 업로드(이름이 내용에서 나오므로
+  **이미 있는 것은 건너뛴다**) → 매니페스트 생성·업로드 → **왕복 확인**. JS 만 고친 배포는 번들 2개만
+  오른다(실측 확인).
+- ⚠️ **순서 규칙: 네이티브를 건드렸으면 `expo prebuild` 를 먼저 끝내고 배포하라.** `runtimeVersion` 이
+  fingerprint 라 **네이티브 트리의 함수**다 — 배포 뒤에 트리가 바뀌면 매니페스트가 «아무도 안 묻는
+  이름» 으로 남고 앱은 204(업데이트 없음)를 받는다. 에러는 어디에서도 안 난다([[ADR-137]] 정정 2).
+- **배포 성공의 정의는 «올렸다» 가 아니라 «받아진다» 다.** 스크립트 `[6/6]` 이 클라이언트가 묻는
+  그대로 매니페스트를 물어보고 **번들을 내려받아 해시까지 대조**한다 — 그 대조가 없어서
+  *"배포 성공 · 매니페스트 정상 · 앱만 못 받음"* 을 한 번 겪었다([[ADR-137]] 정정 1).
+- **`runtimeVersion` 정책은 `fingerprint`** — 네이티브 그래프에서 **계산된다.** @capgo 시절
+  `minNativeVersion` 을 손으로 적던 자리이고, 안 올리면 앱이 죽는 종류의 사고라 사람이 기억할 일이
+  아니다([[ADR-137]] 결정 3).
+- **「스토어 업데이트 필요」만 우리 축에 남는다** — 런타임이 안 맞으면 프로토콜은 **204(업데이트 없음)**
+  를 주고, 그대로 두면 사용자에게 *"최신 버전입니다"* 라는 **거짓**이 보인다. 그래서 확인이 「최신」으로
+  떨어졌을 때만 Worker 의 `/latest` 를 한 번 더 묻는다([[ADR-137]] 결정 4).
+- **우리 축의 값 넷은 매니페스트 `extra` 에 싣는다** — `appVersion`(사용자 표시 버전) ·
+  `highlights`([[ADR-126]] 결정 2) · `sizeBytes` · `storeUrl`. **[[ADR-119]] 결정 1(원천 한 벌)과
+  배포 가드는 글자 하나 안 바뀐다.**
+- **채널이 폐기됐다**([[ADR-024]] 빌드 시점 분리) — 사이드로딩 베타를 위한 것이었고 App Store 출시로
+  용도가 끝났다. 그리고 그것이 **core 의 `import.meta.env` 벽을 없앴다**([[ADR-137]] 결정 7).
+- **`notifyAppReady()` 가 없다.** `expo-updates` 에는 그 신호를 받는 JS API 가 없고 네이티브
+  `ErrorRecovery` 가 부팅 크래시를 직접 관찰해 되돌린다. [[ADR-117]] 결정 2 가 지키려던 것은 살아 있고
+  **그것을 선언하는 주체가 런타임으로 옮겨 갔다.**
+- **셀룰러 경고가 없다**([[ADR-027]] 결정 6) — RN 에 네트워크 종류를 묻는 내장 API 가 없고
+  `@react-native-community/netinfo` 는 새 네이티브 의존성이라 재빌드를 부른다. 어댑터가 `'unknown'`
+  을 돌려 호출부의 기존 폴백(경고 생략)으로 떨어진다. 되살리려면 그 패키지가 선행 조건이다.
+
+### 최초 1회 설정 (사용자 작업)
+
+1. Cloudflare 가입(카드 불필요) → `cd workers/ota-manifest && npx wrangler deploy`
+2. 배포된 주소(`https://maple-routine-ota.<서브도메인>.workers.dev`)를 `app-rn/app.json` 의
+   `expo.updates.url` 에 넣는다 — **`/manifest` 경로까지** 포함해서.
+3. `expo-updates` 는 네이티브 의존성이라 **재빌드가 필요하다**(`npx expo prebuild` → 스토어 릴리스).
+   이 릴리스 자체는 OTA 로 못 나간다([[ADR-137]] 대가 2).
+
 ## 폐기된 정책 (history)
 - ~~번들 호스팅 = Cloudflare R2~~ → GitHub Releases(카드 등록 불필요)([[ADR-022]]).
 - ~~네이티브 `versionName` = `1.0`(2단)~~ → `1.0.0`(3단)([[ADR-024]]).
 - ~~베타 채널을 런타임 토글로~~ → 빌드 시점 분리([[ADR-024]]).
+- ~~베타 채널(`live-update-beta`)~~ → **폐기**([[ADR-137]] 결정 7). 사이드로딩 베타를 위한 것이었고
+  App Store 출시(2026-08-06)로 용도가 끝났다. 릴리스도 지웠다(1.0.46~1.0.48 이 담겨 있었다).
+- ~~`LiveUpdatePort` 가 프로토콜을 드러낸다(`httpGet` · `download({url, checksum})` ·
+  `applyBundle(id)`)~~ → **행위로 다시 그었다**(`check` · `download(onProgress)` · `apply`) —
+  셋 다 `expo-updates` 에 짝이 없어 두 앱이 한 포트를 쓸 수 없었다([[ADR-137]] 결정 6). 매니페스트
+  형식·버전 비교는 **capacitor 어댑터로 옮겼다**(지운 것이 아니다).
 - ~~조용한 자동 다운로드·적용~~ → 사용자 동의형(부팅은 체크만)([[ADR-027]]).
 - ~~배포 = Play Console 내부 테스트 트랙~~ → APK 직접 사이드로딩([[ADR-024]] 정정).
 - ~~스플래시 배경색 `#FB8101`(코드 단색)~~ → 이미지 기준 `#F58B0F` 로 6곳 통일(다크 `#D06100` 유지)([[ADR-029]] 정정).

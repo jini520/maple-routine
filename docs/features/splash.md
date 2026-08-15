@@ -26,6 +26,35 @@ HyperOS 다크모드 force-dark 가 밝은 스플래시 배경색을 앱 설정 
 
 **인라인 타이머만 그 모듈을 못 쓴다**(React 트리 밖·번들 밖이라 import 가 없다) — 그래서 DOM 커버는 직접 지우고 네이티브는 **전역 브릿지로** 부른다(`window.Capacitor?.Plugins?.SplashScreen?.hide()`, optional chaining + `try/catch`). **DOM 만 걷으면 iOS 는 화면만 돌아오고 터치는 죽은 채**이므로(`isUserInteractionEnabled` 는 네이티브 `tearDown()` 에서만 풀린다) 걷는 장치가 넷이면 넷 다 이 성질을 가져야 한다. 다만 **보장은 아니다** — 브릿지가 없거나(웹 개발 서버) 아직 준비되지 않았으면 optional chaining 이 조용히 통과한다. 그 경로와, 넷 다 실행되지 않는 경로(React 가 마운트조차 못 하는 실패)는 capgo 의 10초 롤백이 메운다.
 
+## RN 자산 — 아이콘·스플래시 ([[ADR-138]], 2026-08-14)
+
+RN 앱은 **Expo 자리표시자 아이콘**을 달고 있었다. 디자인은 이미 결정된 것이라 **다시 만들지 않고
+옮겼고**, 바뀐 것은 만드는 도구뿐이다(`capacitor-assets` → `expo prebuild`).
+
+- **원천은 capacitor 것을 읽는다** — 아이콘은 `resources/ios/icon.png`(**루트 `icon-only.png` 가
+  아니다** — 플랫폼 오버라이드가 우선이라 실제 출시본은 이쪽이다), 스플래시 로크업은
+  `resources/splash.png` 에서 **추출**했다(`drawable/splash_icon_lockup.png` 는 **옛 디자인**이라
+  흰 워드마크가 흰 배경에서 안 보인다). 산출물은 `packages/app-rn/assets/` 세 장.
+- **Android adaptive icon 은 여백을 소스에 넣는다** — `capacitor-assets` 는 XML 에서 fg/bg 를 둘 다
+  `inset 16.7%` 로 감쌌지만 **Expo 는 그 inset 을 안 넣는다**(생성된 XML 확인). 그래서 1024 캔버스
+  가운데에 아이콘을 **66.6%**(681px)로 얹었다 — 두 파이프라인이 같은 비율에 도달한다.
+  배경색 `#E6DECF` 는 아이콘 가장자리에서 **뽑은** 노트 종이색이라 이음매가 없다.
+- **다크모드에서도 같은 밝은 주황이다**(사용자 판정 · [[ADR-138]] 결정 4) — `#F58B0F` 하나를 두
+  모드가 함께 쓴다(`values-night/colors.xml` 이 비어 있고 iOS colorset 에 luminosity 변형이 없다).
+  [[ADR-025]] 의 다크 전용 `#D06100` 은 **RN 에서 쓰지 않는다.** 그 색이 막던 MIUI force-dark 는
+  **색이 아니라 구조**([[ADR-029]] 의 비트맵 `SplashActivity`)로 이겼던 것이고 그 구조가 Expo 로
+  안 넘어와 어차피 미검증이었다. **대가**: MIUI 다크에서 갈색으로 깎일 수 있다(iOS 는 force-dark 가
+  없어 무관).
+- **새 규칙**: `app.json` 을 고쳤으면 `expo prebuild` 를 돌려야 반영된다(네이티브가 커밋돼 있다).
+  그리고 prebuild 는 **fingerprint 를 바꾸므로 OTA 재배포가 뒤따라야 한다**([[ADR-137]] 정정 2).
+
+### `capacitor-assets` 의 함정 셋은 RN 에 없다
+
+옛 파이프라인의 주의사항(플랫폼 오버라이드 우선 · adaptive inset 구조 · 아이콘만 바꿀 때 스플래시
+보호)은 전부 **그 도구의 사정**이었다. Expo 는 `app.json` 한 곳을 읽고 아이콘·스플래시가 독립
+항목이라 서로를 덮지 않는다. **capacitor 앱이 살아 있는 동안에는 그 셋이 그대로 유효하다** —
+자산이 두 벌이라 아이콘을 바꾸면 양쪽을 고쳐야 한다([[ADR-138]] 대가).
+
 ## RN 어댑터 ([[ADR-128]], 2026-08-11)
 
 위 정책은 전부 **웹뷰 사정**이다. RN 구현(`packages/app-rn/src/native/adapters/rn-splash-screen.ts`)이

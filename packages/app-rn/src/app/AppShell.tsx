@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 
 import { useDropEffectStore } from '@core/features/drop-effect/store'
 import { useOnboardingStore } from '@core/features/onboarding/store'
+import { useLiveUpdateStore } from '@core/features/live-update/store'
 import { useThemeStore } from '@core/features/theme/store'
 import { useTrackingModeStore } from '@core/features/tracking-mode/store'
 import { startAds } from '@core/features/ads/tab-switch-ad'
@@ -36,19 +37,21 @@ const MIN_SPLASH_MS = 1000
  * 5. **탭 스토어 선하이드레이션** — 온보딩이 완료된 뒤에만([[ADR-101]] 결정 2·6).
  * 6. **스플래시 내리기** — 최소 표시 시간을 채운 뒤([[ADR-025]]).
  *
- * ## 이 파일이 **부르지 않는** 것 — `LiveUpdatePort`
+ * ## 7. **OTA 부팅 확인** — [[ADR-137]] 이 되살린 자리
  *
- * OTA 는 [[ADR-128]] 결정 7 이 별도 ADR 로 미뤄 둔 프로토콜 재설계라, 웹이 부팅에서 하던 둘이
- * 여기 없다 — `checkOnBoot()`(`main.tsx`)와 `notifyLiveUpdateReady()`([[ADR-117]] 결정 2).
- * **부르면 부팅이 죽는다**: 포트가 던지고(`native/adapters/not-implemented.ts`), 그 이전에
- * core 의 live-update 스토어는 **import 하는 것만으로** 죽는다(`import.meta.env` — 실측).
- * 그 계약을 `src/__tests__/boot-order.test.tsx` 가 소스에서 직접 지킨다.
+ * 예전에 이 자리는 *"이 파일이 부르지 않는 것"* 이었다: 포트가 던지고, 그 이전에 core 의
+ * live-update 스토어를 **import 하는 것만으로** 죽었다(`import.meta.env`). 벽 둘이 다 사라져
+ * ([[ADR-137]] 결정 6·7) 웹 `main.tsx` 가 하던 `checkOnBoot()` 를 그대로 부른다.
  *
- * 딸려 오는 공백 둘을 적어 둔다.
- * - [[ADR-117]] 결정 2 의 **자동 롤백이 없다.** 웹은 이 자리에서 "정상"을 선언해 10초 안에 그
- *   호출이 없으면 capgo 가 직전 번들로 되돌렸다. RN 에는 되돌릴 번들 자체가 아직 없다.
- * - [[ADR-126]] 결정 4 의 **「업데이트를 마쳤어요」가 안 뜬다.** 그 판정(`consumeJustUpdated`)이
- *   스토어의 `checkOnBoot` 안에 있다.
+ * **가장 마지막이고, 던져도 부팅을 막지 않는다**(`void`). 확인은 곁가지라 실패해도 앱은 떠야
+ * 하고([[ADR-065]] 결정 2 가 자동 확인 실패를 조용히 넘기는 것과 같은 판단), 스플래시를 내리는
+ * 6번보다 뒤라 네트워크가 느린 사용자를 흰 화면에 붙들지 않는다.
+ *
+ * `notifyLiveUpdateReady()` 는 **부르지 않는다.** [[ADR-117]] 결정 2 가 이 자리를 고른 이유
+ * (*"렌더가 던지는 번들이 SUCCESS 로 찍혀 영구히 박히면 안 된다"*)는 여전히 유효하지만,
+ * `expo-updates` 에는 그 신호를 받는 JS API 가 없고 네이티브가 직접 관찰해 되돌린다
+ * (`rn-live-update.ts` 의 `notifyAppReady` 주석 — 전수 확인). 즉 **자동 롤백은 있고, 그것을
+ * 선언하는 주체가 우리 코드에서 런타임으로 옮겨 갔다.**
  *
  * ## `ErrorBoundary` 는 이 파일이 아니라 `App.tsx` 가 두른다
  *
@@ -124,6 +127,16 @@ export function AppShell(): React.JSX.Element {
     return () => {
       clearTimeout(timer)
     }
+  }, [])
+
+  // 7. OTA 부팅 확인 — 체크만 한다([[ADR-027]] 결정 1). 웹 `main.tsx` 가 하던 그 호출이고,
+  // [[ADR-137]] 이 벽 둘을 없애며 이 자리로 돌아왔다(파일 머리 7번).
+  //
+  // `void` 인 것이 요점이다 — 확인은 곁가지라 실패해도 앱은 떠야 한다. 스토어가 실패를
+  // `check-error` 로 삼켜 던지지 않지만(그쪽 `check()`), 여기서 await 하지 않는 것으로 «부팅이
+  // 네트워크를 기다리지 않는다» 를 구조로 못박는다.
+  useEffect(() => {
+    void useLiveUpdateStore.getState().checkOnBoot()
   }, [])
 
   return (

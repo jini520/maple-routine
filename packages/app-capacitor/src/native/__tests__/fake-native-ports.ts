@@ -76,10 +76,11 @@ export function installNoopNativePorts(): void {
     // 웹과 같다 — 런타임이 없으므로 아래 조회들은 호출부의 가드에 막혀 도달하지 않는다.
     isSupported: () => false,
     notifyAppReady: async () => {},
-    getCurrent: async () => ({ bundleVersion: '0.0.0', nativeVersion: '0.0.0' }),
-    httpGet: async () => ({ status: 0, data: null }),
-    download: async () => ({ id: '' }),
-    applyBundle: async () => {},
+    getCurrentVersion: async () => '0.0.0',
+    getChannel: () => 'production',
+    check: async () => ({ kind: 'unsupported' }),
+    download: async () => {},
+    apply: async () => {},
     getNetworkType: async () => 'unknown',
     openStore: () => {},
   })

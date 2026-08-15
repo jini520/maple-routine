@@ -46,7 +46,7 @@ import * as nativePorts from '@core/native/ports'
 import * as storagePorts from '@core/storage/ports'
 
 import { installPorts } from '../boot'
-import { notImplementedLiveUpdatePort } from '../native/adapters/not-implemented'
+import { rnLiveUpdatePort } from '../native/adapters/rn-live-update'
 import { rnAdsPort } from '../native/adapters/rn-ads'
 import { rnBackGesturePort } from '../native/adapters/rn-back-gesture'
 import { rnColorSchemePort } from '../native/adapters/rn-color-scheme'
@@ -74,7 +74,7 @@ const WIRED: [string, () => unknown, unknown][] = [
   ['getSystemBarsPort', nativePorts.getSystemBarsPort, rnSystemBarsPort],
   ['getThemeAppearancePort', nativePorts.getThemeAppearancePort, rnThemeAppearancePort],
   ['getBackGesturePort', nativePorts.getBackGesturePort, rnBackGesturePort],
-  ['getLiveUpdatePort', nativePorts.getLiveUpdatePort, notImplementedLiveUpdatePort],
+  ['getLiveUpdatePort', nativePorts.getLiveUpdatePort, rnLiveUpdatePort],
 ]
 
 function resetPorts(): void {
@@ -126,30 +126,6 @@ describe('installPorts()', () => {
   })
 })
 
-/**
- * 아직 매핑되지 않은 포트의 메서드를 **인자 없이** 부른다. 인자를 채우지 않는 것이 요점이다 —
- * 이 구현들은 무엇을 받든 던지므로, 인자를 지어내면 "그 값이라서 던졌나" 하는 여지가 생긴다.
- */
-function callBare(fn: unknown): unknown {
-  return (fn as () => unknown)()
-}
-
-/** 동기 throw 든 거부된 Promise 든 받아서 에러를 돌려준다. 어느 쪽도 아니면 실패시킨다. */
-async function captureFailure(fn: unknown): Promise<Error> {
-  let result: unknown
-  try {
-    result = callBare(fn)
-  } catch (error) {
-    return error as Error
-  }
-  try {
-    await result
-  } catch (error) {
-    return error as Error
-  }
-  throw new Error('던지지도 거부하지도 않았다 — 조용한 no-op 이다')
-}
-
 // 이 목록을 떠난 것이 셋이다. `ThemeAppearancePort` 는 step 1(theme-system)에서, `BackGesturePort`
 // 는 step 2(navigation)에서, `SystemBarsPort` 는 step 6(templates)에서 — 셋 다 이제 실구현이
 // 배선되므로 위 `WIRED` 가 그 자리를 본다. 셋 다 **절반씩 갈렸고**(한쪽은 실구현, 다른 쪽은 던지거나
@@ -159,81 +135,11 @@ async function captureFailure(fn: unknown): Promise<Error> {
 // 그래서 *"3단계 몫"* 으로 남은 포트는 **하나도 없다.** 이 자리에 있던 describe 블록은 지웠다 —
 // 빈 목록을 돌리는 테스트는 언제나 초록이라 아무것도 지키지 않는다.
 
-describe('아직 매핑되지 않은 포트 — LiveUpdatePort', () => {
-  const cases = Object.keys(notImplementedLiveUpdatePort).map(
-    (method) =>
-      [method, (notImplementedLiveUpdatePort as unknown as Record<string, unknown>)[method]] as const,
-  )
-
-  it('여덟 메서드를 빠짐없이 검사한다', () => {
-    expect(cases.map(([method]) => method)).toEqual([
-      'isSupported',
-      'notifyAppReady',
-      'getCurrent',
-      'httpGet',
-      'download',
-      'applyBundle',
-      'getNetworkType',
-      'openStore',
-    ])
-  })
-
-  it.each(cases)('LiveUpdatePort.%s() 는 던진다', async (_method, fn) => {
-    await expect(captureFailure(fn)).resolves.toBeInstanceOf(Error)
-  })
-
-  // 이쪽은 뷰 레이어가 아니라 **프로토콜**이 없다(@capgo → expo-updates). 3단계라고 말하면 틀린
-  // 안내가 되므로 메시지가 갈려야 한다.
-  it.each(cases)('LiveUpdatePort.%s() 는 단계 3 이 아니라 별도 ADR 을 가리킨다', async (method, fn) => {
-    const error = await captureFailure(fn)
-
-    expect(error.message).toContain('ADR-128')
-    expect(error.message).toContain('결정 7')
-    expect(error.message).toContain(`LiveUpdatePort.${method}()`)
-    expect(error.message).not.toContain('단계 3')
-  })
-})
-
-describe('시그니처에 맞는 실패 모양', () => {
-  // 동기 시그니처라 Promise 를 돌려줄 수 없다. `isSupported()` 가 동기인 것 자체가 계약이다 —
-  // 매니페스트를 받기 전에 판정해야 지원하지 않는 환경에서 네트워크가 안 나간다.
-  it('isSupported · openStore 는 동기로 던진다', () => {
-    expect(() => callBare(notImplementedLiveUpdatePort.isSupported)).toThrow()
-    expect(() => callBare(notImplementedLiveUpdatePort.openStore)).toThrow()
-  })
-
-  // 동기 `throw` 로 두면 `await` 없이 `.catch()` 만 단 호출부에서 예외가 그대로 터진다
-  // (`rn-hunting-timer.ts` 와 같은 판단).
-  //
-  // 호출을 **썽크로** 두고 하나씩 만들어 바로 소비한다 — 배열에 Promise 를 한꺼번에 만들어 두면
-  // 중간에서 동기로 던졌을 때 앞엣것들이 처리되지 않은 거부로 남아 러너 자체가 죽는다(깨끗한
-  // 실패로 안 보인다).
-  const ASYNC_CALLS: [string, () => unknown][] = [
-    ['LiveUpdatePort.notifyAppReady', () => notImplementedLiveUpdatePort.notifyAppReady()],
-    ['LiveUpdatePort.getCurrent', () => notImplementedLiveUpdatePort.getCurrent()],
-    [
-      'LiveUpdatePort.httpGet',
-      () => notImplementedLiveUpdatePort.httpGet({ url: 'https://example.test' }),
-    ],
-    [
-      'LiveUpdatePort.download',
-      () =>
-        notImplementedLiveUpdatePort.download(
-          { url: 'https://example.test', version: '1.0.0', checksum: 'x' },
-          () => {},
-        ),
-    ],
-    ['LiveUpdatePort.applyBundle', () => notImplementedLiveUpdatePort.applyBundle('id')],
-    ['LiveUpdatePort.getNetworkType', () => notImplementedLiveUpdatePort.getNetworkType()],
-  ]
-
-  it.each(ASYNC_CALLS)('%s 는 동기 throw 가 아니라 거부된 Promise 다', async (_label, call) => {
-    let result: unknown
-    expect(() => {
-      result = call()
-    }).not.toThrow()
-
-    expect(result).toBeInstanceOf(Promise)
-    await expect(result).rejects.toThrow()
-  })
-})
+// **이 자리에 있던 두 describe 블록을 지웠다**([[ADR-137]]).
+//
+// `LiveUpdatePort` 가 실구현으로 채워지면서(`rn-live-update.ts`) `not-implemented.ts` 가 비었고,
+// 파일째 사라졌다. 그 블록들이 지키던 계약(*"왜 없는지를 말하며 던진다"*)은 **지킬 대상이 없어져서**
+// 폐기된 것이지 완화된 것이 아니다 — 위 `WIRED` 가 이제 그 자리에 실어댑터가 있음을 본다.
+//
+// 같은 파일 머리가 이미 적어 둔 판단을 그대로 적용한 것이다: *"빈 목록을 돌리는 테스트는 언제나
+// 초록이라 아무것도 지키지 않는다."*
