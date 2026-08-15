@@ -10,7 +10,7 @@
  * | 관계 | 왜 | 최소(6테마) |
  * |---|---|---|
  * | 테두리 ↔ 페이지 배경 | 바가 페이지에서 떠 보이게 하는 것은 «색» 이 아니라 **가장자리**다 | 1.35 |
- * | 알약 ↔ 바 | 활성 자리가 판으로 읽혀야 한다 | 1.16 |
+ * | 알약 ↔ 바 | 활성 자리가 판으로 읽혀야 한다 — 다만 **라이트는 «옅게»**(정정 28) | 다크 1.16 · 라이트 1.04 |
  * | 활성 라벨 ↔ 알약 | **글자는 읽혀야 한다** | 8.8 |
  * | 비활성 라벨 ↔ 바 | 〃 | 5.88 |
  *
@@ -43,7 +43,12 @@ function withAlpha(hex: string, alpha: number): string {
 export interface BarColors {
   /** 캡슐 바탕 — 그 모드에서 **가장 밝은 표면**. */
   readonly bar: string
-  /** 활성 알약. 바와 갈리되 그 위 글자(`text`)가 읽히는 밝기를 지킨다. */
+  /**
+   * 활성 알약 — **유리가 그리는 그 판**이다(`neutralPlate`, 정정 28). ← 원도 같은 값을 쓴다.
+   *
+   * 라이트는 무채색이라 바와 1.04 밖에 안 갈린다. 그 자리를 메우는 것은 **그림자**고(정정 22·28),
+   * 그래서 이 값과 `PLATE_SHADOW` 는 함께 움직인다 — 한쪽만 세게 하면 유리 쪽과 다시 갈린다.
+   */
   readonly pill: string
   /** 테두리 — **페이지와 바를 가르는 것은 이 선이다**(색이 아니라). */
   readonly edge: string
@@ -123,6 +128,31 @@ function liftAboveMuted(accent: string, muted: string): string {
   return l >= target ? accent : oklchToHex({ l: target, c, h })
 }
 
+/**
+ * 폴백이 그리는 «판» — 유리가 그리는 그 판과 **같은 물건**이어야 한다 (정정 28).
+ *
+ * 유리 알약은 색을 얹지 않는다. `clear` 재질이 얹는 하이라이트를 `text` α.05 로 **덜어낸** 판이고
+ * (정정 18), 재질이 배경을 굴절시키며 채도까지 함께 빼 준다 — iOS 실측 (246,245,245) 가 바
+ * (254,243,249) 옆에서 «무채색 렌즈» 로 읽히는 이유다.
+ *
+ * 폴백에는 그 재질이 없으므로 둘 다 여기서 직접 한다 — 바에서 `text` 쪽으로 **아주 조금** 밀고
+ * 채도를 **0** 으로 뺀다.
+ *
+ * **맞추는 것은 tint 가 아니라 «유리의 순 결과» 다.** tint 만 옮기면(α.05 = 0.95) 판이 한참 어둡다
+ * — 유리는 tint 로 내린 만큼을 재질의 하이라이트로 도로 올리기 때문이다(정정 18 실측: tint 를 아예
+ * 빼도 뒤보다 +11.4). 그래서 상수는 그 **합**을 실측해서 정한다: 0.98 에서 엔젤릭버스터가
+ * `#F5F5F5` 로, iOS 실기 실측 (246,245,245) 과 **한 자리 안**에서 만난다.
+ *
+ * 대가는 `렌`(표면이 순백)에서 판이 바와 1.04 밖에 안 갈린다는 것이다. 거기서는 **그림자가 판을
+ * 진다** — 유리 쪽도 사정이 같고(정정 22), 그래서 폴백 그림자를 유리와 같은 값으로 올렸다.
+ *
+ * **세기를 더 주고 싶어지면 그림자를 볼 것.** 판이 색을 지기 시작하면 정정 1 이 되돌린 그 자리
+ * — «강조는 판이 아니라 글리프가 진다» — 로 다시 간다. 층은 그림자가 만든다(정정 22·28).
+ */
+function neutralPlate(bar: string, text: string): string {
+  return withChroma(mixOklab(bar, text, 0.98), 0)
+}
+
 export function resolveBarColors(theme: ThemeDefinition): BarColors {
   if (theme.mode === 'dark') {
     const pill = theme.border
@@ -143,8 +173,6 @@ export function resolveBarColors(theme: ThemeDefinition): BarColors {
     }
   }
 
-  const pill = mixOklab(theme.primaryTint, theme.primary, 0.85)
-
   return {
     glassTint: withAlpha(theme.surface, 0.3),
     glassEdge: 'rgba(255,255,255,0.6)',
@@ -152,8 +180,9 @@ export function resolveBarColors(theme: ThemeDefinition): BarColors {
     accent: theme.primaryInk,
     muted: withChroma(theme.textMuted, 0),
     bar: theme.surface,
-    // 틴트 단독은 바(거의 흰색)와 1.11 밖에 안 갈린다. `primary` 를 조금 섞어 판으로 세운다.
-    pill,
+    // 유리가 그리는 그 판이다 (정정 28) — `pillOnGlass` 와 **같은 방향**(바에서 `text` 쪽으로
+    // 아주 조금)이고, 유리 재질이 덤으로 빼 주는 채도까지 여기서 직접 뺀다.
+    pill: neutralPlate(theme.surface, theme.text),
     // 라이트에서는 `border` 가 이미 «표면 가장자리» 로 쓰이는 값이다 — 그대로 쓴다.
     edge: theme.border,
   }

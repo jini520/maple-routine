@@ -28,9 +28,15 @@
  * 이라 배경을 굴절시키고 가장자리에 하이라이트가 돈다 — 레퍼런스의 그 «Liquid Glass» 다. 색은
  * 얹지 않고 `tintColor` 로만 아주 옅게 넣는다.
  *
- * **iOS 26 미만·안드로이드에서는 재질이 없다.** `isLiquidGlassAvailable()` 이 거짓이면 예전 그대로
- * 불투명 캡슐 + 테두리로 떨어진다 — 그쪽이 «못생긴 폴백» 이 아니라 그 자체로 완성된 모습이어야
- * 하므로, 색 관계(`bar-colors.ts`)는 유리와 무관하게 그대로 지킨다.
+ * ## 재질이 없는 쪽은 **흉내 내지 않는다 — 색만 맞춘다** (정정 29)
+ *
+ * `expo-glass-effect` 는 iOS 26 이상에서만 산다. 그 아래 iOS 와 안드로이드에는 이 재질이 없고,
+ * **없는 것을 흉내 내지 않는다**(사용자 지시) — 그쪽은 불투명 캡슐로 두고 **색 관계만** 유리와
+ * 같은 자리에 세운다(`bar-colors.ts` 의 `neutralPlate`).
+ *
+ * 블러로 흉내 내는 판을 한 번 만들어 봤고 되돌렸다. 재질은 흉내가 되는데 대가가 셋이었다 —
+ * 대상을 잘못 주면 네이티브가 무한 재귀로 죽고(실기기 크래시), 스크롤 자크가 3.0 → 11.0% 로 뛰고,
+ * 그 모든 것이 **플랫폼이 주지 않는 것을 억지로 만든** 값이다. 자세한 것은 [[ADR-132]] 정정 29.
  *
  * ## 층 전환 애니메이션
  *
@@ -144,23 +150,65 @@ const BACK_CIRCLE = 48
 const TRAVEL_MS = 240
 
 /**
+ * 그림자 한 겹 — **불투명도 · 반경 · 아래로 민 거리**.
+ *
+ * `shadowOpacity` 가 이름에 남아 있는 것은 그 값이 테마 `shadowColor` 의 알파(`59` = 0.35)와
+ * **곱해지는** 자리이기 때문이다(아래 `boxShadow`). 0.65 는 과한 값이 아니라 실효 0.23 이다.
+ */
+interface ShadowLayer {
+  readonly opacity: number
+  readonly radius: number
+  readonly y: number
+}
+
+/**
+ * `shadow*` → `boxShadow` **번역기** ([[ADR-132]] 정정 28).
+ *
+ * ## 왜 옮기는가
+ *
+ * `shadowOpacity` · `shadowRadius` · `shadowOffset` 은 **iOS 전용 프롭**이다. 그것으로 쓰는 동안
+ * 정정 22 가 맞춰 둔 층은 **안드로이드에 하나도 도달하지 않았고**, 거기서는 `elevation` 의 기본
+ * 그림자가 바 · 알약 · ← 셋을 같은 세기로 그렸다. 폴백 알약이 분홍이라 그 부재가 안 보였을 뿐이고
+ * (색으로 이미 갈렸으니까), 그 색을 빼는 순간(`bar-colors` 의 `neutralPlate`) **그림자가 유일한
+ * 층 장치**가 된다 — 그래서 이 변경과 그 변경은 한 쌍이다.
+ *
+ * `boxShadow` 는 RN 0.76+ 가 양 플랫폼에 같은 그림자를 그리는 자리다(안드로이드는 새 아키텍처
+ * 전용 — 이 앱은 `newArchEnabled=true`).
+ *
+ * ## 옮기면서 **두 값이 번역된다** — 그대로 옮기면 다른 그림자가 된다
+ *
+ * - **블러는 두 배다.** `boxShadow` 의 반경은 CSS 정의이고, RN 의 iOS 구현이 그것을
+ *   `shadowRadius = blurRadius / 2` 로 되돌린다(`RCTBoxShadow.mm`). 그래서 여기서 ×2 로 낸다.
+ * - **알파는 미리 곱한다.** iOS 는 `shadowColor` 의 알파와 `shadowOpacity` 를 곱하는데
+ *   `boxShadow` 는 색의 알파를 그대로 쓴다. 곱을 여기서 한 번 해 두면 실효값이 안 변한다.
+ */
+function boxShadow(shadowColor: string, { opacity, radius, y }: ShadowLayer): string {
+  const base = shadowColor.slice(0, 7)
+  const themeAlpha = Number.parseInt(shadowColor.slice(7, 9) || 'ff', 16) / 255
+  const alpha = Math.round(themeAlpha * opacity * 255)
+    .toString(16)
+    .padStart(2, '0')
+
+  return `0px ${y}px ${radius * 2}px ${base}${alpha}`
+}
+
+/** 바 자신의 그림자 — **아주 약하게**(사용자 지시). 층은 알약 쪽에서 만든다. */
+const BAR_SHADOW: ShadowLayer = { opacity: 0.22, radius: 14, y: 5 }
+
+/**
  * 활성 알약과 ← 가 **공유하는** 층 그림자.
  *
  * 둘은 «바 위에 한 겹 떠 있는 판» 이라는 같은 물건이라 같은 값을 써야 한다(사용자 지시, 2026-08-13 —
  * ← 도 알약과 같은 디자인으로, 크기만 그대로). 값을 각자 적어 두면 한쪽만 손볼 때 조용히 갈린다.
  *
- * **유리 쪽 값이 큰 것은 과해서가 아니라 두 번 깎이기 때문이다.** 테마의 `shadowColor` 는 알파가
- * `59`(0.35) 라 `shadowOpacity` 와 곱해진다 — 0.26 이면 실효 0.09 로, 라이트에서는 알약 자체가
- * 바와 같은 밝기(실측 −2.8)라 **층이 아예 안 보였다**(사용자 판정 — *"라이트 테마에 active 가
- * 다른 것들이랑 구분이 잘 안돼"*). 0.65 여도 실효는 0.23 이다.
+ * **값이 큰 것은 과해서가 아니라 두 번 깎이기 때문이다.** 테마의 `shadowColor` 알파(0.35)와
+ * 곱해져 실효 0.23 이다 — 0.26(실효 0.09)일 때 라이트에서는 **층이 아예 안 보였다**(사용자 판정 —
+ * *"라이트 테마에 active 가 다른 것들이랑 구분이 잘 안돼"*).
  *
- * 라이트에만 주지 않는 이유: 다크에서도 과하지 않다(어두운 바 위의 어두운 그림자라 은은하다).
- * 폴백(`solid`)은 그대로 둔다 — 그쪽 알약은 불투명 색이라 이미 갈린다.
+ * **유리와 폴백이 같은 값을 쓴다**(정정 28). 갈라 뒀던 근거는 *"폴백 알약은 불투명 색이라 이미
+ * 갈린다"* 였는데, 그 알약에서 색을 뺐으므로 근거 자체가 사라졌다.
  */
-const PLATE_SHADOW = {
-  glass: { shadowOpacity: 0.65, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } },
-  solid: { shadowOpacity: 0.2, shadowRadius: 5, shadowOffset: { width: 0, height: 2 } },
-} as const
+const PLATE_SHADOW: ShadowLayer = { opacity: 0.65, radius: 10, y: 3 }
 /** 층 전환(페이드·← 열림). 알약보다 조금 짧아 알약이 마지막에 자리를 잡는다. */
 const LAYER_MS = 280
 /** 들어오는 행이 오른쪽에서 밀려 들어오는 거리. 크면 «날아온다» 가 되어 층 관계가 흐려진다. */
@@ -301,7 +349,11 @@ function BarItem({
         />
         <Text
           numberOfLines={1}
-          style={{ color: active ? accent : muted }}
+          // `includeFontPadding` 은 **안드로이드에서만 읽히는 값**이고, 기본(참)일 때 글자 상자에
+          // 폰트 메트릭 여백을 더해 iOS 보다 큰 상자를 만든다 ([[ADR-132]] 정정 28). 실측으로
+          // 아이콘→라벨이 27 → 30px 이 되고 블록이 5px 자라 **아이콘이 3px 위로 밀렸다** — 두
+          // 플랫폼이 같은 리듬을 쓰려면 여기서 꺼야 한다(iOS 는 이 값을 무시한다).
+          style={{ color: active ? accent : muted, includeFontPadding: false }}
           className="text-[10.5px] font-normal tracking-[-0.01em]"
         >
           {label}
@@ -321,7 +373,8 @@ export function BottomBar({ state, navigation }: BottomTabBarProps): React.JSX.E
   const bar: BarState = useMemo(() => ({ page, ...record }), [page, record])
 
   const colors = resolveBarColors(definition)
-  // iOS 26 이상에서만 재질이 있다. 아니면 불투명 캡슐로 떨어진다(위 «유리» 절).
+  // iOS 26 이상에서만 **Liquid Glass** 가 있다. 그 밖(안드로이드 · iOS 26 미만)은 블러 재질이다
+  // (정정 29) — 재질이 아예 없는 «불투명 캡슐» 로 떨어지지는 않는다.
   const glass = isLiquidGlassAvailable()
   const layer = barLayer(bar)
   const subs = visibleSubs(bar)
@@ -510,7 +563,8 @@ export function BottomBar({ state, navigation }: BottomTabBarProps): React.JSX.E
         padding: BAR_PADDING,
         borderRadius: 999,
         // 유리일 때는 바탕을 `GlassView` 가 그린다 — 여기에 색을 주면 그 재질이 가려진다
-        // (이전 판이 정확히 그 실수였다).
+        // (이전 판이 정확히 그 실수였다). 유리가 없는 쪽은 **불투명 캡슐**이고, 그쪽을 유리처럼
+        // 흉내 내지 않는 것이 정정 29 다.
         backgroundColor: glass ? 'transparent' : colors.bar,
         // **페이지와 바를 가르는 것은 색이 아니라 이 선이다**(정정 12). 유리에서도 같은 선이
         // 가장자리를 잡아 준다 — Liquid Glass 자체의 하이라이트에 더해지는 얇은 테두리다.
@@ -522,11 +576,7 @@ export function BottomBar({ state, navigation }: BottomTabBarProps): React.JSX.E
         // **약하되 «떠 있음» 은 남는 값**(사용자 지시 둘을 함께 만족). 예전 값(불투명도 1 · radius 22 ·
         // y 9)은 «두껍다» 였고, 0.18/10/3 까지 내렸더니 이번엔 **입체감이 사라졌다**. 그림자는 층을
         // 만드는 세 장치 중 하나일 뿐이라(나머지: 알약 자체 그림자 · 위쪽 광택) 혼자 다 지지 않는다.
-        shadowColor: definition.shadowColor,
-        shadowOpacity: 0.22,
-        shadowRadius: 14,
-        shadowOffset: { width: 0, height: 5 },
-        elevation: 3,
+        boxShadow: boxShadow(definition.shadowColor, BAR_SHADOW),
       }}
     >
       {glass ? (
@@ -569,9 +619,7 @@ export function BottomBar({ state, navigation }: BottomTabBarProps): React.JSX.E
             // 뒤 콘텐츠 대신 그 색을 굴절시킨다 — 재질이 아니라 «흰 알약» 이 된다(사용자 판정,
             // 2026-08-13). 그림자 모양은 `borderRadius` 에서 나오므로 뒤판 없이도 둥글다.
             backgroundColor: glass ? 'transparent' : colors.pill,
-            shadowColor: definition.shadowColor,
-            ...(glass ? PLATE_SHADOW.glass : PLATE_SHADOW.solid),
-            elevation: 3,
+            boxShadow: boxShadow(definition.shadowColor, PLATE_SHADOW),
           }}
         >
           {glass ? (
@@ -713,9 +761,7 @@ export function BottomBar({ state, navigation }: BottomTabBarProps): React.JSX.E
           borderRadius: 999,
           transform: [{ translateX: backShift }, { scale: backScale }],
           backgroundColor: glass ? 'transparent' : colors.pill,
-          shadowColor: definition.shadowColor,
-          ...(glass ? PLATE_SHADOW.glass : PLATE_SHADOW.solid),
-          elevation: 3,
+          boxShadow: boxShadow(definition.shadowColor, PLATE_SHADOW),
         }}
       >
         {glass ? (
