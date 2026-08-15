@@ -101,9 +101,6 @@ import {
 import { CrystalSummaryChip } from './HeadlineChips'
 import { ItemRevenuePopover, useAnchoredPopover } from './ItemRevenuePopover'
 
-/** 웹 `pt-[calc(1rem+var(--sa-top))]` 의 상수 몫 — 공용 `PageHeader` 와 같은 값이다. */
-const HEADER_TOP_PADDING_PX = 16
-
 export function BossProfitScreen(): React.JSX.Element {
   const {
     status,
@@ -198,11 +195,7 @@ export function BossProfitScreen(): React.JSX.Element {
     // 웹의 `min-h-[calc(100dvh …)]` 자리는 `flex-1` 이다(탭 상자가 이미 탭바를 뺀 크기다).
     // 히스토리·가격 진입점은 두지 않는다([[ADR-071]] 결정 7 · [[ADR-124]] 결정 8).
     return (
-      <View
-        testID="screen-Profit"
-        className="flex-1 p-4"
-        style={{ paddingTop: insets.top + HEADER_TOP_PADDING_PX }}
-      >
+      <View testID="screen-Profit" className="flex-1 p-4" style={{ paddingTop: insets.top }}>
         <Text className="text-lg font-semibold text-text">보스 수익</Text>
 
         <View className="flex-1 items-center justify-center">
@@ -264,12 +257,9 @@ export function BossProfitScreen(): React.JSX.Element {
 
   const header = (
     // 공용 `PageHeader` 를 쓰지 않는 이유는 파일 머리 ① — 그 셸의 하단 페이드를 이 화면은 금지한다
-    // ([[ADR-047]] 결정 6). 나머지 값은 그 컴포넌트와 같다.
-    <View
-      testID="page-header"
-      className="z-10 px-4 pb-2"
-      style={{ paddingTop: insets.top + HEADER_TOP_PADDING_PX }}
-    >
+    // ([[ADR-047]] 결정 6). 나머지 값은 그 컴포넌트와 같고, **상단 여백을 더하지 않는 것도 함께다**
+    // ([[ADR-139]] — 웹 `pt-[calc(1rem+var(--sa-top))]` 의 상수 몫을 옮기지 않는다).
+    <View testID="page-header" className="z-10 px-4 pb-2" style={{ paddingTop: insets.top }}>
 
       <View className="gap-4">
         {/* 히스토리 진입점은 탭 줄이 아니라 **제목 줄 우측**이고 아이콘이 아니라 글자다

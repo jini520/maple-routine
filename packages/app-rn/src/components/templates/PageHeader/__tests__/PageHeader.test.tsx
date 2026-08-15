@@ -28,12 +28,17 @@ const 내용 = <Text>내용</Text>
 const HIDDEN = { includeHiddenElements: true } as const
 
 describe('PageHeader', () => {
-  it('상단 안전영역 + 16px 을 자기 패딩으로 먹는다 (웹 `pt-[calc(1rem+var(--sa-top))]`)', async () => {
+  // ★ [[ADR-139]] — **딱 안전영역만큼이다.** 웹의 `pt-[calc(1rem+var(--sa-top))]` 에서 상수 몫
+  // 1rem 을 뺐다: 그 16 은 불투명 헤더 판의 안쪽 여백이자 고정 헤더와 상태바의 분리였는데,
+  // RN 헤더는 배경을 안 칠하고([[ADR-133]]) 고정도 아니라([[ADR-131]]) 둘 다 해당이 없다.
+  // **`toBe` 로 못 박는 이유**는 이 값이 [[ADR-134]] 상단 페이드의 끝선과 **같은 선**이 됐기
+  // 때문이다 — 한쪽이 움직이면 제목이 갉히거나 띄워지고, 그 어긋남은 여기서만 보인다.
+  it('상단 안전영역만큼만 자기 패딩으로 먹는다 — 여백을 더하지 않는다 ([[ADR-139]])', async () => {
     const { getByTestId } = await renderOverlay(<PageHeader>{내용}</PageHeader>)
 
-    expect(flattenStyle(getByTestId('page-header').props.style)).toMatchObject({
-      paddingTop: 테스트_안전영역.insets.top + 16,
-    })
+    expect(flattenStyle(getByTestId('page-header').props.style).paddingTop).toBe(
+      테스트_안전영역.insets.top,
+    )
   })
 
   // ★ [[ADR-133]] 회귀 가드 — **헤더는 자기 배경을 칠하지 않는다.**

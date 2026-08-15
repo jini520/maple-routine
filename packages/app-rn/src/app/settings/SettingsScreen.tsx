@@ -15,7 +15,8 @@
 //    콘텐츠를 y=0 으로 끌어올려서, 헤더 없는 이 화면이 `pt-[calc(1rem+var(--sa-top))]` 로 직접
 //    되돌려야 했다(실기기 보고 2026-08-09 — 제목이 노치에 깔렸다). RN 의 `ScreenScroll` 은 헤더가
 //    없으면 **스크롤포트 상자 자체를** `insets.top` 만큼 내리므로(그 파일 「상단」절) 그 트릭도
-//    되돌릴 것도 없다. 남는 것은 웹의 `1rem` 몫인 `pt-4` 뿐이다.
+//    되돌릴 것도 없다. 웹의 `1rem` 몫인 `pt-4` 도 **없다**([[ADR-139]]) — 헤더가 있는 화면들이
+//    그 16 을 버렸고, 이 화면만 남기면 제목 높이가 탭마다 갈린다.
 // ② **`<Outlet />` 이 사라진다.** 하위 페이지는 이 화면의 자식 라우트가 아니라 **루트 스택 위로
 //    push** 된다([[ADR-120]] 결정 4 를 구조로 만족 — `RootNavigator` 주석). 그래서 이 화면은
 //    떠날 때 언마운트되지 않고 아래에 남고, 보던 스크롤 자리도 `ScrollView` 가 그대로 들고 있다.
@@ -76,7 +77,7 @@ export function SettingsScreen(): React.JSX.Element {
         {/* `screen-Settings` 는 나머지 세 탭 화면과 같은 관례다(`screen-Content`·`-Boss`·`-Profit`).
             이것이 없어서 내비게이션 테스트가 **자리표시자의 같은 testID 를 보고 초록**이었고,
             설정 탭이 통째로 빠진 것을 아무도 못 잡았다(2026-08-13 실기기 관측). */}
-        <View className="gap-4 px-4 pb-4 pt-4" testID="screen-Settings">
+        <View className="gap-4 px-4 pb-4" testID="screen-Settings">
           <Text className="text-lg font-semibold text-text">설정</Text>
 
           {/* 값을 고르는 행 — 배지(현재값) + chevron 병기(ADR-118 결정 4). */}

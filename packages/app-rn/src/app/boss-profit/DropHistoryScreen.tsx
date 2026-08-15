@@ -66,9 +66,6 @@ import { Svg } from '../../lib/nativewind-interop'
 import { TABULAR_NUMS } from '../../lib/text-styles'
 import { useScreenNavigation } from '../use-screen-navigation'
 
-/** 웹 `pt-[calc(1rem+var(--sa-top))]` 의 상수 몫 — 공용 `PageHeader` 와 같은 값이다. */
-const HEADER_TOP_PADDING_PX = 16
-
 /**
  * 웹 `index.css` 의 `.valuable-drop-badge` 스킨 — **여기서는 단색으로 내려앉는다**(파일 머리 ④).
  *
@@ -328,11 +325,9 @@ export function DropHistoryScreen(): React.JSX.Element {
         // 공용 `PageHeader` 를 쓰지 않는 이유는 파일 머리 ② — 이 화면에는 배경 조각도 하단 페이드도
         // 없다. 스크롤 상자가 노치까지 덮던 웹과 달리 헤더가 스크롤 뷰의 형제라, 상단 안전영역을
         // 헤더가 먹는다는 계약은 그대로다(`ScreenScroll` 은 헤더가 있으면 위를 안 건드린다).
-        <View
-          testID="page-header"
-          className="z-10 px-4 pb-2"
-          style={{ paddingTop: insets.top + HEADER_TOP_PADDING_PX }}
-        >
+        // **여백은 더하지 않는다**([[ADR-139]]) — 공용 셸과 같은 값이어야 가격 화면과 나란히 열릴 때
+        // 제목 높이가 안 갈린다.
+        <View testID="page-header" className="z-10 px-4 pb-2" style={{ paddingTop: insets.top }}>
           <View className="gap-3">
             <View className="flex-row items-center gap-1">
               <Pressable

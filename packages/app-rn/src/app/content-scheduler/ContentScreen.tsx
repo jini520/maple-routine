@@ -290,7 +290,7 @@ export function ContentScreen(): React.JSX.Element {
     // 헤더 셸을 쓰지 않는 가지라(제목 줄이 목록 없이 혼자 선다) 상단 안전영역을 여기서 먹는다 —
     // 웹의 `min-h-[calc(100dvh …)]` 자리는 `flex-1` 이다(탭 상자가 이미 탭바를 뺀 크기다).
     return (
-      <View testID="screen-Content" className="flex-1 p-4" style={{ paddingTop: insets.top + 16 }}>
+      <View testID="screen-Content" className="flex-1 p-4" style={{ paddingTop: insets.top }}>
         <View className="flex-row items-center justify-between">
           <Text className="text-lg font-semibold text-text">컨텐츠 스케줄러</Text>
           {characterManageButton}
