@@ -48,7 +48,8 @@ function screenFor(name: TabRouteName): React.ComponentType<Record<string, never
  * ## `tabBarStyle` 이 없다
  *
  * `BottomBar` 가 스스로 `position: absolute` 로 뜨므로 라이브러리가 자리를 잡아 줄 것이 없다.
- * 콘텐츠 쪽 여백은 `ScreenScroll` 이 준다(`bottom-inset.ts` — 떠 있는 바의 몫 72dp).
+ * 콘텐츠 쪽 여백은 `ScreenScroll` 이 준다(`bottom-inset.ts` — 떠 있는 바의 몫. 상수가 아니라
+ * **기기 폭의 함수**다, [[ADR-132]] 정정 30 · `lib/bottom-bar-metrics.ts`).
  *
  * ## 탭바가 하위 페이지에서 사라지는 것은 여기가 아니라 **루트 스택**이 만든다
  *

@@ -5,6 +5,7 @@
 // 게이트가 여기 있는 이유는 [[ADR-132]] 결정 9 다 — 예전에는 `tabPress` 리스너가 맡았지만, 이제
 // 그룹 이동·하위 이동·뒤로가기가 전부 탭 전환이라 거기 걸면 셋이 다 게이트를 탄다.
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native'
+import { Dimensions } from 'react-native'
 import { isLiquidGlassAvailable } from 'expo-glass-effect'
 import { maybeShowTabSwitchAd } from '@core/features/ads/tab-switch-ad'
 import { useOnboardingStore } from '@core/features/onboarding/store'
@@ -12,6 +13,7 @@ import { useOnboardingStore } from '@core/features/onboarding/store'
 import jobThemes from '@core/data/job-themes.json'
 import type { ThemeDefinition, ThemeName } from '@core/types/theme'
 
+import { BAR_MAX_WIDTH, resolveBottomBarMetrics } from '../../lib/bottom-bar-metrics'
 import { __resetThemeAppearanceForTest, setThemeAppearance } from '../../theme/appearance-store'
 import { resetBarStoreForTests } from '../bar-store'
 import { NavigationHarness } from './harness'
@@ -337,6 +339,32 @@ describe('바의 스타일이 플랫폼을 안 가린다 ([[ADR-132]] 정정 28)
     const style = Object.assign({}, ...[label.props.style].flat(2)) as Record<string, unknown>
 
     expect(style.includeFontPadding).toBe(false)
+  })
+
+  // 바의 치수는 **창 폭에서 계산**된다([[ADR-132]] 정정 30). 값 자체는 `bottom-bar-metrics.test.ts`
+  // 가 지키므로 여기서 물을 것은 «바가 그 함수를 실제로 보는가» 다 — 숫자를 손으로 적어 두면 바와
+  // 콘텐츠 인셋(`ScreenScroll`)이 서로 다른 값을 믿는 상태가 조용히 만들어진다.
+  it('바의 폭·높이가 창 폭에서 나온다 ([[ADR-132]] 정정 30)', async () => {
+    await render(<NavigationHarness />)
+    const metrics = resolveBottomBarMetrics(Dimensions.get('window').width)
+
+    const style = styleOf('bottom-bar')
+
+    expect(style.height).toBe(metrics.heightPx)
+    expect(style.left).toBe(metrics.sideMarginPx)
+    expect(style.right).toBe(metrics.sideMarginPx)
+  })
+
+  // 큰 화면에서 캡슐이 계속 늘어나지 않는다(사용자 지시) — 테스트 창(750pt)이 이미 상한 밖이라
+  // 이 단언이 «상한이 실제로 걸린 자리» 를 본다.
+  it('창이 상한보다 넓으면 바가 상한에서 멈추고 가운데 선다', async () => {
+    await render(<NavigationHarness />)
+    const windowWidth = Dimensions.get('window').width
+    const style = styleOf('bottom-bar')
+
+    expect(windowWidth).toBeGreaterThan(BAR_MAX_WIDTH)
+    expect(windowWidth - Number(style.left) - Number(style.right)).toBe(BAR_MAX_WIDTH)
+    expect(style.left).toBe(style.right)
   })
 })
 

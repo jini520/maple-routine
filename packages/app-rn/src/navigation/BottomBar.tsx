@@ -13,11 +13,12 @@
  * 두므로 그냥 두면 화면 높이를 그만큼 먹는다. 루트를 `position: absolute` 로 빼면 흐름에서 빠져
  * 화면이 전체 높이를 갖고, 콘텐츠의 여백은 `ScreenScroll` 이 따로 준다(`bottom-inset.ts`).
  *
- * ## 알약은 위치를 «계산» 한다
+ * ## 치수는 «계산» 한다 — 재는 것이 하나도 없다
  *
- * 항목마다 `onLayout` 을 달아 실측하면 전환 중간값이 잡혀 알약이 목표를 지나쳤다 돌아온다.
- * 폭은 캡슐 하나만 재고(그 값은 전환 중에 안 변한다) 칸은 균등 분할이므로 나눗셈으로 나온다 —
- * 조절 가능한 상수가 위에 모여 있는 이유이기도 하다.
+ * 항목마다 `onLayout` 을 달아 실측하면 전환 중간값이 잡혀 알약이 목표를 지나쳤다 돌아온다. 그래서
+ * 한때는 캡슐 하나만 쟀는데(그 값은 전환 중에 안 변한다), 정정 30 으로 **바 폭 자체가 창 폭의
+ * 함수**가 되면서 그것마저 필요 없어졌다(`lib/bottom-bar-metrics.ts`). 칸은 균등 분할이라 나눗셈으로
+ * 나오고, 계산은 **첫 프레임부터 맞다** — 측정은 첫 프레임에 0 이라 알약이 한 프레임 접혀 있었다.
  *
  * ## 유리 — **플랫폼의 재질을 쓴다** (정정 13)
  *
@@ -58,13 +59,22 @@
 
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native'
+import {
+  Animated,
+  Easing,
+  Pressable,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native'
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { maybeShowTabSwitchAd } from '@core/features/ads/tab-switch-ad'
 
 import { GearIcon } from '../components/atoms/GearIcon/GearIcon'
 import { ProfitIcon } from '../components/atoms/ProfitIcon/ProfitIcon'
+import { BAR_LIFT, resolveBottomBarMetrics } from '../lib/bottom-bar-metrics'
 import {
   ArrowLeftIcon,
   CalendarCheckIcon,
@@ -97,8 +107,6 @@ import { useKeyboardShown } from './use-keyboard-shown'
 import type { TabRouteName } from './routes'
 
 /** 치수 — `design-system.md` 「하단바」 표와 같은 값이어야 한다. */
-/** 바 좌우 여백 — 바는 **전폭 그대로 둔다**(사용자 지시: 바 너비는 줄이지 말 것). */
-const SIDE_MARGIN = 14
 /**
  * **알약이 칸보다 넓은 정도** — 이 값 하나가 나머지 셋을 정한다(사용자 지시, 2026-08-13).
  *
@@ -117,30 +125,27 @@ const SIDE_MARGIN = 14
  */
 const PILL_OVERHANG = 23
 /**
- * 안전영역 위로 띄우는 높이 — **0**(사용자 지시, 2026-08-13). 바가 안전영역에 바로 붙는다.
- *
- * 없앤 12 는 **바 높이로 옮겼다**(60 → 72). 그래서 콘텐츠가 남기는 하단 여백
- * (`FLOATING_BAR_SPACE_PX = BAR_HEIGHT + LIFT`)은 72 그대로다 — 화면이 돌려받거나 잃는 세로가 없다.
- */
-const LIFT = 0
-const BAR_HEIGHT = 72
-/**
  * 바 안쪽 여백 — 6 에서 **3** 으로 줄였다(사용자 지시 + 레퍼런스 실측, 2026-08-13).
  *
  * 레퍼런스 두 장에서 «활성 알약 높이 ÷ 바 높이» 가 0.89 인데 우리는 0.80 이었다. 그 차이가 곧
  * 이 여백이고, 좁힐수록 알약이 바를 꽉 채워 «항목이 바 안에 떠 있는» 느낌이 사라진다.
+ *
+ * **바 높이가 기기마다 달라져도 이 값은 상수다**([[ADR-132]] 정정 30) — 여백은 «판 둘레의 선» 이라
+ * 판이 커진다고 함께 커질 이유가 없고, 커지면 위 비율(0.92)이 작은 기기에서 먼저 무너진다.
  */
 const BAR_PADDING = 3
-/** 바 높이에서 위아래 여백을 뺀 값. 둘은 함께 움직인다 — 따로 두면 알약이 바 안에서 떠 버린다. */
-const PILL_HEIGHT = BAR_HEIGHT - BAR_PADDING * 2
 /**
- * ← 의 **원 지름 — 바 여백이 줄어도 이 값은 그대로다**(사용자 지시, 2026-08-13). 그래서 알약(54)
- * 보다 작은 원이 되고, 레퍼런스 둘째 장이 정확히 그 모습이다(뒤로가기 원이 활성 알약보다 작다).
- * 차지하는 폭은 이것이 아니라 **한 칸(`itemWidth`)** 이다
- * — 위치와 너비는 메뉴 하나와 같게 두고 배경만 원으로 남긴다. 그래야 ← 도 «이 바의 항목 하나» 로
- * 읽히고, 하위 행이 둘째 칸에서 시작해 그룹 행의 격자와 어긋나지 않는다.
+ * ← 원이 **알약 높이에서 차지하는 비율** — 402pt 기기의 «48 / 66» 이다([[ADR-132]] 정정 30).
+ *
+ * 한때 48 «고정» 이었고, 그 지시가 겨눈 것은 **바 안쪽 여백**이었다(여백을 줄여도 원은 그대로).
+ * 기기 폭은 다른 축이라 그대로 두면 하한(높이 64 · 알약 58)에서 원이 알약을 거의 채우고 태블릿
+ * (81 · 알약 75)에서는 점이 된다. 비율로 두면 402pt 에서 값이 **48 그대로**다.
+ *
+ * 원이 차지하는 **폭**은 이것이 아니라 **한 칸(`itemWidth`)** 이다 — 위치와 너비는 메뉴 하나와 같게
+ * 두고 배경만 원으로 남긴다. 그래야 ← 도 «이 바의 항목 하나» 로 읽히고, 하위 행이 둘째 칸에서
+ * 시작해 그룹 행의 격자와 어긋나지 않는다.
  */
-const BACK_CIRCLE = 48
+const BACK_CIRCLE_RATIO = 48 / 66
 /**
  * 알약이 **같은 층 안에서** 미끄러지는 시간.
  *
@@ -314,6 +319,11 @@ interface BarItemProps {
   muted: string
   /** 층과 무관하게 같은 값이다 — 그룹 다섯이 꽉 찼을 때의 칸 폭(`BottomBar` 의 `itemWidth`). */
   width: number
+  /**
+   * 알약 높이 = 바 높이 − 여백×2. **상수가 아니라 프롭인 것이 [[ADR-132]] 정정 30 이다** — 바
+   * 세로가 기기 폭에서 나오므로 이 항목의 과녁도 함께 자란다(글리프는 안 자란다).
+   */
+  height: number
   testID: string
   onPress: () => void
 }
@@ -325,6 +335,7 @@ function BarItem({
   accent,
   muted,
   width,
+  height,
   testID,
   onPress,
 }: BarItemProps): React.JSX.Element {
@@ -335,7 +346,7 @@ function BarItem({
       accessibilityState={{ selected: active }}
       accessibilityLabel={label}
       onPress={onPress}
-      style={{ width, height: PILL_HEIGHT }}
+      style={{ width, height }}
       className="items-center justify-center"
     >
       <View className="items-center gap-[4px]">
@@ -368,6 +379,14 @@ export function BottomBar({ state, navigation }: BottomTabBarProps): React.JSX.E
   const { definition } = useThemeAppearance()
   const record = useBarRecord()
   const isKeyboardShown = useKeyboardShown()
+  // **바의 세로는 창 폭에서 나온다**([[ADR-132]] 정정 30). 콘텐츠가 남기는 몫도 같은 함수를 보므로
+  // (`ScreenScroll` → `bottom-inset.ts`) 두 값이 어긋날 자리가 없다.
+  const { width: windowWidth } = useWindowDimensions()
+  const metrics = resolveBottomBarMetrics(windowWidth)
+  const barHeight = metrics.heightPx
+  /** 바 높이에서 위아래 여백을 뺀 값. 둘은 함께 움직인다 — 따로 두면 알약이 바 안에서 떠 버린다. */
+  const pillHeight = barHeight - BAR_PADDING * 2
+  const backCircle = Math.round(pillHeight * BACK_CIRCLE_RATIO)
 
   const page = state.routes[state.index].name as TabRouteName
   const bar: BarState = useMemo(() => ({ page, ...record }), [page, record])
@@ -401,37 +420,33 @@ export function BottomBar({ state, navigation }: BottomTabBarProps): React.JSX.E
 
   // ── 알약과 층 ────────────────────────────────────────────────────────────────
   //
-  // ## 재는 것은 **바 하나**뿐이다
+  // ## 재는 것이 **하나도 없다**
   //
   // 처음에는 트랙(항목이 들어가는 상자)을 재고 거기에 ← 몫을 더해 바 폭을 역산했다. 그런데 트랙
   // 폭은 **애니메이션이 바꾸는 값**이라, 그 측정으로 `itemWidth` 를 정하면 애니메이션 → 측정 →
   // `itemWidth` → 애니메이션 범위로 도는 고리가 된다. 실제로 그 고리가 **잘못된 값에 고착**되는
   // 것을 사용자가 잡았다(2026-08-13 — 그룹 행인데 왼쪽 한 칸이 비고 알약이 원으로 남았다).
   //
-  // 바 루트는 좌우가 고정이라 폭이 변하지 않는다. 그것만 재면 `itemWidth` 는 상수가 되고, 위 고리는
-  // 존재 자체가 없어진다.
+  // 그다음 판은 바 루트 하나만 쟀다(좌우가 고정이라 폭이 안 변한다). 정정 30 이 그것마저 걷는다 —
+  // 바 폭이 **창 폭의 함수**라 계산으로 나오고, 계산은 첫 프레임부터 맞다(측정은 첫 프레임에 0 이라
+  // 알약이 한 프레임 접혀 있었다). 위 고리는 이제 원인 자체가 없다.
   //
   // ## 그래서 **폭을 움직이는 애니메이션이 하나도 없다**
   //
   // ← 자리는 «상자를 넓히는» 대신 **행을 한 칸 옆으로 옮겨** 만든다. 이동·불투명도·크기는 전부
   // 네이티브 드라이버가 나를 수 있으므로, 탭 직후 화면 마운트로 JS 가 막혀도 전환이 끝까지
   // 매끄럽다(그것이 «부르르» 의 원인이었다).
-  const [barWidth, setBarWidth] = useState(0)
-
-  const itemWidth =
-    barWidth === 0
-      ? 0
-      : (barWidth - BAR_PADDING * 2 - PILL_OVERHANG) / BAR_GROUPS.length
+  const itemWidth = (metrics.widthPx - BAR_PADDING * 2 - PILL_OVERHANG) / BAR_GROUPS.length
   /** 항목 영역을 바 안쪽에서 들여쓰는 양 — 끝 칸 알약이 `BAR_PADDING` 만큼만 남기게 하는 값. */
   const trackInset = PILL_OVERHANG / 2
   /**
    * ← 원이 바 가장자리에서 남기는 여백 — **위아래와 같은 값**(사용자 지시, 2026-08-13).
    *
-   * 원은 66 높이 행 안에서 세로 가운데라 위아래로 `패딩 + (행 − 원)/2` 만큼 남는다. 가로도 그
+   * 원은 알약 높이의 행 안에서 세로 가운데라 위아래로 `패딩 + (행 − 원)/2` 만큼 남는다. 가로도 그
    * 값이어야 «사방이 같은» 원이 된다. 전에는 칸 안에서 가로 가운데였고(= 25) 그래서 왼쪽만 두 배쯤
    * 넓었다. **다른 항목은 이 값과 무관하다** — ← 는 절대 배치라 하위 행의 자리를 밀지 않는다.
    */
-  const backCircleMargin = BAR_PADDING + (PILL_HEIGHT - BACK_CIRCLE) / 2
+  const backCircleMargin = BAR_PADDING + (pillHeight - backCircle) / 2
   const pillWidth = itemWidth + PILL_OVERHANG
   /** 하위 행은 ← 가 차지한 첫 칸 다음에서 시작한다 — 그룹 행의 격자를 그대로 쓴다. */
   const rowOffset = layer === 'sub' ? itemWidth : 0
@@ -445,9 +460,9 @@ export function BottomBar({ state, navigation }: BottomTabBarProps): React.JSX.E
   const settled = useRef(false)
   const previousLayer = useRef(layer)
 
+  // 첫 배치를 «측정이 도착하면» 으로 미루던 가드(`itemWidth === 0`)가 이 앞에 있었다. 정정 30 으로
+  // 폭이 계산이 되면서 그 0 이 존재하지 않는다 — 첫 렌더부터 제자리다.
   useEffect(() => {
-    if (itemWidth === 0) return
-
     const layerChanged = previousLayer.current !== layer
     previousLayer.current = layer
 
@@ -467,7 +482,7 @@ export function BottomBar({ state, navigation }: BottomTabBarProps): React.JSX.E
       easing: EASE,
       useNativeDriver: true,
     }).start()
-  }, [itemWidth, layer, pillX, x])
+  }, [layer, pillX, x])
 
   useEffect(() => {
     Animated.timing(visual, {
@@ -547,17 +562,16 @@ export function BottomBar({ state, navigation }: BottomTabBarProps): React.JSX.E
   return (
     <View
       testID="bottom-bar"
-      // **여기가 유일한 측정 지점이다.** 좌우가 고정이라 폭이 변하지 않으므로, 애니메이션이
-      // 이 값을 흔들 수 없다(위 «재는 것은 바 하나뿐이다»).
-      onLayout={(event) => {
-        setBarWidth(event.nativeEvent.layout.width)
-      }}
       style={{
         position: 'absolute',
-        left: SIDE_MARGIN,
-        right: SIDE_MARGIN,
-        bottom: insets.bottom + LIFT,
-        height: BAR_HEIGHT,
+        // **좌우 여백은 «남는 폭을 가른» 값이다**([[ADR-132]] 정정 30). 상한(420)에 안 걸리는
+        // 기기에서는 그냥 14 이고, 걸리면 남는 폭이 좌우로 갈라져 바가 가운데 선다. `width` 대신
+        // 좌우를 주는 이유는 전제를 한 곳에 모으기 위해서다 — 어차피 «부모가 창 전체» 를 전제로
+        // 폭을 계산했고, 여기서도 같은 전제를 쓰면 둘이 어긋날 수 없다.
+        left: metrics.sideMarginPx,
+        right: metrics.sideMarginPx,
+        bottom: insets.bottom + BAR_LIFT,
+        height: barHeight,
         flexDirection: 'row',
         alignItems: 'center',
         padding: BAR_PADDING,
@@ -611,7 +625,7 @@ export function BottomBar({ state, navigation }: BottomTabBarProps): React.JSX.E
             // 바 루트 기준이다 — 트랙 기준이 아니다(아래 «왜 트랙 밖인가»).
             top: BAR_PADDING,
             left: BAR_PADDING + trackInset,
-            height: PILL_HEIGHT,
+            height: pillHeight,
             width: pillWidth,
             transform: [{ translateX: x }],
             borderRadius: 999,
@@ -656,7 +670,7 @@ export function BottomBar({ state, navigation }: BottomTabBarProps): React.JSX.E
       <View
         style={{
           flex: 1,
-          height: PILL_HEIGHT,
+          height: pillHeight,
           marginHorizontal: trackInset,
           overflow: 'hidden',
         }}
@@ -670,7 +684,7 @@ export function BottomBar({ state, navigation }: BottomTabBarProps): React.JSX.E
             top: 0,
             left: 0,
             right: 0,
-            height: PILL_HEIGHT,
+            height: pillHeight,
             flexDirection: 'row',
             alignItems: 'center',
             opacity: groupOpacity,
@@ -686,6 +700,7 @@ export function BottomBar({ state, navigation }: BottomTabBarProps): React.JSX.E
               accent={colors.accent}
               muted={colors.muted}
               width={itemWidth}
+              height={pillHeight}
               testID={`bar-group-${item.key}`}
               onPress={() => {
                 applyRef.current(pressGroup(barRef.current, item.key), 'group')
@@ -702,7 +717,7 @@ export function BottomBar({ state, navigation }: BottomTabBarProps): React.JSX.E
             top: 0,
             left: 0,
             right: 0,
-            height: PILL_HEIGHT,
+            height: pillHeight,
             flexDirection: 'row',
             alignItems: 'center',
             opacity: subOpacity,
@@ -718,6 +733,7 @@ export function BottomBar({ state, navigation }: BottomTabBarProps): React.JSX.E
               accent={colors.accent}
               muted={colors.muted}
               width={itemWidth}
+              height={pillHeight}
               testID={`bar-sub-${item.key}`}
               onPress={() => {
                 applyRef.current(pressSub(barRef.current, item.key), 'sub')
@@ -755,9 +771,9 @@ export function BottomBar({ state, navigation }: BottomTabBarProps): React.JSX.E
         style={{
           position: 'absolute',
           left: backCircleMargin,
-          top: BAR_PADDING + (PILL_HEIGHT - BACK_CIRCLE) / 2,
-          width: BACK_CIRCLE,
-          height: BACK_CIRCLE,
+          top: BAR_PADDING + (pillHeight - backCircle) / 2,
+          width: backCircle,
+          height: backCircle,
           borderRadius: 999,
           transform: [{ translateX: backShift }, { scale: backScale }],
           backgroundColor: glass ? 'transparent' : colors.pill,
@@ -811,15 +827,15 @@ export function BottomBar({ state, navigation }: BottomTabBarProps): React.JSX.E
           // 규칙으로 움직인다. 다만 화살표는 그 칸의 가운데가 아니라 **왼쪽 끝**의 판 위에 앉는다.
           style={{
             width: itemWidth,
-            height: PILL_HEIGHT,
+            height: pillHeight,
             alignItems: 'flex-start',
             justifyContent: 'center',
           }}
         >
           <View
             style={{
-              width: BACK_CIRCLE,
-              height: BACK_CIRCLE,
+              width: backCircle,
+              height: backCircle,
               alignItems: 'center',
               justifyContent: 'center',
             }}

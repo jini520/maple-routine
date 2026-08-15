@@ -3,14 +3,16 @@
 // 둘 다 화면을 렌더하지 않고 볼 수 있어서 여기 따로 있다. `bottom-inset.test.ts` 와 같은 이유이고,
 // 실제로 하단 값은 그 판정에서 **파생**되므로(결정 3) 두 파일이 같은 자리를 지킨다.
 
-import { FLOATING_BAR_SPACE_PX, resolveScreenBottomInset } from '../bottom-inset'
+import { resolveScreenBottomInset } from '../bottom-inset'
 import { FADE_MASK_ALPHAS, FADE_MASK_LOCATIONS, resolveSafeAreaFade } from '../safe-area-fade'
 
 /** iPhone 계열(`render-atom.tsx` 의 테스트 안전영역과 같은 값). */
 const 인셋 = { top: 59, bottom: 34 }
 
+/** 기준 기기(402pt)의 바 몫 — 정정 30 이후 기기마다 다르다(`bottom-bar-metrics.ts`). */
+const 바_몫 = 72
 /** 페이드가 바 위로 올라가는 몫 — 바 몫의 절반([[ADR-134]] 정정 1·3). */
-const 바_페이드 = FLOATING_BAR_SPACE_PX / 2
+const 바_페이드 = 바_몫 / 2
 
 /** 화면 하나분의 인자 — 하단 판정(`bottom-inset.ts`)을 그대로 태워서 넘긴다. */
 const 화면 = (
@@ -22,7 +24,9 @@ const 화면 = (
   hasTabBar,
   insetTopPx: 인셋.top,
   insetBottomPx: bottomInsetPx,
-  portBottomPx: resolveScreenBottomInset({ hasTabBar, bottomInsetPx, platform }).portBottomPx,
+  barSpacePx: 바_몫,
+  portBottomPx: resolveScreenBottomInset({ hasTabBar, bottomInsetPx, barSpacePx: 바_몫, platform })
+    .portBottomPx,
 })
 
 describe('페이드는 콘텐츠가 실제로 지나가는 자리에만 있다 ([[ADR-134]] 결정 3)', () => {
@@ -50,7 +54,18 @@ describe('페이드는 콘텐츠가 실제로 지나가는 자리에만 있다 (
     // 바 전체(72)까지 올리면 «너무 높다» 였고(정정 3), 안전영역까지만이면 콘텐츠가 선명한 채로
     // 캡슐 밑에 들어간다(정정 1). 그 사이의 값이라는 것이 이 상수의 전부다.
     expect(fade.bottomPx).toBeGreaterThan(인셋.bottom)
-    expect(fade.bottomPx).toBeLessThan(인셋.bottom + FLOATING_BAR_SPACE_PX)
+    expect(fade.bottomPx).toBeLessThan(인셋.bottom + 바_몫)
+  })
+
+  // **바 몫이 기기마다 다르다**([[ADR-132]] 정정 30). 페이드를 상수로 두면 큰 화면에서는 캡슐
+  // 한가운데보다 아래에서 0 이 되고(콘텐츠가 선명한 채로 캡슐에 들어간다), 작은 화면에서는 그
+  // 위에서 0 이 된다(캡슐 위가 흐릿하다) — 정정 1 과 정정 3 이 각각 반려한 두 상태다.
+  it('바 몫이 달라지면 페이드도 그 절반으로 따라간다', () => {
+    for (const barSpacePx of [64, 72, 81]) {
+      const fade = resolveSafeAreaFade({ ...화면(true, 'ios'), barSpacePx })
+
+      expect(fade.bottomPx).toBe(인셋.bottom + barSpacePx / 2)
+    }
   })
 
   // 하위 페이지에는 바가 없다([[ADR-120]] 결정 4) — 그래서 정정 1 뒤에도 값이 안 바뀐다.

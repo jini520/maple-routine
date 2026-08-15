@@ -21,19 +21,22 @@
  * 렌더 트리를 뒤지는» 상태가 안 된다(`bottom-inset.ts` 와 같은 판단).
  */
 
-import { FLOATING_BAR_SPACE_PX, type ScreenBottomInset } from './bottom-inset'
+import type { ScreenBottomInset } from './bottom-inset'
 
 /**
  * 떠 있는 바 위로 페이드가 **얼마나 올라가는가** — 바 몫의 **절반**([[ADR-134]] 정정 1·3).
  *
- * 0이면 정정 1 이전이다(콘텐츠가 선명한 채로 캡슐 밑에 들어간다). 바 전체(72)면 캡슐 윗변에서
+ * 0이면 정정 1 이전이다(콘텐츠가 선명한 채로 캡슐 밑에 들어간다). 바 전체면 캡슐 윗변에서
  * 이미 완전히 투명하지만 «너무 높다» — 목록의 마지막 두 카드쯤이 늘 흐릿하다(사용자 판정,
  * 2026-08-14). 절반이면 **캡슐 한가운데에서 0** 이라, 콘텐츠는 캡슐에 닿기 전에 옅어지기 시작하고
  * 흐려지는 구간은 바 뒤에 대부분 숨는다.
  *
- * **바 높이에서 파생시킨다** — 숫자를 따로 적으면 바 높이가 바뀔 때 둘이 어긋난다.
+ * **바 높이에서 파생시킨다** — 숫자를 따로 적으면 바 높이가 바뀔 때 둘이 어긋난다. 그 높이가
+ * 기기마다 다른 값이 된 뒤로([[ADR-132]] 정정 30) 이 파생은 상수가 아니라 계산이다.
  */
-const BAR_FADE_PX = FLOATING_BAR_SPACE_PX / 2
+function barFadePx(barSpacePx: number): number {
+  return barSpacePx / 2
+}
 
 export interface SafeAreaFade {
   /** 화면 위 끝에서 이만큼이 페이드 구간이다. 0이면 상단은 깎지 않는다. */
@@ -53,7 +56,7 @@ export interface SafeAreaFade {
  *
  * **하단이 안전영역 위로 올라가는 것이 정정 1 이다.** 안전영역까지만 두면 콘텐츠가 **선명한 채로
  * 캡슐 밑에 들어가고** 녹는 것은 이미 바가 가린 뒤가 된다 — 콘텐츠가 크롬과 처음 겹치는 자리는
- * 바닥이 아니라 **바의 윗변**이다. 다만 바 전체(72)만큼 올리면 «너무 높다» 이므로(정정 3) 절반만
+ * 바닥이 아니라 **바의 윗변**이다. 다만 바 전체만큼 올리면 «너무 높다» 이므로(정정 3) 절반만
  * 올린다.
  *
  * 안전영역 몫에서 **`portBottomPx` 를 뺀다** — 스크롤포트가 이미 그만큼 위에서 끝났으면 그 자리에
@@ -70,6 +73,8 @@ export function resolveSafeAreaFade(options: {
   insetTopPx: number
   /** `useSafeAreaInsets().bottom`. */
   insetBottomPx: number
+  /** 떠 있는 바가 먹는 세로 몫 — `bottom-inset.ts` 에 넘기는 값과 **같은 값**이어야 한다. */
+  barSpacePx: number
   /** `resolveScreenBottomInset()` 이 정한 값 — 스크롤포트가 이미 비운 몫은 깎을 것이 없다. */
   portBottomPx: ScreenBottomInset['portBottomPx']
 }): SafeAreaFade {
@@ -77,7 +82,7 @@ export function resolveSafeAreaFade(options: {
     topPx: options.hasHeader ? options.insetTopPx : 0,
     bottomPx:
       Math.max(0, options.insetBottomPx - options.portBottomPx) +
-      (options.hasTabBar ? BAR_FADE_PX : 0),
+      (options.hasTabBar ? barFadePx(options.barSpacePx) : 0),
   }
 }
 
