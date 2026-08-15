@@ -53,7 +53,32 @@ describe('떠 있는 바의 색 ([[ADR-132]] 정정 12)', () => {
   it.each(THEMES)('%s — 활성 알약이 바와 갈린다', (_name, theme) => {
     const { bar, pill } = resolveBarColors(theme)
 
-    expect(contrast(pill, bar)).toBeGreaterThan(1.2)
+    expect(contrast(pill, bar)).toBeGreaterThan(theme.mode === 'dark' ? 1.2 : 1.03)
+  })
+
+  // ── 폴백 알약은 «유리가 그리는 그 판» 이다 ([[ADR-132]] 정정 28) ────────────────────
+  //
+  // 유리 경로는 정정 15~18 을 거치며 **색을 얹지 않고 덜어내는** 중립 판이 됐는데, 폴백의 `pill` 은
+  // 유리가 오기 전 첫 판의 `mixOklab(primaryTint, primary, 0.85)` 그대로 남아 있었다. 그래서
+  // 안드로이드에서만 활성 자리가 **진분홍 덩어리**로 떴다(실기기 실측 (255,215,239) vs iOS
+  // (246,245,245) — 사용자 판정 *"iOS와 디자인 차이가 너무 크잖아"*).
+  //
+  // 지키는 것은 «어떤 색인가» 가 아니라 **방향**이다 — 채도가 없고(강조는 글리프가 진다, 정정 1),
+  // 유리 tint 와 같은 쪽(`text` 쪽 = 바보다 어둡다)으로 간다.
+  it.each(THEMES)('%s — 라이트 폴백 알약은 무채색이다', (_name, theme) => {
+    if (theme.mode !== 'light') return
+
+    expect(hexToOklch(resolveBarColors(theme).pill).c).toBeLessThan(0.005)
+  })
+
+  it.each(THEMES)('%s — 라이트 폴백 알약이 유리 tint 와 같은 방향이다', (_name, theme) => {
+    if (theme.mode !== 'light') return
+    const { pill, bar } = resolveBarColors(theme)
+
+    // 유리 쪽(`pillOnGlass`)이 바보다 어두운 값인 것은 아래 마지막 검사가 따로 건다.
+    expect(luminance(pill)).toBeLessThan(luminance(bar))
+    // **판이 색을 지면 안 된다** — 옛 규칙(틴트+원색)은 여기서 1.23~1.46 이었다.
+    expect(contrast(pill, bar)).toBeLessThan(1.2)
   })
 
   // ── 글자 ──────────────────────────────────────────────────────────────────────

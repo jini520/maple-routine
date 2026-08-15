@@ -1512,20 +1512,13 @@ exports[`렌더 트리 스냅샷 탭 골격 1`] = `
                     "borderRadius": 999,
                     "borderWidth": 0.5,
                     "bottom": 34,
-                    "elevation": 3,
+                    "boxShadow": "0px 5px 28px #04010014",
                     "flexDirection": "row",
                     "height": 72,
                     "left": 14,
                     "padding": 3,
                     "position": "absolute",
                     "right": 14,
-                    "shadowColor": "#04010059",
-                    "shadowOffset": {
-                      "height": 5,
-                      "width": 0,
-                    },
-                    "shadowOpacity": 0.22,
-                    "shadowRadius": 14,
                   }
                 }
                 testID="bottom-bar"
@@ -1558,17 +1551,10 @@ exports[`렌더 트리 스냅샷 탭 골격 1`] = `
                     {
                       "backgroundColor": "transparent",
                       "borderRadius": 999,
-                      "elevation": 3,
+                      "boxShadow": "0px 3px 20px #0401003a",
                       "height": 66,
                       "left": 14.5,
                       "position": "absolute",
-                      "shadowColor": "#04010059",
-                      "shadowOffset": {
-                        "height": 3,
-                        "width": 0,
-                      },
-                      "shadowOpacity": 0.65,
-                      "shadowRadius": 10,
                       "top": 3,
                       "transform": [
                         {
@@ -1890,6 +1876,7 @@ exports[`렌더 트리 스냅샷 탭 골격 1`] = `
                               "color": "#F58B0F",
                               "fontSize": 10.5,
                               "fontWeight": "400",
+                              "includeFontPadding": false,
                               "letterSpacing": -0.1,
                             }
                           }
@@ -2126,6 +2113,7 @@ exports[`렌더 트리 스냅샷 탭 골격 1`] = `
                               "color": "#5C5C5C",
                               "fontSize": 10.5,
                               "fontWeight": "400",
+                              "includeFontPadding": false,
                               "letterSpacing": -0.1,
                             }
                           }
@@ -2292,6 +2280,7 @@ exports[`렌더 트리 스냅샷 탭 골격 1`] = `
                               "color": "#5C5C5C",
                               "fontSize": 10.5,
                               "fontWeight": "400",
+                              "includeFontPadding": false,
                               "letterSpacing": -0.1,
                             }
                           }
@@ -2436,6 +2425,7 @@ exports[`렌더 트리 스냅샷 탭 골격 1`] = `
                               "color": "#5C5C5C",
                               "fontSize": 10.5,
                               "fontWeight": "400",
+                              "includeFontPadding": false,
                               "letterSpacing": -0.1,
                             }
                           }
@@ -2569,6 +2559,7 @@ exports[`렌더 트리 스냅샷 탭 골격 1`] = `
                               "color": "#5C5C5C",
                               "fontSize": 10.5,
                               "fontWeight": "400",
+                              "includeFontPadding": false,
                               "letterSpacing": -0.1,
                             }
                           }

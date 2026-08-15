@@ -4,7 +4,8 @@
 //
 // 게이트가 여기 있는 이유는 [[ADR-132]] 결정 9 다 — 예전에는 `tabPress` 리스너가 맡았지만, 이제
 // 그룹 이동·하위 이동·뒤로가기가 전부 탭 전환이라 거기 걸면 셋이 다 게이트를 탄다.
-import { act, fireEvent, render, screen } from '@testing-library/react-native'
+import { act, fireEvent, render, screen, within } from '@testing-library/react-native'
+import { isLiquidGlassAvailable } from 'expo-glass-effect'
 import { maybeShowTabSwitchAd } from '@core/features/ads/tab-switch-ad'
 import { useOnboardingStore } from '@core/features/onboarding/store'
 
@@ -22,6 +23,17 @@ jest.mock('@core/features/ads/tab-switch-ad', () => ({
   startAds: jest.fn(async () => {}),
 }))
 
+// Liquid Glass 가 **없는** 쪽을 그릴 수 있어야 한다 ([[ADR-132]] 정정 29). jest 에서 이 함수는 참을
+// 내주므로(유리 경로), 폴백을 물으려면 여기서만 거짓으로 돌려세운다 — 기본값은 참 그대로다.
+jest.mock('expo-glass-effect', () => ({
+  ...jest.requireActual('expo-glass-effect'),
+  isLiquidGlassAvailable: jest.fn(() => true),
+}))
+
+const isLiquidGlassAvailableMock = isLiquidGlassAvailable as jest.MockedFunction<
+  typeof isLiquidGlassAvailable
+>
+
 const maybeShowTabSwitchAdMock = maybeShowTabSwitchAd as jest.MockedFunction<
   typeof maybeShowTabSwitchAd
 >
@@ -31,6 +43,7 @@ const maybeShowTabSwitchAdMock = maybeShowTabSwitchAd as jest.MockedFunction<
 beforeEach(() => {
   installMemoryPreferences()
   resetBarStoreForTests()
+  isLiquidGlassAvailableMock.mockReturnValue(true)
   maybeShowTabSwitchAdMock.mockClear()
   useOnboardingStore.setState({ status: 'completed' })
 })
@@ -279,4 +292,86 @@ describe('광고 게이트는 그룹 이동에만 (결정 9)', () => {
   // 만들려면 목을 거부시켜야 하는데 그러면 **테스트가 만든 처리되지 않은 거부**를 테스트가 잡는
   // 꼴이 된다. 진짜로 지켜야 할 것 — *"게이트가 이동을 막지 않는다"* — 은 위 케이스들이 매번 새
   // 화면을 단언하는 것으로 이미 고정된다.
+})
+
+// 바는 **두 플랫폼에 같은 스타일로 도달해야 한다** ([[ADR-132]] 정정 28).
+//
+// `shadowOpacity`·`shadowRadius`·`shadowOffset` 은 **iOS 전용 프롭**이다. 그것으로 쓰면 안드로이드에는
+// 정정 22 가 맞춰 둔 층이 **하나도 도달하지 않고** `elevation` 의 기본 그림자만 남는다. 두 주 동안
+// 그 부재가 안 보였던 것은 폴백 알약이 분홍이라 **색으로 이미 갈려 있었기** 때문이고, 그 색을 빼는
+// 순간(정정 28-1) 그림자가 유일한 층 장치가 된다 — 그래서 이 검사가 그 색 변경과 한 쌍이다.
+//
+// 눈으로는 못 잡는 부류다: 시뮬레이터만 보면 언제나 초록이고, 안드로이드에서만 다르게 그려진다.
+describe('바의 스타일이 플랫폼을 안 가린다 ([[ADR-132]] 정정 28)', () => {
+  const IOS_ONLY = ['shadowOpacity', 'shadowRadius', 'shadowOffset'] as const
+
+  const styleOf = (testID: string): Record<string, unknown> =>
+    Object.assign({}, ...[screen.getByTestId(testID).props.style].flat(2)) as Record<
+      string,
+      unknown
+    >
+
+  it.each(['bottom-bar', 'bar-pill', 'bar-back-plate'])(
+    '%s — 그림자를 boxShadow 로 쓴다',
+    async (testID) => {
+      await render(<NavigationHarness />)
+      // ← 판은 하위 행에만 마운트된다([[ADR-132]] 정정 26).
+      await press('bar-group-ledger')
+
+      const style = styleOf(testID)
+
+      expect(style.boxShadow).toEqual(expect.any(String))
+      for (const prop of IOS_ONLY) expect(style[prop]).toBeUndefined()
+      // `elevation` 을 함께 걷지 않으면 안드로이드에서 그림자가 **두 번** 그려진다.
+      expect(style.elevation).toBeUndefined()
+    },
+  )
+
+  // 안드로이드 `Text` 는 글자 상자에 폰트 메트릭 여백을 넣어 iOS 보다 상자가 크다 — 실측으로
+  // 아이콘→라벨 간격이 27 → 30px 이 되고 블록이 5px 자라 아이콘이 3px 위로 밀렸다.
+  it('라벨이 폰트 메트릭 여백을 끈다', async () => {
+    await render(<NavigationHarness />)
+
+    // 화면 헤더에도 같은 글자가 있으므로 **바 안에서** 찾는다.
+    const label = within(screen.getByTestId('bar-group-today')).getByText('today')
+    const style = Object.assign({}, ...[label.props.style].flat(2)) as Record<string, unknown>
+
+    expect(style.includeFontPadding).toBe(false)
+  })
+})
+
+// 재질이 없는 쪽은 **흉내 내지 않는다** ([[ADR-132]] 정정 29).
+//
+// `expo-glass-effect` 는 iOS 26 이상에서만 산다. 그 아래 iOS 와 안드로이드에는 이 재질이 없고, 없는
+// 것을 블러로 흉내 내는 판을 한 번 만들었다가 되돌렸다(사용자 지시 — 억지로 만들지 말고 색만 맞출 것).
+//
+// 그래서 폴백에서 지켜야 하는 것은 둘이다: **재질을 흉내 내는 판이 없을 것**, 그리고 그 자리를
+// **불투명 캡슐**이 채울 것. 색 관계는 `bar-colors.test.ts` 가 테마 전부에 대고 따로 건다.
+describe('재질이 없는 쪽은 흉내 내지 않는다 ([[ADR-132]] 정정 29)', () => {
+  it('유리가 없으면 불투명 캡슐이다 — 블러 판을 얹지 않는다', async () => {
+    isLiquidGlassAvailableMock.mockReturnValue(false)
+    setThemeAppearance('엔젤릭버스터', (jobThemes as Record<ThemeName, ThemeDefinition>)['엔젤릭버스터'])
+
+    await render(<NavigationHarness />)
+    const bar = Object.assign(
+      {},
+      ...[screen.getByTestId('bottom-bar').props.style].flat(2),
+    ) as Record<string, unknown>
+
+    expect(screen.queryByTestId('bar-glass')).toBeNull()
+    expect(screen.queryByTestId('bar-blur')).toBeNull()
+    // 유리가 없으면 바탕은 **바 자신이** 칠한다(유리일 때는 투명이어야 한다 — 아래 케이스).
+    expect(bar.backgroundColor).toBe('#FEF8FB')
+  })
+
+  it('유리가 있으면 바탕을 재질에 맡긴다', async () => {
+    await render(<NavigationHarness />)
+    const bar = Object.assign(
+      {},
+      ...[screen.getByTestId('bottom-bar').props.style].flat(2),
+    ) as Record<string, unknown>
+
+    expect(screen.getByTestId('bar-glass')).toBeTruthy()
+    expect(bar.backgroundColor).toBe('transparent')
+  })
 })
