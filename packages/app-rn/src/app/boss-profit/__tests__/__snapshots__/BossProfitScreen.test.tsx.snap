@@ -194,7 +194,7 @@ exports[`렌더 트리 기준선 기록이 있는 현재 주 1`] = `
                   "paddingBottom": 8,
                   "paddingLeft": 16,
                   "paddingRight": 16,
-                  "paddingTop": 75,
+                  "paddingTop": 59,
                   "zIndex": 10,
                 }
               }

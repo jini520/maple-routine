@@ -32,7 +32,7 @@ import { useDropPriceStore, type DropPriceEntry } from '@core/features/boss-prof
 import { useBossProfitStore } from '@core/features/boss-profit/store'
 import type { RecordedDrop } from '@core/types/drops'
 
-import { renderOverlay } from '../../../components/__tests__/render-atom'
+import { flattenStyle, renderOverlay, 테스트_안전영역 } from '../../../components/__tests__/render-atom'
 import { useScreenNavigation } from '../../use-screen-navigation'
 import { DropPriceScreen } from '../DropPriceScreen'
 
@@ -108,6 +108,19 @@ beforeEach(() => {
   goBack.mockReset()
   mockedNavigation.mockReturnValue({ goBack } as unknown as ReturnType<typeof useScreenNavigation>)
   mockStores()
+})
+
+// ★ [[ADR-139]] 회귀 가드 — 이 화면은 공용 `PageHeader` 를 쓰지 않고 **같은 값을 자기 파일에서**
+// 낸다(드랍 히스토리·보스 수익과 같은 사정). 공용 셸만 고치고 여기를 빠뜨리면 히스토리·가격 두
+// 하위 페이지의 제목 높이가 16px 갈리는데, 두 화면은 같은 진입점 줄에서 나란히 열린다.
+describe('DropPriceScreen — 셸', () => {
+  it('헤더가 상단 안전영역만큼만 먹는다 — 여백을 더하지 않는다', async () => {
+    const { getByTestId } = await renderOverlay(<DropPriceScreen />)
+
+    expect(flattenStyle(getByTestId('page-header').props.style).paddingTop).toBe(
+      테스트_안전영역.insets.top,
+    )
+  })
 })
 
 describe('DropPriceScreen — 기간을 이어받는다 ([[ADR-124]] 결정 8)', () => {

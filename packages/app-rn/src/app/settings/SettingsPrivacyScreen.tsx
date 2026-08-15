@@ -71,7 +71,8 @@ export function SettingsPrivacyScreen(): React.JSX.Element {
       className="flex-1"
       style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
     >
-      <View className="flex-row items-center gap-2 px-4 pb-2 pt-4">
+      {/* 상단 여백은 없다([[ADR-139]]) — 바깥 상자가 안전영역만큼 내려온 자리에서 곧바로 시작한다. */}
+      <View className="flex-row items-center gap-2 px-4 pb-2">
         <Pressable
           role="button"
           aria-label="뒤로"

@@ -1318,7 +1318,7 @@ exports[`렌더 트리 스냅샷 탭 골격 1`] = `
                                     "paddingBottom": 8,
                                     "paddingLeft": 16,
                                     "paddingRight": 16,
-                                    "paddingTop": 75,
+                                    "paddingTop": 59,
                                     "zIndex": 10,
                                   }
                                 }

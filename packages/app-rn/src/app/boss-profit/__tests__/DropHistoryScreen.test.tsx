@@ -145,7 +145,9 @@ describe('DropHistoryScreen — 셸과 조회', () => {
 
     expect(getByTestId('screen-scroll')).toBeTruthy()
     expect(flattenStyle(getByTestId('page-header').props.style).paddingTop).toBe(
-      테스트_안전영역.insets.top + 16,
+      // [[ADR-139]] — 여백을 더하지 않는다. 이 화면은 공용 셸을 안 쓰고 같은 값을 자기 파일에서
+      // 내므로, 공용 셸만 고치고 여기를 빠뜨리면 두 화면의 제목 높이가 갈린다.
+      테스트_안전영역.insets.top,
     )
   })
 

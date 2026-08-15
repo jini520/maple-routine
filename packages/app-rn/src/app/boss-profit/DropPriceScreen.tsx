@@ -68,9 +68,6 @@ import { avatarFaceCropStyle } from './CharacterAvatar'
 import { DropPricePad } from './DropPricePad'
 import { ValuableRowBackground } from './ValuableRowBackground'
 
-/** 웹 `pt-[calc(1rem+var(--sa-top))]` 의 상수 몫 — 히스토리 화면과 같은 값이다. */
-const HEADER_TOP_PADDING_PX = 16
-
 function characterTotal(group: DropPriceGroup): number {
   return group.entries.reduce((sum, entry) => sum + dropPayoutMeso(entry.drop), 0)
 }
@@ -222,12 +219,9 @@ export function DropPriceScreen(): React.JSX.Element {
         hasTabBar={false}
         header={
           // 히스토리 화면과 같은 헤더 레시피 — 공용 `PageHeader` 를 쓰지 않는 이유도 같다
-          // (배경 조각도 하단 페이드도 없는 서브 화면이다).
-          <View
-            testID="page-header"
-            className="z-10 px-4 pb-2"
-            style={{ paddingTop: insets.top + HEADER_TOP_PADDING_PX }}
-          >
+          // (배경 조각도 하단 페이드도 없는 서브 화면이다). 상단 여백을 안 더하는 것도 같다
+          // ([[ADR-139]]).
+          <View testID="page-header" className="z-10 px-4 pb-2" style={{ paddingTop: insets.top }}>
             <View className="flex-row items-center gap-1">
               <Pressable
                 role="button"
