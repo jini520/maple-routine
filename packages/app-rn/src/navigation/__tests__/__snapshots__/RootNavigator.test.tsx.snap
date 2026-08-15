@@ -1284,7 +1284,7 @@ exports[`렌더 트리 스냅샷 탭 골격 1`] = `
                                 }
                                 style={
                                   {
-                                    "height": 70,
+                                    "height": 74.5,
                                   }
                                 }
                                 testID="screen-fade-bottom"
@@ -1295,7 +1295,7 @@ exports[`렌더 트리 스냅샷 탭 골격 1`] = `
                             contentContainerStyle={
                               {
                                 "columnGap": 16,
-                                "paddingBottom": 106,
+                                "paddingBottom": 115,
                                 "rowGap": 16,
                               }
                             }
@@ -1503,7 +1503,6 @@ exports[`렌더 트리 스냅샷 탭 골격 1`] = `
                 </RNSScreen>
               </RNSScreenNavigationContainer>
               <View
-                onLayout={[Function]}
                 style={
                   {
                     "alignItems": "center",
@@ -1514,11 +1513,11 @@ exports[`렌더 트리 스냅샷 탭 골격 1`] = `
                     "bottom": 34,
                     "boxShadow": "0px 5px 28px #04010014",
                     "flexDirection": "row",
-                    "height": 72,
-                    "left": 14,
+                    "height": 81,
+                    "left": 165,
                     "padding": 3,
                     "position": "absolute",
-                    "right": 14,
+                    "right": 165,
                   }
                 }
                 testID="bottom-bar"
@@ -1552,16 +1551,16 @@ exports[`렌더 트리 스냅샷 탭 골격 1`] = `
                       "backgroundColor": "transparent",
                       "borderRadius": 999,
                       "boxShadow": "0px 3px 20px #0401003a",
-                      "height": 66,
+                      "height": 75,
                       "left": 14.5,
                       "position": "absolute",
                       "top": 3,
                       "transform": [
                         {
-                          "translateX": 0,
+                          "translateX": -11.5,
                         },
                       ],
-                      "width": 23,
+                      "width": 101.2,
                     }
                   }
                   testID="bar-pill"
@@ -1605,7 +1604,7 @@ exports[`렌더 트리 스냅샷 탭 골격 1`] = `
                   style={
                     {
                       "flex": 1,
-                      "height": 66,
+                      "height": 75,
                       "marginHorizontal": 11.5,
                       "overflow": "hidden",
                     }
@@ -1619,7 +1618,7 @@ exports[`렌더 트리 스냅샷 탭 골격 1`] = `
                       {
                         "alignItems": "center",
                         "flexDirection": "row",
-                        "height": 66,
+                        "height": 75,
                         "left": 0,
                         "opacity": 1,
                         "position": "absolute",
@@ -1668,9 +1667,9 @@ exports[`렌더 트리 스냅샷 탭 골격 1`] = `
                       style={
                         {
                           "alignItems": "center",
-                          "height": 66,
+                          "height": 75,
                           "justifyContent": "center",
-                          "width": 0,
+                          "width": 78.2,
                         }
                       }
                       testID="bar-group-today"
@@ -1920,9 +1919,9 @@ exports[`렌더 트리 스냅샷 탭 골격 1`] = `
                       style={
                         {
                           "alignItems": "center",
-                          "height": 66,
+                          "height": 75,
                           "justifyContent": "center",
-                          "width": 0,
+                          "width": 78.2,
                         }
                       }
                       testID="bar-group-schedule"
@@ -2157,9 +2156,9 @@ exports[`렌더 트리 스냅샷 탭 골격 1`] = `
                       style={
                         {
                           "alignItems": "center",
-                          "height": 66,
+                          "height": 75,
                           "justifyContent": "center",
-                          "width": 0,
+                          "width": 78.2,
                         }
                       }
                       testID="bar-group-ledger"
@@ -2324,9 +2323,9 @@ exports[`렌더 트리 스냅샷 탭 골격 1`] = `
                       style={
                         {
                           "alignItems": "center",
-                          "height": 66,
+                          "height": 75,
                           "justifyContent": "center",
-                          "width": 0,
+                          "width": 78.2,
                         }
                       }
                       testID="bar-group-utility"
@@ -2469,9 +2468,9 @@ exports[`렌더 트리 스냅샷 탭 골격 1`] = `
                       style={
                         {
                           "alignItems": "center",
-                          "height": 66,
+                          "height": 75,
                           "justifyContent": "center",
-                          "width": 0,
+                          "width": 78.2,
                         }
                       }
                       testID="bar-group-settings"
@@ -2577,7 +2576,7 @@ exports[`렌더 트리 스냅샷 탭 골격 1`] = `
                       {
                         "alignItems": "center",
                         "flexDirection": "row",
-                        "height": 66,
+                        "height": 75,
                         "left": 0,
                         "opacity": 0,
                         "position": "absolute",
@@ -2585,7 +2584,7 @@ exports[`렌더 트리 스냅샷 탭 골격 1`] = `
                         "top": 0,
                         "transform": [
                           {
-                            "translateX": 10,
+                            "translateX": 88.2,
                           },
                         ],
                       }

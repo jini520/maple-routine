@@ -7,9 +7,10 @@
 // 것으로 확정). 패치는 마스크를 **참조로** 기억하고 `drawChild` 에서 막는다.
 import MaskedView from '@react-native-masked-view/masked-view'
 import type { ScrollView as ScrollViewType } from 'react-native'
-import { Platform, ScrollView, View } from 'react-native'
+import { Platform, ScrollView, useWindowDimensions, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { resolveBottomBarMetrics } from '../../../lib/bottom-bar-metrics'
 import { LinearGradient } from '../../../lib/nativewind-interop'
 import { useScrollIndicatorStyle } from '../../../theme/context'
 import { resolveScreenBottomInset } from './bottom-inset'
@@ -143,9 +144,15 @@ export function ScreenScroll({
 }: ScreenScrollProps): React.JSX.Element {
   const insets = useSafeAreaInsets()
   const indicatorStyle = useScrollIndicatorStyle()
+  // 바가 먹는 세로는 **기기 폭의 함수**다([[ADR-132]] 정정 30) — 바와 여기가 같은 함수를 봐야
+  // 콘텐츠가 바 뒤로 들어가거나 바닥에 빈 띠를 남기지 않는다. `100dvh` 짝을 안전영역 프레임에서
+  // 받는 자리들과 달리 여기는 **창 폭**이 맞다: 바 자신이 그 폭으로 자리를 잡는다.
+  const { width: windowWidthPx } = useWindowDimensions()
+  const barSpacePx = resolveBottomBarMetrics(windowWidthPx).spacePx
   const bottom = resolveScreenBottomInset({
     hasTabBar,
     bottomInsetPx: insets.bottom,
+    barSpacePx,
     platform: Platform.OS,
   })
   const fade = resolveSafeAreaFade({
@@ -153,6 +160,7 @@ export function ScreenScroll({
     hasTabBar,
     insetTopPx: insets.top,
     insetBottomPx: insets.bottom,
+    barSpacePx,
     portBottomPx: bottom.portBottomPx,
   })
 

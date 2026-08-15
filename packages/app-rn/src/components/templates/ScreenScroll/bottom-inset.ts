@@ -34,15 +34,6 @@ export interface ScreenBottomInset {
   contentBottomPx: number
 }
 
-/**
- * 떠 있는 바가 먹는 세로 몫 — `BottomBar.tsx` 의 **`BAR_HEIGHT + LIFT`** 와 같은 값이어야 한다
- * ([[ADR-132]] 결정 11). 한쪽만 고치면 콘텐츠가 바 뒤로 들어가거나(작으면) 바닥에 빈 띠가 남는다(크면).
- *
- * 값은 72 인데 **구성이 두 번 바뀌었다** — 처음 «높이 60 + 띄움 12», 지금은 «높이 72 + 띄움 0»
- * (안전영역에 붙였다, 2026-08-13). 합이 같아서 이 상수는 그대로다.
- */
-export const FLOATING_BAR_SPACE_PX = 72
-
 export function resolveScreenBottomInset(options: {
   /**
    * 아래에 탭바가 있는가.
@@ -58,11 +49,23 @@ export function resolveScreenBottomInset(options: {
   hasTabBar: boolean
   /** `useSafeAreaInsets().bottom`. */
   bottomInsetPx: number
+  /**
+   * 떠 있는 바가 먹는 세로 몫 — `resolveBottomBarMetrics(창 폭).spacePx` ([[ADR-132]] 정정 30).
+   *
+   * **예전에는 이 파일의 상수(`FLOATING_BAR_SPACE_PX = 72`)였다.** 그 주석이 *"`BottomBar.tsx` 의
+   * `BAR_HEIGHT + LIFT` 와 같은 값이어야 한다"* 였다는 것이 이 인자의 근거다 — 원래부터 파생값을
+   * 손으로 옮겨 적고 테스트로 그 약속을 지키던 자리였고, 정정 30 이 기기마다 다른 값을 만들면서
+   * 손으로 옮길 수 없게 됐다. 어긋나면 콘텐츠가 바 뒤로 들어가거나(작으면) 바닥에 빈 띠가
+   * 남는다(크면).
+   *
+   * `hasTabBar` 가 거짓이면 안 쓴다 — 하위 페이지에는 바가 없다([[ADR-120]] 결정 4).
+   */
+  barSpacePx: number
   /** `Platform.OS`. */
   platform: string
 }): ScreenBottomInset {
   if (options.hasTabBar) {
-    return { portBottomPx: 0, contentBottomPx: options.bottomInsetPx + FLOATING_BAR_SPACE_PX }
+    return { portBottomPx: 0, contentBottomPx: options.bottomInsetPx + options.barSpacePx }
   }
 
   return options.platform === 'ios'

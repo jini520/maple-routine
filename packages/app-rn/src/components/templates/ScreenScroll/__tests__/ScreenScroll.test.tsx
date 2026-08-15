@@ -16,13 +16,19 @@
 
 import { getThemeDefinition } from '@core/lib/theme-registry'
 import { within } from '@testing-library/react-native'
-import { Text, View } from 'react-native'
+import { Dimensions, Text, View } from 'react-native'
 import type { Metrics } from 'react-native-safe-area-context'
 
 import { flattenStyle, renderOverlay, 테스트_안전영역 } from '../../../__tests__/render-atom'
 import { rnThemeAppearancePort } from '../../../../native/adapters/rn-theme-appearance'
 import { __resetThemeAppearanceForTest } from '../../../../theme/appearance-store'
-import { FLOATING_BAR_SPACE_PX } from '../bottom-inset'
+import { resolveBottomBarMetrics } from '../../../../lib/bottom-bar-metrics'
+
+/**
+ * 바가 먹는 몫은 **창 폭의 함수**다([[ADR-132]] 정정 30). 여기서 숫자를 적지 않고 같은 함수를
+ * 부르는 것이 이 파일이 지키는 것이다 — 셸이 창 폭을 안 보면 이 값이 안 맞는다.
+ */
+const 바_몫 = resolveBottomBarMetrics(Dimensions.get('window').width).spacePx
 import { ScreenScroll } from '../ScreenScroll'
 
 beforeEach(__resetThemeAppearanceForTest)
@@ -134,7 +140,7 @@ describe('하단 인셋이 들어가는 자리', () => {
     const scroller = getByTestId('screen-scroll')
     expect(flattenStyle(scroller.props.style).marginBottom).toBe(0)
     expect(flattenStyle(scroller.props.contentContainerStyle).paddingBottom).toBe(
-      테스트_안전영역.insets.bottom + FLOATING_BAR_SPACE_PX,
+      테스트_안전영역.insets.bottom + 바_몫,
     )
   })
 })
@@ -197,7 +203,7 @@ describe('[[ADR-134]] 안전영역 페이드', () => {
       테스트_안전영역.insets.top,
     )
     expect(flattenStyle(getByTestId('screen-fade-bottom').props.style).height).toBe(
-      테스트_안전영역.insets.bottom + FLOATING_BAR_SPACE_PX / 2,
+      테스트_안전영역.insets.bottom + 바_몫 / 2,
     )
   })
 
