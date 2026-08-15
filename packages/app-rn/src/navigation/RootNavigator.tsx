@@ -12,6 +12,7 @@ import { SettingsFeatureGuideListScreen } from '../app/settings/SettingsFeatureG
 import { SettingsFeatureGuideScreen } from '../app/settings/SettingsFeatureGuideScreen'
 import { SettingsPrivacyScreen } from '../app/settings/SettingsPrivacyScreen'
 import { SettingsReleaseNotesScreen } from '../app/settings/SettingsReleaseNotesScreen'
+import { ScreenBackdrop } from '../components/templates/ThemeBackdrop/ScreenBackdrop'
 import { TabNavigator } from './TabNavigator'
 import { STACK_ROUTE_NAMES, type RootStackParamList, type StackRouteName } from './routes'
 
@@ -91,6 +92,10 @@ export function RootNavigator(): React.JSX.Element {
 
   return (
     <Stack.Navigator
+      // 모든 화면이 자기 벽지를 들고 다닌다([[ADR-134]] 정정 5) — 안드로이드에서 화면이
+      // 불투명해야 전환 중 두 화면이 서로 비치지 않고, 그러면 벽지를 화면이 들어야 한다.
+      // iOS 에서는 이 래퍼가 자식을 그대로 통과시킨다(`ScreenBackdrop`).
+      screenLayout={({ children }) => <ScreenBackdrop>{children}</ScreenBackdrop>}
       screenOptions={{
         // 페이지 헤더는 앱이 직접 그린다 — `TabNavigator` 와 같은 이유.
         headerShown: false,

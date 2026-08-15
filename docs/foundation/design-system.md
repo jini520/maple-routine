@@ -509,8 +509,14 @@ DOM:   포털로 탭 레이어 **밖**      (트리 위치는 중첩 그대로 �
   ```
   자리    ScreenScroll (화면 셸 하나) — 마스크 상자 = 스크롤포트. 전역 오버레이로 두면 떠 있는
           바까지 깎이고, 화면마다 두면 열여섯 벌이 된다
-  수단    @react-native-masked-view/masked-view 0.3.2 (Expo SDK 57 고정판) — RN 에 mask-image 가
-          없고 mixBlendMode 에 destination-out 이 없다(0.86 열거 실측)
+  수단    @react-native-masked-view/masked-view 0.3.2 — RN 에 mask-image 가 없고 mixBlendMode 에
+          destination-out 이 없다(0.86 열거 실측).
+          **안드로이드 구현은 패치해서 쓴다**([[ADR-134]] 정정 4 · patches/ + 루트 postinstall) —
+          그쪽은 마스크를 getChildAt(0) 으로 찾는데, pop 으로 서브트리가 언마운트되면 자식이
+          mChildren 에서 빠져 getChildAt(0) 이 null 이 되고(화면은 아직 밀려 나가는 중이라
+          Android 는 disappearing child 로 계속 그린다, INVISIBLE 도 무시) 마스크가 평범한
+          그림으로 깔린다 = 뒤로가기 전환 내내 화면이 검정 한 장. 패치는 마스크를 **참조로**
+          기억하고 drawChild 에서 막는다
   길이    상단 = 안전영역 (**헤더가 있는 화면만** — 없으면 셸이 스크롤포트를 내려 콘텐츠가 그
           자리에 못 온다)
           하단 = 안전영역 − portBottomPx **+ 바 몫의 절반(36, 탭 화면만)**

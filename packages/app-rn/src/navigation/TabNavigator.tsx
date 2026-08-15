@@ -8,6 +8,7 @@ import { SettingsScreen } from '../app/settings/SettingsScreen'
 import { SpendScreen } from '../app/spend/SpendScreen'
 import { TodayScreen } from '../app/today/TodayScreen'
 import { UtilityScreen } from '../app/utility/UtilityScreen'
+import { ScreenBackdrop } from '../components/templates/ThemeBackdrop/ScreenBackdrop'
 import { BottomBar } from './BottomBar'
 import { INITIAL_TAB_ROUTE, TAB_ROUTE_NAMES, type TabParamList, type TabRouteName } from './routes'
 
@@ -69,6 +70,10 @@ function screenFor(name: TabRouteName): React.ComponentType<Record<string, never
 export function TabNavigator(): React.JSX.Element {
   return (
     <Tab.Navigator
+      // 모든 화면이 자기 벽지를 들고 다닌다([[ADR-134]] 정정 5) — 안드로이드에서 화면이
+      // 불투명해야 전환 중 두 화면이 서로 비치지 않고, 그러면 벽지를 화면이 들어야 한다.
+      // iOS 에서는 이 래퍼가 자식을 그대로 통과시킨다(`ScreenBackdrop`).
+      screenLayout={({ children }) => <ScreenBackdrop>{children}</ScreenBackdrop>}
       initialRouteName={INITIAL_TAB_ROUTE}
       backBehavior="none"
       tabBar={(props) => <BottomBar {...props} />}
