@@ -1,0 +1,686 @@
+// 캐릭터 관리 화면([[ADR-144]]) — **웹에 짝이 없는 화면**이라 옮겨 적을 명세가 없다. 그래서 이
+// 파일이 보는 것은 그 ADR 의 성공 기준 그대로다: 두 층의 범위 · 이동 · 별 · TTL · 저장 활성 조건.
+//
+// ── 무엇을 목으로 세우는가 ──────────────────────────────────────────────────────────
+//
+// 값 규칙(`summarizeAccount`·`buildSelectedCharacterViews`·`resolveRepresentative`)과 문구
+// (`formatRosterError`)는 **실물을 쓴다** — 여기서 베끼면 규칙이 두 벌이 된다([[ADR-144]] 머리
+// «값 규칙의 자리»). 세우는 것은 경계 넷뿐이다: 계정 목록 조회 · 후보 목록 조회 · 로컬 캐시 ·
+// 저장 액션.
+//
+// **끌어서 순서 바꾸기는 여기 없다**(step 7). 그래서 «순서만 달라졌을 때 저장이 활성인가» 는
+// 화면에서 도달 가능한 유일한 경로로 본다 — 뺐다가 다시 고르면 집합은 같고 순서만 달라진다.
+import { act, fireEvent } from '@testing-library/react-native'
+
+import { getCharacterPickerRoster } from '@core/features/schedule-sync/schedule-sync'
+import { fetchCharacterList } from '@core/nexon/character'
+import { NexonAuthError, NexonRateLimitError } from '@core/nexon/errors'
+import { getAuthConfig } from '@core/storage/api-key'
+import { getCachedCharacterBasic } from '@core/storage/character-basic-cache'
+import {
+  clearRepresentativeCharacter,
+  getRepresentativeCharacter,
+  setRepresentativeCharacter,
+} from '@core/storage/character-selection'
+import { getScheduleProbeLedger } from '@core/storage/schedule-probe-ledger'
+import { useContentSchedulerStore, type ContentSchedulerStore } from '@core/features/content-scheduler/store'
+import { CHARACTER_BASIC_TTL_MS } from '@core/features/schedule-sync/character-basic-fetch'
+import type { CachedCharacterBasicEntry } from '@core/storage/character-basic-cache'
+import type { CharacterPickerEntry, MapleAccount, MapleCharacter } from '@core/types'
+
+import {
+  flattenStyle,
+  renderOverlay,
+  type AtomElement,
+} from '../../../components/__tests__/render-atom'
+import { SettingsCharactersScreen } from '../SettingsCharactersScreen'
+import { useSettingsNavigation } from '../use-settings-navigation'
+
+// 팩토리 밖 변수를 참조하려면 이름이 `mock` 으로 시작해야 한다(babel-jest 규칙).
+const mockGetRoster = jest.fn()
+const mockNoticeApiKeyIssue = jest.fn()
+const mockLoadBossTracked = jest.fn()
+const mockLoadProfitTracked = jest.fn()
+
+jest.mock('../use-settings-navigation', () => ({ useSettingsNavigation: jest.fn() }))
+jest.mock('@core/nexon/character', () => ({ fetchCharacterList: jest.fn() }))
+jest.mock('@core/storage/api-key', () => ({ getAuthConfig: jest.fn() }))
+jest.mock('@core/storage/character-basic-cache', () => ({ getCachedCharacterBasic: jest.fn() }))
+jest.mock('@core/storage/character-selection', () => ({
+  getRepresentativeCharacter: jest.fn(),
+  setRepresentativeCharacter: jest.fn(),
+  clearRepresentativeCharacter: jest.fn(),
+}))
+jest.mock('@core/storage/schedule-probe-ledger', () => ({ getScheduleProbeLedger: jest.fn() }))
+
+// [[ADR-062]]: `toScheduleSyncError` 는 실물을 쓴다(문구가 원인에서 나온다). `...requireActual` 을
+// 통째로 쓰면 순환 참조가 아직 구성 중인 모듈을 `undefined` 로 만난다 — 부분 모킹이 그 처방이다.
+jest.mock('@core/features/schedule-sync/schedule-sync', () => ({
+  toScheduleSyncError: jest.requireActual<typeof import('@core/features/schedule-sync/errors')>(
+    '@core/features/schedule-sync/errors',
+  ).toScheduleSyncError,
+  getCharacterPickerRoster: (...args: unknown[]) => mockGetRoster(...args),
+}))
+
+jest.mock('@core/features/content-scheduler/store', () => {
+  const hook = jest.fn()
+  return { useContentSchedulerStore: hook }
+})
+// [[ADR-140]] 결정 5: 저장 뒤 다시 읽히는 둘 — 화면은 `getState()` 로만 만진다.
+jest.mock('@core/features/boss-scheduler/store', () => ({
+  useBossSchedulerStore: { getState: () => ({ loadTrackedOcids: mockLoadBossTracked }) },
+}))
+jest.mock('@core/features/boss-profit/store', () => ({
+  useBossProfitStore: { getState: () => ({ loadTrackedOcids: mockLoadProfitTracked }) },
+}))
+// [[ADR-115]] 결정 7 · [[ADR-116]] 결정 1: 401·429 는 키 재입력 진입점으로 간다.
+jest.mock('@core/features/onboarding/store', () => ({
+  useOnboardingStore: { getState: () => ({ noticeApiKeyIssue: mockNoticeApiKeyIssue }) },
+}))
+
+const mockedUseSettingsNavigation = jest.mocked(useSettingsNavigation)
+const mockedFetchCharacterList = jest.mocked(fetchCharacterList)
+const mockedGetAuthConfig = jest.mocked(getAuthConfig)
+const mockedGetCachedBasic = jest.mocked(getCachedCharacterBasic)
+const mockedGetRepresentative = jest.mocked(getRepresentativeCharacter)
+const mockedSetRepresentative = jest.mocked(setRepresentativeCharacter)
+const mockedClearRepresentative = jest.mocked(clearRepresentativeCharacter)
+const mockedGetLedger = jest.mocked(getScheduleProbeLedger)
+const mockedContentStore = jest.mocked(useContentSchedulerStore)
+const mockedRoster = mockGetRoster as unknown as jest.MockedFunction<typeof getCharacterPickerRoster>
+
+const goBack = jest.fn()
+
+// ── 픽스처 ────────────────────────────────────────────────────────────────────────
+function 캐릭터(ocid: string, name: string, world: string, level: number, jobClass: string): MapleCharacter {
+  return { ocid, name, world, jobClass, level }
+}
+
+const 낟낟 = 캐릭터('a1', '낟낟', '스카니아', 294, '아크메이지(썬, 콜)')
+const 달의아이 = 캐릭터('a2', '달의아이', '스카니아', 260, '나이트로드')
+const 별헤는밤 = 캐릭터('a3', '별헤는밤', '스카니아', 250, '비숍')
+const 밤샘메린 = 캐릭터('b1', '밤샘메린', '루나', 275, '팔라딘')
+
+const 계정A: MapleAccount = { accountId: 'account-a', characters: [낟낟, 달의아이, 별헤는밤] }
+const 계정B: MapleAccount = { accountId: 'account-b', characters: [밤샘메린] }
+
+function 후보(character: MapleCharacter, overrides: Partial<CharacterPickerEntry> = {}): CharacterPickerEntry {
+  return {
+    ocid: character.ocid,
+    name: character.name,
+    level: character.level,
+    imageUrl: null,
+    world: character.world,
+    jobClass: character.jobClass,
+    ...overrides,
+  }
+}
+
+function 캐시(character: MapleCharacter): CachedCharacterBasicEntry {
+  return {
+    profile: {
+      name: character.name,
+      level: character.level,
+      imageUrl: `https://example.test/${character.ocid}.png`,
+      accessFlag: true,
+      world: character.world,
+      jobClass: character.jobClass,
+    },
+    cachedAt: '2026-08-17T00:00:00.000Z',
+  }
+}
+
+const 캐시된캐릭터 = new Map([낟낟, 달의아이, 별헤는밤, 밤샘메린].map((c) => [c.ocid, 캐시(c)]))
+
+/** 계정별 후보 목록 — 테스트가 이 표만 갈아 끼운다. */
+let rosterByAccount: Record<string, CharacterPickerEntry[]>
+/** 그 계정의 조회가 실패해야 하면 여기 에러를 둔다. */
+let rosterFailureByAccount: Record<string, unknown>
+/** 그 계정의 조회를 손으로 붙잡아 둔다(대기 화면 검사용). */
+let rosterHangingAccounts: Set<string>
+
+type Rendered = Awaited<ReturnType<typeof renderOverlay>>
+
+function mockContentStore(overrides: Partial<ContentSchedulerStore> = {}): ContentSchedulerStore {
+  const base = {
+    trackedOcids: [],
+    saveTrackedOcids: jest.fn(async () => {}),
+    ...overrides,
+  } as unknown as ContentSchedulerStore
+  mockedContentStore.mockReturnValue(base)
+  return base
+}
+
+async function press(element: AtomElement): Promise<void> {
+  await act(async () => {
+    fireEvent.press(element)
+  })
+}
+
+/** 마운트 직후 계정 조회 → 후보 조회가 연달아 도는 자리라 여러 번 흘려보낸다. */
+async function renderScreen(): Promise<Rendered> {
+  const view = await renderOverlay(<SettingsCharactersScreen />)
+  for (let i = 0; i < 4; i += 1) await act(async () => {})
+  return view
+}
+
+async function switchAccount(view: Rendered, accountId: string): Promise<void> {
+  await press(view.getByTestId('account-select-trigger'))
+  await press(view.getByTestId(`account-select-option-${accountId}`))
+  for (let i = 0; i < 3; i += 1) await act(async () => {})
+}
+
+/** 서브트리의 글자를 나온 순서대로 — 층 안의 **순서**를 보려고 쓴다. */
+function textsIn(node: AtomElement): string[] {
+  const texts: string[] = []
+  const walk = (current: AtomElement): void => {
+    for (const child of current.children) {
+      if (typeof child === 'string') texts.push(child)
+      else walk(child)
+    }
+  }
+  walk(node)
+  return texts
+}
+
+const 모든이름 = ['낟낟', '달의아이', '별헤는밤', '밤샘메린']
+
+function namesIn(view: Rendered, testID: string): string[] {
+  const node = view.queryByTestId(testID)
+  if (node === null) return []
+  return textsIn(node).filter((text) => 모든이름.includes(text))
+}
+
+function star(view: Rendered, name: string): AtomElement {
+  return view.getByLabelText(`${name} 대표 캐릭터`)
+}
+
+/** `aria-selected` 는 RN 에서 `accessibilityState.selected` 로 내려간다. */
+function isRepresentative(view: Rendered, name: string): boolean {
+  return star(view, name).props.accessibilityState?.selected === true
+}
+
+beforeEach(() => {
+  rosterByAccount = {
+    'account-a': [후보(낟낟), 후보(달의아이), 후보(별헤는밤)],
+    'account-b': [후보(밤샘메린)],
+  }
+  rosterFailureByAccount = {}
+  rosterHangingAccounts = new Set()
+
+  mockedUseSettingsNavigation.mockReturnValue({
+    navigate: jest.fn(),
+    goBack,
+    setParams: jest.fn(),
+  } as unknown as ReturnType<typeof useSettingsNavigation>)
+  mockedGetAuthConfig.mockResolvedValue({ apiKey: 'key', selectedAccountId: null })
+  mockedFetchCharacterList.mockResolvedValue([계정A, 계정B])
+  mockedGetCachedBasic.mockImplementation(async (ocid: string) => 캐시된캐릭터.get(ocid) ?? null)
+  mockedGetRepresentative.mockResolvedValue(null)
+  mockedSetRepresentative.mockResolvedValue(undefined)
+  mockedClearRepresentative.mockResolvedValue(undefined)
+  mockedGetLedger.mockResolvedValue({ unavailable: false, dates: {} })
+  mockedRoster.mockImplementation(async (onUpdate, options) => {
+    const accountId = options?.accountId ?? ''
+    if (rosterHangingAccounts.has(accountId)) return new Promise<void>(() => {})
+    const failure = rosterFailureByAccount[accountId]
+    if (failure !== undefined) throw failure
+    onUpdate(rosterByAccount[accountId] ?? [])
+  })
+  mockLoadBossTracked.mockResolvedValue(undefined)
+  mockLoadProfitTracked.mockResolvedValue(undefined)
+  mockContentStore()
+})
+
+afterEach(() => {
+  jest.clearAllMocks()
+})
+
+describe('두 층 — 위는 계정을 넘고 아래는 계정 하나다 ([[ADR-144]] 결정 2)', () => {
+  it('위는 저장 순서 그대로, 아래는 그 계정에서 아직 안 고른 후보다', async () => {
+    mockContentStore({ trackedOcids: ['a1'] })
+
+    const view = await renderScreen()
+
+    expect(view.getByText('선택된 캐릭터 1개')).toBeTruthy()
+    expect(namesIn(view, 'character-manage-selected')).toEqual(['낟낟'])
+    expect(namesIn(view, 'character-manage-candidates')).toEqual(['달의아이', '별헤는밤'])
+  })
+
+  it('드롭다운으로 계정을 바꿔도 위 목록은 그대로다', async () => {
+    mockContentStore({ trackedOcids: ['a1'] })
+    const view = await renderScreen()
+
+    await switchAccount(view, 'account-b')
+
+    expect(namesIn(view, 'character-manage-selected')).toEqual(['낟낟'])
+    expect(namesIn(view, 'character-manage-candidates')).toEqual(['밤샘메린'])
+  })
+
+  it('대기는 아래 자리에만 그려진다 — 위는 로컬 캐시라 기다릴 것이 없다', async () => {
+    mockContentStore({ trackedOcids: ['a1'] })
+    rosterHangingAccounts.add('account-b')
+    const view = await renderScreen()
+
+    await switchAccount(view, 'account-b')
+
+    expect(view.getByLabelText('캐릭터 목록을 불러오는 중')).toBeTruthy()
+    expect(namesIn(view, 'character-manage-selected')).toEqual(['낟낟'])
+  })
+
+  it('실패도 아래 자리에만 그려진다', async () => {
+    mockContentStore({ trackedOcids: ['a1'] })
+    rosterFailureByAccount['account-b'] = new Error('boom')
+    const view = await renderScreen()
+
+    await switchAccount(view, 'account-b')
+
+    expect(view.getByTestId('error-state')).toBeTruthy()
+    expect(namesIn(view, 'character-manage-selected')).toEqual(['낟낟'])
+  })
+
+  // 「후보 목록 로딩」 정책 그대로 — 보여줄 것이 남아 있으면 지우지 않고 위에 배너를 얹는다
+  // ([[ADR-062]] 결정 4). 캐시 stub 이 네트워크보다 먼저 오므로 이쪽이 기본 분기다.
+  it('후보가 도착한 뒤 실패하면 목록을 지우지 않고 스탈 배너를 얹는다', async () => {
+    mockContentStore({ trackedOcids: [] })
+    mockedRoster.mockImplementation(async (onUpdate) => {
+      onUpdate([후보(달의아이)])
+      throw new Error('boom')
+    })
+
+    const view = await renderScreen()
+
+    expect(view.getByTestId('stale-banner')).toBeTruthy()
+    expect(namesIn(view, 'character-manage-candidates')).toEqual(['달의아이'])
+  })
+})
+
+describe('이동 — 선택은 «표시» 가 아니라 «이동» 이다 ([[ADR-144]] 결정 3)', () => {
+  it('후보 카드를 누르면 아래에서 사라지고 위 리스트 **끝**에 붙는다', async () => {
+    mockContentStore({ trackedOcids: ['a1'] })
+    const view = await renderScreen()
+
+    await press(view.getByText('별헤는밤'))
+
+    // 레벨(250)로 끼워 넣지 않는다 — 새로 고른 캐릭터는 배열 끝이다([[ADR-143]] 결정 3).
+    expect(namesIn(view, 'character-manage-selected')).toEqual(['낟낟', '별헤는밤'])
+    expect(namesIn(view, 'character-manage-candidates')).toEqual(['달의아이'])
+  })
+
+  it('`✕` 로 빼면 지금 열린 계정 소속은 아래로 돌아온다', async () => {
+    mockContentStore({ trackedOcids: ['a1', 'a2'] })
+    const view = await renderScreen()
+
+    await press(view.getByLabelText('달의아이 선택 해제'))
+
+    expect(namesIn(view, 'character-manage-selected')).toEqual(['낟낟'])
+    expect(namesIn(view, 'character-manage-candidates')).toEqual(['달의아이', '별헤는밤'])
+  })
+
+  it('다른 계정 소속을 빼면 아래로 돌아오지 않는다 — 그 계정을 열어야 보인다', async () => {
+    mockContentStore({ trackedOcids: ['a1', 'b1'] })
+    const view = await renderScreen()
+
+    await press(view.getByLabelText('밤샘메린 선택 해제'))
+
+    expect(namesIn(view, 'character-manage-selected')).toEqual(['낟낟'])
+    expect(namesIn(view, 'character-manage-candidates')).toEqual(['달의아이', '별헤는밤'])
+  })
+
+  // [[ADR-068]] 결정 4 가 원한 결말 — 뺄 수 있으면 됐고, 다시 고를 수 있어야 할 이유는 없다.
+  it('조회 불가 캐릭터는 위에 남아 해제되고, 빼면 어디에도 서지 않는다', async () => {
+    mockContentStore({ trackedOcids: ['a2'] })
+    rosterByAccount['account-a'] = [후보(낟낟), 후보(달의아이, { unavailable: true })]
+    mockedGetLedger.mockImplementation(async (ocid: string) => ({
+      unavailable: ocid === 'a2',
+      dates: {},
+    }))
+    const view = await renderScreen()
+
+    expect(view.getByText('조회할 수 없는 캐릭터')).toBeTruthy()
+    expect(namesIn(view, 'character-manage-candidates')).toEqual(['낟낟'])
+
+    await press(view.getByLabelText('달의아이 선택 해제'))
+
+    expect(namesIn(view, 'character-manage-selected')).toEqual([])
+    expect(namesIn(view, 'character-manage-candidates')).toEqual(['낟낟'])
+  })
+})
+
+describe('대표 — 별의 뜻이 «고름» 에서 «대표» 로 바뀌었다 ([[ADR-144]] 결정 4)', () => {
+  it('대표가 없으면 아무 별도 채워지지 않고 흐려지지도 않는다', async () => {
+    mockContentStore({ trackedOcids: ['a1', 'a2'] })
+
+    const view = await renderScreen()
+
+    for (const name of ['낟낟', '달의아이']) {
+      expect(isRepresentative(view, name)).toBe(false)
+      expect(flattenStyle(star(view, name).props.style).opacity).toBeUndefined()
+    }
+  })
+
+  it('하나가 채워지면 나머지는 흐려진다', async () => {
+    mockContentStore({ trackedOcids: ['a1', 'a2'] })
+    mockedGetRepresentative.mockResolvedValue('a1')
+
+    const view = await renderScreen()
+
+    expect(isRepresentative(view, '낟낟')).toBe(true)
+    expect(flattenStyle(star(view, '낟낟').props.style).opacity).toBeUndefined()
+    expect(isRepresentative(view, '달의아이')).toBe(false)
+    expect(flattenStyle(star(view, '달의아이').props.style).opacity as number).toBeCloseTo(0.4, 5)
+  })
+
+  it('흐린 별도 눌린다 — 누르면 대표가 그리로 옮겨간다', async () => {
+    mockContentStore({ trackedOcids: ['a1', 'a2'] })
+    mockedGetRepresentative.mockResolvedValue('a1')
+    const view = await renderScreen()
+
+    await press(star(view, '달의아이'))
+
+    expect(isRepresentative(view, '달의아이')).toBe(true)
+    expect(isRepresentative(view, '낟낟')).toBe(false)
+  })
+
+  it('후보 카드에는 별이 없다 — 자리가 곧 «고름» 이다', async () => {
+    mockContentStore({ trackedOcids: [] })
+
+    const view = await renderScreen()
+
+    expect(view.queryByLabelText('낟낟 대표 캐릭터')).toBeNull()
+  })
+
+  it('대표를 뺀 자리는 «대표 없음» 이 된다', async () => {
+    mockContentStore({ trackedOcids: ['a1', 'a2'] })
+    mockedGetRepresentative.mockResolvedValue('a1')
+    const view = await renderScreen()
+
+    await press(view.getByLabelText('낟낟 선택 해제'))
+
+    expect(isRepresentative(view, '달의아이')).toBe(false)
+    expect(flattenStyle(star(view, '달의아이').props.style).opacity).toBeUndefined()
+  })
+})
+
+describe('계정 전환 TTL ([[ADR-144]] 결정 6)', () => {
+  function accountsOf(): string[] {
+    return mockedRoster.mock.calls.map((call) => call[1]?.accountId ?? '')
+  }
+
+  it('5분 안에 같은 계정을 다시 열면 조회가 한 번도 더 나가지 않는다', async () => {
+    const view = await renderScreen()
+
+    await switchAccount(view, 'account-b')
+    await switchAccount(view, 'account-a')
+
+    expect(accountsOf()).toEqual(['account-a', 'account-b'])
+  })
+
+  it('실패로 끝난 계정은 캐싱되지 않는다 — 다시 열면 다시 돈다', async () => {
+    rosterFailureByAccount['account-a'] = new Error('boom')
+    const view = await renderScreen()
+
+    await switchAccount(view, 'account-b')
+    await switchAccount(view, 'account-a')
+
+    expect(accountsOf()).toEqual(['account-a', 'account-b', 'account-a'])
+  })
+
+  it('「다시 시도」는 TTL 과 무관하게 그 계정을 다시 조회한다', async () => {
+    rosterFailureByAccount['account-a'] = new Error('boom')
+    const view = await renderScreen()
+    delete rosterFailureByAccount['account-a']
+
+    await press(view.getByText('다시 시도'))
+    await act(async () => {})
+
+    expect(accountsOf()).toEqual(['account-a', 'account-a'])
+    expect(namesIn(view, 'character-manage-candidates')).toEqual(['낟낟', '달의아이', '별헤는밤'])
+  })
+
+  it('5분이 지나면 다시 돈다', async () => {
+    const base = Date.now()
+    const clock = jest.spyOn(Date, 'now').mockReturnValue(base)
+    try {
+      const view = await renderScreen()
+      await switchAccount(view, 'account-b')
+
+      clock.mockReturnValue(base + CHARACTER_BASIC_TTL_MS + 1)
+      await switchAccount(view, 'account-a')
+
+      expect(accountsOf()).toEqual(['account-a', 'account-b', 'account-a'])
+    } finally {
+      clock.mockRestore()
+    }
+  })
+
+  // 결정 6: «방금 확인함» 류의 표시를 두지 않는다 — 사용자가 아니라 구현의 사정이다.
+  it('TTL 을 알리는 표시가 화면에 없다', async () => {
+    const view = await renderScreen()
+
+    await switchAccount(view, 'account-b')
+    await switchAccount(view, 'account-a')
+
+    expect(view.queryByText(/방금|최신|캐시/)).toBeNull()
+  })
+})
+
+describe('못 고르는 계정 ([[ADR-143]] 결정 10)', () => {
+  it('그 계정의 후보가 0건이면 그 사실을 말하고, 출구는 드롭다운이다', async () => {
+    rosterByAccount['account-a'] = []
+
+    const view = await renderScreen()
+
+    expect(view.getByText('이 메이플 ID 의 캐릭터는 모두 조회할 수 없어요')).toBeTruthy()
+    expect(view.getByTestId('account-select-trigger')).toBeTruthy()
+    expect(view.queryByText('계정 다시 선택')).toBeNull()
+  })
+
+  it('고를 수 있는 계정이 하나도 없으면 화면 전체가 빈 상태 + 키 재입력 경로다', async () => {
+    mockedFetchCharacterList.mockResolvedValue([])
+
+    const view = await renderScreen()
+
+    expect(view.getByText('조회되는 캐릭터가 없어요')).toBeTruthy()
+    expect(view.queryByTestId('account-select-trigger')).toBeNull()
+
+    await press(view.getByText('API 키 다시 입력'))
+
+    expect(mockNoticeApiKeyIssue).toHaveBeenCalledWith('invalid')
+  })
+
+  it('후보를 전부 골랐으면 «모두 조회할 수 없어요» 가 아니라 빈 목록이다', async () => {
+    mockContentStore({ trackedOcids: ['a1', 'a2', 'a3'] })
+
+    const view = await renderScreen()
+
+    expect(view.getByText('표시할 캐릭터가 없어요')).toBeTruthy()
+    expect(view.getByText('3개 중 0개 표시')).toBeTruthy()
+  })
+})
+
+describe('키 재입력 진입점 ([[ADR-115]] 결정 7 · [[ADR-116]] 결정 1)', () => {
+  it.each([
+    ['401', new NexonAuthError('401'), 'invalid'],
+    ['429', new NexonRateLimitError('429'), 'rateLimited'],
+  ])('후보 조회가 %s 로 끝나면 키 재입력 경로로 간다', async (_label, error, kind) => {
+    rosterFailureByAccount['account-a'] = error
+
+    await renderScreen()
+
+    expect(mockNoticeApiKeyIssue).toHaveBeenCalledWith(kind)
+  })
+
+  it('계정 목록 조회가 401 로 끝나도 같은 경로로 간다', async () => {
+    mockedFetchCharacterList.mockRejectedValue(new NexonAuthError('401'))
+
+    await renderScreen()
+
+    expect(mockNoticeApiKeyIssue).toHaveBeenCalledWith('invalid')
+  })
+
+  it('401·429 가 아닌 실패는 그 경로를 타지 않는다', async () => {
+    rosterFailureByAccount['account-a'] = new Error('boom')
+
+    await renderScreen()
+
+    expect(mockNoticeApiKeyIssue).not.toHaveBeenCalled()
+  })
+})
+
+describe('저장 ([[ADR-144]] 결정 7 · [[ADR-140]] 결정 4·5)', () => {
+  function saveButton(view: Rendered): AtomElement {
+    let node: AtomElement | null = view.getByText('저장')
+    while (node !== null && node.props.role !== 'button') node = node.parent
+    if (node === null) throw new Error('저장 버튼을 찾지 못했다')
+    return node
+  }
+
+  function isSaveDisabled(view: Rendered): boolean {
+    return saveButton(view).props.accessibilityState?.disabled === true
+  }
+
+  it('바뀐 것이 없으면 비활성이다', async () => {
+    mockContentStore({ trackedOcids: ['a1'] })
+
+    expect(isSaveDisabled(await renderScreen())).toBe(true)
+  })
+
+  // [[ADR-086]] 결정 7: 0개는 어떤 사용자 의도도 표현하지 않는다.
+  it('0개면 비활성이다', async () => {
+    mockContentStore({ trackedOcids: ['a1'] })
+    const view = await renderScreen()
+
+    await press(view.getByLabelText('낟낟 선택 해제'))
+
+    expect(isSaveDisabled(view)).toBe(true)
+  })
+
+  it('집합만 달라져도 활성이다', async () => {
+    mockContentStore({ trackedOcids: ['a1'] })
+    const view = await renderScreen()
+
+    await press(view.getByText('달의아이'))
+
+    expect(isSaveDisabled(view)).toBe(false)
+  })
+
+  // [[ADR-043]] 결정 1 의 «멤버십으로만 판정하라» 가 뒤집히는 자리다 — 순서가 사용자 것이 되면서
+  // 그 근거(그리드 토글이 배열 끝에 append 해 순서가 의미 없이 흔들린다)가 사라졌다.
+  it('집합이 같아도 순서가 달라지면 활성이다', async () => {
+    mockContentStore({ trackedOcids: ['a1', 'a2'] })
+    const view = await renderScreen()
+
+    await press(view.getByLabelText('낟낟 선택 해제'))
+    await press(view.getByText('낟낟'))
+
+    expect(namesIn(view, 'character-manage-selected')).toEqual(['달의아이', '낟낟'])
+    expect(isSaveDisabled(view)).toBe(false)
+  })
+
+  it('대표만 달라져도 활성이다', async () => {
+    mockContentStore({ trackedOcids: ['a1'] })
+    const view = await renderScreen()
+    expect(isSaveDisabled(view)).toBe(true)
+
+    await press(star(view, '낟낟'))
+
+    expect(isSaveDisabled(view)).toBe(false)
+  })
+
+  it('목록을 먼저 쓰고 대표를 그 뒤에 쓴 다음 보스·수익 스토어를 다시 읽힌다', async () => {
+    const order: string[] = []
+    const saveTrackedOcids = jest.fn(async () => {
+      order.push('save')
+    })
+    mockedSetRepresentative.mockImplementation(async () => {
+      order.push('representative')
+    })
+    mockLoadBossTracked.mockImplementation(async () => {
+      order.push('boss')
+    })
+    mockLoadProfitTracked.mockImplementation(async () => {
+      order.push('profit')
+    })
+    mockContentStore({
+      trackedOcids: ['a1'],
+      saveTrackedOcids: saveTrackedOcids as unknown as ContentSchedulerStore['saveTrackedOcids'],
+    })
+    const view = await renderScreen()
+    await press(view.getByText('달의아이'))
+    await press(star(view, '달의아이'))
+
+    await press(saveButton(view))
+    await act(async () => {})
+
+    expect(saveTrackedOcids).toHaveBeenCalledWith(['a1', 'a2'], expect.any(Function))
+    expect(mockedSetRepresentative).toHaveBeenCalledWith('a2')
+    // 목록 저장이 먼저 돌아야 한다 — `setTrackedCharacterOcids` 가 목록에 없는 대표를 지운다.
+    expect(order).toEqual(['save', 'representative', 'boss', 'profit'])
+    expect(goBack).toHaveBeenCalled()
+  })
+
+  it('대표를 고르지 않았으면 저장할 때 그 키를 지운다', async () => {
+    mockContentStore({ trackedOcids: ['a1'] })
+    const view = await renderScreen()
+    await press(view.getByText('달의아이'))
+
+    await press(saveButton(view))
+    await act(async () => {})
+
+    expect(mockedClearRepresentative).toHaveBeenCalledTimes(1)
+    expect(mockedSetRepresentative).not.toHaveBeenCalled()
+  })
+
+  it('저장 중에는 진행률 모달을 띄운다', async () => {
+    let resolveSave: () => void = () => {}
+    mockContentStore({
+      trackedOcids: ['a1'],
+      saveTrackedOcids: jest.fn(
+        () =>
+          new Promise<void>((resolve) => {
+            resolveSave = resolve
+          }),
+      ) as unknown as ContentSchedulerStore['saveTrackedOcids'],
+    })
+    const view = await renderScreen()
+    await press(view.getByText('달의아이'))
+
+    await press(saveButton(view))
+
+    expect(view.getByText(/캐릭터 정보를 저장하고 있어요/)).toBeTruthy()
+
+    await act(async () => {
+      resolveSave()
+    })
+  })
+
+  it('「닫기」는 저장하지 않고 돌아간다', async () => {
+    const store = mockContentStore({ trackedOcids: ['a1'] })
+    const view = await renderScreen()
+
+    await press(view.getByText('닫기'))
+
+    expect(goBack).toHaveBeenCalledTimes(1)
+    expect(store.saveTrackedOcids).not.toHaveBeenCalled()
+  })
+})
+
+describe('화면 골격', () => {
+  it('자기 스크롤 컨테이너를 갖고 고정 영역을 두지 않는다 ([[ADR-131]])', async () => {
+    const view = await renderScreen()
+
+    // 헤더가 스크롤 뷰의 **자식**이다 — 형제로 두면 화면에 붙어 영원히 고정된다.
+    expect(view.getByTestId('screen-scroll')).toBeTruthy()
+    expect(view.getByTestId('screen-SettingsCharacters')).toBeTruthy()
+    expect(view.getByText('캐릭터 관리')).toBeTruthy()
+  })
+
+  it('뒤로 버튼이 pop 한다', async () => {
+    const view = await renderScreen()
+
+    await press(view.getByLabelText('뒤로'))
+
+    expect(goBack).toHaveBeenCalledTimes(1)
+  })
+})

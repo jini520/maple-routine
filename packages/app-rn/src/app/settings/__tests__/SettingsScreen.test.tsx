@@ -11,10 +11,10 @@
 //    `ScreenScroll` 이 헤더 없는 화면에서는 **스크롤포트 상자 자체를** 내린다(그 파일 「상단」절).
 // ④ **하단 버전은 실행 중인 OTA 번들이 아니라 빌드 시점 값이다**([[ADR-128]] 결정 7) — 웹의
 //    폴백 경로만 남았다. 그래서 웹의 「OTA 번들 버전을 표시한다」 케이스가 그 폴백 케이스로 접힌다.
-// ⑤ **캐릭터 관리 피커가 이 화면으로 왔다**([[ADR-140]]) — 웹판에 없던 계약이라 아래 두 `describe`
-//    는 옮겨온 것이다(`ContentScreen.test.tsx`·`BossScreen.test.tsx` 의 「캐릭터 관리 피커」 절).
-//    피커 자체의 로딩·빈·실패 표현은 `CharacterTrackingPicker.test.tsx` 가 이미 보므로, 여기서는
-//    **이 화면이 그것을 어떻게 먹여 살리는가**(조회 시점 · 401/429 의 목적지 · 저장의 순서)만 본다.
+// ⑤ **캐릭터 관리 행이 이 화면에 생겼다**([[ADR-140]]) — 웹판에 없던 계약이다. 단 [[ADR-144]]
+//    결정 1 이 그것을 모달에서 **하위 페이지**로 바꾸면서, 조회·저장·401/429 배선이 통째로
+//    `SettingsCharactersScreen` 으로 옮겨갔다. 여기 남는 계약은 셋뿐이다 — 배지(단위 «개»),
+//    누르면 그 화면을 민다, `openPicker` 로 들어와도 같은 곳으로 민다.
 import { act, fireEvent } from '@testing-library/react-native'
 
 import { loadCacheDataSizes } from '@core/features/settings/cache-data'
@@ -22,9 +22,7 @@ import { useThemeStore } from '@core/features/theme/store'
 import { useTrackingModeStore } from '@core/features/tracking-mode/store'
 import { useContentSchedulerStore, type ContentSchedulerStore } from '@core/features/content-scheduler/store'
 import { getCharacterPickerRoster } from '@core/features/schedule-sync/schedule-sync'
-import { NexonAuthError, NexonRateLimitError } from '@core/nexon/errors'
 import { THEME_NAMES } from '@core/lib/theme-registry'
-import type { CharacterPickerEntry } from '@core/types'
 
 import packageJson from '../../../../package.json'
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
@@ -33,7 +31,6 @@ import { useSettingsNavigation } from '../use-settings-navigation'
 
 // 이름이 `mock` 으로 시작해야 한다 — babel-jest 가 `jest.mock` 팩토리 밖 변수 참조를 막는데
 // 그 접두사만 예외로 통과시킨다(스케줄러 화면 테스트와 같은 규칙).
-const mockNoticeApiKeyIssue = jest.fn()
 const mockGetRoster = jest.fn()
 const mockLoadContentTracked = jest.fn()
 const mockLoadBossTracked = jest.fn()
@@ -64,14 +61,9 @@ jest.mock('@core/features/boss-profit/store', () => ({
   useBossProfitStore: { getState: () => ({ loadTrackedOcids: mockLoadProfitTracked }) },
 }))
 
-// [[ADR-115]] 결정 7 · [[ADR-116]] 결정 1: 401·429 는 토스트가 아니라 키 재입력 진입점으로 간다.
-jest.mock('@core/features/onboarding/store', () => ({
-  useOnboardingStore: { getState: () => ({ noticeApiKeyIssue: mockNoticeApiKeyIssue }) },
-}))
-
-// [[ADR-062]]: 화면이 `toScheduleSyncError` 로 reject 를 원인으로 바꾸므로 그 매핑은 실물을 쓰고
-// `getCharacterPickerRoster` 만 대체한다(부분 모킹). `...requireActual` 을 통째로 쓰면 순환 참조가
-// 아직 구성 중인 모듈을 `undefined` 로 만난다 — 스케줄러 화면 테스트와 같은 처방.
+// 이 화면은 로스터를 **부르지 않는 것**이 계약이라([[ADR-144]] 결정 1) 그것을 단언하려면 감시할
+// 대상이 필요하다. `...requireActual` 을 통째로 쓰면 순환 참조가 아직 구성 중인 모듈을 `undefined`
+// 로 만난다 — 스케줄러 화면 테스트와 같은 처방으로 부분 모킹한다.
 jest.mock('@core/features/schedule-sync/schedule-sync', () => ({
   toScheduleSyncError: jest.requireActual<typeof import('@core/features/schedule-sync/errors')>(
     '@core/features/schedule-sync/errors',
@@ -170,10 +162,6 @@ function mockContentStore(overrides: Partial<ContentSchedulerStore> = {}): Conte
   const base = { trackedOcids: ['ocid-1'], saveTrackedOcids: jest.fn(), ...overrides } as ContentSchedulerStore
   mockedContentStore.mockReturnValue(base)
   return base
-}
-
-function pickerEntry(overrides: Partial<CharacterPickerEntry> = {}): CharacterPickerEntry {
-  return { ocid: 'roster-ocid', name: '로스터캐릭터', level: 200, imageUrl: null, ...overrides }
 }
 
 beforeEach(() => {
@@ -392,41 +380,19 @@ describe('SettingsScreen', () => {
   })
 })
 
-describe('SettingsScreen — 캐릭터 관리 ([[ADR-140]])', () => {
-  /** 로스터 조회를 손으로 진행시킨다 — 스케줄러 화면 테스트에서 옮겨온 도우미. */
-  function deferredRoster(): {
-    emit: (entries: CharacterPickerEntry[]) => void
-    fail: (error: unknown) => void
-  } {
-    let emit: (entries: CharacterPickerEntry[]) => void = () => {}
-    let fail: (error: unknown) => void = () => {}
-    mockedRoster.mockImplementation(
-      (onUpdate) =>
-        new Promise<void>((_resolve, reject) => {
-          emit = (entries) => onUpdate(entries)
-          fail = (error) => reject(error)
-        }),
-    )
-    // **콜백을 그대로 돌려주면 안 된다** — 위 대입은 `mockImplementation` 이 실제로 불릴 때
-    // (= 화면이 피커를 열 때) 일어나므로, 지금 값을 캡처하면 영원히 빈 함수를 쥔다.
-    return { emit: (entries) => emit(entries), fail: (error) => fail(error) }
-  }
-
-  async function openPicker(view: Rendered): Promise<void> {
-    await press(rowOf(view, '캐릭터 관리'))
-  }
-
-  // 결정 3: 파생·추정값이 아니라 저장된 목록의 길이다.
-  it('행 오른쪽에 추적 인원 배지와 chevron 이 함께 있다', async () => {
+describe('SettingsScreen — 캐릭터 관리 ([[ADR-140]] · [[ADR-144]] 결정 1·8)', () => {
+  // 결정 3: 파생·추정값이 아니라 저장된 목록의 길이다. **단위가 «명» 이 아니라 «개»** 인 것은
+  // [[ADR-144]] 결정 8 이 그 표기를 정정했기 때문이다 — 캐릭터는 사람이 아니다.
+  it('행 오른쪽에 추적 캐릭터 수 배지와 chevron 이 함께 있다', async () => {
     mockContentStore({ trackedOcids: ['a', 'b', 'c'] })
     const view = await renderOverlay(<SettingsScreen />)
 
     const row = rowOf(view, '캐릭터 관리')
-    expect(textsIn(row)).toEqual(['캐릭터 관리', '3', '명'])
+    expect(textsIn(row)).toEqual(['캐릭터 관리', '3', '개'])
     expect(hasChevron(row)).toBe(true)
   })
 
-  // [[ADR-101]] 결정 1: `null` 은 "0명"이 아니라 **"아직 안 읽었다"** 다 — 모르는 사실을 단정하지 않는다.
+  // [[ADR-101]] 결정 1: `null` 은 "0개"가 아니라 **"아직 안 읽었다"** 다 — 모르는 사실을 단정하지 않는다.
   it('추적 목록이 null(미로드)이면 배지를 그리지 않는다', async () => {
     mockContentStore({ trackedOcids: null })
     const view = await renderOverlay(<SettingsScreen />)
@@ -434,170 +400,47 @@ describe('SettingsScreen — 캐릭터 관리 ([[ADR-140]])', () => {
     expect(textsIn(rowOf(view, '캐릭터 관리'))).toEqual(['캐릭터 관리'])
   })
 
-  it('0명이면 "0명" 배지를 그린다 — 미로드와 다른 상태다', async () => {
+  it('0개면 "0개" 배지를 그린다 — 미로드와 다른 상태다', async () => {
     mockContentStore({ trackedOcids: [] })
     const view = await renderOverlay(<SettingsScreen />)
 
-    expect(textsIn(rowOf(view, '캐릭터 관리'))).toEqual(['캐릭터 관리', '0', '명'])
+    expect(textsIn(rowOf(view, '캐릭터 관리'))).toEqual(['캐릭터 관리', '0', '개'])
   })
 
-  // [[ADR-015]]: 후보 목록 조회는 **피커를 열 때만** 돈다(마운트 시 매번 부르면 설정에 들어오기만
-  // 해도 캐릭터 수만큼 병렬 호출이 발생한다).
-  it('행을 누르기 전에는 로스터를 조회하지 않는다', async () => {
+  // [[ADR-144]] 결정 1: 모달이 아니라 **화면 push** 다. 그래서 로스터 조회·저장이 이 화면을 떠났다 —
+  // 여기 남은 것은 «누르면 그리로 간다» 하나다.
+  it('행을 누르면 캐릭터 관리 화면을 민다', async () => {
+    const view = await renderOverlay(<SettingsScreen />)
+
+    await press(rowOf(view, '캐릭터 관리'))
+
+    expect(navigate).toHaveBeenCalledWith('SettingsCharacters')
+  })
+
+  // 조회가 통째로 옮겨간 것이 이 개편의 요점이다 — 설정 본화면은 이제 캐릭터 목록을 모른다.
+  it('이 화면은 로스터를 조회하지 않는다', async () => {
+    mockRouteParams = { openPicker: true }
+
     await renderOverlay(<SettingsScreen />)
 
     expect(mockedRoster).not.toHaveBeenCalled()
   })
 
-  it('행을 누르면 피커가 열리고 로스터 조회가 시작된다', async () => {
-    deferredRoster()
-    const view = await renderOverlay(<SettingsScreen />)
-
-    await openPicker(view)
-
-    expect(view.getByTestId('character-tracking-picker-modal')).toBeTruthy()
-    expect(mockedRoster).toHaveBeenCalledTimes(1)
-  })
-
-  // [[ADR-016]] 웜 캐시 — 항목이 도착하면 조회가 안 끝났어도 목록을 그린다.
-  it('조회가 끝나기 전에 항목이 도착하면 바로 목록을 보여준다', async () => {
-    const roster = deferredRoster()
-    const view = await renderOverlay(<SettingsScreen />)
-    await openPicker(view)
-
-    await act(async () => {
-      roster.emit([pickerEntry({ name: '내옆에최성일' })])
-    })
-
-    expect(view.getByText('내옆에최성일')).toBeTruthy()
-  })
-
-  // [[ADR-115]] 결정 7 · [[ADR-116]] 결정 1: 로스터가 맞는 401·429 도 키 재입력 진입점으로 간다.
-  it.each([
-    ['401', new NexonAuthError('401'), 'invalid'],
-    ['429', new NexonRateLimitError('429'), 'rateLimited'],
-  ])('로스터 조회가 %s 로 reject 되면 키 재입력 경로로 간다', async (_label, error, kind) => {
-    const roster = deferredRoster()
-    const view = await renderOverlay(<SettingsScreen />)
-    await openPicker(view)
-
-    await act(async () => {
-      roster.fail(error)
-    })
-
-    expect(mockNoticeApiKeyIssue).toHaveBeenCalledWith(kind)
-  })
-
-  it('401·429 가 아닌 실패는 키 재입력 경로를 타지 않는다', async () => {
-    const roster = deferredRoster()
-    const view = await renderOverlay(<SettingsScreen />)
-    await openPicker(view)
-
-    await act(async () => {
-      roster.fail(new Error('boom'))
-    })
-
-    expect(mockNoticeApiKeyIssue).not.toHaveBeenCalled()
-  })
-
-  // 결정 2: 보스 수익·두 스케줄러의 빈 상태가 피커를 **열어 둔 채로** 보낸다.
-  it('openPicker 파라미터로 진입하면 피커가 열린 채로 시작하고 파라미터를 지운다', async () => {
+  // 결정 2: 보스 수익·두 스케줄러의 빈 상태가 캐릭터 관리를 **열어 둔 채로** 보낸다. 목적지가
+  // 모달에서 화면으로 바뀌어도 계약은 그대로다([[ADR-144]] 결정 1).
+  it('openPicker 파라미터로 진입하면 캐릭터 관리 화면을 밀고 파라미터를 지운다', async () => {
     mockRouteParams = { openPicker: true }
-    deferredRoster()
 
-    const view = await renderOverlay(<SettingsScreen />)
+    await renderOverlay(<SettingsScreen />)
 
-    expect(view.getByTestId('character-tracking-picker-modal')).toBeTruthy()
+    expect(navigate).toHaveBeenCalledWith('SettingsCharacters')
     expect(setParams).toHaveBeenCalledWith({ openPicker: undefined })
   })
 
-  it('파라미터 없이 진입하면 피커는 닫힌 채로 시작한다', async () => {
-    const view = await renderOverlay(<SettingsScreen />)
+  it('파라미터 없이 진입하면 아무 데도 밀지 않는다', async () => {
+    await renderOverlay(<SettingsScreen />)
 
-    expect(view.queryByTestId('character-tracking-picker-modal')).toBeNull()
+    expect(navigate).not.toHaveBeenCalled()
     expect(setParams).not.toHaveBeenCalled()
-  })
-
-  // 결정 4·5: 저장은 컨텐츠 스토어 액션 하나로 끝내고, 그 뒤 나머지 두 스토어를 **순차로** 다시
-  // 읽힌다(RN 탭 화면은 마운트된 채 남아 스스로 다시 안 읽는다).
-  it('저장하면 saveTrackedOcids 를 부르고 진행률 모달을 띄운다', async () => {
-    let resolveSave: () => void = () => {}
-    const store = mockContentStore({
-      trackedOcids: [],
-      saveTrackedOcids: jest.fn(
-        (_ocids: string[], onProgress?: (completed: number, total: number) => void) =>
-          new Promise<void>((resolve) => {
-            onProgress?.(0, 1)
-            resolveSave = resolve
-          }),
-      ) as unknown as ContentSchedulerStore['saveTrackedOcids'],
-    })
-    const view = await renderOverlay(<SettingsScreen />)
-    await openPicker(view)
-    await act(async () => {
-      mockedRoster.mock.calls[0][0]([pickerEntry({ ocid: 'roster-ocid' })])
-    })
-
-    await press(view.getByText('로스터캐릭터'))
-    await press(view.getByText('저장'))
-
-    expect(store.saveTrackedOcids).toHaveBeenCalledWith(['roster-ocid'], expect.any(Function))
-    // 문구 뒤에 `(0/1)` 이 붙어 한 `Text` 를 이룬다 — 완전 일치가 아니라 부분 일치로 본다.
-    expect(view.getByText(/캐릭터 정보를 저장하고 있어요/)).toBeTruthy()
-    // 아직 저장 중이라 나머지 스토어는 건드리지 않는다.
-    expect(mockLoadBossTracked).not.toHaveBeenCalled()
-
-    await act(async () => {
-      resolveSave()
-    })
-  })
-
-  it('저장이 끝나면 보스·수익 스토어를 순차로 다시 읽힌다', async () => {
-    const order: string[] = []
-    let resolveBoss: () => void = () => {}
-    mockLoadBossTracked.mockImplementation(() => {
-      order.push('boss')
-      return new Promise<void>((resolve) => {
-        resolveBoss = resolve
-      })
-    })
-    mockLoadProfitTracked.mockImplementation(() => {
-      order.push('profit')
-      return Promise.resolve()
-    })
-    mockContentStore({ trackedOcids: [] })
-    const view = await renderOverlay(<SettingsScreen />)
-    await openPicker(view)
-    await act(async () => {
-      mockedRoster.mock.calls[0][0]([pickerEntry({ ocid: 'roster-ocid' })])
-    })
-
-    await press(view.getByText('로스터캐릭터'))
-    await press(view.getByText('저장'))
-
-    // 보스가 끝나기 전에는 수익이 시작되지 않는다 — 동시에 띄우면 둘 다 옛 `syncedAt` 을 보고
-    // [[ADR-097]] 게이트를 통과해 같은 응답을 두 번 받는다(`prehydrateTabStores` 와 같은 이유).
-    expect(order).toEqual(['boss'])
-    await act(async () => {
-      resolveBoss()
-    })
-    expect(order).toEqual(['boss', 'profit'])
-    // 피커·진행률 모달은 그 둘을 기다리지 않는다(결정 5).
-    expect(view.queryByTestId('character-tracking-picker-modal')).toBeNull()
-  })
-
-  it('한 스토어가 실패해도 다음 스토어는 계속 읽힌다', async () => {
-    mockLoadBossTracked.mockRejectedValue(new Error('network'))
-    mockContentStore({ trackedOcids: [] })
-    const view = await renderOverlay(<SettingsScreen />)
-    await openPicker(view)
-    await act(async () => {
-      mockedRoster.mock.calls[0][0]([pickerEntry({ ocid: 'roster-ocid' })])
-    })
-
-    await press(view.getByText('로스터캐릭터'))
-    await press(view.getByText('저장'))
-
-    expect(mockLoadProfitTracked).toHaveBeenCalledTimes(1)
   })
 })

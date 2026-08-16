@@ -1,7 +1,7 @@
 # 설정 (Settings)
 
 > **범위**: API 키 관리·계정(메이플 ID) 변경(**웹뷰 앱만** — RN 은 [[ADR-143]] 이 폐지)·연결 해제·테마 선택·스케줄 관리 방법(트래킹 모드)·캐릭터 관리(RN 앱만, [[ADR-140]]·[[ADR-144]])·데이터 관리·앱 업데이트·개발 노트·footer 표기. 다른 기능 설명에 흩어져 있던 요구사항을 통합 정리.
-> **관련 소스**: `app/settings/`(`SettingsScreen` + 하위 화면 `SettingsReleaseNotesScreen`/`SettingsFeatureGuideListScreen`/`SettingsFeatureGuideScreen`/`SettingsAccountDataScreen`/`SettingsAboutScreen`/`SettingsPrivacyScreen`) · `src/App.tsx`(라우트 셋 — `/settings` 의 형제) · `src/data/release-notes.ts` · `src/data/feature-guides/`(안내 하나 = 파일 하나) · `src/types/release-notes.ts`·`src/types/feature-guides.ts` · `lib/guide-route.ts` · `src/assets/guide/` · `features/settings/`(`changeApiKey`·`cache-data`) · `storage/api-key`(`clearAuthConfig`) · `storage/cache-data`(`clearCacheData`/`getCacheDataSizes`) · `features/onboarding`(`RESET`) · `features/tracking-mode`(`copy.ts`) · `AccountFlowStatus` · `SettingsRow`/`SettingsLinkRow`/`row-class.ts`(`SETTINGS_ROW_CLASS`) · `TrackingModeModal`/`TrackingModeSelector` · `reload-tab-stores`(RN 앱만 — [[ADR-140]] 결정 5) · `ThemeModal`/`ThemeSelector` · `CharacterTrackingPicker`(RN 앱만 — [[ADR-140]]) · `AccountModal`/`CacheClearConfirm`/`DisconnectConfirm` · `AppUpdateSection`.
+> **관련 소스**: `app/settings/`(`SettingsScreen` + 하위 화면 `SettingsReleaseNotesScreen`/`SettingsFeatureGuideListScreen`/`SettingsFeatureGuideScreen`/`SettingsAccountDataScreen`/`SettingsAboutScreen`/`SettingsPrivacyScreen`) · `src/App.tsx`(라우트 셋 — `/settings` 의 형제) · `src/data/release-notes.ts` · `src/data/feature-guides/`(안내 하나 = 파일 하나) · `src/types/release-notes.ts`·`src/types/feature-guides.ts` · `lib/guide-route.ts` · `src/assets/guide/` · `features/settings/`(`changeApiKey`·`cache-data`) · `storage/api-key`(`clearAuthConfig`) · `storage/cache-data`(`clearCacheData`/`getCacheDataSizes`) · `features/onboarding`(`RESET`) · `features/tracking-mode`(`copy.ts`) · `AccountFlowStatus` · `SettingsRow`/`SettingsLinkRow`/`row-class.ts`(`SETTINGS_ROW_CLASS`) · `TrackingModeModal`/`TrackingModeSelector` · `reload-tab-stores`(RN 앱만 — [[ADR-140]] 결정 5) · `ThemeModal`/`ThemeSelector` · `SettingsCharactersScreen`/`CharacterManageBody`/`use-character-manage`/`AccountSelect`/`CharacterRow`(RN 앱만 — [[ADR-140]]·[[ADR-144]]) · `CharacterTrackingPicker`(웹뷰 앱 · RN 은 온보딩만 — [[ADR-144]] 결정 1) · `AccountModal`/`CacheClearConfirm`/`DisconnectConfirm` · `AppUpdateSection`.
 > **관련 ADR**: [[ADR-007]] [[ADR-008]] [[ADR-009]] [[ADR-004]] [[ADR-035]] [[ADR-026]] [[ADR-027]] [[ADR-050]] [[ADR-051]] [[ADR-052]] [[ADR-058]] [[ADR-086]] [[ADR-104]] [[ADR-113]] [[ADR-115]] [[ADR-118]] [[ADR-119]] [[ADR-120]] [[ADR-125]] [[ADR-140]]. **관련 문서**: [onboarding.md](./onboarding.md), [theme.md](./theme.md), [live-update.md](./live-update.md), [../foundation/nexon-api.md](../foundation/nexon-api.md), [../persistence/lifecycle.md](../persistence/lifecycle.md).
 
 ## 정책
@@ -15,7 +15,7 @@
 설정 (본화면 — 고정 헤더 없음)
  [카드 1]  스케줄 관리 방법            자동 ›      ← 값을 고르는 행(모달)
            테마                      혼테일 ›
-           캐릭터 관리                  3명 ›      ← RN 앱만([[ADR-140]])
+           캐릭터 관리                  3개 ›      ← RN 앱만([[ADR-140]]·[[ADR-144]] 결정 8)
  [카드 2]  기능 설명                        ›      ← 화면이 넘어가는 행
            개발 노트                        ›
            계정 및 데이터            1.2 MB ›
@@ -41,7 +41,7 @@
 
 - **「캐릭터 관리」는 RN 앱에만 있고, 그 앱에서는 피커를 여는 **유일한** 자리다**([[ADR-140]], 2026-08-16). 웹뷰 앱은 컨텐츠·보스 헤더 버튼을 그대로 두므로 이 행이 없다(의도된 갈림).
   - 카드 1에 드는 이유는 성질이 그 무리와 같기 때문이다 — 모달이 뜨고, 고르면 그 자리에서 끝난다. 자리는 「테마」 **아래**(사용자 지정).
-    - **[[ADR-144]] 가 그 «모달» 을 하위 페이지로 바꾼다**(2026-08-16, 구현 전) — 계정 드롭다운·후보·선택됨·순서·대표가 한 화면에 서면 385px 모달 본문([[ADR-107]] 결정 2)에 들어가지 않는다. **행의 자리와 배지는 그대로**이고 갈리는 것은 «누르면 무엇이 뜨는가» 뿐이라, 카드 1 의 성질(«고르면 그 자리에서 끝난다»)은 유지된다 — 화면이 pop 되면 설정으로 돌아온다.
+    - **[[ADR-144]] 가 그 «모달» 을 하위 페이지로 바꿨다**(2026-08-16 결정 · 화면 구현 완료 2026-08-17, 순서 끌기·온보딩 단계는 아직) — 계정 드롭다운·후보·선택됨·순서·대표가 한 화면에 서면 385px 모달 본문([[ADR-107]] 결정 2)에 들어가지 않는다. **행의 자리와 배지는 그대로**이고 갈리는 것은 «누르면 무엇이 뜨는가» 뿐이라, 카드 1 의 성질(«고르면 그 자리에서 끝난다»)은 유지된다 — 화면이 pop 되면 설정으로 돌아온다.
   - 배지는 **추적 캐릭터 수**(`3개` — [[ADR-144]] 결정 8 이 «명»→«개» 로 정정했다. 캐릭터는 사람이 아니고, `AccountSelectionList` 는 이미 «캐릭터 {N}개» 였다)이다. [[ADR-118]] 결정 5의 "없는 대표값을 지어내지 않는다"에 걸리지 않는다 — 파생·추정값이 아니라 저장된 목록의 길이이고, 피커를 열려면 어차피 읽는 값이다. 아직 못 읽었으면(`null`) 배지를 그리지 않는다([[ADR-101]] 결정 1).
   - 저장은 컨텐츠 스케줄러 스토어의 `saveTrackedOcids` 를 그대로 부르고([[ADR-140]] 결정 4 — 세 번째 사본을 만들지 않는다), 그 뒤 보스·수익 스토어를 **순차로** 다시 읽힌다(결정 5 — RN 탭 화면은 마운트된 채 남아 스스로 다시 안 읽는다). 로스터 로딩·실패·재시도 정책은 [content-scheduler.md](./content-scheduler.md) "캐릭터 관리 피커" 절 그대로다.
   - **`openPicker` 파라미터로 열린 채 진입할 수 있다** — 보스 수익의 "캐릭터 선택하러 가기"([[ADR-068]] 결정 4)와 두 스케줄러의 빈 상태 CTA 가 그리로 보낸다. 마운트 직후 `setParams` 로 지운다(안 지우면 탭을 떠났다 돌아올 때마다 다시 열린다).
