@@ -80,7 +80,7 @@
       "status": "completed",
       "started_at": "2026-08-17T04:56:12+0900",
       "summary": "순서 함수는 `app-rn/src/lib/tracked-order.ts` 의 `orderByTracked(items, orderedOcids)` 하나 — 스토어를 모르는 순수 함수이고, **모르는 항목을 버리지 않는 것이 계약이다**(저장 목록과 스토어 목록이 한순간 어긋나는 저장 직후·동기화 중간 커밋에서 캐릭터가 화면에서 통째로 사라지지 않게 — 순서를 정하는 함수가 목록의 크기를 바꾸면 안 된다). 동순위(모르는 항목끼리·겹친 ocid)는 정렬 안정성이 아니라 인덱스 비교로 가른다(`Infinity - Infinity = NaN` 이라 뺄셈 한 줄로는 못 쓴다). 적용한 세 자리 — ContentScreen·BossScreen 은 스토어 `characters` 를 `characters: storeCharacters` 로 받아 `orderByTracked(storeCharacters, trackedOcids ?? [])` 로 한 번 통과시키고(그래서 레일·`characters[0]` 폴백 선택이 함께 사용자 순서를 따른다), BossProfitScreen 은 `buildCharacterGroups(rows, weeklySubtotals)` 결과 위에 얹는다(캐릭터 **안쪽** 보스 순서는 [[ADR-036]] 그대로). 순서 인자는 세 스토어가 이미 들고 있는 `trackedOcids` 라 **저장소 조회가 늘지 않는다**(`getTrackedCharacterOcids` 신규 호출 0건). 단위 정정 — 설정 「캐릭터 관리」 배지는 step 6 에서 이미 «개» 라 확인만 했고, 고아로 남은 옛 피커 모달의 «최소 한 명은 선택해주세요» → «최소 1개는 선택해주세요»(트리 스냅샷 2건이 그 한 줄만 바뀌어 갱신됨). `app-capacitor` 의 같은 문구 3자리는 안 건드렸다. **core 무수정 확인**: `git diff packages/core packages/app-capacitor` 가 0줄 — `sortByCachedLevel` 두 벌 그대로이고 웹뷰 앱 정렬은 안 바뀐다(vitest 3,115개 전부 그대로 통과가 그 회귀 가드). 테스트 +14(순수 함수 8 + 화면 6), 판별력은 세 화면에서 얹기를 걷어내 4건 실패로 확인. **보고**: 관리 화면 둘(`ContentManageScreen`·`BossManageScreen`)의 레일은 이 step 의 대상 셋에 없어 아직 스토어 순서다 — 스케줄러에서 들어가면 같은 레일이 다른 차례로 선다(ADR-143 결정 3 구현 노트와 boss-scheduler.md·content-scheduler.md 에 남겼다). **실기기 미검증**.",
-      "completed_at": "2026-08-17T05:20:00+0900"
+      "completed_at": "2026-08-17T05:09:48+0900"
     }
   ],
   "created_at": "2026-08-17T02:27:19+0900"
