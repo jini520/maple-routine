@@ -35,6 +35,7 @@ import { useSettingsNavigation } from '../use-settings-navigation'
 // 그 접두사만 예외로 통과시킨다(스케줄러 화면 테스트와 같은 규칙).
 const mockNoticeApiKeyIssue = jest.fn()
 const mockGetRoster = jest.fn()
+const mockLoadContentTracked = jest.fn()
 const mockLoadBossTracked = jest.fn()
 const mockLoadProfitTracked = jest.fn()
 
@@ -46,7 +47,15 @@ jest.mock('@core/features/settings/cache-data', () => ({ loadCacheDataSizes: jes
 jest.mock('../use-settings-navigation', () => ({ useSettingsNavigation: jest.fn() }))
 
 // [[ADR-140]] 결정 4: 저장은 컨텐츠 스케줄러 스토어의 액션을 그대로 부른다(세 번째 사본 금지).
-jest.mock('@core/features/content-scheduler/store', () => ({ useContentSchedulerStore: jest.fn() }))
+// 훅으로도(배지·저장) `getState()` 로도(결정 5 정정의 모드 전환 재로드) 만지므로 둘 다 세운다.
+jest.mock('@core/features/content-scheduler/store', () => {
+  const hook = jest.fn()
+  return {
+    useContentSchedulerStore: Object.assign(hook, {
+      getState: () => ({ loadTrackedOcids: mockLoadContentTracked }),
+    }),
+  }
+})
 // 결정 5: 저장 뒤 다시 읽히는 나머지 둘 — 화면은 `getState()` 로만 만진다(구독하지 않는다).
 jest.mock('@core/features/boss-scheduler/store', () => ({
   useBossSchedulerStore: { getState: () => ({ loadTrackedOcids: mockLoadBossTracked }) },
@@ -181,6 +190,7 @@ beforeEach(() => {
   mockedLoadCacheDataSizes.mockReturnValue(new Promise(() => {}))
   // 로스터도 기본은 "영원히 조회 중" — 케이스가 필요할 때 `deferredRoster` 로 갈아 세운다.
   mockedRoster.mockReturnValue(new Promise(() => {}))
+  mockLoadContentTracked.mockResolvedValue(undefined)
   mockLoadBossTracked.mockResolvedValue(undefined)
   mockLoadProfitTracked.mockResolvedValue(undefined)
 })
@@ -304,6 +314,44 @@ describe('SettingsScreen', () => {
     await press(rowOf(view, '스케줄 관리 방법'))
 
     expect(view.getByTestId('tracking-mode-modal-overlay')).toBeTruthy()
+  })
+
+  // [[ADR-140]] 결정 5 정정: 모드 전환은 세 스토어를 **모두** 낡게 만든다(저장 경로에서 컨텐츠가
+  // 빠진 것은 그쪽이 저장의 주체여서일 뿐이다). 이것이 없으면 자동 → 수동 직후 보스 탭이
+  // "추적할 주간 보스가 없습니다"로 뜨고 새로고침해야 목록이 나온다(2026-08-16 사용자 관측).
+  it('스케줄 관리 방법을 바꾸면 컨텐츠·보스·수익 스토어를 순차로 다시 읽힌다', async () => {
+    const order: string[] = []
+    let resolveContent: () => void = () => {}
+    mockLoadContentTracked.mockImplementation(() => {
+      order.push('content')
+      return new Promise<void>((resolve) => {
+        resolveContent = resolve
+      })
+    })
+    mockLoadBossTracked.mockImplementation(() => {
+      order.push('boss')
+      return Promise.resolve()
+    })
+    mockLoadProfitTracked.mockImplementation(() => {
+      order.push('profit')
+      return Promise.resolve()
+    })
+    const view = await renderOverlay(<SettingsScreen />)
+
+    await press(rowOf(view, '스케줄 관리 방법'))
+    await press(view.getByText('수동'))
+    await press(view.getByText('적용'))
+
+    // 컨텐츠가 끝나기 전에는 다음이 시작되지 않는다([[ADR-097]] 게이트 — `prehydrateTabStores` 와
+    // 같은 이유). 모달은 그 셋을 기다리지 않고 닫힌다.
+    expect(order).toEqual(['content'])
+    expect(view.queryByTestId('tracking-mode-modal-overlay')).toBeNull()
+
+    await act(async () => {
+      resolveContent()
+    })
+
+    expect(order).toEqual(['content', 'boss', 'profit'])
   })
 
   it('"테마"를 누르면 테마 선택 모달이 열린다', async () => {

@@ -42,8 +42,6 @@ import { TRACKING_MODE_LABELS } from '@core/features/tracking-mode/copy'
 import { useThemeStore } from '@core/features/theme/store'
 import { useTrackingModeStore } from '@core/features/tracking-mode/store'
 import { useContentSchedulerStore } from '@core/features/content-scheduler/store'
-import { useBossSchedulerStore } from '@core/features/boss-scheduler/store'
-import { useBossProfitStore } from '@core/features/boss-profit/store'
 import { useApiKeyNotice } from '@core/features/onboarding/use-api-key-notice'
 import { getCharacterPickerRoster, toScheduleSyncError } from '@core/features/schedule-sync/schedule-sync'
 import type { ScheduleSyncError } from '@core/features/schedule-sync/schedule-sync'
@@ -60,38 +58,11 @@ import { useSettingsNavigation } from './use-settings-navigation'
 import { TABULAR_NUMS } from '../../lib/text-styles'
 import { SettingsRow } from './SettingsRow'
 import { SETTINGS_ROW_DIVIDER_CLASS } from './row-class'
+import { reloadTabStores } from './reload-tab-stores'
 import { ThemeModal } from './ThemeModal'
 import { TrackingModeModal } from './TrackingModeModal'
 
 type OpenModal = 'theme' | 'trackingMode' | null
-
-/**
- * 저장 뒤 나머지 두 탭 스토어를 다시 읽힌다([[ADR-140]] 결정 5).
- *
- * **웹에서는 라우트 언마운트가 하던 몫이다** — 화면을 옮길 때마다 `loadTrackedOcids()` 가 통합 키를
- * 다시 읽었다. RN 의 탭 화면은 한 번 뜨면 마운트된 채 남아 스스로 다시 읽지 않으므로, 여기서
- * 명시적으로 부르지 않으면 보스·수익 탭이 옛 목록을 들고 있게 된다.
- *
- * **순차인 이유는 `prehydrateTabStores` 와 같다** — [[ADR-097]] 게이트의 신선도는 앞 회차가 캐시를
- * **다 쓴 뒤에야** 참이 되므로, 둘을 동시에 띄우면 둘 다 옛 `syncedAt` 을 보고 같은 응답을 두 번 받는다.
- *
- * 실패는 삼킨다(예열과 같은 성격이다) — 그 탭에 들어가면 화면이 자기 몫을 다시 부르고, 그때 실패하면
- * 그 화면의 에러 경로가 정상적으로 돈다.
- */
-function reloadOtherTabStores(): void {
-  void (async () => {
-    for (const load of [
-      () => useBossSchedulerStore.getState().loadTrackedOcids(),
-      () => useBossProfitStore.getState().loadTrackedOcids(),
-    ]) {
-      try {
-        await load()
-      } catch {
-        // 예열 실패는 조용히 넘긴다(`features/prehydrate` 와 같은 이유).
-      }
-    }
-  })()
-}
 
 export function SettingsScreen(): React.JSX.Element {
   const { theme } = useThemeStore()
@@ -184,7 +155,8 @@ export function SettingsScreen(): React.JSX.Element {
       setSaveProgress(null)
       setIsPickerOpen(false)
     }
-    reloadOtherTabStores()
+    // 컨텐츠는 빠진다([[ADR-140]] 결정 5) — 저장의 주체가 그 스토어라 이미 최신이다.
+    reloadTabStores(['boss', 'profit'])
   }
 
   return (
