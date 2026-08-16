@@ -40,7 +40,7 @@
       "status": "completed",
       "started_at": "2026-08-17T03:08:53+0900",
       "summary": "CharacterRow 프롭·프리미티브 셋 이름·2줄 규칙 — molecules/CharacterRow/ 에 CharacterRow(카드 한 벌, 좌우 leading/trailing 슬롯만 갈린다) + RepresentativeStar(label·filled·dimmed·onPress, 배경·테두리 없이 fill 프롭으로 채우고 dimmed 는 opacity-40 만 — disabled 아님) + DragHandle(lucide Menu, 접근성 이름 「순서 변경」, 제스처는 목록의 일이라 여기 없음) + AddMark(PlusIcon text-text-muted, aria-hidden 표시일 뿐 버튼 아님). 2줄은 captionText(level, jobClass) 가 정한다 — 있는 것만 공백으로 잇고 둘 다 없으면 null 이라 Text 자체가 안 그려지며, unavailable 이면 '조회할 수 없는 캐릭터'(text-error-ink)가 그 줄을 통째로 대체한다. 얼굴은 CharacterTrackingGrid 의 [[ADR-015]] 크롭 표(300/x115,y120,64) 그대로 상자만 40px, 이미지 없으면 이름 첫 글자. 엠블럼은 번들 에셋 id 를 그대로 넘기고 naturalAspectStyle(height 17)로 폭 축을 지운다([[ADR-135]]). onPress 를 주면 카드 전체가 role=\"button\", 없으면 View(버튼이라 말하지 않는다). lib/icons.ts 에 MenuIcon 추가. 테스트 18케이스(스냅샷 1) + 캡션 null·별 배경 두 자리에 변이 주입으로 판별력 확인.",
-      "completed_at": "2026-08-17T03:20:00+0900"
+      "completed_at": "2026-08-17T03:17:08+0900"
     },
     {
       "step": 5,
