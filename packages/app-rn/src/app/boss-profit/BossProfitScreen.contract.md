@@ -34,7 +34,7 @@
 | **061** | 보여줄 데이터가 아예 없을 때만 **셸 승계 카드**(`LoadingState`). 기간 백필은 `LoadingState`("… 기록을 불러오고 있어요"), 점선 박스 금지. | ✅ |
 | **063** | 동기화 전체 실패 · 일부 캐릭터 실패 · 파티원 수 저장 실패는 **인라인 문단이 아니라 토스트**. 일부 캐릭터 실패는 이름이 아니라 **인원 수**. | ✅ / ➖(스토어 훅) |
 | **067** | 기간은 **6상태**다. 현재 기간은 백필 가능성을 묻지 않는다(`isCurrentPeriod \|\| isPeriodQueryable`). 기록만 있는 조합도 행으로 되살린다(`appendRecordOnlyRows`). | ✅ / ➖(상태 판정은 스토어) |
-| **068** | 상태마다 얼굴이 다르다 — `recorded` 는 아무것도 안 띄운다 · `notCollected` 는 헤더 안 한 줄(시계 아이콘) + 목록 자리 `UnavailableNotice` · `failed` 는 `ErrorState`(카드가 없을 때) · 조회 불가 캐릭터는 피커로 보낸다(`openPicker`). | ✅ |
+| **068** | 상태마다 얼굴이 다르다 — `recorded` 는 아무것도 안 띄운다 · `notCollected` 는 헤더 안 한 줄(시계 아이콘) + 목록 자리 `UnavailableNotice` · `failed` 는 `ErrorState`(카드가 없을 때) · 조회 불가 캐릭터는 피커로 보낸다(`openPicker` — 목적지는 설정 탭, [[ADR-140]]). | ✅ |
 | **071** | 히스토리 진입점은 탭 줄이 아니라 **제목 줄 우측**이고 아이콘이 아니라 글자다. 캐릭터 미선택 빈 상태에는 두지 않는다. | ✅ |
 | **072** | 당김은 헤더 새로고침 버튼과 **같은 재조회**(`refresh(trackedOcids ?? [])`)를 부른다. 빈 상태·재조회 중·새로고침이 의미 없는 기간에서는 끈다. | ✅ (`RefreshControl`, [[ADR-130]]) |
 | **073** | 헤더는 제자리, 목록만 손가락을 따라 내려간다 · 오프셋 0 이면 `transform` 을 **아예 걸지 않는다**. | 🏗 ([[ADR-130]] — OS 가 한다) |
@@ -126,7 +126,7 @@ RN 의 sticky 는 **스크롤 뷰의 직계 자식**만 붙일 수 있다. 그�
 | 웹 | RN | 근거 |
 |---|---|---|
 | `useNavigate('/profit/drops')` | `navigation.navigate('DropHistory')` | 루트 스택 push([[ADR-120]]) |
-| `navigate('/boss?openPicker=1')` | `navigate('Tabs', { screen: 'Boss', params: { openPicker: true } })` | 받는 쪽은 step 5 가 이미 뒀다 |
+| `navigate('/boss?openPicker=1')` | `navigate('Tabs', { screen: 'Settings', params: { openPicker: true } })` | 받는 쪽이 보스 → **설정** 으로 옮겼다([[ADR-140]]) — 열어 두고 보낸다는 계약은 그대로 |
 | `<Outlet />` | 없음 | 하위 페이지가 루트 스택 위로 올라온다 |
 | `usePullToRefresh` + 인디케이터 | `RefreshControl` | [[ADR-130]] |
 | `useScreenStackStore` 깊이 게이트 | 없음 | 하위 페이지가 덮어 손가락이 안 닿는다 |

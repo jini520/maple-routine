@@ -42,23 +42,24 @@ export type TabRouteName =
 export type TabParamList = {
   Today: undefined
   Content: undefined
-  /**
-   * `openPicker` 는 웹의 **`/boss?openPicker=1`** 이다 — 보스 수익 화면의 "캐릭터 선택하러 가기"
-   * ([[ADR-068]] 결정 4)가 캐릭터 관리 피커를 열어 둔 채로 이 탭에 보낸다.
-   *
-   * URL 이 없어 "새로고침·뒤로가기마다 피커가 다시 열린다"는 웹의 걱정은 사라지지만 **파라미터는
-   * 스택에 남는다** — 탭을 떠났다 돌아오면 그대로 살아 있으므로 화면이 `setParams` 로 지우는 일은
-   * 그대로 필요하다(`BossScreen`).
-   *
-   * **보내는 쪽은 step 7(보스 수익)이 온다.** 받는 쪽을 먼저 두는 이유는 이것이 이 탭의 계약이기
-   * 때문이고, 안 두면 그 화면을 옮기다 여기로 되돌아와야 한다.
-   */
-  Boss: { openPicker?: boolean } | undefined
+  Boss: undefined
   Profit: undefined
   HuntingProfit: undefined
   Spend: undefined
   Utility: undefined
-  Settings: undefined
+  /**
+   * `openPicker` 는 웹의 **`/boss?openPicker=1`** 이다 — 캐릭터 관리 피커를 **열어 둔 채로** 이 탭에
+   * 보낸다. 보내는 쪽 셋: 보스 수익의 "캐릭터 선택하러 가기"([[ADR-068]] 결정 4)와 컨텐츠·보스
+   * 스케줄러의 빈 상태 CTA.
+   *
+   * **받는 쪽이 `Boss` 에서 여기로 옮겨왔다**([[ADR-140]] 결정 1·2) — 피커를 여는 자리가 설정
+   * 하나가 되면서 목적지도 함께 옮겼다. 열어 두고 보낸다는 계약 자체는 그대로다.
+   *
+   * URL 이 없어 "새로고침·뒤로가기마다 피커가 다시 열린다"는 웹의 걱정은 사라지지만 **파라미터는
+   * 스택에 남는다** — 탭을 떠났다 돌아오면 그대로 살아 있으므로 화면이 `setParams` 로 지우는 일은
+   * 그대로 필요하다(`SettingsScreen`).
+   */
+  Settings: { openPicker?: boolean } | undefined
 }
 
 /**

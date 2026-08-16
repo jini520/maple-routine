@@ -41,8 +41,9 @@
 //    것은 **관찰 가능한 동작**이다 — 기간을 옮기면 최상단에서 시작한다. 그것까지 없애면 웹과
 //    다르게 동작하므로 `ScreenScroll` 의 `ref` 로 계속 부른다(`parity-inventory` §2.5 가 step 7
 //    의 자리로 지목한 넷 중 하나).
-// ③ `navigate('/boss?openPicker=1')` → **`navigate('Tabs', { screen: 'Boss', params: … })`**.
-//    받는 쪽은 step 5 가 이미 두었다([[ADR-068]] 결정 4).
+// ③ `navigate('/boss?openPicker=1')` → **`navigate('Tabs', { screen: 'Settings', params: … })`**.
+//    [[ADR-068]] 결정 4의 «피커를 열어 둔 채로 보낸다» 는 그대로이고 **받는 화면만 바뀌었다** —
+//    피커를 여는 자리가 설정 하나가 됐다([[ADR-140]]).
 // ④ **`useScreenStackStore` 깊이 게이트와 `<Outlet />` 이 사라진다**(위 표) — 웹이 이 화면에서
 //    당김을 끄던 세 조건 중 둘은 그대로 남는다(빈 상태 · 새로고침이 의미 없는 기간).
 // ⑤ `animate-spin` → Reanimated CSS 애니메이션(`lib/animation.ts`, step 4·5 와 같은 값).
@@ -203,12 +204,14 @@ export function BossProfitScreen(): React.JSX.Element {
             size="page"
             icon="leaf"
             title="추적 중인 캐릭터가 없습니다"
-            description="보스 스케줄러에서 캐릭터를 선택하면 수익 현황을 확인할 수 있습니다"
+            description="설정에서 캐릭터를 선택하면 수익 현황을 확인할 수 있습니다"
             action={{
               label: '캐릭터 선택하러 가기',
               // [[ADR-068]] 결정 4: 피커를 **열어 둔 채로** 보낸다. 웹의 `?openPicker=1` 자리다.
+              // 목적지는 보스 탭에서 **설정 탭**으로 옮겼다([[ADR-140]] 결정 2) — 열어 두고 보낸다는
+              // 계약은 그대로이고 받는 화면만 바뀌었다.
               onClick: () =>
-                navigation.navigate('Tabs', { screen: 'Boss', params: { openPicker: true } }),
+                navigation.navigate('Tabs', { screen: 'Settings', params: { openPicker: true } }),
             }}
           />
         </View>
