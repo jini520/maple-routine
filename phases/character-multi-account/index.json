@@ -1,0 +1,16 @@
+{
+  "project": "maple-routine",
+  "phase": "character-multi-account",
+  "steps": [
+    { "step": 0, "name": "selection-storage", "status": "pending" },
+    { "step": 1, "name": "multi-account-sync", "status": "pending" },
+    { "step": 2, "name": "onboarding-flow", "status": "pending" },
+    { "step": 3, "name": "account-derivations", "status": "pending" },
+    { "step": 4, "name": "character-row", "status": "pending" },
+    { "step": 5, "name": "account-select", "status": "pending" },
+    { "step": 6, "name": "manage-screen", "status": "pending" },
+    { "step": 7, "name": "reorder-drag", "status": "pending" },
+    { "step": 8, "name": "onboarding-step", "status": "pending" },
+    { "step": 9, "name": "display-order", "status": "pending" }
+  ]
+}
