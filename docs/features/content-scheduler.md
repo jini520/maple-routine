@@ -98,6 +98,9 @@
 - 저장은 Preferences, **캐시 삭제 시 삭제**(재조회로 복구되는 파생 데이터라 `KEEP_KEYS` 에 넣지 않는다 — [[ADR-052]] 결정 1 기준). 읽을 때 윈도우 밖 날짜를 prune 한다. 상세 [../persistence/preferences.md](../persistence/preferences.md).
 
 ## 3단 캐시 병합 ([[ADR-030]], 구현 완료)
+
+> **원장의 «계정» 은 «지금 고른 계정» 이 아니라 «그 캐릭터가 사는 계정» 이다**([[ADR-143]] 결정 6, 구현 완료 2026-08-17 — **두 앱 모두**). `syncSchedules` 가 `resolveTrackedCharacterContext(ocids)` 로 **전 계정**의 `character/list` 를 훑어 ocid 마다 자기 `accountId` 를 함께 들고 다니고, `accountSharedProgress:{accountId}` 읽기·쓰기와 `characterBasicCache` 계정 인덱스가 그 값을 쓴다. 추적 목록이 계정을 넘어도 ① 다른 계정 캐릭터가 «선택 계정 필터» 에서 조용히 빠지지 않고 ② 에픽 던전 같은 계정 공유 완료가 계정을 넘어 번지지 않는다. **단일 계정에서는 결과가 지금과 완전히 같다** — 그래서 이 결정만은 웹뷰 앱에도 그대로 나간다. 계정 하나를 그리는 자리(피커 로스터·예열)는 종전 `resolveRegisteredCharacters(accountIdOverride?)` 를 그대로 쓴다([[ADR-086]] 결정 6 계약 유지).
+
 캐릭터 단일 스냅샷 → 캐릭터/월드/계정 3단 캐시. 응답 도착 시:
 - `daily_contents`/`weekly_contents` 를 각각 판정: 배열이 비었거나 없으면 "그 리셋 주기 이후 이 캐릭터 미접속"으로 간주(응답 `date` 는 항상 요청일 반환이라 타임스탬프 비교 불가 — 배열 empty 여부만 신호).
 - **미접속**: `storage/scheduler-cache` 의 마지막 정상 상태에서 이름·`registration_flag` 유지하고 진행값(now_count/quest_state/isComplete)만 리셋. `boss_contents` 는 `cycle: weekly` 는 `weekly_contents` 와, `cycle: monthly` 는 월간 경계(매월 1일 00:00 KST)와 동일 판정.

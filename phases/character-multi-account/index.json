@@ -13,7 +13,10 @@
     {
       "step": 1,
       "name": "multi-account-sync",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-17T02:35:55+0900",
+      "summary": "character-roster.ts 에 resolveTrackedCharacterContext(ocids) 신설(전 계정 character/list 를 훑어 {character, accountId}[] 반환, selectedAccountId 미사용, 순서는 응답 순서 그대로) — resolveRegisteredCharacters 는 무변경. syncSchedules 가 그것을 써 syncOneCharacter·refreshCharacterBasics 에 캐릭터별 accountId 를 넘긴다(계정 공유 원장·character-basic-cache 인덱스가 자기 계정 키로 갈린다). jobClass 는 fetchCharacterBasicCached 의 5번째 선택 인자로 받아 profile 에 실어 캐시에 쓰고(미전달 시 jobClass ?? cached.profile.jobClass 로 기존 값 유지), 네 호출부(프로브·예열·피커 로스터·편승 갱신)가 전부 character/list 의 값을 넘긴다. 단일 계정 회귀 가드는 schedule-sync.test.ts 의 describe('다계정 …') 안 '단일 계정 입력에서는 호출 수·순서·원장 키가 지금과 같다 (웹뷰 앱 회귀 가드)'.",
+      "completed_at": "2026-08-17T02:46:30+0900"
     },
     {
       "step": 2,

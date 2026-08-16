@@ -116,10 +116,11 @@ describe('prefetchAccountData', () => {
 
     expect(fetchCharacterBasicMock).toHaveBeenCalledWith('key-1', 'ocid-1')
     expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key-1', 'ocid-1')
+    // character/list 가 준 jobClass 가 엔트리에 함께 실린다(ADR-144 결정 2).
     expect(setCachedCharacterBasicMock).toHaveBeenCalledWith(
       ACCOUNT,
       'ocid-1',
-      expect.objectContaining({ profile: profile({ accessFlag: true }) }),
+      expect.objectContaining({ profile: profile({ accessFlag: true, jobClass: '렌' }) }),
     )
     expect(setCachedSchedulerStateMock).toHaveBeenCalledWith(
       'ocid-1',
