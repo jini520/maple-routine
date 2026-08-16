@@ -190,7 +190,9 @@ describe('빈 상태 ([[ADR-101]] 결정 1 · [[ADR-060]])', () => {
     expect(queryByText('아이템 가격')).toBeNull()
   })
 
-  it('빈 상태 CTA 는 피커를 열어 둔 채로 보스 탭에 보낸다([[ADR-068]] 결정 4)', async () => {
+  // [[ADR-068]] 결정 4의 «열어 둔 채로 보낸다» 는 그대로이고 **목적지만 바뀌었다** — 피커를 여는
+  // 자리가 설정 하나가 됐다([[ADR-140]] 결정 1·2).
+  it('빈 상태 CTA 는 피커를 열어 둔 채로 설정 탭에 보낸다([[ADR-068]] 결정 4 · [[ADR-140]])', async () => {
     mockStore({ trackedOcids: [] })
     const { getByText } = await renderScreen()
 
@@ -199,7 +201,7 @@ describe('빈 상태 ([[ADR-101]] 결정 1 · [[ADR-060]])', () => {
     })
 
     expect(navigate).toHaveBeenCalledWith('Tabs', {
-      screen: 'Boss',
+      screen: 'Settings',
       params: { openPicker: true },
     })
   })

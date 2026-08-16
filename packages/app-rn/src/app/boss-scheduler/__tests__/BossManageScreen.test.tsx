@@ -161,16 +161,28 @@ beforeEach(() => {
 })
 
 describe('BossManageScreen — 공통', () => {
-  it('제목·캐릭터 드롭다운이 보이고, 뒤로 버튼이 스택을 pop 한다', async () => {
+  // [[ADR-142]] 정정 8: 제목 줄 우측의 compact 드롭다운이 **초상화 레일**이 됐다. 캐릭터 이름은
+  // 이제 SVG 곡선 글자라 `getByText` 로 안 잡힌다 — 레일이 섰는지로 본다.
+  it('제목·캐릭터 레일이 보이고, 뒤로 버튼이 스택을 pop 한다', async () => {
     mockStore({ characters: [character()] })
     await renderScreen()
 
     expect(screen.getByText('보스 관리')).toBeTruthy()
-    expect(screen.getByText('낟낟')).toBeTruthy()
+    expect(screen.getByTestId('character-rail')).toBeTruthy()
 
     await press(screen.getByLabelText('뒤로'))
 
     expect(goBack).toHaveBeenCalled()
+  })
+
+  // 정정 8: 이 화면의 일은 캐릭터를 고르는 것이지 진행을 보는 것이 아니다.
+  it('관리 화면의 레일에는 진행 링이 없다', async () => {
+    mockStore({ characters: [character()] })
+
+    await renderScreen()
+
+    expect(screen.queryAllByTestId('portrait-ring-track')).toHaveLength(0)
+    expect(screen.queryAllByTestId('portrait-ring-fill')).toHaveLength(0)
   })
 
   it('마운트하면 loadTrackedOcids 를 부른다 — 스케줄러를 거치지 않고 들어와도 채워진다', async () => {
@@ -210,16 +222,17 @@ describe('BossManageScreen — 공통', () => {
   })
 
   // [[ADR-096]] 결정 4 — 선택 캐릭터는 스케줄러와 **공유**한다(탭과 달리 양방향).
-  it('캐릭터 드롭다운은 스케줄러와 같은 selectCharacter 를 쓴다', async () => {
+  // 정정 8: 드롭다운은 눌러도 안 열렸다 — 레일은 **실제로 바뀐다**(스케줄러와 같은 `selectCharacter`
+  // 라 돌아갔을 때 그쪽도 같은 캐릭터다).
+  it('레일에서 다른 초상화를 누르면 스케줄러와 같은 selectCharacter 를 부른다', async () => {
     const store = mockStore({
       characters: [character(), character({ ocid: 'ocid-2', characterName: '캐릭터2' })],
     })
-
     await renderScreen()
 
-    // 목록(열린 상태)은 아직 없다 — 트리거만 옮겨졌다(`CharacterSelectDropdown` 파일 머리).
-    expect(screen.getByText('낟낟')).toBeTruthy()
-    expect(store.selectCharacter).toBeDefined()
+    await press(screen.getAllByTestId('character-portrait')[1])
+
+    expect(store.selectCharacter).toHaveBeenCalledWith('ocid-2')
   })
 })
 

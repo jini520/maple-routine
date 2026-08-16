@@ -184,6 +184,9 @@ describe('useContentSchedulerStore', () => {
         isStale: false,
         syncedAt: '2026-07-11T00:00:00.000Z',
         error: null,
+        // [[ADR-142]] 결정 6: 캐시가 그 캐릭터를 모르면 둘 다 `null` 이다(레일이 레벨 호를 비운다).
+        level: null,
+        imageUrl: null,
       },
     ])
   })
@@ -206,6 +209,8 @@ describe('useContentSchedulerStore', () => {
         isStale: true,
         syncedAt: null,
         error: { kind: 'network' },
+        level: null,
+        imageUrl: null,
       },
     ])
   })
@@ -274,6 +279,8 @@ describe('useContentSchedulerStore', () => {
         isStale: true,
         syncedAt: '2026-07-11T00:00:00.000Z',
         error: null,
+        level: null,
+        imageUrl: null,
       },
     ])
 

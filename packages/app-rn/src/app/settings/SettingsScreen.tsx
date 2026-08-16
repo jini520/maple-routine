@@ -1,4 +1,4 @@
-// 설정 본화면 — 카드 둘 · 6행([[ADR-118]] 결정 1 · [[ADR-125]] 결정 1 정정).
+// 설정 본화면 — 카드 둘 · 7행([[ADR-118]] 결정 1 · [[ADR-125]] 결정 1 정정 · [[ADR-140]] 결정 1).
 //
 // **위 카드는 값을 고르는 행**(모달이 뜨고, 고르면 그 자리에서 끝난다), **아래 카드는 화면이
 // 넘어가는 행**(하위 페이지로 이동한다). 두 무리를 가르는 것은 카드 경계뿐이고 섹션 제목은 달지
@@ -9,7 +9,7 @@
 // 조건은 *"행이 늘어 세로가 길어지면"* 인데, 이 개편은 섹션 둘과 footer 한 줄을 하위 페이지로
 // 내려보내 **순감**이라 조건에 걸리지 않는다.
 //
-// ── RN 으로 옮기며 갈린 것 넷 ────────────────────────────────────────────────────────
+// ── RN 으로 옮기며 갈린 것 다섯 ──────────────────────────────────────────────────────
 //
 // ① **상단 안전영역을 화면이 아니라 셸이 먹는다.** 웹은 `ScreenScroll` 안쪽 래퍼의 `-mt` 가
 //    콘텐츠를 y=0 으로 끌어올려서, 헤더 없는 이 화면이 `pt-[calc(1rem+var(--sa-top))]` 로 직접
@@ -29,19 +29,33 @@
 //    `AppUpdateSection` 파일 머리에 벽 둘이 적혀 있다). 그래서 웹이 `currentVersion === null` 일 때
 //    쓰던 **폴백 경로만 남는다**: 빌드 시점 `package.json` 버전. 값을 지어내지 않고 웹에 이미 있던
 //    분기 하나로 좁힌 것이다.
+// ⑤ **캐릭터 관리가 여기로 들어왔다**([[ADR-140]]) — 웹에는 없는 행이다. 웹뷰 앱은 컨텐츠·보스
+//    헤더의 버튼 둘로 같은 피커를 열고, RN 은 그 다섯 자리(헤더 둘·빈 상태 둘·보스 수익 딥링크)를
+//    이 행 하나로 모았다. 그래서 이 화면만 **로스터 조회**를 갖는다(아래 「캐릭터 관리」 절).
 import { useEffect, useState } from 'react'
 import { Text, View } from 'react-native'
+import { useRoute, type RouteProp } from '@react-navigation/native'
 
 import type { CacheDataSizes } from '@core/features/settings/cache-data'
 import { loadCacheDataSizes } from '@core/features/settings/cache-data'
 import { TRACKING_MODE_LABELS } from '@core/features/tracking-mode/copy'
 import { useThemeStore } from '@core/features/theme/store'
 import { useTrackingModeStore } from '@core/features/tracking-mode/store'
+import { useContentSchedulerStore } from '@core/features/content-scheduler/store'
+import { useBossSchedulerStore } from '@core/features/boss-scheduler/store'
+import { useBossProfitStore } from '@core/features/boss-profit/store'
+import { useApiKeyNotice } from '@core/features/onboarding/use-api-key-notice'
+import { getCharacterPickerRoster, toScheduleSyncError } from '@core/features/schedule-sync/schedule-sync'
+import type { ScheduleSyncError } from '@core/features/schedule-sync/schedule-sync'
+import type { CharacterPickerEntry } from '@core/types'
 import { formatBytes } from '@core/lib/format-bytes'
 
 import packageJson from '../../../package.json'
 import { Card } from '../../components/atoms/Card/Card'
+import { CharacterTrackingPicker } from '../../components/organisms/CharacterTrackingPicker/CharacterTrackingPicker'
+import { ProgressModal } from '../../components/organisms/ProgressModal/ProgressModal'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
+import type { TabParamList } from '../../navigation/routes'
 import { useSettingsNavigation } from './use-settings-navigation'
 import { TABULAR_NUMS } from '../../lib/text-styles'
 import { SettingsRow } from './SettingsRow'
@@ -51,13 +65,58 @@ import { TrackingModeModal } from './TrackingModeModal'
 
 type OpenModal = 'theme' | 'trackingMode' | null
 
+/**
+ * 저장 뒤 나머지 두 탭 스토어를 다시 읽힌다([[ADR-140]] 결정 5).
+ *
+ * **웹에서는 라우트 언마운트가 하던 몫이다** — 화면을 옮길 때마다 `loadTrackedOcids()` 가 통합 키를
+ * 다시 읽었다. RN 의 탭 화면은 한 번 뜨면 마운트된 채 남아 스스로 다시 읽지 않으므로, 여기서
+ * 명시적으로 부르지 않으면 보스·수익 탭이 옛 목록을 들고 있게 된다.
+ *
+ * **순차인 이유는 `prehydrateTabStores` 와 같다** — [[ADR-097]] 게이트의 신선도는 앞 회차가 캐시를
+ * **다 쓴 뒤에야** 참이 되므로, 둘을 동시에 띄우면 둘 다 옛 `syncedAt` 을 보고 같은 응답을 두 번 받는다.
+ *
+ * 실패는 삼킨다(예열과 같은 성격이다) — 그 탭에 들어가면 화면이 자기 몫을 다시 부르고, 그때 실패하면
+ * 그 화면의 에러 경로가 정상적으로 돈다.
+ */
+function reloadOtherTabStores(): void {
+  void (async () => {
+    for (const load of [
+      () => useBossSchedulerStore.getState().loadTrackedOcids(),
+      () => useBossProfitStore.getState().loadTrackedOcids(),
+    ]) {
+      try {
+        await load()
+      } catch {
+        // 예열 실패는 조용히 넘긴다(`features/prehydrate` 와 같은 이유).
+      }
+    }
+  })()
+}
+
 export function SettingsScreen(): React.JSX.Element {
   const { theme } = useThemeStore()
   const { mode: trackingMode } = useTrackingModeStore()
+  // [[ADR-140]] 결정 4: 저장 로직을 새로 갖지 않는다 — 통합 키 쓰기·수동 모드 시드·추가분만 동기화·
+  // 진행률 보고가 이 액션에 이미 한 벌로 들어 있다. 이름이 «컨텐츠» 인 것은 [[ADR-042]] 이전의
+  // 흔적이고, 목록 자체는 앱 전역 하나다(그 대가는 ADR 이 적는다).
+  const { trackedOcids, saveTrackedOcids } = useContentSchedulerStore()
   const navigation = useSettingsNavigation()
+  const route = useRoute<RouteProp<TabParamList, 'Settings'>>()
 
   const [openModal, setOpenModal] = useState<OpenModal>(null)
   const [sizes, setSizes] = useState<CacheDataSizes | null>(null)
+  // [[ADR-140]] 결정 2: 보스 수익의 "캐릭터 선택하러 가기"([[ADR-068]] 결정 4)와 두 스케줄러의 빈
+  // 상태 CTA 가 피커를 **열어 둔 채로** 이 탭에 보낸다. 웹의 `?openPicker=1` 자리다.
+  const [isPickerOpen, setIsPickerOpen] = useState(() => route.params?.openPicker === true)
+  const [roster, setRoster] = useState<CharacterPickerEntry[]>([])
+  // [[ADR-053]] 결정 3: 후보 목록 조회의 로딩·실패는 조회를 소유한 화면이 관리해 피커에 내려준다.
+  // 초기값은 "마운트 직후 조회가 시작되는가"(= 파라미터로 이미 열려 있는가)와 같다.
+  const [isRosterLoading, setIsRosterLoading] = useState(isPickerOpen)
+  const [rosterError, setRosterError] = useState<ScheduleSyncError | null>(null)
+  // [[ADR-062]]: 재조회 트리거. 피커를 여는 것과 재시도가 같은 초기화(reloadRoster)를 공유하고,
+  // 이 값이 바뀌면 아래 조회 effect 가 다시 돈다.
+  const [rosterReloadNonce, setRosterReloadNonce] = useState(0)
+  const [saveProgress, setSaveProgress] = useState<{ completed: number; total: number } | null>(null)
 
   // ADR-118 결정 5: `계정 및 데이터` 행의 대표값. 캐시 행이 한 층 내려가면서 그 값은 한 층
   // 올라와, 들어가지 않고도 안을 짐작하게 한다. 실패는 자리표시(`- KB`)로 남긴다.
@@ -67,9 +126,66 @@ export function SettingsScreen(): React.JSX.Element {
       .catch(() => {})
   }, [])
 
+  // 열어 둔 채로 들어온 파라미터는 마운트 직후 지운다 — 탭 파라미터는 스택에 남아, 안 지우면 탭을
+  // 떠났다 돌아올 때마다 피커가 다시 열린다([[ADR-140]] 결정 2).
+  useEffect(() => {
+    if (route.params?.openPicker !== true) return
+    navigation.setParams({ openPicker: undefined })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // [[ADR-015]]: 후보 목록에 이미지·access_flag 가 필요해져 피커를 열 때만 조회한다.
+  // [[ADR-016]]·[[ADR-017]] 결정 6: 캐시가 있으면 즉시 그 값으로 먼저 그리고 응답이 하나씩 도착하는
+  // 대로 patch 한다. [[ADR-053]] 결정 3: 401/429 는 reject 로 나오므로 finally 에서 반드시 로딩을
+  // 해제해야 스피너가 영구히 걸리지 않는다. roster 는 재조회 시작 시에도 비우지 않는다.
+  useEffect(() => {
+    if (!isPickerOpen) return
+    let cancelled = false
+    getCharacterPickerRoster((entries) => {
+      if (!cancelled) setRoster(entries)
+    })
+      .catch((error: unknown) => {
+        if (!cancelled) setRosterError(toScheduleSyncError(error))
+      })
+      .finally(() => {
+        if (!cancelled) setIsRosterLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [isPickerOpen, rosterReloadNonce])
+
+  // [[ADR-115]] 결정 7 · [[ADR-116]] 결정 1: 로스터가 맞는 401·429 도 키 재입력 진입점으로 간다.
+  useApiKeyNotice(rosterError)
+
   const displayedVersion = packageJson.version
   // 행에 쓰는 총합은 그룹별 용량의 합으로 파생한다(ADR-058 결정 8).
   const totalCacheBytes = sizes === null ? null : sizes.general + sizes.bossRecords
+
+  // [[ADR-053]] 결정 3: 피커를 여는 유일한 경로 — 여는 순간 로딩·실패를 초기화한다(닫았다 다시 열면
+  // 위 effect 가 재조회하므로 직전 실패가 남아 있으면 안 된다).
+  function reloadRoster(): void {
+    setIsRosterLoading(true)
+    setRosterError(null)
+    setRosterReloadNonce((nonce) => nonce + 1)
+  }
+
+  function openPicker(): void {
+    setIsPickerOpen(true)
+    reloadRoster()
+  }
+
+  async function handleSaveTracking(ocids: string[]): Promise<void> {
+    setSaveProgress({ completed: 0, total: ocids.length })
+    // 저장이 실패해도(스토어가 처리 못한 예외 등) 진행률 모달은 항상 닫는다 — 안 그러면 모달이 멈춘다.
+    try {
+      await saveTrackedOcids(ocids, (completed, total) => setSaveProgress({ completed, total }))
+    } finally {
+      setSaveProgress(null)
+      setIsPickerOpen(false)
+    }
+    reloadOtherTabStores()
+  }
 
   return (
     <>
@@ -92,6 +208,18 @@ export function SettingsScreen(): React.JSX.Element {
                 label="테마"
                 onPress={() => setOpenModal('theme')}
                 rightContent={<ValueBadge>{theme}</ValueBadge>}
+              />
+            </View>
+            {/* [[ADR-140]] 결정 1·3: 「테마」 아래(사용자 지정). 이 카드에 드는 이유는 성질이 같기
+                때문이다 — 모달이 뜨고, 고르면 그 자리에서 끝난다. 배지는 **추적 인원**이고,
+                아직 못 읽었으면(`null`) 그리지 않는다([[ADR-101]] 결정 1 — `null` 은 "0명"이 아니다). */}
+            <View className={SETTINGS_ROW_DIVIDER_CLASS}>
+              <SettingsRow
+                label="캐릭터 관리"
+                onPress={openPicker}
+                rightContent={
+                  trackedOcids === null ? undefined : <ValueBadge>{trackedOcids.length}명</ValueBadge>
+                }
               />
             </View>
           </Card>
@@ -160,6 +288,26 @@ export function SettingsScreen(): React.JSX.Element {
 
       {openModal === 'trackingMode' && <TrackingModeModal onClose={() => setOpenModal(null)} />}
       {openModal === 'theme' && <ThemeModal onClose={() => setOpenModal(null)} />}
+
+      {isPickerOpen && (
+        <CharacterTrackingPicker
+          entries={roster}
+          trackedOcids={trackedOcids ?? []}
+          isLoading={isRosterLoading}
+          loadError={rosterError}
+          onSave={handleSaveTracking}
+          onClose={() => setIsPickerOpen(false)}
+          onRetry={reloadRoster}
+        />
+      )}
+      {/* 저장 중에는 캐릭터 관리 모달 위에 진행률 모달을 띄운다(완료 시 둘 다 닫힌다). */}
+      {saveProgress !== null && (
+        <ProgressModal
+          message="캐릭터 정보를 저장하고 있어요"
+          completed={saveProgress.completed}
+          total={saveProgress.total}
+        />
+      )}
     </>
   )
 }

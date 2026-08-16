@@ -1,13 +1,13 @@
 # 설정 (Settings)
 
-> **범위**: API 키 관리·계정(메이플 ID) 변경·연결 해제·테마 선택·스케줄 관리 방법(트래킹 모드)·데이터 관리·앱 업데이트·개발 노트·footer 표기. 다른 기능 설명에 흩어져 있던 요구사항을 통합 정리.
-> **관련 소스**: `app/settings/`(`SettingsScreen` + 하위 화면 `SettingsReleaseNotesScreen`/`SettingsFeatureGuideListScreen`/`SettingsFeatureGuideScreen`/`SettingsAccountDataScreen`/`SettingsAboutScreen`/`SettingsPrivacyScreen`) · `src/App.tsx`(라우트 셋 — `/settings` 의 형제) · `src/data/release-notes.ts` · `src/data/feature-guides/`(안내 하나 = 파일 하나) · `src/types/release-notes.ts`·`src/types/feature-guides.ts` · `lib/guide-route.ts` · `src/assets/guide/` · `features/settings/`(`changeApiKey`·`cache-data`) · `storage/api-key`(`clearAuthConfig`) · `storage/cache-data`(`clearCacheData`/`getCacheDataSizes`) · `features/onboarding`(`RESET`) · `features/tracking-mode`(`copy.ts`) · `AccountFlowStatus` · `SettingsRow`/`SettingsLinkRow`/`row-class.ts`(`SETTINGS_ROW_CLASS`) · `TrackingModeModal`/`TrackingModeSelector` · `ThemeModal`/`ThemeSelector` · `AccountModal`/`CacheClearConfirm`/`DisconnectConfirm` · `AppUpdateSection`.
-> **관련 ADR**: [[ADR-007]] [[ADR-008]] [[ADR-009]] [[ADR-004]] [[ADR-035]] [[ADR-026]] [[ADR-027]] [[ADR-050]] [[ADR-051]] [[ADR-052]] [[ADR-058]] [[ADR-086]] [[ADR-104]] [[ADR-113]] [[ADR-115]] [[ADR-118]] [[ADR-119]] [[ADR-120]] [[ADR-125]]. **관련 문서**: [onboarding.md](./onboarding.md), [theme.md](./theme.md), [live-update.md](./live-update.md), [../foundation/nexon-api.md](../foundation/nexon-api.md), [../persistence/lifecycle.md](../persistence/lifecycle.md).
+> **범위**: API 키 관리·계정(메이플 ID) 변경·연결 해제·테마 선택·스케줄 관리 방법(트래킹 모드)·캐릭터 관리(RN 앱만, [[ADR-140]])·데이터 관리·앱 업데이트·개발 노트·footer 표기. 다른 기능 설명에 흩어져 있던 요구사항을 통합 정리.
+> **관련 소스**: `app/settings/`(`SettingsScreen` + 하위 화면 `SettingsReleaseNotesScreen`/`SettingsFeatureGuideListScreen`/`SettingsFeatureGuideScreen`/`SettingsAccountDataScreen`/`SettingsAboutScreen`/`SettingsPrivacyScreen`) · `src/App.tsx`(라우트 셋 — `/settings` 의 형제) · `src/data/release-notes.ts` · `src/data/feature-guides/`(안내 하나 = 파일 하나) · `src/types/release-notes.ts`·`src/types/feature-guides.ts` · `lib/guide-route.ts` · `src/assets/guide/` · `features/settings/`(`changeApiKey`·`cache-data`) · `storage/api-key`(`clearAuthConfig`) · `storage/cache-data`(`clearCacheData`/`getCacheDataSizes`) · `features/onboarding`(`RESET`) · `features/tracking-mode`(`copy.ts`) · `AccountFlowStatus` · `SettingsRow`/`SettingsLinkRow`/`row-class.ts`(`SETTINGS_ROW_CLASS`) · `TrackingModeModal`/`TrackingModeSelector` · `ThemeModal`/`ThemeSelector` · `CharacterTrackingPicker`(RN 앱만 — [[ADR-140]]) · `AccountModal`/`CacheClearConfirm`/`DisconnectConfirm` · `AppUpdateSection`.
+> **관련 ADR**: [[ADR-007]] [[ADR-008]] [[ADR-009]] [[ADR-004]] [[ADR-035]] [[ADR-026]] [[ADR-027]] [[ADR-050]] [[ADR-051]] [[ADR-052]] [[ADR-058]] [[ADR-086]] [[ADR-104]] [[ADR-113]] [[ADR-115]] [[ADR-118]] [[ADR-119]] [[ADR-120]] [[ADR-125]] [[ADR-140]]. **관련 문서**: [onboarding.md](./onboarding.md), [theme.md](./theme.md), [live-update.md](./live-update.md), [../foundation/nexon-api.md](../foundation/nexon-api.md), [../persistence/lifecycle.md](../persistence/lifecycle.md).
 
 ## 정책
 진입 경로는 **하단 탭바 4번째 탭**(별도 헤더 아이콘 아님, 확정 2026-07-12).
 
-### 화면 구조 — 본화면 2카드 6행 + 하위 페이지 5 ([[ADR-118]], 구현 완료 2026-08-09, 이슈 #135·#161 · 6번째 행은 [[ADR-125]], 2026-08-10)
+### 화면 구조 — 본화면 2카드 6행 + 하위 페이지 5 ([[ADR-118]], 구현 완료 2026-08-09, 이슈 #135·#161 · 6번째 행은 [[ADR-125]], 2026-08-10 · **RN 앱은 7행** — 캐릭터 관리가 늘었다, [[ADR-140]], 2026-08-16)
 
 설정은 **한 화면이 아니라 얕은 계층**이다. 가르는 기준은 "행이 몇 개인가"가 아니라 **성격이 다른 것을 붙여 두지 않는다**이다.
 
@@ -15,6 +15,7 @@
 설정 (본화면 — 고정 헤더 없음)
  [카드 1]  스케줄 관리 방법            자동 ›      ← 값을 고르는 행(모달)
            테마                      혼테일 ›
+           캐릭터 관리                  3명 ›      ← RN 앱만([[ADR-140]])
  [카드 2]  기능 설명                        ›      ← 화면이 넘어가는 행
            개발 노트                        ›
            계정 및 데이터            1.2 MB ›
@@ -36,6 +37,11 @@
                                           2단 스택. 오프라인이면 안내 + 브라우저로 열기
 ```
 
+- **「캐릭터 관리」는 RN 앱에만 있고, 그 앱에서는 피커를 여는 **유일한** 자리다**([[ADR-140]], 2026-08-16). 웹뷰 앱은 컨텐츠·보스 헤더 버튼을 그대로 두므로 이 행이 없다(의도된 갈림).
+  - 카드 1에 드는 이유는 성질이 그 무리와 같기 때문이다 — 모달이 뜨고, 고르면 그 자리에서 끝난다. 자리는 「테마」 **아래**(사용자 지정).
+  - 배지는 **추적 인원**(`3명`)이다. [[ADR-118]] 결정 5의 "없는 대표값을 지어내지 않는다"에 걸리지 않는다 — 파생·추정값이 아니라 저장된 목록의 길이이고, 피커를 열려면 어차피 읽는 값이다. 아직 못 읽었으면(`null`) 배지를 그리지 않는다([[ADR-101]] 결정 1).
+  - 저장은 컨텐츠 스케줄러 스토어의 `saveTrackedOcids` 를 그대로 부르고([[ADR-140]] 결정 4 — 세 번째 사본을 만들지 않는다), 그 뒤 보스·수익 스토어를 **순차로** 다시 읽힌다(결정 5 — RN 탭 화면은 마운트된 채 남아 스스로 다시 안 읽는다). 로스터 로딩·실패·재시도 정책은 [content-scheduler.md](./content-scheduler.md) "캐릭터 관리 피커" 절 그대로다.
+  - **`openPicker` 파라미터로 열린 채 진입할 수 있다** — 보스 수익의 "캐릭터 선택하러 가기"([[ADR-068]] 결정 4)와 두 스케줄러의 빈 상태 CTA 가 그리로 보낸다. 마운트 직후 `setParams` 로 지운다(안 지우면 탭을 떠났다 돌아올 때마다 다시 열린다).
 - **섹션 제목은 달지 않는다** — 두 무리를 덮는 제목(「동작·표시」/「관리·정보」)은 행 이름보다 덜 구체적이라 읽는 사람이 얻는 것이 없다. 카드 경계만으로 가른다. 기존 「데이터 관리」·「앱 업데이트」 제목은 그 아래 행이 하나뿐이라 사실상 행 이름이었고, 두 섹션이 하위 페이지로 내려가면서 함께 사라진다.
 - **파괴적 행은 `/settings/account-data` 안에서 별도 카드로 내린다.** 본화면에서 빼는 것만으로는 분리가 아니다 — 옮긴 곳에서 다시 `계정 변경` 과 붙으면 같은 문제가 한 층 내려갈 뿐이다. 아래 카드에도 제목을 달지 않는다(위험 색 + 카드 경계가 이미 말한다).
 - **하위 페이지 다섯은 `/boss/manage`·`/content/manage` 와 같은 골격**이다 — 공용 `StackScreen`([[ADR-120]]) + `PageHeader`([[ADR-094]]) + 좌측 `ArrowLeft`(`aria-label="뒤로"`). 라우트는 `/settings` 의 **중첩 자식**이고 가드는 부모가 대신 건다(부모가 `/onboarding` 으로 리다이렉트되면 자식은 매칭될 자리가 사라진다). 중첩인 이유는 [[ADR-077]] 의 "부모 상태 보존"이 아니라 **전환 중 아래 화면이 보여야 하기 때문**이다 — 그러려면 언마운트되면 안 된다.
@@ -51,7 +57,7 @@
 개발 노트 한 줄은 *"바뀐 것이 있다"* 까지만 말한다. 사용법은 **기능 축 카탈로그 한 벌**(`/settings/guide`)에 살고, **개발 노트는 거기로 링크만 건다** — 같은 설명이 두 벌 있으면 반드시 갈라지고, 버전 축만으로는 *"지금 이 앱을 어떻게 쓰나"* 에 답할 자리가 없다.
 
 - **그룹은 `컨텐츠·보스·수익·유틸리티·설정`**(사용자 지정). 넷은 하단 탭바와 글자까지 같고, `유틸리티` 만 그 축 밖이며 **지금은 비어 있다.**
-  - **「캐릭터 관리」는 컨텐츠·보스 두 그룹에 선다** — 양쪽이 **같은 피커**를 쓰기 때문이다. 그래서 안내는 `group` 하나가 아니라 `groups` 배열을 갖고, 사본이 아니라 **같은 글 한 벌**이 두 탭에 선다. 반대로 「인게임 데이터 연동」은 컨텐츠 편·보스 편이 **다른 글**이다(같은 API지만 신경 쓸 것이 다르다).
+  - **「캐릭터 관리」는 컨텐츠·보스·설정 세 그룹에 선다** — 앞의 둘은 양쪽이 **같은 피커**를 쓰기 때문이고(그래서 안내는 `group` 하나가 아니라 `groups` 배열을 갖고, 사본이 아니라 **같은 글 한 벌**이 여러 탭에 선다), 설정은 RN 앱에서 그것을 **여는 자리**이기 때문이다([[ADR-140]] 결정 6). 반대로 「인게임 데이터 연동」은 컨텐츠 편·보스 편이 **다른 글**이다(같은 API지만 신경 쓸 것이 다르다).
   - **비어 있는 그룹은 탭째 감춘다**(개발 노트 카테고리 묶음·`ThemeSelector` 와 같은 규칙). 지금 `유틸리티` 가 그렇다.
   - **그룹이 하나면 탭 줄 자체를 안 그린다** — 선택지가 둘 이상일 때만 탭이 뜻을 갖는다. 스타일은 「탭 토글」절 그대로([[ADR-018]]).
 - **개발 노트에서는 안내를 가진 항목만** 눌러 들어갈 수 있고 `›` 가 붙는다 — 나머지 항목은 DOM 이 종전과 같다(버그 수정 한 줄에 붙일 사용법은 없고, 액션 없는 자리에 비활성 버튼을 두지 않는다).
@@ -199,6 +205,7 @@
 - **[[ADR-118]] 개편의 미검증 4건**(2026-08-09 신설 · **구현 완료 후에도 그대로 남는다** — 넷 다 눈·실기기로만 판정된다) — ① 본화면 5행 + 고지 4줄이 정말 스크롤 없이 들어가는가([[ADR-098]] 이 잰 835pt 는 **개편 전 구조**의 값이고 개편 후는 구현 뒤에도 재지 않았다 — jsdom 은 레이아웃을 계산하지 않는다) ② 배지 + chevron 병기가 360px 폭에서 붐비지 않는가 ③ 캐시 총 용량 조회 비용 — **구현 결과 1회가 아니라 2회다**(본화면 + `/settings/account-data` 각각 마운트 시 1회, SQLite + Preferences 왕복). 체감 지연 여부 미측정 ④ 두 탭 깊이의 개인정보 처리방침이 스토어 심사에서 문제되지 않는가(정책 문언상 충족하지만 심사자 판단은 겪어 봐야 안다).
 - **[[ADR-119]] 노트 원천의 미검증 3건**(2026-08-09 신설) — ① 노트 한 벌이 두 소비자에게 정말 충분한가(**모달 쪽이 아직 안 그려졌다** — 이슈 #164. 갈라야 하면 그때 필드를 나눈다, 지금 나누면 이중관리다) ② **노트를 실은 배포를 한 번도 해 보지 않았다**(가드가 발동해 `exit 1` 하는 것까지만 확인 — 다음 릴리스에서 `package.json` 을 1.0.3 으로 올려야 맞물린다, [../foundation/release.md](../foundation/release.md)) ③ `notes` 를 실은 새 매니페스트를 **옛 설치본**이 무사히 읽는가(테스트가 덮은 것은 반대 방향이다).
 - **계정 변경 모달의 두 대기가 실기기에서 하나로 읽히는지**([[ADR-113]] 결정 5, 2026-08-08 신설) — `verifying` 0% 바가 멈춘 것처럼 보이는지, `selectingAccount` 로 넘어갈 때 숫자 한 줄이 붙는 것이 끊김으로 읽히는지는 **눈으로만 판정된다**(자동 테스트는 "같은 프리미티브가 계속 있다"까지만 안다). 미확인.
+- **RN 앱의 7번째 행이 [[ADR-098]] 결정 3의 재판단 조건에 닿는가**([[ADR-140]], 2026-08-16 신설) — 그 결정은 *"행이 늘어 세로가 길어지면"* 고정 헤더를 다시 보라고 적었고, 이 개편은 [[ADR-118]] 이후 **처음으로 행을 늘린 변경**이다(6 → 7). 다만 늘어난 것은 값 카드의 한 행뿐이라 판단은 눈으로 한다 — 위 미검증 ①과 같은 자리에서 함께 본다.
 - 계정 변경 시 실수 방지 확인 다이얼로그 넣을지 — [[ADR-051]] 이후 맥락이 달라졌다. 계정이 1개여도 선택 목록을 반드시 보고 "계속하기"로 확정하게 되어 확정 행위 자체가 이미 한 번 있으므로, 다이얼로그를 더한다면 "실수 방지"보다는 "기존 계정 데이터 영향 고지" 쪽 이유가 필요하다.
 
 ## 폐기된 정책 (history)

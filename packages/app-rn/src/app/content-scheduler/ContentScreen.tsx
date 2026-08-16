@@ -32,30 +32,31 @@
 // ③ `animate-spin` → Reanimated CSS 애니메이션(`lib/animation.ts` 의 `SPIN_ANIMATION`).
 //    NativeWind 에 그 클래스가 없고, **없는 클래스는 에러가 아니라 안 도는 아이콘**이라 값으로 준다.
 //    step 5 에서 보스 스케줄러가 두 번째 호출부가 되며 화면 안 상수에서 `lib/` 로 올라갔다.
-// ④ 모달은 셸 **바깥의 형제**다. 웹에서 그래야 했던 이유(`z-50` 이 셸의 스태킹 컨텍스트에 갇혀
-//    탭바 아래로 간다)는 RN 에 없지만 — `Modal` 이 별도 네이티브 윈도우다 — 자리는 같다.
-import { useEffect, useState } from 'react'
+// ④ **캐릭터 관리 피커가 이 화면에 없다**([[ADR-140]]). 헤더 버튼도, 그것이 열던 모달도, 그
+//    모달을 먹여 살리던 로스터 조회([[ADR-015]]·[[ADR-016]]·[[ADR-053]]·[[ADR-062]])도 **설정
+//    화면으로 통째로 옮겨갔다** — 추적 목록은 [[ADR-042]] 이후 앱 전역 하나인데 그것을 고르는 자리만
+//    다섯이었다. 남은 흔적은 빈 상태 CTA 하나이고, 그것도 모달이 아니라 **설정 탭을 연다**.
+//    그래서 웹이 «모달을 셸 바깥 형제로 둔다»(`z-50` 이 셸의 스태킹 컨텍스트에 갇히는 것을 피한다)
+//    고 정한 자리가 이 파일에서 사라졌다.
+import { useEffect } from 'react'
 import { Pressable, RefreshControl, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useReducedMotion } from 'react-native-reanimated'
 
-import type { CharacterPickerEntry, DailyContent, WeeklyContent } from '@core/types'
-import { useContentSchedulerStore } from '@core/features/content-scheduler/store'
+import type { DailyContent, WeeklyContent } from '@core/types'
+import { useContentSchedulerStore, type ContentCharacterView } from '@core/features/content-scheduler/store'
 import { useTrackingModeStore } from '@core/features/tracking-mode/store'
 import { formatSyncedAt } from '@core/features/schedule-sync/format'
 import { useScheduleSyncErrorToast } from '@core/features/schedule-sync/use-sync-error-toast'
-import { useApiKeyNotice } from '@core/features/onboarding/use-api-key-notice'
-import { getCharacterPickerRoster, toScheduleSyncError } from '@core/features/schedule-sync/schedule-sync'
-import type { ScheduleSyncError } from '@core/features/schedule-sync/schedule-sync'
 import { mergeManualContentList, orderContentsByTemplate } from '@core/lib/manual-content-merge'
 import { CONTENT_TEMPLATE } from '@core/lib/scheduler-content-template'
 import { categorizeContentEntries, WEEKLY_CATEGORY_ORDER } from '@core/lib/content-category'
 
-import { CharacterSelectDropdown } from '../../components/molecules/CharacterSelectDropdown/CharacterSelectDropdown'
-import { CharacterTrackingPicker } from '../../components/organisms/CharacterTrackingPicker/CharacterTrackingPicker'
+import { dailyContentProgress, weeklyContentProgress } from './content-completion'
+
+import { CharacterRail, type CharacterRailEntry } from '../../components/molecules/CharacterRail/CharacterRail'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
-import { ProgressModal } from '../../components/organisms/ProgressModal/ProgressModal'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { SPIN_ANIMATION } from '../../lib/animation'
@@ -85,7 +86,6 @@ export function ContentScreen(): React.JSX.Element {
     selectedOcid,
     manualTrackedByOcid,
     loadTrackedOcids,
-    saveTrackedOcids,
     refresh,
     selectCharacter,
     // ADR-096 결정 1: 탭은 스토어 소유다 — 이 화면이 언마운트돼도 살아남고, 관리 페이지가
@@ -98,57 +98,14 @@ export function ContentScreen(): React.JSX.Element {
   const insets = useSafeAreaInsets()
   const { definition } = useThemeAppearance()
   const reduceMotion = useReducedMotion()
-  const [roster, setRoster] = useState<CharacterPickerEntry[]>([])
-  const [isPickerOpen, setIsPickerOpen] = useState(false)
   // ADR-063: 동기화 전체 실패는 인라인 문단이 아니라 토스트로 알린다 — 지속 상태("n분 전")는
   // 새로고침 옆 표기가 이미 담당하고, 토스트에는 원인을 푸는 액션을 붙일 수 있다.
   useScheduleSyncErrorToast(error, { onRetry: () => refresh(trackedOcids ?? []) })
-
-  // ADR-053 결정 3: 후보 목록 조회의 로딩·실패는 조회를 소유한 화면이 관리해 피커에 내려준다.
-  // 초기값은 "마운트 직후 조회가 시작되는가"(= 피커가 이미 열려 있는가)와 같다.
-  const [isRosterLoading, setIsRosterLoading] = useState(isPickerOpen)
-  const [rosterError, setRosterError] = useState<ScheduleSyncError | null>(null)
-  // ADR-062: 재조회 트리거. 피커를 여는 것과 재시도가 같은 초기화(reloadRoster)를 공유하고,
-  // 이 값이 바뀌면 아래 조회 effect가 다시 돈다.
-  const [rosterReloadNonce, setRosterReloadNonce] = useState(0)
-  const [saveProgress, setSaveProgress] = useState<{ completed: number; total: number } | null>(null)
 
   useEffect(() => {
     loadTrackedOcids()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-
-  // ADR-015: 후보 목록에 이미지·access_flag가 필요해져 피커를 열 때만 조회한다
-  // (마운트 시 매번 호출하면 화면에 들어오기만 해도 캐릭터 수만큼 병렬 호출이 발생함).
-  // ADR-016: 캐시가 있으면 즉시 그 값으로 먼저 그리고, character/basic 응답이 하나씩
-  // 도착하는 대로 patch한다(전체를 기다리지 않음).
-  // ADR-017 결정 6: character/list 응답을 기다리는 동안에도 character-basic-cache에 이미
-  // 있는 캐릭터(추적 여부 무관)는 즉시 먼저 보여줘, 피커를 열 때마다 짧게 비어 보이던 문제를
-  // 완화한다.
-  // ADR-053 결정 3: 조회 결과(Promise)를 버리지 않고 로딩·실패 상태로 남긴다 — 401/429는 reject로
-  // 나오므로 finally에서 반드시 로딩을 해제해야 스피너가 영구히 걸리지 않는다. roster는 재조회
-  // 시작 시에도 비우지 않는다(캐시로 보여주던 목록을 지우면 ADR-016 캐시 우선 표시가 무력화된다).
-  useEffect(() => {
-    if (!isPickerOpen) return
-    let cancelled = false
-    getCharacterPickerRoster((entries) => {
-      if (!cancelled) setRoster(entries)
-    })
-      .catch((error: unknown) => {
-        if (!cancelled) setRosterError(toScheduleSyncError(error))
-      })
-      .finally(() => {
-        if (!cancelled) setIsRosterLoading(false)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [isPickerOpen, rosterReloadNonce])
-
-  // ADR-115 결정 7: 감지 지점은 동기화만이 아니다 — 피커 로스터가 맞는 401도 같은 키 무효화라
-  // 같은 진입점을 부른다(동기화 쪽 위임은 useScheduleSyncErrorToast 안에 있다).
-  // ADR-116 결정 1: 429도 같은 진입점을 탄다 — 이름만 바뀌었을 뿐 이 자리는 그대로다.
-  useApiKeyNotice(rosterError)
 
   // ADR-101 결정 1: `null` 은 "0명"이 아니라 **"저장소를 아직 안 읽었다"** 다. 둘을 `||` 로 묶으면
   // 콜드 스타트 첫 페인트가 아직 모르는 사실을 단정한다 — 빈 상태는 읽고 확인한 뒤에만 그린다.
@@ -170,73 +127,64 @@ export function ContentScreen(): React.JSX.Element {
   // 관리하는 멤버십(manualTrackedContent)으로 표시 목록을 결정하고, 실제 값은 동기화 결과 또는
   // 템플릿에서 즉석 조회한다(mergeManualContentList). 멤버십의 kind('daily'/'weekly')가 저장
   // 시점에 확정돼 있어 각 탭은 자기 kind 항목만 그린다. auto 모드는 기존대로 등록 항목만 표시한다.
-  const manualItems = selected !== null ? (manualTrackedByOcid?.[selected.ocid] ?? []) : []
-
-  const displayDailyContents: DailyContent[] =
-    selected === null
-      ? []
-      : mode === 'manual'
-        ? mergeManualContentList(
-            manualItems.filter((item) => item.kind === 'daily'),
-            selected.dailyContents,
-            ORDERED_DAILY_TEMPLATE,
-          )
-        : // auto 모드도 수동 모드와 동일한 template 순서로 표시한다.
-          orderContentsByTemplate(
-            selected.dailyContents.filter((content) => content.isRegistered),
-            ORDERED_DAILY_TEMPLATE,
-          )
-
-  const displayWeeklyContents: WeeklyContent[] =
-    selected === null
-      ? []
-      : mode === 'manual'
-        ? (mergeManualContentList(
-            manualItems.filter((item) => item.kind === 'weekly'),
-            selected.weeklyContents,
-            ORDERED_WEEKLY_TEMPLATE,
-          ) as WeeklyContent[])
-        : // auto 모드도 수동 모드와 동일한 template 순서로 표시한다.
-          orderContentsByTemplate(
-            selected.weeklyContents.filter((content) => content.isRegistered),
-            ORDERED_WEEKLY_TEMPLATE,
-          )
-
-  async function handleSaveTracking(ocids: string[]): Promise<void> {
-    setSaveProgress({ completed: 0, total: ocids.length })
-    // 저장이 실패해도(스토어가 처리 못한 예외 등) 진행률 모달은 항상 닫는다 — 안 그러면 모달이 멈춘다.
-    try {
-      await saveTrackedOcids(ocids, (completed, total) => setSaveProgress({ completed, total }))
-    } finally {
-      setSaveProgress(null)
-      setIsPickerOpen(false)
-    }
+  // **캐릭터를 인자로 받는다**([[ADR-142]] 결정 4) — 선택된 캐릭터의 카드 목록과 레일의 링이
+  // **같은 함수**를 써야 «링이 세는 것 = 화면에 보이는 것» 이 구조로 보장된다. 전에는 선택된
+  // 캐릭터만 계산하면 됐으므로 이 자리가 식이었다.
+  function dailyContentsOf(character: ContentCharacterView): DailyContent[] {
+    const items = manualTrackedByOcid?.[character.ocid] ?? []
+    return mode === 'manual'
+      ? mergeManualContentList(
+          items.filter((item) => item.kind === 'daily'),
+          character.dailyContents,
+          ORDERED_DAILY_TEMPLATE,
+        )
+      : // auto 모드도 수동 모드와 동일한 template 순서로 표시한다.
+        orderContentsByTemplate(
+          character.dailyContents.filter((content) => content.isRegistered),
+          ORDERED_DAILY_TEMPLATE,
+        )
   }
 
-  // ADR-053 결정 3: 피커를 여는 유일한 경로 — 여는 순간 로딩·실패를 초기화한다(닫았다 다시 열면
-  // 위 useEffect가 재조회하므로 직전 실패가 남아 있으면 안 된다). 초기화를 effect 본문이 아니라
-  // 이 이벤트 핸들러에 두는 이유는 effect 본문의 동기 setState가 cascading render를 만들기 때문.
-  // ADR-062 트레이드오프: 여는 경로와 재시도가 같은 초기화를 쓴다 — 재조회 로직을 한 곳으로 모은다.
-  function reloadRoster(): void {
-    setIsRosterLoading(true)
-    setRosterError(null)
-    setRosterReloadNonce((nonce) => nonce + 1)
+  function weeklyContentsOf(character: ContentCharacterView): WeeklyContent[] {
+    const items = manualTrackedByOcid?.[character.ocid] ?? []
+    return mode === 'manual'
+      ? (mergeManualContentList(
+          items.filter((item) => item.kind === 'weekly'),
+          character.weeklyContents,
+          ORDERED_WEEKLY_TEMPLATE,
+        ) as WeeklyContent[])
+      : orderContentsByTemplate(
+          character.weeklyContents.filter((content) => content.isRegistered),
+          ORDERED_WEEKLY_TEMPLATE,
+        )
   }
 
-  function openPicker(): void {
-    setIsPickerOpen(true)
-    reloadRoster()
-  }
+  const displayDailyContents: DailyContent[] = selected === null ? [] : dailyContentsOf(selected)
+  const displayWeeklyContents: WeeklyContent[] = selected === null ? [] : weeklyContentsOf(selected)
 
-  const characterManageButton = (
-    <Pressable role="button" onPress={openPicker}>
-      <Text className="text-sm font-medium text-text-muted">캐릭터 관리</Text>
-    </Pressable>
-  )
+  // [[ADR-142]] 정정 1: 링 **하나를 좌·우 반원으로 가른다** — 왼쪽 일간, 오른쪽 주간. 둘 다 12시에서
+  // 시작해 아래로 차므로 두 반원을 나란히 읽을 수 있다.
+  const railEntries: CharacterRailEntry[] = characters.map((character) => ({
+    ocid: character.ocid,
+    characterName: character.characterName,
+    level: character.level ?? null,
+    imageUrl: character.imageUrl ?? null,
+    rings: [
+      { label: '일간', ...dailyContentProgress(dailyContentsOf(character)) },
+      { label: '주간', ...weeklyContentProgress(weeklyContentsOf(character)) },
+    ],
+  }))
+
+  // [[ADR-140]] 결정 1·2: 이 화면은 더 이상 피커를 열지 않는다 — 추적 목록을 고르는 자리는 설정
+  // 하나뿐이라, 빈 상태 CTA 는 모달 대신 **설정 탭을 피커가 열린 채로** 연다.
+  function goToCharacterManage(): void {
+    navigation.navigate('Tabs', { screen: 'Settings', params: { openPicker: true } })
+  }
 
   // ADR-035 결정 18: 수동 모드의 추적 항목 편집은 이 화면이 아니라 전용 관리 페이지에서 한다.
+  // 잘린 버튼은 목적지를 잃는다([[ADR-141]] 결정 3) — 줄어드는 것은 시각 텍스트뿐이다.
   const manualManageButton = mode === 'manual' && (
-    <Pressable role="button" onPress={() => navigation.navigate('ContentManage')}>
+    <Pressable role="button" className="shrink-0" onPress={() => navigation.navigate('ContentManage')}>
       <Text className="text-sm font-medium text-text-muted">컨텐츠 관리</Text>
     </Pressable>
   )
@@ -260,41 +208,12 @@ export function ContentScreen(): React.JSX.Element {
     }
   }
 
-  const trackingPicker = isPickerOpen && (
-    <CharacterTrackingPicker
-      entries={roster}
-      trackedOcids={trackedOcids ?? []}
-      isLoading={isRosterLoading}
-      loadError={rosterError}
-      onSave={handleSaveTracking}
-      onClose={() => setIsPickerOpen(false)}
-      onRetry={reloadRoster}
-    />
-  )
-
-  // 저장 중에는 캐릭터 관리 모달 위에 진행률 모달을 띄운다(완료 시 둘 다 닫힌다).
-  const trackingModals = (
-    <>
-      {trackingPicker}
-      {saveProgress !== null && (
-        <ProgressModal
-          message="캐릭터 정보를 저장하고 있어요"
-          completed={saveProgress.completed}
-          total={saveProgress.total}
-        />
-      )}
-    </>
-  )
-
   if (isEmpty) {
     // 헤더 셸을 쓰지 않는 가지라(제목 줄이 목록 없이 혼자 선다) 상단 안전영역을 여기서 먹는다 —
     // 웹의 `min-h-[calc(100dvh …)]` 자리는 `flex-1` 이다(탭 상자가 이미 탭바를 뺀 크기다).
     return (
       <View testID="screen-Content" className="flex-1 p-4" style={{ paddingTop: insets.top }}>
-        <View className="flex-row items-center justify-between">
-          <Text className="text-lg font-semibold text-text">컨텐츠 스케줄러</Text>
-          {characterManageButton}
-        </View>
+        <Text className="text-lg font-semibold text-text">컨텐츠 스케줄러</Text>
 
         <View className="flex-1 items-center justify-center">
           <EmptyState
@@ -302,11 +221,9 @@ export function ContentScreen(): React.JSX.Element {
             icon="leaf"
             title="표시할 캐릭터가 없습니다"
             description="캐릭터를 선택하면 일간·주간 컨텐츠를 확인할 수 있습니다"
-            action={{ label: '캐릭터 선택하기', onClick: openPicker }}
+            action={{ label: '캐릭터 선택하기', onClick: goToCharacterManage }}
           />
         </View>
-
-        {trackingModals}
       </View>
     )
   }
@@ -331,46 +248,43 @@ export function ContentScreen(): React.JSX.Element {
           // 헤더는 스크롤 뷰의 **형제**라 `fixed` 도 spacer 도 없다([[ADR-098]] 결정 2 가 웹에서
           // 풀던 문제가 구조적으로 없다 — `PageHeader` 파일 머리).
           <PageHeader>
+            {/* [[ADR-141]] 결정 1: 동기화 상태가 드롭다운 줄에서 **제목 옆**으로 올라왔다. 오른쪽
+                끝은 관리 버튼 자리 그대로다 — 그쪽은 «가는 곳», 이쪽은 «상태» 라 성질이 다르다. */}
             <View className="flex-row items-center justify-between">
-              <Text className="text-lg font-semibold text-text">컨텐츠 스케줄러</Text>
-              <View className="flex-row items-center gap-4">
-                {manualManageButton}
-                {characterManageButton}
-              </View>
-            </View>
-
-            <View className="gap-1">
-              <View className="flex-row items-center gap-3">
-                {characters.length > 0 && selected !== null && (
-                  <CharacterSelectDropdown
-                    characters={characters}
-                    selectedOcid={selected.ocid}
-                    onSelect={(ocid) => {
-                      void selectCharacter(ocid)
-                    }}
-                  />
-                )}
-
-                <View className="ml-auto shrink-0 flex-row items-center gap-2">
-                  <Text className="text-sm text-text-muted">
-                    {status === 'loading' ? '조회 중...' : selected !== null ? formatSyncedAt(selected.syncedAt) : ''}
-                  </Text>
-                  <Pressable
-                    role="button"
-                    aria-label="새로고침"
-                    onPress={() => refresh(trackedOcids ?? [])}
-                    className="p-2"
+              <View className="shrink flex-row items-center gap-2">
+                {/* 결정 3: 폭을 다투면 시각 텍스트만 줄어든다 — 제목은 화면의 이름이다. */}
+                <Text className="shrink-0 text-lg font-semibold text-text">컨텐츠 스케줄러</Text>
+                <Text className="shrink text-sm text-text-muted" numberOfLines={1}>
+                  {status === 'loading' ? '조회 중...' : selected !== null ? formatSyncedAt(selected.syncedAt) : ''}
+                </Text>
+                <Pressable
+                  role="button"
+                  aria-label="새로고침"
+                  onPress={() => refresh(trackedOcids ?? [])}
+                  className="shrink-0 p-2"
+                >
+                  <AnimatedView
+                    testID="refresh-icon"
+                    style={status === 'loading' && !reduceMotion ? SPIN_ANIMATION : undefined}
                   >
-                    <AnimatedView
-                      testID="refresh-icon"
-                      style={status === 'loading' && !reduceMotion ? SPIN_ANIMATION : undefined}
-                    >
-                      <RefreshCwIcon className="h-4 w-4 text-primary-ink" strokeWidth={2} aria-hidden />
-                    </AnimatedView>
-                  </Pressable>
-                </View>
+                    <RefreshCwIcon className="h-4 w-4 text-primary-ink" strokeWidth={2} aria-hidden />
+                  </AnimatedView>
+                </Pressable>
               </View>
+              {manualManageButton}
             </View>
+
+            {/* 조건이 **줄 밖**에 있다 — 안에 두면 캐릭터가 없는 동안(첫 조회) 빈 줄이 남아
+                `PageHeader` 의 `gap-4` 를 두 번 먹는다([[ADR-141]] 딸림 변경). */}
+            {characters.length > 0 && selected !== null && (
+              <CharacterRail
+                entries={railEntries}
+                selectedOcid={selected.ocid}
+                onSelect={(ocid) => {
+                  void selectCharacter(ocid)
+                }}
+              />
+            )}
 
             {/* ADR-016: 캐시된 characters가 있으면 재검증(status: 'loading') 중에도 계속 보여준다 —
                 셸 승계 카드는 보여줄 데이터가 아예 없을 때만 그린다([[ADR-061]] 결정 2). */}
@@ -443,8 +357,6 @@ export function ContentScreen(): React.JSX.Element {
           </View>
         )}
       </ScreenScroll>
-
-      {trackingModals}
     </View>
   )
 }
