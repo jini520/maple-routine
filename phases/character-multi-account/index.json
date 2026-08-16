@@ -8,7 +8,7 @@
       "status": "completed",
       "started_at": "2026-08-17T02:27:19+0900",
       "summary": "representativeCharacter 키 + get/set/clearRepresentativeCharacter 추가, 참조 무결성은 setTrackedCharacterOcids 안의 pruneDanglingRepresentative 와 목록·대표를 함께 받는 setCharacterSelection(ocids, representative) 가 지킨다. CharacterPickerEntry·CharacterBasicProfile 에 옵셔널 jobClass 추가(출처는 character/list — normalizeCharacterBasic 미변경).",
-      "completed_at": "2026-08-17T02:35:00+0900"
+      "completed_at": "2026-08-17T02:35:54+0900"
     },
     {
       "step": 1,
