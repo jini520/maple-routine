@@ -29,7 +29,10 @@
     {
       "step": 3,
       "name": "account-derivations",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-17T03:01:34+0900",
+      "summary": "features/character-manage/derivations.ts 신설(순수 함수 셋, 저장소·네트워크 호출 0 — 타입만 import). summarizeAccount(account): AccountSummaryView | null — 대표는 pickRepresentativeCharacter 재사용, worldCounts 는 Map 집계 후 개수 내림차순·동수는 compareByName(world)로 결정적 정렬 뒤 slice(0,2)이고 «외 n» 꼬리 없음, 캐릭터 0명이면 던지지 않고 null(대표 없는 요약을 만들 수 없어 반환 타입에 | null 을 더했다 — ADR-127 이 고친 렌더 중 throw 를 되살리지 않기 위한 것). buildSelectedCharacterViews(orderedOcids, cached, unavailableOcids) — 순서 그대로, 캐시 없으면 level null·jobClass/world undefined·imageUrl null·name ''(타입이 string 이라 «없음» 자리가 빈 문자열뿐, 자리표시자 문구 없음), 조회 불가도 목록에 남고 캐시값은 그대로 쓴다. resolveRepresentative(orderedOcids, stored) — 목록에 있으면 그것, 없거나 null 이면 null(«첫 번째를 임시 대표로» 는 만들지 않는다). 테스트 20케이스(__tests__/derivations.test.ts), 월드 상한·순서 보존 두 곳에 변이 주입으로 판별력 확인. ADR-144 머리에 «값 규칙의 자리» 한 문단 추가.",
+      "completed_at": "2026-08-17T03:07:30+0900"
     },
     {
       "step": 4,
