@@ -21,6 +21,7 @@ import type { TrackingMode } from '@core/storage/tracking-mode'
 import { Button } from '../../components/atoms/Button/Button'
 import { MapleSpinner } from '../../components/atoms/MapleSpinner/MapleSpinner'
 import { Modal } from '../../components/organisms/Modal/Modal'
+import { reloadTabStores } from './reload-tab-stores'
 import { TrackingModeSelector } from './TrackingModeSelector'
 
 export interface TrackingModeModalProps {
@@ -41,6 +42,12 @@ export function TrackingModeModal(props: TrackingModeModalProps): React.JSX.Elem
     // ADR-035 결정 15: setMode는 수동 전환 시 시드가 전부 끝난 뒤에만 resolve된다. 시드가
     // 끝나기 전에 닫으면 사용자가 방금 고른 모드가 아직 준비 안 된 상태를 보게 되므로 await 후 닫는다.
     await setMode(selected)
+    // [[ADR-140]] 결정 5 정정: 시드는 저장소를 채우지만 수동 모드의 표시 목록을 정하는 것은 스토어
+    // 메모리의 사본(`manualTrackedByOcid`)이고, RN 탭 화면은 마운트된 채 남아 스스로 다시 읽지
+    // 않는다 — 이 줄이 없으면 자동 → 수동 직후 세 탭이 "모드는 수동인데 멤버십은 빈 맵"을 그린다
+    // (보스 탭의 "추적할 주간 보스가 없습니다", 새로고침해야 나옴). **시드 뒤여야 한다** — 먼저
+    // 읽히면 그 회차가 옛 멤버십을 담는다.
+    reloadTabStores(['content', 'boss', 'profit'])
     props.onClose()
   }
 
