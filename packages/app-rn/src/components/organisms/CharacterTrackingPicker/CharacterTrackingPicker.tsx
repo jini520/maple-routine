@@ -220,7 +220,7 @@ export function CharacterTrackingPicker(props: CharacterTrackingPickerProps): Re
           <View className="mb-4 shrink-0 gap-1">
             <Text className="text-lg font-semibold text-text">캐릭터 관리</Text>
             <Text className="text-sm text-text-muted">
-              체크한 캐릭터만 스케줄러 목록에 표시됩니다. 최소 한 명은 선택해주세요.
+              체크한 캐릭터만 스케줄러 목록에 표시됩니다. 최소 1개는 선택해주세요.
             </Text>
           </View>
 

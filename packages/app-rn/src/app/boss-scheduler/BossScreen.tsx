@@ -77,6 +77,7 @@ import { SPIN_ANIMATION } from '../../lib/animation'
 import { AnimatedView } from '../../lib/nativewind-interop'
 import { RefreshCwIcon, SlidersHorizontalIcon, SwordsIcon, UsersIcon } from '../../lib/icons'
 import { MEDIA_TEXT_SHADOW_STYLE } from '../../lib/text-styles'
+import { orderByTracked } from '../../lib/tracked-order'
 import { useThemeAppearance } from '../../theme/context'
 import { useScreenNavigation } from '../use-screen-navigation'
 
@@ -146,7 +147,7 @@ function BossCard(props: {
 export function BossScreen(): React.JSX.Element {
   const {
     status,
-    characters,
+    characters: storeCharacters,
     error,
     trackedOcids,
     selectedOcid,
@@ -191,6 +192,10 @@ export function BossScreen(): React.JSX.Element {
   // 콜드 스타트 첫 페인트가 아직 모르는 사실을 단정한다(실기기 2026-08-06 — "표시할 캐릭터가
   // 없습니다"가 목록보다 먼저 한 프레임 스쳤다). 빈 상태는 읽고 0명임을 **확인한 뒤에만** 그린다.
   const isEmpty = trackedOcids !== null && trackedOcids.length === 0
+
+  // [[ADR-143]] 결정 3: 스토어가 내는 것은 **기준 순서**(레벨 내림차순)이고, 화면 순서는 사용자가
+  // 캐릭터 관리에서 정한 저장 배열 순서다. core 를 안 고치는 이유는 `orderByTracked` 머리에 있다.
+  const characters = orderByTracked(storeCharacters, trackedOcids ?? [])
 
   const effectiveSelectedOcid =
     selectedOcid !== null && characters.some((character) => character.ocid === selectedOcid)

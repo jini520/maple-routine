@@ -82,6 +82,7 @@
   - **이 복원은 캐시 우선 표시 단계에도 적용한다**([[ADR-111]] 결정 6) — 처음엔 동기화 완료 분기에만 있었는데, TTL 로 건너뛴 진입이 곧 최종 화면이 된 이상([[ADR-097]]) 그 조합이 총 수익에서 통째로 빠진다(같은 증상의 두 번째 경로). 캐시 단계도 **현재 주·달 키를 항상 포함**하고, **캐릭터 프로필 맵을 캐시 *행* 이 아니라 캐시 *엔트리* 에서 만든다** — 행에서 만들면 축약 응답으로 행이 0인 캐릭터는 프로필이 없어 `appendRecordOnlyRows` 가 그 캐릭터를 통째로 건너뛰고, 정확히 이 복원이 겨눈 시나리오가 프로필 부재로 다시 막힌다. **건너뛴 진입 전용이 아니라 캐시 단계 일반에 건다** — 두 경로가 다른 화면을 그리면 그것이 다음 결함이 된다.
   - `isMonthlyBossStale` 판정도 함께 고쳤지만(축약 응답에 `bossWeekly` 가 없으면 남은 `bossMonthly` 도 신뢰하지 않는다) **그것만으로는 이 증상이 낫지 않는다** — `mergeBossCycle` 은 stale 플래그를 보지 않고 항상 fresh를 우선하며, 그 리셋 규약은 [[ADR-034]]가 의도한 것이다(previous의 완료를 되살리면 지난 리셋의 완료가 새 주기로 샌다). 표시를 고치는 것은 기록 합집합이고, 판정 수정은 "축약 응답을 신선하다고 주장하지 않는다"는 별개 값어치다.
 - 보스 표시 순서([[ADR-036]]): `sortRowsByOcidOrder` 에 `weekly-bosses.json` 정규 순서(REFERENCE_ENTRIES: weekly→eventWeekly→monthly) 2차 정렬 키로 캐시·라이브·과거기록 세 경로를 같은 순서로 고정(`getBossReferenceOrder`, `boss-matching.ts`).
+- **캐릭터 카드 순서 (RN 앱만 — [[ADR-143]] 결정 3, 구현 완료 2026-08-17)**: 카드가 서는 차례는 행의 순서(= `getSortedCharacterInfo` 의 레벨 내림차순)가 아니라 사용자가 캐릭터 관리에서 정한 `trackedCharacters` 배열 순서다 — 화면이 `buildCharacterGroups` 결과를 `orderByTracked` 로 한 번 통과시킨다(`app-rn/src/lib/tracked-order.ts`, 두 스케줄러 레일과 같은 함수). **캐릭터 안쪽 보스 순서는 위 [[ADR-036]] 그대로**이고, 저장 목록에 없는 캐릭터의 카드도 사라지지 않는다(뒤에 남는다). 웹뷰 앱은 종전대로 레벨 내림차순이다.
 
 ## UI
 

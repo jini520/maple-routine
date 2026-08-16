@@ -85,7 +85,8 @@ describe('CharacterTrackingPicker', () => {
     )
 
     expect(getByText('캐릭터 관리')).toBeTruthy()
-    expect(getByText('체크한 캐릭터만 스케줄러 목록에 표시됩니다. 최소 한 명은 선택해주세요.')).toBeTruthy()
+    // 단위는 «명» 이 아니라 «개» 다([[ADR-144]] 결정 8) — 캐릭터는 사람이 아니다.
+    expect(getByText('체크한 캐릭터만 스케줄러 목록에 표시됩니다. 최소 1개는 선택해주세요.')).toBeTruthy()
   })
 
   // [[ADR-086]] 결정 7: 0명은 화면을 빈 상태로 만들 뿐 어떤 사용자 의도도 표현하지 않는다.
