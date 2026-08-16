@@ -1,10 +1,10 @@
 # 온보딩 (Onboarding)
 
 > **범위**: API 키 입력·계정(메이플 ID) 선택·전체 캐릭터 예열. 설정에서의 계정 변경/연결 해제는 [settings.md](./settings.md).
-> **관련 소스**: `app/onboarding/` · `features/onboarding/` · `features/schedule-sync/character-basic-fetch`(네 호출부가 공유하는 `character/basic` 통과 지점) · `nexon/character` · `storage/api-key` · `storage/character-basic-cache` · `storage/scheduler-cache` · `AccountSelectionList` · `ApiKeyForm`.
+> **관련 소스**: `app/onboarding/` · `features/onboarding/` · `features/schedule-sync/character-basic-fetch`(네 호출부가 공유하는 `character/basic` 통과 지점) · `nexon/character` · `storage/api-key` · `storage/character-basic-cache` · `storage/scheduler-cache` · `AccountSelectionList`(**웹뷰 앱만** — RN 파일은 [[ADR-143]] 결정 7 로 삭제됐다) · `ApiKeyForm` · RN 캐릭터 선택 단계는 `ContentCharacterStep` + 공용 `CharacterManageBody`/`use-character-manage`([settings.md](./settings.md) 와 같은 본문).
 > **관련 ADR**: [[ADR-007]] [[ADR-016]] [[ADR-015]] [[ADR-006]] [[ADR-051]] [[ADR-053]] [[ADR-086]] [[ADR-110]] [[ADR-113]] [[ADR-115]] [[ADR-116]] [[ADR-127]] [[ADR-143]] [[ADR-144]]. **관련 문서**: [../foundation/nexon-api.md](../foundation/nexon-api.md), [../foundation/architecture.md](../foundation/architecture.md), [site.md](./site.md)(가이드 페이지 본문), [../trouble/2026-08-12-onboarding-empty-account-crash.md](../trouble/2026-08-12-onboarding-empty-account-crash.md).
 
-## 단계는 앱마다 다르다 ([[ADR-143]], 2026-08-16 · **흐름은 구현 완료(2026-08-17) · 화면은 구현 전**)
+## 단계는 앱마다 다르다 ([[ADR-143]], 2026-08-16 · **구현 완료 2026-08-17 · 실기기 미검증**)
 
 ```
 웹뷰(Capacitor)   API 키 → 계정 선택 → 예열 → 스케줄 관리 방법 → 캐릭터 선택
@@ -15,10 +15,12 @@ RN 앱은 **메이플 ID 를 고르지 않는다** — 캐릭터 선택 화면�
 
 | 웹뷰 앱의 자리 | RN |
 |---|---|
-| 계정 선택 단계(`AccountSelectionList`) | **없다** — 캐릭터 선택 화면의 드롭다운 |
+| 계정 선택 단계(`AccountSelectionList`) | **없다** — 캐릭터 선택 화면의 드롭다운(RN 파일 삭제 완료) |
 | 예열([[ADR-016]], 계정 전체 캐릭터) | **드롭다운으로 그 계정을 열 때** 그 계정 몫만 판정([[ADR-143]] 결정 5) |
 | 계정 선택 프로브(`use-account-probes`) | 같은 이유로 없다 — 판정은 로스터 조회가 한다 |
 | 재개 표의 `selectedAccountId` 행 | **빠진다**(아래 「단계 재개」) |
+
+RN 의 `OnboardingScreen` 에는 `selectingAccount`·`prefetching` 두 case 가 **타입상으로만 남는다**(리듀서를 안 고쳤다 — [[ADR-143]] 결정 8). 그 자리에는 빈 화면이 아니라 **키 입력 폼**이 선다: 저장소가 흔들려 `submitApiKey` 의 방어 분기가 그리로 떨어질 수 있고, 출구 없는 흰 화면은 [[ADR-116]] 이 없앤 잠금과 같은 얼굴이기 때문이다. 같은 이유로 `error` 도 `accounts` 유무로 갈리지 않는다(그릴 수 있는 것이 폼 하나다).
 
 두 흐름이 갈리는 자리는 core 의 **계정 범위 플래그 하나**다(`features/onboarding/flow.ts` 의 `accountScope: 'single' | 'all'`, 기본값 `'single'` — Capacitor 는 아무것도 주입하지 않고, RN 은 `boot.ts` 가 포트 주입과 같은 자리에서 `'all'` 을 넣는다). **읽는 곳은 둘뿐이다** — 아래 「단계 재개」의 파생과 「키 재입력 경로」의 대조 가드([[ADR-143]] 결정 8·9 — Capacitor 가 걷히면 플래그를 지우고 `'all'` 만 남긴다).
 
@@ -119,7 +121,7 @@ API 키가 무효화(401/403)되면 저장된 **`apiKey` 키 하나만** 지워�
 
 ### 추적 캐릭터 선택 단계 — 후보 목록 로딩 ([[ADR-053]], 구현 완료 2026-07-29)
 
-> **RN 에서는 이 단계가 두 층이 된다**([[ADR-144]] 결정 2) — **위**는 계정을 넘는 「선택된 캐릭터」 리스트(순서·대표가 여기 산다), **아래**는 계정 드롭다운 + 그 계정의 후보 목록이고, **두 층은 같은 행 카드**를 쓴다(갈리는 것은 좌우 슬롯뿐 — 위는 끌기 핸들과 `★ ✕`, 아래는 `＋`). 아래 로딩·실패 정책은 **그 아래 층 자리에 그대로** 적용되고(계정을 바꾸면 아래만 다시 돈다 — 위는 로컬 캐시로 그려 네트워크와 무관하다), 달라지는 것 셋: **후보 0건의 「계정 다시 선택」 액션이 없어진다**(드롭다운을 되돌리는 것이 그 자리의 출구다 — [[ADR-143]] 결정 10) · **고를 수 있는 계정이 하나도 없으면** 화면 전체가 빈 상태 + 키 재입력이다 · 같은 계정을 5분 안에 다시 열면 **조회 자체를 하지 않는다**([[ADR-144]] 결정 6 의 계정 전환 TTL).
+> **RN 에서는 이 단계가 두 층이 된다**([[ADR-144]] 결정 2 · 구현 완료 2026-08-17) — **위**는 계정을 넘는 「선택된 캐릭터」 리스트(순서·대표가 여기 산다), **아래**는 계정 드롭다운 + 그 계정의 후보 목록이고, **두 층은 같은 행 카드**를 쓴다(갈리는 것은 좌우 슬롯뿐 — 위는 끌기 핸들과 `★ ✕`, 아래는 `＋`). 아래 로딩·실패 정책은 **그 아래 층 자리에 그대로** 적용되고(계정을 바꾸면 아래만 다시 돈다 — 위는 로컬 캐시로 그려 네트워크와 무관하다), 달라지는 것 셋: **후보 0건의 「계정 다시 선택」 액션이 없어진다**(드롭다운을 되돌리는 것이 그 자리의 출구다 — [[ADR-143]] 결정 10) · **고를 수 있는 계정이 하나도 없으면** 화면 전체가 빈 상태 + 키 재입력이다 · 같은 계정을 5분 안에 다시 열면 **조회 자체를 하지 않는다**([[ADR-144]] 결정 6 의 계정 전환 TTL).
 
 **API 키 단계 실패 표시 ([[ADR-065]] 결정 1)**: 실패는 **토스트**로 알린다 — 문구가 사라져도 이 자리엔 폼이 남으므로([[ADR-063]] 원칙 4) 인라인 문구를 두지 않는다. 세 경로 모두 `formatOnboardingError`(위치: `features/onboarding/format.ts` — 스토어가 쓰므로 `app/` 이 아니다) 로 **원인별 문구**를 띄운다.
 - `submitApiKey` 실패 — 전에는 원인과 무관하게 한 문구였다(바로 아래에서 원인을 계산해 state에 넣으면서도 토스트는 그 값을 안 썼다).

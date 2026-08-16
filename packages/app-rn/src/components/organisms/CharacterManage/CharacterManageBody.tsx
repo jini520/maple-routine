@@ -21,6 +21,12 @@
 // 항목이 있으면 지우지 않고 스탈 배너를 얹고([[ADR-062]] 결정 4), 401·429 는 액션 없이 문구만 남긴다
 // ([[ADR-114]] 결정 2 · [[ADR-115]] 결정 7 — 화면이 곧 키 입력으로 옮겨간다).
 //
+// **`place` 가 그 규칙에서 갈리는 유일한 값이다.** 온보딩의 401 은 키 재입력 진입점에 배선하지
+// 않으므로(«방금 넣은 키가 나쁘다» 는 뜻이라 폼 자체의 실패다 — [[ADR-115]] "구현하며 정정한 것" 5)
+// 화면이 옮겨가지 않는다. 그 자리에 피커 문구(«키 입력 화면으로 이동합니다»)를 그대로 쓰면 **거짓인
+// 데다 액션까지 없어** 401 이 하드 잠금이 된다([[ADR-116]] 이 429 에서 없앤 그 얼굴이다). 그래서
+// 자리를 프롭으로 받아 `formatRosterError` 에 그대로 넘긴다 — 문구·액션 표는 core 가 계속 갖는다.
+//
 // ── 「고를 수 있는 계정이 0개」 ──────────────────────────────────────────────────────
 //
 // 그때는 본문 전체가 빈 상태 + 키 재입력 경로다([[ADR-143]] 결정 10 넷째 줄 — [[ADR-127]] 결정 3 이
@@ -28,7 +34,11 @@
 // 없어졌고 출구는 드롭다운이다.
 import { Text, View } from 'react-native'
 
-import { formatRosterError, formatStaleRosterError } from '@core/features/schedule-sync/format'
+import {
+  formatRosterError,
+  formatStaleRosterError,
+  type RosterErrorPlace,
+} from '@core/features/schedule-sync/format'
 import { useOnboardingStore } from '@core/features/onboarding/store'
 
 import { MapleSweepSpinner } from '../../atoms/MapleSweepSpinner/MapleSweepSpinner'
@@ -53,6 +63,12 @@ export interface CharacterManageBodyProps {
    * 도 화면에 남는 편이 자리에 맞는다.
    */
   scroll: ReorderScroll
+  /**
+   * 실패 문구·액션이 갈리는 자리(파일 머리) — 설정 하위 페이지는 `'picker'`, 온보딩 단계는
+   * `'onboarding'`. 기본값을 두지 않는다: 두 호출부뿐이고, 기본값이 있으면 셋째 호출부가
+   * **틀린 자리의 문구를 조용히** 물려받는다.
+   */
+  place: RosterErrorPlace
 }
 
 function Waiting(props: { label: string }): React.JSX.Element {
@@ -81,7 +97,13 @@ function Notice(props: { children: React.ReactNode }): React.JSX.Element {
 }
 
 /** 아래 층의 목록 자리 — 피커의 `PickerBody` 와 같은 순서로 갈린다. */
-function CandidateArea({ manage }: { manage: CharacterManageController }): React.JSX.Element {
+function CandidateArea({
+  manage,
+  place,
+}: {
+  manage: CharacterManageController
+  place: RosterErrorPlace
+}): React.JSX.Element {
   // 보여줄 후보 풀이 있으면 실패해도 지우지 않는다([[ADR-062]] 결정 4) — 캐시 stub 이 네트워크보다
   // 먼저 오므로 예열이 끝난 정상 경로에서는 이쪽이 기본 분기다.
   if (manage.selectableCount > 0) {
@@ -126,7 +148,7 @@ function CandidateArea({ manage }: { manage: CharacterManageController }): React
   }
 
   if (manage.rosterError !== null) {
-    const copy = formatRosterError(manage.rosterError, 'picker')
+    const copy = formatRosterError(manage.rosterError, place)
     return (
       <ErrorState
         title={copy.title}
@@ -144,7 +166,11 @@ function CandidateArea({ manage }: { manage: CharacterManageController }): React
   return <Notice>이 메이플 ID 의 캐릭터는 모두 조회할 수 없어요</Notice>
 }
 
-export function CharacterManageBody({ manage, scroll }: CharacterManageBodyProps): React.JSX.Element {
+export function CharacterManageBody({
+  manage,
+  scroll,
+  place,
+}: CharacterManageBodyProps): React.JSX.Element {
   // 계정을 하나도 못 고르면 본문 전체가 이 화면이다([[ADR-143]] 결정 10 넷째 줄).
   if (!manage.isAccountsLoading && manage.accountsError === null && manage.accounts.length === 0) {
     return (
@@ -190,7 +216,7 @@ export function CharacterManageBody({ manage, scroll }: CharacterManageBodyProps
           <Waiting label="메이플 ID 를 불러오는 중" />
         ) : manage.accounts.length === 0 ? (
           // 계정 목록 자체가 실패했다 — 드롭다운도 후보도 세울 수 없어 이 자리 하나로 답한다.
-          <AccountsError manage={manage} />
+          <AccountsError manage={manage} place={place} />
         ) : (
           <>
             {manage.selectedAccountId !== null && (
@@ -209,7 +235,7 @@ export function CharacterManageBody({ manage, scroll }: CharacterManageBodyProps
                 </Text>
               )}
             </View>
-            <CandidateArea manage={manage} />
+            <CandidateArea manage={manage} place={place} />
           </>
         )}
       </View>
@@ -217,9 +243,15 @@ export function CharacterManageBody({ manage, scroll }: CharacterManageBodyProps
   )
 }
 
-function AccountsError({ manage }: { manage: CharacterManageController }): React.JSX.Element {
+function AccountsError({
+  manage,
+  place,
+}: {
+  manage: CharacterManageController
+  place: RosterErrorPlace
+}): React.JSX.Element {
   // 계정 목록 실패도 로스터 실패와 같은 어휘를 쓴다 — 사용자에게는 «목록을 못 불러왔다» 한 가지다.
-  const copy = formatRosterError(manage.accountsError ?? { kind: 'network' }, 'picker')
+  const copy = formatRosterError(manage.accountsError ?? { kind: 'network' }, place)
   return (
     <ErrorState
       title={copy.title}

@@ -6,37 +6,50 @@
 //    `flexGrow`** 로 바뀐다 — 웹이 그 min-height 로 만든 "남는 세로 공간"을 RN 스크롤에서는 그것이
 //    만든다(그 공간이 있어야 프로브 대기의 `m-auto`·전체 대기의 `justify-center` 가 작동한다).
 // ② `getByLabelText(/API 키/)` → `getByLabelText('Nexon Open API 키')`.
-// ③ `getByRole('progressbar')` 로는 못 찾는다 — `AccountSelectionList` 테스트와 같은 이유로
-//    `toJSON()` 트리에서 프롭으로 고른다.
-// ④ 스토어 목이 **셀렉터를 받는다** — `useOnboardingStore()` 는 전체 상태를 돌려주지만 같은 훅을
+// ③ 스토어 목이 **셀렉터를 받는다** — `useOnboardingStore()` 는 전체 상태를 돌려주지만 같은 훅을
 //    `RootNavigator` 등이 셀렉터와 함께 부르므로, 목 하나가 두 쓰임을 다 받아야 한다.
+//
+// ── 단계가 다섯에서 셋이 됐다 ([[ADR-143]] 결정 1) ────────────────────────────────
+//
+// `selectingAccount`·`prefetching` 은 이 앱에서 **도달할 수 없는 상태**이고(재개 파생이 그 행을
+// 태우지 않는다), 그래서 그 둘을 보던 옛 케이스는 «어떤 화면이 오는가» 를 물을 대상이 아니다 —
+// 갱신이 아니라 **뒤집힌 계약**이라 지우고, 대신 «그 자리에 출구 없는 빈 화면이 서지 않는가» 를
+// 묻는 케이스로 바꿨다.
 import { useOnboardingStore } from '@core/features/onboarding/store'
-import type { MapleAccount } from '@core/types'
 
-import { renderOverlay, type TreeNode } from '../../../components/__tests__/render-atom'
+import { renderOverlay } from '../../../components/__tests__/render-atom'
 import { OnboardingScreen } from '../OnboardingScreen'
 
 jest.mock('@core/features/onboarding/store', () => ({
   useOnboardingStore: jest.fn(),
 }))
 
-// `ContentCharacterStep` 이 마운트 시 호출한다 — 후보 목록은 비워둔다(렌더 확인만).
+// `ContentCharacterStep` 의 본문(`useCharacterManage`)이 마운트 시 부르는 경계 — 이 파일이 보는
+// 것은 "어느 status 에서 어떤 화면이 오는가" 하나라 전부 빈 응답으로 둔다(본문의 계약은
+// `ContentCharacterStep` 테스트가 본다).
 jest.mock('@core/features/schedule-sync/schedule-sync', () => ({
   toScheduleSyncError: jest.requireActual<typeof import('@core/features/schedule-sync/errors')>(
     '@core/features/schedule-sync/errors',
   ).toScheduleSyncError,
   getCharacterPickerRoster: jest.fn(async () => {}),
 }))
-
-// [[ADR-113]] 결정 3: `AccountSelectionList` 는 프로브가 settle 하기 전에는 목록 대신 진행률만
-// 그린다. 이 파일이 보는 것은 "어느 status 에서 어떤 화면이 오는가"이므로 프로브는 끝난 것으로 둔다.
-jest.mock('@core/features/onboarding/use-account-probes', () => ({
-  useAccountProbes: jest.fn(() => ({
-    probes: {},
-    isSettled: true,
-    progress: { completed: 1, total: 1 },
-    retry: jest.fn(),
-  })),
+jest.mock('@core/nexon/character', () => ({ fetchCharacterList: jest.fn(async () => []) }))
+jest.mock('@core/storage/api-key', () => ({
+  getAuthConfig: jest.fn(async () => ({ apiKey: 'key', selectedAccountId: null })),
+}))
+jest.mock('@core/storage/character-basic-cache', () => ({
+  getCachedCharacterBasic: jest.fn(async () => null),
+}))
+jest.mock('@core/storage/character-selection', () => ({
+  getRepresentativeCharacter: jest.fn(async () => null),
+  setRepresentativeCharacter: jest.fn(async () => {}),
+  clearRepresentativeCharacter: jest.fn(async () => {}),
+}))
+jest.mock('@core/storage/schedule-probe-ledger', () => ({
+  getScheduleProbeLedger: jest.fn(async () => ({ unavailable: false, dates: {} })),
+}))
+jest.mock('@core/features/content-scheduler/store', () => ({
+  useContentSchedulerStore: jest.fn(() => ({ trackedOcids: [], saveTrackedOcids: jest.fn() })),
 }))
 
 jest.mock('@core/features/onboarding/use-api-key-notice', () => ({
@@ -44,11 +57,6 @@ jest.mock('@core/features/onboarding/use-api-key-notice', () => ({
 }))
 
 const mockedUseOnboardingStore = jest.mocked(useOnboardingStore)
-
-const account: MapleAccount = {
-  accountId: 'account-1',
-  characters: [{ ocid: 'ocid-1', name: '낟낟', world: '엘리시움', jobClass: '렌', level: 293 }],
-}
 
 type StoreState = ReturnType<typeof useOnboardingStore>
 
@@ -65,7 +73,6 @@ function mockStore(overrides: Partial<StoreState>): void {
     selectAccount: jest.fn(),
     selectTrackingMode: jest.fn(),
     submitContentCharacters: jest.fn(),
-    restartAccountSelection: jest.fn(),
     noticeApiKeyIssue: jest.fn(),
     confirmApiKeyNotice: jest.fn(),
     reset: jest.fn(),
@@ -82,21 +89,6 @@ function mockStore(overrides: Partial<StoreState>): void {
 afterEach(() => {
   jest.clearAllMocks()
 })
-
-type Rendered = Awaited<ReturnType<typeof renderOverlay>>
-
-function findByProp(node: unknown, key: string, value: unknown): TreeNode[] {
-  if (Array.isArray(node)) return node.flatMap((child) => findByProp(child, key, value))
-  if (node === null || typeof node !== 'object') return []
-
-  const current = node as TreeNode
-  const hit = current.props?.[key] === value ? [current] : []
-  return [...hit, ...findByProp(current.children, key, value)]
-}
-
-function progressBars(view: Rendered): TreeNode[] {
-  return findByProp(view.toJSON(), 'accessibilityRole', 'progressbar')
-}
 
 describe('OnboardingScreen', () => {
   it('status가 awaitingApiKey이면 ApiKeyForm이 렌더링된다', async () => {
@@ -117,38 +109,25 @@ describe('OnboardingScreen', () => {
     expect(view.queryByText(/확인하고 있어요/)).toBeNull()
   })
 
-  it('status가 prefetching이면 진행률 바와 문구가 렌더링된다', async () => {
-    mockStore({ status: 'prefetching', prefetchProgress: { completed: 3, total: 10 } })
+  // [[ADR-143]] 결정 1·8: 이 앱에는 계정 선택도 예열도 없다. 리듀서를 안 고쳤으므로 두 상태는
+  // 타입상 남아 있고, 그 자리에 **빈 화면 대신 키 입력 폼**이 선다 — 출구 없는 흰 화면을 만들지
+  // 않는다([[ADR-116]] 이 없앤 잠금과 같은 얼굴이다).
+  it.each(['selectingAccount', 'prefetching'] as const)(
+    'RN 에서 도달할 수 없는 status(%s)는 빈 화면이 아니라 ApiKeyForm 으로 떨어진다',
+    async (status) => {
+      mockStore({ status })
 
-    const view = await renderOverlay(<OnboardingScreen />)
+      const view = await renderOverlay(<OnboardingScreen />)
 
-    expect(view.getByText(/캐릭터 정보를 준비하고 있어요/)).toBeTruthy()
-    expect(view.getByText(/3\/10/)).toBeTruthy()
-    expect(progressBars(view)[0].props.accessibilityValue).toMatchObject({ now: 30 })
-  })
+      expect(view.getByLabelText('Nexon Open API 키')).toBeTruthy()
+    },
+  )
 
-  it('status가 prefetching이고 진행률 정보가 아직 없으면 0%로 렌더링된다', async () => {
-    mockStore({ status: 'prefetching', prefetchProgress: null })
-
-    const view = await renderOverlay(<OnboardingScreen />)
-
-    expect(progressBars(view)[0].props.accessibilityValue).toMatchObject({ now: 0 })
-  })
-
-  it('status가 selectingAccount이면 AccountSelectionList가 렌더링된다', async () => {
-    mockStore({ status: 'selectingAccount', accounts: [account] })
-
-    const view = await renderOverlay(<OnboardingScreen />)
-
-    expect(view.getByText('사용할 메이플 ID를 선택해주세요.')).toBeTruthy()
-    expect(view.getByText('엘리시움 · 낟낟 · Lv.293')).toBeTruthy()
-  })
-
-  // `AccountSelectionList` 의 프로브 대기는 `m-auto` 로 세로 중앙에 서는데, 자동 여백은 **부모가
-  // 남는 세로 공간을 줄 때만** 작동한다(웹에서는 컨테이너의 `min-h-[calc(100dvh-…)]` 이 그 공간을
-  // 만들었다 — 사용자 보고 2026-08-09). RN 에서 그 짝이 콘텐츠 컨테이너의 `flexGrow` 다.
+  // 자동 여백·중앙 정렬(`seedingTracking` 의 `justify-center`)은 **부모가 남는 세로 공간을 줄 때만**
+  // 작동한다(웹에서는 컨테이너의 `min-h-[calc(100dvh-…)]` 이 그 공간을 만들었다 — 사용자 보고
+  // 2026-08-09). RN 에서 그 짝이 콘텐츠 컨테이너의 `flexGrow` 다.
   it('모든 단계의 스크롤 콘텐츠가 화면을 채워 자동 여백·중앙 정렬이 설 자리를 만든다', async () => {
-    mockStore({ status: 'selectingAccount', accounts: [account] })
+    mockStore({ status: 'seedingTracking' })
 
     const view = await renderOverlay(<OnboardingScreen />)
 
@@ -171,8 +150,10 @@ describe('OnboardingScreen', () => {
 
     const view = await renderOverlay(<OnboardingScreen />)
 
-    expect(view.getByText('추적할 캐릭터를 선택해주세요')).toBeTruthy()
+    expect(view.getByText('관리할 캐릭터를 선택해주세요')).toBeTruthy()
     expect(view.getByText('계속하기')).toBeTruthy()
+    // 설정 하위 페이지와 **같은 본문**이다([[ADR-144]] 결정 1) — 사본이 아님을 여기서도 확인한다.
+    expect(view.getByTestId('character-manage-body')).toBeTruthy()
   })
 
   it('status가 seedingTracking이면 시드 준비 스피너와 문구가 렌더링된다', async () => {
@@ -195,24 +176,20 @@ describe('OnboardingScreen', () => {
 
   // 실패 피드백은 토스트(`features/onboarding/store` 의 showError)로 옮겨서, 여기서는 폼이
   // 그대로 남아 재입력할 수 있는지만 확인한다 — 인라인 에러 문구는 더 이상 없다.
-  it('status가 error이고 accounts가 비어있으면 ApiKeyForm이 다시 렌더링된다', async () => {
-    mockStore({ status: 'error', accounts: [], error: { kind: 'invalidApiKey' } })
+  // **`accounts` 로 갈리지 않는다**([[ADR-143]] 결정 1) — 계정 목록 화면 자체가 없어졌으므로,
+  // 값이 남아 있어도 이 앱이 그릴 수 있는 것은 폼 하나다.
+  // 한 겹 더 감싼 것은 jest 규칙이다 — `it.each` 의 행이 배열이면 그것을 **인자 목록**으로 편다.
+  it.each([[[]], [[{ accountId: 'account-1', characters: [] }]]])(
+    'status가 error이면 accounts 유무와 무관하게 ApiKeyForm 이 다시 렌더링된다',
+    async (accounts) => {
+      mockStore({ status: 'error', accounts, error: { kind: 'invalidApiKey' } })
 
-    const view = await renderOverlay(<OnboardingScreen />)
+      const view = await renderOverlay(<OnboardingScreen />)
 
-    expect(view.getByLabelText('Nexon Open API 키')).toBeTruthy()
-  })
-
-  // [[ADR-083]] 결정 4: 실패는 토스트가 알린다(스토어가 띄운다) — 목록은 고를 수 있는 상태 그대로
-  // 남아야 하므로 화면은 인라인 문구를 그리지 않는다.
-  it('status가 error이고 accounts가 비어있지 않으면 인라인 문구 없이 AccountSelectionList만 렌더링된다', async () => {
-    mockStore({ status: 'error', accounts: [account], error: { kind: 'storageWriteFailed' } })
-
-    const view = await renderOverlay(<OnboardingScreen />)
-
-    expect(view.getByText('사용할 메이플 ID를 선택해주세요.')).toBeTruthy()
-    expect(view.queryByText('기기에 저장하지 못했습니다. 다시 시도해주세요')).toBeNull()
-  })
+      expect(view.getByLabelText('Nexon Open API 키')).toBeTruthy()
+      expect(view.queryByText('기기에 저장하지 못했습니다. 다시 시도해주세요')).toBeNull()
+    },
+  )
 
   // 내비게이션 계약 — `RootNavigator` 의 온보딩 분기 테스트가 이 이름으로 화면을 지목한다
   // (자리표시자가 쓰던 `screen-<라우트 이름>` 규약을 그대로 잇는다).

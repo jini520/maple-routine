@@ -102,7 +102,9 @@ export function SettingsCharactersScreen(): React.JSX.Element {
       >
         {/* `screen-<라우트 이름>` 은 나머지 하위 페이지와 같은 관례다. */}
         <View className="gap-4 px-4 pb-4" testID="screen-SettingsCharacters">
-          <CharacterManageBody manage={manage} scroll={scroll} />
+          {/* 이 자리의 401·429 는 곧 키 입력 화면으로 옮겨간다(위 `useApiKeyNotice`) — 그래서
+              실패 문구도 그렇게 말하는 피커 어휘다([[ADR-115]] 결정 7). */}
+          <CharacterManageBody manage={manage} scroll={scroll} place="picker" />
 
           <View className="flex-row justify-end gap-2">
             <Button variant="text" onPress={() => navigation.goBack()}>
