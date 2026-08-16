@@ -75,6 +75,8 @@ import { getRepresentativeCharacter } from '@core/storage/character-selection'
 import { getScheduleProbeLedger } from '@core/storage/schedule-probe-ledger'
 import type { CharacterPickerEntry } from '@core/types'
 
+import { moveOcid } from './reorder'
+
 /** 계정 하나의 후보 목록 + **성공 도장**. 도장이 없으면 TTL 판정에서 «아직» 이다. */
 interface AccountRoster {
   entries: CharacterPickerEntry[]
@@ -108,6 +110,8 @@ export interface CharacterManageController {
   selectAccount: (accountId: string) => void
   addCharacter: (ocid: string) => void
   removeCharacter: (ocid: string) => void
+  /** 끌어 놓았을 때·접근성 액션일 때 — 둘 다 `moveOcid` 하나를 통과한다. */
+  moveCharacter: (fromIndex: number, toIndex: number) => void
   setRepresentative: (ocid: string) => void
   retryAccounts: () => void
   retryRoster: () => void
@@ -356,6 +360,15 @@ export function useCharacterManage(): CharacterManageController {
     [editSelection],
   )
 
+  // 놓은 자리가 곧 배열 순서다([[ADR-144]] 결정 5). **저장 시점에 다시 정렬하지 않는다** —
+  // 레벨 내림차순은 «아직 순서를 정하지 않았을 때의 초기값» 으로 내려갔다([[ADR-143]] 결정 3).
+  const moveCharacter = useCallback(
+    (fromIndex: number, toIndex: number): void => {
+      editSelection((previous) => moveOcid(previous, fromIndex, toIndex))
+    },
+    [editSelection],
+  )
+
   // 대표를 지우는 코드는 없다 — `resolveRepresentative` 가 «목록에 없으면 null» 로 답한다.
   const removeCharacter = useCallback(
     (ocid: string): void => {
@@ -398,6 +411,7 @@ export function useCharacterManage(): CharacterManageController {
     selectAccount,
     addCharacter,
     removeCharacter,
+    moveCharacter,
     setRepresentative,
     retryAccounts,
     retryRoster,

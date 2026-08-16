@@ -8,9 +8,14 @@
 // «값 규칙의 자리»). 세우는 것은 경계 넷뿐이다: 계정 목록 조회 · 후보 목록 조회 · 로컬 캐시 ·
 // 저장 액션.
 //
-// **끌어서 순서 바꾸기는 여기 없다**(step 7). 그래서 «순서만 달라졌을 때 저장이 활성인가» 는
-// 화면에서 도달 가능한 유일한 경로로 본다 — 뺐다가 다시 고르면 집합은 같고 순서만 달라진다.
-import { act, fireEvent } from '@testing-library/react-native'
+// ── 끌기는 여기서 «흉내» 내지 않는다 ────────────────────────────────────────────────
+//
+// 제스처는 네이티브가 인식하고 jest 는 레이아웃을 계산하지 않아, 끄는 동작 자체를 재현하면 우리가
+// 만든 가짜만 검사하게 된다. 그래서 순서의 계약은 두 자리로 나뉜다 — 값 규칙은
+// `../../../components/organisms/CharacterManage/__tests__/reorder.test.ts`(순수 함수)가 보고,
+// 여기서는 **화면이 그 규칙에 닿는 두 번째 경로**인 접근성 액션으로 본다(끌기와 같은 문을 쓰므로,
+// 결과가 `moveOcid` 와 같은지는 그쪽으로 확인된다).
+import { act, fireEvent, within } from '@testing-library/react-native'
 
 import { getCharacterPickerRoster } from '@core/features/schedule-sync/schedule-sync'
 import { fetchCharacterList } from '@core/nexon/character'
@@ -33,6 +38,7 @@ import {
   renderOverlay,
   type AtomElement,
 } from '../../../components/__tests__/render-atom'
+import { moveOcid } from '../../../components/organisms/CharacterManage/reorder'
 import { SettingsCharactersScreen } from '../SettingsCharactersScreen'
 import { useSettingsNavigation } from '../use-settings-navigation'
 
@@ -399,6 +405,110 @@ describe('대표 — 별의 뜻이 «고름» 에서 «대표» 로 바뀌었다
 
     expect(isRepresentative(view, '달의아이')).toBe(false)
     expect(flattenStyle(star(view, '달의아이').props.style).opacity).toBeUndefined()
+  })
+})
+
+describe('순서 — 놓은 자리가 배열 순서다 ([[ADR-144]] 결정 5)', () => {
+  function handle(view: Rendered, name: string): AtomElement {
+    return view.getByLabelText(`${name} 순서 변경`)
+  }
+
+  function actionLabels(element: AtomElement): string[] {
+    const actions = (element.props.accessibilityActions ?? []) as { label?: string }[]
+    return actions.map((action) => action.label ?? '')
+  }
+
+  async function reorder(
+    view: Rendered,
+    name: string,
+    actionName: 'moveUp' | 'moveDown',
+  ): Promise<void> {
+    await act(async () => {
+      fireEvent(handle(view, name), 'accessibilityAction', { nativeEvent: { actionName } })
+    })
+  }
+
+  it('핸들은 위 층 행에만 있다 — 아래 층 순서는 사용자 것이 아니다', async () => {
+    mockContentStore({ trackedOcids: ['a1'] })
+
+    const view = await renderScreen()
+
+    expect(within(view.getByTestId('character-manage-selected')).getAllByTestId('drag-handle')).toHaveLength(1)
+    expect(
+      within(view.getByTestId('character-manage-candidates')).queryAllByTestId('drag-handle'),
+    ).toEqual([])
+    expect(view.queryByLabelText('달의아이 순서 변경')).toBeNull()
+  })
+
+  // 끌기와 접근성 액션은 **같은 문**을 쓴다(`moveOcid`) — 그래서 기대값을 손으로 적지 않고
+  // 그 함수에서 받는다. 두 경로가 갈라지면 이 단언이 먼저 깨진다.
+  it.each([
+    ['아래로 옮기기', '낟낟', 'moveDown' as const, 0, 1],
+    ['위로 옮기기', '별헤는밤', 'moveUp' as const, 2, 1],
+  ])('%s 액션이 moveOcid 와 같은 결과를 낸다', async (_label, name, actionName, from, to) => {
+    mockContentStore({ trackedOcids: ['a1', 'a2', 'a3'] })
+    const view = await renderScreen()
+    const before = namesIn(view, 'character-manage-selected')
+
+    await reorder(view, name, actionName)
+
+    expect(namesIn(view, 'character-manage-selected')).toEqual(moveOcid(before, from, to))
+  })
+
+  // 눌러도 아무 일이 없는 액션을 로터에 남기지 않는다 — 할 수 있는 것만 준다.
+  it('경계 행에는 갈 수 없는 쪽 액션이 없다', async () => {
+    mockContentStore({ trackedOcids: ['a1', 'a2', 'a3'] })
+
+    const view = await renderScreen()
+
+    expect(actionLabels(handle(view, '낟낟'))).toEqual(['아래로 옮기기'])
+    expect(actionLabels(handle(view, '달의아이'))).toEqual(['위로 옮기기', '아래로 옮기기'])
+    expect(actionLabels(handle(view, '별헤는밤'))).toEqual(['위로 옮기기'])
+  })
+
+  it('하나뿐이면 순서 액션이 아예 없다', async () => {
+    mockContentStore({ trackedOcids: ['a1'] })
+
+    const view = await renderScreen()
+
+    expect(actionLabels(handle(view, '낟낟'))).toEqual([])
+  })
+
+  // [[ADR-043]] 결정 1 의 «멤버십으로만 판정하라» 가 뒤집힌 자리([[ADR-144]] 결정 7). 집합은
+  // 그대로이고 순서만 달라진다.
+  it('순서만 바꿔도 저장이 활성이 된다', async () => {
+    mockContentStore({ trackedOcids: ['a1', 'a2'] })
+    const view = await renderScreen()
+    const saveButton = (): AtomElement => {
+      let node: AtomElement | null = view.getByText('저장')
+      while (node !== null && node.props.role !== 'button') node = node.parent
+      if (node === null) throw new Error('저장 버튼을 찾지 못했다')
+      return node
+    }
+    expect(saveButton().props.accessibilityState?.disabled).toBe(true)
+
+    await reorder(view, '낟낟', 'moveDown')
+
+    expect(namesIn(view, 'character-manage-selected')).toEqual(['달의아이', '낟낟'])
+    expect(saveButton().props.accessibilityState?.disabled).toBe(false)
+  })
+
+  it('바꾼 순서 그대로 저장한다 — 저장 시점에 다시 정렬하지 않는다', async () => {
+    const saveTrackedOcids = jest.fn(async () => {})
+    mockContentStore({
+      trackedOcids: ['a1', 'a2', 'a3'],
+      saveTrackedOcids: saveTrackedOcids as unknown as ContentSchedulerStore['saveTrackedOcids'],
+    })
+    const view = await renderScreen()
+
+    await reorder(view, '낟낟', 'moveDown')
+    let node: AtomElement | null = view.getByText('저장')
+    while (node !== null && node.props.role !== 'button') node = node.parent
+    await press(node as AtomElement)
+    await act(async () => {})
+
+    // 레벨(294 · 260 · 250)로 되돌리지 않는다([[ADR-143]] 결정 3).
+    expect(saveTrackedOcids).toHaveBeenCalledWith(['a2', 'a1', 'a3'], expect.any(Function))
   })
 })
 

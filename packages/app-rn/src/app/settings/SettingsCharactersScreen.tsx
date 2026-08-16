@@ -32,6 +32,7 @@ import {
 import { Button } from '../../components/atoms/Button/Button'
 import { CharacterManageBody } from '../../components/organisms/CharacterManage/CharacterManageBody'
 import { useCharacterManage } from '../../components/organisms/CharacterManage/use-character-manage'
+import { useReorderScroll } from '../../components/organisms/CharacterManage/use-reorder-scroll'
 import { ProgressModal } from '../../components/organisms/ProgressModal/ProgressModal'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
@@ -43,6 +44,11 @@ export function SettingsCharactersScreen(): React.JSX.Element {
   const { saveTrackedOcids } = useContentSchedulerStore()
   const navigation = useSettingsNavigation()
   const manage = useCharacterManage()
+  // 끌어서 순서를 바꾸는 동안 화면 가장자리에서 자동으로 굴러간다([[ADR-144]] 결정 5). 이 화면에는
+  // 고정 영역이 없어([[ADR-131]]) 굴릴 것이 페이지 자신뿐이고, 그래서 그 배선은 스크롤 뷰를 가진
+  // **화면**의 것이다 — 컨트롤러에 실으면 그 객체가 ref 를 품어 읽는 자리마다 `react-hooks/refs`
+  // 에 걸린다. 온보딩 단계도 같은 두 줄을 갖는다(결정 1 — 갈리는 것은 머리와 CTA 다).
+  const { scrollRef, onScroll, scroll } = useReorderScroll()
   const [saveProgress, setSaveProgress] = useState<{ completed: number; total: number } | null>(null)
 
   // [[ADR-115]] 결정 7 · [[ADR-116]] 결정 1: 두 조회가 맞는 401·429 도 키 재입력 진입점으로 간다.
@@ -76,6 +82,8 @@ export function SettingsCharactersScreen(): React.JSX.Element {
     <>
       <ScreenScroll
         hasTabBar={false}
+        ref={scrollRef}
+        onScroll={onScroll}
         header={
           <PageHeader>
             <View className="flex-row items-center gap-2">
@@ -94,7 +102,7 @@ export function SettingsCharactersScreen(): React.JSX.Element {
       >
         {/* `screen-<라우트 이름>` 은 나머지 하위 페이지와 같은 관례다. */}
         <View className="gap-4 px-4 pb-4" testID="screen-SettingsCharacters">
-          <CharacterManageBody manage={manage} />
+          <CharacterManageBody manage={manage} scroll={scroll} />
 
           <View className="flex-row justify-end gap-2">
             <Button variant="text" onPress={() => navigation.goBack()}>

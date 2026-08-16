@@ -61,7 +61,10 @@
     {
       "step": 7,
       "name": "reorder-drag",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-17T04:08:20+0900",
+      "summary": "끌기는 **자체 구현**이다 — 새 의존성 0개(react-native-gesture-handler 2.32·reanimated 4.5.1 이 이미 dependencies 이고 GestureHandlerRootView 는 App.tsx 가 이미 두른다). 순서 계산은 제스처와 분리해 organisms/CharacterManage/reorder.ts 의 순수 함수 넷이 갖는다 — moveOcid(ocids,from,to)(경계는 목록 안으로 clamp, 제자리면 같은 내용의 새 배열, 원본 불변) · resolveDropIndex(from,offsetPx,pitchPx,count)(반올림이라 반 칸이 경계, pitch 0 이면 제자리) · resolveAutoScrollStepPx({pointerYPx,topPx,bottomPx,zonePx,maxStepPx})(깊이 비례, 화면 밖도 최대에서 멈춤) · resolveRowShiftSteps(index,from,to)(비켜 주는 칸 수 -1·0·1). 화면 몫은 SelectedCharacterList.tsx — 제스처는 **핸들을 감싼 상자에만** 붙고(Gesture.Pan().runOnJS(true).activeOffsetY([-4,4]), 끝은 onEnd 가 아니라 onFinalize 라 취소도 같은 문으로 들어온다) 배열은 **놓을 때 onMove 한 번**만 바뀌며(끄는 동안은 dragY shared value + 나머지 행의 정적 shift 로 결과를 미리 그린다) 칸 높이는 행만 담은 컨테이너 onLayout 하나를 (height+8)/n 으로 나눠 얻는다. 제스처가 붙드는 함수는 useMemo 로 한 번만 만들고 그것이 읽는 «지금 값»(count·scroll·onMove·화면 위아래)은 latestRef 가 갖는다 — 끄는 도중 재렌더에 제스처를 다시 붙이면 손가락을 놓치고, 옛 onMove 를 붙들면 놓는 순간 옛 목록으로 되돌린다. **자동 스크롤**은 [[ADR-131]] 대로 고정 영역을 만들지 않고 페이지 자신을 굴린다: use-reorder-scroll.ts 가 scrollRef·onScroll·{offsetPx,scrollToPx} 를 한 벌로 주고 **화면**이 그것을 ScreenScroll 에 넘긴다(컨트롤러에 실었더니 그 객체가 ref 를 품어 react-hooks/refs 「Cannot access refs during render」 3건 — 그래서 CharacterManageBody 가 scroll 프롭을 하나 받는다). ScreenScroll 에 optional onScroll 을 더했고 **조건부 전개**라 안 쓰는 화면 열다섯의 렌더 트리·스냅샷은 그대로다(주면 scrollEventThrottle 16 동반). 오프셋은 onScroll 이 유일한 출처다 — 낙관적 갱신은 목록 끝에서 매 프레임 어긋나 끌리는 행이 떨린다. 콘텐츠가 흐른 만큼(offsetPx-startOffsetPx)을 끌기 좌표에 되더해 행이 손가락 밑에 남는다. **접근성 액션은 「위로 옮기기」·「아래로 옮기기」**(name moveUp/moveDown), 핸들 래퍼(accessible, aria-label 「{이름} 순서 변경」)에 붙고 **할 수 있는 것만 준다**(첫 행에 위로 없음·1개면 액션 0개), 끌기와 같은 moveCharacter → moveOcid 를 부른다. 테스트 42케이스(reorder.test.ts 35 + 화면 7), 끌기 자체는 흉내내지 않는다(제스처는 네이티브·jest 는 레이아웃 미계산) — 화면 쪽은 접근성 액션으로 같은 문을 두드린다. 판별력 확인 3건(경계 액션 제거 → 2 실패 · moveOcid 를 정렬로 교체 → 4 실패 · 핸들 제거 → 7 실패). core·app-capacitor 무변경, docs/features/settings.md 「캐릭터 관리」에 순서 절 추가. **실기기 미검증** — 핸들 Pan 이 ScrollView 와의 다툼에서 이기는지·자동 스크롤 속도(72px 구간·프레임당 12px)는 눈으로만 판정된다.",
+      "completed_at": "2026-08-17T04:31:00+0900"
     },
     {
       "step": 8,

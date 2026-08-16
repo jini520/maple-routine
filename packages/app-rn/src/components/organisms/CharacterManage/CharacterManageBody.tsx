@@ -34,17 +34,25 @@ import { useOnboardingStore } from '@core/features/onboarding/store'
 import { MapleSweepSpinner } from '../../atoms/MapleSweepSpinner/MapleSweepSpinner'
 import { AddMark } from '../../molecules/CharacterRow/AddMark'
 import { CharacterRow } from '../../molecules/CharacterRow/CharacterRow'
-import { DragHandle } from '../../molecules/CharacterRow/DragHandle'
-import { RemoveButton } from '../../molecules/CharacterRow/RemoveButton'
-import { RepresentativeStar } from '../../molecules/CharacterRow/RepresentativeStar'
 import { EmptyState } from '../../molecules/EmptyState/EmptyState'
 import { ErrorState } from '../../molecules/ErrorState/ErrorState'
 import { StaleBanner } from '../../molecules/ErrorState/StaleBanner'
 import { AccountSelect } from '../AccountSelect/AccountSelect'
+import { SelectedCharacterList } from './SelectedCharacterList'
 import type { CharacterManageController } from './use-character-manage'
+import type { ReorderScroll } from './use-reorder-scroll'
 
 export interface CharacterManageBodyProps {
   manage: CharacterManageController
+  /**
+   * 끌기 중 자동 스크롤이 만질 스크롤 뷰([[ADR-144]] 결정 5) — **화면이 소유한다.**
+   *
+   * 컨트롤러에 실어 내려보내지 않는 이유는 그 안에 `ref` 가 들어가기 때문이다: 컨트롤러 객체가
+   * ref 를 품는 순간 «렌더 중에 ref 를 만졌다» 가 되어(`react-hooks/refs`) 그 객체를 읽는 자리가
+   * 전부 걸린다. 스크롤 뷰는 어차피 화면(`ScreenScroll`)의 것이라, 그 짝인 `scrollRef`·`onScroll`
+   * 도 화면에 남는 편이 자리에 맞는다.
+   */
+  scroll: ReorderScroll
 }
 
 function Waiting(props: { label: string }): React.JSX.Element {
@@ -73,7 +81,7 @@ function Notice(props: { children: React.ReactNode }): React.JSX.Element {
 }
 
 /** 아래 층의 목록 자리 — 피커의 `PickerBody` 와 같은 순서로 갈린다. */
-function CandidateArea({ manage }: CharacterManageBodyProps): React.JSX.Element {
+function CandidateArea({ manage }: { manage: CharacterManageController }): React.JSX.Element {
   // 보여줄 후보 풀이 있으면 실패해도 지우지 않는다([[ADR-062]] 결정 4) — 캐시 stub 이 네트워크보다
   // 먼저 오므로 예열이 끝난 정상 경로에서는 이쪽이 기본 분기다.
   if (manage.selectableCount > 0) {
@@ -136,7 +144,7 @@ function CandidateArea({ manage }: CharacterManageBodyProps): React.JSX.Element 
   return <Notice>이 메이플 ID 의 캐릭터는 모두 조회할 수 없어요</Notice>
 }
 
-export function CharacterManageBody({ manage }: CharacterManageBodyProps): React.JSX.Element {
+export function CharacterManageBody({ manage, scroll }: CharacterManageBodyProps): React.JSX.Element {
   // 계정을 하나도 못 고르면 본문 전체가 이 화면이다([[ADR-143]] 결정 10 넷째 줄).
   if (!manage.isAccountsLoading && manage.accountsError === null && manage.accounts.length === 0) {
     return (
@@ -162,33 +170,16 @@ export function CharacterManageBody({ manage }: CharacterManageBodyProps): React
       {/* ── 위: 선택됨 (계정 전체) ── */}
       <View testID="character-manage-selected" className="gap-2">
         <SectionLabel>선택된 캐릭터 {manage.selectedOcids.length}개</SectionLabel>
-        {manage.selectedViews.map((view) => (
-          <CharacterRow
-            key={view.ocid}
-            name={view.name}
-            level={view.level}
-            jobClass={view.jobClass}
-            world={view.world}
-            imageUrl={view.imageUrl}
-            unavailable={view.unavailable}
-            leading={<DragHandle />}
-            trailing={
-              <View className="shrink-0 flex-row items-center gap-1">
-                <RepresentativeStar
-                  label={view.name}
-                  filled={manage.representativeOcid === view.ocid}
-                  // 하나가 채워지면 나머지는 흐려진다 — «여럿 고를 수 없다» 는 말이고,
-                  // 비활성이 아니라 톤만 낮춘다(눌러서 대표를 옮길 수 있어야 한다).
-                  dimmed={
-                    manage.representativeOcid !== null && manage.representativeOcid !== view.ocid
-                  }
-                  onPress={() => manage.setRepresentative(view.ocid)}
-                />
-                <RemoveButton label={view.name} onPress={() => manage.removeCharacter(view.ocid)} />
-              </View>
-            }
-          />
-        ))}
+        {/* 행들은 별도 컴포넌트다 — 끌기·자동 스크롤·접근성 액션([[ADR-144]] 결정 5)이 붙고,
+            칸 높이를 재려면 **행만 담은 상자**가 필요하다(라벨이 섞이면 잰 값이 틀린다). */}
+        <SelectedCharacterList
+          views={manage.selectedViews}
+          representativeOcid={manage.representativeOcid}
+          scroll={scroll}
+          onMove={manage.moveCharacter}
+          onRemove={manage.removeCharacter}
+          onSelectRepresentative={manage.setRepresentative}
+        />
       </View>
 
       <View testID="character-manage-divider" className="h-px bg-border" />
@@ -226,7 +217,7 @@ export function CharacterManageBody({ manage }: CharacterManageBodyProps): React
   )
 }
 
-function AccountsError({ manage }: CharacterManageBodyProps): React.JSX.Element {
+function AccountsError({ manage }: { manage: CharacterManageController }): React.JSX.Element {
   // 계정 목록 실패도 로스터 실패와 같은 어휘를 쓴다 — 사용자에게는 «목록을 못 불러왔다» 한 가지다.
   const copy = formatRosterError(manage.accountsError ?? { kind: 'network' }, 'picker')
   return (
