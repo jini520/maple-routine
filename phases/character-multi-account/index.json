@@ -48,7 +48,7 @@
       "status": "completed",
       "started_at": "2026-08-17T03:17:08+0900",
       "summary": "organisms/AccountSelect/ 신설 — AccountSelect(accounts: AccountSummaryView[] · selectedAccountId · portraitByAccountId · onSelect)와 순수 기하 place-dropdown.ts. 행은 트리거·목록이 같은 내부 AccountRow 한 벌이고 갈리는 것은 오른쪽 슬롯(트리거만 ChevronDown)과 선택 틴트(bg-primary-tint)뿐 — 1줄 «[엠블럼] {월드} Lv.{레벨} {이름}»(월드를 글자로도 적는다), 2줄 «{월드} {n}개» 조인(step 3 이 이미 많은 순 둘로 자른 값), 얼굴은 36px 크롭(AccountSelectionList 표 재사용)이고 없으면 대표 이름 첫 글자. 열기는 react-native Modal(transparent) + 트리거 measureInWindow 좌표에 절대 배치, 폭은 트리거 폭 그대로라 «한 덩어리»가 된다. placeDropdown(anchorTop/anchorHeight/contentHeight/windowHeight/safeTop/safeBottom/edgeGap) → {top, maxHeight}: 아래에 들어가면 top=anchorTop(사이를 안 띄운다), 넘치면 top=anchorBottom-contentHeight 로 뒤집고, 양쪽 다 모자라면 넓은 쪽에 붙여 maxHeight 로 자른다(ScrollView 가 굴린다). 목록 높이는 ScrollView 안쪽 View 의 onLayout 으로 재고, 좌표·높이가 둘 다 오기 전에는 opacity-0(ItemRevenuePopover 선례 — jest 는 레이아웃을 계산하지 않아 테스트가 보는 목록은 늘 opacity 0). 스크림 없음 — 닫기용 전체화면 Pressable 은 색 없이 잡기만 하고(account-select-backdrop), 층은 border-border + shadow-lg 가 말한다(border-panel-border 는 «스크림 위 패널» 전제라 여기 안 쓴다 — ADR-122). 닫힘 경로 셋: 옵션 선택(close 후 onSelect) · 바깥 탭 · onRequestClose, 회전(Dimensions change)도 닫는다(잰 좌표가 거짓이 된다). 선택 계정이 목록에 없으면 렌더 중 던지지 않고 빈 프래그먼트(ADR-127). 테스트 17케이스, «스크림 없음» 두 자리에 bg-scrim 변이 주입으로 판별력 확인.",
-      "completed_at": "2026-08-17T03:33:00+0900"
+      "completed_at": "2026-08-17T03:32:14+0900"
     },
     {
       "step": 6,
