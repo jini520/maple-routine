@@ -69,8 +69,11 @@ export type ResumableOnboardingStatus = Extract<
 >
 
 export type OnboardingEvent =
-  | { type: 'RESTORE_COMPLETED'; selectedAccountId: string }
-  | { type: 'RESTORE_STEP'; status: ResumableOnboardingStatus; selectedAccountId: string }
+  // ADR-143 결정 8: selectedAccountId가 `string | null`인 것은 계정 범위 'all'(RN)이 계정을 고르지
+  // 않기 때문이다. **리듀서 본문은 이 때문에 한 줄도 바뀌지 않는다** — 값이 앉는 자리
+  // (OnboardingState.selectedAccountId)가 원래 `string | null`이다.
+  | { type: 'RESTORE_COMPLETED'; selectedAccountId: string | null }
+  | { type: 'RESTORE_STEP'; status: ResumableOnboardingStatus; selectedAccountId: string | null }
   | { type: 'SUBMIT_API_KEY' }
   | { type: 'API_KEY_VERIFIED'; accounts: MapleAccount[] }
   | { type: 'API_KEY_REJECTED'; error: OnboardingError }

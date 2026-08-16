@@ -4,7 +4,7 @@
 > **관련 소스**: `app/onboarding/` · `features/onboarding/` · `features/schedule-sync/character-basic-fetch`(네 호출부가 공유하는 `character/basic` 통과 지점) · `nexon/character` · `storage/api-key` · `storage/character-basic-cache` · `storage/scheduler-cache` · `AccountSelectionList` · `ApiKeyForm`.
 > **관련 ADR**: [[ADR-007]] [[ADR-016]] [[ADR-015]] [[ADR-006]] [[ADR-051]] [[ADR-053]] [[ADR-086]] [[ADR-110]] [[ADR-113]] [[ADR-115]] [[ADR-116]] [[ADR-127]] [[ADR-143]] [[ADR-144]]. **관련 문서**: [../foundation/nexon-api.md](../foundation/nexon-api.md), [../foundation/architecture.md](../foundation/architecture.md), [site.md](./site.md)(가이드 페이지 본문), [../trouble/2026-08-12-onboarding-empty-account-crash.md](../trouble/2026-08-12-onboarding-empty-account-crash.md).
 
-## 단계는 앱마다 다르다 ([[ADR-143]], 2026-08-16 · **설계 완료, 구현 전**)
+## 단계는 앱마다 다르다 ([[ADR-143]], 2026-08-16 · **흐름은 구현 완료(2026-08-17) · 화면은 구현 전**)
 
 ```
 웹뷰(Capacitor)   API 키 → 계정 선택 → 예열 → 스케줄 관리 방법 → 캐릭터 선택
@@ -20,7 +20,9 @@ RN 앱은 **메이플 ID 를 고르지 않는다** — 캐릭터 선택 화면�
 | 계정 선택 프로브(`use-account-probes`) | 같은 이유로 없다 — 판정은 로스터 조회가 한다 |
 | 재개 표의 `selectedAccountId` 행 | **빠진다**(아래 「단계 재개」) |
 
-두 흐름이 갈리는 자리는 core 의 **계정 범위 플래그 하나**이고, 읽는 곳은 재개 파생뿐이다([[ADR-143]] 결정 8 — Capacitor 가 걷히면 지운다).
+두 흐름이 갈리는 자리는 core 의 **계정 범위 플래그 하나**다(`features/onboarding/flow.ts` 의 `accountScope: 'single' | 'all'`, 기본값 `'single'` — Capacitor 는 아무것도 주입하지 않고, RN 은 `boot.ts` 가 포트 주입과 같은 자리에서 `'all'` 을 넣는다). **읽는 곳은 둘뿐이다** — 아래 「단계 재개」의 파생과 「키 재입력 경로」의 대조 가드([[ADR-143]] 결정 8·9 — Capacitor 가 걷히면 플래그를 지우고 `'all'` 만 남긴다).
+
+> **이 흐름만으로 RN 온보딩이 완주되지는 않는다**(2026-08-17). 계정 선택 단계는 이미 건너뛰어지지만 캐릭터 선택 화면은 아직 «고른 계정» 을 전제한다(`resolveRegisteredCharacters` 가 `selectedAccountId` 를 읽는다) — 그 자리는 [[ADR-144]] 의 두 층 화면이 채운다.
 
 ## 정책
 - **키 입력**: 발급 절차는 **앱 밖 안내 사이트**(`mapleroutine.store/api-key`)가 담당하고 앱은 링크만 준다([[ADR-110]], 앱 내 단계별 위저드 아님 — 스크린샷 7장이 번들에 들어가면 최초 1회 보는 화면 때문에 모든 사용자가 1.2MB를 받고, 넥슨이 화면을 바꿀 때마다 OTA 배포가 필요하다). 키는 `storage/` 보안 영역에 저장.
@@ -57,7 +59,9 @@ API 키가 무효화(401/403)되면 저장된 **`apiKey` 키 하나만** 지워�
 - 전에는 `submitApiKey` 성공이 무조건 `selectingAccount` 로 가고 `selectedAccountId` 를 리셋해, 키 하나 때문에 계정 선택부터 캐릭터 선택까지 전부를 다시 시켰다(재개 파생이 부팅 경로에만 있었다).
 - **예열([[ADR-016]])을 다시 돌리지 않는다** — 위 "뒤 두 단계는 네트워크 없이 재개된다"와 같은 근거다(캐시·조회 원장이 이미 따뜻하다).
 - **계정 목록 대조 가드**([[ADR-115]] 결정 5): 새로 넣은 키가 **다른 넥슨 계정의 키**일 수 있다. 키 검증 때 이미 받는 `character/list` 응답에 저장된 `selectedAccountId` 가 들어 있는지 확인해, **없으면 재개하지 않고 기존대로 계정 선택부터** 간다 — 가드가 없으면 남의 계정 키로 이전 계정 ocid 추적 목록을 그대로 쓰게 된다. **추가 호출은 없다**(이미 손에 있는 응답으로 판정한다).
-  - **RN 은 같은 목적을 `trackedCharacters` 로 세운다**([[ADR-143]] 결정 9) — 대조할 `selectedAccountId` 가 없으므로, 저장된 추적 ocid 가 새 응답에 **하나라도** 있으면 재개하고 **하나도 없으면** 캐릭터 선택 단계로 보낸다. 일부만 없는 경우(캐릭터 삭제·이전)는 재개한다 — 없는 ocid 는 피커와 동기화가 각자 이미 다룬다.
+  - **RN 은 같은 목적을 `trackedCharacters` 로 세운다**([[ADR-143]] 결정 9) — 대조할 `selectedAccountId` 가 없으므로, 저장된 추적 ocid 가 새 응답에 **하나라도** 있으면 재개하고 **하나도 없으면** 캐릭터 선택 단계로 보낸다(`selectingAccount` 로 가던 자리). 일부만 없는 경우(캐릭터 삭제·이전)는 재개한다 — 없는 ocid 는 피커와 동기화가 각자 이미 다룬다.
+    - **가드는 «지킬 목록이 있을 때만» 선다** — 저장된 목록이 `null`/`[]` 면 대조하지 않고 위 표 그대로 간다. 안 그러면 **처음 키를 넣는 신규 사용자**가 "목록이 비었으니 하나도 없다"로 걸려 스케줄 관리 방법 단계를 건너뛴다. 이 가드가 막는 것은 «남의 계정 키로 이전 목록을 그대로 쓰는 것» 이라, 지킬 목록이 없으면 판정 대상 자체가 없다.
+    - 대조는 응답의 **전 계정 캐릭터 ocid 집합**으로 한다(계정을 넘어 고르는 것이 본론이라 계정별로 나눠 볼 이유가 없다). **추가 네트워크 호출은 없고**, 추적 목록만 로컬에서 한 번 더 읽는다.
 - **이 화면으로 보내는 알림은 이제 원인이 둘이다** — 키 무효화(400 `OPENAPI00005`·401/403)와 **호출 한도 초과(429)**([[ADR-116]] 결정 1, 2026-08-08). 둘은 **같은 사슬에 문구만 다르고**, 확인을 누르면 똑같이 `apiKey` 만 지워진 채 이 화면으로 온다 — 그래서 재개 규칙(위 표)도 그대로 적용된다.
 - **무효화·한도 초과 자체**(감지 지점·모달 문구·확인 후 이동·저장소에서 지우는 범위)는 여기가 아니라 [../foundation/error-resilience.md](../foundation/error-resilience.md) 의 401/403·429 항목이 원문을 갖는다. 이 절은 **키를 다시 받은 뒤**만 다룬다.
 
