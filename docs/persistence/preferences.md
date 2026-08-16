@@ -38,19 +38,20 @@ flowchart TD
 | 키 | 값 형태 | 어댑터 | 캐시 삭제 시 | 비고 |
 |---|---|---|---|---|
 | `apiKey` | `string` (평문 API 키) | `storage/api-key.ts` | **보존** | Nexon Open API 개인 키. 연결 해제 시에만 삭제됨 |
-| `selectedAccountId` | `string \| null` | `storage/api-key.ts` | **보존** | 여러 메이플 ID 중 선택된 계정. `null`이면 키 자체를 제거(값 없음) |
+| `selectedAccountId` | `string \| null` | `storage/api-key.ts` | **보존** | 여러 메이플 ID 중 선택된 계정. `null`이면 키 자체를 제거(값 없음). **RN 앱은 이 값을 읽지도 쓰지도 않는다**([[ADR-143]] 결정 7 — 계정을 고르지 않는다). 지우지 않는 이유는 웹뷰 앱이 계속 쓰기 때문이고, 그 앱이 걷힐 때 함께 정리한다 |
 | `theme` | `ThemeName` (`'레테'\|'렌'\|'머쉬맘'\|'혼테일'`) | `storage/theme.ts` | **보존** | 유효하지 않은 값이면 `getTheme()`이 `null` 반환 |
 | `trackingMode` | `'auto' \| 'manual'` | `storage/tracking-mode.ts` | **보존** | 값이 없거나 알 수 없는 값이면 어댑터가 **`null`(미선택)** 을 반환하고 소비처가 `?? 'auto'` 로 흡수한다([[ADR-086]] 결정 2 — 동작 기본값은 그대로 자동, [[ADR-035]] 결정 2 유지). 온보딩 게이트만 이 `null` 을 "아직 안 골랐다"로 읽는다. 보존 결정은 [[ADR-052]] |
 | `dropEffect` | `'on' \| 'off'` | `storage/drop-effect.ts` | **보존** | 고가 드롭 연출 표시 여부([[ADR-040]] 결정 6). 값이 없으면 표시(on). 보존 결정은 [[ADR-052]] |
 | `schedulerCache:{ocid}` | `{ state: SchedulerCharacterState, syncedAt: string }` (JSON) | `storage/scheduler-cache.ts` | 삭제 | 캐릭터별 마지막 동기화 스냅샷(일간/주간/보스 콘텐츠) |
-| `characterBasicCache:{ocid}` | `{ profile: CharacterBasicProfile, cachedAt: string }` (JSON) | `storage/character-basic-cache.ts` | 삭제 | 캐릭터 이미지·레벨·`access_flag` 캐시 |
+| `characterBasicCache:{ocid}` | `{ profile: CharacterBasicProfile, cachedAt: string }` (JSON) | `storage/character-basic-cache.ts` | 삭제 | 캐릭터 이미지·레벨·`access_flag` 캐시. **`jobClass` 가 옵셔널로 붙는다**([[ADR-144]] 결정 2, RN 앱만 · 구현 전) — 캐릭터 카드 2줄이 «레벨 + 직업» 이고 위 층은 네트워크 없이 그리기 때문이다. **값의 출처는 `character/basic` 이 아니라 `character/list`** 이고 쓰는 쪽이 함께 넘긴다(그 응답이 직업을 준다고 단정하지 않는다). 옛 엔트리에는 없어 `undefined` 이고, 그때 화면은 레벨만 그린다 |
 | `characterBasicCache:index:{accountId}` | `string[]` (ocid 목록, JSON) | `storage/character-basic-cache.ts` | 삭제 | "이 **계정**에서 지금까지 캐싱된 적 있는 캐릭터가 누구인지" 역인덱스([[ADR-017]] 결정 6 + [[ADR-086]] 결정 9). 동시 쓰기 유실 방지를 위해 read-modify-write를 프로미스 체인으로 직렬화. 계정별로 나뉘기 전(`characterBasicCache:index`)에는 피커 stub 단계가 **이전 계정 캐릭터까지 그렸다** — 마이그레이션은 전역 인덱스를 현재 `selectedAccountId` 것으로 이관(예열이 채운 계정은 그것 하나뿐이라 정확)하고 전역 키를 지운다 |
 | `scheduleProbe:{ocid}` | `{ unavailable?: true, dates: Record<'YYYY-MM-DD', ProbeRecord> }` (JSON) | `storage/schedule-probe-ledger.ts` | 삭제 | **(ocid, 날짜) 조회 원장**([[ADR-086]] 결정 4 = [[ADR-067]] 결정 5). "이 캐릭터를 이 날짜로 이미 조회했고 결과가 이랬다"를 기록해 ① 후보 자격 스윕과 ② 선채움([[ADR-034]])이 같은 날짜를 다시 부르지 않게 한다. 성공·`OPENAPI00003`·`OPENAPI00004` 만 기록하고 `OPENAPI00009`·네트워크 실패는 **기록하지 않는다**(나중에 풀린다). 읽을 때 14일 윈도우 밖 날짜를 prune. 재조회로 복구되는 파생 데이터라 `KEEP_KEYS` 에 넣지 않는다 |
-| `trackedCharacters` | `string[]` (ocid 목록, JSON) | `storage/character-selection.ts` | 삭제 | "캐릭터 관리"에서 추적 선택한 캐릭터. **앱 전역 단일 목록**([[ADR-042]]) — 컨텐츠/보스 화면이 같은 목록을 본다. `null`(미설정)과 `[]`(전부 해제)의 의미가 다름([[ADR-012]]) |
-| `lastSelectedCharacter` | `string` (ocid, 평문) | `storage/character-selection.ts` | 삭제 | 드롭다운의 마지막 선택 캐릭터. 이것도 화면 구분 없는 단일 키([[ADR-042]]) |
+| `trackedCharacters` | `string[]` (ocid 목록, JSON) | `storage/character-selection.ts` | 삭제 | "캐릭터 관리"에서 추적 선택한 캐릭터. **앱 전역 단일 목록**([[ADR-042]]) — 컨텐츠/보스 화면이 같은 목록을 본다. `null`(미설정)과 `[]`(전부 해제)의 의미가 다름([[ADR-012]]). **RN 앱에서는 계정 경계를 넘고(여러 메이플 ID 의 ocid 가 섞인다) 배열 순서가 곧 표시 순서다**([[ADR-143]] 결정 2·3) — 값 형태는 그대로라 마이그레이션이 없다 |
+| `representativeCharacter` | `string` (ocid, 평문) | `storage/character-selection.ts` | 삭제 | **대표 캐릭터**([[ADR-143]] 결정 4, RN 앱만 · 구현 전). 표식일 뿐 지금은 읽는 화면이 없다. 미지정이면 키가 **없고**(첫 번째가 임시 대표 — 그 파생값은 저장하지 않는다), 저장 시점에 대표가 목록에 없으면 지운다 |
+| `lastSelectedCharacter` | `string` (ocid, 평문) | `storage/character-selection.ts` | 삭제 | 드롭다운의 마지막 선택 캐릭터. 이것도 화면 구분 없는 단일 키([[ADR-042]]). `representativeCharacter` 와 **다른 축**이다 — 이쪽은 앱이 쓰고 저쪽은 사용자가 말한 값이다 |
 | `manualTrackedContent:{ocid}` | `ManualTrackedItem[]` (JSON) | `storage/manual-tracked-content.ts` | 삭제 | 수동 모드에서 그 캐릭터가 추적할 항목의 **멤버십 + 사용자 입력 `maxCount`만**([[ADR-035]] 결정 6). 진행값·체크 상태는 여기 없고 `schedulerCache`가 단일 진실 공급원 |
 | `worldSharedProgress:{world}` | `Record<itemName, SharedProgressEntry>` (JSON) | `storage/shared-progress-cache.ts` | 삭제 | 월드 단위로 완료가 공유되는 콘텐츠(예: 몬스터파크) 진행 원장([[ADR-030]]) |
-| `accountSharedProgress:{accountId}` | `Record<itemName, SharedProgressEntry>` (JSON) | `storage/shared-progress-cache.ts` | 삭제 | 계정 단위로 공유되는 콘텐츠(예: 에픽 던전) 진행 원장([[ADR-030]]) |
+| `accountSharedProgress:{accountId}` | `Record<itemName, SharedProgressEntry>` (JSON) | `storage/shared-progress-cache.ts` | 삭제 | 계정 단위로 공유되는 콘텐츠(예: 에픽 던전) 진행 원장([[ADR-030]]). **`{accountId}` 는 «지금 고른 계정» 이 아니라 «그 캐릭터가 사는 계정» 이다**([[ADR-143]] 결정 6) — 추적 목록이 계정을 넘으면 이 키가 **동시에 여러 개** 살아 있고, 캐릭터마다 자기 것을 읽고 쓴다. 한 계정 것으로 몰면 계정 공유 완료가 계정을 넘어 번진다 |
 
 > **새 키를 추가할 때 — 기본값은 "지워진다"다.** 캐시 삭제는 Preferences를 반전 규칙(`storage/cache-data.ts`의 `KEEP_KEYS` 제외 전부)으로 지우므로, 아무 조치도 하지 않으면 **새 키는 자동으로 삭제 대상**이 된다. 재조회로 복구할 수 없는 값 — 특히 인앱 결제/구매(IAP) 상태처럼 지워지면 사용자가 실제 손해를 보는 키 — 은 만들 때 반드시 `KEEP_KEYS`에 함께 넣어라([[ADR-052]] 결정 1이 `trackingMode`·`dropEffect`에 적용한 것과 같은 기준: "재조회로 복구되는 캐시인가, 사용자가 명시적으로 만든 값인가").
 
@@ -209,7 +210,7 @@ flowchart TB
 
 - **캐릭터당 1:1 (계속 늘어남)** — `characterBasicCache:{ocid}`, `schedulerCache:{ocid}`. 캐릭터가 3명이면 이 두 종류가 각각 3개씩, 총 6개 키가 생긴다.
 - **월드당 1개 (같은 월드 캐릭터끼리 공유)** — `worldSharedProgress:{world}`. 낟낟·둘째가 둘 다 "엘리시움"이면 **같은 키를 공유**한다. 몬스터파크처럼 게임 자체가 월드 단위로 진행을 공유하는 콘텐츠라, 이건 버그가 아니라 실제 게임 규칙을 그대로 반영한 것이다([[ADR-030]]).
-- **계정당 1개 (선택된 계정의 전체 캐릭터가 공유)** — `accountSharedProgress:{accountId}`. `selectedAccountId`는 항상 하나만 활성 상태이므로, 실질적으로 이 키는 **한 번에 정확히 1개**만 존재한다 — 낟낟·둘째·셋째 전원이 같은 키에 쓴다(에픽 던전처럼 계정 전체가 공유하는 콘텐츠용).
+- **계정당 1개 (그 계정의 캐릭터들이 공유)** — `accountSharedProgress:{accountId}`. 웹뷰 앱은 `selectedAccountId` 가 항상 하나뿐이라 실질적으로 이 키가 **한 번에 정확히 1개**만 존재한다 — 낟낟·둘째·셋째 전원이 같은 키에 쓴다(에픽 던전처럼 계정 전체가 공유하는 콘텐츠용). **RN 앱은 추적 목록이 계정을 넘으므로 추적 중인 계정 수만큼 존재한다**([[ADR-143]] 결정 6) — 캐릭터가 자기 계정 키에 쓰는 것이 규칙이고, 그래서 «전원이 같은 키» 가 아니라 «같은 계정 소속끼리 같은 키» 다.
 
 ### 캐릭터별로 언제 쓰기가 일어나는가 — 추적 여부에 따른 차이
 
