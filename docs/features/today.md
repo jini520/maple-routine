@@ -41,14 +41,24 @@
 배치는 **명시적 좌표 배열**이다. 흐름 배치(자동 패킹)도, 행 단위(shelf) 배치도 아니다.
 
 ```ts
-interface WidgetPlacement { id: WidgetId; col: number; row: number; w: number; h: number }
-function validateWidgetLayout(layout: readonly WidgetPlacement[]): LayoutViolation[]
+type WidgetHeight = number | 'auto'
+interface WidgetPlacement { id: WidgetId; col: number; row: number; w: number; h: WidgetHeight }
+function validateWidgetLayout(
+  layout: readonly WidgetPlacement[],
+  sizesById: Readonly<Record<string, readonly WidgetSize[]>>,
+): LayoutViolation[]
 ```
+
+**`sizesById` 를 인자로 받는다**(레지스트리를 import 하지 않는다) — 검증이 순수 함수로 남아 값
+조합만으로 테스트가 서고, 위젯 레지스트리가 이 파일을 몰라도 된다.
 
 검증 **다섯** — ① 겹치는 타일 없음 ② `col + w ≤ 4` ③ 통째로 빈 행 없음 ④ `(w,h)` 가 그 위젯이
 선언한 `sizes` 안 ⑤ **`h === 'auto'` 이면 `w === 4`**(아래). 손으로 적는 값이므로 **테스트가 지킨다**.
 
 렌더는 격자 컨테이너 안 절대 배치이고, 컨테이너 높이 = `max(row + h) × (행높이 + 간격) − 간격`.
+좌표 해석은 `resolveWidgetPositions(layout, metrics, autoHeightsById)` 하나가 맡는다 — auto 초과분을
+누적해 아래 타일을 밀고, 컨테이너 높이를 «가장 아래 타일의 끝» 으로 돌려준다. **`row` 를 재계산해
+다시 채우지 않는다**(자동 패킹 금지).
 
 ### 높이가 데이터에서 나오는 타일 — `4×auto` ([[ADR-146]] 정정 1)
 

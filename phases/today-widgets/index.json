@@ -45,7 +45,10 @@
     {
       "step": 5,
       "name": "widget-grid",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-17T21:22:42+0900",
+      "summary": "위젯 격자의 순수 함수 셋(컴포넌트 0개) — widget-grid-metrics.ts 는 창 폭 하나로 열 폭만 유동시키고 행 높이 76 은 상수로 못 박아(폴더블에서 4x2 가 화면 절반을 넘는 것을 막는 회귀 가드) onLayout 없이 첫 프레임부터 맞고, 열 폭을 반올림하지 않아 tileWidthPx(4) 가 언제나 «창폭 − 여백×2» 다. widget-layout.ts 는 좌표 배치를 검증 다섯(겹침·col+w≤4·빈 행·미선언 크기·auto→w=4)으로 지키고 — auto 는 옆에 아무도 없어야 «아래 전부가 같은 값으로 내려간다» 가 성립하므로 w=4 가 조건 — resolveWidgetPositions 가 auto 초과분을 누적해 아래 타일만 밀되 row 를 재계산하지 않는다(자동 패킹 금지). 빈 행 위반은 그 아래 첫 타일에 귀속시켜 LayoutViolation.id 가 언제나 실재하는 타일을 가리킨다. 신규 33케이스(규칙 5·초과분 누적·행 높이 고정을 각각 되돌리면 17개 실패). 문서는 today.md 의 시그니처 스케치를 실제 구현(sizesById 인자·WidgetHeight)으로 맞췄다.",
+      "completed_at": "2026-08-17T21:32:00+0900"
     },
     {
       "step": 6,
