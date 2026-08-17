@@ -1,0 +1,76 @@
+{
+  "project": "maple-routine",
+  "phase": "today-widgets",
+  "steps": [
+    {
+      "step": 0,
+      "name": "sync-single-flight",
+      "status": "pending"
+    },
+    {
+      "step": 1,
+      "name": "character-exp",
+      "status": "pending"
+    },
+    {
+      "step": 2,
+      "name": "representative-display",
+      "status": "pending"
+    },
+    {
+      "step": 3,
+      "name": "boss-display-extract",
+      "status": "pending"
+    },
+    {
+      "step": 4,
+      "name": "drought-headline-pools",
+      "status": "pending"
+    },
+    {
+      "step": 5,
+      "name": "widget-grid",
+      "status": "pending"
+    },
+    {
+      "step": 6,
+      "name": "today-view-model",
+      "status": "pending"
+    },
+    {
+      "step": 7,
+      "name": "widget-shell",
+      "status": "pending"
+    },
+    {
+      "step": 8,
+      "name": "widget-character-schedule",
+      "status": "pending"
+    },
+    {
+      "step": 9,
+      "name": "widget-profit-item",
+      "status": "pending"
+    },
+    {
+      "step": 10,
+      "name": "widget-indicators",
+      "status": "pending"
+    },
+    {
+      "step": 11,
+      "name": "widget-drops",
+      "status": "pending"
+    },
+    {
+      "step": 12,
+      "name": "today-screen",
+      "status": "pending"
+    },
+    {
+      "step": 13,
+      "name": "docs-close",
+      "status": "pending"
+    }
+  ]
+}

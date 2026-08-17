@@ -205,6 +205,10 @@
       "dir": "character-multi-account",
       "status": "completed",
       "completed_at": "2026-08-17T05:09:48+0900"
+    },
+    {
+      "dir": "today-widgets",
+      "status": "pending"
     }
   ]
 }
