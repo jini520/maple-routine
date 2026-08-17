@@ -73,19 +73,30 @@ exports[`WidgetGrid — 좌표 배치 스냅샷 1`] = `
             }
           }
         >
-          <Text
+          <View
             style={
               {
-                "color": "#645C42",
-                "fontSize": 12,
-                "lineHeight": 16,
+                "flexBasis": "0%",
+                "flexGrow": 1,
+                "flexShrink": 1,
+                "justifyContent": "center",
                 "padding": 12,
               }
             }
             testID="widget-representative-character"
           >
-            representative-character
-          </Text>
+            <Text
+              style={
+                {
+                  "color": "#645C42",
+                  "fontSize": 12,
+                  "lineHeight": 16,
+                }
+              }
+            >
+              추적 중인 캐릭터가 없습니다
+            </Text>
+          </View>
         </View>
       </View>
     </View>
@@ -251,19 +262,75 @@ exports[`WidgetGrid — 좌표 배치 스냅샷 1`] = `
             }
           }
         >
-          <Text
+          <View
             style={
               {
-                "color": "#645C42",
-                "fontSize": 12,
-                "lineHeight": 16,
                 "padding": 12,
               }
             }
             testID="widget-remaining-schedule"
           >
-            remaining-schedule
-          </Text>
+            <View
+              style={
+                {
+                  "alignItems": "center",
+                  "borderBottomWidth": 1,
+                  "borderColor": "#A3996E",
+                  "flexDirection": "row",
+                  "paddingBottom": 8,
+                }
+              }
+            >
+              <Text
+                style={
+                  {
+                    "color": "#645C42",
+                    "fontSize": 11,
+                    "fontWeight": "700",
+                  }
+                }
+              >
+                남은 스케줄
+              </Text>
+              <Text
+                style={
+                  {
+                    "color": "#645C42",
+                    "fontSize": 11,
+                    "marginLeft": "auto",
+                  }
+                }
+              >
+                <Text
+                  style={
+                    {
+                      "color": "#241208",
+                      "fontSize": 11,
+                      "fontVariant": [
+                        "tabular-nums",
+                      ],
+                      "fontWeight": "800",
+                    }
+                  }
+                >
+                  0
+                </Text>
+                개
+              </Text>
+            </View>
+            <Text
+              style={
+                {
+                  "color": "#645C42",
+                  "fontSize": 12,
+                  "lineHeight": 16,
+                  "paddingTop": 10,
+                }
+              }
+            >
+              추적 중인 캐릭터가 없습니다
+            </Text>
+          </View>
         </View>
       </View>
     </View>

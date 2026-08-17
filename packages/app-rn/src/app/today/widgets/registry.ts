@@ -20,6 +20,8 @@
  */
 
 import type { WidgetSize } from '../../../lib/widget-layout'
+import { RemainingScheduleWidget } from './RemainingScheduleWidget'
+import { RepresentativeCharacterWidget } from './RepresentativeCharacterWidget'
 import { stubWidget } from './StubWidget'
 import type { WidgetDefinition, WidgetId } from './types'
 
@@ -33,7 +35,7 @@ export const WIDGETS: readonly WidgetDefinition[] = [
     ],
     // 대표를 바꾸는 자리가 캐릭터 관리이고, 그 자리는 설정 하나다([[ADR-140]] 결정 1).
     target: 'Settings',
-    Component: stubWidget('representative-character'),
+    Component: RepresentativeCharacterWidget,
   },
   {
     // 크기가 하나뿐인 유일한 위젯이다 — 캐릭터를 «전부» 출력하므로 높이를 미리 알 수 없고,
@@ -41,7 +43,7 @@ export const WIDGETS: readonly WidgetDefinition[] = [
     id: 'remaining-schedule',
     sizes: [{ w: 4, h: 'auto' }],
     target: 'Content',
-    Component: stubWidget('remaining-schedule'),
+    Component: RemainingScheduleWidget,
   },
   {
     id: 'weekly-boss-profit',
