@@ -69,6 +69,11 @@ import {
   sumPayout,
   summarizeWorldCrystals,
 } from '../boss-profit/character-groups'
+import {
+  displayedDailyContents,
+  displayedWeeklyContents,
+} from '@core/features/content-scheduler/displayed-contents'
+
 import { dailyContentProgress, weeklyContentProgress } from '../content-scheduler/content-completion'
 
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -144,6 +149,8 @@ export interface WeeklyProfitView extends ProfitSplit {
    * 아무것도 없다»)를 위젯이 가르는 유일한 근거다 — 그 구분이 사라지면 큰 `0` 이 사실을 단정한다.
    */
   hasRecords: boolean
+  /** 기간 범위(«8월 14일 ~ 8월 20일») — 4x3 헤더만 쓴다. `formatBossProfitPeriodLabel` 의 `secondary`. */
+  periodRange: string
   topCharacters: WeeklyProfitCharacterView[]
 }
 
@@ -346,8 +353,17 @@ function buildScheduleRows(input: TodayViewModelInput): ScheduleRowView[] {
 
     // «남은 것» = 셀 수 있는 항목 − 완료한 항목. `unmeasurable`(무릉도장)은 분모에서 이미 빠져
     // 있으므로 여기서 따로 거르지 않는다.
-    const daily = dailyContentProgress(content?.dailyContents ?? [])
-    const weekly = weeklyContentProgress(content?.weeklyContents ?? [])
+    //
+    // **먼저 «표시 대상» 으로 거른다.** `content.dailyContents` 는 캐릭터가 등록했든 안 했든 게임에
+    // 있는 항목 전부라, 그냥 세면 모든 캐릭터가 카탈로그 길이(일간 18)로 똑같아진다. 스케줄러 화면과
+    // **같은 함수**를 써야 «세는 것 = 보이는 것» 이 성립한다(보스 쪽 `displayedBosses` 와 같은 짝).
+    const contentsInput = {
+      dailyContents: content?.dailyContents ?? [],
+      weeklyContents: content?.weeklyContents ?? [],
+      manualItems: (content === undefined ? undefined : input.manualTrackedByOcid?.[content.ocid]) ?? [],
+    }
+    const daily = dailyContentProgress(displayedDailyContents(contentsInput, input.trackingMode))
+    const weekly = weeklyContentProgress(displayedWeeklyContents(contentsInput, input.trackingMode))
     const dailyQuest = daily.total - daily.completed
     const weeklyQuest = weekly.total - weekly.completed
     const weeklyBoss = countRemainingBosses(input, boss, 'weekly')
@@ -425,6 +441,7 @@ function buildProfit(
       crystalMeso: characters.reduce((sum, character) => sum + character.crystalMeso, 0),
       itemMeso: characters.reduce((sum, character) => sum + character.itemMeso, 0),
       hasRecords,
+      periodRange: formatBossProfitPeriodLabel('weekly', weeklyPeriodKey, input.now).secondary,
       topCharacters: orderByTracked(characters, input.orderedOcids)
         .map((character, index) => ({ character, index }))
         .sort((a, b) =>

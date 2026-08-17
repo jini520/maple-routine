@@ -39,11 +39,13 @@
  * `syncSchedules` 의 단일 비행이 셋을 한 회차로 합쳐 **네트워크는 한 바퀴**다.
  */
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Pressable, RefreshControl, Text, View } from 'react-native'
 import { useReducedMotion } from 'react-native-reanimated'
+import { useFocusEffect } from '@react-navigation/native'
 
 import { useDropHistoryStore } from '@core/features/boss-profit/drop-history-store'
+import { getBossDropRecordsRevision } from '@core/storage/boss-drops'
 import { useBossProfitStore } from '@core/features/boss-profit/store'
 import { useBossSchedulerStore } from '@core/features/boss-scheduler/store'
 import { useContentSchedulerStore } from '@core/features/content-scheduler/store'
@@ -80,11 +82,41 @@ export function TodayScreen(): React.JSX.Element {
   const [representativeOcid, setRepresentativeOcid] = useState<string | null>(null)
 
   useEffect(() => {
-    // 파일 머리 «진입 자동 조회» — 게이트가 있는 문 하나 + 예열 밖의 로컬 조회 하나.
+    // 파일 머리 «진입 자동 조회» — 게이트가 있는 문 하나. 드롭 기록은 아래 포커스 훅이 맡는다.
     void content.loadTrackedOcids()
-    void dropHistory.load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  /**
+   * 드롭 기록 스냅샷을 **포커스가 소유한다.**
+   *
+   * 이 화면은 탭이라 한 번 마운트되면 계속 살아 있다 — 마운트 이펙트는 앱 실행당 한 번뿐이고,
+   * 그 사이 보스 수익·가격 입력 화면이 `boss_drop_records` 를 바꾸면 최고가·미입력·드롭 가뭄
+   * 셋이 **옛 스냅샷에 굳는다**([[ADR-145]] 결정 2 가 짚은 «진입 시점이 실행당 한 번» 의 대가).
+   *
+   * 그래서 today 에 «진입 시점» 을 되돌려 준다. 다만 그 스토어는 **전 기간을 통째로 읽으므로**
+   * ([[ADR-071]]) 포커스마다 읽으면 비싸다 — 저장 계층의 리비전을 물어 **실제로 바뀌었을 때만**
+   * 다시 읽는다. 첫 포커스는 `status === 'idle'` 로 걸려 마운트 조회를 대신한다.
+   */
+  // 최신 스토어 값을 **deps 없이** 읽는 자리. 구독값을 deps 에 넣으면 `load()` 가 일으킨 상태
+  // 변화가 이펙트를 다시 돌려 «실패 → 재조회 → 실패» 가 무한히 돈다 — 포커스는 사건이지
+  // 상태 변화가 아니다.
+  const dropHistoryRef = useRef(dropHistory)
+  // 렌더 중에 ref 를 쓰면 `react-hooks/refs` 가 잡는다 — 커밋 뒤에 채운다. 포커스 콜백은 렌더가
+  // 아니라 이펙트에서 도므로 이 시점이면 이미 최신이다.
+  useEffect(() => {
+    dropHistoryRef.current = dropHistory
+  })
+
+  useFocusEffect(
+    useCallback(() => {
+      const store = dropHistoryRef.current
+      if (store.status === 'loading') return
+      if (store.status === 'idle' || store.loadedRevision !== getBossDropRecordsRevision()) {
+        void store.load()
+      }
+    }, []),
+  )
 
   // [[ADR-143]] 결정 3: 화면 순서는 사용자가 캐릭터 관리에서 정한 저장 배열 순서다.
   const orderedOcids = content.trackedOcids ?? []

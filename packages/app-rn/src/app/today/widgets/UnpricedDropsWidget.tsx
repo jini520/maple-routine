@@ -103,17 +103,69 @@ function ItemRow(props: { drop: UnpricedDropView }): React.JSX.Element {
  *
  * CTA 도 함께 사라진다: 기록할 것이 없는데 「기록하기」로 보내면 빈 화면에 도착한다.
  */
-function Done(props: { variant: Variant }): React.JSX.Element {
+/**
+ * 0건 표식 — **건수 배지가 서던 자리에 같은 크기의 원**을 세운다.
+ *
+ * 그래야 «7 → ✓» 가 자리를 안 옮기고 바뀌어, 값이 사라진 것이 아니라 **끝난 것**으로 읽힌다.
+ * 색은 배지의 경고 톤이 아니라 `primary-ink` 다 — 남은 일이 아니라 마친 일이다.
+ */
+function DoneMark(props: { sizePx: number }): React.JSX.Element {
   return (
-    <View testID="widget-unpriced-drops" className="flex-1 justify-center p-3">
-      <Text
-        testID="unpriced-done"
-        // 1x1 은 73 폭이라 어차피 여러 줄이 된다 — 타일 밖으로 흐르지 않게 줄 수만 묶는다.
-        numberOfLines={props.variant === 'tiny' ? 3 : 2}
-        className="text-[10.5px] text-text-muted"
-      >
-        {DONE_NOTE}
+    <View
+      testID="unpriced-done-mark"
+      className="shrink-0 items-center justify-center rounded-full bg-surface-2"
+      style={{ width: props.sizePx, height: props.sizePx }}
+    >
+      <Text className="font-bold text-primary-ink" style={{ fontSize: props.sizePx * 0.45 }}>
+        ✓
       </Text>
+    </View>
+  )
+}
+
+function Done(props: { variant: Variant }): React.JSX.Element {
+  if (props.variant === 'tiny') {
+    return (
+      <View testID="widget-unpriced-drops" className="flex-1 items-center justify-center gap-1 p-2">
+        <DoneMark sizePx={22} />
+        {/* 타일 이름이 아니라 **끝났다는 사실**을 남긴다 — 1x1 에는 라벨이 없어서 이 한 줄이
+            «무엇이 0건인가» 를 말하는 유일한 자리다. */}
+        <Text
+          testID="unpriced-done"
+          numberOfLines={3}
+          className="text-center text-[9px] leading-[11px] text-text-muted"
+        >
+          {DONE_NOTE}
+        </Text>
+      </View>
+    )
+  }
+
+  if (props.variant === 'compact') {
+    return (
+      <View testID="widget-unpriced-drops" className="flex-1 items-center justify-center gap-2.5 p-3">
+        <DoneMark sizePx={36} />
+        <Text
+          testID="unpriced-done"
+          numberOfLines={2}
+          className="text-center text-[10.5px] leading-[15px] text-text-muted"
+        >
+          {DONE_NOTE}
+        </Text>
+      </View>
+    )
+  }
+
+  // 2x1 — 채워진 상태와 같은 «배지 좌 · 글자 우» 골격.
+  return (
+    <View testID="widget-unpriced-drops" className="flex-1 flex-row items-center gap-2.5 p-3">
+      <DoneMark sizePx={32} />
+      <View className="flex-1">
+        <Text className="text-[11px] font-semibold text-text-muted">{TITLE}</Text>
+        <Text testID="unpriced-done" numberOfLines={1} className="mt-0.5 text-[10px] text-text-muted">
+          {DONE_NOTE}
+        </Text>
+      </View>
     </View>
   )
 }

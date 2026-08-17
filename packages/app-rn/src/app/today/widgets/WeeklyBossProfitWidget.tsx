@@ -29,10 +29,11 @@
  * 이미 말했다([[ADR-146]] 정정 4).
  */
 
-import { Text, View, type DimensionValue } from 'react-native'
+import { Image, Text, View, type DimensionValue } from 'react-native'
 
 import { formatMesoShort } from '@core/lib/boss-profit-delta'
 
+import { faceCropStyle } from '../../../lib/face-crop'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
 import type { WidgetHeight } from '../../../lib/widget-layout'
 import type { ProfitSplit, WeeklyProfitCharacterView, WeeklyProfitView } from '../view-model'
@@ -55,6 +56,9 @@ const LEGEND_DOT_CLASS = {
 } as const
 
 const SEGMENT_LABEL = { crystal: '결정석', item: '아이템' } as const
+
+/** 「남은 스케줄」의 32 보다 작다 — 이 목록은 세 줄이 한 덩어리라 얼굴이 커지면 줄 간격을 먹는다. */
+const FACE_PX = 26
 
 type SegmentKey = keyof typeof SEGMENT_CLASS
 
@@ -102,12 +106,15 @@ function Amount(props: { meso: number; sizeClass: string }): React.JSX.Element {
  * 같게 보장한다). 합이 0 인 경우(기록은 있는데 가격 미확정 보스뿐)는 나누지 않고 **빈 트랙**을
  * 남긴다 — 0 을 임의의 비율로 그리는 것보다 아무것도 안 그리는 편이 사실이다.
  */
-function StackBar(props: { split: ProfitSplit }): React.JSX.Element {
+function StackBar(props: { split: ProfitSplit; thick?: boolean }): React.JSX.Element {
   const segments = splitOf(props.split)
   const sum = segments.reduce((total, segment) => total + segment.meso, 0)
 
   return (
-    <View testID="profit-stack-bar" className="h-1.5 w-full flex-row overflow-hidden rounded-full bg-track">
+    <View
+      testID="profit-stack-bar"
+      className={`${props.thick === true ? 'h-3' : 'h-1.5'} w-full flex-row overflow-hidden rounded-full bg-track`}
+    >
       {sum > 0 &&
         segments.map((segment) => (
           <View
@@ -122,11 +129,22 @@ function StackBar(props: { split: ProfitSplit }): React.JSX.Element {
 }
 
 /** 분해 금액 — 같은 두 색 점을 달아 바를 읽는 법을 말한다. 좁은 타일에서는 세로로 선다. */
-function Breakdown(props: { split: ProfitSplit; column: boolean }): React.JSX.Element {
+function Breakdown(props: {
+  split: ProfitSplit
+  column: boolean
+  /** 4x3 은 바가 폭을 다 쓰므로 두 항을 **바의 양 끝에** 세운다 — 어느 조각이 어느 값인지 눈이 잇는다. */
+  spread?: boolean
+}): React.JSX.Element {
   return (
     <View
       testID="profit-breakdown"
-      className={props.column ? 'gap-0.5' : 'flex-row items-center gap-3'}
+      className={
+        props.column
+          ? 'gap-0.5'
+          : props.spread === true
+            ? 'flex-row items-center justify-between'
+            : 'flex-row items-center gap-3'
+      }
     >
       {splitOf(props.split).map((segment) => (
         <View key={segment.key} className="flex-row items-center gap-1">
@@ -150,13 +168,17 @@ function Note(): React.JSX.Element {
 }
 
 /** 바 + 분해 금액, 또는 그 자리에 서는 미기록 한 줄. */
-function SplitBlock(props: { profit: WeeklyProfitView; column: boolean }): React.JSX.Element {
+function SplitBlock(props: {
+  profit: WeeklyProfitView
+  column: boolean
+  spread?: boolean
+}): React.JSX.Element {
   if (!props.profit.hasRecords) return <Note />
 
   return (
     <View className="w-full gap-1.5">
-      <StackBar split={props.profit} />
-      <Breakdown split={props.profit} column={props.column} />
+      <StackBar split={props.profit} thick={props.spread} />
+      <Breakdown split={props.profit} column={props.column} spread={props.spread} />
     </View>
   )
 }
@@ -165,12 +187,52 @@ function SplitBlock(props: { profit: WeeklyProfitView; column: boolean }): React
  * 캐릭터 한 줄. **내역은 4x3 에만 선다** — 4x2 의 오른쪽 열은 폭이 타일의 절반도 안 돼 이름과 금액이
  * 먼저다.
  */
+/** 얼굴 — 「남은 스케줄」과 **같은 크롭·같은 폴백**이다(두 타일이 같은 캐릭터를 다르게 그리면 안 된다). */
+function Face(props: { character: WeeklyProfitCharacterView }): React.JSX.Element {
+  return (
+    <View
+      className="shrink-0 overflow-hidden rounded-full"
+      style={{ width: FACE_PX, height: FACE_PX }}
+    >
+      {props.character.imageUrl !== null ? (
+        <Image
+          testID="profit-character-face"
+          accessibilityLabel={props.character.characterName}
+          source={{ uri: props.character.imageUrl }}
+          style={{ position: 'absolute', ...faceCropStyle(FACE_PX) }}
+        />
+      ) : (
+        <View
+          testID="profit-character-face-fallback"
+          className="h-full w-full items-center justify-center bg-primary"
+        >
+          <Text className="text-[9px] font-bold text-on-primary">?</Text>
+        </View>
+      )}
+    </View>
+  )
+}
+
 function CharacterRow(props: {
   character: WeeklyProfitCharacterView
   withSplit: boolean
+  /** 4x3 만 순위와 얼굴을 단다 — 좁은 열에서는 이름과 금액이 먼저다(시안). */
+  rank?: number
 }): React.JSX.Element {
   return (
     <View testID="profit-character-row" className="flex-row items-center gap-2 py-1">
+      {props.rank !== undefined && (
+        <>
+          <Text
+            testID="profit-character-rank"
+            style={TABULAR_NUMS}
+            className="w-2.5 shrink-0 text-[10px] font-bold text-text-disabled"
+          >
+            {props.rank}
+          </Text>
+          <Face character={props.character} />
+        </>
+      )}
       <Text
         testID="profit-character-name"
         numberOfLines={1}
@@ -196,13 +258,19 @@ function CharacterRow(props: {
 function CharacterList(props: {
   characters: WeeklyProfitCharacterView[]
   withSplit: boolean
+  ranked?: boolean
 }): React.JSX.Element | null {
   if (props.characters.length === 0) return null
 
   return (
     <View testID="profit-characters">
-      {props.characters.map((character) => (
-        <CharacterRow key={character.ocid} character={character} withSplit={props.withSplit} />
+      {props.characters.map((character, index) => (
+        <CharacterRow
+          key={character.ocid}
+          character={character}
+          withSplit={props.withSplit}
+          rank={props.ranked === true ? index + 1 : undefined}
+        />
       ))}
     </View>
   )
@@ -210,6 +278,23 @@ function CharacterList(props: {
 
 function PeriodLabel(): React.JSX.Element {
   return <Text className="text-[11px] font-bold text-text-muted">{PERIOD_LABEL}</Text>
+}
+
+/**
+ * 4x3 전용 머리 — 라벨은 왼쪽, **기간 범위는 오른쪽 끝**이다(시안).
+ *
+ * 범위를 이 크기에만 두는 이유는 폭이다. 4x2 아래에서는 라벨과 범위가 한 줄에 서면 둘 다 잘리고,
+ * 잘린 날짜는 «언제인지 모르겠는 숫자» 라 없는 것만 못하다.
+ */
+function PeriodHeader(props: { range: string }): React.JSX.Element {
+  return (
+    <View testID="profit-period-header" className="flex-row items-baseline justify-between gap-2">
+      <Text className="text-[11px] font-bold text-text-muted">{PERIOD_LABEL} 보스 수익</Text>
+      <Text testID="profit-period-range" numberOfLines={1} className="shrink text-[10px] text-text-muted">
+        {props.range}
+      </Text>
+    </View>
+  )
 }
 
 export function WeeklyBossProfitWidget({ w, h, data }: WidgetProps): React.JSX.Element {
@@ -256,15 +341,15 @@ export function WeeklyBossProfitWidget({ w, h, data }: WidgetProps): React.JSX.E
   }
 
   return (
-    <View testID="widget-weekly-boss-profit" className="flex-1 gap-2 p-3">
-      <View className="gap-0.5">
-        <PeriodLabel />
+    <View testID="widget-weekly-boss-profit" className="flex-1 gap-2 p-3.5">
+      <View className="gap-1">
+        <PeriodHeader range={profit.periodRange} />
         <Amount meso={profit.totalMeso} sizeClass="text-[32px]" />
       </View>
-      <SplitBlock profit={profit} column={false} />
+      <SplitBlock profit={profit} column={false} spread />
       {profit.topCharacters.length > 0 && (
-        <View className="mt-0.5 border-t border-border pt-0.5">
-          <CharacterList characters={profit.topCharacters} withSplit />
+        <View className="mt-1 border-t border-border pt-2">
+          <CharacterList characters={profit.topCharacters} withSplit ranked />
         </View>
       )}
     </View>

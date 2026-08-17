@@ -6,15 +6,18 @@ const {
   getAllBossProfitRecordKeysMock,
   getTrackedCharacterOcidsMock,
   getCachedCharacterBasicMock,
+  getBossDropRecordsRevisionMock,
 } = vi.hoisted(() => ({
   getAllBossDropRecordsMock: vi.fn(),
   getAllBossProfitRecordKeysMock: vi.fn(),
   getTrackedCharacterOcidsMock: vi.fn(),
   getCachedCharacterBasicMock: vi.fn(),
+  getBossDropRecordsRevisionMock: vi.fn(() => 0),
 }))
 
 vi.mock('@core/storage/boss-drops', () => ({
   getAllBossDropRecords: getAllBossDropRecordsMock,
+  getBossDropRecordsRevision: getBossDropRecordsRevisionMock,
 }))
 vi.mock('@core/storage/boss-profit', () => ({
   getAllBossProfitRecordKeys: getAllBossProfitRecordKeysMock,
@@ -55,6 +58,7 @@ async function loadStore() {
     groups: [],
     drought: null,
     charactersByOcid: {},
+    loadedRevision: -1,
   })
   return module.useDropHistoryStore
 }
@@ -64,6 +68,7 @@ beforeEach(() => {
   getAllBossDropRecordsMock.mockReset().mockResolvedValue([])
   getAllBossProfitRecordKeysMock.mockReset().mockResolvedValue([])
   getTrackedCharacterOcidsMock.mockReset().mockResolvedValue(['ocid-1'])
+  getBossDropRecordsRevisionMock.mockReset().mockReturnValue(0)
   getCachedCharacterBasicMock
     .mockReset()
     .mockResolvedValue({ profile: { name: '메이플영웅', level: 290, imageUrl: 'https://img/1.png' } })
@@ -160,6 +165,43 @@ describe('useDropHistoryStore.load', () => {
     expect(getAllBossDropRecordsMock).not.toHaveBeenCalled()
     expect(store.getState().status).toBe('ready')
     expect(store.getState().groups).toEqual([])
+  })
+
+  // 이 화면이 push 페이지일 때는 열 때마다 새로 마운트돼 늘 최신을 읽었다. `today` 가 **탭**으로
+  // 같은 스토어를 상시 구독하면서 «내 스냅샷이 낡았나» 를 물을 수 있어야 했다.
+  it('스냅샷을 «읽기 전» 리비전으로 찍는다 — 읽는 중에 들어온 변경을 본 것으로 표시하지 않는다', async () => {
+    getBossDropRecordsRevisionMock.mockReturnValue(7)
+    getAllBossDropRecordsMock.mockImplementation(async () => {
+      // 조회가 도는 사이 다른 화면이 기록을 바꿨다.
+      getBossDropRecordsRevisionMock.mockReturnValue(8)
+      return [dropRecord({})]
+    })
+    const store = await loadStore()
+
+    await store.getState().load()
+
+    // 8 로 찍으면 그 변경을 이미 반영한 것이 되어 영영 다시 읽지 않는다.
+    expect(store.getState().loadedRevision).toBe(7)
+  })
+
+  it('추적 캐릭터가 없는 조기 종료에도 리비전을 찍는다 — 그 상태도 «지금의 사실» 이다', async () => {
+    getBossDropRecordsRevisionMock.mockReturnValue(3)
+    getTrackedCharacterOcidsMock.mockResolvedValue([])
+    const store = await loadStore()
+
+    await store.getState().load()
+
+    expect(store.getState().loadedRevision).toBe(3)
+  })
+
+  it('실패에는 리비전을 찍지 않는다 — 스냅샷이 없으므로 다음 진입이 다시 시도해야 한다', async () => {
+    getBossDropRecordsRevisionMock.mockReturnValue(5)
+    getAllBossDropRecordsMock.mockRejectedValue(new Error('SQLite 죽음'))
+    const store = await loadStore()
+
+    await store.getState().load()
+
+    expect(store.getState().loadedRevision).toBe(-1)
   })
 
   it('조회가 실패하면 failed다 — 빈 목록("기록이 없습니다")으로 위장하지 않는다', async () => {

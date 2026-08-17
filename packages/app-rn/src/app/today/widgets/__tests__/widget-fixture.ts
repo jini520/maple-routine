@@ -29,7 +29,14 @@ export const 빈_뷰모델: TodayViewModel = {
   representative: null,
   schedule: [],
   scheduleTotal: 0,
-  profit: { totalMeso: 0, crystalMeso: 0, itemMeso: 0, hasRecords: false, topCharacters: [] },
+  profit: {
+    totalMeso: 0,
+    crystalMeso: 0,
+    itemMeso: 0,
+    hasRecords: false,
+    periodRange: '8월 14일 ~ 8월 20일',
+    topCharacters: [],
+  },
   topItem: null,
   unpricedCount: 0,
   unpricedPreview: [],
@@ -124,6 +131,7 @@ export function 수익(캐릭터들: WeeklyProfitCharacterView[]): TodayViewMode
     crystalMeso: 캐릭터들.reduce((sum, entry) => sum + entry.crystalMeso, 0),
     itemMeso: 캐릭터들.reduce((sum, entry) => sum + entry.itemMeso, 0),
     hasRecords: true,
+    periodRange: '8월 14일 ~ 8월 20일',
     topCharacters: 캐릭터들,
   }
 }

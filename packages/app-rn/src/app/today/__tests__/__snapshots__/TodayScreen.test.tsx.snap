@@ -2497,7 +2497,7 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                             "flexBasis": "0%",
                             "flexGrow": 1,
                             "flexShrink": 1,
-                            "padding": 12,
+                            "padding": 14,
                             "rowGap": 8,
                           }
                         }
@@ -2506,22 +2506,49 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                         <View
                           style={
                             {
-                              "columnGap": 2,
-                              "rowGap": 2,
+                              "columnGap": 4,
+                              "rowGap": 4,
                             }
                           }
                         >
-                          <Text
+                          <View
                             style={
                               {
-                                "color": "#645C42",
-                                "fontSize": 11,
-                                "fontWeight": "700",
+                                "alignItems": "baseline",
+                                "columnGap": 8,
+                                "flexDirection": "row",
+                                "justifyContent": "space-between",
+                                "rowGap": 8,
                               }
                             }
+                            testID="profit-period-header"
                           >
-                            이번 주
-                          </Text>
+                            <Text
+                              style={
+                                {
+                                  "color": "#645C42",
+                                  "fontSize": 11,
+                                  "fontWeight": "700",
+                                }
+                              }
+                            >
+                              이번 주
+                               보스 수익
+                            </Text>
+                            <Text
+                              numberOfLines={1}
+                              style={
+                                {
+                                  "color": "#645C42",
+                                  "flexShrink": 1,
+                                  "fontSize": 10,
+                                }
+                              }
+                              testID="profit-period-range"
+                            >
+                              8월 13일 ~ 8월 19일
+                            </Text>
+                          </View>
                           <Text
                             numberOfLines={1}
                             style={
@@ -2573,7 +2600,7 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                 "backgroundColor": "#E4E1CE",
                                 "borderRadius": 9999,
                                 "flexDirection": "row",
-                                "height": 6,
+                                "height": 12,
                                 "overflow": "hidden",
                                 "width": "100%",
                               }
@@ -2605,9 +2632,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                             style={
                               {
                                 "alignItems": "center",
-                                "columnGap": 12,
                                 "flexDirection": "row",
-                                "rowGap": 12,
+                                "justifyContent": "space-between",
                               }
                             }
                             testID="profit-breakdown"
@@ -2709,8 +2735,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                             {
                               "borderColor": "#CFC9AE",
                               "borderTopWidth": 1,
-                              "marginTop": 2,
-                              "paddingTop": 2,
+                              "marginTop": 4,
+                              "paddingTop": 8,
                             }
                           }
                         >
@@ -2730,6 +2756,59 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                               }
                               testID="profit-character-row"
                             >
+                              <Text
+                                style={
+                                  {
+                                    "color": "#9A9070",
+                                    "flexShrink": 0,
+                                    "fontSize": 10,
+                                    "fontVariant": [
+                                      "tabular-nums",
+                                    ],
+                                    "fontWeight": "700",
+                                    "width": 10,
+                                  }
+                                }
+                                testID="profit-character-rank"
+                              >
+                                1
+                              </Text>
+                              <View
+                                style={
+                                  {
+                                    "borderRadius": 9999,
+                                    "flexShrink": 0,
+                                    "height": 26,
+                                    "overflow": "hidden",
+                                    "width": 26,
+                                  }
+                                }
+                              >
+                                <View
+                                  style={
+                                    {
+                                      "alignItems": "center",
+                                      "backgroundColor": "#F58B0F",
+                                      "height": "100%",
+                                      "justifyContent": "center",
+                                      "width": "100%",
+                                    }
+                                  }
+                                  testID="profit-character-face-fallback"
+                                >
+                                  <Text
+                                    style={
+                                      {
+                                        "color": "#FFEEE2",
+                                        "fontSize": 9,
+                                        "fontWeight": "700",
+                                      }
+                                    }
+                                  >
+                                    ?
+                                  </Text>
+                                </View>
+                              </View>
                               <Text
                                 numberOfLines={1}
                                 style={
@@ -2789,6 +2868,59 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                               testID="profit-character-row"
                             >
                               <Text
+                                style={
+                                  {
+                                    "color": "#9A9070",
+                                    "flexShrink": 0,
+                                    "fontSize": 10,
+                                    "fontVariant": [
+                                      "tabular-nums",
+                                    ],
+                                    "fontWeight": "700",
+                                    "width": 10,
+                                  }
+                                }
+                                testID="profit-character-rank"
+                              >
+                                2
+                              </Text>
+                              <View
+                                style={
+                                  {
+                                    "borderRadius": 9999,
+                                    "flexShrink": 0,
+                                    "height": 26,
+                                    "overflow": "hidden",
+                                    "width": 26,
+                                  }
+                                }
+                              >
+                                <View
+                                  style={
+                                    {
+                                      "alignItems": "center",
+                                      "backgroundColor": "#F58B0F",
+                                      "height": "100%",
+                                      "justifyContent": "center",
+                                      "width": "100%",
+                                    }
+                                  }
+                                  testID="profit-character-face-fallback"
+                                >
+                                  <Text
+                                    style={
+                                      {
+                                        "color": "#FFEEE2",
+                                        "fontSize": 9,
+                                        "fontWeight": "700",
+                                      }
+                                    }
+                                  >
+                                    ?
+                                  </Text>
+                                </View>
+                              </View>
+                              <Text
                                 numberOfLines={1}
                                 style={
                                   {
@@ -2846,6 +2978,59 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                               }
                               testID="profit-character-row"
                             >
+                              <Text
+                                style={
+                                  {
+                                    "color": "#9A9070",
+                                    "flexShrink": 0,
+                                    "fontSize": 10,
+                                    "fontVariant": [
+                                      "tabular-nums",
+                                    ],
+                                    "fontWeight": "700",
+                                    "width": 10,
+                                  }
+                                }
+                                testID="profit-character-rank"
+                              >
+                                3
+                              </Text>
+                              <View
+                                style={
+                                  {
+                                    "borderRadius": 9999,
+                                    "flexShrink": 0,
+                                    "height": 26,
+                                    "overflow": "hidden",
+                                    "width": 26,
+                                  }
+                                }
+                              >
+                                <View
+                                  style={
+                                    {
+                                      "alignItems": "center",
+                                      "backgroundColor": "#F58B0F",
+                                      "height": "100%",
+                                      "justifyContent": "center",
+                                      "width": "100%",
+                                    }
+                                  }
+                                  testID="profit-character-face-fallback"
+                                >
+                                  <Text
+                                    style={
+                                      {
+                                        "color": "#FFEEE2",
+                                        "fontSize": 9,
+                                        "fontWeight": "700",
+                                      }
+                                    }
+                                  >
+                                    ?
+                                  </Text>
+                                </View>
+                              </View>
                               <Text
                                 numberOfLines={1}
                                 style={

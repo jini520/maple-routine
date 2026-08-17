@@ -52,6 +52,8 @@ import type { WidgetProps } from './types'
  */
 const NO_RECORD_NOTE = '아직 아이템 드롭 기록이 없습니다'
 
+
+
 /** 4x1 · 2x2 · 2x1 — 이름이 크기가 아니라 «무엇을 그리는가» 를 말한다. */
 type Variant = 'wide' | 'compact' | 'mini'
 
@@ -134,14 +136,63 @@ function WeeksChip(props: { weeksSince: number }): React.JSX.Element {
   )
 }
 
-function NoRecord(props: { variant: Variant }): React.JSX.Element {
+/**
+ * 기록 자체가 없을 때의 잎 — **단계 램프를 안 탄다.**
+ *
+ * 단계는 «몇 주째 못 먹었나» 인데 여기는 셀 기록이 아예 없다. 가장 슬픈 단계의 잎을 빌려 쓰면
+ * «오래 못 먹었다» 로 읽혀 [[ADR-146]] 이 금지한 위장(«0주째» 로 그리지 않는다)을 색으로 다시
+ * 저지르는 셈이다. 그래서 **중립색 하나**로 그리고 기울이지 않는다 — 아직 시작하지 않은 잎이다.
+ */
+function BlankLeaf(props: { sizePx: number }): React.JSX.Element {
   return (
-    <View testID="widget-valuable-drought" className="flex-1 justify-center p-3">
-      <Text
-        testID="drought-no-record"
-        numberOfLines={props.variant === 'wide' ? 1 : 2}
-        className="text-[10.5px] text-text-muted"
+    <View testID="drought-blank-leaf" aria-hidden style={{ opacity: 0.28 }}>
+      {/* 색은 테마 토큰에서 온다 — `fill="currentColor"` 의 값은 `Svg` 의 `color` 이고, NativeWind 의
+          `text-*` 가 그 자리를 채운다(`MapleSpinner` 가 쓰는 것과 같은 경로). 잎 램프의 하드코딩
+          hex 를 여기서 흉내 내면 라이트·다크 한쪽에서 반드시 죽는다. */}
+      <Svg
+        width={props.sizePx}
+        height={Math.round(props.sizePx * (130 / 127))}
+        viewBox="0 0 127 130"
+        className="text-text-disabled"
       >
+        <Path d={MAPLE_LEAF_PATH} fill="currentColor" />
+      </Svg>
+    </View>
+  )
+}
+
+function NoRecord(props: { variant: Variant }): React.JSX.Element {
+  // 4x1 — 채워진 상태와 같은 «잎 좌 · 글자 우» 골격이라 기록이 생겨도 줄이 안 흔들린다.
+  if (props.variant === 'wide') {
+    return (
+      <View testID="widget-valuable-drought" className="flex-1 flex-row items-center gap-3 p-3">
+        <BlankLeaf sizePx={24} />
+        <Text testID="drought-no-record" numberOfLines={1} className="flex-1 text-[11px] text-text-muted">
+          {NO_RECORD_NOTE}
+        </Text>
+      </View>
+    )
+  }
+
+  if (props.variant === 'compact') {
+    return (
+      <View testID="widget-valuable-drought" className="flex-1 items-center justify-center gap-2.5 p-3">
+        <BlankLeaf sizePx={44} />
+        <Text
+          testID="drought-no-record"
+          numberOfLines={2}
+          className="text-center text-[10.5px] leading-[15px] text-text-muted"
+        >
+          {NO_RECORD_NOTE}
+        </Text>
+      </View>
+    )
+  }
+
+  return (
+    <View testID="widget-valuable-drought" className="flex-1 flex-row items-center gap-2.5 p-3">
+      <BlankLeaf sizePx={20} />
+      <Text testID="drought-no-record" numberOfLines={2} className="flex-1 text-[10px] text-text-muted">
         {NO_RECORD_NOTE}
       </Text>
     </View>

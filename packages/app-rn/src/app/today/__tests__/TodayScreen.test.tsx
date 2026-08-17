@@ -46,6 +46,16 @@ jest.mock('@core/features/boss-profit/store', () => ({
   ...jest.requireActual('@core/features/boss-profit/store'),
   useBossProfitStore: jest.fn(),
 }))
+// `useFocusEffect` 는 내비게이션 컨텍스트를 요구한다 — 이 하네스는 화면 하나만 띄우므로
+// **포커스를 이펙트로 흉내 낸다**(마운트 = 첫 포커스, 실제 동작과 같은 순서다).
+jest.mock('@react-navigation/native', () => ({
+  ...jest.requireActual('@react-navigation/native'),
+  useFocusEffect: (callback: () => void | (() => void)) => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const react = require('react') as typeof import('react')
+    react.useEffect(callback, [callback])
+  },
+}))
 jest.mock('@core/features/boss-profit/drop-history-store', () => ({
   ...jest.requireActual('@core/features/boss-profit/drop-history-store'),
   useDropHistoryStore: jest.fn(),

@@ -145,14 +145,66 @@ function RestList(props: { rest: PricedDropView[] }): React.JSX.Element | null {
   )
 }
 
-function Empty(props: { variant: Variant }): React.JSX.Element {
+/**
+ * 빈 상태 — **채워진 상태의 골격을 그대로 쓴다.**
+ *
+ * 글자만 남기면 자리가 무너져 «타일이 비었다» 가 아니라 «타일이 고장났다» 로 보인다. 아이콘이
+ * 서던 자리에 **같은 크기의 빈 슬롯**을 세우면 값이 들어왔을 때 자리가 안 움직이고, 지금이
+ * «들어올 곳이 있는데 아직 없다» 로 읽힌다([[ADR-060]] 의 빈 상태 태도).
+ *
+ * 슬롯은 점선이다 — 실선 상자는 «내용이 있는 무엇» 으로 보이고, 점선은 그 자리가 비어 있다는 관례다.
+ */
+function EmptySlot(props: { sizePx: number }): React.JSX.Element {
   return (
-    <View testID="widget-top-valuable-item" className="flex-1 justify-center p-3">
+    <View
+      testID="top-item-empty-slot"
+      className="shrink-0 items-center justify-center rounded-md border border-dashed border-border bg-surface-2"
+      style={{ width: props.sizePx, height: props.sizePx }}
+    >
+      <Text className="font-bold text-text-disabled" style={{ fontSize: props.sizePx * 0.42 }}>
+        ―
+      </Text>
+    </View>
+  )
+}
+
+function Empty(props: { variant: Variant }): React.JSX.Element {
+  // 1x1 도 **문구를 남긴다.** 슬롯만 세우면 «무엇이 없는지» 를 말하지 못해 타일이 그냥 고장난
+  // 것처럼 보인다 — 이 크기의 채워진 상태에는 라벨이 없어서 더 그렇다.
+  if (props.variant === 'tiny') {
+    return (
+      <View testID="widget-top-valuable-item" className="flex-1 items-center justify-center gap-1.5 p-2">
+        <EmptySlot sizePx={22} />
+        <Text
+          testID="top-item-empty"
+          numberOfLines={3}
+          className="text-center text-[9px] leading-[11px] text-text-muted"
+        >
+          {EMPTY_NOTE}
+        </Text>
+      </View>
+    )
+  }
+
+  // 2x1 은 채워진 상태와 같은 «아이콘 좌 · 글자 우» 골격이라 값이 들어와도 줄이 안 흔들린다.
+  if (props.variant === 'mini') {
+    return (
+      <View testID="widget-top-valuable-item" className="flex-1 flex-row items-center gap-2.5 p-3">
+        <EmptySlot sizePx={32} />
+        <Text testID="top-item-empty" numberOfLines={2} className="flex-1 text-[10px] text-text-muted">
+          {EMPTY_NOTE}
+        </Text>
+      </View>
+    )
+  }
+
+  return (
+    <View testID="widget-top-valuable-item" className="flex-1 items-center justify-center gap-2.5 p-3">
+      <EmptySlot sizePx={36} />
       <Text
         testID="top-item-empty"
-        // 1x1 은 49 폭이라 어차피 여러 줄이 된다 — 타일 밖으로 흐르지 않게 줄 수만 묶는다.
-        numberOfLines={props.variant === 'tiny' ? 3 : 2}
-        className="text-[10px] text-text-muted"
+        numberOfLines={2}
+        className="text-center text-[10.5px] leading-[15px] text-text-muted"
       >
         {EMPTY_NOTE}
       </Text>

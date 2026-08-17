@@ -136,7 +136,14 @@ describe('스택 바가 총액을 가른다', () => {
     const { getByTestId, queryByTestId } = await 위젯(
       크기['4x3'],
       뷰모델({
-        profit: { totalMeso: 0, crystalMeso: 0, itemMeso: 0, hasRecords: true, topCharacters: [] },
+        profit: {
+          totalMeso: 0,
+          crystalMeso: 0,
+          itemMeso: 0,
+          hasRecords: true,
+          periodRange: '8월 14일 ~ 8월 20일',
+          topCharacters: [],
+        },
       }),
     )
 
