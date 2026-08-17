@@ -1,0 +1,535 @@
+// today 뷰모델의 **조립 규칙**([[ADR-146]] 결정 4·8·9). 위젯이 스토어를 모르므로 화면이 값을 한
+// 번 모으는데, 그 조립을 순수 함수로 두면 **위젯이 한 줄도 없는 지금 로직 전부를 검증할 수 있다.**
+//
+// 여기서 지키는 것의 대부분은 «다시 구현하지 않았는가» 다 — 남은 개수는 `content-completion` ·
+// `displayedBosses` 가, 수익은 `groupTotalMeso` 가, 한도 분모는 `WEEKLY_CRYSTAL_SALE_LIMIT` 가
+// 판정한다. 판정이 두 벌이 되면 today 와 원래 화면이 **다른 수를 말한다.**
+
+import { WEEKLY_CRYSTAL_SALE_LIMIT } from '@core/lib/boss-matching'
+import type { MatchedBoss } from '@core/lib/boss-matching'
+import type { DropHistoryPeriodGroup, DropHistoryRecord } from '@core/lib/drop-history'
+import type { BossProfitRow } from '@core/features/boss-profit/store'
+import type { ContentCharacterView } from '@core/features/content-scheduler/store'
+import type { BossCharacterView } from '@core/features/boss-scheduler/store'
+import type { CharacterBasicProfile, DailyContent, WeeklyContent } from '@core/types'
+
+import { buildTodayViewModel, type TodayViewModelInput } from '../view-model'
+
+// 2026-08-17(월) 12:00 KST. 이 시점의 주간 기간 키는 직전 목요일인 2026-08-13 이다.
+const NOW = new Date('2026-08-17T03:00:00.000Z')
+const WEEK_KEY = '2026-08-13'
+const HOUR_MS = 60 * 60 * 1000
+
+function daily(overrides: Partial<DailyContent> = {}): DailyContent {
+  return {
+    name: '일일 퀘스트',
+    kind: 'quest',
+    isRegistered: true,
+    nowCount: 0,
+    maxCount: 0,
+    questState: 0,
+    ...overrides,
+  }
+}
+
+function weekly(overrides: Partial<WeeklyContent> = {}): WeeklyContent {
+  return {
+    name: '[주간 퀘스트] 크리티아스',
+    kind: 'quest',
+    isRegistered: true,
+    nowCount: 0,
+    maxCount: 0,
+    questState: 0,
+    ...overrides,
+  }
+}
+
+function boss(overrides: Partial<MatchedBoss> = {}): MatchedBoss {
+  return {
+    apiName: '스우',
+    difficulty: '노멀',
+    cycle: 'weekly',
+    isRegistered: true,
+    isComplete: false,
+    ownComplete: false,
+    matchedBossName: '스우',
+    portraitSlug: null,
+    isSeasonBoss: false,
+    ...overrides,
+  }
+}
+
+function contentView(ocid: string, overrides: Partial<ContentCharacterView> = {}): ContentCharacterView {
+  return {
+    ocid,
+    characterName: ocid,
+    dailyContents: [],
+    weeklyContents: [],
+    isStale: false,
+    syncedAt: NOW.toISOString(),
+    error: null,
+    ...overrides,
+  }
+}
+
+function bossView(ocid: string, overrides: Partial<BossCharacterView> = {}): BossCharacterView {
+  return {
+    ocid,
+    characterName: ocid,
+    weeklyBosses: [],
+    monthlyBosses: [],
+    weeklyBossClearCount: 0,
+    weeklyBossClearLimitCount: 12,
+    isStale: false,
+    syncedAt: NOW.toISOString(),
+    error: null,
+    ...overrides,
+  }
+}
+
+function profitRow(overrides: Partial<BossProfitRow> = {}): BossProfitRow {
+  return {
+    ocid: 'a',
+    characterName: 'a',
+    imageUrl: null,
+    world: '스카니아',
+    boss: '스우',
+    difficulty: '노멀',
+    cycle: 'weekly',
+    periodKey: WEEK_KEY,
+    periodLabel: '이번 주',
+    priceMeso: 100,
+    maxPartySize: 6,
+    partySize: 1,
+    payoutMeso: 100,
+    isComplete: true,
+    ...overrides,
+  }
+}
+
+function dropRecord(overrides: Partial<DropHistoryRecord> = {}): DropHistoryRecord {
+  return {
+    ocid: 'a',
+    boss: '스우',
+    difficulty: '노멀',
+    periodKey: WEEK_KEY,
+    category: 'equipment',
+    itemName: '가디언 엔젤링',
+    quantity: 1,
+    ...overrides,
+  }
+}
+
+function dropGroup(records: DropHistoryRecord[], periodKey = WEEK_KEY): DropHistoryPeriodGroup {
+  return { periodKey, cycle: periodKey.split('-').length === 3 ? 'weekly' : 'monthly', records }
+}
+
+function profile(overrides: Partial<CharacterBasicProfile> = {}): CharacterBasicProfile {
+  return {
+    name: '단풍루틴',
+    level: 291,
+    imageUrl: 'https://example.test/a.png',
+    accessFlag: true,
+    ...overrides,
+  }
+}
+
+function input(overrides: Partial<TodayViewModelInput> = {}): TodayViewModelInput {
+  return {
+    now: NOW,
+    orderedOcids: [],
+    representativeOcid: null,
+    profilesByOcid: {},
+    contentCharacters: [],
+    bossCharacters: [],
+    trackingMode: 'auto',
+    manualTrackedByOcid: null,
+    characterIssues: {},
+    profitRows: [],
+    profitDropsByRowKey: {},
+    dropGroups: [],
+    drought: null,
+    ...overrides,
+  }
+}
+
+describe('남은 스케줄 — 분류 넷 ([[ADR-146]] 정정 3)', () => {
+  it('일퀘·주간퀘는 content-completion 의 미완료 수다', () => {
+    const model = buildTodayViewModel(
+      input({
+        orderedOcids: ['a'],
+        contentCharacters: [
+          contentView('a', {
+            dailyContents: [daily({ name: 'd1', questState: 2 }), daily({ name: 'd2' }), daily({ name: 'd3' })],
+            weeklyContents: [weekly({ name: '[주간 퀘스트] 크리티아스', questState: 2 }), weekly({ name: '에르다 스펙트럼', kind: 'contents', nowCount: 0, maxCount: 1 })],
+          }),
+        ],
+      }),
+    )
+
+    expect(model.schedule[0].dailyQuest).toBe(2)
+    expect(model.schedule[0].weeklyQuest).toBe(1)
+  })
+
+  // 무릉도장은 «다 했다» 가 정의되지 않는다 — 세면 링도 위젯도 영원히 안 찬다.
+  it('끝이 없는 항목(무릉도장)은 남은 개수에 들지 않는다', () => {
+    const model = buildTodayViewModel(
+      input({
+        orderedOcids: ['a'],
+        contentCharacters: [
+          contentView('a', {
+            weeklyContents: [weekly({ name: '[주간 퀘스트] 무릉도장', nowCount: 0, maxCount: 0 })],
+          }),
+        ],
+      }),
+    )
+
+    expect(model.schedule[0].weeklyQuest).toBe(0)
+    expect(model.scheduleTotal).toBe(0)
+  })
+
+  it('주간 보스·검마는 displayedBosses 의 미완료 수다', () => {
+    const model = buildTodayViewModel(
+      input({
+        orderedOcids: ['a'],
+        bossCharacters: [
+          bossView('a', {
+            weeklyBosses: [
+              boss({ apiName: '스우', isComplete: true }),
+              boss({ apiName: '데미안' }),
+              boss({ apiName: '루시드' }),
+            ],
+            monthlyBosses: [boss({ apiName: '검은 마법사', cycle: 'monthly' })],
+          }),
+        ],
+      }),
+    )
+
+    expect(model.schedule[0].weeklyBoss).toBe(2)
+    expect(model.schedule[0].monthlyBoss).toBe(1)
+    expect(model.schedule[0].remainingTotal).toBe(3)
+  })
+
+  // [[ADR-031]] 결정 5 — 미등록이어도 완료했으면 목록에 든다(그리고 완료라 남은 수엔 안 든다).
+  // 판정을 여기서 다시 쓰면 이 규칙이 today 에서만 빠진다.
+  it('등록되지 않았지만 완료한 보스는 displayedBosses 규칙대로 다뤄진다', () => {
+    const model = buildTodayViewModel(
+      input({
+        orderedOcids: ['a'],
+        bossCharacters: [
+          bossView('a', {
+            weeklyBosses: [
+              boss({ apiName: '스우', difficulty: '하드', isRegistered: false, isComplete: true }),
+              boss({ apiName: '스우', difficulty: '노멀', isRegistered: false, isComplete: false }),
+            ],
+          }),
+        ],
+      }),
+    )
+
+    expect(model.schedule[0].weeklyBoss).toBe(0)
+  })
+
+  it('선택된 캐릭터를 전부 담는다 — 「외 N명」 접기가 없다', () => {
+    const ocids = ['a', 'b', 'c', 'd', 'e', 'f']
+    const model = buildTodayViewModel(
+      input({
+        orderedOcids: ocids,
+        contentCharacters: ocids.map((ocid) => contentView(ocid)),
+      }),
+    )
+
+    expect(model.schedule).toHaveLength(6)
+  })
+})
+
+describe('남은 스케줄 — 정렬 ([[ADR-146]] 정정 12)', () => {
+  function withRemaining(ocid: string, remaining: number): ContentCharacterView {
+    return contentView(ocid, {
+      dailyContents: Array.from({ length: remaining }, (_, index) => daily({ name: `${ocid}-${index}` })),
+    })
+  }
+
+  it('남은 개수 많은 순이다', () => {
+    const model = buildTodayViewModel(
+      input({
+        orderedOcids: ['a', 'b', 'c'],
+        contentCharacters: [withRemaining('a', 1), withRemaining('b', 5), withRemaining('c', 3)],
+      }),
+    )
+
+    expect(model.schedule.map((row) => row.ocid)).toEqual(['b', 'c', 'a'])
+  })
+
+  it('동수면 캐릭터 관리 순서다', () => {
+    const model = buildTodayViewModel(
+      input({
+        orderedOcids: ['c', 'a', 'b'],
+        // 스토어 순서(레벨 내림차순)와 관리 순서가 다르다 — 관리 순서가 이긴다.
+        contentCharacters: [withRemaining('a', 2), withRemaining('b', 2), withRemaining('c', 2)],
+      }),
+    )
+
+    expect(model.schedule.map((row) => row.ocid)).toEqual(['c', 'a', 'b'])
+  })
+
+  // 남은 개수를 «모르는» 것이라, 위로 올리면 «제일 밀린 캐릭터» 자리를 모르는 값이 차지한다.
+  it('동기화 실패 캐릭터는 남은 개수가 많아도 맨 아래다', () => {
+    const model = buildTodayViewModel(
+      input({
+        orderedOcids: ['a', 'b'],
+        contentCharacters: [withRemaining('a', 9), withRemaining('b', 1)],
+        characterIssues: { a: 'failed' },
+      }),
+    )
+
+    expect(model.schedule.map((row) => row.ocid)).toEqual(['b', 'a'])
+    expect(model.schedule[1].hasSyncIssue).toBe(true)
+  })
+
+  it('실패 캐릭터의 남은 개수는 합계에 넣지 않는다', () => {
+    const model = buildTodayViewModel(
+      input({
+        orderedOcids: ['a', 'b'],
+        contentCharacters: [withRemaining('a', 9), withRemaining('b', 1)],
+        characterIssues: { a: 'unavailable' },
+      }),
+    )
+
+    expect(model.scheduleTotal).toBe(1)
+  })
+})
+
+describe('대표 캐릭터 ([[ADR-146]] 정정 2)', () => {
+  it('저장된 대표를 쓴다', () => {
+    const model = buildTodayViewModel(
+      input({
+        orderedOcids: ['a', 'b'],
+        representativeOcid: 'b',
+        profilesByOcid: { a: profile({ name: '가' }), b: profile({ name: '나' }) },
+      }),
+    )
+
+    expect(model.representative?.ocid).toBe('b')
+    expect(model.representative?.name).toBe('나')
+  })
+
+  it('미지정이면 목록의 첫 번째가 선다 — «대표 없음» 상태가 없다', () => {
+    const model = buildTodayViewModel(
+      input({
+        orderedOcids: ['a', 'b'],
+        representativeOcid: null,
+        profilesByOcid: { a: profile({ name: '가' }), b: profile({ name: '나' }) },
+      }),
+    )
+
+    expect(model.representative?.ocid).toBe('a')
+  })
+
+  it('목록이 비면 null 이다', () => {
+    expect(buildTodayViewModel(input()).representative).toBeNull()
+  })
+
+  // 이름 없이 카드를 그릴 수 없다 — ocid 는 사용자에게 뜻이 없는 값이라 대신 넣지 않는다.
+  it('캐시에 프로필이 없으면 null 이다', () => {
+    const model = buildTodayViewModel(input({ orderedOcids: ['a'], profilesByOcid: {} }))
+    expect(model.representative).toBeNull()
+  })
+
+  it('옛 캐시에 없는 필드(직업·경험치·길드)는 그대로 비운다', () => {
+    const model = buildTodayViewModel(
+      input({ orderedOcids: ['a'], profilesByOcid: { a: profile() } }),
+    )
+
+    expect(model.representative?.jobClass).toBeUndefined()
+    expect(model.representative?.expRate).toBeUndefined()
+    expect(model.representative?.guildName).toBeUndefined()
+  })
+})
+
+describe('주간 보스 수익 ([[ADR-146]] 정정 4)', () => {
+  it('결정석과 아이템 판매가를 함께 더한다', () => {
+    const drops = { [`a|스우|노멀|${WEEK_KEY}`]: [{ category: 'equipment' as const, itemName: '반지', quantity: 1, priceState: 'entered' as const, priceMeso: 60, priceShare: 2 }] }
+    const model = buildTodayViewModel(
+      input({
+        orderedOcids: ['a'],
+        profitRows: [profitRow({ payoutMeso: 100 })],
+        profitDropsByRowKey: drops,
+      }),
+    )
+
+    expect(model.profit.totalMeso).toBe(130)
+    expect(model.profit.hasRecords).toBe(true)
+  })
+
+  it('기록이 하나도 없으면 0 이고 «미기록» 을 함께 말한다', () => {
+    const model = buildTodayViewModel(input())
+
+    expect(model.profit.totalMeso).toBe(0)
+    expect(model.profit.hasRecords).toBe(false)
+  })
+
+  it('보던 기간이 이번 주가 아니면 그 행은 세지 않는다', () => {
+    const model = buildTodayViewModel(
+      input({ orderedOcids: ['a'], profitRows: [profitRow({ periodKey: '2026-08-06' })] }),
+    )
+
+    expect(model.profit.totalMeso).toBe(0)
+    expect(model.profit.hasRecords).toBe(false)
+  })
+
+  it('캐릭터별 상위 셋을 금액 내림차순으로 담는다', () => {
+    const model = buildTodayViewModel(
+      input({
+        orderedOcids: ['a', 'b', 'c', 'd'],
+        profitRows: [
+          profitRow({ ocid: 'a', characterName: '가', payoutMeso: 10 }),
+          profitRow({ ocid: 'b', characterName: '나', payoutMeso: 40 }),
+          profitRow({ ocid: 'c', characterName: '다', payoutMeso: 30 }),
+          profitRow({ ocid: 'd', characterName: '라', payoutMeso: 20 }),
+        ],
+      }),
+    )
+
+    expect(model.profit.topCharacters.map((entry) => entry.ocid)).toEqual(['b', 'c', 'd'])
+    expect(model.profit.topCharacters[0].totalMeso).toBe(40)
+    expect(model.profit.totalMeso).toBe(100)
+  })
+})
+
+describe('최고가 아이템 ([[ADR-146]] 결정 9 · 정정 5)', () => {
+  it('기록된 판매가 순위이고 최대 다섯이다', () => {
+    const priced = (itemName: string, priceMeso: number): DropHistoryRecord =>
+      dropRecord({ itemName, priceState: 'entered', priceMeso })
+    const model = buildTodayViewModel(
+      input({
+        dropGroups: [
+          dropGroup([
+            priced('1위', 900),
+            priced('3위', 700),
+            priced('2위', 800),
+            priced('4위', 600),
+            priced('5위', 500),
+            priced('6위', 400),
+          ]),
+        ],
+      }),
+    )
+
+    expect(model.topItem?.top.itemName).toBe('1위')
+    expect(model.topItem?.rest.map((entry) => entry.itemName)).toEqual(['2위', '3위', '4위', '5위'])
+  })
+
+  // 값을 모르는 것을 «가장 싼 것» 으로 단정하지 않는다.
+  it('가격 미입력 기록은 순위에 들지 않는다', () => {
+    const model = buildTodayViewModel(
+      input({
+        dropGroups: [
+          dropGroup([
+            dropRecord({ itemName: '미입력' }),
+            dropRecord({ itemName: '입력함', priceState: 'entered', priceMeso: 10 }),
+          ]),
+        ],
+      }),
+    )
+
+    expect(model.topItem?.top.itemName).toBe('입력함')
+    expect(model.topItem?.rest).toEqual([])
+  })
+
+  it('전부 미입력이면 최고가가 없고 미입력 건수가 남는다', () => {
+    const model = buildTodayViewModel(
+      input({ dropGroups: [dropGroup([dropRecord({ itemName: 'a' }), dropRecord({ itemName: 'b' })])] }),
+    )
+
+    expect(model.topItem).toBeNull()
+    expect(model.unpricedCount).toBe(2)
+  })
+
+  // 'excluded' 는 «값을 매기지 않기로 한» 사용자의 결정이라 기다리는 건이 아니다.
+  it('기록 안함(excluded)은 미입력으로 세지 않는다', () => {
+    const model = buildTodayViewModel(
+      input({ dropGroups: [dropGroup([dropRecord({ itemName: 'a', priceState: 'excluded' })])] }),
+    )
+
+    expect(model.unpricedCount).toBe(0)
+  })
+
+  it('지난 주 기록은 이번 주 순위·미입력 건수에 들지 않는다', () => {
+    const model = buildTodayViewModel(
+      input({
+        dropGroups: [
+          dropGroup(
+            [dropRecord({ periodKey: '2026-08-06', itemName: '지난주', priceState: 'entered', priceMeso: 9999 })],
+            '2026-08-06',
+          ),
+        ],
+      }),
+    )
+
+    expect(model.topItem).toBeNull()
+    expect(model.unpricedCount).toBe(0)
+  })
+})
+
+describe('주간 결정석 판매 한도 ([[ADR-054]])', () => {
+  it('월드별로 갈리고 분모는 WEEKLY_CRYSTAL_SALE_LIMIT 이다', () => {
+    const model = buildTodayViewModel(
+      input({
+        orderedOcids: ['a', 'b'],
+        profitRows: [
+          profitRow({ ocid: 'a', world: '스카니아', boss: '스우', isComplete: true }),
+          profitRow({ ocid: 'a', world: '스카니아', boss: '데미안', isComplete: true }),
+          profitRow({ ocid: 'b', world: '루나', boss: '스우', isComplete: true }),
+          profitRow({ ocid: 'b', world: '루나', boss: '루시드', isComplete: false }),
+        ],
+      }),
+    )
+
+    expect(model.crystalLimits).toEqual([
+      { world: '스카니아', cleared: 2, limit: WEEKLY_CRYSTAL_SALE_LIMIT },
+      { world: '루나', cleared: 1, limit: WEEKLY_CRYSTAL_SALE_LIMIT },
+    ])
+  })
+})
+
+describe('아이템 드롭 가뭄 ([[ADR-146]] 정정 6)', () => {
+  it('단계와 풀 크기를 함께 실어 화면이 인덱스만 고르게 한다', () => {
+    const model = buildTodayViewModel(
+      input({
+        drought: { periodKey: WEEK_KEY, cycle: 'weekly', weeksSince: 0, records: [dropRecord({ itemName: '칠흑의 보스 반지 상자' })] },
+      }),
+    )
+
+    expect(model.drought?.weeksSince).toBe(0)
+    expect(model.drought?.tier).toBe(0)
+    expect(model.drought?.headlineCount).toBeGreaterThan(1)
+    expect(model.drought?.itemsLabel).toBe('칠흑의 보스 반지 상자')
+  })
+
+  it('고가 기록이 한 번도 없으면 null 이다', () => {
+    expect(buildTodayViewModel(input()).drought).toBeNull()
+  })
+})
+
+describe('초기화 카운트다운', () => {
+  // now 를 고정하면 전부 결정적이다 — 이 파일이 `new Date()` 를 부르지 않는 이유.
+  it('일간·주간·월간 초기화까지 남은 시간을 KST 기준으로 센다', () => {
+    const model = buildTodayViewModel(input())
+
+    // 2026-08-18 00:00 KST
+    expect(model.resets.daily.remainingMs).toBe(12 * HOUR_MS)
+    // 2026-08-20(목) 00:00 KST
+    expect(model.resets.weekly.remainingMs).toBe(60 * HOUR_MS)
+    // 2026-09-01 00:00 KST
+    expect(model.resets.monthly.remainingMs).toBe(348 * HOUR_MS)
+  })
+
+  it('다음 초기화 시각도 함께 준다 — 화면이 1초마다 다시 세도 기준이 흔들리지 않는다', () => {
+    const model = buildTodayViewModel(input())
+
+    expect(new Date(model.resets.daily.atMs).toISOString()).toBe('2026-08-17T15:00:00.000Z')
+    expect(new Date(model.resets.weekly.atMs).toISOString()).toBe('2026-08-19T15:00:00.000Z')
+    expect(new Date(model.resets.monthly.atMs).toISOString()).toBe('2026-08-31T15:00:00.000Z')
+  })
+})
