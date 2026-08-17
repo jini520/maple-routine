@@ -21,7 +21,9 @@
     {
       "step": 2,
       "name": "representative-display",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-17T21:04:09+0900",
+      "summary": "resolveDisplayRepresentative 신설 — 저장 대표가 목록에 있으면 그것, 없거나 미지정이면 첫 번째(ADR-143 결정 4의 «임시 대표»), 빈 목록이면 null. resolveRepresentative 는 한 줄도 안 고쳐 ADR-144 결정 4(«대표를 안 고르면 채워진 별이 없다»)가 그대로 서고, 두 함수가 «말했는가» vs «자리에 설 캐릭터» 로 다른 질문임을 양쪽 주석에 박아 합치기를 막았다. 파생값은 저장하지 않는다. 신규 5케이스(그중 하나는 회귀 가드)."
     },
     {
       "step": 3,

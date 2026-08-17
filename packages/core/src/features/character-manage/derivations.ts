@@ -120,13 +120,35 @@ export function buildSelectedCharacterViews(
 /**
  * 저장된 대표가 **지금 목록에서도 유효한가**만 답한다([[ADR-144]] 결정 4).
  *
- * «미지정이면 첫 번째» 를 여기서 만들지 않는다 — 그 값을 읽는 화면이 아직 하나도 없고, 화면은
- * 대표가 없을 때 **아무 표시도 하지 않기로** 했다. 목록에서 빠진 대표를 지우는 일은 저장 헬퍼
+ * «미지정이면 첫 번째» 를 여기서 만들지 않는다 — 캐릭터 관리 화면은 대표가 없을 때 **아무 표시도
+ * 하지 않기로** 했고(채워진 별이 하나도 없는 화면), 여기를 폴백시키면 «사용자가 고른 적 없는
+ * 캐릭터의 별이 채워져 있는» 상태가 만들어진다. 목록에서 빠진 대표를 지우는 일은 저장 헬퍼
  * (`setCharacterSelection`)가 이미 한다.
+ *
+ * **`resolveDisplayRepresentative` 와 합치지 마라.** 이름은 비슷하지만 묻는 것이 다르다 —
+ * 이쪽은 «사용자가 대표라고 **말했는가**», 저쪽은 «지금 대표 **자리에 설** 캐릭터는 누구인가».
  */
 export function resolveRepresentative(orderedOcids: string[], stored: string | null): string | null {
   if (stored === null || !orderedOcids.includes(stored)) {
     return null
   }
   return stored
+}
+
+/**
+ * 지금 «대표 자리» 에 설 캐릭터. 미지정이면 목록의 첫 번째([[ADR-143]] 결정 4의 «임시 대표»).
+ * **저장하지 않는 파생값**이다 — 저장하면 순서가 바뀔 때마다 «사용자가 고른 대표» 와 «앱이 적어 둔
+ * 대표» 두 진실이 갈린다.
+ *
+ * `today` 의 「대표 캐릭터」 위젯이 이 값의 첫 독자다([[ADR-146]] 정정 2) — 그 화면은 «대표 없음»
+ * 상태를 갖지 않으므로 자리에 설 캐릭터가 늘 하나 있어야 한다.
+ *
+ * **`resolveRepresentative` 와 합치지 마라** — 위 함수 주석의 이유. 저장된 대표가 목록에 없으면
+ * 여기서도 첫 번째로 떨어진다(참조 무결성은 쓰는 쪽이 지키지만, 읽는 쪽도 안전해야 한다).
+ */
+export function resolveDisplayRepresentative(
+  orderedOcids: string[],
+  stored: string | null,
+): string | null {
+  return resolveRepresentative(orderedOcids, stored) ?? orderedOcids[0] ?? null
 }

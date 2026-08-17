@@ -4,6 +4,7 @@ import type { MapleAccount, MapleCharacter } from '@core/types'
 import { pickRepresentativeCharacter } from '../../onboarding/representative-character'
 import {
   buildSelectedCharacterViews,
+  resolveDisplayRepresentative,
   resolveRepresentative,
   sortAccountSummaries,
   summarizeAccount,
@@ -250,6 +251,32 @@ describe('resolveRepresentative', () => {
 
   it('목록이 비어 있으면 null 이다', () => {
     expect(resolveRepresentative([], 'a')).toBeNull()
+  })
+})
+
+// ADR-146 정정 2 — today 의 「대표 캐릭터」 위젯이 ADR-143 결정 4의 «미지정이면 첫 번째» 를 읽는
+// 첫 화면이다. resolveRepresentative 와 **다른 질문**이라 옆에 하나 더 두었고, 아래 회귀 가드가
+// 그 둘이 합쳐지는 것을 막는다(합치면 ADR-144 결정 4의 «채워진 별이 하나도 없다» 가 깨진다).
+describe('resolveDisplayRepresentative', () => {
+  it('저장된 대표가 목록에 있으면 그것이다', () => {
+    expect(resolveDisplayRepresentative(['a', 'b', 'c'], 'b')).toBe('b')
+  })
+
+  it('저장된 대표가 목록에 없으면 첫 번째다', () => {
+    expect(resolveDisplayRepresentative(['a', 'b'], 'zzz')).toBe('a')
+  })
+
+  it('저장값이 없으면 첫 번째가 임시 대표다', () => {
+    expect(resolveDisplayRepresentative(['a', 'b'], null)).toBe('a')
+  })
+
+  it('목록이 비어 있으면 null 이다', () => {
+    expect(resolveDisplayRepresentative([], 'a')).toBeNull()
+  })
+
+  it('회귀 가드 — 같은 입력에 resolveRepresentative 는 여전히 null 이다', () => {
+    expect(resolveRepresentative(['a', 'b'], null)).toBeNull()
+    expect(resolveRepresentative(['a', 'b'], 'zzz')).toBeNull()
   })
 })
 
