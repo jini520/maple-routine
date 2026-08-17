@@ -188,6 +188,21 @@ describe('바는 «지금 페이지» 가 정하는 층을 그린다 ([[ADR-132]
     expect(screen.queryByTestId('bar-group-schedule')).toBeNull()
   })
 
+  // [[ADR-145]] 결정 1 — 헤더 버튼으로 열던 하위 페이지가 하위 행의 셋째 항목이 됐다. 여기서 물을
+  // 것은 «바에 섰는가» 가 아니라 **«눌러서 그 화면이 열리는가»** 다(라우트 표만 고치고 내비게이터에
+  // 안 꽂으면 바에는 서고 화면은 안 바뀐다 — 2026-08-13 설정 탭 사고와 같은 부류).
+  it('스케줄 하위의 보스 관리를 누르면 그 화면이 열린다', async () => {
+    await render(<NavigationHarness />)
+
+    await press('bar-group-schedule')
+    await press('bar-sub-BossManage')
+
+    expect(screen.getByTestId('screen-BossManage')).toBeTruthy()
+    // 하위 행에 남아 있다 — 탭이지 push 가 아니므로 층이 안 바뀐다.
+    expect(screen.getByTestId('bar-sub-Boss')).toBeTruthy()
+    expect(screen.getByTestId('bar-back')).toBeTruthy()
+  })
+
   it('하위가 없는 그룹은 그룹 행을 유지한다 — ← 도 안 선다', async () => {
     await render(<NavigationHarness />)
 
@@ -271,6 +286,9 @@ describe('광고 게이트는 그룹 이동에만 (결정 9)', () => {
     maybeShowTabSwitchAdMock.mockClear()
 
     await press('bar-sub-Boss')
+    // 보스 관리도 **하위 이동**이다([[ADR-145]] 결정 1) — 하위 페이지였을 때는 게이트 밖이었으므로
+    // 탭이 되면서 게이트를 타기 시작하면 그것이 회귀다.
+    await press('bar-sub-BossManage')
     await press('bar-back')
 
     expect(maybeShowTabSwitchAdMock).not.toHaveBeenCalled()

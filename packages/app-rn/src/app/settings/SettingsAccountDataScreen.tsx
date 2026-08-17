@@ -40,6 +40,7 @@ import { formatBytes } from '@core/lib/format-bytes'
 import type { CacheDataSelection } from '@core/storage/cache-data'
 
 import { Card } from '../../components/atoms/Card/Card'
+import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { ArrowLeftIcon } from '../../lib/icons'
@@ -95,7 +96,7 @@ export function SettingsAccountDataScreen(
         hasTabBar={false}
         header={
           <PageHeader>
-            <View className="flex-row items-center gap-2">
+            <PageHeaderTitleRow className="gap-2">
               <Pressable
                 role="button"
                 aria-label="뒤로"
@@ -105,7 +106,7 @@ export function SettingsAccountDataScreen(
                 <ArrowLeftIcon className="h-5 w-5 text-text-muted" strokeWidth={2} aria-hidden />
               </Pressable>
               <Text className="text-lg font-semibold text-text">계정 및 데이터</Text>
-            </View>
+            </PageHeaderTitleRow>
           </PageHeader>
         }
       >

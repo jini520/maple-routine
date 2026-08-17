@@ -84,10 +84,13 @@ describe('ROUTE_TABLE — 계획서 §1 대조', () => {
 
   // 라벨은 여기 없다 — 바가 라벨을 두 층에서 쓰므로 `bar-model.ts` 의 `BAR_GROUPS` 가 갖는다
   // ([[ADR-132]] 결정 1). 그 표와 이 목록이 같은 집합인지는 `bar-model.test.ts` 가 본다.
-  it('탭 화면은 여덟이고 표에서 파생된다', () => {
+  it('탭 화면은 아홉이고 표에서 파생된다', () => {
     expect(TAB_ROUTE_NAMES).toEqual([
       'Content',
       'Boss',
+      // 웹에서는 `/boss` 위로 밀려 올라오던 하위 페이지다([[ADR-145]] 결정 1) — RN 에서만 형제 탭이라
+      // 이 목록에 웹 경로가 하나 더 든다.
+      'BossManage',
       'Profit',
       'Settings',
       'Today',
@@ -98,10 +101,20 @@ describe('ROUTE_TABLE — 계획서 §1 대조', () => {
     expect(new Set(TAB_ROUTE_NAMES).size).toBe(TAB_ROUTE_NAMES.length)
   })
 
-  it('하위 페이지는 열둘이고 이름이 겹치지 않는다', () => {
+  // **웹 경로인데 탭인 행은 이것 하나다**([[ADR-145]] 결정 1). 나머지 `/…/…` 경로는 전부 push 이므로,
+  // 이 예외가 조용히 늘어나면(= 다른 하위 페이지도 탭이 되면) 여기서 드러난다.
+  it('웹의 하위 경로 중 탭이 된 것은 보스 관리 하나다', () => {
+    const promoted = ROUTE_TABLE.filter(
+      (row) => row.origin === 'web' && row.path.split('/').length > 2 && row.target.kind === 'tab',
+    )
+
+    expect(promoted.map((row) => row.path)).toEqual(['/boss/manage'])
+    expect(promoted[0]?.target).toEqual({ kind: 'tab', route: 'BossManage' })
+  })
+
+  it('하위 페이지는 열하나이고 이름이 겹치지 않는다', () => {
     expect(STACK_ROUTE_NAMES).toEqual([
       'ContentManage',
-      'BossManage',
       'DropHistory',
       'DropPrice',
       'SettingsFeatureGuideList',

@@ -14,14 +14,17 @@
 // ② **`resolveContentOffsetPx` 로 목록을 내리던 `transform`**([[ADR-073]] 결정 6) — OS 가 한다.
 // ③ **`useScreenStackStore` 의 깊이로 당김을 끄던 배선**([[ADR-120]] 결정 10). 하위 페이지는 루트
 //    스택에 **덮여** 올라오므로 아래 화면의 스크롤 뷰에 손가락이 닿지 않는다.
-// ④ **`<Outlet />`**([[ADR-077]] 언마운트 금지). 관리 페이지는 형제 라우트가 아니라 루트 스택
-//    push 라 이 화면이 트리에 그대로 남는다 — 계약을 코드가 아니라 내비게이터가 지킨다.
+// ④ **`<Outlet />`**([[ADR-077]] 언마운트 금지). 관리 페이지는 형제 라우트가 아니라 **형제 탭**이라
+//    ([[ADR-145]] 결정 1 — 그전에는 루트 스택 push 였다) 이 화면이 트리에 그대로 남는다 — 계약을
+//    코드가 아니라 내비게이터가 지킨다.
 //
 // ══ 갈린 것 다섯 ═══════════════════════════════════════════════════════════════════
 //
-// ① `useNavigate('/boss/manage')` → `navigation.navigate('BossManage')`. **[[ADR-098]] 결정 1
-//    (이동 전에 스크롤을 0으로)은 함께 사라진다** — 그 처방이 풀던 것은 네 탭이 문서 스크롤 하나를
-//    공유하던 문제이고([[ADR-099]]), RN 에서는 스크롤이 화면과 함께 죽어 계승할 오프셋이 없다.
+// ① `useNavigate('/boss/manage')` → `navigation.navigate('Tabs', { screen: 'BossManage' })`.
+//    **[[ADR-098]] 결정 1(이동 전에 스크롤을 0으로)은 함께 사라진다** — 그 처방이 풀던 것은 네 탭이
+//    문서 스크롤 하나를 공유하던 문제이고([[ADR-099]]), RN 에서는 스크롤이 화면과 함께 죽어 계승할
+//    오프셋이 없다. **목적지가 push 가 아니라 형제 탭인 것은 [[ADR-145]] 결정 1 이다** — 그래서
+//    이 화면의 헤더에는 그리로 가는 버튼이 아예 없고, 남은 호출부는 빈 상태 CTA 하나다.
 // ② **캐릭터 관리 피커가 이 화면에 없다**([[ADR-140]]). 헤더 버튼도, 그것이 열던 모달도, 그 모달을
 //    먹여 살리던 로스터 조회([[ADR-015]]·[[ADR-016]]·[[ADR-053]]·[[ADR-062]])도, 웹의 `?openPicker=1`
 //    을 받던 라우트 파라미터도 **설정 화면으로 통째로 옮겨갔다** — 추적 목록은 [[ADR-042]] 이후 앱
@@ -72,6 +75,7 @@ import { LoadingState } from '../../components/molecules/LoadingState/LoadingSta
 import { MediaCard, MediaCardArt } from '../../components/molecules/MediaCardArt/MediaCardArt'
 import { PartySizeModal } from '../../components/organisms/PartySizeModal/PartySizeModal'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
+import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { SPIN_ANIMATION } from '../../lib/animation'
 import { AnimatedView } from '../../lib/nativewind-interop'
@@ -344,14 +348,15 @@ export function BossScreen(): React.JSX.Element {
     navigation.navigate('Tabs', { screen: 'Settings', params: { openPicker: true } })
   }
 
-  // [[ADR-035]] 결정 18: 추적 편집(수동)과 파티원 수 설정을 관리 페이지 하나로 통합 — 두 모드 공통
-  // 진입점이다. 헤더의 짝이던 "캐릭터 관리"가 설정으로 가면서([[ADR-140]]) 이제 이 버튼 하나다.
-  // 잘린 버튼은 목적지를 잃는다([[ADR-141]] 결정 3) — 줄어드는 것은 시각 텍스트뿐이다.
-  const bossManageButton = (
-    <Pressable role="button" className="shrink-0" onPress={() => navigation.navigate('BossManage')}>
-      <Text className="text-sm font-medium text-text-muted">보스 관리</Text>
-    </Pressable>
-  )
+  // [[ADR-035]] 결정 18 이 만든 헤더 진입점("보스 관리")은 **여기 없다**([[ADR-145]] 결정 1) —
+  // 그 화면이 스케줄 그룹의 하위 탭이 되면서 진입 자리를 하단바가 가져갔다. [[ADR-140]] 이 걷은
+  // "캐릭터 관리"에 이어 제목 줄의 두 번째이자 마지막 버튼이 사라진 것이라, 이제 그 줄에서 폭을
+  // 다투는 상대가 없다([[ADR-141]] 결정 3의 `shrink-0` 짝이 하나만 남는다).
+  //
+  // 남는 것은 빈 상태 CTA 하나이고, 그것도 push 가 아니라 **형제 탭**으로 보낸다.
+  function goToBossManage(): void {
+    navigation.navigate('Tabs', { screen: 'BossManage' })
+  }
 
   // [[ADR-060]]: 빈 상태 문구는 탭(주간/월간)과 모드(수동/자동)별로 나눈다. 수동 모드만 CTA를 준다 —
   // 자동 모드가 지시하는 곳("게임에서 등록")은 앱 밖이라 데려다줄 수 없다.
@@ -362,7 +367,7 @@ export function BossScreen(): React.JSX.Element {
         icon: SwordsIcon,
         title: `추적할 ${label} 보스가 없습니다`,
         description: `보스 관리에서 이번 ${tab === 'weekly' ? '주' : '달'}에 잡을 보스를 골라주세요`,
-        action: { label: '보스 관리', onClick: () => navigation.navigate('BossManage') },
+        action: { label: '보스 관리', onClick: goToBossManage },
       }
     }
     return {
@@ -390,7 +395,11 @@ export function BossScreen(): React.JSX.Element {
     // 웹의 `min-h-[calc(100dvh …)]` 자리는 `flex-1` 이다(탭 상자가 이미 탭바를 뺀 크기다).
     return (
       <View testID="screen-Boss" className="flex-1 p-4" style={{ paddingTop: insets.top }}>
-        <Text className="text-lg font-semibold text-text">보스 스케줄러</Text>
+        {/* 헤더 셸을 안 쓰는 가지에서도 제목 줄은 같은 프리미티브다([[ADR-145]] 정정 1) — 빈 상태와
+            목록 상태를 오갈 때 제목이 튀면 그것이 가장 눈에 띄는 자리다. */}
+        <PageHeaderTitleRow>
+          <Text className="text-lg font-semibold text-text">보스 스케줄러</Text>
+        </PageHeaderTitleRow>
 
         <View className="flex-1 items-center justify-center">
           <EmptyState
@@ -425,30 +434,29 @@ export function BossScreen(): React.JSX.Element {
           // 한다. RN 에서 헤더는 스크롤 뷰의 **형제**라 `fixed` 도 spacer 도 없다([[ADR-098]] 결정 2 가
           // 웹에서 풀던 문제가 구조적으로 없다 — `PageHeader` 파일 머리).
           <PageHeader>
-            <View className="flex-row items-center justify-between">
-              <View className="shrink flex-row items-center gap-2">
-                {/* [[ADR-141]] 결정 1·3: 동기화 상태가 드롭다운 줄에서 **제목 옆**으로 올라왔고,
-                    폭을 다투면 시각 텍스트만 줄어든다(제목·관리 버튼은 `shrink-0`). */}
-                <Text className="shrink-0 text-lg font-semibold text-text">보스 스케줄러</Text>
-                <Text className="shrink text-sm text-text-muted" numberOfLines={1}>
-                  {status === 'loading' ? '조회 중...' : selected !== null ? formatSyncedAt(selected.syncedAt) : ''}
-                </Text>
-                <Pressable
-                  role="button"
-                  aria-label="새로고침"
-                  onPress={() => refresh(trackedOcids ?? [])}
-                  className="shrink-0 p-2"
+            {/* [[ADR-141]] 결정 1·3: 동기화 상태가 드롭다운 줄에서 **제목 옆**으로 올라왔고, 폭을
+                다투면 시각 텍스트만 줄어든다(제목·새로고침은 `shrink-0`). 오른쪽 끝에서 자리를 지키던
+                관리 버튼이 [[ADR-145]] 결정 1 로 사라져 바깥 `justify-between` 줄도 함께 걷었다 —
+                가를 상대가 없는 줄에서 그 속성은 아무 일도 하지 않는다. */}
+            <PageHeaderTitleRow className="gap-2">
+              <Text className="shrink-0 text-lg font-semibold text-text">보스 스케줄러</Text>
+              <Text className="shrink text-sm text-text-muted" numberOfLines={1}>
+                {status === 'loading' ? '조회 중...' : selected !== null ? formatSyncedAt(selected.syncedAt) : ''}
+              </Text>
+              <Pressable
+                role="button"
+                aria-label="새로고침"
+                onPress={() => refresh(trackedOcids ?? [])}
+                className="shrink-0 p-2"
+              >
+                <AnimatedView
+                  testID="refresh-icon"
+                  style={status === 'loading' && !reduceMotion ? SPIN_ANIMATION : undefined}
                 >
-                  <AnimatedView
-                    testID="refresh-icon"
-                    style={status === 'loading' && !reduceMotion ? SPIN_ANIMATION : undefined}
-                  >
-                    <RefreshCwIcon className="h-4 w-4 text-primary-ink" strokeWidth={2} aria-hidden />
-                  </AnimatedView>
-                </Pressable>
-              </View>
-              {selected !== null && bossManageButton}
-            </View>
+                  <RefreshCwIcon className="h-4 w-4 text-primary-ink" strokeWidth={2} aria-hidden />
+                </AnimatedView>
+              </Pressable>
+            </PageHeaderTitleRow>
 
             {/* 조건이 **줄 밖**에 있다 — 컨텐츠 스케줄러와 같은 이유다(그 파일의 같은 자리):
                 안에 두면 캐릭터가 없는 동안 빈 줄이 `gap-4` 를 두 번 먹는다. */}

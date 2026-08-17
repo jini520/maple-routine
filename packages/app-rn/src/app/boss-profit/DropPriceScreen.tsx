@@ -60,6 +60,7 @@ import { ProfitIcon } from '../../components/atoms/ProfitIcon/ProfitIcon'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
+import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { ArrowLeftIcon, ChevronLeftIcon, ChevronRightIcon, PackageOpenIcon } from '../../lib/icons'
 import { TABULAR_NUMS } from '../../lib/text-styles'
@@ -222,7 +223,7 @@ export function DropPriceScreen(): React.JSX.Element {
           // (배경 조각도 하단 페이드도 없는 서브 화면이다). 상단 여백을 안 더하는 것도 같다
           // ([[ADR-139]]).
           <View testID="page-header" className="z-10 px-4 pb-2" style={{ paddingTop: insets.top }}>
-            <View className="flex-row items-center gap-1">
+            <PageHeaderTitleRow className="gap-1">
               <Pressable
                 role="button"
                 onPress={() => navigation.goBack()}
@@ -232,7 +233,7 @@ export function DropPriceScreen(): React.JSX.Element {
                 <ArrowLeftIcon className="h-5 w-5 text-text" strokeWidth={2} aria-hidden />
               </Pressable>
               <Text className="text-lg font-semibold text-text">가격 기록</Text>
-            </View>
+            </PageHeaderTitleRow>
           </View>
         }
       >

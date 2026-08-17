@@ -51,6 +51,9 @@ export const BAR_GROUPS: readonly BarGroup[] = [
     subs: [
       { page: 'Content', label: '컨텐츠' },
       { page: 'Boss', label: '보스' },
+      // 헤더 버튼으로만 열리던 하위 페이지가 셋째 하위가 됐다([[ADR-145]] 결정 1). 순서는 «보던
+      // 화면 → 그 화면을 편집하는 자리» 라 보스 뒤다.
+      { page: 'BossManage', label: '보스 관리' },
     ],
   },
   {

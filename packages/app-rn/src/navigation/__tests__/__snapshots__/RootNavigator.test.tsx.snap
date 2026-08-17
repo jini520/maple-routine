@@ -1332,18 +1332,29 @@ exports[`렌더 트리 스냅샷 탭 골격 1`] = `
                                     }
                                   }
                                 >
-                                  <Text
+                                  <View
                                     style={
                                       {
-                                        "color": "#241208",
-                                        "fontSize": 18,
-                                        "fontWeight": "600",
-                                        "lineHeight": 28,
+                                        "alignItems": "center",
+                                        "flexDirection": "row",
+                                        "minHeight": 32,
                                       }
                                     }
+                                    testID="page-header-title-row"
                                   >
-                                    today
-                                  </Text>
+                                    <Text
+                                      style={
+                                        {
+                                          "color": "#241208",
+                                          "fontSize": 18,
+                                          "fontWeight": "600",
+                                          "lineHeight": 28,
+                                        }
+                                      }
+                                    >
+                                      today
+                                    </Text>
+                                  </View>
                                 </View>
                               </View>
                               <View

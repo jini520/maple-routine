@@ -7,6 +7,7 @@ import {
   PORTRAIT_CAP_HEIGHT_RATIO,
   PORTRAIT_CENTER_Y,
   PORTRAIT_FACE_SIZE,
+  PORTRAIT_GAP,
   PORTRAIT_TEXT_FONT_SIZE,
   PORTRAIT_RING_GAP_DEG,
   PORTRAIT_RING_R,
@@ -14,7 +15,9 @@ import {
   PORTRAIT_SLOT_H,
   PORTRAIT_SLOT_W,
   PORTRAIT_TEXT_R,
+  PORTRAIT_TEXT_R_RINGLESS,
   isFullTurn,
+  portraitMetrics,
   portraitRingArcPath,
   portraitRingSpan,
   portraitTextArcPath,
@@ -43,6 +46,41 @@ describe('겹침 금지', () => {
     expect(PORTRAIT_CENTER_Y + PORTRAIT_TEXT_R).toBeLessThanOrEqual(PORTRAIT_SLOT_H)
     // 좌우: 링이 상자를 안 넘는다(호 자체는 넘어도 되지만 링은 보인다).
     expect(ringOuterEdge * 2).toBeLessThanOrEqual(PORTRAIT_SLOT_W)
+  })
+})
+
+// [[ADR-145]] 결정 5 — 링이 없으면 칸 사이 간격을 걷는다. 갈리는 값이 셋(글자 반지름 · 칸 높이 ·
+// 칸 간격)이고 **한 함수가 함께 돌려주는 것**이 계약이다. 따로 두면 «링 없는 칸» 의 정의가 흩어진다.
+describe('두 갈래 (링 있음 / 없음)', () => {
+  it('링이 없으면 글자가 안쪽으로 들어오고 칸이 낮아지고 간격이 좁아진다', () => {
+    const withRing = portraitMetrics(true)
+    const ringless = portraitMetrics(false)
+
+    expect(ringless.textR).toBeLessThan(withRing.textR)
+    expect(ringless.slotH).toBeLessThan(withRing.slotH)
+    expect(ringless.gap).toBeLessThan(withRing.gap)
+  })
+
+  it('링 있는 쪽은 표의 값 그대로다', () => {
+    expect(portraitMetrics(true)).toEqual({
+      textR: PORTRAIT_TEXT_R,
+      slotH: PORTRAIT_SLOT_H,
+      gap: PORTRAIT_GAP,
+    })
+  })
+
+  // 간격을 0으로 둬도 이웃이 붙지 않는다 — 칸에서 가장 바깥에 그려지는 것(링 있는 쪽은 링, 없는
+  // 쪽은 글자 호)이 칸 가장자리보다 안쪽이기 때문이다. **눈에 보이는 간격**은 그 여백 둘 + 칸 간격이고,
+  // 그 값이 좁아지되 0 이하로 내려가지 않는 것이 결정 5 다(17 → 12).
+  it('간격이 0이어도 이웃 사이 여백이 남고, 링 있는 쪽보다 좁다', () => {
+    const spacing = (inkEdge: number, gap: number): number =>
+      (PORTRAIT_SLOT_W / 2 - inkEdge) * 2 + gap
+
+    const withRing = spacing(ringOuterEdge, portraitMetrics(true).gap)
+    const ringless = spacing(PORTRAIT_TEXT_R_RINGLESS, portraitMetrics(false).gap)
+
+    expect(ringless).toBeGreaterThan(0)
+    expect(ringless).toBeLessThan(withRing)
   })
 })
 

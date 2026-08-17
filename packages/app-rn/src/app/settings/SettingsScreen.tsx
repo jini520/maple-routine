@@ -48,6 +48,7 @@ import { formatBytes } from '@core/lib/format-bytes'
 
 import packageJson from '../../../package.json'
 import { Card } from '../../components/atoms/Card/Card'
+import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import type { TabParamList } from '../../navigation/routes'
 import { useSettingsNavigation } from './use-settings-navigation'
@@ -104,7 +105,11 @@ export function SettingsScreen(): React.JSX.Element {
             이것이 없어서 내비게이션 테스트가 **자리표시자의 같은 testID 를 보고 초록**이었고,
             설정 탭이 통째로 빠진 것을 아무도 못 잡았다(2026-08-13 실기기 관측). */}
         <View className="gap-4 px-4 pb-4" testID="screen-Settings">
-          <Text className="text-lg font-semibold text-text">설정</Text>
+          {/* 이 화면에는 `PageHeader` 가 없지만([[ADR-098]] 결정 3) 제목 줄은 다른 탭과 **같은
+              프리미티브**다([[ADR-145]] 정정 1) — 셸이 달라도 제목이 서는 선은 같아야 한다. */}
+          <PageHeaderTitleRow>
+            <Text className="text-lg font-semibold text-text">설정</Text>
+          </PageHeaderTitleRow>
 
           {/* 값을 고르는 행 — 배지(현재값) + chevron 병기(ADR-118 결정 4). */}
           <Card className="px-6" testID="settings-card">

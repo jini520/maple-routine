@@ -33,6 +33,7 @@ import { useRoute, type RouteProp } from '@react-navigation/native'
 
 import { findFeatureGuide } from '@core/data/feature-guides'
 
+import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { naturalAspectStyle } from '../../lib/image-aspect'
@@ -101,7 +102,7 @@ export function SettingsFeatureGuideScreen(): React.JSX.Element | null {
       hasTabBar={false}
       header={
         <PageHeader>
-          <View className="flex-row items-center gap-2">
+          <PageHeaderTitleRow className="gap-2">
             <Pressable
               role="button"
               aria-label="뒤로"
@@ -114,7 +115,7 @@ export function SettingsFeatureGuideScreen(): React.JSX.Element | null {
             <Text numberOfLines={1} className="min-w-0 flex-1 text-lg font-semibold text-text">
               {guide.title}
             </Text>
-          </View>
+          </PageHeaderTitleRow>
         </PageHeader>
       }
     >

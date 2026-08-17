@@ -75,6 +75,7 @@ import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { UnavailableNotice } from '../../components/molecules/EmptyState/UnavailableNotice'
 import { ValuableDropBadge } from '../../components/molecules/ValuableDropBadge/ValuableDropBadge'
+import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { SPIN_ANIMATION } from '../../lib/animation'
 import {
@@ -202,7 +203,10 @@ export function BossProfitScreen(): React.JSX.Element {
     // 히스토리·가격 진입점은 두지 않는다([[ADR-071]] 결정 7 · [[ADR-124]] 결정 8).
     return (
       <View testID="screen-Profit" className="flex-1 p-4" style={{ paddingTop: insets.top }}>
-        <Text className="text-lg font-semibold text-text">보스 수익</Text>
+        {/* 헤더 셸을 안 쓰는 가지에서도 제목 줄은 같은 프리미티브다([[ADR-145]] 정정 1). */}
+        <PageHeaderTitleRow>
+          <Text className="text-lg font-semibold text-text">보스 수익</Text>
+        </PageHeaderTitleRow>
 
         <View className="flex-1 items-center justify-center">
           <EmptyState
@@ -273,7 +277,7 @@ export function BossProfitScreen(): React.JSX.Element {
         {/* 히스토리 진입점은 탭 줄이 아니라 **제목 줄 우측**이고 아이콘이 아니라 글자다
             ([[ADR-071]] 결정 7). 진입점 둘은 같은 어휘를 쓰고 `아이템 가격`(쓰기)이
             `히스토리`(읽기) **왼쪽**이다([[ADR-124]] 결정 8) — 값을 매기는 쪽이 주마다 들르는 자리다. */}
-        <View className="flex-row items-center justify-between">
+        <PageHeaderTitleRow className="justify-between">
           <Text className="text-lg font-semibold text-text">보스 수익</Text>
           <View className="flex-row items-center gap-3">
             <Pressable role="button" onPress={() => navigation.navigate('DropPrice')}>
@@ -283,7 +287,7 @@ export function BossProfitScreen(): React.JSX.Element {
               <Text className="text-sm font-medium text-text-muted">히스토리</Text>
             </Pressable>
           </View>
-        </View>
+        </PageHeaderTitleRow>
 
         <View className="flex-row items-center gap-4">
           <Pressable role="button" aria-selected={tab === 'weekly'} onPress={() => setTab('weekly')}>

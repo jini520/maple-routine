@@ -20,7 +20,11 @@
 import type { NavigatorScreenParams } from '@react-navigation/native'
 
 /**
- * 탭 내비게이터의 화면 여덟 — **그룹이 아니라 페이지다**([[ADR-132]] 결정 1).
+ * 탭 내비게이터의 화면 아홉 — **그룹이 아니라 페이지다**([[ADR-132]] 결정 1).
+ *
+ * 아홉째가 `BossManage` 다([[ADR-145]] 결정 1) — **웹의 하위 경로가 여기서만 탭인 유일한 자리**다.
+ * 그 화면을 여는 버튼이 [[ADR-140]] 뒤로 보스 스케줄러 헤더에 하나 남아 있었고, 하단바가 이미
+ * «스케줄 안의 자리들» 을 그리고 있는데 그 목록에만 없었다.
  *
  * 바에 보이는 «그룹»(스케줄·가계부…)은 내비게이션 구조가 아니라 **바의 표현**이라 여기 없다.
  * 그 묶음은 `bar-model.ts` 의 표가 갖는다. 중첩 내비게이터를 두지 않은 이유도 같다 — 하위 페이지들은
@@ -33,6 +37,7 @@ export type TabRouteName =
   | 'Today'
   | 'Content'
   | 'Boss'
+  | 'BossManage'
   | 'Profit'
   | 'HuntingProfit'
   | 'Spend'
@@ -43,6 +48,7 @@ export type TabParamList = {
   Today: undefined
   Content: undefined
   Boss: undefined
+  BossManage: undefined
   Profit: undefined
   HuntingProfit: undefined
   Spend: undefined
@@ -78,7 +84,6 @@ export type RootStackParamList = {
   Onboarding: undefined
   Tabs: NavigatorScreenParams<TabParamList> | undefined
   ContentManage: undefined
-  BossManage: undefined
   DropHistory: undefined
   DropPrice: undefined
   SettingsFeatureGuideList: undefined
@@ -149,7 +154,10 @@ export const ROUTE_TABLE: readonly RouteRow[] = [
   },
 
   { path: '/boss', screen: 'BossScreen', target: { kind: 'tab', route: 'Boss' }, origin: 'web' },
-  { path: '/boss/manage', screen: 'BossManageScreen', target: { kind: 'push', route: 'BossManage' }, origin: 'web' },
+  // **웹 경로인데 `push` 가 아닌 유일한 행**([[ADR-145]] 결정 1) — 웹에서는 `/boss` 위로 밀려
+  // 올라오는 하위 페이지이고, RN 에서는 스케줄 그룹의 셋째 하위 탭이다. `origin` 은 그대로 `web`
+  // 이다(대조할 경로가 실재한다 — 갈린 것은 «어디로 갔는가» 뿐이다).
+  { path: '/boss/manage', screen: 'BossManageScreen', target: { kind: 'tab', route: 'BossManage' }, origin: 'web' },
 
   { path: '/profit', screen: 'BossProfitScreen', target: { kind: 'tab', route: 'Profit' }, origin: 'web' },
   { path: '/profit/drops', screen: 'DropHistoryScreen', target: { kind: 'push', route: 'DropHistory' }, origin: 'web' },
@@ -227,7 +235,7 @@ export const FEATURE_GUIDE_ROUTE_NAMES = [
 ] as const satisfies readonly StackRouteName[]
 
 /**
- * 탭 내비게이터가 그리는 화면 이름 여덟 — 표에서 파생한다.
+ * 탭 내비게이터가 그리는 화면 이름 아홉 — 표에서 파생한다.
  *
  * **라벨은 여기 없다.** 라벨은 그룹과 함께 `bar-model.ts` 의 `BAR_GROUPS` 가 갖는다 — 바가 라벨을
  * 두 층(그룹 이름 · 하위 이름)으로 쓰기 때문에, 여기에도 두면 같은 문구가 두 벌이 된다.

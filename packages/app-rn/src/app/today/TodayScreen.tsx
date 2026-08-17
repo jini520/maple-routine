@@ -10,6 +10,7 @@
  */
 
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
+import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { UnderConstruction } from '../../components/molecules/UnderConstruction/UnderConstruction'
 import { Text, View } from 'react-native'
@@ -20,7 +21,9 @@ export function TodayScreen(): React.JSX.Element {
       <ScreenScroll
         header={
           <PageHeader>
-            <Text className="text-lg font-semibold text-text">today</Text>
+            <PageHeaderTitleRow>
+              <Text className="text-lg font-semibold text-text">today</Text>
+            </PageHeaderTitleRow>
           </PageHeader>
         }
       >
