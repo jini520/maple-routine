@@ -172,9 +172,9 @@ exports[`CharacterRow — 좌우 슬롯 렌더 트리 스냅샷 — 이후 변�
         {
           "borderRadius": 9999,
           "flexShrink": 0,
-          "height": 40,
+          "height": 36,
           "overflow": "hidden",
-          "width": 40,
+          "width": 36,
         }
       }
     >
@@ -187,11 +187,11 @@ exports[`CharacterRow — 좌우 슬롯 렌더 트리 스냅샷 — 이후 변�
         }
         style={
           {
-            "height": 187.5,
-            "left": -71.875,
+            "height": 225,
+            "left": -92.25,
             "position": "absolute",
-            "top": -75,
-            "width": 187.5,
+            "top": -96,
+            "width": 225,
           }
         }
         testID="character-row-face"

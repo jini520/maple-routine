@@ -16,8 +16,8 @@
 //
 // ── 웹 그리드에서 가져온 것 셋 ─────────────────────────────────────────────────────
 //
-// ① **얼굴 크롭**은 [[ADR-015]] 기법 그대로이고 상자 크기만 행에 맞췄다(56 → 40). 값을 새로 잡으면
-//    같은 얼굴이 화면마다 다르게 잘린다(`CharacterTrackingGrid` 와 같은 표를 쓴다).
+// ① **얼굴 크롭**은 [[ADR-015]] 기법 그대로이고, 표와 크기(36px)는 **`lib/face-crop` 한 곳**에서
+//    온다 — 드롭다운 행·보스 수익 아바타·초상화 레일이 이미 쓰던 그 표다(아래).
 // ② **엠블럼은 번들 에셋 id 라 `{ uri }` 로 감싸지 않는다**([[ADR-129]]) — 얼굴만 원격 URI 다.
 // ③ **`w-auto` 의 짝이 `naturalAspectStyle` 이다**([[ADR-135]]) — RN 은 이름을 부르지 않은 축에
 //    에셋의 고유 픽셀 크기를 남기므로, 높이만 정하고 폭을 그림에 맡기려면 그 축을 지워야 한다.
@@ -25,24 +25,15 @@ import { Image, Pressable, Text, View } from 'react-native'
 
 import { worldEmblemUrl } from '@core/lib/world-emblem'
 
+import { faceCropStyle } from '../../../lib/face-crop'
 import { naturalAspectStyle } from '../../../lib/image-aspect'
 
-// [[ADR-015]]: character/basic 이 주는 300×300 전신 룩에서 얼굴만 확대해 자른다.
-const SOURCE_IMAGE_SIZE = 300
-const FACE_CROP_BOX = { x: 115, y: 120, size: 64 }
-const FACE_SIZE = 40
+// 얼굴 크롭 표는 `lib/face-crop` 하나뿐이다(사용자 지정 2026-08-17) — 이 파일이 들고 있던 표는
+// 56px 그리드 시절의 것(`{x:115, y:120, size:64}` · 40px)이라 **같은 얼굴이 드롭다운 행과 다르게
+// 잘렸다.** 드롭다운 행의 표(48px 크롭 · 36px 아바타)로 통일했고, 그 값은 이 앱의 다른 초상화들
+// (보스 수익 아바타 · 초상화 레일)이 이미 쓰던 것이다.
 
 const ROW_CLASS = 'flex-row items-center gap-2 rounded-[14px] border border-border bg-surface px-2.5 py-2'
-
-function faceCropStyle(): { width: number; height: number; left: number; top: number } {
-  const scale = FACE_SIZE / FACE_CROP_BOX.size
-  return {
-    width: SOURCE_IMAGE_SIZE * scale,
-    height: SOURCE_IMAGE_SIZE * scale,
-    left: -FACE_CROP_BOX.x * scale,
-    top: -FACE_CROP_BOX.y * scale,
-  }
-}
 
 /** 2줄에 설 글자 — 아무것도 모르면 `null` 이고, 그때 그 줄은 아예 그려지지 않는다. */
 function captionText(level: number | null, jobClass: string | undefined): string | null {
@@ -79,7 +70,7 @@ export function CharacterRow(props: CharacterRowProps): React.JSX.Element {
       {/* 상자에 배경색을 두지 않는다(사용자 지정 2026-08-17) — 얼굴 크롭이 원을 꽉 채우므로 그 색은
           이미지가 뜨기 전 한 프레임에만 보이고, 그 한 프레임이 «회색 원이 깜빡인다» 로 읽혔다.
           이미지가 **없을 때**만 아래 폴백이 자기 배경을 갖는다. */}
-      <View className="h-10 w-10 shrink-0 overflow-hidden rounded-full">
+      <View className="h-9 w-9 shrink-0 overflow-hidden rounded-full">
         {props.imageUrl !== null ? (
           <Image
             testID="character-row-face"

@@ -61,31 +61,19 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import type { AccountSummaryView } from '@core/features/character-manage/derivations'
 import { worldEmblemUrl } from '@core/lib/world-emblem'
 
+import { faceCropStyle } from '../../../lib/face-crop'
 import { ChevronDownIcon } from '../../../lib/icons'
 import { naturalAspectStyle } from '../../../lib/image-aspect'
 import { placeDropdown } from './place-dropdown'
 
-// [[ADR-015]] 얼굴 크롭 — 36px 아바타용 표는 `AccountSelectionList` 의 것을 그대로 쓴다(계정 행
-// 계보라 같은 자리다). 값을 새로 잡으면 같은 얼굴이 화면마다 다르게 잘린다.
-const SOURCE_IMAGE_SIZE = 300
-const FACE_CROP_BOX = { x: 123, y: 128, size: 48 }
-const FACE_SIZE = 36
+// 얼굴 크롭 표는 `lib/face-crop` 하나뿐이다 — 이 파일이 들고 있던 36px 표가 그 자리로 옮겨갔고,
+// 캐릭터 카드(`CharacterRow`)도 같은 것을 쓴다(사용자 지정 2026-08-17).
 
 /** 목록이 화면 가장자리에 붙지 않게 남기는 여백. */
 const EDGE_GAP_PX = 12
 
 /** 트리거와 목록 행이 공유하는 안쪽 여백 — 둘이 어긋나면 «한 덩어리» 가 깨진다. */
 const ROW_PADDING = 'px-3 py-2.5'
-
-function faceCropStyle(): { width: number; height: number; left: number; top: number } {
-  const scale = FACE_SIZE / FACE_CROP_BOX.size
-  return {
-    width: SOURCE_IMAGE_SIZE * scale,
-    height: SOURCE_IMAGE_SIZE * scale,
-    left: -FACE_CROP_BOX.x * scale,
-    top: -FACE_CROP_BOX.y * scale,
-  }
-}
 
 interface AccountRowProps {
   summary: AccountSummaryView
