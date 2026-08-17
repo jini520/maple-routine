@@ -56,7 +56,7 @@
       "status": "completed",
       "started_at": "2026-08-17T21:31:51+0900",
       "summary": "today 뷰모델 조립을 순수 함수 하나로 — `buildTodayViewModel(input)` 이 스토어 «상태» 와 `now` 를 값으로 받아 위젯 여덟이 읽을 한 벌을 만든다(위젯은 스토어를 모른다). 판정을 하나도 다시 쓰지 않은 것이 요점 — 남은 개수는 `content-completion` 의 progress(«셀 수 있는 수 − 완료», unmeasurable 은 분모에서 이미 빠진다)와 step 3 의 `displayedBosses`, 수익은 `groupTotalMeso`, 월드별 결정석은 `summarizeWorldCrystals`, 분모는 `WEEKLY_CRYSTAL_SALE_LIMIT`, 대표는 step 2 의 `resolveDisplayRepresentative` 가 판다. 위젯 3·4·7 은 현재 주간 기간 키 하나로 자르고(보스 수익 주간 탭과 같은 자), 최고가 순위는 `priceState === 'entered'` 만 담아 «모르는 값을 가장 싼 것으로 단정» 하지 않으며 미입력 건수는 별도 필드다(`excluded` 는 세지 않는다). 실패 캐릭터는 정렬에서 언제나 맨 아래이고 `scheduleTotal` 에서도 빠진다(모르는 것을 더하지 않는다). 초기화 카운트다운은 기존 KST 계산 조합이라 오프셋 상수를 다시 선언하지 않고 «남은 ms + 다음 시각(epoch ms)» 을 함께 준다. `new Date()`·스토어 import·「외 N명」 접기·증감 계산 없음. 신규 28케이스(정렬·기간 필터·unmeasurable·미입력 순위·excluded 여섯 자리를 되돌리면 6개 실패). today.md 에 조립 계약·「이번 주」 범위 절 추가.",
-      "completed_at": "2026-08-17T21:55:00+0900"
+      "completed_at": "2026-08-17T21:46:12+0900"
     },
     {
       "step": 7,
