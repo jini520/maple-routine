@@ -40,7 +40,7 @@
       "status": "completed",
       "started_at": "2026-08-17T21:14:44+0900",
       "summary": "가뭄 문구를 전 단계 풀로 넓혔다(ADR-146 정정 6·10) — VALUABLE_DROUGHT_TIERS 가 headlines: readonly string[] 를 들고 마지막 단계 전용 배열·VALUABLE_DROUGHT_LATE_HEADLINE_COUNT 상수가 사라진 자리에 valuableDroughtHeadlineCount(weeksSince) 가 들어섰다. 채택 문구 여섯을 더하되 기존 열한 줄은 각 풀의 첫 항목으로 남아 index 0 이 예전과 같은 문구를 준다(회귀 가드). Math.random 은 여전히 화면 몫이고, 상수를 쓰던 호출부 넷(RN·capacitor 화면과 그 테스트)이 단계별 개수를 묻도록 바뀌었다 — 0~3주 문구를 단정하던 화면 테스트 6자리는 «그 단계의 풀에 속하는가» 로 옮겨 무작위화에도 안 흔들린다. 신규 8케이스(개수 함수를 마지막 단계 고정으로 되돌리면 4개 실패).",
-      "completed_at": "2026-08-17T21:24:33+0900"
+      "completed_at": "2026-08-17T21:22:42+0900"
     },
     {
       "step": 5,
