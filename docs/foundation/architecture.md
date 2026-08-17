@@ -101,8 +101,8 @@ Feature 단위 구조. 각 `features/*` 폴더가 그 기능의 상태·로직�
 6. 컨텐츠 스케줄러 캐시 병합([[ADR-030]])은 [features/content-scheduler.md](../features/content-scheduler.md) 참고
 7. `storage/` 에 캐시 + 동기화 시각 저장 → 각 feature 가 읽기 전용 표시. 이 **동기화 시각(`syncedAt`)이 위 게이트의 판정 근거**다 — 성공한 동기화에서만 갱신되므로([[ADR-097]] 결정 2) 실패가 TTL 을 갱신해 조회를 막는 일이 없다
 
-**[알림 발송 판단 — 실시간 재확인, [[ADR-004]]]**
-알림 예정 시각 도달 → 백그라운드 트리거(Android WorkManager / iOS BGAppRefreshTask) → `nexon/schedule` 실시간 재호출 → 미완료면 로컬 알림(64개 한도 초과 시 우선순위 정책). 재호출 실패 시 마지막 캐시 폴백. iOS는 정확 시각 미보장(베스트 에포트).
+**[알림 — 하이브리드 판정, [[ADR-146]]]** → 상세 [features/notifications.md](../features/notifications.md) (**설계 완료, 구현 전**)
+① 앱 진입·동기화 완료·백그라운드 태스크가 **같은 재조정 함수**를 부른다 → 레지스트리의 `plan()`(순수 함수)이 앞으로 7일치 계획을 만들고, **원장과의 차집합**만 예약·취소한다(멱등). ② 백그라운드에서 재확인이 되면 최신 상태로, 실패하면 마지막 캐시로 판정한다([[ADR-008]]). ③ **태스크가 한 번도 안 돌아도 알림은 뜬다** — 사전 예약이 아래 깔려 있고, 그 비대칭이 iOS 대비다. ④ 알림은 캐릭터를 말하지 않고 계정 단위 한 줄로 접히므로 동시 예약이 **캐릭터 수와 무관하게 10개 안쪽**이다(iOS 64개 한도가 구조적으로 사라진다). ⑤ 공지 알림만 **FCM 토픽 푸시**이고 판정이 서버에 있다.
 
 ## 상태 관리
 - Nexon 스케줄러 데이터는 사용자 본인 계정 데이터이지만 앱 입장에선 "외부 동기화 읽기 전용 데이터"로 다룬다 — 동기화 상태(로딩/성공/실패)·마지막 동기화 시각·캐시 응답을 `nexon/schedule` 이 노출하고 `storage/` 에 영속화.
@@ -115,7 +115,7 @@ Feature 단위 구조. 각 `features/*` 폴더가 그 기능의 상태·로직�
   - **온보딩 완료 상태에서만 돈다** — `syncSchedules` 가 API 키·계정 없이 던진다.
 
 ## 네이티브 연동 개요 ([[ADR-001]])
-- `@capacitor/local-notifications`: 일간/주간 미완료 알림 예약([[ADR-004]]).
+- **알림**([[ADR-146]], 설계 완료·구현 전): 바이너리엔 **능력 셋**(로컬 알림 표시 `notifee` / 원격 푸시 FCM / 백그라운드 태스크)만 들어가고, **무엇을 언제 왜 띄우는가는 네이티브에 한 줄도 없다**(전부 JS = OTA). 딸림 — 백그라운드 태스크·푸시 백그라운드·알림 탭 **핸들러 셋은 모듈 최상위에 «등록» 돼 있어야** OS 가 죽은 앱을 깨울 수 있어 그 한 줄만 바이너리에 박힌다. 웹뷰 앱은 `@capacitor/local-notifications`(`NotificationsPort` 구현) 그대로이고 새 능력 둘은 **RN 전용**이다.
 - **커스텀 플러그인**(Swift/Kotlin): 사냥 타이머 상시 알림(Android Foreground Service + Chronometer / iOS Live Activity) + 주기 사운드([[ADR-005]]) → [features/hunting-timer.md](../features/hunting-timer.md).
 - `@capacitor-community/sqlite`(+ 웹 테스트용 `jeep-sqlite`): 보스 수익 기록 등([[ADR-003]]).
 - `@capgo/capacitor-updater`: Live Update([[ADR-022]]) → [features/live-update.md](../features/live-update.md).
@@ -141,12 +141,14 @@ Feature 단위 구조. 각 `features/*` 폴더가 그 기능의 상태·로직�
 - `nexon/schedule` 에러 경로 / `nexon/client` 큐잉·백오프 / `nexon/character` dedup·동률 대표 선정: [[ADR-008]] 표 각 행 대응 단위 테스트.
 - 컨텐츠 스케줄러 캐시 병합([[ADR-030]]): `lib/scheduler-merge.test.ts`(폴백·shareScope 저장소 분기·원장 active 유지·리셋 진행값 리셋·maxCountOverride) + `features/schedule-sync/__tests__`(캐시·원장 읽기/쓰기).
 - 보스 수익 포뮬러(`floor(priceMeso / partySize)`) / 파티원 자동 기록(기본값 소스 [[ADR-019]]) / 파티 관리 upsert / 드롭다운 합계 / 물욕 환산 합산: 각 기능 구현 시 단위 테스트.
-- 라우트 가드(온보딩 미완료 리다이렉트), 데이터 정합성(`src/data/__tests__`), 알림 64개 한도 우선순위.
+- 라우트 가드(온보딩 미완료 리다이렉트), 데이터 정합성(`src/data/__tests__`).
+- 알림([[ADR-146]]): `plan()` 순수 함수 전수(지평선·리셋 경계·설정 꺼짐) · **재조정 멱등성**(두 번째 회차에 `schedule`/`cancel` 0회) · **레지스트리에서 사라진 kind 가 취소되는가**(OTA 제거 시나리오의 회귀 가드 — 원장의 존재 이유를 못 박는 테스트).
 - 런타임 import 사이클 0건: `packages/app-rn/src/__tests__/require-cycle-policy.test.ts` — Metro 가 실제로 번들하는 그래프(`app-rn/src` + `core/src`)를 훑는다. app-rn 에 두는 것은 이 경고를 내는 번들러가 Metro 하나라서다.
 - 네이티브 플러그인(상시 알림·Live Activity·백그라운드 재확인)은 유닛 테스트 곤란 → 실기기 수동 QA 체크리스트(백그라운드 전환·강제종료 재실행·배터리 최적화·iOS 16.1 미만 폴백).
 - 골든 패스 수동 시나리오: 최초 실행 → 키 입력 → 캐릭터 조회 → 동기화 → 스케줄러 표시 → 보스 완료 감지 → 파티원 입력 → 수익 확인.
 
 ## 폐기된 정책 (history)
+- ~~알림 예정 시각에 백그라운드 트리거로 API 를 실시간 재호출해 **미완료일 때만** 발송하고, iOS 64개 한도를 넘으면 우선순위 정책으로 자른다([[ADR-004]])~~ → **하이브리드 + 계정 단위 한 줄**([[ADR-146]], 2026-08-17). 재확인은 살아 있되 **사전 예약이 그 아래 깔린다** — 원안은 오탐이 0 이지만 iOS 태스크가 안 돌면 조용히 아예 안 떴다. 한도는 정책이 아니라 **구조로** 사라졌다(캐릭터별로 예약하지 않는다).
 - ~~자산 목록을 `import.meta.glob`(eager)으로 빌드마다 만든다~~ → **커밋된 생성물**(`src/assets/generated/*.ts` + `npm run assets:gen`)([[ADR-129]], 2026-08-12). glob 은 Vite 전용이라 Metro(RN)에 짝이 없었다. 딸려 온 정정: *"`eager` 여부와 무관하게 전부 emit 된다"*([[ADR-093]] 결정 3)는 관찰은 여전히 맞지만 **판정 주체가 glob 이 아니라 생성물의 import 목록**이 됐다.
 - ~~선택된 계정의 `character_list` 를 `storage/` 에 캐싱~~ → 캐싱 안 함, 매번 `nexon/character` 재조회(2026-07-11). 개명/전직/레벨업이 언제든 바뀌기 때문.
 - ~~스케줄 동기화를 계정 전체 캐릭터 대상으로 호출~~ → 추적 대상 캐릭터로 범위 제한([[ADR-012]], 2026-07-11).
