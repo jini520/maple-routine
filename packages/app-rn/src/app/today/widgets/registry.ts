@@ -24,9 +24,10 @@ import { CrystalLimitWidget } from './CrystalLimitWidget'
 import { RemainingScheduleWidget } from './RemainingScheduleWidget'
 import { ResetCountdownWidget } from './ResetCountdownWidget'
 import { RepresentativeCharacterWidget } from './RepresentativeCharacterWidget'
-import { stubWidget } from './StubWidget'
 import { TopValuableItemWidget } from './TopValuableItemWidget'
 import type { WidgetDefinition, WidgetId } from './types'
+import { UnpricedDropsWidget } from './UnpricedDropsWidget'
+import { ValuableDroughtWidget } from './ValuableDroughtWidget'
 import { WeeklyBossProfitWidget } from './WeeklyBossProfitWidget'
 
 export const WIDGETS: readonly WidgetDefinition[] = [
@@ -101,7 +102,7 @@ export const WIDGETS: readonly WidgetDefinition[] = [
       { w: 1, h: 1 },
     ],
     target: 'Profit',
-    Component: stubWidget('unpriced-drops'),
+    Component: UnpricedDropsWidget,
   },
   {
     id: 'valuable-drought',
@@ -111,7 +112,7 @@ export const WIDGETS: readonly WidgetDefinition[] = [
       { w: 2, h: 1 },
     ],
     target: 'Profit',
-    Component: stubWidget('valuable-drought'),
+    Component: ValuableDroughtWidget,
   },
 ]
 

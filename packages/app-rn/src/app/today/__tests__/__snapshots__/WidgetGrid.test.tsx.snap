@@ -754,19 +754,31 @@ exports[`WidgetGrid — 좌표 배치 스냅샷 1`] = `
             }
           }
         >
-          <Text
+          <View
             style={
               {
-                "color": "#645C42",
-                "fontSize": 12,
-                "lineHeight": 16,
+                "flexBasis": "0%",
+                "flexGrow": 1,
+                "flexShrink": 1,
+                "justifyContent": "center",
                 "padding": 12,
               }
             }
             testID="widget-unpriced-drops"
           >
-            unpriced-drops
-          </Text>
+            <Text
+              numberOfLines={2}
+              style={
+                {
+                  "color": "#645C42",
+                  "fontSize": 10.5,
+                }
+              }
+              testID="unpriced-done"
+            >
+              전부 기록했습니다
+            </Text>
+          </View>
         </View>
       </View>
     </View>
@@ -824,19 +836,31 @@ exports[`WidgetGrid — 좌표 배치 스냅샷 1`] = `
             }
           }
         >
-          <Text
+          <View
             style={
               {
-                "color": "#645C42",
-                "fontSize": 12,
-                "lineHeight": 16,
+                "flexBasis": "0%",
+                "flexGrow": 1,
+                "flexShrink": 1,
+                "justifyContent": "center",
                 "padding": 12,
               }
             }
             testID="widget-valuable-drought"
           >
-            valuable-drought
-          </Text>
+            <Text
+              numberOfLines={1}
+              style={
+                {
+                  "color": "#645C42",
+                  "fontSize": 10.5,
+                }
+              }
+              testID="drought-no-record"
+            >
+              아직 아이템 드롭 기록이 없습니다
+            </Text>
+          </View>
         </View>
       </View>
     </View>

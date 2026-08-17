@@ -62,6 +62,7 @@ import { LoadingState } from '../../components/molecules/LoadingState/LoadingSta
 import { MAPLE_LEAF_PATH } from '../../components/mapleLeafPath'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
+import { DROUGHT_GLOW_FILTER, DROUGHT_TIER_STYLES } from '../../lib/drought-tier-styles'
 import { ArrowLeftIcon, ScrollTextIcon } from '../../lib/icons'
 import { Svg } from '../../lib/nativewind-interop'
 import { TABULAR_NUMS } from '../../lib/text-styles'
@@ -78,37 +79,8 @@ import { useScreenNavigation } from '../use-screen-navigation'
 const VALUABLE_INLINE_BG = '#f7c400'
 const VALUABLE_INLINE_INK = '#6b4e00'
 
-/**
- * 슬픔 단계별 시각 표현([[ADR-071]] 결정 9, 사용자 확정 2026-08-01 — 시안 W4).
- *
- * 단풍잎이 색을 잃고 기울다 떨어지는 것으로 가뭄을 말한다. 은유를 새로 만들지 않고 **브랜드 마크를
- * 그대로 쓴 이유**가 이것이다 — 단풍잎은 원래 그렇게 늙으므로 억지 장식이 아니고, 새 에셋도 없다.
- *
- * 색이 테마 토큰이 아니라 고정 hex 인 것은 고가 골드와 같은 사정이다([[ADR-045]]) — 이 램프는 "골드에서
- * 무채색을 거쳐 차가운 회청색으로" 가는 한 줄기라 테마마다 다른 색으로 갈리면 의미를 잃는다. 잎은
- * 아이콘(면적 채색)이라 본문 텍스트급 대비가 필요 없고, 글자색은 테마 토큰을 쓴다.
- *
- * 단계 경계·문구는 `lib/drop-history` 의 `VALUABLE_DROUGHT_TIERS` 가 정한다 — 여기 배열은 그 인덱스에
- * 1:1로 대응하므로 길이가 어긋나면 안 된다.
- */
-const DROUGHT_TIER_STYLES = [
-  { leaf: '#f7d00d', ink: 'text-text', rotate: 0, opacity: 1, glow: true },
-  { leaf: '#e0b400', ink: 'text-text', rotate: 6, opacity: 0.95, glow: false },
-  { leaf: '#b99a5c', ink: 'text-text-muted', rotate: 14, opacity: 0.8, glow: false },
-  { leaf: '#9a9a93', ink: 'text-text-muted', rotate: 26, opacity: 0.6, glow: false },
-  { leaf: '#8f98a1', ink: 'text-text-disabled', rotate: 42, opacity: 0.45, glow: false },
-] as const
-
 /** 단풍잎 한 변(px). 단계별 색·기울기가 이 요소의 감정을 지고 있어 작으면 차이가 읽히지 않는다. */
 const DROUGHT_LEAF_SIZE = 42
-
-/**
- * 0단계 잎의 글로우 — 웹 `drop-shadow(0 0 5px rgba(247,208,13,.75))`.
- *
- * **문자열로 넘긴다**: RN 의 `dropShadow` 필터는 CSS 값 문법을 그대로 받으므로 blur 반지름 ↔ 표준
- * 편차 환산을 우리가 하지 않아도 된다(객체 형태로 적으면 그 환산이 새 오차원이 된다).
- */
-const DROUGHT_GLOW_FILTER = [{ dropShadow: '0 0 5px rgba(247,208,13,0.75)' }]
 
 // 미획득 기간 요약([[ADR-071]] 결정 4) — 고가 전체를 **하나로** 집계한다. 아이템별·세트별로 나누지
 // 않는다(칠흑·광휘 구성원 수십 종이 대부분 "기록 없음"으로 채워져 소음이 된다).

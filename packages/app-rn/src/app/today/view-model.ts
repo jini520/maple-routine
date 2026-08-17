@@ -40,7 +40,11 @@ import type { BossCharacterView } from '@core/features/boss-scheduler/store'
 import type { ContentCharacterView } from '@core/features/content-scheduler/store'
 import type { BossProfitRow } from '@core/features/boss-profit/store'
 import { WEEKLY_CRYSTAL_SALE_LIMIT } from '@core/lib/boss-matching'
-import { getAdjacentPeriodKey, getCurrentBossProfitPeriod } from '@core/lib/boss-profit-period'
+import {
+  formatBossProfitPeriodLabel,
+  getAdjacentPeriodKey,
+  getCurrentBossProfitPeriod,
+} from '@core/lib/boss-profit-period'
 import {
   formatValuableDroughtItems,
   getPeriodStartUtcMs,
@@ -74,6 +78,9 @@ const TOP_CHARACTER_COUNT = 3
 
 /** 최고가 아이템 순위 길이 — 4x2 타일이 1위 + 2~5위를 그린다([[ADR-146]] 정정 5). */
 const TOP_ITEM_COUNT = 5
+
+/** 가격 미입력 미리보기 길이 — 2x2 타일이 이름 셋까지 세우고 나머지는 «외 N건» 이다. */
+const UNPRICED_PREVIEW_COUNT = 3
 
 /** 대표 캐릭터 카드가 그리는 것 — 값이 없는 줄은 위젯이 그리지 않는다([[ADR-146]] 정정 7·8). */
 export interface RepresentativeView {
@@ -140,7 +147,13 @@ export interface WeeklyProfitView extends ProfitSplit {
   topCharacters: WeeklyProfitCharacterView[]
 }
 
-export interface PricedDropView {
+/**
+ * 드롭 한 건에서 **금액을 뺀** 나머지 — 위젯 7(가격 미입력)이 읽는 모양이다.
+ *
+ * 금액이 있는 쪽(`PricedDropView`)이 이것을 넓히는 것이 방향이 맞다. 미입력 건은 «아직 값이 없는»
+ * 것이지 «0원인» 것이 아니라([[ADR-146]] 결정 9), 그 사실이 타입에서도 필드의 부재로 남는다.
+ */
+export interface UnpricedDropView {
   ocid: string
   /**
    * 프로필 캐시에 있을 때만 — 없으면 위젯이 보스만 그린다(ocid 는 사용자에게 뜻이 없는 값이라
@@ -155,6 +168,9 @@ export interface PricedDropView {
   ringLevel?: number
   quantity: number
   category: DropCategory
+}
+
+export interface PricedDropView extends UnpricedDropView {
   /** 입력된 **판매가**(분배 전). 순위 기준이 이 값이다([[ADR-146]] 결정 9). */
   priceMeso: number
 }
@@ -182,6 +198,12 @@ export interface DroughtView {
   headlineCount: number
   periodKey: string
   cycle: BossCycle
+  /**
+   * 그 기간의 사람이 읽는 이름(`이번 주` · `7월 3주차`). **위젯이 만들 수 없다** —
+   * `formatBossProfitPeriodLabel` 이 «지금이 언제인가» 를 받아야 «이번 주» 를 말할 수 있는데,
+   * 타일마다 시계를 읽으면 같은 화면의 두 타일이 다른 시각을 말한다(위젯 6과 같은 규칙).
+   */
+  periodLabel: string
   itemsLabel: string
 }
 
@@ -244,6 +266,15 @@ export interface TodayViewModel {
   topItem: TopItemView | null
   /** 이번 주 가격 미입력 드롭 건수 — 위젯 7의 값이라 위젯 4 안에 넣지 않는다([[ADR-146]] 정정 5). */
   unpricedCount: number
+  /**
+   * 그중 앞 몇 건 — 2x2 타일이 **이름**을 보여 준다. 「값을 적어야지」보다 「그 연마석 얼마에
+   * 팔았지」가 손을 움직이는 문장이라, 건수만으로는 그 문장을 만들 수 없다.
+   *
+   * 순서는 스토어가 준 순서 그대로다(`period_key DESC, ocid, boss, difficulty, drop_index`) —
+   * 여기서 다시 정렬하면 «무엇 기준으로 앞 셋인가» 라는 주장이 생기는데, 미입력 건에는 비교할
+   * 값이 없다.
+   */
+  unpricedPreview: UnpricedDropView[]
   crystalLimits: CrystalLimitView[]
   drought: DroughtView | null
   resets: ResetCountdownView
@@ -253,6 +284,9 @@ export function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel 
   const weeklyPeriodKey = getCurrentBossProfitPeriod('weekly', input.now).periodKey
   const weeklyDrops = collectWeeklyDrops(input.dropGroups, weeklyPeriodKey)
   const schedule = buildScheduleRows(input)
+  // 「값을 기다리는 것」의 정의는 `priceState === undefined` 하나다 — `'excluded'`(기록 안 함)는
+  // 사용자가 «값을 매기지 않기로» 정한 것이라 기다리는 건이 아니다(파일 머리 「이번 주」 절).
+  const unpriced = weeklyDrops.filter((record) => record.priceState === undefined)
 
   return {
     representative: buildRepresentative(input),
@@ -262,8 +296,11 @@ export function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel 
       .reduce((sum, row) => sum + row.remainingTotal, 0),
     ...buildProfit(input, weeklyPeriodKey),
     topItem: buildTopItem(weeklyDrops, input.profilesByOcid),
-    unpricedCount: weeklyDrops.filter((record) => record.priceState === undefined).length,
-    drought: buildDrought(input.drought),
+    unpricedCount: unpriced.length,
+    unpricedPreview: unpriced
+      .slice(0, UNPRICED_PREVIEW_COUNT)
+      .map((record) => toDropView(record, input.profilesByOcid)),
+    drought: buildDrought(input.drought, input.now),
     resets: buildResets(input.now),
   }
 }
@@ -413,6 +450,28 @@ function collectWeeklyDrops(
   return groups.filter((group) => group.periodKey === weeklyPeriodKey).flatMap((group) => group.records)
 }
 
+/**
+ * 저장 행 하나 → 위젯이 읽는 모양. **금액은 싣지 않는다** — 값이 있는 쪽만 그것을 얹는다.
+ *
+ * 캐릭터 이름이 옵셔널인 것이 요점이다(프로필 캐시에 있을 때만 — ocid 를 대신 넣지 않는다).
+ */
+function toDropView(
+  record: DropHistoryRecord,
+  profilesByOcid: Readonly<Record<string, CharacterBasicProfile>>,
+): UnpricedDropView {
+  return {
+    ocid: record.ocid,
+    characterName: profilesByOcid[record.ocid]?.name,
+    boss: record.boss,
+    difficulty: record.difficulty,
+    itemName: record.itemName,
+    slot: record.slot,
+    ringLevel: record.ringLevel,
+    quantity: record.quantity,
+    category: record.category,
+  }
+}
+
 function buildTopItem(
   records: DropHistoryRecord[],
   profilesByOcid: Readonly<Record<string, CharacterBasicProfile>>,
@@ -424,15 +483,7 @@ function buildTopItem(
     .filter((record) => record.priceState === 'entered' && typeof record.priceMeso === 'number')
     .map(
       (record): PricedDropView => ({
-        ocid: record.ocid,
-        characterName: profilesByOcid[record.ocid]?.name,
-        boss: record.boss,
-        difficulty: record.difficulty,
-        itemName: record.itemName,
-        slot: record.slot,
-        ringLevel: record.ringLevel,
-        quantity: record.quantity,
-        category: record.category,
+        ...toDropView(record, profilesByOcid),
         priceMeso: record.priceMeso as number,
       }),
     )
@@ -443,7 +494,7 @@ function buildTopItem(
   return { top: priced[0], rest: priced.slice(1) }
 }
 
-function buildDrought(summary: ValuableDroughtSummary | null): DroughtView | null {
+function buildDrought(summary: ValuableDroughtSummary | null, now: Date): DroughtView | null {
   if (summary === null) return null
   return {
     weeksSince: summary.weeksSince,
@@ -451,6 +502,8 @@ function buildDrought(summary: ValuableDroughtSummary | null): DroughtView | nul
     headlineCount: valuableDroughtHeadlineCount(summary.weeksSince),
     periodKey: summary.periodKey,
     cycle: summary.cycle,
+    // 히스토리 화면과 같은 라벨 함수다 — 두 자리가 같은 주를 다르게 부르면 안 된다.
+    periodLabel: formatBossProfitPeriodLabel(summary.cycle, summary.periodKey, now).primary,
     itemsLabel: formatValuableDroughtItems(summary.records),
   }
 }

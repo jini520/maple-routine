@@ -8,13 +8,17 @@
 
 import { WEEKLY_CRYSTAL_SALE_LIMIT } from '@core/lib/boss-matching'
 
+import { getValuableDroughtTier, valuableDroughtHeadlineCount } from '@core/lib/drop-history'
+
 import type {
   CrystalLimitView,
+  DroughtView,
   PricedDropView,
   RepresentativeView,
   ResetCountdown,
   ScheduleRowView,
   TodayViewModel,
+  UnpricedDropView,
   WeeklyProfitCharacterView,
 } from '../../view-model'
 
@@ -28,6 +32,7 @@ export const 빈_뷰모델: TodayViewModel = {
   profit: { totalMeso: 0, crystalMeso: 0, itemMeso: 0, hasRecords: false, topCharacters: [] },
   topItem: null,
   unpricedCount: 0,
+  unpricedPreview: [],
   crystalLimits: [],
   drought: null,
   resets: {
@@ -192,5 +197,50 @@ export function 최고가(restCount: number): TodayViewModel['topItem'] {
         priceMeso: 1_000_000_000 - index * 100_000_000,
       }),
     ),
+  }
+}
+
+/**
+ * 가격 미입력 한 벌 — 건수와 미리보기는 **따로 준다.**
+ *
+ * 뷰모델이 앞 셋만 미리보기에 싣고 나머지는 건수에만 남기므로(«외 N건»), 픽스처가 둘을 묶어 버리면
+ * 그 어긋남을 테스트가 만들 수 없다.
+ */
+export function 미입력(
+  count: number,
+  이름들: string[] = [],
+): Pick<TodayViewModel, 'unpricedCount' | 'unpricedPreview'> {
+  return {
+    unpricedCount: count,
+    unpricedPreview: 이름들.map(
+      (itemName, index): UnpricedDropView => ({
+        ocid: `ocid-${index + 1}`,
+        characterName: '야간비행',
+        boss: '스우',
+        difficulty: '노멀',
+        itemName,
+        quantity: 1,
+        category: 'equipment',
+      }),
+    ),
+  }
+}
+
+/**
+ * 가뭄 요약 한 벌 — **단계는 손으로 적지 않는다.**
+ *
+ * `tier`·`headlineCount` 를 픽스처가 직접 쓰면 «위젯이 `getValuableDroughtTier` 를 따르는가» 를
+ * 물을 수 없다(테스트가 답을 들고 와서 답을 맞추는 꼴이 된다). 뷰모델이 하는 것과 같은 파생을 한다.
+ */
+export function 가뭄(weeksSince: number, 부분: Partial<DroughtView> = {}): DroughtView {
+  return {
+    weeksSince,
+    tier: getValuableDroughtTier(weeksSince),
+    headlineCount: valuableDroughtHeadlineCount(weeksSince),
+    periodKey: '2026-07-16',
+    cycle: 'weekly',
+    periodLabel: '7월 3주차',
+    itemsLabel: '생명의 연마석 외 1개',
+    ...부분,
   }
 }
