@@ -16,7 +16,7 @@
       "status": "completed",
       "started_at": "2026-08-17T21:00:02+0900",
       "summary": "character/basic 의 경험치 필드를 정규화까지 배선 — wire 에 character_exp?: number·character_exp_rate?: string(문자열임을 주석으로 박음), 도메인엔 진행률만 expRate?: number 로 싣고 누적 절대값은 나르지 않는다. normalizeExpRate 가 Number 로 풀되 미존재·빈 문자열·NaN 은 0 이 아니라 undefined(「모름」≠「0%」), 진짜 \"0.000\" 만 0 으로 싣는다. 신규 6케이스.",
-      "completed_at": "2026-08-17T21:06:40+0900"
+      "completed_at": "2026-08-17T21:04:09+0900"
     },
     {
       "step": 2,
