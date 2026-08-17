@@ -77,18 +77,15 @@
     {
       "step": 9,
       "name": "widget-profit-item",
-      "status": "blocked",
+      "status": "completed",
       "started_at": "2026-08-17T22:16:02+0900",
-      "blocked_reason": "You've hit your session limit · resets 12:30am (Asia/Seoul)",
-      "blocked_at": "2026-08-17T22:34:30+0900"
+      "completed_at": "2026-08-17T22:34:42+0900",
+      "summary": "WeeklyBossProfitWidget(4x3 full·4x2 wide·2x2 compact·2x1 mini) + TopValuableItemWidget(4x2 wide·2x2 compact·2x1 mini·1x1 tiny) 신설. 수익은 증감 칩 없이 결정석/아이템 스택 바 + top3, 기록 0건이면 '0 메소' + 미기록 한 줄. 최고가는 entered 기록만 순위에 넣고 4x2 가 top 5, 미입력 칩은 넣지 않았다(위젯 7 의 몫). 메소 단위는 1x1 만 제외. view-model 에 그 둘이 쓰는 필드가 늘었고 widget-fixture·registry 도 함께 갱신됐다. **주의: 이 산출물은 커밋 a1afdcd4 에 'step 10 — widget-indicators' 라는 잘못된 메시지로 들어가 있다** — step 9 가 세션 한도로 상태를 못 적고 끝나 execute.py 가 다음 step 커밋에 쓸어 담았다."
     },
     {
       "step": 10,
       "name": "widget-indicators",
-      "status": "error",
-      "started_at": "2026-08-17T22:34:30+0900",
-      "error_message": "[3회 시도 후 실패] Step did not update status",
-      "failed_at": "2026-08-17T22:34:42+0900"
+      "status": "pending"
     },
     {
       "step": 11,
