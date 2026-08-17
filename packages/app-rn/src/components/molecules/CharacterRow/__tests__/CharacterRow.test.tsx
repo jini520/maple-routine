@@ -57,13 +57,20 @@ describe('CharacterRow — 2줄 규칙 ([[ADR-144]] 결정 2)', () => {
 })
 
 describe('CharacterRow — 얼굴과 이름', () => {
-  it('이미지가 없으면 이름 첫 글자를 그린다', async () => {
-    const { getByText, queryByTestId } = await renderAtom(
+  // 사용자 지정 2026-08-17 — 이름 첫 글자는 «이 캐릭터의 얼굴» 처럼 보여 «못 가져왔다» 를 말하지
+  // 못했다. 주황 원 + `?` 는 그 자리가 **비어 있다는 사실**을 말한다.
+  it('이미지가 없으면 이름 첫 글자가 아니라 주황 원 + ? 다', async () => {
+    const { getByText, getByTestId, queryByTestId, queryByText } = await renderAtom(
       <CharacterRow {...기본} imageUrl={null} />,
     )
 
     expect(queryByTestId('character-row-face')).toBeNull()
-    expect(getByText('내')).toBeTruthy()
+    expect(queryByText('내')).toBeNull()
+    expect(getByText('?')).toBeTruthy()
+    // 그 원은 **테마 주황**이다 — 배경색이 실제로 칠해졌는지까지 본다(클래스 문자열은
+    // NativeWind 가 스타일로 바꿔 없어지므로 flatten 한 값에서 읽는다).
+    const fallback = flattenStyle(getByTestId('character-row-face-fallback').props.style)
+    expect(fallback.backgroundColor).toBeTruthy()
   })
 
   it('월드를 모르면 엠블럼을 그리지 않는다', async () => {

@@ -227,14 +227,10 @@ export function CharacterManageBody({
                 onSelect={manage.selectAccount}
               />
             )}
-            <View className="flex-row items-center justify-between">
-              <SectionLabel>캐릭터 추가</SectionLabel>
-              {manage.selectableCount > 0 && (
-                <Text className="text-xs text-text-muted">
-                  {manage.selectableCount}개 중 {manage.candidates.length}개 표시
-                </Text>
-              )}
-            </View>
+            {/* 라벨 오른쪽의 «{n}개 중 {m}개 표시» 는 뺐다(사용자 지정 2026-08-17). 그 줄이 답하던
+                질문(«왜 12개가 아니라 7개인가»)은 이 화면에서 물을 수 없는 질문이었다 — 안 보이는
+                캐릭터가 왜 안 보이는지는 그 숫자로도 알 수 없다. */}
+            <SectionLabel>캐릭터 추가</SectionLabel>
             <CandidateArea manage={manage} place={place} />
           </>
         )}

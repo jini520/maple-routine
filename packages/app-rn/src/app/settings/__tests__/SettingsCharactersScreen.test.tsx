@@ -16,6 +16,7 @@
 // 여기서는 **화면이 그 규칙에 닿는 두 번째 경로**인 접근성 액션으로 본다(끌기와 같은 문을 쓰므로,
 // 결과가 `moveOcid` 와 같은지는 그쪽으로 확인된다).
 import { act, fireEvent, within } from '@testing-library/react-native'
+import { StyleSheet } from 'react-native'
 
 import { getCharacterPickerRoster } from '@core/features/schedule-sync/schedule-sync'
 import { fetchCharacterList } from '@core/nexon/character'
@@ -605,7 +606,8 @@ describe('못 고르는 계정 ([[ADR-143]] 결정 10)', () => {
     const view = await renderScreen()
 
     expect(view.getByText('표시할 캐릭터가 없어요')).toBeTruthy()
-    expect(view.getByText('3개 중 0개 표시')).toBeTruthy()
+    // 라벨 오른쪽의 «n개 중 m개 표시» 는 뺐다(사용자 지정 2026-08-17).
+    expect(view.queryByText(/개 중 .*개 표시/)).toBeNull()
   })
 })
 
@@ -765,25 +767,51 @@ describe('저장 ([[ADR-144]] 결정 7 · [[ADR-140]] 결정 4·5)', () => {
     })
   })
 
-  it('「닫기」는 저장하지 않고 돌아간다', async () => {
-    const store = mockContentStore({ trackedOcids: ['a1'] })
+  // 사용자 지정 2026-08-17 — 뒤로가기가 둘(헤더 `←` · OS)인 화면에서 셋째 출구는 중복이다.
+  it('「닫기」 버튼은 없다 — 출구는 뒤로가기다', async () => {
     const view = await renderScreen()
 
-    await press(view.getByText('닫기'))
-
-    expect(goBack).toHaveBeenCalledTimes(1)
-    expect(store.saveTrackedOcids).not.toHaveBeenCalled()
+    expect(view.queryByText('닫기')).toBeNull()
   })
 })
 
 describe('화면 골격', () => {
-  it('자기 스크롤 컨테이너를 갖고 고정 영역을 두지 않는다 ([[ADR-131]])', async () => {
+  it('자기 스크롤 컨테이너를 갖고, 고정되는 것은 저장 바 하나다 ([[ADR-131]] 의 하단 액션 바 예외)', async () => {
     const view = await renderScreen()
 
     // 헤더가 스크롤 뷰의 **자식**이다 — 형제로 두면 화면에 붙어 영원히 고정된다.
     expect(view.getByTestId('screen-scroll')).toBeTruthy()
     expect(view.getByTestId('screen-SettingsCharacters')).toBeTruthy()
     expect(view.getByText('캐릭터 관리')).toBeTruthy()
+    // 저장 바는 반대로 스크롤 뷰 **밖**이라야 어디까지 굴렸든 눌린다(사용자 지정 2026-08-17).
+    expect(view.getByTestId('character-manage-action-bar')).toBeTruthy()
+  })
+
+  // 사용자 지정 2026-08-17 — 「더 높은 레벨이 존재하는 ID 가 먼저」. 응답 순서(넥슨이 정한다)를
+  // 그대로 쓰면 주력 ID 가 뒤에 설 수 있고, 화면은 목록의 첫 항목을 연다.
+  it('메이플 ID 차례는 대표 레벨 내림차순이다 — 응답 순서를 따르지 않는다', async () => {
+    // 응답을 뒤집어 준다: 계정B(대표 275) 가 먼저, 계정A(대표 294) 가 나중.
+    mockedFetchCharacterList.mockResolvedValue([계정B, 계정A])
+
+    const view = await renderScreen()
+
+    // 첫 조회가 account-a 다 — 정렬이 첫 계정 선택에도 그대로 걸린다.
+    expect(mockedRoster.mock.calls[0]?.[1]?.accountId).toBe('account-a')
+
+    await press(view.getByTestId('account-select-trigger'))
+    const options = view
+      .getAllByTestId(/^account-select-option-/)
+      .map((node) => String(node.props.testID).replace('account-select-option-', ''))
+    expect(options).toEqual(['account-a', 'account-b'])
+  })
+
+  it('저장 버튼은 그 바 안에서 폭을 다 쓴다', async () => {
+    const view = await renderScreen()
+
+    const bar = view.getByTestId('character-manage-action-bar')
+    const button = within(bar).getByRole('button')
+    // 클래스 문자열은 NativeWind 가 스타일로 바꿔 사라지므로 flatten 한 값에서 읽는다.
+    expect(StyleSheet.flatten(button.props.style).width).toBe('100%')
   })
 
   it('뒤로 버튼이 pop 한다', async () => {

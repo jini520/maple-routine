@@ -86,11 +86,16 @@ describe('AccountSelect — 트리거 ([[ADR-144]] 결정 6)', () => {
     expect(getByText('루나 Lv.275 밤샘메린')).toBeTruthy()
   })
 
-  it('얼굴이 없으면 이니셜을 그린다 — 얼굴 때문에 조회하지 않는다', async () => {
-    const { queryByTestId, getByText } = await renderOverlay(<AccountSelect {...props()} />)
+  // 폴백 규칙은 `CharacterRow` 와 같다(사용자 지정 2026-08-17) — 이니셜이 아니라 주황 원 + `?`.
+  it('얼굴이 없으면 주황 원 + ? 다 — 얼굴 때문에 조회하지 않는다', async () => {
+    const { queryByTestId, getByTestId, queryByText, getAllByText } = await renderOverlay(
+      <AccountSelect {...props()} />,
+    )
 
     expect(queryByTestId('account-select-face-account-a')).toBeNull()
-    expect(getByText('낟')).toBeTruthy()
+    expect(queryByText('낟')).toBeNull()
+    expect(getAllByText('?').length).toBeGreaterThan(0)
+    expect(getByTestId('account-select-face-fallback-account-a')).toBeTruthy()
   })
 
   it('캐시에 얼굴이 있으면 그것을 쓴다', async () => {

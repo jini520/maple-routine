@@ -8,10 +8,18 @@
 // 선택 단계가 같은 것을 페이지로 쓴다(결정 1 — 갈리는 것은 머리와 CTA 뿐이다). 여기 있는 것은
 // `←` + 제목 · 「닫기/저장」 · 저장 배선 셋이다.
 //
-// ── 고정 영역을 만들지 않는다 ([[ADR-131]]) ─────────────────────────────────────────
+// ── 고정되는 것은 **저장 버튼 하나**다 ([[ADR-131]] 의 «하단 액션 바» 예외, 사용자 판정 2026-08-17)
 //
-// 두 층도 CTA 도 페이지와 함께 굴러간다. 위 리스트가 길면 아래 목록이 화면 밖으로 나가는데
-// ([[ADR-144]] 대가), «아래를 화면에 붙여 둔다» 는 그 ADR 을 정면으로 되돌리는 것이라 하지 않는다.
+// 두 층은 그대로 페이지와 함께 굴러간다 — 위 리스트가 길면 아래 목록이 화면 밖으로 나가는 것도
+// 그대로다([[ADR-144]] 대가). 바뀐 것은 **CTA 뿐**이고, [[ADR-131]] 이 «고정 영역 없음» 을 정하면서
+// 스스로 남긴 예외(*"하단 액션 바는 대상 아님"*)가 이 자리에 걸린 것이다: 이 화면은 스크롤이 길고,
+// 저장은 **어디까지 굴렸든 지금 할 수 있어야 하는 일**이다.
+//
+// 「닫기」는 없앴다(사용자 지정) — 뒤로가기가 둘(헤더 `←` · OS 뒤로가기) 있는 화면에서 셋째 출구는
+// 같은 말을 한 번 더 하는 것이고, 그 자리를 비워야 저장이 폭을 다 쓴다.
+//
+// **바 높이를 상수로 적지 않는다** — `onLayout` 으로 재서 그만큼 콘텐츠 아래 여백을 준다. 손으로
+// 적으면 글자 크기·안전영역이 바뀌는 기기에서 마지막 행이 바 뒤로 숨는다.
 //
 // ── 저장 ([[ADR-144]] 결정 7 · [[ADR-140]] 결정 4·5) ────────────────────────────────
 //
@@ -21,6 +29,7 @@
 // 고른 대표가 지워질 수 있다.
 import { useState } from 'react'
 import { Pressable, Text, View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useContentSchedulerStore } from '@core/features/content-scheduler/store'
 import { useApiKeyNotice } from '@core/features/onboarding/use-api-key-notice'
@@ -50,6 +59,10 @@ export function SettingsCharactersScreen(): React.JSX.Element {
   // 에 걸린다. 온보딩 단계도 같은 두 줄을 갖는다(결정 1 — 갈리는 것은 머리와 CTA 다).
   const { scrollRef, onScroll, scroll } = useReorderScroll()
   const [saveProgress, setSaveProgress] = useState<{ completed: number; total: number } | null>(null)
+  const insets = useSafeAreaInsets()
+  // 고정 바가 덮는 높이 — 잰 값이 오기 전에는 0이라 마지막 행이 한 프레임 가려질 수 있지만, 그
+  // 프레임은 바가 그려지는 바로 그 프레임이라 사용자가 스크롤을 시작하기 전이다.
+  const [actionBarHeightPx, setActionBarHeightPx] = useState(0)
 
   // [[ADR-115]] 결정 7 · [[ADR-116]] 결정 1: 두 조회가 맞는 401·429 도 키 재입력 진입점으로 간다.
   // 두 번 부르는 것은 두 겹이 아니다 — 훅은 값 하나를 지켜보고, 멱등은 스토어 가드가 진다.
@@ -79,7 +92,7 @@ export function SettingsCharactersScreen(): React.JSX.Element {
   }
 
   return (
-    <>
+    <View className="flex-1">
       <ScreenScroll
         hasTabBar={false}
         ref={scrollRef}
@@ -101,31 +114,41 @@ export function SettingsCharactersScreen(): React.JSX.Element {
         }
       >
         {/* `screen-<라우트 이름>` 은 나머지 하위 페이지와 같은 관례다. */}
-        <View className="gap-4 px-4 pb-4" testID="screen-SettingsCharacters">
+        <View
+          className="gap-4 px-4 pb-4"
+          testID="screen-SettingsCharacters"
+          // 잰 바 높이만큼 콘텐츠 아래를 비운다 — 안 그러면 마지막 행이 바 뒤에 영영 숨는다.
+          style={{ paddingBottom: actionBarHeightPx }}
+        >
           {/* 이 자리의 401·429 는 곧 키 입력 화면으로 옮겨간다(위 `useApiKeyNotice`) — 그래서
               실패 문구도 그렇게 말하는 피커 어휘다([[ADR-115]] 결정 7). */}
           <CharacterManageBody manage={manage} scroll={scroll} place="picker" />
-
-          <View className="flex-row justify-end gap-2">
-            <Button variant="text" onPress={() => navigation.goBack()}>
-              닫기
-            </Button>
-            <Button
-              variant="primary"
-              onPress={() => {
-                void handleSave()
-              }}
-              disabled={isSaveDisabled}
-              // 웹의 `disabled:opacity-50` 은 CSS 의사 클래스라 RN 의 `disabled` 프롭과 이어지지
-              // 않는다 — 그대로 두면 비활성 버튼이 멀쩡한 색으로 보인다(피커와 같은 처방).
-              className={isSaveDisabled ? 'opacity-50' : undefined}
-              textClassName="text-sm"
-            >
-              저장
-            </Button>
-          </View>
         </View>
       </ScreenScroll>
+
+      {/* 스크롤 뷰의 **형제**이자 절대 배치라 굴러가지 않는다(파일 머리 — [[ADR-131]] 의 하단 액션 바
+          예외). 불투명해야 하는 이유는 콘텐츠가 이 아래를 지나가기 때문이고, 색은 카드가 아니라
+          «페이지 바닥» 이라 `bg-bg` 다. 안전영역은 이 바가 먹는다(스크롤포트는 `ScreenScroll` 이
+          이미 자기 몫을 뺐다). */}
+      <View
+        testID="character-manage-action-bar"
+        className="absolute inset-x-0 bottom-0 border-t border-border bg-bg px-4 pt-3"
+        style={{ paddingBottom: insets.bottom + 12 }}
+        onLayout={(event) => setActionBarHeightPx(event.nativeEvent.layout.height)}
+      >
+        <Button
+          variant="primary"
+          onPress={() => {
+            void handleSave()
+          }}
+          disabled={isSaveDisabled}
+          // 웹의 `disabled:opacity-50` 은 CSS 의사 클래스라 RN 의 `disabled` 프롭과 이어지지
+          // 않는다 — 그대로 두면 비활성 버튼이 멀쩡한 색으로 보인다(피커와 같은 처방).
+          className={`w-full items-center${isSaveDisabled ? ' opacity-50' : ''}`}
+        >
+          저장
+        </Button>
+      </View>
 
       {saveProgress !== null && (
         <ProgressModal
@@ -134,6 +157,6 @@ export function SettingsCharactersScreen(): React.JSX.Element {
           total={saveProgress.total}
         />
       )}
-    </>
+    </View>
   )
 }

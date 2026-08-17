@@ -56,6 +56,24 @@ export function summarizeAccount(account: MapleAccount): AccountSummaryView | nu
   }
 }
 
+/**
+ * 드롭다운 목록의 차례 — **대표 캐릭터의 레벨이 높은 계정이 먼저**다(사용자 지정 2026-08-17).
+ *
+ * 계정 자체에는 «어느 것이 주력인가» 를 말하는 값이 없다(`accountId` 는 불투명 문자열이고 응답 순서는
+ * 넥슨이 정한다). 그 자리에서 사람이 실제로 쓰는 기준이 **가장 높은 캐릭터**라, 그것으로 세운다 —
+ * 대표는 이미 각 계정의 최고 레벨이므로(`summarizeAccount`) 새로 셀 것도 없다.
+ *
+ * 동레벨이면 대표 **이름순**이다. 응답 순서를 따르면 같은 키로 열 때마다 차례가 달라 보인다.
+ * 이 순서는 **첫 계정 선택에도 그대로 걸린다** — 화면이 목록의 첫 항목을 연다.
+ */
+export function sortAccountSummaries(summaries: AccountSummaryView[]): AccountSummaryView[] {
+  return [...summaries].sort((a, b) =>
+    b.representative.level !== a.representative.level
+      ? b.representative.level - a.representative.level
+      : compareByName(a.representative.name, b.representative.name),
+  )
+}
+
 /** «선택됨» 층의 행 하나([[ADR-144]] 결정 2) — 네트워크 없이 로컬 캐시로만 그린다. */
 export interface SelectedCharacterView {
   ocid: string

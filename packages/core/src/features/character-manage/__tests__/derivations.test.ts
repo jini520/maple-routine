@@ -5,6 +5,7 @@ import { pickRepresentativeCharacter } from '../../onboarding/representative-cha
 import {
   buildSelectedCharacterViews,
   resolveRepresentative,
+  sortAccountSummaries,
   summarizeAccount,
 } from '../derivations'
 
@@ -249,5 +250,35 @@ describe('resolveRepresentative', () => {
 
   it('목록이 비어 있으면 null 이다', () => {
     expect(resolveRepresentative([], 'a')).toBeNull()
+  })
+})
+
+// 사용자 지정 2026-08-17 — «더 높은 레벨이 존재하는 ID 가 먼저». 계정 자체에는 «주력» 을 말하는 값이
+// 없고(accountId 는 불투명 문자열·응답 순서는 넥슨이 정한다), 사람이 실제로 쓰는 기준이 최고 레벨이다.
+describe('sortAccountSummaries', () => {
+  function summary(accountId: string, level: number, name = `대표-${accountId}`) {
+    const view = summarizeAccount(account([character({ name, level })], accountId))
+    if (view === null) throw new Error('테스트 전제가 깨졌다')
+    return view
+  }
+
+  it('대표 레벨이 높은 계정이 먼저다', () => {
+    const sorted = sortAccountSummaries([summary('a', 180), summary('b', 294), summary('c', 221)])
+
+    expect(sorted.map((view) => view.accountId)).toEqual(['b', 'c', 'a'])
+  })
+
+  it('동레벨이면 대표 이름순이다 — 응답 순서를 따르면 열 때마다 달라 보인다', () => {
+    const sorted = sortAccountSummaries([summary('a', 200, '나중'), summary('b', 200, '가장')])
+
+    expect(sorted.map((view) => view.accountId)).toEqual(['b', 'a'])
+  })
+
+  it('입력 배열을 바꾸지 않는다', () => {
+    const input = [summary('a', 100), summary('b', 200)]
+
+    sortAccountSummaries(input)
+
+    expect(input.map((view) => view.accountId)).toEqual(['a', 'b'])
   })
 })

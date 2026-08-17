@@ -54,6 +54,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   buildSelectedCharacterViews,
   resolveRepresentative,
+  sortAccountSummaries,
   summarizeAccount,
   type AccountSummaryView,
   type SelectedCharacterView,
@@ -228,9 +229,11 @@ export function useCharacterManage(): CharacterManageController {
         if (cancelled) return
         // 캐릭터 0명 계정은 `normalizeCharacterList` 가 이미 걸렀고([[ADR-127]] 결정 1),
         // `summarizeAccount` 의 `null` 은 그 규칙이 뚫렸을 때의 안전망이다 — 렌더 중에 던지지 않는다.
-        const summaries = list
-          .map(summarizeAccount)
-          .filter((summary): summary is AccountSummaryView => summary !== null)
+        // 차례는 «대표 레벨이 높은 계정이 먼저» 다(`sortAccountSummaries`) — 그래서 아래 `[0]` 이
+        // 고르는 첫 계정도 주력 ID 가 된다.
+        const summaries = sortAccountSummaries(
+          list.map(summarizeAccount).filter((summary): summary is AccountSummaryView => summary !== null),
+        )
         const open = openAccountRef.current
         const next =
           open !== null && summaries.some((summary) => summary.accountId === open)

@@ -170,7 +170,6 @@ exports[`CharacterRow — 좌우 슬롯 렌더 트리 스냅샷 — 이후 변�
     <View
       style={
         {
-          "backgroundColor": "#E4E1CE",
           "borderRadius": 9999,
           "flexShrink": 0,
           "height": 40,

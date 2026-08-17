@@ -101,7 +101,9 @@ function AccountRow(props: AccountRowProps): React.JSX.Element {
 
   return (
     <View className="flex-row items-center gap-2.5">
-      <View className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-surface-2">
+      {/* 초상화 규칙은 `CharacterRow` 와 같다(사용자 지정 2026-08-17) — 상자에 배경색 없음, 못 가져온
+          자리는 **주황 원 + `?`**. 두 자리가 갈리면 같은 얼굴이 화면마다 다르게 없어진다. */}
+      <View className="h-9 w-9 shrink-0 overflow-hidden rounded-full">
         {props.portraitUrl !== null ? (
           <Image
             testID={`account-select-face-${accountId}`}
@@ -110,8 +112,11 @@ function AccountRow(props: AccountRowProps): React.JSX.Element {
             style={{ position: 'absolute', ...faceCropStyle() }}
           />
         ) : (
-          <View className="h-full w-full items-center justify-center">
-            <Text className="text-sm font-bold text-text">{representative.name.charAt(0)}</Text>
+          <View
+            testID={`account-select-face-fallback-${accountId}`}
+            className="h-full w-full items-center justify-center bg-primary"
+          >
+            <Text className="text-sm font-bold text-on-primary">?</Text>
           </View>
         )}
       </View>
