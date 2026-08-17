@@ -104,14 +104,28 @@ h === 'auto'  →  w === 4
 ## 위젯 규약 ([[ADR-146]] 결정 3)
 
 ```ts
+// app/today/widgets/types.ts
 interface WidgetDefinition {
   id: WidgetId
-  sizes: readonly { w: number; h: number }[]  // 감당하는 크기
+  sizes: readonly WidgetSize[]                 // 감당하는 크기(`{ w: number; h: WidgetHeight }`)
   target?: TabRouteName                        // 없으면 누를 수 없는 타일
   Component: React.ComponentType<WidgetProps>
 }
-interface WidgetProps { w: number; h: number; data: TodayViewModel }
+interface WidgetProps { w: number; h: WidgetHeight; data: TodayViewModel }
 ```
+
+- **`h` 는 선언한 값 그대로 내려간다 — `'auto'` 를 숫자로 접지 않는다.** 위젯이 갈라 그리는 기준이
+  «내가 선언한 어느 크기인가» 라서, 선언에 없는 값(auto 타일의 nominal `1`)을 넘기면 그 분기가
+  실제로는 존재하지 않는 크기를 가리킨다. 최소 높이는 배치를 푸는 쪽(`resolveWidgetPositions`)의
+  사정이지 위젯이 알 일이 아니다.
+- 표는 `widgets/registry.ts`(존재·크기·목적지) · 배치는 `widgets/layout.ts`(좌표) · 그리는 것은
+  `WidgetGrid.tsx` 다. `validateWidgetLayout` 이 읽는 «선언된 크기» 표(`WIDGET_SIZES_BY_ID`)는
+  레지스트리에서 **파생**시킨다 — 손으로 적으면 같은 목록이 두 벌이 된다.
+- **좌우 여백(16)은 `WidgetGrid` 가 그리지 않는다.** 앱 공통 `px-4` 라 다른 화면과 같이 화면의
+  래퍼가 준다 — 격자가 또 주면 두 겹이 되는데, 열 폭 계산은 `창폭 − 32` 를 전제로 서 있다.
+- **`onLayout` 이 붙는 것은 `h: 'auto'` 타일뿐이다.** 나머지 치수는 계산으로 나오므로 재면 첫
+  프레임에 0 이고 그 0 이 그대로 좌표가 된다([[ADR-132]] 정정 30 과 같은 이유). auto 타일만 재는
+  이유는 그 높이가 **계산으로 나오지 않기** 때문이다(내용의 함수다).
 
 - **위젯이 `w`·`h` 로 갈라 스스로 다르게 그린다.** 같은 데이터를 다른 밀도로 말하는 것이지, 큰 타일이
   작은 타일을 확대한 것이 아니다(iOS 위젯의 small/medium/large 와 같은 규약).
