@@ -86,7 +86,12 @@ vi.mock('@core/lib/scheduler-merge', () => ({
 // 실물을 쓰고 그 아래 PreferencesPort만 인메모리로 바꾼다 — 원장이 "같은 날짜를 두 번 부르지 않는다"를
 // 실제로 지키는지가 이 파일이 검증해야 할 동작이라, 그 모듈까지 목으로 대체하면 검증이 사라진다.
 
-import { getCharacterPickerRoster, getRegisteredCharacters, syncSchedules } from '../schedule-sync'
+import {
+  getCharacterPickerRoster,
+  getRegisteredCharacters,
+  resetSyncSingleFlightForTests,
+  syncSchedules,
+} from '../schedule-sync'
 import { hasSyncAttemptedThisRun, resetSyncRunStateForTests } from '../sync-run-state'
 
 function character(ocid: string): MapleCharacter {
@@ -153,6 +158,9 @@ beforeEach(async () => {
   vi.setSystemTime(new Date(NOW))
   // 모듈 수준 플래그라 테스트끼리 샌다(ADR-097 결정 3).
   resetSyncRunStateForTests()
+  // 같은 이유로 진행 중인 회차도 비운다 — 끝내지 않은 회차를 남기면 다음 테스트가 거기에
+  // 합류해 영영 안 끝난다(ADR-146 결정 4).
+  resetSyncSingleFlightForTests()
   prefs = installFakePreferences()
   getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1', selectedAccountId: 'acc-1' })
   getCachedSchedulerStateMock.mockResolvedValue(null)
@@ -472,6 +480,121 @@ describe('syncSchedules', () => {
     expect(results[1].isStale).toBe(true)
     expect(results[2].isStale).toBe(false)
     expect(results[2].error).toBeNull()
+  })
+
+  describe('단일 비행 — 진행 중인 회차가 있으면 함께 기다린다 (ADR-146 결정 4)', () => {
+    it('진행 중인 회차가 있으면 둘째 호출은 네트워크를 다시 타지 않는다', async () => {
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', [character('ocid-1')])])
+      let resolveState: (state: SchedulerCharacterState) => void = () => {}
+      fetchSchedulerCharacterStateMock.mockImplementation(
+        () =>
+          new Promise<SchedulerCharacterState>((resolve) => {
+            resolveState = resolve
+          }),
+      )
+
+      const first = syncSchedules(['ocid-1'])
+      const second = syncSchedules(['ocid-1'])
+
+      await vi.waitFor(() => expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1))
+      resolveState(schedulerState('캐릭터1'))
+      await Promise.all([first, second])
+
+      expect(fetchCharacterListMock).toHaveBeenCalledTimes(1)
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1)
+    })
+
+    it('합류한 호출은 진행 중인 회차와 같은 결과를 받는다', async () => {
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', [character('ocid-1')])])
+      let resolveState: (state: SchedulerCharacterState) => void = () => {}
+      fetchSchedulerCharacterStateMock.mockImplementation(
+        () =>
+          new Promise<SchedulerCharacterState>((resolve) => {
+            resolveState = resolve
+          }),
+      )
+
+      const first = syncSchedules(['ocid-1'])
+      const second = syncSchedules(['ocid-1'])
+
+      await vi.waitFor(() => expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1))
+      resolveState(schedulerState('캐릭터1'))
+      const [firstResults, secondResults] = await Promise.all([first, second])
+
+      expect(secondResults).toBe(firstResults)
+    })
+
+    it('합류한 호출의 onProgress는 불리지 않는다 — 진행률은 회차를 소유한 호출이 받는다', async () => {
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', [character('ocid-1')])])
+      let resolveState: (state: SchedulerCharacterState) => void = () => {}
+      fetchSchedulerCharacterStateMock.mockImplementation(
+        () =>
+          new Promise<SchedulerCharacterState>((resolve) => {
+            resolveState = resolve
+          }),
+      )
+
+      const ownerProgress = vi.fn()
+      const joinerProgress = vi.fn()
+      const first = syncSchedules(['ocid-1'], ownerProgress)
+      const second = syncSchedules(['ocid-1'], joinerProgress)
+
+      await vi.waitFor(() => expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1))
+      resolveState(schedulerState('캐릭터1'))
+      await Promise.all([first, second])
+
+      expect(ownerProgress).toHaveBeenCalled()
+      expect(joinerProgress).not.toHaveBeenCalled()
+    })
+
+    it('회차가 끝난 뒤의 호출은 새 회차라 네트워크를 다시 탄다', async () => {
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', [character('ocid-1')])])
+      fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
+
+      await syncSchedules(['ocid-1'])
+      await syncSchedules(['ocid-1'])
+
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(2)
+    })
+
+    it('실패도 합류한 호출과 함께 받고, 실패한 회차는 캐시되지 않아 다음 호출이 다시 시도한다', async () => {
+      fetchCharacterListMock.mockRejectedValueOnce(new NexonNetworkError('timeout'))
+
+      const first = syncSchedules(['ocid-1'])
+      const second = syncSchedules(['ocid-1'])
+      const settled = Promise.allSettled([first, second])
+
+      expect((await settled).map((outcome) => outcome.status)).toEqual(['rejected', 'rejected'])
+      expect(fetchCharacterListMock).toHaveBeenCalledTimes(1)
+
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', [character('ocid-1')])])
+      fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
+
+      const results = await syncSchedules(['ocid-1'])
+
+      expect(fetchCharacterListMock).toHaveBeenCalledTimes(2)
+      expect(results.map((result) => result.ocid)).toEqual(['ocid-1'])
+    })
+
+    it('회귀 가드 — 단독 호출의 호출 수·순서·인자·결과는 종전과 같다', async () => {
+      const characters = [character('ocid-1'), character('ocid-2')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+      fetchSchedulerCharacterStateMock
+        .mockResolvedValueOnce(schedulerState('캐릭터1'))
+        .mockResolvedValueOnce(schedulerState('캐릭터2'))
+
+      const onProgress = vi.fn()
+      const results = await syncSchedules(['ocid-1', 'ocid-2'], onProgress)
+
+      expect(fetchCharacterListMock).toHaveBeenCalledTimes(1)
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(2)
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(1, 'key-1', 'ocid-1')
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-2')
+      expect(onProgress).toHaveBeenNthCalledWith(1, 0, 2)
+      expect(onProgress).toHaveBeenLastCalledWith(2, 2)
+      expect(results.map((result) => result.ocid)).toEqual(['ocid-1', 'ocid-2'])
+      expect(hasSyncAttemptedThisRun()).toBe(true)
+    })
   })
 
   describe('ADR-030: 캐릭터/월드/계정 병합', () => {
