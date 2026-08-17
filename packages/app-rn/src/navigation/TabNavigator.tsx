@@ -1,6 +1,7 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 
 import { BossProfitScreen } from '../app/boss-profit/BossProfitScreen'
+import { BossManageScreen } from '../app/boss-scheduler/BossManageScreen'
 import { BossScreen } from '../app/boss-scheduler/BossScreen'
 import { ContentScreen } from '../app/content-scheduler/ContentScreen'
 import { HuntingProfitScreen } from '../app/hunting-profit/HuntingProfitScreen'
@@ -15,7 +16,7 @@ import { INITIAL_TAB_ROUTE, TAB_ROUTE_NAMES, type TabParamList, type TabRouteNam
 const Tab = createBottomTabNavigator<TabParamList>()
 
 /**
- * 화면 여덟. **`Partial` 이 아니라 `Record` 인 것이 계약이다** — 하나를 빠뜨리면 타입이 거부한다.
+ * 화면 아홉. **`Partial` 이 아니라 `Record` 인 것이 계약이다** — 하나를 빠뜨리면 타입이 거부한다.
  * 예전에는 `Partial` + 자리표시자 폴백이었고, 그래서 `Settings` 를 빠뜨렸을 때 **타입도 테스트도
  * 통과한 채 설정 탭만 자리표시자**로 떴다(2026-08-13 실기기 관측). 그 사고의 처방이 이 형태다.
  *
@@ -26,6 +27,8 @@ const TAB_SCREENS = {
   Today: TodayScreen,
   Content: ContentScreen,
   Boss: BossScreen,
+  // 루트 스택에서 여기로 옮겨왔다([[ADR-145]] 결정 1) — 웹의 하위 경로 중 유일하게 탭인 화면이다.
+  BossManage: BossManageScreen,
   Profit: BossProfitScreen,
   HuntingProfit: HuntingProfitScreen,
   Spend: SpendScreen,
@@ -38,7 +41,7 @@ function screenFor(name: TabRouteName): React.ComponentType<Record<string, never
 }
 
 /**
- * 탭 여덟 + 떠 있는 바([[ADR-132]]).
+ * 탭 아홉 + 떠 있는 바([[ADR-132]]).
  *
  * ## 바가 그룹을 알고, 내비게이터는 페이지만 안다
  *

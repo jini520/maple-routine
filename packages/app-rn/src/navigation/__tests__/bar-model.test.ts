@@ -9,6 +9,7 @@ import {
   BAR_GROUPS,
   barLayer,
   canGoBack,
+  groupById,
   groupOfPage,
   initialBarState,
   shouldGateAd,
@@ -43,7 +44,17 @@ describe('그룹 표 ([[ADR-132]] 결정 1)', () => {
     }
   })
 
-  it('탭 화면 여덟이 표에 정확히 한 번씩 나온다', () => {
+  // [[ADR-145]] 결정 1 — 헤더 버튼으로만 열리던 화면이 컨텐츠·보스와 나란한 셋째 하위가 된다.
+  // 순서까지 고정하는 이유는 그것이 곧 바에 그려지는 순서이기 때문이다.
+  it('스케줄 하위는 컨텐츠·보스·보스 관리 셋이다', () => {
+    expect(groupById('schedule').subs).toEqual([
+      { page: 'Content', label: '컨텐츠' },
+      { page: 'Boss', label: '보스' },
+      { page: 'BossManage', label: '보스 관리' },
+    ])
+  })
+
+  it('탭 화면 아홉이 표에 정확히 한 번씩 나온다', () => {
     const pages = BAR_GROUPS.flatMap((group) =>
       group.page === null ? group.subs.map((sub) => sub.page) : [group.page],
     )
@@ -63,6 +74,7 @@ describe('층은 «지금 페이지» 가 정한다 (결정 2)', () => {
   it('하위를 가진 그룹의 페이지에 있으면 하위 행이다', () => {
     expect(barLayer(at('Content'))).toBe('sub')
     expect(barLayer(at('Boss'))).toBe('sub')
+    expect(barLayer(at('BossManage'))).toBe('sub')
     expect(barLayer(at('Profit'))).toBe('sub')
     expect(barLayer(at('Spend'))).toBe('sub')
   })

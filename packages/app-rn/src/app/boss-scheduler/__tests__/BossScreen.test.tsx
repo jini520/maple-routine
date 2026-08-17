@@ -3,8 +3,9 @@
 //
 // ── 갈린 것 여섯 ─────────────────────────────────────────────────────────────────────
 //
-// ① **라우터 프로브가 없다** — 이동은 `navigation.navigate('BossManage')` 가 불렸는가로 본다.
-//    웹은 `/boss/manage` 에 프로브 요소를 두고 그것이 나타나는지 봤다.
+// ① **라우터 프로브가 없다** — 이동은 `navigation.navigate(…)` 가 불렸는가로 본다. 웹은
+//    `/boss/manage` 에 프로브 요소를 두고 그것이 나타나는지 봤다. **목적지는 [[ADR-145]] 결정 1 로
+//    `'BossManage'`(push) → `('Tabs', { screen: 'BossManage' })`(형제 탭) 이 됐다.**
 // ② **당겨서 새로고침이 `RefreshControl` 이다**([[ADR-130]]). 웹의 제스처 시뮬레이션 넷(임계
 //    넘김/미달 · 배너 위치 · 목록 transform)은 **옮길 계약이 아니다** — 그 값들을 이제 OS 가 갖는다.
 //    남는 계약은 *"당김이 헤더 버튼과 같은 재조회를 부르는가"*([[ADR-072]] 결정 2)와 *"버튼이 그대로
@@ -338,14 +339,15 @@ describe('BossScreen — 목록 ([[ADR-031]])', () => {
     expect(screen.getByTestId('screen-scroll')).toBeTruthy()
   })
 
-  // [[ADR-140]] 결정 1: 헤더에서 없어진 것은 이 버튼 하나이고, "보스 관리"는 남는다.
-  it('헤더에 "캐릭터 관리" 버튼이 없고 "보스 관리"는 남는다', async () => {
+  // [[ADR-140]] 결정 1 이 "캐릭터 관리"를 걷었고, [[ADR-145]] 결정 1 이 남은 "보스 관리"마저 걷는다
+  // (그쪽은 하단바의 하위 탭이 됐다). 목록이 있는 화면에서 제목 줄에 남는 것은 상태와 새로고침뿐이다.
+  it('헤더에 "캐릭터 관리"도 "보스 관리"도 없다', async () => {
     withBosses()
 
     await renderScreen()
 
     expect(screen.queryByText('캐릭터 관리')).toBeNull()
-    expect(screen.getByText('보스 관리')).toBeTruthy()
+    expect(screen.queryByText('보스 관리')).toBeNull()
   })
 
   // [[ADR-143]] 결정 3: 스토어는 레벨 내림차순으로 준다([[ADR-017]] 결정 2) — 그 위에 사용자가
@@ -503,13 +505,8 @@ describe('BossScreen — 재조회 ([[ADR-072]] · [[ADR-130]])', () => {
     expect(contains(titleRow, screen.getByText('동기화 기록 없음'))).toBe(true)
     // 아래 줄에 있어야 하는 것은 이제 초상화 레일이다([[ADR-142]]).
     expect(contains(titleRow, screen.getByTestId('character-rail'))).toBe(false)
-    // 관리 버튼도 제목과 같은 줄에 **남는다**(오른쪽 끝) — 옮기는 것은 상태뿐이다. 상태와는 다른
-    // 덩어리라(왼쪽 묶음 vs 오른쪽 끝) 공통 조상을 따로 집는다.
-    const manageRow = nearestCommonAncestor(
-      screen.getByText('보스 스케줄러'),
-      screen.getByText('보스 관리'),
-    )
-    expect(contains(manageRow, screen.getByTestId('character-rail'))).toBe(false)
+    // **관리 버튼과 겨루던 짝은 사라졌다**([[ADR-145]] 결정 1) — 그 줄에 남은 것이 제목·상태·
+    // 새로고침 셋뿐이라, 폭을 다투는 상대가 없다.
   })
 })
 
@@ -688,20 +685,22 @@ describe('BossScreen — 빈 상태 문구 ([[ADR-060]])', () => {
     await renderScreen()
 
     expect(screen.getByText('등록된 주간 보스가 없습니다')).toBeTruthy()
-    // "보스 관리"는 **헤더 버튼 하나뿐**이다 — 빈 상태에 CTA 가 붙었다면 둘이 된다.
-    expect(screen.getAllByText('보스 관리')).toHaveLength(1)
+    // 헤더 버튼이 사라졌으므로([[ADR-145]] 결정 1) 이 화면에 "보스 관리"라는 글자는 **하나도 없다** —
+    // 자동 모드에는 CTA 도 없다.
+    expect(screen.queryByText('보스 관리')).toBeNull()
   })
 
-  it('수동 모드는 "보스 관리" CTA 를 주고, 누르면 관리 페이지로 간다', async () => {
+  // [[ADR-145]] 결정 1: CTA 는 남되 목적지가 하위 페이지가 아니라 **형제 탭**이다. 헤더 버튼이
+  // 사라져 같은 라벨을 다투는 상대도 없어졌다.
+  it('수동 모드는 "보스 관리" CTA 를 주고, 누르면 그 탭으로 간다', async () => {
     useTrackingModeStore.setState({ mode: 'manual' })
     mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], characters: [character()] })
     await renderScreen()
 
     expect(screen.getByText('추적할 주간 보스가 없습니다')).toBeTruthy()
-    // 헤더 버튼과 CTA 가 같은 라벨이라 둘째 것을 누른다(CTA).
-    await press(button('보스 관리', 1))
+    await press(button('보스 관리'))
 
-    expect(navigate).toHaveBeenCalledWith('BossManage')
+    expect(navigate).toHaveBeenCalledWith('Tabs', { screen: 'BossManage' })
   })
 
   // 캐시 우선 표시 중(`isStale`)에는 자동 모드에서 "없다"고 단정하지 않는다.
@@ -713,13 +712,14 @@ describe('BossScreen — 빈 상태 문구 ([[ADR-060]])', () => {
     expect(screen.queryByText('등록된 주간 보스가 없습니다')).toBeNull()
   })
 
-  it('헤더 "보스 관리" 버튼을 누르면 관리 페이지로 간다 ([[ADR-035]] 결정 18)', async () => {
+  // [[ADR-035]] 결정 18 의 헤더 진입점이 [[ADR-145]] 결정 1 로 폐기됐다 — 목록이 있는 화면에는
+  // 관리로 가는 자리가 **하나도 없다**(하단바가 진다). 그 부재를 여기서 못 박는다.
+  it('목록이 있으면 "보스 관리"로 가는 자리가 화면에 없다 ([[ADR-145]] 결정 1)', async () => {
     mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], characters: [character({ weeklyBosses: [boss()] })] })
+
     await renderScreen()
 
-    await press(button('보스 관리'))
-
-    expect(navigate).toHaveBeenCalledWith('BossManage')
+    expect(screen.queryByText('보스 관리')).toBeNull()
   })
 })
 

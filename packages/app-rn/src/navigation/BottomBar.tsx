@@ -82,6 +82,7 @@ import {
   LayoutDashboardIcon,
   ListChecksIcon,
   ShoppingCartIcon,
+  SlidersHorizontalIcon,
   SwordsIcon,
   WalletIcon,
   WrenchIcon,
@@ -260,6 +261,9 @@ const ICONS: Readonly<Record<GroupId | TabRouteName, IconComponent>> = {
   Today: LayoutDashboardIcon,
   Content: ListChecksIcon,
   Boss: SwordsIcon,
+  // 검(보스)·목록(컨텐츠)과 겹치지 않으면서 «값을 맞추는 자리» 를 말하는 그림이다([[ADR-145]]
+  // 결정 1) — 위 다섯과 같은 **제안값**이고 확정은 실기기에서 나란히 보고 한다.
+  BossManage: SlidersHorizontalIcon,
   Profit: ProfitIcon,
   HuntingProfit: CrosshairIcon,
   Spend: ShoppingCartIcon,

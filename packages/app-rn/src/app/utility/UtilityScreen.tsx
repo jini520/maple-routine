@@ -8,6 +8,7 @@
 import { Text, View } from 'react-native'
 
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
+import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { UnderConstruction } from '../../components/molecules/UnderConstruction/UnderConstruction'
 
@@ -17,7 +18,9 @@ export function UtilityScreen(): React.JSX.Element {
       <ScreenScroll
         header={
           <PageHeader>
-            <Text className="text-lg font-semibold text-text">유틸리티</Text>
+            <PageHeaderTitleRow>
+              <Text className="text-lg font-semibold text-text">유틸리티</Text>
+            </PageHeaderTitleRow>
           </PageHeader>
         }
       >

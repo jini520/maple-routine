@@ -58,6 +58,7 @@ import { CharacterRail, type CharacterRailEntry } from '../../components/molecul
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
+import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { SPIN_ANIMATION } from '../../lib/animation'
 import { AnimatedView } from '../../lib/nativewind-interop'
@@ -218,7 +219,11 @@ export function ContentScreen(): React.JSX.Element {
     // 웹의 `min-h-[calc(100dvh …)]` 자리는 `flex-1` 이다(탭 상자가 이미 탭바를 뺀 크기다).
     return (
       <View testID="screen-Content" className="flex-1 p-4" style={{ paddingTop: insets.top }}>
-        <Text className="text-lg font-semibold text-text">컨텐츠 스케줄러</Text>
+        {/* 헤더 셸을 안 쓰는 가지에서도 제목 줄은 같은 프리미티브다([[ADR-145]] 정정 1) — 빈 상태와
+            목록 상태를 오갈 때 제목이 튀면 그것이 가장 눈에 띄는 자리다. */}
+        <PageHeaderTitleRow>
+          <Text className="text-lg font-semibold text-text">컨텐츠 스케줄러</Text>
+        </PageHeaderTitleRow>
 
         <View className="flex-1 items-center justify-center">
           <EmptyState
@@ -255,7 +260,7 @@ export function ContentScreen(): React.JSX.Element {
           <PageHeader>
             {/* [[ADR-141]] 결정 1: 동기화 상태가 드롭다운 줄에서 **제목 옆**으로 올라왔다. 오른쪽
                 끝은 관리 버튼 자리 그대로다 — 그쪽은 «가는 곳», 이쪽은 «상태» 라 성질이 다르다. */}
-            <View className="flex-row items-center justify-between">
+            <PageHeaderTitleRow className="justify-between">
               <View className="shrink flex-row items-center gap-2">
                 {/* 결정 3: 폭을 다투면 시각 텍스트만 줄어든다 — 제목은 화면의 이름이다. */}
                 <Text className="shrink-0 text-lg font-semibold text-text">컨텐츠 스케줄러</Text>
@@ -277,7 +282,7 @@ export function ContentScreen(): React.JSX.Element {
                 </Pressable>
               </View>
               {manualManageButton}
-            </View>
+            </PageHeaderTitleRow>
 
             {/* 조건이 **줄 밖**에 있다 — 안에 두면 캐릭터가 없는 동안(첫 조회) 빈 줄이 남아
                 `PageHeader` 의 `gap-4` 를 두 번 먹는다([[ADR-141]] 딸림 변경). */}

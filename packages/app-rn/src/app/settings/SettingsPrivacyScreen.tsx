@@ -39,6 +39,7 @@ import { WebView } from 'react-native-webview'
 
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
+import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ArrowLeftIcon } from '../../lib/icons'
 import { useSettingsNavigation } from './use-settings-navigation'
 
@@ -72,7 +73,7 @@ export function SettingsPrivacyScreen(): React.JSX.Element {
       style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
     >
       {/* 상단 여백은 없다([[ADR-139]]) — 바깥 상자가 안전영역만큼 내려온 자리에서 곧바로 시작한다. */}
-      <View className="flex-row items-center gap-2 px-4 pb-2">
+      <PageHeaderTitleRow className="gap-2 px-4 pb-2">
         <Pressable
           role="button"
           aria-label="뒤로"
@@ -82,7 +83,7 @@ export function SettingsPrivacyScreen(): React.JSX.Element {
           <ArrowLeftIcon className="h-5 w-5 text-text-muted" strokeWidth={2} aria-hidden />
         </Pressable>
         <Text className="text-lg font-semibold text-text">개인정보 처리방침</Text>
-      </View>
+      </PageHeaderTitleRow>
 
       <View className="flex-1">
         {status === 'failed' ? (

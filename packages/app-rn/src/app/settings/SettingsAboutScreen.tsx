@@ -43,6 +43,7 @@ import { useLiveUpdateStore } from '@core/features/live-update/store'
 
 import packageJson from '../../../package.json'
 import { Card } from '../../components/atoms/Card/Card'
+import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { ArrowLeftIcon } from '../../lib/icons'
@@ -69,7 +70,7 @@ export function SettingsAboutScreen(): React.JSX.Element {
       hasTabBar={false}
       header={
         <PageHeader>
-          <View className="flex-row items-center gap-2">
+          <PageHeaderTitleRow className="gap-2">
             <Pressable
               role="button"
               aria-label="뒤로"
@@ -79,7 +80,7 @@ export function SettingsAboutScreen(): React.JSX.Element {
               <ArrowLeftIcon className="h-5 w-5 text-text-muted" strokeWidth={2} aria-hidden />
             </Pressable>
             <Text className="text-lg font-semibold text-text">앱 정보</Text>
-          </View>
+          </PageHeaderTitleRow>
         </PageHeader>
       }
     >

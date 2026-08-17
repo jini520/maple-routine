@@ -33,6 +33,15 @@ export const PORTRAIT_CENTER_Y = 32
 
 /** 칸 사이 간격(px) — 정정 1로 8 → 4(«초상화 간 간격을 좁힌다»). */
 export const PORTRAIT_GAP = 4
+/**
+ * 링이 없는 칸의 간격 — **0**([[ADR-145]] 결정 5, 사용자 지시).
+ *
+ * 링이 사라져도 칸 폭(68)과 안쪽 여백은 그대로라 이웃 사이가 필요 이상으로 벌어진다. 글자 호
+ * (`PORTRAIT_TEXT_R_RINGLESS` = 28)는 칸 가장자리에서 6px 안쪽이라 **간격을 0으로 둬도 이웃 사이에
+ * 12px 이 남는다**(링 있는 쪽은 13 + 4 = 17px). 칸 폭을 줄이는 길도 있었지만 그쪽은 원 중심이
+ * 움직여 두 화면의 초상화가 다른 그림이 된다(정정 8이 폭을 안 건드린 이유와 같다).
+ */
+export const PORTRAIT_GAP_RINGLESS = 0
 
 /** 얼굴 원의 지름(px) — [[ADR-015]] 크롭이 기준으로 삼는 상자다. */
 export const PORTRAIT_FACE_SIZE = 40
@@ -95,15 +104,17 @@ export function portraitTextOffsetPercent(side: 'left' | 'right', radius: number
 }
 
 /**
- * 칸의 두 갈래([[ADR-142]] 정정 8) — 링을 그리는 칸(스케줄러)과 안 그리는 칸(관리 화면).
+ * 칸의 두 갈래([[ADR-142]] 정정 8 · [[ADR-145]] 결정 5) — 링을 그리는 칸(스케줄러)과 안 그리는
+ * 칸(관리 화면).
  *
- * 갈리는 것은 **글자 반지름과 칸 높이 둘뿐**이다. 폭·원 중심·얼굴 크기는 같아서 두 화면의 초상화가
- * 같은 그림으로 보인다.
+ * 갈리는 것은 **글자 반지름 · 칸 높이 · 칸 사이 간격 셋뿐**이다. 폭·원 중심·얼굴 크기는 같아서 두
+ * 화면의 초상화가 같은 그림으로 보인다. 셋을 한 함수가 함께 돌려주므로 «링 없는 칸» 의 정의가
+ * 흩어지지 않는다 — 간격만 레일에 손으로 적어 두면 그 값이 조용히 갈린다.
  */
-export function portraitMetrics(hasRing: boolean): { textR: number; slotH: number } {
+export function portraitMetrics(hasRing: boolean): { textR: number; slotH: number; gap: number } {
   return hasRing
-    ? { textR: PORTRAIT_TEXT_R, slotH: PORTRAIT_SLOT_H }
-    : { textR: PORTRAIT_TEXT_R_RINGLESS, slotH: PORTRAIT_SLOT_H_RINGLESS }
+    ? { textR: PORTRAIT_TEXT_R, slotH: PORTRAIT_SLOT_H, gap: PORTRAIT_GAP }
+    : { textR: PORTRAIT_TEXT_R_RINGLESS, slotH: PORTRAIT_SLOT_H_RINGLESS, gap: PORTRAIT_GAP_RINGLESS }
 }
 
 /** 글자가 베이스라인에서 자라는 높이의 어림값(대문자 높이 ≈ 0.75em) — 여백 검사가 쓴다. */

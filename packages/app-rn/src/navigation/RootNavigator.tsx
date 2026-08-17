@@ -3,7 +3,6 @@ import { useOnboardingStore } from '@core/features/onboarding/store'
 
 import { DropHistoryScreen } from '../app/boss-profit/DropHistoryScreen'
 import { DropPriceScreen } from '../app/boss-profit/DropPriceScreen'
-import { BossManageScreen } from '../app/boss-scheduler/BossManageScreen'
 import { ContentManageScreen } from '../app/content-scheduler/ContentManageScreen'
 import { OnboardingScreen } from '../app/onboarding/OnboardingScreen'
 import { SettingsAboutScreen } from '../app/settings/SettingsAboutScreen'
@@ -20,10 +19,11 @@ import { STACK_ROUTE_NAMES, type RootStackParamList, type StackRouteName } from 
 const Stack = createNativeStackNavigator<RootStackParamList>()
 
 /**
- * 진짜 화면이 들어온 하위 페이지 열둘. **step 8 로 전부 찼고**([[ADR-128]] 4단계) 그 뒤
- * 캐릭터 관리가 하나 늘었다([[ADR-144]] 결정 1 — 웹에서 모달이던 것이 여기서는 화면이다).
+ * 진짜 화면이 들어온 하위 페이지 열하나. **step 8 로 전부 찼고**([[ADR-128]] 4단계) 그 뒤
+ * 캐릭터 관리가 하나 늘었다가([[ADR-144]] 결정 1 — 웹에서 모달이던 것이 여기서는 화면이다)
+ * 보스 관리가 **탭으로 빠져나갔다**([[ADR-145]] 결정 1).
  *
- * 표가 `Partial` 이 아니라 **`Record<StackRouteName, …>`** 인 것이 계약이다. 열둘을 다 적지
+ * 표가 `Partial` 이 아니라 **`Record<StackRouteName, …>`** 인 것이 계약이다. 열하나를 다 적지
  * 않으면 컴파일이 안 된다 — 자리표시자로 조용히 떨어지는 길을 없앴다(그 길이 `TabNavigator` 에서
  * 실제로 설정 탭을 통째로 삼켰다, 2026-08-13).
  *
@@ -31,7 +31,6 @@ const Stack = createNativeStackNavigator<RootStackParamList>()
  * 목록에서도, 개발 노트 항목에서도 같은 상세가 열린다. 사본을 두면 같은 글이 두 벌이 된다.
  */
 const STACK_SCREENS = {
-  BossManage: BossManageScreen,
   ContentManage: ContentManageScreen,
   DropHistory: DropHistoryScreen,
   DropPrice: DropPriceScreen,
@@ -50,12 +49,12 @@ const STACK_SCREENS = {
  *
  * 예전에는 `Partial` + 폴백이었다. 그 형태가 `TabNavigator` 에서 실제로 사고를 냈다 — `Settings`
  * 를 빠뜨렸는데 **타입도 테스트도 통과한 채 설정 탭만 자리표시자**로 떴고, 기기에서 열어 보고서야
- * 알았다(2026-08-13). 여기도 같은 형태였으므로 같이 고친다: `Record<StackRouteName, …>` 는 열둘을
+ * 알았다(2026-08-13). 여기도 같은 형태였으므로 같이 고친다: `Record<StackRouteName, …>` 는 열하나를
  * 다 적지 않으면 **컴파일이 안 된다.**
  *
  * 반환 타입을 넓게 두는 것은 화면 목록을 **데이터에서 돌리기 위한 대가**다. `<Stack.Screen>` 의
  * `component` 타입은 그 자리의 `name` 리터럴에 묶이는데 여기서는 이름이 유니온이라 하나로 좁혀지지
- * 않는다. 열둘을 손으로 적으면 타입이 맞지만, 그러면 계획서 §1 과 화면 목록이 다시 두 벌이 된다
+ * 않는다. 열하나를 손으로 적으면 타입이 맞지만, 그러면 계획서 §1 과 화면 목록이 다시 두 벌이 된다
  * (`routes.ts` 가 데이터인 이유). 진짜 화면이 받는 프롭은 내비게이터가 주는 `route`·`navigation`
  * 뿐이고 그것들은 훅으로 읽으므로(`use-settings-navigation.ts`) 실제 위험은 없다.
  */
@@ -64,7 +63,7 @@ function screenFor(name: StackRouteName): React.ComponentType<Record<string, nev
 }
 
 /**
- * 루트 스택 — 탭 레이어 하나 + 그 위에 쌓이는 하위 페이지 열둘([[ADR-120]] 결정 1·2·4).
+ * 루트 스택 — 탭 레이어 하나 + 그 위에 쌓이는 하위 페이지 열하나([[ADR-120]] 결정 1·2·4).
  *
  * ## 왜 하위 페이지가 탭 **안**이 아니라 **위**인가
  *

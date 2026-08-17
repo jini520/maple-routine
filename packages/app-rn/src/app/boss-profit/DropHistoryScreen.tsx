@@ -60,6 +60,7 @@ import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { MAPLE_LEAF_PATH } from '../../components/mapleLeafPath'
+import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { ArrowLeftIcon, ScrollTextIcon } from '../../lib/icons'
 import { Svg } from '../../lib/nativewind-interop'
@@ -329,7 +330,7 @@ export function DropHistoryScreen(): React.JSX.Element {
         // 제목 높이가 안 갈린다.
         <View testID="page-header" className="z-10 px-4 pb-2" style={{ paddingTop: insets.top }}>
           <View className="gap-3">
-            <View className="flex-row items-center gap-1">
+            <PageHeaderTitleRow className="gap-1">
               <Pressable
                 role="button"
                 onPress={() => navigation.goBack()}
@@ -339,7 +340,7 @@ export function DropHistoryScreen(): React.JSX.Element {
                 <ArrowLeftIcon className="h-5 w-5 text-text" strokeWidth={2} aria-hidden />
               </Pressable>
               <Text className="text-lg font-semibold text-text">히스토리</Text>
-            </View>
+            </PageHeaderTitleRow>
 
             {drought !== null && <ValuableDrought summary={drought} now={now} />}
           </View>

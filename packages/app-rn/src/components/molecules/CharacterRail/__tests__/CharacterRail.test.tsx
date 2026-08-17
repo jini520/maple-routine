@@ -7,7 +7,7 @@ import { act, fireEvent } from '@testing-library/react-native'
 
 import { renderAtom, type AtomElement } from '../../../__tests__/render-atom'
 import { CharacterRail, type CharacterRailEntry } from '../CharacterRail'
-import { portraitRingSpan } from '../character-portrait-geometry'
+import { portraitMetrics, portraitRingSpan } from '../character-portrait-geometry'
 
 function entry(overrides: Partial<CharacterRailEntry> = {}): CharacterRailEntry {
   return {
@@ -117,6 +117,21 @@ describe('CharacterRail', () => {
     const scroll = view.getByTestId('character-rail-scroll')
     expect(scroll.props.horizontal).toBe(true)
     expect(scroll.props.showsHorizontalScrollIndicator).toBe(false)
+  })
+
+  // [[ADR-145]] 결정 5 — 링이 없는 레일(관리 화면 둘)은 칸 사이 간격을 걷는다. 값을 정하는 곳은
+  // `portraitMetrics` 이고 여기서 물을 것은 **레일이 그 값을 실제로 보는가** 다(숫자를 손으로 적어
+  // 두면 기하 표와 레일이 서로 다른 값을 믿는 상태가 조용히 만들어진다).
+  it.each([
+    ['링이 있으면', [{ label: '주간', completed: 1, total: 5 }] as CharacterRailEntry['rings'], true],
+    ['링이 없으면', [] as CharacterRailEntry['rings'], false],
+  ])('%s 그 갈래의 간격을 쓴다', async (_label, rings, hasRing) => {
+    const view = await render([entry({ rings })])
+
+    const style = view.getByTestId('character-rail-scroll').props.contentContainerStyle as {
+      gap: number
+    }
+    expect(style.gap).toBe(portraitMetrics(hasRing).gap)
   })
 })
 

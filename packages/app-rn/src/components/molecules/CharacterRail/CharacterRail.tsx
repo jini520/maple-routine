@@ -13,7 +13,7 @@
 import { ScrollView, View } from 'react-native'
 
 import { CharacterPortrait, type PortraitRingProgress } from './CharacterPortrait'
-import { PORTRAIT_GAP } from './character-portrait-geometry'
+import { portraitMetrics } from './character-portrait-geometry'
 
 export interface CharacterRailEntry {
   ocid: string
@@ -37,6 +37,10 @@ export interface CharacterRailProps {
 const HEADER_PADDING = 16
 
 export function CharacterRail(props: CharacterRailProps): React.JSX.Element {
+  // 한 레일의 칸들은 같은 갈래다(한 화면이 링을 주거나 안 주거나 둘 중 하나다) — 간격은 레일이
+  // 한 번 정해야 하는 값이라 여기서 묻는다([[ADR-145]] 결정 5). 링이 없으면 간격을 걷는다.
+  const { gap } = portraitMetrics(props.entries.some((entry) => entry.rings.length > 0))
+
   return (
     <View testID="character-rail" style={{ marginHorizontal: -HEADER_PADDING }}>
       <ScrollView
@@ -44,7 +48,7 @@ export function CharacterRail(props: CharacterRailProps): React.JSX.Element {
         horizontal
         // 스크롤바를 안 그린다 — «더 있다» 는 잘린 초상화가 말한다(ADR 대가에 적힌 그 값이다).
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: HEADER_PADDING, gap: PORTRAIT_GAP }}
+        contentContainerStyle={{ paddingHorizontal: HEADER_PADDING, gap }}
       >
         {props.entries.map((entry) => (
           <CharacterPortrait
