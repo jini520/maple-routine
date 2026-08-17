@@ -7,7 +7,8 @@
       "name": "sync-single-flight",
       "status": "completed",
       "started_at": "2026-08-17T20:52:13+0900",
-      "summary": "syncSchedules 에 «회차» 단위 단일 비행 도입 — 진행 중인 회차가 있으면 합류해 같은 프라미스를 기다리고, 정산 즉시 슬롯을 비운다(실패도 캐시하지 않는다). 호출부·prehydrate 순차·markSyncAttemptedThisRun 시점 무변경, 테스트 전용 resetSyncSingleFlightForTests 추가, 신규 6케이스(그중 4개는 합류 가드가 없으면 실패)."
+      "summary": "syncSchedules 에 «회차» 단위 단일 비행 도입 — 진행 중인 회차가 있으면 합류해 같은 프라미스를 기다리고, 정산 즉시 슬롯을 비운다(실패도 캐시하지 않는다). 호출부·prehydrate 순차·markSyncAttemptedThisRun 시점 무변경, 테스트 전용 resetSyncSingleFlightForTests 추가, 신규 6케이스(그중 4개는 합류 가드가 없으면 실패).",
+      "completed_at": "2026-08-17T21:00:02+0900"
     },
     {
       "step": 1,
