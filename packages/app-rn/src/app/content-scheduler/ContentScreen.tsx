@@ -62,6 +62,7 @@ import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScro
 import { SPIN_ANIMATION } from '../../lib/animation'
 import { AnimatedView } from '../../lib/nativewind-interop'
 import { ListChecksIcon, RefreshCwIcon } from '../../lib/icons'
+import { orderByTracked } from '../../lib/tracked-order'
 import { useThemeAppearance } from '../../theme/context'
 import { useScreenNavigation } from '../use-screen-navigation'
 import { renderDailyContentCard } from './DailyContentCards'
@@ -80,7 +81,7 @@ const ORDERED_WEEKLY_TEMPLATE = categorizeContentEntries(CONTENT_TEMPLATE.weekly
 export function ContentScreen(): React.JSX.Element {
   const {
     status,
-    characters,
+    characters: storeCharacters,
     error,
     trackedOcids,
     selectedOcid,
@@ -110,6 +111,10 @@ export function ContentScreen(): React.JSX.Element {
   // ADR-101 결정 1: `null` 은 "0명"이 아니라 **"저장소를 아직 안 읽었다"** 다. 둘을 `||` 로 묶으면
   // 콜드 스타트 첫 페인트가 아직 모르는 사실을 단정한다 — 빈 상태는 읽고 확인한 뒤에만 그린다.
   const isEmpty = trackedOcids !== null && trackedOcids.length === 0
+
+  // [[ADR-143]] 결정 3: 스토어가 내는 것은 **기준 순서**(레벨 내림차순)이고, 화면 순서는 사용자가
+  // 캐릭터 관리에서 정한 저장 배열 순서다. core 를 안 고치는 이유는 `orderByTracked` 머리에 있다.
+  const characters = orderByTracked(storeCharacters, trackedOcids ?? [])
 
   const effectiveSelectedOcid =
     selectedOcid !== null && characters.some((character) => character.ocid === selectedOcid)

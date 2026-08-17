@@ -10,6 +10,10 @@
 //    `clearCacheDataAndReload` 가 소유한다**([[ADR-117]] 결정 8) — 전환하며 그 파일을 한 글자도
 //    건드리지 않았으므로 여기서는 **화면이 무엇을 넘기고 무엇을 받는가**만 본다. 순서 자체는
 //    core 테스트(vitest)가 이미 지킨다.
+//
+// ⑤ **「계정 변경」 케이스 셋은 갱신이 아니라 삭제됐다**([[ADR-143]] 결정 7) — 그 행이 없어졌으므로
+//    «어떻게 생겼는가»·«누르면 무엇이 열리는가» 는 물을 대상이 없다. 남는 계약(«그 행이 없다»)은
+//    아래 카드 케이스가 진다.
 import { act, fireEvent } from '@testing-library/react-native'
 
 import { clearCacheDataAndReload, loadCacheDataSizes } from '@core/features/settings/cache-data'
@@ -25,19 +29,6 @@ jest.mock('@core/features/settings/cache-data', () => ({
   clearCacheDataAndReload: jest.fn(async () => {}),
 }))
 jest.mock('../use-settings-navigation', () => ({ useSettingsNavigation: jest.fn() }))
-// 계정 모달 안쪽은 자기 테스트가 본다 — 여기서는 열렸는가와 재조회가 걸렸는가까지다.
-jest.mock('@core/features/onboarding/use-account-probes', () => ({
-  useAccountProbes: jest.fn(() => ({
-    probes: {},
-    isSettled: true,
-    progress: { completed: 0, total: 0 },
-    retry: jest.fn(),
-  })),
-}))
-jest.mock('@core/features/onboarding/use-api-key-notice', () => ({
-  useApiKeyNotice: jest.fn(),
-}))
-
 const mockedStore = jest.mocked(useSettingsStore)
 const mockedLoadSizes = jest.mocked(loadCacheDataSizes)
 const mockedClearAndReload = jest.mocked(clearCacheDataAndReload)
@@ -117,17 +108,16 @@ describe('SettingsAccountDataScreen', () => {
     expect(goBack).toHaveBeenCalledTimes(1)
   })
 
-  // [[ADR-118]] 결정 3: 이슈 #135 가 요구한 분리가 실제로 일어나는 자리다. 본화면에서 빼는 것만으로는
-  // 분리가 아니다 — 옮긴 곳에서 다시 `계정 변경` 과 붙으면 같은 문제가 한 층 내려갈 뿐이다.
-  it('파괴적 행 둘을 "계정 변경"과 다른 카드로 내린다', async () => {
+  // [[ADR-143]] 결정 7: 이 앱에는 「계정 변경」이 없다 — 계정을 바꾸는 일이 「캐릭터 관리」의
+  // 드롭다운 안으로 들어갔다([[ADR-144]]). [[ADR-118]] 결정 3 이 요구한 «파괴적 행을 계정 변경과
+  // 다른 카드로» 는 그 짝이 없어져 저절로 성립하므로, 여기서는 **그 행이 정말 없는지**와 남은
+  // 위험 색 행 둘이 한 카드에 함께 있는지를 본다.
+  it('「계정 변경」 행을 두지 않고, 위험 색 행 둘만 한 카드에 남는다', async () => {
     const view = await renderOverlay(<SettingsAccountDataScreen />)
 
-    const accountCard = cardOf(view, '계정 변경')
-    const cacheCard = cardOf(view, '캐시 데이터 삭제')
-    const disconnectCard = cardOf(view, '연결 해제')
-
-    expect(cacheCard).not.toBe(accountCard)
-    expect(disconnectCard).toBe(cacheCard)
+    expect(view.queryByText('계정 변경')).toBeNull()
+    expect(view.getAllByTestId('settings-card')).toHaveLength(1)
+    expect(cardOf(view, '연결 해제')).toBe(cardOf(view, '캐시 데이터 삭제'))
   })
 
   // [[ADR-118]] 결정 4: chevron 이 있으면 누르면 무언가 열리고, 없는 위험 색 행은 누르면 지운다.
@@ -136,23 +126,6 @@ describe('SettingsAccountDataScreen', () => {
 
     expect(hasChevron(rowOf(view, '캐시 데이터 삭제'))).toBe(false)
     expect(hasChevron(rowOf(view, '연결 해제'))).toBe(false)
-  })
-
-  // [[ADR-118]] 결정 6: `accountId` 는 불투명 문자열이고 대표 캐릭터는 파생·변동값이라 단정할 수 없다.
-  it('"계정 변경" 행은 chevron 만 두고 우측 값을 두지 않는다', async () => {
-    const view = await renderOverlay(<SettingsAccountDataScreen />)
-
-    const row = rowOf(view, '계정 변경')
-    expect(hasChevron(row)).toBe(true)
-    const texts: string[] = []
-    const walk = (node: AtomElement): void => {
-      for (const child of node.children) {
-        if (typeof child === 'string') texts.push(child)
-        else walk(child)
-      }
-    }
-    walk(row)
-    expect(texts).toEqual(['계정 변경'])
   })
 
   // 행에 쓰는 총합은 그룹별 용량의 합으로 파생한다([[ADR-058]] 결정 8).
@@ -212,18 +185,6 @@ describe('SettingsAccountDataScreen', () => {
     await press(view.getByText(/^삭제/))
 
     expect(view.getByText('삭제 중')).toBeTruthy()
-  })
-
-  // 이 화면은 모달을 여는 자리만 옮긴다 — 계정 변경 흐름 자체는 그대로다([[ADR-086]] 결정 6).
-  it('"계정 변경"을 누르면 계정 모달이 열리고 refreshAccounts가 호출된다', async () => {
-    const refreshAccounts = jest.fn()
-    mockSettingsStore({ refreshAccounts })
-    const view = await renderOverlay(<SettingsAccountDataScreen />)
-
-    await press(rowOf(view, '계정 변경'))
-
-    expect(refreshAccounts).toHaveBeenCalledTimes(1)
-    expect(view.getByTestId('account-modal-overlay')).toBeTruthy()
   })
 
   it('"연결 해제"를 누르면 확인 모달이 열리고, 확인 시 disconnect가 호출된다', async () => {

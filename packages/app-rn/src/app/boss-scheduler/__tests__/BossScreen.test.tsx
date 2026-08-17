@@ -347,6 +347,40 @@ describe('BossScreen — 목록 ([[ADR-031]])', () => {
     expect(screen.queryByText('캐릭터 관리')).toBeNull()
     expect(screen.getByText('보스 관리')).toBeTruthy()
   })
+
+  // [[ADR-143]] 결정 3: 스토어는 레벨 내림차순으로 준다([[ADR-017]] 결정 2) — 그 위에 사용자가
+  // 정한 저장 배열 순서를 얹는다. 그래서 **입력 순서와 다른 순서**로 주는 것이 이 케이스의 요점이다.
+  it('레일 순서는 스토어 순서가 아니라 trackedOcids 저장 순서다', async () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-2', 'ocid-1'],
+      characters: [character(), character({ ocid: 'ocid-2', characterName: '캐릭터2' })],
+    })
+
+    await renderScreen()
+
+    expect(screen.getAllByTestId('character-portrait').map((node) => node.props.accessibilityLabel)).toEqual([
+      expect.stringContaining('캐릭터2'),
+      expect.stringContaining('캐릭터1'),
+    ])
+  })
+
+  // 순서를 정하는 함수가 목록의 크기를 바꾸면 안 된다 — 저장 직후·동기화 중간 커밋에서 두 목록이
+  // 한순간 어긋나는데, 그때 카드가 통째로 사라지는 것이 가장 나쁜 실패다.
+  it('저장 목록에 없는 캐릭터도 레일에서 사라지지 않는다', async () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-2'],
+      characters: [character(), character({ ocid: 'ocid-2', characterName: '캐릭터2' })],
+    })
+
+    await renderScreen()
+
+    expect(screen.getAllByTestId('character-portrait').map((node) => node.props.accessibilityLabel)).toEqual([
+      expect.stringContaining('캐릭터2'),
+      expect.stringContaining('캐릭터1'),
+    ])
+  })
 })
 
 // [[ADR-031]] 결정 3 · [[ADR-056]] 결정 2 — 판정은 화면이 아니라 `isChallengersWorld` 가 한다.

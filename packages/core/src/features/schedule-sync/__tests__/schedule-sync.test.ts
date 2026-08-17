@@ -1,6 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { installFakePreferences } from '@core/storage/__tests__/fake-preferences'
-import type { CharacterPickerEntry, MapleAccount, MapleCharacter, SchedulerCharacterState } from '@core/types'
+import type {
+  CharacterBasicProfile,
+  CharacterPickerEntry,
+  MapleAccount,
+  MapleCharacter,
+  SchedulerCharacterState,
+} from '@core/types'
 import { NexonAuthError, NexonBadRequestError, NexonNetworkError, NexonRateLimitError } from '@core/nexon/errors'
 
 const { fetchCharacterListMock, fetchCharacterBasicMock, fetchSchedulerCharacterStateMock } = vi.hoisted(() => ({
@@ -114,17 +120,20 @@ function schedulerState(characterName: string): SchedulerCharacterState {
   }
 }
 
-function basicProfile(overrides: { name: string; level: number; imageUrl?: string }): {
+// jobClass 는 character/basic 이 아니라 character/list 가 준 값이라(ADR-144 결정 2) 이 픽스처의
+// 기본값에는 없다 — 캐시에 실리는 경로를 검증하는 자리에서만 명시적으로 넣는다.
+function basicProfile(overrides: {
   name: string
   level: number
-  imageUrl: string
-  accessFlag: boolean
-} {
+  imageUrl?: string
+  jobClass?: string
+}): CharacterBasicProfile {
   return {
     name: overrides.name,
     level: overrides.level,
     imageUrl: overrides.imageUrl ?? `https://open.api.nexon.com/static/maplestory/character/look/${overrides.name}`,
     accessFlag: true,
+    ...(overrides.jobClass === undefined ? {} : { jobClass: overrides.jobClass }),
   }
 }
 
@@ -914,12 +923,13 @@ describe('syncSchedules', () => {
       expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(2)
       expect(fetchCharacterBasicMock).toHaveBeenCalledWith('key-1', 'ocid-1')
       expect(fetchCharacterBasicMock).toHaveBeenCalledWith('key-1', 'ocid-2')
+      // character/list 가 준 jobClass 가 엔트리에 함께 실린다(ADR-144 결정 2) — basic 응답에는 없다.
       expect(setCachedCharacterBasicMock).toHaveBeenCalledWith('acc-1', 'ocid-1', {
-        profile: basicProfile({ name: '갱신-ocid-1', level: 293 }),
+        profile: basicProfile({ name: '갱신-ocid-1', level: 293, jobClass: '렌' }),
         cachedAt: NOW,
       })
       expect(setCachedCharacterBasicMock).toHaveBeenCalledWith('acc-1', 'ocid-2', {
-        profile: basicProfile({ name: '갱신-ocid-2', level: 293 }),
+        profile: basicProfile({ name: '갱신-ocid-2', level: 293, jobClass: '렌' }),
         cachedAt: NOW,
       })
     })
@@ -953,7 +963,7 @@ describe('syncSchedules', () => {
 
       expect(setCachedCharacterBasicMock).toHaveBeenCalledTimes(1)
       expect(setCachedCharacterBasicMock).toHaveBeenCalledWith('acc-1', 'ocid-2', {
-        profile: basicProfile({ name: '갱신-ocid-2', level: 293 }),
+        profile: basicProfile({ name: '갱신-ocid-2', level: 293, jobClass: '렌' }),
         cachedAt: NOW,
       })
     })
@@ -996,6 +1006,119 @@ describe('syncSchedules', () => {
       // 스케줄 동기화 자체는 그대로 돈다 — 건너뛴 것은 basic 하나뿐이다.
       expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key-1', 'ocid-1')
       expect(results[0].isStale).toBe(false)
+    })
+  })
+
+  // ADR-143 결정 6: 추적 목록이 메이플 ID 경계를 넘는다. 전에는 "선택 계정의 캐릭터"만 받아
+  // ocids로 걸렀으므로 다른 계정 캐릭터가 그 필터에서 조용히 빠졌고(스케줄이 영원히 안 돈다),
+  // 계정 공유 원장도 "지금 고른 계정" 키로 읽고 써서 에픽 던전 완료가 계정을 넘어 번졌다.
+  describe('다계정 — 계정을 캐릭터마다 해석한다 (ADR-143 결정 6)', () => {
+    function twoAccounts(): MapleAccount[] {
+      return [account('acc-1', [character('ocid-1')]), account('acc-2', [character('ocid-2')])]
+    }
+
+    it('두 계정에 나뉜 ocid 를 섞어 추적하면 둘 다 동기화된다', async () => {
+      fetchCharacterListMock.mockResolvedValue(twoAccounts())
+      fetchSchedulerCharacterStateMock.mockImplementation(async (_apiKey: string, ocid: string) =>
+        schedulerState(`캐릭터-${ocid}`),
+      )
+
+      const results = await syncSchedules(['ocid-1', 'ocid-2'])
+
+      expect(results.map((result) => result.ocid)).toEqual(['ocid-1', 'ocid-2'])
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key-1', 'ocid-1')
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key-1', 'ocid-2')
+      expect(results.every((result) => result.isStale === false)).toBe(true)
+    })
+
+    it('계정 공유 원장을 각 캐릭터의 자기 계정 키로 읽는다', async () => {
+      fetchCharacterListMock.mockResolvedValue(twoAccounts())
+      fetchSchedulerCharacterStateMock.mockImplementation(async (_apiKey: string, ocid: string) =>
+        schedulerState(`캐릭터-${ocid}`),
+      )
+
+      await syncSchedules(['ocid-1', 'ocid-2'])
+
+      expect(getAccountSharedProgressMock).toHaveBeenCalledWith('acc-1')
+      expect(getAccountSharedProgressMock).toHaveBeenCalledWith('acc-2')
+    })
+
+    it('계정 공유 원장을 각 캐릭터의 자기 계정 키로 쓴다 — 완료가 계정을 넘어 번지지 않는다', async () => {
+      fetchCharacterListMock.mockResolvedValue(twoAccounts())
+      fetchSchedulerCharacterStateMock.mockImplementation(async (_apiKey: string, ocid: string) =>
+        schedulerState(`캐릭터-${ocid}`),
+      )
+      const entry = {
+        active: true,
+        kind: 'contents' as const,
+        nowCount: 1,
+        maxCount: 0,
+        questState: null,
+        lastUpdatedBucket: '2026-07-09',
+      }
+      mergeSchedulerStateMock.mockImplementation((input: { fresh: SchedulerCharacterState }) => ({
+        characterState: input.fresh,
+        worldLedgerUpdates: {},
+        accountLedgerUpdates: { '에픽 던전 : 악몽선경': entry },
+      }))
+
+      await syncSchedules(['ocid-1', 'ocid-2'])
+
+      expect(setAccountSharedProgressEntryMock).toHaveBeenCalledWith('acc-1', '에픽 던전 : 악몽선경', entry)
+      expect(setAccountSharedProgressEntryMock).toHaveBeenCalledWith('acc-2', '에픽 던전 : 악몽선경', entry)
+    })
+
+    it('character/basic 편승 갱신도 각 캐릭터의 자기 계정으로 캐시에 쓴다 (ADR-086 결정 9 인덱스)', async () => {
+      fetchCharacterListMock.mockResolvedValue(twoAccounts())
+      fetchSchedulerCharacterStateMock.mockImplementation(async (_apiKey: string, ocid: string) =>
+        schedulerState(`캐릭터-${ocid}`),
+      )
+      fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) =>
+        basicProfile({ name: `갱신-${ocid}`, level: 293 }),
+      )
+
+      await syncSchedules(['ocid-1', 'ocid-2'])
+
+      expect(setCachedCharacterBasicMock).toHaveBeenCalledWith('acc-1', 'ocid-1', expect.anything())
+      expect(setCachedCharacterBasicMock).toHaveBeenCalledWith('acc-2', 'ocid-2', expect.anything())
+    })
+
+    // 결정 7: RN 은 계정을 고르는 단계가 없어 selectedAccountId 가 영영 null 이다.
+    it('selectedAccountId 가 없어도 동기화한다 — 계정을 고른 적 없는 설치본', async () => {
+      getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1', selectedAccountId: null })
+      fetchCharacterListMock.mockResolvedValue([account('acc-9', [character('ocid-1')])])
+      fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
+
+      const results = await syncSchedules(['ocid-1'])
+
+      expect(results.map((result) => result.ocid)).toEqual(['ocid-1'])
+      expect(getAccountSharedProgressMock).toHaveBeenCalledWith('acc-9')
+    })
+
+    // 이 파일의 나머지 케이스가 전부 단일 계정이지만, 그것들은 "결과"만 본다. 이 케이스는
+    // **호출 수와 순서까지** 고정한다 — 웹뷰 앱은 이 경로로 계속 배포되므로 여기가 회귀 가드다.
+    it('단일 계정 입력에서는 호출 수·순서·원장 키가 지금과 같다 (웹뷰 앱 회귀 가드)', async () => {
+      const characters = [character('ocid-1'), character('ocid-2'), character('ocid-3')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+      fetchSchedulerCharacterStateMock.mockImplementation(async (_apiKey: string, ocid: string) =>
+        schedulerState(`캐릭터-${ocid}`),
+      )
+      fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) =>
+        basicProfile({ name: `갱신-${ocid}`, level: 293 }),
+      )
+
+      const results = await syncSchedules(['ocid-3', 'ocid-1'])
+
+      // 순서는 ocids 배열이 아니라 **계정 목록 순서**다(지금 동작 그대로 — 표시 순서를 다시
+      // 세우는 일은 RN 화면 셀렉터의 몫이다, ADR-143 결정 3).
+      expect(results.map((result) => result.ocid)).toEqual(['ocid-1', 'ocid-3'])
+      expect(fetchCharacterListMock).toHaveBeenCalledTimes(1)
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(2)
+      expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(2)
+      expect(getAccountSharedProgressMock).toHaveBeenCalledTimes(2)
+      expect(getAccountSharedProgressMock).toHaveBeenCalledWith('acc-1')
+      expect(setCachedCharacterBasicMock).toHaveBeenCalledWith('acc-1', 'ocid-1', expect.anything())
+      expect(setCachedCharacterBasicMock).toHaveBeenCalledWith('acc-1', 'ocid-3', expect.anything())
     })
   })
 })
@@ -1408,7 +1531,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     expect(setCachedCharacterBasicMock).toHaveBeenCalledWith(
       'acc-1',
       'ocid-1',
-      expect.objectContaining({ profile: basicProfile({ name: '최신캐릭', level: 293 }) }),
+      expect.objectContaining({ profile: basicProfile({ name: '최신캐릭', level: 293, jobClass: '렌' }) }),
     )
   })
 

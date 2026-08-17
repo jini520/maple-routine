@@ -54,6 +54,46 @@ export async function getRegisteredCharacters(): Promise<MapleCharacter[]> {
   return characters
 }
 
+/** 추적 캐릭터 하나와 **그 캐릭터가 사는 계정**. 둘은 함께 다녀야 한다([[ADR-143]] 결정 6). */
+export interface TrackedCharacterContext {
+  character: MapleCharacter
+  accountId: string
+}
+
+/**
+ * 추적 ocid 를 **전 계정에서** 찾아 각자의 계정과 함께 돌려준다([[ADR-143]] 결정 6).
+ *
+ * 위 `resolveRegisteredCharacters` 와 묻는 것이 다르다 — 그쪽은 «이 계정에 누가 사는가»(피커
+ * 로스터·예열이 계정 하나를 그릴 때, [[ADR-086]] 결정 6)이고 이쪽은 «이 ocid 들이 어느 계정에
+ * 사는가» 다. 추적 목록이 메이플 ID 경계를 넘으면 전자로는 다른 계정 캐릭터가 필터에서 조용히
+ * 빠지고, 계정 공유 원장([[ADR-030]])도 «지금 고른 계정» 키를 써서 에픽 던전 완료가 계정을
+ * 넘어 번진다.
+ *
+ * **`selectedAccountId` 를 읽지 않는다**([[ADR-143]] 결정 7) — RN 에는 계정을 고르는 단계가 없어
+ * 그 값이 영영 `null` 이다. 응답에 없는 ocid 는 결과에서 빠진다(캐릭터 삭제·월드 이전 경로 —
+ * 지금 동작 그대로다). 순서는 `character/list` 응답 순서를 그대로 따른다: 표시 순서를 다시
+ * 세우는 일은 이 함수가 아니라 화면 셀렉터의 몫이다([[ADR-143]] 결정 3).
+ */
+export async function resolveTrackedCharacterContext(ocids: string[]): Promise<{
+  apiKey: string
+  characters: TrackedCharacterContext[]
+}> {
+  const authConfig = await getAuthConfig()
+  if (authConfig === null) {
+    throw new Error('resolveTrackedCharacterContext: 온보딩이 완료되지 않았습니다 (API 키 없음)')
+  }
+
+  const wanted = new Set(ocids)
+  const accounts = await fetchCharacterList(authConfig.apiKey)
+  const characters = accounts.flatMap((account) =>
+    account.characters
+      .filter((character) => wanted.has(character.ocid))
+      .map((character) => ({ character, accountId: account.accountId })),
+  )
+
+  return { apiKey: authConfig.apiKey, characters }
+}
+
 // 조회 불가 항목은 레벨과 무관하게 **맨 뒤로** 보낸다([[ADR-068]] 결정 4) — 고를 수 없는 후보가
 // 고를 수 있는 후보를 밀어내지 않아야 한다. 그 안에서는 기존 규칙(레벨 내림차순, 동레벨은 이름순).
 function sortPickerEntries(entries: CharacterPickerEntry[]): CharacterPickerEntry[] {
@@ -187,7 +227,13 @@ export async function getCharacterPickerRoster(
       try {
         // ADR-113 결정 1: 캐시 쓰기까지 공유 경로 안이다. 온보딩 한 바퀴(프로브 → 예열 → 피커)가
         // 5분 안에 끝나면 여기서는 네트워크가 나가지 않고 방금 채워진 캐시를 그대로 쓴다.
-        const profile = await fetchCharacterBasicCached(apiKey, accountId, character.ocid, now)
+        const profile = await fetchCharacterBasicCached(
+          apiKey,
+          accountId,
+          character.ocid,
+          now,
+          character.jobClass,
+        )
         // ADR-086 결정 5: 여기서 스윕이 일어난다. 예열이 이미 훑었으면 원장이 채워져 있어
         // 추가 호출이 없고, 예열이 중간에 끊겼으면 이 경로가 이어서 완성한다.
         const eligibility = await resolveCharacterEligibility(

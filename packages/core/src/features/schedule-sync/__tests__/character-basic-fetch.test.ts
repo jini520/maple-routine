@@ -132,6 +132,48 @@ describe('신뢰할 수 없는 cachedAt 은 만료로 취급한다', () => {
   })
 })
 
+// ADR-144 결정 2: 직업은 character/basic 이 아니라 character/list 가 준다. 저장 경로가 이 함수
+// 하나뿐이므로(ADR-113 결정 1) 값을 손에 든 호출부가 여기로 함께 넘긴다.
+describe('jobClass — character/list 가 준 값을 엔트리에 함께 싣는다 (ADR-144 결정 2)', () => {
+  it('넘긴 값이 profile 에 실려 캐시에 쓰이고 그대로 반환된다', async () => {
+    fetchCharacterBasicMock.mockResolvedValue(profile())
+
+    await expect(fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW, '렌')).resolves.toEqual(
+      profile({ jobClass: '렌' }),
+    )
+    await expect(getCachedCharacterBasic(OCID)).resolves.toEqual({
+      profile: profile({ jobClass: '렌' }),
+      cachedAt: NOW.toISOString(),
+    })
+  })
+
+  it('넘기지 않으면 캐시에 있던 값을 유지한다 — 아는 값을 undefined 로 덮으면 화면에서 직업이 사라진다', async () => {
+    await seedCache(CHARACTER_BASIC_TTL_MS + 1, profile({ jobClass: '비숍' }))
+    fetchCharacterBasicMock.mockResolvedValue(profile({ name: '새로받음' }))
+
+    await expect(fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW)).resolves.toEqual(
+      profile({ name: '새로받음', jobClass: '비숍' }),
+    )
+  })
+
+  it('넘긴 값은 캐시된 값을 덮는다 — 전직하면 그 자리에서 바뀐다', async () => {
+    await seedCache(CHARACTER_BASIC_TTL_MS + 1, profile({ jobClass: '비숍' }))
+    fetchCharacterBasicMock.mockResolvedValue(profile())
+
+    await expect(fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW, '렌')).resolves.toEqual(
+      profile({ jobClass: '렌' }),
+    )
+  })
+
+  it('캐시도 없고 넘기지도 않으면 키 자체가 없다 — 없는 값을 지어내지 않는다', async () => {
+    fetchCharacterBasicMock.mockResolvedValue(profile())
+
+    const result = await fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW)
+
+    expect('jobClass' in result).toBe(false)
+  })
+})
+
 describe('실패는 캐시로 폴백하지 않고 그대로 전파한다', () => {
   it('400 OPENAPI00003(조회 불가)이 그대로 던져진다 — 호출부의 characterUnavailable 분기가 산다', async () => {
     const error = new NexonBadRequestError('unavailable', 'OPENAPI00003')

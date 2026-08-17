@@ -88,6 +88,11 @@ export type RootStackParamList = {
   SettingsAccountData: undefined
   SettingsAbout: undefined
   SettingsPrivacy: undefined
+  /**
+   * 캐릭터 관리 — **웹에 없는 화면이다**([[ADR-144]] 결정 1). 웹뷰 앱에서는 모달이고, RN 에서는
+   * 두 층 + 드롭다운 + 순서 + 대표가 385px 모달 본문에 안 들어가 하위 페이지가 됐다.
+   */
+  SettingsCharacters: undefined
 }
 
 export type StackRouteName = Exclude<keyof RootStackParamList, 'Onboarding' | 'Tabs'>
@@ -123,7 +128,7 @@ export interface RouteRow {
 }
 
 /**
- * 웹 17행 + RN 4행. **행 수와 내용을 테스트가 고정한다** — 화면이 늘면 계획서와 여기가 함께 움직여야 한다.
+ * 웹 17행 + RN 5행. **행 수와 내용을 테스트가 고정한다** — 화면이 늘면 계획서와 여기가 함께 움직여야 한다.
  *
  * `/settings/about/privacy` 가 계획서 표(`/settings/privacy`)와 다른 것은 **계획서 쪽이 낡았기
  * 때문**이다. [[ADR-120]] 결정 11 이 구현 중에 경로를 `about` 의 **자식**으로 정정했고
@@ -190,8 +195,9 @@ export const ROUTE_TABLE: readonly RouteRow[] = [
     target: { kind: 'push', route: 'SettingsPrivacy' },
     origin: 'web',
   },
-  // ── 여기부터 RN 에서 새로 생긴 화면 넷 ([[ADR-132]] 결정 1·12) ────────────────────
-  // 웹에는 없다. `path` 는 대조용이 아니라 이름표이고, 화면은 아직 «개발 진행중» 자리표시자다.
+  // ── 여기부터 RN 에서 새로 생긴 화면 ([[ADR-132]] 결정 1·12 · [[ADR-144]] 결정 1) ──
+  // 웹에는 없다. `path` 는 대조용이 아니라 이름표다. 탭 넷은 아직 «개발 진행중» 자리표시자이고,
+  // 마지막 하나(캐릭터 관리)는 진짜 화면이다 — 웹뷰 앱에서는 같은 일을 설정의 모달이 한다.
   { path: '/today', screen: 'TodayScreen', target: { kind: 'tab', route: 'Today' }, origin: 'rn' },
   {
     path: '/profit/hunting',
@@ -201,6 +207,12 @@ export const ROUTE_TABLE: readonly RouteRow[] = [
   },
   { path: '/spend', screen: 'SpendScreen', target: { kind: 'tab', route: 'Spend' }, origin: 'rn' },
   { path: '/utility', screen: 'UtilityScreen', target: { kind: 'tab', route: 'Utility' }, origin: 'rn' },
+  {
+    path: '/settings/characters',
+    screen: 'SettingsCharactersScreen',
+    target: { kind: 'push', route: 'SettingsCharacters' },
+    origin: 'rn',
+  },
 ]
 
 /** 하위 페이지 이름 — `RootNavigator` 가 이 목록으로 `<Stack.Screen>` 을 그린다. */

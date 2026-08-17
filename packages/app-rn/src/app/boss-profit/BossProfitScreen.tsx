@@ -86,6 +86,7 @@ import {
 } from '../../lib/icons'
 import { AnimatedView } from '../../lib/nativewind-interop'
 import { TABULAR_NUMS } from '../../lib/text-styles'
+import { orderByTracked } from '../../lib/tracked-order'
 import { useThemeAppearance } from '../../theme/context'
 import { useScreenNavigation } from '../use-screen-navigation'
 import type { BossProfitContextValue } from './boss-profit-context'
@@ -180,7 +181,11 @@ export function BossProfitScreen(): React.JSX.Element {
 
   // 훅(아래 `usePeriodLoadErrorToast`)이 이 값을 읽으므로 조기 반환보다 위에서 계산한다 — 순수
   // 함수라 위치를 올려도 결과가 같고, 토스트 조건과 화면 조건이 같은 값을 보게 된다.
-  const characterGroups = buildCharacterGroups(rows, weeklySubtotals)
+  // [[ADR-143]] 결정 3: 그룹의 순서는 행의 순서(= 스토어의 레벨 내림차순 — [[ADR-036]]·[[ADR-017]]
+  // 결정 2)가 아니라 사용자가 캐릭터 관리에서 정한 저장 배열 순서다. **캐릭터 안쪽 보스 순서는
+  // 안 건드린다**([[ADR-036]] 의 `weekly-bosses.json` 정규 순서는 그대로다) — 바뀌는 것은 카드가
+  // 서는 차례뿐이다. core 를 안 고치는 이유는 `orderByTracked` 머리에 있다.
+  const characterGroups = orderByTracked(buildCharacterGroups(rows, weeklySubtotals), trackedOcids ?? [])
 
   // [[ADR-083]] 결정 3: 기간 로드 실패는 **카드가 있을 때만** 토스트다. 카드가 없으면 문구가 사라진
   // 자리에 빈 칸이 남으므로 아래에서 `ErrorState` 를 그린다(같은 실패의 두 얼굴, 문구는 통일).

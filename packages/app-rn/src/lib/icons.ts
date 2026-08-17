@@ -64,6 +64,7 @@ import LayoutDashboard from 'lucide-react-native/icons/layout-dashboard'
 import ListChecks from 'lucide-react-native/icons/list-checks'
 import MapPin from 'lucide-react-native/icons/map-pin'
 import Medal from 'lucide-react-native/icons/medal'
+import Menu from 'lucide-react-native/icons/menu'
 import Minus from 'lucide-react-native/icons/minus'
 import Moon from 'lucide-react-native/icons/moon'
 import PackageOpen from 'lucide-react-native/icons/package-open'
@@ -156,6 +157,11 @@ export const ListChecksIcon = withIconInterop(ListChecks)
 export const MapPinIcon = withIconInterop(MapPin)
 /** 무릉도장 카테고리 — `ContentManageScreen` 그룹 헤더·행. */
 export const MedalIcon = withIconInterop(Medal)
+/**
+ * 끌기 핸들 — `CharacterRow/DragHandle`([[ADR-144]] 결정 5). 이름이 «메뉴» 인 글리프지만 여기서
+ * 뜻하는 것은 「순서 변경」이다 — 뜻은 자리와 접근성 이름이 진다.
+ */
+export const MenuIcon = withIconInterop(Menu)
 /** 파티원 수 감소 — `PartySizeStepper`. */
 export const MinusIcon = withIconInterop(Minus)
 /** 다크 테마 표식 — `ThemeSelector` 타일([[ADR-104]] 결정 2). */

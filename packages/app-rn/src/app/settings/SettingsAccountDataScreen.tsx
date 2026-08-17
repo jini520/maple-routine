@@ -1,9 +1,10 @@
-// 설정 하위 페이지 「계정 및 데이터」([[ADR-118]] 결정 2·3) — 계정 변경 + 파괴적 행 둘.
+// 설정 하위 페이지 「계정 및 데이터」([[ADR-118]] 결정 2·3) — 파괴적 행 둘.
 //
-// **파괴적 행 둘이 별도 카드로 내려온 것이 이 화면의 요점이다**(이슈 #135). 본화면에서 빼는
-// 것만으로는 분리가 아니다 — 옮긴 곳에서 다시 `계정 변경` 과 붙으면 같은 문제가 한 층 내려갈
-// 뿐이다. 아래 카드에 제목을 달지 않는 이유는 위험 색 라벨 둘과 카드 경계가 이미 그 말을 하고
-// 있어서다([[ADR-118]] 결정 3).
+// **이 앱에는 「계정 변경」이 없다**([[ADR-143]] 결정 7) — 계정을 바꾸는 일이 「캐릭터 관리」의
+// 드롭다운 안으로 들어갔고([[ADR-144]]), 그래서 카드가 하나다. [[ADR-118]] 결정 3 이 요구한 분리
+// (파괴적 행을 「계정 변경」과 다른 카드로 내린다)는 **그 짝이 없어져 저절로 성립한다** — 카드
+// 경계를 남겨 두는 것은 뜻이 사라져서가 아니라 위험 색 라벨 둘을 담는 그릇이 계속 필요해서다.
+// 아래 카드에 제목을 달지 않는 이유는 위험 색 라벨 둘과 카드 경계가 이미 그 말을 하고 있어서다.
 //
 // ══ 캐시 삭제 **범위**는 이 파일에 없다 ════════════════════════════════════════════
 //
@@ -43,7 +44,6 @@ import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { ArrowLeftIcon } from '../../lib/icons'
 import { TABULAR_NUMS } from '../../lib/text-styles'
-import { AccountModal } from './AccountModal'
 import { CacheClearConfirm } from './CacheClearConfirm'
 import { DisconnectConfirm } from './DisconnectConfirm'
 import { SETTINGS_ROW_DIVIDER_CLASS } from './row-class'
@@ -61,7 +61,6 @@ export function SettingsAccountDataScreen(
   const { disconnect } = useSettingsStore()
   const navigation = useSettingsNavigation()
 
-  const [isAccountOpen, setIsAccountOpen] = useState(false)
   const [isCacheClearOpen, setIsCacheClearOpen] = useState(false)
   const [isClearing, setIsClearing] = useState(false)
   const [sizes, setSizes] = useState<CacheDataSizes | null>(null)
@@ -116,13 +115,6 @@ export function SettingsAccountDataScreen(
               웹 테스트가 카드 경계를 `Card` atom 의 라운딩 클래스로 잡던 자리이고, RN 에는 그
               클래스가 스타일로 컴파일돼 사라져 표식이 필요하다. */}
           <Card className="px-6" testID="settings-card">
-            {/* [[ADR-118]] 결정 6: 우측에 현재값을 두지 않는다 — `accountId` 는 불투명 문자열이고
-                대표 캐릭터 이름은 파생·변동값이다(429·조회 불가에서는 아예 없다). 확실하지 않은
-                것을 단정해 보여주느니 chevron 만 둔다. */}
-            <SettingsRow label="계정 변경" onPress={() => setIsAccountOpen(true)} />
-          </Card>
-
-          <Card className="px-6" testID="settings-card">
             <SettingsRow
               label="캐시 데이터 삭제"
               onPress={() => setIsCacheClearOpen(true)}
@@ -150,8 +142,6 @@ export function SettingsAccountDataScreen(
 
       {/* 모달은 카드 밖이자 스크롤 상자 밖의 형제다 — 카드 안에 두면 구분선이 하나 더 그려진다.
           웹이 셸의 `overlays` 프롭을 거쳐야 했던 이유는 RN 에 없다(파일 머리 ②). */}
-      {isAccountOpen && <AccountModal onClose={() => setIsAccountOpen(false)} />}
-
       <CacheClearConfirm
         isOpen={isCacheClearOpen}
         isClearing={isClearing}

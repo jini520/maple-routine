@@ -123,6 +123,17 @@ export interface ScreenScrollProps {
    */
   refreshControl?: React.ComponentProps<typeof ScrollView>['refreshControl']
   /**
+   * 스크롤 오프셋 통보 — **끌어서 순서 바꾸기의 자동 스크롤만** 쓴다([[ADR-144]] 결정 5).
+   *
+   * 그 화면은 목록이 화면보다 길 때 페이지째 굴려야 하는데([[ADR-131]] — 고정 영역이 없다) 굴린
+   * 만큼을 끌기 좌표에 되더해야 행이 손가락 밑에 남는다. 즉 필요한 것은 **지금 오프셋**이고, 그것을
+   * 아는 유일한 경로가 이 이벤트다.
+   *
+   * **안 주면 프롭 자체를 안 넘긴다**(`scrollEventThrottle` 도 함께) — 이 셸은 화면 열여섯 곳이
+   * 쓰므로, 안 쓰는 화면까지 매 프레임 이벤트를 보내게 두지 않는다.
+   */
+  onScroll?: React.ComponentProps<typeof ScrollView>['onScroll']
+  /**
    * 아래에 탭바가 있는가 — 하단 인셋 처리만 가른다(`bottom-inset.ts`).
    *
    * **하위 페이지는 `false` 다.** 스택 위로 올라간 화면에는 탭바가 없다([[ADR-120]] 결정 4 —
@@ -140,6 +151,7 @@ export function ScreenScroll({
   header,
   ref,
   refreshControl,
+  onScroll,
   hasTabBar = true,
 }: ScreenScrollProps): React.JSX.Element {
   const insets = useSafeAreaInsets()
@@ -180,6 +192,9 @@ export function ScreenScroll({
       // 같은 종류의 실패다: 그 값은 OS 설정을 따라가지 우리 테마를 따라가지 않는다.
       indicatorStyle={indicatorStyle}
       refreshControl={refreshControl}
+      // 조건부 전개다 — `onScroll={undefined}` 로 넘기면 iOS 가 기본 주기(스크롤이 멈출 때 1회)로
+      // 이벤트를 켜고, 안 쓰는 화면의 렌더 트리에도 프롭이 남는다.
+      {...(onScroll === undefined ? null : { onScroll, scrollEventThrottle: 16 })}
       className="flex-1"
       style={port}
       // 웹 안쪽 래퍼의 `space-y-4` 짝. RN 에 `space-y-*` 가 없어 `gap-*` 이고, 그래서 래퍼 뷰가

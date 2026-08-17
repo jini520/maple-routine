@@ -25,7 +25,7 @@ docs/
 
 | 기능 | 문서 | 주요 소스(read/write) |
 |---|---|---|
-| 온보딩 (API 키·계정 선택·예열) | [features/onboarding.md](./features/onboarding.md) | `app/onboarding/` · `features/onboarding/` · `nexon/character` · `storage/character-basic-cache` |
+| 온보딩 (API 키·계정 선택·예열 — **RN 은 계정 선택·예열이 없다**, [[ADR-143]]) | [features/onboarding.md](./features/onboarding.md) | `app/onboarding/` · `features/onboarding/` · `nexon/character` · `storage/character-basic-cache` · `storage/character-selection` |
 | 컨텐츠 스케줄러 | [features/content-scheduler.md](./features/content-scheduler.md) | `app/content-scheduler/` · `features/content-scheduler/` · `lib/scheduler-merge` · `lib/scheduler-content-scope` · `storage/scheduler-cache` · `storage/shared-progress-cache` |
 | 보스 스케줄러 (파티 관리 포함) | [features/boss-scheduler.md](./features/boss-scheduler.md) | `app/boss-scheduler/` · `features/boss-scheduler/` · `storage/boss-party-settings` · `lib/boss-icons` · `lib/boss-matching` |
 | 보스 수익 | [features/boss-profit.md](./features/boss-profit.md) | `app/boss-profit/` · `features/boss-profit/` · `storage/boss-profit` · `storage/sqlite` · `lib/boss-profit-period` |
