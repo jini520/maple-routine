@@ -20,7 +20,9 @@
  */
 
 import type { WidgetSize } from '../../../lib/widget-layout'
+import { CrystalLimitWidget } from './CrystalLimitWidget'
 import { RemainingScheduleWidget } from './RemainingScheduleWidget'
+import { ResetCountdownWidget } from './ResetCountdownWidget'
 import { RepresentativeCharacterWidget } from './RepresentativeCharacterWidget'
 import { stubWidget } from './StubWidget'
 import { TopValuableItemWidget } from './TopValuableItemWidget'
@@ -78,7 +80,7 @@ export const WIDGETS: readonly WidgetDefinition[] = [
       { w: 1, h: 1 },
     ],
     target: 'Profit',
-    Component: stubWidget('crystal-limit'),
+    Component: CrystalLimitWidget,
   },
   {
     // **목적지가 없는 유일한 위젯**이다 — 초기화 시각은 이 타일이 다 말하고, 더 볼 화면이 없다.
@@ -89,7 +91,7 @@ export const WIDGETS: readonly WidgetDefinition[] = [
       { w: 4, h: 1 },
       { w: 1, h: 1 },
     ],
-    Component: stubWidget('reset-countdown'),
+    Component: ResetCountdownWidget,
   },
   {
     id: 'unpriced-drops',

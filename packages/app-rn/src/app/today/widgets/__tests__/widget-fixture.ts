@@ -6,13 +6,20 @@
 // 조합이 곧 테스트 입력이다. 그 이득을 실제로 회수하려면 «전부 빈 상태» 하나가 있어야 하고, 각
 // 테스트는 자기가 보는 필드만 덮어쓴다.
 
+import { WEEKLY_CRYSTAL_SALE_LIMIT } from '@core/lib/boss-matching'
+
 import type {
+  CrystalLimitView,
   PricedDropView,
   RepresentativeView,
+  ResetCountdown,
   ScheduleRowView,
   TodayViewModel,
   WeeklyProfitCharacterView,
 } from '../../view-model'
+
+const HOUR_MS = 60 * 60 * 1000
+const DAY_MS = 24 * HOUR_MS
 
 export const 빈_뷰모델: TodayViewModel = {
   representative: null,
@@ -24,9 +31,9 @@ export const 빈_뷰모델: TodayViewModel = {
   crystalLimits: [],
   drought: null,
   resets: {
-    daily: { atMs: 0, remainingMs: 0 },
-    weekly: { atMs: 0, remainingMs: 0 },
-    monthly: { atMs: 0, remainingMs: 0 },
+    daily: { atMs: 0, remainingMs: 0, periodMs: DAY_MS },
+    weekly: { atMs: 0, remainingMs: 0, periodMs: 7 * DAY_MS },
+    monthly: { atMs: 0, remainingMs: 0, periodMs: 31 * DAY_MS },
   },
 }
 
@@ -137,6 +144,41 @@ export function 드롭(부분: Partial<PricedDropView> = {}): PricedDropView {
     category: 'equipment',
     priceMeso: 12_000_000_000,
     ...부분,
+  }
+}
+
+/**
+ * 월드 한도 한 줄 — **분모는 언제나 참조 데이터에서 온다**([[ADR-006]]).
+ *
+ * 픽스처가 숫자를 적으면 위젯이 그 숫자를 그대로 그려도 «상수에서 왔는가» 를 못 묻는다. 그래서
+ * 기본값을 상수로 두고, 판별력 확인이 필요한 테스트만 `limit` 을 명시적으로 덮는다.
+ */
+export function 월드한도(부분: Partial<CrystalLimitView> = {}): CrystalLimitView {
+  return { world: '스카니아', cleared: 34, limit: WEEKLY_CRYSTAL_SALE_LIMIT, ...부분 }
+}
+
+/** n개 월드 — 이름과 소진량이 서로 달라 «합쳐졌는가» 를 글자로 물을 수 있다. */
+export function 월드한도목록(n: number): CrystalLimitView[] {
+  const 이름 = ['스카니아', '루나', '오로라', '베라', '크로아']
+  return Array.from({ length: n }, (_, index) =>
+    월드한도({ world: 이름[index] ?? `월드${index + 1}`, cleared: 10 * (index + 1) }),
+  )
+}
+
+/** 남은 시간 한 벌 — 주기 길이는 실제 값과 같게 두고 남은 시간만 테스트가 정한다. */
+export function 카운트다운(remainingMs: number, periodMs: number): ResetCountdown {
+  return { atMs: remainingMs, remainingMs, periodMs }
+}
+
+export function 초기화(
+  daily: number,
+  weekly: number,
+  monthly: number,
+): TodayViewModel['resets'] {
+  return {
+    daily: 카운트다운(daily, DAY_MS),
+    weekly: 카운트다운(weekly, 7 * DAY_MS),
+    monthly: 카운트다운(monthly, 31 * DAY_MS),
   }
 }
 

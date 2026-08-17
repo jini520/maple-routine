@@ -190,6 +190,14 @@ export interface ResetCountdown {
   atMs: number
   /** `now` 기준 남은 밀리초. */
   remainingMs: number
+  /**
+   * 이 주기 **한 바퀴**의 길이(ms) — 2x2 타일의 진행 바가 «주기의 어디쯤인가» 를 그리는 분모다.
+   *
+   * 일간·주간은 상수지만 **월간은 달마다 다르다**(28~31일). 위젯이 그것을 스스로 구하려면 KST 달
+   * 경계를 다시 계산해야 하고, 그 순간 리셋 시각의 진실이 둘이 된다 — 그래서 경계를 이미 아는 이
+   * 파일이 함께 낸다(`buildResets` 가 두 경계를 다 갖고 있어 뺄셈 한 번이다).
+   */
+  periodMs: number
 }
 
 export interface ResetCountdownView {
@@ -456,13 +464,20 @@ function buildDrought(summary: ValuableDroughtSummary | null): DroughtView | nul
  */
 function buildResets(now: Date): ResetCountdownView {
   const nowMs = now.getTime()
-  const countdown = (atMs: number): ResetCountdown => ({ atMs, remainingMs: Math.max(0, atMs - nowMs) })
+  const countdown = (atMs: number, periodMs: number): ResetCountdown => ({
+    atMs,
+    remainingMs: Math.max(0, atMs - nowMs),
+    periodMs,
+  })
 
   const monthlyPeriodKey = getCurrentBossProfitPeriod('monthly', now).periodKey
+  // 이번 달의 두 경계 — 길이는 그 차이다(28~31일이라 상수로 둘 수 없다).
+  const monthlyStartMs = getPeriodStartUtcMs(monthlyPeriodKey)
+  const monthlyAtMs = getPeriodStartUtcMs(getAdjacentPeriodKey('monthly', monthlyPeriodKey, 'next'))
 
   return {
-    daily: countdown(getPeriodStartUtcMs(getCurrentKstDateKey(now)) + DAY_MS),
-    weekly: countdown(getMostRecentWeeklyResetKst(now).getTime() + 7 * DAY_MS),
-    monthly: countdown(getPeriodStartUtcMs(getAdjacentPeriodKey('monthly', monthlyPeriodKey, 'next'))),
+    daily: countdown(getPeriodStartUtcMs(getCurrentKstDateKey(now)) + DAY_MS, DAY_MS),
+    weekly: countdown(getMostRecentWeeklyResetKst(now).getTime() + 7 * DAY_MS, 7 * DAY_MS),
+    monthly: countdown(monthlyAtMs, monthlyAtMs - monthlyStartMs),
   }
 }

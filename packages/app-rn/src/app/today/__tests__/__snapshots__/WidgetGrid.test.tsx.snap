@@ -122,19 +122,140 @@ exports[`WidgetGrid — 좌표 배치 스냅샷 1`] = `
           }
         }
       >
-        <Text
+        <View
           style={
             {
-              "color": "#645C42",
-              "fontSize": 12,
-              "lineHeight": 16,
+              "columnGap": 4,
+              "flexBasis": "0%",
+              "flexGrow": 1,
+              "flexShrink": 1,
+              "justifyContent": "center",
               "padding": 12,
+              "rowGap": 4,
             }
           }
           testID="widget-reset-countdown"
         >
-          reset-countdown
-        </Text>
+          <Text
+            style={
+              {
+                "color": "#645C42",
+                "fontSize": 10,
+                "fontWeight": "700",
+              }
+            }
+          >
+            초기화까지
+          </Text>
+          <View
+            style={
+              {
+                "columnGap": 2,
+                "rowGap": 2,
+              }
+            }
+            testID="reset-row-daily"
+          >
+            <View
+              style={
+                {
+                  "alignItems": "baseline",
+                  "flexDirection": "row",
+                }
+              }
+            >
+              <Text
+                style={
+                  {
+                    "color": "#645C42",
+                    "fontSize": 10.5,
+                  }
+                }
+                testID="reset-label-daily"
+              >
+                일일
+              </Text>
+              <View
+                style={
+                  {
+                    "marginLeft": "auto",
+                  }
+                }
+              >
+                <Text
+                  numberOfLines={1}
+                  style={
+                    {
+                      "color": "#241208",
+                      "fontSize": 11.5,
+                      "fontVariant": [
+                        "tabular-nums",
+                      ],
+                      "fontWeight": "700",
+                    }
+                  }
+                  testID="reset-value-daily"
+                >
+                  1분 미만
+                </Text>
+              </View>
+            </View>
+          </View>
+          <View
+            style={
+              {
+                "columnGap": 2,
+                "rowGap": 2,
+              }
+            }
+            testID="reset-row-weekly"
+          >
+            <View
+              style={
+                {
+                  "alignItems": "baseline",
+                  "flexDirection": "row",
+                }
+              }
+            >
+              <Text
+                style={
+                  {
+                    "color": "#645C42",
+                    "fontSize": 10.5,
+                  }
+                }
+                testID="reset-label-weekly"
+              >
+                주간
+              </Text>
+              <View
+                style={
+                  {
+                    "marginLeft": "auto",
+                  }
+                }
+              >
+                <Text
+                  numberOfLines={1}
+                  style={
+                    {
+                      "color": "#241208",
+                      "fontSize": 11.5,
+                      "fontVariant": [
+                        "tabular-nums",
+                      ],
+                      "fontWeight": "700",
+                    }
+                  }
+                  testID="reset-value-weekly"
+                >
+                  1분 미만
+                </Text>
+              </View>
+            </View>
+          </View>
+        </View>
       </View>
     </View>
     <View
@@ -191,19 +312,44 @@ exports[`WidgetGrid — 좌표 배치 스냅샷 1`] = `
             }
           }
         >
-          <Text
+          <View
             style={
               {
-                "color": "#645C42",
-                "fontSize": 12,
-                "lineHeight": 16,
+                "columnGap": 4,
+                "flexBasis": "0%",
+                "flexGrow": 1,
+                "flexShrink": 1,
+                "justifyContent": "center",
                 "padding": 12,
+                "rowGap": 4,
               }
             }
             testID="widget-crystal-limit"
           >
-            crystal-limit
-          </Text>
+            <Text
+              style={
+                {
+                  "color": "#645C42",
+                  "fontSize": 10,
+                  "fontWeight": "700",
+                }
+              }
+            >
+              결정석 판매
+            </Text>
+            <Text
+              numberOfLines={2}
+              style={
+                {
+                  "color": "#645C42",
+                  "fontSize": 10,
+                }
+              }
+              testID="crystal-empty"
+            >
+              집계할 기록이 없습니다
+            </Text>
+          </View>
         </View>
       </View>
     </View>

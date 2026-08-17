@@ -1,5 +1,5 @@
-// 격자 **껍데기**([[ADR-146]] 결정 2·3·5 · 정정 1). 위젯 내용은 아직 stub 이라 이 파일이 묻는 것은
-// 하나다 — «타일 여덟이 적어 둔 좌표에 서는가».
+// 격자 **껍데기**([[ADR-146]] 결정 2·3·5 · 정정 1). 위젯 내용은 각자의 테스트가 보므로 이 파일이
+// 묻는 것은 하나다 — «타일 여덟이 적어 둔 좌표에 서는가».
 //
 // ── 값을 손으로 적지 않는 자리 ──────────────────────────────────────────────────────
 // 치수는 `resolveWidgetGridMetrics` 에서 읽는다(`TabNavigator`·`ScreenScroll` 테스트가 바 치수를
@@ -18,7 +18,7 @@ import {
 } from '../../../components/__tests__/render-atom'
 import { resolveWidgetGridMetrics } from '../../../lib/widget-grid-metrics'
 import { useScreenNavigation } from '../../use-screen-navigation'
-import type { TodayViewModel } from '../view-model'
+import { 빈_뷰모델 } from '../widgets/__tests__/widget-fixture'
 import { WidgetGrid } from '../WidgetGrid'
 
 jest.mock('../../use-screen-navigation', () => ({ useScreenNavigation: jest.fn() }))
@@ -33,24 +33,10 @@ const mockedMaybeShowTabSwitchAd = jest.mocked(maybeShowTabSwitchAd)
 type Rendered = Awaited<ReturnType<typeof renderAtom>>
 
 /**
- * 위젯이 전부 stub 이라 **내용은 아무도 안 읽는다** — 그래도 값을 넣는 이유는 프롭 계약이 이미
- * `TodayViewModel` 이기 때문이다(결정 4). 빈 상태로 두는 것이 격자 검사에 가장 정직하다.
+ * 이 파일이 검사하는 것은 **격자**다 — 내용은 빈 상태로 두는 것이 가장 정직하다(타일이 무엇을
+ * 그리는지는 위젯 테스트가 따로 본다). 값은 위젯 테스트와 **같은 픽스처**를 쓴다: 두 벌로 두면
+ * `TodayViewModel` 이 늘 때마다 한쪽만 고쳐진다(실제로 그렇게 갈렸다).
  */
-const 빈_뷰모델: TodayViewModel = {
-  representative: null,
-  schedule: [],
-  scheduleTotal: 0,
-  profit: { totalMeso: 0, crystalMeso: 0, itemMeso: 0, hasRecords: false, topCharacters: [] },
-  topItem: null,
-  unpricedCount: 0,
-  crystalLimits: [],
-  drought: null,
-  resets: {
-    daily: { atMs: 0, remainingMs: 0 },
-    weekly: { atMs: 0, remainingMs: 0 },
-    monthly: { atMs: 0, remainingMs: 0 },
-  },
-}
 
 const metrics = resolveWidgetGridMetrics(Dimensions.get('window').width)
 const 행 = metrics.rowHeightPx + metrics.gapPx
