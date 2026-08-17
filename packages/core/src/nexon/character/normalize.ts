@@ -35,6 +35,18 @@ function normalizeGuildName(raw: string | null | undefined): string | null | und
   return raw === null || raw.trim() === '' ? null : raw
 }
 
+// ADR-146 결정 7: character_exp_rate는 숫자가 아니라 문자열("80.300")로 온다. 여기서 풀어두지 않으면
+// 문자열째 비교돼 `"9.500" > "80.300"` 이 사전순으로 참이 되고 진행률 바가 조용히 뒤집힌다.
+// 값이 없거나 숫자로 안 풀리면 0이 아니라 undefined다 — 0으로 채우는 순간 "모름"이 "0%"가 된다.
+// (Number('')·Number('  ')이 0이라 빈 문자열은 명시적으로 걸러야 한다.)
+function normalizeExpRate(raw: string | undefined): number | undefined {
+  if (raw === undefined || raw.trim() === '') {
+    return undefined
+  }
+  const parsed = Number(raw)
+  return Number.isFinite(parsed) ? parsed : undefined
+}
+
 export function normalizeCharacterBasic(wire: NexonCharacterBasicResponse): CharacterBasicProfile {
   return {
     name: wire.character_name,
@@ -42,6 +54,8 @@ export function normalizeCharacterBasic(wire: NexonCharacterBasicResponse): Char
     imageUrl: wire.character_image,
     accessFlag: wire.access_flag === 'true',
     world: wire.world_name,
+    // character_exp(누적 절대값)는 일부러 나르지 않는다 — 카드가 답해야 하는 것은 진행률이다.
+    expRate: normalizeExpRate(wire.character_exp_rate),
     guildName: normalizeGuildName(wire.character_guild_name),
   }
 }

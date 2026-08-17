@@ -186,6 +186,91 @@ describe('normalizeCharacterBasic', () => {
     expect(normalizeCharacterBasic(wire).guildName).toBeUndefined()
   })
 
+  // ADR-146 결정 7: character_exp_rate 는 숫자가 아니라 **문자열**("80.300")이다. access_flag와 같은
+  // 모양의 함정이라 여기서 풀어 두지 않으면 문자열째 비교돼("9.500" > "80.300" 이 사전순으로 참)
+  // 진행률 바가 조용히 뒤집힌다.
+  it('character_exp_rate 문자열을 expRate 숫자로 변환한다', () => {
+    const wire: NexonCharacterBasicResponse = {
+      character_name: '낟낟',
+      character_level: 293,
+      character_image: 'https://open.api.nexon.com/static/maplestory/character/look/abc',
+      access_flag: 'true',
+      character_exp_rate: '80.300',
+    }
+
+    expect(normalizeCharacterBasic(wire).expRate).toBe(80.3)
+  })
+
+  it('응답에 character_exp_rate가 없으면 expRate는 undefined다(0이 아니다)', () => {
+    const wire: NexonCharacterBasicResponse = {
+      character_name: '낟낟',
+      character_level: 293,
+      character_image: 'https://open.api.nexon.com/static/maplestory/character/look/abc',
+      access_flag: 'true',
+    }
+
+    expect(normalizeCharacterBasic(wire).expRate).toBeUndefined()
+  })
+
+  // Number('') 은 0이라 그냥 통과시키면 "모름"이 "0%"로 둔갑한다.
+  it('character_exp_rate가 빈 문자열이면 expRate는 undefined다(0이 아니다)', () => {
+    const base = {
+      character_name: '낟낟',
+      character_level: 293,
+      character_image: 'https://open.api.nexon.com/static/maplestory/character/look/abc',
+      access_flag: 'true' as const,
+    }
+
+    expect(normalizeCharacterBasic({ ...base, character_exp_rate: '' }).expRate).toBeUndefined()
+    expect(normalizeCharacterBasic({ ...base, character_exp_rate: '  ' }).expRate).toBeUndefined()
+  })
+
+  it('character_exp_rate가 숫자로 안 풀리면 expRate는 undefined다(NaN을 싣지 않는다)', () => {
+    const wire: NexonCharacterBasicResponse = {
+      character_name: '낟낟',
+      character_level: 293,
+      character_image: 'https://open.api.nexon.com/static/maplestory/character/look/abc',
+      access_flag: 'true',
+      character_exp_rate: 'abc',
+    }
+
+    expect(normalizeCharacterBasic(wire).expRate).toBeUndefined()
+  })
+
+  // 위 두 케이스와 갈리는 자리 — 진짜 0%는 "모름"이 아니라 사실이므로 실어야 한다.
+  it('character_exp_rate가 "0.000"이면 expRate는 0이다', () => {
+    const wire: NexonCharacterBasicResponse = {
+      character_name: '갓만든캐릭',
+      character_level: 10,
+      character_image: 'https://open.api.nexon.com/static/maplestory/character/look/ghi',
+      access_flag: 'true',
+      character_exp_rate: '0.000',
+    }
+
+    expect(normalizeCharacterBasic(wire).expRate).toBe(0)
+  })
+
+  // ADR-146 결정 7: 누적 절대값은 레벨이 오를수록 커져 "얼마나 남았나"를 못 말한다. 카드가 답해야
+  // 하는 것은 진행률이라 도메인 타입이 이 값을 나르지 않는다.
+  it('character_exp는 도메인 객체에 실리지 않는다', () => {
+    const wire: NexonCharacterBasicResponse = {
+      character_name: '낟낟',
+      character_level: 293,
+      character_image: 'https://open.api.nexon.com/static/maplestory/character/look/abc',
+      access_flag: 'true',
+      character_exp: 1390734270108,
+      character_exp_rate: '80.300',
+    }
+
+    expect(normalizeCharacterBasic(wire)).toEqual({
+      name: '낟낟',
+      level: 293,
+      imageUrl: 'https://open.api.nexon.com/static/maplestory/character/look/abc',
+      accessFlag: true,
+      expRate: 80.3,
+    })
+  })
+
   it('access_flag가 "false" 문자열이면 accessFlag: false로 변환한다', () => {
     const wire: NexonCharacterBasicResponse = {
       character_name: '가려진부캐',
