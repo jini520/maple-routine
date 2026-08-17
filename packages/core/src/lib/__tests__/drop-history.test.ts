@@ -11,7 +11,7 @@ import {
   groupDropRecordsByPeriod,
   objectParticle,
   summarizeValuableDrought,
-  VALUABLE_DROUGHT_LATE_HEADLINE_COUNT,
+  valuableDroughtHeadlineCount,
   WORD_JOINER,
   type DropHistoryLine,
   type DropHistoryRecord,
@@ -371,38 +371,81 @@ describe('getValuableDroughtTier', () => {
   })
 })
 
+/** 그 주 수의 풀 전체 — 인덱스를 0부터 개수만큼 돌려 모은다. */
+function pool(weeksSince: number): string[] {
+  return Array.from({ length: valuableDroughtHeadlineCount(weeksSince) }, (_, index) =>
+    formatValuableDroughtHeadline(weeksSince, index),
+  )
+}
+
 describe('formatValuableDroughtHeadline', () => {
-  // 문구는 사용자 지정(2026-08-01) — 구현자가 톤을 다듬지 않는다.
-  it('0~3주는 지정된 문구를 그대로 쓴다', () => {
-    expect(formatValuableDroughtHeadline(0)).toBe('와따리! ㅇㄱㄱㄷ')
-    expect(formatValuableDroughtHeadline(1)).toBe('그래, 그럴 수 있지')
-    expect(formatValuableDroughtHeadline(2)).toBe('어?! 슬슬 쫌 그래!?')
-    expect(formatValuableDroughtHeadline(3)).toBe('선넘네?!')
+  // 문구는 사용자 지정(2026-08-01·2026-08-17) — 구현자가 톤을 다듬지 않는다.
+  // ADR-146 정정 6: 마지막 단계만 풀이던 것이 전 단계 풀이 됐다. 기존 문구는 각 풀의 **첫 항목**이라
+  // 인덱스를 주지 않은 호출은 예전과 글자 하나 다르지 않다(회귀 가드).
+  it('index 0은 단계마다 기존 문구를 그대로 준다', () => {
+    expect(formatValuableDroughtHeadline(0, 0)).toBe('와따리! ㅇㄱㄱㄷ')
+    expect(formatValuableDroughtHeadline(1, 0)).toBe('그래, 그럴 수 있지')
+    expect(formatValuableDroughtHeadline(2, 0)).toBe('어?! 슬슬 쫌 그래!?')
+    expect(formatValuableDroughtHeadline(3, 0)).toBe('선넘네?!')
+    expect(formatValuableDroughtHeadline(9, 0)).toBe('이건 아니지...')
   })
 
-  it('4주 이상은 lateIndex로 고른 풀 문구가 나온다', () => {
-    const headlines = Array.from({ length: VALUABLE_DROUGHT_LATE_HEADLINE_COUNT }, (_, index) =>
-      formatValuableDroughtHeadline(9, index),
-    )
-
-    expect(headlines).toContain('이건 아니지...')
-    expect(headlines).toContain('적당히 해!')
-    // 풀 안에서 문구가 겹치지 않는다 — 같은 말이 두 슬롯을 차지하면 랜덤이 덜 랜덤해진다
-    expect(new Set(headlines).size).toBe(VALUABLE_DROUGHT_LATE_HEADLINE_COUNT)
+  // ADR-146 정정 10 — 사용자가 고른 여섯이 각 풀에 얹혔다.
+  it('0~3주도 풀이라 index로 다른 문구가 나온다', () => {
+    expect(pool(0)).toEqual(['와따리! ㅇㄱㄱㄷ', '완전 럭키비키잖아', '폼 미쳤다'])
+    expect(pool(1)).toEqual(['그래, 그럴 수 있지', '다음 주엔 되겠지'])
+    expect(pool(2)).toEqual(['어?! 슬슬 쫌 그래!?', '슬슬 킹받는데', '이게 맞나?'])
+    expect(pool(3)).toEqual(['선넘네?!', '이게 억까지 뭐야'])
   })
 
-  it('lateIndex는 주 수와 무관하게 같은 문구를 준다 — 4주와 200주가 같은 풀을 쓴다', () => {
+  it('4주 이상은 기존 다섯 줄 그대로다 — 채택된 추가 문구가 없다', () => {
+    expect(pool(9)).toEqual([
+      '이건 아니지...',
+      '적당히 해!',
+      '제발 한 번만...',
+      '이제 기대도 안 해',
+      '내가 뭘 잘못했나',
+    ])
+  })
+
+  it('풀 안에서 문구가 겹치지 않는다 — 같은 말이 두 슬롯을 차지하면 랜덤이 덜 랜덤해진다', () => {
+    for (const weeks of [0, 1, 2, 3, 9]) {
+      expect(new Set(pool(weeks)).size).toBe(valuableDroughtHeadlineCount(weeks))
+    }
+  })
+
+  it('index는 주 수와 무관하게 같은 문구를 준다 — 4주와 200주가 같은 풀을 쓴다', () => {
     expect(formatValuableDroughtHeadline(4, 2)).toBe(formatValuableDroughtHeadline(200, 2))
   })
 
-  it('lateIndex가 범위를 벗어나도 감싸서 고른다', () => {
-    const count = VALUABLE_DROUGHT_LATE_HEADLINE_COUNT
-    expect(formatValuableDroughtHeadline(9, count)).toBe(formatValuableDroughtHeadline(9, 0))
-    expect(formatValuableDroughtHeadline(9, -1)).toBe(formatValuableDroughtHeadline(9, count - 1))
+  // 호출부가 경계를 신경 쓰지 않아도 되는 성질 — 단계마다 풀 크기가 달라져 더 중요해졌다.
+  it('index가 범위를 벗어나도 단계마다 감싸서 고른다', () => {
+    for (const weeks of [0, 1, 2, 3, 9]) {
+      const count = valuableDroughtHeadlineCount(weeks)
+      expect(formatValuableDroughtHeadline(weeks, count)).toBe(
+        formatValuableDroughtHeadline(weeks, 0),
+      )
+      expect(formatValuableDroughtHeadline(weeks, -1)).toBe(
+        formatValuableDroughtHeadline(weeks, count - 1),
+      )
+    }
   })
 
-  it('lateIndex를 주지 않으면 항상 같은 문구다 — 렌더마다 깜빡이지 않게 하는 기본값', () => {
+  it('index를 주지 않으면 항상 같은 문구다 — 렌더마다 깜빡이지 않게 하는 기본값', () => {
     expect(formatValuableDroughtHeadline(9)).toBe(formatValuableDroughtHeadline(9))
+    expect(formatValuableDroughtHeadline(0)).toBe(formatValuableDroughtHeadline(0, 0))
+  })
+})
+
+// 화면이 무작위 인덱스를 고르려면 **그 단계의** 풀 크기를 알아야 한다 — 마지막 단계만 알려주던 상수
+// (`VALUABLE_DROUGHT_LATE_HEADLINE_COUNT`)로는 모자라 함수가 됐다(ADR-146 정정 6).
+describe('valuableDroughtHeadlineCount', () => {
+  it('단계마다 자기 풀 크기를 준다', () => {
+    expect([0, 1, 2, 3, 4].map(valuableDroughtHeadlineCount)).toEqual([3, 2, 3, 2, 5])
+  })
+
+  it('마지막 단계로 묶이는 주 수는 모두 같은 크기다', () => {
+    expect([4, 5, 16, 200].map(valuableDroughtHeadlineCount)).toEqual([5, 5, 5, 5])
   })
 })
 

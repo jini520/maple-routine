@@ -8,7 +8,7 @@ import { useDropHistoryStore } from '@core/features/boss-profit/drop-history-sto
 import { formatBossProfitPeriodLabel } from '@core/lib/boss-profit-period'
 import {
   formatValuableDroughtHeadline,
-  VALUABLE_DROUGHT_LATE_HEADLINE_COUNT,
+  valuableDroughtHeadlineCount,
   WORD_JOINER,
   type DropHistoryRecord,
 } from '@core/lib/drop-history'
@@ -24,6 +24,17 @@ vi.mock('@core/features/boss-profit/drop-history-store', () => ({
 
 const mockedUseDropHistoryStore = vi.mocked(useDropHistoryStore)
 const loadMock = vi.fn()
+
+/**
+ * 그 단계의 문구 풀 — 단계마다 여럿이고 화면이 마운트당 하나를 무작위로 고른다([[ADR-146]] 정정 6).
+ * 그래서 화면 테스트는 문구를 단정하지 않고 "그 단계의 풀에 있는가"만 본다(단계 자체는
+ * `data-drought-tier` 가 말한다).
+ */
+function headlinePool(weeksSince: number): string[] {
+  return Array.from({ length: valuableDroughtHeadlineCount(weeksSince) }, (_, index) =>
+    formatValuableDroughtHeadline(weeksSince, index),
+  )
+}
 
 function record(overrides: Partial<DropHistoryRecord>): DropHistoryRecord {
   return {
@@ -382,19 +393,20 @@ describe('DropHistoryScreen', () => {
     renderScreen()
 
     const summary = screen.getByTestId('valuable-drought')
-    expect(summary).toHaveTextContent('선넘네?!') // 3주 미획득 = 사용자 지정 4주차 문구
+    // 3주 미획득 = 사용자 지정 4주차 풀
+    expect(headlinePool(3).some((headline) => summary.textContent?.includes(headline))).toBe(true)
     expect(summary).toHaveTextContent('마지막 에픽 빔!')
     expect(summary).toHaveTextContent('루즈 컨트롤 머신 마크')
   })
 
   it('기간이 길어질수록 단계가 올라간다 — 잎 색·기울기가 그 단계를 따른다', () => {
-    // 문구는 사용자 지정(2026-08-01) — 0~3주는 고정, 4주 이상은 풀에서 무작위라 문구를 단정하지 않고
-    // 단계만 본다.
-    for (const [weeks, tier, headline] of [
-      [0, '0', '와따리! ㅇㄱㄱㄷ'],
-      [1, '1', '그래, 그럴 수 있지'],
-      [2, '2', '어?! 슬슬 쫌 그래!?'],
-      [3, '3', '선넘네?!'],
+    // 문구는 사용자 지정(2026-08-01·2026-08-17) — **전 단계가 풀**이라 문구를 단정하지 않고 풀 소속과
+    // 단계만 본다([[ADR-146]] 정정 6).
+    for (const [weeks, tier] of [
+      [0, '0'],
+      [1, '1'],
+      [2, '2'],
+      [3, '3'],
     ] as const) {
       cleanup()
       mockStore({
@@ -406,7 +418,9 @@ describe('DropHistoryScreen', () => {
 
       const summary = screen.getByTestId('valuable-drought')
       expect(summary).toHaveAttribute('data-drought-tier', tier)
-      expect(summary).toHaveTextContent(headline)
+      expect(headlinePool(weeks).some((headline) => summary.textContent?.includes(headline))).toBe(
+        true,
+      )
     }
   })
 
@@ -420,7 +434,7 @@ describe('DropHistoryScreen', () => {
     renderScreen()
 
     const summary = screen.getByTestId('valuable-drought')
-    expect(summary).toHaveTextContent('와따리! ㅇㄱㄱㄷ')
+    expect(headlinePool(0).some((headline) => summary.textContent?.includes(headline))).toBe(true)
     expect(summary).not.toHaveTextContent('마지막')
   })
 
@@ -434,9 +448,7 @@ describe('DropHistoryScreen', () => {
     })
     const { rerender } = renderScreen()
 
-    const pool = Array.from({ length: VALUABLE_DROUGHT_LATE_HEADLINE_COUNT }, (_, index) =>
-      formatValuableDroughtHeadline(9, index),
-    )
+    const pool = headlinePool(9)
     const shown = screen.getByTestId('valuable-drought').querySelector('p')?.textContent ?? ''
     expect(pool).toContain(shown)
 

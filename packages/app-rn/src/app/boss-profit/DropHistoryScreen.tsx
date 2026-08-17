@@ -46,7 +46,7 @@ import {
   formatValuableDroughtHeadline,
   formatValuableDroughtItems,
   getValuableDroughtTier,
-  VALUABLE_DROUGHT_LATE_HEADLINE_COUNT,
+  valuableDroughtHeadlineCount,
 } from '@core/lib/drop-history'
 import type {
   DropHistoryPeriodGroup,
@@ -119,11 +119,13 @@ function ValuableDrought(props: { summary: ValuableDroughtSummary; now: Date }):
   const style = DROUGHT_TIER_STYLES[tier]
   const items = formatValuableDroughtItems(props.summary.records)
 
-  // 마지막 단계는 문구가 여럿이고 그중 하나가 무작위로 나온다(사용자 지정 2026-08-01). **마운트당 한
-  // 번만 고른다** — 렌더마다 고르면 리렌더가 일어날 때 문구가 깜빡인다. `useState` 초기화 함수는 그
+  // 단계마다 문구가 여럿이고 그중 하나가 무작위로 나온다(사용자 지정 2026-08-01·2026-08-17). **마운트당
+  // 한 번만 고른다** — 렌더마다 고르면 리렌더가 일어날 때 문구가 깜빡인다. `useState` 초기화 함수는 그
   // 컴포넌트 인스턴스에서 딱 한 번 실행되므로 화면에 머무는 동안 문구가 고정되고, 다시 들어오면 새로
   // 뽑힌다. 무작위는 화면(경계)에만 두고 `lib` 은 순수하게 유지한다.
-  const [lateIndex] = useState(() => Math.floor(Math.random() * VALUABLE_DROUGHT_LATE_HEADLINE_COUNT))
+  const [headlineIndex] = useState(() =>
+    Math.floor(Math.random() * valuableDroughtHeadlineCount(weeks)),
+  )
 
   return (
     <View
@@ -162,7 +164,7 @@ function ValuableDrought(props: { summary: ValuableDroughtSummary; now: Date }):
             아래 줄 `text-[10px]`→`text-[11px]`. 아래 줄을 `text-xs`(12px)까지 올리지 않는 이유는 목록
             문장이 12px 라, 같아지면 요약과 본문의 위계가 사라진다. */}
         <Text className={`text-base font-bold ${style.ink}`}>
-          {formatValuableDroughtHeadline(weeks, lateIndex)}
+          {formatValuableDroughtHeadline(weeks, headlineIndex)}
         </Text>
         {/* 이번 주에 먹었으면 그게 곧 마지막이라 "마지막 에픽 빔!"을 뺀다 — 아직 진행 중인 주를
             "마지막"이라 부르면 어색하다. 1주 이상은 실제로 지난 일이라 붙인다. */}
