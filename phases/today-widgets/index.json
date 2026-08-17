@@ -29,7 +29,10 @@
     {
       "step": 3,
       "name": "boss-display-extract",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-08-17T21:07:56+0900",
+      "summary": "표시 대상 보스 판정을 BossScreen.tsx 지역 함수에서 core features/boss-scheduler/displayed-bosses.ts 로 꺼냈다 — 로직 한 줄 안 바꾸고 클로저로 읽던 mode·manualTrackedByOcid 만 인자가 됐다(ADR-146 결정 8: 복제가 아니라 이동). 화면은 지역 함수를 지우고 호출부 셋(주간·월간·레일 링)이 인자를 넘기며, 고아가 된 import 넷도 함께 정리. 지금까지 BossScreen 렌더로만 검증되던 ADR-035 멤버십·ADR-031 결정 5 를 입출력으로 직접 못 박는 신규 11케이스(cycle 필터·kind 필터 변이 주입으로 판별력 확인), BossScreen 스냅샷 48개가 그대로 통과해 이동 성공을 증명.",
+      "completed_at": "2026-08-17T21:13:29+0900"
     },
     {
       "step": 4,
