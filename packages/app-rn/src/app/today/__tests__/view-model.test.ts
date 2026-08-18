@@ -395,6 +395,28 @@ describe('주간 보스 수익 ([[ADR-146]] 정정 4)', () => {
     expect(model.profit.topCharacters[0].totalMeso).toBe(40)
     expect(model.profit.totalMeso).toBe(100)
   })
+
+  // 위젯 3의 스택 바가 읽는 값이다 — 위젯은 스토어를 모르므로 총액만 주면 갈라 그릴 수 없다.
+  it('총액을 결정석과 아이템으로 가르고, 둘의 합이 총액이다', () => {
+    const drops = {
+      [`a|스우|노멀|${WEEK_KEY}`]: [
+        { category: 'equipment' as const, itemName: '반지', quantity: 1, priceState: 'entered' as const, priceMeso: 60, priceShare: 2 },
+      ],
+    }
+    const model = buildTodayViewModel(
+      input({
+        orderedOcids: ['a'],
+        profitRows: [profitRow({ payoutMeso: 100 })],
+        profitDropsByRowKey: drops,
+      }),
+    )
+
+    expect(model.profit.crystalMeso).toBe(100)
+    expect(model.profit.itemMeso).toBe(30)
+    expect(model.profit.crystalMeso + model.profit.itemMeso).toBe(model.profit.totalMeso)
+    expect(model.profit.topCharacters[0].crystalMeso).toBe(100)
+    expect(model.profit.topCharacters[0].itemMeso).toBe(30)
+  })
 })
 
 describe('최고가 아이템 ([[ADR-146]] 결정 9 · 정정 5)', () => {
@@ -469,6 +491,31 @@ describe('최고가 아이템 ([[ADR-146]] 결정 9 · 정정 5)', () => {
 
     expect(model.topItem).toBeNull()
     expect(model.unpricedCount).toBe(0)
+  })
+
+  // 위젯 4가 «캐릭터 · 보스» 를 그린다. ocid 는 사용자에게 뜻이 없는 값이라 대신 넣지 않는다.
+  it('캐릭터 이름은 프로필 캐시에 있을 때만 싣는다', () => {
+    const 기록 = dropRecord({ itemName: '반지', priceState: 'entered', priceMeso: 10 })
+    const 있음 = buildTodayViewModel(
+      input({ profilesByOcid: { a: profile() }, dropGroups: [dropGroup([기록])] }),
+    )
+    const 없음 = buildTodayViewModel(input({ dropGroups: [dropGroup([기록])] }))
+
+    expect(있음.topItem?.top.characterName).toBe('단풍루틴')
+    expect(없음.topItem?.top.characterName).toBeUndefined()
+  })
+
+  // 아이콘 조회(`getItemIconUrl(name, slot)`)가 쓴다 — 빠지면 에러가 아니라 조용한 폴백 원이 된다.
+  it('아이콘 조회에 필요한 `slot` 을 그대로 나른다', () => {
+    const model = buildTodayViewModel(
+      input({
+        dropGroups: [
+          dropGroup([dropRecord({ itemName: '반지', slot: '반지', priceState: 'entered', priceMeso: 10 })]),
+        ],
+      }),
+    )
+
+    expect(model.topItem?.top.slot).toBe('반지')
   })
 })
 

@@ -40,7 +40,7 @@ const 빈_뷰모델: TodayViewModel = {
   representative: null,
   schedule: [],
   scheduleTotal: 0,
-  profit: { totalMeso: 0, hasRecords: false, topCharacters: [] },
+  profit: { totalMeso: 0, crystalMeso: 0, itemMeso: 0, hasRecords: false, topCharacters: [] },
   topItem: null,
   unpricedCount: 0,
   crystalLimits: [],

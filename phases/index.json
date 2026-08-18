@@ -208,7 +208,8 @@
     },
     {
       "dir": "today-widgets",
-      "status": "pending"
+      "status": "blocked",
+      "blocked_at": "2026-08-17T22:34:30+0900"
     }
   ]
 }

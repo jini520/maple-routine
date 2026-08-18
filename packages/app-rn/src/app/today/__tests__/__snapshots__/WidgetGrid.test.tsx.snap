@@ -388,19 +388,87 @@ exports[`WidgetGrid — 좌표 배치 스냅샷 1`] = `
             }
           }
         >
-          <Text
+          <View
             style={
               {
-                "color": "#645C42",
-                "fontSize": 12,
-                "lineHeight": 16,
+                "columnGap": 8,
+                "flexBasis": "0%",
+                "flexGrow": 1,
+                "flexShrink": 1,
                 "padding": 12,
+                "rowGap": 8,
               }
             }
             testID="widget-weekly-boss-profit"
           >
-            weekly-boss-profit
-          </Text>
+            <View
+              style={
+                {
+                  "columnGap": 2,
+                  "rowGap": 2,
+                }
+              }
+            >
+              <Text
+                style={
+                  {
+                    "color": "#645C42",
+                    "fontSize": 11,
+                    "fontWeight": "700",
+                  }
+                }
+              >
+                이번 주
+              </Text>
+              <Text
+                numberOfLines={1}
+                style={
+                  {
+                    "color": "#241208",
+                  }
+                }
+                testID="profit-amount"
+              >
+                <Text
+                  style={
+                    {
+                      "color": "#241208",
+                      "fontSize": 32,
+                      "fontVariant": [
+                        "tabular-nums",
+                      ],
+                      "fontWeight": "800",
+                    }
+                  }
+                >
+                  0
+                </Text>
+                <Text
+                  style={
+                    {
+                      "color": "#645C42",
+                      "fontSize": 11,
+                      "fontWeight": "600",
+                    }
+                  }
+                >
+                   메소
+                </Text>
+              </Text>
+            </View>
+            <Text
+              numberOfLines={1}
+              style={
+                {
+                  "color": "#645C42",
+                  "fontSize": 10,
+                }
+              }
+              testID="profit-note"
+            >
+              아직 이번 주 기록이 없습니다
+            </Text>
+          </View>
         </View>
       </View>
     </View>
@@ -458,19 +526,31 @@ exports[`WidgetGrid — 좌표 배치 스냅샷 1`] = `
             }
           }
         >
-          <Text
+          <View
             style={
               {
-                "color": "#645C42",
-                "fontSize": 12,
-                "lineHeight": 16,
+                "flexBasis": "0%",
+                "flexGrow": 1,
+                "flexShrink": 1,
+                "justifyContent": "center",
                 "padding": 12,
               }
             }
             testID="widget-top-valuable-item"
           >
-            top-valuable-item
-          </Text>
+            <Text
+              numberOfLines={2}
+              style={
+                {
+                  "color": "#645C42",
+                  "fontSize": 10,
+                }
+              }
+              testID="top-item-empty"
+            >
+              가격이 입력된 아이템이 없습니다
+            </Text>
+          </View>
         </View>
       </View>
     </View>

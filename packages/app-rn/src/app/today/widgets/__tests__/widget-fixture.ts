@@ -7,16 +7,18 @@
 // 테스트는 자기가 보는 필드만 덮어쓴다.
 
 import type {
+  PricedDropView,
   RepresentativeView,
   ScheduleRowView,
   TodayViewModel,
+  WeeklyProfitCharacterView,
 } from '../../view-model'
 
 export const 빈_뷰모델: TodayViewModel = {
   representative: null,
   schedule: [],
   scheduleTotal: 0,
-  profit: { totalMeso: 0, hasRecords: false, topCharacters: [] },
+  profit: { totalMeso: 0, crystalMeso: 0, itemMeso: 0, hasRecords: false, topCharacters: [] },
   topItem: null,
   unpricedCount: 0,
   crystalLimits: [],
@@ -78,4 +80,75 @@ export function 스케줄목록(n: number): ScheduleRowView[] {
       imageUrl: `https://open.api.nexon.com/static/maplestory/character/look/${index + 1}`,
     }),
   )
+}
+
+/**
+ * 수익 캐릭터 한 명. **결정석과 아이템이 서로 다른 값**이라 스택 바가 반반으로 그려지는 실수를
+ * 테스트가 볼 수 있고, `formatMesoShort` 를 통과한 세 값(`20.0억`·`5.0억`·`25.0억`)도 서로 다르다.
+ */
+export function 수익캐릭터(
+  부분: Partial<WeeklyProfitCharacterView> = {},
+): WeeklyProfitCharacterView {
+  const base = {
+    ocid: 'ocid-1',
+    characterName: '야간비행',
+    imageUrl: null,
+    crystalMeso: 2_000_000_000,
+    itemMeso: 500_000_000,
+  }
+  const merged = { ...base, ...부분 }
+
+  // 합계를 손으로 적게 하면 «둘의 합이 총액» 이라는 뷰모델의 계약이 픽스처에서 깨진다.
+  return {
+    ...merged,
+    totalMeso: 부분.totalMeso ?? merged.crystalMeso + merged.itemMeso,
+  }
+}
+
+/** 기록이 있는 한 주 — 캐릭터 셋의 합이 그대로 타일의 총액이다. */
+export function 수익(캐릭터들: WeeklyProfitCharacterView[]): TodayViewModel['profit'] {
+  return {
+    totalMeso: 캐릭터들.reduce((sum, entry) => sum + entry.totalMeso, 0),
+    crystalMeso: 캐릭터들.reduce((sum, entry) => sum + entry.crystalMeso, 0),
+    itemMeso: 캐릭터들.reduce((sum, entry) => sum + entry.itemMeso, 0),
+    hasRecords: true,
+    topCharacters: 캐릭터들,
+  }
+}
+
+/** 상위 셋 — 금액이 내림차순이고 셋 다 다르다(뷰모델이 이미 정렬해 준 모양). */
+export function 수익캐릭터셋(): WeeklyProfitCharacterView[] {
+  return [
+    수익캐릭터({ ocid: 'ocid-1', characterName: '가', crystalMeso: 2_000_000_000, itemMeso: 500_000_000 }),
+    수익캐릭터({ ocid: 'ocid-2', characterName: '나', crystalMeso: 1_000_000_000, itemMeso: 300_000_000 }),
+    수익캐릭터({ ocid: 'ocid-3', characterName: '다', crystalMeso: 200_000_000, itemMeso: 0 }),
+  ]
+}
+
+/** 아이콘이 실제로 해석되는 이름을 기본값으로 둔다(`item-icons.json` 에 있는 반지). */
+export function 드롭(부분: Partial<PricedDropView> = {}): PricedDropView {
+  return {
+    ocid: 'ocid-1',
+    characterName: '야간비행',
+    boss: '스우',
+    difficulty: '노멀',
+    itemName: '가디언 엔젤 링',
+    quantity: 1,
+    category: 'equipment',
+    priceMeso: 12_000_000_000,
+    ...부분,
+  }
+}
+
+/** 1위 + 2~5위. `restCount` 가 4보다 작으면 그만큼만 선다(4x2 의 «모자라면 있는 만큼»). */
+export function 최고가(restCount: number): TodayViewModel['topItem'] {
+  return {
+    top: 드롭(),
+    rest: Array.from({ length: restCount }, (_, index) =>
+      드롭({
+        itemName: `${index + 2}위 아이템`,
+        priceMeso: 1_000_000_000 - index * 100_000_000,
+      }),
+    ),
+  }
 }

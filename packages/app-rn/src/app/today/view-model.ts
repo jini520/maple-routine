@@ -18,6 +18,7 @@
  * | 컨텐츠 완료 | `../content-scheduler/content-completion`([[ADR-142]] 결정 4의 «규칙의 출처») |
  * | 표시 대상 보스 | `@core/features/boss-scheduler/displayed-bosses`([[ADR-035]]·[[ADR-031]]) |
  * | 수익 합산 | `../boss-profit/character-groups` 의 `groupTotalMeso`([[ADR-124]] 결정 7) |
+ * | 결정석·아이템 분해 | 같은 파일의 `sumPayout` + `@core/lib/drop-price` 의 `sumDropPayout` |
  * | 결정석 월드 집계 | 같은 파일의 `summarizeWorldCrystals`([[ADR-054]] 결정 5) |
  * | 한도 분모 | `@core/lib/boss-matching` 의 `WEEKLY_CRYSTAL_SALE_LIMIT` |
  * | 대표 캐릭터 | `resolveDisplayRepresentative`([[ADR-143]] 결정 4의 «임시 대표») |
@@ -49,6 +50,7 @@ import {
   type DropHistoryRecord,
   type ValuableDroughtSummary,
 } from '@core/lib/drop-history'
+import { sumDropPayout } from '@core/lib/drop-price'
 import { getCurrentKstDateKey, getMostRecentWeeklyResetKst } from '@core/lib/reset-clock'
 import type { ManualTrackedItem } from '@core/storage/manual-tracked-content'
 import type { TrackingMode } from '@core/storage/tracking-mode'
@@ -60,6 +62,7 @@ import {
   buildCharacterGroups,
   collectGroupDrops,
   groupTotalMeso,
+  sumPayout,
   summarizeWorldCrystals,
 } from '../boss-profit/character-groups'
 import { dailyContentProgress, weeklyContentProgress } from '../content-scheduler/content-completion'
@@ -105,14 +108,28 @@ export interface ScheduleRowView {
   hasSyncIssue: boolean
 }
 
-export interface WeeklyProfitCharacterView {
+/**
+ * 총액을 가른 둘 — 위젯 3의 스택 바와 분해 금액이 읽는 값이다.
+ *
+ * **위젯이 스토어를 모르므로**([[ADR-146]] 결정 4) 총액만 주면 갈라 그릴 방법이 없다. 그렇다고 여기서
+ * 새로 세지도 않는다 — 결정석은 `sumPayout`, 아이템은 `sumDropPayout` 이고 둘의 합이 곧
+ * `groupTotalMeso` 다(이번 주 계산에는 주차별 소계가 언제나 비어 있다).
+ */
+export interface ProfitSplit {
+  /** 보스 행의 `payoutMeso` 합([[ADR-124]] — 드롭은 여기 안 든다). */
+  crystalMeso: number
+  /** 그 행들에 기록된 드롭 판매가의 분배 후 합. */
+  itemMeso: number
+}
+
+export interface WeeklyProfitCharacterView extends ProfitSplit {
   ocid: string
   characterName: string
   imageUrl: string | null
   totalMeso: number
 }
 
-export interface WeeklyProfitView {
+export interface WeeklyProfitView extends ProfitSplit {
   /** 결정석 + 아이템([[ADR-124]]). 기록이 없으면 0 이다([[ADR-146]] 정정 4). */
   totalMeso: number
   /**
@@ -125,9 +142,16 @@ export interface WeeklyProfitView {
 
 export interface PricedDropView {
   ocid: string
+  /**
+   * 프로필 캐시에 있을 때만 — 없으면 위젯이 보스만 그린다(ocid 는 사용자에게 뜻이 없는 값이라
+   * 대신 넣지 않는다, 대표 카드와 같은 규칙).
+   */
+  characterName?: string
   boss: string
   difficulty: string
   itemName: string
+  /** 아이콘 조회(`getItemIconUrl(name, slot)`)가 쓴다 — 안 넘기면 조용한 폴백 원이 된다. */
+  slot?: string
   ringLevel?: number
   quantity: number
   category: DropCategory
@@ -229,7 +253,7 @@ export function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel 
       .filter((row) => !row.hasSyncIssue)
       .reduce((sum, row) => sum + row.remainingTotal, 0),
     ...buildProfit(input, weeklyPeriodKey),
-    topItem: buildTopItem(weeklyDrops),
+    topItem: buildTopItem(weeklyDrops, input.profilesByOcid),
     unpricedCount: weeklyDrops.filter((record) => record.priceState === undefined).length,
     drought: buildDrought(input.drought),
     resets: buildResets(input.now),
@@ -339,6 +363,11 @@ function buildProfit(
     characterName: group.characterName,
     imageUrl: group.imageUrl,
     totalMeso: groupTotalMeso(group, dropsByRowKey),
+    // 총액을 다시 세는 것이 아니라 **가르는** 것이다 — `groupTotalMeso` 가 더하는 세 항 중 주차별
+    // 소계는 이번 주 계산에서 언제나 비어 있으므로(`buildCharacterGroups(rows, [])`) 둘의 합이
+    // 그대로 `totalMeso` 가 된다. 그래서 여기서 나오는 두 값은 총액과 어긋날 수 없다.
+    crystalMeso: sumPayout(group.bossRows),
+    itemMeso: sumDropPayout(collectGroupDrops(group, dropsByRowKey)),
   }))
 
   const hasRecords =
@@ -348,6 +377,8 @@ function buildProfit(
   return {
     profit: {
       totalMeso: characters.reduce((sum, character) => sum + character.totalMeso, 0),
+      crystalMeso: characters.reduce((sum, character) => sum + character.crystalMeso, 0),
+      itemMeso: characters.reduce((sum, character) => sum + character.itemMeso, 0),
       hasRecords,
       topCharacters: orderByTracked(characters, input.orderedOcids)
         .map((character, index) => ({ character, index }))
@@ -374,7 +405,10 @@ function collectWeeklyDrops(
   return groups.filter((group) => group.periodKey === weeklyPeriodKey).flatMap((group) => group.records)
 }
 
-function buildTopItem(records: DropHistoryRecord[]): TopItemView | null {
+function buildTopItem(
+  records: DropHistoryRecord[],
+  profilesByOcid: Readonly<Record<string, CharacterBasicProfile>>,
+): TopItemView | null {
   // 가격을 아직 안 적은 기록은 순위에 넣지 않는다([[ADR-146]] 결정 9) — 값을 모르는 것을 가장 싼
   // 것으로 단정하는 일이다. 합산(`dropPayoutMeso`)이 미입력을 0으로 접는 것과 **다른 문제**다:
   // 합산은 «더할 것이 없다» 이지만 순위는 «비교했다» 를 주장한다.
@@ -383,9 +417,11 @@ function buildTopItem(records: DropHistoryRecord[]): TopItemView | null {
     .map(
       (record): PricedDropView => ({
         ocid: record.ocid,
+        characterName: profilesByOcid[record.ocid]?.name,
         boss: record.boss,
         difficulty: record.difficulty,
         itemName: record.itemName,
+        slot: record.slot,
         ringLevel: record.ringLevel,
         quantity: record.quantity,
         category: record.category,

@@ -23,7 +23,9 @@ import type { WidgetSize } from '../../../lib/widget-layout'
 import { RemainingScheduleWidget } from './RemainingScheduleWidget'
 import { RepresentativeCharacterWidget } from './RepresentativeCharacterWidget'
 import { stubWidget } from './StubWidget'
+import { TopValuableItemWidget } from './TopValuableItemWidget'
 import type { WidgetDefinition, WidgetId } from './types'
+import { WeeklyBossProfitWidget } from './WeeklyBossProfitWidget'
 
 export const WIDGETS: readonly WidgetDefinition[] = [
   {
@@ -54,7 +56,7 @@ export const WIDGETS: readonly WidgetDefinition[] = [
       { w: 2, h: 1 },
     ],
     target: 'Profit',
-    Component: stubWidget('weekly-boss-profit'),
+    Component: WeeklyBossProfitWidget,
   },
   {
     id: 'top-valuable-item',
@@ -65,7 +67,7 @@ export const WIDGETS: readonly WidgetDefinition[] = [
       { w: 1, h: 1 },
     ],
     target: 'Profit',
-    Component: stubWidget('top-valuable-item'),
+    Component: TopValuableItemWidget,
   },
   {
     id: 'crystal-limit',
