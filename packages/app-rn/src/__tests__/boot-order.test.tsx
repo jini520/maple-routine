@@ -2,8 +2,8 @@
 //
 // 웹 `AppShell`(573줄)이 하던 것과 RN 이 하는 것의 전수 대조표는 `docs/migration/README.md`
 // «4-0단계 결과» 에 있고, 여기서는 그 표 중 **틀려도 조용히 넘어가는 칸**만 코드로 붙든다. 순서가
-// 어긋났을 때 드러나는 모습이 *"흰 화면"* · *"스플래시가 안 걷힘"* · *"광고가 안 뜸"* 이라 어느
-// 것도 스택 트레이스를 남기지 않는다.
+// 어긋났을 때 드러나는 모습이 *"흰 화면"* · *"스플래시가 안 걷힘"* 이라 어느 것도 스택 트레이스를
+// 남기지 않는다.
 //
 // 셋으로 나뉜다.
 //
@@ -68,13 +68,6 @@ jest.mock('@core/features/drop-effect/store', () => ({
         mockCalls.push('restore:dropEffect')
       },
     }),
-}))
-
-jest.mock('@core/features/ads/tab-switch-ad', () => ({
-  __esModule: true,
-  startAds: async () => {
-    mockCalls.push('startAds')
-  },
 }))
 
 // 동적 `import()` 를 가둔 셸 옆 모듈(`app/prehydrate.ts`)을 대체한다 — jest 에서 그 import 는
@@ -146,7 +139,9 @@ describe('① 셸이 무엇을 언제 하는가', () => {
     await act(async () => {})
   }
 
-  it('복원 넷과 광고 초기화가 첫 렌더에 전부 시작된다', async () => {
+  // 여기에 `startAds`(광고 SDK 초기화 + 사전 로드)가 다섯 번째 항목으로 있었다 — [[ADR-150]] 이
+  // 전면광고를 걷으며 셸에서 사라졌다.
+  it('복원 넷이 첫 렌더에 전부 시작된다', async () => {
     await mountShell()
 
     // 넷 사이에는 순서가 없다 — 서로 독립이고, 웹도 각자 자기 이펙트를 갖는다(하나가 던져도
@@ -157,7 +152,6 @@ describe('① 셸이 무엇을 언제 하는가', () => {
         'restore:theme',
         'restore:trackingMode',
         'restore:dropEffect',
-        'startAds',
       ]),
     )
   })
@@ -178,7 +172,7 @@ describe('① 셸이 무엇을 언제 하는가', () => {
   // [[ADR-025]]: 네이티브 스플래시가 순식간에 지나가 깜빡이지 않게 최소 표시 시간을 채운다.
   // **첫 렌더에 곧바로 내리지 않는 것**이 그 결정이고, 이걸 잃으면 화면으로는 안 보인다
   // (콘텐츠가 빨리 준비될수록 스플래시가 번쩍이고 끝난다).
-  it('스플래시는 최소 표시 시간을 채운 뒤에, 그리고 복원·광고·예열보다 뒤에 내려간다', async () => {
+  it('스플래시는 최소 표시 시간을 채운 뒤에, 그리고 복원·예열보다 뒤에 내려간다', async () => {
     await mountShell()
     expect(mockCalls).not.toContain('hideSplash')
 
@@ -187,7 +181,7 @@ describe('① 셸이 무엇을 언제 하는가', () => {
     })
 
     expect(mockCalls).toContain('hideSplash')
-    expect(mockCalls.indexOf('hideSplash')).toBeGreaterThan(mockCalls.indexOf('startAds'))
+    expect(mockCalls.indexOf('hideSplash')).toBeGreaterThan(mockCalls.indexOf('restore:theme'))
     expect(mockCalls.indexOf('hideSplash')).toBeGreaterThan(mockCalls.indexOf('prehydrate'))
   })
 })

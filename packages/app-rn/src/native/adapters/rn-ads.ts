@@ -2,6 +2,14 @@
  * `AdsPort` 의 RN 구현([[ADR-128]] 결정 4 — 밖으로 나가는 시그니처는 Capacitor 구현과 한 글자도
  * 다르지 않다). 정책은 [[ADR-090]](탭 전환 전면광고 + 3중 노출 게이트) · `features/ads.md`.
  *
+ * ## 지금 이 어댑터를 부르는 곳은 **없다** ([[ADR-150]])
+ *
+ * app-rn 은 전면광고를 걷었다 — 노출 지점도, 부팅 사전 로드도 없다. 그런데도 이 파일과 `app.json`
+ * 의 앱 ID·`app-ads.txt`·테스트 광고 강제를 **남긴 것은 인라인 광고가 그대로 물려받을 배선**이기
+ * 때문이다(결정 2). 아래 «실 ID 로 자기 광고를 누르면 계정이 정지된다» 는 위험은 **포맷과 무관**
+ * 하므로 그 방어선도 함께 선다. 인라인을 붙일 때 `initialize()` 를 부를 자리를 새로 정해야 한다 —
+ * 그 호출을 하던 `AppShell` 의 `startAds()` 가 사라졌다.
+ *
  * **광고 단위 ID 결정은 이 파일에 없다.** `@core/native/ads` 의 순수 함수 둘을 그대로 부른다 —
  * `shouldUseTestAds`(테스트 광고인가)와 `resolveInterstitialAdId`(그래서 어느 ID 인가). 이 프로젝트에서
  * 가장 비싼 실수는 실 ID 로 자기 광고를 누르는 것이고(무효 트래픽 → AdMob 계정 정지, 되돌리기 매우
@@ -94,7 +102,7 @@ export const rnAdsPort: AdsPort = {
       loadedAd = loaded ? ad : null
       return loaded
     } catch {
-      // 로드 실패는 광고 없음으로 끝난다 — 던지면 부팅(`startAds`)과 탭 이동이 함께 흔들린다.
+      // 로드 실패는 광고 없음으로 끝난다 — 던지면 이 포트를 부르는 쪽이 함께 흔들린다.
       loadedAd = null
       return false
     }

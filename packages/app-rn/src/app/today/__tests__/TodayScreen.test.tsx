@@ -69,7 +69,6 @@ jest.mock('@core/storage/character-selection', () => ({
   getRepresentativeCharacter: jest.fn(),
 }))
 jest.mock('../../use-screen-navigation', () => ({ useScreenNavigation: jest.fn() }))
-jest.mock('@core/features/ads/tab-switch-ad', () => ({ maybeShowTabSwitchAd: jest.fn(async () => {}) }))
 
 const mockedContent = jest.mocked(useContentSchedulerStore)
 const mockedBoss = jest.mocked(useBossSchedulerStore)

@@ -65,11 +65,11 @@ function screenFor(name: TabRouteName): React.ComponentType<Record<string, never
  * 전환**을 쌓아서 «유틸리티 → 설정 → ← → 유틸리티» 를 만드는데, 그것이 결정 4가 배제한 동작이다.
  * 기록은 우리가 «한 층 내려갈 때만» 든다(`bar-store.ts`).
  *
- * ## 광고 게이트는 `tabPress` 가 아니라 바에 있다
+ * ## 광고 게이트는 `tabPress` 가 아니라 바에 있었다
  *
- * 이제 그룹 이동·하위 이동·뒤로가기가 전부 탭 전환이라, `tabPress` 에 걸면 셋이 다 게이트를 탄다
- * ([[ADR-132]] 결정 9). 바가 **무엇을 눌렀는지** 알고 있으므로 그쪽이 판정 자리다
- * (`bar-model.ts` 의 `shouldGateAd`).
+ * 그룹 이동·하위 이동·뒤로가기가 전부 탭 전환이라 `tabPress` 에 걸면 셋이 다 게이트를 타서
+ * ([[ADR-132]] 결정 9), **무엇을 눌렀는지** 아는 바가 판정 자리였다. [[ADR-150]] 이 전면광고를
+ * 걷으며 그 판정이 통째로 사라졌다 — 이 내비게이터에는 처음부터 없었고 지금도 없다.
  */
 export function TabNavigator(): React.JSX.Element {
   return (
