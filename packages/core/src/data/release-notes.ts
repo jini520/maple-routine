@@ -36,6 +36,65 @@ export const RELEASE_NOTE_CATEGORY_ORDER: readonly ReleaseNoteCategory[] = [
 // 이 파일은 순수 데이터다 — `features/`·`storage/`·`native/` 를 import 하지 않는다.
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '1.0.6',
+    // 아직 `chore(release)` 커밋이 없어 **작성일**이다 — 배포하며 그 커밋 날짜로 정정할 것
+    // (1.0.4 가 같은 순서를 밟았다, 위 주석).
+    date: '2026-08-19',
+    // 네 줄이다(사용자가 정한 문장, 2026-08-19). [[ADR-126]] 결정 2 의 "3~4줄" 상한을 채운
+    // 첫 릴리스다 — 화면 뼈대·캐릭터 선택·게임 데이터·그 아래 구조가 한 버전에 함께 바뀌어
+    // 뭉칠 축이 넷이다. 마지막 줄은 `items` 첫 줄과 글자까지 같지만 **파생이 아니다**
+    // (결정 3) — 나머지 셋이 "무엇이 생겼나"인 자리에서 그 줄만 "왜 이 릴리스인가"다.
+    highlights: [
+      '하단 탭바 개편 및 today 페이지 추가',
+      '여러 메이플 ID의 캐릭터를 함께 관리',
+      '보스 「벨로나」 추가',
+      '앱 기능 확장을 위한 구조 업데이트 및 마이그레이션',
+    ],
+    // 항목의 근거는 `rn-migration` 분기점(PR #203 머지) 이후 머지된 PR #204~#227 이고,
+    // 그중 **사용자가 실제로 겪는 변화**만 남겼다. RN 이식 중에 생겼다가 같은 범위 안에서
+    // 고쳐진 회귀(수동 모드 시드 오염 · 안드로이드 안전영역 · 온보딩 CTA 등)는 출시된 앱에서
+    // 아무도 겪은 적이 없어 **「버그 수정」으로 적지 않는다** — 없던 문제를 있었다고 말하게
+    // 된다(사용자 결정, 2026-08-19). 그래서 이 버전에는 `fix` 항목이 하나도 없다.
+    items: [
+      {
+        category: 'feature',
+        text: 'today 페이지 추가',
+      },
+      {
+        category: 'feature',
+        text: '여러 메이플 ID의 캐릭터를 선택할 수 있도록 수정',
+      },
+      {
+        category: 'feature',
+        text: '캐릭터 순서 변경·대표 캐릭터 지정',
+      },
+      {
+        category: 'feature',
+        text: '보스 「벨로나」 추가',
+      },
+      {
+        category: 'improvement',
+        text: '하단 탭바 디자인 수정',
+      },
+      {
+        category: 'improvement',
+        text: '캐릭터 선택 방식 변경',
+      },
+      {
+        category: 'improvement',
+        text: '보스 관리를 하단바 탭으로 이동',
+      },
+      {
+        category: 'improvement',
+        text: '캐릭터 목록 불러오는 시간 개선',
+      },
+      {
+        category: 'improvement',
+        text: '앱 기능 확장을 위한 구조 업데이트 및 마이그레이션',
+      },
+    ],
+  },
+  {
     version: '1.0.5',
     date: '2026-08-12',
     // 긴급 수정 한 건뿐이라 핵심 목록도 한 줄이다(ADR-126 결정 2 의 "3~4줄"은 상한이지 채워야 할

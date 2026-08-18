@@ -96,6 +96,7 @@ vi.mock('../../tracking-mode/seed', () => ({
   seedManualTrackedContent: seedManualTrackedContentMock,
 }))
 
+import { setOnboardingAccountScope } from '../flow'
 import { useOnboardingStore } from '../store'
 
 function account(accountId: string): MapleAccount {
@@ -500,6 +501,93 @@ describe('useOnboardingStore.submitApiKey', () => {
       expect(prefetchAccountDataMock).not.toHaveBeenCalled()
     })
   })
+
+  // ADR-143 결정 9: 대조할 selectedAccountId 가 없으므로 **같은 목적을 같은 응답으로** 다시 세운다.
+  // 막는 것은 "남의 계정 키로 이전 계정 ocid 추적 목록을 그대로 쓰는 것" 하나다.
+  describe('키 재입력 후 재개 — 계정 범위 all (ADR-143 결정 9)', () => {
+    beforeEach(() => {
+      setOnboardingAccountScope('all')
+      // RN 은 계정을 고른 적이 없다(ADR-143 결정 7).
+      getAuthConfigMock.mockResolvedValue({ apiKey: 'key-2', selectedAccountId: null })
+    })
+
+    afterEach(() => {
+      setOnboardingAccountScope('single')
+    })
+
+    it('추적 ocid가 하나라도 응답에 있으면 재개한다 — 추가 호출은 없다', async () => {
+      getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-acc-2'])
+      fetchCharacterListMock.mockResolvedValue([account('acc-1'), account('acc-2')])
+      const seen: string[] = []
+      const unsubscribe = useOnboardingStore.subscribe((state) => {
+        seen.push(state.status)
+      })
+
+      await useOnboardingStore.getState().submitApiKey('key-2')
+      unsubscribe()
+
+      expect(useOnboardingStore.getState().status).toBe('completed')
+      expect(seen).not.toContain('selectingAccount')
+      // 판정은 이미 손에 있는 응답으로 한다 — character/list 는 검증 때 부른 한 번뿐이다.
+      expect(fetchCharacterListMock).toHaveBeenCalledTimes(1)
+    })
+
+    // 계정을 넘어 고르는 것이 이 개편의 본론이라, 겹치는 ocid 가 **어느 계정에** 있는지는 묻지 않는다.
+    it('겹치는 ocid가 응답의 다른 계정에 있어도 재개한다', async () => {
+      getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-acc-3', '없는-ocid'])
+      fetchCharacterListMock.mockResolvedValue([account('acc-1'), account('acc-3')])
+
+      await useOnboardingStore.getState().submitApiKey('key-2')
+
+      expect(useOnboardingStore.getState().status).toBe('completed')
+    })
+
+    it('하나도 없으면 재개하지 않고 캐릭터 선택 단계로 보낸다', async () => {
+      getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-acc-1'])
+      fetchCharacterListMock.mockResolvedValue([account('acc-9')])
+
+      await useOnboardingStore.getState().submitApiKey('key-2')
+
+      const state = useOnboardingStore.getState()
+      expect(state.status).toBe('selectingContentCharacters')
+      // 계정 선택은 RN 에 없는 단계다 — 여기로 떨어뜨리면 갈 수 없는 화면으로 보내는 것이다.
+      expect(state.accounts).toEqual([])
+    })
+
+    // 이 가드가 지키는 것은 "지킬 목록" 이다. 목록이 없으면 판정 대상 자체가 없고, 글자 그대로
+    // "하나도 없으면 캐릭터 선택"을 적용하면 **처음 키를 넣는 신규 사용자**가 모드 선택을 건너뛴다.
+    it('추적 목록이 없으면(신규 사용자) 대조하지 않고 재개 표 그대로 간다', async () => {
+      getTrackedCharacterOcidsMock.mockResolvedValue(null)
+      getTrackingModeMock.mockResolvedValue(null)
+      fetchCharacterListMock.mockResolvedValue([account('acc-1')])
+
+      await useOnboardingStore.getState().submitApiKey('key-2')
+
+      expect(useOnboardingStore.getState().status).toBe('selectingTrackingMode')
+    })
+
+    it('추적 목록이 빈 배열이어도 같다 — 지킬 것이 없다', async () => {
+      getTrackedCharacterOcidsMock.mockResolvedValue([])
+      getTrackingModeMock.mockResolvedValue(null)
+      fetchCharacterListMock.mockResolvedValue([account('acc-1')])
+
+      await useOnboardingStore.getState().submitApiKey('key-2')
+
+      expect(useOnboardingStore.getState().status).toBe('selectingTrackingMode')
+    })
+
+    // 웹뷰 앱에서 넘어온 설치본에는 selectedAccountId 가 남아 있다. 그 값이 새 응답에 없어도
+    // 'single' 가드처럼 계정 선택으로 되돌리지 않는다 — RN 에서 그 값은 읽지 않는다(결정 7).
+    it('저장된 selectedAccountId가 응답에 없어도 ocid가 겹치면 재개한다', async () => {
+      getAuthConfigMock.mockResolvedValue({ apiKey: 'key-2', selectedAccountId: 'acc-1' })
+      getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-acc-9'])
+      fetchCharacterListMock.mockResolvedValue([account('acc-9')])
+
+      await useOnboardingStore.getState().submitApiKey('key-2')
+
+      expect(useOnboardingStore.getState().status).toBe('completed')
+    })
+  })
 })
 
 // ADR-086 결정 8: 고른 계정에 고를 수 있는 캐릭터가 하나도 없을 때의 유일한 탈출구.
@@ -703,15 +791,14 @@ describe('useOnboardingStore.submitContentCharacters', () => {
     expect(useOnboardingStore.getState().status).toBe('completed')
   })
 
-  it('manual 모드면 각 ocid에 대해 seedManualTrackedContent를 호출한 뒤 completed로 전이한다', async () => {
+  it('manual 모드면 고른 ocid 목록을 한 번에 넘겨 시드한 뒤 completed로 전이한다', async () => {
     trackingModeRef.current = 'manual'
     primeSelectingContentCharacters()
 
     await useOnboardingStore.getState().submitContentCharacters(['ocid-a', 'ocid-b'])
 
     expect(setTrackedCharacterOcidsMock).toHaveBeenCalledWith(['ocid-a', 'ocid-b'])
-    expect(seedManualTrackedContentMock).toHaveBeenCalledWith('ocid-a')
-    expect(seedManualTrackedContentMock).toHaveBeenCalledWith('ocid-b')
+    expect(seedManualTrackedContentMock).toHaveBeenCalledWith(['ocid-a', 'ocid-b'])
     expect(useOnboardingStore.getState().status).toBe('completed')
   })
 

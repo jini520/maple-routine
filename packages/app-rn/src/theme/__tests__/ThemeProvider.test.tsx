@@ -100,6 +100,49 @@ describe('ThemeProvider', () => {
     // 폴백을 두면 프로바이더를 빼먹은 화면이 "잘 도는 것처럼" 보인다.
     await expect(render(<ModeProbe />)).rejects.toThrow('테마 컨텍스트가 없습니다')
   })
+
+  // ── 루트가 자기 바탕을 칠한다 ──────────────────────────────────────────────────────
+  //
+  // 이 View 는 웹의 `:root`/`body` 자리다(파일 머리). **웹은 그 자리를 칠하고 있었고 RN 은 아니었다** —
+  // 앱에서 바탕을 칠하는 것이 내비게이터의 화면들뿐이라, 그 화면 **밖**이 드러나는 순간(하위 페이지로
+  // 미끄러져 들어갈 때 iOS 가 화면 모서리를 둥글게 깎는다) 그 틈으로 **RN 루트 뷰의 흰색**이 보인다.
+  // 시뮬레이터 실측: 내비게이션 두 층을 투명하게 두면 화면의 89.8% 가 흰색이었다.
+  it('루트 View 가 테마 바탕색을 칠한다 — 화면 밖으로 흰 루트가 새지 않게', async () => {
+    const { getByTestId } = await render(
+      <ThemeProvider>
+        <Swatch />
+      </ThemeProvider>,
+    )
+
+    // 루트는 `Swatch` 의 조상이다 — 트리를 타고 올라가 `flex: 1` 인 그 View 를 찾는다.
+    let node = getByTestId('card').parent
+    while (node !== null && flattenStyle(node.props.style).backgroundColor === undefined) {
+      node = node.parent
+    }
+
+    expect(node).not.toBeNull()
+    expect(flattenStyle(node?.props.style).backgroundColor).toBe(머쉬맘.bg)
+  })
+
+  it('테마를 바꾸면 루트 바탕색도 따라간다', async () => {
+    const { getByTestId } = await render(
+      <ThemeProvider>
+        <Swatch />
+      </ThemeProvider>,
+    )
+
+    await act(async () => {
+      rnThemeAppearancePort.apply('검은마법사', 검은마법사)
+    })
+
+    let node = getByTestId('card').parent
+    while (node !== null && flattenStyle(node.props.style).backgroundColor === undefined) {
+      node = node.parent
+    }
+
+    expect(flattenStyle(node?.props.style).backgroundColor).toBe(검은마법사.bg)
+    expect(검은마법사.bg).not.toBe(머쉬맘.bg)
+  })
 })
 
 describe('모드 분기 ([[ADR-122]] · [[ADR-099]])', () => {

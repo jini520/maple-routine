@@ -3,15 +3,18 @@
 // ══ RN 으로 옮기며 갈린 것 다섯 ═══════════════════════════════════════════════════
 //
 // ① **`StackScreen` 이 통째로 사라진다**([[ADR-120]]). 포털 오버레이·푸시/팝 전환·가장자리 스와이프·
-//    탭바 밀어내기 넷이 전부 루트 스택의 성질이라, 셸은 `ScreenScroll(hasTabBar={false})` +
-//    `PageHeader` 다(컨텐츠 관리·설정 하위 화면과 같은 골격).
-// ② **`useStackBack(PARENT_PATH)` → `goBack()`**, 그래서 `PARENT_PATH` 상수도 사라진다 — 딥링크가
-//    없어 *"돌아갈 곳이 없는 경우"* 가 존재하지 않는다(`app/use-screen-navigation.ts`).
+//    탭바 밀어내기 넷이 전부 루트 스택의 성질이라, 셸은 `ScreenScroll` + `PageHeader` 다(컨텐츠
+//    관리·설정 하위 화면과 같은 골격). **`hasTabBar={false}` 는 [[ADR-145]] 결정 1 로 없어졌다** —
+//    이 화면이 하위 페이지가 아니라 **탭**이 되어 아래에 바가 뜬다.
+// ② ~~`useStackBack(PARENT_PATH)` → `goBack()`~~ → **뒤로가기 자체가 이 화면에 없다**([[ADR-145]]
+//    결정 1). 탭이라 pop 할 스택이 없고, 그 일은 하단바의 ← 가 진다([[ADR-132]] 결정 3). 그래서
+//    화면의 헤더에는 제목만 남고 `useScreenNavigation` 도 안 부른다.
 // ③ `<button aria-pressed>` → `Pressable` + **`aria-selected`**(RN 접근성 상태에 *pressed* 가 없다).
 // ④ **파티 스테퍼가 인라인 마크업에서 `PartySizeStepper`(molecule) 로 접힌다.** 3단계가 웹의 두
 //    호출부(이 화면 · 파티 인원 모달)를 한 컴포넌트로 모아 두었으므로([[ADR-121]] 결정 7) 여기서는
 //    `size="compact"` 로 부르기만 한다 — 웹에 남아 있던 복붙 한 벌이 그때 없어졌다.
-// ⑤ **"등록된 보스만 보기" 토글이 손으로 그린 스위치 그대로다.** 웹의 `role="switch"` +
+// ⑤ **모든 보스 보기 토글이 손으로 그린 스위치 그대로다**(웹에서는 "등록된 보스만 보기" — 이름과
+//    방향이 [[ADR-145]] 결정 4 로 뒤집혔고 **표시 결과는 같다**). 웹의 `role="switch"` +
 //    `aria-checked` 는 RN 에도 같은 역할이 있어 **갈리지 않고**(`CacheClearConfirm` 의 체크박스와
 //    같은 판단), 노브 이동은 `translate-x-5` ↔ `translate-x-0` 두 클래스라 NativeWind 가 그대로
 //    낸다. 웹의 `transition-*` 두 클래스만 빠진다 — RN 에 CSS 트랜지션이 없고, 이 자리에 Reanimated
@@ -26,7 +29,7 @@ import { useEffect, useState } from 'react'
 import { Pressable, Text, View } from 'react-native'
 
 import weeklyBossesData from '@core/data/weekly-bosses.json'
-import { partySizeKey, useBossSchedulerStore, type BossTab } from '@core/features/boss-scheduler/store'
+import { partySizeKey, useBossSchedulerStore } from '@core/features/boss-scheduler/store'
 import { useToastStore } from '@core/features/toast/store'
 import { useTrackingModeStore } from '@core/features/tracking-mode/store'
 import { getMaxPartySize } from '@core/lib/boss-crystal-prices'
@@ -41,15 +44,14 @@ import type { BossDifficulty } from '@core/types'
 
 import { Badge } from '../../components/atoms/Badge/Badge'
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
-import { CharacterSelectDropdown } from '../../components/molecules/CharacterSelectDropdown/CharacterSelectDropdown'
+import { CharacterRail, type CharacterRailEntry } from '../../components/molecules/CharacterRail/CharacterRail'
 import { DifficultySegment } from '../../components/molecules/DifficultySegment/DifficultySegment'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { PartySizeStepper } from '../../components/molecules/PartySizeStepper/PartySizeStepper'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
+import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
-import { ArrowLeftIcon } from '../../lib/icons'
 import { TABULAR_NUMS } from '../../lib/text-styles'
-import { useScreenNavigation } from '../use-screen-navigation'
 
 interface BossReferenceEntry {
   boss: string
@@ -67,8 +69,10 @@ interface BossListEntry {
 // 관리 페이지의 보스 목록은 게임 레퍼런스 데이터(weekly-bosses.json) 그대로다 — 주간 탭은
 // 주간(+챌린저스 월드에 한해 시즌 주간), 월간 탭은 월간([[ADR-035]] 결정 18, [[ADR-056]]). 난이도
 // 후보도 같은 파일의 difficulties를 쓴다(폐기된 ManualBossPickerModal과 동일 소스).
-// [[ADR-056]] 결정 1: 미출시 보스(status: 'unreleased', 현재 벨로나)는 목록에서 뺀다. 보스명을
+// [[ADR-056]] 결정 1: 미출시 보스(status: 'unreleased')는 목록에서 뺀다. 보스명을
 // 코드에 박지 않고 데이터의 status로 거르므로, 출시되면 그 필드를 지우는 것만으로 되돌아온다.
+// 벨로나 출시([[ADR-151]])가 실제로 그렇게 지나가 지금 이 필터에 걸리는 엔트리는 0개다 —
+// 다음 미출시 보스를 위해 그대로 둔다([[ADR-151]] 결정 4).
 function toListEntries(entries: BossReferenceEntry[]): BossListEntry[] {
   return entries
     .filter((entry) => entry.status !== 'unreleased')
@@ -102,17 +106,23 @@ export function BossManageScreen(): React.JSX.Element {
     addManualBoss,
     removeManualBoss,
     setManualBossDifficulty,
-    // [[ADR-096]] 결정 2: 진입 시점의 스케줄러 탭을 이어받는다(월간에서 들어오면 월간).
-    activeTab: schedulerTab,
-    // [[ADR-096]] 결정 4: 선택 캐릭터는 스케줄러와 공유한다 — 탭과 달리 두 화면이 갈라지면 안 된다.
+    // [[ADR-096]] 결정 2 · [[ADR-145]] 결정 2: 스케줄러가 보던 탭 그대로 열리고, 여기서 바꾼 것도
+    // 그쪽에 남는다(둘은 이제 형제 탭이라 «돌아갈 원래 탭» 이라는 것이 없다).
+    activeTab,
+    setActiveTab,
+    // [[ADR-096]] 결정 4: 선택 캐릭터는 스케줄러와 공유한다 — 두 화면이 갈라지면 안 된다.
     selectCharacter,
   } = useBossSchedulerStore()
   const { mode } = useTrackingModeStore()
-  const navigation = useScreenNavigation()
-  // [[ADR-096]] 결정 2: 이어받는 것은 **진입 시점 한 번뿐**이다 — 컨텐츠 관리 페이지와 같은 이유로,
-  // 이 화면에서의 탭 전환을 스케줄러로 되돌리지 않는다.
-  const [activeTab, setActiveTab] = useState<BossTab>(schedulerTab)
-  const [onlyRegistered, setOnlyRegistered] = useState(true)
+  // [[ADR-145]] 결정 2: 위 `activeTab` 이 **로컬 state 가 아니라 스토어 값 그대로**인 것이 결정이다.
+  // [[ADR-096]] 결정 2의 «진입 시점 한 번 승계» 는 진입이 사건일 때만 성립하는데, 이 화면이 탭이
+  // 되면서 마운트된 채 남아 그 사건이 앱 실행당 한 번이 됐다(스케줄러에서 월간을 보다 건너오면
+  // 주간이 열렸다). 선택 캐릭터(결정 4)와 같은 규칙으로 옮긴다.
+  //
+  // [[ADR-145]] 결정 4: 스위치가 뒤집혔다 — 「등록된 보스만 보기」(기본 켜짐) → 「모든 보스 보기」
+  // (기본 꺼짐). **표시 결과는 안 바뀐다**(기본은 여전히 등록된 보스만). 켜진 스위치가 «거른다» 를
+  // 뜻하면 «끄면 더 보인다» 가 되어 방향이 뒤집혀 읽힌다.
+  const [showAllBosses, setShowAllBosses] = useState(false)
   // 자동 모드에서 행마다 "어느 난이도의 파티 인원을 편집 중인지"를 담는 화면 전용 상태 —
   // 멤버십이 아니므로 저장하지 않는다(수동 모드의 난이도 선택은 멤버십 그 자체라 이걸 안 쓴다).
   const [autoDifficultyByBoss, setAutoDifficultyByBoss] = useState<Record<string, BossDifficulty>>({})
@@ -129,6 +139,15 @@ export function BossManageScreen(): React.JSX.Element {
       : (characters[0]?.ocid ?? null)
 
   const selected = characters.find((character) => character.ocid === effectiveSelectedOcid) ?? null
+
+  // [[ADR-142]] 정정 8: 링 없는 초상화 레일 — 이름과 레벨만 싣는다(`rings: []`).
+  const railEntries: CharacterRailEntry[] = characters.map((character) => ({
+    ocid: character.ocid,
+    characterName: character.characterName,
+    level: character.level ?? null,
+    imageUrl: character.imageUrl ?? null,
+    rings: [],
+  }))
 
   // 등록 난이도 조회 — 난이도 기본 선택(등록 난이도 우선)과 자동 모드의 "등록된 보스만 보기"에 쓴다.
   const registeredDifficultyByBoss = new Map<string, BossDifficulty>()
@@ -175,9 +194,11 @@ export function BossManageScreen(): React.JSX.Element {
       : MONTHLY_BOSSES
   // 자동 모드 기본은 등록된 보스만 — 단 등록 보스가 하나도 없으면(신규 캐릭터 등) 전체 목록으로
   // 대체해 "미등록 보스 파티 인원 미리 설정"이라는 원래 목적이 막히지 않게 한다([[ADR-031]] 결정 4).
+  // **[[ADR-145]] 결정 4 는 그 규칙을 그대로 승계한다** — 뒤집힌 것은 스위치의 방향과 이름뿐이라
+  // 이 두 줄이 내는 목록은 전과 한 글자도 다르지 않다.
   const registeredEntries = allEntries.filter((entry) => registeredDifficultyByBoss.has(entry.boss))
   const visibleEntries =
-    mode === 'auto' && onlyRegistered && registeredDifficultyByBoss.size > 0 ? registeredEntries : allEntries
+    mode === 'auto' && !showAllBosses && registeredDifficultyByBoss.size > 0 ? registeredEntries : allEntries
 
   // [[ADR-065]] 결정 4: 전에는 try/catch가 없어 저장 실패가 무음이었다 — 체크가 조용히 되돌아가는
   // 것 외에 설명이 없었다. 문구는 컨텐츠 관리 화면과 같다(같은 화면에서 무엇을 토글했는지는
@@ -254,40 +275,39 @@ export function BossManageScreen(): React.JSX.Element {
 
   return (
     <ScreenScroll
-      hasTabBar={false}
       header={
         // 제목~탭~(자동)토글까지 화면 상단에 고정하고 그 아래 보스 목록만 스크롤 — 스케줄러 화면과
         // 동일 패턴(`design-system.md` "스크롤 영역").
         <PageHeader>
-          <View className="flex-row items-center justify-between">
-            <View className="flex-row items-center gap-2">
-              <Pressable role="button" aria-label="뒤로" onPress={() => navigation.goBack()} className="-ml-1 p-1">
-                <ArrowLeftIcon className="h-5 w-5 text-text-muted" strokeWidth={2} aria-hidden />
-              </Pressable>
-              <Text className="text-lg font-semibold text-text">보스 관리</Text>
-            </View>
-            {/* [[ADR-096]] 결정 4·5: 읽기 전용 칩이던 자리 — 컨텐츠 관리 페이지와 같은 처리다.
-                onSelect는 스케줄러와 같은 selectCharacter라 돌아갔을 때 그쪽도 같은 캐릭터다. */}
-            {selected !== null && (
-              <CharacterSelectDropdown
-                characters={characters}
-                selectedOcid={selected.ocid}
-                onSelect={(ocid) => {
-                  void selectCharacter(ocid)
-                }}
-                size="compact"
-              />
-            )}
-          </View>
+          {/* **← 가 없다**([[ADR-145]] 결정 1) — 이 화면은 하위 페이지가 아니라 스케줄 그룹의 하위
+              탭이라 pop 할 스택이 없고, 뒤로 가는 일은 하단바가 진다([[ADR-132]] 결정 3). 같은 이유로
+              `hasTabBar` 도 기본값(참)으로 돌아왔다 — 이제 바가 이 화면 아래에 뜬다.
+
+              줄이 제목 하나뿐이어도 `PageHeaderTitleRow` 를 쓴다(정정 1) — 그 최소 높이가 곧 «옆
+              탭과 같은 선» 이고, 여기서 그것을 빼면 보스 스케줄러와 2px 어긋난다. */}
+          <PageHeaderTitleRow>
+            <Text className="text-lg font-semibold text-text">보스 관리</Text>
+          </PageHeaderTitleRow>
+
+          {/* [[ADR-142]] 정정 8: 제목 줄 우측의 compact 드롭다운이 **초상화 레일**이 됐다(스케줄러와
+              같은 컴포넌트). **여기에는 진행 링이 없다**(`rings: []`) — 이 화면의 일은 캐릭터를 고르는
+              것이지 진행을 보는 것이 아니고, 링 자리를 비우면 글자가 얼굴 쪽으로 들어와 칸도 낮아진다.
+              제목 줄에서 내려온 이유는 레일이 그 작은 자리에 안 들어가기 때문이다. */}
+          {selected !== null && (
+            <CharacterRail
+              entries={railEntries}
+              selectedOcid={selected.ocid}
+              onSelect={(ocid) => {
+                void selectCharacter(ocid)
+              }}
+            />
+          )}
 
           {selected !== null && (
             <>
-              {mode === 'auto' && (
-                <Text className="text-sm text-text-muted">
-                  자동 모드에서는 목록이 게임 등록 기준이에요 — 파티 인원만 설정할 수 있어요.
-                </Text>
-              )}
-
+              {/* [[ADR-035]] 결정 18 의 안내 한 줄("자동 모드에서는 목록이 게임 등록 기준이에요 —
+                  파티 인원만 설정할 수 있어요")은 [[ADR-145]] 결정 3 으로 사라졌다 — 화면이 이미
+                  그것을 보여 준다(체크가 없고 스테퍼만 있다). 설명은 기능 안내가 계속 진다. */}
               <View className="flex-row items-center gap-4">
                 <Pressable role="button" aria-selected={activeTab === 'weekly'} onPress={() => setActiveTab('weekly')}>
                   <Text
@@ -328,19 +348,19 @@ export function BossManageScreen(): React.JSX.Element {
 
               {mode === 'auto' && (
                 <View className="flex-row items-center justify-between gap-3">
-                  <Text className="text-xs font-medium text-text-muted">등록된 보스만 보기</Text>
+                  <Text className="text-xs font-medium text-text-muted">모든 보스 보기</Text>
                   <Pressable
                     role="switch"
-                    aria-checked={onlyRegistered}
-                    aria-label="등록된 보스만 보기"
-                    onPress={() => setOnlyRegistered((prev) => !prev)}
+                    aria-checked={showAllBosses}
+                    aria-label="모든 보스 보기"
+                    onPress={() => setShowAllBosses((prev) => !prev)}
                     className={`relative h-6 w-11 shrink-0 rounded-full ${
-                      onlyRegistered ? 'bg-primary' : 'bg-surface-2'
+                      showAllBosses ? 'bg-primary' : 'bg-surface-2'
                     }`}
                   >
                     <View
                       className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-surface ${
-                        onlyRegistered ? 'translate-x-5' : 'translate-x-0'
+                        showAllBosses ? 'translate-x-5' : 'translate-x-0'
                       }`}
                     />
                   </Pressable>

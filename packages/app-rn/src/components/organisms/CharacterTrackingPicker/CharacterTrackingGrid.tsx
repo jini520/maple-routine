@@ -23,12 +23,17 @@
 //    내지 못하고 조용히 사라진다(별이 테두리만 남아 "선택됨"이 안 읽힌다). lucide 의 `fill` 프롭에
 //    **테마 값 자체**를 넘겨 같은 그림을 만든다 — `currentColor` 로는 안 된다(그 값의 출처는
 //    `Svg` 의 `color` 프롭인데 lucide 는 색을 `stroke` 로만 넘긴다, `nativewind-interop.ts`).
+// ⑧ **엠블럼의 `w-auto` 도 짝이 없다**([[ADR-135]]). 웹은 `h-[17px] w-auto object-contain` 으로
+//    높이만 정하고 폭을 그림에 맡겼는데, RN 은 **안 적은 축에 에셋의 고유 픽셀 크기를 남긴다** —
+//    46×50 엠블럼의 폭 46 이 살아남아 이름 줄 왼쪽에 좌우 각 15.2px 이 빈다. `naturalAspectStyle`
+//    이 그 축을 지우고 종횡비를 얹는다(`lib/image-aspect.ts`).
 import { useState } from 'react'
 import { Image, Pressable, Text, View } from 'react-native'
 
 import { worldEmblemUrl } from '@core/lib/world-emblem'
 import type { CharacterPickerEntry } from '@core/types'
 
+import { naturalAspectStyle } from '../../../lib/image-aspect'
 import { BanIcon, StarIcon } from '../../../lib/icons'
 import { useThemeAppearance } from '../../../theme/context'
 
@@ -151,7 +156,9 @@ export function CharacterTrackingGrid(props: CharacterTrackingGridProps): React.
                 testID={`world-emblem-${entry.ocid}`}
                 accessibilityLabel={entry.world ?? ''}
                 source={emblemUrl}
-                className="h-[17px] shrink-0"
+                // 웹 `h-[17px] w-auto` 의 짝(파일 머리 ⑧) — 폭은 그림이 정한다.
+                style={naturalAspectStyle(emblemUrl, { height: 17 })}
+                className="shrink-0"
                 resizeMode="contain"
               />
             )}

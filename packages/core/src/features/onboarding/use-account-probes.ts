@@ -159,6 +159,7 @@ export function useAccountProbes(accounts: MapleAccount[]): AccountProbesState {
                     account.accountId,
                     character.ocid,
                     now,
+                    character.jobClass,
                   )
                   confirmedOcids.add(character.ocid)
                   portraitByOcid.set(character.ocid, profile.imageUrl)

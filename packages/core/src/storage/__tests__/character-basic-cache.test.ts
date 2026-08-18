@@ -37,6 +37,29 @@ describe('round-trip', () => {
   })
 })
 
+// ADR-144 결정 2: 캐릭터 카드 2줄이 «레벨 + 직업»이고 위 층은 네트워크 없이 캐시로 그린다.
+// 값의 출처는 character/list이고 **쓰는 쪽이 엔트리에 담아 넘긴다** — 저장 레이어는 그것을 그대로
+// 왕복시킬 뿐이라, character/basic 응답이 직업을 준다고 단정하는 자리가 생기지 않는다.
+describe('jobClass (ADR-144 결정 2)', () => {
+  it('호출부가 담아 넘긴 jobClass를 그대로 왕복시킨다', async () => {
+    const entry: CachedCharacterBasicEntry = {
+      profile: { ...sampleProfile, jobClass: '아크메이지(썬,콜)' },
+      cachedAt: sampleEntry.cachedAt,
+    }
+    await setCachedCharacterBasic(ACCOUNT, 'ocid-1', entry)
+
+    await expect(getCachedCharacterBasic('ocid-1')).resolves.toEqual(entry)
+  })
+
+  it('직업이 없는 옛 엔트리는 던지지 않고 jobClass가 undefined다', async () => {
+    await setCachedCharacterBasic(ACCOUNT, 'ocid-1', sampleEntry)
+
+    const cached = await getCachedCharacterBasic('ocid-1')
+    expect(cached?.profile.jobClass).toBeUndefined()
+    expect(cached?.profile.name).toBe(sampleProfile.name)
+  })
+})
+
 describe('저장된 값이 없는 경우', () => {
   it('캐시된 적 없는 ocid는 null을 반환한다', async () => {
     await expect(getCachedCharacterBasic('unknown-ocid')).resolves.toBeNull()

@@ -75,7 +75,8 @@ export function resolvePanelBorder(definition: ThemeDefinition): string {
  *
  * 배경 이미지(`--theme-bg-*`)는 내지 않는다. RN 은 벽지를 CSS 배경이 아니라 `<Image>` 로 그리므로
  * 값의 형태 자체가 다르다 — [[ADR-129]] 로 에셋이 들어온 뒤에도 그대로다(core 는 `url("…")` 을
- * 내지만 RN 에서 그 안의 값은 URL 문자열이 아니다). 그리는 것은 `ThemeHeaderBackdrop` 몫이다.
+ * 내지만 RN 에서 그 안의 값은 URL 문자열이 아니다). 그리는 것은 `ThemeBackdrop` 몫이고,
+ * **그리는 곳은 그 하나뿐이다**([[ADR-133]]).
  */
 export function buildThemeVariables(definition: ThemeDefinition): Record<string, string> {
   const variables: Record<string, string> = {}

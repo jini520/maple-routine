@@ -15,6 +15,7 @@ exports[`트리 스냅샷 그리드가 있는 기본 상태 1`] = `
   <View
     style={
       {
+        "backgroundColor": "#F2F0E2",
         "flexBasis": "0%",
         "flexGrow": 1,
         "flexShrink": 1,
@@ -92,7 +93,7 @@ exports[`트리 스냅샷 그리드가 있는 기본 상태 1`] = `
                 }
               }
             >
-              체크한 캐릭터만 스케줄러 목록에 표시됩니다. 최소 한 명은 선택해주세요.
+              체크한 캐릭터만 스케줄러 목록에 표시됩니다. 최소 1개는 선택해주세요.
             </Text>
           </View>
           <View
@@ -950,6 +951,7 @@ exports[`트리 스냅샷 조회 불가 섹션이 있는 상태 1`] = `
   <View
     style={
       {
+        "backgroundColor": "#F2F0E2",
         "flexBasis": "0%",
         "flexGrow": 1,
         "flexShrink": 1,
@@ -1027,7 +1029,7 @@ exports[`트리 스냅샷 조회 불가 섹션이 있는 상태 1`] = `
                 }
               }
             >
-              체크한 캐릭터만 스케줄러 목록에 표시됩니다. 최소 한 명은 선택해주세요.
+              체크한 캐릭터만 스케줄러 목록에 표시됩니다. 최소 1개는 선택해주세요.
             </Text>
           </View>
           <View

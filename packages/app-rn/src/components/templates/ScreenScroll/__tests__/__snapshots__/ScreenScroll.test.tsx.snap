@@ -15,26 +15,151 @@ exports[`렌더 트리 스냅샷 — 이후 변경을 잡는 기준선(예전 �
   <View
     style={
       {
+        "backgroundColor": "#F2F0E2",
         "flexBasis": "0%",
         "flexGrow": 1,
         "flexShrink": 1,
       }
     }
   >
-    <View
+    <RNCMaskedView
       style={
         {
-          "flexBasis": "0%",
-          "flexGrow": 1,
-          "flexShrink": 1,
+          "flex": 1,
         }
       }
+      testID="screen-fade"
     >
+      <View
+        pointerEvents="none"
+        style={
+          {
+            "bottom": 0,
+            "left": 0,
+            "position": "absolute",
+            "right": 0,
+            "top": 0,
+          }
+        }
+      >
+        <View
+          style={
+            {
+              "flexBasis": "0%",
+              "flexGrow": 1,
+              "flexShrink": 1,
+            }
+          }
+        >
+          <ViewManagerAdapter_ExpoLinearGradient
+            colors={
+              [
+                0,
+                0,
+                100663296,
+                436207616,
+                1073741824,
+                1996488704,
+                3053453312,
+                3925868544,
+                4278190080,
+              ]
+            }
+            endPoint={
+              [
+                0.5,
+                1,
+              ]
+            }
+            locations={
+              [
+                0,
+                0.125,
+                0.25,
+                0.375,
+                0.5,
+                0.625,
+                0.75,
+                0.875,
+                1,
+              ]
+            }
+            startPoint={
+              [
+                0.5,
+                0,
+              ]
+            }
+            style={
+              {
+                "height": 59,
+              }
+            }
+            testID="screen-fade-top"
+          />
+          <View
+            style={
+              {
+                "backgroundColor": "#000",
+                "flexBasis": "0%",
+                "flexGrow": 1,
+                "flexShrink": 1,
+              }
+            }
+          />
+          <ViewManagerAdapter_ExpoLinearGradient
+            colors={
+              [
+                4278190080,
+                3925868544,
+                3053453312,
+                1996488704,
+                1073741824,
+                436207616,
+                100663296,
+                0,
+                0,
+              ]
+            }
+            endPoint={
+              [
+                0.5,
+                1,
+              ]
+            }
+            locations={
+              [
+                0,
+                0.125,
+                0.25,
+                0.375,
+                0.5,
+                0.625,
+                0.75,
+                0.875,
+                1,
+              ]
+            }
+            startPoint={
+              [
+                0.5,
+                0,
+              ]
+            }
+            style={
+              {
+                "height": 74.5,
+              }
+            }
+            testID="screen-fade-bottom"
+          />
+        </View>
+      </View>
       <RCTScrollView
         contentContainerStyle={
           {
             "columnGap": 16,
-            "paddingBottom": 0,
+            "paddingBottom": 115,
             "rowGap": 16,
           }
         }
@@ -59,7 +184,7 @@ exports[`렌더 트리 스냅샷 — 이후 변경을 잡는 기준선(예전 �
           </Text>
         </View>
       </RCTScrollView>
-    </View>
+    </RNCMaskedView>
   </View>
 </RNCSafeAreaProvider>
 `;
@@ -79,21 +204,100 @@ exports[`렌더 트리 스냅샷 — 이후 변경을 잡는 기준선(예전 �
   <View
     style={
       {
+        "backgroundColor": "#F2F0E2",
         "flexBasis": "0%",
         "flexGrow": 1,
         "flexShrink": 1,
       }
     }
   >
-    <View
+    <RNCMaskedView
       style={
         {
-          "flexBasis": "0%",
-          "flexGrow": 1,
-          "flexShrink": 1,
+          "flex": 1,
         }
       }
+      testID="screen-fade"
     >
+      <View
+        pointerEvents="none"
+        style={
+          {
+            "bottom": 0,
+            "left": 0,
+            "position": "absolute",
+            "right": 0,
+            "top": 0,
+          }
+        }
+      >
+        <View
+          style={
+            {
+              "flexBasis": "0%",
+              "flexGrow": 1,
+              "flexShrink": 1,
+            }
+          }
+        >
+          <View
+            style={
+              {
+                "backgroundColor": "#000",
+                "flexBasis": "0%",
+                "flexGrow": 1,
+                "flexShrink": 1,
+              }
+            }
+          />
+          <ViewManagerAdapter_ExpoLinearGradient
+            colors={
+              [
+                4278190080,
+                3925868544,
+                3053453312,
+                1996488704,
+                1073741824,
+                436207616,
+                100663296,
+                0,
+                0,
+              ]
+            }
+            endPoint={
+              [
+                0.5,
+                1,
+              ]
+            }
+            locations={
+              [
+                0,
+                0.125,
+                0.25,
+                0.375,
+                0.5,
+                0.625,
+                0.75,
+                0.875,
+                1,
+              ]
+            }
+            startPoint={
+              [
+                0.5,
+                0,
+              ]
+            }
+            style={
+              {
+                "height": 34,
+              }
+            }
+            testID="screen-fade-bottom"
+          />
+        </View>
+      </View>
       <RCTScrollView
         contentContainerStyle={
           {
@@ -120,7 +324,7 @@ exports[`렌더 트리 스냅샷 — 이후 변경을 잡는 기준선(예전 �
           </Text>
         </View>
       </RCTScrollView>
-    </View>
+    </RNCMaskedView>
   </View>
 </RNCSafeAreaProvider>
 `;

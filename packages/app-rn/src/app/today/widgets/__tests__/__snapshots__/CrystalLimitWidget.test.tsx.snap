@@ -1,0 +1,1122 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`스냅샷 — 네 크기 1x1 1`] = `
+<View
+  style={
+    {
+      "backgroundColor": "#F2F0E2",
+      "flexBasis": "0%",
+      "flexGrow": 1,
+      "flexShrink": 1,
+    }
+  }
+>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexBasis": "0%",
+        "flexGrow": 1,
+        "flexShrink": 1,
+        "justifyContent": "center",
+        "padding": 8,
+      }
+    }
+    testID="widget-crystal-limit"
+  >
+    <View
+      aria-label="스카니아 주간 결정석 판매 10 / 90"
+      role="img"
+      style={
+        {
+          "alignItems": "center",
+          "flexShrink": 0,
+          "height": 44,
+          "justifyContent": "center",
+          "width": 44,
+        }
+      }
+      testID="crystal-ring"
+    >
+      <RNSVGSvgView
+        align="xMidYMid"
+        bbHeight={44}
+        bbWidth={44}
+        focusable={false}
+        height={44}
+        meetOrSlice={0}
+        minX={0}
+        minY={0}
+        style={
+          [
+            {
+              "backgroundColor": "transparent",
+              "borderWidth": 0,
+            },
+            {
+              "position": "absolute",
+              "transform": [
+                {
+                  "rotate": "270deg",
+                },
+              ],
+            },
+            {
+              "flex": 0,
+              "height": 44,
+              "width": 44,
+            },
+          ]
+        }
+        transform={
+          [
+            {
+              "rotate": "270deg",
+            },
+          ]
+        }
+        vbHeight={44}
+        vbWidth={44}
+        width={44}
+      >
+        <RNSVGGroup
+          fill={
+            {
+              "payload": 4278190080,
+              "type": 0,
+            }
+          }
+        >
+          <RNSVGCircle
+            cx={22}
+            cy={22}
+            fill={null}
+            propList={
+              [
+                "fill",
+                "stroke",
+                "strokeWidth",
+              ]
+            }
+            r={20}
+            stroke={
+              {
+                "payload": 4293190094,
+                "type": 0,
+              }
+            }
+            strokeWidth={4}
+            testID="crystal-ring-track"
+          />
+          <RNSVGCircle
+            cx={22}
+            cy={22}
+            fill={null}
+            propList={
+              [
+                "fill",
+                "stroke",
+                "strokeWidth",
+                "strokeDasharray",
+                "strokeLinecap",
+              ]
+            }
+            r={20}
+            stroke={
+              {
+                "payload": 4294281999,
+                "type": 0,
+              }
+            }
+            strokeDasharray={
+              [
+                "13.962634015954634",
+                "111.70107212763709",
+              ]
+            }
+            strokeLinecap={1}
+            strokeWidth={4}
+            testID="crystal-ring-fill"
+          />
+        </RNSVGGroup>
+      </RNSVGSvgView>
+      <Text
+        style={
+          {
+            "color": "#241208",
+            "fontSize": 12,
+            "fontVariant": [
+              "tabular-nums",
+            ],
+            "fontWeight": "800",
+            "lineHeight": 11.040000000000001,
+          }
+        }
+        testID="crystal-ring-numerator"
+      >
+        10
+      </Text>
+      <Text
+        style={
+          {
+            "color": "#645C42",
+            "fontSize": 9,
+            "fontVariant": [
+              "tabular-nums",
+            ],
+            "lineHeight": 8.280000000000001,
+          }
+        }
+        testID="crystal-ring-denominator"
+      >
+        /90
+      </Text>
+    </View>
+  </View>
+</View>
+`;
+
+exports[`스냅샷 — 네 크기 2x1 1`] = `
+<View
+  style={
+    {
+      "backgroundColor": "#F2F0E2",
+      "flexBasis": "0%",
+      "flexGrow": 1,
+      "flexShrink": 1,
+    }
+  }
+>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "columnGap": 10,
+        "flexBasis": "0%",
+        "flexDirection": "row",
+        "flexGrow": 1,
+        "flexShrink": 1,
+        "padding": 12,
+        "rowGap": 10,
+      }
+    }
+    testID="widget-crystal-limit"
+  >
+    <View
+      aria-label="스카니아 주간 결정석 판매 10 / 90"
+      role="img"
+      style={
+        {
+          "alignItems": "center",
+          "flexShrink": 0,
+          "height": 42,
+          "justifyContent": "center",
+          "width": 42,
+        }
+      }
+      testID="crystal-ring"
+    >
+      <RNSVGSvgView
+        align="xMidYMid"
+        bbHeight={42}
+        bbWidth={42}
+        focusable={false}
+        height={42}
+        meetOrSlice={0}
+        minX={0}
+        minY={0}
+        style={
+          [
+            {
+              "backgroundColor": "transparent",
+              "borderWidth": 0,
+            },
+            {
+              "position": "absolute",
+              "transform": [
+                {
+                  "rotate": "270deg",
+                },
+              ],
+            },
+            {
+              "flex": 0,
+              "height": 42,
+              "width": 42,
+            },
+          ]
+        }
+        transform={
+          [
+            {
+              "rotate": "270deg",
+            },
+          ]
+        }
+        vbHeight={42}
+        vbWidth={42}
+        width={42}
+      >
+        <RNSVGGroup
+          fill={
+            {
+              "payload": 4278190080,
+              "type": 0,
+            }
+          }
+        >
+          <RNSVGCircle
+            cx={21}
+            cy={21}
+            fill={null}
+            propList={
+              [
+                "fill",
+                "stroke",
+                "strokeWidth",
+              ]
+            }
+            r={19}
+            stroke={
+              {
+                "payload": 4293190094,
+                "type": 0,
+              }
+            }
+            strokeWidth={4}
+            testID="crystal-ring-track"
+          />
+          <RNSVGCircle
+            cx={21}
+            cy={21}
+            fill={null}
+            propList={
+              [
+                "fill",
+                "stroke",
+                "strokeWidth",
+                "strokeDasharray",
+                "strokeLinecap",
+              ]
+            }
+            r={19}
+            stroke={
+              {
+                "payload": 4294281999,
+                "type": 0,
+              }
+            }
+            strokeDasharray={
+              [
+                "13.264502315156903",
+                "106.11601852125523",
+              ]
+            }
+            strokeLinecap={1}
+            strokeWidth={4}
+            testID="crystal-ring-fill"
+          />
+        </RNSVGGroup>
+      </RNSVGSvgView>
+      <Text
+        style={
+          {
+            "color": "#241208",
+            "fontSize": 11,
+            "fontVariant": [
+              "tabular-nums",
+            ],
+            "fontWeight": "800",
+            "lineHeight": 10.120000000000001,
+          }
+        }
+        testID="crystal-ring-numerator"
+      >
+        10
+      </Text>
+      <Text
+        style={
+          {
+            "color": "#645C42",
+            "fontSize": 8,
+            "fontVariant": [
+              "tabular-nums",
+            ],
+            "lineHeight": 7.36,
+          }
+        }
+        testID="crystal-ring-denominator"
+      >
+        /90
+      </Text>
+    </View>
+    <View
+      style={
+        {
+          "columnGap": 2,
+          "flexBasis": "0%",
+          "flexGrow": 1,
+          "flexShrink": 1,
+          "rowGap": 2,
+        }
+      }
+    >
+      <Text
+        style={
+          {
+            "color": "#645C42",
+            "fontSize": 10,
+            "fontWeight": "700",
+          }
+        }
+      >
+        결정석 판매
+      </Text>
+      <Text
+        numberOfLines={1}
+        style={
+          {
+            "color": "#241208",
+            "fontSize": 11.5,
+            "fontWeight": "600",
+          }
+        }
+        testID="crystal-world"
+      >
+        스카니아
+      </Text>
+      <Text
+        numberOfLines={1}
+        style={
+          {
+            "color": "#645C42",
+            "fontSize": 10,
+          }
+        }
+        testID="crystal-remaining"
+      >
+        <Text
+          style={
+            {
+              "color": "#241208",
+              "fontVariant": [
+                "tabular-nums",
+              ],
+              "fontWeight": "700",
+            }
+          }
+        >
+          80
+        </Text>
+        개 남음
+      </Text>
+    </View>
+  </View>
+</View>
+`;
+
+exports[`스냅샷 — 네 크기 2x2 1`] = `
+<View
+  style={
+    {
+      "backgroundColor": "#F2F0E2",
+      "flexBasis": "0%",
+      "flexGrow": 1,
+      "flexShrink": 1,
+    }
+  }
+>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "columnGap": 6,
+        "flexBasis": "0%",
+        "flexGrow": 1,
+        "flexShrink": 1,
+        "justifyContent": "center",
+        "padding": 12,
+        "rowGap": 6,
+      }
+    }
+    testID="widget-crystal-limit"
+  >
+    <Text
+      style={
+        {
+          "color": "#645C42",
+          "fontSize": 10,
+          "fontWeight": "700",
+        }
+      }
+    >
+      결정석 판매
+    </Text>
+    <View
+      aria-label="스카니아 주간 결정석 판매 10 / 90"
+      role="img"
+      style={
+        {
+          "alignItems": "center",
+          "flexShrink": 0,
+          "height": 56,
+          "justifyContent": "center",
+          "width": 56,
+        }
+      }
+      testID="crystal-ring"
+    >
+      <RNSVGSvgView
+        align="xMidYMid"
+        bbHeight={56}
+        bbWidth={56}
+        focusable={false}
+        height={56}
+        meetOrSlice={0}
+        minX={0}
+        minY={0}
+        style={
+          [
+            {
+              "backgroundColor": "transparent",
+              "borderWidth": 0,
+            },
+            {
+              "position": "absolute",
+              "transform": [
+                {
+                  "rotate": "270deg",
+                },
+              ],
+            },
+            {
+              "flex": 0,
+              "height": 56,
+              "width": 56,
+            },
+          ]
+        }
+        transform={
+          [
+            {
+              "rotate": "270deg",
+            },
+          ]
+        }
+        vbHeight={56}
+        vbWidth={56}
+        width={56}
+      >
+        <RNSVGGroup
+          fill={
+            {
+              "payload": 4278190080,
+              "type": 0,
+            }
+          }
+        >
+          <RNSVGCircle
+            cx={28}
+            cy={28}
+            fill={null}
+            propList={
+              [
+                "fill",
+                "stroke",
+                "strokeWidth",
+              ]
+            }
+            r={26}
+            stroke={
+              {
+                "payload": 4293190094,
+                "type": 0,
+              }
+            }
+            strokeWidth={4}
+            testID="crystal-ring-track"
+          />
+          <RNSVGCircle
+            cx={28}
+            cy={28}
+            fill={null}
+            propList={
+              [
+                "fill",
+                "stroke",
+                "strokeWidth",
+                "strokeDasharray",
+                "strokeLinecap",
+              ]
+            }
+            r={26}
+            stroke={
+              {
+                "payload": 4294281999,
+                "type": 0,
+              }
+            }
+            strokeDasharray={
+              [
+                "18.151424220741028",
+                "145.21139376592822",
+              ]
+            }
+            strokeLinecap={1}
+            strokeWidth={4}
+            testID="crystal-ring-fill"
+          />
+        </RNSVGGroup>
+      </RNSVGSvgView>
+      <Text
+        style={
+          {
+            "color": "#241208",
+            "fontSize": 15,
+            "fontVariant": [
+              "tabular-nums",
+            ],
+            "fontWeight": "800",
+            "lineHeight": 13.8,
+          }
+        }
+        testID="crystal-ring-numerator"
+      >
+        10
+      </Text>
+      <Text
+        style={
+          {
+            "color": "#645C42",
+            "fontSize": 11,
+            "fontVariant": [
+              "tabular-nums",
+            ],
+            "lineHeight": 10.120000000000001,
+          }
+        }
+        testID="crystal-ring-denominator"
+      >
+        /90
+      </Text>
+    </View>
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "columnGap": 2,
+          "rowGap": 2,
+        }
+      }
+    >
+      <Text
+        numberOfLines={1}
+        style={
+          {
+            "color": "#241208",
+            "fontSize": 12,
+            "fontWeight": "600",
+            "lineHeight": 16,
+          }
+        }
+        testID="crystal-world"
+      >
+        스카니아
+      </Text>
+      <Text
+        numberOfLines={1}
+        style={
+          {
+            "color": "#645C42",
+            "fontSize": 10,
+          }
+        }
+        testID="crystal-remaining"
+      >
+        <Text
+          style={
+            {
+              "color": "#241208",
+              "fontVariant": [
+                "tabular-nums",
+              ],
+              "fontWeight": "700",
+            }
+          }
+        >
+          80
+        </Text>
+        개 남음
+      </Text>
+    </View>
+    <Text
+      numberOfLines={1}
+      style={
+        {
+          "color": "#645C42",
+          "fontSize": 10,
+        }
+      }
+      testID="crystal-rest"
+    >
+      루나 70개 남음
+    </Text>
+  </View>
+</View>
+`;
+
+exports[`스냅샷 — 네 크기 4x1 1`] = `
+<View
+  style={
+    {
+      "backgroundColor": "#F2F0E2",
+      "flexBasis": "0%",
+      "flexGrow": 1,
+      "flexShrink": 1,
+    }
+  }
+>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "columnGap": 8,
+        "flexBasis": "0%",
+        "flexDirection": "row",
+        "flexGrow": 1,
+        "flexShrink": 1,
+        "padding": 12,
+        "rowGap": 8,
+      }
+    }
+    testID="widget-crystal-limit"
+  >
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "columnGap": 6,
+          "flexBasis": "0%",
+          "flexDirection": "row",
+          "flexGrow": 1,
+          "flexShrink": 1,
+          "rowGap": 6,
+        }
+      }
+      testID="crystal-world-cell"
+    >
+      <View
+        aria-label="스카니아 주간 결정석 판매 10 / 90"
+        role="img"
+        style={
+          {
+            "alignItems": "center",
+            "flexShrink": 0,
+            "height": 38,
+            "justifyContent": "center",
+            "width": 38,
+          }
+        }
+        testID="crystal-ring"
+      >
+        <RNSVGSvgView
+          align="xMidYMid"
+          bbHeight={38}
+          bbWidth={38}
+          focusable={false}
+          height={38}
+          meetOrSlice={0}
+          minX={0}
+          minY={0}
+          style={
+            [
+              {
+                "backgroundColor": "transparent",
+                "borderWidth": 0,
+              },
+              {
+                "position": "absolute",
+                "transform": [
+                  {
+                    "rotate": "270deg",
+                  },
+                ],
+              },
+              {
+                "flex": 0,
+                "height": 38,
+                "width": 38,
+              },
+            ]
+          }
+          transform={
+            [
+              {
+                "rotate": "270deg",
+              },
+            ]
+          }
+          vbHeight={38}
+          vbWidth={38}
+          width={38}
+        >
+          <RNSVGGroup
+            fill={
+              {
+                "payload": 4278190080,
+                "type": 0,
+              }
+            }
+          >
+            <RNSVGCircle
+              cx={19}
+              cy={19}
+              fill={null}
+              propList={
+                [
+                  "fill",
+                  "stroke",
+                  "strokeWidth",
+                ]
+              }
+              r={17}
+              stroke={
+                {
+                  "payload": 4293190094,
+                  "type": 0,
+                }
+              }
+              strokeWidth={4}
+              testID="crystal-ring-track"
+            />
+            <RNSVGCircle
+              cx={19}
+              cy={19}
+              fill={null}
+              propList={
+                [
+                  "fill",
+                  "stroke",
+                  "strokeWidth",
+                  "strokeDasharray",
+                  "strokeLinecap",
+                ]
+              }
+              r={17}
+              stroke={
+                {
+                  "payload": 4294281999,
+                  "type": 0,
+                }
+              }
+              strokeDasharray={
+                [
+                  "11.868238913561441",
+                  "94.94591130849153",
+                ]
+              }
+              strokeLinecap={1}
+              strokeWidth={4}
+              testID="crystal-ring-fill"
+            />
+          </RNSVGGroup>
+        </RNSVGSvgView>
+        <Text
+          style={
+            {
+              "color": "#241208",
+              "fontSize": 10,
+              "fontVariant": [
+                "tabular-nums",
+              ],
+              "fontWeight": "800",
+              "lineHeight": 9.200000000000001,
+            }
+          }
+          testID="crystal-ring-numerator"
+        >
+          10
+        </Text>
+        <Text
+          style={
+            {
+              "color": "#645C42",
+              "fontSize": 8,
+              "fontVariant": [
+                "tabular-nums",
+              ],
+              "lineHeight": 7.36,
+            }
+          }
+          testID="crystal-ring-denominator"
+        >
+          /90
+        </Text>
+      </View>
+      <View
+        style={
+          {
+            "columnGap": 2,
+            "flexBasis": "0%",
+            "flexGrow": 1,
+            "flexShrink": 1,
+            "rowGap": 2,
+          }
+        }
+      >
+        <Text
+          numberOfLines={1}
+          style={
+            {
+              "color": "#241208",
+              "fontSize": 11,
+              "fontWeight": "600",
+            }
+          }
+          testID="crystal-world"
+        >
+          스카니아
+        </Text>
+        <Text
+          numberOfLines={1}
+          style={
+            {
+              "color": "#645C42",
+              "fontSize": 10,
+            }
+          }
+          testID="crystal-remaining"
+        >
+          <Text
+            style={
+              {
+                "color": "#241208",
+                "fontVariant": [
+                  "tabular-nums",
+                ],
+                "fontWeight": "700",
+              }
+            }
+          >
+            80
+          </Text>
+          개 남음
+        </Text>
+      </View>
+    </View>
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "columnGap": 6,
+          "flexBasis": "0%",
+          "flexDirection": "row",
+          "flexGrow": 1,
+          "flexShrink": 1,
+          "rowGap": 6,
+        }
+      }
+      testID="crystal-world-cell"
+    >
+      <View
+        aria-label="루나 주간 결정석 판매 20 / 90"
+        role="img"
+        style={
+          {
+            "alignItems": "center",
+            "flexShrink": 0,
+            "height": 38,
+            "justifyContent": "center",
+            "width": 38,
+          }
+        }
+        testID="crystal-ring"
+      >
+        <RNSVGSvgView
+          align="xMidYMid"
+          bbHeight={38}
+          bbWidth={38}
+          focusable={false}
+          height={38}
+          meetOrSlice={0}
+          minX={0}
+          minY={0}
+          style={
+            [
+              {
+                "backgroundColor": "transparent",
+                "borderWidth": 0,
+              },
+              {
+                "position": "absolute",
+                "transform": [
+                  {
+                    "rotate": "270deg",
+                  },
+                ],
+              },
+              {
+                "flex": 0,
+                "height": 38,
+                "width": 38,
+              },
+            ]
+          }
+          transform={
+            [
+              {
+                "rotate": "270deg",
+              },
+            ]
+          }
+          vbHeight={38}
+          vbWidth={38}
+          width={38}
+        >
+          <RNSVGGroup
+            fill={
+              {
+                "payload": 4278190080,
+                "type": 0,
+              }
+            }
+          >
+            <RNSVGCircle
+              cx={19}
+              cy={19}
+              fill={null}
+              propList={
+                [
+                  "fill",
+                  "stroke",
+                  "strokeWidth",
+                ]
+              }
+              r={17}
+              stroke={
+                {
+                  "payload": 4293190094,
+                  "type": 0,
+                }
+              }
+              strokeWidth={4}
+              testID="crystal-ring-track"
+            />
+            <RNSVGCircle
+              cx={19}
+              cy={19}
+              fill={null}
+              propList={
+                [
+                  "fill",
+                  "stroke",
+                  "strokeWidth",
+                  "strokeDasharray",
+                  "strokeLinecap",
+                ]
+              }
+              r={17}
+              stroke={
+                {
+                  "payload": 4294281999,
+                  "type": 0,
+                }
+              }
+              strokeDasharray={
+                [
+                  "23.736477827122883",
+                  "83.07767239493009",
+                ]
+              }
+              strokeLinecap={1}
+              strokeWidth={4}
+              testID="crystal-ring-fill"
+            />
+          </RNSVGGroup>
+        </RNSVGSvgView>
+        <Text
+          style={
+            {
+              "color": "#241208",
+              "fontSize": 10,
+              "fontVariant": [
+                "tabular-nums",
+              ],
+              "fontWeight": "800",
+              "lineHeight": 9.200000000000001,
+            }
+          }
+          testID="crystal-ring-numerator"
+        >
+          20
+        </Text>
+        <Text
+          style={
+            {
+              "color": "#645C42",
+              "fontSize": 8,
+              "fontVariant": [
+                "tabular-nums",
+              ],
+              "lineHeight": 7.36,
+            }
+          }
+          testID="crystal-ring-denominator"
+        >
+          /90
+        </Text>
+      </View>
+      <View
+        style={
+          {
+            "columnGap": 2,
+            "flexBasis": "0%",
+            "flexGrow": 1,
+            "flexShrink": 1,
+            "rowGap": 2,
+          }
+        }
+      >
+        <Text
+          numberOfLines={1}
+          style={
+            {
+              "color": "#241208",
+              "fontSize": 11,
+              "fontWeight": "600",
+            }
+          }
+          testID="crystal-world"
+        >
+          루나
+        </Text>
+        <Text
+          numberOfLines={1}
+          style={
+            {
+              "color": "#645C42",
+              "fontSize": 10,
+            }
+          }
+          testID="crystal-remaining"
+        >
+          <Text
+            style={
+              {
+                "color": "#241208",
+                "fontVariant": [
+                  "tabular-nums",
+                ],
+                "fontWeight": "700",
+              }
+            }
+          >
+            70
+          </Text>
+          개 남음
+        </Text>
+      </View>
+    </View>
+  </View>
+</View>
+`;

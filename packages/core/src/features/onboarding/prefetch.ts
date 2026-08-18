@@ -54,7 +54,13 @@ export async function prefetchAccountData(
       try {
         // ADR-113 결정 1: 캐시 쓰기까지 공유 경로 안이다. 계정 선택 프로브가 방금 같은 캐릭터를
         // 받아 뒀으면(결정 2) 여기서는 네트워크가 나가지 않는다.
-        profile = await fetchCharacterBasicCached(apiKey, accountId, character.ocid, now)
+        profile = await fetchCharacterBasicCached(
+          apiKey,
+          accountId,
+          character.ocid,
+          now,
+          character.jobClass,
+        )
       } catch {
         // 개별 실패 — 캐시 없이 넘어간다 (ADR-016)
         emit({ completed: 1, total: -1 })

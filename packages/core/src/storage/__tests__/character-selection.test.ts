@@ -2,10 +2,14 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { installFakePreferences } from './fake-preferences'
 import {
   clearLastSelectedCharacter,
+  clearRepresentativeCharacter,
   clearTrackedCharacterOcids,
   getLastSelectedCharacter,
+  getRepresentativeCharacter,
   getTrackedCharacterOcids,
+  setCharacterSelection,
   setLastSelectedCharacter,
+  setRepresentativeCharacter,
   setTrackedCharacterOcids,
 } from '../character-selection'
 
@@ -150,6 +154,96 @@ describe('통합 마이그레이션', () => {
 
     expect(ocids).toEqual(['a', 'b'])
     await expect(getTrackedCharacterOcids()).resolves.toEqual(['a', 'b'])
+  })
+})
+
+// ADR-143 결정 4: 대표 캐릭터는 "표식"이다 — 미지정이면 키가 없고, 그때 "첫 번째가 임시 대표"라는
+// 규칙은 읽는 쪽(화면)의 것이라 저장 레이어가 그 파생값을 만들지도 저장하지도 않는다.
+describe('대표 캐릭터 (ADR-143 결정 4)', () => {
+  it('저장 전에는 null을 반환한다', async () => {
+    await expect(getRepresentativeCharacter()).resolves.toBeNull()
+  })
+
+  it('setRepresentativeCharacter 후 저장한 ocid를 그대로 읽는다', async () => {
+    await setRepresentativeCharacter('ocid-1')
+    await expect(getRepresentativeCharacter()).resolves.toBe('ocid-1')
+  })
+
+  it('단일 키(representativeCharacter)에 저장한다', async () => {
+    await setRepresentativeCharacter('ocid-1')
+    await expect(prefs.get('representativeCharacter')).resolves.toBe('ocid-1')
+  })
+
+  it('clearRepresentativeCharacter 호출 후 다시 null을 반환한다', async () => {
+    await setRepresentativeCharacter('ocid-1')
+    await clearRepresentativeCharacter()
+    await expect(getRepresentativeCharacter()).resolves.toBeNull()
+  })
+
+  it('미지정이면 목록의 첫 번째를 대신 돌려주지 않는다 — 파생값을 만들지 않는다', async () => {
+    await setTrackedCharacterOcids(['ocid-1', 'ocid-2'])
+    await expect(getRepresentativeCharacter()).resolves.toBeNull()
+  })
+
+  it('lastSelectedCharacter와 다른 축이라 서로를 건드리지 않는다', async () => {
+    await setLastSelectedCharacter('ocid-last')
+    await setRepresentativeCharacter('ocid-rep')
+
+    await expect(getLastSelectedCharacter()).resolves.toBe('ocid-last')
+    await expect(getRepresentativeCharacter()).resolves.toBe('ocid-rep')
+  })
+})
+
+// ADR-143 결정 4: 참조 무결성은 쓰는 쪽이 지킨다 — 대표가 추적 목록에 없으면 그 키를 지운다.
+describe('setCharacterSelection (참조 무결성)', () => {
+  it('목록과 대표를 함께 저장한다', async () => {
+    await setCharacterSelection(['ocid-1', 'ocid-2'], 'ocid-2')
+
+    await expect(getTrackedCharacterOcids()).resolves.toEqual(['ocid-1', 'ocid-2'])
+    await expect(getRepresentativeCharacter()).resolves.toBe('ocid-2')
+  })
+
+  it('대표를 목록에서 빼고 저장하면 대표 키가 지워진다', async () => {
+    await setCharacterSelection(['ocid-1', 'ocid-2'], 'ocid-1')
+
+    await setCharacterSelection(['ocid-2'], 'ocid-1')
+
+    await expect(getTrackedCharacterOcids()).resolves.toEqual(['ocid-2'])
+    await expect(getRepresentativeCharacter()).resolves.toBeNull()
+  })
+
+  it('대표가 null이면 이미 저장된 대표를 지운다', async () => {
+    await setCharacterSelection(['ocid-1'], 'ocid-1')
+
+    await setCharacterSelection(['ocid-1'], null)
+
+    await expect(getRepresentativeCharacter()).resolves.toBeNull()
+  })
+
+  it('목록만 따로 저장해도 목록에 없는 대표는 남지 않는다', async () => {
+    await setRepresentativeCharacter('ocid-1')
+
+    await setTrackedCharacterOcids(['ocid-2'])
+
+    await expect(getRepresentativeCharacter()).resolves.toBeNull()
+  })
+
+  it('대표가 새 목록에 그대로 있으면 유지한다', async () => {
+    await setRepresentativeCharacter('ocid-1')
+
+    await setTrackedCharacterOcids(['ocid-2', 'ocid-1'])
+
+    await expect(getRepresentativeCharacter()).resolves.toBe('ocid-1')
+  })
+
+  it('목록 저장이 실패하면 대표를 건드리지 않는다', async () => {
+    await setCharacterSelection(['ocid-1'], 'ocid-1')
+    prefs.set.mockRejectedValueOnce(new Error('disk full'))
+
+    await expect(setCharacterSelection(['ocid-2'], 'ocid-2')).rejects.toThrow('disk full')
+
+    await expect(getTrackedCharacterOcids()).resolves.toEqual(['ocid-1'])
+    await expect(getRepresentativeCharacter()).resolves.toBe('ocid-1')
   })
 })
 

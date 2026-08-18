@@ -1,9 +1,27 @@
+// **이 라이브러리는 패치해서 쓴다**([[ADR-134]] 정정 4 · `patches/` + 루트 `postinstall`).
+// 안드로이드 구현은 마스크를 `getChildAt(0)` 으로 찾는데, 하위 페이지에서 **뒤로가기**를 하면
+// React 가 서브트리를 언마운트해 자식이 `mChildren` 에서 빠지고 `getChildAt(0)` 이 **null** 이
+// 된다. 화면은 아직 밀려 나가는 중이라 Android 는 그 자식들을 **disappearing child** 로 계속
+// 그린다 — `INVISIBLE` 플래그도 무시하고. 마스크를 못 알아보니 아래 불투명 판이 평범한 그림으로
+// 깔려 **전환 내내 화면이 검었다**(실기기 2026-08-15 — 판 색을 `#f00` 으로 바꾸면 화면이 빨개지는
+// 것으로 확정). 패치는 마스크를 **참조로** 기억하고 `drawChild` 에서 막는다.
+import MaskedView from '@react-native-masked-view/masked-view'
 import type { ScrollView as ScrollViewType } from 'react-native'
-import { Platform, ScrollView, View } from 'react-native'
+import { Platform, ScrollView, useWindowDimensions, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { resolveBottomBarMetrics } from '../../../lib/bottom-bar-metrics'
+import { useBottomSafeAreaPx } from '../../../lib/bottom-safe-area'
+import { LinearGradient } from '../../../lib/nativewind-interop'
+import { useTopSafeAreaPx } from '../../../lib/top-safe-area'
 import { useScrollIndicatorStyle } from '../../../theme/context'
 import { resolveScreenBottomInset } from './bottom-inset'
+import {
+  FADE_MASK_LOCATIONS,
+  FADE_MASK_OPAQUE,
+  fadeMaskColors,
+  resolveSafeAreaFade,
+} from './safe-area-fade'
 
 // 화면 스크롤 셸([[ADR-099]]) — **스크롤의 소유자는 문서가 아니라 화면이다.**
 //
@@ -32,6 +50,8 @@ import { resolveScreenBottomInset } from './bottom-inset'
 // 먹는다 — 되돌릴 것이 없으니 트릭도 없다. 다만 **스크롤포트 자체는 화면 맨 위에서 시작한다**
 // (`marginTop: 0`): 노치를 비우는 것이 상자가 아니라 헤더의 패딩이라, 굴리면 그 패딩이 함께
 // 올라가 **콘텐츠가 상태바 밑으로 지나간다**([[ADR-131]] «남는 문제» — 고정을 없앤 대가다).
+// 그 «남는 문제» 의 처방이 아래 **안전영역 페이드**다([[ADR-134]]) — 지나가는 것을 막지 않고,
+// 지나가는 자리에서 **투명해지게** 한다.
 //
 // 헤더가 없는 화면(설정 계열)에서는 이 셸이 상자를 그만큼 내린다. **콘텐츠 패딩이 아니라 상자**여야
 // 한다 — 인디케이터는 콘텐츠가 아니라 스크롤포트 위에 겹쳐 그려지므로, 패딩으로 밀면 글자는
@@ -41,6 +61,15 @@ import { resolveScreenBottomInset } from './bottom-inset'
 //
 // `hasTabBar` 와 플랫폼에 따라 갈리고, 그 판정은 `bottom-inset.ts` 가 갖는다(RN 이 3버튼과 제스처
 // 내비를 구분하지 못해 생긴 대가도 거기 적혀 있다).
+//
+// ── 안전영역 페이드 — **덮지 않고 깎는다** ([[ADR-134]]) ────────────────────────────
+//
+// 위아래 모두 콘텐츠가 크롬과 겹치는데(상태바 밑 · 홈 인디케이터 자리) 지금까지는 그 자리에서 **딱
+// 끊겼다.** 겹치는 만큼을 마스크로 깎아 알파를 0으로 보낸다 — 배경색을 덮는 스크림이 아니다. 덮으면
+// 벽지 테마에서 **정지 상태에도 띠**가 보여 [[ADR-133]] 이 걷어낸 상태로 돌아간다.
+//
+// 이 셸이 그 자리인 이유: 마스크 상자는 **스크롤포트를 담는 상자**여야 하고, 위(헤더 유무)와
+// 아래(`bottom-inset.ts`)의 갈림을 이미 여기서 알고 있다. 값과 곡선은 `safe-area-fade.ts` 가 갖는다.
 //
 // ── 옮기지 않은 것 둘 ───────────────────────────────────────────────────────────────
 //
@@ -96,6 +125,17 @@ export interface ScreenScrollProps {
    */
   refreshControl?: React.ComponentProps<typeof ScrollView>['refreshControl']
   /**
+   * 스크롤 오프셋 통보 — **끌어서 순서 바꾸기의 자동 스크롤만** 쓴다([[ADR-144]] 결정 5).
+   *
+   * 그 화면은 목록이 화면보다 길 때 페이지째 굴려야 하는데([[ADR-131]] — 고정 영역이 없다) 굴린
+   * 만큼을 끌기 좌표에 되더해야 행이 손가락 밑에 남는다. 즉 필요한 것은 **지금 오프셋**이고, 그것을
+   * 아는 유일한 경로가 이 이벤트다.
+   *
+   * **안 주면 프롭 자체를 안 넘긴다**(`scrollEventThrottle` 도 함께) — 이 셸은 화면 열여섯 곳이
+   * 쓰므로, 안 쓰는 화면까지 매 프레임 이벤트를 보내게 두지 않는다.
+   */
+  onScroll?: React.ComponentProps<typeof ScrollView>['onScroll']
+  /**
    * 아래에 탭바가 있는가 — 하단 인셋 처리만 가른다(`bottom-inset.ts`).
    *
    * **하위 페이지는 `false` 다.** 스택 위로 올라간 화면에는 탭바가 없다([[ADR-120]] 결정 4 —
@@ -104,55 +144,127 @@ export interface ScreenScrollProps {
   hasTabBar?: boolean
 }
 
+/** 위는 화면 끝에서 드러나고, 아래는 그 반대다 — 색을 만드는 규칙은 `safe-area-fade.ts` 가 갖는다. */
+const FADE_IN_COLORS = fadeMaskColors('in')
+const FADE_OUT_COLORS = fadeMaskColors('out')
+
 export function ScreenScroll({
   children,
   header,
   ref,
   refreshControl,
+  onScroll,
   hasTabBar = true,
 }: ScreenScrollProps): React.JSX.Element {
   const insets = useSafeAreaInsets()
+  // 위아래 **둘 다 인셋이 아니라 하한이 깔린 값**이다([[ADR-139]] 정정 1 · [[ADR-132]] 정정 31).
+  // 위는 헤더(`PageHeader`)와 페이드가 같은 값을 봐야 제목 윗변과 페이드 끝선이 한 선에 있고,
+  // 아래는 떠 있는 바(`BottomBar`)와 같은 값을 봐야 마지막 카드가 캡슐 뒤로 안 들어간다.
+  //
+  // 인셋 자체도 여전히 필요하다 — 하위 페이지에서 스크롤포트가 비우는 몫은 «내비바가 실제로
+  // 차지하는 자리» 라 하한이 아니라 인셋이다(그 갈림은 `bottom-inset.ts` 가 갖는다).
+  const topSafeAreaPx = useTopSafeAreaPx()
+  const bottomSafeAreaPx = useBottomSafeAreaPx()
   const indicatorStyle = useScrollIndicatorStyle()
+  // 바가 먹는 세로는 **기기 폭의 함수**다([[ADR-132]] 정정 30) — 바와 여기가 같은 함수를 봐야
+  // 콘텐츠가 바 뒤로 들어가거나 바닥에 빈 띠를 남기지 않는다. `100dvh` 짝을 안전영역 프레임에서
+  // 받는 자리들과 달리 여기는 **창 폭**이 맞다: 바 자신이 그 폭으로 자리를 잡는다.
+  const { width: windowWidthPx } = useWindowDimensions()
+  const barSpacePx = resolveBottomBarMetrics(windowWidthPx).spacePx
   const bottom = resolveScreenBottomInset({
     hasTabBar,
-    bottomInsetPx: insets.bottom,
+    insetBottomPx: insets.bottom,
+    bottomSafeAreaPx,
+    barSpacePx,
     platform: Platform.OS,
+  })
+  const fade = resolveSafeAreaFade({
+    hasHeader: header !== undefined,
+    hasTabBar,
+    topSafeAreaPx,
+    bottomSafeAreaPx,
+    barSpacePx,
+    portBottomPx: bottom.portBottomPx,
   })
 
   // 스크롤포트를 "실제로 보이는 영역"에 맞추는 두 값([[ADR-099]] 결정 6). **콘텐츠 패딩이 아니라
   // 상자의 마진**이어야 한다 — 인디케이터는 콘텐츠가 아니라 스크롤포트 위에 겹쳐 그려진다.
   const port = {
-    marginTop: header === undefined ? insets.top : 0,
+    marginTop: header === undefined ? topSafeAreaPx : 0,
     marginBottom: bottom.portBottomPx,
   }
 
-  return (
-    <View className="flex-1">
-      <ScrollView
-        ref={ref}
-        testID="screen-scroll"
-        // [[ADR-099]] 결정 5 — 우리가 그리지 않는 크롬의 색은 **알려 줘야** 한다. 웹에서 안 걸었을
-        // 때 라이트 테마에 흰 인디케이터가 나왔고(실기기 2026-08-06), RN 의 기본값 `'default'` 도
-        // 같은 종류의 실패다: 그 값은 OS 설정을 따라가지 우리 테마를 따라가지 않는다.
-        indicatorStyle={indicatorStyle}
-        refreshControl={refreshControl}
-        className="flex-1"
-        style={port}
-        // 웹 안쪽 래퍼의 `space-y-4` 짝. RN 에 `space-y-*` 가 없어 `gap-*` 이고, 그래서 래퍼 뷰가
-        // 따로 필요 없다 — 콘텐츠 컨테이너가 그 역할을 겸한다.
-        contentContainerClassName="gap-4"
-        contentContainerStyle={{ paddingBottom: bottom.contentBottomPx }}
-      >
-        {/* **헤더가 스크롤 뷰 «안»에 있다**([[ADR-131]] 후속) — 첫 자식이라 목록과 함께 흘러
-            올라간다. 예전에는 스크롤 뷰의 **형제**라 영원히 화면에 붙어 있었는데, 정책이
-            «최상단 헤더만 고정» 에서 **«고정을 푼다»** 로 다시 바뀌었다(사용자 판정 2026-08-13 —
-            *"지금 페이지에 고정된 영역을 풀라는 거야. 스크롤 가능하도록"*).
+  const scroller = (
+    <ScrollView
+      ref={ref}
+      testID="screen-scroll"
+      // [[ADR-099]] 결정 5 — 우리가 그리지 않는 크롬의 색은 **알려 줘야** 한다. 웹에서 안 걸었을
+      // 때 라이트 테마에 흰 인디케이터가 나왔고(실기기 2026-08-06), RN 의 기본값 `'default'` 도
+      // 같은 종류의 실패다: 그 값은 OS 설정을 따라가지 우리 테마를 따라가지 않는다.
+      indicatorStyle={indicatorStyle}
+      refreshControl={refreshControl}
+      // 조건부 전개다 — `onScroll={undefined}` 로 넘기면 iOS 가 기본 주기(스크롤이 멈출 때 1회)로
+      // 이벤트를 켜고, 안 쓰는 화면의 렌더 트리에도 프롭이 남는다.
+      {...(onScroll === undefined ? null : { onScroll, scrollEventThrottle: 16 })}
+      className="flex-1"
+      style={port}
+      // 웹 안쪽 래퍼의 `space-y-4` 짝. RN 에 `space-y-*` 가 없어 `gap-*` 이고, 그래서 래퍼 뷰가
+      // 따로 필요 없다 — 콘텐츠 컨테이너가 그 역할을 겸한다.
+      contentContainerClassName="gap-4"
+      contentContainerStyle={{ paddingBottom: bottom.contentBottomPx }}
+    >
+      {/* **헤더가 스크롤 뷰 «안»에 있다**([[ADR-131]] 후속) — 첫 자식이라 목록과 함께 흘러
+          올라간다. 예전에는 스크롤 뷰의 **형제**라 영원히 화면에 붙어 있었는데, 정책이
+          «최상단 헤더만 고정» 에서 **«고정을 푼다»** 로 다시 바뀌었다(사용자 판정 2026-08-13 —
+          *"지금 페이지에 고정된 영역을 풀라는 거야. 스크롤 가능하도록"*).
 
-            안전영역은 여전히 헤더가 먹는다(자기 `paddingTop`) — 스크롤 0 에서 노치를 비우고,
-            굴리면 그 패딩째 올라간다. */}
-        {header}
-        {children}
-      </ScrollView>
-    </View>
+          안전영역은 여전히 헤더가 먹는다(자기 `paddingTop`) — 스크롤 0 에서 노치를 비우고,
+          굴리면 그 패딩째 올라간다. */}
+      {header}
+      {children}
+    </ScrollView>
+  )
+
+  // 겹치는 것이 없으면 마스크를 아예 걸지 않는다([[ADR-134]] 결정 5) — 마스킹은 오프스크린 합성이라
+  // 공짜가 아니고, 이 조건이 곧 «페이드가 보이는 화면» 이다.
+  if (fade.topPx === 0 && fade.bottomPx === 0) return <View className="flex-1">{scroller}</View>
+
+  return (
+    // 마스크 상자가 **스크롤포트를 담는 상자**다. 페이드 구간은 화면 끝을 기준으로 잡히는데
+    // (안전영역이 그렇게 정의된다) 스크롤포트가 그보다 안쪽에서 끝나는 경우는 `resolveSafeAreaFade`
+    // 가 이미 0으로 만들어 두므로, 둘을 맞추려고 좌표를 옮길 일이 없다.
+    <MaskedView
+      testID="screen-fade"
+      style={{ flex: 1 }}
+      maskElement={
+        <View className="flex-1">
+          {fade.topPx > 0 && (
+            <LinearGradient
+              testID="screen-fade-top"
+              colors={FADE_IN_COLORS}
+              locations={FADE_MASK_LOCATIONS}
+              // 방향을 기본값에 기대지 않는다 — 뒤집히면 화면 끝이 불투명해지고 목록 한가운데가
+              // 사라진다(그림이 조용히 정반대가 된다).
+              start={{ x: 0.5, y: 0 }}
+              end={{ x: 0.5, y: 1 }}
+              style={{ height: fade.topPx }}
+            />
+          )}
+          <View className="flex-1" style={{ backgroundColor: FADE_MASK_OPAQUE }} />
+          {fade.bottomPx > 0 && (
+            <LinearGradient
+              testID="screen-fade-bottom"
+              colors={FADE_OUT_COLORS}
+              locations={FADE_MASK_LOCATIONS}
+              start={{ x: 0.5, y: 0 }}
+              end={{ x: 0.5, y: 1 }}
+              style={{ height: fade.bottomPx }}
+            />
+          )}
+        </View>
+      }
+    >
+      {scroller}
+    </MaskedView>
   )
 }

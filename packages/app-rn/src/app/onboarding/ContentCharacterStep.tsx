@@ -1,242 +1,107 @@
-// 추적 캐릭터 선택 — 온보딩 마지막 단계([[ADR-035]] 결정 13).
+// 온보딩 마지막 단계 — 관리할 캐릭터 고르기([[ADR-035]] 결정 13 · [[ADR-143]] 결정 1).
 //
-// 캐릭터 관리 모달과 동일한 그리드(`CharacterTrackingGrid`)를 오버레이·카드 없이 페이지 레이아웃으로
-// 재사용한다. 온보딩을 끝내려면 최소 1명은 선택해야 하므로 CTA 는 `selectedOcids` 가 비면 비활성이다
-// ([[ADR-086]] 결정 7) — 이 제약은 이 페이지 전용이고, 재사용하는 그리드나 "캐릭터 관리" 모달에는
-// 넣지 않는다(모달은 전부 해제 가능해야 한다).
+// **본문은 이 파일에 없다.** 설정 하위 페이지(`SettingsCharactersScreen`)와 **같은**
+// `CharacterManageBody` + `useCharacterManage` 를 쓰고, 갈리는 것은 머리와 CTA 뿐이다
+// ([[ADR-144]] 결정 1). 여기 있는 것은 제목 블록 · 「계속하기」 · 최소 1개 게이트 셋이다.
 //
-// [[ADR-053]] 결정 3: 모달이 아니라 페이지라 판정 분기를 `RosterBody` 가 직접 그린다 — 순서는 피커
-// (`CharacterTrackingPicker`)와 같다. 보여줄 항목이 하나라도 있으면 조회 중이어도 그리드를 그리고
-// ([[ADR-016]] 캐시 우선 표시), 항목이 없을 때만 조회 중(스피너)/실패(에러)/0건(빈 상태)을 구분한다.
+// ── 무엇이 없어졌나 ([[ADR-143]]) ───────────────────────────────────────────────────
 //
-// [[ADR-062]]: 실패도 피커와 같은 공용 `ErrorState` 를 쓰고 스탈 배너 분기도 같다. 다른 것은 액션뿐 —
-// 온보딩 중에는 설정 화면이 없으므로 `invalidApiKey` 도 재시도이고 설명만 갈린다
-// (`formatRosterError` 의 `place='onboarding'`).
+// | 전 | 후 |
+// |---|---|
+// | 3열 그리드(`CharacterTrackingGrid`) 한 층 | 「선택됨」/「고르는 곳」 두 층의 행 카드([[ADR-144]] 결정 2) |
+// | 고른 계정 하나의 후보 | 계정 드롭다운 — 여러 메이플 ID 를 넘나든다 |
+// | `accountId` 프롭(설정 계정 변경이 넘기던 후보 계정) | 없다 — 그 플로우가 폐지됐다(결정 7) |
+// | `submitLabel` 프롭 | 없다 — 이 컴포넌트는 이제 온보딩 전용이다 |
+// | 후보 0건의 「계정 다시 선택」(`emptyAction`) | 없다 — 출구는 **드롭다운을 되돌리는 것**이다(결정 10) |
 //
-// [[ADR-114]] 결정 3: 다만 **배너와 ErrorState 의 액션 규칙은 서로 다르다.** 배너는 아래에 목록이
-// 그대로 남아 있어 액션이 없어도 막다른 길이 아니라, 재시도가 실제로 통하는 실패에만 액션을 준다
-// (429·401·characterUnavailable 은 버튼 없음). ErrorState 는 자리 전체가 실패라 같은 401에서 액션을
-// 빼면 화면에 아무 길도 남지 않으므로 재시도를 유지한다 — 같은 근거의 뒷면이다.
+// ── 401 은 여전히 배선하지 않는다 ([[ADR-115]] "구현하며 정정한 것" 5 · [[ADR-116]] 결정 2) ──
 //
-// ── RN 으로 옮기며 갈린 것 넷 ─────────────────────────────────────────────────────
+// 설정 화면은 `manage.rosterError` 를 통째로 키 재입력 진입점에 넘기지만 **이 자리는 429 만** 넘긴다.
+// 여기의 401 은 "사용자가 방금 넣은 키가 나쁘다"는 뜻이라 성질이 다르고, 그래서 폼 자체의 실패로
+// 남아 아래 `ErrorState` 의 「다시 시도」가 실제 처방이 된다. 429 만 넘기는 이유는 반대로 그 자리가
+// **하드 잠금**이기 때문이다(이슈 #176 — 고를 캐릭터가 없어 CTA 가 영구 비활성이고, 재시도는 같은
+// 키로 또 429 이며, 단계는 라우트가 아니라 `status` switch 라 되돌릴 UI 도 없다).
 //
-// ① **`ROSTER_BODY_MIN_H` 가 클래스가 아니라 값(px)이다**([[ADR-107]] 결정 2 의 짝) — 모달은 짧은
-//    기기에서 클램프해야 해 식이 클래스로 표현되지 않는다. 여기(페이지)는 상한 자체가 없어
-//    `ROSTER_BODY_MIN_H_PX` 를 그대로 `minHeight` 로 쓴다.
-// ② **`max-h-[70vh]` → 안전영역 프레임 높이의 70%.** `vh` 의 짝은 `useWindowDimensions()` 가 아니라
-//    `useSafeAreaFrame()` 이다(피커와 같은 판단 — 인셋과 같은 프로바이더에서 나와 회전·분할화면에서
-//    어긋나지 않는다).
-// ③ **그리드 스크롤이 화면 스크롤 안에 들어간다.** 웹에서는 문서 스크롤 + 내부 `overflow-y-auto` 가
-//    자연히 겹쳐 있었고, RN 에서는 같은 모양이 중첩 `ScrollView` 다 — 안드로이드에서 안쪽이 제스처를
-//    받으려면 `nestedScrollEnabled` 를 명시해야 한다(웹에서 브라우저가 공짜로 하던 일).
-//    스크롤포트를 그리드가 아니라 **쓰는 쪽**이 갖는 것은 그대로다([[ADR-107]] 결정 3).
-// ④ `role="status"` + `aria-busy` 는 이름이 같고, `flex flex-1` → `flex-1` 이다.
-import { useEffect, useState } from 'react'
-import { Pressable, ScrollView, Text, View } from 'react-native'
-import { useSafeAreaFrame } from 'react-native-safe-area-context'
+// ── 대표 캐릭터도 여기서 함께 넘긴다 ([[ADR-143]] 결정 4) ───────────────────────────
+//
+// 본문이 별을 그리므로 이 화면에서도 대표를 고를 수 있다. 고른 것을 안 실어 보내면 사용자의 선택이
+// 조용히 사라지므로 CTA 가 목록과 함께 넘긴다 — 저장 순서(목록 먼저, 대표 나중)는 화면이 아니라
+// `OnboardingScreen` 이 지킨다(`setTrackedCharacterOcids` 의 참조 무결성이 목록에 없는 대표를 지운다).
+//
+// ── 「계속하기」는 하단에 **고정**된다 ([[ADR-144]] 정정 2, 사용자 지정 2026-08-18) ──────────
+//
+// 설정 하위 페이지의 「저장」과 같은 액션 바다 — 본문이 그 화면과 **같은 두 층**이라, 캐릭터가 많은
+// 계정에서는 본문 끝의 CTA 가 화면 밖에 있게 된다. 되돌릴 UI 가 없는 단계라([[ADR-116]]) 유일한
+// 전진 버튼이 그 자리에 있으면 안 된다.
+//
+// **그래서 이 단계가 단계 셸(`OnboardingStep`)을 직접 두른다.** 바의 활성 조건이 `useCharacterManage`
+// 안에 있어 그 훅을 부르는 컴포넌트가 스크롤과 바 **둘 다의 조상**이어야 하고, 훅은 조건부로 못
+// 부르므로 그 자리를 `OnboardingScreen` 으로 올릴 수 없다. 끌기 자동 스크롤 배선(결정 5)도 같은
+// 이유로 여기 있다 — 그 배선의 자리는 늘 «스크롤 뷰를 가진 쪽» 이고, 그것이 이제 이 단계다
+// (설정 하위 페이지가 `ScreenScroll` 에 같은 두 값을 거는 것과 같다).
+import { Text, View } from 'react-native'
 
 import { useApiKeyNotice } from '@core/features/onboarding/use-api-key-notice'
-import { formatRosterError, formatStaleRosterError } from '@core/features/schedule-sync/format'
-import {
-  getCharacterPickerRoster,
-  toScheduleSyncError,
-  type ScheduleSyncError,
-} from '@core/features/schedule-sync/schedule-sync'
-import type { CharacterPickerEntry } from '@core/types'
 
 import { Button } from '../../components/atoms/Button/Button'
 import { MapleSpinner } from '../../components/atoms/MapleSpinner/MapleSpinner'
-import { MapleSweepSpinner } from '../../components/atoms/MapleSweepSpinner/MapleSweepSpinner'
-import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
-import { StaleBanner } from '../../components/molecules/ErrorState/StaleBanner'
-import { CharacterTrackingGrid } from '../../components/organisms/CharacterTrackingPicker/CharacterTrackingGrid'
-import { ROSTER_BODY_MIN_H_PX } from '../../components/organisms/CharacterTrackingPicker/roster-body'
-
-/** 웹의 `max-h-[70vh]` — 그리드가 차지할 수 있는 화면 비율(파일 머리 ②). */
-const ROSTER_SCROLL_VIEWPORT_RATIO = 0.7
+import { CharacterManageBody } from '../../components/organisms/CharacterManage/CharacterManageBody'
+import { useCharacterManage } from '../../components/organisms/CharacterManage/use-character-manage'
+import { useReorderScroll } from '../../components/organisms/CharacterManage/use-reorder-scroll'
+import { OnboardingStep } from './OnboardingStep'
 
 export interface ContentCharacterStepProps {
   isSubmitting: boolean
-  onSubmit: (ocids: string[]) => void
-  /** [[ADR-086]] 결정 6: 설정의 계정 변경은 **커밋 전** 후보 계정으로 목록을 그린다. 생략하면 저장된 계정. */
-  accountId?: string
-  /** 확정 CTA 라벨. 온보딩은 다음 단계로 가므로 기본값("계속하기")이고, 설정은 여기서 끝나 "저장"이다. */
-  submitLabel?: string
-  /** [[ADR-086]] 결정 8: 후보가 0명일 때의 탈출구. 온보딩은 계정 선택으로 되돌아간다. */
-  emptyAction?: { label: string; onClick: () => void }
-}
-
-function RosterBody(props: {
-  roster: CharacterPickerEntry[]
-  isLoading: boolean
-  loadError: ScheduleSyncError | null
-  onRetry: () => void
-  onChange: (ocids: string[]) => void
-  emptyAction?: { label: string; onClick: () => void }
-  scrollMaxHeight: number
-}): React.JSX.Element {
-  if (props.roster.length > 0) {
-    const stale = props.loadError === null ? null : formatStaleRosterError(props.loadError)
-    return (
-      <>
-        {stale !== null && (
-          <StaleBanner
-            message={stale.message}
-            // 배너의 액션은 재시도뿐이다 — 401도 429도 characterUnavailable도 액션이 없다
-            // ([[ADR-114]] 결정 3, [[ADR-115]] 결정 7). 그래도 kind를 확인해 매핑한다: 지금은
-            // 타입상 'retry' 하나뿐이라 결과가 같지만, 재시도가 아닌 액션이 새로 생기면 그 자리에
-            // 갈 곳 없는 버튼을 그리는 대신 여기서 버튼이 사라져 드러난다.
-            action={
-              stale.action?.kind === 'retry' ? { label: stale.action.label, onClick: props.onRetry } : undefined
-            }
-          />
-        )}
-        {/* [[ADR-107]] 결정 3: 스크롤포트는 그리드가 아니라 쓰는 쪽이 갖는다. 여기는 모달이 아니라
-            페이지라 상한을 스스로 들고 있어야 한다 — 값은 그리드가 갖고 있던 것 그대로다. */}
-        <ScrollView
-          testID="content-character-roster-scroll"
-          nestedScrollEnabled
-          style={{ maxHeight: props.scrollMaxHeight }}
-        >
-          <CharacterTrackingGrid entries={props.roster} trackedOcids={[]} onChange={props.onChange} />
-        </ScrollView>
-      </>
-    )
-  }
-
-  if (props.isLoading) {
-    return (
-      <View
-        role="status"
-        aria-busy
-        aria-label="캐릭터 목록을 불러오는 중"
-        className="flex-1 items-center justify-center"
-      >
-        <MapleSweepSpinner size={32} className="text-primary" />
-      </View>
-    )
-  }
-
-  if (props.loadError !== null) {
-    const copy = formatRosterError(props.loadError, 'onboarding')
-    // 액션이 있으면 항상 재시도다(타입상으로도 'retry' 하나뿐이다). 영구 실패(조회 불가 캐릭터)와
-    // 429는 액션이 없고([[ADR-067]] 결정 1, [[ADR-114]] 결정 2), 401은 이 자리에서만 재시도를
-    // 유지한다 — 온보딩의 401은 방금 넣은 키에 대한 폼 자체의 실패라 재시도가 실제 처방이다.
-    return (
-      <ErrorState
-        title={copy.title}
-        description={copy.description}
-        action={copy.action === undefined ? undefined : { label: copy.action.label, onClick: props.onRetry }}
-      />
-    )
-  }
-
-  // [[ADR-060]]·[[ADR-061]]: 확정된 빈 상태는 실패(ErrorState)와 디자인을 공유하지 않는다 — 문구는
-  // 그대로 두고 [[ADR-086]] 결정 8의 탈출구만 아래에 붙인다(고른 계정에 고를 수 있는 캐릭터가
-  // 하나도 없는 경우).
-  return (
-    <View className="flex-1 items-center justify-center gap-3 px-4">
-      <Text className="text-center text-sm text-text-muted">표시할 캐릭터가 없어요</Text>
-      {/* `Button` atom 이 아니라 자체 pill 이다 — 여백·글자 크기가 atom(`px-5 py-2.5`·`text-base`)과
-          다르고, 덮어쓰기는 클래스 문자열 순서가 아니라 **스타일시트 순서**에 달려 조용히 갈린다
-          (`ErrorState` 의 재시도 버튼과 같은 판단이고, 실제로 그 버튼과 같은 규격이다). */}
-      {props.emptyAction !== undefined && (
-        <Pressable role="button" onPress={props.emptyAction.onClick} className="rounded-full bg-primary px-4 py-2">
-          <Text className="text-xs font-semibold text-on-primary">{props.emptyAction.label}</Text>
-        </Pressable>
-      )}
-    </View>
-  )
+  /** 목록과 대표를 함께 넘긴다 — 저장 순서는 받는 쪽이 지킨다(파일 머리). */
+  onSubmit: (ocids: string[], representativeOcid: string | null) => void
 }
 
 export function ContentCharacterStep(props: ContentCharacterStepProps): React.JSX.Element {
-  const [roster, setRoster] = useState<CharacterPickerEntry[]>([])
-  // [[ADR-053]] 결정 3: 조회를 소유한 화면이 로딩·실패를 관리한다(ContentScreen·BossScreen과 동일).
-  // 이 단계는 피커와 달리 마운트 즉시 조회를 시작하므로 첫 렌더부터 로딩이다.
-  const [isRosterLoading, setIsRosterLoading] = useState(true)
-  // [[ADR-062]] 결정 2: boolean이 아니라 원인을 들고 있어야 원인별 문구·액션을 그릴 수 있다.
-  const [rosterError, setRosterError] = useState<ScheduleSyncError | null>(null)
-  // [[ADR-062]]: 재조회 트리거. 이 값이 바뀌면 아래 조회 effect가 다시 돈다.
-  const [rosterReloadNonce, setRosterReloadNonce] = useState(0)
-  const [selectedOcids, setSelectedOcids] = useState<string[]>([])
-  const frame = useSafeAreaFrame()
+  const manage = useCharacterManage()
+  const { scrollRef, onScroll, scroll } = useReorderScroll()
 
-  function reloadRoster(): void {
-    setIsRosterLoading(true)
-    setRosterError(null)
-    setRosterReloadNonce((nonce) => nonce + 1)
-  }
+  // 파일 머리 — **429 만** 넘긴다. 두 조회가 각각 맞을 수 있어 두 번 부르지만 두 겹은 아니다
+  // (훅은 값 하나를 지켜보고, 멱등은 스토어 가드가 진다 — [[ADR-115]] 결정 6).
+  useApiKeyNotice(manage.rosterError?.kind === 'rateLimited' ? manage.rosterError : null)
+  useApiKeyNotice(manage.accountsError?.kind === 'rateLimited' ? manage.accountsError : null)
 
-  // [[ADR-016]]·[[ADR-017]]: 캐시가 있으면 즉시 그 값으로 먼저 그리고, character/basic 응답이 하나씩
-  // 도착하는 대로 patch한다(ContentScreen의 피커 열기와 동일 패턴).
-  // [[ADR-053]] 결정 3: 결과를 삼키지 않고 로딩·실패로 남긴다 — 401/429는 reject로 나오므로
-  // finally에서 반드시 로딩을 해제해야 스피너가 영구히 걸리지 않는다.
-  const accountId = props.accountId
-  useEffect(() => {
-    let cancelled = false
-    getCharacterPickerRoster(
-      (entries) => {
-        if (!cancelled) setRoster(entries)
-      },
-      accountId === undefined ? undefined : { accountId },
-    )
-      .catch((error: unknown) => {
-        if (!cancelled) setRosterError(toScheduleSyncError(error))
-      })
-      .finally(() => {
-        if (!cancelled) setIsRosterLoading(false)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [rosterReloadNonce, accountId])
-
-  // [[ADR-116]] 결정 2: 이 자리의 429는 **하드 잠금**이다(이슈 #176) — 로스터가 비어 "계속하기"가 영구
-  // 비활성이고, "다시 시도"는 같은 키로 또 429이며, 탈출구(계정 다시 선택)는 *확정된* 빈 상태
-  // 가지에만 붙고, 온보딩 단계는 라우트가 아니라 status switch라 뒤로 갈 수도 없다. 재시작해도
-  // deriveResumeTarget이 같은 단계로 되돌린다. 그 자리를 여는 것이 이 배선이다.
-  //
-  // 넘기는 것은 **429뿐**이다. 이 자리의 401은 "사용자가 방금 입력한 키가 나쁘다"는 뜻이라 성질이
-  // 다르고, 그래서 계속 폼 자체의 실패로 남는다 — 아래 ErrorState가 주는 재시도가 실제 처방이다
-  // ([[ADR-062]] 결정 3). 되돌리지 말 것: 배선을 빼면 #176의 잠금이 그대로 되살아난다.
-  useApiKeyNotice(rosterError?.kind === 'rateLimited' ? rosterError : null)
-
-  const isSubmitDisabled = selectedOcids.length === 0 || props.isSubmitting
+  // [[ADR-086]] 결정 7: 최소 1개. 이 제약은 온보딩 전용이고 설정 화면에는 «변경 없음» 게이트가
+  // 따로 있다(`isDirty`) — 그래서 두 화면의 CTA 가 갈린다.
+  const isSubmitDisabled = manage.selectedOcids.length === 0 || props.isSubmitting
 
   return (
-    <View className="w-full gap-4">
-      <View className="gap-1">
-        <Text className="text-lg font-semibold text-text">추적할 캐릭터를 선택해주세요</Text>
-        <Text className="text-sm text-text-muted">
-          선택한 캐릭터만 스케줄러 목록에 표시됩니다. 최소 한 명은 선택해주세요.
-        </Text>
-      </View>
+    <OnboardingStep
+      scrollRef={scrollRef}
+      onScroll={onScroll}
+      footer={
+        <Button
+          variant="primary"
+          disabled={isSubmitDisabled}
+          aria-busy={props.isSubmitting}
+          onPress={() => props.onSubmit(manage.selectedOcids, manage.representativeOcid)}
+          // 웹의 `disabled:opacity-50` 은 CSS 의사 클래스라 RN 의 `disabled` 프롭과 이어지지
+          // 않는다 — 그대로 두면 비활성 버튼이 멀쩡한 색으로 보인다(설정 화면과 같은 처방).
+          className={`w-full flex-row items-center justify-center gap-2${isSubmitDisabled ? ' opacity-50' : ''}`}
+        >
+          {/* [[ADR-061]] 결정 5·9 — 스피너 + 말줄임표 없는 '~중' 라벨 */}
+          {props.isSubmitting && <MapleSpinner size={16} />}
+          {props.isSubmitting ? '저장 중' : '계속하기'}
+        </Button>
+      }
+    >
+      <View className="w-full gap-4">
+        <View className="gap-1">
+          <Text className="text-lg font-semibold text-text">관리할 캐릭터를 선택해주세요</Text>
+          {/* 캐릭터를 세는 단위는 «개» 다([[ADR-144]] 결정 8 — «명» 은 사람을 센다). */}
+          <Text className="text-sm text-text-muted">
+            선택한 캐릭터만 스케줄러 목록에 표시됩니다. 최소 한 개는 선택해주세요.
+          </Text>
+        </View>
 
-      {/* 상태가 바뀌어도 이 자리의 높이가 고정돼 아래 "계속하기"가 움직이지 않는다 —
-          실패 상태의 "다시 시도"가 CTA에 붙어 보이던 문제(사용자 보고 2026-07-30). */}
-      <View testID="content-character-roster-body" style={{ minHeight: ROSTER_BODY_MIN_H_PX }}>
-        <RosterBody
-          roster={roster}
-          isLoading={isRosterLoading}
-          loadError={rosterError}
-          onRetry={reloadRoster}
-          onChange={setSelectedOcids}
-          emptyAction={props.emptyAction}
-          scrollMaxHeight={Math.round(frame.height * ROSTER_SCROLL_VIEWPORT_RATIO)}
-        />
+        {/* 401 을 넘기지 않으므로 화면이 안 옮겨간다 — 문구도 그 사실에 맞아야 하고, 그래서 이
+            자리에서만 401 에 「다시 시도」가 남는다(`formatRosterError` 의 `'onboarding'`). */}
+        <CharacterManageBody manage={manage} scroll={scroll} place="onboarding" />
       </View>
-
-      <Button
-        variant="primary"
-        disabled={isSubmitDisabled}
-        aria-busy={props.isSubmitting}
-        onPress={() => props.onSubmit(selectedOcids)}
-        className={`w-full flex-row items-center justify-center gap-2${isSubmitDisabled ? ' opacity-50' : ''}`}
-      >
-        {/* [[ADR-061]] 결정 5·9 — 스피너 + 말줄임표 없는 '~중' 라벨 */}
-        {props.isSubmitting && <MapleSpinner size={16} />}
-        {props.isSubmitting ? '저장 중' : (props.submitLabel ?? '계속하기')}
-      </Button>
-    </View>
+    </OnboardingStep>
   )
 }

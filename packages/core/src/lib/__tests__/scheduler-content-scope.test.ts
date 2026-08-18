@@ -4,6 +4,7 @@ import {
   getContentSection,
   getMaxCountOverride,
   getShareScope,
+  getSharedContentGroups,
   isCumulativeScore,
 } from '../scheduler-content-scope'
 
@@ -112,5 +113,81 @@ describe('getContentCatalogEntries', () => {
     expect(entries).toContainEqual({ name: '에픽 던전 : 악몽선경', scope: 'account' })
     expect(entries).toContainEqual({ name: '[메이플 유니온] PC방 주간 드래곤 퇴치', scope: 'account' })
     expect(entries).toHaveLength(6)
+  })
+})
+
+describe('getSharedContentGroups ([[ADR-147]] 정정 31)', () => {
+  it('계열은 카탈로그가 적어 둔 순서다 — 배열을 읽은 첫 등장 순서가 아니다', () => {
+    // worldShared → accountShared 로 읽으면 첫 등장 순서가 「몬스터파크 · 메이플 유니온 ·
+    // 에픽던전」이라 사용자가 지정한 순서와 다르다. 그래서 `sharedGroupOrder` 가 따로 있다.
+    expect(getSharedContentGroups().map((group) => group.group)).toEqual([
+      '에픽던전',
+      '몬스터파크',
+      '메이플 유니온',
+    ])
+  })
+
+  it('계열 안의 항목 순서는 worldShared → accountShared 를 이어 읽은 순서다', () => {
+    const byGroup = new Map(getSharedContentGroups().map((group) => [group.group, group]))
+
+    expect(byGroup.get('에픽던전')?.entries.map((entry) => entry.shortName)).toEqual([
+      '하이마운틴',
+      '앵글러컴퍼니',
+      '악몽선경',
+    ])
+    // 월드 것(몬스터파크)이 계정 것보다 앞이고, 사이에 낀 유니온 항목은 이 계열에 안 든다.
+    expect(byGroup.get('몬스터파크')?.entries.map((entry) => entry.shortName)).toEqual([
+      '일간',
+      '익스트림 몬스터파커',
+    ])
+    // 월드 하나 + 계정 하나가 한 계열로 묶이는 유일한 경우다.
+    expect(byGroup.get('메이플 유니온')?.entries.map((entry) => entry.shortName)).toEqual([
+      '주간 드래곤 퇴치',
+      'PC방 주간 드래곤 퇴치',
+    ])
+  })
+
+  it('원문 이름·section·scope 를 함께 나른다 — 호출부가 응답에서 항목을 다시 찾는다', () => {
+    const [epic] = getSharedContentGroups()
+
+    expect(epic?.entries[0]).toEqual({
+      name: '에픽 던전 : 하이마운틴',
+      shortName: '하이마운틴',
+      group: '에픽던전',
+      section: 'weekly',
+      scope: 'account',
+      onlyWhenScheduled: false,
+    })
+  })
+
+  it('유니온 둘만 «스케줄러에 있을 때만» 표식을 단다 ([[ADR-147]] 정정 30)', () => {
+    const conditional = getSharedContentGroups()
+      .flatMap((group) => group.entries)
+      .filter((entry) => entry.onlyWhenScheduled)
+      .map((entry) => entry.shortName)
+
+    expect(conditional).toEqual(['주간 드래곤 퇴치', 'PC방 주간 드래곤 퇴치'])
+  })
+
+  it('일곱을 하나도 빠뜨리거나 더하지 않는다', () => {
+    const names = getSharedContentGroups().flatMap((group) =>
+      group.entries.map((entry) => entry.name),
+    )
+
+    expect(names).toHaveLength(7)
+    expect(new Set(names).size).toBe(7)
+    // 카탈로그가 «공유» 라고 적은 것과 정확히 같은 집합이어야 한다 — 여기서 갈리면 「남은 스케줄」이
+    // 빼는 것과 이 위젯이 그리는 것이 어긋나 항목이 통째로 사라지거나 두 곳에 겹쳐 나온다.
+    for (const name of names) {
+      expect(getShareScope(name)).not.toBe('character')
+    }
+  })
+})
+
+describe('getMaxCountOverride — 익스트림 몬스터파커 ([[ADR-147]] 정정 29)', () => {
+  it('템플릿의 5가 아니라 사용자 확정값 2를 준다', () => {
+    // `scheduler-content-template.json` 은 이 항목에 `max_count: 5` 를 들고 있다. 게임 규칙은
+    // 주 2회라 오버라이드가 이긴다(사용자 확정 2026-08-18).
+    expect(getMaxCountOverride('[몬스터파크] 익스트림 몬스터파커에 도전해보겠나?')).toBe(2)
   })
 })

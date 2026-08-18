@@ -8,9 +8,13 @@ import {
   setApiKey,
   setSelectedAccountId,
 } from '@core/storage/api-key'
-import { setTrackedCharacterOcids } from '@core/storage/character-selection'
+import {
+  getTrackedCharacterOcids,
+  setTrackedCharacterOcids,
+} from '@core/storage/character-selection'
 import { type TrackingMode } from '@core/storage/tracking-mode'
 import { useToastStore } from '../toast/store'
+import { getOnboardingAccountScope } from './flow'
 import { formatOnboardingError } from './format'
 import { seedManualTrackedContent } from '../tracking-mode/seed'
 import { useTrackingModeStore } from '../tracking-mode/store'
@@ -97,7 +101,9 @@ export const useOnboardingStore = create<OnboardingStore>()((set, get) => {
 
   // 재개 파생(deriveResumeTarget)이 가리킨 뒤 단계로 곧바로 전이한다. 부팅(restoreFromStorage)과
   // 키 재입력(submitApiKey)이 같은 전이를 쓴다 — 이 자리에 네트워크는 없다(ADR-115 결정 4).
-  function commitResumedStep(target: Extract<ResumeTarget, { selectedAccountId: string }>): void {
+  function commitResumedStep(
+    target: Extract<ResumeTarget, { selectedAccountId: string | null }>,
+  ): void {
     if (target.status === 'completed') {
       set((state) =>
         onboardingReducer(state, {
@@ -170,15 +176,49 @@ export const useOnboardingStore = create<OnboardingStore>()((set, get) => {
       // 다시 묻지 않는다. 파생은 부팅과 같은 함수 하나가 한다(setApiKey 뒤라야 authConfig가 채워져
       // 있다). 예열(ADR-016)은 여기서 돌지 않는다 — 계정을 확정하는 selectAccount 하나뿐이다(ADR-051).
       const target = await deriveResumeTarget()
+      // awaitingApiKey는 setApiKey 직후라 정상적으로는 올 수 없다 — 방어적으로 기존 흐름에 떨어뜨린다.
+      // selectingAccount는 계정 범위 'single'에서 저장된 계정이 아직 없는 신규 사용자다.
+      if (target.status === 'awaitingApiKey' || target.status === 'selectingAccount') {
+        set((state) => onboardingReducer(state, { type: 'API_KEY_VERIFIED', accounts }))
+        return
+      }
+
+      // ADR-143 결정 9: 계정을 고르지 않는 앱에는 대조할 selectedAccountId가 없다. 가드의 목적은
+      // 그대로이므로(남의 계정 키로 이전 목록을 쓰게 두지 않는다) 같은 응답으로 추적 ocid를 대조한다.
+      if (getOnboardingAccountScope() === 'all') {
+        // 지킬 목록이 없으면 판정 대상 자체가 없다 — 여기서 "하나도 없다"로 읽으면 처음 키를 넣는
+        // 신규 사용자가 목록이 비었다는 이유로 스케줄 관리 방법 단계를 건너뛴다.
+        const trackedOcids = (await getTrackedCharacterOcids()) ?? []
+        if (trackedOcids.length === 0) {
+          commitResumedStep(target)
+          return
+        }
+
+        // 계정을 넘어 고르는 것이 이 개편의 본론이라, 겹치는 ocid가 어느 계정에 있는지는 묻지 않는다.
+        const ocidsInResponse = new Set(
+          accounts.flatMap((candidate) => candidate.characters.map((character) => character.ocid)),
+        )
+        if (trackedOcids.some((ocid) => ocidsInResponse.has(ocid))) {
+          commitResumedStep(target)
+          return
+        }
+
+        // 하나도 없다 — 이 키는 다른 넥슨 계정의 것이다. 계정 선택('single'이 가던 자리)이 없으므로
+        // 캐릭터부터 다시 고르게 한다. 새 이벤트 없이 기존 재개 전이를 그대로 쓴다.
+        set((state) =>
+          onboardingReducer(state, {
+            type: 'RESTORE_STEP',
+            status: 'selectingContentCharacters',
+            selectedAccountId: target.selectedAccountId,
+          }),
+        )
+        return
+      }
+
       // 결정 5: 새로 넣은 키가 다른 넥슨 계정의 키일 수 있다. 저장된 selectedAccountId가 방금 받은
       // 응답에 없으면 재개하지 않고 기존대로 계정 선택부터 간다 — 안 그러면 남의 계정 키로 이전 계정
       // ocid 추적 목록을 그대로 쓰게 된다. 추가 호출은 없다(이미 손에 있는 응답으로 판정한다).
-      // awaitingApiKey는 setApiKey 직후라 정상적으로는 올 수 없다 — 방어적으로 기존 흐름에 떨어뜨린다.
-      if (
-        target.status !== 'awaitingApiKey' &&
-        target.status !== 'selectingAccount' &&
-        accounts.some((candidate) => candidate.accountId === target.selectedAccountId)
-      ) {
+      if (accounts.some((candidate) => candidate.accountId === target.selectedAccountId)) {
         commitResumedStep(target)
         return
       }
@@ -240,7 +280,7 @@ export const useOnboardingStore = create<OnboardingStore>()((set, get) => {
 
       if (useTrackingModeStore.getState().mode === 'manual') {
         set((state) => onboardingReducer(state, { type: 'SUBMIT_CONTENT_CHARACTERS' }))
-        await Promise.all(ocids.map((ocid) => seedManualTrackedContent(ocid)))
+        await seedManualTrackedContent(ocids)
       }
 
       set((state) => onboardingReducer(state, { type: 'ONBOARDING_FINISHED' }))

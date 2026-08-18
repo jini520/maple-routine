@@ -32,9 +32,10 @@ import { useContentSchedulerStore, type ContentTab } from '@core/features/conten
 import { useTrackingModeStore } from '@core/features/tracking-mode/store'
 import { useToastStore } from '@core/features/toast/store'
 
-import { CharacterSelectDropdown } from '../../components/molecules/CharacterSelectDropdown/CharacterSelectDropdown'
+import { CharacterRail, type CharacterRailEntry } from '../../components/molecules/CharacterRail/CharacterRail'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
+import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import {
   ArrowLeftIcon,
@@ -113,6 +114,15 @@ export function ContentManageScreen(): React.JSX.Element {
 
   const selected = characters.find((character) => character.ocid === effectiveSelectedOcid) ?? null
 
+  // [[ADR-142]] 정정 8: 링 없는 초상화 레일 — 이름과 레벨만 싣는다(`rings: []`).
+  const railEntries: CharacterRailEntry[] = characters.map((character) => ({
+    ocid: character.ocid,
+    characterName: character.characterName,
+    level: character.level ?? null,
+    imageUrl: character.imageUrl ?? null,
+    rings: [],
+  }))
+
   const trackedNames = new Set(
     (selected !== null ? (manualTrackedByOcid?.[selected.ocid] ?? []) : [])
       .filter((item) => item.kind === activeTab)
@@ -148,7 +158,7 @@ export function ContentManageScreen(): React.JSX.Element {
       hasTabBar={false}
       header={
         <PageHeader>
-          <View className="flex-row items-center justify-between">
+          <PageHeaderTitleRow className="justify-between">
             <View className="flex-row items-center gap-2">
               <Pressable role="button" aria-label="뒤로" onPress={() => navigation.goBack()} className="-ml-1 p-1">
                 <ArrowLeftIcon className="h-5 w-5 text-text-muted" strokeWidth={2} aria-hidden />
@@ -158,17 +168,21 @@ export function ContentManageScreen(): React.JSX.Element {
             {/* ADR-096 결정 4·5: 읽기 전용 칩이던 자리 — 이 화면에서 캐릭터를 갈아 가며 쓰는데도
                 바꾸려면 뒤로 나가야 했다. 자리와 크기감은 그대로 두고(compact) 누를 수 있게만 한다.
                 onSelect는 스케줄러와 같은 selectCharacter라 돌아갔을 때 그쪽도 같은 캐릭터다. */}
-            {selected !== null && (
-              <CharacterSelectDropdown
-                characters={characters}
-                selectedOcid={selected.ocid}
-                onSelect={(ocid) => {
-                  void selectCharacter(ocid)
-                }}
-                size="compact"
-              />
-            )}
-          </View>
+          </PageHeaderTitleRow>
+
+          {/* [[ADR-142]] 정정 8: 제목 줄 우측의 compact 드롭다운이 **초상화 레일**이 됐다(스케줄러와
+              같은 컴포넌트). **여기에는 진행 링이 없다**(`rings: []`) — 이 화면의 일은 캐릭터를 고르는
+              것이지 진행을 보는 것이 아니고, 링 자리를 비우면 글자가 얼굴 쪽으로 들어와 칸도 낮아진다.
+              제목 줄에서 내려온 이유는 레일이 그 작은 자리에 안 들어가기 때문이다. */}
+          {selected !== null && (
+            <CharacterRail
+              entries={railEntries}
+              selectedOcid={selected.ocid}
+              onSelect={(ocid) => {
+                void selectCharacter(ocid)
+              }}
+            />
+          )}
 
           {selected !== null && (
             <View className="flex-row items-center gap-4">

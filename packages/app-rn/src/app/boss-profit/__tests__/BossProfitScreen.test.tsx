@@ -14,7 +14,7 @@
 // ⑤ **히스토리 왕복에도 언마운트되지 않는가**([[ADR-077]]) — 루트 스택 push 라 구조가 지킨다.
 //    화면 안에서 볼 자리가 없다.
 // ⑥ **접기 전후 스크롤**([[ADR-102]]) — 접기에 스크롤 코드가 아예 없다(`CharacterAccordion`).
-import { act, fireEvent } from '@testing-library/react-native'
+import { act, fireEvent, within } from '@testing-library/react-native'
 import { render } from '@testing-library/react-native'
 import { ScrollView } from 'react-native'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
@@ -190,7 +190,9 @@ describe('빈 상태 ([[ADR-101]] 결정 1 · [[ADR-060]])', () => {
     expect(queryByText('아이템 가격')).toBeNull()
   })
 
-  it('빈 상태 CTA 는 피커를 열어 둔 채로 보스 탭에 보낸다([[ADR-068]] 결정 4)', async () => {
+  // [[ADR-068]] 결정 4의 «열어 둔 채로 보낸다» 는 그대로이고 **목적지만 바뀌었다** — 피커를 여는
+  // 자리가 설정 하나가 됐다([[ADR-140]] 결정 1·2).
+  it('빈 상태 CTA 는 피커를 열어 둔 채로 설정 탭에 보낸다([[ADR-068]] 결정 4 · [[ADR-140]])', async () => {
     mockStore({ trackedOcids: [] })
     const { getByText } = await renderScreen()
 
@@ -199,7 +201,7 @@ describe('빈 상태 ([[ADR-101]] 결정 1 · [[ADR-060]])', () => {
     })
 
     expect(navigate).toHaveBeenCalledWith('Tabs', {
-      screen: 'Boss',
+      screen: 'Settings',
       params: { openPicker: true },
     })
   })
@@ -426,6 +428,40 @@ describe('로딩 ([[ADR-061]] 결정 2)', () => {
 
     expect(getByText(/기록을 불러오고 있어요$/)).toBeTruthy()
     expect(queryByText('지내우시')).toBeNull()
+  })
+})
+
+// [[ADR-143]] 결정 3: 카드가 서는 차례는 행의 순서(= 스토어의 레벨 내림차순, [[ADR-017]] 결정 2)가
+// 아니라 사용자가 캐릭터 관리에서 정한 저장 배열 순서다.
+describe('캐릭터 카드 순서 ([[ADR-143]] 결정 3)', () => {
+  /** 카드 헤더에 그려진 캐릭터 이름을 카드 순서대로. */
+  async function 카드이름들(store: Partial<BossProfitStore>): Promise<string[]> {
+    mockStore({ status: 'loaded', periodState: 'recorded', ...store })
+    const { getAllByTestId } = await renderScreen()
+
+    return getAllByTestId('character-accordion').map((card) =>
+      within(card).getAllByText(/^(지내우시|두번째)$/)[0].props.children as string,
+    )
+  }
+
+  it('저장 배열 순서가 카드 순서다 — 행 순서가 아니다', async () => {
+    expect(
+      await 카드이름들({
+        trackedOcids: ['ocid-2', 'ocid-1'],
+        rows: [보스행(), 보스행({ ocid: 'ocid-2', characterName: '두번째' })],
+      }),
+    ).toEqual(['두번째', '지내우시'])
+  })
+
+  // 순서를 정하는 함수가 목록의 크기를 바꾸면 안 된다 — 저장 목록과 행이 한순간 어긋날 때
+  // 캐릭터 카드가 통째로 사라지는 것이 가장 나쁜 실패다.
+  it('저장 목록에 없는 캐릭터의 카드도 사라지지 않는다', async () => {
+    expect(
+      await 카드이름들({
+        trackedOcids: ['ocid-2'],
+        rows: [보스행(), 보스행({ ocid: 'ocid-2', characterName: '두번째' })],
+      }),
+    ).toEqual(['두번째', '지내우시'])
   })
 })
 

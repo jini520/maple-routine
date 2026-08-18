@@ -17,8 +17,8 @@ import { characterManageGuide } from './shared/character-manage'
 //
 // **안내 하나가 파일 하나다**(2026-08-11, 사용자 지정). 한 파일에 전부 있으면 안내를 하나 고칠
 // 때마다 수백 줄짜리 파일을 열게 되고, 이미지 import 가 쌓이면서 그 파일이 전부의 의존성이 된다.
-// 폴더는 그룹을 따르되, **두 그룹에 서는 안내는 `shared/`** 다 — `character-manage` 는
-// `groups: ['content', 'boss']` 라 어느 한쪽 폴더에 두면 나머지에서 찾을 수 없다.
+// 폴더는 그룹을 따르되, **여러 그룹에 서는 안내는 `shared/`** 다 — `character-manage` 는
+// `groups: ['content', 'boss', 'settings']` 라 어느 한쪽 폴더에 두면 나머지에서 찾을 수 없다.
 //
 // ```
 // feature-guides/

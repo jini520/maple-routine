@@ -166,7 +166,7 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => {
       // ADR-035 결정 14(b): 수동 모드면 새로 추적하게 된 캐릭터를 시드한다(온보딩의
       // submitContentCharacters 와 같은 처리 — 계정 전환도 "처음 고르는" 순간이다).
       if (useTrackingModeStore.getState().mode === 'manual') {
-        await Promise.all(ocids.map((ocid) => seedManualTrackedContent(ocid)))
+        await seedManualTrackedContent(ocids)
       }
 
       set((state) => settingsReducer(state, { type: 'RESET' }))

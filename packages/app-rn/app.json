@@ -2,9 +2,19 @@
   "expo": {
     "name": "메이플 루틴",
     "slug": "maple-routine",
-    "version": "1.0.0",
+    "version": "1.0.6",
     "orientation": "default",
     "userInterfaceStyle": "automatic",
+    "icon": "./assets/icon.png",
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "updates": {
+      "url": "https://maple-routine-ota.dev-jinni520.workers.dev/manifest",
+      "enabled": true,
+      "checkAutomatically": "NEVER",
+      "fallbackToCacheTimeout": 0
+    },
     "ios": {
       "bundleIdentifier": "com.mapleroutine.app",
       "buildNumber": "12",
@@ -12,12 +22,25 @@
     },
     "android": {
       "package": "com.mapleroutine.app",
-      "versionCode": 20
+      "versionCode": 20,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#E6DECF"
+      }
     },
     "experiments": {
       "tsconfigPaths": true
     },
     "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "backgroundColor": "#F58B0F",
+          "resizeMode": "contain",
+          "imageWidth": 200
+        }
+      ],
       [
         "react-native-google-mobile-ads",
         {

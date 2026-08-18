@@ -14,76 +14,63 @@
 // ③ **`ScreenScroll` 이 명시적으로 필요하다.** 웹은 `StackScreen` 이 스크롤 상자를 겸했다.
 //    `hasTabBar={false}` 인 이유는 스택 위로 올라간 화면에는 탭바가 없기 때문이다([[ADR-120]] 결정 4).
 //
-// ══ 「앱 업데이트」의 어느 상태가 지금 도달 불가인가 ═══════════════════════════════════
+// ══ 「앱 업데이트」 — 상태 열넷이 전부 도달 가능해졌다 ═══════════════════════════════
 //
-// `AppUpdateSection` 이 문구를 갖는 상태는 **열넷**이고([[ADR-026]]·[[ADR-027]]·[[ADR-126]] 계약),
-// 그중 **지금 도달하는 것은 `unsupported` 하나**다. `LiveUpdatePort` 가 던지는 데다 core 의 스토어는
-// **값으로 import 하는 것만으로 죽어**(`features/live-update/store.ts` 가 모듈 최상위에서
-// `import.meta.env` 를 읽는다 — [[ADR-024]]) 상태를 만들 주체 자체가 없다([[ADR-128]] 결정 7).
+// 여기 있던 «도달 불가» 표를 지웠다([[ADR-137]]). 그 표는 열넷 중 `unsupported` 하나만 도달한다고
+// 적었고 근거는 둘이었다 — `LiveUpdatePort` 가 던진다는 것과, core 스토어를 **값으로 import 하는
+// 것만으로 죽는다**는 것(모듈 최상위의 `import.meta.env`). **둘 다 사라졌다**: 포트는
+// `rn-live-update.ts` 로 채워졌고, `import.meta.env` 는 채널이 폐기되며 그 줄째 없어졌다
+// ([[ADR-137]] 결정 6·7).
 //
-// | 상태 | 지금 |
-// |---|---|
-// | `unsupported` | **도달** — 이 화면이 심는 유일한 값 |
-// | `idle` `checking` `up-to-date` `check-error` | 미도달 — `check()` 가 없다 |
-// | `update-available` `store-required` `confirm-cellular` | 미도달 — 매니페스트 조회가 없다 |
-// | `downloading` `ready-to-apply` `download-error` | 미도달 — 다운로드 경로가 없다 |
-// | `applying` `apply-error` | 미도달 — 적용 경로가 없다 |
-// | `updated` | 미도달 — 「마지막으로 실행된 번들 버전」을 쓰는 주체가 없다([[ADR-126]] 결정 4) |
+// 그래서 이 화면은 이제 상태를 **심지 않고** 스토어를 그대로 넘긴다. 표를 남겨 두면 «지금» 을
+// 말하는 문서가 거짓이 되므로 지웠지, 그 상태들이 없어진 것이 아니다 — 문구 열넷은
+// `AppUpdateSection` 이 그대로 들고 있고 그것이 [[ADR-026]]·[[ADR-027]]·[[ADR-126]] 의 계약이다.
 //
-// **문구를 하나도 지우지 않은 것이 요점**이다 — 그 표가 곧 계약이고, OTA 가 붙는 날 배선은
-// `state={useLiveUpdateStore()}` 한 줄이다. 여기서 상태를 지우면 그날 다시 정해야 한다.
+// `fallbackVersion` 은 남는다 — 내장 번들로 돌 때(아직 OTA 를 한 번도 안 받았을 때) 어댑터가
+// `package.json` 버전을 돌려주므로 값이 겹치지만, 스토어가 아직 `loadCurrentVersion()` 을 끝내기
+// 전 첫 렌더에는 `currentVersion` 이 `null` 이다.
 //
-// `currentVersion` 을 `null` 로 넘기는 것도 값을 지어내지 않기 위해서다 — 그러면 그 카드가 웹에도
-// 이미 있던 폴백(`fallbackVersion`)을 쓴다. **빌드 시점 `package.json` 버전이지 실행 중인 OTA 번들
-// 버전이 아니다**(`SettingsScreen` 과 같은 자리).
 // ── 뒤로가기 줄을 다섯 화면이 복붙하는 것도 웹 그대로다 ──────────────────────────────
 //
 // [[ADR-094]] 결정 2 의 기준("호출부 2곳 이상")만 보면 뽑을 만하지만, 웹이 뽑지 않은 것을 이식하며
 // 뽑으면 **경로 변경 diff 에 구조 변경이 섞인다**([[ADR-128]] 결정 4 가 어댑터 시그니처에 대해
 // 정한 것과 같은 판단 — *"이왕 하는 김에"* 손대면 이식이 재작성이 된다). 두 앱을 나란히 놓고
 // 대조하는 일이 전환 기간 내내 필요하므로(`migration/README.md`) 지금은 같은 모양으로 둔다.
+import { useEffect } from 'react'
 import { Pressable, Text, View } from 'react-native'
+
+import { useLiveUpdateStore } from '@core/features/live-update/store'
 
 import packageJson from '../../../package.json'
 import { Card } from '../../components/atoms/Card/Card'
+import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { ArrowLeftIcon } from '../../lib/icons'
-import {
-  AppUpdateSection,
-  type AppUpdateSectionActions,
-  type AppUpdateSectionState,
-} from './AppUpdateSection'
+import { AppUpdateSection } from './AppUpdateSection'
 import { SettingsRow } from './SettingsRow'
 import { useSettingsNavigation } from './use-settings-navigation'
 
-/** OTA 미연결 상태([[ADR-128]] 결정 7) — 위 표의 유일한 도달 가능 값. */
-const OTA_UNAVAILABLE_STATE: AppUpdateSectionState = {
-  currentVersion: null,
-  status: 'unsupported',
-  availableVersion: null,
-  downloadProgress: 0,
-  channel: 'production',
-}
-
-/**
- * `unsupported` 에서는 카드가 확인 버튼을 그리지 않으므로 이 함수는 **불리지 않는다.** 그래도 던지지
- * 않고 조용히 끝내는 이유는, 만약 불린다면 그것은 사용자의 문제가 아니라 우리의 배선 실수이고
- * 그 자리에서 앱을 죽일 일이 아니기 때문이다.
- */
-const OTA_UNAVAILABLE_ACTIONS: AppUpdateSectionActions = {
-  check: () => Promise.resolve(),
-}
-
 export function SettingsAboutScreen(): React.JSX.Element {
   const navigation = useSettingsNavigation()
+
+  // [[ADR-137]] 이 예고된 그 한 줄을 놓았다 — 상태 열넷이 **전부 도달 가능**해졌고, 위 표의
+  // «도달 불가» 열은 이제 사실이 아니다(그 표는 그 파일 머리에서 함께 걷어냈다).
+  const liveUpdate = useLiveUpdateStore()
+  const { loadCurrentVersion } = liveUpdate
+
+  // 이 화면이 열릴 때 실행 중인 번들 버전을 싣는다. 웹의 `AppUpdateSection` 이 마운트에서 하던
+  // 일이고(그 파일 주석 ③), RN 에서는 포트가 던져 지웠던 자리다 — 이제 되살린다.
+  useEffect(() => {
+    void loadCurrentVersion()
+  }, [loadCurrentVersion])
 
   return (
     <ScreenScroll
       hasTabBar={false}
       header={
         <PageHeader>
-          <View className="flex-row items-center gap-2">
+          <PageHeaderTitleRow className="gap-2">
             <Pressable
               role="button"
               aria-label="뒤로"
@@ -93,7 +80,7 @@ export function SettingsAboutScreen(): React.JSX.Element {
               <ArrowLeftIcon className="h-5 w-5 text-text-muted" strokeWidth={2} aria-hidden />
             </Pressable>
             <Text className="text-lg font-semibold text-text">앱 정보</Text>
-          </View>
+          </PageHeaderTitleRow>
         </PageHeader>
       }
     >
@@ -102,8 +89,8 @@ export function SettingsAboutScreen(): React.JSX.Element {
           에서 같은 판단을 했다). 진짜 화면이 들어와도 그 질문은 그대로 유효하다. */}
       <View className="gap-4 px-4 pb-4" testID="screen-SettingsAbout">
         <AppUpdateSection
-          state={OTA_UNAVAILABLE_STATE}
-          actions={OTA_UNAVAILABLE_ACTIONS}
+          state={liveUpdate}
+          actions={liveUpdate}
           fallbackVersion={packageJson.version}
         />
 

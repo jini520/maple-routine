@@ -40,6 +40,10 @@ export interface BossCharacterView {
   ocid: string
   characterName: string
   world?: string
+  // [[ADR-142]] 결정 6: 초상화 레일이 쓰는 둘 — 컨텐츠 스케줄러 뷰와 같은 자리·같은 규약이다
+  // (`null` = 캐시가 아직 모름). 정렬이 이미 읽는 캐시에서 함께 꺼내므로 조회가 안 는다.
+  level?: number | null
+  imageUrl?: string | null
   weeklyBosses: MatchedBoss[]
   monthlyBosses: MatchedBoss[]
   weeklyBossClearCount: number | null
@@ -144,11 +148,14 @@ let hydration: Promise<void> | null = null
 // 목록에서 필터링한 순서)가 서로 달라 생기던 불일치를 없애기 위해, character-basic-cache의
 // level을 병합해 레벨 내림차순(동레벨이면 compareByName)으로 통일한다. 레벨 캐시가 없는
 // 캐릭터는 맨 뒤로 보낸다.
+// [[ADR-142]] 결정 6: 정렬에 쓰는 level 을 버리지 않고 `imageUrl` 과 함께 뷰에 남긴다 — 초상화
+// 레일이 쓴다. 컨텐츠 스케줄러 스토어의 같은 이름 함수와 **같은 모양이어야 한다**(같은 정책이 두
+// 모양으로 있으면 값을 바꿀 때 한쪽만 바뀐다).
 async function sortByCachedLevel(views: BossCharacterView[]): Promise<BossCharacterView[]> {
   const withLevel = await Promise.all(
     views.map(async (view) => {
       const cached = await getCachedCharacterBasic(view.ocid)
-      return { view, level: cached?.profile.level ?? null }
+      return { view, level: cached?.profile.level ?? null, imageUrl: cached?.profile.imageUrl ?? null }
     }),
   )
 
@@ -162,7 +169,7 @@ async function sortByCachedLevel(views: BossCharacterView[]): Promise<BossCharac
       if (b.level !== a.level) return b.level - a.level
       return compareByName(a.view.characterName, b.view.characterName)
     })
-    .map((entry) => entry.view)
+    .map((entry) => ({ ...entry.view, level: entry.level, imageUrl: entry.imageUrl }))
 }
 
 // ADR-043 결정 3: 저장 시점에 유지되는 캐릭터의 뷰가 메모리에 없을 때만 쓰는 폴백 —
@@ -227,7 +234,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
     // 동기화보다 먼저 실행 — 화면의 저장 진행률 모달이 saveTrackedOcids 전체를 기다리므로
     // 시드가 끝날 때까지 자연스럽게 로딩이 유지된다(결정 15).
     if (added.length > 0 && useTrackingModeStore.getState().mode === 'manual') {
-      await Promise.all(added.map((ocid) => seedManualTrackedContent(ocid)))
+      await seedManualTrackedContent(added)
       const seeded = Object.fromEntries(
         await Promise.all(added.map(async (ocid) => [ocid, await getManualTrackedContent(ocid)] as const)),
       )

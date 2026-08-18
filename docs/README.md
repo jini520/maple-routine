@@ -25,16 +25,19 @@ docs/
 
 | 기능 | 문서 | 주요 소스(read/write) |
 |---|---|---|
-| 온보딩 (API 키·계정 선택·예열) | [features/onboarding.md](./features/onboarding.md) | `app/onboarding/` · `features/onboarding/` · `nexon/character` · `storage/character-basic-cache` |
+| 온보딩 (API 키·계정 선택·예열 — **RN 은 계정 선택·예열이 없다**, [[ADR-143]]) | [features/onboarding.md](./features/onboarding.md) | `app/onboarding/` · `features/onboarding/` · `nexon/character` · `storage/character-basic-cache` · `storage/character-selection` |
 | 컨텐츠 스케줄러 | [features/content-scheduler.md](./features/content-scheduler.md) | `app/content-scheduler/` · `features/content-scheduler/` · `lib/scheduler-merge` · `lib/scheduler-content-scope` · `storage/scheduler-cache` · `storage/shared-progress-cache` |
 | 보스 스케줄러 (파티 관리 포함) | [features/boss-scheduler.md](./features/boss-scheduler.md) | `app/boss-scheduler/` · `features/boss-scheduler/` · `storage/boss-party-settings` · `lib/boss-icons` · `lib/boss-matching` |
 | 보스 수익 | [features/boss-profit.md](./features/boss-profit.md) | `app/boss-profit/` · `features/boss-profit/` · `storage/boss-profit` · `storage/sqlite` · `lib/boss-profit-period` |
-| 아이템 드랍 | [features/item-drop.md](./features/item-drop.md) | `app/item-drop/` · `features/item-drop/` · `lib/item-icons` · `storage/boss-drop-records` · 전 기간 히스토리: `app/boss-profit/DropHistoryScreen`(`/profit/drops`) · `features/boss-profit/drop-history-store` · `lib/drop-history` |
+| 아이템 드랍 | [features/item-drop.md](./features/item-drop.md) | `app/item-drop/` · `features/item-drop/` · `lib/item-icons` · `storage/boss-drop-records` · 전 기간 히스토리: `app/boss-profit/DropHistoryScreen`(`/profit/drops`) · `features/boss-profit/drop-history-store` · `lib/drop-history` · 잎 램프(RN, today 와 공유) `lib/drought-tier-styles` |
 | 사냥 타이머 | [features/hunting-timer.md](./features/hunting-timer.md) | `app/hunting-timer/` · `features/hunting-timer/` · `native/hunting-timer` |
+| today (첫 화면 · 위젯 격자) | [features/today.md](./features/today.md) | `app/today/`(`TodayScreen` · `WidgetGrid` · `view-model` · `widgets/`{`types`·`registry`·`layout` + 위젯 여덟}) · `lib/widget-grid-metrics`(치수) · `lib/widget-layout`(좌표 검증) · `lib/drought-tier-styles`(히스토리 화면과 공유) · 원천은 전부 **읽기만** — 컨텐츠·보스·보스 수익·`drop-history` 스토어 + `character-basic-cache`·`character-selection`·`reset-clock`·`drop-history`·`drop-price` + 판정 둘(`features/boss-scheduler/displayed-bosses` · `app/content-scheduler/content-completion`, [[ADR-147]] 결정 8) |
+| 사냥 수익 · 지출 · 유틸리티 | **문서 없음 — [[ADR-132]] 뿐** | `app/hunting-profit/` · `app/spend/` · `app/utility/` — 전부 «개발 진행중» 껍데기다. 내용을 만들 때 이 표에 문서를 함께 추가할 것 |
 | 설정 | [features/settings.md](./features/settings.md) | `app/settings/`(`SettingsScreen` + 하위 화면 `SettingsReleaseNotesScreen`/`SettingsFeatureGuideListScreen`/`SettingsFeatureGuideScreen`/`SettingsAccountDataScreen`/`SettingsAboutScreen` — 라우트 `/settings/guide`·`/settings/release-notes`(둘 다 자식 `:guideId` — 같은 상세 화면)·`/settings/account-data`·`/settings/about`, `/settings` 의 **형제**) · 행 프리미티브 `SettingsRow`/`SettingsLinkRow`/`row-class.ts` · `src/data/release-notes.ts`·`src/data/feature-guides/`(안내 하나 = 파일 하나)(+`src/types/release-notes.ts`·`src/types/feature-guides.ts` · `lib/guide-route.ts`, 이미지 `src/assets/guide/<안내 id>/`) · `features/settings/`(`cache-data`) · `storage/api-key` · `features/tracking-mode` |
 | 테마 시스템 | [features/theme.md](./features/theme.md) | `features/theme/` · `storage/theme` · `src/index.css` · `src/data/job-themes.json` · `lib/theme-derive` · `lib/theme-backgrounds` · `src/assets/themes/`(+ `src/assets/generated/themes.ts`) · `lib/color` · `scripts/theme-gen.ts` |
 | 광고 | [features/ads.md](./features/ads.md) | `native/ads.ts` · `features/ads/` · `storage/ads.ts` · `App.tsx`(탭 전환 훅) |
-| Live Update (OTA) | [features/live-update.md](./features/live-update.md) | `native/live-update.ts` · `features/live-update/` · `native/network` · `app/UpdatePromptModal.tsx` · `storage/last-run-bundle-version.ts` |
+| 알림 (**설계 완료, 구현 전** — [[ADR-146]]) | [features/notifications.md](./features/notifications.md) | `native/notifications.ts`(기존) · `native/push.ts`·`native/background-task.ts`(신설) · `features/notifications/` · `storage/notification-settings`·`notification-ledger` · RN 어댑터 `rn-notifications`(기존)·`rn-push`·`rn-background-task` · RN 진입점 `packages/app-rn/index.ts` · `workers/notice-push/` |
+| Live Update (OTA) | [features/live-update.md](./features/live-update.md) | `native/live-update.ts` · `features/live-update/` · `app/UpdatePromptModal.tsx` · `storage/last-run-bundle-version.ts` · **어댑터 둘**(`app-capacitor/…/capacitor-live-update.ts` @capgo · `app-rn/…/rn-live-update.ts` expo-updates) · `workers/ota-manifest/` · `scripts/publish-rn-ota.mjs` |
 | 스플래시 | [features/splash.md](./features/splash.md) | `android/…/SplashActivity` · iOS 스토리보드 · `capacitor.config.ts` · `index.html` |
 | 안내 사이트 (mapleroutine.store) | [features/site.md](./features/site.md) | `site/` · `PRIVACY.md`(원본) · `scripts/build-site.mjs` · `.github/workflows/pages.yml` |
 
@@ -55,10 +58,12 @@ docs/
 - **새 화면·기능 구현** → 해당 `features/*.md` (정책) + `foundation/architecture.md` (레이어 규칙) + 관련 `foundation/design-system.md` 컴포넌트. TDD 원칙상 테스트 먼저([[ADR]] 프로세스).
 - **게임 수치 데이터 변경** → `foundation/game-data.md` 먼저, 값은 반드시 사용자 확인([[ADR-006]]).
 - **에셋(그림) 추가·삭제** → 파일을 `packages/core/src/assets/` 에 넣거나 지운 뒤 **`npm run assets:gen`** ([[ADR-129]]). 목록(`assets/generated/*.ts`)은 커밋되는 생성물이라 안 돌리면 화면이 **에러 없이 폴백만** 그린다 — `assets/generated/__tests__/asset-manifest.test.ts` 가 그 낡음을 잡는다.
+- **today 위젯 추가·크기 변경** → `features/today.md` 의 「격자」·「배치」·「위젯 규약」 셋. 만질 파일은 **셋이 짝**이다 — `widgets/registry.ts`(존재·크기·목적지) · `widgets/layout.ts`(좌표) · 위젯 컴포넌트. 좌표는 손으로 적고 `lib/widget-layout.ts` 의 검증 다섯이 지키므로, `row` 를 밀지 않으면 **테스트가 먼저 막는다**.
 - **저장 스키마 변경** → `persistence/` (해당 매체 문서) + 해당 `features/*.md`.
 - **색·토큰·테마** → `foundation/design-system.md` (기본 팔레트·시맨틱 색) + `features/theme.md` (테마별 토큰·런타임 전환).
 - **동기화·정규화·호출 제한** → `foundation/nexon-api.md` + `features/content-scheduler.md`/`boss-scheduler.md`.
 - **에러/빈 상태/엣지 처리** → `foundation/error-resilience.md`.
 - **스토어 배포·서명·버전 올리기** → `foundation/release.md` (OTA 갱신은 `features/live-update.md` — 별개 축이다).
+- **알림을 더하거나 고칠 때** → `features/notifications.md`. 손대기 전에 그 문서의 «층» 표에서 **바이너리 / JS / 서버** 중 어디를 만지는지부터 판정할 것 — 왼쪽 칸은 스토어 심사를 기다린다([[ADR-146]] 결정 1).
 - **React Native 전환 작업** → `migration/README.md`(원칙·단계·게이트) → `migration/parity-inventory.md`(옮길 파일과 그 파일에 걸린 ADR 계약) → `migration/data.md`(기존 사용자 데이터 보존). 배경과 기각안은 [[ADR-128]].
 - **설계 결정의 배경이 궁금할 때** → `ADR.md` 에서 `[[ADR-NNN]]` 조회.

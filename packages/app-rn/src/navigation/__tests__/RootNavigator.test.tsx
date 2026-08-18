@@ -2,7 +2,7 @@
 //
 // 검사하는 것 넷:
 //   ① 온보딩 분기가 **양방향**으로 도는가 (미완료 → 온보딩만 / 완료 → 탭 + 하위 페이지)
-//   ② 계획서 §1 의 하위 페이지 열하나가 **하나도 빠짐없이 열리는가**
+//   ② 하위 페이지 열둘이 **하나도 빠짐없이 열리는가**(계획서 §1 의 열하나 + [[ADR-144]] 의 하나)
 //   ③ 같은 상세를 두 경로가 가리키는가 ([[ADR-125]] 결정 3)
 //   ④ 하위 페이지가 열려도 아래 탭 화면이 **언마운트되지 않는가** ([[ADR-077]] · [[ADR-120]] 결정 4)
 //
@@ -19,17 +19,12 @@ import { createNavigationContainerRef } from '@react-navigation/native'
 import { FEATURE_GUIDES } from '@core/data/feature-guides'
 import { useOnboardingStore } from '@core/features/onboarding/store'
 import { useTrackingModeStore } from '@core/features/tracking-mode/store'
+import { setLiveUpdatePort } from '@core/native/ports'
 
 import { NavigationHarness } from './harness'
 import { installMemoryPreferences } from './memory-preferences'
 import { normalizeRenderedTree } from '../../__tests__/normalize-tree'
 import { FEATURE_GUIDE_ROUTE_NAMES, STACK_ROUTE_NAMES, type RootStackParamList } from '../routes'
-
-jest.mock('@core/features/ads/tab-switch-ad', () => ({
-  __esModule: true,
-  maybeShowTabSwitchAd: jest.fn(async () => {}),
-  startAds: jest.fn(async () => {}),
-}))
 
 type Status = 'awaitingApiKey' | 'completed'
 
@@ -45,9 +40,23 @@ const GUIDE_SECTION_ID = GUIDE.sections[0].id
 
 beforeEach(() => {
   installMemoryPreferences()
+  // `SettingsAbout` 이 마운트에서 실행 중인 번들 버전을 묻는다([[ADR-137]] 배선). 주입이 없으면
+  // 슬롯이 던져 **그 화면이 열리는가** 를 묻는 케이스가 배선과 무관한 이유로 빨개진다.
+  // 지원하지 않는 환경으로 두는 것이 이 파일에 맞다 — 여기서 보는 것은 라우팅이지 OTA 가 아니다.
+  setLiveUpdatePort({
+    isSupported: () => false,
+    notifyAppReady: async () => {},
+    getCurrentVersion: async () => null,
+    getChannel: () => 'production',
+    check: async () => ({ kind: 'unsupported' }),
+    download: async () => {},
+    apply: async () => {},
+    getNetworkType: async () => 'unknown',
+    openStore: () => {},
+  })
   useOnboardingStore.setState({ status: 'awaitingApiKey' })
   // `ContentManage` 는 **수동 모드 전용**이라([[ADR-035]] 결정 18) 자동 모드로 두면 열리자마자
-  // 물러난다 — 그러면 이 파일의 «열하나가 전부 열린다» 가 배선이 아니라 모드 때문에 빨개진다.
+  // 물러난다 — 그러면 이 파일의 «열둘이 전부 열린다» 가 배선이 아니라 모드 때문에 빨개진다.
   useTrackingModeStore.setState({ mode: 'manual' })
 })
 
@@ -58,7 +67,7 @@ describe('온보딩 분기', () => {
     await render(<NavigationHarness />)
 
     expect(screen.getByTestId('screen-Onboarding')).toBeTruthy()
-    expect(screen.queryByTestId('screen-Content', { includeHiddenElements: true })).toBeNull()
+    expect(screen.queryByTestId('screen-Today', { includeHiddenElements: true })).toBeNull()
   })
 
   it('완료면 탭이 그려지고 온보딩은 사라진다', async () => {
@@ -66,7 +75,7 @@ describe('온보딩 분기', () => {
 
     await render(<NavigationHarness />)
 
-    expect(screen.getByTestId('screen-Content')).toBeTruthy()
+    expect(screen.getByTestId('screen-Today')).toBeTruthy()
     expect(screen.queryByTestId('screen-Onboarding', { includeHiddenElements: true })).toBeNull()
   })
 
@@ -85,16 +94,16 @@ describe('온보딩 분기', () => {
     }
 
     await setStatus('completed')
-    expect(screen.getByTestId('screen-Content')).toBeTruthy()
+    expect(screen.getByTestId('screen-Today')).toBeTruthy()
     expect(screen.queryByTestId('screen-Onboarding', { includeHiddenElements: true })).toBeNull()
 
     await setStatus('awaitingApiKey')
     expect(screen.getByTestId('screen-Onboarding')).toBeTruthy()
-    expect(screen.queryByTestId('screen-Content', { includeHiddenElements: true })).toBeNull()
+    expect(screen.queryByTestId('screen-Today', { includeHiddenElements: true })).toBeNull()
   })
 })
 
-describe('하위 페이지 — 계획서 §1 의 열하나', () => {
+describe('하위 페이지 — 열둘', () => {
   // **`guideId` 가 실재해야 한다**(step 3 에서 갈린 것). 자리표시자는 받은 문자열을 그냥 찍어
   // 아무 값이나 통했지만, 진짜 상세는 없는 id 면 조용히 pop 한다([[ADR-125]] 결정 3 — 옛 링크의
   // 착지점이 빈 화면이면 안 된다). 그래서 여기 값이 카탈로그와 어긋나면 이 테스트가 먼저 깨진다.
@@ -134,7 +143,7 @@ describe('하위 페이지 — 계획서 §1 의 열하나', () => {
     })
 
     expect(screen.getByTestId('screen-ContentManage')).toBeTruthy()
-    expect(screen.getByTestId('screen-Content', { includeHiddenElements: true })).toBeTruthy()
+    expect(screen.getByTestId('screen-Today', { includeHiddenElements: true })).toBeTruthy()
   })
 
   it('뒤로 가면 하위 페이지만 사라진다', async () => {
@@ -150,7 +159,7 @@ describe('하위 페이지 — 계획서 §1 의 열하나', () => {
     })
 
     expect(screen.queryByTestId('screen-ContentManage', { includeHiddenElements: true })).toBeNull()
-    expect(screen.getByTestId('screen-Content')).toBeTruthy()
+    expect(screen.getByTestId('screen-Today')).toBeTruthy()
   })
 })
 
@@ -185,7 +194,20 @@ describe('안내 상세는 두 경로가 같은 화면을 그린다 ([[ADR-125]]
 // 스냅샷은 그 화면이 바뀌면 함께 움직인다 — 자리표시자였을 때보다 시끄럽지만, 그것이 이 기준선이
 // 실제로 고정하기로 한 것이다(내비게이터가 그 자리에 무엇을 그리는가). 화면 내부의 계약은
 // `src/app/onboarding/__tests__` 가 따로 본다.
+//
+// **시계를 고정한다** — 첫 탭이 `today` 이고([[ADR-132]] 결정 7) 그 화면의 초기화 카운트다운 위젯이
+// «남은 시간» 을 글자로 그린다([[ADR-147]]). 실제 시각으로 찍으면 몇 분 뒤 같은 트리가 다른
+// 스냅샷이 되어(`22시간 11분` → `22시간 9분`, 실측) 기준선이 스스로 빨개진다. 시각은 실제 시간
+// 흐름과 무관해야 하는 것이지 특정 값이어야 하는 것이 아니므로 아무 고정값이나 된다.
 describe('렌더 트리 스냅샷', () => {
+  beforeAll(() => {
+    jest.useFakeTimers({ now: new Date('2026-08-17T03:00:00.000Z') })
+  })
+
+  afterAll(() => {
+    jest.useRealTimers()
+  })
+
   it('탭 골격', async () => {
     useOnboardingStore.setState({ status: 'completed' })
 

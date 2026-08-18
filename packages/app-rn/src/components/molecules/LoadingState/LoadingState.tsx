@@ -16,9 +16,9 @@
 // ③ `text-center` 가 상자에서 **글자로** 내려왔다. RN 은 `textAlign` 이 상자에서 상속되지 않는다
 //    (`atoms/Button/variants.ts` 의 같은 사정).
 //
-// **스피너는 아직 움직이지 않는다** — `MapleSweepSpinner` 가 `@keyframes` 8종 중 `maple-sweep` 에
-// 걸려 있어 step 7 몫이다(그 atom 주석). 지금 그리는 것은 그 애니메이션의 0프레임이고, 크기 규칙
-// (page 32 / inline 24, [[ADR-061]] 결정 1·2)은 그대로다.
+// **스피너는 움직인다** — step 7 이 `maple-sweep` 을 Reanimated 로 옮겼고, 그 띠가 실제로 보이게 된
+// 것은 [[ADR-061]] 정정 1 이다(그때까지는 마스크가 띠를 통째로 지우고 있어 «0프레임» 만 보였다 —
+// 그 atom 주석 ①-b). 크기 규칙(page 32 / inline 24, [[ADR-061]] 결정 1·2)은 그대로다.
 import { Text } from 'react-native'
 
 import { Card } from '../../atoms/Card/Card'

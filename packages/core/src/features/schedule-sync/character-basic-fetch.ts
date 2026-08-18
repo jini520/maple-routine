@@ -44,11 +44,21 @@ function isFresh(cachedAt: string, now: Date): boolean {
   return elapsed >= 0 && elapsed < CHARACTER_BASIC_TTL_MS
 }
 
+/**
+ * `jobClass` 는 **`character/basic` 이 주는 값이 아니라 `character/list` 가 주는 값**이다
+ * ([[ADR-144]] 결정 2). 저장 경로가 이 함수 하나뿐이라, 그 값을 손에 든 호출부가 여기로 함께
+ * 넘겨 엔트리에 실린다 — `normalizeCharacterBasic` 은 채우지 않는다([[ADR-006]] 의 태도: basic
+ * 응답이 직업을 준다는 것을 실측한 적이 없다).
+ *
+ * **모르면 넘기지 않는다.** 그때는 캐시에 이미 있던 값을 그대로 유지한다 — 아는 값을
+ * `undefined` 로 덮으면 화면에서 직업이 사라진다.
+ */
 export async function fetchCharacterBasicCached(
   apiKey: string,
   accountId: string,
   ocid: string,
   now: Date,
+  jobClass?: string,
 ): Promise<CharacterBasicProfile> {
   const cached = await getCachedCharacterBasic(ocid)
   if (cached !== null && isFresh(cached.cachedAt, now)) {
@@ -60,8 +70,12 @@ export async function fetchCharacterBasicCached(
   // `characterUnavailable`), 401·429 는 전역 실패로 갈라진다. 여기서 삼키면 그 판정이 통째로 죽는다.
   const fetched = await fetchCharacterBasic(apiKey, ocid)
 
+  const resolvedJobClass = jobClass ?? cached?.profile.jobClass
+  const profile: CharacterBasicProfile =
+    resolvedJobClass === undefined ? fetched : { ...fetched, jobClass: resolvedJobClass }
+
   // cachedAt 은 호출부가 이미 잡아둔 `now` 다(여기서 시계를 다시 읽지 않는다) — 판정이 결정적이고,
   // 오차는 항상 TTL 이 짧아지는 보수적인 방향으로만 난다.
-  await setCachedCharacterBasic(accountId, ocid, { profile: fetched, cachedAt: now.toISOString() })
-  return fetched
+  await setCachedCharacterBasic(accountId, ocid, { profile, cachedAt: now.toISOString() })
+  return profile
 }

@@ -18,6 +18,13 @@ jest.mock('@core/features/tracking-mode/store', () => ({
   useTrackingModeStore: jest.fn(),
 }))
 
+// 이름이 `mock` 으로 시작해야 한다 — babel-jest 가 `jest.mock` 팩토리 밖 변수 참조를 막는데
+// 그 접두사만 예외로 통과시킨다(다른 화면 테스트와 같은 규칙).
+const mockReloadTabStores = jest.fn()
+jest.mock('../reload-tab-stores', () => ({
+  reloadTabStores: (...args: unknown[]) => mockReloadTabStores(...args),
+}))
+
 const mockedStore = jest.mocked(useTrackingModeStore)
 
 type Rendered = Awaited<ReturnType<typeof renderOverlay>>
@@ -114,6 +121,43 @@ describe('TrackingModeModal', () => {
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
+  // [[ADR-140]] 결정 5 정정: 시드는 저장소를 채우지만 수동 모드의 표시 목록을 정하는 것은 스토어
+  // 메모리의 사본이고, RN 탭 화면은 마운트된 채 남아 스스로 다시 읽지 않는다 — 그래서 적용이
+  // 끝나면 세 탭 스토어를 여기서 다시 읽힌다(안 그러면 자동 → 수동 직후 보스 탭이 빈 상태로 뜬다).
+  it('적용이 끝나면 컨텐츠·보스·수익 세 탭 스토어를 다시 읽힌다', async () => {
+    const view = await renderOverlay(<TrackingModeModal onClose={jest.fn()} />)
+
+    await press(optionCard(view, 'manual'))
+    await press(climb(view, '적용'))
+
+    expect(mockReloadTabStores).toHaveBeenCalledWith(['content', 'boss', 'profit'])
+  })
+
+  // 시드가 끝나기 전에 읽히면 그 회차가 옛 멤버십을 담는다 — 순서가 계약이다.
+  it('setMode가 resolve되기 전에는 다시 읽히지 않는다', async () => {
+    let finish: () => void = () => {}
+    mockTrackingModeStore({
+      setMode: jest.fn(
+        () =>
+          new Promise<void>((resolve) => {
+            finish = resolve
+          }),
+      ),
+    })
+    const view = await renderOverlay(<TrackingModeModal onClose={jest.fn()} />)
+
+    await press(optionCard(view, 'manual'))
+    await press(climb(view, '적용'))
+
+    expect(mockReloadTabStores).not.toHaveBeenCalled()
+
+    await act(async () => {
+      finish()
+    })
+
+    expect(mockReloadTabStores).toHaveBeenCalledTimes(1)
+  })
+
   it('취소를 누르면 setMode 없이 닫힌다', async () => {
     const setMode = jest.fn(async () => {})
     const onClose = jest.fn()
@@ -125,6 +169,8 @@ describe('TrackingModeModal', () => {
 
     expect(setMode).not.toHaveBeenCalled()
     expect(onClose).toHaveBeenCalledTimes(1)
+    // 바뀐 것이 없으면 다시 읽힐 것도 없다([[ADR-140]] 결정 5 정정).
+    expect(mockReloadTabStores).not.toHaveBeenCalled()
   })
 
   // [[ADR-035]] 결정 15: 수동 전환의 `setMode` 는 시드가 전부 끝난 뒤에만 resolve 된다 — 그동안

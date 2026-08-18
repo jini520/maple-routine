@@ -20,6 +20,21 @@ import { buildThemeVariables } from './theme-vars'
  * 요소가 곧 레이아웃 노드가 된다 — 테마가 side-effect 에서 렌더 트리의 일부로 바뀌었다는 사실의
  * 구체적인 대가다. `flex-1` 로 부모를 그대로 채워 자식들이 보는 상자가 달라지지 않게 한다.
  *
+ * ## 이 View 가 **앱의 바탕을 칠한다** ([[ADR-136]])
+ *
+ * 웹에서 이 자리(`:root`/`body`)는 늘 `bg-bg` 로 칠해져 있었다. RN 으로 옮기며 그 한 줄이 빠졌고,
+ * 앱에서 바탕을 칠하는 것이 **내비게이터의 화면들뿐**이 됐다. 화면이 뷰포트를 꽉 채우니 평소에는
+ * 아무 일도 없지만, **화면 밖이 드러나는 순간**(하위 페이지로 미끄러져 들어갈 때 iOS 가 화면
+ * 모서리를 둥글게 깎는다 — 나가는 화면의 오른쪽 위와 들어오는 화면의 왼쪽 위 곡선 사이) 그 틈으로
+ * **RN 루트 뷰의 흰색**이 보인다. 다크 테마에서 흰 쐐기라 눈에 띈다.
+ *
+ * 시뮬레이터 실측: 내비게이션 두 층(루트 스택 `contentStyle` · 탭 `sceneStyle`)을 투명하게 두면
+ * 화면의 **89.8%가 흰색**이었다 — 그 아래에 아무것도 없다는 뜻이다.
+ *
+ * **[[ADR-088]] 결정 4 와 어긋나지 않는다.** 그 결정(*"앱 루트의 `bg-bg` 를 빼라"*)은 웹에서 벽지가
+ * `z-index: -1` 로 루트 **뒤**에 있었기 때문이고, 루트를 칠하면 벽지가 통째로 가려졌다. RN 의 벽지
+ * (`ThemeBackdrop`)는 이 View 의 **자식**이라 위에 그려진다 — 가릴 수 없다.
+ *
  * ## 구독은 스토어에서, 값은 포트에서
  *
  * `features/theme/store.ts`(core)를 직접 구독하지 않는다. 그 스토어가 테마를 **적용**하는 경로는
@@ -32,7 +47,12 @@ export function ThemeProvider(props: { children: ReactNode }): React.JSX.Element
 
   return (
     <ThemeContext.Provider value={appearance}>
-      <View className="flex-1" style={vars(buildThemeVariables(appearance.definition))}>
+      <View
+        className="flex-1"
+        // 색을 `className`(`bg-bg`)이 아니라 값으로 주는 이유는 이 View 가 **변수를 얹는 바로 그
+        // 자리**이기 때문이다 — 자기가 정의하는 변수를 자기 클래스가 다시 읽는 모양이 된다.
+        style={[{ backgroundColor: appearance.definition.bg }, vars(buildThemeVariables(appearance.definition))]}
+      >
         {props.children}
       </View>
     </ThemeContext.Provider>

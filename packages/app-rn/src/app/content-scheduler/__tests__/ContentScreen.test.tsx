@@ -23,10 +23,7 @@ import {
   type ContentCharacterView,
   type ContentSchedulerStore,
 } from '@core/features/content-scheduler/store'
-import { getCharacterPickerRoster } from '@core/features/schedule-sync/schedule-sync'
 import { useTrackingModeStore } from '@core/features/tracking-mode/store'
-import { NexonAuthError, NexonRateLimitError } from '@core/nexon/errors'
-import type { CharacterPickerEntry } from '@core/types'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { ContentScreen } from '../ContentScreen'
@@ -36,7 +33,6 @@ import { useScreenNavigation } from '../../use-screen-navigation'
 // 그 접두사만 예외로 통과시킨다(안 지키면 트랜스폼 단계에서 죽는다).
 const mockShowError = jest.fn()
 const mockNoticeApiKeyIssue = jest.fn()
-const mockGetRoster = jest.fn()
 const navigate = jest.fn()
 
 // ADR-063: 동기화 실패는 인라인 문단이 아니라 토스트다.
@@ -53,24 +49,12 @@ jest.mock('@core/features/content-scheduler/store', () => ({
   useContentSchedulerStore: jest.fn(),
 }))
 
-// [[ADR-062]]: 화면이 `toScheduleSyncError` 로 reject 를 원인으로 바꾸므로 그 매핑은 실물을 쓰고
-// `getCharacterPickerRoster` 만 대체한다(부분 모킹).
-//
-// **웹의 `...importOriginal()` 을 그대로 옮기면 죽는다** — `schedule-sync` ↔ `character-roster` ↔
-// `character-eligibility` 가 순환 참조라 팩토리 안의 `requireActual` 이 그 사이클을 다시 밟다가
-// 아직 구성 중인 모듈을 `undefined` 로 만난다(step 2 가 온보딩에서 겪은 그대로다). 화면이 실제로
-// 쓰는 둘만 세우고, 진짜가 필요한 `toScheduleSyncError` 는 사이클 밖 원본에서 곧장 가져온다.
-jest.mock('@core/features/schedule-sync/schedule-sync', () => ({
-  toScheduleSyncError: jest.requireActual<typeof import('@core/features/schedule-sync/errors')>(
-    '@core/features/schedule-sync/errors',
-  ).toScheduleSyncError,
-  getCharacterPickerRoster: (...args: unknown[]) => mockGetRoster(...args),
-}))
+// **로스터 조회 목은 여기 없다** — 이 화면은 더 이상 피커를 열지 않으므로 `schedule-sync` 를
+// 아예 부르지 않는다([[ADR-140]]). 그 목은 설정 화면 테스트로 옮겨갔다.
 
 jest.mock('../../use-screen-navigation', () => ({ useScreenNavigation: jest.fn() }))
 
 const mockedStore = jest.mocked(useContentSchedulerStore)
-const mockedRoster = mockGetRoster as unknown as jest.MockedFunction<typeof getCharacterPickerRoster>
 const mockedNavigation = jest.mocked(useScreenNavigation)
 
 // `ReturnType<typeof useContentSchedulerStore>` 은 **`unknown` 이 된다** — zustand 의 훅이 오버로드라
@@ -121,10 +105,6 @@ function character(overrides: Partial<ContentCharacterView> = {}): ContentCharac
   }
 }
 
-function pickerEntry(overrides: Partial<CharacterPickerEntry> = {}): CharacterPickerEntry {
-  return { ocid: 'roster-ocid', name: '로스터캐릭터', level: 200, imageUrl: null, ...overrides }
-}
-
 async function renderScreen(): Promise<ReturnType<typeof renderOverlay>> {
   return renderOverlay(<ContentScreen />)
 }
@@ -152,15 +132,28 @@ function refreshControl(): { refreshing: boolean; onRefresh: () => void } {
   return screen.getByTestId('screen-scroll').props.refreshControl.props
 }
 
+/** 두 노드를 **같은 줄**로 묶는 가장 작은 상자([[ADR-141]] — 아래 케이스가 그것으로 자리를 본다). */
+function nearestCommonAncestor(a: AtomElement, b: AtomElement): AtomElement {
+  const ancestors = new Set<AtomElement>()
+  for (let node: AtomElement | null = a; node !== null; node = node.parent) ancestors.add(node)
+  for (let node: AtomElement | null = b; node !== null; node = node.parent) {
+    if (ancestors.has(node)) return node
+  }
+  throw new Error('공통 조상이 없다 — 두 노드가 같은 트리에 있지 않다')
+}
+
+function contains(ancestor: AtomElement, node: AtomElement): boolean {
+  for (let current: AtomElement | null = node; current !== null; current = current.parent) {
+    if (current === ancestor) return true
+  }
+  return false
+}
+
 beforeEach(() => {
   mockShowError.mockClear()
   mockNoticeApiKeyIssue.mockClear()
   navigate.mockClear()
-  mockGetRoster.mockClear()
   mockedNavigation.mockReturnValue({ navigate, goBack: jest.fn() } as never)
-  mockedRoster.mockImplementation(async (onUpdate) => {
-    onUpdate([])
-  })
   useTrackingModeStore.setState({ mode: 'auto' })
 })
 
@@ -193,13 +186,18 @@ describe('ContentScreen — 빈 상태와 마운트', () => {
     expect(screen.getByText('불러오고 있어요')).toBeTruthy()
   })
 
-  it('빈 상태 CTA 를 누르면 캐릭터 관리 피커가 열린다', async () => {
+  // [[ADR-140]] 결정 1·2: 이 화면은 피커를 열지 않는다 — 설정 탭을 **열린 채로** 연다.
+  it('빈 상태 CTA 를 누르면 설정 탭을 피커가 열린 채로 연다', async () => {
     mockStore({ trackedOcids: [] })
     await renderScreen()
 
     await press(button('캐릭터 선택하기'))
 
-    expect(screen.getByTestId('character-tracking-picker-modal')).toBeTruthy()
+    expect(navigate).toHaveBeenCalledWith('Tabs', {
+      screen: 'Settings',
+      params: { openPicker: true },
+    })
+    expect(screen.queryByTestId('character-tracking-picker-modal')).toBeNull()
   })
 })
 
@@ -242,23 +240,25 @@ describe('ContentScreen — 목록', () => {
     expect(screen.queryByText(/일간항목/)).toBeNull()
   })
 
-  it('헤더와 목록이 공용 스크롤 셸 안에 있고, 모달은 그 바깥이다', async () => {
+  it('헤더와 목록이 공용 스크롤 셸 안에 있다', async () => {
     withContents()
     await renderScreen()
 
-    // 둘 다 셸이 그린다 — 헤더는 `header` 프롭으로, 목록은 자식으로. 이 케이스가 보는 것은
-    // **모달이 그 바깥이라는 것**이고, 헤더가 스크롤 뷰 «안» 인지는 `ScreenScroll` 테스트가 본다.
+    // 둘 다 셸이 그린다 — 헤더는 `header` 프롭으로, 목록은 자식으로. 헤더가 스크롤 뷰 «안» 인지는
+    // `ScreenScroll` 테스트가 본다. **모달이 셸 바깥인지를 묻던 짝은 함께 사라졌다** — 이 화면에
+    // 모달이 없다([[ADR-140]]).
     expect(screen.getByTestId('page-header')).toBeTruthy()
     expect(screen.getByTestId('screen-scroll')).toBeTruthy()
+  })
 
-    await press(button('캐릭터 관리'))
-    let node: AtomElement | null = screen.getByTestId('character-tracking-picker-modal')
-    let insideShell = false
-    while (node !== null) {
-      if (node.props.testID === 'screen-scroll') insideShell = true
-      node = node.parent
-    }
-    expect(insideShell).toBe(false)
+  // [[ADR-140]] 결정 1: 헤더에서 없어진 것은 이 버튼 하나이고, 수동 모드의 "컨텐츠 관리"는 남는다
+  // (그쪽은 아래 「수동 트래킹 모드」 절이 본다).
+  it('헤더에 "캐릭터 관리" 버튼이 없다', async () => {
+    withContents()
+
+    await renderScreen()
+
+    expect(screen.queryByText('캐릭터 관리')).toBeNull()
   })
 
   // [[ADR-016]] — 캐시가 있으면 재검증 중에도 계속 보여준다(셸 승계 카드는 보여줄 게 없을 때만).
@@ -289,7 +289,9 @@ describe('ContentScreen — 목록', () => {
     expect(screen.getByText('불러오고 있어요')).toBeTruthy()
   })
 
-  it('드롭다운에서 캐릭터를 바꾸면 selectCharacter 를 부른다', async () => {
+  // [[ADR-142]]: 드롭다운이 초상화 레일이 되면서 **실제로 캐릭터가 바뀐다** — 전에는 목록(열린
+  // 상태)이 없어 이 케이스가 «프롭이 있다» 까지밖에 못 봤다.
+  it('레일에서 다른 초상화를 누르면 그 ocid 로 selectCharacter 를 부른다', async () => {
     const store = mockStore({
       status: 'loaded',
       trackedOcids: ['ocid-1', 'ocid-2'],
@@ -297,11 +299,65 @@ describe('ContentScreen — 목록', () => {
     })
     await renderScreen()
 
-    await press(button('캐릭터1'))
+    await press(screen.getAllByTestId('character-portrait')[1])
 
-    // 목록(열린 상태)은 아직 없다 — 트리거만 옮겨졌다(`CharacterSelectDropdown` 파일 머리).
-    // 계약은 "같은 `onSelect` 가 스토어의 `selectCharacter` 로 이어진다"이고, 그것은 프롭에 있다.
-    expect(store.selectCharacter).toBeDefined()
+    expect(store.selectCharacter).toHaveBeenCalledWith('ocid-2')
+  })
+
+  // 결정 4: 링이 세는 것과 카드 목록이 **같은 함수**에서 나온다 — 등록 안 된 항목은 둘 다에서 빠진다.
+  it('레일의 링은 표시 목록과 같은 것을 센다', async () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [
+        character({
+          dailyContents: [
+            { name: '완료됨', kind: 'quest', isRegistered: true, nowCount: 0, maxCount: 0, questState: 2 },
+            { name: '미완료', kind: 'quest', isRegistered: true, nowCount: 0, maxCount: 0, questState: 0 },
+            // 등록 안 된 항목은 목록에 없으므로 분모에도 없다.
+            { name: '미등록', kind: 'quest', isRegistered: false, nowCount: 0, maxCount: 0, questState: 0 },
+          ],
+        }),
+      ],
+    })
+
+    await renderScreen()
+
+    expect(screen.getByTestId('character-portrait').props.accessibilityLabel).toContain('일간 1/2')
+  })
+
+  // [[ADR-143]] 결정 3: 스토어는 레벨 내림차순으로 준다([[ADR-017]] 결정 2) — 그 위에 사용자가
+  // 정한 저장 배열 순서를 얹는다. 그래서 **입력 순서와 다른 순서**로 주는 것이 이 케이스의 요점이다.
+  it('레일 순서는 스토어 순서가 아니라 trackedOcids 저장 순서다', async () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-2', 'ocid-1'],
+      characters: [character(), character({ ocid: 'ocid-2', characterName: '캐릭터2' })],
+    })
+
+    await renderScreen()
+
+    expect(screen.getAllByTestId('character-portrait').map((node) => node.props.accessibilityLabel)).toEqual([
+      expect.stringContaining('캐릭터2'),
+      expect.stringContaining('캐릭터1'),
+    ])
+  })
+
+  // 순서를 정하는 함수가 목록의 크기를 바꾸면 안 된다 — 저장 직후·동기화 중간 커밋에서 두 목록이
+  // 한순간 어긋나는데, 그때 카드가 통째로 사라지는 것이 가장 나쁜 실패다.
+  it('저장 목록에 없는 캐릭터도 레일에서 사라지지 않는다', async () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-2'],
+      characters: [character(), character({ ocid: 'ocid-2', characterName: '캐릭터2' })],
+    })
+
+    await renderScreen()
+
+    expect(screen.getAllByTestId('character-portrait').map((node) => node.props.accessibilityLabel)).toEqual([
+      expect.stringContaining('캐릭터2'),
+      expect.stringContaining('캐릭터1'),
+    ])
   })
 })
 
@@ -345,6 +401,23 @@ describe('ContentScreen — 재조회 ([[ADR-072]] · [[ADR-130]])', () => {
 
     expect(screen.getByText('조회 중...')).toBeTruthy()
     expect(refreshControl().refreshing).toBe(true)
+  })
+
+  // [[ADR-141]] 결정 1: 동기화 상태는 드롭다운 줄이 아니라 **제목 줄**에 있다. 「같은 줄인가」는
+  // 최소 공통 조상으로 본다 — 제목과 새로고침의 공통 조상 안에 캐릭터 드롭다운이 **없으면**
+  // 그 조상이 곧 제목 줄이다(있으면 헤더 전체를 집은 것이라 아무것도 보장하지 못한다).
+  it('새로고침과 동기화 시각이 제목과 같은 줄에 있다', async () => {
+    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], characters: [character()] })
+    await renderScreen()
+
+    const titleRow = nearestCommonAncestor(
+      screen.getByText('컨텐츠 스케줄러'),
+      screen.getByLabelText('새로고침'),
+    )
+
+    expect(contains(titleRow, screen.getByText('동기화 기록 없음'))).toBe(true)
+    // 아래 줄에 있어야 하는 것은 이제 초상화 레일이다([[ADR-142]]).
+    expect(contains(titleRow, screen.getByTestId('character-rail'))).toBe(false)
   })
 })
 
@@ -425,118 +498,6 @@ describe('ContentScreen — 실패의 목적지', () => {
 
     expect(mockShowError).not.toHaveBeenCalled()
     expect(mockNoticeApiKeyIssue).not.toHaveBeenCalled()
-  })
-})
-
-describe('ContentScreen — 캐릭터 관리 피커 ([[ADR-053]])', () => {
-  function deferredRoster(): { emit: (entries: CharacterPickerEntry[]) => void; settle: () => void; fail: (error: unknown) => void } {
-    let emit: (entries: CharacterPickerEntry[]) => void = () => {}
-    let settle: () => void = () => {}
-    let fail: (error: unknown) => void = () => {}
-    mockedRoster.mockImplementation(
-      (onUpdate) =>
-        new Promise<void>((resolve, reject) => {
-          emit = (entries) => onUpdate(entries)
-          settle = () => resolve()
-          fail = (error) => reject(error)
-        }),
-    )
-    // **콜백을 그대로 돌려주면 안 된다** — 위 대입은 `mockImplementation` 이 실제로 불릴 때(=화면이
-    // 피커를 열 때) 일어나므로, 지금 값을 캡처하면 영원히 빈 함수를 쥔다.
-    return {
-      emit: (entries) => emit(entries),
-      settle: () => settle(),
-      fail: (error) => fail(error),
-    }
-  }
-
-  async function openPicker(): Promise<void> {
-    mockStore({ trackedOcids: [] })
-    await renderScreen()
-    await press(button('캐릭터 선택하기'))
-  }
-
-  it('조회 중이고 보여줄 항목이 없으면 스피너를 보여준다', async () => {
-    deferredRoster()
-    await openPicker()
-
-    expect(screen.getByTestId('character-tracking-picker-body')).toBeTruthy()
-    expect(screen.queryByText('표시할 캐릭터가 없어요')).toBeNull()
-  })
-
-  // [[ADR-016]] 웜 캐시 — 항목이 도착하면 조회가 안 끝났어도 목록을 그린다.
-  it('조회가 끝나기 전에 항목이 도착하면 바로 목록을 보여준다', async () => {
-    const roster = deferredRoster()
-    await openPicker()
-
-    await act(async () => {
-      roster.emit([pickerEntry({ name: '내옆에최성일' })])
-    })
-
-    expect(screen.getByText('내옆에최성일')).toBeTruthy()
-  })
-
-  it('전역 실패(401)로 reject 되면 스피너가 걷히고 키 무효화 경로로 간다', async () => {
-    const roster = deferredRoster()
-    await openPicker()
-
-    await act(async () => {
-      roster.fail(new NexonAuthError('401'))
-    })
-
-    expect(mockNoticeApiKeyIssue).toHaveBeenCalledWith('invalid')
-  })
-
-  it('429 로 reject 되면 키 재입력 경로로 간다 — EmptyState 루프를 끊는다', async () => {
-    const roster = deferredRoster()
-    await openPicker()
-
-    await act(async () => {
-      roster.fail(new NexonRateLimitError('429'))
-    })
-
-    expect(mockNoticeApiKeyIssue).toHaveBeenCalledWith('rateLimited')
-  })
-
-  it('401·429 가 아닌 실패는 키 재입력 경로를 타지 않는다', async () => {
-    const roster = deferredRoster()
-    await openPicker()
-
-    await act(async () => {
-      roster.fail(new Error('boom'))
-    })
-
-    expect(mockNoticeApiKeyIssue).not.toHaveBeenCalled()
-  })
-
-  it('저장하면 saveTrackedOcids 를 부르고 진행률 모달을 띄운다', async () => {
-    let resolveSave: () => void = () => {}
-    const store = mockStore({
-      trackedOcids: [],
-      saveTrackedOcids: jest.fn(
-        (_ocids: string[], onProgress?: (completed: number, total: number) => void) =>
-          new Promise<void>((resolve) => {
-            onProgress?.(0, 1)
-            resolveSave = resolve
-          }),
-      ) as unknown as Store['saveTrackedOcids'],
-    })
-    await renderScreen()
-    await press(button('캐릭터 선택하기'))
-    await act(async () => {
-      mockedRoster.mock.calls[0][0]([pickerEntry({ ocid: 'roster-ocid' })])
-    })
-
-    await press(button('로스터캐릭터'))
-    await press(button('저장'))
-
-    expect(store.saveTrackedOcids).toHaveBeenCalledWith(['roster-ocid'], expect.any(Function))
-    // 문구 뒤에 `(0/1)` 이 붙어 한 `Text` 를 이룬다 — 완전 일치가 아니라 부분 일치로 본다.
-    expect(screen.getByText(/캐릭터 정보를 저장하고 있어요/)).toBeTruthy()
-
-    await act(async () => {
-      resolveSave()
-    })
   })
 })
 

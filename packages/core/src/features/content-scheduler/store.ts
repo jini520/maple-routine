@@ -49,6 +49,10 @@ export interface ContentCharacterView {
   // ADR-057: 같은 캐시에서 함께 꺼내는 길드명. null = 미가입(길드 콘텐츠 잠금 근거),
   // undefined = 모름(잠그지 않음).
   guildName?: string | null
+  // [[ADR-142]] 결정 6: 초상화 레일이 쓰는 둘. 같은 캐시에서 정렬과 함께 꺼내므로 조회가 안 는다.
+  // `null` 은 **캐시가 아직 그 캐릭터를 모른다**는 뜻이다 — 레일은 그때 레벨 호를 비운다.
+  level?: number | null
+  imageUrl?: string | null
   dailyContents: DailyContent[]
   weeklyContents: WeeklyContent[]
   isStale: boolean
@@ -116,11 +120,19 @@ const initialState: ContentSchedulerState = {
 // 캐릭터는 맨 뒤로 보낸다.
 // ADR-057: 길드명은 여기서 함께 꺼내 뷰에 실어 보낸다 — 정렬을 위해 이미 읽는 캐시 객체
 // 안에 있으므로 추가 조회가 0이고, 화면이 character-basic-cache를 다시 읽을 이유가 없다.
+// [[ADR-142]] 결정 6: `level`·`imageUrl` 도 **같은 이유로** 함께 실어 보낸다(초상화 레일이 쓴다) —
+// 이 함수가 이미 캐릭터마다 캐시를 한 번씩 읽고 있어 조회가 늘지 않는다. 정렬에 쓰던 level 을
+// 버리지 않고 뷰에 남기는 것뿐이다.
 async function sortByCachedLevel(views: ContentCharacterView[]): Promise<ContentCharacterView[]> {
   const withLevel = await Promise.all(
     views.map(async (view) => {
       const cached = await getCachedCharacterBasic(view.ocid)
-      return { view, level: cached?.profile.level ?? null, guildName: cached?.profile.guildName }
+      return {
+        view,
+        level: cached?.profile.level ?? null,
+        guildName: cached?.profile.guildName,
+        imageUrl: cached?.profile.imageUrl ?? null,
+      }
     }),
   )
 
@@ -134,7 +146,12 @@ async function sortByCachedLevel(views: ContentCharacterView[]): Promise<Content
       if (b.level !== a.level) return b.level - a.level
       return compareByName(a.view.characterName, b.view.characterName)
     })
-    .map((entry) => ({ ...entry.view, guildName: entry.guildName }))
+    .map((entry) => ({
+      ...entry.view,
+      guildName: entry.guildName,
+      level: entry.level,
+      imageUrl: entry.imageUrl,
+    }))
 }
 
 // ADR-043 결정 3: 저장 시점에 유지되는 캐릭터의 뷰가 메모리에 없을 때만 쓰는 폴백 —
@@ -201,7 +218,7 @@ export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, ge
     // 동기화보다 먼저 실행 — 화면의 저장 진행률 모달이 saveTrackedOcids 전체를 기다리므로
     // 시드가 끝날 때까지 자연스럽게 로딩이 유지된다(결정 15).
     if (added.length > 0 && useTrackingModeStore.getState().mode === 'manual') {
-      await Promise.all(added.map((ocid) => seedManualTrackedContent(ocid)))
+      await seedManualTrackedContent(added)
       const seeded = Object.fromEntries(
         await Promise.all(added.map(async (ocid) => [ocid, await getManualTrackedContent(ocid)] as const)),
       )

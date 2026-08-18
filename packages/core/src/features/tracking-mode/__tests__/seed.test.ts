@@ -50,9 +50,9 @@ function buildState(overrides: Partial<SchedulerCharacterState> = {}): Scheduler
   }
 }
 
-function buildSyncResult(state: SchedulerCharacterState | null): CharacterScheduleSync {
+function buildSyncResult(state: SchedulerCharacterState | null, ocid = OCID): CharacterScheduleSync {
   return {
-    ocid: OCID,
+    ocid,
     characterName: '낟낟',
     state,
     syncedAt: state === null ? null : '2026-07-23T12:00:00.000Z',
@@ -85,7 +85,7 @@ describe('seedManualTrackedContent', () => {
       ),
     ])
 
-    await seedManualTrackedContent(OCID)
+    await seedManualTrackedContent([OCID])
 
     expect(syncSchedules).toHaveBeenCalledWith([OCID])
     expect(setManualTrackedContent).toHaveBeenCalledWith(OCID, [
@@ -105,7 +105,7 @@ describe('seedManualTrackedContent', () => {
       ),
     ])
 
-    await seedManualTrackedContent(OCID)
+    await seedManualTrackedContent([OCID])
 
     expect(setManualTrackedContent).toHaveBeenCalledWith(OCID, [
       { contentName: '몬스터파크', kind: 'daily' },
@@ -122,7 +122,7 @@ describe('seedManualTrackedContent', () => {
       ),
     ])
 
-    await seedManualTrackedContent(OCID)
+    await seedManualTrackedContent([OCID])
 
     expect(setManualTrackedContent).toHaveBeenCalledWith(OCID, [
       { contentName: '선택받은 세렌', difficulty: '하드', kind: 'boss' },
@@ -132,14 +132,64 @@ describe('seedManualTrackedContent', () => {
   it('동기화가 실패해 state가 null이면 에러를 던지고 저장하지 않는다', async () => {
     vi.mocked(syncSchedules).mockResolvedValue([buildSyncResult(null)])
 
-    await expect(seedManualTrackedContent(OCID)).rejects.toThrow()
+    await expect(seedManualTrackedContent([OCID])).rejects.toThrow()
     expect(setManualTrackedContent).not.toHaveBeenCalled()
   })
 
   it('동기화 결과가 아예 없으면 에러를 던지고 저장하지 않는다', async () => {
     vi.mocked(syncSchedules).mockResolvedValue([])
 
-    await expect(seedManualTrackedContent(OCID)).rejects.toThrow()
+    await expect(seedManualTrackedContent([OCID])).rejects.toThrow()
+    expect(setManualTrackedContent).not.toHaveBeenCalled()
+  })
+})
+
+// ADR-147 정정 42: 캐릭터마다 회차를 내다가 서로 합류해 전원이 남의 스케줄로 시드됐다.
+describe('seedManualTrackedContent — 여러 ocid (ADR-147 정정 42)', () => {
+  it('ocid가 여럿이어도 동기화는 한 회차다', async () => {
+    vi.mocked(syncSchedules).mockResolvedValue([
+      buildSyncResult(buildState(), 'ocid-1'),
+      buildSyncResult(buildState(), 'ocid-2'),
+    ])
+
+    await seedManualTrackedContent(['ocid-1', 'ocid-2'])
+
+    expect(syncSchedules).toHaveBeenCalledTimes(1)
+    expect(syncSchedules).toHaveBeenCalledWith(['ocid-1', 'ocid-2'])
+  })
+
+  it('결과 순서가 요청 순서와 달라도 각 ocid는 자기 결과로 시드된다', async () => {
+    vi.mocked(syncSchedules).mockResolvedValue([
+      buildSyncResult(buildState({ dailyContents: [buildDaily('몬스터파크', true)] }), 'ocid-2'),
+      buildSyncResult(
+        buildState({ dailyContents: [buildDaily('[일일 퀘스트] 소멸의 여로 조사', true)] }),
+        'ocid-1',
+      ),
+    ])
+
+    await seedManualTrackedContent(['ocid-1', 'ocid-2'])
+
+    expect(setManualTrackedContent).toHaveBeenCalledWith('ocid-1', [
+      { contentName: '[일일 퀘스트] 소멸의 여로 조사', kind: 'daily' },
+    ])
+    expect(setManualTrackedContent).toHaveBeenCalledWith('ocid-2', [
+      { contentName: '몬스터파크', kind: 'daily' },
+    ])
+  })
+
+  it('요청한 ocid가 결과에 없으면 남의 결과로 시드하지 않고 에러를 던진다', async () => {
+    vi.mocked(syncSchedules).mockResolvedValue([
+      buildSyncResult(buildState({ dailyContents: [buildDaily('몬스터파크', true)] }), 'ocid-1'),
+    ])
+
+    await expect(seedManualTrackedContent(['ocid-1', 'ocid-2'])).rejects.toThrow()
+    expect(setManualTrackedContent).not.toHaveBeenCalledWith('ocid-2', expect.anything())
+  })
+
+  it('빈 배열이면 동기화도 저장도 하지 않는다', async () => {
+    await seedManualTrackedContent([])
+
+    expect(syncSchedules).not.toHaveBeenCalled()
     expect(setManualTrackedContent).not.toHaveBeenCalled()
   })
 })

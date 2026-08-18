@@ -20,6 +20,14 @@ import { getThemeBackgroundUrl } from '@core/lib/theme-backgrounds'
 import { useThemeAppearance } from '../../../theme/context'
 import { resolveThemeBackdropLayout } from './theme-backdrop-layout'
 
+/** `#RRGGBB` + 알파 → `#RRGGBBAA`. 이 파일에서만 쓰므로 여기 둔다. */
+function withAlpha(hex: string, alpha: number): string {
+  const value = Math.round(Math.min(1, Math.max(0, alpha)) * 255)
+    .toString(16)
+    .padStart(2, '0')
+  return `${hex}${value}`
+}
+
 /**
  * 배경을 선언한 테마에서만 그린다. 나머지는 `null` — 웹에서 `--theme-bg-image` 가 없으면 백드롭이
  * 아무것도 안 그리던 것과 같다(뷰가 늘지 않는다).
@@ -45,7 +53,19 @@ export function ThemeBackdrop(): React.JSX.Element | null {
   if (layout === null) return null
 
   return (
-    <View testID="theme-backdrop" pointerEvents="none" className="absolute inset-0 overflow-hidden">
+    // **어두운 바탕을 먼저 깐다**([[ADR-133]] 결정 2). 그림은 `cover` 지만 **알파를 크게 쓴다**
+    // (투명 50% / 36% — [[ADR-108]] 결정 2 가 하늘을 비워 두게 한 결과다). 그 뚫린 자리 뒤에는
+    // 지금까지 아무 색도 없었다 — 배경 있는 테마에서는 내비게이션 테마가 화면을 `transparent` 로
+    // 두기 때문이다(`navigation-theme.ts`). 그래서 «어둡게» 를 `dim` 혼자 지고 있었고, 올릴수록
+    // 그림이 회색으로 죽었다.
+    //
+    // 바탕이 있으면 `dim` 은 «검게 덮는 양» 이 아니라 **«그림을 바탕 쪽으로 당기는 양»** 이 된다.
+    <View
+      testID="theme-backdrop"
+      pointerEvents="none"
+      className="absolute inset-0 overflow-hidden"
+      style={{ backgroundColor: definition.bg }}
+    >
       <Image
         testID="theme-backdrop-image"
         source={source}
@@ -53,11 +73,12 @@ export function ThemeBackdrop(): React.JSX.Element | null {
         importantForAccessibility="no-hide-descendants"
         style={{ position: 'absolute', ...layout }}
       />
-      {/* 그림 위 검정 한 겹 — 글자가 읽히게 한다([[ADR-088]] 결정 3 의 `dim`). */}
+      {/* 덮는 색도 **검정이 아니라 테마의 바탕색**이다 — 검정으로 덮으면 어느 테마든 같은 회색으로
+          수렴하지만, 자기 바탕색으로 덮으면 그 테마의 색조가 남는다. */}
       <View
         testID="theme-backdrop-dim"
         className="absolute inset-0"
-        style={{ backgroundColor: `rgba(0,0,0,${background.dim})` }}
+        style={{ backgroundColor: withAlpha(definition.bg, background.dim) }}
       />
     </View>
   )

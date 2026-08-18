@@ -24,7 +24,8 @@ import type { MapleCharacter, SchedulerCharacterState, SharedProgressEntry } fro
 import { toScheduleSyncError } from './errors'
 import type { ScheduleSyncError } from './errors'
 import { fetchCharacterBasicCached } from './character-basic-fetch'
-import { resolveRegisteredCharacters } from './character-roster'
+import { resolveTrackedCharacterContext } from './character-roster'
+import type { TrackedCharacterContext } from './character-roster'
 import { markSyncAttemptedThisRun } from './sync-run-state'
 // 공개 API 는 그대로 둔다 — 옮긴 것은 구현 위치이지 호출부가 알 바가 아니다(ADR-094 결정 7).
 export { toScheduleSyncError } from './errors'
@@ -100,15 +101,22 @@ function canResolveAnyStaleSection(
 }
 
 // ADR-034 정정(2026-07-23): 당일 응답에서 stale이었던 섹션을, [[getBackfillDateKeys]]가 주는
-// 날짜(평소 -1일부터, 자정 직후 불안정 구간엔 -2일부터) 목록을 하루씩 순서대로 조회하며
-// 항목(이름 또는 이름+난이도) 단위로 채운다. 각 날짜 응답을 previous로 삼아
-// mergeSchedulerState(ADR-030 + ADR-034 항목 단위 정정)를 한 번씩 더 태우되, world/account
-// 원장은 이 루프의 범위 밖이라( previous가 아니라 "마지막 활성 캐릭터" 오염을 피하려 원장을
-// 신뢰해야 하므로, ADR-030) 4개 플래그를 모두 true로 강제해 character 범위 항목 병합만
-// 일어나게 한다. 그 날짜 응답 자체가(원래 stale이었던 섹션 기준으로) 더 이상 stale이
-// 아니면 그 시점에 멈추고, 끝까지 못 찾으면 -13일까지 다 써보고 그동안 누적된 결과를
-// best-effort로 그대로 쓴다. 특정 날짜 조회가 실패해도(네트워크 등) 그 날짜만 건너뛰고
-// 다음 날짜로 계속한다.
+// 날짜(평소 -1일부터, 자정 직후 불안정 구간엔 -2일부터) 목록을 조회하며 항목(이름 또는
+// 이름+난이도) 단위로 채운다. 각 날짜 응답을 previous로 삼아 mergeSchedulerState(ADR-030 +
+// ADR-034 항목 단위 정정)를 한 번씩 더 태우되, world/account 원장은 이 루프의 범위 밖이라
+// (previous가 아니라 "마지막 활성 캐릭터" 오염을 피하려 원장을 신뢰해야 하므로, ADR-030)
+// 4개 플래그를 모두 true로 강제해 character 범위 항목 병합만 일어나게 한다. 그 날짜 응답
+// 자체가(원래 stale이었던 섹션 기준으로) 더 이상 stale이 아니면 그 시점에 멈추고, 끝까지 못
+// 찾으면 -13일까지 다 써보고 그동안 누적된 결과를 best-effort로 그대로 쓴다. 특정 날짜 조회가
+// 실패해도(네트워크 등) 그 날짜만 건너뛰고 다음 날짜로 계속한다.
+//
+// ADR-148: **조회와 병합이 갈렸다** — 날짜는 한꺼번에 나가고(결정 1), 접는 것은 그대로 날짜
+// 순 폴드다(결정 2). 순서가 결과를 정하는 것은 조회가 아니라 병합이었으므로 `resolved` 중단을
+// 포함해 아래 루프의 의미는 한 글자도 안 바뀐다.
+//
+// 그 갈림이 만드는 새 사실 하나: 폴드가 일찍 멈춰도 **뒷 날짜 응답은 이미 손에 있다.** 그것을
+// 버리면 원장이 안 차 다음 동기화가 같은 13일을 다시 훑고 이슈 #87 문제 1이 되살아나므로,
+// 기록은 폴드가 아니라 **발사 지점**에서 한다(결정 3 — 최적화가 아니라 병렬화의 성립 조건).
 async function fillMissingSections(
   apiKey: string,
   ocid: string,
@@ -138,31 +146,41 @@ async function fillMissingSections(
     return stage1
   }
 
+  const dateKeys = getBackfillDateKeys(now).filter((dateKey) => {
+    const known = probeLedger.dates[dateKey]
+    return known === undefined || canResolveAnyStaleSection(originallyStale, known)
+  })
+
+  // 발사와 기록이 여기 함께 있다. 실패 종류별 기록 정책은 ADR-086 결정 4 그대로다.
+  const fetched = await Promise.all(
+    dateKeys.map(async (dateKey) => {
+      try {
+        const response = await fetchSchedulerCharacterState(apiKey, ocid, dateKey)
+        await recordScheduleProbe(ocid, dateKey, { kind: 'observed', ...toProbeObservation(response) })
+        return { response, failure: null }
+      } catch (error) {
+        const failure = toScheduleSyncError(error).kind
+        if (failure === 'characterUnavailable') {
+          await markScheduleProbeUnavailable(ocid)
+        } else if (failure === 'periodOutOfRange') {
+          await recordScheduleProbe(ocid, dateKey, { kind: 'outOfRange' })
+        }
+        // notCollected(집계 전)·네트워크는 기록하지 않는다 — 나중에 다시 시도한다.
+        return { response: null, failure }
+      }
+    }),
+  )
+
   let acc = stage1
 
-  for (const dateKey of getBackfillDateKeys(now)) {
-    const known = probeLedger.dates[dateKey]
-    if (known !== undefined && !canResolveAnyStaleSection(originallyStale, known)) {
+  for (const { response: dayResponse, failure } of fetched) {
+    // 조회 불가는 캐릭터 단위 확정이라 남은 날짜를 접을 이유가 없다(종전 `break` 그대로).
+    if (failure === 'characterUnavailable') {
+      break
+    }
+    if (dayResponse === null) {
       continue
     }
-
-    let dayResponse: SchedulerCharacterState
-    try {
-      dayResponse = await fetchSchedulerCharacterState(apiKey, ocid, dateKey)
-    } catch (error) {
-      const kind = toScheduleSyncError(error).kind
-      if (kind === 'characterUnavailable') {
-        await markScheduleProbeUnavailable(ocid)
-        break
-      }
-      if (kind === 'periodOutOfRange') {
-        await recordScheduleProbe(ocid, dateKey, { kind: 'outOfRange' })
-      }
-      // notCollected(집계 전)·네트워크는 기록하지 않는다 — 나중에 다시 시도한다.
-      continue
-    }
-
-    await recordScheduleProbe(ocid, dateKey, { kind: 'observed', ...toProbeObservation(dayResponse) })
 
     const dayMerge = mergeSchedulerState({
       previous: dayResponse,
@@ -216,17 +234,19 @@ async function fillMissingSections(
 // 대상이라 판정이 필요 없다. 그 스윕은 피커 경로의 몫이다(ADR-086 결정 5).
 async function refreshCharacterBasics(
   apiKey: string,
-  accountId: string,
-  characters: MapleCharacter[],
+  targets: TrackedCharacterContext[],
 ): Promise<void> {
   // 라운드 하나가 기준 시각 하나를 공유한다 — 캐릭터마다 새로 읽으면 같은 라운드 안에서 TTL
   // 판정 기준이 흔들린다.
   const now = new Date()
 
   await Promise.all(
-    characters.map(async (character) => {
+    targets.map(async ({ character, accountId }) => {
       try {
-        await fetchCharacterBasicCached(apiKey, accountId, character.ocid, now)
+        // accountId 는 **그 캐릭터가 사는 계정**이다([[ADR-143]] 결정 6) — 캐시 인덱스가 계정별이라
+        // ([[ADR-086]] 결정 9) 틀리면 다른 계정 인덱스를 오염시킨다. jobClass 는 character/list 가
+        // 준 값을 그대로 실어 보낸다([[ADR-144]] 결정 2).
+        await fetchCharacterBasicCached(apiKey, accountId, character.ocid, now, character.jobClass)
       } catch {
         // best-effort — 기존 캐시를 그대로 둔다.
       }
@@ -303,28 +323,26 @@ async function syncOneCharacter(
 //
 // ocids로 지정된 캐릭터만 동기화한다 — 계정의 전체 캐릭터를 대상으로 호출하면
 // 추적 대상이 아닌 캐릭터까지 불필요하게 호출하게 되어 로딩이 느려진다.
-export async function syncSchedules(
+async function runSyncRound(
   ocids: string[],
   onProgress?: (completed: number, total: number) => void,
 ): Promise<CharacterScheduleSync[]> {
-  if (ocids.length === 0) {
-    return []
-  }
-
   // ADR-097 결정 3: 여기서부터 실제 네트워크가 나간다. 성공이 아니라 "시도"를 표시하므로 실패해도
   // 표시한다 — 오프라인에서 탭을 옮길 때마다 실패 호출이 반복되지 않게. 화면 진입 재조회 말고
   // 추적 목록 저장·수동 모드 시드에서 들어온 회차도 같은 대상이다(동기화가 일어난 사실은 같고,
   // 캐릭터별 신선도는 isSyncFresh 가 따로 본다).
   markSyncAttemptedThisRun()
 
-  const { apiKey, accountId, characters } = await resolveRegisteredCharacters()
-  const targetCharacters = characters.filter((character) => ocids.includes(character.ocid))
-  const total = targetCharacters.length
+  // ADR-143 결정 6: 추적 목록이 메이플 ID 경계를 넘으므로 "선택 계정의 캐릭터"를 받아 거르지
+  // 않는다 — 전 계정에서 찾고, 각 캐릭터가 **자기 계정**을 들고 다닌다(계정 공유 원장·캐시
+  // 인덱스가 그 값을 쓴다). 단일 계정에서는 결과가 완전히 같다.
+  const { apiKey, characters: targets } = await resolveTrackedCharacterContext(ocids)
+  const total = targets.length
 
   onProgress?.(0, total)
 
-  const [first, ...rest] = targetCharacters
-  const firstResult = await syncOneCharacter(apiKey, first, accountId)
+  const [first, ...rest] = targets
+  const firstResult = await syncOneCharacter(apiKey, first.character, first.accountId)
   let completed = 1
   onProgress?.(completed, total)
 
@@ -332,7 +350,7 @@ export async function syncSchedules(
 
   if (isGlobalFailure) {
     const fallbackRest = await Promise.all(
-      rest.map((character) => buildFallbackResult(character, firstResult.error as ScheduleSyncError)),
+      rest.map(({ character }) => buildFallbackResult(character, firstResult.error as ScheduleSyncError)),
     )
     completed += fallbackRest.length
     onProgress?.(completed, total)
@@ -342,18 +360,83 @@ export async function syncSchedules(
   // ADR-097 결정 7: character/basic 편승 갱신을 스케줄 병렬 구간과 **같은 Promise.all** 로 묶어
   // 동시에 내보낸다 — 체감 대기 시간이 늘지 않는다. 자리는 isGlobalFailure 를 걸러 낸 **뒤**여야
   // 한다(ADR-008 순서 보존 — 401/429 인데 캐릭터 수만큼 호출을 낭비하지 않는다). 대상은
-  // targetCharacters 전체다: 프리플라이트로 이미 동기화한 첫 캐릭터도 basic 갱신 대상이다.
+  // targets 전체다: 프리플라이트로 이미 동기화한 첫 캐릭터도 basic 갱신 대상이다.
   const [restResults] = await Promise.all([
     Promise.all(
-      rest.map(async (character) => {
+      rest.map(async ({ character, accountId }) => {
         const result = await syncOneCharacter(apiKey, character, accountId)
         completed += 1
         onProgress?.(completed, total)
         return result
       }),
     ),
-    refreshCharacterBasics(apiKey, accountId, targetCharacters),
+    refreshCharacterBasics(apiKey, targets),
   ])
 
   return [firstResult, ...restResults]
+}
+
+// ADR-147 결정 4 (= ADR-132 결정 8 이 "today 에 내용이 붙는 시점"을 기한으로 열어 둔 구멍):
+// 진행 중인 회차가 있으면 새 회차를 시작하지 않고 그 프라미스를 함께 기다린다.
+//
+// 게이트(ADR-097 결정 3)는 "이번 실행에서 시도함 AND 캐시가 10분 안"인데, 플래그는 호출이
+// **시작될 때** 서고 신선도는 호출이 **끝나야** 갱신된다. 그 사이에 다른 화면이 진입하면
+// `시도함 = true` · `신선함 = false`를 보고 같은 호출을 한 번 더 낸다. today 가 첫 화면이라
+// 실행당 첫 동기화를 대개 그 화면이 내므로, 이 경로는 예외가 아니라 지배 경로다.
+// prehydrate.ts 의 순차 루프는 그 창을 순서로 피해 왔지만 today 는 그 순차 밖의 트리거다.
+//
+// **키는 "회차" 하나다 — ocid 집합이 아니다.** 스케줄러 셋과 today 가 같은 추적 목록을 보므로
+// 집합이 늘 같고, 집합별 슬롯을 두면 목록이 조금 다른 조합에서 같은 캐릭터가 여전히 두 번 나간다.
+//
+// **다만 합류에는 자격이 있다 — 진행 중인 회차가 요청 ocid 를 전부 덮어야 한다**(ADR-147 정정 42).
+// 결정 4 는 이걸 대가 ①("자기가 요청한 캐릭터가 그 안에 없을 수 있다")로 적고 창이 좁다고 봤는데,
+// 수동 모드 시드는 **자기가 자기와 부딪쳐** 그 창이 100% 였다: ocid 마다 회차를 동시에 내면 첫
+// 호출이 슬롯을 잡고 나머지가 전부 거기 합류해, 추적 캐릭터 전원이 첫 캐릭터의 스케줄로 시드됐다.
+// 못 덮는 요청은 그 회차가 **정산된 뒤에** 자기 회차를 잇는다 — 동시에 둘을 내보내면 단일 비행이
+// 막으려던 중복이 되살아난다. 키는 그대로 회차이므로 집합이 늘 같은 today·스케줄러 셋은 한 회차다.
+//
+// **대가**: 합류한 호출의 `onProgress` 는 불리지 않는다 — 진행률은 회차를 소유한 호출이 받는다.
+let inFlightRound: { ocids: ReadonlySet<string>; promise: Promise<CharacterScheduleSync[]> } | null =
+  null
+
+// ADR-147 정정 42: 호출부 여섯이 전부 결과를 "내가 물어본 캐릭터들"로 취급해 map 하므로, 회차가
+// 더 많이 물어봤더라도 초과분은 돌려주지 않는다(스케줄러 저장 경로에서는 그 초과분이 keptViews 와
+// 겹쳐 중복 행이 된다). 순서는 회차 순서 그대로다 — 표시 순서는 화면 셀렉터의 몫이다.
+function pickRequested(round: CharacterScheduleSync[], ocids: string[]): CharacterScheduleSync[] {
+  const wanted = new Set(ocids)
+  return round.filter((result) => wanted.has(result.ocid))
+}
+
+export async function syncSchedules(
+  ocids: string[],
+  onProgress?: (completed: number, total: number) => void,
+): Promise<CharacterScheduleSync[]> {
+  if (ocids.length === 0) {
+    return []
+  }
+
+  while (inFlightRound !== null) {
+    const current = inFlightRound
+    if (ocids.every((ocid) => current.ocids.has(ocid))) {
+      return pickRequested(await current.promise, ocids)
+    }
+    // 실패도 정산이다 — 앞 회차의 실패를 내 요청의 실패로 삼지 않고 내 회차를 새로 낸다.
+    await current.promise.catch(() => undefined)
+  }
+
+  const round = runSyncRound(ocids, onProgress)
+  inFlightRound = { ocids: new Set(ocids), promise: round }
+  try {
+    return pickRequested(await round, ocids)
+  } finally {
+    // 성공·실패와 무관하게 정산되면 즉시 비운다. 실패한 회차를 들고 있으면 네트워크가 돌아와도
+    // 다음 진입이 그 실패를 다시 받는다.
+    inFlightRound = null
+  }
+}
+
+// 테스트 전용. 모듈 수준 상태라 테스트끼리 오염되므로 beforeEach 에서 부른다.
+// 프로덕션 코드에서 부르지 말 것 — 진행 중인 회차를 잊어버려 그 순간 단일 비행이 무너진다.
+export function resetSyncSingleFlightForTests(): void {
+  inFlightRound = null
 }

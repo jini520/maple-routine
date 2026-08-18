@@ -1,6 +1,12 @@
 // "캐릭터 관리" 모달 — 그리드(`CharacterTrackingGrid`)를 감싸는 오버레이·카드·CTA 를 소유한다.
 // 그리드 자체는 온보딩 캐릭터 선택 단계와 공유한다([[ADR-035]]).
 //
+// ⚠️ **이 모달 껍데기는 RN 제품 코드에서 더 이상 열리지 않는다**([[ADR-144]] 결정 1, 2026-08-17) —
+// 설정의 캐릭터 관리가 `SettingsCharactersScreen` 하위 페이지로 옮겨갔다. 지금 남은 이유는
+// `CharacterTrackingGrid`·`roster-body` 를 **온보딩 캐릭터 선택 단계가 아직 쓰기 때문**이다.
+// 그 단계가 새 본문(`CharacterManageBody`)으로 옮겨가면 이 디렉터리 전체가 고아가 된다 — 지우는
+// 것은 그때 함께 한다(둘을 따로 지우면 중간에 온보딩이 그릴 것을 잃는다).
+//
 // ── RN 으로 옮기며 갈린 것 다섯 ─────────────────────────────────────────────────────
 //
 // ① **오버레이 = `react-native` 의 `Modal`.** 웹의 `fixed inset-0` 은 뷰포트 기준이라 어디에 마운트
@@ -214,7 +220,7 @@ export function CharacterTrackingPicker(props: CharacterTrackingPickerProps): Re
           <View className="mb-4 shrink-0 gap-1">
             <Text className="text-lg font-semibold text-text">캐릭터 관리</Text>
             <Text className="text-sm text-text-muted">
-              체크한 캐릭터만 스케줄러 목록에 표시됩니다. 최소 한 명은 선택해주세요.
+              체크한 캐릭터만 스케줄러 목록에 표시됩니다. 최소 1개는 선택해주세요.
             </Text>
           </View>
 

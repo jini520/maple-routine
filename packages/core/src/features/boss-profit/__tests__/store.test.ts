@@ -112,6 +112,11 @@ import {
 } from '../../schedule-sync/sync-run-state'
 import { useBossProfitStore } from '../store'
 
+// "시세표(boss-crystal-prices.json)에 없는 보스" 표본. 실재 보스명을 쓰면 그 보스의 가격이
+// 확정되는 날 검증하려던 것과 반대 상태를 검증하게 된다 — 벨로나가 실제로 그랬다
+// ([[ADR-151]] 결정 5). 어떤 보스도 이 이름을 갖지 않는다는 사실이 이 픽스처의 불변조건이다.
+const UNPRICED_BOSS = '미확정 보스'
+
 function bossContent(overrides: Partial<BossContent> = {}): BossContent {
   const merged = {
     name: '자쿰',
@@ -573,7 +578,7 @@ describe('useBossProfitStore', () => {
       syncResult({
         state: {
           ...syncResult().state!,
-          bossContents: [bossContent({ name: '벨로나', difficulty: '이지', isComplete: true })],
+          bossContents: [bossContent({ name: UNPRICED_BOSS, difficulty: '이지', isComplete: true })],
         },
       }),
     ])
@@ -921,7 +926,7 @@ describe('useBossProfitStore', () => {
         syncResult({
           state: {
             ...syncResult().state!,
-            bossContents: [bossContent({ name: '벨로나', difficulty: '이지', isComplete: true })],
+            bossContents: [bossContent({ name: UNPRICED_BOSS, difficulty: '이지', isComplete: true })],
           },
         }),
       ])
@@ -1056,7 +1061,7 @@ describe('useBossProfitStore', () => {
     })
 
     it('priceMeso가 null인 보스는 upsert를 호출하지 않지만 partySize는 로컬 상태에 반영된다', async () => {
-      const row = await seedRow({ name: '벨로나', difficulty: '이지' })
+      const row = await seedRow({ name: UNPRICED_BOSS, difficulty: '이지' })
 
       await useBossProfitStore.getState().setPartySize(row, 3)
 

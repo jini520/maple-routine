@@ -3,23 +3,25 @@ import { useOnboardingStore } from '@core/features/onboarding/store'
 
 import { DropHistoryScreen } from '../app/boss-profit/DropHistoryScreen'
 import { DropPriceScreen } from '../app/boss-profit/DropPriceScreen'
-import { BossManageScreen } from '../app/boss-scheduler/BossManageScreen'
 import { ContentManageScreen } from '../app/content-scheduler/ContentManageScreen'
 import { OnboardingScreen } from '../app/onboarding/OnboardingScreen'
 import { SettingsAboutScreen } from '../app/settings/SettingsAboutScreen'
 import { SettingsAccountDataScreen } from '../app/settings/SettingsAccountDataScreen'
+import { SettingsCharactersScreen } from '../app/settings/SettingsCharactersScreen'
 import { SettingsFeatureGuideListScreen } from '../app/settings/SettingsFeatureGuideListScreen'
 import { SettingsFeatureGuideScreen } from '../app/settings/SettingsFeatureGuideScreen'
 import { SettingsPrivacyScreen } from '../app/settings/SettingsPrivacyScreen'
 import { SettingsReleaseNotesScreen } from '../app/settings/SettingsReleaseNotesScreen'
+import { ScreenBackdrop } from '../components/templates/ThemeBackdrop/ScreenBackdrop'
 import { TabNavigator } from './TabNavigator'
 import { STACK_ROUTE_NAMES, type RootStackParamList, type StackRouteName } from './routes'
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
 
 /**
- * 진짜 화면이 들어온 하위 페이지 열하나. **step 8 로 전부 찼다** — 4단계가 step 마다 이 표를
- * 채웠고, 비어 있던 자리가 곧 남은 일이었다.
+ * 진짜 화면이 들어온 하위 페이지 열하나. **step 8 로 전부 찼고**([[ADR-128]] 4단계) 그 뒤
+ * 캐릭터 관리가 하나 늘었다가([[ADR-144]] 결정 1 — 웹에서 모달이던 것이 여기서는 화면이다)
+ * 보스 관리가 **탭으로 빠져나갔다**([[ADR-145]] 결정 1).
  *
  * 표가 `Partial` 이 아니라 **`Record<StackRouteName, …>`** 인 것이 계약이다. 열하나를 다 적지
  * 않으면 컴파일이 안 된다 — 자리표시자로 조용히 떨어지는 길을 없앴다(그 길이 `TabNavigator` 에서
@@ -29,7 +31,6 @@ const Stack = createNativeStackNavigator<RootStackParamList>()
  * 목록에서도, 개발 노트 항목에서도 같은 상세가 열린다. 사본을 두면 같은 글이 두 벌이 된다.
  */
 const STACK_SCREENS = {
-  BossManage: BossManageScreen,
   ContentManage: ContentManageScreen,
   DropHistory: DropHistoryScreen,
   DropPrice: DropPriceScreen,
@@ -40,6 +41,7 @@ const STACK_SCREENS = {
   SettingsAccountData: SettingsAccountDataScreen,
   SettingsAbout: SettingsAboutScreen,
   SettingsPrivacy: SettingsPrivacyScreen,
+  SettingsCharacters: SettingsCharactersScreen,
 } as const satisfies Record<StackRouteName, React.ComponentType>
 
 /**
@@ -91,6 +93,10 @@ export function RootNavigator(): React.JSX.Element {
 
   return (
     <Stack.Navigator
+      // 모든 화면이 자기 벽지를 들고 다닌다([[ADR-134]] 정정 5) — 안드로이드에서 화면이
+      // 불투명해야 전환 중 두 화면이 서로 비치지 않고, 그러면 벽지를 화면이 들어야 한다.
+      // iOS 에서는 이 래퍼가 자식을 그대로 통과시킨다(`ScreenBackdrop`).
+      screenLayout={({ children }) => <ScreenBackdrop>{children}</ScreenBackdrop>}
       screenOptions={{
         // 페이지 헤더는 앱이 직접 그린다 — `TabNavigator` 와 같은 이유.
         headerShown: false,

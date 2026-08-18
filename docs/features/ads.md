@@ -2,14 +2,18 @@
 
 > **범위**: 광고 포맷·노출 지점·노출 게이트·어댑터 경계·스토어 부수 요건. 결정의 배경과 폐기된 대안은 [[ADR-090]].
 > **관련 소스**: `native/ads.ts`(어댑터) · `features/ads/`(게이트 판정·오케스트레이션) · `storage/ads.ts`(마지막 노출 시각) · `App.tsx`(초기화·탭 전환 훅) · `android/…/AndroidManifest.xml` · `ios/App/App/Info.plist` · RN: `packages/app-rn/src/native/adapters/rn-ads.ts`·`ads-env.ts`·`app.json`.
-> **관련 ADR**: [[ADR-090]] [[ADR-005]] [[ADR-003]] [[ADR-013]] [[ADR-007]]. **관련 문서**: [settings.md](./settings.md), [../foundation/product.md](../foundation/product.md), [../foundation/architecture.md](../foundation/architecture.md).
+> **관련 ADR**: [[ADR-090]] [[ADR-150]] [[ADR-128]] [[ADR-005]] [[ADR-003]] [[ADR-013]] [[ADR-007]]. **관련 문서**: [settings.md](./settings.md), [../foundation/product.md](../foundation/product.md), [../foundation/architecture.md](../foundation/architecture.md).
 
 ## 정책
 
 이 앱의 **유일한 수익화 수단은 광고**다. 판매 상품(인앱 구매·구독·광고 제거)은 두지 않는다
 ([[ADR-090]] 맥락 — 이슈 #58이 네 번 좁혀진 결과).
 
-### 포맷과 지점: 탭 전환 시 전면광고(Interstitial)
+> ⚠️ **아래 「탭 전환 전면광고」는 이제 `app-capacitor` 에만 해당한다**([[ADR-150]], 2026-08-19).
+> `app-rn` 에서는 전면광고를 걷었고 인라인 광고는 아직 없다 — 즉 **RN 앱은 지금 광고가 없다.**
+> 두 앱의 현재 상태는 [RN 어댑터](#rn-어댑터-packagesapp-rn--광고-없음-전면광고를-걷었다) 절에.
+
+### 포맷과 지점: 탭 전환 시 전면광고(Interstitial) — `app-capacitor`
 
 하단 탭바로 화면을 옮길 때(`/content` ↔ `/boss` ↔ `/profit` ↔ `/settings`) 전면광고를 띄운다.
 
@@ -94,10 +98,40 @@
 샘플로 남으면 SDK가 초기화에서 죽는다. 그래서 `native/__tests__/ads.test.ts` 가 세 곳을 모두
 읽어 드리프트를 잡는다(ID 선택은 순수 함수 `resolveInterstitialAdId` 로 분리).
 
-### RN 어댑터 (`packages/app-rn`) — 같은 판정, 다른 채우는 값
+### RN 어댑터 (`packages/app-rn`) — 광고 없음, 전면광고를 걷었다
 
-RN 전환([[ADR-128]])의 `AdsPort` 구현은 `react-native-google-mobile-ads` 를 쓴다. **판정 함수는
-공유한다** — `packages/core` 의 `shouldUseTestAds`·`resolveInterstitialAdId` 를 그대로 부르고,
+**`app-rn` 에는 지금 광고가 하나도 안 뜬다**([[ADR-150]], 2026-08-19). [[ADR-128]] 이 RN 으로 간
+동인 자체가 광고 인벤토리였고 — 웹뷰에는 카드 *사이*에 광고를 넣을 자리가 원리적으로 없어
+전면광고 말고 선택지가 없었다 — 그 제약이 사라졌으므로 **먼저 전면광고를 걷고** 인라인 광고를
+후속으로 붙인다.
+
+| 걷은 것 | 남긴 것 |
+|---|---|
+| `AppShell.tsx` 부팅 `startAds()`(SDK 초기화 + 사전 로드) | `react-native-google-mobile-ads` 의존성 |
+| `BottomBar.tsx` 그룹 이동 게이트 | `native/adapters/rn-ads.ts`(`AdsPort` 구현) |
+| `WidgetGrid.tsx` 위젯 이동 게이트 | `ads-env.ts`(테스트 광고 강제) |
+| `bar-model.ts` 의 `shouldGateAd`·`BarAction` | `boot.ts` 의 `setAdsPort(rnAdsPort)` |
+| — | `app.json` 앱 ID · `EXPO_PUBLIC_ADS_TEST` · `app-ads.txt` |
+
+**사전 로드까지 걷은 이유**는 표시만 막으면 실행마다 «뜨지 않을 광고» 를 요청해 임프레션 없는
+요청(매치율 0)으로 쌓이기 때문이다. 걷은 것은 「광고를 띄우는 일」이 아니라 「전면광고라는
+인벤토리」다.
+
+**`src/__tests__/interstitial-policy.test.ts` 가 되돌아오는 것을 막는다** — app-rn 소스에
+`features/ads/tab-switch-ad` import 가 0건이어야 한다. `@core/native/ads` 는 잡지 않는다(어댑터가
+계속 쓴다).
+
+> **SDK 초기화 자리가 비어 있다.** `startAds()` 가 초기화와 사전 로드를 함께 했으므로, 인라인
+> 광고를 붙일 때 `mobileAds().initialize()`(=`rnAdsPort.initialize()`)를 부를 자리를 새로 정해야
+> 한다. 함수 자체는 `rn-ads.ts` 에 그대로 있다.
+
+**`packages/core` 는 무변경이다** — `features/ads/`·`native/ads.ts`·`storage/ads.ts` 는
+`app-capacitor` 가 지금도 쓰고 있다.
+
+#### 어댑터가 채우는 값 (그대로 유효)
+
+`AdsPort` 구현은 `react-native-google-mobile-ads` 를 쓴다. **판정 함수는 공유한다** —
+`packages/core` 의 `shouldUseTestAds`·`resolveInterstitialAdId` 를 그대로 부르고,
 `packages/app-rn/src` 에는 광고 단위 ID 문자열이 한 글자도 없다(저장소 검색으로 지킨다).
 
 | 값 | 위치 |
@@ -174,7 +208,11 @@ RN 전환([[ADR-128]])의 `AdsPort` 구현은 `react-native-google-mobile-ads` �
 
 ## 열린 질문
 
-- **App Open 재검토 트리거**: `@capacitor-community/admob` 배포판에 App Open이 올라오면 앱 시작
+- **`app-rn` 의 인라인 광고 포맷·지점**([[ADR-150]] 후속) — RN 전환의 동인이었던 «카드 사이 광고»
+  를 실제로 어떤 형태로(배너 / 네이티브 광고) 어디에 넣을지. **[[ADR-128]] 5단계의 선행 조건**이다
+  — 인라인 없이 전환 릴리스가 나가면 그 순간부터 수익이 0이다. SDK 초기화를 부를 자리도 이때 함께
+  정한다
+- **App Open 재검토 트리거**(`app-capacitor` 한정): `@capacitor-community/admob` 배포판에 App Open이 올라오면 앱 시작
   광고를 추가할지 다시 본다(사용자 의사 2026-08-04: "플러그인으로 쓸 수 있으면 그때 추가"). App Open
   코드는 `main` 에 2026-04-10 머지됐으나 마지막 릴리스(v8.0.0, 2025-12-27)에는 없다. **AdMob 콘솔에
   앱 오프닝 광고 형식이 보이는 것과 앱에서 쓸 수 있는 것은 별개다** — 콘솔에서 광고 단위는 만들 수
@@ -184,6 +222,11 @@ RN 전환([[ADR-128]])의 `AdsPort` 구현은 `react-native-google-mobile-ads` �
 
 ## 폐기된 정책 (history)
 
+- ~~`app-rn` 도 탭 전환 전면광고를 띄운다 — 부팅 `startAds()` 사전 로드 + 그룹 이동 게이트
+  (`shouldGateAd`, [[ADR-132]] 결정 9) + 위젯 이동 게이트~~ → **RN 에서만 폐기**([[ADR-150]],
+  2026-08-19). 전면광고는 웹뷰에서 «가능한 유일한 포맷» 이었고 RN 에는 그 제약이 없다 — 인라인
+  광고를 붙이기 전에 먼저 걷었다. **`app-capacitor` 의 전면광고는 그대로 선다**(출시본이고,
+  네이티브 플러그인이라 OTA 로는 제거되지도 않는다)
 - ~~테마를 기본/프리미엄으로 나눠 프리미엄을 IAP로 판매~~ → 파는 것은 광고 제거이지 테마가 아님(사용자 정정, 2026-08-03)
 - ~~광고 제거를 월간/연간 **구독**으로 판매 + 프리미엄 테마를 구독 리워드로~~ → 넥슨 약관 검토 후 철회, 판매 상품 없이 광고만(2026-08-03)
 - ~~후원 페이지를 만들어 후원자에게 광고 제거·테마 해제~~ → 리워드가 붙으면 스토어가 후원이 아니라 인앱 구매로 분류(Google Play가 "ad-free version of an app"을 Play Billing 필수 예시로 명시 / Apple 3.2.1(vii)), 2026-08-03

@@ -33,8 +33,10 @@ import { useRoute, type RouteProp } from '@react-navigation/native'
 
 import { findFeatureGuide } from '@core/data/feature-guides'
 
+import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
+import { naturalAspectStyle } from '../../lib/image-aspect'
 import { ArrowLeftIcon } from '../../lib/icons'
 import { TABULAR_NUMS } from '../../lib/text-styles'
 import type { RootStackParamList } from '../../navigation/routes'
@@ -100,7 +102,7 @@ export function SettingsFeatureGuideScreen(): React.JSX.Element | null {
       hasTabBar={false}
       header={
         <PageHeader>
-          <View className="flex-row items-center gap-2">
+          <PageHeaderTitleRow className="gap-2">
             <Pressable
               role="button"
               aria-label="뒤로"
@@ -113,7 +115,7 @@ export function SettingsFeatureGuideScreen(): React.JSX.Element | null {
             <Text numberOfLines={1} className="min-w-0 flex-1 text-lg font-semibold text-text">
               {guide.title}
             </Text>
-          </View>
+          </PageHeaderTitleRow>
         </PageHeader>
       }
     >
@@ -180,12 +182,18 @@ export function SettingsFeatureGuideScreen(): React.JSX.Element | null {
                   //
                   // **`src` 는 URL 문자열이 아니라 번들 에셋 참조다**([[ADR-129]]) — 웹에서 그것이
                   // 문자열인 것은 번들러가 그렇게 값을 가르기 때문이고, 여기서는 `Image` 가 그대로
-                  // 받는 에셋 id 다. 비율은 원본이 정하게 두고(`aspectRatio: undefined`) 폭만 채운다.
+                  // 받는 에셋 id 다.
+                  //
+                  // **비율은 원본이 정하지만, 그렇게 되려면 높이를 «지워야» 한다**([[ADR-135]]) —
+                  // 웹의 `w-full` 한 줄이 통했던 것은 preflight 의 `img { height: auto }` 때문이고
+                  // RN 에는 그 짝이 없다. 안 적은 축에는 스크린샷의 고유 픽셀 높이가 남아
+                  // (746×274 안내는 위아래 각 71px, 780×1438 안내는 각 389px) 큰 여백이 생긴다.
                   <Image
                     source={block.image.src}
                     alt={block.image.alt}
                     resizeMode="contain"
-                    className="w-full rounded-[14px] border border-border"
+                    style={naturalAspectStyle(block.image.src, { width: '100%' })}
+                    className="rounded-[14px] border border-border"
                   />
                 )}
                 {block.text !== undefined && (

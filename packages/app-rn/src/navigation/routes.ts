@@ -19,25 +19,53 @@
 
 import type { NavigatorScreenParams } from '@react-navigation/native'
 
-/** 탭 넷. 순서가 곧 탭바 순서다(`App.tsx` 의 `TAB_ITEMS` 와 같은 순서). */
-export type TabRouteName = 'Content' | 'Boss' | 'Profit' | 'Settings'
+/**
+ * 탭 내비게이터의 화면 아홉 — **그룹이 아니라 페이지다**([[ADR-132]] 결정 1).
+ *
+ * 아홉째가 `BossManage` 다([[ADR-145]] 결정 1) — **웹의 하위 경로가 여기서만 탭인 유일한 자리**다.
+ * 그 화면을 여는 버튼이 [[ADR-140]] 뒤로 보스 스케줄러 헤더에 하나 남아 있었고, 하단바가 이미
+ * «스케줄 안의 자리들» 을 그리고 있는데 그 목록에만 없었다.
+ *
+ * 바에 보이는 «그룹»(스케줄·가계부…)은 내비게이션 구조가 아니라 **바의 표현**이라 여기 없다.
+ * 그 묶음은 `bar-model.ts` 의 표가 갖는다. 중첩 내비게이터를 두지 않은 이유도 같다 — 하위 페이지들은
+ * 서로 형제이고 전환에 스택도 애니메이션도 없다.
+ *
+ * 순서는 «그룹 순서 → 그룹 안 순서» 다. 바가 이 순서로 그리는 것은 아니지만(그건 `BAR_GROUPS`),
+ * 표 둘이 같은 순서를 갖고 있으면 나중에 대조하기 쉽다.
+ */
+export type TabRouteName =
+  | 'Today'
+  | 'Content'
+  | 'Boss'
+  | 'BossManage'
+  | 'Profit'
+  | 'HuntingProfit'
+  | 'Spend'
+  | 'Utility'
+  | 'Settings'
 
 export type TabParamList = {
+  Today: undefined
   Content: undefined
+  Boss: undefined
+  BossManage: undefined
+  Profit: undefined
+  HuntingProfit: undefined
+  Spend: undefined
+  Utility: undefined
   /**
-   * `openPicker` 는 웹의 **`/boss?openPicker=1`** 이다 — 보스 수익 화면의 "캐릭터 선택하러 가기"
-   * ([[ADR-068]] 결정 4)가 캐릭터 관리 피커를 열어 둔 채로 이 탭에 보낸다.
+   * `openPicker` 는 웹의 **`/boss?openPicker=1`** 이다 — 캐릭터 관리 피커를 **열어 둔 채로** 이 탭에
+   * 보낸다. 보내는 쪽 셋: 보스 수익의 "캐릭터 선택하러 가기"([[ADR-068]] 결정 4)와 컨텐츠·보스
+   * 스케줄러의 빈 상태 CTA.
+   *
+   * **받는 쪽이 `Boss` 에서 여기로 옮겨왔다**([[ADR-140]] 결정 1·2) — 피커를 여는 자리가 설정
+   * 하나가 되면서 목적지도 함께 옮겼다. 열어 두고 보낸다는 계약 자체는 그대로다.
    *
    * URL 이 없어 "새로고침·뒤로가기마다 피커가 다시 열린다"는 웹의 걱정은 사라지지만 **파라미터는
    * 스택에 남는다** — 탭을 떠났다 돌아오면 그대로 살아 있으므로 화면이 `setParams` 로 지우는 일은
-   * 그대로 필요하다(`BossScreen`).
-   *
-   * **보내는 쪽은 step 7(보스 수익)이 온다.** 받는 쪽을 먼저 두는 이유는 이것이 이 탭의 계약이기
-   * 때문이고, 안 두면 그 화면을 옮기다 여기로 되돌아와야 한다.
+   * 그대로 필요하다(`SettingsScreen`).
    */
-  Boss: { openPicker?: boolean } | undefined
-  Profit: undefined
-  Settings: undefined
+  Settings: { openPicker?: boolean } | undefined
 }
 
 /**
@@ -56,7 +84,6 @@ export type RootStackParamList = {
   Onboarding: undefined
   Tabs: NavigatorScreenParams<TabParamList> | undefined
   ContentManage: undefined
-  BossManage: undefined
   DropHistory: undefined
   DropPrice: undefined
   SettingsFeatureGuideList: undefined
@@ -66,6 +93,11 @@ export type RootStackParamList = {
   SettingsAccountData: undefined
   SettingsAbout: undefined
   SettingsPrivacy: undefined
+  /**
+   * 캐릭터 관리 — **웹에 없는 화면이다**([[ADR-144]] 결정 1). 웹뷰 앱에서는 모달이고, RN 에서는
+   * 두 층 + 드롭다운 + 순서 + 대표가 385px 모달 본문에 안 들어가 하위 페이지가 됐다.
+   */
+  SettingsCharacters: undefined
 }
 
 export type StackRouteName = Exclude<keyof RootStackParamList, 'Onboarding' | 'Tabs'>
@@ -85,15 +117,23 @@ export type RouteTarget =
   | { readonly kind: 'push'; readonly route: StackRouteName }
 
 export interface RouteRow {
-  /** 웹(react-router) 경로 — parity-inventory §1 의 첫 열. */
+  /** 웹(react-router) 경로 — parity-inventory §1 의 첫 열. `origin: 'rn'` 이면 웹에 없는 경로다(아래). */
   readonly path: string
   /** 그 경로가 그리던 화면 — parity-inventory §1 의 둘째 열. **두 행이 같은 값을 가질 수 있다.** */
   readonly screen: string
   readonly target: RouteTarget
+  /**
+   * 이 행이 **어디서 왔는가**([[ADR-132]] 결정 1).
+   *
+   * - `web` — 웹 앱에 실제로 있는 경로. 계획서 §1 과 대조되는 행이고 **17개로 고정**이다.
+   * - `rn` — RN 에서 새로 생긴 화면. 웹에는 없다. `path` 는 그 화면이 웹 규칙대로였다면 가졌을
+   *   경로이고 **대조가 아니라 이름표**다 — 이 값으로 계획서를 검사하지 말 것(테스트가 갈라 본다).
+   */
+  readonly origin: 'web' | 'rn'
 }
 
 /**
- * 17행. **행 수와 내용을 테스트가 고정한다** — 화면이 늘면 계획서와 여기가 함께 움직여야 한다.
+ * 웹 17행 + RN 5행. **행 수와 내용을 테스트가 고정한다** — 화면이 늘면 계획서와 여기가 함께 움직여야 한다.
  *
  * `/settings/about/privacy` 가 계획서 표(`/settings/privacy`)와 다른 것은 **계획서 쪽이 낡았기
  * 때문**이다. [[ADR-120]] 결정 11 이 구현 중에 경로를 `about` 의 **자식**으로 정정했고
@@ -102,28 +142,33 @@ export interface RouteRow {
  * 유일하게 2단인 스택이다. 계획서 표도 함께 고쳤다.
  */
 export const ROUTE_TABLE: readonly RouteRow[] = [
-  { path: '/', screen: 'ContentScreen', target: { kind: 'initial', route: 'Content' } },
-  { path: '/onboarding', screen: 'OnboardingScreen', target: { kind: 'root', route: 'Onboarding' } },
+  { path: '/', screen: 'ContentScreen', target: { kind: 'initial', route: 'Content' }, origin: 'web' },
+  { path: '/onboarding', screen: 'OnboardingScreen', target: { kind: 'root', route: 'Onboarding' }, origin: 'web' },
 
-  { path: '/content', screen: 'ContentScreen', target: { kind: 'tab', route: 'Content' } },
+  { path: '/content', screen: 'ContentScreen', target: { kind: 'tab', route: 'Content' }, origin: 'web' },
   {
     path: '/content/manage',
     screen: 'ContentManageScreen',
     target: { kind: 'push', route: 'ContentManage' },
+    origin: 'web',
   },
 
-  { path: '/boss', screen: 'BossScreen', target: { kind: 'tab', route: 'Boss' } },
-  { path: '/boss/manage', screen: 'BossManageScreen', target: { kind: 'push', route: 'BossManage' } },
+  { path: '/boss', screen: 'BossScreen', target: { kind: 'tab', route: 'Boss' }, origin: 'web' },
+  // **웹 경로인데 `push` 가 아닌 유일한 행**([[ADR-145]] 결정 1) — 웹에서는 `/boss` 위로 밀려
+  // 올라오는 하위 페이지이고, RN 에서는 스케줄 그룹의 셋째 하위 탭이다. `origin` 은 그대로 `web`
+  // 이다(대조할 경로가 실재한다 — 갈린 것은 «어디로 갔는가» 뿐이다).
+  { path: '/boss/manage', screen: 'BossManageScreen', target: { kind: 'tab', route: 'BossManage' }, origin: 'web' },
 
-  { path: '/profit', screen: 'BossProfitScreen', target: { kind: 'tab', route: 'Profit' } },
-  { path: '/profit/drops', screen: 'DropHistoryScreen', target: { kind: 'push', route: 'DropHistory' } },
-  { path: '/profit/prices', screen: 'DropPriceScreen', target: { kind: 'push', route: 'DropPrice' } },
+  { path: '/profit', screen: 'BossProfitScreen', target: { kind: 'tab', route: 'Profit' }, origin: 'web' },
+  { path: '/profit/drops', screen: 'DropHistoryScreen', target: { kind: 'push', route: 'DropHistory' }, origin: 'web' },
+  { path: '/profit/prices', screen: 'DropPriceScreen', target: { kind: 'push', route: 'DropPrice' }, origin: 'web' },
 
-  { path: '/settings', screen: 'SettingsScreen', target: { kind: 'tab', route: 'Settings' } },
+  { path: '/settings', screen: 'SettingsScreen', target: { kind: 'tab', route: 'Settings' }, origin: 'web' },
   {
     path: '/settings/guide',
     screen: 'SettingsFeatureGuideListScreen',
     target: { kind: 'push', route: 'SettingsFeatureGuideList' },
+    origin: 'web',
   },
   // 아래 둘이 **같은 `screen` 값을 갖는 것이 계약이다**([[ADR-125]] 결정 3) — 기능 설명 목록에서도,
   // 개발 노트 항목에서도 같은 상세가 열린다. 화면과 데이터는 한 벌이고 경로만 둘이다.
@@ -131,27 +176,50 @@ export const ROUTE_TABLE: readonly RouteRow[] = [
     path: '/settings/guide/:guideId',
     screen: 'SettingsFeatureGuideScreen',
     target: { kind: 'push', route: 'SettingsFeatureGuide' },
+    origin: 'web',
   },
   {
     path: '/settings/release-notes',
     screen: 'SettingsReleaseNotesScreen',
     target: { kind: 'push', route: 'SettingsReleaseNotes' },
+    origin: 'web',
   },
   {
     path: '/settings/release-notes/:guideId',
     screen: 'SettingsFeatureGuideScreen',
     target: { kind: 'push', route: 'SettingsReleaseNoteGuide' },
+    origin: 'web',
   },
   {
     path: '/settings/account-data',
     screen: 'SettingsAccountDataScreen',
     target: { kind: 'push', route: 'SettingsAccountData' },
+    origin: 'web',
   },
-  { path: '/settings/about', screen: 'SettingsAboutScreen', target: { kind: 'push', route: 'SettingsAbout' } },
+  { path: '/settings/about', screen: 'SettingsAboutScreen', target: { kind: 'push', route: 'SettingsAbout' }, origin: 'web' },
   {
     path: '/settings/about/privacy',
     screen: 'SettingsPrivacyScreen',
     target: { kind: 'push', route: 'SettingsPrivacy' },
+    origin: 'web',
+  },
+  // ── 여기부터 RN 에서 새로 생긴 화면 ([[ADR-132]] 결정 1·12 · [[ADR-144]] 결정 1) ──
+  // 웹에는 없다. `path` 는 대조용이 아니라 이름표다. 탭 넷은 아직 «개발 진행중» 자리표시자이고,
+  // 마지막 하나(캐릭터 관리)는 진짜 화면이다 — 웹뷰 앱에서는 같은 일을 설정의 모달이 한다.
+  { path: '/today', screen: 'TodayScreen', target: { kind: 'tab', route: 'Today' }, origin: 'rn' },
+  {
+    path: '/profit/hunting',
+    screen: 'HuntingProfitScreen',
+    target: { kind: 'tab', route: 'HuntingProfit' },
+    origin: 'rn',
+  },
+  { path: '/spend', screen: 'SpendScreen', target: { kind: 'tab', route: 'Spend' }, origin: 'rn' },
+  { path: '/utility', screen: 'UtilityScreen', target: { kind: 'tab', route: 'Utility' }, origin: 'rn' },
+  {
+    path: '/settings/characters',
+    screen: 'SettingsCharactersScreen',
+    target: { kind: 'push', route: 'SettingsCharacters' },
+    origin: 'rn',
   },
 ]
 
@@ -166,25 +234,21 @@ export const FEATURE_GUIDE_ROUTE_NAMES = [
   'SettingsReleaseNoteGuide',
 ] as const satisfies readonly StackRouteName[]
 
-export interface TabItem {
-  readonly route: TabRouteName
-  /** 탭바 라벨 — 웹 `TAB_ITEMS` 와 같은 문구다. */
-  readonly label: string
-}
+/**
+ * 탭 내비게이터가 그리는 화면 이름 아홉 — 표에서 파생한다.
+ *
+ * **라벨은 여기 없다.** 라벨은 그룹과 함께 `bar-model.ts` 의 `BAR_GROUPS` 가 갖는다 — 바가 라벨을
+ * 두 층(그룹 이름 · 하위 이름)으로 쓰기 때문에, 여기에도 두면 같은 문구가 두 벌이 된다.
+ */
+export const TAB_ROUTE_NAMES: readonly TabRouteName[] = ROUTE_TABLE.flatMap((row) =>
+  row.target.kind === 'tab' ? [row.target.route] : [],
+)
 
 /**
- * 탭 넷과 라벨.
+ * 처음 서 있는 탭 — **`/` 행과 갈렸다**([[ADR-132]] 결정 7).
  *
- * **아이콘은 아직 없다.** 웹의 셋은 lucide 이고 수익 하나는 커스텀 SVG(`ProfitIcon`, [[ADR-066]])라
- * atoms 를 옮기는 단계의 몫이다 — 여기서 임시 아이콘을 넣으면 그 단계에 버려질 뿐 아니라, 도메인
- * 아이덴티티를 임의로 고른 그림으로 대체하는 것이 된다([[ADR-066]] 이 명시적으로 금지한 방향).
+ * 표의 `/` 행은 여전히 `Content` 를 가리킨다. 그 행은 *"웹이 `/` 에서 무엇을 보여 줬는가"* 라는
+ * 기록이고, *"이 앱이 어디서 시작하는가"* 와는 다른 축이기 때문이다. 둘이 갈린 것 자체가
+ * [[ADR-132]] 의 산물이라 `routes.test.ts` 가 **양쪽을 함께** 고정한다 — 한쪽만 고치면 테스트가 운다.
  */
-export const TAB_ITEMS: readonly TabItem[] = [
-  { route: 'Content', label: '컨텐츠' },
-  { route: 'Boss', label: '보스' },
-  { route: 'Profit', label: '수익' },
-  { route: 'Settings', label: '설정' },
-]
-
-/** 처음 서 있는 탭 — 웹의 `/` → `/content` 리디렉트 자리. */
-export const INITIAL_TAB_ROUTE: TabRouteName = 'Content'
+export const INITIAL_TAB_ROUTE: TabRouteName = 'Today'

@@ -24,6 +24,15 @@ afterEach(() => {
   withRepeatSpy.mockClear()
 })
 
+/** 띠(마스크를 «무는» 쪽)와 램프(마스크 «안» 쪽)를 가른다. 둘 다 `RNSVGRect` 라 프롭으로 나눈다. */
+function bandAndRamp(tree: unknown): { band?: TreeNode; ramp?: TreeNode } {
+  const rects = findAllOfType(tree, 'RNSVGRect')
+  return {
+    band: rects.find((rect) => rect.props.mask !== undefined),
+    ramp: rects.find((rect) => rect.props.mask === undefined),
+  }
+}
+
 function childTypes(node: TreeNode): string[] {
   return (node.children ?? [])
     .filter((child): child is TreeNode => typeof child !== 'string')
@@ -93,6 +102,36 @@ describe('MapleSweepSpinner', () => {
     expect(
       (await renderAtom(<MapleSweepSpinner className="text-primary" />)).toJSON(),
     ).toMatchSnapshot()
+  })
+
+  // ★ [[ADR-061]] 정정 1 회귀 가드 — **띠가 마스크에 지워지던 결함.**
+  //
+  // 이식 당시 마스크는 `maskUnits`·`maskContentUnits` 를 **둘 다 `objectBoundingBox`** 로 두고
+  // 램프를 `<Rect x=0 y=0 width=1 height=1>` 로 적었다. 그런데 `react-native-svg`(15.15.4)는
+  // **`maskContentUnits` 를 렌더 시 읽지 않는다** — 안드로이드 `RenderableView.java` 도 iOS
+  // `RNSVGRenderable.mm` 도 `maskUnits` 만 본다. 그래서 그 램프가 **1×1 픽셀**로 그려지고,
+  // 마스크가 사실상 투명해져 `DST_IN` 이 띠를 통째로 지웠다 — 실기기에서 **띠가 한 번도 보인 적이
+  // 없었다**(두 플랫폼 다, 2026-08-18).
+  //
+  // 그 실패는 **렌더 트리에서 보이지 않는다**(마스크도 램프도 «있다»). 보이는 것은 **좌표의 단위**뿐이라
+  // 여기서 그것을 못 박는다: 램프는 user space 이고 띠와 **같은 크기**여야 한다.
+  it('마스크 램프는 user space 좌표다 — 1×1 이면 라이브러리가 띠를 통째로 지운다 ([[ADR-061]] 정정 1)', async () => {
+    const tree = (await renderAtom(<MapleSweepSpinner />)).toJSON()
+
+    const { band, ramp } = bandAndRamp(tree)
+    expect(ramp?.props.width).toBe(band?.props.width)
+    expect(ramp?.props.height).toBe(band?.props.height)
+    // 「1」 은 objectBoundingBox 비율일 때만 뜻이 있는 값이고, 이 라이브러리에서는 그냥 1px 이다.
+    expect(ramp?.props.width).not.toBe(1)
+  })
+
+  // 램프가 제자리에 서 있으면 «고정된 창으로 내다보는» 그림이 된다(띠만 그 아래를 지나간다).
+  // 둘이 같은 shared value 에서 파생되므로 **시작 좌표가 같다**는 것으로 그 계약을 본다.
+  it('램프가 띠와 같은 자리에서 시작한다 — 함께 움직인다', async () => {
+    const tree = (await renderAtom(<MapleSweepSpinner />)).toJSON()
+
+    const { band, ramp } = bandAndRamp(tree)
+    expect(ramp?.props.y).toBe(band?.props.y)
   })
 })
 

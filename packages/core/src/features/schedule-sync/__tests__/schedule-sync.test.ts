@@ -1,6 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { installFakePreferences } from '@core/storage/__tests__/fake-preferences'
-import type { CharacterPickerEntry, MapleAccount, MapleCharacter, SchedulerCharacterState } from '@core/types'
+import type {
+  CharacterBasicProfile,
+  CharacterPickerEntry,
+  MapleAccount,
+  MapleCharacter,
+  SchedulerCharacterState,
+} from '@core/types'
 import { NexonAuthError, NexonBadRequestError, NexonNetworkError, NexonRateLimitError } from '@core/nexon/errors'
 
 const { fetchCharacterListMock, fetchCharacterBasicMock, fetchSchedulerCharacterStateMock } = vi.hoisted(() => ({
@@ -80,7 +86,12 @@ vi.mock('@core/lib/scheduler-merge', () => ({
 // 실물을 쓰고 그 아래 PreferencesPort만 인메모리로 바꾼다 — 원장이 "같은 날짜를 두 번 부르지 않는다"를
 // 실제로 지키는지가 이 파일이 검증해야 할 동작이라, 그 모듈까지 목으로 대체하면 검증이 사라진다.
 
-import { getCharacterPickerRoster, getRegisteredCharacters, syncSchedules } from '../schedule-sync'
+import {
+  getCharacterPickerRoster,
+  getRegisteredCharacters,
+  resetSyncSingleFlightForTests,
+  syncSchedules,
+} from '../schedule-sync'
 import { hasSyncAttemptedThisRun, resetSyncRunStateForTests } from '../sync-run-state'
 
 function character(ocid: string): MapleCharacter {
@@ -114,17 +125,20 @@ function schedulerState(characterName: string): SchedulerCharacterState {
   }
 }
 
-function basicProfile(overrides: { name: string; level: number; imageUrl?: string }): {
+// jobClass 는 character/basic 이 아니라 character/list 가 준 값이라(ADR-144 결정 2) 이 픽스처의
+// 기본값에는 없다 — 캐시에 실리는 경로를 검증하는 자리에서만 명시적으로 넣는다.
+function basicProfile(overrides: {
   name: string
   level: number
-  imageUrl: string
-  accessFlag: boolean
-} {
+  imageUrl?: string
+  jobClass?: string
+}): CharacterBasicProfile {
   return {
     name: overrides.name,
     level: overrides.level,
     imageUrl: overrides.imageUrl ?? `https://open.api.nexon.com/static/maplestory/character/look/${overrides.name}`,
     accessFlag: true,
+    ...(overrides.jobClass === undefined ? {} : { jobClass: overrides.jobClass }),
   }
 }
 
@@ -144,6 +158,9 @@ beforeEach(async () => {
   vi.setSystemTime(new Date(NOW))
   // 모듈 수준 플래그라 테스트끼리 샌다(ADR-097 결정 3).
   resetSyncRunStateForTests()
+  // 같은 이유로 진행 중인 회차도 비운다 — 끝내지 않은 회차를 남기면 다음 테스트가 거기에
+  // 합류해 영영 안 끝난다(ADR-147 결정 4).
+  resetSyncSingleFlightForTests()
   prefs = installFakePreferences()
   getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1', selectedAccountId: 'acc-1' })
   getCachedSchedulerStateMock.mockResolvedValue(null)
@@ -465,6 +482,192 @@ describe('syncSchedules', () => {
     expect(results[2].error).toBeNull()
   })
 
+  describe('단일 비행 — 진행 중인 회차가 있으면 함께 기다린다 (ADR-147 결정 4)', () => {
+    it('진행 중인 회차가 있으면 둘째 호출은 네트워크를 다시 타지 않는다', async () => {
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', [character('ocid-1')])])
+      let resolveState: (state: SchedulerCharacterState) => void = () => {}
+      fetchSchedulerCharacterStateMock.mockImplementation(
+        () =>
+          new Promise<SchedulerCharacterState>((resolve) => {
+            resolveState = resolve
+          }),
+      )
+
+      const first = syncSchedules(['ocid-1'])
+      const second = syncSchedules(['ocid-1'])
+
+      await vi.waitFor(() => expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1))
+      resolveState(schedulerState('캐릭터1'))
+      await Promise.all([first, second])
+
+      expect(fetchCharacterListMock).toHaveBeenCalledTimes(1)
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1)
+    })
+
+    it('합류한 호출은 진행 중인 회차와 같은 결과를 받는다', async () => {
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', [character('ocid-1')])])
+      let resolveState: (state: SchedulerCharacterState) => void = () => {}
+      fetchSchedulerCharacterStateMock.mockImplementation(
+        () =>
+          new Promise<SchedulerCharacterState>((resolve) => {
+            resolveState = resolve
+          }),
+      )
+
+      const first = syncSchedules(['ocid-1'])
+      const second = syncSchedules(['ocid-1'])
+
+      await vi.waitFor(() => expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1))
+      resolveState(schedulerState('캐릭터1'))
+      const [firstResults, secondResults] = await Promise.all([first, second])
+
+      // ADR-147 정정 42: 회차 결과를 «요청한 ocid» 로 거르면서 계약이 «같은 객체»에서
+      // «같은 내용»으로 내려왔다 — 거르기가 호출마다 새 배열을 만든다.
+      expect(secondResults).toEqual(firstResults)
+    })
+
+    it('요청하지 않은 ocid는 결과에서 빠진다 — 덮는 회차에 합류해도 자기 몫만 받는다 (ADR-147 정정 42)', async () => {
+      fetchCharacterListMock.mockResolvedValue([
+        account('acc-1', [character('ocid-1'), character('ocid-2')]),
+      ])
+      let resolveState: (state: SchedulerCharacterState) => void = () => {}
+      fetchSchedulerCharacterStateMock
+        .mockResolvedValueOnce(schedulerState('캐릭터1'))
+        .mockImplementationOnce(
+          () =>
+            new Promise<SchedulerCharacterState>((resolve) => {
+              resolveState = resolve
+            }),
+        )
+
+      const owner = syncSchedules(['ocid-1', 'ocid-2'])
+      await vi.waitFor(() => expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(2))
+      const joiner = syncSchedules(['ocid-2'])
+
+      resolveState(schedulerState('캐릭터2'))
+      const [ownerResults, joinerResults] = await Promise.all([owner, joiner])
+
+      expect(ownerResults.map((result) => result.ocid)).toEqual(['ocid-1', 'ocid-2'])
+      expect(joinerResults.map((result) => result.ocid)).toEqual(['ocid-2'])
+      // 합류했으므로 회차는 하나다 — 거르기는 결과만 좁히지 네트워크를 더 내지 않는다.
+      expect(fetchCharacterListMock).toHaveBeenCalledTimes(1)
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(2)
+    })
+
+    it('진행 중인 회차가 요청 ocid를 못 덮으면 합류하지 않고, 그 회차가 정산된 뒤 새 회차를 잇는다 (ADR-147 정정 42)', async () => {
+      fetchCharacterListMock.mockResolvedValue([
+        account('acc-1', [character('ocid-1'), character('ocid-2')]),
+      ])
+      let resolveFirst: (state: SchedulerCharacterState) => void = () => {}
+      fetchSchedulerCharacterStateMock.mockImplementationOnce(
+        () =>
+          new Promise<SchedulerCharacterState>((resolve) => {
+            resolveFirst = resolve
+          }),
+      )
+
+      const owner = syncSchedules(['ocid-1'])
+      await vi.waitFor(() => expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1))
+
+      // ocid-2는 진행 중인 회차 밖이다 — 남의 회차에 붙지 않고 그 회차가 끝나기를 기다린다.
+      fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터2'))
+      const outsider = syncSchedules(['ocid-2'])
+
+      resolveFirst(schedulerState('캐릭터1'))
+      const [ownerResults, outsiderResults] = await Promise.all([owner, outsider])
+
+      expect(ownerResults.map((result) => result.ocid)).toEqual(['ocid-1'])
+      expect(outsiderResults.map((result) => result.ocid)).toEqual(['ocid-2'])
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(1, 'key-1', 'ocid-1')
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-2')
+    })
+
+    it('앞 회차가 실패해도 못 덮은 요청은 자기 회차를 잇는다 (ADR-147 정정 42)', async () => {
+      fetchCharacterListMock
+        .mockRejectedValueOnce(new NexonNetworkError('timeout'))
+        .mockResolvedValue([account('acc-1', [character('ocid-2')])])
+      fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터2'))
+
+      const owner = syncSchedules(['ocid-1'])
+      const outsider = syncSchedules(['ocid-2'])
+
+      await expect(owner).rejects.toThrow()
+      expect((await outsider).map((result) => result.ocid)).toEqual(['ocid-2'])
+    })
+
+    it('합류한 호출의 onProgress는 불리지 않는다 — 진행률은 회차를 소유한 호출이 받는다', async () => {
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', [character('ocid-1')])])
+      let resolveState: (state: SchedulerCharacterState) => void = () => {}
+      fetchSchedulerCharacterStateMock.mockImplementation(
+        () =>
+          new Promise<SchedulerCharacterState>((resolve) => {
+            resolveState = resolve
+          }),
+      )
+
+      const ownerProgress = vi.fn()
+      const joinerProgress = vi.fn()
+      const first = syncSchedules(['ocid-1'], ownerProgress)
+      const second = syncSchedules(['ocid-1'], joinerProgress)
+
+      await vi.waitFor(() => expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1))
+      resolveState(schedulerState('캐릭터1'))
+      await Promise.all([first, second])
+
+      expect(ownerProgress).toHaveBeenCalled()
+      expect(joinerProgress).not.toHaveBeenCalled()
+    })
+
+    it('회차가 끝난 뒤의 호출은 새 회차라 네트워크를 다시 탄다', async () => {
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', [character('ocid-1')])])
+      fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
+
+      await syncSchedules(['ocid-1'])
+      await syncSchedules(['ocid-1'])
+
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(2)
+    })
+
+    it('실패도 합류한 호출과 함께 받고, 실패한 회차는 캐시되지 않아 다음 호출이 다시 시도한다', async () => {
+      fetchCharacterListMock.mockRejectedValueOnce(new NexonNetworkError('timeout'))
+
+      const first = syncSchedules(['ocid-1'])
+      const second = syncSchedules(['ocid-1'])
+      const settled = Promise.allSettled([first, second])
+
+      expect((await settled).map((outcome) => outcome.status)).toEqual(['rejected', 'rejected'])
+      expect(fetchCharacterListMock).toHaveBeenCalledTimes(1)
+
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', [character('ocid-1')])])
+      fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
+
+      const results = await syncSchedules(['ocid-1'])
+
+      expect(fetchCharacterListMock).toHaveBeenCalledTimes(2)
+      expect(results.map((result) => result.ocid)).toEqual(['ocid-1'])
+    })
+
+    it('회귀 가드 — 단독 호출의 호출 수·순서·인자·결과는 종전과 같다', async () => {
+      const characters = [character('ocid-1'), character('ocid-2')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+      fetchSchedulerCharacterStateMock
+        .mockResolvedValueOnce(schedulerState('캐릭터1'))
+        .mockResolvedValueOnce(schedulerState('캐릭터2'))
+
+      const onProgress = vi.fn()
+      const results = await syncSchedules(['ocid-1', 'ocid-2'], onProgress)
+
+      expect(fetchCharacterListMock).toHaveBeenCalledTimes(1)
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(2)
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(1, 'key-1', 'ocid-1')
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-2')
+      expect(onProgress).toHaveBeenNthCalledWith(1, 0, 2)
+      expect(onProgress).toHaveBeenLastCalledWith(2, 2)
+      expect(results.map((result) => result.ocid)).toEqual(['ocid-1', 'ocid-2'])
+      expect(hasSyncAttemptedThisRun()).toBe(true)
+    })
+  })
+
   describe('ADR-030: 캐릭터/월드/계정 병합', () => {
     it('이전 캐시·월드/계정 원장을 읽어 mergeSchedulerState에 넘긴다', async () => {
       const characters = [character('ocid-1')]
@@ -548,13 +751,73 @@ describe('syncSchedules', () => {
     })
   })
 
-  describe('ADR-034: 최초 동기화·캐시 유실 대비 -13일 이내 순차 선채움', () => {
+  describe('ADR-034: 최초 동기화·캐시 유실 대비 -13일 이내 선채움 (조회는 병렬 · 병합은 날짜 순)', () => {
     function bossContent(cycle: 'weekly' | 'monthly') {
       return { name: '자쿰', difficulty: '카오스' as const, cycle, isRegistered: true, isComplete: false, ownComplete: false }
     }
 
     // NOW = 2026-07-11T00:00:00.000Z = KST 2026-07-11T09:00:00(불안정 구간 아님)
     // → getBackfillDateKeys는 '2026-07-10'(-1일)부터 시작한다.
+    //
+    // ADR-148 결정 1: 원장 필터를 통과한 날짜는 **전부** 나간다. 그래서 «-1일에서 멈춘다» 같은
+    // 테스트도 조회는 14회(오늘 1 + 과거 13)이고, 멈추는 것은 **병합**이다. 앞 날짜에서 병합이
+    // 끝나도 뒤 날짜 응답은 이미 와 있으므로, 그 응답을 받을 tail 기본값이 없으면 undefined 가
+    // 흘러든다 — 그래서 아래 테스트들이 마지막에 `mockResolvedValue` 로 기본값을 깐다.
+    const STALE_DAY = { ...schedulerState('그 밖의 과거'), isWeeklyBossStale: true, bossContents: [] }
+
+    it('13일을 한꺼번에 태운다 — 앞 날짜 응답을 기다리지 않는다 (ADR-148 결정 1)', async () => {
+      const characters = [character('ocid-1')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+
+      const stage1State = { ...schedulerState('캐릭터1'), isWeeklyBossStale: true, bossContents: [] }
+      mergeSchedulerStateMock.mockReturnValue({ characterState: stage1State, worldLedgerUpdates: {}, accountLedgerUpdates: {} })
+
+      const pending: Array<(value: SchedulerCharacterState) => void> = []
+      fetchSchedulerCharacterStateMock
+        .mockResolvedValueOnce(schedulerState('캐릭터1'))
+        .mockImplementation(() => new Promise<SchedulerCharacterState>((resolve) => pending.push(resolve)))
+
+      const promise = syncSchedules(['ocid-1'])
+      for (let i = 0; i < 40; i += 1) await Promise.resolve()
+
+      // 직렬이던 시절에는 여기서 1이었다 — 오늘 조회 뒤 -1일 하나만 나가 있었다.
+      expect(pending).toHaveLength(13)
+
+      pending.forEach((resolve) => {
+        resolve(STALE_DAY)
+      })
+      await promise
+    })
+
+    it('병합이 일찍 멈춰도 이미 받은 날짜는 전부 원장에 기록한다 (ADR-148 결정 3 — 이슈 #87 재발 방지)', async () => {
+      const characters = [character('ocid-1')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+
+      const stage1State = { ...schedulerState('캐릭터1'), isWeeklyBossStale: true, bossContents: [] }
+      const day1Response = { ...schedulerState('-1일'), isWeeklyBossStale: false, bossContents: [bossContent('weekly')] }
+
+      fetchSchedulerCharacterStateMock
+        .mockResolvedValueOnce(schedulerState('캐릭터1'))
+        .mockResolvedValueOnce(day1Response)
+        .mockResolvedValue(STALE_DAY)
+      mergeSchedulerStateMock.mockReturnValue({ characterState: stage1State, worldLedgerUpdates: {}, accountLedgerUpdates: {} })
+
+      await syncSchedules(['ocid-1'])
+      // -1일에서 resolved라 병합은 2회에 멈췄다.
+      expect(mergeSchedulerStateMock).toHaveBeenCalledTimes(2)
+
+      // 그래도 13일이 전부 원장에 남았으므로 다음 동기화는 같은 13일을 다시 훑지 않는다.
+      const { getScheduleProbeLedger } = await import('@core/storage/schedule-probe-ledger')
+      const ledger = await getScheduleProbeLedger('ocid-1', new Date(NOW))
+      expect(Object.keys(ledger.dates)).toHaveLength(13)
+
+      fetchSchedulerCharacterStateMock.mockClear()
+      await syncSchedules(['ocid-1'])
+      // 오늘 1회 + -1일 1회. -1일만 다시 부르는 것은 그 날짜에 주간 보스 섹션이 **있었기** 때문이고
+      // (원장은 값이 아니라 유무만 기억한다), 나머지 12일은 원장이 걸러 낸다 — 기록하지 않았다면
+      // 여기서 13일이 통째로 다시 나갔을 자리다.
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(2)
+    })
 
     it('당일 응답에서 4개 섹션 모두 stale이 아니면 추가 조회를 하지 않는다', async () => {
       const characters = [character('ocid-1')]
@@ -575,14 +838,18 @@ describe('syncSchedules', () => {
       const day1Response = { ...schedulerState('-1일 응답'), isWeeklyBossStale: false, bossContents: [bossContent('weekly')] }
       const finalState = { ...schedulerState('병합결과'), isWeeklyBossStale: true, bossContents: [bossContent('weekly')] }
 
-      fetchSchedulerCharacterStateMock.mockResolvedValueOnce(schedulerState('캐릭터1')).mockResolvedValueOnce(day1Response)
+      fetchSchedulerCharacterStateMock
+        .mockResolvedValueOnce(schedulerState('캐릭터1'))
+        .mockResolvedValueOnce(day1Response)
+        .mockResolvedValue(STALE_DAY)
       mergeSchedulerStateMock
         .mockReturnValueOnce({ characterState: stage1State, worldLedgerUpdates: {}, accountLedgerUpdates: {} })
         .mockReturnValueOnce({ characterState: finalState, worldLedgerUpdates: {}, accountLedgerUpdates: {} })
 
       const results = await syncSchedules(['ocid-1'])
 
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(2)
+      // 조회는 13일이 다 나가고(ADR-148 결정 1), **멈추는 것은 병합이다**.
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(14)
       expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(1, 'key-1', 'ocid-1')
       expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-1', '2026-07-10')
 
@@ -611,6 +878,7 @@ describe('syncSchedules', () => {
         .mockResolvedValueOnce(schedulerState('캐릭터1'))
         .mockResolvedValueOnce(day1Response)
         .mockResolvedValueOnce(day2Response)
+        .mockResolvedValue(STALE_DAY)
       mergeSchedulerStateMock
         .mockReturnValueOnce({ characterState: stage1State, worldLedgerUpdates: {}, accountLedgerUpdates: {} })
         .mockReturnValueOnce({ characterState: stage1State, worldLedgerUpdates: {}, accountLedgerUpdates: {} })
@@ -618,9 +886,10 @@ describe('syncSchedules', () => {
 
       await syncSchedules(['ocid-1'])
 
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(3)
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(14)
       expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-1', '2026-07-10')
       expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(3, 'key-1', 'ocid-1', '2026-07-09')
+      // -1일이 아직 stale이라 -2일까지 접고 거기서 멈춘다 — 병합 순서는 그대로다(ADR-148 결정 2).
       expect(mergeSchedulerStateMock).toHaveBeenCalledTimes(3)
     })
 
@@ -691,6 +960,7 @@ describe('syncSchedules', () => {
         fetchSchedulerCharacterStateMock
           .mockResolvedValueOnce(schedulerState('캐릭터1'))
           .mockResolvedValueOnce(day1Response)
+          .mockResolvedValue(STALE_DAY)
         mergeSchedulerStateMock.mockReturnValue({
           characterState: stage1State,
           worldLedgerUpdates: {},
@@ -769,13 +1039,14 @@ describe('syncSchedules', () => {
         .mockResolvedValueOnce(schedulerState('캐릭터1'))
         .mockRejectedValueOnce(new NexonNetworkError('-1일 조회 실패'))
         .mockResolvedValueOnce(day2Response)
+        .mockResolvedValue(STALE_DAY)
       mergeSchedulerStateMock
         .mockReturnValueOnce({ characterState: stage1State, worldLedgerUpdates: {}, accountLedgerUpdates: {} })
         .mockReturnValueOnce({ characterState: finalState, worldLedgerUpdates: {}, accountLedgerUpdates: {} })
 
       const results = await syncSchedules(['ocid-1'])
 
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(3)
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(14)
       expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(3, 'key-1', 'ocid-1', '2026-07-09')
       // -1일 조회는 실패해서 merge가 안 불리고, 그다음 성공한 -2일만 merge된다(1단계 + -2일 = 2회)
       expect(mergeSchedulerStateMock).toHaveBeenCalledTimes(2)
@@ -788,7 +1059,10 @@ describe('syncSchedules', () => {
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       const fresh = schedulerState('캐릭터1')
       const day1Response = { ...schedulerState('-1일'), isWeeklyBossStale: false, bossContents: [bossContent('weekly')] }
-      fetchSchedulerCharacterStateMock.mockResolvedValueOnce(fresh).mockResolvedValueOnce(day1Response)
+      fetchSchedulerCharacterStateMock
+        .mockResolvedValueOnce(fresh)
+        .mockResolvedValueOnce(day1Response)
+        .mockResolvedValue(STALE_DAY)
 
       const stage1State = { ...schedulerState('캐릭터1'), isWeeklyBossStale: true, bossContents: [] }
       const finalState = { ...schedulerState('병합결과'), isWeeklyBossStale: true, bossContents: [bossContent('weekly')] }
@@ -832,6 +1106,13 @@ describe('syncSchedules', () => {
       maxCount: 0,
       questState: 2 as const,
     }
+    // 아래 두 테스트의 tail 기본값 — 병합이 앞 날짜에서 멈춘 뒤에도 도착하는 날짜들이 받는 응답이다.
+    // 여전히 «월드공유만» 이라 이것이 병합까지 갔더라도 해결로 읽히지 않는다.
+    const PARTIAL_DAILY_DAY = {
+      ...schedulerState('그 밖의 과거'),
+      dailyContents: [monsterParkOnly],
+      isDailyStale: false,
+    }
 
     it('당일 daily에 월드공유 항목(몬스터파크)만 남고 character 일일이 빠졌으면 isDailyStale이 false여도 백필한다', async () => {
       const characters = [character('ocid-1')]
@@ -841,14 +1122,17 @@ describe('syncSchedules', () => {
       const day1Response = { ...schedulerState('-1일 응답'), dailyContents: [dailyQuest], isDailyStale: false }
       const finalState = { ...schedulerState('병합결과'), dailyContents: [monsterParkOnly, dailyQuest], isDailyStale: false }
 
-      fetchSchedulerCharacterStateMock.mockResolvedValueOnce(schedulerState('캐릭터1')).mockResolvedValueOnce(day1Response)
+      fetchSchedulerCharacterStateMock
+        .mockResolvedValueOnce(schedulerState('캐릭터1'))
+        .mockResolvedValueOnce(day1Response)
+        .mockResolvedValue(PARTIAL_DAILY_DAY)
       mergeSchedulerStateMock
         .mockReturnValueOnce({ characterState: stage1State, worldLedgerUpdates: {}, accountLedgerUpdates: {} })
         .mockReturnValueOnce({ characterState: finalState, worldLedgerUpdates: {}, accountLedgerUpdates: {} })
 
       const results = await syncSchedules(['ocid-1'])
 
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(2)
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(14)
       expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-1', '2026-07-10')
       expect(mergeSchedulerStateMock).toHaveBeenCalledTimes(2)
       expect(results[0].state).toEqual(finalState)
@@ -866,6 +1150,7 @@ describe('syncSchedules', () => {
         .mockResolvedValueOnce(schedulerState('캐릭터1'))
         .mockResolvedValueOnce(day1Response)
         .mockResolvedValueOnce(day2Response)
+        .mockResolvedValue(PARTIAL_DAILY_DAY)
       mergeSchedulerStateMock
         .mockReturnValueOnce({ characterState: stage1State, worldLedgerUpdates: {}, accountLedgerUpdates: {} })
         .mockReturnValueOnce({ characterState: stage1State, worldLedgerUpdates: {}, accountLedgerUpdates: {} })
@@ -873,7 +1158,7 @@ describe('syncSchedules', () => {
 
       await syncSchedules(['ocid-1'])
 
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(3)
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(14)
       expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(3, 'key-1', 'ocid-1', '2026-07-09')
       expect(mergeSchedulerStateMock).toHaveBeenCalledTimes(3)
     })
@@ -914,12 +1199,13 @@ describe('syncSchedules', () => {
       expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(2)
       expect(fetchCharacterBasicMock).toHaveBeenCalledWith('key-1', 'ocid-1')
       expect(fetchCharacterBasicMock).toHaveBeenCalledWith('key-1', 'ocid-2')
+      // character/list 가 준 jobClass 가 엔트리에 함께 실린다(ADR-144 결정 2) — basic 응답에는 없다.
       expect(setCachedCharacterBasicMock).toHaveBeenCalledWith('acc-1', 'ocid-1', {
-        profile: basicProfile({ name: '갱신-ocid-1', level: 293 }),
+        profile: basicProfile({ name: '갱신-ocid-1', level: 293, jobClass: '렌' }),
         cachedAt: NOW,
       })
       expect(setCachedCharacterBasicMock).toHaveBeenCalledWith('acc-1', 'ocid-2', {
-        profile: basicProfile({ name: '갱신-ocid-2', level: 293 }),
+        profile: basicProfile({ name: '갱신-ocid-2', level: 293, jobClass: '렌' }),
         cachedAt: NOW,
       })
     })
@@ -953,7 +1239,7 @@ describe('syncSchedules', () => {
 
       expect(setCachedCharacterBasicMock).toHaveBeenCalledTimes(1)
       expect(setCachedCharacterBasicMock).toHaveBeenCalledWith('acc-1', 'ocid-2', {
-        profile: basicProfile({ name: '갱신-ocid-2', level: 293 }),
+        profile: basicProfile({ name: '갱신-ocid-2', level: 293, jobClass: '렌' }),
         cachedAt: NOW,
       })
     })
@@ -996,6 +1282,119 @@ describe('syncSchedules', () => {
       // 스케줄 동기화 자체는 그대로 돈다 — 건너뛴 것은 basic 하나뿐이다.
       expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key-1', 'ocid-1')
       expect(results[0].isStale).toBe(false)
+    })
+  })
+
+  // ADR-143 결정 6: 추적 목록이 메이플 ID 경계를 넘는다. 전에는 "선택 계정의 캐릭터"만 받아
+  // ocids로 걸렀으므로 다른 계정 캐릭터가 그 필터에서 조용히 빠졌고(스케줄이 영원히 안 돈다),
+  // 계정 공유 원장도 "지금 고른 계정" 키로 읽고 써서 에픽 던전 완료가 계정을 넘어 번졌다.
+  describe('다계정 — 계정을 캐릭터마다 해석한다 (ADR-143 결정 6)', () => {
+    function twoAccounts(): MapleAccount[] {
+      return [account('acc-1', [character('ocid-1')]), account('acc-2', [character('ocid-2')])]
+    }
+
+    it('두 계정에 나뉜 ocid 를 섞어 추적하면 둘 다 동기화된다', async () => {
+      fetchCharacterListMock.mockResolvedValue(twoAccounts())
+      fetchSchedulerCharacterStateMock.mockImplementation(async (_apiKey: string, ocid: string) =>
+        schedulerState(`캐릭터-${ocid}`),
+      )
+
+      const results = await syncSchedules(['ocid-1', 'ocid-2'])
+
+      expect(results.map((result) => result.ocid)).toEqual(['ocid-1', 'ocid-2'])
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key-1', 'ocid-1')
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key-1', 'ocid-2')
+      expect(results.every((result) => result.isStale === false)).toBe(true)
+    })
+
+    it('계정 공유 원장을 각 캐릭터의 자기 계정 키로 읽는다', async () => {
+      fetchCharacterListMock.mockResolvedValue(twoAccounts())
+      fetchSchedulerCharacterStateMock.mockImplementation(async (_apiKey: string, ocid: string) =>
+        schedulerState(`캐릭터-${ocid}`),
+      )
+
+      await syncSchedules(['ocid-1', 'ocid-2'])
+
+      expect(getAccountSharedProgressMock).toHaveBeenCalledWith('acc-1')
+      expect(getAccountSharedProgressMock).toHaveBeenCalledWith('acc-2')
+    })
+
+    it('계정 공유 원장을 각 캐릭터의 자기 계정 키로 쓴다 — 완료가 계정을 넘어 번지지 않는다', async () => {
+      fetchCharacterListMock.mockResolvedValue(twoAccounts())
+      fetchSchedulerCharacterStateMock.mockImplementation(async (_apiKey: string, ocid: string) =>
+        schedulerState(`캐릭터-${ocid}`),
+      )
+      const entry = {
+        active: true,
+        kind: 'contents' as const,
+        nowCount: 1,
+        maxCount: 0,
+        questState: null,
+        lastUpdatedBucket: '2026-07-09',
+      }
+      mergeSchedulerStateMock.mockImplementation((input: { fresh: SchedulerCharacterState }) => ({
+        characterState: input.fresh,
+        worldLedgerUpdates: {},
+        accountLedgerUpdates: { '에픽 던전 : 악몽선경': entry },
+      }))
+
+      await syncSchedules(['ocid-1', 'ocid-2'])
+
+      expect(setAccountSharedProgressEntryMock).toHaveBeenCalledWith('acc-1', '에픽 던전 : 악몽선경', entry)
+      expect(setAccountSharedProgressEntryMock).toHaveBeenCalledWith('acc-2', '에픽 던전 : 악몽선경', entry)
+    })
+
+    it('character/basic 편승 갱신도 각 캐릭터의 자기 계정으로 캐시에 쓴다 (ADR-086 결정 9 인덱스)', async () => {
+      fetchCharacterListMock.mockResolvedValue(twoAccounts())
+      fetchSchedulerCharacterStateMock.mockImplementation(async (_apiKey: string, ocid: string) =>
+        schedulerState(`캐릭터-${ocid}`),
+      )
+      fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) =>
+        basicProfile({ name: `갱신-${ocid}`, level: 293 }),
+      )
+
+      await syncSchedules(['ocid-1', 'ocid-2'])
+
+      expect(setCachedCharacterBasicMock).toHaveBeenCalledWith('acc-1', 'ocid-1', expect.anything())
+      expect(setCachedCharacterBasicMock).toHaveBeenCalledWith('acc-2', 'ocid-2', expect.anything())
+    })
+
+    // 결정 7: RN 은 계정을 고르는 단계가 없어 selectedAccountId 가 영영 null 이다.
+    it('selectedAccountId 가 없어도 동기화한다 — 계정을 고른 적 없는 설치본', async () => {
+      getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1', selectedAccountId: null })
+      fetchCharacterListMock.mockResolvedValue([account('acc-9', [character('ocid-1')])])
+      fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
+
+      const results = await syncSchedules(['ocid-1'])
+
+      expect(results.map((result) => result.ocid)).toEqual(['ocid-1'])
+      expect(getAccountSharedProgressMock).toHaveBeenCalledWith('acc-9')
+    })
+
+    // 이 파일의 나머지 케이스가 전부 단일 계정이지만, 그것들은 "결과"만 본다. 이 케이스는
+    // **호출 수와 순서까지** 고정한다 — 웹뷰 앱은 이 경로로 계속 배포되므로 여기가 회귀 가드다.
+    it('단일 계정 입력에서는 호출 수·순서·원장 키가 지금과 같다 (웹뷰 앱 회귀 가드)', async () => {
+      const characters = [character('ocid-1'), character('ocid-2'), character('ocid-3')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+      fetchSchedulerCharacterStateMock.mockImplementation(async (_apiKey: string, ocid: string) =>
+        schedulerState(`캐릭터-${ocid}`),
+      )
+      fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) =>
+        basicProfile({ name: `갱신-${ocid}`, level: 293 }),
+      )
+
+      const results = await syncSchedules(['ocid-3', 'ocid-1'])
+
+      // 순서는 ocids 배열이 아니라 **계정 목록 순서**다(지금 동작 그대로 — 표시 순서를 다시
+      // 세우는 일은 RN 화면 셀렉터의 몫이다, ADR-143 결정 3).
+      expect(results.map((result) => result.ocid)).toEqual(['ocid-1', 'ocid-3'])
+      expect(fetchCharacterListMock).toHaveBeenCalledTimes(1)
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(2)
+      expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(2)
+      expect(getAccountSharedProgressMock).toHaveBeenCalledTimes(2)
+      expect(getAccountSharedProgressMock).toHaveBeenCalledWith('acc-1')
+      expect(setCachedCharacterBasicMock).toHaveBeenCalledWith('acc-1', 'ocid-1', expect.anything())
+      expect(setCachedCharacterBasicMock).toHaveBeenCalledWith('acc-1', 'ocid-3', expect.anything())
     })
   })
 })
@@ -1297,7 +1696,8 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
         ...basicProfile({ name: '휴면캐릭', level: 250 }),
         accessFlag: false,
       })
-      // 원장은 비었고 오늘−1 응답에 완료가 있다 → 1회 조회로 자격 확정
+      // 원장이 비어 스윕이 돈다. 완료가 첫 날짜에 있어도 13일이 다 나간다 — 조기 종료를 포기한
+      // 자리다(ADR-148 결정 2). 옛 직렬 루프에서는 이 값이 1이었다.
       fetchSchedulerCharacterStateMock.mockResolvedValue(completedState())
 
       const onUpdate = vi.fn()
@@ -1305,7 +1705,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
 
       const emitted = onUpdate.mock.calls.at(-1)?.[0] as CharacterPickerEntry[]
       expect(emitted.map((entry) => entry.ocid)).toEqual(['ocid-1'])
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1)
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(13)
     })
 
     it('최근 14일 내내 완료 기록이 없고 추적 중도 아니면 목록에서 뺀다', async () => {
@@ -1408,7 +1808,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     expect(setCachedCharacterBasicMock).toHaveBeenCalledWith(
       'acc-1',
       'ocid-1',
-      expect.objectContaining({ profile: basicProfile({ name: '최신캐릭', level: 293 }) }),
+      expect.objectContaining({ profile: basicProfile({ name: '최신캐릭', level: 293, jobClass: '렌' }) }),
     )
   })
 
@@ -1574,7 +1974,9 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       ])
     })
 
-    it('콜드 캐시 — character/list·개별 character/basic 응답 시점엔 방출하지 않고 완료 후 정확히 1회만 방출한다', async () => {
+    // ADR-149 결정 1: 아래 둘은 «콜드 스타트에서는 완료 후 1회만» 을 단언하던 자리다. ③에 담기는
+    // 항목은 character/basic 응답과 자격 판정을 통과한 **확인된** 것이라, 형제를 기다릴 이유가 없다.
+    it('콜드 캐시 — 확인된 캐릭터는 형제를 기다리지 않고 그 자리에서 방출한다 (ADR-149 결정 1)', async () => {
       const characters = [character('ocid-1'), character('ocid-2')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
@@ -1590,26 +1992,25 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       const onUpdate = vi.fn()
       const promise = getCharacterPickerRoster(onUpdate)
 
-      // ② character/list 응답 — 방출 없음
+      // 아직 한 건도 확인하지 못했다 — 빈 목록은 흘리지 않는다(결정 2).
       await vi.waitFor(() => expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(2))
       expect(onUpdate).not.toHaveBeenCalled()
 
-      // ③ 개별 응답 — 방출 없음
+      // 첫 캐릭터가 확인되는 즉시 그 한 건만으로 방출한다 — 둘째는 아직 응답 전이다.
       resolvers[0](basicProfile({ name: '캐릭1', level: 250 }))
-      await vi.waitFor(() => expect(setCachedCharacterBasicMock).toHaveBeenCalledTimes(1))
-      expect(onUpdate).not.toHaveBeenCalled()
+      await vi.waitFor(() => expect(onUpdate).toHaveBeenCalled())
+      expect((onUpdate.mock.calls[0][0] as CharacterPickerEntry[]).map((entry) => entry.name)).toEqual(['캐릭1'])
 
       resolvers[1](basicProfile({ name: '캐릭2', level: 240 }))
       await promise
 
-      expect(onUpdate).toHaveBeenCalledTimes(1)
-      expect(onUpdate).toHaveBeenCalledWith([
+      expect(onUpdate.mock.calls.at(-1)?.[0]).toEqual([
         { ocid: 'ocid-1', name: '캐릭1', level: 250, imageUrl: basicProfile({ name: '캐릭1', level: 250 }).imageUrl, world: '베라' },
         { ocid: 'ocid-2', name: '캐릭2', level: 240, imageUrl: basicProfile({ name: '캐릭2', level: 240 }).imageUrl, world: '베라' },
       ])
     })
 
-    it('콜드 캐시 — 캐시 인덱스에 ocid가 있어도 전부 access_flag: false면 콜드로 보고 1회만 방출한다', async () => {
+    it('콜드 캐시 — 캐시 인덱스에 ocid가 있어도 전부 access_flag: false면 stub 을 흘리지 않는다', async () => {
       const characters = [character('ocid-1'), character('ocid-2')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1', 'ocid-2'])
@@ -1624,11 +2025,33 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       const onUpdate = vi.fn()
       await getCharacterPickerRoster(onUpdate)
 
-      expect(onUpdate).toHaveBeenCalledTimes(1)
-      expect((onUpdate.mock.calls[0][0] as CharacterPickerEntry[]).map((entry) => entry.name)).toEqual([
+      // 자격 미확인 캐시는 어떤 방출에도 안 들어간다 — 「비공개」가 한 번도 안 보인다(ADR-053 결정 1).
+      const emittedNames = new Set(
+        onUpdate.mock.calls.flatMap(([entries]) => (entries as CharacterPickerEntry[]).map((entry) => entry.name)),
+      )
+      expect(emittedNames).toEqual(new Set(['이제활성', '이제활성2']))
+      expect((onUpdate.mock.calls.at(-1)?.[0] as CharacterPickerEntry[]).map((entry) => entry.name)).toEqual([
         '이제활성',
         '이제활성2',
       ])
+    })
+
+    it('콜드 캐시 — 한 건도 확인하지 못한 채 끝나면 빈 목록은 최종 방출에서만 나간다 (ADR-149 결정 2)', async () => {
+      const characters = [character('ocid-1'), character('ocid-2')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+      getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
+      getCachedCharacterBasicMock.mockResolvedValue(null)
+      fetchCharacterBasicMock.mockImplementation(async () => ({
+        ...basicProfile({ name: '비공개', level: 999 }),
+        accessFlag: false,
+      }))
+
+      const onUpdate = vi.fn()
+      await getCharacterPickerRoster(onUpdate)
+
+      // 중간에 []를 흘렸다면 화면이 «모두 조회할 수 없어요» 를 그렸을 자리다.
+      expect(onUpdate).toHaveBeenCalledTimes(1)
+      expect(onUpdate).toHaveBeenCalledWith([])
     })
 
     it('콜드 캐시 — character/basic이 access_flag: false를 반환한 캐릭터는 어떤 방출에도 등장하지 않는다', async () => {
@@ -1643,13 +2066,16 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       const onUpdate = vi.fn()
       await getCharacterPickerRoster(onUpdate)
 
-      const emittedOcids = onUpdate.mock.calls.flatMap(([entries]) =>
-        (entries as CharacterPickerEntry[]).map((entry) => entry.ocid),
+      // 방출이 여러 번이므로(ADR-149 결정 1) «어떤 방출에도» 는 합집합으로 묻는다.
+      const emittedOcids = new Set(
+        onUpdate.mock.calls.flatMap(([entries]) => (entries as CharacterPickerEntry[]).map((entry) => entry.ocid)),
       )
-      expect(emittedOcids).toEqual(['ocid-1'])
+      expect(emittedOcids).toEqual(new Set(['ocid-1']))
     })
 
-    it('콜드 캐시 — 전역 실패(401)면 불완전한 목록을 최종 방출하지 않고 그대로 던진다', async () => {
+    // ADR-149 결정 3: 스트리밍이 되면서 `globalError` 가드가 비로소 실효를 갖는다 — 실패가 먼저
+    // 확정되면 뒤이어 성공한 형제도 흘리지 않는다(불완전한 목록이 «완성» 으로 오해되면 안 된다).
+    it('콜드 캐시 — 전역 실패(401)가 먼저 확정되면 뒤이은 성공도 흘리지 않고 그대로 던진다', async () => {
       const characters = [character('ocid-1'), character('ocid-2')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) => {
@@ -1662,7 +2088,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       expect(onUpdate).not.toHaveBeenCalled()
     })
 
-    it('콜드 캐시 — 전역 실패(429)면 불완전한 목록을 최종 방출하지 않고 그대로 던진다', async () => {
+    it('콜드 캐시 — 전역 실패(429)가 먼저 확정되면 뒤이은 성공도 흘리지 않고 그대로 던진다', async () => {
       const characters = [character('ocid-1'), character('ocid-2')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) => {

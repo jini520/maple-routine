@@ -2,20 +2,23 @@
 //
 // ── 갈린 것 넷 ───────────────────────────────────────────────────────────────────────
 //
-// ① **라우터 프로브가 없다** — 뒤로는 `navigation.goBack()` 이 불렸는가로 본다(`StackScreen` 이
-//    통째로 사라지고 루트 스택이 그 자리를 맡는다, [[ADR-120]]).
+// ① **라우터 프로브가 없다** — 뒤로는 `navigation.goBack()` 이 불렸는가로 봤다(`StackScreen` 이
+//    통째로 사라지고 루트 스택이 그 자리를 맡는다, [[ADR-120]]). **[[ADR-145]] 결정 1 로 그 계약이
+//    없어졌다** — 이 화면은 탭이라 pop 할 스택이 없고, 남은 것은 «화면 안에 ← 가 없다» 하나다.
 // ② `closest('li')` 로 행을 잡던 자리가 **`aria-label` 로 잡는 토글 버튼**이다 — RN 에 DOM 조회가
 //    없고, 웹도 이미 그 버튼에 보스명을 `aria-label` 로 박아 두었다.
 // ③ `aria-pressed` → **`accessibilityState.selected`**(RN 접근성 상태에 *pressed* 가 없다).
 // ④ **보스 목록·난이도·상한은 전부 참조 데이터에서 온다** — 이 파일에도 게임 수치를 손으로 적지
 //    않는다([[ADR-006]]). 12개 한도 케이스의 보스 이름도 `weekly-bosses.json` 에서 뽑아 쓴다.
 import { act, fireEvent, screen } from '@testing-library/react-native'
+import { useState } from 'react'
 
 import weeklyBossesData from '@core/data/weekly-bosses.json'
 import {
   useBossSchedulerStore,
   type BossCharacterView,
   type BossSchedulerStore,
+  type BossTab,
 } from '@core/features/boss-scheduler/store'
 import { useTrackingModeStore } from '@core/features/tracking-mode/store'
 import { WEEKLY_BOSS_CLEAR_LIMIT } from '@core/lib/boss-matching'
@@ -54,9 +57,11 @@ const WEEKLY_NAMES = weeklyBossesData.weekly
   .map((entry) => entry.boss)
 const SEASON_NAME = weeklyBossesData.eventWeekly[0].boss
 const MONTHLY_NAME = weeklyBossesData.monthly[0].boss
+// 미출시 보스는 있을 때도 없을 때도 있다 — 벨로나 출시로 현재는 0개다([[ADR-151]] 결정 4·5).
+// `!` 로 단정하면 표본이 사라진 순간 `undefined` 를 찾는 검증이 되어 조용히 통과한다.
 const UNRELEASED_NAME = (weeklyBossesData.weekly as { boss: string; status?: string }[]).find(
   (entry) => entry.status === 'unreleased',
-)!.boss
+)?.boss
 
 function mockStore(overrides: Partial<Store> = {}): Store {
   const base = {
@@ -85,9 +90,20 @@ function mockStore(overrides: Partial<Store> = {}): Store {
     ...overrides,
   } as Store
 
-  // [[ADR-096]] 결정 2: 이 화면의 탭은 **진입 시점 값을 이어받은 로컬 state** 라 세터가 실물처럼
-  // 굴러야 한다. 스토어 쪽 `activeTab` 은 승계 원본이므로 그대로 둔다.
-  mockedStore.mockImplementation(() => base)
+  // [[ADR-145]] 결정 2: 이 화면의 탭은 이제 **스토어의 `activeTab` 그 자체**다(승계가 아니라 공유).
+  // 그래서 목이 실물처럼 굴어야 한다 — 화면이 부른 세터가 `base.setActiveTab`(단언 대상)에 닿고,
+  // 그 값이 다음 렌더에 실제로 반영돼야 «누르면 월간이 나온다» 를 볼 수 있다.
+  mockedStore.mockImplementation(() => {
+    const [activeTab, applyTab] = useState(base.activeTab)
+    return {
+      ...base,
+      activeTab,
+      setActiveTab: (tab: BossTab) => {
+        base.setActiveTab(tab)
+        applyTab(tab)
+      },
+    }
+  })
   return base
 }
 
@@ -140,8 +156,12 @@ function rowToggle(bossName: string): AtomElement {
   return screen.getByLabelText(bossName)
 }
 
-function stateOf(node: AtomElement): { selected?: boolean; disabled?: boolean } {
-  return (node.props.accessibilityState ?? {}) as { selected?: boolean; disabled?: boolean }
+function stateOf(node: AtomElement): { selected?: boolean; disabled?: boolean; checked?: boolean } {
+  return (node.props.accessibilityState ?? {}) as {
+    selected?: boolean
+    disabled?: boolean
+    checked?: boolean
+  }
 }
 
 /** 글자에서 위로 올라가 실제로 눌리는 조상을 찾는다. */
@@ -161,16 +181,30 @@ beforeEach(() => {
 })
 
 describe('BossManageScreen — 공통', () => {
-  it('제목·캐릭터 드롭다운이 보이고, 뒤로 버튼이 스택을 pop 한다', async () => {
+  // [[ADR-142]] 정정 8: 제목 줄 우측의 compact 드롭다운이 **초상화 레일**이 됐다. 캐릭터 이름은
+  // 이제 SVG 곡선 글자라 `getByText` 로 안 잡힌다 — 레일이 섰는지로 본다.
+  //
+  // **뒤로 버튼을 묻던 짝은 사라졌다**([[ADR-145]] 결정 1) — 이 화면은 하위 페이지가 아니라 탭이라
+  // pop 할 스택이 없고, ← 는 하단바가 진다([[ADR-132]] 결정 3).
+  it('제목·캐릭터 레일이 보이고, 화면 안에 뒤로 버튼이 없다', async () => {
     mockStore({ characters: [character()] })
+
     await renderScreen()
 
     expect(screen.getByText('보스 관리')).toBeTruthy()
-    expect(screen.getByText('낟낟')).toBeTruthy()
+    expect(screen.getByTestId('character-rail')).toBeTruthy()
+    expect(screen.queryByLabelText('뒤로')).toBeNull()
+    expect(goBack).not.toHaveBeenCalled()
+  })
 
-    await press(screen.getByLabelText('뒤로'))
+  // 정정 8: 이 화면의 일은 캐릭터를 고르는 것이지 진행을 보는 것이 아니다.
+  it('관리 화면의 레일에는 진행 링이 없다', async () => {
+    mockStore({ characters: [character()] })
 
-    expect(goBack).toHaveBeenCalled()
+    await renderScreen()
+
+    expect(screen.queryAllByTestId('portrait-ring-track')).toHaveLength(0)
+    expect(screen.queryAllByTestId('portrait-ring-fill')).toHaveLength(0)
   })
 
   it('마운트하면 loadTrackedOcids 를 부른다 — 스케줄러를 거치지 않고 들어와도 채워진다', async () => {
@@ -199,8 +233,8 @@ describe('BossManageScreen — 공통', () => {
     expect(screen.queryByText(/캐릭터를 먼저 선택해주세요/)).toBeNull()
   })
 
-  // [[ADR-096]] 결정 2 — 진입 시점의 스케줄러 탭을 이어받는다(한 방향).
-  it('월간 탭에서 들어오면 월간 목록이 열린다', async () => {
+  // [[ADR-096]] 결정 2 — 스케줄러가 보던 탭 그대로 열린다.
+  it('스케줄러가 월간이면 월간 목록이 열린다', async () => {
     mockStore({ characters: [character()], activeTab: 'monthly' })
 
     await renderScreen()
@@ -209,17 +243,30 @@ describe('BossManageScreen — 공통', () => {
     expect(screen.queryByText(WEEKLY_NAMES[0])).toBeNull()
   })
 
+  // [[ADR-145]] 결정 2 — «진입 시점 한 번» 이 **공유**가 됐다. 탭 화면은 마운트된 채 남아 그
+  // «진입» 이라는 사건이 앱 실행당 한 번이 되므로, 로컬 state 로 두면 스케줄러에서 월간을 보다
+  // 건너와도 주간이 열린다. 그래서 여기서 바꾼 탭은 **스토어에 닿아야 한다**(선택 캐릭터와 같은 규칙).
+  it('여기서 탭을 바꾸면 스케줄러와 같은 setActiveTab 을 부른다', async () => {
+    const store = mockStore({ characters: [character()] })
+    await renderScreen()
+
+    await press(button('월간'))
+
+    expect(store.setActiveTab).toHaveBeenCalledWith('monthly')
+  })
+
   // [[ADR-096]] 결정 4 — 선택 캐릭터는 스케줄러와 **공유**한다(탭과 달리 양방향).
-  it('캐릭터 드롭다운은 스케줄러와 같은 selectCharacter 를 쓴다', async () => {
+  // 정정 8: 드롭다운은 눌러도 안 열렸다 — 레일은 **실제로 바뀐다**(스케줄러와 같은 `selectCharacter`
+  // 라 돌아갔을 때 그쪽도 같은 캐릭터다).
+  it('레일에서 다른 초상화를 누르면 스케줄러와 같은 selectCharacter 를 부른다', async () => {
     const store = mockStore({
       characters: [character(), character({ ocid: 'ocid-2', characterName: '캐릭터2' })],
     })
-
     await renderScreen()
 
-    // 목록(열린 상태)은 아직 없다 — 트리거만 옮겨졌다(`CharacterSelectDropdown` 파일 머리).
-    expect(screen.getByText('낟낟')).toBeTruthy()
-    expect(store.selectCharacter).toBeDefined()
+    await press(screen.getAllByTestId('character-portrait')[1])
+
+    expect(store.selectCharacter).toHaveBeenCalledWith('ocid-2')
   })
 })
 
@@ -357,33 +404,50 @@ describe('BossManageScreen — 수동 모드', () => {
 })
 
 describe('BossManageScreen — 자동 모드', () => {
-  it('안내 문구가 보이고, 등록 보스만 나오며 체크 토글이 없다', async () => {
+  // [[ADR-145]] 결정 3: 상단 안내 한 줄을 없앤다 — 체크가 없고 스테퍼만 있다는 것을 화면이 이미
+  // 보여 준다. 설명은 기능 안내(`boss-manage` 가이드)가 계속 진다.
+  it('안내 문구 없이 등록 보스만 나오고 체크 토글이 없다', async () => {
     mockStore({ characters: [character({ weeklyBosses: [registeredBoss()] })] })
 
     await renderScreen()
 
-    expect(screen.getByText(/자동 모드에서는 목록이 게임 등록 기준이에요/)).toBeTruthy()
+    expect(screen.queryByText(/자동 모드에서는 목록이 게임 등록 기준이에요/)).toBeNull()
     expect(screen.getByText('자쿰')).toBeTruthy()
     expect(screen.queryByText('매그너스')).toBeNull()
     // 수동 모드의 행 토글 버튼이 없다.
     expect(screen.queryByLabelText('자쿰')).toBeNull()
   })
 
-  it('토글을 끄면 전체 보스가 나와 미등록 보스도 파티를 미리 설정할 수 있다', async () => {
+  // [[ADR-145]] 결정 4: 스위치가 뒤집혔다 — 이름은 「모든 보스 보기」이고 **기본이 꺼짐**이다.
+  // 표시 결과는 그대로라(기본 = 등록된 보스만) 위 케이스가 그 절반을 이미 지킨다.
+  it('토글은 「모든 보스 보기」이고 기본으로 꺼져 있다', async () => {
+    mockStore({ characters: [character({ weeklyBosses: [registeredBoss()] })] })
+
+    await renderScreen()
+
+    expect(screen.queryByText('등록된 보스만 보기')).toBeNull()
+    expect(screen.getByText('모든 보스 보기')).toBeTruthy()
+    expect(stateOf(screen.getByLabelText('모든 보스 보기')).checked).toBe(false)
+  })
+
+  it('토글을 켜면 전체 보스가 나와 미등록 보스도 파티를 미리 설정할 수 있다', async () => {
     mockStore({ characters: [character({ weeklyBosses: [registeredBoss()] })] })
     await renderScreen()
 
-    await press(screen.getByLabelText('등록된 보스만 보기'))
+    await press(screen.getByLabelText('모든 보스 보기'))
 
     expect(screen.getByText('매그너스')).toBeTruthy()
+    expect(stateOf(screen.getByLabelText('모든 보스 보기')).checked).toBe(true)
   })
 
-  // [[ADR-031]] 결정 4 — 등록 보스가 하나도 없으면 토글이 ON 이어도 전체로 대체한다.
-  it('등록된 보스가 하나도 없으면 토글이 ON 이어도 전체 목록이다', async () => {
+  // [[ADR-031]] 결정 4 — 등록 보스가 하나도 없으면 토글이 꺼져 있어도 전체로 대체한다([[ADR-145]]
+  // 결정 4 가 승계했다 — 뒤집힌 것은 스위치의 방향과 이름뿐이다).
+  it('등록된 보스가 하나도 없으면 토글이 꺼져 있어도 전체 목록이다', async () => {
     mockStore({ characters: [character()] })
 
     await renderScreen()
 
+    expect(stateOf(screen.getByLabelText('모든 보스 보기')).checked).toBe(false)
     expect(screen.getByText('자쿰')).toBeTruthy()
     expect(screen.getByText('매그너스')).toBeTruthy()
   })
@@ -557,13 +621,19 @@ describe('BossManageScreen — 목록 구성 ([[ADR-056]])', () => {
     useTrackingModeStore.setState({ mode: 'manual' })
   })
 
-  it('미출시 보스는 목록에 나오지 않는다 — 이름이 아니라 status 로 거른다', async () => {
-    mockStore({ characters: [character()] })
+  // 참조표에 미출시 엔트리가 있을 때만 돌린다. 규칙([[ADR-056]] 결정 1)은 표본이 없어도 코드에
+  // 남아 있으므로 테스트도 남기되, 표본이 없으면 건너뛴다([[ADR-151]] 결정 5).
+  const 미출시표본있음 = UNRELEASED_NAME !== undefined
+  ;(미출시표본있음 ? it : it.skip)(
+    '미출시 보스는 목록에 나오지 않는다 — 이름이 아니라 status 로 거른다',
+    async () => {
+      mockStore({ characters: [character()] })
 
-    await renderScreen()
+      await renderScreen()
 
-    expect(screen.queryByText(UNRELEASED_NAME)).toBeNull()
-  })
+      expect(screen.queryByText(UNRELEASED_NAME!)).toBeNull()
+    },
+  )
 
   it.each([
     ['챌린저스 월드 캐릭터에게는 시즌 보스가 나온다', '챌린저스2', true],
@@ -592,6 +662,6 @@ describe('BossManageScreen — 목록 구성 ([[ADR-056]])', () => {
     await renderScreen()
 
     expect(screen.queryByText(SEASON_NAME)).toBeNull()
-    expect(screen.queryByText(UNRELEASED_NAME)).toBeNull()
+    if (UNRELEASED_NAME !== undefined) expect(screen.queryByText(UNRELEASED_NAME)).toBeNull()
   })
 })

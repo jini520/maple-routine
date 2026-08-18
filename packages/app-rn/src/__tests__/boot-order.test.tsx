@@ -2,8 +2,8 @@
 //
 // 웹 `AppShell`(573줄)이 하던 것과 RN 이 하는 것의 전수 대조표는 `docs/migration/README.md`
 // «4-0단계 결과» 에 있고, 여기서는 그 표 중 **틀려도 조용히 넘어가는 칸**만 코드로 붙든다. 순서가
-// 어긋났을 때 드러나는 모습이 *"흰 화면"* · *"스플래시가 안 걷힘"* · *"광고가 안 뜸"* 이라 어느
-// 것도 스택 트레이스를 남기지 않는다.
+// 어긋났을 때 드러나는 모습이 *"흰 화면"* · *"스플래시가 안 걷힘"* 이라 어느 것도 스택 트레이스를
+// 남기지 않는다.
 //
 // 셋으로 나뉜다.
 //
@@ -70,19 +70,25 @@ jest.mock('@core/features/drop-effect/store', () => ({
     }),
 }))
 
-jest.mock('@core/features/ads/tab-switch-ad', () => ({
-  __esModule: true,
-  startAds: async () => {
-    mockCalls.push('startAds')
-  },
-}))
-
 // 동적 `import()` 를 가둔 셸 옆 모듈(`app/prehydrate.ts`)을 대체한다 — jest 에서 그 import 는
 // **동기적으로 던져** 마운트를 통째로 죽인다(실측). 그 파일이 경계로 있는 이유가 이것이다.
 jest.mock('../app/prehydrate', () => ({
   __esModule: true,
   prehydrateTabStores: async () => {
     mockCalls.push('prehydrate')
+  },
+}))
+
+// OTA 부팅 확인도 포트를 거친다([[ADR-137]]). 다른 스토어와 같은 방식으로 대체해 **순서만** 본다 —
+// 확인이 실제로 무엇을 하는지는 어댑터·스토어 테스트의 몫이다.
+jest.mock('@core/features/live-update/store', () => ({
+  __esModule: true,
+  useLiveUpdateStore: {
+    getState: () => ({
+      checkOnBoot: async () => {
+        mockCalls.push('checkOnBoot')
+      },
+    }),
   },
 }))
 
@@ -133,7 +139,9 @@ describe('① 셸이 무엇을 언제 하는가', () => {
     await act(async () => {})
   }
 
-  it('복원 넷과 광고 초기화가 첫 렌더에 전부 시작된다', async () => {
+  // 여기에 `startAds`(광고 SDK 초기화 + 사전 로드)가 다섯 번째 항목으로 있었다 — [[ADR-150]] 이
+  // 전면광고를 걷으며 셸에서 사라졌다.
+  it('복원 넷이 첫 렌더에 전부 시작된다', async () => {
     await mountShell()
 
     // 넷 사이에는 순서가 없다 — 서로 독립이고, 웹도 각자 자기 이펙트를 갖는다(하나가 던져도
@@ -144,7 +152,6 @@ describe('① 셸이 무엇을 언제 하는가', () => {
         'restore:theme',
         'restore:trackingMode',
         'restore:dropEffect',
-        'startAds',
       ]),
     )
   })
@@ -165,7 +172,7 @@ describe('① 셸이 무엇을 언제 하는가', () => {
   // [[ADR-025]]: 네이티브 스플래시가 순식간에 지나가 깜빡이지 않게 최소 표시 시간을 채운다.
   // **첫 렌더에 곧바로 내리지 않는 것**이 그 결정이고, 이걸 잃으면 화면으로는 안 보인다
   // (콘텐츠가 빨리 준비될수록 스플래시가 번쩍이고 끝난다).
-  it('스플래시는 최소 표시 시간을 채운 뒤에, 그리고 복원·광고·예열보다 뒤에 내려간다', async () => {
+  it('스플래시는 최소 표시 시간을 채운 뒤에, 그리고 복원·예열보다 뒤에 내려간다', async () => {
     await mountShell()
     expect(mockCalls).not.toContain('hideSplash')
 
@@ -174,7 +181,7 @@ describe('① 셸이 무엇을 언제 하는가', () => {
     })
 
     expect(mockCalls).toContain('hideSplash')
-    expect(mockCalls.indexOf('hideSplash')).toBeGreaterThan(mockCalls.indexOf('startAds'))
+    expect(mockCalls.indexOf('hideSplash')).toBeGreaterThan(mockCalls.indexOf('restore:theme'))
     expect(mockCalls.indexOf('hideSplash')).toBeGreaterThan(mockCalls.indexOf('prehydrate'))
   })
 })
@@ -194,7 +201,7 @@ describe('② 진입점이 무엇을 먼저 하는가', () => {
   })
 })
 
-describe('③ OTA 는 아직 아무 데도 이어져 있지 않다', () => {
+describe('③ OTA 배선 — 벽이 사라졌고, 사라진 채로 있어야 한다', () => {
   /** `packages/app-rn` 의 **제품 소스** 전부(테스트·스냅샷 제외). */
   const sources = ((): string[] => {
     const walk = (dir: string): string[] =>
@@ -215,45 +222,33 @@ describe('③ OTA 는 아직 아무 데도 이어져 있지 않다', () => {
 
   const relative = (file: string): string => path.relative(RN_ROOT, file)
 
-  // `import type` 은 컴파일에서 지워져 **모듈이 평가되지 않는다** — `UpdatePromptModal` 이 상태
-  // 아홉과 필드 이름을 두 벌로 만들지 않으려고 그 형태로 타입만 가져온다. 값으로 가져오는 순간
-  // 부팅이 죽으므로, 계약은 "쓰지 마라"가 아니라 **"타입으로만 써라"** 다.
-  it('core 의 live-update 스토어는 타입으로만 가져온다', () => {
-    const valueImports = sources.filter((file) =>
-      readFileSync(file, 'utf8')
-        .split('\n')
-        .some(
-          (line) =>
-            line.includes("from '@core/features/live-update/store'") &&
-            !line.trimStart().startsWith('import type '),
-        ),
-    )
-
-    expect(valueImports.map(relative)).toEqual([])
-  })
-
-  // 셸은 웹이 부팅에서 하던 둘을 안 한다 — `checkOnBoot()`([[ADR-027]])와
-  // `notifyLiveUpdateReady()`([[ADR-117]] 결정 2). 그 공백이 무엇을 뜻하는지(자동 롤백 없음 ·
-  // [[ADR-126]] 결정 4 의 완료 안내 안 뜸)는 `AppShell.tsx` 파일 머리에 적혀 있다.
-  it('`@core/native/live-update` 를 부르는 제품 코드가 없다', () => {
-    const callers = sources.filter((file) =>
-      readFileSync(file, 'utf8').includes("'@core/native/live-update'"),
-    )
-
-    expect(callers.map(relative)).toEqual([])
-  })
-
-  // 모달은 **그릴 줄은 알지만 그릴 값을 얻을 방법이 없다**(`UpdatePromptModal.tsx` 파일 머리).
-  // 값 없이 마운트해 두면 상태가 늘 `idle` 이라 **아무것도 안 뜨는 것이 정상처럼 보여**, OTA 가
-  // 붙는 날 배선을 빠뜨려도 아무 데서도 안 드러난다.
+  // 여기 있던 세 케이스는 **«아직 안 이어져 있다»를 고정**하고 있었다(스토어를 타입으로만 import ·
+  // `@core/native/live-update` 호출 0 · 모달 마운트 0). [[ADR-137]] 이 셋 다 뒤집었으므로 그대로
+  // 두면 «구현하면 실패하는 테스트»가 된다. [[ADR-129]] 가 글롭 고정 테스트를 「0이어야 한다」로
+  // 뒤집었을 때와 같은 처리다 — 감시 대상이 사라진 게 아니라 **묻는 질문이 바뀐 것**이다.
   //
-  // 이름 언급이 아니라 **import 구문**을 본다 — `lib/icons.ts` 가 아이콘마다 쓰이는 자리를 주석에
-  // 적어 두어(그 파일의 관례) 단순 문자열 검사로는 그것까지 걸린다.
-  it('`UpdatePromptModal` 은 아직 어디에도 마운트되지 않는다', () => {
+  // 이제 묻는 것은 «벽이 정말 사라졌는가» 다. 벽은 core 가 **Vite 전용 API** 를 쓰는 것이었고,
+  // 그것이 되살아나면 RN 은 다시 «import 하는 것만으로 죽는» 상태로 돌아간다. 그때 실패해야 하는
+  // 자리는 이 모듈을 쓰는 화면 하나가 아니라 여기다.
+  it('core 의 live-update 스토어에 `import.meta` 가 없다 — 그것이 벽이었다', () => {
+    const store = readFileSync(
+      path.join(RN_ROOT, '..', 'core', 'src', 'features', 'live-update', 'store.ts'),
+      'utf8',
+    )
+
+    // 주석에서 그 이름을 **설명**하는 것은 막지 않는다(이 저장소는 왜 없앴는지를 코드 옆에 적는다).
+    const codeLines = store.split('\n').filter((line) => !line.trimStart().startsWith('//'))
+
+    expect(codeLines.filter((line) => line.includes('import.meta'))).toEqual([])
+  })
+
+  // 배선이 실제로 있는가 — 없으면 모달은 «그릴 줄은 알지만 아무것도 안 뜨는» 상태로 조용히
+  // 되돌아간다(그 상태가 정상처럼 보이는 것이 원래 이 describe 가 걱정하던 것이다).
+  it('`UpdatePromptModal` 이 마운트돼 있다', () => {
     const importers = sources.filter((file) =>
       /from '[^']*UpdatePromptModal'/.test(readFileSync(file, 'utf8')),
     )
 
-    expect(importers.map(relative)).toEqual([])
+    expect(importers.map(relative)).toEqual(['src/navigation/AppNavigation.tsx'])
   })
 })

@@ -1,0 +1,88 @@
+{
+  "project": "maple-routine",
+  "phase": "character-multi-account",
+  "steps": [
+    {
+      "step": 0,
+      "name": "selection-storage",
+      "status": "completed",
+      "started_at": "2026-08-17T02:27:19+0900",
+      "summary": "representativeCharacter 키 + get/set/clearRepresentativeCharacter 추가, 참조 무결성은 setTrackedCharacterOcids 안의 pruneDanglingRepresentative 와 목록·대표를 함께 받는 setCharacterSelection(ocids, representative) 가 지킨다. CharacterPickerEntry·CharacterBasicProfile 에 옵셔널 jobClass 추가(출처는 character/list — normalizeCharacterBasic 미변경).",
+      "completed_at": "2026-08-17T02:35:54+0900"
+    },
+    {
+      "step": 1,
+      "name": "multi-account-sync",
+      "status": "completed",
+      "started_at": "2026-08-17T02:35:55+0900",
+      "summary": "character-roster.ts 에 resolveTrackedCharacterContext(ocids) 신설(전 계정 character/list 를 훑어 {character, accountId}[] 반환, selectedAccountId 미사용, 순서는 응답 순서 그대로) — resolveRegisteredCharacters 는 무변경. syncSchedules 가 그것을 써 syncOneCharacter·refreshCharacterBasics 에 캐릭터별 accountId 를 넘긴다(계정 공유 원장·character-basic-cache 인덱스가 자기 계정 키로 갈린다). jobClass 는 fetchCharacterBasicCached 의 5번째 선택 인자로 받아 profile 에 실어 캐시에 쓰고(미전달 시 jobClass ?? cached.profile.jobClass 로 기존 값 유지), 네 호출부(프로브·예열·피커 로스터·편승 갱신)가 전부 character/list 의 값을 넘긴다. 단일 계정 회귀 가드는 schedule-sync.test.ts 의 describe('다계정 …') 안 '단일 계정 입력에서는 호출 수·순서·원장 키가 지금과 같다 (웹뷰 앱 회귀 가드)'.",
+      "completed_at": "2026-08-17T02:46:25+0900"
+    },
+    {
+      "step": 2,
+      "name": "onboarding-flow",
+      "status": "completed",
+      "started_at": "2026-08-17T02:46:25+0900",
+      "summary": "features/onboarding/flow.ts 신설 — OnboardingAccountScope('single'|'all') + set/getOnboardingAccountScope, 모듈 스코프 값 하나이고 기본값 'single'(Capacitor 는 주입 안 함). 주입은 app-rn/src/boot.ts 의 installPorts() 끝, 포트 열셋 바로 뒤(포트가 아니라 제품 흐름이지만 '저장소를 처음 만지는 코드보다 먼저' 조건이 같다). 읽는 자리는 정확히 둘 — deriveResumeTarget 은 'single' 일 때만 selectedAccountId===null → selectingAccount 행을 태우고 나머지 세 행은 공통(마이그레이션 포함), submitApiKey 는 'all' 이면 계정 대조 대신 추적 ocid 대조를 한다(응답 전 계정 ocid 집합과 겹치면 재개 / 하나도 없으면 RESTORE_STEP 으로 selectingContentCharacters / 저장 목록이 null·[] 이면 '지킬 것이 없다'로 대조 자체를 건너뛴다 — 안 그러면 신규 사용자가 모드 선택을 건너뛴다). 추가 네트워크 0회(추적 목록만 로컬 재조회). ResumeTarget·RESTORE_STEP·RESTORE_COMPLETED 의 selectedAccountId 를 string|null 로 넓혔고 리듀서 본문·OnboardingStatus 이름은 무변경. 회귀 가드는 기존 'single' 케이스 전부 + boot.test.ts 의 '계정 범위를 all 로 주입한다'.",
+      "completed_at": "2026-08-17T03:01:34+0900"
+    },
+    {
+      "step": 3,
+      "name": "account-derivations",
+      "status": "completed",
+      "started_at": "2026-08-17T03:01:34+0900",
+      "summary": "features/character-manage/derivations.ts 신설(순수 함수 셋, 저장소·네트워크 호출 0 — 타입만 import). summarizeAccount(account): AccountSummaryView | null — 대표는 pickRepresentativeCharacter 재사용, worldCounts 는 Map 집계 후 개수 내림차순·동수는 compareByName(world)로 결정적 정렬 뒤 slice(0,2)이고 «외 n» 꼬리 없음, 캐릭터 0명이면 던지지 않고 null(대표 없는 요약을 만들 수 없어 반환 타입에 | null 을 더했다 — ADR-127 이 고친 렌더 중 throw 를 되살리지 않기 위한 것). buildSelectedCharacterViews(orderedOcids, cached, unavailableOcids) — 순서 그대로, 캐시 없으면 level null·jobClass/world undefined·imageUrl null·name ''(타입이 string 이라 «없음» 자리가 빈 문자열뿐, 자리표시자 문구 없음), 조회 불가도 목록에 남고 캐시값은 그대로 쓴다. resolveRepresentative(orderedOcids, stored) — 목록에 있으면 그것, 없거나 null 이면 null(«첫 번째를 임시 대표로» 는 만들지 않는다). 테스트 20케이스(__tests__/derivations.test.ts), 월드 상한·순서 보존 두 곳에 변이 주입으로 판별력 확인. ADR-144 머리에 «값 규칙의 자리» 한 문단 추가.",
+      "completed_at": "2026-08-17T03:08:53+0900"
+    },
+    {
+      "step": 4,
+      "name": "character-row",
+      "status": "completed",
+      "started_at": "2026-08-17T03:08:53+0900",
+      "summary": "CharacterRow 프롭·프리미티브 셋 이름·2줄 규칙 — molecules/CharacterRow/ 에 CharacterRow(카드 한 벌, 좌우 leading/trailing 슬롯만 갈린다) + RepresentativeStar(label·filled·dimmed·onPress, 배경·테두리 없이 fill 프롭으로 채우고 dimmed 는 opacity-40 만 — disabled 아님) + DragHandle(lucide Menu, 접근성 이름 「순서 변경」, 제스처는 목록의 일이라 여기 없음) + AddMark(PlusIcon text-text-muted, aria-hidden 표시일 뿐 버튼 아님). 2줄은 captionText(level, jobClass) 가 정한다 — 있는 것만 공백으로 잇고 둘 다 없으면 null 이라 Text 자체가 안 그려지며, unavailable 이면 '조회할 수 없는 캐릭터'(text-error-ink)가 그 줄을 통째로 대체한다. 얼굴은 CharacterTrackingGrid 의 [[ADR-015]] 크롭 표(300/x115,y120,64) 그대로 상자만 40px, 이미지 없으면 이름 첫 글자. 엠블럼은 번들 에셋 id 를 그대로 넘기고 naturalAspectStyle(height 17)로 폭 축을 지운다([[ADR-135]]). onPress 를 주면 카드 전체가 role=\"button\", 없으면 View(버튼이라 말하지 않는다). lib/icons.ts 에 MenuIcon 추가. 테스트 18케이스(스냅샷 1) + 캡션 null·별 배경 두 자리에 변이 주입으로 판별력 확인.",
+      "completed_at": "2026-08-17T03:17:08+0900"
+    },
+    {
+      "step": 5,
+      "name": "account-select",
+      "status": "completed",
+      "started_at": "2026-08-17T03:17:08+0900",
+      "summary": "organisms/AccountSelect/ 신설 — AccountSelect(accounts: AccountSummaryView[] · selectedAccountId · portraitByAccountId · onSelect)와 순수 기하 place-dropdown.ts. 행은 트리거·목록이 같은 내부 AccountRow 한 벌이고 갈리는 것은 오른쪽 슬롯(트리거만 ChevronDown)과 선택 틴트(bg-primary-tint)뿐 — 1줄 «[엠블럼] {월드} Lv.{레벨} {이름}»(월드를 글자로도 적는다), 2줄 «{월드} {n}개» 조인(step 3 이 이미 많은 순 둘로 자른 값), 얼굴은 36px 크롭(AccountSelectionList 표 재사용)이고 없으면 대표 이름 첫 글자. 열기는 react-native Modal(transparent) + 트리거 measureInWindow 좌표에 절대 배치, 폭은 트리거 폭 그대로라 «한 덩어리»가 된다. placeDropdown(anchorTop/anchorHeight/contentHeight/windowHeight/safeTop/safeBottom/edgeGap) → {top, maxHeight}: 아래에 들어가면 top=anchorTop(사이를 안 띄운다), 넘치면 top=anchorBottom-contentHeight 로 뒤집고, 양쪽 다 모자라면 넓은 쪽에 붙여 maxHeight 로 자른다(ScrollView 가 굴린다). 목록 높이는 ScrollView 안쪽 View 의 onLayout 으로 재고, 좌표·높이가 둘 다 오기 전에는 opacity-0(ItemRevenuePopover 선례 — jest 는 레이아웃을 계산하지 않아 테스트가 보는 목록은 늘 opacity 0). 스크림 없음 — 닫기용 전체화면 Pressable 은 색 없이 잡기만 하고(account-select-backdrop), 층은 border-border + shadow-lg 가 말한다(border-panel-border 는 «스크림 위 패널» 전제라 여기 안 쓴다 — ADR-122). 닫힘 경로 셋: 옵션 선택(close 후 onSelect) · 바깥 탭 · onRequestClose, 회전(Dimensions change)도 닫는다(잰 좌표가 거짓이 된다). 선택 계정이 목록에 없으면 렌더 중 던지지 않고 빈 프래그먼트(ADR-127). 테스트 17케이스, «스크림 없음» 두 자리에 bg-scrim 변이 주입으로 판별력 확인.",
+      "completed_at": "2026-08-17T03:32:14+0900"
+    },
+    {
+      "step": 6,
+      "name": "manage-screen",
+      "status": "completed",
+      "started_at": "2026-08-17T03:32:14+0900",
+      "summary": "화면 SettingsCharactersScreen.tsx(라우트 SettingsCharacters · path /settings/characters · origin 'rn' · STACK_ROUTE_NAMES 열둘째, 루트 스택 push). 본문은 온보딩과 공유하려고 둘로 쪼갰다 — components/organisms/CharacterManage/use-character-manage.ts(상태·조회·TTL 한 벌, CharacterManageController 반환)와 CharacterManageBody.tsx(순수 표시, manage 하나만 받는다). 화면이 갖는 것은 PageHeader(← + 제목)·CTA(닫기/저장)·저장 배선 셋뿐이라 step 8 은 머리와 CTA 만 갈아 끼우면 된다. 두 층은 CharacterRow 한 벌이고 갈리는 것은 좌우 슬롯(DragHandle + RepresentativeStar/RemoveButton vs AddMark)뿐, 층 testID 는 character-manage-selected / character-manage-candidates. 후보 = 그 계정 로스터 − 조회 불가 − 이미 고른 것이고 라벨은 «{selectableCount}개 중 {candidates}개 표시». TTL 은 훅의 메모리(rostersRef + settledAt, 영속화 없음)에 살고 값은 CHARACTER_BASIC_TTL_MS 재사용 — 성공에만 도장을 찍어 실패는 캐싱되지 않고 「다시 시도」는 force 로 무시한다. **회차를 effect 가 아니라 사건이 연다**(계정 목록이 첫 계정을 정하는 순간·드롭다운 선택·다시 시도) — useEffect 안 setState 는 react-hooks/set-state-in-effect 에러이고 비동기로 미루면 «0건 + 로딩 아님» 프레임이 생긴다. 같은 이유로 선택 목록·대표는 심지 않고 파생한다(editedOcids ?? trackedOcids / pickedRepresentative === undefined ? stored : picked). 저장은 useContentSchedulerStore().saveTrackedOcids(ocids, onProgress) → setRepresentativeCharacter|clearRepresentativeCharacter(목록이 먼저여야 참조 무결성이 대표를 안 지운다) → reloadTabStores(['boss','profit']) → goBack, 진행률은 기존 ProgressModal. 활성 조건은 배열 동일성(집합∪순서) ∪ 대표. 설정 본화면에서 로스터·피커·저장을 걷어내고 배지를 «3명»→«3개»(ADR-144 결정 8)로 바꿨으며 openPicker 는 navigate('SettingsCharacters') + setParams(undefined). 계정 0개는 본문 전체 EmptyState(page) + noticeApiKeyIssue('invalid') — core 에 그 진입점이 하나뿐이라 문구가 «유효하지 않습니다» 로 나가는 것이 알려진 열화. 테스트 37케이스(SettingsCharactersScreen.test.tsx), TTL 건너뛰기·조회 불가 필터·순서 dirty 세 자리에 변이 주입으로 판별력 확인. core·app-capacitor 무변경.",
+      "completed_at": "2026-08-17T04:08:20+0900"
+    },
+    {
+      "step": 7,
+      "name": "reorder-drag",
+      "status": "completed",
+      "started_at": "2026-08-17T04:08:20+0900",
+      "summary": "끌기는 **자체 구현**이다 — 새 의존성 0개(react-native-gesture-handler 2.32·reanimated 4.5.1 이 이미 dependencies 이고 GestureHandlerRootView 는 App.tsx 가 이미 두른다). 순서 계산은 제스처와 분리해 organisms/CharacterManage/reorder.ts 의 순수 함수 넷이 갖는다 — moveOcid(ocids,from,to)(경계는 목록 안으로 clamp, 제자리면 같은 내용의 새 배열, 원본 불변) · resolveDropIndex(from,offsetPx,pitchPx,count)(반올림이라 반 칸이 경계, pitch 0 이면 제자리) · resolveAutoScrollStepPx({pointerYPx,topPx,bottomPx,zonePx,maxStepPx})(깊이 비례, 화면 밖도 최대에서 멈춤) · resolveRowShiftSteps(index,from,to)(비켜 주는 칸 수 -1·0·1). 화면 몫은 SelectedCharacterList.tsx — 제스처는 **핸들을 감싼 상자에만** 붙고(Gesture.Pan().runOnJS(true).activeOffsetY([-4,4]), 끝은 onEnd 가 아니라 onFinalize 라 취소도 같은 문으로 들어온다) 배열은 **놓을 때 onMove 한 번**만 바뀌며(끄는 동안은 dragY shared value + 나머지 행의 정적 shift 로 결과를 미리 그린다) 칸 높이는 행만 담은 컨테이너 onLayout 하나를 (height+8)/n 으로 나눠 얻는다. 제스처가 붙드는 함수는 useMemo 로 한 번만 만들고 그것이 읽는 «지금 값»(count·scroll·onMove·화면 위아래)은 latestRef 가 갖는다 — 끄는 도중 재렌더에 제스처를 다시 붙이면 손가락을 놓치고, 옛 onMove 를 붙들면 놓는 순간 옛 목록으로 되돌린다. **자동 스크롤**은 [[ADR-131]] 대로 고정 영역을 만들지 않고 페이지 자신을 굴린다: use-reorder-scroll.ts 가 scrollRef·onScroll·{offsetPx,scrollToPx} 를 한 벌로 주고 **화면**이 그것을 ScreenScroll 에 넘긴다(컨트롤러에 실었더니 그 객체가 ref 를 품어 react-hooks/refs 「Cannot access refs during render」 3건 — 그래서 CharacterManageBody 가 scroll 프롭을 하나 받는다). ScreenScroll 에 optional onScroll 을 더했고 **조건부 전개**라 안 쓰는 화면 열다섯의 렌더 트리·스냅샷은 그대로다(주면 scrollEventThrottle 16 동반). 오프셋은 onScroll 이 유일한 출처다 — 낙관적 갱신은 목록 끝에서 매 프레임 어긋나 끌리는 행이 떨린다. 콘텐츠가 흐른 만큼(offsetPx-startOffsetPx)을 끌기 좌표에 되더해 행이 손가락 밑에 남는다. **접근성 액션은 「위로 옮기기」·「아래로 옮기기」**(name moveUp/moveDown), 핸들 래퍼(accessible, aria-label 「{이름} 순서 변경」)에 붙고 **할 수 있는 것만 준다**(첫 행에 위로 없음·1개면 액션 0개), 끌기와 같은 moveCharacter → moveOcid 를 부른다. 테스트 42케이스(reorder.test.ts 35 + 화면 7), 끌기 자체는 흉내내지 않는다(제스처는 네이티브·jest 는 레이아웃 미계산) — 화면 쪽은 접근성 액션으로 같은 문을 두드린다. 판별력 확인 3건(경계 액션 제거 → 2 실패 · moveOcid 를 정렬로 교체 → 4 실패 · 핸들 제거 → 7 실패). core·app-capacitor 무변경, docs/features/settings.md 「캐릭터 관리」에 순서 절 추가. **실기기 미검증** — 핸들 Pan 이 ScrollView 와의 다툼에서 이기는지·자동 스크롤 속도(72px 구간·프레임당 12px)는 눈으로만 판정된다.",
+      "completed_at": "2026-08-17T04:32:33+0900"
+    },
+    {
+      "step": 8,
+      "name": "onboarding-step",
+      "status": "completed",
+      "started_at": "2026-08-17T04:32:33+0900",
+      "summary": "온보딩이 세 단계가 됐다(API 키 → 스케줄 관리 방법 → 캐릭터 선택). **지운 파일 7개**: `AccountSelectionList`·`AccountModal`·`AccountFlowStatus` + 그 테스트 셋 + `error-message.ts`(그 셋만 쓰던 orphan, 자체 테스트 없음). `packages/core` 의 계정 플로우(`features/settings/store` 의 `refreshAccounts`·`selectAccount`·`commitAccountChange` · `use-account-probes` · `prefetch`)와 `packages/app-capacitor` 는 한 글자도 안 건드렸다. **도달 불가 상태 처리**: `selectingAccount`·`prefetching` case 는 리듀서를 안 고쳐 타입상 남으므로 `error` 와 함께 `awaitingApiKey` 에 묶어 **ApiKeyForm** 을 그린다 — 빈 화면은 출구가 없고([[ADR-116]] 잠금과 같은 얼굴), `submitApiKey` 의 방어 분기(`setApiKey` 직후 `getAuthConfig()` 가 null 이면 `API_KEY_VERIFIED`)가 실제로 그 자리에 닿을 수 있다. `error` 도 `accounts` 유무로 안 갈린다(그릴 목록 자체가 없다). 진행률 UI·`prefetchProgress`·`restartAccountSelection`·`selectAccount` 배선은 함께 사라졌다. **본문 공유 방법**: 사본을 만들지 않고 `ContentCharacterStep.tsx` 를 **제자리에서 다시 썼다** — step 6 의 `useCharacterManage` + `CharacterManageBody` 를 그대로 쓰고 머리(제목 블록 «관리할 캐릭터를 선택해주세요»)와 CTA(「계속하기」, 0개면 비활성)만 갖는다. 끌기 자동 스크롤은 스크롤 뷰를 가진 `OnboardingScreen` 이 `useReorderScroll()` 로 배선해 `OnboardingStep` 에 `scrollRef`/`onScroll`(조건부 전개), 단계에 `scroll` 을 내린다. **구현하며 정한 것 넷** — ① `CharacterManageBody` 에 `place: RosterErrorPlace` 프롭 신설(기본값 없음): 설정은 `'picker'`, 온보딩은 `'onboarding'`. 온보딩은 401 을 키 재입력 진입점에 **배선하지 않으므로**(429 만 넘긴다 — [[ADR-115]] 정정 5 · [[ADR-116]] 결정 2) 피커 문구«키 입력 화면으로 이동합니다» 를 쓰면 거짓인 데다 액션까지 없어 401 이 하드 잠금이 된다 ② 대표 캐릭터를 `onSubmit(ocids, representativeOcid)` 로 함께 넘겨 화면이 목록 저장 **뒤에** 쓴다(참조 무결성 순서, 설정 화면과 동일). 본문이 별을 그리는데 안 실어 보내면 선택이 조용히 사라진다. 쓰기 실패는 삼킨다(온보딩은 이미 끝났고 대표는 표식뿐 — [[ADR-143]] 결정 4) ③ 보조문 «최소 한 명»→«최소 한 개»([[ADR-144]] 결정 8) ④ `OnboardingStep` 은 `props` 를 통째로 안 받고 **구조 분해**한다 — `react-hooks/refs` 가 ref 를 품은 props 객체 접근을 통째로 막아 `props.center` 까지 6건 걸렸다. **뒤집힌 테스트는 갱신이 아니라 재작성/삭제**: `ContentCharacterStep.test` 전면 재작성(12케이스 — 본문 계약은 `SettingsCharactersScreen.test` 가 이미 봐서 여기선 머리·CTA·payload·429-only 만), `OnboardingScreen.test` 의 prefetching 2·selectingAccount 1·error 2 → 도달 불가 2 + error 2(it.each), `SettingsAccountDataScreen.test` 의 계정 변경 3케이스 삭제 후 «그 행이 없다 + 카드 1개» 로 대체. **문서**: `onboarding.md` 머리를 «화면은 구현 전» → «구현 완료 2026-08-17 · 실기기 미검증», 도달 불가 두 상태의 화면 규칙 문단 추가, 429-only 배선과 `place` 프롭을 「추적 캐릭터 선택 단계」에 명시; `settings.md` 의 [[ADR-144]] 구현 상태와 «RN 파일은 삭제됐다/카드가 하나다» 반영. 곁가지로 `TrackingModeStep` 머리의 «`AccountSelectionList` 와 계속 공유한다»(지워진 파일을 가리키는 거짓 문장)를 `ThemeSelector` 로 정정. **남는 고아(지우지 않고 보고)**: `components/organisms/CharacterTrackingPicker/` 3파일 + 테스트가 RN 에서 import 0건이 됐다(`CharacterTrackingPicker` 는 step 6 부터, `CharacterTrackingGrid`·`roster-body` 는 이번 재작성으로). AC 전부 통과 — vitest 3,115/202파일 · jest 1,685/125스위트 · build 성공 · lint 0 errors/35 warnings(baseline 동일, 경고는 전부 안 건드린 파일) · tsc 통과 · `expo export --platform android` 성공. **실기기 미검증**.",
+      "completed_at": "2026-08-17T04:56:12+0900"
+    },
+    {
+      "step": 9,
+      "name": "display-order",
+      "status": "completed",
+      "started_at": "2026-08-17T04:56:12+0900",
+      "summary": "순서 함수는 `app-rn/src/lib/tracked-order.ts` 의 `orderByTracked(items, orderedOcids)` 하나 — 스토어를 모르는 순수 함수이고, **모르는 항목을 버리지 않는 것이 계약이다**(저장 목록과 스토어 목록이 한순간 어긋나는 저장 직후·동기화 중간 커밋에서 캐릭터가 화면에서 통째로 사라지지 않게 — 순서를 정하는 함수가 목록의 크기를 바꾸면 안 된다). 동순위(모르는 항목끼리·겹친 ocid)는 정렬 안정성이 아니라 인덱스 비교로 가른다(`Infinity - Infinity = NaN` 이라 뺄셈 한 줄로는 못 쓴다). 적용한 세 자리 — ContentScreen·BossScreen 은 스토어 `characters` 를 `characters: storeCharacters` 로 받아 `orderByTracked(storeCharacters, trackedOcids ?? [])` 로 한 번 통과시키고(그래서 레일·`characters[0]` 폴백 선택이 함께 사용자 순서를 따른다), BossProfitScreen 은 `buildCharacterGroups(rows, weeklySubtotals)` 결과 위에 얹는다(캐릭터 **안쪽** 보스 순서는 [[ADR-036]] 그대로). 순서 인자는 세 스토어가 이미 들고 있는 `trackedOcids` 라 **저장소 조회가 늘지 않는다**(`getTrackedCharacterOcids` 신규 호출 0건). 단위 정정 — 설정 「캐릭터 관리」 배지는 step 6 에서 이미 «개» 라 확인만 했고, 고아로 남은 옛 피커 모달의 «최소 한 명은 선택해주세요» → «최소 1개는 선택해주세요»(트리 스냅샷 2건이 그 한 줄만 바뀌어 갱신됨). `app-capacitor` 의 같은 문구 3자리는 안 건드렸다. **core 무수정 확인**: `git diff packages/core packages/app-capacitor` 가 0줄 — `sortByCachedLevel` 두 벌 그대로이고 웹뷰 앱 정렬은 안 바뀐다(vitest 3,115개 전부 그대로 통과가 그 회귀 가드). 테스트 +14(순수 함수 8 + 화면 6), 판별력은 세 화면에서 얹기를 걷어내 4건 실패로 확인. **보고**: 관리 화면 둘(`ContentManageScreen`·`BossManageScreen`)의 레일은 이 step 의 대상 셋에 없어 아직 스토어 순서다 — 스케줄러에서 들어가면 같은 레일이 다른 차례로 선다(ADR-143 결정 3 구현 노트와 boss-scheduler.md·content-scheduler.md 에 남겼다). **실기기 미검증**.",
+      "completed_at": "2026-08-17T05:09:48+0900"
+    }
+  ],
+  "created_at": "2026-08-17T02:27:19+0900",
+  "completed_at": "2026-08-17T05:09:48+0900"
+}

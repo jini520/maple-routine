@@ -3,12 +3,16 @@
 <plist version="1.0">
   <dict>
     <key>EXUpdatesCheckOnLaunch</key>
-    <string>ALWAYS</string>
+    <string>NEVER</string>
     <key>EXUpdatesEnableBsdiffPatchSupport</key>
     <true/>
     <key>EXUpdatesEnabled</key>
-    <false/>
+    <true/>
     <key>EXUpdatesLaunchWaitMs</key>
     <integer>0</integer>
+    <key>EXUpdatesRuntimeVersion</key>
+    <string>file:fingerprint</string>
+    <key>EXUpdatesURL</key>
+    <string>https://maple-routine-ota.dev-jinni520.workers.dev/manifest</string>
   </dict>
 </plist>

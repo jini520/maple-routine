@@ -10,10 +10,11 @@
 //    **필요 자체가 없다**(컴포넌트 주석 ②). 대신 그 자리에 `onRequestClose`(안드로이드 뒤로가기,
 //    [[ADR-120]] 결정 18 후반) 케이스를 둔다.
 import { fireEvent } from '@testing-library/react-native'
+import { Image } from 'react-native'
 
 import type { CharacterPickerEntry } from '@core/types'
 
-import { renderOverlay, type AtomElement } from '../../../__tests__/render-atom'
+import { flattenStyle, renderOverlay, type AtomElement } from '../../../__tests__/render-atom'
 import { CharacterTrackingPicker } from '../CharacterTrackingPicker'
 import { ROSTER_BODY_MIN_H_PX } from '../roster-body'
 
@@ -29,6 +30,11 @@ const entries: CharacterPickerEntry[] = [
 const loaded = { isLoading: false, loadError: null, onRetry: jest.fn() }
 
 const noop = (): void => {}
+
+// 아래 한 케이스가 심는 `resolveAssetSource` 스파이만 되돌린다(모듈 목은 건드리지 않는다).
+afterEach(() => {
+  jest.restoreAllMocks()
+})
 
 /** `Pressable` 이 접어 넣는 접근성 상태 — 아래 두 헬퍼가 읽는 것. */
 interface PressableState {
@@ -79,7 +85,8 @@ describe('CharacterTrackingPicker', () => {
     )
 
     expect(getByText('캐릭터 관리')).toBeTruthy()
-    expect(getByText('체크한 캐릭터만 스케줄러 목록에 표시됩니다. 최소 한 명은 선택해주세요.')).toBeTruthy()
+    // 단위는 «명» 이 아니라 «개» 다([[ADR-144]] 결정 8) — 캐릭터는 사람이 아니다.
+    expect(getByText('체크한 캐릭터만 스케줄러 목록에 표시됩니다. 최소 1개는 선택해주세요.')).toBeTruthy()
   })
 
   // [[ADR-086]] 결정 7: 0명은 화면을 빈 상태로 만들 뿐 어떤 사용자 의도도 표현하지 않는다.
@@ -344,6 +351,35 @@ describe('CharacterTrackingPicker', () => {
       uri: 'https://example.com/1.png',
     })
     expect(getByTestId('world-emblem-ocid-1').props.source).not.toHaveProperty('uri')
+  })
+
+  // 웹은 `h-[17px] w-auto object-contain` 이었다 — 높이만 정하고 폭은 그림이 정한다. RN 에서 폭을
+  // **이름 부르지 않으면** 엠블럼(46×50)의 고유 폭 46 이 살아남아 `contain` 이 15.6px 그림을 46px
+  // 상자 안에 넣고, 이름 줄 왼쪽에 **좌우 각 15.2px** 의 빈자리가 생긴다([[ADR-135]] 보고 ①).
+  //
+  // **고유 크기를 테스트가 넣어 준다** — jest 에서 번들 에셋은 `{ testUri }` 대역이라
+  // `resolveAssetSource` 가 크기를 못 읽고([[ADR-129]]), 그러면 `naturalAspectStyle` 이 «준 축만»
+  // 폴백으로 떨어져 이 계약이 안 보인다. 값은 실제 엠블럼(46×50)이다.
+  it('엠블럼은 높이만 정하고 폭을 그림에 맡긴다 — 두 축의 이름이 다 나온다', async () => {
+    jest
+      .spyOn(Image, 'resolveAssetSource')
+      .mockReturnValue({ uri: 'emblem', scale: 1, width: 46, height: 50 })
+    const { getByTestId } = await renderOverlay(
+      <CharacterTrackingPicker
+        entries={entries}
+        trackedOcids={[]}
+        {...loaded}
+        onSave={noop}
+        onClose={noop}
+      />,
+    )
+
+    const style = flattenStyle(getByTestId('world-emblem-ocid-1').props.style)
+
+    expect(style.height).toBe(17) // 웹 `h-[17px]` — 이름 줄 높이를 정하던 값
+    expect(Object.keys(style)).toContain('width')
+    expect(style.width).toBeUndefined()
+    expect(style.aspectRatio).toBe(46 / 50)
   })
 })
 

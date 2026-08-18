@@ -33,7 +33,6 @@
 //    사라지고(줄바꿈 품질만 달라진다) WORD JOINER 는 **core 가 문자열에 박아 두므로** 그대로 온다.
 import { useEffect, useState } from 'react'
 import { Image, Pressable, Text, View } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Path } from 'react-native-svg'
 
 import {
@@ -46,7 +45,7 @@ import {
   formatValuableDroughtHeadline,
   formatValuableDroughtItems,
   getValuableDroughtTier,
-  VALUABLE_DROUGHT_LATE_HEADLINE_COUNT,
+  valuableDroughtHeadlineCount,
 } from '@core/lib/drop-history'
 import type {
   DropHistoryPeriodGroup,
@@ -60,14 +59,14 @@ import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { MAPLE_LEAF_PATH } from '../../components/mapleLeafPath'
+import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
+import { DROUGHT_GLOW_FILTER, DROUGHT_TIER_STYLES } from '../../lib/drought-tier-styles'
 import { ArrowLeftIcon, ScrollTextIcon } from '../../lib/icons'
 import { Svg } from '../../lib/nativewind-interop'
 import { TABULAR_NUMS } from '../../lib/text-styles'
+import { useTopSafeAreaPx } from '../../lib/top-safe-area'
 import { useScreenNavigation } from '../use-screen-navigation'
-
-/** 웹 `pt-[calc(1rem+var(--sa-top))]` 의 상수 몫 — 공용 `PageHeader` 와 같은 값이다. */
-const HEADER_TOP_PADDING_PX = 16
 
 /**
  * 웹 `index.css` 의 `.valuable-drop-badge` 스킨 — **여기서는 단색으로 내려앉는다**(파일 머리 ④).
@@ -80,37 +79,8 @@ const HEADER_TOP_PADDING_PX = 16
 const VALUABLE_INLINE_BG = '#f7c400'
 const VALUABLE_INLINE_INK = '#6b4e00'
 
-/**
- * 슬픔 단계별 시각 표현([[ADR-071]] 결정 9, 사용자 확정 2026-08-01 — 시안 W4).
- *
- * 단풍잎이 색을 잃고 기울다 떨어지는 것으로 가뭄을 말한다. 은유를 새로 만들지 않고 **브랜드 마크를
- * 그대로 쓴 이유**가 이것이다 — 단풍잎은 원래 그렇게 늙으므로 억지 장식이 아니고, 새 에셋도 없다.
- *
- * 색이 테마 토큰이 아니라 고정 hex 인 것은 고가 골드와 같은 사정이다([[ADR-045]]) — 이 램프는 "골드에서
- * 무채색을 거쳐 차가운 회청색으로" 가는 한 줄기라 테마마다 다른 색으로 갈리면 의미를 잃는다. 잎은
- * 아이콘(면적 채색)이라 본문 텍스트급 대비가 필요 없고, 글자색은 테마 토큰을 쓴다.
- *
- * 단계 경계·문구는 `lib/drop-history` 의 `VALUABLE_DROUGHT_TIERS` 가 정한다 — 여기 배열은 그 인덱스에
- * 1:1로 대응하므로 길이가 어긋나면 안 된다.
- */
-const DROUGHT_TIER_STYLES = [
-  { leaf: '#f7d00d', ink: 'text-text', rotate: 0, opacity: 1, glow: true },
-  { leaf: '#e0b400', ink: 'text-text', rotate: 6, opacity: 0.95, glow: false },
-  { leaf: '#b99a5c', ink: 'text-text-muted', rotate: 14, opacity: 0.8, glow: false },
-  { leaf: '#9a9a93', ink: 'text-text-muted', rotate: 26, opacity: 0.6, glow: false },
-  { leaf: '#8f98a1', ink: 'text-text-disabled', rotate: 42, opacity: 0.45, glow: false },
-] as const
-
 /** 단풍잎 한 변(px). 단계별 색·기울기가 이 요소의 감정을 지고 있어 작으면 차이가 읽히지 않는다. */
 const DROUGHT_LEAF_SIZE = 42
-
-/**
- * 0단계 잎의 글로우 — 웹 `drop-shadow(0 0 5px rgba(247,208,13,.75))`.
- *
- * **문자열로 넘긴다**: RN 의 `dropShadow` 필터는 CSS 값 문법을 그대로 받으므로 blur 반지름 ↔ 표준
- * 편차 환산을 우리가 하지 않아도 된다(객체 형태로 적으면 그 환산이 새 오차원이 된다).
- */
-const DROUGHT_GLOW_FILTER = [{ dropShadow: '0 0 5px rgba(247,208,13,0.75)' }]
 
 // 미획득 기간 요약([[ADR-071]] 결정 4) — 고가 전체를 **하나로** 집계한다. 아이템별·세트별로 나누지
 // 않는다(칠흑·광휘 구성원 수십 종이 대부분 "기록 없음"으로 채워져 소음이 된다).
@@ -121,11 +91,13 @@ function ValuableDrought(props: { summary: ValuableDroughtSummary; now: Date }):
   const style = DROUGHT_TIER_STYLES[tier]
   const items = formatValuableDroughtItems(props.summary.records)
 
-  // 마지막 단계는 문구가 여럿이고 그중 하나가 무작위로 나온다(사용자 지정 2026-08-01). **마운트당 한
-  // 번만 고른다** — 렌더마다 고르면 리렌더가 일어날 때 문구가 깜빡인다. `useState` 초기화 함수는 그
+  // 단계마다 문구가 여럿이고 그중 하나가 무작위로 나온다(사용자 지정 2026-08-01·2026-08-17). **마운트당
+  // 한 번만 고른다** — 렌더마다 고르면 리렌더가 일어날 때 문구가 깜빡인다. `useState` 초기화 함수는 그
   // 컴포넌트 인스턴스에서 딱 한 번 실행되므로 화면에 머무는 동안 문구가 고정되고, 다시 들어오면 새로
   // 뽑힌다. 무작위는 화면(경계)에만 두고 `lib` 은 순수하게 유지한다.
-  const [lateIndex] = useState(() => Math.floor(Math.random() * VALUABLE_DROUGHT_LATE_HEADLINE_COUNT))
+  const [headlineIndex] = useState(() =>
+    Math.floor(Math.random() * valuableDroughtHeadlineCount(weeks)),
+  )
 
   return (
     <View
@@ -164,7 +136,7 @@ function ValuableDrought(props: { summary: ValuableDroughtSummary; now: Date }):
             아래 줄 `text-[10px]`→`text-[11px]`. 아래 줄을 `text-xs`(12px)까지 올리지 않는 이유는 목록
             문장이 12px 라, 같아지면 요약과 본문의 위계가 사라진다. */}
         <Text className={`text-base font-bold ${style.ink}`}>
-          {formatValuableDroughtHeadline(weeks, lateIndex)}
+          {formatValuableDroughtHeadline(weeks, headlineIndex)}
         </Text>
         {/* 이번 주에 먹었으면 그게 곧 마지막이라 "마지막 에픽 빔!"을 뺀다 — 아직 진행 중인 주를
             "마지막"이라 부르면 어색하다. 1주 이상은 실제로 지난 일이라 붙인다. */}
@@ -312,7 +284,7 @@ function DropHistoryPeriodSection(props: {
 
 export function DropHistoryScreen(): React.JSX.Element {
   const navigation = useScreenNavigation()
-  const insets = useSafeAreaInsets()
+  const topSafeAreaPx = useTopSafeAreaPx()
   const { status, groups, drought, charactersByOcid, load } = useDropHistoryStore()
 
   useEffect(() => {
@@ -328,13 +300,12 @@ export function DropHistoryScreen(): React.JSX.Element {
         // 공용 `PageHeader` 를 쓰지 않는 이유는 파일 머리 ② — 이 화면에는 배경 조각도 하단 페이드도
         // 없다. 스크롤 상자가 노치까지 덮던 웹과 달리 헤더가 스크롤 뷰의 형제라, 상단 안전영역을
         // 헤더가 먹는다는 계약은 그대로다(`ScreenScroll` 은 헤더가 있으면 위를 안 건드린다).
-        <View
-          testID="page-header"
-          className="z-10 bg-bg px-4 pb-2"
-          style={{ paddingTop: insets.top + HEADER_TOP_PADDING_PX }}
-        >
+        // **여백은 더하지 않는다**([[ADR-139]]) — 공용 셸과 같은 값이어야 가격 화면과 나란히 열릴 때
+        // 제목 높이가 안 갈린다. 그 «같은 값» 이 `useTopSafeAreaPx()` 다([[ADR-139]] 정정 1 —
+        // 안드로이드 하한 48).
+        <View testID="page-header" className="z-10 px-4 pb-2" style={{ paddingTop: topSafeAreaPx }}>
           <View className="gap-3">
-            <View className="flex-row items-center gap-1">
+            <PageHeaderTitleRow className="gap-1">
               <Pressable
                 role="button"
                 onPress={() => navigation.goBack()}
@@ -344,7 +315,7 @@ export function DropHistoryScreen(): React.JSX.Element {
                 <ArrowLeftIcon className="h-5 w-5 text-text" strokeWidth={2} aria-hidden />
               </Pressable>
               <Text className="text-lg font-semibold text-text">히스토리</Text>
-            </View>
+            </PageHeaderTitleRow>
 
             {drought !== null && <ValuableDrought summary={drought} now={now} />}
           </View>

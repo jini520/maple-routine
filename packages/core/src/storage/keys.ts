@@ -45,6 +45,13 @@ export function lastSelectedCharacterKey(): string {
   return 'lastSelectedCharacter'
 }
 
+// ADR-143 결정 4: 사용자가 "대표"라고 말한 캐릭터(ocid 하나). 미지정이면 키 자체가 없다 —
+// "첫 번째가 임시 대표"는 읽는 쪽의 규칙이고, 그 파생값을 여기 적어두면 사용자가 고른 대표와
+// 앱이 계산한 대표 두 진실이 갈린다. `lastSelectedCharacter`(앱이 쓰는 값)와는 다른 축이다.
+export function representativeCharacterKey(): string {
+  return 'representativeCharacter'
+}
+
 // ADR-035: 수동 트래킹 모드의 캐릭터별 추적 항목(멤버십) 키
 export function manualTrackedContentKey(ocid: string): string {
   return `manualTrackedContent:${ocid}`

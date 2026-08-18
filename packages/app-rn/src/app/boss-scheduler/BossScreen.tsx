@@ -14,19 +14,22 @@
 // ② **`resolveContentOffsetPx` 로 목록을 내리던 `transform`**([[ADR-073]] 결정 6) — OS 가 한다.
 // ③ **`useScreenStackStore` 의 깊이로 당김을 끄던 배선**([[ADR-120]] 결정 10). 하위 페이지는 루트
 //    스택에 **덮여** 올라오므로 아래 화면의 스크롤 뷰에 손가락이 닿지 않는다.
-// ④ **`<Outlet />`**([[ADR-077]] 언마운트 금지). 관리 페이지는 형제 라우트가 아니라 루트 스택
-//    push 라 이 화면이 트리에 그대로 남는다 — 계약을 코드가 아니라 내비게이터가 지킨다.
+// ④ **`<Outlet />`**([[ADR-077]] 언마운트 금지). 관리 페이지는 형제 라우트가 아니라 **형제 탭**이라
+//    ([[ADR-145]] 결정 1 — 그전에는 루트 스택 push 였다) 이 화면이 트리에 그대로 남는다 — 계약을
+//    코드가 아니라 내비게이터가 지킨다.
 //
 // ══ 갈린 것 다섯 ═══════════════════════════════════════════════════════════════════
 //
-// ① `useNavigate('/boss/manage')` → `navigation.navigate('BossManage')`. **[[ADR-098]] 결정 1
-//    (이동 전에 스크롤을 0으로)은 함께 사라진다** — 그 처방이 풀던 것은 네 탭이 문서 스크롤 하나를
-//    공유하던 문제이고([[ADR-099]]), RN 에서는 스크롤이 화면과 함께 죽어 계승할 오프셋이 없다.
-// ② `?openPicker=1` **쿼리 → 라우트 파라미터**(`route.params.openPicker`). URL 이 없어 "새로고침·
-//    뒤로가기마다 피커가 다시 열린다"는 웹의 걱정은 사라지지만, 파라미터는 스택에 남아 **탭을
-//    떠났다 돌아오면 그대로 살아 있다.** 그래서 지우는 일은 그대로 필요하고, `setSearchParams` 대신
-//    `setParams` 다(설정의 안내 마디가 밟은 자리). **보내는 쪽은 아직 없다** — 그 링크는 보스 수익
-//    화면([[ADR-068]] 결정 4)에 있고 step 7 이 온다.
+// ① `useNavigate('/boss/manage')` → `navigation.navigate('Tabs', { screen: 'BossManage' })`.
+//    **[[ADR-098]] 결정 1(이동 전에 스크롤을 0으로)은 함께 사라진다** — 그 처방이 풀던 것은 네 탭이
+//    문서 스크롤 하나를 공유하던 문제이고([[ADR-099]]), RN 에서는 스크롤이 화면과 함께 죽어 계승할
+//    오프셋이 없다. **목적지가 push 가 아니라 형제 탭인 것은 [[ADR-145]] 결정 1 이다** — 그래서
+//    이 화면의 헤더에는 그리로 가는 버튼이 아예 없고, 남은 호출부는 빈 상태 CTA 하나다.
+// ② **캐릭터 관리 피커가 이 화면에 없다**([[ADR-140]]). 헤더 버튼도, 그것이 열던 모달도, 그 모달을
+//    먹여 살리던 로스터 조회([[ADR-015]]·[[ADR-016]]·[[ADR-053]]·[[ADR-062]])도, 웹의 `?openPicker=1`
+//    을 받던 라우트 파라미터도 **설정 화면으로 통째로 옮겨갔다** — 추적 목록은 [[ADR-042]] 이후 앱
+//    전역 하나인데 그것을 고르는 자리만 다섯이었다. 남은 흔적은 빈 상태 CTA 하나이고, 그것도 모달이
+//    아니라 **설정 탭을 피커가 열린 채로** 연다.
 // ③ **카드 눌림 피드백이 절반만 온다**([[ADR-121]] 결정 1 — 이 카드의 **유일한** 어포던스다).
 //    `active:scale-[.985]` 는 NativeWind 가 그대로 낸다(실측). `active:brightness-110` 은 **조용히
 //    사라진다** — NativeWind 가 `brightness-*` 를 네이티브 `filter` 로 내보내지 않는다. 탈출구인
@@ -39,47 +42,41 @@
 //    ([[ADR-094]] 결정 1).
 import { useEffect, useState } from 'react'
 import { Pressable, RefreshControl, Text, View } from 'react-native'
-import { useRoute, type RouteProp } from '@react-navigation/native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useReducedMotion } from 'react-native-reanimated'
 
-import type { BossContent, BossDifficulty, CharacterPickerEntry } from '@core/types'
-import { partySizeKey, useBossSchedulerStore, type PartyFilter } from '@core/features/boss-scheduler/store'
+import type { BossDifficulty } from '@core/types'
+import {
+  partySizeKey,
+  useBossSchedulerStore,
+  type PartyFilter,
+} from '@core/features/boss-scheduler/store'
+import { displayedBosses } from '@core/features/boss-scheduler/displayed-bosses'
 import { formatSyncedAt } from '@core/features/schedule-sync/format'
 import { useScheduleSyncErrorToast } from '@core/features/schedule-sync/use-sync-error-toast'
-import { useApiKeyNotice } from '@core/features/onboarding/use-api-key-notice'
-import { getCharacterPickerRoster, toScheduleSyncError } from '@core/features/schedule-sync/schedule-sync'
-import type { ScheduleSyncError } from '@core/features/schedule-sync/schedule-sync'
 import { useToastStore } from '@core/features/toast/store'
 import { useTrackingModeStore } from '@core/features/tracking-mode/store'
 import { getBossPortraitCrop, getBossPortraitUrl, type BossPortraitCrop } from '@core/lib/boss-icons'
-import {
-  getSupportedDifficulties,
-  matchBossContent,
-  selectDisplayBosses,
-  type MatchedBoss,
-} from '@core/lib/boss-matching'
+import { getSupportedDifficulties, type MatchedBoss } from '@core/lib/boss-matching'
 import { getMaxPartySize } from '@core/lib/boss-crystal-prices'
-import { mergeManualBossList } from '@core/lib/manual-boss-merge'
 import { isChallengersWorld } from '@core/lib/world-emblem'
 
 import { Badge } from '../../components/atoms/Badge/Badge'
 import { DifficultyBadge } from '../../components/atoms/DifficultyBadge/DifficultyBadge'
-import { CharacterSelectDropdown } from '../../components/molecules/CharacterSelectDropdown/CharacterSelectDropdown'
+import { CharacterRail, type CharacterRailEntry } from '../../components/molecules/CharacterRail/CharacterRail'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { MediaCard, MediaCardArt } from '../../components/molecules/MediaCardArt/MediaCardArt'
-import { CharacterTrackingPicker } from '../../components/organisms/CharacterTrackingPicker/CharacterTrackingPicker'
 import { PartySizeModal } from '../../components/organisms/PartySizeModal/PartySizeModal'
-import { ProgressModal } from '../../components/organisms/ProgressModal/ProgressModal'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
+import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { SPIN_ANIMATION } from '../../lib/animation'
 import { AnimatedView } from '../../lib/nativewind-interop'
 import { RefreshCwIcon, SlidersHorizontalIcon, SwordsIcon, UsersIcon } from '../../lib/icons'
 import { MEDIA_TEXT_SHADOW_STYLE } from '../../lib/text-styles'
+import { useTopSafeAreaPx } from '../../lib/top-safe-area'
+import { orderByTracked } from '../../lib/tracked-order'
 import { useThemeAppearance } from '../../theme/context'
-import type { TabParamList } from '../../navigation/routes'
 import { useScreenNavigation } from '../use-screen-navigation'
 
 const PARTY_FILTER_LABELS: Record<PartyFilter, string> = {
@@ -148,14 +145,13 @@ function BossCard(props: {
 export function BossScreen(): React.JSX.Element {
   const {
     status,
-    characters,
+    characters: storeCharacters,
     error,
     trackedOcids,
     selectedOcid,
     partySizes,
     manualTrackedByOcid,
     loadTrackedOcids,
-    saveTrackedOcids,
     refresh,
     selectCharacter,
     // [[ADR-121]]: 카드 탭 모달이 쓰는 두 액션. 파티 인원은 두 모드 공통이고, 난이도 교체는 수동
@@ -175,20 +171,9 @@ export function BossScreen(): React.JSX.Element {
   } = useBossSchedulerStore()
   const { mode } = useTrackingModeStore()
   const navigation = useScreenNavigation()
-  const route = useRoute<RouteProp<TabParamList, 'Boss'>>()
-  const insets = useSafeAreaInsets()
+  const topSafeAreaPx = useTopSafeAreaPx()
   const { definition } = useThemeAppearance()
   const reduceMotion = useReducedMotion()
-  const [roster, setRoster] = useState<CharacterPickerEntry[]>([])
-  const [isPickerOpen, setIsPickerOpen] = useState(() => route.params?.openPicker === true)
-  // [[ADR-053]] 결정 3: 후보 목록 조회의 로딩·실패는 조회를 소유한 화면이 관리해 피커에 내려준다.
-  // 초기값은 "마운트 직후 조회가 시작되는가"(= 파라미터로 이미 열려 있는가)와 같다.
-  const [isRosterLoading, setIsRosterLoading] = useState(isPickerOpen)
-  const [rosterError, setRosterError] = useState<ScheduleSyncError | null>(null)
-  // [[ADR-062]]: 재조회 트리거. 피커를 여는 것과 재시도가 같은 초기화(reloadRoster)를 공유하고,
-  // 이 값이 바뀌면 아래 조회 effect가 다시 돈다.
-  const [rosterReloadNonce, setRosterReloadNonce] = useState(0)
-  const [saveProgress, setSaveProgress] = useState<{ completed: number; total: number } | null>(null)
   // [[ADR-121]]: 카드 탭으로 여는 파티 인원 모달. 편집 중인 난이도를 함께 들고 있는 이유는
   // openPartyModal 주석 참고.
   const [partyModal, setPartyModal] = useState<{ boss: MatchedBoss; difficulty: BossDifficulty } | null>(null)
@@ -201,50 +186,14 @@ export function BossScreen(): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // 보스 수익 화면의 "캐릭터 선택하러 가기"(파일 머리 ②)로 진입했을 때만 파라미터를 지운다 —
-  // 웹의 `?openPicker=1` 정리와 같은 자리다. 안 지우면 탭을 떠났다 돌아올 때마다 피커가 다시 열린다.
-  useEffect(() => {
-    if (route.params?.openPicker !== true) return
-    navigation.setParams({ openPicker: undefined })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  // [[ADR-015]]: 후보 목록에 이미지·access_flag가 필요해져 피커를 열 때만 조회한다
-  // (마운트 시 매번 호출하면 화면에 들어오기만 해도 캐릭터 수만큼 병렬 호출이 발생함).
-  // [[ADR-016]]: 캐시가 있으면 즉시 그 값으로 먼저 그리고, character/basic 응답이 하나씩
-  // 도착하는 대로 patch한다(전체를 기다리지 않음).
-  // [[ADR-017]] 결정 6: character/list 응답을 기다리는 동안에도 character-basic-cache에 이미
-  // 있는 캐릭터(추적 여부 무관)는 즉시 먼저 보여줘, 피커를 열 때마다 짧게 비어 보이던 문제를
-  // 완화한다.
-  // [[ADR-053]] 결정 3: 조회 결과(Promise)를 버리지 않고 로딩·실패 상태로 남긴다 — 401/429는 reject로
-  // 나오므로 finally에서 반드시 로딩을 해제해야 스피너가 영구히 걸리지 않는다. roster는 재조회
-  // 시작 시에도 비우지 않는다(캐시로 보여주던 목록을 지우면 [[ADR-016]] 캐시 우선 표시가 무력화된다).
-  useEffect(() => {
-    if (!isPickerOpen) return
-    let cancelled = false
-    getCharacterPickerRoster((entries) => {
-      if (!cancelled) setRoster(entries)
-    })
-      .catch((error: unknown) => {
-        if (!cancelled) setRosterError(toScheduleSyncError(error))
-      })
-      .finally(() => {
-        if (!cancelled) setIsRosterLoading(false)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [isPickerOpen, rosterReloadNonce])
-
-  // [[ADR-115]] 결정 7: 감지 지점은 동기화만이 아니다 — 피커 로스터가 맞는 401도 같은 키 무효화라
-  // 같은 진입점을 부른다(동기화 쪽 위임은 useScheduleSyncErrorToast 안에 있다).
-  // [[ADR-116]] 결정 1: 429도 같은 진입점을 탄다 — 이름만 바뀌었을 뿐 이 자리는 그대로다.
-  useApiKeyNotice(rosterError)
-
   // [[ADR-101]] 결정 1: `null` 은 "0명"이 아니라 **"저장소를 아직 안 읽었다"** 다. 둘을 `||` 로 묶으면
   // 콜드 스타트 첫 페인트가 아직 모르는 사실을 단정한다(실기기 2026-08-06 — "표시할 캐릭터가
   // 없습니다"가 목록보다 먼저 한 프레임 스쳤다). 빈 상태는 읽고 0명임을 **확인한 뒤에만** 그린다.
   const isEmpty = trackedOcids !== null && trackedOcids.length === 0
+
+  // [[ADR-143]] 결정 3: 스토어가 내는 것은 **기준 순서**(레벨 내림차순)이고, 화면 순서는 사용자가
+  // 캐릭터 관리에서 정한 저장 배열 순서다. core 를 안 고치는 이유는 `orderByTracked` 머리에 있다.
+  const characters = orderByTracked(storeCharacters, trackedOcids ?? [])
 
   const effectiveSelectedOcid =
     selectedOcid !== null && characters.some((character) => character.ocid === selectedOcid)
@@ -259,44 +208,32 @@ export function BossScreen(): React.JSX.Element {
   // (전역 error가 채워지는 경로에서는 characters가 캐시 뷰로 교체되고 그 뷰의 error는 null이다).
   useScheduleSyncErrorToast(selected?.error ?? null, { onRetry: () => refresh(trackedOcids ?? []) })
 
-  // [[ADR-035]] 결정 3·6·12: 수동 모드에서는 게임 등록 여부가 아니라 사용자가 앱에서 관리하는
-  // 멤버십(manualTrackedContent)으로 표시 목록을 결정하고, 완료 여부는 동기화 결과에서 즉석
-  // 조회한다(mergeManualBossList). synced는 store의 auto 목록(MatchedBoss)에서 BossContent로
-  // 되돌려 넘긴다 — MatchedBoss는 BossContent의 모든 필드를 갖고 있어 손실이 없다.
-  const manualBossItems =
-    selected !== null
-      ? (manualTrackedByOcid?.[selected.ocid] ?? []).filter((item) => item.kind === 'boss')
-      : []
-
-  const syncedBossContents: BossContent[] =
-    selected === null
-      ? []
-      : [...selected.weeklyBosses, ...selected.monthlyBosses].map((boss) => ({
-          name: boss.apiName,
-          difficulty: boss.difficulty,
-          cycle: boss.cycle,
-          isRegistered: boss.isRegistered,
-          isComplete: boss.isComplete,
-          ownComplete: boss.ownComplete,
-        }))
-
-  const manualBosses =
-    mode === 'manual' ? mergeManualBossList(manualBossItems, syncedBossContents).map(matchBossContent) : []
-
-  // 카드로 표시할 목록 — auto 모드는 등록된 보스뿐 아니라 미등록이어도 완료된 보스를 포함하고
-  // ([[ADR-031]] 결정 5), manual 모드는 selectDisplayBosses(등록 우선) 대신 추적 멤버십 그대로 보여준다.
+  // 카드로 표시할 목록 — [[ADR-035]] 수동 모드 멤버십과 [[ADR-031]] 결정 5(미등록이어도 완료면
+  // 포함)가 그 안에 있다. **이 화면의 지역 함수였던 것을 코어로 꺼냈다**([[ADR-147]] 결정 8) —
+  // today 의 「캐릭터별 남은 스케줄」이 세는 «남은 보스» 가 이 화면이 보여 주는 것과 한 글자도
+  // 달라선 안 되기 때문이다. 이유·규칙·«캐릭터를 인자로 받는» 근거는 `displayed-bosses.ts` 파일 머리.
   const displayedWeeklyBosses =
-    selected === null
-      ? []
-      : mode === 'manual'
-        ? manualBosses.filter((boss) => boss.cycle === 'weekly')
-        : selectDisplayBosses(selected.weeklyBosses)
+    selected === null ? [] : displayedBosses(selected, 'weekly', mode, manualTrackedByOcid)
   const displayedMonthlyBosses =
-    selected === null
-      ? []
-      : mode === 'manual'
-        ? manualBosses.filter((boss) => boss.cycle === 'monthly')
-        : selectDisplayBosses(selected.monthlyBosses)
+    selected === null ? [] : displayedBosses(selected, 'monthly', mode, manualTrackedByOcid)
+
+  // [[ADR-142]] 정정 1: 링은 **주간 하나**다(온전한 원). 월간은 종류가 하나뿐이라 «몇 개 중 몇 개»
+  // 가 뜻을 갖지 못한다 — 표현 방법은 따로 정한다(사용자 지시, 2026-08-16).
+  // **솔로/파티 필터는 안 탄다**(결정 4) — 필터는 «지금 보고 싶은 것» 이지 진행이 아니다.
+  const bossRingProgress = (bosses: MatchedBoss[]): { completed: number; total: number } => ({
+    completed: bosses.filter((boss) => boss.isComplete).length,
+    total: bosses.length,
+  })
+
+  const railEntries: CharacterRailEntry[] = characters.map((character) => ({
+    ocid: character.ocid,
+    characterName: character.characterName,
+    level: character.level ?? null,
+    imageUrl: character.imageUrl ?? null,
+    rings: [
+      { label: '주간', ...bossRingProgress(displayedBosses(character, 'weekly', mode, manualTrackedByOcid)) },
+    ],
+  }))
 
   // 챌린저스 월드면 registration_flag와 무관하게 시즌 보스 완료 여부를 배지로 보여준다([[ADR-031]] 결정 3).
   // **판정은 `isChallengersWorld` 가 한다** — 화면이 월드 이름을 다시 뜯지 않는다(관리 페이지가
@@ -377,71 +314,21 @@ export function BossScreen(): React.JSX.Element {
     }
   }
 
-  async function handleSaveTracking(ocids: string[]): Promise<void> {
-    setSaveProgress({ completed: 0, total: ocids.length })
-    // 저장이 실패해도(스토어가 처리 못한 예외 등) 진행률 모달은 항상 닫는다 — 안 그러면 모달이 멈춘다.
-    try {
-      await saveTrackedOcids(ocids, (completed, total) => setSaveProgress({ completed, total }))
-    } finally {
-      setSaveProgress(null)
-      setIsPickerOpen(false)
-    }
+  // [[ADR-140]] 결정 1·2: 이 화면은 더 이상 피커를 열지 않는다 — 추적 목록을 고르는 자리는 설정
+  // 하나뿐이라, 빈 상태 CTA 는 모달 대신 **설정 탭을 피커가 열린 채로** 연다.
+  function goToCharacterManage(): void {
+    navigation.navigate('Tabs', { screen: 'Settings', params: { openPicker: true } })
   }
 
-  // [[ADR-053]] 결정 3: 피커를 여는 유일한 경로 — 여는 순간 로딩·실패를 초기화한다(닫았다 다시 열면
-  // 위 useEffect가 재조회하므로 직전 실패가 남아 있으면 안 된다). 초기화를 effect 본문이 아니라
-  // 이 이벤트 핸들러에 두는 이유는 effect 본문의 동기 setState가 cascading render를 만들기 때문.
-  // [[ADR-062]] 트레이드오프: 여는 경로와 재시도가 같은 초기화를 쓴다 — 재조회 로직을 한 곳으로 모은다.
-  function reloadRoster(): void {
-    setIsRosterLoading(true)
-    setRosterError(null)
-    setRosterReloadNonce((nonce) => nonce + 1)
+  // [[ADR-035]] 결정 18 이 만든 헤더 진입점("보스 관리")은 **여기 없다**([[ADR-145]] 결정 1) —
+  // 그 화면이 스케줄 그룹의 하위 탭이 되면서 진입 자리를 하단바가 가져갔다. [[ADR-140]] 이 걷은
+  // "캐릭터 관리"에 이어 제목 줄의 두 번째이자 마지막 버튼이 사라진 것이라, 이제 그 줄에서 폭을
+  // 다투는 상대가 없다([[ADR-141]] 결정 3의 `shrink-0` 짝이 하나만 남는다).
+  //
+  // 남는 것은 빈 상태 CTA 하나이고, 그것도 push 가 아니라 **형제 탭**으로 보낸다.
+  function goToBossManage(): void {
+    navigation.navigate('Tabs', { screen: 'BossManage' })
   }
-
-  function openPicker(): void {
-    setIsPickerOpen(true)
-    reloadRoster()
-  }
-
-  const characterManageButton = (
-    <Pressable role="button" onPress={openPicker}>
-      <Text className="text-sm font-medium text-text-muted">캐릭터 관리</Text>
-    </Pressable>
-  )
-
-  // [[ADR-035]] 결정 18: 추적 편집(수동)과 파티원 수 설정을 관리 페이지 하나로 통합 — 두 모드 공통
-  // 진입점이라 헤더는 항상 [보스 관리 · 캐릭터 관리] 2버튼이다(기존 "파티 관리" 모달 대체).
-  const bossManageButton = (
-    <Pressable role="button" onPress={() => navigation.navigate('BossManage')}>
-      <Text className="text-sm font-medium text-text-muted">보스 관리</Text>
-    </Pressable>
-  )
-
-  const trackingPicker = isPickerOpen && (
-    <CharacterTrackingPicker
-      entries={roster}
-      trackedOcids={trackedOcids ?? []}
-      isLoading={isRosterLoading}
-      loadError={rosterError}
-      onSave={handleSaveTracking}
-      onClose={() => setIsPickerOpen(false)}
-      onRetry={reloadRoster}
-    />
-  )
-
-  // 저장 중에는 캐릭터 관리 모달 위에 진행률 모달을 띄운다(완료 시 둘 다 닫힌다).
-  const trackingModals = (
-    <>
-      {trackingPicker}
-      {saveProgress !== null && (
-        <ProgressModal
-          message="캐릭터 정보를 저장하고 있어요"
-          completed={saveProgress.completed}
-          total={saveProgress.total}
-        />
-      )}
-    </>
-  )
 
   // [[ADR-060]]: 빈 상태 문구는 탭(주간/월간)과 모드(수동/자동)별로 나눈다. 수동 모드만 CTA를 준다 —
   // 자동 모드가 지시하는 곳("게임에서 등록")은 앱 밖이라 데려다줄 수 없다.
@@ -452,7 +339,7 @@ export function BossScreen(): React.JSX.Element {
         icon: SwordsIcon,
         title: `추적할 ${label} 보스가 없습니다`,
         description: `보스 관리에서 이번 ${tab === 'weekly' ? '주' : '달'}에 잡을 보스를 골라주세요`,
-        action: { label: '보스 관리', onClick: () => navigation.navigate('BossManage') },
+        action: { label: '보스 관리', onClick: goToBossManage },
       }
     }
     return {
@@ -479,11 +366,12 @@ export function BossScreen(): React.JSX.Element {
     // 헤더 셸을 쓰지 않는 가지라(제목 줄이 목록 없이 혼자 선다) 상단 안전영역을 여기서 먹는다 —
     // 웹의 `min-h-[calc(100dvh …)]` 자리는 `flex-1` 이다(탭 상자가 이미 탭바를 뺀 크기다).
     return (
-      <View testID="screen-Boss" className="flex-1 p-4" style={{ paddingTop: insets.top + 16 }}>
-        <View className="flex-row items-center justify-between">
+      <View testID="screen-Boss" className="flex-1 p-4" style={{ paddingTop: topSafeAreaPx }}>
+        {/* 헤더 셸을 안 쓰는 가지에서도 제목 줄은 같은 프리미티브다([[ADR-145]] 정정 1) — 빈 상태와
+            목록 상태를 오갈 때 제목이 튀면 그것이 가장 눈에 띄는 자리다. */}
+        <PageHeaderTitleRow>
           <Text className="text-lg font-semibold text-text">보스 스케줄러</Text>
-          {characterManageButton}
-        </View>
+        </PageHeaderTitleRow>
 
         <View className="flex-1 items-center justify-center">
           <EmptyState
@@ -491,11 +379,9 @@ export function BossScreen(): React.JSX.Element {
             icon="leaf"
             title="표시할 캐릭터가 없습니다"
             description="캐릭터를 선택하면 주간·월간 보스 스케줄을 확인할 수 있습니다"
-            action={{ label: '캐릭터 선택하기', onClick: openPicker }}
+            action={{ label: '캐릭터 선택하기', onClick: goToCharacterManage }}
           />
         </View>
-
-        {trackingModals}
       </View>
     )
   }
@@ -520,46 +406,41 @@ export function BossScreen(): React.JSX.Element {
           // 한다. RN 에서 헤더는 스크롤 뷰의 **형제**라 `fixed` 도 spacer 도 없다([[ADR-098]] 결정 2 가
           // 웹에서 풀던 문제가 구조적으로 없다 — `PageHeader` 파일 머리).
           <PageHeader>
-            <View className="flex-row items-center justify-between">
-              <Text className="text-lg font-semibold text-text">보스 스케줄러</Text>
-              <View className="flex-row items-center gap-4">
-                {selected !== null && bossManageButton}
-                {characterManageButton}
-              </View>
-            </View>
+            {/* [[ADR-141]] 결정 1·3: 동기화 상태가 드롭다운 줄에서 **제목 옆**으로 올라왔고, 폭을
+                다투면 시각 텍스트만 줄어든다(제목·새로고침은 `shrink-0`). 오른쪽 끝에서 자리를 지키던
+                관리 버튼이 [[ADR-145]] 결정 1 로 사라져 바깥 `justify-between` 줄도 함께 걷었다 —
+                가를 상대가 없는 줄에서 그 속성은 아무 일도 하지 않는다. */}
+            <PageHeaderTitleRow className="gap-2">
+              <Text className="shrink-0 text-lg font-semibold text-text">보스 스케줄러</Text>
+              <Text className="shrink text-sm text-text-muted" numberOfLines={1}>
+                {status === 'loading' ? '조회 중...' : selected !== null ? formatSyncedAt(selected.syncedAt) : ''}
+              </Text>
+              <Pressable
+                role="button"
+                aria-label="새로고침"
+                onPress={() => refresh(trackedOcids ?? [])}
+                className="shrink-0 p-2"
+              >
+                <AnimatedView
+                  testID="refresh-icon"
+                  style={status === 'loading' && !reduceMotion ? SPIN_ANIMATION : undefined}
+                >
+                  <RefreshCwIcon className="h-4 w-4 text-primary-ink" strokeWidth={2} aria-hidden />
+                </AnimatedView>
+              </Pressable>
+            </PageHeaderTitleRow>
 
-            <View className="gap-1">
-              <View className="flex-row items-center gap-3">
-                {characters.length > 0 && selected !== null && (
-                  <CharacterSelectDropdown
-                    characters={characters}
-                    selectedOcid={selected.ocid}
-                    onSelect={(ocid) => {
-                      void selectCharacter(ocid)
-                    }}
-                  />
-                )}
-
-                <View className="ml-auto shrink-0 flex-row items-center gap-2">
-                  <Text className="text-sm text-text-muted">
-                    {status === 'loading' ? '조회 중...' : selected !== null ? formatSyncedAt(selected.syncedAt) : ''}
-                  </Text>
-                  <Pressable
-                    role="button"
-                    aria-label="새로고침"
-                    onPress={() => refresh(trackedOcids ?? [])}
-                    className="p-2"
-                  >
-                    <AnimatedView
-                      testID="refresh-icon"
-                      style={status === 'loading' && !reduceMotion ? SPIN_ANIMATION : undefined}
-                    >
-                      <RefreshCwIcon className="h-4 w-4 text-primary-ink" strokeWidth={2} aria-hidden />
-                    </AnimatedView>
-                  </Pressable>
-                </View>
-              </View>
-            </View>
+            {/* 조건이 **줄 밖**에 있다 — 컨텐츠 스케줄러와 같은 이유다(그 파일의 같은 자리):
+                안에 두면 캐릭터가 없는 동안 빈 줄이 `gap-4` 를 두 번 먹는다. */}
+            {characters.length > 0 && selected !== null && (
+              <CharacterRail
+                entries={railEntries}
+                selectedOcid={selected.ocid}
+                onSelect={(ocid) => {
+                  void selectCharacter(ocid)
+                }}
+              />
+            )}
 
             {/* [[ADR-016]]: 캐시된 characters가 있으면 재검증(status: 'loading') 중에도 계속 보여준다 —
                 셸 승계 카드는 보여줄 데이터가 아예 없을 때만 그린다([[ADR-061]] 결정 2). */}
@@ -685,8 +566,6 @@ export function BossScreen(): React.JSX.Element {
           </View>
         )}
       </ScreenScroll>
-
-      {trackingModals}
 
       {partyModal !== null && selected !== null && modalBossName !== null && (
         <PartySizeModal

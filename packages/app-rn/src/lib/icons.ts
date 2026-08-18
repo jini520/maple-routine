@@ -37,6 +37,7 @@ import ArrowLeft from 'lucide-react-native/icons/arrow-left'
 import ArrowUp from 'lucide-react-native/icons/arrow-up'
 import Ban from 'lucide-react-native/icons/ban'
 import BookOpen from 'lucide-react-native/icons/book-open'
+import CalendarCheck from 'lucide-react-native/icons/calendar-check'
 import Castle from 'lucide-react-native/icons/castle'
 import Check from 'lucide-react-native/icons/check'
 import ChevronDown from 'lucide-react-native/icons/chevron-down'
@@ -45,8 +46,10 @@ import ChevronRight from 'lucide-react-native/icons/chevron-right'
 import ChevronUp from 'lucide-react-native/icons/chevron-up'
 import CircleAlert from 'lucide-react-native/icons/circle-alert'
 import CircleCheckBig from 'lucide-react-native/icons/circle-check-big'
+import CircleQuestionMark from 'lucide-react-native/icons/circle-question-mark'
 import Clock from 'lucide-react-native/icons/clock'
 import CloudDownload from 'lucide-react-native/icons/cloud-download'
+import Crosshair from 'lucide-react-native/icons/crosshair'
 import ExternalLink from 'lucide-react-native/icons/external-link'
 import Eye from 'lucide-react-native/icons/eye'
 import EyeOff from 'lucide-react-native/icons/eye-off'
@@ -58,9 +61,11 @@ import Gauge from 'lucide-react-native/icons/gauge'
 import Info from 'lucide-react-native/icons/info'
 import KeyRound from 'lucide-react-native/icons/key-round'
 import LayoutGrid from 'lucide-react-native/icons/layout-grid'
+import LayoutDashboard from 'lucide-react-native/icons/layout-dashboard'
 import ListChecks from 'lucide-react-native/icons/list-checks'
 import MapPin from 'lucide-react-native/icons/map-pin'
 import Medal from 'lucide-react-native/icons/medal'
+import Menu from 'lucide-react-native/icons/menu'
 import Minus from 'lucide-react-native/icons/minus'
 import Moon from 'lucide-react-native/icons/moon'
 import PackageOpen from 'lucide-react-native/icons/package-open'
@@ -70,6 +75,7 @@ import RefreshCw from 'lucide-react-native/icons/refresh-cw'
 import RotateCcw from 'lucide-react-native/icons/rotate-ccw'
 import ScrollText from 'lucide-react-native/icons/scroll-text'
 import Settings from 'lucide-react-native/icons/settings'
+import ShoppingCart from 'lucide-react-native/icons/shopping-cart'
 import Signal from 'lucide-react-native/icons/signal'
 import SlidersHorizontal from 'lucide-react-native/icons/sliders-horizontal'
 import Sparkles from 'lucide-react-native/icons/sparkles'
@@ -80,6 +86,8 @@ import Sun from 'lucide-react-native/icons/sun'
 import Swords from 'lucide-react-native/icons/swords'
 import TriangleAlert from 'lucide-react-native/icons/triangle-alert'
 import Users from 'lucide-react-native/icons/users'
+import Wallet from 'lucide-react-native/icons/wallet'
+import Wrench from 'lucide-react-native/icons/wrench'
 import X from 'lucide-react-native/icons/x'
 
 import { withIconInterop } from './nativewind-interop'
@@ -99,6 +107,8 @@ export const BanIcon = withIconInterop(Ban)
 /** 안내가 하나도 없을 때 — `SettingsFeatureGuideListScreen` 빈 상태([[ADR-060]]). */
 export const BookOpenIcon = withIconInterop(BookOpen)
 /** 에픽 던전 카테고리 — `ContentManageScreen` 그룹 헤더·행([[ADR-035]] 결정 18). */
+export const CalendarCheckIcon = withIconInterop(CalendarCheck)
+
 export const CastleIcon = withIconInterop(Castle)
 /** 선택 표식 — `CacheClearConfirm` 체크박스 · `ThemeSelector` 선택 타일. */
 export const CheckIcon = withIconInterop(Check)
@@ -112,10 +122,15 @@ export const ChevronLeftIcon = withIconInterop(ChevronLeft)
 export const ChevronRightIcon = withIconInterop(ChevronRight)
 /** 월드별 결정석 분해 **펼침** — `CrystalSummaryChip`([[ADR-054]] 결정 9). */
 export const ChevronUpIcon = withIconInterop(ChevronUp)
+
+/** 도움말 여는 자리 — 위젯 9 머리의 `?`([[ADR-147]] 정정 34). */
+export const CircleQuestionMarkIcon = withIconInterop(CircleQuestionMark)
 /** 아직 집계 전(pending 톤) — `UnavailableNotice`. */
 export const ClockIcon = withIconInterop(Clock)
 /** 새 업데이트 있음 — `UpdatePromptModal`(update-available). */
 export const CloudDownloadIcon = withIconInterop(CloudDownload)
+
+export const CrosshairIcon = withIconInterop(Crosshair)
 /** 앱 밖으로 나가는 이동 — `ApiKeyForm` 의 두 링크([[ADR-110]]). */
 export const ExternalLinkIcon = withIconInterop(ExternalLink)
 /** API 키 표시 토글(가림 상태) — `ApiKeyForm`. */
@@ -139,11 +154,18 @@ export const KeyRoundIcon = withIconInterop(KeyRound)
 /** 메이플 유니온 카테고리 — `ContentManageScreen` 그룹 헤더·행. */
 export const LayoutGridIcon = withIconInterop(LayoutGrid)
 /** 수동 트래킹 모드 — `TrackingModeStep`([[ADR-035]] 결정 22: "앱에서 고른다"). */
+export const LayoutDashboardIcon = withIconInterop(LayoutDashboard)
+
 export const ListChecksIcon = withIconInterop(ListChecks)
 /** 일일/주간 퀘스트 카테고리 — `ContentManageScreen` 그룹 헤더·행. */
 export const MapPinIcon = withIconInterop(MapPin)
 /** 무릉도장 카테고리 — `ContentManageScreen` 그룹 헤더·행. */
 export const MedalIcon = withIconInterop(Medal)
+/**
+ * 끌기 핸들 — `CharacterRow/DragHandle`([[ADR-144]] 결정 5). 이름이 «메뉴» 인 글리프지만 여기서
+ * 뜻하는 것은 「순서 변경」이다 — 뜻은 자리와 접근성 이름이 진다.
+ */
+export const MenuIcon = withIconInterop(Menu)
 /** 파티원 수 감소 — `PartySizeStepper`. */
 export const MinusIcon = withIconInterop(Minus)
 /** 다크 테마 표식 — `ThemeSelector` 타일([[ADR-104]] 결정 2). */
@@ -162,6 +184,8 @@ export const RotateCcwIcon = withIconInterop(RotateCcw)
 export const ScrollTextIcon = withIconInterop(ScrollText)
 /** 토스트 액션이 기본 아이콘을 덮을 수 있음을 지키는 자리 — `Toast` 테스트([[ADR-063]]). */
 export const SettingsIcon = withIconInterop(Settings)
+
+export const ShoppingCartIcon = withIconInterop(ShoppingCart)
 /** 모바일 데이터 확인 — `UpdatePromptModal`(confirm-cellular). */
 export const SignalIcon = withIconInterop(Signal)
 /** 솔로·파티 필터가 가린 빈 상태 — `BossScreen`([[ADR-060]] 결정 2 의 컨텍스트 아이콘). */
@@ -180,5 +204,9 @@ export const SunIcon = withIconInterop(Sun)
 export const SwordsIcon = withIconInterop(Swords)
 /** 파티원 표식 — `PartySizeStepper`(compact) · 파티 인원 라벨 `PartySizeModal`. */
 export const UsersIcon = withIconInterop(Users)
+
+export const WalletIcon = withIconInterop(Wallet)
+
+export const WrenchIcon = withIconInterop(Wrench)
 /** 닫기 — `Toast` · `PartySizeModal`. */
 export const XIcon = withIconInterop(X)

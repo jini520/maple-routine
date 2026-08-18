@@ -13,10 +13,9 @@
 //    공용 셸을 바꿔야 하는 데다 jest 가 한 줄도 검증하지 못한다.
 //    **육안 대조 1순위다** — [[ADR-047]] 후속 3 이 소계 footer 를 지운 근거가 sticky 였으므로,
 //    없으면 보스 행을 스크롤하는 동안 그 캐릭터의 합계가 화면에서 사라진다.
-// ② **테마 배경 조각**([[ADR-088]] 결정 5-1). `ThemeHeaderBackdrop` 을 헤더 첫 자식으로 부르기는
-//    하지만 그 컴포넌트가 아직 두 갈래 모두 `null` 이다. 헤더 조각은 *"전면 백드롭과 이어 붙이는"*
-//    물건이라 백드롭 없이 조각만 그리면 화면 맨 위에 그림 띠 하나만 뜨고 아래는 단색이 된다 —
-//    그 결정이 없애려던 이음매를 오히려 만들므로 **반쪽만 만들지 않는다.**
+// ② **테마 배경 조각은 없앴다**([[ADR-133]]). 한때 [[ADR-088]] 결정 5-1 을 따라 헤더 첫 자식으로
+//    조각을 그렸는데, 그 구조가 서 있던 전제(«헤더가 불투명하고 화면에 고정») 를 [[ADR-131]] 이
+//    없앴다. 지금은 벽지 한 장(`ThemeBackdrop`)만 있고 헤더는 아무것도 안 칠한다.
 //
 // ══ 구조가 대신 지키는 것 여섯 ═════════════════════════════════════════════════════
 //
@@ -34,22 +33,23 @@
 // ① **공용 `PageHeader` 를 쓰지 않는다** — 그 셸은 하단 경계 페이드를 항상 그리는데 이 화면은
 //    [[ADR-047]] 결정 6 이 **그 페이드를 금지한다**(웹 시절 근거는 stuck 카드 헤더를 가린다는
 //    것이었고, 지금은 sticky 가 없어 그 증상이 없지만 **경계 표현의 계약**은 그대로다 — 이 화면의
-//    경계는 총 수익 헤드라인 하단 헤어라인이 담당한다). 나머지 셸 값(`z-10 bg-bg px-4 pb-2` +
-//    상단 안전영역 + `gap-4` + `ThemeHeaderBackdrop` 첫 자식)은 그 컴포넌트와 글자 그대로 같다.
+//    경계는 총 수익 헤드라인 하단 헤어라인이 담당한다). 나머지 셸 값(`z-10 px-4 pb-2` +
+//    상단 안전영역 + `gap-4`)은 그 컴포넌트와 글자 그대로 같다 — 배경을 안 칠하는 것도 함께다
+//    ([[ADR-133]]).
 // ② **[[ADR-080]] 의 최상단 이동은 남기되 이유가 바뀐다.** 웹에서 그것은 *"문서 높이가 붕괴하며
 //    sticky 헤더가 화면 밖에 그려지는 프레임"* 을 없애는 처방이었고 RN 에는 그 사슬이 없다. 남는
 //    것은 **관찰 가능한 동작**이다 — 기간을 옮기면 최상단에서 시작한다. 그것까지 없애면 웹과
 //    다르게 동작하므로 `ScreenScroll` 의 `ref` 로 계속 부른다(`parity-inventory` §2.5 가 step 7
 //    의 자리로 지목한 넷 중 하나).
-// ③ `navigate('/boss?openPicker=1')` → **`navigate('Tabs', { screen: 'Boss', params: … })`**.
-//    받는 쪽은 step 5 가 이미 두었다([[ADR-068]] 결정 4).
+// ③ `navigate('/boss?openPicker=1')` → **`navigate('Tabs', { screen: 'Settings', params: … })`**.
+//    [[ADR-068]] 결정 4의 «피커를 열어 둔 채로 보낸다» 는 그대로이고 **받는 화면만 바뀌었다** —
+//    피커를 여는 자리가 설정 하나가 됐다([[ADR-140]]).
 // ④ **`useScreenStackStore` 깊이 게이트와 `<Outlet />` 이 사라진다**(위 표) — 웹이 이 화면에서
 //    당김을 끄던 세 조건 중 둘은 그대로 남는다(빈 상태 · 새로고침이 의미 없는 기간).
 // ⑤ `animate-spin` → Reanimated CSS 애니메이션(`lib/animation.ts`, step 4·5 와 같은 값).
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import type { ScrollView } from 'react-native'
 import { Pressable, RefreshControl, Text, View } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useReducedMotion } from 'react-native-reanimated'
 
 import { useBossProfitStore } from '@core/features/boss-profit/store'
@@ -74,8 +74,8 @@ import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { UnavailableNotice } from '../../components/molecules/EmptyState/UnavailableNotice'
 import { ValuableDropBadge } from '../../components/molecules/ValuableDropBadge/ValuableDropBadge'
+import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
-import { ThemeHeaderBackdrop } from '../../components/templates/ThemeHeaderBackdrop/ThemeHeaderBackdrop'
 import { SPIN_ANIMATION } from '../../lib/animation'
 import {
   ChevronDownIcon,
@@ -86,6 +86,8 @@ import {
 } from '../../lib/icons'
 import { AnimatedView } from '../../lib/nativewind-interop'
 import { TABULAR_NUMS } from '../../lib/text-styles'
+import { useTopSafeAreaPx } from '../../lib/top-safe-area'
+import { orderByTracked } from '../../lib/tracked-order'
 import { useThemeAppearance } from '../../theme/context'
 import { useScreenNavigation } from '../use-screen-navigation'
 import type { BossProfitContextValue } from './boss-profit-context'
@@ -101,9 +103,6 @@ import {
 // — 컴포넌트와 테스트는 그대로 두고 여기서 부르지만 않는다.
 import { CrystalSummaryChip } from './HeadlineChips'
 import { ItemRevenuePopover, useAnchoredPopover } from './ItemRevenuePopover'
-
-/** 웹 `pt-[calc(1rem+var(--sa-top))]` 의 상수 몫 — 공용 `PageHeader` 와 같은 값이다. */
-const HEADER_TOP_PADDING_PX = 16
 
 export function BossProfitScreen(): React.JSX.Element {
   const {
@@ -134,7 +133,7 @@ export function BossProfitScreen(): React.JSX.Element {
   } = useBossProfitStore()
 
   const navigation = useScreenNavigation()
-  const insets = useSafeAreaInsets()
+  const topSafeAreaPx = useTopSafeAreaPx()
   const { definition } = useThemeAppearance()
   const reduceMotion = useReducedMotion()
 
@@ -183,7 +182,11 @@ export function BossProfitScreen(): React.JSX.Element {
 
   // 훅(아래 `usePeriodLoadErrorToast`)이 이 값을 읽으므로 조기 반환보다 위에서 계산한다 — 순수
   // 함수라 위치를 올려도 결과가 같고, 토스트 조건과 화면 조건이 같은 값을 보게 된다.
-  const characterGroups = buildCharacterGroups(rows, weeklySubtotals)
+  // [[ADR-143]] 결정 3: 그룹의 순서는 행의 순서(= 스토어의 레벨 내림차순 — [[ADR-036]]·[[ADR-017]]
+  // 결정 2)가 아니라 사용자가 캐릭터 관리에서 정한 저장 배열 순서다. **캐릭터 안쪽 보스 순서는
+  // 안 건드린다**([[ADR-036]] 의 `weekly-bosses.json` 정규 순서는 그대로다) — 바뀌는 것은 카드가
+  // 서는 차례뿐이다. core 를 안 고치는 이유는 `orderByTracked` 머리에 있다.
+  const characterGroups = orderByTracked(buildCharacterGroups(rows, weeklySubtotals), trackedOcids ?? [])
 
   // [[ADR-083]] 결정 3: 기간 로드 실패는 **카드가 있을 때만** 토스트다. 카드가 없으면 문구가 사라진
   // 자리에 빈 칸이 남으므로 아래에서 `ErrorState` 를 그린다(같은 실패의 두 얼굴, 문구는 통일).
@@ -199,24 +202,25 @@ export function BossProfitScreen(): React.JSX.Element {
     // 웹의 `min-h-[calc(100dvh …)]` 자리는 `flex-1` 이다(탭 상자가 이미 탭바를 뺀 크기다).
     // 히스토리·가격 진입점은 두지 않는다([[ADR-071]] 결정 7 · [[ADR-124]] 결정 8).
     return (
-      <View
-        testID="screen-Profit"
-        className="flex-1 p-4"
-        style={{ paddingTop: insets.top + HEADER_TOP_PADDING_PX }}
-      >
-        <Text className="text-lg font-semibold text-text">보스 수익</Text>
+      <View testID="screen-Profit" className="flex-1 p-4" style={{ paddingTop: topSafeAreaPx }}>
+        {/* 헤더 셸을 안 쓰는 가지에서도 제목 줄은 같은 프리미티브다([[ADR-145]] 정정 1). */}
+        <PageHeaderTitleRow>
+          <Text className="text-lg font-semibold text-text">보스 수익</Text>
+        </PageHeaderTitleRow>
 
         <View className="flex-1 items-center justify-center">
           <EmptyState
             size="page"
             icon="leaf"
             title="추적 중인 캐릭터가 없습니다"
-            description="보스 스케줄러에서 캐릭터를 선택하면 수익 현황을 확인할 수 있습니다"
+            description="설정에서 캐릭터를 선택하면 수익 현황을 확인할 수 있습니다"
             action={{
               label: '캐릭터 선택하러 가기',
               // [[ADR-068]] 결정 4: 피커를 **열어 둔 채로** 보낸다. 웹의 `?openPicker=1` 자리다.
+              // 목적지는 보스 탭에서 **설정 탭**으로 옮겼다([[ADR-140]] 결정 2) — 열어 두고 보낸다는
+              // 계약은 그대로이고 받는 화면만 바뀌었다.
               onClick: () =>
-                navigation.navigate('Tabs', { screen: 'Boss', params: { openPicker: true } }),
+                navigation.navigate('Tabs', { screen: 'Settings', params: { openPicker: true } }),
             }}
           />
         </View>
@@ -265,21 +269,17 @@ export function BossProfitScreen(): React.JSX.Element {
 
   const header = (
     // 공용 `PageHeader` 를 쓰지 않는 이유는 파일 머리 ① — 그 셸의 하단 페이드를 이 화면은 금지한다
-    // ([[ADR-047]] 결정 6). 나머지 값은 그 컴포넌트와 같다.
-    <View
-      testID="page-header"
-      className="z-10 bg-bg px-4 pb-2"
-      style={{ paddingTop: insets.top + HEADER_TOP_PADDING_PX }}
-    >
-      {/* [[ADR-088]] 결정 5-1: 헤더 자리의 테마 배경 조각. **첫 자식이어야 한다** — RN 은 형제
-          순서가 곧 그리는 순서라 이 자리가 웹의 `z-index: -1` 을 대신한다(오늘은 아직 `null`, 파일 머리 ②). */}
-      <ThemeHeaderBackdrop />
+    // ([[ADR-047]] 결정 6). 나머지 값은 그 컴포넌트와 같고, **상단 여백을 더하지 않는 것도 함께다**
+    // ([[ADR-139]] — 웹 `pt-[calc(1rem+var(--sa-top))]` 의 상수 몫을 옮기지 않는다). 그 «안전영역»
+    // 은 `useTopSafeAreaPx()` 다([[ADR-139]] 정정 1) — 셸을 복제한 화면이 인셋을 직접 읽으면 이
+    // 화면만 안드로이드에서 16.7px 위에 선다.
+    <View testID="page-header" className="z-10 px-4 pb-2" style={{ paddingTop: topSafeAreaPx }}>
 
       <View className="gap-4">
         {/* 히스토리 진입점은 탭 줄이 아니라 **제목 줄 우측**이고 아이콘이 아니라 글자다
             ([[ADR-071]] 결정 7). 진입점 둘은 같은 어휘를 쓰고 `아이템 가격`(쓰기)이
             `히스토리`(읽기) **왼쪽**이다([[ADR-124]] 결정 8) — 값을 매기는 쪽이 주마다 들르는 자리다. */}
-        <View className="flex-row items-center justify-between">
+        <PageHeaderTitleRow className="justify-between">
           <Text className="text-lg font-semibold text-text">보스 수익</Text>
           <View className="flex-row items-center gap-3">
             <Pressable role="button" onPress={() => navigation.navigate('DropPrice')}>
@@ -289,7 +289,7 @@ export function BossProfitScreen(): React.JSX.Element {
               <Text className="text-sm font-medium text-text-muted">히스토리</Text>
             </Pressable>
           </View>
-        </View>
+        </PageHeaderTitleRow>
 
         <View className="flex-row items-center gap-4">
           <Pressable role="button" aria-selected={tab === 'weekly'} onPress={() => setTab('weekly')}>

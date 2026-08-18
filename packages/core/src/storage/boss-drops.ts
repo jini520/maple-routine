@@ -41,6 +41,35 @@ const INSERT_SQL = `
 `
 
 // 한 보스/기간의 드롭 집합을 통째로 교체한다(기존 삭제 후 0..n으로 재삽입). 빈 배열이면 삭제만.
+/**
+ * `boss_drop_records` 가 바뀔 때마다 오르는 수 — **이 테이블을 캐시하는 쪽이 «내 스냅샷이 낡았나» 를
+ * 물을 수 있게** 하는 값이다.
+ *
+ * ## 왜 저장 계층에 있나
+ *
+ * 이 테이블에는 캐시가 **셋**이다 — `boss-profit/store`(`dropsByRowKey`) · `drop-price-store` ·
+ * `drop-history-store`(전 기간 집계). 앞의 둘은 서로를 직접 부르는 것으로 맞춘다
+ * (`applyExternalDropEdit`, 2026-08-10 «새로고침해야 반영된다» 보고의 처방). 그 방식은 **쓰는 쪽이
+ * 읽는 쪽을 전부 알아야** 해서, 캐시가 하나 늘 때마다 세 호출부를 다시 훑어야 한다 — 실제로
+ * `drop-history-store` 가 그렇게 빠졌다.
+ *
+ * 이 수는 그 방향을 뒤집는다. **쓰기 경로가 이 함수 하나뿐**이므로(세 호출부가 전부 여기로 온다)
+ * 여기서 한 번 올리면 캐시가 몇 개든 «물어볼 수 있는» 상태가 되고, 새 캐시가 생겨도 쓰는 쪽은
+ * 손댈 것이 없다.
+ *
+ * **영속화하지 않는다.** 프로세스와 함께 사라지는 것이 맞다 — 앱을 다시 켜면 어느 캐시든 비어 있다.
+ */
+let recordsRevision = 0
+
+export function getBossDropRecordsRevision(): number {
+  return recordsRevision
+}
+
+/** 테스트 전용. 모듈 수준 상태라 테스트끼리 오염된다 — 프로덕션에서 부르지 말 것. */
+export function resetBossDropRecordsRevisionForTests(): void {
+  recordsRevision = 0
+}
+
 export async function replaceBossDropRecords(
   ocid: string,
   boss: string,
@@ -73,6 +102,10 @@ export async function replaceBossDropRecords(
       drop.priceShare ?? null,
     ])
   }
+
+  // **삭제/삽입이 다 끝난 뒤**에 올린다 — 중간에 던지면 테이블이 바뀌지 않은 채로 끝나므로
+  // 그때 올리면 읽는 쪽이 헛되이 전 기간을 다시 읽는다.
+  recordsRevision += 1
 }
 
 /** 저장된 상태 문자열을 도메인 값으로. 모르는 값은 미입력으로 떨어뜨린다(거짓 상태를 만들지 않는다). */

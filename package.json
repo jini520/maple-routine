@@ -6,6 +6,7 @@
     "packages/*"
   ],
   "scripts": {
+    "postinstall": "patch-package",
     "dev": "npm run dev -w @maple-routine/app-capacitor",
     "dev:beta": "npm run dev:beta -w @maple-routine/app-capacitor",
     "build": "npm run build -w @maple-routine/app-capacitor",
@@ -35,6 +36,7 @@
     "globals": "^17.7.0",
     "jsdom": "^29.1.1",
     "marked": "^18.0.7",
+    "patch-package": "^8.0.1",
     "tailwindcss": "3.4.19",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.63.0",

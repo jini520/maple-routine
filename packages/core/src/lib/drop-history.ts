@@ -245,38 +245,42 @@ export function filterUnobtainableConfirmedDrops(
  * (2026-08-01). 바꿀 땐 이 배열 하나만 고치면 문구·시각 표현이 함께 따라온다.
  */
 /**
- * 문구는 **사용자가 직접 지정했다**(2026-08-01) — 물욕 가뭄에 대한 플레이어 반응을 단계로 옮긴 것이라
- * 구현자가 톤을 다듬지 않는다. 마지막 단계만 문구가 여럿이고 그중 하나가 무작위로 나온다.
+ * 문구는 **사용자가 직접 지정했다**(2026-08-01 다섯 줄 · 2026-08-17 추가 여섯 줄) — 아이템 드롭 가뭄에
+ * 대한 플레이어 반응을 단계로 옮긴 것이라 구현자가 톤을 다듬지 않는다.
  *
- * `maxWeeks` 는 **미획득 주 수**(`weeksSince`)다 — 사용자가 말한 "N주차"보다 하나 작다(1주차 = 먹은
- * 그 주 = 0주 미획득).
- */
-const VALUABLE_DROUGHT_TIERS: readonly { maxWeeks: number; headline: string | null }[] = [
-  { maxWeeks: 0, headline: '와따리! ㅇㄱㄱㄷ' },
-  { maxWeeks: 1, headline: '그래, 그럴 수 있지' },
-  { maxWeeks: 2, headline: '어?! 슬슬 쫌 그래!?' },
-  { maxWeeks: 3, headline: '선넘네?!' },
-  { maxWeeks: Number.POSITIVE_INFINITY, headline: null }, // 아래 풀에서 무작위
-]
-
-/**
- * 마지막 단계(4주 이상 미획득)의 문구 풀. 앞 둘은 사용자 지정, 뒤 셋은 같은 톤으로 이어 붙인 것
- * (애원 · 포기 · 자기검열 — 분노 다음에 오는 감정들).
+ * **단계마다 문구가 풀이다**([[ADR-147]] 정정 6·10) — 처음엔 마지막 단계만 여럿이었는데, today 의
+ * 위젯이 같은 요약을 자주 띄우게 되면서 전 단계로 넓혔다. 각 풀의 **첫 항목이 원래 있던 문구**라
+ * 인덱스를 주지 않은 호출은 예전과 같은 문구를 준다.
  *
  * **무작위 선택은 이 파일이 하지 않는다.** `Math.random()` 을 여기서 부르면 순수 함수가 아니게 되고
  * 테스트가 값을 고정할 수 없다. 화면이 인덱스를 골라 넘긴다(마운트당 한 번 — 매 렌더마다 고르면
  * 리렌더 때 문구가 깜빡인다).
+ *
+ * `maxWeeks` 는 **미획득 주 수**(`weeksSince`)다 — 사용자가 말한 "N주차"보다 하나 작다(1주차 = 먹은
+ * 그 주 = 0주 미획득).
  */
-const VALUABLE_DROUGHT_LATE_HEADLINES = [
-  '이건 아니지...',
-  '적당히 해!',
-  '제발 한 번만...',
-  '이제 기대도 안 해',
-  '내가 뭘 잘못했나',
-] as const
+const VALUABLE_DROUGHT_TIERS: readonly { maxWeeks: number; headlines: readonly string[] }[] = [
+  { maxWeeks: 0, headlines: ['와따리! ㅇㄱㄱㄷ', '완전 럭키비키잖아', '폼 미쳤다'] },
+  { maxWeeks: 1, headlines: ['그래, 그럴 수 있지', '다음 주엔 되겠지'] },
+  { maxWeeks: 2, headlines: ['어?! 슬슬 쫌 그래!?', '슬슬 킹받는데', '이게 맞나?'] },
+  { maxWeeks: 3, headlines: ['선넘네?!', '이게 억까지 뭐야'] },
+  {
+    // 마지막 단계(4주 이상). 앞 둘은 사용자 지정, 뒤 셋은 같은 톤으로 이어 붙인 것
+    // (애원 · 포기 · 자기검열 — 분노 다음에 오는 감정들). 여기엔 추가 채택이 없었다.
+    maxWeeks: Number.POSITIVE_INFINITY,
+    headlines: ['이건 아니지...', '적당히 해!', '제발 한 번만...', '이제 기대도 안 해', '내가 뭘 잘못했나'],
+  },
+]
 
-/** 마지막 단계 문구 개수 — 화면이 이 범위에서 인덱스를 무작위로 고른다. */
-export const VALUABLE_DROUGHT_LATE_HEADLINE_COUNT = VALUABLE_DROUGHT_LATE_HEADLINES.length
+/**
+ * 그 단계의 문구 개수 — 화면이 이 범위에서 인덱스를 무작위로 고른다.
+ *
+ * 단계마다 풀 크기가 달라 "마지막 단계 개수" 상수로는 모자란다([[ADR-147]] 정정 6). 인덱스를 감싸므로
+ * 틀린 개수를 줘도 문구는 나오지만, 그러면 뽑히지 않는 문구가 생긴다.
+ */
+export function valuableDroughtHeadlineCount(weeksSince: number): number {
+  return VALUABLE_DROUGHT_TIERS[getValuableDroughtTier(weeksSince)].headlines.length
+}
 
 /** 미획득 주 수 → 슬픔 단계(0 = 이번 주 획득, 4 = 가장 슬픔). 화면이 이 값으로 잎 색·기울기를 고른다. */
 export function getValuableDroughtTier(weeksSince: number): number {
@@ -285,15 +289,13 @@ export function getValuableDroughtTier(weeksSince: number): number {
 }
 
 /**
- * 요약 제목. 마지막 단계는 문구가 여럿이라 `lateIndex` 로 고른다 — 범위를 벗어난 값은 감싸므로
- * 호출부가 경계를 신경 쓰지 않아도 된다(기본값 0이라 인덱스를 안 주면 항상 같은 문구다).
+ * 요약 제목. 단계마다 문구가 여럿이라 `index` 로 고른다 — 범위를 벗어난 값은 감싸므로 호출부가
+ * 경계를 신경 쓰지 않아도 된다(기본값 0이라 인덱스를 안 주면 항상 그 단계의 원래 문구다).
  */
-export function formatValuableDroughtHeadline(weeksSince: number, lateIndex = 0): string {
-  const fixed = VALUABLE_DROUGHT_TIERS[getValuableDroughtTier(weeksSince)].headline
-  if (fixed !== null) return fixed
-
-  const count = VALUABLE_DROUGHT_LATE_HEADLINES.length
-  return VALUABLE_DROUGHT_LATE_HEADLINES[((lateIndex % count) + count) % count]
+export function formatValuableDroughtHeadline(weeksSince: number, index = 0): string {
+  const { headlines } = VALUABLE_DROUGHT_TIERS[getValuableDroughtTier(weeksSince)]
+  const count = headlines.length
+  return headlines[((index % count) + count) % count]
 }
 
 /**

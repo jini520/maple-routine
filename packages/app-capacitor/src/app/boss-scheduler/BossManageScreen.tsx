@@ -38,8 +38,10 @@ interface BossListEntry {
 // 관리 페이지의 보스 목록은 게임 레퍼런스 데이터(weekly-bosses.json) 그대로다 — 주간 탭은
 // 주간(+챌린저스 월드에 한해 시즌 주간), 월간 탭은 월간(ADR-035 결정 18, ADR-056). 난이도
 // 후보도 같은 파일의 difficulties를 쓴다(폐기된 ManualBossPickerModal과 동일 소스).
-// ADR-056 결정 1: 미출시 보스(status: 'unreleased', 현재 벨로나)는 목록에서 뺀다. 보스명을
+// ADR-056 결정 1: 미출시 보스(status: 'unreleased')는 목록에서 뺀다. 보스명을
 // 코드에 박지 않고 데이터의 status로 거르므로, 출시되면 그 필드를 지우는 것만으로 되돌아온다.
+// 벨로나 출시(ADR-151)가 실제로 그렇게 지나가 지금 이 필터에 걸리는 엔트리는 0개다 —
+// 다음 미출시 보스를 위해 그대로 둔다(ADR-151 결정 4).
 function toListEntries(entries: BossReferenceEntry[]): BossListEntry[] {
   return entries
     .filter((entry) => entry.status !== 'unreleased')

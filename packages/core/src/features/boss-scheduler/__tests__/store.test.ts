@@ -374,6 +374,9 @@ describe('useBossSchedulerStore', () => {
         isStale: true,
         syncedAt: null,
         error: { kind: 'network' },
+        // [[ADR-142]] 결정 6: 캐시가 그 캐릭터를 모르면 둘 다 `null` 이다.
+        level: null,
+        imageUrl: null,
       },
     ])
   })
@@ -617,7 +620,9 @@ describe('useBossSchedulerStore', () => {
       const restored = useBossSchedulerStore
         .getState()
         .characters.find((character) => character.ocid === 'ocid-1')
-      expect(restored).toEqual(kept)
+      // 보스 목록·클리어 카운트는 손대지 않는다. `level`·`imageUrl` 만 정렬 단계가 캐시에서 다시
+      // 찍는다([[ADR-142]] 결정 6) — 여기 목에는 캐시가 없어 둘 다 `null` 이다.
+      expect(restored).toEqual({ ...kept, level: null, imageUrl: null })
     })
 
     it('최초 선택(이전 추적 목록 없음)이면 전원이 추가분이라 전체를 조회한다', async () => {
@@ -700,7 +705,7 @@ describe('useBossSchedulerStore', () => {
       await useBossSchedulerStore.getState().saveTrackedOcids(['ocid-1', 'ocid-2'])
 
       expect(seedManualTrackedContentMock).toHaveBeenCalledTimes(1)
-      expect(seedManualTrackedContentMock).toHaveBeenCalledWith('ocid-2')
+      expect(seedManualTrackedContentMock).toHaveBeenCalledWith(['ocid-2'])
       // 시드가 refresh(syncSchedules)보다 먼저 실행된다 — 저장 진행률 모달이 시드까지 커버(결정 15)
       expect(seedManualTrackedContentMock.mock.invocationCallOrder[0]).toBeLessThan(
         syncSchedulesMock.mock.invocationCallOrder[0],
