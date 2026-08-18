@@ -184,7 +184,7 @@ describe('prepareInterstitial', () => {
     await expect(rnAdsPort.prepareInterstitial()).resolves.toBe(false)
   })
 
-  // 던지면 부팅(`startAds`)과 탭 이동이 함께 흔들린다 — 광고는 실패해도 앱을 멈추지 않는다.
+  // 던지면 이 포트를 부르는 쪽이 함께 흔들린다 — 광고는 실패해도 앱을 멈추지 않는다.
   it('광고 생성 자체가 던져도 false 다', async () => {
     mockCreateThrows = true
     await expect(rnAdsPort.prepareInterstitial()).resolves.toBe(false)

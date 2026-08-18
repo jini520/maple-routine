@@ -13,7 +13,6 @@ import {
   groupOfPage,
   initialBarState,
   openPage,
-  shouldGateAd,
   pressBack,
   pressGroup,
   pressSub,
@@ -178,30 +177,9 @@ describe('기록이 없으면 ← 는 그룹 행을 연다 (결정 5)', () => {
   })
 })
 
-describe('광고 게이트는 그룹 이동에만 (결정 9)', () => {
-  it('다른 그룹으로 옮기면 참이다', () => {
-    const start = at('Today')
-    expect(shouldGateAd('group', start, pressGroup(start, 'ledger'))).toBe(true)
-  })
-
-  it('하위 이동·같은 그룹 재탭은 거짓이다', () => {
-    const inLedger = pressGroup(at('Today'), 'ledger')
-    expect(shouldGateAd('sub', inLedger, pressSub(inLedger, 'Spend'))).toBe(false)
-
-    const reopened = at('Content', { showGroups: true })
-    expect(shouldGateAd('group', reopened, pressGroup(reopened, 'schedule'))).toBe(false)
-  })
-
-  // **뒤로가기도 그룹을 바꾼다** — 가계부에서 ← 를 누르면 유틸리티로 나간다. 그래서 판정이
-  // 상태 델타가 아니라 «무엇을 눌렀는가» 를 함께 봐야 한다(이 기대가 그 설계를 끌어냈다).
-  it('뒤로가기는 그룹이 바뀌어도 거짓이다', () => {
-    const inLedger = pressGroup(at('Utility'), 'ledger')
-    const back = pressBack(inLedger)
-
-    expect(back.page).toBe('Utility')
-    expect(shouldGateAd('back', inLedger, back)).toBe(false)
-  })
-})
+// 결정 9 의 `shouldGateAd` 테스트 넷이 여기 있었다 — 그룹 이동만 참 · 하위/재탭 거짓 · **뒤로가기도
+// 그룹을 바꾸므로 거짓**(그 기대가 «상태 델타가 아니라 조작을 본다» 는 설계를 끌어냈다).
+// [[ADR-150]] 이 전면광고를 걷으며 함수와 함께 지웠다.
 
 describe('openPage — 바를 거치지 않은 이동 ([[ADR-132]] 결정 4)', () => {
   // 증상: today 위젯으로 보스 수익에 간 뒤 ← 를 누르면 today 가 아니라 **가계부가 활성인 채로**

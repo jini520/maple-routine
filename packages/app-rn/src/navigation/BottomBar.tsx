@@ -1,9 +1,9 @@
 /**
- * 떠 있는 캡슐 하단바 — [[ADR-132]] 결정 3·9·11.
+ * 떠 있는 캡슐 하단바 — [[ADR-132]] 결정 3·11(결정 9 의 광고 게이트는 [[ADR-150]] 에서 폐기).
  *
  * ## 이 파일이 하는 일은 «그리기 + 배선» 뿐이다
  *
- * 층 판정·기록·게이트 규칙은 전부 `bar-model.ts` 의 순수 함수가 갖는다. 여기서는 그 결과를 그리고,
+ * 층 판정과 기록 규칙은 전부 `bar-model.ts` 의 순수 함수가 갖는다. 여기서는 그 결과를 그리고,
  * 리듀서가 돌려준 페이지로 이동시키고, 기록을 저장소에 넣는다. 규칙을 여기 두면 사용자가 준 예시
  * 셋을 화면 조작으로만 검증할 수 있게 되어 명세가 흐려진다.
  *
@@ -69,7 +69,6 @@ import {
   View,
 } from 'react-native'
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect'
-import { maybeShowTabSwitchAd } from '@core/features/ads/tab-switch-ad'
 
 import { GearIcon } from '../components/atoms/GearIcon/GearIcon'
 import { ProfitIcon } from '../components/atoms/ProfitIcon/ProfitIcon'
@@ -97,9 +96,7 @@ import {
   pressBack,
   pressGroup,
   pressSub,
-  shouldGateAd,
   visibleSubs,
-  type BarAction,
   type BarState,
   type GroupId,
 } from './bar-model'
@@ -531,16 +528,14 @@ export function BottomBar({ state, navigation }: BottomTabBarProps): React.JSX.E
     barRef.current = bar
   })
 
+  // 여기서 [[ADR-132]] 결정 9 의 광고 게이트를 태웠다(그래서 «무엇을 눌렀는가» 를 인자로 받았다).
+  // [[ADR-150]] 이 전면광고를 걷으며 함께 지웠다 — 지금 이 함수가 하는 일은 이동뿐이다.
   const apply = useCallback(
-    (next: BarState, action: BarAction) => {
+    (next: BarState) => {
       const before = barRef.current
 
       setBarRecord(toBarRecord(next))
       if (next.page !== before.page) navigation.navigate(next.page)
-
-      // **막지 않는다** — 이동은 위에서 이미 끝났고 광고는 준비된 것이 있을 때만 뜬다
-      // ([[ADR-090]] 결정 3 «광고는 이동을 지연시키지 않는다»).
-      if (shouldGateAd(action, before, next)) void maybeShowTabSwitchAd()
     },
     [navigation],
   )
@@ -554,7 +549,7 @@ export function BottomBar({ state, navigation }: BottomTabBarProps): React.JSX.E
     registerBarBackHandler({
       canGoBack: () => canGoBack(barRef.current),
       goBack: () => {
-        applyRef.current(pressBack(barRef.current), 'back')
+        applyRef.current(pressBack(barRef.current))
       },
     })
 
@@ -709,7 +704,7 @@ export function BottomBar({ state, navigation }: BottomTabBarProps): React.JSX.E
               height={pillHeight}
               testID={`bar-group-${item.key}`}
               onPress={() => {
-                applyRef.current(pressGroup(barRef.current, item.key), 'group')
+                applyRef.current(pressGroup(barRef.current, item.key))
               }}
             />
           ))}
@@ -742,7 +737,7 @@ export function BottomBar({ state, navigation }: BottomTabBarProps): React.JSX.E
               height={pillHeight}
               testID={`bar-sub-${item.key}`}
               onPress={() => {
-                applyRef.current(pressSub(barRef.current, item.key), 'sub')
+                applyRef.current(pressSub(barRef.current, item.key))
               }}
             />
           ))}
@@ -827,7 +822,7 @@ export function BottomBar({ state, navigation }: BottomTabBarProps): React.JSX.E
           accessibilityLabel="뒤로 가기"
           disabled={!hasBack}
           onPress={() => {
-            applyRef.current(pressBack(barRef.current), 'back')
+            applyRef.current(pressBack(barRef.current))
           }}
           // 누르는 자리는 **한 칸 전체**로 남긴다 — 메뉴 항목과 같은 크기의 과녁이라야 손이 같은
           // 규칙으로 움직인다. 다만 화살표는 그 칸의 가운데가 아니라 **왼쪽 끝**의 판 위에 앉는다.

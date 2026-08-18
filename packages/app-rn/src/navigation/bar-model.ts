@@ -213,20 +213,7 @@ export function pressBack(state: BarState): BarState {
   }
 }
 
-/** 바에서 일어날 수 있는 조작 셋. 광고 게이트가 **무엇을 눌렀는가**까지 봐야 해서 이름이 필요하다. */
-export type BarAction = 'group' | 'sub' | 'back'
-
-/**
- * 광고 게이트를 태울 이동인가(결정 9 — [[ADR-090]] 결정 3 축소).
- *
- * **상태 비교만으로는 못 가린다.** 뒤로가기도 그룹을 바꾸기 때문이다(가계부에서 ← 를 누르면
- * 유틸리티로 나간다) — 처음에 상태 델타만 보는 함수로 썼다가 테스트가 그것을 잡았다. 그래서
- * 판정에 **조작**이 들어간다: 그룹을 눌러서, 그룹이 실제로 바뀌었을 때만 참이다.
- *
- * 하위 이동·뒤로가기·같은 그룹 재탭이 전부 거짓이라, 게이트가 불리는 빈도가 옛 탭바와 같은 자리에
- * 남는다(그때도 «다른 탭을 누른 경우» 하나였다).
- */
-export function shouldGateAd(action: BarAction, before: BarState, after: BarState): boolean {
-  if (action !== 'group') return false
-  return groupOfPage(before.page).id !== groupOfPage(after.page).id
-}
+// 결정 9 의 `BarAction`·`shouldGateAd` 는 여기 있었다 — 광고 게이트가 **무엇을 눌렀는가**까지
+// 봐야 해서 조작에 이름이 필요했다(상태 델타만으로는 못 가렸다. 뒤로가기도 그룹을 바꾸기
+// 때문이다 — 가계부에서 ← 를 누르면 유틸리티로 나간다). [[ADR-150]] 이 전면광고를 걷으며 함께
+// 지웠다. 인라인 광고는 화면에 그려지는 것이라 이동 시점 판정이 필요 없다.

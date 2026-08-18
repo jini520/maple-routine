@@ -5,7 +5,6 @@ import { useOnboardingStore } from '@core/features/onboarding/store'
 import { useLiveUpdateStore } from '@core/features/live-update/store'
 import { useThemeStore } from '@core/features/theme/store'
 import { useTrackingModeStore } from '@core/features/tracking-mode/store'
-import { startAds } from '@core/features/ads/tab-switch-ad'
 import { hideSplashScreen } from '@core/native/splash-screen'
 
 import { ToastStack } from '../components/organisms/Toast/ToastStack'
@@ -91,11 +90,10 @@ export function AppShell(): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // [[ADR-090]]: SDK 초기화 + 첫 광고 사전 로드. 둘 다 실패해도 던지지 않으므로 부팅을 막지 않는다.
-  // 스플래시 시퀀스와는 무관하다 — 앱 시작에 광고를 띄우지 않기 때문에 기다릴 이유가 없다.
-  useEffect(() => {
-    void startAds()
-  }, [])
+  // 여기서 [[ADR-090]] 의 `startAds()`(SDK 초기화 + 첫 광고 사전 로드)를 불렀다. [[ADR-150]] 이
+  // 전면광고를 걷으며 지웠다 — 표시만 막고 사전 로드를 남기면 매 실행 «뜨지 않을 광고» 를 요청해
+  // 임프레션 없는 요청으로 쌓인다. **인라인 광고를 붙일 때 SDK 초기화를 부를 자리가 여기다**
+  // (`rnAdsPort.initialize()` 는 어댑터에 그대로 있다).
 
   // [[ADR-101]] 결정 2·6: 탭 스토어를 스플래시가 떠 있는 동안 미리 하이드레이션해, 첫 탭 진입이
   // 저장소 읽기를 사용자가 보는 앞에서 치르지 않게 한다. **온보딩 완료 상태에서만 돈다** —

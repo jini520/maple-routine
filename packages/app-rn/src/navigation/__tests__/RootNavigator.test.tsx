@@ -26,12 +26,6 @@ import { installMemoryPreferences } from './memory-preferences'
 import { normalizeRenderedTree } from '../../__tests__/normalize-tree'
 import { FEATURE_GUIDE_ROUTE_NAMES, STACK_ROUTE_NAMES, type RootStackParamList } from '../routes'
 
-jest.mock('@core/features/ads/tab-switch-ad', () => ({
-  __esModule: true,
-  maybeShowTabSwitchAd: jest.fn(async () => {}),
-  startAds: jest.fn(async () => {}),
-}))
-
 type Status = 'awaitingApiKey' | 'completed'
 
 /**

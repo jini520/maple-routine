@@ -18,22 +18,20 @@
  * `GRID_SIDE_PADDING`(16)은 앱 공통 `px-4` 이고, 다른 화면과 같이 **화면의 래퍼**가 준다. 여기서 또
  * 주면 두 겹이 되어 격자가 `창폭 − 64` 안에 들어가는데, 열 폭 계산은 `창폭 − 32` 를 전제로 서 있다.
  *
- * ## 탭 이동은 광고 게이트를 탄다
+ * ## 탭 이동은 광고 게이트를 탔었다
  *
- * today 자신이 그룹이라 여기서 나가는 것은 전부 **그룹 이동**이다([[ADR-147]] 결정 5 · [[ADR-132]]
- * 결정 9). 바를 거치지 않으므로 `shouldGateAd` 의 'group' 갈래와 같은 비교를 여기서 하되, 그룹 표는
- * `BAR_GROUPS` 하나를 본다 — 목적지가 today 그룹 안이면(그런 위젯은 아직 없다) 게이트가 서지 않는다.
+ * today 자신이 그룹이라 여기서 나가는 것은 전부 **그룹 이동**이고([[ADR-147]] 결정 5 · [[ADR-132]]
+ * 결정 9), 바를 거치지 않으므로 같은 비교를 여기서 한 번 더 했다. [[ADR-150]] 이 전면광고를 걷으며
+ * 지웠다 — 노출 지점이 바 하나에서 여기까지 저절로 둘로 늘었던 것이 그 결정의 근거 중 하나다.
  */
 
 import { useState } from 'react'
 import { Pressable, useWindowDimensions, View } from 'react-native'
 
-import { maybeShowTabSwitchAd } from '@core/features/ads/tab-switch-ad'
-
 import { Card } from '../../components/atoms/Card/Card'
 import { resolveWidgetGridMetrics } from '../../lib/widget-grid-metrics'
 import { resolveWidgetPositions } from '../../lib/widget-layout'
-import { groupOfPage, openPage } from '../../navigation/bar-model'
+import { openPage } from '../../navigation/bar-model'
 import { getBarRecord, setBarRecord, toBarRecord } from '../../navigation/bar-store'
 import type { TabRouteName } from '../../navigation/routes'
 import { useScreenNavigation } from '../use-screen-navigation'
@@ -72,10 +70,6 @@ export function WidgetGrid({ data }: WidgetGridProps): React.JSX.Element {
     setBarRecord(toBarRecord(openPage({ ...getBarRecord(), page: HOST_PAGE }, target)))
 
     navigation.navigate('Tabs', { screen: target })
-
-    // **막지 않는다** — 이동은 위에서 이미 끝났고 광고는 준비된 것이 있을 때만 뜬다
-    // ([[ADR-090]] 결정 3 «광고는 이동을 지연시키지 않는다»).
-    if (groupOfPage(HOST_PAGE).id !== groupOfPage(target).id) void maybeShowTabSwitchAd()
   }
 
   return (

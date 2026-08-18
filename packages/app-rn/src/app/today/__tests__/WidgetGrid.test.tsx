@@ -9,8 +9,6 @@
 import { act, fireEvent, within } from '@testing-library/react-native'
 import { Dimensions } from 'react-native'
 
-import { maybeShowTabSwitchAd } from '@core/features/ads/tab-switch-ad'
-
 import {
   renderAtom,
   flattenStyle,
@@ -25,13 +23,9 @@ import { initialBarState, pressBack } from '../../../navigation/bar-model'
 import { getBarRecord, setBarRecord, toBarRecord } from '../../../navigation/bar-store'
 
 jest.mock('../../use-screen-navigation', () => ({ useScreenNavigation: jest.fn() }))
-jest.mock('@core/features/ads/tab-switch-ad', () => ({
-  maybeShowTabSwitchAd: jest.fn(async () => {}),
-}))
 
 const navigate = jest.fn()
 const mockedUseScreenNavigation = jest.mocked(useScreenNavigation)
-const mockedMaybeShowTabSwitchAd = jest.mocked(maybeShowTabSwitchAd)
 
 type Rendered = Awaited<ReturnType<typeof renderAtom>>
 
@@ -214,7 +208,9 @@ describe('`h: auto` 타일 ([[ADR-147]] 정정 1)', () => {
 })
 
 describe('타일 탭 ([[ADR-147]] 결정 5)', () => {
-  it('`target` 이 있는 타일은 그 탭으로 보내고 광고 게이트를 탄다', async () => {
+  // 여기서 «광고 게이트도 탄다» 를 함께 물었다. [[ADR-150]] 이 전면광고를 걷으며 지웠고, 되살아나는
+  // 것은 `src/__tests__/interstitial-policy.test.ts` 가 소스로 막는다.
+  it('`target` 이 있는 타일은 그 탭으로 보낸다', async () => {
     const view = await 격자()
 
     await act(async () => {
@@ -222,7 +218,6 @@ describe('타일 탭 ([[ADR-147]] 결정 5)', () => {
     })
 
     expect(navigate).toHaveBeenCalledWith('Tabs', { screen: 'Profit' })
-    expect(mockedMaybeShowTabSwitchAd).toHaveBeenCalledTimes(1)
   })
 
   // 증상: 위젯으로 보스 수익에 간 뒤 ← 를 누르면 today 가 아니라 **가계부가 활성인 채로** 그룹
