@@ -54,7 +54,7 @@ import {
   type DropHistoryRecord,
   type ValuableDroughtSummary,
 } from '@core/lib/drop-history'
-import { sumDropPayout } from '@core/lib/drop-price'
+import { dropPayoutMeso, sumDropPayout } from '@core/lib/drop-price'
 import { getCurrentKstDateKey, getMostRecentWeeklyResetKst } from '@core/lib/reset-clock'
 import type { ManualTrackedItem } from '@core/storage/manual-tracked-content'
 import type { TrackingMode } from '@core/storage/tracking-mode'
@@ -178,8 +178,18 @@ export interface UnpricedDropView {
 }
 
 export interface PricedDropView extends UnpricedDropView {
-  /** 입력된 **판매가**(분배 전). 순위 기준이 이 값이다([[ADR-146]] 결정 9). */
-  priceMeso: number
+  /**
+   * **실수령액** — 입력한 판매 총액을 분배 인원으로 나눈 값(`dropPayoutMeso`).
+   *
+   * 총액이 아니라 이 값을 쓰는 이유는 today 가 답하는 질문이 «내가 이번 주에 얼마를 벌었나» 이기
+   * 때문이다. 같은 화면의 「주간 보스 수익」이 이미 `sumDropPayout`(= 이 함수의 합)으로 더하므로,
+   * 총액으로 순위를 매기면 **최고가 아이템이 총 수익보다 큰 화면**이 나온다.
+   *
+   * **순위 기준도 이 값이다** — 표시와 순위가 갈리면 1위가 2위보다 작은 숫자를 달고 선다.
+   */
+  payoutMeso: number
+  /** 분배 인원(`priceShare`). `1` 이면 단독이라 화면이 분배 표기를 생략한다. */
+  shareCount: number
 }
 
 export interface TopItemView {
@@ -501,10 +511,13 @@ function buildTopItem(
     .map(
       (record): PricedDropView => ({
         ...toDropView(record, profilesByOcid),
-        priceMeso: record.priceMeso as number,
+        // 분배는 여기서 다시 나누지 않는다 — `dropPayoutMeso` 가 그 규칙(0 나눗셈 방어 포함)을
+        // 이미 갖고 있고, 「주간 보스 수익」의 아이템 합(`sumDropPayout`)이 같은 함수를 쓴다.
+        payoutMeso: dropPayoutMeso(record),
+        shareCount: Math.max(1, record.priceShare ?? 1),
       }),
     )
-    .sort((a, b) => b.priceMeso - a.priceMeso)
+    .sort((a, b) => b.payoutMeso - a.payoutMeso)
     .slice(0, TOP_ITEM_COUNT)
 
   if (priced.length === 0) return null

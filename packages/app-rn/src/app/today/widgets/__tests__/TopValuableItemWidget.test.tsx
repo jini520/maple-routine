@@ -83,6 +83,28 @@ describe('0건 ([[ADR-146]] 정정 5)', () => {
   })
 })
 
+describe('분배 표기 ([[ADR-146]] 정정 21)', () => {
+  it('4x2 는 «N인 분배» 를 단다 — 총액보다 작은 이유를 그 자리에서 말한다', async () => {
+    const { getByTestId } = await 위젯(크기['4x2'], 뷰모델({ topItem: 최고가(2, { shareCount: 3 }) }))
+
+    expect(getByTestId('top-item-share')).toHaveTextContent('3인 분배')
+  })
+
+  it('단독이면 안 단다 — 나눈 적 없는데 «1인 분배» 는 없는 사건을 말하는 것이다', async () => {
+    const { queryByTestId } = await 위젯(크기['4x2'], 뷰모델({ topItem: 최고가(2, { shareCount: 1 }) }))
+
+    expect(queryByTestId('top-item-share')).toBeNull()
+  })
+
+  // 2x2 아래로는 158px 안에 아이콘 40 + 금액 78 이 이미 들어가 있어 이 줄을 넣을 폭이 없다.
+  // 억지로 넣으면 말줄임에 먹혀 설명이 아니라 잡음이 된다 — 자리가 있는 크기에만 둔다.
+  it.each(['2x2', '2x1', '1x1'] as const)('%s 은 자리가 없어 안 단다', async (size) => {
+    const { queryByTestId } = await 위젯(크기[size], 뷰모델({ topItem: 최고가(0, { shareCount: 3 }) }))
+
+    expect(queryByTestId('top-item-share')).toBeNull()
+  })
+})
+
 describe('크기가 버리는 것 ([[ADR-146]] 정정 5·13)', () => {
   // 이름은 잘려야 들어간다 — 잘린 한 조각보다 «얼마였나» 가 이 타일이 답하는 질문이다.
   it('2x1 은 아이템 이름을 버린다', async () => {

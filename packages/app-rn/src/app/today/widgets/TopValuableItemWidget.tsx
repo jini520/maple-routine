@@ -107,6 +107,28 @@ function ItemName(props: { drop: PricedDropView; sizeClass: string }): React.JSX
  *
  * 캐릭터 이름은 프로필 캐시에 있을 때만 온다 — 없으면 보스만 선다(ocid 를 대신 넣지 않는다).
  */
+/**
+ * «2인 분배» — **4x2 에만 선다.**
+ *
+ * 금액이 분배 후 실수령액이라([[ADR-146]] 정정 21) 사용자가 입력한 총액보다 작다. 그 차이를
+ * 설명하지 않으면 «숫자가 틀렸다» 로 읽힌다 — 실제로 이 위젯이 두 번 그렇게 신고됐다.
+ *
+ * 그런데 **2x2 아래로는 이 한 줄을 넣을 폭이 없다**(158px 안에 아이콘 40 + 금액 78 이 이미 들어가
+ * 있다). 억지로 넣으면 말줄임에 먹혀 «2인 분...» 이 되어 설명이 아니라 잡음이 된다. 그래서 자리가
+ * 실제로 있는 크기에만 두고, 나머지는 금액만 말한다.
+ *
+ * 단독(1인)이면 그리지 않는다 — 나눈 적이 없는데 «1인 분배» 라고 적으면 없는 사건을 말하는 것이다.
+ */
+function ShareNote(props: { drop: PricedDropView }): React.JSX.Element | null {
+  if (props.drop.shareCount <= 1) return null
+
+  return (
+    <Text testID="top-item-share" numberOfLines={1} className="text-[9.5px] text-text-disabled">
+      {props.drop.shareCount}인 분배
+    </Text>
+  )
+}
+
 function Origin(props: { drop: PricedDropView }): React.JSX.Element {
   const parts = [props.drop.characterName, props.drop.boss].filter(
     (part): part is string => part !== undefined,
@@ -137,7 +159,7 @@ function RestList(props: { rest: PricedDropView[] }): React.JSX.Element | null {
           </Text>
           {/* 목록 행에는 단위를 안 붙인다 — 왼쪽 1위가 이미 말했다. */}
           <Text style={TABULAR_NUMS} className="shrink-0 text-[10.5px] font-bold text-text">
-            {formatMesoShort(drop.priceMeso)}
+            {formatMesoShort(drop.payoutMeso)}
           </Text>
         </View>
       ))}
@@ -222,7 +244,7 @@ export function TopValuableItemWidget({ w, h, data }: WidgetProps): React.JSX.El
     return (
       <View testID="widget-top-valuable-item" className="flex-1 items-center justify-center gap-1 p-2">
         <Icon drop={view.top} sizePx={28} />
-        <Amount meso={view.top.priceMeso} sizeClass="text-[12px]" unit={false} />
+        <Amount meso={view.top.payoutMeso} sizeClass="text-[12px]" unit={false} />
       </View>
     )
   }
@@ -233,7 +255,7 @@ export function TopValuableItemWidget({ w, h, data }: WidgetProps): React.JSX.El
         <Icon drop={view.top} sizePx={36} />
         <View className="min-w-0 flex-1 gap-0.5">
           <Text className="text-[10px] font-bold text-text-muted">{TITLE}</Text>
-          <Amount meso={view.top.priceMeso} sizeClass="text-[15px]" unit />
+          <Amount meso={view.top.payoutMeso} sizeClass="text-[15px]" unit />
         </View>
       </View>
     )
@@ -247,7 +269,7 @@ export function TopValuableItemWidget({ w, h, data }: WidgetProps): React.JSX.El
         <View className="flex-row items-center gap-2">
           <Icon drop={view.top} sizePx={40} />
           <View className="min-w-0 flex-1">
-            <Amount meso={view.top.priceMeso} sizeClass="text-[15px]" unit />
+            <Amount meso={view.top.payoutMeso} sizeClass="text-[15px]" unit />
           </View>
         </View>
         <View className="gap-0.5">
@@ -265,9 +287,10 @@ export function TopValuableItemWidget({ w, h, data }: WidgetProps): React.JSX.El
         <View className="flex-row items-center gap-2">
           <Icon drop={view.top} sizePx={44} />
           <View className="min-w-0 flex-1 gap-0.5">
-            <Amount meso={view.top.priceMeso} sizeClass="text-[18px]" unit />
+            <Amount meso={view.top.payoutMeso} sizeClass="text-[18px]" unit />
             <ItemName drop={view.top} sizeClass="text-[11.5px]" />
             <Origin drop={view.top} />
+            <ShareNote drop={view.top} />
           </View>
         </View>
       </View>

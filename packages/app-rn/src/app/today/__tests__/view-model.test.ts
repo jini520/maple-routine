@@ -442,6 +442,53 @@ describe('최고가 아이템 ([[ADR-146]] 결정 9 · 정정 5)', () => {
     expect(model.topItem?.rest.map((entry) => entry.itemName)).toEqual(['2위', '3위', '4위', '5위'])
   })
 
+  // today 가 답하는 질문은 «내가 얼마를 벌었나» 다 — 총액으로 그리면 같은 화면의 「주간 보스 수익」
+  // (`sumDropPayout` = 분배 후 합)보다 최고가가 큰 화면이 나온다([[ADR-146]] 정정 21).
+  it('분배된 금액을 그린다 — 입력한 총액이 아니다', () => {
+    const model = buildTodayViewModel(
+      input({
+        dropGroups: [
+          dropGroup([
+            dropRecord({ itemName: '나눈 것', priceState: 'entered', priceMeso: 900, priceShare: 3 }),
+          ]),
+        ],
+      }),
+    )
+
+    expect(model.topItem?.top.payoutMeso).toBe(300)
+    expect(model.topItem?.top.shareCount).toBe(3)
+  })
+
+  it('순위도 분배 후 기준이다 — 표시와 순위가 갈리면 1위가 더 작은 숫자를 단다', () => {
+    const model = buildTodayViewModel(
+      input({
+        dropGroups: [
+          dropGroup([
+            // 총액은 이쪽이 크지만(1000 > 600) 6인이라 실수령은 167 이다.
+            dropRecord({ itemName: '총액 1위', priceState: 'entered', priceMeso: 1000, priceShare: 6 }),
+            dropRecord({ itemName: '실수령 1위', priceState: 'entered', priceMeso: 600, priceShare: 1 }),
+          ]),
+        ],
+      }),
+    )
+
+    expect(model.topItem?.top.itemName).toBe('실수령 1위')
+    expect(model.topItem?.top.payoutMeso).toBe(600)
+  })
+
+  it('분배 인원이 없으면 단독이다 — 나눈 적 없는 기록을 나누지 않는다', () => {
+    const model = buildTodayViewModel(
+      input({
+        dropGroups: [
+          dropGroup([dropRecord({ itemName: '단독', priceState: 'entered', priceMeso: 500 })]),
+        ],
+      }),
+    )
+
+    expect(model.topItem?.top.payoutMeso).toBe(500)
+    expect(model.topItem?.top.shareCount).toBe(1)
+  })
+
   // 값을 모르는 것을 «가장 싼 것» 으로 단정하지 않는다.
   it('가격 미입력 기록은 순위에 들지 않는다', () => {
     const model = buildTodayViewModel(

@@ -155,7 +155,8 @@ export function 드롭(부분: Partial<PricedDropView> = {}): PricedDropView {
     itemName: '가디언 엔젤 링',
     quantity: 1,
     category: 'equipment',
-    priceMeso: 12_000_000_000,
+    payoutMeso: 12_000_000_000,
+    shareCount: 1,
     ...부분,
   }
 }
@@ -196,13 +197,13 @@ export function 초기화(
 }
 
 /** 1위 + 2~5위. `restCount` 가 4보다 작으면 그만큼만 선다(4x2 의 «모자라면 있는 만큼»). */
-export function 최고가(restCount: number): TodayViewModel['topItem'] {
+export function 최고가(restCount: number, 상위?: Partial<PricedDropView>): TodayViewModel['topItem'] {
   return {
-    top: 드롭(),
+    top: 드롭(상위),
     rest: Array.from({ length: restCount }, (_, index) =>
       드롭({
         itemName: `${index + 2}위 아이템`,
-        priceMeso: 1_000_000_000 - index * 100_000_000,
+        payoutMeso: 1_000_000_000 - index * 100_000_000,
       }),
     ),
   }
