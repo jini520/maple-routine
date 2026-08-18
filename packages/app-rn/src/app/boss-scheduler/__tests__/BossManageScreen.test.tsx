@@ -57,9 +57,11 @@ const WEEKLY_NAMES = weeklyBossesData.weekly
   .map((entry) => entry.boss)
 const SEASON_NAME = weeklyBossesData.eventWeekly[0].boss
 const MONTHLY_NAME = weeklyBossesData.monthly[0].boss
+// 미출시 보스는 있을 때도 없을 때도 있다 — 벨로나 출시로 현재는 0개다([[ADR-151]] 결정 4·5).
+// `!` 로 단정하면 표본이 사라진 순간 `undefined` 를 찾는 검증이 되어 조용히 통과한다.
 const UNRELEASED_NAME = (weeklyBossesData.weekly as { boss: string; status?: string }[]).find(
   (entry) => entry.status === 'unreleased',
-)!.boss
+)?.boss
 
 function mockStore(overrides: Partial<Store> = {}): Store {
   const base = {
@@ -619,13 +621,19 @@ describe('BossManageScreen — 목록 구성 ([[ADR-056]])', () => {
     useTrackingModeStore.setState({ mode: 'manual' })
   })
 
-  it('미출시 보스는 목록에 나오지 않는다 — 이름이 아니라 status 로 거른다', async () => {
-    mockStore({ characters: [character()] })
+  // 참조표에 미출시 엔트리가 있을 때만 돌린다. 규칙([[ADR-056]] 결정 1)은 표본이 없어도 코드에
+  // 남아 있으므로 테스트도 남기되, 표본이 없으면 건너뛴다([[ADR-151]] 결정 5).
+  const 미출시표본있음 = UNRELEASED_NAME !== undefined
+  ;(미출시표본있음 ? it : it.skip)(
+    '미출시 보스는 목록에 나오지 않는다 — 이름이 아니라 status 로 거른다',
+    async () => {
+      mockStore({ characters: [character()] })
 
-    await renderScreen()
+      await renderScreen()
 
-    expect(screen.queryByText(UNRELEASED_NAME)).toBeNull()
-  })
+      expect(screen.queryByText(UNRELEASED_NAME!)).toBeNull()
+    },
+  )
 
   it.each([
     ['챌린저스 월드 캐릭터에게는 시즌 보스가 나온다', '챌린저스2', true],
@@ -654,6 +662,6 @@ describe('BossManageScreen — 목록 구성 ([[ADR-056]])', () => {
     await renderScreen()
 
     expect(screen.queryByText(SEASON_NAME)).toBeNull()
-    expect(screen.queryByText(UNRELEASED_NAME)).toBeNull()
+    if (UNRELEASED_NAME !== undefined) expect(screen.queryByText(UNRELEASED_NAME)).toBeNull()
   })
 })

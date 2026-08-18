@@ -15,30 +15,31 @@ import a2 from '../bosses/arcanus.webp'
 import a3 from '../bosses/armorDragon.webp'
 import a4 from '../bosses/baekyeon.webp'
 import a5 from '../bosses/bardrix.webp'
-import a6 from '../bosses/blackMage.webp'
-import a7 from '../bosses/crimsonQueen.webp'
-import a8 from '../bosses/damien.webp'
-import a9 from '../bosses/darknell.webp'
-import a10 from '../bosses/gloom.webp'
-import a11 from '../bosses/jupiter.webp'
-import a12 from '../bosses/kaling.webp'
-import a13 from '../bosses/kalos.webp'
-import a14 from '../bosses/limbo.webp'
-import a15 from '../bosses/lotus.webp'
-import a16 from '../bosses/lucid.webp'
-import a17 from '../bosses/maerin.webp'
-import a18 from '../bosses/magnus.webp'
-import a19 from '../bosses/maleficStar.webp'
-import a20 from '../bosses/papulatus.webp'
-import a21 from '../bosses/pierre.webp'
-import a22 from '../bosses/senya.webp'
-import a23 from '../bosses/seren.webp'
-import a24 from '../bosses/slime.webp'
-import a25 from '../bosses/vellum.webp'
-import a26 from '../bosses/verusHilla.webp'
-import a27 from '../bosses/vonBon.webp'
-import a28 from '../bosses/will.webp'
-import a29 from '../bosses/zakum.webp'
+import a6 from '../bosses/bellona.webp'
+import a7 from '../bosses/blackMage.webp'
+import a8 from '../bosses/crimsonQueen.webp'
+import a9 from '../bosses/damien.webp'
+import a10 from '../bosses/darknell.webp'
+import a11 from '../bosses/gloom.webp'
+import a12 from '../bosses/jupiter.webp'
+import a13 from '../bosses/kaling.webp'
+import a14 from '../bosses/kalos.webp'
+import a15 from '../bosses/limbo.webp'
+import a16 from '../bosses/lotus.webp'
+import a17 from '../bosses/lucid.webp'
+import a18 from '../bosses/maerin.webp'
+import a19 from '../bosses/magnus.webp'
+import a20 from '../bosses/maleficStar.webp'
+import a21 from '../bosses/papulatus.webp'
+import a22 from '../bosses/pierre.webp'
+import a23 from '../bosses/senya.webp'
+import a24 from '../bosses/seren.webp'
+import a25 from '../bosses/slime.webp'
+import a26 from '../bosses/vellum.webp'
+import a27 from '../bosses/verusHilla.webp'
+import a28 from '../bosses/vonBon.webp'
+import a29 from '../bosses/will.webp'
+import a30 from '../bosses/zakum.webp'
 
 export const BOSS_PORTRAIT_ASSETS: Record<string, ImageAssetRef> = {
   "adversary": a0,
@@ -47,28 +48,29 @@ export const BOSS_PORTRAIT_ASSETS: Record<string, ImageAssetRef> = {
   "armorDragon": a3,
   "baekyeon": a4,
   "bardrix": a5,
-  "blackMage": a6,
-  "crimsonQueen": a7,
-  "damien": a8,
-  "darknell": a9,
-  "gloom": a10,
-  "jupiter": a11,
-  "kaling": a12,
-  "kalos": a13,
-  "limbo": a14,
-  "lotus": a15,
-  "lucid": a16,
-  "maerin": a17,
-  "magnus": a18,
-  "maleficStar": a19,
-  "papulatus": a20,
-  "pierre": a21,
-  "senya": a22,
-  "seren": a23,
-  "slime": a24,
-  "vellum": a25,
-  "verusHilla": a26,
-  "vonBon": a27,
-  "will": a28,
-  "zakum": a29,
+  "bellona": a6,
+  "blackMage": a7,
+  "crimsonQueen": a8,
+  "damien": a9,
+  "darknell": a10,
+  "gloom": a11,
+  "jupiter": a12,
+  "kaling": a13,
+  "kalos": a14,
+  "limbo": a15,
+  "lotus": a16,
+  "lucid": a17,
+  "maerin": a18,
+  "magnus": a19,
+  "maleficStar": a20,
+  "papulatus": a21,
+  "pierre": a22,
+  "senya": a23,
+  "seren": a24,
+  "slime": a25,
+  "vellum": a26,
+  "verusHilla": a27,
+  "vonBon": a28,
+  "will": a29,
+  "zakum": a30,
 }
