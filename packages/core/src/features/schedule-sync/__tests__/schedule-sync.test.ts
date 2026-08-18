@@ -521,7 +521,78 @@ describe('syncSchedules', () => {
       resolveState(schedulerState('캐릭터1'))
       const [firstResults, secondResults] = await Promise.all([first, second])
 
-      expect(secondResults).toBe(firstResults)
+      // ADR-147 정정 42: 회차 결과를 «요청한 ocid» 로 거르면서 계약이 «같은 객체»에서
+      // «같은 내용»으로 내려왔다 — 거르기가 호출마다 새 배열을 만든다.
+      expect(secondResults).toEqual(firstResults)
+    })
+
+    it('요청하지 않은 ocid는 결과에서 빠진다 — 덮는 회차에 합류해도 자기 몫만 받는다 (ADR-147 정정 42)', async () => {
+      fetchCharacterListMock.mockResolvedValue([
+        account('acc-1', [character('ocid-1'), character('ocid-2')]),
+      ])
+      let resolveState: (state: SchedulerCharacterState) => void = () => {}
+      fetchSchedulerCharacterStateMock
+        .mockResolvedValueOnce(schedulerState('캐릭터1'))
+        .mockImplementationOnce(
+          () =>
+            new Promise<SchedulerCharacterState>((resolve) => {
+              resolveState = resolve
+            }),
+        )
+
+      const owner = syncSchedules(['ocid-1', 'ocid-2'])
+      await vi.waitFor(() => expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(2))
+      const joiner = syncSchedules(['ocid-2'])
+
+      resolveState(schedulerState('캐릭터2'))
+      const [ownerResults, joinerResults] = await Promise.all([owner, joiner])
+
+      expect(ownerResults.map((result) => result.ocid)).toEqual(['ocid-1', 'ocid-2'])
+      expect(joinerResults.map((result) => result.ocid)).toEqual(['ocid-2'])
+      // 합류했으므로 회차는 하나다 — 거르기는 결과만 좁히지 네트워크를 더 내지 않는다.
+      expect(fetchCharacterListMock).toHaveBeenCalledTimes(1)
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(2)
+    })
+
+    it('진행 중인 회차가 요청 ocid를 못 덮으면 합류하지 않고, 그 회차가 정산된 뒤 새 회차를 잇는다 (ADR-147 정정 42)', async () => {
+      fetchCharacterListMock.mockResolvedValue([
+        account('acc-1', [character('ocid-1'), character('ocid-2')]),
+      ])
+      let resolveFirst: (state: SchedulerCharacterState) => void = () => {}
+      fetchSchedulerCharacterStateMock.mockImplementationOnce(
+        () =>
+          new Promise<SchedulerCharacterState>((resolve) => {
+            resolveFirst = resolve
+          }),
+      )
+
+      const owner = syncSchedules(['ocid-1'])
+      await vi.waitFor(() => expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1))
+
+      // ocid-2는 진행 중인 회차 밖이다 — 남의 회차에 붙지 않고 그 회차가 끝나기를 기다린다.
+      fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터2'))
+      const outsider = syncSchedules(['ocid-2'])
+
+      resolveFirst(schedulerState('캐릭터1'))
+      const [ownerResults, outsiderResults] = await Promise.all([owner, outsider])
+
+      expect(ownerResults.map((result) => result.ocid)).toEqual(['ocid-1'])
+      expect(outsiderResults.map((result) => result.ocid)).toEqual(['ocid-2'])
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(1, 'key-1', 'ocid-1')
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-2')
+    })
+
+    it('앞 회차가 실패해도 못 덮은 요청은 자기 회차를 잇는다 (ADR-147 정정 42)', async () => {
+      fetchCharacterListMock
+        .mockRejectedValueOnce(new NexonNetworkError('timeout'))
+        .mockResolvedValue([account('acc-1', [character('ocid-2')])])
+      fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터2'))
+
+      const owner = syncSchedules(['ocid-1'])
+      const outsider = syncSchedules(['ocid-2'])
+
+      await expect(owner).rejects.toThrow()
+      expect((await outsider).map((result) => result.ocid)).toEqual(['ocid-2'])
     })
 
     it('합류한 호출의 onProgress는 불리지 않는다 — 진행률은 회차를 소유한 호출이 받는다', async () => {

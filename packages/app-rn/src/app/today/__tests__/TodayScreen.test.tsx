@@ -431,6 +431,48 @@ describe('TodayScreen — 진입 조회', () => {
 
 })
 
+// 수동 멤버십은 저장소 키 하나인데 **스토어 둘이 각자 사본**을 든다. 사본을 갱신하는 것은 각자
+// 자기 계열을 바꿀 때뿐이라(컨텐츠 추가는 컨텐츠 스토어만, 보스 추가는 보스 스토어만) 계열마다
+// 주인이 정해져 있다 — 이 화면은 **두 계열을 한 화면에서** 그리는 유일한 자리라 둘을 다 읽어야
+// 한다([[ADR-147]] 정정 43).
+describe('TodayScreen — 수동 멤버십을 어느 스토어에서 읽는가', () => {
+  it('컨텐츠 멤버십은 컨텐츠 스토어에서 읽는다 — 보스 스토어의 사본이 아니다', async () => {
+    useTrackingModeStore.setState({ mode: 'manual' })
+    setStores({
+      content: {
+        trackedOcids: ['ocid-1'],
+        characters: [contentView('ocid-1', 1)],
+        // character 범위 항목이어야 「남은 스케줄」에 남는다 — 공유 컨텐츠는 별도 위젯으로 뗐다
+        // ([[ADR-147]] 정정 28).
+        manualTrackedByOcid: {
+          'ocid-1': [{ contentName: '[일일 퀘스트] 소멸의 여로 조사', kind: 'daily' }],
+        },
+      },
+      boss: { trackedOcids: ['ocid-1'], characters: [bossView('ocid-1', 1)] },
+    })
+
+    await renderScreen()
+
+    expect(screen.queryAllByTestId('schedule-stat-line').length).toBeGreaterThan(0)
+  })
+
+  it('보스 멤버십은 보스 스토어에서 읽는다 — 컨텐츠 스토어의 사본이 아니다', async () => {
+    useTrackingModeStore.setState({ mode: 'manual' })
+    setStores({
+      content: { trackedOcids: ['ocid-1'], characters: [contentView('ocid-1', 1)] },
+      boss: {
+        trackedOcids: ['ocid-1'],
+        characters: [bossView('ocid-1', 1)],
+        manualTrackedByOcid: { 'ocid-1': [{ contentName: '스우', difficulty: '노멀', kind: 'boss' }] },
+      },
+    })
+
+    await renderScreen()
+
+    expect(screen.queryAllByTestId('schedule-stat-line').length).toBeGreaterThan(0)
+  })
+})
+
 describe('TodayScreen — 명시적 재조회', () => {
   // [[ADR-072]] 결정 2 — 당김과 헤더 버튼은 **같은 재조회**다.
   it('당김이 헤더 버튼과 같은 재조회를 부른다', async () => {

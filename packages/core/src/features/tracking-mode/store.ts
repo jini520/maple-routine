@@ -22,14 +22,15 @@ export const useTrackingModeStore = create<TrackingModeStore>()((set, get) => ({
   // 시드한다. 반환 Promise는 시드가 전부 끝난 뒤에만 resolve된다 — 호출부가 이걸 await하며
   // 로딩을 유지하면 결정 15의 "시드 완료 전까지 로딩 유지"가 충족된다.
   // ADR-042로 추적 목록이 단일화되어 content+boss 합집합 계산이 사라졌다.
+  // ADR-147 정정 42: "일괄"이 목록 전체를 **한 번에 넘기는** 것이 됐다 — 캐릭터마다 시드를 동시에
+  // 부르던 옛 모양은 단일 비행에 서로 합류해 전원이 첫 캐릭터의 스케줄로 시드됐다.
   async setMode(mode: TrackingMode) {
     const previousMode = get().mode
     await setTrackingMode(mode)
     set({ mode })
 
     if (mode === 'manual' && previousMode !== 'manual') {
-      const ocids = (await getTrackedCharacterOcids()) ?? []
-      await Promise.all(ocids.map((ocid) => seedManualTrackedContent(ocid)))
+      await seedManualTrackedContent((await getTrackedCharacterOcids()) ?? [])
     }
   },
 }))
