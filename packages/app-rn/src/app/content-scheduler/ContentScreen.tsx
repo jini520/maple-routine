@@ -40,7 +40,6 @@
 //    고 정한 자리가 이 파일에서 사라졌다.
 import { useEffect } from 'react'
 import { Pressable, RefreshControl, Text, View } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useReducedMotion } from 'react-native-reanimated'
 
 import type { DailyContent, WeeklyContent } from '@core/types'
@@ -65,6 +64,7 @@ import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScro
 import { SPIN_ANIMATION } from '../../lib/animation'
 import { AnimatedView } from '../../lib/nativewind-interop'
 import { ListChecksIcon, RefreshCwIcon } from '../../lib/icons'
+import { useTopSafeAreaPx } from '../../lib/top-safe-area'
 import { orderByTracked } from '../../lib/tracked-order'
 import { useThemeAppearance } from '../../theme/context'
 import { useScreenNavigation } from '../use-screen-navigation'
@@ -89,7 +89,7 @@ export function ContentScreen(): React.JSX.Element {
   } = useContentSchedulerStore()
   const { mode } = useTrackingModeStore()
   const navigation = useScreenNavigation()
-  const insets = useSafeAreaInsets()
+  const topSafeAreaPx = useTopSafeAreaPx()
   const { definition } = useThemeAppearance()
   const reduceMotion = useReducedMotion()
   // ADR-063: 동기화 전체 실패는 인라인 문단이 아니라 토스트로 알린다 — 지속 상태("n분 전")는
@@ -193,7 +193,7 @@ export function ContentScreen(): React.JSX.Element {
     // 헤더 셸을 쓰지 않는 가지라(제목 줄이 목록 없이 혼자 선다) 상단 안전영역을 여기서 먹는다 —
     // 웹의 `min-h-[calc(100dvh …)]` 자리는 `flex-1` 이다(탭 상자가 이미 탭바를 뺀 크기다).
     return (
-      <View testID="screen-Content" className="flex-1 p-4" style={{ paddingTop: insets.top }}>
+      <View testID="screen-Content" className="flex-1 p-4" style={{ paddingTop: topSafeAreaPx }}>
         {/* 헤더 셸을 안 쓰는 가지에서도 제목 줄은 같은 프리미티브다([[ADR-145]] 정정 1) — 빈 상태와
             목록 상태를 오갈 때 제목이 튀면 그것이 가장 눈에 띄는 자리다. */}
         <PageHeaderTitleRow>

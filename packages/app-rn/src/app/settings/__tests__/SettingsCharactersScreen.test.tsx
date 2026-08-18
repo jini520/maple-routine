@@ -271,8 +271,23 @@ describe('두 층 — 위는 계정을 넘고 아래는 계정 하나다 ([[ADR-
 
     await switchAccount(view, 'account-b')
 
-    expect(view.getByLabelText('캐릭터 목록을 불러오는 중')).toBeTruthy()
+    expect(view.getByText('캐릭터 목록을 불러오고 있어요')).toBeTruthy()
     expect(namesIn(view, 'character-manage-selected')).toEqual(['낟낟'])
+  })
+
+  // ★ [[ADR-061]] 정정 2 — 대기 자리에 **문구가 보인다.** 예전에는 `aria-label` 만 있어 화면에는
+  // 마크 하나뿐이었고, 그 마크가 [[ADR-061]] 정정 1 대로 **움직이지도 않았다**. 사용자 보고가
+  // 그 조합을 «진행중인지 알 수 없다» 로 반려했다(2026-08-18).
+  it('대기 문구가 화면에 보인다 — 마크만으로는 무엇을 기다리는지 모른다 ([[ADR-061]] 정정 2)', async () => {
+    mockContentStore({ trackedOcids: ['a1'] })
+    rosterHangingAccounts.add('account-b')
+    const view = await renderScreen()
+
+    await switchAccount(view, 'account-b')
+
+    // 마크와 문구가 **함께** 선다 — 둘 중 하나만 남기면 예전 얼굴로 돌아간다.
+    expect(view.getByText('캐릭터 목록을 불러오고 있어요')).toBeTruthy()
+    expect(view.getByTestId('maple-sweep-spinner', { includeHiddenElements: true })).toBeTruthy()
   })
 
   it('실패도 아래 자리에만 그려진다', async () => {
@@ -299,6 +314,64 @@ describe('두 층 — 위는 계정을 넘고 아래는 계정 하나다 ([[ADR-
 
     expect(view.getByTestId('stale-banner')).toBeTruthy()
     expect(namesIn(view, 'character-manage-candidates')).toEqual(['달의아이'])
+  })
+})
+
+// ★ [[ADR-144]] 정정 1 — **콜드 캐시에서 위 층이 비던 결함.**
+//
+// 위 층과 대표 얼굴은 로컬 캐시(`getCachedCharacterBasic`)만 읽었는데, 프로필 채우기 effect 가
+// **miss 에도 `null` 을 넣어** 그 ocid 를 영영 다시 안 읽었다(«모른다» 를 «없다» 로 기억). 온보딩에서는
+// 그 effect 가 로스터의 `character/basic` 이 캐시를 쓰기 **전에** 돌아, 신규 설치 사용자에게만 —
+// 그리고 하필 가장 눈에 띄는 대표 캐릭터에서 — 얼굴이 '?' 로, 고른 카드가 빈칸으로 남았다
+// (안드로이드 실기기 2026-08-18).
+//
+// 여기서는 캐시를 **끝까지 비워** 그 창을 영구화한다. 값은 이미 화면에 있는 로스터 응답에서 와야 한다.
+describe('콜드 캐시 — 캐시가 비어도 위 층이 빈칸으로 남지 않는다 ([[ADR-144]] 정정 1)', () => {
+  const 얼굴 = 'https://example.test/a1.png'
+
+  beforeEach(() => {
+    // 캐시가 한 번도 채워지지 않는 기기(= 신규 설치 직후의 그 창).
+    mockedGetCachedBasic.mockResolvedValue(null)
+    rosterByAccount['account-a'] = [
+      후보(낟낟, { imageUrl: 얼굴 }),
+      후보(달의아이),
+      후보(별헤는밤),
+    ]
+  })
+
+  it('대표 얼굴이 로스터 응답으로 채워진다 — 캐시가 비었다고 «?» 로 두지 않는다', async () => {
+    const view = await renderScreen()
+
+    expect(view.queryByTestId('account-select-face-fallback-account-a')).toBeNull()
+    expect(view.getByTestId('account-select-face-account-a').props.source).toEqual({ uri: 얼굴 })
+  })
+
+  it('캐시가 빈 채로 고른 캐릭터도 이름·레벨이 보인다 — 빈 행이 아니다', async () => {
+    const view = await renderScreen()
+
+    await press(view.getByText('달의아이'))
+
+    expect(namesIn(view, 'character-manage-selected')).toEqual(['달의아이'])
+    expect(textsIn(view.getByTestId('character-manage-selected'))).toContain('Lv.260 나이트로드')
+  })
+
+  // 결정 1-1 — 로스터가 못 채우는 자리(지금 열지 않은 계정의 캐릭터)로 «재시도를 막지 않는다» 를
+  // 따로 본다. 캐시가 **나중에** 차면 그때 그려져야 한다.
+  it('캐시가 나중에 차면 그때 채워진다 — miss 를 «없음» 으로 굳히지 않는다', async () => {
+    mockContentStore({ trackedOcids: ['b1'] })
+    let 캐시가찼다 = false
+    mockedGetCachedBasic.mockImplementation(async (ocid: string) =>
+      캐시가찼다 ? (캐시된캐릭터.get(ocid) ?? null) : null,
+    )
+
+    const view = await renderScreen()
+    expect(namesIn(view, 'character-manage-selected')).toEqual([])
+
+    캐시가찼다 = true
+    // `neededKey` 를 움직이는 사건 하나 — 후보를 고르면 위 층이 다시 읽힌다.
+    await press(view.getByText('달의아이'))
+
+    expect(namesIn(view, 'character-manage-selected')).toEqual(['밤샘메린', '달의아이'])
   })
 })
 

@@ -8,7 +8,6 @@
  * 조회는 호출부의 일이다). 여기서 조회를 하면 값 규칙을 검사하려고 포트를 목으로 세워야 한다.
  */
 
-import type { CachedCharacterBasicEntry } from '@core/storage/character-basic-cache'
 import type { MapleAccount, MapleCharacter } from '@core/types'
 import { compareByName, pickRepresentativeCharacter } from '../onboarding/representative-character'
 
@@ -88,22 +87,41 @@ export interface SelectedCharacterView {
 }
 
 /**
+ * 「선택됨」 층이 **실제로 읽는 필드만** ([[ADR-144]] 정정 1).
+ *
+ * `CharacterBasicProfile` 을 그대로 요구하지 않는 이유는 출처가 둘이 됐기 때문이다 — 로컬 캐시와
+ * **지금 열린 계정의 로스터**. 로스터 항목은 얼굴을 아직 모를 수 있어(`imageUrl: null`) 그 타입에
+ * 안 맞고, `accessFlag` 처럼 이 함수가 한 번도 안 읽는 필드를 억지로 지어내게 만든다.
+ */
+export interface KnownCharacterProfile {
+  name: string
+  level: number
+  imageUrl: string | null
+  world?: string
+  jobClass?: string
+}
+
+/**
  * 추적 목록을 «선택됨» 층의 행들로 편다.
  *
  * - **순서는 `orderedOcids` 그대로**다([[ADR-143]] 결정 3 — 저장 순서가 곧 표시 순서다).
  *   레벨로 다시 정렬하지 않는다.
- * - **캐시가 없으면 모르는 채로 둔다** — 레벨 `null`, 직업·월드 없음, 얼굴 `null`. 화면이 그
- *   자리를 비운다([[ADR-101]] 결정 1: 모르는 사실을 그리는 프레임을 만들지 않는다).
+ * - **모르면 모르는 채로 둔다** — 레벨 `null`, 직업·월드 없음, 얼굴 `null`. 화면이 그 자리를
+ *   비운다([[ADR-101]] 결정 1: 모르는 사실을 그리는 프레임을 만들지 않는다).
  * - **조회 불가 캐릭터도 빠지지 않는다**([[ADR-068]] 결정 4) — 빼면 그 ocid 를 해제할 방법이
- *   없다. 캐시에 값이 남아 있으면 그대로 쓰고, 플래그만 얹는다.
+ *   없다. 값이 남아 있으면 그대로 쓰고, 플래그만 얹는다.
+ *
+ * **프로필을 받지 «캐시 엔트리» 를 받지 않는다**([[ADR-144]] 정정 1). 이 함수는 `cachedAt` 을 한
+ * 번도 읽지 않았고, 엔트리를 요구하면 «캐시 말고 다른 출처» 를 넘기려는 호출부가 **언제 캐싱됐는지를
+ * 지어내야** 한다 — 그 정정이 로스터 응답을 이 자리로 흘리면서 실제로 그 요구가 생겼다.
  */
 export function buildSelectedCharacterViews(
   orderedOcids: string[],
-  cached: Map<string, CachedCharacterBasicEntry | null>,
+  profiles: Map<string, KnownCharacterProfile | null>,
   unavailableOcids: ReadonlySet<string>,
 ): SelectedCharacterView[] {
   return orderedOcids.map((ocid) => {
-    const profile = cached.get(ocid)?.profile ?? null
+    const profile = profiles.get(ocid) ?? null
 
     return {
       ocid,

@@ -50,7 +50,6 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import type { ScrollView } from 'react-native'
 import { Pressable, RefreshControl, Text, View } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useReducedMotion } from 'react-native-reanimated'
 
 import { useBossProfitStore } from '@core/features/boss-profit/store'
@@ -87,6 +86,7 @@ import {
 } from '../../lib/icons'
 import { AnimatedView } from '../../lib/nativewind-interop'
 import { TABULAR_NUMS } from '../../lib/text-styles'
+import { useTopSafeAreaPx } from '../../lib/top-safe-area'
 import { orderByTracked } from '../../lib/tracked-order'
 import { useThemeAppearance } from '../../theme/context'
 import { useScreenNavigation } from '../use-screen-navigation'
@@ -133,7 +133,7 @@ export function BossProfitScreen(): React.JSX.Element {
   } = useBossProfitStore()
 
   const navigation = useScreenNavigation()
-  const insets = useSafeAreaInsets()
+  const topSafeAreaPx = useTopSafeAreaPx()
   const { definition } = useThemeAppearance()
   const reduceMotion = useReducedMotion()
 
@@ -202,7 +202,7 @@ export function BossProfitScreen(): React.JSX.Element {
     // 웹의 `min-h-[calc(100dvh …)]` 자리는 `flex-1` 이다(탭 상자가 이미 탭바를 뺀 크기다).
     // 히스토리·가격 진입점은 두지 않는다([[ADR-071]] 결정 7 · [[ADR-124]] 결정 8).
     return (
-      <View testID="screen-Profit" className="flex-1 p-4" style={{ paddingTop: insets.top }}>
+      <View testID="screen-Profit" className="flex-1 p-4" style={{ paddingTop: topSafeAreaPx }}>
         {/* 헤더 셸을 안 쓰는 가지에서도 제목 줄은 같은 프리미티브다([[ADR-145]] 정정 1). */}
         <PageHeaderTitleRow>
           <Text className="text-lg font-semibold text-text">보스 수익</Text>
@@ -270,8 +270,10 @@ export function BossProfitScreen(): React.JSX.Element {
   const header = (
     // 공용 `PageHeader` 를 쓰지 않는 이유는 파일 머리 ① — 그 셸의 하단 페이드를 이 화면은 금지한다
     // ([[ADR-047]] 결정 6). 나머지 값은 그 컴포넌트와 같고, **상단 여백을 더하지 않는 것도 함께다**
-    // ([[ADR-139]] — 웹 `pt-[calc(1rem+var(--sa-top))]` 의 상수 몫을 옮기지 않는다).
-    <View testID="page-header" className="z-10 px-4 pb-2" style={{ paddingTop: insets.top }}>
+    // ([[ADR-139]] — 웹 `pt-[calc(1rem+var(--sa-top))]` 의 상수 몫을 옮기지 않는다). 그 «안전영역»
+    // 은 `useTopSafeAreaPx()` 다([[ADR-139]] 정정 1) — 셸을 복제한 화면이 인셋을 직접 읽으면 이
+    // 화면만 안드로이드에서 16.7px 위에 선다.
+    <View testID="page-header" className="z-10 px-4 pb-2" style={{ paddingTop: topSafeAreaPx }}>
 
       <View className="gap-4">
         {/* 히스토리 진입점은 탭 줄이 아니라 **제목 줄 우측**이고 아이콘이 아니라 글자다

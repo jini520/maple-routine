@@ -42,7 +42,6 @@
 //    ([[ADR-094]] 결정 1).
 import { useEffect, useState } from 'react'
 import { Pressable, RefreshControl, Text, View } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useReducedMotion } from 'react-native-reanimated'
 
 import type { BossDifficulty } from '@core/types'
@@ -75,6 +74,7 @@ import { SPIN_ANIMATION } from '../../lib/animation'
 import { AnimatedView } from '../../lib/nativewind-interop'
 import { RefreshCwIcon, SlidersHorizontalIcon, SwordsIcon, UsersIcon } from '../../lib/icons'
 import { MEDIA_TEXT_SHADOW_STYLE } from '../../lib/text-styles'
+import { useTopSafeAreaPx } from '../../lib/top-safe-area'
 import { orderByTracked } from '../../lib/tracked-order'
 import { useThemeAppearance } from '../../theme/context'
 import { useScreenNavigation } from '../use-screen-navigation'
@@ -171,7 +171,7 @@ export function BossScreen(): React.JSX.Element {
   } = useBossSchedulerStore()
   const { mode } = useTrackingModeStore()
   const navigation = useScreenNavigation()
-  const insets = useSafeAreaInsets()
+  const topSafeAreaPx = useTopSafeAreaPx()
   const { definition } = useThemeAppearance()
   const reduceMotion = useReducedMotion()
   // [[ADR-121]]: 카드 탭으로 여는 파티 인원 모달. 편집 중인 난이도를 함께 들고 있는 이유는
@@ -366,7 +366,7 @@ export function BossScreen(): React.JSX.Element {
     // 헤더 셸을 쓰지 않는 가지라(제목 줄이 목록 없이 혼자 선다) 상단 안전영역을 여기서 먹는다 —
     // 웹의 `min-h-[calc(100dvh …)]` 자리는 `flex-1` 이다(탭 상자가 이미 탭바를 뺀 크기다).
     return (
-      <View testID="screen-Boss" className="flex-1 p-4" style={{ paddingTop: insets.top }}>
+      <View testID="screen-Boss" className="flex-1 p-4" style={{ paddingTop: topSafeAreaPx }}>
         {/* 헤더 셸을 안 쓰는 가지에서도 제목 줄은 같은 프리미티브다([[ADR-145]] 정정 1) — 빈 상태와
             목록 상태를 오갈 때 제목이 튀면 그것이 가장 눈에 띄는 자리다. */}
         <PageHeaderTitleRow>

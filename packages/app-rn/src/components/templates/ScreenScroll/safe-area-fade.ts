@@ -51,7 +51,7 @@ export interface SafeAreaFade {
  *
  * | | 값 | 0이 되는 경우 |
  * |---|---|---|
- * | 상단 | 안전영역 | 헤더가 없는 화면(설정 계열) — 셸이 스크롤포트를 그만큼 내려, 깎으면 콘텐츠의 첫 줄을 깎는다 |
+ * | 상단 | 상단 안전영역(`lib/top-safe-area.ts` — 안드로이드는 하한 48) | 헤더가 없는 화면(설정 계열) — 셸이 스크롤포트를 그만큼 내려, 깎으면 콘텐츠의 첫 줄을 깎는다 |
  * | 하단 | 안전영역 **+ 바의 절반**(탭 화면) · 안전영역(하위 페이지) | 안드로이드 3버튼 내비의 하위 페이지 — 스크롤포트가 이미 인셋 위에서 끝난다(`bottom-inset.ts` 결정 19) |
  *
  * **하단이 안전영역 위로 올라가는 것이 정정 1 이다.** 안전영역까지만 두면 콘텐츠가 **선명한 채로
@@ -69,9 +69,15 @@ export function resolveSafeAreaFade(options: {
   hasHeader: boolean
   /** 아래에 떠 있는 바가 있는가 — 페이드가 안전영역 위로 얼마나 올라가는지가 갈린다. */
   hasTabBar: boolean
-  /** `useSafeAreaInsets().top`. */
-  insetTopPx: number
-  /** `useSafeAreaInsets().bottom`. */
+  /**
+   * `useTopSafeAreaPx()` — **인셋이 아니다**([[ADR-139]] 정정 1: 안드로이드는 하한 48).
+   *
+   * 이름이 아래 `insetBottomPx` 와 갈리는 것이 일부러다. 이 값은 헤더 패딩과 **같은 함수**에서
+   * 와야 하고(제목 윗변 = 이 페이드의 끝선), 인셋을 그대로 넣으면 안드로이드에서 페이드가 제목보다
+   * 16.7px 짧아져 그 선이 갈라진다.
+   */
+  topSafeAreaPx: number
+  /** `useSafeAreaInsets().bottom` — 하단에는 하한이 없다(갈림은 `bottom-inset.ts` 가 갖는다). */
   insetBottomPx: number
   /** 떠 있는 바가 먹는 세로 몫 — `bottom-inset.ts` 에 넘기는 값과 **같은 값**이어야 한다. */
   barSpacePx: number
@@ -79,7 +85,7 @@ export function resolveSafeAreaFade(options: {
   portBottomPx: ScreenBottomInset['portBottomPx']
 }): SafeAreaFade {
   return {
-    topPx: options.hasHeader ? options.insetTopPx : 0,
+    topPx: options.hasHeader ? options.topSafeAreaPx : 0,
     bottomPx:
       Math.max(0, options.insetBottomPx - options.portBottomPx) +
       (options.hasTabBar ? barFadePx(options.barSpacePx) : 0),

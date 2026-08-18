@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { resolveBottomBarMetrics } from '../../../lib/bottom-bar-metrics'
 import { LinearGradient } from '../../../lib/nativewind-interop'
+import { useTopSafeAreaPx } from '../../../lib/top-safe-area'
 import { useScrollIndicatorStyle } from '../../../theme/context'
 import { resolveScreenBottomInset } from './bottom-inset'
 import {
@@ -155,6 +156,10 @@ export function ScreenScroll({
   hasTabBar = true,
 }: ScreenScrollProps): React.JSX.Element {
   const insets = useSafeAreaInsets()
+  // 상단은 인셋이 **아니라** 하한이 깔린 값이다([[ADR-139]] 정정 1) — 헤더(`PageHeader`)와 아래
+  // 페이드가 **같은 값을 봐야** 제목 윗변과 페이드 끝선이 계속 한 선에 있다. 하단은 그대로 인셋을
+  // 본다(그쪽 갈림은 `bottom-inset.ts` 가 갖는다).
+  const topSafeAreaPx = useTopSafeAreaPx()
   const indicatorStyle = useScrollIndicatorStyle()
   // 바가 먹는 세로는 **기기 폭의 함수**다([[ADR-132]] 정정 30) — 바와 여기가 같은 함수를 봐야
   // 콘텐츠가 바 뒤로 들어가거나 바닥에 빈 띠를 남기지 않는다. `100dvh` 짝을 안전영역 프레임에서
@@ -170,7 +175,7 @@ export function ScreenScroll({
   const fade = resolveSafeAreaFade({
     hasHeader: header !== undefined,
     hasTabBar,
-    insetTopPx: insets.top,
+    topSafeAreaPx,
     insetBottomPx: insets.bottom,
     barSpacePx,
     portBottomPx: bottom.portBottomPx,
@@ -179,7 +184,7 @@ export function ScreenScroll({
   // 스크롤포트를 "실제로 보이는 영역"에 맞추는 두 값([[ADR-099]] 결정 6). **콘텐츠 패딩이 아니라
   // 상자의 마진**이어야 한다 — 인디케이터는 콘텐츠가 아니라 스크롤포트 위에 겹쳐 그려진다.
   const port = {
-    marginTop: header === undefined ? insets.top : 0,
+    marginTop: header === undefined ? topSafeAreaPx : 0,
     marginBottom: bottom.portBottomPx,
   }
 
