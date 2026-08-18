@@ -81,6 +81,19 @@ def enableMinifyInReleaseBuilds = (findProperty('android.enableMinifyInReleaseBu
  */
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
+// 릴리스 서명([[ADR-091]]). `app-capacitor` 와 **같은 업로드 키**를 쓴다 — 스토어에 이미 올라간
+// 앱의 업데이트라 다른 키는 애초에 거부된다. 키스토어는 저장소 밖에 있고 이 파일은 커밋하지
+// 않는다(`packages/app-rn/.gitignore`).
+//
+// **없으면 조용히 건너뛴다** — 클론만 한 사람의 debug 빌드가 깨지지 않아야 한다. 그 대신
+// release 빌드는 서명이 안 붙은 채로 나오고, 그것은 Play 가 거부하므로 조용히 잘못 나가지 않는다.
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+def hasSigningConfig = keystorePropertiesFile.exists()
+if (hasSigningConfig) {
+    keystorePropertiesFile.withInputStream { keystoreProperties.load(it) }
+}
+
 android {
     ndkVersion rootProject.ext.ndkVersion
 
@@ -104,15 +117,23 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        if (hasSigningConfig) {
+            release {
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
+        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            if (hasSigningConfig) {
+                signingConfig signingConfigs.release
+            }
             def enableShrinkResources = findProperty('android.enableShrinkResourcesInReleaseBuilds') ?: 'false'
             shrinkResources enableShrinkResources.toBoolean()
             minifyEnabled enableMinifyInReleaseBuilds
