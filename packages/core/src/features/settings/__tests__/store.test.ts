@@ -378,8 +378,7 @@ describe('useSettingsStore.commitAccountChange (ADR-086 결정 6)', () => {
 
     await useSettingsStore.getState().commitAccountChange(['ocid-a', 'ocid-b'])
 
-    expect(seedManualTrackedContentMock).toHaveBeenCalledWith('ocid-a')
-    expect(seedManualTrackedContentMock).toHaveBeenCalledWith('ocid-b')
+    expect(seedManualTrackedContentMock).toHaveBeenCalledWith(['ocid-a', 'ocid-b'])
   })
 
   it('자동 모드에서는 시드하지 않는다', async () => {

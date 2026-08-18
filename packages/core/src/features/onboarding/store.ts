@@ -280,7 +280,7 @@ export const useOnboardingStore = create<OnboardingStore>()((set, get) => {
 
       if (useTrackingModeStore.getState().mode === 'manual') {
         set((state) => onboardingReducer(state, { type: 'SUBMIT_CONTENT_CHARACTERS' }))
-        await Promise.all(ocids.map((ocid) => seedManualTrackedContent(ocid)))
+        await seedManualTrackedContent(ocids)
       }
 
       set((state) => onboardingReducer(state, { type: 'ONBOARDING_FINISHED' }))

@@ -143,7 +143,8 @@ function input(overrides: Partial<TodayViewModelInput> = {}): TodayViewModelInpu
     contentCharacters: [],
     bossCharacters: [],
     trackingMode: 'auto',
-    manualTrackedByOcid: null,
+    manualContentByOcid: null,
+    manualBossByOcid: null,
     characterIssues: {},
     profitRows: [],
     profitDropsByRowKey: {},
@@ -932,7 +933,7 @@ describe('공유 컨텐츠 — 유니온만 조건부다 ([[ADR-147]] 정정 30)
       input({
         orderedOcids: ['a'],
         trackingMode: 'manual',
-        manualTrackedByOcid: { a: [{ contentName: UNION_PC, kind: 'weekly' }] },
+        manualContentByOcid: { a: [{ contentName: UNION_PC, kind: 'weekly' }] },
         contentCharacters: [sharedView('a')],
       }),
     )

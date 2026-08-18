@@ -554,7 +554,7 @@ describe('useContentSchedulerStore', () => {
       await useContentSchedulerStore.getState().saveTrackedOcids(['ocid-1', 'ocid-2'])
 
       expect(seedManualTrackedContentMock).toHaveBeenCalledTimes(1)
-      expect(seedManualTrackedContentMock).toHaveBeenCalledWith('ocid-2')
+      expect(seedManualTrackedContentMock).toHaveBeenCalledWith(['ocid-2'])
       // 시드가 refresh(syncSchedules)보다 먼저 실행된다 — 저장 진행률 모달이 시드까지 커버(결정 15)
       expect(seedManualTrackedContentMock.mock.invocationCallOrder[0]).toBeLessThan(
         syncSchedulesMock.mock.invocationCallOrder[0],

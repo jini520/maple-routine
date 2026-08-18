@@ -315,7 +315,17 @@ export interface TodayViewModelInput {
   /** 보스 스케줄러 스토어. */
   bossCharacters: readonly BossCharacterView[]
   trackingMode: TrackingMode
-  manualTrackedByOcid: Record<string, ManualTrackedItem[]> | null
+  /**
+   * 수동 멤버십의 **계열별 주인** ([[ADR-147]] 정정 43).
+   *
+   * 저장소 키는 하나인데(`manualTrackedContent`) 스케줄러 스토어 **둘이 각자 사본**을 든다. 사본을
+   * 갱신하는 것은 각자 자기 계열을 바꿀 때뿐이므로(`addManualContent` 는 컨텐츠 스토어만,
+   * `addManualBoss` 는 보스 스토어만) 계열마다 최신인 사본이 정해져 있다. 스케줄러 화면 둘은 자기
+   * 계열만 그려 이 사실을 몰라도 되지만, **두 계열을 한 화면에서 그리는 것은 여기뿐**이라 이 조립은
+   * 둘을 다 받아야 한다. 하나로 합쳐 받으면 반대쪽 계열이 옛 사본에 굳는다.
+   */
+  manualContentByOcid: Record<string, ManualTrackedItem[]> | null
+  manualBossByOcid: Record<string, ManualTrackedItem[]> | null
   /** 보스 수익 스토어의 캐릭터 단위 실패 표식([[ADR-068]] 결정 3) — 위젯 2·3 이 물려받는다. */
   characterIssues: Readonly<Record<string, 'unavailable' | 'failed'>>
   /** 보스 수익 스토어. 이번 주가 아닌 기간의 행은 이 파일이 걸러낸다(파일 머리 「이번 주」). */
@@ -419,7 +429,7 @@ function contentsInputOf(
   return {
     dailyContents: content?.dailyContents ?? [],
     weeklyContents: content?.weeklyContents ?? [],
-    manualItems: (content === undefined ? undefined : input.manualTrackedByOcid?.[content.ocid]) ?? [],
+    manualItems: (content === undefined ? undefined : input.manualContentByOcid?.[content.ocid]) ?? [],
   }
 }
 
@@ -578,7 +588,7 @@ function remainingBosses(
   cycle: BossCycle,
 ): RemainingBossView[] {
   if (boss === undefined) return []
-  return displayedBosses(boss, cycle, input.trackingMode, input.manualTrackedByOcid)
+  return displayedBosses(boss, cycle, input.trackingMode, input.manualBossByOcid)
     .filter((matched) => !matched.isComplete)
     .map((matched) => ({
       name: matched.matchedBossName ?? matched.apiName,

@@ -71,21 +71,21 @@ describe('setMode', () => {
 })
 
 describe('setMode — 시드 트리거 (a): auto → manual 전환 (ADR-035 결정 14)', () => {
-  it('auto에서 manual로 전환하면 추적 중인 모든 ocid를 시드한다', async () => {
+  // ADR-147 정정 42: 캐릭터마다 부르면 그 호출들이 단일 비행에 서로 합류해 전원이 첫 캐릭터의
+  // 스케줄로 시드된다 — 목록을 통째로 넘겨 회차를 하나로 만드는 것이 계약이다.
+  it('auto에서 manual로 전환하면 추적 중인 ocid 목록을 한 번에 넘겨 시드한다', async () => {
     vi.mocked(getTrackedCharacterOcids).mockResolvedValue(['ocid-a', 'ocid-b', 'ocid-c'])
 
     await useTrackingModeStore.getState().setMode('manual')
 
-    expect(seedManualTrackedContent).toHaveBeenCalledTimes(3)
-    expect(seedManualTrackedContent).toHaveBeenCalledWith('ocid-a')
-    expect(seedManualTrackedContent).toHaveBeenCalledWith('ocid-b')
-    expect(seedManualTrackedContent).toHaveBeenCalledWith('ocid-c')
+    expect(seedManualTrackedContent).toHaveBeenCalledTimes(1)
+    expect(seedManualTrackedContent).toHaveBeenCalledWith(['ocid-a', 'ocid-b', 'ocid-c'])
   })
 
-  it('추적 목록이 아직 없으면(null) 시드 없이 전환만 한다', async () => {
+  it('추적 목록이 아직 없으면(null) 빈 목록을 넘긴다 — 시드가 할 일이 없다', async () => {
     await useTrackingModeStore.getState().setMode('manual')
 
-    expect(seedManualTrackedContent).not.toHaveBeenCalled()
+    expect(seedManualTrackedContent).toHaveBeenCalledWith([])
     expect(useTrackingModeStore.getState().mode).toBe('manual')
   })
 

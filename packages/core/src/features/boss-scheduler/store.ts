@@ -234,7 +234,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
     // 동기화보다 먼저 실행 — 화면의 저장 진행률 모달이 saveTrackedOcids 전체를 기다리므로
     // 시드가 끝날 때까지 자연스럽게 로딩이 유지된다(결정 15).
     if (added.length > 0 && useTrackingModeStore.getState().mode === 'manual') {
-      await Promise.all(added.map((ocid) => seedManualTrackedContent(ocid)))
+      await seedManualTrackedContent(added)
       const seeded = Object.fromEntries(
         await Promise.all(added.map(async (ocid) => [ocid, await getManualTrackedContent(ocid)] as const)),
       )

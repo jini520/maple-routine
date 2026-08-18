@@ -791,15 +791,14 @@ describe('useOnboardingStore.submitContentCharacters', () => {
     expect(useOnboardingStore.getState().status).toBe('completed')
   })
 
-  it('manual 모드면 각 ocid에 대해 seedManualTrackedContent를 호출한 뒤 completed로 전이한다', async () => {
+  it('manual 모드면 고른 ocid 목록을 한 번에 넘겨 시드한 뒤 completed로 전이한다', async () => {
     trackingModeRef.current = 'manual'
     primeSelectingContentCharacters()
 
     await useOnboardingStore.getState().submitContentCharacters(['ocid-a', 'ocid-b'])
 
     expect(setTrackedCharacterOcidsMock).toHaveBeenCalledWith(['ocid-a', 'ocid-b'])
-    expect(seedManualTrackedContentMock).toHaveBeenCalledWith('ocid-a')
-    expect(seedManualTrackedContentMock).toHaveBeenCalledWith('ocid-b')
+    expect(seedManualTrackedContentMock).toHaveBeenCalledWith(['ocid-a', 'ocid-b'])
     expect(useOnboardingStore.getState().status).toBe('completed')
   })
 

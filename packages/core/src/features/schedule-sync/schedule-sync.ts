@@ -371,11 +371,24 @@ async function runSyncRound(
 // **키는 "회차" 하나다 — ocid 집합이 아니다.** 스케줄러 셋과 today 가 같은 추적 목록을 보므로
 // 집합이 늘 같고, 집합별 슬롯을 두면 목록이 조금 다른 조합에서 같은 캐릭터가 여전히 두 번 나간다.
 //
-// **대가 둘.** ① 진행 중인 회차와 다른 ocid 목록으로 들어온 호출(추적 목록 저장의 `added`,
-// 수동 모드 시드의 단일 ocid)도 그 회차의 결과를 받는다 — 자기가 요청한 캐릭터가 그 안에 없을 수
-// 있다. 둘 다 사용자가 저장을 누른 직후의 경로라 화면 진입 자동 조회와 겹치는 창이 좁다.
-// ② 합류한 호출의 `onProgress` 는 불리지 않는다 — 진행률은 회차를 소유한 호출이 받는다.
-let inFlightRound: Promise<CharacterScheduleSync[]> | null = null
+// **다만 합류에는 자격이 있다 — 진행 중인 회차가 요청 ocid 를 전부 덮어야 한다**(ADR-147 정정 42).
+// 결정 4 는 이걸 대가 ①("자기가 요청한 캐릭터가 그 안에 없을 수 있다")로 적고 창이 좁다고 봤는데,
+// 수동 모드 시드는 **자기가 자기와 부딪쳐** 그 창이 100% 였다: ocid 마다 회차를 동시에 내면 첫
+// 호출이 슬롯을 잡고 나머지가 전부 거기 합류해, 추적 캐릭터 전원이 첫 캐릭터의 스케줄로 시드됐다.
+// 못 덮는 요청은 그 회차가 **정산된 뒤에** 자기 회차를 잇는다 — 동시에 둘을 내보내면 단일 비행이
+// 막으려던 중복이 되살아난다. 키는 그대로 회차이므로 집합이 늘 같은 today·스케줄러 셋은 한 회차다.
+//
+// **대가**: 합류한 호출의 `onProgress` 는 불리지 않는다 — 진행률은 회차를 소유한 호출이 받는다.
+let inFlightRound: { ocids: ReadonlySet<string>; promise: Promise<CharacterScheduleSync[]> } | null =
+  null
+
+// ADR-147 정정 42: 호출부 여섯이 전부 결과를 "내가 물어본 캐릭터들"로 취급해 map 하므로, 회차가
+// 더 많이 물어봤더라도 초과분은 돌려주지 않는다(스케줄러 저장 경로에서는 그 초과분이 keptViews 와
+// 겹쳐 중복 행이 된다). 순서는 회차 순서 그대로다 — 표시 순서는 화면 셀렉터의 몫이다.
+function pickRequested(round: CharacterScheduleSync[], ocids: string[]): CharacterScheduleSync[] {
+  const wanted = new Set(ocids)
+  return round.filter((result) => wanted.has(result.ocid))
+}
 
 export async function syncSchedules(
   ocids: string[],
@@ -385,14 +398,19 @@ export async function syncSchedules(
     return []
   }
 
-  if (inFlightRound !== null) {
-    return inFlightRound
+  while (inFlightRound !== null) {
+    const current = inFlightRound
+    if (ocids.every((ocid) => current.ocids.has(ocid))) {
+      return pickRequested(await current.promise, ocids)
+    }
+    // 실패도 정산이다 — 앞 회차의 실패를 내 요청의 실패로 삼지 않고 내 회차를 새로 낸다.
+    await current.promise.catch(() => undefined)
   }
 
   const round = runSyncRound(ocids, onProgress)
-  inFlightRound = round
+  inFlightRound = { ocids: new Set(ocids), promise: round }
   try {
-    return await round
+    return pickRequested(await round, ocids)
   } finally {
     // 성공·실패와 무관하게 정산되면 즉시 비운다. 실패한 회차를 들고 있으면 네트워크가 돌아와도
     // 다음 진입이 그 실패를 다시 받는다.

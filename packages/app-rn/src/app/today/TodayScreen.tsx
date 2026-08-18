@@ -161,7 +161,10 @@ export function TodayScreen(): React.JSX.Element {
     contentCharacters: content.characters,
     bossCharacters: boss.characters,
     trackingMode: mode,
-    manualTrackedByOcid: boss.manualTrackedByOcid,
+    // 계열마다 **주인이 다르다** ([[ADR-147]] 정정 43) — 컨텐츠 멤버십을 보스 스토어 사본에서
+    // 읽으면 수동 컨텐츠를 추가해도 이 화면만 옛 값에 굳는다(그 사본을 갱신하는 것은 보스 변경뿐).
+    manualContentByOcid: content.manualTrackedByOcid,
+    manualBossByOcid: boss.manualTrackedByOcid,
     characterIssues: profit.characterIssues,
     profitRows: profit.rows,
     profitDropsByRowKey: profit.dropsByRowKey,
