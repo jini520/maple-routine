@@ -7,6 +7,8 @@
 // jsdom 도 jest 도 레이아웃을 계산하지 않으므로 ③ 을 «픽셀» 로는 못 묻는다. 그래서 **높이를 정하는
 // 구조**(둘째 줄이 언제나 있고 칸 폭이 상수다)를 계약으로 적는다.
 
+import { act, fireEvent } from '@testing-library/react-native'
+
 import { renderAtom, flattenStyle, 기본테마 } from '../../../../components/__tests__/render-atom'
 import { RemainingScheduleWidget } from '../RemainingScheduleWidget'
 import { 뷰모델, 스케줄목록, 스케줄행, 빈_뷰모델 } from './widget-fixture'
@@ -81,7 +83,7 @@ describe('강조는 굵기 하나뿐이다 ([[ADR-146]] 정정 9)', () => {
 describe('행 높이는 데이터에 안 흔들린다 ([[ADR-146]] 정정 9·12)', () => {
   it('보스가 0이면 둘째 줄이 **비되 자리는 남는다**', async () => {
     const { getAllByTestId, queryByText } = await 위젯([
-      스케줄행({ weeklyBoss: 0, monthlyBoss: 0 }),
+      스케줄행({ weeklyBosses: [], monthlyBosses: [] }),
     ])
 
     expect(getAllByTestId('schedule-stat-line')).toHaveLength(2)
@@ -93,7 +95,7 @@ describe('행 높이는 데이터에 안 흔들린다 ([[ADR-146]] 정정 9·12)
   // 않으면 보스가 0인 캐릭터의 행만 접혀 auto 높이 계산이 성립하지 않는다.
   it('수치 줄 높이가 값에 상관없이 같다', async () => {
     const 채워진 = await 위젯([스케줄행()])
-    const 비어있는 = await 위젯([스케줄행({ weeklyBoss: 0, monthlyBoss: 0 })])
+    const 비어있는 = await 위젯([스케줄행({ weeklyBosses: [], monthlyBosses: [] })])
 
     const 높이 = (view: Awaited<ReturnType<typeof 위젯>>): unknown[] =>
       view.getAllByTestId('schedule-stat-line').map((line) => flattenStyle(line.props.style).height)
@@ -104,17 +106,104 @@ describe('행 높이는 데이터에 안 흔들린다 ([[ADR-146]] 정정 9·12)
   })
 
   it('0 인 칸은 「일퀘 0」이 아니라 빈 칸이다', async () => {
-    const { queryByText } = await 위젯([스케줄행({ dailyQuest: 0 })])
+    const { queryByText } = await 위젯([스케줄행({ dailyNames: [] })])
 
     expect(queryByText('일퀘')).toBeNull()
     expect(queryByText('0')).toBeNull()
   })
 })
 
+describe('아코디언 ([[ADR-146]] 정정 25)', () => {
+  it('처음에는 전부 접혀 있다', async () => {
+    const { queryByTestId } = await 위젯(스케줄목록(3))
+
+    expect(queryByTestId('schedule-detail')).toBeNull()
+  })
+
+  it('행을 누르면 그 캐릭터의 남은 것이 이름으로 선다', async () => {
+    const view = await 위젯([스케줄행()])
+
+    await act(async () => {
+      fireEvent.press(view.getAllByTestId('schedule-toggle')[0])
+    })
+
+    expect(view.getByTestId('schedule-detail')).toBeTruthy()
+    expect(view.getByText('소멸의 여로')).toBeTruthy()
+    expect(view.getByText('에르다 스펙트럼')).toBeTruthy()
+    expect(view.getByText('스우')).toBeTruthy()
+  })
+
+  // 「외 N개」로 접으면 펼친 이유가 사라진다 — 펼침은 «더 보겠다» 는 명시적 행동이다.
+  it('본문은 자르지 않는다 — 일퀘 넷이면 넷 다 적는다', async () => {
+    const view = await 위젯([스케줄행()])
+
+    await act(async () => {
+      fireEvent.press(view.getAllByTestId('schedule-toggle')[0])
+    })
+
+    for (const name of ['소멸의 여로', '츄츄 아일랜드', '레헬른', '아르카나']) {
+      expect(view.getByText(name)).toBeTruthy()
+    }
+  })
+
+  it('보스는 공용 난이도 배지를 쓴다 — 주간과 검마가 한 그룹이다', async () => {
+    const view = await 위젯([스케줄행()])
+
+    await act(async () => {
+      fireEvent.press(view.getAllByTestId('schedule-toggle')[0])
+    })
+
+    expect(view.getAllByTestId('schedule-detail-boss')).toHaveLength(3)
+    expect(view.getByText('검은마법사')).toBeTruthy()
+    // 스우·검은마법사가 둘 다 하드다 — 배지가 보스마다 하나씩 선다.
+    expect(view.getAllByText('하드')).toHaveLength(2)
+    expect(view.getByText('카오스')).toBeTruthy()
+  })
+
+  it('열린 행을 다시 누르면 닫힌다', async () => {
+    const view = await 위젯([스케줄행()])
+
+    await act(async () => {
+      fireEvent.press(view.getAllByTestId('schedule-toggle')[0])
+    })
+    expect(view.getByTestId('schedule-detail')).toBeTruthy()
+
+    await act(async () => {
+      fireEvent.press(view.getAllByTestId('schedule-toggle')[0])
+    })
+    expect(view.queryByTestId('schedule-detail')).toBeNull()
+  })
+
+  // 여섯이 다 열리면 타일이 1,000px 을 넘고, 타일 안 스크롤은 [[ADR-146]] 결정 3 이 금지한다.
+  it('한 번에 하나만 열린다', async () => {
+    const view = await 위젯(스케줄목록(3))
+
+    await act(async () => {
+      fireEvent.press(view.getAllByTestId('schedule-toggle')[0])
+    })
+    await act(async () => {
+      fireEvent.press(view.getAllByTestId('schedule-toggle')[1])
+    })
+
+    expect(view.getAllByTestId('schedule-detail')).toHaveLength(1)
+  })
+
+  it('CLEAR 와 동기화 실패는 누를 수 없다 — 보여 줄 것이 없거나 모른다', async () => {
+    const view = await 위젯([
+      스케줄행({ ocid: 'open' }),
+      스케줄행({ ocid: 'clear', dailyNames: [], weeklyNames: [], weeklyBosses: [], monthlyBosses: [] }),
+      스케줄행({ ocid: 'issue', hasSyncIssue: true }),
+    ])
+
+    // 셋 중 남은 것이 있는 하나만 눌린다.
+    expect(view.queryAllByTestId('schedule-toggle')).toHaveLength(1)
+  })
+})
+
 describe('배지는 «상태» 에만 선다 ([[ADR-146]] 정정 9)', () => {
   it('남은 것이 없으면 수치 자리에 `CLEAR` 가 선다', async () => {
     const { getByTestId, queryByTestId } = await 위젯([
-      스케줄행({ dailyQuest: 0, weeklyQuest: 0, weeklyBoss: 0, monthlyBoss: 0 }),
+      스케줄행({ dailyNames: [], weeklyNames: [], weeklyBosses: [], monthlyBosses: [] }),
     ])
 
     expect(getByTestId('schedule-clear')).toBeTruthy()
@@ -124,10 +213,10 @@ describe('배지는 «상태» 에만 선다 ([[ADR-146]] 정정 9)', () => {
   it('전부 완료여도 **같은 목록**이다 — 축하 UI 를 두지 않는다', async () => {
     const 완료 = 스케줄목록(3).map((row) => ({
       ...row,
-      dailyQuest: 0,
-      weeklyQuest: 0,
-      weeklyBoss: 0,
-      monthlyBoss: 0,
+      dailyNames: [],
+      weeklyNames: [],
+      weeklyBosses: [],
+      monthlyBosses: [],
       remainingTotal: 0,
     }))
     const { getAllByTestId, getAllByText } = await 위젯(완료)

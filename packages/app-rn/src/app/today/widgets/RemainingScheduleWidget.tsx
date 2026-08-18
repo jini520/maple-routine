@@ -33,11 +33,14 @@
  * 동수면 캐릭터 관리 순서 · **동기화 실패는 언제나 맨 아래**).
  */
 
-import { Image, Text, View } from 'react-native'
+import { useState } from 'react'
+import { Image, Pressable, Text, View } from 'react-native'
 
+import { DifficultyBadge } from '../../../components/atoms/DifficultyBadge/DifficultyBadge'
 import { faceCropStyle } from '../../../lib/face-crop'
+import { ChevronDownIcon, ChevronUpIcon } from '../../../lib/icons'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
-import type { ScheduleRowView } from '../view-model'
+import type { RemainingBossView, ScheduleRowView } from '../view-model'
 import type { WidgetProps } from './types'
 
 /** 행 초상화 지름 — 목록 밀도(행 45px)에 맞춘 값이라 `FACE_AVATAR_SIZE`(36)보다 작다. */
@@ -99,16 +102,16 @@ function StatGrid(props: { row: ScheduleRowView }): React.JSX.Element {
         className="flex-row items-center gap-3"
         style={{ height: STAT_LINE_HEIGHT_PX }}
       >
-        <StatCell label={LABEL.dailyQuest} value={props.row.dailyQuest} />
-        <StatCell label={LABEL.weeklyQuest} value={props.row.weeklyQuest} />
+        <StatCell label={LABEL.dailyQuest} value={props.row.dailyNames.length} />
+        <StatCell label={LABEL.weeklyQuest} value={props.row.weeklyNames.length} />
       </View>
       <View
         testID="schedule-stat-line"
         className="flex-row items-center gap-3"
         style={{ height: STAT_LINE_HEIGHT_PX }}
       >
-        <StatCell label={LABEL.weeklyBoss} value={props.row.weeklyBoss} />
-        <StatCell label={LABEL.monthlyBoss} value={props.row.monthlyBoss} />
+        <StatCell label={LABEL.weeklyBoss} value={props.row.weeklyBosses.length} />
+        <StatCell label={LABEL.monthlyBoss} value={props.row.monthlyBosses.length} />
       </View>
     </View>
   )
@@ -156,14 +159,98 @@ function Portrait(props: { row: ScheduleRowView }): React.JSX.Element {
   )
 }
 
-function ScheduleRow(props: { row: ScheduleRowView; first: boolean }): React.JSX.Element {
+/** 본문의 항목 하나 — 이름만 있는 알약. 보스는 아래 `BossChip` 이 난이도를 앞에 단다. */
+function NameChip(props: { name: string }): React.JSX.Element {
+  return (
+    <Text
+      testID="schedule-detail-chip"
+      numberOfLines={1}
+      className="rounded-md bg-surface-2 px-1.5 py-0.5 text-[10px] leading-tight text-text"
+    >
+      {props.name}
+    </Text>
+  )
+}
+
+/**
+ * 보스 한 줄 — 난이도는 **공용 `DifficultyBadge`** 가 그린다(사용자 지정).
+ *
+ * 이 화면만의 표기를 새로 만들지 않는 것이 요점이다. 같은 난이도가 보스 스케줄러·수익 화면과
+ * 다른 색으로 보이면 그것이 같은 값이라는 것을 사람이 알아볼 수 없다.
+ */
+function BossChip(props: { boss: RemainingBossView }): React.JSX.Element {
+  return (
+    <View testID="schedule-detail-boss" className="flex-row items-center gap-1">
+      <DifficultyBadge difficulty={props.boss.difficulty} />
+      <Text numberOfLines={1} className="text-[10px] leading-tight text-text">
+        {props.boss.name}
+      </Text>
+    </View>
+  )
+}
+
+function DetailGroup(props: { label: string; children: React.ReactNode }): React.JSX.Element {
+  return (
+    <View className="gap-1">
+      <Text className="text-[9.5px] font-bold tracking-[.02em] text-text-muted">{props.label}</Text>
+      <View className="flex-row flex-wrap items-center gap-1">{props.children}</View>
+    </View>
+  )
+}
+
+/**
+ * 펼친 본문 — **항목을 이름으로 낱개로** 센다([[ADR-146]] 정정 25).
+ *
+ * **자르지 않는다.** 일퀘가 여덟이면 여덟을 다 적는다 — 「외 3개」로 접으면 펼친 이유가 사라진다.
+ * 펼침은 «더 보겠다» 는 명시적 행동이고 그 답을 다시 접는 것은 앞뒤가 안 맞는다. 늘어난 높이는
+ * `resolveWidgetPositions` 가 아래 타일을 밀어 흡수한다(그것이 `h: 'auto'` 를 둔 이유다).
+ *
+ * 보스는 **주간과 검마를 한 그룹**으로 묶는다 — 접힘의 수치는 둘을 갈라 세지만(한도가 다르다),
+ * 펼침에서 물어보는 것은 «무엇이 남았나» 하나라 굳이 두 줄로 나눌 이유가 없다.
+ */
+function ScheduleDetail(props: { row: ScheduleRowView }): React.JSX.Element {
   const { row } = props
+  const bosses = [...row.weeklyBosses, ...row.monthlyBosses]
 
   return (
-    <View
-      testID="schedule-row"
-      className={`flex-row items-center gap-2 py-1.5${props.first ? '' : ' border-t border-border'}`}
-    >
+    <View testID="schedule-detail" className="gap-2 pb-2.5 pl-10 pt-0.5">
+      {row.dailyNames.length > 0 && (
+        <DetailGroup label={LABEL.dailyQuest}>
+          {row.dailyNames.map((name) => (
+            <NameChip key={name} name={name} />
+          ))}
+        </DetailGroup>
+      )}
+      {row.weeklyNames.length > 0 && (
+        <DetailGroup label={LABEL.weeklyQuest}>
+          {row.weeklyNames.map((name) => (
+            <NameChip key={name} name={name} />
+          ))}
+        </DetailGroup>
+      )}
+      {bosses.length > 0 && (
+        <DetailGroup label="보스">
+          {bosses.map((boss) => (
+            <BossChip key={`${boss.difficulty}-${boss.name}`} boss={boss} />
+          ))}
+        </DetailGroup>
+      )}
+    </View>
+  )
+}
+
+function ScheduleRow(props: {
+  row: ScheduleRowView
+  first: boolean
+  expanded: boolean
+  onToggle: () => void
+}): React.JSX.Element {
+  const { row } = props
+  // 펼칠 것이 없는 행은 누를 수도 없다 — CLEAR 는 보여 줄 것이 없고, 실패는 **모른다**.
+  const openable = !row.hasSyncIssue && row.remainingTotal > 0
+
+  const head = (
+    <View testID="schedule-row" className="flex-row items-center gap-2 py-1.5">
       <Portrait row={row} />
       <Text
         testID="schedule-name"
@@ -179,11 +266,41 @@ function ScheduleRow(props: { row: ScheduleRowView; first: boolean }): React.JSX
       ) : (
         <StatGrid row={row} />
       )}
+      {openable &&
+        (props.expanded ? (
+          <ChevronUpIcon testID="schedule-chevron" className="h-3.5 w-3.5 shrink-0 text-text-muted" strokeWidth={2.5} aria-hidden />
+        ) : (
+          <ChevronDownIcon testID="schedule-chevron" className="h-3.5 w-3.5 shrink-0 text-text-disabled" strokeWidth={2.5} aria-hidden />
+        ))}
+    </View>
+  )
+
+  return (
+    <View className={props.first ? '' : 'border-t border-border'}>
+      {openable ? (
+        <Pressable testID="schedule-toggle" role="button" aria-expanded={props.expanded} onPress={props.onToggle}>
+          {head}
+        </Pressable>
+      ) : (
+        head
+      )}
+      {openable && props.expanded && <ScheduleDetail row={row} />}
     </View>
   )
 }
 
 export function RemainingScheduleWidget({ data }: WidgetProps): React.JSX.Element {
+  /**
+   * 펼친 행 하나 — **`null` 은 전부 접힘**이다.
+   *
+   * **하나만 연다.** 여섯 명이 다 열리면 이 타일이 1,000px 을 넘고, 타일 안 스크롤은
+   * [[ADR-146]] 결정 3 이 금지한다 — 동시 펼침을 하나로 묶는 것이 그 금지와 짝이 되는 선택이다.
+   *
+   * **기억하지 않는다**(사용자 지정). 저장소에 쓰지 않으므로 앱을 다시 켜면 전부 접혀 있다
+   * ([[ADR-096]] 결정 3 의 탭 상태와 같은 태도). 화면이 탭이라 앱을 켜 둔 동안은 남는다.
+   */
+  const [expandedOcid, setExpandedOcid] = useState<string | null>(null)
+
   return (
     <View testID="widget-remaining-schedule" className="p-3">
       {/* 합계도 칩이 아니라 텍스트다([[ADR-146]] 정정 9) — 숫자만 굵다. 동기화 실패 캐릭터의 몫은
@@ -202,7 +319,15 @@ export function RemainingScheduleWidget({ data }: WidgetProps): React.JSX.Elemen
         <Text className="pt-2.5 text-xs text-text-muted">추적 중인 캐릭터가 없습니다</Text>
       ) : (
         data.schedule.map((row, index) => (
-          <ScheduleRow key={row.ocid} row={row} first={index === 0} />
+          <ScheduleRow
+            key={row.ocid}
+            row={row}
+            first={index === 0}
+            expanded={expandedOcid === row.ocid}
+            // 열린 행을 다시 누르면 닫는다(사용자 지정) — 닫는 방법이 셰브런뿐이면 «어디를 눌러야
+            // 닫히나» 를 사용자가 배워야 한다.
+            onToggle={() => setExpandedOcid((current) => (current === row.ocid ? null : row.ocid))}
+          />
         ))
       )}
     </View>

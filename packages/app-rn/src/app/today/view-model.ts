@@ -58,7 +58,7 @@ import { dropPayoutMeso, sumDropPayout } from '@core/lib/drop-price'
 import { getCurrentKstDateKey, getMostRecentWeeklyResetKst } from '@core/lib/reset-clock'
 import type { ManualTrackedItem } from '@core/storage/manual-tracked-content'
 import type { TrackingMode } from '@core/storage/tracking-mode'
-import type { BossCycle, CharacterBasicProfile, DropCategory } from '@core/types'
+import type { BossCycle, BossDifficulty, CharacterBasicProfile, DropCategory } from '@core/types'
 import type { RecordedDrop } from '@core/types/drops'
 
 import { orderByTracked } from '../../lib/tracked-order'
@@ -74,7 +74,12 @@ import {
   displayedWeeklyContents,
 } from '@core/features/content-scheduler/displayed-contents'
 
-import { dailyContentProgress, weeklyContentProgress } from '../content-scheduler/content-completion'
+import {
+  shortDailyContentName,
+  shortWeeklyContentName,
+} from '@core/features/content-scheduler/short-content-name'
+
+import { dailyContentCompletion, weeklyContentCompletion } from '../content-scheduler/content-completion'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
@@ -107,14 +112,27 @@ export interface RepresentativeView {
  * 라벨(일퀘·주간퀘·주간 보스·**검마**)은 위젯이 붙인다 — 「검마」는 월간 보스가 하나뿐이라 성립하는
  * 이름이라([[ADR-146]] 정정 3) 참조 데이터에서 파생시키지 않는다.
  */
+/** 아코디언 본문의 보스 한 줄 — 난이도는 공용 `DifficultyBadge` 가 그린다. */
+export interface RemainingBossView {
+  name: string
+  difficulty: BossDifficulty
+}
+
+/**
+ * 캐릭터 한 줄.
+ *
+ * **개수 대신 이름을 든다**([[ADR-146]] 정정 25). 접힘의 수치는 이 배열들의 `length` 이고, 펼침의
+ * 본문은 같은 배열을 이름으로 그린다 — 두 층이 **같은 배열 하나**를 보므로 «세는 것 = 보이는 것»
+ * 이 구조로 성립한다. 개수를 따로 들면 그 둘이 갈릴 자리가 생긴다.
+ */
 export interface ScheduleRowView {
   ocid: string
   characterName: string
   imageUrl: string | null
-  dailyQuest: number
-  weeklyQuest: number
-  weeklyBoss: number
-  monthlyBoss: number
+  dailyNames: readonly string[]
+  weeklyNames: readonly string[]
+  weeklyBosses: readonly RemainingBossView[]
+  monthlyBosses: readonly RemainingBossView[]
   remainingTotal: number
   /** [[ADR-068]] 결정 3의 캐릭터 단위 실패 표식. 참이면 위젯이 수치 대신 「동기화 실패」를 그린다. */
   hasSyncIssue: boolean
@@ -372,22 +390,25 @@ function buildScheduleRows(input: TodayViewModelInput): ScheduleRowView[] {
       weeklyContents: content?.weeklyContents ?? [],
       manualItems: (content === undefined ? undefined : input.manualTrackedByOcid?.[content.ocid]) ?? [],
     }
-    const daily = dailyContentProgress(displayedDailyContents(contentsInput, input.trackingMode))
-    const weekly = weeklyContentProgress(displayedWeeklyContents(contentsInput, input.trackingMode))
-    const dailyQuest = daily.total - daily.completed
-    const weeklyQuest = weekly.total - weekly.completed
-    const weeklyBoss = countRemainingBosses(input, boss, 'weekly')
-    const monthlyBoss = countRemainingBosses(input, boss, 'monthly')
+    const dailyNames = displayedDailyContents(contentsInput, input.trackingMode)
+      .filter((item) => dailyContentCompletion(item) === 'incomplete')
+      .map((item) => shortDailyContentName(item.name))
+    const weeklyNames = displayedWeeklyContents(contentsInput, input.trackingMode)
+      .filter((item) => weeklyContentCompletion(item) === 'incomplete')
+      .map((item) => shortWeeklyContentName(item.name))
+    const weeklyBosses = remainingBosses(input, boss, 'weekly')
+    const monthlyBosses = remainingBosses(input, boss, 'monthly')
 
     return {
       ocid,
       characterName: content?.characterName ?? boss?.characterName ?? '',
       imageUrl: content?.imageUrl ?? boss?.imageUrl ?? null,
-      dailyQuest,
-      weeklyQuest,
-      weeklyBoss,
-      monthlyBoss,
-      remainingTotal: dailyQuest + weeklyQuest + weeklyBoss + monthlyBoss,
+      dailyNames,
+      weeklyNames,
+      weeklyBosses,
+      monthlyBosses,
+      remainingTotal:
+        dailyNames.length + weeklyNames.length + weeklyBosses.length + monthlyBosses.length,
       hasSyncIssue: input.characterIssues[ocid] !== undefined,
     }
   })
@@ -406,15 +427,24 @@ function buildScheduleRows(input: TodayViewModelInput): ScheduleRowView[] {
     .map((entry) => entry.row)
 }
 
-function countRemainingBosses(
+/**
+ * 남은 보스 — **개수가 아니라 목록**이다(아코디언 본문이 이름을 그린다).
+ *
+ * 이름은 `matchedBossName ?? apiName` — 참조 데이터에 매핑된 이름이 있으면 그것, 없으면 API 원문
+ * 그대로다([[ADR-008]] «매핑 실패는 원문 그대로»).
+ */
+function remainingBosses(
   input: TodayViewModelInput,
   boss: BossCharacterView | undefined,
   cycle: BossCycle,
-): number {
-  if (boss === undefined) return 0
-  return displayedBosses(boss, cycle, input.trackingMode, input.manualTrackedByOcid).filter(
-    (matched) => !matched.isComplete,
-  ).length
+): RemainingBossView[] {
+  if (boss === undefined) return []
+  return displayedBosses(boss, cycle, input.trackingMode, input.manualTrackedByOcid)
+    .filter((matched) => !matched.isComplete)
+    .map((matched) => ({
+      name: matched.matchedBossName ?? matched.apiName,
+      difficulty: matched.difficulty,
+    }))
 }
 
 function buildProfit(

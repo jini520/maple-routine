@@ -47,7 +47,9 @@ export const WIDGETS: readonly WidgetDefinition[] = [
     // `h: 'auto'` 는 가로를 다 쓰는 타일에만 허용된다([[ADR-146]] 정정 1).
     id: 'remaining-schedule',
     sizes: [{ w: 4, h: 'auto' }],
-    target: 'Content',
+    // **`target` 이 없다**([[ADR-146]] 정정 25). 행이 각자 눌려 아코디언을 여닫으므로 타일 전체를
+    // 감싼 누름 영역이 설 수 없고(중첩 `Pressable`), 컨텐츠 화면으로 보내던 경로도 함께 사라졌다
+    // (사용자 지정 — 하단바의 «스케줄 → 컨텐츠» 가 이미 그 길이다).
     Component: RemainingScheduleWidget,
   },
   {

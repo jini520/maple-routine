@@ -65,16 +65,23 @@ export const 대표_캐릭터: RepresentativeView = {
   expRate: 80.3,
 }
 
-/** 남은 것이 넷 다 있는 행. 수치는 **서로 다른 값**이라 테스트가 글자로 집을 수 있다. */
+/**
+ * 남은 것이 넷 다 있는 행. **개수는 배열 길이에서 나온다** — 4·3·2·1 이라 테스트가 글자로 집을 수 있다.
+ *
+ * 이름은 실제 참조 데이터의 것을 쓴다(지어낸 이름은 «지역명만 쓴다» 판정을 타지 못한다).
+ */
 export function 스케줄행(부분: Partial<ScheduleRowView> = {}): ScheduleRowView {
   const base: ScheduleRowView = {
     ocid: 'ocid-1',
     characterName: '야간비행',
     imageUrl: 'https://open.api.nexon.com/static/maplestory/character/look/one',
-    dailyQuest: 4,
-    weeklyQuest: 3,
-    weeklyBoss: 2,
-    monthlyBoss: 1,
+    dailyNames: ['소멸의 여로', '츄츄 아일랜드', '레헬른', '아르카나'],
+    weeklyNames: ['에르다 스펙트럼', '크리티아스', '헤이븐'],
+    weeklyBosses: [
+      { name: '스우', difficulty: '하드' },
+      { name: '파풀라투스', difficulty: '카오스' },
+    ],
+    monthlyBosses: [{ name: '검은마법사', difficulty: '하드' }],
     remainingTotal: 10,
     hasSyncIssue: false,
   }
@@ -85,7 +92,10 @@ export function 스케줄행(부분: Partial<ScheduleRowView> = {}): ScheduleRow
     ? {
         ...merged,
         remainingTotal:
-          merged.dailyQuest + merged.weeklyQuest + merged.weeklyBoss + merged.monthlyBoss,
+          merged.dailyNames.length +
+          merged.weeklyNames.length +
+          merged.weeklyBosses.length +
+          merged.monthlyBosses.length,
       }
     : merged
 }

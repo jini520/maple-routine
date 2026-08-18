@@ -167,8 +167,8 @@ describe('남은 스케줄 — 분류 넷 ([[ADR-146]] 정정 3)', () => {
       }),
     )
 
-    expect(model.schedule[0].dailyQuest).toBe(2)
-    expect(model.schedule[0].weeklyQuest).toBe(1)
+    expect(model.schedule[0].dailyNames).toHaveLength(2)
+    expect(model.schedule[0].weeklyNames).toHaveLength(1)
   })
 
   // 무릉도장은 «다 했다» 가 정의되지 않는다 — 세면 링도 위젯도 영원히 안 찬다.
@@ -184,7 +184,7 @@ describe('남은 스케줄 — 분류 넷 ([[ADR-146]] 정정 3)', () => {
       }),
     )
 
-    expect(model.schedule[0].weeklyQuest).toBe(0)
+    expect(model.schedule[0].weeklyNames).toHaveLength(0)
     expect(model.scheduleTotal).toBe(0)
   })
 
@@ -205,8 +205,8 @@ describe('남은 스케줄 — 분류 넷 ([[ADR-146]] 정정 3)', () => {
       }),
     )
 
-    expect(model.schedule[0].weeklyBoss).toBe(2)
-    expect(model.schedule[0].monthlyBoss).toBe(1)
+    expect(model.schedule[0].weeklyBosses).toHaveLength(2)
+    expect(model.schedule[0].monthlyBosses).toHaveLength(1)
     expect(model.schedule[0].remainingTotal).toBe(3)
   })
 
@@ -227,7 +227,7 @@ describe('남은 스케줄 — 분류 넷 ([[ADR-146]] 정정 3)', () => {
       }),
     )
 
-    expect(model.schedule[0].weeklyBoss).toBe(0)
+    expect(model.schedule[0].weeklyBosses).toHaveLength(0)
   })
 
   it('선택된 캐릭터를 전부 담는다 — 「외 N명」 접기가 없다', () => {
