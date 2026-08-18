@@ -126,12 +126,18 @@ export interface CharacterPickerRosterOptions {
   accountId?: string
 }
 
-// ADR-053 결정 2 (2026-07-29): 확인되지 않은 캐릭터는 목록에 넣지 않는다 — 확인 경로는
+// ADR-053 결정 1 (2026-07-29): 확인되지 않은 캐릭터는 목록에 넣지 않는다 — 확인 경로는
 // character-basic-cache/조회 원장 또는 character/basic 응답뿐이고, 그 값이 없는 character/list
-// 응답으로 목록을 채우지 않는다. 그래서 ①에서 보여줄 stub이 한 건도 없는 콜드 스타트(캐시 삭제·
-// 재설치 직후)에는 흘릴 중간 결과가 추측뿐이므로 ②·③의 중간 onUpdate를 억제하고, 모든
-// character/basic이 끝난 뒤 1회만 방출한다(그동안 호출부는 스피너를 보여준다). 반대로 stub을
-// 한 건이라도 방출했다면 위 ADR-016 SWR 동작이 그대로 유지된다 — 즉시 표시 + 개별 patch.
+// 응답으로 목록을 채우지 않는다.
+//
+// ADR-149 가 그 결정의 **결정 2**(콜드 스타트에서는 ②·③의 중간 방출을 억제하고 완료 후 1회만)를
+// 정정했다. 억제의 근거는 «콜드 스타트의 중간 결과는 추측이거나 튀는 레이아웃» 이었는데, 그것은
+// 캐시로 채우는 ②에만 맞았다 — ③에 담기는 항목은 character/basic 응답과 자격 판정을 통과한
+// **확인된** 것이라 결정 1 이 요구하는 조건을 이미 만족한다. 형제가 안 끝났다는 이유로 그것을
+// 붙들고 있으면 45명 중 40명이 확인됐는데 가장 느린 1명이 화면 전체를 잡는다(ADR-016 이 막으려던
+// 바로 그 그림이다).
+//
+// 그래서 단계별 분기가 사라지고 아래 `emit` 의 조건 둘로 접힌다.
 export async function getCharacterPickerRoster(
   onUpdate: (entries: CharacterPickerEntry[]) => void,
   options?: CharacterPickerRosterOptions,
@@ -141,10 +147,34 @@ export async function getCharacterPickerRoster(
   const { apiKey, accountId } = await resolveAccountContext(options?.accountId)
   const trackedOcids = new Set((await getTrackedCharacterOcids()) ?? [])
 
-  // ADR-053 결정 2: 판정 기준은 "캐시 인덱스가 비었는가"가 아니라 "①에서 실제로 사용자에게
-  // 보여줄 것을 방출했는가"다 — 인덱스에 ocid가 있어도 전부 자격 미확인이면 화면에 보여줄
-  // 게 없는 것은 마찬가지이기 때문이다.
+  // 한 번이라도 사용자에게 보여줄 것을 흘렸는가. 인덱스에 ocid가 있어도 전부 자격 미확인이면
+  // 아직 거짓이다 — 판정 기준은 "캐시 인덱스가 비었는가"가 아니라 "실제로 방출했는가"다.
   let hasVisibleView = false
+  // 401/403·429 는 모든 캐릭터에 같이 적용되는 실패다. 아래 `emit` 이 방출 직전에 이 값을 본다.
+  let globalError: unknown = null
+
+  const liveEntries = new Map<string, CharacterPickerEntry>()
+
+  /**
+   * 중간 방출의 **유일한 문**([[ADR-149]]).
+   *
+   * - **전역 실패가 확정된 뒤에는 흘리지 않는다**(결정 3) — 부분 목록이 «완성된 결과» 로 오해된다.
+   *   이미 흘린 것은 되돌리지 않고, 호출부가 reject 를 받아 실패 경로를 그린다([[ADR-062]] 결정 4).
+   * - **참는 것은 「빈 목록」이지 「짧은 목록」이 아니다**(결정 2) — 한 건도 확인하지 못한 채
+   *   방출하면 화면이 «모두 조회할 수 없어요» 를 그린다([[ADR-143]] 결정 10 · [[ADR-101]] 결정 1).
+   *   한 건이라도 흘린 뒤에는 **줄어드는 방출도 통과**시킨다 — 자격 미달로 빠진 항목이 화면에
+   *   남아 있으면 안 된다.
+   */
+  function emit(): void {
+    if (globalError !== null) {
+      return
+    }
+    if (!hasVisibleView && liveEntries.size === 0) {
+      return
+    }
+    hasVisibleView = true
+    onUpdate(sortPickerEntries(Array.from(liveEntries.values())))
+  }
 
   // ADR-017 결정 6 (2026-07-12 재수정): character/list는 캐싱하지 않으므로(개명·전직·레벨업
   // 정확성 우선, ADR 2026-07-11 정정) 이 함수가 열릴 때마다 그 네트워크 응답을 기다려야 한다.
@@ -190,8 +220,6 @@ export async function getCharacterPickerRoster(
     return
   }
 
-  const liveEntries = new Map<string, CharacterPickerEntry>()
-
   await Promise.all(
     characters.map(async (character) => {
       const cached = await getCachedCharacterBasic(character.ocid)
@@ -212,18 +240,13 @@ export async function getCharacterPickerRoster(
       })
     }),
   )
-  if (hasVisibleView) {
-    onUpdate(sortPickerEntries(Array.from(liveEntries.values())))
-  }
-
-  let globalError: unknown = null
+  emit()
 
   await Promise.all(
     characters.map(async (character) => {
-      if (globalError !== null) {
-        return
-      }
-
+      // 여기서 globalError 를 봐도 조기 중단은 안 된다 — 이 본문은 첫 await 전까지 전부 동기로
+      // 돌아 첫 401 이 도착할 때 이미 전원이 지나간 뒤다. 그래서 판정은 `emit()` 안으로 옮겼다
+      // ([[ADR-149]] 결정 3) — 발사는 못 막아도 «실패 확정 후 방출» 은 막는다.
       try {
         // ADR-113 결정 1: 캐시 쓰기까지 공유 경로 안이다. 온보딩 한 바퀴(프로브 → 예열 → 피커)가
         // 5분 안에 끝나면 여기서는 네트워크가 나가지 않고 방금 채워진 캐시를 그대로 쓴다.
@@ -254,9 +277,7 @@ export async function getCharacterPickerRoster(
         } else {
           liveEntries.delete(character.ocid)
         }
-        if (hasVisibleView) {
-          onUpdate(sortPickerEntries(Array.from(liveEntries.values())))
-        }
+        emit()
       } catch (error) {
         if (error instanceof NexonAuthError || error instanceof NexonRateLimitError) {
           globalError = error
@@ -278,9 +299,7 @@ export async function getCharacterPickerRoster(
           } else {
             liveEntries.delete(character.ocid)
           }
-          if (hasVisibleView) {
-            onUpdate(sortPickerEntries(Array.from(liveEntries.values())))
-          }
+          emit()
           return
         }
         // 그 외 개별 실패 — 이미 있던 캐시 값을 그대로 유지

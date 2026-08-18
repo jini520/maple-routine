@@ -49,12 +49,21 @@ export async function readKnownEligibility(
   return judgeFromLedger(await getScheduleProbeLedger(ocid, now)) ?? 'unknown'
 }
 
+/** 한 날짜가 스윕에 남기는 것. 날짜끼리 독립이라 이것만 모으면 판정이 선다. */
+type DayOutcome = 'completion' | 'observed' | 'unavailable' | 'skipped'
+
 /**
  * `access_flag` 가 false 인 캐릭터에게 "최근 14일 안에 활동한 적이 있는가"를 묻는다([[ADR-086]] 결정 3).
  *
  * 호출 비용은 조회 원장이 결정한다 — 이미 본 날짜는 다시 부르지 않으므로, 예열이 한 번 훑고 나면
- * 그 뒤로는 **그날 새로 윈도우에 들어온 날짜 1개**만 남는다(결정 4). 완료를 찾으면 즉시 멈추므로
- * 실제로 게임을 하는 캐릭터는 1~2회에 끝나고, 13일을 다 쓰는 것은 정말 휴면인 캐릭터뿐이다.
+ * 그 뒤로는 **그날 새로 윈도우에 들어온 날짜 1개**만 남는다(결정 4).
+ *
+ * **미조회 날짜는 한꺼번에 나간다**([[ADR-148]] 결정 1). 옛 루프는 하루씩 순서대로 물으며 완료를
+ * 찾은 날짜에서 멈췄는데, 이 함수가 피커의 캐릭터별 체인 안에서 `character/basic` **뒤에** 붙어
+ * 있어서 그 직렬 구간이 그대로 «캐릭터가 화면에 뜨는 시간» 이었다(최대 13 RTT). 날짜끼리는 서로를
+ * 모르므로 — 각 날짜가 하는 일은 «원장에 기록» 과 «완료를 봤는가» 뿐이다 — 순서를 없애도 답이
+ * 바뀌지 않는다. 바뀌는 것은 **조기 종료가 아끼던 호출**뿐이고(결정 2), 그 대가는 서비스 단계 키의
+ * 초당 500건 예산 안에서 치른다([[ADR-116]] 결정 1 — 개발 단계 키는 온보딩을 통과하지 못한다).
  *
  * `todayState` 는 이미 오늘 응답을 손에 쥔 호출부(예열)가 넘긴다 — 같은 호출을 두 번 하지 않기
  * 위해서다. 오늘 응답은 **원장에 기록하지 않는다**: 오늘은 아직 끝나지 않은 날이라 "완료 없음"을
@@ -82,34 +91,40 @@ export async function resolveCharacterEligibility(
     return 'eligible'
   }
 
-  for (const dateKey of getBackfillDateKeys(now)) {
-    if (ledger.dates[dateKey] !== undefined) {
-      continue
-    }
+  const dateKeys = getBackfillDateKeys(now).filter((dateKey) => ledger.dates[dateKey] === undefined)
 
-    let dayState: SchedulerCharacterState
-    try {
-      dayState = await fetchSchedulerCharacterState(apiKey, ocid, dateKey)
-    } catch (error) {
-      const kind = toScheduleSyncError(error).kind
-      if (kind === 'characterUnavailable') {
-        await markScheduleProbeUnavailable(ocid)
-        return 'unavailable'
+  const outcomes = await Promise.all(
+    dateKeys.map(async (dateKey): Promise<DayOutcome> => {
+      let dayState: SchedulerCharacterState
+      try {
+        dayState = await fetchSchedulerCharacterState(apiKey, ocid, dateKey)
+      } catch (error) {
+        const kind = toScheduleSyncError(error).kind
+        if (kind === 'characterUnavailable') {
+          // 여러 날짜가 함께 003 이면 여기도 여러 번 불린다 — ocid 별 락 안의 멱등한 쓰기라 무해하다.
+          await markScheduleProbeUnavailable(ocid)
+          return 'unavailable'
+        }
+        if (kind === 'periodOutOfRange') {
+          await recordScheduleProbe(ocid, dateKey, { kind: 'outOfRange' })
+          return 'skipped'
+        }
+        // notCollected(집계 전)·네트워크·파싱은 기록하지 않는다 — 나중에 다시 시도한다([[ADR-086]] 결정 4).
+        return 'skipped'
       }
-      if (kind === 'periodOutOfRange') {
-        await recordScheduleProbe(ocid, dateKey, { kind: 'outOfRange' })
-        continue
-      }
-      // notCollected(집계 전)·네트워크·파싱은 기록하지 않는다 — 나중에 다시 시도한다([[ADR-086]] 결정 4).
-      continue
-    }
 
-    const observation = toProbeObservation(dayState)
-    await recordScheduleProbe(ocid, dateKey, { kind: 'observed', ...observation })
-    if (observation.hasCompletion) {
-      return 'eligible'
-    }
+      const observation = toProbeObservation(dayState)
+      await recordScheduleProbe(ocid, dateKey, { kind: 'observed', ...observation })
+      return observation.hasCompletion ? 'completion' : 'observed'
+    }),
+  )
+
+  // **`unavailable` 이 `completion` 을 이긴다**([[ADR-148]] 결정 4). 위 `judgeFromLedger` 가 원장을
+  // 그 순서로 읽으므로(unavailable 먼저), 여기서 뒤집으면 같은 입력에 이번 회차와 다음 회차의 답이
+  // 갈린다. 003 은 «그 ocid 는 어느 날짜로도 조회 불가» 라 실제로 섞일 일이 없고, 이 줄은 그 전제가
+  // 깨졌을 때의 안전망이다.
+  if (outcomes.includes('unavailable')) {
+    return 'unavailable'
   }
-
-  return 'ineligible'
+  return outcomes.includes('completion') ? 'eligible' : 'ineligible'
 }
