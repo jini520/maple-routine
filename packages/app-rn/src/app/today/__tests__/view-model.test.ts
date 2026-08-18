@@ -1,4 +1,4 @@
-// today 뷰모델의 **조립 규칙**([[ADR-146]] 결정 4·8·9). 위젯이 스토어를 모르므로 화면이 값을 한
+// today 뷰모델의 **조립 규칙**([[ADR-147]] 결정 4·8·9). 위젯이 스토어를 모르므로 화면이 값을 한
 // 번 모으는데, 그 조립을 순수 함수로 두면 **위젯이 한 줄도 없는 지금 로직 전부를 검증할 수 있다.**
 //
 // 여기서 지키는 것의 대부분은 «다시 구현하지 않았는가» 다 — 남은 개수는 `content-completion` ·
@@ -153,7 +153,7 @@ function input(overrides: Partial<TodayViewModelInput> = {}): TodayViewModelInpu
   }
 }
 
-describe('남은 스케줄 — 분류 넷 ([[ADR-146]] 정정 3)', () => {
+describe('남은 스케줄 — 분류 넷 ([[ADR-147]] 정정 3)', () => {
   it('일퀘·주간퀘는 content-completion 의 미완료 수다', () => {
     const model = buildTodayViewModel(
       input({
@@ -243,7 +243,7 @@ describe('남은 스케줄 — 분류 넷 ([[ADR-146]] 정정 3)', () => {
   })
 })
 
-describe('남은 스케줄 — 정렬 ([[ADR-146]] 정정 12)', () => {
+describe('남은 스케줄 — 정렬 ([[ADR-147]] 정정 12)', () => {
   function withRemaining(ocid: string, remaining: number): ContentCharacterView {
     return contentView(ocid, {
       dailyContents: Array.from({ length: remaining }, (_, index) => daily({ name: `${ocid}-${index}` })),
@@ -300,7 +300,7 @@ describe('남은 스케줄 — 정렬 ([[ADR-146]] 정정 12)', () => {
   })
 })
 
-describe('대표 캐릭터 ([[ADR-146]] 정정 2)', () => {
+describe('대표 캐릭터 ([[ADR-147]] 정정 2)', () => {
   it('저장된 대표를 쓴다', () => {
     const model = buildTodayViewModel(
       input({
@@ -347,7 +347,7 @@ describe('대표 캐릭터 ([[ADR-146]] 정정 2)', () => {
   })
 })
 
-describe('주간 보스 수익 ([[ADR-146]] 정정 4)', () => {
+describe('주간 보스 수익 ([[ADR-147]] 정정 4)', () => {
   it('결정석과 아이템 판매가를 함께 더한다', () => {
     const drops = { [`a|스우|노멀|${WEEK_KEY}`]: [{ category: 'equipment' as const, itemName: '반지', quantity: 1, priceState: 'entered' as const, priceMeso: 60, priceShare: 2 }] }
     const model = buildTodayViewModel(
@@ -419,7 +419,7 @@ describe('주간 보스 수익 ([[ADR-146]] 정정 4)', () => {
   })
 })
 
-describe('최고가 아이템 ([[ADR-146]] 결정 9 · 정정 5)', () => {
+describe('최고가 아이템 ([[ADR-147]] 결정 9 · 정정 5)', () => {
   it('기록된 판매가 순위이고 최대 다섯이다', () => {
     const priced = (itemName: string, priceMeso: number): DropHistoryRecord =>
       dropRecord({ itemName, priceState: 'entered', priceMeso })
@@ -443,7 +443,7 @@ describe('최고가 아이템 ([[ADR-146]] 결정 9 · 정정 5)', () => {
   })
 
   // today 가 답하는 질문은 «내가 얼마를 벌었나» 다 — 총액으로 그리면 같은 화면의 「주간 보스 수익」
-  // (`sumDropPayout` = 분배 후 합)보다 최고가가 큰 화면이 나온다([[ADR-146]] 정정 21).
+  // (`sumDropPayout` = 분배 후 합)보다 최고가가 큰 화면이 나온다([[ADR-147]] 정정 21).
   it('분배된 금액을 그린다 — 입력한 총액이 아니다', () => {
     const model = buildTodayViewModel(
       input({
@@ -587,7 +587,7 @@ describe('주간 결정석 판매 한도 ([[ADR-054]])', () => {
   })
 })
 
-describe('아이템 드롭 가뭄 ([[ADR-146]] 정정 6)', () => {
+describe('아이템 드롭 가뭄 ([[ADR-147]] 정정 6)', () => {
   it('단계와 풀 크기를 함께 실어 화면이 인덱스만 고르게 한다', () => {
     const model = buildTodayViewModel(
       input({
@@ -629,7 +629,7 @@ describe('초기화 카운트다운', () => {
 })
 
 // ────────────────────────────────────────────────────────────────────────────
-// 공유 컨텐츠 ([[ADR-146]] 정정 28~31)
+// 공유 컨텐츠 ([[ADR-147]] 정정 28~31)
 // ────────────────────────────────────────────────────────────────────────────
 
 const MONSTER_PARK = '몬스터파크'
@@ -663,7 +663,7 @@ function sharedRows(model: ReturnType<typeof buildTodayViewModel>) {
   ])
 }
 
-describe('공유 컨텐츠 — 계열로 묶는다 ([[ADR-146]] 정정 28)', () => {
+describe('공유 컨텐츠 — 계열로 묶는다 ([[ADR-147]] 정정 28)', () => {
   it('계열 셋을 카탈로그 순서로 낸다 — 월드/계정은 그리지 않는다', () => {
     const model = buildTodayViewModel(
       input({ orderedOcids: ['a'], contentCharacters: [sharedView('a')] }),
@@ -721,7 +721,7 @@ describe('공유 컨텐츠 — 계열로 묶는다 ([[ADR-146]] 정정 28)', () 
   })
 })
 
-describe('공유 컨텐츠 — 오른쪽 열은 `maxCount > 0` 하나로 갈린다 ([[ADR-146]] 정정 29)', () => {
+describe('공유 컨텐츠 — 오른쪽 열은 `maxCount > 0` 하나로 갈린다 ([[ADR-147]] 정정 29)', () => {
   it('몬스터파크는 7/14 — 월드 총합을 그대로 그린다', () => {
     const model = buildTodayViewModel(
       input({
@@ -764,7 +764,7 @@ describe('공유 컨텐츠 — 오른쪽 열은 `maxCount > 0` 하나로 갈린�
     expect(epic?.items[1]).toMatchObject({ shortName: '앵글러컴퍼니', count: null, isComplete: false })
   })
 
-  it('완료하면 카운트를 안 준다 — 화면이 CLEAR 를 그린다 ([[ADR-146]] 정정 33)', () => {
+  it('완료하면 카운트를 안 준다 — 화면이 CLEAR 를 그린다 ([[ADR-147]] 정정 33)', () => {
     // 익스트림 몬스터파커는 `quest_state` 로 완료를 판정하는 항목이라 `now_count` 의 충실도가
     // 확인된 적이 없다. 완료한 항목의 «몇 번 했나» 는 언제나 max 라 카운트를 줄 이유가 없고,
     // 안 주면 **끝낸 퀘스트가 `0/2` 로 보일 위험도 함께 사라진다**.
@@ -867,7 +867,7 @@ describe('공유 컨텐츠 — 오른쪽 열은 `maxCount > 0` 하나로 갈린�
   })
 })
 
-describe('공유 컨텐츠 — 유니온만 조건부다 ([[ADR-146]] 정정 30)', () => {
+describe('공유 컨텐츠 — 유니온만 조건부다 ([[ADR-147]] 정정 30)', () => {
   it('아무 캐릭터의 스케줄러에도 없으면 유니온 계열이 통째로 빠진다', () => {
     const model = buildTodayViewModel(
       input({

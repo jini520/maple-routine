@@ -1,14 +1,14 @@
 /**
- * 위젯 2 — **캐릭터별 남은 스케줄**(`4×auto`, [[ADR-146]] 결정 6 · 정정 3·9·12).
+ * 위젯 2 — **캐릭터별 남은 스케줄**(`4×auto`, [[ADR-147]] 결정 6 · 정정 3·9·12).
  *
- * ## 형태의 전부는 «정렬» 이다 ([[ADR-146]] 정정 12)
+ * ## 형태의 전부는 «정렬» 이다 ([[ADR-147]] 정정 12)
  *
  * 수치를 배지에서 텍스트로 바꾸고 나니 숫자가 어디에도 정렬되지 않았다 — 라벨 길이가 제각각
  * (「일퀘」 2자 · 「주간 보스」 4자)이라 행마다 다른 x 에서 끝나 «누가 제일 밀렸나» 를 세로로 훑을 수가
  * 없었다. 그래서 **라벨 폭을 고정하고 숫자에 `tabular-nums`** 를 걸어 2×2 격자로 세운다
  * (col A = 일퀘/주간 보스 · col B = 주간퀘/검마). `·` 구분자는 열이 생기면 할 일이 없어 사라진다.
  *
- * ## 강조는 굵기 하나뿐이다 ([[ADR-146]] 정정 9)
+ * ## 강조는 굵기 하나뿐이다 ([[ADR-147]] 정정 9)
  *
  * 숫자는 **크기도 색도 라벨과 같고** `font-weight` 만 400 → 800 이다. 라벨은 `text-muted`, 숫자는
  * 닉네임과 같은 `text`(읽기 2 확정). **테마 색을 쓰지 않는다** — 숫자를 `primary-ink` 로 칠하면 이
@@ -20,7 +20,7 @@
  * 「다 했습니다」 같은 문장도, **전부 완료 전용 UI 도 두지 않는다**: 형태가 안 바뀌어야 «어제와 같은
  * 화면» 으로 읽힌다.
  *
- * ## 줄도 칸도 «그 행» 이 정한다 ([[ADR-146]] 정정 35~37)
+ * ## 줄도 칸도 «그 행» 이 정한다 ([[ADR-147]] 정정 35~37)
  *
  * ```
  * 줄  = 그 행에 그 계열(① 컨텐츠 ② 보스)의 값이 하나라도 있을 때
@@ -68,12 +68,12 @@ import type { WidgetProps } from './types'
 const PORTRAIT_PX = 32
 
 /**
- * 라벨·숫자 열의 **고정 폭**. 이 두 값이 모든 행의 숫자를 같은 x 에 세운다([[ADR-146]] 정정 12) —
+ * 라벨·숫자 열의 **고정 폭**. 이 두 값이 모든 행의 숫자를 같은 x 에 세운다([[ADR-147]] 정정 12) —
  * 라벨을 내용 폭으로 두면 「일퀘」와 「주간 보스」가 다른 자리에서 끝난다.
  */
 const LABEL_WIDTH_PX = 48
 /**
- * **두 자리에 맞춘 폭**([[ADR-146]] 정정 40). 18 은 세 자리를 담을 폭이라 오른쪽 정렬에서 남는 4px 이
+ * **두 자리에 맞춘 폭**([[ADR-147]] 정정 40). 18 은 세 자리를 담을 폭이라 오른쪽 정렬에서 남는 4px 이
  * 전부 왼쪽 여백이 되어 한 자리 수치가 라벨에서 떨어져 보였다. 세 자리가 실제로 나오면 그때 넓힌다.
  */
 const VALUE_WIDTH_PX = 14
@@ -89,7 +89,7 @@ const VALUE_WIDTH_PX = 14
 const STAT_LINE_HEIGHT_PX = 14
 
 /**
- * 「검마」는 **월간 보스가 하나뿐이라 성립하는 이름**이다([[ADR-146]] 정정 3) — 참조 데이터에서
+ * 「검마」는 **월간 보스가 하나뿐이라 성립하는 이름**이다([[ADR-147]] 정정 3) — 참조 데이터에서
  * 파생시키지 않는다. 월간 보스가 둘이 되면 이 이름이 거짓이 되고, 그때 다시 정한다([[ADR-006]] 태도).
  */
 const LABEL = {
@@ -117,7 +117,7 @@ function statValue(row: ScheduleRowView, key: StatKey): number {
 const VALUE_CLASS = 'text-right text-[10.5px] font-extrabold leading-tight text-text'
 const LABEL_CLASS = 'text-right text-[10.5px] leading-tight text-text-muted'
 
-/** 값이 있는 칸만 온다 — 0 인 칸은 부모가 접는다([[ADR-146]] 정정 36). */
+/** 값이 있는 칸만 온다 — 0 인 칸은 부모가 접는다([[ADR-147]] 정정 36). */
 function StatCell(props: { label: string; value: number }): React.JSX.Element {
   return (
     <View className="flex-row items-center gap-0.5">
@@ -133,10 +133,10 @@ function StatCell(props: { label: string; value: number }): React.JSX.Element {
 
 function StatGrid(props: { row: ScheduleRowView }): React.JSX.Element {
   return (
-    // `items-end` — 칸이 줄면 **왼쪽으로** 짧아져야 셰브런 옆이 붙는다([[ADR-146]] 정정 36).
+    // `items-end` — 칸이 줄면 **왼쪽으로** 짧아져야 셰브런 옆이 붙는다([[ADR-147]] 정정 36).
     <View testID="schedule-stats" className="shrink-0 items-end gap-0.5">
       {STAT_LINES.map((line) => {
-        // 줄도 칸도 **이 행**이 정한다([[ADR-146]] 정정 37) — 값이 없는 계열은 줄째로 빠지므로
+        // 줄도 칸도 **이 행**이 정한다([[ADR-147]] 정정 37) — 값이 없는 계열은 줄째로 빠지므로
         // 빈 줄이 안 남는다. 목록에 물어 «아무도 안 쓰는 칸» 을 죽이던 장치(정정 35)는 지웠다.
         const cells = line.filter((key) => statValue(props.row, key) > 0)
         if (cells.length === 0) return null
@@ -222,7 +222,7 @@ function NameChip(props: { name: string }): React.JSX.Element {
 function BossChip(props: { boss: RemainingBossView }): React.JSX.Element {
   return (
     <View testID="schedule-detail-boss" className="flex-row items-center gap-1">
-      {/* 작은 크기 — 20px 배지가 줄 높이를 혼자 정하고 있었다([[ADR-146]] 정정 40). */}
+      {/* 작은 크기 — 20px 배지가 줄 높이를 혼자 정하고 있었다([[ADR-147]] 정정 40). */}
       <DifficultyBadge difficulty={props.boss.difficulty} size="small" />
       <Text numberOfLines={1} className="text-[10px] leading-tight text-text">
         {props.boss.name}
@@ -241,7 +241,7 @@ function DetailGroup(props: { label: string; children: React.ReactNode }): React
 }
 
 /**
- * 펼친 본문 — **항목을 이름으로 낱개로** 센다([[ADR-146]] 정정 25).
+ * 펼친 본문 — **항목을 이름으로 낱개로** 센다([[ADR-147]] 정정 25).
  *
  * **자르지 않는다.** 일퀘가 여덟이면 여덟을 다 적는다 — 「외 3개」로 접으면 펼친 이유가 사라진다.
  * 펼침은 «더 보겠다» 는 명시적 행동이고 그 답을 다시 접는 것은 앞뒤가 안 맞는다. 늘어난 높이는
@@ -266,7 +266,7 @@ function ScheduleDetail(props: { row: ScheduleRowView }): React.JSX.Element {
       {row.weeklyNames.length > 0 && (
         <DetailGroup label={LABEL.weeklyQuest}>
           {/* **키가 이름이면 안 된다** — `[주간 퀘스트] 타락한 세계수 주간 임무` 와 `… 정화에 대한
-              보답` 이 둘 다 「타락한 세계수」로 접혀 같은 키가 둘이 된다([[ADR-146]] 정정 40). */}
+              보답` 이 둘 다 「타락한 세계수」로 접혀 같은 키가 둘이 된다([[ADR-147]] 정정 40). */}
           {row.weeklyNames.map((name, index) => (
             <NameChip key={`${name}-${String(index)}`} name={name} />
           ))}
@@ -338,7 +338,7 @@ export function RemainingScheduleWidget({ data }: WidgetProps): React.JSX.Elemen
    * 펼친 행 하나 — **`null` 은 전부 접힘**이다.
    *
    * **하나만 연다.** 여섯 명이 다 열리면 이 타일이 1,000px 을 넘고, 타일 안 스크롤은
-   * [[ADR-146]] 결정 3 이 금지한다 — 동시 펼침을 하나로 묶는 것이 그 금지와 짝이 되는 선택이다.
+   * [[ADR-147]] 결정 3 이 금지한다 — 동시 펼침을 하나로 묶는 것이 그 금지와 짝이 되는 선택이다.
    *
    * **기억하지 않는다**(사용자 지정). 저장소에 쓰지 않으므로 앱을 다시 켜면 전부 접혀 있다
    * ([[ADR-096]] 결정 3 의 탭 상태와 같은 태도). 화면이 탭이라 앱을 켜 둔 동안은 남는다.
@@ -347,7 +347,7 @@ export function RemainingScheduleWidget({ data }: WidgetProps): React.JSX.Elemen
 
   return (
     <View testID="widget-remaining-schedule" className="p-3">
-      {/* 합계도 칩이 아니라 텍스트다([[ADR-146]] 정정 9) — 숫자만 굵다. 동기화 실패 캐릭터의 몫은
+      {/* 합계도 칩이 아니라 텍스트다([[ADR-147]] 정정 9) — 숫자만 굵다. 동기화 실패 캐릭터의 몫은
           여기 안 들어 있다(뷰모델이 «모르는 것을 더하지 않는다»). */}
       <View className="flex-row items-center border-b border-border-strong pb-2">
         <Text className="text-[11px] font-bold text-text-muted">남은 스케줄</Text>

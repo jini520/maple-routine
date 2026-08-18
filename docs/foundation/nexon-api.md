@@ -145,7 +145,7 @@ HTTP 400
 
 ## 확인 완료된 사실 (레퍼런스)
 - `access_flag` 는 boolean이 아니라 **문자열 `"true"`/`"false"`** — `normalizeCharacterBasic` 이 `=== 'true'` 로 변환한다(실측 재확인 2026-07-31). truthy 검사로 바꾸면 모든 캐릭터가 활성으로 읽힌다.
-- **경험치는 `character/basic` 에 두 필드로 온다**(사용자 확인 2026-08-17, [[ADR-146]] 결정 7의 열린 질문을 닫는다):
+- **경험치는 `character/basic` 에 두 필드로 온다**(사용자 확인 2026-08-17, [[ADR-147]] 결정 7의 열린 질문을 닫는다):
   ```
   "character_exp": 1390734270108,      // number — 누적 경험치 절대값
   "character_exp_rate": "80.300"       // string — 현재 레벨 진행률(%), 소수 3자리

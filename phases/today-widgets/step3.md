@@ -3,7 +3,7 @@
 ## 읽어야 할 파일
 
 - `/docs/README.md` · **`/docs/features/boss-scheduler.md`**
-- **`/docs/adr/ADR-146.md` 결정 8** — 이 이동의 근거
+- **`/docs/adr/ADR-147.md` 결정 8** — 이 이동의 근거
 - `/docs/adr/ADR-035.md` 결정 3·6·12·20(수동 모드 멤버십) · `/docs/adr/ADR-031.md` 결정 4·5 ·
   `/docs/adr/ADR-142.md` 결정 4
 - 코드: `packages/app-rn/src/app/boss-scheduler/BossScreen.tsx` 의 **지역 함수 `displayedBossesOf`** ·

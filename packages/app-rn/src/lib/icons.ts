@@ -123,7 +123,7 @@ export const ChevronRightIcon = withIconInterop(ChevronRight)
 /** 월드별 결정석 분해 **펼침** — `CrystalSummaryChip`([[ADR-054]] 결정 9). */
 export const ChevronUpIcon = withIconInterop(ChevronUp)
 
-/** 도움말 여는 자리 — 위젯 9 머리의 `?`([[ADR-146]] 정정 34). */
+/** 도움말 여는 자리 — 위젯 9 머리의 `?`([[ADR-147]] 정정 34). */
 export const CircleQuestionMarkIcon = withIconInterop(CircleQuestionMark)
 /** 아직 집계 전(pending 톤) — `UnavailableNotice`. */
 export const ClockIcon = withIconInterop(Clock)

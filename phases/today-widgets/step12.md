@@ -3,7 +3,7 @@
 ## 읽어야 할 파일
 
 - `/docs/README.md` · **`/docs/features/today.md` 전문**
-- **`/docs/adr/ADR-146.md` 결정 4·5 + 정정 13**
+- **`/docs/adr/ADR-147.md` 결정 4·5 + 정정 13**
 - **`/docs/adr/ADR-132.md` 결정 7·8·11·12** — 첫 화면·동기화 트리거·하단 인셋·«개발 진행중» 자리표시자
 - `/docs/adr/ADR-097.md` 결정 3·4 · `/docs/adr/ADR-101.md` · `/docs/adr/ADR-130.md`(RefreshControl)
 - 코드: `packages/app-rn/src/app/today/TodayScreen.tsx`(**지금은 `UnderConstruction` 껍데기**) ·
@@ -64,10 +64,10 @@
 
 ## 금지사항
 
-- **위젯이 스토어를 구독하게 하지 마라.** 이유: [[ADR-146]] 결정 4 — 트리거가 위젯 수만큼 는다.
+- **위젯이 스토어를 구독하게 하지 마라.** 이유: [[ADR-147]] 결정 4 — 트리거가 위젯 수만큼 는다.
 - **`ROUTE_TABLE` 의 `/` 행을 `Today` 로 바꾸지 마라.** 이유: 위 4번.
 - **`UnderConstruction` 을 지우지 마라.** 이유: 화면 셋이 아직 쓴다.
-- **`prehydrate.ts` 에 `drop-history` 를 더하지 마라.** 이유: [[ADR-146]] 대가 3 — 실측 뒤에 정한다.
+- **`prehydrate.ts` 에 `drop-history` 를 더하지 마라.** 이유: [[ADR-147]] 대가 3 — 실측 뒤에 정한다.
   지금 넣으면 근거 없는 값이 된다.
 - **타일 안에 스크롤을 넣지 마라.** 이유: 페이지 스크롤과 제스처를 두고 싸운다.
 - 기존 테스트를 깨뜨리지 마라.

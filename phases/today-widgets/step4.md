@@ -3,7 +3,7 @@
 ## 읽어야 할 파일
 
 - `/docs/README.md` · **`/docs/features/item-drop.md`**
-- **`/docs/adr/ADR-146.md` 정정 6·10·14**
+- **`/docs/adr/ADR-147.md` 정정 6·10·14**
 - `/docs/adr/ADR-071.md`(드롭 획득 히스토리)
 - 코드: `packages/core/src/lib/drop-history.ts` 의 `VALUABLE_DROUGHT_TIERS` ·
   `VALUABLE_DROUGHT_LATE_HEADLINES` · `getValuableDroughtTier` ·
@@ -62,7 +62,7 @@ export function valuableDroughtHeadlineCount(weeksSince: number): number
 
 ### 4. 용어 — 「물욕」을 새로 들이지 마라
 
-[[ADR-146]] 정정 14: **화면에 보이는 한국어에서 「물욕」을 쓰지 않는다**(→ 「아이템 드롭」).
+[[ADR-147]] 정정 14: **화면에 보이는 한국어에서 「물욕」을 쓰지 않는다**(→ 「아이템 드롭」).
 실측 결과 **지금 앱의 사용자 노출 문구에는 그 말이 한 번도 안 나온다** — `drop-history.ts` **주석**
 두 줄과 설계 문서에만 있다.
 

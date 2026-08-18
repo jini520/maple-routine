@@ -380,7 +380,7 @@ function pool(weeksSince: number): string[] {
 
 describe('formatValuableDroughtHeadline', () => {
   // 문구는 사용자 지정(2026-08-01·2026-08-17) — 구현자가 톤을 다듬지 않는다.
-  // ADR-146 정정 6: 마지막 단계만 풀이던 것이 전 단계 풀이 됐다. 기존 문구는 각 풀의 **첫 항목**이라
+  // ADR-147 정정 6: 마지막 단계만 풀이던 것이 전 단계 풀이 됐다. 기존 문구는 각 풀의 **첫 항목**이라
   // 인덱스를 주지 않은 호출은 예전과 글자 하나 다르지 않다(회귀 가드).
   it('index 0은 단계마다 기존 문구를 그대로 준다', () => {
     expect(formatValuableDroughtHeadline(0, 0)).toBe('와따리! ㅇㄱㄱㄷ')
@@ -390,7 +390,7 @@ describe('formatValuableDroughtHeadline', () => {
     expect(formatValuableDroughtHeadline(9, 0)).toBe('이건 아니지...')
   })
 
-  // ADR-146 정정 10 — 사용자가 고른 여섯이 각 풀에 얹혔다.
+  // ADR-147 정정 10 — 사용자가 고른 여섯이 각 풀에 얹혔다.
   it('0~3주도 풀이라 index로 다른 문구가 나온다', () => {
     expect(pool(0)).toEqual(['와따리! ㅇㄱㄱㄷ', '완전 럭키비키잖아', '폼 미쳤다'])
     expect(pool(1)).toEqual(['그래, 그럴 수 있지', '다음 주엔 되겠지'])
@@ -438,7 +438,7 @@ describe('formatValuableDroughtHeadline', () => {
 })
 
 // 화면이 무작위 인덱스를 고르려면 **그 단계의** 풀 크기를 알아야 한다 — 마지막 단계만 알려주던 상수
-// (`VALUABLE_DROUGHT_LATE_HEADLINE_COUNT`)로는 모자라 함수가 됐다(ADR-146 정정 6).
+// (`VALUABLE_DROUGHT_LATE_HEADLINE_COUNT`)로는 모자라 함수가 됐다(ADR-147 정정 6).
 describe('valuableDroughtHeadlineCount', () => {
   it('단계마다 자기 풀 크기를 준다', () => {
     expect([0, 1, 2, 3, 4].map(valuableDroughtHeadlineCount)).toEqual([3, 2, 3, 2, 5])

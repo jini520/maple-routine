@@ -254,7 +254,7 @@ describe('resolveRepresentative', () => {
   })
 })
 
-// ADR-146 정정 2 — today 의 「대표 캐릭터」 위젯이 ADR-143 결정 4의 «미지정이면 첫 번째» 를 읽는
+// ADR-147 정정 2 — today 의 「대표 캐릭터」 위젯이 ADR-143 결정 4의 «미지정이면 첫 번째» 를 읽는
 // 첫 화면이다. resolveRepresentative 와 **다른 질문**이라 옆에 하나 더 두었고, 아래 회귀 가드가
 // 그 둘이 합쳐지는 것을 막는다(합치면 ADR-144 결정 4의 «채워진 별이 하나도 없다» 가 깨진다).
 describe('resolveDisplayRepresentative', () => {

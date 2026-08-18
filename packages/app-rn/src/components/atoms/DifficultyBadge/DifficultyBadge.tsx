@@ -65,7 +65,7 @@ const DIFFICULTY_BADGE_STYLES: Record<BossDifficulty, DifficultyBadgeStyle> = {
 }
 
 /**
- * 크기 둘 — **색은 한 값도 안 갈린다**([[ADR-146]] 정정 40).
+ * 크기 둘 — **색은 한 값도 안 갈린다**([[ADR-147]] 정정 40).
  *
  * `'small'` 은 today 아코디언처럼 **이름과 한 줄에 서는** 자리를 위한 것이다. 20px 배지가 줄 높이를
  * 혼자 정해 버려 목록이 성기게 보였다. 색·테두리·그림자를 함께 줄이지 않는 이유는 그 표가 웹에서

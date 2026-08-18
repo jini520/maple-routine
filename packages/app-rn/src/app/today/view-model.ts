@@ -1,6 +1,6 @@
 /**
  * today 위젯이 읽는 **하나의 뷰모델** — 화면이 스토어 넷을 읽어 한 번 모으고, 위젯에는 프롭으로만
- * 준다([[ADR-146]] 결정 4).
+ * 준다([[ADR-147]] 결정 4).
  *
  * ## 이 파일이 순수 함수인 이유
  *
@@ -8,7 +8,7 @@
  * 값 조합만으로 검증할 수 있고, 「수익 0 · 캐릭터 없음 · 동기화 실패」 같은 상태를 목 없이 만든다.
  * 같은 이유로 `new Date()` 를 부르지 않는다 — `now` 를 받아야 카운트다운·기간 판정이 고정된다.
  *
- * ## 여기서 «판정» 을 새로 쓰지 않는다 ([[ADR-146]] 결정 8)
+ * ## 여기서 «판정» 을 새로 쓰지 않는다 ([[ADR-147]] 결정 8)
  *
  * today 가 세는 «남은 것» 은 스케줄러 화면이 보여 주는 것과 한 글자도 다르면 안 된다. 그래서 판정은
  * 전부 남의 것을 부른다:
@@ -24,14 +24,14 @@
  * | 대표 캐릭터 | `resolveDisplayRepresentative`([[ADR-143]] 결정 4의 «임시 대표») |
  * | 초기화 시각 | `@core/lib/reset-clock` · `@core/lib/boss-profit-period` |
  *
- * 그 대가로 **화면 사이 import 가 둘 생긴다**(`content-scheduler`·`boss-profit`). [[ADR-146]] 결정 8이
+ * 그 대가로 **화면 사이 import 가 둘 생긴다**(`content-scheduler`·`boss-profit`). [[ADR-147]] 결정 8이
  * 감수하기로 한 것이고, 판정을 두 벌로 만드는 것보다 낫다.
  *
  * ## 「이번 주」 의 범위
  *
  * 위젯 3·4·7 은 전부 **현재 주간 기간 키 하나**로 자른다 — 보스 수익 화면의 주간 탭과 같은 범위다.
  * 월간 키(`YYYY-MM`)로 저장되는 검은마법사 기록은 여기 들지 않는다(그쪽은 그 화면의 월간 탭 몫).
- * 셋이 같은 범위여야 위젯 7이 위젯 4의 «없음» 을 설명할 수 있다([[ADR-146]] 결정 9).
+ * 셋이 같은 범위여야 위젯 7이 위젯 4의 «없음» 을 설명할 수 있다([[ADR-147]] 결정 9).
  */
 
 import { resolveDisplayRepresentative } from '@core/features/character-manage/derivations'
@@ -94,13 +94,13 @@ const DAY_MS = 24 * 60 * 60 * 1000
 /** 「캐릭터별 수익」 목록에 담는 캐릭터 수 — 4x3 타일이 세 줄이다. */
 const TOP_CHARACTER_COUNT = 3
 
-/** 최고가 아이템 순위 길이 — 4x2 타일이 1위 + 2~5위를 그린다([[ADR-146]] 정정 5). */
+/** 최고가 아이템 순위 길이 — 4x2 타일이 1위 + 2~5위를 그린다([[ADR-147]] 정정 5). */
 const TOP_ITEM_COUNT = 5
 
 /** 가격 미입력 미리보기 길이 — 2x2 타일이 이름 셋까지 세우고 나머지는 «외 N건» 이다. */
 const UNPRICED_PREVIEW_COUNT = 3
 
-/** 대표 캐릭터 카드가 그리는 것 — 값이 없는 줄은 위젯이 그리지 않는다([[ADR-146]] 정정 7·8). */
+/** 대표 캐릭터 카드가 그리는 것 — 값이 없는 줄은 위젯이 그리지 않는다([[ADR-147]] 정정 7·8). */
 export interface RepresentativeView {
   ocid: string
   name: string
@@ -118,7 +118,7 @@ export interface RepresentativeView {
  * 한 캐릭터의 «남은 것» 넷.
  *
  * 라벨(일퀘·주간퀘·주간 보스·**검마**)은 위젯이 붙인다 — 「검마」는 월간 보스가 하나뿐이라 성립하는
- * 이름이라([[ADR-146]] 정정 3) 참조 데이터에서 파생시키지 않는다.
+ * 이름이라([[ADR-147]] 정정 3) 참조 데이터에서 파생시키지 않는다.
  */
 /** 아코디언 본문의 보스 한 줄 — 난이도는 공용 `DifficultyBadge` 가 그린다. */
 export interface RemainingBossView {
@@ -129,7 +129,7 @@ export interface RemainingBossView {
 /**
  * 캐릭터 한 줄.
  *
- * **개수 대신 이름을 든다**([[ADR-146]] 정정 25). 접힘의 수치는 이 배열들의 `length` 이고, 펼침의
+ * **개수 대신 이름을 든다**([[ADR-147]] 정정 25). 접힘의 수치는 이 배열들의 `length` 이고, 펼침의
  * 본문은 같은 배열을 이름으로 그린다 — 두 층이 **같은 배열 하나**를 보므로 «세는 것 = 보이는 것»
  * 이 구조로 성립한다. 개수를 따로 들면 그 둘이 갈릴 자리가 생긴다.
  */
@@ -147,7 +147,7 @@ export interface ScheduleRowView {
 }
 
 /**
- * 공유 컨텐츠 한 줄 ([[ADR-146]] 정정 29).
+ * 공유 컨텐츠 한 줄 ([[ADR-147]] 정정 29).
  *
  * **캐릭터가 없다** — 진행이 공유되므로 캐릭터 수만큼 세면 하루 한 번 할 일이 넷으로 부풀고, 그
  * 부풀림을 없애는 것이 위젯 9의 존재 이유다.
@@ -160,7 +160,7 @@ export interface SharedContentItemView {
   /**
    * `null` 이면 화면이 `CLEAR`(완료) 또는 **빈칸**(미완료)을 그린다.
    *
-   * 값이 서는 것은 **미완료이면서 분모가 있는** 항목뿐이다([[ADR-146]] 정정 33) — 완료한 항목의
+   * 값이 서는 것은 **미완료이면서 분모가 있는** 항목뿐이다([[ADR-147]] 정정 33) — 완료한 항목의
    * «몇 번 했나» 는 언제나 `max` 라 숫자가 더 말하는 것이 없고, 분모가 없는 항목에 `0/1` 을 붙이려면
    * **API 에 없는 값**을 앱이 지어내야 한다.
    */
@@ -176,7 +176,7 @@ export interface SharedContentGroupView {
 /**
  * 총액을 가른 둘 — 위젯 3의 스택 바와 분해 금액이 읽는 값이다.
  *
- * **위젯이 스토어를 모르므로**([[ADR-146]] 결정 4) 총액만 주면 갈라 그릴 방법이 없다. 그렇다고 여기서
+ * **위젯이 스토어를 모르므로**([[ADR-147]] 결정 4) 총액만 주면 갈라 그릴 방법이 없다. 그렇다고 여기서
  * 새로 세지도 않는다 — 결정석은 `sumPayout`, 아이템은 `sumDropPayout` 이고 둘의 합이 곧
  * `groupTotalMeso` 다(이번 주 계산에는 주차별 소계가 언제나 비어 있다).
  */
@@ -195,7 +195,7 @@ export interface WeeklyProfitCharacterView extends ProfitSplit {
 }
 
 export interface WeeklyProfitView extends ProfitSplit {
-  /** 결정석 + 아이템([[ADR-124]]). 기록이 없으면 0 이다([[ADR-146]] 정정 4). */
+  /** 결정석 + 아이템([[ADR-124]]). 기록이 없으면 0 이다([[ADR-147]] 정정 4). */
   totalMeso: number
   /**
    * 이번 주에 **기록이 하나라도 있는가**. `totalMeso` 가 0 인 두 경우(«0메소를 벌었다» 와 «아직
@@ -211,7 +211,7 @@ export interface WeeklyProfitView extends ProfitSplit {
  * 드롭 한 건에서 **금액을 뺀** 나머지 — 위젯 7(가격 미입력)이 읽는 모양이다.
  *
  * 금액이 있는 쪽(`PricedDropView`)이 이것을 넓히는 것이 방향이 맞다. 미입력 건은 «아직 값이 없는»
- * 것이지 «0원인» 것이 아니라([[ADR-146]] 결정 9), 그 사실이 타입에서도 필드의 부재로 남는다.
+ * 것이지 «0원인» 것이 아니라([[ADR-147]] 결정 9), 그 사실이 타입에서도 필드의 부재로 남는다.
  */
 export interface UnpricedDropView {
   ocid: string
@@ -262,7 +262,7 @@ export interface DroughtView {
   /** 잎 색·기울기를 고르는 단계(0 = 이번 주 획득). */
   tier: number
   /**
-   * 그 단계의 문구 개수 — **무작위 인덱스는 위젯이 마운트당 한 번** 고른다([[ADR-146]] 정정 6).
+   * 그 단계의 문구 개수 — **무작위 인덱스는 위젯이 마운트당 한 번** 고른다([[ADR-147]] 정정 6).
    * `Math.random()` 이 여기 들어오면 이 파일이 순수 함수가 아니게 된다.
    */
   headlineCount: number
@@ -306,7 +306,7 @@ export interface TodayViewModelInput {
   now: Date
   /** 캐릭터 관리 순서(= 추적 목록 저장 순서, [[ADR-143]] 결정 3). */
   orderedOcids: string[]
-  /** 사용자가 «대표라고 말한» ocid. 미지정이면 첫 번째가 선다([[ADR-146]] 정정 2). */
+  /** 사용자가 «대표라고 말한» ocid. 미지정이면 첫 번째가 선다([[ADR-147]] 정정 2). */
   representativeOcid: string | null
   /** `character-basic-cache` 에서 읽은 프로필. */
   profilesByOcid: Readonly<Record<string, CharacterBasicProfile>>
@@ -328,7 +328,7 @@ export interface TodayViewModelInput {
 
 export interface TodayViewModel {
   representative: RepresentativeView | null
-  /** 계열별로 묶인 공유 컨텐츠([[ADR-146]] 정정 28) — 위젯 9. */
+  /** 계열별로 묶인 공유 컨텐츠([[ADR-147]] 정정 28) — 위젯 9. */
   sharedContents: SharedContentGroupView[]
   /** 그중 완료가 아닌 **줄**의 수. 캐릭터 수와 무관하다 — 그게 이 분리의 이유다. */
   sharedRemaining: number
@@ -338,7 +338,7 @@ export interface TodayViewModel {
   scheduleTotal: number
   profit: WeeklyProfitView
   topItem: TopItemView | null
-  /** 이번 주 가격 미입력 드롭 건수 — 위젯 7의 값이라 위젯 4 안에 넣지 않는다([[ADR-146]] 정정 5). */
+  /** 이번 주 가격 미입력 드롭 건수 — 위젯 7의 값이라 위젯 4 안에 넣지 않는다([[ADR-147]] 정정 5). */
   unpricedCount: number
   /**
    * 그중 앞 몇 건 — 2x2 타일이 **이름**을 보여 준다. 「값을 적어야지」보다 「그 연마석 얼마에
@@ -424,7 +424,7 @@ function contentsInputOf(
 }
 
 /**
- * 공유 컨텐츠를 **계열별로** 조립한다 ([[ADR-146]] 정정 28~30).
+ * 공유 컨텐츠를 **계열별로** 조립한다 ([[ADR-147]] 정정 28~30).
  *
  * ## 값은 «가장 앞선 캐릭터» 것이다
  *
@@ -437,7 +437,7 @@ function contentsInputOf(
  * - **값**: 캐릭터의 원본 목록(`dailyContents`/`weeklyContents`) — API 는 등록 여부와 무관하게
  *   진행을 준다. 그래서 아무도 등록 안 한 에픽 던전도 값이 있으면 `CLEAR` 로 그려진다.
  * - **있는가**: `displayed*Contents`(자동 모드 = `registration_flag`, 수동 모드 = 추적 목록 멤버십).
- *   `onlyWhenScheduled` 인 항목만 이 판정을 탄다([[ADR-146]] 정정 30 — 유니온 둘).
+ *   `onlyWhenScheduled` 인 항목만 이 판정을 탄다([[ADR-147]] 정정 30 — 유니온 둘).
  *
  * 둘을 한 목록으로 합치면 «등록 안 했지만 진행은 있다» 를 표현할 방법이 사라진다.
  */
@@ -483,7 +483,7 @@ function buildSharedContents(input: TodayViewModelInput): SharedContentGroupView
           return {
             name: entry.name,
             shortName: entry.shortName,
-            // **완료하면 카운트를 안 준다**([[ADR-146]] 정정 33) — 완료한 항목의 «몇 번 했나» 는
+            // **완료하면 카운트를 안 준다**([[ADR-147]] 정정 33) — 완료한 항목의 «몇 번 했나» 는
             // 언제나 `max` 라 `CLEAR` 가 이미 그 말을 하고, 안 주면 카운트로 완료를 재지 않는
             // 항목(익스트림 몬스터파커는 `quest_state` 로 판정한다)이 **끝냈는데 `0/2` 로 보이는**
             // 위험도 함께 사라진다. 「그 항목만 예외」로 적으면 그것이 이름으로 유추하는 규칙이 된다.
@@ -522,7 +522,7 @@ function buildScheduleRows(input: TodayViewModelInput): ScheduleRowView[] {
     // 있는 항목 전부라, 그냥 세면 모든 캐릭터가 카탈로그 길이(일간 18)로 똑같아진다. 스케줄러 화면과
     // **같은 함수**를 써야 «세는 것 = 보이는 것» 이 성립한다(보스 쪽 `displayedBosses` 와 같은 짝).
     //
-    // **공유 항목은 여기 안 든다**([[ADR-146]] 정정 28) — 진행이 공유되므로 캐릭터마다 세면 하루
+    // **공유 항목은 여기 안 든다**([[ADR-147]] 정정 28) — 진행이 공유되므로 캐릭터마다 세면 하루
     // 한 번 할 일이 캐릭터 수만큼 부푼다. 거르는 자리가 **여기**인 것이 중요하다:
     // `displayed-contents.ts` 는 컨텐츠 화면과 공유하므로 거기서 빼면 그 화면에서도 사라지는데,
     // 그 화면은 캐릭터별로 그리는 것이 맞다(진행이 공유될 뿐 «내가 할 수 있는 일» 목록에는 있다).
@@ -557,7 +557,7 @@ function buildScheduleRows(input: TodayViewModelInput): ScheduleRowView[] {
   return orderByTracked(rows, input.orderedOcids)
     .map((row, index) => ({ row, index }))
     .sort((a, b) => {
-      // 실패는 남은 개수를 «모르는» 것이라 언제나 맨 아래다([[ADR-146]] 정정 12) — 위로 올리면
+      // 실패는 남은 개수를 «모르는» 것이라 언제나 맨 아래다([[ADR-147]] 정정 12) — 위로 올리면
       // «제일 밀린 캐릭터» 자리를 모르는 값이 거짓으로 차지한다.
       if (a.row.hasSyncIssue !== b.row.hasSyncIssue) return a.row.hasSyncIssue ? 1 : -1
       if (a.row.remainingTotal !== b.row.remainingTotal) return b.row.remainingTotal - a.row.remainingTotal
@@ -672,7 +672,7 @@ function buildTopItem(
   records: DropHistoryRecord[],
   profilesByOcid: Readonly<Record<string, CharacterBasicProfile>>,
 ): TopItemView | null {
-  // 가격을 아직 안 적은 기록은 순위에 넣지 않는다([[ADR-146]] 결정 9) — 값을 모르는 것을 가장 싼
+  // 가격을 아직 안 적은 기록은 순위에 넣지 않는다([[ADR-147]] 결정 9) — 값을 모르는 것을 가장 싼
   // 것으로 단정하는 일이다. 합산(`dropPayoutMeso`)이 미입력을 0으로 접는 것과 **다른 문제**다:
   // 합산은 «더할 것이 없다» 이지만 순위는 «비교했다» 를 주장한다.
   const priced = records

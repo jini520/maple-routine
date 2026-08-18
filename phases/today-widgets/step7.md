@@ -3,7 +3,7 @@
 ## 읽어야 할 파일
 
 - `/docs/README.md` · **`/docs/features/today.md` 의 「배치」·「위젯 규약」절**
-- **`/docs/adr/ADR-146.md` 결정 2·3·5 + 정정 1·13**
+- **`/docs/adr/ADR-147.md` 결정 2·3·5 + 정정 1·13**
 - `/docs/adr/ADR-094.md`(아토믹 계층) · `/docs/foundation/design-system.md`(카드 토큰)
 - 코드: `packages/app-rn/src/components/atoms/Card/Card.tsx` ·
   `packages/app-rn/src/components/__tests__/layer-dependencies.test.ts` ·
@@ -37,7 +37,7 @@ export interface WidgetDefinition {
 
 ### 2. 레지스트리 — `widgets/registry.ts`
 
-여덟 위젯의 `sizes`·`target`·stub 컴포넌트. 선언 크기는 **[[ADR-146]] 정정 13 의 매트릭스 전부**를
+여덟 위젯의 `sizes`·`target`·stub 컴포넌트. 선언 크기는 **[[ADR-147]] 정정 13 의 매트릭스 전부**를
 담는다(v1 배치가 안 쓰는 크기도 포함 — 사용자 확정: 나중 편집 기능을 위해 남긴다).
 
 | id | sizes | target |
@@ -94,7 +94,7 @@ export interface WidgetDefinition {
 - **auto 가 아닌 타일에 `onLayout` 을 걸지 마라.** 이유: 위 4번.
 - **`components/` 에 새 컴포넌트를 만들지 마라.** 이유: `WidgetGrid` 는 today 전용이라 화면 폴더가
   제자리다. 여러 화면이 쓰게 되면 그때 `components/` 로 올린다(아토믹 계층 테스트가 그 경계를 지킨다).
-- **`TILE_LAYOUT` 을 저장소에 쓰거나 읽지 마라.** 이유: v1 은 코드 상수다([[ADR-146]] 결정 2) —
+- **`TILE_LAYOUT` 을 저장소에 쓰거나 읽지 마라.** 이유: v1 은 코드 상수다([[ADR-147]] 결정 2) —
   저장 스키마도 마이그레이션도 이번 범위가 아니다.
 - 기존 테스트를 깨뜨리지 마라.
 

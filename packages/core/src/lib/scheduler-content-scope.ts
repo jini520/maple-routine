@@ -76,7 +76,7 @@ export interface SharedContentEntry {
   scope: 'world' | 'account'
   /**
    * 참이면 **추적 중인 캐릭터 중 누구의 스케줄러에도 없을 때 그 줄을 안 그린다**
-   * ([[ADR-146]] 정정 30 — 유니온 둘만 해당). 나머지는 등록 여부와 무관하게 늘 그린다.
+   * ([[ADR-147]] 정정 30 — 유니온 둘만 해당). 나머지는 등록 여부와 무관하게 늘 그린다.
    *
    * 판정 자체는 이 파일이 아니라 호출부가 한다(`displayedWeeklyContents` 의 결과) — 여기서
    * 항목을 빼면 컨텐츠 화면에서도 사라진다.
@@ -102,7 +102,7 @@ function toSharedEntry(entry: CatalogEntry, scope: 'world' | 'account'): SharedC
 
 /**
  * 공유 컨텐츠를 **계열별로** 묶어 준다 — today 의 「계정 및 메이플 ID 공유 컨텐츠」 위젯이 읽는다
- * ([[ADR-146]] 정정 28·31).
+ * ([[ADR-147]] 정정 28·31).
  *
  * ## 월드/계정이 축이 아니다
  *

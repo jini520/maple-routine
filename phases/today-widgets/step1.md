@@ -4,7 +4,7 @@
 
 - `/docs/README.md`
 - **`/docs/foundation/nexon-api.md` 의 「확인 완료된 사실」절** — 이 step 이 쓰는 실측값이 거기 있다
-- **`/docs/adr/ADR-146.md` 결정 7 + 정정 8**
+- **`/docs/adr/ADR-147.md` 결정 7 + 정정 8**
 - `/docs/adr/ADR-006.md`(확인 안 한 값을 단정하지 않는다) · `/docs/adr/ADR-057.md`(«모름» 과 «없음»)
 - 코드: `packages/core/src/types/nexon-wire.ts` · `packages/core/src/types/character.ts` ·
   `packages/core/src/nexon/character/normalize.ts` ·

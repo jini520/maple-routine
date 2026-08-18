@@ -186,7 +186,7 @@ describe('normalizeCharacterBasic', () => {
     expect(normalizeCharacterBasic(wire).guildName).toBeUndefined()
   })
 
-  // ADR-146 결정 7: character_exp_rate 는 숫자가 아니라 **문자열**("80.300")이다. access_flag와 같은
+  // ADR-147 결정 7: character_exp_rate 는 숫자가 아니라 **문자열**("80.300")이다. access_flag와 같은
   // 모양의 함정이라 여기서 풀어 두지 않으면 문자열째 비교돼("9.500" > "80.300" 이 사전순으로 참)
   // 진행률 바가 조용히 뒤집힌다.
   it('character_exp_rate 문자열을 expRate 숫자로 변환한다', () => {
@@ -250,7 +250,7 @@ describe('normalizeCharacterBasic', () => {
     expect(normalizeCharacterBasic(wire).expRate).toBe(0)
   })
 
-  // ADR-146 결정 7: 누적 절대값은 레벨이 오를수록 커져 "얼마나 남았나"를 못 말한다. 카드가 답해야
+  // ADR-147 결정 7: 누적 절대값은 레벨이 오를수록 커져 "얼마나 남았나"를 못 말한다. 카드가 답해야
   // 하는 것은 진행률이라 도메인 타입이 이 값을 나르지 않는다.
   it('character_exp는 도메인 객체에 실리지 않는다', () => {
     const wire: NexonCharacterBasicResponse = {

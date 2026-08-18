@@ -74,7 +74,7 @@ describe('DifficultyBadge', () => {
   })
 })
 
-describe('크기 둘 ([[ADR-146]] 정정 40)', () => {
+describe('크기 둘 ([[ADR-147]] 정정 40)', () => {
   it('기본은 지금까지와 같다 — 호출부 아홉 곳이 안 바뀐다', async () => {
     const 지정없음 = await renderAtom(<DifficultyBadge difficulty="하드" />)
     const 기본지정 = await renderAtom(<DifficultyBadge difficulty="하드" size="default" />)

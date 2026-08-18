@@ -2,8 +2,8 @@
 
 ## 읽어야 할 파일
 
-- `/docs/README.md` · **`/docs/features/today.md` 전문** · **`/docs/adr/ADR-146.md` 전문**
-- `/docs/ADR.md` 의 ADR-146 행 · `/docs/adr/ADR-132.md` 의 「열린 질문」 · `/docs/adr/ADR-143.md` 결정 4
+- `/docs/README.md` · **`/docs/features/today.md` 전문** · **`/docs/adr/ADR-147.md` 전문**
+- `/docs/ADR.md` 의 ADR-147 행 · `/docs/adr/ADR-132.md` 의 「열린 질문」 · `/docs/adr/ADR-143.md` 결정 4
 - `/CLAUDE.md` 의 「문서」절 — *"ADR 도 «설계, 구현 전» 으로 남는 경우가 많다 — 구현 완료 시
   `docs/adr/` 와 `docs/ADR.md` 인덱스 상태를 «구현 완료» 로 명시할 것"*
 - **step 0~12 산출물 전부** (각 step 의 `summary` 를 읽어라)
@@ -17,8 +17,8 @@ CLAUDE.md 의 docs-first 규칙은 **작업 후 점검**까지를 포함한다. 
 
 ### 1. 상태를 «구현 완료» 로
 
-- `docs/adr/ADR-146.md` 머리의 `(설계 완료, 구현 전, 2026-08-17)` → `(구현 완료 <날짜> · 실기기 미검증)`
-- `docs/ADR.md` 의 ADR-146 행 끝 `(**설계 완료, 구현 전**)` 도 같이
+- `docs/adr/ADR-147.md` 머리의 `(설계 완료, 구현 전, 2026-08-17)` → `(구현 완료 <날짜> · 실기기 미검증)`
+- `docs/ADR.md` 의 ADR-147 행 끝 `(**설계 완료, 구현 전**)` 도 같이
 - `docs/features/today.md` 의 `**상태**: 설계 완료 · **구현 전**...` 줄
 
 **실기기 검증을 하지 않았다면 «실기기 미검증» 을 반드시 남겨라** — 이 저장소의 다른 ADR 이 전부
@@ -26,7 +26,7 @@ CLAUDE.md 의 docs-first 규칙은 **작업 후 점검**까지를 포함한다. 
 
 ### 2. 열린 질문 정리
 
-`docs/features/today.md` 와 `ADR-146` 의 「열린 질문」에서 **구현으로 닫힌 것을 취소선 + 결과**로 옮기고,
+`docs/features/today.md` 와 `ADR-147` 의 「열린 질문」에서 **구현으로 닫힌 것을 취소선 + 결과**로 옮기고,
 남은 것만 둔다. **지우지 마라** — 이 저장소는 옛 내용을 지우지 않고 이력으로 남긴다.
 
 구현으로 닫히지 **않는** 것들(그대로 두어야 한다):
@@ -67,7 +67,7 @@ npm run build
 npx tsc --noEmit -p packages/app-rn/tsconfig.json
 npm test
 npm run lint
-grep -rn "설계 완료, 구현 전" docs/adr/ADR-146.md docs/ADR.md   # 결과가 없어야 한다
+grep -rn "설계 완료, 구현 전" docs/adr/ADR-147.md docs/ADR.md   # 결과가 없어야 한다
 grep -rn "물욕" packages/app-rn/src packages/core/src | grep -v "__tests__" | grep -v "^.*://"  # 화면 문구에 없어야 한다
 ```
 
@@ -83,6 +83,6 @@ grep -rn "물욕" packages/app-rn/src packages/core/src | grep -v "__tests__" | 
 ## 검증 절차
 
 1. 위 AC 커맨드를 전부 실행한다.
-2. `docs/README.md` → `docs/features/today.md` → `docs/adr/ADR-146.md` 순으로 읽어 내려가며
+2. `docs/README.md` → `docs/features/today.md` → `docs/adr/ADR-147.md` 순으로 읽어 내려가며
    **실제 만들어진 파일과 한 줄씩 대조**한다.
 3. 결과에 따라 `phases/today-widgets/index.json` 의 해당 step 을 갱신한다.

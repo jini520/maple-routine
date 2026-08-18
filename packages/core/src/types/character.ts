@@ -47,7 +47,7 @@ export interface CharacterBasicProfile {
   // 실측한 적도 없어([[ADR-006]] 의 태도) `normalizeCharacterBasic` 이 채우지 않고 **캐시에 쓰는 쪽이
   // 함께 넘긴다**. 그래서 옛 엔트리에는 없고, 그때는 화면이 레벨만 그린다.
   jobClass?: string
-  // 현재 레벨 진행률(%). wire의 문자열 `character_exp_rate` 를 Number로 푼 값([[ADR-146]] 결정 7).
+  // 현재 레벨 진행률(%). wire의 문자열 `character_exp_rate` 를 Number로 푼 값([[ADR-147]] 결정 7).
   // 옛 캐시 엔트리와 축약 응답에는 없어 옵셔널이고, 없으면 화면이 경험치 줄 자체를 그리지 않는다
   // (0%로 채우면 "모름"이 "0%"가 된다 — [[ADR-057]]과 같은 구분).
   expRate?: number

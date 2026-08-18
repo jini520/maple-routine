@@ -3,7 +3,7 @@
 ## 읽어야 할 파일
 
 - `/docs/README.md` · **`/docs/features/today.md` 전문** (특히 「데이터」·「위젯 여덟」)
-- **`/docs/adr/ADR-146.md` 결정 4·8·9 + 정정 3·4·9·12**
+- **`/docs/adr/ADR-147.md` 결정 4·8·9 + 정정 3·4·9·12**
 - `/docs/features/content-scheduler.md` · `/docs/features/boss-scheduler.md` ·
   `/docs/features/boss-profit.md`(「아이템 수익 합산」) · `/docs/adr/ADR-054.md`(결정석 한도)
 - 코드(읽기만): `packages/core/src/features/content-scheduler/store.ts` ·
@@ -16,7 +16,7 @@
 
 ## 배경
 
-**위젯은 스토어를 모른다**([[ADR-146]] 결정 4). 화면이 스토어 넷을 읽어 뷰모델 하나를 만들고 위젯에
+**위젯은 스토어를 모른다**([[ADR-147]] 결정 4). 화면이 스토어 넷을 읽어 뷰모델 하나를 만들고 위젯에
 프롭으로 준다. 이 step 은 그 **조립을 순수 함수로** 만든다 — 스토어를 안 만지므로 위젯이 전부 stub 인
 지금 상태에서 **로직 전부를 검증할 수 있다.**
 
@@ -108,7 +108,7 @@ export function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel
 - **`new Date()` 를 이 파일에서 부르지 마라.** 이유: `now` 를 인자로 받아야 카운트다운·기간 판정이
   테스트에서 고정된다.
 - **「외 N명」 접기·상한을 넣지 마라.** 이유: 사용자 확정 — 선택된 캐릭터를 전부 출력한다.
-- **증감(`previousPeriodTotalMeso`)을 계산하지 마라.** 이유: [[ADR-146]] 정정 4.
+- **증감(`previousPeriodTotalMeso`)을 계산하지 마라.** 이유: [[ADR-147]] 정정 4.
 - 기존 테스트를 깨뜨리지 마라.
 
 ## Acceptance Criteria

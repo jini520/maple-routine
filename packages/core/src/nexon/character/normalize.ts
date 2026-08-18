@@ -35,7 +35,7 @@ function normalizeGuildName(raw: string | null | undefined): string | null | und
   return raw === null || raw.trim() === '' ? null : raw
 }
 
-// ADR-146 결정 7: character_exp_rate는 숫자가 아니라 문자열("80.300")로 온다. 여기서 풀어두지 않으면
+// ADR-147 결정 7: character_exp_rate는 숫자가 아니라 문자열("80.300")로 온다. 여기서 풀어두지 않으면
 // 문자열째 비교돼 `"9.500" > "80.300"` 이 사전순으로 참이 되고 진행률 바가 조용히 뒤집힌다.
 // 값이 없거나 숫자로 안 풀리면 0이 아니라 undefined다 — 0으로 채우는 순간 "모름"이 "0%"가 된다.
 // (Number('')·Number('  ')이 0이라 빈 문자열은 명시적으로 걸러야 한다.)

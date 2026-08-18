@@ -159,7 +159,7 @@ beforeEach(async () => {
   // 모듈 수준 플래그라 테스트끼리 샌다(ADR-097 결정 3).
   resetSyncRunStateForTests()
   // 같은 이유로 진행 중인 회차도 비운다 — 끝내지 않은 회차를 남기면 다음 테스트가 거기에
-  // 합류해 영영 안 끝난다(ADR-146 결정 4).
+  // 합류해 영영 안 끝난다(ADR-147 결정 4).
   resetSyncSingleFlightForTests()
   prefs = installFakePreferences()
   getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1', selectedAccountId: 'acc-1' })
@@ -482,7 +482,7 @@ describe('syncSchedules', () => {
     expect(results[2].error).toBeNull()
   })
 
-  describe('단일 비행 — 진행 중인 회차가 있으면 함께 기다린다 (ADR-146 결정 4)', () => {
+  describe('단일 비행 — 진행 중인 회차가 있으면 함께 기다린다 (ADR-147 결정 4)', () => {
     it('진행 중인 회차가 있으면 둘째 호출은 네트워크를 다시 타지 않는다', async () => {
       fetchCharacterListMock.mockResolvedValue([account('acc-1', [character('ocid-1')])])
       let resolveState: (state: SchedulerCharacterState) => void = () => {}

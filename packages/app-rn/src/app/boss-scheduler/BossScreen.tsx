@@ -209,7 +209,7 @@ export function BossScreen(): React.JSX.Element {
   useScheduleSyncErrorToast(selected?.error ?? null, { onRetry: () => refresh(trackedOcids ?? []) })
 
   // 카드로 표시할 목록 — [[ADR-035]] 수동 모드 멤버십과 [[ADR-031]] 결정 5(미등록이어도 완료면
-  // 포함)가 그 안에 있다. **이 화면의 지역 함수였던 것을 코어로 꺼냈다**([[ADR-146]] 결정 8) —
+  // 포함)가 그 안에 있다. **이 화면의 지역 함수였던 것을 코어로 꺼냈다**([[ADR-147]] 결정 8) —
   // today 의 「캐릭터별 남은 스케줄」이 세는 «남은 보스» 가 이 화면이 보여 주는 것과 한 글자도
   // 달라선 안 되기 때문이다. 이유·규칙·«캐릭터를 인자로 받는» 근거는 `displayed-bosses.ts` 파일 머리.
   const displayedWeeklyBosses =

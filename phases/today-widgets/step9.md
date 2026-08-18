@@ -3,7 +3,7 @@
 ## 읽어야 할 파일
 
 - `/docs/README.md` · **`/docs/features/today.md` 의 「3. 주간 보스 수익」·「4·7·8」절**
-- **`/docs/adr/ADR-146.md` 결정 9 + 정정 4·5·11**
+- **`/docs/adr/ADR-147.md` 결정 9 + 정정 4·5·11**
 - `/docs/features/boss-profit.md`(「아이템 수익 합산」) · `/docs/adr/ADR-124.md` · `/docs/adr/ADR-087.md`
 - 코드: `packages/core/src/lib/boss-profit-delta.ts` 의 `formatMesoShort` ·
   `packages/core/src/lib/item-icons.ts` · `packages/app-rn/src/components/atoms/AnimatedMeso/`
@@ -12,13 +12,13 @@
 
 ## 공통 규칙 (이 step 의 모든 위젯에 걸린다)
 
-- **위젯은 스토어를 모른다.** `data: TodayViewModel` 프롭만 읽는다([[ADR-146]] 결정 4).
+- **위젯은 스토어를 모른다.** `data: TodayViewModel` 프롭만 읽는다([[ADR-147]] 결정 4).
 - **`w`·`h` 로 갈라 스스로 다르게 그린다** — 큰 타일이 작은 타일을 확대한 것이 아니다.
   크기가 줄면 **무엇을 버릴지 위젯이 정한다.**
 - **타일은 스스로 커지거나 줄지 않는다.** 크기는 배치가 준다(`4×auto` 만 예외, 정정 1).
 - **타일 안에서 스크롤하지 마라.** 넘치면 자르거나 접는다 — 타일 안 스크롤은 페이지 스크롤과
   제스처를 두고 싸운다.
-- **위젯은 사라지지 않는다**([[ADR-146]] 결정 5). 데이터가 없어도 **자기 타일 안에서** 빈 상태를 말한다 —
+- **위젯은 사라지지 않는다**([[ADR-147]] 결정 5). 데이터가 없어도 **자기 타일 안에서** 빈 상태를 말한다 —
   좌표 배치라 자리를 빼면 빈 사각형이 남는다.
 - **«없다» 와 «모른다» 를 가른다.** 동기화 실패로 모르는 것을 «0» 으로 그리지 마라
   (예외는 주간 보스 수익 하나 — 정정 4).

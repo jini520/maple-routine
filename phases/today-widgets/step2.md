@@ -6,14 +6,14 @@
 - **`/docs/adr/ADR-143.md` 결정 4 전문** — «미지정이면 첫 번째가 임시 대표» 규칙과, 그 값을 읽는 화면이
   아직 없다고 적어 둔 자리(**이 step 이 그 문장을 낡게 만든다**)
 - **`/docs/adr/ADR-144.md` 결정 4** — 대표를 안 고른 화면은 «채워진 별이 하나도 없다»
-- **`/docs/adr/ADR-146.md` 정정 2**
+- **`/docs/adr/ADR-147.md` 정정 2**
 - 코드: `packages/core/src/features/character-manage/derivations.ts` ·
   그 `__tests__/` · `packages/core/src/storage/character-selection.ts` ·
   `packages/app-rn/src/components/organisms/CharacterManage/use-character-manage.ts`
 
 ## 배경
 
-`today` 의 대표 캐릭터 위젯은 **«대표 없음» 상태를 갖지 않는다**([[ADR-146]] 정정 2, 사용자 판정).
+`today` 의 대표 캐릭터 위젯은 **«대표 없음» 상태를 갖지 않는다**([[ADR-147]] 정정 2, 사용자 판정).
 [[ADR-143]] 결정 4 가 이미 답을 갖고 있다 — *«미지정이면 목록의 첫 번째가 «임시 대표»» 이고 그
 파생값을 저장하지 않는다.*
 

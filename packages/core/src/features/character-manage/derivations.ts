@@ -140,7 +140,7 @@ export function resolveRepresentative(orderedOcids: string[], stored: string | n
  * **저장하지 않는 파생값**이다 — 저장하면 순서가 바뀔 때마다 «사용자가 고른 대표» 와 «앱이 적어 둔
  * 대표» 두 진실이 갈린다.
  *
- * `today` 의 「대표 캐릭터」 위젯이 이 값의 첫 독자다([[ADR-146]] 정정 2) — 그 화면은 «대표 없음»
+ * `today` 의 「대표 캐릭터」 위젯이 이 값의 첫 독자다([[ADR-147]] 정정 2) — 그 화면은 «대표 없음»
  * 상태를 갖지 않으므로 자리에 설 캐릭터가 늘 하나 있어야 한다.
  *
  * **`resolveRepresentative` 와 합치지 마라** — 위 함수 주석의 이유. 저장된 대표가 목록에 없으면

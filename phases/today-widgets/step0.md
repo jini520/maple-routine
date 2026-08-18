@@ -3,7 +3,7 @@
 ## 읽어야 할 파일
 
 - `/docs/README.md` (문서 인덱스)
-- **`/docs/adr/ADR-146.md` 결정 4 전문** — 이 step 이 왜 today 보다 먼저인지가 거기 있다
+- **`/docs/adr/ADR-147.md` 결정 4 전문** — 이 step 이 왜 today 보다 먼저인지가 거기 있다
 - **`/docs/adr/ADR-132.md` 결정 8** — 이 구멍을 열어 두고 기한을 «today 에 내용이 붙는 시점» 으로 못 박은 원문
 - `/docs/adr/ADR-097.md` 결정 1~4·7 · `/docs/adr/ADR-101.md` 결정 3
 - 코드: `packages/core/src/features/schedule-sync/schedule-sync.ts` ·

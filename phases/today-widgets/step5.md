@@ -3,7 +3,7 @@
 ## 읽어야 할 파일
 
 - `/docs/README.md` · **`/docs/features/today.md` 의 「격자」·「배치」절 전문**
-- **`/docs/adr/ADR-146.md` 결정 1·2·3 + 정정 1**
+- **`/docs/adr/ADR-147.md` 결정 1·2·3 + 정정 1**
 - `/docs/adr/ADR-132.md` 정정 30(«치수는 계산한다 — 재는 것이 하나도 없다»)
 - 코드: `packages/app-rn/src/lib/bottom-bar-metrics.ts`(**같은 모양의 선례 — 읽고 관례를 따라라**) ·
   `packages/app-rn/src/lib/__tests__/`
@@ -87,7 +87,7 @@ export function resolveWidgetPositions(
   아래(`row` 가 큰) 모든 타일의 `top` 에 차이를 더한다.** 즉
   `top = 적어 둔 top + Σ(위쪽 auto 타일들의 초과분)`.
 - 컨테이너 높이는 그 결과의 `max(top + height)`.
-- **`row` 를 재계산해 다시 채우지 마라**(자동 패킹). 이유: [[ADR-146]] 결정 2 — 알고리즘이 늘 «어딘가에»
+- **`row` 를 재계산해 다시 채우지 마라**(자동 패킹). 이유: [[ADR-147]] 결정 2 — 알고리즘이 늘 «어딘가에»
   넣으므로 배치 실수가 실수로 드러나지 않는다.
 
 ## 테스트 (먼저 작성한다)
