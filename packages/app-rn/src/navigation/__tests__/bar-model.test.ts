@@ -12,6 +12,7 @@ import {
   groupById,
   groupOfPage,
   initialBarState,
+  openPage,
   shouldGateAd,
   pressBack,
   pressGroup,
@@ -199,5 +200,48 @@ describe('광고 게이트는 그룹 이동에만 (결정 9)', () => {
 
     expect(back.page).toBe('Utility')
     expect(shouldGateAd('back', inLedger, back)).toBe(false)
+  })
+})
+
+describe('openPage — 바를 거치지 않은 이동 ([[ADR-132]] 결정 4)', () => {
+  // 증상: today 위젯으로 보스 수익에 간 뒤 ← 를 누르면 today 가 아니라 **가계부가 활성인 채로**
+  // 그룹 행만 열렸다. 기록이 비어 있어 결정 5 의 안전망에 걸린 것이다.
+  it('하위를 가진 그룹으로 내려가면 온 자리를 적는다 — ← 가 그리로 돌아간다', () => {
+    const start = initialBarState()
+
+    const opened = openPage(start, 'Profit')
+    expect(opened.page).toBe('Profit')
+    expect(opened.history).toEqual(['Today'])
+
+    expect(pressBack(opened)).toMatchObject({ page: 'Today', history: [], showGroups: false })
+  })
+
+  it('하위가 없는 그룹으로 가면 같은 층의 옆걸음이라 기록을 비운다', () => {
+    const withHistory = { ...initialBarState(), page: 'Profit' as const, history: ['Today' as const] }
+
+    expect(openPage(withHistory, 'Settings')).toMatchObject({ page: 'Settings', history: [] })
+  })
+
+  it('같은 그룹 안의 이동은 쌓지 않는다 — 하위 옆걸음이다', () => {
+    const inLedger = { ...initialBarState(), page: 'Profit' as const, history: ['Today' as const] }
+
+    expect(openPage(inLedger, 'HuntingProfit')).toMatchObject({
+      page: 'HuntingProfit',
+      history: ['Today'],
+    })
+  })
+
+  it('같은 페이지면 그룹 행만 닫는다', () => {
+    const opened = { ...initialBarState(), page: 'Profit' as const, showGroups: true }
+
+    expect(openPage(opened, 'Profit')).toMatchObject({ page: 'Profit', showGroups: false })
+  })
+
+  // 프로그램 이동이 «마지막으로 본 하위» 를 안 건드리는 것은 [[ADR-145]] 대가 · [[ADR-140]] 결정 1
+  // 의 CTA 와 같은 성질이라 여기서 뒤집지 않는다 — 이 함수가 고치는 것은 뒤로 갈 자리 하나뿐이다.
+  it('lastSub 는 건드리지 않는다', () => {
+    const start = initialBarState()
+
+    expect(openPage(start, 'Profit').lastSub).toEqual(start.lastSub)
   })
 })

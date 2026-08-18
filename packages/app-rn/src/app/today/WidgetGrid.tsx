@@ -33,7 +33,8 @@ import { maybeShowTabSwitchAd } from '@core/features/ads/tab-switch-ad'
 import { Card } from '../../components/atoms/Card/Card'
 import { resolveWidgetGridMetrics } from '../../lib/widget-grid-metrics'
 import { resolveWidgetPositions } from '../../lib/widget-layout'
-import { groupOfPage } from '../../navigation/bar-model'
+import { groupOfPage, openPage } from '../../navigation/bar-model'
+import { getBarRecord, setBarRecord, toBarRecord } from '../../navigation/bar-store'
 import type { TabRouteName } from '../../navigation/routes'
 import { useScreenNavigation } from '../use-screen-navigation'
 import type { TodayViewModel } from './view-model'
@@ -64,6 +65,12 @@ export function WidgetGrid({ data }: WidgetGridProps): React.JSX.Element {
   }
 
   function open(target: TabRouteName): void {
+    // **바 기록을 먼저 맞춘다.** 타일 탭은 today(그룹 행)에서 하위 층으로 **한 층 내려가는 이동**
+    // 이라 [[ADR-132]] 결정 4 대로 온 자리를 적어야 한다. 안 적으면 하위 행의 ← 가 결정 5 의
+    // 안전망(«기록이 없으면 페이지는 그대로 두고 그룹 행만 연다»)에 걸려 **가계부가 활성인 채로**
+    // 그룹 행이 열린다 — 그 안전망은 «어디서 왔는지 알 수 없을 때» 의 것이지 여기 걸릴 자리가 아니다.
+    setBarRecord(toBarRecord(openPage({ ...getBarRecord(), page: HOST_PAGE }, target)))
+
     navigation.navigate('Tabs', { screen: target })
 
     // **막지 않는다** — 이동은 위에서 이미 끝났고 광고는 준비된 것이 있을 때만 뜬다

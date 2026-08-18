@@ -21,6 +21,9 @@ import { useScreenNavigation } from '../../use-screen-navigation'
 import { 빈_뷰모델 } from '../widgets/__tests__/widget-fixture'
 import { WidgetGrid } from '../WidgetGrid'
 
+import { initialBarState, pressBack } from '../../../navigation/bar-model'
+import { getBarRecord, setBarRecord, toBarRecord } from '../../../navigation/bar-store'
+
 jest.mock('../../use-screen-navigation', () => ({ useScreenNavigation: jest.fn() }))
 jest.mock('@core/features/ads/tab-switch-ad', () => ({
   maybeShowTabSwitchAd: jest.fn(async () => {}),
@@ -55,6 +58,8 @@ function 스타일(element: AtomElement): Record<string, unknown> {
 }
 
 beforeEach(() => {
+  // 바 기록은 모듈 수준 상태다 — 테스트끼리 새지 않게 매번 비운다.
+  setBarRecord(toBarRecord(initialBarState()))
   mockedUseScreenNavigation.mockReturnValue({ navigate } as unknown as ReturnType<
     typeof useScreenNavigation
   >)
@@ -158,6 +163,34 @@ describe('타일 탭 ([[ADR-146]] 결정 5)', () => {
 
     expect(navigate).toHaveBeenCalledWith('Tabs', { screen: 'Profit' })
     expect(mockedMaybeShowTabSwitchAd).toHaveBeenCalledTimes(1)
+  })
+
+  // 증상: 위젯으로 보스 수익에 간 뒤 ← 를 누르면 today 가 아니라 **가계부가 활성인 채로** 그룹
+  // 행만 열렸다. 타일 탭이 «한 층 내려가는 이동» 인데 바 기록을 안 남겨, ← 가 [[ADR-132]] 결정 5 의
+  // 안전망(«기록이 없으면 페이지는 그대로 두고 그룹 행만 연다»)에 걸린 것이다.
+  it('하위를 가진 그룹으로 보내면 바 기록에 온 자리를 적는다 — ← 가 today 로 돌아간다', async () => {
+    const view = await 격자()
+
+    await act(async () => {
+      fireEvent.press(within(타일(view, 'weekly-boss-profit')).getByRole('button'))
+    })
+
+    expect(getBarRecord().history).toEqual(['Today'])
+    expect(pressBack({ ...getBarRecord(), page: 'Profit' })).toMatchObject({
+      page: 'Today',
+      showGroups: false,
+    })
+  })
+
+  it('하위가 없는 그룹으로 보내면 적지 않는다 — 같은 층의 옆걸음이다', async () => {
+    const view = await 격자()
+
+    await act(async () => {
+      fireEvent.press(within(타일(view, 'representative-character')).getByRole('button'))
+    })
+
+    expect(navigate).toHaveBeenCalledWith('Tabs', { screen: 'Settings' })
+    expect(getBarRecord().history).toEqual([])
   })
 
   it('`target` 이 없는 타일은 누를 수 없다', async () => {
