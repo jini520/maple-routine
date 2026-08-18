@@ -111,6 +111,17 @@ describe('스택 바가 총액을 가른다', () => {
     expect(flattenStyle(getByTestId('profit-fill-item').props.style).width).toBe('20%')
   })
 
+  // 조각에 높이가 박혀 있으면 트랙만 키웠을 때 **아래쪽이 빈 채로** 남는다(실제로 그렇게 났다).
+  // 조각은 자기 높이를 알면 안 되고 트랙을 그대로 채워야 한다.
+  it.each(['4x3', '4x2', '2x2'] as const)('%s — 조각이 트랙 높이를 그대로 채운다', async (size) => {
+    const { getByTestId } = await 위젯(크기[size])
+
+    for (const key of ['crystal', 'item'] as const) {
+      const style = flattenStyle(getByTestId(`profit-fill-${key}`).props.style)
+      expect(style.height).toBe('100%')
+    }
+  })
+
   it('두 조각의 색이 [[ADR-142]] 링과 같은 짝이다 — 결정석 `primary` · 아이템 `third`', async () => {
     const { getByTestId } = await 위젯(크기['4x3'])
 

@@ -2600,7 +2600,7 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                 "backgroundColor": "#E4E1CE",
                                 "borderRadius": 9999,
                                 "flexDirection": "row",
-                                "height": 12,
+                                "height": 8,
                                 "overflow": "hidden",
                                 "width": "100%",
                               }
@@ -2611,7 +2611,7 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                               style={
                                 {
                                   "backgroundColor": "#F58B0F",
-                                  "height": 6,
+                                  "height": "100%",
                                   "width": "100%",
                                 }
                               }
@@ -2621,7 +2621,7 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                               style={
                                 {
                                   "backgroundColor": "#CA763A",
-                                  "height": 6,
+                                  "height": "100%",
                                   "width": "0%",
                                 }
                               }

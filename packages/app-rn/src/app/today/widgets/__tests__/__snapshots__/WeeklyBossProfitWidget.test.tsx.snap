@@ -181,7 +181,7 @@ exports[`스냅샷 — 네 크기 2x2 1`] = `
           style={
             {
               "backgroundColor": "#F58B0F",
-              "height": 6,
+              "height": "100%",
               "width": "80%",
             }
           }
@@ -191,7 +191,7 @@ exports[`스냅샷 — 네 크기 2x2 1`] = `
           style={
             {
               "backgroundColor": "#CA763A",
-              "height": 6,
+              "height": "100%",
               "width": "20%",
             }
           }
@@ -421,7 +421,7 @@ exports[`스냅샷 — 네 크기 4x2 1`] = `
             style={
               {
                 "backgroundColor": "#F58B0F",
-                "height": 6,
+                "height": "100%",
                 "width": "80%",
               }
             }
@@ -431,7 +431,7 @@ exports[`스냅샷 — 네 크기 4x2 1`] = `
             style={
               {
                 "backgroundColor": "#CA763A",
-                "height": 6,
+                "height": "100%",
                 "width": "20%",
               }
             }
@@ -815,7 +815,7 @@ exports[`스냅샷 — 네 크기 4x3 1`] = `
             "backgroundColor": "#E4E1CE",
             "borderRadius": 9999,
             "flexDirection": "row",
-            "height": 12,
+            "height": 8,
             "overflow": "hidden",
             "width": "100%",
           }
@@ -826,7 +826,7 @@ exports[`스냅샷 — 네 크기 4x3 1`] = `
           style={
             {
               "backgroundColor": "#F58B0F",
-              "height": 6,
+              "height": "100%",
               "width": "80%",
             }
           }
@@ -836,7 +836,7 @@ exports[`스냅샷 — 네 크기 4x3 1`] = `
           style={
             {
               "backgroundColor": "#CA763A",
-              "height": 6,
+              "height": "100%",
               "width": "20%",
             }
           }

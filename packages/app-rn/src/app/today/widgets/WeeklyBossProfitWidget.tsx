@@ -45,9 +45,16 @@ const NO_RECORD_NOTE = '아직 이번 주 기록이 없습니다'
 const PERIOD_LABEL = '이번 주'
 
 /** 스택 바의 두 조각. 조립하지 않는다 — `ProgressBar` 파일 머리 ①과 같은 이유(스캔에 안 잡힌다). */
+/**
+ * 조각에는 **높이를 박지 않는다** — 트랙의 높이를 그대로 채운다(`h-full`).
+ *
+ * 한때 여기에 `h-1.5` 가 박혀 있었고, 4x3 의 트랙만 키우자 **아래쪽이 빈 채로**
+ * 남았다([[ADR-146]] 정정 18 이 만든 회귀). 트랙 높이가 한 곳(`StackBar`)에서 갈리는데 조각이
+ * 자기 높이를 따로 알면 둘은 반드시 어긋난다.
+ */
 const SEGMENT_CLASS = {
-  crystal: 'h-1.5 bg-primary',
-  item: 'h-1.5 bg-third',
+  crystal: 'h-full bg-primary',
+  item: 'h-full bg-third',
 } as const
 
 const LEGEND_DOT_CLASS = {
@@ -113,7 +120,7 @@ function StackBar(props: { split: ProfitSplit; thick?: boolean }): React.JSX.Ele
   return (
     <View
       testID="profit-stack-bar"
-      className={`${props.thick === true ? 'h-3' : 'h-1.5'} w-full flex-row overflow-hidden rounded-full bg-track`}
+      className={`${props.thick === true ? 'h-2' : 'h-1.5'} w-full flex-row overflow-hidden rounded-full bg-track`}
     >
       {sum > 0 &&
         segments.map((segment) => (
