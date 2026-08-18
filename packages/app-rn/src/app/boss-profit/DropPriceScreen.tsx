@@ -33,7 +33,6 @@
 //    주는 원격 주소라 `{ uri }` 로 감싼다.
 import { useEffect, useState } from 'react'
 import { Image, Pressable, Text, View } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useBossProfitStore } from '@core/features/boss-profit/store'
 import {
@@ -64,6 +63,7 @@ import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHe
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { ArrowLeftIcon, ChevronLeftIcon, ChevronRightIcon, PackageOpenIcon } from '../../lib/icons'
 import { TABULAR_NUMS } from '../../lib/text-styles'
+import { useTopSafeAreaPx } from '../../lib/top-safe-area'
 import { useScreenNavigation } from '../use-screen-navigation'
 import { avatarFaceCropStyle } from './CharacterAvatar'
 import { DropPricePad } from './DropPricePad'
@@ -165,7 +165,7 @@ function EntryRow(props: {
 
 export function DropPriceScreen(): React.JSX.Element {
   const navigation = useScreenNavigation()
-  const insets = useSafeAreaInsets()
+  const topSafeAreaPx = useTopSafeAreaPx()
   const { tab, periodKey: profitPeriodKey } = useBossProfitStore()
   const { status, groups, load, savePrice, excludePrice } = useDropPriceStore()
 
@@ -220,9 +220,9 @@ export function DropPriceScreen(): React.JSX.Element {
         hasTabBar={false}
         header={
           // 히스토리 화면과 같은 헤더 레시피 — 공용 `PageHeader` 를 쓰지 않는 이유도 같다
-          // (배경 조각도 하단 페이드도 없는 서브 화면이다). 상단 여백을 안 더하는 것도 같다
-          // ([[ADR-139]]).
-          <View testID="page-header" className="z-10 px-4 pb-2" style={{ paddingTop: insets.top }}>
+          // (배경 조각도 하단 페이드도 없는 서브 화면이다). 상단 여백을 안 더하는 것도, 그 안전영역을
+          // `useTopSafeAreaPx()` 로 받는 것도 같다([[ADR-139]] · 정정 1).
+          <View testID="page-header" className="z-10 px-4 pb-2" style={{ paddingTop: topSafeAreaPx }}>
             <PageHeaderTitleRow className="gap-1">
               <Pressable
                 role="button"

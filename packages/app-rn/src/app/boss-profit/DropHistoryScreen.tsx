@@ -33,7 +33,6 @@
 //    사라지고(줄바꿈 품질만 달라진다) WORD JOINER 는 **core 가 문자열에 박아 두므로** 그대로 온다.
 import { useEffect, useState } from 'react'
 import { Image, Pressable, Text, View } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Path } from 'react-native-svg'
 
 import {
@@ -66,6 +65,7 @@ import { DROUGHT_GLOW_FILTER, DROUGHT_TIER_STYLES } from '../../lib/drought-tier
 import { ArrowLeftIcon, ScrollTextIcon } from '../../lib/icons'
 import { Svg } from '../../lib/nativewind-interop'
 import { TABULAR_NUMS } from '../../lib/text-styles'
+import { useTopSafeAreaPx } from '../../lib/top-safe-area'
 import { useScreenNavigation } from '../use-screen-navigation'
 
 /**
@@ -284,7 +284,7 @@ function DropHistoryPeriodSection(props: {
 
 export function DropHistoryScreen(): React.JSX.Element {
   const navigation = useScreenNavigation()
-  const insets = useSafeAreaInsets()
+  const topSafeAreaPx = useTopSafeAreaPx()
   const { status, groups, drought, charactersByOcid, load } = useDropHistoryStore()
 
   useEffect(() => {
@@ -301,8 +301,9 @@ export function DropHistoryScreen(): React.JSX.Element {
         // 없다. 스크롤 상자가 노치까지 덮던 웹과 달리 헤더가 스크롤 뷰의 형제라, 상단 안전영역을
         // 헤더가 먹는다는 계약은 그대로다(`ScreenScroll` 은 헤더가 있으면 위를 안 건드린다).
         // **여백은 더하지 않는다**([[ADR-139]]) — 공용 셸과 같은 값이어야 가격 화면과 나란히 열릴 때
-        // 제목 높이가 안 갈린다.
-        <View testID="page-header" className="z-10 px-4 pb-2" style={{ paddingTop: insets.top }}>
+        // 제목 높이가 안 갈린다. 그 «같은 값» 이 `useTopSafeAreaPx()` 다([[ADR-139]] 정정 1 —
+        // 안드로이드 하한 48).
+        <View testID="page-header" className="z-10 px-4 pb-2" style={{ paddingTop: topSafeAreaPx }}>
           <View className="gap-3">
             <PageHeaderTitleRow className="gap-1">
               <Pressable

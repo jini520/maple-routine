@@ -1,5 +1,6 @@
 import { View } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
+
+import { useTopSafeAreaPx } from '../../../lib/top-safe-area'
 
 
 // 화면 상단 헤더 셸([[ADR-094]] 4단계). 스케줄러 계열 4화면이 **글자 하나까지 같은** 마크업을
@@ -52,10 +53,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 //
 // ── 안전영역 ─────────────────────────────────────────────────────────────────────
 //
-// `pt-[calc(1rem+var(--sa-top))]` → `paddingTop: insets.top`. 값의 출처가 CSS 변수 주입에서
+// `pt-[calc(1rem+var(--sa-top))]` → `paddingTop: 상단 안전영역`. 값의 출처가 CSS 변수 주입에서
 // `SafeAreaProvider` 로 바뀔 뿐 뜻은 같다(그래서 `SystemBarsPort.refreshSafeAreaInsets()` 가 RN 에서
 // 할 일이 없다 — `native/adapters/rn-system-bars.ts`). **헤더가 상단 안전영역을 먹는 쪽이라는
 // 사실이 계약이다** — `ScreenScroll` 은 헤더가 있으면 그 위쪽을 건드리지 않는다.
+//
+// 그 값은 `insets.top` 이 **아니라** `useTopSafeAreaPx()` 다([[ADR-139]] 정정 1) — 안드로이드에서만
+// 하한 48 이 깔린다(실기기 인셋 31.3 은 iOS 59 의 절반이 안 돼 «여백이 부족» 했다). 하한을 이
+// 헤더가 아니라 **안전영역 값 쪽에** 단 이유는 바로 아래 문단이다.
 //
 // **상수 몫 `1rem` 은 옮기지 않는다**([[ADR-139]], 사용자 판정 2026-08-16). 웹에서 그 16 이 하던
 // 일은 둘인데 여기서는 둘 다 없다 — ① 불투명 헤더 판의 안쪽 여백(RN 헤더는 자기 배경을 안 칠한다,
@@ -65,6 +70,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 // 그래서 **제목 윗변과 그 페이드의 끝선이 같은 선**이 됐다. 지금은 마스크 알파가 그 선에서 1 이라
 // (smoothstep² 은 양 끝 기울기가 0 이다) 제목이 불투명하지만 **여유가 0** 이다 — 페이드 길이
 // (`safe-area-fade.ts`)를 늘리면 제목 윗변부터 갉힌다. 두 값이 이제 서로를 본다.
+//
+// **그래서 안드로이드 하한이 여기가 아니라 `lib/top-safe-area.ts` 에 있다**([[ADR-139]] 정정 1).
+// 이 헤더에만 더하면 제목은 내려가는데 페이드는 짧은 채로 남아 **그 선이 갈라진다** — 결정 1 이
+// 대가를 치르고 얻은 성질을 그대로 버리는 셈이다. 밑에 깔면 둘이 계속 같은 값을 본다.
 //
 // ── 보스 수익은 여전히 여기 포함하지 않는다 ────────────────────────────────────────
 //
@@ -87,10 +96,10 @@ export interface PageHeaderProps {
 }
 
 export function PageHeader(props: PageHeaderProps): React.JSX.Element {
-  const insets = useSafeAreaInsets()
+  const topSafeAreaPx = useTopSafeAreaPx()
 
   return (
-    <View testID="page-header" className="z-10 px-4 pb-2" style={{ paddingTop: insets.top }}>
+    <View testID="page-header" className="z-10 px-4 pb-2" style={{ paddingTop: topSafeAreaPx }}>
 
       <View className="gap-4">{props.children}</View>
 

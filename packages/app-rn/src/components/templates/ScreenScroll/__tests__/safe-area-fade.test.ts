@@ -6,7 +6,13 @@
 import { resolveScreenBottomInset } from '../bottom-inset'
 import { FADE_MASK_ALPHAS, FADE_MASK_LOCATIONS, resolveSafeAreaFade } from '../safe-area-fade'
 
-/** iPhone 계열(`render-atom.tsx` 의 테스트 안전영역과 같은 값). */
+/**
+ * iPhone 계열(`render-atom.tsx` 의 테스트 안전영역과 같은 값).
+ *
+ * 상단은 **인셋이 아니라 `useTopSafeAreaPx()` 의 결과**가 들어오는 자리다([[ADR-139]] 정정 1) —
+ * iOS 는 하한(48) 위라 같은 값이고, 안드로이드에서만 갈린다. 그 갈림은 `lib/top-safe-area.test.ts`
+ * 가 보고, 여기서는 **받은 값을 그대로 상단 길이로 쓰는지**만 본다.
+ */
 const 인셋 = { top: 59, bottom: 34 }
 
 /** 기준 기기(402pt)의 바 몫 — 정정 30 이후 기기마다 다르다(`bottom-bar-metrics.ts`). */
@@ -22,7 +28,7 @@ const 화면 = (
 ): Parameters<typeof resolveSafeAreaFade>[0] => ({
   hasHeader: true,
   hasTabBar,
-  insetTopPx: 인셋.top,
+  topSafeAreaPx: 인셋.top,
   insetBottomPx: bottomInsetPx,
   barSpacePx: 바_몫,
   portBottomPx: resolveScreenBottomInset({ hasTabBar, bottomInsetPx, barSpacePx: 바_몫, platform })
@@ -30,7 +36,7 @@ const 화면 = (
 })
 
 describe('페이드는 콘텐츠가 실제로 지나가는 자리에만 있다 ([[ADR-134]] 결정 3)', () => {
-  it('헤더가 있으면 상단은 안전영역만큼이다 — 굴리면 콘텐츠가 상태바 밑을 지나간다', () => {
+  it('헤더가 있으면 상단은 상단 안전영역만큼이다 — 굴리면 콘텐츠가 상태바 밑을 지나간다', () => {
     const fade = resolveSafeAreaFade(화면(true, 'ios'))
 
     expect(fade.topPx).toBe(59)
@@ -104,7 +110,7 @@ describe('페이드는 콘텐츠가 실제로 지나가는 자리에만 있다 (
   // 바가 있으면 그 몫(72)은 안전영역과 무관하게 남는다 — 인셋 0인 기기에서도 콘텐츠는 바 밑을
   // 지나간다. 상단만 0이 된다.
   it('안전영역이 없는 기기에서도 바가 있으면 그 몫만큼은 깎는다', () => {
-    const fade = resolveSafeAreaFade({ ...화면(true, 'android', 0), insetTopPx: 0 })
+    const fade = resolveSafeAreaFade({ ...화면(true, 'android', 0), topSafeAreaPx: 0 })
 
     expect(fade).toEqual({ topPx: 0, bottomPx: 바_페이드 })
   })
@@ -113,7 +119,7 @@ describe('페이드는 콘텐츠가 실제로 지나가는 자리에만 있다 (
     const fade = resolveSafeAreaFade({
       ...화면(false, 'ios', 0),
       hasHeader: false,
-      insetTopPx: 0,
+      topSafeAreaPx: 0,
     })
 
     expect(fade).toEqual({ topPx: 0, bottomPx: 0 })
