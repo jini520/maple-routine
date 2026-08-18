@@ -36,6 +36,7 @@ docs/
 | 설정 | [features/settings.md](./features/settings.md) | `app/settings/`(`SettingsScreen` + 하위 화면 `SettingsReleaseNotesScreen`/`SettingsFeatureGuideListScreen`/`SettingsFeatureGuideScreen`/`SettingsAccountDataScreen`/`SettingsAboutScreen` — 라우트 `/settings/guide`·`/settings/release-notes`(둘 다 자식 `:guideId` — 같은 상세 화면)·`/settings/account-data`·`/settings/about`, `/settings` 의 **형제**) · 행 프리미티브 `SettingsRow`/`SettingsLinkRow`/`row-class.ts` · `src/data/release-notes.ts`·`src/data/feature-guides/`(안내 하나 = 파일 하나)(+`src/types/release-notes.ts`·`src/types/feature-guides.ts` · `lib/guide-route.ts`, 이미지 `src/assets/guide/<안내 id>/`) · `features/settings/`(`cache-data`) · `storage/api-key` · `features/tracking-mode` |
 | 테마 시스템 | [features/theme.md](./features/theme.md) | `features/theme/` · `storage/theme` · `src/index.css` · `src/data/job-themes.json` · `lib/theme-derive` · `lib/theme-backgrounds` · `src/assets/themes/`(+ `src/assets/generated/themes.ts`) · `lib/color` · `scripts/theme-gen.ts` |
 | 광고 | [features/ads.md](./features/ads.md) | `native/ads.ts` · `features/ads/` · `storage/ads.ts` · `App.tsx`(탭 전환 훅) |
+| 알림 (**설계 완료, 구현 전** — [[ADR-146]]) | [features/notifications.md](./features/notifications.md) | `native/notifications.ts`(기존) · `native/push.ts`·`native/background-task.ts`(신설) · `features/notifications/` · `storage/notification-settings`·`notification-ledger` · RN 어댑터 `rn-notifications`(기존)·`rn-push`·`rn-background-task` · RN 진입점 `packages/app-rn/index.ts` · `workers/notice-push/` |
 | Live Update (OTA) | [features/live-update.md](./features/live-update.md) | `native/live-update.ts` · `features/live-update/` · `app/UpdatePromptModal.tsx` · `storage/last-run-bundle-version.ts` · **어댑터 둘**(`app-capacitor/…/capacitor-live-update.ts` @capgo · `app-rn/…/rn-live-update.ts` expo-updates) · `workers/ota-manifest/` · `scripts/publish-rn-ota.mjs` |
 | 스플래시 | [features/splash.md](./features/splash.md) | `android/…/SplashActivity` · iOS 스토리보드 · `capacitor.config.ts` · `index.html` |
 | 안내 사이트 (mapleroutine.store) | [features/site.md](./features/site.md) | `site/` · `PRIVACY.md`(원본) · `scripts/build-site.mjs` · `.github/workflows/pages.yml` |
@@ -63,5 +64,6 @@ docs/
 - **동기화·정규화·호출 제한** → `foundation/nexon-api.md` + `features/content-scheduler.md`/`boss-scheduler.md`.
 - **에러/빈 상태/엣지 처리** → `foundation/error-resilience.md`.
 - **스토어 배포·서명·버전 올리기** → `foundation/release.md` (OTA 갱신은 `features/live-update.md` — 별개 축이다).
+- **알림을 더하거나 고칠 때** → `features/notifications.md`. 손대기 전에 그 문서의 «층» 표에서 **바이너리 / JS / 서버** 중 어디를 만지는지부터 판정할 것 — 왼쪽 칸은 스토어 심사를 기다린다([[ADR-146]] 결정 1).
 - **React Native 전환 작업** → `migration/README.md`(원칙·단계·게이트) → `migration/parity-inventory.md`(옮길 파일과 그 파일에 걸린 ADR 계약) → `migration/data.md`(기존 사용자 데이터 보존). 배경과 기각안은 [[ADR-128]].
 - **설계 결정의 배경이 궁금할 때** → `ADR.md` 에서 `[[ADR-NNN]]` 조회.

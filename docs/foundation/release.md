@@ -159,7 +159,8 @@ keytool -printcert -jarfile packages/app-capacitor/android/app/build/outputs/bun
 | 개인정보 처리방침 URL | ✅ | `https://mapleroutine.store/privacy` — 게시 확인 완료(2026-08-04) |
 | 개인정보 처리방침 **앱 내 링크** | ✅ | 설정 footer 맨 위(2026-08-04). Play 사용자 데이터 정책은 스토어 등록정보 **와 앱 안** 양쪽을 요구한다([features/settings.md](../features/settings.md)) |
 | **앱 액세스 권한** | ❌ | 온보딩이 넥슨 API 키 하드 게이트라([features/onboarding.md](../features/onboarding.md)) **심사자용 테스트 키 + 캐릭터 있는 계정 + 입력 절차**를 적어주지 않으면 리뷰어가 앱을 실행조차 못 한다 |
-| 데이터 안전 | ❌ | `AD_ID` 권한을 선언했으므로 **광고 ID 수집 신고 필수**. 넥슨 API 키의 취급 분류도 함께 |
+| 데이터 안전 | ❌ | `AD_ID` 권한을 선언했으므로 **광고 ID 수집 신고 필수**. 넥슨 API 키의 취급 분류도 함께. **알림을 넣는 릴리스부터 한 항목 더** — FCM 등록 토큰은 앱이 서버로 안 보내도(토픽 방식, [[ADR-146]] 결정 2) **Firebase 가 갖는 기기 식별자**라 신고 대상이다 |
+| **개인정보 처리방침 갱신 (푸시)** | ❌ | [[ADR-146]] 을 구현하는 릴리스 전에 `PRIVACY.md`(→ `mapleroutine.store/privacy`)에 푸시 알림·Firebase 데이터 처리를 추가해야 한다. **바이너리가 아니라 문서 쪽 준비물이라 잊기 쉽다** |
 | "광고 포함" 선언 | ❌ | [[ADR-090]] |
 | 콘텐츠 등급 설문 · 타겟 연령 | ❌ | — |
 | 배포 국가 | 한국 한정 | EU 사용자가 없어 GDPR 동의(UMP) 구현이 불필요하다는 전제([features/ads.md](../features/ads.md)). 국가를 넓히려면 그 흐름부터 |
@@ -286,6 +287,13 @@ Xcode 자동 서명을 쓰므로 키 관리가 없다. 대신 두 가지 함정�
 
 `cap add ios` 를 다시 하면 `PRODUCT_NAME` 이 `capacitor.config.ts` 의 한글 `appName` 으로
 되살아난다. **플랫폼을 재생성했다면 ASCII 로 다시 바꿀 것.**
+
+### 알림을 넣는 릴리스의 iOS 준비물 ([[ADR-146]], 설계 완료·구현 전)
+
+**바이너리에 안 들어가면 다음 심사까지 못 쓴다** — Push Notifications capability · Background Modes
+(`remote-notification`·`fetch`) · `GoogleService-Info.plist` · **APNs 인증 키(.p8)를 Firebase 콘솔에
+업로드**. 마지막 것은 코드가 아니라 콘솔 작업이라 빌드가 통과해도 조용히 빠진다(그러면 iOS 에서만
+푸시가 안 온다). 전체 체크리스트는 [../features/notifications.md](../features/notifications.md).
 
 ### 저장소만 클론해서는 iOS를 빌드할 수 없다 (Xcode Cloud 비활성, 2026-08-04)
 

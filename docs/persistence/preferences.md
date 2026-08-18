@@ -53,6 +53,15 @@ flowchart TD
 | `worldSharedProgress:{world}` | `Record<itemName, SharedProgressEntry>` (JSON) | `storage/shared-progress-cache.ts` | 삭제 | 월드 단위로 완료가 공유되는 콘텐츠(예: 몬스터파크) 진행 원장([[ADR-030]]) |
 | `accountSharedProgress:{accountId}` | `Record<itemName, SharedProgressEntry>` (JSON) | `storage/shared-progress-cache.ts` | 삭제 | 계정 단위로 공유되는 콘텐츠(예: 에픽 던전) 진행 원장([[ADR-030]]). **`{accountId}` 는 «지금 고른 계정» 이 아니라 «그 캐릭터가 사는 계정» 이다**([[ADR-143]] 결정 6) — 추적 목록이 계정을 넘으면 이 키가 **동시에 여러 개** 살아 있고, 캐릭터마다 자기 것을 읽고 쓴다. 한 계정 것으로 몰면 계정 공유 완료가 계정을 넘어 번진다 |
 
+### 알림 (**설계 완료, 구현 전** — [[ADR-146]])
+
+| 키 | 값 형태 | 어댑터 | 캐시 삭제 시 | 비고 |
+|---|---|---|---|---|
+| `notificationSettings` | `Record<NotificationKind, { enabled: boolean, timeKst: string \| null }>` (JSON) | `storage/notification-settings.ts` | **보존**(`KEEP_KEYS`) | 사용자가 켠 알림과 고른 시각. **재조회로 복구되지 않는 사용자가 만든 값**이라 위 «새 키» 규칙에 따라 보존 쪽이다([[ADR-052]] 결정 1 과 같은 기준). 값이 없는 `kind` 는 레지스트리의 `defaultEnabled`·`defaultTimeKst` 로 읽는다 — **기본값을 저장하지 않으므로** OTA 가 기본값을 바꾸면 손대지 않은 사용자에게 그대로 반영된다 |
+| `notificationLedger` | `{ id: number, kind: string, fireAt: string }[]` (JSON) | `storage/notification-ledger.ts` | 삭제 | **우리가 지금 예약해 둔 것의 원장**([[ADR-146]] 결정 5). OS 는 예약을 들고 있는데 앱은 개수만 조회할 수 있어([lifecycle.md](./lifecycle.md)) 우리가 기억한다. 재조정이 **계획과의 차집합**으로만 움직이고, **원장에 있는데 레지스트리에 없는 `kind` 는 무조건 취소**한다 — OTA 가 알림 종류를 지웠을 때 예약이 유령으로 남는 것을 막는 유일한 장치다 |
+
+**원장이 지워져도 안전한 이유** — 계획이 다시 예약할 때 **결정적 id 라 같은 예약을 덮어쓴다.** 남는 위험은 «지금 레지스트리에 없는 옛 `kind` 의 예약» 뿐인데 그것은 원장 없이는 애초에 못 지운다. 그래서 `KEEP_KEYS` 에 넣지 않는다(`lastRunBundleVersion` 과 같은 판단 — 지워져도 생기는 것은 거짓이 아니라 «한 번 더 함» 이다).
+
 > **새 키를 추가할 때 — 기본값은 "지워진다"다.** 캐시 삭제는 Preferences를 반전 규칙(`storage/cache-data.ts`의 `KEEP_KEYS` 제외 전부)으로 지우므로, 아무 조치도 하지 않으면 **새 키는 자동으로 삭제 대상**이 된다. 재조회로 복구할 수 없는 값 — 특히 인앱 결제/구매(IAP) 상태처럼 지워지면 사용자가 실제 손해를 보는 키 — 은 만들 때 반드시 `KEEP_KEYS`에 함께 넣어라([[ADR-052]] 결정 1이 `trackingMode`·`dropEffect`에 적용한 것과 같은 기준: "재조회로 복구되는 캐시인가, 사용자가 명시적으로 만든 값인가").
 
 > **레거시 키 4종** — `trackedCharacters:content` / `:boss`([[ADR-013]] 시대) 와 `trackedCharacters:daily` / `:weekly`([[ADR-013]] 이전) 는 전부 [[ADR-042]] 통합 이후의 레거시다(`lastSelectedCharacter:content` / `:boss` 도 마찬가지). `getTrackedCharacterOcids`가 호출될 때마다 `character-selection.ts`의 통합 마이그레이션이 먼저 실행되어, `trackedCharacters`가 아직 없으면 **네 레거시 목록의 중복 제거된 합집합**을 1회 이관하고 원본을 지운다 — 이관이 끝난 기기에서는 다시 나타나지 않는 no-op이다. daily/weekly까지 흡수하는 이유는 통합 후 `:content` 키를 더 쓰지 않아 옛 이관 체인이 끊기기 때문이다.
