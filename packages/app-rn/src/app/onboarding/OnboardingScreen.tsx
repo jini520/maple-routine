@@ -49,6 +49,7 @@ import {
 
 import { MapleSweepSpinner } from '../../components/atoms/MapleSweepSpinner/MapleSweepSpinner'
 import { useReorderScroll } from '../../components/organisms/CharacterManage/use-reorder-scroll'
+import { useBottomSafeAreaPx } from '../../lib/bottom-safe-area'
 import { useScrollIndicatorStyle } from '../../theme/context'
 import { ApiKeyForm } from './ApiKeyForm'
 import { ContentCharacterStep } from './ContentCharacterStep'
@@ -76,6 +77,10 @@ function OnboardingStep({
   children: React.ReactNode
 }): React.JSX.Element {
   const insets = useSafeAreaInsets()
+  // **위아래가 갈린다.** 상단은 [[ADR-139]] 결정 2 대로 인셋 그대로다 — 단계에 제목 줄이 없어 그
+  // `marginTop` 은 헤더 여백이 아니라 콘텐츠 여백이라 축이 다르다. 하단은 반대로 «탭바 없는 화면의
+  // 규칙»(아래) 그 자체라, 하한이 깔린 값을 본다([[ADR-132]] 정정 31).
+  const bottomSafeAreaPx = useBottomSafeAreaPx()
   const indicatorStyle = useScrollIndicatorStyle()
 
   return (
@@ -90,7 +95,7 @@ function OnboardingStep({
       contentContainerClassName={
         center === true ? 'items-center justify-center px-4' : 'px-4 pt-8 pb-4'
       }
-      contentContainerStyle={{ flexGrow: 1, paddingBottom: insets.bottom }}
+      contentContainerStyle={{ flexGrow: 1, paddingBottom: bottomSafeAreaPx }}
       // 키보드가 떠 있는 동안에도 첫 탭이 버튼에 닿는다 — 없으면 그 탭이 키보드를 내리는 데만 쓰인다
       // (`ApiKeyForm` 의 확인 버튼이 그 자리다). 웹에서는 없던 문제라 짝이 없는 프롭이다.
       keyboardShouldPersistTaps="handled"
