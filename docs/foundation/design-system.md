@@ -182,6 +182,14 @@ CTA:    rounded-full bg-primary text-on-primary font-semibold hover:bg-primary-h
 ```
 스윕이 16px에서 안 읽히고(띠가 잎보다 커져 바탕만 남아 비활성처럼 보인다) 트레일 링이 32px를 못 채우기 때문 — 두 크기 대역의 요구가 반대라 한 시안으로 덮이지 않는다. 스피너 색은 `text-primary`, 대기 문구는 `text-sm text-text-muted`.
 
+**RN 의 스윕 띠는 `userSpaceOnUse` 마스크이고 램프가 띠와 함께 움직인다** ([[ADR-061]] 정정 1, 2026-08-18). `maskContentUnits="objectBoundingBox"` 는 **쓰지 말 것** — `react-native-svg`(15.15.4)가 그 속성을 렌더 시 안 읽어(안드로이드 `RenderableView.java` · iOS `RNSVGRenderable.mm` 둘 다 `maskUnits` 만 본다) 마스크 내용이 user space 로 그려진다. `<Rect width={1} height={1}>` 이 **1×1 픽셀**이 되어 마스크가 투명해지고 `DST_IN` 이 띠를 통째로 지운다 — 실기기에서 **띠가 한 번도 보인 적이 없었다**(두 플랫폼 다). 웹은 그라디언트를 `fill` 에 직접 걸어 브라우저가 그 단위를 지원하므로 같은 함정이 없다.
+```
+마스크 범위    maskUnits="userSpaceOnUse" + 띠와 같은 x/width, y 는 bandY 를 따라간다
+마스크 내용    <AnimatedRect>가 같은 bandY 를 본다 — 램프가 띠에 딸려 간다
+움직이는 값    shared value 하나에서 둘 다 파생 (어긋날 자리가 없다)
+```
+**로스터 대기 두 자리에는 문구를 둔다** ([[ADR-061]] 정정 2) — 온보딩 캐릭터 목록 · 캐릭터 관리 피커. 예전엔 `aria-label` 만 뒀는데(배정표 2·4) 그 결정의 전제가 «띠가 움직인다» 였고, 콜드 캐시에서는 `character/basic` 을 캐릭터 수만큼 부르느라 대기가 길어 마크만으로는 무엇을 기다리는지 전달되지 않는다. **카드 껍데기는 여전히 안 씌운다**(아래 「셸 승계 카드」의 범위 밖).
+
 **셸 승계 카드 (`components/LoadingState`)** — 콜드 스타트와 영역 부분 로딩이 공유한다. 로딩이 끝나면 그 자리를 채울 카드와 **같은 껍데기**라 결과가 들어와도 배경이 바뀌지 않는다(스켈레톤 없이 "자리를 미리 잡는" 효용을 얻는 지점).
 ```
 공통:   rounded-[14px] border border-border bg-surface p-6

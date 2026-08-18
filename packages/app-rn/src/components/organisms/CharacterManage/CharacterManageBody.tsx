@@ -71,15 +71,20 @@ export interface CharacterManageBodyProps {
   place: RosterErrorPlace
 }
 
+// 대기 자리 — **마크와 문구가 함께 선다** ([[ADR-061]] 정정 2).
+//
+// 예전에는 `aria-label` 만 있어 화면에는 잎 하나뿐이었다([[ADR-061]] 배정표 2·4 의 «문구 없음»).
+// 그 결정이 서 있던 전제는 «띠가 움직인다» 였는데 그것이 한 번도 참이 아니었고(정정 1), 되살린
+// 뒤에도 이 자리는 콜드 캐시에서 `character/basic` 을 캐릭터 수만큼 부르느라 **대기가 길다** —
+// 그 길이에서는 마크만으로 «무엇을» 기다리는지가 전달되지 않는다(사용자 보고 2026-08-18).
+//
+// `aria-label` 을 걷고 글자를 그린다 — 둘을 함께 두면 스크린리더가 같은 말을 두 번 읽는다.
+// 카드 껍데기는 여전히 안 씌운다(`LoadingState` 를 쓰지 않는 이유 — [[ADR-061]] 결정 2).
 function Waiting(props: { label: string }): React.JSX.Element {
   return (
-    <View
-      role="status"
-      aria-busy
-      aria-label={props.label}
-      className="min-h-[120px] flex-1 items-center justify-center"
-    >
+    <View role="status" aria-busy className="min-h-[120px] flex-1 items-center justify-center gap-3">
       <MapleSweepSpinner size={32} className="text-primary" />
+      <Text className="text-center text-sm text-text-muted">{props.label}</Text>
     </View>
   )
 }
@@ -144,7 +149,7 @@ function CandidateArea({
   }
 
   if (manage.isRosterLoading) {
-    return <Waiting label="캐릭터 목록을 불러오는 중" />
+    return <Waiting label="캐릭터 목록을 불러오고 있어요" />
   }
 
   if (manage.rosterError !== null) {
@@ -213,7 +218,7 @@ export function CharacterManageBody({
       {/* ── 아래: 고르는 곳 (드롭다운이 고른 계정 하나) ── */}
       <View className="gap-2">
         {manage.isAccountsLoading && manage.accounts.length === 0 ? (
-          <Waiting label="메이플 ID 를 불러오는 중" />
+          <Waiting label="메이플 ID 를 불러오고 있어요" />
         ) : manage.accounts.length === 0 ? (
           // 계정 목록 자체가 실패했다 — 드롭다운도 후보도 세울 수 없어 이 자리 하나로 답한다.
           <AccountsError manage={manage} place={place} />

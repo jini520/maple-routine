@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { CachedCharacterBasicEntry } from '@core/storage/character-basic-cache'
-import type { MapleAccount, MapleCharacter } from '@core/types'
+import type { CharacterBasicProfile, MapleAccount, MapleCharacter } from '@core/types'
 import { pickRepresentativeCharacter } from '../../onboarding/representative-character'
 import {
   buildSelectedCharacterViews,
@@ -25,19 +24,14 @@ function account(characters: MapleCharacter[], accountId = 'account-1'): MapleAc
   return { accountId, characters }
 }
 
-function cached(
-  overrides: Partial<CachedCharacterBasicEntry['profile']> = {},
-): CachedCharacterBasicEntry {
+function cached(overrides: Partial<CharacterBasicProfile> = {}): CharacterBasicProfile {
   return {
-    profile: {
-      name: '낟낟',
-      level: 294,
-      imageUrl: 'https://example.com/face.png',
-      accessFlag: true,
-      world: '스카니아',
-      ...overrides,
-    },
-    cachedAt: '2026-08-17T00:00:00.000Z',
+    name: '낟낟',
+    level: 294,
+    imageUrl: 'https://example.com/face.png',
+    accessFlag: true,
+    world: '스카니아',
+    ...overrides,
   }
 }
 

@@ -30,13 +30,23 @@
 // 루미넌스 마스크에서 흰색의 루미넌스는 1이라 결국 `stopOpacity` 가 그대로 알파가 된다 —
 // **웹과 같은 램프**다. 호출부 API 는 웹 그대로 유지된다(`className="text-*"` 하나로 색이 정해진다).
 //
-// **①-b 그래서 마스크는 띠의 바운딩 박스에 매인다(step 7 에서 고쳤다).** 처음 옮길 때는 마스크를
-// `userSpaceOnUse` 로 두고 띠와 같은 좌표를 손으로 적었는데, 띠가 **움직이는 순간 그 방식은 깨진다** —
-// 램프는 제자리에 서 있고 띠만 그 아래를 지나가 "고정된 창으로 내다보는" 그림이 된다. `maskUnits` 와
-// `maskContentUnits` 를 **둘 다 `objectBoundingBox`** 로 두면 마스크 영역과 내용이 참조하는 도형의
-// 바운딩 박스 비율로 표현되므로, 띠가 어디로 가든 램프가 **딸려 간다**(움직이는 프롭이 하나로 줄고,
-// `<Defs>` 안의 노드를 애니메이션하지 않아도 된다). 웹이 `objectBoundingBox` 그라디언트를 띠의
-// `fill` 에 직접 걸어 공짜로 얻던 성질을, 마스크 쪽에서 같은 방식으로 얻는 것이다.
+// **①-b 마스크는 user space 이고, 램프가 띠와 함께 움직인다** ([[ADR-061]] 정정 1 — step 7 의
+// 반대 방향으로 다시 고쳤다).
+//
+// step 7 은 `maskUnits` 와 `maskContentUnits` 를 **둘 다 `objectBoundingBox`** 로 두어 "띠가 어디로
+// 가든 램프가 딸려 온다"를 공짜로 얻으려 했다. **그 코드는 띠를 통째로 지웠다** — `react-native-svg`
+// (15.15.4)는 `maskContentUnits` 를 **렌더 시 읽지 않는다**(안드로이드 `RenderableView.java` 도 iOS
+// `RNSVGRenderable.mm` 도 `maskUnits` 만 본다). 마스크 «내용» 은 늘 user space 로 그려지므로
+// `<Rect width={1} height={1}>` 이 **1×1 픽셀**이 되고, 사실상 투명한 마스크가 `DST_IN` 으로 띠를
+// 지운다. 실기기에서 **띠가 한 번도 보인 적이 없었다**(두 플랫폼 다, 2026-08-18).
+//
+// 그래서 지원되는 속성만 쓴다 — 마스크는 `userSpaceOnUse`, 램프 `<Rect>` 는 띠와 **같은 크기**이고
+// **같은 shared value** 로 함께 굴린다. step 7 이 피하려던 "램프는 서 있고 띠만 지나간다"는 그 공유로
+// 사라진다(움직이는 프롭이 둘로 늘지만 한 값에서 파생돼 어긋날 자리가 없다). 마스크 «범위» 는 띠의
+// **여정 전체**를 덮는 정적 상자다 — 범위까지 굴리면 `<Defs>` 안의 노드를 애니메이션해야 한다.
+//
+// 그라디언트는 그대로 `objectBoundingBox` 다 — 그쪽 단위는 라이브러리가 **실제로 읽는다**
+// (`Brush.java` 의 `mUseObjectBoundingBox`). 웹이 이 성질로 공짜로 얻던 것을 램프가 그대로 쓴다.
 //
 // **②** `clipPathUnits="userSpaceOnUse"` 를 뺐다 — `react-native-svg` 의 `ClipPath` 는 그 속성을 받지
 // 않고, 받지 않는 이유는 **그것이 이미 유일한 동작**이기 때문이다(웹에서 기본값
@@ -139,10 +149,27 @@ export function MapleSweepSpinner(props: MapleSweepSpinnerProps): React.JSX.Elem
           <Stop offset="50%" stopColor="#ffffff" stopOpacity="1" />
           <Stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
         </LinearGradient>
-        {/* 좌표가 아니라 **비율**이다(위 ①-b) — 0~1 은 마스크를 참조하는 도형(= 띠)의 바운딩 박스라,
-            띠가 위로 올라가면 램프도 함께 올라간다. */}
-        <Mask id={maskId} maskUnits="objectBoundingBox" maskContentUnits="objectBoundingBox">
-          <Rect x={0} y={0} width={1} height={1} fill={`url(#${gradientId})`} />
+        {/* 좌표는 **user space** 다(위 ①-b). 범위는 띠의 여정 전체를 덮는 정적 상자이고, 램프는
+            띠와 같은 크기로 **같은 `bandY`** 를 따라간다 — 그래야 램프가 띠에 딸려 간다.
+            `maskContentUnits` 도 함께 적어 둔다: 지금 라이브러리는 안 읽지만, 언젠가 읽게 되어도
+            좌표의 뜻이 바뀌지 않아야 한다. */}
+        <Mask
+          id={maskId}
+          maskUnits="userSpaceOnUse"
+          maskContentUnits="userSpaceOnUse"
+          x={BAND_X}
+          y={BAND_START_Y - MAPLE_SWEEP_TRAVEL}
+          width={BAND_WIDTH}
+          height={MAPLE_SWEEP_TRAVEL + BAND_HEIGHT}
+        >
+          <AnimatedRect
+            x={BAND_X}
+            y={BAND_START_Y}
+            width={BAND_WIDTH}
+            height={BAND_HEIGHT}
+            fill={`url(#${gradientId})`}
+            animatedProps={bandProps}
+          />
         </Mask>
       </Defs>
 
