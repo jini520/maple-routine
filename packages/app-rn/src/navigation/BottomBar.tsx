@@ -69,12 +69,12 @@ import {
   View,
 } from 'react-native'
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { maybeShowTabSwitchAd } from '@core/features/ads/tab-switch-ad'
 
 import { GearIcon } from '../components/atoms/GearIcon/GearIcon'
 import { ProfitIcon } from '../components/atoms/ProfitIcon/ProfitIcon'
 import { BAR_LIFT, resolveBottomBarMetrics } from '../lib/bottom-bar-metrics'
+import { useBottomSafeAreaPx } from '../lib/bottom-safe-area'
 import {
   ArrowLeftIcon,
   CalendarCheckIcon,
@@ -379,7 +379,10 @@ function BarItem({
 }
 
 export function BottomBar({ state, navigation }: BottomTabBarProps): React.JSX.Element | null {
-  const insets = useSafeAreaInsets()
+  // **인셋이 아니라 하한이 깔린 값이다**([[ADR-132]] 정정 31) — 결정 11 의 들어올림이 0 이라 이
+  // 값이 곧 «캡슐이 바닥에서 뜨는 높이» 이고, 안드로이드 제스처 기기(15)에서는 그것이 iOS 의 절반도
+  // 안 됐다. 콘텐츠가 남기는 몫(`ScreenScroll`)과 토스트도 같은 함수를 본다.
+  const bottomSafeAreaPx = useBottomSafeAreaPx()
   const { definition } = useThemeAppearance()
   const record = useBarRecord()
   const isKeyboardShown = useKeyboardShown()
@@ -573,7 +576,7 @@ export function BottomBar({ state, navigation }: BottomTabBarProps): React.JSX.E
         // 폭을 계산했고, 여기서도 같은 전제를 쓰면 둘이 어긋날 수 없다.
         left: metrics.sideMarginPx,
         right: metrics.sideMarginPx,
-        bottom: insets.bottom + BAR_LIFT,
+        bottom: bottomSafeAreaPx + BAR_LIFT,
         height: barHeight,
         flexDirection: 'row',
         alignItems: 'center',

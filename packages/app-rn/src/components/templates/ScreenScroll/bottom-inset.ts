@@ -26,6 +26,16 @@
  * 되살리려면 `modules/app-system-bars` 에 `tappableElement` 바닥값을 얹으면 된다 — 그 모듈이 이미
  * 안드로이드 창(window)을 들고 있다. 인셋은 회전·내비 모드 변경으로 바뀌므로 값 하나를 더 읽는
  * 것이 아니라 **구독**이 필요해서, 실기기에서 이 대가가 실제로 거슬리는지 본 뒤에 판단한다.
+ *
+ * ## 하한이 깔린 뒤로 두 조각은 «인셋» 이 아니라 «안전영역» 을 나눈다 ([[ADR-132]] 정정 31)
+ *
+ * 안드로이드 하단 안전영역에 하한(34)이 생기면서 위 표의 «안드로이드 = 전부 막는다» 가 두 뜻으로
+ * 갈렸다 — 막아야 하는 것은 **내비바가 실제로 차지하는 자리**(인셋)이지 하한이 더한 몫이 아니다.
+ * 그 몫은 리듬일 뿐이라 [[ADR-120]] 결정 16 의 «지나가도 되는 여백» 쪽에 든다.
+ *
+ * 하한을 `portBottomPx` 에 통째로 실었다면 제스처 기기의 스크롤포트가 34 위에서 끝나 위 「대가」의
+ * 배경색 띠가 그만큼 커졌을 것이다 — 모르는 것을 보수적으로 다루는 것과 **아는 것까지 보수적으로
+ * 다루는 것**은 다르다.
  */
 export interface ScreenBottomInset {
   /** 스크롤포트를 화면 바닥에서 이만큼 올려 끝낸다. */
@@ -47,8 +57,24 @@ export function resolveScreenBottomInset(options: {
    * 콘텐츠가 거기까지 닿지 않는다 — 그래서 여기서도 조각을 가르지 않고 한 값으로 더한다.
    */
   hasTabBar: boolean
-  /** `useSafeAreaInsets().bottom`. */
-  bottomInsetPx: number
+  /**
+   * `useSafeAreaInsets().bottom` — **내비바가 실제로 차지하는 자리**다(파일 머리 마지막 절).
+   *
+   * 안드로이드 하위 페이지에서만 쓴다. 그 한 자리가 이 함수에서 «지나가면 안 되는» 조각이고,
+   * 나머지는 전부 아래 `bottomSafeAreaPx` 가 정한다.
+   */
+  insetBottomPx: number
+  /**
+   * `useBottomSafeAreaPx()` — **인셋이 아니다**([[ADR-132]] 정정 31: 안드로이드는 하한 34).
+   *
+   * 이름이 위 `insetBottomPx` 와 갈리는 것이 일부러다. 이 값은 떠 있는 바가 뜨는 높이와 **같은
+   * 함수**에서 와야 하고(콘텐츠 끝 = 바의 윗변), 인셋을 그대로 넣으면 안드로이드 제스처 기기에서
+   * 마지막 카드가 19px 만큼 캡슐 뒤로 들어간다.
+   *
+   * **`insetBottomPx` 보다 작지 않다**(`resolveBottomSafeAreaPx` 가 `Math.max` 라서) — 아래
+   * 안드로이드 분기의 뺄셈이 그 성질에 기댄다.
+   */
+  bottomSafeAreaPx: number
   /**
    * 떠 있는 바가 먹는 세로 몫 — `resolveBottomBarMetrics(창 폭).spacePx` ([[ADR-132]] 정정 30).
    *
@@ -65,10 +91,13 @@ export function resolveScreenBottomInset(options: {
   platform: string
 }): ScreenBottomInset {
   if (options.hasTabBar) {
-    return { portBottomPx: 0, contentBottomPx: options.bottomInsetPx + options.barSpacePx }
+    return { portBottomPx: 0, contentBottomPx: options.bottomSafeAreaPx + options.barSpacePx }
   }
 
   return options.platform === 'ios'
-    ? { portBottomPx: 0, contentBottomPx: options.bottomInsetPx }
-    : { portBottomPx: options.bottomInsetPx, contentBottomPx: 0 }
+    ? { portBottomPx: 0, contentBottomPx: options.bottomSafeAreaPx }
+    : {
+        portBottomPx: options.insetBottomPx,
+        contentBottomPx: options.bottomSafeAreaPx - options.insetBottomPx,
+      }
 }

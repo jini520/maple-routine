@@ -11,6 +11,7 @@ import { Platform, ScrollView, useWindowDimensions, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { resolveBottomBarMetrics } from '../../../lib/bottom-bar-metrics'
+import { useBottomSafeAreaPx } from '../../../lib/bottom-safe-area'
 import { LinearGradient } from '../../../lib/nativewind-interop'
 import { useTopSafeAreaPx } from '../../../lib/top-safe-area'
 import { useScrollIndicatorStyle } from '../../../theme/context'
@@ -156,10 +157,14 @@ export function ScreenScroll({
   hasTabBar = true,
 }: ScreenScrollProps): React.JSX.Element {
   const insets = useSafeAreaInsets()
-  // 상단은 인셋이 **아니라** 하한이 깔린 값이다([[ADR-139]] 정정 1) — 헤더(`PageHeader`)와 아래
-  // 페이드가 **같은 값을 봐야** 제목 윗변과 페이드 끝선이 계속 한 선에 있다. 하단은 그대로 인셋을
-  // 본다(그쪽 갈림은 `bottom-inset.ts` 가 갖는다).
+  // 위아래 **둘 다 인셋이 아니라 하한이 깔린 값**이다([[ADR-139]] 정정 1 · [[ADR-132]] 정정 31).
+  // 위는 헤더(`PageHeader`)와 페이드가 같은 값을 봐야 제목 윗변과 페이드 끝선이 한 선에 있고,
+  // 아래는 떠 있는 바(`BottomBar`)와 같은 값을 봐야 마지막 카드가 캡슐 뒤로 안 들어간다.
+  //
+  // 인셋 자체도 여전히 필요하다 — 하위 페이지에서 스크롤포트가 비우는 몫은 «내비바가 실제로
+  // 차지하는 자리» 라 하한이 아니라 인셋이다(그 갈림은 `bottom-inset.ts` 가 갖는다).
   const topSafeAreaPx = useTopSafeAreaPx()
+  const bottomSafeAreaPx = useBottomSafeAreaPx()
   const indicatorStyle = useScrollIndicatorStyle()
   // 바가 먹는 세로는 **기기 폭의 함수**다([[ADR-132]] 정정 30) — 바와 여기가 같은 함수를 봐야
   // 콘텐츠가 바 뒤로 들어가거나 바닥에 빈 띠를 남기지 않는다. `100dvh` 짝을 안전영역 프레임에서
@@ -168,7 +173,8 @@ export function ScreenScroll({
   const barSpacePx = resolveBottomBarMetrics(windowWidthPx).spacePx
   const bottom = resolveScreenBottomInset({
     hasTabBar,
-    bottomInsetPx: insets.bottom,
+    insetBottomPx: insets.bottom,
+    bottomSafeAreaPx,
     barSpacePx,
     platform: Platform.OS,
   })
@@ -176,7 +182,7 @@ export function ScreenScroll({
     hasHeader: header !== undefined,
     hasTabBar,
     topSafeAreaPx,
-    insetBottomPx: insets.bottom,
+    bottomSafeAreaPx,
     barSpacePx,
     portBottomPx: bottom.portBottomPx,
   })

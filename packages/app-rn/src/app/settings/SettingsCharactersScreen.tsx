@@ -29,7 +29,6 @@
 // 고른 대표가 지워질 수 있다.
 import { useState } from 'react'
 import { Pressable, Text, View } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useContentSchedulerStore } from '@core/features/content-scheduler/store'
 import { useApiKeyNotice } from '@core/features/onboarding/use-api-key-notice'
@@ -46,6 +45,7 @@ import { ProgressModal } from '../../components/organisms/ProgressModal/Progress
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
+import { useBottomSafeAreaPx } from '../../lib/bottom-safe-area'
 import { ArrowLeftIcon } from '../../lib/icons'
 import { reloadTabStores } from './reload-tab-stores'
 import { useSettingsNavigation } from './use-settings-navigation'
@@ -60,7 +60,9 @@ export function SettingsCharactersScreen(): React.JSX.Element {
   // 에 걸린다. 온보딩 단계도 같은 두 줄을 갖는다(결정 1 — 갈리는 것은 머리와 CTA 다).
   const { scrollRef, onScroll, scroll } = useReorderScroll()
   const [saveProgress, setSaveProgress] = useState<{ completed: number; total: number } | null>(null)
-  const insets = useSafeAreaInsets()
+  // 하단 액션 바가 안전영역을 먹는다(아래) — 그 «안전영역» 은 인셋이 아니라 하한이 깔린 값이다
+  // ([[ADR-132]] 정정 31). 이 화면만 인셋으로 두면 하위 페이지들과 바닥 여백이 갈린다.
+  const bottomSafeAreaPx = useBottomSafeAreaPx()
   // 고정 바가 덮는 높이 — 잰 값이 오기 전에는 0이라 마지막 행이 한 프레임 가려질 수 있지만, 그
   // 프레임은 바가 그려지는 바로 그 프레임이라 사용자가 스크롤을 시작하기 전이다.
   const [actionBarHeightPx, setActionBarHeightPx] = useState(0)
@@ -134,7 +136,7 @@ export function SettingsCharactersScreen(): React.JSX.Element {
       <View
         testID="character-manage-action-bar"
         className="absolute inset-x-0 bottom-0 border-t border-border bg-bg px-4 pt-3"
-        style={{ paddingBottom: insets.bottom + 12 }}
+        style={{ paddingBottom: bottomSafeAreaPx + 12 }}
         onLayout={(event) => setActionBarHeightPx(event.nativeEvent.layout.height)}
       >
         <Button

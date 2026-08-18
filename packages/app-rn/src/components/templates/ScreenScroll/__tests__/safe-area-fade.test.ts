@@ -3,15 +3,17 @@
 // 둘 다 화면을 렌더하지 않고 볼 수 있어서 여기 따로 있다. `bottom-inset.test.ts` 와 같은 이유이고,
 // 실제로 하단 값은 그 판정에서 **파생**되므로(결정 3) 두 파일이 같은 자리를 지킨다.
 
+import { resolveBottomSafeAreaPx } from '../../../../lib/bottom-safe-area'
 import { resolveScreenBottomInset } from '../bottom-inset'
 import { FADE_MASK_ALPHAS, FADE_MASK_LOCATIONS, resolveSafeAreaFade } from '../safe-area-fade'
 
 /**
  * iPhone 계열(`render-atom.tsx` 의 테스트 안전영역과 같은 값).
  *
- * 상단은 **인셋이 아니라 `useTopSafeAreaPx()` 의 결과**가 들어오는 자리다([[ADR-139]] 정정 1) —
- * iOS 는 하한(48) 위라 같은 값이고, 안드로이드에서만 갈린다. 그 갈림은 `lib/top-safe-area.test.ts`
- * 가 보고, 여기서는 **받은 값을 그대로 상단 길이로 쓰는지**만 본다.
+ * **위아래 다 인셋이 아니다** — 상단은 `useTopSafeAreaPx()`([[ADR-139]] 정정 1), 하단은
+ * `useBottomSafeAreaPx()`([[ADR-132]] 정정 31) 의 결과가 들어오는 자리다. iOS 는 둘 다 하한
+ * (48·34) 위라 인셋과 같은 값이고, 안드로이드에서만 갈린다. 그 갈림은 `lib/` 의 두 테스트가 보고,
+ * 여기서는 **받은 값을 그대로 페이드 길이로 쓰는지**만 본다.
  */
 const 인셋 = { top: 59, bottom: 34 }
 
@@ -24,16 +26,25 @@ const 바_페이드 = 바_몫 / 2
 const 화면 = (
   hasTabBar: boolean,
   platform: string,
-  bottomInsetPx: number = 인셋.bottom,
-): Parameters<typeof resolveSafeAreaFade>[0] => ({
-  hasHeader: true,
-  hasTabBar,
-  topSafeAreaPx: 인셋.top,
-  insetBottomPx: bottomInsetPx,
-  barSpacePx: 바_몫,
-  portBottomPx: resolveScreenBottomInset({ hasTabBar, bottomInsetPx, barSpacePx: 바_몫, platform })
-    .portBottomPx,
-})
+  insetBottomPx: number = 인셋.bottom,
+): Parameters<typeof resolveSafeAreaFade>[0] => {
+  const bottomSafeAreaPx = resolveBottomSafeAreaPx({ insetBottomPx, platform })
+
+  return {
+    hasHeader: true,
+    hasTabBar,
+    topSafeAreaPx: 인셋.top,
+    bottomSafeAreaPx,
+    barSpacePx: 바_몫,
+    portBottomPx: resolveScreenBottomInset({
+      hasTabBar,
+      insetBottomPx,
+      bottomSafeAreaPx,
+      barSpacePx: 바_몫,
+      platform,
+    }).portBottomPx,
+  }
+}
 
 describe('페이드는 콘텐츠가 실제로 지나가는 자리에만 있다 ([[ADR-134]] 결정 3)', () => {
   it('헤더가 있으면 상단은 상단 안전영역만큼이다 — 굴리면 콘텐츠가 상태바 밑을 지나간다', () => {
@@ -84,33 +95,47 @@ describe('페이드는 콘텐츠가 실제로 지나가는 자리에만 있다 (
   // 안드로이드 3버튼 내비의 하위 페이지 — `bottom-inset.ts` 가 스크롤포트를 인셋 위에서 끝낸다
   // (결정 19: 불투명 버튼 사이로 글자가 비치면 안 된다). 겹치는 것이 없으니 깎을 것도 없다.
   it('스크롤포트가 이미 안전영역 위에서 끝나면 하단은 0이다', () => {
-    const fade = resolveSafeAreaFade(화면(false, 'android'))
+    const fade = resolveSafeAreaFade(화면(false, 'android', 48))
 
     expect(fade.bottomPx).toBe(0)
+  })
+
+  // **[[ADR-132]] 정정 31** — 제스처 기기(인셋 15)의 하위 페이지에서는 그 «겹치는 것이 없다» 가
+  // 더 이상 참이 아니다. 하한이 더한 19 는 `contentBottomPx` 로 나가 **콘텐츠가 지나가는 자리**가
+  // 되므로, 그만큼은 깎아야 한다. 스크롤포트가 먹은 15 는 여전히 뺀다.
+  it('안드로이드 제스처 하위 페이지는 하한이 더한 몫만큼 깎는다 (0 → 19)', () => {
+    const fade = resolveSafeAreaFade(화면(false, 'android', 45 / 3))
+
+    expect(fade.bottomPx).toBe(34 - 45 / 3)
   })
 
   // 스크롤포트가 이미 비운 몫은 깎지 않는다는 계약([[ADR-134]] 결정 3) — 판정을 두 벌로 두면
   // 한쪽만 고쳐도 페이드가 빈 자리를 깎거나 겹치는 자리를 놓친다.
   it('안전영역 몫은 `bottom-inset.ts` 가 비운 만큼을 뺀 값이다', () => {
-    for (const [hasTabBar, platform] of [
-      [true, 'ios'],
-      [true, 'android'],
-      [false, 'ios'],
-      [false, 'android'],
+    for (const [hasTabBar, platform, insetBottomPx] of [
+      [true, 'ios', 인셋.bottom],
+      [true, 'android', 48],
+      [true, 'android', 45 / 3],
+      [false, 'ios', 인셋.bottom],
+      [false, 'android', 48],
+      [false, 'android', 45 / 3],
     ] as const) {
-      const args = 화면(hasTabBar, platform)
+      const args = 화면(hasTabBar, platform, insetBottomPx)
       const fade = resolveSafeAreaFade(args)
 
       expect(fade.bottomPx).toBe(
-        Math.max(0, 인셋.bottom - args.portBottomPx) + (hasTabBar ? 바_페이드 : 0),
+        Math.max(0, args.bottomSafeAreaPx - args.portBottomPx) + (hasTabBar ? 바_페이드 : 0),
       )
     }
   })
 
   // 바가 있으면 그 몫(72)은 안전영역과 무관하게 남는다 — 인셋 0인 기기에서도 콘텐츠는 바 밑을
   // 지나간다. 상단만 0이 된다.
+  //
+  // **안드로이드로는 물을 수 없는 성질이 됐다**([[ADR-132]] 정정 31) — 그쪽은 인셋이 0이어도
+  // 안전영역이 하한 34 라 «안전영역이 없는 기기» 자체가 없다.
   it('안전영역이 없는 기기에서도 바가 있으면 그 몫만큼은 깎는다', () => {
-    const fade = resolveSafeAreaFade({ ...화면(true, 'android', 0), topSafeAreaPx: 0 })
+    const fade = resolveSafeAreaFade({ ...화면(true, 'ios', 0), topSafeAreaPx: 0 })
 
     expect(fade).toEqual({ topPx: 0, bottomPx: 바_페이드 })
   })

@@ -34,12 +34,12 @@
 //    없으므로 **상자 자체를 홈 인디케이터 위에서 끝낸다.**
 import { useEffect, useState } from 'react'
 import { Linking, Pressable, Text, View } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { WebView } from 'react-native-webview'
 
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
+import { useBottomSafeAreaPx } from '../../lib/bottom-safe-area'
 import { ArrowLeftIcon } from '../../lib/icons'
 import { useTopSafeAreaPx } from '../../lib/top-safe-area'
 import { useSettingsNavigation } from './use-settings-navigation'
@@ -53,8 +53,8 @@ type LoadStatus = 'loading' | 'loaded' | 'failed'
 
 export function SettingsPrivacyScreen(): React.JSX.Element {
   const navigation = useSettingsNavigation()
-  const insets = useSafeAreaInsets()
   const topSafeAreaPx = useTopSafeAreaPx()
+  const bottomSafeAreaPx = useBottomSafeAreaPx()
   const [status, setStatus] = useState<LoadStatus>('loading')
 
   useEffect(() => {
@@ -72,7 +72,7 @@ export function SettingsPrivacyScreen(): React.JSX.Element {
     <View
       testID="screen-SettingsPrivacy"
       className="flex-1"
-      style={{ paddingTop: topSafeAreaPx, paddingBottom: insets.bottom }}
+      style={{ paddingTop: topSafeAreaPx, paddingBottom: bottomSafeAreaPx }}
     >
       {/* 상단 여백은 없다([[ADR-139]]) — 바깥 상자가 안전영역만큼 내려온 자리에서 곧바로 시작한다.
           그 안전영역은 인셋이 아니라 `useTopSafeAreaPx()` 다(정정 1) — 헤더를 쓰는 화면들과 같은

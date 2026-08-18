@@ -52,7 +52,7 @@ export interface SafeAreaFade {
  * | | 값 | 0이 되는 경우 |
  * |---|---|---|
  * | 상단 | 상단 안전영역(`lib/top-safe-area.ts` — 안드로이드는 하한 48) | 헤더가 없는 화면(설정 계열) — 셸이 스크롤포트를 그만큼 내려, 깎으면 콘텐츠의 첫 줄을 깎는다 |
- * | 하단 | 안전영역 **+ 바의 절반**(탭 화면) · 안전영역(하위 페이지) | 안드로이드 3버튼 내비의 하위 페이지 — 스크롤포트가 이미 인셋 위에서 끝난다(`bottom-inset.ts` 결정 19) |
+ * | 하단 | 하단 안전영역(`lib/bottom-safe-area.ts` — 안드로이드는 하한 34) **+ 바의 절반**(탭 화면) | 안드로이드 3버튼 내비의 하위 페이지 — 스크롤포트가 이미 인셋 위에서 끝난다(`bottom-inset.ts` 결정 19) |
  *
  * **하단이 안전영역 위로 올라가는 것이 정정 1 이다.** 안전영역까지만 두면 콘텐츠가 **선명한 채로
  * 캡슐 밑에 들어가고** 녹는 것은 이미 바가 가린 뒤가 된다 — 콘텐츠가 크롬과 처음 겹치는 자리는
@@ -63,6 +63,10 @@ export interface SafeAreaFade {
  * 깎을 콘텐츠가 없다. 그 판정을 여기서 다시 적지 않고 `bottom-inset.ts` 의 값을 받는 이유는 값이
  * 두 벌이 되면 한쪽만 고쳐도 페이드가 빈 자리를 깎거나 겹치는 자리를 놓치기 때문이다
  * ([[ADR-133]] 결정 1 과 같은 형태의 실패다).
+ *
+ * **그 뺄셈이 정정 31 을 그대로 따라간다.** 안드로이드 제스처 기기의 하위 페이지는 스크롤포트가
+ * 인셋(15)만 비우고 하한이 더한 19 는 콘텐츠가 지나가므로, 이 값이 0 에서 19 가 된다 — 판정을 한
+ * 벌로 둔 덕에 여기에 적을 규칙이 없다.
  */
 export function resolveSafeAreaFade(options: {
   /** 헤더를 받았는가 — 상단 안전영역을 누가 먹는지가 여기서 갈린다(`ScreenScroll` 의 계약). */
@@ -77,8 +81,14 @@ export function resolveSafeAreaFade(options: {
    * 16.7px 짧아져 그 선이 갈라진다.
    */
   topSafeAreaPx: number
-  /** `useSafeAreaInsets().bottom` — 하단에는 하한이 없다(갈림은 `bottom-inset.ts` 가 갖는다). */
-  insetBottomPx: number
+  /**
+   * `useBottomSafeAreaPx()` — **인셋이 아니다**([[ADR-132]] 정정 31: 안드로이드는 하한 34).
+   *
+   * 위 `topSafeAreaPx` 와 같은 사정이다. 이 값은 떠 있는 바가 뜨는 높이와 **같은 함수**에서 와야
+   * 하고, 인셋을 그대로 넣으면 안드로이드에서 페이드가 캡슐 한가운데보다 19px 아래에서 0 이 되어
+   * 콘텐츠가 선명한 채로 캡슐에 들어간다(정정 1 이 반려한 그 상태다).
+   */
+  bottomSafeAreaPx: number
   /** 떠 있는 바가 먹는 세로 몫 — `bottom-inset.ts` 에 넘기는 값과 **같은 값**이어야 한다. */
   barSpacePx: number
   /** `resolveScreenBottomInset()` 이 정한 값 — 스크롤포트가 이미 비운 몫은 깎을 것이 없다. */
@@ -87,7 +97,7 @@ export function resolveSafeAreaFade(options: {
   return {
     topPx: options.hasHeader ? options.topSafeAreaPx : 0,
     bottomPx:
-      Math.max(0, options.insetBottomPx - options.portBottomPx) +
+      Math.max(0, options.bottomSafeAreaPx - options.portBottomPx) +
       (options.hasTabBar ? barFadePx(options.barSpacePx) : 0),
   }
 }
