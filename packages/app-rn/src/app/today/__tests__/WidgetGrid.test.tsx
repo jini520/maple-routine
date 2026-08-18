@@ -115,10 +115,36 @@ describe('`h: auto` 타일 ([[ADR-146]] 정정 1)', () => {
   it('측정 전에는 nominal 최소 높이로 그린다', async () => {
     const view = await 격자()
     const 카드 = within(타일(view, 'remaining-schedule')).getByTestId('widget-remaining-schedule')
-      .parent
+      .parent?.parent
 
     expect(스타일(카드 as AtomElement).minHeight).toBe(metrics.rowHeightPx)
     expect(스타일(카드 as AtomElement).height).toBeUndefined()
+  })
+
+  // ⚠️ 한때 `onLayout` 이 **최소 높이를 진 상자**(`Card` 를 감싼 래퍼)에 붙어 있었다. 그러면 재는
+  // 값이 `max(minHeight, 내용)` 이고 그것이 다시 다음 `minHeight` 가 되어 **늘기만 하고 줄지 않는다** —
+  // 아코디언을 한 번 펼쳤다 접으면 접힌 내용 위로 펼쳤을 때의 높이가 그대로 남았다.
+  it('실측이 줄면 타일도 줄어든다 — 늘기만 하는 래칫이 아니다', async () => {
+    const view = await 격자()
+    const 측정상자 = () => view.getByTestId('widget-measure-remaining-schedule')
+    const 카드 = () =>
+      within(타일(view, 'remaining-schedule')).getByTestId('widget-remaining-schedule').parent
+        ?.parent
+
+    await act(async () => {
+      fireEvent(측정상자(), 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 358, height: 380 } } })
+    })
+    expect(스타일(카드() as AtomElement).minHeight).toBe(380)
+
+    await act(async () => {
+      fireEvent(측정상자(), 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 358, height: 236 } } })
+    })
+    expect(스타일(카드() as AtomElement).minHeight).toBe(236)
+
+    // 아래 타일도 함께 되돌아온다 — 초과분이 줄었으므로.
+    expect(스타일(타일(view, 'weekly-boss-profit'))).toMatchObject({
+      top: 3 * 행 + (236 - metrics.rowHeightPx),
+    })
   })
 
   it('실측이 최소 높이를 넘으면 그 아래 타일이 전부 초과분만큼 내려간다', async () => {
@@ -127,7 +153,7 @@ describe('`h: auto` 타일 ([[ADR-146]] 정정 1)', () => {
     const 초과 = 실측 - metrics.rowHeightPx
 
     await act(async () => {
-      fireEvent(타일(view, 'remaining-schedule'), 'layout', {
+      fireEvent(view.getByTestId('widget-measure-remaining-schedule'), 'layout', {
         nativeEvent: { layout: { x: 0, y: 0, width: 358, height: 실측 } },
       })
     })
@@ -143,12 +169,19 @@ describe('`h: auto` 타일 ([[ADR-146]] 정정 1)', () => {
   })
 
   // 계산으로 나오는 값을 재면 첫 프레임에 0 이고, 그 0 이 그대로 좌표가 된다.
-  it('auto 가 아닌 타일에는 `onLayout` 을 걸지 않는다', async () => {
+  // 재는 것은 **auto 타일의 내용 상자 하나뿐**이다 — 나머지는 계산으로 나오고, 재면 첫 프레임에
+  // 0 이라 타일이 한 프레임 접혀 있다([[ADR-132]] 정정 30 과 같은 이유).
+  it('auto 타일의 «내용» 만 잰다 — 타일 래퍼도 다른 타일도 안 잰다', async () => {
     const view = await 격자()
 
-    expect(타일(view, 'remaining-schedule').props.onLayout).toBeInstanceOf(Function)
+    expect(view.getByTestId('widget-measure-remaining-schedule').props.onLayout).toBeInstanceOf(
+      Function,
+    )
+    // 래퍼에 붙으면 자기가 크기를 정하는 상자를 재게 되어 높이가 늘기만 한다.
+    expect(타일(view, 'remaining-schedule').props.onLayout).toBeUndefined()
     for (const id of ['representative-character', 'weekly-boss-profit', 'reset-countdown']) {
       expect(타일(view, id).props.onLayout).toBeUndefined()
+      expect(view.queryByTestId(`widget-measure-${id}`)).toBeNull()
     }
   })
 })

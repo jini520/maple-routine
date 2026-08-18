@@ -89,30 +89,40 @@ export function WidgetGrid({ data }: WidgetGridProps): React.JSX.Element {
         // auto 타일은 «최소» 높이만 정하고 내용이 그 위로 자란다 — 고정 높이를 주면 잰 값이 늘
         // 그 값이라 아무것도 못 재고, 늘어나는 것과 스크롤하는 것은 다르다([[ADR-146]] 정정 1).
         const box = isAuto ? { minHeight: tile.heightPx } : { height: tile.heightPx }
+
+        // ⚠️ **`onLayout` 은 «내용» 에 붙는다 — 최소 높이를 진 상자에 붙이면 안 된다.**
+        //
+        // 한때 바깥 래퍼(= `minHeight` 를 진 `Card` 를 감싼 상자)를 쟀다. 그러면 재는 값이
+        // `max(minHeight, 내용)` 이고 그 값이 다시 다음 `minHeight` 가 되어 **높이가 늘기만 하고
+        // 줄지 않는다**(래칫). 아코디언을 한 번 펼쳤다 접으면 접힌 내용 위로 펼쳤을 때의 높이가
+        // 그대로 남아 빈 자리가 생긴다 — 자기가 크기를 정하는 것을 재고 있었던 것이다.
+        //
+        // 안쪽에서 재면 그 고리가 끊긴다: 이 상자에는 최소 높이가 없어 **언제나 내용의 높이**다.
         const widget = <Component w={placement.w} h={placement.h} data={data} />
+        const measured = isAuto ? (
+          <View
+            testID={`widget-measure-${placement.id}`}
+            onLayout={(event: { nativeEvent: { layout: { height: number } } }) => {
+              measureAuto(placement.id, event.nativeEvent.layout.height)
+            }}
+          >
+            {widget}
+          </View>
+        ) : (
+          widget
+        )
 
         return (
           <View
             key={placement.id}
             testID={`widget-tile-${placement.id}`}
             style={{ position: 'absolute', left: tile.leftPx, top: tile.topPx, width: tile.widthPx }}
-            // 조건부 전개다 — `onLayout={undefined}` 로 넘겨도 동작은 같지만, «auto 타일만 잰다» 가
-            // 렌더 트리에서도 보여야 그 규칙이 다음 사람에게 남는다.
-            {...(isAuto
-              ? {
-                  onLayout: (event: {
-                    nativeEvent: { layout: { height: number } }
-                  }) => {
-                    measureAuto(placement.id, event.nativeEvent.layout.height)
-                  },
-                }
-              : null)}
           >
             {target === undefined ? (
-              <Card style={box}>{widget}</Card>
+              <Card style={box}>{measured}</Card>
             ) : (
               <Pressable role="button" onPress={() => open(target)}>
-                <Card style={box}>{widget}</Card>
+                <Card style={box}>{measured}</Card>
               </Pressable>
             )}
           </View>
