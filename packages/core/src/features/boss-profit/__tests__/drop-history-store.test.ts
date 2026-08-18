@@ -92,6 +92,37 @@ describe('useDropHistoryStore.load', () => {
     ])
   })
 
+  // today 의 「최고가 아이템」(entered 만 순위)·「가격 미입력」(undefined 만 카운트)이 이 세 필드를
+  // 읽는다. 빠지면 저장은 됐는데 최고가는 영영 비고 미입력 건수는 안 준다([[ADR-124]] 결정 4).
+  it('가격 세 필드를 함께 담는다 — 빠지면 「입력해도 미입력」이 된다', async () => {
+    getAllBossDropRecordsMock.mockResolvedValue([
+      dropRecord({ priceState: 'entered', priceMeso: 1_200_000_000, priceShare: 2 }),
+    ])
+    const store = await loadStore()
+
+    await store.getState().load()
+
+    expect(store.getState().groups[0].records[0]).toMatchObject({
+      priceState: 'entered',
+      priceMeso: 1_200_000_000,
+      priceShare: 2,
+    })
+  })
+
+  it('저장 계층의 null 은 undefined 로 정규화한다 — 「미입력」과 「0메소」가 갈린다', async () => {
+    getAllBossDropRecordsMock.mockResolvedValue([
+      dropRecord({ priceState: null, priceMeso: null, priceShare: null }),
+    ])
+    const store = await loadStore()
+
+    await store.getState().load()
+
+    const record = store.getState().groups[0].records[0]
+    expect(record.priceState).toBeUndefined()
+    expect(record.priceMeso).toBeUndefined()
+    expect(record.priceShare).toBeUndefined()
+  })
+
   it('캐릭터 이름·아바타를 ocid로 찾을 수 있게 함께 담는다', async () => {
     getAllBossDropRecordsMock.mockResolvedValue([dropRecord({})])
     const store = await loadStore()
