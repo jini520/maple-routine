@@ -146,3 +146,49 @@ Upload Symbols Failed
 - **GUI 없이 CLI로 끝까지 검증된다.** 추측으로 고치고 사용자에게 Xcode를 다시 돌리게 하는 대신,
   `xcodebuild archive` → `-exportArchive` → `codesign -dvv` 로 서명 주체까지 직접 확인하는 편이
   왕복이 훨씬 적다.
+
+---
+
+## 후속 (2026-08-19) — `app-rn` 도 같은 자리에서 시작했다
+
+[[ADR-128]] 의 RN 앱을 v1.0.6 으로 처음 아카이브하는데 **그 전에 다른 데서 먼저 막혔다.**
+
+```
+app.xcodeproj: error: Signing for "app" requires a development team.
+```
+
+Expo prebuild 는 `DEVELOPMENT_TEAM` 을 만들어 주지 않는다. Capacitor 스캐폴드에는 있던 값이 RN
+쪽에는 **아예 없었다**(`grep -c DEVELOPMENT_TEAM project.pbxproj` → `0`). 타겟의 Debug·Release
+양쪽에 `CODE_SIGN_STYLE = Automatic` + `DEVELOPMENT_TEAM = TQPKW249G7` 을 넣어 풀었다.
+
+그리고 그 뒤에 **이 문서의 그 문제가 그대로 기다리고 있었다.** Expo/RN 템플릿도 프로젝트
+레벨에 레거시 문자열을 쓴다 — 다만 조건부 형태라 `grep CODE_SIGN_IDENTITY` 의 모양이 다르다.
+
+```
+"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";   ← 두 자리
+```
+
+같은 처방(`"Apple Development"`)을 적용했다. **아카이브는 이 값으로도 통과하므로 GUI 로는 안
+드러난다** — Organizer 의 Distribute 까지 가야 나온다. 이 문서가 남긴 CLI 검증 경로 덕에 업로드
+전에 잡았다.
+
+검증(2026-08-19, `xcodebuild archive` → `-exportArchive` method `app-store-connect`):
+
+```
+** ARCHIVE SUCCEEDED **
+** EXPORT SUCCEEDED **
+Identifier=com.mapleroutine.app
+Authority=Apple Distribution: JINMYEONG JE (TQPKW249G7)
+TeamIdentifier=TQPKW249G7
+CFBundleShortVersionString=1.0.6 · CFBundleVersion=12
+```
+
+### `expo prebuild` 는 이 셋을 전부 지운다
+
+`ios/` 를 **통째로 지우고 다시 만들기** 때문이다(2026-08-19 실제로 겪었다 — `- Clearing ios` /
+`✔ Cleared ios code`). 커밋된 `ios/` 라 `git checkout -- packages/app-rn/ios` 로 되살아나지만,
+`Pods/` 는 gitignore 대상이라 **같이 지워지고 안 돌아온다** → `pod install` 을 다시 해야 한다.
+
+그러므로 **`app.json` 을 고쳐 prebuild 를 돌린 뒤에는 이 세 값이 살아 있는지 반드시 확인할 것**
+([[ADR-138]]). 서명 설정은 `app.json` 이 원천이 아니라 pbxproj 에만 있는 값이라, 원천에서 다시
+생성되지 않는다.
