@@ -212,7 +212,15 @@ export function ValuableDroughtWidget({ w, h, data }: WidgetProps): React.JSX.El
   const ink = DROUGHT_TIER_STYLES[view.tier].ink
   const headline = formatValuableDroughtHeadline(view.weeksSince, headlineIndex)
   // 0단계만 배경으로 축하한다 — 나머지는 기본 표면이고 슬픔은 잎이 진다.
-  const surface = view.tier === 0 ? 'bg-primary-tint' : ''
+  //
+  // **모서리를 함께 둥글린다.** `Card` 는 `rounded-[14px]` 를 갖되 `overflow-hidden` 은 **일부러**
+  // 안 건다(클리핑은 호출부의 일이라고 그 atom 이 적어 뒀다 — 미디어 스코프·글로우가 그 자유를
+  // 쓴다). 그래서 타일 전체를 칠하는 배경이 사각이면 **네 모서리에서 카드의 둥근 테두리 안쪽을
+  // 덮어** 테두리가 잘려 보인다. 이 위젯이 today 에서 유일하게 타일 전면을 칠한다.
+  //
+  // 반지름이 13인 것은 14가 아니라서다 — 배경은 테두리 **안쪽** 상자를 채우므로 바깥 반지름에서
+  // 테두리 1px 을 뺀 값이 정확히 겹친다.
+  const surface = view.tier === 0 ? 'rounded-[13px] bg-primary-tint' : ''
 
   if (variant === 'compact') {
     return (

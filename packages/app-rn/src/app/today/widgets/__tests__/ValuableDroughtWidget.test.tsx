@@ -98,6 +98,15 @@ describe('0주째만 배경이 바뀐다 — 격자에서 유일하게 축하하
     )
   })
 
+  // `Card` 는 `rounded-[14px]` 를 갖되 `overflow-hidden` 을 **일부러** 안 건다(클리핑은 호출부의
+  // 일이다). 그래서 타일 전면을 칠하는 배경이 사각이면 네 모서리에서 카드의 둥근 테두리 안쪽을
+  // 덮어 **테두리가 잘려 보인다** — 실제로 그렇게 났다.
+  it.each(Object.entries(크기))('%s — 배경도 모서리를 둥글린다 (테두리를 안 덮는다)', async (_이름, 값) => {
+    const { getByTestId } = await 위젯(값, 뷰모델({ drought: 가뭄(0) }))
+
+    expect(flattenStyle(getByTestId('widget-valuable-drought').props.style).borderRadius).toBe(13)
+  })
+
   it.each([1, 3, 9])('%i주째는 배경을 칠하지 않는다', async (weeksSince) => {
     const { getByTestId } = await 위젯(크기['4x1'], 뷰모델({ drought: 가뭄(weeksSince) }))
 

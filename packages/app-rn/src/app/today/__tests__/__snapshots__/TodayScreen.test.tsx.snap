@@ -3521,6 +3521,7 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                           {
                             "alignItems": "center",
                             "backgroundColor": "#FEECDA",
+                            "borderRadius": 13,
                             "columnGap": 10,
                             "flexBasis": "0%",
                             "flexDirection": "row",
