@@ -19,7 +19,7 @@ import weeklyBossesData from '@core/data/weekly-bosses.json'
 import { formatBossProfitPeriodLabel } from '@core/lib/boss-profit-period'
 import {
   formatValuableDroughtHeadline,
-  VALUABLE_DROUGHT_LATE_HEADLINE_COUNT,
+  valuableDroughtHeadlineCount,
   WORD_JOINER,
   type DropHistoryRecord,
 } from '@core/lib/drop-history'
@@ -363,6 +363,17 @@ describe('DropHistoryScreen — 미획득 요약 ([[ADR-071]] 결정 9)', () => 
     return { periodKey: PERIOD, cycle: 'weekly' as const, weeksSince, records }
   }
 
+  /**
+   * 그 단계의 문구 풀 — 단계마다 여럿이고 화면이 마운트당 하나를 무작위로 고른다([[ADR-147]] 정정 6).
+   * 그래서 화면 테스트는 문구를 단정하지 않고 "그 단계의 풀에 있는가"만 본다(단계 자체는 접근성
+   * 이름이 말한다).
+   */
+  function 문구풀(weeksSince: number): string[] {
+    return Array.from({ length: valuableDroughtHeadlineCount(weeksSince) }, (_, index) =>
+      formatValuableDroughtHeadline(weeksSince, index),
+    )
+  }
+
   it('제목에 슬픔 단계, 아래 줄에 마지막 에픽 빔 정보를 담는다', async () => {
     mockStore({
       groups: [{ periodKey: PERIOD, cycle: 'weekly', records: [기록()] }],
@@ -371,20 +382,21 @@ describe('DropHistoryScreen — 미획득 요약 ([[ADR-071]] 결정 9)', () => 
     const { getByTestId } = await renderHistory()
 
     const summary = 문장(getByTestId('valuable-drought'))
-    expect(summary).toContain('선넘네?!') // 3주 미획득 = 사용자 지정 4주차 문구
+    // 3주 미획득 = 사용자 지정 4주차 풀
+    expect(문구풀(3).some((headline) => summary.includes(headline))).toBe(true)
     expect(summary).toContain('마지막 에픽 빔!')
     expect(summary).toContain('루즈 컨트롤 머신 마크')
   })
 
-  // 문구는 사용자 지정(2026-08-01) — 0~3주는 고정, 4주 이상은 풀에서 무작위라 아래 표는 고정 넷만
-  // 담는다. **한 케이스에서 네 번 렌더하지 않는다** — RNTL 14 는 한 케이스에 렌더가 셋을 넘기면
-  // 그 뒤가 빈 화면으로 떨어진다(step 2 가 실측해 적어 둔 함정, 여기서 다시 밟았다).
+  // 문구는 사용자 지정(2026-08-01·2026-08-17) — **전 단계가 풀**이라 표는 문구를 담지 않고 풀 소속만
+  // 본다([[ADR-147]] 정정 6). **한 케이스에서 네 번 렌더하지 않는다** — RNTL 14 는 한 케이스에 렌더가
+  // 셋을 넘기면 그 뒤가 빈 화면으로 떨어진다(step 2 가 실측해 적어 둔 함정, 여기서 다시 밟았다).
   it.each([
-    [0, '#f7d00d', 0, '와따리! ㅇㄱㄱㄷ'],
-    [1, '#e0b400', 6, '그래, 그럴 수 있지'],
-    [2, '#b99a5c', 14, '어?! 슬슬 쫌 그래!?'],
-    [3, '#9a9a93', 26, '선넘네?!'],
-  ])('%i주 미획득이면 단계·문구·잎이 함께 움직인다', async (weeks, color, rotate, headline) => {
+    [0, '#f7d00d', 0],
+    [1, '#e0b400', 6],
+    [2, '#b99a5c', 14],
+    [3, '#9a9a93', 26],
+  ])('%i주 미획득이면 단계·문구·잎이 함께 움직인다', async (weeks, color, rotate) => {
     mockStore({
       groups: [{ periodKey: PERIOD, cycle: 'weekly', records: [기록()] }],
       drought: 가뭄(weeks),
@@ -393,7 +405,8 @@ describe('DropHistoryScreen — 미획득 요약 ([[ADR-071]] 결정 9)', () => 
 
     // 웹의 `data-drought-tier` 자리 — 데이터 속성이 없어 접근성 이름으로 옮겼다.
     expect(getByLabelText(`고가 드롭 미획득 ${weeks}단계`)).toBeTruthy()
-    expect(문장(getByTestId('valuable-drought'))).toContain(headline)
+    const summary = 문장(getByTestId('valuable-drought'))
+    expect(문구풀(weeks).some((headline) => summary.includes(headline))).toBe(true)
 
     const leaf = getByTestId('valuable-drought-leaf', { includeHiddenElements: true })
     expect(flattenStyle(leaf.props.style).transform).toEqual([{ rotate: `${rotate}deg` }])
@@ -428,7 +441,7 @@ describe('DropHistoryScreen — 미획득 요약 ([[ADR-071]] 결정 9)', () => 
     const { getByTestId } = await renderHistory()
 
     const summary = 문장(getByTestId('valuable-drought'))
-    expect(summary).toContain('와따리! ㅇㄱㄱㄷ')
+    expect(문구풀(0).some((headline) => summary.includes(headline))).toBe(true)
     expect(summary).not.toContain('마지막')
   })
 
@@ -438,9 +451,7 @@ describe('DropHistoryScreen — 미획득 요약 ([[ADR-071]] 결정 9)', () => 
     mockStore({ drought: 가뭄(9) })
     const { getByTestId, rerenderSame } = await renderHistory()
 
-    const pool = Array.from({ length: VALUABLE_DROUGHT_LATE_HEADLINE_COUNT }, (_, index) =>
-      formatValuableDroughtHeadline(9, index),
-    )
+    const pool = 문구풀(9)
     const shown = 문장(getByTestId('valuable-drought'))
     expect(pool.some((headline) => shown.includes(headline))).toBe(true)
 

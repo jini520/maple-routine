@@ -45,26 +45,20 @@ import { Pressable, RefreshControl, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useReducedMotion } from 'react-native-reanimated'
 
-import type { BossContent, BossCycle, BossDifficulty } from '@core/types'
+import type { BossDifficulty } from '@core/types'
 import {
   partySizeKey,
   useBossSchedulerStore,
-  type BossCharacterView,
   type PartyFilter,
 } from '@core/features/boss-scheduler/store'
+import { displayedBosses } from '@core/features/boss-scheduler/displayed-bosses'
 import { formatSyncedAt } from '@core/features/schedule-sync/format'
 import { useScheduleSyncErrorToast } from '@core/features/schedule-sync/use-sync-error-toast'
 import { useToastStore } from '@core/features/toast/store'
 import { useTrackingModeStore } from '@core/features/tracking-mode/store'
 import { getBossPortraitCrop, getBossPortraitUrl, type BossPortraitCrop } from '@core/lib/boss-icons'
-import {
-  getSupportedDifficulties,
-  matchBossContent,
-  selectDisplayBosses,
-  type MatchedBoss,
-} from '@core/lib/boss-matching'
+import { getSupportedDifficulties, type MatchedBoss } from '@core/lib/boss-matching'
 import { getMaxPartySize } from '@core/lib/boss-crystal-prices'
-import { mergeManualBossList } from '@core/lib/manual-boss-merge'
 import { isChallengersWorld } from '@core/lib/world-emblem'
 
 import { Badge } from '../../components/atoms/Badge/Badge'
@@ -214,38 +208,14 @@ export function BossScreen(): React.JSX.Element {
   // (전역 error가 채워지는 경로에서는 characters가 캐시 뷰로 교체되고 그 뷰의 error는 null이다).
   useScheduleSyncErrorToast(selected?.error ?? null, { onRetry: () => refresh(trackedOcids ?? []) })
 
-  // [[ADR-035]] 결정 3·6·12: 수동 모드에서는 게임 등록 여부가 아니라 사용자가 앱에서 관리하는
-  // 멤버십(manualTrackedContent)으로 표시 목록을 결정하고, 완료 여부는 동기화 결과에서 즉석
-  // 조회한다(mergeManualBossList). synced는 store의 auto 목록(MatchedBoss)에서 BossContent로
-  // 되돌려 넘긴다 — MatchedBoss는 BossContent의 모든 필드를 갖고 있어 손실이 없다.
-  // 카드로 표시할 목록 — auto 모드는 등록된 보스뿐 아니라 미등록이어도 완료된 보스를 포함하고
-  // ([[ADR-031]] 결정 5), manual 모드는 selectDisplayBosses(등록 우선) 대신 추적 멤버십 그대로 보여준다.
-  //
-  // **캐릭터를 인자로 받는다**([[ADR-142]] 결정 4) — 선택된 캐릭터의 카드 목록과 레일의 링이 **같은
-  // 함수**를 써야 «링이 세는 것 = 화면에 보이는 것» 이 구조로 보장된다.
-  function displayedBossesOf(character: BossCharacterView, cycle: BossCycle): MatchedBoss[] {
-    if (mode !== 'manual') {
-      return selectDisplayBosses(cycle === 'weekly' ? character.weeklyBosses : character.monthlyBosses)
-    }
-
-    const items = (manualTrackedByOcid?.[character.ocid] ?? []).filter((item) => item.kind === 'boss')
-    // synced 는 store 의 auto 목록(MatchedBoss)에서 BossContent 로 되돌려 넘긴다 — MatchedBoss 는
-    // BossContent 의 모든 필드를 갖고 있어 손실이 없다.
-    const synced: BossContent[] = [...character.weeklyBosses, ...character.monthlyBosses].map((boss) => ({
-      name: boss.apiName,
-      difficulty: boss.difficulty,
-      cycle: boss.cycle,
-      isRegistered: boss.isRegistered,
-      isComplete: boss.isComplete,
-      ownComplete: boss.ownComplete,
-    }))
-    return mergeManualBossList(items, synced)
-      .map(matchBossContent)
-      .filter((boss) => boss.cycle === cycle)
-  }
-
-  const displayedWeeklyBosses = selected === null ? [] : displayedBossesOf(selected, 'weekly')
-  const displayedMonthlyBosses = selected === null ? [] : displayedBossesOf(selected, 'monthly')
+  // 카드로 표시할 목록 — [[ADR-035]] 수동 모드 멤버십과 [[ADR-031]] 결정 5(미등록이어도 완료면
+  // 포함)가 그 안에 있다. **이 화면의 지역 함수였던 것을 코어로 꺼냈다**([[ADR-147]] 결정 8) —
+  // today 의 「캐릭터별 남은 스케줄」이 세는 «남은 보스» 가 이 화면이 보여 주는 것과 한 글자도
+  // 달라선 안 되기 때문이다. 이유·규칙·«캐릭터를 인자로 받는» 근거는 `displayed-bosses.ts` 파일 머리.
+  const displayedWeeklyBosses =
+    selected === null ? [] : displayedBosses(selected, 'weekly', mode, manualTrackedByOcid)
+  const displayedMonthlyBosses =
+    selected === null ? [] : displayedBosses(selected, 'monthly', mode, manualTrackedByOcid)
 
   // [[ADR-142]] 정정 1: 링은 **주간 하나**다(온전한 원). 월간은 종류가 하나뿐이라 «몇 개 중 몇 개»
   // 가 뜻을 갖지 못한다 — 표현 방법은 따로 정한다(사용자 지시, 2026-08-16).
@@ -260,7 +230,9 @@ export function BossScreen(): React.JSX.Element {
     characterName: character.characterName,
     level: character.level ?? null,
     imageUrl: character.imageUrl ?? null,
-    rings: [{ label: '주간', ...bossRingProgress(displayedBossesOf(character, 'weekly')) }],
+    rings: [
+      { label: '주간', ...bossRingProgress(displayedBosses(character, 'weekly', mode, manualTrackedByOcid)) },
+    ],
   }))
 
   // 챌린저스 월드면 registration_flag와 무관하게 시즌 보스 완료 여부를 배지로 보여준다([[ADR-031]] 결정 3).

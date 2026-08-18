@@ -306,14 +306,10 @@ async function syncOneCharacter(
 //
 // ocids로 지정된 캐릭터만 동기화한다 — 계정의 전체 캐릭터를 대상으로 호출하면
 // 추적 대상이 아닌 캐릭터까지 불필요하게 호출하게 되어 로딩이 느려진다.
-export async function syncSchedules(
+async function runSyncRound(
   ocids: string[],
   onProgress?: (completed: number, total: number) => void,
 ): Promise<CharacterScheduleSync[]> {
-  if (ocids.length === 0) {
-    return []
-  }
-
   // ADR-097 결정 3: 여기서부터 실제 네트워크가 나간다. 성공이 아니라 "시도"를 표시하므로 실패해도
   // 표시한다 — 오프라인에서 탭을 옮길 때마다 실패 호출이 반복되지 않게. 화면 진입 재조회 말고
   // 추적 목록 저장·수동 모드 시드에서 들어온 회차도 같은 대상이다(동기화가 일어난 사실은 같고,
@@ -361,4 +357,51 @@ export async function syncSchedules(
   ])
 
   return [firstResult, ...restResults]
+}
+
+// ADR-147 결정 4 (= ADR-132 결정 8 이 "today 에 내용이 붙는 시점"을 기한으로 열어 둔 구멍):
+// 진행 중인 회차가 있으면 새 회차를 시작하지 않고 그 프라미스를 함께 기다린다.
+//
+// 게이트(ADR-097 결정 3)는 "이번 실행에서 시도함 AND 캐시가 10분 안"인데, 플래그는 호출이
+// **시작될 때** 서고 신선도는 호출이 **끝나야** 갱신된다. 그 사이에 다른 화면이 진입하면
+// `시도함 = true` · `신선함 = false`를 보고 같은 호출을 한 번 더 낸다. today 가 첫 화면이라
+// 실행당 첫 동기화를 대개 그 화면이 내므로, 이 경로는 예외가 아니라 지배 경로다.
+// prehydrate.ts 의 순차 루프는 그 창을 순서로 피해 왔지만 today 는 그 순차 밖의 트리거다.
+//
+// **키는 "회차" 하나다 — ocid 집합이 아니다.** 스케줄러 셋과 today 가 같은 추적 목록을 보므로
+// 집합이 늘 같고, 집합별 슬롯을 두면 목록이 조금 다른 조합에서 같은 캐릭터가 여전히 두 번 나간다.
+//
+// **대가 둘.** ① 진행 중인 회차와 다른 ocid 목록으로 들어온 호출(추적 목록 저장의 `added`,
+// 수동 모드 시드의 단일 ocid)도 그 회차의 결과를 받는다 — 자기가 요청한 캐릭터가 그 안에 없을 수
+// 있다. 둘 다 사용자가 저장을 누른 직후의 경로라 화면 진입 자동 조회와 겹치는 창이 좁다.
+// ② 합류한 호출의 `onProgress` 는 불리지 않는다 — 진행률은 회차를 소유한 호출이 받는다.
+let inFlightRound: Promise<CharacterScheduleSync[]> | null = null
+
+export async function syncSchedules(
+  ocids: string[],
+  onProgress?: (completed: number, total: number) => void,
+): Promise<CharacterScheduleSync[]> {
+  if (ocids.length === 0) {
+    return []
+  }
+
+  if (inFlightRound !== null) {
+    return inFlightRound
+  }
+
+  const round = runSyncRound(ocids, onProgress)
+  inFlightRound = round
+  try {
+    return await round
+  } finally {
+    // 성공·실패와 무관하게 정산되면 즉시 비운다. 실패한 회차를 들고 있으면 네트워크가 돌아와도
+    // 다음 진입이 그 실패를 다시 받는다.
+    inFlightRound = null
+  }
+}
+
+// 테스트 전용. 모듈 수준 상태라 테스트끼리 오염되므로 beforeEach 에서 부른다.
+// 프로덕션 코드에서 부르지 말 것 — 진행 중인 회차를 잊어버려 그 순간 단일 비행이 무너진다.
+export function resetSyncSingleFlightForTests(): void {
+  inFlightRound = null
 }

@@ -48,9 +48,11 @@ import { useContentSchedulerStore, type ContentCharacterView } from '@core/featu
 import { useTrackingModeStore } from '@core/features/tracking-mode/store'
 import { formatSyncedAt } from '@core/features/schedule-sync/format'
 import { useScheduleSyncErrorToast } from '@core/features/schedule-sync/use-sync-error-toast'
-import { mergeManualContentList, orderContentsByTemplate } from '@core/lib/manual-content-merge'
-import { CONTENT_TEMPLATE } from '@core/lib/scheduler-content-template'
-import { categorizeContentEntries, WEEKLY_CATEGORY_ORDER } from '@core/lib/content-category'
+import {
+  displayedDailyContents,
+  displayedWeeklyContents,
+  type DisplayedContentsInput,
+} from '@core/features/content-scheduler/displayed-contents'
 
 import { dailyContentProgress, weeklyContentProgress } from './content-completion'
 
@@ -68,16 +70,6 @@ import { useThemeAppearance } from '../../theme/context'
 import { useScreenNavigation } from '../use-screen-navigation'
 import { renderDailyContentCard } from './DailyContentCards'
 import { renderWeeklyContentCard } from './WeeklyContentCards'
-
-// ADR-035 결정 20: 수동 모드 표시 순서를 컨텐츠 관리 페이지와 동일하게 고정하려고, 템플릿을
-// 관리 페이지와 같은 categorizeContentEntries 평탄화 순서로 미리 정렬해 mergeManualContentList에
-// 넘긴다(일간은 첫 등장 순서, 주간은 WEEKLY_CATEGORY_ORDER). 캐릭터 무관 상수라 모듈 레벨에서 1회 계산.
-const ORDERED_DAILY_TEMPLATE = categorizeContentEntries(CONTENT_TEMPLATE.daily).flatMap((group) =>
-  group.items.map((item) => item.entry),
-)
-const ORDERED_WEEKLY_TEMPLATE = categorizeContentEntries(CONTENT_TEMPLATE.weekly, WEEKLY_CATEGORY_ORDER).flatMap(
-  (group) => group.items.map((item) => item.entry),
-)
 
 export function ContentScreen(): React.JSX.Element {
   const {
@@ -129,40 +121,23 @@ export function ContentScreen(): React.JSX.Element {
   // 전역 error가 아니라 이 값으로 온다.
   useScheduleSyncErrorToast(selected?.error ?? null, { onRetry: () => refresh(trackedOcids ?? []) })
 
-  // ADR-035 결정 3·6·19: 수동 모드에서는 게임 등록 여부(isRegistered)가 아니라 사용자가 앱에서
-  // 관리하는 멤버십(manualTrackedContent)으로 표시 목록을 결정하고, 실제 값은 동기화 결과 또는
-  // 템플릿에서 즉석 조회한다(mergeManualContentList). 멤버십의 kind('daily'/'weekly')가 저장
-  // 시점에 확정돼 있어 각 탭은 자기 kind 항목만 그린다. auto 모드는 기존대로 등록 항목만 표시한다.
-  // **캐릭터를 인자로 받는다**([[ADR-142]] 결정 4) — 선택된 캐릭터의 카드 목록과 레일의 링이
-  // **같은 함수**를 써야 «링이 세는 것 = 화면에 보이는 것» 이 구조로 보장된다. 전에는 선택된
-  // 캐릭터만 계산하면 됐으므로 이 자리가 식이었다.
+  // 판정은 `features/content-scheduler/displayed-contents` 가 갖는다 — today 의 「남은 스케줄」이
+  // 같은 수를 세므로 화면 안에 두면 두 벌이 되고, 실제로 갈라졌던 자리다(모든 캐릭터 «일퀘 18»).
+  // 여기 남는 것은 «스토어에서 꺼내 넘기는 일» 뿐이다.
+  function contentsInputOf(character: ContentCharacterView): DisplayedContentsInput {
+    return {
+      dailyContents: character.dailyContents,
+      weeklyContents: character.weeklyContents,
+      manualItems: manualTrackedByOcid?.[character.ocid] ?? [],
+    }
+  }
+
   function dailyContentsOf(character: ContentCharacterView): DailyContent[] {
-    const items = manualTrackedByOcid?.[character.ocid] ?? []
-    return mode === 'manual'
-      ? mergeManualContentList(
-          items.filter((item) => item.kind === 'daily'),
-          character.dailyContents,
-          ORDERED_DAILY_TEMPLATE,
-        )
-      : // auto 모드도 수동 모드와 동일한 template 순서로 표시한다.
-        orderContentsByTemplate(
-          character.dailyContents.filter((content) => content.isRegistered),
-          ORDERED_DAILY_TEMPLATE,
-        )
+    return displayedDailyContents(contentsInputOf(character), mode)
   }
 
   function weeklyContentsOf(character: ContentCharacterView): WeeklyContent[] {
-    const items = manualTrackedByOcid?.[character.ocid] ?? []
-    return mode === 'manual'
-      ? (mergeManualContentList(
-          items.filter((item) => item.kind === 'weekly'),
-          character.weeklyContents,
-          ORDERED_WEEKLY_TEMPLATE,
-        ) as WeeklyContent[])
-      : orderContentsByTemplate(
-          character.weeklyContents.filter((content) => content.isRegistered),
-          ORDERED_WEEKLY_TEMPLATE,
-        )
+    return displayedWeeklyContents(contentsInputOf(character), mode)
   }
 
   const displayDailyContents: DailyContent[] = selected === null ? [] : dailyContentsOf(selected)

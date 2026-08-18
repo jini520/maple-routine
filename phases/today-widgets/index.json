@@ -1,0 +1,120 @@
+{
+  "project": "maple-routine",
+  "phase": "today-widgets",
+  "steps": [
+    {
+      "step": 0,
+      "name": "sync-single-flight",
+      "status": "completed",
+      "started_at": "2026-08-17T20:52:13+0900",
+      "summary": "syncSchedules 에 «회차» 단위 단일 비행 도입 — 진행 중인 회차가 있으면 합류해 같은 프라미스를 기다리고, 정산 즉시 슬롯을 비운다(실패도 캐시하지 않는다). 호출부·prehydrate 순차·markSyncAttemptedThisRun 시점 무변경, 테스트 전용 resetSyncSingleFlightForTests 추가, 신규 6케이스(그중 4개는 합류 가드가 없으면 실패).",
+      "completed_at": "2026-08-17T21:00:02+0900"
+    },
+    {
+      "step": 1,
+      "name": "character-exp",
+      "status": "completed",
+      "started_at": "2026-08-17T21:00:02+0900",
+      "summary": "character/basic 의 경험치 필드를 정규화까지 배선 — wire 에 character_exp?: number·character_exp_rate?: string(문자열임을 주석으로 박음), 도메인엔 진행률만 expRate?: number 로 싣고 누적 절대값은 나르지 않는다. normalizeExpRate 가 Number 로 풀되 미존재·빈 문자열·NaN 은 0 이 아니라 undefined(「모름」≠「0%」), 진짜 \"0.000\" 만 0 으로 싣는다. 신규 6케이스.",
+      "completed_at": "2026-08-17T21:04:09+0900"
+    },
+    {
+      "step": 2,
+      "name": "representative-display",
+      "status": "completed",
+      "started_at": "2026-08-17T21:04:09+0900",
+      "summary": "resolveDisplayRepresentative 신설 — 저장 대표가 목록에 있으면 그것, 없거나 미지정이면 첫 번째(ADR-143 결정 4의 «임시 대표»), 빈 목록이면 null. resolveRepresentative 는 한 줄도 안 고쳐 ADR-144 결정 4(«대표를 안 고르면 채워진 별이 없다»)가 그대로 서고, 두 함수가 «말했는가» vs «자리에 설 캐릭터» 로 다른 질문임을 양쪽 주석에 박아 합치기를 막았다. 파생값은 저장하지 않는다. 신규 5케이스(그중 하나는 회귀 가드).",
+      "completed_at": "2026-08-17T21:07:56+0900"
+    },
+    {
+      "step": 3,
+      "name": "boss-display-extract",
+      "status": "completed",
+      "started_at": "2026-08-17T21:07:56+0900",
+      "summary": "표시 대상 보스 판정을 BossScreen.tsx 지역 함수에서 core features/boss-scheduler/displayed-bosses.ts 로 꺼냈다 — 로직 한 줄 안 바꾸고 클로저로 읽던 mode·manualTrackedByOcid 만 인자가 됐다(ADR-147 결정 8: 복제가 아니라 이동). 화면은 지역 함수를 지우고 호출부 셋(주간·월간·레일 링)이 인자를 넘기며, 고아가 된 import 넷도 함께 정리. 지금까지 BossScreen 렌더로만 검증되던 ADR-035 멤버십·ADR-031 결정 5 를 입출력으로 직접 못 박는 신규 11케이스(cycle 필터·kind 필터 변이 주입으로 판별력 확인), BossScreen 스냅샷 48개가 그대로 통과해 이동 성공을 증명.",
+      "completed_at": "2026-08-17T21:14:43+0900"
+    },
+    {
+      "step": 4,
+      "name": "drought-headline-pools",
+      "status": "completed",
+      "started_at": "2026-08-17T21:14:44+0900",
+      "summary": "가뭄 문구를 전 단계 풀로 넓혔다(ADR-147 정정 6·10) — VALUABLE_DROUGHT_TIERS 가 headlines: readonly string[] 를 들고 마지막 단계 전용 배열·VALUABLE_DROUGHT_LATE_HEADLINE_COUNT 상수가 사라진 자리에 valuableDroughtHeadlineCount(weeksSince) 가 들어섰다. 채택 문구 여섯을 더하되 기존 열한 줄은 각 풀의 첫 항목으로 남아 index 0 이 예전과 같은 문구를 준다(회귀 가드). Math.random 은 여전히 화면 몫이고, 상수를 쓰던 호출부 넷(RN·capacitor 화면과 그 테스트)이 단계별 개수를 묻도록 바뀌었다 — 0~3주 문구를 단정하던 화면 테스트 6자리는 «그 단계의 풀에 속하는가» 로 옮겨 무작위화에도 안 흔들린다. 신규 8케이스(개수 함수를 마지막 단계 고정으로 되돌리면 4개 실패).",
+      "completed_at": "2026-08-17T21:22:42+0900"
+    },
+    {
+      "step": 5,
+      "name": "widget-grid",
+      "status": "completed",
+      "started_at": "2026-08-17T21:22:42+0900",
+      "summary": "위젯 격자의 순수 함수 셋(컴포넌트 0개) — widget-grid-metrics.ts 는 창 폭 하나로 열 폭만 유동시키고 행 높이 76 은 상수로 못 박아(폴더블에서 4x2 가 화면 절반을 넘는 것을 막는 회귀 가드) onLayout 없이 첫 프레임부터 맞고, 열 폭을 반올림하지 않아 tileWidthPx(4) 가 언제나 «창폭 − 여백×2» 다. widget-layout.ts 는 좌표 배치를 검증 다섯(겹침·col+w≤4·빈 행·미선언 크기·auto→w=4)으로 지키고 — auto 는 옆에 아무도 없어야 «아래 전부가 같은 값으로 내려간다» 가 성립하므로 w=4 가 조건 — resolveWidgetPositions 가 auto 초과분을 누적해 아래 타일만 밀되 row 를 재계산하지 않는다(자동 패킹 금지). 빈 행 위반은 그 아래 첫 타일에 귀속시켜 LayoutViolation.id 가 언제나 실재하는 타일을 가리킨다. 신규 33케이스(규칙 5·초과분 누적·행 높이 고정을 각각 되돌리면 17개 실패). 문서는 today.md 의 시그니처 스케치를 실제 구현(sizesById 인자·WidgetHeight)으로 맞췄다.",
+      "completed_at": "2026-08-17T21:31:51+0900"
+    },
+    {
+      "step": 6,
+      "name": "today-view-model",
+      "status": "completed",
+      "started_at": "2026-08-17T21:31:51+0900",
+      "summary": "today 뷰모델 조립을 순수 함수 하나로 — `buildTodayViewModel(input)` 이 스토어 «상태» 와 `now` 를 값으로 받아 위젯 여덟이 읽을 한 벌을 만든다(위젯은 스토어를 모른다). 판정을 하나도 다시 쓰지 않은 것이 요점 — 남은 개수는 `content-completion` 의 progress(«셀 수 있는 수 − 완료», unmeasurable 은 분모에서 이미 빠진다)와 step 3 의 `displayedBosses`, 수익은 `groupTotalMeso`, 월드별 결정석은 `summarizeWorldCrystals`, 분모는 `WEEKLY_CRYSTAL_SALE_LIMIT`, 대표는 step 2 의 `resolveDisplayRepresentative` 가 판다. 위젯 3·4·7 은 현재 주간 기간 키 하나로 자르고(보스 수익 주간 탭과 같은 자), 최고가 순위는 `priceState === 'entered'` 만 담아 «모르는 값을 가장 싼 것으로 단정» 하지 않으며 미입력 건수는 별도 필드다(`excluded` 는 세지 않는다). 실패 캐릭터는 정렬에서 언제나 맨 아래이고 `scheduleTotal` 에서도 빠진다(모르는 것을 더하지 않는다). 초기화 카운트다운은 기존 KST 계산 조합이라 오프셋 상수를 다시 선언하지 않고 «남은 ms + 다음 시각(epoch ms)» 을 함께 준다. `new Date()`·스토어 import·「외 N명」 접기·증감 계산 없음. 신규 28케이스(정렬·기간 필터·unmeasurable·미입력 순위·excluded 여섯 자리를 되돌리면 6개 실패). today.md 에 조립 계약·「이번 주」 범위 절 추가.",
+      "completed_at": "2026-08-17T21:46:12+0900"
+    },
+    {
+      "step": 7,
+      "name": "widget-shell",
+      "status": "completed",
+      "started_at": "2026-08-17T21:46:13+0900",
+      "summary": "위젯 격자의 껍데기 — 규약·표·배치·렌더러 넷(위젯 내용은 전부 stub). `types.ts` 의 `WidgetProps.h` 는 **선언한 값 그대로**라 `WidgetHeight` 다(step 지시의 `number` 에서 정정 — auto 타일에 nominal 1 을 넘기면 그 분기가 선언에 없는 크기를 가리킨다). `registry.ts` 는 정정 13 의 크기 매트릭스 전부를 담고 아무도 안 쓰는 크기까지 남기며(나중 편집이 그때 고를 크기가 있어야 한다), 검증이 읽는 `WIDGET_SIZES_BY_ID` 를 표에서 **파생**시켜 목록이 두 벌이 되는 것을 막았다. `layout.ts` 의 좌표 여덟은 손으로 적은 값이라 «검증 다섯 통과 + 위젯이 정확히 한 번 등장» 을 테스트가 지킨다 — 자동 패킹을 기각하며 산 값이 여기서 회수된다. `WidgetGrid` 는 창 폭 하나로 치수를 계산하고(`onLayout` 은 auto 타일 **하나**에만 — 나머지는 재면 첫 프레임이 0 이다) 초과분만큼 아래를 밀며, auto 는 고정 높이가 아니라 `minHeight` 라야 잰 값이 늘 자기 값이 되는 고리를 피한다. 타일 탭은 `Tabs` 로 보내고 `groupOfPage` 비교로 광고 게이트를 탄다(today 자신이 그룹 — ADR-132 결정 9). 좌우 여백은 화면 래퍼 몫이라 격자가 그리지 않는다. 신규 13케이스(auto 를 고정 높이로·초과분 누적을 없애면 3개 실패), 스냅샷 1. today.md 의 규약 스케치를 실제 구현으로 갱신.",
+      "completed_at": "2026-08-17T21:59:12+0900"
+    },
+    {
+      "step": 8,
+      "name": "widget-character-schedule",
+      "status": "completed",
+      "started_at": "2026-08-17T21:59:12+0900",
+      "summary": "대표 캐릭터·남은 스케줄 위젯 둘을 stub 에서 실물로 — 레지스트리 두 줄만 갈리고 격자는 안 건드렸다. 대표 카드는 세 크기(4x1·4x2·2x2)가 «엠블럼 + 세 줄 + EXP» 로 **같은 구조**이고 갈리는 것은 밀도와 EXP 의 자리뿐(4x1 은 오른쪽 70px 열, 나머지는 아래 전폭) — `expRate` 가 없으면 EXP 블록째 없고 0 이면 그리며(없는 것 ≠ 0), 엠블럼·직업·길드도 모르면 그 줄을 비운다. 진행률은 `toFixed(3)`(반올림하면 `99.999%` 가 `100%` 가 된다), 초상화·엠블럼은 `faceCropStyle`·`naturalAspectStyle` 재사용(ADR-135 를 다시 밟지 않는다). 남은 스케줄은 라벨 48 / 숫자 18 **고정 폭 + `tabular-nums`** 2×2 격자라 모든 행의 숫자가 같은 x 에 서고, 강조는 `font-weight` 800 하나뿐(색은 라벨 `text-muted` · 숫자 `text` — **테마 색 금지**), 0 인 칸은 글자만 비우고 자리는 남으며 배지는 `CLEAR`·「동기화 실패」 둘뿐이다(축하 UI·「외 N명」 없음). 설계에 없던 것 하나를 구현이 정했다 — **수치 줄에 높이 14 를 박았다**: 빈 `Text` 높이가 플랫폼마다 달라 빈 글자만으로는 보스 0인 행이 실제로 접히고 auto 높이(`55+45n`)가 무너진다. 신규 35케이스(스냅샷 6 = 대표 3크기 + 목록 2·4·6명, 고정 폭·굵기·줄 높이를 되돌리면 깨진다), WidgetGrid 스냅샷은 stub 교체분만 갱신. today.md 에 구현이 확정한 값 넷 반영.",
+      "completed_at": "2026-08-17T22:16:02+0900"
+    },
+    {
+      "step": 9,
+      "name": "widget-profit-item",
+      "status": "completed",
+      "started_at": "2026-08-17T22:16:02+0900",
+      "completed_at": "2026-08-17T22:34:42+0900",
+      "summary": "WeeklyBossProfitWidget(4x3 full·4x2 wide·2x2 compact·2x1 mini) + TopValuableItemWidget(4x2 wide·2x2 compact·2x1 mini·1x1 tiny) 신설. 수익은 증감 칩 없이 결정석/아이템 스택 바 + top3, 기록 0건이면 '0 메소' + 미기록 한 줄. 최고가는 entered 기록만 순위에 넣고 4x2 가 top 5, 미입력 칩은 넣지 않았다(위젯 7 의 몫). 메소 단위는 1x1 만 제외. view-model 에 그 둘이 쓰는 필드가 늘었고 widget-fixture·registry 도 함께 갱신됐다. **주의: 이 산출물은 커밋 a1afdcd4 에 'step 10 — widget-indicators' 라는 잘못된 메시지로 들어가 있다** — step 9 가 세션 한도로 상태를 못 적고 끝나 execute.py 가 다음 step 커밋에 쓸어 담았다."
+    },
+    {
+      "step": 10,
+      "name": "widget-indicators",
+      "status": "completed",
+      "started_at": "2026-08-18T00:48:02+0900",
+      "completed_at": "2026-08-18T01:04:55+0900",
+      "summary": "결정석 한도(2x1·4x1·2x2·1x1)·초기화 카운트다운(2x1·2x2·4x1·1x1) 위젯 둘을 stub 에서 실물로 — 레지스트리 두 줄만 갈렸다. 링은 **칸이 아니라 연속 호**다(ADR-054 정정 1의 칸 링은 12를 쪼갠 것이라 셀 수 있었지만 이 한도는 그 몇 배라 톱니가 된다 — 비율은 연속 호라는 ADR-142 결정 3), 분자·분모는 줄 높이 0.92 로 붙여 분수로 읽히고(정정 15) 글자 크기는 링 지름에서 파생한다. **한도를 월드별로 합치지 않는다**(ADR-054 결정 1 — 보스 수익의 `n/180` 은 그 자리의 제약이지 격자의 규칙이 아니다): 4x1 은 셋까지 나란히, 2x2 는 나머지를 «외 N개 월드» 로 접고, 1x1 은 링만이라 월드가 하나인 사용자에게만 정직하다(주석·테스트로 명시). 분모는 소스에 숫자가 **한 번도 안 나오고** 뷰모델의 `WEEKLY_CRYSTAL_SALE_LIMIT` 에서만 오며(값 판별력 + 소스 스캔 두 겹), 빈 상태는 이유가 둘이라(기록 없음 / 월드 모름) 어느 쪽도 단정하지 않는 한 줄이다. 카운트다운은 `new Date()` 를 안 부르고 초를 안 그리며 1분 미만은 «0분» 이 아니라 «1분 미만», **임박에 색을 쓰지 않는다**(같은 className 인지 테스트가 잡는다). 설계에 없던 것 하나를 구현이 정했다 — **뷰모델 `ResetCountdown` 에 `periodMs` 를 더했다**: 2x2 진행 바의 분모인데 월간은 달마다 28~31일이라 위젯이 스스로 구하려면 KST 달 경계를 다시 계산해야 하고, 그 순간 리셋 시각의 진실이 둘이 된다(경계를 이미 아는 `buildResets` 가 뺄셈 한 번으로 낸다). 딸림으로 `WidgetGrid.test` 의 복제 뷰모델을 공유 픽스처로 합쳤다(그 복제가 정확히 이번에 깨진 자리다). 신규 49케이스(스냅샷 8 = 각 네 크기, 분모 리터럴화·1x1 compact 제거·2x1 월간 추가 변이로 판별력 확인), WidgetGrid 스냅샷은 stub 교체분만 갱신. today.md 에 위젯 5·6 절과 `periodMs` 계약·열린 질문 1건 추가."
+    },
+    {
+      "step": 11,
+      "name": "widget-drops",
+      "status": "completed",
+      "started_at": "2026-08-18T01:04:55+0900",
+      "summary": "가격 미입력·아이템 드롭 가뭄 위젯 둘을 stub 에서 실물로 — 레지스트리 두 줄이 갈리며 `StubWidget.tsx` 가 예고대로 통째로 사라졌다(고아 0건). 두 위젯이 화면에 필요로 한 값 셋을 뷰모델이 낸다 — `unpricedPreview`(앞 셋, **정렬하지 않는다**: 미입력 건에는 비교할 값이 없어 «무엇 기준으로 앞 셋인가» 를 주장할 수 없다)·`DroughtView.periodLabel`(`formatBossProfitPeriodLabel` 이 `now` 를 받아야 「이번 주」를 말하는데 타일이 시계를 읽으면 두 타일이 다른 시각을 말한다)·`PricedDropView extends UnpricedDropView`(미입력은 «값이 없는» 것이지 «0원인» 것이 아니라 타입에서도 필드의 부재로 남는다). 미입력 타일은 **0건에도 사라지지 않고**(좌표 배치라 빈 사각형이 남는다) 「전부 기록했습니다」로 바뀌며 그때 CTA 도 함께 빠진다(기록할 것이 없는데 「기록하기」로 보내면 빈 화면에 도착한다), 2x2 만 이름 셋을 세우고 나머지는 «외 N건»(0이면 조각째 없다 — «외 0건» 은 없는 것을 세는 말이다). 가뭄 타일은 잎이 `tier` 를 따라 늙고 **0단계만 `primary-tint`** 배경이며, `null` 을 「0주째」로 위장하지 않는다(0주는 «이번 주에 먹었다» 는 정반대의 사실이다) — 같은 이유로 0주에서는 칩이 「이번 주」이고 4x1 의 「마지막」이 빠진다. **잎 램프 표를 `lib/drought-tier-styles.ts` 로 꺼내 히스토리 화면과 한 벌로 만들었다**(호출부 2곳, ADR-094 결정 1 — 5행짜리 값 표를 양쪽이 각자 들면 같은 단계가 두 화면에서 다른 색으로 늙는다). 화면 문구에 「물욕」이 없음을 두 위젯의 렌더 결과로 검사하고 영문 식별자는 그대로 뒀다(ADR-147 정정 14). **테스트가 하마터면 무의미할 뻔했다** — 「문구는 마운트당 한 번」을 리렌더로 물었는데 이 런타임에서는 `rerender` 만으로 커밋이 안 나, 「렌더마다 무작위」로 되돌려도 초록이었다(판별력 확인으로 발각 → `act` 로 감쌌다). 신규 55케이스(스냅샷 6 = 각 세 크기, 변이 넷 — 타일 숨김·«외 0건»·0주 위장·잎 단계 밀기 — 이 전부 잡힌다), WidgetGrid 스냅샷은 stub 교체분만 갱신. today.md 에 위젯 7·8 절과 뷰모델 계약 셋 추가.",
+      "completed_at": "2026-08-18T01:26:19+0900"
+    },
+    {
+      "step": 12,
+      "name": "today-screen",
+      "status": "completed",
+      "started_at": "2026-08-18T01:26:19+0900",
+      "summary": "`UnderConstruction` 껍데기를 걷고 격자를 올렸다 — 화면이 스토어 넷 + `character-basic-cache`·대표 표식을 읽어 `buildTodayViewModel` 하나를 만들고 `WidgetGrid` 에 프롭으로 넘긴다(판정은 한 줄도 화면에 없다). **진입 트리거는 하나다** — [[ADR-132]] 결정 8 이 today 를 «예열 순차 밖의 **네 번째 트리거**» 로 못 박았고, 게이트가 있는 문(`loadTrackedOcids`)으로만 들어가며 예열이 이미 채운 보스·수익 스토어를 다시 부르지 않는다(대가: 이 화면에 머무는 동안 TTL 이 만료되면 그 둘은 옛 스냅샷 — 당김·버튼이 즉시 푼다). 반면 **명시적 재조회는 셋을 모두** 읽는다(TTL 무시가 그 경로의 규약이고, 하나만 읽으면 당겨도 보스·수익 위젯이 안 바뀐다 — 셋이 동시에 나가도 step 0 의 단일 비행이 한 회차로 합친다). `drop-history` 는 예열 밖·네트워크 밖이라 동기화 트리거 수에 안 들고 이 화면이 그 스토어의 유일한 자동 호출자다(`prehydrate` 는 안 건드렸다 — 금지 사항). 동기화 시각은 «선택된 캐릭터» 가 없어 보스 수익의 `lastSyncedAt`(페이지 전체 기준)에서 온다. 라우트는 확인만 했고 `ROUTE_TABLE` 의 `/` 는 `Content` 그대로다 — 갈린 것 자체가 결정이라 `routes.test` 의 두 단언을 **한 케이스로 합쳐** 함께 고정했다. 구현하며 셋이 드러났다 — ① **RNTL 14 의 `render` 는 비동기**라 안 기다리면 `act` 가 마운트보다 먼저 돌아 «아무것도 안 그려졌는데 초록» 이 된다(그 상태로 한 번 갔다가 `plain.toJSON is not a function` 으로 발각) ② 스토어 모듈을 통째로 목으로 덮으면 같은 파일이 내보내는 순수 헬퍼(`dropRowKey`)가 `undefined` 가 되어 뷰모델 조립이 렌더 도중 죽는다 → `requireActual` 로 훅만 갈아끼운다 ③ **화면 스냅샷은 `normalizeRenderedTree` 없이는 못 찍는다**(`refreshControl` 엘리먼트의 `_owner` 가 파이버 트리를 물어 직렬화가 상한을 넘는다). 딸림으로 `RootNavigator` 의 «탭 골격» 스냅샷이 첫 탭인 today 의 **살아 있는 카운트다운** 때문에 실행마다 갈리게 되어 그 describe 에 시각을 고정했다. 신규 10케이스(스냅샷 1 = 캐릭터 넷 · 변이 셋 — 진입이 게이트 우회 · 진입이 스토어 각자 트리거 · 당김만 다른 재조회 — 이 전부 잡힌다), 테스트 1,984 → 1,996(jest)·vitest 3,150 무증감·build·lint 0 errors/35 warnings(baseline 동일). **발견하고 고치지 않은 것 하나** — `drop-history-store` 의 `toHistoryRecord` 가 가격 세 필드를 안 옮겨 위젯 4·7 이 실기기에서 값을 못 받는다(범위 밖이라 `today.md` 경고 상자 + 열린 질문으로 남겼다).",
+      "completed_at": "2026-08-18T02:05:23+0900"
+    },
+    {
+      "step": 13,
+      "name": "docs-close",
+      "status": "completed",
+      "started_at": "2026-08-18T02:05:23+0900",
+      "summary": "코드 0줄, 문서 8개. ① 상태를 «구현 완료 · **실기기 미검증**» 으로(ADR-147 머리·ADR.md 행·today.md) — 실기기에서 이 화면을 한 번도 띄우지 않았으므로 그 표기를 반드시 남겼고, «자동 테스트가 담보하는 것은 분기·좌표·수치이고 픽셀이 아니다»(jest 는 레이아웃을 계산하지 않아 auto 높이도 스텁)를 today.md 머리에 박았다 ② 열린 질문을 갈랐다 — 닫힌 넷(경험치 필드·단일 비행·「메소」 표기·안 쓰는 크기 선언)은 취소선+결과로 남기고 남은 열은 그대로, ADR-132 의 단일 비행 항목도 «닫혔다»로(`inFlightRound`, 회차 단위) ③ **문서를 실제에 맞췄다 — 코드가 아니라 문서를 고쳤다**: `50+48n` → `55+45n`(today.md 본문 한 자리, 정정 12 가 이미 갈아치운 값이 남아 있었다) · content-scheduler.md·boss-scheduler.md·item-drop.md 관련 소스/ADR 에 꺼낸 판정 둘과 잎 램프 표를 배선 · item-drop.md 의 가뭄 문구 구조를 «0~3주 한 줄 고정 + 마지막만 풀» → **전 단계 풀**로(`valuableDroughtHeadlineCount`) · README today 행에 실제 파일 구성과 판정 둘을 넣고 「작업 유형별 길잡이」에 «위젯 추가는 registry·layout·컴포넌트 셋이 짝» 한 줄 추가 ④ 격자 치수 표를 계산해 넣었다(360dp 73/158/243/328 · 390dp 80.5/173/265.5/358 · 높이 76/164/252) — 본문이 «158 폭» 이라 부르던 것의 출처가 이제 표에 있고, 총 높이 852 도 `8×76+7×12=692` + 초과분으로 검산했다. **소스 대조에서 문서가 틀린 자리 넷을 찾아 고쳤다** — ⓐ «실패 캐릭터를 정렬에서 0으로 취급» 은 구현이 하는 일이 아니다(실패 여부가 **첫 정렬 키**이고 남은 개수가 그 다음 — 0 으로 치환하면 `CLEAR` 와 동수로 묶여 그 위에 설 수 있는데 결정이 원한 결론은 «언제나 맨 아래» 였다. 결론은 옳고 기제 설명만 틀렸다) ⓑ `atMs` 의 근거로 적힌 «위젯이 1초마다 다시 세도» 가 설 자리가 없다(초를 안 그리기로 해 tick 이 없고 **아무 위젯도 그 값을 안 읽는다** — 값은 남기고 사실만 적었다. 같은 `resets` 의 `periodMs` 는 반대로 소비된다) ⓒ 「남은 스케줄」 실측 «145·236·326» 과 그 요약식 `55+45n`(145·**235**·**325**)이 4·6명에서 **1px 어긋난다** — RN 에서 다시 재지 않아 어느 쪽이 맞는지 모르므로 한쪽을 고르지 않고 불일치를 열린 질문으로 남겼다(화면은 `onLayout` 값으로 그려져 틀려도 안 깨지고, 어긋나는 것은 총 높이 852 vs 851 뿐) ⓓ 위젯 3 의 2x1 이 «금액만» 이 아니고(기간 라벨·미기록 줄도 그린다) 위젯 4 의 제목은 **1x1 만 버린다**. **발견하고 고치지 않은 것 둘** — `toHistoryRecord` 가 가격 세 필드를 안 옮기는 결함은 여전하고(item-drop.md 열린 질문 첫 줄로 올려 그 파일의 홈 문서가 알게 했다), `TopValuableItemWidget` 주석의 «49 폭» 은 73 이어야 하나 코드 수정 금지라 남겼다. AC: build 성공 · `tsc --noEmit -p packages/app-rn` 통과 · jest 1,996/142파일(스냅샷 78) · vitest 3,150/203파일 · lint 0 errors/35 warnings(baseline 동일) · 화면 문구에 「물욕」 0건(남은 두 건은 JSDoc 주석이고 정정 14 가 허용한 자리) · git diff 에 `packages/` 0건. **AC 커맨드 하나는 문자 그대로는 안 통과하고, 그것이 정상이다** — `grep '설계 완료, 구현 전' docs/ADR.md` 가 **ADR-144**(캐릭터 관리 두 층 페이지) 행을 잡는다. 그 ADR 은 실제로 미구현이라 고치면 거짓이 되므로 두었고, ADR-147 의 파일·인덱스 행은 둘 다 깨끗하다. **함께 발견한 무관한 결함 하나** — `app-capacitor` 의 `StackScreen.test.tsx > 가장자리 스와이프 백 > 기준에 못 미치게 끌고 놓으면 제자리로 돌아간다` 가 **플래키**다(6회 중 2회 실패). ADR-120 영역이고 문서 변경으로는 건드릴 수 없어 보고만 한다.",
+      "completed_at": "2026-08-18T02:28:15+0900"
+    }
+  ],
+  "created_at": "2026-08-17T20:52:13+0900",
+  "completed_at": "2026-08-18T02:28:15+0900"
+}

@@ -154,6 +154,12 @@ HTTP 400
 
 ## 확인 완료된 사실 (레퍼런스)
 - `access_flag` 는 boolean이 아니라 **문자열 `"true"`/`"false"`** — `normalizeCharacterBasic` 이 `=== 'true'` 로 변환한다(실측 재확인 2026-07-31). truthy 검사로 바꾸면 모든 캐릭터가 활성으로 읽힌다.
+- **경험치는 `character/basic` 에 두 필드로 온다**(사용자 확인 2026-08-17, [[ADR-147]] 결정 7의 열린 질문을 닫는다):
+  ```
+  "character_exp": 1390734270108,      // number — 누적 경험치 절대값
+  "character_exp_rate": "80.300"       // string — 현재 레벨 진행률(%), 소수 3자리
+  ```
+  **`character_exp_rate` 는 숫자가 아니라 문자열이다.** `access_flag` 와 같은 모양의 함정이라 정규화가 반드시 변환한다 — 문자열째로 비교·연산하면 `"9.500" > "80.300"` 이 참이 되고(사전순), 진행률 바가 조용히 뒤집힌다. `character_exp` 는 `Number.MAX_SAFE_INTEGER` 안이지만(1.39e12) 레벨이 오를수록 커지는 값이라 합산·누적에 쓰지 않는다.
 - `character/basic`·`scheduler` 응답의 `date` 필드는 당일 조회에서 `null` 이거나 요청일을 그대로 돌려준다 — **타임스탬프 비교에 쓸 수 없다**(마지막 갱신 시각이 아니다).
 - `weekly_boss_clear_count`·`weekly_boss_clear_limit_count` 는 wire 타입에만 있고 **앱이 소비하지 않는다**. 미접속 캐릭터는 `limit_count: 0` 으로 오므로(실측) 이 값을 분모로 쓰기 시작하면 축약 응답에서 0으로 나눈다.
 - `weekly_boss_clear_limit_count` = 캐릭터당 주간 보스 12마리 제한 카운트. 시즌보스(메이린)는 예외.

@@ -1300,6 +1300,7 @@ exports[`렌더 트리 스냅샷 탭 골격 1`] = `
                               }
                             }
                             indicatorStyle="black"
+                            refreshControl="<element:RefreshControlMock>"
                             style={
                               {
                                 "flexBasis": "0%",
@@ -1311,6 +1312,7 @@ exports[`렌더 트리 스냅샷 탭 골격 1`] = `
                             }
                             testID="screen-scroll"
                           >
+                            <RCTRefreshControl />
                             <View>
                               <View
                                 style={
@@ -1342,168 +1344,1721 @@ exports[`렌더 트리 스냅샷 탭 골격 1`] = `
                                     }
                                     testID="page-header-title-row"
                                   >
-                                    <Text
+                                    <View
                                       style={
                                         {
-                                          "color": "#241208",
-                                          "fontSize": 18,
-                                          "fontWeight": "600",
-                                          "lineHeight": 28,
+                                          "alignItems": "center",
+                                          "columnGap": 8,
+                                          "flexDirection": "row",
+                                          "flexShrink": 1,
+                                          "rowGap": 8,
                                         }
                                       }
                                     >
-                                      today
-                                    </Text>
+                                      <Text
+                                        style={
+                                          {
+                                            "color": "#241208",
+                                            "flexShrink": 0,
+                                            "fontSize": 18,
+                                            "fontWeight": "600",
+                                            "lineHeight": 28,
+                                          }
+                                        }
+                                      >
+                                        today
+                                      </Text>
+                                      <Text
+                                        numberOfLines={1}
+                                        style={
+                                          {
+                                            "color": "#645C42",
+                                            "flexShrink": 1,
+                                            "fontSize": 14,
+                                            "lineHeight": 20,
+                                          }
+                                        }
+                                      >
+                                        동기화 기록 없음
+                                      </Text>
+                                      <View
+                                        accessibilityLabel="새로고침"
+                                        accessibilityState={
+                                          {
+                                            "busy": undefined,
+                                            "checked": undefined,
+                                            "disabled": undefined,
+                                            "expanded": undefined,
+                                            "selected": undefined,
+                                          }
+                                        }
+                                        accessibilityValue={
+                                          {
+                                            "max": undefined,
+                                            "min": undefined,
+                                            "now": undefined,
+                                            "text": undefined,
+                                          }
+                                        }
+                                        accessible={true}
+                                        collapsable={false}
+                                        focusable={true}
+                                        onBlur={[Function]}
+                                        onClick={[Function]}
+                                        onFocus={[Function]}
+                                        onResponderGrant={[Function]}
+                                        onResponderMove={[Function]}
+                                        onResponderRelease={[Function]}
+                                        onResponderTerminate={[Function]}
+                                        onResponderTerminationRequest={[Function]}
+                                        onStartShouldSetResponder={[Function]}
+                                        role="button"
+                                        style={
+                                          {
+                                            "flexShrink": 0,
+                                            "padding": 8,
+                                          }
+                                        }
+                                      >
+                                        <View
+                                          collapsable={false}
+                                          jestAnimatedProps={
+                                            {
+                                              "value": {},
+                                            }
+                                          }
+                                          jestAnimatedStyle={
+                                            {
+                                              "value": {},
+                                            }
+                                          }
+                                          style={[]}
+                                          testID="refresh-icon"
+                                        >
+                                          <RNSVGSvgView
+                                            align="xMidYMid"
+                                            aria-hidden={true}
+                                            bbHeight={16}
+                                            bbWidth={16}
+                                            fill="none"
+                                            focusable={false}
+                                            height={16}
+                                            meetOrSlice={0}
+                                            minX={0}
+                                            minY={0}
+                                            stroke="#F58B0F"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            style={
+                                              [
+                                                {
+                                                  "backgroundColor": "transparent",
+                                                  "borderWidth": 0,
+                                                },
+                                                {},
+                                                {
+                                                  "flex": 0,
+                                                  "height": 16,
+                                                  "width": 16,
+                                                },
+                                              ]
+                                            }
+                                            vbHeight={24}
+                                            vbWidth={24}
+                                            width={16}
+                                            xmlns="http://www.w3.org/2000/svg"
+                                          >
+                                            <RNSVGGroup
+                                              fill={null}
+                                              propList={
+                                                [
+                                                  "fill",
+                                                  "stroke",
+                                                  "strokeWidth",
+                                                  "strokeLinecap",
+                                                  "strokeLinejoin",
+                                                ]
+                                              }
+                                              stroke={
+                                                {
+                                                  "payload": 4294281999,
+                                                  "type": 0,
+                                                }
+                                              }
+                                              strokeLinecap={1}
+                                              strokeLinejoin={1}
+                                              strokeWidth={2}
+                                            >
+                                              <RNSVGPath
+                                                d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"
+                                                fill={null}
+                                                propList={
+                                                  [
+                                                    "fill",
+                                                    "stroke",
+                                                    "strokeWidth",
+                                                    "strokeLinecap",
+                                                    "strokeLinejoin",
+                                                  ]
+                                                }
+                                                stroke={
+                                                  {
+                                                    "payload": 4294281999,
+                                                    "type": 0,
+                                                  }
+                                                }
+                                                strokeLinecap={1}
+                                                strokeLinejoin={1}
+                                                strokeWidth={2}
+                                              />
+                                              <RNSVGPath
+                                                d="M21 3v5h-5"
+                                                fill={null}
+                                                propList={
+                                                  [
+                                                    "fill",
+                                                    "stroke",
+                                                    "strokeWidth",
+                                                    "strokeLinecap",
+                                                    "strokeLinejoin",
+                                                  ]
+                                                }
+                                                stroke={
+                                                  {
+                                                    "payload": 4294281999,
+                                                    "type": 0,
+                                                  }
+                                                }
+                                                strokeLinecap={1}
+                                                strokeLinejoin={1}
+                                                strokeWidth={2}
+                                              />
+                                              <RNSVGPath
+                                                d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"
+                                                fill={null}
+                                                propList={
+                                                  [
+                                                    "fill",
+                                                    "stroke",
+                                                    "strokeWidth",
+                                                    "strokeLinecap",
+                                                    "strokeLinejoin",
+                                                  ]
+                                                }
+                                                stroke={
+                                                  {
+                                                    "payload": 4294281999,
+                                                    "type": 0,
+                                                  }
+                                                }
+                                                strokeLinecap={1}
+                                                strokeLinejoin={1}
+                                                strokeWidth={2}
+                                              />
+                                              <RNSVGPath
+                                                d="M8 16H3v5"
+                                                fill={null}
+                                                propList={
+                                                  [
+                                                    "fill",
+                                                    "stroke",
+                                                    "strokeWidth",
+                                                    "strokeLinecap",
+                                                    "strokeLinejoin",
+                                                  ]
+                                                }
+                                                stroke={
+                                                  {
+                                                    "payload": 4294281999,
+                                                    "type": 0,
+                                                  }
+                                                }
+                                                strokeLinecap={1}
+                                                strokeLinejoin={1}
+                                                strokeWidth={2}
+                                              />
+                                            </RNSVGGroup>
+                                          </RNSVGSvgView>
+                                        </View>
+                                      </View>
+                                    </View>
                                   </View>
                                 </View>
                               </View>
                               <View
                                 style={
                                   {
-                                    "alignItems": "center",
-                                    "columnGap": 12,
-                                    "flexBasis": "0%",
-                                    "flexGrow": 1,
-                                    "flexShrink": 1,
-                                    "justifyContent": "center",
-                                    "paddingBottom": 64,
-                                    "paddingLeft": 32,
-                                    "paddingRight": 32,
-                                    "paddingTop": 64,
-                                    "rowGap": 12,
+                                    "paddingBottom": 16,
+                                    "paddingLeft": 16,
+                                    "paddingRight": 16,
                                   }
                                 }
-                                testID="under-construction"
                               >
                                 <View
-                                  aria-hidden={true}
                                   style={
                                     {
-                                      "alignItems": "center",
-                                      "backgroundColor": "#FEECDA",
-                                      "borderRadius": 9999,
-                                      "height": 84,
-                                      "justifyContent": "center",
-                                      "width": 84,
+                                      "height": 780,
                                     }
                                   }
+                                  testID="widget-grid"
                                 >
-                                  <RNSVGSvgView
-                                    align="xMidYMid"
-                                    bbHeight={36}
-                                    bbWidth={36}
-                                    fill="none"
-                                    focusable={false}
-                                    height={36}
-                                    meetOrSlice={0}
-                                    minX={0}
-                                    minY={0}
-                                    stroke="#F58B0F"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={1.75}
+                                  <View
                                     style={
-                                      [
-                                        {
-                                          "backgroundColor": "transparent",
-                                          "borderWidth": 0,
-                                        },
-                                        {},
-                                        {
-                                          "flex": 0,
-                                          "height": 36,
-                                          "width": 36,
-                                        },
-                                      ]
+                                      {
+                                        "left": 0,
+                                        "position": "absolute",
+                                        "top": 0,
+                                        "width": 718,
+                                      }
                                     }
-                                    vbHeight={24}
-                                    vbWidth={24}
-                                    width={36}
-                                    xmlns="http://www.w3.org/2000/svg"
+                                    testID="widget-tile-representative-character"
                                   >
-                                    <RNSVGGroup
-                                      fill={null}
-                                      propList={
-                                        [
-                                          "fill",
-                                          "stroke",
-                                          "strokeWidth",
-                                          "strokeLinecap",
-                                          "strokeLinejoin",
-                                        ]
-                                      }
-                                      stroke={
+                                    <View
+                                      accessibilityState={
                                         {
-                                          "payload": 4294281999,
-                                          "type": 0,
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": undefined,
+                                          "expanded": undefined,
+                                          "selected": undefined,
                                         }
                                       }
-                                      strokeLinecap={1}
-                                      strokeLinejoin={1}
-                                      strokeWidth={1.75}
-                                    >
-                                      <RNSVGPath
-                                        d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z"
-                                        fill={null}
-                                        propList={
-                                          [
-                                            "fill",
-                                            "stroke",
-                                            "strokeWidth",
-                                            "strokeLinecap",
-                                            "strokeLinejoin",
-                                          ]
+                                      accessibilityValue={
+                                        {
+                                          "max": undefined,
+                                          "min": undefined,
+                                          "now": undefined,
+                                          "text": undefined,
                                         }
-                                        stroke={
+                                      }
+                                      accessible={true}
+                                      collapsable={false}
+                                      focusable={true}
+                                      onBlur={[Function]}
+                                      onClick={[Function]}
+                                      onFocus={[Function]}
+                                      onResponderGrant={[Function]}
+                                      onResponderMove={[Function]}
+                                      onResponderRelease={[Function]}
+                                      onResponderTerminate={[Function]}
+                                      onResponderTerminationRequest={[Function]}
+                                      onStartShouldSetResponder={[Function]}
+                                      role="button"
+                                    >
+                                      <View
+                                        style={
                                           {
-                                            "payload": 4294281999,
-                                            "type": 0,
+                                            "backgroundColor": "#FDFCF6",
+                                            "borderColor": "#CFC9AE",
+                                            "borderRadius": 14,
+                                            "borderWidth": 1,
+                                            "height": 76,
                                           }
                                         }
-                                        strokeLinecap={1}
-                                        strokeLinejoin={1}
-                                        strokeWidth={1.75}
-                                      />
-                                    </RNSVGGroup>
-                                  </RNSVGSvgView>
+                                      >
+                                        <View
+                                          style={
+                                            {
+                                              "flexBasis": "0%",
+                                              "flexGrow": 1,
+                                              "flexShrink": 1,
+                                              "justifyContent": "center",
+                                              "padding": 12,
+                                            }
+                                          }
+                                          testID="widget-representative-character"
+                                        >
+                                          <Text
+                                            style={
+                                              {
+                                                "color": "#645C42",
+                                                "fontSize": 12,
+                                                "lineHeight": 16,
+                                              }
+                                            }
+                                          >
+                                            추적 중인 캐릭터가 없습니다
+                                          </Text>
+                                        </View>
+                                      </View>
+                                    </View>
+                                  </View>
+                                  <View
+                                    style={
+                                      {
+                                        "left": 0,
+                                        "position": "absolute",
+                                        "top": 88,
+                                        "width": 353,
+                                      }
+                                    }
+                                    testID="widget-tile-reset-countdown"
+                                  >
+                                    <View
+                                      style={
+                                        {
+                                          "backgroundColor": "#FDFCF6",
+                                          "borderColor": "#CFC9AE",
+                                          "borderRadius": 14,
+                                          "borderWidth": 1,
+                                          "height": 76,
+                                        }
+                                      }
+                                    >
+                                      <View
+                                        style={
+                                          {
+                                            "columnGap": 4,
+                                            "flexBasis": "0%",
+                                            "flexGrow": 1,
+                                            "flexShrink": 1,
+                                            "justifyContent": "center",
+                                            "padding": 12,
+                                            "rowGap": 4,
+                                          }
+                                        }
+                                        testID="widget-reset-countdown"
+                                      >
+                                        <Text
+                                          style={
+                                            {
+                                              "color": "#645C42",
+                                              "fontSize": 10,
+                                              "fontWeight": "700",
+                                            }
+                                          }
+                                        >
+                                          초기화까지
+                                        </Text>
+                                        <View
+                                          style={
+                                            {
+                                              "columnGap": 2,
+                                              "rowGap": 2,
+                                            }
+                                          }
+                                          testID="reset-row-daily"
+                                        >
+                                          <View
+                                            style={
+                                              {
+                                                "alignItems": "baseline",
+                                                "flexDirection": "row",
+                                              }
+                                            }
+                                          >
+                                            <Text
+                                              style={
+                                                {
+                                                  "color": "#645C42",
+                                                  "fontSize": 10.5,
+                                                }
+                                              }
+                                              testID="reset-label-daily"
+                                            >
+                                              일일
+                                            </Text>
+                                            <View
+                                              style={
+                                                {
+                                                  "marginLeft": "auto",
+                                                }
+                                              }
+                                            >
+                                              <Text
+                                                numberOfLines={1}
+                                                style={
+                                                  {
+                                                    "color": "#241208",
+                                                    "fontSize": 11.5,
+                                                    "fontVariant": [
+                                                      "tabular-nums",
+                                                    ],
+                                                    "fontWeight": "700",
+                                                  }
+                                                }
+                                                testID="reset-value-daily"
+                                              >
+                                                12시간 0분 0초
+                                              </Text>
+                                            </View>
+                                          </View>
+                                        </View>
+                                        <View
+                                          style={
+                                            {
+                                              "columnGap": 2,
+                                              "rowGap": 2,
+                                            }
+                                          }
+                                          testID="reset-row-weekly"
+                                        >
+                                          <View
+                                            style={
+                                              {
+                                                "alignItems": "baseline",
+                                                "flexDirection": "row",
+                                              }
+                                            }
+                                          >
+                                            <Text
+                                              style={
+                                                {
+                                                  "color": "#645C42",
+                                                  "fontSize": 10.5,
+                                                }
+                                              }
+                                              testID="reset-label-weekly"
+                                            >
+                                              주간
+                                            </Text>
+                                            <View
+                                              style={
+                                                {
+                                                  "marginLeft": "auto",
+                                                }
+                                              }
+                                            >
+                                              <Text
+                                                numberOfLines={1}
+                                                style={
+                                                  {
+                                                    "color": "#241208",
+                                                    "fontSize": 11.5,
+                                                    "fontVariant": [
+                                                      "tabular-nums",
+                                                    ],
+                                                    "fontWeight": "700",
+                                                  }
+                                                }
+                                                testID="reset-value-weekly"
+                                              >
+                                                2일 12시간
+                                              </Text>
+                                            </View>
+                                          </View>
+                                        </View>
+                                      </View>
+                                    </View>
+                                  </View>
+                                  <View
+                                    style={
+                                      {
+                                        "left": 365,
+                                        "position": "absolute",
+                                        "top": 88,
+                                        "width": 353,
+                                      }
+                                    }
+                                    testID="widget-tile-crystal-limit"
+                                  >
+                                    <View
+                                      accessibilityState={
+                                        {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": undefined,
+                                          "expanded": undefined,
+                                          "selected": undefined,
+                                        }
+                                      }
+                                      accessibilityValue={
+                                        {
+                                          "max": undefined,
+                                          "min": undefined,
+                                          "now": undefined,
+                                          "text": undefined,
+                                        }
+                                      }
+                                      accessible={true}
+                                      collapsable={false}
+                                      focusable={true}
+                                      onBlur={[Function]}
+                                      onClick={[Function]}
+                                      onFocus={[Function]}
+                                      onResponderGrant={[Function]}
+                                      onResponderMove={[Function]}
+                                      onResponderRelease={[Function]}
+                                      onResponderTerminate={[Function]}
+                                      onResponderTerminationRequest={[Function]}
+                                      onStartShouldSetResponder={[Function]}
+                                      role="button"
+                                    >
+                                      <View
+                                        style={
+                                          {
+                                            "backgroundColor": "#FDFCF6",
+                                            "borderColor": "#CFC9AE",
+                                            "borderRadius": 14,
+                                            "borderWidth": 1,
+                                            "height": 76,
+                                          }
+                                        }
+                                      >
+                                        <View
+                                          style={
+                                            {
+                                              "columnGap": 4,
+                                              "flexBasis": "0%",
+                                              "flexGrow": 1,
+                                              "flexShrink": 1,
+                                              "justifyContent": "center",
+                                              "padding": 12,
+                                              "rowGap": 4,
+                                            }
+                                          }
+                                          testID="widget-crystal-limit"
+                                        >
+                                          <Text
+                                            style={
+                                              {
+                                                "color": "#645C42",
+                                                "fontSize": 10,
+                                                "fontWeight": "700",
+                                              }
+                                            }
+                                          >
+                                            결정석 판매
+                                          </Text>
+                                          <Text
+                                            numberOfLines={2}
+                                            style={
+                                              {
+                                                "color": "#645C42",
+                                                "fontSize": 10,
+                                              }
+                                            }
+                                            testID="crystal-empty"
+                                          >
+                                            집계할 기록이 없습니다
+                                          </Text>
+                                        </View>
+                                      </View>
+                                    </View>
+                                  </View>
+                                  <View
+                                    style={
+                                      {
+                                        "left": 0,
+                                        "position": "absolute",
+                                        "top": 176,
+                                        "width": 718,
+                                      }
+                                    }
+                                    testID="widget-tile-shared-contents"
+                                  >
+                                    <View
+                                      style={
+                                        {
+                                          "backgroundColor": "#FDFCF6",
+                                          "borderColor": "#CFC9AE",
+                                          "borderRadius": 14,
+                                          "borderWidth": 1,
+                                          "minHeight": 76,
+                                        }
+                                      }
+                                    >
+                                      <View
+                                        onLayout={[Function]}
+                                        testID="widget-measure-shared-contents"
+                                      >
+                                        <View
+                                          style={
+                                            {
+                                              "padding": 12,
+                                            }
+                                          }
+                                          testID="widget-shared-contents"
+                                        >
+                                          <View
+                                            style={
+                                              {
+                                                "alignItems": "center",
+                                                "borderBottomWidth": 1,
+                                                "borderColor": "#A3996E",
+                                                "flexDirection": "row",
+                                                "paddingBottom": 8,
+                                              }
+                                            }
+                                          >
+                                            <Text
+                                              style={
+                                                {
+                                                  "color": "#645C42",
+                                                  "fontSize": 11,
+                                                  "fontWeight": "700",
+                                                }
+                                              }
+                                            >
+                                              계정 및 메이플 ID 공유 컨텐츠
+                                            </Text>
+                                            <View
+                                              accessibilityLabel="표시 기준 설명"
+                                              accessibilityState={
+                                                {
+                                                  "busy": undefined,
+                                                  "checked": undefined,
+                                                  "disabled": undefined,
+                                                  "expanded": false,
+                                                  "selected": undefined,
+                                                }
+                                              }
+                                              accessibilityValue={
+                                                {
+                                                  "max": undefined,
+                                                  "min": undefined,
+                                                  "now": undefined,
+                                                  "text": undefined,
+                                                }
+                                              }
+                                              accessible={true}
+                                              collapsable={false}
+                                              focusable={true}
+                                              hitSlop={10}
+                                              onBlur={[Function]}
+                                              onClick={[Function]}
+                                              onFocus={[Function]}
+                                              onResponderGrant={[Function]}
+                                              onResponderMove={[Function]}
+                                              onResponderRelease={[Function]}
+                                              onResponderTerminate={[Function]}
+                                              onResponderTerminationRequest={[Function]}
+                                              onStartShouldSetResponder={[Function]}
+                                              role="button"
+                                              style={
+                                                {
+                                                  "marginLeft": 4,
+                                                }
+                                              }
+                                              testID="shared-note-toggle"
+                                            >
+                                              <RNSVGSvgView
+                                                align="xMidYMid"
+                                                aria-hidden={true}
+                                                bbHeight={12}
+                                                bbWidth={12}
+                                                fill="none"
+                                                focusable={false}
+                                                height={12}
+                                                meetOrSlice={0}
+                                                minX={0}
+                                                minY={0}
+                                                stroke="#9A9070"
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2.5}
+                                                style={
+                                                  [
+                                                    {
+                                                      "backgroundColor": "transparent",
+                                                      "borderWidth": 0,
+                                                    },
+                                                    {},
+                                                    {
+                                                      "flex": 0,
+                                                      "height": 12,
+                                                      "width": 12,
+                                                    },
+                                                  ]
+                                                }
+                                                vbHeight={24}
+                                                vbWidth={24}
+                                                width={12}
+                                                xmlns="http://www.w3.org/2000/svg"
+                                              >
+                                                <RNSVGGroup
+                                                  fill={null}
+                                                  propList={
+                                                    [
+                                                      "fill",
+                                                      "stroke",
+                                                      "strokeWidth",
+                                                      "strokeLinecap",
+                                                      "strokeLinejoin",
+                                                    ]
+                                                  }
+                                                  stroke={
+                                                    {
+                                                      "payload": 4288319600,
+                                                      "type": 0,
+                                                    }
+                                                  }
+                                                  strokeLinecap={1}
+                                                  strokeLinejoin={1}
+                                                  strokeWidth={2.5}
+                                                >
+                                                  <RNSVGCircle
+                                                    cx="12"
+                                                    cy="12"
+                                                    fill={null}
+                                                    propList={
+                                                      [
+                                                        "fill",
+                                                        "stroke",
+                                                        "strokeWidth",
+                                                        "strokeLinecap",
+                                                        "strokeLinejoin",
+                                                      ]
+                                                    }
+                                                    r="10"
+                                                    stroke={
+                                                      {
+                                                        "payload": 4288319600,
+                                                        "type": 0,
+                                                      }
+                                                    }
+                                                    strokeLinecap={1}
+                                                    strokeLinejoin={1}
+                                                    strokeWidth={2.5}
+                                                  />
+                                                  <RNSVGPath
+                                                    d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"
+                                                    fill={null}
+                                                    propList={
+                                                      [
+                                                        "fill",
+                                                        "stroke",
+                                                        "strokeWidth",
+                                                        "strokeLinecap",
+                                                        "strokeLinejoin",
+                                                      ]
+                                                    }
+                                                    stroke={
+                                                      {
+                                                        "payload": 4288319600,
+                                                        "type": 0,
+                                                      }
+                                                    }
+                                                    strokeLinecap={1}
+                                                    strokeLinejoin={1}
+                                                    strokeWidth={2.5}
+                                                  />
+                                                  <RNSVGPath
+                                                    d="M12 17h.01"
+                                                    fill={null}
+                                                    propList={
+                                                      [
+                                                        "fill",
+                                                        "stroke",
+                                                        "strokeWidth",
+                                                        "strokeLinecap",
+                                                        "strokeLinejoin",
+                                                      ]
+                                                    }
+                                                    stroke={
+                                                      {
+                                                        "payload": 4288319600,
+                                                        "type": 0,
+                                                      }
+                                                    }
+                                                    strokeLinecap={1}
+                                                    strokeLinejoin={1}
+                                                    strokeWidth={2.5}
+                                                  />
+                                                </RNSVGGroup>
+                                              </RNSVGSvgView>
+                                            </View>
+                                            <Text
+                                              style={
+                                                {
+                                                  "color": "#645C42",
+                                                  "fontSize": 11,
+                                                  "marginLeft": "auto",
+                                                }
+                                              }
+                                            >
+                                              <Text
+                                                style={
+                                                  {
+                                                    "color": "#241208",
+                                                    "fontSize": 11,
+                                                    "fontVariant": [
+                                                      "tabular-nums",
+                                                    ],
+                                                    "fontWeight": "800",
+                                                  }
+                                                }
+                                                testID="shared-total"
+                                              >
+                                                5
+                                              </Text>
+                                              개
+                                            </Text>
+                                          </View>
+                                          <View
+                                            style={
+                                              {
+                                                "paddingBottom": 8,
+                                                "paddingTop": 8,
+                                              }
+                                            }
+                                            testID="shared-group"
+                                          >
+                                            <Text
+                                              style={
+                                                {
+                                                  "color": "#241208",
+                                                  "fontSize": 11.5,
+                                                  "fontWeight": "700",
+                                                }
+                                              }
+                                              testID="shared-group-name"
+                                            >
+                                              에픽던전
+                                            </Text>
+                                            <View
+                                              style={
+                                                {
+                                                  "columnGap": 2,
+                                                  "marginTop": 4,
+                                                  "rowGap": 2,
+                                                }
+                                              }
+                                            >
+                                              <View
+                                                style={
+                                                  {
+                                                    "alignItems": "center",
+                                                    "columnGap": 8,
+                                                    "flexDirection": "row",
+                                                    "minHeight": 16,
+                                                    "rowGap": 8,
+                                                  }
+                                                }
+                                                testID="shared-item"
+                                              >
+                                                <Text
+                                                  numberOfLines={1}
+                                                  style={
+                                                    {
+                                                      "color": "#241208",
+                                                      "flexBasis": "0%",
+                                                      "flexGrow": 1,
+                                                      "flexShrink": 1,
+                                                      "fontSize": 11,
+                                                      "lineHeight": 13.75,
+                                                    }
+                                                  }
+                                                >
+                                                  하이마운틴
+                                                </Text>
+                                              </View>
+                                              <View
+                                                style={
+                                                  {
+                                                    "alignItems": "center",
+                                                    "columnGap": 8,
+                                                    "flexDirection": "row",
+                                                    "minHeight": 16,
+                                                    "rowGap": 8,
+                                                  }
+                                                }
+                                                testID="shared-item"
+                                              >
+                                                <Text
+                                                  numberOfLines={1}
+                                                  style={
+                                                    {
+                                                      "color": "#241208",
+                                                      "flexBasis": "0%",
+                                                      "flexGrow": 1,
+                                                      "flexShrink": 1,
+                                                      "fontSize": 11,
+                                                      "lineHeight": 13.75,
+                                                    }
+                                                  }
+                                                >
+                                                  앵글러컴퍼니
+                                                </Text>
+                                              </View>
+                                              <View
+                                                style={
+                                                  {
+                                                    "alignItems": "center",
+                                                    "columnGap": 8,
+                                                    "flexDirection": "row",
+                                                    "minHeight": 16,
+                                                    "rowGap": 8,
+                                                  }
+                                                }
+                                                testID="shared-item"
+                                              >
+                                                <Text
+                                                  numberOfLines={1}
+                                                  style={
+                                                    {
+                                                      "color": "#241208",
+                                                      "flexBasis": "0%",
+                                                      "flexGrow": 1,
+                                                      "flexShrink": 1,
+                                                      "fontSize": 11,
+                                                      "lineHeight": 13.75,
+                                                    }
+                                                  }
+                                                >
+                                                  악몽선경
+                                                </Text>
+                                              </View>
+                                            </View>
+                                          </View>
+                                          <View
+                                            style={
+                                              {
+                                                "borderColor": "#CFC9AE",
+                                                "borderTopWidth": 1,
+                                                "paddingBottom": 8,
+                                                "paddingTop": 8,
+                                              }
+                                            }
+                                            testID="shared-group"
+                                          >
+                                            <Text
+                                              style={
+                                                {
+                                                  "color": "#241208",
+                                                  "fontSize": 11.5,
+                                                  "fontWeight": "700",
+                                                }
+                                              }
+                                              testID="shared-group-name"
+                                            >
+                                              몬스터파크
+                                            </Text>
+                                            <View
+                                              style={
+                                                {
+                                                  "columnGap": 2,
+                                                  "marginTop": 4,
+                                                  "rowGap": 2,
+                                                }
+                                              }
+                                            >
+                                              <View
+                                                style={
+                                                  {
+                                                    "alignItems": "center",
+                                                    "columnGap": 8,
+                                                    "flexDirection": "row",
+                                                    "minHeight": 16,
+                                                    "rowGap": 8,
+                                                  }
+                                                }
+                                                testID="shared-item"
+                                              >
+                                                <Text
+                                                  numberOfLines={1}
+                                                  style={
+                                                    {
+                                                      "color": "#241208",
+                                                      "flexBasis": "0%",
+                                                      "flexGrow": 1,
+                                                      "flexShrink": 1,
+                                                      "fontSize": 11,
+                                                      "lineHeight": 13.75,
+                                                    }
+                                                  }
+                                                >
+                                                  일간
+                                                </Text>
+                                              </View>
+                                              <View
+                                                style={
+                                                  {
+                                                    "alignItems": "center",
+                                                    "columnGap": 8,
+                                                    "flexDirection": "row",
+                                                    "minHeight": 16,
+                                                    "rowGap": 8,
+                                                  }
+                                                }
+                                                testID="shared-item"
+                                              >
+                                                <Text
+                                                  numberOfLines={1}
+                                                  style={
+                                                    {
+                                                      "color": "#241208",
+                                                      "flexBasis": "0%",
+                                                      "flexGrow": 1,
+                                                      "flexShrink": 1,
+                                                      "fontSize": 11,
+                                                      "lineHeight": 13.75,
+                                                    }
+                                                  }
+                                                >
+                                                  익스트림 몬스터파커
+                                                </Text>
+                                              </View>
+                                            </View>
+                                          </View>
+                                        </View>
+                                      </View>
+                                    </View>
+                                  </View>
+                                  <View
+                                    style={
+                                      {
+                                        "left": 0,
+                                        "position": "absolute",
+                                        "top": 264,
+                                        "width": 718,
+                                      }
+                                    }
+                                    testID="widget-tile-remaining-schedule"
+                                  >
+                                    <View
+                                      style={
+                                        {
+                                          "backgroundColor": "#FDFCF6",
+                                          "borderColor": "#CFC9AE",
+                                          "borderRadius": 14,
+                                          "borderWidth": 1,
+                                          "minHeight": 76,
+                                        }
+                                      }
+                                    >
+                                      <View
+                                        onLayout={[Function]}
+                                        testID="widget-measure-remaining-schedule"
+                                      >
+                                        <View
+                                          style={
+                                            {
+                                              "padding": 12,
+                                            }
+                                          }
+                                          testID="widget-remaining-schedule"
+                                        >
+                                          <View
+                                            style={
+                                              {
+                                                "alignItems": "center",
+                                                "borderBottomWidth": 1,
+                                                "borderColor": "#A3996E",
+                                                "flexDirection": "row",
+                                                "paddingBottom": 8,
+                                              }
+                                            }
+                                          >
+                                            <Text
+                                              style={
+                                                {
+                                                  "color": "#645C42",
+                                                  "fontSize": 11,
+                                                  "fontWeight": "700",
+                                                }
+                                              }
+                                            >
+                                              남은 스케줄
+                                            </Text>
+                                            <Text
+                                              style={
+                                                {
+                                                  "color": "#645C42",
+                                                  "fontSize": 11,
+                                                  "marginLeft": "auto",
+                                                }
+                                              }
+                                            >
+                                              <Text
+                                                style={
+                                                  {
+                                                    "color": "#241208",
+                                                    "fontSize": 11,
+                                                    "fontVariant": [
+                                                      "tabular-nums",
+                                                    ],
+                                                    "fontWeight": "800",
+                                                  }
+                                                }
+                                              >
+                                                0
+                                              </Text>
+                                              개
+                                            </Text>
+                                          </View>
+                                          <Text
+                                            style={
+                                              {
+                                                "color": "#645C42",
+                                                "fontSize": 12,
+                                                "lineHeight": 16,
+                                                "paddingTop": 10,
+                                              }
+                                            }
+                                          >
+                                            추적 중인 캐릭터가 없습니다
+                                          </Text>
+                                        </View>
+                                      </View>
+                                    </View>
+                                  </View>
+                                  <View
+                                    style={
+                                      {
+                                        "left": 0,
+                                        "position": "absolute",
+                                        "top": 352,
+                                        "width": 718,
+                                      }
+                                    }
+                                    testID="widget-tile-weekly-boss-profit"
+                                  >
+                                    <View
+                                      accessibilityState={
+                                        {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": undefined,
+                                          "expanded": undefined,
+                                          "selected": undefined,
+                                        }
+                                      }
+                                      accessibilityValue={
+                                        {
+                                          "max": undefined,
+                                          "min": undefined,
+                                          "now": undefined,
+                                          "text": undefined,
+                                        }
+                                      }
+                                      accessible={true}
+                                      collapsable={false}
+                                      focusable={true}
+                                      onBlur={[Function]}
+                                      onClick={[Function]}
+                                      onFocus={[Function]}
+                                      onResponderGrant={[Function]}
+                                      onResponderMove={[Function]}
+                                      onResponderRelease={[Function]}
+                                      onResponderTerminate={[Function]}
+                                      onResponderTerminationRequest={[Function]}
+                                      onStartShouldSetResponder={[Function]}
+                                      role="button"
+                                    >
+                                      <View
+                                        style={
+                                          {
+                                            "backgroundColor": "#FDFCF6",
+                                            "borderColor": "#CFC9AE",
+                                            "borderRadius": 14,
+                                            "borderWidth": 1,
+                                            "height": 252,
+                                          }
+                                        }
+                                      >
+                                        <View
+                                          style={
+                                            {
+                                              "columnGap": 8,
+                                              "flexBasis": "0%",
+                                              "flexGrow": 1,
+                                              "flexShrink": 1,
+                                              "padding": 14,
+                                              "rowGap": 8,
+                                            }
+                                          }
+                                          testID="widget-weekly-boss-profit"
+                                        >
+                                          <View
+                                            style={
+                                              {
+                                                "columnGap": 4,
+                                                "rowGap": 4,
+                                              }
+                                            }
+                                          >
+                                            <View
+                                              style={
+                                                {
+                                                  "alignItems": "baseline",
+                                                  "columnGap": 8,
+                                                  "flexDirection": "row",
+                                                  "justifyContent": "space-between",
+                                                  "rowGap": 8,
+                                                }
+                                              }
+                                              testID="profit-period-header"
+                                            >
+                                              <Text
+                                                style={
+                                                  {
+                                                    "color": "#645C42",
+                                                    "fontSize": 11,
+                                                    "fontWeight": "700",
+                                                  }
+                                                }
+                                              >
+                                                이번 주
+                                                 보스 수익
+                                              </Text>
+                                              <Text
+                                                numberOfLines={1}
+                                                style={
+                                                  {
+                                                    "color": "#645C42",
+                                                    "flexShrink": 1,
+                                                    "fontSize": 10,
+                                                  }
+                                                }
+                                                testID="profit-period-range"
+                                              >
+                                                8월 13일 ~ 8월 19일
+                                              </Text>
+                                            </View>
+                                            <Text
+                                              numberOfLines={1}
+                                              style={
+                                                {
+                                                  "color": "#241208",
+                                                }
+                                              }
+                                              testID="profit-amount"
+                                            >
+                                              <Text
+                                                style={
+                                                  {
+                                                    "color": "#241208",
+                                                    "fontSize": 32,
+                                                    "fontVariant": [
+                                                      "tabular-nums",
+                                                    ],
+                                                    "fontWeight": "800",
+                                                  }
+                                                }
+                                              >
+                                                0
+                                              </Text>
+                                              <Text
+                                                style={
+                                                  {
+                                                    "color": "#645C42",
+                                                    "fontSize": 11,
+                                                    "fontWeight": "600",
+                                                  }
+                                                }
+                                              >
+                                                 메소
+                                              </Text>
+                                            </Text>
+                                          </View>
+                                          <Text
+                                            numberOfLines={1}
+                                            style={
+                                              {
+                                                "color": "#645C42",
+                                                "fontSize": 10,
+                                              }
+                                            }
+                                            testID="profit-note"
+                                          >
+                                            아직 이번 주 기록이 없습니다
+                                          </Text>
+                                        </View>
+                                      </View>
+                                    </View>
+                                  </View>
+                                  <View
+                                    style={
+                                      {
+                                        "left": 0,
+                                        "position": "absolute",
+                                        "top": 616,
+                                        "width": 353,
+                                      }
+                                    }
+                                    testID="widget-tile-top-valuable-item"
+                                  >
+                                    <View
+                                      accessibilityState={
+                                        {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": undefined,
+                                          "expanded": undefined,
+                                          "selected": undefined,
+                                        }
+                                      }
+                                      accessibilityValue={
+                                        {
+                                          "max": undefined,
+                                          "min": undefined,
+                                          "now": undefined,
+                                          "text": undefined,
+                                        }
+                                      }
+                                      accessible={true}
+                                      collapsable={false}
+                                      focusable={true}
+                                      onBlur={[Function]}
+                                      onClick={[Function]}
+                                      onFocus={[Function]}
+                                      onResponderGrant={[Function]}
+                                      onResponderMove={[Function]}
+                                      onResponderRelease={[Function]}
+                                      onResponderTerminate={[Function]}
+                                      onResponderTerminationRequest={[Function]}
+                                      onStartShouldSetResponder={[Function]}
+                                      role="button"
+                                    >
+                                      <View
+                                        style={
+                                          {
+                                            "backgroundColor": "#FDFCF6",
+                                            "borderColor": "#CFC9AE",
+                                            "borderRadius": 14,
+                                            "borderWidth": 1,
+                                            "height": 76,
+                                          }
+                                        }
+                                      >
+                                        <View
+                                          style={
+                                            {
+                                              "alignItems": "center",
+                                              "columnGap": 10,
+                                              "flexBasis": "0%",
+                                              "flexDirection": "row",
+                                              "flexGrow": 1,
+                                              "flexShrink": 1,
+                                              "padding": 12,
+                                              "rowGap": 10,
+                                            }
+                                          }
+                                          testID="widget-top-valuable-item"
+                                        >
+                                          <View
+                                            style={
+                                              {
+                                                "alignItems": "center",
+                                                "backgroundColor": "#E4E1CE",
+                                                "borderColor": "#CFC9AE",
+                                                "borderRadius": 6,
+                                                "borderStyle": "dashed",
+                                                "borderWidth": 1,
+                                                "flexShrink": 0,
+                                                "height": 32,
+                                                "justifyContent": "center",
+                                                "width": 32,
+                                              }
+                                            }
+                                            testID="top-item-empty-slot"
+                                          >
+                                            <Text
+                                              style={
+                                                {
+                                                  "color": "#9A9070",
+                                                  "fontSize": 13.44,
+                                                  "fontWeight": "700",
+                                                }
+                                              }
+                                            >
+                                              ―
+                                            </Text>
+                                          </View>
+                                          <Text
+                                            numberOfLines={2}
+                                            style={
+                                              {
+                                                "color": "#645C42",
+                                                "flexBasis": "0%",
+                                                "flexGrow": 1,
+                                                "flexShrink": 1,
+                                                "fontSize": 10,
+                                              }
+                                            }
+                                            testID="top-item-empty"
+                                          >
+                                            가격이 입력된 아이템이 없습니다
+                                          </Text>
+                                        </View>
+                                      </View>
+                                    </View>
+                                  </View>
+                                  <View
+                                    style={
+                                      {
+                                        "left": 365,
+                                        "position": "absolute",
+                                        "top": 616,
+                                        "width": 353,
+                                      }
+                                    }
+                                    testID="widget-tile-unpriced-drops"
+                                  >
+                                    <View
+                                      accessibilityState={
+                                        {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": undefined,
+                                          "expanded": undefined,
+                                          "selected": undefined,
+                                        }
+                                      }
+                                      accessibilityValue={
+                                        {
+                                          "max": undefined,
+                                          "min": undefined,
+                                          "now": undefined,
+                                          "text": undefined,
+                                        }
+                                      }
+                                      accessible={true}
+                                      collapsable={false}
+                                      focusable={true}
+                                      onBlur={[Function]}
+                                      onClick={[Function]}
+                                      onFocus={[Function]}
+                                      onResponderGrant={[Function]}
+                                      onResponderMove={[Function]}
+                                      onResponderRelease={[Function]}
+                                      onResponderTerminate={[Function]}
+                                      onResponderTerminationRequest={[Function]}
+                                      onStartShouldSetResponder={[Function]}
+                                      role="button"
+                                    >
+                                      <View
+                                        style={
+                                          {
+                                            "backgroundColor": "#FDFCF6",
+                                            "borderColor": "#CFC9AE",
+                                            "borderRadius": 14,
+                                            "borderWidth": 1,
+                                            "height": 76,
+                                          }
+                                        }
+                                      >
+                                        <View
+                                          style={
+                                            {
+                                              "alignItems": "center",
+                                              "columnGap": 10,
+                                              "flexBasis": "0%",
+                                              "flexDirection": "row",
+                                              "flexGrow": 1,
+                                              "flexShrink": 1,
+                                              "padding": 12,
+                                              "rowGap": 10,
+                                            }
+                                          }
+                                          testID="widget-unpriced-drops"
+                                        >
+                                          <View
+                                            style={
+                                              {
+                                                "alignItems": "center",
+                                                "backgroundColor": "#E4E1CE",
+                                                "borderRadius": 9999,
+                                                "flexShrink": 0,
+                                                "height": 32,
+                                                "justifyContent": "center",
+                                                "width": 32,
+                                              }
+                                            }
+                                            testID="unpriced-done-mark"
+                                          >
+                                            <Text
+                                              style={
+                                                {
+                                                  "color": "#F58B0F",
+                                                  "fontSize": 14.4,
+                                                  "fontWeight": "700",
+                                                }
+                                              }
+                                            >
+                                              ✓
+                                            </Text>
+                                          </View>
+                                          <View
+                                            style={
+                                              {
+                                                "flexBasis": "0%",
+                                                "flexGrow": 1,
+                                                "flexShrink": 1,
+                                              }
+                                            }
+                                          >
+                                            <Text
+                                              style={
+                                                {
+                                                  "color": "#645C42",
+                                                  "fontSize": 11,
+                                                  "fontWeight": "600",
+                                                }
+                                              }
+                                            >
+                                              가격 미입력
+                                            </Text>
+                                            <Text
+                                              numberOfLines={1}
+                                              style={
+                                                {
+                                                  "color": "#645C42",
+                                                  "fontSize": 10,
+                                                  "marginTop": 2,
+                                                }
+                                              }
+                                              testID="unpriced-done"
+                                            >
+                                              전부 기록했습니다
+                                            </Text>
+                                          </View>
+                                        </View>
+                                      </View>
+                                    </View>
+                                  </View>
+                                  <View
+                                    style={
+                                      {
+                                        "left": 0,
+                                        "position": "absolute",
+                                        "top": 704,
+                                        "width": 718,
+                                      }
+                                    }
+                                    testID="widget-tile-valuable-drought"
+                                  >
+                                    <View
+                                      accessibilityState={
+                                        {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": undefined,
+                                          "expanded": undefined,
+                                          "selected": undefined,
+                                        }
+                                      }
+                                      accessibilityValue={
+                                        {
+                                          "max": undefined,
+                                          "min": undefined,
+                                          "now": undefined,
+                                          "text": undefined,
+                                        }
+                                      }
+                                      accessible={true}
+                                      collapsable={false}
+                                      focusable={true}
+                                      onBlur={[Function]}
+                                      onClick={[Function]}
+                                      onFocus={[Function]}
+                                      onResponderGrant={[Function]}
+                                      onResponderMove={[Function]}
+                                      onResponderRelease={[Function]}
+                                      onResponderTerminate={[Function]}
+                                      onResponderTerminationRequest={[Function]}
+                                      onStartShouldSetResponder={[Function]}
+                                      role="button"
+                                    >
+                                      <View
+                                        style={
+                                          {
+                                            "backgroundColor": "#FDFCF6",
+                                            "borderColor": "#CFC9AE",
+                                            "borderRadius": 14,
+                                            "borderWidth": 1,
+                                            "height": 76,
+                                          }
+                                        }
+                                      >
+                                        <View
+                                          style={
+                                            {
+                                              "alignItems": "center",
+                                              "columnGap": 12,
+                                              "flexBasis": "0%",
+                                              "flexDirection": "row",
+                                              "flexGrow": 1,
+                                              "flexShrink": 1,
+                                              "padding": 12,
+                                              "rowGap": 12,
+                                            }
+                                          }
+                                          testID="widget-valuable-drought"
+                                        >
+                                          <View
+                                            aria-hidden={true}
+                                            style={
+                                              {
+                                                "opacity": 0.28,
+                                              }
+                                            }
+                                            testID="drought-blank-leaf"
+                                          >
+                                            <RNSVGSvgView
+                                              align="xMidYMid"
+                                              bbHeight={25}
+                                              bbWidth={24}
+                                              color="#9A9070"
+                                              focusable={false}
+                                              height={25}
+                                              meetOrSlice={0}
+                                              minX={0}
+                                              minY={0}
+                                              style={
+                                                [
+                                                  {
+                                                    "backgroundColor": "transparent",
+                                                    "borderWidth": 0,
+                                                  },
+                                                  {},
+                                                  {
+                                                    "flex": 0,
+                                                    "height": 25,
+                                                    "width": 24,
+                                                  },
+                                                ]
+                                              }
+                                              vbHeight={130}
+                                              vbWidth={127}
+                                              width={24}
+                                            >
+                                              <RNSVGGroup
+                                                fill={
+                                                  {
+                                                    "payload": 4278190080,
+                                                    "type": 0,
+                                                  }
+                                                }
+                                              >
+                                                <RNSVGPath
+                                                  d="M60.4426 107.504L59.1392 127.924C59.1024 128.5 59.5598 128.987 60.1372 128.987H65.9593C66.5534 128.987 67.0165 128.472 66.9537 127.882L64.785 107.496C64.6975 106.673 65.5908 106.106 66.2984 106.536L78.2704 113.805C78.4651 113.923 78.6944 113.971 78.9203 113.941L103.215 110.732C104.008 110.628 104.363 109.681 103.835 109.081L91.452 94.9894C91.0117 94.4885 91.1759 93.7052 91.7802 93.4231L118.529 80.9405C119.315 80.5738 119.293 79.4491 118.494 79.1126L112.061 76.4041C111.526 76.1789 111.295 75.5471 111.558 75.0296L125.96 46.675C126.366 45.8757 125.596 44.9873 124.747 45.275L98.4688 54.1831C97.9655 54.3537 97.4167 54.1008 97.2193 53.6074L95.2595 48.7079C94.9641 47.9693 93.9662 47.8547 93.5109 48.5071L82.408 64.4213C81.7836 65.3163 80.3814 64.7067 80.6101 63.6396L88.1353 28.5217C88.311 27.7019 87.4603 27.0428 86.7103 27.4178L81.4218 30.062C80.9453 30.3003 80.3657 30.1231 80.1038 29.6592L63.9299 1.00826C63.5499 0.335101 62.5824 0.329222 62.1943 0.997712L45.543 29.6749C45.2779 30.1315 44.7033 30.3033 44.231 30.0672L38.9323 27.4178C38.1823 27.0428 37.3315 27.7018 37.5072 28.5217L44.9884 63.4338C45.2189 64.5095 43.7966 65.1145 43.1815 64.2025L32.5593 48.4523C32.1246 47.8077 31.1528 47.884 30.824 48.5885L28.4482 53.6797C28.2334 54.14 27.7076 54.3661 27.2258 54.2055L1.8202 45.7369C0.98094 45.4572 0.218491 46.3249 0.603813 47.1212L14.1413 75.0988C14.3797 75.5913 14.1779 76.184 13.6884 76.4287L7.43998 79.553C6.68865 79.9286 6.70724 81.0071 7.47107 81.3567L33.8706 93.4379C34.4733 93.7136 34.6458 94.4888 34.217 94.9941L22.2282 109.124C21.7222 109.72 22.0657 110.64 22.8386 110.759L46.6876 114.428C46.9344 114.466 47.1865 114.41 47.3943 114.272L58.8899 106.608C59.5787 106.149 60.4953 106.678 60.4426 107.504Z"
+                                                  fill={
+                                                    {
+                                                      "type": 2,
+                                                    }
+                                                  }
+                                                  propList={
+                                                    [
+                                                      "fill",
+                                                    ]
+                                                  }
+                                                />
+                                              </RNSVGGroup>
+                                            </RNSVGSvgView>
+                                          </View>
+                                          <Text
+                                            numberOfLines={1}
+                                            style={
+                                              {
+                                                "color": "#645C42",
+                                                "flexBasis": "0%",
+                                                "flexGrow": 1,
+                                                "flexShrink": 1,
+                                                "fontSize": 11,
+                                              }
+                                            }
+                                            testID="drought-no-record"
+                                          >
+                                            아직 아이템 드롭 기록이 없습니다
+                                          </Text>
+                                        </View>
+                                      </View>
+                                    </View>
+                                  </View>
                                 </View>
-                                <Text
-                                  style={
-                                    {
-                                      "color": "#241208",
-                                      "fontSize": 16,
-                                      "fontWeight": "700",
-                                      "lineHeight": 24,
-                                      "textAlign": "center",
-                                    }
-                                  }
-                                >
-                                  오늘 현황
-                                </Text>
-                                <Text
-                                  style={
-                                    {
-                                      "color": "#645C42",
-                                      "fontSize": 14,
-                                      "lineHeight": 20,
-                                      "textAlign": "center",
-                                    }
-                                  }
-                                >
-                                  개발 진행중
-                                </Text>
-                                <Text
-                                  style={
-                                    {
-                                      "color": "#9A9070",
-                                      "fontSize": 12,
-                                      "lineHeight": 16,
-                                      "textAlign": "center",
-                                    }
-                                  }
-                                >
-                                  오늘 할 일과 이번 주 수익을 한 화면에 모읍니다.
-                                </Text>
                               </View>
                             </View>
                           </RCTScrollView>

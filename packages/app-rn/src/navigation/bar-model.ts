@@ -153,6 +153,46 @@ export function pressSub(state: BarState, page: TabRouteName): BarState {
 }
 
 /**
+ * **바를 거치지 않은 이동** — today 위젯 타일처럼 화면이 직접 목적지를 정해 가는 경우.
+ *
+ * ## 왜 필요한가
+ *
+ * [[ADR-132]] 결정 4 는 *"기록은 «한 층 내려갈 때»만 남는다"* 인데, 구현은 그것을
+ * **«바를 눌러 내려갈 때»만** 으로 좁혀 있었다(`pressGroup`). 위젯 타일은 today(그룹 행)에서
+ * 가계부 하위로 **한 층 내려가는 이동**인데 그 밖에 있었고, 그래서 기록이 빈 채로 하위 행에
+ * 도착했다. 거기서 ← 는 결정 5 의 안전망(*"기록이 없으면 그룹 행을 연다, 페이지는 그대로"*)에
+ * 걸려 **가계부가 활성인 채로 그룹 행만 열렸다.**
+ *
+ * 그 안전망은 «세션 복원처럼 어디서 왔는지 알 수 없을 때» 를 위한 것이지, **우리가 어디서 왔는지
+ * 아는 이동**에 걸릴 자리가 아니다.
+ *
+ * ## `pressGroup` 과 무엇이 다른가
+ *
+ * 기록 규칙은 같고 **목적지를 스스로 정하지 않는다.** `pressGroup` 은 `lastSub` 나 첫 하위로
+ * 가지만, 위젯은 «보스 수익» 처럼 특정 페이지를 지목한다.
+ *
+ * ## `lastSub` 는 건드리지 않는다
+ *
+ * 프로그램 이동이 바 기록의 «마지막으로 본 하위» 를 안 건드리는 것은 [[ADR-145]] 대가 · [[ADR-140]]
+ * 결정 1 의 CTA 와 같은 성질이라 여기서 뒤집지 않는다. 이 함수가 고치는 것은 **뒤로 갈 자리**
+ * 하나뿐이다.
+ */
+export function openPage(state: BarState, target: TabRouteName): BarState {
+  if (target === state.page) return { ...state, showGroups: false }
+
+  const group = groupOfPage(target)
+
+  // 같은 그룹 안이면 하위 옆걸음이다 — 쌓지 않는다(결정 4, `pressSub` 와 같은 규칙).
+  if (group.id === groupOfPage(state.page).id) return { ...state, page: target, showGroups: false }
+
+  // 하위가 없는 그룹은 같은 층의 옆걸음이라 돌아갈 자리가 없다 — 기록을 비운다(`pressGroup` 과 같다).
+  if (group.page !== null) return { ...state, page: target, history: [], showGroups: false }
+
+  // 하위를 가진 그룹으로 한 층 내려간다 → 온 자리를 적는다.
+  return { ...state, page: target, history: [...state.history, state.page], showGroups: false }
+}
+
+/**
  * ← 를 눌렀을 때(결정 3~5).
  *
  * 하위 행이 아니면 아무 일도 하지 않는다 — 그 상태에서는 ← 가 그려지지도 않지만, 시스템

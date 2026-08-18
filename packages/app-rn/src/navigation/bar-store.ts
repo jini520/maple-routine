@@ -26,6 +26,17 @@ import { initialBarState } from './bar-model'
 
 export type BarRecord = Omit<BarState, 'page'>
 
+/**
+ * 상태에서 **기록 부분만** 떼어낸다.
+ *
+ * 페이지는 react-navigation 이 갖고 이 저장소는 나머지만 든다(파일 머리 «지금 페이지는 여기 없다»).
+ * 그 분리를 호출부마다 손으로 하면 필드 목록이 두 벌·세 벌이 되고, `BarRecord` 에 필드가 하나 늘 때
+ * 어느 호출부가 안 따라왔는지 컴파일러가 말해 주지 않는다.
+ */
+export function toBarRecord(state: BarState): BarRecord {
+  return { history: state.history, showGroups: state.showGroups, lastSub: state.lastSub }
+}
+
 export interface BarBackHandler {
   canGoBack(): boolean
   goBack(): void
@@ -34,8 +45,7 @@ export interface BarBackHandler {
 function emptyRecord(): BarRecord {
   // 초기값을 여기서 다시 적지 않는다 — `bar-model.ts` 가 유일한 출처이고, 두 벌이 되면 «앱을 켠
   // 직후» 의 정의가 갈린다.
-  const initial = initialBarState()
-  return { history: initial.history, showGroups: initial.showGroups, lastSub: initial.lastSub }
+  return toBarRecord(initialBarState())
 }
 
 let record: BarRecord = emptyRecord()

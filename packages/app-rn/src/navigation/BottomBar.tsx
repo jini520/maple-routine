@@ -103,7 +103,7 @@ import {
   type BarState,
   type GroupId,
 } from './bar-model'
-import { registerBarBackHandler, setBarRecord, useBarRecord } from './bar-store'
+import { registerBarBackHandler, setBarRecord, toBarRecord, useBarRecord } from './bar-store'
 import { useKeyboardShown } from './use-keyboard-shown'
 import type { TabRouteName } from './routes'
 
@@ -531,10 +531,9 @@ export function BottomBar({ state, navigation }: BottomTabBarProps): React.JSX.E
   const apply = useCallback(
     (next: BarState, action: BarAction) => {
       const before = barRef.current
-      const { page: nextPage, ...nextRecord } = next
 
-      setBarRecord(nextRecord)
-      if (nextPage !== before.page) navigation.navigate(nextPage)
+      setBarRecord(toBarRecord(next))
+      if (next.page !== before.page) navigation.navigate(next.page)
 
       // **막지 않는다** — 이동은 위에서 이미 끝났고 광고는 준비된 것이 있을 때만 뜬다
       // ([[ADR-090]] 결정 3 «광고는 이동을 지연시키지 않는다»).
