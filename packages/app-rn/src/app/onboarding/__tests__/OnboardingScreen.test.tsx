@@ -154,6 +154,17 @@ describe('OnboardingScreen', () => {
     expect(view.getByText('계속하기')).toBeTruthy()
     // 설정 하위 페이지와 **같은 본문**이다([[ADR-144]] 결정 1) — 사본이 아님을 여기서도 확인한다.
     expect(view.getByTestId('character-manage-body')).toBeTruthy()
+    // CTA 는 고정 바 안이다([[ADR-144]] 정정 2) — 그 계약은 단계 테스트가 자세히 본다.
+    expect(view.getByTestId('onboarding-action-bar')).toBeTruthy()
+  })
+
+  // 고정 바는 **CTA 를 넘긴 단계에만** 선다 — 셸이 늘 그리면 단계마다 빈 띠가 남는다.
+  it('다른 단계에는 고정 액션 바가 없다', async () => {
+    mockStore({ status: 'selectingTrackingMode' })
+
+    const view = await renderOverlay(<OnboardingScreen />)
+
+    expect(view.queryByTestId('onboarding-action-bar')).toBeNull()
   })
 
   it('status가 seedingTracking이면 시드 준비 스피너와 문구가 렌더링된다', async () => {

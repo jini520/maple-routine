@@ -12,7 +12,8 @@
 // 본다. 같은 컴포넌트를 두 곳에서 다시 검사하면 [[ADR-144]] 결정 1 이 «머리와 CTA 만 갈린다» 로
 // 묶어 둔 것이 테스트에서 두 벌이 된다. 여기서 보는 것은 제목 · CTA 게이트 · 제출 payload ·
 // **429 만 넘기는 배선** 넷이다.
-import { act, fireEvent } from '@testing-library/react-native'
+import { act, fireEvent, within } from '@testing-library/react-native'
+import { StyleSheet } from 'react-native'
 
 import { getCharacterPickerRoster } from '@core/features/schedule-sync/schedule-sync'
 import { fetchCharacterList } from '@core/nexon/character'
@@ -26,7 +27,6 @@ import type { CachedCharacterBasicEntry } from '@core/storage/character-basic-ca
 import type { CharacterPickerEntry, MapleAccount, MapleCharacter } from '@core/types'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
-import type { ReorderScroll } from '../../../components/organisms/CharacterManage/use-reorder-scroll'
 import { ContentCharacterStep } from '../ContentCharacterStep'
 
 // 팩토리 밖 변수를 참조하려면 이름이 `mock` 으로 시작해야 한다(babel-jest 규칙).
@@ -105,9 +105,6 @@ function 캐시(character: MapleCharacter): CachedCharacterBasicEntry {
 
 const 캐시된캐릭터 = new Map([낟낟, 달의아이].map((c) => [c.ocid, 캐시(c)]))
 
-/** 끌기 배선은 화면(`OnboardingScreen`)의 것이라 여기서는 아무것도 하지 않는 짝을 준다. */
-const scroll: ReorderScroll = { offsetPx: () => 0, scrollToPx: () => {} }
-
 type Rendered = Awaited<ReturnType<typeof renderOverlay>>
 
 async function press(element: AtomElement): Promise<void> {
@@ -140,7 +137,6 @@ async function renderStep(
     <ContentCharacterStep
       isSubmitting={props.isSubmitting ?? false}
       onSubmit={onSubmit as (ocids: string[], representativeOcid: string | null) => void}
-      scroll={scroll}
     />,
   )
   for (let i = 0; i < 4; i += 1) await act(async () => {})
@@ -224,6 +220,43 @@ describe('ContentCharacterStep — 머리와 CTA ([[ADR-144]] 결정 1)', () => 
     const cta = button(view, '저장 중')
     expect(stateOf(cta).disabled).toBe(true)
     expect(stateOf(cta).busy).toBe(true)
+  })
+})
+
+// [[ADR-144]] 정정 2 (사용자 지정 2026-08-18) — 설정 하위 페이지의 「저장」과 **같은 액션 바**다.
+// 본문이 그 화면과 같은 두 층이라(결정 1) 캐릭터가 많으면 본문 끝의 CTA 는 화면 밖에 있게 된다.
+describe('ContentCharacterStep — 「계속하기」는 하단에 고정된다 ([[ADR-144]] 정정 2)', () => {
+  it('CTA 는 스크롤 뷰 **밖**의 고정 바 안에 선다', async () => {
+    const { view } = await renderStep()
+
+    expect(within(view.getByTestId('onboarding-action-bar')).getByText('계속하기')).toBeTruthy()
+    // 스크롤 뷰 안에 남아 있으면 «어디까지 굴렸든 지금 누른다» 가 깨진다 — 그것이 이 정정이
+    // 옮긴 자리다.
+    expect(within(view.getByTestId('onboarding-scroll')).queryByText('계속하기')).toBeNull()
+  })
+
+  // 바 높이를 상수로 적지 않는다(결정 1) — 잰 값만큼 비워야 글자 크기·안전영역이 다른 기기에서도
+  // 마지막 행이 바 뒤로 숨지 않는다.
+  it('잰 바 높이만큼 콘텐츠 아래를 비운다', async () => {
+    const { view } = await renderStep()
+
+    await act(async () => {
+      fireEvent(view.getByTestId('onboarding-action-bar'), 'layout', {
+        nativeEvent: { layout: { height: 96 } },
+      })
+    })
+
+    expect(view.getByTestId('onboarding-scroll').props.contentContainerStyle).toMatchObject({
+      paddingBottom: 96,
+    })
+  })
+
+  it('CTA 는 그 바 안에서 폭을 다 쓴다', async () => {
+    const { view } = await renderStep()
+
+    const cta = within(view.getByTestId('onboarding-action-bar')).getByRole('button')
+    // 클래스 문자열은 NativeWind 가 스타일로 바꿔 사라지므로 flatten 한 값에서 읽는다.
+    expect(StyleSheet.flatten(cta.props.style).width).toBe('100%')
   })
 })
 
