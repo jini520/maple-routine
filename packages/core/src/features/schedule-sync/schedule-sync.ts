@@ -101,15 +101,22 @@ function canResolveAnyStaleSection(
 }
 
 // ADR-034 정정(2026-07-23): 당일 응답에서 stale이었던 섹션을, [[getBackfillDateKeys]]가 주는
-// 날짜(평소 -1일부터, 자정 직후 불안정 구간엔 -2일부터) 목록을 하루씩 순서대로 조회하며
-// 항목(이름 또는 이름+난이도) 단위로 채운다. 각 날짜 응답을 previous로 삼아
-// mergeSchedulerState(ADR-030 + ADR-034 항목 단위 정정)를 한 번씩 더 태우되, world/account
-// 원장은 이 루프의 범위 밖이라( previous가 아니라 "마지막 활성 캐릭터" 오염을 피하려 원장을
-// 신뢰해야 하므로, ADR-030) 4개 플래그를 모두 true로 강제해 character 범위 항목 병합만
-// 일어나게 한다. 그 날짜 응답 자체가(원래 stale이었던 섹션 기준으로) 더 이상 stale이
-// 아니면 그 시점에 멈추고, 끝까지 못 찾으면 -13일까지 다 써보고 그동안 누적된 결과를
-// best-effort로 그대로 쓴다. 특정 날짜 조회가 실패해도(네트워크 등) 그 날짜만 건너뛰고
-// 다음 날짜로 계속한다.
+// 날짜(평소 -1일부터, 자정 직후 불안정 구간엔 -2일부터) 목록을 조회하며 항목(이름 또는
+// 이름+난이도) 단위로 채운다. 각 날짜 응답을 previous로 삼아 mergeSchedulerState(ADR-030 +
+// ADR-034 항목 단위 정정)를 한 번씩 더 태우되, world/account 원장은 이 루프의 범위 밖이라
+// (previous가 아니라 "마지막 활성 캐릭터" 오염을 피하려 원장을 신뢰해야 하므로, ADR-030)
+// 4개 플래그를 모두 true로 강제해 character 범위 항목 병합만 일어나게 한다. 그 날짜 응답
+// 자체가(원래 stale이었던 섹션 기준으로) 더 이상 stale이 아니면 그 시점에 멈추고, 끝까지 못
+// 찾으면 -13일까지 다 써보고 그동안 누적된 결과를 best-effort로 그대로 쓴다. 특정 날짜 조회가
+// 실패해도(네트워크 등) 그 날짜만 건너뛰고 다음 날짜로 계속한다.
+//
+// ADR-148: **조회와 병합이 갈렸다** — 날짜는 한꺼번에 나가고(결정 1), 접는 것은 그대로 날짜
+// 순 폴드다(결정 2). 순서가 결과를 정하는 것은 조회가 아니라 병합이었으므로 `resolved` 중단을
+// 포함해 아래 루프의 의미는 한 글자도 안 바뀐다.
+//
+// 그 갈림이 만드는 새 사실 하나: 폴드가 일찍 멈춰도 **뒷 날짜 응답은 이미 손에 있다.** 그것을
+// 버리면 원장이 안 차 다음 동기화가 같은 13일을 다시 훑고 이슈 #87 문제 1이 되살아나므로,
+// 기록은 폴드가 아니라 **발사 지점**에서 한다(결정 3 — 최적화가 아니라 병렬화의 성립 조건).
 async function fillMissingSections(
   apiKey: string,
   ocid: string,
@@ -139,31 +146,41 @@ async function fillMissingSections(
     return stage1
   }
 
+  const dateKeys = getBackfillDateKeys(now).filter((dateKey) => {
+    const known = probeLedger.dates[dateKey]
+    return known === undefined || canResolveAnyStaleSection(originallyStale, known)
+  })
+
+  // 발사와 기록이 여기 함께 있다. 실패 종류별 기록 정책은 ADR-086 결정 4 그대로다.
+  const fetched = await Promise.all(
+    dateKeys.map(async (dateKey) => {
+      try {
+        const response = await fetchSchedulerCharacterState(apiKey, ocid, dateKey)
+        await recordScheduleProbe(ocid, dateKey, { kind: 'observed', ...toProbeObservation(response) })
+        return { response, failure: null }
+      } catch (error) {
+        const failure = toScheduleSyncError(error).kind
+        if (failure === 'characterUnavailable') {
+          await markScheduleProbeUnavailable(ocid)
+        } else if (failure === 'periodOutOfRange') {
+          await recordScheduleProbe(ocid, dateKey, { kind: 'outOfRange' })
+        }
+        // notCollected(집계 전)·네트워크는 기록하지 않는다 — 나중에 다시 시도한다.
+        return { response: null, failure }
+      }
+    }),
+  )
+
   let acc = stage1
 
-  for (const dateKey of getBackfillDateKeys(now)) {
-    const known = probeLedger.dates[dateKey]
-    if (known !== undefined && !canResolveAnyStaleSection(originallyStale, known)) {
+  for (const { response: dayResponse, failure } of fetched) {
+    // 조회 불가는 캐릭터 단위 확정이라 남은 날짜를 접을 이유가 없다(종전 `break` 그대로).
+    if (failure === 'characterUnavailable') {
+      break
+    }
+    if (dayResponse === null) {
       continue
     }
-
-    let dayResponse: SchedulerCharacterState
-    try {
-      dayResponse = await fetchSchedulerCharacterState(apiKey, ocid, dateKey)
-    } catch (error) {
-      const kind = toScheduleSyncError(error).kind
-      if (kind === 'characterUnavailable') {
-        await markScheduleProbeUnavailable(ocid)
-        break
-      }
-      if (kind === 'periodOutOfRange') {
-        await recordScheduleProbe(ocid, dateKey, { kind: 'outOfRange' })
-      }
-      // notCollected(집계 전)·네트워크는 기록하지 않는다 — 나중에 다시 시도한다.
-      continue
-    }
-
-    await recordScheduleProbe(ocid, dateKey, { kind: 'observed', ...toProbeObservation(dayResponse) })
 
     const dayMerge = mergeSchedulerState({
       previous: dayResponse,
