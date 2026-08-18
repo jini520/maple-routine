@@ -1,6 +1,6 @@
 {
-  "updatedAt": "2026-07-09",
-  "source": "사용자 제공 시세표. 보스별 상세 보상 정보에 다른 금액이 함께 제공되었으나, 사용자가 이 시세표 값을 정답으로 확정하고 갱신일은 의미가 없다고 확인함.",
+  "updatedAt": "2026-08-19",
+  "source": "사용자 제공 시세표. 보스별 상세 보상 정보에 다른 금액이 함께 제공되었으나, 사용자가 이 시세표 값을 정답으로 확정하고 갱신일은 의미가 없다고 확인함. 2026-08-19 — 벨로나 출시분 3건을 사용자 확정값으로 채움(이지 440,000,000 / 노멀 890,000,000 / 하드 2,950,000,000, maxPartySize 3). 원본 「고정 보상」에 결정과 나란히 적힌 메소가 곧 그 결정의 판매가라는 사용자 확인에 따른 것이며([[ADR-151]] 결정 2), 같은 값을 item-drop-table.json에는 넣지 않는다 — 두 자리에 적으면 같은 돈이 두 번 세어진다.",
   "priceBasis": "1인(솔로) 기준 정가. 대부분 '강력한 힘의 결정' 판매가 기준이나, 메이린(이벤트 주간 보스)은 결정이 아닌 황금 메소 주머니 총 가치(1개 = 1000만 메소) 기준 — 개별 entry의 note 참고. 파티원 수별 실수령액은 partySizeScaling 참고.",
   "partySizeScaling": {
     "formula": "floor(priceMeso / partySize)",
@@ -67,9 +67,9 @@
     { "boss": "찬란한 흉성", "difficulty": "노멀", "priceMeso": 625000000, "asOf": "2026-06-25", "maxPartySize": 3 },
     { "boss": "찬란한 흉성", "difficulty": "하드", "priceMeso": 2678000000, "asOf": "2026-06-25", "maxPartySize": 3 },
 
-    { "boss": "벨로나", "difficulty": "이지", "priceMeso": null, "status": "unreleased", "note": "아직 출시되지 않은 보스" },
-    { "boss": "벨로나", "difficulty": "노멀", "priceMeso": null, "status": "unreleased", "note": "아직 출시되지 않은 보스" },
-    { "boss": "벨로나", "difficulty": "하드", "priceMeso": null, "status": "unreleased", "note": "아직 출시되지 않은 보스" },
+    { "boss": "벨로나", "difficulty": "이지", "priceMeso": 440000000, "asOf": "2026-08-19", "maxPartySize": 3 },
+    { "boss": "벨로나", "difficulty": "노멀", "priceMeso": 890000000, "asOf": "2026-08-19", "maxPartySize": 3 },
+    { "boss": "벨로나", "difficulty": "하드", "priceMeso": 2950000000, "asOf": "2026-08-19", "maxPartySize": 3 },
 
     { "boss": "림보", "difficulty": "노멀", "priceMeso": 1026000000, "asOf": "2026-06-25", "maxPartySize": 3 },
     { "boss": "림보", "difficulty": "하드", "priceMeso": 2385000000, "asOf": "2026-06-25", "maxPartySize": 3 },

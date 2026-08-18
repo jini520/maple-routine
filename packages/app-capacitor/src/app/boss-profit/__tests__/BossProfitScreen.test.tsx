@@ -1241,15 +1241,15 @@ describe('BossProfitScreen', () => {
     mockStore({
       status: 'loaded',
       trackedOcids: ['ocid-1'],
-      rows: [row({ boss: '벨로나', priceMeso: null, partySize: null, payoutMeso: null })],
+      rows: [row({ boss: '미확정 보스', priceMeso: null, partySize: null, payoutMeso: null })],
     })
 
     renderBossProfitScreen()
     fireEvent.click(screen.getByRole('button', { name: /낟낟/ }))
 
     expect(screen.getByText('가격 미확정')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '낟낟 벨로나 카오스 파티원 수 증가' })).toBeDisabled()
-    expect(screen.getByRole('button', { name: '낟낟 벨로나 카오스 파티원 수 감소' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: '낟낟 미확정 보스 카오스 파티원 수 증가' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: '낟낟 미확정 보스 카오스 파티원 수 감소' })).toBeDisabled()
   })
 
   it('isComplete가 false면 미완료 배지를 보여주고 스테퍼가 비활성화된다(ADR-032)', () => {

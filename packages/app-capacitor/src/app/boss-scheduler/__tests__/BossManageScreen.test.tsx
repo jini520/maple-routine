@@ -9,6 +9,13 @@ import { useBossSchedulerStore, type BossCharacterView } from '@core/features/bo
 import { useToastStore } from '@core/features/toast/store'
 import { useTrackingModeStore } from '@core/features/tracking-mode/store'
 import type { MatchedBoss } from '@core/lib/boss-matching'
+import weeklyBossesData from '@core/data/weekly-bosses.json'
+
+// 미출시 보스는 참조표에서 뽑는다 — 이름을 손으로 적으면 그 보스가 출시되는 날 검증이 뒤집힌다
+// (벨로나가 실제로 그랬다, [[ADR-151]] 결정 5). 벨로나 출시로 현재 표본은 0개다.
+const UNRELEASED_NAME = (weeklyBossesData.weekly as { boss: string; status?: string }[]).find(
+  (entry) => entry.status === 'unreleased',
+)?.boss
 
 vi.mock('@core/features/boss-scheduler/store', () => ({
   useBossSchedulerStore: vi.fn(),
@@ -525,13 +532,15 @@ describe('BossManageScreen — 주간 12개 한도 (ADR-055)', () => {
 
 // ADR-056: 목록 구성 규칙 — 미출시 보스 제외, 시즌 보스는 챌린저스 월드 전용.
 describe('BossManageScreen — 목록 구성 (ADR-056)', () => {
-  it('미출시 보스(벨로나)는 목록에 나오지 않는다', () => {
+  // 규칙(status 로 거른다)은 표본이 없어도 코드에 남아 있으므로 테스트도 남기되, 참조표에
+  // 미출시 엔트리가 없으면 건너뛴다([[ADR-151]] 결정 5).
+  ;(UNRELEASED_NAME !== undefined ? it : it.skip)('미출시 보스는 목록에 나오지 않는다', () => {
     useTrackingModeStore.setState({ mode: 'manual' })
     mockStore({ characters: [character({ world: '스카니아' })] })
 
     renderManageScreen()
 
-    expect(screen.queryByRole('button', { name: '벨로나' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: UNRELEASED_NAME! })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: '자쿰' })).toBeInTheDocument()
   })
 
@@ -569,6 +578,8 @@ describe('BossManageScreen — 목록 구성 (ADR-056)', () => {
     renderManageScreen()
 
     expect(screen.queryByText('시즌 보스 메이린')).not.toBeInTheDocument()
-    expect(screen.queryByText('벨로나')).not.toBeInTheDocument()
+    if (UNRELEASED_NAME !== undefined) {
+      expect(screen.queryByText(UNRELEASED_NAME)).not.toBeInTheDocument()
+    }
   })
 })

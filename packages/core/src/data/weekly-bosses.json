@@ -1,7 +1,7 @@
 {
   "updatedAt": "2026-07-29",
   "source": "사용자 제공",
-  "note": "보스 종류/난이도 조합은 아래 목록 전체이며, 캐릭터는 이 중 최대 12마리(난이도 조합 단위)까지 선택해 주간 보스 스케줄로 등록·완료 처리한다. 힐라(하드)·핑크빈(카오스)는 일간 보스로 격하되어 목록에서 제외함. eventWeekly(시즌보스, 현재 메이린만 해당)는 이 12마리 제한에서 예외라 카운트에 포함되지 않음 — Nexon 스케줄러 Open API의 weekly_boss_clear_count/weekly_boss_clear_limit_count 필드도 이 게임 규칙을 그대로 반영함(2026-07-09 확인). portraitSlug는 src/assets/bosses/의 파일명(portraitSlug.webp)에서 슬러그 부분([[ADR-011]], 정정 [[ADR-018]] 2026-07-13 — 기존 난이도별 파일이 보스당 1장으로 통합되며 파일명에서 난이도 접두사가 빠짐). portraitSlug가 없는 보스(현재 벨로나만)는 아직 이미지 파일이 없음. weeklyBossSelectionLimit(12)과 weeklyCrystalSaleLimit(90)은 이름이 비슷하지만 단위가 다른 별개 한도임([[ADR-054]], 사용자 확인 2026-07-29) — 전자는 '캐릭터당' 주간 보스 등록/처치 한도이고, 후자는 '월드당' 주당 결정석 판매 한도(주간 보스만 포함 — 월간 보스인 검은마법사 결정석 제외, 시즌 보스 제외, 이월 없이 매주 초기화)임. requiredLevels는 난이도별 입장 요구 레벨(진행 가능 최소 레벨, [[ADR-055]]/이슈 #32, 사용자 확인 2026-07-29) — 키는 반드시 같은 엔트리 difficulties의 부분집합이어야 하고(data-consistency 테스트가 검증), 값이 없는 난이도는 필드를 생략함(생략=잠금 없음). 메이린을 제외한 모든 보스는 난이도가 달라도 입장 레벨이 같아 같은 값이 반복됨(메이린만 노멀 270/하드 280).",
+  "note": "보스 종류/난이도 조합은 아래 목록 전체이며, 캐릭터는 이 중 최대 12마리(난이도 조합 단위)까지 선택해 주간 보스 스케줄로 등록·완료 처리한다. 힐라(하드)·핑크빈(카오스)는 일간 보스로 격하되어 목록에서 제외함. eventWeekly(시즌보스, 현재 메이린만 해당)는 이 12마리 제한에서 예외라 카운트에 포함되지 않음 — Nexon 스케줄러 Open API의 weekly_boss_clear_count/weekly_boss_clear_limit_count 필드도 이 게임 규칙을 그대로 반영함(2026-07-09 확인). portraitSlug는 src/assets/bosses/의 파일명(portraitSlug.webp)에서 슬러그 부분([[ADR-011]], 정정 [[ADR-018]] 2026-07-13 — 기존 난이도별 파일이 보스당 1장으로 통합되며 파일명에서 난이도 접두사가 빠짐). portraitSlug가 없는 보스는 아직 이미지 파일이 없다는 뜻이며 현재 그런 보스는 없음(벨로나가 출시되며 초상화 bellona.webp 추가 — [[ADR-151]]). weeklyBossSelectionLimit(12)과 weeklyCrystalSaleLimit(90)은 이름이 비슷하지만 단위가 다른 별개 한도임([[ADR-054]], 사용자 확인 2026-07-29) — 전자는 '캐릭터당' 주간 보스 등록/처치 한도이고, 후자는 '월드당' 주당 결정석 판매 한도(주간 보스만 포함 — 월간 보스인 검은마법사 결정석 제외, 시즌 보스 제외, 이월 없이 매주 초기화)임. requiredLevels는 난이도별 입장 요구 레벨(진행 가능 최소 레벨, [[ADR-055]]/이슈 #32, 사용자 확인 2026-07-29) — 키는 반드시 같은 엔트리 difficulties의 부분집합이어야 하고(data-consistency 테스트가 검증), 값이 없는 난이도는 필드를 생략함(생략=잠금 없음). 메이린을 제외한 모든 보스는 난이도가 달라도 입장 레벨이 같아 같은 값이 반복됨(메이린만 노멀 270/하드 280). status: 'unreleased'는 미출시 보스를 참조표에 남겨두되 보스 관리 목록에서 거르기 위한 필드이고([[ADR-056]] 결정 1), 벨로나 출시로 현재 그 필드를 가진 엔트리는 없음 — 필터는 다음 미출시 보스를 위해 코드에 그대로 남아 있음([[ADR-151]] 결정 4).",
   "weeklyBossSelectionLimit": 12,
   "weeklyCrystalSaleLimit": 90,
   "weekly": [
@@ -25,7 +25,7 @@
     { "boss": "최초의 대적자", "difficulties": ["이지", "노멀", "하드", "익스트림"], "requiredLevels": { "이지": 270, "노멀": 270, "하드": 270, "익스트림": 270 }, "portraitSlug": "adversary" },
     { "boss": "카링", "difficulties": ["이지", "노멀", "하드", "익스트림"], "requiredLevels": { "이지": 275, "노멀": 275, "하드": 275, "익스트림": 275 }, "portraitSlug": "kaling" },
     { "boss": "찬란한 흉성", "difficulties": ["노멀", "하드"], "requiredLevels": { "노멀": 280, "하드": 280 }, "portraitSlug": "maleficStar" },
-    { "boss": "벨로나", "difficulties": ["이지", "노멀", "하드"], "requiredLevels": { "이지": 280, "노멀": 280, "하드": 280 }, "status": "unreleased", "note": "아직 출시되지 않은 보스. 출시 후 가격/드랍 데이터 추가 필요" },
+    { "boss": "벨로나", "difficulties": ["이지", "노멀", "하드"], "requiredLevels": { "이지": 280, "노멀": 280, "하드": 280 }, "portraitSlug": "bellona" },
     { "boss": "림보", "difficulties": ["노멀", "하드"], "requiredLevels": { "노멀": 285, "하드": 285 }, "portraitSlug": "limbo" },
     { "boss": "발드릭스", "difficulties": ["노멀", "하드"], "requiredLevels": { "노멀": 290, "하드": 290 }, "portraitSlug": "bardrix" },
     { "boss": "유피테르", "difficulties": ["노멀", "하드"], "requiredLevels": { "노멀": 295, "하드": 295 }, "portraitSlug": "jupiter" }
