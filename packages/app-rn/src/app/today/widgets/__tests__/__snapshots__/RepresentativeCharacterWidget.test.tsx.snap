@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`세 크기가 같은 구조다 ([[ADR-146]] 정정 7) 2x2 — 스냅샷 1`] = `
+exports[`세 크기가 같은 구조다 ([[ADR-146]] 정정 7 · 38) 2x2 — 스냅샷 1`] = `
 <View
   style={
     {
@@ -75,6 +75,7 @@ exports[`세 크기가 같은 구조다 ([[ADR-146]] 정정 7) 2x2 — 스냅샷
             "rowGap": 4,
           }
         }
+        testID="representative-name-line"
       >
         <View
           style={
@@ -110,8 +111,23 @@ exports[`세 크기가 같은 구조다 ([[ADR-146]] 정정 7) 2x2 — 스냅샷
               "lineHeight": 17.5,
             }
           }
+          testID="representative-name"
         >
           단풍루틴
+        </Text>
+        <Text
+          numberOfLines={1}
+          style={
+            {
+              "color": "#645C42",
+              "flexShrink": 0,
+              "fontSize": 10,
+              "lineHeight": 12.5,
+            }
+          }
+          testID="representative-guild"
+        >
+          백호단
         </Text>
       </View>
       <View
@@ -152,19 +168,6 @@ exports[`세 크기가 같은 구조다 ([[ADR-146]] 정정 7) 2x2 — 스냅샷
           아크메이지(불,독)
         </Text>
       </View>
-      <Text
-        numberOfLines={1}
-        style={
-          {
-            "color": "#645C42",
-            "fontSize": 10,
-            "lineHeight": 12.5,
-          }
-        }
-        testID="representative-guild"
-      >
-        백호단
-      </Text>
     </View>
     <View
       style={
@@ -270,7 +273,7 @@ exports[`세 크기가 같은 구조다 ([[ADR-146]] 정정 7) 2x2 — 스냅샷
 </View>
 `;
 
-exports[`세 크기가 같은 구조다 ([[ADR-146]] 정정 7) 4x1 — 스냅샷 1`] = `
+exports[`세 크기가 같은 구조다 ([[ADR-146]] 정정 7 · 38) 4x1 — 스냅샷 1`] = `
 <View
   style={
     {
@@ -346,6 +349,7 @@ exports[`세 크기가 같은 구조다 ([[ADR-146]] 정정 7) 4x1 — 스냅샷
             "rowGap": 4,
           }
         }
+        testID="representative-name-line"
       >
         <View
           style={
@@ -381,8 +385,23 @@ exports[`세 크기가 같은 구조다 ([[ADR-146]] 정정 7) 4x1 — 스냅샷
               "lineHeight": 16.25,
             }
           }
+          testID="representative-name"
         >
           단풍루틴
+        </Text>
+        <Text
+          numberOfLines={1}
+          style={
+            {
+              "color": "#645C42",
+              "flexShrink": 0,
+              "fontSize": 10,
+              "lineHeight": 12.5,
+            }
+          }
+          testID="representative-guild"
+        >
+          백호단
         </Text>
       </View>
       <View
@@ -422,19 +441,6 @@ exports[`세 크기가 같은 구조다 ([[ADR-146]] 정정 7) 4x1 — 스냅샷
           아크메이지(불,독)
         </Text>
       </View>
-      <Text
-        numberOfLines={1}
-        style={
-          {
-            "color": "#645C42",
-            "fontSize": 10,
-            "lineHeight": 12.5,
-          }
-        }
-        testID="representative-guild"
-      >
-        백호단
-      </Text>
     </View>
     <View
       style={
@@ -442,7 +448,7 @@ exports[`세 크기가 같은 구조다 ([[ADR-146]] 정정 7) 4x1 — 스냅샷
           "columnGap": 4,
           "flexShrink": 0,
           "rowGap": 4,
-          "width": 70,
+          "width": 100,
         }
       }
       testID="representative-exp"
@@ -541,7 +547,7 @@ exports[`세 크기가 같은 구조다 ([[ADR-146]] 정정 7) 4x1 — 스냅샷
 </View>
 `;
 
-exports[`세 크기가 같은 구조다 ([[ADR-146]] 정정 7) 4x2 — 스냅샷 1`] = `
+exports[`세 크기가 같은 구조다 ([[ADR-146]] 정정 7 · 38) 4x2 — 스냅샷 1`] = `
 <View
   style={
     {
@@ -626,6 +632,7 @@ exports[`세 크기가 같은 구조다 ([[ADR-146]] 정정 7) 4x2 — 스냅샷
               "rowGap": 4,
             }
           }
+          testID="representative-name-line"
         >
           <View
             style={
@@ -661,8 +668,23 @@ exports[`세 크기가 같은 구조다 ([[ADR-146]] 정정 7) 4x2 — 스냅샷
                 "lineHeight": 23.75,
               }
             }
+            testID="representative-name"
           >
             단풍루틴
+          </Text>
+          <Text
+            numberOfLines={1}
+            style={
+              {
+                "color": "#645C42",
+                "flexShrink": 0,
+                "fontSize": 12,
+                "lineHeight": 15,
+              }
+            }
+            testID="representative-guild"
+          >
+            백호단
           </Text>
         </View>
         <View
@@ -702,19 +724,6 @@ exports[`세 크기가 같은 구조다 ([[ADR-146]] 정정 7) 4x2 — 스냅샷
             아크메이지(불,독)
           </Text>
         </View>
-        <Text
-          numberOfLines={1}
-          style={
-            {
-              "color": "#645C42",
-              "fontSize": 12,
-              "lineHeight": 15,
-            }
-          }
-          testID="representative-guild"
-        >
-          백호단
-        </Text>
       </View>
     </View>
     <View

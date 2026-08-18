@@ -13,10 +13,10 @@ describe('기본 배치 ([[ADR-146]] 정정 13)', () => {
     expect(validateWidgetLayout(TILE_LAYOUT, WIDGET_SIZES_BY_ID)).toEqual([])
   })
 
-  it('레지스트리의 위젯 여덟이 배치에 정확히 한 번씩 등장한다', () => {
+  it('레지스트리의 위젯 아홉이 배치에 정확히 한 번씩 등장한다', () => {
     const placedIds = TILE_LAYOUT.map((placement) => placement.id)
 
-    expect(WIDGETS).toHaveLength(8)
+    expect(WIDGETS).toHaveLength(9)
     expect([...placedIds].sort()).toEqual(WIDGETS.map((widget) => widget.id).sort())
     expect(new Set(placedIds).size).toBe(placedIds.length)
   })
@@ -30,6 +30,16 @@ describe('기본 배치 ([[ADR-146]] 정정 13)', () => {
 
     const declaredCount = WIDGETS.reduce((sum, widget) => sum + widget.sizes.length, 0)
     expect(declaredCount).toBeGreaterThan(TILE_LAYOUT.length)
+  })
+
+  // 공유 컨텐츠가 「남은 스케줄」 **위**에 선다([[ADR-146]] 정정 32, 사용자 지정) — 먼저 치우면
+  // 아래 목록이 줄어드는 관계라서다. 순서가 뒤집히면 그 근거가 사라지므로 좌표로 못 박는다.
+  it('공유 컨텐츠가 남은 스케줄 바로 위다', () => {
+    const rowOf = (id: string): number =>
+      TILE_LAYOUT.find((placement) => placement.id === id)?.row ?? -1
+
+    expect(rowOf('shared-contents')).toBe(rowOf('remaining-schedule') - 1)
+    expect(rowOf('shared-contents')).toBeGreaterThan(rowOf('crystal-limit'))
   })
 
   it('`h: auto` 를 선언한 위젯은 가로 4칸짜리 크기만 갖는다 ([[ADR-146]] 정정 1)', () => {

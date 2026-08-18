@@ -73,3 +73,29 @@ describe('DifficultyBadge', () => {
     expect((await renderAtom(<DifficultyBadge difficulty="하드" />)).toJSON()).toMatchSnapshot()
   })
 })
+
+describe('크기 둘 ([[ADR-146]] 정정 40)', () => {
+  it('기본은 지금까지와 같다 — 호출부 아홉 곳이 안 바뀐다', async () => {
+    const 지정없음 = await renderAtom(<DifficultyBadge difficulty="하드" />)
+    const 기본지정 = await renderAtom(<DifficultyBadge difficulty="하드" size="default" />)
+
+    expect(지정없음.toJSON()).toEqual(기본지정.toJSON())
+  })
+
+  it('`small` 은 높이와 글자만 줄인다 — **색은 한 값도 안 갈린다**', async () => {
+    const 기본 = await renderAtom(<DifficultyBadge difficulty="카오스" />)
+    const 작게 = await renderAtom(<DifficultyBadge difficulty="카오스" size="small" />)
+
+    const 상자 = (view: Awaited<ReturnType<typeof renderAtom>>): Record<string, unknown> =>
+      flattenStyle(view.getByText('카오스').parent?.props.style) as Record<string, unknown>
+    const 글자 = (view: Awaited<ReturnType<typeof renderAtom>>): Record<string, unknown> =>
+      flattenStyle(view.getByText('카오스').props.style) as Record<string, unknown>
+
+    expect(Number(상자(작게).height)).toBeLessThan(Number(상자(기본).height))
+    expect(Number(글자(작게).fontSize)).toBeLessThan(Number(글자(기본).fontSize))
+
+    // 색·테두리는 같은 값이어야 한다 — 같은 난이도가 화면마다 다른 색이면 같은 값인 줄 모른다.
+    expect(글자(작게).color).toBe(글자(기본).color)
+    expect(상자(작게).borderColor).toBe(상자(기본).borderColor)
+  })
+})

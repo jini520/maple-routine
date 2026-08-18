@@ -70,7 +70,7 @@ afterEach(() => {
 })
 
 describe('WidgetGrid — 좌표 배치', () => {
-  it('타일 여덟이 적어 둔 좌표에 선다', async () => {
+  it('타일 아홉이 적어 둔 좌표에 선다', async () => {
     const view = await 격자()
 
     // (0,0) 4x1 — 가로를 다 쓰는 타일의 폭은 «창폭 − 좌우 여백» 이다.
@@ -86,19 +86,20 @@ describe('WidgetGrid — 좌표 배치', () => {
       top: 행,
       width: 2 * metrics.colWidthPx + metrics.gapPx,
     })
-    // (0,2) 4×auto — 그 아래는 4x3 · 2x1 둘 · 4x1 이 이어 붙는다.
-    expect(스타일(타일(view, 'remaining-schedule'))).toMatchObject({ left: 0, top: 2 * 행 })
-    expect(스타일(타일(view, 'weekly-boss-profit'))).toMatchObject({ left: 0, top: 3 * 행 })
-    expect(스타일(타일(view, 'top-valuable-item'))).toMatchObject({ left: 0, top: 6 * 행 })
-    expect(스타일(타일(view, 'unpriced-drops'))).toMatchObject({ left: 2 * 열, top: 6 * 행 })
-    expect(스타일(타일(view, 'valuable-drought'))).toMatchObject({ left: 0, top: 7 * 행 })
+    // (0,2)·(0,3) 4×auto 둘 — 그 아래는 4x3 · 2x1 둘 · 4x1 이 이어 붙는다.
+    expect(스타일(타일(view, 'shared-contents'))).toMatchObject({ left: 0, top: 2 * 행 })
+    expect(스타일(타일(view, 'remaining-schedule'))).toMatchObject({ left: 0, top: 3 * 행 })
+    expect(스타일(타일(view, 'weekly-boss-profit'))).toMatchObject({ left: 0, top: 4 * 행 })
+    expect(스타일(타일(view, 'top-valuable-item'))).toMatchObject({ left: 0, top: 7 * 행 })
+    expect(스타일(타일(view, 'unpriced-drops'))).toMatchObject({ left: 2 * 열, top: 7 * 행 })
+    expect(스타일(타일(view, 'valuable-drought'))).toMatchObject({ left: 0, top: 8 * 행 })
   })
 
   it('격자 컨테이너 높이가 가장 아래 타일의 끝이다', async () => {
     const view = await 격자()
 
     expect(스타일(view.getByTestId('widget-grid'))).toMatchObject({
-      height: 7 * 행 + metrics.rowHeightPx,
+      height: 8 * 행 + metrics.rowHeightPx,
     })
   })
 
@@ -143,7 +144,7 @@ describe('`h: auto` 타일 ([[ADR-146]] 정정 1)', () => {
 
     // 아래 타일도 함께 되돌아온다 — 초과분이 줄었으므로.
     expect(스타일(타일(view, 'weekly-boss-profit'))).toMatchObject({
-      top: 3 * 행 + (236 - metrics.rowHeightPx),
+      top: 4 * 행 + (236 - metrics.rowHeightPx),
     })
   })
 
@@ -160,11 +161,37 @@ describe('`h: auto` 타일 ([[ADR-146]] 정정 1)', () => {
 
     // 자기 자신과 위쪽 타일은 그대로다 — 밀리는 것은 «아래» 뿐이다.
     expect(스타일(타일(view, 'reset-countdown'))).toMatchObject({ top: 행 })
-    expect(스타일(타일(view, 'remaining-schedule'))).toMatchObject({ top: 2 * 행 })
-    expect(스타일(타일(view, 'weekly-boss-profit'))).toMatchObject({ top: 3 * 행 + 초과 })
-    expect(스타일(타일(view, 'valuable-drought'))).toMatchObject({ top: 7 * 행 + 초과 })
+    expect(스타일(타일(view, 'shared-contents'))).toMatchObject({ top: 2 * 행 })
+    expect(스타일(타일(view, 'remaining-schedule'))).toMatchObject({ top: 3 * 행 })
+    expect(스타일(타일(view, 'weekly-boss-profit'))).toMatchObject({ top: 4 * 행 + 초과 })
+    expect(스타일(타일(view, 'valuable-drought'))).toMatchObject({ top: 8 * 행 + 초과 })
     expect(스타일(view.getByTestId('widget-grid'))).toMatchObject({
-      height: 7 * 행 + 초과 + metrics.rowHeightPx,
+      height: 8 * 행 + 초과 + metrics.rowHeightPx,
+    })
+  })
+
+  // auto 타일이 둘이 됐다([[ADR-146]] 정정 32) — `w === 4` 라 옆 칸이 없어 초과분이 **누적**된다.
+  // 이 규칙이 깨지면 두 타일이 서로를 덮는다.
+  it('auto 타일 둘의 초과분이 누적된다 — 위의 것이 아래 것을 민다', async () => {
+    const view = await 격자()
+    const 공유초과 = 120 - metrics.rowHeightPx
+    const 스케줄초과 = 200 - metrics.rowHeightPx
+
+    await act(async () => {
+      fireEvent(view.getByTestId('widget-measure-shared-contents'), 'layout', {
+        nativeEvent: { layout: { x: 0, y: 0, width: 358, height: 120 } },
+      })
+    })
+    await act(async () => {
+      fireEvent(view.getByTestId('widget-measure-remaining-schedule'), 'layout', {
+        nativeEvent: { layout: { x: 0, y: 0, width: 358, height: 200 } },
+      })
+    })
+
+    expect(스타일(타일(view, 'shared-contents'))).toMatchObject({ top: 2 * 행 })
+    expect(스타일(타일(view, 'remaining-schedule'))).toMatchObject({ top: 3 * 행 + 공유초과 })
+    expect(스타일(타일(view, 'weekly-boss-profit'))).toMatchObject({
+      top: 4 * 행 + 공유초과 + 스케줄초과,
     })
   })
 

@@ -153,7 +153,7 @@ exports[`스냅샷 — 네 크기 2x1 1`] = `
             }
             testID="reset-value-daily"
           >
-            12시간 34분
+            12시간 34분 0초
           </Text>
         </View>
       </View>
@@ -301,7 +301,7 @@ exports[`스냅샷 — 네 크기 2x2 1`] = `
             }
             testID="reset-value-daily"
           >
-            12시간 34분
+            12시간 34분 0초
           </Text>
         </View>
       </View>

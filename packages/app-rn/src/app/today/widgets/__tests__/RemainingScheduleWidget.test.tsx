@@ -1,7 +1,7 @@
 // 남은 스케줄 위젯([[ADR-146]] 정정 3·9·12). 이 파일이 지키는 것 넷 —
-// ① **정렬 격자**(라벨·숫자 열 폭이 고정이라 모든 행의 숫자가 같은 x 에 선다)
+// ① **숫자 폭이 고정이다**(`tabular-nums` + 칸 폭 상수 — 자릿수가 바뀌어도 오른쪽 끝이 안 떤다)
 // ② **강조는 굵기 하나뿐**(테마 색 금지 — 칠하면 강조가 캐릭터 수만큼 반복된다)
-// ③ **행 높이가 데이터에 안 흔들린다**(값이 0 인 칸은 글자만 비우고 자리는 남는다)
+// ③ **줄도 칸도 «그 행» 이 정한다**(정정 37 — 빈 줄도 빈 칸도 안 남는다)
 // ④ **자르지도 축하하지도 않는다**(「외 N명」 없음 · 전부 완료 전용 UI 없음)
 //
 // jsdom 도 jest 도 레이아웃을 계산하지 않으므로 ③ 을 «픽셀» 로는 못 묻는다. 그래서 **높이를 정하는
@@ -26,7 +26,7 @@ async function 위젯(
   )
 }
 
-describe('정렬 격자 ([[ADR-146]] 정정 12)', () => {
+describe('정렬 격자 ([[ADR-146]] 정정 12 · 36)', () => {
   it('네 수치가 2×2 로 서고 라벨은 일퀘·주간퀘·주간 보스·검마다', async () => {
     const { getByText, getAllByTestId } = await 위젯([스케줄행()])
 
@@ -37,9 +37,9 @@ describe('정렬 격자 ([[ADR-146]] 정정 12)', () => {
     expect(getAllByTestId('schedule-stat-line')).toHaveLength(2)
   })
 
-  // 라벨 길이가 제각각(「일퀘」 2자 · 「주간 보스」 4자)이라 폭을 고정하지 않으면 행마다 다른 x 에서
-  // 끝난다 — 그러면 «누가 제일 밀렸나» 를 세로로 훑을 수가 없다.
-  it('라벨·숫자 열 폭이 고정이라 모든 행의 숫자가 같은 x 에 선다', async () => {
+  // 폭 상수는 남는다([[ADR-146]] 정정 36) — 정렬을 반만 포기한 것이지 숫자가 자릿수마다 떨어도
+  // 된다는 뜻이 아니다. **같은 모양의 행끼리는** 이 폭 덕에 여전히 한 열이다.
+  it('라벨·숫자 열 폭이 고정이다', async () => {
     const { getByText } = await 위젯([스케줄행()])
 
     const 라벨폭 = (글자: string): unknown => flattenStyle(getByText(글자).props.style).width
@@ -80,36 +80,86 @@ describe('강조는 굵기 하나뿐이다 ([[ADR-146]] 정정 9)', () => {
   })
 })
 
-describe('행 높이는 데이터에 안 흔들린다 ([[ADR-146]] 정정 9·12)', () => {
-  it('보스가 0이면 둘째 줄이 **비되 자리는 남는다**', async () => {
+describe('줄도 칸도 «그 행» 이 정한다 ([[ADR-146]] 정정 35~37)', () => {
+  it('보스가 안 남은 행은 **한 줄**이다 — 빈 줄을 지지 않는다', async () => {
     const { getAllByTestId, queryByText } = await 위젯([
-      스케줄행({ weeklyBosses: [], monthlyBosses: [] }),
+      스케줄행({ ocid: 'a', weeklyBosses: [], monthlyBosses: [] }),
+      스케줄행({ ocid: 'b', weeklyBosses: [], monthlyBosses: [] }),
     ])
 
-    expect(getAllByTestId('schedule-stat-line')).toHaveLength(2)
+    expect(getAllByTestId('schedule-stat-line')).toHaveLength(2) // 행마다 한 줄씩
     expect(queryByText('주간 보스')).toBeNull()
     expect(queryByText('검마')).toBeNull()
   })
 
-  // 빈 글자만으로는 부족하다 — **빈 `Text` 의 높이는 플랫폼마다 다르다.** 줄에 높이를 박아 두지
-  // 않으면 보스가 0인 캐릭터의 행만 접혀 auto 높이 계산이 성립하지 않는다.
-  it('수치 줄 높이가 값에 상관없이 같다', async () => {
-    const 채워진 = await 위젯([스케줄행()])
-    const 비어있는 = await 위젯([스케줄행({ weeklyBosses: [], monthlyBosses: [] })])
+  // 정정 35 는 «한 명이라도 들고 있으면 모든 행에 줄이 선다» 였다 — 그 장치를 지웠다. 남은 행이
+  // 빈 줄을 지지 않는 것이 사용자가 고른 답이고, 대가는 목록의 행 높이가 고르지 않은 것이다.
+  it('한 캐릭터만 보스가 남으면 그 행만 두 줄이다', async () => {
+    const { getAllByTestId, getAllByText } = await 위젯([
+      스케줄행({ ocid: 'a', weeklyBosses: [], monthlyBosses: [] }),
+      스케줄행({ ocid: 'b' }),
+    ])
 
-    const 높이 = (view: Awaited<ReturnType<typeof 위젯>>): unknown[] =>
-      view.getAllByTestId('schedule-stat-line').map((line) => flattenStyle(line.props.style).height)
-
-    expect(높이(채워진)).toEqual(높이(비어있는))
-    expect(new Set(높이(채워진)).size).toBe(1)
-    expect(높이(채워진)[0]).toBeGreaterThan(0)
+    expect(getAllByTestId('schedule-stat-line')).toHaveLength(3) // a 한 줄 + b 두 줄
+    expect(getAllByText('주간 보스')).toHaveLength(1)
   })
 
-  it('0 인 칸은 「일퀘 0」이 아니라 빈 칸이다', async () => {
-    const { queryByText } = await 위젯([스케줄행({ dailyNames: [] })])
+  it('칸 하나만 죽으면 줄은 남는다 — 줄은 계열(컨텐츠·보스) 단위다', async () => {
+    const { getAllByTestId, getAllByText, queryByText } = await 위젯([
+      스케줄행({ ocid: 'a', monthlyBosses: [] }),
+      스케줄행({ ocid: 'b', monthlyBosses: [] }),
+    ])
 
+    expect(getAllByTestId('schedule-stat-line')).toHaveLength(4)
+    expect(getAllByText('주간 보스')).toHaveLength(2)
+    expect(queryByText('검마')).toBeNull()
+  })
+
+  // 값이 없는 칸을 비워 두면 그것이 그대로 빈 자리가 된다 — 일퀘만 남은 행이 `일퀘 10` 뒤에
+  // 라벨 48 + 숫자 18 + 간격 12 를 지고 셰브런까지 갔다(사용자 보고, 정정 36).
+  it('값이 없는 칸은 접힌다 — 「일퀘 0」도 빈 자리도 남기지 않는다', async () => {
+    const { getAllByTestId, queryByText } = await 위젯([
+      스케줄행({ dailyNames: [], weeklyBosses: [], monthlyBosses: [] }),
+    ])
+
+    const 줄들 = getAllByTestId('schedule-stat-line')
+    expect(줄들).toHaveLength(1)
+    expect(줄들[0]?.props.children).toHaveLength(1) // 주간퀘 하나만
     expect(queryByText('일퀘')).toBeNull()
     expect(queryByText('0')).toBeNull()
+  })
+
+  it('줄은 오른쪽 정렬이다 — 칸이 줄면 셰브런 옆에 붙는다', async () => {
+    const { getByTestId } = await 위젯([스케줄행()])
+
+    expect(flattenStyle(getByTestId('schedule-stats').props.style)).toMatchObject({
+      alignItems: 'flex-end',
+    })
+  })
+
+  // 행 높이는 이제 줄 수를 따라간다. 그래도 **줄 하나의 높이**는 상수라, 한 줄 행과 두 줄 행의
+  // 높이가 예측 가능한 관계로 묶인다.
+  it('수치 줄 하나의 높이는 값에 상관없이 같다', async () => {
+    const view = await 위젯([
+      스케줄행({ ocid: 'a', weeklyBosses: [], monthlyBosses: [] }),
+      스케줄행({ ocid: 'b' }),
+    ])
+
+    const 높이 = view
+      .getAllByTestId('schedule-stat-line')
+      .map((line) => flattenStyle(line.props.style).height)
+
+    expect(new Set(높이).size).toBe(1)
+    expect(높이[0]).toBeGreaterThan(0)
+  })
+
+  it('넷 다 남으면 2×2 그대로다', async () => {
+    const { getAllByTestId } = await 위젯([스케줄행()])
+
+    const 줄들 = getAllByTestId('schedule-stat-line')
+    expect(줄들).toHaveLength(2)
+    expect(줄들[0]?.props.children).toHaveLength(2)
+    expect(줄들[1]?.props.children).toHaveLength(2)
   })
 })
 
@@ -282,5 +332,55 @@ describe('스냅샷 — 캐릭터 수만 다르다', () => {
     const view = await 위젯(스케줄목록(n))
 
     expect(view.toJSON()).toMatchSnapshot()
+  })
+})
+
+
+describe('수치 줄을 좁혔다 ([[ADR-146]] 정정 40)', () => {
+  // 18 은 세 자리를 담을 폭이라, 오른쪽 정렬에서 남는 4px 이 전부 왼쪽 여백이 되어 한 자리 수치가
+  // 라벨에서 떨어져 보였다. 두 자리에 맞춘다.
+  it('숫자 칸이 두 자리 폭이다', async () => {
+    const { getByText } = await 위젯([스케줄행()])
+
+    expect(flattenStyle(getByText('4').props.style).width).toBe(14)
+  })
+
+  it('라벨–숫자 간격보다 칸 사이가 넓다 — 한 칸이 한 덩이로 읽혀야 한다', async () => {
+    const { getAllByTestId, getByText } = await 위젯([스케줄행()])
+
+    const 간격 = (style: unknown): number => {
+      const 풀린 = flattenStyle(style) as Record<string, unknown>
+      return Number(풀린.columnGap ?? 풀린.gap ?? 0)
+    }
+    const 칸사이 = 간격(getAllByTestId('schedule-stat-line')[0]?.props.style)
+    const 라벨숫자 = 간격(getByText('일퀘').parent?.props.style)
+
+    expect(칸사이).toBeGreaterThan(라벨숫자)
+    expect(칸사이).toBeLessThanOrEqual(8)
+  })
+
+  it('보스 배지가 작은 크기다 — 20px 배지가 줄 높이를 혼자 정하고 있었다', async () => {
+    const { getAllByTestId, getAllByText } = await 위젯([스케줄행()])
+
+    await act(async () => {
+      fireEvent.press(getAllByTestId('schedule-toggle')[0])
+    })
+
+    // 스우 하드 · 검은마법사 하드 둘이라 앞의 것을 본다.
+    expect(Number(flattenStyle(getAllByText('하드')[0]?.parent?.props.style).height)).toBe(16)
+  })
+
+  // `[주간 퀘스트] 타락한 세계수 주간 임무` 와 `… 정화에 대한 보답` 이 **둘 다 「타락한 세계수」** 로
+  // 접힌다 — 키가 이름이면 같은 키가 둘이 되어 React 가 경고를 낸다.
+  it('짧은 이름이 겹쳐도 칩이 둘 다 선다', async () => {
+    const { getAllByTestId, getAllByText } = await 위젯([
+      스케줄행({ weeklyNames: ['타락한 세계수', '타락한 세계수'] }),
+    ])
+
+    await act(async () => {
+      fireEvent.press(getAllByTestId('schedule-toggle')[0])
+    })
+
+    expect(getAllByText('타락한 세계수')).toHaveLength(2)
   })
 })

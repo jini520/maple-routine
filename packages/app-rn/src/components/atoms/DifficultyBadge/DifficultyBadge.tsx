@@ -64,18 +64,34 @@ const DIFFICULTY_BADGE_STYLES: Record<BossDifficulty, DifficultyBadgeStyle> = {
   },
 }
 
-export function DifficultyBadge(props: { difficulty: BossDifficulty }): React.JSX.Element {
+/**
+ * 크기 둘 — **색은 한 값도 안 갈린다**([[ADR-146]] 정정 40).
+ *
+ * `'small'` 은 today 아코디언처럼 **이름과 한 줄에 서는** 자리를 위한 것이다. 20px 배지가 줄 높이를
+ * 혼자 정해 버려 목록이 성기게 보였다. 색·테두리·그림자를 함께 줄이지 않는 이유는 그 표가 웹에서
+ * 그대로 옮겨 온 값이고, **같은 난이도가 화면마다 다른 색이면 같은 값인 줄 모르기** 때문이다.
+ */
+const SIZE = {
+  default: { box: 'h-5 px-2.5', text: 'text-[10px]' },
+  small: { box: 'h-4 px-1.5', text: 'text-[9px]' },
+} as const
+
+export function DifficultyBadge(props: {
+  difficulty: BossDifficulty
+  size?: keyof typeof SIZE
+}): React.JSX.Element {
   const style = DIFFICULTY_BADGE_STYLES[props.difficulty]
+  const size = SIZE[props.size ?? 'default']
 
   return (
     <LinearGradient
       colors={style.gradient}
       start={{ x: 0.5, y: 0 }}
       end={{ x: 0.5, y: 1 }}
-      className="h-5 flex-row items-center rounded-full px-2.5"
+      className={`flex-row items-center rounded-full ${size.box}`}
       style={style.border}
     >
-      <Text className="text-[10px] font-extrabold tracking-[.03em]" style={style.text}>
+      <Text className={`font-extrabold tracking-[.03em] ${size.text}`} style={style.text}>
         {props.difficulty}
       </Text>
     </LinearGradient>

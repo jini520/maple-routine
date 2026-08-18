@@ -6,6 +6,8 @@
 // 아무도 안 부르는 렌더 분기다. 그 분기의 유일한 안전망이 스냅샷이라는 것이 그 결정의 대가이고,
 // 그래서 여기서 회수한다.
 
+import { within } from '@testing-library/react-native'
+
 import {
   renderAtom,
   findAllOfType,
@@ -31,8 +33,8 @@ const 크기 = {
   '2x2': { w: 2, h: 2 },
 } as const
 
-describe('세 크기가 같은 구조다 ([[ADR-146]] 정정 7)', () => {
-  it.each(Object.entries(크기))('%s — 엠블럼 + 세 줄 + EXP', async (_이름, 값) => {
+describe('세 크기가 같은 구조다 ([[ADR-146]] 정정 7 · 38)', () => {
+  it.each(Object.entries(크기))('%s — 엠블럼 + 두 줄 + EXP', async (_이름, 값) => {
     const { getByText, getByTestId } = await 위젯(값)
 
     expect(getByTestId('representative-emblem')).toBeTruthy()
@@ -154,5 +156,52 @@ describe('2x2 는 잘리되 지우지 않는다 ([[ADR-146]] 정정 7)', () => {
     const { getByText } = await 위젯(크기['2x2'])
 
     expect(flattenStyle(getByText('단풍루틴').props.style).color).toBe(기본테마.text)
+  })
+})
+
+describe('길드는 닉네임 옆이다 ([[ADR-146]] 정정 38)', () => {
+  // 셋째 줄에 혼자 서던 값이다. 4x1 은 내부 높이가 52 뿐이라 그 한 줄이 크고, 길드는 «누구인가» 의
+  // 일부지 별도 항목이 아니다.
+  it.each(Object.entries(크기))('%s — 닉네임과 길드가 같은 줄이다', async (_이름, 값) => {
+    const view = await 위젯(값)
+    const 이름줄 = within(view.getByTestId('representative-name-line'))
+
+    expect(이름줄.getByText('단풍루틴')).toBeTruthy()
+    expect(이름줄.getByText('백호단')).toBeTruthy()
+  })
+
+  it('길드를 모르거나 미가입이면 이름만 선다 ([[ADR-057]])', async () => {
+    for (const guildName of [undefined, null] as const) {
+      const { queryByTestId } = await 위젯(
+        크기['4x1'],
+        뷰모델({ representative: { ...대표_캐릭터, guildName } }),
+      )
+
+      expect(queryByTestId('representative-guild')).toBeNull()
+    }
+  })
+
+  // 길드는 잘리면 **다른 길드로 읽힌다** — 닉네임은 초상화가 이미 «누구인가» 를 말한다.
+  it('자리가 모자라면 닉네임이 줄어든다 — 길드가 아니라', async () => {
+    const { getByTestId } = await 위젯(크기['4x1'])
+
+    expect(flattenStyle(getByTestId('representative-name').props.style).flexShrink).toBe(1)
+    expect(flattenStyle(getByTestId('representative-guild').props.style).flexShrink).toBe(0)
+  })
+})
+
+describe('EXP 열이 길어졌다 ([[ADR-146]] 정정 38)', () => {
+  it('4x1 의 EXP 열은 100px 다 — 바가 짧아 진행률이 눈에 안 들어왔다', async () => {
+    const { getByTestId } = await 위젯(크기['4x1'])
+
+    expect(flattenStyle(getByTestId('representative-exp').props.style).width).toBe(100)
+  })
+
+  it('4x2·2x2 는 아래 전폭이라 고정 폭이 없다', async () => {
+    for (const 값 of [크기['4x2'], 크기['2x2']]) {
+      const { getByTestId } = await 위젯(값)
+
+      expect(flattenStyle(getByTestId('representative-exp').props.style).width).toBe('100%')
+    }
   })
 })

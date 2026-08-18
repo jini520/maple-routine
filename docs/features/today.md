@@ -1,7 +1,7 @@
 # today (첫 화면 · 위젯 격자)
 
-> **범위**: 앱의 첫 화면 `today` 와 그 위에 서는 **위젯 시스템** — 격자 치수, 배치 규약, 위젯 레지스트리, 뷰모델 조립, 위젯 여덟의 내용과 빈 상태. 하단바의 층·그룹 구조는 [[ADR-132]](문서 없음 — ADR 전문 참조), 각 위젯이 **가리키는** 화면의 정책은 그 화면의 문서([content-scheduler.md](./content-scheduler.md) · [boss-scheduler.md](./boss-scheduler.md) · [boss-profit.md](./boss-profit.md) · [item-drop.md](./item-drop.md)).
-> **관련 소스(read/write)**: `app/today/`(`TodayScreen.tsx` · `WidgetGrid.tsx` · `view-model.ts` · `widgets/`{`types.ts`·`registry.ts`·`layout.ts` + 위젯 여덟}) · `lib/widget-grid-metrics.ts` · `lib/widget-layout.ts`(좌표 검증) · `lib/drought-tier-styles.ts`(잎 램프 — 드롭 히스토리 화면과 공유) · 읽기만 하는 원천 — `features/content-scheduler/store` · `features/boss-scheduler/store` · `features/boss-profit/store` · `features/boss-profit/drop-history-store` · `storage/character-basic-cache` · `storage/character-selection`(`getRepresentativeCharacter`) · `lib/reset-clock` · `lib/drop-history` · `lib/drop-price` · `lib/boss-matching`(`WEEKLY_CRYSTAL_SALE_LIMIT`) · `lib/valuable-drops`. **꺼내는 것 셋**([[ADR-146]] 결정 8 + 정정 16) — `features/boss-scheduler/displayed-bosses.ts`(`displayedBosses`) · **`features/content-scheduler/displayed-contents.ts`**(`displayedDailyContents`·`displayedWeeklyContents`, `ContentScreen.tsx` 에서 이동 완료) · `app/content-scheduler/content-completion.ts`(제자리, import 만).
+> **범위**: 앱의 첫 화면 `today` 와 그 위에 서는 **위젯 시스템** — 격자 치수, 배치 규약, 위젯 레지스트리, 뷰모델 조립, 위젯 아홉의 내용과 빈 상태. 하단바의 층·그룹 구조는 [[ADR-132]](문서 없음 — ADR 전문 참조), 각 위젯이 **가리키는** 화면의 정책은 그 화면의 문서([content-scheduler.md](./content-scheduler.md) · [boss-scheduler.md](./boss-scheduler.md) · [boss-profit.md](./boss-profit.md) · [item-drop.md](./item-drop.md)).
+> **관련 소스(read/write)**: `app/today/`(`TodayScreen.tsx` · `WidgetGrid.tsx` · `view-model.ts` · `widgets/`{`types.ts`·`registry.ts`·`layout.ts` + 위젯 아홉}) · `lib/widget-grid-metrics.ts` · `lib/widget-layout.ts`(좌표 검증) · `lib/drought-tier-styles.ts`(잎 램프 — 드롭 히스토리 화면과 공유) · 읽기만 하는 원천 — `features/content-scheduler/store` · `features/boss-scheduler/store` · `features/boss-profit/store` · `features/boss-profit/drop-history-store` · `storage/character-basic-cache` · `storage/character-selection`(`getRepresentativeCharacter`) · `lib/reset-clock` · `lib/drop-history` · `lib/drop-price` · `lib/boss-matching`(`WEEKLY_CRYSTAL_SALE_LIMIT`) · `lib/valuable-drops` · `lib/scheduler-content-scope`(`getShareScope`·**`getSharedContentGroups`**) + `data/scheduler-content-catalog.json`(`group`·`shortName`·`sharedGroupOrder`·`onlyWhenScheduled`). **꺼내는 것 셋**([[ADR-146]] 결정 8 + 정정 16) — `features/boss-scheduler/displayed-bosses.ts`(`displayedBosses`) · **`features/content-scheduler/displayed-contents.ts`**(`displayedDailyContents`·`displayedWeeklyContents`, `ContentScreen.tsx` 에서 이동 완료) · `app/content-scheduler/content-completion.ts`(제자리, import 만).
 > **관련 ADR**: [[ADR-146]](이 화면의 설계 전부) · [[ADR-132]](첫 화면 이동·하단바·동기화 트리거) · [[ADR-097]]·[[ADR-101]](동기화 게이트·예열) · [[ADR-142]](완료 판정의 출처) · [[ADR-035]]·[[ADR-031]](표시 대상 보스) · [[ADR-054]]·[[ADR-059]](결정석 한도) · [[ADR-071]]·[[ADR-124]](드롭 히스토리·아이템 수익) · [[ADR-060]]·[[ADR-062]](빈 상태·실패) · [[ADR-140]]·[[ADR-143]](대표 캐릭터) · [[ADR-057]](«모름» 과 «없음» 을 가르는 태도) · [[ADR-006]](확인 안 한 값을 단정하지 않는다).
 > **관련 문서**: [../foundation/design-system.md](../foundation/design-system.md) · [../foundation/error-resilience.md](../foundation/error-resilience.md) · [../foundation/nexon-api.md](../foundation/nexon-api.md) · [../foundation/architecture.md](../foundation/architecture.md).
 
@@ -76,6 +76,22 @@ function validateWidgetLayout(
 
 검증 **다섯** — ① 겹치는 타일 없음 ② `col + w ≤ 4` ③ 통째로 빈 행 없음 ④ `(w,h)` 가 그 위젯이
 선언한 `sizes` 안 ⑤ **`h === 'auto'` 이면 `w === 4`**(아래). 손으로 적는 값이므로 **테스트가 지킨다**.
+
+기본 배치([[ADR-146]] 정정 13 · **정정 32**) — `row` 는 `auto` 타일의 nominal `h = 1` 기준이다.
+
+```
+(0,0)  4x1     대표 캐릭터
+(0,1)  2x1     초기화 카운트다운      (2,1) 2x1  주간 결정석 판매 한도
+(0,2)  4×auto  계정 및 메이플 ID 공유 컨텐츠
+(0,3)  4×auto  캐릭터별 남은 스케줄
+(0,4)  4x3     주간 보스 수익
+(0,7)  2x1     이번 주 최고가 아이템  (2,7) 2x1  가격 미입력
+(0,8)  4x1     아이템 드롭 가뭄
+```
+
+읽는 순서가 곧 이 배열의 근거다 — 정체(대표) → 마감·상한(초기화 · 결정석) → **한 번만 하면 되는
+것**(공유) → 캐릭터별 할 일(남은 스케줄) → 결과(수익) → 결과의 디테일(최고가 · 미입력) → 정서(가뭄).
+공유가 위인 이유는 **먼저 치우면 아래 목록이 줄어드는 관계**라서다(사용자 지정).
 
 렌더는 격자 컨테이너 안 절대 배치이고, 컨테이너 높이 = `max(row + h) × (행높이 + 간격) − 간격`.
 좌표 해석은 `resolveWidgetPositions(layout, metrics, autoHeightsById)` 하나가 맡는다 — auto 초과분을
@@ -166,7 +182,7 @@ interface WidgetProps { w: number; h: WidgetHeight; data: TodayViewModel }
 만들고 프롭으로 나눠 준다.
 
 이유 셋 — ① 위젯이 화면보다 잘게 쪼개진 단위라 [[ADR-097]] 게이트의 «실행당 1회» 가 자동으로
-따라오지 않는다(위젯 여덟이 각자 부르면 여덟 번 시도한다) ② 위젯이 순수 프리젠테이션이면 스냅샷
+따라오지 않는다(위젯 아홉이 각자 부르면 아홉 번 시도한다) ② 위젯이 순수 프리젠테이션이면 스냅샷
 테스트가 스토어 목킹 없이 값 조합만으로 선다 ③ 같은 드롭 기록을 보는 위젯 셋이 각자 읽으면 각자의
 시점에서 읽는다.
 
@@ -274,27 +290,28 @@ function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel
   타일이 다른 시각을 말한다(위젯 6과 같은 규칙). 히스토리 화면과 **같은 라벨 함수**라 두 자리가 같은
   주를 다르게 부르지 않는다.
 
-## 위젯 여덟 ([[ADR-146]] 결정 6)
+## 위젯 아홉 ([[ADR-146]] 결정 6 · 정정 28)
 
 굵은 것이 기본 크기다.
 
 | # | id | 내용 | 크기 | 이동 | 원천 |
 |---|---|---|---|---|---|
 | 1 | `representative-character` | 대표 캐릭터 — 엠블럼 · 닉네임 · `Lv.` + 직업 · 길드 · EXP | **4x1** · 4x2 · 2x2 | Settings | `character-basic-cache` + `resolveDisplayRepresentative` |
-| 2 | `remaining-schedule` | 캐릭터별 남은 일퀘 · 주간퀘 · 주간 보스 · 검마 (행 탭 → 아코디언) | **`4×auto`** | **없음**(정정 25) | 컨텐츠·보스 스케줄러 스토어 |
+| 2 | `remaining-schedule` | 캐릭터별 남은 일퀘 · 주간퀘 · 주간 보스 · 검마 (행 탭 → 아코디언). **공유 일곱은 빠진다** | **`4×auto`** | **없음**(정정 25) | 컨텐츠·보스 스케줄러 스토어 |
 | 3 | `weekly-boss-profit` | 이번 주 총 수익 + 캐릭터 top3(아이템 판매 포함) | **4x3** · 4x2 · 2x2 · 2x1 | Profit | 보스 수익 스토어(주간 탭·현재 기간) |
 | 4 | `top-valuable-item` | 이번 주 최고가 아이템 (4x2 는 top 5) | **2x1** · 4x2 · 2x2 · 1x1 | Profit | `drop-history` |
 | 5 | `crystal-limit` | 주간 결정석 판매 한도 `n/90`(월드별) | **2x1** · 4x1 · 2x2 · 1x1 | Profit | 보스 수익 `rows` 파생([[ADR-054]]) |
-| 6 | `reset-countdown` | 일일/주간/월간 초기화까지 남은 시간 | **2x1** · 2x2 · 4x1 · 1x1 | — | `lib/reset-clock.ts` |
+| 6 | `reset-countdown` | 일일/주간/월간 초기화까지 남은 시간(**일일은 초까지 · 1초 갱신**) | **2x1** · 2x2 · 4x1 · 1x1 | — | `lib/reset-clock.ts` |
 | 7 | `unpriced-drops` | 가격 미입력 드롭 N건 | **2x1** · 2x2 · 1x1 | Profit | `drop-history` |
 | 8 | `valuable-drought` | «N주째 아이템 드롭 없음» | **4x1** · 2x2 · 2x1 | Profit | `summarizeValuableDrought` |
+| 9 | `shared-contents` | **계정 및 메이플 ID 공유 컨텐츠** — 계열별(에픽던전 · 몬스터파크 · 메이플 유니온) | **`4×auto`** | 없음 | 컨텐츠 스토어 + `scheduler-content-catalog.json` |
 
 **기본 크기가 여섯 바뀌었다**([[ADR-146]] 정정 13) — 대표 4x2 → **4x1**, 수익 4x2 → **4x3**,
 최고가 2x2 → **2x1**, 결정석 2x2 → **2x1**. 배치가 코드 상수인 v1 에서는 **선언만 남고 아무도 안 쓰는
 크기**가 생기는데 **남긴다**(사용자 확정) — 나중에 편집이 오면 그때 고를 크기가 이미 있어야 한다.
 대가는 아무도 안 부르는 렌더 분기가 스냅샷으로만 검증된다는 것이다.
 
-**5~8 의 선정 기준은 «새 API 가 필요 없을 것»** 이었다(사용자 선택, 2026-08-17). 여덟 중 일곱이
+**5~8 의 선정 기준은 «새 API 가 필요 없을 것»** 이었다(사용자 선택, 2026-08-17). 아홉 중 여덟이
 이미 기기 안에 있는 값을 다시 배치하는 것뿐이다.
 
 **「사냥 타이머」 위젯은 만들지 않는다** — 그 화면 자체가 아직 [[ADR-132]] 결정 12 의 «개발 진행중»
@@ -318,14 +335,16 @@ function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel
   엔트리에 그 필드가 없는 것은 사실이므로 값이 없으면 그 줄을 안 그리는 **방어적 기본값**만 남기고,
   그 상태를 화면 설계의 한 갈래로 두지는 않는다.
 
-**카드는 월드 엠블럼 + 세 줄이다**([[ADR-146]] 정정 7) — **4x2 · 4x1 · 2x2 셋 모두 같은 구조**.
+**카드는 월드 엠블럼 + 두 줄이다**([[ADR-146]] 정정 7 · **38**) — **4x2 · 4x1 · 2x2 셋 모두 같은 구조**.
 
 ```
-[초상화] [엠블럼] 단풍루틴
-         Lv. 291  아크메이지(불,독)
-         백호단
-         EXP ────────────── 80.300%
+[초상화] [엠블럼] 단풍루틴  백호단          EXP 80.300%
+         Lv. 291  아크메이지(불,독)   ══════════════════
 ```
+
+**길드는 닉네임 옆이다**(정정 38, 사용자 지시) — 셋째 줄에 혼자 서던 값인데 길드는 «누구인가» 의
+일부지 별도 항목이 아니고, 4x1 은 내부 높이가 52 뿐이라 그 한 줄이 크다. 넘치면 **닉네임이 줄어든다**
+(길드는 잘리면 다른 길드로 읽히지만 닉네임은 초상화가 이미 말한다).
 
 - **월드는 텍스트 배지가 아니라 엠블럼 이미지**다 — `lib/world-emblem.ts` 의 `worldEmblemUrl(world)`
   (`world-emblems.json` 18종 + `assets/worlds/*.png`). 매핑에 없거나 파일이 없으면 `null` 이고 그때는
@@ -334,7 +353,7 @@ function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel
   규칙이 아니다. 그 값은 `character/basic` 이 아니라 `character/list` 에서 오므로 **옛 캐시에는 없고**,
   없으면 그 줄이 레벨만 그린다(타입이 이미 정한 규칙).
 - **2x2 에서 직업이 잘린다** — 「아크메이지(불,독)」이 158폭의 한계다(열린 질문).
-- **크기가 가르는 것은 밀도와 EXP 의 자리뿐이다**(구현 확정) — 4x1 은 EXP 가 **오른쪽 70px 열**
+- **크기가 가르는 것은 밀도와 EXP 의 자리뿐이다**(구현 확정) — 4x1 은 EXP 가 **오른쪽 100px 열**(정정 38 — 70 에서 늘렸다. 바가 짧아 진행률이 눈에 안 들어왔고, 늘어난 30px 은 이름 줄에서 가져온다)
   (`EXP` + 퍼센트 + 얇은 바), 4x2·2x2 는 세 줄 **아래 전폭**. 초상화 44 / 72 / 56 · 이름 13 / 19 /
   14px 이고 2x2 만 가운데 정렬이다.
 - **모르는 줄은 그리지 않는다** — `expRate` 가 없으면 EXP 블록째 없고(정정 8), 길드는 «미가입»
@@ -398,7 +417,9 @@ function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel
   따라 그 위에 설 수 있다. 실패는 «모르는» 것이라 비교에 참여하지 않는 것이 맞다 — 위로 올리면
   «제일 밀린 캐릭터» 자리를 모르는 값이 차지한다(사용자 확정).
 - **둘째 줄이 비어도 자리를 남긴다.** 보스가 0인 캐릭터는 둘째 줄이 비는데, 행을 줄이면 **행 높이가
-  데이터마다 달라져** 위의 auto 높이 계산(`55 + 45n`)이 성립하지 않는다.
+  데이터마다 달라져** 목록이 들쭉날쭉해진다. **줄 수 자체는 목록 전체가 정한다**([[ADR-146]] 정정
+  35) — 아무도 안 쓰는 줄은 모든 행에서 같이 빠지므로 행끼리는 여전히 같은 높이다. 그래서 실측
+  `55 + 45n` 은 **두 줄이 다 설 때의 값**이고, 한 줄만 서면 그만큼 낮아진다(실기기에서 다시 잰다).
 
 - **「검마」는 종류가 하나라서 종류 이름 대신 고유명이 선다.** `weekly-bosses.json` 의 `monthly` 가
   검은마법사 한 항목이라 «월간 보스 1» 과 «검마 1» 이 같은 말이고 더 짧다. **월간 보스가 둘이 되면 이
@@ -412,12 +433,23 @@ function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel
 |---|---|
 | 본문 | 카테고리 줄(일퀘 · 주간퀘 · **보스**) + 이름 알약. 보스는 주간·검마를 한 그룹으로 묶는다 |
 | 보스 난이도 | **공용 `DifficultyBadge`** — 이 화면만의 표기를 새로 만들지 않는다 |
-| 항목 이름 | **지역명까지만**(`[일일 퀘스트] 소멸의 여로 조사` → `소멸의 여로`). 그 밖은 접두어만 뗀다 |
+| 항목 이름 | **일일은 지역명까지**(`[일일 퀘스트] 소멸의 여로 조사` → `소멸의 여로`) · **주간은 접두어만**(`[주간 퀘스트] 타락한 세계수 정화에 대한 보답` 그대로, [[ADR-146]] 정정 41) · 그 밖은 원문 |
 | 여닫기 | 행을 누르면 열리고 **같은 행을 다시 누르면 닫힌다** |
 | 동시 펼침 | **하나** — 여섯이 다 열리면 1,000px 을 넘는데 타일 안 스크롤은 금지다(결정 3) |
 | 상태 보존 | **안 한다**(저장소에 안 쓴다). 탭이라 앱을 켜 둔 동안은 남는다 |
 | `target` | **없다** — 행이 각자 눌리면 타일 전체를 감싼 `Pressable` 이 설 수 없다(중첩) |
 
+- **줄도 칸도 «그 행» 이 정한다**([[ADR-146]] 정정 35~37). **줄**(계열 — ① 일퀘·주간퀘 ② 주간
+  보스·검마)은 그 행에 그 계열의 값이 하나라도 있을 때 서고, **칸**(수치)은 그 행에 그 값이 있을 때
+  선다. 줄은 오른쪽 정렬이라 칸이 줄면 셰브런 옆에 붙는다. 아무도 보스가 안 남았으면 둘째 줄이
+  여섯 행에서 다 같이 빠지는데, 그건 특수 규칙이 아니라 **이 규칙의 한 경우**다.
+- **그 대가로 «모양이 다른 행 사이» 의 정렬과 «고른 행 높이» 를 잃는다**(정정 36·37). 빈 자리를
+  남겨 두는 것이 곧 정렬이라 둘 다는 못 가지고, 사용자가 세 번에 걸쳐 간결함을 골랐다. 같은 모양의
+  행끼리는 여전히 한 열이고(`tabular-nums` 와 칸 폭 상수는 남긴다), 목록이 남은 개수 순이라 그런
+  행들이 대체로 붙어 선다.
+- **주간만 접두어까지인 이유**([[ADR-146]] 정정 41, 사용자 지시) — 같은 지역에 **둘**(`타락한 세계수
+  주간 임무` / `… 정화에 대한 보답`)이 있어 **그 뒷말이 곧 구분**이다. 지역명까지 줄이면 같은 칩이
+  둘 서고, 실제로 그랬다. 일일은 지역당 하나뿐이라 뒷말이 정보를 안 더한다.
 - **본문은 자르지 않는다.** 일퀘가 여덟이면 여덟을 다 적는다 — 「외 3개」로 접으면 펼친 이유가
   사라진다. 늘어난 높이는 `resolveWidgetPositions` 가 아래 타일을 밀어 흡수한다.
 - **`CLEAR`·동기화 실패 행은 안 열린다** — 보여 줄 것이 없거나 **모른다**. 셰브런도 안 선다.
@@ -536,14 +568,18 @@ function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel
   「판매 0개」는 없는 사실을 단정하고, 「월드를 모릅니다」는 사용자가 할 수 있는 일이 없는 내부 사정이다.
   보스 수익 화면은 이 경우 줄을 통째로 지우지만([[ADR-054]] 구현 메모) **위젯은 사라질 수 없다.**
 
-### 6. 초기화 카운트다운 — 시계를 위젯이 읽지 않는다
+### 6. 초기화 카운트다운 — **KST 기준 · 일일만 1초 갱신** ([[ADR-146]] 정정 39)
 
 - **목적지가 없는 유일한 타일**이다 — 초기화 시각은 이 타일이 다 말하고 더 볼 화면이 없다.
-- **`new Date()` 를 부르지 않는다** — 남은 시간도 다음 시각도 뷰모델이 `now` 하나로 계산해 내려 준다.
-  타일마다 시계를 읽으면 같은 화면의 두 타일이 다른 시각을 말한다.
-- **초는 어느 크기에서도 안 그린다** — 이 타일은 «지금 급한가» 에 답하지 스톱워치가 아니고, 초를
-  그리면 1초마다 다시 그려야 한다. 표기는 위 **두 단위**(`2일 5시간` · `12시간 34분` · `43분`)이고
-  1분 미만은 **«1분 미만»** 이다(«0분» 은 아직 안 온 것을 0으로 말한다). 숫자에 `tabular-nums`.
+- **셋 다 KST 기준이다**(실측 확인 2026-08-18) — 일일은 `getPeriodStartUtcMs(getCurrentKstDateKey(now)) + 1일`,
+  주간은 `getMostRecentWeeklyResetKst`(KST 목 00:00), 월간은 KST 월초. 세 함수 모두 `Date.UTC(...) − 9시간`
+  으로 계산해 **기기 타임존과 무관**하고, 그 사실을 테스트가 타임존을 바꿔 가며 지킨다.
+- **일일만 초까지 그리고 1초마다 다시 그린다** — `12시간 34분 56초`. 주간·월간은 분까지다(수십 시간
+  남은 값에 초를 붙이면 글자만 길어진다). 일일에서 **«1분 미만» 은 사라진다** — `43초` 가 그 말을
+  직접 한다. 숫자에 `tabular-nums`.
+- **기준은 `atMs`** — 남은 시간을 틱 수로 세면 백그라운드에서 타이머가 눌려 조용히 뒤처진다. 절대
+  시각에서 빼면 몇 번을 못 세도 다음 렌더가 맞는 값을 준다. 결정 4(«위젯은 시계를 안 읽는다»)를
+  **이 위젯에서만** 뒤집는 것이고, 뷰모델 전체를 1초마다 다시 만들지 않기 위한 대가다.
 - **임박을 색으로 말하지 않는다** — 1시간 미만에 `error` 를 빌리는 안이 시안에 있었으나 **색이 확정되지
   않았다**(실패가 아니라 임박인데 이 앱에 «경고» 축이 없다). 값이 무엇이든 글자 스타일이 같다는 것을
   테스트가 계약으로 잡는다.
@@ -552,8 +588,8 @@ function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel
 |---|---|
 | **2x1** | 「초기화까지」 + 일일 · 주간 두 줄 — **월간을 버린다**(대개 멀어 지금 급한 것이 아니다) |
 | 2x2 | 셋 + 각각 **진행 바**(지난 몫이 찬다 · 분모는 뷰모델의 `periodMs`) |
-| 4x1 | 셋을 가로로, 숫자를 16px 로 |
-| 1x1 | 일일만 + 값이 **가장 큰 단위 하나**로 접힌다(두 단위가 물리적으로 안 들어간다) |
+| 4x1 | 셋을 가로로, 숫자를 16px 로 — 폭이 좁아 **초를 안 그린다** |
+| 1x1 | 일일만 + 값이 **가장 큰 단위 하나**로 접힌다(초는 물리적으로 안 들어간다) |
 
 ### 7. 가격 미입력 드롭 — 옆 타일의 «없음» 을 이 타일이 설명한다
 
@@ -634,6 +670,68 @@ formatValuableDroughtHeadline(weeksSince, lateIndex)  →  (weeksSince, index)
   영문 식별자(`valuable-drought` · `summarizeValuableDrought`)는 그대로 둔다. **렌더 결과에 그 문자열이
   없다는 것**을 두 위젯의 테스트가 검사한다.
 
+### 9. 공유 컨텐츠 — **계열**로 묶고, 축을 주장하지 않는다 ([[ADR-146]] 정정 28~31)
+
+몬스터파크·에픽 던전처럼 진행이 공유되는 일곱 항목을 위젯 2 에서 빼 이쪽으로 모은다. 캐릭터 넷이면
+**하루 한 번 할 일이 넷으로 세어지던** 것이 이 분리의 이유다.
+
+```
+계정 및 메이플 ID 공유 컨텐츠            4개
+─────────────────────────────────
+에픽던전
+  하이마운틴                      CLEAR
+  앵글러컴퍼니                    CLEAR
+  악몽선경
+몬스터파크
+  일간                             7/14
+  익스트림 몬스터파커                1/2
+메이플 유니온
+  주간 드래곤 퇴치                CLEAR
+  PC방 주간 드래곤 퇴치
+```
+
+**월드/계정이 아니라 계열이 축이다**(사용자 지정). Open API 는 월드 공유 항목을 **마지막 접속 월드
+기준**으로 돌려주므로 월드로는 못 가른다([[ADR-030]] 결정 6, 사용자 확정 2026-07-21). 계열로 묶으면
+**월드 라벨을 한 번도 안 쓰므로 틀린 말을 할 자리가 없다** — 한계가 사라진 것이 아니라 화면이 그
+축을 주장하지 않게 된 것이다.
+
+| 규칙 | 값 |
+|---|---|
+| 대상 판정 | `getShareScope(name) !== 'character'` — 분류를 새로 만들지 않는다 |
+| 계열·짧은 이름 | `scheduler-content-catalog.json` 의 `group`·`shortName`(사람이 적는다, 정정 31) |
+| 순서 | 계열은 `sharedGroupOrder`(손으로 적는다) · 계열 «안» 은 `worldShared` → `accountShared` 를 이어 읽은 순서 |
+| 오른쪽 열 | **완료 → `CLEAR` · 미완료 + 카운트 → `n/max` · 미완료 + 카운트 없음 → 빈칸**(정정 33) |
+| 완료 판정 | `weeklyContentCompletion`·`dailyContentCompletion`(위젯 2 와 같은 함수) |
+| 머리의 수 | 완료가 아닌 **줄**의 수 |
+| 머리의 `?` | 월드 한계 한 문장을 팝오버로(정정 34) |
+
+- **미완료는 오른쪽을 비운다**(사용자 지정). 퀘스트형에 `0/1` 을 붙이려면 API 에 없는 분모를 앱이
+  지어내야 한다.
+- **완료는 언제나 `CLEAR` 다**(정정 33, 사용자 지시). 카운트형도 `14/14` 대신 `CLEAR` 다 —
+  완료한 항목의 «몇 번 했나» 는 언제나 `max` 라 `CLEAR` 가 이미 그 말을 한다. 「익스트림만 예외」로
+  적으면 정정 31 이 카탈로그로 밀어낸 «이름으로 유추하는 규칙» 이 코드로 되돌아온다.
+- **몬스터파크 14 는 이미 데이터에 있었다** — 템플릿의 `max_count: 14`. 카탈로그 `note` 가
+  *«월드당 14회(캐릭터당 최대 7회)… API 는 월드 총합을 now_count 로 반환»*(사용자 확인 2026-07-21)을
+  적어 둔 그 값이다. 오버라이드 없이 `7/14` 가 나온다.
+- **익스트림 몬스터파커만 `maxCountOverride: 2`**(사용자 확정 2026-08-18, 템플릿 값 5 와의 충돌을
+  짚은 뒤). 컨텐츠 화면 카드는 이 항목을 `quest_state` 로 그리므로 그쪽에는 무해하다.
+
+**유니온만 조건부다**(사용자 지정, 정정 30). 추적 중인 캐릭터 중 **아무의 스케줄러에도 유니온 항목이
+없으면** 그 줄을 안 그린다 — 나머지 다섯은 등록 여부와 무관하게 항상 그린다. 판정은 뷰모델이 이미
+부르는 `displayedWeeklyContents(...)` 의 결과이고, **카탈로그에서 거르면 안 된다**(거기서 빼면 컨텐츠
+화면에서도 사라지고 나중에 유니온을 열어도 안 돌아온다). **계열이 아니라 항목 단위**라 둘 중 하나만
+있으면 그 한 줄만 남는다.
+
+**결정 5(«위젯은 사라지지 않는다»)의 예외가 아니다** — 사라지는 것은 줄이지 타일이 아니다. 일곱이 다
+없어도 타일은 서고 다섯 줄이 빈칸으로 남는다.
+
+**머리의 `?` 가 월드 한계를 말한다**(정정 34, 사용자 지시). 누르면 한 문장이 뜬다 —
+*«계정 및 메이플 ID 공유 컨텐츠는 가장 마지막에 접속한 월드 기준으로 표시됩니다.»*
+[[ADR-030]] 결정 6 이 «받아들이는 한계» 로 적어 둔 것을 **화면이 처음으로 사용자에게 말하는**
+자리다(계열로 묶어 «안 그린 것» 과 «말한 것» 은 다르다). 말풍선은 **카드 안에 절대 배치**해
+목록 위에 겹친다 — 인라인으로 펼치면 `h: 'auto'` 가 다시 재서 아래 타일이 전부 밀린다(정정 27).
+공용 컴포넌트로 올리지 않는다(단일 사용).
+
 ## 빈 상태와 실패 ([[ADR-146]] 결정 5)
 
 - **위젯은 사라지지 않는다.** 좌표 배치라 자리를 빼면 아래 타일이 올라오지 않고 **빈 사각형**이
@@ -672,7 +770,7 @@ formatValuableDroughtHeadline(weeksSince, lateIndex)  →  (weeksSince, index)
   로 확장되면 추적 캐릭터 수만큼 는다.
 - **타일 탭의 목적지** — 위 표는 제안값이다. 특히 결정석 한도·아이템 드롭 가뭄이 `Profit` 인지
   `/profit/drops`(전 기간 히스토리)인지는 실기기에서 눌러 보고 정한다.
-- **온보딩 직후 착지** — [[ADR-132]] 열린 질문이 그대로다. 위젯 여덟이 **전부 빈 상태**인 첫 실행에서
+- **온보딩 직후 착지** — [[ADR-132]] 열린 질문이 그대로다. 위젯 아홉이 **전부 빈 상태**인 첫 실행에서
   이 화면이 «시작하기» 를 겸할지, 그때만 다른 곳에 착지시킬지.
 - **간격 12 · 행 높이 76** — 제안값. 실기기에서 확정한다. 바꾸면 위 「계산된 타일 치수」 표와
   총 높이 852 가 함께 움직인다.
@@ -681,6 +779,14 @@ formatValuableDroughtHeadline(weeksSince, lateIndex)  →  (weeksSince, index)
 - **`drop-history` 예열 여부** — 그 스토어는 전 기간 드롭을 SQLite 에서 통째로 읽는다([[ADR-071]]).
   today 가 첫 화면이라 그 비용이 콜드 스타트에 실린다. [[ADR-101]] 예열 목록에 더할지는 **실측 뒤에**
   정한다(지금 정하면 근거 없는 값이 된다).
+
+- **다계정일 때 공유 컨텐츠 한 줄이 어느 계정 것인가**(위젯 9) — 에픽 던전 진행은
+  `accountSharedProgress:{accountId}` 로 계정마다 따로인데([[ADR-143]] 결정 6) 위젯은 항목당 한 줄이다.
+  계정이 하나면 지금도 맞고, 이 구멍은 다계정 사용자에게만 드러난다.
+- **익스트림 몬스터파커의 `now_count` 가 진짜인가**(위젯 9) — `type: "quest"` 라 앱이 이 항목의
+  카운트를 읽은 적이 없다. 늘 0이면 완료 전까지 `0/2` 로 보인다(완료 후에는 승격 규칙이 `2/2` 로
+  만든다). 실기기에서 한 번 끝내 보면 닫힌다.
+- **공유 컨텐츠 타일의 목적지** — 지금은 `target` 이 없다(위젯 2 와 같다).
 
 ## 폐기된 정책 (history)
 

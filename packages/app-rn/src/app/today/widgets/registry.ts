@@ -1,5 +1,5 @@
 /**
- * 위젯 여덟의 **표** — 존재·크기·목적지([[ADR-146]] 결정 3·6 · 정정 13).
+ * 위젯 아홉의 **표** — 존재·크기·목적지([[ADR-146]] 결정 3·6 · 정정 13·28).
  *
  * ## 왜 «표» 인가
  *
@@ -22,6 +22,7 @@
 import type { WidgetSize } from '../../../lib/widget-layout'
 import { CrystalLimitWidget } from './CrystalLimitWidget'
 import { RemainingScheduleWidget } from './RemainingScheduleWidget'
+import { SharedContentsWidget } from './SharedContentsWidget'
 import { ResetCountdownWidget } from './ResetCountdownWidget'
 import { RepresentativeCharacterWidget } from './RepresentativeCharacterWidget'
 import { TopValuableItemWidget } from './TopValuableItemWidget'
@@ -43,7 +44,16 @@ export const WIDGETS: readonly WidgetDefinition[] = [
     Component: RepresentativeCharacterWidget,
   },
   {
-    // 크기가 하나뿐인 유일한 위젯이다 — 캐릭터를 «전부» 출력하므로 높이를 미리 알 수 없고,
+    // 「남은 스케줄」과 같은 이유로 크기가 하나뿐이다 — 계열 수와 줄 수가 데이터에서 나온다
+    // (유니온은 스케줄러에 있을 때만 그린다, [[ADR-146]] 정정 30).
+    id: 'shared-contents',
+    sizes: [{ w: 4, h: 'auto' }],
+    // **`target` 이 없다** — 목적지가 열린 질문이라, 갈 데가 정해지기 전에 누를 수 있게 두면
+    // 무반응이 «고장» 으로 읽힌다.
+    Component: SharedContentsWidget,
+  },
+  {
+    // 크기가 하나뿐인 위젯 둘 중 하나다 — 캐릭터를 «전부» 출력하므로 높이를 미리 알 수 없고,
     // `h: 'auto'` 는 가로를 다 쓰는 타일에만 허용된다([[ADR-146]] 정정 1).
     id: 'remaining-schedule',
     sizes: [{ w: 4, h: 'auto' }],

@@ -46,6 +46,7 @@ import ChevronRight from 'lucide-react-native/icons/chevron-right'
 import ChevronUp from 'lucide-react-native/icons/chevron-up'
 import CircleAlert from 'lucide-react-native/icons/circle-alert'
 import CircleCheckBig from 'lucide-react-native/icons/circle-check-big'
+import CircleQuestionMark from 'lucide-react-native/icons/circle-question-mark'
 import Clock from 'lucide-react-native/icons/clock'
 import CloudDownload from 'lucide-react-native/icons/cloud-download'
 import Crosshair from 'lucide-react-native/icons/crosshair'
@@ -121,6 +122,9 @@ export const ChevronLeftIcon = withIconInterop(ChevronLeft)
 export const ChevronRightIcon = withIconInterop(ChevronRight)
 /** 월드별 결정석 분해 **펼침** — `CrystalSummaryChip`([[ADR-054]] 결정 9). */
 export const ChevronUpIcon = withIconInterop(ChevronUp)
+
+/** 도움말 여는 자리 — 위젯 9 머리의 `?`([[ADR-146]] 정정 34). */
+export const CircleQuestionMarkIcon = withIconInterop(CircleQuestionMark)
 /** 아직 집계 전(pending 톤) — `UnavailableNotice`. */
 export const ClockIcon = withIconInterop(Clock)
 /** 새 업데이트 있음 — `UpdatePromptModal`(update-available). */

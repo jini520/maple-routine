@@ -40,6 +40,7 @@ import type { BossCharacterView } from '@core/features/boss-scheduler/store'
 import type { ContentCharacterView } from '@core/features/content-scheduler/store'
 import type { BossProfitRow } from '@core/features/boss-profit/store'
 import { WEEKLY_CRYSTAL_SALE_LIMIT } from '@core/lib/boss-matching'
+import { getShareScope, getSharedContentGroups } from '@core/lib/scheduler-content-scope'
 import {
   formatBossProfitPeriodLabel,
   getAdjacentPeriodKey,
@@ -58,7 +59,14 @@ import { dropPayoutMeso, sumDropPayout } from '@core/lib/drop-price'
 import { getCurrentKstDateKey, getMostRecentWeeklyResetKst } from '@core/lib/reset-clock'
 import type { ManualTrackedItem } from '@core/storage/manual-tracked-content'
 import type { TrackingMode } from '@core/storage/tracking-mode'
-import type { BossCycle, BossDifficulty, CharacterBasicProfile, DropCategory } from '@core/types'
+import type {
+  BossCycle,
+  BossDifficulty,
+  CharacterBasicProfile,
+  DailyContent,
+  DropCategory,
+  WeeklyContent,
+} from '@core/types'
 import type { RecordedDrop } from '@core/types/drops'
 
 import { orderByTracked } from '../../lib/tracked-order'
@@ -136,6 +144,33 @@ export interface ScheduleRowView {
   remainingTotal: number
   /** [[ADR-068]] 결정 3의 캐릭터 단위 실패 표식. 참이면 위젯이 수치 대신 「동기화 실패」를 그린다. */
   hasSyncIssue: boolean
+}
+
+/**
+ * 공유 컨텐츠 한 줄 ([[ADR-146]] 정정 29).
+ *
+ * **캐릭터가 없다** — 진행이 공유되므로 캐릭터 수만큼 세면 하루 한 번 할 일이 넷으로 부풀고, 그
+ * 부풀림을 없애는 것이 위젯 9의 존재 이유다.
+ */
+export interface SharedContentItemView {
+  /** API 원문 이름. 화면은 안 쓰지만 «어느 항목인가» 의 신원이라 남긴다. */
+  name: string
+  /** 그리는 이름 — 계열명이 위에 있으므로 그것을 뺀 나머지다(카탈로그의 `shortName`). */
+  shortName: string
+  /**
+   * `null` 이면 화면이 `CLEAR`(완료) 또는 **빈칸**(미완료)을 그린다.
+   *
+   * 값이 서는 것은 **미완료이면서 분모가 있는** 항목뿐이다([[ADR-146]] 정정 33) — 완료한 항목의
+   * «몇 번 했나» 는 언제나 `max` 라 숫자가 더 말하는 것이 없고, 분모가 없는 항목에 `0/1` 을 붙이려면
+   * **API 에 없는 값**을 앱이 지어내야 한다.
+   */
+  count: { now: number; max: number } | null
+  isComplete: boolean
+}
+
+export interface SharedContentGroupView {
+  group: string
+  items: SharedContentItemView[]
 }
 
 /**
@@ -293,6 +328,10 @@ export interface TodayViewModelInput {
 
 export interface TodayViewModel {
   representative: RepresentativeView | null
+  /** 계열별로 묶인 공유 컨텐츠([[ADR-146]] 정정 28) — 위젯 9. */
+  sharedContents: SharedContentGroupView[]
+  /** 그중 완료가 아닌 **줄**의 수. 캐릭터 수와 무관하다 — 그게 이 분리의 이유다. */
+  sharedRemaining: number
   /** 정렬까지 끝난 목록 — 위젯은 그리기만 한다. */
   schedule: ScheduleRowView[]
   /** 남은 것의 총합. **동기화 실패 캐릭터는 빼고** 센다(모르는 것을 더하지 않는다). */
@@ -323,8 +362,14 @@ export function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel 
   // 사용자가 «값을 매기지 않기로» 정한 것이라 기다리는 건이 아니다(파일 머리 「이번 주」 절).
   const unpriced = weeklyDrops.filter((record) => record.priceState === undefined)
 
+  const sharedContents = buildSharedContents(input)
+
   return {
     representative: buildRepresentative(input),
+    sharedContents,
+    sharedRemaining: sharedContents
+      .flatMap((group) => group.items)
+      .filter((item) => !item.isComplete).length,
     schedule,
     scheduleTotal: schedule
       .filter((row) => !row.hasSyncIssue)
@@ -361,6 +406,97 @@ function buildRepresentative(input: TodayViewModelInput): RepresentativeView | n
   }
 }
 
+/** 카탈로그 이름과 응답 이름의 공백 방향이 항목마다 달라(카탈로그 `matchingNote`) 지운 뒤 비교한다. */
+function sameContentName(a: string, b: string): boolean {
+  return a.replace(/\s+/g, '') === b.replace(/\s+/g, '')
+}
+
+/** 한 캐릭터의 컨텐츠 입력 — 「남은 스케줄」과 공유 위젯이 같은 모양으로 읽는다. */
+function contentsInputOf(
+  input: TodayViewModelInput,
+  content: ContentCharacterView | undefined,
+): { dailyContents: DailyContent[]; weeklyContents: WeeklyContent[]; manualItems: ManualTrackedItem[] } {
+  return {
+    dailyContents: content?.dailyContents ?? [],
+    weeklyContents: content?.weeklyContents ?? [],
+    manualItems: (content === undefined ? undefined : input.manualTrackedByOcid?.[content.ocid]) ?? [],
+  }
+}
+
+/**
+ * 공유 컨텐츠를 **계열별로** 조립한다 ([[ADR-146]] 정정 28~30).
+ *
+ * ## 값은 «가장 앞선 캐릭터» 것이다
+ *
+ * 진행이 공유되므로 캐릭터마다 같은 값이어야 하는데, 마지막 동기화 시각이 달라 **뒤처진 캐릭터가
+ * 낮은 값을 들고 있을 수 있다**. 주기 안에서 진행은 줄지 않으므로 최댓값이 곧 최신값이고, 완료는
+ * 하나라도 완료면 완료다. 낮은 쪽을 고르면 이미 한 일이 화면에서 되돌아간다.
+ *
+ * ## «값» 과 «스케줄러에 있는가» 는 다른 목록에서 온다
+ *
+ * - **값**: 캐릭터의 원본 목록(`dailyContents`/`weeklyContents`) — API 는 등록 여부와 무관하게
+ *   진행을 준다. 그래서 아무도 등록 안 한 에픽 던전도 값이 있으면 `CLEAR` 로 그려진다.
+ * - **있는가**: `displayed*Contents`(자동 모드 = `registration_flag`, 수동 모드 = 추적 목록 멤버십).
+ *   `onlyWhenScheduled` 인 항목만 이 판정을 탄다([[ADR-146]] 정정 30 — 유니온 둘).
+ *
+ * 둘을 한 목록으로 합치면 «등록 안 했지만 진행은 있다» 를 표현할 방법이 사라진다.
+ */
+function buildSharedContents(input: TodayViewModelInput): SharedContentGroupView[] {
+  const daily: DailyContent[] = []
+  const weekly: WeeklyContent[] = []
+  const scheduled = new Set<string>()
+
+  for (const content of input.contentCharacters) {
+    daily.push(...content.dailyContents)
+    weekly.push(...content.weeklyContents)
+
+    const contentsInput = contentsInputOf(input, content)
+    for (const item of displayedDailyContents(contentsInput, input.trackingMode)) {
+      scheduled.add(item.name.replace(/\s+/g, ''))
+    }
+    for (const item of displayedWeeklyContents(contentsInput, input.trackingMode)) {
+      scheduled.add(item.name.replace(/\s+/g, ''))
+    }
+  }
+
+  return getSharedContentGroups()
+    .map((group): SharedContentGroupView => {
+      const items = group.entries
+        .filter(
+          (entry) => !entry.onlyWhenScheduled || scheduled.has(entry.name.replace(/\s+/g, '')),
+        )
+        .map((entry): SharedContentItemView => {
+          const matches = (entry.section === 'daily' ? daily : weekly).filter((item) =>
+            sameContentName(item.name, entry.name),
+          )
+          const isComplete = matches.some(
+            (item) =>
+              (entry.section === 'daily'
+                ? dailyContentCompletion(item as DailyContent)
+                : weeklyContentCompletion(item as WeeklyContent)) === 'complete',
+          )
+          // `maxCount` 는 스토어가 이미 `maxCountOverride` 를 얹은 값이다(`scheduler-merge`) —
+          // 여기서 다시 얹으면 오버라이드의 출처가 둘이 된다.
+          const max = Math.max(0, ...matches.map((item) => item.maxCount))
+          const now = Math.max(0, ...matches.map((item) => item.nowCount))
+
+          return {
+            name: entry.name,
+            shortName: entry.shortName,
+            // **완료하면 카운트를 안 준다**([[ADR-146]] 정정 33) — 완료한 항목의 «몇 번 했나» 는
+            // 언제나 `max` 라 `CLEAR` 가 이미 그 말을 하고, 안 주면 카운트로 완료를 재지 않는
+            // 항목(익스트림 몬스터파커는 `quest_state` 로 판정한다)이 **끝냈는데 `0/2` 로 보이는**
+            // 위험도 함께 사라진다. 「그 항목만 예외」로 적으면 그것이 이름으로 유추하는 규칙이 된다.
+            count: !isComplete && max > 0 ? { now: Math.min(now, max), max } : null,
+            isComplete,
+          }
+        })
+
+      return { group: group.group, items }
+    })
+    .filter((group) => group.items.length > 0)
+}
+
 function buildScheduleRows(input: TodayViewModelInput): ScheduleRowView[] {
   const contentByOcid = new Map(input.contentCharacters.map((view) => [view.ocid, view]))
   const bossByOcid = new Map(input.bossCharacters.map((view) => [view.ocid, view]))
@@ -385,15 +521,18 @@ function buildScheduleRows(input: TodayViewModelInput): ScheduleRowView[] {
     // **먼저 «표시 대상» 으로 거른다.** `content.dailyContents` 는 캐릭터가 등록했든 안 했든 게임에
     // 있는 항목 전부라, 그냥 세면 모든 캐릭터가 카탈로그 길이(일간 18)로 똑같아진다. 스케줄러 화면과
     // **같은 함수**를 써야 «세는 것 = 보이는 것» 이 성립한다(보스 쪽 `displayedBosses` 와 같은 짝).
-    const contentsInput = {
-      dailyContents: content?.dailyContents ?? [],
-      weeklyContents: content?.weeklyContents ?? [],
-      manualItems: (content === undefined ? undefined : input.manualTrackedByOcid?.[content.ocid]) ?? [],
-    }
+    //
+    // **공유 항목은 여기 안 든다**([[ADR-146]] 정정 28) — 진행이 공유되므로 캐릭터마다 세면 하루
+    // 한 번 할 일이 캐릭터 수만큼 부푼다. 거르는 자리가 **여기**인 것이 중요하다:
+    // `displayed-contents.ts` 는 컨텐츠 화면과 공유하므로 거기서 빼면 그 화면에서도 사라지는데,
+    // 그 화면은 캐릭터별로 그리는 것이 맞다(진행이 공유될 뿐 «내가 할 수 있는 일» 목록에는 있다).
+    const contentsInput = contentsInputOf(input, content)
     const dailyNames = displayedDailyContents(contentsInput, input.trackingMode)
+      .filter((item) => getShareScope(item.name) === 'character')
       .filter((item) => dailyContentCompletion(item) === 'incomplete')
       .map((item) => shortDailyContentName(item.name))
     const weeklyNames = displayedWeeklyContents(contentsInput, input.trackingMode)
+      .filter((item) => getShareScope(item.name) === 'character')
       .filter((item) => weeklyContentCompletion(item) === 'incomplete')
       .map((item) => shortWeeklyContentName(item.name))
     const weeklyBosses = remainingBosses(input, boss, 'weekly')

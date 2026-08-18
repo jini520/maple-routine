@@ -3,9 +3,22 @@
  *
  * ## 세 크기가 같은 구조다
  *
- * 4x1 · 4x2 · 2x2 셋 모두 «월드 엠블럼 + 세 줄 + EXP» 이고([[ADR-146]] 정정 7), 갈리는 것은
- * **밀도와 EXP 의 자리**뿐이다 — 4x1 은 오른쪽 70px 열, 나머지는 아래 전폭. 큰 타일이 작은 타일을
+ * 4x1 · 4x2 · 2x2 셋 모두 «월드 엠블럼 + 두 줄 + EXP» 이고([[ADR-146]] 정정 7 · 38), 갈리는 것은
+ * **밀도와 EXP 의 자리**뿐이다 — 4x1 은 오른쪽 100px 열, 나머지는 아래 전폭. 큰 타일이 작은 타일을
  * 확대한 것이 아니라 같은 사실을 다른 밀도로 말한다(`widgets/types.ts` 규약).
+ *
+ * ## 길드는 닉네임 옆이다 ([[ADR-146]] 정정 38, 사용자 지시)
+ *
+ * ```
+ * [초상화] [엠블럼] 단풍루틴  백호단          EXP 80.300%
+ *          Lv. 291  아크메이지(불,독)   ══════════════════
+ * ```
+ *
+ * 셋째 줄에 혼자 서던 값인데 **길드는 «누구인가» 의 일부**지 별도 항목이 아니다. 4x1 은 내부 높이가
+ * 52 뿐이라 그 한 줄이 크다.
+ *
+ * **자리가 모자라면 닉네임이 줄어든다** — 길드는 잘리면 다른 길드로 읽히지만, 닉네임은 초상화가
+ * 이미 «누구인가» 를 말한다.
  *
  * ## 없는 것을 그리지 않는다
  *
@@ -106,7 +119,10 @@ function NameLine(props: {
   const emblem = props.view.world === undefined ? null : worldEmblemUrl(props.view.world)
 
   return (
-    <View className={`flex-row items-center gap-1${props.center ? ' justify-center' : ''}`}>
+    <View
+      testID="representative-name-line"
+      className={`flex-row items-center gap-1${props.center ? ' justify-center' : ''}`}
+    >
       {emblem !== null && (
         <View testID="representative-emblem" className="shrink-0">
           <Image
@@ -118,11 +134,23 @@ function NameLine(props: {
         </View>
       )}
       <Text
+        testID="representative-name"
         numberOfLines={1}
         className={`min-w-0 shrink font-semibold leading-tight text-text ${spec.name}`}
       >
         {props.view.name}
       </Text>
+      {/* 길드는 «모르는 것»(undefined)과 «미가입»(null)이 둘 다 그릴 것이 없다([[ADR-057]]) —
+          이 카드가 가르는 자리는 아니라 둘 다 비운다. */}
+      {props.view.guildName !== undefined && props.view.guildName !== null && (
+        <Text
+          testID="representative-guild"
+          numberOfLines={1}
+          className={`shrink-0 leading-tight text-text-muted ${spec.guild}`}
+        >
+          {props.view.guildName}
+        </Text>
+      )}
     </View>
   )
 }
@@ -154,7 +182,10 @@ function CaptionLine(props: {
 }
 
 /**
- * EXP — 4x1 은 오른쪽 70px 열, 나머지는 아래 전폭.
+ * EXP — 4x1 은 오른쪽 **100px 열**, 나머지는 아래 전폭.
+ *
+ * 100 은 70 에서 늘린 값이다([[ADR-146]] 정정 38, 사용자 지시) — 바가 짧아 진행률이 눈에 안
+ * 들어왔다. 늘어난 30px 은 이름 줄에서 가져오고, 그래서 닉네임이 먼저 줄어든다(`NameLine`).
  *
  * `null` 을 돌려주는 갈래가 곧 «EXP 줄 자체가 없다» 는 계약이다([[ADR-146]] 정정 8).
  */
@@ -170,7 +201,7 @@ function ExpBlock(props: {
   return (
     <View
       testID="representative-exp"
-      className={compactColumn ? 'w-[70px] shrink-0 gap-1' : 'w-full gap-1'}
+      className={compactColumn ? 'w-[100px] shrink-0 gap-1' : 'w-full gap-1'}
     >
       <View className="flex-row items-center gap-1">
         <Text className="text-[10px] font-semibold text-text-muted">EXP</Text>
@@ -192,23 +223,10 @@ function Lines(props: {
   variant: Variant
   center: boolean
 }): React.JSX.Element {
-  const spec = VARIANT[props.variant]
-
   return (
     <View className={`min-w-0 ${props.center ? 'w-full items-center' : 'flex-1'} gap-0.5`}>
       <NameLine view={props.view} variant={props.variant} center={props.center} />
       <CaptionLine view={props.view} variant={props.variant} center={props.center} />
-      {/* 길드는 «모르는 것»(undefined)과 «미가입»(null)이 둘 다 그릴 것이 없다([[ADR-057]]) —
-          이 카드가 가르는 자리는 아니라 둘 다 줄을 비운다. */}
-      {props.view.guildName !== undefined && props.view.guildName !== null && (
-        <Text
-          testID="representative-guild"
-          numberOfLines={1}
-          className={`min-w-0 leading-tight text-text-muted ${spec.guild}`}
-        >
-          {props.view.guildName}
-        </Text>
-      )}
     </View>
   )
 }

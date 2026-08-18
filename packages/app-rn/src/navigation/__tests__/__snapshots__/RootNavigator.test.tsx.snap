@@ -1598,7 +1598,7 @@ exports[`렌더 트리 스냅샷 탭 골격 1`] = `
                                 <View
                                   style={
                                     {
-                                      "height": 692,
+                                      "height": 780,
                                     }
                                   }
                                   testID="widget-grid"
@@ -1780,7 +1780,7 @@ exports[`렌더 트리 스냅샷 탭 골격 1`] = `
                                                 }
                                                 testID="reset-value-daily"
                                               >
-                                                12시간 0분
+                                                12시간 0분 0초
                                               </Text>
                                             </View>
                                           </View>
@@ -1946,6 +1946,465 @@ exports[`렌더 트리 스냅샷 탭 골격 1`] = `
                                         "width": 718,
                                       }
                                     }
+                                    testID="widget-tile-shared-contents"
+                                  >
+                                    <View
+                                      style={
+                                        {
+                                          "backgroundColor": "#FDFCF6",
+                                          "borderColor": "#CFC9AE",
+                                          "borderRadius": 14,
+                                          "borderWidth": 1,
+                                          "minHeight": 76,
+                                        }
+                                      }
+                                    >
+                                      <View
+                                        onLayout={[Function]}
+                                        testID="widget-measure-shared-contents"
+                                      >
+                                        <View
+                                          style={
+                                            {
+                                              "padding": 12,
+                                            }
+                                          }
+                                          testID="widget-shared-contents"
+                                        >
+                                          <View
+                                            style={
+                                              {
+                                                "alignItems": "center",
+                                                "borderBottomWidth": 1,
+                                                "borderColor": "#A3996E",
+                                                "flexDirection": "row",
+                                                "paddingBottom": 8,
+                                              }
+                                            }
+                                          >
+                                            <Text
+                                              style={
+                                                {
+                                                  "color": "#645C42",
+                                                  "fontSize": 11,
+                                                  "fontWeight": "700",
+                                                }
+                                              }
+                                            >
+                                              계정 및 메이플 ID 공유 컨텐츠
+                                            </Text>
+                                            <View
+                                              accessibilityLabel="표시 기준 설명"
+                                              accessibilityState={
+                                                {
+                                                  "busy": undefined,
+                                                  "checked": undefined,
+                                                  "disabled": undefined,
+                                                  "expanded": false,
+                                                  "selected": undefined,
+                                                }
+                                              }
+                                              accessibilityValue={
+                                                {
+                                                  "max": undefined,
+                                                  "min": undefined,
+                                                  "now": undefined,
+                                                  "text": undefined,
+                                                }
+                                              }
+                                              accessible={true}
+                                              collapsable={false}
+                                              focusable={true}
+                                              hitSlop={10}
+                                              onBlur={[Function]}
+                                              onClick={[Function]}
+                                              onFocus={[Function]}
+                                              onResponderGrant={[Function]}
+                                              onResponderMove={[Function]}
+                                              onResponderRelease={[Function]}
+                                              onResponderTerminate={[Function]}
+                                              onResponderTerminationRequest={[Function]}
+                                              onStartShouldSetResponder={[Function]}
+                                              role="button"
+                                              style={
+                                                {
+                                                  "marginLeft": 4,
+                                                }
+                                              }
+                                              testID="shared-note-toggle"
+                                            >
+                                              <RNSVGSvgView
+                                                align="xMidYMid"
+                                                aria-hidden={true}
+                                                bbHeight={12}
+                                                bbWidth={12}
+                                                fill="none"
+                                                focusable={false}
+                                                height={12}
+                                                meetOrSlice={0}
+                                                minX={0}
+                                                minY={0}
+                                                stroke="#9A9070"
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2.5}
+                                                style={
+                                                  [
+                                                    {
+                                                      "backgroundColor": "transparent",
+                                                      "borderWidth": 0,
+                                                    },
+                                                    {},
+                                                    {
+                                                      "flex": 0,
+                                                      "height": 12,
+                                                      "width": 12,
+                                                    },
+                                                  ]
+                                                }
+                                                vbHeight={24}
+                                                vbWidth={24}
+                                                width={12}
+                                                xmlns="http://www.w3.org/2000/svg"
+                                              >
+                                                <RNSVGGroup
+                                                  fill={null}
+                                                  propList={
+                                                    [
+                                                      "fill",
+                                                      "stroke",
+                                                      "strokeWidth",
+                                                      "strokeLinecap",
+                                                      "strokeLinejoin",
+                                                    ]
+                                                  }
+                                                  stroke={
+                                                    {
+                                                      "payload": 4288319600,
+                                                      "type": 0,
+                                                    }
+                                                  }
+                                                  strokeLinecap={1}
+                                                  strokeLinejoin={1}
+                                                  strokeWidth={2.5}
+                                                >
+                                                  <RNSVGCircle
+                                                    cx="12"
+                                                    cy="12"
+                                                    fill={null}
+                                                    propList={
+                                                      [
+                                                        "fill",
+                                                        "stroke",
+                                                        "strokeWidth",
+                                                        "strokeLinecap",
+                                                        "strokeLinejoin",
+                                                      ]
+                                                    }
+                                                    r="10"
+                                                    stroke={
+                                                      {
+                                                        "payload": 4288319600,
+                                                        "type": 0,
+                                                      }
+                                                    }
+                                                    strokeLinecap={1}
+                                                    strokeLinejoin={1}
+                                                    strokeWidth={2.5}
+                                                  />
+                                                  <RNSVGPath
+                                                    d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"
+                                                    fill={null}
+                                                    propList={
+                                                      [
+                                                        "fill",
+                                                        "stroke",
+                                                        "strokeWidth",
+                                                        "strokeLinecap",
+                                                        "strokeLinejoin",
+                                                      ]
+                                                    }
+                                                    stroke={
+                                                      {
+                                                        "payload": 4288319600,
+                                                        "type": 0,
+                                                      }
+                                                    }
+                                                    strokeLinecap={1}
+                                                    strokeLinejoin={1}
+                                                    strokeWidth={2.5}
+                                                  />
+                                                  <RNSVGPath
+                                                    d="M12 17h.01"
+                                                    fill={null}
+                                                    propList={
+                                                      [
+                                                        "fill",
+                                                        "stroke",
+                                                        "strokeWidth",
+                                                        "strokeLinecap",
+                                                        "strokeLinejoin",
+                                                      ]
+                                                    }
+                                                    stroke={
+                                                      {
+                                                        "payload": 4288319600,
+                                                        "type": 0,
+                                                      }
+                                                    }
+                                                    strokeLinecap={1}
+                                                    strokeLinejoin={1}
+                                                    strokeWidth={2.5}
+                                                  />
+                                                </RNSVGGroup>
+                                              </RNSVGSvgView>
+                                            </View>
+                                            <Text
+                                              style={
+                                                {
+                                                  "color": "#645C42",
+                                                  "fontSize": 11,
+                                                  "marginLeft": "auto",
+                                                }
+                                              }
+                                            >
+                                              <Text
+                                                style={
+                                                  {
+                                                    "color": "#241208",
+                                                    "fontSize": 11,
+                                                    "fontVariant": [
+                                                      "tabular-nums",
+                                                    ],
+                                                    "fontWeight": "800",
+                                                  }
+                                                }
+                                                testID="shared-total"
+                                              >
+                                                5
+                                              </Text>
+                                              개
+                                            </Text>
+                                          </View>
+                                          <View
+                                            style={
+                                              {
+                                                "paddingBottom": 8,
+                                                "paddingTop": 8,
+                                              }
+                                            }
+                                            testID="shared-group"
+                                          >
+                                            <Text
+                                              style={
+                                                {
+                                                  "color": "#241208",
+                                                  "fontSize": 11.5,
+                                                  "fontWeight": "700",
+                                                }
+                                              }
+                                              testID="shared-group-name"
+                                            >
+                                              에픽던전
+                                            </Text>
+                                            <View
+                                              style={
+                                                {
+                                                  "columnGap": 2,
+                                                  "marginTop": 4,
+                                                  "rowGap": 2,
+                                                }
+                                              }
+                                            >
+                                              <View
+                                                style={
+                                                  {
+                                                    "alignItems": "center",
+                                                    "columnGap": 8,
+                                                    "flexDirection": "row",
+                                                    "minHeight": 16,
+                                                    "rowGap": 8,
+                                                  }
+                                                }
+                                                testID="shared-item"
+                                              >
+                                                <Text
+                                                  numberOfLines={1}
+                                                  style={
+                                                    {
+                                                      "color": "#241208",
+                                                      "flexBasis": "0%",
+                                                      "flexGrow": 1,
+                                                      "flexShrink": 1,
+                                                      "fontSize": 11,
+                                                      "lineHeight": 13.75,
+                                                    }
+                                                  }
+                                                >
+                                                  하이마운틴
+                                                </Text>
+                                              </View>
+                                              <View
+                                                style={
+                                                  {
+                                                    "alignItems": "center",
+                                                    "columnGap": 8,
+                                                    "flexDirection": "row",
+                                                    "minHeight": 16,
+                                                    "rowGap": 8,
+                                                  }
+                                                }
+                                                testID="shared-item"
+                                              >
+                                                <Text
+                                                  numberOfLines={1}
+                                                  style={
+                                                    {
+                                                      "color": "#241208",
+                                                      "flexBasis": "0%",
+                                                      "flexGrow": 1,
+                                                      "flexShrink": 1,
+                                                      "fontSize": 11,
+                                                      "lineHeight": 13.75,
+                                                    }
+                                                  }
+                                                >
+                                                  앵글러컴퍼니
+                                                </Text>
+                                              </View>
+                                              <View
+                                                style={
+                                                  {
+                                                    "alignItems": "center",
+                                                    "columnGap": 8,
+                                                    "flexDirection": "row",
+                                                    "minHeight": 16,
+                                                    "rowGap": 8,
+                                                  }
+                                                }
+                                                testID="shared-item"
+                                              >
+                                                <Text
+                                                  numberOfLines={1}
+                                                  style={
+                                                    {
+                                                      "color": "#241208",
+                                                      "flexBasis": "0%",
+                                                      "flexGrow": 1,
+                                                      "flexShrink": 1,
+                                                      "fontSize": 11,
+                                                      "lineHeight": 13.75,
+                                                    }
+                                                  }
+                                                >
+                                                  악몽선경
+                                                </Text>
+                                              </View>
+                                            </View>
+                                          </View>
+                                          <View
+                                            style={
+                                              {
+                                                "borderColor": "#CFC9AE",
+                                                "borderTopWidth": 1,
+                                                "paddingBottom": 8,
+                                                "paddingTop": 8,
+                                              }
+                                            }
+                                            testID="shared-group"
+                                          >
+                                            <Text
+                                              style={
+                                                {
+                                                  "color": "#241208",
+                                                  "fontSize": 11.5,
+                                                  "fontWeight": "700",
+                                                }
+                                              }
+                                              testID="shared-group-name"
+                                            >
+                                              몬스터파크
+                                            </Text>
+                                            <View
+                                              style={
+                                                {
+                                                  "columnGap": 2,
+                                                  "marginTop": 4,
+                                                  "rowGap": 2,
+                                                }
+                                              }
+                                            >
+                                              <View
+                                                style={
+                                                  {
+                                                    "alignItems": "center",
+                                                    "columnGap": 8,
+                                                    "flexDirection": "row",
+                                                    "minHeight": 16,
+                                                    "rowGap": 8,
+                                                  }
+                                                }
+                                                testID="shared-item"
+                                              >
+                                                <Text
+                                                  numberOfLines={1}
+                                                  style={
+                                                    {
+                                                      "color": "#241208",
+                                                      "flexBasis": "0%",
+                                                      "flexGrow": 1,
+                                                      "flexShrink": 1,
+                                                      "fontSize": 11,
+                                                      "lineHeight": 13.75,
+                                                    }
+                                                  }
+                                                >
+                                                  일간
+                                                </Text>
+                                              </View>
+                                              <View
+                                                style={
+                                                  {
+                                                    "alignItems": "center",
+                                                    "columnGap": 8,
+                                                    "flexDirection": "row",
+                                                    "minHeight": 16,
+                                                    "rowGap": 8,
+                                                  }
+                                                }
+                                                testID="shared-item"
+                                              >
+                                                <Text
+                                                  numberOfLines={1}
+                                                  style={
+                                                    {
+                                                      "color": "#241208",
+                                                      "flexBasis": "0%",
+                                                      "flexGrow": 1,
+                                                      "flexShrink": 1,
+                                                      "fontSize": 11,
+                                                      "lineHeight": 13.75,
+                                                    }
+                                                  }
+                                                >
+                                                  익스트림 몬스터파커
+                                                </Text>
+                                              </View>
+                                            </View>
+                                          </View>
+                                        </View>
+                                      </View>
+                                    </View>
+                                  </View>
+                                  <View
+                                    style={
+                                      {
+                                        "left": 0,
+                                        "position": "absolute",
+                                        "top": 264,
+                                        "width": 718,
+                                      }
+                                    }
                                     testID="widget-tile-remaining-schedule"
                                   >
                                     <View
@@ -2040,7 +2499,7 @@ exports[`렌더 트리 스냅샷 탭 골격 1`] = `
                                       {
                                         "left": 0,
                                         "position": "absolute",
-                                        "top": 264,
+                                        "top": 352,
                                         "width": 718,
                                       }
                                     }
@@ -2205,7 +2664,7 @@ exports[`렌더 트리 스냅샷 탭 골격 1`] = `
                                       {
                                         "left": 0,
                                         "position": "absolute",
-                                        "top": 528,
+                                        "top": 616,
                                         "width": 353,
                                       }
                                     }
@@ -2322,7 +2781,7 @@ exports[`렌더 트리 스냅샷 탭 골격 1`] = `
                                       {
                                         "left": 365,
                                         "position": "absolute",
-                                        "top": 528,
+                                        "top": 616,
                                         "width": 353,
                                       }
                                     }
@@ -2455,7 +2914,7 @@ exports[`렌더 트리 스냅샷 탭 골격 1`] = `
                                       {
                                         "left": 0,
                                         "position": "absolute",
-                                        "top": 616,
+                                        "top": 704,
                                         "width": 718,
                                       }
                                     }

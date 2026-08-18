@@ -17,6 +17,8 @@ import type {
   RepresentativeView,
   ResetCountdown,
   ScheduleRowView,
+  SharedContentGroupView,
+  SharedContentItemView,
   TodayViewModel,
   UnpricedDropView,
   WeeklyProfitCharacterView,
@@ -27,6 +29,8 @@ const DAY_MS = 24 * HOUR_MS
 
 export const 빈_뷰모델: TodayViewModel = {
   representative: null,
+  sharedContents: [],
+  sharedRemaining: 0,
   schedule: [],
   scheduleTotal: 0,
   profit: {
@@ -262,4 +266,35 @@ export function 가뭄(weeksSince: number, 부분: Partial<DroughtView> = {}): D
     itemsLabel: '생명의 연마석 외 1개',
     ...부분,
   }
+}
+
+/** 공유 컨텐츠 한 줄 — 카운트가 없으면 `CLEAR`/빈칸으로 그려진다([[ADR-146]] 정정 29). */
+export function 공유항목(
+  shortName: string,
+  부분: Partial<SharedContentItemView> = {},
+): SharedContentItemView {
+  return { name: shortName, shortName, count: null, isComplete: false, ...부분 }
+}
+
+export function 공유계열(group: string, items: SharedContentItemView[]): SharedContentGroupView {
+  return { group, items }
+}
+
+/** 카탈로그 일곱을 다 그린 상태 — 남은 것 넷(악몽선경 · 일간 · 익스트림 · PC방). */
+export function 공유컨텐츠(): SharedContentGroupView[] {
+  return [
+    공유계열('에픽던전', [
+      공유항목('하이마운틴', { isComplete: true }),
+      공유항목('앵글러컴퍼니', { isComplete: true }),
+      공유항목('악몽선경'),
+    ]),
+    공유계열('몬스터파크', [
+      공유항목('일간', { count: { now: 7, max: 14 } }),
+      공유항목('익스트림 몬스터파커', { count: { now: 1, max: 2 } }),
+    ]),
+    공유계열('메이플 유니온', [
+      공유항목('주간 드래곤 퇴치', { isComplete: true }),
+      공유항목('PC방 주간 드래곤 퇴치'),
+    ]),
+  ]
 }

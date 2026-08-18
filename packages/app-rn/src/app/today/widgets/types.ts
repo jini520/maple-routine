@@ -22,6 +22,7 @@ import type { TodayViewModel } from '../view-model'
 
 export type WidgetId =
   | 'representative-character'
+  | 'shared-contents'
   | 'remaining-schedule'
   | 'weekly-boss-profit'
   | 'top-valuable-item'

@@ -20,11 +20,32 @@
  * 「다 했습니다」 같은 문장도, **전부 완료 전용 UI 도 두지 않는다**: 형태가 안 바뀌어야 «어제와 같은
  * 화면» 으로 읽힌다.
  *
- * ## 행 높이는 데이터에 흔들리지 않는다
+ * ## 줄도 칸도 «그 행» 이 정한다 ([[ADR-146]] 정정 35~37)
  *
- * 값이 0인 칸은 **글자만 비우고 자리는 남긴다.** 보스가 0인 캐릭터의 둘째 줄이 통째로 사라지면 행
- * 높이가 캐릭터마다 달라지고, 그러면 이 타일의 auto 높이(`55 + 45n`)가 성립하지 않는다
- * ([[ADR-146]] 정정 9·12).
+ * ```
+ * 줄  = 그 행에 그 계열(① 컨텐츠 ② 보스)의 값이 하나라도 있을 때
+ * 칸  = 그 행에 그 수치가 있을 때
+ * ```
+ *
+ * **세 번에 걸쳐 여기까지 왔다**(전부 사용자 보고 — 빈 자리가 크다).
+ *
+ * 1. 원래는 «값이 0인 칸도 글자만 비우고 자리는 남긴다» 였다(정정 9·12). 그래야 숫자가 모든 행에서
+ *    같은 x 에 서고 행 높이가 데이터를 안 따라간다.
+ * 2. 정정 35 는 그 질문을 **목록 전체**에 물어 «아무도 안 쓰는 칸» 을 다 같이 죽였다.
+ * 3. 정정 36·37 이 그 장치를 도로 지웠다 — **빈 자리를 남기는 것이 곧 정렬**이라 둘 다는 못 가지고,
+ *    간결함이 선택됐다.
+ *
+ * 그래서 **포기한 것 둘**을 여기 적어 둔다: «모양이 다른 행 사이의 정렬» 과 «고른 행 높이». 값이 넷
+ * 다 있는 행은 두 줄, 하나만 있는 행은 한 줄이다.
+ *
+ * 남긴 것도 있다.
+ *
+ * - **줄은 오른쪽 정렬**(`items-end`) — 칸이 줄면 왼쪽으로 짧아져야 셰브런 옆이 붙는다.
+ * - `tabular-nums` 와 **숫자 칸 고정 폭** — 그것까지 놓으면 `10` 과 `1` 사이에서 오른쪽 끝이 떨린다.
+ *   같은 모양의 행끼리는 이 폭 덕에 여전히 한 열이고, 목록이 남은 개수 순이라(정정 3) 그런 행들이
+ *   대체로 붙어 선다.
+ * - **계열 묶음**(① 일퀘·주간퀘 ② 주간 보스·검마) — 정정 13 이 안 B 를 기각한 이유가 «컨텐츠 /
+ *   보스 묶음이 사라진다» 였다. 줄이 접히는 단위는 여전히 계열이다.
  *
  * ## 목록은 자르지 않는다
  *
@@ -51,15 +72,19 @@ const PORTRAIT_PX = 32
  * 라벨을 내용 폭으로 두면 「일퀘」와 「주간 보스」가 다른 자리에서 끝난다.
  */
 const LABEL_WIDTH_PX = 48
-const VALUE_WIDTH_PX = 18
+/**
+ * **두 자리에 맞춘 폭**([[ADR-146]] 정정 40). 18 은 세 자리를 담을 폭이라 오른쪽 정렬에서 남는 4px 이
+ * 전부 왼쪽 여백이 되어 한 자리 수치가 라벨에서 떨어져 보였다. 세 자리가 실제로 나오면 그때 넓힌다.
+ */
+const VALUE_WIDTH_PX = 14
 
 /**
  * 수치 한 줄의 **고정 높이**(10.5px × 1.25 를 올림).
  *
- * 값이 0인 칸을 빈 글자로 두는 것만으로는 부족하다 — **빈 `Text` 의 높이는 플랫폼마다 다르다**
- * (글리프가 없으면 0으로 재는 경우가 있다). 그러면 보스가 0인 캐릭터의 둘째 줄이 실제로 접혀 행
- * 높이가 데이터를 따라 움직이고, 이 타일의 auto 높이(`55 + 45n`)가 성립하지 않는다. 높이를 줄에
- * 박아 두면 그 질문 자체가 사라진다.
+ * 원래 이유(«빈 `Text` 의 높이는 플랫폼마다 다르다»)는 정정 37 로 사라졌다 — 값이 없는 칸도 줄도
+ * 아예 안 그리므로 빈 글자가 없다. 그래도 남기는 것은 이 상수가 **한 줄 행과 두 줄 행의 높이를
+ * 예측 가능한 관계**로 묶기 때문이다. 행 높이가 줄 수를 따라가는 것은 받아들이되, 줄 하나의 높이는
+ * 데이터와 무관해야 한다.
  */
 const STAT_LINE_HEIGHT_PX = 14
 
@@ -74,21 +99,33 @@ const LABEL = {
   monthlyBoss: '검마',
 } as const
 
+type StatKey = keyof typeof LABEL
+
+/** 줄 = 계열. 순서가 곧 화면 순서다(① 컨텐츠 ② 보스). */
+const STAT_LINES: readonly (readonly StatKey[])[] = [
+  ['dailyQuest', 'weeklyQuest'],
+  ['weeklyBoss', 'monthlyBoss'],
+]
+
+function statValue(row: ScheduleRowView, key: StatKey): number {
+  if (key === 'dailyQuest') return row.dailyNames.length
+  if (key === 'weeklyQuest') return row.weeklyNames.length
+  if (key === 'weeklyBoss') return row.weeklyBosses.length
+  return row.monthlyBosses.length
+}
+
 const VALUE_CLASS = 'text-right text-[10.5px] font-extrabold leading-tight text-text'
 const LABEL_CLASS = 'text-right text-[10.5px] leading-tight text-text-muted'
 
+/** 값이 있는 칸만 온다 — 0 인 칸은 부모가 접는다([[ADR-146]] 정정 36). */
 function StatCell(props: { label: string; value: number }): React.JSX.Element {
-  // 0 은 그리지 않고 **자리만 남긴다** — 「일퀘 0」은 훑는 눈에 잡음이고, 칸을 없애면 행 높이가
-  // 데이터마다 달라진다(파일 머리).
-  const drawn = props.value > 0
-
   return (
-    <View className="flex-row items-center gap-1">
+    <View className="flex-row items-center gap-0.5">
       <Text numberOfLines={1} style={{ width: LABEL_WIDTH_PX }} className={LABEL_CLASS}>
-        {drawn ? props.label : ''}
+        {props.label}
       </Text>
       <Text style={{ width: VALUE_WIDTH_PX, ...TABULAR_NUMS }} className={VALUE_CLASS}>
-        {drawn ? String(props.value) : ''}
+        {String(props.value)}
       </Text>
     </View>
   )
@@ -96,23 +133,27 @@ function StatCell(props: { label: string; value: number }): React.JSX.Element {
 
 function StatGrid(props: { row: ScheduleRowView }): React.JSX.Element {
   return (
-    <View testID="schedule-stats" className="shrink-0 gap-0.5">
-      <View
-        testID="schedule-stat-line"
-        className="flex-row items-center gap-3"
-        style={{ height: STAT_LINE_HEIGHT_PX }}
-      >
-        <StatCell label={LABEL.dailyQuest} value={props.row.dailyNames.length} />
-        <StatCell label={LABEL.weeklyQuest} value={props.row.weeklyNames.length} />
-      </View>
-      <View
-        testID="schedule-stat-line"
-        className="flex-row items-center gap-3"
-        style={{ height: STAT_LINE_HEIGHT_PX }}
-      >
-        <StatCell label={LABEL.weeklyBoss} value={props.row.weeklyBosses.length} />
-        <StatCell label={LABEL.monthlyBoss} value={props.row.monthlyBosses.length} />
-      </View>
+    // `items-end` — 칸이 줄면 **왼쪽으로** 짧아져야 셰브런 옆이 붙는다([[ADR-146]] 정정 36).
+    <View testID="schedule-stats" className="shrink-0 items-end gap-0.5">
+      {STAT_LINES.map((line) => {
+        // 줄도 칸도 **이 행**이 정한다([[ADR-146]] 정정 37) — 값이 없는 계열은 줄째로 빠지므로
+        // 빈 줄이 안 남는다. 목록에 물어 «아무도 안 쓰는 칸» 을 죽이던 장치(정정 35)는 지웠다.
+        const cells = line.filter((key) => statValue(props.row, key) > 0)
+        if (cells.length === 0) return null
+
+        return (
+          <View
+            key={line.join('-')}
+            testID="schedule-stat-line"
+            className="flex-row items-center gap-2"
+            style={{ height: STAT_LINE_HEIGHT_PX }}
+          >
+            {cells.map((key) => (
+              <StatCell key={key} label={LABEL[key]} value={statValue(props.row, key)} />
+            ))}
+          </View>
+        )
+      })}
     </View>
   )
 }
@@ -181,7 +222,8 @@ function NameChip(props: { name: string }): React.JSX.Element {
 function BossChip(props: { boss: RemainingBossView }): React.JSX.Element {
   return (
     <View testID="schedule-detail-boss" className="flex-row items-center gap-1">
-      <DifficultyBadge difficulty={props.boss.difficulty} />
+      {/* 작은 크기 — 20px 배지가 줄 높이를 혼자 정하고 있었다([[ADR-146]] 정정 40). */}
+      <DifficultyBadge difficulty={props.boss.difficulty} size="small" />
       <Text numberOfLines={1} className="text-[10px] leading-tight text-text">
         {props.boss.name}
       </Text>
@@ -216,15 +258,17 @@ function ScheduleDetail(props: { row: ScheduleRowView }): React.JSX.Element {
     <View testID="schedule-detail" className="gap-2 pb-2.5 pl-10 pt-0.5">
       {row.dailyNames.length > 0 && (
         <DetailGroup label={LABEL.dailyQuest}>
-          {row.dailyNames.map((name) => (
-            <NameChip key={name} name={name} />
+          {row.dailyNames.map((name, index) => (
+            <NameChip key={`${name}-${String(index)}`} name={name} />
           ))}
         </DetailGroup>
       )}
       {row.weeklyNames.length > 0 && (
         <DetailGroup label={LABEL.weeklyQuest}>
-          {row.weeklyNames.map((name) => (
-            <NameChip key={name} name={name} />
+          {/* **키가 이름이면 안 된다** — `[주간 퀘스트] 타락한 세계수 주간 임무` 와 `… 정화에 대한
+              보답` 이 둘 다 「타락한 세계수」로 접혀 같은 키가 둘이 된다([[ADR-146]] 정정 40). */}
+          {row.weeklyNames.map((name, index) => (
+            <NameChip key={`${name}-${String(index)}`} name={name} />
           ))}
         </DetailGroup>
       )}
