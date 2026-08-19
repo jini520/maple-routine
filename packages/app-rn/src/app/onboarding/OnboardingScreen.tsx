@@ -29,7 +29,7 @@
 // 컴포넌트가 스크롤과 바 둘 다의 조상**이어야 하기 때문이다. 훅은 조건부로 못 부르므로 그 자리를
 // 이 화면으로 올릴 수 없다 — 올리면 키 입력 단계부터 로스터 조회가 돈다.
 import { useState } from 'react'
-import { Text, View } from 'react-native'
+import { View } from 'react-native'
 
 import { useOnboardingStore } from '@core/features/onboarding/store'
 import {
@@ -38,6 +38,7 @@ import {
 } from '@core/storage/character-selection'
 
 import { MapleSweepSpinner } from '../../components/atoms/MapleSweepSpinner/MapleSweepSpinner'
+import { Text } from '../../components/atoms/Text/Text'
 import { ApiKeyForm } from './ApiKeyForm'
 import { ContentCharacterStep } from './ContentCharacterStep'
 import { OnboardingStep } from './OnboardingStep'

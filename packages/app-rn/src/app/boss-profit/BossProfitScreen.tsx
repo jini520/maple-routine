@@ -49,7 +49,7 @@
 // ⑤ `animate-spin` → Reanimated CSS 애니메이션(`lib/animation.ts`, step 4·5 와 같은 값).
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import type { ScrollView } from 'react-native'
-import { Pressable, RefreshControl, Text, View } from 'react-native'
+import { Pressable, RefreshControl, View } from 'react-native'
 import { useReducedMotion } from 'react-native-reanimated'
 
 import { useBossProfitStore } from '@core/features/boss-profit/store'
@@ -69,6 +69,7 @@ import { sumDropPayout } from '@core/lib/drop-price'
 
 import { AnimatedMeso } from '../../components/atoms/AnimatedMeso/AnimatedMeso'
 import { ProfitIcon } from '../../components/atoms/ProfitIcon/ProfitIcon'
+import { Text } from '../../components/atoms/Text/Text'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'

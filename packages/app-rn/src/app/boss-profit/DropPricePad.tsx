@@ -26,7 +26,7 @@
 //    `visibility` 가 없어 투명도로 대신하고, 투명한 버튼이 눌리지 않도록 터치를 함께 끈다.
 // ⑤ `⌫` 는 글자 그대로 남는다(`aria-label` 도 웹과 같은 `한 자리 지우기`).
 import { useState } from 'react'
-import { Image, Pressable, Text, View } from 'react-native'
+import { Image, Pressable, View } from 'react-native'
 
 import { formatMesoUnits } from '@core/lib/drop-price'
 import { getItemIconUrl } from '@core/lib/item-icons'
@@ -34,6 +34,7 @@ import type { BossDifficulty } from '@core/types'
 import type { RecordedDrop } from '@core/types/drops'
 
 import { DifficultyBadge } from '../../components/atoms/DifficultyBadge/DifficultyBadge'
+import { Text } from '../../components/atoms/Text/Text'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import { ChevronLeftIcon, RotateCcwIcon } from '../../lib/icons'
 import { TABULAR_NUMS } from '../../lib/text-styles'

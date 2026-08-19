@@ -183,6 +183,8 @@ exports[`DropEffectOverlay — 구조 트리 스냅샷 1`] = `
           }
         >
           <Text
+            allowFontScaling={true}
+            maxFontSizeMultiplier={1.235}
             style={
               {
                 "color": "rgba(255,255,255,0.8)",

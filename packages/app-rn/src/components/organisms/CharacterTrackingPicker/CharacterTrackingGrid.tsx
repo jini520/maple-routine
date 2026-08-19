@@ -28,7 +28,7 @@
 //    46×50 엠블럼의 폭 46 이 살아남아 이름 줄 왼쪽에 좌우 각 15.2px 이 빈다. `naturalAspectStyle`
 //    이 그 축을 지우고 종횡비를 얹는다(`lib/image-aspect.ts`).
 import { useState } from 'react'
-import { Image, Pressable, Text, View } from 'react-native'
+import { Image, Pressable, View } from 'react-native'
 
 import { worldEmblemUrl } from '@core/lib/world-emblem'
 import type { CharacterPickerEntry } from '@core/types'
@@ -36,6 +36,7 @@ import type { CharacterPickerEntry } from '@core/types'
 import { naturalAspectStyle } from '../../../lib/image-aspect'
 import { BanIcon, StarIcon } from '../../../lib/icons'
 import { useThemeAppearance } from '../../../theme/context'
+import { Text } from '../../atoms/Text/Text'
 
 // [[ADR-015]]: character/basic 이 주는 300x300 전신 룩에서 얼굴만 보이도록 확대·정렬해 자른다.
 // 헤어스타일/포즈에 따라 완벽히 얼굴만 나오지 않을 수 있는 근사치다(ADR-015 미확정 항목).

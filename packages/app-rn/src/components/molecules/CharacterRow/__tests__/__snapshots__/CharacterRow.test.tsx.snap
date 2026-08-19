@@ -242,6 +242,8 @@ exports[`CharacterRow — 좌우 슬롯 렌더 트리 스냅샷 — 이후 변�
           />
         </View>
         <Text
+          allowFontScaling={true}
+          maxFontSizeMultiplier={1.235}
           numberOfLines={1}
           style={
             {
@@ -259,6 +261,8 @@ exports[`CharacterRow — 좌우 슬롯 렌더 트리 스냅샷 — 이후 변�
         </Text>
       </View>
       <Text
+        allowFontScaling={true}
+        maxFontSizeMultiplier={1.235}
         numberOfLines={1}
         style={
           {

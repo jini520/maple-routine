@@ -21,12 +21,13 @@
 // ② **엠블럼은 번들 에셋 id 라 `{ uri }` 로 감싸지 않는다**([[ADR-129]]) — 얼굴만 원격 URI 다.
 // ③ **`w-auto` 의 짝이 `naturalAspectStyle` 이다**([[ADR-135]]) — RN 은 이름을 부르지 않은 축에
 //    에셋의 고유 픽셀 크기를 남기므로, 높이만 정하고 폭을 그림에 맡기려면 그 축을 지워야 한다.
-import { Image, Pressable, Text, View } from 'react-native'
+import { Image, Pressable, View } from 'react-native'
 
 import { worldEmblemUrl } from '@core/lib/world-emblem'
 
 import { faceCropStyle } from '../../../lib/face-crop'
 import { naturalAspectStyle } from '../../../lib/image-aspect'
+import { Text } from '../../atoms/Text/Text'
 
 // 얼굴 크롭 표는 `lib/face-crop` 하나뿐이다(사용자 지정 2026-08-17) — 이 파일이 들고 있던 표는
 // 56px 그리드 시절의 것(`{x:115, y:120, size:64}` · 40px)이라 **같은 얼굴이 드롭다운 행과 다르게

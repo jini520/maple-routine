@@ -247,6 +247,8 @@ exports[`UpdatePromptModal 렌더 트리 스냅샷 (update-available) 1`] = `
               }
             >
               <Text
+                allowFontScaling={true}
+                maxFontSizeMultiplier={1.235}
                 style={
                   {
                     "color": "#241208",
@@ -272,6 +274,8 @@ exports[`UpdatePromptModal 렌더 트리 스냅샷 (update-available) 1`] = `
                 }
               >
                 <Text
+                  allowFontScaling={true}
+                  maxFontSizeMultiplier={1.235}
                   style={
                     {
                       "borderColor": "#CFC9AE",
@@ -293,6 +297,8 @@ exports[`UpdatePromptModal 렌더 트리 스냅샷 (update-available) 1`] = `
                 </Text>
               </View>
               <Text
+                allowFontScaling={true}
+                maxFontSizeMultiplier={1.235}
                 style={
                   {
                     "color": "#645C42",
@@ -362,6 +368,8 @@ exports[`UpdatePromptModal 렌더 트리 스냅샷 (update-available) 1`] = `
                 }
               >
                 <Text
+                  allowFontScaling={true}
+                  maxFontSizeMultiplier={1.235}
                   style={
                     {
                       "color": "#645C42",
@@ -538,6 +546,8 @@ exports[`UpdatePromptModal 렌더 트리 스냅샷 (update-available) 1`] = `
                 }
               >
                 <Text
+                  allowFontScaling={true}
+                  maxFontSizeMultiplier={1.235}
                   style={
                     {
                       "color": "#FFEEE2",
@@ -594,6 +604,8 @@ exports[`UpdatePromptModal 렌더 트리 스냅샷 (update-available) 1`] = `
                 }
               >
                 <Text
+                  allowFontScaling={true}
+                  maxFontSizeMultiplier={1.235}
                   style={
                     {
                       "color": "#645C42",

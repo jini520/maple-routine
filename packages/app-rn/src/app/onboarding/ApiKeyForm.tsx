@@ -30,10 +30,11 @@
 // ⑦ **`placeholder` 색을 지정하지 않는다.** 웹도 지정하지 않아 브라우저 기본값이었고, 여기서도
 //    플랫폼 기본값에 맡긴다 — 색을 새로 정하면 웹에 없던 결정을 여기서 만드는 것이 된다.
 import { useState } from 'react'
-import { Linking, Pressable, Text, TextInput, View } from 'react-native'
+import { Linking, Pressable, View } from 'react-native'
 
 import { Button } from '../../components/atoms/Button/Button'
 import { MapleSpinner } from '../../components/atoms/MapleSpinner/MapleSpinner'
+import { Text, TextInput } from '../../components/atoms/Text/Text'
 import { ExternalLinkIcon, EyeIcon, EyeOffIcon } from '../../lib/icons'
 
 /** 1차 경로 — 처음 쓰는 사용자를 넥슨 첫 화면에 떨궈 놓지 않는다([[ADR-110]]). */

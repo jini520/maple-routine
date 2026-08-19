@@ -6,11 +6,12 @@
 // **RN 에서 갈린 것은 온보딩 쪽과 완전히 같다** — 그쪽 파일(`app/onboarding/TrackingModeStep.tsx`)
 // 머리의 셋(`aria-pressed`→`aria-selected` · 글자 클래스가 안쪽 `Text` 로 · `hover:` 제거)을 그대로
 // 따른다. 두 화면이 같은 모양이어야 한다는 결정 22 가 **갈라지는 방식까지** 같기를 요구한다.
-import { Pressable, Text, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 
 import { TRACKING_MODE_OPTIONS } from '@core/features/tracking-mode/copy'
 import type { TrackingMode } from '@core/storage/tracking-mode'
 
+import { Text } from '../../components/atoms/Text/Text'
 import { Gamepad2Icon, InfoIcon, ListChecksIcon } from '../../lib/icons'
 
 export interface TrackingModeSelectorProps {

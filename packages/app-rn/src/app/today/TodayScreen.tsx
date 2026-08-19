@@ -40,7 +40,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Pressable, RefreshControl, Text, View } from 'react-native'
+import { Pressable, RefreshControl, View } from 'react-native'
 import { useReducedMotion } from 'react-native-reanimated'
 import { useFocusEffect } from '@react-navigation/native'
 
@@ -55,6 +55,7 @@ import { getCachedCharacterBasic } from '@core/storage/character-basic-cache'
 import { getRepresentativeCharacter } from '@core/storage/character-selection'
 import type { CharacterBasicProfile } from '@core/types'
 
+import { Text } from '../../components/atoms/Text/Text'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'

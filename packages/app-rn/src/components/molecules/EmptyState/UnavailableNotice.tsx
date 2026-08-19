@@ -18,9 +18,10 @@
 // ② `space-y-0.5` → `gap-0.5`(NativeWind 에 `space-y-*` 가 없다).
 // ③ `flex-none` → `shrink-0`. RN 에서 `flex: 0 0 auto` 를 쓰면 아이콘이 자기 크기를 잃는 경우가
 //    있어(basis auto 해석), 필요한 것만 — 줄어들지 않게 — 명시한다.
-import { Text, View } from 'react-native'
+import { View } from 'react-native'
 
 import { ClockIcon, InfoIcon } from '../../../lib/icons'
+import { Text } from '../../atoms/Text/Text'
 
 /** 기간 조회 하한은 실측 13일이지만 넥슨 한도 자체는 14일이라 **문구는 14일**이다([[ADR-068]] 결정 1). */
 const COPY = {

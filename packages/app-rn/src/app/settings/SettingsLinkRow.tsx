@@ -18,8 +18,9 @@
 // (`SettingsAboutScreen` 이 `SettingsRow` 로 연다) 웹에서도 사용처가 0 이다. 그래도 옮기는 이유는
 // [[ADR-118]] 결정 4 의 "행 우측 표기 5종"이 이 프리미티브로 고정돼 있어서다 — 다섯 중 하나를
 // 지우면 다음에 외부 링크 행이 필요할 때 규격이 아니라 그때의 즉흥이 다시 자리를 잡는다.
-import { Linking, Pressable, Text, View } from 'react-native'
+import { Linking, Pressable, View } from 'react-native'
 
+import { Text } from '../../components/atoms/Text/Text'
 import { ExternalLinkIcon } from '../../lib/icons'
 import { SETTINGS_ROW_CLASS } from './row-class'
 

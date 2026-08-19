@@ -19,9 +19,10 @@
 // `inline-flex` 는 RN 에 없다 — 이 뱃지는 부모가 잡아 주는 줄 안에 놓이므로 `flex-row items-center`
 // 로 안쪽 정렬만 옮긴다(줄 안에서의 배치는 호출부 몫이고, 웹에서도 그랬다).
 import type { BossDifficulty } from '@core/types'
-import { Text, type TextStyle, type ViewStyle } from 'react-native'
+import { type TextStyle, type ViewStyle } from 'react-native'
 
 import { LinearGradient } from '../../../lib/nativewind-interop'
+import { Text } from '../Text/Text'
 
 interface DifficultyBadgeStyle {
   /** 위 → 아래. 웹의 `linear-gradient(180deg, …)` 와 같은 순서다. */
@@ -91,7 +92,9 @@ export function DifficultyBadge(props: {
       className={`flex-row items-center rounded-full ${size.box}`}
       style={style.border}
     >
-      <Text className={`font-extrabold tracking-[.03em] ${size.text}`} style={style.text}>
+      {/* 상자가 `h-5`/`h-4` 로 **고정**이라 글자만 커지면 잘린다 — 시스템 글자 크기를 안 따르는
+          자리다([[ADR-152]] 결정 5). 배지의 크기 둘은 [[ADR-147]] 정정 40 이 정한 값이다. */}
+      <Text fixed className={`font-extrabold tracking-[.03em] ${size.text}`} style={style.text}>
         {props.difficulty}
       </Text>
     </LinearGradient>

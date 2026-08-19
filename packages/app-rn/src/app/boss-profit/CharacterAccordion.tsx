@@ -58,7 +58,7 @@
 //    스크롤 조작을 다시 넣지 말 것 — 웹에서 그것이 정확히 [[ADR-085]] 결정 2 였고 두 프레임으로
 //    갈려 페이지가 튀었다.
 import { useRef, useState } from 'react'
-import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { Pressable, StyleSheet, View } from 'react-native'
 import { useReducedMotion } from 'react-native-reanimated'
 
 import { formatMesoShort } from '@core/lib/boss-profit-delta'
@@ -68,6 +68,7 @@ import type { PopoverAnchorGeometry } from '@core/lib/popover-anchor'
 import weeklyBossesData from '@core/data/weekly-bosses.json'
 
 import { AnimatedMeso } from '../../components/atoms/AnimatedMeso/AnimatedMeso'
+import { Text } from '../../components/atoms/Text/Text'
 import { ValuableDropBadge } from '../../components/molecules/ValuableDropBadge/ValuableDropBadge'
 import { ChevronDownIcon, ChevronUpIcon } from '../../lib/icons'
 import { AnimatedView } from '../../lib/nativewind-interop'

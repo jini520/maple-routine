@@ -39,7 +39,7 @@
 //    그래서 웹이 «모달을 셸 바깥 형제로 둔다»(`z-50` 이 셸의 스태킹 컨텍스트에 갇히는 것을 피한다)
 //    고 정한 자리가 이 파일에서 사라졌다.
 import { useEffect } from 'react'
-import { Pressable, RefreshControl, Text, View } from 'react-native'
+import { Pressable, RefreshControl, View } from 'react-native'
 import { useReducedMotion } from 'react-native-reanimated'
 
 import type { DailyContent, WeeklyContent } from '@core/types'
@@ -53,6 +53,7 @@ import {
   type DisplayedContentsInput,
 } from '@core/features/content-scheduler/displayed-contents'
 
+import { Text } from '../../components/atoms/Text/Text'
 import { dailyContentProgress, weeklyContentProgress } from './content-completion'
 
 import { CharacterRail, type CharacterRailEntry } from '../../components/molecules/CharacterRail/CharacterRail'

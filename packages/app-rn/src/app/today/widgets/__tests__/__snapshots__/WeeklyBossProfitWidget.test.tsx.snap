@@ -26,6 +26,8 @@ exports[`스냅샷 — 네 크기 2x1 1`] = `
     testID="widget-weekly-boss-profit"
   >
     <Text
+      allowFontScaling={false}
+      maxFontSizeMultiplier={1.235}
       style={
         {
           "color": "#645C42",
@@ -37,6 +39,8 @@ exports[`스냅샷 — 네 크기 2x1 1`] = `
       이번 주
     </Text>
     <Text
+      allowFontScaling={false}
+      maxFontSizeMultiplier={1.235}
       numberOfLines={1}
       style={
         {
@@ -46,6 +50,8 @@ exports[`스냅샷 — 네 크기 2x1 1`] = `
       testID="profit-amount"
     >
       <Text
+        allowFontScaling={false}
+        maxFontSizeMultiplier={1.235}
         style={
           {
             "color": "#241208",
@@ -60,6 +66,8 @@ exports[`스냅샷 — 네 크기 2x1 1`] = `
         40.0억
       </Text>
       <Text
+        allowFontScaling={false}
+        maxFontSizeMultiplier={1.235}
         style={
           {
             "color": "#645C42",
@@ -109,6 +117,8 @@ exports[`스냅샷 — 네 크기 2x2 1`] = `
       }
     >
       <Text
+        allowFontScaling={false}
+        maxFontSizeMultiplier={1.235}
         style={
           {
             "color": "#645C42",
@@ -120,6 +130,8 @@ exports[`스냅샷 — 네 크기 2x2 1`] = `
         이번 주
       </Text>
       <Text
+        allowFontScaling={false}
+        maxFontSizeMultiplier={1.235}
         numberOfLines={1}
         style={
           {
@@ -129,6 +141,8 @@ exports[`스냅샷 — 네 크기 2x2 1`] = `
         testID="profit-amount"
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
           style={
             {
               "color": "#241208",
@@ -143,6 +157,8 @@ exports[`스냅샷 — 네 크기 2x2 1`] = `
           40.0억
         </Text>
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
           style={
             {
               "color": "#645C42",
@@ -228,6 +244,8 @@ exports[`스냅샷 — 네 크기 2x2 1`] = `
             }
           />
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             style={
               {
                 "color": "#645C42",
@@ -238,6 +256,8 @@ exports[`스냅샷 — 네 크기 2x2 1`] = `
             결정석
           </Text>
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             style={
               {
                 "color": "#241208",
@@ -273,6 +293,8 @@ exports[`스냅샷 — 네 크기 2x2 1`] = `
             }
           />
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             style={
               {
                 "color": "#645C42",
@@ -283,6 +305,8 @@ exports[`스냅샷 — 네 크기 2x2 1`] = `
             아이템
           </Text>
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             style={
               {
                 "color": "#241208",
@@ -349,6 +373,8 @@ exports[`스냅샷 — 네 크기 4x2 1`] = `
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
           style={
             {
               "color": "#645C42",
@@ -360,6 +386,8 @@ exports[`스냅샷 — 네 크기 4x2 1`] = `
           이번 주
         </Text>
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
           numberOfLines={1}
           style={
             {
@@ -369,6 +397,8 @@ exports[`스냅샷 — 네 크기 4x2 1`] = `
           testID="profit-amount"
         >
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             style={
               {
                 "color": "#241208",
@@ -383,6 +413,8 @@ exports[`스냅샷 — 네 크기 4x2 1`] = `
             40.0억
           </Text>
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             style={
               {
                 "color": "#645C42",
@@ -470,6 +502,8 @@ exports[`스냅샷 — 네 크기 4x2 1`] = `
               }
             />
             <Text
+              allowFontScaling={false}
+              maxFontSizeMultiplier={1.235}
               style={
                 {
                   "color": "#645C42",
@@ -480,6 +514,8 @@ exports[`스냅샷 — 네 크기 4x2 1`] = `
               결정석
             </Text>
             <Text
+              allowFontScaling={false}
+              maxFontSizeMultiplier={1.235}
               style={
                 {
                   "color": "#241208",
@@ -515,6 +551,8 @@ exports[`스냅샷 — 네 크기 4x2 1`] = `
               }
             />
             <Text
+              allowFontScaling={false}
+              maxFontSizeMultiplier={1.235}
               style={
                 {
                   "color": "#645C42",
@@ -525,6 +563,8 @@ exports[`스냅샷 — 네 크기 4x2 1`] = `
               아이템
             </Text>
             <Text
+              allowFontScaling={false}
+              maxFontSizeMultiplier={1.235}
               style={
                 {
                   "color": "#241208",
@@ -567,6 +607,8 @@ exports[`스냅샷 — 네 크기 4x2 1`] = `
           testID="profit-character-row"
         >
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             numberOfLines={1}
             style={
               {
@@ -583,6 +625,8 @@ exports[`스냅샷 — 네 크기 4x2 1`] = `
             가
           </Text>
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             style={
               {
                 "color": "#241208",
@@ -612,6 +656,8 @@ exports[`스냅샷 — 네 크기 4x2 1`] = `
           testID="profit-character-row"
         >
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             numberOfLines={1}
             style={
               {
@@ -628,6 +674,8 @@ exports[`스냅샷 — 네 크기 4x2 1`] = `
             나
           </Text>
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             style={
               {
                 "color": "#241208",
@@ -657,6 +705,8 @@ exports[`스냅샷 — 네 크기 4x2 1`] = `
           testID="profit-character-row"
         >
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             numberOfLines={1}
             style={
               {
@@ -673,6 +723,8 @@ exports[`스냅샷 — 네 크기 4x2 1`] = `
             다
           </Text>
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             style={
               {
                 "color": "#241208",
@@ -739,6 +791,8 @@ exports[`스냅샷 — 네 크기 4x3 1`] = `
         testID="profit-period-header"
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
           style={
             {
               "color": "#645C42",
@@ -751,6 +805,8 @@ exports[`스냅샷 — 네 크기 4x3 1`] = `
            보스 수익
         </Text>
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
           numberOfLines={1}
           style={
             {
@@ -765,6 +821,8 @@ exports[`스냅샷 — 네 크기 4x3 1`] = `
         </Text>
       </View>
       <Text
+        allowFontScaling={false}
+        maxFontSizeMultiplier={1.235}
         numberOfLines={1}
         style={
           {
@@ -774,6 +832,8 @@ exports[`스냅샷 — 네 크기 4x3 1`] = `
         testID="profit-amount"
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
           style={
             {
               "color": "#241208",
@@ -788,6 +848,8 @@ exports[`스냅샷 — 네 크기 4x3 1`] = `
           40.0억
         </Text>
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
           style={
             {
               "color": "#645C42",
@@ -874,6 +936,8 @@ exports[`스냅샷 — 네 크기 4x3 1`] = `
             }
           />
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             style={
               {
                 "color": "#645C42",
@@ -884,6 +948,8 @@ exports[`스냅샷 — 네 크기 4x3 1`] = `
             결정석
           </Text>
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             style={
               {
                 "color": "#241208",
@@ -919,6 +985,8 @@ exports[`스냅샷 — 네 크기 4x3 1`] = `
             }
           />
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             style={
               {
                 "color": "#645C42",
@@ -929,6 +997,8 @@ exports[`스냅샷 — 네 크기 4x3 1`] = `
             아이템
           </Text>
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             style={
               {
                 "color": "#241208",
@@ -972,6 +1042,8 @@ exports[`스냅샷 — 네 크기 4x3 1`] = `
           testID="profit-character-row"
         >
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             style={
               {
                 "color": "#9A9070",
@@ -1012,6 +1084,8 @@ exports[`스냅샷 — 네 크기 4x3 1`] = `
               testID="profit-character-face-fallback"
             >
               <Text
+                allowFontScaling={false}
+                maxFontSizeMultiplier={1.235}
                 style={
                   {
                     "color": "#FFEEE2",
@@ -1025,6 +1099,8 @@ exports[`스냅샷 — 네 크기 4x3 1`] = `
             </View>
           </View>
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             numberOfLines={1}
             style={
               {
@@ -1041,6 +1117,8 @@ exports[`스냅샷 — 네 크기 4x3 1`] = `
             가
           </Text>
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             numberOfLines={1}
             style={
               {
@@ -1054,6 +1132,8 @@ exports[`스냅샷 — 네 크기 4x3 1`] = `
             결정석 20.0억 · 아이템 5.0억
           </Text>
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             style={
               {
                 "color": "#241208",
@@ -1083,6 +1163,8 @@ exports[`스냅샷 — 네 크기 4x3 1`] = `
           testID="profit-character-row"
         >
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             style={
               {
                 "color": "#9A9070",
@@ -1123,6 +1205,8 @@ exports[`스냅샷 — 네 크기 4x3 1`] = `
               testID="profit-character-face-fallback"
             >
               <Text
+                allowFontScaling={false}
+                maxFontSizeMultiplier={1.235}
                 style={
                   {
                     "color": "#FFEEE2",
@@ -1136,6 +1220,8 @@ exports[`스냅샷 — 네 크기 4x3 1`] = `
             </View>
           </View>
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             numberOfLines={1}
             style={
               {
@@ -1152,6 +1238,8 @@ exports[`스냅샷 — 네 크기 4x3 1`] = `
             나
           </Text>
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             numberOfLines={1}
             style={
               {
@@ -1165,6 +1253,8 @@ exports[`스냅샷 — 네 크기 4x3 1`] = `
             결정석 10.0억 · 아이템 3.0억
           </Text>
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             style={
               {
                 "color": "#241208",
@@ -1194,6 +1284,8 @@ exports[`스냅샷 — 네 크기 4x3 1`] = `
           testID="profit-character-row"
         >
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             style={
               {
                 "color": "#9A9070",
@@ -1234,6 +1326,8 @@ exports[`스냅샷 — 네 크기 4x3 1`] = `
               testID="profit-character-face-fallback"
             >
               <Text
+                allowFontScaling={false}
+                maxFontSizeMultiplier={1.235}
                 style={
                   {
                     "color": "#FFEEE2",
@@ -1247,6 +1341,8 @@ exports[`스냅샷 — 네 크기 4x3 1`] = `
             </View>
           </View>
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             numberOfLines={1}
             style={
               {
@@ -1263,6 +1359,8 @@ exports[`스냅샷 — 네 크기 4x3 1`] = `
             다
           </Text>
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             numberOfLines={1}
             style={
               {
@@ -1276,6 +1374,8 @@ exports[`스냅샷 — 네 크기 4x3 1`] = `
             결정석 2.0억 · 아이템 0
           </Text>
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             style={
               {
                 "color": "#241208",

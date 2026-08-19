@@ -24,11 +24,12 @@
 //    (`ValuableDropBadge` 가 먼저 밟은 자리).
 // ④ `title`(마우스 툴팁)은 RN 에 짝이 없어 사라진다 — 터치 기기에서는 웹에서도 뜨지 않았다.
 //    팝오버가 그 문구를 이미 말한다.
-import { Pressable, Text, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 
 import { anchorPopover } from '@core/lib/popover-anchor'
 import type { PopoverAnchorGeometry } from '@core/lib/popover-anchor'
 
+import { Text } from '../../components/atoms/Text/Text'
 import { AlertTriangleIcon, BanIcon } from '../../lib/icons'
 import { useThemeAppearance } from '../../theme/context'
 import type { PopoverAnchorRect } from './ItemRevenuePopover'

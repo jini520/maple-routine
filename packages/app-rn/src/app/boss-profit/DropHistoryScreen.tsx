@@ -32,7 +32,7 @@
 //    그대로 받는다(`MediaCardArt` 가 먼저 쓴 자리). `text-balance`·`break-keep` 은 짝이 없어
 //    사라지고(줄바꿈 품질만 달라진다) WORD JOINER 는 **core 가 문자열에 박아 두므로** 그대로 온다.
 import { useEffect, useState } from 'react'
-import { Image, Pressable, Text, View } from 'react-native'
+import { Image, Pressable, View } from 'react-native'
 import { Path } from 'react-native-svg'
 
 import {
@@ -55,6 +55,7 @@ import type {
 import { getItemIconUrl } from '@core/lib/item-icons'
 import { isValuableDrop } from '@core/lib/valuable-drops'
 
+import { Text } from '../../components/atoms/Text/Text'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'

@@ -30,7 +30,7 @@
 //    `RESET` 하고, 그러면 `RootNavigator` 의 화면 목록 자체가 갈려 이 화면이 통째로 사라진다
 //    (웹은 라우트 가드가 `/onboarding` 으로 리다이렉트했다). 어느 쪽이든 이 화면은 다시 안 그려진다.
 import { useEffect, useState } from 'react'
-import { Pressable, Text, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 import { reloadAppAsync } from 'expo'
 
 import type { CacheDataSizes } from '@core/features/settings/cache-data'
@@ -40,6 +40,7 @@ import { formatBytes } from '@core/lib/format-bytes'
 import type { CacheDataSelection } from '@core/storage/cache-data'
 
 import { Card } from '../../components/atoms/Card/Card'
+import { Text } from '../../components/atoms/Text/Text'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'

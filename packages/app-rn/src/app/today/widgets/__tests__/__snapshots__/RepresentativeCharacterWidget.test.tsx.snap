@@ -101,6 +101,8 @@ exports[`세 크기가 같은 구조다 ([[ADR-147]] 정정 7 · 38) 2x2 — 스
           />
         </View>
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
           numberOfLines={1}
           style={
             {
@@ -116,6 +118,8 @@ exports[`세 크기가 같은 구조다 ([[ADR-147]] 정정 7 · 38) 2x2 — 스
           단풍루틴
         </Text>
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
           numberOfLines={1}
           style={
             {
@@ -142,6 +146,8 @@ exports[`세 크기가 같은 구조다 ([[ADR-147]] 정정 7 · 38) 2x2 — 스
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
           style={
             {
               "color": "#645C42",
@@ -154,6 +160,8 @@ exports[`세 크기가 같은 구조다 ([[ADR-147]] 정정 7 · 38) 2x2 — 스
           Lv. 291
         </Text>
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
           numberOfLines={1}
           style={
             {
@@ -190,6 +198,8 @@ exports[`세 크기가 같은 구조다 ([[ADR-147]] 정정 7 · 38) 2x2 — 스
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
           style={
             {
               "color": "#645C42",
@@ -201,6 +211,8 @@ exports[`세 크기가 같은 구조다 ([[ADR-147]] 정정 7 · 38) 2x2 — 스
           EXP
         </Text>
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
           numberOfLines={1}
           style={
             {
@@ -375,6 +387,8 @@ exports[`세 크기가 같은 구조다 ([[ADR-147]] 정정 7 · 38) 4x1 — 스
           />
         </View>
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
           numberOfLines={1}
           style={
             {
@@ -390,6 +404,8 @@ exports[`세 크기가 같은 구조다 ([[ADR-147]] 정정 7 · 38) 4x1 — 스
           단풍루틴
         </Text>
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
           numberOfLines={1}
           style={
             {
@@ -415,6 +431,8 @@ exports[`세 크기가 같은 구조다 ([[ADR-147]] 정정 7 · 38) 4x1 — 스
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
           style={
             {
               "color": "#645C42",
@@ -427,6 +445,8 @@ exports[`세 크기가 같은 구조다 ([[ADR-147]] 정정 7 · 38) 4x1 — 스
           Lv. 291
         </Text>
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
           numberOfLines={1}
           style={
             {
@@ -464,6 +484,8 @@ exports[`세 크기가 같은 구조다 ([[ADR-147]] 정정 7 · 38) 4x1 — 스
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
           style={
             {
               "color": "#645C42",
@@ -475,6 +497,8 @@ exports[`세 크기가 같은 구조다 ([[ADR-147]] 정정 7 · 38) 4x1 — 스
           EXP
         </Text>
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
           numberOfLines={1}
           style={
             {
@@ -658,6 +682,8 @@ exports[`세 크기가 같은 구조다 ([[ADR-147]] 정정 7 · 38) 4x2 — 스
             />
           </View>
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             numberOfLines={1}
             style={
               {
@@ -673,6 +699,8 @@ exports[`세 크기가 같은 구조다 ([[ADR-147]] 정정 7 · 38) 4x2 — 스
             단풍루틴
           </Text>
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             numberOfLines={1}
             style={
               {
@@ -698,6 +726,8 @@ exports[`세 크기가 같은 구조다 ([[ADR-147]] 정정 7 · 38) 4x2 — 스
           }
         >
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             style={
               {
                 "color": "#645C42",
@@ -710,6 +740,8 @@ exports[`세 크기가 같은 구조다 ([[ADR-147]] 정정 7 · 38) 4x2 — 스
             Lv. 291
           </Text>
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             numberOfLines={1}
             style={
               {
@@ -747,6 +779,8 @@ exports[`세 크기가 같은 구조다 ([[ADR-147]] 정정 7 · 38) 4x2 — 스
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
           style={
             {
               "color": "#645C42",
@@ -758,6 +792,8 @@ exports[`세 크기가 같은 구조다 ([[ADR-147]] 정정 7 · 38) 4x2 — 스
           EXP
         </Text>
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
           numberOfLines={1}
           style={
             {

@@ -161,6 +161,8 @@ exports[`ErrorState 렌더 트리 스냅샷 — 이후 변경을 잡는 기준�
       }
     >
       <Text
+        allowFontScaling={true}
+        maxFontSizeMultiplier={1.235}
         style={
           {
             "color": "#241208",
@@ -175,6 +177,8 @@ exports[`ErrorState 렌더 트리 스냅샷 — 이후 변경을 잡는 기준�
         캐릭터 목록을 불러오지 못했습니다
       </Text>
       <Text
+        allowFontScaling={true}
+        maxFontSizeMultiplier={1.235}
         style={
           {
             "color": "#645C42",
@@ -234,6 +238,8 @@ exports[`ErrorState 렌더 트리 스냅샷 — 이후 변경을 잡는 기준�
       }
     >
       <Text
+        allowFontScaling={true}
+        maxFontSizeMultiplier={1.235}
         style={
           {
             "color": "#FFEEE2",

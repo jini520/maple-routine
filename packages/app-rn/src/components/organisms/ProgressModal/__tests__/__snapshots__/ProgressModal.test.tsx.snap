@@ -96,6 +96,8 @@ exports[`ProgressModal 트리 스냅샷 1`] = `
             }
           >
             <Text
+              allowFontScaling={true}
+              maxFontSizeMultiplier={1.235}
               style={
                 {
                   "color": "#645C42",

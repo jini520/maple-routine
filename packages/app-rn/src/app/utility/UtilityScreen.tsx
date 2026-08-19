@@ -5,8 +5,9 @@
  * 성격까지만 적는다. 지어내면 그 문구가 정해진 것처럼 읽힌다.
  */
 
-import { Text, View } from 'react-native'
+import { View } from 'react-native'
 
+import { Text } from '../../components/atoms/Text/Text'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'

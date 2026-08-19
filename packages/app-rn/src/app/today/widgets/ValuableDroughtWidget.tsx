@@ -32,11 +32,12 @@
  */
 
 import { useState } from 'react'
-import { Text, View } from 'react-native'
+import { View } from 'react-native'
 import { Path } from 'react-native-svg'
 
 import { formatValuableDroughtHeadline } from '@core/lib/drop-history'
 
+import { Text } from '../../../components/atoms/Text/Text'
 import { MAPLE_LEAF_PATH } from '../../../components/mapleLeafPath'
 import { DROUGHT_GLOW_FILTER, DROUGHT_TIER_STYLES } from '../../../lib/drought-tier-styles'
 import { Svg } from '../../../lib/nativewind-interop'
@@ -129,7 +130,7 @@ function WeeksChip(props: { weeksSince: number }): React.JSX.Element {
       testID="drought-weeks"
       className="shrink-0 rounded-full border border-border bg-surface-2 px-1.5 py-0.5"
     >
-      <Text numberOfLines={1} className="text-[10px] font-bold text-text-muted">
+      <Text fixed numberOfLines={1} className="text-[10px] font-bold text-text-muted">
         {weeksLabel(props.weeksSince)}
       </Text>
     </View>
@@ -167,7 +168,7 @@ function NoRecord(props: { variant: Variant }): React.JSX.Element {
     return (
       <View testID="widget-valuable-drought" className="flex-1 flex-row items-center gap-3 p-3">
         <BlankLeaf sizePx={24} />
-        <Text testID="drought-no-record" numberOfLines={1} className="flex-1 text-[11px] text-text-muted">
+        <Text fixed testID="drought-no-record" numberOfLines={1} className="flex-1 text-[11px] text-text-muted">
           {NO_RECORD_NOTE}
         </Text>
       </View>
@@ -179,6 +180,7 @@ function NoRecord(props: { variant: Variant }): React.JSX.Element {
       <View testID="widget-valuable-drought" className="flex-1 items-center justify-center gap-2.5 p-3">
         <BlankLeaf sizePx={44} />
         <Text
+          fixed
           testID="drought-no-record"
           numberOfLines={2}
           className="text-center text-[10.5px] leading-[15px] text-text-muted"
@@ -192,7 +194,7 @@ function NoRecord(props: { variant: Variant }): React.JSX.Element {
   return (
     <View testID="widget-valuable-drought" className="flex-1 flex-row items-center gap-2.5 p-3">
       <BlankLeaf sizePx={20} />
-      <Text testID="drought-no-record" numberOfLines={2} className="flex-1 text-[10px] text-text-muted">
+      <Text fixed testID="drought-no-record" numberOfLines={2} className="flex-1 text-[10px] text-text-muted">
         {NO_RECORD_NOTE}
       </Text>
     </View>
@@ -230,10 +232,11 @@ export function ValuableDroughtWidget({ w, h, data }: WidgetProps): React.JSX.El
         className={`flex-1 items-center justify-center gap-1.5 p-3 ${surface}`}
       >
         <Leaf tier={view.tier} sizePx={LEAF_PX.compact} />
-        <Text testID="drought-headline" numberOfLines={1} className={`text-[13px] font-bold ${ink}`}>
+        <Text fixed testID="drought-headline" numberOfLines={1} className={`text-[13px] font-bold ${ink}`}>
           {headline}
         </Text>
         <Text
+          fixed
           testID="drought-status"
           numberOfLines={1}
           className="text-[10.5px] text-text-muted"
@@ -252,7 +255,7 @@ export function ValuableDroughtWidget({ w, h, data }: WidgetProps): React.JSX.El
         className={`flex-1 flex-row items-center gap-2 p-3 ${surface}`}
       >
         <Leaf tier={view.tier} sizePx={LEAF_PX.mini} />
-        <Text testID="drought-headline" numberOfLines={1} className={`min-w-0 flex-1 text-[12px] font-bold ${ink}`}>
+        <Text fixed testID="drought-headline" numberOfLines={1} className={`min-w-0 flex-1 text-[12px] font-bold ${ink}`}>
           {headline}
         </Text>
         <WeeksChip weeksSince={view.weeksSince} />
@@ -268,10 +271,10 @@ export function ValuableDroughtWidget({ w, h, data }: WidgetProps): React.JSX.El
     >
       <Leaf tier={view.tier} sizePx={LEAF_PX.wide} />
       <View className="min-w-0 flex-1 gap-0.5">
-        <Text testID="drought-headline" numberOfLines={1} className={`text-[13px] font-bold ${ink}`}>
+        <Text fixed testID="drought-headline" numberOfLines={1} className={`text-[13px] font-bold ${ink}`}>
           {headline}
         </Text>
-        <Text testID="drought-last" numberOfLines={1} className="text-[10.5px] text-text-muted">
+        <Text fixed testID="drought-last" numberOfLines={1} className="text-[10.5px] text-text-muted">
           {lastLine(view)}
         </Text>
       </View>

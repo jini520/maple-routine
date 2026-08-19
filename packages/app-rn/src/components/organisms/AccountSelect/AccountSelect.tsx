@@ -52,7 +52,6 @@ import {
   Modal,
   Pressable,
   ScrollView,
-  Text,
   useWindowDimensions,
   View,
 } from 'react-native'
@@ -64,6 +63,7 @@ import { worldEmblemUrl } from '@core/lib/world-emblem'
 import { faceCropStyle } from '../../../lib/face-crop'
 import { ChevronDownIcon } from '../../../lib/icons'
 import { naturalAspectStyle } from '../../../lib/image-aspect'
+import { Text } from '../../atoms/Text/Text'
 import { placeDropdown } from './place-dropdown'
 
 // 얼굴 크롭 표는 `lib/face-crop` 하나뿐이다 — 이 파일이 들고 있던 36px 표가 그 자리로 옮겨갔고,

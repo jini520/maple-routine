@@ -25,7 +25,7 @@
 //    없어 그 규칙이 계산하던 결과를 토큰 하나로 미리 만들어 뒀다(`src/theme/theme-vars.ts`).
 //    모드 분기는 거기서 `definition.mode` 로 딱 한 번 일어난다 — **테마 이름으로 가르지 않는다**.
 import { useState } from 'react'
-import { Modal, ScrollView, Text, View } from 'react-native'
+import { Modal, ScrollView, View } from 'react-native'
 import { useSafeAreaFrame, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { formatRosterError, formatStaleRosterError } from '@core/features/schedule-sync/format'
@@ -35,6 +35,7 @@ import type { CharacterPickerEntry } from '@core/types'
 import { Button } from '../../atoms/Button/Button'
 import { Card } from '../../atoms/Card/Card'
 import { MapleSweepSpinner } from '../../atoms/MapleSweepSpinner/MapleSweepSpinner'
+import { Text } from '../../atoms/Text/Text'
 import { ErrorState } from '../../molecules/ErrorState/ErrorState'
 import { StaleBanner } from '../../molecules/ErrorState/StaleBanner'
 import { CharacterTrackingGrid } from './CharacterTrackingGrid'

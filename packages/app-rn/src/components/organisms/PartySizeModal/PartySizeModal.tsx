@@ -28,7 +28,7 @@
 // ④ `border-t` 경계선은 `media-scope` **바깥**이다 — 다크 테마는 media-surface ≈ surface 이고
 //    검은마법사는 값이 완전히 같아(#1C1319) 이 선이 유일한 경계다. 웹과 같은 자리에 그대로 둔다.
 // ⑤ `space-y`/`gap-[18px]` 은 `gap-*` 로, `tabular-nums` 는 스타일로(`lib/text-styles.ts`).
-import { Pressable, Text, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 
 import { getBossPortraitCrop, getBossPortraitUrl } from '@core/lib/boss-icons'
 import type { BossDifficulty } from '@core/types'
@@ -42,6 +42,7 @@ import { MEDIA_TEXT_SHADOW_STYLE, TABULAR_NUMS } from '../../../lib/text-styles'
 import { useThemeAppearance } from '../../../theme/context'
 import { MediaScope } from '../../../theme/MediaScope'
 import { Badge } from '../../atoms/Badge/Badge'
+import { Text } from '../../atoms/Text/Text'
 import { DifficultySegment } from '../../molecules/DifficultySegment/DifficultySegment'
 import { MediaCardArt } from '../../molecules/MediaCardArt/MediaCardArt'
 import { PartySizeStepper } from '../../molecules/PartySizeStepper/PartySizeStepper'

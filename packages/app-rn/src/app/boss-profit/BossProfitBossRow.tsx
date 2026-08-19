@@ -21,7 +21,7 @@
 // ⑥ **드롭 아이콘 스택의 겹침(`marginLeft: -2`)과 층 순서(`zIndex`)는 그대로다** — 둘 다 RN 스타일에
 //    같은 이름으로 있다.
 import { useState } from 'react'
-import { Image, Pressable, Text, View } from 'react-native'
+import { Image, Pressable, View } from 'react-native'
 
 import type { BossProfitRow } from '@core/features/boss-profit/store'
 import { useToastStore } from '@core/features/toast/store'
@@ -33,6 +33,7 @@ import type { RecordedDrop } from '@core/types/drops'
 
 import { AnimatedMeso } from '../../components/atoms/AnimatedMeso/AnimatedMeso'
 import { DifficultyBadge } from '../../components/atoms/DifficultyBadge/DifficultyBadge'
+import { Text } from '../../components/atoms/Text/Text'
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
 import { MinusIcon, PlusIcon } from '../../lib/icons'
 import { TABULAR_NUMS } from '../../lib/text-styles'

@@ -19,10 +19,11 @@
 // 덮어쓰면 **어느 쪽이 이기는지가 스타일시트 순서에 달리므로**(class 문자열 순서가 아니다) 조용히
 // 갈릴 수 있다. 웹과 같은 자체 pill 로 둔다.
 import { Path } from 'react-native-svg'
-import { Pressable, Text, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 
 import { Svg } from '../../../lib/nativewind-interop'
 import { Card } from '../../atoms/Card/Card'
+import { Text } from '../../atoms/Text/Text'
 import { MAPLE_LEAF_PATH } from '../../mapleLeafPath'
 
 interface EmptyStateAction {

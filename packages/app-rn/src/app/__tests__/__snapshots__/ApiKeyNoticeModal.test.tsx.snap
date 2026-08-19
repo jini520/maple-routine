@@ -228,6 +228,8 @@ exports[`ApiKeyNoticeModal ([[ADR-116]] 결정 1) 렌더 트리 스냅샷 (inval
               }
             >
               <Text
+                allowFontScaling={true}
+                maxFontSizeMultiplier={1.235}
                 style={
                   {
                     "color": "#241208",
@@ -241,6 +243,8 @@ exports[`ApiKeyNoticeModal ([[ADR-116]] 결정 1) 렌더 트리 스냅샷 (inval
                 API 키가 더 이상 유효하지 않습니다
               </Text>
               <Text
+                allowFontScaling={true}
+                maxFontSizeMultiplier={1.235}
                 style={
                   {
                     "color": "#645C42",
@@ -298,6 +302,8 @@ exports[`ApiKeyNoticeModal ([[ADR-116]] 결정 1) 렌더 트리 스냅샷 (inval
               }
             >
               <Text
+                allowFontScaling={true}
+                maxFontSizeMultiplier={1.235}
                 style={
                   {
                     "color": "#FFEEE2",

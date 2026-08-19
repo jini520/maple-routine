@@ -43,12 +43,13 @@
 // > 그것이라 OTA 와 무관하다. 셸이 그것을 넘긴다(`App.tsx`). 프롭으로 받는 구조는 그대로 둔다 —
 // > 이 컴포넌트가 재시작 수단을 아는 것과 폴백을 그리는 것은 다른 관심사다.
 import { Component, type ErrorInfo, type ReactNode } from 'react'
-import { Text, View } from 'react-native'
+import { View } from 'react-native'
 
 import { hideSplashScreen } from '@core/native/splash-screen'
 
 import { AlertTriangleIcon, RotateCcwIcon } from '../../../lib/icons'
 import { Button } from '../../atoms/Button/Button'
+import { Text } from '../../atoms/Text/Text'
 
 interface ErrorBoundaryProps {
   children: ReactNode

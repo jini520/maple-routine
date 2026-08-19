@@ -19,12 +19,13 @@
 //    상자(`bg-info-tint`)·아이콘(`text-info-ink`)·글자(`text-xs text-info-ink`)로 나뉜다.
 // ③ `hover:bg-primary-tint` 제거(터치 기기에 hover 가 없다 — atoms 와 같은 규칙).
 import { useState } from 'react'
-import { Pressable, Text, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 
 import { TRACKING_MODE_OPTIONS } from '@core/features/tracking-mode/copy'
 import type { TrackingMode } from '@core/storage/tracking-mode'
 
 import { Button } from '../../components/atoms/Button/Button'
+import { Text } from '../../components/atoms/Text/Text'
 import { Gamepad2Icon, InfoIcon, ListChecksIcon } from '../../lib/icons'
 
 // 자동은 "게임에서 정한 것을 따른다"는 주어를 가리키고, 수동은 "앱에서 고른다"를 가리킨다

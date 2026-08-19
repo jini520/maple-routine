@@ -32,7 +32,7 @@
 //    좌표**. 크롭 값은 한 자리도 안 바뀐다(`CharacterAvatar` 가 먼저 밟은 자리) — 얼굴은 넥슨이
 //    주는 원격 주소라 `{ uri }` 로 감싼다.
 import { useEffect, useState } from 'react'
-import { Image, Pressable, Text, View } from 'react-native'
+import { Image, Pressable, View } from 'react-native'
 
 import { useBossProfitStore } from '@core/features/boss-profit/store'
 import {
@@ -56,6 +56,7 @@ import type { RecordedDrop } from '@core/types/drops'
 
 import { DifficultyBadge } from '../../components/atoms/DifficultyBadge/DifficultyBadge'
 import { ProfitIcon } from '../../components/atoms/ProfitIcon/ProfitIcon'
+import { Text } from '../../components/atoms/Text/Text'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'

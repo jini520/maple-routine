@@ -27,6 +27,8 @@ exports[`세 크기 스냅샷 — 아무도 안 부르는 분기의 유일한 �
     testID="widget-unpriced-drops"
   >
     <Text
+      allowFontScaling={false}
+      maxFontSizeMultiplier={1.235}
       style={
         {
           "color": "#241208",
@@ -41,6 +43,8 @@ exports[`세 크기 스냅샷 — 아무도 안 부르는 분기의 유일한 �
       5
     </Text>
     <Text
+      allowFontScaling={false}
+      maxFontSizeMultiplier={1.235}
       numberOfLines={1}
       style={
         {
@@ -99,6 +103,8 @@ exports[`세 크기 스냅샷 — 아무도 안 부르는 분기의 유일한 �
     >
       <Text
         adjustsFontSizeToFit={true}
+        allowFontScaling={false}
+        maxFontSizeMultiplier={1.235}
         numberOfLines={1}
         style={
           {
@@ -126,6 +132,8 @@ exports[`세 크기 스냅샷 — 아무도 안 부르는 분기의 유일한 �
       }
     >
       <Text
+        allowFontScaling={false}
+        maxFontSizeMultiplier={1.235}
         numberOfLines={1}
         style={
           {
@@ -149,6 +157,8 @@ exports[`세 크기 스냅샷 — 아무도 안 부르는 분기의 유일한 �
         testID="unpriced-cta"
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
           numberOfLines={1}
           style={
             {
@@ -299,6 +309,8 @@ exports[`세 크기 스냅샷 — 아무도 안 부르는 분기의 유일한 �
       >
         <Text
           adjustsFontSizeToFit={true}
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
           numberOfLines={1}
           style={
             {
@@ -315,6 +327,8 @@ exports[`세 크기 스냅샷 — 아무도 안 부르는 분기의 유일한 �
         </Text>
       </View>
       <Text
+        allowFontScaling={false}
+        maxFontSizeMultiplier={1.235}
         numberOfLines={1}
         style={
           {
@@ -340,6 +354,8 @@ exports[`세 크기 스냅샷 — 아무도 안 부르는 분기의 유일한 �
       testID="unpriced-preview"
     >
       <Text
+        allowFontScaling={false}
+        maxFontSizeMultiplier={1.235}
         numberOfLines={1}
         style={
           {
@@ -352,6 +368,8 @@ exports[`세 크기 스냅샷 — 아무도 안 부르는 분기의 유일한 �
         생명의 연마석
       </Text>
       <Text
+        allowFontScaling={false}
+        maxFontSizeMultiplier={1.235}
         numberOfLines={1}
         style={
           {
@@ -364,6 +382,8 @@ exports[`세 크기 스냅샷 — 아무도 안 부르는 분기의 유일한 �
         검은 환생의 불꽃
       </Text>
       <Text
+        allowFontScaling={false}
+        maxFontSizeMultiplier={1.235}
         numberOfLines={1}
         style={
           {
@@ -388,6 +408,8 @@ exports[`세 크기 스냅샷 — 아무도 안 부르는 분기의 유일한 �
       testID="unpriced-cta"
     >
       <Text
+        allowFontScaling={false}
+        maxFontSizeMultiplier={1.235}
         numberOfLines={1}
         style={
           {

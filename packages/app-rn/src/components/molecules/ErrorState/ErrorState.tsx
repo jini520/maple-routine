@@ -32,9 +32,10 @@
 // ② `space-y-1` → `gap-1`, `text-center` 는 각 글자로(RN 은 `textAlign` 을 상속하지 않는다).
 // ③ 재시도 버튼은 웹처럼 자체 pill 이다 — `Button` atom 의 여백(`px-5 py-2.5`)과 다르고
 //    (`px-4 py-2 text-xs`), 덮어쓰기는 클래스 순서가 아니라 스타일시트 순서에 달려 조용히 갈린다.
-import { Pressable, Text, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 
 import { AlertTriangleIcon } from '../../../lib/icons'
+import { Text } from '../../atoms/Text/Text'
 
 interface ErrorStateAction {
   label: string

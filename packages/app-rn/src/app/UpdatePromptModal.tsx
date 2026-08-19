@@ -36,7 +36,7 @@
 //    두 갈래(`View` 스타일 = CSS API / SVG 속성 = `useAnimatedProps`) 중 어느 쪽도 아직 필요 없다.
 //    **웹에도 이 트랜지션은 `@keyframes` 가 아니라 CSS 트랜지션이라 7종 목록 밖이다.**
 import { useState } from 'react'
-import { Text, View } from 'react-native'
+import { View } from 'react-native'
 
 import type { LiveUpdateStatus, LiveUpdateStore } from '@core/features/live-update/store'
 
@@ -44,6 +44,7 @@ import { Badge } from '../components/atoms/Badge/Badge'
 import { Button } from '../components/atoms/Button/Button'
 import { MapleSweepSpinner } from '../components/atoms/MapleSweepSpinner/MapleSweepSpinner'
 import { ProgressBar } from '../components/atoms/ProgressBar/ProgressBar'
+import { Text } from '../components/atoms/Text/Text'
 import { Modal } from '../components/organisms/Modal/Modal'
 import {
   AlertTriangleIcon,

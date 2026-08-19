@@ -13,9 +13,10 @@
 // ③ **카테고리 배지의 `/20` 은 클래스로 남는다.** NativeWind 가 투명도 접미사를 못 만드는 것은
 //    `var()` 로 들어온 색일 때이고(`lib/color-alpha.ts`), 이 셋은 리터럴 hex 라 빌드 시점에
 //    `rgba()` 로 접힌다. **조용히 사라지는 종류의 실패**라 테스트가 배경색이 실제로 붙는지 본다.
-import { Text } from 'react-native'
 
 import type { WeeklyContent } from '@core/types'
+
+import { Text } from '../../components/atoms/Text/Text'
 
 // 무릉도장은 quest_state가 아니라 참여 시 도달한 층수(1~100+)가 now_count에 그대로 기록된다.
 // 성실한 조사에 대한 보답은 quest_state=1일 때 now_count/max_count(0~2)로 완료 횟수를 따로

@@ -42,11 +42,12 @@
  * `CharacterRow` 가 이미 밟은 자리라 그 함수를 그대로 쓴다.
  */
 
-import { Image, Text, View } from 'react-native'
+import { Image, View } from 'react-native'
 
 import { worldEmblemUrl } from '@core/lib/world-emblem'
 
 import { ProgressBar } from '../../../components/atoms/ProgressBar/ProgressBar'
+import { Text } from '../../../components/atoms/Text/Text'
 import { faceCropStyle } from '../../../lib/face-crop'
 import { naturalAspectStyle } from '../../../lib/image-aspect'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
@@ -134,6 +135,7 @@ function NameLine(props: {
         </View>
       )}
       <Text
+        fixed
         testID="representative-name"
         numberOfLines={1}
         className={`min-w-0 shrink font-semibold leading-tight text-text ${spec.name}`}
@@ -144,6 +146,7 @@ function NameLine(props: {
           이 카드가 가르는 자리는 아니라 둘 다 비운다. */}
       {props.view.guildName !== undefined && props.view.guildName !== null && (
         <Text
+          fixed
           testID="representative-guild"
           numberOfLines={1}
           className={`shrink-0 leading-tight text-text-muted ${spec.guild}`}
@@ -165,11 +168,12 @@ function CaptionLine(props: {
 
   return (
     <View className={`flex-row items-center gap-1.5${props.center ? ' justify-center' : ''}`}>
-      <Text className={`shrink-0 leading-tight text-text-muted ${spec.caption}`}>
+      <Text fixed className={`shrink-0 leading-tight text-text-muted ${spec.caption}`}>
         {`Lv. ${props.view.level}`}
       </Text>
       {props.view.jobClass !== undefined && (
         <Text
+          fixed
           testID="representative-job"
           numberOfLines={1}
           className={`min-w-0 shrink leading-tight text-text-muted ${spec.caption}`}
@@ -204,8 +208,9 @@ function ExpBlock(props: {
       className={compactColumn ? 'w-[100px] shrink-0 gap-1' : 'w-full gap-1'}
     >
       <View className="flex-row items-center gap-1">
-        <Text className="text-[10px] font-semibold text-text-muted">EXP</Text>
+        <Text fixed className="text-[10px] font-semibold text-text-muted">EXP</Text>
         <Text
+          fixed
           numberOfLines={1}
           style={TABULAR_NUMS}
           className="ml-auto text-[10px] font-semibold text-text"
@@ -240,7 +245,7 @@ export function RepresentativeCharacterWidget({ w, h, data }: WidgetProps): Reac
   if (view === null) {
     return (
       <View testID="widget-representative-character" className="flex-1 justify-center p-3">
-        <Text className="text-xs text-text-muted">추적 중인 캐릭터가 없습니다</Text>
+        <Text fixed className="text-xs text-text-muted">추적 중인 캐릭터가 없습니다</Text>
       </View>
     )
   }

@@ -20,8 +20,9 @@
 // 한다** — 상자에 주면 조용히 무시된다(웹 호출부 4곳이 그렇게 쓰고 있다: ThemeModal ·
 // AccountFlowStatus · ErrorBoundary · CharacterTrackingPicker). step 4~6 이 옮길 때 함께 처리한다.
 import { Children, type ReactNode } from 'react'
-import { Pressable, type PressableProps, Text } from 'react-native'
+import { Pressable, type PressableProps } from 'react-native'
 
+import { Text } from '../Text/Text'
 import { BUTTON_VARIANT_CLASS, BUTTON_VARIANT_TEXT_CLASS, type ButtonVariant } from './variants'
 
 export interface ButtonProps extends Omit<PressableProps, 'children'> {

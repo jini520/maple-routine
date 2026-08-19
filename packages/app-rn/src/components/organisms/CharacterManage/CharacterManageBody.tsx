@@ -32,7 +32,7 @@
 // 그때는 본문 전체가 빈 상태 + 키 재입력 경로다([[ADR-143]] 결정 10 넷째 줄 — [[ADR-127]] 결정 3 이
 // 열린 질문으로 남긴 자리). 「계정 다시 선택」 같은 옛 탈출구는 두지 않는다: 계정을 고르는 단계가
 // 없어졌고 출구는 드롭다운이다.
-import { Text, View } from 'react-native'
+import { View } from 'react-native'
 
 import {
   formatRosterError,
@@ -42,6 +42,7 @@ import {
 import { useOnboardingStore } from '@core/features/onboarding/store'
 
 import { MapleSweepSpinner } from '../../atoms/MapleSweepSpinner/MapleSweepSpinner'
+import { Text } from '../../atoms/Text/Text'
 import { AddMark } from '../../molecules/CharacterRow/AddMark'
 import { CharacterRow } from '../../molecules/CharacterRow/CharacterRow'
 import { EmptyState } from '../../molecules/EmptyState/EmptyState'

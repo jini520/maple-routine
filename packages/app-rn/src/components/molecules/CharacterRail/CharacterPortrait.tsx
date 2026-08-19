@@ -12,11 +12,12 @@
 //    엉뚱한 호를 따라가므로 **ocid 로 유일하게** 만든다(레일에 같은 컴포넌트가 여러 벌 뜬다).
 // ③ **얼굴 크롭의 기준 상자는 얼굴 원(40px)이지 슬롯이 아니다.** 슬롯을 기준으로 잡으면 크롭이
 //    밀린다([[ADR-015]] 기법 그대로 — `boss-profit/CharacterAvatar` 와 같은 함정).
-import { Image, Pressable, Text, View, type ImageStyle } from 'react-native'
+import { Image, Pressable, View, type ImageStyle } from 'react-native'
 import { Circle, Defs, Path, TextPath, Text as SvgText } from 'react-native-svg'
 
 import { Svg } from '../../../lib/nativewind-interop'
 import { useThemeAppearance } from '../../../theme/context'
+import { Text } from '../../atoms/Text/Text'
 import {
   PORTRAIT_CENTER_X,
   PORTRAIT_CENTER_Y,
@@ -188,7 +189,7 @@ export function CharacterPortrait(props: CharacterPortraitProps): React.JSX.Elem
           />
         ) : (
           <View className="h-full w-full items-center justify-center">
-            <Text className="text-sm font-bold text-text">{props.characterName.charAt(0)}</Text>
+            <Text fixed className="text-sm font-bold text-text">{props.characterName.charAt(0)}</Text>
           </View>
         )}
       </View>

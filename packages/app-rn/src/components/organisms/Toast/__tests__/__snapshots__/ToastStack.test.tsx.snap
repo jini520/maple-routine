@@ -252,6 +252,8 @@ exports[`ToastStack 트리 스냅샷 1`] = `
           </RNSVGGroup>
         </RNSVGSvgView>
         <Text
+          allowFontScaling={true}
+          maxFontSizeMultiplier={1.235}
           numberOfLines={1}
           style={
             {
@@ -689,6 +691,8 @@ exports[`ToastStack 트리 스냅샷 1`] = `
           </RNSVGGroup>
         </RNSVGSvgView>
         <Text
+          allowFontScaling={true}
+          maxFontSizeMultiplier={1.235}
           numberOfLines={1}
           style={
             {

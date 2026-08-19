@@ -53,7 +53,7 @@
 //    바탕을 전제로 그려져서, 밝은 테마에서 표면색으로 바꾸면 연출 자체가 사라진다. 웹과 같은
 //    고정 hex 를 그대로 쓴다.
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
-import { Image, Modal, Pressable, Text, View, useWindowDimensions } from 'react-native'
+import { Image, Modal, Pressable, View, useWindowDimensions } from 'react-native'
 import { useReducedMotion } from 'react-native-reanimated'
 import { Defs, RadialGradient, Rect, Stop } from 'react-native-svg'
 
@@ -66,6 +66,7 @@ import {
 import { getItemIconUrl } from '@core/lib/item-icons'
 
 import { AnimatedView, Svg } from '../../../lib/nativewind-interop'
+import { Text } from '../../atoms/Text/Text'
 import {
   advanceDropEffect,
   createDropEffectState,

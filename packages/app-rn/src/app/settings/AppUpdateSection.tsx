@@ -26,13 +26,14 @@
 // ② `Button` 의 글자 클래스가 `textClassName` 으로, `disabled:opacity-50` 이 조건부 클래스로.
 // ③ **`loadCurrentVersion()` 을 마운트에서 부르던 이펙트가 사라진다.** 그 호출이 곧 ①의 포트라
 //    부르면 던진다 — 값은 호출부가 넘기고, 이 카드는 받은 것을 그린다.
-import { Text, View } from 'react-native'
+import { View } from 'react-native'
 
 import type { LiveUpdateStatus, LiveUpdateStore } from '@core/features/live-update/store'
 
 import { Button } from '../../components/atoms/Button/Button'
 import { Card } from '../../components/atoms/Card/Card'
 import { MapleSpinner } from '../../components/atoms/MapleSpinner/MapleSpinner'
+import { Text } from '../../components/atoms/Text/Text'
 import { SETTINGS_ROW_DIVIDER_CLASS } from './row-class'
 
 /** 이 카드가 **읽는** 것 — core 스토어에서 그대로 뽑아 두 벌이 되지 않게 한다. */

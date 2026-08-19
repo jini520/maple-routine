@@ -1,7 +1,8 @@
 /** 가계부 · 사냥 수익 — [[ADR-132]] 결정 12. **아직 껍데기다.** */
 
-import { Text, View } from 'react-native'
+import { View } from 'react-native'
 
+import { Text } from '../../components/atoms/Text/Text'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
