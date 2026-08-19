@@ -64,7 +64,6 @@ import {
   Easing,
   Pressable,
   StyleSheet,
-  Text,
   useWindowDimensions,
   View,
 } from 'react-native'
@@ -72,6 +71,7 @@ import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect'
 
 import { GearIcon } from '../components/atoms/GearIcon/GearIcon'
 import { ProfitIcon } from '../components/atoms/ProfitIcon/ProfitIcon'
+import { Text } from '../components/atoms/Text/Text'
 import { BAR_LIFT, resolveBottomBarMetrics } from '../lib/bottom-bar-metrics'
 import { useBottomSafeAreaPx } from '../lib/bottom-safe-area'
 import {
@@ -360,6 +360,7 @@ function BarItem({
           strokeWidth={activeStroke(Icon, active)}
         />
         <Text
+          fixed
           numberOfLines={1}
           // `includeFontPadding` 은 **안드로이드에서만 읽히는 값**이고, 기본(참)일 때 글자 상자에
           // 폰트 메트릭 여백을 더해 iOS 보다 큰 상자를 만든다 ([[ADR-132]] 정정 28). 실측으로

@@ -93,6 +93,8 @@ exports[`세 크기 스냅샷 — 아무도 안 부르는 분기의 유일한 �
       </RNSVGSvgView>
     </View>
     <Text
+      allowFontScaling={false}
+      maxFontSizeMultiplier={1.235}
       numberOfLines={1}
       style={
         {
@@ -125,6 +127,8 @@ exports[`세 크기 스냅샷 — 아무도 안 부르는 분기의 유일한 �
       testID="drought-weeks"
     >
       <Text
+        allowFontScaling={false}
+        maxFontSizeMultiplier={1.235}
         numberOfLines={1}
         style={
           {
@@ -234,6 +238,8 @@ exports[`세 크기 스냅샷 — 아무도 안 부르는 분기의 유일한 �
       </RNSVGSvgView>
     </View>
     <Text
+      allowFontScaling={false}
+      maxFontSizeMultiplier={1.235}
       numberOfLines={1}
       style={
         {
@@ -247,6 +253,8 @@ exports[`세 크기 스냅샷 — 아무도 안 부르는 분기의 유일한 �
       선넘네?!
     </Text>
     <Text
+      allowFontScaling={false}
+      maxFontSizeMultiplier={1.235}
       numberOfLines={1}
       style={
         {
@@ -366,6 +374,8 @@ exports[`세 크기 스냅샷 — 아무도 안 부르는 분기의 유일한 �
       }
     >
       <Text
+        allowFontScaling={false}
+        maxFontSizeMultiplier={1.235}
         numberOfLines={1}
         style={
           {
@@ -379,6 +389,8 @@ exports[`세 크기 스냅샷 — 아무도 안 부르는 분기의 유일한 �
         선넘네?!
       </Text>
       <Text
+        allowFontScaling={false}
+        maxFontSizeMultiplier={1.235}
         numberOfLines={1}
         style={
           {
@@ -408,6 +420,8 @@ exports[`세 크기 스냅샷 — 아무도 안 부르는 분기의 유일한 �
       testID="drought-weeks"
     >
       <Text
+        allowFontScaling={false}
+        maxFontSizeMultiplier={1.235}
         numberOfLines={1}
         style={
           {

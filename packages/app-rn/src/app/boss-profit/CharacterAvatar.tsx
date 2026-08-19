@@ -16,11 +16,12 @@
 // ④ **접근성 이름이 `<Svg>` 가 아니라 그것을 감싸는 `View` 로 올라간다** — `BossPortrait` 와 같은
 //    방식이다. 링이 진행률의 유일한 표현이므로(정정 7 — `n/12` 텍스트 보류) 이름은 남아야 하고,
 //    `role="img"` + `aria-label` 의 **문구는 웹과 한 글자도 다르지 않다.**
-import { Image, Text, View, type ImageStyle } from 'react-native'
+import { Image, View, type ImageStyle } from 'react-native'
 import { Circle } from 'react-native-svg'
 
 import type { BossCycle } from '@core/types'
 
+import { Text } from '../../components/atoms/Text/Text'
 import { Svg } from '../../lib/nativewind-interop'
 import { useThemeAppearance } from '../../theme/context'
 

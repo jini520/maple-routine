@@ -14,7 +14,7 @@
 // ── RN 으로 옮기며 바뀐 것 ────────────────────────────────────────────────────────
 // `<span>` → `<Text>`. 웹은 인라인 요소라 글자 흐름 안에 놓였고 RN 의 `Text` 도 같다(부모 `Text`
 // 안이면 인라인, 아니면 자기 상자). 클래스 문자열은 그대로다.
-import { Text, type TextProps } from 'react-native'
+import { Text, type TextProps } from '../Text/Text'
 
 const TONE_CLASS = {
   primary: 'bg-primary-tint text-primary-ink',

@@ -220,6 +220,8 @@ exports[`렌더 트리 기준선 기록이 있는 현재 주 1`] = `
                   testID="page-header-title-row"
                 >
                   <Text
+                    allowFontScaling={true}
+                    maxFontSizeMultiplier={1.235}
                     style={
                       {
                         "color": "#241208",
@@ -274,6 +276,8 @@ exports[`렌더 트리 기준선 기록이 있는 현재 주 1`] = `
                       role="button"
                     >
                       <Text
+                        allowFontScaling={true}
+                        maxFontSizeMultiplier={1.235}
                         style={
                           {
                             "color": "#645C42",
@@ -319,6 +323,8 @@ exports[`렌더 트리 기준선 기록이 있는 현재 주 1`] = `
                       role="button"
                     >
                       <Text
+                        allowFontScaling={true}
+                        maxFontSizeMultiplier={1.235}
                         style={
                           {
                             "color": "#645C42",
@@ -376,6 +382,8 @@ exports[`렌더 트리 기준선 기록이 있는 현재 주 1`] = `
                     role="button"
                   >
                     <Text
+                      allowFontScaling={true}
+                      maxFontSizeMultiplier={1.235}
                       style={
                         {
                           "backgroundColor": "#FEECDA",
@@ -427,6 +435,8 @@ exports[`렌더 트리 기준선 기록이 있는 현재 주 1`] = `
                     role="button"
                   >
                     <Text
+                      allowFontScaling={true}
+                      maxFontSizeMultiplier={1.235}
                       style={
                         {
                           "color": "#645C42",
@@ -454,6 +464,8 @@ exports[`렌더 트리 기준선 기록이 있는 현재 주 1`] = `
                     }
                   >
                     <Text
+                      allowFontScaling={true}
+                      maxFontSizeMultiplier={1.235}
                       style={
                         {
                           "color": "#645C42",
@@ -812,6 +824,8 @@ exports[`렌더 트리 기준선 기록이 있는 현재 주 1`] = `
                     }
                   >
                     <Text
+                      allowFontScaling={true}
+                      maxFontSizeMultiplier={1.235}
                       style={
                         {
                           "color": "#241208",
@@ -824,6 +838,8 @@ exports[`렌더 트리 기준선 기록이 있는 현재 주 1`] = `
                       이번 주
                     </Text>
                     <Text
+                      allowFontScaling={true}
+                      maxFontSizeMultiplier={1.235}
                       style={
                         {
                           "color": "#645C42",
@@ -977,6 +993,8 @@ exports[`렌더 트리 기준선 기록이 있는 현재 주 1`] = `
                     }
                   >
                     <Text
+                      allowFontScaling={true}
+                      maxFontSizeMultiplier={1.235}
                       style={
                         {
                           "color": "#645C42",
@@ -1025,6 +1043,8 @@ exports[`렌더 트리 기준선 기록이 있는 현재 주 1`] = `
                         }
                       />
                       <Text
+                        allowFontScaling={true}
+                        maxFontSizeMultiplier={1.235}
                         style={
                           {
                             "color": "#F58B0F",
@@ -1040,6 +1060,8 @@ exports[`렌더 트리 기준선 기록이 있는 현재 주 1`] = `
                         1
                          
                         <Text
+                          allowFontScaling={true}
+                          maxFontSizeMultiplier={1.235}
                           style={
                             {
                               "fontWeight": "600",
@@ -1204,6 +1226,8 @@ exports[`렌더 트리 기준선 기록이 있는 현재 주 1`] = `
                       </RNSVGSvgView>
                     </View>
                     <Text
+                      allowFontScaling={true}
+                      maxFontSizeMultiplier={1.235}
                       style={
                         {
                           "color": "#F58B0F",
@@ -1219,6 +1243,8 @@ exports[`렌더 트리 기준선 기록이 있는 현재 주 1`] = `
                       5,000,000
                        
                       <Text
+                        allowFontScaling={true}
+                        maxFontSizeMultiplier={1.235}
                         style={
                           {
                             "color": "#645C42",
@@ -1281,6 +1307,8 @@ exports[`렌더 트리 기준선 기록이 있는 현재 주 1`] = `
                       }
                     >
                       <Text
+                        allowFontScaling={true}
+                        maxFontSizeMultiplier={1.235}
                         style={
                           {
                             "color": "#645C42",
@@ -1491,6 +1519,8 @@ exports[`렌더 트리 기준선 기록이 있는 현재 주 1`] = `
                           }
                         >
                           <Text
+                            allowFontScaling={true}
+                            maxFontSizeMultiplier={1.235}
                             style={
                               {
                                 "color": "#241208",
@@ -1958,6 +1988,8 @@ exports[`렌더 트리 기준선 기록이 있는 현재 주 1`] = `
                       </View>
                     </View>
                     <Text
+                      allowFontScaling={true}
+                      maxFontSizeMultiplier={1.235}
                       numberOfLines={1}
                       style={
                         {
@@ -1983,6 +2015,8 @@ exports[`렌더 트리 기준선 기록이 있는 현재 주 1`] = `
                       }
                     >
                       <Text
+                        allowFontScaling={true}
+                        maxFontSizeMultiplier={1.235}
                         style={
                           {
                             "color": "#241208",

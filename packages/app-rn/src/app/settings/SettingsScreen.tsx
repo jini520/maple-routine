@@ -36,7 +36,7 @@
 //    드롭다운 + 순서 + 대표가 385px 모달 본문에 안 들어간다. 그래서 로스터 조회·저장 배선은 이
 //    화면이 아니라 `SettingsCharactersScreen` 이 갖고, 여기 남는 것은 **행 하나와 배지**뿐이다.
 import { useEffect, useState } from 'react'
-import { Text, View } from 'react-native'
+import { View } from 'react-native'
 import { useRoute, type RouteProp } from '@react-navigation/native'
 
 import type { CacheDataSizes } from '@core/features/settings/cache-data'
@@ -49,6 +49,7 @@ import { formatBytes } from '@core/lib/format-bytes'
 
 import packageJson from '../../../package.json'
 import { Card } from '../../components/atoms/Card/Card'
+import { Text } from '../../components/atoms/Text/Text'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import type { TabParamList } from '../../navigation/routes'

@@ -22,7 +22,7 @@
 //    RN 은 라우트 이름 + `{ guideId }` 다. **그 요점은 그대로 지켜진다** — 여기서 `FEATURE_GUIDES`
 //    를 읽는 것은 목록 행(제목·그룹)을 그리기 위해서지 본문 때문이 아니다.
 import { useState } from 'react'
-import { Pressable, Text, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 
 import {
   FEATURE_GUIDES,
@@ -32,6 +32,7 @@ import {
 import type { FeatureGuideGroup } from '@core/types'
 
 import { Card } from '../../components/atoms/Card/Card'
+import { Text } from '../../components/atoms/Text/Text'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'

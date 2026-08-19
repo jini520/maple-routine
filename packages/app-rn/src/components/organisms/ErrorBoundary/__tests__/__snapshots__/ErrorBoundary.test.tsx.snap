@@ -161,6 +161,8 @@ exports[`ErrorBoundary 트리 스냅샷 1`] = `
       }
     >
       <Text
+        allowFontScaling={true}
+        maxFontSizeMultiplier={1.235}
         style={
           {
             "color": "#241208",
@@ -174,6 +176,8 @@ exports[`ErrorBoundary 트리 스냅샷 1`] = `
         화면을 표시하지 못했습니다
       </Text>
       <Text
+        allowFontScaling={true}
+        maxFontSizeMultiplier={1.235}
         style={
           {
             "color": "#645C42",
@@ -338,6 +342,8 @@ exports[`ErrorBoundary 트리 스냅샷 1`] = `
         </RNSVGGroup>
       </RNSVGSvgView>
       <Text
+        allowFontScaling={true}
+        maxFontSizeMultiplier={1.235}
         style={
           {
             "color": "#FFEEE2",

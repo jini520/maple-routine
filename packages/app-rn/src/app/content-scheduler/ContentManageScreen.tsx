@@ -18,7 +18,7 @@
 //    RN 에 `backdrop-filter` 가 없어 되붙일 방법이 없고, [[ADR-123]] 이 웹에서 그것을 걷어낸 뒤라
 //    **방향도 같다.** 규칙의 본체("사유는 오른쪽 뱃지가 아니라 행 위를 덮는 한 줄")는 그대로다.
 import { useEffect, useState } from 'react'
-import { Pressable, Text, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 import type { LucideIcon } from 'lucide-react-native'
 
 import { CONTENT_TEMPLATE } from '@core/lib/scheduler-content-template'
@@ -32,6 +32,7 @@ import { useContentSchedulerStore, type ContentTab } from '@core/features/conten
 import { useTrackingModeStore } from '@core/features/tracking-mode/store'
 import { useToastStore } from '@core/features/toast/store'
 
+import { Text } from '../../components/atoms/Text/Text'
 import { CharacterRail, type CharacterRailEntry } from '../../components/molecules/CharacterRail/CharacterRail'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'

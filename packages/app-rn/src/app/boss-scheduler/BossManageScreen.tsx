@@ -26,7 +26,7 @@
 // 있었다). [[ADR-129]] 가 에셋을, step 4·5 가 기하를 풀어 이제 진짜 초상이 나온다 — 이 화면은
 // 프롭을 그대로 넘기기만 하고 계산을 갖지 않는다.
 import { useEffect, useState } from 'react'
-import { Pressable, Text, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 
 import weeklyBossesData from '@core/data/weekly-bosses.json'
 import { partySizeKey, useBossSchedulerStore } from '@core/features/boss-scheduler/store'
@@ -43,6 +43,7 @@ import { isChallengersWorld } from '@core/lib/world-emblem'
 import type { BossDifficulty } from '@core/types'
 
 import { Badge } from '../../components/atoms/Badge/Badge'
+import { Text } from '../../components/atoms/Text/Text'
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
 import { CharacterRail, type CharacterRailEntry } from '../../components/molecules/CharacterRail/CharacterRail'
 import { DifficultySegment } from '../../components/molecules/DifficultySegment/DifficultySegment'

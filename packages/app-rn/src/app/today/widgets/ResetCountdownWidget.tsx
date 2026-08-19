@@ -42,8 +42,9 @@
  */
 
 import { useEffect, useState } from 'react'
-import { Text, View, type DimensionValue } from 'react-native'
+import { View, type DimensionValue } from 'react-native'
 
+import { Text } from '../../../components/atoms/Text/Text'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
 import type { WidgetHeight } from '../../../lib/widget-layout'
 import type { ResetCountdown, ResetCountdownView } from '../view-model'
@@ -153,7 +154,7 @@ function elapsedWidth(countdown: ResetCountdown, remainingMs: number): Dimension
 
 function Label(props: { cycle: CycleKey; sizeClass: string }): React.JSX.Element {
   return (
-    <Text testID={`reset-label-${props.cycle}`} className={`text-text-muted ${props.sizeClass}`}>
+    <Text fixed testID={`reset-label-${props.cycle}`} className={`text-text-muted ${props.sizeClass}`}>
       {CYCLE_LABEL[props.cycle]}
     </Text>
   )
@@ -173,6 +174,7 @@ function Value(props: {
 }): React.JSX.Element {
   return (
     <Text
+      fixed
       testID={`reset-value-${props.cycle}`}
       numberOfLines={1}
       style={TABULAR_NUMS}
@@ -226,7 +228,7 @@ function Row(props: {
 }
 
 function Title(props: { sizeClass: string }): React.JSX.Element {
-  return <Text className={`font-bold text-text-muted ${props.sizeClass}`}>{TITLE}</Text>
+  return <Text fixed className={`font-bold text-text-muted ${props.sizeClass}`}>{TITLE}</Text>
 }
 
 export function ResetCountdownWidget({ w, h, data }: WidgetProps): React.JSX.Element {

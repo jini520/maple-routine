@@ -86,6 +86,8 @@ exports[`WidgetGrid — 좌표 배치 스냅샷 1`] = `
             testID="widget-representative-character"
           >
             <Text
+              allowFontScaling={false}
+              maxFontSizeMultiplier={1.235}
               style={
                 {
                   "color": "#645C42",
@@ -137,6 +139,8 @@ exports[`WidgetGrid — 좌표 배치 스냅샷 1`] = `
           testID="widget-reset-countdown"
         >
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             style={
               {
                 "color": "#645C42",
@@ -165,6 +169,8 @@ exports[`WidgetGrid — 좌표 배치 스냅샷 1`] = `
               }
             >
               <Text
+                allowFontScaling={false}
+                maxFontSizeMultiplier={1.235}
                 style={
                   {
                     "color": "#645C42",
@@ -183,6 +189,8 @@ exports[`WidgetGrid — 좌표 배치 스냅샷 1`] = `
                 }
               >
                 <Text
+                  allowFontScaling={false}
+                  maxFontSizeMultiplier={1.235}
                   numberOfLines={1}
                   style={
                     {
@@ -219,6 +227,8 @@ exports[`WidgetGrid — 좌표 배치 스냅샷 1`] = `
               }
             >
               <Text
+                allowFontScaling={false}
+                maxFontSizeMultiplier={1.235}
                 style={
                   {
                     "color": "#645C42",
@@ -237,6 +247,8 @@ exports[`WidgetGrid — 좌표 배치 스냅샷 1`] = `
                 }
               >
                 <Text
+                  allowFontScaling={false}
+                  maxFontSizeMultiplier={1.235}
                   numberOfLines={1}
                   style={
                     {
@@ -327,6 +339,8 @@ exports[`WidgetGrid — 좌표 배치 스냅샷 1`] = `
             testID="widget-crystal-limit"
           >
             <Text
+              allowFontScaling={false}
+              maxFontSizeMultiplier={1.235}
               style={
                 {
                   "color": "#645C42",
@@ -338,6 +352,8 @@ exports[`WidgetGrid — 좌표 배치 스냅샷 1`] = `
               결정석 판매
             </Text>
             <Text
+              allowFontScaling={false}
+              maxFontSizeMultiplier={1.235}
               numberOfLines={2}
               style={
                 {
@@ -399,6 +415,8 @@ exports[`WidgetGrid — 좌표 배치 스냅샷 1`] = `
               }
             >
               <Text
+                allowFontScaling={false}
+                maxFontSizeMultiplier={1.235}
                 style={
                   {
                     "color": "#645C42",
@@ -576,6 +594,8 @@ exports[`WidgetGrid — 좌표 배치 스냅샷 1`] = `
                 </RNSVGSvgView>
               </View>
               <Text
+                allowFontScaling={false}
+                maxFontSizeMultiplier={1.235}
                 style={
                   {
                     "color": "#645C42",
@@ -585,6 +605,8 @@ exports[`WidgetGrid — 좌표 배치 스냅샷 1`] = `
                 }
               >
                 <Text
+                  allowFontScaling={false}
+                  maxFontSizeMultiplier={1.235}
                   style={
                     {
                       "color": "#241208",
@@ -652,6 +674,8 @@ exports[`WidgetGrid — 좌표 배치 스냅샷 1`] = `
               }
             >
               <Text
+                allowFontScaling={false}
+                maxFontSizeMultiplier={1.235}
                 style={
                   {
                     "color": "#645C42",
@@ -663,6 +687,8 @@ exports[`WidgetGrid — 좌표 배치 스냅샷 1`] = `
                 남은 스케줄
               </Text>
               <Text
+                allowFontScaling={false}
+                maxFontSizeMultiplier={1.235}
                 style={
                   {
                     "color": "#645C42",
@@ -672,6 +698,8 @@ exports[`WidgetGrid — 좌표 배치 스냅샷 1`] = `
                 }
               >
                 <Text
+                  allowFontScaling={false}
+                  maxFontSizeMultiplier={1.235}
                   style={
                     {
                       "color": "#241208",
@@ -689,6 +717,8 @@ exports[`WidgetGrid — 좌표 배치 스냅샷 1`] = `
               </Text>
             </View>
             <Text
+              allowFontScaling={false}
+              maxFontSizeMultiplier={1.235}
               style={
                 {
                   "color": "#645C42",
@@ -792,6 +822,8 @@ exports[`WidgetGrid — 좌표 배치 스냅샷 1`] = `
                 testID="profit-period-header"
               >
                 <Text
+                  allowFontScaling={false}
+                  maxFontSizeMultiplier={1.235}
                   style={
                     {
                       "color": "#645C42",
@@ -804,6 +836,8 @@ exports[`WidgetGrid — 좌표 배치 스냅샷 1`] = `
                    보스 수익
                 </Text>
                 <Text
+                  allowFontScaling={false}
+                  maxFontSizeMultiplier={1.235}
                   numberOfLines={1}
                   style={
                     {
@@ -818,6 +852,8 @@ exports[`WidgetGrid — 좌표 배치 스냅샷 1`] = `
                 </Text>
               </View>
               <Text
+                allowFontScaling={false}
+                maxFontSizeMultiplier={1.235}
                 numberOfLines={1}
                 style={
                   {
@@ -827,6 +863,8 @@ exports[`WidgetGrid — 좌표 배치 스냅샷 1`] = `
                 testID="profit-amount"
               >
                 <Text
+                  allowFontScaling={false}
+                  maxFontSizeMultiplier={1.235}
                   style={
                     {
                       "color": "#241208",
@@ -841,6 +879,8 @@ exports[`WidgetGrid — 좌표 배치 스냅샷 1`] = `
                   0
                 </Text>
                 <Text
+                  allowFontScaling={false}
+                  maxFontSizeMultiplier={1.235}
                   style={
                     {
                       "color": "#645C42",
@@ -854,6 +894,8 @@ exports[`WidgetGrid — 좌표 배치 스냅샷 1`] = `
               </Text>
             </View>
             <Text
+              allowFontScaling={false}
+              maxFontSizeMultiplier={1.235}
               numberOfLines={1}
               style={
                 {
@@ -956,6 +998,8 @@ exports[`WidgetGrid — 좌표 배치 스냅샷 1`] = `
               testID="top-item-empty-slot"
             >
               <Text
+                allowFontScaling={false}
+                maxFontSizeMultiplier={1.235}
                 style={
                   {
                     "color": "#9A9070",
@@ -968,6 +1012,8 @@ exports[`WidgetGrid — 좌표 배치 스냅샷 1`] = `
               </Text>
             </View>
             <Text
+              allowFontScaling={false}
+              maxFontSizeMultiplier={1.235}
               numberOfLines={2}
               style={
                 {
@@ -1070,6 +1116,8 @@ exports[`WidgetGrid — 좌표 배치 스냅샷 1`] = `
               testID="unpriced-done-mark"
             >
               <Text
+                allowFontScaling={false}
+                maxFontSizeMultiplier={1.235}
                 style={
                   {
                     "color": "#F58B0F",
@@ -1091,6 +1139,8 @@ exports[`WidgetGrid — 좌표 배치 스냅샷 1`] = `
               }
             >
               <Text
+                allowFontScaling={false}
+                maxFontSizeMultiplier={1.235}
                 style={
                   {
                     "color": "#645C42",
@@ -1102,6 +1152,8 @@ exports[`WidgetGrid — 좌표 배치 스냅샷 1`] = `
                 가격 미입력
               </Text>
               <Text
+                allowFontScaling={false}
+                maxFontSizeMultiplier={1.235}
                 numberOfLines={1}
                 style={
                   {
@@ -1250,6 +1302,8 @@ exports[`WidgetGrid — 좌표 배치 스냅샷 1`] = `
               </RNSVGSvgView>
             </View>
             <Text
+              allowFontScaling={false}
+              maxFontSizeMultiplier={1.235}
               numberOfLines={1}
               style={
                 {

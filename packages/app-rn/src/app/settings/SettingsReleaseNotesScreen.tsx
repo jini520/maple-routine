@@ -21,7 +21,7 @@
 //    내려온다(`EmptyState` 와 같은 자리). 불릿 `·` 은 `aria-hidden` 인 `Text` 그대로다.
 // ④ **`space-y-*` → `gap-*`**(NativeWind 에 형제 선택자가 없다). 안내가 있는 항목의 `<button>` 은
 //    `Pressable role="button"` 이 된다 — 웹에서 태그가 공짜로 주던 시맨틱을 명시로 되살린다.
-import { Pressable, Text, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 
 import packageJson from '../../../package.json'
 import {
@@ -32,6 +32,7 @@ import {
 
 import { Badge } from '../../components/atoms/Badge/Badge'
 import { Card } from '../../components/atoms/Card/Card'
+import { Text } from '../../components/atoms/Text/Text'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'

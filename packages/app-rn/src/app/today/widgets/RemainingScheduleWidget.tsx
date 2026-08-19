@@ -55,9 +55,10 @@
  */
 
 import { useState } from 'react'
-import { Image, Pressable, Text, View } from 'react-native'
+import { Image, Pressable, View } from 'react-native'
 
 import { DifficultyBadge } from '../../../components/atoms/DifficultyBadge/DifficultyBadge'
+import { Text } from '../../../components/atoms/Text/Text'
 import { faceCropStyle } from '../../../lib/face-crop'
 import { ChevronDownIcon, ChevronUpIcon } from '../../../lib/icons'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
@@ -121,10 +122,10 @@ const LABEL_CLASS = 'text-right text-[10.5px] leading-tight text-text-muted'
 function StatCell(props: { label: string; value: number }): React.JSX.Element {
   return (
     <View className="flex-row items-center gap-0.5">
-      <Text numberOfLines={1} style={{ width: LABEL_WIDTH_PX }} className={LABEL_CLASS}>
+      <Text fixed numberOfLines={1} style={{ width: LABEL_WIDTH_PX }} className={LABEL_CLASS}>
         {props.label}
       </Text>
-      <Text style={{ width: VALUE_WIDTH_PX, ...TABULAR_NUMS }} className={VALUE_CLASS}>
+      <Text fixed style={{ width: VALUE_WIDTH_PX, ...TABULAR_NUMS }} className={VALUE_CLASS}>
         {String(props.value)}
       </Text>
     </View>
@@ -165,6 +166,7 @@ function StatusBadge(props: { testID: string; tone: 'clear' | 'issue'; label: st
 
   return (
     <Text
+      fixed
       testID={props.testID}
       className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${tone}`}
     >
@@ -193,7 +195,7 @@ function Portrait(props: { row: ScheduleRowView }): React.JSX.Element {
           testID="schedule-face-fallback"
           className="h-full w-full items-center justify-center bg-primary"
         >
-          <Text className="text-xs font-bold text-on-primary">?</Text>
+          <Text fixed className="text-xs font-bold text-on-primary">?</Text>
         </View>
       )}
     </View>
@@ -204,6 +206,7 @@ function Portrait(props: { row: ScheduleRowView }): React.JSX.Element {
 function NameChip(props: { name: string }): React.JSX.Element {
   return (
     <Text
+      fixed
       testID="schedule-detail-chip"
       numberOfLines={1}
       className="rounded-md bg-surface-2 px-1.5 py-0.5 text-[10px] leading-tight text-text"
@@ -224,7 +227,7 @@ function BossChip(props: { boss: RemainingBossView }): React.JSX.Element {
     <View testID="schedule-detail-boss" className="flex-row items-center gap-1">
       {/* 작은 크기 — 20px 배지가 줄 높이를 혼자 정하고 있었다([[ADR-147]] 정정 40). */}
       <DifficultyBadge difficulty={props.boss.difficulty} size="small" />
-      <Text numberOfLines={1} className="text-[10px] leading-tight text-text">
+      <Text fixed numberOfLines={1} className="text-[10px] leading-tight text-text">
         {props.boss.name}
       </Text>
     </View>
@@ -234,7 +237,7 @@ function BossChip(props: { boss: RemainingBossView }): React.JSX.Element {
 function DetailGroup(props: { label: string; children: React.ReactNode }): React.JSX.Element {
   return (
     <View className="gap-1">
-      <Text className="text-[9.5px] font-bold tracking-[.02em] text-text-muted">{props.label}</Text>
+      <Text fixed className="text-[9.5px] font-bold tracking-[.02em] text-text-muted">{props.label}</Text>
       <View className="flex-row flex-wrap items-center gap-1">{props.children}</View>
     </View>
   )
@@ -297,6 +300,7 @@ function ScheduleRow(props: {
     <View testID="schedule-row" className="flex-row items-center gap-2 py-1.5">
       <Portrait row={row} />
       <Text
+        fixed
         testID="schedule-name"
         numberOfLines={1}
         className="min-w-0 flex-1 text-xs font-semibold text-text"
@@ -350,9 +354,9 @@ export function RemainingScheduleWidget({ data }: WidgetProps): React.JSX.Elemen
       {/* 합계도 칩이 아니라 텍스트다([[ADR-147]] 정정 9) — 숫자만 굵다. 동기화 실패 캐릭터의 몫은
           여기 안 들어 있다(뷰모델이 «모르는 것을 더하지 않는다»). */}
       <View className="flex-row items-center border-b border-border-strong pb-2">
-        <Text className="text-[11px] font-bold text-text-muted">남은 스케줄</Text>
-        <Text className="ml-auto text-[11px] text-text-muted">
-          <Text style={TABULAR_NUMS} className="text-[11px] font-extrabold text-text">
+        <Text fixed className="text-[11px] font-bold text-text-muted">남은 스케줄</Text>
+        <Text fixed className="ml-auto text-[11px] text-text-muted">
+          <Text fixed style={TABULAR_NUMS} className="text-[11px] font-extrabold text-text">
             {data.scheduleTotal}
           </Text>
           개
@@ -360,7 +364,7 @@ export function RemainingScheduleWidget({ data }: WidgetProps): React.JSX.Elemen
       </View>
 
       {data.schedule.length === 0 ? (
-        <Text className="pt-2.5 text-xs text-text-muted">추적 중인 캐릭터가 없습니다</Text>
+        <Text fixed className="pt-2.5 text-xs text-text-muted">추적 중인 캐릭터가 없습니다</Text>
       ) : (
         data.schedule.map((row, index) => (
           <ScheduleRow

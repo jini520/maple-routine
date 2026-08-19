@@ -27,6 +27,8 @@ exports[`스냅샷 — 네 크기 1x1 1`] = `
     testID="widget-reset-countdown"
   >
     <Text
+      allowFontScaling={false}
+      maxFontSizeMultiplier={1.235}
       style={
         {
           "color": "#645C42",
@@ -38,6 +40,8 @@ exports[`스냅샷 — 네 크기 1x1 1`] = `
       초기화까지
     </Text>
     <Text
+      allowFontScaling={false}
+      maxFontSizeMultiplier={1.235}
       style={
         {
           "color": "#645C42",
@@ -49,6 +53,8 @@ exports[`스냅샷 — 네 크기 1x1 1`] = `
       일일
     </Text>
     <Text
+      allowFontScaling={false}
+      maxFontSizeMultiplier={1.235}
       numberOfLines={1}
       style={
         {
@@ -94,6 +100,8 @@ exports[`스냅샷 — 네 크기 2x1 1`] = `
     testID="widget-reset-countdown"
   >
     <Text
+      allowFontScaling={false}
+      maxFontSizeMultiplier={1.235}
       style={
         {
           "color": "#645C42",
@@ -122,6 +130,8 @@ exports[`스냅샷 — 네 크기 2x1 1`] = `
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
           style={
             {
               "color": "#645C42",
@@ -140,6 +150,8 @@ exports[`스냅샷 — 네 크기 2x1 1`] = `
           }
         >
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             numberOfLines={1}
             style={
               {
@@ -176,6 +188,8 @@ exports[`스냅샷 — 네 크기 2x1 1`] = `
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
           style={
             {
               "color": "#645C42",
@@ -194,6 +208,8 @@ exports[`스냅샷 — 네 크기 2x1 1`] = `
           }
         >
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             numberOfLines={1}
             style={
               {
@@ -242,6 +258,8 @@ exports[`스냅샷 — 네 크기 2x2 1`] = `
     testID="widget-reset-countdown"
   >
     <Text
+      allowFontScaling={false}
+      maxFontSizeMultiplier={1.235}
       style={
         {
           "color": "#645C42",
@@ -270,6 +288,8 @@ exports[`스냅샷 — 네 크기 2x2 1`] = `
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
           style={
             {
               "color": "#645C42",
@@ -288,6 +308,8 @@ exports[`스냅샷 — 네 크기 2x2 1`] = `
           }
         >
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             numberOfLines={1}
             style={
               {
@@ -347,6 +369,8 @@ exports[`스냅샷 — 네 크기 2x2 1`] = `
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
           style={
             {
               "color": "#645C42",
@@ -365,6 +389,8 @@ exports[`스냅샷 — 네 크기 2x2 1`] = `
           }
         >
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             numberOfLines={1}
             style={
               {
@@ -424,6 +450,8 @@ exports[`스냅샷 — 네 크기 2x2 1`] = `
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
           style={
             {
               "color": "#645C42",
@@ -442,6 +470,8 @@ exports[`스냅샷 — 네 크기 2x2 1`] = `
           }
         >
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             numberOfLines={1}
             style={
               {
@@ -513,6 +543,8 @@ exports[`스냅샷 — 네 크기 4x1 1`] = `
     testID="widget-reset-countdown"
   >
     <Text
+      allowFontScaling={false}
+      maxFontSizeMultiplier={1.235}
       style={
         {
           "color": "#645C42",
@@ -544,6 +576,8 @@ exports[`스냅샷 — 네 크기 4x1 1`] = `
         testID="reset-cell-daily"
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
           style={
             {
               "color": "#645C42",
@@ -555,6 +589,8 @@ exports[`스냅샷 — 네 크기 4x1 1`] = `
           일일
         </Text>
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
           numberOfLines={1}
           style={
             {
@@ -582,6 +618,8 @@ exports[`스냅샷 — 네 크기 4x1 1`] = `
         testID="reset-cell-weekly"
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
           style={
             {
               "color": "#645C42",
@@ -593,6 +631,8 @@ exports[`스냅샷 — 네 크기 4x1 1`] = `
           주간
         </Text>
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
           numberOfLines={1}
           style={
             {
@@ -620,6 +660,8 @@ exports[`스냅샷 — 네 크기 4x1 1`] = `
         testID="reset-cell-monthly"
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
           style={
             {
               "color": "#645C42",
@@ -631,6 +673,8 @@ exports[`스냅샷 — 네 크기 4x1 1`] = `
           월간
         </Text>
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
           numberOfLines={1}
           style={
             {

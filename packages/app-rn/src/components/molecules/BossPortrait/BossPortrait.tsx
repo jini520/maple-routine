@@ -16,11 +16,12 @@
 // 않는다) ② 원형이라 `overflow-hidden` 이 필요하다. 웹은 `background-image` 라 둥근 모서리가
 // 배경을 저절로 잘랐지만, RN 의 `<Image>` 는 자식이라 부모가 명시적으로 잘라야 한다 ③ 접근성
 // 역할 `img` 가 붙는다(웹과 **같은 이름**이다 — RN 의 `role` 은 ARIA 이름을 그대로 받는다).
-import { Image, Text, View } from 'react-native'
+import { Image, View } from 'react-native'
 
 import { getBossPortraitIconCrop, getBossPortraitUrl } from '@core/lib/boss-icons'
 import type { BossPortraitCrop } from '@core/lib/boss-icons'
 
+import { Text } from '../../atoms/Text/Text'
 import {
   mediaArtImageStyle,
   mediaArtNaturalSize,

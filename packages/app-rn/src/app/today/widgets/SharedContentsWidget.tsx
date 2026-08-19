@@ -49,8 +49,9 @@
  */
 
 import { useState } from 'react'
-import { Pressable, Text, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 
+import { Text } from '../../../components/atoms/Text/Text'
 import { CircleQuestionMarkIcon } from '../../../lib/icons'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
 import type { SharedContentItemView } from '../view-model'
@@ -69,8 +70,8 @@ const WORLD_NOTE = '계정 및 메이플 ID 공유 컨텐츠는 가장 마지막
 
 function CountValue(props: { count: { now: number; max: number } }): React.JSX.Element {
   return (
-    <Text testID="shared-count" style={TABULAR_NUMS} className="shrink-0 text-[11px] text-text-muted">
-      <Text style={TABULAR_NUMS} className="text-[11px] font-extrabold text-text">
+    <Text fixed testID="shared-count" style={TABULAR_NUMS} className="shrink-0 text-[11px] text-text-muted">
+      <Text fixed style={TABULAR_NUMS} className="text-[11px] font-extrabold text-text">
         {String(props.count.now)}
       </Text>
       {`/${String(props.count.max)}`}
@@ -82,6 +83,7 @@ function CountValue(props: { count: { now: number; max: number } }): React.JSX.E
 function ClearBadge(): React.JSX.Element {
   return (
     <Text
+      fixed
       testID="shared-clear"
       className="shrink-0 rounded-full bg-secondary-tint px-2 py-0.5 text-[10px] font-bold text-secondary-ink"
     >
@@ -100,6 +102,7 @@ function SharedItemRow(props: { item: SharedContentItemView }): React.JSX.Elemen
       style={{ minHeight: ITEM_HEIGHT_PX }}
     >
       <Text
+        fixed
         numberOfLines={1}
         className={`min-w-0 flex-1 text-[11px] leading-tight ${
           item.isComplete ? 'text-text-disabled' : 'text-text'
@@ -124,7 +127,7 @@ export function SharedContentsWidget({ data }: WidgetProps): React.JSX.Element {
   return (
     <View testID="widget-shared-contents" className="p-3">
       <View className="flex-row items-center border-b border-border-strong pb-2">
-        <Text className="text-[11px] font-bold text-text-muted">계정 및 메이플 ID 공유 컨텐츠</Text>
+        <Text fixed className="text-[11px] font-bold text-text-muted">계정 및 메이플 ID 공유 컨텐츠</Text>
         <Pressable
           testID="shared-note-toggle"
           role="button"
@@ -142,8 +145,8 @@ export function SharedContentsWidget({ data }: WidgetProps): React.JSX.Element {
             aria-hidden
           />
         </Pressable>
-        <Text className="ml-auto text-[11px] text-text-muted">
-          <Text testID="shared-total" style={TABULAR_NUMS} className="text-[11px] font-extrabold text-text">
+        <Text fixed className="ml-auto text-[11px] text-text-muted">
+          <Text fixed testID="shared-total" style={TABULAR_NUMS} className="text-[11px] font-extrabold text-text">
             {data.sharedRemaining}
           </Text>
           개
@@ -159,7 +162,7 @@ export function SharedContentsWidget({ data }: WidgetProps): React.JSX.Element {
           className="absolute left-3 right-3 top-9 z-10 rounded-lg border border-border bg-surface-2 px-3 py-2"
           onPress={() => setNoteOpen(false)}
         >
-          <Text className="text-[10.5px] leading-snug text-text-muted">{WORLD_NOTE}</Text>
+          <Text fixed className="text-[10.5px] leading-snug text-text-muted">{WORLD_NOTE}</Text>
         </Pressable>
       )}
 
@@ -169,7 +172,7 @@ export function SharedContentsWidget({ data }: WidgetProps): React.JSX.Element {
           testID="shared-group"
           className={index === 0 ? 'py-2' : 'border-t border-border py-2'}
         >
-          <Text testID="shared-group-name" className="text-[11.5px] font-bold text-text">
+          <Text fixed testID="shared-group-name" className="text-[11.5px] font-bold text-text">
             {group.group}
           </Text>
           <View className="mt-1 gap-0.5">

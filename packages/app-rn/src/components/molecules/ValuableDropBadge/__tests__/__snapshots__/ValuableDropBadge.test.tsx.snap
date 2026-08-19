@@ -284,6 +284,8 @@ exports[`ValuableDropBadge 렌더 트리 스냅샷 — 이후 변경을 잡는 �
       />
     </View>
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.235}
       style={
         {
           "color": "#6b4e00",

@@ -44,6 +44,8 @@ exports[`스냅샷 — 네 크기 1x1 1`] = `
       testID="top-item-icon"
     />
     <Text
+      allowFontScaling={false}
+      maxFontSizeMultiplier={1.235}
       numberOfLines={1}
       style={
         {
@@ -53,6 +55,8 @@ exports[`스냅샷 — 네 크기 1x1 1`] = `
       testID="top-item-amount"
     >
       <Text
+        allowFontScaling={false}
+        maxFontSizeMultiplier={1.235}
         style={
           {
             "color": "#241208",
@@ -126,6 +130,8 @@ exports[`스냅샷 — 네 크기 2x1 1`] = `
       }
     >
       <Text
+        allowFontScaling={false}
+        maxFontSizeMultiplier={1.235}
         style={
           {
             "color": "#645C42",
@@ -137,6 +143,8 @@ exports[`스냅샷 — 네 크기 2x1 1`] = `
         이번 주 최고가
       </Text>
       <Text
+        allowFontScaling={false}
+        maxFontSizeMultiplier={1.235}
         numberOfLines={1}
         style={
           {
@@ -146,6 +154,8 @@ exports[`스냅샷 — 네 크기 2x1 1`] = `
         testID="top-item-amount"
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
           style={
             {
               "color": "#241208",
@@ -160,6 +170,8 @@ exports[`스냅샷 — 네 크기 2x1 1`] = `
           120.0억
         </Text>
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
           style={
             {
               "color": "#645C42",
@@ -202,6 +214,8 @@ exports[`스냅샷 — 네 크기 2x2 1`] = `
     testID="widget-top-valuable-item"
   >
     <Text
+      allowFontScaling={false}
+      maxFontSizeMultiplier={1.235}
       style={
         {
           "color": "#645C42",
@@ -249,6 +263,8 @@ exports[`스냅샷 — 네 크기 2x2 1`] = `
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
           numberOfLines={1}
           style={
             {
@@ -258,6 +274,8 @@ exports[`스냅샷 — 네 크기 2x2 1`] = `
           testID="top-item-amount"
         >
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             style={
               {
                 "color": "#241208",
@@ -272,6 +290,8 @@ exports[`스냅샷 — 네 크기 2x2 1`] = `
             120.0억
           </Text>
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             style={
               {
                 "color": "#645C42",
@@ -294,6 +314,8 @@ exports[`스냅샷 — 네 크기 2x2 1`] = `
       }
     >
       <Text
+        allowFontScaling={false}
+        maxFontSizeMultiplier={1.235}
         numberOfLines={1}
         style={
           {
@@ -307,6 +329,8 @@ exports[`스냅샷 — 네 크기 2x2 1`] = `
         가디언 엔젤 링
       </Text>
       <Text
+        allowFontScaling={false}
+        maxFontSizeMultiplier={1.235}
         numberOfLines={1}
         style={
           {
@@ -361,6 +385,8 @@ exports[`스냅샷 — 네 크기 4x2 1`] = `
       }
     >
       <Text
+        allowFontScaling={false}
+        maxFontSizeMultiplier={1.235}
         style={
           {
             "color": "#645C42",
@@ -410,6 +436,8 @@ exports[`스냅샷 — 네 크기 4x2 1`] = `
           }
         >
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             numberOfLines={1}
             style={
               {
@@ -419,6 +447,8 @@ exports[`스냅샷 — 네 크기 4x2 1`] = `
             testID="top-item-amount"
           >
             <Text
+              allowFontScaling={false}
+              maxFontSizeMultiplier={1.235}
               style={
                 {
                   "color": "#241208",
@@ -433,6 +463,8 @@ exports[`스냅샷 — 네 크기 4x2 1`] = `
               120.0억
             </Text>
             <Text
+              allowFontScaling={false}
+              maxFontSizeMultiplier={1.235}
               style={
                 {
                   "color": "#645C42",
@@ -445,6 +477,8 @@ exports[`스냅샷 — 네 크기 4x2 1`] = `
             </Text>
           </Text>
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             numberOfLines={1}
             style={
               {
@@ -458,6 +492,8 @@ exports[`스냅샷 — 네 크기 4x2 1`] = `
             가디언 엔젤 링
           </Text>
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             numberOfLines={1}
             style={
               {
@@ -515,6 +551,8 @@ exports[`스냅샷 — 네 크기 4x2 1`] = `
             testID="top-item-icon-fallback"
           />
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             numberOfLines={1}
             style={
               {
@@ -529,6 +567,8 @@ exports[`스냅샷 — 네 크기 4x2 1`] = `
             2위 아이템
           </Text>
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             style={
               {
                 "color": "#241208",
@@ -570,6 +610,8 @@ exports[`스냅샷 — 네 크기 4x2 1`] = `
             testID="top-item-icon-fallback"
           />
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             numberOfLines={1}
             style={
               {
@@ -584,6 +626,8 @@ exports[`스냅샷 — 네 크기 4x2 1`] = `
             3위 아이템
           </Text>
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             style={
               {
                 "color": "#241208",
@@ -625,6 +669,8 @@ exports[`스냅샷 — 네 크기 4x2 1`] = `
             testID="top-item-icon-fallback"
           />
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             numberOfLines={1}
             style={
               {
@@ -639,6 +685,8 @@ exports[`스냅샷 — 네 크기 4x2 1`] = `
             4위 아이템
           </Text>
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             style={
               {
                 "color": "#241208",
@@ -680,6 +728,8 @@ exports[`스냅샷 — 네 크기 4x2 1`] = `
             testID="top-item-icon-fallback"
           />
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             numberOfLines={1}
             style={
               {
@@ -694,6 +744,8 @@ exports[`스냅샷 — 네 크기 4x2 1`] = `
             5위 아이템
           </Text>
           <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
             style={
               {
                 "color": "#241208",

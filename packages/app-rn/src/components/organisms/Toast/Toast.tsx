@@ -40,7 +40,7 @@
 // 단계에서 걸린다. core 를 이 단계에서 고치지 않는 것이 원칙이라([[ADR-128]] 원칙 3) 사실만 적어
 // 둔다 — 푸는 방법은 core 의 그 필드를 플랫폼 중립 컴포넌트 타입으로 넓히는 것이다.
 import { useEffect, useRef, useState } from 'react'
-import { Pressable, Text, View, type GestureResponderEvent } from 'react-native'
+import { Pressable, View, type GestureResponderEvent } from 'react-native'
 import { useReducedMotion } from 'react-native-reanimated'
 
 import type { ToastItem, ToastVariant } from '@core/features/toast/store'
@@ -54,6 +54,7 @@ import {
   XIcon,
 } from '../../../lib/icons'
 import { AnimatedView } from '../../../lib/nativewind-interop'
+import { Text } from '../../atoms/Text/Text'
 import { ENTER_TRANSITION, timerAnimation } from './timer-animation'
 
 export interface ToastProps {

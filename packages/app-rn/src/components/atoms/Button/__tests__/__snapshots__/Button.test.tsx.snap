@@ -54,6 +54,8 @@ exports[`Button 렌더 트리 스냅샷 — 이후 변경을 잡는 기준선(�
     }
   >
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.235}
       style={
         {
           "color": "#FFEEE2",
@@ -124,6 +126,8 @@ exports[`Button 렌더 트리 스냅샷 — 이후 변경을 잡는 기준선(�
     }
   >
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.235}
       style={
         {
           "color": "#241208",
@@ -192,6 +196,8 @@ exports[`Button 렌더 트리 스냅샷 — 이후 변경을 잡는 기준선(�
     }
   >
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.235}
       style={
         {
           "color": "#645C42",
@@ -262,6 +268,8 @@ exports[`Button 렌더 트리 스냅샷 — 이후 변경을 잡는 기준선(�
     }
   >
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.235}
       style={
         {
           "color": "#B3200B",

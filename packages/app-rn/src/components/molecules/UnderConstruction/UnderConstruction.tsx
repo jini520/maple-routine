@@ -14,9 +14,10 @@
  * 통과한 채 **탭 하나만 자리표시자**로 뜨고, 그것을 실기기에서야 발견한다.
  */
 
-import { Text, View } from 'react-native'
+import { View } from 'react-native'
 
 import { WrenchIcon } from '../../../lib/icons'
+import { Text } from '../../atoms/Text/Text'
 
 export interface UnderConstructionProps {
   /** 무엇을 만들고 있는지 — 화면 이름 그대로. */

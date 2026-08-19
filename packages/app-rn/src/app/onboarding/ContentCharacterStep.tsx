@@ -39,12 +39,13 @@
 // 부르므로 그 자리를 `OnboardingScreen` 으로 올릴 수 없다. 끌기 자동 스크롤 배선(결정 5)도 같은
 // 이유로 여기 있다 — 그 배선의 자리는 늘 «스크롤 뷰를 가진 쪽» 이고, 그것이 이제 이 단계다
 // (설정 하위 페이지가 `ScreenScroll` 에 같은 두 값을 거는 것과 같다).
-import { Text, View } from 'react-native'
+import { View } from 'react-native'
 
 import { useApiKeyNotice } from '@core/features/onboarding/use-api-key-notice'
 
 import { Button } from '../../components/atoms/Button/Button'
 import { MapleSpinner } from '../../components/atoms/MapleSpinner/MapleSpinner'
+import { Text } from '../../components/atoms/Text/Text'
 import { CharacterManageBody } from '../../components/organisms/CharacterManage/CharacterManageBody'
 import { useCharacterManage } from '../../components/organisms/CharacterManage/use-character-manage'
 import { useReorderScroll } from '../../components/organisms/CharacterManage/use-reorder-scroll'

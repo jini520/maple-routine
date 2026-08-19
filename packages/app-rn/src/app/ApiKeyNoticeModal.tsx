@@ -23,12 +23,13 @@
 //    (`rounded-full bg-primary text-on-primary font-semibold px-5 py-2.5 text-sm`)에서 `hover:` 만
 //    빠지고 나머지는 `primary` 변형이 그대로 갖는다 — 웹이 `text-sm` 으로 줄여 쓰던 것만
 //    `textClassName` 으로 옮긴다(atom 기본은 `text-base`).
-import { Text, View } from 'react-native'
+import { View } from 'react-native'
 
 import { useOnboardingStore } from '@core/features/onboarding/store'
 import type { ApiKeyNoticeKind } from '@core/features/onboarding/state'
 
 import { Button } from '../components/atoms/Button/Button'
+import { Text } from '../components/atoms/Text/Text'
 import { Modal } from '../components/organisms/Modal/Modal'
 import { GaugeIcon, KeyRoundIcon } from '../lib/icons'
 

@@ -93,6 +93,8 @@ exports[`DifficultySegment 렌더 트리 스냅샷 — 이후 변경을 잡는 �
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
           style={
             {
               "color": "#ffffff",
@@ -182,6 +184,8 @@ exports[`DifficultySegment 렌더 트리 스냅샷 — 이후 변경을 잡는 �
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
           style={
             {
               "color": "#ffffff",
@@ -272,6 +276,8 @@ exports[`DifficultySegment 렌더 트리 스냅샷 — 이후 변경을 잡는 �
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
           style={
             {
               "color": "#f0d8b8",

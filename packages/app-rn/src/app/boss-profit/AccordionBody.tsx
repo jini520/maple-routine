@@ -11,7 +11,7 @@
 // ③ 팝오버 앵커가 비동기로 온다 — 보스 행과 **같은 훅**(`useAnchoredPopover`)을 쓴다. 스크롤로
 //    닫던 효과는 별도 네이티브 윈도우라 구조가 대신 지킨다(`ItemRevenuePopover` 파일 머리 ②).
 // ④ 글자가 상자에서 `Text` 로 내려오고 `tabular-nums` 는 값으로 준다(`lib/text-styles.ts`).
-import { Pressable, Text, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 
 import type { WeeklySubtotalState } from '@core/features/boss-profit/store'
 import { dropRowKey } from '@core/features/boss-profit/store'
@@ -21,6 +21,7 @@ import { formatMesoShort } from '@core/lib/boss-profit-delta'
 import { sumDropPayout } from '@core/lib/drop-price'
 
 import { AnimatedMeso } from '../../components/atoms/AnimatedMeso/AnimatedMeso'
+import { Text } from '../../components/atoms/Text/Text'
 import { UnavailableNotice } from '../../components/molecules/EmptyState/UnavailableNotice'
 import { RefreshCwIcon } from '../../lib/icons'
 import { TABULAR_NUMS } from '../../lib/text-styles'

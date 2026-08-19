@@ -5,8 +5,9 @@
  * 분류인지 더 아래 층인지는 [[ADR-132]] 열린 질문이라, 여기서 미리 정하지 않는다.
  */
 
-import { Text, View } from 'react-native'
+import { View } from 'react-native'
 
+import { Text } from '../../components/atoms/Text/Text'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'

@@ -41,7 +41,7 @@
 //    *"보스 스케줄러가 붙는 step 5 에서 둘이 된다"* 고 적어 둔 자리라, 여기서 `lib/` 로 올렸다
 //    ([[ADR-094]] 결정 1).
 import { useEffect, useState } from 'react'
-import { Pressable, RefreshControl, Text, View } from 'react-native'
+import { Pressable, RefreshControl, View } from 'react-native'
 import { useReducedMotion } from 'react-native-reanimated'
 
 import type { BossDifficulty } from '@core/types'
@@ -62,6 +62,7 @@ import { isChallengersWorld } from '@core/lib/world-emblem'
 
 import { Badge } from '../../components/atoms/Badge/Badge'
 import { DifficultyBadge } from '../../components/atoms/DifficultyBadge/DifficultyBadge'
+import { Text } from '../../components/atoms/Text/Text'
 import { CharacterRail, type CharacterRailEntry } from '../../components/molecules/CharacterRail/CharacterRail'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'

@@ -37,12 +37,13 @@
 // 정한 것과 같은 판단 — *"이왕 하는 김에"* 손대면 이식이 재작성이 된다). 두 앱을 나란히 놓고
 // 대조하는 일이 전환 기간 내내 필요하므로(`migration/README.md`) 지금은 같은 모양으로 둔다.
 import { useEffect } from 'react'
-import { Pressable, Text, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 
 import { useLiveUpdateStore } from '@core/features/live-update/store'
 
 import packageJson from '../../../package.json'
 import { Card } from '../../components/atoms/Card/Card'
+import { Text } from '../../components/atoms/Text/Text'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'

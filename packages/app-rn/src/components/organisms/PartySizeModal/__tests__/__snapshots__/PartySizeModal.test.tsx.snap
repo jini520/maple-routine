@@ -375,6 +375,8 @@ exports[`PartySizeModal 트리 스냅샷 1`] = `
                 }
               >
                 <Text
+                  allowFontScaling={true}
+                  maxFontSizeMultiplier={1.235}
                   style={
                     {
                       "color": "#AEA298",
@@ -393,6 +395,8 @@ exports[`PartySizeModal 트리 스냅샷 1`] = `
                   주간 보스
                 </Text>
                 <Text
+                  allowFontScaling={true}
+                  maxFontSizeMultiplier={1.235}
                   style={
                     {
                       "color": "#ECE2DB",
@@ -426,6 +430,8 @@ exports[`PartySizeModal 트리 스냅샷 1`] = `
             >
               <View>
                 <Text
+                  allowFontScaling={true}
+                  maxFontSizeMultiplier={1.235}
                   style={
                     {
                       "color": "#645C42",
@@ -521,6 +527,8 @@ exports[`PartySizeModal 트리 스냅샷 1`] = `
                       }
                     >
                       <Text
+                        allowFontScaling={false}
+                        maxFontSizeMultiplier={1.235}
                         style={
                           {
                             "color": "#ffffff",
@@ -610,6 +618,8 @@ exports[`PartySizeModal 트리 스냅샷 1`] = `
                       }
                     >
                       <Text
+                        allowFontScaling={false}
+                        maxFontSizeMultiplier={1.235}
                         style={
                           {
                             "color": "#ffffff",
@@ -700,6 +710,8 @@ exports[`PartySizeModal 트리 스냅샷 1`] = `
                       }
                     >
                       <Text
+                        allowFontScaling={false}
+                        maxFontSizeMultiplier={1.235}
                         style={
                           {
                             "color": "#f4794f",
@@ -886,6 +898,8 @@ exports[`PartySizeModal 트리 스냅샷 1`] = `
                       </RNSVGGroup>
                     </RNSVGSvgView>
                     <Text
+                      allowFontScaling={true}
+                      maxFontSizeMultiplier={1.235}
                       style={
                         {
                           "color": "#645C42",
@@ -900,6 +914,8 @@ exports[`PartySizeModal 트리 스냅샷 1`] = `
                     </Text>
                   </View>
                   <Text
+                    allowFontScaling={true}
+                    maxFontSizeMultiplier={1.235}
                     style={
                       {
                         "backgroundColor": "#FEECDA",
@@ -1081,6 +1097,8 @@ exports[`PartySizeModal 트리 스냅샷 1`] = `
                     }
                   >
                     <Text
+                      allowFontScaling={true}
+                      maxFontSizeMultiplier={1.235}
                       style={
                         {
                           "color": "#241208",
@@ -1097,6 +1115,8 @@ exports[`PartySizeModal 트리 스냅샷 1`] = `
                       4
                     </Text>
                     <Text
+                      allowFontScaling={true}
+                      maxFontSizeMultiplier={1.235}
                       style={
                         {
                           "color": "#645C42",

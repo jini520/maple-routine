@@ -28,7 +28,7 @@
 // 목록에 없는 대표를 지우므로(`setTrackedCharacterOcids` 의 참조 무결성), 순서를 뒤집으면 방금
 // 고른 대표가 지워질 수 있다.
 import { useState } from 'react'
-import { Pressable, Text, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 
 import { useContentSchedulerStore } from '@core/features/content-scheduler/store'
 import { useApiKeyNotice } from '@core/features/onboarding/use-api-key-notice'
@@ -38,6 +38,7 @@ import {
 } from '@core/storage/character-selection'
 
 import { Button } from '../../components/atoms/Button/Button'
+import { Text } from '../../components/atoms/Text/Text'
 import { CharacterManageBody } from '../../components/organisms/CharacterManage/CharacterManageBody'
 import { useCharacterManage } from '../../components/organisms/CharacterManage/use-character-manage'
 import { useReorderScroll } from '../../components/organisms/CharacterManage/use-reorder-scroll'

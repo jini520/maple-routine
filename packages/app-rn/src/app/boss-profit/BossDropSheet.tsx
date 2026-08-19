@@ -27,7 +27,7 @@
 // ⑥ 글자가 상자에서 `Text` 로 내려온다. `line-clamp-2` 는 `numberOfLines={2}` 이고, `text-balance`·
 //    `break-keep` 은 짝이 없어 사라진다(줄바꿈 품질만 달라진다).
 import { useState } from 'react'
-import { Image, Pressable, Text, View } from 'react-native'
+import { Image, Pressable, View } from 'react-native'
 
 import {
   getAccessoryBoxContents,
@@ -47,6 +47,7 @@ import type { DropCandidate, DropCategory, RecordedDrop, SelectableDropCategory 
 
 import { DifficultyBadge } from '../../components/atoms/DifficultyBadge/DifficultyBadge'
 import { ProfitIcon } from '../../components/atoms/ProfitIcon/ProfitIcon'
+import { Text } from '../../components/atoms/Text/Text'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import { DropEffectOverlay } from '../../components/organisms/DropEffectOverlay/DropEffectOverlay'

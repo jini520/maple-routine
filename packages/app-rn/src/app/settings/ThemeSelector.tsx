@@ -23,11 +23,12 @@
 // 여기 색은 클래스가 아니라 레지스트리 값이라 그 경로를 못 타므로 프롭으로 직접 준다 — 안 그러면
 // 에러 없이 아이콘만 기본색으로 남는다.
 import { useState } from 'react'
-import { Pressable, Text, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 
 import { THEME_NAMES, getThemeDefinition, groupThemesByCategory } from '@core/lib/theme-registry'
 import type { ThemeName } from '@core/types/theme'
 
+import { Text } from '../../components/atoms/Text/Text'
 import { CheckIcon, MoonIcon, SunIcon } from '../../lib/icons'
 
 export interface ThemeSelectorProps {

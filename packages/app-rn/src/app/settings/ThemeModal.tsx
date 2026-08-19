@@ -16,11 +16,12 @@
  * 트리가 다시 그려진다 — 이 모달은 **네이티브 윈도우**(`react-native` 의 `Modal`)라 그 View 아래에
  * 있는지가 구조상 자명하지 않다. 육안 대조 목록에 넣어 둔다.
  */
-import { Text, View } from 'react-native'
+import { View } from 'react-native'
 
 import { useThemeStore } from '@core/features/theme/store'
 
 import { Button } from '../../components/atoms/Button/Button'
+import { Text } from '../../components/atoms/Text/Text'
 import { Modal } from '../../components/organisms/Modal/Modal'
 import { ThemeSelector } from './ThemeSelector'
 

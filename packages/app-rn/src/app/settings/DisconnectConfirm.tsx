@@ -12,10 +12,11 @@
 // ③ `disabled:opacity-50` → 조건부 클래스(NativeWind 의 `disabled:` 는 `Pressable` 프롭과 안 이어진다).
 //
 // 카드 폭·여백(`max-w-sm p-6`)과 세로 중앙 정렬은 `Modal.Card` + `align="center"` 가 그대로 낸다.
-import { Text, View } from 'react-native'
+import { View } from 'react-native'
 
 import { Button } from '../../components/atoms/Button/Button'
 import { MapleSpinner } from '../../components/atoms/MapleSpinner/MapleSpinner'
+import { Text } from '../../components/atoms/Text/Text'
 import { Modal } from '../../components/organisms/Modal/Modal'
 
 export interface DisconnectConfirmProps {

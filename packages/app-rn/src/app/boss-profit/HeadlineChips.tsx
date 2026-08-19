@@ -14,7 +14,7 @@
 // ③ 글자가 상자에서 `Text` 로 내려오고, `tabular-nums` 는 클래스로 안 나와 값으로 준다
 //    (`lib/text-styles.ts`).
 import { useState } from 'react'
-import { Image, Modal, Pressable, Text, View } from 'react-native'
+import { Image, Modal, Pressable, View } from 'react-native'
 
 import { getItemIconUrlByFile } from '@core/lib/item-icons'
 import { WEEKLY_CRYSTAL_SALE_LIMIT } from '@core/lib/boss-matching'
@@ -23,6 +23,7 @@ import { formatBossProfitPeriodLabel, getAdjacentPeriodKey } from '@core/lib/bos
 import { worldEmblemUrl } from '@core/lib/world-emblem'
 import type { BossCycle } from '@core/types'
 
+import { Text } from '../../components/atoms/Text/Text'
 import { ArrowDownIcon, ArrowUpIcon, ChevronDownIcon, ChevronUpIcon } from '../../lib/icons'
 import { TABULAR_NUMS } from '../../lib/text-styles'
 import { countMonthlyCrystals, summarizeWorldCrystals } from './character-groups'

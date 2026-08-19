@@ -32,9 +32,10 @@
  * 사용자에게만 정직하다.** 여러 월드를 보려면 4x1 이나 2x2 로 키우는 것이 이 격자의 답이다.
  */
 
-import { Text, View } from 'react-native'
+import { View } from 'react-native'
 import { Circle } from 'react-native-svg'
 
+import { Text } from '../../../components/atoms/Text/Text'
 import { Svg } from '../../../lib/nativewind-interop'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
 import type { WidgetHeight } from '../../../lib/widget-layout'
@@ -141,6 +142,7 @@ function Ring(props: { view: CrystalLimitView; sizePx: number }): React.JSX.Elem
 
       {/* 정정 15 — 두 줄이지만 한 값이다. 줄 높이를 글자보다 낮춰 분수로 읽히게 한다. */}
       <Text
+        fixed
         testID="crystal-ring-numerator"
         style={{ fontSize: numeratorPx, lineHeight: numeratorPx * 0.92, ...TABULAR_NUMS }}
         className="font-extrabold text-text"
@@ -148,6 +150,7 @@ function Ring(props: { view: CrystalLimitView; sizePx: number }): React.JSX.Elem
         {props.view.cleared}
       </Text>
       <Text
+        fixed
         testID="crystal-ring-denominator"
         style={{ fontSize: denominatorPx, lineHeight: denominatorPx * 0.92, ...TABULAR_NUMS }}
         className="text-text-muted"
@@ -160,7 +163,7 @@ function Ring(props: { view: CrystalLimitView; sizePx: number }): React.JSX.Elem
 
 function WorldName(props: { world: string; sizeClass: string }): React.JSX.Element {
   return (
-    <Text testID="crystal-world" numberOfLines={1} className={`text-text ${props.sizeClass}`}>
+    <Text fixed testID="crystal-world" numberOfLines={1} className={`text-text ${props.sizeClass}`}>
       {props.world}
     </Text>
   )
@@ -169,8 +172,8 @@ function WorldName(props: { world: string; sizeClass: string }): React.JSX.Eleme
 /** `56개 남음` — 이 타일이 답하는 질문이 «더 팔 수 있나» 라서 소진량이 아니라 잔량이 글자가 된다. */
 function Remaining(props: { view: CrystalLimitView; sizeClass: string }): React.JSX.Element {
   return (
-    <Text testID="crystal-remaining" numberOfLines={1} className={`text-text-muted ${props.sizeClass}`}>
-      <Text style={TABULAR_NUMS} className="font-bold text-text">
+    <Text fixed testID="crystal-remaining" numberOfLines={1} className={`text-text-muted ${props.sizeClass}`}>
+      <Text fixed style={TABULAR_NUMS} className="font-bold text-text">
         {remainingOf(props.view)}
       </Text>
       개 남음
@@ -179,7 +182,7 @@ function Remaining(props: { view: CrystalLimitView; sizeClass: string }): React.
 }
 
 function Title(props: { sizeClass: string }): React.JSX.Element {
-  return <Text className={`font-bold text-text-muted ${props.sizeClass}`}>{TITLE}</Text>
+  return <Text fixed className={`font-bold text-text-muted ${props.sizeClass}`}>{TITLE}</Text>
 }
 
 /**
@@ -192,7 +195,7 @@ function RestWorlds(props: { rest: CrystalLimitView[] }): React.JSX.Element | nu
   if (props.rest.length === 0) return null
 
   return (
-    <Text testID="crystal-rest" numberOfLines={1} className="text-[10px] text-text-muted">
+    <Text fixed testID="crystal-rest" numberOfLines={1} className="text-[10px] text-text-muted">
       {props.rest.length === 1
         ? `${props.rest[0].world} ${remainingOf(props.rest[0])}개 남음`
         : `외 ${props.rest.length}개 월드`}
@@ -204,7 +207,7 @@ function Empty(props: { variant: Variant }): React.JSX.Element {
   return (
     <View testID="widget-crystal-limit" className="flex-1 justify-center gap-1 p-3">
       {props.variant !== 'tiny' && <Title sizeClass="text-[10px]" />}
-      <Text testID="crystal-empty" numberOfLines={2} className="text-[10px] text-text-muted">
+      <Text fixed testID="crystal-empty" numberOfLines={2} className="text-[10px] text-text-muted">
         {EMPTY_NOTE}
       </Text>
     </View>

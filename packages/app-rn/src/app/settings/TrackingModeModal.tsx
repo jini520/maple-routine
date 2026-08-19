@@ -13,13 +13,14 @@
 // (`Modal` 의 `onRequestClose`) — 웹에 없던 진입 경로라 **막는 자리가 하나 늘어난 것**이지 계약이
 // 바뀐 것은 아니다.
 import { useState } from 'react'
-import { Text, View } from 'react-native'
+import { View } from 'react-native'
 
 import { useTrackingModeStore } from '@core/features/tracking-mode/store'
 import type { TrackingMode } from '@core/storage/tracking-mode'
 
 import { Button } from '../../components/atoms/Button/Button'
 import { MapleSpinner } from '../../components/atoms/MapleSpinner/MapleSpinner'
+import { Text } from '../../components/atoms/Text/Text'
 import { Modal } from '../../components/organisms/Modal/Modal'
 import { reloadTabStores } from './reload-tab-stores'
 import { TrackingModeSelector } from './TrackingModeSelector'

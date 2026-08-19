@@ -19,13 +19,14 @@
 // ④ `divide`·`border-b` 로 그리던 목록 경계가 **행마다 `border-b`** 그대로다 — 웹도 형제 선택자가
 //    아니라 각 행에 직접 걸고 있었다.
 import { useState } from 'react'
-import { Pressable, Text, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 
 import { formatBytes } from '@core/lib/format-bytes'
 import type { CacheDataGroupId, CacheDataSelection } from '@core/storage/cache-data'
 
 import { Button } from '../../components/atoms/Button/Button'
 import { MapleSpinner } from '../../components/atoms/MapleSpinner/MapleSpinner'
+import { Text } from '../../components/atoms/Text/Text'
 import { Modal } from '../../components/organisms/Modal/Modal'
 import { CheckIcon } from '../../lib/icons'
 import { TABULAR_NUMS } from '../../lib/text-styles'

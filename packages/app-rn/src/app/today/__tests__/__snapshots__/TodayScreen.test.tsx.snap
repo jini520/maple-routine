@@ -230,6 +230,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                     }
                   >
                     <Text
+                      allowFontScaling={true}
+                      maxFontSizeMultiplier={1.235}
                       style={
                         {
                           "color": "#241208",
@@ -243,6 +245,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                       today
                     </Text>
                     <Text
+                      allowFontScaling={true}
+                      maxFontSizeMultiplier={1.235}
                       numberOfLines={1}
                       style={
                         {
@@ -622,6 +626,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                               />
                             </View>
                             <Text
+                              allowFontScaling={false}
+                              maxFontSizeMultiplier={1.235}
                               numberOfLines={1}
                               style={
                                 {
@@ -637,6 +643,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                               캐릭터2
                             </Text>
                             <Text
+                              allowFontScaling={false}
+                              maxFontSizeMultiplier={1.235}
                               numberOfLines={1}
                               style={
                                 {
@@ -662,6 +670,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                             }
                           >
                             <Text
+                              allowFontScaling={false}
+                              maxFontSizeMultiplier={1.235}
                               style={
                                 {
                                   "color": "#645C42",
@@ -674,6 +684,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                               Lv. 298
                             </Text>
                             <Text
+                              allowFontScaling={false}
+                              maxFontSizeMultiplier={1.235}
                               numberOfLines={1}
                               style={
                                 {
@@ -711,6 +723,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                             }
                           >
                             <Text
+                              allowFontScaling={false}
+                              maxFontSizeMultiplier={1.235}
                               style={
                                 {
                                   "color": "#645C42",
@@ -722,6 +736,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                               EXP
                             </Text>
                             <Text
+                              allowFontScaling={false}
+                              maxFontSizeMultiplier={1.235}
                               numberOfLines={1}
                               style={
                                 {
@@ -831,6 +847,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                       testID="widget-reset-countdown"
                     >
                       <Text
+                        allowFontScaling={false}
+                        maxFontSizeMultiplier={1.235}
                         style={
                           {
                             "color": "#645C42",
@@ -859,6 +877,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                           }
                         >
                           <Text
+                            allowFontScaling={false}
+                            maxFontSizeMultiplier={1.235}
                             style={
                               {
                                 "color": "#645C42",
@@ -877,6 +897,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                             }
                           >
                             <Text
+                              allowFontScaling={false}
+                              maxFontSizeMultiplier={1.235}
                               numberOfLines={1}
                               style={
                                 {
@@ -913,6 +935,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                           }
                         >
                           <Text
+                            allowFontScaling={false}
+                            maxFontSizeMultiplier={1.235}
                             style={
                               {
                                 "color": "#645C42",
@@ -931,6 +955,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                             }
                           >
                             <Text
+                              allowFontScaling={false}
+                              maxFontSizeMultiplier={1.235}
                               numberOfLines={1}
                               style={
                                 {
@@ -1138,6 +1164,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                             </RNSVGGroup>
                           </RNSVGSvgView>
                           <Text
+                            allowFontScaling={false}
+                            maxFontSizeMultiplier={1.235}
                             style={
                               {
                                 "color": "#241208",
@@ -1154,6 +1182,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                             4
                           </Text>
                           <Text
+                            allowFontScaling={false}
+                            maxFontSizeMultiplier={1.235}
                             style={
                               {
                                 "color": "#645C42",
@@ -1181,6 +1211,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                           }
                         >
                           <Text
+                            allowFontScaling={false}
+                            maxFontSizeMultiplier={1.235}
                             style={
                               {
                                 "color": "#645C42",
@@ -1192,6 +1224,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                             결정석 판매
                           </Text>
                           <Text
+                            allowFontScaling={false}
+                            maxFontSizeMultiplier={1.235}
                             numberOfLines={1}
                             style={
                               {
@@ -1205,6 +1239,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                             스카니아
                           </Text>
                           <Text
+                            allowFontScaling={false}
+                            maxFontSizeMultiplier={1.235}
                             numberOfLines={1}
                             style={
                               {
@@ -1215,6 +1251,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                             testID="crystal-remaining"
                           >
                             <Text
+                              allowFontScaling={false}
+                              maxFontSizeMultiplier={1.235}
                               style={
                                 {
                                   "color": "#241208",
@@ -1280,6 +1318,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                           }
                         >
                           <Text
+                            allowFontScaling={false}
+                            maxFontSizeMultiplier={1.235}
                             style={
                               {
                                 "color": "#645C42",
@@ -1457,6 +1497,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                             </RNSVGSvgView>
                           </View>
                           <Text
+                            allowFontScaling={false}
+                            maxFontSizeMultiplier={1.235}
                             style={
                               {
                                 "color": "#645C42",
@@ -1466,6 +1508,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                             }
                           >
                             <Text
+                              allowFontScaling={false}
+                              maxFontSizeMultiplier={1.235}
                               style={
                                 {
                                   "color": "#241208",
@@ -1493,6 +1537,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                           testID="shared-group"
                         >
                           <Text
+                            allowFontScaling={false}
+                            maxFontSizeMultiplier={1.235}
                             style={
                               {
                                 "color": "#241208",
@@ -1526,6 +1572,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                               testID="shared-item"
                             >
                               <Text
+                                allowFontScaling={false}
+                                maxFontSizeMultiplier={1.235}
                                 numberOfLines={1}
                                 style={
                                   {
@@ -1554,6 +1602,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                               testID="shared-item"
                             >
                               <Text
+                                allowFontScaling={false}
+                                maxFontSizeMultiplier={1.235}
                                 numberOfLines={1}
                                 style={
                                   {
@@ -1582,6 +1632,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                               testID="shared-item"
                             >
                               <Text
+                                allowFontScaling={false}
+                                maxFontSizeMultiplier={1.235}
                                 numberOfLines={1}
                                 style={
                                   {
@@ -1611,6 +1663,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                           testID="shared-group"
                         >
                           <Text
+                            allowFontScaling={false}
+                            maxFontSizeMultiplier={1.235}
                             style={
                               {
                                 "color": "#241208",
@@ -1644,6 +1698,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                               testID="shared-item"
                             >
                               <Text
+                                allowFontScaling={false}
+                                maxFontSizeMultiplier={1.235}
                                 numberOfLines={1}
                                 style={
                                   {
@@ -1659,6 +1715,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                 일간
                               </Text>
                               <Text
+                                allowFontScaling={false}
+                                maxFontSizeMultiplier={1.235}
                                 style={
                                   {
                                     "backgroundColor": "#FCF6DD",
@@ -1691,6 +1749,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                               testID="shared-item"
                             >
                               <Text
+                                allowFontScaling={false}
+                                maxFontSizeMultiplier={1.235}
                                 numberOfLines={1}
                                 style={
                                   {
@@ -1758,6 +1818,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                           }
                         >
                           <Text
+                            allowFontScaling={false}
+                            maxFontSizeMultiplier={1.235}
                             style={
                               {
                                 "color": "#645C42",
@@ -1769,6 +1831,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                             남은 스케줄
                           </Text>
                           <Text
+                            allowFontScaling={false}
+                            maxFontSizeMultiplier={1.235}
                             style={
                               {
                                 "color": "#645C42",
@@ -1778,6 +1842,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                             }
                           >
                             <Text
+                              allowFontScaling={false}
+                              maxFontSizeMultiplier={1.235}
                               style={
                                 {
                                   "color": "#241208",
@@ -1865,6 +1931,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                   testID="schedule-face-fallback"
                                 >
                                   <Text
+                                    allowFontScaling={false}
+                                    maxFontSizeMultiplier={1.235}
                                     style={
                                       {
                                         "color": "#FFEEE2",
@@ -1879,6 +1947,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                 </View>
                               </View>
                               <Text
+                                allowFontScaling={false}
+                                maxFontSizeMultiplier={1.235}
                                 numberOfLines={1}
                                 style={
                                   {
@@ -1929,6 +1999,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                     }
                                   >
                                     <Text
+                                      allowFontScaling={false}
+                                      maxFontSizeMultiplier={1.235}
                                       numberOfLines={1}
                                       style={
                                         {
@@ -1943,6 +2015,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                       일퀘
                                     </Text>
                                     <Text
+                                      allowFontScaling={false}
+                                      maxFontSizeMultiplier={1.235}
                                       style={
                                         {
                                           "color": "#241208",
@@ -1971,6 +2045,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                     }
                                   >
                                     <Text
+                                      allowFontScaling={false}
+                                      maxFontSizeMultiplier={1.235}
                                       numberOfLines={1}
                                       style={
                                         {
@@ -1985,6 +2061,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                       주간퀘
                                     </Text>
                                     <Text
+                                      allowFontScaling={false}
+                                      maxFontSizeMultiplier={1.235}
                                       style={
                                         {
                                           "color": "#241208",
@@ -2026,6 +2104,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                     }
                                   >
                                     <Text
+                                      allowFontScaling={false}
+                                      maxFontSizeMultiplier={1.235}
                                       numberOfLines={1}
                                       style={
                                         {
@@ -2040,6 +2120,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                       주간 보스
                                     </Text>
                                     <Text
+                                      allowFontScaling={false}
+                                      maxFontSizeMultiplier={1.235}
                                       style={
                                         {
                                           "color": "#241208",
@@ -2068,6 +2150,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                     }
                                   >
                                     <Text
+                                      allowFontScaling={false}
+                                      maxFontSizeMultiplier={1.235}
                                       numberOfLines={1}
                                       style={
                                         {
@@ -2082,6 +2166,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                       검마
                                     </Text>
                                     <Text
+                                      allowFontScaling={false}
+                                      maxFontSizeMultiplier={1.235}
                                       style={
                                         {
                                           "color": "#241208",
@@ -2264,6 +2350,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                   testID="schedule-face-fallback"
                                 >
                                   <Text
+                                    allowFontScaling={false}
+                                    maxFontSizeMultiplier={1.235}
                                     style={
                                       {
                                         "color": "#FFEEE2",
@@ -2278,6 +2366,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                 </View>
                               </View>
                               <Text
+                                allowFontScaling={false}
+                                maxFontSizeMultiplier={1.235}
                                 numberOfLines={1}
                                 style={
                                   {
@@ -2328,6 +2418,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                     }
                                   >
                                     <Text
+                                      allowFontScaling={false}
+                                      maxFontSizeMultiplier={1.235}
                                       numberOfLines={1}
                                       style={
                                         {
@@ -2342,6 +2434,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                       일퀘
                                     </Text>
                                     <Text
+                                      allowFontScaling={false}
+                                      maxFontSizeMultiplier={1.235}
                                       style={
                                         {
                                           "color": "#241208",
@@ -2370,6 +2464,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                     }
                                   >
                                     <Text
+                                      allowFontScaling={false}
+                                      maxFontSizeMultiplier={1.235}
                                       numberOfLines={1}
                                       style={
                                         {
@@ -2384,6 +2480,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                       주간퀘
                                     </Text>
                                     <Text
+                                      allowFontScaling={false}
+                                      maxFontSizeMultiplier={1.235}
                                       style={
                                         {
                                           "color": "#241208",
@@ -2425,6 +2523,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                     }
                                   >
                                     <Text
+                                      allowFontScaling={false}
+                                      maxFontSizeMultiplier={1.235}
                                       numberOfLines={1}
                                       style={
                                         {
@@ -2439,6 +2539,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                       주간 보스
                                     </Text>
                                     <Text
+                                      allowFontScaling={false}
+                                      maxFontSizeMultiplier={1.235}
                                       style={
                                         {
                                           "color": "#241208",
@@ -2467,6 +2569,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                     }
                                   >
                                     <Text
+                                      allowFontScaling={false}
+                                      maxFontSizeMultiplier={1.235}
                                       numberOfLines={1}
                                       style={
                                         {
@@ -2481,6 +2585,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                       검마
                                     </Text>
                                     <Text
+                                      allowFontScaling={false}
+                                      maxFontSizeMultiplier={1.235}
                                       style={
                                         {
                                           "color": "#241208",
@@ -2663,6 +2769,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                   testID="schedule-face-fallback"
                                 >
                                   <Text
+                                    allowFontScaling={false}
+                                    maxFontSizeMultiplier={1.235}
                                     style={
                                       {
                                         "color": "#FFEEE2",
@@ -2677,6 +2785,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                 </View>
                               </View>
                               <Text
+                                allowFontScaling={false}
+                                maxFontSizeMultiplier={1.235}
                                 numberOfLines={1}
                                 style={
                                   {
@@ -2727,6 +2837,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                     }
                                   >
                                     <Text
+                                      allowFontScaling={false}
+                                      maxFontSizeMultiplier={1.235}
                                       numberOfLines={1}
                                       style={
                                         {
@@ -2741,6 +2853,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                       일퀘
                                     </Text>
                                     <Text
+                                      allowFontScaling={false}
+                                      maxFontSizeMultiplier={1.235}
                                       style={
                                         {
                                           "color": "#241208",
@@ -2782,6 +2896,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                     }
                                   >
                                     <Text
+                                      allowFontScaling={false}
+                                      maxFontSizeMultiplier={1.235}
                                       numberOfLines={1}
                                       style={
                                         {
@@ -2796,6 +2912,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                       주간 보스
                                     </Text>
                                     <Text
+                                      allowFontScaling={false}
+                                      maxFontSizeMultiplier={1.235}
                                       style={
                                         {
                                           "color": "#241208",
@@ -2824,6 +2942,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                     }
                                   >
                                     <Text
+                                      allowFontScaling={false}
+                                      maxFontSizeMultiplier={1.235}
                                       numberOfLines={1}
                                       style={
                                         {
@@ -2838,6 +2958,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                       검마
                                     </Text>
                                     <Text
+                                      allowFontScaling={false}
+                                      maxFontSizeMultiplier={1.235}
                                       style={
                                         {
                                           "color": "#241208",
@@ -3020,6 +3142,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                   testID="schedule-face-fallback"
                                 >
                                   <Text
+                                    allowFontScaling={false}
+                                    maxFontSizeMultiplier={1.235}
                                     style={
                                       {
                                         "color": "#FFEEE2",
@@ -3034,6 +3158,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                 </View>
                               </View>
                               <Text
+                                allowFontScaling={false}
+                                maxFontSizeMultiplier={1.235}
                                 numberOfLines={1}
                                 style={
                                   {
@@ -3084,6 +3210,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                     }
                                   >
                                     <Text
+                                      allowFontScaling={false}
+                                      maxFontSizeMultiplier={1.235}
                                       numberOfLines={1}
                                       style={
                                         {
@@ -3098,6 +3226,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                       일퀘
                                     </Text>
                                     <Text
+                                      allowFontScaling={false}
+                                      maxFontSizeMultiplier={1.235}
                                       style={
                                         {
                                           "color": "#241208",
@@ -3139,6 +3269,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                     }
                                   >
                                     <Text
+                                      allowFontScaling={false}
+                                      maxFontSizeMultiplier={1.235}
                                       numberOfLines={1}
                                       style={
                                         {
@@ -3153,6 +3285,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                       주간 보스
                                     </Text>
                                     <Text
+                                      allowFontScaling={false}
+                                      maxFontSizeMultiplier={1.235}
                                       style={
                                         {
                                           "color": "#241208",
@@ -3181,6 +3315,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                     }
                                   >
                                     <Text
+                                      allowFontScaling={false}
+                                      maxFontSizeMultiplier={1.235}
                                       numberOfLines={1}
                                       style={
                                         {
@@ -3195,6 +3331,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                       검마
                                     </Text>
                                     <Text
+                                      allowFontScaling={false}
+                                      maxFontSizeMultiplier={1.235}
                                       style={
                                         {
                                           "color": "#241208",
@@ -3391,6 +3529,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                             testID="profit-period-header"
                           >
                             <Text
+                              allowFontScaling={false}
+                              maxFontSizeMultiplier={1.235}
                               style={
                                 {
                                   "color": "#645C42",
@@ -3403,6 +3543,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                보스 수익
                             </Text>
                             <Text
+                              allowFontScaling={false}
+                              maxFontSizeMultiplier={1.235}
                               numberOfLines={1}
                               style={
                                 {
@@ -3417,6 +3559,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                             </Text>
                           </View>
                           <Text
+                            allowFontScaling={false}
+                            maxFontSizeMultiplier={1.235}
                             numberOfLines={1}
                             style={
                               {
@@ -3426,6 +3570,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                             testID="profit-amount"
                           >
                             <Text
+                              allowFontScaling={false}
+                              maxFontSizeMultiplier={1.235}
                               style={
                                 {
                                   "color": "#241208",
@@ -3440,6 +3586,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                               1,000만
                             </Text>
                             <Text
+                              allowFontScaling={false}
+                              maxFontSizeMultiplier={1.235}
                               style={
                                 {
                                   "color": "#645C42",
@@ -3526,6 +3674,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                 }
                               />
                               <Text
+                                allowFontScaling={false}
+                                maxFontSizeMultiplier={1.235}
                                 style={
                                   {
                                     "color": "#645C42",
@@ -3536,6 +3686,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                 결정석
                               </Text>
                               <Text
+                                allowFontScaling={false}
+                                maxFontSizeMultiplier={1.235}
                                 style={
                                   {
                                     "color": "#241208",
@@ -3571,6 +3723,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                 }
                               />
                               <Text
+                                allowFontScaling={false}
+                                maxFontSizeMultiplier={1.235}
                                 style={
                                   {
                                     "color": "#645C42",
@@ -3581,6 +3735,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                 아이템
                               </Text>
                               <Text
+                                allowFontScaling={false}
+                                maxFontSizeMultiplier={1.235}
                                 style={
                                   {
                                     "color": "#241208",
@@ -3624,6 +3780,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                               testID="profit-character-row"
                             >
                               <Text
+                                allowFontScaling={false}
+                                maxFontSizeMultiplier={1.235}
                                 style={
                                   {
                                     "color": "#9A9070",
@@ -3664,6 +3822,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                   testID="profit-character-face-fallback"
                                 >
                                   <Text
+                                    allowFontScaling={false}
+                                    maxFontSizeMultiplier={1.235}
                                     style={
                                       {
                                         "color": "#FFEEE2",
@@ -3677,6 +3837,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                 </View>
                               </View>
                               <Text
+                                allowFontScaling={false}
+                                maxFontSizeMultiplier={1.235}
                                 numberOfLines={1}
                                 style={
                                   {
@@ -3693,6 +3855,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                 캐릭터4
                               </Text>
                               <Text
+                                allowFontScaling={false}
+                                maxFontSizeMultiplier={1.235}
                                 numberOfLines={1}
                                 style={
                                   {
@@ -3706,6 +3870,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                 결정석 400만 · 아이템 0
                               </Text>
                               <Text
+                                allowFontScaling={false}
+                                maxFontSizeMultiplier={1.235}
                                 style={
                                   {
                                     "color": "#241208",
@@ -3735,6 +3901,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                               testID="profit-character-row"
                             >
                               <Text
+                                allowFontScaling={false}
+                                maxFontSizeMultiplier={1.235}
                                 style={
                                   {
                                     "color": "#9A9070",
@@ -3775,6 +3943,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                   testID="profit-character-face-fallback"
                                 >
                                   <Text
+                                    allowFontScaling={false}
+                                    maxFontSizeMultiplier={1.235}
                                     style={
                                       {
                                         "color": "#FFEEE2",
@@ -3788,6 +3958,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                 </View>
                               </View>
                               <Text
+                                allowFontScaling={false}
+                                maxFontSizeMultiplier={1.235}
                                 numberOfLines={1}
                                 style={
                                   {
@@ -3804,6 +3976,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                 캐릭터3
                               </Text>
                               <Text
+                                allowFontScaling={false}
+                                maxFontSizeMultiplier={1.235}
                                 numberOfLines={1}
                                 style={
                                   {
@@ -3817,6 +3991,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                 결정석 300만 · 아이템 0
                               </Text>
                               <Text
+                                allowFontScaling={false}
+                                maxFontSizeMultiplier={1.235}
                                 style={
                                   {
                                     "color": "#241208",
@@ -3846,6 +4022,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                               testID="profit-character-row"
                             >
                               <Text
+                                allowFontScaling={false}
+                                maxFontSizeMultiplier={1.235}
                                 style={
                                   {
                                     "color": "#9A9070",
@@ -3886,6 +4064,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                   testID="profit-character-face-fallback"
                                 >
                                   <Text
+                                    allowFontScaling={false}
+                                    maxFontSizeMultiplier={1.235}
                                     style={
                                       {
                                         "color": "#FFEEE2",
@@ -3899,6 +4079,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                 </View>
                               </View>
                               <Text
+                                allowFontScaling={false}
+                                maxFontSizeMultiplier={1.235}
                                 numberOfLines={1}
                                 style={
                                   {
@@ -3915,6 +4097,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                 캐릭터2
                               </Text>
                               <Text
+                                allowFontScaling={false}
+                                maxFontSizeMultiplier={1.235}
                                 numberOfLines={1}
                                 style={
                                   {
@@ -3928,6 +4112,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                 결정석 200만 · 아이템 0
                               </Text>
                               <Text
+                                allowFontScaling={false}
+                                maxFontSizeMultiplier={1.235}
                                 style={
                                   {
                                     "color": "#241208",
@@ -4044,6 +4230,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                           }
                         >
                           <Text
+                            allowFontScaling={false}
+                            maxFontSizeMultiplier={1.235}
                             style={
                               {
                                 "color": "#645C42",
@@ -4055,6 +4243,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                             이번 주 최고가
                           </Text>
                           <Text
+                            allowFontScaling={false}
+                            maxFontSizeMultiplier={1.235}
                             numberOfLines={1}
                             style={
                               {
@@ -4064,6 +4254,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                             testID="top-item-amount"
                           >
                             <Text
+                              allowFontScaling={false}
+                              maxFontSizeMultiplier={1.235}
                               style={
                                 {
                                   "color": "#241208",
@@ -4078,6 +4270,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                               12.0억
                             </Text>
                             <Text
+                              allowFontScaling={false}
+                              maxFontSizeMultiplier={1.235}
                               style={
                                 {
                                   "color": "#645C42",
@@ -4181,6 +4375,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                         >
                           <Text
                             adjustsFontSizeToFit={true}
+                            allowFontScaling={false}
+                            maxFontSizeMultiplier={1.235}
                             numberOfLines={1}
                             style={
                               {
@@ -4208,6 +4404,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                           }
                         >
                           <Text
+                            allowFontScaling={false}
+                            maxFontSizeMultiplier={1.235}
                             numberOfLines={1}
                             style={
                               {
@@ -4231,6 +4429,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                             testID="unpriced-cta"
                           >
                             <Text
+                              allowFontScaling={false}
+                              maxFontSizeMultiplier={1.235}
                               numberOfLines={1}
                               style={
                                 {
@@ -4482,6 +4682,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                           }
                         >
                           <Text
+                            allowFontScaling={false}
+                            maxFontSizeMultiplier={1.235}
                             numberOfLines={1}
                             style={
                               {
@@ -4495,6 +4697,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                             와따리! ㅇㄱㄱㄷ
                           </Text>
                           <Text
+                            allowFontScaling={false}
+                            maxFontSizeMultiplier={1.235}
                             numberOfLines={1}
                             style={
                               {
@@ -4524,6 +4728,8 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                           testID="drought-weeks"
                         >
                           <Text
+                            allowFontScaling={false}
+                            maxFontSizeMultiplier={1.235}
                             numberOfLines={1}
                             style={
                               {

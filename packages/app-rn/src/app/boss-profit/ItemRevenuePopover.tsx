@@ -42,7 +42,7 @@
 // ⑤ 글자가 상자에서 `Text` 로 내려온다(RN 은 글자 스타일을 상속하지 않는다). `truncate` 는
 //    `numberOfLines={1}` 이다.
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Dimensions, Image, Modal, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native'
+import { Dimensions, Image, Modal, Pressable, ScrollView, useWindowDimensions, View } from 'react-native'
 
 import { formatMesoShort } from '@core/lib/boss-profit-delta'
 import { dropPayoutMeso } from '@core/lib/drop-price'
@@ -50,6 +50,7 @@ import type { RecordedDrop } from '@core/types/drops'
 import { getItemIconUrl } from '@core/lib/item-icons'
 import { anchorPopover } from '@core/lib/popover-anchor'
 
+import { Text } from '../../components/atoms/Text/Text'
 import { TABULAR_NUMS } from '../../lib/text-styles'
 
 export const ITEM_POPOVER_WIDTH = 248

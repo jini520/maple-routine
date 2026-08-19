@@ -33,9 +33,10 @@
 //    스크롤을 갖는다. 안전영역도 이 화면이 직접 비우고, 하단은 `WebView` 안쪽에 여백을 넣을 수
 //    없으므로 **상자 자체를 홈 인디케이터 위에서 끝낸다.**
 import { useEffect, useState } from 'react'
-import { Linking, Pressable, Text, View } from 'react-native'
+import { Linking, Pressable, View } from 'react-native'
 import { WebView } from 'react-native-webview'
 
+import { Text } from '../../components/atoms/Text/Text'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'

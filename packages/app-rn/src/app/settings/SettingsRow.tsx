@@ -19,8 +19,9 @@
 // 가로채 `data-testid` 로 바꿔 넘기기 때문이다(웹판과 코드를 공유하는 흔적 —
 // `lib/nativewind-interop.ts` 가 실측으로 적어 뒀다). 웹 테스트가 이 testID 로 「값과 화살표의
 // 병기」를 지키고 있어 이름을 유지해야 한다.
-import { Pressable, Text, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 
+import { Text } from '../../components/atoms/Text/Text'
 import { ChevronRightIcon } from '../../lib/icons'
 import { SETTINGS_ROW_CLASS } from './row-class'
 

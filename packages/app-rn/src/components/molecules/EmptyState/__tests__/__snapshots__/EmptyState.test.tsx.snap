@@ -303,6 +303,8 @@ exports[`EmptyState 렌더 트리 스냅샷 — 이후 변경을 잡는 기준�
       }
     >
       <Text
+        allowFontScaling={true}
+        maxFontSizeMultiplier={1.235}
         style={
           {
             "color": "#241208",
@@ -317,6 +319,8 @@ exports[`EmptyState 렌더 트리 스냅샷 — 이후 변경을 잡는 기준�
         추적할 주간 보스가 없습니다
       </Text>
       <Text
+        allowFontScaling={true}
+        maxFontSizeMultiplier={1.235}
         style={
           {
             "color": "#645C42",
@@ -376,6 +380,8 @@ exports[`EmptyState 렌더 트리 스냅샷 — 이후 변경을 잡는 기준�
       }
     >
       <Text
+        allowFontScaling={true}
+        maxFontSizeMultiplier={1.235}
         style={
           {
             "color": "#FFEEE2",
@@ -489,6 +495,8 @@ exports[`EmptyState 렌더 트리 스냅샷 — 이후 변경을 잡는 기준�
       }
     >
       <Text
+        allowFontScaling={true}
+        maxFontSizeMultiplier={1.235}
         style={
           {
             "color": "#241208",
