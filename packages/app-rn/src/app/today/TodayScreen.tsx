@@ -167,7 +167,11 @@ export function TodayScreen(): React.JSX.Element {
     manualContentByOcid: content.manualTrackedByOcid,
     manualBossByOcid: boss.manualTrackedByOcid,
     characterIssues: profit.characterIssues,
-    profitRows: profit.rows,
+    // **«보고 있는 것» 이 아니라 «지금 기간» 이다**([[ADR-153]]) — `rows` 는 `filterRowsForTab` 이
+    // `cycle` 까지 걸러 낸 보스 수익 화면의 한 조각이라, 그 화면을 월간 탭으로 옮기기만 해도 이
+    // 화면의 주간 수익·결정석 한도가 함께 비었다(사용자 보고 2026-08-19). 이번 주로 자르는 것은
+    // 종전대로 뷰모델이 한다.
+    profitRows: profit.currentPeriodRows,
     profitDropsByRowKey: profit.dropsByRowKey,
     dropGroups: dropHistory.groups,
     drought: dropHistory.drought,
