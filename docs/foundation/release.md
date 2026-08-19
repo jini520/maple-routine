@@ -298,6 +298,80 @@ Xcode 자동 서명을 쓰므로 키 관리가 없다. 대신 두 가지 함정�
 `cap add ios` 를 다시 하면 `PRODUCT_NAME` 이 `capacitor.config.ts` 의 한글 `appName` 으로
 되살아난다. **플랫폼을 재생성했다면 ASCII 로 다시 바꿀 것.**
 
+### RN 앱(`packages/app-rn`)의 아카이브 (2026-08-19, v1.0.6 build 13 으로 확인)
+
+Xcode GUI 가 아니라 **CLI 로 돈다.** Organizer 는 아카이브가 `~/Library/Developer/Xcode/Archives/<오늘
+날짜>/` 밑에 있으면 그대로 집어 가므로, `-archivePath` 를 거기로 주면 GUI 의 `Product ▸ Archive` 와
+결과가 같다. CLI 를 쓰는 이유는 실패 지점이 로그에 남기 때문이다 — 서명 문제는 GUI 로 하면
+Organizer 의 Distribute 까지 가야 드러난다([../trouble/2026-08-04-ios-appstore-signing.md](../trouble/2026-08-04-ios-appstore-signing.md)).
+
+#### 1. 빌드 번호는 **두 파일**이다 — Android 와 같은 함정
+
+| 파일 | 값 |
+|---|---|
+| `packages/app-rn/app.json` | `ios.buildNumber` |
+| `packages/app-rn/ios/app/Info.plist` | `CFBundleVersion` ← **빌드가 실제로 읽는 값** |
+
+이 저장소는 네이티브 트리를 커밋해 두므로 `app.json` 은 원천이 아니다(prebuild 를 돌려야 반영된다,
+[[ADR-138]]). `app.json` 만 고치면 **옛 번호로 나간다** — Android 가 `versionCode` 20 으로 그렇게 한 번
+나갔다(`c9ce4697`). 타겟의 `MARKETING_VERSION`(`1.0`)·`CURRENT_PROJECT_VERSION`(`1`) 은 스캐폴드
+기본값 그대로 둬도 된다. `INFOPLIST_FILE` 의 리터럴이 이긴다.
+
+#### 2. 소진된 번호는 **로컬 아카이브가 알고 있다**
+
+App Store Connect 를 열 필요가 없다. Xcode 는 업로드 이력을 아카이브 안에 적어 둔다.
+
+```bash
+for a in ~/Library/Developer/Xcode/Archives/*/*.xcarchive; do
+  plutil -p "$a/Info.plist" | grep -e uploadedBuildNumber -e '"title"' -e '"state"'
+done
+```
+
+`task = distribute` 항목의 `uploadEvent.state = success` 가 보이면 그 `uploadedBuildNumber` 는 **다시 못
+쓴다.** build 12 가 그랬다(업로드 2026-08-19 05:23). `task = validate` 만 있는 것은 검증만 한 것이라
+번호가 살아 있다 — 둘을 구별할 것.
+
+#### 3. 아카이브
+
+```bash
+cd packages/app-rn/ios
+xcodebuild -workspace app.xcworkspace -scheme app \
+  -configuration Release -destination 'generic/platform=iOS' \
+  -archivePath "$HOME/Library/Developer/Xcode/Archives/$(date +%Y-%m-%d)/MapleRoutine-1.0.6-13.xcarchive" \
+  archive
+```
+
+`npm run build`·`npx cap sync` 는 **필요 없다**(그건 capacitor 쪽 절차다). RN 은 `Bundle React Native
+code and images` 빌드 단계가 `expo export:embed` 를 돌려 JS 번들과 에셋을 매 빌드 새로 만든다.
+
+#### 4. 업로드 전에 export 까지 돌려 배포 서명을 확인한다
+
+아카이브는 **개발 인증서로 서명된 채 성공한다**(`SigningIdentity = Apple Development …`). 배포
+인증서로 바뀌는 것은 export 단계이고, 거기서 깨지면 error 90034 다. 그래서 업로드 전에 한 번 돌린다.
+
+```bash
+xcodebuild -exportArchive -archivePath <위 경로> \
+  -exportPath /tmp/export -exportOptionsPlist ExportOptions.plist
+# method: app-store-connect · destination: export · teamID: TQPKW249G7 · signingStyle: automatic
+```
+
+`destination` 을 `export` 로 두면 IPA 만 만들고 업로드하지 않는다.
+
+#### 5. 산출물 확인 — 무엇을 보는가
+
+```bash
+A=~/Library/Developer/Xcode/Archives/<날짜>/<이름>.xcarchive/Products/Applications/app.app
+plutil -p "$A/Info.plist" | grep -E 'CFBundleVersion|CFBundleShortVersionString'
+codesign -dv --verbose=2 "$A" 2>&1 | grep -E 'Identifier|Authority|TeamIdentifier'
+```
+
+**Android 의 `app.manifest` 스탈 문제(`c9ce4697`)는 iOS 에 없다.** `Bundle React Native code and images`
+와 `[CP-User] Generate updates resources for expo-updates` 가 둘 다 *"Based on dependency analysis"* 를 끈
+채라 **매 빌드 돈다**(아카이브 로그의 `note:` 로 확인된다). Gradle 처럼 UP-TO-DATE 로 건너뛰는 자리가
+없다. 그래도 스토어행 바이너리는 눈으로 확인하고 보낸다 — build 13 에서는 `EXUpdates.bundle/app.manifest`
+의 288개 항목이 전부 `app.app/assets/` 의 실제 파일로 풀렸고, 카링·벨로나의 `packagerHash` 가
+`packages/core/src/assets/bosses/*.webp` 의 md5 와 같았다.
+
 ### 알림을 넣는 릴리스의 iOS 준비물 ([[ADR-146]], 설계 완료·구현 전)
 
 **바이너리에 안 들어가면 다음 심사까지 못 쓴다** — Push Notifications capability · Background Modes
