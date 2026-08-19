@@ -2,7 +2,7 @@
 
 > **범위**: 앱의 첫 화면 `today` 와 그 위에 서는 **위젯 시스템** — 격자 치수, 배치 규약, 위젯 레지스트리, 뷰모델 조립, 위젯 아홉의 내용과 빈 상태. 하단바의 층·그룹 구조는 [[ADR-132]](문서 없음 — ADR 전문 참조), 각 위젯이 **가리키는** 화면의 정책은 그 화면의 문서([content-scheduler.md](./content-scheduler.md) · [boss-scheduler.md](./boss-scheduler.md) · [boss-profit.md](./boss-profit.md) · [item-drop.md](./item-drop.md)).
 > **관련 소스(read/write)**: `app/today/`(`TodayScreen.tsx` · `WidgetGrid.tsx` · `view-model.ts` · `widgets/`{`types.ts`·`registry.ts`·`layout.ts` + 위젯 아홉}) · `lib/widget-grid-metrics.ts` · `lib/widget-layout.ts`(좌표 검증) · `lib/drought-tier-styles.ts`(잎 램프 — 드롭 히스토리 화면과 공유) · 읽기만 하는 원천 — `features/content-scheduler/store` · `features/boss-scheduler/store` · `features/boss-profit/store` · `features/boss-profit/drop-history-store` · `storage/character-basic-cache` · `storage/character-selection`(`getRepresentativeCharacter`) · `lib/reset-clock` · `lib/drop-history` · `lib/drop-price` · `lib/boss-matching`(`WEEKLY_CRYSTAL_SALE_LIMIT`) · `lib/valuable-drops` · `lib/scheduler-content-scope`(`getShareScope`·**`getSharedContentGroups`**) + `data/scheduler-content-catalog.json`(`group`·`shortName`·`sharedGroupOrder`·`onlyWhenScheduled`). **꺼내는 것 셋**([[ADR-147]] 결정 8 + 정정 16) — `features/boss-scheduler/displayed-bosses.ts`(`displayedBosses`) · **`features/content-scheduler/displayed-contents.ts`**(`displayedDailyContents`·`displayedWeeklyContents`, `ContentScreen.tsx` 에서 이동 완료) · `app/content-scheduler/content-completion.ts`(제자리, import 만).
-> **관련 ADR**: [[ADR-147]](이 화면의 설계 전부) · [[ADR-132]](첫 화면 이동·하단바·동기화 트리거) · [[ADR-097]]·[[ADR-101]](동기화 게이트·예열) · [[ADR-142]](완료 판정의 출처) · [[ADR-035]]·[[ADR-031]](표시 대상 보스) · [[ADR-054]]·[[ADR-059]](결정석 한도) · [[ADR-071]]·[[ADR-124]](드롭 히스토리·아이템 수익) · [[ADR-060]]·[[ADR-062]](빈 상태·실패) · [[ADR-140]]·[[ADR-143]](대표 캐릭터) · [[ADR-057]](«모름» 과 «없음» 을 가르는 태도) · [[ADR-006]](확인 안 한 값을 단정하지 않는다).
+> **관련 ADR**: [[ADR-147]](이 화면의 설계 전부) · [[ADR-153]](수익 위젯이 읽는 값 — «지금 기간») · [[ADR-132]](첫 화면 이동·하단바·동기화 트리거) · [[ADR-097]]·[[ADR-101]](동기화 게이트·예열) · [[ADR-142]](완료 판정의 출처) · [[ADR-035]]·[[ADR-031]](표시 대상 보스) · [[ADR-054]]·[[ADR-059]](결정석 한도) · [[ADR-071]]·[[ADR-124]](드롭 히스토리·아이템 수익) · [[ADR-060]]·[[ADR-062]](빈 상태·실패) · [[ADR-140]]·[[ADR-143]](대표 캐릭터) · [[ADR-057]](«모름» 과 «없음» 을 가르는 태도) · [[ADR-006]](확인 안 한 값을 단정하지 않는다).
 > **관련 문서**: [../foundation/design-system.md](../foundation/design-system.md) · [../foundation/error-resilience.md](../foundation/error-resilience.md) · [../foundation/nexon-api.md](../foundation/nexon-api.md) · [../foundation/architecture.md](../foundation/architecture.md).
 
 **상태**: **구현 완료 · 실기기에 띄워 봄 · 치수는 미검증**(2026-08-18). `UnderConstruction` 껍데기가
@@ -289,8 +289,13 @@ function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel
 
 #### 「이번 주」 의 범위 — 위젯 3·4·7 이 같은 자를 쓴다
 
-셋 다 **현재 주간 기간 키 하나**로 자른다(보스 수익 화면의 주간 탭과 같은 범위). 스토어가 다른
-탭·기간을 보고 있으면 그 행은 세지 않는다.
+셋 다 **현재 주간 기간 키 하나**로 자른다(보스 수익 화면의 주간 탭과 같은 범위).
+
+- **원천은 «지금 기간» 이지 «보고 있는 기간» 이 아니다**([[ADR-153]], 2026-08-19). 수익 입력은
+  보스 수익 스토어의 `rows` 가 아니라 **`currentPeriodRows`** 다 — `rows` 는 `filterRowsForTab` 이
+  `cycle` 까지 걸러 낸 «사용자가 보고 있는 (탭, 기간)» 한 조각이라, 그 화면을 **월간 탭으로 옮기는
+  것만으로** today 의 위젯 3·5 가 함께 비었다(사용자 보고 — 재현 경로가 짧고 결정적이다). 드롭
+  기록이 원천인 위젯 4·7·8 이 그때도 멀쩡한 것이 이 경계를 그대로 보여 준다.
 
 - 월간 키(`YYYY-MM`)로 저장되는 검은마법사 드롭은 여기 **안 든다** — 그쪽은 보스 수익 화면 월간 탭의
   몫이고, 위젯 3이 이미 주간 탭 기준이라 셋이 갈리면 같은 격자에서 서로 다른 기간을 말하게 된다.
@@ -323,9 +328,9 @@ function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel
 |---|---|---|---|---|---|
 | 1 | `representative-character` | 대표 캐릭터 — 엠블럼 · 닉네임 · `Lv.` + 직업 · 길드 · EXP | **4x1** · 4x2 · 2x2 | Settings | `character-basic-cache` + `resolveDisplayRepresentative` |
 | 2 | `remaining-schedule` | 캐릭터별 남은 일퀘 · 주간퀘 · 주간 보스 · 검마 (행 탭 → 아코디언). **공유 일곱은 빠진다** | **`4×auto`** | **없음**(정정 25) | 컨텐츠·보스 스케줄러 스토어 |
-| 3 | `weekly-boss-profit` | 이번 주 총 수익 + 캐릭터 top3(아이템 판매 포함) | **4x3** · 4x2 · 2x2 · 2x1 | Profit | 보스 수익 스토어(주간 탭·현재 기간) |
+| 3 | `weekly-boss-profit` | 이번 주 총 수익 + 캐릭터 top3(아이템 판매 포함) | **4x3** · 4x2 · 2x2 · 2x1 | Profit | 보스 수익 스토어 `currentPeriodRows`([[ADR-153]] — «보고 있는 탭» 이 아니다) |
 | 4 | `top-valuable-item` | 이번 주 최고가 아이템 (4x2 는 top 5) | **2x1** · 4x2 · 2x2 · 1x1 | Profit | `drop-history` |
-| 5 | `crystal-limit` | 주간 결정석 판매 한도 `n/90`(월드별) | **2x1** · 4x1 · 2x2 · 1x1 | Profit | 보스 수익 `rows` 파생([[ADR-054]]) |
+| 5 | `crystal-limit` | 주간 결정석 판매 한도 `n/90`(월드별) | **2x1** · 4x1 · 2x2 · 1x1 | Profit | 보스 수익 `currentPeriodRows` 파생([[ADR-054]] · [[ADR-153]]) |
 | 6 | `reset-countdown` | 일일/주간/월간 초기화까지 남은 시간(**일일은 초까지 · 1초 갱신**) | **2x1** · 2x2 · 4x1 · 1x1 | — | `lib/reset-clock.ts` |
 | 7 | `unpriced-drops` | 가격 미입력 드롭 N건 | **2x1** · 2x2 · 1x1 | Profit | `drop-history` |
 | 8 | `valuable-drought` | «N주째 아이템 드롭 없음» | **4x1** · 2x2 · 2x1 | Profit | `summarizeValuableDrought` |
@@ -819,6 +824,10 @@ formatValuableDroughtHeadline(weeksSince, lateIndex)  →  (weeksSince, index)
 
 ## 폐기된 정책 (history)
 
+- ~~수익 계열 위젯의 원천은 보스 수익 스토어의 `rows` 이고, 스토어가 다른 탭·기간을 보고 있으면 그
+  행은 세지 않는다~~ → **`currentPeriodRows`(지금 기간)를 읽는다**([[ADR-153]], 2026-08-19). 그
+  «세지 않는다» 는 적어 둔 대가였는데, 실제로는 보스 수익 화면을 월간 탭으로 옮기기만 해도 today 의
+  위젯 3·5 가 함께 비는 결함이었다(사용자 보고).
 - ~~`today` 는 «개발 진행중» 빈 화면이다([[ADR-132]] 결정 12)~~ → 위젯 격자로 채운다([[ADR-147]],
   구현 완료 2026-08-18).
 - ~~첫 화면은 컨텐츠 스케줄러(`INITIAL_TAB_ROUTE = 'Content'`)~~ → `Today`([[ADR-132]] 결정 7).

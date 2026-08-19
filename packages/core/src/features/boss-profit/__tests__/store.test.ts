@@ -573,6 +573,80 @@ describe('useBossProfitStore', () => {
     expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
   })
 
+  // [[ADR-153]]: `rows` 는 «보고 있는 (탭, 기간)» 이고 today 위젯이 읽는 것은 «지금 기간» 이다.
+  // 사용자 보고(2026-08-19) — 이 화면을 월간 탭으로 옮기기만 해도 today 의 주간 보스 수익·주간
+  // 결정석 한도가 함께 비었다. 그 화면은 이 화면의 네비게이션을 모르는 채로 이번 주를 그린다.
+  it('월간 탭으로 옮겨도 currentPeriodRows 는 이번 주 행을 그대로 들고 있다([[ADR-153]])', async () => {
+    const weekKey = getCurrentBossProfitPeriod('weekly', new Date()).periodKey
+    syncSchedulesMock.mockResolvedValue([
+      syncResult({
+        state: {
+          ...syncResult().state!,
+          bossContents: [
+            bossContent({ name: '자쿰', cycle: 'weekly', isComplete: true }),
+            bossContent({ name: '검은 마법사', difficulty: '익스트림', cycle: 'monthly', isComplete: true }),
+          ],
+        },
+      }),
+    ])
+
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+    await useBossProfitStore.getState().setTab('monthly')
+
+    // 화면은 보던 대로 월간이다.
+    expect(useBossProfitStore.getState().rows.map((row) => row.boss)).toEqual(['검은마법사'])
+    // today 가 읽는 값에는 이번 주 행이 그대로 있다.
+    const weeklyRows = useBossProfitStore
+      .getState()
+      .currentPeriodRows.filter((row) => row.cycle === 'weekly' && row.periodKey === weekKey)
+    expect(weeklyRows.map((row) => row.boss)).toEqual(['자쿰'])
+  })
+
+  it('월간 탭으로 옮겨도 dropsByRowKey 가 이번 주 드롭을 잃지 않는다([[ADR-153]])', async () => {
+    const weekKey = getCurrentBossProfitPeriod('weekly', new Date()).periodKey
+    // `fixed` 는 난이도 획득 가능 판정을 타지 않는다([[ADR-040]] 결정 3) — 이 테스트가 보려는 것은
+    // 드롭 맵의 **범위**이지 정리 규칙이 아니다.
+    // **조회 인자를 지키는 목이어야 한다** — 통째로 같은 배열을 돌려주면 "그 기간을 조회했는가" 를
+    // 못 본다(이 결함이 정확히 «어느 기간 키로 읽는가» 의 문제다).
+    getBossDropRecordsMock.mockImplementation(async (_ocids: string[], periodKeys: string[]) =>
+      periodKeys.includes(weekKey)
+        ? [
+            {
+              ocid: 'ocid-1',
+              boss: '자쿰',
+              difficulty: '카오스',
+              periodKey: weekKey,
+              dropIndex: 0,
+              category: 'fixed',
+              itemName: '테스트 드롭',
+              slot: null,
+              boxOrigin: null,
+              ringLevel: null,
+              quantity: 1,
+            },
+          ]
+        : [],
+    )
+    syncSchedulesMock.mockResolvedValue([
+      syncResult({
+        state: {
+          ...syncResult().state!,
+          bossContents: [
+            bossContent({ name: '자쿰', cycle: 'weekly', isComplete: true }),
+            bossContent({ name: '검은 마법사', difficulty: '익스트림', cycle: 'monthly', isComplete: true }),
+          ],
+        },
+      }),
+    ])
+
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+    expect(useBossProfitStore.getState().dropsByRowKey[`ocid-1|자쿰|카오스|${weekKey}`]).toHaveLength(1)
+
+    await useBossProfitStore.getState().setTab('monthly')
+
+    expect(useBossProfitStore.getState().dropsByRowKey[`ocid-1|자쿰|카오스|${weekKey}`]).toHaveLength(1)
+  })
+
   it('시세표에 없는 보스는 priceMeso가 null이고 payoutMeso도 항상 null이다', async () => {
     syncSchedulesMock.mockResolvedValue([
       syncResult({

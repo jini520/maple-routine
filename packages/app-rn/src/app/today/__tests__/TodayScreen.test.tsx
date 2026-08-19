@@ -20,6 +20,7 @@ import {
   type ContentCharacterView,
 } from '@core/features/content-scheduler/store'
 import { useTrackingModeStore } from '@core/features/tracking-mode/store'
+import { formatMesoShort } from '@core/lib/boss-profit-delta'
 import type { MatchedBoss } from '@core/lib/boss-matching'
 import type { DropHistoryPeriodGroup, DropHistoryRecord } from '@core/lib/drop-history'
 import { getCachedCharacterBasic } from '@core/storage/character-basic-cache'
@@ -143,6 +144,8 @@ function setStores(
     tab: 'weekly',
     periodKey: WEEK_KEY,
     rows: [],
+    // [[ADR-153]]: 이 화면이 읽는 것은 «지금 기간» 이다 — `rows`(보고 있는 탭·기간)가 아니다.
+    currentPeriodRows: [],
     loadedTab: 'weekly',
     loadedPeriodKey: WEEK_KEY,
     dropsByRowKey: {},
@@ -296,7 +299,9 @@ const 캐릭터_넷 = {
   },
   profit: {
     trackedOcids: OCIDS,
+    // 주간 탭·현재 기간에서는 둘이 같은 내용이다([[ADR-153]] 대가) — 픽스처도 그 상태를 그대로 둔다.
     rows: OCIDS.map((ocid, index) => profitRow(ocid, index + 1)),
+    currentPeriodRows: OCIDS.map((ocid, index) => profitRow(ocid, index + 1)),
     lastSyncedAt: new Date(NOW.getTime() - 5 * 60 * 1000).toISOString(),
   },
   dropHistory: {
@@ -434,6 +439,31 @@ describe('TodayScreen — 진입 조회', () => {
 // 자기 계열을 바꿀 때뿐이라(컨텐츠 추가는 컨텐츠 스토어만, 보스 추가는 보스 스토어만) 계열마다
 // 주인이 정해져 있다 — 이 화면은 **두 계열을 한 화면에서** 그리는 유일한 자리라 둘을 다 읽어야
 // 한다([[ADR-147]] 정정 43).
+// 보스 수익 스토어의 `rows` 는 «사용자가 보고 있는 (탭, 기간)» 이고 이 화면이 그리는 것은 «이번
+// 주» 다([[ADR-153]]). 사용자 보고(2026-08-19) — 그 화면을 월간 탭으로 옮기기만 해도 위젯 3·5 가
+// 함께 비었다. 이 화면은 그 네비게이션을 **모르는 채로** 서야 한다.
+describe('TodayScreen — 수익 위젯이 읽는 값 ([[ADR-153]])', () => {
+  it('보스 수익 화면이 월간 탭을 보고 있어도 이번 주 수익을 그린다', async () => {
+    setStores({
+      ...캐릭터_넷,
+      profit: {
+        ...캐릭터_넷.profit,
+        // 월간 탭을 보고 있는 상태 — `rows` 에는 이번 주 행이 한 줄도 없다(`filterRowsForTab`).
+        tab: 'monthly',
+        rows: [],
+        dropsByRowKey: {},
+      },
+    })
+
+    await renderScreen()
+
+    expect(screen.queryByText('아직 이번 주 기록이 없습니다')).toBeNull()
+    // 1 + 2 + 3 + 4 백만 — 화면의 접기 규칙은 `formatMesoShort` 하나가 판다(총액과 결정석 분해가
+    // 같은 값이라 자리는 여럿이다).
+    expect(screen.getAllByText(formatMesoShort(10_000_000)).length).toBeGreaterThan(0)
+  })
+})
+
 describe('TodayScreen — 수동 멤버십을 어느 스토어에서 읽는가', () => {
   it('컨텐츠 멤버십은 컨텐츠 스토어에서 읽는다 — 보스 스토어의 사본이 아니다', async () => {
     useTrackingModeStore.setState({ mode: 'manual' })

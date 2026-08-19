@@ -117,6 +117,21 @@ export interface BossProfitState {
    */
   loadedTab: BossCycle
   loadedPeriodKey: string
+  /**
+   * **«지금 기간» 의 행 전부**(주간·월간 두 주기가 함께 들어 있다) — 위의 `rows` 와 **뜻이 다른
+   * 값**이다([[ADR-153]]).
+   *
+   * `rows` 는 `filterRowsForTab` 이 `cycle` 까지 걸러 낸 «사용자가 보고 있는 (탭, 기간)» 한
+   * 조각이라, 이 화면의 네비게이션을 따라 움직인다. **today 위젯은 그것을 읽으면 안 된다** — 그
+   * 화면은 언제나 «이번 주» 를 그리므로, 사용자가 여기서 월간 탭으로 옮기는 것만으로 주간 보스
+   * 수익과 주간 결정석 한도가 함께 비었다(사용자 보고 2026-08-19).
+   *
+   * 내용은 `latestSyncSnapshot.rows` 와 같다 — **모든 커밋이 그 스냅샷을 함께 싣기 때문에**(아래
+   * `create` 의 `set` 래퍼) 둘이 어긋날 수 없다. **기간 이동(`loadPeriod`)은 이 값을 건드리지
+   * 않는다.** 자르는 것은 읽는 쪽 몫이다(today 는 종전대로 `cycle === 'weekly' && periodKey ===
+   * 이번 주` 로 자른다).
+   */
+  currentPeriodRows: BossProfitRow[]
   dropsByRowKey: Record<string, RecordedDrop[]> // 보스 행별 기록된 드롭(ADR-038). 키는 dropRowKey(ocid|boss|difficulty|periodKey). rows와 독립 상태라 탭 전환 시 loadPeriod가 DB에서 재로드
   weeklySubtotals: BossProfitWeeklySubtotal[] // monthly 탭에서만 채워짐(주차별 합계). weekly 탭에서는 항상 []
   isPeriodLoading: boolean // periodKey 이동 후 백필(과거 기간 재조회) 진행 중
@@ -435,6 +450,20 @@ async function buildRowsFromRecords(
 
 type BossProfitSetter = (partial: Partial<BossProfitState>) => void
 
+/**
+ * 드롭 맵이 담을 행 — **보고 있는 기간 ∪ 지금 기간**([[ADR-153]] 결정 3).
+ *
+ * `dropsByRowKey` 는 사본을 만들지 않는다. 키(`dropRowKey`)에 `periodKey` 가 들어 있어 두 기간이 한
+ * 맵에 있어도 충돌하지 않고, 사본을 두면 드롭 편집 경로(`setBossDrops`·`applyExternalDropEdit`)가
+ * 둘로 갈려 «today 에만 반영이 안 되는» 결함이 아이템 수익 쪽에서 되풀이된다.
+ *
+ * 조회는 늘어나지 않는다 — `loadDropsByRowKey` 가 기간 키를 모아 **한 번에** 읽는다. 행이 겹쳐도
+ * 무해하다(그 함수의 정리 루프는 멱등이다).
+ */
+function withCurrentPeriodRows(rows: BossProfitRow[]): BossProfitRow[] {
+  return latestSyncSnapshot === null ? rows : [...rows, ...latestSyncSnapshot.rows]
+}
+
 
 
 
@@ -473,7 +502,7 @@ async function loadPeriod(
     // withSqliteFallback 의 5초 타임아웃이 줄줄이 더해진다(ADR-078 결정 1과 같은 이유).
     const [canGoPreviousPeriod, dropsByRowKey, previousPeriodTotalMeso] = await Promise.all([
       canReachPreviousPeriod(tab, periodKey, ocids, now),
-      loadDropsByRowKey(ocids, rows, now),
+      loadDropsByRowKey(ocids, withCurrentPeriodRows(rows), now),
       loadPreviousPeriodTotal(ocids, tab, periodKey),
     ])
     if (generation !== requestGeneration) return
@@ -549,7 +578,7 @@ async function loadPeriod(
       : []
   const [canGoPreviousPeriod, dropsByRowKey, previousPeriodTotalMeso] = await Promise.all([
     canReachPreviousPeriod(tab, periodKey, ocids, now),
-    loadDropsByRowKey(ocids, rows, now),
+    loadDropsByRowKey(ocids, withCurrentPeriodRows(rows), now),
     loadPreviousPeriodTotal(ocids, tab, periodKey),
   ])
 
@@ -592,6 +621,7 @@ const initialState: BossProfitState = {
   rows: [],
   loadedTab: 'weekly',
   loadedPeriodKey: getCurrentBossProfitPeriod('weekly', new Date()).periodKey,
+  currentPeriodRows: [],
   dropsByRowKey: {},
   weeklySubtotals: [],
   isPeriodLoading: false,
@@ -609,7 +639,23 @@ const initialState: BossProfitState = {
 // 이다 — 끝나면 잊는다. 영구 메모로 만들면 진입 재조회의 10분 TTL([[ADR-097]])이 죽는다.
 let hydration: Promise<void> | null = null
 
-export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
+export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
+  /**
+   * **이 스토어의 모든 커밋은 «지금 기간» 을 함께 싣는다**([[ADR-153]] 결정 2).
+   *
+   * `currentPeriodRows` 의 내용은 `latestSyncSnapshot.rows` 와 같다. 그것을 «갱신하는 자리마다
+   * 잊지 않고 함께 쓴다» 로 두면 사본 둘이 언젠가 어긋나고(그 어긋남은 `setPartySize` 에서 실제로
+   * 한 번 터졌다 — 2026-07-22), 반대로 스냅샷을 바꿀 때마다 `set` 을 한 번씩 더 부르면 «건너뛴
+   * 진입의 커밋은 1회» 가 깨진다([[ADR-097]] 결정 5 정정 3 — 그 계약은 화면 깜빡임을 막는다).
+   *
+   * 그래서 **커밋 자체에 얹는다** — 커밋 수는 그대로이고, 어느 커밋에서 보든 상태와 스냅샷이 같다.
+   * 대신 스냅샷 대입은 **그것을 화면에 반영할 `set` 보다 앞**에 와야 한다(지금 네 자리 모두 그렇다).
+   */
+  const set: BossProfitSetter = (partial) => {
+    rawSet({ ...partial, currentPeriodRows: latestSyncSnapshot?.rows ?? [] })
+  }
+
+  return {
   ...initialState,
 
   loadTrackedOcids() {
@@ -1157,16 +1203,19 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     const applyEdit = (candidate: BossProfitRow): BossProfitRow =>
       matchesRowKey(candidate, rowKey) ? { ...candidate, partySize, payoutMeso } : candidate
 
-    set({ rows: get().rows.map(applyEdit) })
-
     // latestSyncSnapshot(모듈 스코프 캐시)도 함께 갱신해야 한다 — 그렇지 않으면 이 수정 후
     // 탭을 전환했다가 돌아오거나 기간을 이동했다 복귀할 때, loadPeriod의 "현재 기간" 분기가
     // 이 스냅샷에서 그대로 슬라이스하므로 방금 수정한 값이 낡은 스냅샷 값으로 되돌아가 보인다
     // (2026-07-22 재현 — "파티원 수를 고쳐도 다시 파티관리 기본값으로 돌아간다"로 보고된 증상의
     // 실제 원인).
+    //
+    // **set 보다 앞이어야 한다**([[ADR-153]] 결정 2) — 아래 set 이 이 스냅샷을 그대로 실어
+    // `currentPeriodRows` 를 만든다. 뒤에 두면 이 수정이 today 위젯에 한 커밋 늦게 닿는다.
     if (latestSyncSnapshot !== null) {
       latestSyncSnapshot = { ...latestSyncSnapshot, rows: latestSyncSnapshot.rows.map(applyEdit) }
     }
+
+    set({ rows: get().rows.map(applyEdit) })
   },
 
   async setBossDrops(rowKey, drops) {
@@ -1199,4 +1248,5 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
       },
     })
   },
-}))
+  }
+})
