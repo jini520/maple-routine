@@ -372,6 +372,9 @@ codesign -dv --verbose=2 "$A" 2>&1 | grep -E 'Identifier|Authority|TeamIdentifie
 의 288개 항목이 전부 `app.app/assets/` 의 실제 파일로 풀렸고, 카링·벨로나의 `packagerHash` 가
 `packages/core/src/assets/bosses/*.webp` 의 md5 와 같았다.
 
+**같은 자리에서 `EXUpdates.bundle/fingerprint` 도 함께 본다** — 아래 «스토어 바이너리와 OTA 의
+runtimeVersion» 절이 그 이유다(1.0.6 에서 실제로 어긋난 채 올라갔다).
+
 ### 알림을 넣는 릴리스의 iOS 준비물 ([[ADR-146]], 설계 완료·구현 전)
 
 **바이너리에 안 들어가면 다음 심사까지 못 쓴다** — Push Notifications capability · Background Modes
@@ -407,6 +410,51 @@ Xcode가 이 프로젝트를 열 수 있다** — 로컬 아카이브가 되는 
   위 세 단계를 돌려야 한다.
 - **트리거를 좁힐 것.** 무료 한도가 월 25 컴퓨팅 시간인데, main 푸시마다 아카이브가 돌면
   머지가 잦은 날 하루에 한도의 상당분을 쓴다. 태그나 수동 실행이 맞다.
+
+## 스토어 바이너리와 OTA 의 runtimeVersion (RN, [[ADR-137]])
+
+**RN 앱의 OTA 는 버전 번호가 아니라 `runtimeVersion`(네이티브 트리의 fingerprint 해시)으로
+매칭된다.** 그 값은 **빌드 시각에 바이너리 안에 박히고**(`EXUpdates.bundle/fingerprint` ·
+AAB `base/assets/fingerprint`), `publish-rn-ota.mjs` 는 **발행 시점 트리의 계산값**을 쓴다. 둘이
+갈리면 매니페스트는 아무도 묻지 않는 이름으로 남고, `latest-<platform>.json` 은 최신 사용자에게
+**「스토어 업데이트가 필요해요」 거짓 모달**을 띄운다([[ADR-137]] 결정 4의 판정 경로).
+
+1.0.6 이 그 상태로 두 스토어에 올라갔다 — 전말은
+[../trouble/2026-08-19-rn-runtimeversion-drift.md](../trouble/2026-08-19-rn-runtimeversion-drift.md).
+
+### 규칙 1 — 버전·빌드 번호를 **먼저 커밋**하고, 그 트리에서 굽는다
+
+`app.json` 은 **두 플랫폼 공통** 지문 재료다(`expoConfig` 가 통째로 들어가고 거기에
+`ios.buildNumber` 와 `android.versionCode` 가 함께 있다). 그래서 **iOS 빌드 번호만 올려도 이미
+구워 둔 Android AAB 의 지문이 무효화된다.** 1.0.6 에서 정확히 그렇게 됐다.
+
+굽고 나서 번호를 올리면(소진 여부를 로컬 아카이브에서 확인한 뒤 올리므로 그렇게 되기 쉽다)
+**두 바이너리를 모두 다시 구워야 한다.**
+
+### 규칙 2 — 업로드 직전에 «바이너리 안 지문 == 트리 계산값» 을 대조한다
+
+```bash
+cd packages/app-rn
+npx expo-updates runtimeversion:resolve --platform ios      # {"runtimeVersion":"…", …}
+npx expo-updates runtimeversion:resolve --platform android
+
+cat <archive>/Products/Applications/app.app/EXUpdates.bundle/fingerprint
+unzip -p android/app/build/outputs/bundle/release/app-release.aab base/assets/fingerprint
+```
+
+**두 플랫폼 모두 같아야 업로드한다.** 다르면 그 바이너리는 OTA 를 영영 못 받고, 발행하는 순간
+거짓 모달의 원인이 된다. Android 는 `app.manifest` 스탈 문제(`c9ce4697`)도 같은 자리에서 함께 본다.
+
+### 규칙 3 — 아카이브는 CLI 로 굽는다
+
+같은 트리에서 `xcodebuild archive`(CLI)와 Xcode GUI `Product ▸ Archive` 가 **서로 다른
+fingerprint** 를 낸 사례가 있다(1.0.6, 재현 불가). 위 «RN 앱의 아카이브» 절의 CLI 경로를 쓰고,
+**업로드하는 바로 그 아카이브**의 지문을 대조한다.
+
+### 규칙 4 — 발행은 «구운 트리» 에서, 스토어 업로드 뒤에
+
+`node scripts/publish-rn-ota.mjs` 는 두 바이너리를 구운 트리 그대로에서 돌린다. 심사 반려로
+네이티브를 고쳐 재빌드하면 지문이 다시 바뀌므로 **발행도 다시** 한다.
 
 ## 폐기된 정책 (history)
 
