@@ -1,7 +1,7 @@
 import * as Updates from 'expo-updates'
 import { addUpdatesStateChangeListener } from 'expo-updates'
 import { Linking, Platform } from 'react-native'
-import type { LiveUpdateCheckResult, LiveUpdatePort, NetworkType } from '@core/native/ports'
+import type { LiveUpdateCheckResult, LiveUpdatePort, NetworkType } from '../ports'
 // 내장 번들로 돌 때의 표시 버전. `SettingsScreen` 이 읽는 것과 **같은 파일**이라야 한 화면 안에서
 // 두 값이 갈리지 않는다(그쪽은 `packageJson.version` 을 직접 읽는다).
 import packageJson from '../../../package.json'

@@ -4,7 +4,7 @@
 // 알 수 있고, 어느 포트에 무엇이 들어갔는지가 뒤바뀌어도 통과한다.
 import { act, render } from '@testing-library/react-native'
 import { BackHandler } from 'react-native'
-import { setBackGesturePort, __resetNativePortsForTest } from '@core/native/ports'
+import { setBackGesturePort, __resetNativePortsForTest } from '../../native/ports'
 
 import { useRootBackToBackground, type RootBackNavigation } from '../use-root-back'
 import { registerBarBackHandler, resetBarStoreForTests } from '../bar-store'

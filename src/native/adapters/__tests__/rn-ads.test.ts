@@ -16,7 +16,7 @@ import { join } from 'node:path'
 
 import { Platform } from 'react-native'
 
-import { resolveInterstitialAdId } from '@core/native/ads'
+import { resolveInterstitialAdId } from '../../ads'
 
 // `mock` 접두사는 필수다 — `jest.mock` 팩토리가 위로 끌어올려지므로 babel 이 그 접두사가 붙은
 // 것만 바깥 변수 참조로 허용한다.
@@ -68,7 +68,7 @@ jest.mock('react-native-google-mobile-ads', () => ({
   },
 }))
 
-import type { AdsPort } from '@core/native/ports'
+import type { AdsPort } from '../../ports'
 
 /**
  * 어댑터는 사전 로드한 광고를 **모듈 수준 상태**로 들고 있다(플러그인이 로드 여부를 묻는 API 를

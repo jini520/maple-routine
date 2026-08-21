@@ -30,12 +30,12 @@
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 
-import { useContentSchedulerStore } from '@core/features/content-scheduler/store'
-import { useApiKeyNotice } from '@core/features/onboarding/use-api-key-notice'
+import { useContentSchedulerStore } from '../../features/content-scheduler/store'
+import { useApiKeyNotice } from '../../features/onboarding/use-api-key-notice'
 import {
   clearRepresentativeCharacter,
   setRepresentativeCharacter,
-} from '@core/storage/character-selection'
+} from '../../storage/character-selection'
 
 import { Button } from '../../components/atoms/Button/Button'
 import { Text } from '../../components/atoms/Text/Text'

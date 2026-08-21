@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { BackHandler } from 'react-native'
-import { moveAppToBackground } from '@core/native/back-gesture'
+import { moveAppToBackground } from '../native/back-gesture'
 
 import { barCanGoBack, barGoBack } from './bar-store'
 

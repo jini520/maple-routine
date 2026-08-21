@@ -38,7 +38,7 @@
  */
 import { Image, type ImageStyle } from 'react-native'
 
-import type { ImageAssetRef } from '@core/types/image-asset'
+import type { ImageAssetRef } from '../types/image-asset'
 
 /** 그림의 고유 픽셀 크기. */
 export interface ImageNaturalSize {

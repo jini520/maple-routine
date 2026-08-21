@@ -19,8 +19,7 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 
-const RN_SRC = join(__dirname, '..')
-const CORE_SRC = resolve(__dirname, '../../core')
+const SRC = join(__dirname, '..')
 
 function sourceFiles(dir: string): string[] {
   const out: string[] = []
@@ -37,12 +36,10 @@ function sourceFiles(dir: string): string[] {
   return out
 }
 
-/** `@core/*` 와 상대 경로만 푼다 — 패키지 의존은 사이클을 만들 수 없다. */
+/** 상대 경로만 푼다 — 패키지 의존은 사이클을 만들 수 없다([[ADR-155]] 결정 3 이후 alias 가 없다). */
 function resolveSpecifier(fromFile: string, specifier: string): string | null {
-  let base: string
-  if (specifier.startsWith('@core/')) base = join(CORE_SRC, specifier.slice('@core/'.length))
-  else if (specifier.startsWith('.')) base = resolve(dirname(fromFile), specifier)
-  else return null
+  if (!specifier.startsWith('.')) return null
+  const base = resolve(dirname(fromFile), specifier)
 
   for (const candidate of [
     `${base}.ts`,
@@ -115,7 +112,7 @@ function findCycles(graph: Map<string, string[]>): string[][] {
 
 describe('런타임 import 사이클', () => {
   it('Metro 가 번들하는 그래프에 사이클이 없다', () => {
-    const files = [...sourceFiles(RN_SRC), ...sourceFiles(CORE_SRC)]
+    const files = sourceFiles(SRC)
     const graph = new Map(files.map((file) => [file, runtimeDependencies(file)]))
 
     const readable = findCycles(graph).map((cycle) =>
@@ -126,12 +123,13 @@ describe('런타임 import 사이클', () => {
   })
 
   // 그래프를 못 읽고 있으면 위 테스트는 «사이클 0건» 으로 조용히 통과한다 — 해석이 실제로
-  // 도는지 하나로 붙든다(`@core/*` 와 상대 경로 양쪽).
+  // 도는지 하나로 붙든다. 화면(`app/`)에서 로직 층(`features/`)까지 건너가는 것을 고르는 이유는
+  // [[ADR-155]] 로 둘이 한 트리가 됐어도 **그 방향의 의존이 여전히 이 그래프의 본론**이라서다.
   it('그래프를 실제로 읽는다', () => {
-    const entry = join(RN_SRC, 'app/AppShell.tsx')
+    const entry = join(SRC, 'app/AppShell.tsx')
     const deps = runtimeDependencies(entry)
 
-    expect(deps).toContain(join(CORE_SRC, 'features/theme/store.ts'))
-    expect(deps).toContain(join(RN_SRC, 'app/prehydrate.ts'))
+    expect(deps).toContain(join(SRC, 'features/theme/store.ts'))
+    expect(deps).toContain(join(SRC, 'app/prehydrate.ts'))
   })
 })

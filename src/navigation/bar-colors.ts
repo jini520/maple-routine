@@ -30,8 +30,8 @@
  * 테마 **이름**이 아니라 `mode` 로 분기하는 것은 [[ADR-064]] 결정 8 그대로다.
  */
 
-import { hexToOklch, mixOklab, oklchToHex, withChroma } from '@core/lib/color'
-import type { ThemeDefinition } from '@core/types/theme'
+import { hexToOklch, mixOklab, oklchToHex, withChroma } from '../lib/color'
+import type { ThemeDefinition } from '../types/theme'
 
 function withAlpha(hex: string, alpha: number): string {
   const value = Math.round(Math.min(1, Math.max(0, alpha)) * 255)

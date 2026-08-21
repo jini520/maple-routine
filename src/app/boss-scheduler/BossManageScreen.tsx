@@ -28,19 +28,19 @@
 import { useEffect, useState } from 'react'
 import { Pressable, View } from 'react-native'
 
-import weeklyBossesData from '@core/data/weekly-bosses.json'
-import { partySizeKey, useBossSchedulerStore } from '@core/features/boss-scheduler/store'
-import { useToastStore } from '@core/features/toast/store'
-import { useTrackingModeStore } from '@core/features/tracking-mode/store'
-import { getMaxPartySize } from '@core/lib/boss-crystal-prices'
+import weeklyBossesData from '../../data/weekly-bosses.json'
+import { partySizeKey, useBossSchedulerStore } from '../../features/boss-scheduler/store'
+import { useToastStore } from '../../features/toast/store'
+import { useTrackingModeStore } from '../../features/tracking-mode/store'
+import { getMaxPartySize } from '../../lib/boss-crystal-prices'
 import {
   countManualWeeklyBosses,
   getBossCycleByName,
   isSeasonBossName,
   WEEKLY_BOSS_CLEAR_LIMIT,
-} from '@core/lib/boss-matching'
-import { isChallengersWorld } from '@core/lib/world-emblem'
-import type { BossDifficulty } from '@core/types'
+} from '../../lib/boss-matching'
+import { isChallengersWorld } from '../../lib/world-emblem'
+import type { BossDifficulty } from '../../types'
 
 import { Badge } from '../../components/atoms/Badge/Badge'
 import { Text } from '../../components/atoms/Text/Text'

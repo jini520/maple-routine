@@ -11,7 +11,7 @@ import {
   MEDIA_ART_MASK_CARD,
   MEDIA_ART_MASK_HERO,
   MEDIA_ART_OPACITY,
-} from '@core/lib/media-card'
+} from '../../../../lib/media-card'
 import { processColor, View } from 'react-native'
 
 import { 기본테마, flattenStyle, renderAtom } from '../../../__tests__/render-atom'

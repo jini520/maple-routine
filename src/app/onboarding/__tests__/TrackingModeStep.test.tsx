@@ -11,7 +11,7 @@
 //    지키는 검사는 존재 여부로 충분하다.
 import { fireEvent } from '@testing-library/react-native'
 
-import { TRACKING_MODE_OPTIONS } from '@core/features/tracking-mode/copy'
+import { TRACKING_MODE_OPTIONS } from '../../../features/tracking-mode/copy'
 
 import { renderAtom, type AtomElement } from '../../../components/__tests__/render-atom'
 import { TrackingModeStep } from '../TrackingModeStep'

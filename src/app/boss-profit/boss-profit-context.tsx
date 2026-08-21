@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react'
-import type { BossProfitStore } from '@core/features/boss-profit/store'
-import type { RecordedDrop } from '@core/types/drops'
+import type { BossProfitStore } from '../../features/boss-profit/store'
+import type { RecordedDrop } from '../../types/drops'
 
 // 보스 수익 화면의 **기간·탭 맥락과 스토어 바인딩**을 자손에게 내리는 컨텍스트([[ADR-094]] 3단계).
 //

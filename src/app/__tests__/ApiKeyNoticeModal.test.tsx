@@ -8,8 +8,8 @@
 //   확인이 안 불리고 화면이 그대로다).
 import { fireEvent } from '@testing-library/react-native'
 
-import { useOnboardingStore } from '@core/features/onboarding/store'
-import type { ApiKeyNoticeKind } from '@core/features/onboarding/state'
+import { useOnboardingStore } from '../../features/onboarding/store'
+import type { ApiKeyNoticeKind } from '../../features/onboarding/state'
 
 import { renderOverlay } from '../../components/__tests__/render-atom'
 import { ApiKeyNoticeModal } from '../ApiKeyNoticeModal'

@@ -28,9 +28,9 @@ import { useState } from 'react'
 import { Modal, ScrollView, View } from 'react-native'
 import { useSafeAreaFrame, useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { formatRosterError, formatStaleRosterError } from '@core/features/schedule-sync/format'
-import type { ScheduleSyncError } from '@core/features/schedule-sync/schedule-sync'
-import type { CharacterPickerEntry } from '@core/types'
+import { formatRosterError, formatStaleRosterError } from '../../../features/schedule-sync/format'
+import type { ScheduleSyncError } from '../../../features/schedule-sync/schedule-sync'
+import type { CharacterPickerEntry } from '../../../types'
 
 import { Button } from '../../atoms/Button/Button'
 import { Card } from '../../atoms/Card/Card'

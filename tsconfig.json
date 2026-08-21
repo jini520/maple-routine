@@ -8,31 +8,19 @@
     "resolveJsonModule": true,
     // `core/types/image-asset.native.ts` 처럼 RN 에서만 갈리는 파일을 tsc 가 고르게 한다.
     "moduleSuffixes": [".native", ""],
-    "types": ["jest", "expo/types"],
-    // **이 한 벌이 tsc·Metro·jest 를 전부 푼다**([[ADR-128]] 결정 3) — Expo 의
-    // `experiments.tsconfigPaths`(app.json)와 jest-expo 의 `withTypescriptMapping()` 이 여기서
-    // 파생시킨다. 그래서 "타입은 통과하는데 런타임에 죽는" 어긋남이 생길 자리가 없다.
-    // vite 계열(vitest·vite-node)만 이 파생에 안 껴서 `vite.config.ts` 에 같은 매핑이 한 벌 더 있다.
-    "paths": {
-      "@core/*": ["./core/*"]
-    }
+    "types": ["jest", "expo/types"]
   },
   "include": [
     "*.ts",
     "*.tsx",
     "src/**/*.ts",
     "src/**/*.tsx",
-    // core 는 앱이 import 하는 것만으로도 프로그램에 들어오지만, **아무도 import 하지 않는 파일**
-    // (테스트 헬퍼 등)은 그렇게 안 잡힌다. 캐패시터의 `tsc -b` 가 core 전체를 검사하던 자리를
-    // 여기서 이어받는다.
-    "core/**/*.ts",
-    "core/**/*.tsx",
     "nativewind-env.d.ts",
     "asset-modules.d.ts"
   ],
-  // core 의 **vitest 테스트만** 뺀다 — 그쪽은 Vite 위에서 돌아 `import.meta.glob` 이 사실이지만,
-  // 이 프로그램에는 그 선언이 **일부러** 없다([[ADR-129]] · `core-import-meta.d.ts` — 선언을 남기면
-  // "제품 코드가 써도 타입은 통과하고 런타임에 죽는" 함정이 산다). 그 파일들은 `tsconfig.vitest.json`
-  // 이 `vite/client` 를 켜고 검사한다. 종전에 `tsconfig.base.json` 이 하던 일과 같은 가름이다.
-  "exclude": ["node_modules", "core/**/__tests__/**"]
+  // **vitest 가 도는 테스트(`*.spec.*`)만 뺀다** — 그쪽은 Vite 위에서 돌아 `import.meta.glob` 이
+  // 사실이지만, 이 프로그램에는 그 선언이 **일부러** 없다([[ADR-129]] · `core-import-meta.d.ts` —
+  // 선언을 남기면 "제품 코드가 써도 타입은 통과하고 런타임에 죽는" 함정이 산다). 그 파일들은
+  // `tsconfig.vitest.json` 이 따로 검사한다.
+  "exclude": ["node_modules", "src/**/*.spec.ts", "src/**/*.spec.tsx"]
 }

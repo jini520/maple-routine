@@ -18,7 +18,7 @@
 //
 // `inline-flex` 는 RN 에 없다 — 이 뱃지는 부모가 잡아 주는 줄 안에 놓이므로 `flex-row items-center`
 // 로 안쪽 정렬만 옮긴다(줄 안에서의 배치는 호출부 몫이고, 웹에서도 그랬다).
-import type { BossDifficulty } from '@core/types'
+import type { BossDifficulty } from '../../../types'
 import { type TextStyle, type ViewStyle } from 'react-native'
 
 import { LinearGradient } from '../../../lib/nativewind-interop'

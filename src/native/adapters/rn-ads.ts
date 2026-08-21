@@ -10,7 +10,7 @@
  * 하므로 그 방어선도 함께 선다. 인라인을 붙일 때 `initialize()` 를 부를 자리를 새로 정해야 한다 —
  * 그 호출을 하던 `AppShell` 의 `startAds()` 가 사라졌다.
  *
- * **광고 단위 ID 결정은 이 파일에 없다.** `@core/native/ads` 의 순수 함수 둘을 그대로 부른다 —
+ * **광고 단위 ID 결정은 이 파일에 없다.** `src/native/ads` 의 순수 함수 둘을 그대로 부른다 —
  * `shouldUseTestAds`(테스트 광고인가)와 `resolveInterstitialAdId`(그래서 어느 ID 인가). 이 프로젝트에서
  * 가장 비싼 실수는 실 ID 로 자기 광고를 누르는 것이고(무효 트래픽 → AdMob 계정 정지, 되돌리기 매우
  * 어려움) 그 유일한 방어선이 저 두 함수라, 플랫폼 구현마다 복제되면 한쪽만 틀려도 사고가 난다.
@@ -42,8 +42,8 @@
 import { Platform } from 'react-native'
 import mobileAds, { AdEventType, InterstitialAd } from 'react-native-google-mobile-ads'
 
-import { resolveInterstitialAdId, shouldUseTestAds } from '@core/native/ads'
-import type { AdsPort } from '@core/native/ports'
+import { resolveInterstitialAdId, shouldUseTestAds } from '../ads'
+import type { AdsPort } from '../ports'
 
 import { toAdsEnv } from './ads-env'
 

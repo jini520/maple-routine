@@ -14,7 +14,7 @@ import {
   type TimestampTrigger,
 } from '@notifee/react-native'
 
-import type { LocalNotificationRequest } from '@core/native/ports'
+import type { LocalNotificationRequest } from '../ports'
 
 /**
  * Capacitor 시절 채널 ID 를 **그대로 쓴다**(`LocalNotificationManager.java:48`

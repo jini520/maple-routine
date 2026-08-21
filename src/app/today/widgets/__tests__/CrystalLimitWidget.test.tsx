@@ -10,7 +10,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
-import { WEEKLY_CRYSTAL_SALE_LIMIT } from '@core/lib/boss-matching'
+import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../../../lib/boss-matching'
 
 import { renderAtom } from '../../../../components/__tests__/render-atom'
 import { CrystalLimitWidget } from '../CrystalLimitWidget'

@@ -16,10 +16,10 @@
 //     반영되지 않은 채 통과한다(단언이 옛 화면을 보고도 초록이 된다)
 import { act, render, screen } from '@testing-library/react-native'
 import { createNavigationContainerRef } from '@react-navigation/native'
-import { FEATURE_GUIDES } from '@core/data/feature-guides'
-import { useOnboardingStore } from '@core/features/onboarding/store'
-import { useTrackingModeStore } from '@core/features/tracking-mode/store'
-import { setLiveUpdatePort } from '@core/native/ports'
+import { FEATURE_GUIDES } from '../../data/feature-guides'
+import { useOnboardingStore } from '../../features/onboarding/store'
+import { useTrackingModeStore } from '../../features/tracking-mode/store'
+import { setLiveUpdatePort } from '../../native/ports'
 
 import { NavigationHarness } from './harness'
 import { installMemoryPreferences } from './memory-preferences'

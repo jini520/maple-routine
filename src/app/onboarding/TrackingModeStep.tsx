@@ -21,8 +21,8 @@
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 
-import { TRACKING_MODE_OPTIONS } from '@core/features/tracking-mode/copy'
-import type { TrackingMode } from '@core/storage/tracking-mode'
+import { TRACKING_MODE_OPTIONS } from '../../features/tracking-mode/copy'
+import type { TrackingMode } from '../../storage/tracking-mode'
 
 import { Button } from '../../components/atoms/Button/Button'
 import { Text } from '../../components/atoms/Text/Text'

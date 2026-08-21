@@ -57,7 +57,7 @@ docs/
 
 - **새 화면·기능 구현** → 해당 `features/*.md` (정책) + `foundation/architecture.md` (레이어 규칙) + 관련 `foundation/design-system.md` 컴포넌트. TDD 원칙상 테스트 먼저([[ADR]] 프로세스).
 - **게임 수치 데이터 변경** → `foundation/game-data.md` 먼저, 값은 반드시 사용자 확인([[ADR-006]]).
-- **에셋(그림) 추가·삭제** → 파일을 `core/assets/` 에 넣거나 지운 뒤 **`npm run assets:gen`** ([[ADR-129]]). 목록(`assets/generated/*.ts`)은 커밋되는 생성물이라 안 돌리면 화면이 **에러 없이 폴백만** 그린다 — `assets/generated/__tests__/asset-manifest.test.ts` 가 그 낡음을 잡는다.
+- **에셋(그림) 추가·삭제** → 파일을 `src/assets/` 에 넣거나 지운 뒤 **`npm run assets:gen`** ([[ADR-129]]). 목록(`assets/generated/*.ts`)은 커밋되는 생성물이라 안 돌리면 화면이 **에러 없이 폴백만** 그린다 — `assets/generated/__tests__/asset-manifest.test.ts` 가 그 낡음을 잡는다.
 - **today 위젯 추가·크기 변경** → `features/today.md` 의 「격자」·「배치」·「위젯 규약」 셋. 만질 파일은 **셋이 짝**이다 — `widgets/registry.ts`(존재·크기·목적지) · `widgets/layout.ts`(좌표) · 위젯 컴포넌트. 좌표는 손으로 적고 `lib/widget-layout.ts` 의 검증 다섯이 지키므로, `row` 를 밀지 않으면 **테스트가 먼저 막는다**.
 - **저장 스키마 변경** → `persistence/` (해당 매체 문서) + 해당 `features/*.md`.
 - **색·토큰·테마** → `foundation/design-system.md` (기본 팔레트·시맨틱 색) + `features/theme.md` (테마별 토큰·런타임 전환).

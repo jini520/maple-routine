@@ -41,7 +41,7 @@
 // (설정 하위 페이지가 `ScreenScroll` 에 같은 두 값을 거는 것과 같다).
 import { View } from 'react-native'
 
-import { useApiKeyNotice } from '@core/features/onboarding/use-api-key-notice'
+import { useApiKeyNotice } from '../../features/onboarding/use-api-key-notice'
 
 import { Button } from '../../components/atoms/Button/Button'
 import { MapleSpinner } from '../../components/atoms/MapleSpinner/MapleSpinner'

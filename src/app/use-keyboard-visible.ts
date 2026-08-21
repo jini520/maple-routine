@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-import { addKeyboardVisibilityListener } from '@core/native/keyboard'
+import { addKeyboardVisibilityListener } from '../native/keyboard'
 
 /**
  * 키보드가 떠 있는가 — 웹 `AppShell` 의 `isKeyboardVisible` state 자리.

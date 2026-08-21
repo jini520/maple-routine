@@ -11,8 +11,8 @@
 // 와 `data-sheet-keep-open` 대신 **네이티브 윈도우로 뜬다**를 지킨다.
 import { fireEvent } from '@testing-library/react-native'
 
-import { DROP_EFFECT_FRAMES } from '@core/lib/drop-effect-frames'
-import { screenEffectScale } from '@core/lib/drop-effect-layout'
+import { DROP_EFFECT_FRAMES } from '../../../../lib/drop-effect-frames'
+import { screenEffectScale } from '../../../../lib/drop-effect-layout'
 
 import { renderOverlay } from '../../../__tests__/render-atom'
 import { DropEffectOverlay } from '../DropEffectOverlay'

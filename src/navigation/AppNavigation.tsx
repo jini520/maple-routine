@@ -1,6 +1,6 @@
 import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native'
 
-import { useLiveUpdateStore } from '@core/features/live-update/store'
+import { useLiveUpdateStore } from '../features/live-update/store'
 
 import { UpdatePromptModal } from '../app/UpdatePromptModal'
 import { RootNavigator } from './RootNavigator'

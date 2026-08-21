@@ -30,8 +30,8 @@
 import { useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
 
-import { worldEmblemUrl } from '@core/lib/world-emblem'
-import type { CharacterPickerEntry } from '@core/types'
+import { worldEmblemUrl } from '../../../lib/world-emblem'
+import type { CharacterPickerEntry } from '../../../types'
 
 import { naturalAspectStyle } from '../../../lib/image-aspect'
 import { BanIcon, StarIcon } from '../../../lib/icons'

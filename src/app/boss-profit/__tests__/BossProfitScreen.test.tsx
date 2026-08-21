@@ -19,18 +19,18 @@ import { render } from '@testing-library/react-native'
 import { ScrollView } from 'react-native'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 
-import weeklyBossesData from '@core/data/weekly-bosses.json'
-import valuableDropsData from '@core/data/valuable-drops.json'
+import weeklyBossesData from '../../../data/weekly-bosses.json'
+import valuableDropsData from '../../../data/valuable-drops.json'
 import {
   useBossProfitStore,
   type BossProfitRow,
   type BossProfitStore,
   type BossProfitWeeklySubtotal,
-} from '@core/features/boss-profit/store'
-import { WEEKLY_CRYSTAL_SALE_LIMIT } from '@core/lib/boss-matching'
-import { getCurrentBossProfitPeriod } from '@core/lib/boss-profit-period'
-import { clearCountUpMemory } from '@core/lib/use-count-up'
-import type { RecordedDrop } from '@core/types/drops'
+} from '../../../features/boss-profit/store'
+import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../../lib/boss-matching'
+import { getCurrentBossProfitPeriod } from '../../../lib/boss-profit-period'
+import { clearCountUpMemory } from '../../../lib/use-count-up'
+import type { RecordedDrop } from '../../../types/drops'
 
 import { normalizeRenderedTree, type RenderedTree } from '../../../__tests__/normalize-tree'
 import { 테스트_안전영역 } from '../../../components/__tests__/render-atom'
@@ -45,7 +45,7 @@ const mockNoticeApiKeyIssue = jest.fn()
 const navigate = jest.fn()
 
 // [[ADR-063]]: 동기화 실패·기간 로드 실패는 인라인 문단이 아니라 토스트다.
-jest.mock('@core/features/toast/store', () => ({
+jest.mock('../../../features/toast/store', () => ({
   useToastStore: {
     getState: () => ({ showError: mockShowError, showSuccess: jest.fn(), showInfo: jest.fn() }),
   },
@@ -53,13 +53,13 @@ jest.mock('@core/features/toast/store', () => ({
 
 // [[ADR-115]] 결정 7: 401 은 토스트가 아니라 키 무효화 진입점으로 간다(이 화면에는 로스터 조회가
 // 없어 동기화 경로 하나뿐이다).
-jest.mock('@core/features/onboarding/store', () => ({
+jest.mock('../../../features/onboarding/store', () => ({
   useOnboardingStore: { getState: () => ({ noticeApiKeyIssue: mockNoticeApiKeyIssue }) },
 }))
 
 // 웹과 같은 범위로 좁혀 목한다 — `dropRowKey` 는 본문(`AccordionBody`)이 쓰는 순수 함수라 실물과
 // 같은 문자열을 낸다.
-jest.mock('@core/features/boss-profit/store', () => ({
+jest.mock('../../../features/boss-profit/store', () => ({
   useBossProfitStore: jest.fn(),
   dropRowKey: (ocid: string, boss: string, difficulty: string, periodKey: string) =>
     `${ocid}|${boss}|${difficulty}|${periodKey}`,

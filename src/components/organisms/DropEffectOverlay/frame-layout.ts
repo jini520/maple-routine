@@ -20,7 +20,7 @@
 // ([[ADR-129]] 이후 프레임이 번들에 있다), 그 조회는 컴포넌트가 해서 여기로 넘긴다 — 이 파일이
 // 순수하게 남아야 검사할 수 있다.
 
-import type { DropEffectOrigin } from '@core/lib/drop-effect-layout'
+import type { DropEffectOrigin } from '../../../lib/drop-effect-layout'
 
 export interface FrameBitmapSize {
   width: number

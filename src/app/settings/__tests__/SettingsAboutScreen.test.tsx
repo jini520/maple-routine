@@ -12,8 +12,8 @@
 //    `AppUpdateSection` 테스트가 프롭을 직접 넣어 지킨다 — 여기서 보는 것은 «배선» 이다.
 import { act, fireEvent } from '@testing-library/react-native'
 
-import { useLiveUpdateStore } from '@core/features/live-update/store'
-import { setLiveUpdatePort, type LiveUpdatePort } from '@core/native/ports'
+import { useLiveUpdateStore } from '../../../features/live-update/store'
+import { setLiveUpdatePort, type LiveUpdatePort } from '../../../native/ports'
 
 import packageJson from '../../../../package.json'
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'

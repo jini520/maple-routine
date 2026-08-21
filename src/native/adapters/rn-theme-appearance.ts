@@ -1,4 +1,4 @@
-import type { ThemeAppearancePort } from '@core/native/ports'
+import type { ThemeAppearancePort } from '../ports'
 
 import { setThemeAppearance } from '../../theme/appearance-store'
 

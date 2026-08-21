@@ -11,7 +11,7 @@
 // ── RN 으로 옮기며 갈린 것 다섯 ─────────────────────────────────────────────────────
 //
 // ① **스와이프는 responder 프롭으로 그대로 옮긴다.** 웹은 `onPointerDown/Move/Up` 에 `clientX` 를
-//    썼고 RN 은 같은 자리에 `onResponder*` 와 `pageX` 가 있다 — 임계값 판정은 `@core/lib/
+//    썼고 RN 은 같은 자리에 `onResponder*` 와 `pageX` 가 있다 — 임계값 판정은 `src/lib/
 //    swipe-dismiss` 의 `shouldDismissFromSwipe` 를 그대로 부른다. **`PanResponder` 를 쓰지
 //    않는다**: 그것은 터치 히스토리에서 제스처 상태를 스스로 계산해, 웹이 갖고 있던 "시작점
 //    하나와 현재 x" 라는 단순한 모델을 대신 세운다(그리고 그 계산 때문에 테스트에서 제스처를
@@ -43,8 +43,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Pressable, View, type GestureResponderEvent } from 'react-native'
 import { useReducedMotion } from 'react-native-reanimated'
 
-import type { ToastItem, ToastVariant } from '@core/features/toast/store'
-import { shouldDismissFromSwipe } from '@core/lib/swipe-dismiss'
+import type { ToastItem, ToastVariant } from '../../../features/toast/store'
+import { shouldDismissFromSwipe } from '../../../lib/swipe-dismiss'
 
 import {
   AlertCircleIcon,

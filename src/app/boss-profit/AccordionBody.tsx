@@ -13,12 +13,12 @@
 // ④ 글자가 상자에서 `Text` 로 내려오고 `tabular-nums` 는 값으로 준다(`lib/text-styles.ts`).
 import { Pressable, View } from 'react-native'
 
-import type { WeeklySubtotalState } from '@core/features/boss-profit/store'
-import { dropRowKey } from '@core/features/boss-profit/store'
-import type { BossProfitRow, BossProfitWeeklySubtotal } from '@core/features/boss-profit/store'
-import { formatBossProfitPeriodLabel } from '@core/lib/boss-profit-period'
-import { formatMesoShort } from '@core/lib/boss-profit-delta'
-import { sumDropPayout } from '@core/lib/drop-price'
+import type { WeeklySubtotalState } from '../../features/boss-profit/store'
+import { dropRowKey } from '../../features/boss-profit/store'
+import type { BossProfitRow, BossProfitWeeklySubtotal } from '../../features/boss-profit/store'
+import { formatBossProfitPeriodLabel } from '../../lib/boss-profit-period'
+import { formatMesoShort } from '../../lib/boss-profit-delta'
+import { sumDropPayout } from '../../lib/drop-price'
 
 import { AnimatedMeso } from '../../components/atoms/AnimatedMeso/AnimatedMeso'
 import { Text } from '../../components/atoms/Text/Text'

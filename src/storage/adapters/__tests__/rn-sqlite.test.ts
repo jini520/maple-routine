@@ -5,7 +5,7 @@
 //
 // 그래서 목으로 흉내 내는 것은 SQLite 의 동작이 아니라 **op-sqlite 가 우리에게 주는 모양**뿐이다
 // (`open()` 이 받는 옵션, `execute()` 가 돌려주는 `{ rows }`). 상상한 DB 엔진을 검증하지 않도록
-// 실제 계약 검사는 아래 «db.ts 와 맞물리는가» 가 `@core` 의 진짜 코드로 한다.
+// 실제 계약 검사는 아래 «db.ts 와 맞물리는가» 가 `src/storage/sqlite` 의 진짜 코드로 한다.
 //
 // jest 기본 플랫폼은 ios 다(`jest-expo`) — data.md 가 유일하게 미검증으로 남긴 쪽, 즉 틀리면
 // 데이터가 안 보이는 쪽이 검사된다. android 경로 선택은 순수 테스트가 덮는다.
@@ -42,8 +42,8 @@ jest.mock('@op-engineering/op-sqlite', () => ({
 }))
 
 import { IOS_DOCUMENT_PATH } from '@op-engineering/op-sqlite'
-import { closeBossProfitDb, getBossProfitDb } from '@core/storage/sqlite/db'
-import { __resetStoragePortsForTest, setSqlitePort } from '@core/storage/ports'
+import { closeBossProfitDb, getBossProfitDb } from '../../sqlite/db'
+import { __resetStoragePortsForTest, setSqlitePort } from '../../ports'
 
 import { rnSqlitePort } from '../rn-sqlite'
 
@@ -114,7 +114,7 @@ describe('rnSqlitePort', () => {
   })
 })
 
-// `db.ts` 는 이 step 에서 한 글자도 안 고쳤다(전부 `@core` 에 있고 app-capacitor 와 공유한다).
+// `db.ts` 는 이 step 에서 한 글자도 안 고쳤다(당시엔 `packages/core` 에 있었고 웹 앱과 공유했다).
 // 그래서 어댑터가 계약을 지키는지는 목이 아니라 **그 진짜 코드를 돌려** 확인한다 — 특히
 // `ensureColumn` 은 `PRAGMA table_info` 결과를 `values` 로 읽으므로, 감싸는 모양이 어긋나면
 // "컬럼이 없다"로 읽혀 매 부팅마다 ALTER 를 시도한다.

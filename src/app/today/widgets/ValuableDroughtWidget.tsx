@@ -35,7 +35,7 @@ import { useState } from 'react'
 import { View } from 'react-native'
 import { Path } from 'react-native-svg'
 
-import { formatValuableDroughtHeadline } from '@core/lib/drop-history'
+import { formatValuableDroughtHeadline } from '../../../lib/drop-history'
 
 import { Text } from '../../../components/atoms/Text/Text'
 import { MAPLE_LEAF_PATH } from '../../../components/mapleLeafPath'

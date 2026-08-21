@@ -11,8 +11,8 @@ import { render } from '@testing-library/react-native'
 import type { ReactElement, ReactNode } from 'react'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 
-import type { BossProfitRow, BossProfitWeeklySubtotal } from '@core/features/boss-profit/store'
-import weeklyBossesData from '@core/data/weekly-bosses.json'
+import type { BossProfitRow, BossProfitWeeklySubtotal } from '../../../features/boss-profit/store'
+import weeklyBossesData from '../../../data/weekly-bosses.json'
 
 import { ThemeProvider } from '../../../theme/ThemeProvider'
 import { 테스트_안전영역 } from '../../../components/__tests__/render-atom'

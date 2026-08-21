@@ -3,7 +3,7 @@
  * (step 1 `capacitor-storage-keys.ts` · step 2 `capacitor-sqlite-open.ts` · step 3
  * `notification-request.ts` 와 같은 배치).
  *
- * **판정 자체는 여기 없다.** `shouldUseTestAds` 는 `@core/native/ads` 의 것 하나뿐이고 이 파일이
+ * **판정 자체는 여기 없다.** `shouldUseTestAds` 는 `src/native/ads` 의 것 하나뿐이고 이 파일이
  * 하는 일은 그 함수의 **인자를 채우는 것**뿐이다. 실 ID 로 자기 광고를 누르면 무효 트래픽으로
  * AdMob 계정이 정지되고 되돌리기가 매우 어려운데([[ADR-090]] · `features/ads.md`), 그 방어선이
  * 플랫폼마다 두 벌이 되면 한쪽만 틀려도 사고가 난다.
@@ -53,7 +53,7 @@
  * `__DEV__` 가 `true` 인 번들은 정의상 Metro 개발 번들이라 스토어에 나갈 수 없다.
  */
 
-import type { shouldUseTestAds } from '@core/native/ads'
+import type { shouldUseTestAds } from '../ads'
 
 /**
  * `shouldUseTestAds` 가 읽는 모양. 손으로 베끼지 않고 그 함수에서 뽑아 오므로, core 가 키 이름을

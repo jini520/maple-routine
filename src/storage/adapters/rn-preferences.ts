@@ -1,6 +1,6 @@
 import { Platform } from 'react-native'
 
-import type { PreferencesPort } from '@core/storage/ports'
+import type { PreferencesPort } from '../ports'
 
 import CapacitorStorage from '../../../modules/capacitor-storage'
 import { toAppKeys, toNativeKey, type PreferencesPlatform } from './capacitor-storage-keys'

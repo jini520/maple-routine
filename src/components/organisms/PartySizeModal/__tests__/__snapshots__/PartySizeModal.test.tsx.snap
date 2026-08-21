@@ -129,7 +129,7 @@ exports[`PartySizeModal 트리 스냅샷 1`] = `
                   resizeMode="cover"
                   source={
                     {
-                      "testUri": "../../../core/assets/bosses/lotus.webp",
+                      "testUri": "../../../src/assets/bosses/lotus.webp",
                     }
                   }
                   style={

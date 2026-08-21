@@ -28,7 +28,7 @@ import {
   RELEASE_NOTES,
   RELEASE_NOTE_CATEGORY_LABELS,
   RELEASE_NOTE_CATEGORY_ORDER,
-} from '@core/data/release-notes'
+} from '../../data/release-notes'
 
 import { Badge } from '../../components/atoms/Badge/Badge'
 import { Card } from '../../components/atoms/Card/Card'

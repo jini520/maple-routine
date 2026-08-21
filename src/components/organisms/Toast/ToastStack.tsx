@@ -21,7 +21,7 @@
 //    `4rem` 가정을 실측으로 바꾼 것과 같은 지점).
 import { View } from 'react-native'
 
-import { useToastStore } from '@core/features/toast/store'
+import { useToastStore } from '../../../features/toast/store'
 
 import { useBottomSafeAreaPx } from '../../../lib/bottom-safe-area'
 import { Toast } from './Toast'

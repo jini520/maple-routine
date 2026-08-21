@@ -90,7 +90,7 @@ exports[`세 크기가 같은 구조다 ([[ADR-147]] 정정 7 · 38) 2x2 — 스
             resizeMode="contain"
             source={
               {
-                "testUri": "../../../core/assets/worlds/scania.png",
+                "testUri": "../../../src/assets/worlds/scania.png",
               }
             }
             style={
@@ -376,7 +376,7 @@ exports[`세 크기가 같은 구조다 ([[ADR-147]] 정정 7 · 38) 4x1 — 스
             resizeMode="contain"
             source={
               {
-                "testUri": "../../../core/assets/worlds/scania.png",
+                "testUri": "../../../src/assets/worlds/scania.png",
               }
             }
             style={
@@ -671,7 +671,7 @@ exports[`세 크기가 같은 구조다 ([[ADR-147]] 정정 7 · 38) 4x2 — 스
               resizeMode="contain"
               source={
                 {
-                  "testUri": "../../../core/assets/worlds/scania.png",
+                  "testUri": "../../../src/assets/worlds/scania.png",
                 }
               }
               style={

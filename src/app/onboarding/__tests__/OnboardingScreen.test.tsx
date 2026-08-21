@@ -15,44 +15,44 @@
 // 태우지 않는다), 그래서 그 둘을 보던 옛 케이스는 «어떤 화면이 오는가» 를 물을 대상이 아니다 —
 // 갱신이 아니라 **뒤집힌 계약**이라 지우고, 대신 «그 자리에 출구 없는 빈 화면이 서지 않는가» 를
 // 묻는 케이스로 바꿨다.
-import { useOnboardingStore } from '@core/features/onboarding/store'
+import { useOnboardingStore } from '../../../features/onboarding/store'
 
 import { renderOverlay } from '../../../components/__tests__/render-atom'
 import { OnboardingScreen } from '../OnboardingScreen'
 
-jest.mock('@core/features/onboarding/store', () => ({
+jest.mock('../../../features/onboarding/store', () => ({
   useOnboardingStore: jest.fn(),
 }))
 
 // `ContentCharacterStep` 의 본문(`useCharacterManage`)이 마운트 시 부르는 경계 — 이 파일이 보는
 // 것은 "어느 status 에서 어떤 화면이 오는가" 하나라 전부 빈 응답으로 둔다(본문의 계약은
 // `ContentCharacterStep` 테스트가 본다).
-jest.mock('@core/features/schedule-sync/schedule-sync', () => ({
-  toScheduleSyncError: jest.requireActual<typeof import('@core/features/schedule-sync/errors')>(
-    '@core/features/schedule-sync/errors',
+jest.mock('../../../features/schedule-sync/schedule-sync', () => ({
+  toScheduleSyncError: jest.requireActual<typeof import('../../../features/schedule-sync/errors')>(
+    '../../../features/schedule-sync/errors',
   ).toScheduleSyncError,
   getCharacterPickerRoster: jest.fn(async () => {}),
 }))
-jest.mock('@core/nexon/character', () => ({ fetchCharacterList: jest.fn(async () => []) }))
-jest.mock('@core/storage/api-key', () => ({
+jest.mock('../../../nexon/character', () => ({ fetchCharacterList: jest.fn(async () => []) }))
+jest.mock('../../../storage/api-key', () => ({
   getAuthConfig: jest.fn(async () => ({ apiKey: 'key', selectedAccountId: null })),
 }))
-jest.mock('@core/storage/character-basic-cache', () => ({
+jest.mock('../../../storage/character-basic-cache', () => ({
   getCachedCharacterBasic: jest.fn(async () => null),
 }))
-jest.mock('@core/storage/character-selection', () => ({
+jest.mock('../../../storage/character-selection', () => ({
   getRepresentativeCharacter: jest.fn(async () => null),
   setRepresentativeCharacter: jest.fn(async () => {}),
   clearRepresentativeCharacter: jest.fn(async () => {}),
 }))
-jest.mock('@core/storage/schedule-probe-ledger', () => ({
+jest.mock('../../../storage/schedule-probe-ledger', () => ({
   getScheduleProbeLedger: jest.fn(async () => ({ unavailable: false, dates: {} })),
 }))
-jest.mock('@core/features/content-scheduler/store', () => ({
+jest.mock('../../../features/content-scheduler/store', () => ({
   useContentSchedulerStore: jest.fn(() => ({ trackedOcids: [], saveTrackedOcids: jest.fn() })),
 }))
 
-jest.mock('@core/features/onboarding/use-api-key-notice', () => ({
+jest.mock('../../../features/onboarding/use-api-key-notice', () => ({
   useApiKeyNotice: jest.fn(),
 }))
 

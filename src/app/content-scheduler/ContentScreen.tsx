@@ -42,16 +42,16 @@ import { useEffect } from 'react'
 import { Pressable, RefreshControl, View } from 'react-native'
 import { useReducedMotion } from 'react-native-reanimated'
 
-import type { DailyContent, WeeklyContent } from '@core/types'
-import { useContentSchedulerStore, type ContentCharacterView } from '@core/features/content-scheduler/store'
-import { useTrackingModeStore } from '@core/features/tracking-mode/store'
-import { formatSyncedAt } from '@core/features/schedule-sync/format'
-import { useScheduleSyncErrorToast } from '@core/features/schedule-sync/use-sync-error-toast'
+import type { DailyContent, WeeklyContent } from '../../types'
+import { useContentSchedulerStore, type ContentCharacterView } from '../../features/content-scheduler/store'
+import { useTrackingModeStore } from '../../features/tracking-mode/store'
+import { formatSyncedAt } from '../../features/schedule-sync/format'
+import { useScheduleSyncErrorToast } from '../../features/schedule-sync/use-sync-error-toast'
 import {
   displayedDailyContents,
   displayedWeeklyContents,
   type DisplayedContentsInput,
-} from '@core/features/content-scheduler/displayed-contents'
+} from '../../features/content-scheduler/displayed-contents'
 
 import { Text } from '../../components/atoms/Text/Text'
 import { dailyContentProgress, weeklyContentProgress } from './content-completion'

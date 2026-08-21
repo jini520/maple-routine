@@ -1,4 +1,4 @@
-import { setPreferencesPort } from '@core/storage/ports'
+import { setPreferencesPort } from '../../storage/ports'
 
 /**
  * 인메모리 `PreferencesPort` 를 꽂는다 — **step 4 부터 필요해졌다.**

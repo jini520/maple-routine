@@ -14,8 +14,8 @@ import {
   useContentSchedulerStore,
   type ContentCharacterView,
   type ContentSchedulerStore,
-} from '@core/features/content-scheduler/store'
-import { useTrackingModeStore } from '@core/features/tracking-mode/store'
+} from '../../../features/content-scheduler/store'
+import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { ContentManageScreen } from '../ContentManageScreen'
@@ -24,11 +24,11 @@ import { useScreenNavigation } from '../../use-screen-navigation'
 const mockShowError = jest.fn()
 const goBack = jest.fn()
 
-jest.mock('@core/features/toast/store', () => ({
+jest.mock('../../../features/toast/store', () => ({
   useToastStore: { getState: () => ({ showError: mockShowError, showSuccess: jest.fn(), showInfo: jest.fn() }) },
 }))
 
-jest.mock('@core/features/content-scheduler/store', () => ({
+jest.mock('../../../features/content-scheduler/store', () => ({
   useContentSchedulerStore: jest.fn(),
 }))
 

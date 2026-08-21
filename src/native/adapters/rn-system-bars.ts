@@ -1,4 +1,4 @@
-import type { SystemBarsPort } from '@core/native/ports'
+import type { SystemBarsPort } from '../ports'
 
 import AppSystemBars from '../../../modules/app-system-bars'
 

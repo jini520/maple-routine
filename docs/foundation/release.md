@@ -15,13 +15,13 @@ Xcode 아카이브다. 저장소 루트가 곧 Expo 프로젝트라 둘 다 루�
 
 ## 릴리스는 노트를 쓰는 것으로 시작한다 ([[ADR-119]])
 
-**버전을 올리기 전이 아니라, 올리면서 `core/data/release-notes.ts` 에 그 버전의 항목을
+**버전을 올리기 전이 아니라, 올리면서 `src/data/release-notes.ts` 에 그 버전의 항목을
 먼저 쓴다.** OTA 배포든 스토어 바이너리든 순서는 같다.
 
 ```
 1. package.json 의 version 을 올린다        (x.y.z — 2단이면 OTA가 깨진다, [[ADR-024]])
      ↑ 저장소 루트 package.json 이 아니다. 루트는 워크스페이스 오케스트레이션용이라 version 이 없다
-2. core/data/release-notes.ts 에 그 버전 항목을 쓴다            ← 이 단계를 건너뛰면 3에서 막힌다
+2. src/data/release-notes.ts 에 그 버전 항목을 쓴다            ← 이 단계를 건너뛰면 3에서 막힌다
      · items      — 변경 전부. 개발 노트 화면이 읽는다
      · highlights — 핵심 3~4줄. **업데이트 모달**이 받기 전에 읽는다([[ADR-126]] 결정 2·3)
      · 네이티브 변경 항목에는 「스토어 업데이트 필요」 표식(항목 단위)
@@ -72,7 +72,7 @@ Xcode 아카이브다. 저장소 루트가 곧 Expo 프로젝트라 둘 다 루�
 - **`highlights` 를 `items` 에서 베끼지 말 것**([[ADR-126]] 결정 3). *"무엇이 바뀌었나"* 가 아니라
   *"받으면 무엇이 생기나"* 를 쓰고, 자잘한 것은 `일부 버그 및 사용성 개선` 처럼 한 줄로 뭉친다.
 - **스크립트가 `.ts` 를 읽는 방법은 Node 내장 타입 스트리핑이다** — `.mjs` 가
-  `core/data/release-notes.ts` 를 **그대로 `import`** 한다(Node 22.18+/23.6+ 부터 플래그 없이 켜져 있고
+  `src/data/release-notes.ts` 를 **그대로 `import`** 한다(Node 22.18+/23.6+ 부터 플래그 없이 켜져 있고
   이 저장소는 24.x 에서 확인했다). **이 자리를 만질 때 `tsx`·`ts-node` 를 들이지 말 것** — 배포
   스크립트는 릴리스 경로의 일부라 의존성이 늘수록 릴리스가 깨질 표면이 넓어진다. 정규식으로 파일을
   긁는 것도 안 된다(원천 형식이 바뀌는 순간 조용히 틀린 값을 낸다). `release-notes.ts` 는 순수
@@ -391,7 +391,7 @@ codesign -dv --verbose=2 "$A" 2>&1 | grep -E 'Identifier|Authority|TeamIdentifie
 채라 **매 빌드 돈다**(아카이브 로그의 `note:` 로 확인된다). Gradle 처럼 UP-TO-DATE 로 건너뛰는 자리가
 없다. 그래도 스토어행 바이너리는 눈으로 확인하고 보낸다 — build 13 에서는 `EXUpdates.bundle/app.manifest`
 의 288개 항목이 전부 `app.app/assets/` 의 실제 파일로 풀렸고, 카링·벨로나의 `packagerHash` 가
-`core/assets/bosses/*.webp` 의 md5 와 같았다.
+`src/assets/bosses/*.webp` 의 md5 와 같았다.
 
 **같은 자리에서 `EXUpdates.bundle/fingerprint` 도 함께 본다** — 아래 «스토어 바이너리와 OTA 의
 runtimeVersion» 절이 그 이유다(1.0.6 에서 실제로 어긋난 채 올라갔다).

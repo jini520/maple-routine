@@ -26,7 +26,7 @@ const mockCalls: string[] = []
 /** 온보딩 상태만 케이스마다 갈아 끼운다(선하이드레이션 게이트가 이 값 하나로 갈린다). */
 const mockOnboarding = { status: 'completed' }
 
-jest.mock('@core/features/onboarding/store', () => ({
+jest.mock('../features/onboarding/store', () => ({
   __esModule: true,
   useOnboardingStore: (selector: (state: unknown) => unknown) =>
     selector({
@@ -40,7 +40,7 @@ jest.mock('@core/features/onboarding/store', () => ({
     }),
 }))
 
-jest.mock('@core/features/theme/store', () => ({
+jest.mock('../features/theme/store', () => ({
   __esModule: true,
   useThemeStore: (selector: (state: unknown) => unknown) =>
     selector({
@@ -50,7 +50,7 @@ jest.mock('@core/features/theme/store', () => ({
     }),
 }))
 
-jest.mock('@core/features/tracking-mode/store', () => ({
+jest.mock('../features/tracking-mode/store', () => ({
   __esModule: true,
   useTrackingModeStore: (selector: (state: unknown) => unknown) =>
     selector({
@@ -60,7 +60,7 @@ jest.mock('@core/features/tracking-mode/store', () => ({
     }),
 }))
 
-jest.mock('@core/features/drop-effect/store', () => ({
+jest.mock('../features/drop-effect/store', () => ({
   __esModule: true,
   useDropEffectStore: (selector: (state: unknown) => unknown) =>
     selector({
@@ -81,7 +81,7 @@ jest.mock('../app/prehydrate', () => ({
 
 // OTA 부팅 확인도 포트를 거친다([[ADR-137]]). 다른 스토어와 같은 방식으로 대체해 **순서만** 본다 —
 // 확인이 실제로 무엇을 하는지는 어댑터·스토어 테스트의 몫이다.
-jest.mock('@core/features/live-update/store', () => ({
+jest.mock('../features/live-update/store', () => ({
   __esModule: true,
   useLiveUpdateStore: {
     getState: () => ({
@@ -94,12 +94,12 @@ jest.mock('@core/features/live-update/store', () => ({
 
 // 키보드 구독은 포트를 거친다(`app/use-keyboard-visible.ts`). 주입 없이 렌더하면 슬롯이 던지고,
 // 그 던짐이 이 파일에서는 배선 문제가 아니라 **관측 대상이 아닌 것**이다(어댑터는 자기 테스트가 있다).
-jest.mock('@core/native/keyboard', () => ({
+jest.mock('../native/keyboard', () => ({
   __esModule: true,
   addKeyboardVisibilityListener: async () => () => {},
 }))
 
-jest.mock('@core/native/splash-screen', () => ({
+jest.mock('../native/splash-screen', () => ({
   __esModule: true,
   hideSplashScreen: async () => {
     mockCalls.push('hideSplash')
@@ -223,7 +223,7 @@ describe('③ OTA 배선 — 벽이 사라졌고, 사라진 채로 있어야 한
   const relative = (file: string): string => path.relative(RN_ROOT, file)
 
   // 여기 있던 세 케이스는 **«아직 안 이어져 있다»를 고정**하고 있었다(스토어를 타입으로만 import ·
-  // `@core/native/live-update` 호출 0 · 모달 마운트 0). [[ADR-137]] 이 셋 다 뒤집었으므로 그대로
+  // `src/native/live-update` 호출 0 · 모달 마운트 0). [[ADR-137]] 이 셋 다 뒤집었으므로 그대로
   // 두면 «구현하면 실패하는 테스트»가 된다. [[ADR-129]] 가 글롭 고정 테스트를 「0이어야 한다」로
   // 뒤집었을 때와 같은 처리다 — 감시 대상이 사라진 게 아니라 **묻는 질문이 바뀐 것**이다.
   //
@@ -232,7 +232,7 @@ describe('③ OTA 배선 — 벽이 사라졌고, 사라진 채로 있어야 한
   // 자리는 이 모듈을 쓰는 화면 하나가 아니라 여기다.
   it('core 의 live-update 스토어에 `import.meta` 가 없다 — 그것이 벽이었다', () => {
     const store = readFileSync(
-      path.join(RN_ROOT, 'core', 'features', 'live-update', 'store.ts'),
+      path.join(RN_ROOT, 'src', 'features', 'live-update', 'store.ts'),
       'utf8',
     )
 

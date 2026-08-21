@@ -28,7 +28,7 @@
 //    부르면 던진다 — 값은 호출부가 넘기고, 이 카드는 받은 것을 그린다.
 import { View } from 'react-native'
 
-import type { LiveUpdateStatus, LiveUpdateStore } from '@core/features/live-update/store'
+import type { LiveUpdateStatus, LiveUpdateStore } from '../../features/live-update/store'
 
 import { Button } from '../../components/atoms/Button/Button'
 import { Card } from '../../components/atoms/Card/Card'

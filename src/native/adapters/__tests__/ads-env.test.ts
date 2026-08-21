@@ -5,11 +5,11 @@
 // 위험해진다(되돌리기 매우 어려움 — `features/ads.md`). 그래서 판정을 눈으로 확인할 방법이 없고
 // 여기가 유일한 방어선이다.
 //
-// **판정 함수는 `@core/native/ads` 의 진짜 것을 쓴다.** 흉내 내면 core 가 규칙을 바꿨을 때
+// **판정 함수는 `src/native/ads` 의 진짜 것을 쓴다.** 흉내 내면 core 가 규칙을 바꿨을 때
 // 이 테스트만 초록으로 남는다 — 검사 대상은 `toAdsEnv` 가 그 함수에 **무엇을 넘기는가** 이지
 // 판정 자체가 아니다(그건 core 쪽 테스트가 이미 덮는다).
 
-import { shouldUseTestAds } from '@core/native/ads'
+import { shouldUseTestAds } from '../../ads'
 
 import { toAdsEnv, type AdsEnvSource } from '../ads-env'
 

@@ -5,10 +5,10 @@
 // "0원 벌었다"가 같은 화면이 된다.
 import { act, fireEvent } from '@testing-library/react-native'
 
-import valuableDropsData from '@core/data/valuable-drops.json'
-import { isValuableDrop } from '@core/lib/valuable-drops'
-import { clearCountUpMemory } from '@core/lib/use-count-up'
-import type { RecordedDrop } from '@core/types/drops'
+import valuableDropsData from '../../../data/valuable-drops.json'
+import { isValuableDrop } from '../../../lib/valuable-drops'
+import { clearCountUpMemory } from '../../../lib/use-count-up'
+import type { RecordedDrop } from '../../../types/drops'
 
 import { BossProfitBossRow } from '../BossProfitBossRow'
 import { 보스행, 컨텍스트값, renderProfit, 주간보스 } from './harness'

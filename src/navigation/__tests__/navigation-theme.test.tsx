@@ -7,7 +7,7 @@
 import { render, renderHook } from '@testing-library/react-native'
 import { Text } from 'react-native'
 
-import { getThemeDefinition } from '@core/lib/theme-registry'
+import { getThemeDefinition } from '../../lib/theme-registry'
 
 import { ScreenBackdrop } from '../../components/templates/ThemeBackdrop/ScreenBackdrop'
 import { rnThemeAppearancePort } from '../../native/adapters/rn-theme-appearance'

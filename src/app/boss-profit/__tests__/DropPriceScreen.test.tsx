@@ -27,10 +27,10 @@ jest.mock('@gorhom/bottom-sheet', () => {
   }
 })
 
-import weeklyBossesData from '@core/data/weekly-bosses.json'
-import { useDropPriceStore, type DropPriceEntry } from '@core/features/boss-profit/drop-price-store'
-import { useBossProfitStore } from '@core/features/boss-profit/store'
-import type { RecordedDrop } from '@core/types/drops'
+import weeklyBossesData from '../../../data/weekly-bosses.json'
+import { useDropPriceStore, type DropPriceEntry } from '../../../features/boss-profit/drop-price-store'
+import { useBossProfitStore } from '../../../features/boss-profit/store'
+import type { RecordedDrop } from '../../../types/drops'
 
 import { flattenStyle, renderOverlay, 테스트_안전영역 } from '../../../components/__tests__/render-atom'
 import { useScreenNavigation } from '../../use-screen-navigation'
@@ -39,11 +39,11 @@ import { DropPriceScreen } from '../DropPriceScreen'
 const mockShowError = jest.fn()
 const goBack = jest.fn()
 
-jest.mock('@core/features/toast/store', () => ({
+jest.mock('../../../features/toast/store', () => ({
   useToastStore: { getState: () => ({ showError: mockShowError, showSuccess: jest.fn(), showInfo: jest.fn() }) },
 }))
-jest.mock('@core/features/boss-profit/store', () => ({ useBossProfitStore: jest.fn() }))
-jest.mock('@core/features/boss-profit/drop-price-store', () => ({ useDropPriceStore: jest.fn() }))
+jest.mock('../../../features/boss-profit/store', () => ({ useBossProfitStore: jest.fn() }))
+jest.mock('../../../features/boss-profit/drop-price-store', () => ({ useDropPriceStore: jest.fn() }))
 jest.mock('../../use-screen-navigation', () => ({ useScreenNavigation: jest.fn() }))
 
 const mockedProfitStore = jest.mocked(useBossProfitStore)

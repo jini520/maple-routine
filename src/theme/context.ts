@@ -7,7 +7,7 @@
  */
 
 import { createContext, useContext } from 'react'
-import type { ThemeMode } from '@core/types/theme'
+import type { ThemeMode } from '../types/theme'
 
 import type { ThemeAppearance } from './appearance-store'
 

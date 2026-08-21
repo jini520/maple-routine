@@ -1,4 +1,4 @@
-import { setOnboardingAccountScope } from '@core/features/onboarding/flow'
+import { setOnboardingAccountScope } from './features/onboarding/flow'
 import {
   setAdsPort,
   setBackGesturePort,
@@ -11,8 +11,8 @@ import {
   setStatusBarPort,
   setSystemBarsPort,
   setThemeAppearancePort,
-} from '@core/native/ports'
-import { setPreferencesPort, setSqlitePort } from '@core/storage/ports'
+} from './native/ports'
+import { setPreferencesPort, setSqlitePort } from './storage/ports'
 
 import { rnAdsPort } from './native/adapters/rn-ads'
 import { rnBackGesturePort } from './native/adapters/rn-back-gesture'

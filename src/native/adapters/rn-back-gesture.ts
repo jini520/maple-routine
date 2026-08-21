@@ -1,4 +1,4 @@
-import type { BackGesturePort } from '@core/native/ports'
+import type { BackGesturePort } from '../ports'
 
 import AppBackground from '../../../modules/app-background'
 

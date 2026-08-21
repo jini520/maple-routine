@@ -28,7 +28,7 @@ import { basename, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 // 릴리스 노트의 진실 원천을 **그대로** 읽는다([[ADR-119]] 결정 1) — capacitor 스크립트와 같은 파일을
 // 같은 이유로 읽는다. 노트가 두 벌이 되면 갈라진 순간 어느 쪽이 사실인지 알 방법이 없다.
-import { findReleaseNote } from '../core/data/release-notes.ts'
+import { findReleaseNote } from '../src/data/release-notes.ts'
 // 노트 가드도 한 벌이다 — «무엇이 비었는지 문구로 말한다»는 판단([[ADR-126]] 결정 8)을 두 스크립트가
 // 나눠 가지면 한쪽만 고쳐진다.
 import { describeReleaseNoteGap } from './publish-live-update.mjs'
@@ -160,7 +160,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const note = findReleaseNote(appVersion)
   const gap = describeReleaseNoteGap(note)
   if (gap !== null) {
-    console.error(`core/data/release-notes.ts 의 ${appVersion}: ${gap}`)
+    console.error(`src/data/release-notes.ts 의 ${appVersion}: ${gap}`)
     process.exit(1)
   }
 

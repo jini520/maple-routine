@@ -32,7 +32,7 @@ import type { ScrollView as ScrollViewType } from 'react-native'
 import { Image, Pressable, View } from 'react-native'
 import { useRoute, type RouteProp } from '@react-navigation/native'
 
-import { findFeatureGuide } from '@core/data/feature-guides'
+import { findFeatureGuide } from '../../data/feature-guides'
 
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'

@@ -1,12 +1,12 @@
 {
-  // vitest 가 도는 것들(`core/**/__tests__` · `ota/`)만 따로 검사한다([[ADR-155]] 결정 6).
+  // vitest 가 도는 것들(`*.spec.*` · `ota/`)만 따로 검사한다([[ADR-155]] 결정 6).
   //
   // 갈리는 이유는 **하나**다 — 이쪽은 Vite 위에서 돌아 `import.meta.glob` 이 사실이고, 앱 프로그램에는
   // 그 선언이 없어야 한다(`tsconfig.json` 의 `exclude` 주석 · `vitest-import-meta.d.ts` 참고).
   "extends": "./tsconfig.json",
   "include": [
-    "core/**/__tests__/**/*.ts",
-    "core/**/__tests__/**/*.tsx",
+    "src/**/*.spec.ts",
+    "src/**/*.spec.tsx",
     "ota/**/*.ts",
     "vitest.setup.ts",
     "vitest-import-meta.d.ts",

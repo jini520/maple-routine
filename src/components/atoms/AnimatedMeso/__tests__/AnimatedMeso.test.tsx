@@ -3,7 +3,7 @@
 // 굴러가는 동작 자체(재조준·마운트 기억·identity 교체 — [[ADR-087]] 결정 6·7·8, 정정 1)는 여기서
 // 다시 세우지 않는다. 그 계약은 `packages/core` 의 `use-count-up.test.tsx` 가 이미 지키고, RN 은
 // **같은 훅을 그대로 부른다**(CSS 가 아니라 rAF 기반이라 옮길 것이 없었다 — 컴포넌트 주석 참고).
-import { clearCountUpMemory } from '@core/lib/use-count-up'
+import { clearCountUpMemory } from '../../../../lib/use-count-up'
 import { Text } from 'react-native'
 
 import { renderAtom } from '../../../__tests__/render-atom'

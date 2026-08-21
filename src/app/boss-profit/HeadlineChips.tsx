@@ -16,12 +16,12 @@
 import { useState } from 'react'
 import { Image, Modal, Pressable, View } from 'react-native'
 
-import { getItemIconUrlByFile } from '@core/lib/item-icons'
-import { WEEKLY_CRYSTAL_SALE_LIMIT } from '@core/lib/boss-matching'
-import { computeProfitDelta, formatProfitDeltaBody, formatProfitDeltaLabel } from '@core/lib/boss-profit-delta'
-import { formatBossProfitPeriodLabel, getAdjacentPeriodKey } from '@core/lib/boss-profit-period'
-import { worldEmblemUrl } from '@core/lib/world-emblem'
-import type { BossCycle } from '@core/types'
+import { getItemIconUrlByFile } from '../../lib/item-icons'
+import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../lib/boss-matching'
+import { computeProfitDelta, formatProfitDeltaBody, formatProfitDeltaLabel } from '../../lib/boss-profit-delta'
+import { formatBossProfitPeriodLabel, getAdjacentPeriodKey } from '../../lib/boss-profit-period'
+import { worldEmblemUrl } from '../../lib/world-emblem'
+import type { BossCycle } from '../../types'
 
 import { Text } from '../../components/atoms/Text/Text'
 import { ArrowDownIcon, ArrowUpIcon, ChevronDownIcon, ChevronUpIcon } from '../../lib/icons'

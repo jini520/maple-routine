@@ -16,15 +16,15 @@
 //    아래 카드 케이스가 진다.
 import { act, fireEvent } from '@testing-library/react-native'
 
-import { clearCacheDataAndReload, loadCacheDataSizes } from '@core/features/settings/cache-data'
-import { useSettingsStore } from '@core/features/settings/store'
+import { clearCacheDataAndReload, loadCacheDataSizes } from '../../../features/settings/cache-data'
+import { useSettingsStore } from '../../../features/settings/store'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { SettingsAccountDataScreen } from '../SettingsAccountDataScreen'
 import { useSettingsNavigation } from '../use-settings-navigation'
 
-jest.mock('@core/features/settings/store', () => ({ useSettingsStore: jest.fn() }))
-jest.mock('@core/features/settings/cache-data', () => ({
+jest.mock('../../../features/settings/store', () => ({ useSettingsStore: jest.fn() }))
+jest.mock('../../../features/settings/cache-data', () => ({
   loadCacheDataSizes: jest.fn(),
   clearCacheDataAndReload: jest.fn(async () => {}),
 }))

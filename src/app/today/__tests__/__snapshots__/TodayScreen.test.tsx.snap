@@ -615,7 +615,7 @@ exports[`TodayScreen — 격자 캐릭터 넷의 기본 배치 1`] = `
                                 resizeMode="contain"
                                 source={
                                   {
-                                    "testUri": "../../../core/assets/worlds/scania.png",
+                                    "testUri": "../../../src/assets/worlds/scania.png",
                                   }
                                 }
                                 style={

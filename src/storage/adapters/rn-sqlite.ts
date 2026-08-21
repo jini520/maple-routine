@@ -7,7 +7,7 @@ import {
 } from '@op-engineering/op-sqlite'
 import { Platform } from 'react-native'
 
-import type { SqliteDbConnection, SqlitePort } from '@core/storage/ports'
+import type { SqliteDbConnection, SqlitePort } from '../ports'
 
 import { toOpenOptions, type SqlitePlatform } from './capacitor-sqlite-open'
 
@@ -22,7 +22,7 @@ import { toOpenOptions, type SqlitePlatform } from './capacitor-sqlite-open'
  * 상수로 내준다(`ANDROID_DATABASE_PATH`·`IOS_DOCUMENT_PATH`).
  *
  * 스키마 생성·컬럼 보강([[ADR-069]] 결정 1)·메이린 키 이관·stale 커넥션 복구([[ADR-050]] 결정 2)·
- * 타임아웃([[ADR-117]] 결정 5)은 전부 `@core/storage/sqlite/db.ts` 에 그대로 있다. 이 파일이 맡는
+ * 타임아웃([[ADR-117]] 결정 5)은 전부 `src/storage/sqlite/db.ts` 에 그대로 있다. 이 파일이 맡는
  * 것은 **플러그인 호출 그 자체**뿐이다.
  */
 const platform: SqlitePlatform = Platform.OS === 'ios' ? 'ios' : 'android'

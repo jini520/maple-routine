@@ -231,7 +231,7 @@ exports[`CharacterRow — 좌우 슬롯 렌더 트리 스냅샷 — 이후 변�
             resizeMode="contain"
             source={
               {
-                "testUri": "../../../core/assets/worlds/scania.png",
+                "testUri": "../../../src/assets/worlds/scania.png",
               }
             }
             style={

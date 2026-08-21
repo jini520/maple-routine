@@ -17,7 +17,7 @@ import type { TextStyle } from 'react-native'
 export const TABULAR_NUMS: TextStyle = { fontVariant: ['tabular-nums'] }
 
 /**
- * 일러스트 위 글자의 **가독성 스크림** — `@core/lib/media-card` 의 `MEDIA_TEXT_SHADOW` 짝
+ * 일러스트 위 글자의 **가독성 스크림** — `src/lib/media-card` 의 `MEDIA_TEXT_SHADOW` 짝
  * ([[ADR-018]]·[[ADR-020]]).
  *
  * 테마 토큰이 아니라 검정 고정인 이유는 core 쪽 주석이 갖는다 — 무슨 그림이 깔리든 글자가 읽혀야

@@ -8,8 +8,8 @@
 // 따른다. 두 화면이 같은 모양이어야 한다는 결정 22 가 **갈라지는 방식까지** 같기를 요구한다.
 import { Pressable, View } from 'react-native'
 
-import { TRACKING_MODE_OPTIONS } from '@core/features/tracking-mode/copy'
-import type { TrackingMode } from '@core/storage/tracking-mode'
+import { TRACKING_MODE_OPTIONS } from '../../features/tracking-mode/copy'
+import type { TrackingMode } from '../../storage/tracking-mode'
 
 import { Text } from '../../components/atoms/Text/Text'
 import { Gamepad2Icon, InfoIcon, ListChecksIcon } from '../../lib/icons'

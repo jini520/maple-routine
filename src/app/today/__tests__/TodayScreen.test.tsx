@@ -12,20 +12,20 @@
 // ④ **캐릭터 넷의 기본 배치**(스냅샷) — 헤더 + 격자가 실제 값 위에서 함께 그려지는 유일한 자리다.
 import { act, fireEvent, screen } from '@testing-library/react-native'
 
-import { useDropHistoryStore } from '@core/features/boss-profit/drop-history-store'
-import { useBossProfitStore, type BossProfitRow } from '@core/features/boss-profit/store'
-import { useBossSchedulerStore, type BossCharacterView } from '@core/features/boss-scheduler/store'
+import { useDropHistoryStore } from '../../../features/boss-profit/drop-history-store'
+import { useBossProfitStore, type BossProfitRow } from '../../../features/boss-profit/store'
+import { useBossSchedulerStore, type BossCharacterView } from '../../../features/boss-scheduler/store'
 import {
   useContentSchedulerStore,
   type ContentCharacterView,
-} from '@core/features/content-scheduler/store'
-import { useTrackingModeStore } from '@core/features/tracking-mode/store'
-import { formatMesoShort } from '@core/lib/boss-profit-delta'
-import type { MatchedBoss } from '@core/lib/boss-matching'
-import type { DropHistoryPeriodGroup, DropHistoryRecord } from '@core/lib/drop-history'
-import { getCachedCharacterBasic } from '@core/storage/character-basic-cache'
-import { getRepresentativeCharacter } from '@core/storage/character-selection'
-import type { CharacterBasicProfile, DailyContent, WeeklyContent } from '@core/types'
+} from '../../../features/content-scheduler/store'
+import { useTrackingModeStore } from '../../../features/tracking-mode/store'
+import { formatMesoShort } from '../../../lib/boss-profit-delta'
+import type { MatchedBoss } from '../../../lib/boss-matching'
+import type { DropHistoryPeriodGroup, DropHistoryRecord } from '../../../lib/drop-history'
+import { getCachedCharacterBasic } from '../../../storage/character-basic-cache'
+import { getRepresentativeCharacter } from '../../../storage/character-selection'
+import type { CharacterBasicProfile, DailyContent, WeeklyContent } from '../../../types'
 
 import { normalizeRenderedTree, type RenderedTree } from '../../../__tests__/normalize-tree'
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
@@ -35,16 +35,16 @@ import { TodayScreen } from '../TodayScreen'
 // **훅만 갈아끼우고 나머지는 실물을 남긴다.** 스토어 모듈은 훅 말고도 순수 헬퍼를 내보내는데
 // (`dropRowKey`·`partySizeKey`) 그것을 이 화면이 아니라 **뷰모델이 부르는 계산기**가 쓴다 —
 // 통째로 목으로 덮으면 그 헬퍼가 `undefined` 가 되어 조립이 렌더 도중 죽는다(실제로 그렇게 갔다).
-jest.mock('@core/features/content-scheduler/store', () => ({
-  ...jest.requireActual('@core/features/content-scheduler/store'),
+jest.mock('../../../features/content-scheduler/store', () => ({
+  ...jest.requireActual('../../../features/content-scheduler/store'),
   useContentSchedulerStore: jest.fn(),
 }))
-jest.mock('@core/features/boss-scheduler/store', () => ({
-  ...jest.requireActual('@core/features/boss-scheduler/store'),
+jest.mock('../../../features/boss-scheduler/store', () => ({
+  ...jest.requireActual('../../../features/boss-scheduler/store'),
   useBossSchedulerStore: jest.fn(),
 }))
-jest.mock('@core/features/boss-profit/store', () => ({
-  ...jest.requireActual('@core/features/boss-profit/store'),
+jest.mock('../../../features/boss-profit/store', () => ({
+  ...jest.requireActual('../../../features/boss-profit/store'),
   useBossProfitStore: jest.fn(),
 }))
 // `useFocusEffect` 는 내비게이션 컨텍스트를 요구한다 — 이 하네스는 화면 하나만 띄우므로
@@ -57,16 +57,16 @@ jest.mock('@react-navigation/native', () => ({
     react.useEffect(callback, [callback])
   },
 }))
-jest.mock('@core/features/boss-profit/drop-history-store', () => ({
-  ...jest.requireActual('@core/features/boss-profit/drop-history-store'),
+jest.mock('../../../features/boss-profit/drop-history-store', () => ({
+  ...jest.requireActual('../../../features/boss-profit/drop-history-store'),
   useDropHistoryStore: jest.fn(),
 }))
-jest.mock('@core/storage/character-basic-cache', () => ({
-  ...jest.requireActual('@core/storage/character-basic-cache'),
+jest.mock('../../../storage/character-basic-cache', () => ({
+  ...jest.requireActual('../../../storage/character-basic-cache'),
   getCachedCharacterBasic: jest.fn(),
 }))
-jest.mock('@core/storage/character-selection', () => ({
-  ...jest.requireActual('@core/storage/character-selection'),
+jest.mock('../../../storage/character-selection', () => ({
+  ...jest.requireActual('../../../storage/character-selection'),
   getRepresentativeCharacter: jest.fn(),
 }))
 jest.mock('../../use-screen-navigation', () => ({ useScreenNavigation: jest.fn() }))

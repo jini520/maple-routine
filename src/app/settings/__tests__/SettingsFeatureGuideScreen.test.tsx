@@ -16,7 +16,7 @@
 import { act, fireEvent } from '@testing-library/react-native'
 import { ScrollView } from 'react-native'
 
-import type { FeatureGuide } from '@core/types'
+import type { FeatureGuide } from '../../../types'
 
 import { flattenStyle, renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { SettingsFeatureGuideScreen } from '../SettingsFeatureGuideScreen'
@@ -24,10 +24,10 @@ import { useSettingsNavigation } from '../use-settings-navigation'
 
 // 안내 데이터는 화면이 아니라 데이터 파일이 소유한다 — 블록 조합을 훑는 케이스를 위해
 // `src/data/feature-guides/` 를 늘리지 않고 여기서 픽스처를 주입한다.
-jest.mock('@core/data/feature-guides', () => {
+jest.mock('../../../data/feature-guides', () => {
   const guides: unknown[] = []
   return {
-    ...jest.requireActual('@core/data/feature-guides'),
+    ...jest.requireActual('../../../data/feature-guides'),
     FEATURE_GUIDES: guides,
     findFeatureGuide: (id: string): unknown =>
       guides.find((guide) => (guide as { id: string }).id === id),
@@ -35,8 +35,8 @@ jest.mock('@core/data/feature-guides', () => {
 })
 jest.mock('../use-settings-navigation', () => ({ useSettingsNavigation: jest.fn() }))
 
-const mockGuides = jest.requireMock<typeof import('@core/data/feature-guides')>(
-  '@core/data/feature-guides',
+const mockGuides = jest.requireMock<typeof import('../../../data/feature-guides')>(
+  '../../../data/feature-guides',
 ).FEATURE_GUIDES as FeatureGuide[]
 
 function setGuides(guides: FeatureGuide[]): void {

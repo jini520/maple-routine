@@ -1031,7 +1031,7 @@ exports[`렌더 트리 기준선 기록이 있는 현재 주 1`] = `
                         resizeMode="contain"
                         source={
                           {
-                            "testUri": "../../../core/assets/items/intense_power_crystal_weekly.webp",
+                            "testUri": "../../../src/assets/items/intense_power_crystal_weekly.webp",
                           }
                         }
                         style={

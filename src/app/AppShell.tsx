@@ -1,11 +1,11 @@
 import { useEffect } from 'react'
 
-import { useDropEffectStore } from '@core/features/drop-effect/store'
-import { useOnboardingStore } from '@core/features/onboarding/store'
-import { useLiveUpdateStore } from '@core/features/live-update/store'
-import { useThemeStore } from '@core/features/theme/store'
-import { useTrackingModeStore } from '@core/features/tracking-mode/store'
-import { hideSplashScreen } from '@core/native/splash-screen'
+import { useDropEffectStore } from '../features/drop-effect/store'
+import { useOnboardingStore } from '../features/onboarding/store'
+import { useLiveUpdateStore } from '../features/live-update/store'
+import { useThemeStore } from '../features/theme/store'
+import { useTrackingModeStore } from '../features/tracking-mode/store'
+import { hideSplashScreen } from '../native/splash-screen'
 
 import { ToastStack } from '../components/organisms/Toast/ToastStack'
 import { AppNavigation } from '../navigation/AppNavigation'

@@ -7,14 +7,14 @@
 // RN 으로 갈린 것은 일간 카드와 **같은 넷**이라 그쪽 파일 머리에 한 번만 적는다
 // (`DailyContentCards.tsx`) — bleed 는 `MediaCardArt`, 껍데기는 `MediaCard`, `flex-row` 명시,
 // `<img>`/`<span>`/`text-shadow` 의 짝.
-import { getBossPortraitCrop, getBossPortraitUrl } from '@core/lib/boss-icons'
-import type { BossPortraitCrop } from '@core/lib/boss-icons'
-import { getDailyQuestBackgroundUrl, getDailyQuestRegionCrop } from '@core/lib/daily-quest-backgrounds'
-import type { DailyQuestRegionCrop } from '@core/lib/daily-quest-backgrounds'
-import { getDailyQuestRegionIconUrl } from '@core/lib/daily-quest-icons'
-import { matchWeeklyQuestRegionSlug, stripWeeklyQuestPrefix } from '@core/lib/weekly-quest-matching'
-import { matchWeeklyRegionalQuestSlug } from '@core/lib/weekly-regional-quest-matching'
-import type { WeeklyContent } from '@core/types'
+import { getBossPortraitCrop, getBossPortraitUrl } from '../../lib/boss-icons'
+import type { BossPortraitCrop } from '../../lib/boss-icons'
+import { getDailyQuestBackgroundUrl, getDailyQuestRegionCrop } from '../../lib/daily-quest-backgrounds'
+import type { DailyQuestRegionCrop } from '../../lib/daily-quest-backgrounds'
+import { getDailyQuestRegionIconUrl } from '../../lib/daily-quest-icons'
+import { matchWeeklyQuestRegionSlug, stripWeeklyQuestPrefix } from '../../lib/weekly-quest-matching'
+import { matchWeeklyRegionalQuestSlug } from '../../lib/weekly-regional-quest-matching'
+import type { WeeklyContent } from '../../types'
 import { Image, View } from 'react-native'
 
 import { Badge } from '../../components/atoms/Badge/Badge'

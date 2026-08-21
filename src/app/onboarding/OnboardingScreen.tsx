@@ -17,7 +17,7 @@
 //
 // ## 상태는 core 에 있다 — 여기서 다시 만들지 않는다
 //
-// `@core/features/onboarding/store` 가 그대로 산다([[ADR-128]] 결정 4·5). 이 파일이 하는 일은 그
+// `src/features/onboarding/store` 가 그대로 산다([[ADR-128]] 결정 4·5). 이 파일이 하는 일은 그
 // `status` 를 화면에 매핑하는 것과, 웹에 있던 로컬 state 하나(`isSubmittingContent`)를 그대로 두는
 // 것뿐이다.
 //
@@ -31,11 +31,11 @@
 import { useState } from 'react'
 import { View } from 'react-native'
 
-import { useOnboardingStore } from '@core/features/onboarding/store'
+import { useOnboardingStore } from '../../features/onboarding/store'
 import {
   clearRepresentativeCharacter,
   setRepresentativeCharacter,
-} from '@core/storage/character-selection'
+} from '../../storage/character-selection'
 
 import { MapleSweepSpinner } from '../../components/atoms/MapleSweepSpinner/MapleSweepSpinner'
 import { Text } from '../../components/atoms/Text/Text'

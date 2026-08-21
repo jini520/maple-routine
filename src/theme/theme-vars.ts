@@ -17,9 +17,9 @@
  * `buildThemeCss` 의 출력을 **직접 대조**해 두 벌이 갈라지는 것을 막는다.
  */
 
-import { parseHex, toHex } from '@core/lib/color'
-import { THEME_TOKEN_KEYS, deriveMediaScope } from '@core/lib/theme-derive'
-import type { ThemeDefinition } from '@core/types/theme'
+import { parseHex, toHex } from '../lib/color'
+import { THEME_TOKEN_KEYS, deriveMediaScope } from '../lib/theme-derive'
+import type { ThemeDefinition } from '../types/theme'
 
 /** `mediaInkMuted` → `--color-media-ink-muted`. core 의 `toCustomPropertyName` 과 같은 규칙이다. */
 export function toColorVariableName(token: string): string {

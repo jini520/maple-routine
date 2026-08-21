@@ -15,7 +15,7 @@
 //    화면이 렌더할 때 `.map`/`.length` 를 읽으므로 같은 효과이고, 방식은 오히려 단순해진다.
 import { act, fireEvent } from '@testing-library/react-native'
 
-import type { ReleaseNote } from '@core/types'
+import type { ReleaseNote } from '../../../types'
 
 import packageJson from '../../../../package.json'
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
@@ -27,13 +27,13 @@ import { useSettingsNavigation } from '../use-settings-navigation'
 // 주입한다. 아무것도 안 넣으면 `beforeEach` 가 진짜 데이터를 되돌려 놓는다(파일 머리 ④).
 // **배열은 팩토리가 만든다.** 바깥에 `const` 로 두면 팩토리가 먼저 돌아(테스트 파일의 import 시점)
 // 아직 초기화되지 않은 값을 실어 보낸다 — 화면이 `undefined.length` 에서 죽는다(실측).
-jest.mock('@core/data/release-notes', () => ({
-  ...jest.requireActual('@core/data/release-notes'),
+jest.mock('../../../data/release-notes', () => ({
+  ...jest.requireActual('../../../data/release-notes'),
   RELEASE_NOTES: [],
 }))
 
-const mockNotes = jest.requireMock<typeof import('@core/data/release-notes')>(
-  '@core/data/release-notes',
+const mockNotes = jest.requireMock<typeof import('../../../data/release-notes')>(
+  '../../../data/release-notes',
 ).RELEASE_NOTES as ReleaseNote[]
 
 jest.mock('../use-settings-navigation', () => ({ useSettingsNavigation: jest.fn() }))
@@ -75,8 +75,8 @@ function textsIn(node: AtomElement): string[] {
   return texts
 }
 
-const 진짜노트 = jest.requireActual<typeof import('@core/data/release-notes')>(
-  '@core/data/release-notes',
+const 진짜노트 = jest.requireActual<typeof import('../../../data/release-notes')>(
+  '../../../data/release-notes',
 ).RELEASE_NOTES
 
 beforeEach(() => {

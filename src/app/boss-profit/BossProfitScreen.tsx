@@ -52,20 +52,20 @@ import type { ScrollView } from 'react-native'
 import { Pressable, RefreshControl, View } from 'react-native'
 import { useReducedMotion } from 'react-native-reanimated'
 
-import { useBossProfitStore } from '@core/features/boss-profit/store'
-import { usePeriodLoadErrorToast } from '@core/features/boss-profit/use-period-error-toast'
-import { formatSyncedAt } from '@core/features/schedule-sync/format'
+import { useBossProfitStore } from '../../features/boss-profit/store'
+import { usePeriodLoadErrorToast } from '../../features/boss-profit/use-period-error-toast'
+import { formatSyncedAt } from '../../features/schedule-sync/format'
 import {
   useScheduleSyncErrorToast,
   useStaleCharactersToast,
-} from '@core/features/schedule-sync/use-sync-error-toast'
+} from '../../features/schedule-sync/use-sync-error-toast'
 import {
   formatBossProfitPeriodLabel,
   isLatestPeriod,
   isPeriodQueryable,
   isPeriodRefreshable,
-} from '@core/lib/boss-profit-period'
-import { sumDropPayout } from '@core/lib/drop-price'
+} from '../../lib/boss-profit-period'
+import { sumDropPayout } from '../../lib/drop-price'
 
 import { AnimatedMeso } from '../../components/atoms/AnimatedMeso/AnimatedMeso'
 import { ProfitIcon } from '../../components/atoms/ProfitIcon/ProfitIcon'

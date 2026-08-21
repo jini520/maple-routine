@@ -1,5 +1,5 @@
-import { getItemIconUrl } from '@core/lib/item-icons'
-import type { RecordedDrop } from '@core/types/drops'
+import { getItemIconUrl } from '../../../lib/item-icons'
+import type { RecordedDrop } from '../../../types/drops'
 import { Image, View } from 'react-native'
 
 import { SparklesIcon } from '../../../lib/icons'

@@ -1,6 +1,6 @@
 import * as SplashScreen from 'expo-splash-screen'
 
-import { hideSplashScreen } from '@core/native/splash-screen'
+import { hideSplashScreen } from './native/splash-screen'
 
 /**
  * 스플래시를 **React 트리 밖에서** 다루는 두 가지 — 붙들기와 실패 안전 타이머.

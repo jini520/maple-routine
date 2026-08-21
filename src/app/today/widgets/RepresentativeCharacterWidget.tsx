@@ -44,7 +44,7 @@
 
 import { Image, View } from 'react-native'
 
-import { worldEmblemUrl } from '@core/lib/world-emblem'
+import { worldEmblemUrl } from '../../../lib/world-emblem'
 
 import { ProgressBar } from '../../../components/atoms/ProgressBar/ProgressBar'
 import { Text } from '../../../components/atoms/Text/Text'

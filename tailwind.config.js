@@ -18,7 +18,7 @@
 // 이름 규칙(camelCase → kebab)이 `src/theme/theme-vars.ts` 에도 있는 것은 CJS 가 TS 를 못 읽기
 // 때문이고, 두 벌이 갈라지는 것은 `src/theme/__tests__/theme-vars.test.ts` 가 막는다(이 파일의
 // `theme.colors` 키와 그쪽이 내는 변수 이름을 직접 대조한다).
-const jobThemes = require('./core/data/job-themes.json')
+const jobThemes = require('./src/data/job-themes.json')
 const { theme } = require('./tailwind-v4-axes.cjs')
 
 /** `job-themes.json` 항목에서 색 토큰이 **아닌** 필드. 나머지는 전부 38토큰이다. */

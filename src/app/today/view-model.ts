@@ -16,13 +16,13 @@
  * | 값 | 출처 |
  * |---|---|
  * | 컨텐츠 완료 | `../content-scheduler/content-completion`([[ADR-142]] 결정 4의 «규칙의 출처») |
- * | 표시 대상 보스 | `@core/features/boss-scheduler/displayed-bosses`([[ADR-035]]·[[ADR-031]]) |
+ * | 표시 대상 보스 | `src/features/boss-scheduler/displayed-bosses`([[ADR-035]]·[[ADR-031]]) |
  * | 수익 합산 | `../boss-profit/character-groups` 의 `groupTotalMeso`([[ADR-124]] 결정 7) |
- * | 결정석·아이템 분해 | 같은 파일의 `sumPayout` + `@core/lib/drop-price` 의 `sumDropPayout` |
+ * | 결정석·아이템 분해 | 같은 파일의 `sumPayout` + `src/lib/drop-price` 의 `sumDropPayout` |
  * | 결정석 월드 집계 | 같은 파일의 `summarizeWorldCrystals`([[ADR-054]] 결정 5) |
- * | 한도 분모 | `@core/lib/boss-matching` 의 `WEEKLY_CRYSTAL_SALE_LIMIT` |
+ * | 한도 분모 | `src/lib/boss-matching` 의 `WEEKLY_CRYSTAL_SALE_LIMIT` |
  * | 대표 캐릭터 | `resolveDisplayRepresentative`([[ADR-143]] 결정 4의 «임시 대표») |
- * | 초기화 시각 | `@core/lib/reset-clock` · `@core/lib/boss-profit-period` |
+ * | 초기화 시각 | `src/lib/reset-clock` · `src/lib/boss-profit-period` |
  *
  * 그 대가로 **화면 사이 import 가 둘 생긴다**(`content-scheduler`·`boss-profit`). [[ADR-147]] 결정 8이
  * 감수하기로 한 것이고, 판정을 두 벌로 만드는 것보다 낫다.
@@ -34,18 +34,18 @@
  * 셋이 같은 범위여야 위젯 7이 위젯 4의 «없음» 을 설명할 수 있다([[ADR-147]] 결정 9).
  */
 
-import { resolveDisplayRepresentative } from '@core/features/character-manage/derivations'
-import { displayedBosses } from '@core/features/boss-scheduler/displayed-bosses'
-import type { BossCharacterView } from '@core/features/boss-scheduler/store'
-import type { ContentCharacterView } from '@core/features/content-scheduler/store'
-import type { BossProfitRow } from '@core/features/boss-profit/store'
-import { WEEKLY_CRYSTAL_SALE_LIMIT } from '@core/lib/boss-matching'
-import { getShareScope, getSharedContentGroups } from '@core/lib/scheduler-content-scope'
+import { resolveDisplayRepresentative } from '../../features/character-manage/derivations'
+import { displayedBosses } from '../../features/boss-scheduler/displayed-bosses'
+import type { BossCharacterView } from '../../features/boss-scheduler/store'
+import type { ContentCharacterView } from '../../features/content-scheduler/store'
+import type { BossProfitRow } from '../../features/boss-profit/store'
+import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../lib/boss-matching'
+import { getShareScope, getSharedContentGroups } from '../../lib/scheduler-content-scope'
 import {
   formatBossProfitPeriodLabel,
   getAdjacentPeriodKey,
   getCurrentBossProfitPeriod,
-} from '@core/lib/boss-profit-period'
+} from '../../lib/boss-profit-period'
 import {
   formatValuableDroughtItems,
   getPeriodStartUtcMs,
@@ -54,11 +54,11 @@ import {
   type DropHistoryPeriodGroup,
   type DropHistoryRecord,
   type ValuableDroughtSummary,
-} from '@core/lib/drop-history'
-import { dropPayoutMeso, sumDropPayout } from '@core/lib/drop-price'
-import { getCurrentKstDateKey, getMostRecentWeeklyResetKst } from '@core/lib/reset-clock'
-import type { ManualTrackedItem } from '@core/storage/manual-tracked-content'
-import type { TrackingMode } from '@core/storage/tracking-mode'
+} from '../../lib/drop-history'
+import { dropPayoutMeso, sumDropPayout } from '../../lib/drop-price'
+import { getCurrentKstDateKey, getMostRecentWeeklyResetKst } from '../../lib/reset-clock'
+import type { ManualTrackedItem } from '../../storage/manual-tracked-content'
+import type { TrackingMode } from '../../storage/tracking-mode'
 import type {
   BossCycle,
   BossDifficulty,
@@ -66,8 +66,8 @@ import type {
   DailyContent,
   DropCategory,
   WeeklyContent,
-} from '@core/types'
-import type { RecordedDrop } from '@core/types/drops'
+} from '../../types'
+import type { RecordedDrop } from '../../types/drops'
 
 import { orderByTracked } from '../../lib/tracked-order'
 import {
@@ -80,12 +80,12 @@ import {
 import {
   displayedDailyContents,
   displayedWeeklyContents,
-} from '@core/features/content-scheduler/displayed-contents'
+} from '../../features/content-scheduler/displayed-contents'
 
 import {
   shortDailyContentName,
   shortWeeklyContentName,
-} from '@core/features/content-scheduler/short-content-name'
+} from '../../features/content-scheduler/short-content-name'
 
 import { dailyContentCompletion, weeklyContentCompletion } from '../content-scheduler/content-completion'
 

@@ -330,7 +330,7 @@ exports[`트리 스냅샷 그리드가 있는 기본 상태 1`] = `
                             resizeMode="contain"
                             source={
                               {
-                                "testUri": "../../../core/assets/worlds/elysium.png",
+                                "testUri": "../../../src/assets/worlds/elysium.png",
                               }
                             }
                             style={
@@ -562,7 +562,7 @@ exports[`트리 스냅샷 그리드가 있는 기본 상태 1`] = `
                             resizeMode="contain"
                             source={
                               {
-                                "testUri": "../../../core/assets/worlds/bera.png",
+                                "testUri": "../../../src/assets/worlds/bera.png",
                               }
                             }
                             style={
@@ -1279,7 +1279,7 @@ exports[`트리 스냅샷 조회 불가 섹션이 있는 상태 1`] = `
                             resizeMode="contain"
                             source={
                               {
-                                "testUri": "../../../core/assets/worlds/elysium.png",
+                                "testUri": "../../../src/assets/worlds/elysium.png",
                               }
                             }
                             style={
@@ -1511,7 +1511,7 @@ exports[`트리 스냅샷 조회 불가 섹션이 있는 상태 1`] = `
                             resizeMode="contain"
                             source={
                               {
-                                "testUri": "../../../core/assets/worlds/bera.png",
+                                "testUri": "../../../src/assets/worlds/bera.png",
                               }
                             }
                             style={
@@ -2131,7 +2131,7 @@ exports[`트리 스냅샷 조회 불가 섹션이 있는 상태 1`] = `
                               resizeMode="contain"
                               source={
                                 {
-                                  "testUri": "../../../core/assets/worlds/scania.png",
+                                  "testUri": "../../../src/assets/worlds/scania.png",
                                 }
                               }
                               style={

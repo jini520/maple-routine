@@ -21,8 +21,8 @@
  * 전에도 화면은 기본 테마로 그려지고, 저장된 테마가 오면 갈아탄다(웹과 같은 순서).
  */
 
-import { DEFAULT_THEME, getThemeDefinition } from '@core/lib/theme-registry'
-import type { ThemeDefinition, ThemeName } from '@core/types/theme'
+import { DEFAULT_THEME, getThemeDefinition } from '../lib/theme-registry'
+import type { ThemeDefinition, ThemeName } from '../types/theme'
 
 export interface ThemeAppearance {
   theme: ThemeName

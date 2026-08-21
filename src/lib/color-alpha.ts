@@ -1,4 +1,4 @@
-import { parseHex } from '@core/lib/color'
+import { parseHex } from './color'
 
 /**
  * 테마 토큰(16진수) 하나에 알파를 얹어 `rgba()` 문자열을 만든다.

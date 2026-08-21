@@ -1,7 +1,7 @@
 /**
  * 그림 파일 import 의 **타입 선언** ([[ADR-129]]).
  *
- * `packages/core/src/assets/generated/*.ts` 는 `import a0 from '../worlds/nova.png'` 처럼 에셋을
+ * `src/assets/generated/*.ts` 는 `import a0 from '../worlds/nova.png'` 처럼 에셋을
  * 그냥 import 한다 — 웹은 `vite/client` 가 그 모듈을 `string`(URL)으로 선언해 주지만, 이 패키지에는
  * `vite/client` 가 없고 Expo·RN 도 이미지 모듈 선언을 주지 않는다. 없으면 `Cannot find module` 이다.
  *

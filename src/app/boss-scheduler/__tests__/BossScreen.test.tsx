@@ -26,9 +26,9 @@ import {
   useBossSchedulerStore,
   type BossCharacterView,
   type BossSchedulerStore,
-} from '@core/features/boss-scheduler/store'
-import { useTrackingModeStore } from '@core/features/tracking-mode/store'
-import type { MatchedBoss } from '@core/lib/boss-matching'
+} from '../../../features/boss-scheduler/store'
+import { useTrackingModeStore } from '../../../features/tracking-mode/store'
+import type { MatchedBoss } from '../../../lib/boss-matching'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { useScreenNavigation } from '../../use-screen-navigation'
@@ -42,18 +42,18 @@ const mockNoticeApiKeyIssue = jest.fn()
 const navigate = jest.fn()
 
 // [[ADR-063]]: 동기화 실패·파티원 수 저장 실패는 인라인 문단이 아니라 토스트다.
-jest.mock('@core/features/toast/store', () => ({
+jest.mock('../../../features/toast/store', () => ({
   useToastStore: {
     getState: () => ({ showError: mockShowError, showSuccess: jest.fn(), showInfo: mockShowInfo }),
   },
 }))
 
 // [[ADR-115]] 결정 7 · [[ADR-116]] 결정 1: 401·429 는 토스트가 아니라 키 재입력 진입점으로 간다.
-jest.mock('@core/features/onboarding/store', () => ({
+jest.mock('../../../features/onboarding/store', () => ({
   useOnboardingStore: { getState: () => ({ noticeApiKeyIssue: mockNoticeApiKeyIssue }) },
 }))
 
-jest.mock('@core/features/boss-scheduler/store', () => ({
+jest.mock('../../../features/boss-scheduler/store', () => ({
   useBossSchedulerStore: jest.fn(),
   partySizeKey: (ocid: string, boss: string, difficulty: string) => `${ocid}:${boss}:${difficulty}`,
 }))

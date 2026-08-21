@@ -8,13 +8,13 @@
 // **테마 이름을 손으로 나열하지 않는다**([[ADR-064]] 결정 10) — 레지스트리에서 둘을 뽑아 쓴다.
 import { act, fireEvent } from '@testing-library/react-native'
 
-import { useThemeStore } from '@core/features/theme/store'
-import { THEME_NAMES } from '@core/lib/theme-registry'
+import { useThemeStore } from '../../../features/theme/store'
+import { THEME_NAMES } from '../../../lib/theme-registry'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { ThemeModal } from '../ThemeModal'
 
-jest.mock('@core/features/theme/store', () => ({
+jest.mock('../../../features/theme/store', () => ({
   useThemeStore: jest.fn(),
 }))
 

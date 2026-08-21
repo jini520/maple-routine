@@ -15,16 +15,16 @@
 import { act, fireEvent, within } from '@testing-library/react-native'
 import { StyleSheet } from 'react-native'
 
-import { getCharacterPickerRoster } from '@core/features/schedule-sync/schedule-sync'
-import { fetchCharacterList } from '@core/nexon/character'
-import { NexonAuthError, NexonRateLimitError } from '@core/nexon/errors'
-import { getAuthConfig } from '@core/storage/api-key'
-import { getCachedCharacterBasic } from '@core/storage/character-basic-cache'
-import { getRepresentativeCharacter } from '@core/storage/character-selection'
-import { getScheduleProbeLedger } from '@core/storage/schedule-probe-ledger'
-import { useContentSchedulerStore, type ContentSchedulerStore } from '@core/features/content-scheduler/store'
-import type { CachedCharacterBasicEntry } from '@core/storage/character-basic-cache'
-import type { CharacterPickerEntry, MapleAccount, MapleCharacter } from '@core/types'
+import { getCharacterPickerRoster } from '../../../features/schedule-sync/schedule-sync'
+import { fetchCharacterList } from '../../../nexon/character'
+import { NexonAuthError, NexonRateLimitError } from '../../../nexon/errors'
+import { getAuthConfig } from '../../../storage/api-key'
+import { getCachedCharacterBasic } from '../../../storage/character-basic-cache'
+import { getRepresentativeCharacter } from '../../../storage/character-selection'
+import { getScheduleProbeLedger } from '../../../storage/schedule-probe-ledger'
+import { useContentSchedulerStore, type ContentSchedulerStore } from '../../../features/content-scheduler/store'
+import type { CachedCharacterBasicEntry } from '../../../storage/character-basic-cache'
+import type { CharacterPickerEntry, MapleAccount, MapleCharacter } from '../../../types'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { ContentCharacterStep } from '../ContentCharacterStep'
@@ -33,31 +33,31 @@ import { ContentCharacterStep } from '../ContentCharacterStep'
 const mockGetRoster = jest.fn()
 const mockNoticeApiKeyIssue = jest.fn()
 
-jest.mock('@core/nexon/character', () => ({ fetchCharacterList: jest.fn() }))
-jest.mock('@core/storage/api-key', () => ({ getAuthConfig: jest.fn() }))
-jest.mock('@core/storage/character-basic-cache', () => ({ getCachedCharacterBasic: jest.fn() }))
-jest.mock('@core/storage/character-selection', () => ({
+jest.mock('../../../nexon/character', () => ({ fetchCharacterList: jest.fn() }))
+jest.mock('../../../storage/api-key', () => ({ getAuthConfig: jest.fn() }))
+jest.mock('../../../storage/character-basic-cache', () => ({ getCachedCharacterBasic: jest.fn() }))
+jest.mock('../../../storage/character-selection', () => ({
   getRepresentativeCharacter: jest.fn(),
   setRepresentativeCharacter: jest.fn(),
   clearRepresentativeCharacter: jest.fn(),
 }))
-jest.mock('@core/storage/schedule-probe-ledger', () => ({ getScheduleProbeLedger: jest.fn() }))
+jest.mock('../../../storage/schedule-probe-ledger', () => ({ getScheduleProbeLedger: jest.fn() }))
 
 // [[ADR-062]]: `toScheduleSyncError` 는 실물을 쓴다(문구가 원인에서 나온다). `...requireActual` 을
 // 통째로 쓰면 순환 참조가 아직 구성 중인 모듈을 `undefined` 로 만난다 — 부분 모킹이 그 처방이다.
-jest.mock('@core/features/schedule-sync/schedule-sync', () => ({
-  toScheduleSyncError: jest.requireActual<typeof import('@core/features/schedule-sync/errors')>(
-    '@core/features/schedule-sync/errors',
+jest.mock('../../../features/schedule-sync/schedule-sync', () => ({
+  toScheduleSyncError: jest.requireActual<typeof import('../../../features/schedule-sync/errors')>(
+    '../../../features/schedule-sync/errors',
   ).toScheduleSyncError,
   getCharacterPickerRoster: (...args: unknown[]) => mockGetRoster(...args),
 }))
 
-jest.mock('@core/features/content-scheduler/store', () => ({ useContentSchedulerStore: jest.fn() }))
+jest.mock('../../../features/content-scheduler/store', () => ({ useContentSchedulerStore: jest.fn() }))
 
 // [[ADR-116]] 결정 1: 429 는 키 재입력 진입점으로 간다(#176 하드 잠금의 유일한 출구).
 // **`useApiKeyNotice` 는 실물을 쓴다** — 이 파일이 보려는 것이 "무엇을 그 훅에 넘기는가"라,
 // 훅을 목으로 세우면 검사 대상이 사라진다. 그래서 그 끝인 스토어만 세운다.
-jest.mock('@core/features/onboarding/store', () => ({
+jest.mock('../../../features/onboarding/store', () => ({
   useOnboardingStore: { getState: () => ({ noticeApiKeyIssue: mockNoticeApiKeyIssue }) },
 }))
 

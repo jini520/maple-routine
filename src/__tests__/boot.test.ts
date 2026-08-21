@@ -45,9 +45,9 @@ jest.mock('react-native-google-mobile-ads', () => ({
 import {
   getOnboardingAccountScope,
   setOnboardingAccountScope,
-} from '@core/features/onboarding/flow'
-import * as nativePorts from '@core/native/ports'
-import * as storagePorts from '@core/storage/ports'
+} from '../features/onboarding/flow'
+import * as nativePorts from '../native/ports'
+import * as storagePorts from '../storage/ports'
 
 import { installPorts } from '../boot'
 import { rnLiveUpdatePort } from '../native/adapters/rn-live-update'

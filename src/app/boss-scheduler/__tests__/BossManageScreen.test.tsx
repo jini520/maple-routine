@@ -13,17 +13,17 @@
 import { act, fireEvent, screen } from '@testing-library/react-native'
 import { useState } from 'react'
 
-import weeklyBossesData from '@core/data/weekly-bosses.json'
+import weeklyBossesData from '../../../data/weekly-bosses.json'
 import {
   useBossSchedulerStore,
   type BossCharacterView,
   type BossSchedulerStore,
   type BossTab,
-} from '@core/features/boss-scheduler/store'
-import { useTrackingModeStore } from '@core/features/tracking-mode/store'
-import { WEEKLY_BOSS_CLEAR_LIMIT } from '@core/lib/boss-matching'
-import type { MatchedBoss } from '@core/lib/boss-matching'
-import type { ManualTrackedItem } from '@core/types'
+} from '../../../features/boss-scheduler/store'
+import { useTrackingModeStore } from '../../../features/tracking-mode/store'
+import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss-matching'
+import type { MatchedBoss } from '../../../lib/boss-matching'
+import type { ManualTrackedItem } from '../../../types'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { useScreenNavigation } from '../../use-screen-navigation'
@@ -33,13 +33,13 @@ const mockShowError = jest.fn()
 const mockShowInfo = jest.fn()
 const goBack = jest.fn()
 
-jest.mock('@core/features/toast/store', () => ({
+jest.mock('../../../features/toast/store', () => ({
   useToastStore: {
     getState: () => ({ showError: mockShowError, showSuccess: jest.fn(), showInfo: mockShowInfo }),
   },
 }))
 
-jest.mock('@core/features/boss-scheduler/store', () => ({
+jest.mock('../../../features/boss-scheduler/store', () => ({
   useBossSchedulerStore: jest.fn(),
   partySizeKey: (ocid: string, boss: string, difficulty: string) => `${ocid}:${boss}:${difficulty}`,
 }))

@@ -5,13 +5,13 @@
 // `displayedBosses` 가, 수익은 `groupTotalMeso` 가, 한도 분모는 `WEEKLY_CRYSTAL_SALE_LIMIT` 가
 // 판정한다. 판정이 두 벌이 되면 today 와 원래 화면이 **다른 수를 말한다.**
 
-import { WEEKLY_CRYSTAL_SALE_LIMIT } from '@core/lib/boss-matching'
-import type { MatchedBoss } from '@core/lib/boss-matching'
-import type { DropHistoryPeriodGroup, DropHistoryRecord } from '@core/lib/drop-history'
-import type { BossProfitRow } from '@core/features/boss-profit/store'
-import type { ContentCharacterView } from '@core/features/content-scheduler/store'
-import type { BossCharacterView } from '@core/features/boss-scheduler/store'
-import type { CharacterBasicProfile, DailyContent, WeeklyContent } from '@core/types'
+import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../../lib/boss-matching'
+import type { MatchedBoss } from '../../../lib/boss-matching'
+import type { DropHistoryPeriodGroup, DropHistoryRecord } from '../../../lib/drop-history'
+import type { BossProfitRow } from '../../../features/boss-profit/store'
+import type { ContentCharacterView } from '../../../features/content-scheduler/store'
+import type { BossCharacterView } from '../../../features/boss-scheduler/store'
+import type { CharacterBasicProfile, DailyContent, WeeklyContent } from '../../../types'
 
 import { buildTodayViewModel, type TodayViewModelInput } from '../view-model'
 

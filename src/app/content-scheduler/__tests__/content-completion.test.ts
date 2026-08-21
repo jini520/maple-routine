@@ -2,7 +2,7 @@
 //
 // 케이스를 카드 렌더러의 갈래마다 하나씩 둔다 — 이 표가 카드와 갈라지는 순간이 곧 링이 거짓말을
 // 시작하는 순간이라, 여기 없는 갈래는 «아직 안 본 갈래» 가 아니라 **빠뜨린 갈래**다.
-import type { DailyContent, WeeklyContent } from '@core/types'
+import type { DailyContent, WeeklyContent } from '../../../types'
 
 import {
   dailyContentCompletion,

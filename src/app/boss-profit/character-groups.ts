@@ -13,19 +13,19 @@
 // 결정 4 가 83% 무수정을 지키는 조건이다), core 이동은 「어느 계산이 뷰 밖인가」를 화면 전부가
 // 붙은 뒤에 한 번에 판정해야 하는 별도 결정이다. 지금 하나만 옮기면 그 판정이 파일 단위로 흩어진다.
 //
-// 옮길 때 확인할 것: 아래 함수들은 전부 `@core/*` 만 참조하므로 **경로 수정 없이** 이동한다.
+// 옮길 때 확인할 것: 아래 함수들은 전부 `src/*` 만 참조하므로 **경로 수정 없이** 이동한다.
 //
 // ── RN 으로 옮기며 바뀐 것: 없다 ────────────────────────────────────────────────────
 //
 // 웹판과 한 줄도 다르지 않다(주석 제외). 그 사실 자체가 위 문단의 근거다.
 
-import { dropRowKey } from '@core/features/boss-profit/store'
-import type { BossProfitRow, BossProfitWeeklySubtotal } from '@core/features/boss-profit/store'
-import { isSeasonBossName } from '@core/lib/boss-matching'
-import { isValuableDrop } from '@core/lib/valuable-drops'
-import { sumDropPayout } from '@core/lib/drop-price'
-import type { RecordedDrop } from '@core/types/drops'
-import weeklyBossesData from '@core/data/weekly-bosses.json'
+import { dropRowKey } from '../../features/boss-profit/store'
+import type { BossProfitRow, BossProfitWeeklySubtotal } from '../../features/boss-profit/store'
+import { isSeasonBossName } from '../../lib/boss-matching'
+import { isValuableDrop } from '../../lib/valuable-drops'
+import { sumDropPayout } from '../../lib/drop-price'
+import type { RecordedDrop } from '../../types/drops'
+import weeklyBossesData from '../../data/weekly-bosses.json'
 
 export interface BossReferenceEntry {
   boss: string

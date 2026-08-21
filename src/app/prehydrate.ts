@@ -2,7 +2,7 @@
  * 탭 스토어 선하이드레이션([[ADR-101]] 결정 2·5·6)을 부르는 **한 자리** — 동적 `import()` 를 여기
  * 가둔다.
  *
- * 셸이 직접 `void import('@core/features/prehydrate').then(...)` 를 쓰던 것을 이 한 줄로 바꾼 것이고,
+ * 셸이 직접 `void import('../features/prehydrate').then(...)` 를 쓰던 것을 이 한 줄로 바꾼 것이고,
  * **런타임 동작은 같다**(같은 시점에 같은 모듈을 받아 같은 함수를 부른다). 가둔 이유가 둘이다.
  *
  * ## ① 동적 import 를 왜 그대로 두는가
@@ -29,6 +29,6 @@
  * 한 줄 때문에 죽는 경로가 없어진다.
  */
 export async function prehydrateTabStores(): Promise<void> {
-  const module = await import('@core/features/prehydrate')
+  const module = await import('../features/prehydrate')
   await module.prehydrateTabStores()
 }

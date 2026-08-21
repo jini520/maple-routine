@@ -1,7 +1,7 @@
 # 알림 (Notifications)
 
 > **범위**: 알림 레이어 구조·레지스트리·예약 재조정(reconcile)·푸시 경로·권한·실패 처리. 결정의 배경과 기각안은 [[ADR-146]], 옛 정책은 [[ADR-004]].
-> **관련 소스(read/write)**: `core/native/ports.ts`(`NotificationsPort` **기존** · `PushPort`·`BackgroundTaskPort` **신설**) · `core/native/notifications.ts`·`push.ts`·`background-task.ts` · `core/features/notifications/`(레지스트리·계획·재조정·스토어) · `core/storage/notification-settings.ts`·`notification-ledger.ts`·`keys.ts` · RN 어댑터 `src/native/adapters/rn-notifications.ts`(기존)·`rn-push.ts`·`rn-background-task.ts` · RN 진입점 `index.ts`(모듈 최상위 핸들러 셋) · `app.json` · `workers/notice-push/`(발송 Worker).
+> **관련 소스(read/write)**: `src/native/ports.ts`(`NotificationsPort` **기존** · `PushPort`·`BackgroundTaskPort` **신설**) · `src/native/notifications.ts`·`push.ts`·`background-task.ts` · `src/features/notifications/`(레지스트리·계획·재조정·스토어) · `src/storage/notification-settings.ts`·`notification-ledger.ts`·`keys.ts` · RN 어댑터 `src/native/adapters/rn-notifications.ts`(기존)·`rn-push.ts`·`rn-background-task.ts` · RN 진입점 `index.ts`(모듈 최상위 핸들러 셋) · `app.json` · `workers/notice-push/`(발송 Worker).
 > **관련 ADR**: [[ADR-146]] [[ADR-004]] [[ADR-008]] [[ADR-003]] [[ADR-128]] [[ADR-137]]. **관련 문서**: [../foundation/architecture.md](../foundation/architecture.md), [../foundation/error-resilience.md](../foundation/error-resilience.md), [../foundation/nexon-api.md](../foundation/nexon-api.md), [../foundation/release.md](../foundation/release.md), [../persistence/preferences.md](../persistence/preferences.md), [settings.md](./settings.md), [live-update.md](./live-update.md).
 
 > **현재 상태 (2026-08-17)**: **설계 완료, 구현 전.** 지금 저장소에 있는 것은 `NotificationsPort` 와 두 어댑터뿐이고 **그 포트를 부르는 `features/` 코드는 없다.** 이 문서는 만들 것을 적은 것이지 있는 것을 적은 것이 아니다.

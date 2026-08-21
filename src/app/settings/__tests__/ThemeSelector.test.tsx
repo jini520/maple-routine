@@ -12,8 +12,8 @@
 // 레지스트리에서 온다. 그래야 테마가 늘어도 이 파일이 함께 커지지 않는다.
 import { act, fireEvent } from '@testing-library/react-native'
 
-import { THEME_NAMES, getThemeDefinition, groupThemesByCategory } from '@core/lib/theme-registry'
-import type { ThemeName } from '@core/types/theme'
+import { THEME_NAMES, getThemeDefinition, groupThemesByCategory } from '../../../lib/theme-registry'
+import type { ThemeName } from '../../../types/theme'
 
 import { flattenStyle, renderAtom, type AtomElement } from '../../../components/__tests__/render-atom'
 import { ThemeSelector } from '../ThemeSelector'

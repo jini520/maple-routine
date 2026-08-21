@@ -34,25 +34,25 @@
 import { useEffect, useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
 
-import { useBossProfitStore } from '@core/features/boss-profit/store'
+import { useBossProfitStore } from '../../features/boss-profit/store'
 import {
   useDropPriceStore,
   type DropPriceEntry,
   type DropPriceGroup,
-} from '@core/features/boss-profit/drop-price-store'
-import { useToastStore } from '@core/features/toast/store'
-import { DEFAULT_MAX_PARTY_SIZE, findPriceEntry } from '@core/lib/boss-crystal-prices'
-import { formatMesoShort } from '@core/lib/boss-profit-delta'
+} from '../../features/boss-profit/drop-price-store'
+import { useToastStore } from '../../features/toast/store'
+import { DEFAULT_MAX_PARTY_SIZE, findPriceEntry } from '../../lib/boss-crystal-prices'
+import { formatMesoShort } from '../../lib/boss-profit-delta'
 import {
   formatBossProfitPeriodLabel,
   getAdjacentPeriodKey,
   isEarliestNavigablePeriod,
   isLatestPeriod,
-} from '@core/lib/boss-profit-period'
-import { dropPayoutMeso } from '@core/lib/drop-price'
-import { getItemIconUrl } from '@core/lib/item-icons'
-import { isValuableDrop } from '@core/lib/valuable-drops'
-import type { RecordedDrop } from '@core/types/drops'
+} from '../../lib/boss-profit-period'
+import { dropPayoutMeso } from '../../lib/drop-price'
+import { getItemIconUrl } from '../../lib/item-icons'
+import { isValuableDrop } from '../../lib/valuable-drops'
+import type { RecordedDrop } from '../../types/drops'
 
 import { DifficultyBadge } from '../../components/atoms/DifficultyBadge/DifficultyBadge'
 import { ProfitIcon } from '../../components/atoms/ProfitIcon/ProfitIcon'

@@ -7,7 +7,7 @@
 // **그림은 `testUri` 로 본다.** jest 에서 번들 에셋은 숫자가 아니라 `{ testUri }` 대역이라
 // ([[ADR-129]] 의 `image-asset.native.ts`) *"어느 파일로 해석됐는가"* 를 그 문자열로 묻는다 —
 // 웹이 `src` 속성으로 묻던 것과 같은 질문이다.
-import type { DailyContent, WeeklyContent } from '@core/types'
+import type { DailyContent, WeeklyContent } from '../../../types'
 
 import { findAllOfType, renderAtom, type AtomElement } from '../../../components/__tests__/render-atom'
 import { renderDailyContentCard } from '../DailyContentCards'

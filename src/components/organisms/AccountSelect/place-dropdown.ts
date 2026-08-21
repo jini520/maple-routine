@@ -1,7 +1,7 @@
 /**
  * 메이플 ID 목록을 어디에 앉힐지 — 순수 기하([[ADR-144]] 결정 6).
  *
- * **컴포넌트 파일 밖에 사는 이유**는 `@core/lib/popover-anchor.ts`(웹·RN 공용 팝오버 기하)와 같다 —
+ * **컴포넌트 파일 밖에 사는 이유**는 `src/lib/popover-anchor.ts`(웹·RN 공용 팝오버 기하)와 같다 —
  * 값 계산이라 화면 없이 검사할 수 있고, 컴포넌트 파일이 값을 export 하면 fast refresh 가 깨진다
  * (`Button/variants.ts`·`SettingsRow/row-class.ts` 와 같은 판단). core 가 아니라 여기 있는 것은
  * 웹뷰 앱에 짝이 되는 화면이 없기 때문이다(적용 범위는 `app-rn` 뿐 — [[ADR-144]]).

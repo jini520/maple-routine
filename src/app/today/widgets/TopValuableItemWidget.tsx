@@ -27,8 +27,8 @@
 
 import { Image, View } from 'react-native'
 
-import { formatMesoShort } from '@core/lib/boss-profit-delta'
-import { getItemIconUrl } from '@core/lib/item-icons'
+import { formatMesoShort } from '../../../lib/boss-profit-delta'
+import { getItemIconUrl } from '../../../lib/item-icons'
 
 import { Text } from '../../../components/atoms/Text/Text'
 import { TABULAR_NUMS } from '../../../lib/text-styles'

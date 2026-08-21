@@ -28,10 +28,10 @@
 import { useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
 
-import { formatMesoUnits } from '@core/lib/drop-price'
-import { getItemIconUrl } from '@core/lib/item-icons'
-import type { BossDifficulty } from '@core/types'
-import type { RecordedDrop } from '@core/types/drops'
+import { formatMesoUnits } from '../../lib/drop-price'
+import { getItemIconUrl } from '../../lib/item-icons'
+import type { BossDifficulty } from '../../types'
+import type { RecordedDrop } from '../../types/drops'
 
 import { DifficultyBadge } from '../../components/atoms/DifficultyBadge/DifficultyBadge'
 import { Text } from '../../components/atoms/Text/Text'

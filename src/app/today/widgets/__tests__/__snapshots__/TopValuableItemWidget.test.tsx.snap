@@ -31,7 +31,7 @@ exports[`스냅샷 — 네 크기 1x1 1`] = `
       resizeMode="contain"
       source={
         {
-          "testUri": "../../../core/assets/items/dawn_boss_ring.png",
+          "testUri": "../../../src/assets/items/dawn_boss_ring.png",
         }
       }
       style={
@@ -106,7 +106,7 @@ exports[`스냅샷 — 네 크기 2x1 1`] = `
       resizeMode="contain"
       source={
         {
-          "testUri": "../../../core/assets/items/dawn_boss_ring.png",
+          "testUri": "../../../src/assets/items/dawn_boss_ring.png",
         }
       }
       style={
@@ -241,7 +241,7 @@ exports[`스냅샷 — 네 크기 2x2 1`] = `
         resizeMode="contain"
         source={
           {
-            "testUri": "../../../core/assets/items/dawn_boss_ring.png",
+            "testUri": "../../../src/assets/items/dawn_boss_ring.png",
           }
         }
         style={
@@ -412,7 +412,7 @@ exports[`스냅샷 — 네 크기 4x2 1`] = `
           resizeMode="contain"
           source={
             {
-              "testUri": "../../../core/assets/items/dawn_boss_ring.png",
+              "testUri": "../../../src/assets/items/dawn_boss_ring.png",
             }
           }
           style={

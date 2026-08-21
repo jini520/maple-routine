@@ -28,8 +28,8 @@ import {
   FEATURE_GUIDES,
   FEATURE_GUIDE_GROUP_LABELS,
   FEATURE_GUIDE_GROUP_ORDER,
-} from '@core/data/feature-guides'
-import type { FeatureGuideGroup } from '@core/types'
+} from '../../data/feature-guides'
+import type { FeatureGuideGroup } from '../../types'
 
 import { Card } from '../../components/atoms/Card/Card'
 import { Text } from '../../components/atoms/Text/Text'

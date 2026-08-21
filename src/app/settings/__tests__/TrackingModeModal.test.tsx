@@ -7,14 +7,14 @@
 // ③ 누른 뒤 화면을 보려면 `act` 로 흘려보낸다(`CacheClearConfirm` 테스트 파일 머리 ③).
 import { act, fireEvent } from '@testing-library/react-native'
 
-import { TRACKING_MODE_OPTIONS } from '@core/features/tracking-mode/copy'
-import { useTrackingModeStore } from '@core/features/tracking-mode/store'
-import type { TrackingMode } from '@core/storage/tracking-mode'
+import { TRACKING_MODE_OPTIONS } from '../../../features/tracking-mode/copy'
+import { useTrackingModeStore } from '../../../features/tracking-mode/store'
+import type { TrackingMode } from '../../../storage/tracking-mode'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { TrackingModeModal } from '../TrackingModeModal'
 
-jest.mock('@core/features/tracking-mode/store', () => ({
+jest.mock('../../../features/tracking-mode/store', () => ({
   useTrackingModeStore: jest.fn(),
 }))
 

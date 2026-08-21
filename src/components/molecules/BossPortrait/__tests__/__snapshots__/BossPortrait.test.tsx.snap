@@ -29,7 +29,7 @@ exports[`BossPortrait 렌더 트리 스냅샷 — 이후 변경을 잡는 기준
       resizeMode="cover"
       source={
         {
-          "testUri": "../../../core/assets/bosses/lucid.webp",
+          "testUri": "../../../src/assets/bosses/lucid.webp",
         }
       }
       style={

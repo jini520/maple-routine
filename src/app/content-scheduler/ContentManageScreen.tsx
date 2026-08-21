@@ -21,16 +21,16 @@ import { useEffect, useState } from 'react'
 import { Pressable, View } from 'react-native'
 import type { LucideIcon } from 'lucide-react-native'
 
-import { CONTENT_TEMPLATE } from '@core/lib/scheduler-content-template'
+import { CONTENT_TEMPLATE } from '../../lib/scheduler-content-template'
 import {
   categorizeContentEntries,
   contentCountTag,
   isGuildContent,
   WEEKLY_CATEGORY_ORDER,
-} from '@core/lib/content-category'
-import { useContentSchedulerStore, type ContentTab } from '@core/features/content-scheduler/store'
-import { useTrackingModeStore } from '@core/features/tracking-mode/store'
-import { useToastStore } from '@core/features/toast/store'
+} from '../../lib/content-category'
+import { useContentSchedulerStore, type ContentTab } from '../../features/content-scheduler/store'
+import { useTrackingModeStore } from '../../features/tracking-mode/store'
+import { useToastStore } from '../../features/toast/store'
 
 import { Text } from '../../components/atoms/Text/Text'
 import { CharacterRail, type CharacterRailEntry } from '../../components/molecules/CharacterRail/CharacterRail'

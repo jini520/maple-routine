@@ -5,8 +5,8 @@
 // [[ADR-124]] 가 드롭 가격에서 지키는 것과 같은 원칙이다.
 import { act, fireEvent } from '@testing-library/react-native'
 
-import { clearCountUpMemory } from '@core/lib/use-count-up'
-import type { WeeklySubtotalState } from '@core/features/boss-profit/store'
+import { clearCountUpMemory } from '../../../lib/use-count-up'
+import type { WeeklySubtotalState } from '../../../features/boss-profit/store'
 
 import { flattenStyle } from '../../../components/__tests__/render-atom'
 import { MonthlyAccordionBody, WeeklyAccordionBody, WeeklySubtotalRow } from '../AccordionBody'

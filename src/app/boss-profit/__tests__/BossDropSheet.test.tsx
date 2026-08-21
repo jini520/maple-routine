@@ -45,7 +45,7 @@ jest.mock('@gorhom/bottom-sheet', () => {
   }
 })
 
-import { useDropEffectStore } from '@core/features/drop-effect/store'
+import { useDropEffectStore } from '../../../features/drop-effect/store'
 
 import { installMemoryPreferences } from '../../../navigation/__tests__/memory-preferences'
 

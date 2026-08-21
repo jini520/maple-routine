@@ -9,8 +9,8 @@ import { act, fireEvent } from '@testing-library/react-native'
 import {
   summarizeAccount,
   type AccountSummaryView,
-} from '@core/features/character-manage/derivations'
-import type { MapleCharacter } from '@core/types'
+} from '../../../../features/character-manage/derivations'
+import type { MapleCharacter } from '../../../../types'
 
 import { flattenStyle, renderOverlay, 기본테마, type TreeNode } from '../../../__tests__/render-atom'
 import { AccountSelect } from '../AccountSelect'

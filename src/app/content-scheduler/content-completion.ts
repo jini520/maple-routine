@@ -19,9 +19,9 @@
 //
 // **길드 지하 수로는 여기 있다가 나갔다**([[ADR-142]] 정정 7) — 점수에 상한이 없는 것은 같지만,
 // «0점이 아니면 완료» 라는 답이 있었다(사용자 지시). 상한이 없다고 판정이 불가능한 것은 아니다.
-import { matchWeeklyQuestRegionSlug, stripWeeklyQuestPrefix } from '@core/lib/weekly-quest-matching'
-import { matchWeeklyRegionalQuestSlug } from '@core/lib/weekly-regional-quest-matching'
-import type { DailyContent, WeeklyContent } from '@core/types'
+import { matchWeeklyQuestRegionSlug, stripWeeklyQuestPrefix } from '../../lib/weekly-quest-matching'
+import { matchWeeklyRegionalQuestSlug } from '../../lib/weekly-regional-quest-matching'
+import type { DailyContent, WeeklyContent } from '../../types'
 
 import {
   FAITHFUL_INVESTIGATION_BACKGROUND_SLUG,

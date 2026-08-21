@@ -13,7 +13,7 @@
 // 것과 문구가 살아 있는 것은 다른 이야기다.
 import { act, fireEvent } from '@testing-library/react-native'
 
-import type { LiveUpdateStatus } from '@core/features/live-update/store'
+import type { LiveUpdateStatus } from '../../../features/live-update/store'
 
 import { renderAtom, type AtomElement } from '../../../components/__tests__/render-atom'
 import {

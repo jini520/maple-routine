@@ -1,7 +1,7 @@
 # 광고 (Ads)
 
 > **범위**: 광고 포맷·노출 지점·노출 게이트·어댑터 경계·스토어 부수 요건. 결정의 배경과 폐기된 대안은 [[ADR-090]].
-> **관련 소스**: `src/native/adapters/rn-ads.ts`·`ads-env.ts` · `app.json`(앱 ID) · `core/native/ads.ts`(광고 단위 ID·판정 함수) · `android/…/AndroidManifest.xml` · `ios/app/Info.plist`. **`core/features/ads/`·`core/storage/ads.ts` 는 지금 소비자가 없다** — 아래 「전면광고」 절 참고.
+> **관련 소스**: `src/native/adapters/rn-ads.ts`·`ads-env.ts` · `app.json`(앱 ID) · `src/native/ads.ts`(광고 단위 ID·판정 함수) · `android/…/AndroidManifest.xml` · `ios/app/Info.plist`. **`src/features/ads/`·`src/storage/ads.ts` 는 지금 소비자가 없다** — 아래 「전면광고」 절 참고.
 > **관련 ADR**: [[ADR-090]] [[ADR-150]] [[ADR-128]] [[ADR-005]] [[ADR-003]] [[ADR-013]] [[ADR-007]]. **관련 문서**: [settings.md](./settings.md), [../foundation/product.md](../foundation/product.md), [../foundation/architecture.md](../foundation/architecture.md).
 
 ## 정책
@@ -14,7 +14,7 @@
 > **이 앱은 현재 광고가 하나도 없다(수익 0).** 아래 절을 남겨 두는 이유는 인라인 광고를 붙일 때
 > 게이트 정책(간격·업타임·빈도)을 여기서 다시 읽기 때문이다.
 >
-> 그래서 `core/features/ads/`·`core/storage/ads.ts` 는 **부르는 곳이 없는 코드**가 됐다.
+> 그래서 `src/features/ads/`·`src/storage/ads.ts` 는 **부르는 곳이 없는 코드**가 됐다.
 > 지울지 남길지는 인라인 광고 설계와 함께 판단한다(아래 「열린 질문」).
 
 ### 포맷과 지점: 탭 전환 시 전면광고(Interstitial) — **지금은 아무도 안 쓴다**
@@ -122,7 +122,7 @@
 인벤토리」다.
 
 **`src/__tests__/interstitial-policy.test.ts` 가 되돌아오는 것을 막는다** — app-rn 소스에
-`features/ads/tab-switch-ad` import 가 0건이어야 한다. `@core/native/ads` 는 잡지 않는다(어댑터가
+`features/ads/tab-switch-ad` import 가 0건이어야 한다. `@src/native/ads` 는 잡지 않는다(어댑터가
 계속 쓴다).
 
 > **SDK 초기화 자리가 비어 있다.** `startAds()` 가 초기화와 사전 로드를 함께 했으므로, 인라인
@@ -131,8 +131,8 @@
 
 ~~**`packages/core` 는 무변경이다** — `features/ads/`·`native/ads.ts`·`storage/ads.ts` 는
 `app-capacitor` 가 지금도 쓰고 있다.~~ → **그 소비자가 사라졌다**([[ADR-155]]).
-`core/native/ads.ts` 의 판정 함수 둘은 RN 어댑터가 계속 쓰지만, `core/features/ads/`(게이트
-오케스트레이션)와 `core/storage/ads.ts`(마지막 노출 시각)는 **부르는 곳이 0** 이다.
+`src/native/ads.ts` 의 판정 함수 둘은 RN 어댑터가 계속 쓰지만, `src/features/ads/`(게이트
+오케스트레이션)와 `src/storage/ads.ts`(마지막 노출 시각)는 **부르는 곳이 0** 이다.
 
 #### 어댑터가 채우는 값 (그대로 유효)
 
@@ -142,7 +142,7 @@
 
 | 값 | 위치 |
 |---|---|
-| 광고 단위 ID(`/`) | `core/native/ads.ts` |
+| 광고 단위 ID(`/`) | `src/native/ads.ts` |
 | Android·iOS 앱 ID(`~`) | `app.json` 의 config plugin 인자 → `expo prebuild` 가 `AndroidManifest.xml`·`Info.plist` 에 쓴다 |
 
 환경 변수는 Vite 이름을 Expo 이름으로 바꿔 채운다(`src/native/adapters/ads-env.ts`) —

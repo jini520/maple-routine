@@ -19,7 +19,7 @@
 import { Image, View, type ImageStyle } from 'react-native'
 import { Circle } from 'react-native-svg'
 
-import type { BossCycle } from '@core/types'
+import type { BossCycle } from '../../types'
 
 import { Text } from '../../components/atoms/Text/Text'
 import { Svg } from '../../lib/nativewind-interop'

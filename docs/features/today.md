@@ -244,7 +244,7 @@ today 가 세는 «남은 것» 은 스케줄러 화면이 보여 주는 것과 
 | 판정 | 지금 자리 | 처리 |
 |---|---|---|
 | **표시 대상 컨텐츠** | ~~`ContentScreen.tsx` 지역 함수 `dailyContentsOf`·`weeklyContentsOf`~~ → **`features/content-scheduler/displayed-contents.ts`**(이동 완료, [[ADR-147]] 정정 16) | **완료 판정과 다른 판정이다.** 아래 `content-completion.ts` 는 «이 항목이 끝났나» 에만 답하지 «이 항목이 이 캐릭터의 것인가» 에는 답하지 않는다 — 그 둘을 하나로 본 것이 «모든 캐릭터 일퀘 18» 버그였다 |
-| 컨텐츠 완료 여부 | `app/content-scheduler/content-completion.ts` | **제자리에서 import.** 그 파일이 [[ADR-142]] 결정 4 에서 이미 «규칙의 출처」로 만들어졌지만 화면 상수(`content-badges`·`WeeklyContentCards` 의 슬러그)에 기대 `core` 로 갈 수 없다 → **화면 사이 의존이 새로 생긴다**(감수). 세 번째 사용처가 생기면 상수와 함께 `core/lib` 승격 |
+| 컨텐츠 완료 여부 | `app/content-scheduler/content-completion.ts` | **제자리에서 import.** 그 파일이 [[ADR-142]] 결정 4 에서 이미 «규칙의 출처」로 만들어졌지만 화면 상수(`content-badges`·`WeeklyContentCards` 의 슬러그)에 기대 `core` 로 갈 수 없다 → **화면 사이 의존이 새로 생긴다**(감수). 세 번째 사용처가 생기면 상수와 함께 `src/lib` 승격 |
 | 표시 대상 보스 목록 | ~~`BossScreen.tsx` 지역 함수 `displayedBossesOf`~~ → **`features/boss-scheduler/displayed-bosses.ts` 의 `displayedBosses`**(이동 완료, 2026-08-17) | **`features/boss-scheduler/` 로 이동.** 안에 [[ADR-035]] 수동 모드 멤버십과 [[ADR-031]] 결정 5(미등록이어도 완료면 포함)가 갇혀 있는데 화면 밖에서 부를 방법이 없었다. 의존이 코어 모듈과 인자뿐이라 그대로 나갔다 — 클로저로 읽던 `mode`·`manualTrackedByOcid` 가 인자가 된 것 말고는 **로직도 나가는 모양도 안 바꿨다** |
 
 **이 둘이 이 작업에서 기존 코드를 만지는 유일한 부분이다**(그 밖은 전부 새 파일).

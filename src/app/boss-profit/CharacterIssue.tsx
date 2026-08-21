@@ -26,8 +26,8 @@
 //    팝오버가 그 문구를 이미 말한다.
 import { Pressable, View } from 'react-native'
 
-import { anchorPopover } from '@core/lib/popover-anchor'
-import type { PopoverAnchorGeometry } from '@core/lib/popover-anchor'
+import { anchorPopover } from '../../lib/popover-anchor'
+import type { PopoverAnchorGeometry } from '../../lib/popover-anchor'
 
 import { Text } from '../../components/atoms/Text/Text'
 import { AlertTriangleIcon, BanIcon } from '../../lib/icons'
@@ -130,7 +130,7 @@ export function CharacterIssueBadge(props: {
  * 잰 두 상자를 팝오버 기하로 환산한다.
  *
  * 금액은 자릿수에 따라 폭이 변해 **배지의 x를 고정값으로 알 수 없다** — clamp·꼬리 계산은 순수
- * 함수(`@core/lib/popover-anchor`)가 맡고 여기서는 좌표계를 옮기기만 한다. 재는 일은 호출부가
+ * 함수(`src/lib/popover-anchor`)가 맡고 여기서는 좌표계를 옮기기만 한다. 재는 일은 호출부가
  * 한다(파일 머리 ②).
  *
  * 둘 다 **같은 기준**(윈도우)에서 잰 값이어야 한다 — 뺄셈으로 카드 기준 좌표를 만든다.

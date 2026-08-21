@@ -44,21 +44,21 @@ import { useEffect, useState } from 'react'
 import { Pressable, RefreshControl, View } from 'react-native'
 import { useReducedMotion } from 'react-native-reanimated'
 
-import type { BossDifficulty } from '@core/types'
+import type { BossDifficulty } from '../../types'
 import {
   partySizeKey,
   useBossSchedulerStore,
   type PartyFilter,
-} from '@core/features/boss-scheduler/store'
-import { displayedBosses } from '@core/features/boss-scheduler/displayed-bosses'
-import { formatSyncedAt } from '@core/features/schedule-sync/format'
-import { useScheduleSyncErrorToast } from '@core/features/schedule-sync/use-sync-error-toast'
-import { useToastStore } from '@core/features/toast/store'
-import { useTrackingModeStore } from '@core/features/tracking-mode/store'
-import { getBossPortraitCrop, getBossPortraitUrl, type BossPortraitCrop } from '@core/lib/boss-icons'
-import { getSupportedDifficulties, type MatchedBoss } from '@core/lib/boss-matching'
-import { getMaxPartySize } from '@core/lib/boss-crystal-prices'
-import { isChallengersWorld } from '@core/lib/world-emblem'
+} from '../../features/boss-scheduler/store'
+import { displayedBosses } from '../../features/boss-scheduler/displayed-bosses'
+import { formatSyncedAt } from '../../features/schedule-sync/format'
+import { useScheduleSyncErrorToast } from '../../features/schedule-sync/use-sync-error-toast'
+import { useToastStore } from '../../features/toast/store'
+import { useTrackingModeStore } from '../../features/tracking-mode/store'
+import { getBossPortraitCrop, getBossPortraitUrl, type BossPortraitCrop } from '../../lib/boss-icons'
+import { getSupportedDifficulties, type MatchedBoss } from '../../lib/boss-matching'
+import { getMaxPartySize } from '../../lib/boss-crystal-prices'
+import { isChallengersWorld } from '../../lib/world-emblem'
 
 import { Badge } from '../../components/atoms/Badge/Badge'
 import { DifficultyBadge } from '../../components/atoms/DifficultyBadge/DifficultyBadge'

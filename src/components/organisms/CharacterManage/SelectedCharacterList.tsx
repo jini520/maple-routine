@@ -37,7 +37,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import { useAnimatedStyle, useSharedValue, type SharedValue } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import type { SelectedCharacterView } from '@core/features/character-manage/derivations'
+import type { SelectedCharacterView } from '../../../features/character-manage/derivations'
 
 import { AnimatedView } from '../../../lib/nativewind-interop'
 import { CharacterRow } from '../../molecules/CharacterRow/CharacterRow'

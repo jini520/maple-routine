@@ -8,7 +8,7 @@
 // `jest.mock` 팩토리는 호이스팅돼 스코프 밖 변수를 못 읽는다 — **`mock` 접두 이름만** 예외다.
 const mockHideSplashScreen = jest.fn()
 
-jest.mock('@core/native/splash-screen', () => ({
+jest.mock('../../../../native/splash-screen', () => ({
   hideSplashScreen: (): Promise<void> => mockHideSplashScreen() as Promise<void>,
 }))
 

@@ -14,11 +14,11 @@
 //    에러 없이 세로로 쌓인다.
 // ④ `<img>` → `<Image>`, `<span>` → `<Text>`, `text-shadow` → `MEDIA_TEXT_SHADOW_STYLE`
 //    (`lib/text-styles.ts` — RN 은 그림자를 하나만 표현할 수 있어 강한 쪽을 남긴다).
-import { getDailyQuestBackgroundUrl, getDailyQuestRegionCrop } from '@core/lib/daily-quest-backgrounds'
-import type { DailyQuestRegionCrop } from '@core/lib/daily-quest-backgrounds'
-import { getDailyQuestRegionIconUrl } from '@core/lib/daily-quest-icons'
-import { matchDailyQuestRegionSlug, stripDailyQuestPrefix } from '@core/lib/daily-quest-matching'
-import type { DailyContent } from '@core/types'
+import { getDailyQuestBackgroundUrl, getDailyQuestRegionCrop } from '../../lib/daily-quest-backgrounds'
+import type { DailyQuestRegionCrop } from '../../lib/daily-quest-backgrounds'
+import { getDailyQuestRegionIconUrl } from '../../lib/daily-quest-icons'
+import { matchDailyQuestRegionSlug, stripDailyQuestPrefix } from '../../lib/daily-quest-matching'
+import type { DailyContent } from '../../types'
 import { Image, View } from 'react-native'
 
 import { Badge } from '../../components/atoms/Badge/Badge'

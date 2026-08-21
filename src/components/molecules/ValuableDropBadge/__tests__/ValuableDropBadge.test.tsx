@@ -1,7 +1,7 @@
 // **웹에는 이 컴포넌트의 단위 테스트가 없었다** — 세 화면 테스트가 배지를 `aria-label` 로만 찾았다.
 // RN 에서는 외형 규칙이 CSS(`.valuable-drop-badge`)가 아니라 **컴포넌트 안의 값**이 됐으므로
 // (그라디언트·글로우·흰 링) 그 값을 지킬 자리가 필요하다.
-import type { RecordedDrop } from '@core/types/drops'
+import type { RecordedDrop } from '../../../../types/drops'
 import { processColor } from 'react-native'
 
 import { flattenStyle, renderAtom, 기본테마 } from '../../../__tests__/render-atom'

@@ -37,7 +37,7 @@
 
 import notifee, { AuthorizationStatus, type NotificationSettings } from '@notifee/react-native'
 
-import type { NotificationsPort } from '@core/native/ports'
+import type { NotificationsPort } from '../ports'
 
 import {
   NOTIFICATION_CHANNEL,

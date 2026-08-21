@@ -14,10 +14,10 @@
 //
 // ## 무엇을 잡고, 무엇을 안 잡나
 //
-// - 잡는다: `@core/features/ads/tab-switch-ad` — `startAds`(SDK 초기화 + **사전 로드**) 와
+// - 잡는다: `src/features/ads/tab-switch-ad` — `startAds`(SDK 초기화 + **사전 로드**) 와
 //   `maybeShowTabSwitchAd`(표시) 가 사는 모듈. 사전 로드까지 잡는 이유는, 표시만 막으면 매 실행
 //   «뜨지 않을 광고» 를 요청해 임프레션 없는 요청(매치율 0)으로 쌓이기 때문이다.
-// - **안 잡는다**: `@core/native/ads` — 어댑터(`rn-ads.ts`)가 `resolveInterstitialAdId`·
+// - **안 잡는다**: `src/native/ads` — 어댑터(`rn-ads.ts`)가 `resolveInterstitialAdId`·
 //   `shouldUseTestAds` 를 계속 부른다([[ADR-150]] 결정 2). 그 둘은 인라인 광고도 쓸 함수다.
 // - **안 잡는다**: `AdsPort`·`setAdsPort`·`rn-ads.ts` 자체 — 포트 배선은 남기기로 한 자산이다.
 import { readFileSync, readdirSync, statSync } from 'node:fs'
@@ -25,7 +25,17 @@ import { join } from 'node:path'
 
 const SRC = join(__dirname, '..')
 
-/** 검사 대상 — 소스만. 이 파일과 ADR 을 인용하는 주석은 대상이 아니다(아래 `stripComments`). */
+/**
+ * 검사 대상 — 소스만. 이 파일과 ADR 을 인용하는 주석은 대상이 아니다(아래 `stripComments`).
+ *
+ * **`features/ads/` 자신은 뺀다**([[ADR-155]] 결정 3 이후). 종전에는 그 모듈이 `packages/core` 에
+ * 살아 이 스캔의 사정거리 밖이었고, 스캔은 «app-rn 이 그것을 부르는가» 를 물었다. core 가 `src/`
+ * 로 녹으면서 **정의 자체가 대상에 들어와** 금지어에 걸렸다 — 정의를 위반으로 세면 가드가
+ * *"그 모듈을 지워라"* 라고 말하는 셈이고, 그 판단은 인라인 광고 설계의 몫이지 이 가드의 몫이
+ * 아니다(`docs/features/ads.md`). 그래서 묻는 것을 원래대로 **«아무도 부르지 않는가»** 로 되돌린다.
+ */
+const DEFINING_MODULE = 'features/ads'
+
 function sourceFiles(dir: string): string[] {
   const out: string[] = []
   for (const entry of readdirSync(dir)) {
@@ -36,7 +46,7 @@ function sourceFiles(dir: string): string[] {
       out.push(path)
     }
   }
-  return out
+  return out.filter((file) => !file.slice(SRC.length + 1).startsWith(DEFINING_MODULE))
 }
 
 /**
@@ -51,7 +61,8 @@ function stripComments(source: string): string {
 
 const FORBIDDEN: Array<{ pattern: RegExp; what: string }> = [
   {
-    pattern: /['"]@core\/features\/ads\/tab-switch-ad['"]/,
+    // alias 가 사라져 상대 경로로 온다([[ADR-155]] 결정 3) — 깊이가 자리마다 달라 끝만 잡는다.
+    pattern: /['"][^'"]*features\/ads\/tab-switch-ad['"]/,
     what: '탭 전환 전면광고 모듈 import',
   },
   { pattern: /\bmaybeShowTabSwitchAd\b/, what: '전면광고 표시 호출' },

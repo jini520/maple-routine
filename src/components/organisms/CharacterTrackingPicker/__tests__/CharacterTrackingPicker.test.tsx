@@ -12,7 +12,7 @@
 import { fireEvent } from '@testing-library/react-native'
 import { Image } from 'react-native'
 
-import type { CharacterPickerEntry } from '@core/types'
+import type { CharacterPickerEntry } from '../../../../types'
 
 import { flattenStyle, renderOverlay, type AtomElement } from '../../../__tests__/render-atom'
 import { CharacterTrackingPicker } from '../CharacterTrackingPicker'

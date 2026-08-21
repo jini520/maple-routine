@@ -29,8 +29,8 @@ jest.mock('@gorhom/bottom-sheet', () => {
   }
 })
 
-import weeklyBossesData from '@core/data/weekly-bosses.json'
-import type { RecordedDrop } from '@core/types/drops'
+import weeklyBossesData from '../../../data/weekly-bosses.json'
+import type { RecordedDrop } from '../../../types/drops'
 
 import { renderOverlay } from '../../../components/__tests__/render-atom'
 import { DropPricePad, DropPricePadContent } from '../DropPricePad'

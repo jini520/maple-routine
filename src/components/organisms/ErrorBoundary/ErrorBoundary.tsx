@@ -45,7 +45,7 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
 import { View } from 'react-native'
 
-import { hideSplashScreen } from '@core/native/splash-screen'
+import { hideSplashScreen } from '../../../native/splash-screen'
 
 import { AlertTriangleIcon, RotateCcwIcon } from '../../../lib/icons'
 import { Button } from '../../atoms/Button/Button'

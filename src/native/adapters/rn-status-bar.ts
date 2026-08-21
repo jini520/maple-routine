@@ -1,6 +1,6 @@
 import { StatusBar } from 'react-native'
 
-import type { StatusBarPort } from '@core/native/ports'
+import type { StatusBarPort } from '../ports'
 
 /**
  * `StatusBarPort` 의 RN 구현([[ADR-128]] 결정 4 — 밖으로 나가는 시그니처는 Capacitor 구현과 한

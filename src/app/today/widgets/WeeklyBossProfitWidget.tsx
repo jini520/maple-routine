@@ -31,7 +31,7 @@
 
 import { Image, View, type DimensionValue } from 'react-native'
 
-import { formatMesoShort } from '@core/lib/boss-profit-delta'
+import { formatMesoShort } from '../../../lib/boss-profit-delta'
 
 import { Text } from '../../../components/atoms/Text/Text'
 import { faceCropStyle } from '../../../lib/face-crop'

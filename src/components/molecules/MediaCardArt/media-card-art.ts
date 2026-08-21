@@ -57,7 +57,7 @@
 //
 import { Image, type ImageStyle } from 'react-native'
 
-import type { ImageAssetRef } from '@core/types/image-asset'
+import type { ImageAssetRef } from '../../../types/image-asset'
 
 /** 크롭 표의 한 줄. 두 조회 함수(`daily-quest-backgrounds`·`boss-icons`)가 같은 모양을 돌려준다. */
 export interface MediaArtCrop {

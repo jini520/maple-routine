@@ -39,7 +39,7 @@
 import { useEffect } from 'react'
 import { Pressable, View } from 'react-native'
 
-import { useLiveUpdateStore } from '@core/features/live-update/store'
+import { useLiveUpdateStore } from '../../features/live-update/store'
 
 import packageJson from '../../../package.json'
 import { Card } from '../../components/atoms/Card/Card'

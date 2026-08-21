@@ -9,7 +9,7 @@
 // **세 크기를 전부 스냅샷으로 찍는다** — v1 배치가 쓰는 것은 4x1 하나뿐이라(정정 13) 나머지 둘은
 // 아무도 안 부르는 렌더 분기이고, 그 분기의 유일한 안전망이 스냅샷이다.
 
-import { getValuableDroughtTier } from '@core/lib/drop-history'
+import { getValuableDroughtTier } from '../../../../lib/drop-history'
 import { act } from '@testing-library/react-native'
 
 import {

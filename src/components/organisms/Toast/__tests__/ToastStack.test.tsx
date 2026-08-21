@@ -6,7 +6,7 @@
 // · `bottom-[calc(...)]` 클래스를 보던 두 케이스는 실제 `bottom` 숫자를 잰다.
 import { fireEvent } from '@testing-library/react-native'
 
-import { useToastStore, type ToastItem } from '@core/features/toast/store'
+import { useToastStore, type ToastItem } from '../../../../features/toast/store'
 
 import {
   flattenStyle,
@@ -16,7 +16,7 @@ import {
 } from '../../../__tests__/render-atom'
 import { ToastStack } from '../ToastStack'
 
-jest.mock('@core/features/toast/store', () => ({ useToastStore: jest.fn() }))
+jest.mock('../../../../features/toast/store', () => ({ useToastStore: jest.fn() }))
 
 const mockedStore = jest.mocked(useToastStore)
 

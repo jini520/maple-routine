@@ -1,6 +1,6 @@
-import { useBossProfitStore } from '@core/features/boss-profit/store'
-import { useBossSchedulerStore } from '@core/features/boss-scheduler/store'
-import { useContentSchedulerStore } from '@core/features/content-scheduler/store'
+import { useBossProfitStore } from '../../features/boss-profit/store'
+import { useBossSchedulerStore } from '../../features/boss-scheduler/store'
+import { useContentSchedulerStore } from '../../features/content-scheduler/store'
 
 /**
  * 설정에서 무언가 바뀐 뒤 탭 스토어를 다시 읽히는 **한 자리**([[ADR-140]] 결정 5 + 그 정정).

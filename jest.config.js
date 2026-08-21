@@ -3,26 +3,14 @@
 // 대상을 나눠 갖는다: jest 는 `src/`, vitest 는 `core/`. 경계는 양쪽에서 한 번씩 못박는다 —
 // 아래 `testPathIgnorePatterns` 와 `vite.config.ts` 의 `test.exclude`.
 //
-// `@core/*` alias 는 여기 없다 — **`tsconfig.json` 의 `paths` 하나가 tsc·Metro·jest 를 전부 푼다.**
-// jest-expo 프리셋이 마지막에 `withTypescriptMapping()` 을 걸어 cwd 의 `tsconfig.json` 에서
-// `compilerOptions.paths` 를 읽고 `moduleNameMapper` 로 옮긴다
-// (`@core/*` → `^@core/(.*)$` → `<rootDir>/../core/src/$1`). `metro.config.js` 가 alias 를 안 두는 것과
-// 같은 이유이고, 같은 이득이다 — 선언이 한 벌이라 "타입은 통과하는데 테스트에서만 죽는" 어긋남이
-// 생길 자리가 없다.
-//
-// 그 파생은 **cwd 기준**이다(jest-expo 가 `path.resolve('tsconfig.json')` 을 쓴다). 프로젝트가 저장소
-// 루트로 올라오면서 그 조건이 저절로 맞는다 — 종전에는 `-w @maple-routine/app-rn` 으로 디렉터리를
-// 지정해 불러야 했다. 매핑이 실제로 풀리는지는 `src/__tests__/core-wiring.test.ts` 가 지킨다.
+// **alias 가 하나도 없다**([[ADR-155]] 결정 3). `core` 가 `src/` 로 녹으면서 `@core/*` 가 사라졌고,
+// 모든 import 가 상대 경로라 tsc·Metro·jest 가 같은 것을 본다 — 풀어 줄 매핑 자체가 없으니 셋이
+// 갈라질 자리도 없다.
 //
 // NativeWind 배선은 두 파일로 나뉜다([[ADR-128]] 3단계) — `globalSetup` 이 `global.css` 를 실행당
 // 한 번 컴파일하고, `setupFilesAfterEnv` 가 그 결과를 테스트마다 주입한다. 나눈 이유는 컴파일이
 // 비동기라 `setupFiles`(동기)에 못 들어가고, 매 테스트 파일마다 다시 하면 느리기 때문이다.
 //
-// `moduleNameMapper` 가 여기 있는 것은 `@core/*` 때문이 **아니다**(그건 위 문단대로 tsconfig 이 푼다).
-// Vite 전용 API 를 쓰는 core 모듈을 RN 구현으로 갈아끼우는 표이고, 그 표는 `core-shims.js` 에 있어
-// Metro 와 공유한다 — 따로 적으면 "앱은 도는데 테스트만 죽는"(또는 반대) 어긋남이 조용히 생긴다.
-// jest 는 preset 의 매퍼와 여기 매퍼를 **합치므로** `@core/*` 매핑은 그대로 살아 있고, 이 항목들이
-// 먼저 검사된다.
 // `testMatch` 를 **파일 이름으로** 좁힌다. `jest-expo` 기본값은 `**/__tests__/**/*.[jt]s?(x)` 라
 // 그 디렉터리에 둔 **보조 파일까지 테스트 스위트로 집어** *"must contain at least one test"* 로
 // 빨개진다(`src/navigation/__tests__/harness.tsx`). 보조 파일을 밖으로 빼는 대신 규칙을 좁힌 이유는
@@ -44,7 +32,6 @@
 // CJS 빌드로 매핑하는 안(`moduleNameMapper`)도 되지만, 그러면 **jest 는 CJS·Metro 는 ESM** 을 보게
 // 된다. 같은 소스의 두 빌드라 실질 차이는 없어도, 이 패키지는 "두 도구가 같은 파일을 본다"를
 // 원칙으로 두고 있어(`core-shims.js` 「한 벌로 두는 이유」) 그 쪽을 고르지 않았다.
-const { coreShimModuleNameMapper } = require('./core-shims')
 const expoPreset = require('jest-expo/jest-preset')
 
 /** `react-native` 조건에서 ESM 만 내보내는 의존성 — jest 가 트랜스폼해야 한다. */
@@ -55,10 +42,9 @@ const NEGATIVE_LOOKAHEAD = '(?!('
 module.exports = {
   preset: 'jest-expo',
   testMatch: ['**/*.test.[jt]s?(x)'],
-  // `core/` 는 **vitest 의 몫**이다([[ADR-155]] 결정 6). 프로젝트 루트가 저장소 루트가 되면서
-  // `testMatch` 의 사정거리에 들어왔는데, 그쪽 테스트는 `vitest` 에서 import 하므로 jest 가 집으면
-  // 그 자리에서 죽는다. 기본값(`/node_modules/`)을 덮어쓰는 옵션이라 함께 적는다.
-  testPathIgnorePatterns: ['/node_modules/', '<rootDir>/core/'],
+  // `*.spec.*` 는 **vitest 의 몫**이다([[ADR-155]] 결정 6 — 경계는 경로가 아니라 확장자다.
+  // `vite.config.ts` 에 그 이유가 적혀 있다). 위 `testMatch` 가 `*.test.*` 만 잡으므로 그 규칙 하나로
+  // 이미 갈리고, 여기서는 기본값만 유지한다.
   // reanimated 4 가 `react-native-worklets` 위에 서 있고 그 패키지의 `.native.*` 변형이 jest 에서
   // 즉시 죽는다 — 프리셋의 해석기를 대체하는 것이 아니라 **겹친다**(`jest.resolver.js`).
   resolver: '<rootDir>/jest.resolver.js',
@@ -68,7 +54,6 @@ module.exports = {
   // 없으면 *"install is not a function"* 으로 죽는다). 라이브러리가 공식으로 주는 파일이다.
   setupFiles: [...expoPreset.setupFiles, require.resolve('react-native-gesture-handler/jestSetup')],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
-  moduleNameMapper: coreShimModuleNameMapper(),
   transformIgnorePatterns: expoPreset.transformIgnorePatterns.map((pattern) =>
     pattern.includes(NEGATIVE_LOOKAHEAD)
       ? pattern.replace(NEGATIVE_LOOKAHEAD, `${NEGATIVE_LOOKAHEAD}${ESM_ONLY_DEPS.join('|')}|`)

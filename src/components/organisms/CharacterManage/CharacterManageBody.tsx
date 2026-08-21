@@ -38,8 +38,8 @@ import {
   formatRosterError,
   formatStaleRosterError,
   type RosterErrorPlace,
-} from '@core/features/schedule-sync/format'
-import { useOnboardingStore } from '@core/features/onboarding/store'
+} from '../../../features/schedule-sync/format'
+import { useOnboardingStore } from '../../../features/onboarding/store'
 
 import { MapleSweepSpinner } from '../../atoms/MapleSweepSpinner/MapleSweepSpinner'
 import { Text } from '../../atoms/Text/Text'

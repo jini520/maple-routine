@@ -1,4 +1,4 @@
-import type { BossDifficulty } from '@core/types'
+import type { BossDifficulty } from '../../../types'
 import { Pressable, View } from 'react-native'
 
 import { DifficultyBadge } from '../../atoms/DifficultyBadge/DifficultyBadge'

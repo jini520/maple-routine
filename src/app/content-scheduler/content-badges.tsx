@@ -14,7 +14,7 @@
 //    `var()` 로 들어온 색일 때이고(`lib/color-alpha.ts`), 이 셋은 리터럴 hex 라 빌드 시점에
 //    `rgba()` 로 접힌다. **조용히 사라지는 종류의 실패**라 테스트가 배경색이 실제로 붙는지 본다.
 
-import type { WeeklyContent } from '@core/types'
+import type { WeeklyContent } from '../../types'
 
 import { Text } from '../../components/atoms/Text/Text'
 

@@ -15,13 +15,13 @@
 //    움직인다(닫을 이유가 사라졌다). 웹의 *"window 스크롤로는 안 닫힌다"* 회귀 가드도 함께 간다.
 import { act, fireEvent } from '@testing-library/react-native'
 
-import weeklyBossesData from '@core/data/weekly-bosses.json'
-import { clearCountUpMemory } from '@core/lib/use-count-up'
-import valuableDropsData from '@core/data/valuable-drops.json'
-import { WEEKLY_BOSS_CLEAR_LIMIT } from '@core/lib/boss-matching'
-import { formatMesoShort } from '@core/lib/boss-profit-delta'
-import { dropRowKey } from '@core/features/boss-profit/store'
-import type { RecordedDrop } from '@core/types/drops'
+import weeklyBossesData from '../../../data/weekly-bosses.json'
+import { clearCountUpMemory } from '../../../lib/use-count-up'
+import valuableDropsData from '../../../data/valuable-drops.json'
+import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss-matching'
+import { formatMesoShort } from '../../../lib/boss-profit-delta'
+import { dropRowKey } from '../../../features/boss-profit/store'
+import type { RecordedDrop } from '../../../types/drops'
 
 import { CharacterAccordion } from '../CharacterAccordion'
 import { buildCharacterGroups } from '../character-groups'

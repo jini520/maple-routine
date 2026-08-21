@@ -6,7 +6,7 @@
 // ── 값 규칙은 여기 없다 ─────────────────────────────────────────────────────────────
 //
 // 드롭다운 행의 계정 요약 · 「선택됨」 층의 행 · 저장된 대표의 유효성은
-// `@core/features/character-manage/derivations` 의 순수 함수가 갖는다([[ADR-144]] 머리
+// `src/features/character-manage/derivations` 의 순수 함수가 갖는다([[ADR-144]] 머리
 // «값 규칙의 자리»). 여기서 다시 계산하면 그 규칙을 테스트가 직접 물 수 없다.
 //
 // ── 조회 넷과 그 자리 ───────────────────────────────────────────────────────────────
@@ -22,7 +22,7 @@
 // 부르므로 화면을 처음 열면 그 응답이 두 번 온다. 로스터가 그 목록을 밖에서 받는 구조가 아니고
 // (`resolveRegisteredCharacters` 가 자기 안에서 부른다) 이 phase 는 core 를 건드리지 않는다.
 //
-// **`@core/nexon` 을 화면 층에서 직접 부르는 자리다.** core 에 «계정 목록만 주는» 함수가 없고
+// **`src/nexon` 을 화면 층에서 직접 부르는 자리다.** core 에 «계정 목록만 주는» 함수가 없고
 // (`features/settings/store` 의 것은 계정 변경 플로우에 묶여 있는데 RN 에는 그 플로우가 없다 —
 // [[ADR-143]] 결정 7) 이 phase 에서는 core 를 못 고친다. 저장소는 그대로 `storage/` 어댑터를
 // 거친다(CLAUDE.md CRITICAL).
@@ -59,23 +59,23 @@ import {
   type AccountSummaryView,
   type KnownCharacterProfile,
   type SelectedCharacterView,
-} from '@core/features/character-manage/derivations'
-import { useContentSchedulerStore } from '@core/features/content-scheduler/store'
-import { CHARACTER_BASIC_TTL_MS } from '@core/features/schedule-sync/character-basic-fetch'
+} from '../../../features/character-manage/derivations'
+import { useContentSchedulerStore } from '../../../features/content-scheduler/store'
+import { CHARACTER_BASIC_TTL_MS } from '../../../features/schedule-sync/character-basic-fetch'
 import {
   getCharacterPickerRoster,
   toScheduleSyncError,
   type ScheduleSyncError,
-} from '@core/features/schedule-sync/schedule-sync'
-import { fetchCharacterList } from '@core/nexon/character'
-import { getAuthConfig } from '@core/storage/api-key'
+} from '../../../features/schedule-sync/schedule-sync'
+import { fetchCharacterList } from '../../../nexon/character'
+import { getAuthConfig } from '../../../storage/api-key'
 import {
   getCachedCharacterBasic,
   type CachedCharacterBasicEntry,
-} from '@core/storage/character-basic-cache'
-import { getRepresentativeCharacter } from '@core/storage/character-selection'
-import { getScheduleProbeLedger } from '@core/storage/schedule-probe-ledger'
-import type { CharacterPickerEntry } from '@core/types'
+} from '../../../storage/character-basic-cache'
+import { getRepresentativeCharacter } from '../../../storage/character-selection'
+import { getScheduleProbeLedger } from '../../../storage/schedule-probe-ledger'
+import type { CharacterPickerEntry } from '../../../types'
 
 import { moveOcid } from './reorder'
 

@@ -3,9 +3,9 @@
 // 이 파일이 지키는 것은 계산이지 화면이 아니다 — "값을 안 매긴 드롭은 합에 안 들어간다"와
 // "금액을 모르는 행의 0은 합산 편의값이지 표시값이 아니다"가 서로 다른 층이라는 사실이 여기서
 // 시작해 `ItemRevenuePopover`·`BossProfitBossRow` 테스트로 이어진다.
-import { dropRowKey } from '@core/features/boss-profit/store'
-import type { BossProfitRow } from '@core/features/boss-profit/store'
-import type { RecordedDrop } from '@core/types/drops'
+import { dropRowKey } from '../../../features/boss-profit/store'
+import type { BossProfitRow } from '../../../features/boss-profit/store'
+import type { RecordedDrop } from '../../../types/drops'
 
 import { groupTotalMeso, sumPayout } from '../character-groups'
 import type { CharacterGroup } from '../character-groups'

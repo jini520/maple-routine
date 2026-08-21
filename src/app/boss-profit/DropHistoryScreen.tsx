@@ -38,22 +38,22 @@ import { Path } from 'react-native-svg'
 import {
   useDropHistoryStore,
   type DropHistoryCharacter,
-} from '@core/features/boss-profit/drop-history-store'
-import { formatBossProfitPeriodLabel } from '@core/lib/boss-profit-period'
+} from '../../features/boss-profit/drop-history-store'
+import { formatBossProfitPeriodLabel } from '../../lib/boss-profit-period'
 import {
   formatDropHistoryLine,
   formatValuableDroughtHeadline,
   formatValuableDroughtItems,
   getValuableDroughtTier,
   valuableDroughtHeadlineCount,
-} from '@core/lib/drop-history'
+} from '../../lib/drop-history'
 import type {
   DropHistoryPeriodGroup,
   DropHistoryRecord,
   ValuableDroughtSummary,
-} from '@core/lib/drop-history'
-import { getItemIconUrl } from '@core/lib/item-icons'
-import { isValuableDrop } from '@core/lib/valuable-drops'
+} from '../../lib/drop-history'
+import { getItemIconUrl } from '../../lib/item-icons'
+import { isValuableDrop } from '../../lib/valuable-drops'
 
 import { Text } from '../../components/atoms/Text/Text'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'

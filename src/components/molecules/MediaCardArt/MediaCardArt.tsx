@@ -1,7 +1,7 @@
 // 일러스트 카드의 bleed 레이어와 껍데기 — **값과 기하는 `media-card-art.ts` 가 갖는다**(그 파일
 // 머리에 CSS 배경 → RN 변환의 근거가 전부 있다). 여기는 그것을 그리는 두 컴포넌트뿐이다.
-import { MEDIA_ART_OPACITY } from '@core/lib/media-card'
-import type { ImageAssetRef } from '@core/types/image-asset'
+import { MEDIA_ART_OPACITY } from '../../../lib/media-card'
+import type { ImageAssetRef } from '../../../types/image-asset'
 import { Image, View } from 'react-native'
 import { vars } from 'nativewind'
 

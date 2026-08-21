@@ -37,13 +37,13 @@ import {
   getObtainableTileNames,
   getRingBoxContents,
   isBoxItem,
-} from '@core/lib/boss-drops'
-import { useDropEffectStore } from '@core/features/drop-effect/store'
-import { getFixedDropIcons, type FixedDropIconSpec } from '@core/lib/fixed-drops'
-import { getItemIconUrl, getItemIconUrlByFile } from '@core/lib/item-icons'
-import { isValuableDrop } from '@core/lib/valuable-drops'
-import { BOSS_DIFFICULTIES, type BossDifficulty } from '@core/types'
-import type { DropCandidate, DropCategory, RecordedDrop, SelectableDropCategory } from '@core/types/drops'
+} from '../../lib/boss-drops'
+import { useDropEffectStore } from '../../features/drop-effect/store'
+import { getFixedDropIcons, type FixedDropIconSpec } from '../../lib/fixed-drops'
+import { getItemIconUrl, getItemIconUrlByFile } from '../../lib/item-icons'
+import { isValuableDrop } from '../../lib/valuable-drops'
+import { BOSS_DIFFICULTIES, type BossDifficulty } from '../../types'
+import type { DropCandidate, DropCategory, RecordedDrop, SelectableDropCategory } from '../../types/drops'
 
 import { DifficultyBadge } from '../../components/atoms/DifficultyBadge/DifficultyBadge'
 import { ProfitIcon } from '../../components/atoms/ProfitIcon/ProfitIcon'

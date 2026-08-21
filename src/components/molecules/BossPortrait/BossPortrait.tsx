@@ -18,8 +18,8 @@
 // 역할 `img` 가 붙는다(웹과 **같은 이름**이다 — RN 의 `role` 은 ARIA 이름을 그대로 받는다).
 import { Image, View } from 'react-native'
 
-import { getBossPortraitIconCrop, getBossPortraitUrl } from '@core/lib/boss-icons'
-import type { BossPortraitCrop } from '@core/lib/boss-icons'
+import { getBossPortraitIconCrop, getBossPortraitUrl } from '../../../lib/boss-icons'
+import type { BossPortraitCrop } from '../../../lib/boss-icons'
 
 import { Text } from '../../atoms/Text/Text'
 import {

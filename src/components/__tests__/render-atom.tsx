@@ -13,7 +13,7 @@
 // 색을 단언할 때는 `job-themes.json`(= `getThemeDefinition`)에서 읽는다([[ADR-006]] — 색은 사람이
 // 확인해 커밋한 값이고, 테스트가 베끼면 두 벌이 된다). `theme/__tests__/ThemeProvider.test.tsx` 와
 // 같은 방식이다.
-import { getThemeDefinition } from '@core/lib/theme-registry'
+import { getThemeDefinition } from '../../lib/theme-registry'
 import { act, render } from '@testing-library/react-native'
 import type { ReactElement } from 'react'
 import { SafeAreaProvider, type Metrics } from 'react-native-safe-area-context'

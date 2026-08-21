@@ -1,4 +1,4 @@
-import { resolveContentOffsetPx, resolvePullProgress, type PullPhase } from '@core/lib/pull-to-refresh'
+import { resolveContentOffsetPx, resolvePullProgress, type PullPhase } from '../../../lib/pull-to-refresh'
 import { View } from 'react-native'
 import { Path } from 'react-native-svg'
 
@@ -51,7 +51,7 @@ import { MAPLE_LEAF_PATH, MAPLE_LEAF_PATH_LENGTH } from '../../mapleLeafPath'
 //    (`MAPLE_LEAF_PATH_LENGTH`)에 같은 비율을 곱해 **같은 그림**을 만든다(`MapleSpinner` 와 같은 처방).
 //    `strokeDashoffset` 도 그래서 `300 × (1−진행률)` 이 아니라 `둘레 × (1−진행률)` 이다.
 // ② 높이는 `style={{ height }}` 그대로다 — [[ADR-073]] 결정 6(인디케이터 높이와 목록 오프셋이 한
-//    함수에서 나온다)이 유지된다. 계산도 `@core/lib/pull-to-refresh` 의 같은 함수다.
+//    함수에서 나온다)이 유지된다. 계산도 `src/lib/pull-to-refresh` 의 같은 함수다.
 // ③ `aria-hidden` 은 남고 `role`/`aria-live` 는 없다([[ADR-074]] 결정 7) — 문구가 없어 빈 라이브
 //    리전이 되는 것은 RN 에서도 같다.
 //

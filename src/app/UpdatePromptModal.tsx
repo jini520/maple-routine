@@ -38,7 +38,7 @@
 import { useState } from 'react'
 import { View } from 'react-native'
 
-import type { LiveUpdateStatus, LiveUpdateStore } from '@core/features/live-update/store'
+import type { LiveUpdateStatus, LiveUpdateStore } from '../features/live-update/store'
 
 import { Badge } from '../components/atoms/Badge/Badge'
 import { Button } from '../components/atoms/Button/Button'

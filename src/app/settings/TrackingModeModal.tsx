@@ -15,8 +15,8 @@
 import { useState } from 'react'
 import { View } from 'react-native'
 
-import { useTrackingModeStore } from '@core/features/tracking-mode/store'
-import type { TrackingMode } from '@core/storage/tracking-mode'
+import { useTrackingModeStore } from '../../features/tracking-mode/store'
+import type { TrackingMode } from '../../storage/tracking-mode'
 
 import { Button } from '../../components/atoms/Button/Button'
 import { MapleSpinner } from '../../components/atoms/MapleSpinner/MapleSpinner'

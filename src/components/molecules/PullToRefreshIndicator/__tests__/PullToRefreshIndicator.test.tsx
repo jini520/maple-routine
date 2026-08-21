@@ -3,7 +3,7 @@
 //
 // 이 파일이 지키는 계약은 `RefreshControl` 로 **대체할 수 없는 부분**이기도 하다(컴포넌트 주석) —
 // 마크의 형태·연속성·크기가 곧 [[ADR-074]] 다.
-import { PULL_THRESHOLD_PX } from '@core/lib/pull-to-refresh'
+import { PULL_THRESHOLD_PX } from '../../../../lib/pull-to-refresh'
 
 import { findAllOfType, flattenStyle, renderAtom } from '../../../__tests__/render-atom'
 import { MAPLE_LEAF_PATH_LENGTH } from '../../../mapleLeafPath'

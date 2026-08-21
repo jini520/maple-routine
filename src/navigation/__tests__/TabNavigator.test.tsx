@@ -9,10 +9,10 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native'
 import { Dimensions } from 'react-native'
 import { isLiquidGlassAvailable } from 'expo-glass-effect'
-import { useOnboardingStore } from '@core/features/onboarding/store'
+import { useOnboardingStore } from '../../features/onboarding/store'
 
-import jobThemes from '@core/data/job-themes.json'
-import type { ThemeDefinition, ThemeName } from '@core/types/theme'
+import jobThemes from '../../data/job-themes.json'
+import type { ThemeDefinition, ThemeName } from '../../types/theme'
 
 import { BAR_MAX_WIDTH, resolveBottomBarMetrics } from '../../lib/bottom-bar-metrics'
 import { __resetThemeAppearanceForTest, setThemeAppearance } from '../../theme/appearance-store'

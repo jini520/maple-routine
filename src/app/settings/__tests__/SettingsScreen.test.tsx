@@ -17,12 +17,12 @@
 //    누르면 그 화면을 민다, `openPicker` 로 들어와도 같은 곳으로 민다.
 import { act, fireEvent } from '@testing-library/react-native'
 
-import { loadCacheDataSizes } from '@core/features/settings/cache-data'
-import { useThemeStore } from '@core/features/theme/store'
-import { useTrackingModeStore } from '@core/features/tracking-mode/store'
-import { useContentSchedulerStore, type ContentSchedulerStore } from '@core/features/content-scheduler/store'
-import { getCharacterPickerRoster } from '@core/features/schedule-sync/schedule-sync'
-import { THEME_NAMES } from '@core/lib/theme-registry'
+import { loadCacheDataSizes } from '../../../features/settings/cache-data'
+import { useThemeStore } from '../../../features/theme/store'
+import { useTrackingModeStore } from '../../../features/tracking-mode/store'
+import { useContentSchedulerStore, type ContentSchedulerStore } from '../../../features/content-scheduler/store'
+import { getCharacterPickerRoster } from '../../../features/schedule-sync/schedule-sync'
+import { THEME_NAMES } from '../../../lib/theme-registry'
 
 import packageJson from '../../../../package.json'
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
@@ -36,16 +36,16 @@ const mockLoadContentTracked = jest.fn()
 const mockLoadBossTracked = jest.fn()
 const mockLoadProfitTracked = jest.fn()
 
-jest.mock('@core/features/theme/store', () => ({ useThemeStore: jest.fn() }))
-jest.mock('@core/features/tracking-mode/store', () => ({ useTrackingModeStore: jest.fn() }))
+jest.mock('../../../features/theme/store', () => ({ useThemeStore: jest.fn() }))
+jest.mock('../../../features/tracking-mode/store', () => ({ useTrackingModeStore: jest.fn() }))
 // 본화면이 대표값으로 캐시 총 용량을 읽는다([[ADR-118]] 결정 5) — 화면은 `features/` 를 거치고
 // 저장소·SQLite 는 그 아래가 맡는다(CLAUDE.md CRITICAL).
-jest.mock('@core/features/settings/cache-data', () => ({ loadCacheDataSizes: jest.fn() }))
+jest.mock('../../../features/settings/cache-data', () => ({ loadCacheDataSizes: jest.fn() }))
 jest.mock('../use-settings-navigation', () => ({ useSettingsNavigation: jest.fn() }))
 
 // [[ADR-140]] 결정 4: 저장은 컨텐츠 스케줄러 스토어의 액션을 그대로 부른다(세 번째 사본 금지).
 // 훅으로도(배지·저장) `getState()` 로도(결정 5 정정의 모드 전환 재로드) 만지므로 둘 다 세운다.
-jest.mock('@core/features/content-scheduler/store', () => {
+jest.mock('../../../features/content-scheduler/store', () => {
   const hook = jest.fn()
   return {
     useContentSchedulerStore: Object.assign(hook, {
@@ -54,19 +54,19 @@ jest.mock('@core/features/content-scheduler/store', () => {
   }
 })
 // 결정 5: 저장 뒤 다시 읽히는 나머지 둘 — 화면은 `getState()` 로만 만진다(구독하지 않는다).
-jest.mock('@core/features/boss-scheduler/store', () => ({
+jest.mock('../../../features/boss-scheduler/store', () => ({
   useBossSchedulerStore: { getState: () => ({ loadTrackedOcids: mockLoadBossTracked }) },
 }))
-jest.mock('@core/features/boss-profit/store', () => ({
+jest.mock('../../../features/boss-profit/store', () => ({
   useBossProfitStore: { getState: () => ({ loadTrackedOcids: mockLoadProfitTracked }) },
 }))
 
 // 이 화면은 로스터를 **부르지 않는 것**이 계약이라([[ADR-144]] 결정 1) 그것을 단언하려면 감시할
 // 대상이 필요하다. `...requireActual` 을 통째로 쓰면 순환 참조가 아직 구성 중인 모듈을 `undefined`
 // 로 만난다 — 스케줄러 화면 테스트와 같은 처방으로 부분 모킹한다.
-jest.mock('@core/features/schedule-sync/schedule-sync', () => ({
-  toScheduleSyncError: jest.requireActual<typeof import('@core/features/schedule-sync/errors')>(
-    '@core/features/schedule-sync/errors',
+jest.mock('../../../features/schedule-sync/schedule-sync', () => ({
+  toScheduleSyncError: jest.requireActual<typeof import('../../../features/schedule-sync/errors')>(
+    '../../../features/schedule-sync/errors',
   ).toScheduleSyncError,
   getCharacterPickerRoster: (...args: unknown[]) => mockGetRoster(...args),
 }))

@@ -25,8 +25,8 @@
 //    `textClassName` 으로 옮긴다(atom 기본은 `text-base`).
 import { View } from 'react-native'
 
-import { useOnboardingStore } from '@core/features/onboarding/store'
-import type { ApiKeyNoticeKind } from '@core/features/onboarding/state'
+import { useOnboardingStore } from '../features/onboarding/store'
+import type { ApiKeyNoticeKind } from '../features/onboarding/state'
 
 import { Button } from '../components/atoms/Button/Button'
 import { Text } from '../components/atoms/Text/Text'

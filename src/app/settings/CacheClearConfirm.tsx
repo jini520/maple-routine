@@ -21,8 +21,8 @@
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 
-import { formatBytes } from '@core/lib/format-bytes'
-import type { CacheDataGroupId, CacheDataSelection } from '@core/storage/cache-data'
+import { formatBytes } from '../../lib/format-bytes'
+import type { CacheDataGroupId, CacheDataSelection } from '../../storage/cache-data'
 
 import { Button } from '../../components/atoms/Button/Button'
 import { MapleSpinner } from '../../components/atoms/MapleSpinner/MapleSpinner'

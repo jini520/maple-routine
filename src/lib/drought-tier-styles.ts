@@ -15,7 +15,7 @@
  * 무채색을 거쳐 차가운 회청색으로" 가는 한 줄기라 테마마다 다른 색으로 갈리면 의미를 잃는다. 잎은
  * 아이콘(면적 채색)이라 본문 텍스트급 대비가 필요 없고, 글자색은 테마 토큰을 쓴다.
  *
- * 단계 경계·문구는 `@core/lib/drop-history` 의 `VALUABLE_DROUGHT_TIERS` 가 정한다 — 이 배열은 그
+ * 단계 경계·문구는 `src/lib/drop-history` 의 `VALUABLE_DROUGHT_TIERS` 가 정한다 — 이 배열은 그
  * 인덱스에 1:1로 대응하므로 길이가 어긋나면 안 된다(`getValuableDroughtTier` 가 주는 값이 곧 첨자다).
  */
 

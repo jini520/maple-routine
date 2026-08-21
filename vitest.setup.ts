@@ -1,5 +1,5 @@
-import { installFakePreferences } from '@core/storage/__tests__/fake-preferences'
-import { installNoopNativePorts } from '@core/native/__tests__/fake-native-ports'
+import { installFakePreferences } from './src/storage/__tests__/fake-preferences'
+import { installNoopNativePorts } from './src/native/__tests__/fake-native-ports'
 
 // 저장소 포트의 테스트 기본값([[ADR-128]]). 포트 역전 전에는 `@capacitor/preferences` 모듈이 어느
 // 테스트에서나 그냥 import돼 동작했다 — 그 자리를 인메모리 포트가 대신한다. 이것이 없으면 앱을
