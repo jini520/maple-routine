@@ -127,6 +127,6 @@ flowchart LR
 
 - **로컬 알림 예약** (`native/notifications.ts`): `schedule()`로 등록한 예약은 OS(Android AlarmManager / iOS `UNUserNotificationCenter`)가 직접 들고 있다. 앱은 예약 개수(`getPendingNotificationCount()`)만 조회할 수 있고, 개별 예약 내용을 다시 읽어올 방법은 없다.
   - **그래서 «무엇을 예약해 뒀는지» 는 우리가 따로 적는다** — `notificationLedger`(Preferences, [[ADR-146]] 결정 5). 이 원장이 없으면 OTA 로 알림 종류를 뺐을 때 그 예약을 **이름으로 지목해 취소할 방법이 없어** 유령 알림으로 남는다(`../migration/data.md` 결정 4 가 프레임워크 전환에서 겪은 것과 같은 사고이고, 이번엔 OTA 마다 일어날 수 있었다). 원장은 OS 를 **읽는** 수단이 아니라 **우리가 쓴 것을 기억하는** 수단이라, 둘이 어긋나는 창은 결정적 id + 멱등 재조정이 다음 회차에 흡수한다.
-- **OTA 번들 파일** (`native/live-update.ts`): `@capgo/capacitor-updater`가 다운로드한 번들 zip은 플러그인이 자체 관리하는 네이티브 파일 저장소에 있다. 앱 코드는 `CapacitorUpdater.current()`로 "지금 이 버전이 적용돼 있다"는 메타데이터만 조회하며, 파일 자체의 존재/삭제는 플러그인 책임이다. `applyDownloadedLiveUpdate()`(번들 전환)와 캐시 데이터 삭제 둘 다 SQLite 커넥션을 먼저 닫아야 하는 동일한 리로드 패턴을 쓴다.
+- **OTA 번들 파일** (`native/live-update.ts`): `expo-updates` 가 다운로드한 번들은 라이브러리가 자체 관리하는 네이티브 파일 저장소에 있다. 앱 코드는 `Updates.updateId`/`Updates.reloadAsync()`로 "지금 이 버전이 적용돼 있다"는 메타데이터만 조회하며, 파일 자체의 존재/삭제는 플러그인 책임이다. `applyDownloadedLiveUpdate()`(번들 전환)와 캐시 데이터 삭제 둘 다 SQLite 커넥션을 먼저 닫아야 하는 동일한 리로드 패턴을 쓴다.
 
 두 저장소 모두 "캐시 데이터 삭제"의 삭제 범위에 포함돼 있지 않다 — 캐시 삭제 후에도 예약된 알림과 현재 적용된 OTA 번들은 그대로 남는다. **원장(`notificationLedger`)은 Preferences 라 함께 지워지지만** 그것이 안전한 이유는 [preferences.md](./preferences.md) 알림 절에 적어 두었다(결정적 id 라 다음 재조정이 같은 예약을 덮어쓴다).

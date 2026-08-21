@@ -2,7 +2,7 @@
 
 이 디렉토리는 메이플 루틴 앱이 기기에 **영속적으로(재실행·재부팅 후에도 남게)** 저장하는 모든 데이터를 정리한다. 백엔드가 없는 구조([[ADR-003]])라 여기 정리된 것이 앱이 가진 데이터의 전부다.
 
-- [preferences.md](./preferences.md) — Key-Value 저장소(Capacitor Preferences) 전체 키 목록
+- [preferences.md](./preferences.md) — Key-Value 저장소(UserDefaults / SharedPreferences) 전체 키 목록
 - [sqlite.md](./sqlite.md) — SQLite `boss_profit.db` 스키마
 - [lifecycle.md](./lifecycle.md) — 데이터가 언제 생성·갱신·삭제되는지 (온보딩, 캐시 삭제, 연결 해제, OTA 리로드)
 
@@ -10,9 +10,9 @@
 
 | 저장소 | 무엇을 담당 | 형태 |
 |---|---|---|
-| **Capacitor Preferences** | 대부분의 데이터. 인증, 테마, 동기화 캐시, 사용자 기록 원장 | 평문 Key-Value (iOS UserDefaults / Android SharedPreferences) |
+| **Preferences** | 대부분의 데이터. 인증, 테마, 동기화 캐시, 사용자 기록 원장 | 평문 Key-Value (iOS UserDefaults / Android SharedPreferences) |
 | **SQLite (`boss_profit.db`)** | 보스 수익 관련 데이터만 | 관계형 테이블 4개 |
-| **네이티브 OS 레벨** | 로컬 알림 예약, OTA 번들 파일 | 앱 코드가 직접 읽지 못하는 OS/플러그인 소유 저장소 |
+| **네이티브 OS 레벨** | 로컬 알림 예약, OTA 번들 파일 | 앱 코드가 직접 읽지 못하는 OS/라이브러리 소유 저장소 |
 
 보스 수익만 SQLite인 이유는 "기간별 기록이 누적되고, (ocid, boss, difficulty, period_key) 같은 복합키로 조회·upsert가 잦다"는 특성 때문이다. 나머지는 대부분 "캐릭터 하나당 JSON 덩어리 하나" 형태라 Key-Value로 충분하다.
 
@@ -34,10 +34,10 @@ flowchart LR
     end
 
     subgraph L3[" 실제 저장 매체 "]
-        Pref[("Capacitor Preferences\nUserDefaults / SharedPreferences\n⚠️ 평문 저장")]
+        Pref[("Preferences\nUserDefaults / SharedPreferences\n⚠️ 평문 저장")]
         Sql[("SQLite: boss_profit.db")]
         OS[["OS 알림 스케줄러\n(AlarmManager / UNUserNotificationCenter)"]]
-        OTA[["OTA 번들 파일\n(@capgo/capacitor-updater 소유)"]]
+        OTA[["OTA 번들 파일\n(expo-updates 소유)"]]
     end
 
     UI <--> PrefAdapters
@@ -49,14 +49,14 @@ flowchart LR
     NativeAdapters --> OTA
 ```
 
-이 레이어링 덕분에 (1) feature 코드는 Capacitor API를 몰라도 되고, (2) 물리 저장소를 바꾸더라도 어댑터 내부만 교체하면 된다.
+이 레이어링 덕분에 (1) feature 코드는 네이티브 API를 몰라도 되고, (2) 물리 저장소를 바꾸더라도 어댑터 내부만 교체하면 된다. **RN 전환이 그것을 실제로 증명했다**([[ADR-128]]) — 저장 매체는 한 바이트도 안 옮기고 어댑터만 갈아끼웠다(`storage/adapters/rn-preferences.ts`·`rn-sqlite.ts`, [migration/data.md](../migration/data.md)).
 
 ## 데이터 성격별 3분류
 
 | 분류 | 예시 | 특징 |
 |---|---|---|
 | **인증/설정** | `apiKey`, `selectedAccountId`, `theme`, `trackingMode`, `dropEffect` | 사용자가 명시적으로 설정. "캐시 데이터 삭제"에도 보존됨 |
-| **동기화 캐시** | 스케줄러 상태, 캐릭터 기본 정보, 공유 진행 원장 | Nexon API 응답을 로컬에 미러링. 서버가 진실이고 이건 stale-while-revalidate용 사본([[ADR-016]]) |
+| **동기화 캐시** | 스케줄러 상태, 캐릭터 기본 정보, 공유 진행 원장 | Nexon API 응답을 로컬에 미러링. 서버가 진실이고 이건 stale-while-revalidate용 사본(ADR-016) |
 | **로컬 전용 기록** | 보스 수익 기록, 파티 설정, 기간 체크 | Nexon API에 없는, 사용자가 이 앱에서만 남기는 값. 서버 재동기화로 복구 불가 |
 
 ## 영속 데이터가 "아닌" 것

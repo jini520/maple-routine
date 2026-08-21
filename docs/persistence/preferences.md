@@ -1,6 +1,12 @@
-# Capacitor Preferences
+# Preferences (Key-Value 저장소)
 
-`@capacitor/preferences` 기반 Key-Value 저장소. iOS는 UserDefaults, Android는 SharedPreferences에 매핑되며 **평문 저장**이다 — Keychain/Keystore 수준 암호화는 보장하지 않는다(강화된 보안 저장 도입은 별도 task로 미뤄둔 상태, `src/storage/api-key.ts` 주석 참고).
+iOS UserDefaults / Android SharedPreferences 를 그대로 쓰는 Key-Value 저장소이고 **평문 저장**이다 — Keychain/Keystore 수준 암호화는 보장하지 않는다(강화된 보안 저장 도입은 별도 task로 미뤄둔 상태, `src/storage/api-key.ts` 주석 참고).
+
+> **읽고 쓰는 경로**: `storage/adapters/rn-preferences.ts` → 로컬 Expo 모듈 `modules/capacitor-storage`.
+> 캐패시터 시절 `@capacitor/preferences` 가 쓰던 **바로 그 키와 그 저장소**를 연다 — 기존 사용자의
+> 데이터를 한 바이트도 옮기지 않기 위해서다([migration/data.md](../migration/data.md) 결정 1). 그래서
+> 키 앞에 붙는 네이티브 접두사 규칙까지 그대로이고, 그 변환은 `storage/adapters/capacitor-storage-keys.ts`
+> 가 맡는다.
 
 키 이름은 전부 `src/storage/keys.ts`에 모여 있고, 값 읽기/쓰기는 `src/storage/*.ts`의 개별 어댑터가 담당한다.
 
@@ -8,7 +14,7 @@
 
 ```mermaid
 flowchart TD
-    Pref[("Capacitor Preferences")]
+    Pref[("Preferences")]
     Pref --> Auth["인증/설정\n(캐시 삭제에도 보존)"]
     Pref --> Sync["동기화 캐시\n(재조회로 복구 가능)"]
     Pref --> Track["사용자 추적/선택 설정"]
@@ -38,7 +44,7 @@ flowchart TD
 | 키 | 값 형태 | 어댑터 | 캐시 삭제 시 | 비고 |
 |---|---|---|---|---|
 | `apiKey` | `string` (평문 API 키) | `storage/api-key.ts` | **보존** | Nexon Open API 개인 키. 연결 해제 시에만 삭제됨 |
-| `selectedAccountId` | `string \| null` | `storage/api-key.ts` | **보존** | 여러 메이플 ID 중 선택된 계정. `null`이면 키 자체를 제거(값 없음). **RN 앱은 이 값을 읽지도 쓰지도 않는다**([[ADR-143]] 결정 7 — 계정을 고르지 않는다). 지우지 않는 이유는 웹뷰 앱이 계속 쓰기 때문이고, 그 앱이 걷힐 때 함께 정리한다 |
+| `selectedAccountId` | `string \| null` | `storage/api-key.ts` | **보존** | 여러 메이플 ID 중 선택된 계정. `null`이면 키 자체를 제거(값 없음). ⛔ **지금은 읽지도 쓰지도 않는다**([[ADR-143]] 결정 7 — 계정을 고르지 않는다). 기존 사용자 기기에 값이 남아 있을 뿐이라 **정리 대상**이다 |
 | `theme` | `ThemeName` (`'레테'\|'렌'\|'머쉬맘'\|'혼테일'`) | `storage/theme.ts` | **보존** | 유효하지 않은 값이면 `getTheme()`이 `null` 반환 |
 | `trackingMode` | `'auto' \| 'manual'` | `storage/tracking-mode.ts` | **보존** | 값이 없거나 알 수 없는 값이면 어댑터가 **`null`(미선택)** 을 반환하고 소비처가 `?? 'auto'` 로 흡수한다([[ADR-086]] 결정 2 — 동작 기본값은 그대로 자동, [[ADR-035]] 결정 2 유지). 온보딩 게이트만 이 `null` 을 "아직 안 골랐다"로 읽는다. 보존 결정은 [[ADR-052]] |
 | `dropEffect` | `'on' \| 'off'` | `storage/drop-effect.ts` | **보존** | 고가 드롭 연출 표시 여부([[ADR-040]] 결정 6). 값이 없으면 표시(on). 보존 결정은 [[ADR-052]] |
@@ -68,7 +74,7 @@ flowchart TD
 
 ## 캐릭터별(ocid)로 저장되는 데이터
 
-`{ocid}`를 키에 물고 있는 항목은 정확히 두 개뿐이다 — `characterBasicCache:{ocid}`(가벼운 프로필)과 `schedulerCache:{ocid}`(그 캐릭터의 일간/주간/보스 진행 상태 전체). 둘 다 **캐릭터마다 독립된 Preferences 엔트리**라, 캐릭터가 10개면 이 두 종류가 최대 20개까지 쌓일 수 있다(추적 여부 무관 — 온보딩 예열이 계정의 전체 캐릭터를 캐싱하므로, [[ADR-016]]).
+`{ocid}`를 키에 물고 있는 항목은 정확히 두 개뿐이다 — `characterBasicCache:{ocid}`(가벼운 프로필)과 `schedulerCache:{ocid}`(그 캐릭터의 일간/주간/보스 진행 상태 전체). 둘 다 **캐릭터마다 독립된 Preferences 엔트리**라, 캐릭터가 10개면 이 두 종류가 최대 20개까지 쌓일 수 있다(추적 여부 무관 — 온보딩 예열이 계정의 전체 캐릭터를 캐싱하므로, ADR-016).
 
 ### 1. `characterBasicCache:{ocid}`
 
@@ -226,7 +232,7 @@ flowchart TB
 
 | 시점 | 대상 캐릭터 | 쓰는 것 |
 |---|---|---|
-| 온보딩 완료 직전 예열([[ADR-016]], `features/onboarding/prefetch.ts`) | **계정의 전체 캐릭터** (추적 여부 무관) | `characterBasicCache:{ocid}` 전원 + 계정 인덱스. `schedulerCache:{ocid}`도 **전원**([[ADR-086]] 결정 3 — `accessFlag: true` 게이트 폐기). `accessFlag: false` 이고 오늘 응답도 비었으면 과거 날짜를 거슬러 올라가며 `scheduleProbe:{ocid}` 를 채운다. **`worldSharedProgress`/`accountSharedProgress`는 이 시점엔 쓰지 않는다** — 아래 참고 |
+| 온보딩 완료 직전 예열(ADR-016, `features/onboarding/prefetch.ts`) | **계정의 전체 캐릭터** (추적 여부 무관) | `characterBasicCache:{ocid}` 전원 + 계정 인덱스. `schedulerCache:{ocid}`도 **전원**([[ADR-086]] 결정 3 — `accessFlag: true` 게이트 폐기). `accessFlag: false` 이고 오늘 응답도 비었으면 과거 날짜를 거슬러 올라가며 `scheduleProbe:{ocid}` 를 채운다. **`worldSharedProgress`/`accountSharedProgress`는 이 시점엔 쓰지 않는다** — 아래 참고 |
 | 컨텐츠 스케줄러 새로고침 | `trackedCharacters`에 속한 캐릭터만 | 해당 캐릭터들의 `schedulerCache:{ocid}` + 그 캐릭터들의 월드/계정 원장 |
 | 보스 스케줄러/보스 수익 새로고침 | 동일(같은 단일 목록) | 동일 |
 

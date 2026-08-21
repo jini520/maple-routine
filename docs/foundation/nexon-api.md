@@ -2,7 +2,7 @@
 
 > **범위**: Nexon Open API 호출·인증·엔드포인트·정규화·호출 제한. 별도 서버/프록시 없이 사용자 개인 키로 기기에서 직접 호출한다([[ADR-003]], [[ADR-007]]).
 > **관련 소스**: `nexon/client` · `nexon/character` · `nexon/schedule`(client/normalize) · `lib/boss-matching`.
-> **관련 ADR**: [[ADR-007]] [[ADR-003]] [[ADR-006]] [[ADR-067]] [[ADR-095]]. **관련 문서**: [architecture.md](./architecture.md), [error-resilience.md](./error-resilience.md), [features/content-scheduler.md](../features/content-scheduler.md), [features/boss-scheduler.md](../features/boss-scheduler.md).
+> **관련 ADR**: [[ADR-007]] [[ADR-003]] [[ADR-006]] [[ADR-067]]. **관련 문서**: [architecture.md](./architecture.md), [error-resilience.md](./error-resilience.md), [features/content-scheduler.md](../features/content-scheduler.md), [features/boss-scheduler.md](../features/boss-scheduler.md).
 
 ## 클라이언트·인증
 - 호출 도메인은 **`https://open.api.nexon.com/`**(문서 사이트 `openapi.nexon.com` 과 다름). 모든 요청 헤더에 **`x-nxopen-api-key: <저장된 개인 API 키>`**.
@@ -12,16 +12,6 @@
   - **429 를 만났을 때 화면이 하는 말**은 [[ADR-114]] 결정 1 — 앱은 키의 단계를 **판정하지 않고**(API 가 알려주지 않고 429 만으로는 구분 불가) 단계 무관 문구로 "입력하신 API 키가 서비스 단계 키인지 확인해주세요"를 안내한다. 액션은 자리마다 갈린다([[ADR-116]] 이 [[ADR-114]] 결정 2 를 `ErrorState` 자리에서만 정정했다).
 - 별도 서버/프록시 없음 — 키는 기기에만 저장되고 호출도 기기에서 직접 나간다([[ADR-003]]).
 - 이용약관 출처 표기: 영문 원문 **"Data based on NEXON Open API"** 를 **설정 화면 하단**(앱 버전·카피라이트와 함께) 상시 노출([[ADR-007]], 앱 전역 footer는 만들지 않음).
-
-## Analytics 스크립트 (데이터 조회 API 아님, [[ADR-095]])
-- 넥슨이 개발자에게 제공하는 웹 애널리틱스. `index.html` `<head>` 에 한 줄:
-  `<script type="text/javascript" src="https://openapi.nexon.com/js/analytics.js?app_id=322698" async></script>`
-- **위 데이터 조회 API와 도메인이 반대다** — 조회는 `open.api.nexon.com`, 이 스크립트는 **문서 사이트 쪽 `openapi.nexon.com`** 에서 받는다.
-- **경로는 `/js/analytics.js`** — 가이드 본문 예시(`/analytics.js`)와 다르다. 손으로 옮겨 적지 말고 애플리케이션 상세 하단의 구문을 그대로 쓸 것.
-- `app_id` 는 공개 식별자(넥슨 마이 페이지 > 애플리케이션 상세 하단). 사용자 개인 API 키와 층이 다르다 — 그쪽은 기기 보안 영역에만 있다([[ADR-007]]).
-- 지표는 "마이 페이지 > Analytics 대시보드". 연동 성립까지 **최대 24시간**, 성립 여부는 애플리케이션 상세 하단의 "연동 완료" 표기로 본다.
-- **앱 코드는 이 기능을 모른다** — `analytics.js` 가 정의하는 전역을 아무도 참조하지 않으므로 오프라인·넥슨 장애 시 조용히 실패하고 끝난다. 참조하기 시작하면 넥슨 도메인 가용성이 앱 동작의 의존성이 된다([[ADR-003]]).
-- **미확인**: 웹뷰 origin(`https://localhost`·`capacitor://localhost`)에서 연동이 성립하는지. 가이드는 "웹 서비스" 기준이고 origin 언급이 없다.
 
 ## 엔드포인트
 - **`GET /maplestory/v1/character/list`** (`nexon/character`): 계정 소속 캐릭터 목록. 캐릭터명+월드 수동 입력 폼은 없다. 응답: `{ account_list: [{ account_id, character_list: [{ ocid, character_name, world_name, character_class, character_level }] }] }`. **하나의 키가 여러 `account_id`(메이플 ID)를 반환할 수 있다**(실측, 2026-07-09) — `account_list.length > 1` 이면 계정 선택 UI. `ocid` 는 길이가 계정마다 다르므로(32~65자 관찰) 불투명 문자열로 다룬다. 키가 등록된 Nexon 계정 캐릭터만 반환(다른 계정은 별도 키 필요). **`character_list` 가 빈 계정이 섞여 올 수 있다**([[ADR-127]], 2026-08-12) — 그런 계정은 `normalizeCharacterList` 가 걸러 도메인 모델로 올리지 않는다(캐릭터가 0명이면 대표 캐릭터를 세울 수 없어 계정 선택 화면이 렌더 중에 던졌다). ⚠️ **넥슨이 어떤 조건에서 그 응답을 내는지는 모른다** — 테스터 크래시에서 역산한 것이고 그 응답을 직접 받아 본 적이 없다.
@@ -146,7 +136,7 @@ HTTP 400
 
 - `character/list` 는 그 13명을 정상 반환하고, `/maplestory/v1/id?character_name=` 도 **같은 ocid** 를 돌려준다 — ocid 자체는 유효한 형태다.
 - 같은 월드(베라)의 **다른 사람 캐릭터는 200** 이므로 월드 문제도, 키 소유권 문제도 아니다.
-- 원인은 확정하지 못했다(삭제/이전 등 계정 상태로 추정). 확정할 수 없어도 **앱이 다뤄야 하는 사실**은 분명하다: 온보딩 계정 선택([[ADR-051]])은 이 계정을 정상 후보로 제시하고, 고르면 모든 캐릭터가 영구히 조회 불가라 피커가 빈 목록이 된다.
+- 원인은 확정하지 못했다(삭제/이전 등 계정 상태로 추정). 확정할 수 없어도 **앱이 다뤄야 하는 사실**은 분명하다: 온보딩 계정 선택(ADR-051)은 이 계정을 정상 후보로 제시하고, 고르면 모든 캐릭터가 영구히 조회 불가라 피커가 빈 목록이 된다.
 
 ## 정규화
 - 난이도: 영문 소문자 ↔ 한글 변환(`nexon/normalize`).
@@ -168,6 +158,7 @@ HTTP 400
 - 온보딩 계정 표기: 각 `account_id` 는 그 계정 최고 레벨 캐릭터의 닉네임+직업+레벨로 표기(`account_id` 해시 비노출).
 
 ## 폐기된 정책 (history)
+- ~~NEXON Open API Analytics 스크립트를 `index.html` `<head>` 에 삽입한다(`openapi.nexon.com/js/analytics.js?app_id=…`)~~ → **폐기·제거**(🗑 [[ADR-095]]). `index.html` 이 캐패시터 앱과 함께 사라졌고([[ADR-155]]) RN 에는 `<head>` 가 없다. 지금 앱은 이 스크립트를 싣지 않는다 — 넥슨 요건이라면 **새 결정**이 필요하다.
 - ~~`date` 조회 제약을 하한(고정 2026-07-01 + 롤링 오늘−13일)만으로 기술~~ → 상한도 있다: 오늘·미래는 `OPENAPI00004`, 오늘−1일은 `OPENAPI00009`. 실효 구간 `[오늘−13, 오늘−2]`(실측 2026-07-31, [[ADR-067]]).
 - ~~비활성 캐릭터(`access_flag: false`)는 API가 200을 반환하지 않는다(사용자 관찰, 이슈 #78 A 전제)~~ → **반증**. 세 엔드포인트 모두 200이고 응답 항목만 축약된다. 400의 실제 원인은 조회 불가 ocid(`OPENAPI00003`)와 날짜 문제(`OPENAPI00004`/`OPENAPI00009`)였다(실측 2026-07-31).
 - ~~개발 단계 호출량 상한(초당 5건/일 1,000건) 검증 필요~~ → 서비스 단계 키 사용이라 불필요(2026-07-09). → **재정정**: 그 문장은 개발자 본인 키에만 맞았다([[ADR-114]] 결정 5, 2026-08-08, 이슈 #158). ~~"이 앱은 사용자가 이미 승인받은 서비스 단계 키를 쓰므로 개발 단계 상한 검증은 불필요"~~ → 사용자·테스터는 각자 발급받은 **개발 단계 키**(초당 5건·일 1,000건)를 넣고, 앱은 그 한도를 실제로 넘긴다(피커가 대표 1명만 남는 증상으로 관측, 2026-08-07).

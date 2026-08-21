@@ -1,17 +1,17 @@
 # 테마 시스템 (Theme)
 
 > **범위**: 캐릭터 대표 컬러 기반 다중 테마의 시맨틱 토큰 스키마·토큰 파생 규칙·테마별 컬러 값·배경 이미지·런타임 전환·시스템 다크 모드 연동. 기본 팔레트·시맨틱 색 체계는 [../foundation/design-system.md](../foundation/design-system.md).
-> **관련 소스**: `features/theme/`(Zustand store) · `storage/theme.ts` · `src/index.css`(`@theme` + `:root[data-theme]` + `.theme-backdrop`) · `src/data/job-themes.json` · `lib/theme-backgrounds.ts` · `src/assets/themes/` · `AppShell`(`restoreFromStorage`).
-> **관련 ADR**: [[ADR-009]] [[ADR-064]] [[ADR-088]] [[ADR-089]] [[ADR-105]] [[ADR-106]] [[ADR-108]] [[ADR-109]] [[ADR-006]] [[ADR-104]] [[ADR-122]]. **관련 문서**: [../foundation/design-system.md](../foundation/design-system.md), [settings.md](./settings.md).
+> **관련 소스**: `features/theme/`(Zustand store) · `storage/theme.ts` · `src/theme/`(`ThemeProvider` · `theme-vars.ts`(NativeWind `vars()`) · `context.ts` · `MediaScope.tsx` · `screen-backdrop-policy.ts`) · `global.css` + `tailwind.config.js` · `src/data/job-themes.json` · `lib/theme-derive.ts` · `lib/theme-backgrounds.ts` · `components/templates/ThemeBackdrop/` · `src/assets/themes/` · `AppShell`(`restoreFromStorage`).
+> **관련 ADR**: [[ADR-009]] [[ADR-064]] [[ADR-088]] [[ADR-089]] [[ADR-105]] ADR-106 [[ADR-108]] [[ADR-109]] [[ADR-006]] [[ADR-104]] ADR-122. **관련 문서**: [../foundation/design-system.md](../foundation/design-system.md), [settings.md](./settings.md).
 
 ## 정책
 테마마다 **34개 시맨틱 토큰**을 값으로 갖는다([[ADR-064]], 17토큰에서 확장). 현재 등록: **"머쉬맘"(라이트, 기본)·"혼테일"(다크, 시스템 다크 기본)·"레테"(다크)·"렌"(라이트)·"엔젤릭버스터"(라이트)·"검은마법사"(다크)**. 목표는 캐릭터 대표 컬러로 **수십 개**까지 늘리는 것이고, 스키마·파생·등록 방식이 모두 그 전제로 설계돼 있다.
 
-- `src/index.css` `@theme` 기본 블록 = **머쉬맘** 값. 나머지 테마는 `:root[data-theme='…']` 오버라이드. Tailwind v4 유틸(`bg-primary`·`text-text` 등)이 이미 `var(--color-*)` 를 참조하므로 컴포넌트 코드는 그대로 두고 `data-theme` 속성만 바꾸면 전환된다.
+- **토큰은 `theme-vars.ts` 가 «이름 → 값» 맵으로 내고 NativeWind `vars()` 가 렌더 트리에 내린다.** `className`(`bg-primary`·`text-text-muted` …)이 `var(--color-*)` 로 그것을 읽으므로, 컴포넌트 코드는 그대로 두고 **`ThemeProvider` 가 내리는 맵만 바꾸면** 전환된다(웹은 같은 값을 `<style>` 문자열로 굳혀 `:root[data-theme]` 에 붙였다 — 값이 객체로 이미 있어 RN 은 문자열이 될 필요가 없다).
 - 선택 테마는 Zustand(`features/theme/store.ts`) + `storage/theme.ts`(Preferences 어댑터) 영속화, `AppShell` `restoreFromStorage` 흐름에서 앱 시작 시 hydration.
-- **시스템 다크 모드 연동(2026-07-14)**: `restoreFromStorage()` 가 저장된 테마가 없을 때 `window.matchMedia('(prefers-color-scheme: dark)')` 로 OS 설정을 확인해 라이트="머쉬맘"/다크="혼테일"을 기본값으로 씀(앱 실행 시 1회 판정, 실행 중 OS 변경은 재시작 전까지 미반영). 사용자가 설정에서 한 번이라도 명시 선택하면 그 값이 저장돼 이후 시스템과 무관. **"OS가 지금 무엇인가"는 `ColorSchemePort` 가 답한다**([[ADR-128]]) — 묻는 법이 플랫폼마다 달라서다(웹뷰=위 미디어 쿼리 / RN=`Appearance.getColorScheme()`). 어느 쪽이든 **판정을 못 하면 라이트로 폴백한다**(웹뷰는 `matchMedia` 부재, RN 은 `null` 반환) — 모르는 것을 다크로 읽으면 저장된 테마가 없는 첫 실행이 통째로 다크로 열린다. 구독 API 는 두지 않는다(실행 중 변경 미반영이 정책이라 부를 곳이 없다).
-- **모드(라이트/다크)는 `data-mode` 로 CSS 에도 노출된다**([[ADR-122]], 2026-08-10) — `applyThemeToDocument` 가 `data-theme`(이름)·`color-scheme`·스크롤바 색과 함께 세운다. 토큰만으로 못 푸는 규칙, 즉 **같은 토큰이 모드에 따라 반대 역할을 하는 자리**(스크림 위 패널 테두리)가 이걸 쓴다. 테마 **이름**으로 분기하면 [[ADR-064]] 결정 8이 폐기한 `DARK_THEMES` 수동 목록이 CSS 쪽에 되살아나므로 금지. `color-scheme` 은 선택자로 쓸 수 없어 이 자리를 못 푼다.
-- **토큰을 화면에 칠하는 방법은 플랫폼마다 다르다** — 위 셋(`<style>` 주입·`data-*`·`color-scheme`)은 전부 DOM 작업이라 `ThemeAppearancePort` 구현이 갖는다([[ADR-128]]). RN 쪽은 문자열로 굳히지 않고 같은 38토큰을 NativeWind `vars()` 로 렌더 트리에 내리며, **선택자가 없어 [[ADR-122]] 규칙을 `--color-panel-border` 파생 토큰으로** 만든다(분기는 여전히 `mode` 다). 상속·재선언 성질이 같아 `.media-scope` 도 컴포넌트 하나로 옮겨졌고, 배경 이미지는 URL 이 아니라 `<Image>` 라서 **아직 없다**. 구조와 대가는 `docs/migration/README.md` «3-1단계 결과».
+- **시스템 다크 모드 연동**: `restoreFromStorage()` 가 저장된 테마가 없을 때 OS 설정을 확인해 라이트="머쉬맘"/다크="혼테일"을 기본값으로 씀(앱 실행 시 1회 판정, 실행 중 OS 변경은 재시작 전까지 미반영). 사용자가 설정에서 한 번이라도 명시 선택하면 그 값이 저장돼 이후 시스템과 무관. **"OS가 지금 무엇인가"는 `ColorSchemePort` 가 답한다**([[ADR-128]]) — 묻는 법이 플랫폼마다 달라서다(웹뷰=위 미디어 쿼리 / RN=`Appearance.getColorScheme()`). 어느 쪽이든 **판정을 못 하면 라이트로 폴백한다**(웹뷰는 `matchMedia` 부재, RN 은 `null` 반환) — 모르는 것을 다크로 읽으면 저장된 테마가 없는 첫 실행이 통째로 다크로 열린다. 구독 API 는 두지 않는다(실행 중 변경 미반영이 정책이라 부를 곳이 없다).
+- **같은 토큰이 모드에 따라 반대 역할을 하는 자리**(스크림 위 패널 테두리)는 **파생 토큰으로 푼다** — RN 에는 선택자가 없어 `--color-panel-border` 를 `mode` 에서 파생시킨다. 웹은 같은 자리를 `data-mode` CSS 속성으로 풀었다(🗑 ADR-123·⛔ ADR-122). 어느 쪽이든 **분기 재료는 `mode` 이고 테마 이름이 아니다** — 이름으로 분기하면 [[ADR-064]] 결정 8이 폐기한 `DARK_THEMES` 수동 목록이 되살아난다.
+- **OS 색 구성표를 묻는 일은 `ColorSchemePort` 가 맡는다**([[ADR-128]] 결정 4) — 상태 바 같은 시스템 표면을 칠하는 것도 포트 뒤다(`ThemeAppearancePort`). 미디어 스코프는 `theme/MediaScope.tsx` 컴포넌트 하나이고(상속·재선언 성질이 CSS 변수와 같다), 배경 이미지는 URL 이 아니라 `<Image>` 로 그린다(아래 「배경 이미지」).
 - 설정 화면에선 등록된 테마 중 하나를 고른다 — 목록은 카테고리 섹션 + 프리뷰 타일이고 위에 라이트·다크 필터가 붙는다(아래 「카테고리와 선택 목록」, UI 상세는 [settings.md](./settings.md)). 직업 기반 자동 매핑은 미정이라 범위 밖.
 - 값 소스: `src/data/job-themes.json`([[ADR-006]] — AI가 임의로 채우지 않고 사용자 확인 후 반영).
 
@@ -179,7 +179,7 @@
 ## 배경 이미지 (선택)
 테마는 색 38토큰 외에 **배경 이미지**를 가질 수 있다([[ADR-088]]).
 
-**지금 값을 가진 테마는 혼테일·검은마법사 둘이다**([[ADR-108]]·[[ADR-109]], 2026-08-07). [[ADR-106]]
+**지금 값을 가진 테마는 혼테일·검은마법사 둘이다**([[ADR-108]]·[[ADR-109]], 2026-08-07). ADR-106
 으로 뗐던 둘이 새 그림으로 다시 채워졌고, "새 그림은 JSON 블록 하나로 다시 붙는다"는 그 전제가 두 번
 확인됐다(제품 코드·타입·CSS 변경 0). 배경 없는 나머지 네 테마는 CSS 자체가 나가지 않아 그림이 한
 픽셀도 안 바뀐다.
@@ -257,34 +257,34 @@
   헤더 조각이 같은 에셋을 같은 기하로 그리므로 에셋을 바꾸면 양쪽을 함께 맞춰야 한다.
 - **값은 눈으로 맞춘다** — 수치로 고를 수 없다(어느 크롭에서 수정·달이 보이는지는 뷰포트 비율까지
   걸린다). 확정 값은 `job-themes.json` 의 `background` 블록에 사람이 넣는다([[ADR-006]] — 확인은
-  사람이 한다). 이 조정에 쓰던 `/debug/theme-background`(슬라이더가 진짜 백드롭·헤더 조각의 커스텀
-  프로퍼티를 실시간으로 바꿔 보고 있는 화면이 곧 결과였다)는 **[[ADR-092]] 에서 삭제**했다 —
+  사람이 한다). 이 조정에 쓰던 `/debug/theme-background` 화면은 **삭제됐다**(디버그 도구는 만들고 쓰고 지운다) —
   값을 다시 만질 일이 생기면 도구 복원이 선행돼야 한다(옛 구현은 `git log` 참고).
 - **에셋 해석**: `lib/theme-backgrounds.ts` 가 **커밋된 목록**(`src/assets/generated/themes.ts`)에서
   슬러그→에셋을 찾는다([[ADR-129]] — 일일 퀘스트 지역 배경 `lib/daily-quest-backgrounds.ts` 와 같은
   방식이고, 확장자 혼재와 macOS NFD 파일명도 같은 이유로 같은 처리를 한다). JSON 은 번들 경로를
   모른다. 그림을 넣거나 지우면 **`npm run assets:gen` 을 돌려야** 목록이 따라오고, 안 돌리면
   `src/assets/generated/__tests__/asset-manifest.test.ts` 가 빨개진다. **목록에 든 파일은 어느 테마도
-  안 써도 번들에 실리므로** 쓰지 않게 된 그림은 파일째 지워야 실제로 빠진다([[ADR-106]] 결정 2).
-- **테스트는 "배경 있는 테마"를 데이터에서 고르지 않는다**([[ADR-106]] 결정 3·4). 선언이 0건이어도
+  안 써도 번들에 실리므로** 쓰지 않게 된 그림은 파일째 지워야 실제로 빠진다(ADR-106 결정 2).
+- **테스트는 "배경 있는 테마"를 데이터에서 고르지 않는다**(ADR-106 결정 3·4). 선언이 0건이어도
   기계장치(`--theme-bg-*` 방출 · 슬러그 미해석 폴백 · 백드롭 렌더 분기)는 계속 검사돼야 하므로,
   있음 쪽 사례는 **테스트가 픽스처로 만들고**(`theme-registry.test.ts`) 컴포넌트 쪽은
-  `getThemeDefinition` 을 부분 모킹해 주입한다(`App`·`PageHeader`·`ThemeHeaderBackdrop` 테스트).
+  `getThemeDefinition` 을 부분 모킹해 주입한다(`App`·`PageHeader`·`ThemeBackdrop` 테스트).
   없음 쪽은 진짜 테마 여섯으로 계속 실물 검사한다. 선언이 0건이면 뜻이 없어지는 전수 검사는 통과가
   아니라 **`it.skipIf` 로 skip** 이다 — "검사했고 괜찮다"와 "검사할 것이 없다"를 리포트에서 가른다.
-- **깔리는 방식**: `buildThemeCss` 가 `--theme-bg-*` 네 프로퍼티를 내고, `App.tsx` 루트 첫
-  자식인 `.theme-backdrop`(`position: fixed` · `z-index: -1`)이 그걸 읽어 그린다. 음수 z-index 라
-  루트의 `bg-bg` **위**, 앱 콘텐츠 **아래**에 그려진다.
-- **`background-attachment: fixed` 는 쓰지 않는다** — iOS WKWebView 에서 불안정하고, 이 앱은 이미
-  같은 계열의 페인트 결함을 [[ADR-077]]·[[ADR-085]] 에서 겪었다.
-- **sticky 헤더는 `<ThemeHeaderBackdrop />` 로 자기 자리의 배경 조각을 직접 그린다**
-  ([[ADR-088]] 결정 5-1). 헤더는 계속 불투명하다 — 반투명으로 열면 배경만이 아니라 **밑으로 스크롤된
-  카드까지 비치기** 때문이다(사용자 반려). 조각은 뷰포트 크기(`100vw × 100dvh`)로 그리고 래퍼가
-  헤더 높이만큼 잘라내, 백드롭과 **같은 기하**라 이음매가 구조적으로 없다. 헤더 상자에 `cover` 를
-  주면 배율이 달라져 어긋나므로 이 우회가 필요하다.
-  적용은 **페이지 상단 헤더 5곳**뿐 — 드롭 히스토리 오버레이·바텀시트·에러 화면은 아래를 가리는
-  것이 일이라 손대지 않는다. `overflow: hidden` 은 헤더가 아니라 **조각 래퍼**에 건다(헤더에 걸면
-  캐릭터 드롭다운 팝오버가 잘린다).
+- **깔리는 방식**: `components/templates/ThemeBackdrop` 이 **한 장**을 셸의 **첫 자식**으로 깐다
+  ([[ADR-088]] 결정 4). RN 은 형제 순서가 곧 그리는 순서라 음수 z-index 가 필요 없고, 웹이 그것을
+  쓰느라 겪던 함정(*"루트의 `bg-bg` 를 빼야 이미지가 보인다"*)도 함께 사라졌다.
+- **`cover` 와 위치는 좌표로 계산한다**(`theme-backdrop-layout.ts`) — CSS `background-size/position`
+  이 없기 때문이고, 그 계산을 여러 자리가 **공유하는 것**이 이음매를 없애는 조건이다. `dim` 은 그림
+  위에 덮는 검정 한 겹이고 값·자리는 웹과 같다.
+- **헤더 자리에 따로 칠하지 않는다**([[ADR-133]] — [[ADR-088]] 결정 5-1 폐기). 배경은 **벽지 한 장**
+  뿐이고, 헤더도 그 위를 함께 스크롤한다([[ADR-131]] — 고정 영역이 없다). 웹 시절 `ThemeHeaderBackdrop`
+  이 헤더 몫의 배경 조각을 따로 그리던 구조는 사라졌다.
+- **화면이 자기 벽지를 들고 다니는 경우가 있다**([[ADR-134]] 정정 5, `theme/screen-backdrop-policy.ts`)
+  — 한 장으로 깔려면 그 위 내비게이션 화면들이 **투명**해야 하는데, 안드로이드에서는 전환 중 두 화면이
+  겹치는 동안 **위 화면 너머로 아래 화면 글자가 비친다**(실기기 확인). iOS 에는 그 증상이 없어
+  **양쪽 모습을 함께 바꾸지 않는다** — 안드로이드에서만 화면을 불투명하게 하고 벽지를 화면마다 들려
+  보낸다.
 - **카드는 불투명을 유지한다.** 반투명 카드는 카드 안 텍스트 대비가 배경 그림 위치마다 달라져
   이 문서의 대비 계측이 뜻을 잃는다([[ADR-088]] 결정 6).
 
@@ -313,8 +313,8 @@
 아래는 테마를 따라가지 **않는** 것이 맞다. 정규화 대상으로 오해하지 말 것([[ADR-064]] 적용 범위 밖).
 
 - **`components/DifficultyBadge`** — 5난이도 하드코딩 팔레트. 게임 고유 난이도 색이라 테마를 따라가면 의미가 깨진다([[ADR-006]] 도메인 데이터).
-- **고가 드롭 골드 연출** — `src/index.css` 의 `.valuable-drop-*`(`#f7d00d` 계열). 전 테마 공통 네온 골드.
-- **네이티브 브랜드색 3곳** — `capacitor.config.ts` · `index.html` 부트 커버 · `native/splash-screen.ts`(전부 `#F58B0F`). 앱 실행 전이라 선택 테마를 모르는 시점이다. 선택 테마를 스플래시에 반영할지는 별도 결정.
+- **고가 드롭 골드 연출** — `app/boss-profit/valuable-card-glow.ts`·`valuable-row-glow.ts`(`#f7d00d` 계열). 전 테마 공통 네온 골드.
+- **네이티브 브랜드색** — 스플래시 배경 `#F58B0F` 하나(`app.json` 의 `expo-splash-screen` 블록 → Android `values/colors.xml`·iOS colorset, [splash.md](./splash.md)). 앱 실행 전이라 선택 테마를 모르는 시점이다. 선택 테마를 스플래시에 반영할지는 별도 결정.
 
 ## 열린 질문
 - **직업 테마의 단위** — 직업 대분류인가 5차 전직 세부인가. 테마 이름과 실제 직업(전직) 매핑도 함께 미정이다. 카테고리 분류([[ADR-104]])는 이 답에 의존하지 않는다(어느 쪽이든 `category: "직업"`).

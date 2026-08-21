@@ -62,9 +62,9 @@ export interface BackgroundTaskPort {
 }
 ```
 
-포트 구현은 부팅 시 주입한다(`src/boot.ts` 의 관례 그대로). **Capacitor 구현은
-`isSupported(): false` 인 no-op** 이다([[ADR-146]] 결정 8) — 없애지 않는 이유는 주입 전 접근이 던지는
-계약(`native/ports.ts` 머리말)을 깨지 않기 위해서다.
+포트 구현은 부팅 시 주입한다(`src/boot.ts` 의 관례 그대로). 능력이 없는 플랫폼에서는
+`isSupported(): false` 인 **no-op 구현**을 넣는다([[ADR-146]] 결정 8) — 포트를 비워 두지 않는 이유는
+주입 전 접근이 던지는 계약(`native/ports.ts` 머리말)을 깨지 않기 위해서다.
 
 ## 레지스트리 — 알림 하나 = 정의 하나
 
