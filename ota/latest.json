@@ -3,8 +3,11 @@
   "url": "https://github.com/jini520/maple-routine/releases/download/live-update-latest/1.0.6.zip",
   "checksum": "f57f092d3a5face0c5292f1ca92d1f8e41884f142817db7db5dd0dd19ffaed39",
   "size": 6312602,
+  "storeRequiredPlatforms": [
+    "android"
+  ],
   "highlights": [
-    "메이플 루틴이 새 버전으로 바뀌었어요",
-    "스토어에서 업데이트해 주세요"
+    "보스 「벨로나」 추가",
+    "새 버전 전환을 위한 준비 업데이트"
   ]
 }

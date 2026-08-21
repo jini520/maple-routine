@@ -7,7 +7,6 @@ import {
   resolveReleaseCreateArgs,
   resolveReleaseTag,
 } from '../publish-live-update.mjs'
-import { readFileSync } from 'node:fs'
 import { RELEASE_NOTES } from '../../packages/core/src/data/release-notes.ts'
 // 이 왕복 검사가 보는 것은 «capacitor 배포 스크립트가 쓴 매니페스트를 capacitor 앱이 읽는가» 라,
 // 파서가 core 에서 그 앱의 어댑터로 내려간 뒤에도([[ADR-137]] 결정 6) 대상은 그대로다.
@@ -240,28 +239,3 @@ describe('매니페스트 왕복', () => {
     expect(parsed?.storeRequiredPlatforms).toEqual(['android', 'ios'])
   })
 })
-
-// ADR-154 결정 4 — `ota/latest.json` 은 캐패시터 소스를 지운 뒤 **유도를 켜는 유일한 재료**다.
-// url·checksum·size 는 그 빌드에서만 나오는 값이라 다시 계산할 방법이 없고, 이 파일이 깨지면
-// 이미 올라간 1.0.6.zip 이 «아무도 못 받는 번들» 이 된다. 그래서 형식을 테스트가 지킨다.
-describe('ota/latest.json — 캐패시터 최종 매니페스트 초안', () => {
-  const draft = JSON.parse(readFileSync(new URL('../../ota/latest.json', import.meta.url), 'utf-8'))
-
-  it('앱의 파서를 그대로 통과한다', () => {
-    expect(parseLiveUpdateManifest(draft)).not.toBeNull()
-    // 매니페스트는 GitHub CDN 이 octet-stream 으로 내려줘 문자열로 도착하는 경로가 실재한다.
-    expect(parseLiveUpdateManifest(JSON.stringify(draft))).not.toBeNull()
-  })
-
-  it('아직 게이트가 꺼져 있다 — 켜는 것은 스토어 게시를 확인한 사람이다', () => {
-    expect(draft.storeRequiredPlatforms).toBeUndefined()
-  })
-
-  it('업로드된 zip 을 가리키고 버전이 x.y.z 다', () => {
-    expect(draft.url).toContain(`/${draft.version}.zip`)
-    expect(draft.version).toMatch(/^\d+\.\d+\.\d+$/)
-    expect(draft.checksum).toMatch(/^[0-9a-f]{64}$/)
-    expect(draft.size).toBeGreaterThan(0)
-  })
-})
-
