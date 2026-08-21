@@ -5,15 +5,13 @@
 // 없다는 뜻이라 [[ADR-116]] 이 그 자리에 안내 모달을 얹었다(그 배선은 `ContentCharacterStep` 이
 // 갖는다). 화면 목록을 갈아 끼우는 온보딩 분기는 `RootNavigator` 다.
 //
-// ## 이 앱의 온보딩은 **세 단계**다 ([[ADR-143]] 결정 1)
+// ## 온보딩은 **세 단계**다 ([[ADR-143]] 결정 1)
 //
-//   웹뷰(Capacitor)   API 키 → 계정 선택 → 예열 → 스케줄 관리 방법 → 캐릭터 선택
-//   RN               API 키 →                     스케줄 관리 방법 → 캐릭터 선택
+//   API 키 → 스케줄 관리 방법 → 캐릭터 선택
 //
-// 계정을 고르는 일이 캐릭터 선택 화면의 드롭다운 안으로 들어갔고([[ADR-144]]), 예열([[ADR-016]])은
-// «계정을 열 때의 자격 판정» 으로 대체됐다(결정 5). 그래서 `selectingAccount`·`prefetching` 은 이
-// 앱에서 **도달할 수 없는 상태**다 — 두 흐름이 갈리는 자리는 core 의 계정 범위 플래그 하나이고
-// (`features/onboarding/flow.ts`, `boot.ts` 가 `'all'` 을 넣는다) 리듀서·상태 이름은 그대로다.
+// 계정을 고르는 일이 캐릭터 선택 화면의 드롭다운 안으로 들어갔고([[ADR-144]]), 예열은 «계정을 열
+// 때의 자격 판정» 으로 대체됐다(결정 5). 그 둘을 위해 있던 상태·이벤트·모듈은 전부 지웠다 —
+// 도달할 수 없는 상태를 남겨 두면 다음 사람이 그리로 가는 길을 찾게 된다.
 //
 // ## 상태는 core 에 있다 — 여기서 다시 만들지 않는다
 //
@@ -74,21 +72,16 @@ export function OnboardingScreen(): React.JSX.Element {
 
   function renderStep(): React.JSX.Element {
     switch (status) {
-      // 네 상태가 같은 화면인 것은 우연이 아니다 — 이 앱에서 **키 입력 앞뒤로 갈 수 있는 곳이 그
+      // 두 상태가 같은 화면인 것은 우연이 아니다 — 이 앱에서 **키 입력 앞뒤로 갈 수 있는 곳이 그
       // 자리 하나**다.
       //
       // ① `awaitingApiKey` — 첫 화면.
-      // ② `error` — 실패는 스토어가 토스트로 알린다([[ADR-083]] 결정 4). 웹뷰 앱은 `accounts` 가
-      //    남아 있으면 계정 목록을 그렸지만, 이 앱에는 그 목록 자체가 없다([[ADR-143]] 결정 1).
-      // ③④ `selectingAccount`·`prefetching` — **도달할 수 없는 상태**다(파일 머리). case 를 지우지
-      //    않는 것은 리듀서를 안 고쳤기 때문이고([[ADR-143]] 결정 8), 빈 화면 대신 폼을 두는 것은
-      //    `submitApiKey` 의 방어 분기(저장 직후 `getAuthConfig()` 가 `null` 이면 `API_KEY_VERIFIED`)
-      //    가 이 자리에 닿을 수 있어서다. **출구 없는 흰 화면을 만들지 않는다** — [[ADR-116]] 이
-      //    없앤 잠금과 같은 얼굴이고, 그때 실제로 통한 처방도 "키를 다시 넣는 것" 하나였다.
+      // ② `error` — 실패는 스토어가 토스트로 알린다([[ADR-083]] 결정 4). 계정 목록이라는 것이
+      //    없으므로([[ADR-143]] 결정 1) 그릴 수 있는 것이 폼 하나다. **출구 없는 흰 화면을 만들지
+      //    않는다** — [[ADR-116]] 이 없앤 잠금과 같은 얼굴이고, 그때 통한 처방도 "키를 다시 넣는
+      //    것" 하나였다.
       case 'awaitingApiKey':
       case 'error':
-      case 'selectingAccount':
-      case 'prefetching':
         return (
           <OnboardingStep>
             <ApiKeyForm isSubmitting={false} onSubmit={submitApiKey} />

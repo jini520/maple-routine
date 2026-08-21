@@ -60,7 +60,7 @@ const mockShowSplashMock = mockOnce('splash', 'cover')
 const callOrder = (mockCallOrder = mockCallOrder ?? [])
 
 
-const KEEP_KEY_NAMES = ['apiKey', 'selectedAccountId', 'theme', 'trackingMode', 'dropEffect']
+const KEEP_KEY_NAMES = ['apiKey', 'theme', 'trackingMode', 'dropEffect']
 
 function deleteCalls(): string[] {
   return mockDbExecuteMock.mock.calls.map(([statement]) => statement)
@@ -71,7 +71,6 @@ let prefs = installFakePreferences()
 beforeEach(async () => {
   prefs = installFakePreferences()
   await prefs.set('apiKey', 'test-key')
-  await prefs.set('selectedAccountId', 'acc-1')
   await prefs.set('theme', '렌')
   await prefs.set('trackingMode', 'manual')
   await prefs.set('dropEffect', 'off')
@@ -116,11 +115,10 @@ describe('그룹 ↔ 테이블 분할', () => {
 describe('clearCacheData', () => {
   // ADR-052 결정 1: trackingMode·dropEffect는 재조회로 복구되는 캐시가 아니라 사용자가 고른
   // 취향 설정이라, theme과 같이 캐시 삭제에도 보존한다.
-  it('apiKey·selectedAccountId·theme·trackingMode·dropEffect는 남긴다', async () => {
+  it('apiKey·theme·trackingMode·dropEffect는 남긴다', async () => {
     await clearCacheData()
 
     expect(await prefs.get('apiKey')).toBe('test-key')
-    expect(await prefs.get('selectedAccountId')).toBe('acc-1')
     expect(await prefs.get('theme')).toBe('렌')
     expect(await prefs.get('trackingMode')).toBe('manual')
     expect(await prefs.get('dropEffect')).toBe('off')

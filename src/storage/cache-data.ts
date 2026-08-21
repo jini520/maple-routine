@@ -7,7 +7,6 @@ import { BOSS_PROFIT_TABLE_NAMES, getBossProfitDb } from './sqlite/db'
 // theme과 같이 보존한다(ADR-052 결정 1). 어떤 그룹을 골라도 이 5개는 삭제 대상이 아니다.
 const KEEP_KEYS = new Set<string>([
   STORAGE_KEYS.apiKey,
-  STORAGE_KEYS.selectedAccountId,
   STORAGE_KEYS.theme,
   STORAGE_KEYS.trackingMode,
   STORAGE_KEYS.dropEffect,

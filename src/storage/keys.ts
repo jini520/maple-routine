@@ -1,6 +1,8 @@
 export const STORAGE_KEYS = {
   apiKey: 'apiKey',
-  selectedAccountId: 'selectedAccountId',
+  // 레거시 — 계정 선택 단계가 사라져([[ADR-143]] 결정 7) 아무도 읽고 쓰지 않는다. 옛 설치본에
+  // 남은 값을 치우기 위해 이름만 남긴다(연결 해제·캐시 삭제가 지운다).
+  legacySelectedAccountId: 'selectedAccountId',
   theme: 'theme',
   trackingMode: 'trackingMode',
   dropEffect: 'dropEffect',

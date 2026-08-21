@@ -1,24 +1,16 @@
 import { create } from 'zustand'
 import { fetchCharacterList } from '../../nexon/character'
 import { isInvalidApiKeyError, NexonRateLimitError } from '../../nexon/errors'
-import {
-  clearAuthConfig,
-  getAuthConfig,
-  removeApiKey,
-  setApiKey,
-  setSelectedAccountId,
-} from '../../storage/api-key'
+import { clearAuthConfig, removeApiKey, setApiKey } from '../../storage/api-key'
 import {
   getTrackedCharacterOcids,
   setTrackedCharacterOcids,
 } from '../../storage/character-selection'
 import { type TrackingMode } from '../../storage/tracking-mode'
 import { useToastStore } from '../toast/store'
-import { getOnboardingAccountScope } from './flow'
 import { formatOnboardingError } from './format'
 import { seedManualTrackedContent } from '../tracking-mode/seed'
 import { useTrackingModeStore } from '../tracking-mode/store'
-import { prefetchAccountData } from './prefetch'
 import { deriveResumeTarget, type ResumeTarget } from './resume'
 import {
   initialOnboardingState,
@@ -31,11 +23,8 @@ import {
 export interface OnboardingStore extends OnboardingState {
   restoreFromStorage(): Promise<void>
   submitApiKey(apiKey: string): Promise<void>
-  selectAccount(accountId: string): Promise<void>
   selectTrackingMode(mode: TrackingMode): Promise<void>
   submitContentCharacters(ocids: string[]): Promise<void>
-  // ADR-086 결정 8: 고른 계정의 후보가 0명일 때의 유일한 탈출구 — 온보딩 중에는 설정 화면이 없다.
-  restartAccountSelection(): Promise<void>
   // ADR-115 결정 10 · ADR-116 결정 1: 저장된 키로 앞으로 갈 수 없게 됐을 때 부르는 유일한 진입점.
   // 원인은 무효 키(400 OPENAPI00005 · 401/403)와 429 둘이고, 사슬은 하나이며 문구만 갈린다.
   // 알리기만 하고(모달) 이동·삭제는 하지 않는다 — 그것은 아래 confirmApiKeyNotice 가 한다.
@@ -58,87 +47,27 @@ function toOnboardingError(error: unknown): OnboardingError {
 }
 
 export const useOnboardingStore = create<OnboardingStore>()((set, get) => {
-  // ADR-016: 계정이 확정된 직후(ADR-051 이후로는 사용자가 "계속하기"를 누른 selectAccount 한 곳뿐)
-  // 전체 캐릭터를 예열한다. 진행률은 PREFETCH_PROGRESS로 스트리밍 반영하고, 끝나면 PREFETCH_FINISHED로
-  // 'completed'로 넘어간다.
-  async function runPrefetch(
-    apiKey: string,
-    accountId: string,
-    characters: OnboardingState['accounts'][number]['characters'],
-  ) {
-    await prefetchAccountData(apiKey, accountId, characters, (progress) => {
-      set((state) =>
-        onboardingReducer(state, {
-          type: 'PREFETCH_PROGRESS',
-          completed: progress.completed,
-          total: progress.total,
-        }),
-      )
-    })
-    useToastStore.getState().showSuccess('캐릭터 정보를 모두 불러왔어요')
-    set((state) => onboardingReducer(state, { type: 'PREFETCH_FINISHED' }))
-  }
-
-  // 저장된 키로 계정 목록을 다시 받아 선택 화면으로 보낸다. 부팅 재개(restoreFromStorage)와
-  // 후보 0명일 때의 되돌아가기(restartAccountSelection)가 같은 경로를 쓴다.
-  async function loadAccountsForSelection(apiKey: string): Promise<void> {
-    set((state) => onboardingReducer(state, { type: 'SUBMIT_API_KEY' }))
-
-    let accounts: OnboardingState['accounts']
-    try {
-      accounts = await fetchCharacterList(apiKey)
-    } catch (error) {
-      // ADR-065 결정 1: 전에는 이 경로에 토스트가 없어, 아무 설명 없이 API 키 입력 화면으로
-      // 되돌아갔다(status가 error인데 accounts가 비면 화면이 폼만 다시 그린다).
-      const onboardingError = toOnboardingError(error)
-      useToastStore.getState().showError(formatOnboardingError(onboardingError))
-      set((state) => onboardingReducer(state, { type: 'API_KEY_REJECTED', error: onboardingError }))
-      return
-    }
-
-    set((state) => onboardingReducer(state, { type: 'API_KEY_VERIFIED', accounts }))
-  }
-
   // 재개 파생(deriveResumeTarget)이 가리킨 뒤 단계로 곧바로 전이한다. 부팅(restoreFromStorage)과
   // 키 재입력(submitApiKey)이 같은 전이를 쓴다 — 이 자리에 네트워크는 없다(ADR-115 결정 4).
-  function commitResumedStep(
-    target: Extract<ResumeTarget, { selectedAccountId: string | null }>,
-  ): void {
+  function commitResumedStep(target: Exclude<ResumeTarget, { status: 'awaitingApiKey' }>): void {
     if (target.status === 'completed') {
-      set((state) =>
-        onboardingReducer(state, {
-          type: 'RESTORE_COMPLETED',
-          selectedAccountId: target.selectedAccountId,
-        }),
-      )
+      set((state) => onboardingReducer(state, { type: 'RESTORE_COMPLETED' }))
       return
     }
 
-    set((state) =>
-      onboardingReducer(state, {
-        type: 'RESTORE_STEP',
-        status: target.status,
-        selectedAccountId: target.selectedAccountId,
-      }),
-    )
+    set((state) => onboardingReducer(state, { type: 'RESTORE_STEP', status: target.status }))
   }
 
   return {
     ...initialOnboardingState,
 
-    // ADR-086 결정 1: 저장된 값에서 재개 지점을 파생한다 — 전에는 selectedAccountId 하나만 보고
-    // 곧바로 completed로 전이해, 모드·캐릭터를 고르지 않은 채 빈 메인으로 떨어졌다.
+    // ADR-086 결정 1: 저장된 값에서 재개 지점을 파생한다.
     // 진행 상태 전용 키를 두지 않는 이유: 각 단계의 산출물이 이미 영속화돼 있어서, 진행 상태를
     // 따로 쓰면 진실이 둘이 되고 한쪽만 써진 채 앱이 죽는 순간 어긋난다.
     async restoreFromStorage() {
       const target = await deriveResumeTarget()
 
       if (target.status === 'awaitingApiKey') {
-        return
-      }
-
-      if (target.status === 'selectingAccount') {
-        await loadAccountsForSelection(target.apiKey)
         return
       }
 
@@ -172,95 +101,39 @@ export const useOnboardingStore = create<OnboardingStore>()((set, get) => {
 
       useToastStore.getState().showSuccess('API 키를 확인했어요')
 
-      // ADR-115 결정 4: 키 재입력이면 뒤 단계를 저장된 값으로 재개한다 — 계정 선택·모드·캐릭터를
-      // 다시 묻지 않는다. 파생은 부팅과 같은 함수 하나가 한다(setApiKey 뒤라야 authConfig가 채워져
-      // 있다). 예열(ADR-016)은 여기서 돌지 않는다 — 계정을 확정하는 selectAccount 하나뿐이다(ADR-051).
+      // ADR-115 결정 4: 키 재입력이면 뒤 단계를 저장된 값으로 재개한다 — 모드·캐릭터를 다시 묻지
+      // 않는다. 파생은 부팅과 같은 함수 하나가 한다(setApiKey 뒤라야 authConfig가 채워져 있다).
       const target = await deriveResumeTarget()
-      // awaitingApiKey는 setApiKey 직후라 정상적으로는 올 수 없다 — 방어적으로 기존 흐름에 떨어뜨린다.
-      // selectingAccount는 계정 범위 'single'에서 저장된 계정이 아직 없는 신규 사용자다.
-      if (target.status === 'awaitingApiKey' || target.status === 'selectingAccount') {
+      // awaitingApiKey는 setApiKey 직후라 정상적으로는 올 수 없다 — 방어적으로 첫 단계에 떨어뜨린다.
+      if (target.status === 'awaitingApiKey') {
         set((state) => onboardingReducer(state, { type: 'API_KEY_VERIFIED', accounts }))
         return
       }
 
-      // ADR-143 결정 9: 계정을 고르지 않는 앱에는 대조할 selectedAccountId가 없다. 가드의 목적은
-      // 그대로이므로(남의 계정 키로 이전 목록을 쓰게 두지 않는다) 같은 응답으로 추적 ocid를 대조한다.
-      if (getOnboardingAccountScope() === 'all') {
-        // 지킬 목록이 없으면 판정 대상 자체가 없다 — 여기서 "하나도 없다"로 읽으면 처음 키를 넣는
-        // 신규 사용자가 목록이 비었다는 이유로 스케줄 관리 방법 단계를 건너뛴다.
-        const trackedOcids = (await getTrackedCharacterOcids()) ?? []
-        if (trackedOcids.length === 0) {
-          commitResumedStep(target)
-          return
-        }
-
-        // 계정을 넘어 고르는 것이 이 개편의 본론이라, 겹치는 ocid가 어느 계정에 있는지는 묻지 않는다.
-        const ocidsInResponse = new Set(
-          accounts.flatMap((candidate) => candidate.characters.map((character) => character.ocid)),
-        )
-        if (trackedOcids.some((ocid) => ocidsInResponse.has(ocid))) {
-          commitResumedStep(target)
-          return
-        }
-
-        // 하나도 없다 — 이 키는 다른 넥슨 계정의 것이다. 계정 선택('single'이 가던 자리)이 없으므로
-        // 캐릭터부터 다시 고르게 한다. 새 이벤트 없이 기존 재개 전이를 그대로 쓴다.
-        set((state) =>
-          onboardingReducer(state, {
-            type: 'RESTORE_STEP',
-            status: 'selectingContentCharacters',
-            selectedAccountId: target.selectedAccountId,
-          }),
-        )
-        return
-      }
-
-      // 결정 5: 새로 넣은 키가 다른 넥슨 계정의 키일 수 있다. 저장된 selectedAccountId가 방금 받은
-      // 응답에 없으면 재개하지 않고 기존대로 계정 선택부터 간다 — 안 그러면 남의 계정 키로 이전 계정
-      // ocid 추적 목록을 그대로 쓰게 된다. 추가 호출은 없다(이미 손에 있는 응답으로 판정한다).
-      if (accounts.some((candidate) => candidate.accountId === target.selectedAccountId)) {
+      // ADR-143 결정 9: 계정을 고르지 않으므로 대조할 «저장된 계정» 이 없다. 가드의 목적은 그대로다
+      // (남의 계정 키로 이전 목록을 쓰게 두지 않는다) — 같은 응답으로 추적 ocid를 대조한다.
+      //
+      // 지킬 목록이 없으면 판정 대상 자체가 없다 — 여기서 "하나도 없다"로 읽으면 처음 키를 넣는
+      // 신규 사용자가 목록이 비었다는 이유로 스케줄 관리 방법 단계를 건너뛴다.
+      const trackedOcids = (await getTrackedCharacterOcids()) ?? []
+      if (trackedOcids.length === 0) {
         commitResumedStep(target)
         return
       }
 
-      set((state) => onboardingReducer(state, { type: 'API_KEY_VERIFIED', accounts }))
-    },
-
-    async selectAccount(accountId: string) {
-      try {
-        await setSelectedAccountId(accountId)
-      } catch {
-        // ADR-083 결정 4: 목록 상단 인라인 문구를 걷어내면서 이 경로가 유일하게 신호가 없는
-        // 자리가 됐다 — 그대로 두면 계정을 눌렀는데 아무 일도 안 일어난 것처럼 보인다.
-        // 액션은 두지 않는다(다시 계정을 누르면 되는 일이라 중복이다, ADR-065 결정 1과 같은 판단).
-        const onboardingError = { kind: 'storageWriteFailed' } as const
-        useToastStore.getState().showError(formatOnboardingError(onboardingError))
-        set((state) =>
-          onboardingReducer(state, { type: 'ACCOUNT_SELECTION_FAILED', error: onboardingError }),
-        )
+      // 계정을 넘어 고르는 것이 이 개편의 본론이라, 겹치는 ocid가 어느 계정에 있는지는 묻지 않는다.
+      const ocidsInResponse = new Set(
+        accounts.flatMap((candidate) => candidate.characters.map((character) => character.ocid)),
+      )
+      if (trackedOcids.some((ocid) => ocidsInResponse.has(ocid))) {
+        commitResumedStep(target)
         return
       }
 
-      set((state) => onboardingReducer(state, { type: 'SELECT_ACCOUNT', accountId }))
-
-      // ADR-016/ADR-051: 계정 수와 무관하게 사용자가 확정한 이 경로에서만 예열을 시작한다.
-      const account = get().accounts.find((candidate) => candidate.accountId === accountId)
-      const authConfig = await getAuthConfig()
-      if (account !== undefined && authConfig !== null) {
-        await runPrefetch(authConfig.apiKey, accountId, account.characters)
-      }
-    },
-
-    // ADR-086 결정 8: 고른 계정에 고를 수 있는 캐릭터가 하나도 없을 때 계정 선택으로 되돌아간다.
-    // 저장된 selectedAccountId 도 비운다 — 안 비우면 여기서 앱을 종료했을 때 결정 1의 재개가
-    // 같은 계정의 캐릭터 단계로 다시 데려와 같은 막다른 길이 반복된다.
-    async restartAccountSelection() {
-      const authConfig = await getAuthConfig()
-      if (authConfig === null) {
-        return
-      }
-      await setSelectedAccountId(null)
-      await loadAccountsForSelection(authConfig.apiKey)
+      // 하나도 없다 — 이 키는 다른 넥슨 계정의 것이다. 캐릭터부터 다시 고르게 한다.
+      set((state) =>
+        onboardingReducer(state, { type: 'RESTORE_STEP', status: 'selectingContentCharacters' }),
+      )
     },
 
     // ADR-035 결정 13/14: 온보딩에서 자동/수동 트래킹 모드를 고른 뒤 다음 단계로 넘어간다.
