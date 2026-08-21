@@ -460,12 +460,14 @@ describe('openStoreForUpdate', () => {
     openSpy.mockRestore()
   })
 
-  it('iOS면 itms-apps:// URL을 외부로 연다', () => {
+  // 스킴만 보던 정규식(`/^itms-apps:\/\//`)이라 **placeholder `id0000000000` 으로도 통과했다** —
+  // 그래서 iOS 「스토어로 이동」이 죽은 링크인 채로 살아남았다([[ADR-154]] 결정 6). 앱 ID 는
+  // 형식이 아니라 **값**이 맞아야 의미가 있으므로 실제 값을 못박는다(RN 어댑터와 같은 값이다).
+  it('iOS면 실제 App Store 앱 ID로 연다 — 스킴만 보면 placeholder를 놓친다', () => {
     getPlatformMock.mockReturnValue('ios')
     const openSpy = vi.spyOn(window, 'open').mockReturnValue(null)
     openStoreForUpdate()
-    expect(openSpy.mock.calls[0][0]).toMatch(/^itms-apps:\/\//)
-    expect(openSpy.mock.calls[0][1]).toBe('_system')
+    expect(openSpy).toHaveBeenCalledWith('itms-apps://apps.apple.com/app/id6797579391', '_system')
     openSpy.mockRestore()
   })
 })
