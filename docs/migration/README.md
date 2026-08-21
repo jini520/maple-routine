@@ -1,5 +1,17 @@
 # React Native 전환 (인덱스)
 
+> ## ⚠️ 이 문서는 **완료된 전환의 기록**이다 (2026-08-21)
+>
+> RN 전환은 끝났고([[ADR-128]]), 마지막 고리인 캐패시터 소스 삭제와 모노레포 해체도 마쳤다
+> ([[ADR-154]]·[[ADR-155]]). 그래서 아래 본문에 나오는 **경로는 그때의 것**이다
+> (`packages/app-capacitor/…`·`packages/app-rn/…`·`packages/core/src/…`) — 지금 구조는
+> 저장소 루트가 앱이고 `core/` 가 그 옆이다. **고치지 않는 이유는 기록이기 때문이다**:
+> "그때 무엇을 어디서 어디로 옮겼는가" 가 이 문서의 값이고, 경로를 현재로 덮으면 그 값이 사라진다.
+>
+> **지금 작업의 근거로 이 문서를 읽지 말 것.** 현재 유효한 것은 `foundation/architecture.md`(레이어) ·
+> `foundation/release.md`(빌드·서명) · 각 `features/*.md` 다. 다만 [data.md](./data.md) 는 예외로
+> **지금도 도는 코드의 설명**이다 — RN 앱이 캐패시터 시절 저장소를 그대로 읽는 방법이 거기 있다.
+
 **범위**: Capacitor → React Native 전환 전체 — 원칙·전략·단계·검증 게이트. 옮길 대상의 전수 목록은
 [parity-inventory.md](./parity-inventory.md), 기존 사용자 데이터 보존은 [data.md](./data.md).
 

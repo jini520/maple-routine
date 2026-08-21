@@ -1,39 +1,34 @@
 # 스토어 릴리스 (Play · App Store)
 
 > **범위**: 스토어에 나가는 **바이너리**를 만드는 절차 — 서명·버전·빌드 커맨드·산출물 검증, 그리고 콘솔에 채워 넣어야 하는 요건. 앱 안에서 도는 OTA 갱신은 [features/live-update.md](../features/live-update.md), 광고 관련 스토어 요건의 *배경*은 [features/ads.md](../features/ads.md).
-> **관련 소스**(전부 `packages/app-capacitor/` 아래 — [[ADR-128]] 0단계): `android/app/build.gradle`(서명·`versionCode`) · `android/keystore.properties`(**커밋 금지**) · `android/.gitignore` · `ios/App/App.xcodeproj`(iOS 서명) · `package.json`(**버전 원천** — OTA 매니페스트와 설정 화면 표시가 같은 파일을 읽는다). 빌드 스크립트 진입점은 저장소 루트 `package.json`(위임).
+> **관련 소스**(전부 저장소 루트 아래 — [[ADR-155]] 결정 2): `android/app/build.gradle`(서명·`versionCode`) · `android/keystore.properties`(**커밋 금지**) · `ios/app.xcodeproj`(iOS 서명) · `ios/app/Info.plist`(`CFBundleVersion`) · `app.json`(**두 플랫폼 공통 지문 재료** — `expo.version`·`ios.buildNumber`·`android.versionCode`) · `package.json`(**버전 원천** — OTA 매니페스트와 설정 화면 표시가 같은 파일을 읽는다).
 > **관련 ADR**: [[ADR-091]](Android 서명) [[ADR-090]](광고 — 스토어 요건이 늘어난 이유) [[ADR-024]](버전 형식) [[ADR-119]](릴리스 노트) [[ADR-126]](핵심 목록·모달). **관련 문서**: [../features/ads.md](../features/ads.md), [../features/live-update.md](../features/live-update.md), [../features/site.md](../features/site.md), [../trouble/2026-08-04-ios-appstore-signing.md](../trouble/2026-08-04-ios-appstore-signing.md).
 
-## 빌드 커맨드는 하나뿐이다 — `npm run build`
+## 빌드는 Expo/네이티브 하나다 ([[ADR-155]])
 
-스토어에 나가는 웹 번들은 **반드시 `npm run build`** 로 만든다.
+스토어 바이너리는 **네이티브 빌드 산출물**이다 — Android 는 `android/` 의 Gradle, iOS 는 `ios/` 의
+Xcode 아카이브다. 저장소 루트가 곧 Expo 프로젝트라 둘 다 루트 기준 한 칸 아래에 있다.
 
-| 명령 | 광고 | 채널 | 스토어행 |
-|---|---|---|---|
-| `npm run build` | **실 광고** | production | ✅ |
-| `npm run build:test-ads` | 테스트 광고 | production | ❌ 수익 0 |
-| `npm run build:beta` | 테스트 광고 | beta | ❌ |
-| `npm run build:screenshot` | — | — | ❌ 캐릭터명이 익명화된다 |
-
-**틀려도 화면에는 증상이 없다**([features/ads.md](../features/ads.md)) — 테스트 광고가 박힌
-빌드도 멀쩡히 돌고 광고까지 뜬다. 수익만 0이다.
+> 종전에는 이 자리에 «웹 번들을 어느 스크립트로 굽는가»(`npm run build` / `build:beta` /
+> `build:test-ads`) 표가 있었다. 그 스크립트들은 캐패시터 앱의 것이었고 앱과 함께 사라졌다 —
+> 아래 «폐기된 정책» 참고.
 
 ## 릴리스는 노트를 쓰는 것으로 시작한다 ([[ADR-119]])
 
-**버전을 올리기 전이 아니라, 올리면서 `packages/core/src/data/release-notes.ts` 에 그 버전의 항목을
+**버전을 올리기 전이 아니라, 올리면서 `core/data/release-notes.ts` 에 그 버전의 항목을
 먼저 쓴다.** OTA 배포든 스토어 바이너리든 순서는 같다.
 
 ```
-1. packages/app-capacitor/package.json version 을 올린다  (x.y.z — 2단이면 OTA가 깨진다, [[ADR-024]])
+1. package.json 의 version 을 올린다        (x.y.z — 2단이면 OTA가 깨진다, [[ADR-024]])
      ↑ 저장소 루트 package.json 이 아니다. 루트는 워크스페이스 오케스트레이션용이라 version 이 없다
-2. packages/core/src/data/release-notes.ts 에 그 버전 항목을 쓴다   ← 이 단계를 건너뛰면 3에서 막힌다
+2. core/data/release-notes.ts 에 그 버전 항목을 쓴다            ← 이 단계를 건너뛰면 3에서 막힌다
      · items      — 변경 전부. 개발 노트 화면이 읽는다
      · highlights — 핵심 3~4줄. **업데이트 모달**이 받기 전에 읽는다([[ADR-126]] 결정 2·3)
      · 네이티브 변경 항목에는 「스토어 업데이트 필요」 표식(항목 단위)
 3. npm run build / node scripts/publish-live-update.mjs
 ```
 
-> ⚠️ **`packages/app-capacitor/package.json` 의 `1.0.6` 은 이 앱의 마지막 번들이다**([[ADR-154]]).
+> ⚠️ **캐패시터 앱의 `1.0.6` 이 그 앱의 마지막 번들이다**([[ADR-154]]) — 소스는 이미 지웠고([[ADR-155]]) 남은 재료는 `ota/latest.json` 뿐이다.
 > [[ADR-128]] 의 RN 전환분이 스토어에 올라가면서 capacitor 앱은 갱신이 끝났고, 이 배포는 «적용될
 > 번들»을 나르는 것이 아니라 **사용자를 스토어로 보내는** 것이 목적이다. **버전은 여기서 더 올리지
 > 않는다** — iOS 스토어 심사 버전이 1.0.6 이라 OTA 가 그 위로 가면 안 되고([[ADR-154]] 맥락),
@@ -49,7 +44,7 @@
 > 2단계  ota/latest.json 에 "storeRequiredPlatforms": ["android"] 를 넣어 발행 (Play 게시 확인 후)
 > 3단계  같은 필드를 ["android","ios"] 로                            (App Store 게시 확인 후)
 >          gh release upload live-update-latest ota/latest.json --repo jini520/maple-routine --clobber
->          ← 둘 다 빌드 없음·다운로드 없음. 그래서 1단계 직후 packages/app-capacitor 를 지워도 된다.
+>          ← 둘 다 빌드 없음·다운로드 없음. 그래서 1단계 직후 캐패시터 소스를 지웠다([[ADR-155]]).
 > ```
 >
 > - **먼저 쏘지 말 것** — 스토어에 받을 것이 없는 플랫폼을 목록에 넣으면 막다른 길로 보낸다.
@@ -67,7 +62,7 @@
 > 것도 같은 중단**이다 — 문구가 어느 쪽이 비었는지 말해 준다.
 
 > [!NOTE]
-> **이 문서는 `app-capacitor` 기준이다.** RN 앱(`packages/app-rn`)의 OTA 는 프로토콜도 스크립트도 다르다
+> **이 절은 캐패시터 기준이다.** RN 앱의 OTA 는 프로토콜도 스크립트도 다르다
 > (`scripts/publish-rn-ota.mjs` · [[ADR-137]]). **RN 스토어 릴리스 절차는 아직 이 문서에 없다** — 1.0.6
 > 을 내보내며 확인된 것부터 여기 채울 것.
 
@@ -77,7 +72,7 @@
 - **`highlights` 를 `items` 에서 베끼지 말 것**([[ADR-126]] 결정 3). *"무엇이 바뀌었나"* 가 아니라
   *"받으면 무엇이 생기나"* 를 쓰고, 자잘한 것은 `일부 버그 및 사용성 개선` 처럼 한 줄로 뭉친다.
 - **스크립트가 `.ts` 를 읽는 방법은 Node 내장 타입 스트리핑이다** — `.mjs` 가
-  `packages/core/src/data/release-notes.ts` 를 **그대로 `import`** 한다(Node 22.18+/23.6+ 부터 플래그 없이 켜져 있고
+  `core/data/release-notes.ts` 를 **그대로 `import`** 한다(Node 22.18+/23.6+ 부터 플래그 없이 켜져 있고
   이 저장소는 24.x 에서 확인했다). **이 자리를 만질 때 `tsx`·`ts-node` 를 들이지 말 것** — 배포
   스크립트는 릴리스 경로의 일부라 의존성이 늘수록 릴리스가 깨질 표면이 넓어진다. 정규식으로 파일을
   긁는 것도 안 된다(원천 형식이 바뀌는 순간 조용히 틀린 값을 낸다). `release-notes.ts` 는 순수
@@ -124,7 +119,7 @@ CN=MapleRoutine, O=Maple Routine, L=Seoul, ST=Seoul, C=KR
 - 마지막 확인(`… 이(가) 맞습니까? [아니오]:`)에서 **`y` 를 입력**한다 — 기본값이 "아니오"라
   그냥 엔터를 치면 처음부터 다시 묻는다.
 
-그 다음 `packages/app-capacitor/android/keystore.properties` 를 만든다(**gitignore 대상 · 절대경로**).
+그 다음 `android/keystore.properties` 를 만든다(**gitignore 대상 · 절대경로**).
 
 ```properties
 storeFile=/Users/<user>/keys/maple-routine-upload.jks
@@ -144,23 +139,26 @@ keyPassword=<같은 비밀번호>
 
 **릴리스 노트가 선행한다**(위 "릴리스는 노트를 쓰는 것으로 시작한다") — 아래는 그 뒤의 빌드 절차다.
 
-**네이티브 프로젝트는 `packages/app-capacitor/` 안에 있다**([[ADR-128]] 0단계) — `npx cap` 은 반드시
-그 디렉터리에서 돈다(`capacitor.config.ts` 와 `android/`·`ios/` 가 거기 있다). `npm run build` 만
-저장소 루트에서 위임으로 돈다.
+**네이티브 프로젝트는 저장소 루트의 `android/` 다**([[ADR-155]] 결정 2). 웹 번들을 굽고
+`npx cap sync` 로 넣던 단계는 없다 — JS 는 Gradle 이 Metro 를 불러 AAB 안에 직접 넣는다.
 
 ```bash
-# 1. versionCode 를 올린다 (packages/app-capacitor/android/app/build.gradle) — 소진된 번호는 재사용 불가
-# 2. 웹 번들 → 네이티브 동기화
-npm run build && (cd packages/app-capacitor && npx cap sync android)
+# 1. versionCode 를 **두 파일에** 올린다 — 소진된 번호는 재사용 불가
+#      android/app/build.gradle  ← 빌드가 실제로 읽는 값
+#      app.json                  ← 지문(runtimeVersion) 재료. 한쪽만 고치면 AAB 는 옛 번호로 나온다(실측, c9ce4697)
+# 2. expo-updates 의 임베드 에셋 목록을 **지워서** 다시 만들게 한다
+#      그 Gradle 태스크가 소스를 입력으로 선언하지 않아 한 번 만들어지면 UP-TO-DATE 로 건너뛴다.
+#      스탈해지면 새 그림이 **에러도 로그도 없이** 빈 자리로 나온다(c9ce4697 — 카링·벨로나 5장).
+rm -rf android/app/build/generated/assets/createReleaseUpdatesResources
 # 3. AAB (APK 아님 — Play는 AAB만 받는다)
-cd packages/app-capacitor/android && ./gradlew bundleRelease
-# 4. 산출물: packages/app-capacitor/android/app/build/outputs/bundle/release/app-release.aab
+cd android && ./gradlew bundleRelease
+# 4. 산출물: android/app/build/outputs/bundle/release/app-release.aab
 ```
 
 **서명 확인** — 서명이 안 붙어도 빌드는 성공하므로([[ADR-091]] 결정 4) 산출물을 직접 본다.
 
 ```bash
-keytool -printcert -jarfile packages/app-capacitor/android/app/build/outputs/bundle/release/app-release.aab
+keytool -printcert -jarfile android/app/build/outputs/bundle/release/app-release.aab
 ```
 
 `소유자: CN=...` 이 나오면 서명된 것이고, 아무것도 안 나오면 `keystore.properties` 를 못 읽은
@@ -321,7 +319,7 @@ Xcode 자동 서명을 쓰므로 키 관리가 없다. 대신 두 가지 함정�
 `cap add ios` 를 다시 하면 `PRODUCT_NAME` 이 `capacitor.config.ts` 의 한글 `appName` 으로
 되살아난다. **플랫폼을 재생성했다면 ASCII 로 다시 바꿀 것.**
 
-### RN 앱(`packages/app-rn`)의 아카이브 (2026-08-19, v1.0.6 build 13 으로 확인)
+### 아카이브 (2026-08-19, v1.0.6 build 13 으로 확인)
 
 Xcode GUI 가 아니라 **CLI 로 돈다.** Organizer 는 아카이브가 `~/Library/Developer/Xcode/Archives/<오늘
 날짜>/` 밑에 있으면 그대로 집어 가므로, `-archivePath` 를 거기로 주면 GUI 의 `Product ▸ Archive` 와
@@ -332,8 +330,8 @@ Organizer 의 Distribute 까지 가야 드러난다([../trouble/2026-08-04-ios-a
 
 | 파일 | 값 |
 |---|---|
-| `packages/app-rn/app.json` | `ios.buildNumber` |
-| `packages/app-rn/ios/app/Info.plist` | `CFBundleVersion` ← **빌드가 실제로 읽는 값** |
+| `app.json` | `ios.buildNumber` |
+| `ios/app/Info.plist` | `CFBundleVersion` ← **빌드가 실제로 읽는 값** |
 
 이 저장소는 네이티브 트리를 커밋해 두므로 `app.json` 은 원천이 아니다(prebuild 를 돌려야 반영된다,
 [[ADR-138]]). `app.json` 만 고치면 **옛 번호로 나간다** — Android 가 `versionCode` 20 으로 그렇게 한 번
@@ -357,7 +355,7 @@ done
 #### 3. 아카이브
 
 ```bash
-cd packages/app-rn/ios
+cd ios
 xcodebuild -workspace app.xcworkspace -scheme app \
   -configuration Release -destination 'generic/platform=iOS' \
   -archivePath "$HOME/Library/Developer/Xcode/Archives/$(date +%Y-%m-%d)/MapleRoutine-1.0.6-13.xcarchive" \
@@ -393,7 +391,7 @@ codesign -dv --verbose=2 "$A" 2>&1 | grep -E 'Identifier|Authority|TeamIdentifie
 채라 **매 빌드 돈다**(아카이브 로그의 `note:` 로 확인된다). Gradle 처럼 UP-TO-DATE 로 건너뛰는 자리가
 없다. 그래도 스토어행 바이너리는 눈으로 확인하고 보낸다 — build 13 에서는 `EXUpdates.bundle/app.manifest`
 의 288개 항목이 전부 `app.app/assets/` 의 실제 파일로 풀렸고, 카링·벨로나의 `packagerHash` 가
-`packages/core/src/assets/bosses/*.webp` 의 md5 와 같았다.
+`core/assets/bosses/*.webp` 의 md5 와 같았다.
 
 **같은 자리에서 `EXUpdates.bundle/fingerprint` 도 함께 본다** — 아래 «스토어 바이너리와 OTA 의
 runtimeVersion» 절이 그 이유다(1.0.6 에서 실제로 어긋난 채 올라갔다).
@@ -457,7 +455,7 @@ AAB `base/assets/fingerprint`), `publish-rn-ota.mjs` 는 **발행 시점 트리�
 ### 규칙 2 — 업로드 직전에 «바이너리 안 지문 == 트리 계산값» 을 대조한다
 
 ```bash
-cd packages/app-rn
+cd .   # 저장소 루트가 곧 Expo 프로젝트다
 npx expo-updates runtimeversion:resolve --platform ios      # {"runtimeVersion":"…", …}
 npx expo-updates runtimeversion:resolve --platform android
 
@@ -481,4 +479,9 @@ fingerprint** 를 낸 사례가 있다(1.0.6, 재현 불가). 위 «RN 앱의 �
 
 ## 폐기된 정책 (history)
 
-(없음)
+- ~~웹 번들을 `npm run build`(+`build:beta`·`build:test-ads`·`build:screenshot`)로 굽고
+  `npx cap sync` 로 네이티브에 넣는다~~ → **네이티브 빌드가 JS 를 직접 만든다**([[ADR-155]]) —
+  그 스크립트들은 캐패시터 앱의 것이었고 앱과 함께 사라졌다. 광고 테스트 모드는 빌드 스크립트가
+  아니라 `EXPO_PUBLIC_*` 환경 변수로 가른다(`src/native/adapters/rn-ads.ts`).
+- ~~네이티브 프로젝트는 `packages/app-capacitor/` 안에 있다~~ → **저장소 루트의 `android/`·`ios/`**
+  ([[ADR-155]] 결정 2 — 모노레포 해체).

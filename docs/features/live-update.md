@@ -123,7 +123,7 @@ payload 는 게이트를 읽는 코드와 `APP_STORE_ID` 수정뿐이라 **화�
 값이라 캐패시터 소스가 사라진 뒤엔 재생성할 수 없다. 형식은 테스트가 지킨다.
 
 2·3단계가 `gh release upload live-update-latest latest.json --clobber` 한 줄인 것이 핵심 이득이다 —
-**1단계 직후 `packages/app-capacitor` 를 지워도 나머지를 칠 수 있고 어느 스토어도 기다리지 않는다.**
+**1단계 직후 캐패시터 소스를 지워도 나머지를 칠 수 있고 어느 스토어도 기다리지 않는다** — 실제로 그렇게 했다([[ADR-155]], 2026-08-21). 남은 재료는 `ota/latest.json` 과 그 형식을 지키는 가드(`ota/manifest-parser.ts` — 1.0.6 번들 파서의 동결 사본 · `ota/__tests__/latest.test.mjs`) 뿐이다.
 그리고 목록에서 플랫폼을 빼면 **되돌아간다**(종전 `--min-native` 계획은 되돌릴 수 없는 지점이었다).
 
 > **게시 확인은 조회로 한다** — 콘솔 상태나 심사 통과 알림이 아니라

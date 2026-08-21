@@ -1,7 +1,7 @@
 # 스플래시 (Splash Screen)
 
 > **범위**: 앱 실행 스플래시. iOS 런치 스토리보드, Android 경량 `SplashActivity` + 비트맵, MIUI/HyperOS force-dark 대응.
-> **관련 소스**: Android `SplashActivity`(진짜 런처) + `MainActivity` · `@drawable/splash`(비트맵) · `values-night` · iOS 런치 스토리보드 · Capacitor SplashScreen 플러그인 · `capacitor.config.ts`(`backgroundColor`/`androidScaleType`) · `index.html`(`#boot-cover`) · RN 어댑터 `packages/app-rn/src/native/adapters/rn-splash-screen.ts`(아래 「RN 어댑터」).
+> **관련 소스**: Android `SplashActivity`(진짜 런처) + `MainActivity` · `@drawable/splash`(비트맵) · `values-night` · iOS 런치 스토리보드 · Capacitor SplashScreen 플러그인 · `capacitor.config.ts`(`backgroundColor`/`androidScaleType`) · `index.html`(`#boot-cover`) · RN 어댑터 `src/native/adapters/rn-splash-screen.ts`(아래 「RN 어댑터」).
 > **관련 ADR**: [[ADR-025]] [[ADR-028]] [[ADR-029]] [[ADR-117]]. **관련 문서**: [../trouble/2026-07-16-splash-darkmode-native-activity.md](../trouble/2026-07-16-splash-darkmode-native-activity.md), [live-update.md](./live-update.md).
 
 ## 정책 ([[ADR-025]] → [[ADR-029]])
@@ -34,7 +34,7 @@ RN 앱은 **Expo 자리표시자 아이콘**을 달고 있었다. 디자인은 �
 - **원천은 capacitor 것을 읽는다** — 아이콘은 `resources/ios/icon.png`(**루트 `icon-only.png` 가
   아니다** — 플랫폼 오버라이드가 우선이라 실제 출시본은 이쪽이다), 스플래시 로크업은
   `resources/splash.png` 에서 **추출**했다(`drawable/splash_icon_lockup.png` 는 **옛 디자인**이라
-  흰 워드마크가 흰 배경에서 안 보인다). 산출물은 `packages/app-rn/assets/` 세 장.
+  흰 워드마크가 흰 배경에서 안 보인다). 산출물은 `assets/` 세 장.
 - **Android adaptive icon 은 여백을 소스에 넣는다** — `capacitor-assets` 는 XML 에서 fg/bg 를 둘 다
   `inset 16.7%` 로 감쌌지만 **Expo 는 그 inset 을 안 넣는다**(생성된 XML 확인). 그래서 1024 캔버스
   가운데에 아이콘을 **66.6%**(681px)로 얹었다 — 두 파이프라인이 같은 비율에 도달한다.
@@ -57,7 +57,7 @@ RN 앱은 **Expo 자리표시자 아이콘**을 달고 있었다. 디자인은 �
 
 ## RN 어댑터 ([[ADR-128]], 2026-08-11)
 
-위 정책은 전부 **웹뷰 사정**이다. RN 구현(`packages/app-rn/src/native/adapters/rn-splash-screen.ts`)이
+위 정책은 전부 **웹뷰 사정**이다. RN 구현(`src/native/adapters/rn-splash-screen.ts`)이
 다루는 것은 **네이티브 스플래시 한 장뿐**이다.
 
 - 라이브러리는 **`expo-splash-screen` `~57.0.6`** — 버전이 SDK 에 묶여 있어 고른 것이다(`expo` 의

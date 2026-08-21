@@ -3,7 +3,17 @@
 **범위**: 이미 앱을 쓰고 있는 사용자의 기기 데이터를 RN 빌드가 **그대로 이어받는** 방법. 전략은
 [README.md](./README.md), 옮길 코드 목록은 [parity-inventory.md](./parity-inventory.md).
 
-**관련 소스(read/write)**: `src/storage/**` · `capacitor.config.ts` · `android/` · `ios/`
+**관련 소스(read/write)**: `src/storage/adapters/capacitor-storage-keys.ts`·`capacitor-sqlite-open.ts` ·
+`modules/capacitor-storage/`(로컬 Expo 모듈) · `android/` · `ios/`
+
+> **이 문서는 전환이 끝난 뒤에도 유효하다** — 여기 적힌 것은 «옮기는 방법» 이 아니라 **RN 앱이 지금
+> 매 실행 하고 있는 일**이다. 이름에 `capacitor` 가 붙은 위 파일들을 [[ADR-155]] 의 정리에서 **일부러
+> 남긴 이유**가 이것이다: 그것은 프레임워크가 아니라 **기존 사용자 데이터가 들어 있는 저장소의
+> 이름**(`CapacitorStorage` SharedPreferences 파일 · `UserDefaults` 키 접두사)이다.
+>
+> 다만 `capacitor.config.ts` 는 더 이상 없다(그 앱과 함께 사라졌다). 아래에서 그 파일을 근거로 든
+> 사실들 — 그룹명을 바꾼 적이 없어 기본값 `CapacitorStorage` 가 적용된다는 것 — 은 **이미 배포된
+> 바이너리에 대한 사실**이라 그대로 유효하다.
 
 **관련 ADR**: [[ADR-128]] · [[ADR-003]](로컬 저장소만 사용) · [[ADR-052]](캐시 삭제 범위·`KEEP_KEYS`) ·
 [[ADR-050]](SQLite 도입) · [[ADR-058]](계정 데이터 삭제) · [[ADR-124]](드랍 가격 컬럼) · [[ADR-069]](월드 스냅샷)
