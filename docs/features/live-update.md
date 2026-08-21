@@ -102,16 +102,26 @@ App Store 첫 출시를 앞두고 **버전을 1.0.0으로 리셋**했다(`packag
 - **`minNativeVersion` 은 폐기가 아니다** — 답하는 질문이 다르다(«이 번들을 적용할 수 있나» vs
   «이 플랫폼이 아직 이 앱을 쓰는 게 맞나»). 읽는 코드도 테스트도 그대로 두고 이번에 쓰지 않을 뿐이다.
 
-### 배포는 2단계다 — 번들은 한 번뿐
+### 배포는 3단계다 — 번들은 한 번뿐
 
-| | 매니페스트 | 캐패시터 소스 | 사용자 다운로드 |
-|---|---|---|---|
-| **1단계** | 번들 1.0.6 + `storeRequiredPlatforms: ["android"]` | **필요** | 6MB |
-| **2단계** (iOS 심사 통과·**게시 확인** 후) | 같은 파일에서 `["android","ios"]` | **불필요** | 없음 |
+| | 매니페스트 | 캐패시터 소스 | 사용자 다운로드 | 조건 |
+|---|---|---|---|---|
+| **1단계** | 번들 1.0.6, **게이트 없이** | **필요** | 6MB | 없음 |
+| **2단계** | `storeRequiredPlatforms: ["android"]` | 불필요 | 없음 | Play 게시 확인 |
+| **3단계** | `["android","ios"]` | 불필요 | 없음 | App Store 게시 확인 |
 
-2단계가 `gh release upload live-update-latest latest.json --clobber` 한 줄인 것이 핵심 이득이다 —
-**1단계 직후 `packages/app-capacitor` 를 지워도 2단계를 칠 수 있다.** 그리고 목록에서 플랫폼을 빼면
-**되돌아간다**(종전 `--min-native` 계획은 되돌릴 수 없는 지점이었다).
+**1단계에 게이트를 안 켜는 이유**: 2026-08-21 실측으로 **두 스토어 모두 아직 새 바이너리가 없다**
+(Play 상세 페이지 HTTP 404 · iTunes Lookup `id6797579391` = **1.0.0**). 지금 목록에 넣으면 받을 것이
+없는 곳으로 보낸다. 그래도 1단계가 할 일은 다 한다 — `storeRequiredPlatforms` 를 읽는 코드와
+`APP_STORE_ID` 수정을 기기에 **심는 것**이 그것이다.
+
+2·3단계가 `gh release upload live-update-latest latest.json --clobber` 한 줄인 것이 핵심 이득이다 —
+**1단계 직후 `packages/app-capacitor` 를 지워도 나머지를 칠 수 있고 어느 스토어도 기다리지 않는다.**
+그리고 목록에서 플랫폼을 빼면 **되돌아간다**(종전 `--min-native` 계획은 되돌릴 수 없는 지점이었다).
+
+> **게시 확인은 조회로 한다** — 콘솔 상태나 심사 통과 알림이 아니라
+> `curl -o /dev/null -w '%{http_code}' 'https://play.google.com/store/apps/details?id=com.mapleroutine.app'`
+> 와 `curl -s 'https://itunes.apple.com/lookup?id=6797579391' | ...`(`version` 필드).
 
 ### 1단계 번들에 반드시 실려야 하는 것
 
@@ -123,12 +133,14 @@ App Store 첫 출시를 앞두고 **버전을 1.0.0으로 리셋**했다(`packag
   데이터라 실제로 들어간다). `release-notes.ts` 원천 한 벌([[ADR-119]] 결정 1)과 배포
   가드는 그대로 돌고 **싣는 값만** 바뀐다.
 
-### 대가 — Android 유도는 OTA 한 홉 뒤다
+### 대가 — 게이트를 켜는 순간의 유도는 OTA 한 홉 뒤다
 
 `storeRequiredPlatforms` 를 읽는 코드가 1.0.6 번들에 있으므로 1.0.5 에 있는 사람은 그 번들을 받아야
-게이트에 들어온다. 즉시 거는 유일한 장치(`minNativeVersion`)가 **iOS 까지 함께 걸어서** 고른
-대가다. 홀드아웃은 방치되지 않는다 — 부팅마다 `update-available` 모달을 받고 거기 뜨는 것이 위
-`highlights` 다.
+게이트에 들어온다. 즉시 거는 유일한 장치(`minNativeVersion`)가 **양 플랫폼을 함께 걸어서** 고른
+대가다. 홀드아웃은 방치되지 않는다 — 부팅마다 `update-available` 모달을 받는다.
+
+**1단계와 2·3단계 사이에는 이 대가가 없다** — 그 구간엔 게이트가 꺼져 있어 잃는 것이 없고, 그 사이
+1.0.6 을 받아 두는 사람이 늘수록 게이트를 켜는 순간의 도달률이 올라간다. **먼저 내보낼수록 유리하다.**
 
 ## RN — expo-updates ([[ADR-137]])
 

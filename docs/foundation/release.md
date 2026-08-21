@@ -39,18 +39,20 @@
 > 않는다** — iOS 스토어 심사 버전이 1.0.6 이라 OTA 가 그 위로 가면 안 되고([[ADR-154]] 맥락),
 > 판정이 버전이 아니라 플랫폼 목록이라 올릴 필요도 없다.
 >
-> **2단계로 나눠 친다** — 플랫폼마다 «스토어에 받을 것이 생기는» 시점이 다르기 때문이다.
+> **3단계로 나눠 친다** — 플랫폼마다 «스토어에 받을 것이 생기는» 시점이 다르기 때문이다.
+> 2026-08-21 실측으로 **두 스토어 모두 아직 새 바이너리가 없다**(Play 404 · App Store 1.0.0).
 >
 > ```
-> 1단계  node scripts/publish-live-update.mjs --store-required android \
->            --highlight '<문구>' --highlight '<문구>'
->          ← 번들 빌드 + 업로드. 캐패시터 소스가 필요한 마지막 순간이다.
-> 2단계  latest.json 의 storeRequiredPlatforms 에 "ios" 를 더해 덮어쓴다 (iOS **게시 확인** 후)
+> 1단계  node scripts/publish-live-update.mjs --highlight '<문구>' --highlight '<문구>'
+>          ← 게이트 없이 번들만. 캐패시터 소스가 필요한 마지막 순간이다.
+> 2단계  latest.json 에 "storeRequiredPlatforms": ["android"] 를 넣어 덮어쓴다 (Play 게시 확인 후)
+> 3단계  같은 필드를 ["android","ios"] 로                          (App Store 게시 확인 후)
 >          gh release upload live-update-latest latest.json --repo jini520/maple-routine --clobber
->          ← 빌드 없음·다운로드 없음. 그래서 1단계 직후 packages/app-capacitor 를 지워도 된다.
+>          ← 둘 다 빌드 없음·다운로드 없음. 그래서 1단계 직후 packages/app-capacitor 를 지워도 된다.
 > ```
 >
 > - **먼저 쏘지 말 것** — 스토어에 받을 것이 없는 플랫폼을 목록에 넣으면 막다른 길로 보낸다.
+>   게시 확인은 콘솔 상태가 아니라 **조회**로 한다(Play 상세 페이지 HTTP 코드 · iTunes Lookup 의 `version`).
 > - **되돌릴 수 있다** — 목록에서 플랫폼을 빼고 다시 덮어쓰면 원복된다([[ADR-154]] 결정 5).
 >   종전 `--min-native` 계획은 되돌릴 수 없는 지점이었다.
 > - **`--highlight` 로 덮어쓰는 이유** — 1.0.6 노트는 **RN 의 것**이라 넷 중 셋이 캐패시터 번들에
