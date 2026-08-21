@@ -1,14 +1,14 @@
 // 에셋 목록 생성기 ([[ADR-129]]). `npm run assets:gen`
 //
-// `packages/core/src/assets/` 아래 그림 파일을 훑어 **슬러그 → 에셋** 목록을
-// `packages/core/src/assets/generated/*.ts` 로 낸다. 옛 `import.meta.glob` 이 하던 일과 같지만
+// `src/assets/` 아래 그림 파일을 훑어 **슬러그 → 에셋** 목록을
+// `src/assets/generated/*.ts` 로 낸다. 옛 `import.meta.glob` 이 하던 일과 같지만
 // **빌드 타임이 아니라 커밋 타임**에 한다 — 그래야 Vite 없이도(= Metro 로도) 같은 목록이 선다.
 //
 // 생성물은 웹·RN 이 **한 벌을 함께 쓴다.** 파일 안에는 평범한 ESM 에셋 import 만 있고, 그 값이
 // 무엇이 되는지는 번들러가 정한다(Vite → URL 문자열 · Metro → 에셋 id). 그래서 플랫폼별 생성물이
 // 필요 없고, 갈리는 것은 값의 **타입 한 줄**뿐이다(`src/types/image-asset.ts` ↔ `.native.ts`).
 //
-// 무엇을 훑을지는 이 파일이 아니라 `packages/core/src/assets/asset-groups.ts` 가 정한다 —
+// 무엇을 훑을지는 이 파일이 아니라 `src/assets/asset-groups.ts` 가 정한다 —
 // 같은 표를 생성물 검사 테스트도 읽는다(표가 두 벌이면 검사가 통과하는데 목록이 틀릴 수 있다).
 // `.ts` 를 그대로 import 하는 것은 Node 내장 타입 스트리핑이고, `publish-live-update.mjs` 가
 // `data/release-notes.ts` 를 읽는 방식과 같다([[ADR-119]] 결정 1).
@@ -17,9 +17,9 @@ import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'n
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { ASSET_GROUPS } from '../packages/core/src/assets/asset-groups.ts'
+import { ASSET_GROUPS } from '../src/assets/asset-groups.ts'
 
-const ASSETS_DIR = fileURLToPath(new URL('../packages/core/src/assets/', import.meta.url))
+const ASSETS_DIR = fileURLToPath(new URL('../src/assets/', import.meta.url))
 const OUT_DIR = path.join(ASSETS_DIR, 'generated')
 
 /**

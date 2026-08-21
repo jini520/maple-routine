@@ -6,7 +6,7 @@
 
 > **범위**: 스토어 심사 없이 JS/HTML/CSS 번들을 배포하는 OTA. 사용자 동의형 업데이트 UX, 베타 채널, 관찰용 UI.
 > **관련 소스**: `native/live-update.ts`(`@capgo/capacitor-updater` 래퍼) · `features/live-update/`(store, `checkOnBoot`) · `native/network`(셀룰러 감지) · `capacitor.config.ts` · GitHub Releases(`live-update-latest`/`live-update-beta`).
-> **관련 ADR**: [[ADR-022]] [[ADR-024]] [[ADR-026]] [[ADR-027]] [[ADR-008]] [[ADR-117]] [[ADR-119]] [[ADR-126]]. **관련 문서**: [../foundation/architecture.md](../foundation/architecture.md), [settings.md](./settings.md), [splash.md](./splash.md), [../trouble/2026-07-15-live-update-testing.md](../trouble/2026-07-15-live-update-testing.md), [../trouble/2026-08-08-ota-apply-stuck-splash.md](../trouble/2026-08-08-ota-apply-stuck-splash.md).
+> **관련 ADR**: [[ADR-022]] [[ADR-024]] [[ADR-026]] [[ADR-027]] [[ADR-008]] [[ADR-117]] [[ADR-119]] [[ADR-126]] [[ADR-154]]. **관련 문서**: [../foundation/architecture.md](../foundation/architecture.md), [settings.md](./settings.md), [splash.md](./splash.md), [../trouble/2026-07-15-live-update-testing.md](../trouble/2026-07-15-live-update-testing.md), [../trouble/2026-08-08-ota-apply-stuck-splash.md](../trouble/2026-08-08-ota-apply-stuck-splash.md).
 
 ## 정책 ([[ADR-022]])
 - `@capgo/capacitor-updater` 플러그인 사용(Capgo 매니지드 백엔드 미사용 — `autoUpdate`/`statsUrl` 명시적으로 끔). 번들 호스팅은 **GitHub Releases 자체 호스팅**(이 저장소 고정 릴리스 `live-update-latest`). Cloudflare R2도 검토했으나 무료 한도에서도 카드 등록 필수라 카드 없이 되는 GitHub Releases로 변경.
@@ -82,6 +82,72 @@ App Store 첫 출시를 앞두고 **버전을 1.0.0으로 리셋**했다(`packag
 `set()`(리로드) 전에 SQLite 커넥션을 정상 종료하지 않으면 stale 커넥션으로 과거 데이터 로드가 멈춘다 → `closeBossProfitDb()` 로 리로드 전 미리 닫음([[ADR-008]] 세 번째 정정, [boss-profit.md](./boss-profit.md)).
 
 **닫기에는 5초 타임아웃이 있다**([[ADR-117]] 결정 5) — 여는 쪽 `withOpenTimeout`(10초)과 대칭이되 더 짧다. 닫기는 파일 생성·마이그레이션이 없어 정상이면 수 ms 이고, 이 값이 곧 적용 경로에서 사용자가 무반응을 견디는 상한이다(`'applying'` 구간의 길이). 실패·타임아웃은 **여전히 삼킨다**(best-effort) — 곧 리로드될 것이고 `openBossProfitDb` 의 stale 감지가 최후 폴백으로 남는다. 타임아웃이 바꾸는 것은 *"실패로 끝난다"* 가 아니라 **"끝난다"** 이다. 같은 함수를 쓰는 캐시 데이터 삭제 경로도 이 타임아웃을 함께 받고, 그쪽 순서도 `close` → 커버 → `reload()` 로 같아진다([[ADR-117]] 결정 8 — [[ADR-065]] 결정 3 의 *"항상 리로드한다"*·`pendingNotice` 정책은 그대로).
+
+## 캐패시터 앱의 종료 — 스토어 유도 ([[ADR-154]])
+
+> **여기부터가 이 앱의 마지막 상태다.** RN 전환이 끝나 스토어 바이너리는 `app-rn` 이고,
+> 캐패시터 OTA 는 «업데이트를 나르는 관» 에서 **«스토어로 보내는 관»** 으로 용도가 바뀐다.
+
+갱신이 끝난 앱이 부팅마다 **「최신 버전입니다」** 라고 답하는 것은 거짓이고, 그 거짓이 사용자를 옛
+앱에 붙잡아 둔다. 그래서 매니페스트가 «이 플랫폼은 이제 스토어로 가야 한다» 를 직접 말한다.
+
+- **`storeRequiredPlatforms?: string[]`** — 값은 `Capacitor.getPlatform()` 문자열(`'android'` ·
+  `'ios'`). 판정은 포함 여부 하나다.
+- **판정은 버전 비교보다 앞에 선다.** 그래야 ⓐ 갱신이 끝난 플랫폼에 `up-to-date` 를 안 돌려주고
+  ⓑ **`manifest.version` 이 사용자 번들과 같아도 게이트가 켜진다** — 버전을 1.0.6 에 고정한 채
+  플랫폼만 늘렸다 줄일 수 있다. `minNativeVersion` 분기는 그 뒤에 그대로 남는다.
+- **선택 필드다.** 필수 검사에 넣지 않는다 — 넣으면 옛 매니페스트를 읽는 기존 설치본이 전부
+  `check-error` 로 떨어진다([[ADR-119]] 결정 5 와 같은 이유). 배열이 아니거나 원소가 문자열이
+  아니면 필드가 없는 것과 같게 다룬다.
+- **`minNativeVersion` 은 폐기가 아니다** — 답하는 질문이 다르다(«이 번들을 적용할 수 있나» vs
+  «이 플랫폼이 아직 이 앱을 쓰는 게 맞나»). 읽는 코드도 테스트도 그대로 두고 이번에 쓰지 않을 뿐이다.
+
+### 배포는 3단계다 — 번들은 한 번뿐
+
+| | 하는 일 | 캐패시터 소스 | 사용자에게 보이는 것 | 조건 |
+|---|---|---|---|---|
+| **1단계** ✅ | `1.0.6.zip` **업로드만** — `latest.json` 손 안 댐 | **필요** | **없음** | 없음 |
+| **2단계** | 초안에 `storeRequiredPlatforms: ["android"]` | 불필요 | 유도 | Play 게시 확인 |
+| **3단계** | `["android","ios"]` | 불필요 | 유도 | App Store 게시 확인 |
+
+**1단계가 매니페스트를 발행하지 않는 이유**: 2026-08-21 실측으로 **두 스토어 모두 아직 새 바이너리가
+없다**(Play 상세 페이지 HTTP 404 · iTunes Lookup `id6797579391` = **1.0.0**). 그리고 이 번들의
+payload 는 게이트를 읽는 코드와 `APP_STORE_ID` 수정뿐이라 **화면에 아무것도 안 나타난다** — 그런
+것을 위해 6MB 를 권하면 «받을 이유가 없는 업데이트» 를 묻는 모달이 된다.
+
+그래서 **zip 만 올려 두고, 매니페스트는 유도가 실제로 필요한 시점에 한 번 발행한다.** 그러면 문구
+문제도 원인에서 사라진다 — 캐패시터에만 있는 항목을 나열할 자리가 없고, 그때는 「스토어에서
+업데이트해 주세요」가 참이다.
+
+**`ota/latest.json` 이 그 발행의 유일한 재료다.** `url`·`checksum`·`size` 는 그 빌드에서만 나오는
+값이라 캐패시터 소스가 사라진 뒤엔 재생성할 수 없다. 형식은 테스트가 지킨다.
+
+2·3단계가 `gh release upload live-update-latest latest.json --clobber` 한 줄인 것이 핵심 이득이다 —
+**1단계 직후 캐패시터 소스를 지워도 나머지를 칠 수 있고 어느 스토어도 기다리지 않는다** — 실제로 그렇게 했다([[ADR-155]], 2026-08-21). 남은 재료는 `ota/latest.json` 과 그 형식을 지키는 가드(`ota/manifest-parser.ts` — 1.0.6 번들 파서의 동결 사본 · `ota/__tests__/latest.test.mjs`) 뿐이다.
+그리고 목록에서 플랫폼을 빼면 **되돌아간다**(종전 `--min-native` 계획은 되돌릴 수 없는 지점이었다).
+
+> **게시 확인은 조회로 한다** — 콘솔 상태나 심사 통과 알림이 아니라
+> `curl -o /dev/null -w '%{http_code}' 'https://play.google.com/store/apps/details?id=com.mapleroutine.app'`
+> 와 `curl -s 'https://itunes.apple.com/lookup?id=6797579391' | ...`(`version` 필드).
+
+### 1단계 번들에 반드시 실려야 하는 것
+
+- **`APP_STORE_ID` 를 실제 값 `6797579391` 로.** placeholder(`'0000000000'`) 탓에 iOS
+  「스토어로 이동」이 죽은 링크다(Android 는 `market://details?id=…` 라 무관). **게이트가 켜지면
+  새 번들은 다운로드 자체가 안 되므로 여기서 안 고치면 영영 안 닿는다.**
+- **매니페스트 `highlights` 는 배포 인자로 덮어쓴다.** 1.0.6 노트는 **RN 의 것**이라 넷 중 셋이
+  캐패시터 번들에 없는 기능이다(`app/today/` 없음 · 다계정 UI 없음 — 벨로나만 core 게임
+  데이터라 실제로 들어간다). `release-notes.ts` 원천 한 벌([[ADR-119]] 결정 1)과 배포
+  가드는 그대로 돌고 **싣는 값만** 바뀐다.
+
+### 대가 — 게이트를 켜는 순간의 유도는 OTA 한 홉 뒤다
+
+`storeRequiredPlatforms` 를 읽는 코드가 1.0.6 번들에 있으므로 1.0.5 에 있는 사람은 그 번들을 받아야
+게이트에 들어온다. 즉시 거는 유일한 장치(`minNativeVersion`)가 **양 플랫폼을 함께 걸어서** 고른
+대가다. 홀드아웃은 방치되지 않는다 — 부팅마다 `update-available` 모달을 받는다.
+
+**1단계와 2·3단계 사이에는 이 대가가 없다** — 그 구간엔 게이트가 꺼져 있어 잃는 것이 없고, 그 사이
+1.0.6 을 받아 두는 사람이 늘수록 게이트를 켜는 순간의 도달률이 올라간다. **먼저 내보낼수록 유리하다.**
 
 ## RN — expo-updates ([[ADR-137]])
 

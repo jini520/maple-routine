@@ -23,11 +23,29 @@ phases/**/step*-output.json
 
 memo
 
-# 드롭 이펙트 원본 프레임(29MB PNG). 최적화본(packages/core/src/assets/drop-effect/*.jpg)만
-# 커밋한다(ADR-038).
-packages/app-capacitor/src/assets/ScreenEff/
+# ── Expo / React Native (모노레포 해체로 packages/app-rn/.gitignore 가 여기로 왔다, [[ADR-155]])
+# Expo
+.expo
+dist/
+web-build/
+expo-env.d.ts
 
-# 스토어 리스팅용 스크린샷 원본·산출물(26MB PNG). _raw 는 로컬 전처리 입력이고 나머지는
-# 앱에서 다시 찍어 만들 수 있는 산출물이라, 위와 같은 원칙으로 저장소에서 제외한다(ADR-038).
-# 스토어에 올라간 최종본의 출처는 Play Console·App Store Connect 쪽이다.
-packages/app-capacitor/resources/screenshots/
+# 네이티브 프로젝트(android/ · ios/)는 **커밋한다** — bare 로 가기로 했다([[ADR-127]]).
+# 서명 설정과 커스텀 네이티브 모듈(Preferences 어댑터)이 거기 들어간다.
+# 빌드 산출물만 제외하고, 그 목록은 `expo prebuild` 가 android/.gitignore · ios/.gitignore 로 만든다.
+
+# 로컬 네이티브 모듈(modules/*)은 소스만 커밋한다 — `expo prebuild` 가 만들어 주는 자리가 아니라
+# 우리가 직접 쓰는 소스라 위 두 .gitignore 가 안 덮는다.
+modules/*/android/build/
+modules/*/android/.cxx/
+
+# Kotlin 컴파일러 세션 파일. `expo prebuild` 가 만드는 android/.gitignore 에 없는 자리라 여기서 덮는다.
+android/.kotlin/
+
+# 릴리스 서명(ADR-091) — 저장소 밖 키스토어를 가리키고 **비밀번호가 들어간다. 절대 커밋 금지.**
+# 이 규칙이 android/.gitignore 가 아니라 여기 있는 이유: `expo prebuild` 가 android/.gitignore 를
+# 다시 만들면서 손으로 넣은 줄을 지운다(실제로 한 번 지워졌다). 이 파일은 prebuild 가 안 건드린다.
+android/keystore.properties
+
+# macOS
+.DS_Store

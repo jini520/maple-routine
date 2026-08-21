@@ -1,0 +1,768 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`스냅샷 — 네 크기 1x1 1`] = `
+<View
+  style={
+    {
+      "backgroundColor": "#F2F0E2",
+      "flexBasis": "0%",
+      "flexGrow": 1,
+      "flexShrink": 1,
+    }
+  }
+>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "columnGap": 4,
+        "flexBasis": "0%",
+        "flexGrow": 1,
+        "flexShrink": 1,
+        "justifyContent": "center",
+        "padding": 8,
+        "rowGap": 4,
+      }
+    }
+    testID="widget-top-valuable-item"
+  >
+    <Image
+      accessibilityLabel="가디언 엔젤 링"
+      resizeMode="contain"
+      source={
+        {
+          "testUri": "../../../src/assets/items/dawn_boss_ring.png",
+        }
+      }
+      style={
+        {
+          "flexShrink": 0,
+          "height": 28,
+          "width": 28,
+        }
+      }
+      testID="top-item-icon"
+    />
+    <Text
+      allowFontScaling={false}
+      maxFontSizeMultiplier={1.235}
+      numberOfLines={1}
+      style={
+        {
+          "color": "#241208",
+        }
+      }
+      testID="top-item-amount"
+    >
+      <Text
+        allowFontScaling={false}
+        maxFontSizeMultiplier={1.235}
+        style={
+          {
+            "color": "#241208",
+            "fontSize": 12,
+            "fontVariant": [
+              "tabular-nums",
+            ],
+            "fontWeight": "800",
+          }
+        }
+      >
+        120.0억
+      </Text>
+    </Text>
+  </View>
+</View>
+`;
+
+exports[`스냅샷 — 네 크기 2x1 1`] = `
+<View
+  style={
+    {
+      "backgroundColor": "#F2F0E2",
+      "flexBasis": "0%",
+      "flexGrow": 1,
+      "flexShrink": 1,
+    }
+  }
+>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "columnGap": 10,
+        "flexBasis": "0%",
+        "flexDirection": "row",
+        "flexGrow": 1,
+        "flexShrink": 1,
+        "padding": 12,
+        "rowGap": 10,
+      }
+    }
+    testID="widget-top-valuable-item"
+  >
+    <Image
+      accessibilityLabel="가디언 엔젤 링"
+      resizeMode="contain"
+      source={
+        {
+          "testUri": "../../../src/assets/items/dawn_boss_ring.png",
+        }
+      }
+      style={
+        {
+          "flexShrink": 0,
+          "height": 36,
+          "width": 36,
+        }
+      }
+      testID="top-item-icon"
+    />
+    <View
+      style={
+        {
+          "columnGap": 2,
+          "flexBasis": "0%",
+          "flexGrow": 1,
+          "flexShrink": 1,
+          "rowGap": 2,
+        }
+      }
+    >
+      <Text
+        allowFontScaling={false}
+        maxFontSizeMultiplier={1.235}
+        style={
+          {
+            "color": "#645C42",
+            "fontSize": 10,
+            "fontWeight": "700",
+          }
+        }
+      >
+        이번 주 최고가
+      </Text>
+      <Text
+        allowFontScaling={false}
+        maxFontSizeMultiplier={1.235}
+        numberOfLines={1}
+        style={
+          {
+            "color": "#241208",
+          }
+        }
+        testID="top-item-amount"
+      >
+        <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
+          style={
+            {
+              "color": "#241208",
+              "fontSize": 15,
+              "fontVariant": [
+                "tabular-nums",
+              ],
+              "fontWeight": "800",
+            }
+          }
+        >
+          120.0억
+        </Text>
+        <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
+          style={
+            {
+              "color": "#645C42",
+              "fontSize": 10,
+              "fontWeight": "600",
+            }
+          }
+        >
+           메소
+        </Text>
+      </Text>
+    </View>
+  </View>
+</View>
+`;
+
+exports[`스냅샷 — 네 크기 2x2 1`] = `
+<View
+  style={
+    {
+      "backgroundColor": "#F2F0E2",
+      "flexBasis": "0%",
+      "flexGrow": 1,
+      "flexShrink": 1,
+    }
+  }
+>
+  <View
+    style={
+      {
+        "columnGap": 8,
+        "flexBasis": "0%",
+        "flexGrow": 1,
+        "flexShrink": 1,
+        "justifyContent": "center",
+        "padding": 12,
+        "rowGap": 8,
+      }
+    }
+    testID="widget-top-valuable-item"
+  >
+    <Text
+      allowFontScaling={false}
+      maxFontSizeMultiplier={1.235}
+      style={
+        {
+          "color": "#645C42",
+          "fontSize": 10,
+          "fontWeight": "700",
+        }
+      }
+    >
+      이번 주 최고가
+    </Text>
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "columnGap": 8,
+          "flexDirection": "row",
+          "rowGap": 8,
+        }
+      }
+    >
+      <Image
+        accessibilityLabel="가디언 엔젤 링"
+        resizeMode="contain"
+        source={
+          {
+            "testUri": "../../../src/assets/items/dawn_boss_ring.png",
+          }
+        }
+        style={
+          {
+            "flexShrink": 0,
+            "height": 40,
+            "width": 40,
+          }
+        }
+        testID="top-item-icon"
+      />
+      <View
+        style={
+          {
+            "flexBasis": "0%",
+            "flexGrow": 1,
+            "flexShrink": 1,
+          }
+        }
+      >
+        <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.235}
+          numberOfLines={1}
+          style={
+            {
+              "color": "#241208",
+            }
+          }
+          testID="top-item-amount"
+        >
+          <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
+            style={
+              {
+                "color": "#241208",
+                "fontSize": 15,
+                "fontVariant": [
+                  "tabular-nums",
+                ],
+                "fontWeight": "800",
+              }
+            }
+          >
+            120.0억
+          </Text>
+          <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
+            style={
+              {
+                "color": "#645C42",
+                "fontSize": 10,
+                "fontWeight": "600",
+              }
+            }
+          >
+             메소
+          </Text>
+        </Text>
+      </View>
+    </View>
+    <View
+      style={
+        {
+          "columnGap": 2,
+          "rowGap": 2,
+        }
+      }
+    >
+      <Text
+        allowFontScaling={false}
+        maxFontSizeMultiplier={1.235}
+        numberOfLines={1}
+        style={
+          {
+            "color": "#241208",
+            "fontSize": 11.5,
+            "fontWeight": "600",
+          }
+        }
+        testID="top-item-name"
+      >
+        가디언 엔젤 링
+      </Text>
+      <Text
+        allowFontScaling={false}
+        maxFontSizeMultiplier={1.235}
+        numberOfLines={1}
+        style={
+          {
+            "color": "#645C42",
+            "fontSize": 10,
+          }
+        }
+        testID="top-item-origin"
+      >
+        야간비행 · 스우
+      </Text>
+    </View>
+  </View>
+</View>
+`;
+
+exports[`스냅샷 — 네 크기 4x2 1`] = `
+<View
+  style={
+    {
+      "backgroundColor": "#F2F0E2",
+      "flexBasis": "0%",
+      "flexGrow": 1,
+      "flexShrink": 1,
+    }
+  }
+>
+  <View
+    style={
+      {
+        "columnGap": 12,
+        "flexBasis": "0%",
+        "flexDirection": "row",
+        "flexGrow": 1,
+        "flexShrink": 1,
+        "padding": 12,
+        "rowGap": 12,
+      }
+    }
+    testID="widget-top-valuable-item"
+  >
+    <View
+      style={
+        {
+          "columnGap": 4,
+          "flexBasis": "0%",
+          "flexGrow": 1,
+          "flexShrink": 1,
+          "justifyContent": "center",
+          "rowGap": 4,
+        }
+      }
+    >
+      <Text
+        allowFontScaling={false}
+        maxFontSizeMultiplier={1.235}
+        style={
+          {
+            "color": "#645C42",
+            "fontSize": 10,
+            "fontWeight": "700",
+          }
+        }
+      >
+        이번 주 최고가
+      </Text>
+      <View
+        style={
+          {
+            "alignItems": "center",
+            "columnGap": 8,
+            "flexDirection": "row",
+            "rowGap": 8,
+          }
+        }
+      >
+        <Image
+          accessibilityLabel="가디언 엔젤 링"
+          resizeMode="contain"
+          source={
+            {
+              "testUri": "../../../src/assets/items/dawn_boss_ring.png",
+            }
+          }
+          style={
+            {
+              "flexShrink": 0,
+              "height": 44,
+              "width": 44,
+            }
+          }
+          testID="top-item-icon"
+        />
+        <View
+          style={
+            {
+              "columnGap": 2,
+              "flexBasis": "0%",
+              "flexGrow": 1,
+              "flexShrink": 1,
+              "rowGap": 2,
+            }
+          }
+        >
+          <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
+            numberOfLines={1}
+            style={
+              {
+                "color": "#241208",
+              }
+            }
+            testID="top-item-amount"
+          >
+            <Text
+              allowFontScaling={false}
+              maxFontSizeMultiplier={1.235}
+              style={
+                {
+                  "color": "#241208",
+                  "fontSize": 18,
+                  "fontVariant": [
+                    "tabular-nums",
+                  ],
+                  "fontWeight": "800",
+                }
+              }
+            >
+              120.0억
+            </Text>
+            <Text
+              allowFontScaling={false}
+              maxFontSizeMultiplier={1.235}
+              style={
+                {
+                  "color": "#645C42",
+                  "fontSize": 10,
+                  "fontWeight": "600",
+                }
+              }
+            >
+               메소
+            </Text>
+          </Text>
+          <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
+            numberOfLines={1}
+            style={
+              {
+                "color": "#241208",
+                "fontSize": 11.5,
+                "fontWeight": "600",
+              }
+            }
+            testID="top-item-name"
+          >
+            가디언 엔젤 링
+          </Text>
+          <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
+            numberOfLines={1}
+            style={
+              {
+                "color": "#645C42",
+                "fontSize": 10,
+              }
+            }
+            testID="top-item-origin"
+          >
+            야간비행 · 스우
+          </Text>
+        </View>
+      </View>
+    </View>
+    <View
+      style={
+        {
+          "justifyContent": "center",
+          "width": "44%",
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "columnGap": 4,
+            "rowGap": 4,
+          }
+        }
+        testID="top-item-rest"
+      >
+        <View
+          style={
+            {
+              "alignItems": "center",
+              "columnGap": 6,
+              "flexDirection": "row",
+              "rowGap": 6,
+            }
+          }
+          testID="top-item-rest-row"
+        >
+          <View
+            style={
+              {
+                "backgroundColor": "#E4E1CE",
+                "borderColor": "#CFC9AE",
+                "borderRadius": 6,
+                "borderWidth": 1,
+                "flexShrink": 0,
+                "height": 18,
+                "width": 18,
+              }
+            }
+            testID="top-item-icon-fallback"
+          />
+          <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
+            numberOfLines={1}
+            style={
+              {
+                "color": "#241208",
+                "flexBasis": "0%",
+                "flexGrow": 1,
+                "flexShrink": 1,
+                "fontSize": 10.5,
+              }
+            }
+          >
+            2위 아이템
+          </Text>
+          <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
+            style={
+              {
+                "color": "#241208",
+                "flexShrink": 0,
+                "fontSize": 10.5,
+                "fontVariant": [
+                  "tabular-nums",
+                ],
+                "fontWeight": "700",
+              }
+            }
+          >
+            10.0억
+          </Text>
+        </View>
+        <View
+          style={
+            {
+              "alignItems": "center",
+              "columnGap": 6,
+              "flexDirection": "row",
+              "rowGap": 6,
+            }
+          }
+          testID="top-item-rest-row"
+        >
+          <View
+            style={
+              {
+                "backgroundColor": "#E4E1CE",
+                "borderColor": "#CFC9AE",
+                "borderRadius": 6,
+                "borderWidth": 1,
+                "flexShrink": 0,
+                "height": 18,
+                "width": 18,
+              }
+            }
+            testID="top-item-icon-fallback"
+          />
+          <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
+            numberOfLines={1}
+            style={
+              {
+                "color": "#241208",
+                "flexBasis": "0%",
+                "flexGrow": 1,
+                "flexShrink": 1,
+                "fontSize": 10.5,
+              }
+            }
+          >
+            3위 아이템
+          </Text>
+          <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
+            style={
+              {
+                "color": "#241208",
+                "flexShrink": 0,
+                "fontSize": 10.5,
+                "fontVariant": [
+                  "tabular-nums",
+                ],
+                "fontWeight": "700",
+              }
+            }
+          >
+            9.0억
+          </Text>
+        </View>
+        <View
+          style={
+            {
+              "alignItems": "center",
+              "columnGap": 6,
+              "flexDirection": "row",
+              "rowGap": 6,
+            }
+          }
+          testID="top-item-rest-row"
+        >
+          <View
+            style={
+              {
+                "backgroundColor": "#E4E1CE",
+                "borderColor": "#CFC9AE",
+                "borderRadius": 6,
+                "borderWidth": 1,
+                "flexShrink": 0,
+                "height": 18,
+                "width": 18,
+              }
+            }
+            testID="top-item-icon-fallback"
+          />
+          <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
+            numberOfLines={1}
+            style={
+              {
+                "color": "#241208",
+                "flexBasis": "0%",
+                "flexGrow": 1,
+                "flexShrink": 1,
+                "fontSize": 10.5,
+              }
+            }
+          >
+            4위 아이템
+          </Text>
+          <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
+            style={
+              {
+                "color": "#241208",
+                "flexShrink": 0,
+                "fontSize": 10.5,
+                "fontVariant": [
+                  "tabular-nums",
+                ],
+                "fontWeight": "700",
+              }
+            }
+          >
+            8.0억
+          </Text>
+        </View>
+        <View
+          style={
+            {
+              "alignItems": "center",
+              "columnGap": 6,
+              "flexDirection": "row",
+              "rowGap": 6,
+            }
+          }
+          testID="top-item-rest-row"
+        >
+          <View
+            style={
+              {
+                "backgroundColor": "#E4E1CE",
+                "borderColor": "#CFC9AE",
+                "borderRadius": 6,
+                "borderWidth": 1,
+                "flexShrink": 0,
+                "height": 18,
+                "width": 18,
+              }
+            }
+            testID="top-item-icon-fallback"
+          />
+          <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
+            numberOfLines={1}
+            style={
+              {
+                "color": "#241208",
+                "flexBasis": "0%",
+                "flexGrow": 1,
+                "flexShrink": 1,
+                "fontSize": 10.5,
+              }
+            }
+          >
+            5위 아이템
+          </Text>
+          <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.235}
+            style={
+              {
+                "color": "#241208",
+                "flexShrink": 0,
+                "fontSize": 10.5,
+                "fontVariant": [
+                  "tabular-nums",
+                ],
+                "fontWeight": "700",
+              }
+            }
+          >
+            7.0억
+          </Text>
+        </View>
+      </View>
+    </View>
+  </View>
+</View>
+`;

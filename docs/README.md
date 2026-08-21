@@ -11,7 +11,7 @@ docs/
 ├── foundation/           기능을 가로지르는 공통 토대 — 여러 기능이 함께 지키는 규칙
 ├── ADR.md                결정 원장(연대기). 개별 결정의 "왜/트레이드오프"는 항상 여기
 ├── persistence/          기기 영속 데이터 지도(저장 매체 축으로 조직 — feature 계층과 별개)
-├── migration/            React Native 전환 계획·패리티 인벤토리·데이터 보존([[ADR-128]])
+├── migration/            **완료된 RN 전환의 기록**([[ADR-128]]) — `data.md` 만 지금도 유효
 └── trouble/              날짜별 트러블슈팅 로그(네이티브·실기기 이슈)
 ```
 
@@ -19,7 +19,7 @@ docs/
 - 각 문서 하단에는 **`## 폐기된 정책 (history)`** 섹션이 있다. 본문은 항상 **현재 유효한 정책만** 담고, 대체·폐기된 결정은 `~~옛 정책~~ → 새 정책 (ADR-N)` 한 줄로 이 섹션에 모은다. 정책을 바꿀 때 옛 내용을 지우지 말고 이 섹션으로 내려라.
 - **ADR.md** 는 쪼개지 않는다. `[[ADR-NNN]]` 은 경로가 아니라 논리적 참조이므로 문서 위치와 무관하게 그대로 쓴다. 새 결정은 ADR.md 말미에 append 한다.
 - **persistence/** 는 "무엇이 어디에 저장되는가"를 저장 매체(Preferences/SQLite/네이티브) 축으로 조직한 별개 문서다. feature 계층으로 편입하지 않는다 — 저장 스키마를 만질 때만 참고.
-- **migration/** 은 React Native 전환([[ADR-128]])의 실행 문서다. **한시적**이다 — 전환이 끝나면 문서도 함께 정리한다. feature 계층을 가로지르므로 `features/`·`foundation/` 어디에도 넣지 않는다. 전환 작업을 할 때만 참고하고, 그 밖의 작업에서는 열지 않는다.
+- **migration/** 은 React Native 전환([[ADR-128]])의 실행 문서였고 **전환은 끝났다**(2026-08-21 — 캐패시터 소스 삭제와 모노레포 해체까지, [[ADR-154]]·[[ADR-155]]). 이제 `README.md`·`parity-inventory.md` 는 **기록**이라 그 안의 경로는 그때의 것이다(문서 머리에 그 사실을 못박아 뒀다) — **작업의 근거로 읽지 말 것.** 예외는 `data.md` 하나로, RN 앱이 캐패시터 시절 저장소를 **지금도** 읽는 방법이라 계속 유효하다.
 
 ## 기능별 인덱스
 
@@ -36,8 +36,8 @@ docs/
 | 설정 | [features/settings.md](./features/settings.md) | `app/settings/`(`SettingsScreen` + 하위 화면 `SettingsReleaseNotesScreen`/`SettingsFeatureGuideListScreen`/`SettingsFeatureGuideScreen`/`SettingsAccountDataScreen`/`SettingsAboutScreen` — 라우트 `/settings/guide`·`/settings/release-notes`(둘 다 자식 `:guideId` — 같은 상세 화면)·`/settings/account-data`·`/settings/about`, `/settings` 의 **형제**) · 행 프리미티브 `SettingsRow`/`SettingsLinkRow`/`row-class.ts` · `src/data/release-notes.ts`·`src/data/feature-guides/`(안내 하나 = 파일 하나)(+`src/types/release-notes.ts`·`src/types/feature-guides.ts` · `lib/guide-route.ts`, 이미지 `src/assets/guide/<안내 id>/`) · `features/settings/`(`cache-data`) · `storage/api-key` · `features/tracking-mode` |
 | 테마 시스템 | [features/theme.md](./features/theme.md) | `features/theme/` · `storage/theme` · `src/index.css` · `src/data/job-themes.json` · `lib/theme-derive` · `lib/theme-backgrounds` · `src/assets/themes/`(+ `src/assets/generated/themes.ts`) · `lib/color` · `scripts/theme-gen.ts` |
 | 광고 | [features/ads.md](./features/ads.md) | `native/ads.ts` · `features/ads/` · `storage/ads.ts` · `App.tsx`(탭 전환 훅) |
-| 알림 (**설계 완료, 구현 전** — [[ADR-146]]) | [features/notifications.md](./features/notifications.md) | `native/notifications.ts`(기존) · `native/push.ts`·`native/background-task.ts`(신설) · `features/notifications/` · `storage/notification-settings`·`notification-ledger` · RN 어댑터 `rn-notifications`(기존)·`rn-push`·`rn-background-task` · RN 진입점 `packages/app-rn/index.ts` · `workers/notice-push/` |
-| Live Update (OTA) | [features/live-update.md](./features/live-update.md) | `native/live-update.ts` · `features/live-update/` · `app/UpdatePromptModal.tsx` · `storage/last-run-bundle-version.ts` · **어댑터 둘**(`app-capacitor/…/capacitor-live-update.ts` @capgo · `app-rn/…/rn-live-update.ts` expo-updates) · `workers/ota-manifest/` · `scripts/publish-rn-ota.mjs` |
+| 알림 (**설계 완료, 구현 전** — [[ADR-146]]) | [features/notifications.md](./features/notifications.md) | `native/notifications.ts`(기존) · `native/push.ts`·`native/background-task.ts`(신설) · `features/notifications/` · `storage/notification-settings`·`notification-ledger` · RN 어댑터 `rn-notifications`(기존)·`rn-push`·`rn-background-task` · RN 진입점 `index.ts` · `workers/notice-push/` |
+| Live Update (OTA) | [features/live-update.md](./features/live-update.md) | `native/live-update.ts` · `features/live-update/` · `app/UpdatePromptModal.tsx` · `storage/last-run-bundle-version.ts` · 어댑터 `src/native/adapters/rn-live-update.ts`(expo-updates) · 캐패시터 최종 매니페스트 `ota/`([[ADR-154]]·[[ADR-155]]) · `workers/ota-manifest/` · `scripts/publish-rn-ota.mjs` |
 | 스플래시 | [features/splash.md](./features/splash.md) | `android/…/SplashActivity` · iOS 스토리보드 · `capacitor.config.ts` · `index.html` |
 | 안내 사이트 (mapleroutine.store) | [features/site.md](./features/site.md) | `site/` · `PRIVACY.md`(원본) · `scripts/build-site.mjs` · `.github/workflows/pages.yml` |
 
@@ -57,7 +57,7 @@ docs/
 
 - **새 화면·기능 구현** → 해당 `features/*.md` (정책) + `foundation/architecture.md` (레이어 규칙) + 관련 `foundation/design-system.md` 컴포넌트. TDD 원칙상 테스트 먼저([[ADR]] 프로세스).
 - **게임 수치 데이터 변경** → `foundation/game-data.md` 먼저, 값은 반드시 사용자 확인([[ADR-006]]).
-- **에셋(그림) 추가·삭제** → 파일을 `packages/core/src/assets/` 에 넣거나 지운 뒤 **`npm run assets:gen`** ([[ADR-129]]). 목록(`assets/generated/*.ts`)은 커밋되는 생성물이라 안 돌리면 화면이 **에러 없이 폴백만** 그린다 — `assets/generated/__tests__/asset-manifest.test.ts` 가 그 낡음을 잡는다.
+- **에셋(그림) 추가·삭제** → 파일을 `src/assets/` 에 넣거나 지운 뒤 **`npm run assets:gen`** ([[ADR-129]]). 목록(`assets/generated/*.ts`)은 커밋되는 생성물이라 안 돌리면 화면이 **에러 없이 폴백만** 그린다 — `assets/generated/__tests__/asset-manifest.test.ts` 가 그 낡음을 잡는다.
 - **today 위젯 추가·크기 변경** → `features/today.md` 의 「격자」·「배치」·「위젯 규약」 셋. 만질 파일은 **셋이 짝**이다 — `widgets/registry.ts`(존재·크기·목적지) · `widgets/layout.ts`(좌표) · 위젯 컴포넌트. 좌표는 손으로 적고 `lib/widget-layout.ts` 의 검증 다섯이 지키므로, `row` 를 밀지 않으면 **테스트가 먼저 막는다**.
 - **저장 스키마 변경** → `persistence/` (해당 매체 문서) + 해당 `features/*.md`.
 - **색·토큰·테마** → `foundation/design-system.md` (기본 팔레트·시맨틱 색) + `features/theme.md` (테마별 토큰·런타임 전환).
@@ -65,5 +65,5 @@ docs/
 - **에러/빈 상태/엣지 처리** → `foundation/error-resilience.md`.
 - **스토어 배포·서명·버전 올리기** → `foundation/release.md` (OTA 갱신은 `features/live-update.md` — 별개 축이다).
 - **알림을 더하거나 고칠 때** → `features/notifications.md`. 손대기 전에 그 문서의 «층» 표에서 **바이너리 / JS / 서버** 중 어디를 만지는지부터 판정할 것 — 왼쪽 칸은 스토어 심사를 기다린다([[ADR-146]] 결정 1).
-- **React Native 전환 작업** → `migration/README.md`(원칙·단계·게이트) → `migration/parity-inventory.md`(옮길 파일과 그 파일에 걸린 ADR 계약) → `migration/data.md`(기존 사용자 데이터 보존). 배경과 기각안은 [[ADR-128]].
+- **기존 사용자 데이터를 만질 때** → `migration/data.md`(RN 이 캐패시터 시절 저장소를 읽는 방법 — 이름에 `capacitor` 가 붙은 파일을 지우면 안 되는 이유가 거기 있다). 전환 자체는 끝났고 그 기록은 `migration/README.md`·`parity-inventory.md` 다([[ADR-128]]·[[ADR-155]]).
 - **설계 결정의 배경이 궁금할 때** → `ADR.md` 에서 `[[ADR-NNN]]` 조회.

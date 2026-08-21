@@ -1,8 +1,26 @@
 {
-  "files": [],
-  "references": [
-    { "path": "./packages/app-capacitor" },
-    { "path": "./packages/core" },
-    { "path": "./tsconfig.node.json" }
-  ]
+  // 저장소 루트가 곧 Expo 프로젝트다([[ADR-155]] 결정 2). 종전 루트 파일은 워크스페이스 셋을
+  // 가리키는 **참조 스텁**이었고, 그 탓에 `tsc --noEmit` 이 검사 대상 0개로 조용히 통과했다 —
+  // 이 파일이 그것을 대신하면서 그 함정도 함께 없어진다([[ADR-155]] 결정 7).
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "resolveJsonModule": true,
+    // `core/types/image-asset.native.ts` 처럼 RN 에서만 갈리는 파일을 tsc 가 고르게 한다.
+    "moduleSuffixes": [".native", ""],
+    "types": ["jest", "expo/types"]
+  },
+  "include": [
+    "*.ts",
+    "*.tsx",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "nativewind-env.d.ts",
+    "asset-modules.d.ts"
+  ],
+  // **vitest 가 도는 테스트(`*.spec.*`)만 뺀다** — 그쪽은 Vite 위에서 돌아 `import.meta.glob` 이
+  // 사실이지만, 이 프로그램에는 그 선언이 **일부러** 없다([[ADR-129]] · `core-import-meta.d.ts` —
+  // 선언을 남기면 "제품 코드가 써도 타입은 통과하고 런타임에 죽는" 함정이 산다). 그 파일들은
+  // `tsconfig.vitest.json` 이 따로 검사한다.
+  "exclude": ["node_modules", "src/**/*.spec.ts", "src/**/*.spec.tsx"]
 }

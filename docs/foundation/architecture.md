@@ -143,7 +143,7 @@ Feature 단위 구조. 각 `features/*` 폴더가 그 기능의 상태·로직�
 - 보스 수익 포뮬러(`floor(priceMeso / partySize)`) / 파티원 자동 기록(기본값 소스 [[ADR-019]]) / 파티 관리 upsert / 드롭다운 합계 / 물욕 환산 합산: 각 기능 구현 시 단위 테스트.
 - 라우트 가드(온보딩 미완료 리다이렉트), 데이터 정합성(`src/data/__tests__`).
 - 알림([[ADR-146]]): `plan()` 순수 함수 전수(지평선·리셋 경계·설정 꺼짐) · **재조정 멱등성**(두 번째 회차에 `schedule`/`cancel` 0회) · **레지스트리에서 사라진 kind 가 취소되는가**(OTA 제거 시나리오의 회귀 가드 — 원장의 존재 이유를 못 박는 테스트).
-- 런타임 import 사이클 0건: `packages/app-rn/src/__tests__/require-cycle-policy.test.ts` — Metro 가 실제로 번들하는 그래프(`app-rn/src` + `core/src`)를 훑는다. app-rn 에 두는 것은 이 경고를 내는 번들러가 Metro 하나라서다.
+- 런타임 import 사이클 0건: `src/__tests__/require-cycle-policy.test.ts` — Metro 가 실제로 번들하는 그래프(`src/` 전체)를 훑는다. `src/` 에 두는 것은 이 경고를 내는 번들러가 Metro 하나라서다.
 - 네이티브 플러그인(상시 알림·Live Activity·백그라운드 재확인)은 유닛 테스트 곤란 → 실기기 수동 QA 체크리스트(백그라운드 전환·강제종료 재실행·배터리 최적화·iOS 16.1 미만 폴백).
 - 골든 패스 수동 시나리오: 최초 실행 → 키 입력 → 캐릭터 조회 → 동기화 → 스케줄러 표시 → 보스 완료 감지 → 파티원 입력 → 수익 확인.
 

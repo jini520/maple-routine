@@ -18,36 +18,51 @@
 // 나머지 축(`fontSize`·`fontWeight`·`leading`·`tracking`·`screens`)은 두 메이저의 값이 **같다**.
 // 같은 것을 굳이 파생시키면 파생 코드 자체가 새 오차원이 되므로 건드리지 않는다.
 //
-// ── 값을 어디서 가져오는가 ──────────────────────────────────────────────────────────
+// ── 값을 어디서 가져오는가 — **읽던 것을 동결했다** ([[ADR-155]] 결정 4) ────────────
 //
-// **웹이 실제로 컴파일에 쓰는 그 파일**(`tailwindcss/theme.css`)을 읽어 판다. 손으로 베끼지 않으므로
-// Tailwind 를 올리면 이쪽이 따라 움직인다. 베껴 두면 한쪽만 바뀌어도 아무도 모른다.
-const { readFileSync } = require('node:fs')
+// 원래 이 파일은 웹이 실제로 컴파일에 쓰는 `tailwindcss/theme.css` 를 **읽었다**. 손으로 안 베끼면
+// Tailwind 를 올릴 때 이쪽이 따라 움직이기 때문이었다.
+//
+// **그 웹이 없어졌다.** `packages/app-capacitor` 와 함께 v4 도 저장소에서 사라졌고(그 파일은 그
+// 패키지의 `node_modules` 에 있었다), 그러면 «따라 움직일 상대» 가 없다. 남는 것은 RN 이 쓰는
+// 축 값들뿐이고 그것은 이제 파생이 아니라 **이 앱의 치수**다.
+//
+// 그래서 마지막으로 읽은 값을 여기 고정했다 — **tailwindcss 4.3.3 의 `theme.css`**(2026-08-21).
+// 읽어 오던 입력은 실제로 아래 셋뿐이었고, 그 위에 서는 파생(`deriveSpacing`)은 그대로 둔다.
+//
+// 값이 안 바뀌었다는 것은 `packages/app-rn/src/__tests__/tailwind-axes.test.ts` 의 «v4 축 파생» 이
+// 지킨다 — `spacing[13]`·`max-w-2xs`(288, [[ADR-121]])처럼 **사람이 정한 수치**를 직접 단언한다.
 
-/** 웹이 쓰는 tailwindcss(v4)의 기본 테마 파일. **웹 패키지 기준으로** 풀어야 루트의 v3 가 안 잡힌다. */
-const V4_THEME_CSS = readFileSync(
-  require.resolve('tailwindcss/theme.css', {
-    paths: [require('node:path').join(__dirname, 'packages/app-capacitor')],
-  }),
-  'utf8',
-)
+/** v4 의 `--spacing` 배수. 이 하나에서 간격 계단 전체가 파생된다. */
+const SPACING_VALUE = '0.25rem'
 
-/** `--<name>: <value>;` 선언을 전부 뽑는다. */
-function readCustomProperties(prefix) {
-  const found = new Map()
-  const pattern = new RegExp(`--${prefix}(?<name>[a-z0-9-]*):\\s*(?<value>[^;]+);`, 'g')
-  for (const match of V4_THEME_CSS.matchAll(pattern)) {
-    found.set(match.groups.name, match.groups.value.trim())
-  }
-  return found
+/** v4 의 `--container-*`. `max-w-2xs`(288 = 18rem) 처럼 컨테이너 스케일을 쓰는 유틸리티의 원천. */
+const CONTAINER = {
+  '3xs': '16rem',
+  '2xs': '18rem',
+  xs: '20rem',
+  sm: '24rem',
+  md: '28rem',
+  lg: '32rem',
+  xl: '36rem',
+  '2xl': '42rem',
+  '3xl': '48rem',
+  '4xl': '56rem',
+  '5xl': '64rem',
+  '6xl': '72rem',
+  '7xl': '80rem',
 }
 
-function requireValue(map, key, what) {
-  const value = map.get(key)
-  // 조용히 비면 그 축이 통째로 사라진 채 빌드가 성공한다 — Tailwind 가 `theme.css` 형식을 바꾸면
-  // 여기서 터뜨린다.
-  if (value === undefined) throw new Error(`tailwindcss/theme.css 에서 ${what} 를 못 찾았다`)
-  return value
+/** v4 의 `--radius-*`. v3 와 계단 이름이 한 칸 밀려 있어(`rounded-sm` 2px → 4px) 교체가 필요하다. */
+const RADIUS = {
+  xs: '0.125rem',
+  sm: '0.25rem',
+  md: '0.375rem',
+  lg: '0.5rem',
+  xl: '0.75rem',
+  '2xl': '1rem',
+  '3xl': '1.5rem',
+  '4xl': '2rem',
 }
 
 /**
@@ -70,18 +85,13 @@ function round(value) {
   return Number(value.toFixed(5))
 }
 
-const SPACING_STEP = Number.parseFloat(requireValue(readCustomProperties('spacing'), '', '--spacing'))
-
-/** `max-w-2xs` 처럼 컨테이너 스케일을 쓰는 유틸리티가 v3 에도 서게 한다. */
-const CONTAINER = Object.fromEntries(
-  [...readCustomProperties('container-')].map(([name, value]) => [name, value]),
-)
+const SPACING_STEP = Number.parseFloat(SPACING_VALUE)
 
 /** v4 의 radius 계단. `none`·`full` 은 `theme.css` 에 없는 내장값이라 여기서만 더한다. */
 const BORDER_RADIUS = {
   none: '0px',
   full: '9999px',
-  ...Object.fromEntries([...readCustomProperties('radius-')].map(([name, value]) => [name, value])),
+  ...RADIUS,
 }
 
 module.exports = {
