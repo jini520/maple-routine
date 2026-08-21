@@ -7,15 +7,8 @@
   ],
   "scripts": {
     "postinstall": "patch-package",
-    "dev": "npm run dev -w @maple-routine/app-capacitor",
-    "dev:beta": "npm run dev:beta -w @maple-routine/app-capacitor",
-    "build": "npm run build -w @maple-routine/app-capacitor",
-    "build:beta": "npm run build:beta -w @maple-routine/app-capacitor",
-    "build:test-ads": "npm run build:test-ads -w @maple-routine/app-capacitor",
     "lint": "eslint .",
     "test": "vitest run && npm run test -w @maple-routine/app-rn",
-    "preview": "npm run preview -w @maple-routine/app-capacitor",
-    "publish-live-update": "node scripts/publish-live-update.mjs",
     "theme:gen": "vite-node scripts/theme-gen.ts",
     "assets:gen": "node scripts/generate-asset-manifest.mjs",
     "build:site": "node scripts/build-site.mjs"

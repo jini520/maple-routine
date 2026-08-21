@@ -11,9 +11,6 @@ export default tseslint.config(
   // Expo 가 만드는 캐시·생성 타입이다).
   {
     ignores: [
-      'packages/app-capacitor/dist',
-      'packages/app-capacitor/android',
-      'packages/app-capacitor/ios',
       'packages/app-rn/dist',
       'packages/app-rn/android',
       'packages/app-rn/ios',

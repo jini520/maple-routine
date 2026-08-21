@@ -1,17 +1,17 @@
-// 테마와 무관한 축이 **웹과 같은 값**인지 지킨다([[ADR-128]] 3단계).
+// 테마와 무관한 축(간격·radius·container)의 값을 지킨다([[ADR-128]] 3단계 → [[ADR-155]] 결정 4).
 //
-// 이 저장소는 Tailwind 메이저를 둘 물고 있다 — NativeWind 안정판이 v4 를 거부하고 웹은 v4 로
-// 배포 중이라 어느 쪽도 못 옮긴다(`tailwind-v4-axes.cjs` 에 경위가 있다). 그래서 `p-4` 처럼 이름은
-// 같은데 값이 갈리는 자리가 생길 수 있고, 그 어긋남은 **빌드가 성공한 채로** 화면에만 나타난다.
+// 이 축들은 원래 **웹의 Tailwind v4** 에서 판 값이었다. 그 웹이 사라지면서 값은 `tailwind-v4-axes.cjs`
+// 에 동결됐고, 저장소가 무는 Tailwind 는 이제 NativeWind 용 v3 하나뿐이다. 그래서 이 테스트가 답하는
+// 질문도 «두 메이저가 갈리지 않았나» 에서 **«동결한 값이 그대로인가»** 로 바뀌었다 — 여기가 흔들리면
+// `h-13`·`max-w-2xs` 같은 클래스가 **빌드가 성공한 채로** 화면에서만 사라진다.
 //
-// 파싱 결과를 다시 파싱해 비교하면 순환이라 아무것도 안 지킨다. 그래서 **문서가 못박은 실제 수치**와
-// 대조한다 — 288(파티 인원 모달 폭 하한, [[ADR-121]])·88(히어로 높이)처럼 사람이 정한 값들이다.
+// 대조 대상은 **문서가 못박은 실제 수치**다 — 288(파티 인원 모달 폭 하한, [[ADR-121]])·88(히어로
+// 높이)처럼 사람이 정한 값들이라, 파생 코드를 다시 파싱해 비교하는 순환에 빠지지 않는다.
 import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import path from 'node:path'
 
 const repoRoot = path.resolve(__dirname, '../../../..')
-const webPackage = path.join(repoRoot, 'packages/app-capacitor')
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const axes = require('../../../../tailwind-v4-axes.cjs') as {
@@ -30,12 +30,6 @@ function resolvedTailwindVersion(fromPackageDir: string): string {
 }
 
 describe('Tailwind 메이저 배치', () => {
-  // 웹이 v3 를 집으면 `@theme` 이 미지원 at-rule 이 되어 **유틸리티가 거의 안 나온 채 빌드가
-  // 성공한다**. 조용한 실패라 여기서 잡는다.
-  it('웹은 v4 를 집는다', () => {
-    expect(resolvedTailwindVersion(webPackage)).toMatch(/^4\./)
-  })
-
   // NativeWind 는 루트로 호이스팅되고 Node 해석은 **위로만** 걷는다. 그래서 그가 집는 것은 저장소
   // 루트의 tailwindcss 이고, 그것이 v3 여야 한다(v4 면 `"NativeWind only supports Tailwind CSS v3"`
   // 로 Metro 가 아예 안 뜬다 — 이쪽은 요란한 실패지만, 왜 루트가 v3 인지를 여기 적어 둔다).
