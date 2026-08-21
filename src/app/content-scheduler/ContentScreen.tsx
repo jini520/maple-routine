@@ -156,8 +156,10 @@ export function ContentScreen(): React.JSX.Element {
     level: character.level ?? null,
     imageUrl: character.imageUrl ?? null,
     rings: [
-      { label: '일간', ...dailyContentProgress(dailyContentsOf(character)) },
-      { label: '주간', ...weeklyContentProgress(weeklyContentsOf(character)) },
+      // [[ADR-162]] 결정 1 — 링이 세는 것도 요구 레벨을 탄다. 링·카드 목록·today 가 같은 판정을
+      // 봐야 [[ADR-147]] 결정 8 이 성립한다.
+      { label: '일간', ...dailyContentProgress(dailyContentsOf(character), character.level ?? null) },
+      { label: '주간', ...weeklyContentProgress(weeklyContentsOf(character), character.level ?? null) },
     ],
   }))
 
