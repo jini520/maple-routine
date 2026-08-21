@@ -51,6 +51,8 @@ import {
   type PartyFilter,
 } from '../../features/boss-scheduler/store'
 import { displayedBosses } from '../../features/boss-scheduler/displayed-bosses'
+import { resolveSelectedCharacter } from '../../features/character-selection/selected-character'
+import { useCharacterSelectionStore } from '../../features/character-selection/store'
 import { formatSyncedAt } from '../../features/schedule-sync/format'
 import { useScheduleSyncErrorToast } from '../../features/schedule-sync/use-sync-error-toast'
 import { useToastStore } from '../../features/toast/store'
@@ -79,6 +81,7 @@ import { useTopSafeAreaPx } from '../../lib/top-safe-area'
 import { orderByTracked } from '../../lib/tracked-order'
 import { useThemeAppearance } from '../../theme/context'
 import { useScreenNavigation } from '../use-screen-navigation'
+import { usePullRefresh } from '../use-pull-refresh'
 
 const PARTY_FILTER_LABELS: Record<PartyFilter, string> = {
   all: '전체',
@@ -149,12 +152,10 @@ export function BossScreen(): React.JSX.Element {
     characters: storeCharacters,
     error,
     trackedOcids,
-    selectedOcid,
     partySizes,
     manualTrackedByOcid,
     loadTrackedOcids,
     refresh,
-    selectCharacter,
     // [[ADR-121]]: 카드 탭 모달이 쓰는 두 액션. 파티 인원은 두 모드 공통이고, 난이도 교체는 수동
     // 모드에서만 멤버십을 바꾼다.
     setPartySize,
@@ -170,6 +171,12 @@ export function BossScreen(): React.JSX.Element {
     monthlyFilter,
     setMonthlyFilter,
   } = useBossSchedulerStore()
+  // 선택은 화면·스토어가 아니라 **여기 한 벌**이다([[ADR-159]] 결정 1).
+  const { selectedOcid, select } = useCharacterSelectionStore()
+  // **당김이 시작한 회차에만** 인디케이터가 돈다([[ADR-160]] 결정 1). 헤더 버튼·자동 조회는 같은
+  // 재조회를 부르지만 인디케이터는 안 연다 — 버튼은 자기 스피너와 «조회 중...» 을 이미 갖고 있고
+  // ([[ADR-141]] 결정 1), 자동 조회는 원래 조용해야 하는 것이다.
+  const pull = usePullRefresh(() => refresh(trackedOcids ?? []))
   const { mode } = useTrackingModeStore()
   const navigation = useScreenNavigation()
   const topSafeAreaPx = useTopSafeAreaPx()
@@ -196,12 +203,9 @@ export function BossScreen(): React.JSX.Element {
   // 캐릭터 관리에서 정한 저장 배열 순서다. core 를 안 고치는 이유는 `orderByTracked` 머리에 있다.
   const characters = orderByTracked(storeCharacters, trackedOcids ?? [])
 
-  const effectiveSelectedOcid =
-    selectedOcid !== null && characters.some((character) => character.ocid === selectedOcid)
-      ? selectedOcid
-      : (characters[0]?.ocid ?? null)
-
-  const selected = characters.find((character) => character.ocid === effectiveSelectedOcid) ?? null
+  // 화면 넷이 **같은 규칙**으로 고른다([[ADR-159]] 결정 3) — 선택만 합치고 폴백을 화면마다 두면
+  // «공유했는데 화면마다 다른 캐릭터» 가 다시 생긴다.
+  const selected = resolveSelectedCharacter(selectedOcid, characters)
 
   // [[ADR-083]] 결정 1: 캐릭터별 실패도 인라인 문단이 아니라 토스트다. syncSchedules는 캐릭터 단위
   // 실패를 던지지 않고 결과에 실어 반환하므로(401/429는 나머지 캐릭터까지 같은 에러로 채운다)
@@ -395,8 +399,8 @@ export function BossScreen(): React.JSX.Element {
         // 다르게 반응하면 그 자체가 회귀다.
         refreshControl={
           <RefreshControl
-            refreshing={status === 'loading'}
-            onRefresh={() => refresh(trackedOcids ?? [])}
+            refreshing={pull.refreshing}
+            onRefresh={pull.onRefresh}
             tintColor={definition.primaryInk}
             colors={[definition.primaryInk]}
             progressBackgroundColor={definition.surface}
@@ -438,7 +442,7 @@ export function BossScreen(): React.JSX.Element {
                 entries={railEntries}
                 selectedOcid={selected.ocid}
                 onSelect={(ocid) => {
-                  void selectCharacter(ocid)
+                  void select(ocid)
                 }}
               />
             )}

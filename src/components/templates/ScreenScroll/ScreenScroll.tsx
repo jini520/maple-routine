@@ -6,6 +6,7 @@
 // 깔려 **전환 내내 화면이 검었다**(실기기 2026-08-15 — 판 색을 `#f00` 으로 바꾸면 화면이 빨개지는
 // 것으로 확정). 패치는 마스크를 **참조로** 기억하고 `drawChild` 에서 막는다.
 import MaskedView from '@react-native-masked-view/masked-view'
+import { cloneElement } from 'react'
 import type { ScrollView as ScrollViewType } from 'react-native'
 import { Platform, ScrollView, useWindowDimensions, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -16,6 +17,7 @@ import { LinearGradient } from '../../../lib/nativewind-interop'
 import { useTopSafeAreaPx } from '../../../lib/top-safe-area'
 import { useScrollIndicatorStyle } from '../../../theme/context'
 import { resolveScreenBottomInset } from './bottom-inset'
+import { resolvePullIndicatorOffset } from './pull-indicator-offset'
 import {
   FADE_MASK_LOCATIONS,
   FADE_MASK_OPAQUE,
@@ -87,8 +89,15 @@ import {
 // `contentOffset.y` 가 음수가 되지만 안드로이드 `ScrollView` 는 콘텐츠를 안 움직이고 글로우만
 // 그린다). 커스텀 마크를 고르면 그 플랫폼에서는 제스처 계층을 처음부터 새로 만들어야 한다.
 //
-// 그래서 이 셸은 `refreshControl` 을 그대로 `ScrollView` 에 넘기기만 한다. [[ADR-074]] 의 마크
-// 결정 넷이 폐기되는 자리이고, 그 폐기의 기록이 [[ADR-130]] 이다.
+// 그래서 이 셸은 `refreshControl` 을 그대로 `ScrollView` 에 넘긴다. [[ADR-074]] 의 마크 결정 넷이
+// 폐기되는 자리이고, 그 폐기의 기록이 [[ADR-130]] 이다.
+//
+// **손대는 것은 한 프롭뿐이다 — `progressViewOffset`**([[ADR-160]] 결정 2). 인디케이터가 바로 위
+// 안전영역 페이드에 **함께 깎이기** 때문이고(두 플랫폼 다 마스크 «안» 이다 — iOS 는 스크롤 뷰의
+// 서브뷰, 안드로이드는 `ScrollView` 를 감싸는 `AndroidSwipeRefreshLayout`), 그 높이를 아는 것이
+// 화면이 아니라 이 셸이라 여기서 얹는다(화면에 시키면 화면이 셸의 마스크를 알아야 한다).
+// **값은 플랫폼마다 다르다** — 안드로이드 원은 기본으로 이미 24dp 내려와 멈추기 때문이고, 그
+// 계산은 `pull-indicator-offset.ts` 가 갖는다(정정 1).
 //
 // ── 리스트 성능은 여기서 앞당기지 않는다 ────────────────────────────────────────────
 //
@@ -186,6 +195,10 @@ export function ScreenScroll({
     barSpacePx,
     portBottomPx: bottom.portBottomPx,
   })
+  const indicatorOffsetPx = resolvePullIndicatorOffset({
+    fadeTopPx: fade.topPx,
+    platform: Platform.OS,
+  })
 
   // 스크롤포트를 "실제로 보이는 영역"에 맞추는 두 값([[ADR-099]] 결정 6). **콘텐츠 패딩이 아니라
   // 상자의 마진**이어야 한다 — 인디케이터는 콘텐츠가 아니라 스크롤포트 위에 겹쳐 그려진다.
@@ -202,7 +215,16 @@ export function ScreenScroll({
       // 때 라이트 테마에 흰 인디케이터가 나왔고(실기기 2026-08-06), RN 의 기본값 `'default'` 도
       // 같은 종류의 실패다: 그 값은 OS 설정을 따라가지 우리 테마를 따라가지 않는다.
       indicatorStyle={indicatorStyle}
-      refreshControl={refreshControl}
+      // **인디케이터는 아래 마스크 «안» 에 있다**([[ADR-160]] 결정 2) — iOS 는 스크롤 뷰의
+      // 서브뷰이고, 안드로이드는 `ScrollView` 를 감싸는 `AndroidSwipeRefreshLayout` 이라 어느
+      // 쪽이든 마스크를 지난다(뷰 트리로 걸리지, 콘텐츠가 당겨지는지로 걸리지 않는다). 상단 페이드
+      // 구간은 알파가 0에서 시작하므로 그대로 두면 당김 자리에 열리는 것이 «인디케이터» 가 아니라
+      // «빈 띠» 다. 얼마나 내릴지는 플랫폼마다 다르고(정정 1) 그 계산은 옆 파일이 갖는다.
+      refreshControl={
+        refreshControl === undefined || indicatorOffsetPx === 0
+          ? refreshControl
+          : cloneElement(refreshControl, { progressViewOffset: indicatorOffsetPx })
+      }
       // 조건부 전개다 — `onScroll={undefined}` 로 넘기면 iOS 가 기본 주기(스크롤이 멈출 때 1회)로
       // 이벤트를 켜고, 안 쓰는 화면의 렌더 트리에도 프롭이 남는다.
       {...(onScroll === undefined ? null : { onScroll, scrollEventThrottle: 16 })}

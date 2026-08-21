@@ -19,6 +19,7 @@
 //    갖고 있다([[ADR-101]] 결정 2). 여기 남는 것은 **[[ADR-101]] 결정 1** — `null` 을 0명으로 읽지
 //    않는가 — 이고 그것은 한 케이스다.
 // ⑥ DOM 스냅샷 둘은 옮기지 않는다(전환 계획서 «잃는 안전망») — 대신 각 가지를 케이스로 적는다.
+import { useCharacterSelectionStore } from '../../../features/character-selection/store'
 import { act, fireEvent, screen } from '@testing-library/react-native'
 import { useState } from 'react'
 
@@ -81,13 +82,12 @@ function mockStore(overrides: Partial<Store> = {}): Store {
     characters: [],
     error: null,
     trackedOcids: null,
-    selectedOcid: null,
     partySizes: {},
     manualTrackedByOcid: {},
     loadTrackedOcids: jest.fn(),
     saveTrackedOcids: jest.fn(),
-    refresh: jest.fn(),
-    selectCharacter: jest.fn(),
+    // 실물은 `Promise<void>` 다 — 당김 훅이 회차의 «끝» 을 기다린다([[ADR-160]] 결정 1).
+    refresh: jest.fn().mockResolvedValue(undefined),
     loadPartySizes: jest.fn(),
     setPartySize: jest.fn(),
     addManualBoss: jest.fn(),
@@ -189,6 +189,12 @@ beforeEach(() => {
   navigate.mockClear()
   mockedNavigation.mockReturnValue({ navigate, goBack: jest.fn() } as never)
   useTrackingModeStore.setState({ mode: 'auto' })
+})
+
+// 선택은 이제 화면 스토어가 아니라 `useCharacterSelectionStore` 가 갖는다([[ADR-159]]).
+// 실물 스토어라 값이 파일 안에서 넘어가므로 테스트마다 되돌린다.
+beforeEach(() => {
+  useCharacterSelectionStore.setState({ selectedOcid: null })
 })
 
 describe('BossScreen — 빈 상태와 마운트', () => {
@@ -483,12 +489,18 @@ describe('BossScreen — 재조회 ([[ADR-072]] · [[ADR-130]])', () => {
     expect(refreshControl()).toBeDefined()
   })
 
-  it('조회 중이면 인디케이터가 돌고 "조회 중..." 을 보여준다', async () => {
+  // ★ 회귀 가드 — **«조회 중» 과 «당겼다» 는 다른 사실이다** ([[ADR-160]] 결정 1).
+  //
+  // 종전에는 `refreshing = status === 'loading'` 이라, 화면 마운트 하이드레이션만으로 인디케이터가
+  // 프로그램적으로 열렸다. 사용자 보고(2026-08-22) *"페이지 이동 시 새로고침 인디케이터가 저절로
+  // 돌고 상단이 빈 채로 멈춘다"* 가 그 증상이다. «조회 중...» 은 그대로 뜬다 — 그쪽이 조회를
+  // 말하는 자리다.
+  it('조회 중이어도 인디케이터는 안 돈다 — "조회 중..." 만 보여준다', async () => {
     loaded('loading')
     await renderScreen()
 
     expect(screen.getByText('조회 중...')).toBeTruthy()
-    expect(refreshControl().refreshing).toBe(true)
+    expect(refreshControl().refreshing).toBe(false)
   })
 
   // [[ADR-141]] 결정 1: 동기화 상태는 드롭다운 줄이 아니라 **제목 줄**에 있다(컨텐츠 스케줄러와

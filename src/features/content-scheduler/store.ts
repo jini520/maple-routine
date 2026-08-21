@@ -2,12 +2,8 @@ import { create } from 'zustand'
 import { syncSchedules, toScheduleSyncError, type ScheduleSyncError } from '../schedule-sync/schedule-sync'
 import { hasSyncAttemptedThisRun } from '../schedule-sync/sync-run-state'
 import { isSyncFresh } from '../../lib/sync-freshness'
-import {
-  getLastSelectedCharacter,
-  getTrackedCharacterOcids,
-  setLastSelectedCharacter,
-  setTrackedCharacterOcids,
-} from '../../storage/character-selection'
+import { getTrackedCharacterOcids, setTrackedCharacterOcids } from '../../storage/character-selection'
+import { useCharacterSelectionStore } from '../character-selection/store'
 import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getCachedSchedulerState } from '../../storage/scheduler-cache'
 import { compareByName } from '../onboarding/representative-character'
@@ -78,7 +74,6 @@ export interface ContentSchedulerState {
   characters: ContentCharacterView[]
   error: ScheduleSyncError | null
   trackedOcids: string[] | null
-  selectedOcid: string | null
   // ADR-035: 수동 모드에서 캐릭터별 추적 항목(멤버십). 값 필드는 여기 두지 않고 표시 시점에
   // characters의 동기화 값 또는 템플릿에서 조회한다(단일 진실 공급원, 결정 6).
   manualTrackedByOcid: Record<string, ManualTrackedItem[]>
@@ -96,7 +91,6 @@ export interface ContentSchedulerStore extends ContentSchedulerState {
     onProgress?: (completed: number, total: number) => void,
     options?: RefreshOptions,
   ): Promise<void>
-  selectCharacter(ocid: string): Promise<void>
   addManualContent(ocid: string, contentName: string, kind: 'daily' | 'weekly'): Promise<ManualContentAddResult>
   removeManualContent(ocid: string, contentName: string, kind: 'daily' | 'weekly'): Promise<void>
   // 보스 수익의 setTab([[ADR-023]])과 달리 동기다 — 그쪽은 탭이 바뀌면 기간을 다시 불러와야
@@ -109,7 +103,6 @@ const initialState: ContentSchedulerState = {
   characters: [],
   error: null,
   trackedOcids: null,
-  selectedOcid: null,
   manualTrackedByOcid: {},
   activeTab: 'daily',
 }
@@ -184,11 +177,13 @@ export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, ge
   loadTrackedOcids() {
     // ADR-101 결정 4: 동시 호출은 한 회차로 합친다(위 `hydration` 주석).
     hydration ??= (async () => {
-      const [ocids, selectedOcid] = await Promise.all([
+      // 저장된 선택은 **선택 스토어가 읽는다**([[ADR-159]] 결정 2) — 이 스토어가 읽어 자기
+      // 상태에 넣던 것이 «두 벌» 의 출처였다. 둘을 나란히 태우는 것은 그대로다(왕복 한 번).
+      const [ocids] = await Promise.all([
         getTrackedCharacterOcids(),
-        getLastSelectedCharacter(),
+        useCharacterSelectionStore.getState().hydrate(),
       ])
-      set({ trackedOcids: ocids, selectedOcid })
+      set({ trackedOcids: ocids })
       if (ocids !== null) {
         // ADR-097 결정 4: 자동 진입 경로는 여기 하나뿐이라 게이트를 놓칠 자리가 생기지 않는다.
         await get().refresh(ocids, undefined, { auto: true })
@@ -367,11 +362,6 @@ export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, ge
     }))
 
     set({ status: 'loaded', characters: await sortByCachedLevel(characters), error: null, manualTrackedByOcid })
-  },
-
-  async selectCharacter(ocid) {
-    set({ selectedOcid: ocid })
-    await setLastSelectedCharacter(ocid)
   },
 
   setActiveTab(tab) {
