@@ -46,7 +46,7 @@ export const BAR_GROUPS: readonly BarGroup[] = [
   { id: 'today', label: 'today', subs: [], page: 'Today' },
   {
     id: 'schedule',
-    label: '스케줄',
+    label: '스케줄러',
     page: null,
     subs: [
       { page: 'Content', label: '컨텐츠' },
@@ -58,7 +58,7 @@ export const BAR_GROUPS: readonly BarGroup[] = [
   },
   {
     id: 'ledger',
-    label: '가계부',
+    label: '수익·지출',
     page: null,
     subs: [
       { page: 'Profit', label: '보스 수익' },
