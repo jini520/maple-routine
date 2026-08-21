@@ -41,11 +41,6 @@ const NEGATIVE_LOOKAHEAD = '(?!('
 
 module.exports = {
   preset: 'jest-expo',
-  // **워커를 주기적으로 갈아 준다.** vitest 를 걷으면서 한 실행이 149 → 261 스위트가 됐고
-  // (`*.spec.*` 가 넘어왔다), 그 압력에서 워커가 `SIGSEGV` 로 죽는 일이 생겼다 — 매번 다른
-  // 스위트가 «Test suite failed to run» 으로 빨개지는 모양이라 테스트 실패로 오인하기 쉽다.
-  // 한도를 넘은 워커를 재시작시키면 사라진다([[ADR-157]]).
-  workerIdleMemoryLimit: '512MB',
   testMatch: ['**/*.test.[jt]s?(x)', '**/*.spec.[jt]s?(x)'],
   // 러너는 **jest 하나**다([[ADR-157]]). `*.spec.*` 는 vitest 가 돌던 것들인데 그쪽을 걷으면서
   // 여기로 들어왔다 — 확장자를 남긴 이유는 «RN 을 렌더하지 않는 순수 로직» 이라는 구분이 여전히

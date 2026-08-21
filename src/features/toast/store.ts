@@ -98,3 +98,20 @@ export const useToastStore = create<ToastStore>()((set, get) => {
     },
   }
 })
+
+/**
+ * 테스트 전용 — 떠 있는 토스트와 **예약된 자동 소멸 타이머**를 전부 걷는다.
+ *
+ * 이것이 필요한 이유는 타이머가 **모듈 스코프**에 살기 때문이다(위 `timers`). 토스트를 띄운 채
+ * 끝난 케이스는 2~2.5초짜리 실제 `setTimeout` 을 남기고, 그러면 jest 가 *"Jest did not exit one
+ * second after the test run has completed"* 로 멈춰 서 있다가 워커 정리와 겹쳐 `SIGSEGV` 로
+ * 죽기까지 한다([[ADR-157]] — 러너를 합치며 이 자리가 드러났다. vitest 는 이 상태로도 그냥 끝났다).
+ *
+ * `jest.setup.js` 의 전역 `afterEach` 가 이것을 부르므로 **개별 테스트는 아무것도 안 해도 된다.**
+ * 관례는 `__resetNativePortsForTest`·`resetSyncRunStateForTests` 와 같다.
+ */
+export function __resetToastsForTest(): void {
+  for (const timer of timers.values()) clearTimeout(timer)
+  timers.clear()
+  useToastStore.setState({ toasts: [], queue: [] })
+}

@@ -160,11 +160,10 @@
 
 **런타임이 아니라 생성 도구로 한다** — 색 값은 도메인 데이터라 [[ADR-006]] 상 사용자 확인이 필요한데, 런타임 계산은 그 확인 절차를 없앤다. 시드를 넣으면 38토큰 + 대비 계측 리포트가 나오고, 사람이 확인해 `job-themes.json` 에 커밋한다.
 
-```bash
-npm run theme:gen -- --primary '#F58B0F' --secondary '#F7D00D' --third '#CA763A' --mode light
-npm run theme:gen -- --existing 머쉬맘      # 기존 테마의 확정값을 승계하고 나머지를 채운다
-npm run theme:gen -- --existing-all         # 기존 4테마 일괄
-```
+> ⚠️ **`npm run theme:gen` 은 없어졌다**([[ADR-157]]) — 그 CLI 는 `vite-node` 위에 서 있었고,
+> vitest 를 걷으면서 vite 계열 의존을 통째로 지웠다. **파생 규칙 자체는 그대로 `src/lib/theme-derive.ts`
+> 에 있고 테스트가 지킨다** — 없어진 것은 그것을 부르던 껍데기뿐이다. 값을 새로 뽑는 방법은
+> 다시 정한다(사용자 결정, 2026-08-21).
 
 터미널에 색 견본·대비 계측·붙여넣을 JSON 블록·미디어 스코프 파생값이 함께 나온다. 대비 때문에 실패로 끝나지 않는다. 파생 규칙 본체는 `lib/theme-derive.ts`(색 공간·대비 프리미티브는 `lib/color.ts`)에 있고 스크립트는 껍데기다 — 회귀 테스트가 같은 함수를 재사용하므로 도구와 테스트가 갈라지지 않는다.
 

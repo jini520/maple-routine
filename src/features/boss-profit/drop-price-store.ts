@@ -7,6 +7,7 @@
 // 가격만 고치려 해도 **같은 (ocid, boss, difficulty, periodKey) 의 나머지 드롭을 함께 넘겨야**
 // 한다. 넘기지 않으면 그 그룹의 다른 기록이 사라진다.
 
+import { withSqliteTimeout } from './sqlite-guards'
 import { create } from 'zustand'
 import { toRecordedDrop } from './rows'
 import { useBossProfitStore } from './store'
@@ -51,16 +52,6 @@ interface DropPriceState {
 
 // 히스토리와 같은 사정 — 여기서 실패를 빈 배열로 바꾸면 "기록이 없습니다"라는 **거짓 빈 상태**가
 // 된다. 실패는 실패로 알린다([[ADR-062]]).
-const SQLITE_QUERY_TIMEOUT_MS = 5000
-
-function withSqliteTimeout<T>(promise: Promise<T>): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) =>
-      setTimeout(() => reject(new Error('SQLite 응답 시간 초과')), SQLITE_QUERY_TIMEOUT_MS),
-    ),
-  ])
-}
 
 function entryId(record: Pick<BossDropRecord, 'ocid' | 'boss' | 'difficulty' | 'periodKey' | 'dropIndex'>): string {
   return `${record.ocid}|${record.boss}|${record.difficulty}|${record.periodKey}|${record.dropIndex}`

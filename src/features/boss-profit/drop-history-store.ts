@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { withSqliteTimeout } from './sqlite-guards'
 import {
   confirmedDropKey,
   filterUnobtainableConfirmedDrops,
@@ -47,16 +48,8 @@ interface DropHistoryState {
 
 // 보스 수익 화면의 withSqliteFallback(타임아웃을 fallback으로 삼킴)을 쓰지 않는다 — 여기서 실패를
 // 빈 배열로 바꾸면 "기록이 없습니다"라는 **거짓 빈 상태**가 된다. 실패는 실패로 알린다([[ADR-062]]).
-const SQLITE_QUERY_TIMEOUT_MS = 5000
-
-function withSqliteTimeout<T>(promise: Promise<T>): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) =>
-      setTimeout(() => reject(new Error('SQLite 응답 시간 초과')), SQLITE_QUERY_TIMEOUT_MS),
-    ),
-  ])
-}
+// 그래서 던지는 쪽인 `withSqliteTimeout` 을 쓴다 — 이 파일에 있던 **같은 코드의 사본**을 걷었다
+// ([[ADR-157]]: 그 사본은 경주가 끝나도 타이머를 안 꺼서 조회마다 5초짜리 타이머를 남겼다).
 
 // 저장 계층은 부재를 null 로, `RecordedDrop` 은 optional(undefined)로 표현한다 — 여기서 한 번
 // 정규화한다(`loadDropsByRowKey` 가 하는 것과 같은 변환). `recordedAt` 은 옮기지 않는다([[ADR-071]]
