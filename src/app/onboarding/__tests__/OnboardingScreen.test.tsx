@@ -112,17 +112,6 @@ describe('OnboardingScreen', () => {
   // [[ADR-143]] 결정 1·8: 이 앱에는 계정 선택도 예열도 없다. 리듀서를 안 고쳤으므로 두 상태는
   // 타입상 남아 있고, 그 자리에 **빈 화면 대신 키 입력 폼**이 선다 — 출구 없는 흰 화면을 만들지
   // 않는다([[ADR-116]] 이 없앤 잠금과 같은 얼굴이다).
-  it.each(['selectingAccount', 'prefetching'] as const)(
-    'RN 에서 도달할 수 없는 status(%s)는 빈 화면이 아니라 ApiKeyForm 으로 떨어진다',
-    async (status) => {
-      mockStore({ status })
-
-      const view = await renderOverlay(<OnboardingScreen />)
-
-      expect(view.getByLabelText('Nexon Open API 키')).toBeTruthy()
-    },
-  )
-
   // 자동 여백·중앙 정렬(`seedingTracking` 의 `justify-center`)은 **부모가 남는 세로 공간을 줄 때만**
   // 작동한다(웹에서는 컨테이너의 `min-h-[calc(100dvh-…)]` 이 그 공간을 만들었다 — 사용자 보고
   // 2026-08-09). RN 에서 그 짝이 콘텐츠 컨테이너의 `flexGrow` 다.

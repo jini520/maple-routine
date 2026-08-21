@@ -1,8 +1,8 @@
 # 아이템 드랍 (Item Drop)
 
 > **범위**: 보스별 아이템 획득 기록, 랜덤 컨테이너 결과 선택, 드롭 입력 시트, 고가 아이템 리스트, 전 기간 획득 히스토리. 수익 합산·고가 드롭 연출은 [boss-profit.md](./boss-profit.md), 게임 데이터 파일은 [../foundation/game-data.md](../foundation/game-data.md).
-> **관련 소스**: `app/item-drop/` · `features/item-drop/` · `features/drop-effect/` · `storage/boss-drop-records`·`storage/drop-effect` · `lib/item-icons`·`lib/drop-effect-frames`·`lib/drop-effect-layout`·`lib/boss-drops`(`pruneUnobtainableDrops`·`planConfirmedDifficultyDropMigration`)·`lib/drop-history`(전 기간 집계) · `DropEffectOverlay` · `scripts/measure-drop-effect-origins.py`(origin 재계측) · `BossDropSheet`(vaul Drawer) · `DropPricePad`(가격 키패드) · `app/boss-profit/DropPriceScreen.tsx`(`/profit/prices`) · `lib/drop-price` · `app/boss-profit/DropHistoryScreen.tsx`(`/profit/drops`) · `src/data/item-drop-table.json`·`boss-ring-boxes.json`·`accessory-boxes.json`·`item-icons.json`·`valuable-drops.json`.
-> **관련 ADR**: [[ADR-011]] [[ADR-010]] [[ADR-038]] [[ADR-039]] [[ADR-040]] [[ADR-041]] [[ADR-045]] [[ADR-048]] [[ADR-069]] [[ADR-070]] [[ADR-071]] [[ADR-103]] [[ADR-124]] [[ADR-147]]. **관련 문서**: [../foundation/game-data.md](../foundation/game-data.md), [boss-profit.md](./boss-profit.md), [today.md](./today.md).
+> **관련 소스**: `app/boss-profit/`(`BossDropSheet`·`DropHistoryScreen`·`DropPriceScreen`·`DropPricePad` — 드롭 UI 는 보스 수익 화면 아래 산다) · `features/boss-profit/`(`drop-history-store`·`drop-price-store`·`drops-loader`) · `features/drop-effect/` · `storage/boss-drop-records`·`storage/drop-effect` · `lib/item-icons`·`lib/drop-effect-frames`·`lib/drop-effect-layout`·`lib/boss-drops`(`pruneUnobtainableDrops`·`planConfirmedDifficultyDropMigration`)·`lib/drop-history`(전 기간 집계) · `DropEffectOverlay` · `scripts/measure-drop-effect-origins.py`(origin 재계측) · `BossDropSheet`(vaul Drawer) · `DropPricePad`(가격 키패드) · `app/boss-profit/DropPriceScreen.tsx`(`/profit/prices`) · `lib/drop-price` · `app/boss-profit/DropHistoryScreen.tsx`(`/profit/drops`) · `src/data/item-drop-table.json`·`boss-ring-boxes.json`·`accessory-boxes.json`·`item-icons.json`·`valuable-drops.json`.
+> **관련 ADR**: [[ADR-011]] [[ADR-010]] [[ADR-038]] ADR-039 [[ADR-040]] [[ADR-041]] [[ADR-045]] [[ADR-048]] [[ADR-069]] [[ADR-070]] [[ADR-071]] [[ADR-103]] [[ADR-124]] [[ADR-147]]. **관련 문서**: [../foundation/game-data.md](../foundation/game-data.md), [boss-profit.md](./boss-profit.md), [today.md](./today.md).
 
 ## 정책
 - **드롭 기록의 키는 `(ocid, boss, difficulty, period_key, drop_index)`** 이고, 그래서 **처치 난이도가 나중에 달라지면 이관이 필요하다**([[ADR-069]] 결정 4) — 익스트림으로 등록해두고 드롭까지 기록한 뒤 백필이 하드로 확정하면 그 드롭은 고아가 된다. 확정 시점에 옛 난이도 키의 드롭을 확정 키로 옮기고, **그 난이도에서 획득 불가능한 항목(`pruneUnobtainableDrops` 탈락분)은 삭제한다** — 거짓 기록이 환산 가치·고가 드롭 연출에 섞이는 것을 막는다(사용자 판단). 상세는 [boss-profit.md](./boss-profit.md) "자동 기록"(2026-07-31 구현 완료 — 계산은 `planConfirmedDifficultyDropMigration`, 쓰기는 store).
@@ -42,8 +42,9 @@
 
 ### 입력 — 앱 내장 키패드 ([[ADR-124]] 결정 5)
 OS 키보드를 부르지 않는다. 메소는 자릿수가 커서 시스템 키패드로는 0을 세게 되고, 키보드가 뜨면
-WebView 가 줄어(iOS `resize:native` · 안드로이드 컨테이너 패딩) 시트가 밀리거나 잘린다 — 앱이 자기
-키패드를 그리면 뷰포트가 그대로라 **보정할 것이 애초에 없다**.
+시트가 밀리거나 잘린다 — 앱이 자기 키패드를 그리면 화면이 줄지 않아 **보정할 것이 애초에 없다**.
+(웹뷰 시절에는 그 밀림이 `resize:native`·컨테이너 패딩이라는 플랫폼별 형태로 나타났고, RN 에서도
+키보드 인셋을 쫓는 일이 남는 것은 같다 — 안 부르는 것이 여전히 싸다.)
 
 - **주 표기는 자릿수 전체**(`3,250,000,000`). 억/만으로 접으면 한 자를 칠 때마다 `3억` → `32억` → `3억 2,000만` 으로 단위가 갈아엎여 읽히지 않는다(1차 시안 반려). 억/만 환산은 **보조 줄**.
 - **단위 칩 다섯** — `+100만 +1000만 +1억 +10억 +100억`, 10배씩 오르는 자릿수 눈금(사용자 지정).
@@ -72,7 +73,7 @@ WebView 가 줄어(iOS `resize:native` · 안드로이드 컨테이너 패딩) �
 ## 획득 히스토리 (전 기간) — [[ADR-071]], 이슈 #54
 보스 수익 화면이 "지금 보고 있는 기간"만 보여주는 데 반해, 히스토리는 **전 기간**의 드롭 기록을 한 목록에서 시간순으로 본다. 진입점은 보스 수익 sticky 헤더 **제목 줄 우측**의 `히스토리` 링크이고("캐릭터 관리"와 같은 패턴) 라우트는 `/profit/drops`(`DropHistoryScreen`, 화면 제목 "히스토리").
 
-**독립 페이지가 아니라 보스 수익 위에 얹히는 스택 화면이다**([[ADR-077]], 2026-08-02) — `/profit` 의 **중첩 라우트**이고 화면은 `fixed inset-0` 오버레이(자기 스크롤 컨테이너)로 그린다. 그래서 `BossProfitScreen` 은 히스토리가 열려 있는 동안에도 마운트를 유지하고, 뒤로 오면 아코디언 펼침·보고 있던 기간·스크롤 위치가 **저장·복원 없이** 그대로 남는다. 형제 라우트였을 때는 이동마다 언마운트돼 셋 다 잃었고, 같은 언마운트가 iOS WKWebView에서 stuck sticky 헤더를 빈 화면으로 만들었다.
+**독립 페이지가 아니라 보스 수익 위에 얹히는 스택 화면이다**(⛔ ADR-077 에서 살아남은 계약) — `@react-navigation/native-stack` 이 위로 push 하므로 `BossProfitScreen` 은 히스토리가 열려 있는 동안에도 **마운트를 유지**하고, 뒤로 오면 아코디언 펼침·보고 있던 기간·스크롤 위치가 **저장·복원 없이** 그대로 남는다. 웹에서 형제 라우트였을 때는 이동마다 언마운트돼 셋 다 잃었고, 그것이 이 계약이 생긴 이유다(중첩 라우트 + `fixed inset-0` 오버레이라는 **구현**은 스택으로 대체됐다).
 
 - **원천은 `boss_drop_records` 하나다 — 히스토리 전용 테이블을 만들지 않는다**([[ADR-071]] 결정 1). 이 테이블은 고가 여부를 가려 저장하지 않으므로(고가 판정은 표시 시점 필터) **선택 등록 가능한 모든 아이템**이 이미 전부 들어 있고, 삭제 경로 셋(수동 편집 replace-all · `pruneUnobtainableDrops` · 난이도 확정 이관 탈락분)이 모두 이 테이블을 직접 지우므로 **삭제가 히스토리에 자동 전파된다**. 미러 테이블을 두면 prune 이 현재 화면 `rows` 의 키만 순회하는 탓에 열어본 적 없는 기간의 미러가 영구히 어긋난다.
 - **드롭의 '언제'는 `period_key` 다 — `recorded_at` 을 쓰지 않는다**([[ADR-071]] 결정 2). `recorded_at` 은 "언제 먹었는가"가 아니라 "이 그룹을 마지막으로 쓴 시각"이다: replace-all 이 그룹 전체에 호출 시점을 박고 prune·이관도 `now` 로 덮어, 드롭 하나를 더 추가하면 기존 드롭들의 날짜까지 오늘로 갱신된다. `period_key`(주간=리셋일 `YYYY-MM-DD`, 월간=`YYYY-MM`)는 불변이고 게임 주기와 일치한다. **정렬도 `period_key DESC, drop_index`** 이고 `recorded_at DESC` 는 금지다(과거 기간 재편집이 그 기록을 맨 위로 점프시킨다). `recorded_at` 은 감사 필드로만 남는다.
@@ -94,8 +95,12 @@ WebView 가 줄어(iOS `resize:native` · 안드로이드 컨테이너 패딩) �
   - **잎 색만 고정 hex**(고가 골드와 같은 사정, [[ADR-045]] — 램프가 테마마다 갈리면 의미를 잃는다). 글자색은 테마 토큰. 모션 없음. **크기**(2026-08-01 키움): 잎 42px(26→, 작으면 단계 차이가 읽히지 않는다) · 제목 `text-base` · 아래 줄 11px. 아래 줄을 12px 까지 올리지 않는 이유는 목록 문장이 12px 라 위계가 사라지기 때문.
 - **월간 탭의 구조적 한계를 물려받지 않는다**([[ADR-071]] 결정 10): 화면 집계(`collectAllValuableDrops`)는 주차 합계 행에 보스 행이 없어 월간 보스 드롭만 잡히지만, 히스토리는 화면 `rows` 가 아니라 DB를 직접 읽어 이 한계가 없다.
 
-### 바텀시트 = vaul(Drawer) ([[ADR-039]])
-자체 `createPortal` 바텀시트를 vaul 라이브러리로 교체(자체구현은 데스크톱 마우스 드래그 닫기 불가·스냅 복귀·fling 없음). 공개 API(`onClose`/`children`/`testId`)·시각 스킨(오버레이 `bg-scrim`·`rounded-t-[20px]`·`z-[60]`·그랩 핸들·`max-h-[82vh]`·safe-area 패딩) 유지해 `BossDropSheet` 무변경. 부모 조건부 마운트는 내부 `open` 상태 + `onAnimationEnd`(닫힘 후 `onClose`). 포커스 트랩·Esc·`aria` vaul 내장. jsdom 폴리필(pointer capture·`scrollIntoView`·`matchMedia`·`ResizeObserver`) `setupFiles` 추가. 네이티브 변경 없어 OTA 배포 가능.
+### 바텀시트 = `@gorhom/bottom-sheet`
+공용 `components/organisms/BottomSheet` 가 라이브러리를 감싸고, 시트를 쓰는 화면은 그 뒤만 본다.
+**계약은 라이브러리를 두 번 갈아끼우는 동안 한 글자도 안 바뀌었다**(⛔ ADR-039 결정 2·3 에서
+살아남은 부분) — 공개 API(`onClose`/`children`/`testId`)와 시각 스킨(스크림·상단 라운딩·그랩 핸들·
+safe-area 패딩)을 유지하므로 `BossDropSheet` 는 무변경이고, 부모 조건부 마운트는 **내부 `open` 상태
++ 닫힘 애니메이션 종료 뒤 `onClose`** 로 흡수한다(닫히는 동안 언마운트되면 애니메이션이 잘린다).
 
 ## 열린 질문
 - **`toHistoryRecord` 가 가격 세 필드를 안 옮긴다**(발견 2026-08-18, [[ADR-147]] 구현 중). `drop-history-store` 가 저장 행을 `DropHistoryRecord` 로 투영하며 `priceState`·`priceMeso`·`priceShare` 를 빠뜨린다 — 저장소(`boss_drop_records`)에도 조회 함수(`getAllBossDropRecords`)에도 값이 있고 가격 기록 화면(`drop-price-store`)은 잘 읽는데 **히스토리 쪽 투영에서만** 빠진다. 히스토리 화면은 지금 가격을 안 쓰므로 증상이 없지만, 같은 투영을 읽는 today 의 위젯 둘은 **실기기에서 값을 못 받는다**(최고가 아이템이 언제나 «가격이 입력된 아이템이 없습니다» · 가격 미입력이 «기록 안 함»(`excluded`)까지 미입력으로 센다). **한 함수의 문제이지만 두 화면이 그 투영을 공유하므로 고치는 범위를 따로 정한다.**
@@ -106,6 +111,7 @@ WebView 가 줄어(iOS `resize:native` · 안드로이드 컨테이너 패딩) �
 - 개봉 결과 개별 반지/장신구의 거래 가능 여부(상자 자체는 교환 불가 확인). ~~개별 시세 전무~~ 는 [[ADR-124]] 가 **사용자 직접 입력**으로 해소했다.
 
 ## 폐기된 정책 (history)
+- ~~바텀시트 = vaul(Drawer) — 자체 `createPortal` 구현을 웹 라이브러리로 교체~~ → **`@gorhom/bottom-sheet`**(🗑 [[ADR-039]] → [[ADR-128]]). 공개 API·스킨 계약은 그대로 살아남았다.
 - ~~드롭은 기록만 하고 금액은 저장하지 않는다(시세는 별도 소스에서 조인, 갱신 소스 미정·크롤링 유력)~~ → **가격을 `boss_drop_records` 에 함께 저장한다**([[ADR-124]], [[ADR-038]] 반전). 거래소 변동값이라 참조표에 담을 수 없어 사용자 직접 입력이 유일하게 정합한 소스였다.
 - ~~"물욕템"~~ → **"아이템"**([[ADR-124]] 결정 9). "고가"는 별개 개념이라 남는다.
 - ~~보스 목록을 독립 목록으로 관리~~ → 보스 스케줄러 동기화 캐시로 통일([[ADR-011]]).

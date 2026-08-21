@@ -4,8 +4,6 @@ import type { TrackingMode } from '../../storage/tracking-mode'
 export type OnboardingStatus =
   | 'awaitingApiKey'
   | 'verifyingApiKey'
-  | 'selectingAccount'
-  | 'prefetching'
   | 'selectingTrackingMode'
   | 'selectingContentCharacters'
   | 'seedingTracking'
@@ -17,11 +15,6 @@ export type OnboardingError =
   | { kind: 'rateLimited' } // 429
   | { kind: 'network' } // 네트워크/5xx/JSON 파싱 실패 등
   | { kind: 'storageWriteFailed' } // 로컬 저장 실패
-
-export interface PrefetchProgress {
-  completed: number
-  total: number
-}
 
 /**
  * 저장된 키로는 앞으로 갈 수 없게 된 원인([[ADR-116]] 결정 1).
@@ -37,9 +30,7 @@ export type ApiKeyNoticeKind =
 export interface OnboardingState {
   status: OnboardingStatus
   accounts: MapleAccount[]
-  selectedAccountId: string | null
   error: OnboardingError | null
-  prefetchProgress: PrefetchProgress | null
   /**
    * 키를 다시 받아야 한다는 것을 **알렸고 사용자의 확인을 기다리는 중**이며, 그 **원인**이 무엇인지
    * ([[ADR-115]] 결정 10 · [[ADR-116]] 결정 1). 알림이 없으면 `null`.
@@ -55,34 +46,24 @@ export interface OnboardingState {
 export const initialOnboardingState: OnboardingState = {
   status: 'awaitingApiKey',
   accounts: [],
-  selectedAccountId: null,
   error: null,
-  prefetchProgress: null,
   apiKeyNotice: null,
 }
 
 // ADR-086 결정 1: 끝내지 않은 온보딩은 그 단계부터 재개한다. 재개 지점은 저장된 값(apiKey ·
-// selectedAccountId · trackingMode · trackedCharacters)에서 파생하므로 진행 상태 전용 키가 없다.
+// trackingMode · trackedCharacters)에서 파생하므로 진행 상태 전용 키가 없다.
 export type ResumableOnboardingStatus = Extract<
   OnboardingStatus,
   'selectingTrackingMode' | 'selectingContentCharacters'
 >
 
 export type OnboardingEvent =
-  // ADR-143 결정 8: selectedAccountId가 `string | null`인 것은 계정 범위 'all'(RN)이 계정을 고르지
-  // 않기 때문이다. **리듀서 본문은 이 때문에 한 줄도 바뀌지 않는다** — 값이 앉는 자리
-  // (OnboardingState.selectedAccountId)가 원래 `string | null`이다.
-  | { type: 'RESTORE_COMPLETED'; selectedAccountId: string | null }
-  | { type: 'RESTORE_STEP'; status: ResumableOnboardingStatus; selectedAccountId: string | null }
+  | { type: 'RESTORE_COMPLETED' }
+  | { type: 'RESTORE_STEP'; status: ResumableOnboardingStatus }
   | { type: 'SUBMIT_API_KEY' }
   | { type: 'API_KEY_VERIFIED'; accounts: MapleAccount[] }
   | { type: 'API_KEY_REJECTED'; error: OnboardingError }
-  | { type: 'SELECT_ACCOUNT'; accountId: string }
-  | { type: 'ACCOUNT_SELECTION_FAILED'; error: OnboardingError }
-  // ADR-016: 계정 확정 직후 전체 캐릭터 예열(character/basic + access_flag true인 경우 scheduler) 진행 상태
-  | { type: 'PREFETCH_PROGRESS'; completed: number; total: number }
-  | { type: 'PREFETCH_FINISHED' }
-  // ADR-035 결정 13: 예열이 끝나면 자동/수동 트래킹 모드 선택 단계로 넘어간다.
+  // ADR-035 결정 13: 키가 확인되면 자동/수동 트래킹 모드 선택 단계로 넘어간다.
   | { type: 'SELECT_TRACKING_MODE'; mode: TrackingMode }
   // ADR-035 결정 13: 트래킹 모드 선택 후 컨텐츠 추적 캐릭터를 1명 이상 고른다.
   | { type: 'SUBMIT_CONTENT_CHARACTERS' }
@@ -100,9 +81,7 @@ export function onboardingReducer(state: OnboardingState, event: OnboardingEvent
       return {
         status: 'completed',
         accounts: [],
-        selectedAccountId: event.selectedAccountId,
         error: null,
-        prefetchProgress: null,
         apiKeyNotice: null,
       }
 
@@ -112,9 +91,7 @@ export function onboardingReducer(state: OnboardingState, event: OnboardingEvent
       return {
         status: event.status,
         accounts: [],
-        selectedAccountId: event.selectedAccountId,
         error: null,
-        prefetchProgress: null,
         apiKeyNotice: null,
       }
 
@@ -126,14 +103,13 @@ export function onboardingReducer(state: OnboardingState, event: OnboardingEvent
       }
 
     case 'API_KEY_VERIFIED':
-      // ADR-051: 계정 수와 무관하게 항상 선택 화면을 거친다 — 계정이 1개여도 자동 확정하지 않는다.
-      // 계정 확정(과 그에 이어지는 ADR-016 예열)은 사용자가 "계속하기"를 누르는 SELECT_ACCOUNT 하나뿐이다.
+      // 계정을 고르는 단계가 없으므로([[ADR-143]] 결정 1) 키가 확인되면 곧바로 스케줄 관리 방법
+      // 단계다. `accounts` 는 화면이 그리지 않지만, 응답을 받았다는 사실 자체가 키 검증이라
+      // 스토어가 재개 판정(같은 응답으로 추적 ocid 대조)에 쓴다.
       return {
-        status: 'selectingAccount',
+        status: 'selectingTrackingMode',
         accounts: event.accounts,
-        selectedAccountId: null,
         error: null,
-        prefetchProgress: null,
         apiKeyNotice: null,
       }
 
@@ -142,36 +118,6 @@ export function onboardingReducer(state: OnboardingState, event: OnboardingEvent
         ...state,
         status: 'error',
         error: event.error,
-      }
-
-    case 'SELECT_ACCOUNT':
-      // ADR-016/ADR-051: 계정 수와 무관하게 모든 계정 확정이 이 경로 하나를 지나 예열을 거친다.
-      return {
-        ...state,
-        status: 'prefetching',
-        selectedAccountId: event.accountId,
-        prefetchProgress: null,
-      }
-
-    case 'ACCOUNT_SELECTION_FAILED':
-      return {
-        ...state,
-        status: 'error',
-        error: event.error,
-      }
-
-    case 'PREFETCH_PROGRESS':
-      return {
-        ...state,
-        prefetchProgress: { completed: event.completed, total: event.total },
-      }
-
-    case 'PREFETCH_FINISHED':
-      // ADR-035 결정 13: 예열 완료 후 곧바로 완료하지 않고 트래킹 모드 선택 단계로 넘어간다.
-      return {
-        ...state,
-        status: 'selectingTrackingMode',
-        prefetchProgress: null,
       }
 
     case 'SELECT_TRACKING_MODE':

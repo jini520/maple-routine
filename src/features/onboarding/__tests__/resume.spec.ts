@@ -15,12 +15,11 @@ jest.mock('../../../storage/tracking-mode', () => ({
 }))
 const { getTrackingMode: getTrackingModeMock, setTrackingMode: setTrackingModeMock } = jest.requireMock('../../../storage/tracking-mode') as Record<string, jest.Mock>
 
-import { setOnboardingAccountScope } from '../flow'
 import { deriveResumeTarget } from '../resume'
 
 beforeEach(() => {
   // 기본값 = 온보딩을 끝까지 마친 상태
-  getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1', selectedAccountId: 'acc-1' })
+  getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1' })
   getTrackingModeMock.mockResolvedValue('auto')
   getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
   setTrackingModeMock.mockResolvedValue(undefined)
@@ -42,23 +41,12 @@ describe('deriveResumeTarget', () => {
     expect(getTrackedCharacterOcidsMock).not.toHaveBeenCalled()
   })
 
-  it('selectedAccountId가 없으면 selectingAccount이고, 재조회에 쓸 키를 실어 보낸다', async () => {
-    getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1', selectedAccountId: null })
-
-    await expect(deriveResumeTarget()).resolves.toEqual({
-      status: 'selectingAccount',
-      apiKey: 'key-1',
-    })
-    expect(getTrackingModeMock).not.toHaveBeenCalled()
-  })
-
   it('trackingMode를 고르지 않았으면 selectingTrackingMode다 — 자동으로 확정하지 않는다', async () => {
     getTrackingModeMock.mockResolvedValue(null)
     getTrackedCharacterOcidsMock.mockResolvedValue(null)
 
     await expect(deriveResumeTarget()).resolves.toEqual({
       status: 'selectingTrackingMode',
-      selectedAccountId: 'acc-1',
     })
     expect(setTrackingModeMock).not.toHaveBeenCalled()
   })
@@ -68,7 +56,6 @@ describe('deriveResumeTarget', () => {
 
     await expect(deriveResumeTarget()).resolves.toEqual({
       status: 'selectingContentCharacters',
-      selectedAccountId: 'acc-1',
     })
   })
 
@@ -77,14 +64,12 @@ describe('deriveResumeTarget', () => {
 
     await expect(deriveResumeTarget()).resolves.toEqual({
       status: 'selectingContentCharacters',
-      selectedAccountId: 'acc-1',
     })
   })
 
   it('네 단계를 모두 마쳤으면 completed다', async () => {
     await expect(deriveResumeTarget()).resolves.toEqual({
       status: 'completed',
-      selectedAccountId: 'acc-1',
     })
     expect(setTrackingModeMock).not.toHaveBeenCalled()
   })
@@ -97,7 +82,6 @@ describe('deriveResumeTarget', () => {
 
     await expect(deriveResumeTarget()).resolves.toEqual({
       status: 'completed',
-      selectedAccountId: 'acc-1',
     })
     expect(setTrackingModeMock).toHaveBeenCalledTimes(1)
     expect(setTrackingModeMock).toHaveBeenCalledWith('auto')
@@ -109,19 +93,16 @@ describe('deriveResumeTarget', () => {
 // 안 빠졌는가"를 본다.
 describe('deriveResumeTarget — 계정 범위 all', () => {
   beforeEach(() => {
-    setOnboardingAccountScope('all')
     // 계정을 고른 적이 없는 것이 RN 의 정상 상태다(ADR-143 결정 7).
-    getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1', selectedAccountId: null })
+    getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1' })
   })
 
   afterEach(() => {
-    setOnboardingAccountScope('single')
   })
 
   it('selectedAccountId가 없어도 selectingAccount로 가지 않는다', async () => {
     await expect(deriveResumeTarget()).resolves.toEqual({
       status: 'completed',
-      selectedAccountId: null,
     })
   })
 
@@ -138,7 +119,6 @@ describe('deriveResumeTarget — 계정 범위 all', () => {
 
     await expect(deriveResumeTarget()).resolves.toEqual({
       status: 'selectingTrackingMode',
-      selectedAccountId: null,
     })
     expect(setTrackingModeMock).not.toHaveBeenCalled()
   })
@@ -148,7 +128,6 @@ describe('deriveResumeTarget — 계정 범위 all', () => {
 
     await expect(deriveResumeTarget()).resolves.toEqual({
       status: 'selectingContentCharacters',
-      selectedAccountId: null,
     })
   })
 
@@ -159,7 +138,6 @@ describe('deriveResumeTarget — 계정 범위 all', () => {
 
     await expect(deriveResumeTarget()).resolves.toEqual({
       status: 'completed',
-      selectedAccountId: null,
     })
     expect(setTrackingModeMock).toHaveBeenCalledTimes(1)
   })
@@ -167,11 +145,10 @@ describe('deriveResumeTarget — 계정 범위 all', () => {
   // 웹뷰 앱을 쓰다 RN 으로 넘어온 설치본에는 이 값이 남아 있다(ADR-143 결정 7 — 지우지 않는다).
   // 읽지 않는 값이라 판정을 바꾸지 않고, 있으면 있는 그대로 실어 보낸다.
   it('저장된 selectedAccountId가 있으면 그 값을 그대로 싣는다 — 판정은 바뀌지 않는다', async () => {
-    getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1', selectedAccountId: 'acc-1' })
+    getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1' })
 
     await expect(deriveResumeTarget()).resolves.toEqual({
       status: 'completed',
-      selectedAccountId: 'acc-1',
     })
   })
 })

@@ -11,7 +11,7 @@
 - 알림음은 **기본 제공 사운드만**(사용자 업로드/커스텀 선택 없음).
 
 ## 네이티브 구현 ([[ADR-005]])
-Capacitor 공식 플러그인이 커버 못 해 Swift/Kotlin 커스텀 플러그인을 직접 작성해 `native/hunting-timer` 로 노출.
+기성 모듈이 커버 못 하는 영역이라 Swift/Kotlin **커스텀 네이티브 모듈**을 직접 작성해 `native/hunting-timer` 포트 뒤로 노출한다(어댑터는 `src/native/adapters/rn-hunting-timer.ts`).
 - **Android**: Foreground Service + `Notification.Builder.setUsesChronometer(true)`(OS가 경과 시간 자동 갱신). 동일 서비스에서 주기 타이머로 알림음 재생.
 - **iOS**: Live Activity(ActivityKit, iOS 16.1+)로 잠금화면/Dynamic Island에 경과 시간. 사운드는 Live Activity와 별도로 로컬 알림/백그라운드 오디오 세션으로 트리거. **iOS 16.1 미만은 폴백**(로컬 알림 + 사운드만).
 - 타이머 정지 시 상시 알림/Live Activity 종료 및 예약 해제.
@@ -25,5 +25,6 @@ Capacitor 공식 플러그인이 커버 못 해 Swift/Kotlin 커스텀 플러그
 
 ## 구현 현황
 - 아직 인터페이스만 정의됨. 실제 Android Foreground Service / iOS Live Activity 구현은 별도 task. 현재 web 폴백(`hunting-timer.web.ts`)은 메모리 변수라 새로고침하면 사라지며, 어떤 feature 도 아직 이 플러그인을 소비하지 않는다.
-- **실기기에서는 폴백조차 안 쓰인다 — 세 메서드가 거부된다**(2026-08-11 확인). `registerPlugin('HuntingTimer', { web })` 에 등록된 것이 `web` 하나뿐이라 android·ios 는 구현을 못 찾고, 네이티브 플러그인도 없어 `PluginHeaders` 에도 없다 → `CapacitorException(UNIMPLEMENTED)` 이 **거부된 Promise** 로 나온다. 인메모리 폴백은 브라우저(`platform === 'web'`) 전용이다. RN 어댑터(`src/native/adapters/rn-hunting-timer.ts`)도 같은 이유로 거부한다 — 폴백을 옮기면 웹 전용 동작을 네이티브로 승격시키는 것이고, `start()` 가 조용히 resolve 하면 화면은 타이머가 도는 줄 아는데 알림도 소리도 없다.
+- **옮길 구현이 아예 없었다**(2026-08-11 확인, `rn-hunting-timer.ts` 주석이 그 조사의 답이다). 저장소 전체에서 `HuntingTimer` 를 담은 `.java`/`.kt`/`.swift` 가 **0건**이고, 상시 알림도 주기 사운드도 `soundIntervalMinutes` 를 소비하는 코드도 존재한 적이 없다. **RN 어댑터도 세 메서드를 거부한다** — 폴백을 옮기면 웹 전용 동작을 네이티브로 승격시키는 것이고, `start()` 가 조용히 resolve 하면 화면은 타이머가 도는 줄 아는데 알림도 소리도 없다.
+- **소비자도 없다** — `app/hunting-timer/`·`features/hunting-timer/` 디렉터리 자체가 없다. 포트와 어댑터만 서 있다.
 - 정식 구현 전 기술 스파이크(PoC)로 두 플랫폼 실현 가능성과 배터리 영향 검증 필요.

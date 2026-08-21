@@ -2,11 +2,11 @@
 
 > **범위**: 스토어가 요구하는 개인정보 처리방침·지원 URL, 그리고 **앱 밖에서 끝내야 하는 절차의 안내**를 서빙하는 최소 정적 사이트. 앱 기능을 웹으로 옮기는 것이 아니다.
 > **관련 소스**: `site/`(템플릿·스타일·페이지 마크다운·`images/`) · `PRIVACY.md`(**개인정보 처리방침 원본**) · `scripts/build-site.mjs` · `.github/workflows/pages.yml` · `npm run build:site`.
-> **관련 ADR**: [[ADR-090]](광고 도입 — 이 사이트가 필요해진 이유) · [[ADR-110]](API 키 발급 가이드). **관련 문서**: [ads.md](./ads.md), [onboarding.md](./onboarding.md), [../foundation/product.md](../foundation/product.md).
+> **관련 ADR**: ADR-090(광고 도입 — 이 사이트가 필요해진 이유) · [[ADR-110]](API 키 발급 가이드). **관련 문서**: [ads.md](./ads.md), [onboarding.md](./onboarding.md), [../foundation/product.md](../foundation/product.md).
 
 ## 왜 있는가
 
-광고를 도입하면서 스토어 등록 요건이 늘었다([[ADR-090]] 결정 5).
+광고를 도입하면서 스토어 등록 요건이 늘었다(ADR-090 결정 5).
 
 | 요건 | 요구처 | URL |
 |---|---|---|
@@ -100,7 +100,7 @@ google.com, pub-5278246170608284, DIRECT, f08c47fec0942fa0
 ## 배포
 
 `main` 에 `site/**` · `PRIVACY.md` · 빌드 스크립트 · 워크플로가 바뀌면 GitHub Actions가
-빌드해 Pages로 올린다(수동 실행도 가능). 앱 번들(vite)과는 완전히 별개다.
+빌드해 Pages로 올린다(수동 실행도 가능). 앱 번들과는 완전히 별개다 — 이 사이트는 정적 HTML 이고 RN 앱과 코드를 공유하지 않는다.
 
 - `CNAME`(`mapleroutine.store`)과 `.nojekyll` 은 **빌드 스크립트가 생성한다** — 저장소에 두면
   잊고, `CNAME` 이 빠지면 배포할 때마다 커스텀 도메인 설정이 풀린다.

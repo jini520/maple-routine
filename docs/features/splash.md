@@ -1,96 +1,93 @@
 # 스플래시 (Splash Screen)
 
-> **범위**: 앱 실행 스플래시. iOS 런치 스토리보드, Android 경량 `SplashActivity` + 비트맵, MIUI/HyperOS force-dark 대응.
-> **관련 소스**: Android `SplashActivity`(진짜 런처) + `MainActivity` · `@drawable/splash`(비트맵) · `values-night` · iOS 런치 스토리보드 · Capacitor SplashScreen 플러그인 · `capacitor.config.ts`(`backgroundColor`/`androidScaleType`) · `index.html`(`#boot-cover`) · RN 어댑터 `src/native/adapters/rn-splash-screen.ts`(아래 「RN 어댑터」).
-> **관련 ADR**: [[ADR-025]] [[ADR-028]] [[ADR-029]] [[ADR-117]]. **관련 문서**: [../trouble/2026-07-16-splash-darkmode-native-activity.md](../trouble/2026-07-16-splash-darkmode-native-activity.md), [live-update.md](./live-update.md).
+> **범위**: 앱 실행 스플래시 한 장 — 언제 뜨고, 무엇으로 그리고, 누가 내리는가.
+> **관련 소스**: `app.json`(`expo-splash-screen` 플러그인 블록) · `assets/splash-icon.png` · Android `values/colors.xml`(`splashscreen_background`) · iOS `Images.xcassets/SplashScreen{Background,Logo}` · 진입점 `index.ts` → `src/boot-splash.ts`(붙들기·실패 안전 타이머) · `src/app/AppShell.tsx`(`MIN_SPLASH_MS`) · 포트 `src/native/splash-screen.ts` + 어댑터 `src/native/adapters/rn-splash-screen.ts`.
+> **관련 ADR**: [[ADR-138]](자산 파이프라인) [[ADR-128]](RN 어댑터) [[ADR-117]] 결정 3·4(실패 안전 타이머·내리는 코드 한 곳 — 🔗 로 살아남은 부분) [[ADR-136]](앱 루트 바탕색). **관련 문서**: [live-update.md](./live-update.md), [../foundation/release.md](../foundation/release.md).
+>
+> ⚠️ **웹뷰 시절 스플래시는 이 문서에 없다.** 두 장(네이티브 + DOM 커버)이던 구조, `SplashActivity` 비트맵, MIUI force-dark 색 split 은 전부 캐패시터 앱의 것이고 저장소에서 사라졌다 — 아래 「폐기된 정책」 에만 남는다.
 
-## 정책 ([[ADR-025]] → [[ADR-029]])
-- **iOS**: 런치 스토리보드(오렌지 배경 + `Splash` 이미지=로고+워드마크) + Capacitor SplashScreen 플러그인 유지. `App.tsx` 가 최소 표시 시간(1s) 뒤 `SplashScreen.hide()`(`launchAutoHide:false`).
-- **Android**([[ADR-029]] — [[ADR-025]]의 12+ 테마 방식을 대체): Capacitor/WebView를 전혀 안 거치는 **초경량 `SplashActivity`** 를 앱의 진짜 런처로 두고, OS 강제 무채색 첫 프레임 직후 `android:windowBackground=@drawable/splash`(비트맵, **force-dark 면역**)를 곧바로 그려 ~1.2초 유지한 뒤 `MainActivity` 로 넘긴다. 실기기 녹화 2회로 `#FB8101` 과 사실상 동일한 `(252,128,2)` 가 ~0.9초 안정 노출됨 확인 — 프로젝트 스플래시 작업 전체에서 **다크모드 진짜 브랜드색 노출 최초 성공**.
-- **WebView 배경**: 흰 깜빡임 제거용으로 오렌지(`capacitor.config` `backgroundColor`).
+## 정책 — 네이티브 스플래시 **한 장**뿐이다 ([[ADR-128]] · [[ADR-138]])
 
-## MIUI/HyperOS force-dark 대응 ([[ADR-025]])
-HyperOS 다크모드 force-dark 가 밝은 스플래시 배경색을 앱 설정 무관하게 **luminance 기준으로 강제로 어둡게** 만드는 문제를 실기기로 규명. 배경색을 `@color/splash_background` 로 빼고 라이트 `#FB8101`/다크 `#D06100`(강제 다크 변환을 통과하는 상한)으로 `values-night` split. 단색 통일(2026-07-17, [[ADR-029]] 정정): 스플래시 이미지 교체로 배경이 `#F58B0F`(UI primary)로 바뀌었는데 코드 단색이 안 따라가 리로드 커버 이음새로 드러나, 단색 6곳(웹뷰 배경·splash_colors 라이트·iOS 스토리보드·플러그인 bg·boot-cover·오버레이)을 이미지 기준 `#F58B0F` 로 통일(다크 `#D06100` 유지).
+RN 에는 문서(document)가 없어 덮을 DOM 커버라는 개념 자체가 없다. 스플래시는 OS 가 그리는 네이티브
+화면 하나이고, 앱이 하는 일은 **언제까지 붙들고 언제 내리는가** 둘뿐이다.
 
-## 스플래시를 **내리는** 쪽 ([[ADR-117]])
+- **그림·색은 `app.json` 한 곳이 정한다** — `expo-splash-screen` 플러그인 블록:
+  `image: ./assets/splash-icon.png` · `backgroundColor: #F58B0F` · `resizeMode: contain` · `imageWidth: 200`.
+  `expo prebuild` 가 이 값을 네이티브로 내린다(Android `values/colors.xml` 의
+  `splashscreen_background`, iOS `SplashScreenBackground.colorset`).
+- **다크모드에서도 같은 밝은 주황이다**([[ADR-138]] 결정 4, 사용자 판정). `values-night/colors.xml`
+  이 비어 있고 iOS colorset 에 luminosity 변형이 없다 — 두 모드가 `#F58B0F` 하나를 함께 쓴다.
+  **대가**: MIUI/HyperOS 다크에서 force-dark 에 갈색으로 깎일 수 있다(iOS 는 force-dark 가 없어 무관).
+  그것을 막던 것은 색이 아니라 «캐패시터를 안 거치는 비트맵 액티비티» 라는 **구조**였고, 그 구조는
+  Expo 로 넘어오지 않았다.
+- **`app.json` 을 고쳤으면 `expo prebuild` 를 돌려야 반영된다**(네이티브가 커밋돼 있다). prebuild 는
+  **fingerprint 를 바꾸므로 OTA 재배포가 뒤따라야 한다**([[ADR-137]] 정정 2).
 
-올리는 장치는 여럿인데(런치 스토리보드 · `SplashActivity` · 플러그인 `show()` · `#boot-cover` · `[data-splash-cover]`) **내리는 코드가 하나뿐이고 그것이 React 트리 안에 있었다.** OTA 적용이 실패한 테스터 기기에서 커버가 영영 안 걷혀 앱이 브랜드 주황에 갇혔다(이슈 #175). iOS `SplashScreen.show()` 는 `parentView.isUserInteractionEnabled = false` 를 걸므로 **터치까지 죽는다** — 그래서 이 자리의 실패는 "못생김"이 아니라 **벽돌**이다.
+## 붙들기와 내리기 — 셋이 내린다
 
-- **`hideSplashScreen()` 은 `[data-splash-cover]` 도 걷는다**(`querySelectorAll` 로 전부 — 중복 호출로 여러 장 쌓였을 수 있다). 이 오버레이는 `showSplashScreen()` 이 붙이는데(플러그인 창이 못 덮는 하단 내비 바 인셋용, [[ADR-027]] 정정) **걷는 코드가 저장소에 아예 없었다** — *"문서와 함께 사라지므로 별도 정리가 필요 없다"* 는 주석이 **리로드가 성공한다는 전제**였다. 리로드가 실패해 문서가 안 죽으면 영구히 남는다.
-- **`#boot-cover` 에 컴포넌트 밖 실패 안전 타이머(8초)를 둔다** — `index.html` 인라인 스크립트. **`#boot-cover` 가 아직 DOM 에 있을 때만** 걷고, 이미 걷혔으면(정상 부팅) **아무것도 하지 않는다.** 정상 부팅은 `MIN_SPLASH_MS`(1초) + 첫 렌더라 8초는 8배 여유이고, capgo 롤백 타임아웃(10초)보다 짧아 *"커버가 걷힌 화면"* 을 사용자가 롤백보다 먼저 본다. 오탐 시 노출되는 것은 테마 적용 전 첫 렌더 정도이고 **영구 벽돌보다 낫다.**
-  - **"아직 있을 때만" 가드가 요점이다.** 없으면 정상 부팅 8초 뒤에 사용자가 마침 `지금 적용` 을 눌러 올라간 **리로드 커버까지** 걷어버린다. 그 구간은 `apply()` 의 12초 타임아웃이 맡는다([[ADR-117]] 결정 1) — 두 장치의 담당 구간이 겹치지 않게 하는 것이 이 가드다.
-  - 컴포넌트 밖이라는 것도 요점이다. `App.tsx` 의 스플래시 `useEffect` 는 클린업에서 `clearTimeout` 하므로 첫 1초 안에 렌더가 던지면 커버를 걷는 타이머가 **함께 죽는다.** 이 타이머는 React 트리를 모른다.
-- **ErrorBoundary 폴백은 마운트 시 `hideSplashScreen()` 을 부른다** — 커버 제거 + 네이티브 스플래시 해제(**터치 복구**)를 한 번에 얻는다. 폴백은 `#root` 안이라 `z-index: 2147483647` 인 `#boot-cover` **밑**에 그려지는데, 폴백의 z-index 를 올리는 것으로는 안 풀린다(올릴 숫자가 없고, 같은 매직 넘버가 두 곳에 생기며, 무엇보다 **보이게 만들어도 `isUserInteractionEnabled = false` 라 '다시 시작' 이 눌리지 않는다**). 커버를 지우면 위에 아무것도 없으므로 z-index 는 올릴 이유 자체가 사라진다. [[ADR-065]] 결정 5 의 *"폴백은 최소로 둔다"* 는 그대로 — 화면에 보이는 것은 하나도 늘지 않는다.
+**붙들기는 React 트리 밖, 전역 스코프여야 한다.** `index.ts` 가 `registerRootComponent` **앞에서**
+`holdSplashUntilAppReady()`(`src/boot-splash.ts`)를 부르고, 그 안에서
+`SplashScreen.preventAutoHideAsync()` 를 호출한다 — 라이브러리 문서가 컴포넌트·훅 안에서 부르지
+말라고 명시한다(늦으면 이미 내려간 뒤다). 안 부르면 스플래시가 첫 렌더 전에 스스로 사라져
+테마 복원 전 화면이 노출된다.
 
-**스플래시를 내리는 주체는 넷이다** — 정상 부팅(`App.tsx` 의 `MIN_SPLASH_MS` 타이머) · `apply()` 실패 catch([[ADR-117]] 결정 1) · 위 8초 인라인 타이머 · ErrorBoundary 폴백. 셋이 새로 생기지만 **셋 중 둘은 `hideSplashScreen()` 을 그대로 부르는 것**이라 커버 제거 로직은 `native/splash-screen.ts` 한 곳에 남는다.
+**내리는 주체는 셋이고, 셋 다 포트 `hideSplashScreen()` 하나를 지난다**([[ADR-117]] 결정 4 가 세운 규칙).
 
-**인라인 타이머만 그 모듈을 못 쓴다**(React 트리 밖·번들 밖이라 import 가 없다) — 그래서 DOM 커버는 직접 지우고 네이티브는 **전역 브릿지로** 부른다(`window.Capacitor?.Plugins?.SplashScreen?.hide()`, optional chaining + `try/catch`). **DOM 만 걷으면 iOS 는 화면만 돌아오고 터치는 죽은 채**이므로(`isUserInteractionEnabled` 는 네이티브 `tearDown()` 에서만 풀린다) 걷는 장치가 넷이면 넷 다 이 성질을 가져야 한다. 다만 **보장은 아니다** — 브릿지가 없거나(웹 개발 서버) 아직 준비되지 않았으면 optional chaining 이 조용히 통과한다. 그 경로와, 넷 다 실행되지 않는 경로(React 가 마운트조차 못 하는 실패)는 capgo 의 10초 롤백이 메운다.
+| 주체 | 자리 | 언제 |
+|---|---|---|
+| 정상 부팅 | `AppShell` 의 이펙트 타이머 | `MIN_SPLASH_MS`(1초) 경과 시점 |
+| 실패 안전 타이머 | `boot-splash.ts`, **트리 밖** | 8초(`SPLASH_FAILSAFE_MS`) — 부팅 렌더가 끝내 오지 않을 때 |
+| `ErrorBoundary` 폴백 | 폴백 마운트 시 | 부팅 렌더가 던졌을 때 |
 
-## RN 자산 — 아이콘·스플래시 ([[ADR-138]], 2026-08-14)
+실패 안전 타이머가 트리 밖에 있는 이유가 요점이다 — 정상 경로 타이머는 **언마운트 클린업이
+취소하므로**, 렌더가 던지면 내릴 주체가 함께 죽어 브랜드색 화면에 갇힌다([[ADR-117]] 결정 3).
 
-RN 앱은 **Expo 자리표시자 아이콘**을 달고 있었다. 디자인은 이미 결정된 것이라 **다시 만들지 않고
-옮겼고**, 바뀐 것은 만드는 도구뿐이다(`capacitor-assets` → `expo prebuild`).
+**웹판과 갈린 것 셋**(근거는 `boot-splash.ts` 주석):
 
-- **원천은 capacitor 것을 읽는다** — 아이콘은 `resources/ios/icon.png`(**루트 `icon-only.png` 가
-  아니다** — 플랫폼 오버라이드가 우선이라 실제 출시본은 이쪽이다), 스플래시 로크업은
-  `resources/splash.png` 에서 **추출**했다(`drawable/splash_icon_lockup.png` 는 **옛 디자인**이라
-  흰 워드마크가 흰 배경에서 안 보인다). 산출물은 `assets/` 세 장.
+- **가드가 없다.** 웹의 8초 타이머는 `#boot-cover` 가 아직 있을 때만 걷었는데, 그 가드가 막던 것은
+  «사용자가 마침 `지금 적용` 을 눌러 올라간 리로드 커버까지 걷는 것» 이었다. RN 에는 그 커버가 없고
+  (`show()` 가 no-op), `hideAsync()` 는 이미 내려간 스플래시에 무해하다.
+- **덮는 범위가 좁다.** 웹 타이머는 앱 번들과 다른 스크립트라 번들이 통째로 깨져도 돌았다. RN 은
+  번들이 하나라 이 타이머가 구하는 것은 *"번들은 평가됐는데 React 가 끝내 마운트되지 않는"* 경우뿐이다.
+- **포트를 거친다.** `SplashScreen.hideAsync()` 를 직접 부르지 않는다 — 내리는 자리가 늘어도 전부
+  같은 한 함수를 지나게 한다.
+
+**`show()` 는 no-op 이다**(`rn-splash-screen.ts`). 그 함수가 존재한 이유는 웹뷰 리로드 하나였는데
+(OTA 적용·캐시 초기화 직전 웹뷰 배경색을 덮는다) RN 에는 **문서를 다시 로드하는 일 자체가 없어**
+덮을 구간이 생기지 않는다. `preventAutoHideAsync()` 로 흉내 내는 것은 답이 아니다 — 이미 내려간
+스플래시에는 아무 효과가 없어 화면은 그대로인데 호출부만 덮였다고 믿는다.
+
+## 아이콘·스플래시 자산 파이프라인 ([[ADR-138]], 2026-08-14)
+
+디자인은 이미 결정된 것이라 **다시 만들지 않고 옮겼다** — 바뀐 것은 만드는 도구뿐이다
+(`capacitor-assets` → `expo prebuild`).
+
+- **원천은 캐패시터 것을 읽었다** — 아이콘은 `resources/ios/icon.png`(루트 `icon-only.png` 가
+  **아니다** — 플랫폼 오버라이드가 우선이라 실제 출시본은 이쪽이었다), 스플래시 로크업은
+  `resources/splash.png` 에서 추출했다(`drawable/splash_icon_lockup.png` 는 옛 디자인이라 흰 워드마크가
+  흰 배경에서 안 보인다). 산출물은 `assets/` 세 장(`icon.png`·`adaptive-icon.png`·`splash-icon.png`).
 - **Android adaptive icon 은 여백을 소스에 넣는다** — `capacitor-assets` 는 XML 에서 fg/bg 를 둘 다
-  `inset 16.7%` 로 감쌌지만 **Expo 는 그 inset 을 안 넣는다**(생성된 XML 확인). 그래서 1024 캔버스
-  가운데에 아이콘을 **66.6%**(681px)로 얹었다 — 두 파이프라인이 같은 비율에 도달한다.
-  배경색 `#E6DECF` 는 아이콘 가장자리에서 **뽑은** 노트 종이색이라 이음매가 없다.
-- **다크모드에서도 같은 밝은 주황이다**(사용자 판정 · [[ADR-138]] 결정 4) — `#F58B0F` 하나를 두
-  모드가 함께 쓴다(`values-night/colors.xml` 이 비어 있고 iOS colorset 에 luminosity 변형이 없다).
-  [[ADR-025]] 의 다크 전용 `#D06100` 은 **RN 에서 쓰지 않는다.** 그 색이 막던 MIUI force-dark 는
-  **색이 아니라 구조**([[ADR-029]] 의 비트맵 `SplashActivity`)로 이겼던 것이고 그 구조가 Expo 로
-  안 넘어와 어차피 미검증이었다. **대가**: MIUI 다크에서 갈색으로 깎일 수 있다(iOS 는 force-dark 가
-  없어 무관).
-- **새 규칙**: `app.json` 을 고쳤으면 `expo prebuild` 를 돌려야 반영된다(네이티브가 커밋돼 있다).
-  그리고 prebuild 는 **fingerprint 를 바꾸므로 OTA 재배포가 뒤따라야 한다**([[ADR-137]] 정정 2).
+  `inset 16.7%` 로 감쌌지만 **Expo 는 그 inset 을 안 넣는다**. 그래서 1024 캔버스 가운데에 아이콘을
+  **66.6%**(681px)로 얹어 두 파이프라인이 같은 비율에 도달하게 했다. 배경색 `#E6DECF` 는 아이콘
+  가장자리에서 **뽑은** 노트 종이색이라 이음매가 없다.
+- **Expo 에는 `capacitor-assets` 의 함정 셋이 없다**(플랫폼 오버라이드 우선 · adaptive inset 구조 ·
+  아이콘만 바꿀 때 스플래시 보호). `app.json` 한 곳을 읽고 아이콘·스플래시가 독립 항목이라 서로를
+  덮지 않는다.
 
-### `capacitor-assets` 의 함정 셋은 RN 에 없다
+## 미검증
 
-옛 파이프라인의 주의사항(플랫폼 오버라이드 우선 · adaptive inset 구조 · 아이콘만 바꿀 때 스플래시
-보호)은 전부 **그 도구의 사정**이었다. Expo 는 `app.json` 한 곳을 읽고 아이콘·스플래시가 독립
-항목이라 서로를 덮지 않는다. **capacitor 앱이 살아 있는 동안에는 그 셋이 그대로 유효하다** —
-자산이 두 벌이라 아이콘을 바꾸면 양쪽을 고쳐야 한다([[ADR-138]] 대가).
-
-## RN 어댑터 ([[ADR-128]], 2026-08-11)
-
-위 정책은 전부 **웹뷰 사정**이다. RN 구현(`src/native/adapters/rn-splash-screen.ts`)이
-다루는 것은 **네이티브 스플래시 한 장뿐**이다.
-
-- 라이브러리는 **`expo-splash-screen` `~57.0.6`** — 버전이 SDK 에 묶여 있어 고른 것이다(`expo` 의
-  `bundledNativeModules.json` 이 SDK 57 짝으로 지정한 값, 이미 있는 `expo-status-bar` 와 같은 라인).
-  후보였던 `react-native-bootsplash` 는 SDK 와 독립적으로 움직이고 에셋 생성 CLI 가 따로 필요하다.
-- **`hide()` 는 `SplashScreen.hideAsync()` 하나다.** 걷을 DOM 커버가 없다 —
-  `#boot-cover`·`[data-splash-cover]` 는 정의상 웹뷰 구현이고([[ADR-117]] 결정 4) RN 에는 문서가 없다.
-  위 «스플래시를 내리는 주체는 넷이다» 도 웹뷰 이야기다(`index.html` 인라인 타이머는 RN 에 자리 자체가
-  없다).
-- **`show()` 는 no-op 이다.** 그 함수가 존재한 이유는 웹뷰 리로드 하나였는데(OTA 적용·캐시 초기화
-  직전에 드러나는 웹뷰 배경색을 덮는다 — [[ADR-027]] 정정 · [[ADR-117]] 결정 1·8) RN 에는 **문서를 다시
-  로드하는 일 자체가 없어** 덮을 구간이 생기지 않는다. `preventAutoHideAsync()` 로 흉내 내는 것은
-  **답이 아니다** — 이미 내려간 스플래시에는 아무 효과가 없어 화면은 그대로인데 호출부만 덮였다고
-  믿는다. OTA 프로토콜은 [[ADR-128]] 결정 7 대로 재설계 대상이라, 새 적용 경로가 화면을 덮어야 하면
-  그 결정에서 이 자리를 다시 본다.
-- **계속 띄워 두는 일은 어댑터 밖이다.** Capacitor 에서 그것은 코드가 아니라 설정이었고
-  (`capacitor.config.ts` `launchAutoHide: false`), RN 짝은 앱 진입점 **전역 스코프**에서 부르는
-  `SplashScreen.preventAutoHideAsync()` 다(라이브러리 문서가 컴포넌트·훅 안에서 부르지 말라고 명시 —
-  늦으면 이미 내려간 뒤다).
-
-**미검증**: 실기기에서 스플래시가 실제로 뜨고 걷히는 것. 지금까지 확인된 것은 빌드
-(`expo prebuild` + `assembleDebug` · `pod install` + `xcodebuild -scheme ExpoSplashScreen`)와 포트
-계약(jest)까지다. 브랜드 색·이미지([[ADR-025]]·[[ADR-029]])를 RN 스플래시에 옮기는 것도 아직이다 —
-지금 `expo prebuild` 가 만드는 것은 기본 흰 배경이다(`colors.xml` `splashscreen_background` `#FFFFFF`).
-
-## 핵심 교훈
-- **Capacitor 브릿지+플러그인 초기화가 끝나기 전엔 HTML 레이어가 그려질 시점 자체가 없다** — 그래서 "브랜드 룩을 WebView/HTML 레이어로 옮긴다"는 접근([[ADR-028]])은 실기기에서 실패했고, "Capacitor를 아예 안 거치는 별도 네이티브 액티비티 + 비트맵"([[ADR-029]])만 성공했다.
-- 콜드스타트 내내 무언가는 보여야 하는데, 브랜드 없는 무채색보다 살짝 어두운 주황(`#D06100`)이 낫다.
+- **실기기에서 스플래시가 실제로 뜨고 걷히는 것.** 지금까지 확인된 것은 빌드
+  (`expo prebuild` + `assembleDebug` · `pod install` + `xcodebuild`)와 포트 계약(jest)까지다.
+- **MIUI/HyperOS 다크에서 `#F58B0F` 가 얼마나 깎이는지.** 옛 구조가 안 넘어와 대응이 없는 상태다.
 
 ## 폐기된 정책 (history)
-- ~~Capacitor 플러그인 JS 브릿지 show/hide로 스플래시 유지~~ → Android는 플러그인 install이 늦어 유지 안 됨([[ADR-025]] 구현 중 폐기).
-- ~~HTML 부트 스플래시 이원화(네이티브+HTML 로고)~~ → 이중 로고 발생 → 폐기([[ADR-025]]).
-- ~~Android 네이티브 스플래시를 무채색+아이콘 없음으로 축소하고 브랜드를 `index.html` HTML 레이어로 이전~~ → 실기기 2차 검증 전부 실패, 전체 폐기([[ADR-028]], 구현 없음). "WebView 레이어로 옮긴다"는 접근이 구조적으로 불가능. **이 결론은 [[ADR-029]] 의 "Capacitor 미경유 네이티브 액티비티 + 비트맵"으로 뒤집힘**(그 방식은 성공).
-- ~~다크모드 색을 더 밝게 튜닝~~ → `#D06100` 이 force-dark 통과 상한임을 실기기 hue 스윕으로 확인, 색 튜닝 대신 [[ADR-029]] 방식 채택([[ADR-028]]).
-- ~~`[data-splash-cover]` 오버레이는 문서와 함께 사라지므로 별도 정리가 필요 없다~~ → **`hideSplashScreen()` 이 걷는다**([[ADR-027]] 2026-07-17 정정 → [[ADR-117]] 결정 4). 리로드가 성공한다는 전제가 틀렸다.
-- ~~커버를 걷는 코드는 `App.tsx` 의 `useEffect` 타이머 하나뿐~~ → **넷**(정상 부팅 · `apply()` catch · `#boot-cover` 8초 인라인 타이머 · ErrorBoundary 폴백)([[ADR-117]] 결정 3·6). 유일한 코드가 죽을 수 있는 트리 안에 있었다.
+
+- ~~Capacitor 플러그인 JS 브릿지 show/hide 로 스플래시 유지~~ → Android 는 플러그인 install 이 늦어 유지 안 됨(🗑 [[ADR-025]] 구현 중 폐기).
+- ~~HTML 부트 스플래시 이원화(네이티브+HTML 로고)~~ → 이중 로고 발생 → 폐기(🗑 [[ADR-025]]).
+- ~~Android 네이티브 스플래시를 무채색+아이콘 없음으로 축소하고 브랜드를 `index.html` HTML 레이어로 이전~~ → 실기기 2차 검증 전부 실패, 전체 폐기(🗑 [[ADR-028]], 구현 없음). "WebView 레이어로 옮긴다"는 접근이 구조적으로 불가능했다.
+- ~~다크모드 색을 더 밝게 튜닝~~ → `#D06100` 이 force-dark 통과 상한임을 실기기 hue 스윕으로 확인(🗑 [[ADR-028]]).
+- ~~Capacitor/WebView 를 안 거치는 초경량 `SplashActivity` + 비트맵(`@drawable/splash`)을 진짜 런처로~~ → **다크모드 진짜 브랜드색 노출에 유일하게 성공한 구조**였으나 Expo 로 넘어오지 않았다(🗑 [[ADR-029]] → [[ADR-138]]). 지금은 색 하나로 간다.
+- ~~라이트 `#FB8101` / 다크 `#D06100` `values-night` split, 단색 6곳 통일~~ → RN 은 `#F58B0F` 한 색이고 `values-night/colors.xml` 이 비어 있다([[ADR-138]] 결정 4).
+- ~~WebView 배경을 오렌지로 두어 흰 깜빡임 제거(`capacitor.config` `backgroundColor`)~~ → 웹뷰가 없다. 앱 루트 바탕은 [[ADR-136]] 이 칠한다.
+- ~~DOM 커버(`#boot-cover` · `[data-splash-cover]`)와 `index.html` 인라인 8초 스크립트, `window.Capacitor?.Plugins?.SplashScreen?.hide()` 전역 브릿지~~ → RN 에는 문서가 없다. 8초 실패 안전 타이머만 `boot-splash.ts` 로 이사했다(⛔ [[ADR-117]] 결정 3·4 중 살아남은 부분).
+- ~~iOS `SplashScreen.show()` 가 `isUserInteractionEnabled = false` 를 걸어 실패 시 터치까지 죽는다~~ → `expo-splash-screen` 은 터치를 막지 않는다(`ErrorBoundary` 주석 참고). 그래서 «영구 벽돌» 위험이 이 형태로는 없다.

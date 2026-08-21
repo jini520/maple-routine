@@ -1,6 +1,11 @@
 # SQLite — `boss_profit.db`
 
-`@capacitor-community/sqlite` 기반 단일 DB(`storage/sqlite/db.ts`). 보스 수익 관련 4개 테이블만 여기에 있고, 나머지 데이터는 모두 [Preferences](./preferences.md)다 — "복합키로 upsert/조회가 잦은 기록형 데이터"만 관계형으로 뒀다.
+**`@op-engineering/op-sqlite`** 기반 단일 DB(`storage/sqlite/db.ts` + 어댑터 `storage/adapters/rn-sqlite.ts`). 보스 수익 관련 4개 테이블만 여기에 있고, 나머지 데이터는 모두 [Preferences](./preferences.md)다 — "복합키로 upsert/조회가 잦은 기록형 데이터"만 관계형으로 뒀다.
+
+> **파일 자리는 캐패시터 시절 그대로다.** op-sqlite 를 고른 이유는 성능이 아니라 `location` 이다 —
+> 기존 DB 가 캐패시터 플러그인이 정한 경로에 있고, 자기 전용 디렉터리에만 파일을 만드는 라이브러리로는
+> 거기 닿을 수 없다(닿지 못하면 빈 DB 가 새로 생기고 사용자에게는 기록이 전부 사라진 것으로 보인다).
+> 경로 계산은 `storage/adapters/capacitor-sqlite-open.ts` 가 공유한다([migration/data.md](../migration/data.md) 결정 2).
 
 ## 스키마
 
@@ -99,11 +104,11 @@ PK: `(ocid, boss, difficulty, period_key, drop_index)`. [[ADR-038]]에서 도입
 sequenceDiagram
     participant UI as 화면(설정/OTA 프롬프트)
     participant DB as storage/sqlite/db.ts
-    participant Native as 네이티브 SQLite 플러그인
+    participant Native as 네이티브 SQLite (op-sqlite)
 
     UI->>DB: closeBossProfitDb()
     DB->>Native: closeConnection(boss_profit)
-    UI->>UI: CapacitorUpdater.set() 또는 window.location.reload()
+    UI->>UI: Updates.reloadAsync() 또는 캐시 삭제 후 리로드
     Note over UI: JS 컨텍스트 파괴·재로드
     UI->>DB: getBossProfitDb() (다음 쿼리가 최초 호출)
     DB->>Native: isConnection() 확인 후 없으면 createConnection + open
@@ -114,20 +119,21 @@ sequenceDiagram
 - `native/live-update.ts`의 `applyDownloadedLiveUpdate()` — OTA 번들 적용 직전
 - `features/settings/cache-data.ts`의 `clearCacheDataAndReload()` — 캐시 데이터 삭제 직후 리로드 직전(호출 화면은 `app/settings/SettingsAccountDataScreen`. 옛 `app/settings/CacheDataSection.tsx` 는 2026-08-09 [[ADR-118]] 개편에서 삭제됐고, 닫기 호출은 그때도 이 파일에 있었다)
 
-**닫기에는 5초 상한이 있고 여전히 던지지 않는다** ([[ADR-117]] 결정 5, 2026-08-08) — 여는 쪽 `withOpenTimeout`(10초)과 대칭이되 더 짧다(닫기는 파일 생성·마이그레이션이 없어 정상이면 수 ms). 상한이 없던 동안 이 호출은 **리로드 앞을 막는 유일한 맨몸 대기**였고, iOS 실기기 SQLite 무응답 전례가 둘이나 있는 상태에서(위 [[ADR-050]] 결정 2 · [[ADR-008]] 2026-07-17 정정) 그대로 매달리면 리로드에 도달하지 못한다. **타임아웃이 바꾸는 것은 *"실패로 끝난다"* 가 아니라 *"끝난다"*** 이고, 실패·타임아웃은 지금처럼 삼킨다(곧 리로드될 것이고 `openBossProfitDb` 의 stale 감지가 최후 폴백으로 남는다).
+**닫기에는 5초 상한이 있고 여전히 던지지 않는다** ([[ADR-117]] 결정 5, 2026-08-08) — 여는 쪽 `withOpenTimeout`(10초)과 대칭이되 더 짧다(닫기는 파일 생성·마이그레이션이 없어 정상이면 수 ms). 상한이 없던 동안 이 호출은 **리로드 앞을 막는 유일한 맨몸 대기**였고, iOS 실기기 SQLite 무응답 전례가 둘이나 있는 상태에서(위 ADR-050 결정 2 · [[ADR-008]] 2026-07-17 정정) 그대로 매달리면 리로드에 도달하지 못한다. **타임아웃이 바꾸는 것은 *"실패로 끝난다"* 가 아니라 *"끝난다"*** 이고, 실패·타임아웃은 지금처럼 삼킨다(곧 리로드될 것이고 `openBossProfitDb` 의 stale 감지가 최후 폴백으로 남는다).
 
 **두 곳 모두 커버(스플래시)보다 닫기가 먼저다** ([[ADR-117]] 결정 1·8) — 커버를 먼저 올리면 닫기가 매달리는 동안 사용자가 브랜드색 화면에 갇히고 iOS 에서는 터치까지 죽는다(이슈 #175).
 
-### 예기치 않은 리로드 — 손으로 배선한 두 곳으로는 못 막는다 ([[ADR-050]])
+### 커넥션 쪽 방어 — 우리가 못 끼워 넣는 경로가 있다 (⛔ ADR-050 결정 2·3, 지금도 유효)
 
-위 두 곳은 **우리가 리로드를 일으키는** 경우다. 그 밖에 앱이 통제할 수 없는 리로드 경로가 있고, 거기엔 `closeBossProfitDb()`를 끼워 넣을 자리가 없다.
+위 두 곳은 **우리가 리로드를 일으키는** 경우다. 웹뷰 시절에는 그 밖에 앱이 통제할 수 없는 리로드 경로가
+둘 있었고(두 손가락 동시 탭이 합성한 클릭이 `<a href>` 의 기본 동작을 흘린 것 · WebKit 콘텐츠 프로세스
+사망 후 Capacitor 가 자동으로 걸던 `webView.reload()`), 거기엔 `closeBossProfitDb()` 를 끼워 넣을 자리가
+없었다. **RN 에는 그 두 경로가 없다** — 문서도 웹뷰도 없다. 그런데도 **방어는 그대로 둔다**: 커넥션이
+에러 없이 멈추는 사고(iOS 실기기 전례 둘)는 리로드와 무관하게 성립한다.
 
-- **탭 링크의 기본 동작 누출** — iOS WKWebView가 두 손가락 동시 탭에서 드물게 합성하는 클릭이 React 이벤트 시스템을 타지 않아 `<a href>`가 실제 문서 네비게이션이 됐다(2026-07-28 실기기 계측: `click` → `PAGEHIDE`). `App.tsx`의 탭바 캡처 인터셉터로 차단했다([[ADR-050]] 결정 1).
-- **WebKit 콘텐츠 프로세스 사망** — Capacitor iOS(`WebViewDelegationHandler.swift`)가 **자동으로 `webView.reload()`** 한다. 앱 코드로 개입할 수 없다.
+그래서 커넥션 쪽에도 방어가 있어야 한다 — `openBossProfitDb()`는 **타임아웃과 경쟁**시켜, 커넥션이 에러 없이 멈춰도 `dbPromise`를 비우고 다음 호출이 처음부터 다시 열게 한다(ADR-050 결정 2). 이 방어가 없으면 죽은 커넥션이 `dbPromise`에 영구 캐시되어 **앱을 재시작할 때까지** 모든 조회가 실패한다. 단 네이티브 브릿지 큐 자체가 막힌 경우엔 재시도 호출도 같은 큐에 서므로 회복되지 않는다.
 
-그래서 커넥션 쪽에도 방어가 있어야 한다 — `openBossProfitDb()`는 **타임아웃과 경쟁**시켜, 커넥션이 에러 없이 멈춰도 `dbPromise`를 비우고 다음 호출이 처음부터 다시 열게 한다([[ADR-050]] 결정 2). 이 방어가 없으면 죽은 커넥션이 `dbPromise`에 영구 캐시되어 **앱을 재시작할 때까지** 모든 조회가 실패한다. 단 네이티브 브릿지 큐 자체가 막힌 경우엔 재시도 호출도 같은 큐에 서므로 회복되지 않는다.
-
-**조회 실패를 "기록 없음"으로 오인하지 말 것** — `features/boss-profit/store.ts`의 `withSqliteFallback`은 타임아웃을 빈 결과로 바꾸는데, 그 값을 "기록이 없다"로 읽으면 자동 기록이 `party_size = 1`로 **사용자가 저장한 값을 덮어쓴다**. `getBossProfitRecords` 조회는 폴백을 `null`로 두어 실패와 빈 결과를 구분하고, 실패면 자동 기록을 건너뛴다([[ADR-050]] 결정 3).
+**조회 실패를 "기록 없음"으로 오인하지 말 것** — `features/boss-profit/store.ts`의 `withSqliteFallback`은 타임아웃을 빈 결과로 바꾸는데, 그 값을 "기록이 없다"로 읽으면 자동 기록이 `party_size = 1`로 **사용자가 저장한 값을 덮어쓴다**. `getBossProfitRecords` 조회는 폴백을 `null`로 두어 실패와 빈 결과를 구분하고, 실패면 자동 기록을 건너뛴다(ADR-050 결정 3).
 
 ## 마이그레이션
 
@@ -142,4 +148,4 @@ UPDATE boss_profit_records SET boss = '시즌 보스 메이린' WHERE boss = '�
 
 ## 웹 플랫폼
 
-`Capacitor.getPlatform() === 'web'`이면 `connection.initWebStore()`를 먼저 호출해 웹 스토리지 백엔드를 초기화한다(개발 서버 `npm run dev`에서 SQLite를 흉내 내는 경로). 실기기(iOS/Android)에서는 이 호출을 건너뛰고 네이티브 SQLite를 바로 연다.
+~~`Capacitor.getPlatform() === 'web'`이면 `connection.initWebStore()`를 먼저 호출해 웹 스토리지 백엔드를 초기화한다(개발 서버에서 SQLite를 흉내 내는 경로)~~ — **웹 경로가 사라졌다**(RN 은 실기기·시뮬레이터뿐). 실기기(iOS/Android)에서는 이 호출을 건너뛰고 네이티브 SQLite를 바로 연다.

@@ -220,7 +220,7 @@ beforeEach(() => {
     goBack,
     setParams: jest.fn(),
   } as unknown as ReturnType<typeof useSettingsNavigation>)
-  mockedGetAuthConfig.mockResolvedValue({ apiKey: 'key', selectedAccountId: null })
+  mockedGetAuthConfig.mockResolvedValue({ apiKey: 'key' })
   mockedFetchCharacterList.mockResolvedValue([계정A, 계정B])
   mockedGetCachedBasic.mockImplementation(async (ocid: string) => 캐시된캐릭터.get(ocid) ?? null)
   mockedGetRepresentative.mockResolvedValue(null)

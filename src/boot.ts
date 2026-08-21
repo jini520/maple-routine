@@ -1,4 +1,3 @@
-import { setOnboardingAccountScope } from './features/onboarding/flow'
 import {
   setAdsPort,
   setBackGesturePort,
@@ -86,12 +85,4 @@ export function installPorts(): void {
   setThemeAppearancePort(rnThemeAppearancePort)
 
   setLiveUpdatePort(rnLiveUpdatePort)
-
-  // 포트가 아니라 **제품 흐름**이다([[ADR-143]] 결정 8) — 이 앱은 메이플 ID 를 고르지 않고 여러
-  // 계정의 캐릭터를 한 목록으로 고르므로 온보딩이 세 단계다. 이름은 조금 어긋나지만 자리는 여기가
-  // 맞다: 위 세터들이 "저장소를 처음 만지는 코드보다 먼저"여야 하는 것과 같은 조건이 이 값에도
-  // 필요하다(재개 파생이 부팅 직후 이것을 읽는다). 안 넣으면 core 의 기본값 'single' 이 서서
-  // **있지도 않은 계정 선택 단계**로 재개된다 — 조용히 멈추는 종류의 실패다.
-  // Capacitor 가 걷히면 이 줄과 `flow.ts` 를 함께 지운다.
-  setOnboardingAccountScope('all')
 }

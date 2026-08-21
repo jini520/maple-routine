@@ -58,7 +58,6 @@ const { mergeSchedulerState: mergeSchedulerStateMock } = jest.requireMock('../..
 
 import {
   getCharacterPickerRoster,
-  getRegisteredCharacters,
   resetSyncSingleFlightForTests,
   syncSchedules,
 } from '../schedule-sync'
@@ -132,7 +131,7 @@ beforeEach(async () => {
   // 합류해 영영 안 끝난다(ADR-147 결정 4).
   resetSyncSingleFlightForTests()
   prefs = installFakePreferences()
-  getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1', selectedAccountId: 'acc-1' })
+  getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1' })
   getCachedSchedulerStateMock.mockResolvedValue(null)
   setCachedSchedulerStateMock.mockResolvedValue(undefined)
   getCachedCharacterBasicMock.mockResolvedValue(null)
@@ -155,36 +154,6 @@ beforeEach(async () => {
 afterEach(() => {
   jest.useRealTimers()
   jest.resetAllMocks()
-})
-
-describe('getRegisteredCharacters', () => {
-  it('API 키가 저장돼 있지 않으면 에러를 던진다', async () => {
-    getAuthConfigMock.mockResolvedValue(null)
-
-    await expect(getRegisteredCharacters()).rejects.toThrow()
-    expect(fetchCharacterListMock).not.toHaveBeenCalled()
-  })
-
-  it('선택된 계정이 없으면 에러를 던진다', async () => {
-    getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1', selectedAccountId: null })
-
-    await expect(getRegisteredCharacters()).rejects.toThrow()
-    expect(fetchCharacterListMock).not.toHaveBeenCalled()
-  })
-
-  it('fetchCharacterList 응답에 선택된 계정이 없으면 에러를 던진다', async () => {
-    fetchCharacterListMock.mockResolvedValue([account('other-acc', [mockCharacter('ocid-1')])])
-
-    await expect(getRegisteredCharacters()).rejects.toThrow()
-  })
-
-  it('선택된 계정의 캐릭터 목록을 반환한다', async () => {
-    const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
-    fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
-
-    await expect(getRegisteredCharacters()).resolves.toEqual(characters)
-    expect(fetchCharacterListMock).toHaveBeenCalledWith('key-1')
-  })
 })
 
 describe('syncSchedules', () => {
@@ -1331,7 +1300,7 @@ describe('syncSchedules', () => {
 
     // 결정 7: RN 은 계정을 고르는 단계가 없어 selectedAccountId 가 영영 null 이다.
     it('selectedAccountId 가 없어도 동기화한다 — 계정을 고른 적 없는 설치본', async () => {
-      getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1', selectedAccountId: null })
+      getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1' })
       fetchCharacterListMock.mockResolvedValue([account('acc-9', [mockCharacter('ocid-1')])])
       fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
 
@@ -1381,7 +1350,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       )
 
       const onUpdate = jest.fn()
-      void getCharacterPickerRoster(onUpdate)
+      void getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
 
       await waitFor(() => expect(onUpdate).toHaveBeenCalled())
       expect(onUpdate).toHaveBeenCalledWith([
@@ -1399,7 +1368,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       }))
 
       const onUpdate = jest.fn()
-      void getCharacterPickerRoster(onUpdate)
+      void getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
 
       await waitFor(() => expect(onUpdate).toHaveBeenCalled())
       const stub = onUpdate.mock.calls[0][0] as Array<{ ocid: string }>
@@ -1415,7 +1384,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       })
 
       const onUpdate = jest.fn()
-      void getCharacterPickerRoster(onUpdate)
+      void getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
 
       await waitFor(() => expect(getCachedCharacterBasicMock).toHaveBeenCalled())
       expect(onUpdate).not.toHaveBeenCalled()
@@ -1425,7 +1394,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       fetchCharacterListMock.mockResolvedValue([account('acc-1', [])])
       getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
 
-      await getCharacterPickerRoster(jest.fn())
+      await getCharacterPickerRoster(jest.fn(), { accountId: 'acc-1' })
 
       expect(getCachedCharacterBasicMock).not.toHaveBeenCalled()
     })
@@ -1444,7 +1413,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       fetchCharacterBasicMock.mockImplementation(() => new Promise(() => {}))
 
       const onUpdate = jest.fn()
-      void getCharacterPickerRoster(onUpdate)
+      void getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
 
       await waitFor(() => expect(onUpdate.mock.calls.length).toBeGreaterThanOrEqual(2))
       const afterCharacterList = onUpdate.mock.calls.at(-1)?.[0] as CharacterPickerEntry[]
@@ -1484,7 +1453,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       })
 
       const onUpdate = jest.fn()
-      await getCharacterPickerRoster(onUpdate)
+      await getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
 
       const emitted = onUpdate.mock.calls.at(-1)?.[0] as CharacterPickerEntry[]
       expect(emitted.map((entry) => entry.ocid).sort()).toEqual(['ocid-1', 'ocid-2'])
@@ -1515,7 +1484,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       })
 
       const onUpdate = jest.fn()
-      await getCharacterPickerRoster(onUpdate)
+      await getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
 
       const emitted = onUpdate.mock.calls.at(-1)?.[0] as CharacterPickerEntry[]
       expect(emitted.map((entry) => entry.ocid)).toEqual(['ocid-1'])
@@ -1534,7 +1503,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       })
 
       const onUpdate = jest.fn()
-      await getCharacterPickerRoster(onUpdate)
+      await getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
 
       const emitted = onUpdate.mock.calls.at(-1)?.[0] as CharacterPickerEntry[]
       expect(emitted.map((entry) => entry.ocid)).toEqual(['ocid-low', 'ocid-high'])
@@ -1551,7 +1520,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       })
 
       const onUpdate = jest.fn()
-      await getCharacterPickerRoster(onUpdate)
+      await getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
 
       const emitted = onUpdate.mock.calls.at(-1)?.[0] as CharacterPickerEntry[]
       expect(emitted.map((entry) => entry.ocid)).toEqual(['ocid-1'])
@@ -1562,7 +1531,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     fetchCharacterListMock.mockResolvedValue([account('acc-1', [])])
     const onUpdate = jest.fn()
 
-    await getCharacterPickerRoster(onUpdate)
+    await getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
 
     expect(onUpdate).toHaveBeenCalledWith([])
     expect(fetchCharacterBasicMock).not.toHaveBeenCalled()
@@ -1579,7 +1548,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     fetchCharacterBasicMock.mockImplementation(() => new Promise(() => {})) // 절대 resolve 안 함
 
     const onUpdate = jest.fn()
-    void getCharacterPickerRoster(onUpdate)
+    void getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
 
     // 첫 방출(stub)은 mockCharacter/basic 응답 없이도 캐시 값만으로 이뤄진다
     await waitFor(() => expect(onUpdate).toHaveBeenCalled())
@@ -1613,7 +1582,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     )
 
     const onUpdate = jest.fn()
-    const promise = getCharacterPickerRoster(onUpdate)
+    const promise = getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
 
     await waitFor(() => expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(2))
     for (const [entries] of onUpdate.mock.calls) {
@@ -1671,7 +1640,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       fetchSchedulerCharacterStateMock.mockResolvedValue(completedState())
 
       const onUpdate = jest.fn()
-      await getCharacterPickerRoster(onUpdate)
+      await getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
 
       const emitted = onUpdate.mock.calls.at(-1)?.[0] as CharacterPickerEntry[]
       expect(emitted.map((entry) => entry.ocid)).toEqual(['ocid-1'])
@@ -1690,7 +1659,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('휴면캐릭'))
 
       const onUpdate = jest.fn()
-      await getCharacterPickerRoster(onUpdate)
+      await getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
 
       expect(onUpdate.mock.calls.at(-1)?.[0]).toEqual([])
     })
@@ -1709,7 +1678,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('휴면캐릭'))
 
       const onUpdate = jest.fn()
-      await getCharacterPickerRoster(onUpdate)
+      await getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
 
       const emitted = onUpdate.mock.calls.at(-1)?.[0] as CharacterPickerEntry[]
       expect(emitted.map((entry) => entry.ocid)).toEqual(['ocid-1'])
@@ -1731,7 +1700,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       fetchCharacterBasicMock.mockImplementation(() => new Promise(() => {}))
 
       const onUpdate = jest.fn()
-      void getCharacterPickerRoster(onUpdate)
+      void getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
 
       await waitFor(() => expect(onUpdate).toHaveBeenCalled())
       const first = onUpdate.mock.calls[0]?.[0] as CharacterPickerEntry[]
@@ -1754,7 +1723,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     fetchCharacterBasicMock.mockImplementation(() => new Promise(() => {}))
 
     const onUpdate = jest.fn()
-    void getCharacterPickerRoster(onUpdate)
+    void getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
 
     await waitFor(() => expect(onUpdate.mock.calls.length).toBeGreaterThanOrEqual(2))
     for (const [entries] of onUpdate.mock.calls) {
@@ -1768,7 +1737,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     fetchCharacterBasicMock.mockResolvedValue(basicProfile({ name: '최신캐릭', level: 293 }))
 
     const onUpdate = jest.fn()
-    await getCharacterPickerRoster(onUpdate)
+    await getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
 
     const last = onUpdate.mock.calls.at(-1)?.[0]
     expect(last).toEqual([
@@ -1794,7 +1763,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     })
 
     const onUpdate = jest.fn()
-    await getCharacterPickerRoster(onUpdate)
+    await getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
 
     expect(fetchCharacterBasicMock).not.toHaveBeenCalled()
     expect(setCachedCharacterBasicMock).not.toHaveBeenCalled()
@@ -1816,7 +1785,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     fetchCharacterBasicMock.mockResolvedValue({ ...basicProfile({ name: '숨김', level: 100 }), accessFlag: false })
 
     const onUpdate = jest.fn()
-    await getCharacterPickerRoster(onUpdate)
+    await getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
 
     const last = onUpdate.mock.calls.at(-1)?.[0]
     expect(last).toEqual([])
@@ -1841,7 +1810,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     )
 
     const onUpdate = jest.fn()
-    const promise = getCharacterPickerRoster(onUpdate)
+    const promise = getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
 
     await waitFor(() => expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(3))
     const callsBeforeAnyResolve = onUpdate.mock.calls.length
@@ -1864,7 +1833,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     fetchCharacterBasicMock.mockRejectedValue(new NexonNetworkError('timeout'))
 
     const onUpdate = jest.fn()
-    await getCharacterPickerRoster(onUpdate)
+    await getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
 
     const last = onUpdate.mock.calls.at(-1)?.[0]
     expect(last).toEqual([
@@ -1880,7 +1849,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       return basicProfile({ name: '정상캐릭', level: 100 })
     })
 
-    await expect(getCharacterPickerRoster(jest.fn())).rejects.toThrow(NexonAuthError)
+    await expect(getCharacterPickerRoster(jest.fn(), { accountId: 'acc-1' })).rejects.toThrow(NexonAuthError)
   })
 
   it('한 캐릭터에서 429(NexonRateLimitError)가 발생하면 전체를 에러로 던진다', async () => {
@@ -1891,7 +1860,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       return basicProfile({ name: '정상캐릭', level: 100 })
     })
 
-    await expect(getCharacterPickerRoster(jest.fn())).rejects.toThrow(NexonRateLimitError)
+    await expect(getCharacterPickerRoster(jest.fn(), { accountId: 'acc-1' })).rejects.toThrow(NexonRateLimitError)
   })
 
   describe('ADR-053 결정 1·2: access_flag 확인된 캐릭터만 방출 + 콜드 스타트 중간 방출 억제', () => {
@@ -1918,7 +1887,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       )
 
       const onUpdate = jest.fn()
-      const promise = getCharacterPickerRoster(onUpdate)
+      const promise = getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
 
       // ① stub — mockCharacter/list 응답을 기다리지 않고 즉시
       await waitFor(() => expect(onUpdate).toHaveBeenCalledTimes(1))
@@ -1960,7 +1929,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       )
 
       const onUpdate = jest.fn()
-      const promise = getCharacterPickerRoster(onUpdate)
+      const promise = getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
 
       // 아직 한 건도 확인하지 못했다 — 빈 목록은 흘리지 않는다(결정 2).
       await waitFor(() => expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(2))
@@ -1993,7 +1962,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       )
 
       const onUpdate = jest.fn()
-      await getCharacterPickerRoster(onUpdate)
+      await getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
 
       // 자격 미확인 캐시는 어떤 방출에도 안 들어간다 — 「비공개」가 한 번도 안 보인다(ADR-053 결정 1).
       const emittedNames = new Set(
@@ -2017,7 +1986,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       }))
 
       const onUpdate = jest.fn()
-      await getCharacterPickerRoster(onUpdate)
+      await getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
 
       // 중간에 []를 흘렸다면 화면이 «모두 조회할 수 없어요» 를 그렸을 자리다.
       expect(onUpdate).toHaveBeenCalledTimes(1)
@@ -2034,7 +2003,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       )
 
       const onUpdate = jest.fn()
-      await getCharacterPickerRoster(onUpdate)
+      await getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
 
       // 방출이 여러 번이므로(ADR-149 결정 1) «어떤 방출에도» 는 합집합으로 묻는다.
       const emittedOcids = new Set(
@@ -2054,7 +2023,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       })
 
       const onUpdate = jest.fn()
-      await expect(getCharacterPickerRoster(onUpdate)).rejects.toThrow(NexonAuthError)
+      await expect(getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })).rejects.toThrow(NexonAuthError)
       expect(onUpdate).not.toHaveBeenCalled()
     })
 
@@ -2067,7 +2036,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       })
 
       const onUpdate = jest.fn()
-      await expect(getCharacterPickerRoster(onUpdate)).rejects.toThrow(NexonRateLimitError)
+      await expect(getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })).rejects.toThrow(NexonRateLimitError)
       expect(onUpdate).not.toHaveBeenCalled()
     })
   })
@@ -2085,7 +2054,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     })
 
     const onUpdate = jest.fn()
-    await getCharacterPickerRoster(onUpdate)
+    await getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
 
     const last = onUpdate.mock.calls.at(-1)?.[0] as Array<{ name: string }>
     expect(last.map((entry) => entry.name)).toEqual(['최고레벨', '한글캐릭', 'Alpha'])

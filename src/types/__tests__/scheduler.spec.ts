@@ -111,12 +111,9 @@ describe('domain 타입 샘플 객체', () => {
     expect(account.characters).toHaveLength(1)
   })
 
-  it('NexonAuthConfig 샘플이 미선택 상태(null)를 표현할 수 있다', () => {
-    const config: NexonAuthConfig = {
-      apiKey: 'test-key',
-      selectedAccountId: null,
-    }
-    expect(config.selectedAccountId).toBeNull()
+  it('NexonAuthConfig 는 API 키 하나다 — 계정 선택이 사라졌다([[ADR-143]] 결정 7)', () => {
+    const config: NexonAuthConfig = { apiKey: 'test-key' }
+    expect(config.apiKey).toBe('test-key')
   })
 })
 

@@ -41,7 +41,7 @@ export interface CharacterScheduleSync {
   isStale: boolean
   error: ScheduleSyncError | null
 }
-export { getCharacterPickerRoster, getRegisteredCharacters } from './character-roster'
+export { getCharacterPickerRoster } from './character-roster'
 export type { CharacterPickerRosterOptions } from './character-roster'
 
 

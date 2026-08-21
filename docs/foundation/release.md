@@ -2,7 +2,7 @@
 
 > **범위**: 스토어에 나가는 **바이너리**를 만드는 절차 — 서명·버전·빌드 커맨드·산출물 검증, 그리고 콘솔에 채워 넣어야 하는 요건. 앱 안에서 도는 OTA 갱신은 [features/live-update.md](../features/live-update.md), 광고 관련 스토어 요건의 *배경*은 [features/ads.md](../features/ads.md).
 > **관련 소스**(전부 저장소 루트 아래 — [[ADR-155]] 결정 2): `android/app/build.gradle`(서명·`versionCode`) · `android/keystore.properties`(**커밋 금지**) · `ios/app.xcodeproj`(iOS 서명) · `ios/app/Info.plist`(`CFBundleVersion`) · `app.json`(**두 플랫폼 공통 지문 재료** — `expo.version`·`ios.buildNumber`·`android.versionCode`) · `package.json`(**버전 원천** — OTA 매니페스트와 설정 화면 표시가 같은 파일을 읽는다).
-> **관련 ADR**: [[ADR-091]](Android 서명) [[ADR-090]](광고 — 스토어 요건이 늘어난 이유) [[ADR-024]](버전 형식) [[ADR-119]](릴리스 노트) [[ADR-126]](핵심 목록·모달). **관련 문서**: [../features/ads.md](../features/ads.md), [../features/live-update.md](../features/live-update.md), [../features/site.md](../features/site.md), [../trouble/2026-08-04-ios-appstore-signing.md](../trouble/2026-08-04-ios-appstore-signing.md).
+> **관련 ADR**: [[ADR-091]](Android 서명) ADR-090(광고 — 스토어 요건이 늘어난 이유) ADR-024(버전 형식) [[ADR-119]](릴리스 노트) [[ADR-126]](핵심 목록·모달). **관련 문서**: [../features/ads.md](../features/ads.md), [../features/live-update.md](../features/live-update.md), [../features/site.md](../features/site.md), [../trouble/2026-08-04-ios-appstore-signing.md](../trouble/2026-08-04-ios-appstore-signing.md).
 
 ## 빌드는 Expo/네이티브 하나다 ([[ADR-155]])
 
@@ -19,7 +19,7 @@ Xcode 아카이브다. 저장소 루트가 곧 Expo 프로젝트라 둘 다 루�
 먼저 쓴다.** OTA 배포든 스토어 바이너리든 순서는 같다.
 
 ```
-1. package.json 의 version 을 올린다        (x.y.z — 2단이면 OTA가 깨진다, [[ADR-024]])
+1. package.json 의 version 을 올린다        (x.y.z — 2단이면 OTA가 깨진다, ADR-024)
      ↑ 저장소 루트 package.json 이 아니다. 루트는 워크스페이스 오케스트레이션용이라 version 이 없다
 2. src/data/release-notes.ts 에 그 버전 항목을 쓴다            ← 이 단계를 건너뛰면 3에서 막힌다
      · items      — 변경 전부. 개발 노트 화면이 읽는다
@@ -170,7 +170,7 @@ keytool -printcert -jarfile android/app/build/outputs/bundle/release/app-release
 주체 공용 키 알고리즘: 2048비트 RSA 키       ← Play 요건(RSA 2048 이상) 충족
 ```
 
-### 버전 규칙 ([[ADR-024]], [[ADR-091]] 결정 5)
+### 버전 규칙 (ADR-024, [[ADR-091]] 결정 5)
 
 | 값 | 현재 | 규칙 |
 |---|---|---|
@@ -192,7 +192,7 @@ keytool -printcert -jarfile android/app/build/outputs/bundle/release/app-release
 | **앱 액세스 권한** | ❌ | 온보딩이 넥슨 API 키 하드 게이트라([features/onboarding.md](../features/onboarding.md)) **심사자용 테스트 키 + 캐릭터 있는 계정 + 입력 절차**를 적어주지 않으면 리뷰어가 앱을 실행조차 못 한다 |
 | 데이터 안전 | ❌ | `AD_ID` 권한을 선언했으므로 **광고 ID 수집 신고 필수**. 넥슨 API 키의 취급 분류도 함께. **알림을 넣는 릴리스부터 한 항목 더** — FCM 등록 토큰은 앱이 서버로 안 보내도(토픽 방식, [[ADR-146]] 결정 2) **Firebase 가 갖는 기기 식별자**라 신고 대상이다 |
 | **개인정보 처리방침 갱신 (푸시)** | ❌ | [[ADR-146]] 을 구현하는 릴리스 전에 `PRIVACY.md`(→ `mapleroutine.store/privacy`)에 푸시 알림·Firebase 데이터 처리를 추가해야 한다. **바이너리가 아니라 문서 쪽 준비물이라 잊기 쉽다** |
-| "광고 포함" 선언 | ❌ | [[ADR-090]] |
+| "광고 포함" 선언 | ❌ | ADR-090 |
 | 콘텐츠 등급 설문 · 타겟 연령 | ❌ | — |
 | 배포 국가 | 한국 한정 | EU 사용자가 없어 GDPR 동의(UMP) 구현이 불필요하다는 전제([features/ads.md](../features/ads.md)). 국가를 넓히려면 그 흐름부터 |
 | 계정 삭제 정책 | 해당 없음 | 계정 생성 기능이 없다([[ADR-003]]) |

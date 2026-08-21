@@ -1,13 +1,13 @@
 # 광고 (Ads)
 
-> **범위**: 광고 포맷·노출 지점·노출 게이트·어댑터 경계·스토어 부수 요건. 결정의 배경과 폐기된 대안은 [[ADR-090]].
+> **범위**: 광고 포맷·노출 지점·노출 게이트·어댑터 경계·스토어 부수 요건. 결정의 배경과 폐기된 대안은 ADR-090.
 > **관련 소스**: `src/native/adapters/rn-ads.ts`·`ads-env.ts` · `app.json`(앱 ID) · `src/native/ads.ts`(광고 단위 ID·판정 함수) · `android/…/AndroidManifest.xml` · `ios/app/Info.plist`. **전면광고 구현은 [[ADR-156]] 이 지웠다**(소비자 0) — 아래 「전면광고」 절은 **정책의 기록**으로 남는다.
-> **관련 ADR**: [[ADR-090]] [[ADR-150]] [[ADR-128]] [[ADR-005]] [[ADR-003]] [[ADR-013]] [[ADR-007]]. **관련 문서**: [settings.md](./settings.md), [../foundation/product.md](../foundation/product.md), [../foundation/architecture.md](../foundation/architecture.md).
+> **관련 ADR**: ADR-090 [[ADR-150]] [[ADR-128]] [[ADR-005]] [[ADR-003]] [[ADR-013]] [[ADR-007]]. **관련 문서**: [settings.md](./settings.md), [../foundation/product.md](../foundation/product.md), [../foundation/architecture.md](../foundation/architecture.md).
 
 ## 정책
 
 이 앱의 **유일한 수익화 수단은 광고**다. 판매 상품(인앱 구매·구독·광고 제거)은 두지 않는다
-([[ADR-090]] 맥락 — 이슈 #58이 네 번 좁혀진 결과).
+(ADR-090 맥락 — 이슈 #58이 네 번 좁혀진 결과).
 
 > ⚠️ **아래 「탭 전환 전면광고」를 지금 띄우는 앱은 없다.** RN 에서 걷었고([[ADR-150]], 2026-08-19)
 > 그것을 쓰던 캐패시터 앱은 저장소에서 사라졌다([[ADR-155]]) — 인라인 광고는 아직 없으므로
@@ -24,14 +24,14 @@
 하단 탭바로 화면을 옮길 때(`/content` ↔ `/boss` ↔ `/profit` ↔ `/settings`) 전면광고를 띄운다.
 
 - **앱 시작에는 띄우지 않는다.** 정책이 명시적으로 금지한다 — *"Do not place interstitial ads on
-  app load."* 그 자리에 맞는 포맷은 App Open인데 **배포판 플러그인에 구현이 없다**([[ADR-090]] 결정 2).
+  app load."* 그 자리에 맞는 포맷은 App Open인데 **배포판 플러그인에 구현이 없다**(ADR-090 결정 2).
 - **탭 전환은 정책이 허용하는 지점이다** — *"interstitials should only be placed in between pages
   of app content."* 탭 이동은 실제 페이지 전환이다.
 - **위반은 "지점"이 아니라 "빈도"다** — *"Placing an interstitial ad after every user action…"*
   즉 탭 전환**마다**가 위반이지 탭 전환**에**가 위반이 아니다. 그래서 아래 게이트가 설계의 본체다.
 - **하단 배너는 쓰지 않는다** — 정책상 가장 안전하고 노출도 최다지만 탭바와 세로 공간이 2겹이 된다.
-- **웹 광고(AdSense/GPT)를 WebView에 붙일 수 없다** — "Ad placement" 조항이 소프트웨어 애플리케이션
-  통합을 금지한다(`(does not apply to AdMob)` = 앱에는 AdMob을 쓰라는 뜻).
+- **웹 광고(AdSense/GPT)는 애초에 선택지가 아니었다** — "Ad placement" 조항이 소프트웨어 애플리케이션
+  통합을 금지한다(`(does not apply to AdMob)` = 앱에는 AdMob을 쓰라는 뜻). RN 에서는 더더욱 무관하다.
 
 ### 노출 게이트 — 셋을 **모두** 만족할 때만
 
@@ -81,21 +81,19 @@
 **테스트 광고 여부는 빌드 시점 환경 변수로 가른다.** 실 ID로 자기 광고를 누르면 무효 트래픽으로
 **AdMob 계정이 정지**될 수 있고 되돌리기가 매우 어렵다.
 
-| 명령 | 광고 |
+| 빌드 | 광고 |
 |---|---|
-| `npm run build` | **실 광고** — 스토어에 나가는 빌드 |
-| `npm run build:test-ads` | 테스트 광고 (`VITE_ADS_TEST=1`) |
-| `npm run build:beta` | 테스트 광고 — 베타는 정의상 스토어에 안 나간다 |
+| 릴리스 빌드 | **실 광고** — 스토어에 나가는 빌드 |
+| `EXPO_PUBLIC_ADS_TEST=1` 로 만든 빌드 | 테스트 광고 |
+| `__DEV__` (개발 클라이언트) | 테스트 광고 강제 |
 
-> **실기기에서 테스트할 때는 반드시 `build:test-ads` 나 `build:beta` 로 빌드할 것.**
-> `npm run build` 로 만든 사이드로딩 빌드는 실 광고를 띄운다.
+> **실기기에서 테스트할 때는 반드시 `EXPO_PUBLIC_ADS_TEST=1` 로 캐시를 비우고 빌드할 것**
+> (아래 Metro 캐시 경고). 그냥 만든 릴리스 빌드는 실 광고를 띄운다.
 
-⚠️ **`import.meta.env.DEV` 로는 가를 수 없다**(초안의 오류, 2026-08-04 수정). Vite는 `vite build`
-산출물에서 그 값을 **항상 `false` 로 치환**하고, Capacitor 앱은 개발 중에도 **언제나 빌드된
-번들**로 돈다 — 즉 `DEV` 로 가르면 실기기 테스트 빌드에도 실 광고가 나간다. `DEV` 가 `true` 인
-곳은 브라우저(`npm run dev`)뿐인데 거기서는 플랫폼이 `web` 이라 어댑터가 어차피 no-op 이라,
-그 분기는 아무것도 막지 못했다. 프로덕션 번들에서 `getPlatform(), !1` 로 치환된 것을 실제로
-확인해 잡았다.
+⚠️ **빌드 시점 플래그가 아니면 가를 수 없다.** 웹 시절 `import.meta.env.DEV` 로 가르려다 틀렸던
+전례가 있다 — 번들러가 프로덕션 산출물에서 그 값을 항상 `false` 로 치환하고 앱은 개발 중에도
+빌드된 번들로 돌아, **실기기 테스트 빌드에도 실 광고가 나갔다.** RN 에서 그 자리를 대신하는 것이
+`EXPO_PUBLIC_ADS_TEST` + `__DEV__` 이고, 바꿀 수 있는 방향이 "실 광고 → 테스트 광고" 한 쪽뿐이다.
 
 플랫폼별로 갈리는 이유는 AdMob이 **Android와 iOS를 별개 앱으로 등록**하기 때문이다 — 앱 ID도
 광고 단위 ID도 서로 다르고, 한쪽 ID를 양쪽에 쓰면 정책 위반이다.
@@ -106,7 +104,7 @@
 
 ### RN 어댑터 — 광고 없음, 전면광고를 걷었다
 
-**`app-rn` 에는 지금 광고가 하나도 안 뜬다**([[ADR-150]], 2026-08-19). [[ADR-128]] 이 RN 으로 간
+**지금 앱에는 광고가 하나도 안 뜬다**([[ADR-150]], 2026-08-19). [[ADR-128]] 이 RN 으로 간
 동인 자체가 광고 인벤토리였고 — 웹뷰에는 카드 *사이*에 광고를 넣을 자리가 원리적으로 없어
 전면광고 말고 선택지가 없었다 — 그 제약이 사라졌으므로 **먼저 전면광고를 걷고** 인라인 광고를
 후속으로 붙인다.
@@ -123,7 +121,7 @@
 요청(매치율 0)으로 쌓이기 때문이다. 걷은 것은 「광고를 띄우는 일」이 아니라 「전면광고라는
 인벤토리」다.
 
-**`src/__tests__/interstitial-policy.test.ts` 가 되돌아오는 것을 막는다** — app-rn 소스에
+**`src/__tests__/interstitial-policy.test.ts` 가 되돌아오는 것을 막는다** — 소스에
 `features/ads/tab-switch-ad` import 가 0건이어야 한다. `@src/native/ads` 는 잡지 않는다(어댑터가
 계속 쓴다).
 
@@ -146,17 +144,15 @@
 | 광고 단위 ID(`/`) | `src/native/ads.ts` |
 | Android·iOS 앱 ID(`~`) | `app.json` 의 config plugin 인자 → `expo prebuild` 가 `AndroidManifest.xml`·`Info.plist` 에 쓴다 |
 
-환경 변수는 Vite 이름을 Expo 이름으로 바꿔 채운다(`src/native/adapters/ads-env.ts`) —
-`VITE_ADS_TEST` → **`EXPO_PUBLIC_ADS_TEST`**, `VITE_LIVE_UPDATE_CHANNEL` →
-**`EXPO_PUBLIC_LIVE_UPDATE_CHANNEL`**. 둘 다 빌드 시점에 번들로 박히는 값이라 성질이 같다.
+환경 변수는 `src/native/adapters/ads-env.ts` 가 읽는다 — **`EXPO_PUBLIC_ADS_TEST`**(웹 시절
+`VITE_ADS_TEST` 자리). 빌드 시점에 번들로 박히는 값이다.
 여기에 RN 의 `__DEV__` 를 **더한다** — 켜져 있으면 테스트 광고를 강제하고 꺼져 있으면 아무것도
 하지 않으므로, 바꿀 수 있는 방향이 "실 광고 → 테스트 광고" 한 쪽뿐이다.
 
 > ⚠️ **Metro 트랜스폼 캐시가 `EXPO_PUBLIC_*` 을 무효화하지 않는다**(2026-08-11 실측). 프로덕션
 > 번들을 만든 직후 `EXPO_PUBLIC_ADS_TEST=1` 로 다시 빌드하면 **캐시가 이겨서 실 광고 번들이
 > 그대로 나온다**(번들 해시 동일). 즉 **테스트 빌드는 캐시를 비우고 만들어야 한다**
-> (`--clear`/`--reset-cache`). app-rn 에는 아직 릴리스 빌드 경로가 없으므로, 그 경로를 만들 때
-> 명령에 박을 것. 측정표는 `ads-env.ts` 상단.
+> (`--clear`/`--reset-cache`). 릴리스 빌드 경로를 만들 때 명령에 박을 것. 측정표는 `ads-env.ts` 상단.
 
 **play-services-ads 는 24.9 라인으로 맞춘다**(`react-native-google-mobile-ads` **16.0.3** 고정).
 최신 16.4.0 이 끌어오는 25.4.0 은 Kotlin 메타데이터 2.3 이라 RN 0.86 의 Kotlin 2.1 에서
@@ -185,7 +181,7 @@
 
 ## 넥슨 약관과의 관계
 
-광고는 이 앱에 처음으로 **영리 목적**을 들인다([[ADR-007]], [[ADR-090]] 맥락).
+광고는 이 앱에 처음으로 **영리 목적**을 들인다([[ADR-007]], ADR-090 맥락).
 
 - **API 이용약관 제6조⑥** — "승낙 없이 영리 목적으로 이용" 금지. **광고만 달아도 해당한다.**
 - **게임IP 사용 가이드** — "광고 및 후원금 수익"은 **명시적 예외**. 다만 가이드가 정의한 UGC
@@ -223,7 +219,7 @@
   광고를 추가할지 다시 본다(사용자 의사 2026-08-04: "플러그인으로 쓸 수 있으면 그때 추가"). App Open
   코드는 `main` 에 2026-04-10 머지됐으나 마지막 릴리스(v8.0.0, 2025-12-27)에는 없다. **AdMob 콘솔에
   앱 오프닝 광고 형식이 보이는 것과 앱에서 쓸 수 있는 것은 별개다** — 콘솔에서 광고 단위는 만들 수
-  있지만 호출할 API가 없다. 폐기 당시 설계는 [[ADR-090]] "폐기된 대안"에 남아 있다
+  있지만 호출할 API가 없다. 폐기 당시 설계는 ADR-090 "폐기된 대안"에 남아 있다
 - `AD_MIN_INTERVAL_MS` 30분 · `AD_MIN_UPTIME_MS` 60초 적정값 — 실사용 후 조정
 - 사전 로드 실패율이 높아 "거의 안 뜨는" 상태가 되면 포맷·지점 재검토
 

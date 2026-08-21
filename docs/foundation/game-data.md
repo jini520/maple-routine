@@ -1,7 +1,7 @@
 # 게임 레퍼런스 데이터 (src/data)
 
 > **범위**: `src/data/*.json` 정적 참조 데이터의 역할·조인 방식·컨벤션. **CRITICAL — AI가 수치를 임의 추정해 채우지 않는다. 반드시 사용자(도메인 전문가) 확인 후 반영**([[ADR-006]]).
-> **관련 소스**: `src/data/*.json` · `src/data/__tests__/data-consistency.test.ts` · `lib/boss-matching` · `lib/boss-icons` · `lib/item-icons`.
+> **관련 소스**: `src/data/*.json` · `src/data/__tests__/data-consistency.spec.ts` · `lib/boss-matching` · `lib/boss-icons` · `lib/item-icons`.
 > **관련 ADR**: [[ADR-006]] [[ADR-007]] [[ADR-010]] [[ADR-011]] [[ADR-030]] [[ADR-055]]. **관련 문서**: [nexon-api.md](./nexon-api.md), [features/item-drop.md](../features/item-drop.md), [features/boss-profit.md](../features/boss-profit.md).
 
 ## 원칙 ([[ADR-006]])
@@ -24,10 +24,10 @@
 
 ## UI 표시 전용 설정 파일 ([[ADR-006]] 대상 아님 — 게임 수치 아님)
 게임 밸런스/수치가 아니라 화면 크롭 파라미터이므로 사용자가 이미지 넣을 때마다 직접 조정(디버그 프리뷰에서 값 복사).
-- **`boss-portrait-crops.json`** ([[ADR-018]]): 보스 스케줄러 새 보스 카드 bleed 일러스트의 `portraitSlug → { size, position }`(CSS background-size/position). 매핑 없으면 cover/center. 값 조정은 전용 디버그 화면에서 눈으로 맞췄고, 그 화면은 조정을 마치고 삭제했다([[ADR-092]] — 다시 만질 일이 생기면 복원 선행). `bellona` 두 항목은 2026-08-19 사용자가 직접 채웠다([[ADR-151]]). **같은 날 카링 일러스트가 960×873(불투명) → 422×500(알파) 로 교체되면서 카링 크롭도 함께 바뀌었다** — 원본이 코퍼스 규격(422×500, 벨로나·유피테르와 동일)으로 내려오며 필요한 확대가 줄었다(카드 `200% auto` → `90% auto`, 원형 `800% auto` → `250% auto`). 원형 확대 800% 는 이 파일에서 유일한 극단값이었고 그 원인이 일러스트 규격이었다. 찬란한 흉성 원형 확대도 같은 날 210% → 250% 로 조정됐다(위치는 그대로). 주간 콘텐츠 카드 배경(에픽 던전 3종·길드 지하수로)도 이 파일 재사용([[ADR-021]]).
-- **`boss-portrait-icon-crops.json`** (2026-07-14): `BossPortrait`(원형 아이콘, 보스 수익 화면)의 크롭. 형식은 위와 동일하나 값은 공유하지 않는 별도 파일(원형/사각형은 이상적 크롭이 다름). 조정 화면은 [[ADR-092]] 에서 삭제.
+- **`boss-portrait-crops.json`** ([[ADR-018]]): 보스 스케줄러 새 보스 카드 bleed 일러스트의 `portraitSlug → { size, position }`(CSS background-size/position). 매핑 없으면 cover/center. 값 조정은 전용 디버그 화면에서 눈으로 맞췄고, 그 화면은 조정을 마치고 삭제했다(ADR-092 — 다시 만질 일이 생기면 복원 선행). `bellona` 두 항목은 2026-08-19 사용자가 직접 채웠다([[ADR-151]]). **같은 날 카링 일러스트가 960×873(불투명) → 422×500(알파) 로 교체되면서 카링 크롭도 함께 바뀌었다** — 원본이 코퍼스 규격(422×500, 벨로나·유피테르와 동일)으로 내려오며 필요한 확대가 줄었다(카드 `200% auto` → `90% auto`, 원형 `800% auto` → `250% auto`). 원형 확대 800% 는 이 파일에서 유일한 극단값이었고 그 원인이 일러스트 규격이었다. 찬란한 흉성 원형 확대도 같은 날 210% → 250% 로 조정됐다(위치는 그대로). 주간 콘텐츠 카드 배경(에픽 던전 3종·길드 지하수로)도 이 파일 재사용([[ADR-021]]).
+- **`boss-portrait-icon-crops.json`** (2026-07-14): `BossPortrait`(원형 아이콘, 보스 수익 화면)의 크롭. 형식은 위와 동일하나 값은 공유하지 않는 별도 파일(원형/사각형은 이상적 크롭이 다름). 조정 화면은 ADR-092 에서 삭제.
 - **`daily-quest-regions.json`** ([[ADR-020]]): 일일퀘스트 카드 "지역명 → 배경 슬러그". 매칭은 접두어 제거 후 공백 제거 표시명이 지역명으로 `startsWith`.
-- **`daily-quest-region-crops.json`** ([[ADR-020]]): 지역 슬러그 → `{ size, position }`. 조정 화면은 [[ADR-092]] 에서 삭제. 길드 미션 포인트(`hallOfHeroes`)·플래그 레이스(`flagRace`, jpg)도 추가([[ADR-021]]).
+- **`daily-quest-region-crops.json`** ([[ADR-020]]): 지역 슬러그 → `{ size, position }`. 조정 화면은 ADR-092 에서 삭제. 길드 미션 포인트(`hallOfHeroes`)·플래그 레이스(`flagRace`, jpg)도 추가([[ADR-021]]).
 - **`weekly-regional-quests.json`** ([[ADR-021]]): 주간 지역 콘텐츠(에르다 스펙트럼 등 6종) "콘텐츠명 → 배경 슬러그". 콘텐츠명에 지역명이 없어 `startsWith` 아닌 정확 일치. 슬러그·에셋은 `daily-quest-regions.json` 재사용(신규 에셋 없음).
 - **`job-themes.json`** ([[ADR-009]], [[ADR-064]], [[ADR-104]]): 테마별 38토큰 컬러 + `mode` + 선택 `background` + **`category`**(기본/직업/보스 — 소속은 게임 도메인이라 사용자 확인으로 정한다) → [features/theme.md](../features/theme.md).
 

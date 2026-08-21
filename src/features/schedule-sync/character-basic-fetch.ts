@@ -5,10 +5,9 @@ import type { CharacterBasicProfile } from '../../types'
 /**
  * `character/basic` 의 **공유 통과 지점**([[ADR-113]] 결정 1).
  *
- * 같은 요청이 네 곳에서 나간다 — 계정 선택 프로브(`features/onboarding/use-account-probes`) ·
- * 예열(`features/onboarding/prefetch`) · 캐릭터 피커(`character-roster`) · 동기화 편승 갱신
+ * 같은 요청이 두 곳에서 나간다 — 캐릭터 피커(`character-roster`) · 동기화 편승 갱신
  * (`schedule-sync` 의 `refreshCharacterBasics`, [[ADR-097]] 결정 7). 엔드포인트·파라미터·응답이
- * 완전히 같고 소비하는 필드만 달라서, 온보딩 한 바퀴에 같은 캐릭터로 세 번이 나가고 있었다.
+ * 완전히 같고 소비하는 필드만 달라서, 한 바퀴에 같은 캐릭터로 여러 번이 나가고 있었다.
  *
  * **호출부마다 "이미 받았는지"를 판단하게 하지 않고 경로 하나로 접는다** — 그래야 호출자끼리
  * 서로를 몰라도 접힌다. 프로브는 예열이 뒤따라온다는 것을 모르고 예열은 피커가 곧 열린다는 것을

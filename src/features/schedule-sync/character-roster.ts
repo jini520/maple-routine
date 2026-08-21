@@ -16,42 +16,36 @@ import { fetchCharacterBasicCached } from './character-basic-fetch'
 import { readKnownEligibility, resolveCharacterEligibility } from './character-eligibility'
 import type { CharacterEligibility } from './character-eligibility'
 import { toScheduleSyncError } from './errors'
-// ADR-086 결정 6: 설정의 계정 변경은 커밋 전에 **후보 계정**으로 예열·후보 목록을 돌린다 —
-// 그래서 저장된 selectedAccountId 대신 인자로 받은 계정을 쓸 수 있어야 한다. 인자가 없으면
-// 지금까지처럼 저장된 값이다.
-async function resolveAccountContext(accountIdOverride?: string): Promise<{
+// **계정은 반드시 인자로 온다**([[ADR-143]] 결정 7) — 저장된 «고른 계정» 이라는 것이 없어졌다.
+// 부르는 쪽(캐릭터 관리의 계정 드롭다운)이 어느 계정을 여는지 알고 있고, 모르면 그것은 버그이지
+// 폴백으로 덮을 상태가 아니다.
+async function resolveAccountContext(accountId?: string): Promise<{
   apiKey: string
   accountId: string
 }> {
   const authConfig = await getAuthConfig()
-  const accountId = accountIdOverride ?? authConfig?.selectedAccountId ?? null
-  if (authConfig === null || accountId === null) {
+  if (authConfig === null || accountId === undefined) {
     throw new Error(
-      'getRegisteredCharacters: 온보딩이 완료되지 않았습니다 (API 키 또는 선택된 계정 없음)',
+      'resolveRegisteredCharacters: API 키가 없거나 계정을 지정하지 않았습니다',
     )
   }
   return { apiKey: authConfig.apiKey, accountId }
 }
 
-export async function resolveRegisteredCharacters(accountIdOverride?: string): Promise<{
+export async function resolveRegisteredCharacters(accountId?: string): Promise<{
   apiKey: string
   accountId: string
   characters: MapleCharacter[]
 }> {
-  const { apiKey, accountId } = await resolveAccountContext(accountIdOverride)
+  const { apiKey, accountId: resolved } = await resolveAccountContext(accountId)
 
   const accounts = await fetchCharacterList(apiKey)
-  const account = accounts.find((candidate) => candidate.accountId === accountId)
+  const account = accounts.find((candidate) => candidate.accountId === resolved)
   if (account === undefined) {
-    throw new Error('getRegisteredCharacters: 선택된 계정을 찾을 수 없습니다')
+    throw new Error('resolveRegisteredCharacters: 지정한 계정을 응답에서 찾을 수 없습니다')
   }
 
-  return { apiKey, accountId, characters: account.characters }
-}
-
-export async function getRegisteredCharacters(): Promise<MapleCharacter[]> {
-  const { characters } = await resolveRegisteredCharacters()
-  return characters
+  return { apiKey, accountId: resolved, characters: account.characters }
 }
 
 /** 추적 캐릭터 하나와 **그 캐릭터가 사는 계정**. 둘은 함께 다녀야 한다([[ADR-143]] 결정 6). */
