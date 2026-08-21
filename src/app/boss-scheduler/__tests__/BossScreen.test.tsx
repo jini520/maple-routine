@@ -19,6 +19,7 @@
 //    갖고 있다([[ADR-101]] 결정 2). 여기 남는 것은 **[[ADR-101]] 결정 1** — `null` 을 0명으로 읽지
 //    않는가 — 이고 그것은 한 케이스다.
 // ⑥ DOM 스냅샷 둘은 옮기지 않는다(전환 계획서 «잃는 안전망») — 대신 각 가지를 케이스로 적는다.
+import { useCharacterSelectionStore } from '../../../features/character-selection/store'
 import { act, fireEvent, screen } from '@testing-library/react-native'
 import { useState } from 'react'
 
@@ -81,13 +82,11 @@ function mockStore(overrides: Partial<Store> = {}): Store {
     characters: [],
     error: null,
     trackedOcids: null,
-    selectedOcid: null,
     partySizes: {},
     manualTrackedByOcid: {},
     loadTrackedOcids: jest.fn(),
     saveTrackedOcids: jest.fn(),
     refresh: jest.fn(),
-    selectCharacter: jest.fn(),
     loadPartySizes: jest.fn(),
     setPartySize: jest.fn(),
     addManualBoss: jest.fn(),
@@ -189,6 +188,12 @@ beforeEach(() => {
   navigate.mockClear()
   mockedNavigation.mockReturnValue({ navigate, goBack: jest.fn() } as never)
   useTrackingModeStore.setState({ mode: 'auto' })
+})
+
+// 선택은 이제 화면 스토어가 아니라 `useCharacterSelectionStore` 가 갖는다([[ADR-159]]).
+// 실물 스토어라 값이 파일 안에서 넘어가므로 테스트마다 되돌린다.
+beforeEach(() => {
+  useCharacterSelectionStore.setState({ selectedOcid: null })
 })
 
 describe('BossScreen — 빈 상태와 마운트', () => {

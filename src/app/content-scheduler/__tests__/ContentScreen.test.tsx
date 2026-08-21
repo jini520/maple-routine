@@ -15,6 +15,7 @@
 //    않는다. 대신 *"헤더가 셸의 `header` 로 들어가고 목록은 그 안에 있다"* 를 본다.
 // ⑤ `getByRole('combobox')`(웹 `<select>`) → **드롭다운 트리거의 캐릭터 이름**으로 기다린다.
 // ⑥ DOM 스냅샷 셋은 옮기지 않는다(전환 계획서 «잃는 안전망») — 대신 각 가지를 케이스로 적는다.
+import { useCharacterSelectionStore } from '../../../features/character-selection/store'
 import { act, fireEvent, screen } from '@testing-library/react-native'
 import { useState } from 'react'
 
@@ -72,12 +73,10 @@ function mockStore(overrides: Partial<Store> = {}): Store {
     characters: [],
     error: null,
     trackedOcids: null,
-    selectedOcid: null,
     manualTrackedByOcid: {},
     loadTrackedOcids: jest.fn(),
     saveTrackedOcids: jest.fn(),
     refresh: jest.fn(),
-    selectCharacter: jest.fn(),
     addManualContent: jest.fn(),
     removeManualContent: jest.fn(),
     activeTab: 'daily' as const,
@@ -155,6 +154,12 @@ beforeEach(() => {
   navigate.mockClear()
   mockedNavigation.mockReturnValue({ navigate, goBack: jest.fn() } as never)
   useTrackingModeStore.setState({ mode: 'auto' })
+})
+
+// 선택은 이제 화면 스토어가 아니라 `useCharacterSelectionStore` 가 갖는다([[ADR-159]]).
+// 실물 스토어라 값이 파일 안에서 넘어가므로 테스트마다 되돌린다.
+beforeEach(() => {
+  useCharacterSelectionStore.setState({ selectedOcid: null })
 })
 
 describe('ContentScreen — 빈 상태와 마운트', () => {
@@ -291,8 +296,10 @@ describe('ContentScreen — 목록', () => {
 
   // [[ADR-142]]: 드롭다운이 초상화 레일이 되면서 **실제로 캐릭터가 바뀐다** — 전에는 목록(열린
   // 상태)이 없어 이 케이스가 «프롭이 있다» 까지밖에 못 봤다.
-  it('레일에서 다른 초상화를 누르면 그 ocid 로 selectCharacter 를 부른다', async () => {
-    const store = mockStore({
+  // [[ADR-159]]: «부르는가» 가 아니라 **«고른 것이 바뀌는가»** 를 본다 — 선택이 스토어 하나가 되면서
+  // 그 값이 곧 다른 화면이 보는 값이다(공유가 전파 단계 없이 성립하는 자리).
+  it('레일에서 다른 초상화를 누르면 고른 캐릭터가 그 ocid 가 된다', async () => {
+    mockStore({
       status: 'loaded',
       trackedOcids: ['ocid-1', 'ocid-2'],
       characters: [character(), character({ ocid: 'ocid-2', characterName: '캐릭터2' })],
@@ -301,7 +308,7 @@ describe('ContentScreen — 목록', () => {
 
     await press(screen.getAllByTestId('character-portrait')[1])
 
-    expect(store.selectCharacter).toHaveBeenCalledWith('ocid-2')
+    expect(useCharacterSelectionStore.getState().selectedOcid).toBe('ocid-2')
   })
 
   // 결정 4: 링이 세는 것과 카드 목록이 **같은 함수**에서 나온다 — 등록 안 된 항목은 둘 다에서 빠진다.

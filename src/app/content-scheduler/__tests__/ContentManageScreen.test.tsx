@@ -7,6 +7,7 @@
 //    *pressed* 가 없다 — 설정·온보딩의 선택 카드가 이미 밟은 자리).
 // ③ 잠금 행의 **스크림에서 블러가 빠진다**(`backdrop-filter` 가 RN 에 없다). 검사 대상은 흐림이
 //    아니라 *"눌리지 않고, 사유가 행 위에 뜬다"* 라 그대로 남는다.
+import { useCharacterSelectionStore } from '../../../features/character-selection/store'
 import { act, fireEvent, screen } from '@testing-library/react-native'
 import { useState } from 'react'
 
@@ -47,12 +48,10 @@ function mockStore(overrides: Partial<Store> = {}): Store {
     characters: [],
     error: null,
     trackedOcids: ['ocid-1'],
-    selectedOcid: 'ocid-1',
     manualTrackedByOcid: {},
     loadTrackedOcids: jest.fn(),
     saveTrackedOcids: jest.fn(),
     refresh: jest.fn(),
-    selectCharacter: jest.fn(),
     addManualContent: jest.fn(async () => {}),
     removeManualContent: jest.fn(async () => {}),
     activeTab: 'daily' as const,
@@ -117,6 +116,12 @@ beforeEach(() => {
   goBack.mockClear()
   mockedNavigation.mockReturnValue({ navigate: jest.fn(), goBack } as never)
   useTrackingModeStore.setState({ mode: 'manual' })
+})
+
+// 선택은 이제 화면 스토어가 아니라 `useCharacterSelectionStore` 가 갖는다([[ADR-159]]).
+// 실물 스토어라 값이 파일 안에서 넘어가므로 테스트마다 되돌린다.
+beforeEach(() => {
+  useCharacterSelectionStore.setState({ selectedOcid: null })
 })
 
 describe('ContentManageScreen', () => {

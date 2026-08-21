@@ -10,6 +10,7 @@
 // ③ `aria-pressed` → **`accessibilityState.selected`**(RN 접근성 상태에 *pressed* 가 없다).
 // ④ **보스 목록·난이도·상한은 전부 참조 데이터에서 온다** — 이 파일에도 게임 수치를 손으로 적지
 //    않는다([[ADR-006]]). 12개 한도 케이스의 보스 이름도 `weekly-bosses.json` 에서 뽑아 쓴다.
+import { useCharacterSelectionStore } from '../../../features/character-selection/store'
 import { act, fireEvent, screen } from '@testing-library/react-native'
 import { useState } from 'react'
 
@@ -69,13 +70,11 @@ function mockStore(overrides: Partial<Store> = {}): Store {
     characters: [],
     error: null,
     trackedOcids: ['ocid-1'],
-    selectedOcid: 'ocid-1',
     partySizes: {},
     manualTrackedByOcid: {},
     loadTrackedOcids: jest.fn(),
     saveTrackedOcids: jest.fn(),
     refresh: jest.fn(),
-    selectCharacter: jest.fn(),
     loadPartySizes: jest.fn(),
     setPartySize: jest.fn(),
     addManualBoss: jest.fn(async () => 'added'),
@@ -180,6 +179,12 @@ beforeEach(() => {
   useTrackingModeStore.setState({ mode: 'auto' })
 })
 
+// 선택은 이제 화면 스토어가 아니라 `useCharacterSelectionStore` 가 갖는다([[ADR-159]]).
+// 실물 스토어라 값이 파일 안에서 넘어가므로 테스트마다 되돌린다.
+beforeEach(() => {
+  useCharacterSelectionStore.setState({ selectedOcid: null })
+})
+
 describe('BossManageScreen — 공통', () => {
   // [[ADR-142]] 정정 8: 제목 줄 우측의 compact 드롭다운이 **초상화 레일**이 됐다. 캐릭터 이름은
   // 이제 SVG 곡선 글자라 `getByText` 로 안 잡힌다 — 레일이 섰는지로 본다.
@@ -256,17 +261,18 @@ describe('BossManageScreen — 공통', () => {
   })
 
   // [[ADR-096]] 결정 4 — 선택 캐릭터는 스케줄러와 **공유**한다(탭과 달리 양방향).
-  // 정정 8: 드롭다운은 눌러도 안 열렸다 — 레일은 **실제로 바뀐다**(스케줄러와 같은 `selectCharacter`
-  // 라 돌아갔을 때 그쪽도 같은 캐릭터다).
-  it('레일에서 다른 초상화를 누르면 스케줄러와 같은 selectCharacter 를 부른다', async () => {
-    const store = mockStore({
+  // 정정 8: 드롭다운은 눌러도 안 열렸다 — 레일은 **실제로 바뀐다**. [[ADR-159]] 로 그 «같은 선택»
+  // 이 두 스토어의 우연이 아니라 **스토어 하나**가 됐고, 그래서 여기서 보는 값이 컨텐츠 스케줄러가
+  // 보는 값과 같은 것이다.
+  it('레일에서 다른 초상화를 누르면 고른 캐릭터가 그 ocid 가 된다', async () => {
+    mockStore({
       characters: [character(), character({ ocid: 'ocid-2', characterName: '캐릭터2' })],
     })
     await renderScreen()
 
     await press(screen.getAllByTestId('character-portrait')[1])
 
-    expect(store.selectCharacter).toHaveBeenCalledWith('ocid-2')
+    expect(useCharacterSelectionStore.getState().selectedOcid).toBe('ocid-2')
   })
 })
 

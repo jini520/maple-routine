@@ -44,6 +44,8 @@ import { useReducedMotion } from 'react-native-reanimated'
 
 import type { DailyContent, WeeklyContent } from '../../types'
 import { useContentSchedulerStore, type ContentCharacterView } from '../../features/content-scheduler/store'
+import { resolveSelectedCharacter } from '../../features/character-selection/selected-character'
+import { useCharacterSelectionStore } from '../../features/character-selection/store'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { formatSyncedAt } from '../../features/schedule-sync/format'
 import { useScheduleSyncErrorToast } from '../../features/schedule-sync/use-sync-error-toast'
@@ -78,16 +80,16 @@ export function ContentScreen(): React.JSX.Element {
     characters: storeCharacters,
     error,
     trackedOcids,
-    selectedOcid,
     manualTrackedByOcid,
     loadTrackedOcids,
     refresh,
-    selectCharacter,
     // ADR-096 결정 1: 탭은 스토어 소유다 — 이 화면이 언마운트돼도 살아남고, 관리 페이지가
     // 같은 값을 읽어 보던 탭 그대로 열린다.
     activeTab,
     setActiveTab,
   } = useContentSchedulerStore()
+  // 선택은 화면·스토어가 아니라 **여기 한 벌**이다([[ADR-159]] 결정 1).
+  const { selectedOcid, select } = useCharacterSelectionStore()
   const { mode } = useTrackingModeStore()
   const navigation = useScreenNavigation()
   const topSafeAreaPx = useTopSafeAreaPx()
@@ -110,12 +112,9 @@ export function ContentScreen(): React.JSX.Element {
   // 캐릭터 관리에서 정한 저장 배열 순서다. core 를 안 고치는 이유는 `orderByTracked` 머리에 있다.
   const characters = orderByTracked(storeCharacters, trackedOcids ?? [])
 
-  const effectiveSelectedOcid =
-    selectedOcid !== null && characters.some((character) => character.ocid === selectedOcid)
-      ? selectedOcid
-      : (characters[0]?.ocid ?? null)
-
-  const selected = characters.find((character) => character.ocid === effectiveSelectedOcid) ?? null
+  // 화면 넷이 **같은 규칙**으로 고른다([[ADR-159]] 결정 3) — 선택만 합치고 폴백을 화면마다 두면
+  // «공유했는데 화면마다 다른 캐릭터» 가 다시 생긴다.
+  const selected = resolveSelectedCharacter(selectedOcid, characters)
 
   // ADR-083 결정 1: 캐릭터별 실패도 인라인 문단이 아니라 토스트다(보스 스케줄러와 동일한 배선).
   // syncSchedules가 캐릭터 단위 실패를 던지지 않고 결과에 실어 반환하므로 실패의 대부분이 위의
@@ -267,7 +266,7 @@ export function ContentScreen(): React.JSX.Element {
                 entries={railEntries}
                 selectedOcid={selected.ocid}
                 onSelect={(ocid) => {
-                  void selectCharacter(ocid)
+                  void select(ocid)
                 }}
               />
             )}

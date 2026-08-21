@@ -12,12 +12,8 @@ import {
 import { syncSchedules, toScheduleSyncError, type ScheduleSyncError } from '../schedule-sync/schedule-sync'
 import { hasSyncAttemptedThisRun } from '../schedule-sync/sync-run-state'
 import { isSyncFresh } from '../../lib/sync-freshness'
-import {
-  getLastSelectedCharacter,
-  getTrackedCharacterOcids,
-  setLastSelectedCharacter,
-  setTrackedCharacterOcids,
-} from '../../storage/character-selection'
+import { getTrackedCharacterOcids, setTrackedCharacterOcids } from '../../storage/character-selection'
+import { useCharacterSelectionStore } from '../character-selection/store'
 import { getBossPartySettings, setBossPartySize } from '../../storage/boss-party-settings'
 import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getCachedSchedulerState } from '../../storage/scheduler-cache'
@@ -75,7 +71,6 @@ export interface BossSchedulerState {
   characters: BossCharacterView[]
   error: ScheduleSyncError | null
   trackedOcids: string[] | null
-  selectedOcid: string | null
   // key: `${ocid}:${boss}:${difficulty}` (ADR-019 결정 3) — 맵에 키가 없으면 "미설정"(솔로)을
   // 뜻한다. 이 store는 없는 키를 1로 채워 넣지 않는다 — 그 해석은 UI의 책임이다.
   partySizes: Record<string, number>
@@ -99,7 +94,6 @@ export interface BossSchedulerStore extends BossSchedulerState {
     onProgress?: (completed: number, total: number) => void,
     options?: RefreshOptions,
   ): Promise<void>
-  selectCharacter(ocid: string): Promise<void>
   loadPartySizes(ocids: string[]): Promise<void>
   setPartySize(ocid: string, boss: string, difficulty: string, partySize: number): Promise<void>
   addManualBoss(ocid: string, contentName: string, difficulty: string): Promise<ManualBossAddResult>
@@ -125,7 +119,6 @@ const initialState: BossSchedulerState = {
   characters: [],
   error: null,
   trackedOcids: null,
-  selectedOcid: null,
   partySizes: {},
   manualTrackedByOcid: {},
   activeTab: 'weekly',
@@ -200,11 +193,13 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
   loadTrackedOcids() {
     // ADR-101 결정 4: 동시 호출은 한 회차로 합친다(위 `hydration` 주석).
     hydration ??= (async () => {
-      const [ocids, selectedOcid] = await Promise.all([
+      // 저장된 선택은 **선택 스토어가 읽는다**([[ADR-159]] 결정 2) — 이 스토어가 읽어 자기
+      // 상태에 넣던 것이 «두 벌» 의 출처였다. 둘을 나란히 태우는 것은 그대로다(왕복 한 번).
+      const [ocids] = await Promise.all([
         getTrackedCharacterOcids(),
-        getLastSelectedCharacter(),
+        useCharacterSelectionStore.getState().hydrate(),
       ])
-      set({ trackedOcids: ocids, selectedOcid })
+      set({ trackedOcids: ocids })
       if (ocids !== null) {
         // ADR-097 결정 4: 자동 진입 경로는 여기 하나뿐이라 게이트를 놓칠 자리가 생기지 않는다.
         await get().refresh(ocids, undefined, { auto: true })
@@ -416,11 +411,6 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
     })
 
     set({ status: 'loaded', characters: await sortByCachedLevel(characters), error: null, manualTrackedByOcid })
-  },
-
-  async selectCharacter(ocid) {
-    set({ selectedOcid: ocid })
-    await setLastSelectedCharacter(ocid)
   },
 
   setActiveTab(tab) {

@@ -1,4 +1,5 @@
 
+import { useCharacterSelectionStore } from '../../character-selection/store'
 import { waitFor } from '../../../__tests__/wait-for'
 import { matchBossContent } from '../../../lib/boss-matching'
 import type { CharacterScheduleSync } from '../../schedule-sync/schedule-sync'
@@ -17,7 +18,7 @@ jest.mock('../../../storage/character-selection', () => ({
   getLastSelectedCharacter: jest.fn(),
   setLastSelectedCharacter: jest.fn(),
 }))
-const { getTrackedCharacterOcids: getTrackedCharacterOcidsMock, setTrackedCharacterOcids: setTrackedCharacterOcidsMock, getLastSelectedCharacter: getLastSelectedCharacterMock, setLastSelectedCharacter: setLastSelectedCharacterMock } = jest.requireMock('../../../storage/character-selection') as Record<string, jest.Mock>
+const { getTrackedCharacterOcids: getTrackedCharacterOcidsMock, setTrackedCharacterOcids: setTrackedCharacterOcidsMock, getLastSelectedCharacter: getLastSelectedCharacterMock } = jest.requireMock('../../../storage/character-selection') as Record<string, jest.Mock>
 
 jest.mock('../../../storage/scheduler-cache', () => ({
   getCachedSchedulerState: jest.fn(),
@@ -113,12 +114,12 @@ function syncResult(overrides: Partial<CharacterScheduleSync> = {}): CharacterSc
 }
 
 beforeEach(() => {
+  useCharacterSelectionStore.setState({ selectedOcid: null })
   useBossSchedulerStore.setState({
     status: 'idle',
     characters: [],
     error: null,
     trackedOcids: null,
-    selectedOcid: null,
     partySizes: {},
     manualTrackedByOcid: {},
     activeTab: 'weekly',
@@ -1052,7 +1053,9 @@ describe('useBossSchedulerStore', () => {
       ])
     })
 
-    it('loadTrackedOcids는 getLastSelectedCharacter 반환값으로 selectedOcid를 초기화한다', async () => {
+    // [[ADR-159]] 결정 2 — 저장된 선택을 읽는 것은 이 스토어가 아니라 선택 스토어다. 부르는
+    // 자리(진입 경로)는 그대로라 여기서 그 위임을 지킨다.
+    it('loadTrackedOcids 는 선택 스토어를 하이드레이션한다', async () => {
       getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
       getLastSelectedCharacterMock.mockResolvedValue('ocid-1')
       syncSchedulesMock.mockResolvedValue([syncResult()])
@@ -1060,17 +1063,11 @@ describe('useBossSchedulerStore', () => {
       await useBossSchedulerStore.getState().loadTrackedOcids()
 
       expect(getLastSelectedCharacterMock).toHaveBeenCalledWith()
-      expect(useBossSchedulerStore.getState().selectedOcid).toBe('ocid-1')
+      expect(useCharacterSelectionStore.getState().selectedOcid).toBe('ocid-1')
     })
 
-    it('selectCharacter(ocid)는 selectedOcid 상태를 갱신하고 setLastSelectedCharacter를 호출한다', async () => {
-      setLastSelectedCharacterMock.mockResolvedValue(undefined)
-
-      await useBossSchedulerStore.getState().selectCharacter('ocid-9')
-
-      expect(useBossSchedulerStore.getState().selectedOcid).toBe('ocid-9')
-      expect(setLastSelectedCharacterMock).toHaveBeenCalledWith('ocid-9')
-    })
+    // `selectCharacter` 테스트는 여기 있었다 — 선택이 이 스토어를 떠나면서
+    // `features/character-selection/__tests__/store.spec.ts` 로 옮겨갔다([[ADR-159]] 결정 1).
   })
 
   describe('ADR-019: 파티 관리', () => {

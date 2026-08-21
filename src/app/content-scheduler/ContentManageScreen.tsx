@@ -29,6 +29,8 @@ import {
   WEEKLY_CATEGORY_ORDER,
 } from '../../lib/content-category'
 import { useContentSchedulerStore, type ContentTab } from '../../features/content-scheduler/store'
+import { resolveSelectedCharacter } from '../../features/character-selection/selected-character'
+import { useCharacterSelectionStore } from '../../features/character-selection/store'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { useToastStore } from '../../features/toast/store'
 
@@ -79,7 +81,6 @@ export function ContentManageScreen(): React.JSX.Element {
   const {
     status,
     characters,
-    selectedOcid,
     manualTrackedByOcid,
     loadTrackedOcids,
     addManualContent,
@@ -88,8 +89,9 @@ export function ContentManageScreen(): React.JSX.Element {
     activeTab: schedulerTab,
     // ADR-096 결정 4: 선택 캐릭터는 스케줄러와 공유한다 — 탭과 달리 "지금 누구를 보고 있는가"는
     // 두 화면이 갈라지면 안 되는 값이다.
-    selectCharacter,
   } = useContentSchedulerStore()
+  // 선택은 화면·스토어가 아니라 **여기 한 벌**이다([[ADR-159]] 결정 1).
+  const { selectedOcid, select } = useCharacterSelectionStore()
   const { mode } = useTrackingModeStore()
   const navigation = useScreenNavigation()
   // ADR-096 결정 2: 이어받는 것은 **진입 시점 한 번뿐**이고, 이 화면에서의 탭 전환은 스케줄러로
@@ -108,12 +110,9 @@ export function ContentManageScreen(): React.JSX.Element {
     if (mode !== 'manual') navigation.goBack()
   }, [mode, navigation])
 
-  const effectiveSelectedOcid =
-    selectedOcid !== null && characters.some((character) => character.ocid === selectedOcid)
-      ? selectedOcid
-      : (characters[0]?.ocid ?? null)
-
-  const selected = characters.find((character) => character.ocid === effectiveSelectedOcid) ?? null
+  // 화면 넷이 **같은 규칙**으로 고른다([[ADR-159]] 결정 3) — 선택만 합치고 폴백을 화면마다 두면
+  // «공유했는데 화면마다 다른 캐릭터» 가 다시 생긴다.
+  const selected = resolveSelectedCharacter(selectedOcid, characters)
 
   // [[ADR-142]] 정정 8: 링 없는 초상화 레일 — 이름과 레벨만 싣는다(`rings: []`).
   const railEntries: CharacterRailEntry[] = characters.map((character) => ({
@@ -180,7 +179,7 @@ export function ContentManageScreen(): React.JSX.Element {
               entries={railEntries}
               selectedOcid={selected.ocid}
               onSelect={(ocid) => {
-                void selectCharacter(ocid)
+                void select(ocid)
               }}
             />
           )}

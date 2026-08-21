@@ -30,6 +30,8 @@ import { Pressable, View } from 'react-native'
 
 import weeklyBossesData from '../../data/weekly-bosses.json'
 import { partySizeKey, useBossSchedulerStore } from '../../features/boss-scheduler/store'
+import { resolveSelectedCharacter } from '../../features/character-selection/selected-character'
+import { useCharacterSelectionStore } from '../../features/character-selection/store'
 import { useToastStore } from '../../features/toast/store'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { getMaxPartySize } from '../../lib/boss-crystal-prices'
@@ -99,7 +101,6 @@ export function BossManageScreen(): React.JSX.Element {
   const {
     status,
     characters,
-    selectedOcid,
     partySizes,
     manualTrackedByOcid,
     loadTrackedOcids,
@@ -112,8 +113,9 @@ export function BossManageScreen(): React.JSX.Element {
     activeTab,
     setActiveTab,
     // [[ADR-096]] 결정 4: 선택 캐릭터는 스케줄러와 공유한다 — 두 화면이 갈라지면 안 된다.
-    selectCharacter,
   } = useBossSchedulerStore()
+  // 선택은 화면·스토어가 아니라 **여기 한 벌**이다([[ADR-159]] 결정 1).
+  const { selectedOcid, select } = useCharacterSelectionStore()
   const { mode } = useTrackingModeStore()
   // [[ADR-145]] 결정 2: 위 `activeTab` 이 **로컬 state 가 아니라 스토어 값 그대로**인 것이 결정이다.
   // [[ADR-096]] 결정 2의 «진입 시점 한 번 승계» 는 진입이 사건일 때만 성립하는데, 이 화면이 탭이
@@ -134,12 +136,9 @@ export function BossManageScreen(): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const effectiveSelectedOcid =
-    selectedOcid !== null && characters.some((character) => character.ocid === selectedOcid)
-      ? selectedOcid
-      : (characters[0]?.ocid ?? null)
-
-  const selected = characters.find((character) => character.ocid === effectiveSelectedOcid) ?? null
+  // 화면 넷이 **같은 규칙**으로 고른다([[ADR-159]] 결정 3) — 선택만 합치고 폴백을 화면마다 두면
+  // «공유했는데 화면마다 다른 캐릭터» 가 다시 생긴다.
+  const selected = resolveSelectedCharacter(selectedOcid, characters)
 
   // [[ADR-142]] 정정 8: 링 없는 초상화 레일 — 이름과 레벨만 싣는다(`rings: []`).
   const railEntries: CharacterRailEntry[] = characters.map((character) => ({
@@ -299,7 +298,7 @@ export function BossManageScreen(): React.JSX.Element {
               entries={railEntries}
               selectedOcid={selected.ocid}
               onSelect={(ocid) => {
-                void selectCharacter(ocid)
+                void select(ocid)
               }}
             />
           )}
