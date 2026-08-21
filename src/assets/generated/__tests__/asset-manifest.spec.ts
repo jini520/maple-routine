@@ -13,8 +13,6 @@
 
 import { readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-import { describe, expect, it } from 'vitest'
 
 import { ASSET_GROUPS, type AssetGroup } from '../../asset-groups'
 import { BOSS_PORTRAIT_ASSETS } from '../bosses'
@@ -25,7 +23,7 @@ import { DAILY_QUEST_BACKGROUND_ASSETS } from '../maps'
 import { THEME_BACKGROUND_ASSETS } from '../themes'
 import { WORLD_EMBLEM_ASSETS } from '../worlds'
 
-const ASSETS_DIR = fileURLToPath(new URL('../../', import.meta.url))
+const ASSETS_DIR = __dirname + '/../../'
 
 /** 표의 `file` → 실제로 import 한 생성물. 여기 빠뜨리면 아래 첫 테스트가 잡는다. */
 const GENERATED: Record<string, Record<string, unknown>> = {
@@ -35,8 +33,7 @@ const GENERATED: Record<string, Record<string, unknown>> = {
   themes: THEME_BACKGROUND_ASSETS,
   maps: DAILY_QUEST_BACKGROUND_ASSETS,
   'map-icons': DAILY_QUEST_ICON_ASSETS,
-  'drop-effect': DROP_EFFECT_ASSETS,
-}
+  'drop-effect': DROP_EFFECT_ASSETS }
 
 /** 디렉터리 하나에서 대상 파일 이름을 읽는다(하위 디렉터리는 안 본다 — 생성기와 같은 규칙). */
 function filesIn(dir: string, extensions: string[]): string[] {

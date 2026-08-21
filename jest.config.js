@@ -41,10 +41,10 @@ const NEGATIVE_LOOKAHEAD = '(?!('
 
 module.exports = {
   preset: 'jest-expo',
-  testMatch: ['**/*.test.[jt]s?(x)'],
-  // `*.spec.*` 는 **vitest 의 몫**이다([[ADR-155]] 결정 6 — 경계는 경로가 아니라 확장자다.
-  // `vite.config.ts` 에 그 이유가 적혀 있다). 위 `testMatch` 가 `*.test.*` 만 잡으므로 그 규칙 하나로
-  // 이미 갈리고, 여기서는 기본값만 유지한다.
+  testMatch: ['**/*.test.[jt]s?(x)', '**/*.spec.[jt]s?(x)'],
+  // 러너는 **jest 하나**다([[ADR-157]]). `*.spec.*` 는 vitest 가 돌던 것들인데 그쪽을 걷으면서
+  // 여기로 들어왔다 — 확장자를 남긴 이유는 «RN 을 렌더하지 않는 순수 로직» 이라는 구분이 여전히
+  // 쓸모 있어서다(그 파일들은 node 환경에서 돌아 빠르다).
   // reanimated 4 가 `react-native-worklets` 위에 서 있고 그 패키지의 `.native.*` 변형이 jest 에서
   // 즉시 죽는다 — 프리셋의 해석기를 대체하는 것이 아니라 **겹친다**(`jest.resolver.js`).
   resolver: '<rootDir>/jest.resolver.js',

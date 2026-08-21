@@ -115,11 +115,12 @@ Feature 단위 구조. 각 `features/*` 폴더가 그 기능의 상태·로직�
   - **온보딩 완료 상태에서만 돈다** — `syncSchedules` 가 API 키·계정 없이 던진다.
 
 ## 네이티브 연동 개요 ([[ADR-001]])
-- **알림**([[ADR-146]], 설계 완료·구현 전): 바이너리엔 **능력 셋**(로컬 알림 표시 `notifee` / 원격 푸시 FCM / 백그라운드 태스크)만 들어가고, **무엇을 언제 왜 띄우는가는 네이티브에 한 줄도 없다**(전부 JS = OTA). 딸림 — 백그라운드 태스크·푸시 백그라운드·알림 탭 **핸들러 셋은 모듈 최상위에 «등록» 돼 있어야** OS 가 죽은 앱을 깨울 수 있어 그 한 줄만 바이너리에 박힌다. 웹뷰 앱은 `@capacitor/local-notifications`(`NotificationsPort` 구현) 그대로이고 새 능력 둘은 **RN 전용**이다.
+- **알림**([[ADR-146]], 설계 완료·구현 전): 바이너리엔 **능력 셋**(로컬 알림 표시 `@notifee/react-native` / 원격 푸시 FCM / 백그라운드 태스크)만 들어가고, **무엇을 언제 왜 띄우는가는 네이티브에 한 줄도 없다**(전부 JS = OTA). 딸림 — 백그라운드 태스크·푸시 백그라운드·알림 탭 **핸들러 셋은 모듈 최상위에 «등록» 돼 있어야** OS 가 죽은 앱을 깨울 수 있어 그 한 줄만 바이너리에 박힌다.
 - **커스텀 플러그인**(Swift/Kotlin): 사냥 타이머 상시 알림(Android Foreground Service + Chronometer / iOS Live Activity) + 주기 사운드([[ADR-005]]) → [features/hunting-timer.md](../features/hunting-timer.md).
-- `@capacitor-community/sqlite`(+ 웹 테스트용 `jeep-sqlite`): 보스 수익 기록 등([[ADR-003]]).
-- `@capgo/capacitor-updater`: Live Update([[ADR-022]]) → [features/live-update.md](../features/live-update.md).
-- `@capacitor/network`: 셀룰러 감지([[ADR-027]]).
+- **로컬 Expo 모듈** `modules/` 셋: `capacitor-storage`(기존 사용자 저장소를 그대로 연다 — `migration/data.md`) · `app-background`(앱을 백그라운드로) · `app-system-bars`(시스템 바).
+- `@op-engineering/op-sqlite`: 보스 수익 기록 등([[ADR-003]]).
+- `expo-updates`: Live Update([[ADR-137]]) → [features/live-update.md](../features/live-update.md).
+- **셀룰러 감지는 없다** — RN 에 내장 API 가 없고 `@react-native-community/netinfo` 는 새 네이티브 의존이라, `getNetworkType()` 이 `'unknown'` 을 돌리고 호출부가 경고를 생략한다([[ADR-027]] 결정 6 의 폴백, `rn-live-update.ts`).
 - 플랫폼별 백그라운드 정책 차이(특히 iOS Live Activity 16.1+ 제약)는 `native/` 레이어에서 흡수해 `features/*` 가 플랫폼 분기를 모르게 한다.
 
 ## 번들·코드 분할 ([[ADR-092]])
@@ -135,6 +136,10 @@ Feature 단위 구조. 각 `features/*` 폴더가 그 기능의 상태·로직�
 - 검증은 추론이 아니라 **산출물로** 한다 — `npm run build` 실측 + `dist/assets/*.js` grep. 자산 최적화는 **코드를 안 바꾸므로 조용히 깨진다**(슬러그가 안 풀려도 폴백이 뜰 뿐 에러가 없다) — `lib/__tests__/asset-slug-coverage.test.ts` 가 선언된 슬러그 전수를 해석해 그 사고를 막는다.
 
 ## 테스트 전략
+- **러너는 jest 하나다**([[ADR-157]]) — `npm test` 가 261스위트를 한 번에 돈다. 파일 이름 둘은 러너가 아니라 **성질**을 말한다: `*.spec.ts(x)` 는 RN 을 렌더하지 않는 순수 로직·데이터·저장소, `*.test.ts(x)` 는 RN 을 렌더하거나 RN 모듈을 목하는 것.
+- **목 팩토리는 멱등이어야 한다**([[ADR-157]] 결정 3) — `jest.resetModules()` 뒤 팩토리가 다시 불릴 때 새 목을 만들면 테스트가 붙들고 있던 인스턴스와 조용히 갈라진다. `jest.requireMock` 으로 꺼내 쓰거나, `mock` 접두 변수를 팩토리 안에서 «한 번만» 채운다.
+- **vitest 에 있고 jest 에 없던 것 셋은 `jest.setup.js` 가 만든다** — `expect(값, '메시지')`(두 번째 인자를 실패 메시지에 붙인다) · `toHaveBeenCalledOnce` · `toHaveBeenCalledExactlyOnceWith`.
+- **렌더 트리 스냅샷을 쓰지 않는다**([[ADR-156]]) — 스냅샷은 «달라졌다» 만 말하고 «무엇이 맞는지» 는 안 말한다. 맞는 값이 정해져 있으면 **그 값을 단언한다**([[ADR-064]] 결정 11 이 먼저 고른 방법).
 - 신규 기능은 **테스트 먼저(TDD)** 작성 후 통과 구현.
 - `lib/reset-clock`: KST 자정/목요일/월·연 경계 단위 테스트(기기 타임존 무관 KST 계산 검증).
 - `nexon/schedule` 파싱/정규화: 실제 응답 fixture — 문자열 flag 파싱, 영↔한 난이도, 양방향 공백 정규화, `apiAlias`, `bossDaily` 필터, 미매핑 폴백.

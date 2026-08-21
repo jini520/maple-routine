@@ -1,7 +1,6 @@
 // 지금까지 이 판정은 `BossScreen` 을 렌더해야만 검증됐다(지역 함수였다) — 화면으로 보면 «카드가
 // 몇 장인가» 까지만 알 수 있고 «어느 규칙이 그 장 수를 만들었는가» 는 못 본다. 꺼낸 김에 입출력으로
 // 직접 못 박는다([[ADR-147]] 결정 8).
-import { describe, expect, it } from 'vitest'
 
 import type { BossCharacterView } from '../store'
 import { displayedBosses } from '../displayed-bosses'

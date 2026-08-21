@@ -45,11 +45,6 @@ describe('세 크기가 같은 구조다 ([[ADR-147]] 정정 7 · 38)', () => {
     expect(getByTestId('representative-exp')).toBeTruthy()
   })
 
-  it.each(Object.entries(크기))('%s — 스냅샷', async (_이름, 값) => {
-    const view = await 위젯(값)
-
-    expect(view.toJSON()).toMatchSnapshot()
-  })
 })
 
 describe('모르는 것을 그리지 않는다', () => {

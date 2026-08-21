@@ -1,15 +1,12 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { BossProfitRecord } from '../boss-profit'
 
-const { runMock, queryMock, getBossProfitDbMock } = vi.hoisted(() => ({
-  runMock: vi.fn(),
-  queryMock: vi.fn(),
-  getBossProfitDbMock: vi.fn(),
+jest.mock('../sqlite/db', () => ({
+  getBossProfitDb: jest.fn(),
 }))
+const { getBossProfitDb: getBossProfitDbMock } = jest.requireMock('../sqlite/db') as Record<string, jest.Mock>
 
-vi.mock('../sqlite/db', () => ({
-  getBossProfitDb: getBossProfitDbMock,
-}))
+const runMock = jest.fn()
+const queryMock = jest.fn()
 
 const fakeDb = { run: runMock, query: queryMock }
 
@@ -34,7 +31,7 @@ const sampleRecord: BossProfitRecord = {
 
 describe('upsertBossProfitRecord', () => {
   it('동일 키로 두 번 호출하면 ON CONFLICT DO UPDATE로 최신 값을 덮어쓴다', async () => {
-    const { upsertBossProfitRecord } = await import('../boss-profit')
+    const { upsertBossProfitRecord } = require('../boss-profit') as typeof import('../boss-profit')
 
     await upsertBossProfitRecord(sampleRecord)
     await upsertBossProfitRecord({ ...sampleRecord, partySize: 3, payoutMeso: 333_333 })
@@ -75,7 +72,7 @@ describe('upsertBossProfitRecord', () => {
 
 describe('getBossProfitRecords', () => {
   it('ocids가 빈 배열이면 DB를 호출하지 않고 빈 배열을 반환한다', async () => {
-    const { getBossProfitRecords } = await import('../boss-profit')
+    const { getBossProfitRecords } = require('../boss-profit') as typeof import('../boss-profit')
 
     await expect(getBossProfitRecords([], ['2026-07'])).resolves.toEqual([])
     expect(getBossProfitDbMock).not.toHaveBeenCalled()
@@ -83,7 +80,7 @@ describe('getBossProfitRecords', () => {
   })
 
   it('periodKeys가 빈 배열이면 DB를 호출하지 않고 빈 배열을 반환한다', async () => {
-    const { getBossProfitRecords } = await import('../boss-profit')
+    const { getBossProfitRecords } = require('../boss-profit') as typeof import('../boss-profit')
 
     await expect(getBossProfitRecords(['ocid-1'], [])).resolves.toEqual([])
     expect(getBossProfitDbMock).not.toHaveBeenCalled()
@@ -106,7 +103,7 @@ describe('getBossProfitRecords', () => {
         },
       ],
     })
-    const { getBossProfitRecords } = await import('../boss-profit')
+    const { getBossProfitRecords } = require('../boss-profit') as typeof import('../boss-profit')
 
     const result = await getBossProfitRecords(['ocid-1', 'ocid-2'], ['2026-07'])
 
@@ -121,7 +118,7 @@ describe('getBossProfitRecords', () => {
 
   it('조회 결과가 없으면 빈 배열을 반환한다', async () => {
     queryMock.mockResolvedValue({ values: undefined })
-    const { getBossProfitRecords } = await import('../boss-profit')
+    const { getBossProfitRecords } = require('../boss-profit') as typeof import('../boss-profit')
 
     await expect(getBossProfitRecords(['ocid-1'], ['2026-07'])).resolves.toEqual([])
   })
@@ -131,7 +128,7 @@ describe('getBossProfitRecords', () => {
 // 리프가 모든 과거 주의 귀속을 소급 이동시킨다(분모 90 x 월드 수까지 바뀐다).
 describe('world 스냅샷', () => {
   it('upsert가 world를 함께 쓰고, 아는 값이 없을 때는 기존 스냅샷을 지우지 않는다', async () => {
-    const { upsertBossProfitRecord } = await import('../boss-profit')
+    const { upsertBossProfitRecord } = require('../boss-profit') as typeof import('../boss-profit')
 
     await upsertBossProfitRecord({ ...sampleRecord, world: '엘리시움' })
 
@@ -143,7 +140,7 @@ describe('world 스냅샷', () => {
   })
 
   it('컬럼 도입 전 기록(world 없음)은 null로 정규화해 읽는다', async () => {
-    const { getBossProfitRecords } = await import('../boss-profit')
+    const { getBossProfitRecords } = require('../boss-profit') as typeof import('../boss-profit')
     queryMock.mockResolvedValue({
       values: [
         {
@@ -167,7 +164,7 @@ describe('world 스냅샷', () => {
   })
 
   it('fillMissingRecordWorlds는 비어 있는 기록만 채운다 — 멱등이라 리프 후에도 과거를 덮지 않는다', async () => {
-    const { fillMissingRecordWorlds } = await import('../boss-profit')
+    const { fillMissingRecordWorlds } = require('../boss-profit') as typeof import('../boss-profit')
 
     await fillMissingRecordWorlds(new Map([['ocid-1', '엘리시움'], ['ocid-2', '베라']]))
 
@@ -179,7 +176,7 @@ describe('world 스냅샷', () => {
   })
 
   it('채울 월드가 없으면 DB를 건드리지 않는다', async () => {
-    const { fillMissingRecordWorlds } = await import('../boss-profit')
+    const { fillMissingRecordWorlds } = require('../boss-profit') as typeof import('../boss-profit')
 
     await fillMissingRecordWorlds(new Map())
 
@@ -191,14 +188,14 @@ describe('world 스냅샷', () => {
 // 수익 기록 행의 존재가 곧 확정이므로 키만 전 기간 조회한다.
 describe('getAllBossProfitRecordKeys', () => {
   it('ocids가 비면 DB를 호출하지 않고 빈 배열을 반환한다', async () => {
-    const { getAllBossProfitRecordKeys } = await import('../boss-profit')
+    const { getAllBossProfitRecordKeys } = require('../boss-profit') as typeof import('../boss-profit')
 
     await expect(getAllBossProfitRecordKeys([])).resolves.toEqual([])
     expect(getBossProfitDbMock).not.toHaveBeenCalled()
   })
 
   it('period_key 조건 없이 키 컬럼만 조회한다 — 전체 행을 읽을 필요가 없다', async () => {
-    const { getAllBossProfitRecordKeys } = await import('../boss-profit')
+    const { getAllBossProfitRecordKeys } = require('../boss-profit') as typeof import('../boss-profit')
 
     await getAllBossProfitRecordKeys(['ocid-1', 'ocid-2'])
 
@@ -213,7 +210,7 @@ describe('getAllBossProfitRecordKeys', () => {
     queryMock.mockResolvedValue({
       values: [{ ocid: 'ocid-1', boss: '스우', difficulty: '하드', period_key: '2026-07-09' }],
     })
-    const { getAllBossProfitRecordKeys } = await import('../boss-profit')
+    const { getAllBossProfitRecordKeys } = require('../boss-profit') as typeof import('../boss-profit')
 
     await expect(getAllBossProfitRecordKeys(['ocid-1'])).resolves.toEqual([
       { ocid: 'ocid-1', boss: '스우', difficulty: '하드', periodKey: '2026-07-09' },
@@ -222,7 +219,7 @@ describe('getAllBossProfitRecordKeys', () => {
 
   it('조회 결과가 없으면 빈 배열을 반환한다', async () => {
     queryMock.mockResolvedValue({ values: undefined })
-    const { getAllBossProfitRecordKeys } = await import('../boss-profit')
+    const { getAllBossProfitRecordKeys } = require('../boss-profit') as typeof import('../boss-profit')
 
     await expect(getAllBossProfitRecordKeys(['ocid-1'])).resolves.toEqual([])
   })

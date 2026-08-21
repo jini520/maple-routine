@@ -53,6 +53,21 @@ export default tseslint.config(
       ],
     },
   },
+  // 테스트는 **jest 의 CJS 관례**를 따른다([[ADR-157]]).
+  //
+  // - `require()` — `jest.resetModules()` 뒤에 모듈을 다시 집는 방법이 이것뿐이다(동적 `import()` 는
+  //   jest 의 CJS VM 에서 못 쓴다). 타입은 `as typeof import('…')` 로 그대로 붙든다.
+  // - `var` — 목 팩토리는 **import 보다 먼저** 끌어올려지므로, 팩토리가 참조하는 값은 `const` 면
+  //   TDZ 에 걸린다. `var` 로 올려 두고 팩토리가 처음 불릴 때 채운다.
+  //
+  // 둘 다 제품 코드에서는 여전히 금지다 — 이 완화는 테스트 파일에만 건다.
+  {
+    files: ['**/__tests__/**/*.{ts,tsx}', '**/*.spec.{ts,tsx}', '**/*.test.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
+      'no-var': 'off',
+    },
+  },
   // 예외 둘. ① 클램프를 실제로 거는 자리 ② 테스트 — 픽스처가 그리는 글자는 제품 UI 가 아니고,
   // 오히려 «클램프 없는 원본» 과 대조해야 할 때가 있다(정책 테스트도 `__tests__` 를 훑지 않는다).
   {

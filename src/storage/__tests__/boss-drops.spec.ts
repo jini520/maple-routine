@@ -1,15 +1,12 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { RecordedDrop } from '../../types/drops'
 
-const { runMock, queryMock, getBossProfitDbMock } = vi.hoisted(() => ({
-  runMock: vi.fn(),
-  queryMock: vi.fn(),
-  getBossProfitDbMock: vi.fn(),
+jest.mock('../sqlite/db', () => ({
+  getBossProfitDb: jest.fn(),
 }))
+const { getBossProfitDb: getBossProfitDbMock } = jest.requireMock('../sqlite/db') as Record<string, jest.Mock>
 
-vi.mock('../sqlite/db', () => ({
-  getBossProfitDb: getBossProfitDbMock,
-}))
+const runMock = jest.fn()
+const queryMock = jest.fn()
 
 const fakeDb = { run: runMock, query: queryMock }
 
@@ -32,7 +29,7 @@ const drops: RecordedDrop[] = [
 
 describe('replaceBossDropRecords', () => {
   it('기존 행을 DELETE한 뒤 drop_index 0..n으로 다시 INSERT한다', async () => {
-    const { replaceBossDropRecords } = await import('../boss-drops')
+    const { replaceBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
 
     await replaceBossDropRecords(
       'ocid-1',
@@ -91,7 +88,7 @@ describe('replaceBossDropRecords', () => {
   })
 
   it('드롭이 비면 DELETE만 하고 INSERT하지 않는다', async () => {
-    const { replaceBossDropRecords } = await import('../boss-drops')
+    const { replaceBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
 
     await replaceBossDropRecords('ocid-1', '스우', '하드', '2026-W30', [], '2026-07-26T00:00:00.000Z')
 
@@ -102,7 +99,7 @@ describe('replaceBossDropRecords', () => {
 
 describe('getBossDropRecords', () => {
   it('ocids가 비면 DB를 호출하지 않고 빈 배열을 반환한다', async () => {
-    const { getBossDropRecords } = await import('../boss-drops')
+    const { getBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
 
     await expect(getBossDropRecords([], ['2026-W30'])).resolves.toEqual([])
     expect(getBossProfitDbMock).not.toHaveBeenCalled()
@@ -110,7 +107,7 @@ describe('getBossDropRecords', () => {
   })
 
   it('periodKeys가 비면 DB를 호출하지 않고 빈 배열을 반환한다', async () => {
-    const { getBossDropRecords } = await import('../boss-drops')
+    const { getBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
 
     await expect(getBossDropRecords(['ocid-1'], [])).resolves.toEqual([])
     expect(getBossProfitDbMock).not.toHaveBeenCalled()
@@ -135,7 +132,7 @@ describe('getBossDropRecords', () => {
         },
       ],
     })
-    const { getBossDropRecords } = await import('../boss-drops')
+    const { getBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
 
     const result = await getBossDropRecords(['ocid-1', 'ocid-2'], ['2026-W30'])
 
@@ -166,7 +163,7 @@ describe('getBossDropRecords', () => {
 
   it('조회 결과가 없으면 빈 배열을 반환한다', async () => {
     queryMock.mockResolvedValue({ values: undefined })
-    const { getBossDropRecords } = await import('../boss-drops')
+    const { getBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
 
     await expect(getBossDropRecords(['ocid-1'], ['2026-W30'])).resolves.toEqual([])
   })
@@ -175,7 +172,7 @@ describe('getBossDropRecords', () => {
 // ADR-071 결정 1: 드롭 히스토리는 히스토리 전용 테이블이 아니라 이 테이블을 전 기간 조회한다.
 describe('getAllBossDropRecords', () => {
   it('ocids가 비면 DB를 호출하지 않고 빈 배열을 반환한다', async () => {
-    const { getAllBossDropRecords } = await import('../boss-drops')
+    const { getAllBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
 
     await expect(getAllBossDropRecords([])).resolves.toEqual([])
     expect(getBossProfitDbMock).not.toHaveBeenCalled()
@@ -183,7 +180,7 @@ describe('getAllBossDropRecords', () => {
   })
 
   it('period_key 조건 없이 ocid만 걸어 조회한다 — "전 기간"을 볼 수단이다', async () => {
-    const { getAllBossDropRecords } = await import('../boss-drops')
+    const { getAllBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
 
     await getAllBossDropRecords(['ocid-1', 'ocid-2'])
 
@@ -194,7 +191,7 @@ describe('getAllBossDropRecords', () => {
   })
 
   it('period_key DESC, drop_index 순으로 정렬한다 — recorded_at은 그룹 재기록으로 뒤집힌다 (ADR-071 결정 3)', async () => {
-    const { getAllBossDropRecords } = await import('../boss-drops')
+    const { getAllBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
 
     await getAllBossDropRecords(['ocid-1'])
 
@@ -223,7 +220,7 @@ describe('getAllBossDropRecords', () => {
         },
       ],
     })
-    const { getAllBossDropRecords } = await import('../boss-drops')
+    const { getAllBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
 
     await expect(getAllBossDropRecords(['ocid-1'])).resolves.toEqual([
       {
@@ -248,7 +245,7 @@ describe('getAllBossDropRecords', () => {
 
   it('조회 결과가 없으면 빈 배열을 반환한다', async () => {
     queryMock.mockResolvedValue({ values: undefined })
-    const { getAllBossDropRecords } = await import('../boss-drops')
+    const { getAllBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
 
     await expect(getAllBossDropRecords(['ocid-1'])).resolves.toEqual([])
   })
@@ -258,7 +255,7 @@ describe('getAllBossDropRecords', () => {
 // 컬럼을 알면 값이 조용히 사라진다.
 describe('가격 컬럼 왕복 (ADR-124)', () => {
   it('INSERT 에 price_state·price_meso·price_share 를 함께 싣는다', async () => {
-    const { replaceBossDropRecords } = await import('../boss-drops')
+    const { replaceBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
 
     await replaceBossDropRecords(
       'ocid-1',
@@ -285,7 +282,7 @@ describe('가격 컬럼 왕복 (ADR-124)', () => {
   })
 
   it('가격이 없는 드롭은 세 컬럼을 NULL 로 넣는다 — 0 이 아니다', async () => {
-    const { replaceBossDropRecords } = await import('../boss-drops')
+    const { replaceBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
 
     await replaceBossDropRecords(
       'ocid-1',
@@ -323,7 +320,7 @@ describe('가격 컬럼 왕복 (ADR-124)', () => {
         },
       ],
     })
-    const { getBossDropRecords } = await import('../boss-drops')
+    const { getBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
 
     const [record] = await getBossDropRecords(['ocid-1'], ['2026-08-06'])
 

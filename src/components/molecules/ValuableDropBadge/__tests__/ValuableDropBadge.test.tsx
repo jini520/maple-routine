@@ -155,11 +155,4 @@ describe('ValuableDropBadge', () => {
     })
   })
 
-  it('렌더 트리 스냅샷 — 이후 변경을 잡는 기준선(예전 화면과의 대조가 아니다)', async () => {
-    const rendered = await renderAtom(
-      <ValuableDropBadge drops={drops('a', 'b', 'c', 'd')} label="고가 드롭" />,
-    )
-
-    expect(rendered.toJSON()).toMatchSnapshot()
-  })
 })

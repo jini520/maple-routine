@@ -1,14 +1,13 @@
-// @vitest-environment jsdom
+/** @jest-environment jsdom */
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
 import type { CharacterBasicProfile, MapleAccount } from '../../../types'
 
-const { getAuthConfigMock } = vi.hoisted(() => ({ getAuthConfigMock: vi.fn() }))
-vi.mock('../../../storage/api-key', () => ({ getAuthConfig: getAuthConfigMock }))
+jest.mock('../../../storage/api-key', () => ({ getAuthConfig: jest.fn() }))
+const { getAuthConfig: getAuthConfigMock } = jest.requireMock('../../../storage/api-key') as Record<string, jest.Mock>
 
-const { fetchCharacterBasicMock } = vi.hoisted(() => ({ fetchCharacterBasicMock: vi.fn() }))
-vi.mock('../../../nexon/character', () => ({ fetchCharacterBasic: fetchCharacterBasicMock }))
+jest.mock('../../../nexon/character', () => ({ fetchCharacterBasic: jest.fn() }))
+const { fetchCharacterBasic: fetchCharacterBasicMock } = jest.requireMock('../../../nexon/character') as Record<string, jest.Mock>
 
 // 캐시는 목이 아니라 **실제 어댑터**를 쓴다 — ADR-113 결정 2가 정한 것은 "쓴다"가 아니라
 // "**그 캐릭터가 속한 계정의 accountId 로** 쓴다"이고, 계정별 인덱스(ADR-086 결정 9)를 통과해야
@@ -60,7 +59,7 @@ beforeEach(async () => {
 })
 
 afterEach(() => {
-  vi.clearAllMocks()
+  jest.clearAllMocks()
 })
 
 describe('useAccountProbes', () => {
@@ -248,7 +247,7 @@ describe('useAccountProbes', () => {
 
   // ADR-113 결정 5: 시작 시점에 총량을 알 수 있어 진행률을 정확히 그릴 수 있다.
   describe('진행률 (ADR-113 결정 5)', () => {
-    it('total 은 전 계정 캐릭터 수의 합이고 첫 렌더부터 정확하다', () => {
+    it('total 은 전 계정 캐릭터 수의 합이고 첫 렌더부터 정확하다', async () => {
       fetchCharacterBasicMock.mockImplementation(() => new Promise(() => {}))
 
       const { result } = renderHook(() => useAccountProbes(twoAccounts))

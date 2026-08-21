@@ -1,17 +1,13 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
 import { NexonBadRequestError, NexonNetworkError } from '../../../nexon/errors'
 import { clearScheduleProbeLedger, getScheduleProbeLedger } from '../../../storage/schedule-probe-ledger'
 import type { SchedulerCharacterState } from '../../../types'
 import { resolveCharacterEligibility } from '../character-eligibility'
 
-const { fetchSchedulerCharacterStateMock } = vi.hoisted(() => ({
-  fetchSchedulerCharacterStateMock: vi.fn(),
+jest.mock('../../../nexon/schedule', () => ({
+  fetchSchedulerCharacterState: jest.fn(),
 }))
-
-vi.mock('../../../nexon/schedule', () => ({
-  fetchSchedulerCharacterState: fetchSchedulerCharacterStateMock,
-}))
+const { fetchSchedulerCharacterState: fetchSchedulerCharacterStateMock } = jest.requireMock('../../../nexon/schedule') as Record<string, jest.Mock>
 
 // KST 2026-08-03 12:00 → 백필 날짜는 2026-08-02 … 2026-07-21 (13일)
 const NOW = new Date('2026-08-03T03:00:00.000Z')

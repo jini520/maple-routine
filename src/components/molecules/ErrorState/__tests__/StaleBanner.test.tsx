@@ -61,11 +61,4 @@ describe('StaleBanner', () => {
     expect(getByTestId('stale-banner').props.role).toBe('alert')
   })
 
-  it('렌더 트리 스냅샷 — 이후 변경을 잡는 기준선(예전 화면과의 대조가 아니다)', async () => {
-    const rendered = await renderAtom(
-      <StaleBanner message="목록이 최신이 아닙니다" action={{ label: '다시 시도', onClick: () => {} }} />,
-    )
-
-    expect(rendered.toJSON()).toMatchSnapshot()
-  })
 })

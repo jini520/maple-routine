@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest'
 import { anchorPopover } from '../popover-anchor'
 
 // ADR-068 결정 3 정정 3: 팝오버는 트리거(실패 아이콘) x에 맞춰 열려야 하는데, 그 아이콘은 금액 위에

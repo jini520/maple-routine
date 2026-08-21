@@ -3,7 +3,6 @@
 // 그 전에는 export 된 것이 dropRowKey 하나뿐이라, 89개 스토어 테스트가 전부 스토어를 거쳐
 // 간접 검증했다. 정렬처럼 "입력을 어떻게 주느냐"가 핵심인 로직은 그 방식으로는 경우를
 // 만들기가 번거로워, 실제로 결정적 정렬(ADR-036·#28)에 직접 붙은 테스트가 없었다.
-import { describe, expect, it } from 'vitest'
 import { filterRowsForTab, matchesRowKey, sortRowsByOcidOrder, sumRowsPayout, toRecordedDrop } from '../rows'
 import type { BossProfitRow } from '../store'
 

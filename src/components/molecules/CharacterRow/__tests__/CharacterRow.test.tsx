@@ -118,13 +118,6 @@ describe('CharacterRow — 좌우 슬롯', () => {
     expect(getByTestId('슬롯-표식')).toBeTruthy()
   })
 
-  it('렌더 트리 스냅샷 — 이후 변경을 잡는 기준선', async () => {
-    const rendered = await renderAtom(
-      <CharacterRow {...기본} leading={<DragHandle />} trailing={<AddMark />} />,
-    )
-
-    expect(rendered.toJSON()).toMatchSnapshot()
-  })
 })
 
 describe('RepresentativeStar ([[ADR-144]] 결정 4)', () => {

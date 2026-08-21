@@ -1,4 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { syncSchedules, type CharacterScheduleSync } from '../../schedule-sync/schedule-sync'
 import { setManualTrackedContent } from '../../../storage/manual-tracked-content'
 import type {
@@ -10,12 +9,12 @@ import type {
 } from '../../../types'
 import { seedManualTrackedContent } from '../seed'
 
-vi.mock('../../schedule-sync/schedule-sync', () => ({
-  syncSchedules: vi.fn(),
+jest.mock('../../schedule-sync/schedule-sync', () => ({
+  syncSchedules: jest.fn(),
 }))
 
-vi.mock('../../../storage/manual-tracked-content', () => ({
-  setManualTrackedContent: vi.fn(),
+jest.mock('../../../storage/manual-tracked-content', () => ({
+  setManualTrackedContent: jest.fn(),
 }))
 
 const OCID = 'ocid-1'
@@ -62,14 +61,14 @@ function buildSyncResult(state: SchedulerCharacterState | null, ocid = OCID): Ch
 }
 
 beforeEach(() => {
-  vi.mocked(syncSchedules).mockReset()
-  vi.mocked(setManualTrackedContent).mockReset()
-  vi.mocked(setManualTrackedContent).mockResolvedValue(undefined)
+  jest.mocked(syncSchedules).mockReset()
+  jest.mocked(setManualTrackedContent).mockReset()
+  jest.mocked(setManualTrackedContent).mockResolvedValue(undefined)
 })
 
 describe('seedManualTrackedContent', () => {
   it('최신 동기화 결과에서 등록된(isRegistered) 항목만 일간/주간 구분과 함께 저장한다', async () => {
-    vi.mocked(syncSchedules).mockResolvedValue([
+    jest.mocked(syncSchedules).mockResolvedValue([
       buildSyncResult(
         buildState({
           dailyContents: [
@@ -96,7 +95,7 @@ describe('seedManualTrackedContent', () => {
   })
 
   it('템플릿에 없는 컨텐츠는 등록돼 있어도 시드에서 제외한다 (ADR-035 결정 19)', async () => {
-    vi.mocked(syncSchedules).mockResolvedValue([
+    jest.mocked(syncSchedules).mockResolvedValue([
       buildSyncResult(
         buildState({
           dailyContents: [buildDaily('템플릿에 없는 이벤트 콘텐츠', true), buildDaily('몬스터파크', true)],
@@ -113,7 +112,7 @@ describe('seedManualTrackedContent', () => {
   })
 
   it('보스는 API 원문명이 아니라 matchBossContent 정규화 명으로 저장한다 (ADR-035 결정 19)', async () => {
-    vi.mocked(syncSchedules).mockResolvedValue([
+    jest.mocked(syncSchedules).mockResolvedValue([
       buildSyncResult(
         buildState({
           // API가 공백 없이 내려주는 케이스 — 우리 데이터 이름은 "선택받은 세렌"
@@ -130,14 +129,14 @@ describe('seedManualTrackedContent', () => {
   })
 
   it('동기화가 실패해 state가 null이면 에러를 던지고 저장하지 않는다', async () => {
-    vi.mocked(syncSchedules).mockResolvedValue([buildSyncResult(null)])
+    jest.mocked(syncSchedules).mockResolvedValue([buildSyncResult(null)])
 
     await expect(seedManualTrackedContent([OCID])).rejects.toThrow()
     expect(setManualTrackedContent).not.toHaveBeenCalled()
   })
 
   it('동기화 결과가 아예 없으면 에러를 던지고 저장하지 않는다', async () => {
-    vi.mocked(syncSchedules).mockResolvedValue([])
+    jest.mocked(syncSchedules).mockResolvedValue([])
 
     await expect(seedManualTrackedContent([OCID])).rejects.toThrow()
     expect(setManualTrackedContent).not.toHaveBeenCalled()
@@ -147,7 +146,7 @@ describe('seedManualTrackedContent', () => {
 // ADR-147 정정 42: 캐릭터마다 회차를 내다가 서로 합류해 전원이 남의 스케줄로 시드됐다.
 describe('seedManualTrackedContent — 여러 ocid (ADR-147 정정 42)', () => {
   it('ocid가 여럿이어도 동기화는 한 회차다', async () => {
-    vi.mocked(syncSchedules).mockResolvedValue([
+    jest.mocked(syncSchedules).mockResolvedValue([
       buildSyncResult(buildState(), 'ocid-1'),
       buildSyncResult(buildState(), 'ocid-2'),
     ])
@@ -159,7 +158,7 @@ describe('seedManualTrackedContent — 여러 ocid (ADR-147 정정 42)', () => {
   })
 
   it('결과 순서가 요청 순서와 달라도 각 ocid는 자기 결과로 시드된다', async () => {
-    vi.mocked(syncSchedules).mockResolvedValue([
+    jest.mocked(syncSchedules).mockResolvedValue([
       buildSyncResult(buildState({ dailyContents: [buildDaily('몬스터파크', true)] }), 'ocid-2'),
       buildSyncResult(
         buildState({ dailyContents: [buildDaily('[일일 퀘스트] 소멸의 여로 조사', true)] }),
@@ -178,7 +177,7 @@ describe('seedManualTrackedContent — 여러 ocid (ADR-147 정정 42)', () => {
   })
 
   it('요청한 ocid가 결과에 없으면 남의 결과로 시드하지 않고 에러를 던진다', async () => {
-    vi.mocked(syncSchedules).mockResolvedValue([
+    jest.mocked(syncSchedules).mockResolvedValue([
       buildSyncResult(buildState({ dailyContents: [buildDaily('몬스터파크', true)] }), 'ocid-1'),
     ])
 

@@ -1,4 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { waitFor } from '../../../__tests__/wait-for'
 import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
 import type {
   CharacterBasicProfile,
@@ -9,78 +10,47 @@ import type {
 } from '../../../types'
 import { NexonAuthError, NexonBadRequestError, NexonNetworkError, NexonRateLimitError } from '../../../nexon/errors'
 
-const { fetchCharacterListMock, fetchCharacterBasicMock, fetchSchedulerCharacterStateMock } = vi.hoisted(() => ({
-  fetchCharacterListMock: vi.fn(),
-  fetchCharacterBasicMock: vi.fn(),
-  fetchSchedulerCharacterStateMock: vi.fn(),
+jest.mock('../../../nexon/character', () => ({
+  fetchCharacterList: jest.fn(),
+  fetchCharacterBasic: jest.fn(),
 }))
+const { fetchCharacterList: fetchCharacterListMock, fetchCharacterBasic: fetchCharacterBasicMock } = jest.requireMock('../../../nexon/character') as Record<string, jest.Mock>
 
-const { getAuthConfigMock } = vi.hoisted(() => ({
-  getAuthConfigMock: vi.fn(),
+jest.mock('../../../nexon/schedule', () => ({
+  fetchSchedulerCharacterState: jest.fn(),
 }))
+const { fetchSchedulerCharacterState: fetchSchedulerCharacterStateMock } = jest.requireMock('../../../nexon/schedule') as Record<string, jest.Mock>
 
-const { getCachedSchedulerStateMock, setCachedSchedulerStateMock } = vi.hoisted(() => ({
-  getCachedSchedulerStateMock: vi.fn(),
-  setCachedSchedulerStateMock: vi.fn(),
+jest.mock('../../../storage/api-key', () => ({
+  getAuthConfig: jest.fn(),
 }))
+const { getAuthConfig: getAuthConfigMock } = jest.requireMock('../../../storage/api-key') as Record<string, jest.Mock>
 
-const { getCachedCharacterBasicMock, setCachedCharacterBasicMock, getAllCachedCharacterBasicOcidsMock } =
-  vi.hoisted(() => ({
-    getCachedCharacterBasicMock: vi.fn(),
-    setCachedCharacterBasicMock: vi.fn(),
-    getAllCachedCharacterBasicOcidsMock: vi.fn(),
-  }))
-
-const {
-  getWorldSharedProgressMock,
-  getAccountSharedProgressMock,
-  setWorldSharedProgressEntryMock,
-  setAccountSharedProgressEntryMock,
-} = vi.hoisted(() => ({
-  getWorldSharedProgressMock: vi.fn(),
-  getAccountSharedProgressMock: vi.fn(),
-  setWorldSharedProgressEntryMock: vi.fn(),
-  setAccountSharedProgressEntryMock: vi.fn(),
+jest.mock('../../../storage/scheduler-cache', () => ({
+  getCachedSchedulerState: jest.fn(),
+  setCachedSchedulerState: jest.fn(),
 }))
+const { getCachedSchedulerState: getCachedSchedulerStateMock, setCachedSchedulerState: setCachedSchedulerStateMock } = jest.requireMock('../../../storage/scheduler-cache') as Record<string, jest.Mock>
 
-const { mergeSchedulerStateMock } = vi.hoisted(() => ({
-  mergeSchedulerStateMock: vi.fn(),
+jest.mock('../../../storage/character-basic-cache', () => ({
+  getCachedCharacterBasic: jest.fn(),
+  setCachedCharacterBasic: jest.fn(),
+  getAllCachedCharacterBasicOcids: jest.fn(),
 }))
+const { getCachedCharacterBasic: getCachedCharacterBasicMock, setCachedCharacterBasic: setCachedCharacterBasicMock, getAllCachedCharacterBasicOcids: getAllCachedCharacterBasicOcidsMock } = jest.requireMock('../../../storage/character-basic-cache') as Record<string, jest.Mock>
 
-vi.mock('../../../nexon/character', () => ({
-  fetchCharacterList: fetchCharacterListMock,
-  fetchCharacterBasic: fetchCharacterBasicMock,
+jest.mock('../../../storage/shared-progress-cache', () => ({
+  getWorldSharedProgress: jest.fn(),
+  getAccountSharedProgress: jest.fn(),
+  setWorldSharedProgressEntry: jest.fn(),
+  setAccountSharedProgressEntry: jest.fn(),
 }))
+const { getWorldSharedProgress: getWorldSharedProgressMock, getAccountSharedProgress: getAccountSharedProgressMock, setWorldSharedProgressEntry: setWorldSharedProgressEntryMock, setAccountSharedProgressEntry: setAccountSharedProgressEntryMock } = jest.requireMock('../../../storage/shared-progress-cache') as Record<string, jest.Mock>
 
-vi.mock('../../../nexon/schedule', () => ({
-  fetchSchedulerCharacterState: fetchSchedulerCharacterStateMock,
+jest.mock('../../../lib/scheduler-merge', () => ({
+  mergeSchedulerState: jest.fn(),
 }))
-
-vi.mock('../../../storage/api-key', () => ({
-  getAuthConfig: getAuthConfigMock,
-}))
-
-vi.mock('../../../storage/scheduler-cache', () => ({
-  getCachedSchedulerState: getCachedSchedulerStateMock,
-  setCachedSchedulerState: setCachedSchedulerStateMock,
-}))
-
-vi.mock('../../../storage/character-basic-cache', () => ({
-  getCachedCharacterBasic: getCachedCharacterBasicMock,
-  setCachedCharacterBasic: setCachedCharacterBasicMock,
-  getAllCachedCharacterBasicOcids: getAllCachedCharacterBasicOcidsMock,
-}))
-
-vi.mock('../../../storage/shared-progress-cache', () => ({
-  getWorldSharedProgress: getWorldSharedProgressMock,
-  getAccountSharedProgress: getAccountSharedProgressMock,
-  setWorldSharedProgressEntry: setWorldSharedProgressEntryMock,
-  setAccountSharedProgressEntry: setAccountSharedProgressEntryMock,
-}))
-
-vi.mock('../../../lib/scheduler-merge', () => ({
-  mergeSchedulerState: mergeSchedulerStateMock,
-}))
+const { mergeSchedulerState: mergeSchedulerStateMock } = jest.requireMock('../../../lib/scheduler-merge') as Record<string, jest.Mock>
 
 // ADR-086: 조회 원장(storage/schedule-probe-ledger)과 추적 목록(storage/character-selection)은
 // 실물을 쓰고 그 아래 PreferencesPort만 인메모리로 바꾼다 — 원장이 "같은 날짜를 두 번 부르지 않는다"를
@@ -94,7 +64,7 @@ import {
 } from '../schedule-sync'
 import { hasSyncAttemptedThisRun, resetSyncRunStateForTests } from '../sync-run-state'
 
-function character(ocid: string): MapleCharacter {
+function mockCharacter(ocid: string): MapleCharacter {
   return {
     ocid,
     name: `캐릭터-${ocid}`,
@@ -125,7 +95,7 @@ function schedulerState(characterName: string): SchedulerCharacterState {
   }
 }
 
-// jobClass 는 character/basic 이 아니라 character/list 가 준 값이라(ADR-144 결정 2) 이 픽스처의
+// jobClass 는 mockCharacter/basic 이 아니라 mockCharacter/list 가 준 값이라(ADR-144 결정 2) 이 픽스처의
 // 기본값에는 없다 — 캐시에 실리는 경로를 검증하는 자리에서만 명시적으로 넣는다.
 function basicProfile(overrides: {
   name: string
@@ -144,7 +114,7 @@ function basicProfile(overrides: {
 
 const NOW = '2026-07-11T00:00:00.000Z'
 
-// ADR-113 결정 1: character/basic 이 5분 TTL 가드를 통과한다. 이 파일의 캐시 픽스처는 원래
+// ADR-113 결정 1: mockCharacter/basic 이 5분 TTL 가드를 통과한다. 이 파일의 캐시 픽스처는 원래
 // "캐시가 있다"만 뜻했고 cachedAt 값은 아무도 읽지 않았는데(ADR-097 이 "쓰이기만 하고 읽는 곳이
 // 없다"고 적은 그 필드다), 이제 읽히므로 값이 곧 정책이 된다. 아래 케이스들은 **네트워크가 나가는**
 // 경로(SWR patch·콜드 스타트 억제·개별 실패)를 검증하므로 만료된 시각으로 심는다 — TTL 안에서
@@ -154,8 +124,8 @@ const STALE_CACHED_AT = '2026-07-10T00:00:00.000Z'
 let prefs = installFakePreferences()
 
 beforeEach(async () => {
-  vi.useFakeTimers()
-  vi.setSystemTime(new Date(NOW))
+  jest.useFakeTimers()
+  jest.setSystemTime(new Date(NOW))
   // 모듈 수준 플래그라 테스트끼리 샌다(ADR-097 결정 3).
   resetSyncRunStateForTests()
   // 같은 이유로 진행 중인 회차도 비운다 — 끝내지 않은 회차를 남기면 다음 테스트가 거기에
@@ -183,8 +153,8 @@ beforeEach(async () => {
 })
 
 afterEach(() => {
-  vi.useRealTimers()
-  vi.resetAllMocks()
+  jest.useRealTimers()
+  jest.resetAllMocks()
 })
 
 describe('getRegisteredCharacters', () => {
@@ -203,13 +173,13 @@ describe('getRegisteredCharacters', () => {
   })
 
   it('fetchCharacterList 응답에 선택된 계정이 없으면 에러를 던진다', async () => {
-    fetchCharacterListMock.mockResolvedValue([account('other-acc', [character('ocid-1')])])
+    fetchCharacterListMock.mockResolvedValue([account('other-acc', [mockCharacter('ocid-1')])])
 
     await expect(getRegisteredCharacters()).rejects.toThrow()
   })
 
   it('선택된 계정의 캐릭터 목록을 반환한다', async () => {
-    const characters = [character('ocid-1'), character('ocid-2')]
+    const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
 
     await expect(getRegisteredCharacters()).resolves.toEqual(characters)
@@ -233,7 +203,7 @@ describe('syncSchedules', () => {
   })
 
   it('실제로 조회하면 이번 실행에서 동기화를 시도한 것으로 표시한다 (ADR-097 결정 3)', async () => {
-    fetchCharacterListMock.mockResolvedValue([account('acc-1', [character('ocid-1')])])
+    fetchCharacterListMock.mockResolvedValue([account('acc-1', [mockCharacter('ocid-1')])])
     fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
 
     await syncSchedules(['ocid-1'])
@@ -250,11 +220,11 @@ describe('syncSchedules', () => {
 
   it('계정에 캐릭터가 5명 있어도 ocids로 지정한 2명에 대해서만 스케줄 API를 호출한다', async () => {
     const characters = [
-      character('ocid-1'),
-      character('ocid-2'),
-      character('ocid-3'),
-      character('ocid-4'),
-      character('ocid-5'),
+      mockCharacter('ocid-1'),
+      mockCharacter('ocid-2'),
+      mockCharacter('ocid-3'),
+      mockCharacter('ocid-4'),
+      mockCharacter('ocid-5'),
     ]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
     fetchSchedulerCharacterStateMock
@@ -270,7 +240,7 @@ describe('syncSchedules', () => {
   })
 
   it('ocids에 있지만 실제 계정 캐릭터 목록에는 없는 ocid는 조용히 결과에서 빠진다', async () => {
-    const characters = [character('ocid-1'), character('ocid-2')]
+    const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
     fetchSchedulerCharacterStateMock.mockResolvedValueOnce(schedulerState('캐릭터1'))
 
@@ -281,7 +251,7 @@ describe('syncSchedules', () => {
   })
 
   it('모든 캐릭터가 성공하면 캐시를 갱신하고 isStale: false로 채워진 결과를 반환한다', async () => {
-    const characters = [character('ocid-1'), character('ocid-2')]
+    const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
     fetchSchedulerCharacterStateMock
       .mockResolvedValueOnce(schedulerState('캐릭터1'))
@@ -320,13 +290,13 @@ describe('syncSchedules', () => {
   })
 
   it('onProgress는 시작 시 (0,total)로 호출되고, 마지막 호출은 (total,total)이다', async () => {
-    const characters = [character('ocid-1'), character('ocid-2')]
+    const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
     fetchSchedulerCharacterStateMock
       .mockResolvedValueOnce(schedulerState('캐릭터1'))
       .mockResolvedValueOnce(schedulerState('캐릭터2'))
 
-    const onProgress = vi.fn()
+    const onProgress = jest.fn()
     await syncSchedules(['ocid-1', 'ocid-2'], onProgress)
 
     expect(onProgress).toHaveBeenCalledTimes(3)
@@ -335,7 +305,7 @@ describe('syncSchedules', () => {
   })
 
   it('첫 캐릭터(프리플라이트)를 먼저 호출해 응답을 기다린 뒤, 나머지 캐릭터는 병렬로 호출한다', async () => {
-    const characters = [character('ocid-1'), character('ocid-2'), character('ocid-3')]
+    const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2'), mockCharacter('ocid-3')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
 
     const resolvers: Array<(state: SchedulerCharacterState) => void> = []
@@ -349,12 +319,12 @@ describe('syncSchedules', () => {
     const promise = syncSchedules(['ocid-1', 'ocid-2', 'ocid-3'])
 
     // 프리플라이트: 첫 캐릭터만 먼저 호출되고 응답을 기다린다
-    await vi.waitFor(() => expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1))
     expect(resolvers).toHaveLength(1)
     resolvers[0](schedulerState('캐릭터1'))
 
     // 프리플라이트 성공 후 나머지 두 캐릭터는 서로를 기다리지 않고 동시에 호출된다
-    await vi.waitFor(() => expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(3))
+    await waitFor(() => expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(3))
     resolvers[2](schedulerState('캐릭터3'))
     resolvers[1](schedulerState('캐릭터2'))
 
@@ -363,7 +333,7 @@ describe('syncSchedules', () => {
   })
 
   it('네트워크 에러가 나고 캐시가 있으면 캐시 값으로 폴백하고 isStale: true, error: network를 채운다', async () => {
-    const characters = [character('ocid-1')]
+    const characters = [mockCharacter('ocid-1')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
     fetchSchedulerCharacterStateMock.mockRejectedValue(new NexonNetworkError('timeout'))
     getCachedSchedulerStateMock.mockResolvedValue({
@@ -388,7 +358,7 @@ describe('syncSchedules', () => {
   })
 
   it('네트워크 에러가 나고 캐시도 없으면 state/syncedAt이 null인 채로 isStale: true를 반환한다', async () => {
-    const characters = [character('ocid-1')]
+    const characters = [mockCharacter('ocid-1')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
     fetchSchedulerCharacterStateMock.mockRejectedValue(new NexonNetworkError('timeout'))
     getCachedSchedulerStateMock.mockResolvedValue(null)
@@ -409,7 +379,7 @@ describe('syncSchedules', () => {
   })
 
   it('한 캐릭터의 네트워크 에러는 다른 캐릭터 조회를 막지 않는다', async () => {
-    const characters = [character('ocid-1'), character('ocid-2')]
+    const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
     fetchSchedulerCharacterStateMock
       .mockRejectedValueOnce(new NexonNetworkError('timeout'))
@@ -431,7 +401,7 @@ describe('syncSchedules', () => {
   })
 
   it('프리플라이트(첫 캐릭터)에서 401(NexonAuthError)이 발생하면 이후 캐릭터는 API를 호출하지 않고 캐시 폴백만 한다', async () => {
-    const characters = [character('ocid-1'), character('ocid-2'), character('ocid-3')]
+    const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2'), mockCharacter('ocid-3')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
     fetchSchedulerCharacterStateMock.mockRejectedValueOnce(new NexonAuthError('invalid'))
     getCachedSchedulerStateMock.mockResolvedValue(null)
@@ -447,7 +417,7 @@ describe('syncSchedules', () => {
   })
 
   it('프리플라이트(첫 캐릭터)에서 429(NexonRateLimitError)가 발생하면 이후 캐릭터는 API를 호출하지 않고 캐시 폴백만 한다', async () => {
-    const characters = [character('ocid-1'), character('ocid-2')]
+    const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
     fetchSchedulerCharacterStateMock.mockRejectedValueOnce(new NexonRateLimitError('rate limited'))
     getCachedSchedulerStateMock.mockResolvedValue(null)
@@ -462,7 +432,7 @@ describe('syncSchedules', () => {
   })
 
   it('프리플라이트 이후 병렬 구간에서 한 캐릭터가 401이어도 나머지 병렬 호출은 막지 않고 개별 결과로 처리한다', async () => {
-    const characters = [character('ocid-1'), character('ocid-2'), character('ocid-3')]
+    const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2'), mockCharacter('ocid-3')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
     fetchSchedulerCharacterStateMock
       .mockResolvedValueOnce(schedulerState('캐릭터1')) // 프리플라이트: ocid-1
@@ -484,7 +454,7 @@ describe('syncSchedules', () => {
 
   describe('단일 비행 — 진행 중인 회차가 있으면 함께 기다린다 (ADR-147 결정 4)', () => {
     it('진행 중인 회차가 있으면 둘째 호출은 네트워크를 다시 타지 않는다', async () => {
-      fetchCharacterListMock.mockResolvedValue([account('acc-1', [character('ocid-1')])])
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', [mockCharacter('ocid-1')])])
       let resolveState: (state: SchedulerCharacterState) => void = () => {}
       fetchSchedulerCharacterStateMock.mockImplementation(
         () =>
@@ -496,7 +466,7 @@ describe('syncSchedules', () => {
       const first = syncSchedules(['ocid-1'])
       const second = syncSchedules(['ocid-1'])
 
-      await vi.waitFor(() => expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1))
+      await waitFor(() => expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1))
       resolveState(schedulerState('캐릭터1'))
       await Promise.all([first, second])
 
@@ -505,7 +475,7 @@ describe('syncSchedules', () => {
     })
 
     it('합류한 호출은 진행 중인 회차와 같은 결과를 받는다', async () => {
-      fetchCharacterListMock.mockResolvedValue([account('acc-1', [character('ocid-1')])])
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', [mockCharacter('ocid-1')])])
       let resolveState: (state: SchedulerCharacterState) => void = () => {}
       fetchSchedulerCharacterStateMock.mockImplementation(
         () =>
@@ -517,7 +487,7 @@ describe('syncSchedules', () => {
       const first = syncSchedules(['ocid-1'])
       const second = syncSchedules(['ocid-1'])
 
-      await vi.waitFor(() => expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1))
+      await waitFor(() => expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1))
       resolveState(schedulerState('캐릭터1'))
       const [firstResults, secondResults] = await Promise.all([first, second])
 
@@ -528,7 +498,7 @@ describe('syncSchedules', () => {
 
     it('요청하지 않은 ocid는 결과에서 빠진다 — 덮는 회차에 합류해도 자기 몫만 받는다 (ADR-147 정정 42)', async () => {
       fetchCharacterListMock.mockResolvedValue([
-        account('acc-1', [character('ocid-1'), character('ocid-2')]),
+        account('acc-1', [mockCharacter('ocid-1'), mockCharacter('ocid-2')]),
       ])
       let resolveState: (state: SchedulerCharacterState) => void = () => {}
       fetchSchedulerCharacterStateMock
@@ -541,7 +511,7 @@ describe('syncSchedules', () => {
         )
 
       const owner = syncSchedules(['ocid-1', 'ocid-2'])
-      await vi.waitFor(() => expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(2))
+      await waitFor(() => expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(2))
       const joiner = syncSchedules(['ocid-2'])
 
       resolveState(schedulerState('캐릭터2'))
@@ -556,7 +526,7 @@ describe('syncSchedules', () => {
 
     it('진행 중인 회차가 요청 ocid를 못 덮으면 합류하지 않고, 그 회차가 정산된 뒤 새 회차를 잇는다 (ADR-147 정정 42)', async () => {
       fetchCharacterListMock.mockResolvedValue([
-        account('acc-1', [character('ocid-1'), character('ocid-2')]),
+        account('acc-1', [mockCharacter('ocid-1'), mockCharacter('ocid-2')]),
       ])
       let resolveFirst: (state: SchedulerCharacterState) => void = () => {}
       fetchSchedulerCharacterStateMock.mockImplementationOnce(
@@ -567,7 +537,7 @@ describe('syncSchedules', () => {
       )
 
       const owner = syncSchedules(['ocid-1'])
-      await vi.waitFor(() => expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1))
+      await waitFor(() => expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1))
 
       // ocid-2는 진행 중인 회차 밖이다 — 남의 회차에 붙지 않고 그 회차가 끝나기를 기다린다.
       fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터2'))
@@ -585,7 +555,7 @@ describe('syncSchedules', () => {
     it('앞 회차가 실패해도 못 덮은 요청은 자기 회차를 잇는다 (ADR-147 정정 42)', async () => {
       fetchCharacterListMock
         .mockRejectedValueOnce(new NexonNetworkError('timeout'))
-        .mockResolvedValue([account('acc-1', [character('ocid-2')])])
+        .mockResolvedValue([account('acc-1', [mockCharacter('ocid-2')])])
       fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터2'))
 
       const owner = syncSchedules(['ocid-1'])
@@ -596,7 +566,7 @@ describe('syncSchedules', () => {
     })
 
     it('합류한 호출의 onProgress는 불리지 않는다 — 진행률은 회차를 소유한 호출이 받는다', async () => {
-      fetchCharacterListMock.mockResolvedValue([account('acc-1', [character('ocid-1')])])
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', [mockCharacter('ocid-1')])])
       let resolveState: (state: SchedulerCharacterState) => void = () => {}
       fetchSchedulerCharacterStateMock.mockImplementation(
         () =>
@@ -605,12 +575,12 @@ describe('syncSchedules', () => {
           }),
       )
 
-      const ownerProgress = vi.fn()
-      const joinerProgress = vi.fn()
+      const ownerProgress = jest.fn()
+      const joinerProgress = jest.fn()
       const first = syncSchedules(['ocid-1'], ownerProgress)
       const second = syncSchedules(['ocid-1'], joinerProgress)
 
-      await vi.waitFor(() => expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1))
+      await waitFor(() => expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1))
       resolveState(schedulerState('캐릭터1'))
       await Promise.all([first, second])
 
@@ -619,7 +589,7 @@ describe('syncSchedules', () => {
     })
 
     it('회차가 끝난 뒤의 호출은 새 회차라 네트워크를 다시 탄다', async () => {
-      fetchCharacterListMock.mockResolvedValue([account('acc-1', [character('ocid-1')])])
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', [mockCharacter('ocid-1')])])
       fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
 
       await syncSchedules(['ocid-1'])
@@ -638,7 +608,7 @@ describe('syncSchedules', () => {
       expect((await settled).map((outcome) => outcome.status)).toEqual(['rejected', 'rejected'])
       expect(fetchCharacterListMock).toHaveBeenCalledTimes(1)
 
-      fetchCharacterListMock.mockResolvedValue([account('acc-1', [character('ocid-1')])])
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', [mockCharacter('ocid-1')])])
       fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
 
       const results = await syncSchedules(['ocid-1'])
@@ -648,13 +618,13 @@ describe('syncSchedules', () => {
     })
 
     it('회귀 가드 — 단독 호출의 호출 수·순서·인자·결과는 종전과 같다', async () => {
-      const characters = [character('ocid-1'), character('ocid-2')]
+      const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       fetchSchedulerCharacterStateMock
         .mockResolvedValueOnce(schedulerState('캐릭터1'))
         .mockResolvedValueOnce(schedulerState('캐릭터2'))
 
-      const onProgress = vi.fn()
+      const onProgress = jest.fn()
       const results = await syncSchedules(['ocid-1', 'ocid-2'], onProgress)
 
       expect(fetchCharacterListMock).toHaveBeenCalledTimes(1)
@@ -670,7 +640,7 @@ describe('syncSchedules', () => {
 
   describe('ADR-030: 캐릭터/월드/계정 병합', () => {
     it('이전 캐시·월드/계정 원장을 읽어 mergeSchedulerState에 넘긴다', async () => {
-      const characters = [character('ocid-1')]
+      const characters = [mockCharacter('ocid-1')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       const fresh = schedulerState('캐릭터1')
       fetchSchedulerCharacterStateMock.mockResolvedValue(fresh)
@@ -693,7 +663,7 @@ describe('syncSchedules', () => {
     })
 
     it('previous 캐시가 없으면 previous: null로 mergeSchedulerState를 호출한다', async () => {
-      const characters = [character('ocid-1')]
+      const characters = [mockCharacter('ocid-1')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
       getCachedSchedulerStateMock.mockResolvedValue(null)
@@ -704,7 +674,7 @@ describe('syncSchedules', () => {
     })
 
     it('mergeSchedulerState 결과(characterState)를 캐시에 쓰고 결과의 state로 반환한다', async () => {
-      const characters = [character('ocid-1')]
+      const characters = [mockCharacter('ocid-1')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
       const mergedState = schedulerState('병합된-캐릭터1')
@@ -721,7 +691,7 @@ describe('syncSchedules', () => {
     })
 
     it('worldLedgerUpdates/accountLedgerUpdates에 담긴 변경분을 각 원장에 저장한다', async () => {
-      const characters = [character('ocid-1')]
+      const characters = [mockCharacter('ocid-1')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       const fresh = schedulerState('캐릭터1')
       fetchSchedulerCharacterStateMock.mockResolvedValue(fresh)
@@ -740,7 +710,7 @@ describe('syncSchedules', () => {
     })
 
     it('ledger 변경분이 없으면 원장 쓰기를 호출하지 않는다', async () => {
-      const characters = [character('ocid-1')]
+      const characters = [mockCharacter('ocid-1')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
 
@@ -766,7 +736,7 @@ describe('syncSchedules', () => {
     const STALE_DAY = { ...schedulerState('그 밖의 과거'), isWeeklyBossStale: true, bossContents: [] }
 
     it('13일을 한꺼번에 태운다 — 앞 날짜 응답을 기다리지 않는다 (ADR-148 결정 1)', async () => {
-      const characters = [character('ocid-1')]
+      const characters = [mockCharacter('ocid-1')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
 
       const stage1State = { ...schedulerState('캐릭터1'), isWeeklyBossStale: true, bossContents: [] }
@@ -790,7 +760,7 @@ describe('syncSchedules', () => {
     })
 
     it('병합이 일찍 멈춰도 이미 받은 날짜는 전부 원장에 기록한다 (ADR-148 결정 3 — 이슈 #87 재발 방지)', async () => {
-      const characters = [character('ocid-1')]
+      const characters = [mockCharacter('ocid-1')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
 
       const stage1State = { ...schedulerState('캐릭터1'), isWeeklyBossStale: true, bossContents: [] }
@@ -807,7 +777,7 @@ describe('syncSchedules', () => {
       expect(mergeSchedulerStateMock).toHaveBeenCalledTimes(2)
 
       // 그래도 13일이 전부 원장에 남았으므로 다음 동기화는 같은 13일을 다시 훑지 않는다.
-      const { getScheduleProbeLedger } = await import('../../../storage/schedule-probe-ledger')
+      const { getScheduleProbeLedger } = require('../../../storage/schedule-probe-ledger') as typeof import('../../../storage/schedule-probe-ledger')
       const ledger = await getScheduleProbeLedger('ocid-1', new Date(NOW))
       expect(Object.keys(ledger.dates)).toHaveLength(13)
 
@@ -820,7 +790,7 @@ describe('syncSchedules', () => {
     })
 
     it('당일 응답에서 4개 섹션 모두 stale이 아니면 추가 조회를 하지 않는다', async () => {
-      const characters = [character('ocid-1')]
+      const characters = [mockCharacter('ocid-1')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
 
@@ -831,7 +801,7 @@ describe('syncSchedules', () => {
     })
 
     it('주간 보스가 stale이면 -1일부터 조회하고, 그 날짜 응답이 그 섹션에 대해 stale이 아니면 거기서 멈춘다', async () => {
-      const characters = [character('ocid-1')]
+      const characters = [mockCharacter('ocid-1')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
 
       const stage1State = { ...schedulerState('캐릭터1'), isWeeklyBossStale: true, bossContents: [] }
@@ -867,7 +837,7 @@ describe('syncSchedules', () => {
     })
 
     it('-1일도 그 섹션이 stale이면 -2일로 계속 넘어간다', async () => {
-      const characters = [character('ocid-1')]
+      const characters = [mockCharacter('ocid-1')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
 
       const stage1State = { ...schedulerState('캐릭터1'), isWeeklyBossStale: true, bossContents: [] }
@@ -894,7 +864,7 @@ describe('syncSchedules', () => {
     })
 
     it('13일을 다 써도 못 찾으면 조회를 멈추고 그동안 누적된 결과를 그대로 쓴다', async () => {
-      const characters = [character('ocid-1')]
+      const characters = [mockCharacter('ocid-1')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
 
       const stage1State = { ...schedulerState('캐릭터1'), isWeeklyBossStale: true, bossContents: [] }
@@ -915,7 +885,7 @@ describe('syncSchedules', () => {
     // 자리다. 과거 날짜도 0건이라 resolved가 영원히 참이 되지 않고 상태가 변하지 않기 때문이다.
     describe('조회 원장 — 같은 날짜를 두 번 조회하지 않는다 (ADR-086 결정 4)', () => {
       it('두 번째 동기화는 오늘 응답 1회로 끝난다 — 해결하지 못한 13일을 다시 훑지 않는다', async () => {
-        const characters = [character('ocid-1')]
+        const characters = [mockCharacter('ocid-1')]
         fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
 
         const stage1State = { ...schedulerState('캐릭터1'), isWeeklyBossStale: true, bossContents: [] }
@@ -941,14 +911,14 @@ describe('syncSchedules', () => {
       })
 
       it('그 날짜에 그 섹션이 있었다면 다시 부른다 — 원장은 값이 아니라 유무만 기억한다', async () => {
-        const { recordScheduleProbe } = await import('../../../storage/schedule-probe-ledger')
+        const { recordScheduleProbe } = require('../../../storage/schedule-probe-ledger') as typeof import('../../../storage/schedule-probe-ledger')
         await recordScheduleProbe('ocid-1', '2026-07-10', {
           kind: 'observed',
           hasCompletion: true,
           sections: { daily: true, weekly: true, weeklyBoss: true, monthlyBoss: true },
         })
 
-        const characters = [character('ocid-1')]
+        const characters = [mockCharacter('ocid-1')]
         fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
 
         const stage1State = { ...schedulerState('캐릭터1'), isWeeklyBossStale: true, bossContents: [] }
@@ -973,10 +943,10 @@ describe('syncSchedules', () => {
       })
 
       it('조회 불가(OPENAPI00003)로 확정된 캐릭터는 백필 루프에 아예 들어가지 않는다', async () => {
-        const { markScheduleProbeUnavailable } = await import('../../../storage/schedule-probe-ledger')
+        const { markScheduleProbeUnavailable } = require('../../../storage/schedule-probe-ledger') as typeof import('../../../storage/schedule-probe-ledger')
         await markScheduleProbeUnavailable('ocid-1')
 
-        const characters = [character('ocid-1')]
+        const characters = [mockCharacter('ocid-1')]
         fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
 
         const stage1State = { ...schedulerState('캐릭터1'), isWeeklyBossStale: true, bossContents: [] }
@@ -993,7 +963,7 @@ describe('syncSchedules', () => {
       })
 
       it('네트워크 실패는 기록하지 않는다 — 다음 동기화에서 그 날짜를 다시 시도한다', async () => {
-        const characters = [character('ocid-1')]
+        const characters = [mockCharacter('ocid-1')]
         fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
 
         const stage1State = { ...schedulerState('캐릭터1'), isWeeklyBossStale: true, bossContents: [] }
@@ -1028,7 +998,7 @@ describe('syncSchedules', () => {
     })
 
     it('과거 날짜 조회가 실패해도(네트워크 등) 그 날짜만 건너뛰고 다음 날짜로 계속한다', async () => {
-      const characters = [character('ocid-1')]
+      const characters = [mockCharacter('ocid-1')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
 
       const stage1State = { ...schedulerState('캐릭터1'), isWeeklyBossStale: true, bossContents: [] }
@@ -1055,7 +1025,7 @@ describe('syncSchedules', () => {
     })
 
     it('1·N단계 world/account 원장 변경분을 모두 합쳐 저장하고, 다음 단계는 이전 변경분이 반영된 원장을 받는다', async () => {
-      const characters = [character('ocid-1')]
+      const characters = [mockCharacter('ocid-1')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       const fresh = schedulerState('캐릭터1')
       const day1Response = { ...schedulerState('-1일'), isWeeklyBossStale: false, bossContents: [bossContent('weekly')] }
@@ -1089,7 +1059,7 @@ describe('syncSchedules', () => {
 
     // ADR-034 추가 정정(2026-07-25): 콜드 스타트에서 당일 daily가 완전히 비지 않고 월드공유
     // 항목(몬스터파크)만 남으면 isDailyStale이 false라 백필이 안 걸리던 사각지대. 병합 결과에
-    // character 범위 항목이 하나도 없으면(=몬스터파크뿐) stale로 보고 과거 조회를 발동한다.
+    // mockCharacter 범위 항목이 하나도 없으면(=몬스터파크뿐) stale로 보고 과거 조회를 발동한다.
     const monsterParkOnly = {
       name: '몬스터파크',
       kind: 'contents' as const,
@@ -1114,8 +1084,8 @@ describe('syncSchedules', () => {
       isDailyStale: false,
     }
 
-    it('당일 daily에 월드공유 항목(몬스터파크)만 남고 character 일일이 빠졌으면 isDailyStale이 false여도 백필한다', async () => {
-      const characters = [character('ocid-1')]
+    it('당일 daily에 월드공유 항목(몬스터파크)만 남고 mockCharacter 일일이 빠졌으면 isDailyStale이 false여도 백필한다', async () => {
+      const characters = [mockCharacter('ocid-1')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
 
       const stage1State = { ...schedulerState('캐릭터1'), dailyContents: [monsterParkOnly], isDailyStale: false }
@@ -1139,7 +1109,7 @@ describe('syncSchedules', () => {
     })
 
     it('과거 조회 응답도 월드공유만 있으면(-1일도 여전히 부분 누락) 다음 날짜로 계속 넘어간다', async () => {
-      const characters = [character('ocid-1')]
+      const characters = [mockCharacter('ocid-1')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
 
       const stage1State = { ...schedulerState('캐릭터1'), dailyContents: [monsterParkOnly], isDailyStale: false }
@@ -1163,8 +1133,8 @@ describe('syncSchedules', () => {
       expect(mergeSchedulerStateMock).toHaveBeenCalledTimes(3)
     })
 
-    it('병합 결과 daily에 character 항목이 있으면(몬스터파크+일일퀘스트) 백필하지 않는다', async () => {
-      const characters = [character('ocid-1')]
+    it('병합 결과 daily에 mockCharacter 항목이 있으면(몬스터파크+일일퀘스트) 백필하지 않는다', async () => {
+      const characters = [mockCharacter('ocid-1')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
 
       const stage1State = {
@@ -1184,9 +1154,9 @@ describe('syncSchedules', () => {
 
   // 이슈 #139: 갱신 경로가 피커 하나뿐이라 레벨·외형이 "피커를 마지막으로 연 시점"에 굳었다.
   // 동기화가 실제로 도는 회차에 편승시켜 그 스냅샷을 푼다.
-  describe('character/basic 편승 갱신 (ADR-097 결정 7)', () => {
-    it('추적 캐릭터 N명을 동기화하면 character/basic을 N회 호출하고 cachedAt과 함께 캐시에 쓴다', async () => {
-      const characters = [character('ocid-1'), character('ocid-2')]
+  describe('mockCharacter/basic 편승 갱신 (ADR-097 결정 7)', () => {
+    it('추적 캐릭터 N명을 동기화하면 mockCharacter/basic을 N회 호출하고 cachedAt과 함께 캐시에 쓴다', async () => {
+      const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
       fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) =>
@@ -1199,7 +1169,7 @@ describe('syncSchedules', () => {
       expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(2)
       expect(fetchCharacterBasicMock).toHaveBeenCalledWith('key-1', 'ocid-1')
       expect(fetchCharacterBasicMock).toHaveBeenCalledWith('key-1', 'ocid-2')
-      // character/list 가 준 jobClass 가 엔트리에 함께 실린다(ADR-144 결정 2) — basic 응답에는 없다.
+      // mockCharacter/list 가 준 jobClass 가 엔트리에 함께 실린다(ADR-144 결정 2) — basic 응답에는 없다.
       expect(setCachedCharacterBasicMock).toHaveBeenCalledWith('acc-1', 'ocid-1', {
         profile: basicProfile({ name: '갱신-ocid-1', level: 293, jobClass: '렌' }),
         cachedAt: NOW,
@@ -1210,8 +1180,8 @@ describe('syncSchedules', () => {
       })
     })
 
-    it('character/basic이 실패해도 스케줄 조회가 성공했으면 그 캐릭터는 isStale: false다', async () => {
-      const characters = [character('ocid-1')]
+    it('mockCharacter/basic이 실패해도 스케줄 조회가 성공했으면 그 캐릭터는 isStale: false다', async () => {
+      const characters = [mockCharacter('ocid-1')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
       fetchCharacterBasicMock.mockRejectedValue(new NexonNetworkError('basic 조회 실패'))
@@ -1224,8 +1194,8 @@ describe('syncSchedules', () => {
       expect(setCachedCharacterBasicMock).not.toHaveBeenCalled()
     })
 
-    it('한 캐릭터의 character/basic 실패가 다른 캐릭터의 갱신을 막지 않는다', async () => {
-      const characters = [character('ocid-1'), character('ocid-2')]
+    it('한 캐릭터의 mockCharacter/basic 실패가 다른 캐릭터의 갱신을 막지 않는다', async () => {
+      const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
       fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) => {
@@ -1244,8 +1214,8 @@ describe('syncSchedules', () => {
       })
     })
 
-    it('프리플라이트가 401이면 character/basic을 한 번도 부르지 않는다 (ADR-008 순서 보존)', async () => {
-      const characters = [character('ocid-1'), character('ocid-2'), character('ocid-3')]
+    it('프리플라이트가 401이면 mockCharacter/basic을 한 번도 부르지 않는다 (ADR-008 순서 보존)', async () => {
+      const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2'), mockCharacter('ocid-3')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       fetchSchedulerCharacterStateMock.mockRejectedValueOnce(new NexonAuthError('invalid'))
 
@@ -1254,8 +1224,8 @@ describe('syncSchedules', () => {
       expect(fetchCharacterBasicMock).not.toHaveBeenCalled()
     })
 
-    it('프리플라이트가 429면 character/basic을 한 번도 부르지 않는다', async () => {
-      const characters = [character('ocid-1'), character('ocid-2')]
+    it('프리플라이트가 429면 mockCharacter/basic을 한 번도 부르지 않는다', async () => {
+      const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       fetchSchedulerCharacterStateMock.mockRejectedValueOnce(new NexonRateLimitError('rate limited'))
 
@@ -1266,8 +1236,8 @@ describe('syncSchedules', () => {
 
     // ADR-113 결정 1: 이 편승 갱신도 공유 TTL 가드를 통과한다. ADR-097 결정 1~4 의 호출 조건은
     // 그대로 서고(동기화 자체는 돈다) basic 만 5분 가드에 걸려 건너뛴다.
-    it('5분 TTL 안에 캐시된 캐릭터는 편승 갱신에서 character/basic 을 부르지 않는다 (ADR-113 결정 1)', async () => {
-      const characters = [character('ocid-1')]
+    it('5분 TTL 안에 캐시된 캐릭터는 편승 갱신에서 mockCharacter/basic 을 부르지 않는다 (ADR-113 결정 1)', async () => {
+      const characters = [mockCharacter('ocid-1')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
       getCachedCharacterBasicMock.mockResolvedValue({
@@ -1290,7 +1260,7 @@ describe('syncSchedules', () => {
   // 계정 공유 원장도 "지금 고른 계정" 키로 읽고 써서 에픽 던전 완료가 계정을 넘어 번졌다.
   describe('다계정 — 계정을 캐릭터마다 해석한다 (ADR-143 결정 6)', () => {
     function twoAccounts(): MapleAccount[] {
-      return [account('acc-1', [character('ocid-1')]), account('acc-2', [character('ocid-2')])]
+      return [account('acc-1', [mockCharacter('ocid-1')]), account('acc-2', [mockCharacter('ocid-2')])]
     }
 
     it('두 계정에 나뉜 ocid 를 섞어 추적하면 둘 다 동기화된다', async () => {
@@ -1344,7 +1314,7 @@ describe('syncSchedules', () => {
       expect(setAccountSharedProgressEntryMock).toHaveBeenCalledWith('acc-2', '에픽 던전 : 악몽선경', entry)
     })
 
-    it('character/basic 편승 갱신도 각 캐릭터의 자기 계정으로 캐시에 쓴다 (ADR-086 결정 9 인덱스)', async () => {
+    it('mockCharacter/basic 편승 갱신도 각 캐릭터의 자기 계정으로 캐시에 쓴다 (ADR-086 결정 9 인덱스)', async () => {
       fetchCharacterListMock.mockResolvedValue(twoAccounts())
       fetchSchedulerCharacterStateMock.mockImplementation(async (_apiKey: string, ocid: string) =>
         schedulerState(`캐릭터-${ocid}`),
@@ -1362,7 +1332,7 @@ describe('syncSchedules', () => {
     // 결정 7: RN 은 계정을 고르는 단계가 없어 selectedAccountId 가 영영 null 이다.
     it('selectedAccountId 가 없어도 동기화한다 — 계정을 고른 적 없는 설치본', async () => {
       getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1', selectedAccountId: null })
-      fetchCharacterListMock.mockResolvedValue([account('acc-9', [character('ocid-1')])])
+      fetchCharacterListMock.mockResolvedValue([account('acc-9', [mockCharacter('ocid-1')])])
       fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
 
       const results = await syncSchedules(['ocid-1'])
@@ -1374,7 +1344,7 @@ describe('syncSchedules', () => {
     // 이 파일의 나머지 케이스가 전부 단일 계정이지만, 그것들은 "결과"만 본다. 이 케이스는
     // **호출 수와 순서까지** 고정한다 — 웹뷰 앱은 이 경로로 계속 배포되므로 여기가 회귀 가드다.
     it('단일 계정 입력에서는 호출 수·순서·원장 키가 지금과 같다 (웹뷰 앱 회귀 가드)', async () => {
-      const characters = [character('ocid-1'), character('ocid-2'), character('ocid-3')]
+      const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2'), mockCharacter('ocid-3')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       fetchSchedulerCharacterStateMock.mockImplementation(async (_apiKey: string, ocid: string) =>
         schedulerState(`캐릭터-${ocid}`),
@@ -1400,8 +1370,8 @@ describe('syncSchedules', () => {
 })
 
 describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신)', () => {
-  describe('ADR-017 결정 6: 캐싱된 전체 캐릭터 stub으로 character/list 대기 중에도 즉시 표시', () => {
-    it('character-basic-cache 인덱스에 캐시가 있으면 character/list 응답 전에 stub 목록으로 먼저 onUpdate한다', async () => {
+  describe('ADR-017 결정 6: 캐싱된 전체 캐릭터 stub으로 mockCharacter/list 대기 중에도 즉시 표시', () => {
+    it('mockCharacter-basic-cache 인덱스에 캐시가 있으면 mockCharacter/list 응답 전에 stub 목록으로 먼저 onUpdate한다', async () => {
       fetchCharacterListMock.mockImplementation(() => new Promise(() => {})) // 절대 resolve 안 함
       getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1'])
       getCachedCharacterBasicMock.mockImplementation(async (ocid: string) =>
@@ -1410,10 +1380,10 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
           : null,
       )
 
-      const onUpdate = vi.fn()
+      const onUpdate = jest.fn()
       void getCharacterPickerRoster(onUpdate)
 
-      await vi.waitFor(() => expect(onUpdate).toHaveBeenCalled())
+      await waitFor(() => expect(onUpdate).toHaveBeenCalled())
       expect(onUpdate).toHaveBeenCalledWith([
         { ocid: 'ocid-1', name: '캐싱된캐릭', level: 180, imageUrl: basicProfile({ name: '캐싱된캐릭', level: 180 }).imageUrl },
       ])
@@ -1428,10 +1398,10 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
         cachedAt: STALE_CACHED_AT,
       }))
 
-      const onUpdate = vi.fn()
+      const onUpdate = jest.fn()
       void getCharacterPickerRoster(onUpdate)
 
-      await vi.waitFor(() => expect(onUpdate).toHaveBeenCalled())
+      await waitFor(() => expect(onUpdate).toHaveBeenCalled())
       const stub = onUpdate.mock.calls[0][0] as Array<{ ocid: string }>
       expect(stub.map((entry) => entry.ocid).sort()).toEqual(['ocid-1', 'ocid-2'])
     })
@@ -1444,26 +1414,26 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
         cachedAt: STALE_CACHED_AT,
       })
 
-      const onUpdate = vi.fn()
+      const onUpdate = jest.fn()
       void getCharacterPickerRoster(onUpdate)
 
-      await vi.waitFor(() => expect(getCachedCharacterBasicMock).toHaveBeenCalled())
+      await waitFor(() => expect(getCachedCharacterBasicMock).toHaveBeenCalled())
       expect(onUpdate).not.toHaveBeenCalled()
     })
 
-    it('인덱스가 비어있으면 stub 단계에서 onUpdate를 호출하지 않고 곧바로 character/list를 기다린다', async () => {
+    it('인덱스가 비어있으면 stub 단계에서 onUpdate를 호출하지 않고 곧바로 mockCharacter/list를 기다린다', async () => {
       fetchCharacterListMock.mockResolvedValue([account('acc-1', [])])
       getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
 
-      await getCharacterPickerRoster(vi.fn())
+      await getCharacterPickerRoster(jest.fn())
 
       expect(getCachedCharacterBasicMock).not.toHaveBeenCalled()
     })
 
-    // ADR-053 결정 1로 갱신: 예전에는 character/list 응답 시점에 캐시 없는 캐릭터까지 전부
+    // ADR-053 결정 1로 갱신: 예전에는 mockCharacter/list 응답 시점에 캐시 없는 캐릭터까지 전부
     // 채워 넣었으나(access_flag 미상), 이제는 캐시로 활성이 확인된 캐릭터만 남는다.
-    it('character/list 응답이 도착해도 캐시로 활성이 확인된 캐릭터만 담긴 목록으로 교체된다', async () => {
-      const characters = [character('ocid-1'), character('ocid-2')]
+    it('mockCharacter/list 응답이 도착해도 캐시로 활성이 확인된 캐릭터만 담긴 목록으로 교체된다', async () => {
+      const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1'])
       getCachedCharacterBasicMock.mockImplementation(async (ocid: string) =>
@@ -1473,10 +1443,10 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       )
       fetchCharacterBasicMock.mockImplementation(() => new Promise(() => {}))
 
-      const onUpdate = vi.fn()
+      const onUpdate = jest.fn()
       void getCharacterPickerRoster(onUpdate)
 
-      await vi.waitFor(() => expect(onUpdate.mock.calls.length).toBeGreaterThanOrEqual(2))
+      await waitFor(() => expect(onUpdate.mock.calls.length).toBeGreaterThanOrEqual(2))
       const afterCharacterList = onUpdate.mock.calls.at(-1)?.[0] as CharacterPickerEntry[]
       expect(afterCharacterList.map((entry) => entry.ocid)).toEqual(['ocid-1'])
       expect(afterCharacterList).toEqual([
@@ -1502,7 +1472,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
 
     it('추적 중이면 목록에서 빼지 않고 unavailable 항목으로 남긴다 — 해제 경로', async () => {
       await setTrackedOcids(['ocid-2'])
-      const characters = [character('ocid-1'), character('ocid-2')]
+      const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
       getCachedCharacterBasicMock.mockResolvedValue(null)
@@ -1513,14 +1483,14 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
         return basicProfile({ name: '정상', level: 250 })
       })
 
-      const onUpdate = vi.fn()
+      const onUpdate = jest.fn()
       await getCharacterPickerRoster(onUpdate)
 
       const emitted = onUpdate.mock.calls.at(-1)?.[0] as CharacterPickerEntry[]
       expect(emitted.map((entry) => entry.ocid).sort()).toEqual(['ocid-1', 'ocid-2'])
 
       const unavailable = emitted.find((entry) => entry.ocid === 'ocid-2')
-      // character/list가 준 이름·레벨·월드는 쓸 수 있다(basic만 실패한 것이다)
+      // mockCharacter/list가 준 이름·레벨·월드는 쓸 수 있다(basic만 실패한 것이다)
       expect(unavailable).toEqual({
         ocid: 'ocid-2',
         name: '캐릭터-ocid-2',
@@ -1533,7 +1503,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     })
 
     it('추적 중이 아니면 목록에 넣지 않는다 (ADR-086 결정 3)', async () => {
-      const characters = [character('ocid-1'), character('ocid-2')]
+      const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
       getCachedCharacterBasicMock.mockResolvedValue(null)
@@ -1544,7 +1514,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
         return basicProfile({ name: '정상', level: 250 })
       })
 
-      const onUpdate = vi.fn()
+      const onUpdate = jest.fn()
       await getCharacterPickerRoster(onUpdate)
 
       const emitted = onUpdate.mock.calls.at(-1)?.[0] as CharacterPickerEntry[]
@@ -1553,7 +1523,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
 
     it('조회 불가 항목은 목록 맨 뒤로 보낸다 — 정상 후보를 밀어내지 않는다', async () => {
       await setTrackedOcids(['ocid-high'])
-      const characters = [character('ocid-low'), character('ocid-high')]
+      const characters = [mockCharacter('ocid-low'), mockCharacter('ocid-high')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
       getCachedCharacterBasicMock.mockResolvedValue(null)
@@ -1563,7 +1533,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
         return basicProfile({ name: '낮은레벨', level: 10 })
       })
 
-      const onUpdate = vi.fn()
+      const onUpdate = jest.fn()
       await getCharacterPickerRoster(onUpdate)
 
       const emitted = onUpdate.mock.calls.at(-1)?.[0] as CharacterPickerEntry[]
@@ -1571,7 +1541,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     })
 
     it('그 외 개별 실패(네트워크)는 지금처럼 목록에 넣지 않는다 — 조회 불가와 구분한다', async () => {
-      const characters = [character('ocid-1'), character('ocid-2')]
+      const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
       getCachedCharacterBasicMock.mockResolvedValue(null)
@@ -1580,7 +1550,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
         return basicProfile({ name: '정상', level: 250 })
       })
 
-      const onUpdate = vi.fn()
+      const onUpdate = jest.fn()
       await getCharacterPickerRoster(onUpdate)
 
       const emitted = onUpdate.mock.calls.at(-1)?.[0] as CharacterPickerEntry[]
@@ -1588,9 +1558,9 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     })
   })
 
-  it('계정에 캐릭터가 없으면 character/basic을 호출하지 않고 onUpdate([])를 한 번 호출한다', async () => {
+  it('계정에 캐릭터가 없으면 mockCharacter/basic을 호출하지 않고 onUpdate([])를 한 번 호출한다', async () => {
     fetchCharacterListMock.mockResolvedValue([account('acc-1', [])])
-    const onUpdate = vi.fn()
+    const onUpdate = jest.fn()
 
     await getCharacterPickerRoster(onUpdate)
 
@@ -1598,8 +1568,8 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     expect(fetchCharacterBasicMock).not.toHaveBeenCalled()
   })
 
-  it('캐시된 캐릭터는 character/basic 응답을 기다리지 않고 첫 onUpdate에 즉시 포함된다', async () => {
-    const characters = [character('ocid-1')]
+  it('캐시된 캐릭터는 mockCharacter/basic 응답을 기다리지 않고 첫 onUpdate에 즉시 포함된다', async () => {
+    const characters = [mockCharacter('ocid-1')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
     getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1'])
     getCachedCharacterBasicMock.mockResolvedValue({
@@ -1608,25 +1578,25 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     })
     fetchCharacterBasicMock.mockImplementation(() => new Promise(() => {})) // 절대 resolve 안 함
 
-    const onUpdate = vi.fn()
+    const onUpdate = jest.fn()
     void getCharacterPickerRoster(onUpdate)
 
-    // 첫 방출(stub)은 character/basic 응답 없이도 캐시 값만으로 이뤄진다
-    await vi.waitFor(() => expect(onUpdate).toHaveBeenCalled())
+    // 첫 방출(stub)은 mockCharacter/basic 응답 없이도 캐시 값만으로 이뤄진다
+    await waitFor(() => expect(onUpdate).toHaveBeenCalled())
     expect(onUpdate.mock.calls[0][0]).toEqual([
       { ocid: 'ocid-1', name: '캐시캐릭', level: 150, imageUrl: basicProfile({ name: '캐시캐릭', level: 150 }).imageUrl },
     ])
 
-    // character/list 응답 이후 방출도 캐시 값(+ world)을 그대로 유지한다
-    await vi.waitFor(() => expect(onUpdate.mock.calls.length).toBeGreaterThanOrEqual(2))
+    // mockCharacter/list 응답 이후 방출도 캐시 값(+ world)을 그대로 유지한다
+    await waitFor(() => expect(onUpdate.mock.calls.length).toBeGreaterThanOrEqual(2))
     expect(onUpdate.mock.calls.at(-1)?.[0]).toEqual([
       { ocid: 'ocid-1', name: '캐시캐릭', level: 150, imageUrl: basicProfile({ name: '캐시캐릭', level: 150 }).imageUrl, world: '베라' },
     ])
   })
 
-  // ADR-053 결정 1로 갱신: 예전에는 imageUrl: null + character/list의 이름/레벨로 즉시 넣었다.
-  it('캐시가 없는 캐릭터는 character/basic으로 활성이 확인되기 전까지 어떤 방출에도 포함되지 않는다', async () => {
-    const characters = [character('ocid-1'), character('ocid-2')]
+  // ADR-053 결정 1로 갱신: 예전에는 imageUrl: null + mockCharacter/list의 이름/레벨로 즉시 넣었다.
+  it('캐시가 없는 캐릭터는 mockCharacter/basic으로 활성이 확인되기 전까지 어떤 방출에도 포함되지 않는다', async () => {
+    const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
     getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1'])
     getCachedCharacterBasicMock.mockImplementation(async (ocid: string) =>
@@ -1642,15 +1612,15 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
         }),
     )
 
-    const onUpdate = vi.fn()
+    const onUpdate = jest.fn()
     const promise = getCharacterPickerRoster(onUpdate)
 
-    await vi.waitFor(() => expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(2))
     for (const [entries] of onUpdate.mock.calls) {
       expect((entries as CharacterPickerEntry[]).map((entry) => entry.ocid)).toEqual(['ocid-1'])
     }
 
-    // character/basic이 활성을 확인해준 뒤에야 목록에 들어온다
+    // mockCharacter/basic이 활성을 확인해준 뒤에야 목록에 들어온다
     resolvers[0](basicProfile({ name: '캐시캐릭', level: 150 }))
     resolvers[1](basicProfile({ name: '새캐릭', level: 250 }))
     await promise
@@ -1663,7 +1633,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
   // access_flag: true 면 즉시 통과(충분조건), false 면 최근 14일 완료 기록을 한 번 더 본다.
   describe('후보 자격 — 활동 관측 (ADR-086 결정 3)', () => {
     async function primeLedger(ocid: string, dateKey: string, hasCompletion: boolean): Promise<void> {
-      const { recordScheduleProbe } = await import('../../../storage/schedule-probe-ledger')
+      const { recordScheduleProbe } = require('../../../storage/schedule-probe-ledger') as typeof import('../../../storage/schedule-probe-ledger')
       await recordScheduleProbe(ocid, dateKey, {
         kind: 'observed',
         hasCompletion,
@@ -1688,7 +1658,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     }
 
     it('access_flag: false여도 최근 14일 완료 기록이 있으면 목록에 넣는다', async () => {
-      const characters = [character('ocid-1')]
+      const characters = [mockCharacter('ocid-1')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
       getCachedCharacterBasicMock.mockResolvedValue(null)
@@ -1700,7 +1670,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       // 자리다(ADR-148 결정 2). 옛 직렬 루프에서는 이 값이 1이었다.
       fetchSchedulerCharacterStateMock.mockResolvedValue(completedState())
 
-      const onUpdate = vi.fn()
+      const onUpdate = jest.fn()
       await getCharacterPickerRoster(onUpdate)
 
       const emitted = onUpdate.mock.calls.at(-1)?.[0] as CharacterPickerEntry[]
@@ -1709,7 +1679,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     })
 
     it('최근 14일 내내 완료 기록이 없고 추적 중도 아니면 목록에서 뺀다', async () => {
-      const characters = [character('ocid-1')]
+      const characters = [mockCharacter('ocid-1')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
       getCachedCharacterBasicMock.mockResolvedValue(null)
@@ -1719,7 +1689,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       })
       fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('휴면캐릭'))
 
-      const onUpdate = vi.fn()
+      const onUpdate = jest.fn()
       await getCharacterPickerRoster(onUpdate)
 
       expect(onUpdate.mock.calls.at(-1)?.[0]).toEqual([])
@@ -1728,7 +1698,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     it('자격이 없어도 추적 중이면 남긴다 — 해제 경로', async () => {
       await prefs.set('trackedCharacters', JSON.stringify(['ocid-1']))
 
-      const characters = [character('ocid-1')]
+      const characters = [mockCharacter('ocid-1')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
       getCachedCharacterBasicMock.mockResolvedValue(null)
@@ -1738,7 +1708,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       })
       fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('휴면캐릭'))
 
-      const onUpdate = vi.fn()
+      const onUpdate = jest.fn()
       await getCharacterPickerRoster(onUpdate)
 
       const emitted = onUpdate.mock.calls.at(-1)?.[0] as CharacterPickerEntry[]
@@ -1748,7 +1718,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     it('stub 단계는 원장만 읽어 판정한다 — 네트워크 없이 자격 있는 캐릭터를 먼저 그린다', async () => {
       await primeLedger('ocid-2', '2026-07-10', true)
 
-      const characters = [character('ocid-1'), character('ocid-2')]
+      const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1', 'ocid-2'])
       getCachedCharacterBasicMock.mockImplementation(async (ocid: string) => ({
@@ -1760,17 +1730,17 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       }))
       fetchCharacterBasicMock.mockImplementation(() => new Promise(() => {}))
 
-      const onUpdate = vi.fn()
+      const onUpdate = jest.fn()
       void getCharacterPickerRoster(onUpdate)
 
-      await vi.waitFor(() => expect(onUpdate).toHaveBeenCalled())
+      await waitFor(() => expect(onUpdate).toHaveBeenCalled())
       const first = onUpdate.mock.calls[0]?.[0] as CharacterPickerEntry[]
       expect(first.map((entry) => entry.ocid)).toEqual(['ocid-2'])
     })
   })
 
   it('캐시상 access_flag가 false이고 활동 기록도 없는 캐릭터는 모든 방출에서 제외된다', async () => {
-    const characters = [character('ocid-1'), character('ocid-2')]
+    const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
     getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1', 'ocid-2'])
     getCachedCharacterBasicMock.mockImplementation(async (ocid: string) =>
@@ -1783,21 +1753,21 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     )
     fetchCharacterBasicMock.mockImplementation(() => new Promise(() => {}))
 
-    const onUpdate = vi.fn()
+    const onUpdate = jest.fn()
     void getCharacterPickerRoster(onUpdate)
 
-    await vi.waitFor(() => expect(onUpdate.mock.calls.length).toBeGreaterThanOrEqual(2))
+    await waitFor(() => expect(onUpdate.mock.calls.length).toBeGreaterThanOrEqual(2))
     for (const [entries] of onUpdate.mock.calls) {
       expect((entries as CharacterPickerEntry[]).map((entry) => entry.ocid)).toEqual(['ocid-1'])
     }
   })
 
-  it('character/basic 응답이 도착하면 값을 갱신하고 캐시에 기록한다', async () => {
-    const characters = [character('ocid-1')]
+  it('mockCharacter/basic 응답이 도착하면 값을 갱신하고 캐시에 기록한다', async () => {
+    const characters = [mockCharacter('ocid-1')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
     fetchCharacterBasicMock.mockResolvedValue(basicProfile({ name: '최신캐릭', level: 293 }))
 
-    const onUpdate = vi.fn()
+    const onUpdate = jest.fn()
     await getCharacterPickerRoster(onUpdate)
 
     const last = onUpdate.mock.calls.at(-1)?.[0]
@@ -1814,8 +1784,8 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
 
   // ADR-113 결정 1: 온보딩 한 바퀴(프로브 → 예열 → 피커)가 5분 안에 끝나면 피커는 방금 채워진
   // 캐시를 그대로 쓴다 — 같은 캐릭터로 세 번 나가던 요청이 한 번이 된다.
-  it('5분 TTL 안에 캐시된 캐릭터는 live 루프에서 character/basic 을 부르지 않는다 (ADR-113 결정 1)', async () => {
-    const characters = [character('ocid-1')]
+  it('5분 TTL 안에 캐시된 캐릭터는 live 루프에서 mockCharacter/basic 을 부르지 않는다 (ADR-113 결정 1)', async () => {
+    const characters = [mockCharacter('ocid-1')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
     getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1'])
     getCachedCharacterBasicMock.mockResolvedValue({
@@ -1823,12 +1793,12 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       cachedAt: NOW,
     })
 
-    const onUpdate = vi.fn()
+    const onUpdate = jest.fn()
     await getCharacterPickerRoster(onUpdate)
 
     expect(fetchCharacterBasicMock).not.toHaveBeenCalled()
     expect(setCachedCharacterBasicMock).not.toHaveBeenCalled()
-    // 목록은 캐시 값으로 그대로 완성된다(+ character/list 가 준 world).
+    // 목록은 캐시 값으로 그대로 완성된다(+ mockCharacter/list 가 준 world).
     expect(onUpdate.mock.calls.at(-1)?.[0]).toEqual([
       {
         ocid: 'ocid-1',
@@ -1840,12 +1810,12 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     ])
   })
 
-  it('character/basic 응답이 access_flag: false면 이후 목록에서 제외된다', async () => {
-    const characters = [character('ocid-1')]
+  it('mockCharacter/basic 응답이 access_flag: false면 이후 목록에서 제외된다', async () => {
+    const characters = [mockCharacter('ocid-1')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
     fetchCharacterBasicMock.mockResolvedValue({ ...basicProfile({ name: '숨김', level: 100 }), accessFlag: false })
 
-    const onUpdate = vi.fn()
+    const onUpdate = jest.fn()
     await getCharacterPickerRoster(onUpdate)
 
     const last = onUpdate.mock.calls.at(-1)?.[0]
@@ -1854,8 +1824,8 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
 
   // ADR-053 결정 2: 개별 patch 스트리밍은 "보여줄 캐시가 있는" 웜 경로의 동작이다(콜드 경로는
   // 아래 ADR-053 describe에서 중간 방출 억제를 검증한다).
-  it('character/basic을 Promise.all로 뭉치지 않고 하나씩 끝나는 대로 onUpdate한다', async () => {
-    const characters = [character('ocid-1'), character('ocid-2'), character('ocid-3')]
+  it('mockCharacter/basic을 Promise.all로 뭉치지 않고 하나씩 끝나는 대로 onUpdate한다', async () => {
+    const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2'), mockCharacter('ocid-3')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
     getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1', 'ocid-2', 'ocid-3'])
     getCachedCharacterBasicMock.mockImplementation(async (ocid: string) => ({
@@ -1870,14 +1840,14 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
         }),
     )
 
-    const onUpdate = vi.fn()
+    const onUpdate = jest.fn()
     const promise = getCharacterPickerRoster(onUpdate)
 
-    await vi.waitFor(() => expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(3))
+    await waitFor(() => expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(3))
     const callsBeforeAnyResolve = onUpdate.mock.calls.length
 
     resolvers[0](basicProfile({ name: '캐릭터1', level: 100 }))
-    await vi.waitFor(() => expect(onUpdate.mock.calls.length).toBeGreaterThan(callsBeforeAnyResolve))
+    await waitFor(() => expect(onUpdate.mock.calls.length).toBeGreaterThan(callsBeforeAnyResolve))
 
     resolvers[1](basicProfile({ name: '캐릭터2', level: 200 }))
     resolvers[2](basicProfile({ name: '캐릭터3', level: 300 }))
@@ -1885,7 +1855,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
   })
 
   it('개별 실패는 기존 캐시 값을 유지한 채 조용히 넘어간다', async () => {
-    const characters = [character('ocid-1')]
+    const characters = [mockCharacter('ocid-1')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
     getCachedCharacterBasicMock.mockResolvedValue({
       profile: basicProfile({ name: '캐시캐릭', level: 150 }),
@@ -1893,7 +1863,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     })
     fetchCharacterBasicMock.mockRejectedValue(new NexonNetworkError('timeout'))
 
-    const onUpdate = vi.fn()
+    const onUpdate = jest.fn()
     await getCharacterPickerRoster(onUpdate)
 
     const last = onUpdate.mock.calls.at(-1)?.[0]
@@ -1903,30 +1873,30 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
   })
 
   it('한 캐릭터에서 401(NexonAuthError)이 발생하면 전체를 에러로 던진다', async () => {
-    const characters = [character('ocid-1'), character('ocid-2')]
+    const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
     fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) => {
       if (ocid === 'ocid-1') throw new NexonAuthError('invalid')
       return basicProfile({ name: '정상캐릭', level: 100 })
     })
 
-    await expect(getCharacterPickerRoster(vi.fn())).rejects.toThrow(NexonAuthError)
+    await expect(getCharacterPickerRoster(jest.fn())).rejects.toThrow(NexonAuthError)
   })
 
   it('한 캐릭터에서 429(NexonRateLimitError)가 발생하면 전체를 에러로 던진다', async () => {
-    const characters = [character('ocid-1'), character('ocid-2')]
+    const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
     fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) => {
       if (ocid === 'ocid-1') throw new NexonRateLimitError('rate limited')
       return basicProfile({ name: '정상캐릭', level: 100 })
     })
 
-    await expect(getCharacterPickerRoster(vi.fn())).rejects.toThrow(NexonRateLimitError)
+    await expect(getCharacterPickerRoster(jest.fn())).rejects.toThrow(NexonRateLimitError)
   })
 
   describe('ADR-053 결정 1·2: access_flag 확인된 캐릭터만 방출 + 콜드 스타트 중간 방출 억제', () => {
-    it('웜 캐시 — character/list 응답 전 stub을 방출하고, 이후 응답마다 추가로 방출한다(ADR-016 SWR 유지)', async () => {
-      const characters = [character('ocid-1'), character('ocid-2')]
+    it('웜 캐시 — mockCharacter/list 응답 전 stub을 방출하고, 이후 응답마다 추가로 방출한다(ADR-016 SWR 유지)', async () => {
+      const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
       let resolveList: (accounts: MapleAccount[]) => void = () => {}
       fetchCharacterListMock.mockImplementation(
         () =>
@@ -1947,22 +1917,22 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
           }),
       )
 
-      const onUpdate = vi.fn()
+      const onUpdate = jest.fn()
       const promise = getCharacterPickerRoster(onUpdate)
 
-      // ① stub — character/list 응답을 기다리지 않고 즉시
-      await vi.waitFor(() => expect(onUpdate).toHaveBeenCalledTimes(1))
+      // ① stub — mockCharacter/list 응답을 기다리지 않고 즉시
+      await waitFor(() => expect(onUpdate).toHaveBeenCalledTimes(1))
       expect(fetchCharacterBasicMock).not.toHaveBeenCalled()
 
-      // ② character/list 응답 시점에 추가 방출
+      // ② mockCharacter/list 응답 시점에 추가 방출
       resolveList([account('acc-1', characters)])
-      await vi.waitFor(() => expect(onUpdate.mock.calls.length).toBeGreaterThanOrEqual(2))
-      await vi.waitFor(() => expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(2))
+      await waitFor(() => expect(onUpdate.mock.calls.length).toBeGreaterThanOrEqual(2))
+      await waitFor(() => expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(2))
       const callsBeforeAnyResolve = onUpdate.mock.calls.length
 
-      // ③ character/basic 응답마다 개별 patch 방출
+      // ③ mockCharacter/basic 응답마다 개별 patch 방출
       resolvers[0](basicProfile({ name: '최신-1', level: 250 }))
-      await vi.waitFor(() => expect(onUpdate.mock.calls.length).toBeGreaterThan(callsBeforeAnyResolve))
+      await waitFor(() => expect(onUpdate.mock.calls.length).toBeGreaterThan(callsBeforeAnyResolve))
 
       resolvers[1](basicProfile({ name: '최신-2', level: 240 }))
       await promise
@@ -1975,9 +1945,9 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     })
 
     // ADR-149 결정 1: 아래 둘은 «콜드 스타트에서는 완료 후 1회만» 을 단언하던 자리다. ③에 담기는
-    // 항목은 character/basic 응답과 자격 판정을 통과한 **확인된** 것이라, 형제를 기다릴 이유가 없다.
+    // 항목은 mockCharacter/basic 응답과 자격 판정을 통과한 **확인된** 것이라, 형제를 기다릴 이유가 없다.
     it('콜드 캐시 — 확인된 캐릭터는 형제를 기다리지 않고 그 자리에서 방출한다 (ADR-149 결정 1)', async () => {
-      const characters = [character('ocid-1'), character('ocid-2')]
+      const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
       getCachedCharacterBasicMock.mockResolvedValue(null)
@@ -1989,16 +1959,16 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
           }),
       )
 
-      const onUpdate = vi.fn()
+      const onUpdate = jest.fn()
       const promise = getCharacterPickerRoster(onUpdate)
 
       // 아직 한 건도 확인하지 못했다 — 빈 목록은 흘리지 않는다(결정 2).
-      await vi.waitFor(() => expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(2))
+      await waitFor(() => expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(2))
       expect(onUpdate).not.toHaveBeenCalled()
 
       // 첫 캐릭터가 확인되는 즉시 그 한 건만으로 방출한다 — 둘째는 아직 응답 전이다.
       resolvers[0](basicProfile({ name: '캐릭1', level: 250 }))
-      await vi.waitFor(() => expect(onUpdate).toHaveBeenCalled())
+      await waitFor(() => expect(onUpdate).toHaveBeenCalled())
       expect((onUpdate.mock.calls[0][0] as CharacterPickerEntry[]).map((entry) => entry.name)).toEqual(['캐릭1'])
 
       resolvers[1](basicProfile({ name: '캐릭2', level: 240 }))
@@ -2011,7 +1981,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     })
 
     it('콜드 캐시 — 캐시 인덱스에 ocid가 있어도 전부 access_flag: false면 stub 을 흘리지 않는다', async () => {
-      const characters = [character('ocid-1'), character('ocid-2')]
+      const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1', 'ocid-2'])
       getCachedCharacterBasicMock.mockImplementation(async () => ({
@@ -2022,7 +1992,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
         ocid === 'ocid-1' ? basicProfile({ name: '이제활성', level: 210 }) : basicProfile({ name: '이제활성2', level: 205 }),
       )
 
-      const onUpdate = vi.fn()
+      const onUpdate = jest.fn()
       await getCharacterPickerRoster(onUpdate)
 
       // 자격 미확인 캐시는 어떤 방출에도 안 들어간다 — 「비공개」가 한 번도 안 보인다(ADR-053 결정 1).
@@ -2037,7 +2007,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     })
 
     it('콜드 캐시 — 한 건도 확인하지 못한 채 끝나면 빈 목록은 최종 방출에서만 나간다 (ADR-149 결정 2)', async () => {
-      const characters = [character('ocid-1'), character('ocid-2')]
+      const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
       getCachedCharacterBasicMock.mockResolvedValue(null)
@@ -2046,7 +2016,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
         accessFlag: false,
       }))
 
-      const onUpdate = vi.fn()
+      const onUpdate = jest.fn()
       await getCharacterPickerRoster(onUpdate)
 
       // 중간에 []를 흘렸다면 화면이 «모두 조회할 수 없어요» 를 그렸을 자리다.
@@ -2054,8 +2024,8 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       expect(onUpdate).toHaveBeenCalledWith([])
     })
 
-    it('콜드 캐시 — character/basic이 access_flag: false를 반환한 캐릭터는 어떤 방출에도 등장하지 않는다', async () => {
-      const characters = [character('ocid-1'), character('ocid-2')]
+    it('콜드 캐시 — mockCharacter/basic이 access_flag: false를 반환한 캐릭터는 어떤 방출에도 등장하지 않는다', async () => {
+      const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) =>
         ocid === 'ocid-1'
@@ -2063,7 +2033,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
           : { ...basicProfile({ name: '비공개', level: 999 }), accessFlag: false },
       )
 
-      const onUpdate = vi.fn()
+      const onUpdate = jest.fn()
       await getCharacterPickerRoster(onUpdate)
 
       // 방출이 여러 번이므로(ADR-149 결정 1) «어떤 방출에도» 는 합집합으로 묻는다.
@@ -2076,34 +2046,34 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     // ADR-149 결정 3: 스트리밍이 되면서 `globalError` 가드가 비로소 실효를 갖는다 — 실패가 먼저
     // 확정되면 뒤이어 성공한 형제도 흘리지 않는다(불완전한 목록이 «완성» 으로 오해되면 안 된다).
     it('콜드 캐시 — 전역 실패(401)가 먼저 확정되면 뒤이은 성공도 흘리지 않고 그대로 던진다', async () => {
-      const characters = [character('ocid-1'), character('ocid-2')]
+      const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) => {
         if (ocid === 'ocid-1') throw new NexonAuthError('invalid')
         return basicProfile({ name: '정상캐릭', level: 100 })
       })
 
-      const onUpdate = vi.fn()
+      const onUpdate = jest.fn()
       await expect(getCharacterPickerRoster(onUpdate)).rejects.toThrow(NexonAuthError)
       expect(onUpdate).not.toHaveBeenCalled()
     })
 
     it('콜드 캐시 — 전역 실패(429)가 먼저 확정되면 뒤이은 성공도 흘리지 않고 그대로 던진다', async () => {
-      const characters = [character('ocid-1'), character('ocid-2')]
+      const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) => {
         if (ocid === 'ocid-1') throw new NexonRateLimitError('rate limited')
         return basicProfile({ name: '정상캐릭', level: 100 })
       })
 
-      const onUpdate = vi.fn()
+      const onUpdate = jest.fn()
       await expect(getCharacterPickerRoster(onUpdate)).rejects.toThrow(NexonRateLimitError)
       expect(onUpdate).not.toHaveBeenCalled()
     })
   })
 
   it('정렬은 레벨 내림차순이고, 동레벨이면 대표 캐릭터 비교 로직(한글 우선)으로 2차 정렬한다', async () => {
-    const characters = [character('ocid-1'), character('ocid-2'), character('ocid-3')]
+    const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2'), mockCharacter('ocid-3')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
     fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) => {
       const byOcid: Record<string, ReturnType<typeof basicProfile>> = {
@@ -2114,7 +2084,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       return byOcid[ocid]
     })
 
-    const onUpdate = vi.fn()
+    const onUpdate = jest.fn()
     await getCharacterPickerRoster(onUpdate)
 
     const last = onUpdate.mock.calls.at(-1)?.[0] as Array<{ name: string }>

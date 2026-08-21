@@ -1,102 +1,77 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { waitFor } from '../../../__tests__/wait-for'
 import type { CharacterScheduleSync } from '../../schedule-sync/schedule-sync'
 import type { BossContent, SchedulerCharacterState } from '../../../types'
 import type { BossProfitRecord } from '../../../storage/boss-profit'
 import type { CachedSchedulerEntry } from '../../../storage/scheduler-cache'
 
-const {
-  syncSchedulesMock,
-  getTrackedCharacterOcidsMock,
-  getBossProfitRecordsMock,
-  hasBossProfitRecordsAtOrBeforeMock,
-  fillMissingRecordWorldsMock,
-  upsertBossProfitRecordMock,
-  getBossPartySizeMock,
-  getCachedSchedulerStateMock,
-  getCachedCharacterBasicMock,
-  isPeriodCheckedMock,
-  markPeriodCheckedMock,
-  getAuthConfigMock,
-  fetchSchedulerCharacterStateMock,
-  getTrackingModeMock,
-  getManualTrackedContentMock,
-  getBossDropRecordsMock,
-  replaceBossDropRecordsMock,
-} = vi.hoisted(() => ({
-  syncSchedulesMock: vi.fn(),
-  getTrackedCharacterOcidsMock: vi.fn(),
-  getBossProfitRecordsMock: vi.fn(),
-  hasBossProfitRecordsAtOrBeforeMock: vi.fn(),
-  fillMissingRecordWorldsMock: vi.fn(),
-  upsertBossProfitRecordMock: vi.fn(),
-  getBossPartySizeMock: vi.fn(),
-  getCachedSchedulerStateMock: vi.fn(),
-  getCachedCharacterBasicMock: vi.fn(),
-  isPeriodCheckedMock: vi.fn(),
-  markPeriodCheckedMock: vi.fn(),
-  getAuthConfigMock: vi.fn(),
-  fetchSchedulerCharacterStateMock: vi.fn(),
-  getTrackingModeMock: vi.fn(),
-  getManualTrackedContentMock: vi.fn(),
-  getBossDropRecordsMock: vi.fn(),
-  replaceBossDropRecordsMock: vi.fn(),
-}))
-
 // ADR-063: 스토어가 toScheduleSyncError로 원인을 살리므로 그 매핑은 실물을 쓴다(부분 모킹).
-vi.mock('../../schedule-sync/schedule-sync', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../../schedule-sync/schedule-sync')>()),
-  syncSchedules: syncSchedulesMock,
+jest.mock('../../schedule-sync/schedule-sync', () => ({
+  ...jest.requireActual<typeof import('../../schedule-sync/schedule-sync')>('../../schedule-sync/schedule-sync'),
+  syncSchedules: jest.fn(),
 }))
+const { syncSchedules: syncSchedulesMock } = jest.requireMock('../../schedule-sync/schedule-sync') as Record<string, jest.Mock>
 
-vi.mock('../../../storage/character-selection', () => ({
-  getTrackedCharacterOcids: getTrackedCharacterOcidsMock,
+jest.mock('../../../storage/character-selection', () => ({
+  getTrackedCharacterOcids: jest.fn(),
 }))
+const { getTrackedCharacterOcids: getTrackedCharacterOcidsMock } = jest.requireMock('../../../storage/character-selection') as Record<string, jest.Mock>
 
-vi.mock('../../../storage/boss-profit', () => ({
-  getBossProfitRecords: getBossProfitRecordsMock,
+jest.mock('../../../storage/boss-profit', () => ({
+  getBossProfitRecords: jest.fn(),
   // ADR-068 결정 5: 이전 게이트가 "이 기간 또는 더 과거에 기록이 있는가"를 SQL 부등호로 묻는다.
-  hasBossProfitRecordsAtOrBefore: hasBossProfitRecordsAtOrBeforeMock,
-  fillMissingRecordWorlds: fillMissingRecordWorldsMock,
-  upsertBossProfitRecord: upsertBossProfitRecordMock,
+  hasBossProfitRecordsAtOrBefore: jest.fn(),
+  fillMissingRecordWorlds: jest.fn(),
+  upsertBossProfitRecord: jest.fn(),
 }))
+const { getBossProfitRecords: getBossProfitRecordsMock, hasBossProfitRecordsAtOrBefore: hasBossProfitRecordsAtOrBeforeMock, fillMissingRecordWorlds: fillMissingRecordWorldsMock, upsertBossProfitRecord: upsertBossProfitRecordMock } = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
 
-vi.mock('../../../storage/boss-party-settings', () => ({
-  getBossPartySize: getBossPartySizeMock,
+jest.mock('../../../storage/boss-party-settings', () => ({
+  getBossPartySize: jest.fn(),
 }))
+const { getBossPartySize: getBossPartySizeMock } = jest.requireMock('../../../storage/boss-party-settings') as Record<string, jest.Mock>
 
-vi.mock('../../../storage/scheduler-cache', () => ({
-  getCachedSchedulerState: getCachedSchedulerStateMock,
+jest.mock('../../../storage/scheduler-cache', () => ({
+  getCachedSchedulerState: jest.fn(),
 }))
+const { getCachedSchedulerState: getCachedSchedulerStateMock } = jest.requireMock('../../../storage/scheduler-cache') as Record<string, jest.Mock>
 
-vi.mock('../../../storage/character-basic-cache', () => ({
-  getCachedCharacterBasic: getCachedCharacterBasicMock,
+jest.mock('../../../storage/character-basic-cache', () => ({
+  getCachedCharacterBasic: jest.fn(),
 }))
+const { getCachedCharacterBasic: getCachedCharacterBasicMock } = jest.requireMock('../../../storage/character-basic-cache') as Record<string, jest.Mock>
 
-vi.mock('../../../storage/boss-profit-period-checks', () => ({
-  isPeriodChecked: isPeriodCheckedMock,
-  markPeriodChecked: markPeriodCheckedMock,
+jest.mock('../../../storage/boss-profit-period-checks', () => ({
+  isPeriodChecked: jest.fn(),
+  markPeriodChecked: jest.fn(),
 }))
+const { isPeriodChecked: isPeriodCheckedMock, markPeriodChecked: markPeriodCheckedMock } = jest.requireMock('../../../storage/boss-profit-period-checks') as Record<string, jest.Mock>
 
-vi.mock('../../../storage/api-key', () => ({
-  getAuthConfig: getAuthConfigMock,
+jest.mock('../../../storage/api-key', () => ({
+  getAuthConfig: jest.fn(),
 }))
+const { getAuthConfig: getAuthConfigMock } = jest.requireMock('../../../storage/api-key') as Record<string, jest.Mock>
 
-vi.mock('../../../nexon/schedule', () => ({
-  fetchSchedulerCharacterState: fetchSchedulerCharacterStateMock,
+jest.mock('../../../nexon/schedule', () => ({
+  fetchSchedulerCharacterState: jest.fn(),
 }))
+const { fetchSchedulerCharacterState: fetchSchedulerCharacterStateMock } = jest.requireMock('../../../nexon/schedule') as Record<string, jest.Mock>
 
-vi.mock('../../../storage/tracking-mode', () => ({
-  getTrackingMode: getTrackingModeMock,
+jest.mock('../../../storage/tracking-mode', () => ({
+  getTrackingMode: jest.fn(),
 }))
+const { getTrackingMode: getTrackingModeMock } = jest.requireMock('../../../storage/tracking-mode') as Record<string, jest.Mock>
 
-vi.mock('../../../storage/manual-tracked-content', () => ({
-  getManualTrackedContent: getManualTrackedContentMock,
+jest.mock('../../../storage/manual-tracked-content', () => ({
+  getManualTrackedContent: jest.fn(),
 }))
+const { getManualTrackedContent: getManualTrackedContentMock } = jest.requireMock('../../../storage/manual-tracked-content') as Record<string, jest.Mock>
 
-vi.mock('../../../storage/boss-drops', () => ({
-  getBossDropRecords: getBossDropRecordsMock,
-  replaceBossDropRecords: replaceBossDropRecordsMock,
+jest.mock('../../../storage/boss-drops', () => ({
+  getBossDropRecords: jest.fn(),
+  replaceBossDropRecords: jest.fn(),
 }))
+const { getBossDropRecords: getBossDropRecordsMock, replaceBossDropRecords: replaceBossDropRecordsMock } = jest.requireMock('../../../storage/boss-drops') as Record<string, jest.Mock>
 
 import {
   getAdjacentPeriodKey,
@@ -111,6 +86,11 @@ import {
   resetSyncRunStateForTests,
 } from '../../schedule-sync/sync-run-state'
 import { useBossProfitStore } from '../store'
+// **Date 만 가짜로 만든다.** vitest 는 `toFake` 로 «가짜로 만들 것» 을 받았는데 jest 는 반대로
+// `doNotFake` 로 «건드리지 말 것» 을 받는다 — 그대로 두면 타이머까지 전부 가짜가 되어 실제
+// `setTimeout` 에 기대는 플러시가 영영 안 끝난다([[ADR-157]]).
+const NOT_FAKED = ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'setImmediate', 'clearImmediate', 'nextTick', 'queueMicrotask', 'performance', 'requestAnimationFrame', 'cancelAnimationFrame', 'requestIdleCallback', 'cancelIdleCallback', 'hrtime',
+] as never
 
 // "시세표(boss-crystal-prices.json)에 없는 보스" 표본. 실재 보스명을 쓰면 그 보스의 가격이
 // 확정되는 날 검증하려던 것과 반대 상태를 검증하게 된다 — 벨로나가 실제로 그랬다
@@ -195,7 +175,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  vi.resetAllMocks()
+  jest.resetAllMocks()
 })
 
 describe('setBossDrops (ADR-038)', () => {
@@ -759,7 +739,7 @@ describe('useBossProfitStore', () => {
     syncSchedulesMock.mockReturnValue(pending)
 
     void useBossProfitStore.getState().refresh(['ocid-1', 'ocid-2'])
-    await vi.waitFor(() => expect(useBossProfitStore.getState().rows.length).toBe(2))
+    await waitFor(() => expect(useBossProfitStore.getState().rows.length).toBe(2))
 
     const cacheFirstOrder = useBossProfitStore.getState().rows.map((row) => row.ocid)
     expect(cacheFirstOrder).toEqual(['ocid-2', 'ocid-1']) // 레벨 내림차순(ocid-2가 250으로 더 높음)
@@ -1020,14 +1000,14 @@ describe('useBossProfitStore', () => {
     // "불러오는 중..."에서 영원히 멈췄다. refresh()가 SQLite 응답을 무한정 기다리지 않고
     // 타임아웃 후 기본값(파티원 1인)으로라도 화면을 완성해야 한다.
     it('upsertBossProfitRecord가 응답하지 않아도(hang) 타임아웃 후 기본 파티원 수로 loaded 상태가 된다', async () => {
-      vi.useFakeTimers()
+      jest.useFakeTimers()
       try {
         getBossPartySizeMock.mockResolvedValue(null)
         upsertBossProfitRecordMock.mockImplementation(() => new Promise(() => {}))
         syncSchedulesMock.mockResolvedValue([syncResult()]) // 자쿰 카오스, priceMeso 8080000
 
         const refreshPromise = useBossProfitStore.getState().refresh(['ocid-1'])
-        await vi.advanceTimersByTimeAsync(5000)
+        await jest.advanceTimersByTimeAsync(5000)
         await refreshPromise
 
         const state = useBossProfitStore.getState()
@@ -1035,7 +1015,7 @@ describe('useBossProfitStore', () => {
         expect(state.rows[0].partySize).toBe(1)
         expect(state.rows[0].payoutMeso).toBe(8080000)
       } finally {
-        vi.useRealTimers()
+        jest.useRealTimers()
       }
     })
 
@@ -1043,7 +1023,7 @@ describe('useBossProfitStore', () => {
     // 유효하다. 다만 그때 party_size=1로 자동 기록하던 동작은 [[ADR-050]] 결정 3으로 폐기했다 —
     // 조회 실패를 "기록 없음"으로 읽고 사용자가 저장한 값을 덮어쓰는 데이터 손상 경로였다.
     it('getBossProfitRecords가 응답하지 않아도(hang) 타임아웃 후 멈추지 않고, 기본 파티원 수로 덮어쓰지도 않는다', async () => {
-      vi.useFakeTimers()
+      jest.useFakeTimers()
       try {
         getBossProfitRecordsMock.mockImplementation(() => new Promise(() => {}))
         getBossPartySizeMock.mockResolvedValue(null)
@@ -1053,8 +1033,8 @@ describe('useBossProfitStore', () => {
         // withSqliteFallback 창은 **조회마다 하나**이고 캐시 단계와 동기화 완료 단계가 차례로 조회한다
         // (ADR-111 결정 6 이후 캐시 단계는 캐시 행이 0이어도 조회한다 — 그 진입이 복원이 겨누는
         // 시나리오다). 뒤 창은 앞 창이 끝난 뒤에야 시작하므로 두 번 나눠 흘려보내야 한다.
-        await vi.advanceTimersByTimeAsync(5000) // 캐시 우선 표시 단계
-        await vi.advanceTimersByTimeAsync(5000) // 동기화 완료 단계
+        await jest.advanceTimersByTimeAsync(5000) // 캐시 우선 표시 단계
+        await jest.advanceTimersByTimeAsync(5000) // 동기화 완료 단계
         await refreshPromise
 
         const state = useBossProfitStore.getState()
@@ -1063,7 +1043,7 @@ describe('useBossProfitStore', () => {
         expect(state.rows[0].partySize).toBeNull()
         expect(upsertBossProfitRecordMock).not.toHaveBeenCalled()
       } finally {
-        vi.useRealTimers()
+        jest.useRealTimers()
       }
     })
   })
@@ -1296,7 +1276,7 @@ describe('useBossProfitStore', () => {
         recordedAt: '2026-07-10T00:00:00.000Z',
         world: null,
       }
-      vi.clearAllMocks() // 위 준비용 refresh에서 쌓인 호출 기록(자동 기록 포함)을 지운다
+      jest.clearAllMocks() // 위 준비용 refresh에서 쌓인 호출 기록(자동 기록 포함)을 지운다
       getBossProfitRecordsMock.mockResolvedValue([record])
       getCachedSchedulerStateMock.mockResolvedValue(cachedEntry())
 
@@ -1367,8 +1347,8 @@ describe('useBossProfitStore', () => {
       // 이번 달에 반드시 "지난 주차"가 존재하도록 날짜를 고정한다(월초에 테스트를 실행하면
       // 지난 주차가 아예 없어 전제가 깨지는 걸 방지) — Date만 고정하고 타이머는 실제로 둬서
       // 아래 flushMicrotasks(실제 setTimeout 기반)가 그대로 동작하게 한다.
-      vi.useFakeTimers({ toFake: ['Date'] })
-      vi.setSystemTime(new Date('2026-07-30T06:00:00.000Z'))
+      jest.useFakeTimers({ doNotFake: NOT_FAKED })
+      jest.setSystemTime(new Date('2026-07-30T06:00:00.000Z'))
 
       try {
         syncSchedulesMock.mockResolvedValue([syncResult()])
@@ -1397,7 +1377,7 @@ describe('useBossProfitStore', () => {
           world: null,
         }
 
-        vi.clearAllMocks()
+        jest.clearAllMocks()
         getBossProfitRecordsMock.mockResolvedValue([pastRecord])
         getCachedSchedulerStateMock.mockResolvedValue(cachedEntry())
         getCachedCharacterBasicMock.mockImplementation(async (ocid: string) => ({
@@ -1418,7 +1398,7 @@ describe('useBossProfitStore', () => {
         expect(pastSubtotal?.totalMeso).toBe(2_000_000)
         expect(pastSubtotal?.state).toBe('recorded')
       } finally {
-        vi.useRealTimers()
+        jest.useRealTimers()
       }
     })
   })
@@ -1670,7 +1650,7 @@ describe('useBossProfitStore', () => {
       syncSchedulesMock.mockReturnValue(new Promise<CharacterScheduleSync[]>(() => {}))
 
       void useBossProfitStore.getState().refresh(['ocid-1'])
-      await vi.waitFor(() => expect(useBossProfitStore.getState().rows).toHaveLength(1))
+      await waitFor(() => expect(useBossProfitStore.getState().rows).toHaveLength(1))
 
       const row = useBossProfitStore.getState().rows[0]
       expect(row.characterName).toBe('캐시캐릭터') // 캐시 경로임을 확인
@@ -1781,8 +1761,8 @@ describe('useBossProfitStore', () => {
     }
 
     it('주간 탭은 직전 주 기록만 합산한다', async () => {
-      vi.useFakeTimers({ toFake: ['Date'] })
-      vi.setSystemTime(new Date('2026-07-22T12:00:00+09:00')) // 이번 주 2026-07-16, 직전 주 2026-07-09
+      jest.useFakeTimers({ doNotFake: NOT_FAKED })
+      jest.setSystemTime(new Date('2026-07-22T12:00:00+09:00')) // 이번 주 2026-07-16, 직전 주 2026-07-09
       try {
         syncSchedulesMock.mockResolvedValue([syncResult()])
         getBossProfitRecordsMock.mockImplementation(async (_ocids: string[], keys: string[]) =>
@@ -1796,14 +1776,14 @@ describe('useBossProfitStore', () => {
         expect(getBossProfitRecordsMock).toHaveBeenCalledWith(['ocid-1'], ['2026-07-09'])
         expect(useBossProfitStore.getState().previousPeriodTotalMeso).toBe(8_000_000)
       } finally {
-        vi.useRealTimers()
+        jest.useRealTimers()
       }
     })
 
     // 월간 탭 총액은 monthly 보스 행 + 그 달의 주차별 합계라(groupTotalMeso), 직전 달 합계도 같은 산식이다.
     it('월간 탭은 직전 달 monthly 기록과 그 달에 속한 weekly 기록을 함께 합산한다', async () => {
-      vi.useFakeTimers({ toFake: ['Date'] })
-      vi.setSystemTime(new Date('2026-07-22T12:00:00+09:00')) // 이번 달 2026-07, 직전 달 2026-06
+      jest.useFakeTimers({ doNotFake: NOT_FAKED })
+      jest.setSystemTime(new Date('2026-07-22T12:00:00+09:00')) // 이번 달 2026-07, 직전 달 2026-06
       try {
         syncSchedulesMock.mockResolvedValue([syncResult()])
         getBossProfitRecordsMock.mockImplementation(async (_ocids: string[], keys: string[]) => {
@@ -1821,13 +1801,13 @@ describe('useBossProfitStore', () => {
         expect(keys).toEqual(['2026-06', '2026-06-04', '2026-06-11', '2026-06-18', '2026-06-25'])
         expect(useBossProfitStore.getState().previousPeriodTotalMeso).toBe(13_000_000)
       } finally {
-        vi.useRealTimers()
+        jest.useRealTimers()
       }
     })
 
     it('직전 기간 기록이 없으면 0이다 — 조회한 적 없는 기간도 같다(결정 3)', async () => {
-      vi.useFakeTimers({ toFake: ['Date'] })
-      vi.setSystemTime(new Date('2026-07-22T12:00:00+09:00'))
+      jest.useFakeTimers({ doNotFake: NOT_FAKED })
+      jest.setSystemTime(new Date('2026-07-22T12:00:00+09:00'))
       try {
         syncSchedulesMock.mockResolvedValue([syncResult()])
         getBossProfitRecordsMock.mockResolvedValue([])
@@ -1837,13 +1817,13 @@ describe('useBossProfitStore', () => {
 
         expect(useBossProfitStore.getState().previousPeriodTotalMeso).toBe(0)
       } finally {
-        vi.useRealTimers()
+        jest.useRealTimers()
       }
     })
 
     it('과거 기간으로 이동하면 그 기간의 직전 기간으로 기준이 바뀐다', async () => {
-      vi.useFakeTimers({ toFake: ['Date'] })
-      vi.setSystemTime(new Date('2026-07-22T12:00:00+09:00')) // 이번 주 2026-07-16
+      jest.useFakeTimers({ doNotFake: NOT_FAKED })
+      jest.setSystemTime(new Date('2026-07-22T12:00:00+09:00')) // 이번 주 2026-07-16
       try {
         syncSchedulesMock.mockResolvedValue([syncResult()])
         isPeriodCheckedMock.mockResolvedValue(true)
@@ -1857,7 +1837,7 @@ describe('useBossProfitStore', () => {
         expect(useBossProfitStore.getState().periodKey).toBe('2026-07-09')
         expect(useBossProfitStore.getState().previousPeriodTotalMeso).toBe(777)
       } finally {
-        vi.useRealTimers()
+        jest.useRealTimers()
       }
     })
   })
@@ -1882,8 +1862,8 @@ describe('useBossProfitStore', () => {
     }
 
     it('refresh(조회 중)가 진행 중일 때 과거 기간으로 이동 후 다시 돌아와도 status가 loading에 갇히지 않는다', async () => {
-      vi.useFakeTimers({ toFake: ['Date'] })
-      vi.setSystemTime(new Date('2026-07-22T12:00:00+09:00')) // 이번 주 2026-07-16, 롤링 하한 2026-07-09
+      jest.useFakeTimers({ doNotFake: NOT_FAKED })
+      jest.setSystemTime(new Date('2026-07-22T12:00:00+09:00')) // 이번 주 2026-07-16, 롤링 하한 2026-07-09
       try {
         // syncSchedules를 수동 제어해 "조회 중"(status: 'loading') 상태를 유지시킨다.
         let resolveSync!: (value: Awaited<ReturnType<typeof syncSchedulesMock>>) => void
@@ -1898,7 +1878,7 @@ describe('useBossProfitStore', () => {
         const refreshPromise = useBossProfitStore.getState().refresh(['ocid-1'])
 
         // 캐시 우선 단계에서 status가 'loading'이 된다.
-        await vi.waitFor(() => {
+        await waitFor(() => {
           expect(useBossProfitStore.getState().status).toBe('loading')
         })
 
@@ -1922,7 +1902,7 @@ describe('useBossProfitStore', () => {
         expect(useBossProfitStore.getState().status).toBe('loaded')
         expect(useBossProfitStore.getState().lastSyncedAt).not.toBeNull()
       } finally {
-        vi.useRealTimers()
+        jest.useRealTimers()
       }
     })
 
@@ -2069,7 +2049,7 @@ describe('useBossProfitStore', () => {
     // 백필을 진행해야 한다(멈추지 않고 끝까지 진행되는지가 핵심 — 고치기 전엔 아래 await promise가
     // 영원히 끝나지 않았다).
     it('goToPreviousPeriod: isPeriodChecked가 응답하지 않아도(hang) 타임아웃 후 백필을 진행해 멈추지 않는다', async () => {
-      vi.useFakeTimers()
+      jest.useFakeTimers()
       try {
         syncSchedulesMock.mockResolvedValue([syncResult()]) // 자쿰 카오스, 이번 주
         await useBossProfitStore.getState().refresh(['ocid-1'])
@@ -2085,7 +2065,7 @@ describe('useBossProfitStore', () => {
         )
 
         const promise = useBossProfitStore.getState().goToPreviousPeriod()
-        await vi.advanceTimersByTimeAsync(5000)
+        await jest.advanceTimersByTimeAsync(5000)
         await promise
 
         const state = useBossProfitStore.getState()
@@ -2095,7 +2075,7 @@ describe('useBossProfitStore', () => {
         expect(state.isPeriodLoading).toBe(false)
         expect(state.periodState).not.toBe('failed')
       } finally {
-        vi.useRealTimers()
+        jest.useRealTimers()
       }
     })
 
@@ -2191,7 +2171,7 @@ describe('useBossProfitStore', () => {
 
       const promise = useBossProfitStore.getState().goToPreviousPeriod()
 
-      await vi.waitFor(() => {
+      await waitFor(() => {
         expect(useBossProfitStore.getState().isPeriodLoading).toBe(true)
       })
 
@@ -2252,8 +2232,8 @@ describe('useBossProfitStore', () => {
       // 의존하게 두면 8월부터는 지난 달(7월)이 조회 가능 구간에 들어와 이동이 정상 허용되고, 그러면
       // **코드가 맞는데 테스트만 영구히 실패한다**(실제로 그렇게 깨져 있었다). 옆의 롤링 윈도우
       // 테스트들이 같은 이유로 이미 시각을 고정한다.
-      vi.useFakeTimers({ toFake: ['Date'] })
-      vi.setSystemTime(new Date('2026-07-22T12:00:00+09:00')) // 이번 달 2026-07 → 지난 달 2026-06(조회일 2026-06-30, MIN 이전)
+      jest.useFakeTimers({ doNotFake: NOT_FAKED })
+      jest.setSystemTime(new Date('2026-07-22T12:00:00+09:00')) // 이번 달 2026-07 → 지난 달 2026-06(조회일 2026-06-30, MIN 이전)
 
       try {
         syncSchedulesMock.mockResolvedValue([syncResult()])
@@ -2270,13 +2250,13 @@ describe('useBossProfitStore', () => {
         expect(useBossProfitStore.getState().periodKey).toBe(monthBefore)
         expect(fetchSchedulerCharacterStateMock).not.toHaveBeenCalled()
       } finally {
-        vi.useRealTimers()
+        jest.useRealTimers()
       }
     })
 
     it('goToPreviousPeriod: 롤링 조회 윈도우(오늘-13일)를 벗어났고 캐시 기록도 없는 이전 주로는 이동하지 않는다(#29)', async () => {
-      vi.useFakeTimers({ toFake: ['Date'] })
-      vi.setSystemTime(new Date('2026-07-22T12:00:00+09:00')) // 이번 주 periodKey: 2026-07-16, 롤링 하한: 2026-07-09
+      jest.useFakeTimers({ doNotFake: NOT_FAKED })
+      jest.setSystemTime(new Date('2026-07-22T12:00:00+09:00')) // 이번 주 periodKey: 2026-07-16, 롤링 하한: 2026-07-09
 
       try {
         syncSchedulesMock.mockResolvedValue([syncResult()])
@@ -2303,13 +2283,13 @@ describe('useBossProfitStore', () => {
         expect(fetchSchedulerCharacterStateMock).not.toHaveBeenCalled()
         expect(markPeriodCheckedMock).not.toHaveBeenCalled()
       } finally {
-        vi.useRealTimers()
+        jest.useRealTimers()
       }
     })
 
     it('goToPreviousPeriod: 롤링 윈도우 밖이어도 이미 저장된 기록이 있으면 그 이전 주로 이동해 캐시 기록을 보여준다(#29, 캐시 존중)', async () => {
-      vi.useFakeTimers({ toFake: ['Date'] })
-      vi.setSystemTime(new Date('2026-07-22T12:00:00+09:00')) // 이번 주 periodKey: 2026-07-16, 롤링 하한: 2026-07-09
+      jest.useFakeTimers({ doNotFake: NOT_FAKED })
+      jest.setSystemTime(new Date('2026-07-22T12:00:00+09:00')) // 이번 주 periodKey: 2026-07-16, 롤링 하한: 2026-07-09
 
       try {
         syncSchedulesMock.mockResolvedValue([syncResult()])
@@ -2357,13 +2337,13 @@ describe('useBossProfitStore', () => {
         expect(rows[0].boss).toBe('자쿰')
         expect(rows[0].payoutMeso).toBe(4_040_000)
       } finally {
-        vi.useRealTimers()
+        jest.useRealTimers()
       }
     })
 
     it('goToPreviousPeriod: 현재 기간에서는 (이전 주가 롤링 윈도우 안이라) canGoPreviousPeriod가 true다(#29)', async () => {
-      vi.useFakeTimers({ toFake: ['Date'] })
-      vi.setSystemTime(new Date('2026-07-22T12:00:00+09:00'))
+      jest.useFakeTimers({ doNotFake: NOT_FAKED })
+      jest.setSystemTime(new Date('2026-07-22T12:00:00+09:00'))
 
       try {
         syncSchedulesMock.mockResolvedValue([syncResult()])
@@ -2372,13 +2352,13 @@ describe('useBossProfitStore', () => {
         // 이번 주(2026-07-16)의 이전 주(2026-07-09, 조회일 2026-07-15)는 롤링 윈도우 안이므로 이동 가능.
         expect(useBossProfitStore.getState().canGoPreviousPeriod).toBe(true)
       } finally {
-        vi.useRealTimers()
+        jest.useRealTimers()
       }
     })
 
     it('setTab: 이전 달 전체가 MIN_SCHEDULER_DATE 이전이면 canGoPreviousPeriod가 false다(monthly, #29)', async () => {
-      vi.useFakeTimers({ toFake: ['Date'] })
-      vi.setSystemTime(new Date('2026-07-22T12:00:00+09:00')) // 이번 달 2026-07, 지난 달 2026-06은 통째로 MIN 이전
+      jest.useFakeTimers({ doNotFake: NOT_FAKED })
+      jest.setSystemTime(new Date('2026-07-22T12:00:00+09:00')) // 이번 달 2026-07, 지난 달 2026-06은 통째로 MIN 이전
 
       try {
         syncSchedulesMock.mockResolvedValue([syncResult()])
@@ -2388,13 +2368,13 @@ describe('useBossProfitStore', () => {
         expect(useBossProfitStore.getState().periodKey).toBe('2026-07')
         expect(useBossProfitStore.getState().canGoPreviousPeriod).toBe(false)
       } finally {
-        vi.useRealTimers()
+        jest.useRealTimers()
       }
     })
 
     it('월간 탭 주차별 합계: 롤링 윈도우를 벗어났어도 이미 저장된 기록이 있으면 조회 불가가 아니라 확정 합계를 그대로 보여준다(ADR-032)', async () => {
-      vi.useFakeTimers({ toFake: ['Date'] })
-      vi.setSystemTime(new Date('2026-07-22T12:00:00+09:00'))
+      jest.useFakeTimers({ doNotFake: NOT_FAKED })
+      jest.setSystemTime(new Date('2026-07-22T12:00:00+09:00'))
 
       try {
         syncSchedulesMock.mockResolvedValue([syncResult()])
@@ -2424,15 +2404,15 @@ describe('useBossProfitStore', () => {
         expect(subtotal?.state).toBe('recorded')
         expect(subtotal?.totalMeso).toBe(4_040_000)
       } finally {
-        vi.useRealTimers()
+        jest.useRealTimers()
       }
     })
 
     it('월간 탭 주차별 합계: 이번 달을 보는 동안 진행 중 주차는 기록이 아니라 라이브 스냅샷에서 합산한다(ADR-075 회귀 가드)', async () => {
       // 라이브 원천이 있을 때까지 기록으로 갈아타면, 자동 기록이 건너뛰어진 처치(기록 조회 실패
       // ADR-050 · 동기화 실패 캐릭터 ADR-067 결정 7)가 이번 주 합계에서 사라진다.
-      vi.useFakeTimers({ toFake: ['Date'] })
-      vi.setSystemTime(new Date('2026-07-22T12:00:00+09:00')) // 이번 주 2026-07-16, 이번 달 2026-07
+      jest.useFakeTimers({ doNotFake: NOT_FAKED })
+      jest.setSystemTime(new Date('2026-07-22T12:00:00+09:00')) // 이번 주 2026-07-16, 이번 달 2026-07
 
       try {
         syncSchedulesMock.mockResolvedValue([syncResult()]) // 자쿰 카오스 완료
@@ -2446,7 +2426,7 @@ describe('useBossProfitStore', () => {
         expect(subtotal?.state).toBe('inProgress')
         expect(subtotal?.totalMeso).toBe(8_080_000) // 자쿰 카오스 정가 / 파티원 1
       } finally {
-        vi.useRealTimers()
+        jest.useRealTimers()
       }
     })
 
@@ -2454,8 +2434,8 @@ describe('useBossProfitStore', () => {
       // 2026-08-02(KST): 이번 주는 2026-07-30(목) 시작이라 "7월 5주차"이면서 8/5까지 이어진다.
       // 달이 바뀌어 7월이 지난 달이 되면 liveRows(라이브 스냅샷)는 8월 화면의 것이라 이 주를
       // 담지 않는다 — 그때 진행 중 주차 합계를 라이브에서만 읽으면 0메소로 굳는다.
-      vi.useFakeTimers({ toFake: ['Date'] })
-      vi.setSystemTime(new Date('2026-08-02T12:00:00+09:00'))
+      jest.useFakeTimers({ doNotFake: NOT_FAKED })
+      jest.setSystemTime(new Date('2026-08-02T12:00:00+09:00'))
 
       try {
         syncSchedulesMock.mockResolvedValue([syncResult()])
@@ -2487,13 +2467,13 @@ describe('useBossProfitStore', () => {
         expect(subtotal?.state).toBe('inProgress')
         expect(subtotal?.totalMeso).toBe(2_000_000)
       } finally {
-        vi.useRealTimers()
+        jest.useRealTimers()
       }
     })
 
     it('refresh: 진행 중인 주를 품은 지난 달을 보고 있으면 그 기간을 유지한 채 동기화·자동 기록만 한다(ADR-076)', async () => {
-      vi.useFakeTimers({ toFake: ['Date'] })
-      vi.setSystemTime(new Date('2026-08-02T12:00:00+09:00')) // 이번 주 2026-07-30, 이번 달 2026-08
+      jest.useFakeTimers({ doNotFake: NOT_FAKED })
+      jest.setSystemTime(new Date('2026-08-02T12:00:00+09:00')) // 이번 주 2026-07-30, 이번 달 2026-08
 
       try {
         syncSchedulesMock.mockResolvedValue([syncResult()])
@@ -2532,13 +2512,13 @@ describe('useBossProfitStore', () => {
         expect(subtotal?.state).toBe('inProgress')
         expect(subtotal?.totalMeso).toBe(8_080_000)
       } finally {
-        vi.useRealTimers()
+        jest.useRealTimers()
       }
     })
 
     it('refresh: 완전히 닫힌 과거 기간을 보고 있으면 종전대로 현재 기간으로 되돌린다(ADR-076 범위 밖)', async () => {
-      vi.useFakeTimers({ toFake: ['Date'] })
-      vi.setSystemTime(new Date('2026-07-22T12:00:00+09:00')) // 이번 주 2026-07-16
+      jest.useFakeTimers({ doNotFake: NOT_FAKED })
+      jest.setSystemTime(new Date('2026-07-22T12:00:00+09:00')) // 이번 주 2026-07-16
 
       try {
         syncSchedulesMock.mockResolvedValue([syncResult()])
@@ -2552,7 +2532,7 @@ describe('useBossProfitStore', () => {
 
         expect(useBossProfitStore.getState().periodKey).toBe(currentPeriodKey)
       } finally {
-        vi.useRealTimers()
+        jest.useRealTimers()
       }
     })
 
@@ -2572,7 +2552,7 @@ describe('useBossProfitStore', () => {
       fetchSchedulerCharacterStateMock.mockReturnValueOnce(slowFetch)
 
       const firstNavigation = useBossProfitStore.getState().goToPreviousPeriod()
-      await vi.waitFor(() => expect(useBossProfitStore.getState().isPeriodLoading).toBe(true))
+      await waitFor(() => expect(useBossProfitStore.getState().isPeriodLoading).toBe(true))
 
       // 응답을 기다리는 동안 사용자가 곧바로 이번 주로 돌아온다 — 로컬 스냅샷에서 즉시 끝난다.
       await useBossProfitStore.getState().goToNextPeriod()
@@ -2903,10 +2883,10 @@ describe('useBossProfitStore', () => {
       // 결정 2: TTL(10분) 안이면서 리셋 경계를 넘는 조합은 리셋 직후 10분 창에서만 성립한다 —
       // 리셋 시각은 손으로 추측하지 않고 getMostRecentWeeklyResetKst 로 실제 값을 구한다.
       it('캐시가 주간 리셋 경계를 넘었으면 TTL 안이어도 기록하지 않는다', async () => {
-        vi.useFakeTimers({ toFake: ['Date'] })
+        jest.useFakeTimers({ doNotFake: NOT_FAKED })
         try {
           const reset = getMostRecentWeeklyResetKst(new Date('2026-08-07T12:00:00+09:00'))
-          vi.setSystemTime(new Date(reset.getTime() + 5 * 60 * 1000)) // 리셋 5분 뒤
+          jest.setSystemTime(new Date(reset.getTime() + 5 * 60 * 1000)) // 리셋 5분 뒤
 
           markSyncAttemptedThisRun()
           // 리셋 2분 전 캐시 — 나이는 7분(TTL 안)인데 기간 키가 지난 주다.
@@ -2922,17 +2902,17 @@ describe('useBossProfitStore', () => {
           // 표시는 그대로다 — 미룬 것은 기록이고 다음 실제 동기화가 맡는다.
           expect(useBossProfitStore.getState().rows[0].payoutMeso).toBeNull()
         } finally {
-          vi.useRealTimers()
+          jest.useRealTimers()
         }
       })
 
       // 결정 2: 판정은 row.cycle 로 갈린다 — 주간 리셋(목요일 00:00)과 월간 리셋(1일 00:00)은
       // 시점이 달라, 한쪽으로 뭉뚱그리면 반대쪽이 조용히 틀린다.
       it('월 경계를 넘은 캐시에서 월간 행만 빠지고 주간 행은 그대로 기록된다', async () => {
-        vi.useFakeTimers({ toFake: ['Date'] })
+        jest.useFakeTimers({ doNotFake: NOT_FAKED })
         try {
           // 2026-08-01 00:05 KST — 월은 갈렸지만(7월→8월) 주간 리셋(2026-07-30 목)은 그대로다.
-          vi.setSystemTime(new Date('2026-08-01T00:05:00+09:00'))
+          jest.setSystemTime(new Date('2026-08-01T00:05:00+09:00'))
 
           markSyncAttemptedThisRun()
           const entry = cachedEntry(new Date('2026-07-31T23:58:00+09:00').toISOString())
@@ -2953,7 +2933,7 @@ describe('useBossProfitStore', () => {
           const recordedBosses = upsertBossProfitRecordMock.mock.calls.map((call) => call[0].boss)
           expect(recordedBosses).toEqual(['자쿰'])
         } finally {
-          vi.useRealTimers()
+          jest.useRealTimers()
         }
       })
 
@@ -3085,8 +3065,8 @@ describe('useBossProfitStore', () => {
     // ADR-076 제자리 새로고침(진행 중인 주를 품은 지난 달)에서도 게이트는 같다 — 화면 반영을
     // loadPeriod에 넘기는 규약만 그대로 지킨다.
     it('제자리 새로고침 화면에서 건너뛰면 보던 기간을 유지한 채 loadPeriod로 정착한다', async () => {
-      vi.useFakeTimers({ toFake: ['Date'] })
-      vi.setSystemTime(new Date('2026-08-02T12:00:00+09:00')) // 이번 주 2026-07-30, 이번 달 2026-08
+      jest.useFakeTimers({ doNotFake: NOT_FAKED })
+      jest.setSystemTime(new Date('2026-08-02T12:00:00+09:00')) // 이번 주 2026-07-30, 이번 달 2026-08
 
       try {
         const syncedAt = minutesAgo(5)
@@ -3110,7 +3090,7 @@ describe('useBossProfitStore', () => {
         expect(state.status).toBe('loaded') // status는 loadPeriod가 확정한다
         expect(state.lastSyncedAt).toBe(syncedAt)
       } finally {
-        vi.useRealTimers()
+        jest.useRealTimers()
       }
     })
 

@@ -1,7 +1,21 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { NexonCharacterBasicResponse, NexonCharacterListResponse } from '../../../types'
 import { fetchCharacterBasic, fetchCharacterList } from '../client'
 import { NexonAuthError, NexonNetworkError, NexonRateLimitError } from '../../errors'
+
+// vitest 의 `vi.stubGlobal` 짝. jest 에는 없어서 여기서 최소한으로 만든다 — 원래 값을 기억해 두고
+// `unstubAllGlobals()` 가 되돌린다 ([[ADR-157]]).
+const 원래전역: Record<string, unknown> = {}
+
+function stubGlobal(name: string, value: unknown): void {
+  if (!(name in 원래전역)) 원래전역[name] = (globalThis as Record<string, unknown>)[name]
+  ;(globalThis as Record<string, unknown>)[name] = value
+}
+
+function unstubAllGlobals(): void {
+  for (const [name, value] of Object.entries(원래전역)) {
+    ;(globalThis as Record<string, unknown>)[name] = value
+  }
+}
 
 function jsonResponse(status: number, body: unknown): Response {
   return {
@@ -39,13 +53,13 @@ const characterListFixture: NexonCharacterListResponse = {
 }
 
 afterEach(() => {
-  vi.unstubAllGlobals()
+  unstubAllGlobals()
 })
 
 describe('fetchCharacterList', () => {
   it('정상 응답을 MapleAccount[]로 변환해 반환한다', async () => {
-    const fetchMock = vi.fn(async () => jsonResponse(200, characterListFixture))
-    vi.stubGlobal('fetch', fetchMock)
+    const fetchMock = jest.fn(async () => jsonResponse(200, characterListFixture))
+    stubGlobal('fetch', fetchMock)
 
     const result = await fetchCharacterList('test-api-key')
 
@@ -82,8 +96,8 @@ const characterBasicFixture: NexonCharacterBasicResponse = {
 
 describe('fetchCharacterBasic', () => {
   it('ocid를 쿼리로 붙여 호출하고 정상 응답을 CharacterBasicProfile로 변환해 반환한다', async () => {
-    const fetchMock = vi.fn(async () => jsonResponse(200, characterBasicFixture))
-    vi.stubGlobal('fetch', fetchMock)
+    const fetchMock = jest.fn(async () => jsonResponse(200, characterBasicFixture))
+    stubGlobal('fetch', fetchMock)
 
     const result = await fetchCharacterBasic('test-api-key', 'ocid-1')
 
@@ -102,41 +116,39 @@ describe('fetchCharacterBasic', () => {
   })
 
   it('401 응답이면 NexonAuthError를 던진다', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => jsonResponse(401, {})))
+    stubGlobal('fetch', jest.fn(async () => jsonResponse(401, {})))
     await expect(fetchCharacterBasic('test-api-key', 'ocid-1')).rejects.toThrow(NexonAuthError)
   })
 
   it('429 응답이면 NexonRateLimitError를 던진다', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => jsonResponse(429, { error: { name: 'OPENAPI00007' } })))
+    stubGlobal('fetch', jest.fn(async () => jsonResponse(429, { error: { name: 'OPENAPI00007' } })))
     await expect(fetchCharacterBasic('test-api-key', 'ocid-1')).rejects.toThrow(NexonRateLimitError)
   })
 })
 
 describe('에러 처리', () => {
   it('401 응답이면 NexonAuthError를 던진다', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => jsonResponse(401, {})))
+    stubGlobal('fetch', jest.fn(async () => jsonResponse(401, {})))
     await expect(fetchCharacterList('test-api-key')).rejects.toThrow(NexonAuthError)
   })
 
   it('403 응답이면 NexonAuthError를 던진다', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => jsonResponse(403, {})))
+    stubGlobal('fetch', jest.fn(async () => jsonResponse(403, {})))
     await expect(fetchCharacterList('test-api-key')).rejects.toThrow(NexonAuthError)
   })
 
   it('429 응답이면 NexonRateLimitError를 던진다', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => jsonResponse(429, { error: { name: 'OPENAPI00007' } })))
+    stubGlobal('fetch', jest.fn(async () => jsonResponse(429, { error: { name: 'OPENAPI00007' } })))
     await expect(fetchCharacterList('test-api-key')).rejects.toThrow(NexonRateLimitError)
   })
 
   it('5xx 응답이면 NexonNetworkError를 던진다', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => jsonResponse(500, {})))
+    stubGlobal('fetch', jest.fn(async () => jsonResponse(500, {})))
     await expect(fetchCharacterList('test-api-key')).rejects.toThrow(NexonNetworkError)
   })
 
   it('fetch 자체가 reject되면(네트워크 없음/타임아웃) NexonNetworkError를 던진다', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => {
+    stubGlobal('fetch', jest.fn(async () => {
         throw new TypeError('Failed to fetch')
       }),
     )
@@ -144,7 +156,7 @@ describe('에러 처리', () => {
   })
 
   it('응답이 JSON이 아니면(WAF/CDN 차단 페이지 등) NexonNetworkError를 던진다', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => brokenJsonResponse(200)))
+    stubGlobal('fetch', jest.fn(async () => brokenJsonResponse(200)))
     await expect(fetchCharacterList('test-api-key')).rejects.toThrow(NexonNetworkError)
   })
 })

@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest'
+import { readdirSync } from 'node:fs'
+import { join } from 'node:path'
 import { RELEASE_NOTES } from '../release-notes'
 import {
   FEATURE_GUIDES,
@@ -15,10 +16,21 @@ import {
 // 안내 하나가 파일 하나다(2026-08-11) — 그래서 **파일은 만들었는데 `index.ts` 에 안 넣는** 실패가
 // 새로 생긴다. 화면에 안 나오는데 파일은 멀쩡히 있어 눈으로는 알아채기 어렵다.
 describe('안내 파일과 index 가 어긋나지 않는다', () => {
-  // `import.meta.glob` 은 Vite 가 정적으로 훑으므로 인자가 인라인 리터럴이어야 한다.
-  const modules = import.meta.glob<Record<string, unknown>>(
-    '../feature-guides/*/*.ts',
-    { eager: true },
+  // 폴더를 **직접 훑는다**([[ADR-157]]). vitest 시절엔 `import.meta.glob` 이 이 자리였는데 그것은
+  // Vite 의 컴파일 타임 API 라 jest 에는 짝이 없다 — 대신 `readdirSync` + `require` 로 같은 일을
+  // 한다(묻는 것은 그대로다: 폴더의 파일과 `index.ts` 가 어긋나지 않는가).
+  const guidesDir = join(__dirname, '../feature-guides')
+  const modules = Object.fromEntries(
+    readdirSync(guidesDir, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .flatMap((dir) =>
+        readdirSync(join(guidesDir, dir.name))
+          .filter((file) => file.endsWith('.ts'))
+          .map((file) => [
+            `../feature-guides/${dir.name}/${file}`,
+            require(join(guidesDir, dir.name, file)) as Record<string, unknown>,
+          ]),
+      ),
   )
 
   it('폴더의 모든 안내 파일이 FEATURE_GUIDES 에 들어 있다', () => {

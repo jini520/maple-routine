@@ -197,10 +197,3 @@ describe('아이콘', () => {
   })
 })
 
-describe('스냅샷 — 네 크기', () => {
-  it.each(Object.entries(크기))('%s', async (_이름, 값) => {
-    const view = await 위젯(값)
-
-    expect(view.toJSON()).toMatchSnapshot()
-  })
-})

@@ -1,4 +1,3 @@
-import { beforeEach, describe, expect, it } from 'vitest'
 import { installFakePreferences } from './fake-preferences'
 import { getDropEffectEnabled, setDropEffectEnabled } from '../drop-effect'
 

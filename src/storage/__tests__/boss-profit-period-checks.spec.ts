@@ -1,14 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { runMock, queryMock, getBossProfitDbMock } = vi.hoisted(() => ({
-  runMock: vi.fn(),
-  queryMock: vi.fn(),
-  getBossProfitDbMock: vi.fn(),
+jest.mock('../sqlite/db', () => ({
+  getBossProfitDb: jest.fn(),
 }))
+const { getBossProfitDb: getBossProfitDbMock } = jest.requireMock('../sqlite/db') as Record<string, jest.Mock>
 
-vi.mock('../sqlite/db', () => ({
-  getBossProfitDb: getBossProfitDbMock,
-}))
+const runMock = jest.fn()
+const queryMock = jest.fn()
 
 const fakeDb = { run: runMock, query: queryMock }
 
@@ -21,21 +18,21 @@ beforeEach(() => {
 describe('isPeriodChecked', () => {
   it('저장 전에는 false를 반환한다', async () => {
     queryMock.mockResolvedValue({ values: [] })
-    const { isPeriodChecked } = await import('../boss-profit-period-checks')
+    const { isPeriodChecked } = require('../boss-profit-period-checks') as typeof import('../boss-profit-period-checks')
 
     await expect(isPeriodChecked('ocid-1', 'weekly', '2026-06-04')).resolves.toBe(false)
   })
 
   it('조회 결과가 undefined여도 false를 반환한다', async () => {
     queryMock.mockResolvedValue({ values: undefined })
-    const { isPeriodChecked } = await import('../boss-profit-period-checks')
+    const { isPeriodChecked } = require('../boss-profit-period-checks') as typeof import('../boss-profit-period-checks')
 
     await expect(isPeriodChecked('ocid-1', 'weekly', '2026-06-04')).resolves.toBe(false)
   })
 
   it('ocid/cycle/period_key 조건으로 조회한다', async () => {
     queryMock.mockResolvedValue({ values: [] })
-    const { isPeriodChecked } = await import('../boss-profit-period-checks')
+    const { isPeriodChecked } = require('../boss-profit-period-checks') as typeof import('../boss-profit-period-checks')
 
     await isPeriodChecked('ocid-1', 'weekly', '2026-06-04')
 
@@ -56,7 +53,7 @@ describe('isPeriodChecked', () => {
         },
       ],
     })
-    const { isPeriodChecked, markPeriodChecked } = await import('../boss-profit-period-checks')
+    const { isPeriodChecked, markPeriodChecked } = require('../boss-profit-period-checks') as typeof import('../boss-profit-period-checks')
 
     await markPeriodChecked('ocid-1', 'weekly', '2026-06-04', '2026-07-14T00:00:00.000Z')
 
@@ -74,7 +71,7 @@ describe('isPeriodChecked', () => {
           : [],
       }
     })
-    const { isPeriodChecked, markPeriodChecked } = await import('../boss-profit-period-checks')
+    const { isPeriodChecked, markPeriodChecked } = require('../boss-profit-period-checks') as typeof import('../boss-profit-period-checks')
 
     await markPeriodChecked('ocid-1', 'weekly', '2026-06-04', '2026-07-14T00:00:00.000Z')
 
@@ -87,7 +84,7 @@ describe('isPeriodChecked', () => {
 
 describe('markPeriodChecked', () => {
   it('동일 키로 두 번 호출해도 에러 없이 ON CONFLICT DO UPDATE로 처리된다 (멱등성)', async () => {
-    const { markPeriodChecked } = await import('../boss-profit-period-checks')
+    const { markPeriodChecked } = require('../boss-profit-period-checks') as typeof import('../boss-profit-period-checks')
 
     await markPeriodChecked('ocid-1', 'weekly', '2026-06-04', '2026-07-14T00:00:00.000Z')
     await markPeriodChecked('ocid-1', 'weekly', '2026-06-04', '2026-07-14T01:00:00.000Z')

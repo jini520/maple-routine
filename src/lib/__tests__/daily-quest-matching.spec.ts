@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest'
 import { matchDailyQuestRegionSlug, stripDailyQuestPrefix } from '../daily-quest-matching'
 
 describe('stripDailyQuestPrefix', () => {

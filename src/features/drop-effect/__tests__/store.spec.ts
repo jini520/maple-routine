@@ -1,16 +1,15 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { getDropEffectEnabled, setDropEffectEnabled } from '../../../storage/drop-effect'
 import { useDropEffectStore } from '../store'
 
-vi.mock('../../../storage/drop-effect', () => ({
-  getDropEffectEnabled: vi.fn(),
-  setDropEffectEnabled: vi.fn(),
+jest.mock('../../../storage/drop-effect', () => ({
+  getDropEffectEnabled: jest.fn(),
+  setDropEffectEnabled: jest.fn(),
 }))
 
 beforeEach(() => {
-  vi.mocked(getDropEffectEnabled).mockReset()
-  vi.mocked(setDropEffectEnabled).mockReset()
-  vi.mocked(setDropEffectEnabled).mockResolvedValue(undefined)
+  jest.mocked(getDropEffectEnabled).mockReset()
+  jest.mocked(setDropEffectEnabled).mockReset()
+  jest.mocked(setDropEffectEnabled).mockResolvedValue(undefined)
   useDropEffectStore.setState({ enabled: true })
 })
 
@@ -22,7 +21,7 @@ describe('초기 상태', () => {
 
 describe('restoreFromStorage', () => {
   it('저장된 값이 false면 enabled를 false로 갱신한다', async () => {
-    vi.mocked(getDropEffectEnabled).mockResolvedValue(false)
+    jest.mocked(getDropEffectEnabled).mockResolvedValue(false)
 
     await useDropEffectStore.getState().restoreFromStorage()
 
@@ -30,7 +29,7 @@ describe('restoreFromStorage', () => {
   })
 
   it('저장된 값이 true면 enabled는 true다', async () => {
-    vi.mocked(getDropEffectEnabled).mockResolvedValue(true)
+    jest.mocked(getDropEffectEnabled).mockResolvedValue(true)
 
     await useDropEffectStore.getState().restoreFromStorage()
 

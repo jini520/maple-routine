@@ -7,7 +7,6 @@
 //
 // 파일명은 macOS가 NFD로 저장하고 소스 리터럴은 보통 NFC라, 조회 함수들이 양쪽을 NFC로
 // 정규화한다 — 이 테스트는 그 정규화까지 함께 검증하는 셈이다.
-import { describe, expect, it } from 'vitest'
 import weeklyBossesData from '../../data/weekly-bosses.json'
 import dailyQuestRegionCrops from '../../data/daily-quest-region-crops.json'
 import jobThemesData from '../../data/job-themes.json'
@@ -59,7 +58,7 @@ describe('자산 슬러그 전수 해석 (ADR-093)', () => {
     .filter(([, definition]) => definition.background !== undefined)
     .map(([name, definition]) => ({ name, image: definition.background?.image ?? '' }))
 
-  it.skipIf(declaredThemeBackgrounds.length === 0)(
+  ;(declaredThemeBackgrounds.length === 0 ? it.skip : it)(
     'job-themes.json이 background를 선언한 테마는 그 이미지 슬러그가 URL로 해석된다',
     () => {
       const unresolved = declaredThemeBackgrounds

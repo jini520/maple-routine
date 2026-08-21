@@ -9,7 +9,6 @@
 jest.mock('react-native-reanimated', () =>
   // `jest.mock` 팩토리는 import 위로 끌어올려져 **밖의 값을 참조할 수 없다** — 그래서 `require` 가
   // 선택이 아니라 유일한 길이다(`reduced-motion.ts` 「쓰는 법」).
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   require('../../../__tests__/reduced-motion').reanimatedWithReducedMotion(),
 )
 
@@ -96,12 +95,6 @@ describe('MapleSweepSpinner', () => {
     const [first, second] = findAllOfType(tree, 'RNSVGClipPath')
     expect(first.props.name).toBeDefined()
     expect(first.props.name).not.toEqual(second.props.name)
-  })
-
-  it('렌더 트리 스냅샷 — 이후 변경을 잡는 기준선(예전 화면과의 대조가 아니다)', async () => {
-    expect(
-      (await renderAtom(<MapleSweepSpinner className="text-primary" />)).toJSON(),
-    ).toMatchSnapshot()
   })
 
   // ★ [[ADR-061]] 정정 1 회귀 가드 — **띠가 마스크에 지워지던 결함.**

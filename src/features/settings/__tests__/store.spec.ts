@@ -1,4 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { MapleAccount } from '../../../types'
 import {
   NexonAuthError,
@@ -8,68 +7,56 @@ import {
 } from '../../../nexon/errors'
 import { initialSettingsState } from '../state'
 
-const { fetchCharacterListMock } = vi.hoisted(() => ({
-  fetchCharacterListMock: vi.fn(),
+jest.mock('../../../nexon/character', () => ({
+  fetchCharacterList: jest.fn(),
 }))
+const { fetchCharacterList: fetchCharacterListMock } = jest.requireMock('../../../nexon/character') as Record<string, jest.Mock>
 
-const { getAuthConfigMock, setApiKeyMock, setSelectedAccountIdMock } = vi.hoisted(() => ({
-  getAuthConfigMock: vi.fn(),
-  setApiKeyMock: vi.fn(),
-  setSelectedAccountIdMock: vi.fn(),
+jest.mock('../../../storage/api-key', () => ({
+  getAuthConfig: jest.fn(),
+  setApiKey: jest.fn(),
+  setSelectedAccountId: jest.fn(),
 }))
+const { getAuthConfig: getAuthConfigMock, setApiKey: setApiKeyMock, setSelectedAccountId: setSelectedAccountIdMock } = jest.requireMock('../../../storage/api-key') as Record<string, jest.Mock>
 
-const { prefetchAccountDataMock } = vi.hoisted(() => ({
-  prefetchAccountDataMock: vi.fn(),
+jest.mock('../../onboarding/prefetch', () => ({
+  prefetchAccountData: jest.fn(),
 }))
+const { prefetchAccountData: prefetchAccountDataMock } = jest.requireMock('../../onboarding/prefetch') as Record<string, jest.Mock>
 
-const { onboardingResetMock, noticeApiKeyIssueMock } = vi.hoisted(() => ({
-  onboardingResetMock: vi.fn(),
-  noticeApiKeyIssueMock: vi.fn(),
+jest.mock('../../onboarding/store', () => {
+  const reset = jest.fn()
+  const noticeApiKeyIssue = jest.fn()
+  return { useOnboardingStore: { getState: () => ({ reset, noticeApiKeyIssue }) } }
+})
+const onboardingResetMock = jest.requireMock('../../onboarding/store').useOnboardingStore.getState().reset as jest.Mock
+const noticeApiKeyIssueMock = jest.requireMock('../../onboarding/store').useOnboardingStore.getState().noticeApiKeyIssue as jest.Mock
+
+jest.mock('../../../storage/character-selection', () => ({
+  setTrackedCharacterOcids: jest.fn(),
 }))
+const { setTrackedCharacterOcids: setTrackedCharacterOcidsMock } = jest.requireMock('../../../storage/character-selection') as Record<string, jest.Mock>
 
-const { setTrackedCharacterOcidsMock, seedManualTrackedContentMock, trackingModeRef } = vi.hoisted(
-  () => ({
-    setTrackedCharacterOcidsMock: vi.fn(),
-    seedManualTrackedContentMock: vi.fn(),
-    trackingModeRef: { current: 'auto' as 'auto' | 'manual' },
-  }),
-)
-
-vi.mock('../../../nexon/character', () => ({
-  fetchCharacterList: fetchCharacterListMock,
+jest.mock('../../tracking-mode/seed', () => ({
+  seedManualTrackedContent: jest.fn(),
 }))
+const { seedManualTrackedContent: seedManualTrackedContentMock } = jest.requireMock('../../tracking-mode/seed') as Record<string, jest.Mock>
 
-vi.mock('../../../storage/api-key', () => ({
-  getAuthConfig: getAuthConfigMock,
-  setApiKey: setApiKeyMock,
-  setSelectedAccountId: setSelectedAccountIdMock,
-}))
+jest.mock('../../tracking-mode/store', () => {
 
-vi.mock('../../onboarding/prefetch', () => ({
-  prefetchAccountData: prefetchAccountDataMock,
-}))
+  return { useTrackingModeStore: { getState: () => {
+      mockTrackingModeRef = mockTrackingModeRef ?? { current: 'auto' }
+      return {  mode: mockTrackingModeRef.current  }
+    } } }
+})
 
-vi.mock('../../onboarding/store', () => ({
-  useOnboardingStore: {
-    getState: () => ({ reset: onboardingResetMock, noticeApiKeyIssue: noticeApiKeyIssueMock }),
-  },
-}))
-
-vi.mock('../../../storage/character-selection', () => ({
-  setTrackedCharacterOcids: setTrackedCharacterOcidsMock,
-}))
-
-vi.mock('../../tracking-mode/seed', () => ({
-  seedManualTrackedContent: seedManualTrackedContentMock,
-}))
-
-vi.mock('../../tracking-mode/store', () => ({
-  useTrackingModeStore: {
-    getState: () => ({ mode: trackingModeRef.current }),
-  },
-}))
+// 테스트가 이 값에 직접 쓰므로 모듈 평가 시점에도 채워 둔다(팩토리도 같은 걸 쓴다).
 
 import { useSettingsStore } from '../store'
+
+// 팩토리가 **모듈 평가보다 먼저** 불릴 수 있어(스토어를 import 하는 순간) `var` 로 올리고
+// 읽는 자리에서 채운다([[ADR-157]]).
+var mockTrackingModeRef: { current: 'auto' | 'manual' } = { current: 'auto' }
 
 function account(accountId: string): MapleAccount {
   return {
@@ -95,12 +82,12 @@ beforeEach(() => {
   noticeApiKeyIssueMock.mockResolvedValue(undefined)
   setTrackedCharacterOcidsMock.mockResolvedValue(undefined)
   seedManualTrackedContentMock.mockResolvedValue(undefined)
-  trackingModeRef.current = 'auto'
+  mockTrackingModeRef.current = 'auto'
   getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1', selectedAccountId: 'acc-old' })
 })
 
 afterEach(() => {
-  vi.resetAllMocks()
+  jest.resetAllMocks()
 })
 
 describe('useSettingsStore.changeApiKey', () => {
@@ -373,7 +360,7 @@ describe('useSettingsStore.commitAccountChange (ADR-086 결정 6)', () => {
   })
 
   it('수동 모드면 고른 캐릭터를 시드한다(ADR-035 결정 14(b))', async () => {
-    trackingModeRef.current = 'manual'
+    mockTrackingModeRef.current = 'manual'
     primePending()
 
     await useSettingsStore.getState().commitAccountChange(['ocid-a', 'ocid-b'])

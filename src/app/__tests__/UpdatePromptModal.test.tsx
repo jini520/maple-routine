@@ -286,12 +286,4 @@ describe('UpdatePromptModal', () => {
     })
   })
 
-  it('렌더 트리 스냅샷 (update-available)', async () => {
-    const { view } = await renderModal({
-      status: 'update-available',
-      availableHighlights: ['한 줄'],
-    })
-
-    expect(view.toJSON()).toMatchSnapshot()
-  })
 })

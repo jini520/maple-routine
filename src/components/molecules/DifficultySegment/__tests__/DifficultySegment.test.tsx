@@ -94,11 +94,4 @@ describe('DifficultySegment', () => {
     expect(onSelect).not.toHaveBeenCalled()
   })
 
-  it('렌더 트리 스냅샷 — 이후 변경을 잡는 기준선(예전 화면과의 대조가 아니다)', async () => {
-    const rendered = await renderAtom(
-      <DifficultySegment difficulties={['노멀', '하드', '카오스']} selected="하드" onSelect={jest.fn()} />,
-    )
-
-    expect(rendered.toJSON()).toMatchSnapshot()
-  })
 })

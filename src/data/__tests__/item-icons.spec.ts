@@ -1,12 +1,10 @@
 /// <reference types="node" />
 import { existsSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
-import { describe, expect, it } from 'vitest'
+import {  join } from 'node:path'
 import itemIcons from '../item-icons.json'
 import itemDropTable from '../item-drop-table.json'
 
-const itemsDir = join(dirname(fileURLToPath(import.meta.url)), '../../assets/items')
+const itemsDir = join(__dirname, '../../assets/items')
 
 // lib/item-icons.ts와 동일: 현재 데이터엔 iconFileBySlot이 없지만 로더가 하위호환으로
 // 지원하므로 옵셔널 필드를 포함한 타입으로 캐스트해 검증 분기를 유지한다.

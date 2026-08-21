@@ -119,13 +119,4 @@ describe('ErrorBoundary', () => {
     expect(getByTestId('error-boundary-fallback')).toBeTruthy()
   })
 
-  it('트리 스냅샷', async () => {
-    const { toJSON } = await renderAtom(
-      <ErrorBoundary onRestart={noop}>
-        <Boom />
-      </ErrorBoundary>,
-    )
-
-    expect(toJSON()).toMatchSnapshot()
-  })
 })

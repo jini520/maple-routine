@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest'
 import itemDropTable from '../../data/item-drop-table.json'
 import valuableDrops from '../../data/valuable-drops.json'
 import { isValuableDrop } from '../valuable-drops'

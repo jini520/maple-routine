@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest'
 import { isChallengersWorld, worldEmblemUrl } from '../world-emblem'
 
 describe('worldEmblemUrl', () => {

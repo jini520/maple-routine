@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest'
 import { getBackfillDateKeys, getCurrentKstDateKey, getMostRecentWeeklyResetKst } from '../reset-clock'
 
 describe('getMostRecentWeeklyResetKst', () => {

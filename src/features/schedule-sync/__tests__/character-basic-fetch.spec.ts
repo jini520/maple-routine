@@ -1,4 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
 import { NexonBadRequestError, NexonRateLimitError } from '../../../nexon/errors'
 import {
@@ -9,13 +8,10 @@ import {
 import type { CharacterBasicProfile } from '../../../types'
 import { CHARACTER_BASIC_TTL_MS, fetchCharacterBasicCached } from '../character-basic-fetch'
 
-const { fetchCharacterBasicMock } = vi.hoisted(() => ({
-  fetchCharacterBasicMock: vi.fn(),
+jest.mock('../../../nexon/character', () => ({
+  fetchCharacterBasic: jest.fn(),
 }))
-
-vi.mock('../../../nexon/character', () => ({
-  fetchCharacterBasic: fetchCharacterBasicMock,
-}))
+const { fetchCharacterBasic: fetchCharacterBasicMock } = jest.requireMock('../../../nexon/character') as Record<string, jest.Mock>
 
 const NOW = new Date('2026-08-08T05:00:00.000Z')
 const ACCOUNT = 'account-1'

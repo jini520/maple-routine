@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest'
 import catalog from '../scheduler-content-catalog.json'
 
 function stripSpaces(value: string): string {

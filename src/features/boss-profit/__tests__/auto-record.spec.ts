@@ -3,31 +3,27 @@
 // 이 루프가 지키는 것은 전부 **데이터 무결성**이라(미완료 행을 기록하면 0메소로 영구히 굳고,
 // 조회 실패를 "기록 없음"으로 읽으면 사용자가 저장한 파티원 수가 1로 덮인다) 가드 하나하나에
 // 테스트를 붙인다. 전에는 스토어를 거쳐야만 이 경우들을 만들 수 있었다.
-import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { BossProfitRecord } from '../../../storage/boss-profit'
 import type { BossDropRecord } from '../../../storage/boss-drops'
 import type { BossProfitRow } from '../rows'
 
-const { getBossPartySizeMock, upsertBossProfitRecordMock, migrateDropsMock } = vi.hoisted(() => ({
-  getBossPartySizeMock: vi.fn(),
-  upsertBossProfitRecordMock: vi.fn(),
-  migrateDropsMock: vi.fn(),
+jest.mock('../../../storage/boss-party-settings', () => ({
+  getBossPartySize: jest.fn(),
 }))
+const { getBossPartySize: getBossPartySizeMock } = jest.requireMock('../../../storage/boss-party-settings') as Record<string, jest.Mock>
 
-vi.mock('../../../storage/boss-party-settings', () => ({
-  getBossPartySize: getBossPartySizeMock,
+jest.mock('../../../storage/boss-profit', () => ({
+  upsertBossProfitRecord: jest.fn(),
 }))
+const { upsertBossProfitRecord: upsertBossProfitRecordMock } = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
 
-vi.mock('../../../storage/boss-profit', () => ({
-  upsertBossProfitRecord: upsertBossProfitRecordMock,
+jest.mock('../drops-loader', () => ({
+  ...jest.requireActual<typeof import('../drops-loader')>('../drops-loader'),
+  migrateDropsToConfirmedDifficulty: jest.fn(),
 }))
+const { migrateDropsToConfirmedDifficulty: migrateDropsMock } = jest.requireMock('../drops-loader') as Record<string, jest.Mock>
 
-vi.mock('../drops-loader', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../drops-loader')>()),
-  migrateDropsToConfirmedDifficulty: migrateDropsMock,
-}))
-
-const { autoRecordRows } = await import('../auto-record')
+const { autoRecordRows } = require('../auto-record') as typeof import('../auto-record')
 
 const NOW = new Date('2026-08-08T09:00:00.000Z')
 
@@ -55,7 +51,7 @@ const NO_DROPS: BossDropRecord[] = []
 const NO_RECORDS: BossProfitRecord[] = []
 
 beforeEach(() => {
-  vi.clearAllMocks()
+  jest.clearAllMocks()
   getBossPartySizeMock.mockResolvedValue(null)
   upsertBossProfitRecordMock.mockResolvedValue(undefined)
   migrateDropsMock.mockResolvedValue(undefined)

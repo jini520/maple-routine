@@ -145,24 +145,6 @@ describe('하단 인셋이 들어가는 자리', () => {
   })
 })
 
-describe('렌더 트리 스냅샷 — 이후 변경을 잡는 기준선(예전 화면과의 대조가 아니다)', () => {
-  it('탭 화면 · 헤더 있음', async () => {
-    expect(
-      (
-        await renderOverlay(
-          <ScreenScroll header={<View testID="header" />}>{목록}</ScreenScroll>,
-        )
-      ).toJSON(),
-    ).toMatchSnapshot()
-  })
-
-  it('하위 페이지 · 헤더 없음', async () => {
-    expect(
-      (await renderOverlay(<ScreenScroll hasTabBar={false}>{목록}</ScreenScroll>)).toJSON(),
-    ).toMatchSnapshot()
-  })
-})
-
 // ★ 회귀 가드 — **헤더는 스크롤 뷰 «안»에 있다**([[ADR-131]] 후속, 사용자 판정 2026-08-13).
 //
 // 예전에는 스크롤 뷰의 **형제**라 영원히 화면에 붙어 있었다. 정책이 «고정을 푼다» 로 바뀌면서

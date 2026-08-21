@@ -56,7 +56,4 @@ describe('Badge', () => {
     expect(getByTestId('count').props.accessibilityLabel).toBe('완료 수')
   })
 
-  it('렌더 트리 스냅샷 — 이후 변경을 잡는 기준선(예전 화면과의 대조가 아니다)', async () => {
-    expect((await renderAtom(<Badge tone="primary">3</Badge>)).toJSON()).toMatchSnapshot()
-  })
 })

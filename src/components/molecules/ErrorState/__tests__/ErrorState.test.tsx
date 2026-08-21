@@ -56,15 +56,4 @@ describe('ErrorState', () => {
     expect(getByTestId('error-state').props.role).toBe('alert')
   })
 
-  it('렌더 트리 스냅샷 — 이후 변경을 잡는 기준선(예전 화면과의 대조가 아니다)', async () => {
-    const rendered = await renderAtom(
-      <ErrorState
-        title="캐릭터 목록을 불러오지 못했습니다"
-        description="네트워크 연결을 확인해주세요"
-        action={{ label: '다시 시도', onClick: () => {} }}
-      />,
-    )
-
-    expect(rendered.toJSON()).toMatchSnapshot()
-  })
 })

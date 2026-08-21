@@ -1,30 +1,19 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { getAuthConfigMock } = vi.hoisted(() => ({
-  getAuthConfigMock: vi.fn(),
+jest.mock('../../../storage/api-key', () => ({
+  getAuthConfig: jest.fn(),
 }))
+const { getAuthConfig: getAuthConfigMock } = jest.requireMock('../../../storage/api-key') as Record<string, jest.Mock>
 
-const { getTrackedCharacterOcidsMock } = vi.hoisted(() => ({
-  getTrackedCharacterOcidsMock: vi.fn(),
+jest.mock('../../../storage/character-selection', () => ({
+  getTrackedCharacterOcids: jest.fn(),
 }))
+const { getTrackedCharacterOcids: getTrackedCharacterOcidsMock } = jest.requireMock('../../../storage/character-selection') as Record<string, jest.Mock>
 
-const { getTrackingModeMock, setTrackingModeMock } = vi.hoisted(() => ({
-  getTrackingModeMock: vi.fn(),
-  setTrackingModeMock: vi.fn(),
+jest.mock('../../../storage/tracking-mode', () => ({
+  getTrackingMode: jest.fn(),
+  setTrackingMode: jest.fn(),
 }))
-
-vi.mock('../../../storage/api-key', () => ({
-  getAuthConfig: getAuthConfigMock,
-}))
-
-vi.mock('../../../storage/character-selection', () => ({
-  getTrackedCharacterOcids: getTrackedCharacterOcidsMock,
-}))
-
-vi.mock('../../../storage/tracking-mode', () => ({
-  getTrackingMode: getTrackingModeMock,
-  setTrackingMode: setTrackingModeMock,
-}))
+const { getTrackingMode: getTrackingModeMock, setTrackingMode: setTrackingModeMock } = jest.requireMock('../../../storage/tracking-mode') as Record<string, jest.Mock>
 
 import { setOnboardingAccountScope } from '../flow'
 import { deriveResumeTarget } from '../resume'
@@ -38,7 +27,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  vi.resetAllMocks()
+  jest.resetAllMocks()
 })
 
 // ADR-086 결정 1 재개 파생표 — 부팅(restoreFromStorage)과 키 재입력(submitApiKey)이

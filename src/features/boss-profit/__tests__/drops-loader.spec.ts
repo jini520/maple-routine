@@ -4,19 +4,14 @@
 // 보이던 증상(사용자 보고 2026-08-10: "지난주 갔다 오니 아이템 수익이 사라진다")의 원인이었다.
 // 시트에서 값을 넣은 직후에는 스토어가 들고 있는 값이라 보이고, 기간을 왕복하면 DB에서 다시
 // 읽으면서 가격만 떨어져 나갔다.
-import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { BossDropRecord } from '../../../storage/boss-drops'
 import type { BossProfitRow } from '../rows'
 
-const { getBossDropRecordsMock, replaceBossDropRecordsMock } = vi.hoisted(() => ({
-  getBossDropRecordsMock: vi.fn(),
-  replaceBossDropRecordsMock: vi.fn(),
+jest.mock('../../../storage/boss-drops', () => ({
+  getBossDropRecords: jest.fn(),
+  replaceBossDropRecords: jest.fn(),
 }))
-
-vi.mock('../../../storage/boss-drops', () => ({
-  getBossDropRecords: getBossDropRecordsMock,
-  replaceBossDropRecords: replaceBossDropRecordsMock,
-}))
+const { getBossDropRecords: getBossDropRecordsMock, replaceBossDropRecords: replaceBossDropRecordsMock } = jest.requireMock('../../../storage/boss-drops') as Record<string, jest.Mock>
 
 const PERIOD = '2026-08-06'
 
@@ -68,7 +63,7 @@ beforeEach(() => {
 
 describe('loadDropsByRowKey — 가격 생존 (ADR-124)', () => {
   it('DB에서 읽은 가격을 화면 상태로 그대로 옮긴다', async () => {
-    const { loadDropsByRowKey } = await import('../drops-loader')
+    const { loadDropsByRowKey } = require('../drops-loader') as typeof import('../drops-loader')
 
     const map = await loadDropsByRowKey(['ocid-1'], [row()], new Date('2026-08-10T00:00:00Z'))
 
@@ -86,7 +81,7 @@ describe('loadDropsByRowKey — 가격 생존 (ADR-124)', () => {
     getBossDropRecordsMock.mockResolvedValue([
       record({ priceState: 'excluded', priceMeso: null, priceShare: null }),
     ])
-    const { loadDropsByRowKey } = await import('../drops-loader')
+    const { loadDropsByRowKey } = require('../drops-loader') as typeof import('../drops-loader')
 
     const map = await loadDropsByRowKey(['ocid-1'], [row()], new Date('2026-08-10T00:00:00Z'))
 
@@ -99,7 +94,7 @@ describe('loadDropsByRowKey — 가격 생존 (ADR-124)', () => {
       record({ dropIndex: 0 }),
       record({ dropIndex: 1, itemName: '컴플리트 언더컨트롤', slot: null, priceState: null, priceMeso: null, priceShare: null }),
     ])
-    const { loadDropsByRowKey } = await import('../drops-loader')
+    const { loadDropsByRowKey } = require('../drops-loader') as typeof import('../drops-loader')
 
     await loadDropsByRowKey(['ocid-1'], [row()], new Date('2026-08-10T00:00:00Z'))
 

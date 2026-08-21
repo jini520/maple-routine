@@ -1,17 +1,14 @@
 /// <reference types="node" />
 import { existsSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
-import { describe, expect, it } from 'vitest'
+import {  join } from 'node:path'
 import {
   SOL_ERDA_DENOMINATIONS,
   SOL_ERDA_ENERGY_NAME,
   decomposeSolErda,
   getFixedDropIcons,
-  parseFixedAmount,
-} from '../fixed-drops'
+  parseFixedAmount } from '../fixed-drops'
 
-const itemsDir = join(dirname(fileURLToPath(import.meta.url)), '../../assets/items')
+const itemsDir = join(__dirname, '../../assets/items')
 
 describe('parseFixedAmount', () => {
   it('"N개" 형식에서 개수를 뽑는다', () => {

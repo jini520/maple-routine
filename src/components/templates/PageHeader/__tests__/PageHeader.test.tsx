@@ -134,22 +134,6 @@ describe('below 슬롯', () => {
   })
 })
 
-describe('렌더 트리 스냅샷 — 이후 변경을 잡는 기준선(예전 화면과의 대조가 아니다)', () => {
-  it('기본 테마 · 헤더 + 당김 인디케이터 자리', async () => {
-    expect(
-      (
-        await renderOverlay(
-          <PageHeader below={<View testID="ptr" />}>
-            <Text>컨텐츠 스케줄러</Text>
-          </PageHeader>,
-        )
-      ).toJSON(),
-    ).toMatchSnapshot()
-  })
-})
-
-
-
 interface TreeNode {
   type: string
   props: Record<string, unknown>

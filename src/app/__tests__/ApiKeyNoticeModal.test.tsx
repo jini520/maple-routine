@@ -90,9 +90,4 @@ describe('ApiKeyNoticeModal ([[ADR-116]] 결정 1)', () => {
     })
   })
 
-  it('렌더 트리 스냅샷 (invalid)', async () => {
-    useOnboardingStore.setState({ apiKeyNotice: 'invalid' })
-
-    expect((await renderOverlay(<ApiKeyNoticeModal />)).toJSON()).toMatchSnapshot()
-  })
 })

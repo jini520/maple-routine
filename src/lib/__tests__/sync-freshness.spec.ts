@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest'
 import { SYNC_TTL_MS, isSyncFresh } from '../sync-freshness'
 
 const NOW = new Date('2026-08-06T12:00:00.000Z')

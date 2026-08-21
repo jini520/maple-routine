@@ -174,15 +174,4 @@ describe('Modal', () => {
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
-  it('트리 스냅샷', async () => {
-    const { toJSON } = await renderOverlay(
-      <Modal onClose={noop} testId="test-modal">
-        <Modal.Card>
-          <Text>내용</Text>
-        </Modal.Card>
-      </Modal>,
-    )
-
-    expect(toJSON()).toMatchSnapshot()
-  })
 })

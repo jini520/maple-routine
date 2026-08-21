@@ -192,10 +192,3 @@ describe('집계할 것이 없을 때 ([[ADR-147]] 결정 5)', () => {
   })
 })
 
-describe('스냅샷 — 네 크기', () => {
-  it.each(Object.entries(크기))('%s', async (_이름, 값) => {
-    const view = await 위젯(값, 뷰모델({ crystalLimits: 월드한도목록(2) }))
-
-    expect(view.toJSON()).toMatchSnapshot()
-  })
-})

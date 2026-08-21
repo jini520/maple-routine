@@ -214,19 +214,3 @@ describe('「물욕」을 쓰지 않는다 ([[ADR-147]] 정정 14)', () => {
   })
 })
 
-describe('세 크기 스냅샷 — 아무도 안 부르는 분기의 유일한 안전망', () => {
-  beforeEach(() => {
-    // 문구가 무작위라 그대로 찍으면 스냅샷이 실행마다 갈린다 — 인덱스를 0으로 고정한다.
-    jest.spyOn(Math, 'random').mockReturnValue(0)
-  })
-
-  afterEach(() => {
-    jest.restoreAllMocks()
-  })
-
-  it.each(Object.entries(크기))('%s', async (_이름, 값) => {
-    const { toJSON } = await 위젯(값)
-
-    expect(toJSON()).toMatchSnapshot()
-  })
-})

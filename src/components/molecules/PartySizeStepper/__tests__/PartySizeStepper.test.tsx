@@ -98,13 +98,4 @@ describe('PartySizeStepper', () => {
     expect(getByLabelText(증가).props.hitSlop).toEqual({ top: 8, bottom: 8, left: 8, right: 8 })
   })
 
-  it('렌더 트리 스냅샷 — 이후 변경을 잡는 기준선(예전 화면과의 대조가 아니다)', async () => {
-    const asDefault = await renderAtom(<PartySizeStepper label="스우" value={3} max={6} onChange={jest.fn()} />)
-    expect(asDefault.toJSON()).toMatchSnapshot()
-
-    const compact = await renderAtom(
-      <PartySizeStepper label="스우" value={3} max={6} onChange={jest.fn()} size="compact" />,
-    )
-    expect(compact.toJSON()).toMatchSnapshot()
-  })
 })

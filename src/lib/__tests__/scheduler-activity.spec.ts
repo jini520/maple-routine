@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest'
 import type { BossContent, DailyContent, SchedulerCharacterState, WeeklyContent } from '../../types'
 import { getSectionPresence, hasCharacterScopeCompletion } from '../scheduler-activity'
 

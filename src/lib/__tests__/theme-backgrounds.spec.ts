@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest'
+
+import { assetUri } from '../../assets/__tests__/asset-uri'
 import jobThemes from '../../data/job-themes.json'
 import { getThemeBackgroundUrl } from '../theme-backgrounds'
 
@@ -13,7 +14,7 @@ describe('getThemeBackgroundUrl', () => {
   // 그 파일을 지우는 순간 상관없는 테스트가 깨지고 그래서 못 지우게 된다([[ADR-106]] 결정 2 가
   // 남긴 자리 — 실제로 [[ADR-109]] 에서 지울 때 이 테스트가 깨졌다).
   it('슬러그를 번들 URL 로 바꾼다', () => {
-    expect(getThemeBackgroundUrl('hontail-background')).toEqual(expect.any(String))
+    expect(assetUri(getThemeBackgroundUrl('hontail-background'))).not.toBe('')
   })
 
   it('없는 슬러그는 null 이다 — 파일을 지워도 앱이 죽지 않는다', () => {
@@ -30,7 +31,7 @@ describe('getThemeBackgroundUrl', () => {
     .map((theme) => (theme as { background?: { image: string } }).background?.image)
     .filter((slug): slug is string => slug !== undefined)
 
-  it.skipIf(declaredSlugs.length === 0)(
+  ;(declaredSlugs.length === 0 ? it.skip : it)(
     'job-themes.json 에 적힌 배경 슬러그는 모두 실재하는 파일이다',
     () => {
       for (const slug of declaredSlugs) {

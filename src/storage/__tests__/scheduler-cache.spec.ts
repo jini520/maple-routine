@@ -1,4 +1,3 @@
-import { beforeEach, describe, expect, it } from 'vitest'
 import { installFakePreferences } from './fake-preferences'
 import type { SchedulerCharacterState } from '../../types'
 import {

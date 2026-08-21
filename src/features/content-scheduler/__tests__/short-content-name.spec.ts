@@ -2,7 +2,6 @@
 //
 // 두 축이 다른 규칙을 쓴다 — **일일은 지역명까지 줄이고, 주간은 접두어만 뗀다.** 그 비대칭이 이
 // 파일의 요점이라 두 축을 나란히 놓고 본다.
-import { describe, expect, it } from 'vitest'
 
 import { CONTENT_TEMPLATE } from '../../../lib/scheduler-content-template'
 

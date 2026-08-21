@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest'
 import type { NexonSchedulerCharacterStateWire } from '../../../types'
 import { normalizeSchedulerCharacterState } from '../normalize'
 

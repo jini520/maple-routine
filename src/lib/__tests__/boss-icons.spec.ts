@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest'
+
+import { assetUri } from '../../assets/__tests__/asset-uri'
 import { getBossPortraitCrop, getBossPortraitUrl } from '../boss-icons'
 
 describe('getBossPortraitUrl', () => {
@@ -10,7 +11,7 @@ describe('getBossPortraitUrl', () => {
     const url = getBossPortraitUrl('lucid')
 
     expect(url).not.toBeNull()
-    expect(url).toEqual(expect.stringContaining('lucid'))
+    expect(assetUri(url)).toContain('lucid')
   })
 
   it('존재하지 않는 slug면 null을 반환한다', () => {
@@ -21,7 +22,7 @@ describe('getBossPortraitUrl', () => {
     const url = getBossPortraitUrl('senya')
 
     expect(url).not.toBeNull()
-    expect(url).toEqual(expect.stringContaining('senya'))
+    expect(assetUri(url)).toContain('senya')
   })
 
 })

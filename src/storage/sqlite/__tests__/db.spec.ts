@@ -1,38 +1,25 @@
 /// <reference types="node" />
 import { readFileSync } from 'node:fs'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+const isWebPlatformMock = jest.fn()
+const initWebStoreMock = jest.fn()
+const isConnectionMock = jest.fn()
+const createConnectionMock = jest.fn()
+const dbQueryMock = jest.fn()
+const closeConnectionMock = jest.fn()
+const dbOpenMock = jest.fn()
+const dbExecuteMock = jest.fn()
 
 // 포트 역전 후([[ADR-128]]) db.ts는 플러그인이 아니라 SqlitePort에만 의존한다 — 가로채는 지점이
 // SQLite 플러그인 모듈 목에서 주입된 가짜 포트로 바뀌었을 뿐, 검증 대상(어떤
 // 인자로 커넥션을 여는가·stale 커넥션을 닫는가·스키마와 마이그레이션을 도는가)은 그대로다.
 // `retrieveConnection` 을 쓰지 않는다는 것은 이제 포트 표면에 그 연산이 없어 구조적으로 보장된다.
-const {
-  isWebPlatformMock,
-  initWebStoreMock,
-  isConnectionMock,
-  createConnectionMock,
-  dbQueryMock,
-  closeConnectionMock,
-} = vi.hoisted(() => ({
-  isWebPlatformMock: vi.fn(),
-  initWebStoreMock: vi.fn(),
-  isConnectionMock: vi.fn(),
-  createConnectionMock: vi.fn(),
-  dbQueryMock: vi.fn(),
-  closeConnectionMock: vi.fn(),
-}))
-
-const { dbOpenMock, dbExecuteMock } = vi.hoisted(() => ({
-  dbOpenMock: vi.fn(),
-  dbExecuteMock: vi.fn(),
-}))
-
 // ADR-069 결정 1: openBossProfitDb가 PRAGMA table_info로 world 컬럼 존재를 확인한다(SQLite에
 // ADD COLUMN IF NOT EXISTS가 없다) — 기본값은 "이미 있음"으로 둬 기존 케이스가 ALTER를 타지 않게 한다.
-const fakeDb = { open: dbOpenMock, execute: dbExecuteMock, query: dbQueryMock, run: vi.fn() }
+const fakeDb = { open: dbOpenMock, execute: dbExecuteMock, query: dbQueryMock, run: jest.fn() }
 
 beforeEach(async () => {
-  vi.resetModules()
+  jest.resetModules()
   isWebPlatformMock.mockReset().mockReturnValue(false)
   initWebStoreMock.mockReset().mockResolvedValue(undefined)
   isConnectionMock.mockReset().mockResolvedValue(false)
@@ -43,7 +30,7 @@ beforeEach(async () => {
   dbExecuteMock.mockReset().mockResolvedValue({ changes: { changes: 0 } })
 
   // resetModules 뒤에 주입한다 — db.ts가 그때 새로 만들어지는 ports 인스턴스를 읽기 때문이다.
-  const { setSqlitePort } = await import('../../ports')
+  const { setSqlitePort } = require('../../ports') as typeof import('../../ports')
   setSqlitePort({
     isWebPlatform: isWebPlatformMock,
     initWebStore: initWebStoreMock,
@@ -55,7 +42,7 @@ beforeEach(async () => {
 
 describe('getBossProfitDb', () => {
   it('네이티브 플랫폼에서는 initWebStore 없이 커넥션을 생성하고 테이블을 만든다', async () => {
-    const { getBossProfitDb } = await import('../db')
+    const { getBossProfitDb } = require('../db') as typeof import('../db')
 
     const db = await getBossProfitDb()
 
@@ -82,7 +69,7 @@ describe('getBossProfitDb', () => {
   // 않도록, 열 때마다 옛 키를 새 키로 옮겨준다(이미 옮겨졌으면 WHERE절에 걸리는 행이 없어
   // no-op).
   it('boss_party_settings/boss_profit_records의 옛 boss 키(메이린)를 새 키(시즌 보스 메이린)로 마이그레이션한다', async () => {
-    const { getBossProfitDb } = await import('../db')
+    const { getBossProfitDb } = require('../db') as typeof import('../db')
 
     await getBossProfitDb()
 
@@ -96,7 +83,7 @@ describe('getBossProfitDb', () => {
 
   it('웹 플랫폼에서는 커넥션을 열기 전에 initWebStore를 먼저 호출한다', async () => {
     isWebPlatformMock.mockReturnValue(true)
-    const { getBossProfitDb } = await import('../db')
+    const { getBossProfitDb } = require('../db') as typeof import('../db')
 
     await getBossProfitDb()
 
@@ -106,7 +93,7 @@ describe('getBossProfitDb', () => {
 
   it('이전 페이지 로드의 stale 커넥션이 있으면 닫고 새로 createConnection한다(리로드 대응)', async () => {
     isConnectionMock.mockResolvedValue(true)
-    const { getBossProfitDb } = await import('../db')
+    const { getBossProfitDb } = require('../db') as typeof import('../db')
 
     await getBossProfitDb()
 
@@ -116,7 +103,7 @@ describe('getBossProfitDb', () => {
 
   it('커넥션 열기에 실패하면 실패를 캐시하지 않고 다음 호출에서 재시도한다', async () => {
     createConnectionMock.mockRejectedValueOnce(new Error('open fail'))
-    const { getBossProfitDb } = await import('../db')
+    const { getBossProfitDb } = require('../db') as typeof import('../db')
 
     await expect(getBossProfitDb()).rejects.toThrow('open fail')
 
@@ -128,7 +115,7 @@ describe('getBossProfitDb', () => {
   // 커넥션 매니저 인스턴스 자체를 한 번만 만드는 것은 이제 어댑터(capacitor-sqlite)의
   // 몫이다 — db.ts가 지는 계약은 "같은 이름 커넥션을 두 번 열지 않는다" 하나로 남는다.
   it('여러 번 호출해도 커넥션을 한 번만 만든다(싱글턴)', async () => {
-    const { getBossProfitDb } = await import('../db')
+    const { getBossProfitDb } = require('../db') as typeof import('../db')
 
     const [first, second] = await Promise.all([getBossProfitDb(), getBossProfitDb()])
 
@@ -141,20 +128,20 @@ describe('getBossProfitDb', () => {
   // 있다. reject 경로에만 복구가 있으면 그 죽은 커넥션이 dbPromise에 영구 캐시돼 앱을 재시작할
   // 때까지 모든 조회가 실패한다.
   it('커넥션 열기가 응답하지 않으면 타임아웃으로 실패하고 다음 호출에서 다시 연다', async () => {
-    vi.useFakeTimers()
+    jest.useFakeTimers()
     try {
       dbOpenMock.mockReturnValueOnce(new Promise(() => {}))
-      const { getBossProfitDb } = await import('../db')
+      const { getBossProfitDb } = require('../db') as typeof import('../db')
 
       const pending = getBossProfitDb()
       const rejection = expect(pending).rejects.toThrow(/시간 초과/)
-      await vi.advanceTimersByTimeAsync(60_000)
+      await jest.advanceTimersByTimeAsync(60_000)
       await rejection
     } finally {
-      vi.useRealTimers()
+      jest.useRealTimers()
     }
 
-    const { getBossProfitDb } = await import('../db')
+    const { getBossProfitDb } = require('../db') as typeof import('../db')
     const db = await getBossProfitDb()
 
     expect(db).toBe(fakeDb)
@@ -162,16 +149,16 @@ describe('getBossProfitDb', () => {
   })
 
   it('타임아웃 안에 열리면 정상 동작하며 타임아웃 에러를 남기지 않는다', async () => {
-    vi.useFakeTimers()
+    jest.useFakeTimers()
     try {
-      const { getBossProfitDb } = await import('../db')
+      const { getBossProfitDb } = require('../db') as typeof import('../db')
 
       const pending = getBossProfitDb()
-      await vi.advanceTimersByTimeAsync(60_000)
+      await jest.advanceTimersByTimeAsync(60_000)
 
       await expect(pending).resolves.toBe(fakeDb)
     } finally {
-      vi.useRealTimers()
+      jest.useRealTimers()
     }
   })
 })
@@ -182,9 +169,9 @@ describe('getBossProfitDb', () => {
 // 캐시 데이터 삭제·용량 계산이 그 테이블을 조용히 빠뜨린다(boss_drop_records가 그랬다).
 describe('BOSS_PROFIT_TABLE_NAMES', () => {
   it('db.ts가 만드는 모든 테이블이 export된 이름 목록에 들어 있다', async () => {
-    const { BOSS_PROFIT_TABLE_NAMES } = await import('../db')
+    const { BOSS_PROFIT_TABLE_NAMES } = require('../db') as typeof import('../db')
 
-    const source = readFileSync(new URL('../db.ts', import.meta.url), 'utf-8')
+    const source = readFileSync((__dirname + '/../db.ts'), 'utf-8')
     const createdTables = [...source.matchAll(/CREATE TABLE IF NOT EXISTS (\w+)/g)].map(
       (match) => match[1],
     )
@@ -195,7 +182,7 @@ describe('BOSS_PROFIT_TABLE_NAMES', () => {
 
 describe('closeBossProfitDb', () => {
   it('열린 적 있는 커넥션을 정상 종료하고, 다음 getBossProfitDb는 새로 연다', async () => {
-    const { getBossProfitDb, closeBossProfitDb } = await import('../db')
+    const { getBossProfitDb, closeBossProfitDb } = require('../db') as typeof import('../db')
 
     await getBossProfitDb()
     await closeBossProfitDb()
@@ -207,7 +194,7 @@ describe('closeBossProfitDb', () => {
   })
 
   it('한 번도 연 적 없으면 아무것도 하지 않는다', async () => {
-    const { closeBossProfitDb } = await import('../db')
+    const { closeBossProfitDb } = require('../db') as typeof import('../db')
 
     await closeBossProfitDb()
 
@@ -216,7 +203,7 @@ describe('closeBossProfitDb', () => {
 
   it('종료 중 에러가 나도 던지지 않는다(리로드는 곧 진행돼야 하므로 best-effort)', async () => {
     closeConnectionMock.mockRejectedValue(new Error('close fail'))
-    const { getBossProfitDb, closeBossProfitDb } = await import('../db')
+    const { getBossProfitDb, closeBossProfitDb } = require('../db') as typeof import('../db')
 
     await getBossProfitDb()
 
@@ -235,7 +222,7 @@ describe('closeBossProfitDb', () => {
           resolveClose = resolve
         }),
     )
-    const { getBossProfitDb, closeBossProfitDb } = await import('../db')
+    const { getBossProfitDb, closeBossProfitDb } = require('../db') as typeof import('../db')
 
     await getBossProfitDb()
     expect(createConnectionMock).toHaveBeenCalledTimes(1)
@@ -262,10 +249,10 @@ describe('closeBossProfitDb', () => {
   // 가짜 타이머는 케이스 안에서만 켠다 — 파일 전역으로 켜면 위 레이스 케이스가 의존하는
   // 마이크로태스크 순서가 흔들린다.
   it('닫기가 응답하지 않아도 5초 타임아웃으로 끝난다 — 던지지 않는다(best-effort)', async () => {
-    vi.useFakeTimers()
+    jest.useFakeTimers()
     try {
       closeConnectionMock.mockImplementation(() => new Promise<void>(() => {}))
-      const { getBossProfitDb, closeBossProfitDb } = await import('../db')
+      const { getBossProfitDb, closeBossProfitDb } = require('../db') as typeof import('../db')
 
       await getBossProfitDb()
 
@@ -273,41 +260,41 @@ describe('closeBossProfitDb', () => {
       const closePromise = closeBossProfitDb().then(() => {
         settled = true
       })
-      await vi.advanceTimersByTimeAsync(5_000)
+      await jest.advanceTimersByTimeAsync(5_000)
 
       await expect(closePromise).resolves.toBeUndefined()
       expect(settled).toBe(true)
     } finally {
-      vi.useRealTimers()
+      jest.useRealTimers()
     }
   })
 
   it('닫기가 타임아웃돼도 dbPromise를 비워 다음 getBossProfitDb가 새로 연다', async () => {
-    vi.useFakeTimers()
+    jest.useFakeTimers()
     try {
       closeConnectionMock.mockImplementation(() => new Promise<void>(() => {}))
-      const { getBossProfitDb, closeBossProfitDb } = await import('../db')
+      const { getBossProfitDb, closeBossProfitDb } = require('../db') as typeof import('../db')
 
       await getBossProfitDb()
       expect(createConnectionMock).toHaveBeenCalledTimes(1)
 
       const closePromise = closeBossProfitDb()
-      await vi.advanceTimersByTimeAsync(5_000)
+      await jest.advanceTimersByTimeAsync(5_000)
       await closePromise
 
       await getBossProfitDb()
       expect(createConnectionMock).toHaveBeenCalledTimes(2)
     } finally {
-      vi.useRealTimers()
+      jest.useRealTimers()
     }
   })
 
   // 상한이 조용히 줄어드는 것을 막는다 — 이 값은 적용 경로에서 사용자가 무반응을 견디는 시간이다.
   it('4.9초에는 아직 끝나지 않고, 5초를 넘겨야 끝난다', async () => {
-    vi.useFakeTimers()
+    jest.useFakeTimers()
     try {
       closeConnectionMock.mockImplementation(() => new Promise<void>(() => {}))
-      const { getBossProfitDb, closeBossProfitDb } = await import('../db')
+      const { getBossProfitDb, closeBossProfitDb } = require('../db') as typeof import('../db')
 
       await getBossProfitDb()
 
@@ -316,27 +303,27 @@ describe('closeBossProfitDb', () => {
         settled = true
       })
 
-      await vi.advanceTimersByTimeAsync(4_900)
+      await jest.advanceTimersByTimeAsync(4_900)
       expect(settled).toBe(false)
 
-      await vi.advanceTimersByTimeAsync(200)
+      await jest.advanceTimersByTimeAsync(200)
       expect(settled).toBe(true)
     } finally {
-      vi.useRealTimers()
+      jest.useRealTimers()
     }
   })
 
   it('한 번도 연 적 없으면 타이머조차 걸지 않는다', async () => {
-    vi.useFakeTimers()
+    jest.useFakeTimers()
     try {
-      const { closeBossProfitDb } = await import('../db')
+      const { closeBossProfitDb } = require('../db') as typeof import('../db')
 
       await closeBossProfitDb()
 
-      expect(vi.getTimerCount()).toBe(0)
+      expect(jest.getTimerCount()).toBe(0)
       expect(closeConnectionMock).not.toHaveBeenCalled()
     } finally {
-      vi.useRealTimers()
+      jest.useRealTimers()
     }
   })
 })
@@ -348,7 +335,7 @@ describe('world 컬럼 마이그레이션 (ADR-069 결정 1)', () => {
     isConnectionMock.mockResolvedValue(false)
     dbQueryMock.mockResolvedValue({ values: [{ name: 'ocid' }, { name: 'boss' }] })
 
-    const { getBossProfitDb } = await import('../db')
+    const { getBossProfitDb } = require('../db') as typeof import('../db')
     await getBossProfitDb()
 
     expect(dbExecuteMock).toHaveBeenCalledWith('ALTER TABLE boss_profit_records ADD COLUMN world TEXT')
@@ -358,7 +345,7 @@ describe('world 컬럼 마이그레이션 (ADR-069 결정 1)', () => {
     isConnectionMock.mockResolvedValue(false)
     dbQueryMock.mockResolvedValue({ values: [{ name: 'world' }] })
 
-    const { getBossProfitDb } = await import('../db')
+    const { getBossProfitDb } = require('../db') as typeof import('../db')
     await getBossProfitDb()
 
     // **컬럼을 지목해 센다.** `ADD COLUMN` 전체를 세면 같은 `ensureColumn` 을 쓰는 다른 컬럼이
@@ -375,7 +362,7 @@ describe('가격 컬럼 마이그레이션 (ADR-124 결정 4)', () => {
     isConnectionMock.mockResolvedValue(false)
     dbQueryMock.mockResolvedValue({ values: [{ name: 'ocid' }] })
 
-    const { getBossProfitDb } = await import('../db')
+    const { getBossProfitDb } = require('../db') as typeof import('../db')
     await getBossProfitDb()
 
     expect(dbExecuteMock).toHaveBeenCalledWith(
@@ -395,7 +382,7 @@ describe('가격 컬럼 마이그레이션 (ADR-124 결정 4)', () => {
       values: [{ name: 'price_state' }, { name: 'price_meso' }, { name: 'price_share' }],
     })
 
-    const { getBossProfitDb } = await import('../db')
+    const { getBossProfitDb } = require('../db') as typeof import('../db')
     await getBossProfitDb()
 
     const altered = dbExecuteMock.mock.calls.filter(([sql]) => String(sql).includes('ADD COLUMN price_'))

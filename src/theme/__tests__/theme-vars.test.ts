@@ -154,7 +154,6 @@ describe('스크림 위 패널 테두리 — 모드가 역할을 가른다 ([[AD
 })
 
 describe('`tailwind.config.js` 색 스케일', () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const colors = (require('../../../tailwind.config.js') as { theme: { colors: Record<string, string> } })
     .theme.colors
 
