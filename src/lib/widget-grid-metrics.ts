@@ -40,7 +40,7 @@ export const GRID_SIDE_PADDING = 16
 export const GRID_GAP = 12
 
 /** 행 높이 — 고정 76(제안값). 위 「행 높이는 폭에서 파생하지 않는다」 참조. */
-export const GRID_ROW_HEIGHT = 76
+export const GRID_ROW_HEIGHT = 82
 
 export interface WidgetGridMetrics {
   /** 한 칸의 폭 — 유동. 창 폭에서 여백과 간격을 뺀 나머지를 4로 나눈 값이다. */

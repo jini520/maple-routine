@@ -210,7 +210,7 @@ function Row(props: {
   return (
     <View testID={`reset-row-${props.cycle}`} className="gap-0.5">
       <View className="flex-row items-baseline">
-        <Label cycle={props.cycle} sizeClass="text-[10.5px]" />
+        <Label cycle={props.cycle} sizeClass="text-[11.5px]" />
         <View className="ml-auto">
           <Value
             cycle={props.cycle}
@@ -218,7 +218,7 @@ function Row(props: {
             // **일일만 초까지**([[ADR-147]] 정정 39) — 수십 시간 남은 값에 초를 붙이면 글자만 길어지고
             // 아무도 안 본다.
             granularity={props.cycle === 'daily' ? 'second' : 'minute'}
-            sizeClass="text-[11.5px]"
+            sizeClass="text-[12.5px]"
           />
         </View>
       </View>
@@ -240,13 +240,13 @@ export function ResetCountdownWidget({ w, h, data }: WidgetProps): React.JSX.Ele
     return (
       <View testID="widget-reset-countdown" className="flex-1 items-center justify-center gap-0.5 p-2">
         <Title sizeClass="text-[9px]" />
-        <Label cycle="daily" sizeClass="text-[9.5px]" />
+        <Label cycle="daily" sizeClass="text-[10.5px]" />
         {/* 1x1 은 초를 넣을 자리가 물리적으로 없다 — 가장 큰 단위 하나뿐이다. */}
         <Value
           cycle="daily"
           remainingMs={remainingOf(resets.daily, nowMs)}
           granularity="largest"
-          sizeClass="text-[13px]"
+          sizeClass="text-[14px]"
         />
       </View>
     )
@@ -259,7 +259,7 @@ export function ResetCountdownWidget({ w, h, data }: WidgetProps): React.JSX.Ele
         <View className="flex-row items-center gap-2">
           {(['daily', 'weekly', 'monthly'] as const).map((cycle) => (
             <View key={cycle} testID={`reset-cell-${cycle}`} className="min-w-0 flex-1">
-              <Label cycle={cycle} sizeClass="text-[10px]" />
+              <Label cycle={cycle} sizeClass="text-[11px]" />
               {/* 셋을 가로로 나눠 쓰느라 한 칸이 좁다 — 여기서는 일일도 분까지다. */}
               <Value
                 cycle={cycle}

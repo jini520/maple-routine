@@ -102,7 +102,7 @@ function Amount(props: { meso: number; sizeClass: string }): React.JSX.Element {
         {formatMesoShort(props.meso)}
       </Text>
       {/* 숫자와 단위 사이는 마진이 아니라 **실제 공백 문자**다([[ADR-046]] 트레이드오프). */}
-      <Text fixed className="text-[11px] font-semibold text-text-muted"> 메소</Text>
+      <Text fixed className="text-[12px] font-semibold text-text-muted"> 메소</Text>
     </Text>
   )
 }
@@ -157,8 +157,8 @@ function Breakdown(props: {
       {splitOf(props.split).map((segment) => (
         <View key={segment.key} className="flex-row items-center gap-1">
           <View className={LEGEND_DOT_CLASS[segment.key]} />
-          <Text fixed className="text-[10px] text-text-muted">{SEGMENT_LABEL[segment.key]}</Text>
-          <Text fixed style={TABULAR_NUMS} className="text-[10px] font-semibold text-text">
+          <Text fixed className="text-[11px] text-text-muted">{SEGMENT_LABEL[segment.key]}</Text>
+          <Text fixed style={TABULAR_NUMS} className="text-[11px] font-semibold text-text">
             {formatMesoShort(segment.meso)}
           </Text>
         </View>
@@ -169,7 +169,7 @@ function Breakdown(props: {
 
 function Note(): React.JSX.Element {
   return (
-    <Text fixed testID="profit-note" numberOfLines={1} className="text-[10px] text-text-muted">
+    <Text fixed testID="profit-note" numberOfLines={1} className="text-[11px] text-text-muted">
       {NO_RECORD_NOTE}
     </Text>
   )
@@ -214,7 +214,7 @@ function Face(props: { character: WeeklyProfitCharacterView }): React.JSX.Elemen
           testID="profit-character-face-fallback"
           className="h-full w-full items-center justify-center bg-primary"
         >
-          <Text fixed className="text-[9px] font-bold text-on-primary">?</Text>
+          <Text fixed className="text-[10px] font-bold text-on-primary">?</Text>
         </View>
       )}
     </View>
@@ -235,7 +235,7 @@ function CharacterRow(props: {
             fixed
             testID="profit-character-rank"
             style={TABULAR_NUMS}
-            className="w-2.5 shrink-0 text-[10px] font-bold text-text-disabled"
+            className="w-2.5 shrink-0 text-[11px] font-bold text-text-disabled"
           >
             {props.rank}
           </Text>
@@ -246,19 +246,19 @@ function CharacterRow(props: {
         fixed
         testID="profit-character-name"
         numberOfLines={1}
-        className="min-w-0 flex-1 text-[11.5px] font-semibold text-text"
+        className="min-w-0 flex-1 text-[12.5px] font-semibold text-text"
       >
         {props.character.characterName}
       </Text>
       {props.withSplit && (
-        <Text fixed testID="profit-character-split" numberOfLines={1} className="shrink-0 text-[10px] text-text-muted">
+        <Text fixed testID="profit-character-split" numberOfLines={1} className="shrink-0 text-[11px] text-text-muted">
           {splitOf(props.character)
             .map((segment) => `${SEGMENT_LABEL[segment.key]} ${formatMesoShort(segment.meso)}`)
             .join(' · ')}
         </Text>
       )}
       {/* 목록 행에는 「메소」를 안 붙인다 — 머리가 이미 단위를 말했다([[ADR-147]] 정정 4). */}
-      <Text fixed style={TABULAR_NUMS} className="shrink-0 text-[11.5px] font-bold text-text">
+      <Text fixed style={TABULAR_NUMS} className="shrink-0 text-[12.5px] font-bold text-text">
         {formatMesoShort(props.character.totalMeso)}
       </Text>
     </View>
@@ -300,7 +300,7 @@ function PeriodHeader(props: { range: string }): React.JSX.Element {
   return (
     <View testID="profit-period-header" className="flex-row items-baseline justify-between gap-2">
       <Text fixed className="text-[11px] font-bold text-text-muted">{PERIOD_LABEL} 보스 수익</Text>
-      <Text fixed testID="profit-period-range" numberOfLines={1} className="shrink text-[10px] text-text-muted">
+      <Text fixed testID="profit-period-range" numberOfLines={1} className="shrink text-[11px] text-text-muted">
         {props.range}
       </Text>
     </View>

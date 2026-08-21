@@ -77,7 +77,7 @@ function CountBadge(props: { count: number; sizePx: number; textPx: number }): R
 function Cta(props: { prefix?: string }): React.JSX.Element {
   return (
     <View testID="unpriced-cta" className="flex-row items-center gap-0.5">
-      <Text fixed numberOfLines={1} className="text-[10.5px] font-semibold text-text-muted">
+      <Text fixed numberOfLines={1} className="text-[11.5px] font-semibold text-text-muted">
         {props.prefix === undefined ? CTA : `${props.prefix} · ${CTA}`}
       </Text>
       <ChevronRightIcon size={12} className="shrink-0 text-text-muted" />
@@ -93,7 +93,7 @@ function Cta(props: { prefix?: string }): React.JSX.Element {
  */
 function ItemRow(props: { drop: UnpricedDropView }): React.JSX.Element {
   return (
-    <Text fixed testID="unpriced-item" numberOfLines={1} className="text-[11px] text-text">
+    <Text fixed testID="unpriced-item" numberOfLines={1} className="text-[12px] text-text">
       {props.drop.itemName}
       {props.drop.ringLevel !== undefined && ` ${props.drop.ringLevel}레벨`}
     </Text>
@@ -136,7 +136,7 @@ function Done(props: { variant: Variant }): React.JSX.Element {
           fixed
           testID="unpriced-done"
           numberOfLines={3}
-          className="text-center text-[9px] leading-[11px] text-text-muted"
+          className="text-center text-[10px] leading-[11px] text-text-muted"
         >
           {DONE_NOTE}
         </Text>
@@ -152,7 +152,7 @@ function Done(props: { variant: Variant }): React.JSX.Element {
           fixed
           testID="unpriced-done"
           numberOfLines={2}
-          className="text-center text-[10.5px] leading-[15px] text-text-muted"
+          className="text-center text-[11.5px] leading-[15px] text-text-muted"
         >
           {DONE_NOTE}
         </Text>
@@ -166,7 +166,7 @@ function Done(props: { variant: Variant }): React.JSX.Element {
       <DoneMark sizePx={32} />
       <View className="flex-1">
         <Text fixed className="text-[11px] font-semibold text-text-muted">{TITLE}</Text>
-        <Text fixed testID="unpriced-done" numberOfLines={1} className="mt-0.5 text-[10px] text-text-muted">
+        <Text fixed testID="unpriced-done" numberOfLines={1} className="mt-0.5 text-[11px] text-text-muted">
           {DONE_NOTE}
         </Text>
       </View>
