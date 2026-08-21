@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   describeReleaseNoteGap,
   parseArgs,
+  resolveManifestHighlights,
   resolveBuildScript,
   resolveReleaseCreateArgs,
   resolveReleaseTag,
@@ -71,6 +72,48 @@ describe('parseArgs', () => {
       isBeta: true,
       minNativeVersion: '2.0.0',
     })
+  })
+
+  // ── ADR-154: 캐패시터 앱의 종료 ──────────────────────────────────────────────
+
+  it('--store-required를 쉼표로 갈라 플랫폼 목록으로 만든다', () => {
+    expect(parseArgs(['--store-required', 'android']).storeRequiredPlatforms).toEqual(['android'])
+    expect(parseArgs(['--store-required', 'android,ios']).storeRequiredPlatforms).toEqual(['android', 'ios'])
+    expect(parseArgs(['--store-required', 'android, ios']).storeRequiredPlatforms).toEqual(['android', 'ios'])
+  })
+
+  it('--store-required가 없으면 undefined다 — 종전 배포와 한 글자도 안 달라진다', () => {
+    expect(parseArgs([]).storeRequiredPlatforms).toBeUndefined()
+  })
+
+  // 오타는 조용히 «아무도 유도되지 않는» 배포가 된다 — 그 실패는 발행하고 나서야, 그것도
+  // 아무 일이 안 일어나는 형태로 드러난다. 그래서 파싱 단계에서 이름을 못박는다.
+  it('알 수 없는 플랫폼 이름은 던진다', () => {
+    expect(() => parseArgs(['--store-required', 'andriod'])).toThrow(/andriod/)
+    expect(() => parseArgs(['--store-required', 'web'])).toThrow()
+  })
+
+  it('--highlight는 여러 번 줄 수 있고 순서대로 쌓인다', () => {
+    expect(parseArgs(['--highlight', '첫 줄', '--highlight', '둘째 줄']).highlights).toEqual([
+      '첫 줄',
+      '둘째 줄',
+    ])
+  })
+
+  it('--highlight가 없으면 undefined다 — 원천(release-notes.ts)이 그대로 이긴다', () => {
+    expect(parseArgs([]).highlights).toBeUndefined()
+  })
+})
+
+// ADR-154 결정 7 — 매니페스트에 싣는 값만 덮어쓴다. 원천 한 벌([[ADR-119]] 결정 1)과 배포
+// 가드는 그대로 돌고, 여기서 갈리는 것은 «이 배포의 매니페스트에 무엇이 실리는가» 뿐이다.
+describe('resolveManifestHighlights', () => {
+  it('덮어쓸 값이 없으면 노트의 highlights를 그대로 쓴다', () => {
+    expect(resolveManifestHighlights({ highlights: ['노트 줄'] }, undefined)).toEqual(['노트 줄'])
+  })
+
+  it('덮어쓸 값이 있으면 그쪽이 이긴다', () => {
+    expect(resolveManifestHighlights({ highlights: ['노트 줄'] }, ['배포 인자 줄'])).toEqual(['배포 인자 줄'])
   })
 })
 
@@ -153,6 +196,37 @@ describe('매니페스트 왕복', () => {
     })
 
     expect(parsed?.highlights).toEqual(highlights)
+  })
+
+  // ADR-154 — 같은 이유로 같은 확인이 필요하다. 이 배포는 «올렸다» 가 아니라 «앱이 그걸 보고
+  // 스토어로 간다» 가 성공이라, 스크립트가 쓰는 형식과 앱 파서를 한 번에 이어 본다.
+  it('--store-required가 만든 목록이 파서를 통과하고 값이 그대로 읽힌다', () => {
+    const { storeRequiredPlatforms } = parseArgs(['--store-required', 'android'])
+
+    const parsed = parseLiveUpdateManifest({
+      version: '9.9.9',
+      url: 'https://example.com/9.9.9.zip',
+      checksum: 'abc',
+      size: 123,
+      storeRequiredPlatforms,
+    })
+
+    expect(parsed?.storeRequiredPlatforms).toEqual(['android'])
+  })
+
+  // 2단계가 실제로 «한 줄 고치기» 인지 — 1단계 매니페스트에 "ios" 만 더한 형태가 그대로 읽힌다.
+  it('2단계 형태(android,ios)도 그대로 읽힌다', () => {
+    const { storeRequiredPlatforms } = parseArgs(['--store-required', 'android,ios'])
+
+    const parsed = parseLiveUpdateManifest({
+      version: '9.9.9',
+      url: 'https://example.com/9.9.9.zip',
+      checksum: 'abc',
+      size: 123,
+      storeRequiredPlatforms,
+    })
+
+    expect(parsed?.storeRequiredPlatforms).toEqual(['android', 'ios'])
   })
 })
 

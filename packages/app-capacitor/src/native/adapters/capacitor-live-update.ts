@@ -17,8 +17,12 @@ import type { LiveUpdateCheckResult, LiveUpdatePort, NetworkType } from '@core/n
  */
 
 const APP_ID = 'com.mapleroutine.app'
-// TODO(출시): 실제 App Store 앱 ID로 교체. 아직 스토어 미출시라 placeholder다([[ADR-024]]·[[ADR-027]]).
-const APP_STORE_ID = '0000000000'
+// App Store 앱 ID. placeholder(`'0000000000'`) 였던 것을 실제 값으로 고쳤다([[ADR-154]] 결정 6) —
+// 그 탓에 iOS 「스토어로 이동」이 죽은 링크였다(Android 는 `market://` 라 무관했다).
+//
+// **이 수정은 이 번들에 실려야만 한다.** 스토어 유도 게이트가 켜지면 새 번들은 다운로드 자체가
+// 안 되므로, 그 뒤에 고쳐 봐야 사용자 기기에는 영영 안 닿는다.
+const APP_STORE_ID = '6797579391'
 
 // scripts/publish-live-update.mjs 가 이 저장소의 "live-update-latest" 릴리스에 latest.json 을 올린다([[ADR-022]]).
 export const LIVE_UPDATE_MANIFEST_URL =
@@ -45,6 +49,15 @@ export interface LiveUpdateManifest {
   // 필수로 만들면 그것을 읽는 기존 설치본이 전부 파싱 실패(null → check-error)해 업데이트를 못 받는다.
   // 매니페스트는 URL 고정·내용 가변이라 옛 앱이 새 파일을, 새 앱이 옛 파일을 읽는 조합이 둘 다 실재한다.
   highlights?: string[]
+  // 이 목록에 든 플랫폼(`Capacitor.getPlatform()` 문자열)은 **스토어로 보낸다**([[ADR-154]]).
+  //
+  // 이 앱은 RN 바이너리로 대체됐고, 갱신이 끝난 플랫폼에 「최신입니다」를 돌려주는 것은 거짓이다.
+  // `minNativeVersion` 과 답하는 질문이 다르다 — 그쪽은 *"이 번들을 적용할 수 있는가"*(번들의
+  // 성질)이고 이쪽은 *"이 플랫폼이 아직 이 앱을 쓰는 것이 맞는가"*(앱의 수명)다. 한 필드에 두
+  // 뜻을 얹으면 다음에 읽는 사람이 어느 쪽인지 못 가린다.
+  //
+  // 위 둘과 **같은 이유로 선택 필드**다(아래 파서 참고).
+  storeRequiredPlatforms?: string[]
 }
 
 // GitHub Releases의 CDN은 자산을 application/octet-stream으로 내려주므로, CapacitorHttp가
@@ -70,6 +83,13 @@ export function parseLiveUpdateManifest(data: unknown): LiveUpdateManifest | nul
     // 빈 배열은 "핵심 목록이 없다"와 같게 다룬다 — 실어 보내면 모달이 빈 목록을 여는 버튼을 그린다.
     const hasHighlights =
       Array.isArray(highlights) && highlights.length > 0 && highlights.every((line) => typeof line === 'string')
+    // 같은 판정을 스토어 유도 목록에도 쓴다([[ADR-154]] 결정 3). 형식이 어긋나면 매니페스트를
+    // 버리는 것이 아니라 **그 필드만** 뺀다 — 유도 하나 때문에 업데이트 경로 전체를 죽이지 않는다.
+    const storeRequiredPlatforms = (parsed as LiveUpdateManifest).storeRequiredPlatforms
+    const hasStoreRequired =
+      Array.isArray(storeRequiredPlatforms) &&
+      storeRequiredPlatforms.length > 0 &&
+      storeRequiredPlatforms.every((name) => typeof name === 'string')
     return {
       version: (parsed as LiveUpdateManifest).version,
       url: (parsed as LiveUpdateManifest).url,
@@ -77,6 +97,7 @@ export function parseLiveUpdateManifest(data: unknown): LiveUpdateManifest | nul
       size: (parsed as LiveUpdateManifest).size,
       ...(typeof minNativeVersion === 'string' ? { minNativeVersion } : {}),
       ...(hasHighlights ? { highlights } : {}),
+      ...(hasStoreRequired ? { storeRequiredPlatforms } : {}),
     }
   }
   return null
@@ -133,6 +154,15 @@ export const capacitorLiveUpdatePort: LiveUpdatePort = {
     if (manifest === null) return { kind: 'error' }
 
     const { bundle, native } = await CapacitorUpdater.current()
+
+    // 스토어 유도는 **버전 비교보다 앞이다**([[ADR-154]] 결정 2). 두 가지를 한꺼번에 얻는다:
+    // ⓐ 갱신이 끝난 플랫폼에 `up-to-date`(= 거짓)를 돌려주지 않는다 ⓑ `manifest.version` 이
+    // 사용자의 번들 버전과 **같아도** 게이트가 켜진다 — 그래서 버전을 고정한 채 플랫폼만 늘렸다
+    // 줄일 수 있고(2단계 배포), 목록에서 빼면 그대로 되돌아온다.
+    if (manifest.storeRequiredPlatforms?.includes(Capacitor.getPlatform())) {
+      return { kind: 'store-required', version: manifest.version }
+    }
+
     if (!isNewerVersion(bundle.version, manifest.version)) return { kind: 'up-to-date' }
 
     // 새 번들이 요구하는 네이티브 버전이 설치본보다 높으면 라이브로 못 받는다 → 스토어([[ADR-027]] 결정 7).

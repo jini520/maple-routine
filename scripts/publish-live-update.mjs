@@ -2,6 +2,16 @@
 // Live Update(OTA) 번들 배포 스크립트 (ADR-022, 베타 채널 지원 ADR-024).
 //
 // 사용법: node scripts/publish-live-update.mjs [--beta] [--min-native <x.y.z>]
+//                                             [--store-required <android[,ios]>] [--highlight <문구> ...]
+//
+// --store-required / --highlight 는 **캐패시터 앱의 종료**를 위해 붙었다([[ADR-154]]). 이 앱은 RN
+// 바이너리로 대체됐고, 갱신이 끝난 플랫폼에 「최신입니다」를 돌려주는 것은 거짓이라 그 플랫폼을
+// 스토어로 보낸다. 판정이 버전이 아니라 목록이라 **버전을 안 올려도 켜지고, 빼면 되돌아온다.**
+//
+//   1단계  node scripts/publish-live-update.mjs --store-required android \
+//              --highlight '<문구>' --highlight '<문구>'
+//   2단계  latest.json 의 storeRequiredPlatforms 에 "ios" 를 더해 --clobber 로 덮어쓴다.
+//          (번들 빌드 불필요 — 그래서 1단계 직후 packages/app-capacitor 를 지워도 된다.)
 //
 // 배포 버전은 CLI 인자로 받지 않고 packages/app-capacitor/package.json의 version을 그대로 쓴다 —
 // 버전을 CLI 인자로 자유롭게 받으면 package.json을 안 올린 채 OTA만 배포할 수 있어, 빌드된 번들에
@@ -81,17 +91,60 @@ export function describeReleaseNoteGap(note) {
   return null
 }
 
+/** `Capacitor.getPlatform()` 이 돌려주는 값 중 이 앱이 실제로 도는 둘([[ADR-154]] 결정 1). */
+const STORE_REQUIRED_PLATFORMS = ['android', 'ios']
+
 export function parseArgs(argv) {
   const isBeta = argv.includes('--beta')
   // --min-native <x.y.z>: 이 번들을 적용하려면 필요한 최소 네이티브 앱 버전. 있으면 매니페스트에 실어,
   // 앱이 설치된 네이티브가 더 낮으면 "스토어 업데이트 필요"로 분기한다(ADR-027 결정 7).
   const minNativeIdx = argv.indexOf('--min-native')
   const minNativeVersion = minNativeIdx >= 0 ? argv[minNativeIdx + 1] : undefined
-  return { isBeta, minNativeVersion }
+
+  // --store-required <android[,ios]>: 이 플랫폼들은 업데이트를 나르는 대신 **스토어로 보낸다**
+  // ([[ADR-154]]). 캐패시터 앱이 RN 바이너리로 대체돼 더 이상 갱신되지 않으므로, 갱신이 끝난
+  // 플랫폼에 「최신입니다」를 돌려주는 거짓을 없앤다.
+  //
+  // 판정이 버전이 아니라 목록이라 **양방향이다** — 목록에서 빼면 그대로 되돌아온다.
+  const storeRequiredIdx = argv.indexOf('--store-required')
+  const storeRequiredPlatforms =
+    storeRequiredIdx >= 0
+      ? (argv[storeRequiredIdx + 1] ?? '')
+          .split(',')
+          .map((name) => name.trim())
+          .filter((name) => name !== '')
+      : undefined
+  // 오타(`andriod`)를 통과시키면 «아무도 유도되지 않는» 배포가 나가고, 그 실패는 발행하고 나서야
+  // 그것도 «아무 일이 안 일어나는» 형태로 드러난다. 이름을 여기서 못박는 이유다.
+  for (const name of storeRequiredPlatforms ?? []) {
+    if (!STORE_REQUIRED_PLATFORMS.includes(name)) {
+      throw new Error(
+        `--store-required 의 플랫폼 이름이 잘못됐습니다: "${name}". 쓸 수 있는 값: ${STORE_REQUIRED_PLATFORMS.join(' · ')}`,
+      )
+    }
+  }
+
+  // --highlight <문구> (여러 번 가능): 매니페스트에 실을 핵심 목록을 **이 배포에 한해** 덮어쓴다
+  // ([[ADR-154]] 결정 7). 원천(release-notes.ts)과 배포 가드는 그대로 돌고, 갈리는 것은 매니페스트에
+  // 실리는 값 하나다 — 한 버전 번호를 두 앱이 나눠 쓰게 된 이번 배포에만 해당한다.
+  const highlightLines = argv.flatMap((arg, i) => (arg === '--highlight' ? [argv[i + 1]] : []))
+  const highlights = highlightLines.length > 0 ? highlightLines : undefined
+
+  return { isBeta, minNativeVersion, storeRequiredPlatforms, highlights }
+}
+
+/**
+ * 매니페스트에 실을 핵심 목록. **덮어쓸 값이 있으면 그쪽이 이긴다**([[ADR-154]] 결정 7).
+ *
+ * 순수 함수로 갈라 둔 이유는 `describeReleaseNoteGap` 과 같다 — 스크립트 본문은 빌드·`gh` 업로드를
+ * 부르므로 테스트에서 실행할 수 없지만, 판정은 실행할 수 있다.
+ */
+export function resolveManifestHighlights(note, override) {
+  return override ?? note.highlights
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { isBeta, minNativeVersion } = parseArgs(process.argv.slice(2))
+  const { isBeta, minNativeVersion, storeRequiredPlatforms, highlights } = parseArgs(process.argv.slice(2))
 
   const root = join(import.meta.dirname, '..')
   // OTA 번들 버전은 **앱 패키지의** package.json 에서 읽는다([[ADR-024]] — 버전 축은 하나여야 한다).
@@ -124,6 +177,15 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const zipPath = join(workDir, `${version}.zip`)
   const manifestPath = join(workDir, 'latest.json')
 
+  // 이 배포가 «무엇을 켜는가» 를 빌드 전에 말한다 — 되돌릴 수는 있지만(ADR-154 결정 5) 사용자
+  // 화면이 바뀌는 배포라, 잘못 친 인자가 6MB 를 굽고 나서 드러나면 안 된다.
+  if (storeRequiredPlatforms && storeRequiredPlatforms.length > 0) {
+    console.log(`⚠️  스토어 유도 대상: ${storeRequiredPlatforms.join(' · ')} — 이 플랫폼은 업데이트 대신 스토어로 보내집니다([[ADR-154]]).`)
+  }
+  if (highlights) {
+    console.log(`ℹ️  매니페스트 highlights 를 배포 인자로 덮어씁니다(노트 원천은 그대로):\n${highlights.map((line) => `     · ${line}`).join('\n')}`)
+  }
+
   console.log('[1/5] 빌드 중...')
   execFileSync('npm', ['run', resolveBuildScript(isBeta)], { cwd: root, stdio: 'inherit' })
 
@@ -146,7 +208,10 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     //
     // 싣는 것은 **항목 전체가 아니라 핵심 목록**이다(ADR-126 결정 2) — 모달은 "받을까 말까"를
     // 정하는 자리라 전수 목록이 필요 없고, 전체는 받은 뒤 개발 노트 화면이 보여준다.
-    highlights: note.highlights,
+    highlights: resolveManifestHighlights(note, highlights),
+    // 목록이 비어 있으면 필드를 아예 안 싣는다 — 앱 쪽 파서가 빈 배열을 «없음» 과 같게 다루므로
+    // 값은 같지만, 매니페스트를 눈으로 읽을 때 «켜져 있는가» 가 필드의 유무로 바로 보인다.
+    ...(storeRequiredPlatforms && storeRequiredPlatforms.length > 0 ? { storeRequiredPlatforms } : {}),
   }
   writeFileSync(manifestPath, JSON.stringify(manifest, null, 2))
 

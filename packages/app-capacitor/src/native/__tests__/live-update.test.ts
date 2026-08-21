@@ -149,6 +149,26 @@ describe('parseLiveUpdateManifest', () => {
     expect(parseLiveUpdateManifest(JSON.stringify(withHighlights))).toEqual(withHighlights)
   })
 
+  // ADR-154 결정 3 — minNativeVersion·highlights 와 **같은 이유로** 선택 필드다. 필수 검사에
+  // 넣으면 이미 발행된 옛 매니페스트(필드 없음)를 읽는 기존 설치본이 전부 check-error 로 떨어진다.
+  it('storeRequiredPlatforms가 없는 매니페스트를 그대로 통과시킨다', () => {
+    expect(parseLiveUpdateManifest(manifest)).not.toHaveProperty('storeRequiredPlatforms')
+  })
+
+  it('storeRequiredPlatforms가 문자열 배열이면 함께 반환한다', () => {
+    const withPlatforms = { ...manifest, storeRequiredPlatforms: ['android'] }
+    expect(parseLiveUpdateManifest(withPlatforms)).toEqual(withPlatforms)
+    expect(parseLiveUpdateManifest(JSON.stringify(withPlatforms))).toEqual(withPlatforms)
+  })
+
+  // 형식이 어긋나면 **매니페스트를 버리는 것이 아니라 그 필드만** 뺀다 — 유도 하나 때문에
+  // 업데이트 경로 전체를 죽이지 않는다(highlights 의 빈 배열 처리와 같은 자리·같은 방식).
+  it('storeRequiredPlatforms가 배열이 아니거나 빈 배열이면 필드만 뺀다', () => {
+    expect(parseLiveUpdateManifest({ ...manifest, storeRequiredPlatforms: 'android' })).toEqual(manifest)
+    expect(parseLiveUpdateManifest({ ...manifest, storeRequiredPlatforms: [] })).toEqual(manifest)
+    expect(parseLiveUpdateManifest({ ...manifest, storeRequiredPlatforms: ['android', 7] })).toEqual(manifest)
+  })
+
   it('highlights가 문자열 배열이 아니면 매니페스트를 버리지 않고 그 필드만 뺀다', () => {
     for (const highlights of [42, 'a\nb', { text: 'x' }, null, ['ok', 7]]) {
       expect(parseLiveUpdateManifest({ ...manifest, highlights })).toEqual(manifest)
@@ -244,6 +264,54 @@ describe('checkForLiveUpdate (체크만, 다운로드 안 함)', () => {
     httpGetMock.mockResolvedValue({ status: 200, data: { ...manifest, minNativeVersion: '1.0.0' } })
     currentMock.mockResolvedValue(currentAt('1.0.0', '1.0.0'))
     expect((await checkForLiveUpdate()).kind).toBe('update-available')
+  })
+
+  // ── ADR-154: 캐패시터 앱의 종료 — 스토어 유도 ────────────────────────────────
+  //
+  // 이 앱은 RN 바이너리로 대체됐다. 갱신이 끝난 플랫폼에 「최신입니다」를 돌려주는 것이 거짓이고,
+  // 그 거짓이 사용자를 옛 앱에 붙잡아 둔다.
+
+  it("storeRequiredPlatforms에 내 플랫폼이 있으면 'store-required'", async () => {
+    httpGetMock.mockResolvedValue({ status: 200, data: { ...manifest, storeRequiredPlatforms: ['android'] } })
+    currentMock.mockResolvedValue(currentAt('1.0.0'))
+    getPlatformMock.mockReturnValue('android')
+    expect(await checkForLiveUpdate()).toEqual({ kind: 'store-required', version: '1.1.0' })
+    expect(downloadMock).not.toHaveBeenCalled()
+  })
+
+  // 2단계로 나눠 치는 것이 이 필드의 존재 이유다(ADR-154 결정 4) — Android 는 지금, iOS 는
+  // 심사 통과 후. 목록에 없는 플랫폼은 종전 경로를 그대로 탄다.
+  it('목록에 없는 플랫폼은 종전대로 update-available', async () => {
+    httpGetMock.mockResolvedValue({ status: 200, data: { ...manifest, storeRequiredPlatforms: ['android'] } })
+    currentMock.mockResolvedValue(currentAt('1.0.0'))
+    getPlatformMock.mockReturnValue('ios')
+    expect((await checkForLiveUpdate()).kind).toBe('update-available')
+  })
+
+  // **결정 2 의 순서가 곧 이 케이스다.** 버전이 같아도(= isNewerVersion false) 게이트가 켜져야
+  // 한다 — 그래야 manifest.version 을 1.0.6 에 고정한 채 플랫폼만 늘렸다 줄일 수 있다.
+  // 이 케이스가 실패하면 게이트를 켤 때마다 버전을 한 칸씩 써야 하고, iOS 스토어 심사 버전이
+  // 1.0.6 이라 쓸 칸이 없다.
+  it("버전이 같아도(up-to-date 자리) 게이트가 이긴다", async () => {
+    httpGetMock.mockResolvedValue({
+      status: 200,
+      data: { ...manifest, version: '1.0.6', storeRequiredPlatforms: ['android'] },
+    })
+    currentMock.mockResolvedValue(currentAt('1.0.6'))
+    getPlatformMock.mockReturnValue('android')
+    expect(await checkForLiveUpdate()).toEqual({ kind: 'store-required', version: '1.0.6' })
+  })
+
+  // 목록에서 플랫폼을 빼면 원복된다(ADR-154 결정 5) — `--min-native` 는 되돌릴 수 없는
+  // 지점이었고, 판정이 버전이 아니라 목록이라 이쪽은 양방향이다.
+  it('목록을 비우면 게이트가 풀린다', async () => {
+    httpGetMock.mockResolvedValue({
+      status: 200,
+      data: { ...manifest, version: '1.0.6', storeRequiredPlatforms: [] },
+    })
+    currentMock.mockResolvedValue(currentAt('1.0.6'))
+    getPlatformMock.mockReturnValue('android')
+    expect(await checkForLiveUpdate()).toEqual({ kind: 'up-to-date' })
   })
 
   // ADR-126 결정 1: 받기 전 모달이 보여줄 유일한 재료다 — 매니페스트에서 여기까지 오지 못하면
