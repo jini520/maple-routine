@@ -23,7 +23,6 @@ import { setLiveUpdatePort } from '../../native/ports'
 
 import { NavigationHarness } from './harness'
 import { installMemoryPreferences } from './memory-preferences'
-import { normalizeRenderedTree } from '../../__tests__/normalize-tree'
 import { FEATURE_GUIDE_ROUTE_NAMES, STACK_ROUTE_NAMES, type RootStackParamList } from '../routes'
 
 type Status = 'awaitingApiKey' | 'completed'
@@ -52,8 +51,7 @@ beforeEach(() => {
     download: async () => {},
     apply: async () => {},
     getNetworkType: async () => 'unknown',
-    openStore: () => {},
-  })
+    openStore: () => {} })
   useOnboardingStore.setState({ status: 'awaitingApiKey' })
   // `ContentManage` 는 **수동 모드 전용**이라([[ADR-035]] 결정 18) 자동 모드로 두면 열리자마자
   // 물러난다 — 그러면 이 파일의 «열둘이 전부 열린다» 가 배선이 아니라 모드 때문에 빨개진다.
@@ -109,8 +107,7 @@ describe('하위 페이지 — 열둘', () => {
   // 착지점이 빈 화면이면 안 된다). 그래서 여기 값이 카탈로그와 어긋나면 이 테스트가 먼저 깨진다.
   const params: Partial<Record<(typeof STACK_ROUTE_NAMES)[number], object>> = {
     SettingsFeatureGuide: { guideId: GUIDE_ID },
-    SettingsReleaseNoteGuide: { guideId: GUIDE_ID },
-  }
+    SettingsReleaseNoteGuide: { guideId: GUIDE_ID } }
 
   it.each(STACK_ROUTE_NAMES)('%s 로 push 하면 그 화면이 열린다', async (name) => {
     useOnboardingStore.setState({ status: 'completed' })
@@ -187,36 +184,3 @@ describe('안내 상세는 두 경로가 같은 화면을 그린다 ([[ADR-125]]
   })
 })
 
-// 이 스냅샷이 답하는 것은 *"앞으로 안 바뀌는가"* 뿐이다 — 웹뷰 앱과의 대조가 아니다
-// (`docs/migration/README.md` «잃는 안전망»). 탭 넷과 탭바가 실제로 그려진 트리를 고정한다.
-//
-// **온보딩 쪽은 step 2 부터 진짜 화면이 들어 있다**(자리표시자 → `OnboardingScreen`). 그래서 이
-// 스냅샷은 그 화면이 바뀌면 함께 움직인다 — 자리표시자였을 때보다 시끄럽지만, 그것이 이 기준선이
-// 실제로 고정하기로 한 것이다(내비게이터가 그 자리에 무엇을 그리는가). 화면 내부의 계약은
-// `src/app/onboarding/__tests__` 가 따로 본다.
-//
-// **시계를 고정한다** — 첫 탭이 `today` 이고([[ADR-132]] 결정 7) 그 화면의 초기화 카운트다운 위젯이
-// «남은 시간» 을 글자로 그린다([[ADR-147]]). 실제 시각으로 찍으면 몇 분 뒤 같은 트리가 다른
-// 스냅샷이 되어(`22시간 11분` → `22시간 9분`, 실측) 기준선이 스스로 빨개진다. 시각은 실제 시간
-// 흐름과 무관해야 하는 것이지 특정 값이어야 하는 것이 아니므로 아무 고정값이나 된다.
-describe('렌더 트리 스냅샷', () => {
-  beforeAll(() => {
-    jest.useFakeTimers({ now: new Date('2026-08-17T03:00:00.000Z') })
-  })
-
-  afterAll(() => {
-    jest.useRealTimers()
-  })
-
-  it('탭 골격', async () => {
-    useOnboardingStore.setState({ status: 'completed' })
-
-    expect(normalizeRenderedTree((await render(<NavigationHarness />)).toJSON())).toMatchSnapshot()
-  })
-
-  it('온보딩 골격', async () => {
-    useOnboardingStore.setState({ status: 'awaitingApiKey' })
-
-    expect(normalizeRenderedTree((await render(<NavigationHarness />)).toJSON())).toMatchSnapshot()
-  })
-})

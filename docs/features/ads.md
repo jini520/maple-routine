@@ -1,7 +1,7 @@
 # 광고 (Ads)
 
 > **범위**: 광고 포맷·노출 지점·노출 게이트·어댑터 경계·스토어 부수 요건. 결정의 배경과 폐기된 대안은 [[ADR-090]].
-> **관련 소스**: `src/native/adapters/rn-ads.ts`·`ads-env.ts` · `app.json`(앱 ID) · `src/native/ads.ts`(광고 단위 ID·판정 함수) · `android/…/AndroidManifest.xml` · `ios/app/Info.plist`. **`src/features/ads/`·`src/storage/ads.ts` 는 지금 소비자가 없다** — 아래 「전면광고」 절 참고.
+> **관련 소스**: `src/native/adapters/rn-ads.ts`·`ads-env.ts` · `app.json`(앱 ID) · `src/native/ads.ts`(광고 단위 ID·판정 함수) · `android/…/AndroidManifest.xml` · `ios/app/Info.plist`. **전면광고 구현은 [[ADR-156]] 이 지웠다**(소비자 0) — 아래 「전면광고」 절은 **정책의 기록**으로 남는다.
 > **관련 ADR**: [[ADR-090]] [[ADR-150]] [[ADR-128]] [[ADR-005]] [[ADR-003]] [[ADR-013]] [[ADR-007]]. **관련 문서**: [settings.md](./settings.md), [../foundation/product.md](../foundation/product.md), [../foundation/architecture.md](../foundation/architecture.md).
 
 ## 정책
@@ -14,8 +14,10 @@
 > **이 앱은 현재 광고가 하나도 없다(수익 0).** 아래 절을 남겨 두는 이유는 인라인 광고를 붙일 때
 > 게이트 정책(간격·업타임·빈도)을 여기서 다시 읽기 때문이다.
 >
-> 그래서 `src/features/ads/`·`src/storage/ads.ts` 는 **부르는 곳이 없는 코드**가 됐다.
-> 지울지 남길지는 인라인 광고 설계와 함께 판단한다(아래 「열린 질문」).
+>
+> 그 구현(`features/ads/`·`storage/ads.ts`)은 **[[ADR-156]] 이 지웠다** — 부르는 곳이 0이었고,
+> 인라인 광고는 포맷이 달라 그 오케스트레이션을 어차피 안 쓴다. **아래 절이 정책의 기록이다** —
+> 간격·업타임·빈도 게이트를 다시 정할 때 여기서 읽는다.
 
 ### 포맷과 지점: 탭 전환 시 전면광고(Interstitial) — **지금은 아무도 안 쓴다**
 
@@ -130,9 +132,8 @@
 > 한다. 함수 자체는 `rn-ads.ts` 에 그대로 있다.
 
 ~~**`packages/core` 는 무변경이다** — `features/ads/`·`native/ads.ts`·`storage/ads.ts` 는
-`app-capacitor` 가 지금도 쓰고 있다.~~ → **그 소비자가 사라졌다**([[ADR-155]]).
-`src/native/ads.ts` 의 판정 함수 둘은 RN 어댑터가 계속 쓰지만, `src/features/ads/`(게이트
-오케스트레이션)와 `src/storage/ads.ts`(마지막 노출 시각)는 **부르는 곳이 0** 이다.
+`app-capacitor` 가 지금도 쓰고 있다.~~ → **그 소비자가 사라졌고([[ADR-155]]) 코드도 지웠다
+([[ADR-156]]).** 남은 것은 `src/native/ads.ts` 의 판정 함수 둘뿐이고, 그것은 RN 어댑터가 계속 쓴다.
 
 #### 어댑터가 채우는 값 (그대로 유효)
 

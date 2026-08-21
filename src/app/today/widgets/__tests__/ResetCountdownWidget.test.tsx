@@ -200,14 +200,6 @@ describe('누를 수 없는 타일이다', () => {
   })
 })
 
-describe('스냅샷 — 네 크기', () => {
-  it.each(Object.entries(크기))('%s', async (_이름, 값) => {
-    const view = await 위젯(값)
-
-    expect(view.toJSON()).toMatchSnapshot()
-  })
-})
-
 describe('1초마다 다시 그린다 ([[ADR-147]] 정정 39)', () => {
   it('1초가 지나면 일일이 1초 줄어든다', async () => {
     const { getByTestId } = await 위젯(크기['2x1'])

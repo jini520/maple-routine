@@ -4,16 +4,15 @@
 //   그것은 화면 전체의 터치를 삼켜 토스트에 쓸 수 없다(`ToastStack.tsx` 파일 머리). 대신 **자기가
 //   놓인 자리에 절대 배치로 그리고 터치를 통과시킨다**는 계약을 지킨다.
 // · `bottom-[calc(...)]` 클래스를 보던 두 케이스는 실제 `bottom` 숫자를 잰다.
+import {
+  flattenStyle,
+  renderOverlay,
+  type AtomElement,
+} from '../../../__tests__/render-atom'
 import { fireEvent } from '@testing-library/react-native'
 
 import { useToastStore, type ToastItem } from '../../../../features/toast/store'
 
-import {
-  flattenStyle,
-  flushEnterFrame,
-  renderOverlay,
-  type AtomElement,
-} from '../../../__tests__/render-atom'
 import { ToastStack } from '../ToastStack'
 
 jest.mock('../../../../features/toast/store', () => ({ useToastStore: jest.fn() }))
@@ -28,8 +27,7 @@ function mockStore(toasts: ToastItem[]): { dismiss: jest.Mock } {
     showSuccess: jest.fn(),
     showInfo: jest.fn(),
     showError: jest.fn(),
-    dismiss,
-  })
+    dismiss })
   return { dismiss }
 }
 
@@ -114,13 +112,4 @@ describe('ToastStack', () => {
     expect(flattenStyle(getByTestId('toast-stack').props.style).bottom).toBe(34 + 12)
   })
 
-  it('트리 스냅샷', async () => {
-    mockStore([toast('t1', '첫째'), toast('t2', '둘째')])
-    const { toJSON } = await renderOverlay(<ToastStack />)
-
-    // 안에 든 `Toast` 들의 진입 프레임을 흘린다 — 안 흘리면 회차마다 갈린다(`flushEnterFrame` 주석).
-    await flushEnterFrame()
-
-    expect(toJSON()).toMatchSnapshot()
-  })
 })

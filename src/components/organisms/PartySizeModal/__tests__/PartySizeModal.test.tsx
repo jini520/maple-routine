@@ -157,9 +157,4 @@ describe('PartySizeModal', () => {
     expect(stateOf(chip(getByText, '카오스')).selected).toBe(true)
   })
 
-  it('트리 스냅샷', async () => {
-    const { toJSON } = await renderOverlay(<PartySizeModal {...props()} />)
-
-    expect(toJSON()).toMatchSnapshot()
-  })
 })

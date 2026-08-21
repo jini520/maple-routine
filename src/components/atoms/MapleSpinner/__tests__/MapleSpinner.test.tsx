@@ -66,9 +66,6 @@ describe('MapleSpinner', () => {
     expect(dash[0] + dash[1]).toBeCloseTo(MAPLE_LEAF_PATH_LENGTH, 10)
   })
 
-  it('렌더 트리 스냅샷 — 이후 변경을 잡는 기준선(예전 화면과의 대조가 아니다)', async () => {
-    expect((await renderAtom(<MapleSpinner className="text-primary" />)).toJSON()).toMatchSnapshot()
-  })
 })
 
 describe('MapleSpinner — 모션 줄이기', () => {

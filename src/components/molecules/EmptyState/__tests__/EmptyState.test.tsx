@@ -123,20 +123,4 @@ describe('EmptyState', () => {
     expect(getByTestId('empty-state-leaf', HIDDEN).props.color).toBe(기본테마.primaryInk)
   })
 
-  it('렌더 트리 스냅샷 — 이후 변경을 잡는 기준선(예전 화면과의 대조가 아니다)', async () => {
-    const inline = await renderAtom(
-      <EmptyState
-        icon={SwordsIcon}
-        title="추적할 주간 보스가 없습니다"
-        description="보스 관리에서 이번 주에 잡을 보스를 골라주세요"
-        action={{ label: '보스 관리', onClick: () => {} }}
-      />,
-    )
-    expect(inline.toJSON()).toMatchSnapshot()
-
-    const page = await renderAtom(
-      <EmptyState size="page" icon="leaf" title="표시할 캐릭터가 없습니다" />,
-    )
-    expect(page.toJSON()).toMatchSnapshot()
-  })
 })

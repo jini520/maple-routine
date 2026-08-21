@@ -25,17 +25,7 @@ import { join } from 'node:path'
 
 const SRC = join(__dirname, '..')
 
-/**
- * 검사 대상 — 소스만. 이 파일과 ADR 을 인용하는 주석은 대상이 아니다(아래 `stripComments`).
- *
- * **`features/ads/` 자신은 뺀다**([[ADR-155]] 결정 3 이후). 종전에는 그 모듈이 `packages/core` 에
- * 살아 이 스캔의 사정거리 밖이었고, 스캔은 «app-rn 이 그것을 부르는가» 를 물었다. core 가 `src/`
- * 로 녹으면서 **정의 자체가 대상에 들어와** 금지어에 걸렸다 — 정의를 위반으로 세면 가드가
- * *"그 모듈을 지워라"* 라고 말하는 셈이고, 그 판단은 인라인 광고 설계의 몫이지 이 가드의 몫이
- * 아니다(`docs/features/ads.md`). 그래서 묻는 것을 원래대로 **«아무도 부르지 않는가»** 로 되돌린다.
- */
-const DEFINING_MODULE = 'features/ads'
-
+/** 검사 대상 — 소스만. 이 파일과 ADR 을 인용하는 주석은 대상이 아니다(아래 `stripComments`). */
 function sourceFiles(dir: string): string[] {
   const out: string[] = []
   for (const entry of readdirSync(dir)) {
@@ -46,7 +36,7 @@ function sourceFiles(dir: string): string[] {
       out.push(path)
     }
   }
-  return out.filter((file) => !file.slice(SRC.length + 1).startsWith(DEFINING_MODULE))
+  return out
 }
 
 /**

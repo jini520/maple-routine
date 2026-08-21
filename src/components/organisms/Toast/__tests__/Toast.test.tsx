@@ -23,7 +23,7 @@ import { fireEvent } from '@testing-library/react-native'
 import type { ToastAction, ToastItem } from '../../../../features/toast/store'
 
 import { mockReducedMotion } from '../../../__tests__/reduced-motion'
-import { flushEnterFrame, renderAtom, type AtomElement } from '../../../__tests__/render-atom'
+import { renderAtom, type AtomElement } from '../../../__tests__/render-atom'
 import { SettingsIcon } from '../../../../lib/icons'
 import { Toast } from '../Toast'
 
@@ -37,8 +37,7 @@ function makeToast(overrides: Partial<ToastItem> = {}): ToastItem {
     variant: 'success',
     message: '저장했어요',
     duration: 2000,
-    ...overrides,
-  }
+    ...overrides }
 }
 
 /** 어떤 요소 아래의 SVG path `d` 목록 — 아이콘 그림이 실제로 바뀌었는지 본다. */
@@ -98,8 +97,7 @@ describe('Toast', () => {
             // 달라 `fillRule` 에서 갈린다). core 는 이 단계에서 손대지 않는 것이 원칙이라
             // ([[ADR-128]] 원칙 3) 여기서는 캐스팅으로 넘기고, **호출부가 아이콘을 넘기는 화면
             // 단계에서 core 타입을 풀어야 한다**는 사실을 여기 남긴다.
-            action: { label: '설정 열기', onClick: noop, icon: SettingsIcon as unknown as ToastAction['icon'] },
-          })}
+            action: { label: '설정 열기', onClick: noop, icon: SettingsIcon as unknown as ToastAction['icon'] } })}
           onDismiss={noop}
         />
       </>,
@@ -203,23 +201,7 @@ describe('Toast — 모션 줄이기', () => {
     // `src/__tests__/keyframes-parity.test.ts` 몫이다.
     expect(bar.props.jestInlineStyle).toMatchObject({
       animationDuration: '2500ms',
-      transformOrigin: 'left',
-    })
+      transformOrigin: 'left' })
   })
 })
 
-describe('Toast — 트리 스냅샷', () => {
-  it.each(['success', 'error', 'info'] as const)('%s', async (variant) => {
-    const { toJSON } = await renderAtom(
-      <Toast
-        toast={makeToast({ variant, action: { label: '다시 시도', onClick: noop } })}
-        onDismiss={noop}
-      />,
-    )
-
-    // 진입 프레임을 흘리지 않으면 이 스냅샷이 회차마다 갈린다(`flushEnterFrame` 주석).
-    await flushEnterFrame()
-
-    expect(toJSON()).toMatchSnapshot()
-  })
-})

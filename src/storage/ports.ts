@@ -98,7 +98,7 @@ export const preferences: PreferencesPort = {
   keys: () => getPreferencesPort().keys(),
 }
 
-/** 테스트 전용 — 주입된 포트를 비운다(`features/ads/tab-switch-ad.ts` 의 `__resetAdsForTest` 관례). */
+/** 테스트 전용 — 주입된 포트를 비운다. */
 export function __resetStoragePortsForTest(): void {
   preferencesPort = null
   sqlitePort = null

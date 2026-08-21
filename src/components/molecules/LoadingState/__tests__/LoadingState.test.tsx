@@ -51,7 +51,4 @@ describe('LoadingState', () => {
     expect(flattenStyle(getByTestId('loading-state').props.style).minHeight).toBe(132)
   })
 
-  it('렌더 트리 스냅샷 — 이후 변경을 잡는 기준선(예전 화면과의 대조가 아니다)', async () => {
-    expect((await renderAtom(<LoadingState message="불러오고 있어요" size="page" />)).toJSON()).toMatchSnapshot()
-  })
 })

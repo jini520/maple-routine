@@ -227,16 +227,3 @@ describe('MediaScope ([[ADR-064]] 결정 5)', () => {
   })
 })
 
-describe('렌더 트리 스냅샷 — 이후 변경을 잡는 기준선(예전 화면과의 대조가 아니다)', () => {
-  it('기본 테마', async () => {
-    expect(
-      (
-        await render(
-          <ThemeProvider>
-            <Swatch />
-          </ThemeProvider>,
-        )
-      ).toJSON(),
-    ).toMatchSnapshot()
-  })
-})

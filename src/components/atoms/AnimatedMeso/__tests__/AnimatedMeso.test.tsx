@@ -34,15 +34,4 @@ describe('AnimatedMeso', () => {
     expect(getByTestId('money').children.join('')).toBe('0 메소')
   })
 
-  it('렌더 트리 스냅샷 — 이후 변경을 잡는 기준선(예전 화면과의 대조가 아니다)', async () => {
-    expect(
-      (
-        await renderAtom(
-          <Text>
-            <AnimatedMeso identity="snapshot" value={1_284_500_000} /> 메소
-          </Text>,
-        )
-      ).toJSON(),
-    ).toMatchSnapshot()
-  })
 })

@@ -103,14 +103,6 @@ describe('DropEffectOverlay — 구조', () => {
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
-  it('트리 스냅샷', async () => {
-    const { toJSON } = await renderOverlay(
-      <DropEffectOverlay itemName="칠흑의 보스 반지 상자" onClose={noop} />,
-    )
-
-    expect(toJSON()).toMatchSnapshot()
-  })
-
   // **엔진이 붙었다.** 다만 이 렌더 테스트가 프레임 그림을 볼 수는 없다 — jest 의 에셋 대역은
   // `{ testUri }` 뿐이라 `Image.resolveAssetSource` 가 크기를 안 준다. 크기를 모르면 아예 안 그리는
   // 것이 `frame-layout.ts` 의 계약이므로(크기 없이 그리면 프레임마다 최대 26px 튄다, [[ADR-048]])

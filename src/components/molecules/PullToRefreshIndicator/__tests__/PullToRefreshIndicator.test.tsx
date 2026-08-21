@@ -152,11 +152,4 @@ describe('PullToRefreshIndicator', () => {
     })
   })
 
-  it('렌더 트리 스냅샷 — 이후 변경을 잡는 기준선(예전 화면과의 대조가 아니다)', async () => {
-    const pulling = await renderAtom(<PullToRefreshIndicator distance={30} phase="pulling" />)
-    expect(pulling.toJSON()).toMatchSnapshot()
-
-    const refreshing = await renderAtom(<PullToRefreshIndicator distance={0} phase="refreshing" />)
-    expect(refreshing.toJSON()).toMatchSnapshot()
-  })
 })

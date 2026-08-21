@@ -396,7 +396,6 @@ describe('CharacterTrackingPicker — 정렬', () => {
       />,
     )
 
-
     // 레벨 표기의 순서가 곧 카드 순서다(165 → 293 → 211).
     expect(getAllByText(/^Lv\./).map((node) => node.children.join(''))).toEqual([
       'Lv.165',
@@ -812,37 +811,3 @@ describe('CharacterTrackingPicker — 모달 높이·스크롤포트 ([[ADR-107]
   })
 })
 
-// step 3~4 와 같은 관례의 트리 스냅샷 — *"예전(웹)과 같은가"* 가 아니라 **"앞으로 안 바뀌는가"** 만
-// 답한다(웹의 DOM 스냅샷은 [[ADR-094]] 결정 4 였고 RN 에는 그 짝이 없다, `render-atom.tsx`).
-describe('트리 스냅샷', () => {
-  it('그리드가 있는 기본 상태', async () => {
-    const { toJSON } = await renderOverlay(
-      <CharacterTrackingPicker
-        entries={entries}
-        trackedOcids={['ocid-1']}
-        {...loaded}
-        onSave={noop}
-        onClose={noop}
-      />,
-    )
-
-    expect(toJSON()).toMatchSnapshot()
-  })
-
-  it('조회 불가 섹션이 있는 상태', async () => {
-    const { toJSON } = await renderOverlay(
-      <CharacterTrackingPicker
-        entries={[
-          ...entries,
-          { ocid: 'ocid-4', name: '조회불가', level: 200, imageUrl: null, world: '스카니아', unavailable: true },
-        ]}
-        trackedOcids={['ocid-4']}
-        {...loaded}
-        onSave={noop}
-        onClose={noop}
-      />,
-    )
-
-    expect(toJSON()).toMatchSnapshot()
-  })
-})

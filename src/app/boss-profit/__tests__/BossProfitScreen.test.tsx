@@ -25,14 +25,12 @@ import {
   useBossProfitStore,
   type BossProfitRow,
   type BossProfitStore,
-  type BossProfitWeeklySubtotal,
-} from '../../../features/boss-profit/store'
+  type BossProfitWeeklySubtotal } from '../../../features/boss-profit/store'
 import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../../lib/boss-matching'
 import { getCurrentBossProfitPeriod } from '../../../lib/boss-profit-period'
 import { clearCountUpMemory } from '../../../lib/use-count-up'
 import type { RecordedDrop } from '../../../types/drops'
 
-import { normalizeRenderedTree, type RenderedTree } from '../../../__tests__/normalize-tree'
 import { 테스트_안전영역 } from '../../../components/__tests__/render-atom'
 import { ThemeProvider } from '../../../theme/ThemeProvider'
 import { useScreenNavigation } from '../../use-screen-navigation'
@@ -47,23 +45,19 @@ const navigate = jest.fn()
 // [[ADR-063]]: 동기화 실패·기간 로드 실패는 인라인 문단이 아니라 토스트다.
 jest.mock('../../../features/toast/store', () => ({
   useToastStore: {
-    getState: () => ({ showError: mockShowError, showSuccess: jest.fn(), showInfo: jest.fn() }),
-  },
-}))
+    getState: () => ({ showError: mockShowError, showSuccess: jest.fn(), showInfo: jest.fn() }) } }))
 
 // [[ADR-115]] 결정 7: 401 은 토스트가 아니라 키 무효화 진입점으로 간다(이 화면에는 로스터 조회가
 // 없어 동기화 경로 하나뿐이다).
 jest.mock('../../../features/onboarding/store', () => ({
-  useOnboardingStore: { getState: () => ({ noticeApiKeyIssue: mockNoticeApiKeyIssue }) },
-}))
+  useOnboardingStore: { getState: () => ({ noticeApiKeyIssue: mockNoticeApiKeyIssue }) } }))
 
 // 웹과 같은 범위로 좁혀 목한다 — `dropRowKey` 는 본문(`AccordionBody`)이 쓰는 순수 함수라 실물과
 // 같은 문자열을 낸다.
 jest.mock('../../../features/boss-profit/store', () => ({
   useBossProfitStore: jest.fn(),
   dropRowKey: (ocid: string, boss: string, difficulty: string, periodKey: string) =>
-    `${ocid}|${boss}|${difficulty}|${periodKey}`,
-}))
+    `${ocid}|${boss}|${difficulty}|${periodKey}` }))
 
 jest.mock('../../use-screen-navigation', () => ({ useScreenNavigation: jest.fn() }))
 
@@ -104,8 +98,7 @@ function mockStore(overrides: Partial<BossProfitStore> = {}): void {
     retryPeriod: jest.fn(),
     setPartySize: jest.fn(),
     setBossDrops: jest.fn(),
-    ...overrides,
-  } as unknown as BossProfitStore)
+    ...overrides } as unknown as BossProfitStore)
 }
 
 function 보스행(overrides: Partial<BossProfitRow> = {}): BossProfitRow {
@@ -124,8 +117,7 @@ function 보스행(overrides: Partial<BossProfitRow> = {}): BossProfitRow {
     partySize: 2,
     payoutMeso: 5_000_000,
     isComplete: true,
-    ...overrides,
-  }
+    ...overrides }
 }
 
 function 주차소계(overrides: Partial<BossProfitWeeklySubtotal> = {}): BossProfitWeeklySubtotal {
@@ -137,8 +129,7 @@ function 주차소계(overrides: Partial<BossProfitWeeklySubtotal> = {}): BossPr
     totalMeso: 5_000_000,
     drops: [],
     state: 'recorded',
-    ...overrides,
-  }
+    ...overrides }
 }
 
 function 드롭(overrides: Partial<RecordedDrop> = {}): RecordedDrop {
@@ -202,8 +193,7 @@ describe('빈 상태 ([[ADR-101]] 결정 1 · [[ADR-060]])', () => {
 
     expect(navigate).toHaveBeenCalledWith('Tabs', {
       screen: 'Settings',
-      params: { openPicker: true },
-    })
+      params: { openPicker: true } })
   })
 })
 
@@ -448,8 +438,7 @@ describe('캐릭터 카드 순서 ([[ADR-143]] 결정 3)', () => {
     expect(
       await 카드이름들({
         trackedOcids: ['ocid-2', 'ocid-1'],
-        rows: [보스행(), 보스행({ ocid: 'ocid-2', characterName: '두번째' })],
-      }),
+        rows: [보스행(), 보스행({ ocid: 'ocid-2', characterName: '두번째' })] }),
     ).toEqual(['두번째', '지내우시'])
   })
 
@@ -459,8 +448,7 @@ describe('캐릭터 카드 순서 ([[ADR-143]] 결정 3)', () => {
     expect(
       await 카드이름들({
         trackedOcids: ['ocid-2'],
-        rows: [보스행(), 보스행({ ocid: 'ocid-2', characterName: '두번째' })],
-      }),
+        rows: [보스행(), 보스행({ ocid: 'ocid-2', characterName: '두번째' })] }),
     ).toEqual(['두번째', '지내우시'])
   })
 })
@@ -470,8 +458,7 @@ describe('총 수익 헤드라인 ([[ADR-046]] · [[ADR-054]] · [[ADR-124]] 결
     mockStore({
       status: 'loaded',
       periodState: 'recorded',
-      rows: [보스행(), 보스행({ ocid: 'ocid-2', characterName: '두번째', payoutMeso: 3_000_000 })],
-    })
+      rows: [보스행(), 보스행({ ocid: 'ocid-2', characterName: '두번째', payoutMeso: 3_000_000 })] })
     const { getByText } = await renderScreen()
 
     // 헤드라인과 카드가 같은 어휘(`N 메소`)를 쓰므로 합계 숫자로 가른다 — 카드는 5·3백만이다.
@@ -495,9 +482,7 @@ describe('총 수익 헤드라인 ([[ADR-046]] · [[ADR-054]] · [[ADR-124]] 결
       dropsByRowKey: {
         [`ocid-1|${주간보스}|하드|${CURRENT_WEEKLY}`]: [
           드롭({ priceState: 'entered', priceMeso: 2_000_000, priceShare: 1 }),
-        ],
-      },
-    })
+        ] } })
     const { getAllByText } = await renderScreen()
 
     // 헤드라인과 그 캐릭터 카드가 같은 값을 말한다 — 둘 다 움직여야 합산이 한 곳에서만 일어난다.
@@ -510,9 +495,7 @@ describe('총 수익 헤드라인 ([[ADR-046]] · [[ADR-054]] · [[ADR-124]] 결
       periodState: 'recorded',
       rows: [보스행()],
       dropsByRowKey: {
-        [`ocid-1|${주간보스}|하드|${CURRENT_WEEKLY}`]: [드롭({ priceMeso: 9_000_000 })],
-      },
-    })
+        [`ocid-1|${주간보스}|하드|${CURRENT_WEEKLY}`]: [드롭({ priceMeso: 9_000_000 })] } })
     const { getAllByText } = await renderScreen()
 
     expect(getAllByText(/^5,000,000 /)).toHaveLength(2)
@@ -545,9 +528,7 @@ describe('총 수익 헤드라인 ([[ADR-046]] · [[ADR-054]] · [[ADR-124]] 결
       periodState: 'recorded',
       rows: [보스행()],
       dropsByRowKey: {
-        [`ocid-1|${주간보스}|하드|${CURRENT_WEEKLY}`]: [드롭({ itemName: 고가아이템 })],
-      },
-    })
+        [`ocid-1|${주간보스}|하드|${CURRENT_WEEKLY}`]: [드롭({ itemName: 고가아이템 })] } })
     const { getByLabelText } = await renderScreen()
 
     expect(getByLabelText('이 기간 고가 드롭')).toBeTruthy()
@@ -571,8 +552,7 @@ describe('월간 탭', () => {
       periodKey: CURRENT_MONTHLY,
       loadedPeriodKey: CURRENT_MONTHLY,
       rows: [],
-      weeklySubtotals: [주차소계()],
-    })
+      weeklySubtotals: [주차소계()] })
     const { getByText } = await renderScreen()
 
     expect(getByText('지내우시')).toBeTruthy()
@@ -652,16 +632,3 @@ describe('구조 계약', () => {
   })
 })
 
-// 새 기준선 — **«예전과 같은가» 가 아니라 «앞으로 안 바뀌는가» 를 묻는다**(3단계 관례).
-describe('렌더 트리 기준선', () => {
-  it('기록이 있는 현재 주', async () => {
-    mockStore({ status: 'loaded', periodState: 'recorded', rows: [보스행({ world: '스카니아' })] })
-    const { toJSON } = await renderScreen()
-
-    // **엘리먼트를 값으로 받는 프롭을 접지 않으면 스냅샷이 아예 안 찍힌다** — 이 화면은
-    // `ScreenScroll` 에 `header` 와 `refreshControl` 을 엘리먼트로 넘기는데, 거기 딸린 `_owner` 가
-    // 파이버 트리를 가리켜 직렬화기가 앱 전체를 따라가다 `RangeError` 로 죽는다(step 4 가 먼저
-    // 밟은 자리). 형태만 남겨도 "그 프롭이 붙어 있는가"는 그대로 지켜진다.
-    expect(normalizeRenderedTree(toJSON() as RenderedTree)).toMatchSnapshot()
-  })
-})

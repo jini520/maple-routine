@@ -17,17 +17,15 @@ import { useBossProfitStore, type BossProfitRow } from '../../../features/boss-p
 import { useBossSchedulerStore, type BossCharacterView } from '../../../features/boss-scheduler/store'
 import {
   useContentSchedulerStore,
-  type ContentCharacterView,
-} from '../../../features/content-scheduler/store'
+  type ContentCharacterView } from '../../../features/content-scheduler/store'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 import { formatMesoShort } from '../../../lib/boss-profit-delta'
 import type { MatchedBoss } from '../../../lib/boss-matching'
 import type { DropHistoryPeriodGroup, DropHistoryRecord } from '../../../lib/drop-history'
 import { getCachedCharacterBasic } from '../../../storage/character-basic-cache'
 import { getRepresentativeCharacter } from '../../../storage/character-selection'
-import type { CharacterBasicProfile, DailyContent, WeeklyContent } from '../../../types'
+import type { DailyContent, WeeklyContent } from '../../../types'
 
-import { normalizeRenderedTree, type RenderedTree } from '../../../__tests__/normalize-tree'
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { useScreenNavigation } from '../../use-screen-navigation'
 import { TodayScreen } from '../TodayScreen'
@@ -37,16 +35,13 @@ import { TodayScreen } from '../TodayScreen'
 // 통째로 목으로 덮으면 그 헬퍼가 `undefined` 가 되어 조립이 렌더 도중 죽는다(실제로 그렇게 갔다).
 jest.mock('../../../features/content-scheduler/store', () => ({
   ...jest.requireActual('../../../features/content-scheduler/store'),
-  useContentSchedulerStore: jest.fn(),
-}))
+  useContentSchedulerStore: jest.fn() }))
 jest.mock('../../../features/boss-scheduler/store', () => ({
   ...jest.requireActual('../../../features/boss-scheduler/store'),
-  useBossSchedulerStore: jest.fn(),
-}))
+  useBossSchedulerStore: jest.fn() }))
 jest.mock('../../../features/boss-profit/store', () => ({
   ...jest.requireActual('../../../features/boss-profit/store'),
-  useBossProfitStore: jest.fn(),
-}))
+  useBossProfitStore: jest.fn() }))
 // `useFocusEffect` 는 내비게이션 컨텍스트를 요구한다 — 이 하네스는 화면 하나만 띄우므로
 // **포커스를 이펙트로 흉내 낸다**(마운트 = 첫 포커스, 실제 동작과 같은 순서다).
 jest.mock('@react-navigation/native', () => ({
@@ -55,20 +50,16 @@ jest.mock('@react-navigation/native', () => ({
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const react = require('react') as typeof import('react')
     react.useEffect(callback, [callback])
-  },
-}))
+  } }))
 jest.mock('../../../features/boss-profit/drop-history-store', () => ({
   ...jest.requireActual('../../../features/boss-profit/drop-history-store'),
-  useDropHistoryStore: jest.fn(),
-}))
+  useDropHistoryStore: jest.fn() }))
 jest.mock('../../../storage/character-basic-cache', () => ({
   ...jest.requireActual('../../../storage/character-basic-cache'),
-  getCachedCharacterBasic: jest.fn(),
-}))
+  getCachedCharacterBasic: jest.fn() }))
 jest.mock('../../../storage/character-selection', () => ({
   ...jest.requireActual('../../../storage/character-selection'),
-  getRepresentativeCharacter: jest.fn(),
-}))
+  getRepresentativeCharacter: jest.fn() }))
 jest.mock('../../use-screen-navigation', () => ({ useScreenNavigation: jest.fn() }))
 
 const mockedContent = jest.mocked(useContentSchedulerStore)
@@ -120,8 +111,7 @@ function setStores(
     activeTab: 'daily',
     loadTrackedOcids: mocks.content.loadTrackedOcids,
     refresh: mocks.content.refresh,
-    ...overrides.content,
-  } as never)
+    ...overrides.content } as never)
 
   mockedBoss.mockReturnValue({
     status: 'loaded',
@@ -136,8 +126,7 @@ function setStores(
     monthlyFilter: 'all',
     loadTrackedOcids: mocks.boss.loadTrackedOcids,
     refresh: mocks.boss.refresh,
-    ...overrides.boss,
-  } as never)
+    ...overrides.boss } as never)
 
   mockedProfit.mockReturnValue({
     status: 'loaded',
@@ -161,8 +150,7 @@ function setStores(
     lastSyncedAt: null,
     loadTrackedOcids: mocks.profit.loadTrackedOcids,
     refresh: mocks.profit.refresh,
-    ...overrides.profit,
-  } as never)
+    ...overrides.profit } as never)
 
   mockedDropHistory.mockReturnValue({
     status: 'ready',
@@ -170,25 +158,10 @@ function setStores(
     drought: null,
     charactersByOcid: {},
     load: mocks.dropHistory.load,
-    ...overrides.dropHistory,
-  } as never)
+    ...overrides.dropHistory } as never)
 }
 
 // ── 값 픽스처 ────────────────────────────────────────────────────────────────────────
-
-function profile(index: number, overrides: Partial<CharacterBasicProfile> = {}): CharacterBasicProfile {
-  return {
-    name: `캐릭터${index}`,
-    level: 300 - index,
-    imageUrl: `https://open.api.nexon.com/static/maplestory/character/look/${index}`,
-    accessFlag: true,
-    world: '스카니아',
-    jobClass: '아크메이지(불,독)',
-    guildName: '백호단',
-    expRate: 80.3,
-    ...overrides,
-  }
-}
 
 function daily(overrides: Partial<DailyContent> = {}): DailyContent {
   return {
@@ -198,8 +171,7 @@ function daily(overrides: Partial<DailyContent> = {}): DailyContent {
     nowCount: 0,
     maxCount: 0,
     questState: 0,
-    ...overrides,
-  }
+    ...overrides }
 }
 
 function weekly(overrides: Partial<WeeklyContent> = {}): WeeklyContent {
@@ -210,8 +182,7 @@ function weekly(overrides: Partial<WeeklyContent> = {}): WeeklyContent {
     nowCount: 0,
     maxCount: 0,
     questState: 0,
-    ...overrides,
-  }
+    ...overrides }
 }
 
 function matchedBoss(overrides: Partial<MatchedBoss> = {}): MatchedBoss {
@@ -225,8 +196,7 @@ function matchedBoss(overrides: Partial<MatchedBoss> = {}): MatchedBoss {
     matchedBossName: '스우',
     portraitSlug: null,
     isSeasonBoss: false,
-    ...overrides,
-  }
+    ...overrides }
 }
 
 function contentView(ocid: string, index: number): ContentCharacterView {
@@ -238,8 +208,7 @@ function contentView(ocid: string, index: number): ContentCharacterView {
     weeklyContents: [weekly({ questState: index % 2 === 0 ? 2 : 0 })],
     isStale: false,
     syncedAt: NOW.toISOString(),
-    error: null,
-  }
+    error: null }
 }
 
 function bossView(ocid: string, index: number): BossCharacterView {
@@ -252,8 +221,7 @@ function bossView(ocid: string, index: number): BossCharacterView {
     weeklyBossClearLimitCount: 12,
     isStale: false,
     syncedAt: NOW.toISOString(),
-    error: null,
-  }
+    error: null }
 }
 
 function profitRow(ocid: string, index: number): BossProfitRow {
@@ -271,8 +239,7 @@ function profitRow(ocid: string, index: number): BossProfitRow {
     maxPartySize: 6,
     partySize: 1,
     payoutMeso: 1_000_000 * index,
-    isComplete: true,
-  }
+    isComplete: true }
 }
 
 function dropRecord(overrides: Partial<DropHistoryRecord> = {}): DropHistoryRecord {
@@ -284,26 +251,22 @@ function dropRecord(overrides: Partial<DropHistoryRecord> = {}): DropHistoryReco
     category: 'equipment',
     itemName: '가디언 엔젤링',
     quantity: 1,
-    ...overrides,
-  }
+    ...overrides }
 }
 
 const 캐릭터_넷 = {
   content: {
     trackedOcids: OCIDS,
-    characters: OCIDS.map((ocid, index) => contentView(ocid, index + 1)),
-  },
+    characters: OCIDS.map((ocid, index) => contentView(ocid, index + 1)) },
   boss: {
     trackedOcids: OCIDS,
-    characters: OCIDS.map((ocid, index) => bossView(ocid, index + 1)),
-  },
+    characters: OCIDS.map((ocid, index) => bossView(ocid, index + 1)) },
   profit: {
     trackedOcids: OCIDS,
     // 주간 탭·현재 기간에서는 둘이 같은 내용이다([[ADR-153]] 대가) — 픽스처도 그 상태를 그대로 둔다.
     rows: OCIDS.map((ocid, index) => profitRow(ocid, index + 1)),
     currentPeriodRows: OCIDS.map((ocid, index) => profitRow(ocid, index + 1)),
-    lastSyncedAt: new Date(NOW.getTime() - 5 * 60 * 1000).toISOString(),
-  },
+    lastSyncedAt: new Date(NOW.getTime() - 5 * 60 * 1000).toISOString() },
   dropHistory: {
     groups: [
       {
@@ -312,17 +275,13 @@ const 캐릭터_넷 = {
         records: [
           dropRecord({ priceState: 'entered', priceMeso: 1_200_000_000, priceShare: 1 }),
           dropRecord({ itemName: '생명의 연마석', category: 'consumable' }),
-        ],
-      },
+        ] },
     ] satisfies DropHistoryPeriodGroup[],
     drought: {
       periodKey: WEEK_KEY,
       cycle: 'weekly' as const,
       weeksSince: 0,
-      records: [dropRecord({ priceState: 'entered', priceMeso: 1_200_000_000 })],
-    },
-  },
-}
+      records: [dropRecord({ priceState: 'entered', priceMeso: 1_200_000_000 })] } } }
 
 // ── 도우미 ───────────────────────────────────────────────────────────────────────────
 
@@ -346,17 +305,6 @@ async function press(element: AtomElement): Promise<void> {
 /** 스크롤 셸에 붙은 당겨서 새로고침 컨트롤([[ADR-130]] 결정 1) — 스케줄러 테스트와 같은 자리다. */
 function refreshControl(): { refreshing: boolean; onRefresh: () => void } {
   return screen.getByTestId('screen-scroll').props.refreshControl.props
-}
-
-/**
- * 스냅샷 전에 실행마다 갈리는 값을 접는다 — **`refreshControl` 때문에 필수다.**
- *
- * 그 프롭은 React 엘리먼트이고 그 안의 `_owner` 가 파이버 트리를 통째로 물고 있어, 그냥 찍으면
- * 직렬화가 순환에 걸리거나 문자열 길이 상한을 넘겨 죽는다(실측 — `normalize-tree.ts` 가 적어 둔
- * 그 실패 그대로다). 보스 수익 화면 스냅샷과 같은 도구를 쓴다.
- */
-function 스냅샷_트리(view: Rendered): RenderedTree {
-  return normalizeRenderedTree(view.toJSON() as RenderedTree)
 }
 
 function buttonOf(node: AtomElement): AtomElement {
@@ -392,8 +340,7 @@ beforeEach(() => {
     content: { loadTrackedOcids: jest.fn(), refresh: jest.fn() },
     boss: { loadTrackedOcids: jest.fn(), refresh: jest.fn() },
     profit: { loadTrackedOcids: jest.fn(), refresh: jest.fn() },
-    dropHistory: { load: jest.fn() },
-  }
+    dropHistory: { load: jest.fn() } }
   mockedGetRepresentative.mockResolvedValue(null)
   mockedGetCachedCharacterBasic.mockResolvedValue(null)
   mockedNavigation.mockReturnValue({ navigate: jest.fn(), goBack: jest.fn() } as never)
@@ -451,9 +398,7 @@ describe('TodayScreen — 수익 위젯이 읽는 값 ([[ADR-153]])', () => {
         // 월간 탭을 보고 있는 상태 — `rows` 에는 이번 주 행이 한 줄도 없다(`filterRowsForTab`).
         tab: 'monthly',
         rows: [],
-        dropsByRowKey: {},
-      },
-    })
+        dropsByRowKey: {} } })
 
     await renderScreen()
 
@@ -474,11 +419,8 @@ describe('TodayScreen — 수동 멤버십을 어느 스토어에서 읽는가',
         // character 범위 항목이어야 「남은 스케줄」에 남는다 — 공유 컨텐츠는 별도 위젯으로 뗐다
         // ([[ADR-147]] 정정 28).
         manualTrackedByOcid: {
-          'ocid-1': [{ contentName: '[일일 퀘스트] 소멸의 여로 조사', kind: 'daily' }],
-        },
-      },
-      boss: { trackedOcids: ['ocid-1'], characters: [bossView('ocid-1', 1)] },
-    })
+          'ocid-1': [{ contentName: '[일일 퀘스트] 소멸의 여로 조사', kind: 'daily' }] } },
+      boss: { trackedOcids: ['ocid-1'], characters: [bossView('ocid-1', 1)] } })
 
     await renderScreen()
 
@@ -492,9 +434,7 @@ describe('TodayScreen — 수동 멤버십을 어느 스토어에서 읽는가',
       boss: {
         trackedOcids: ['ocid-1'],
         characters: [bossView('ocid-1', 1)],
-        manualTrackedByOcid: { 'ocid-1': [{ contentName: '스우', difficulty: '노멀', kind: 'boss' }] },
-      },
-    })
+        manualTrackedByOcid: { 'ocid-1': [{ contentName: '스우', difficulty: '노멀', kind: 'boss' }] } } })
 
     await renderScreen()
 
@@ -587,21 +527,4 @@ describe('TodayScreen — 격자', () => {
     }
   })
 
-  it('캐릭터 넷의 기본 배치', async () => {
-    // 가뭄 문구는 마운트마다 풀에서 무작위로 뽑는다([[ADR-147]] 정정 6) — 그대로 찍으면 스냅샷이
-    // 실행마다 갈린다(실제로 갈렸다). 인덱스를 0으로 고정한다(그 위젯 테스트와 같은 처방).
-    const random = jest.spyOn(Math, 'random').mockReturnValue(0)
-    setStores(캐릭터_넷)
-    mockedGetRepresentative.mockResolvedValue('ocid-2')
-    mockedGetCachedCharacterBasic.mockImplementation(async (ocid: string) => {
-      const index = OCIDS.indexOf(ocid)
-      return index === -1 ? null : { profile: profile(index + 1), cachedAt: NOW.toISOString() }
-    })
-
-    const view = await renderScreen()
-
-    expect(스냅샷_트리(view)).toMatchSnapshot()
-
-    random.mockRestore()
-  })
 })

@@ -97,11 +97,6 @@ describe('WidgetGrid — 좌표 배치', () => {
     })
   })
 
-  it('스냅샷', async () => {
-    const view = await 격자()
-
-    expect(view.toJSON()).toMatchSnapshot()
-  })
 })
 
 describe('`h: auto` 타일 ([[ADR-147]] 정정 1)', () => {

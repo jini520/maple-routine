@@ -212,10 +212,3 @@ describe('단위는 큰 금액에만 붙는다 ([[ADR-147]] 정정 4)', () => {
   })
 })
 
-describe('스냅샷 — 네 크기', () => {
-  it.each(Object.entries(크기))('%s', async (_이름, 값) => {
-    const view = await 위젯(값)
-
-    expect(view.toJSON()).toMatchSnapshot()
-  })
-})

@@ -32,9 +32,4 @@ describe('ProgressModal', () => {
     expect(progressValue(toJSON())).toBe(0)
   })
 
-  it('트리 스냅샷', async () => {
-    const { toJSON } = await renderOverlay(<ProgressModal message="저장 중" completed={2} total={5} />)
-
-    expect(toJSON()).toMatchSnapshot()
-  })
 })

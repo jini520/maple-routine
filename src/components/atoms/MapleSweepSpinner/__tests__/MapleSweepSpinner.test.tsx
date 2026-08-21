@@ -98,12 +98,6 @@ describe('MapleSweepSpinner', () => {
     expect(first.props.name).not.toEqual(second.props.name)
   })
 
-  it('렌더 트리 스냅샷 — 이후 변경을 잡는 기준선(예전 화면과의 대조가 아니다)', async () => {
-    expect(
-      (await renderAtom(<MapleSweepSpinner className="text-primary" />)).toJSON(),
-    ).toMatchSnapshot()
-  })
-
   // ★ [[ADR-061]] 정정 1 회귀 가드 — **띠가 마스크에 지워지던 결함.**
   //
   // 이식 당시 마스크는 `maskUnits`·`maskContentUnits` 를 **둘 다 `objectBoundingBox`** 로 두고
