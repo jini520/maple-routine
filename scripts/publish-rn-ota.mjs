@@ -4,7 +4,7 @@
 //
 // 사용법: node scripts/publish-rn-ota.mjs
 //
-// 배포 버전은 CLI 인자로 받지 않고 packages/app-rn/app.json 의 expo.version 을 그대로 쓴다 —
+// 배포 버전은 CLI 인자로 받지 않고 app.json 의 expo.version 을 그대로 쓴다 —
 // capacitor 스크립트가 같은 이유를 적어 두었다(버전을 인자로 받으면 앱에 박히는 표시값과 실제
 // 배포된 버전이 어긋나고, 그것은 배포되고 나서야 드러난다).
 //
@@ -28,7 +28,7 @@ import { basename, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 // 릴리스 노트의 진실 원천을 **그대로** 읽는다([[ADR-119]] 결정 1) — capacitor 스크립트와 같은 파일을
 // 같은 이유로 읽는다. 노트가 두 벌이 되면 갈라진 순간 어느 쪽이 사실인지 알 방법이 없다.
-import { findReleaseNote } from '../packages/core/src/data/release-notes.ts'
+import { findReleaseNote } from '../core/data/release-notes.ts'
 // 노트 가드도 한 벌이다 — «무엇이 비었는지 문구로 말한다»는 판단([[ADR-126]] 결정 8)을 두 스크립트가
 // 나눠 가지면 한쪽만 고쳐진다.
 import { describeReleaseNoteGap } from './publish-live-update.mjs'
@@ -133,8 +133,8 @@ function contentTypeFor(ext) {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const root = join(import.meta.dirname, '..')
-  const appDir = join(root, 'packages', 'app-rn')
+  // 저장소 루트가 곧 앱 프로젝트다([[ADR-155]] 결정 2) — 종전 `packages/app-rn` 자리다.
+  const appDir = join(import.meta.dirname, '..')
   const distDir = join(appDir, 'dist')
 
   // 버전 축이 **둘**이라 여기서 먼저 묶는다.
@@ -145,7 +145,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { version: appVersion } = JSON.parse(readFileSync(join(appDir, 'package.json'), 'utf-8'))
   const appConfig = JSON.parse(readFileSync(join(appDir, 'app.json'), 'utf-8'))
   if (!appVersion || !/^\d+\.\d+\.\d+$/.test(appVersion)) {
-    console.error(`packages/app-rn/package.json 의 version("${appVersion}")이 x.y.z 형식이 아닙니다.`)
+    console.error(`package.json 의 version("${appVersion}")이 x.y.z 형식이 아닙니다.`)
     process.exit(1)
   }
   if (appConfig?.expo?.version !== appVersion) {
@@ -160,7 +160,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const note = findReleaseNote(appVersion)
   const gap = describeReleaseNoteGap(note)
   if (gap !== null) {
-    console.error(`packages/core/src/data/release-notes.ts 의 ${appVersion}: ${gap}`)
+    console.error(`core/data/release-notes.ts 의 ${appVersion}: ${gap}`)
     process.exit(1)
   }
 

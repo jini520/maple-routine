@@ -1,0 +1,2125 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`렌더 트리 기준선 기록이 있는 현재 주 1`] = `
+<RNCSafeAreaProvider
+  onInsetsChange={[Function]}
+  style={
+    [
+      {
+        "flex": 1,
+      },
+      undefined,
+    ]
+  }
+>
+  <View
+    style={
+      {
+        "backgroundColor": "#F2F0E2",
+        "flexBasis": "0%",
+        "flexGrow": 1,
+        "flexShrink": 1,
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "flexBasis": "0%",
+          "flexGrow": 1,
+          "flexShrink": 1,
+        }
+      }
+      testID="screen-Profit"
+    >
+      <RNCMaskedView
+        style={
+          {
+            "flex": 1,
+          }
+        }
+        testID="screen-fade"
+      >
+        <View
+          pointerEvents="none"
+          style={
+            {
+              "bottom": 0,
+              "left": 0,
+              "position": "absolute",
+              "right": 0,
+              "top": 0,
+            }
+          }
+        >
+          <View
+            style={
+              {
+                "flexBasis": "0%",
+                "flexGrow": 1,
+                "flexShrink": 1,
+              }
+            }
+          >
+            <ViewManagerAdapter_ExpoLinearGradient
+              colors={
+                [
+                  0,
+                  0,
+                  100663296,
+                  436207616,
+                  1073741824,
+                  1996488704,
+                  3053453312,
+                  3925868544,
+                  4278190080,
+                ]
+              }
+              endPoint={
+                [
+                  0.5,
+                  1,
+                ]
+              }
+              locations={
+                [
+                  0,
+                  0.125,
+                  0.25,
+                  0.375,
+                  0.5,
+                  0.625,
+                  0.75,
+                  0.875,
+                  1,
+                ]
+              }
+              startPoint={
+                [
+                  0.5,
+                  0,
+                ]
+              }
+              style={
+                {
+                  "height": 59,
+                }
+              }
+              testID="screen-fade-top"
+            />
+            <View
+              style={
+                {
+                  "backgroundColor": "#000",
+                  "flexBasis": "0%",
+                  "flexGrow": 1,
+                  "flexShrink": 1,
+                }
+              }
+            />
+            <ViewManagerAdapter_ExpoLinearGradient
+              colors={
+                [
+                  4278190080,
+                  3925868544,
+                  3053453312,
+                  1996488704,
+                  1073741824,
+                  436207616,
+                  100663296,
+                  0,
+                  0,
+                ]
+              }
+              endPoint={
+                [
+                  0.5,
+                  1,
+                ]
+              }
+              locations={
+                [
+                  0,
+                  0.125,
+                  0.25,
+                  0.375,
+                  0.5,
+                  0.625,
+                  0.75,
+                  0.875,
+                  1,
+                ]
+              }
+              startPoint={
+                [
+                  0.5,
+                  0,
+                ]
+              }
+              style={
+                {
+                  "height": 74.5,
+                }
+              }
+              testID="screen-fade-bottom"
+            />
+          </View>
+        </View>
+        <RCTScrollView
+          contentContainerStyle={
+            {
+              "columnGap": 16,
+              "paddingBottom": 115,
+              "rowGap": 16,
+            }
+          }
+          indicatorStyle="black"
+          refreshControl="<element:RefreshControlMock>"
+          style={
+            {
+              "flexBasis": "0%",
+              "flexGrow": 1,
+              "flexShrink": 1,
+              "marginBottom": 0,
+              "marginTop": 0,
+            }
+          }
+          testID="screen-scroll"
+        >
+          <RCTRefreshControl />
+          <View>
+            <View
+              style={
+                {
+                  "paddingBottom": 8,
+                  "paddingLeft": 16,
+                  "paddingRight": 16,
+                  "paddingTop": 59,
+                  "zIndex": 10,
+                }
+              }
+              testID="page-header"
+            >
+              <View
+                style={
+                  {
+                    "columnGap": 16,
+                    "rowGap": 16,
+                  }
+                }
+              >
+                <View
+                  style={
+                    {
+                      "alignItems": "center",
+                      "flexDirection": "row",
+                      "justifyContent": "space-between",
+                      "minHeight": 32,
+                    }
+                  }
+                  testID="page-header-title-row"
+                >
+                  <Text
+                    allowFontScaling={true}
+                    maxFontSizeMultiplier={1.235}
+                    style={
+                      {
+                        "color": "#241208",
+                        "fontSize": 18,
+                        "fontWeight": "600",
+                        "lineHeight": 28,
+                      }
+                    }
+                  >
+                    보스 수익
+                  </Text>
+                  <View
+                    style={
+                      {
+                        "alignItems": "center",
+                        "columnGap": 12,
+                        "flexDirection": "row",
+                        "rowGap": 12,
+                      }
+                    }
+                  >
+                    <View
+                      accessibilityState={
+                        {
+                          "busy": undefined,
+                          "checked": undefined,
+                          "disabled": undefined,
+                          "expanded": undefined,
+                          "selected": undefined,
+                        }
+                      }
+                      accessibilityValue={
+                        {
+                          "max": undefined,
+                          "min": undefined,
+                          "now": undefined,
+                          "text": undefined,
+                        }
+                      }
+                      accessible={true}
+                      collapsable={false}
+                      focusable={true}
+                      onBlur={[Function]}
+                      onClick={[Function]}
+                      onFocus={[Function]}
+                      onResponderGrant={[Function]}
+                      onResponderMove={[Function]}
+                      onResponderRelease={[Function]}
+                      onResponderTerminate={[Function]}
+                      onResponderTerminationRequest={[Function]}
+                      onStartShouldSetResponder={[Function]}
+                      role="button"
+                    >
+                      <Text
+                        allowFontScaling={true}
+                        maxFontSizeMultiplier={1.235}
+                        style={
+                          {
+                            "color": "#645C42",
+                            "fontSize": 14,
+                            "fontWeight": "500",
+                            "lineHeight": 20,
+                          }
+                        }
+                      >
+                        아이템 가격
+                      </Text>
+                    </View>
+                    <View
+                      accessibilityState={
+                        {
+                          "busy": undefined,
+                          "checked": undefined,
+                          "disabled": undefined,
+                          "expanded": undefined,
+                          "selected": undefined,
+                        }
+                      }
+                      accessibilityValue={
+                        {
+                          "max": undefined,
+                          "min": undefined,
+                          "now": undefined,
+                          "text": undefined,
+                        }
+                      }
+                      accessible={true}
+                      collapsable={false}
+                      focusable={true}
+                      onBlur={[Function]}
+                      onClick={[Function]}
+                      onFocus={[Function]}
+                      onResponderGrant={[Function]}
+                      onResponderMove={[Function]}
+                      onResponderRelease={[Function]}
+                      onResponderTerminate={[Function]}
+                      onResponderTerminationRequest={[Function]}
+                      onStartShouldSetResponder={[Function]}
+                      role="button"
+                    >
+                      <Text
+                        allowFontScaling={true}
+                        maxFontSizeMultiplier={1.235}
+                        style={
+                          {
+                            "color": "#645C42",
+                            "fontSize": 14,
+                            "fontWeight": "500",
+                            "lineHeight": 20,
+                          }
+                        }
+                      >
+                        히스토리
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+                <View
+                  style={
+                    {
+                      "alignItems": "center",
+                      "columnGap": 16,
+                      "flexDirection": "row",
+                      "rowGap": 16,
+                    }
+                  }
+                >
+                  <View
+                    accessibilityState={
+                      {
+                        "busy": undefined,
+                        "checked": undefined,
+                        "disabled": undefined,
+                        "expanded": undefined,
+                        "selected": true,
+                      }
+                    }
+                    accessibilityValue={
+                      {
+                        "max": undefined,
+                        "min": undefined,
+                        "now": undefined,
+                        "text": undefined,
+                      }
+                    }
+                    accessible={true}
+                    collapsable={false}
+                    focusable={true}
+                    onBlur={[Function]}
+                    onClick={[Function]}
+                    onFocus={[Function]}
+                    onResponderGrant={[Function]}
+                    onResponderMove={[Function]}
+                    onResponderRelease={[Function]}
+                    onResponderTerminate={[Function]}
+                    onResponderTerminationRequest={[Function]}
+                    onStartShouldSetResponder={[Function]}
+                    role="button"
+                  >
+                    <Text
+                      allowFontScaling={true}
+                      maxFontSizeMultiplier={1.235}
+                      style={
+                        {
+                          "backgroundColor": "#FEECDA",
+                          "borderRadius": 9999,
+                          "color": "#F58B0F",
+                          "fontSize": 14,
+                          "fontWeight": "600",
+                          "lineHeight": 20,
+                          "paddingBottom": 5,
+                          "paddingLeft": 12,
+                          "paddingRight": 12,
+                          "paddingTop": 5,
+                        }
+                      }
+                    >
+                      주간
+                    </Text>
+                  </View>
+                  <View
+                    accessibilityState={
+                      {
+                        "busy": undefined,
+                        "checked": undefined,
+                        "disabled": undefined,
+                        "expanded": undefined,
+                        "selected": false,
+                      }
+                    }
+                    accessibilityValue={
+                      {
+                        "max": undefined,
+                        "min": undefined,
+                        "now": undefined,
+                        "text": undefined,
+                      }
+                    }
+                    accessible={true}
+                    collapsable={false}
+                    focusable={true}
+                    onBlur={[Function]}
+                    onClick={[Function]}
+                    onFocus={[Function]}
+                    onResponderGrant={[Function]}
+                    onResponderMove={[Function]}
+                    onResponderRelease={[Function]}
+                    onResponderTerminate={[Function]}
+                    onResponderTerminationRequest={[Function]}
+                    onStartShouldSetResponder={[Function]}
+                    role="button"
+                  >
+                    <Text
+                      allowFontScaling={true}
+                      maxFontSizeMultiplier={1.235}
+                      style={
+                        {
+                          "color": "#645C42",
+                          "fontSize": 14,
+                          "fontWeight": "500",
+                          "lineHeight": 20,
+                          "paddingLeft": 12,
+                          "paddingRight": 12,
+                        }
+                      }
+                    >
+                      월간
+                    </Text>
+                  </View>
+                  <View
+                    style={
+                      {
+                        "alignItems": "center",
+                        "columnGap": 8,
+                        "flexDirection": "row",
+                        "flexShrink": 0,
+                        "marginLeft": "auto",
+                        "rowGap": 8,
+                      }
+                    }
+                  >
+                    <Text
+                      allowFontScaling={true}
+                      maxFontSizeMultiplier={1.235}
+                      style={
+                        {
+                          "color": "#645C42",
+                          "fontSize": 14,
+                          "lineHeight": 20,
+                        }
+                      }
+                    >
+                      동기화 기록 없음
+                    </Text>
+                    <View
+                      accessibilityLabel="새로고침"
+                      accessibilityState={
+                        {
+                          "busy": undefined,
+                          "checked": undefined,
+                          "disabled": undefined,
+                          "expanded": undefined,
+                          "selected": undefined,
+                        }
+                      }
+                      accessibilityValue={
+                        {
+                          "max": undefined,
+                          "min": undefined,
+                          "now": undefined,
+                          "text": undefined,
+                        }
+                      }
+                      accessible={true}
+                      collapsable={false}
+                      focusable={true}
+                      onBlur={[Function]}
+                      onClick={[Function]}
+                      onFocus={[Function]}
+                      onResponderGrant={[Function]}
+                      onResponderMove={[Function]}
+                      onResponderRelease={[Function]}
+                      onResponderTerminate={[Function]}
+                      onResponderTerminationRequest={[Function]}
+                      onStartShouldSetResponder={[Function]}
+                      role="button"
+                      style={
+                        {
+                          "alignItems": "center",
+                          "height": 30,
+                          "justifyContent": "center",
+                          "width": 30,
+                        }
+                      }
+                    >
+                      <View
+                        collapsable={false}
+                        jestAnimatedProps={
+                          {
+                            "value": {},
+                          }
+                        }
+                        jestAnimatedStyle={
+                          {
+                            "value": {},
+                          }
+                        }
+                        style={[]}
+                        testID="refresh-icon"
+                      >
+                        <RNSVGSvgView
+                          align="xMidYMid"
+                          aria-hidden={true}
+                          bbHeight={16}
+                          bbWidth={16}
+                          fill="none"
+                          focusable={false}
+                          height={16}
+                          meetOrSlice={0}
+                          minX={0}
+                          minY={0}
+                          stroke="#F58B0F"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          style={
+                            [
+                              {
+                                "backgroundColor": "transparent",
+                                "borderWidth": 0,
+                              },
+                              {},
+                              {
+                                "flex": 0,
+                                "height": 16,
+                                "width": 16,
+                              },
+                            ]
+                          }
+                          vbHeight={24}
+                          vbWidth={24}
+                          width={16}
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <RNSVGGroup
+                            fill={null}
+                            propList={
+                              [
+                                "fill",
+                                "stroke",
+                                "strokeWidth",
+                                "strokeLinecap",
+                                "strokeLinejoin",
+                              ]
+                            }
+                            stroke={
+                              {
+                                "payload": 4294281999,
+                                "type": 0,
+                              }
+                            }
+                            strokeLinecap={1}
+                            strokeLinejoin={1}
+                            strokeWidth={2}
+                          >
+                            <RNSVGPath
+                              d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"
+                              fill={null}
+                              propList={
+                                [
+                                  "fill",
+                                  "stroke",
+                                  "strokeWidth",
+                                  "strokeLinecap",
+                                  "strokeLinejoin",
+                                ]
+                              }
+                              stroke={
+                                {
+                                  "payload": 4294281999,
+                                  "type": 0,
+                                }
+                              }
+                              strokeLinecap={1}
+                              strokeLinejoin={1}
+                              strokeWidth={2}
+                            />
+                            <RNSVGPath
+                              d="M21 3v5h-5"
+                              fill={null}
+                              propList={
+                                [
+                                  "fill",
+                                  "stroke",
+                                  "strokeWidth",
+                                  "strokeLinecap",
+                                  "strokeLinejoin",
+                                ]
+                              }
+                              stroke={
+                                {
+                                  "payload": 4294281999,
+                                  "type": 0,
+                                }
+                              }
+                              strokeLinecap={1}
+                              strokeLinejoin={1}
+                              strokeWidth={2}
+                            />
+                            <RNSVGPath
+                              d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"
+                              fill={null}
+                              propList={
+                                [
+                                  "fill",
+                                  "stroke",
+                                  "strokeWidth",
+                                  "strokeLinecap",
+                                  "strokeLinejoin",
+                                ]
+                              }
+                              stroke={
+                                {
+                                  "payload": 4294281999,
+                                  "type": 0,
+                                }
+                              }
+                              strokeLinecap={1}
+                              strokeLinejoin={1}
+                              strokeWidth={2}
+                            />
+                            <RNSVGPath
+                              d="M8 16H3v5"
+                              fill={null}
+                              propList={
+                                [
+                                  "fill",
+                                  "stroke",
+                                  "strokeWidth",
+                                  "strokeLinecap",
+                                  "strokeLinejoin",
+                                ]
+                              }
+                              stroke={
+                                {
+                                  "payload": 4294281999,
+                                  "type": 0,
+                                }
+                              }
+                              strokeLinecap={1}
+                              strokeLinejoin={1}
+                              strokeWidth={2}
+                            />
+                          </RNSVGGroup>
+                        </RNSVGSvgView>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+                <View
+                  style={
+                    {
+                      "alignItems": "center",
+                      "columnGap": 16,
+                      "flexDirection": "row",
+                      "justifyContent": "center",
+                      "rowGap": 16,
+                    }
+                  }
+                >
+                  <View
+                    accessibilityLabel="이전 기간"
+                    accessibilityState={
+                      {
+                        "busy": undefined,
+                        "checked": undefined,
+                        "disabled": false,
+                        "expanded": undefined,
+                        "selected": undefined,
+                      }
+                    }
+                    accessibilityValue={
+                      {
+                        "max": undefined,
+                        "min": undefined,
+                        "now": undefined,
+                        "text": undefined,
+                      }
+                    }
+                    accessible={true}
+                    collapsable={false}
+                    focusable={true}
+                    onBlur={[Function]}
+                    onClick={[Function]}
+                    onFocus={[Function]}
+                    onResponderGrant={[Function]}
+                    onResponderMove={[Function]}
+                    onResponderRelease={[Function]}
+                    onResponderTerminate={[Function]}
+                    onResponderTerminationRequest={[Function]}
+                    onStartShouldSetResponder={[Function]}
+                    role="button"
+                    style={
+                      {
+                        "alignItems": "center",
+                        "borderColor": "#CFC9AE",
+                        "borderRadius": 9999,
+                        "borderWidth": 1,
+                        "height": 28,
+                        "justifyContent": "center",
+                        "width": 28,
+                      }
+                    }
+                  >
+                    <RNSVGSvgView
+                      align="xMidYMid"
+                      aria-hidden={true}
+                      bbHeight={16}
+                      bbWidth={16}
+                      fill="none"
+                      focusable={false}
+                      height={16}
+                      meetOrSlice={0}
+                      minX={0}
+                      minY={0}
+                      stroke="#241208"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      style={
+                        [
+                          {
+                            "backgroundColor": "transparent",
+                            "borderWidth": 0,
+                          },
+                          {},
+                          {
+                            "flex": 0,
+                            "height": 16,
+                            "width": 16,
+                          },
+                        ]
+                      }
+                      vbHeight={24}
+                      vbWidth={24}
+                      width={16}
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <RNSVGGroup
+                        fill={null}
+                        propList={
+                          [
+                            "fill",
+                            "stroke",
+                            "strokeWidth",
+                            "strokeLinecap",
+                            "strokeLinejoin",
+                          ]
+                        }
+                        stroke={
+                          {
+                            "payload": 4280553992,
+                            "type": 0,
+                          }
+                        }
+                        strokeLinecap={1}
+                        strokeLinejoin={1}
+                        strokeWidth={2}
+                      >
+                        <RNSVGPath
+                          d="m15 18-6-6 6-6"
+                          fill={null}
+                          propList={
+                            [
+                              "fill",
+                              "stroke",
+                              "strokeWidth",
+                              "strokeLinecap",
+                              "strokeLinejoin",
+                            ]
+                          }
+                          stroke={
+                            {
+                              "payload": 4280553992,
+                              "type": 0,
+                            }
+                          }
+                          strokeLinecap={1}
+                          strokeLinejoin={1}
+                          strokeWidth={2}
+                        />
+                      </RNSVGGroup>
+                    </RNSVGSvgView>
+                  </View>
+                  <View
+                    style={
+                      {
+                        "alignItems": "center",
+                      }
+                    }
+                  >
+                    <Text
+                      allowFontScaling={true}
+                      maxFontSizeMultiplier={1.235}
+                      style={
+                        {
+                          "color": "#241208",
+                          "fontSize": 14,
+                          "fontWeight": "600",
+                          "lineHeight": 20,
+                        }
+                      }
+                    >
+                      이번 주
+                    </Text>
+                    <Text
+                      allowFontScaling={true}
+                      maxFontSizeMultiplier={1.235}
+                      style={
+                        {
+                          "color": "#645C42",
+                          "fontSize": 12,
+                          "fontVariant": [
+                            "tabular-nums",
+                          ],
+                          "lineHeight": 16,
+                          "marginTop": 2,
+                        }
+                      }
+                    >
+                      8월 13일 ~ 8월 19일
+                    </Text>
+                  </View>
+                  <View
+                    accessibilityLabel="다음 기간"
+                    accessibilityState={
+                      {
+                        "busy": undefined,
+                        "checked": undefined,
+                        "disabled": true,
+                        "expanded": undefined,
+                        "selected": undefined,
+                      }
+                    }
+                    accessibilityValue={
+                      {
+                        "max": undefined,
+                        "min": undefined,
+                        "now": undefined,
+                        "text": undefined,
+                      }
+                    }
+                    accessible={true}
+                    collapsable={false}
+                    focusable={true}
+                    onBlur={[Function]}
+                    onClick={[Function]}
+                    onFocus={[Function]}
+                    onResponderGrant={[Function]}
+                    onResponderMove={[Function]}
+                    onResponderRelease={[Function]}
+                    onResponderTerminate={[Function]}
+                    onResponderTerminationRequest={[Function]}
+                    onStartShouldSetResponder={[Function]}
+                    role="button"
+                    style={
+                      {
+                        "alignItems": "center",
+                        "borderColor": "#CFC9AE",
+                        "borderRadius": 9999,
+                        "borderWidth": 1,
+                        "height": 28,
+                        "justifyContent": "center",
+                        "opacity": 0.30000001192092896,
+                        "width": 28,
+                      }
+                    }
+                  >
+                    <RNSVGSvgView
+                      align="xMidYMid"
+                      aria-hidden={true}
+                      bbHeight={16}
+                      bbWidth={16}
+                      fill="none"
+                      focusable={false}
+                      height={16}
+                      meetOrSlice={0}
+                      minX={0}
+                      minY={0}
+                      stroke="#241208"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      style={
+                        [
+                          {
+                            "backgroundColor": "transparent",
+                            "borderWidth": 0,
+                          },
+                          {},
+                          {
+                            "flex": 0,
+                            "height": 16,
+                            "width": 16,
+                          },
+                        ]
+                      }
+                      vbHeight={24}
+                      vbWidth={24}
+                      width={16}
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <RNSVGGroup
+                        fill={null}
+                        propList={
+                          [
+                            "fill",
+                            "stroke",
+                            "strokeWidth",
+                            "strokeLinecap",
+                            "strokeLinejoin",
+                          ]
+                        }
+                        stroke={
+                          {
+                            "payload": 4280553992,
+                            "type": 0,
+                          }
+                        }
+                        strokeLinecap={1}
+                        strokeLinejoin={1}
+                        strokeWidth={2}
+                      >
+                        <RNSVGPath
+                          d="m9 18 6-6-6-6"
+                          fill={null}
+                          propList={
+                            [
+                              "fill",
+                              "stroke",
+                              "strokeWidth",
+                              "strokeLinecap",
+                              "strokeLinejoin",
+                            ]
+                          }
+                          stroke={
+                            {
+                              "payload": 4280553992,
+                              "type": 0,
+                            }
+                          }
+                          strokeLinecap={1}
+                          strokeLinejoin={1}
+                          strokeWidth={2}
+                        />
+                      </RNSVGGroup>
+                    </RNSVGSvgView>
+                  </View>
+                </View>
+                <View>
+                  <View
+                    style={
+                      {
+                        "alignItems": "center",
+                        "flexDirection": "row",
+                        "height": 24,
+                        "position": "relative",
+                      }
+                    }
+                  >
+                    <Text
+                      allowFontScaling={true}
+                      maxFontSizeMultiplier={1.235}
+                      style={
+                        {
+                          "color": "#645C42",
+                          "fontSize": 12,
+                          "fontWeight": "600",
+                          "letterSpacing": 0.3,
+                          "lineHeight": 16,
+                        }
+                      }
+                    >
+                      이번 주
+                       총 수익
+                    </Text>
+                    <View
+                      aria-label="주간 결정석 판매 1 / 90"
+                      role="img"
+                      style={
+                        {
+                          "alignItems": "center",
+                          "backgroundColor": "#FEECDA",
+                          "borderRadius": 9999,
+                          "columnGap": 4,
+                          "flexDirection": "row",
+                          "flexShrink": 0,
+                          "height": 20,
+                          "marginLeft": 8,
+                          "paddingLeft": 6,
+                          "paddingRight": 6,
+                          "rowGap": 4,
+                        }
+                      }
+                    >
+                      <Image
+                        resizeMode="contain"
+                        source={
+                          {
+                            "testUri": "../../../core/assets/items/intense_power_crystal_weekly.webp",
+                          }
+                        }
+                        style={
+                          {
+                            "flexShrink": 0,
+                            "height": 16,
+                            "width": 16,
+                          }
+                        }
+                      />
+                      <Text
+                        allowFontScaling={true}
+                        maxFontSizeMultiplier={1.235}
+                        style={
+                          {
+                            "color": "#F58B0F",
+                            "fontSize": 12,
+                            "fontVariant": [
+                              "tabular-nums",
+                            ],
+                            "fontWeight": "700",
+                            "lineHeight": 12,
+                          }
+                        }
+                      >
+                        1
+                         
+                        <Text
+                          allowFontScaling={true}
+                          maxFontSizeMultiplier={1.235}
+                          style={
+                            {
+                              "fontWeight": "600",
+                              "opacity": 0.699999988079071,
+                            }
+                          }
+                        >
+                          / 
+                          90
+                        </Text>
+                      </Text>
+                    </View>
+                  </View>
+                  <View
+                    style={
+                      {
+                        "alignItems": "center",
+                        "columnGap": 10,
+                        "flexDirection": "row",
+                        "marginTop": 6,
+                        "rowGap": 10,
+                      }
+                    }
+                  >
+                    <View
+                      style={
+                        {
+                          "alignItems": "center",
+                          "backgroundColor": "#FEECDA",
+                          "borderRadius": 9999,
+                          "flexShrink": 0,
+                          "height": 32,
+                          "justifyContent": "center",
+                          "width": 32,
+                        }
+                      }
+                    >
+                      <RNSVGSvgView
+                        align="xMidYMid"
+                        aria-hidden={true}
+                        bbHeight={18}
+                        bbWidth={18}
+                        color="#F58B0F"
+                        fill="none"
+                        focusable={false}
+                        height={18}
+                        meetOrSlice={0}
+                        minX={0}
+                        minY={0}
+                        stroke="currentColor"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        style={
+                          [
+                            {
+                              "backgroundColor": "transparent",
+                              "borderWidth": 0,
+                            },
+                            {},
+                            {
+                              "flex": 0,
+                              "height": 18,
+                              "width": 18,
+                            },
+                          ]
+                        }
+                        testID="profit-icon"
+                        vbHeight={24}
+                        vbWidth={24}
+                        width={18}
+                      >
+                        <RNSVGGroup
+                          fill={null}
+                          propList={
+                            [
+                              "fill",
+                              "stroke",
+                              "strokeWidth",
+                              "strokeLinecap",
+                              "strokeLinejoin",
+                            ]
+                          }
+                          stroke={
+                            {
+                              "type": 2,
+                            }
+                          }
+                          strokeLinecap={1}
+                          strokeLinejoin={1}
+                          strokeWidth={2}
+                        >
+                          <RNSVGEllipse
+                            cx="16.3"
+                            cy="6.4"
+                            fill={null}
+                            propList={
+                              [
+                                "fill",
+                              ]
+                            }
+                            rx="5.2"
+                            ry="2.2"
+                          />
+                          <RNSVGPath
+                            d="M11.1 6.4v3.7"
+                            fill={
+                              {
+                                "payload": 4278190080,
+                                "type": 0,
+                              }
+                            }
+                          />
+                          <RNSVGPath
+                            d="M21.5 6.4v8.2"
+                            fill={
+                              {
+                                "payload": 4278190080,
+                                "type": 0,
+                              }
+                            }
+                          />
+                          <RNSVGPath
+                            d="M11.1 9.1a5.2 2.2 0 0 0 10.4 0"
+                            fill={
+                              {
+                                "payload": 4278190080,
+                                "type": 0,
+                              }
+                            }
+                          />
+                          <RNSVGPath
+                            d="M13.4 13.7A5.2 2.2 0 0 0 21.5 11.85"
+                            fill={
+                              {
+                                "payload": 4278190080,
+                                "type": 0,
+                              }
+                            }
+                          />
+                          <RNSVGPath
+                            d="M13.7 16.5A5.2 2.2 0 0 0 21.5 14.6"
+                            fill={
+                              {
+                                "payload": 4278190080,
+                                "type": 0,
+                              }
+                            }
+                          />
+                          <RNSVGCircle
+                            cx="8"
+                            cy="15"
+                            fill={null}
+                            propList={
+                              [
+                                "fill",
+                              ]
+                            }
+                            r="5.5"
+                          />
+                        </RNSVGGroup>
+                      </RNSVGSvgView>
+                    </View>
+                    <Text
+                      allowFontScaling={true}
+                      maxFontSizeMultiplier={1.235}
+                      style={
+                        {
+                          "color": "#F58B0F",
+                          "fontSize": 20,
+                          "fontVariant": [
+                            "tabular-nums",
+                          ],
+                          "fontWeight": "800",
+                          "lineHeight": 20,
+                        }
+                      }
+                    >
+                      5,000,000
+                       
+                      <Text
+                        allowFontScaling={true}
+                        maxFontSizeMultiplier={1.235}
+                        style={
+                          {
+                            "color": "#645C42",
+                            "fontSize": 12,
+                            "fontWeight": "700",
+                            "lineHeight": 16,
+                          }
+                        }
+                      >
+                        메소
+                      </Text>
+                    </Text>
+                    <View
+                      accessibilityLabel="총 수익 자세히 보기"
+                      accessibilityState={
+                        {
+                          "busy": undefined,
+                          "checked": undefined,
+                          "disabled": undefined,
+                          "expanded": false,
+                          "selected": undefined,
+                        }
+                      }
+                      accessibilityValue={
+                        {
+                          "max": undefined,
+                          "min": undefined,
+                          "now": undefined,
+                          "text": undefined,
+                        }
+                      }
+                      accessible={true}
+                      collapsable={false}
+                      focusable={true}
+                      onBlur={[Function]}
+                      onClick={[Function]}
+                      onFocus={[Function]}
+                      onResponderGrant={[Function]}
+                      onResponderMove={[Function]}
+                      onResponderRelease={[Function]}
+                      onResponderTerminate={[Function]}
+                      onResponderTerminationRequest={[Function]}
+                      onStartShouldSetResponder={[Function]}
+                      role="button"
+                      style={
+                        {
+                          "alignItems": "center",
+                          "borderColor": "#CFC9AE",
+                          "borderRadius": 9999,
+                          "borderWidth": 1,
+                          "columnGap": 2,
+                          "flexDirection": "row",
+                          "flexShrink": 0,
+                          "height": 24,
+                          "marginLeft": "auto",
+                          "paddingLeft": 10,
+                          "paddingRight": 10,
+                          "rowGap": 2,
+                        }
+                      }
+                    >
+                      <Text
+                        allowFontScaling={true}
+                        maxFontSizeMultiplier={1.235}
+                        style={
+                          {
+                            "color": "#645C42",
+                            "fontSize": 11,
+                            "fontWeight": "600",
+                          }
+                        }
+                      >
+                        자세히 보기
+                      </Text>
+                      <RNSVGSvgView
+                        align="xMidYMid"
+                        aria-hidden={true}
+                        bbHeight={12}
+                        bbWidth={12}
+                        fill="none"
+                        focusable={false}
+                        height={12}
+                        meetOrSlice={0}
+                        minX={0}
+                        minY={0}
+                        stroke="#645C42"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2.5}
+                        style={
+                          [
+                            {
+                              "backgroundColor": "transparent",
+                              "borderWidth": 0,
+                            },
+                            {
+                              "flexShrink": 0,
+                            },
+                            {
+                              "flex": 0,
+                              "height": 12,
+                              "width": 12,
+                            },
+                          ]
+                        }
+                        vbHeight={24}
+                        vbWidth={24}
+                        width={12}
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <RNSVGGroup
+                          fill={null}
+                          propList={
+                            [
+                              "fill",
+                              "stroke",
+                              "strokeWidth",
+                              "strokeLinecap",
+                              "strokeLinejoin",
+                            ]
+                          }
+                          stroke={
+                            {
+                              "payload": 4284767298,
+                              "type": 0,
+                            }
+                          }
+                          strokeLinecap={1}
+                          strokeLinejoin={1}
+                          strokeWidth={2.5}
+                        >
+                          <RNSVGPath
+                            d="m6 9 6 6 6-6"
+                            fill={null}
+                            propList={
+                              [
+                                "fill",
+                                "stroke",
+                                "strokeWidth",
+                                "strokeLinecap",
+                                "strokeLinejoin",
+                              ]
+                            }
+                            stroke={
+                              {
+                                "payload": 4284767298,
+                                "type": 0,
+                              }
+                            }
+                            strokeLinecap={1}
+                            strokeLinejoin={1}
+                            strokeWidth={2.5}
+                          />
+                        </RNSVGGroup>
+                      </RNSVGSvgView>
+                    </View>
+                  </View>
+                  <View
+                    aria-hidden={true}
+                    style={
+                      {
+                        "backgroundColor": "#CFC9AE",
+                        "height": 1,
+                        "marginTop": 12,
+                      }
+                    }
+                  />
+                </View>
+              </View>
+            </View>
+            <View
+              style={
+                {
+                  "columnGap": 8,
+                  "paddingBottom": 16,
+                  "paddingLeft": 16,
+                  "paddingRight": 16,
+                  "rowGap": 8,
+                }
+              }
+              testID="pull-content"
+            >
+              <View
+                style={
+                  {
+                    "position": "relative",
+                  }
+                }
+                testID="character-accordion"
+              >
+                <View>
+                  <View
+                    accessibilityState={
+                      {
+                        "busy": undefined,
+                        "checked": undefined,
+                        "disabled": undefined,
+                        "expanded": false,
+                        "selected": undefined,
+                      }
+                    }
+                    accessibilityValue={
+                      {
+                        "max": undefined,
+                        "min": undefined,
+                        "now": undefined,
+                        "text": undefined,
+                      }
+                    }
+                    accessible={true}
+                    collapsable={false}
+                    focusable={true}
+                    onBlur={[Function]}
+                    onClick={[Function]}
+                    onFocus={[Function]}
+                    onResponderGrant={[Function]}
+                    onResponderMove={[Function]}
+                    onResponderRelease={[Function]}
+                    onResponderTerminate={[Function]}
+                    onResponderTerminationRequest={[Function]}
+                    onStartShouldSetResponder={[Function]}
+                    role="button"
+                    style={
+                      {
+                        "alignItems": "center",
+                        "backgroundColor": "#FDFCF6",
+                        "borderColor": "#CFC9AE",
+                        "borderRadius": 14,
+                        "borderWidth": 1,
+                        "columnGap": 12,
+                        "flexDirection": "row",
+                        "paddingBottom": 12,
+                        "paddingLeft": 16,
+                        "paddingRight": 16,
+                        "paddingTop": 12,
+                        "rowGap": 12,
+                        "width": "100%",
+                      }
+                    }
+                  >
+                    <View
+                      style={
+                        {
+                          "alignItems": "center",
+                          "flexShrink": 0,
+                          "height": 40,
+                          "justifyContent": "center",
+                          "position": "relative",
+                          "width": 40,
+                        }
+                      }
+                    >
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#E4E1CE",
+                            "borderRadius": 9999,
+                            "height": 32,
+                            "overflow": "hidden",
+                            "width": 32,
+                          }
+                        }
+                      >
+                        <View
+                          style={
+                            {
+                              "alignItems": "center",
+                              "height": "100%",
+                              "justifyContent": "center",
+                              "width": "100%",
+                            }
+                          }
+                        >
+                          <Text
+                            allowFontScaling={true}
+                            maxFontSizeMultiplier={1.235}
+                            style={
+                              {
+                                "color": "#241208",
+                                "fontSize": 12,
+                                "fontWeight": "700",
+                                "lineHeight": 16,
+                              }
+                            }
+                          >
+                            지
+                          </Text>
+                        </View>
+                      </View>
+                      <View
+                        aria-label="주간 보스 처치 1 / 12"
+                        pointerEvents="none"
+                        role="img"
+                        style={
+                          {
+                            "inset": 0,
+                            "position": "absolute",
+                          }
+                        }
+                      >
+                        <RNSVGSvgView
+                          align="xMidYMid"
+                          bbHeight={40}
+                          bbWidth={40}
+                          focusable={false}
+                          height={40}
+                          meetOrSlice={0}
+                          minX={0}
+                          minY={0}
+                          style={
+                            [
+                              {
+                                "backgroundColor": "transparent",
+                                "borderWidth": 0,
+                              },
+                              {
+                                "transform": [
+                                  {
+                                    "rotate": "90deg",
+                                  },
+                                  {
+                                    "scaleX": -1,
+                                  },
+                                ],
+                              },
+                              {
+                                "flex": 0,
+                                "height": 40,
+                                "width": 40,
+                              },
+                            ]
+                          }
+                          transform={
+                            [
+                              {
+                                "rotate": "90deg",
+                              },
+                              {
+                                "scaleX": -1,
+                              },
+                            ]
+                          }
+                          vbHeight={40}
+                          vbWidth={40}
+                          width={40}
+                        >
+                          <RNSVGGroup
+                            fill={
+                              {
+                                "payload": 4278190080,
+                                "type": 0,
+                              }
+                            }
+                          >
+                            <RNSVGCircle
+                              cx={20}
+                              cy={20}
+                              fill={null}
+                              propList={
+                                [
+                                  "fill",
+                                  "stroke",
+                                  "strokeWidth",
+                                  "strokeDasharray",
+                                  "strokeDashoffset",
+                                  "strokeLinecap",
+                                ]
+                              }
+                              r={18.75}
+                              stroke={
+                                {
+                                  "payload": 4294281999,
+                                  "type": 0,
+                                }
+                              }
+                              strokeDasharray={
+                                [
+                                  "4.917477042468104",
+                                  "112.89224746714913",
+                                ]
+                              }
+                              strokeDashoffset={-1.25}
+                              strokeLinecap={1}
+                              strokeWidth={2.5}
+                              testID="avatar-ring-segment"
+                            />
+                            <RNSVGCircle
+                              cx={20}
+                              cy={20}
+                              fill={null}
+                              propList={
+                                [
+                                  "fill",
+                                  "stroke",
+                                  "strokeWidth",
+                                  "strokeDasharray",
+                                  "strokeDashoffset",
+                                  "strokeLinecap",
+                                ]
+                              }
+                              r={18.75}
+                              stroke={
+                                {
+                                  "payload": 4291807662,
+                                  "type": 0,
+                                }
+                              }
+                              strokeDasharray={
+                                [
+                                  "4.917477042468104",
+                                  "112.89224746714913",
+                                ]
+                              }
+                              strokeDashoffset={-11.067477042468104}
+                              strokeLinecap={1}
+                              strokeWidth={2.5}
+                              testID="avatar-ring-segment"
+                            />
+                            <RNSVGCircle
+                              cx={20}
+                              cy={20}
+                              fill={null}
+                              propList={
+                                [
+                                  "fill",
+                                  "stroke",
+                                  "strokeWidth",
+                                  "strokeDasharray",
+                                  "strokeDashoffset",
+                                  "strokeLinecap",
+                                ]
+                              }
+                              r={18.75}
+                              stroke={
+                                {
+                                  "payload": 4291807662,
+                                  "type": 0,
+                                }
+                              }
+                              strokeDasharray={
+                                [
+                                  "4.917477042468104",
+                                  "112.89224746714913",
+                                ]
+                              }
+                              strokeDashoffset={-20.884954084936208}
+                              strokeLinecap={1}
+                              strokeWidth={2.5}
+                              testID="avatar-ring-segment"
+                            />
+                            <RNSVGCircle
+                              cx={20}
+                              cy={20}
+                              fill={null}
+                              propList={
+                                [
+                                  "fill",
+                                  "stroke",
+                                  "strokeWidth",
+                                  "strokeDasharray",
+                                  "strokeDashoffset",
+                                  "strokeLinecap",
+                                ]
+                              }
+                              r={18.75}
+                              stroke={
+                                {
+                                  "payload": 4291807662,
+                                  "type": 0,
+                                }
+                              }
+                              strokeDasharray={
+                                [
+                                  "4.917477042468104",
+                                  "112.89224746714913",
+                                ]
+                              }
+                              strokeDashoffset={-30.70243112740431}
+                              strokeLinecap={1}
+                              strokeWidth={2.5}
+                              testID="avatar-ring-segment"
+                            />
+                            <RNSVGCircle
+                              cx={20}
+                              cy={20}
+                              fill={null}
+                              propList={
+                                [
+                                  "fill",
+                                  "stroke",
+                                  "strokeWidth",
+                                  "strokeDasharray",
+                                  "strokeDashoffset",
+                                  "strokeLinecap",
+                                ]
+                              }
+                              r={18.75}
+                              stroke={
+                                {
+                                  "payload": 4291807662,
+                                  "type": 0,
+                                }
+                              }
+                              strokeDasharray={
+                                [
+                                  "4.917477042468104",
+                                  "112.89224746714913",
+                                ]
+                              }
+                              strokeDashoffset={-40.519908169872416}
+                              strokeLinecap={1}
+                              strokeWidth={2.5}
+                              testID="avatar-ring-segment"
+                            />
+                            <RNSVGCircle
+                              cx={20}
+                              cy={20}
+                              fill={null}
+                              propList={
+                                [
+                                  "fill",
+                                  "stroke",
+                                  "strokeWidth",
+                                  "strokeDasharray",
+                                  "strokeDashoffset",
+                                  "strokeLinecap",
+                                ]
+                              }
+                              r={18.75}
+                              stroke={
+                                {
+                                  "payload": 4291807662,
+                                  "type": 0,
+                                }
+                              }
+                              strokeDasharray={
+                                [
+                                  "4.917477042468104",
+                                  "112.89224746714913",
+                                ]
+                              }
+                              strokeDashoffset={-50.33738521234052}
+                              strokeLinecap={1}
+                              strokeWidth={2.5}
+                              testID="avatar-ring-segment"
+                            />
+                            <RNSVGCircle
+                              cx={20}
+                              cy={20}
+                              fill={null}
+                              propList={
+                                [
+                                  "fill",
+                                  "stroke",
+                                  "strokeWidth",
+                                  "strokeDasharray",
+                                  "strokeDashoffset",
+                                  "strokeLinecap",
+                                ]
+                              }
+                              r={18.75}
+                              stroke={
+                                {
+                                  "payload": 4291807662,
+                                  "type": 0,
+                                }
+                              }
+                              strokeDasharray={
+                                [
+                                  "4.917477042468104",
+                                  "112.89224746714913",
+                                ]
+                              }
+                              strokeDashoffset={-60.15486225480862}
+                              strokeLinecap={1}
+                              strokeWidth={2.5}
+                              testID="avatar-ring-segment"
+                            />
+                            <RNSVGCircle
+                              cx={20}
+                              cy={20}
+                              fill={null}
+                              propList={
+                                [
+                                  "fill",
+                                  "stroke",
+                                  "strokeWidth",
+                                  "strokeDasharray",
+                                  "strokeDashoffset",
+                                  "strokeLinecap",
+                                ]
+                              }
+                              r={18.75}
+                              stroke={
+                                {
+                                  "payload": 4291807662,
+                                  "type": 0,
+                                }
+                              }
+                              strokeDasharray={
+                                [
+                                  "4.917477042468104",
+                                  "112.89224746714913",
+                                ]
+                              }
+                              strokeDashoffset={-69.97233929727673}
+                              strokeLinecap={1}
+                              strokeWidth={2.5}
+                              testID="avatar-ring-segment"
+                            />
+                            <RNSVGCircle
+                              cx={20}
+                              cy={20}
+                              fill={null}
+                              propList={
+                                [
+                                  "fill",
+                                  "stroke",
+                                  "strokeWidth",
+                                  "strokeDasharray",
+                                  "strokeDashoffset",
+                                  "strokeLinecap",
+                                ]
+                              }
+                              r={18.75}
+                              stroke={
+                                {
+                                  "payload": 4291807662,
+                                  "type": 0,
+                                }
+                              }
+                              strokeDasharray={
+                                [
+                                  "4.917477042468104",
+                                  "112.89224746714913",
+                                ]
+                              }
+                              strokeDashoffset={-79.78981633974483}
+                              strokeLinecap={1}
+                              strokeWidth={2.5}
+                              testID="avatar-ring-segment"
+                            />
+                            <RNSVGCircle
+                              cx={20}
+                              cy={20}
+                              fill={null}
+                              propList={
+                                [
+                                  "fill",
+                                  "stroke",
+                                  "strokeWidth",
+                                  "strokeDasharray",
+                                  "strokeDashoffset",
+                                  "strokeLinecap",
+                                ]
+                              }
+                              r={18.75}
+                              stroke={
+                                {
+                                  "payload": 4291807662,
+                                  "type": 0,
+                                }
+                              }
+                              strokeDasharray={
+                                [
+                                  "4.917477042468104",
+                                  "112.89224746714913",
+                                ]
+                              }
+                              strokeDashoffset={-89.60729338221293}
+                              strokeLinecap={1}
+                              strokeWidth={2.5}
+                              testID="avatar-ring-segment"
+                            />
+                            <RNSVGCircle
+                              cx={20}
+                              cy={20}
+                              fill={null}
+                              propList={
+                                [
+                                  "fill",
+                                  "stroke",
+                                  "strokeWidth",
+                                  "strokeDasharray",
+                                  "strokeDashoffset",
+                                  "strokeLinecap",
+                                ]
+                              }
+                              r={18.75}
+                              stroke={
+                                {
+                                  "payload": 4291807662,
+                                  "type": 0,
+                                }
+                              }
+                              strokeDasharray={
+                                [
+                                  "4.917477042468104",
+                                  "112.89224746714913",
+                                ]
+                              }
+                              strokeDashoffset={-99.42477042468104}
+                              strokeLinecap={1}
+                              strokeWidth={2.5}
+                              testID="avatar-ring-segment"
+                            />
+                            <RNSVGCircle
+                              cx={20}
+                              cy={20}
+                              fill={null}
+                              propList={
+                                [
+                                  "fill",
+                                  "stroke",
+                                  "strokeWidth",
+                                  "strokeDasharray",
+                                  "strokeDashoffset",
+                                  "strokeLinecap",
+                                ]
+                              }
+                              r={18.75}
+                              stroke={
+                                {
+                                  "payload": 4291807662,
+                                  "type": 0,
+                                }
+                              }
+                              strokeDasharray={
+                                [
+                                  "4.917477042468104",
+                                  "112.89224746714913",
+                                ]
+                              }
+                              strokeDashoffset={-109.24224746714914}
+                              strokeLinecap={1}
+                              strokeWidth={2.5}
+                              testID="avatar-ring-segment"
+                            />
+                          </RNSVGGroup>
+                        </RNSVGSvgView>
+                      </View>
+                    </View>
+                    <Text
+                      allowFontScaling={true}
+                      maxFontSizeMultiplier={1.235}
+                      numberOfLines={1}
+                      style={
+                        {
+                          "color": "#241208",
+                          "flexBasis": "0%",
+                          "flexGrow": 1,
+                          "flexShrink": 1,
+                          "fontSize": 14,
+                          "fontWeight": "600",
+                          "lineHeight": 20,
+                        }
+                      }
+                    >
+                      지내우시
+                    </Text>
+                    <View
+                      style={
+                        {
+                          "alignItems": "center",
+                          "flexDirection": "row",
+                          "position": "relative",
+                        }
+                      }
+                    >
+                      <Text
+                        allowFontScaling={true}
+                        maxFontSizeMultiplier={1.235}
+                        style={
+                          {
+                            "color": "#241208",
+                            "fontSize": 14,
+                            "fontVariant": [
+                              "tabular-nums",
+                            ],
+                            "fontWeight": "700",
+                            "lineHeight": 20,
+                          }
+                        }
+                      >
+                        5,000,000
+                         메소
+                      </Text>
+                    </View>
+                    <RNSVGSvgView
+                      align="xMidYMid"
+                      aria-hidden={true}
+                      bbHeight={16}
+                      bbWidth={16}
+                      fill="none"
+                      focusable={false}
+                      height={16}
+                      meetOrSlice={0}
+                      minX={0}
+                      minY={0}
+                      stroke="#645C42"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      style={
+                        [
+                          {
+                            "backgroundColor": "transparent",
+                            "borderWidth": 0,
+                          },
+                          {},
+                          {
+                            "flex": 0,
+                            "height": 16,
+                            "width": 16,
+                          },
+                        ]
+                      }
+                      vbHeight={24}
+                      vbWidth={24}
+                      width={16}
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <RNSVGGroup
+                        fill={null}
+                        propList={
+                          [
+                            "fill",
+                            "stroke",
+                            "strokeWidth",
+                            "strokeLinecap",
+                            "strokeLinejoin",
+                          ]
+                        }
+                        stroke={
+                          {
+                            "payload": 4284767298,
+                            "type": 0,
+                          }
+                        }
+                        strokeLinecap={1}
+                        strokeLinejoin={1}
+                        strokeWidth={2}
+                      >
+                        <RNSVGPath
+                          d="m6 9 6 6 6-6"
+                          fill={null}
+                          propList={
+                            [
+                              "fill",
+                              "stroke",
+                              "strokeWidth",
+                              "strokeLinecap",
+                              "strokeLinejoin",
+                            ]
+                          }
+                          stroke={
+                            {
+                              "payload": 4284767298,
+                              "type": 0,
+                            }
+                          }
+                          strokeLinecap={1}
+                          strokeLinejoin={1}
+                          strokeWidth={2}
+                        />
+                      </RNSVGGroup>
+                    </RNSVGSvgView>
+                  </View>
+                </View>
+              </View>
+            </View>
+          </View>
+        </RCTScrollView>
+      </RNCMaskedView>
+    </View>
+  </View>
+</RNCSafeAreaProvider>
+`;
