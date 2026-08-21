@@ -7,6 +7,7 @@
 // RN 으로 갈린 것은 일간 카드와 **같은 넷**이라 그쪽 파일 머리에 한 번만 적는다
 // (`DailyContentCards.tsx`) — bleed 는 `MediaCardArt`, 껍데기는 `MediaCard`, `flex-row` 명시,
 // `<img>`/`<span>`/`text-shadow` 의 짝.
+import { isContentBlocked } from '../../lib/required-level'
 import { getBossPortraitCrop, getBossPortraitUrl } from '../../lib/boss-icons'
 import type { BossPortraitCrop } from '../../lib/boss-icons'
 import { getDailyQuestBackgroundUrl, getDailyQuestRegionCrop } from '../../lib/daily-quest-backgrounds'
@@ -22,7 +23,13 @@ import { Card } from '../../components/atoms/Card/Card'
 import { ProgressBar } from '../../components/atoms/ProgressBar/ProgressBar'
 import { Text } from '../../components/atoms/Text/Text'
 import { MEDIA_TEXT_SHADOW_STYLE } from '../../lib/text-styles'
-import { CategoryBadge, QuestStateBadge, renderWeeklyQuestStatus, stripGuildPrefix } from './content-badges'
+import {
+  BlockedBadge,
+  CategoryBadge,
+  QuestStateBadge,
+  renderWeeklyQuestStatus,
+  stripGuildPrefix,
+} from './content-badges'
 import { MONSTER_PARK_BACKGROUND_SLUG } from './DailyContentCards'
 import { MediaCard, MediaCardArt } from '../../components/molecules/MediaCardArt/MediaCardArt'
 
@@ -51,6 +58,8 @@ export const MONSTER_PARK_EXTREME_PREFIX = '[몬스터파크] '
 export function EpicDungeonCard(props: {
   content: WeeklyContent
   crop?: BossPortraitCrop
+  /** 요구 레벨 미달 — 상태 배지를 «진행 불가» 로 대체한다([[ADR-162]] 결정 3). */
+  isBlocked?: boolean
 }): React.JSX.Element {
   const { content } = props
   const displayName = content.name.startsWith(EPIC_DUNGEON_PREFIX)
@@ -73,7 +82,8 @@ export function EpicDungeonCard(props: {
           </Text>
         </View>
 
-        <QuestStateBadge questState={questState} />
+        {/* [[ADR-162]] 결정 3 — 진행 불가면 상태 배지를 **대체**한다(늘리지 않는다). */}
+        {props.isBlocked === true ? <BlockedBadge /> : <QuestStateBadge questState={questState} />}
       </View>
     </MediaCard>
   )
@@ -82,6 +92,8 @@ export function EpicDungeonCard(props: {
 export function WeeklyRegionalContentCard(props: {
   content: WeeklyContent
   crop?: DailyQuestRegionCrop
+  /** 요구 레벨 미달 — 상태 배지를 «진행 불가» 로 대체한다([[ADR-162]] 결정 3). */
+  isBlocked?: boolean
 }): React.JSX.Element {
   const { content } = props
   const displayName = content.name.startsWith(MONSTER_PARK_EXTREME_PREFIX)
@@ -114,7 +126,12 @@ export function WeeklyRegionalContentCard(props: {
           </Text>
         </View>
 
-        {questState !== null && <QuestStateBadge questState={questState} />}
+        {/* [[ADR-162]] 결정 3 — 진행 불가면 상태 배지를 **대체**한다(늘리지 않는다). */}
+        {props.isBlocked === true ? (
+          <BlockedBadge />
+        ) : (
+          questState !== null && <QuestStateBadge questState={questState} />
+        )}
       </View>
     </MediaCard>
   )
@@ -123,6 +140,8 @@ export function WeeklyRegionalContentCard(props: {
 export function WeeklyQuestCard(props: {
   content: WeeklyContent
   crop?: DailyQuestRegionCrop
+  /** 요구 레벨 미달 — 상태 배지를 «진행 불가» 로 대체한다([[ADR-162]] 결정 3). */
+  isBlocked?: boolean
 }): React.JSX.Element {
   const { content } = props
   const displayName = stripWeeklyQuestPrefix(content.name)
@@ -145,7 +164,8 @@ export function WeeklyQuestCard(props: {
           </Text>
         </View>
 
-        {renderWeeklyQuestStatus(content, backgroundSlug)}
+        {/* [[ADR-162]] 결정 3 — 진행 불가면 상태 배지를 **대체**한다(늘리지 않는다). */}
+        {props.isBlocked === true ? <BlockedBadge /> : renderWeeklyQuestStatus(content, backgroundSlug)}
       </View>
     </MediaCard>
   )
@@ -277,7 +297,15 @@ export function GuildFlagRaceCard(props: {
   )
 }
 
-export function renderWeeklyContentCard(content: WeeklyContent): React.JSX.Element {
+export function renderWeeklyContentCard(
+  content: WeeklyContent,
+  /** 이 카드를 보는 캐릭터의 레벨 — 판정은 `lib/required-level` 한 곳이 한다([[ADR-162]] 결정 1). */
+  characterLevel: number | null,
+): React.JSX.Element {
+  // 길드 셋과 유니온 둘은 참조표에 요구 레벨이 **없다** — 어떤 레벨에서도 진행 가능이라
+  // 그 카드들에는 이 프롭을 넘기지 않는다([[ADR-162]] 「대가」).
+  const isBlocked = isContentBlocked(characterLevel, content.name)
+
   if (content.name === GUILD_UNDERGROUND_WATERWAY_NAME) {
     return <GuildUndergroundWaterwayCard content={content} />
   }
@@ -291,11 +319,11 @@ export function renderWeeklyContentCard(content: WeeklyContent): React.JSX.Eleme
   }
 
   if (content.name.startsWith(EPIC_DUNGEON_PREFIX)) {
-    return <EpicDungeonCard content={content} />
+    return <EpicDungeonCard content={content} isBlocked={isBlocked} />
   }
 
   if (matchWeeklyRegionalQuestSlug(content.name) !== null) {
-    return <WeeklyRegionalContentCard content={content} />
+    return <WeeklyRegionalContentCard content={content} isBlocked={isBlocked} />
   }
 
   if (content.name.startsWith(MAPLE_UNION_PREFIX)) {
@@ -303,15 +331,18 @@ export function renderWeeklyContentCard(content: WeeklyContent): React.JSX.Eleme
   }
 
   if (matchWeeklyQuestRegionSlug(stripWeeklyQuestPrefix(content.name)) !== null) {
-    return <WeeklyQuestCard content={content} />
+    return <WeeklyQuestCard content={content} isBlocked={isBlocked} />
   }
 
   return (
     <Card className="gap-2 p-4">
-      <Text className="text-sm text-text">
-        {content.name} · {content.nowCount}/{content.maxCount}
-      </Text>
-      {content.maxCount > 0 && (
+      <View className="flex-row items-center justify-between gap-2">
+        <Text className="shrink text-sm text-text">
+          {content.name} · {content.nowCount}/{content.maxCount}
+        </Text>
+        {isBlocked && <BlockedBadge />}
+      </View>
+      {!isBlocked && content.maxCount > 0 && (
         <ProgressBar
           percent={Math.min((content.nowCount / content.maxCount) * 100, 100)}
           aria={{ now: content.nowCount, max: content.maxCount }}

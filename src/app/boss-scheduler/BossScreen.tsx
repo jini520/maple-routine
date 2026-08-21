@@ -40,6 +40,7 @@
 // ⑤ `animate-spin` → Reanimated CSS 애니메이션(`lib/animation.ts`). step 4 가 화면 안 상수로 두며
 //    *"보스 스케줄러가 붙는 step 5 에서 둘이 된다"* 고 적어 둔 자리라, 여기서 `lib/` 로 올렸다
 //    ([[ADR-094]] 결정 1).
+import { isBossBlocked } from '../../lib/required-level'
 import { useEffect, useState } from 'react'
 import { Pressable, RefreshControl, View } from 'react-native'
 import { useReducedMotion } from 'react-native-reanimated'
@@ -63,6 +64,7 @@ import { getMaxPartySize } from '../../lib/boss-crystal-prices'
 import { isChallengersWorld } from '../../lib/world-emblem'
 
 import { Badge } from '../../components/atoms/Badge/Badge'
+import { BlockedBadge } from '../../components/atoms/BlockedBadge/BlockedBadge'
 import { DifficultyBadge } from '../../components/atoms/DifficultyBadge/DifficultyBadge'
 import { Text } from '../../components/atoms/Text/Text'
 import { CharacterRail, type CharacterRailEntry } from '../../components/molecules/CharacterRail/CharacterRail'
@@ -93,6 +95,8 @@ function BossCard(props: {
   boss: MatchedBoss
   crop?: BossPortraitCrop
   partySize?: number
+  /** 요구 레벨 미달 — 「완료」 자리를 «진행 불가» 로 대체한다([[ADR-162]] 결정 3). */
+  isBlocked?: boolean
   onEdit: () => void
 }): React.JSX.Element {
   const { boss, partySize } = props
@@ -134,10 +138,16 @@ function BossCard(props: {
           </View>
 
           <View className="flex-row items-center gap-1.5">
-            {boss.isComplete && (
-              <Text className="rounded-full bg-secondary-tint px-2.5 py-1 text-xs font-bold text-secondary-ink">
-                완료
-              </Text>
+            {/* [[ADR-162]] 결정 3 — 진행 불가면 「완료」 자리를 대체한다. 진행할 수 없는 보스의
+                완료 여부는 게임이 준 스냅샷이지 이 캐릭터가 잡을 수 있다는 뜻이 아니다. */}
+            {props.isBlocked === true ? (
+              <BlockedBadge />
+            ) : (
+              boss.isComplete && (
+                <Text className="rounded-full bg-secondary-tint px-2.5 py-1 text-xs font-bold text-secondary-ink">
+                  완료
+                </Text>
+              )
             )}
           </View>
         </View>
@@ -225,10 +235,21 @@ export function BossScreen(): React.JSX.Element {
   // [[ADR-142]] 정정 1: 링은 **주간 하나**다(온전한 원). 월간은 종류가 하나뿐이라 «몇 개 중 몇 개»
   // 가 뜻을 갖지 못한다 — 표현 방법은 따로 정한다(사용자 지시, 2026-08-16).
   // **솔로/파티 필터는 안 탄다**(결정 4) — 필터는 «지금 보고 싶은 것» 이지 진행이 아니다.
-  const bossRingProgress = (bosses: MatchedBoss[]): { completed: number; total: number } => ({
-    completed: bosses.filter((boss) => boss.isComplete).length,
-    total: bosses.length,
-  })
+  //
+  // **요구 레벨 미달은 분모에서 빠진다**([[ADR-162]] 결정 1·2) — 남겨 두면 그 캐릭터의 링이
+  // 100%에 절대 도달하지 못한다. 컨텐츠 진행률과 **같은 판정 함수**를 본다.
+  const bossRingProgress = (
+    bosses: MatchedBoss[],
+    characterLevel: number | null,
+  ): { completed: number; total: number } => {
+    const progressible = bosses.filter(
+      (boss) => !isBossBlocked(characterLevel, boss.matchedBossName ?? boss.apiName, boss.difficulty),
+    )
+    return {
+      completed: progressible.filter((boss) => boss.isComplete).length,
+      total: progressible.length,
+    }
+  }
 
   const railEntries: CharacterRailEntry[] = characters.map((character) => ({
     ocid: character.ocid,
@@ -236,7 +257,13 @@ export function BossScreen(): React.JSX.Element {
     level: character.level ?? null,
     imageUrl: character.imageUrl ?? null,
     rings: [
-      { label: '주간', ...bossRingProgress(displayedBosses(character, 'weekly', mode, manualTrackedByOcid)) },
+      {
+        label: '주간',
+        ...bossRingProgress(
+          displayedBosses(character, 'weekly', mode, manualTrackedByOcid),
+          character.level ?? null,
+        ),
+      },
     ],
   }))
 
@@ -271,6 +298,8 @@ export function BossScreen(): React.JSX.Element {
     selected !== null ? filterByPartySize(displayedMonthlyBosses, selected.ocid, monthlyFilter) : []
 
   function renderBossCards(bosses: MatchedBoss[], ocid: string): React.JSX.Element {
+    const characterLevel = selected?.level ?? null
+
     return (
       <View className="gap-2">
         {bosses.map((boss) => (
@@ -278,6 +307,11 @@ export function BossScreen(): React.JSX.Element {
             key={`${boss.apiName}-${boss.difficulty}`}
             boss={boss}
             partySize={getPartySize(ocid, boss)}
+            isBlocked={isBossBlocked(
+              characterLevel,
+              boss.matchedBossName ?? boss.apiName,
+              boss.difficulty,
+            )}
             onEdit={() => openPartyModal(boss)}
           />
         ))}

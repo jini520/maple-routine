@@ -324,7 +324,7 @@ export function ContentScreen(): React.JSX.Element {
                 {displayDailyContents.length > 0 && (
                   <View className="gap-2">
                     {displayDailyContents.map((content) => (
-                      <View key={content.name}>{renderDailyContentCard(content)}</View>
+                      <View key={content.name}>{renderDailyContentCard(content, selected.level ?? null)}</View>
                     ))}
                   </View>
                 )}
@@ -340,7 +340,7 @@ export function ContentScreen(): React.JSX.Element {
                 {displayWeeklyContents.length > 0 && (
                   <View className="gap-2">
                     {displayWeeklyContents.map((content) => (
-                      <View key={content.name}>{renderWeeklyContentCard(content)}</View>
+                      <View key={content.name}>{renderWeeklyContentCard(content, selected.level ?? null)}</View>
                     ))}
                   </View>
                 )}
