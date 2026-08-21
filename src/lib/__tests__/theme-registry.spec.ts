@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest'
 import jobThemes from '../../data/job-themes.json'
 import { contrastHex, hexToOklch } from '../color'
 import {

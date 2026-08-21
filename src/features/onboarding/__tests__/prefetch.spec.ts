@@ -1,46 +1,35 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { waitFor } from '../../../__tests__/wait-for'
 import type { CharacterBasicProfile, MapleCharacter, SchedulerCharacterState } from '../../../types'
 import { NexonAuthError, NexonNetworkError, NexonRateLimitError } from '../../../nexon/errors'
 
-const { fetchCharacterBasicMock, fetchSchedulerCharacterStateMock } = vi.hoisted(() => ({
-  fetchCharacterBasicMock: vi.fn(),
-  fetchSchedulerCharacterStateMock: vi.fn(),
+jest.mock('../../../nexon/character', () => ({
+  fetchCharacterBasic: jest.fn(),
 }))
+const { fetchCharacterBasic: fetchCharacterBasicMock } = jest.requireMock('../../../nexon/character') as Record<string, jest.Mock>
 
-const {
-  getCachedCharacterBasicMock,
-  setCachedCharacterBasicMock,
-  setCachedSchedulerStateMock,
-  resolveCharacterEligibilityMock,
-} = vi.hoisted(() => ({
-  getCachedCharacterBasicMock: vi.fn(),
-  setCachedCharacterBasicMock: vi.fn(),
-  setCachedSchedulerStateMock: vi.fn(),
-  resolveCharacterEligibilityMock: vi.fn(),
+jest.mock('../../../nexon/schedule', () => ({
+  fetchSchedulerCharacterState: jest.fn(),
 }))
-
-vi.mock('../../../nexon/character', () => ({
-  fetchCharacterBasic: fetchCharacterBasicMock,
-}))
-
-vi.mock('../../../nexon/schedule', () => ({
-  fetchSchedulerCharacterState: fetchSchedulerCharacterStateMock,
-}))
+const { fetchSchedulerCharacterState: fetchSchedulerCharacterStateMock } = jest.requireMock('../../../nexon/schedule') as Record<string, jest.Mock>
 
 // ADR-113 결정 1: 예열이 공유 통과 지점(features/schedule-sync/character-basic-fetch)을 거치므로
 // 이제 캐시 **읽기**도 이 경로를 탄다 — 목이 그 함수를 안 주면 예열이 그 캐릭터를 실패로 삼킨다.
-vi.mock('../../../storage/character-basic-cache', () => ({
-  getCachedCharacterBasic: getCachedCharacterBasicMock,
-  setCachedCharacterBasic: setCachedCharacterBasicMock,
+jest.mock('../../../storage/character-basic-cache', () => ({
+  getCachedCharacterBasic: jest.fn(),
+  setCachedCharacterBasic: jest.fn(),
 }))
+const { getCachedCharacterBasic: getCachedCharacterBasicMock, setCachedCharacterBasic: setCachedCharacterBasicMock } = jest.requireMock('../../../storage/character-basic-cache') as Record<string, jest.Mock>
 
-vi.mock('../../../storage/scheduler-cache', () => ({
-  setCachedSchedulerState: setCachedSchedulerStateMock,
+jest.mock('../../../storage/scheduler-cache', () => ({
+  setCachedSchedulerState: jest.fn(),
 }))
+const { setCachedSchedulerState: setCachedSchedulerStateMock } = jest.requireMock('../../../storage/scheduler-cache') as Record<string, jest.Mock>
 
-vi.mock('../../schedule-sync/character-eligibility', () => ({
-  resolveCharacterEligibility: resolveCharacterEligibilityMock,
+jest.mock('../../schedule-sync/character-eligibility', () => ({
+  resolveCharacterEligibility: jest.fn(),
 }))
+const { resolveCharacterEligibility: resolveCharacterEligibilityMock } = jest.requireMock('../../schedule-sync/character-eligibility') as Record<string, jest.Mock>
 
 import { prefetchAccountData } from '../prefetch'
 import {
@@ -50,7 +39,7 @@ import {
 
 const ACCOUNT = 'account-1'
 
-function character(ocid: string): MapleCharacter {
+function mockCharacter(ocid: string): MapleCharacter {
   return { ocid, name: `캐릭터-${ocid}`, world: '베라', jobClass: '렌', level: 200 }
 }
 
@@ -85,12 +74,12 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  vi.resetAllMocks()
+  jest.resetAllMocks()
 })
 
 describe('prefetchAccountData', () => {
   it('캐릭터가 없으면 아무 API도 호출하지 않고 progress {0,0}만 보고한다', async () => {
-    const onProgress = vi.fn()
+    const onProgress = jest.fn()
     await prefetchAccountData('key-1', ACCOUNT, [], onProgress)
 
     expect(fetchCharacterBasicMock).not.toHaveBeenCalled()
@@ -102,7 +91,7 @@ describe('prefetchAccountData', () => {
     fetchCharacterBasicMock.mockResolvedValue(profile({ accessFlag: true }))
     fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState())
 
-    await prefetchAccountData('key-1', ACCOUNT, [character('ocid-1')], vi.fn())
+    await prefetchAccountData('key-1', ACCOUNT, [mockCharacter('ocid-1')], jest.fn())
 
     expect(hasSyncAttemptedThisRun()).toBe(true)
   })
@@ -111,12 +100,12 @@ describe('prefetchAccountData', () => {
     fetchCharacterBasicMock.mockResolvedValue(profile({ accessFlag: true }))
     fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState())
 
-    const onProgress = vi.fn()
-    await prefetchAccountData('key-1', ACCOUNT, [character('ocid-1')], onProgress)
+    const onProgress = jest.fn()
+    await prefetchAccountData('key-1', ACCOUNT, [mockCharacter('ocid-1')], onProgress)
 
     expect(fetchCharacterBasicMock).toHaveBeenCalledWith('key-1', 'ocid-1')
     expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key-1', 'ocid-1')
-    // character/list 가 준 jobClass 가 엔트리에 함께 실린다(ADR-144 결정 2).
+    // mockCharacter/list 가 준 jobClass 가 엔트리에 함께 실린다(ADR-144 결정 2).
     expect(setCachedCharacterBasicMock).toHaveBeenCalledWith(
       ACCOUNT,
       'ocid-1',
@@ -131,7 +120,7 @@ describe('prefetchAccountData', () => {
   })
 
   // ADR-113 결정 1: 계정 선택 프로브가 방금 같은 캐릭터를 받아 뒀으면 예열은 다시 받지 않는다.
-  it('5분 TTL 안에 캐시된 캐릭터는 character/basic 네트워크를 타지 않는다 (ADR-113 결정 1)', async () => {
+  it('5분 TTL 안에 캐시된 캐릭터는 mockCharacter/basic 네트워크를 타지 않는다 (ADR-113 결정 1)', async () => {
     const cached = profile({ name: '프로브가받아둠', accessFlag: false })
     getCachedCharacterBasicMock.mockResolvedValue({
       profile: cached,
@@ -139,8 +128,8 @@ describe('prefetchAccountData', () => {
     })
     fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState())
 
-    const onProgress = vi.fn()
-    await prefetchAccountData('key-1', ACCOUNT, [character('ocid-1')], onProgress)
+    const onProgress = jest.fn()
+    await prefetchAccountData('key-1', ACCOUNT, [mockCharacter('ocid-1')], onProgress)
 
     expect(fetchCharacterBasicMock).not.toHaveBeenCalled()
     expect(setCachedCharacterBasicMock).not.toHaveBeenCalled()
@@ -161,8 +150,8 @@ describe('prefetchAccountData', () => {
       fetchCharacterBasicMock.mockResolvedValue(profile({ accessFlag: false }))
       fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState())
 
-      const onProgress = vi.fn()
-      await prefetchAccountData('key-1', ACCOUNT, [character('ocid-1')], onProgress)
+      const onProgress = jest.fn()
+      await prefetchAccountData('key-1', ACCOUNT, [mockCharacter('ocid-1')], onProgress)
 
       expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key-1', 'ocid-1')
       expect(setCachedSchedulerStateMock).toHaveBeenCalled()
@@ -174,7 +163,7 @@ describe('prefetchAccountData', () => {
       fetchCharacterBasicMock.mockResolvedValue(profile({ accessFlag: false }))
       fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState())
 
-      await prefetchAccountData('key-1', ACCOUNT, [character('ocid-1')], vi.fn())
+      await prefetchAccountData('key-1', ACCOUNT, [mockCharacter('ocid-1')], jest.fn())
 
       expect(resolveCharacterEligibilityMock).toHaveBeenCalledWith(
         'key-1',
@@ -186,11 +175,11 @@ describe('prefetchAccountData', () => {
     })
   })
 
-  it('character/basic 조회가 실패하면 캐시 없이 넘어가고 schedule도 조회하지 않는다', async () => {
+  it('mockCharacter/basic 조회가 실패하면 캐시 없이 넘어가고 schedule도 조회하지 않는다', async () => {
     fetchCharacterBasicMock.mockRejectedValue(new NexonNetworkError('timeout'))
 
-    const onProgress = vi.fn()
-    await prefetchAccountData('key-1', ACCOUNT, [character('ocid-1')], onProgress)
+    const onProgress = jest.fn()
+    await prefetchAccountData('key-1', ACCOUNT, [mockCharacter('ocid-1')], onProgress)
 
     expect(setCachedCharacterBasicMock).not.toHaveBeenCalled()
     expect(fetchSchedulerCharacterStateMock).not.toHaveBeenCalled()
@@ -203,8 +192,8 @@ describe('prefetchAccountData', () => {
     fetchCharacterBasicMock.mockResolvedValue(profile({ accessFlag: true }))
     fetchSchedulerCharacterStateMock.mockRejectedValue(new NexonNetworkError('timeout'))
 
-    const onProgress = vi.fn()
-    await prefetchAccountData('key-1', ACCOUNT, [character('ocid-1')], onProgress)
+    const onProgress = jest.fn()
+    await prefetchAccountData('key-1', ACCOUNT, [mockCharacter('ocid-1')], onProgress)
 
     expect(setCachedSchedulerStateMock).not.toHaveBeenCalled()
     const last = onProgress.mock.calls.at(-1)?.[0]
@@ -217,9 +206,9 @@ describe('prefetchAccountData', () => {
       .mockResolvedValueOnce(profile({ accessFlag: true }))
     fetchSchedulerCharacterStateMock.mockRejectedValue(new NexonRateLimitError('rate limited'))
 
-    const onProgress = vi.fn()
+    const onProgress = jest.fn()
     await expect(
-      prefetchAccountData('key-1', ACCOUNT, [character('ocid-1'), character('ocid-2')], onProgress),
+      prefetchAccountData('key-1', ACCOUNT, [mockCharacter('ocid-1'), mockCharacter('ocid-2')], onProgress),
     ).resolves.toBeUndefined()
   })
 
@@ -233,18 +222,18 @@ describe('prefetchAccountData', () => {
     )
     fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState())
 
-    const onProgress = vi.fn()
+    const onProgress = jest.fn()
     const promise = prefetchAccountData(
       'key-1',
       ACCOUNT,
-      [character('ocid-1'), character('ocid-2'), character('ocid-3')],
+      [mockCharacter('ocid-1'), mockCharacter('ocid-2'), mockCharacter('ocid-3')],
       onProgress,
     )
 
-    await vi.waitFor(() => expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(3))
+    await waitFor(() => expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(3))
 
     resolvers[0](profile({ accessFlag: false }))
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(onProgress).toHaveBeenCalledWith(expect.objectContaining({ completed: 1 })),
     )
 

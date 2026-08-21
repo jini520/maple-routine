@@ -1,4 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useToastStore } from '../store'
 
 beforeEach(() => {
@@ -6,7 +5,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  vi.useRealTimers()
+  jest.useRealTimers()
 })
 
 describe('useToastStore', () => {
@@ -35,7 +34,7 @@ describe('useToastStore', () => {
   })
 
   it('showError는 duration이 null이고 action을 그대로 담는다', () => {
-    const onClick = vi.fn()
+    const onClick = jest.fn()
     useToastStore.getState().showError('저장하지 못했습니다', { label: '다시 시도', onClick })
 
     expect(useToastStore.getState().toasts[0]).toMatchObject({
@@ -94,34 +93,34 @@ describe('useToastStore', () => {
   })
 
   it('success는 2000ms 후 자동으로 사라진다', () => {
-    vi.useFakeTimers()
+    jest.useFakeTimers()
     useToastStore.getState().showSuccess('저장했어요')
 
-    vi.advanceTimersByTime(1999)
+    jest.advanceTimersByTime(1999)
     expect(useToastStore.getState().toasts).toHaveLength(1)
 
-    vi.advanceTimersByTime(1)
+    jest.advanceTimersByTime(1)
     expect(useToastStore.getState().toasts).toHaveLength(0)
   })
 
   it('info는 2500ms 후 자동으로 사라진다', () => {
-    vi.useFakeTimers()
+    jest.useFakeTimers()
     useToastStore.getState().showInfo('안내')
 
-    vi.advanceTimersByTime(2500)
+    jest.advanceTimersByTime(2500)
     expect(useToastStore.getState().toasts).toHaveLength(0)
   })
 
   it('error는 duration이 없어 시간이 지나도 자동으로 사라지지 않는다', () => {
-    vi.useFakeTimers()
+    jest.useFakeTimers()
     useToastStore.getState().showError('실패')
 
-    vi.advanceTimersByTime(60_000)
+    jest.advanceTimersByTime(60_000)
     expect(useToastStore.getState().toasts).toHaveLength(1)
   })
 
   it('큐에서 승격된 항목도 자기 duration만큼 지나면 자동으로 사라진다', () => {
-    vi.useFakeTimers()
+    jest.useFakeTimers()
     useToastStore.getState().showSuccess('1')
     useToastStore.getState().showSuccess('2')
     useToastStore.getState().showSuccess('3')
@@ -130,12 +129,12 @@ describe('useToastStore', () => {
     useToastStore.getState().dismiss(useToastStore.getState().toasts[0].id)
     expect(useToastStore.getState().toasts.map((t) => t.message)).toEqual(['2', '3', '4'])
 
-    vi.advanceTimersByTime(2000)
+    jest.advanceTimersByTime(2000)
     expect(useToastStore.getState().toasts).toHaveLength(0)
   })
 
   it('수동으로 먼저 dismiss한 항목의 예약된 자동 소멸 타이머는 취소된다', () => {
-    vi.useFakeTimers()
+    jest.useFakeTimers()
     useToastStore.getState().showSuccess('1')
     useToastStore.getState().showSuccess('2')
     const firstId = useToastStore.getState().toasts[0].id
@@ -144,7 +143,7 @@ describe('useToastStore', () => {
     expect(useToastStore.getState().toasts.map((t) => t.message)).toEqual(['2'])
 
     // '1'의 취소된 타이머가 뒤늦게 발화해 다른 항목을 잘못 지우지 않는지 확인 — '2'는 자기 타이머로 정상 소멸.
-    vi.advanceTimersByTime(2000)
+    jest.advanceTimersByTime(2000)
     expect(useToastStore.getState().toasts).toHaveLength(0)
   })
 })

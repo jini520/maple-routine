@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest'
 import {
   PULL_MAX_PX,
   PULL_RESISTANCE,

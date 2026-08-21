@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest'
 import { formatRosterError, formatScheduleSyncError, formatStaleRosterError, formatSyncedAt } from '../format'
 import type { ScheduleSyncError } from '../schedule-sync'
 

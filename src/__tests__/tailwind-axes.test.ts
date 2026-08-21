@@ -13,7 +13,6 @@ import path from 'node:path'
 
 const repoRoot = path.resolve(__dirname, '../..')
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const axes = require('../../tailwind-v4-axes.cjs') as {
   SPACING_STEP: number
   theme: {

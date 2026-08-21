@@ -1,6 +1,5 @@
 // 드롭 판매가 → 수익 환산([[ADR-124]] 결정 7). 이 함수가 틀리면 캐릭터 합계·총 수익·증감 칩이
 // 한꺼번에 틀리므로 규칙을 여기서 못 박는다.
-import { describe, expect, it } from 'vitest'
 import { dropPayoutMeso, formatMesoUnits, sumDropPayout } from '../drop-price'
 
 describe('dropPayoutMeso', () => {

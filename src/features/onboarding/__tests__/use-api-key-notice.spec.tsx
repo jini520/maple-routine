@@ -1,16 +1,15 @@
-// @vitest-environment jsdom
+/** @jest-environment jsdom */
 import { cleanup, renderHook } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ScheduleSyncError } from '../../schedule-sync/schedule-sync'
 import type { ApiKeyNoticeKind } from '../state'
 
-const { noticeApiKeyIssueMock } = vi.hoisted(() => ({ noticeApiKeyIssueMock: vi.fn() }))
+jest.mock('../store', () => {
+  const noticeApiKeyIssue = jest.fn()
+  return { useOnboardingStore: { getState: () => ({ noticeApiKeyIssue }) } }
+})
+const noticeApiKeyIssueMock = jest.requireMock('../store').useOnboardingStore.getState().noticeApiKeyIssue as jest.Mock
 
-vi.mock('../store', () => ({
-  useOnboardingStore: { getState: () => ({ noticeApiKeyIssue: noticeApiKeyIssueMock }) },
-}))
-
-const { useApiKeyNotice } = await import('../use-api-key-notice')
+const { useApiKeyNotice } = require('../use-api-key-notice') as typeof import('../use-api-key-notice')
 
 // ADR-116 결정 1: 원인 둘이 같은 사슬을 탄다 — 넘기는 kind만 갈린다.
 const ROUTED: [ScheduleSyncError['kind'], ApiKeyNoticeKind][] = [
@@ -43,7 +42,7 @@ describe('useApiKeyNotice', () => {
     },
   )
 
-  it('error가 null이면 넘기지 않는다', () => {
+  it('error가 null이면 넘기지 않는다', async () => {
     renderHook(() => useApiKeyNotice(null))
 
     expect(noticeApiKeyIssueMock).not.toHaveBeenCalled()

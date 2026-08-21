@@ -1,11 +1,9 @@
 /// <reference types="node" />
 import { existsSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
-import { describe, expect, it } from 'vitest'
+import {  join } from 'node:path'
 import weeklyBosses from '../weekly-bosses.json'
 
-const bossesDir = join(dirname(fileURLToPath(import.meta.url)), '../../assets/bosses')
+const bossesDir = join(__dirname, '../../assets/bosses')
 
 describe('보스 초상화 파일 정합성', () => {
   it('portraitSlug가 있는 보스는 통합 초상화 파일(난이도 무관 1장)이 실제로 존재한다', () => {

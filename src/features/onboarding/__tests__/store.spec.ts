@@ -1,4 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { waitFor } from '../../../__tests__/wait-for'
 import type { MapleAccount } from '../../../types'
 import {
   NexonAuthError,
@@ -8,96 +9,67 @@ import {
 } from '../../../nexon/errors'
 import { initialOnboardingState } from '../state'
 
-const { fetchCharacterListMock } = vi.hoisted(() => ({
-  fetchCharacterListMock: vi.fn(),
+jest.mock('../../../nexon/character', () => ({
+  fetchCharacterList: jest.fn(),
 }))
+const { fetchCharacterList: fetchCharacterListMock } = jest.requireMock('../../../nexon/character') as Record<string, jest.Mock>
 
-const {
-  getAuthConfigMock,
-  setApiKeyMock,
-  setSelectedAccountIdMock,
-  clearAuthConfigMock,
-  removeApiKeyMock,
-} = vi.hoisted(() => ({
-  getAuthConfigMock: vi.fn(),
-  setApiKeyMock: vi.fn(),
-  setSelectedAccountIdMock: vi.fn(),
-  clearAuthConfigMock: vi.fn(),
-  removeApiKeyMock: vi.fn(),
+jest.mock('../../../storage/api-key', () => ({
+  getAuthConfig: jest.fn(),
+  setApiKey: jest.fn(),
+  setSelectedAccountId: jest.fn(),
+  clearAuthConfig: jest.fn(),
+  removeApiKey: jest.fn(),
 }))
+const { getAuthConfig: getAuthConfigMock, setApiKey: setApiKeyMock, setSelectedAccountId: setSelectedAccountIdMock, clearAuthConfig: clearAuthConfigMock, removeApiKey: removeApiKeyMock } = jest.requireMock('../../../storage/api-key') as Record<string, jest.Mock>
 
-const { prefetchAccountDataMock } = vi.hoisted(() => ({
-  prefetchAccountDataMock: vi.fn(),
+jest.mock('../prefetch', () => ({
+  prefetchAccountData: jest.fn(),
 }))
+const { prefetchAccountData: prefetchAccountDataMock } = jest.requireMock('../prefetch') as Record<string, jest.Mock>
 
-const { showSuccessMock, showErrorMock } = vi.hoisted(() => ({
-  showSuccessMock: vi.fn(),
-  showErrorMock: vi.fn(),
-}))
+jest.mock('../../toast/store', () => {
+  const showSuccess = jest.fn()
+  const showError = jest.fn()
+  return { useToastStore: { getState: () => ({ showSuccess, showError }) } }
+})
+const showSuccessMock = jest.requireMock('../../toast/store').useToastStore.getState().showSuccess as jest.Mock
+const showErrorMock = jest.requireMock('../../toast/store').useToastStore.getState().showError as jest.Mock
 
-const { setModeMock, trackingModeRef } = vi.hoisted(() => ({
-  setModeMock: vi.fn(),
-  trackingModeRef: { current: 'auto' as 'auto' | 'manual' },
-}))
+jest.mock('../../tracking-mode/store', () => {
+  const setMode = jest.fn()
+  return { useTrackingModeStore: { getState: () => {
+      mockTrackingModeRef = mockTrackingModeRef ?? { current: 'auto' }
+      return {  setMode, mode: mockTrackingModeRef.current  }
+    } } }
+})
+const setModeMock = jest.requireMock('../../tracking-mode/store').useTrackingModeStore.getState().setMode as jest.Mock
 
-const { setTrackedCharacterOcidsMock, getTrackedCharacterOcidsMock } = vi.hoisted(() => ({
-  setTrackedCharacterOcidsMock: vi.fn(),
-  getTrackedCharacterOcidsMock: vi.fn(),
+jest.mock('../../../storage/character-selection', () => ({
+  setTrackedCharacterOcids: jest.fn(),
+  getTrackedCharacterOcids: jest.fn(),
 }))
+const { setTrackedCharacterOcids: setTrackedCharacterOcidsMock, getTrackedCharacterOcids: getTrackedCharacterOcidsMock } = jest.requireMock('../../../storage/character-selection') as Record<string, jest.Mock>
 
-const { getTrackingModeMock, setTrackingModeMock } = vi.hoisted(() => ({
-  getTrackingModeMock: vi.fn(),
-  setTrackingModeMock: vi.fn(),
+jest.mock('../../../storage/tracking-mode', () => ({
+  getTrackingMode: jest.fn(),
+  setTrackingMode: jest.fn(),
 }))
+const { getTrackingMode: getTrackingModeMock, setTrackingMode: setTrackingModeMock } = jest.requireMock('../../../storage/tracking-mode') as Record<string, jest.Mock>
 
-const { seedManualTrackedContentMock } = vi.hoisted(() => ({
-  seedManualTrackedContentMock: vi.fn(),
+jest.mock('../../tracking-mode/seed', () => ({
+  seedManualTrackedContent: jest.fn(),
 }))
+// 테스트가 이 값에 직접 쓰므로 모듈 평가 시점에도 채워 둔다(팩토리도 같은 걸 쓴다).
 
-vi.mock('../../../nexon/character', () => ({
-  fetchCharacterList: fetchCharacterListMock,
-}))
-
-vi.mock('../../../storage/api-key', () => ({
-  getAuthConfig: getAuthConfigMock,
-  setApiKey: setApiKeyMock,
-  setSelectedAccountId: setSelectedAccountIdMock,
-  clearAuthConfig: clearAuthConfigMock,
-  removeApiKey: removeApiKeyMock,
-}))
-
-vi.mock('../prefetch', () => ({
-  prefetchAccountData: prefetchAccountDataMock,
-}))
-
-vi.mock('../../toast/store', () => ({
-  useToastStore: {
-    getState: () => ({ showSuccess: showSuccessMock, showError: showErrorMock }),
-  },
-}))
-
-vi.mock('../../tracking-mode/store', () => ({
-  useTrackingModeStore: {
-    getState: () => ({ setMode: setModeMock, mode: trackingModeRef.current }),
-  },
-}))
-
-vi.mock('../../../storage/character-selection', () => ({
-  setTrackedCharacterOcids: setTrackedCharacterOcidsMock,
-  getTrackedCharacterOcids: getTrackedCharacterOcidsMock,
-}))
-
-vi.mock('../../../storage/tracking-mode', () => ({
-  getTrackingMode: getTrackingModeMock,
-  setTrackingMode: setTrackingModeMock,
-}))
-
-vi.mock('../../tracking-mode/seed', () => ({
-  seedManualTrackedContent: seedManualTrackedContentMock,
-}))
+const { seedManualTrackedContent: seedManualTrackedContentMock } = jest.requireMock('../../tracking-mode/seed') as Record<string, jest.Mock>
 
 import { setOnboardingAccountScope } from '../flow'
 import { useOnboardingStore } from '../store'
+
+// 팩토리가 **모듈 평가보다 먼저** 불릴 수 있어(스토어를 import 하는 순간) `var` 로 올리고
+// 읽는 자리에서 채운다([[ADR-157]]).
+var mockTrackingModeRef: { current: 'auto' | 'manual' } = { current: 'auto' }
 
 function account(accountId: string): MapleAccount {
   return {
@@ -124,7 +96,7 @@ beforeEach(() => {
   setModeMock.mockResolvedValue(undefined)
   setTrackedCharacterOcidsMock.mockResolvedValue(undefined)
   seedManualTrackedContentMock.mockResolvedValue(undefined)
-  trackingModeRef.current = 'auto'
+  mockTrackingModeRef.current = 'auto'
   getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1', selectedAccountId: null })
   // ADR-086 결정 1: 재개 판정의 기본값 = 온보딩을 끝까지 마친 상태
   getTrackingModeMock.mockResolvedValue('auto')
@@ -133,7 +105,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  vi.resetAllMocks()
+  jest.resetAllMocks()
 })
 
 describe('useOnboardingStore.restoreFromStorage', () => {
@@ -682,7 +654,7 @@ describe('useOnboardingStore.selectAccount', () => {
 
     const promise = useOnboardingStore.getState().selectAccount('acc-2')
 
-    await vi.waitFor(() => expect(useOnboardingStore.getState().status).toBe('prefetching'))
+    await waitFor(() => expect(useOnboardingStore.getState().status).toBe('prefetching'))
     progressCallbacks[0]({ completed: 1, total: 2 })
     expect(useOnboardingStore.getState().prefetchProgress).toEqual({ completed: 1, total: 2 })
 
@@ -781,7 +753,7 @@ describe('useOnboardingStore.submitContentCharacters', () => {
   }
 
   it('추적 캐릭터를 저장하고, auto 모드면 시드 없이 바로 completed로 전이한다', async () => {
-    trackingModeRef.current = 'auto'
+    mockTrackingModeRef.current = 'auto'
     primeSelectingContentCharacters()
 
     await useOnboardingStore.getState().submitContentCharacters(['ocid-a', 'ocid-b'])
@@ -792,7 +764,7 @@ describe('useOnboardingStore.submitContentCharacters', () => {
   })
 
   it('manual 모드면 고른 ocid 목록을 한 번에 넘겨 시드한 뒤 completed로 전이한다', async () => {
-    trackingModeRef.current = 'manual'
+    mockTrackingModeRef.current = 'manual'
     primeSelectingContentCharacters()
 
     await useOnboardingStore.getState().submitContentCharacters(['ocid-a', 'ocid-b'])
@@ -803,7 +775,7 @@ describe('useOnboardingStore.submitContentCharacters', () => {
   })
 
   it('manual 모드에서 시드가 끝나기 전까지는 seedingTracking 상태에 머문다', async () => {
-    trackingModeRef.current = 'manual'
+    mockTrackingModeRef.current = 'manual'
     primeSelectingContentCharacters()
     let resolveSeed: () => void = () => {}
     seedManualTrackedContentMock.mockImplementation(
@@ -814,7 +786,7 @@ describe('useOnboardingStore.submitContentCharacters', () => {
     )
 
     const promise = useOnboardingStore.getState().submitContentCharacters(['ocid-a'])
-    await vi.waitFor(() => expect(useOnboardingStore.getState().status).toBe('seedingTracking'))
+    await waitFor(() => expect(useOnboardingStore.getState().status).toBe('seedingTracking'))
 
     resolveSeed()
     await promise
@@ -823,7 +795,7 @@ describe('useOnboardingStore.submitContentCharacters', () => {
   })
 
   it('manual 모드에서도 시드는 추적 저장 이후에 실행된다', async () => {
-    trackingModeRef.current = 'manual'
+    mockTrackingModeRef.current = 'manual'
     primeSelectingContentCharacters()
     const callOrder: string[] = []
     setTrackedCharacterOcidsMock.mockImplementation(async () => {

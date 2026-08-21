@@ -27,7 +27,6 @@ jest.mock('../../theme/screen-backdrop-policy', () => ({ SCREENS_CARRY_BACKDROP:
 // `theme-backdrop-layout.test.ts` 의 몫이다). 여기서 지킬 것은 **그리는 자리에 놓였는가** 하나다.
 jest.mock('../../components/templates/ThemeBackdrop/ThemeBackdrop', () => {
   // 팩토리 밖 변수를 못 쓰므로(jest 의 hoisting 가드) 여기서 직접 가져온다.
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const MockView = require('react-native').View
   return { ThemeBackdrop: () => <MockView testID="theme-backdrop-stub" /> }
 })

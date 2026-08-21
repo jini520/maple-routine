@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest'
 import type { NexonCharacterBasicResponse, NexonCharacterListResponse } from '../../../types'
 import { normalizeCharacterBasic, normalizeCharacterList } from '../normalize'
 

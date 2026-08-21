@@ -16,11 +16,8 @@
     "src/**/*.ts",
     "src/**/*.tsx",
     "nativewind-env.d.ts",
-    "asset-modules.d.ts"
+    "asset-modules.d.ts",
+    "jest-extensions.d.ts"
   ],
-  // **vitest 가 도는 테스트(`*.spec.*`)만 뺀다** — 그쪽은 Vite 위에서 돌아 `import.meta.glob` 이
-  // 사실이지만, 이 프로그램에는 그 선언이 **일부러** 없다([[ADR-129]] · `core-import-meta.d.ts` —
-  // 선언을 남기면 "제품 코드가 써도 타입은 통과하고 런타임에 죽는" 함정이 산다). 그 파일들은
-  // `tsconfig.vitest.json` 이 따로 검사한다.
-  "exclude": ["node_modules", "src/**/*.spec.ts", "src/**/*.spec.tsx"]
+  "exclude": ["node_modules"]
 }

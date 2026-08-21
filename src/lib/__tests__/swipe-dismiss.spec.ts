@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest'
 import { shouldDismissFromSwipe } from '../swipe-dismiss'
 
 describe('shouldDismissFromSwipe', () => {

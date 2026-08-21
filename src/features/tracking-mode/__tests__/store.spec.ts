@@ -1,30 +1,29 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { getTrackedCharacterOcids } from '../../../storage/character-selection'
 import { getTrackingMode, setTrackingMode } from '../../../storage/tracking-mode'
 import { seedManualTrackedContent } from '../seed'
 import { useTrackingModeStore } from '../store'
 
-vi.mock('../../../storage/tracking-mode', () => ({
-  getTrackingMode: vi.fn(),
-  setTrackingMode: vi.fn(),
+jest.mock('../../../storage/tracking-mode', () => ({
+  getTrackingMode: jest.fn(),
+  setTrackingMode: jest.fn(),
 }))
 
-vi.mock('../../../storage/character-selection', () => ({
-  getTrackedCharacterOcids: vi.fn(),
+jest.mock('../../../storage/character-selection', () => ({
+  getTrackedCharacterOcids: jest.fn(),
 }))
 
-vi.mock('../seed', () => ({
-  seedManualTrackedContent: vi.fn(),
+jest.mock('../seed', () => ({
+  seedManualTrackedContent: jest.fn(),
 }))
 
 beforeEach(() => {
-  vi.mocked(getTrackingMode).mockReset()
-  vi.mocked(setTrackingMode).mockReset()
-  vi.mocked(setTrackingMode).mockResolvedValue(undefined)
-  vi.mocked(getTrackedCharacterOcids).mockReset()
-  vi.mocked(getTrackedCharacterOcids).mockResolvedValue(null)
-  vi.mocked(seedManualTrackedContent).mockReset()
-  vi.mocked(seedManualTrackedContent).mockResolvedValue(undefined)
+  jest.mocked(getTrackingMode).mockReset()
+  jest.mocked(setTrackingMode).mockReset()
+  jest.mocked(setTrackingMode).mockResolvedValue(undefined)
+  jest.mocked(getTrackedCharacterOcids).mockReset()
+  jest.mocked(getTrackedCharacterOcids).mockResolvedValue(null)
+  jest.mocked(seedManualTrackedContent).mockReset()
+  jest.mocked(seedManualTrackedContent).mockResolvedValue(undefined)
   useTrackingModeStore.setState({ mode: 'auto' })
 })
 
@@ -36,7 +35,7 @@ describe('초기 상태', () => {
 
 describe('restoreFromStorage', () => {
   it('저장된 값이 manual이면 mode를 manual로 갱신한다', async () => {
-    vi.mocked(getTrackingMode).mockResolvedValue('manual')
+    jest.mocked(getTrackingMode).mockResolvedValue('manual')
 
     await useTrackingModeStore.getState().restoreFromStorage()
 
@@ -44,7 +43,7 @@ describe('restoreFromStorage', () => {
   })
 
   it('저장된 값이 없으면(storage가 기본값 auto 반환) mode는 auto다', async () => {
-    vi.mocked(getTrackingMode).mockResolvedValue('auto')
+    jest.mocked(getTrackingMode).mockResolvedValue('auto')
 
     await useTrackingModeStore.getState().restoreFromStorage()
 
@@ -74,7 +73,7 @@ describe('setMode — 시드 트리거 (a): auto → manual 전환 (ADR-035 결�
   // ADR-147 정정 42: 캐릭터마다 부르면 그 호출들이 단일 비행에 서로 합류해 전원이 첫 캐릭터의
   // 스케줄로 시드된다 — 목록을 통째로 넘겨 회차를 하나로 만드는 것이 계약이다.
   it('auto에서 manual로 전환하면 추적 중인 ocid 목록을 한 번에 넘겨 시드한다', async () => {
-    vi.mocked(getTrackedCharacterOcids).mockResolvedValue(['ocid-a', 'ocid-b', 'ocid-c'])
+    jest.mocked(getTrackedCharacterOcids).mockResolvedValue(['ocid-a', 'ocid-b', 'ocid-c'])
 
     await useTrackingModeStore.getState().setMode('manual')
 

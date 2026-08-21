@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { waitFor } from '../../__tests__/wait-for'
 import { installFakePreferences } from './fake-preferences'
 import type { CacheDataSelection } from '../cache-data'
 import {
@@ -13,43 +14,56 @@ import { BOSS_PROFIT_TABLE_NAMES, getBossProfitDb } from '../sqlite/db'
 // 삭제 범위(ADR-052·058)는 같은 계약의 앞뒤라 떼어 놓지 않는다.
 import { clearCacheDataAndReload } from '../../features/settings/cache-data'
 
+// 팩토리 밖 이름은 `mock` 접두만 끌어올 수 있고 팩토리가 여러 번 불릴 수 있어, «같은 목을
+// 돌려주는» 멱등 헬퍼로 둔다([[ADR-157]] — vitest 의 `vi.hoisted` 가 하던 일).
+var mockCallOrder: string[] | undefined
+var mockShared: Record<string, jest.Mock> | undefined
+
+/** 가짜 DB 가 돌려주는 함수들도 **같은 인스턴스**여야 한다 — 테스트가 그 위에 단언한다. */
+function mockDb(name: string): jest.Mock {
+  const shared = (mockShared = mockShared ?? {})
+  shared[name] = shared[name] ?? jest.fn()
+  return shared[name]
+}
+
+function mockOnce(name: string, label: string): jest.Mock {
+  const order = (mockCallOrder = mockCallOrder ?? [])
+  const shared = (mockShared = mockShared ?? {})
+  shared[name] =
+    shared[name] ??
+    jest.fn(async () => {
+      order.push(label)
+    })
+  return shared[name]
+}
+
 // clearCacheDataAndReload의 "닫기 → 커버 → 리로드" 순서를 잡기 위한 공유 호출 기록(ADR-117 결정 8).
 // 각 mock이 호출되는 시점에 이름을 push하므로 배열 자체가 곧 실행 순서다 — toHaveBeenCalled로는
 // 순서가 안 잡히고, 이 step이 고치는 것이 정확히 순서다.
-const { callOrder, closeDbMock, showSplashMock } = vi.hoisted(() => {
-  const callOrder: string[] = []
-  return {
-    callOrder,
-    closeDbMock: vi.fn(async () => {
-      callOrder.push('close')
-    }),
-    showSplashMock: vi.fn(async () => {
-      callOrder.push('cover')
-    }),
-  }
-})
-
-const { dbExecuteMock, dbQueryMock } = vi.hoisted(() => ({
-  dbExecuteMock: vi.fn<(statement: string) => Promise<void>>(async () => {}),
-  dbQueryMock: vi.fn(),
-}))
 // ADR-052 결정 2: 삭제 대상 테이블 목록은 db.ts가 단일 진실 공급원이므로, 커넥션(getBossProfitDb)만
 // 가짜로 바꾸고 BOSS_PROFIT_TABLE_NAMES는 실제 값을 그대로 쓴다 — 목록까지 모킹하면 "실제 테이블
 // 전부를 지우는가"를 검증하지 못한다.
-vi.mock('../sqlite/db', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../sqlite/db')>()),
-  getBossProfitDb: vi.fn(async () => ({ execute: dbExecuteMock, query: dbQueryMock })),
-  closeBossProfitDb: closeDbMock,
+jest.mock('../sqlite/db', () => ({
+  ...jest.requireActual<typeof import('../sqlite/db')>('../sqlite/db'),
+  getBossProfitDb: jest.fn(async () => ({ execute: mockDb('execute'), query: mockDb('query') })),
+  closeBossProfitDb: mockOnce('close', 'close'),
 }))
 
 // 위 import와 같은 한시적 참조다 — `features/settings/cache-data` 가 부르는 그 모듈을 가리켜야
 // 목이 걸린다(경로가 어긋나면 실물이 로드돼 커버가 진짜로 올라간다).
-vi.mock('../../native/splash-screen', () => ({ showSplashScreen: showSplashMock }))
+jest.mock('../../native/splash-screen', () => ({ showSplashScreen: mockOnce('splash', 'cover') }))
+
+const mockDbExecuteMock = mockDb('execute')
+const dbQueryMock = mockDb('query')
+const mockCloseDbMock = mockOnce('close', 'close')
+const mockShowSplashMock = mockOnce('splash', 'cover')
+const callOrder = (mockCallOrder = mockCallOrder ?? [])
+
 
 const KEEP_KEY_NAMES = ['apiKey', 'selectedAccountId', 'theme', 'trackingMode', 'dropEffect']
 
 function deleteCalls(): string[] {
-  return dbExecuteMock.mock.calls.map(([statement]) => statement)
+  return mockDbExecuteMock.mock.calls.map(([statement]) => statement)
 }
 
 let prefs = installFakePreferences()
@@ -66,7 +80,7 @@ beforeEach(async () => {
   await prefs.set('trackedCharacters', '[]')
   await prefs.set('lastSelectedCharacter', 'ocid-1')
   dbQueryMock.mockResolvedValue({ values: [] })
-  vi.clearAllMocks()
+  jest.clearAllMocks()
 })
 
 // ADR-058 결정 2: 그룹 정의는 열거가 아니라 차집합이다 — bossRecords만 명시 목록이고 general은
@@ -131,10 +145,10 @@ describe('clearCacheData', () => {
     expect(await prefs.get('trackedCharacters')).toBeNull()
     expect(await prefs.get('lastSelectedCharacter')).toBeNull()
     for (const table of BOSS_PROFIT_TABLE_NAMES) {
-      expect(dbExecuteMock).toHaveBeenCalledWith(`DELETE FROM ${table};`)
+      expect(mockDbExecuteMock).toHaveBeenCalledWith(`DELETE FROM ${table};`)
     }
     // 목록에 없는 테이블까지 지우지 않는다(스키마 DROP·다른 DELETE 없음).
-    expect(dbExecuteMock).toHaveBeenCalledTimes(BOSS_PROFIT_TABLE_NAMES.length)
+    expect(mockDbExecuteMock).toHaveBeenCalledTimes(BOSS_PROFIT_TABLE_NAMES.length)
   })
 
   describe('일반 데이터만 선택', () => {
@@ -151,10 +165,10 @@ describe('clearCacheData', () => {
       await clearCacheData({ general: true, bossRecords: false })
 
       for (const table of GENERAL_TABLE_NAMES) {
-        expect(dbExecuteMock).toHaveBeenCalledWith(`DELETE FROM ${table};`)
+        expect(mockDbExecuteMock).toHaveBeenCalledWith(`DELETE FROM ${table};`)
       }
       for (const table of BOSS_RECORD_TABLE_NAMES) {
-        expect(dbExecuteMock).not.toHaveBeenCalledWith(`DELETE FROM ${table};`)
+        expect(mockDbExecuteMock).not.toHaveBeenCalledWith(`DELETE FROM ${table};`)
       }
       expect(deleteCalls()).toHaveLength(GENERAL_TABLE_NAMES.length)
     })
@@ -175,10 +189,10 @@ describe('clearCacheData', () => {
       await clearCacheData({ general: false, bossRecords: true })
 
       for (const table of BOSS_RECORD_TABLE_NAMES) {
-        expect(dbExecuteMock).toHaveBeenCalledWith(`DELETE FROM ${table};`)
+        expect(mockDbExecuteMock).toHaveBeenCalledWith(`DELETE FROM ${table};`)
       }
       for (const table of GENERAL_TABLE_NAMES) {
-        expect(dbExecuteMock).not.toHaveBeenCalledWith(`DELETE FROM ${table};`)
+        expect(mockDbExecuteMock).not.toHaveBeenCalledWith(`DELETE FROM ${table};`)
       }
       expect(deleteCalls()).toHaveLength(BOSS_RECORD_TABLE_NAMES.length)
     })
@@ -188,7 +202,7 @@ describe('clearCacheData', () => {
     await clearCacheData({ general: false, bossRecords: false })
 
     expect(prefs.remove).not.toHaveBeenCalled()
-    expect(dbExecuteMock).not.toHaveBeenCalled()
+    expect(mockDbExecuteMock).not.toHaveBeenCalled()
     // 지울 것이 없으면 커넥션도 열지 않는다.
     expect(getBossProfitDb).not.toHaveBeenCalled()
   })
@@ -250,7 +264,7 @@ describe('clearCacheDataAndReload', () => {
   })
 
   it('닫기 → 커버 → 리로드 순으로 부른다', async () => {
-    const reload = vi.fn(() => {
+    const reload = jest.fn(() => {
       callOrder.push('reload')
     })
 
@@ -263,7 +277,7 @@ describe('clearCacheDataAndReload', () => {
   // 정확히 사용자가 주황 화면에 갇히던 자리다). 커버는 리로드 직전에만 올라간다.
   it('닫기가 끝나기 전에는 커버를 올리지 않는다', async () => {
     let finishClose: () => void = () => {}
-    closeDbMock.mockImplementationOnce(
+    mockCloseDbMock.mockImplementationOnce(
       () =>
         new Promise<void>((resolve) => {
           finishClose = () => {
@@ -272,16 +286,16 @@ describe('clearCacheDataAndReload', () => {
           }
         }),
     )
-    const reload = vi.fn(() => {
+    const reload = jest.fn(() => {
       callOrder.push('reload')
     })
 
     const pending = clearCacheDataAndReload(ALL, reload)
-    await vi.waitFor(() => {
-      expect(closeDbMock).toHaveBeenCalled()
+    await waitFor(() => {
+      expect(mockCloseDbMock).toHaveBeenCalled()
     })
 
-    expect(showSplashMock).not.toHaveBeenCalled()
+    expect(mockShowSplashMock).not.toHaveBeenCalled()
     expect(reload).not.toHaveBeenCalled()
 
     finishClose()
@@ -293,8 +307,8 @@ describe('clearCacheDataAndReload', () => {
   // 커버는 시각적 장치일 뿐이라, 그것이 실패했다고 리로드를 막으면 본말전도다
   // (ADR-027 2026-07-17 추가의 "스플래시 표시가 실패해도 진행한다"가 그대로 유효하다).
   it('커버 표시가 실패해도 리로드한다', async () => {
-    showSplashMock.mockRejectedValueOnce(new Error('splash failed'))
-    const reload = vi.fn(() => {
+    mockShowSplashMock.mockRejectedValueOnce(new Error('splash failed'))
+    const reload = jest.fn(() => {
       callOrder.push('reload')
     })
 

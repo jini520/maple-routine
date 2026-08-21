@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest'
 import { BOSS_CYCLES, BOSS_DIFFICULTIES } from '../scheduler'
 import type {
   BossContent,

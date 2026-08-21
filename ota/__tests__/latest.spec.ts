@@ -8,13 +8,13 @@
 //
 // 파서가 옆의 **동결 사본**인 이유는 `manifest-parser.ts` 머리에 적혀 있다([[ADR-155]] 결정 5) —
 // 이 가드가 대조해야 하는 것은 저장소의 현재가 아니라 **기기에서 도는 1.0.6 번들**이다.
-import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 
-import { parseLiveUpdateManifest } from '../manifest-parser.ts'
+import { parseLiveUpdateManifest } from '../manifest-parser'
 
 describe('ota/latest.json — 캐패시터 최종 매니페스트', () => {
-  const draft = JSON.parse(readFileSync(new URL('../latest.json', import.meta.url), 'utf-8'))
+  const draft: Record<string, unknown> & { highlights: string[] } = JSON.parse(readFileSync(join(__dirname, '../latest.json'), 'utf-8'))
 
   it('앱의 파서를 그대로 통과한다', () => {
     expect(parseLiveUpdateManifest(draft)).not.toBeNull()

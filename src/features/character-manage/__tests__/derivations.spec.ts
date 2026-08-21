@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest'
 import type { CharacterBasicProfile, MapleAccount, MapleCharacter } from '../../../types'
 import { pickRepresentativeCharacter } from '../../onboarding/representative-character'
 import {

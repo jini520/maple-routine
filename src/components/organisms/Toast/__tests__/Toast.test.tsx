@@ -14,7 +14,6 @@
 jest.mock('react-native-reanimated', () =>
   // `jest.mock` 팩토리는 import 위로 끌어올려져 **밖의 값을 참조할 수 없다** — 그래서 `require` 가
   // 선택이 아니라 유일한 길이다(`reduced-motion.ts` 「쓰는 법」).
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   require('../../../__tests__/reduced-motion').reanimatedWithReducedMotion(),
 )
 

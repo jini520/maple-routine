@@ -35,7 +35,6 @@ import { 다른주간보스, 월간보스, PERIOD, renderProfit, 보스행, 주�
 // 모션 줄이기는 분기로만 관측된다(`components/__tests__/reduced-motion.ts` 파일 머리).
 jest.mock('react-native-reanimated', () =>
   // 팩토리는 import 위로 끌어올려져 **밖의 값을 참조할 수 없다** — `require` 가 유일한 길이다.
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   require('../../../components/__tests__/reduced-motion').reanimatedWithReducedMotion(),
 )
 import { mockReducedMotion } from '../../../components/__tests__/reduced-motion'

@@ -47,7 +47,6 @@ jest.mock('../../../features/boss-profit/store', () => ({
 jest.mock('@react-navigation/native', () => ({
   ...jest.requireActual('@react-navigation/native'),
   useFocusEffect: (callback: () => void | (() => void)) => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const react = require('react') as typeof import('react')
     react.useEffect(callback, [callback])
   } }))

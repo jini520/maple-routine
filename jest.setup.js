@@ -10,6 +10,16 @@
 // 순서가 계약이다 — `react-native-css-interop/test` 는 모듈 최상위에서 `beforeEach` 를 걸어 스타일
 // 데이터를 **비운다**(테스트 간 격리). 그러니 주입은 그 뒤에 등록해야 한다. 먼저 등록하면 매번
 // 주입 직후 지워져 스타일이 하나도 안 남는다.
+// jsdom 환경(`@jest-environment jsdom` 을 단 훅 스펙 여섯)에는 `TextEncoder` 가 없다 — Node 20+ 의
+// 전역인데 jsdom 이 자기 전역을 새로 만들면서 빠진다. 아래 NativeWind 배선이 그것을 쓰므로
+// **setup 의 맨 앞**에서 채운다([[ADR-157]]).
+if (typeof globalThis.TextEncoder === 'undefined') {
+  const { TextEncoder, TextDecoder } = require('node:util')
+  globalThis.TextEncoder = TextEncoder
+  globalThis.TextDecoder = TextDecoder
+}
+
+
 const { registerCSS, setupAllComponents } = require('react-native-css-interop/test')
 
 const { readFileSync } = require('node:fs')
@@ -26,4 +36,71 @@ const compiledCss = readFileSync(COMPILED_CSS_PATH, 'utf8')
 
 beforeEach(() => {
   registerCSS(compiledCss, { inlineRem: INLINE_REM })
+})
+
+// ── vitest 에서 넘어온 두 가지 ([[ADR-157]]) ──────────────────────────────────────────
+
+// ① 포트의 테스트 기본값. 종전 `vitest.setup.ts` 가 하던 일이고, 그 파일이 사라지면서 여기로 왔다.
+//    이것이 없으면 앱을 렌더하기만 하는 테스트가 "포트 미주입" 에러를 던진다.
+require('./src/storage/__tests__/fake-preferences').installFakePreferences()
+require('./src/native/__tests__/fake-native-ports').installNoopNativePorts()
+
+// ② `expect(값, '메시지')` — **vitest 에는 있고 jest 에는 없다.**
+//
+//    옮겨 온 테스트 170곳이 이 두 번째 인자로 «어느 항목에서 틀렸는지» 를 말한다
+//    (`expect(tokens[key], `${name}.${key}`).toBeDefined()` 처럼 `it.each` 안에서 특히 중요하다 —
+//    없으면 34개 토큰 중 무엇이 빠졌는지 실패 메시지가 말해 주지 않는다).
+//
+//    그래서 인자를 버리는 대신 **실패 메시지 앞에 붙인다.** 패키지를 더하지 않는 이유는 하는 일이
+//    아래 그대로이기 때문이다(`jest-expect-message` 와 같은 방식).
+const baseExpect = global.expect
+
+function expectWithMessage(actual, message) {
+  const matchers = baseExpect(actual)
+  if (message === undefined) return matchers
+  return new Proxy(matchers, {
+    get(target, prop, receiver) {
+      const value = Reflect.get(target, prop, receiver)
+      if (typeof value !== 'function') return value
+      return (...args) => {
+        try {
+          return value.apply(target, args)
+        } catch (error) {
+          if (error instanceof Error) error.message = `${message}\n\n${error.message}`
+          throw error
+        }
+      }
+    },
+  })
+}
+
+// `expect.extend`·`expect.any`·`expect.objectContaining` … 정적 멤버를 그대로 물려준다.
+Object.setPrototypeOf(expectWithMessage, baseExpect)
+Object.assign(expectWithMessage, baseExpect)
+global.expect = expectWithMessage
+
+// vitest 의 `toHaveBeenCalledExactlyOnceWith` — jest 에는 없다([[ADR-157]]).
+// «한 번만, 그리고 이 인자로» 는 두 단언으로 쪼개면 «한 번» 이 빠져도 통과하므로 그대로 옮긴다.
+expect.extend({
+  // vitest 의 `toHaveBeenCalledOnce`.
+  toHaveBeenCalledOnce(received) {
+    const calls = received?.mock?.calls ?? []
+    return {
+      pass: calls.length === 1,
+      message: () => `정확히 한 번 호출돼야 하는데 ${calls.length}번 호출됐다`,
+    }
+  },
+
+  toHaveBeenCalledExactlyOnceWith(received, ...expected) {
+    const calls = received?.mock?.calls ?? []
+    const once = calls.length === 1
+    const matches = once && this.equals(calls[0], expected)
+    return {
+      pass: matches,
+      message: () =>
+        once
+          ? `호출은 한 번이지만 인자가 다르다\n기대: ${this.utils.printExpected(expected)}\n실제: ${this.utils.printReceived(calls[0])}`
+          : `정확히 한 번 호출돼야 하는데 ${calls.length}번 호출됐다`,
+    }
+  },
 })

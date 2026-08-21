@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest'
 import { matchWeeklyRegionalQuestSlug } from '../weekly-regional-quest-matching'
 
 describe('matchWeeklyRegionalQuestSlug', () => {

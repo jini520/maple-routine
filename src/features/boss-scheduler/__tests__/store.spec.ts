@@ -1,93 +1,68 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { waitFor } from '../../../__tests__/wait-for'
 import { matchBossContent } from '../../../lib/boss-matching'
 import type { CharacterScheduleSync } from '../../schedule-sync/schedule-sync'
 import type { BossContent } from '../../../types'
 
-const {
-  syncSchedulesMock,
-  getTrackedCharacterOcidsMock,
-  setTrackedCharacterOcidsMock,
-  getLastSelectedCharacterMock,
-  setLastSelectedCharacterMock,
-} = vi.hoisted(() => ({
-  syncSchedulesMock: vi.fn(),
-  getTrackedCharacterOcidsMock: vi.fn(),
-  setTrackedCharacterOcidsMock: vi.fn(),
-  getLastSelectedCharacterMock: vi.fn(),
-  setLastSelectedCharacterMock: vi.fn(),
-}))
-
-const { getCachedSchedulerStateMock, getCachedCharacterBasicMock } = vi.hoisted(() => ({
-  getCachedSchedulerStateMock: vi.fn(),
-  getCachedCharacterBasicMock: vi.fn(),
-}))
-
-const { getBossPartySettingsMock, setBossPartySizeMock } = vi.hoisted(() => ({
-  getBossPartySettingsMock: vi.fn(),
-  setBossPartySizeMock: vi.fn(),
-}))
-
-const { showSuccessMock, showErrorMock } = vi.hoisted(() => ({
-  showSuccessMock: vi.fn(),
-  showErrorMock: vi.fn(),
-}))
-
-const { seedManualTrackedContentMock, trackingModeStateMock } = vi.hoisted(() => ({
-  seedManualTrackedContentMock: vi.fn(),
-  trackingModeStateMock: { mode: 'auto' as 'auto' | 'manual' },
-}))
-
-const { getManualTrackedContentMock, setManualTrackedContentMock } = vi.hoisted(() => ({
-  getManualTrackedContentMock: vi.fn(),
-  setManualTrackedContentMock: vi.fn(),
-}))
-
 // ADR-063: 스토어가 toScheduleSyncError로 원인을 살리므로 그 매핑은 실물을 쓴다(부분 모킹).
-vi.mock('../../schedule-sync/schedule-sync', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../../schedule-sync/schedule-sync')>()),
-  syncSchedules: syncSchedulesMock,
+jest.mock('../../schedule-sync/schedule-sync', () => ({
+  ...jest.requireActual<typeof import('../../schedule-sync/schedule-sync')>('../../schedule-sync/schedule-sync'),
+  syncSchedules: jest.fn(),
 }))
+const { syncSchedules: syncSchedulesMock } = jest.requireMock('../../schedule-sync/schedule-sync') as Record<string, jest.Mock>
 
-vi.mock('../../../storage/character-selection', () => ({
-  getTrackedCharacterOcids: getTrackedCharacterOcidsMock,
-  setTrackedCharacterOcids: setTrackedCharacterOcidsMock,
-  getLastSelectedCharacter: getLastSelectedCharacterMock,
-  setLastSelectedCharacter: setLastSelectedCharacterMock,
+jest.mock('../../../storage/character-selection', () => ({
+  getTrackedCharacterOcids: jest.fn(),
+  setTrackedCharacterOcids: jest.fn(),
+  getLastSelectedCharacter: jest.fn(),
+  setLastSelectedCharacter: jest.fn(),
 }))
+const { getTrackedCharacterOcids: getTrackedCharacterOcidsMock, setTrackedCharacterOcids: setTrackedCharacterOcidsMock, getLastSelectedCharacter: getLastSelectedCharacterMock, setLastSelectedCharacter: setLastSelectedCharacterMock } = jest.requireMock('../../../storage/character-selection') as Record<string, jest.Mock>
 
-vi.mock('../../../storage/scheduler-cache', () => ({
-  getCachedSchedulerState: getCachedSchedulerStateMock,
+jest.mock('../../../storage/scheduler-cache', () => ({
+  getCachedSchedulerState: jest.fn(),
 }))
+const { getCachedSchedulerState: getCachedSchedulerStateMock } = jest.requireMock('../../../storage/scheduler-cache') as Record<string, jest.Mock>
 
-vi.mock('../../../storage/character-basic-cache', () => ({
-  getCachedCharacterBasic: getCachedCharacterBasicMock,
+jest.mock('../../../storage/character-basic-cache', () => ({
+  getCachedCharacterBasic: jest.fn(),
 }))
+const { getCachedCharacterBasic: getCachedCharacterBasicMock } = jest.requireMock('../../../storage/character-basic-cache') as Record<string, jest.Mock>
 
-vi.mock('../../../storage/boss-party-settings', () => ({
-  getBossPartySettings: getBossPartySettingsMock,
-  setBossPartySize: setBossPartySizeMock,
+jest.mock('../../../storage/boss-party-settings', () => ({
+  getBossPartySettings: jest.fn(),
+  setBossPartySize: jest.fn(),
 }))
+const { getBossPartySettings: getBossPartySettingsMock, setBossPartySize: setBossPartySizeMock } = jest.requireMock('../../../storage/boss-party-settings') as Record<string, jest.Mock>
 
-vi.mock('../../toast/store', () => ({
-  useToastStore: {
-    getState: () => ({ showSuccess: showSuccessMock, showError: showErrorMock }),
-  },
-}))
+jest.mock('../../toast/store', () => {
+  const showSuccess = jest.fn()
+  const showError = jest.fn()
+  return { useToastStore: { getState: () => ({ showSuccess, showError }) } }
+})
+const showSuccessMock = jest.requireMock('../../toast/store').useToastStore.getState().showSuccess as jest.Mock
+const showErrorMock = jest.requireMock('../../toast/store').useToastStore.getState().showError as jest.Mock
 
-vi.mock('../../tracking-mode/store', () => ({
-  useTrackingModeStore: {
-    getState: () => ({ mode: trackingModeStateMock.mode }),
-  },
-}))
+jest.mock('../../tracking-mode/store', () => {
 
-vi.mock('../../tracking-mode/seed', () => ({
-  seedManualTrackedContent: seedManualTrackedContentMock,
-}))
+  return { useTrackingModeStore: { getState: () => {
+      mockTrackingModeStateMock = mockTrackingModeStateMock ?? { mode: 'auto' }
+      return {  mode: mockTrackingModeStateMock.mode  }
+    } } }
+})
 
-vi.mock('../../../storage/manual-tracked-content', () => ({
-  getManualTrackedContent: getManualTrackedContentMock,
-  setManualTrackedContent: setManualTrackedContentMock,
+jest.mock('../../tracking-mode/seed', () => ({
+  seedManualTrackedContent: jest.fn(),
 }))
+const { seedManualTrackedContent: seedManualTrackedContentMock } = jest.requireMock('../../tracking-mode/seed') as Record<string, jest.Mock>
+
+jest.mock('../../../storage/manual-tracked-content', () => ({
+  getManualTrackedContent: jest.fn(),
+  setManualTrackedContent: jest.fn(),
+}))
+// 테스트가 이 값에 직접 쓰므로 모듈 평가 시점에도 채워 둔다(팩토리도 같은 걸 쓴다).
+
+const { getManualTrackedContent: getManualTrackedContentMock, setManualTrackedContent: setManualTrackedContentMock } = jest.requireMock('../../../storage/manual-tracked-content') as Record<string, jest.Mock>
 
 import { useBossSchedulerStore, type BossCharacterView } from '../store'
 import {
@@ -95,6 +70,10 @@ import {
   resetSyncRunStateForTests,
 } from '../../schedule-sync/sync-run-state'
 import type { ManualTrackedItem } from '../../../storage/manual-tracked-content'
+
+// 팩토리가 **모듈 평가보다 먼저** 불릴 수 있어(스토어를 import 하는 순간) `var` 로 올리고
+// 읽는 자리에서 채운다([[ADR-157]]).
+var mockTrackingModeStateMock: { mode: 'auto' | 'manual' } = { mode: 'auto' }
 
 function bossContent(overrides: Partial<BossContent> = {}): BossContent {
   const merged = {
@@ -150,7 +129,7 @@ beforeEach(() => {
   getCachedCharacterBasicMock.mockResolvedValue(null)
   getLastSelectedCharacterMock.mockResolvedValue(null)
   getBossPartySettingsMock.mockResolvedValue([])
-  trackingModeStateMock.mode = 'auto'
+  mockTrackingModeStateMock.mode = 'auto'
   seedManualTrackedContentMock.mockResolvedValue(undefined)
   getManualTrackedContentMock.mockResolvedValue([])
   setManualTrackedContentMock.mockResolvedValue(undefined)
@@ -159,7 +138,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  vi.resetAllMocks()
+  jest.resetAllMocks()
 })
 
 describe('useBossSchedulerStore', () => {
@@ -345,7 +324,7 @@ describe('useBossSchedulerStore', () => {
 
       const promise = useBossSchedulerStore.getState().refresh(['ocid-1'])
 
-      await vi.waitFor(() => expect(useBossSchedulerStore.getState().status).toBe('loading'))
+      await waitFor(() => expect(useBossSchedulerStore.getState().status).toBe('loading'))
       const state = useBossSchedulerStore.getState()
       expect(state.characters[0].weeklyBossClearCount).toBe(1)
       expect(state.characters[0].weeklyBossClearLimitCount).toBe(12)
@@ -414,7 +393,7 @@ describe('useBossSchedulerStore', () => {
 
     const promise = useBossSchedulerStore.getState().refresh(['ocid-1'])
 
-    await vi.waitFor(() => expect(useBossSchedulerStore.getState().status).toBe('loading'))
+    await waitFor(() => expect(useBossSchedulerStore.getState().status).toBe('loading'))
     const state = useBossSchedulerStore.getState()
     expect(state.characters[0].characterName).toBe('캐시된캐릭터')
     expect(state.characters[0].world).toBe('베라')
@@ -445,7 +424,7 @@ describe('useBossSchedulerStore', () => {
 
     const promise = useBossSchedulerStore.getState().refresh(['ocid-1'])
 
-    await vi.waitFor(() => expect(useBossSchedulerStore.getState().status).toBe('loading'))
+    await waitFor(() => expect(useBossSchedulerStore.getState().status).toBe('loading'))
     resolveSync([])
     await promise
 
@@ -677,7 +656,7 @@ describe('useBossSchedulerStore', () => {
     })
 
     it('수동 모드에서 캐릭터를 추가하면 시드된 멤버십이 manualTrackedByOcid에 반영된다', async () => {
-      trackingModeStateMock.mode = 'manual'
+      mockTrackingModeStateMock.mode = 'manual'
       syncSchedulesMock.mockResolvedValue([syncResult({ ocid: 'ocid-2', characterName: '새캐릭터' })])
       getManualTrackedContentMock.mockImplementation(async (ocid: string) =>
         ocid === 'ocid-2' ? [{ contentName: '자쿰', kind: 'boss', difficulty: '카오스' }] : [],
@@ -697,7 +676,7 @@ describe('useBossSchedulerStore', () => {
 
   describe('ADR-035 결정 14(b): 수동 모드에서 새 추적 캐릭터 개별 시드', () => {
     it('수동 모드에서 saveTrackedOcids는 새로 추가된 캐릭터만 refresh 전에 시드한다', async () => {
-      trackingModeStateMock.mode = 'manual'
+      mockTrackingModeStateMock.mode = 'manual'
       useBossSchedulerStore.setState({ trackedOcids: ['ocid-1'] })
       setTrackedCharacterOcidsMock.mockResolvedValue(undefined)
       syncSchedulesMock.mockResolvedValue([syncResult()])
@@ -713,7 +692,7 @@ describe('useBossSchedulerStore', () => {
     })
 
     it('수동 모드라도 새로 추가된 캐릭터가 없으면 시드하지 않는다', async () => {
-      trackingModeStateMock.mode = 'manual'
+      mockTrackingModeStateMock.mode = 'manual'
       useBossSchedulerStore.setState({ trackedOcids: ['ocid-1', 'ocid-2'] })
       setTrackedCharacterOcidsMock.mockResolvedValue(undefined)
       syncSchedulesMock.mockResolvedValue([syncResult()])
@@ -736,7 +715,7 @@ describe('useBossSchedulerStore', () => {
 
   describe('ADR-035: 수동 추적 보스 (manualTrackedContent)', () => {
     it('수동 모드일 때 refresh는 추적 목록을 읽어 manualTrackedByOcid에 채운다', async () => {
-      trackingModeStateMock.mode = 'manual'
+      mockTrackingModeStateMock.mode = 'manual'
       syncSchedulesMock.mockResolvedValue([syncResult({ ocid: 'ocid-1' })])
       getManualTrackedContentMock.mockImplementation(async (ocid: string) =>
         ocid === 'ocid-1' ? [{ contentName: '자쿰', kind: 'boss', difficulty: '카오스' }] : [],

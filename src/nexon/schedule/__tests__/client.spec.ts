@@ -1,6 +1,20 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { NexonSchedulerCharacterStateWire } from '../../../types'
 import { fetchSchedulerCharacterState } from '../client'
+
+// vitest 의 `vi.stubGlobal` 짝. jest 에는 없어서 여기서 최소한으로 만든다 — 원래 값을 기억해 두고
+// `unstubAllGlobals()` 가 되돌린다 ([[ADR-157]]).
+const 원래전역: Record<string, unknown> = {}
+
+function stubGlobal(name: string, value: unknown): void {
+  if (!(name in 원래전역)) 원래전역[name] = (globalThis as Record<string, unknown>)[name]
+  ;(globalThis as Record<string, unknown>)[name] = value
+}
+
+function unstubAllGlobals(): void {
+  for (const [name, value] of Object.entries(원래전역)) {
+    ;(globalThis as Record<string, unknown>)[name] = value
+  }
+}
 
 function jsonResponse(status: number, body: unknown): Response {
   return {
@@ -26,13 +40,13 @@ function schedulerFixture(characterName: string): NexonSchedulerCharacterStateWi
 }
 
 afterEach(() => {
-  vi.unstubAllGlobals()
+  unstubAllGlobals()
 })
 
 describe('fetchSchedulerCharacterState', () => {
   it('ocid를 쿼리 파라미터로 담아 호출하고 응답을 domain 타입으로 변환한다', async () => {
-    const fetchMock = vi.fn(async () => jsonResponse(200, schedulerFixture('낟낟')))
-    vi.stubGlobal('fetch', fetchMock)
+    const fetchMock = jest.fn(async () => jsonResponse(200, schedulerFixture('낟낟')))
+    stubGlobal('fetch', fetchMock)
 
     const result = await fetchSchedulerCharacterState('test-api-key', 'ocid-123')
 
@@ -46,8 +60,8 @@ describe('fetchSchedulerCharacterState', () => {
   })
 
   it('date가 주어지면 쿼리 파라미터에 date를 함께 담아 호출한다', async () => {
-    const fetchMock = vi.fn(async () => jsonResponse(200, schedulerFixture('낟낟')))
-    vi.stubGlobal('fetch', fetchMock)
+    const fetchMock = jest.fn(async () => jsonResponse(200, schedulerFixture('낟낟')))
+    stubGlobal('fetch', fetchMock)
 
     await fetchSchedulerCharacterState('test-api-key', 'ocid-123', '2026-06-01')
 

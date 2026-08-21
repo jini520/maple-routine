@@ -1,5 +1,4 @@
-// @vitest-environment jsdom
-import { beforeEach, describe, expect, it } from 'vitest'
+/** @jest-environment jsdom */
 import { consumePendingNotice, setPendingNotice } from '../pending-notice'
 
 beforeEach(() => {

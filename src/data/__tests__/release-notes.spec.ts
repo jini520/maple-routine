@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest'
 import {
   RELEASE_NOTES,
   RELEASE_NOTE_CATEGORY_LABELS,

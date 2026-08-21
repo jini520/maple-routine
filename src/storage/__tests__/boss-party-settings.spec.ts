@@ -1,15 +1,12 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { BossPartySetting } from '../boss-party-settings'
 
-const { runMock, queryMock, getBossProfitDbMock } = vi.hoisted(() => ({
-  runMock: vi.fn(),
-  queryMock: vi.fn(),
-  getBossProfitDbMock: vi.fn(),
+jest.mock('../sqlite/db', () => ({
+  getBossProfitDb: jest.fn(),
 }))
+const { getBossProfitDb: getBossProfitDbMock } = jest.requireMock('../sqlite/db') as Record<string, jest.Mock>
 
-vi.mock('../sqlite/db', () => ({
-  getBossProfitDb: getBossProfitDbMock,
-}))
+const runMock = jest.fn()
+const queryMock = jest.fn()
 
 const fakeDb = { run: runMock, query: queryMock }
 
@@ -29,7 +26,7 @@ const sampleSetting: BossPartySetting = {
 
 describe('setBossPartySize', () => {
   it('동일 키로 두 번 호출하면 ON CONFLICT DO UPDATE로 최신 값을 덮어쓴다 (멱등성)', async () => {
-    const { setBossPartySize } = await import('../boss-party-settings')
+    const { setBossPartySize } = require('../boss-party-settings') as typeof import('../boss-party-settings')
 
     await setBossPartySize('ocid-1', '검은 마법사', '익스트림', 4, '2026-07-13T00:05:00.000Z')
     await setBossPartySize('ocid-1', '검은 마법사', '익스트림', 2, '2026-07-13T01:00:00.000Z')
@@ -49,14 +46,14 @@ describe('setBossPartySize', () => {
 describe('getBossPartySize', () => {
   it('조회 결과가 없으면 null을 반환한다 (설정 없음 = 솔로)', async () => {
     queryMock.mockResolvedValue({ values: [] })
-    const { getBossPartySize } = await import('../boss-party-settings')
+    const { getBossPartySize } = require('../boss-party-settings') as typeof import('../boss-party-settings')
 
     await expect(getBossPartySize('ocid-1', '검은 마법사', '익스트림')).resolves.toBeNull()
   })
 
   it('조회 결과가 undefined여도 null을 반환한다', async () => {
     queryMock.mockResolvedValue({ values: undefined })
-    const { getBossPartySize } = await import('../boss-party-settings')
+    const { getBossPartySize } = require('../boss-party-settings') as typeof import('../boss-party-settings')
 
     await expect(getBossPartySize('ocid-1', '검은 마법사', '익스트림')).resolves.toBeNull()
   })
@@ -73,14 +70,14 @@ describe('getBossPartySize', () => {
         },
       ],
     })
-    const { getBossPartySize } = await import('../boss-party-settings')
+    const { getBossPartySize } = require('../boss-party-settings') as typeof import('../boss-party-settings')
 
     await expect(getBossPartySize('ocid-1', '검은 마법사', '익스트림')).resolves.toBe(4)
   })
 
   it('ocid/boss/difficulty 조건으로 조회한다', async () => {
     queryMock.mockResolvedValue({ values: [] })
-    const { getBossPartySize } = await import('../boss-party-settings')
+    const { getBossPartySize } = require('../boss-party-settings') as typeof import('../boss-party-settings')
 
     await getBossPartySize('ocid-1', '검은 마법사', '익스트림')
 
@@ -93,7 +90,7 @@ describe('getBossPartySize', () => {
 
 describe('getBossPartySettings', () => {
   it('ocids가 빈 배열이면 DB를 호출하지 않고 빈 배열을 반환한다', async () => {
-    const { getBossPartySettings } = await import('../boss-party-settings')
+    const { getBossPartySettings } = require('../boss-party-settings') as typeof import('../boss-party-settings')
 
     await expect(getBossPartySettings([])).resolves.toEqual([])
     expect(getBossProfitDbMock).not.toHaveBeenCalled()
@@ -112,7 +109,7 @@ describe('getBossPartySettings', () => {
         },
       ],
     })
-    const { getBossPartySettings } = await import('../boss-party-settings')
+    const { getBossPartySettings } = require('../boss-party-settings') as typeof import('../boss-party-settings')
 
     const result = await getBossPartySettings(['ocid-1', 'ocid-2'])
 
@@ -125,7 +122,7 @@ describe('getBossPartySettings', () => {
 
   it('조회 결과가 없으면 빈 배열을 반환한다', async () => {
     queryMock.mockResolvedValue({ values: undefined })
-    const { getBossPartySettings } = await import('../boss-party-settings')
+    const { getBossPartySettings } = require('../boss-party-settings') as typeof import('../boss-party-settings')
 
     await expect(getBossPartySettings(['ocid-1'])).resolves.toEqual([])
   })

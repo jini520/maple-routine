@@ -1,4 +1,3 @@
-import { beforeEach, describe, expect, it } from 'vitest'
 import { installFakePreferences } from './fake-preferences'
 import { getLastRunBundleVersion, setLastRunBundleVersion } from '../last-run-bundle-version'
 

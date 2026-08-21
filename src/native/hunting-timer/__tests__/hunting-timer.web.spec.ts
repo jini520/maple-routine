@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest'
 import { HuntingTimerWeb } from '../hunting-timer.web'
 
 describe('HuntingTimerWeb', () => {

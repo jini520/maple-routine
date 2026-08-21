@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest'
 import type { MapleCharacter } from '../../../types'
 import { pickRepresentativeCharacter } from '../representative-character'
 

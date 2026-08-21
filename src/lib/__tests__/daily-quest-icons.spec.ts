@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest'
+
+import { assetUri } from '../../assets/__tests__/asset-uri'
 import { getDailyQuestRegionIconUrl } from '../daily-quest-icons'
 
 describe('getDailyQuestRegionIconUrl', () => {
@@ -12,7 +13,7 @@ describe('getDailyQuestRegionIconUrl', () => {
     const url = getDailyQuestRegionIconUrl('lacheln')
 
     expect(url).not.toBeNull()
-    expect(url).toEqual(expect.stringContaining('lacheln'))
+    expect(assetUri(url)).toContain('lacheln')
   })
 
   it('존재하지 않는 slug면 null을 반환한다', () => {
@@ -26,6 +27,6 @@ describe('getDailyQuestRegionIconUrl', () => {
     const url = getDailyQuestRegionIconUrl('moonBridge')
 
     expect(url).not.toBeNull()
-    expect(url).toEqual(expect.stringContaining('moonBridge'))
+    expect(assetUri(url)).toContain('moonBridge')
   })
 })

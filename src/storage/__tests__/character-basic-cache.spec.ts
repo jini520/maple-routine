@@ -1,4 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { installFakePreferences } from './fake-preferences'
 import type { CharacterBasicProfile } from '../../types'
 import {

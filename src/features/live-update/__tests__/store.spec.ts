@@ -1,55 +1,29 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-const {
-  applyLiveUpdateMock,
-  checkForLiveUpdateMock,
-  downloadLiveUpdateMock,
-  getCurrentBundleVersionMock,
-  getNetworkTypeMock,
-  openStoreForUpdateMock,
-  getLiveUpdateChannelMock,
-} = vi.hoisted(() => ({
-  applyLiveUpdateMock: vi.fn(),
-  checkForLiveUpdateMock: vi.fn(),
-  downloadLiveUpdateMock: vi.fn(),
-  getCurrentBundleVersionMock: vi.fn(),
-  getNetworkTypeMock: vi.fn(),
-  openStoreForUpdateMock: vi.fn(),
-  getLiveUpdateChannelMock: vi.fn(() => 'production'),
-}))
 
 // isNewerVersion 은 실물을 그대로 쓴다 — 완료 안내가 자동 롤백을 거르는 근거가 바로 이 비교라
 // (ADR-126 결정 4), 가짜로 바꾸면 그 규칙을 검사하지 못한다.
-vi.mock('../../../native/live-update', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../../../native/live-update')>()),
-  applyLiveUpdate: applyLiveUpdateMock,
-  checkForLiveUpdate: checkForLiveUpdateMock,
-  downloadLiveUpdate: downloadLiveUpdateMock,
-  getCurrentBundleVersion: getCurrentBundleVersionMock,
-  getNetworkType: getNetworkTypeMock,
-  openStoreForUpdate: openStoreForUpdateMock,
-  getLiveUpdateChannel: getLiveUpdateChannelMock,
+jest.mock('../../../native/live-update', () => ({
+  ...jest.requireActual<typeof import('../../../native/live-update')>('../../../native/live-update'),
+  applyLiveUpdate: jest.fn(),
+  checkForLiveUpdate: jest.fn(),
+  downloadLiveUpdate: jest.fn(),
+  getCurrentBundleVersion: jest.fn(),
+  getNetworkType: jest.fn(),
+  openStoreForUpdate: jest.fn(),
+  getLiveUpdateChannel: jest.fn(),
 }))
+const { applyLiveUpdate: applyLiveUpdateMock, checkForLiveUpdate: checkForLiveUpdateMock, downloadLiveUpdate: downloadLiveUpdateMock, getCurrentBundleVersion: getCurrentBundleVersionMock, getNetworkType: getNetworkTypeMock, openStoreForUpdate: openStoreForUpdateMock } = jest.requireMock('../../../native/live-update') as Record<string, jest.Mock>
 
-const { getLastRunBundleVersionMock, setLastRunBundleVersionMock } = vi.hoisted(() => ({
-  getLastRunBundleVersionMock: vi.fn(),
-  setLastRunBundleVersionMock: vi.fn(),
+jest.mock('../../../storage/last-run-bundle-version', () => ({
+  getLastRunBundleVersion: jest.fn(),
+  setLastRunBundleVersion: jest.fn(),
 }))
+const { getLastRunBundleVersion: getLastRunBundleVersionMock, setLastRunBundleVersion: setLastRunBundleVersionMock } = jest.requireMock('../../../storage/last-run-bundle-version') as Record<string, jest.Mock>
 
-vi.mock('../../../storage/last-run-bundle-version', () => ({
-  getLastRunBundleVersion: getLastRunBundleVersionMock,
-  setLastRunBundleVersion: setLastRunBundleVersionMock,
+jest.mock('../../../native/splash-screen', () => ({
+  showSplashScreen: jest.fn(),
+  hideSplashScreen: jest.fn(),
 }))
-
-const { showSplashScreenMock, hideSplashScreenMock } = vi.hoisted(() => ({
-  showSplashScreenMock: vi.fn(),
-  hideSplashScreenMock: vi.fn(),
-}))
-
-vi.mock('../../../native/splash-screen', () => ({
-  showSplashScreen: showSplashScreenMock,
-  hideSplashScreen: hideSplashScreenMock,
-}))
+const { showSplashScreen: showSplashScreenMock, hideSplashScreen: hideSplashScreenMock } = jest.requireMock('../../../native/splash-screen') as Record<string, jest.Mock>
 
 import { useLiveUpdateStore } from '../store'
 
@@ -275,23 +249,23 @@ describe('useLiveUpdateStore', () => {
     })
 
     it('12초 안에 끝나지 않으면 커버를 걷고 apply-error (11.9초에는 아직 applying)', async () => {
-      vi.useFakeTimers()
+      jest.useFakeTimers()
       try {
         useLiveUpdateStore.setState({ hasDownloadedBundle: true })
         applyLiveUpdateMock.mockReturnValue(new Promise<void>(() => {}))
 
         const pending = s().apply()
 
-        await vi.advanceTimersByTimeAsync(11_900)
+        await jest.advanceTimersByTimeAsync(11_900)
         expect(s().status).toBe('applying')
         expect(hideSplashScreenMock).not.toHaveBeenCalled()
 
-        await vi.advanceTimersByTimeAsync(200)
+        await jest.advanceTimersByTimeAsync(200)
         await pending
         expect(hideSplashScreenMock).toHaveBeenCalled()
         expect(s().status).toBe('apply-error')
       } finally {
-        vi.useRealTimers()
+        jest.useRealTimers()
       }
     })
 
