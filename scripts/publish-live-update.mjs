@@ -28,7 +28,7 @@
 
 import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -130,7 +130,17 @@ export function parseArgs(argv) {
   const highlightLines = argv.flatMap((arg, i) => (arg === '--highlight' ? [argv[i + 1]] : []))
   const highlights = highlightLines.length > 0 ? highlightLines : undefined
 
-  return { isBeta, minNativeVersion, storeRequiredPlatforms, highlights }
+  // --bundle-only: zip 만 릴리스에 올리고 **latest.json 은 건드리지 않는다**([[ADR-154]] 결정 4).
+  //
+  // 캐패시터 앱의 마지막 번들은 사용자에게 줄 것이 없다 — payload 가 게이트 읽는 코드와 스토어
+  // 링크 수정뿐이라 화면에 안 보인다. 그런 것을 위해 6MB 다운로드를 권하면 모달이 «받을 이유가
+  // 없는 업데이트» 를 묻는 자리가 되고, 그러면 안 받는다.
+  //
+  // 대신 매니페스트 초안을 저장소에 남긴다. 그 파일이 있으면 **캐패시터 소스 없이도** 나중에
+  // 유도를 켤 수 있다 — 그때는 「스토어에서 업데이트해 주세요」가 참이라 문구도 정직해진다.
+  const bundleOnly = argv.includes('--bundle-only')
+
+  return { isBeta, minNativeVersion, storeRequiredPlatforms, highlights, bundleOnly }
 }
 
 /**
@@ -144,7 +154,8 @@ export function resolveManifestHighlights(note, override) {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { isBeta, minNativeVersion, storeRequiredPlatforms, highlights } = parseArgs(process.argv.slice(2))
+  const { isBeta, minNativeVersion, storeRequiredPlatforms, highlights, bundleOnly } =
+    parseArgs(process.argv.slice(2))
 
   const root = join(import.meta.dirname, '..')
   // OTA 번들 버전은 **앱 패키지의** package.json 에서 읽는다([[ADR-024]] — 버전 축은 하나여야 한다).
@@ -181,6 +192,9 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   // 화면이 바뀌는 배포라, 잘못 친 인자가 6MB 를 굽고 나서 드러나면 안 된다.
   if (storeRequiredPlatforms && storeRequiredPlatforms.length > 0) {
     console.log(`⚠️  스토어 유도 대상: ${storeRequiredPlatforms.join(' · ')} — 이 플랫폼은 업데이트 대신 스토어로 보내집니다([[ADR-154]]).`)
+  }
+  if (bundleOnly) {
+    console.log('ℹ️  --bundle-only: zip 만 올리고 latest.json 은 건드리지 않습니다 — 사용자에게 모달이 뜨지 않습니다.')
   }
   if (highlights) {
     console.log(`ℹ️  매니페스트 highlights 를 배포 인자로 덮어씁니다(노트 원천은 그대로):\n${highlights.map((line) => `     · ${line}`).join('\n')}`)
@@ -233,13 +247,26 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     )
   }
 
-  console.log('[5/5] 번들·latest.json 업로드 중...')
+  console.log(bundleOnly ? '[5/5] 번들만 업로드 중...' : '[5/5] 번들·latest.json 업로드 중...')
   execFileSync(
     'gh',
-    ['release', 'upload', RELEASE_TAG, zipPath, manifestPath, '--repo', REPO, '--clobber'],
+    ['release', 'upload', RELEASE_TAG, zipPath, ...(bundleOnly ? [] : [manifestPath]), '--repo', REPO, '--clobber'],
     { cwd: root, stdio: 'inherit' },
   )
 
-  rmSync(workDir, { recursive: true, force: true })
-  console.log(`완료: ${version} 배포됨 → ${manifest.url}`)
+  if (bundleOnly) {
+    // 초안을 저장소에 남기는 것이 --bundle-only 의 핵심이다 — url·checksum·size 는 **이 빌드에서만**
+    // 나오는 값이라, 캐패시터 소스를 지운 뒤에는 다시 계산할 방법이 없다. 이 파일이 그 값을 들고
+    // 있으면 나중에 유도를 켜는 일이 «필드 하나 넣고 업로드» 로 끝난다.
+    const draftPath = join(root, 'ota', 'latest.json')
+    mkdirSync(join(root, 'ota'), { recursive: true })
+    writeFileSync(draftPath, `${JSON.stringify(manifest, null, 2)}\n`)
+    rmSync(workDir, { recursive: true, force: true })
+    console.log(`완료: ${version}.zip 업로드됨(매니페스트 미발행). 초안 → ota/latest.json`)
+    console.log('   유도를 켤 때: 그 파일에 "storeRequiredPlatforms" 를 넣고')
+    console.log(`   gh release upload ${RELEASE_TAG} ota/latest.json --repo ${REPO} --clobber`)
+  } else {
+    rmSync(workDir, { recursive: true, force: true })
+    console.log(`완료: ${version} 배포됨 → ${manifest.url}`)
+  }
 }

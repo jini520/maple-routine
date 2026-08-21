@@ -43,11 +43,12 @@
 > 2026-08-21 실측으로 **두 스토어 모두 아직 새 바이너리가 없다**(Play 404 · App Store 1.0.0).
 >
 > ```
-> 1단계  node scripts/publish-live-update.mjs --highlight '<문구>' --highlight '<문구>'
->          ← 게이트 없이 번들만. 캐패시터 소스가 필요한 마지막 순간이다.
-> 2단계  latest.json 에 "storeRequiredPlatforms": ["android"] 를 넣어 덮어쓴다 (Play 게시 확인 후)
-> 3단계  같은 필드를 ["android","ios"] 로                          (App Store 게시 확인 후)
->          gh release upload live-update-latest latest.json --repo jini520/maple-routine --clobber
+> 1단계  node scripts/publish-live-update.mjs --bundle-only --highlight '<문구>' ...   ✅ 완료
+>          ← zip 만 올리고 latest.json 은 안 건드린다(모달 안 뜸). 초안이 ota/latest.json 에 남는다.
+>            캐패시터 소스가 필요한 마지막 순간이다.
+> 2단계  ota/latest.json 에 "storeRequiredPlatforms": ["android"] 를 넣어 발행 (Play 게시 확인 후)
+> 3단계  같은 필드를 ["android","ios"] 로                            (App Store 게시 확인 후)
+>          gh release upload live-update-latest ota/latest.json --repo jini520/maple-routine --clobber
 >          ← 둘 다 빌드 없음·다운로드 없음. 그래서 1단계 직후 packages/app-capacitor 를 지워도 된다.
 > ```
 >
