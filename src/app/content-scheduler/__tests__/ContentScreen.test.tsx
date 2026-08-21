@@ -76,7 +76,8 @@ function mockStore(overrides: Partial<Store> = {}): Store {
     manualTrackedByOcid: {},
     loadTrackedOcids: jest.fn(),
     saveTrackedOcids: jest.fn(),
-    refresh: jest.fn(),
+    // 실물은 `Promise<void>` 다 — 당김 훅이 회차의 «끝» 을 기다린다([[ADR-160]] 결정 1).
+    refresh: jest.fn().mockResolvedValue(undefined),
     addManualContent: jest.fn(),
     removeManualContent: jest.fn(),
     activeTab: 'daily' as const,
@@ -402,12 +403,41 @@ describe('ContentScreen — 재조회 ([[ADR-072]] · [[ADR-130]])', () => {
     expect(refreshControl()).toBeDefined()
   })
 
-  it('조회 중이면 인디케이터가 돌고 "조회 중..." 을 보여준다', async () => {
+  // ★ 회귀 가드 — **«조회 중» 과 «당겼다» 는 다른 사실이다** ([[ADR-160]] 결정 1).
+  //
+  // 종전에는 `refreshing = status === 'loading'` 이라, 화면 마운트 하이드레이션만으로 인디케이터가
+  // 프로그램적으로 열렸다. 사용자 보고(2026-08-22) *"페이지 이동 시 새로고침 인디케이터가 저절로
+  // 돌고 상단이 빈 채로 멈춘다"* 가 그 증상이다. «조회 중...» 은 그대로 뜬다 — 그쪽이 조회를
+  // 말하는 자리다.
+  it('조회 중이어도 인디케이터는 안 돈다 — "조회 중..." 만 보여준다', async () => {
     loaded('loading')
     await renderScreen()
 
     expect(screen.getByText('조회 중...')).toBeTruthy()
+    expect(refreshControl().refreshing).toBe(false)
+  })
+
+  // 그리고 당기면 **돈다** — 위 가드가 «인디케이터를 없앤 것» 으로 읽히지 않게 짝으로 둔다.
+  it('당기면 그 회차 동안 인디케이터가 돈다', async () => {
+    const store = loaded()
+    let 회차_끝내기 = (): void => undefined
+    jest.mocked(store.refresh).mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          회차_끝내기 = resolve
+        }),
+    )
+    await renderScreen()
+
+    await act(async () => {
+      refreshControl().onRefresh()
+    })
     expect(refreshControl().refreshing).toBe(true)
+
+    await act(async () => {
+      회차_끝내기()
+    })
+    expect(refreshControl().refreshing).toBe(false)
   })
 
   // [[ADR-141]] 결정 1: 동기화 상태는 드롭다운 줄이 아니라 **제목 줄**에 있다. 「같은 줄인가」는

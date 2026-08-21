@@ -91,6 +91,7 @@ import { useTopSafeAreaPx } from '../../lib/top-safe-area'
 import { orderByTracked } from '../../lib/tracked-order'
 import { useThemeAppearance } from '../../theme/context'
 import { useScreenNavigation } from '../use-screen-navigation'
+import { usePullRefresh } from '../use-pull-refresh'
 import type { BossProfitContextValue } from './boss-profit-context'
 import { BossProfitContextProvider } from './boss-profit-context'
 import { CharacterAccordion } from './CharacterAccordion'
@@ -132,6 +133,10 @@ export function BossProfitScreen(): React.JSX.Element {
     setBossDrops,
     dropsByRowKey,
   } = useBossProfitStore()
+  // **당김이 시작한 회차에만** 인디케이터가 돈다([[ADR-160]] 결정 1). 헤더 버튼·자동 조회는 같은
+  // 재조회를 부르지만 인디케이터는 안 연다 — 버튼은 자기 스피너와 «조회 중...» 을 이미 갖고 있고
+  // ([[ADR-141]] 결정 1), 자동 조회는 원래 조용해야 하는 것이다.
+  const pull = usePullRefresh(() => refresh(trackedOcids ?? []))
 
   const navigation = useScreenNavigation()
   const topSafeAreaPx = useTopSafeAreaPx()
@@ -480,8 +485,8 @@ export function BossProfitScreen(): React.JSX.Element {
           refreshControl={
             canRefreshPeriod ? (
               <RefreshControl
-                refreshing={status === 'loading'}
-                onRefresh={() => refresh(trackedOcids ?? [])}
+                refreshing={pull.refreshing}
+                onRefresh={pull.onRefresh}
                 tintColor={definition.primaryInk}
                 colors={[definition.primaryInk]}
                 progressBackgroundColor={definition.surface}

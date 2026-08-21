@@ -51,7 +51,8 @@ function mockStore(overrides: Partial<Store> = {}): Store {
     manualTrackedByOcid: {},
     loadTrackedOcids: jest.fn(),
     saveTrackedOcids: jest.fn(),
-    refresh: jest.fn(),
+    // 실물은 `Promise<void>` 다 — 당김 훅이 회차의 «끝» 을 기다린다([[ADR-160]] 결정 1).
+    refresh: jest.fn().mockResolvedValue(undefined),
     addManualContent: jest.fn(async () => {}),
     removeManualContent: jest.fn(async () => {}),
     activeTab: 'daily' as const,

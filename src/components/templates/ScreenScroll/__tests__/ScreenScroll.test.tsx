@@ -16,7 +16,7 @@
 
 import { getThemeDefinition } from '../../../../lib/theme-registry'
 import { within } from '@testing-library/react-native'
-import { Dimensions, Text, View } from 'react-native'
+import { Dimensions, RefreshControl, Text, View } from 'react-native'
 import type { Metrics } from 'react-native-safe-area-context'
 
 import { flattenStyle, renderOverlay, 테스트_안전영역 } from '../../../__tests__/render-atom'
@@ -158,6 +158,53 @@ describe('[[ADR-131]] 헤더도 함께 스크롤된다', () => {
 
     // `screen-scroll` 아래에서 찾을 수 있으면 자식이다. 형제였다면 못 찾는다.
     expect(within(getByTestId('screen-scroll')).getByTestId('header')).toBeTruthy()
+  })
+})
+
+// ★ 당김 인디케이터는 스크롤포트 «위» 가 아니라 **«안»** 에 그려진다 ([[ADR-160]] 결정 2).
+//
+// 그래서 위 페이드가 그것도 **함께 깎는다** — 사용자가 당기면 자리는 열리는데 그 자리에 아무것도
+// 안 보이고, 자동 조회로 열렸을 때는 «상단에 빈 띠» 로 보인다(사용자 보고 2026-08-22). 페이드
+// 높이만큼 내려 구간 밖에서 돌게 한다.
+describe('[[ADR-160]] 당김 인디케이터는 페이드 구간 아래에서 돈다', () => {
+  const 당김 = <RefreshControl refreshing={false} onRefresh={() => undefined} />
+
+  it('상단을 깎는 화면에서는 그 높이만큼 내린다', async () => {
+    const { getByTestId } = await renderOverlay(
+      <ScreenScroll header={<View testID="header" />} refreshControl={당김}>
+        {목록}
+      </ScreenScroll>,
+    )
+
+    expect(getByTestId('screen-scroll').props.refreshControl.props.progressViewOffset).toBe(
+      테스트_안전영역.insets.top,
+    )
+  })
+
+  // 헤더가 없는 화면은 셸이 상자를 내려서 안전영역을 먹으므로 위를 안 깎는다 — 깎지 않으면
+  // 인디케이터가 가려질 일도 없고, 그래도 내리면 그만큼 엉뚱하게 낮은 자리에서 돈다.
+  it('상단을 안 깎는 화면에서는 안 내린다', async () => {
+    const { getByTestId } = await renderOverlay(
+      <ScreenScroll refreshControl={당김}>{목록}</ScreenScroll>,
+    )
+
+    expect(getByTestId('screen-scroll').props.refreshControl.props.progressViewOffset).toBeUndefined()
+  })
+
+  // 이 셸은 `refreshControl` 을 **그대로 넘기기만 한다**([[ADR-130]] 결정 1). 오프셋 하나를 얹느라
+  // 화면이 정한 값(색·`refreshing`·`onRefresh`)이 바뀌면 그 계약이 깨진다.
+  it('화면이 정한 값은 그대로 둔다', async () => {
+    const { getByTestId } = await renderOverlay(
+      <ScreenScroll header={<View testID="header" />} refreshControl={
+        <RefreshControl refreshing onRefresh={() => undefined} tintColor="#abcdef" />
+      }>
+        {목록}
+      </ScreenScroll>,
+    )
+
+    const control = getByTestId('screen-scroll').props.refreshControl
+    expect(control.props.refreshing).toBe(true)
+    expect(control.props.tintColor).toBe('#abcdef')
   })
 })
 

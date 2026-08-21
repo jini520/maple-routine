@@ -336,10 +336,11 @@ afterAll(() => {
 
 beforeEach(() => {
   mocks = {
-    content: { loadTrackedOcids: jest.fn(), refresh: jest.fn() },
-    boss: { loadTrackedOcids: jest.fn(), refresh: jest.fn() },
-    profit: { loadTrackedOcids: jest.fn(), refresh: jest.fn() },
-    dropHistory: { load: jest.fn() } }
+    // 실물은 넷 다 `Promise` 다 — 당김 훅이 `allSettled` 로 넷의 «끝» 을 기다린다([[ADR-160]] 결정 1).
+    content: { loadTrackedOcids: jest.fn(), refresh: jest.fn().mockResolvedValue(undefined) },
+    boss: { loadTrackedOcids: jest.fn(), refresh: jest.fn().mockResolvedValue(undefined) },
+    profit: { loadTrackedOcids: jest.fn(), refresh: jest.fn().mockResolvedValue(undefined) },
+    dropHistory: { load: jest.fn().mockResolvedValue(undefined) } }
   mockedGetRepresentative.mockResolvedValue(null)
   mockedGetCachedCharacterBasic.mockResolvedValue(null)
   mockedNavigation.mockReturnValue({ navigate: jest.fn(), goBack: jest.fn() } as never)
@@ -485,13 +486,19 @@ describe('TodayScreen — 명시적 재조회', () => {
     expect(refreshControl()).toBeDefined()
   })
 
-  it('조회 중이면 "조회 중..." 을 보여주고 인디케이터가 돈다', async () => {
+  // ★ 회귀 가드 — **«조회 중» 과 «당겼다» 는 다른 사실이다** ([[ADR-160]] 결정 1).
+  //
+  // 종전에는 `refreshing = status === 'loading'` 이라, 화면 마운트 하이드레이션만으로 인디케이터가
+  // 프로그램적으로 열렸다. 사용자 보고(2026-08-22) *"페이지 이동 시 새로고침 인디케이터가 저절로
+  // 돌고 상단이 빈 채로 멈춘다"* 가 그 증상이다. «조회 중...» 은 그대로 뜬다 — 그쪽이 조회를
+  // 말하는 자리다.
+  it('조회 중이어도 인디케이터는 안 돈다 — "조회 중..." 만 보여준다', async () => {
     setStores({ ...캐릭터_넷, boss: { ...캐릭터_넷.boss, status: 'loading' } })
 
     await renderScreen()
 
     expect(screen.getByText('조회 중...')).toBeTruthy()
-    expect(refreshControl().refreshing).toBe(true)
+    expect(refreshControl().refreshing).toBe(false)
   })
 
   // 이 화면에는 «선택된 캐릭터» 가 없어 스케줄러 두 화면의 출처(선택된 캐릭터의 `syncedAt`)를 쓸 수

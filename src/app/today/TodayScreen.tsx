@@ -39,6 +39,7 @@
  * `syncSchedules` 의 단일 비행이 셋을 한 회차로 합쳐 **네트워크는 한 바퀴**다.
  */
 
+import { usePullRefresh } from '../use-pull-refresh'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Pressable, RefreshControl, View } from 'react-native'
 import { useReducedMotion } from 'react-native-reanimated'
@@ -180,21 +181,33 @@ export function TodayScreen(): React.JSX.Element {
   const isSyncing =
     content.status === 'loading' || boss.status === 'loading' || profit.status === 'loading'
 
-  /** 헤더 버튼과 당김이 **같은 함수**를 부른다([[ADR-072]] 결정 2) — 파일 머리 «당김과 헤더 버튼». */
-  function refreshAll(): void {
-    void content.refresh(content.trackedOcids ?? [])
-    void boss.refresh(boss.trackedOcids ?? [])
-    void profit.refresh(profit.trackedOcids ?? [])
-    void dropHistory.load()
+  /**
+   * 헤더 버튼과 당김이 **같은 함수**를 부른다([[ADR-072]] 결정 2) — 파일 머리 «당김과 헤더 버튼».
+   *
+   * **`allSettled` 다**([[ADR-160]] 결정 1). 넷이 서로 독립이라 하나가 실패해도 나머지를 기다려야
+   * 하고(각자 자기 스토어에 실패를 적는다), 넷이 다 끝나야 당김 인디케이터를 닫을 수 있다 —
+   * 종전에는 `void` 넷이라 «언제 끝났는가» 라는 값 자체가 없었다.
+   */
+  async function refreshAll(): Promise<void> {
+    await Promise.allSettled([
+      content.refresh(content.trackedOcids ?? []),
+      boss.refresh(boss.trackedOcids ?? []),
+      profit.refresh(profit.trackedOcids ?? []),
+      dropHistory.load(),
+    ])
   }
+
+  // **당김이 시작한 회차에만** 인디케이터가 돈다([[ADR-160]] 결정 1) — `isSyncing` 은 여전히 제목
+  // 옆 «조회 중...» 과 헤더 버튼의 스피너가 쓴다(그쪽은 자동 조회도 말해야 하는 자리다).
+  const pull = usePullRefresh(refreshAll)
 
   return (
     <View testID="screen-Today" className="flex-1">
       <ScreenScroll
         refreshControl={
           <RefreshControl
-            refreshing={isSyncing}
-            onRefresh={refreshAll}
+            refreshing={pull.refreshing}
+            onRefresh={pull.onRefresh}
             tintColor={definition.primaryInk}
             colors={[definition.primaryInk]}
             progressBackgroundColor={definition.surface}
@@ -213,7 +226,14 @@ export function TodayScreen(): React.JSX.Element {
                       `lastSyncedAt` 이 이미 그 뜻이고, 건너뛴 진입에서도 갱신된다([[ADR-111]]). */}
                   {isSyncing ? '조회 중...' : formatSyncedAt(profit.lastSyncedAt)}
                 </Text>
-                <Pressable role="button" aria-label="새로고침" onPress={refreshAll} className="shrink-0 p-2">
+                <Pressable
+                  role="button"
+                  aria-label="새로고침"
+                  onPress={() => {
+                    void refreshAll()
+                  }}
+                  className="shrink-0 p-2"
+                >
                   <AnimatedView
                     testID="refresh-icon"
                     style={isSyncing && !reduceMotion ? SPIN_ANIMATION : undefined}
