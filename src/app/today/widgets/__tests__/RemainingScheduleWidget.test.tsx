@@ -137,9 +137,10 @@ describe('줄도 칸도 «그 행» 이 정한다 ([[ADR-147]] 정정 35~37)', (
     })
   })
 
-  // 행 높이는 이제 줄 수를 따라간다. 그래도 **줄 하나의 높이**는 상수라, 한 줄 행과 두 줄 행의
-  // 높이가 예측 가능한 관계로 묶인다.
-  it('수치 줄 하나의 높이는 값에 상관없이 같다', async () => {
+  // 행 높이는 이제 줄 수를 따라간다. 그래도 **줄 하나의 높이**는 데이터와 무관해, 한 줄 행과 두 줄
+  // 행의 높이가 예측 가능한 관계로 묶인다. [[ADR-165]] 로 그 값이 천장에서 **바닥**이 됐지만 성질은
+  // 같다 — 바닥이 모든 줄에 같고, 그 위에 쌓이는 것(글자 한 줄)도 값과 무관하다.
+  it('수치 줄 하나의 바닥 높이는 값에 상관없이 같다', async () => {
     const view = await 위젯([
       스케줄행({ ocid: 'a', weeklyBosses: [], monthlyBosses: [] }),
       스케줄행({ ocid: 'b' }),
@@ -147,7 +148,7 @@ describe('줄도 칸도 «그 행» 이 정한다 ([[ADR-147]] 정정 35~37)', (
 
     const 높이 = view
       .getAllByTestId('schedule-stat-line')
-      .map((line) => flattenStyle(line.props.style).height)
+      .map((line) => flattenStyle(line.props.style).minHeight)
 
     expect(new Set(높이).size).toBe(1)
     expect(높이[0]).toBeGreaterThan(0)
@@ -329,11 +330,11 @@ describe('머리글 합계 ([[ADR-147]] 정정 9)', () => {
 
 describe('수치 줄을 좁혔다 ([[ADR-147]] 정정 40)', () => {
   // 18 은 세 자리를 담을 폭이라, 오른쪽 정렬에서 남는 4px 이 전부 왼쪽 여백이 되어 한 자리 수치가
-  // 라벨에서 떨어져 보였다. 두 자리에 맞춘다.
-  it('숫자 칸이 두 자리 폭이다', async () => {
+  // 라벨에서 떨어져 보였다. 그 값은 **바닥**으로 남고, 천장은 없다(아래 [[ADR-165]]).
+  it('숫자 칸의 바닥이 한 자리 정렬을 지킨다', async () => {
     const { getByText } = await 위젯([스케줄행()])
 
-    expect(flattenStyle(getByText('4').props.style).width).toBe(14)
+    expect(flattenStyle(getByText('4').props.style).minWidth).toBe(14)
   })
 
   it('라벨–숫자 간격보다 칸 사이가 넓다 — 한 칸이 한 덩이로 읽혀야 한다', async () => {
@@ -348,6 +349,23 @@ describe('수치 줄을 좁혔다 ([[ADR-147]] 정정 40)', () => {
 
     expect(칸사이).toBeGreaterThan(라벨숫자)
     expect(칸사이).toBeLessThanOrEqual(8)
+  })
+
+  // [[ADR-165]]: **천장이 글자 크기에 묶여 있었다.** 두 상수 모두 10.5px 시절 값인데
+  // [[ADR-163]] 이 글자만 11.5px 로 올려 두 자리 수치의 마지막 글자가 오른쪽에서 잘렸다
+  // (시뮬레이터 3x 실측 — 「12」의 「2」가 박스 경계에서 평평하게 잘렸다).
+  it('숫자 칸에 고정 폭이 없다 — 내용이 넘치면 칸이 늘어난다', async () => {
+    const { getByText } = await 위젯([스케줄행()])
+
+    expect(flattenStyle(getByText('4').props.style).width).toBeUndefined()
+  })
+
+  it('수치 줄에 고정 높이가 없다 — 바닥만 있다', async () => {
+    const { getAllByTestId } = await 위젯([스케줄행()])
+
+    const 줄 = flattenStyle(getAllByTestId('schedule-stat-line')[0]?.props.style)
+    expect(줄.height).toBeUndefined()
+    expect(줄.minHeight).toBe(14)
   })
 
   it('보스 배지가 작은 크기다 — 20px 배지가 줄 높이를 혼자 정하고 있었다', async () => {
