@@ -2,8 +2,6 @@ import { useEffect } from 'react'
 import { BackHandler } from 'react-native'
 import { moveAppToBackground } from '../native/back-gesture'
 
-import { barCanGoBack, barGoBack } from './bar-store'
-
 /**
  * 스택이 비었을 때의 뒤로가기 — **묻지 않고 백그라운드로**([[ADR-120]] 결정 18).
  *
@@ -50,20 +48,10 @@ export function useRootBackToBackground(navigation: RootBackNavigation): void {
       if (!navigation.isReady()) return false
       if (navigation.canGoBack()) return false
 
-      // **판정이 하나 늘었다**([[ADR-132]] 결정 10). 하단바의 «층» 기록은 react-navigation 이 모르는
-      // 우리 것이라(`bar-store.ts`) `canGoBack()` 에 안 잡힌다 — 그대로 두면 하위 행에서 시스템
-      // 뒤로가기가 위층으로 가는 대신 **앱을 백그라운드로 보낸다**.
-      //
-      // 순서는 «화면 스택 → 바 기록 → 백그라운드» 다(사용자 판정). 위 `canGoBack()` 이 먼저인 것이
-      // 그 순서이고, 하위 페이지가 열려 있으면 여기까지 오지 않는다.
-      //
-      // 판정이 둘이 됐어도 **리스너 등록 순서에는 여전히 안 기댄다** — 둘 다 «우리가 처리할 수
-      // 있으면 true» 형태라, react-navigation 리스너보다 먼저 불리든 나중에 불리든 결과가 같다.
-      if (barCanGoBack()) {
-        barGoBack()
-        return true
-      }
-
+      // **판정이 다시 하나다**([[ADR-167]] 결정 7). [[ADR-132]] 결정 10 은 하단바의 «층» 기록이
+      // react-navigation 이 모르는 우리 것이라 `canGoBack()` 에 안 잡힌다는 이유로 여기에 단을
+      // 하나 더 뒀었다. 층이 진짜 스택이 된 지금은 그 판정에 **하위 층까지 포함해** 잡히므로,
+      // 여기까지 왔다는 것은 정말로 pop 할 것이 없다는 뜻이다.
       void moveAppToBackground()
       return true
     })

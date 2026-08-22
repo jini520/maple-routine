@@ -20,7 +20,7 @@
 //
 // ══ 갈린 것 다섯 ═══════════════════════════════════════════════════════════════════
 //
-// ① `useNavigate('/boss/manage')` → `navigation.navigate('Tabs', { screen: 'BossManage' })`.
+// ① `useNavigate('/boss/manage')` → `openTab('BossManage')`(같은 층의 형제, [[ADR-167]] 결정 3).
 //    **[[ADR-098]] 결정 1(이동 전에 스크롤을 0으로)은 함께 사라진다** — 그 처방이 풀던 것은 네 탭이
 //    문서 스크롤 하나를 공유하던 문제이고([[ADR-099]]), RN 에서는 스크롤이 화면과 함께 죽어 계승할
 //    오프셋이 없다. **목적지가 push 가 아니라 형제 탭인 것은 [[ADR-145]] 결정 1 이다** — 그래서
@@ -82,7 +82,7 @@ import { MEDIA_TEXT_SHADOW_STYLE } from '../../lib/text-styles'
 import { useTopSafeAreaPx } from '../../lib/top-safe-area'
 import { orderByTracked } from '../../lib/tracked-order'
 import { useThemeAppearance } from '../../theme/context'
-import { useScreenNavigation } from '../use-screen-navigation'
+import { useOpenTab } from '../use-open-tab'
 import { usePullRefresh } from '../use-pull-refresh'
 
 const PARTY_FILTER_LABELS: Record<PartyFilter, string> = {
@@ -184,7 +184,7 @@ export function BossScreen(): React.JSX.Element {
   // ([[ADR-141]] 결정 1), 자동 조회는 원래 조용해야 하는 것이다.
   const pull = usePullRefresh(() => refresh(trackedOcids ?? []))
   const { mode } = useTrackingModeStore()
-  const navigation = useScreenNavigation()
+  const openTab = useOpenTab()
   const topSafeAreaPx = useTopSafeAreaPx()
   const { definition } = useThemeAppearance()
   const reduceMotion = useReducedMotion()
@@ -374,7 +374,7 @@ export function BossScreen(): React.JSX.Element {
   // [[ADR-140]] 결정 1·2: 이 화면은 더 이상 피커를 열지 않는다 — 추적 목록을 고르는 자리는 설정
   // 하나뿐이라, 빈 상태 CTA 는 모달 대신 **설정 탭을 피커가 열린 채로** 연다.
   function goToCharacterManage(): void {
-    navigation.navigate('Tabs', { screen: 'Settings', params: { openPicker: true } })
+    openTab('Settings', { openPicker: true })
   }
 
   // [[ADR-035]] 결정 18 이 만든 헤더 진입점("보스 관리")은 **여기 없다**([[ADR-145]] 결정 1) —
@@ -382,9 +382,10 @@ export function BossScreen(): React.JSX.Element {
   // "캐릭터 관리"에 이어 제목 줄의 두 번째이자 마지막 버튼이 사라진 것이라, 이제 그 줄에서 폭을
   // 다투는 상대가 없다([[ADR-141]] 결정 3의 `shrink-0` 짝이 하나만 남는다).
   //
-  // 남는 것은 빈 상태 CTA 하나이고, 그것도 push 가 아니라 **형제 탭**으로 보낸다.
+  // 남는 것은 빈 상태 CTA 하나이고, 그것도 push 가 아니라 **같은 층의 형제**로 보낸다
+  // ([[ADR-167]] 결정 3 — 보스 관리는 이 화면과 같은 스케줄러 단에 산다).
   function goToBossManage(): void {
-    navigation.navigate('Tabs', { screen: 'BossManage' })
+    openTab('BossManage')
   }
 
   // [[ADR-060]]: 빈 상태 문구는 모드(수동/자동)별로 나눈다. 수동 모드만 CTA를 준다 — 자동 모드가

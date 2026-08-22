@@ -19,12 +19,11 @@ import { useScreenNavigation } from '../../use-screen-navigation'
 import { 빈_뷰모델 } from '../widgets/__tests__/widget-fixture'
 import { WidgetGrid } from '../WidgetGrid'
 
-import { initialBarState, pressBack } from '../../../navigation/bar-model'
-import { getBarRecord, setBarRecord, toBarRecord } from '../../../navigation/bar-store'
-
 jest.mock('../../use-screen-navigation', () => ({ useScreenNavigation: jest.fn() }))
 
 const navigate = jest.fn()
+// 층이 스택이 된 뒤로 «그룹 층으로 되돌리기» 는 액션이다([[ADR-167]]) — 화면이 이것도 부른다.
+const dispatch = jest.fn()
 const mockedUseScreenNavigation = jest.mocked(useScreenNavigation)
 
 type Rendered = Awaited<ReturnType<typeof renderAtom>>
@@ -52,9 +51,7 @@ function 스타일(element: AtomElement): Record<string, unknown> {
 }
 
 beforeEach(() => {
-  // 바 기록은 모듈 수준 상태다 — 테스트끼리 새지 않게 매번 비운다.
-  setBarRecord(toBarRecord(initialBarState()))
-  mockedUseScreenNavigation.mockReturnValue({ navigate } as unknown as ReturnType<
+  mockedUseScreenNavigation.mockReturnValue({ navigate, dispatch } as unknown as ReturnType<
     typeof useScreenNavigation
   >)
 })
@@ -212,35 +209,32 @@ describe('타일 탭 ([[ADR-147]] 결정 5)', () => {
       fireEvent.press(within(타일(view, 'weekly-boss-profit')).getByRole('button'))
     })
 
-    expect(navigate).toHaveBeenCalledWith('Tabs', { screen: 'Profit' })
-  })
-
-  // 증상: 위젯으로 보스 수익에 간 뒤 ← 를 누르면 today 가 아니라 **가계부가 활성인 채로** 그룹
-  // 행만 열렸다. 타일 탭이 «한 층 내려가는 이동» 인데 바 기록을 안 남겨, ← 가 [[ADR-132]] 결정 5 의
-  // 안전망(«기록이 없으면 페이지는 그대로 두고 그룹 행만 연다»)에 걸린 것이다.
-  it('하위를 가진 그룹으로 보내면 바 기록에 온 자리를 적는다 — ← 가 today 로 돌아간다', async () => {
-    const view = await 격자()
-
-    await act(async () => {
-      fireEvent.press(within(타일(view, 'weekly-boss-profit')).getByRole('button'))
-    })
-
-    expect(getBarRecord().history).toEqual(['Today'])
-    expect(pressBack({ ...getBarRecord(), page: 'Profit' })).toMatchObject({
-      page: 'Today',
-      showGroups: false,
+    // **한 층 내려가는 이동이다** — 보스 수익은 수익·지출 그룹의 하위라 그 층 화면을 연다.
+    // 그것이 곧 스택 한 단이므로 ← 도, 가장자리 스와이프도 today 로 돌아온다([[ADR-167]] 결정 6).
+    expect(navigate).toHaveBeenCalledWith('Main', {
+      screen: 'LedgerSubs',
+      params: { screen: 'Profit' },
     })
   })
 
-  it('하위가 없는 그룹으로 보내면 적지 않는다 — 같은 층의 옆걸음이다', async () => {
+  // 증상이었던 것: 위젯으로 보스 수익에 간 뒤 ← 를 누르면 today 가 아니라 **가계부가 활성인 채로**
+  // 그룹 행만 열렸다. 타일 탭이 «한 층 내려가는 이동» 인데 바 기록을 안 남겨, ← 가 [[ADR-132]]
+  // 결정 5 의 안전망(«기록이 없으면 페이지는 그대로 두고 그룹 행만 연다»)에 걸린 것이다.
+  //
+  // 지금은 **적을 기록이 없다.** 이동 자체가 스택 한 단이라 되돌아갈 자리가 구조로 실재하고,
+  // 그 안전망도 함께 사라졌다([[ADR-167]] 결정 4·6). 그래서 이 결함을 막는 것은 위 한 줄이다.
+
+  it('하위가 없는 그룹으로 보내면 그룹 층 안의 옆걸음이다 — 층이 안 쌓인다', async () => {
     const view = await 격자()
 
     await act(async () => {
       fireEvent.press(within(타일(view, 'representative-character')).getByRole('button'))
     })
 
-    expect(navigate).toHaveBeenCalledWith('Tabs', { screen: 'Settings' })
-    expect(getBarRecord().history).toEqual([])
+    expect(navigate).toHaveBeenCalledWith('Main', {
+      screen: 'Groups',
+      params: { screen: 'Settings' },
+    })
   })
 
   it('`target` 이 없는 타일은 누를 수 없다', async () => {

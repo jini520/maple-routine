@@ -57,7 +57,6 @@
  * 바가 키보드 위에 얹혀 의미도 없고 시야만 가린다.
  */
 
-import type { BottomTabBarProps } from '@react-navigation/bottom-tabs'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Animated,
@@ -96,13 +95,35 @@ import {
   pressBack,
   pressGroup,
   pressSub,
+  layerOfPage,
+  rememberSub,
   visibleSubs,
+  type BarIntent,
   type BarState,
   type GroupId,
 } from './bar-model'
-import { registerBarBackHandler, setBarRecord, toBarRecord, useBarRecord } from './bar-store'
+import { setLastSub, useLastSub } from './bar-store'
 import { useKeyboardShown } from './use-keyboard-shown'
-import type { TabRouteName } from './routes'
+import type { LayerRouteName, TabRouteName } from './routes'
+
+/**
+ * 바가 아는 이동은 **둘뿐이다** — [[ADR-167]] 결정 2.
+ *
+ * 층 화면 이름과 중첩 파라미터의 모양은 `Main` 에서 끝난다. 바가 내비게이션 구조를 직접 알면
+ * 구조를 바꿀 때마다 바가 함께 움직이고, 바는 이 앱에서 정정이 제일 많이 쌓인 파일이다.
+ */
+export interface BarNavigation {
+  /** 그 층 화면으로 가며 안쪽 페이지를 지정한다. 스택에 없으면 한 단 쌓이고, 있으면 그리로 돌아간다. */
+  openLayer(layer: LayerRouteName, page: TabRouteName): void
+  /** 한 단 올라간다 — 가장자리 스와이프가 만드는 것과 같은 결과다. */
+  goBack(): void
+}
+
+export interface BottomBarProps {
+  /** react-navigation 이 알려 주는 지금 화면(`current-page.ts`). 바는 사본을 들지 않는다. */
+  page: TabRouteName
+  navigation: BarNavigation
+}
 
 /** 치수 — `design-system.md` 「하단바」 표와 같은 값이어야 한다. */
 /**
@@ -376,13 +397,13 @@ function BarItem({
   )
 }
 
-export function BottomBar({ state, navigation }: BottomTabBarProps): React.JSX.Element | null {
+export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Element | null {
   // **인셋이 아니라 하한이 깔린 값이다**([[ADR-132]] 정정 31) — 결정 11 의 들어올림이 0 이라 이
   // 값이 곧 «캡슐이 바닥에서 뜨는 높이» 이고, 안드로이드 제스처 기기(15)에서는 그것이 iOS 의 절반도
   // 안 됐다. 콘텐츠가 남기는 몫(`ScreenScroll`)과 토스트도 같은 함수를 본다.
   const bottomSafeAreaPx = useBottomSafeAreaPx()
   const { definition } = useThemeAppearance()
-  const record = useBarRecord()
+  const lastSub = useLastSub()
   const isKeyboardShown = useKeyboardShown()
   // **바의 세로는 창 폭에서 나온다**([[ADR-132]] 정정 30). 콘텐츠가 남기는 몫도 같은 함수를 보므로
   // (`ScreenScroll` → `bottom-inset.ts`) 두 값이 어긋날 자리가 없다.
@@ -393,8 +414,7 @@ export function BottomBar({ state, navigation }: BottomTabBarProps): React.JSX.E
   const pillHeight = barHeight - BAR_PADDING * 2
   const backCircle = Math.round(pillHeight * BACK_CIRCLE_RATIO)
 
-  const page = state.routes[state.index].name as TabRouteName
-  const bar: BarState = useMemo(() => ({ page, ...record }), [page, record])
+  const bar: BarState = useMemo(() => ({ page, lastSub }), [page, lastSub])
 
   const colors = resolveBarColors(definition)
   // iOS 26 이상에서만 **Liquid Glass** 가 있다. 그 밖(안드로이드 · iOS 26 미만)은 블러 재질이다
@@ -531,12 +551,31 @@ export function BottomBar({ state, navigation }: BottomTabBarProps): React.JSX.E
 
   // 여기서 [[ADR-132]] 결정 9 의 광고 게이트를 태웠다(그래서 «무엇을 눌렀는가» 를 인자로 받았다).
   // [[ADR-150]] 이 전면광고를 걷으며 함께 지웠다 — 지금 이 함수가 하는 일은 이동뿐이다.
+  //
+  // **상태가 아니라 지시를 받는다**([[ADR-167]] 결정 5) — 층은 스택이 들고 우리가 드는 것은
+  // «다시 들어갈 자리»(`lastSub`) 하나다.
   const apply = useCallback(
-    (next: BarState) => {
-      const before = barRef.current
-
-      setBarRecord(toBarRecord(next))
-      if (next.page !== before.page) navigation.navigate(next.page)
+    (intent: BarIntent) => {
+      switch (intent.kind) {
+        case 'openSubs':
+          setLastSub(rememberSub(getLastSubOf(barRef.current), intent.page))
+          navigation.openLayer(intent.layer, intent.page)
+          return
+        case 'switchSub':
+          setLastSub(rememberSub(getLastSubOf(barRef.current), intent.page))
+          // 같은 단 안의 옆걸음이다 — 그 층 화면은 이미 맨 위이므로 스택이 자라지 않는다.
+          navigation.openLayer(layerOfPage(intent.page), intent.page)
+          return
+        case 'switchGroupPage':
+          // 하위 행에서 눌렀다면 그룹 층이 아래 단이라 **올라가면서** 옆걸음한다(이동 한 번).
+          navigation.openLayer('Groups', intent.page)
+          return
+        case 'back':
+          navigation.goBack()
+          return
+        case 'none':
+          return
+      }
     },
     [navigation],
   )
@@ -545,19 +584,6 @@ export function BottomBar({ state, navigation }: BottomTabBarProps): React.JSX.E
   useEffect(() => {
     applyRef.current = apply
   })
-
-  useEffect(() => {
-    registerBarBackHandler({
-      canGoBack: () => canGoBack(barRef.current),
-      goBack: () => {
-        applyRef.current(pressBack(barRef.current))
-      },
-    })
-
-    return () => {
-      registerBarBackHandler(null)
-    }
-  }, [])
 
   if (isKeyboardShown) return null
 
@@ -853,4 +879,9 @@ export function BottomBar({ state, navigation }: BottomTabBarProps): React.JSX.E
       ) : null}
     </View>
   )
+}
+
+/** `apply` 가 최신 `lastSub` 를 ref 에서 꺼내는 한 줄. 옛 값을 붙들면 기억이 한 번씩 밀린다. */
+function getLastSubOf(bar: BarState): BarState['lastSub'] {
+  return bar.lastSub
 }

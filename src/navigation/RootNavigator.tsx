@@ -13,7 +13,8 @@ import { SettingsFeatureGuideScreen } from '../app/settings/SettingsFeatureGuide
 import { SettingsPrivacyScreen } from '../app/settings/SettingsPrivacyScreen'
 import { SettingsReleaseNotesScreen } from '../app/settings/SettingsReleaseNotesScreen'
 import { ScreenBackdrop } from '../components/templates/ThemeBackdrop/ScreenBackdrop'
-import { TabNavigator } from './TabNavigator'
+import { Main } from './Main'
+import { PUSH_SCREEN_OPTIONS } from './stack-presentation'
 import { STACK_ROUTE_NAMES, type RootStackParamList, type StackRouteName } from './routes'
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
@@ -63,13 +64,16 @@ function screenFor(name: StackRouteName): React.ComponentType<Record<string, nev
 }
 
 /**
- * 루트 스택 — 탭 레이어 하나 + 그 위에 쌓이는 하위 페이지 열하나([[ADR-120]] 결정 1·2·4).
+ * 루트 스택 — `Main` 하나 + 그 위에 쌓이는 하위 페이지 열하나([[ADR-120]] 결정 1·2·4).
  *
- * ## 왜 하위 페이지가 탭 **안**이 아니라 **위**인가
+ * ## 왜 하위 페이지가 `Main` **안**이 아니라 **위**인가
  *
  * [[ADR-120]] 결정 4 가 정한 것은 *"탭바가 아래 화면과 한 덩어리로 밀려 나간다"* 이고, 그 덩어리가
- * 곧 `TabNavigator` 전체다. 하위 페이지를 이 스택에 쌓으면 밀려나는 것이 탭 화면 + 탭바가 되어
- * 그 결정이 **구조로** 성립한다. 웹에서 오버레이를 포털로 탭 레이어 밖에 그려야 했던 이유(결정 3 —
+ * 곧 `Main` 전체다 — 층 스택과 바가 그 안에 함께 산다([[ADR-167]] 결정 2). 하위 페이지를 이 스택에
+ * 쌓으면 밀려나는 것이 층 화면 + 바가 되어 그 결정이 **구조로** 성립한다.
+ *
+ * 층(그룹 행 ↔ 하위 행)은 `Main` **안쪽** 스택이 진다. 두 스택이 같은 `animation`·`gestureEnabled`
+ * 를 쓰므로 «하위 페이지처럼 열린다» 가 값이 아니라 구조로 성립한다(#240). 웹에서 오버레이를 포털로 탭 레이어 밖에 그려야 했던 이유(결정 3 —
  * `transform` 이 containing block 을 만든다)도 여기서는 존재하지 않는다: 층을 겹치는 일을 OS 가 한다.
  *
  * 그래서 계획서 표의 *"탭 N 위 push"* 는 **루트 스택 push** 로 읽는다 — 실제로 어느 탭에서 열리는지는
@@ -97,32 +101,11 @@ export function RootNavigator(): React.JSX.Element {
       // 불투명해야 전환 중 두 화면이 서로 비치지 않고, 그러면 벽지를 화면이 들어야 한다.
       // iOS 에서는 이 래퍼가 자식을 그대로 통과시킨다(`ScreenBackdrop`).
       screenLayout={({ children }) => <ScreenBackdrop>{children}</ScreenBackdrop>}
-      screenOptions={{
-        // 페이지 헤더는 앱이 직접 그린다 — `TabNavigator` 와 같은 이유.
-        headerShown: false,
-
-        // [[ADR-120]] 결정 5. iOS 에서는 `default`(UIKit push)로 해석되는데, 그 결정의 값 네 줄
-        // (`translateX(100% → 0)` · 아래 화면 `-30%` · 스크림 `0.12` · 왼쪽 그림자)이 애초에 그
-        // 전환을 흉내 낸 것이라 원본으로 돌아가는 셈이다. 안드로이드에서는 이 값이 **플랫폼 기본
-        // 대신 iOS 식 슬라이드**를 그린다 — 웹뷰 앱이 두 플랫폼에 같은 전환을 그렸으므로
-        // (`stack-transition.ts` 는 플랫폼을 묻지 않는다) 여기서 기본값을 택하면 안드로이드 사용자에게
-        // 전환 후 앱이 **다르게 보인다**(`docs/migration/README.md` 의 한 문장).
-        //
-        // 340ms·0.12·-30% 같은 개별 수치는 이제 OS/`react-native-screens` 가 갖고 있어 우리가 못
-        // 돌린다. 결정 12 가 요구하는 실기기 프레임 확인은 그래서 **값 확정이 아니라 채택 판정**이 된다.
-        animation: 'ios_from_right',
-
-        // [[ADR-120]] 결정 6 — iOS 가장자리 스와이프 백. `gestureResponseDistance` 는 **주지
-        // 않는다**: 기본값이 UIKit 의 화면 가장자리 인식기이고, 결정 6 의 28px·35%·0.4px/ms 가
-        // 바로 그것을 손으로 흉내 낸 값이었다. 숫자를 다시 얹으면 흉내가 원본을 덮는다.
-        // (`fullScreenGestureEnabled` 도 켜지 않는다 — 화면 전체 드래그는 "가장자리 28px" 규정과
-        // 다른 동작이다.)
-        gestureEnabled: true,
-      }}
+      screenOptions={PUSH_SCREEN_OPTIONS}
     >
       {isCompleted ? (
         <Stack.Group>
-          <Stack.Screen name="Tabs" component={TabNavigator} />
+          <Stack.Screen name="Main" component={Main} />
           {STACK_ROUTE_NAMES.map((name) => (
             <Stack.Screen key={name} name={name} component={screenFor(name)} />
           ))}

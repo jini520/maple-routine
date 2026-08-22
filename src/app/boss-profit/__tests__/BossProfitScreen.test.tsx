@@ -41,6 +41,8 @@ import { BossProfitScreen } from '../BossProfitScreen'
 const mockShowError = jest.fn()
 const mockNoticeApiKeyIssue = jest.fn()
 const navigate = jest.fn()
+// 층이 스택이 된 뒤로 «그룹 층으로 되돌리기» 는 액션이다([[ADR-167]]) — 화면이 이것도 부른다.
+const dispatch = jest.fn()
 
 // [[ADR-063]]: 동기화 실패·기간 로드 실패는 인라인 문단이 아니라 토스트다.
 jest.mock('../../../features/toast/store', () => ({
@@ -152,7 +154,10 @@ beforeEach(() => {
   // 카운트업의 '직전 표시값' 기억은 모듈 수준이라 언마운트를 건너 산다([[ADR-087]] 결정 8) —
   // 테스트 하나가 곧 세션 하나다.
   clearCountUpMemory()
-  mockedNavigation.mockReturnValue({ navigate } as unknown as ReturnType<typeof useScreenNavigation>)
+  dispatch.mockClear()
+  mockedNavigation.mockReturnValue({ navigate, dispatch } as unknown as ReturnType<
+    typeof useScreenNavigation
+  >)
   mockStore()
 })
 
@@ -192,9 +197,12 @@ describe('빈 상태 ([[ADR-101]] 결정 1 · [[ADR-060]])', () => {
       fireEvent.press(getByText('캐릭터 선택하러 가기'))
     })
 
-    expect(navigate).toHaveBeenCalledWith('Tabs', {
-      screen: 'Settings',
-      params: { openPicker: true } })
+    // 층이 스택이 되면서 이동이 두 단 중첩이 됐다([[ADR-167]] 결정 2) — 설정은 **그룹 층**에
+    // 살고, 파라미터는 가장 안쪽 화면에 붙는다.
+    expect(navigate).toHaveBeenCalledWith('Main', {
+      screen: 'Groups',
+      params: { screen: 'Settings', params: { openPicker: true } },
+    })
   })
 })
 

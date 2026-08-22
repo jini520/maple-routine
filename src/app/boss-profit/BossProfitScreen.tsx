@@ -90,6 +90,7 @@ import { TABULAR_NUMS } from '../../lib/text-styles'
 import { useTopSafeAreaPx } from '../../lib/top-safe-area'
 import { orderByTracked } from '../../lib/tracked-order'
 import { useThemeAppearance } from '../../theme/context'
+import { useOpenTab } from '../use-open-tab'
 import { useScreenNavigation } from '../use-screen-navigation'
 import { usePullRefresh } from '../use-pull-refresh'
 import type { BossProfitContextValue } from './boss-profit-context'
@@ -139,6 +140,7 @@ export function BossProfitScreen(): React.JSX.Element {
   const pull = usePullRefresh(() => refresh(trackedOcids ?? []))
 
   const navigation = useScreenNavigation()
+  const openTab = useOpenTab()
   const topSafeAreaPx = useTopSafeAreaPx()
   const { definition } = useThemeAppearance()
   const reduceMotion = useReducedMotion()
@@ -225,8 +227,7 @@ export function BossProfitScreen(): React.JSX.Element {
               // [[ADR-068]] 결정 4: 피커를 **열어 둔 채로** 보낸다. 웹의 `?openPicker=1` 자리다.
               // 목적지는 보스 탭에서 **설정 탭**으로 옮겼다([[ADR-140]] 결정 2) — 열어 두고 보낸다는
               // 계약은 그대로이고 받는 화면만 바뀌었다.
-              onClick: () =>
-                navigation.navigate('Tabs', { screen: 'Settings', params: { openPicker: true } }),
+              onClick: () => openTab('Settings', { openPicker: true }),
             }}
           />
         </View>
