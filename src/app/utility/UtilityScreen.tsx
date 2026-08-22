@@ -33,10 +33,13 @@ import { ITEM_SPLIT_TOOL_NAME } from './tool-names'
  * 감싼다** — 줄바꿈이 아이템 경계에서만 일어나므로 단어가 통째로 움직인다. `
 ` 을 박아 넣는
  * 방법도 있지만 그러면 넓은 화면에서도 끊긴다.
+ *
+ * **가운데 정렬**이다(사용자 지정, 2026-08-23) — 정렬은 `Text` 의 `text-center` 가 아니라 이 줄의
+ * `justify-center` 가 한다. 글자가 단어별 flex 아이템이라 각 줄을 미는 것이 그쪽 축이기 때문이다.
  */
 function TileLabel(props: { text: string }): React.JSX.Element {
   return (
-    <View className="flex-1 flex-row flex-wrap gap-x-1">
+    <View className="flex-1 flex-row flex-wrap justify-center gap-x-1">
       {props.text.split(' ').map((word, index) => (
         <Text key={`${word}-${index}`} className="text-sm font-semibold text-text">
           {word}
