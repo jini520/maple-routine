@@ -20,7 +20,7 @@
 //    않는가 — 이고 그것은 한 케이스다.
 // ⑥ DOM 스냅샷 둘은 옮기지 않는다(전환 계획서 «잃는 안전망») — 대신 각 가지를 케이스로 적는다.
 import { useCharacterSelectionStore } from '../../../features/character-selection/store'
-import { act, fireEvent, screen } from '@testing-library/react-native'
+import { act, fireEvent, screen, within } from '@testing-library/react-native'
 import { useState } from 'react'
 
 import {
@@ -93,22 +93,27 @@ function mockStore(overrides: Partial<Store> = {}): Store {
     addManualBoss: jest.fn(),
     removeManualBoss: jest.fn(),
     setManualBossDifficulty: jest.fn(),
-    activeTab: 'weekly' as const,
-    setActiveTab: jest.fn(),
-    weeklyFilter: 'all' as const,
-    setWeeklyFilter: jest.fn(),
-    monthlyFilter: 'all' as const,
-    setMonthlyFilter: jest.fn(),
+    partyFilter: 'all' as const,
+    setPartyFilter: jest.fn(),
     ...overrides,
   } as Store
 
   mockedStore.mockImplementation(() => {
-    const [activeTab, setActiveTab] = useState(base.activeTab)
-    const [weeklyFilter, setWeeklyFilter] = useState(base.weeklyFilter)
-    const [monthlyFilter, setMonthlyFilter] = useState(base.monthlyFilter)
-    return { ...base, activeTab, setActiveTab, weeklyFilter, setWeeklyFilter, monthlyFilter, setMonthlyFilter }
+    const [partyFilter, setPartyFilter] = useState(base.partyFilter)
+    return { ...base, partyFilter, setPartyFilter }
   })
   return base
+}
+
+/**
+ * 화면에 **선** 섹션 헤더를 위에서 아래 순서로 — `['monthly', 'weekly']`.
+ *
+ * 무리가 비면 헤더도 안 서므로([[ADR-164]] 결정 6) 이 배열이 곧 «지금 무엇이 보이는가» 다.
+ */
+function sectionOrder(): string[] {
+  return screen
+    .queryAllByTestId(/^boss-section-header-/)
+    .map((node) => String(node.props.testID).replace('boss-section-header-', ''))
 }
 
 function character(overrides: Partial<BossCharacterView> = {}): BossCharacterView {
@@ -270,38 +275,49 @@ describe('BossScreen — 목록 ([[ADR-031]])', () => {
       ],
     })
 
-  it('기본 탭은 주간이고, 등록된 보스만 보이며 n/12 배지를 그린다', async () => {
+  // [[ADR-164]] 결정 1·3: 탭이 없다. 한 목록에 월간이 먼저 서고 주간이 뒤따르며, 무리마다
+  // 섹션 헤더가 붙는다.
+  it('탭 없이 월간·주간이 한 목록에 서고, 등록된 보스만 보인다', async () => {
     withBosses()
 
     await renderScreen()
 
+    expect(screen.getByText('검은마법사')).toBeTruthy()
     expect(screen.getByText('자쿰')).toBeTruthy()
     expect(screen.getByText('카오스')).toBeTruthy()
     expect(screen.queryByText('매그너스')).toBeNull()
-    expect(screen.queryByText('검은마법사')).toBeNull()
-    expect(screen.getByText('3/12')).toBeTruthy()
+    // 탭 버튼이 있던 자리는 이제 섹션 헤더다 — 누르는 것이 아니라 읽는 것이다.
+    expect(screen.queryByRole('button', { name: '월간' })).toBeNull()
   })
 
-  it('월간 탭으로 바꾸면 월간 보스만 보이고 n/12 배지는 사라진다 — 12는 주간 한도다', async () => {
+  // 화면에 그려진 순서를 직접 못 박는다 — «둘 다 보인다» 만으로는 위아래가 안 잡힌다.
+  it('월간 무리가 주간 무리보다 위에 있다', async () => {
     withBosses()
+
     await renderScreen()
 
-    await press(button('월간'))
+    expect(sectionOrder()).toEqual(['monthly', 'weekly'])
+  })
 
-    expect(screen.getByText('검은마법사')).toBeTruthy()
-    expect(screen.queryByText('자쿰')).toBeNull()
-    expect(screen.queryByText('3/12')).toBeNull()
+  // [[ADR-164]] 결정 3: 탭이 사라지며 갈 곳을 잃는 표시가 「주간」 헤더에 붙는다 — 12 는 주간
+  // 한도이므로([[ADR-055]] 결정 8) 그 수치가 어느 무리의 것인지 헤더가 대신 말한다.
+  it('n/12 배지는 「주간」 섹션 헤더에 붙는다', async () => {
+    withBosses()
+
+    await renderScreen()
+
+    expect(screen.getByTestId('boss-section-header-weekly')).toBeTruthy()
+    expect(within(screen.getByTestId('boss-section-header-weekly')).getByText('3/12')).toBeTruthy()
+    expect(within(screen.getByTestId('boss-section-header-monthly')).queryByText('3/12')).toBeNull()
   })
 
   it('완료된 보스에만 완료 배지가 붙는다', async () => {
     withBosses()
+
     await renderScreen()
 
-    expect(screen.queryByText('완료')).toBeNull()
-
-    await press(button('월간'))
-
-    expect(screen.getByText('완료')).toBeTruthy()
+    // 검마만 완료다(위 fixture) — 자쿰은 미완료라 배지가 하나뿐이다.
+    expect(screen.getAllByText('완료')).toHaveLength(1)
   })
 
   // [[ADR-031]] 결정 5 — 미등록이어도 완료된 보스는 목록에 남는다(게임에서 지웠어도 잡은 것은 사실).
@@ -418,6 +434,43 @@ describe('BossScreen — 챌린저스 시즌 보스 배지 ([[ADR-031]])', () =>
     await renderScreen()
 
     expect(screen.getByText('season 미완료')).toBeTruthy()
+  })
+
+  // [[ADR-164]] 결정 6 의 «빈 무리는 헤더도 걷는다» 에 예외가 하나 있다 — **배지를 싣고 있으면
+  // 남긴다.** 탭 시절 이 배지들은 목록이 비어도 탭 줄에 떠 있었고, 무리가 비었다는 이유로 지우면
+  // «이번 주 몇 마리 잡았나» 를 말할 자리가 아예 없어진다.
+  it('주간 카드가 하나도 안 서도 배지를 실은 「주간」 헤더는 남는다', async () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [
+        character({
+          world: '챌린저스2',
+          // 미등록·미완료라 카드로는 안 선다([[ADR-031]] 결정 5).
+          weeklyBosses: [seasonBoss()],
+          monthlyBosses: [
+            boss({
+              apiName: '검은 마법사',
+              matchedBossName: '검은마법사',
+              difficulty: '하드',
+              cycle: 'monthly',
+              portraitSlug: 'blackMage',
+              isRegistered: true,
+            }),
+          ],
+          weeklyBossClearCount: 3,
+          weeklyBossClearLimitCount: 12,
+        }),
+      ],
+    })
+
+    await renderScreen()
+
+    expect(sectionOrder()).toEqual(['monthly', 'weekly'])
+    const header = screen.getByTestId('boss-section-header-weekly')
+    expect(within(header).getByText('3/12')).toBeTruthy()
+    expect(within(header).getByText('season 미완료')).toBeTruthy()
+    expect(screen.queryByText('시즌 보스 메이린')).toBeNull()
   })
 
   it('시즌 보스가 완료됐으면 배지가 완료를 말한다', async () => {
@@ -637,8 +690,9 @@ describe('BossScreen — 솔로/파티 필터 ([[ADR-019]] · [[ADR-096]])', () 
     expect(screen.queryByText('자쿰')).toBeNull()
   })
 
-  // [[ADR-096]] 결정 1 — 두 탭의 필터는 독립이다(한 탭을 바꿔도 다른 탭은 전체).
-  it('주간 필터를 바꿔도 월간 탭은 전체다', async () => {
+  // [[ADR-164]] 결정 5([[ADR-019]] 결정 6 정정) — 목록이 하나라 필터도 하나다. 「파티」를 고르면
+  // 두 무리 모두에 걸린다(전에는 주간 필터가 월간 목록을 건드리지 않았다).
+  it('필터 하나가 두 무리에 함께 걸린다', async () => {
     mockStore({
       status: 'loaded',
       trackedOcids: ['ocid-1'],
@@ -661,10 +715,13 @@ describe('BossScreen — 솔로/파티 필터 ([[ADR-019]] · [[ADR-096]])', () 
     await renderScreen()
 
     await press(button('파티'))
-    await press(button('월간'))
 
-    // 월간 보스는 파티 설정이 없어 "파티" 필터였다면 사라졌을 것이다.
-    expect(screen.getByText('검은마법사')).toBeTruthy()
+    // 자쿰만 파티 설정(4인)이 있다 — 검마와 스우는 미설정이라 솔로로 취급돼 함께 사라진다.
+    expect(screen.getByText('자쿰')).toBeTruthy()
+    expect(screen.queryByText('검은마법사')).toBeNull()
+    expect(screen.queryByText('스우')).toBeNull()
+    // 무리가 비면 그 헤더도 함께 사라진다([[ADR-164]] 결정 6).
+    expect(sectionOrder()).toEqual(['weekly'])
   })
 
   // 보스가 0건인 빈 상태와 **다른 문구·다른 CTA** 다([[ADR-060]] 결정 3).
@@ -681,7 +738,7 @@ describe('BossScreen — 솔로/파티 필터 ([[ADR-019]] · [[ADR-096]])', () 
 
     expect(screen.getByText('이 조건에 해당하는 보스가 없습니다')).toBeTruthy()
     // 보스가 0건인 빈 상태의 문구가 아니다.
-    expect(screen.queryByText('등록된 주간 보스가 없습니다')).toBeNull()
+    expect(screen.queryByText('등록된 보스가 없습니다')).toBeNull()
 
     await press(button('필터 초기화'))
 
@@ -696,7 +753,7 @@ describe('BossScreen — 빈 상태 문구 ([[ADR-060]])', () => {
 
     await renderScreen()
 
-    expect(screen.getByText('등록된 주간 보스가 없습니다')).toBeTruthy()
+    expect(screen.getByText('등록된 보스가 없습니다')).toBeTruthy()
     // 헤더 버튼이 사라졌으므로([[ADR-145]] 결정 1) 이 화면에 "보스 관리"라는 글자는 **하나도 없다** —
     // 자동 모드에는 CTA 도 없다.
     expect(screen.queryByText('보스 관리')).toBeNull()
@@ -709,7 +766,7 @@ describe('BossScreen — 빈 상태 문구 ([[ADR-060]])', () => {
     mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], characters: [character()] })
     await renderScreen()
 
-    expect(screen.getByText('추적할 주간 보스가 없습니다')).toBeTruthy()
+    expect(screen.getByText('추적할 보스가 없습니다')).toBeTruthy()
     await press(button('보스 관리'))
 
     expect(navigate).toHaveBeenCalledWith('Tabs', { screen: 'BossManage' })
@@ -721,7 +778,7 @@ describe('BossScreen — 빈 상태 문구 ([[ADR-060]])', () => {
 
     await renderScreen()
 
-    expect(screen.queryByText('등록된 주간 보스가 없습니다')).toBeNull()
+    expect(screen.queryByText('등록된 보스가 없습니다')).toBeNull()
   })
 
   // [[ADR-035]] 결정 18 의 헤더 진입점이 [[ADR-145]] 결정 1 로 폐기됐다 — 목록이 있는 화면에는
@@ -867,9 +924,8 @@ describe('BossScreen — 수동 모드 ([[ADR-035]])', () => {
     })
     await renderScreen()
 
-    // 월간 참조표의 보스라 주간 탭에는 없고 월간 탭에 있다.
-    expect(screen.queryByText('검은마법사')).toBeNull()
-    await press(button('월간'))
+    // 월간 참조표의 보스라 「월간」 무리에 선다 — 탭을 누를 필요가 없다.
     expect(screen.getByText('검은마법사')).toBeTruthy()
+    expect(sectionOrder()).toEqual(['monthly'])
   })
 })

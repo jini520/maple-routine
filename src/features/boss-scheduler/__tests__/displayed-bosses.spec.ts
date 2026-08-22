@@ -3,7 +3,7 @@
 // 직접 못 박는다([[ADR-147]] 결정 8).
 
 import type { BossCharacterView } from '../store'
-import { displayedBosses } from '../displayed-bosses'
+import { displayedBosses, displayedBossSections } from '../displayed-bosses'
 import { matchBossContent, type MatchedBoss } from '../../../lib/boss-matching'
 import type { BossContent, BossCycle, BossDifficulty } from '../../../types'
 import type { ManualTrackedItem } from '../../../types/scheduler'
@@ -200,5 +200,69 @@ describe('displayedBosses — 수동 모드', () => {
     })
 
     expect(result.map((entry) => entry.apiName)).toEqual(['루시드'])
+  })
+})
+
+// 탭이 걷히면서 «어느 순서로 서는가» 가 화면의 판단이 아니라 이 모듈의 판단이 된다([[ADR-164]]
+// 결정 1) — 화면이 다시 해석하면 today 가 같은 목록을 다른 순서로 읽을 길이 열린다.
+describe('displayedBossSections — 통합 목록의 순서 ([[ADR-164]] 결정 1)', () => {
+  it('월간이 먼저, 그다음 주간이다', () => {
+    const weekly = boss({ name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true })
+    const monthly = boss({ name: '검은마법사', difficulty: '하드', cycle: 'monthly', isRegistered: true })
+
+    const sections = displayedBossSections(
+      character({ weeklyBosses: [weekly], monthlyBosses: [monthly] }),
+      'auto',
+      null,
+    )
+
+    expect(sections).toEqual([
+      { cycle: 'monthly', bosses: [monthly] },
+      { cycle: 'weekly', bosses: [weekly] },
+    ])
+  })
+
+  // 빈 무리를 여기서 걷지 않는 것이 결정이다 — 솔로/파티 필터는 화면이 걸고, «비었다» 는 판정은
+  // 그 뒤에야 성립한다([[ADR-164]] 결정 6). 여기서 미리 걷으면 화면이 필터 후 다시 걷어야 한다.
+  it('무리가 비어도 자리는 남긴다 — 걷는 것은 화면의 일이다', () => {
+    const weekly = boss({ name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true })
+
+    expect(displayedBossSections(character({ weeklyBosses: [weekly] }), 'auto', null)).toEqual([
+      { cycle: 'monthly', bosses: [] },
+      { cycle: 'weekly', bosses: [weekly] },
+    ])
+  })
+
+  // 무리 안의 규칙은 한 글자도 안 바뀐다 — 같은 함수를 부른다.
+  it('무리 안은 `displayedBosses` 와 같은 목록이다 — 수동 모드도', () => {
+    const tracked = { 'ocid-1': [bossItem('스우', '하드'), bossItem('검은마법사', '하드')] }
+    const view = character()
+
+    const sections = displayedBossSections(view, 'manual', tracked)
+
+    expect(sections.map((section) => section.cycle)).toEqual(['monthly', 'weekly'])
+    expect(sections[0]?.bosses).toEqual(displayedBosses(view, 'monthly', 'manual', tracked))
+    expect(sections[1]?.bosses).toEqual(displayedBosses(view, 'weekly', 'manual', tracked))
+  })
+
+  // 완료는 자리를 안 바꾼다([[ADR-164]] 결정 2) — 정렬 규칙을 새로 만들지 않는 것이 그 결정의 값이다.
+  it('완료된 검마도 여전히 위에 선다', () => {
+    const weekly = boss({ name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true })
+    const doneMonthly = boss({
+      name: '검은마법사',
+      difficulty: '하드',
+      cycle: 'monthly',
+      isRegistered: true,
+      isComplete: true,
+      ownComplete: true,
+    })
+
+    const sections = displayedBossSections(
+      character({ weeklyBosses: [weekly], monthlyBosses: [doneMonthly] }),
+      'auto',
+      null,
+    )
+
+    expect(sections[0]).toEqual({ cycle: 'monthly', bosses: [doneMonthly] })
   })
 })

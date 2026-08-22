@@ -60,10 +60,7 @@ export interface RefreshOptions {
   auto?: boolean
 }
 
-// ADR-096 결정 1: 스케줄러 화면과 관리 페이지가 함께 쓰는 탭 식별자(전에는 두 화면이 각자 선언).
-export type BossTab = 'weekly' | 'monthly'
-
-// ADR-019 솔로/파티 서브 필터. 탭마다 독립된 값을 갖는다.
+// ADR-019 솔로/파티 서브 필터. **목록이 하나라 필터도 하나다**([[ADR-164]] 결정 5).
 export type PartyFilter = 'all' | 'solo' | 'party'
 
 export interface BossSchedulerState {
@@ -77,13 +74,17 @@ export interface BossSchedulerState {
   // ADR-035: 수동 모드에서 캐릭터별 추적 항목(멤버십). 값 필드는 여기 두지 않고 표시 시점에
   // characters의 동기화 값 또는 참조 테이블에서 조회한다(단일 진실 공급원, 결정 6).
   manualTrackedByOcid: Record<string, ManualTrackedItem[]>
-  // ADR-096 결정 1·2: 화면 로컬 state가 아니라 스토어가 소유한다 — 화면이 언마운트돼도 살아남고
-  // (탭 이동 후 복귀), 관리 페이지가 같은 탭 값을 읽어 보던 탭 그대로 열린다. 영속화하지 않는다.
-  activeTab: BossTab
-  // 필터를 탭과 함께 옮기는 이유 — 탭만 살리면 돌아왔을 때 "탭은 유지되는데 필터만 초기화"되는
-  // 반쪽 상태가 된다. 두 탭이 서로 독립이라는 기존 성질(ADR-019)은 그대로다.
-  weeklyFilter: PartyFilter
-  monthlyFilter: PartyFilter
+  // 화면 로컬 state가 아니라 스토어가 소유한다 — 화면이 언마운트돼도 살아남는다(탭 이동 후 복귀).
+  // 영속화하지 않는다.
+  //
+  // **`activeTab` 은 여기 없다**([[ADR-164]] 결정 4) — 주간/월간 탭이 두 화면에서 함께 걷혔다.
+  // [[ADR-096]] 결정 1·2 와 [[ADR-145]] 결정 2(«승계가 아니라 공유»)가 이 축에서 폐기된 자리다.
+  // 되살리지 말 것: 공유할 상대가 없는 공유 상태가 된다. 선택 캐릭터 쪽 공유는 [[ADR-159]] 가
+  // 따로 갖고 있어 그대로다.
+  //
+  // 필터도 하나다([[ADR-164]] 결정 5 — [[ADR-019]] 결정 6 정정). «두 축이 서로 독립» 은 탭이
+  // 있을 때만 뜻이 있는 문장이었다.
+  partyFilter: PartyFilter
 }
 
 export interface BossSchedulerStore extends BossSchedulerState {
@@ -108,10 +109,8 @@ export interface BossSchedulerStore extends BossSchedulerState {
    * 개수가 변하지 않으므로 주간 12개 한도(ADR-055)에 걸리지 않는다 — 반환값이 없는 이유다.
    */
   setManualBossDifficulty(ocid: string, contentName: string, to: string): Promise<void>
-  // 탭 전환에 네트워크가 없어 전부 동기 세터다(보스 수익 setTab과 다른 점).
-  setActiveTab(tab: BossTab): void
-  setWeeklyFilter(filter: PartyFilter): void
-  setMonthlyFilter(filter: PartyFilter): void
+  // 필터 전환에 네트워크가 없어 동기 세터다(보스 수익 setTab과 다른 점).
+  setPartyFilter(filter: PartyFilter): void
 }
 
 const initialState: BossSchedulerState = {
@@ -121,9 +120,7 @@ const initialState: BossSchedulerState = {
   trackedOcids: null,
   partySizes: {},
   manualTrackedByOcid: {},
-  activeTab: 'weekly',
-  weeklyFilter: 'all',
-  monthlyFilter: 'all',
+  partyFilter: 'all',
 }
 
 export function partySizeKey(ocid: string, boss: string, difficulty: string): string {
@@ -413,16 +410,8 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
     set({ status: 'loaded', characters: await sortByCachedLevel(characters), error: null, manualTrackedByOcid })
   },
 
-  setActiveTab(tab) {
-    set({ activeTab: tab })
-  },
-
-  setWeeklyFilter(filter) {
-    set({ weeklyFilter: filter })
-  },
-
-  setMonthlyFilter(filter) {
-    set({ monthlyFilter: filter })
+  setPartyFilter(filter) {
+    set({ partyFilter: filter })
   },
 
   async loadPartySizes(ocids) {

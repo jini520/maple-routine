@@ -20,6 +20,9 @@ import type { ManualTrackedItem } from '../../types/scheduler'
 import type { TrackingMode } from '../../storage/tracking-mode'
 import type { BossCharacterView } from './store'
 
+/** 통합 목록에서 무리가 서는 순서 — **월간이 위**다([[ADR-164]] 결정 1, 이슈 #247). */
+export const BOSS_SECTION_ORDER: readonly BossCycle[] = ['monthly', 'weekly']
+
 /**
  * **캐릭터를 인자로 받는다**([[ADR-142]] 결정 4) — 선택된 캐릭터의 카드 목록과 초상화 레일의 링이
  * **같은 함수**를 써야 «링이 세는 것 = 화면에 보이는 것» 이 구조로 보장된다. 레일은 선택되지 않은
@@ -49,4 +52,38 @@ export function displayedBosses(
   return mergeManualBossList(items, synced)
     .map(matchBossContent)
     .filter((boss) => boss.cycle === cycle)
+}
+
+/**
+ * 통합 목록의 **한 무리** — 섹션 헤더 하나가 덮는 범위다([[ADR-164]] 결정 3).
+ *
+ * 라벨(「월간」·「주간」)은 여기 없다 — 그것은 화면의 말이고, 이 모듈이 정하는 것은 **순서**뿐이다.
+ */
+export interface BossSection {
+  readonly cycle: BossCycle
+  readonly bosses: MatchedBoss[]
+}
+
+/**
+ * **월간이 먼저, 그다음 주간**([[ADR-164]] 결정 1).
+ *
+ * 순서를 화면이 아니라 여기 두는 이유는 표시 목록 판정을 여기 둔 이유와 같다 — 화면이 다시
+ * 해석하면 같은 목록이 자리마다 다른 순서로 선다.
+ *
+ * **빈 무리를 걷지 않는다.** 솔로/파티 필터는 화면이 걸고, «비었다» 는 판정은 그 뒤에야 성립한다
+ * ([[ADR-164]] 결정 6 — 무리가 비면 헤더도 함께 사라진다). 여기서 미리 걷어도 화면이 필터 후
+ * 다시 걷어야 하므로 판정이 두 곳이 된다.
+ *
+ * **완료는 자리를 안 바꾼다**([[ADR-164]] 결정 2) — 정렬이 아예 없는 것이 그 결정의 모습이다.
+ * 무리 안의 순서는 자동 모드가 참조표 순서, 수동 모드가 추적 순서이고 둘 다 전과 같다.
+ */
+export function displayedBossSections(
+  character: BossCharacterView,
+  mode: TrackingMode,
+  manualTrackedByOcid: Record<string, ManualTrackedItem[]> | null,
+): BossSection[] {
+  return BOSS_SECTION_ORDER.map((cycle) => ({
+    cycle,
+    bosses: displayedBosses(character, cycle, mode, manualTrackedByOcid),
+  }))
 }
