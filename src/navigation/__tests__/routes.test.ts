@@ -53,9 +53,10 @@ describe('ROUTE_TABLE — 계획서 §1 대조', () => {
     expect(new Set(paths).size).toBe(paths.length)
   })
 
-  // 넷은 [[ADR-132]] 결정 1 의 탭이고, 다섯째는 [[ADR-144]] 결정 1 의 하위 페이지다 — 웹뷰 앱에서
-  // 같은 일을 하는 것이 **모달**이라 대조할 경로가 없다(그래서 `web` 이 아니라 `rn` 이다).
-  it('RN 에서 새로 생긴 화면은 다섯이고 넷은 탭·하나는 하위 페이지다', () => {
+  // 넷은 [[ADR-132]] 결정 1 의 탭이고, 나머지 둘은 하위 페이지다 — 캐릭터 관리는 [[ADR-144]]
+  // 결정 1(웹뷰 앱에서 같은 일을 하는 것이 **모달**이라 대조할 경로가 없다), 아이템 분배 계산기는
+  // [[ADR-168]] 결정 6(유틸리티의 첫 도구 · 웹에 그런 화면 자체가 없다).
+  it('RN 에서 새로 생긴 화면은 여섯이고 넷은 탭·둘은 하위 페이지다', () => {
     const rnRows = ROUTE_TABLE.filter((row) => row.origin === 'rn')
 
     expect(rnRows.map((row) => row.target)).toEqual([
@@ -63,6 +64,7 @@ describe('ROUTE_TABLE — 계획서 §1 대조', () => {
       { kind: 'tab', route: 'HuntingProfit' },
       { kind: 'tab', route: 'Spend' },
       { kind: 'tab', route: 'Utility' },
+      { kind: 'push', route: 'UtilityItemSplit' },
       { kind: 'push', route: 'SettingsCharacters' },
     ])
   })
@@ -119,7 +121,7 @@ describe('ROUTE_TABLE — 계획서 §1 대조', () => {
     expect(promoted[0]?.target).toEqual({ kind: 'tab', route: 'BossManage' })
   })
 
-  it('하위 페이지는 열하나이고 이름이 겹치지 않는다', () => {
+  it('하위 페이지는 열둘이고 이름이 겹치지 않는다', () => {
     expect(STACK_ROUTE_NAMES).toEqual([
       'ContentManage',
       'DropHistory',
@@ -131,6 +133,8 @@ describe('ROUTE_TABLE — 계획서 §1 대조', () => {
       'SettingsAccountData',
       'SettingsAbout',
       'SettingsPrivacy',
+      // 유틸리티의 첫 도구([[ADR-168]] 결정 6) — 웹에 그런 화면 자체가 없다.
+      'UtilityItemSplit',
       // 웹에 짝이 없다([[ADR-144]] 결정 1) — 그쪽에서는 설정의 모달이다.
       'SettingsCharacters',
     ])

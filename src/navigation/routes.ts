@@ -142,6 +142,13 @@ export type RootStackParamList = {
   SettingsAbout: undefined
   SettingsPrivacy: undefined
   /**
+   * 아이템 분배 계산기 — **유틸리티의 첫 도구다**([[ADR-168]] 결정 6). 웹에 없다.
+   *
+   * 이 자리가 유틸리티의 구조를 정한다: 도구는 유틸리티 화면 **안의 카드**가 아니라 루트 스택에
+   * 쌓이는 하위 페이지이고, 뒤에 오는 도구들이 그대로 물려받는다.
+   */
+  UtilityItemSplit: undefined
+  /**
    * 캐릭터 관리 — **웹에 없는 화면이다**([[ADR-144]] 결정 1). 웹뷰 앱에서는 모달이고, RN 에서는
    * 두 층 + 드롭다운 + 순서 + 대표가 385px 모달 본문에 안 들어가 하위 페이지가 됐다.
    */
@@ -252,8 +259,9 @@ export const ROUTE_TABLE: readonly RouteRow[] = [
     origin: 'web',
   },
   // ── 여기부터 RN 에서 새로 생긴 화면 ([[ADR-132]] 결정 1·12 · [[ADR-144]] 결정 1) ──
-  // 웹에는 없다. `path` 는 대조용이 아니라 이름표다. 탭 넷은 아직 «개발 진행중» 자리표시자이고,
-  // 마지막 하나(캐릭터 관리)는 진짜 화면이다 — 웹뷰 앱에서는 같은 일을 설정의 모달이 한다.
+  // 웹에는 없다. `path` 는 대조용이 아니라 이름표다. 탭 넷 중 셋은 아직 «개발 진행중»
+  // 자리표시자이고, 유틸리티는 도구 목록이 됐다([[ADR-168]]). 하위 페이지 둘은 진짜 화면이다 —
+  // 캐릭터 관리는 웹뷰 앱에서 설정의 모달이 하던 일이고, 아이템 분배 계산기는 웹에 없던 도구다.
   { path: '/today', screen: 'TodayScreen', target: { kind: 'tab', route: 'Today' }, origin: 'rn' },
   {
     path: '/profit/hunting',
@@ -263,6 +271,12 @@ export const ROUTE_TABLE: readonly RouteRow[] = [
   },
   { path: '/spend', screen: 'SpendScreen', target: { kind: 'tab', route: 'Spend' }, origin: 'rn' },
   { path: '/utility', screen: 'UtilityScreen', target: { kind: 'tab', route: 'Utility' }, origin: 'rn' },
+  {
+    path: '/utility/item-split',
+    screen: 'ItemSplitScreen',
+    target: { kind: 'push', route: 'UtilityItemSplit' },
+    origin: 'rn',
+  },
   {
     path: '/settings/characters',
     screen: 'SettingsCharactersScreen',
