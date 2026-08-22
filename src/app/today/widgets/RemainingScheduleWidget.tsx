@@ -74,20 +74,33 @@ const PORTRAIT_PX = 32
  */
 const LABEL_WIDTH_PX = 48
 /**
- * **두 자리에 맞춘 폭**([[ADR-147]] 정정 40). 18 은 세 자리를 담을 폭이라 오른쪽 정렬에서 남는 4px 이
- * 전부 왼쪽 여백이 되어 한 자리 수치가 라벨에서 떨어져 보였다. 세 자리가 실제로 나오면 그때 넓힌다.
+ * 숫자 칸의 **바닥**(천장이 아니다 — [[ADR-165]]).
+ *
+ * 값 자체는 [[ADR-147]] 정정 40 의 것이다 — 18 은 세 자리를 담을 폭이라 오른쪽 정렬에서 남는 4px 이
+ * 전부 왼쪽 여백이 되어 한 자리 수치가 라벨에서 떨어져 보였다. 그 이유는 지금도 유효하므로 **한 자리
+ * 수치의 정렬을 잡는 바닥**으로 남긴다.
+ *
+ * **`width` 가 아니라 `minWidth` 인 것이 결정이다.** 고정 폭이던 시절 이 값은 «두 자리에 맞춘» 것이라
+ * 글자 크기에 묶여 있었고, [[ADR-163]] 이 글자만 10.5 → 11.5px 로 올리자 두 자리 수치의 마지막 글자가
+ * 오른쪽에서 잘렸다(시뮬레이터 3x 실측: 「12」의 「2」가 박스 경계에서 평평하게 잘렸다 — 폭을 넓힌
+ * 대조군에서는 곡선이 온전했다). 바닥으로 두면 칸이 내용을 따라 늘어나므로 **글자 크기가 다시 바뀌어도
+ * 이 값을 다시 재지 않는다.**
  */
-const VALUE_WIDTH_PX = 14
+const VALUE_MIN_WIDTH_PX = 14
 
 /**
- * 수치 한 줄의 **고정 높이**(10.5px × 1.25 를 올림).
+ * 수치 한 줄의 **바닥 높이**(천장이 아니다 — [[ADR-165]]).
  *
  * 원래 이유(«빈 `Text` 의 높이는 플랫폼마다 다르다»)는 정정 37 로 사라졌다 — 값이 없는 칸도 줄도
  * 아예 안 그리므로 빈 글자가 없다. 그래도 남기는 것은 이 상수가 **한 줄 행과 두 줄 행의 높이를
  * 예측 가능한 관계**로 묶기 때문이다. 행 높이가 줄 수를 따라가는 것은 받아들이되, 줄 하나의 높이는
  * 데이터와 무관해야 한다.
+ *
+ * **`height` 가 아니라 `minHeight` 인 것이 결정이다.** 14 는 «10.5px × 1.25 를 올림» 이었는데
+ * [[ADR-163]] 이 글자를 11.5px 로 올려 줄 상자가 14.375px 을 요구하게 됐다 — 고정 높이는 그 몫을
+ * 안 준다. 숫자 칸과 **같은 성질의 결함**이라 같은 방식으로 고친다.
  */
-const STAT_LINE_HEIGHT_PX = 14
+const STAT_LINE_MIN_HEIGHT_PX = 14
 
 /**
  * 「검마」는 **월간 보스가 하나뿐이라 성립하는 이름**이다([[ADR-147]] 정정 3) — 참조 데이터에서
@@ -125,7 +138,7 @@ function StatCell(props: { label: string; value: number }): React.JSX.Element {
       <Text fixed numberOfLines={1} style={{ width: LABEL_WIDTH_PX }} className={LABEL_CLASS}>
         {props.label}
       </Text>
-      <Text fixed style={{ width: VALUE_WIDTH_PX, ...TABULAR_NUMS }} className={VALUE_CLASS}>
+      <Text fixed style={{ minWidth: VALUE_MIN_WIDTH_PX, ...TABULAR_NUMS }} className={VALUE_CLASS}>
         {String(props.value)}
       </Text>
     </View>
@@ -147,7 +160,7 @@ function StatGrid(props: { row: ScheduleRowView }): React.JSX.Element {
             key={line.join('-')}
             testID="schedule-stat-line"
             className="flex-row items-center gap-2"
-            style={{ height: STAT_LINE_HEIGHT_PX }}
+            style={{ minHeight: STAT_LINE_MIN_HEIGHT_PX }}
           >
             {cells.map((key) => (
               <StatCell key={key} label={LABEL[key]} value={statValue(props.row, key)} />
