@@ -6,7 +6,8 @@
  * 공짜로 따라오는 전환 애니메이션과 iOS 가장자리 스와이프다([[ADR-120]] 결정 1·2·4 · [[ADR-167]]).
  *
  * 목록은 **2열 타일 격자**다(사용자 지정, 2026-08-23) — 이름만 있고 설명은 없다. 도구 이름이
- * 곧 설명이어야 한다는 뜻이고, 그렇지 않은 이름은 이름 쪽을 고칠 일이다.
+ * 곧 설명이어야 한다는 뜻이고, 그렇지 않은 이름은 이름 쪽을 고칠 일이다. 타일은 **가로:세로 2:1** —
+ * 담는 것이 아이콘 하나와 이름 한 줄뿐이라 정사각은 빈 자리가 더 컸다.
  *
  * **도구를 더할 때는 아래 타일을 형제로 하나 더 놓는다** — 그리고 `routes.ts` 한 줄,
  * `RootNavigator` 의 `STACK_SCREENS` 한 줄, `docs/features/utility.md`. 넷뿐이다.
@@ -45,8 +46,9 @@ export function UtilityScreen(): React.JSX.Element {
             onPress={() => navigation.navigate('UtilityItemSplit')}
             className="w-[48%]"
           >
-            <Card className="aspect-square items-center justify-center gap-3 px-3">
-              <CalculatorIcon className="h-8 w-8 text-text-muted" strokeWidth={1.75} aria-hidden />
+            {/* 가로:세로 = 2:1 (사용자 지정, 2026-08-23) — 정사각은 이름 한 줄에 견줘 너무 컸다. */}
+            <Card className="aspect-[2/1] items-center justify-center gap-2 px-3">
+              <CalculatorIcon className="h-7 w-7 text-text-muted" strokeWidth={1.75} aria-hidden />
               <Text className="text-center text-sm font-semibold text-text">아이템 분배 계산기</Text>
             </Card>
           </Pressable>
