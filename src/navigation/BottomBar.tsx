@@ -76,10 +76,9 @@ import { useBottomSafeAreaPx } from '../lib/bottom-safe-area'
 import {
   ArrowLeftIcon,
   CalendarCheckIcon,
-  CrosshairIcon,
   LayoutDashboardIcon,
   ListChecksIcon,
-  ShoppingCartIcon,
+  NotebookTextIcon,
   SlidersHorizontalIcon,
   SwordsIcon,
   WalletIcon,
@@ -283,8 +282,9 @@ const ICONS: Readonly<Record<GroupId | TabRouteName, IconComponent>> = {
   // 결정 1) — 위 다섯과 같은 **제안값**이고 확정은 실기기에서 나란히 보고 한다.
   BossManage: SlidersHorizontalIcon,
   Profit: ProfitIcon,
-  HuntingProfit: CrosshairIcon,
-  Spend: ShoppingCartIcon,
+  // 가계부 = 장부. 달력 계열(`CalendarCheck` = 스케줄러 그룹)과 겹치지 않게 골랐다 —
+  // 위 다섯과 같은 **제안값**이고 확정은 실기기에서 나란히 보고 한다([[ADR-169]]).
+  Cashbook: NotebookTextIcon,
   Utility: WrenchIcon,
   Settings: GearIcon,
 }
@@ -296,11 +296,14 @@ const ICONS: Readonly<Record<GroupId | TabRouteName, IconComponent>> = {
  * 선이 있는 아이콘은 채우는 순간 그 선이 통째로 사라진다 — 시뮬레이터에서 열 개를 다 채워 보고
  * 골랐다.
  *
- *   살아남음  대시보드(사각 넷) · 렌치(실루엣 하나) · 장바구니(윤곽 자체가 그림) ·
+ *   살아남음  대시보드(사각 넷) · 렌치(실루엣 하나) ·
  *             검(칼날이 면으로 차고 손잡이 선은 남는다 — 사용자 판정으로 뒤늦게 편입)
- *   무너짐    톱니 → 가운데 구멍이 메워져 덩어리 · 조준경 → 십자선이 사라져 원판
- *             달력·지갑 → 안쪽 체크·주머니를 잃음 · 목록 → 선뿐이라 채울 «면» 이 없음
+ *   무너짐    톱니 → 가운데 구멍이 메워져 덩어리 ·
+ *             달력·지갑 → 안쪽 체크·주머니를 잃음 · 목록·장부 → 선뿐이라 채울 «면» 이 없음
  *             수익(`ProfitIcon`) → 열린 호로 그린 커스텀이라 `fill="none"` 이 규격이다([[ADR-066]])
+ *
+ * 장바구니(지출)와 조준경(사냥 수익)이 이 표에서 빠진 것은 **그 두 탭이 없어졌기 때문**이다
+ * ([[ADR-169]] 결정 2) — 판정이 바뀐 것이 아니다.
  *
  * 아이콘 **컴포넌트**로 잡는 이유는 같은 그림이 두 자리에 쓰이기 때문이다(today 는 그룹과 페이지,
  * 렌치는 유틸리티 그룹과 페이지). 라우트 키로 잡으면 한쪽만 채워지는 사고가 난다.
@@ -308,7 +311,6 @@ const ICONS: Readonly<Record<GroupId | TabRouteName, IconComponent>> = {
 const FILLED_ICONS: ReadonlySet<IconComponent> = new Set([
   LayoutDashboardIcon,
   WrenchIcon,
-  ShoppingCartIcon,
   SwordsIcon,
   // 아래 둘은 우리가 그린 아이콘이라 **채울 자리를 고를 수 있다** — 수익은 동전 두 개만 면이
   // 되고 단을 그리는 호는 선으로 남으며, 톱니는 몸통만 차고 가운데가 구멍으로 남는다.

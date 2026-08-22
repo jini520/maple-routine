@@ -7,10 +7,9 @@ import { View } from 'react-native'
 import { BossProfitScreen } from '../app/boss-profit/BossProfitScreen'
 import { BossManageScreen } from '../app/boss-scheduler/BossManageScreen'
 import { BossScreen } from '../app/boss-scheduler/BossScreen'
+import { CashbookScreen } from '../app/cashbook/CashbookScreen'
 import { ContentScreen } from '../app/content-scheduler/ContentScreen'
-import { HuntingProfitScreen } from '../app/hunting-profit/HuntingProfitScreen'
 import { SettingsScreen } from '../app/settings/SettingsScreen'
-import { SpendScreen } from '../app/spend/SpendScreen'
 import { TodayScreen } from '../app/today/TodayScreen'
 import { UtilityScreen } from '../app/utility/UtilityScreen'
 import { ScreenBackdrop } from '../components/templates/ThemeBackdrop/ScreenBackdrop'
@@ -71,9 +70,8 @@ function LedgerLayer(): React.JSX.Element {
   return (
     <LedgerTabs.Navigator {...TAB_LAYER_PROPS}>
       <LedgerTabs.Screen name="Profit" component={BossProfitScreen} />
-      {/* 둘은 아직 «개발 진행중» 껍데기이지만 **화면은 실재한다**([[ADR-132]] 결정 12). */}
-      <LedgerTabs.Screen name="HuntingProfit" component={HuntingProfitScreen} />
-      <LedgerTabs.Screen name="Spend" component={SpendScreen} />
+      {/* 껍데기 둘(사냥 수익·지출)이 있던 자리 — 가계부 하나로 합쳐졌다([[ADR-169]] 결정 1·2). */}
+      <LedgerTabs.Screen name="Cashbook" component={CashbookScreen} />
     </LedgerTabs.Navigator>
   )
 }
