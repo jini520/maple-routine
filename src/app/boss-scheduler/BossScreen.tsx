@@ -51,7 +51,7 @@ import {
   useBossSchedulerStore,
   type PartyFilter,
 } from '../../features/boss-scheduler/store'
-import { displayedBosses } from '../../features/boss-scheduler/displayed-bosses'
+import { displayedBosses, displayedBossSections } from '../../features/boss-scheduler/displayed-bosses'
 import { resolveSelectedCharacter } from '../../features/character-selection/selected-character'
 import { useCharacterSelectionStore } from '../../features/character-selection/store'
 import { formatSyncedAt } from '../../features/schedule-sync/format'
@@ -63,10 +63,10 @@ import { getSupportedDifficulties, type MatchedBoss } from '../../lib/boss-match
 import { getMaxPartySize } from '../../lib/boss-crystal-prices'
 import { isChallengersWorld } from '../../lib/world-emblem'
 
-import { Badge } from '../../components/atoms/Badge/Badge'
 import { BlockedBadge } from '../../components/atoms/BlockedBadge/BlockedBadge'
 import { DifficultyBadge } from '../../components/atoms/DifficultyBadge/DifficultyBadge'
 import { Text } from '../../components/atoms/Text/Text'
+import { BossSectionHeader } from '../../components/molecules/BossSectionHeader/BossSectionHeader'
 import { CharacterRail, type CharacterRailEntry } from '../../components/molecules/CharacterRail/CharacterRail'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
@@ -172,14 +172,10 @@ export function BossScreen(): React.JSX.Element {
     setManualBossDifficulty,
     // [[ADR-096]] 결정 1: 탭과 두 필터는 스토어 소유다 — 이 화면이 언마운트돼도 살아남고, 관리
     // 페이지가 같은 탭 값을 읽어 보던 탭 그대로 열린다.
-    activeTab,
-    setActiveTab,
-    // [[ADR-019]] 결정 6: 주간/월간 탭은 서로 독립된 필터 상태를 갖는다(한 탭의 필터 변경이
-    // 다른 탭에 영향을 주지 않음).
-    weeklyFilter,
-    setWeeklyFilter,
-    monthlyFilter,
-    setMonthlyFilter,
+    // **필터는 하나다**([[ADR-164]] 결정 5 — [[ADR-019]] 결정 6 정정). 목록이 하나가 되면서
+    // «두 축이 서로 독립» 이라는 문장이 뜻을 잃었다(독립할 상대가 없다).
+    partyFilter,
+    setPartyFilter,
   } = useBossSchedulerStore()
   // 선택은 화면·스토어가 아니라 **여기 한 벌**이다([[ADR-159]] 결정 1).
   const { selectedOcid, select } = useCharacterSelectionStore()
@@ -227,10 +223,11 @@ export function BossScreen(): React.JSX.Element {
   // 포함)가 그 안에 있다. **이 화면의 지역 함수였던 것을 코어로 꺼냈다**([[ADR-147]] 결정 8) —
   // today 의 「캐릭터별 남은 스케줄」이 세는 «남은 보스» 가 이 화면이 보여 주는 것과 한 글자도
   // 달라선 안 되기 때문이다. 이유·규칙·«캐릭터를 인자로 받는» 근거는 `displayed-bosses.ts` 파일 머리.
-  const displayedWeeklyBosses =
-    selected === null ? [] : displayedBosses(selected, 'weekly', mode, manualTrackedByOcid)
-  const displayedMonthlyBosses =
-    selected === null ? [] : displayedBosses(selected, 'monthly', mode, manualTrackedByOcid)
+  //
+  // **순서는 여기서 정하지 않는다**([[ADR-164]] 결정 1) — `displayedBossSections` 가 월간을 위에
+  // 두고, 이 화면은 받은 순서대로 그린다. 화면이 다시 정렬하면 그 결정이 두 곳이 된다.
+  const sections =
+    selected === null ? [] : displayedBossSections(selected, mode, manualTrackedByOcid)
 
   // [[ADR-142]] 정정 1: 링은 **주간 하나**다(온전한 원). 월간은 종류가 하나뿐이라 «몇 개 중 몇 개»
   // 가 뜻을 갖지 못한다 — 표현 방법은 따로 정한다(사용자 지시, 2026-08-16).
@@ -291,11 +288,32 @@ export function BossScreen(): React.JSX.Element {
     })
   }
 
-  const activeFilter = activeTab === 'weekly' ? weeklyFilter : monthlyFilter
-  const filteredWeeklyBosses =
-    selected !== null ? filterByPartySize(displayedWeeklyBosses, selected.ocid, weeklyFilter) : []
-  const filteredMonthlyBosses =
-    selected !== null ? filterByPartySize(displayedMonthlyBosses, selected.ocid, monthlyFilter) : []
+  // 필터를 건 뒤에야 «비었다» 가 성립한다 — 그래서 빈 무리를 걷는 것이 여기다([[ADR-164]] 결정 6).
+  // `displayedBossSections` 가 빈 무리도 자리를 남겨 주는 이유가 이 순서 때문이다.
+  const filteredSections =
+    selected === null
+      ? []
+      : sections.map((section) => ({
+          ...section,
+          bosses: filterByPartySize(section.bosses, selected.ocid, partyFilter),
+        }))
+  // 「주간」 헤더가 싣는 배지 — 이 값들은 **표시 목록과 무관하다**. `weekly_boss_clear_count` 는
+  // 게임이 세는 이번 주 처치 수이고([[ADR-055]] 결정 8), 시즌 완료 여부도 등록과 무관하다
+  // ([[ADR-031]] 결정 3 — 그래서 미등록·미완료 시즌 보스는 카드로 안 서면서 배지만 뜬다).
+  const weeklySeasonState =
+    seasonBosses.length === 0 ? null : isSeasonBossComplete ? ('complete' as const) : ('incomplete' as const)
+  const hasWeeklyBadges =
+    weeklySeasonState !== null ||
+    (selected?.weeklyBossClearCount != null && selected.weeklyBossClearLimitCount != null)
+
+  // 빈 무리의 헤더는 걷는다 — 이름만 남으면 «여기 뭔가 있었다» 로 읽힌다([[ADR-164]] 결정 6).
+  // **단 배지를 싣고 있으면 남긴다.** 탭 시절 그 배지들은 목록이 비어도 떠 있었고(탭 줄에 있었다),
+  // 무리가 비었다는 이유로 지우면 «이번 주 3마리 잡았다» 를 화면이 말할 자리가 아예 없어진다.
+  const visibleSections = filteredSections.filter(
+    (section) => section.bosses.length > 0 || (section.cycle === 'weekly' && hasWeeklyBadges),
+  )
+  const displayedCount = sections.reduce((sum, section) => sum + section.bosses.length, 0)
+  const filteredCount = filteredSections.reduce((sum, section) => sum + section.bosses.length, 0)
 
   function renderBossCards(bosses: MatchedBoss[], ocid: string): React.JSX.Element {
     const characterLevel = selected?.level ?? null
@@ -369,35 +387,35 @@ export function BossScreen(): React.JSX.Element {
     navigation.navigate('Tabs', { screen: 'BossManage' })
   }
 
-  // [[ADR-060]]: 빈 상태 문구는 탭(주간/월간)과 모드(수동/자동)별로 나눈다. 수동 모드만 CTA를 준다 —
-  // 자동 모드가 지시하는 곳("게임에서 등록")은 앱 밖이라 데려다줄 수 없다.
-  function bossEmptyProps(tab: 'weekly' | 'monthly'): React.ComponentProps<typeof EmptyState> {
-    const label = tab === 'weekly' ? '주간' : '월간'
+  // [[ADR-060]]: 빈 상태 문구는 모드(수동/자동)별로 나눈다. 수동 모드만 CTA를 준다 — 자동 모드가
+  // 지시하는 곳("게임에서 등록")은 앱 밖이라 데려다줄 수 없다.
+  //
+  // **주기별로 나누던 축은 사라졌다**([[ADR-164]] 결정 6 — [[ADR-060]] 정정). 목록이 하나라
+  // 판정도 하나이고, 무리별로 물으면 검마를 안 잡는 캐릭터마다 «추적할 월간 보스가 없습니다» 가
+  // 뜬다 — 그것은 빈 상태가 아니라 **그냥 그 캐릭터의 목록**이다.
+  function bossEmptyProps(): React.ComponentProps<typeof EmptyState> {
     if (mode === 'manual') {
       return {
         icon: SwordsIcon,
-        title: `추적할 ${label} 보스가 없습니다`,
-        description: `보스 관리에서 이번 ${tab === 'weekly' ? '주' : '달'}에 잡을 보스를 골라주세요`,
+        title: '추적할 보스가 없습니다',
+        description: '보스 관리에서 이번에 잡을 보스를 골라주세요',
         action: { label: '보스 관리', onClick: goToBossManage },
       }
     }
     return {
       icon: SwordsIcon,
-      title: `등록된 ${label} 보스가 없습니다`,
+      title: '등록된 보스가 없습니다',
       description: '게임 내 스케줄러에 등록하면 여기에 자동으로 표시됩니다',
     }
   }
 
   // 보스가 0건인 빈 상태와 달리 "필터가 가린 상태"라 CTA는 필터를 되돌린다([[ADR-060]] 결정 3).
-  function filterEmptyProps(tab: 'weekly' | 'monthly'): React.ComponentProps<typeof EmptyState> {
+  function filterEmptyProps(): React.ComponentProps<typeof EmptyState> {
     return {
       icon: SlidersHorizontalIcon,
       title: '이 조건에 해당하는 보스가 없습니다',
       description: '솔로·파티 필터를 해제하면 전체 보스를 볼 수 있습니다',
-      action: {
-        label: '필터 초기화',
-        onClick: () => (tab === 'weekly' ? setWeeklyFilter('all') : setMonthlyFilter('all')),
-      },
+      action: { label: '필터 초기화', onClick: () => setPartyFilter('all') },
     }
   }
 
@@ -487,121 +505,57 @@ export function BossScreen(): React.JSX.Element {
               <LoadingState size="page" message="불러오고 있어요" />
             )}
 
+            {/* [[ADR-164]] 결정 4: **주간/월간 탭이 여기 있었다.** 목록이 하나가 되면서 걷혔고,
+                탭에만 매달려 있던 `n/12`·`season` 배지는 「주간」 섹션 헤더로 내려갔다(결정 3) —
+                그 수치가 어느 무리의 것인지 이제 헤더가 말한다. 남는 줄은 필터 하나뿐이다. */}
             {characters.length > 0 && selected !== null && (
-              <>
-                <View className="flex-row items-center justify-between">
-                  <View className="flex-row items-center gap-4">
-                    <Pressable
-                      role="button"
-                      aria-selected={activeTab === 'weekly'}
-                      onPress={() => setActiveTab('weekly')}
-                    >
-                      <Text
-                        className={
-                          activeTab === 'weekly'
-                            ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
-                            : 'px-3 text-sm font-medium text-text-muted'
-                        }
-                      >
-                        주간
-                      </Text>
-                    </Pressable>
-                    <Pressable
-                      role="button"
-                      aria-selected={activeTab === 'monthly'}
-                      onPress={() => setActiveTab('monthly')}
-                    >
-                      <Text
-                        className={
-                          activeTab === 'monthly'
-                            ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
-                            : 'px-3 text-sm font-medium text-text-muted'
-                        }
-                      >
-                        월간
-                      </Text>
-                    </Pressable>
-                  </View>
-
-                  {activeTab === 'weekly' && (
-                    <View className="flex-row items-center gap-2">
-                      {seasonBosses.length > 0 && (
-                        <Text
-                          className={
-                            isSeasonBossComplete
-                              ? 'rounded-full bg-secondary-tint px-2.5 py-1 text-xs font-bold text-secondary-ink'
-                              : 'rounded-full bg-primary-tint px-2.5 py-1 text-xs font-semibold text-primary-ink'
-                          }
-                        >
-                          {`season ${isSeasonBossComplete ? '완료' : '미완료'}`}
-                        </Text>
-                      )}
-                      {selected.weeklyBossClearCount !== null &&
-                        selected.weeklyBossClearLimitCount !== null && (
-                          <Badge tone="primary">
-                            {selected.weeklyBossClearCount}/{selected.weeklyBossClearLimitCount}
-                          </Badge>
-                        )}
-                    </View>
-                  )}
-                </View>
-
-                <View className="flex-row items-center gap-2">
-                  {(['all', 'solo', 'party'] as const).map((filter) => (
-                    <Pressable
-                      key={filter}
-                      role="button"
-                      aria-selected={activeFilter === filter}
-                      onPress={() =>
-                        activeTab === 'weekly' ? setWeeklyFilter(filter) : setMonthlyFilter(filter)
+              <View className="flex-row items-center gap-2">
+                {(['all', 'solo', 'party'] as const).map((filter) => (
+                  <Pressable
+                    key={filter}
+                    role="button"
+                    aria-selected={partyFilter === filter}
+                    onPress={() => setPartyFilter(filter)}
+                  >
+                    <Text
+                      className={
+                        partyFilter === filter
+                          ? 'rounded-full bg-primary-tint px-3 py-1 text-xs font-semibold text-primary-ink'
+                          : 'px-3 text-xs font-medium text-text-muted'
                       }
                     >
-                      <Text
-                        className={
-                          activeFilter === filter
-                            ? 'rounded-full bg-primary-tint px-3 py-1 text-xs font-semibold text-primary-ink'
-                            : 'px-3 text-xs font-medium text-text-muted'
-                        }
-                      >
-                        {PARTY_FILTER_LABELS[filter]}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
-              </>
+                      {PARTY_FILTER_LABELS[filter]}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
             )}
           </PageHeader>
         }
       >
         {characters.length > 0 && selected !== null && (
           <View testID="pull-content" className="gap-4 px-4 pb-4">
-            {activeTab === 'weekly' && (
-              <>
-                {displayedWeeklyBosses.length === 0 && (mode === 'manual' || !selected.isStale) && (
-                  <EmptyState {...bossEmptyProps('weekly')} />
-                )}
-
-                {displayedWeeklyBosses.length > 0 && filteredWeeklyBosses.length === 0 && (
-                  <EmptyState {...filterEmptyProps('weekly')} />
-                )}
-
-                {filteredWeeklyBosses.length > 0 && renderBossCards(filteredWeeklyBosses, selected.ocid)}
-              </>
+            {/* 빈 상태 둘은 **목록 하나**를 보고 판정한다([[ADR-164]] 결정 6) — 무리별로 물으면
+                검마를 안 잡는 캐릭터마다 «추적할 월간 보스가 없습니다» 가 뜬다. */}
+            {displayedCount === 0 && (mode === 'manual' || !selected.isStale) && (
+              <EmptyState {...bossEmptyProps()} />
             )}
 
-            {activeTab === 'monthly' && (
-              <>
-                {displayedMonthlyBosses.length === 0 && (mode === 'manual' || !selected.isStale) && (
-                  <EmptyState {...bossEmptyProps('monthly')} />
-                )}
+            {displayedCount > 0 && filteredCount === 0 && <EmptyState {...filterEmptyProps()} />}
 
-                {displayedMonthlyBosses.length > 0 && filteredMonthlyBosses.length === 0 && (
-                  <EmptyState {...filterEmptyProps('monthly')} />
-                )}
-
-                {filteredMonthlyBosses.length > 0 && renderBossCards(filteredMonthlyBosses, selected.ocid)}
-              </>
-            )}
+            {/* 순서는 `displayedBossSections` 것이고(결정 1), **비어 있는 무리는 이미 걷혔다**
+                (`visibleSections`) — 헤더만 남아 «여기 뭔가 있었다» 로 읽히지 않게 한다(결정 6). */}
+            {visibleSections.map((section) => (
+              <View key={section.cycle} className="gap-2">
+                <BossSectionHeader
+                  cycle={section.cycle}
+                  seasonState={section.cycle === 'weekly' ? weeklySeasonState : null}
+                  clearCount={section.cycle === 'weekly' ? selected.weeklyBossClearCount : null}
+                  clearLimit={section.cycle === 'weekly' ? selected.weeklyBossClearLimitCount : null}
+                />
+                {section.bosses.length > 0 && renderBossCards(section.bosses, selected.ocid)}
+              </View>
+            ))}
           </View>
         )}
       </ScreenScroll>

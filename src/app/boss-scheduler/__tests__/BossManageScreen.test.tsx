@@ -11,15 +11,13 @@
 // ④ **보스 목록·난이도·상한은 전부 참조 데이터에서 온다** — 이 파일에도 게임 수치를 손으로 적지
 //    않는다([[ADR-006]]). 12개 한도 케이스의 보스 이름도 `weekly-bosses.json` 에서 뽑아 쓴다.
 import { useCharacterSelectionStore } from '../../../features/character-selection/store'
-import { act, fireEvent, screen } from '@testing-library/react-native'
-import { useState } from 'react'
+import { act, fireEvent, screen, within } from '@testing-library/react-native'
 
 import weeklyBossesData from '../../../data/weekly-bosses.json'
 import {
   useBossSchedulerStore,
   type BossCharacterView,
   type BossSchedulerStore,
-  type BossTab,
 } from '../../../features/boss-scheduler/store'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss-matching'
@@ -81,30 +79,21 @@ function mockStore(overrides: Partial<Store> = {}): Store {
     addManualBoss: jest.fn(async () => 'added'),
     removeManualBoss: jest.fn(),
     setManualBossDifficulty: jest.fn(),
-    activeTab: 'weekly' as const,
-    setActiveTab: jest.fn(),
-    weeklyFilter: 'all' as const,
-    setWeeklyFilter: jest.fn(),
-    monthlyFilter: 'all' as const,
-    setMonthlyFilter: jest.fn(),
+    partyFilter: 'all' as const,
+    setPartyFilter: jest.fn(),
     ...overrides,
   } as Store
 
-  // [[ADR-145]] 결정 2: 이 화면의 탭은 이제 **스토어의 `activeTab` 그 자체**다(승계가 아니라 공유).
-  // 그래서 목이 실물처럼 굴어야 한다 — 화면이 부른 세터가 `base.setActiveTab`(단언 대상)에 닿고,
-  // 그 값이 다음 렌더에 실제로 반영돼야 «누르면 월간이 나온다» 를 볼 수 있다.
-  mockedStore.mockImplementation(() => {
-    const [activeTab, applyTab] = useState(base.activeTab)
-    return {
-      ...base,
-      activeTab,
-      setActiveTab: (tab: BossTab) => {
-        base.setActiveTab(tab)
-        applyTab(tab)
-      },
-    }
-  })
+  // [[ADR-164]] 결정 4: 탭이 걷혔다 — 목이 흉내 낼 탭 상태가 없다.
+  mockedStore.mockImplementation(() => base)
   return base
+}
+
+/** 화면에 선 섹션 헤더를 위에서 아래 순서로 — 스케줄러 화면의 같은 이름 헬퍼와 같은 규칙이다. */
+function sectionOrder(): string[] {
+  return screen
+    .queryAllByTestId(/^boss-section-header-/)
+    .map((node) => String(node.props.testID).replace('boss-section-header-', ''))
 }
 
 function character(overrides: Partial<BossCharacterView> = {}): BossCharacterView {
@@ -239,26 +228,18 @@ describe('BossManageScreen — 공통', () => {
     expect(screen.queryByText(/캐릭터를 먼저 선택해주세요/)).toBeNull()
   })
 
-  // [[ADR-096]] 결정 2 — 스케줄러가 보던 탭 그대로 열린다.
-  it('스케줄러가 월간이면 월간 목록이 열린다', async () => {
-    mockStore({ characters: [character()], activeTab: 'monthly' })
+  // [[ADR-164]] 결정 4 — 스케줄러가 한 목록이 되면서 이 화면의 탭도 함께 걷혔다. [[ADR-096]]
+  // 결정 2 와 [[ADR-145]] 결정 2(«승계가 아니라 공유»)가 이 축에서 폐기된 자리다 — 공유할 상대가
+  // 사라졌으므로 되살리지 말 것.
+  it('탭 없이 월간·주간이 한 목록에 서고, 월간이 위다', async () => {
+    mockStore({ characters: [character()] })
 
     await renderScreen()
 
     expect(screen.getByText(MONTHLY_NAME)).toBeTruthy()
-    expect(screen.queryByText(WEEKLY_NAMES[0])).toBeNull()
-  })
-
-  // [[ADR-145]] 결정 2 — «진입 시점 한 번» 이 **공유**가 됐다. 탭 화면은 마운트된 채 남아 그
-  // «진입» 이라는 사건이 앱 실행당 한 번이 되므로, 로컬 state 로 두면 스케줄러에서 월간을 보다
-  // 건너와도 주간이 열린다. 그래서 여기서 바꾼 탭은 **스토어에 닿아야 한다**(선택 캐릭터와 같은 규칙).
-  it('여기서 탭을 바꾸면 스케줄러와 같은 setActiveTab 을 부른다', async () => {
-    const store = mockStore({ characters: [character()] })
-    await renderScreen()
-
-    await press(button('월간'))
-
-    expect(store.setActiveTab).toHaveBeenCalledWith('monthly')
+    expect(screen.getByText(WEEKLY_NAMES[0])).toBeTruthy()
+    expect(screen.queryByRole('button', { name: '월간' })).toBeNull()
+    expect(sectionOrder()).toEqual(['monthly', 'weekly'])
   })
 
   // [[ADR-096]] 결정 4 — 선택 캐릭터는 스케줄러와 **공유**한다(탭과 달리 양방향).
@@ -294,14 +275,13 @@ describe('BossManageScreen — 수동 모드', () => {
     expect(stateOf(rowToggle('매그너스')).selected).toBe(false)
   })
 
-  it('월간 탭으로 전환하면 월간 보스가 나온다', async () => {
+  it('월간 보스가 같은 목록의 「월간」 무리에 선다', async () => {
     mockStore({ characters: [character()] })
+
     await renderScreen()
 
-    await press(button('월간'))
-
     expect(screen.getByText(MONTHLY_NAME)).toBeTruthy()
-    expect(screen.queryByText('자쿰')).toBeNull()
+    expect(screen.getByText('자쿰')).toBeTruthy()
   })
 
   it('추적 중인 행에만 난이도 세그먼트와 파티 스테퍼가 펼쳐진다', async () => {
@@ -540,16 +520,20 @@ describe('BossManageScreen — 주간 12개 한도 ([[ADR-055]])', () => {
     expect(screen.getByText(`1/${WEEKLY_BOSS_CLEAR_LIMIT}`)).toBeTruthy()
   })
 
-  it('월간 탭에는 카운터를 표시하지 않는다 — 12는 주간 한도다', async () => {
+  // [[ADR-164]] 결정 3: 탭이 없어져 «이 수치는 주간 것» 을 말할 자리가 「주간」 헤더로 옮겨왔다.
+  it('카운터는 「주간」 헤더에만 붙는다 — 12는 주간 한도다', async () => {
     mockStore({
       characters: [character()],
       manualTrackedByOcid: { 'ocid-1': [trackedBoss('자쿰', '카오스')] },
     })
+
     await renderScreen()
 
-    await press(button('월간'))
-
-    expect(screen.queryByText(`1/${WEEKLY_BOSS_CLEAR_LIMIT}`)).toBeNull()
+    const weekly = screen.getByTestId('boss-section-header-weekly')
+    expect(within(weekly).getByText(`1/${WEEKLY_BOSS_CLEAR_LIMIT}`)).toBeTruthy()
+    expect(
+      within(screen.getByTestId('boss-section-header-monthly')).queryByText(`1/${WEEKLY_BOSS_CLEAR_LIMIT}`),
+    ).toBeNull()
   })
 
   it('자동 모드에는 카운터를 표시하지 않는다 — 선택 자체가 없다', async () => {
@@ -612,11 +596,10 @@ describe('BossManageScreen — 주간 12개 한도 ([[ADR-055]])', () => {
     expect(store.addManualBoss).toHaveBeenCalledWith('ocid-1', SEASON_NAME, '노멀')
   })
 
-  it('한도에 도달해도 월간 탭의 보스는 선택할 수 있다', async () => {
+  it('한도에 도달해도 월간 보스는 선택할 수 있다', async () => {
     const store = atLimit()
     await renderScreen()
 
-    await press(button('월간'))
     await press(rowToggle(MONTHLY_NAME))
 
     expect(store.addManualBoss).toHaveBeenCalled()

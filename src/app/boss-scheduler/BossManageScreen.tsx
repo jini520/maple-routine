@@ -30,6 +30,7 @@ import { Pressable, View } from 'react-native'
 
 import weeklyBossesData from '../../data/weekly-bosses.json'
 import { partySizeKey, useBossSchedulerStore } from '../../features/boss-scheduler/store'
+import { BOSS_SECTION_ORDER } from '../../features/boss-scheduler/displayed-bosses'
 import { resolveSelectedCharacter } from '../../features/character-selection/selected-character'
 import { useCharacterSelectionStore } from '../../features/character-selection/store'
 import { useToastStore } from '../../features/toast/store'
@@ -44,7 +45,7 @@ import {
 import { isChallengersWorld } from '../../lib/world-emblem'
 import type { BossDifficulty } from '../../types'
 
-import { Badge } from '../../components/atoms/Badge/Badge'
+import { BossSectionHeader } from '../../components/molecules/BossSectionHeader/BossSectionHeader'
 import { Text } from '../../components/atoms/Text/Text'
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
 import { CharacterRail, type CharacterRailEntry } from '../../components/molecules/CharacterRail/CharacterRail'
@@ -54,7 +55,6 @@ import { PartySizeStepper } from '../../components/molecules/PartySizeStepper/Pa
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
-import { TABULAR_NUMS } from '../../lib/text-styles'
 
 interface BossReferenceEntry {
   boss: string
@@ -108,20 +108,13 @@ export function BossManageScreen(): React.JSX.Element {
     addManualBoss,
     removeManualBoss,
     setManualBossDifficulty,
-    // [[ADR-096]] 결정 2 · [[ADR-145]] 결정 2: 스케줄러가 보던 탭 그대로 열리고, 여기서 바꾼 것도
-    // 그쪽에 남는다(둘은 이제 형제 탭이라 «돌아갈 원래 탭» 이라는 것이 없다).
-    activeTab,
-    setActiveTab,
+    // **탭은 여기 없다**([[ADR-164]] 결정 4) — 스케줄러가 한 목록이 되면서 이 화면의 탭도 함께
+    // 걷혔다. [[ADR-096]] 결정 2 와 [[ADR-145]] 결정 2(«승계가 아니라 공유»)가 폐기된 자리다.
     // [[ADR-096]] 결정 4: 선택 캐릭터는 스케줄러와 공유한다 — 두 화면이 갈라지면 안 된다.
   } = useBossSchedulerStore()
   // 선택은 화면·스토어가 아니라 **여기 한 벌**이다([[ADR-159]] 결정 1).
   const { selectedOcid, select } = useCharacterSelectionStore()
   const { mode } = useTrackingModeStore()
-  // [[ADR-145]] 결정 2: 위 `activeTab` 이 **로컬 state 가 아니라 스토어 값 그대로**인 것이 결정이다.
-  // [[ADR-096]] 결정 2의 «진입 시점 한 번 승계» 는 진입이 사건일 때만 성립하는데, 이 화면이 탭이
-  // 되면서 마운트된 채 남아 그 사건이 앱 실행당 한 번이 됐다(스케줄러에서 월간을 보다 건너오면
-  // 주간이 열렸다). 선택 캐릭터(결정 4)와 같은 규칙으로 옮긴다.
-  //
   // [[ADR-145]] 결정 4: 스위치가 뒤집혔다 — 「등록된 보스만 보기」(기본 켜짐) → 「모든 보스 보기」
   // (기본 꺼짐). **표시 결과는 안 바뀐다**(기본은 여전히 등록된 보스만). 켜진 스위치가 «거른다» 를
   // 뜻하면 «끄면 더 보인다» 가 되어 방향이 뒤집혀 읽힌다.
@@ -186,19 +179,37 @@ export function BossManageScreen(): React.JSX.Element {
   // 보여준다. 월드를 모르는 구버전 캐시는 비-챌린저스로 취급한다 — 보스 스케줄러 화면의 시즌
   // 배지가 쓰는 판정과 **같은 함수**여야 두 화면이 갈라지지 않는다.
   const showsSeasonBosses = selected?.world !== undefined && isChallengersWorld(selected.world)
-  const allEntries =
-    activeTab === 'weekly'
-      ? showsSeasonBosses
-        ? [...WEEKLY_BOSSES, ...SEASON_BOSSES]
-        : WEEKLY_BOSSES
-      : MONTHLY_BOSSES
+  // **무리 둘이고 월간이 위다**([[ADR-164]] 결정 1·4) — 스케줄러 목록과 같은 순서여야 «보는 화면과
+  // 편집 화면이 같은 목록» 이 성립한다(그 순서의 출처는 `displayed-bosses` 의 `BOSS_SECTION_ORDER`).
+  const allSections = BOSS_SECTION_ORDER.map((cycle) => ({
+    cycle,
+    entries:
+      cycle === 'monthly'
+        ? MONTHLY_BOSSES
+        : showsSeasonBosses
+          ? [...WEEKLY_BOSSES, ...SEASON_BOSSES]
+          : WEEKLY_BOSSES,
+  }))
   // 자동 모드 기본은 등록된 보스만 — 단 등록 보스가 하나도 없으면(신규 캐릭터 등) 전체 목록으로
   // 대체해 "미등록 보스 파티 인원 미리 설정"이라는 원래 목적이 막히지 않게 한다([[ADR-031]] 결정 4).
   // **[[ADR-145]] 결정 4 는 그 규칙을 그대로 승계한다** — 뒤집힌 것은 스위치의 방향과 이름뿐이라
-  // 이 두 줄이 내는 목록은 전과 한 글자도 다르지 않다.
-  const registeredEntries = allEntries.filter((entry) => registeredDifficultyByBoss.has(entry.boss))
-  const visibleEntries =
-    mode === 'auto' && !showAllBosses && registeredDifficultyByBoss.size > 0 ? registeredEntries : allEntries
+  // 이 판정이 내는 목록은 전과 한 글자도 다르지 않다.
+  //
+  // **판정은 무리별이 아니라 목록 전체로 한다** — `registeredDifficultyByBoss.size` 는 두 무리를
+  // 합쳐 센 값이라, 검마만 등록한 캐릭터의 주간 무리가 «등록이 0이니 전체 목록» 으로 부풀지 않는다.
+  const showsRegisteredOnly =
+    mode === 'auto' && !showAllBosses && registeredDifficultyByBoss.size > 0
+  const visibleSections = allSections
+    .map((section) => ({
+      ...section,
+      entries: showsRegisteredOnly
+        ? section.entries.filter((entry) => registeredDifficultyByBoss.has(entry.boss))
+        : section.entries,
+    }))
+    // 무리가 비면 헤더도 안 선다([[ADR-164]] 결정 6). 스케줄러와 달리 여기서는 예외가 없다 —
+    // 「주간」 헤더가 싣는 `n/12` 는 **수동 모드에서 고른 개수**라, 고를 행이 하나도 없으면 그
+    // 수치를 보여 줄 이유도 없다(스케줄러 쪽은 게임이 세는 처치 수라 목록과 무관하다).
+    .filter((section) => section.entries.length > 0)
 
   // [[ADR-065]] 결정 4: 전에는 try/catch가 없어 저장 실패가 무음이었다 — 체크가 조용히 되돌아가는
   // 것 외에 설명이 없었다. 문구는 컨텐츠 관리 화면과 같다(같은 화면에서 무엇을 토글했는지는
@@ -308,43 +319,8 @@ export function BossManageScreen(): React.JSX.Element {
               {/* [[ADR-035]] 결정 18 의 안내 한 줄("자동 모드에서는 목록이 게임 등록 기준이에요 —
                   파티 인원만 설정할 수 있어요")은 [[ADR-145]] 결정 3 으로 사라졌다 — 화면이 이미
                   그것을 보여 준다(체크가 없고 스테퍼만 있다). 설명은 기능 안내가 계속 진다. */}
-              <View className="flex-row items-center gap-4">
-                <Pressable role="button" aria-selected={activeTab === 'weekly'} onPress={() => setActiveTab('weekly')}>
-                  <Text
-                    className={
-                      activeTab === 'weekly'
-                        ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
-                        : 'px-3 text-sm font-medium text-text-muted'
-                    }
-                  >
-                    주간
-                  </Text>
-                </Pressable>
-                <Pressable
-                  role="button"
-                  aria-selected={activeTab === 'monthly'}
-                  onPress={() => setActiveTab('monthly')}
-                >
-                  <Text
-                    className={
-                      activeTab === 'monthly'
-                        ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
-                        : 'px-3 text-sm font-medium text-text-muted'
-                    }
-                  >
-                    월간
-                  </Text>
-                </Pressable>
-
-                {/* [[ADR-055]] 결정 8(이슈 #62): 주간 12개 한도 카운터. 주간 탭·수동 모드에만 — 월간
-                    보스는 이 한도와 무관하고 자동 모드는 선택 자체가 없다. 스타일은 보스 스케줄러
-                    화면의 n/12 배지 재사용(신규 스타일 금지). */}
-                {mode === 'manual' && activeTab === 'weekly' && (
-                  <Badge tone="primary" className="ml-auto" style={TABULAR_NUMS}>
-                    {weeklyTrackedCount}/{WEEKLY_BOSS_CLEAR_LIMIT}
-                  </Badge>
-                )}
-              </View>
+              {/* [[ADR-164]] 결정 4: **주간/월간 탭이 여기 있었다.** 스케줄러와 함께 걷혔고,
+                  탭에만 매달려 있던 `n/12` 카운터는 「주간」 섹션 헤더로 내려갔다(결정 3). */}
 
               {mode === 'auto' && (
                 <View className="flex-row items-center justify-between gap-3">
@@ -385,7 +361,17 @@ export function BossManageScreen(): React.JSX.Element {
           </View>
         ) : (
           <View className="gap-2 px-4 pb-4">
-            {visibleEntries.map((entry) => {
+            {visibleSections.map((section) => (
+              <View key={section.cycle} className="gap-2">
+                {/* 스케줄러와 **같은 컴포넌트**다 — 두 화면의 무리 머리가 갈리면 «같은 목록» 으로
+                    안 읽힌다. 시즌 배지는 여기 없다(그것은 진행이고 이 화면은 편집이다). */}
+                <BossSectionHeader
+                  cycle={section.cycle}
+                  seasonState={null}
+                  clearCount={mode === 'manual' && section.cycle === 'weekly' ? weeklyTrackedCount : null}
+                  clearLimit={mode === 'manual' && section.cycle === 'weekly' ? WEEKLY_BOSS_CLEAR_LIMIT : null}
+                />
+                {section.entries.map((entry) => {
               const trackedDifficulty = mode === 'manual' ? trackedDifficultyOf(entry.boss) : null
               const isTracked = trackedDifficulty !== null
 
@@ -467,7 +453,9 @@ export function BossManageScreen(): React.JSX.Element {
                   )}
                 </View>
               )
-            })}
+                })}
+              </View>
+            ))}
           </View>
         )}
       </View>
