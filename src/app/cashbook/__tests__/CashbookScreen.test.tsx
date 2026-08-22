@@ -115,12 +115,25 @@ describe('CashbookScreen — 아직 기록이 없다 ([[ADR-169]] 결정 6)', ()
     expect(view.getByTestId('cashbook-empty')).toBeTruthy()
   })
 
-  it('표식이 하나도 서지 않는다 — 공급원이 아직 없다', async () => {
+  // [[ADR-169]] 정정 1 — 칸은 금액 두 줄이고, 공급원이 없는 지금은 모든 날이 «0» 이다.
+  it('모든 칸의 수익이 0 이고 칠해진 칸이 없다', async () => {
     const view = await 그리기()
 
-    expect(view.queryAllByTestId(/^calendar-mark-income-/)).toHaveLength(0)
-    expect(view.queryAllByTestId(/^calendar-mark-expense-/)).toHaveLength(0)
-    // 그래도 표식 줄은 칸마다 서 있다(결정 5).
-    expect(view.queryAllByTestId(/^calendar-marks-/).length).toBeGreaterThan(0)
+    const 수익줄 = view.queryAllByTestId(/^calendar-income-/)
+    expect(수익줄.length).toBeGreaterThan(0)
+    for (const line of 수익줄) expect(line).toHaveTextContent('0')
+
+    for (const heat of view.queryAllByTestId(/^calendar-heat-/)) {
+      expect(heat.props.style.opacity).toBe(0)
+    }
+  })
+
+  // 값이 없어도 두 줄이 서 있어야 기록이 붙을 때 격자가 안 흔들린다.
+  it('지출 줄도 칸마다 자리를 지킨다', async () => {
+    const view = await 그리기()
+
+    expect(view.queryAllByTestId(/^calendar-expense-/)).toHaveLength(
+      view.queryAllByTestId(/^calendar-income-/).length,
+    )
   })
 })

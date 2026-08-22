@@ -11,7 +11,8 @@
  * - **수익** → **날짜가 없다.** `boss_profit_records` 의 `periodKey` 는 주간(목요일)·월간뿐이라
  *   앱이 «며칟날 잡았나» 를 모른다. 그 날짜를 만드는 일이 **#239** 다.
  *
- * 그래서 `marks` 로 **빈 지도**를 넘긴다 — 누락이 아니라 기록된 상태다. **지우지 말고 채울 것.**
+ * 그래서 `amounts` 로 **빈 지도**를 넘긴다 — 누락이 아니라 기록된 상태다. **지우지 말고 채울 것.**
+ * 칸은 그동안 모든 날을 «0» 으로 그린다([[ADR-169]] 정정 1 — 수익 줄은 0 도 적는다).
  *
  * ## 이 껍데기는 앞의 둘과 다르다
  *
@@ -30,7 +31,7 @@ import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 
 import { Text } from '../../components/atoms/Text/Text'
-import { CalendarMonth, type CalendarMarks } from '../../components/molecules/CalendarMonth/CalendarMonth'
+import { CalendarMonth } from '../../components/molecules/CalendarMonth/CalendarMonth'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
@@ -42,13 +43,14 @@ import {
   getAdjacentMonthKey,
   getCurrentMonthKey,
   monthKeyOf,
+  type CalendarAmounts,
 } from '../../lib/calendar-month'
 import { ChevronLeftIcon, ChevronRightIcon, NotebookTextIcon } from '../../lib/icons'
 import { getCurrentKstDateKey } from '../../lib/reset-clock'
 import { TABULAR_NUMS } from '../../lib/text-styles'
 
-/** 공급원이 붙기 전까지 격자가 받는 값([[ADR-169]] 결정 6). */
-const NO_MARKS: Readonly<Record<string, CalendarMarks>> = {}
+/** 공급원이 붙기 전까지 격자가 받는 값([[ADR-169]] 결정 6) — 모든 날이 0 으로 그려진다. */
+const NO_AMOUNTS: CalendarAmounts = {}
 
 /** 달을 넘기는 화살표 — 보스 수익의 기간 이동과 같은 치수다(같은 그룹에서 두 모양이면 안 된다). */
 function MonthArrow(props: {
@@ -117,7 +119,7 @@ export function CashbookScreen(): React.JSX.Element {
             weeks={buildCalendarMonth(monthKey)}
             selectedDateKey={selectedDateKey}
             todayDateKey={todayDateKey}
-            marks={NO_MARKS}
+            amounts={NO_AMOUNTS}
             onSelectDate={selectDate}
           />
 

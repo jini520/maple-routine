@@ -2,12 +2,14 @@
 // «어느 규칙이 이 배치를 만들었나» 를 화면을 띄워야만 볼 수 있다([[ADR-147]] 결정 8 과 같은 태도).
 
 import {
+  HEAT_LEVELS,
   WEEKDAY_LABELS,
   buildCalendarMonth,
   formatDayLabel,
   formatMonthLabel,
   getAdjacentMonthKey,
   getCurrentMonthKey,
+  heatLevel,
   monthKeyOf,
 } from '../calendar-month'
 
@@ -141,5 +143,38 @@ describe('buildCalendarMonth — 격자', () => {
     for (const day of buildCalendarMonth('2027-01').flat()) {
       expect(day.day).toBe(Number(day.dateKey.slice(8)))
     }
+  })
+})
+
+// [[ADR-169]] 정정 1 — 칸이 표식에서 **금액 두 줄 + 열지도**로 바뀌었다.
+describe('heatLevel — 그 달 안에서 상대적이다', () => {
+  it('가장 큰 날이 최고 단계다', () => {
+    expect(heatLevel(100, 100)).toBe(HEAT_LEVELS)
+  })
+
+  it('비율이 단계를 정한다', () => {
+    expect(heatLevel(25, 100)).toBe(1)
+    expect(heatLevel(50, 100)).toBe(2)
+    expect(heatLevel(75, 100)).toBe(3)
+  })
+
+  // 1 메소라도 있으면 칠해져야 «적은 날» 과 «안 적은 날» 이 갈린다.
+  it('아주 작은 값도 0 이 아니라 1 이다', () => {
+    expect(heatLevel(1, 1_000_000_000)).toBe(1)
+  })
+
+  it('0 과 음수는 안 칠한다', () => {
+    expect(heatLevel(0, 100)).toBe(0)
+    expect(heatLevel(-5, 100)).toBe(0)
+  })
+
+  // 기록이 하나도 없는 달 — 나누기가 0 으로 떨어지면 NaN 이 칸마다 실린다.
+  it('그 달이 통째로 비어 있어도 0 이다', () => {
+    expect(heatLevel(0, 0)).toBe(0)
+    expect(heatLevel(10, 0)).toBe(0)
+  })
+
+  it('단계는 상한을 넘지 않는다', () => {
+    expect(heatLevel(500, 100)).toBe(HEAT_LEVELS)
   })
 })

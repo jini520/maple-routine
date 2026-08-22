@@ -1,18 +1,21 @@
 /**
  * 달력 한 달의 격자 — **그리기만 한다**([[ADR-169]] 결정 7).
  *
- * 어떤 칸이 서는가(몇 주인가 · 앞뒤 달을 어디까지 채우나)는 `lib/calendar-month` 이 정한다. 여기에
- * 그 판정을 두면 «어느 규칙이 이 배치를 만들었나» 를 화면을 띄워야만 볼 수 있다([[ADR-147]] 결정 8).
+ * 어떤 칸이 서는가(몇 주인가 · 앞뒤 달을 어디까지 채우나 · 진하기가 몇 단계인가)는
+ * `lib/calendar-month` 이 정한다. 여기에 그 판정을 두면 «어느 규칙이 이 배치를 만들었나» 를
+ * 화면을 띄워야만 볼 수 있다([[ADR-147]] 결정 8).
  *
- * ## 칸에 금액을 넣지 않는다
+ * ## 칸은 금액 두 줄이다 ([[ADR-169]] 정정 1)
  *
- * [[ADR-166]] 결정 1 이 **통화 셋을 합치지 않으므로** 환율을 안 넣은 사용자에게 한 칸에 들어갈
- * «한 숫자»가 존재하지 않고, 칸 너비는 화면 폭 ÷ 7 이라 억 단위가 잘린다([[ADR-165]] 가 「남은
- * 스케줄」 **두 자리**에서 이미 겪었다). 그래서 칸이 나르는 것은 **표식 둘**이다 —
- * 수익(`rise-ink`) · 지출(`fall-ink`), [[ADR-169]] 결정 5.
+ * 처음에는 표식 두 개(점)였다. 사용자가 레퍼런스를 주며 *"단순 달력만 있는게 아니라 일별 데이터도
+ * 함께 볼 수 있는 형태"* 를 지정했고(2026-08-23), 그 이미지가 «칸이 좁아 억 단위가 잘린다» 는
+ * 근거를 반박했다 — **줄여 적으면 들어간다**(`lib/meso-compact`).
  *
- * 표식 줄은 **비어 있어도 자리를 차지한다**([[ADR-168]] 정정 1 과 같은 이유). 칸이 마흔둘이라
- * 표식이 들어올 때 줄 높이가 바뀌면 격자와 그 아래가 통째로 튄다.
+ * 위 줄이 수익(`rise-ink`), 아래 줄이 지출(`fall-ink`)이다. **수익 줄은 0 도 «0» 으로 적고, 지출
+ * 줄은 0 이면 비운다** — 사용자가 고른 시안 그대로다. 둘 다 값이 없어도 **자리는 차지한다**:
+ * 칸이 마흔둘이라 한 줄만 생겨도 격자와 그 아래가 통째로 튄다.
+ *
+ * 지출 줄이 **메소만**인 이유는 `CalendarDayAmounts` 에 적어 뒀다(통화 셋을 앱이 못 합친다).
  *
  * ## 앞뒤 달 칸을 죽이지 않는다
  *
@@ -22,43 +25,51 @@
 import { Pressable, View } from 'react-native'
 
 import { Text } from '../../atoms/Text/Text'
-import { WEEKDAY_LABELS, formatDayLabel, type CalendarWeek } from '../../../lib/calendar-month'
+import {
+  WEEKDAY_LABELS,
+  formatDayLabel,
+  heatLevel,
+  monthIncomeMax,
+  type CalendarAmounts,
+  type CalendarWeek,
+} from '../../../lib/calendar-month'
+import { formatMesoCompact } from '../../../lib/meso-compact'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
-
-export interface CalendarMarks {
-  readonly income: boolean
-  readonly expense: boolean
-}
 
 export interface CalendarMonthProps {
   readonly weeks: readonly CalendarWeek[]
   readonly selectedDateKey: string
   readonly todayDateKey: string
   /**
-   * 날짜 키 → 표식. **공급원이 아직 없다**([[ADR-169]] 결정 6) — 지출은 [[ADR-166]] 의
-   * `spend_records`(코드 0줄), 수익은 #239 가 만드는 «며칟날 잡았나» 가 채운다. 지우지 말고 채울 것.
+   * 날짜 키 → 그날 금액. **공급원이 아직 없다**([[ADR-169]] 결정 6) — 지출은 [[ADR-166]] 의
+   * `spend_records`(코드 0줄), 수익은 #239 가 만드는 «며칟날 잡았나» 가 채운다.
    */
-  readonly marks: Readonly<Record<string, CalendarMarks>>
+  readonly amounts: CalendarAmounts
   readonly onSelectDate: (dateKey: string) => void
 }
 
-const NO_MARKS: CalendarMarks = { income: false, expense: false }
+const NO_AMOUNTS = { incomeMeso: 0, expenseMeso: 0 } as const
+
+/** 단계 → 불투명도. 0 단계는 **정확히 0** 이어야 «안 적은 날» 이 칠해지지 않는다. */
+const HEAT_OPACITY: readonly number[] = [0, 0.1, 0.2, 0.3, 0.42]
 
 /** 오늘과 고른 날은 **같은 칸일 수 있다** — 그래서 표현을 겹치지 않게 나눈다(채움 ↔ 테두리). */
 function dayCircleClass(isSelected: boolean, isToday: boolean): string {
-  const base = 'h-8 w-8 items-center justify-center rounded-full'
+  const base = 'h-6 w-6 items-center justify-center rounded-full'
   if (isSelected) return `${base} bg-primary`
   if (isToday) return `${base} border border-primary`
   return base
 }
 
 function dayTextClass(isSelected: boolean, inMonth: boolean): string {
-  const base = 'text-sm'
+  const base = 'text-xs'
   if (isSelected) return `${base} font-semibold text-on-primary`
   return inMonth ? `${base} text-text` : `${base} text-text-disabled`
 }
 
 export function CalendarMonth(props: CalendarMonthProps): React.JSX.Element {
+  const incomeMax = monthIncomeMax(props.weeks, props.amounts)
+
   return (
     <View>
       <View className="flex-row">
@@ -74,7 +85,8 @@ export function CalendarMonth(props: CalendarMonthProps): React.JSX.Element {
           {week.map((day) => {
             const isSelected = day.dateKey === props.selectedDateKey
             const isToday = day.dateKey === props.todayDateKey
-            const mark = props.marks[day.dateKey] ?? NO_MARKS
+            const amounts = props.amounts[day.dateKey] ?? NO_AMOUNTS
+            const heat = HEAT_OPACITY[heatLevel(amounts.incomeMeso, incomeMax)] ?? 0
 
             return (
               <Pressable
@@ -87,30 +99,41 @@ export function CalendarMonth(props: CalendarMonthProps): React.JSX.Element {
                 onPress={() => props.onSelectDate(day.dateKey)}
                 className="flex-1 items-center py-1"
               >
+                {/*
+                  열지도 바탕. 형제보다 먼저 그려져 글자 뒤에 깔린다.
+
+                  `aria-hidden` 을 **안 붙인다** — 글자가 없어 스크린리더가 읽을 것도 없는데,
+                  붙이면 RNTL 이 이 노드를 숨김으로 보고 쿼리에서 걷어 테스트가 못 잡는다.
+                */}
+                <View
+                  testID={`calendar-heat-${day.dateKey}`}
+                  style={{ opacity: heat }}
+                  className="absolute bottom-0 left-0.5 right-0.5 top-0 rounded-lg bg-primary"
+                />
+
                 <View className={dayCircleClass(isSelected, isToday)}>
                   <Text className={dayTextClass(isSelected, day.inMonth)} style={TABULAR_NUMS}>
                     {day.day}
                   </Text>
                 </View>
 
-                {/* 비어도 자리를 차지한다([[ADR-169]] 결정 5). */}
-                <View
-                  testID={`calendar-marks-${day.dateKey}`}
-                  className="mt-1 h-1.5 flex-row items-center justify-center gap-1"
+                {/* 두 줄은 값이 없어도 자리를 차지한다([[ADR-169]] 정정 1). */}
+                <Text
+                  testID={`calendar-income-${day.dateKey}`}
+                  numberOfLines={1}
+                  className="text-[9px] leading-3 text-rise-ink"
+                  style={TABULAR_NUMS}
                 >
-                  {mark.income && (
-                    <View
-                      testID={`calendar-mark-income-${day.dateKey}`}
-                      className="h-1.5 w-1.5 rounded-full bg-rise-ink"
-                    />
-                  )}
-                  {mark.expense && (
-                    <View
-                      testID={`calendar-mark-expense-${day.dateKey}`}
-                      className="h-1.5 w-1.5 rounded-full bg-fall-ink"
-                    />
-                  )}
-                </View>
+                  {amounts.incomeMeso > 0 ? `+${formatMesoCompact(amounts.incomeMeso)}` : '0'}
+                </Text>
+                <Text
+                  testID={`calendar-expense-${day.dateKey}`}
+                  numberOfLines={1}
+                  className="text-[9px] leading-3 text-fall-ink"
+                  style={TABULAR_NUMS}
+                >
+                  {amounts.expenseMeso > 0 ? `−${formatMesoCompact(amounts.expenseMeso)}` : ' '}
+                </Text>
               </Pressable>
             )
           })}
