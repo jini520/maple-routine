@@ -23,10 +23,15 @@
 ## 개발 프로세스
 - CRITICAL: 작업 전 관련 문서를 먼저 작성/갱신하고(docs-first), 작업 완료 후 문서를 다시 점검해 완료된 항목을 반영(체크)할 것
 - CRITICAL: 새 기능 구현 시 반드시 테스트를 먼저 작성하고, 테스트가 통과하는 구현을 작성할 것 (TDD)
+- CRITICAL: 작업 중 검증은 **변경 영향 범위의 경로만** 지정해 돌릴 것 — `npx jest <바꾼 디렉터리…>`. 전체 실행은 269 스위트·3,880여 테스트로 40초가 넘고, 애니메이션이 무거운 스위트(`DropEffectOverlay` 등)에서 **내 변경과 무관한 워커 플레이크**를 내 해석에 시간이 샌다. 공유 상수·유틸을 뽑아 다른 소비자를 건드렸으면 그 경로도 함께 넣을 것. 배선 누락은 `npx tsc --noEmit` 가 전역으로 잡으므로 그것 때문에 전체를 돌릴 필요는 없다
 - 커밋 메시지는 conventional commits 형식을 따를 것 (feat:, fix:, docs:, refactor:)
 
 ## 명령어
 npm run dev      # 개발 서버
 npm run build    # 프로덕션 빌드
 npm run lint     # ESLint
-npm run test     # 테스트
+npm run test     # 테스트 (전체 — 최종 확인용)
+
+npx tsc --noEmit                 # 타입 (전역, 빠르다)
+npx eslint src                   # 린트
+npx jest src/lib src/app/utility # 테스트 — **영향 범위만** 지정하는 것이 기본
