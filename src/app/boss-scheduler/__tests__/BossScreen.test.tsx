@@ -41,6 +41,8 @@ const mockShowError = jest.fn()
 const mockShowInfo = jest.fn()
 const mockNoticeApiKeyIssue = jest.fn()
 const navigate = jest.fn()
+// 층이 스택이 된 뒤로 «그룹 층으로 되돌리기» 는 액션이다([[ADR-167]]) — 화면이 이것도 부른다.
+const dispatch = jest.fn()
 
 // [[ADR-063]]: 동기화 실패·파티원 수 저장 실패는 인라인 문단이 아니라 토스트다.
 jest.mock('../../../features/toast/store', () => ({
@@ -192,7 +194,8 @@ beforeEach(() => {
   mockShowInfo.mockClear()
   mockNoticeApiKeyIssue.mockClear()
   navigate.mockClear()
-  mockedNavigation.mockReturnValue({ navigate, goBack: jest.fn() } as never)
+  dispatch.mockClear()
+  mockedNavigation.mockReturnValue({ navigate, dispatch, goBack: jest.fn() } as never)
   useTrackingModeStore.setState({ mode: 'auto' })
 })
 
@@ -239,9 +242,11 @@ describe('BossScreen — 빈 상태와 마운트', () => {
 
     await press(button('캐릭터 선택하기'))
 
-    expect(navigate).toHaveBeenCalledWith('Tabs', {
-      screen: 'Settings',
-      params: { openPicker: true },
+    // 층이 스택이 되면서 이동이 두 단 중첩이 됐다([[ADR-167]] 결정 2) — 설정은 **그룹 층**에
+    // 살고, 파라미터는 가장 안쪽 화면에 붙는다.
+    expect(navigate).toHaveBeenCalledWith('Main', {
+      screen: 'Groups',
+      params: { screen: 'Settings', params: { openPicker: true } },
     })
     expect(screen.queryByTestId('character-tracking-picker-modal')).toBeNull()
   })
@@ -769,7 +774,12 @@ describe('BossScreen — 빈 상태 문구 ([[ADR-060]])', () => {
     expect(screen.getByText('추적할 보스가 없습니다')).toBeTruthy()
     await press(button('보스 관리'))
 
-    expect(navigate).toHaveBeenCalledWith('Tabs', { screen: 'BossManage' })
+    // 보스 관리는 이 화면과 **같은 스케줄러 단**에 산다 — 층은 안 바뀌고 그 안에서 옆걸음한다
+    // ([[ADR-167]] 결정 3).
+    expect(navigate).toHaveBeenCalledWith('Main', {
+      screen: 'ScheduleSubs',
+      params: { screen: 'BossManage' },
+    })
   })
 
   // 캐시 우선 표시 중(`isStale`)에는 자동 모드에서 "없다"고 단정하지 않는다.

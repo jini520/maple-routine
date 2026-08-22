@@ -35,6 +35,8 @@ import { useScreenNavigation } from '../../use-screen-navigation'
 const mockShowError = jest.fn()
 const mockNoticeApiKeyIssue = jest.fn()
 const navigate = jest.fn()
+// 층이 스택이 된 뒤로 «그룹 층으로 되돌리기» 는 액션이다([[ADR-167]]) — 화면이 이것도 부른다.
+const dispatch = jest.fn()
 
 // ADR-063: 동기화 실패는 인라인 문단이 아니라 토스트다.
 jest.mock('../../../features/toast/store', () => ({
@@ -153,7 +155,8 @@ beforeEach(() => {
   mockShowError.mockClear()
   mockNoticeApiKeyIssue.mockClear()
   navigate.mockClear()
-  mockedNavigation.mockReturnValue({ navigate, goBack: jest.fn() } as never)
+  dispatch.mockClear()
+  mockedNavigation.mockReturnValue({ navigate, dispatch, goBack: jest.fn() } as never)
   useTrackingModeStore.setState({ mode: 'auto' })
 })
 
@@ -199,10 +202,16 @@ describe('ContentScreen — 빈 상태와 마운트', () => {
 
     await press(button('캐릭터 선택하기'))
 
-    expect(navigate).toHaveBeenCalledWith('Tabs', {
-      screen: 'Settings',
-      params: { openPicker: true },
+    // 층이 스택이 되면서 이동이 두 단 중첩이 됐다([[ADR-167]] 결정 2) — 설정은 **그룹 층**에
+    // 살고, 파라미터는 가장 안쪽 화면에 붙는다.
+    expect(navigate).toHaveBeenCalledWith('Main', {
+      screen: 'Groups',
+      params: { screen: 'Settings', params: { openPicker: true } },
     })
+    // **먼저 층을 바닥으로 되돌린다.** 이 화면은 하위 층에 살고 설정은 그룹 층에 사는데, 그룹 층은
+    // 스택 바닥이라 그냥 이동하면 바닥에 있는 것을 한 번 더 쌓는다 — 그러면 바는 ← 를 안 그리는데
+    // 가장자리 스와이프는 뒤로 가는 어긋난 프레임이 된다([[ADR-167]] 결정 8).
+    expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: 'POP_TO_TOP' }))
     expect(screen.queryByTestId('character-tracking-picker-modal')).toBeNull()
   })
 })

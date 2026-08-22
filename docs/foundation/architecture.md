@@ -21,7 +21,7 @@ src/
 │   ├── boss-profit/        # 주간/월간 탭 + 기간 네비게이터 + 드롭 시트·히스토리·가격 입력
 │   ├── onboarding/  settings/  hunting-profit/  spend/  utility/
 │   ├── AppShell.tsx  prehydrate.ts  UpdatePromptModal.tsx
-├── navigation/             # @react-navigation 배선 — RootNavigator · TabNavigator · BottomBar
+├── navigation/             # @react-navigation 배선 — RootNavigator · Main(층 스택) · BottomBar
 ├── features/               # 기능별 도메인 로직(UI 상태 + 비즈니스 로직)
 │   ├── onboarding/  content-scheduler/  boss-scheduler/  boss-profit/  schedule-sync/
 │   ├── character-manage/  settings/  tracking-mode/  live-update/  drop-effect/  toast/
@@ -43,11 +43,26 @@ src/
 modules/                    # 로컬 Expo 모듈 셋 — capacitor-storage · app-background · app-system-bars
 ```
 
-## 화면 구조 — 탭 다섯 + 그 위에 얹히는 스택 ([[ADR-132]] · [[ADR-145]])
+## 화면 구조 — **스택 두 겹** + 떠 있는 바 ([[ADR-132]] · [[ADR-145]] · [[ADR-167]])
 
-배선은 `src/navigation/` 이 소유한다 — `RootNavigator`(스택) 안에 `TabNavigator` 가 들어가고, 하위
-페이지는 **네이티브 스택으로 push** 된다(`@react-navigation/native-stack`). 하단바는 떠 있는 캡슐
-2층이고 첫 화면은 `today` 다([[ADR-132]]).
+배선은 `src/navigation/` 이 소유한다. 스택이 **두 겹**이고 둘이 같은 상수로 열린다
+(`stack-presentation.ts` — 그래서 «하위 페이지처럼 열린다» 가 우연이 아니라 구조다):
+
+```
+RootNavigator (스택)
+├── Main                          # 「탭 레이어」 자리
+│   ├── 층 스택 (Groups · ScheduleSubs · LedgerSubs)
+│   │     └── 각 층은 탭 내비게이터 — 그 안의 옆걸음은 안 쌓이고 언마운트도 없다
+│   └── BottomBar                 # 층 스택의 `layout` 이 그린다 → 층이 밀려도 안 밀린다
+└── 하위 페이지 열하나            # `Main` **통째**를 밀어낸다 → 바도 함께 나간다
+```
+
+**그룹 행 → 하위 행이 스택 한 단**이라는 것이 [[ADR-167]] 이다 — 전환 애니메이션과 iOS 가장자리
+스와이프가 «만드는 것» 이 아니라 «단이 있으면 OS 가 주는 것» 이라, 그 단이 없던 동안은 안드로이드
+백만 되고 iOS 스와이프는 걸릴 자리가 아예 없었다(#240).
+
+하단바는 떠 있는 캡슐 2층이고 첫 화면은 `today` 다([[ADR-132]]). 바가 드는 상태는 «마지막으로 보던
+하위»(`lastSub`) **하나뿐**이다 — 층과 뒤로가기는 스택이 든다.
 
 - **하위 페이지는 스택이라 아래 화면이 언마운트되지 않는다** — 펼침·기간·스크롤을 잃지 않는다는
   계약(⛔ ADR-077 에서 살아남은 부분)을 스택이 구조적으로 지킨다. 웹에서 그것을 중첩 라우트 +

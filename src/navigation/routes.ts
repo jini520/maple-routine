@@ -69,6 +69,46 @@ export type TabParamList = {
 }
 
 /**
+ * 층 스택의 화면 — **그룹 층 하나 + 하위를 가진 그룹마다 하나**([[ADR-167]] 결정 1·2).
+ *
+ * 이 이름들이 곧 «층» 이다. 그룹 행에 서 있으면 `Groups` 한 단이고, 하위로 내려가면 그 그룹의
+ * 화면이 그 위에 **push** 된다 — 그래서 전환 애니메이션과 가장자리 스와이프가 공짜로 붙는다
+ * ([[ADR-120]] 결정 5·6 이 하위 페이지 열하나에 준 것과 같은 값이 같은 경로로 온다).
+ *
+ * 어느 그룹이 어느 층 화면을 갖는지는 `bar-model.ts` 의 `BAR_GROUPS` 가 든다 — 여기 두면 두 벌이
+ * 된다. 이름만 여기 있는 것은 `bar-model` 이 `routes` 를 읽지 그 반대가 아니기 때문이다.
+ */
+export type LayerRouteName = 'Groups' | 'ScheduleSubs' | 'LedgerSubs'
+
+/** 그룹 층에 서는 화면 — **하위가 없는 그룹의 페이지**들이다. */
+export type GroupLayerParamList = {
+  Today: undefined
+  Utility: undefined
+  Settings: { openPicker?: boolean } | undefined
+}
+
+export type ScheduleSubsParamList = {
+  Content: undefined
+  Boss: undefined
+  BossManage: undefined
+}
+
+export type LedgerSubsParamList = {
+  Profit: undefined
+  HuntingProfit: undefined
+  Spend: undefined
+}
+
+export type LayerParamList = {
+  Groups: NavigatorScreenParams<GroupLayerParamList> | undefined
+  ScheduleSubs: NavigatorScreenParams<ScheduleSubsParamList> | undefined
+  LedgerSubs: NavigatorScreenParams<LedgerSubsParamList> | undefined
+}
+
+/** 층 화면 셋. `Main` 이 이 목록으로 `<Stack.Screen>` 을 그린다. */
+export const LAYER_ROUTE_NAMES: readonly LayerRouteName[] = ['Groups', 'ScheduleSubs', 'LedgerSubs']
+
+/**
  * 기능 안내 상세가 받는 파라미터.
  *
  * `section` 은 웹의 `?s=` 다([[ADR-125]] 결정 7) — 그쪽이 세그먼트가 아니라 쿼리인 이유는
@@ -82,7 +122,15 @@ export interface FeatureGuideParams {
 
 export type RootStackParamList = {
   Onboarding: undefined
-  Tabs: NavigatorScreenParams<TabParamList> | undefined
+  /**
+   * 「탭 레이어」를 대신하는 화면 하나 — **안에 층 스택과 바가 형제로 산다**([[ADR-167]] 결정 2).
+   *
+   * 이름이 `Tabs` 가 아닌 이유: 이제 이 자리는 탭 내비게이터가 아니라 **스택**이고, 탭은 그 스택의
+   * 각 단 안에 있다. 하위 페이지 열하나는 여전히 이것 **위**로 밀려 들어와 `Main` 통째를 밀어낸다 —
+   * 바가 그 안에 있으므로 [[ADR-120]] 결정 4(*"탭바가 아래 화면과 한 덩어리로 밀려 나간다"*)가
+   * 구조로 그대로 성립한다.
+   */
+  Main: NavigatorScreenParams<LayerParamList> | undefined
   ContentManage: undefined
   DropHistory: undefined
   DropPrice: undefined
@@ -100,7 +148,7 @@ export type RootStackParamList = {
   SettingsCharacters: undefined
 }
 
-export type StackRouteName = Exclude<keyof RootStackParamList, 'Onboarding' | 'Tabs'>
+export type StackRouteName = Exclude<keyof RootStackParamList, 'Onboarding' | 'Main'>
 
 /**
  * 한 경로가 RN 의 어느 자리로 갔는가.
@@ -247,8 +295,12 @@ export const TAB_ROUTE_NAMES: readonly TabRouteName[] = ROUTE_TABLE.flatMap((row
 /**
  * 처음 서 있는 탭 — **`/` 행과 갈렸다**([[ADR-132]] 결정 7).
  *
+ * 타입이 `TabRouteName` 이 아니라 **`keyof GroupLayerParamList`** 인 것이 [[ADR-167]] 의 산물이다.
+ * 앱은 «탭 아홉 중 하나» 가 아니라 **그룹 층의 첫 화면**에서 시작한다 — 하위 층은 push 로만 열리므로
+ * 여기에 하위 페이지를 적을 수 있으면 «앱을 켰는데 스택이 한 단 깊은» 상태가 표현돼 버린다.
+ *
  * 표의 `/` 행은 여전히 `Content` 를 가리킨다. 그 행은 *"웹이 `/` 에서 무엇을 보여 줬는가"* 라는
  * 기록이고, *"이 앱이 어디서 시작하는가"* 와는 다른 축이기 때문이다. 둘이 갈린 것 자체가
  * [[ADR-132]] 의 산물이라 `routes.test.ts` 가 **양쪽을 함께** 고정한다 — 한쪽만 고치면 테스트가 운다.
  */
-export const INITIAL_TAB_ROUTE: TabRouteName = 'Today'
+export const INITIAL_TAB_ROUTE: keyof GroupLayerParamList = 'Today'

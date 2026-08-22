@@ -70,6 +70,7 @@ import { ListChecksIcon, RefreshCwIcon } from '../../lib/icons'
 import { useTopSafeAreaPx } from '../../lib/top-safe-area'
 import { orderByTracked } from '../../lib/tracked-order'
 import { useThemeAppearance } from '../../theme/context'
+import { useOpenTab } from '../use-open-tab'
 import { useScreenNavigation } from '../use-screen-navigation'
 import { usePullRefresh } from '../use-pull-refresh'
 import { renderDailyContentCard } from './DailyContentCards'
@@ -97,6 +98,7 @@ export function ContentScreen(): React.JSX.Element {
   const pull = usePullRefresh(() => refresh(trackedOcids ?? []))
   const { mode } = useTrackingModeStore()
   const navigation = useScreenNavigation()
+  const openTab = useOpenTab()
   const topSafeAreaPx = useTopSafeAreaPx()
   const { definition } = useThemeAppearance()
   const reduceMotion = useReducedMotion()
@@ -166,7 +168,7 @@ export function ContentScreen(): React.JSX.Element {
   // [[ADR-140]] 결정 1·2: 이 화면은 더 이상 피커를 열지 않는다 — 추적 목록을 고르는 자리는 설정
   // 하나뿐이라, 빈 상태 CTA 는 모달 대신 **설정 탭을 피커가 열린 채로** 연다.
   function goToCharacterManage(): void {
-    navigation.navigate('Tabs', { screen: 'Settings', params: { openPicker: true } })
+    openTab('Settings', { openPicker: true })
   }
 
   // ADR-035 결정 18: 수동 모드의 추적 항목 편집은 이 화면이 아니라 전용 관리 페이지에서 한다.

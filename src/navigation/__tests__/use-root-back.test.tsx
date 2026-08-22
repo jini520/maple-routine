@@ -7,7 +7,7 @@ import { BackHandler } from 'react-native'
 import { setBackGesturePort, __resetNativePortsForTest } from '../../native/ports'
 
 import { useRootBackToBackground, type RootBackNavigation } from '../use-root-back'
-import { registerBarBackHandler, resetBarStoreForTests } from '../bar-store'
+import { resetBarStoreForTests } from '../bar-store'
 import { rnBackGesturePort } from '../../native/adapters/rn-back-gesture'
 
 // `mock` 접두사는 jest 규칙이다 — `jest.mock()` 팩토리는 호이스팅돼 모듈 평가보다 먼저 돌기 때문에
@@ -100,45 +100,28 @@ describe('useRootBackToBackground ([[ADR-120]] 결정 18)', () => {
   })
 })
 
-// [[ADR-132]] 결정 10 — 판정이 «화면 스택 → 바 기록 → 백그라운드» 3단이 됐다. 바의 층 기록은
-// react-navigation 이 모르는 우리 것이라(`bar-store.ts`) `canGoBack()` 에 안 잡히고, 그래서 이 단이
-// 없으면 하위 행에서 시스템 뒤로가기가 **위층으로 가는 대신 앱을 백그라운드로 보낸다**.
-describe('하단바의 층도 뒤로가기가 처리한다 ([[ADR-132]] 결정 10)', () => {
-  it('바가 뒤로 갈 수 있으면 바에게 맡기고 백그라운드로 보내지 않는다', async () => {
-    const goBack = jest.fn()
-    registerBarBackHandler({ canGoBack: () => true, goBack })
-
-    const pressBack = captureBackHandler()
-    await render(<Harness navigation={{ isReady: () => true, canGoBack: () => false }} />)
-
-    expect(pressBack()).toBe(true)
-    expect(goBack).toHaveBeenCalledTimes(1)
-    expect(mockMoveToBackground).not.toHaveBeenCalled()
-  })
-
-  it('바가 그룹 행이면(갈 곳 없음) 예전처럼 백그라운드로 간다', async () => {
-    const goBack = jest.fn()
-    registerBarBackHandler({ canGoBack: () => false, goBack })
-
-    const pressBack = captureBackHandler()
-    await render(<Harness navigation={{ isReady: () => true, canGoBack: () => false }} />)
-
-    expect(pressBack()).toBe(true)
-    expect(goBack).not.toHaveBeenCalled()
-    expect(mockMoveToBackground).toHaveBeenCalledTimes(1)
-  })
-
-  // 순서가 뒤집히면 하위 페이지(드랍 이력 등)가 열려 있을 때 그 화면 대신 바의 층이 먼저 닫힌다 —
-  // 사용자가 «화면 스택 먼저» 로 판정한 자리다.
-  it('화면 스택이 먼저다 — pop 할 것이 있으면 바는 건드리지 않는다', async () => {
-    const goBack = jest.fn()
-    registerBarBackHandler({ canGoBack: () => true, goBack })
-
+// [[ADR-132]] 결정 10 이 여기에 단을 하나 더 뒀었다 — 하단바의 «층» 기록이 react-navigation 이
+// 모르는 우리 것이라 `canGoBack()` 에 안 잡혔고, 그래서 «화면 스택 → 바 기록 → 백그라운드» 3단이
+// 됐다. [[ADR-167]] 결정 7 이 그 단을 걷었다: 층이 진짜 스택이면 하위 층까지 `canGoBack()` 에
+// 잡히므로 우리가 알려 줄 것이 없다.
+describe('판정은 다시 하나다 ([[ADR-167]] 결정 7)', () => {
+  // 하위 «층» 에 서 있는 경우다. 예전에는 `canGoBack()` 이 거짓이라 앱이 백그라운드로 갔고,
+  // 그것을 막으려고 바가 자기 뒤로가기를 등록했다. 지금은 층이 스택 한 단이라 이 값이 참이고,
+  // 우리는 가로채지 않는다 — react-navigation 이 pop 한다.
+  it('층이 남아 있으면 가로채지 않는다 — 백그라운드로 보내지 않는다', async () => {
     const pressBack = captureBackHandler()
     await render(<Harness navigation={{ isReady: () => true, canGoBack: () => true }} />)
 
     expect(pressBack()).toBe(false)
-    expect(goBack).not.toHaveBeenCalled()
     expect(mockMoveToBackground).not.toHaveBeenCalled()
+  })
+
+  // 여기까지 왔다는 것은 층도 하위 페이지도 남아 있지 않다는 뜻이다.
+  it('정말로 pop 할 것이 없을 때만 백그라운드로 간다', async () => {
+    const pressBack = captureBackHandler()
+    await render(<Harness navigation={{ isReady: () => true, canGoBack: () => false }} />)
+
+    expect(pressBack()).toBe(true)
+    expect(mockMoveToBackground).toHaveBeenCalledTimes(1)
   })
 })
