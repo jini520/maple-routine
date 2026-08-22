@@ -115,7 +115,7 @@ describe('layerOfPage — 페이지가 사는 층 화면 ([[ADR-167]] 결정 2)'
     expect(layerOfPage('Content')).toBe('ScheduleSubs')
     expect(layerOfPage('BossManage')).toBe('ScheduleSubs')
     expect(layerOfPage('Profit')).toBe('LedgerSubs')
-    expect(layerOfPage('Spend')).toBe('LedgerSubs')
+    expect(layerOfPage('Cashbook')).toBe('LedgerSubs')
   })
 })
 
@@ -125,7 +125,7 @@ describe('층은 «지금 페이지» 가 정한다 (결정 2)', () => {
     expect(barLayer(at('Boss'))).toBe('sub')
     expect(barLayer(at('BossManage'))).toBe('sub')
     expect(barLayer(at('Profit'))).toBe('sub')
-    expect(barLayer(at('Spend'))).toBe('sub')
+    expect(barLayer(at('Cashbook'))).toBe('sub')
   })
 
   it('하위가 없는 그룹의 페이지에 있으면 그룹 행이다', () => {
@@ -213,8 +213,8 @@ describe('하위끼리는 같은 단 안의 옆걸음이다 ([[ADR-167]] 결정 
   // 옆걸음을 몇 번 하든 ← 는 여전히 «그룹에 들어오기 전 자리» 로 나간다 — 스택이 안 자라기
   // 때문이다. 그 성질을 여기서는 «← 가 여전히 한 번이면 된다» 로 못 박는다.
   it('옆걸음 뒤에도 ← 는 한 단이다', () => {
-    expect(canGoBack(at('Spend'))).toBe(true)
-    expect(pressBack(at('Spend'))).toEqual({ kind: 'back' })
+    expect(canGoBack(at('Cashbook'))).toBe(true)
+    expect(pressBack(at('Cashbook'))).toEqual({ kind: 'back' })
   })
 })
 
@@ -223,7 +223,7 @@ describe('rememberSub — 다시 들어갈 자리 ([[ADR-167]] 결정 4)', () =>
   // 스택으로 옮겨가지 못하고 남은 유일한 값이다.
   it('하위 페이지를 적는다', () => {
     expect(rememberSub({}, 'Boss')).toEqual({ schedule: 'Boss' })
-    expect(rememberSub({ schedule: 'Boss' }, 'Spend')).toEqual({ schedule: 'Boss', ledger: 'Spend' })
+    expect(rememberSub({ schedule: 'Boss' }, 'Cashbook')).toEqual({ schedule: 'Boss', ledger: 'Cashbook' })
   })
 
   it('그룹 층 페이지는 기억할 것이 없다 — 그대로 돌려준다', () => {
@@ -250,9 +250,9 @@ describe('openPage — 바를 거치지 않은 이동 ([[ADR-167]] 결정 6)', (
   })
 
   it('같은 그룹 안이면 하위 옆걸음이다', () => {
-    expect(openPage(at('Profit'), 'HuntingProfit')).toEqual({
+    expect(openPage(at('Profit'), 'Cashbook')).toEqual({
       kind: 'switchSub',
-      page: 'HuntingProfit',
+      page: 'Cashbook',
     })
   })
 
@@ -263,7 +263,7 @@ describe('openPage — 바를 거치지 않은 이동 ([[ADR-167]] 결정 6)', (
   // `pressGroup` 과 달리 **목적지를 지목한다** — `lastSub` 를 보지 않는다. 위젯은 «보스 수익» 처럼
   // 특정 페이지를 가리키기 때문이다([[ADR-145]] 대가 · [[ADR-140]] 결정 1 의 CTA 와 같은 성질).
   it('기억된 하위가 있어도 지목한 페이지로 간다', () => {
-    const remembered = at('Today', { lastSub: { ledger: 'Spend' } })
+    const remembered = at('Today', { lastSub: { ledger: 'Cashbook' } })
 
     expect(openPage(remembered, 'Profit')).toMatchObject({ page: 'Profit' })
   })

@@ -82,10 +82,11 @@ export const BAR_GROUPS: readonly BarGroup[] = [
     label: '수익·지출',
     page: null,
     layer: 'LedgerSubs',
+    // 셋에서 둘이 됐다([[ADR-169]] 결정 1, 사용자 지정 2026-08-23). 사냥 수익·지출은 사라진 것이
+    // 아니라 **가계부 안으로** 들어간다 — 같은 날의 같은 돈이 세 화면에 흩어지지 않게.
     subs: [
       { page: 'Profit', label: '보스 수익' },
-      { page: 'HuntingProfit', label: '사냥 수익' },
-      { page: 'Spend', label: '지출' },
+      { page: 'Cashbook', label: '가계부' },
     ],
   },
   { id: 'utility', label: '유틸리티', subs: [], page: 'Utility', layer: null },

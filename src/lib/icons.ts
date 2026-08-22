@@ -69,6 +69,7 @@ import Medal from 'lucide-react-native/icons/medal'
 import Menu from 'lucide-react-native/icons/menu'
 import Minus from 'lucide-react-native/icons/minus'
 import Moon from 'lucide-react-native/icons/moon'
+import NotebookText from 'lucide-react-native/icons/notebook-text'
 import PackageOpen from 'lucide-react-native/icons/package-open'
 import Pin from 'lucide-react-native/icons/pin'
 import Plus from 'lucide-react-native/icons/plus'
@@ -173,6 +174,9 @@ export const MenuIcon = withIconInterop(Menu)
 export const MinusIcon = withIconInterop(Minus)
 /** 다크 테마 표식 — `ThemeSelector` 타일([[ADR-104]] 결정 2). */
 export const MoonIcon = withIconInterop(Moon)
+
+/** 가계부 — 장부. 달력 계열(`CalendarCheck` = 스케줄러 그룹)과 겹치지 않게 고른 그림이다. */
+export const NotebookTextIcon = withIconInterop(NotebookText)
 /** 드롭 데이터가 아직 없는 보스 — `BossDropSheet` 빈 상태([[ADR-060]]). */
 export const PackageOpenIcon = withIconInterop(PackageOpen)
 /** 고정 드롭(읽기 전용) 섹션 — `BossDropSheet`([[ADR-040]] 결정 3). */

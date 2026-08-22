@@ -53,16 +53,18 @@ describe('ROUTE_TABLE — 계획서 §1 대조', () => {
     expect(new Set(paths).size).toBe(paths.length)
   })
 
-  // 넷은 [[ADR-132]] 결정 1 의 탭이고, 나머지 둘은 하위 페이지다 — 캐릭터 관리는 [[ADR-144]]
+  // 셋은 [[ADR-132]] 결정 1 의 탭이고, 나머지 둘은 하위 페이지다 — 캐릭터 관리는 [[ADR-144]]
   // 결정 1(웹뷰 앱에서 같은 일을 하는 것이 **모달**이라 대조할 경로가 없다), 아이템 분배 계산기는
   // [[ADR-168]] 결정 6(유틸리티의 첫 도구 · 웹에 그런 화면 자체가 없다).
-  it('RN 에서 새로 생긴 화면은 여섯이고 넷은 탭·둘은 하위 페이지다', () => {
+  //
+  // **탭이 넷에서 셋이 됐다**([[ADR-169]] 결정 1·2) — 사냥 수익·지출 껍데기 둘이 빠지고 가계부
+  // 하나가 들어왔다. 둘은 사라진 것이 아니라 그 화면 안으로 들어간다.
+  it('RN 에서 새로 생긴 화면은 다섯이고 셋은 탭·둘은 하위 페이지다', () => {
     const rnRows = ROUTE_TABLE.filter((row) => row.origin === 'rn')
 
     expect(rnRows.map((row) => row.target)).toEqual([
       { kind: 'tab', route: 'Today' },
-      { kind: 'tab', route: 'HuntingProfit' },
-      { kind: 'tab', route: 'Spend' },
+      { kind: 'tab', route: 'Cashbook' },
       { kind: 'tab', route: 'Utility' },
       { kind: 'push', route: 'UtilityItemSplit' },
       { kind: 'push', route: 'SettingsCharacters' },
@@ -93,7 +95,7 @@ describe('ROUTE_TABLE — 계획서 §1 대조', () => {
 
   // 라벨은 여기 없다 — 바가 라벨을 두 층에서 쓰므로 `bar-model.ts` 의 `BAR_GROUPS` 가 갖는다
   // ([[ADR-132]] 결정 1). 그 표와 이 목록이 같은 집합인지는 `bar-model.test.ts` 가 본다.
-  it('탭 화면은 아홉이고 표에서 파생된다', () => {
+  it('탭 화면은 여덟이고 표에서 파생된다', () => {
     expect(TAB_ROUTE_NAMES).toEqual([
       'Content',
       'Boss',
@@ -103,8 +105,8 @@ describe('ROUTE_TABLE — 계획서 §1 대조', () => {
       'Profit',
       'Settings',
       'Today',
-      'HuntingProfit',
-      'Spend',
+      // 사냥 수익·지출 자리에 들어온 하나([[ADR-169]] 결정 1) — 아홉에서 여덟이 됐다.
+      'Cashbook',
       'Utility',
     ])
     expect(new Set(TAB_ROUTE_NAMES).size).toBe(TAB_ROUTE_NAMES.length)
