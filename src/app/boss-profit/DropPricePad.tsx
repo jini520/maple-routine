@@ -29,6 +29,7 @@ import { useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
 
 import { formatMesoUnits } from '../../lib/drop-price'
+import { MESO_QUICK_ADDS } from '../../lib/meso-quick-adds'
 import { getItemIconUrl } from '../../lib/item-icons'
 import type { BossDifficulty } from '../../types'
 import type { RecordedDrop } from '../../types/drops'
@@ -45,16 +46,10 @@ const MAX_MESO = 9_999_999_999_999
 /**
  * 금액 바로 아래 붙는 단위 칩. 자릿수 세기를 없애는 것이 이 줄의 전부다.
  *
- * 100만에서 100억까지 **10배씩** 오른다 — 칩 다섯이 곧 자릿수 눈금이라 원하는 단위를 세지 않고
- * 짚을 수 있다. 칠흑 마크처럼 100억을 넘기는 값도 두세 번이면 닿는다.
+ * 값은 `lib/meso-quick-adds` 가 든다 — 아이템 분배 계산기도 같은 눈금을 쓰기 때문이다
+ * ([[ADR-168]] 결정 9).
  */
-const QUICK_ADDS = [
-  { label: '+100만', value: 1_000_000 },
-  { label: '+1000만', value: 10_000_000 },
-  { label: '+1억', value: 100_000_000 },
-  { label: '+10억', value: 1_000_000_000 },
-  { label: '+100억', value: 10_000_000_000 },
-] as const
+const QUICK_ADDS = MESO_QUICK_ADDS
 
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '00', '0', 'del'] as const
 
