@@ -7,6 +7,7 @@ import spendCatalog from '../spend-catalog.json'
 // (`boss-crystal-prices` 와 같은 태도). 다만 **몇 개는 값을 못 박는다** — 아래 「닻」 절 참고.
 
 const items = spendCatalog.items as {
+  category: string
   group: string
   name: string
   currency: string
@@ -55,6 +56,32 @@ describe('spend-catalog.json — 규약', () => {
       expect(item.group.length).toBeGreaterThan(0)
       expect(item.name.length).toBeGreaterThan(0)
       expect(item.unit.length).toBeGreaterThan(0)
+    }
+  })
+
+  // [[ADR-166]] 정정 1 ② — 큰 갈래 셋. 나머지 둘(아이템 구매·기타)은 직접 입력이라 항목이 없다.
+  it('갈래는 머리에 선언된 셋뿐이다', () => {
+    expect(spendCatalog.categories).toEqual(['컨텐츠', '상점·편의', '버프'])
+
+    for (const item of items) {
+      expect(spendCatalog.categories).toContain(item.category)
+    }
+  })
+
+  // 한 묶음이 두 갈래에 걸치면 «이번 달 버프에 얼마» 가 묶음 이름에 따라 갈린다.
+  it('한 묶음은 한 갈래에만 속한다', () => {
+    const categoryOfGroup = new Map<string, string>()
+
+    for (const item of items) {
+      const known = categoryOfGroup.get(item.group)
+      if (known === undefined) categoryOfGroup.set(item.group, item.category)
+      else expect(item.category).toBe(known)
+    }
+  })
+
+  it('갈래 셋이 모두 항목을 갖는다 — 빈 갈래는 고를 수 없는 자리가 된다', () => {
+    for (const category of spendCatalog.categories) {
+      expect(items.some((item) => item.category === category)).toBe(true)
     }
   })
 })
