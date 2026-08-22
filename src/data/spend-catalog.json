@@ -1,0 +1,203 @@
+{
+  "updatedAt": "2026-08-23",
+  "source": "사용자 제공 (2026-08-23). 메이플 포인트 소모처와 고정 비용 버프 아이템 — [[ADR-006]] 대상이라 AI 가 추정해 채우지 않는다. [[ADR-166]] 결정 7 이 기다리던 선택 목록이 이 파일이다.",
+  "note": "`group` 은 사용자가 적어 준 묶음 이름 그대로다 — 앱이 다시 묶지 않는다. `unit` 은 «가격 하나가 무엇 하나의 값인가» 이고, 사용자가 «1회당»·«1포인트당»·«1시간당» 이라 적은 것은 그대로 옮겼으며 그 표현이 없던 항목은 «회»(한 번 구매)로 적었다. `limit` 은 사용자 문장을 **그대로** 옮긴 것이고 앱이 해석하지 않는다 — 한도를 세는 기능이 아직 없어 구조로 쪼개면 그 구조가 곧 추정이 된다.",
+  "currencies": {
+    "point": "메이플 포인트(메포)",
+    "meso": "메소"
+  },
+  "items": [
+    {
+      "group": "에픽던전 추가 리워드",
+      "name": "하이마운틴 1단계",
+      "currency": "point",
+      "unitPrice": 7500,
+      "unit": "회",
+      "forms": ["경험치", "솔 에르다"]
+    },
+    {
+      "group": "에픽던전 추가 리워드",
+      "name": "하이마운틴 2단계",
+      "currency": "point",
+      "unitPrice": 30000,
+      "unit": "회",
+      "forms": ["경험치", "솔 에르다"]
+    },
+    {
+      "group": "에픽던전 추가 리워드",
+      "name": "앵글러 컴퍼니 1단계",
+      "currency": "point",
+      "unitPrice": 10000,
+      "unit": "회",
+      "forms": ["경험치", "솔 에르다"]
+    },
+    {
+      "group": "에픽던전 추가 리워드",
+      "name": "앵글러 컴퍼니 2단계",
+      "currency": "point",
+      "unitPrice": 40000,
+      "unit": "회",
+      "forms": ["경험치", "솔 에르다"]
+    },
+    {
+      "group": "에픽던전 추가 리워드",
+      "name": "악몽선경 1단계",
+      "currency": "point",
+      "unitPrice": 12500,
+      "unit": "회",
+      "forms": ["경험치", "솔 에르다"]
+    },
+    {
+      "group": "에픽던전 추가 리워드",
+      "name": "악몽선경 2단계",
+      "currency": "point",
+      "unitPrice": 50000,
+      "unit": "회",
+      "forms": ["경험치", "솔 에르다"]
+    },
+
+    {
+      "group": "몬스터 파크",
+      "name": "몬스터 파크",
+      "currency": "point",
+      "unitPrice": 600,
+      "unit": "회",
+      "limit": "일간 월드당 최대 14회, 캐릭터 당 최대 7회, 일간 무료 2회"
+    },
+
+    {
+      "group": "메이플 포인트 샵",
+      "name": "메카베리 농장 입장권",
+      "currency": "point",
+      "unitPrice": 10000,
+      "unit": "회",
+      "limit": "메이플 ID당 최대 2회",
+      "seasonal": true
+    },
+    {
+      "group": "메이플 포인트 샵",
+      "name": "블루베리 농장 입장권",
+      "currency": "point",
+      "unitPrice": 7000,
+      "unit": "회",
+      "limit": "메이플 ID당 최대 2회",
+      "seasonal": true
+    },
+    {
+      "group": "메이플 포인트 샵",
+      "name": "솔 에르다",
+      "currency": "point",
+      "unitPrice": 2000,
+      "unit": "회",
+      "limit": "메이플 ID당 최대 5회",
+      "seasonal": true
+    },
+    {
+      "group": "메이플 포인트 샵",
+      "name": "블랙 서큘레이터",
+      "currency": "point",
+      "unitPrice": 3000,
+      "unit": "개",
+      "limit": "메이플 ID당 최대 30개",
+      "seasonal": true
+    },
+    {
+      "group": "메이플 포인트 샵",
+      "name": "미호로이드 교환권",
+      "currency": "point",
+      "unitPrice": 7500,
+      "unit": "개",
+      "limit": "메이플 ID당 최대 1개",
+      "seasonal": true
+    },
+
+    {
+      "group": "퀵 패스",
+      "name": "에픽던전 퀵패스",
+      "currency": "point",
+      "unitPrice": 5000,
+      "unit": "회"
+    },
+    {
+      "group": "퀵 패스",
+      "name": "일간 퀘스트 퀵패스",
+      "currency": "point",
+      "unitPrice": 200,
+      "unit": "회",
+      "note": "소멸의 여로 ~ 기어드락 각 200메포. 그 범위는 `daily-quest-regions.json`(17지역)과 같다 — 다만 이 파일은 그것을 참조하지 않는다(연결 여부는 아직 안 정했다)."
+    },
+    {
+      "group": "퀵 패스",
+      "name": "주간 퀘스트 퀵패스",
+      "currency": "point",
+      "unitPrice": 2000,
+      "unit": "회",
+      "note": "소멸의 여로 ~ 에스페라. 그 범위는 `weekly-regional-quests.json` 의 앞 여섯(에르다 스펙트럼~프로텍트 에스페라)과 같다 — 익스트림 몬스터파크는 그 범위 밖이다."
+    },
+
+    {
+      "group": "닉네임 변경",
+      "name": "닉네임 변경",
+      "currency": "point",
+      "unitPrice": 15000,
+      "unit": "회"
+    },
+    {
+      "group": "출석 이벤트 패스",
+      "name": "출석 이벤트 패스",
+      "currency": "point",
+      "unitPrice": 3000,
+      "unit": "회"
+    },
+    {
+      "group": "보약 버프 추가 구매",
+      "name": "보약 버프 추가 구매",
+      "currency": "point",
+      "unitPrice": 1000,
+      "unit": "포인트"
+    },
+    {
+      "group": "보약 버프 초기화",
+      "name": "보약 버프 초기화",
+      "currency": "point",
+      "unitPrice": 9900,
+      "unit": "회"
+    },
+    {
+      "group": "VIP 사우나",
+      "name": "VIP 사우나",
+      "currency": "point",
+      "unitPrice": 3000,
+      "unit": "시간"
+    },
+
+    {
+      "group": "버프 물약",
+      "name": "세이람의 영약",
+      "currency": "meso",
+      "unitPrice": 2000000,
+      "unit": "회"
+    },
+    {
+      "group": "버프 물약",
+      "name": "알레리아의 영약",
+      "currency": "meso",
+      "unitPrice": 2000000,
+      "unit": "회"
+    },
+    {
+      "group": "버프 물약",
+      "name": "콜렉터의 영약",
+      "currency": "meso",
+      "unitPrice": 20000000,
+      "unit": "회"
+    },
+    {
+      "group": "버프 물약",
+      "name": "명예의 영약",
+      "currency": "meso",
+      "unitPrice": 5000000,
+      "unit": "회"
+    }
+  ]
+}
