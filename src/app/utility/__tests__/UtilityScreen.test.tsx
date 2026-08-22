@@ -7,6 +7,7 @@ import { act, fireEvent } from '@testing-library/react-native'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { useScreenNavigation } from '../../use-screen-navigation'
+import { ITEM_SPLIT_TOOL_NAME } from '../tool-names'
 import { UtilityScreen } from '../UtilityScreen'
 
 jest.mock('../../use-screen-navigation', () => ({ useScreenNavigation: jest.fn() }))
@@ -30,13 +31,6 @@ async function press(element: AtomElement): Promise<void> {
   })
 }
 
-function pressableOf(node: AtomElement | null): AtomElement {
-  let current = node
-  while (current !== null && current.props.role !== 'button') current = current.parent
-  if (current === null) throw new Error('누를 수 있는 자리를 찾지 못했다')
-  return current
-}
-
 describe('UtilityScreen', () => {
   it('«유틸리티» 제목을 그린다', async () => {
     const view = await renderOverlay(<UtilityScreen />)
@@ -53,11 +47,23 @@ describe('UtilityScreen', () => {
     expect(view.queryByText('개발 진행중')).toBeNull()
   })
 
-  it('아이템 분배 계산기를 목록에 그리고, 누르면 하위 페이지로 민다', async () => {
+  it('계산기 타일을 그리고, 누르면 하위 페이지로 민다', async () => {
     const view = await renderOverlay(<UtilityScreen />)
 
-    await press(pressableOf(view.getByText('아이템 분배 계산기')))
+    await press(view.getByLabelText(ITEM_SPLIT_TOOL_NAME))
 
     expect(navigate).toHaveBeenCalledWith('UtilityItemSplit')
+  })
+
+  // RN 의 `Text` 는 한글을 글자 단위로 끊는다(「판매 분배금 계 / 산기」). 단어마다 `Text` 를 두고
+  // flex 아이템으로 감싸 **아이템 경계에서만** 줄이 바뀌게 한 것이 이 계약이다(사용자 지정).
+  it('타일 이름은 단어마다 쪼개져 있다 — 줄바꿈이 단어 경계에서만 일어나도록', async () => {
+    const view = await renderOverlay(<UtilityScreen />)
+
+    for (const word of ITEM_SPLIT_TOOL_NAME.split(' ')) {
+      expect(view.getByText(word)).toBeTruthy()
+    }
+    // 통째로 그리면 글자 단위로 끊긴다 — 한 덩어리 노드가 있으면 안 된다.
+    expect(view.queryByText(ITEM_SPLIT_TOOL_NAME)).toBeNull()
   })
 })

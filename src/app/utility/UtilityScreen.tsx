@@ -23,6 +23,28 @@ import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHe
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { CalculatorIcon } from '../../lib/icons'
 import { useScreenNavigation } from '../use-screen-navigation'
+import { ITEM_SPLIT_TOOL_NAME } from './tool-names'
+
+/**
+ * 타일 이름 — **단어 단위로 줄바꿈한다**(사용자 지정, 2026-08-23).
+ *
+ * RN 의 `Text` 는 한글을 **글자 단위**로 끊는다(「판매 분배금 계 / 산기」). RN 에는 웹의
+ * `word-break` 에 해당하는 스타일이 없으므로, 단어마다 `Text` 를 하나씩 두고 **flex 아이템으로
+ * 감싼다** — 줄바꿈이 아이템 경계에서만 일어나므로 단어가 통째로 움직인다. `
+` 을 박아 넣는
+ * 방법도 있지만 그러면 넓은 화면에서도 끊긴다.
+ */
+function TileLabel(props: { text: string }): React.JSX.Element {
+  return (
+    <View className="flex-1 flex-row flex-wrap gap-x-1">
+      {props.text.split(' ').map((word, index) => (
+        <Text key={`${word}-${index}`} className="text-sm font-semibold text-text">
+          {word}
+        </Text>
+      ))}
+    </View>
+  )
+}
 
 export function UtilityScreen(): React.JSX.Element {
   const navigation = useScreenNavigation()
@@ -43,13 +65,21 @@ export function UtilityScreen(): React.JSX.Element {
         <View className="flex-row flex-wrap gap-3 px-4 pb-4">
           <Pressable
             role="button"
+            // 이름이 단어별 `Text` 로 쪼개져 있으므로(TileLabel) 접근성 이름은 여기서 한 벌로 준다 —
+            // 그러지 않으면 스크린리더가 «판매» «분배금» «계산기» 를 따로 읽는다.
+            aria-label={ITEM_SPLIT_TOOL_NAME}
             onPress={() => navigation.navigate('UtilityItemSplit')}
             className="w-[48%]"
           >
-            {/* 가로:세로 = 2:1 (사용자 지정, 2026-08-23) — 정사각은 이름 한 줄에 견줘 너무 컸다. */}
-            <Card className="aspect-[2/1] items-center justify-center gap-2 px-3">
-              <CalculatorIcon className="h-7 w-7 text-text-muted" strokeWidth={1.75} aria-hidden />
-              <Text className="text-center text-sm font-semibold text-text">아이템 분배 계산기</Text>
+            {/* 가로:세로 = 2:1, 안은 «아이콘 → 이름» 가로 배치(사용자 지정, 2026-08-23).
+                납작한 타일에는 세로 쌓기보다 가로가 맞는다 — 세로면 둘 다 눌려 보인다. */}
+            <Card className="aspect-[2/1] flex-row items-center gap-3 px-4">
+              <CalculatorIcon
+                className="h-7 w-7 shrink-0 text-text-muted"
+                strokeWidth={1.75}
+                aria-hidden
+              />
+              <TileLabel text={ITEM_SPLIT_TOOL_NAME} />
             </Card>
           </Pressable>
         </View>

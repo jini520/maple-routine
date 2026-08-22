@@ -9,6 +9,7 @@ import { act, fireEvent } from '@testing-library/react-native'
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { useScreenNavigation } from '../../use-screen-navigation'
 import { ItemSplitScreen } from '../ItemSplitScreen'
+import { ITEM_SPLIT_TOOL_NAME } from '../tool-names'
 
 jest.mock('../../use-screen-navigation', () => ({ useScreenNavigation: jest.fn() }))
 
@@ -54,7 +55,8 @@ describe('ItemSplitScreen — 골격', () => {
   it('제목과 뒤로 버튼을 그리고, 뒤로를 누르면 pop 한다', async () => {
     const view = await renderOverlay(<ItemSplitScreen />)
 
-    expect(view.getByText('아이템 분배 계산기')).toBeTruthy()
+    // 타일과 같은 글자여야 한다 — `tool-names` 한 벌에서 온다.
+    expect(view.getByText(ITEM_SPLIT_TOOL_NAME)).toBeTruthy()
     expect(view.getByTestId('screen-UtilityItemSplit')).toBeTruthy()
     expect(view.getByText('정산 금액')).toBeTruthy()
 

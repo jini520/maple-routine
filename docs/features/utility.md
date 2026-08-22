@@ -1,7 +1,7 @@
 # 유틸리티 (Utility)
 
 > **범위**: 유틸리티 탭 — «메이플을 하며 쓰는 도구» 가 사는 자리와, 그 안의 도구들.
-> **관련 소스**: `app/utility/UtilityScreen.tsx`(도구 목록) · `app/utility/ItemSplitScreen.tsx`(아이템 분배 계산기) · `lib/item-split.ts`(순수 계산) · `navigation/routes.ts`(`UtilityItemSplit`) · `navigation/RootNavigator.tsx`.
+> **관련 소스**: `app/utility/UtilityScreen.tsx`(도구 목록) · `app/utility/ItemSplitScreen.tsx`(판매 분배금 계산기) · `app/utility/tool-names.ts`(화면에 뜨는 이름) · `lib/item-split.ts`(순수 계산) · `navigation/routes.ts`(`UtilityItemSplit`) · `navigation/RootNavigator.tsx`.
 > **관련 ADR**: [[ADR-168]](아이템 분배 계산기 · 유틸리티 화면 구조) [[ADR-132]] 결정 12(탭은 실재하고 내용이 없었다) [[ADR-120]] 결정 1·2·4(하위 페이지는 루트 스택 push) [[ADR-167]](층 스택 — push 가 애니메이션·제스처를 함께 준다) [[ADR-006]](게임 수치는 사용자 확인).
 > **관련 문서**: [boss-profit.md](./boss-profit.md)(결정석 몫은 그쪽이 계산한다), [../foundation/game-data.md](../foundation/game-data.md).
 
@@ -9,6 +9,10 @@
 
 유틸리티 탭은 **2열 타일 격자**이고, 도구는 **루트 스택 push** 로 열린다. 도구를 유틸리티 화면
 안의 카드로 그리지 않는다 — 셋만 돼도 한 화면이 길어지고, 그때 목록으로 옮기면 두 번 만든다.
+
+타일 이름은 **단어 단위로 줄바꿈한다**([[ADR-168]] 정정 5) — RN 의 `Text` 는 한글을 글자 단위로
+끊으므로(「판매 분배금 계 / 산기」) 단어마다 `Text` 를 두고 flex 아이템으로 감싼다. 이름 자체는
+`app/utility/tool-names.ts` 한 벌이 들고 **하위 페이지 제목과 같은 글자**여야 한다.
 
 **타일에 설명을 쓰지 않는다**([[ADR-168]] 정정 1) — 아이콘 + 이름뿐이다. 도구 이름이 곧 설명이어야
 한다는 뜻이고, 그렇지 않은 이름은 설명을 붙일 게 아니라 **이름 쪽을 고칠 일**이다. 타일 비례는
@@ -22,7 +26,7 @@ push 를 고른 값이 공짜로 따라온다: 전환 애니메이션과 iOS 가
 **도구를 더할 때 만지는 곳은 넷이다** — `routes.ts` 의 `ROUTE_TABLE` 한 줄(`origin: 'rn'`),
 `RootNavigator` 의 `STACK_SCREENS` 한 줄, 목록 화면의 카드 하나, 그리고 이 문서.
 
-## 아이템 분배 계산기 ([[ADR-168]])
+## 판매 분배금 계산기 ([[ADR-168]])
 
 ### 이 도구가 푸는 문제
 

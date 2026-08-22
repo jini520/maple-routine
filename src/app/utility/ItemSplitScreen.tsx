@@ -37,6 +37,7 @@ import {
 import { MESO_QUICK_ADDS } from '../../lib/meso-quick-adds'
 import { TABULAR_NUMS } from '../../lib/text-styles'
 import { useScreenNavigation } from '../use-screen-navigation'
+import { ITEM_SPLIT_TOOL_NAME } from './tool-names'
 
 const FEE_PERCENTS = [3, 5] as const satisfies readonly FeePercent[]
 
@@ -125,7 +126,7 @@ export function ItemSplitScreen(): React.JSX.Element {
             >
               <ArrowLeftIcon className="h-5 w-5 text-text-muted" strokeWidth={2} aria-hidden />
             </Pressable>
-            <Text className="text-lg font-semibold text-text">아이템 분배 계산기</Text>
+            <Text className="text-lg font-semibold text-text">{ITEM_SPLIT_TOOL_NAME}</Text>
           </PageHeaderTitleRow>
         </PageHeader>
       }
