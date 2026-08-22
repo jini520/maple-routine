@@ -56,6 +56,7 @@ describe('ItemSplitScreen — 골격', () => {
 
     expect(view.getByText('아이템 분배 계산기')).toBeTruthy()
     expect(view.getByTestId('screen-UtilityItemSplit')).toBeTruthy()
+    expect(view.getByText('정산 금액')).toBeTruthy()
 
     await press(view.getByLabelText('뒤로'))
 
@@ -64,13 +65,14 @@ describe('ItemSplitScreen — 골격', () => {
 })
 
 describe('ItemSplitScreen — 결과', () => {
-  // [[ADR-168]] 결정 2 의 표 그대로. 기본값이 6인 · 판매 3% · 분배 3% 다.
-  it('판매가 10억을 넣으면 162,479,061 을 보내라고 한다', async () => {
+  // 기본값은 **2인** · 판매 3% · 분배 3% 다(사용자 지정) — ⌊97,000,000,000 / 197⌋.
+  // [[ADR-168]] 결정 2 표의 6인 예시는 `lib/__tests__/item-split.test.ts` 가 고정한다.
+  it('판매가 10억을 넣으면 492,385,786 을 보내라고 한다', async () => {
     const view = await renderOverlay(<ItemSplitScreen />)
 
     await typeSalePrice(view, '1000000000')
 
-    expect(transferText(view)).toBe('162,479,061')
+    expect(transferText(view)).toBe('492,385,786')
   })
 
   // 분배 수수료가 오르면 **더 많이** 보내야 받는 사람 손에 같은 금액이 남는다 — 이 방향이
@@ -81,7 +83,7 @@ describe('ItemSplitScreen — 결과', () => {
 
     await press(view.getByLabelText('분배 수수료 5%'))
 
-    expect(transferText(view)).toBe('163,025,210')
+    expect(transferText(view)).toBe('497,435,897')
   })
 
   // 판매 수수료는 정산 대상 자체를 줄이므로 보낼 금액도 준다.
@@ -91,17 +93,17 @@ describe('ItemSplitScreen — 결과', () => {
 
     await press(view.getByLabelText('판매 수수료 5%'))
 
-    expect(transferText(view)).toBe('159,128,978')
+    expect(transferText(view)).toBe('482,233,502')
   })
 
-  it('파티원 수를 줄이면 1인당 보낼 금액이 는다', async () => {
+  it('파티원 수를 늘리면 1인당 보낼 금액이 준다', async () => {
     const view = await renderOverlay(<ItemSplitScreen />)
     await typeSalePrice(view, '1000000000')
 
-    await press(view.getByLabelText('분배 파티원 수 감소'))
+    await press(view.getByLabelText('분배 파티원 수 증가'))
 
-    // 5인 · 판매 3% · 분배 3% — ⌊97,000,000,000 / 497⌋
-    expect(transferText(view)).toBe('195,171,026')
+    // 3인 · 판매 3% · 분배 3% — ⌊97,000,000,000 / 297⌋
+    expect(transferText(view)).toBe('326,599,326')
   })
 })
 
@@ -118,7 +120,7 @@ describe('ItemSplitScreen — 결과가 없는 두 자리', () => {
     const view = await renderOverlay(<ItemSplitScreen />)
     await typeSalePrice(view, '1000000000')
 
-    for (let i = 0; i < 5; i += 1) await press(view.getByLabelText('분배 파티원 수 감소'))
+    await press(view.getByLabelText('분배 파티원 수 감소'))
 
     expect(view.queryByTestId('item-split-transfer')).toBeNull()
     expect(view.getByText('혼자서는 나눌 것이 없습니다')).toBeTruthy()
@@ -134,6 +136,17 @@ describe('ItemSplitScreen — 금액 입력 ([[ADR-168]] 결정 9)', () => {
     await press(pressableOf(view.getByText('+1억')))
 
     expect(view.getByLabelText('판매가').props.value).toBe('200,000,000')
+  })
+
+  // 조건부로 그리면 첫 글자를 치는 순간 줄이 생겨 아래 카드가 통째로 밀린다(사용자 지정).
+  it('단위 줄은 금액이 비어 있어도 자리를 지킨다', async () => {
+    const view = await renderOverlay(<ItemSplitScreen />)
+
+    expect(view.getByTestId('item-split-sale-price-units').props.children).toBe(' ')
+
+    await typeSalePrice(view, '100000000')
+
+    expect(view.getByTestId('item-split-sale-price-units').props.children).toBe('1억')
   })
 
   it('숫자가 아닌 글자는 흘린다', async () => {

@@ -37,6 +37,7 @@ import ArrowLeft from 'lucide-react-native/icons/arrow-left'
 import ArrowUp from 'lucide-react-native/icons/arrow-up'
 import Ban from 'lucide-react-native/icons/ban'
 import BookOpen from 'lucide-react-native/icons/book-open'
+import Calculator from 'lucide-react-native/icons/calculator'
 import CalendarCheck from 'lucide-react-native/icons/calendar-check'
 import Castle from 'lucide-react-native/icons/castle'
 import Check from 'lucide-react-native/icons/check'
@@ -107,6 +108,8 @@ export const BanIcon = withIconInterop(Ban)
 /** 안내가 하나도 없을 때 — `SettingsFeatureGuideListScreen` 빈 상태([[ADR-060]]). */
 export const BookOpenIcon = withIconInterop(BookOpen)
 /** 에픽 던전 카테고리 — `ContentManageScreen` 그룹 헤더·행([[ADR-035]] 결정 18). */
+/** 유틸리티의 계산기 도구 타일 — 아이템 분배 계산기([[ADR-168]] 결정 6). */
+export const CalculatorIcon = withIconInterop(Calculator)
 export const CalendarCheckIcon = withIconInterop(CalendarCheck)
 
 export const CastleIcon = withIconInterop(Castle)
