@@ -195,7 +195,7 @@ function RestWorlds(props: { rest: CrystalLimitView[] }): React.JSX.Element | nu
   if (props.rest.length === 0) return null
 
   return (
-    <Text fixed testID="crystal-rest" numberOfLines={1} className="text-[10px] text-text-muted">
+    <Text fixed testID="crystal-rest" numberOfLines={1} className="text-[11px] text-text-muted">
       {props.rest.length === 1
         ? `${props.rest[0].world} ${remainingOf(props.rest[0])}개 남음`
         : `외 ${props.rest.length}개 월드`}
@@ -207,7 +207,7 @@ function Empty(props: { variant: Variant }): React.JSX.Element {
   return (
     <View testID="widget-crystal-limit" className="flex-1 justify-center gap-1 p-3">
       {props.variant !== 'tiny' && <Title sizeClass="text-[10px]" />}
-      <Text fixed testID="crystal-empty" numberOfLines={2} className="text-[10px] text-text-muted">
+      <Text fixed testID="crystal-empty" numberOfLines={2} className="text-[11px] text-text-muted">
         {EMPTY_NOTE}
       </Text>
     </View>
@@ -238,8 +238,8 @@ export function CrystalLimitWidget({ w, h, data }: WidgetProps): React.JSX.Eleme
         <Ring view={first} sizePx={RING_PX.mini} />
         <View className="min-w-0 flex-1 gap-0.5">
           <Title sizeClass="text-[10px]" />
-          <WorldName world={first.world} sizeClass="text-[11.5px] font-semibold" />
-          <Remaining view={first} sizeClass="text-[10px]" />
+          <WorldName world={first.world} sizeClass="text-[12.5px] font-semibold" />
+          <Remaining view={first} sizeClass="text-[11px]" />
         </View>
       </View>
     )
@@ -252,8 +252,8 @@ export function CrystalLimitWidget({ w, h, data }: WidgetProps): React.JSX.Eleme
         <Title sizeClass="text-[10px]" />
         <Ring view={first} sizePx={RING_PX.compact} />
         <View className="items-center gap-0.5">
-          <WorldName world={first.world} sizeClass="text-xs font-semibold" />
-          <Remaining view={first} sizeClass="text-[10px]" />
+          <WorldName world={first.world} sizeClass="text-[13px] font-semibold" />
+          <Remaining view={first} sizeClass="text-[11px]" />
         </View>
         <RestWorlds rest={rest} />
       </View>
@@ -267,8 +267,8 @@ export function CrystalLimitWidget({ w, h, data }: WidgetProps): React.JSX.Eleme
         <View key={view.world} testID="crystal-world-cell" className="min-w-0 flex-1 flex-row items-center gap-1.5">
           <Ring view={view} sizePx={RING_PX.wide} />
           <View className="min-w-0 flex-1 gap-0.5">
-            <WorldName world={view.world} sizeClass="text-[11px] font-semibold" />
-            <Remaining view={view} sizeClass="text-[10px]" />
+            <WorldName world={view.world} sizeClass="text-[12px] font-semibold" />
+            <Remaining view={view} sizeClass="text-[11px]" />
           </View>
         </View>
       ))}

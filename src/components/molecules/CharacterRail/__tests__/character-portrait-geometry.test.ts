@@ -15,7 +15,6 @@ import {
   PORTRAIT_SLOT_H,
   PORTRAIT_SLOT_W,
   PORTRAIT_TEXT_R,
-  PORTRAIT_TEXT_R_RINGLESS,
   isFullTurn,
   portraitMetrics,
   portraitRingArcPath,
@@ -49,38 +48,28 @@ describe('겹침 금지', () => {
   })
 })
 
-// [[ADR-145]] 결정 5 — 링이 없으면 칸 사이 간격을 걷는다. 갈리는 값이 셋(글자 반지름 · 칸 높이 ·
-// 칸 간격)이고 **한 함수가 함께 돌려주는 것**이 계약이다. 따로 두면 «링 없는 칸» 의 정의가 흩어진다.
-describe('두 갈래 (링 있음 / 없음)', () => {
-  it('링이 없으면 글자가 안쪽으로 들어오고 칸이 낮아지고 간격이 좁아진다', () => {
-    const withRing = portraitMetrics(true)
-    const ringless = portraitMetrics(false)
-
-    expect(ringless.textR).toBeLessThan(withRing.textR)
-    expect(ringless.slotH).toBeLessThan(withRing.slotH)
-    expect(ringless.gap).toBeLessThan(withRing.gap)
-  })
-
-  it('링 있는 쪽은 표의 값 그대로다', () => {
-    expect(portraitMetrics(true)).toEqual({
+// [[ADR-161]] 결정 1 — **두 갈래가 없어졌다.** 정정 전에는 링이 없는 칸(관리 화면)이 글자 반지름 ·
+// 칸 높이 · 칸 간격 셋을 따로 썼는데([[ADR-142]] 정정 8 · [[ADR-145]] 결정 5), 그 탓에 화면을 옮길
+// 때 같은 캐릭터의 초상화가 커졌다 작아졌다 했다. 이제 **링은 자리만 잡고**(사용자 판정 —
+// *"링의 레이아웃은 잡지만 색깔을 채우지 마"*) 치수는 한 벌이다.
+describe('칸 치수는 한 벌이다 ([[ADR-161]] 결정 1)', () => {
+  // 시그니처에 인자가 없는 것 자체가 계약이다 — `portraitMetrics(hasRing)` 를 남겨 두면 «링 유무로
+  // 갈릴 수 있다» 가 타입에 남고, 다음 사람이 그 자리에 값을 다시 넣는다.
+  it('한 벌뿐이고, 그 값은 링 있는 쪽 기준이다', () => {
+    expect(portraitMetrics()).toEqual({
       textR: PORTRAIT_TEXT_R,
       slotH: PORTRAIT_SLOT_H,
       gap: PORTRAIT_GAP,
     })
   })
 
-  // 간격을 0으로 둬도 이웃이 붙지 않는다 — 칸에서 가장 바깥에 그려지는 것(링 있는 쪽은 링, 없는
-  // 쪽은 글자 호)이 칸 가장자리보다 안쪽이기 때문이다. **눈에 보이는 간격**은 그 여백 둘 + 칸 간격이고,
-  // 그 값이 좁아지되 0 이하로 내려가지 않는 것이 결정 5 다(17 → 12).
-  it('간격이 0이어도 이웃 사이 여백이 남고, 링 있는 쪽보다 좁다', () => {
-    const spacing = (inkEdge: number, gap: number): number =>
-      (PORTRAIT_SLOT_W / 2 - inkEdge) * 2 + gap
+  // 치수를 합쳤으니 **죽은 여백이 돌아온다** — 얼굴과 글자 사이가 링 두께만큼 벌어진다. 그것을
+  // 감수한 것이 이 결정이므로(대가 절), 여백이 «남는다» 는 사실 자체를 못 박아 둔다.
+  it('링을 안 그리는 칸에는 링 두께만큼 빈 자리가 남는다', () => {
+    const 얼굴_가장자리 = PORTRAIT_FACE_SIZE / 2
+    const 글자_안쪽 = portraitMetrics().textR - PORTRAIT_TEXT_FONT_SIZE * PORTRAIT_CAP_HEIGHT_RATIO
 
-    const withRing = spacing(ringOuterEdge, portraitMetrics(true).gap)
-    const ringless = spacing(PORTRAIT_TEXT_R_RINGLESS, portraitMetrics(false).gap)
-
-    expect(ringless).toBeGreaterThan(0)
-    expect(ringless).toBeLessThan(withRing)
+    expect(글자_안쪽 - 얼굴_가장자리).toBeGreaterThan(PORTRAIT_RING_STROKE)
   })
 })
 

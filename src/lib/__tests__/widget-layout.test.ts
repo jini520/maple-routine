@@ -1,7 +1,7 @@
 // 좌표 배치의 **검증과 해석**([[ADR-147]] 결정 2 · 정정 1). 배치를 손으로 적기로 한 이상 그
 // 실수는 반드시 나므로, 자동 패킹 대신 «검증» 을 산 값이 여기서 회수된다.
 
-import { resolveWidgetGridMetrics } from '../widget-grid-metrics'
+import { GRID_GAP, GRID_ROW_HEIGHT, resolveWidgetGridMetrics } from '../widget-grid-metrics'
 import { resolveWidgetPositions, validateWidgetLayout, type WidgetPlacement } from '../widget-layout'
 
 const sizes = {
@@ -144,9 +144,11 @@ describe('resolveWidgetPositions — 좌표를 절대 위치로 ([[ADR-147]] 결
 
     // 위 = row × (행 높이 + 간격)
     expect(byId['대표'].topPx).toBe(0)
-    expect(byId['초기화'].topPx).toBe(76 + 12)
-    expect(byId['수익'].topPx).toBe(3 * (76 + 12))
-    expect(byId['수익'].heightPx).toBe(76 * 3 + 12 * 2)
+    // 세로는 **행 높이의 함수**다 — 숫자를 손으로 적으면 행 높이를 조정할 때마다 여기가 깨진다
+    // ([[ADR-163]] 결정 3 으로 76 → 82 가 됐다).
+    expect(byId['초기화'].topPx).toBe(GRID_ROW_HEIGHT + GRID_GAP)
+    expect(byId['수익'].topPx).toBe(3 * (GRID_ROW_HEIGHT + GRID_GAP))
+    expect(byId['수익'].heightPx).toBe(GRID_ROW_HEIGHT * 3 + GRID_GAP * 2)
   })
 
   it('입력 순서를 지킨다', () => {
@@ -158,7 +160,7 @@ describe('resolveWidgetPositions — 좌표를 절대 위치로 ([[ADR-147]] 결
   // auto 타일의 `h` 는 **최소 높이**다. 실측이 그와 같으면 배치가 적어 둔 좌표 그대로여야 한다.
   it('auto 실측이 최소 높이와 같으면 좌표가 그대로다', () => {
     const 기준 = resolveWidgetPositions(유효한_배치, metrics, {})
-    const 실측 = resolveWidgetPositions(유효한_배치, metrics, { 스케줄: 76 })
+    const 실측 = resolveWidgetPositions(유효한_배치, metrics, { 스케줄: GRID_ROW_HEIGHT })
 
     expect(실측).toEqual(기준)
   })
@@ -166,7 +168,7 @@ describe('resolveWidgetPositions — 좌표를 절대 위치로 ([[ADR-147]] 결
   it('실측이 없는 auto 타일은 최소 높이로 친다', () => {
     const { tiles } = resolveWidgetPositions(유효한_배치, metrics, {})
 
-    expect(tiles.find((tile) => tile.id === '스케줄')?.heightPx).toBe(76)
+    expect(tiles.find((tile) => tile.id === '스케줄')?.heightPx).toBe(GRID_ROW_HEIGHT)
   })
 
   it('실측이 최소 높이보다 작아도 줄어들지 않는다', () => {
@@ -176,10 +178,10 @@ describe('resolveWidgetPositions — 좌표를 절대 위치로 ([[ADR-147]] 결
     expect(실측).toEqual(기준)
   })
 
-  // 캐릭터 4명이면 `55 + 45 × 4 = 235` 인데 최소 높이가 76 이라 초과분이 160 이다([[ADR-147]] 정정 1).
+  // 캐릭터 4명이면 `55 + 45 × 4 = 235` 인데 최소 높이가 행 높이라 그만큼이 초과분이다([[ADR-147]] 정정 1).
   it('auto 초과분만큼 아래 타일 전부가 내려간다', () => {
     const 기준 = resolveWidgetPositions(유효한_배치, metrics, {})
-    const 늘어남 = resolveWidgetPositions(유효한_배치, metrics, { 스케줄: 76 + 160 })
+    const 늘어남 = resolveWidgetPositions(유효한_배치, metrics, { 스케줄: GRID_ROW_HEIGHT + 160 })
 
     const 기준_by = Object.fromEntries(기준.tiles.map((tile) => [tile.id, tile] as const))
     const 늘어남_by = Object.fromEntries(늘어남.tiles.map((tile) => [tile.id, tile] as const))
@@ -191,7 +193,7 @@ describe('resolveWidgetPositions — 좌표를 절대 위치로 ([[ADR-147]] 결
 
     // auto 타일 자신은 제자리에서 커진다.
     expect(늘어남_by['스케줄'].topPx).toBe(기준_by['스케줄'].topPx)
-    expect(늘어남_by['스케줄'].heightPx).toBe(236)
+    expect(늘어남_by['스케줄'].heightPx).toBe(GRID_ROW_HEIGHT + 160)
 
     // 아래 타일은 정확히 초과분만큼 내려간다.
     expect(늘어남_by['수익'].topPx).toBe(기준_by['수익'].topPx + 160)
@@ -205,7 +207,7 @@ describe('resolveWidgetPositions — 좌표를 절대 위치로 ([[ADR-147]] 결
       { id: 'c', col: 0, row: 2, w: 4, h: 1 },
     ]
     const 기준 = resolveWidgetPositions(배치, metrics, {})
-    const 늘어남 = resolveWidgetPositions(배치, metrics, { a: 76 + 100, b: 76 + 30 })
+    const 늘어남 = resolveWidgetPositions(배치, metrics, { a: GRID_ROW_HEIGHT + 100, b: GRID_ROW_HEIGHT + 30 })
 
     const 기준_by = Object.fromEntries(기준.tiles.map((tile) => [tile.id, tile] as const))
     const 늘어남_by = Object.fromEntries(늘어남.tiles.map((tile) => [tile.id, tile] as const))
@@ -219,7 +221,8 @@ describe('resolveWidgetPositions — 좌표를 절대 위치로 ([[ADR-147]] 결
   it('컨테이너 높이는 가장 아래 타일의 끝이다', () => {
     const { containerHeightPx } = resolveWidgetPositions(유효한_배치, metrics, {})
 
-    // 수익 타일: top 3×88 = 264 · 높이 3×76 + 2×12 = 252
-    expect(containerHeightPx).toBe(264 + 252)
+    // 수익 타일: top 3×(행+간격) · 높이 3×행 + 2×간격
+    const top = 3 * (GRID_ROW_HEIGHT + GRID_GAP)
+    expect(containerHeightPx).toBe(top + GRID_ROW_HEIGHT * 3 + GRID_GAP * 2)
   })
 })

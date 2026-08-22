@@ -3,11 +3,16 @@
 // **여기서 볼 수 없는 것이 있다** — 곡선 글자가 실제로 어떻게 휘는지, 링 두 겹이 눈에 구분되는지는
 // 렌더 트리에 안 나온다(jest 에는 레이아웃도 폰트도 없다). 그래서 이 파일이 보는 것은 «무엇을
 // 그렸는가» 와 «무엇을 눌렀을 때 무엇이 불리는가» 이고, 나머지는 실기기 몫이다(ADR «미검증»).
-import { act, fireEvent } from '@testing-library/react-native'
+import { act, fireEvent, within } from '@testing-library/react-native'
 
 import { renderAtom, type AtomElement } from '../../../__tests__/render-atom'
 import { CharacterRail, type CharacterRailEntry } from '../CharacterRail'
-import { portraitMetrics, portraitRingSpan } from '../character-portrait-geometry'
+import {
+  PORTRAIT_FACE_SIZE,
+  PORTRAIT_RING_R,
+  portraitMetrics,
+  portraitRingSpan,
+} from '../character-portrait-geometry'
 
 function entry(overrides: Partial<CharacterRailEntry> = {}): CharacterRailEntry {
   return {
@@ -97,18 +102,44 @@ describe('CharacterRail', () => {
     expect(onSelect).toHaveBeenCalledWith('ocid-2')
   })
 
-  // 결정 5: 테두리는 진행률이 이미 쓰고 있어 선택은 흐림으로 말한다. 색만으로는 안 전달되므로
-  // `aria-selected` 를 함께 둔다.
-  it('고른 칸만 또렷하고 나머지는 흐리다', async () => {
+  // [[ADR-161]] 결정 2·3 — 흐림만으로는 «흐린 것이 여럿, 또렷한 것이 하나» 라는 **상대 비교**를
+  // 시켜야 읽힌다. 세기를 올리고(0.45 → 0.3) 그 위에 칸 하나만 보고도 읽히는 **절대 신호**를 얹는다.
+  // 색만으로는 안 전달되므로 `aria-selected` 를 함께 둔다.
+  it('고른 칸만 또렷하고 나머지는 0.3 으로 흐리다', async () => {
     const view = await render([entry(), entry({ ocid: 'ocid-2', characterName: '두번째' })])
 
     const [selected, dimmed] = view.getAllByTestId('character-portrait')
     expect(selected.props.style.opacity).toBe(1)
-    expect(dimmed.props.style.opacity).toBeLessThan(1)
+    expect(dimmed.props.style.opacity).toBe(0.3)
     // `Pressable` 은 `aria-selected` 를 호스트 프롭으로 그대로 넘기지 않고 `accessibilityState` 에
     // 접어 넣는다(`CharacterTrackingPicker` 테스트가 먼저 실측한 자리).
     expect(selected.props.accessibilityState.selected).toBe(true)
     expect(dimmed.props.accessibilityState.selected).toBe(false)
+  })
+
+  // 결정 3 — 자리는 **얼굴 둘레**다. 진행 링(r=26)과 6 떨어져 있어 링을 그리는 화면에서도 «링이
+  // 하나 더 생긴» 것으로 안 읽힌다. 그리는 곳이 `<Svg>` 층인 것이 요점이다 — 얼굴 `View` 에
+  // `borderWidth` 를 주면 이미지가 그만큼 안으로 밀려 **선택된 칸의 얼굴만 작아 보인다.**
+  it('고른 칸에만 얼굴 둘레 테두리가 선다 — 레이아웃은 안 움직인다', async () => {
+    const view = await render([entry(), entry({ ocid: 'ocid-2', characterName: '두번째' })])
+
+    expect(view.queryAllByTestId('portrait-selected-ring')).toHaveLength(1)
+
+    const [selected, dimmed] = view.getAllByTestId('character-portrait')
+    expect(within(selected).queryByTestId('portrait-selected-ring')).not.toBeNull()
+    expect(within(dimmed).queryByTestId('portrait-selected-ring')).toBeNull()
+    // 두 칸의 상자가 한 픽셀도 다르지 않다([[ADR-145]] 결정 5 의 성질).
+    expect(selected.props.style.width).toBe(dimmed.props.style.width)
+    expect(selected.props.style.height).toBe(dimmed.props.style.height)
+  })
+
+  // 링을 그리는 칸에서도 테두리는 링과 **겹치지 않는다** — 반지름이 갈린다.
+  it('테두리는 얼굴 반지름에 서고 진행 링보다 안쪽이다', async () => {
+    const view = await render([entry({ rings: [{ label: '주간', completed: 1, total: 5 }] })])
+
+    const rim = view.getByTestId('portrait-selected-ring')
+    expect(Number(rim.props.r)).toBe(PORTRAIT_FACE_SIZE / 2)
+    expect(Number(rim.props.r)).toBeLessThan(PORTRAIT_RING_R)
   })
 
   it('가로로 굴러가고 스크롤바를 그리지 않는다', async () => {
@@ -123,15 +154,15 @@ describe('CharacterRail', () => {
   // `portraitMetrics` 이고 여기서 물을 것은 **레일이 그 값을 실제로 보는가** 다(숫자를 손으로 적어
   // 두면 기하 표와 레일이 서로 다른 값을 믿는 상태가 조용히 만들어진다).
   it.each([
-    ['링이 있으면', [{ label: '주간', completed: 1, total: 5 }] as CharacterRailEntry['rings'], true],
-    ['링이 없으면', [] as CharacterRailEntry['rings'], false],
-  ])('%s 그 갈래의 간격을 쓴다', async (_label, rings, hasRing) => {
+    ['링이 있어도', [{ label: '주간', completed: 1, total: 5 }] as CharacterRailEntry['rings']],
+    ['링이 없어도', [] as CharacterRailEntry['rings']],
+  ])('%s 같은 간격을 쓴다 ([[ADR-161]] 결정 1)', async (_label, rings) => {
     const view = await render([entry({ rings })])
 
     const style = view.getByTestId('character-rail-scroll').props.contentContainerStyle as {
       gap: number
     }
-    expect(style.gap).toBe(portraitMetrics(hasRing).gap)
+    expect(style.gap).toBe(portraitMetrics().gap)
   })
 })
 

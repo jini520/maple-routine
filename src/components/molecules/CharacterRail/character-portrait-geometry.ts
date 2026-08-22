@@ -25,24 +25,12 @@
 /** 칸 하나의 상자. 글자가 아래로만 자라므로 **세로가 더 길다**. */
 export const PORTRAIT_SLOT_W = 68
 export const PORTRAIT_SLOT_H = 70
-/** 링이 없는 칸(관리 화면, [[ADR-142]] 정정 8) — 글자가 얼굴 쪽으로 들어와 그만큼 낮다. */
-export const PORTRAIT_SLOT_H_RINGLESS = 62
 /** 원의 중심 — 위로 붙는다(위쪽에 글자가 없다). */
 export const PORTRAIT_CENTER_X = PORTRAIT_SLOT_W / 2
 export const PORTRAIT_CENTER_Y = 32
 
 /** 칸 사이 간격(px) — 정정 1로 8 → 4(«초상화 간 간격을 좁힌다»). */
 export const PORTRAIT_GAP = 4
-/**
- * 링이 없는 칸의 간격 — **0**([[ADR-145]] 결정 5, 사용자 지시).
- *
- * 링이 사라져도 칸 폭(68)과 안쪽 여백은 그대로라 이웃 사이가 필요 이상으로 벌어진다. 글자 호
- * (`PORTRAIT_TEXT_R_RINGLESS` = 28)는 칸 가장자리에서 6px 안쪽이라 **간격을 0으로 둬도 이웃 사이에
- * 12px 이 남는다**(링 있는 쪽은 13 + 4 = 17px). 칸 폭을 줄이는 길도 있었지만 그쪽은 원 중심이
- * 움직여 두 화면의 초상화가 다른 그림이 된다(정정 8이 폭을 안 건드린 이유와 같다).
- */
-export const PORTRAIT_GAP_RINGLESS = 0
-
 /** 얼굴 원의 지름(px) — [[ADR-015]] 크롭이 기준으로 삼는 상자다. */
 export const PORTRAIT_FACE_SIZE = 40
 
@@ -77,13 +65,6 @@ export const PORTRAIT_TEXT_R = 35
  * 이제 둘을 가르는 것은 **자리뿐**이다(가운데 왼쪽 = 레벨 · 오른쪽 = 이름).
  */
 export const PORTRAIT_TEXT_FONT_SIZE = 8.5
-/**
- * 링이 **없을 때**의 글자 반지름([[ADR-142]] 정정 8) — 얼굴 바로 밖이다.
- *
- * 링 자리를 비운 채 글자를 그대로 두면 얼굴과 글자 사이에 **링 두께만큼 죽은 여백**이 남는다.
- * 관리 화면은 진행률을 안 그리므로 그 자리를 걷어내고 칸도 그만큼 낮춘다.
- */
-export const PORTRAIT_TEXT_R_RINGLESS = 28
 /** 레벨과 이름 사이에 벌리는 몫(px) — 가운데를 기준으로 좌우 절반씩 나눠 쓴다. */
 export const PORTRAIT_TEXT_GAP = 3
 
@@ -104,17 +85,23 @@ export function portraitTextOffsetPercent(side: 'left' | 'right', radius: number
 }
 
 /**
- * 칸의 두 갈래([[ADR-142]] 정정 8 · [[ADR-145]] 결정 5) — 링을 그리는 칸(스케줄러)과 안 그리는
- * 칸(관리 화면).
+ * 칸의 치수 — **한 벌뿐이다**([[ADR-161]] 결정 1).
  *
- * 갈리는 것은 **글자 반지름 · 칸 높이 · 칸 사이 간격 셋뿐**이다. 폭·원 중심·얼굴 크기는 같아서 두
- * 화면의 초상화가 같은 그림으로 보인다. 셋을 한 함수가 함께 돌려주므로 «링 없는 칸» 의 정의가
- * 흩어지지 않는다 — 간격만 레일에 손으로 적어 두면 그 값이 조용히 갈린다.
+ * 예전에는 두 갈래였다([[ADR-142]] 정정 8 · [[ADR-145]] 결정 5) — 링을 안 그리는 관리 화면이 글자
+ * 반지름 · 칸 높이 · 칸 간격 셋을 따로 썼다. 링 자리를 비운 채 글자를 그대로 두면 얼굴과 글자 사이에
+ * **링 두께만큼 죽은 여백**이 남고, 그것을 «낭비» 로 본 판단이었다.
+ *
+ * **지금은 그 여백을 받아들인다**(사용자 판정 2026-08-22 — *"링의 레이아웃은 잡지만 색깔을 채우지
+ * 마"*). 화면을 옮길 때 같은 캐릭터의 초상화가 커졌다 작아졌다 하는 것이 더 비싸다는 뜻이고,
+ * [[ADR-159]] 로 **선택까지 공유**하게 된 지금은 더 그렇다 — 같은 값을 가리키는 두 그림이 서로 다른
+ * 크기면 «같은 것» 으로 안 읽힌다.
+ *
+ * **인자가 없는 것이 이 결정이다.** 예전 시그니처(`portraitMetrics(hasRing)`)를 남겨 두면 «링 유무로
+ * 갈릴 수 있다» 가 타입에 남고, 다음 사람이 그 자리에 값을 다시 넣는다. 함수를 없애지 않는 이유는
+ * 그 반대다 — 칸을 정의하는 자리가 하나로 남아야 레일과 칸이 서로 다른 값을 믿지 않는다.
  */
-export function portraitMetrics(hasRing: boolean): { textR: number; slotH: number; gap: number } {
-  return hasRing
-    ? { textR: PORTRAIT_TEXT_R, slotH: PORTRAIT_SLOT_H, gap: PORTRAIT_GAP }
-    : { textR: PORTRAIT_TEXT_R_RINGLESS, slotH: PORTRAIT_SLOT_H_RINGLESS, gap: PORTRAIT_GAP_RINGLESS }
+export function portraitMetrics(): { textR: number; slotH: number; gap: number } {
+  return { textR: PORTRAIT_TEXT_R, slotH: PORTRAIT_SLOT_H, gap: PORTRAIT_GAP }
 }
 
 /** 글자가 베이스라인에서 자라는 높이의 어림값(대문자 높이 ≈ 0.75em) — 여백 검사가 쓴다. */

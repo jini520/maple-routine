@@ -84,7 +84,7 @@ function Amount(props: { meso: number; sizeClass: string; unit: boolean }): Reac
       <Text fixed style={TABULAR_NUMS} className={`font-extrabold text-text ${props.sizeClass}`}>
         {formatMesoShort(props.meso)}
       </Text>
-      {props.unit && <Text fixed className="text-[10px] font-semibold text-text-muted"> 메소</Text>}
+      {props.unit && <Text fixed className="text-[11px] font-semibold text-text-muted"> 메소</Text>}
     </Text>
   )
 }
@@ -125,7 +125,7 @@ function ShareNote(props: { drop: PricedDropView }): React.JSX.Element | null {
   if (props.drop.shareCount <= 1) return null
 
   return (
-    <Text fixed testID="top-item-share" numberOfLines={1} className="text-[9.5px] text-text-disabled">
+    <Text fixed testID="top-item-share" numberOfLines={1} className="text-[10.5px] text-text-disabled">
       {props.drop.shareCount}인 분배
     </Text>
   )
@@ -137,7 +137,7 @@ function Origin(props: { drop: PricedDropView }): React.JSX.Element {
   )
 
   return (
-    <Text fixed testID="top-item-origin" numberOfLines={1} className="text-[10px] text-text-muted">
+    <Text fixed testID="top-item-origin" numberOfLines={1} className="text-[11px] text-text-muted">
       {parts.join(' · ')}
     </Text>
   )
@@ -156,11 +156,11 @@ function RestList(props: { rest: PricedDropView[] }): React.JSX.Element | null {
           className="flex-row items-center gap-1.5"
         >
           <Icon drop={drop} sizePx={18} />
-          <Text fixed numberOfLines={1} className="min-w-0 flex-1 text-[10.5px] text-text">
+          <Text fixed numberOfLines={1} className="min-w-0 flex-1 text-[11.5px] text-text">
             {drop.itemName}
           </Text>
           {/* 목록 행에는 단위를 안 붙인다 — 왼쪽 1위가 이미 말했다. */}
-          <Text fixed style={TABULAR_NUMS} className="shrink-0 text-[10.5px] font-bold text-text">
+          <Text fixed style={TABULAR_NUMS} className="shrink-0 text-[11.5px] font-bold text-text">
             {formatMesoShort(drop.payoutMeso)}
           </Text>
         </View>
@@ -203,7 +203,7 @@ function Empty(props: { variant: Variant }): React.JSX.Element {
           fixed
           testID="top-item-empty"
           numberOfLines={3}
-          className="text-center text-[9px] leading-[11px] text-text-muted"
+          className="text-center text-[10px] leading-[11px] text-text-muted"
         >
           {EMPTY_NOTE}
         </Text>
@@ -216,7 +216,7 @@ function Empty(props: { variant: Variant }): React.JSX.Element {
     return (
       <View testID="widget-top-valuable-item" className="flex-1 flex-row items-center gap-2.5 p-3">
         <EmptySlot sizePx={32} />
-        <Text fixed testID="top-item-empty" numberOfLines={2} className="flex-1 text-[10px] text-text-muted">
+        <Text fixed testID="top-item-empty" numberOfLines={2} className="flex-1 text-[11px] text-text-muted">
           {EMPTY_NOTE}
         </Text>
       </View>
@@ -230,7 +230,7 @@ function Empty(props: { variant: Variant }): React.JSX.Element {
         fixed
         testID="top-item-empty"
         numberOfLines={2}
-        className="text-center text-[10.5px] leading-[15px] text-text-muted"
+        className="text-center text-[11.5px] leading-[15px] text-text-muted"
       >
         {EMPTY_NOTE}
       </Text>
@@ -248,7 +248,7 @@ export function TopValuableItemWidget({ w, h, data }: WidgetProps): React.JSX.El
     return (
       <View testID="widget-top-valuable-item" className="flex-1 items-center justify-center gap-1 p-2">
         <Icon drop={view.top} sizePx={28} />
-        <Amount meso={view.top.payoutMeso} sizeClass="text-[12px]" unit={false} />
+        <Amount meso={view.top.payoutMeso} sizeClass="text-[13px]" unit={false} />
       </View>
     )
   }
@@ -277,7 +277,7 @@ export function TopValuableItemWidget({ w, h, data }: WidgetProps): React.JSX.El
           </View>
         </View>
         <View className="gap-0.5">
-          <ItemName drop={view.top} sizeClass="text-[11.5px]" />
+          <ItemName drop={view.top} sizeClass="text-[12.5px]" />
           <Origin drop={view.top} />
         </View>
       </View>
@@ -292,7 +292,7 @@ export function TopValuableItemWidget({ w, h, data }: WidgetProps): React.JSX.El
           <Icon drop={view.top} sizePx={44} />
           <View className="min-w-0 flex-1 gap-0.5">
             <Amount meso={view.top.payoutMeso} sizeClass="text-[18px]" unit />
-            <ItemName drop={view.top} sizeClass="text-[11.5px]" />
+            <ItemName drop={view.top} sizeClass="text-[12.5px]" />
             <Origin drop={view.top} />
             <ShareNote drop={view.top} />
           </View>

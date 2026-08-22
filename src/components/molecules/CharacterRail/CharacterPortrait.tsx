@@ -35,6 +35,12 @@ import {
   ringRatio,
 } from './character-portrait-geometry'
 
+/** 안 고른 칸의 불투명도([[ADR-161]] 결정 2). 0.45 는 «조금 흐린» 정도라 여섯 칸을 넘으면 안 잡혔다. */
+const SELECTED_DIM_OPACITY = 0.3
+
+/** 선택 테두리의 굵기 — 진행 링(3)보다 **얇다**. 진행이 아니라 «여기» 를 말하는 선이다. */
+const SELECTED_RING_STROKE = 1.5
+
 /** 링 한 칸이 받는 값 — 화면이 «무엇을 세었는지» 까지 들고 온다(접근성 이름이 그것을 말한다). */
 export interface PortraitRingProgress {
   /** `일간`·`주간`·`월간` — 접근성 이름에 그대로 들어간다. */
@@ -147,7 +153,7 @@ export function CharacterPortrait(props: CharacterPortraitProps): React.JSX.Elem
   const { definition } = useThemeAppearance()
   // 함정 ② — 화면에 여러 벌이 뜨므로 id 가 칸마다 달라야 한다.
   const textPathId = `portrait-text-${props.ocid}`
-  const { textR, slotH } = portraitMetrics(props.rings.length > 0)
+  const { textR, slotH } = portraitMetrics()
 
   const ringLabel = (ring: PortraitRingProgress): string =>
     `${ring.label} ${ring.completed}/${ring.total}`
@@ -166,8 +172,10 @@ export function CharacterPortrait(props: CharacterPortraitProps): React.JSX.Elem
       aria-selected={props.isSelected}
       aria-label={`${props.level !== null ? `Lv.${props.level} ` : ''}${props.characterName}${ringsLabel}`}
       onPress={props.onPress}
-      // 결정 5: 고른 칸은 그대로, 나머지는 흐리게. 레이아웃이 전혀 안 움직인다.
-      style={{ opacity: props.isSelected ? 1 : 0.45, width: PORTRAIT_SLOT_W, height: slotH }}
+      // [[ADR-145]] 결정 5 의 방식(고른 칸은 그대로, 나머지는 흐리게)에 **세기만** 올렸다
+      // (0.45 → 0.3, [[ADR-161]] 결정 2) — 칸이 여섯 넘게 늘어서면 0.45 로는 어느 것이 선택인지
+      // 한눈에 안 잡혔다. 레이아웃은 여전히 전혀 안 움직인다.
+      style={{ opacity: props.isSelected ? 1 : SELECTED_DIM_OPACITY, width: PORTRAIT_SLOT_W, height: slotH }}
     >
       {/* 얼굴은 SVG 아래에 깔린다 — 링·글자가 그 위에 그려져야 한다. 크롭 기준 상자는 이 원이다(함정 ③). */}
       <View
@@ -199,6 +207,25 @@ export function CharacterPortrait(props: CharacterPortraitProps): React.JSX.Elem
           <Defs>
             <Path id={textPathId} d={portraitTextArcPath(textR)} />
           </Defs>
+
+          {/* [[ADR-161]] 결정 3 — 흐림은 «흐린 것이 여럿, 또렷한 것이 하나» 라는 상대 비교를
+              시켜야 읽힌다. 이 테두리는 칸 하나만 보고도 읽히는 절대 신호다.
+
+              **얼굴 반지름(20)에 선다** — 진행 링은 26 이라 6 떨어져 있어, 링을 그리는 화면에서도
+              «링이 하나 더 생긴» 것으로 안 읽힌다. 그리는 곳이 이 `<Svg>` 층인 것이 요점이다:
+              얼굴 `View` 에 `borderWidth` 를 주면 이미지가 그만큼 안으로 밀려 **선택된 칸의 얼굴만
+              작아 보인다**(레이아웃은 안 움직여도 그림이 움직인다). */}
+          {props.isSelected && (
+            <Circle
+              testID="portrait-selected-ring"
+              cx={PORTRAIT_CENTER_X}
+              cy={PORTRAIT_CENTER_Y}
+              r={PORTRAIT_FACE_SIZE / 2}
+              fill="none"
+              stroke={definition.primary}
+              strokeWidth={SELECTED_RING_STROKE}
+            />
+          )}
 
           {props.rings.length === 0 ? null : props.rings.length === 1 ? (
             <ProgressArc

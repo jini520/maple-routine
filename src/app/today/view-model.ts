@@ -34,6 +34,7 @@
  * 셋이 같은 범위여야 위젯 7이 위젯 4의 «없음» 을 설명할 수 있다([[ADR-147]] 결정 9).
  */
 
+import { isBossBlocked, isContentBlocked } from '../../lib/required-level'
 import { resolveDisplayRepresentative } from '../../features/character-manage/derivations'
 import { displayedBosses } from '../../features/boss-scheduler/displayed-bosses'
 import type { BossCharacterView } from '../../features/boss-scheduler/store'
@@ -537,16 +538,23 @@ function buildScheduleRows(input: TodayViewModelInput): ScheduleRowView[] {
     // `displayed-contents.ts` 는 컨텐츠 화면과 공유하므로 거기서 빼면 그 화면에서도 사라지는데,
     // 그 화면은 캐릭터별로 그리는 것이 맞다(진행이 공유될 뿐 «내가 할 수 있는 일» 목록에는 있다).
     const contentsInput = contentsInputOf(input, content)
+    // **요구 레벨에 못 미치는 항목은 «남은 것» 이 아니다**([[ADR-162]] 결정 1·4). 게임이 등록을
+    // 허용해도 이 캐릭터로는 못 하므로, 세면 그 숫자가 영원히 안 줄어든다. 스케줄러 카드·진행률·
+    // 링과 **같은 판정 함수**를 본다 — 그것이 [[ADR-147]] 결정 8 이 요구하는 «한 글자도 다르지
+    // 않다» 의 조건이다.
+    const characterLevel = content?.level ?? boss?.level ?? null
     const dailyNames = displayedDailyContents(contentsInput, input.trackingMode)
       .filter((item) => getShareScope(item.name) === 'character')
+      .filter((item) => !isContentBlocked(characterLevel, item.name))
       .filter((item) => dailyContentCompletion(item) === 'incomplete')
       .map((item) => shortDailyContentName(item.name))
     const weeklyNames = displayedWeeklyContents(contentsInput, input.trackingMode)
       .filter((item) => getShareScope(item.name) === 'character')
+      .filter((item) => !isContentBlocked(characterLevel, item.name))
       .filter((item) => weeklyContentCompletion(item) === 'incomplete')
       .map((item) => shortWeeklyContentName(item.name))
-    const weeklyBosses = remainingBosses(input, boss, 'weekly')
-    const monthlyBosses = remainingBosses(input, boss, 'monthly')
+    const weeklyBosses = remainingBosses(input, boss, 'weekly', characterLevel)
+    const monthlyBosses = remainingBosses(input, boss, 'monthly', characterLevel)
 
     return {
       ocid,
@@ -586,9 +594,15 @@ function remainingBosses(
   input: TodayViewModelInput,
   boss: BossCharacterView | undefined,
   cycle: BossCycle,
+  /** 요구 레벨에 못 미치는 보스는 «남은 것» 이 아니다([[ADR-162]] 결정 2·4). */
+  characterLevel: number | null,
 ): RemainingBossView[] {
   if (boss === undefined) return []
   return displayedBosses(boss, cycle, input.trackingMode, input.manualBossByOcid)
+    .filter(
+      (matched) =>
+        !isBossBlocked(characterLevel, matched.matchedBossName ?? matched.apiName, matched.difficulty),
+    )
     .filter((matched) => !matched.isComplete)
     .map((matched) => ({
       name: matched.matchedBossName ?? matched.apiName,

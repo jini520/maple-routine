@@ -942,3 +942,42 @@ describe('공유 컨텐츠 — 유니온만 조건부다 ([[ADR-147]] 정정 30)
     expect(union?.items.map((item) => item.shortName)).toEqual(['PC방 주간 드래곤 퇴치'])
   })
 })
+
+// [[ADR-162]] 결정 1·4 — 요구 레벨에 못 미치는 항목은 «남은 것» 이 아니다. 게임이 등록을 허용해도
+// 이 캐릭터로는 못 하므로, 세면 그 숫자가 **영원히 안 줄어든다.** 스케줄러 카드·진행률·링과 같은
+// 판정 함수를 봐야 [[ADR-147]] 결정 8(«한 글자도 다르면 안 된다»)이 성립한다.
+//
+// 항목을 **캐릭터 단위**로 고른 것이 요점이다 — 몬스터파크(요구 레벨 105)는 월드 공유라 이 목록에
+// 애초에 안 든다([[ADR-147]] 정정 28). 공유 항목으로 재면 레벨과 무관하게 빠져 테스트가 거짓으로
+// 통과한다.
+describe('요구 레벨 미달은 남은 개수에서 빠진다 ([[ADR-162]])', () => {
+  const 항목 = [
+    daily({ name: '[일일 퀘스트] 소멸의 여로 조사' }), // 요구 레벨 200
+    daily({ name: '[일일 퀘스트] 츄츄 아일랜드 최고의 요리' }), // 요구 레벨 210
+  ]
+
+  const 남은것 = (level?: number): readonly string[] =>
+    buildTodayViewModel(
+      input({
+        orderedOcids: ['a'],
+        contentCharacters: [contentView('a', { level, dailyContents: 항목 })],
+      }),
+    ).schedule[0]?.dailyNames ?? []
+
+  it('레벨이 되면 둘 다 센다', () => {
+    expect(남은것(300)).toHaveLength(2)
+  })
+
+  it('레벨이 미달인 항목만 빠진다', () => {
+    expect(남은것(205)).toHaveLength(1)
+  })
+
+  it('둘 다 미달이면 둘 다 빠진다', () => {
+    expect(남은것(199)).toHaveLength(0)
+  })
+
+  // 레벨을 모르면 단정하지 않는다 — 전부 센다([[ADR-057]] 태도).
+  it('레벨을 모르면 아무것도 안 뺀다', () => {
+    expect(남은것()).toHaveLength(2)
+  })
+})

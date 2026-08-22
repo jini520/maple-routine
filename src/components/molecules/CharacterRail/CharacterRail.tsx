@@ -39,7 +39,7 @@ const HEADER_PADDING = 16
 export function CharacterRail(props: CharacterRailProps): React.JSX.Element {
   // 한 레일의 칸들은 같은 갈래다(한 화면이 링을 주거나 안 주거나 둘 중 하나다) — 간격은 레일이
   // 한 번 정해야 하는 값이라 여기서 묻는다([[ADR-145]] 결정 5). 링이 없으면 간격을 걷는다.
-  const { gap } = portraitMetrics(props.entries.some((entry) => entry.rings.length > 0))
+  const { gap } = portraitMetrics()
 
   return (
     <View testID="character-rail" style={{ marginHorizontal: -HEADER_PADDING }}>

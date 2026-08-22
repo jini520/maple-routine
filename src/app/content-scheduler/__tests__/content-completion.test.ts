@@ -127,7 +127,7 @@ describe('진행 합계', () => {
       daily({ name: 'c', questState: 2 }),
     ]
 
-    expect(dailyContentProgress(contents)).toEqual({ completed: 2, total: 3 })
+    expect(dailyContentProgress(contents, 300)).toEqual({ completed: 2, total: 3 })
   })
 
   // 끝이 없는 항목이 분모에 들어가면 링이 100%에 절대 도달하지 못한다.
@@ -139,10 +139,29 @@ describe('진행 합계', () => {
       weekly({ name: '[주간 퀘스트] 크리티아스', questState: 2 }),
     ]
 
-    expect(weeklyContentProgress(contents)).toEqual({ completed: 2, total: 2 })
+    expect(weeklyContentProgress(contents, 300)).toEqual({ completed: 2, total: 2 })
+  })
+
+  // [[ADR-162]] 결정 1 — 요구 레벨에 못 미치는 항목은 **분모에서도 빠진다.** 남겨 두면 그 캐릭터의
+  // 링이 100%에 절대 도달하지 못하고, 「남은 스케줄」의 숫자도 영원히 안 줄어든다.
+  it('요구 레벨에 못 미치는 항목은 분모에서 빠진다', () => {
+    const contents = [
+      daily({ name: '몬스터파크', questState: 0 }),   // 요구 레벨 105
+      daily({ name: '[일일 퀘스트] 소멸의 여로', questState: 2 }),
+    ]
+
+    expect(dailyContentProgress(contents, 300)).toEqual({ completed: 1, total: 2 })
+    expect(dailyContentProgress(contents, 104)).toEqual({ completed: 1, total: 1 })
+  })
+
+  // 레벨을 모르면 단정하지 않는다 — 전부 센다([[ADR-057]] 태도).
+  it('레벨을 모르면 아무것도 빼지 않는다', () => {
+    const contents = [daily({ name: '몬스터파크', questState: 0 })]
+
+    expect(dailyContentProgress(contents, null)).toEqual({ completed: 0, total: 1 })
   })
 
   it('빈 목록은 0/0 이다', () => {
-    expect(dailyContentProgress([])).toEqual({ completed: 0, total: 0 })
+    expect(dailyContentProgress([], 300)).toEqual({ completed: 0, total: 0 })
   })
 })

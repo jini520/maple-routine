@@ -61,25 +61,25 @@ const VARIANT = {
   row: {
     portraitPx: 44,
     emblemPx: 15,
-    name: 'text-[13px]',
-    caption: 'text-[10.5px]',
-    guild: 'text-[10px]',
+    name: 'text-[14px]',
+    caption: 'text-[11.5px]',
+    guild: 'text-[11px]',
   },
   /** 4x2 — 같은 구조를 크게. EXP 바가 아래 전폭이다. */
   large: {
     portraitPx: 72,
     emblemPx: 20,
     name: 'text-[19px]',
-    caption: 'text-[13px]',
-    guild: 'text-xs',
+    caption: 'text-[14px]',
+    guild: 'text-[13px]',
   },
   /** 2x2 — 가운데 정렬. 158 폭이라 **직업이 잘린다**([[ADR-147]] 열린 질문). */
   compact: {
     portraitPx: 56,
     emblemPx: 16,
-    name: 'text-sm',
-    caption: 'text-[10.5px]',
-    guild: 'text-[10px]',
+    name: 'text-[15px]',
+    caption: 'text-[11.5px]',
+    guild: 'text-[11px]',
   },
 } as const
 
@@ -208,12 +208,12 @@ function ExpBlock(props: {
       className={compactColumn ? 'w-[100px] shrink-0 gap-1' : 'w-full gap-1'}
     >
       <View className="flex-row items-center gap-1">
-        <Text fixed className="text-[10px] font-semibold text-text-muted">EXP</Text>
+        <Text fixed className="text-[11px] font-semibold text-text-muted">EXP</Text>
         <Text
           fixed
           numberOfLines={1}
           style={TABULAR_NUMS}
-          className="ml-auto text-[10px] font-semibold text-text"
+          className="ml-auto text-[11px] font-semibold text-text"
         >
           {formatExpRate(rate)}
         </Text>
@@ -245,7 +245,7 @@ export function RepresentativeCharacterWidget({ w, h, data }: WidgetProps): Reac
   if (view === null) {
     return (
       <View testID="widget-representative-character" className="flex-1 justify-center p-3">
-        <Text fixed className="text-xs text-text-muted">추적 중인 캐릭터가 없습니다</Text>
+        <Text fixed className="text-[13px] text-text-muted">추적 중인 캐릭터가 없습니다</Text>
       </View>
     )
   }

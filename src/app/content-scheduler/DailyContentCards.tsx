@@ -14,6 +14,7 @@
 //    에러 없이 세로로 쌓인다.
 // ④ `<img>` → `<Image>`, `<span>` → `<Text>`, `text-shadow` → `MEDIA_TEXT_SHADOW_STYLE`
 //    (`lib/text-styles.ts` — RN 은 그림자를 하나만 표현할 수 있어 강한 쪽을 남긴다).
+import { isContentBlocked } from '../../lib/required-level'
 import { getDailyQuestBackgroundUrl, getDailyQuestRegionCrop } from '../../lib/daily-quest-backgrounds'
 import type { DailyQuestRegionCrop } from '../../lib/daily-quest-backgrounds'
 import { getDailyQuestRegionIconUrl } from '../../lib/daily-quest-icons'
@@ -26,7 +27,7 @@ import { Card } from '../../components/atoms/Card/Card'
 import { ProgressBar } from '../../components/atoms/ProgressBar/ProgressBar'
 import { Text } from '../../components/atoms/Text/Text'
 import { MEDIA_TEXT_SHADOW_STYLE } from '../../lib/text-styles'
-import { QuestStateBadge } from './content-badges'
+import { BlockedBadge, QuestStateBadge } from './content-badges'
 import { MediaCard, MediaCardArt } from '../../components/molecules/MediaCardArt/MediaCardArt'
 
 // "몬스터파크"만 배경+아이콘 카드로 확장한다 — 다른 kind: 'contents' 항목이 생기면 그때
@@ -37,6 +38,8 @@ export const MONSTER_PARK_BACKGROUND_SLUG = 'monsterPark'
 export function DailyQuestCard(props: {
   content: DailyContent
   crop?: DailyQuestRegionCrop
+  /** 요구 레벨 미달 — 상태 배지를 «진행 불가» 로 대체한다([[ADR-162]] 결정 3). */
+  isBlocked?: boolean
 }): React.JSX.Element {
   const { content } = props
   const displayName = stripDailyQuestPrefix(content.name)
@@ -66,7 +69,12 @@ export function DailyQuestCard(props: {
           </Text>
         </View>
 
-        {content.questState !== null && <QuestStateBadge questState={content.questState} />}
+        {/* [[ADR-162]] 결정 3 — 진행 불가면 상태 배지를 **대체**한다(늘리지 않는다). */}
+        {props.isBlocked === true ? (
+          <BlockedBadge />
+        ) : (
+          content.questState !== null && <QuestStateBadge questState={content.questState} />
+        )}
       </View>
     </MediaCard>
   )
@@ -75,6 +83,8 @@ export function DailyQuestCard(props: {
 export function MonsterParkCard(props: {
   content: DailyContent
   crop?: DailyQuestRegionCrop
+  /** 요구 레벨 미달 — 상태 배지를 «진행 불가» 로 대체한다([[ADR-162]] 결정 3). */
+  isBlocked?: boolean
 }): React.JSX.Element {
   const { content } = props
   const backgroundUrl = getDailyQuestBackgroundUrl(MONSTER_PARK_BACKGROUND_SLUG)
@@ -102,12 +112,18 @@ export function MonsterParkCard(props: {
             </Text>
           </View>
 
-          <Badge tone="third">
-            {content.nowCount}/{content.maxCount}
-          </Badge>
+        {/* [[ADR-162]] 결정 3 — 진행 불가면 상태 배지를 **대체**한다(늘리지 않는다). */}
+          {props.isBlocked === true ? (
+            <BlockedBadge />
+          ) : (
+            <Badge tone="third">
+              {content.nowCount}/{content.maxCount}
+            </Badge>
+          )}
         </View>
 
-        {content.maxCount > 0 && (
+        {/* 진행 불가면 바도 안 그린다 — 그릴 진행이 없다. */}
+        {props.isBlocked !== true && content.maxCount > 0 && (
           <View className="flex-1 px-[14px]">
             <ProgressBar
               percent={progressPercent}
@@ -122,21 +138,30 @@ export function MonsterParkCard(props: {
 }
 
 // 카드 종류 분기를 한 곳으로 모은다. 카드 컴포넌트 자체는 그대로 재사용한다.
-export function renderDailyContentCard(content: DailyContent): React.JSX.Element {
+export function renderDailyContentCard(
+  content: DailyContent,
+  /** 이 카드를 보는 캐릭터의 레벨 — 판정은 `lib/required-level` 한 곳이 한다([[ADR-162]] 결정 1). */
+  characterLevel: number | null,
+): React.JSX.Element {
+  const isBlocked = isContentBlocked(characterLevel, content.name)
+
   if (content.kind === 'quest') {
-    return <DailyQuestCard content={content} />
+    return <DailyQuestCard content={content} isBlocked={isBlocked} />
   }
 
   if (content.name === MONSTER_PARK_NAME) {
-    return <MonsterParkCard content={content} />
+    return <MonsterParkCard content={content} isBlocked={isBlocked} />
   }
 
   return (
     <Card className="gap-2 p-4">
-      <Text className="text-sm text-text">
-        {content.name} · {content.nowCount}/{content.maxCount}
-      </Text>
-      {content.maxCount > 0 && (
+      <View className="flex-row items-center justify-between gap-2">
+        <Text className="shrink text-sm text-text">
+          {content.name} · {content.nowCount}/{content.maxCount}
+        </Text>
+        {isBlocked && <BlockedBadge />}
+      </View>
+      {!isBlocked && content.maxCount > 0 && (
         <ProgressBar
           percent={Math.min((content.nowCount / content.maxCount) * 100, 100)}
           aria={{ now: content.nowCount, max: content.maxCount }}

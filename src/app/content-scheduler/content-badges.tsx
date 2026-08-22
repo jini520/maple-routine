@@ -16,6 +16,7 @@
 
 import type { WeeklyContent } from '../../types'
 
+import { BlockedBadge } from '../../components/atoms/BlockedBadge/BlockedBadge'
 import { Text } from '../../components/atoms/Text/Text'
 
 // 무릉도장은 quest_state가 아니라 참여 시 도달한 층수(1~100+)가 now_count에 그대로 기록된다.
@@ -92,3 +93,6 @@ export function renderWeeklyQuestStatus(content: WeeklyContent, backgroundSlug: 
 export function stripGuildPrefix(name: string): string {
   return name.startsWith(GUILD_PREFIX) ? name.slice(GUILD_PREFIX.length) : name
 }
+
+/** 카드들이 상태 배지와 **같은 자리에서** 가져다 쓰도록 다시 내보낸다([[ADR-162]] 결정 3). */
+export { BlockedBadge }
