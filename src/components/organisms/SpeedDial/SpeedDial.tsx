@@ -35,7 +35,7 @@
  */
 import { useEffect, useState } from 'react'
 import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native'
-import {
+import Animated, {
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
@@ -45,7 +45,6 @@ import {
   type SharedValue,
 } from 'react-native-reanimated'
 
-import { AnimatedView } from '../../../lib/nativewind-interop'
 import { resolveBottomBarMetrics } from '../../../lib/bottom-bar-metrics'
 import { useBottomSafeAreaPx } from '../../../lib/bottom-safe-area'
 import { useThemeAppearance } from '../../../theme/context'
@@ -62,6 +61,20 @@ import {
   dialTiming,
   type DialStep,
 } from './speed-dial-motion'
+
+/**
+ * 애니메이션이 붙는 상자 — **`nativewind-interop` 의 `AnimatedView` 를 쓰지 않는다.**
+ *
+ * 그쪽은 `cssInterop` 에 등록된 `Animated.View` 이고, 등록된 컴포넌트에 **정적 스타일과 애니메이션
+ * 스타일을 한 배열로** 넘기면 **정적 쪽이 사라진다**(iOS 실측 2026-08-25 — 원이 44px 도 채움색도
+ * 없이 아이콘만 남았고, 애니메이션 스타일만 떼면 즉시 정상이었다). 스크림에서는 그 탓에
+ * `position: absolute` 가 사라져 화면을 통째로 밀어냈다.
+ *
+ * `BottomSheet` 의 `SheetScrim` 이 처음부터 `Animated.createAnimatedComponent(Pressable)` 로
+ * **직접 만든** 컴포넌트를 쓰는 것이 같은 자리다. 여기도 그 형태를 따른다 —
+ * 대가는 `className` 을 못 쓰는 것이고, 그래서 이 파일의 애니메이션 상자들은 색까지 `style` 로 준다.
+ */
+const AnimatedBox = Animated.createAnimatedComponent(View)
 
 /** 앱이 이미 쓰는 스택 전환 커브([[ADR-120]]) — `BottomBar` 의 `EASE` 와 같은 가족이다. */
 const EASE = Easing.bezier(0.32, 0.72, 0, 1)
@@ -136,12 +149,10 @@ function DialRow(props: DialRowProps): React.JSX.Element {
       className="flex-row items-center gap-2"
     >
       {/*
-        **애니메이션이 붙는 View 에는 `className` 을 안 준다.** 둘을 같이 주면 클래스가 만든
-        스타일(크기·채움·`position`)이 애니메이션 스타일에 밀려 사라진다 — 실기기에서 원이
-        색도 크기도 없이 잘려 나왔고, 스크림은 아예 화면을 덮었다(2026-08-25 확인).
-        `BottomSheet` 의 `SheetScrim` 이 처음부터 **`style` 전용**인 것이 같은 이유다.
+        색과 치수를 `style` 로 주는 이유는 위 `AnimatedBox` 주석에 있다 — 이 상자는 `className` 을
+        못 받는다.
       */}
-      <AnimatedView
+      <AnimatedBox
         style={[
           {
             borderRadius: 999,
@@ -155,8 +166,8 @@ function DialRow(props: DialRowProps): React.JSX.Element {
         ]}
       >
         <Text className="text-xs font-semibold text-text">{props.label.replace(' 추가', '')}</Text>
-      </AnimatedView>
-      <AnimatedView
+      </AnimatedBox>
+      <AnimatedBox
         style={[
           {
             width: CIRCLE_PX,
@@ -171,7 +182,7 @@ function DialRow(props: DialRowProps): React.JSX.Element {
       >
         {/* 원이 색을 드므로 그림은 바탕에서 파낸 것처럼 어둡게 둔다. */}
         <Icon className="h-5 w-5 text-bg" strokeWidth={2} aria-hidden />
-      </AnimatedView>
+      </AnimatedBox>
     </Pressable>
   )
 }
@@ -222,7 +233,7 @@ export function SpeedDial(props: SpeedDialProps): React.JSX.Element {
         스크림은 **접혀 있을 때 터치를 안 먹는다** — 먹으면 판이 닫힌 채로 캘린더를 덮어 날짜를
         고를 수 없게 된다(투명해서 원인이 안 보이는 종류의 결함이다).
       */}
-      <AnimatedView
+      <AnimatedBox
         testID="speed-dial-scrim"
         pointerEvents={isOpen ? 'auto' : 'none'}
         style={[StyleSheet.absoluteFill, { backgroundColor: definition.scrim }, scrimStyle]}
@@ -238,7 +249,7 @@ export function SpeedDial(props: SpeedDialProps): React.JSX.Element {
           onPress={() => setIsOpen(false)}
           style={StyleSheet.absoluteFill}
         />
-      </AnimatedView>
+      </AnimatedBox>
 
       <View
         style={{ bottom: dialBottomPx }}
@@ -269,13 +280,13 @@ export function SpeedDial(props: SpeedDialProps): React.JSX.Element {
             isOpen ? 'bg-surface-2' : 'bg-primary'
           }`}
         >
-          <AnimatedView style={fabStyle}>
+          <AnimatedBox style={fabStyle}>
             <PlusIcon
               className={`h-6 w-6 ${isOpen ? 'text-text-muted' : 'text-on-primary'}`}
               strokeWidth={2.2}
               aria-hidden
             />
-          </AnimatedView>
+          </AnimatedBox>
         </Pressable>
       </View>
     </>
