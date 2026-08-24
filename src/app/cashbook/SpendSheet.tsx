@@ -30,13 +30,18 @@ import { Pressable, ScrollView, View } from 'react-native'
 
 // `TextInput` 도 atom 에서 온다 — 시스템 글자 크기 클램프가 거기 있다([[ADR-152]] 결정 4).
 import { Text, TextInput } from '../../components/atoms/Text/Text'
+import { MesoAmountField } from '../../components/molecules/MesoPad/MesoAmountField'
+import { MesoKeypad } from '../../components/molecules/MesoPad/MesoKeypad'
+import { applyMesoKey } from '../../components/molecules/MesoPad/meso-pad'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import { formatDayLabel } from '../../lib/calendar-month'
-import { MinusIcon, PlusIcon } from '../../lib/icons'
+import { CheckIcon, MinusIcon, PlusIcon } from '../../lib/icons'
 import { formatMesoCompact } from '../../lib/meso-compact'
 import {
+  SPEND_TARIFF_PERCENT,
   pointToMeso,
   spendGroupsOf,
+  withTariffMeso,
   type SpendCatalogItem,
 } from '../../lib/spend-catalog'
 import { TABULAR_NUMS } from '../../lib/text-styles'
@@ -45,11 +50,19 @@ import { SPEND_CATEGORIES, type SpendCategory, type SpendRecord } from '../../st
 /** 저장할 값에서 **어댑터가 아니라 화면이 정하는 것 둘**(`id`·`recordedAt`)을 뺀 나머지. */
 export type SpendDraft = Omit<SpendRecord, 'id' | 'recordedAt'>
 
-/**
- * 칩에 세울 갈래 — **목록이 있는 것만**이다. 하드코딩이 아니라 파생이라, 직접 입력 둘이 설 수
- * 있게 되는 날(앞 키패드) 이 줄이 저절로 다섯이 된다.
- */
-const LIST_CATEGORIES = SPEND_CATEGORIES.filter((category) => spendGroupsOf(category).length > 0)
+/** 「기타」가 고르는 통화 셋([[ADR-166]] 결정 1 · 정정 1 ④) — **캐시가 사는 유일한 자리**다. */
+const FREE_CURRENCIES = [
+  { id: 'meso', label: '메소', unit: '메소' },
+  { id: 'point', label: '메포', unit: '메포' },
+  { id: 'cash', label: '캐시', unit: '원' },
+] as const
+
+type FreeCurrency = (typeof FREE_CURRENCIES)[number]['id']
+
+/** 고를 목록이 없는 갈래 — 금액을 **친다**([[ADR-166]] 정정 1 ②). */
+function isDirectInput(category: SpendCategory): boolean {
+  return spendGroupsOf(category).length === 0
+}
 
 function CategoryChip(props: {
   label: string
@@ -171,9 +184,15 @@ export interface SpendSheetProps {
 }
 
 export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
-  const [category, setCategory] = useState<SpendCategory>(LIST_CATEGORIES[0])
+  const [category, setCategory] = useState<SpendCategory>(SPEND_CATEGORIES[0])
   const [item, setItem] = useState<SpendCatalogItem | null>(null)
   const [quantity, setQuantity] = useState(1)
+  // 직접 입력 갈래의 칸들. 갈래를 오갈 때 **비우지 않는다** — 잘못 눌러 돌아왔을 때 친 것이
+  // 사라지면 다시 쳐야 한다. 저장에 무엇이 쓰이는지는 아래 `direct` 가 가른다.
+  const [name, setName] = useState('')
+  const [typed, setTyped] = useState(0)
+  const [hasTariff, setHasTariff] = useState(false)
+  const [freeCurrency, setFreeCurrency] = useState<FreeCurrency>('meso')
   // 마지막으로 쓴 값으로 시작한다([[ADR-166]] 결정 5). 사용자가 고치면 그 값이 저장되고, 다음에
   // 이 시트를 열 때 다시 채워진다 — 필수 칸이 매번 비어 있으면 입력이 막힌다.
   const [rateText, setRateText] = useState(
@@ -181,21 +200,42 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
   )
 
   const groups = spendGroupsOf(category)
-  const usesPoint = item?.currency === 'point'
+  const direct = isDirectInput(category)
+  /**
+   * 통화가 어디서 오나 — 갈래마다 다르다.
+   *
+   * | 갈래 | 통화 |
+   * |---|---|
+   * | 「기타」 | **사용자가 고른다** — 캐시가 사는 유일한 자리다([[ADR-166]] 정정 1 ④) |
+   * | 아이템 구매 | 언제나 **메소**다(관세는 메소로 재므로 메포 칸이 없다 — 정정 2 ②) |
+   * | 목록 셋 | **항목이 안다**(`spend-catalog.json` 의 `currency`) — 「버프」는 그 안에서도 갈린다 |
+   */
+  const currency: FreeCurrency =
+    category === '기타' ? freeCurrency : direct ? 'meso' : (item?.currency ?? 'meso')
+  const usesPoint = currency === 'point'
   // 시세는 메포 항목에만 뜻이 있다 — 메소 항목에서 물어보면 «왜 묻나» 가 된다.
   const typedRate = Number(rateText)
   const rate = usesPoint && rateText !== '' && Number.isFinite(typedRate) ? typedRate : null
-  const amount = item === null ? 0 : item.unitPrice * quantity
-  const totalMeso = usesPoint ? pointToMeso(amount, rate ?? 0) : amount
+  // 관세는 **친 숫자를 안 바꾼다** — 아래에 한 줄로 더한다. 금액 자체를 고치면 껐다 켰다 할 때
+  // 8.5억 → 9.35억 → 10.28억 으로 부푼다([[ADR-166]] 정정 2 ②).
+  const tariffed = withTariffMeso(typed)
+  const directAmount = currency === 'meso' && hasTariff ? tariffed.mesoAmount : typed
+  const amount = direct ? directAmount : (item?.unitPrice ?? 0) * quantity
+
+  // 캐시는 **환산하지 않는다**([[ADR-166]] 정정 2 ①) — 그래서 메소 축 합계에 안 든다.
+  const totalMeso = currency === 'cash' ? 0 : usesPoint ? pointToMeso(amount, rate ?? 0) : amount
   // 메포를 쓰는데 시세가 없으면 **막는다** — 저장하면 영영 메소로 표시할 수 없는 행이 된다
   // ([[ADR-166]] 정정 2 ③). 어댑터도 같은 것을 막지만 화면이 먼저 알려 주는 편이 낫다.
-  const canSave = item !== null && (!usesPoint || (rate !== null && rate > 0))
+  const hasSubject = direct ? typed > 0 : item !== null
+  const canSave = hasSubject && (!usesPoint || (rate !== null && rate > 0))
 
   function selectCategory(next: SpendCategory): void {
     setCategory(next)
     // 고르던 항목을 **푼다** — 남겨 두면 «컨텐츠를 골랐는데 버프 항목이 저장되는» 일이 생긴다.
     setItem(null)
     setQuantity(1)
+    // 관세는 아이템 구매에만 있다 — 다른 갈래로 갔다가 돌아오면 켜져 있던 것이 남으면 안 된다.
+    if (next !== '아이템 구매') setHasTariff(false)
   }
 
   function selectItem(next: SpendCatalogItem): void {
@@ -205,18 +245,21 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
   }
 
   function save(): void {
-    if (item === null) return
+    if (!canSave) return
     props.onSave({
       ocid: null,
       spentOn: props.dateKey,
       category,
-      item: item.name,
-      quantity,
-      mesoAmount: usesPoint ? null : amount,
-      tariffMeso: null,
-      pointAmount: usesPoint ? amount : null,
-      pointPer100mMeso: usesPoint ? rate : null,
-      cashAmount: null,
+      // 빈 칸은 `null` 이다 — 빈 문자열을 넣으면 «적었는데 비어 있다» 와 «안 적었다» 가 같아진다.
+      item: direct ? (name.trim() === '' ? null : name.trim()) : (item?.name ?? null),
+      // 직접 입력에는 단가가 없어 곱할 것도 없다([[ADR-166]] 정정 1 ③).
+      quantity: direct ? null : quantity,
+      mesoAmount: currency === 'meso' ? amount : null,
+      // 총액과 그 몫을 **둘 다** 박는다(정정 2 ②) — 집계는 총액 한 칸만 본다.
+      tariffMeso: direct && hasTariff && currency === 'meso' ? tariffed.tariffMeso : null,
+      pointAmount: currency === 'point' ? amount : null,
+      pointPer100mMeso: currency === 'point' ? rate : null,
+      cashAmount: currency === 'cash' ? amount : null,
       memo: null,
     })
     props.onClose()
@@ -237,7 +280,7 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
         </View>
 
         <View className="flex-row flex-wrap gap-1.5">
-          {LIST_CATEGORIES.map((each) => (
+          {SPEND_CATEGORIES.map((each) => (
             <CategoryChip
               key={each}
               label={each}
@@ -247,8 +290,49 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
           ))}
         </View>
 
-        <ScrollView className="max-h-72">
-          {groups.map((group) => (
+        {direct ? (
+          <View className="gap-3">
+            <View className="flex-row items-center gap-3 border-b border-border pb-2">
+              <Text className="shrink-0 text-xs text-text-muted">사용처</Text>
+              <TextInput
+                testID="spend-sheet-name"
+                value={name}
+                onChangeText={setName}
+                placeholder="비워 둬도 됩니다"
+                className="flex-1 text-right text-sm text-text"
+              />
+            </View>
+
+            {category === '기타' && (
+              <View className="flex-row flex-wrap gap-1.5">
+                {FREE_CURRENCIES.map((each) => (
+                  <CategoryChip
+                    key={each.id}
+                    label={each.label}
+                    selected={each.id === freeCurrency}
+                    onPress={() => setFreeCurrency(each.id)}
+                  />
+                ))}
+              </View>
+            )}
+
+            <MesoAmountField
+              meso={typed}
+              onChange={setTyped}
+              resetLabel="금액 초기화"
+              amountTestID="spend-sheet-amount"
+              unit={FREE_CURRENCIES.find((each) => each.id === currency)?.unit}
+              // 메포·캐시는 자릿수가 작아 메소 칩이 쓸모없다([[ADR-166]] 결정 8 열린 질문).
+              mesoHelpers={currency === 'meso'}
+            />
+
+            <View className="-mx-1">
+              <MesoKeypad onKey={(key) => setTyped((prev) => applyMesoKey(prev, key))} />
+            </View>
+          </View>
+        ) : (
+          <ScrollView className="max-h-72">
+            {groups.map((group) => (
             <View key={group.group} className="gap-1 pb-2">
               <Text className="text-[11px] text-text-disabled">{group.group}</Text>
               {/* 퍼센트 폭과 `gap` 을 섞으면 마지막 칸이 밀린다 — 간격은 자식 패딩이 만든다
@@ -265,14 +349,42 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
               </View>
             </View>
           ))}
-        </ScrollView>
+          </ScrollView>
+        )}
 
-        {item !== null && (
-          <View className="gap-2 rounded-xl border border-border bg-surface p-3">
-            <View className="flex-row items-center justify-between">
-              <Text className="text-xs text-text-muted">수량</Text>
-              <QuantityStepper value={quantity} unit={item.unit} onChange={setQuantity} />
+        {category === '아이템 구매' && (
+          <Pressable
+            // 다중 선택이 아니라 켬/끔 하나라 역할이 checkbox 다(`CacheClearConfirm` ②와 같은 판단).
+            role="checkbox"
+            aria-checked={hasTariff}
+            aria-label={`관세 ${SPEND_TARIFF_PERCENT}%`}
+            onPress={() => setHasTariff((on) => !on)}
+            className="flex-row items-center gap-2"
+          >
+            <View
+              className={`h-5 w-5 items-center justify-center rounded-md border ${
+                hasTariff ? 'border-transparent bg-primary' : 'border-border-strong'
+              }`}
+            >
+              {hasTariff && (
+                <CheckIcon className="h-3 w-3 text-on-primary" strokeWidth={3} aria-hidden />
+              )}
             </View>
+            <Text className="text-xs text-text">관세 {SPEND_TARIFF_PERCENT}% — 월드 간 거래</Text>
+            <Text className="ml-auto text-xs text-fall-ink" style={TABULAR_NUMS}>
+              {hasTariff ? `+${tariffed.tariffMeso.toLocaleString()}` : ' '}
+            </Text>
+          </Pressable>
+        )}
+
+        {(hasSubject || usesPoint) && (
+          <View className="gap-2 rounded-xl border border-border bg-surface p-3">
+            {item !== null && !direct && (
+              <View className="flex-row items-center justify-between">
+                <Text className="text-xs text-text-muted">수량</Text>
+                <QuantityStepper value={quantity} unit={item.unit} onChange={setQuantity} />
+              </View>
+            )}
 
             {usesPoint && (
               // 시세는 네 자리라 **OS 숫자 키패드로 충분하다** — [[ADR-124]] 가 앞 키패드를 세운
@@ -297,12 +409,15 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
 
             <View className="flex-row items-baseline justify-between border-t border-border pt-2">
               <Text className="text-xs font-semibold text-text">합계</Text>
+              {/* 캐시는 메소로 환산하지 않으므로 **캐시 그대로** 적는다(정정 2 ①). */}
               <Text
                 testID="spend-sheet-total"
                 className="text-lg font-bold text-fall-ink"
                 style={TABULAR_NUMS}
               >
-                −{formatMesoCompact(totalMeso)}
+                {currency === 'cash'
+                  ? `−${amount.toLocaleString()}원`
+                  : `−${formatMesoCompact(totalMeso)}`}
               </Text>
             </View>
           </View>

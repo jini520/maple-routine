@@ -23,7 +23,18 @@ export function MesoAmountField(props: {
   /** 테스트와 스크린리더가 이 칸을 집는 이름 — 부르는 자리마다 다르다(가격 · 금액). */
   resetLabel: string
   amountTestID: string
+  /** 숫자 옆에 붙는 단위. 기본은 메소다. */
+  unit?: string
+  /**
+   * 억/만 보조 줄과 빠른 칩을 그릴지 — **메소일 때만 뜻이 있다.**
+   *
+   * 메포·캐시는 자릿수가 작아 `+100만 ~ +100억` 칩이 쓸모없고(1만원짜리 캐시 지출에 «+100억» 이
+   * 떠 있으면 안 된다), 억/만 환산도 그 단위에서는 틀린 말이다. **그쪽 칩 값은 아직 안 정했으므로**
+   * ([[ADR-166]] 결정 8 열린 질문) 잘못된 칩을 세우는 대신 **안 세운다.**
+   */
+  mesoHelpers?: boolean
 }): React.JSX.Element {
+  const mesoHelpers = props.mesoHelpers ?? true
   return (
     <View>
       {/* 초기화는 **금액 왼쪽**이다(2026-08-10 사용자 요청). 키패드 자리를 안 뺏고(⌫ 는 한 자씩
@@ -53,30 +64,36 @@ export function MesoAmountField(props: {
         >
           {props.meso.toLocaleString()}
         </Text>
-        <Text className="text-sm font-semibold text-text-muted">메소</Text>
+        <Text className="text-sm font-semibold text-text-muted">{props.unit ?? '메소'}</Text>
       </View>
 
       {/* 항상 자리를 지킨다 — 0 에서 사라지면 첫 타건에 아래가 통째로 밀린다. */}
-      <Text className="mt-1.5 min-h-4 text-right text-[11px] text-text-muted" style={TABULAR_NUMS}>
-        {props.meso > 0 ? formatMesoUnits(props.meso) : ''}
-      </Text>
+      {mesoHelpers && (
+        <Text
+          className="mt-1.5 min-h-4 text-right text-[11px] text-text-muted"
+          style={TABULAR_NUMS}
+        >
+          {props.meso > 0 ? formatMesoUnits(props.meso) : ''}
+        </Text>
+      )}
 
       {/* 다섯 개가 390px 한 줄에 들어가도록 여백·글자를 한 단계 줄였다. `flex-wrap` 은 안전장치다 —
           더 좁은 기기에서는 넘치는 대신 줄을 바꾼다. 값은 `lib/meso-quick-adds` 가 든다 —
           아이템 분배 계산기도 같은 눈금을 쓴다([[ADR-168]] 결정 9). */}
       <View className="mt-2 flex-row flex-wrap justify-end gap-1.5">
-        {MESO_QUICK_ADDS.map((quick) => (
-          <Pressable
-            key={quick.label}
-            role="button"
-            onPress={() => props.onChange(Math.min(MAX_MESO, props.meso + quick.value))}
-            className="h-7 justify-center rounded-full border border-border px-2.5 active:bg-surface-2"
-          >
-            <Text className="text-[11px] font-semibold text-text-muted" style={TABULAR_NUMS}>
-              {quick.label}
-            </Text>
-          </Pressable>
-        ))}
+        {mesoHelpers &&
+          MESO_QUICK_ADDS.map((quick) => (
+            <Pressable
+              key={quick.label}
+              role="button"
+              onPress={() => props.onChange(Math.min(MAX_MESO, props.meso + quick.value))}
+              className="h-7 justify-center rounded-full border border-border px-2.5 active:bg-surface-2"
+            >
+              <Text className="text-[11px] font-semibold text-text-muted" style={TABULAR_NUMS}>
+                {quick.label}
+              </Text>
+            </Pressable>
+          ))}
       </View>
     </View>
   )

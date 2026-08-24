@@ -62,16 +62,13 @@ describe('머리', () => {
 })
 
 describe('갈래 칩', () => {
-  // 직접 입력 둘(아이템 구매 · 기타)은 앞 키패드가 서야 성립한다 — 그때까지 **누를 수 없는 칩을
-  // 세우지 않는다**([[ADR-132]] 결정 12 의 껍데기를 되풀이하지 않는다).
-  it('목록이 있는 갈래만 세운다', async () => {
+  // [[ADR-166]] 정정 1 ② 의 다섯 — 목록 셋과 직접 입력 둘.
+  it('다섯이 다 선다', async () => {
     const view = await 그리기()
 
-    expect(view.getByLabelText('컨텐츠')).toBeTruthy()
-    expect(view.getByLabelText('상점·편의')).toBeTruthy()
-    expect(view.getByLabelText('버프')).toBeTruthy()
-    expect(view.queryByLabelText('아이템 구매')).toBeNull()
-    expect(view.queryByLabelText('기타')).toBeNull()
+    for (const label of ['컨텐츠', '상점·편의', '버프', '아이템 구매', '기타']) {
+      expect(view.getByLabelText(label)).toBeTruthy()
+    }
   })
 
   it('첫 갈래로 시작한다', async () => {
@@ -298,5 +295,209 @@ describe('저장', () => {
     await 누르기(view, '저장')
 
     expect(onClose).toHaveBeenCalledTimes(1)
+  })
+})
+
+// ══ 직접 입력 갈래 둘 ([[ADR-166]] 결정 2·7 · 정정 1 ② · 정정 2 ②) ═══════════════
+//
+// 목록 갈래 셋과 폼이 통째로 다르다 — 고를 것이 없고 **금액을 친다.**
+
+async function 치기(view: Rendered, ...keys: string[]): Promise<void> {
+  for (const key of keys) await 누르기(view, key)
+}
+
+describe('아이템 구매', () => {
+  it('고를 목록이 없고 금액을 친다', async () => {
+    const view = await 그리기()
+
+    await 누르기(view, '아이템 구매')
+
+    expect(view.queryByText('에픽던전 추가 리워드')).toBeNull()
+    expect(view.getByTestId('spend-sheet-amount')).toBeTruthy()
+  })
+
+  it('금액이 0 이면 저장할 수 없다', async () => {
+    const view = await 그리기()
+
+    await 누르기(view, '아이템 구매')
+
+    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
+  })
+
+  // **친 숫자는 안 바뀐다**([[ADR-170]] 시안) — 관세는 아래에 한 줄로 더해진다. 금액을 직접
+  // 고치면 껐다 켰다 할 때 8.5억 → 9.35억 → 10.28억 으로 부푼다.
+  it('관세를 켜도 친 금액은 그대로다', async () => {
+    const view = await 그리기()
+    await 누르기(view, '아이템 구매')
+    await 치기(view, '8', '5', '00', '00', '00', '0')
+
+    await 누르기(view, '관세 10%')
+
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('850,000,000')
+  })
+
+  it('관세를 켜면 합계가 10% 는다', async () => {
+    const view = await 그리기()
+    await 누르기(view, '아이템 구매')
+    await 치기(view, '8', '5', '00', '00', '00', '0')
+
+    await 누르기(view, '관세 10%')
+
+    expect(view.getByTestId('spend-sheet-total')).toHaveTextContent('−9.35억')
+  })
+
+  it('껐다 켜도 부풀지 않는다', async () => {
+    const view = await 그리기()
+    await 누르기(view, '아이템 구매')
+    await 치기(view, '8', '5', '00', '00', '00', '0')
+
+    await 누르기(view, '관세 10%')
+    await 누르기(view, '관세 10%')
+    await 누르기(view, '관세 10%')
+
+    expect(view.getByTestId('spend-sheet-total')).toHaveTextContent('−9.35억')
+  })
+
+  // 총액과 그 몫을 **둘 다** 박는다([[ADR-166]] 정정 2 ②) — 집계는 총액 한 칸만 본다.
+  it('총액과 관세분을 함께 저장한다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave })
+    await 누르기(view, '아이템 구매')
+    await 치기(view, '8', '5', '00', '00', '00', '0')
+    await 누르기(view, '관세 10%')
+
+    await act(async () => {
+      fireEvent.changeText(view.getByTestId('spend-sheet-name'), '앱솔랩스 슈즈')
+    })
+    await 누르기(view, '저장')
+
+    expect(onSave.mock.calls[0][0]).toMatchObject({
+      category: '아이템 구매',
+      item: '앱솔랩스 슈즈',
+      mesoAmount: 935_000_000,
+      tariffMeso: 85_000_000,
+      pointAmount: null,
+      quantity: null,
+    })
+  })
+
+  it('관세를 안 켜면 관세분이 없다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave })
+    await 누르기(view, '아이템 구매')
+    await 치기(view, '1', '00')
+
+    await 누르기(view, '저장')
+
+    expect(onSave.mock.calls[0][0]).toMatchObject({ mesoAmount: 100, tariffMeso: null })
+  })
+
+  // 시세를 안 물어도 된다 — 관세가 «메소 가치 기준 10%» 라 양변에서 상쇄된다(정정 2 ②).
+  it('시세를 안 묻는다', async () => {
+    const view = await 그리기({ lastPointRate: null })
+
+    await 누르기(view, '아이템 구매')
+
+    expect(view.queryByTestId('spend-sheet-rate')).toBeNull()
+  })
+})
+
+describe('기타 — 캐시가 사는 유일한 자리', () => {
+  it('통화 셋을 고른다', async () => {
+    const view = await 그리기()
+
+    await 누르기(view, '기타')
+
+    expect(view.getByLabelText('메소')).toBeTruthy()
+    expect(view.getByLabelText('메포')).toBeTruthy()
+    expect(view.getByLabelText('캐시')).toBeTruthy()
+  })
+
+  it('메소로 시작한다', async () => {
+    const view = await 그리기()
+
+    await 누르기(view, '기타')
+
+    expect(view.getByLabelText('메소').props.accessibilityState?.selected).toBe(true)
+  })
+
+  it('관세는 아이템 구매에만 있다', async () => {
+    const view = await 그리기()
+
+    await 누르기(view, '기타')
+
+    expect(view.queryByLabelText('관세 10%')).toBeNull()
+  })
+
+  it('메포를 고르면 시세를 묻는다', async () => {
+    const view = await 그리기({ lastPointRate: 1_180 })
+    await 누르기(view, '기타')
+
+    await 누르기(view, '메포')
+
+    expect(view.getByTestId('spend-sheet-rate')).toBeTruthy()
+  })
+
+  // **캐시는 환산하지 않는다**([[ADR-166]] 정정 2 ①) — 현금과 게임 재화의 교환비가 실제로
+  // 성립하는 경로가 운영정책 위반 거래라, 앱이 그 숫자를 적으면 그 경로에 값을 매기는 것처럼 읽힌다.
+  it('캐시는 시세를 안 묻는다 — 환산 자체를 안 한다', async () => {
+    const view = await 그리기({ lastPointRate: 1_180 })
+    await 누르기(view, '기타')
+
+    await 누르기(view, '캐시')
+
+    expect(view.queryByTestId('spend-sheet-rate')).toBeNull()
+  })
+
+  it('캐시는 원 단위로 적고 캐시 칸에 담긴다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave })
+    await 누르기(view, '기타')
+    await 누르기(view, '캐시')
+    await 치기(view, '6', '9', '00')
+
+    await 누르기(view, '저장')
+
+    expect(onSave.mock.calls[0][0]).toMatchObject({
+      category: '기타',
+      cashAmount: 6_900,
+      mesoAmount: null,
+      pointAmount: null,
+    })
+  })
+
+  it('캐시 금액에는 메소 빠른 칩이 안 뜬다 — 1만원짜리에 +100억은 없다', async () => {
+    const view = await 그리기()
+    await 누르기(view, '기타')
+
+    await 누르기(view, '캐시')
+
+    expect(view.queryByText('+100억')).toBeNull()
+  })
+
+  it('메포로 적으면 원금과 시세가 함께 박힌다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave, lastPointRate: 1_180 })
+    await 누르기(view, '기타')
+    await 누르기(view, '메포')
+    await 치기(view, '3', '00', '00')
+
+    await 누르기(view, '저장')
+
+    expect(onSave.mock.calls[0][0]).toMatchObject({
+      pointAmount: 30_000,
+      pointPer100mMeso: 1_180,
+      cashAmount: null,
+    })
+  })
+
+  it('통화를 바꿔도 친 금액은 남는다 — 단위만 갈린다', async () => {
+    const view = await 그리기()
+    await 누르기(view, '기타')
+    await 치기(view, '1', '2', '3')
+
+    await 누르기(view, '캐시')
+
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('123')
   })
 })
