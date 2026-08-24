@@ -20,11 +20,26 @@
  * 12 — 자리를 예약하던 장치이고, 그 예약이 이 화면으로 이행돼 둘은 삭제됐다). 이 화면은 데이터가
  * 없을 뿐 격자·이동·선택이 **진짜로 동작한다.**
  *
- * ## 축은 달력이다
+ * ## 축이 **둘**이다 ([[ADR-170]] 결정 10)
  *
- * 보스 수익이 같은 그룹에서 **목요일 리셋** 축을 쓰지만(`lib/boss-profit-period.ts`) 이 화면은
- * 달력 월이다([[ADR-166]] 결정 4 · [[ADR-169]] 결정 4). 두 축을 합치는 것은 #239 의 일이고,
- * 이 화면은 그것을 앞당기지 않는다.
+ * | 보기 | 축 | 주가 시작하는 요일 |
+ * |---|---|---|
+ * | 월간 | 달력 월 | 일요일 — 한국 달력의 관습([[ADR-169]] 결정 8) |
+ * | 주간 | **게임의 주** | **목요일** — 보스 수익 탭과 **같은 주**다 |
+ *
+ * 주간이 게임 축인 덕에 같은 그룹의 두 하위가 「이번 주」로 **같은 숫자**를 말하고, 날짜를 모르는
+ * 옛 보스 기록(`defeated_on IS NULL`)도 자기 `period_key` 그대로 한 주에 든다.
+ *
+ * 대가로 **월간 격자의 한 줄 ≠ 주간의 한 주**다 — 격자에 목요일 경계선을 그어 그것을 드러낸다.
+ *
+ * ## 상태가 둘로 갈려 있고, 오갈 때만 맞춘다
+ *
+ * 월간은 `monthKey`, 주간은 `weekStartKey`(목요일)를 든다. 하나로 합쳐 파생시키면 «달을 넘겨도
+ * 고른 날은 안 바뀐다» 는 기존 계약이 깨진다([[ADR-169]] 이후 테스트가 붙들고 있다). 대신
+ * **모드를 오갈 때 한 번씩 맞춘다**([[ADR-170]] 결정 12 의 함정):
+ *
+ * - 주간으로 → **고른 날이 든 주**. 화면 아래 상세가 그 날을 말하고 있으므로 격자도 그 주여야 한다.
+ * - 월간으로 → **그 주의 목요일이 든 달**. 주가 두 달에 걸쳐도 `weekStartKey` 가 답을 하나로 만든다.
  */
 
 import { useState } from 'react'
@@ -36,14 +51,19 @@ import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
+import { getAdjacentPeriodKey } from '../../lib/boss-profit-period'
 import {
+  WEEKDAY_LABELS_RESET,
   buildCalendarMonth,
+  buildResetWeek,
   formatDayLabel,
   formatMonthLabel,
+  formatResetWeekLabel,
   getAdjacentMonthKey,
   getCurrentMonthKey,
   monthIncomeMax,
   monthKeyOf,
+  resetWeekStartOf,
   type CalendarAmounts,
 } from '../../lib/calendar-month'
 import { ChevronLeftIcon, ChevronRightIcon, NotebookTextIcon } from '../../lib/icons'
@@ -53,7 +73,34 @@ import { TABULAR_NUMS } from '../../lib/text-styles'
 /** 공급원이 붙기 전까지 격자가 받는 값([[ADR-169]] 결정 6) — 모든 날이 0 으로 그려진다. */
 const NO_AMOUNTS: CalendarAmounts = {}
 
-/** 달을 넘기는 화살표 — 보스 수익의 기간 이동과 같은 치수다(같은 그룹에서 두 모양이면 안 된다). */
+/** 「주간 | 월간」 — **보스 수익 탭의 알약 그대로다**(같은 그룹의 두 하위가 같은 어법으로 기간을
+ *  가른다). 주간이 먼저인 것도 그쪽 순서다. 고른 값은 **기억하지 않는다** — 그쪽도 화면 상태다. */
+function PeriodTab(props: {
+  label: string
+  selected: boolean
+  onPress: () => void
+}): React.JSX.Element {
+  return (
+    <Pressable
+      role="button"
+      aria-label={props.label}
+      aria-selected={props.selected}
+      onPress={props.onPress}
+    >
+      <Text
+        className={
+          props.selected
+            ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
+            : 'px-3 text-sm font-medium text-text-muted'
+        }
+      >
+        {props.label}
+      </Text>
+    </Pressable>
+  )
+}
+
+/** 기간을 넘기는 화살표 — 보스 수익의 기간 이동과 같은 치수다(같은 그룹에서 두 모양이면 안 된다). */
 function MonthArrow(props: {
   label: string
   icon: typeof ChevronLeftIcon
@@ -74,15 +121,41 @@ function MonthArrow(props: {
 
 export function CashbookScreen(): React.JSX.Element {
   const todayDateKey = getCurrentKstDateKey(new Date())
+  const [isWeekly, setIsWeekly] = useState(false)
   const [monthKey, setMonthKey] = useState(() => getCurrentMonthKey(new Date()))
+  const [weekStartKey, setWeekStartKey] = useState(() => resetWeekStartOf(todayDateKey))
   const [selectedDateKey, setSelectedDateKey] = useState(todayDateKey)
-  const weeks = buildCalendarMonth(monthKey)
+
+  const monthWeeks = buildCalendarMonth(monthKey)
+  const weeks = isWeekly ? [buildResetWeek(weekStartKey)] : monthWeeks
+  // **기준선은 두 보기가 같다 — 그 달이다**([[ADR-170]] 결정 12). 주간에서 받은 이레로 다시 내면
+  // «7칸 중 하나는 언제나 최대» 가 되어 아무것도 안 한 주도 한 칸이 새까매진다. 걸치는 주는
+  // 목요일이 든 달을 기준으로 삼는다 — 「어느 달로 돌아가나」 와 같은 답이라 둘이 안 갈린다.
+  const heatWeeks = isWeekly ? buildCalendarMonth(monthKeyOf(weekStartKey)) : monthWeeks
 
   // 앞뒤 달로 채운 칸을 누르면 **보는 달도 따라간다** — 아니면 고른 날이 격자 밖에 있게 된다.
-  // 격자는 자기가 어느 달인지 모르므로(그리기만 한다) 이 판단이 여기 있다.
+  // 주간에는 그런 칸이 없으므로(이레가 전부 그 주다) 주는 그대로 둔다.
   function selectDate(dateKey: string): void {
     setSelectedDateKey(dateKey)
-    setMonthKey(monthKeyOf(dateKey))
+    if (!isWeekly) setMonthKey(monthKeyOf(dateKey))
+  }
+
+  function showWeekly(): void {
+    setWeekStartKey(resetWeekStartOf(selectedDateKey))
+    setIsWeekly(true)
+  }
+
+  function showMonthly(): void {
+    setMonthKey(monthKeyOf(weekStartKey))
+    setIsWeekly(false)
+  }
+
+  function movePeriod(delta: -1 | 1): void {
+    if (isWeekly) {
+      setWeekStartKey(getAdjacentPeriodKey('weekly', weekStartKey, delta < 0 ? 'prev' : 'next'))
+      return
+    }
+    setMonthKey(getAdjacentMonthKey(monthKey, delta))
   }
 
   return (
@@ -90,30 +163,35 @@ export function CashbookScreen(): React.JSX.Element {
       <ScreenScroll
         header={
           <PageHeader>
-            <PageHeaderTitleRow>
+            <PageHeaderTitleRow className="justify-between">
               <Text className="text-lg font-semibold text-text">가계부</Text>
+              <View className="flex-row items-center gap-1">
+                <PeriodTab label="주간" selected={isWeekly} onPress={showWeekly} />
+                <PeriodTab label="월간" selected={!isWeekly} onPress={showMonthly} />
+              </View>
             </PageHeaderTitleRow>
           </PageHeader>
         }
       >
         <View className="gap-4 px-4 pb-4">
           <View className="flex-row items-center justify-center gap-4">
+            {/* 이름이 모드를 따른다 — 스크린리더가 «무엇이 옮겨지는가» 를 듣는다. */}
             <MonthArrow
-              label="이전 달"
+              label={isWeekly ? '이전 주' : '이전 달'}
               icon={ChevronLeftIcon}
-              onPress={() => setMonthKey(getAdjacentMonthKey(monthKey, -1))}
+              onPress={() => movePeriod(-1)}
             />
             <Text
-              testID="cashbook-month-label"
+              testID="cashbook-period-label"
               className="text-sm font-semibold text-text"
               style={TABULAR_NUMS}
             >
-              {formatMonthLabel(monthKey)}
+              {isWeekly ? formatResetWeekLabel(weekStartKey) : formatMonthLabel(monthKey)}
             </Text>
             <MonthArrow
-              label="다음 달"
+              label={isWeekly ? '다음 주' : '다음 달'}
               icon={ChevronRightIcon}
-              onPress={() => setMonthKey(getAdjacentMonthKey(monthKey, 1))}
+              onPress={() => movePeriod(1)}
             />
           </View>
 
@@ -122,9 +200,11 @@ export function CashbookScreen(): React.JSX.Element {
             selectedDateKey={selectedDateKey}
             todayDateKey={todayDateKey}
             amounts={NO_AMOUNTS}
-            // 열지도 기준은 **화면이 낸다**([[ADR-170]] 결정 12) — 격자가 스스로 내면 주간 보기에서
-            // 받은 이레가 곧 기준이 되어 «7칸 중 하나는 언제나 최대» 가 된다.
-            incomeMax={monthIncomeMax(weeks, NO_AMOUNTS)}
+            weekdayLabels={isWeekly ? WEEKDAY_LABELS_RESET : undefined}
+            // 열지도 기준은 **화면이 낸다**([[ADR-170]] 결정 12) — 위 `heatWeeks` 참조.
+            incomeMax={monthIncomeMax(heatWeeks, NO_AMOUNTS)}
+            // 주간 격자는 자체가 한 주라 **자를 것이 없다.**
+            showResetDivider={!isWeekly}
             onSelectDate={selectDate}
           />
 

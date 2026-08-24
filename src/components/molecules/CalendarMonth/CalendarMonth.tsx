@@ -72,9 +72,25 @@ export interface CalendarMonthProps {
    * 말을 하려면 기준이 **둘 다 그 달**이어야 하고, 그 판단은 화면이 한다.
    */
   readonly incomeMax: number
+  /**
+   * 목요일 열 왼쪽의 **주 경계선**([[ADR-170]] 결정 10 의 대가) — 월간 격자에만 준다.
+   *
+   * 월간 격자의 한 줄(일~토)과 주간 보기의 한 주(목~수)가 **다른 이레**라, 표시가 없으면
+   * 주간으로 넘어가 다른 날들이 뜨는 것이 사용자에게는 그냥 어긋남이다. 주간 격자에는 안 준다 —
+   * 격자 자체가 한 주라 **자를 것이 없다.**
+   */
+  readonly showResetDivider?: boolean
 }
 
 const NO_AMOUNTS = { incomeMeso: 0, expenseMeso: 0 } as const
+
+/**
+ * 경계선이 서는 자리 — 기본 요일 머리(일~토)에서 **목요일이 다섯째 칸**이라 그 왼쪽이다.
+ *
+ * 칸이 `flex-1` 일곱이라 각 칸이 정확히 1/7 이고, 선은 그 경계에 절대 배치된다. 칸에 `border-l` 을
+ * 주면 칸마다 세로 여백(`py-1`)에서 선이 끊긴다.
+ */
+const RESET_DIVIDER_LEFT = `${(4 / 7) * 100}%`
 
 /** 단계 → 불투명도. 0 단계는 **정확히 0** 이어야 «안 적은 날» 이 칠해지지 않는다. */
 const HEAT_OPACITY: readonly number[] = [0, 0.1, 0.2, 0.3, 0.42]
@@ -106,7 +122,18 @@ export function CalendarMonth(props: CalendarMonthProps): React.JSX.Element {
         ))}
       </View>
 
-      {props.weeks.map((week) => (
+      <View className="relative">
+        {props.showResetDivider === true && (
+          // `aria-hidden` 을 **안 붙인다** — 열지도 바탕과 같은 이유다(위 주석): 붙이면 RNTL 이
+          // 이 노드를 숨김으로 보고 쿼리에서 걷어 테스트가 못 잡는다. 글자가 없어 스크린리더가
+          // 읽을 것도 없다.
+          <View
+            testID="calendar-reset-divider"
+            style={{ left: RESET_DIVIDER_LEFT }}
+            className="absolute bottom-0 top-0 border-l border-dashed border-border-strong"
+          />
+        )}
+        {props.weeks.map((week) => (
         <View key={week[0]?.dateKey} className="flex-row">
           {week.map((day) => {
             const isSelected = day.dateKey === props.selectedDateKey
@@ -163,8 +190,9 @@ export function CalendarMonth(props: CalendarMonthProps): React.JSX.Element {
               </Pressable>
             )
           })}
-        </View>
-      ))}
+          </View>
+        ))}
+      </View>
     </View>
   )
 }
