@@ -34,7 +34,7 @@
  * 움직임 값은 여기 없다 — `speed-dial-motion.ts` 가 든다([[ADR-147]] 결정 8).
  */
 import { useEffect, useState } from 'react'
-import { Pressable, View } from 'react-native'
+import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native'
 import {
   useAnimatedStyle,
   useReducedMotion,
@@ -45,9 +45,13 @@ import {
   type SharedValue,
 } from 'react-native-reanimated'
 
+import { AnimatedView } from '../../../lib/nativewind-interop'
+import { resolveBottomBarMetrics } from '../../../lib/bottom-bar-metrics'
+import { useBottomSafeAreaPx } from '../../../lib/bottom-safe-area'
+import { useThemeAppearance } from '../../../theme/context'
+import type { ThemeDefinition } from '../../../types/theme'
 import { ProfitIcon } from '../../atoms/ProfitIcon/ProfitIcon'
 import { Text } from '../../atoms/Text/Text'
-import { AnimatedView } from '../../../lib/nativewind-interop'
 import { PlusIcon, ShoppingCartIcon } from '../../../lib/icons'
 import {
   DIAL_MOTION,
@@ -79,11 +83,15 @@ function useDialProgress(step: DialStep, isOpen: boolean, reduceMotion: boolean)
   return progress
 }
 
+/** 원의 지름 — 아래 FAB(56)보다 작다. 위계가 크기로 드러난다. */
+const CIRCLE_PX = 44
+
 interface DialRowProps {
   kind: 'income' | 'expense'
   label: string
   isOpen: boolean
   reduceMotion: boolean
+  definition: ThemeDefinition
   onPress: () => void
 }
 
@@ -116,6 +124,7 @@ function DialRow(props: DialRowProps): React.JSX.Element {
   }))
 
   const Icon = isIncome ? ProfitIcon : ShoppingCartIcon
+  const { definition } = props
 
   return (
     <Pressable
@@ -126,17 +135,39 @@ function DialRow(props: DialRowProps): React.JSX.Element {
       onPress={props.onPress}
       className="flex-row items-center gap-2"
     >
+      {/*
+        **애니메이션이 붙는 View 에는 `className` 을 안 준다.** 둘을 같이 주면 클래스가 만든
+        스타일(크기·채움·`position`)이 애니메이션 스타일에 밀려 사라진다 — 실기기에서 원이
+        색도 크기도 없이 잘려 나왔고, 스크림은 아예 화면을 덮었다(2026-08-25 확인).
+        `BottomSheet` 의 `SheetScrim` 이 처음부터 **`style` 전용**인 것이 같은 이유다.
+      */}
       <AnimatedView
-        style={chipStyle}
-        className="rounded-full border border-border bg-surface px-3 py-1.5"
+        style={[
+          {
+            borderRadius: 999,
+            borderWidth: 1,
+            borderColor: definition.border,
+            backgroundColor: definition.surface,
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+          },
+          chipStyle,
+        ]}
       >
         <Text className="text-xs font-semibold text-text">{props.label.replace(' 추가', '')}</Text>
       </AnimatedView>
       <AnimatedView
-        style={circleStyle}
-        className={`h-11 w-11 items-center justify-center rounded-full ${
-          isIncome ? 'bg-rise-ink' : 'bg-fall-ink'
-        }`}
+        style={[
+          {
+            width: CIRCLE_PX,
+            height: CIRCLE_PX,
+            borderRadius: 999,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: isIncome ? definition.riseInk : definition.fallInk,
+          },
+          circleStyle,
+        ]}
       >
         {/* 원이 색을 드므로 그림은 바탕에서 파낸 것처럼 어둡게 둔다. */}
         <Icon className="h-5 w-5 text-bg" strokeWidth={2} aria-hidden />
@@ -153,6 +184,24 @@ export interface SpeedDialProps {
 export function SpeedDial(props: SpeedDialProps): React.JSX.Element {
   const [isOpen, setIsOpen] = useState(false)
   const reduceMotion = useReducedMotion()
+  const { definition } = useThemeAppearance()
+
+  /**
+   * **떠 있는 하단바 위에 앉는다.**
+   *
+   * 바는 화면 상자 **밖**이 아니라 그 위에 떠 있어서([[ADR-132]]), 화면 기준 `bottom: 0` 은 바
+   * 뒤다 — 처음에 그렇게 뒀더니 FAB 가 캡슐에 반쯤 가려 안 보였다(실기기 확인 2026-08-25).
+   *
+   * 값은 `ScreenScroll` 이 콘텐츠 끝에 남기는 몫과 **같은 함수에서 나온다**
+   * (`bottomSafeAreaPx + barSpacePx`, `bottom-inset.ts`). 손으로 옮겨 적으면 기기마다 갈린다 —
+   * 바 높이가 창 폭의 함수이기 때문이다([[ADR-132]] 정정 30).
+   *
+   * 이 컴포넌트는 **탭 화면에 선다고 전제한다.** 바가 없는 하위 페이지에 놓을 일이 생기면 그때
+   * 프롭으로 가른다(지금은 쓰는 자리가 하나다).
+   */
+  const bottomSafeAreaPx = useBottomSafeAreaPx()
+  const { width: windowWidthPx } = useWindowDimensions()
+  const dialBottomPx = bottomSafeAreaPx + resolveBottomBarMetrics(windowWidthPx).spacePx + 12
 
   const scrim = useDialProgress(DIAL_MOTION.scrim, isOpen, reduceMotion)
   const fab = useDialProgress(DIAL_MOTION.fab, isOpen, reduceMotion)
@@ -176,8 +225,7 @@ export function SpeedDial(props: SpeedDialProps): React.JSX.Element {
       <AnimatedView
         testID="speed-dial-scrim"
         pointerEvents={isOpen ? 'auto' : 'none'}
-        style={scrimStyle}
-        className="absolute bottom-0 left-0 right-0 top-0 bg-scrim"
+        style={[StyleSheet.absoluteFill, { backgroundColor: definition.scrim }, scrimStyle]}
       >
         {/*
           **접근성 트리에서 뺀다**(`accessible={false}`) — 닫는 방법을 이름으로 알리는 것은 FAB 이
@@ -188,16 +236,20 @@ export function SpeedDial(props: SpeedDialProps): React.JSX.Element {
           testID="speed-dial-scrim-button"
           accessible={false}
           onPress={() => setIsOpen(false)}
-          className="h-full w-full"
+          style={StyleSheet.absoluteFill}
         />
       </AnimatedView>
 
-      <View className="absolute bottom-4 right-4 items-end gap-3">
+      <View
+        style={{ bottom: dialBottomPx }}
+        className="absolute right-4 items-end gap-3"
+      >
         <DialRow
           kind="income"
           label="수입 추가"
           isOpen={isOpen}
           reduceMotion={reduceMotion}
+          definition={definition}
           onPress={() => select(props.onSelectIncome)}
         />
         <DialRow
@@ -205,6 +257,7 @@ export function SpeedDial(props: SpeedDialProps): React.JSX.Element {
           label="지출 추가"
           isOpen={isOpen}
           reduceMotion={reduceMotion}
+          definition={definition}
           onPress={() => select(props.onSelectExpense)}
         />
         <Pressable
