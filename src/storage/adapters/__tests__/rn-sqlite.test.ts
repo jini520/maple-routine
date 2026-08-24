@@ -42,7 +42,7 @@ jest.mock('@op-engineering/op-sqlite', () => ({
 }))
 
 import { IOS_DOCUMENT_PATH } from '@op-engineering/op-sqlite'
-import { closeBossProfitDb, getBossProfitDb } from '../../sqlite/db'
+import { BOSS_PROFIT_TABLE_NAMES, closeBossProfitDb, getBossProfitDb } from '../../sqlite/db'
 import { __resetStoragePortsForTest, setSqlitePort } from '../../ports'
 
 import { rnSqlitePort } from '../rn-sqlite'
@@ -154,8 +154,12 @@ describe('db.ts 와 맞물리는가', () => {
 
     const executed = mockOpened[0].statements.map((entry) => entry.statement.trim())
     expect(executed.filter((statement) => statement.startsWith('ALTER TABLE'))).toEqual([])
-    // 네 테이블 생성과 메이린 키 이관은 그대로 돈다(`docs/migration/data.md` «스키마 진화 코드»).
-    expect(executed.filter((statement) => statement.startsWith('CREATE TABLE'))).toHaveLength(4)
+    // 테이블 생성과 메이린 키 이관은 그대로 돈다(`docs/migration/data.md` «스키마 진화 코드»).
+    // **개수를 박지 않는다** — db.ts 가 테이블을 더할 때마다 이 숫자가 조용히 스탈해진다([[ADR-052]]
+    // 결정 2 가 목록의 단일 진실 공급원을 db.ts 로 둔 이유와 같다). [[ADR-170]] 이 둘을 더하며 겪었다.
+    expect(executed.filter((statement) => statement.startsWith('CREATE TABLE'))).toHaveLength(
+      BOSS_PROFIT_TABLE_NAMES.length,
+    )
     expect(executed.filter((statement) => statement.startsWith('UPDATE'))).toHaveLength(2)
   })
 })

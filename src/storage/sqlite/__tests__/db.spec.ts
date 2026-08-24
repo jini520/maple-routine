@@ -58,6 +58,13 @@ describe('getBossProfitDb', () => {
     expect(dbExecuteMock).toHaveBeenCalledWith(
       expect.stringContaining('CREATE TABLE IF NOT EXISTS boss_profit_period_checks'),
     )
+    // [[ADR-170]] 결정 2 · [[ADR-166]] — 가계부가 손으로 적는 둘.
+    expect(dbExecuteMock).toHaveBeenCalledWith(
+      expect.stringContaining('CREATE TABLE IF NOT EXISTS income_records'),
+    )
+    expect(dbExecuteMock).toHaveBeenCalledWith(
+      expect.stringContaining('CREATE TABLE IF NOT EXISTS spend_records'),
+    )
     expect(dbExecuteMock).toHaveBeenCalledWith(
       expect.stringContaining('CREATE TABLE IF NOT EXISTS boss_drop_records'),
     )

@@ -40,7 +40,7 @@ export interface CacheClearConfirmProps {
   onCancel: () => void
 }
 
-const ALL_SELECTED: CacheDataSelection = { general: true, bossRecords: true }
+const ALL_SELECTED: CacheDataSelection = { general: true, records: true }
 
 const GROUPS: { id: CacheDataGroupId; label: string; detail: string; warning?: string }[] = [
   {
@@ -49,10 +49,13 @@ const GROUPS: { id: CacheDataGroupId; label: string; detail: string; warning?: s
     detail: '캐릭터 정보 · 수동 선택 항목 · 파티 보스 설정 등',
   },
   {
-    id: 'bossRecords',
-    label: '보스 수익·드롭 기록',
-    detail: '처치 기록 · 수익 · 드롭 아이템 정보 등',
-    warning: 'NEXON Open API가 최근 2주 데이터만 제공해 삭제 후 복구할 수 없습니다.',
+    id: 'records',
+    label: '수익·지출 기록',
+    detail: '보스 처치·드롭 · 손으로 적은 수입·지출',
+    // **경고의 근거가 둘로 갈린다**([[ADR-166]] 결정 9). 보스 기록은 «API 가 2주치만 준다» 인데
+    // 손입력 수입·지출은 **API 가 애초에 없다** — 더 강한 쪽을 앞에 둔다.
+    warning:
+      '손으로 적은 수입·지출은 되살릴 방법이 없고, 보스 기록은 NEXON Open API가 최근 2주치만 제공합니다.',
   },
 ]
 

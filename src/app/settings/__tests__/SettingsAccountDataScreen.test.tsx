@@ -130,7 +130,7 @@ describe('SettingsAccountDataScreen', () => {
 
   // 행에 쓰는 총합은 그룹별 용량의 합으로 파생한다([[ADR-058]] 결정 8).
   it('마운트 시 조회한 그룹별 용량의 합을 사람이 읽을 수 있는 단위로 보여준다', async () => {
-    mockedLoadSizes.mockResolvedValue({ general: 1024, bossRecords: 512 })
+    mockedLoadSizes.mockResolvedValue({ general: 1024, records: 512 })
     const view = await renderOverlay(<SettingsAccountDataScreen />)
 
     expect(await view.findByText('1.5KB')).toBeTruthy()
@@ -149,11 +149,11 @@ describe('SettingsAccountDataScreen', () => {
     const view = await renderOverlay(<SettingsAccountDataScreen />)
 
     await press(rowOf(view, '캐시 데이터 삭제'))
-    await press(view.getByLabelText('보스 수익·드롭 기록'))
+    await press(view.getByLabelText('수익·지출 기록'))
     await press(view.getByText(/^삭제/))
 
     expect(mockedClearAndReload).toHaveBeenCalledTimes(1)
-    expect(mockedClearAndReload.mock.calls[0][0]).toEqual({ general: true, bossRecords: false })
+    expect(mockedClearAndReload.mock.calls[0][0]).toEqual({ general: true, records: false })
   })
 
   // 기본이 전체 선택이라 열고 바로 삭제하면 기존 전체 삭제와 같다([[ADR-058]] 결정 6).
@@ -163,7 +163,7 @@ describe('SettingsAccountDataScreen', () => {
     await press(rowOf(view, '캐시 데이터 삭제'))
     await press(view.getByText(/^삭제/))
 
-    expect(mockedClearAndReload.mock.calls[0][0]).toEqual({ general: true, bossRecords: true })
+    expect(mockedClearAndReload.mock.calls[0][0]).toEqual({ general: true, records: true })
   })
 
   // 리로드 실행부는 **주입 가능**하다(웹 그대로) — 기본값은 지금 도는 번들의 재실행이다.
