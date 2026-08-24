@@ -107,6 +107,32 @@ describe('항목 — 고르면 채워진다', () => {
     expect(view.getByLabelText('하이마운틴 1단계')).toBeTruthy()
   })
 
+  // 갈래 하나 안에서 통화가 갈리는 곳이 있다 — 「버프」의 영약은 메소, 보약은 메포다.
+  // 숫자만 적으면 타일만 보고는 어느 쪽인지 모른다([[ADR-166]] 정정 1 ②).
+  it('메포 항목은 단위가 「메포」다', async () => {
+    const view = await 그리기()
+
+    expect(view.getByText('7,500 메포')).toBeTruthy()
+  })
+
+  it('메소 항목은 단위가 「메소」이고 줄여 적는다 — 좁은 칸이다', async () => {
+    const view = await 그리기()
+    await 누르기(view, '버프')
+
+    // 세이람·알레리아가 둘 다 200만이라 같은 글자가 두 번 선다 — 그것 자체가 맞는 표기다.
+    expect(view.getAllByText('200만 메소')).toHaveLength(2)
+    expect(view.getByText('2,000만 메소')).toBeTruthy()
+  })
+
+  it('한 갈래 안에서 통화가 갈려도 타일마다 구분된다', async () => {
+    const view = await 그리기()
+    await 누르기(view, '버프')
+
+    // 영약은 메소, 보약 버프는 메포다.
+    expect(view.getByText('500만 메소')).toBeTruthy()
+    expect(view.getByText('9,900 메포')).toBeTruthy()
+  })
+
   it('고르기 전에는 저장할 수 없다', async () => {
     const view = await 그리기()
 

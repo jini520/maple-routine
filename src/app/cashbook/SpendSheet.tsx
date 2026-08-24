@@ -90,6 +90,21 @@ function CategoryChip(props: {
   )
 }
 
+/**
+ * 타일에 적는 값 — **단위를 붙인다.**
+ *
+ * 갈래 하나 안에서 통화가 갈리는 곳이 있어서다(「버프」의 영약은 메소, 보약은 메포 —
+ * [[ADR-166]] 정정 1 ②). 숫자만 적으면 «2,000,000» 이 메소인지 메포인지 타일만 보고는 모른다.
+ *
+ * **메소만 줄여 적는다**(`formatMesoCompact`). 메포는 200~50,000 이라 그대로가 읽히지만 메소는
+ * 백만 단위라 1/3 폭 타일에서 잘린다 — 그 좁은 칸을 위해 있는 함수가 그것이다.
+ */
+function tilePriceLabel(item: SpendCatalogItem): string {
+  return item.currency === 'point'
+    ? `${item.unitPrice.toLocaleString()} 메포`
+    : `${formatMesoCompact(item.unitPrice)} 메소`
+}
+
 function ItemTile(props: {
   item: SpendCatalogItem
   selected: boolean
@@ -102,10 +117,16 @@ function ItemTile(props: {
       aria-label={item.name}
       aria-selected={props.selected}
       onPress={props.onPress}
-      className={`w-1/3 shrink-0 p-1`}
+      className="w-1/3 p-1"
     >
+      {/*
+        **`h-full` 을 안 쓴다.** 부모(`Pressable`)의 높이가 내용에서 나오는데 거기에 백분율 높이를
+        걸면 그 값이 위쪽의 늘어난 상자에서 풀려, 타일 하나가 목록 높이를 통째로 먹는다
+        (iOS 실측 2026-08-25 — 여섯 중 셋만 보였다). 한 줄 안의 높이는 `flex-1` 이 맞춘다:
+        줄이 `items-stretch`(기본)로 부모를 늘리고 이 상자가 그만큼 채운다.
+      */}
       <View
-        className={`h-full items-center gap-1 rounded-xl border px-2 py-2.5 ${
+        className={`flex-1 items-center gap-1 rounded-xl border px-2 py-2.5 ${
           props.selected ? 'border-primary bg-primary-tint' : 'border-border bg-surface'
         }`}
       >
@@ -116,7 +137,7 @@ function ItemTile(props: {
           className={`text-[11px] ${props.selected ? 'text-primary-ink' : 'text-text-muted'}`}
           style={TABULAR_NUMS}
         >
-          {item.unitPrice.toLocaleString()}
+          {tilePriceLabel(item)}
         </Text>
       </View>
     </Pressable>
