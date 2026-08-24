@@ -28,7 +28,8 @@
 import { useState } from 'react'
 import { Pressable, ScrollView, View } from 'react-native'
 
-import { Text } from '../../components/atoms/Text/Text'
+// `TextInput` 도 atom 에서 온다 — 시스템 글자 크기 클램프가 거기 있다([[ADR-152]] 결정 4).
+import { Text, TextInput } from '../../components/atoms/Text/Text'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import { formatDayLabel } from '../../lib/calendar-month'
 import { MinusIcon, PlusIcon } from '../../lib/icons'
@@ -173,11 +174,17 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
   const [category, setCategory] = useState<SpendCategory>(LIST_CATEGORIES[0])
   const [item, setItem] = useState<SpendCatalogItem | null>(null)
   const [quantity, setQuantity] = useState(1)
+  // 마지막으로 쓴 값으로 시작한다([[ADR-166]] 결정 5). 사용자가 고치면 그 값이 저장되고, 다음에
+  // 이 시트를 열 때 다시 채워진다 — 필수 칸이 매번 비어 있으면 입력이 막힌다.
+  const [rateText, setRateText] = useState(
+    props.lastPointRate === null ? '' : String(props.lastPointRate),
+  )
 
   const groups = spendGroupsOf(category)
   const usesPoint = item?.currency === 'point'
   // 시세는 메포 항목에만 뜻이 있다 — 메소 항목에서 물어보면 «왜 묻나» 가 된다.
-  const rate = usesPoint ? props.lastPointRate : null
+  const typedRate = Number(rateText)
+  const rate = usesPoint && rateText !== '' && Number.isFinite(typedRate) ? typedRate : null
   const amount = item === null ? 0 : item.unitPrice * quantity
   const totalMeso = usesPoint ? pointToMeso(amount, rate ?? 0) : amount
   // 메포를 쓰는데 시세가 없으면 **막는다** — 저장하면 영영 메소로 표시할 수 없는 행이 된다
@@ -268,15 +275,23 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
             </View>
 
             {usesPoint && (
-              <View className="flex-row items-center justify-between border-t border-border pt-2">
-                <Text className="text-xs text-text-muted">시세 · 1억당</Text>
-                <Text
+              // 시세는 네 자리라 **OS 숫자 키패드로 충분하다** — [[ADR-124]] 가 앞 키패드를 세운
+              // 것은 «메소는 자릿수가 커서 0 을 세게 된다» 때문이고, 그 문제가 여기엔 없다.
+              // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
+              <View className="flex-row items-center justify-between gap-2 border-t border-border pt-2">
+                <Text className="shrink-0 text-xs text-text-muted">시세 · 1억당</Text>
+                <TextInput
                   testID="spend-sheet-rate"
-                  className={`text-sm font-semibold ${rate === null ? 'text-error-ink' : 'text-text'}`}
+                  value={rateText}
+                  onChangeText={setRateText}
+                  keyboardType="number-pad"
+                  placeholder="메소마켓 시세"
+                  className={`flex-1 text-right text-sm font-semibold ${
+                    rate === null ? 'text-error-ink' : 'text-text'
+                  }`}
                   style={TABULAR_NUMS}
-                >
-                  {rate === null ? '시세를 넣어야 저장할 수 있어요' : `${rate.toLocaleString()} 메포`}
-                </Text>
+                />
+                <Text className="shrink-0 text-xs text-text-muted">메포</Text>
               </View>
             )}
 

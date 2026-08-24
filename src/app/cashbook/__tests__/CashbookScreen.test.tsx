@@ -1,9 +1,38 @@
 // 가계부 캘린더 — [[ADR-169]]. **아직 기록이 없다**(결정 6), 그래서 여기서 보는 것은 격자·달 이동·
 // 날짜 선택 셋이다. 그 셋은 데이터 없이도 진짜로 동작해야 한다(앞선 껍데기 둘과 갈리는 지점).
+import type { ReactNode } from 'react'
 import { act, fireEvent } from '@testing-library/react-native'
+
+// 화면은 `storage/` 를 직접 안 부른다(CLAUDE.md CRITICAL) — 그 층을 목으로 갈아 끼운다.
+jest.mock('../../../features/cashbook/records', () => ({
+  loadCalendarAmounts: jest.fn(),
+  loadLastPointRate: jest.fn(),
+  recordIncome: jest.fn(),
+  recordSpend: jest.fn(),
+}))
+
+// 시트 껍데기는 `BossDropSheet.test.tsx` 와 같은 방식으로 세운다.
+jest.mock('@gorhom/bottom-sheet', () => {
+  const ReactNative = jest.requireActual<typeof import('react-native')>('react-native')
+  const React = jest.requireActual<typeof import('react')>('react')
+
+  return {
+    BottomSheetBackdrop: (props: Record<string, unknown>) =>
+      React.createElement(ReactNative.View, { testID: 'sheet-backdrop', ...props }),
+    BottomSheetModal: React.forwardRef((props: Record<string, unknown>, ref: unknown) => {
+      React.useImperativeHandle(ref as never, () => ({ present: jest.fn(), dismiss: jest.fn() }))
+      return React.createElement(ReactNative.View, props)
+    }),
+    BottomSheetScrollView: (props: Record<string, unknown>) =>
+      React.createElement(ReactNative.View, props),
+    BottomSheetModalProvider: (props: { children: ReactNode }) => props.children,
+  }
+})
 
 import { renderOverlay } from '../../../components/__tests__/render-atom'
 import { CashbookScreen } from '../CashbookScreen'
+
+const records = jest.requireMock('../../../features/cashbook/records') as Record<string, jest.Mock>
 
 type Rendered = Awaited<ReturnType<typeof renderOverlay>>
 
@@ -12,6 +41,10 @@ const 지금 = Date.parse('2026-08-23T05:00:00Z')
 
 beforeEach(() => {
   jest.useFakeTimers({ now: 지금 })
+  records.loadCalendarAmounts.mockReset().mockResolvedValue({})
+  records.loadLastPointRate.mockReset().mockResolvedValue(null)
+  records.recordIncome.mockReset().mockResolvedValue(undefined)
+  records.recordSpend.mockReset().mockResolvedValue(undefined)
 })
 
 afterEach(() => {
@@ -19,7 +52,10 @@ afterEach(() => {
 })
 
 async function 그리기(): Promise<Rendered> {
-  return renderOverlay(<CashbookScreen />)
+  const view = await renderOverlay(<CashbookScreen />)
+  // 마운트 직후의 읽기 둘(칸 금액 · 기억된 시세)이 끝난 뒤에 본다.
+  await act(async () => {})
+  return view
 }
 
 async function 누르기(view: Rendered, testID: string): Promise<void> {
@@ -250,5 +286,135 @@ describe('목요일 경계선', () => {
     await 이름으로누르기(view, '주간')
 
     expect(view.queryByTestId('calendar-reset-divider')).toBeNull()
+  })
+})
+
+// ══ 기록이 붙었다 ([[ADR-170]] 결정 2·5·6) ═══════════════════════════════════════
+
+describe('칸에 숫자가 든다', () => {
+  it('보이는 칸과 열지도 기준을 **함께 덮는** 범위를 읽는다', async () => {
+    await 그리기()
+
+    // 2026-08 격자는 7/26(일) ~ 9/5(토)다.
+    expect(records.loadCalendarAmounts).toHaveBeenCalledWith('2026-07-26', '2026-09-05')
+  })
+
+  it('기간을 옮기면 그 범위로 다시 읽는다 — 옛 숫자가 안 남는다', async () => {
+    const view = await 그리기()
+
+    await 이름으로누르기(view, '다음 달')
+    await act(async () => {})
+
+    expect(records.loadCalendarAmounts).toHaveBeenLastCalledWith('2026-08-30', '2026-10-03')
+  })
+
+  // 주간이 달을 걸치면 그 이레가 기준 달의 격자 밖으로 나갈 수 있다 — 합집합을 쓰는 이유다.
+  it('주간에서도 그 달 전체를 함께 읽는다 — 열지도 기준이 그 달이다', async () => {
+    const view = await 그리기()
+
+    await 이름으로누르기(view, '주간')
+    await act(async () => {})
+
+    expect(records.loadCalendarAmounts).toHaveBeenLastCalledWith('2026-07-26', '2026-09-05')
+  })
+
+  it('읽은 금액이 칸에 선다', async () => {
+    records.loadCalendarAmounts.mockResolvedValue({
+      '2026-08-23': { incomeMeso: 1_743_000_000, expenseMeso: 2_542_372_881 },
+    })
+
+    const view = await 그리기()
+
+    expect(view.getByTestId('calendar-income-2026-08-23')).toHaveTextContent('+17.43억')
+    expect(view.getByTestId('calendar-expense-2026-08-23')).toHaveTextContent('−25.42억')
+  })
+
+  it('고른 날에 기록이 있으면 합계가 서고 빈 상태가 사라진다', async () => {
+    records.loadCalendarAmounts.mockResolvedValue({
+      '2026-08-23': { incomeMeso: 1_743_000_000, expenseMeso: 2_542_372_881 },
+    })
+
+    const view = await 그리기()
+
+    expect(view.getByTestId('cashbook-day-total')).toBeTruthy()
+    expect(view.queryByTestId('cashbook-empty')).toBeNull()
+  })
+
+  it('기록이 없는 날은 빈 상태다', async () => {
+    const view = await 그리기()
+
+    expect(view.getByTestId('cashbook-empty')).toBeTruthy()
+    expect(view.queryByTestId('cashbook-day-total')).toBeNull()
+  })
+})
+
+describe('펼침판이 시트를 연다', () => {
+  async function 고르기(view: Rendered, label: string): Promise<void> {
+    await 이름으로누르기(view, '기록 추가')
+    await 이름으로누르기(view, label)
+  }
+
+  it('지출을 고르면 지출 시트가 뜬다', async () => {
+    const view = await 그리기()
+
+    await 고르기(view, '지출 추가')
+
+    expect(view.getByText('지출 추가')).toBeTruthy()
+  })
+
+  it('수입을 고르면 수입 시트가 뜬다', async () => {
+    const view = await 그리기()
+
+    await 고르기(view, '수입 추가')
+
+    expect(view.getByText('수입 추가')).toBeTruthy()
+  })
+
+  // 시트는 **고른 날**에 적는다 — FAB 는 날짜를 안 들고 오므로 화면이 그것을 넘긴다.
+  it('시트가 고른 날을 받는다', async () => {
+    const view = await 그리기()
+    await 누르기(view, 'calendar-day-2026-08-11')
+
+    await 고르기(view, '수입 추가')
+
+    expect(view.getByTestId('income-sheet-date')).toHaveTextContent('8월 11일 (화)')
+  })
+
+  it('기억된 시세가 지출 시트로 간다', async () => {
+    records.loadLastPointRate.mockResolvedValue(1_180)
+    const view = await 그리기()
+
+    await 고르기(view, '지출 추가')
+    await 이름으로누르기(view, '하이마운틴 2단계')
+
+    expect(view.getByTestId('spend-sheet-rate').props.value).toBe('1180')
+  })
+
+  it('저장하면 적고 다시 읽는다', async () => {
+    const view = await 그리기()
+    await 고르기(view, '수입 추가')
+
+    await 이름으로누르기(view, '1')
+    await 이름으로누르기(view, '저장')
+    await act(async () => {})
+
+    expect(records.recordIncome).toHaveBeenCalledTimes(1)
+    expect(records.recordIncome.mock.calls[0][0]).toMatchObject({
+      earnedOn: '2026-08-23',
+      mesoAmount: 1,
+    })
+    // 처음 읽기 + 저장 뒤 다시 읽기.
+    expect(records.loadCalendarAmounts).toHaveBeenCalledTimes(2)
+  })
+
+  it('저장하면 시트가 닫힌다', async () => {
+    const view = await 그리기()
+    await 고르기(view, '수입 추가')
+
+    await 이름으로누르기(view, '1')
+    await 이름으로누르기(view, '저장')
+    await act(async () => {})
+
+    expect(view.queryByTestId('income-sheet-amount')).toBeNull()
   })
 })

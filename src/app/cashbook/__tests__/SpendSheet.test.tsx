@@ -210,8 +210,33 @@ describe('메소마켓 시세', () => {
 
     await 누르기(view, '하이마운틴 2단계')
 
-    expect(view.getByTestId('spend-sheet-rate')).toHaveTextContent('1,180 메포')
+    expect(view.getByTestId('spend-sheet-rate').props.value).toBe('1180')
     expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(false)
+  })
+
+  // 시세는 네 자리라 OS 숫자 키패드로 충분하다 — [[ADR-124]] 가 막은 것은 큰 메소다.
+  it('시세를 고치면 환산이 따라온다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave, lastPointRate: 1_180 })
+    await 누르기(view, '하이마운틴 2단계')
+
+    await act(async () => {
+      fireEvent.changeText(view.getByTestId('spend-sheet-rate'), '2360')
+    })
+    await 누르기(view, '저장')
+
+    expect(onSave.mock.calls[0][0]).toMatchObject({ pointPer100mMeso: 2_360 })
+  })
+
+  it('시세를 비우면 저장이 막힌다', async () => {
+    const view = await 그리기({ lastPointRate: 1_180 })
+    await 누르기(view, '하이마운틴 2단계')
+
+    await act(async () => {
+      fireEvent.changeText(view.getByTestId('spend-sheet-rate'), '')
+    })
+
+    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
   })
 
   it('메소 항목은 시세가 없어도 저장된다', async () => {

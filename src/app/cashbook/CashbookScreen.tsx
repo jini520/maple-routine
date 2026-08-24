@@ -42,12 +42,13 @@
  * - 월간으로 → **그 주의 목요일이 든 달**. 주가 두 달에 걸쳐도 `weekStartKey` 가 답을 하나로 만든다.
  */
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Pressable, View } from 'react-native'
 
 import { Text } from '../../components/atoms/Text/Text'
 import { CalendarMonth } from '../../components/molecules/CalendarMonth/CalendarMonth'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
+import { SpeedDial } from '../../components/organisms/SpeedDial/SpeedDial'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
@@ -55,6 +56,7 @@ import { getAdjacentPeriodKey } from '../../lib/boss-profit-period'
 import {
   WEEKDAY_LABELS_RESET,
   buildCalendarMonth,
+  type CalendarWeek,
   buildResetWeek,
   formatDayLabel,
   formatMonthLabel,
@@ -67,11 +69,29 @@ import {
   type CalendarAmounts,
 } from '../../lib/calendar-month'
 import { ChevronLeftIcon, ChevronRightIcon, NotebookTextIcon } from '../../lib/icons'
+import { formatMesoCompact } from '../../lib/meso-compact'
 import { getCurrentKstDateKey } from '../../lib/reset-clock'
 import { TABULAR_NUMS } from '../../lib/text-styles'
+import {
+  loadCalendarAmounts,
+  loadLastPointRate,
+  recordIncome,
+  recordSpend,
+} from '../../features/cashbook/records'
+import { IncomeSheet, type IncomeDraft } from './IncomeSheet'
+import { SpendSheet, type SpendDraft } from './SpendSheet'
 
-/** 공급원이 붙기 전까지 격자가 받는 값([[ADR-169]] 결정 6) — 모든 날이 0 으로 그려진다. */
 const NO_AMOUNTS: CalendarAmounts = {}
+
+/**
+ * 두 격자가 **함께 덮는** 날짜 범위 — 보이는 칸(주간이면 이레)과 열지도 기준(언제나 그 달)을 다
+ * 담아야 한다. 주간이 달을 걸치면 그 이레가 기준 달의 격자 밖으로 나갈 수 있어(예: 7/30 목요일
+ * 주는 8/5 까지 가는데 7월 격자는 8/1 에 끝난다) 둘의 **합집합**을 쓴다.
+ */
+function coveringRange(...grids: readonly CalendarWeek[][]): { from: string; to: string } {
+  const keys = grids.flat().flatMap((week) => week.map((day) => day.dateKey))
+  return { from: keys.reduce((a, b) => (a < b ? a : b)), to: keys.reduce((a, b) => (a > b ? a : b)) }
+}
 
 /** 「주간 | 월간」 — **보스 수익 탭의 알약 그대로다**(같은 그룹의 두 하위가 같은 어법으로 기간을
  *  가른다). 주간이 먼저인 것도 그쪽 순서다. 고른 값은 **기억하지 않는다** — 그쪽도 화면 상태다. */
@@ -125,6 +145,9 @@ export function CashbookScreen(): React.JSX.Element {
   const [monthKey, setMonthKey] = useState(() => getCurrentMonthKey(new Date()))
   const [weekStartKey, setWeekStartKey] = useState(() => resetWeekStartOf(todayDateKey))
   const [selectedDateKey, setSelectedDateKey] = useState(todayDateKey)
+  const [sheet, setSheet] = useState<'income' | 'expense' | null>(null)
+  const [amounts, setAmounts] = useState<CalendarAmounts>(NO_AMOUNTS)
+  const [lastPointRate, setLastPointRate] = useState<number | null>(null)
 
   const monthWeeks = buildCalendarMonth(monthKey)
   const weeks = isWeekly ? [buildResetWeek(weekStartKey)] : monthWeeks
@@ -132,6 +155,45 @@ export function CashbookScreen(): React.JSX.Element {
   // «7칸 중 하나는 언제나 최대» 가 되어 아무것도 안 한 주도 한 칸이 새까매진다. 걸치는 주는
   // 목요일이 든 달을 기준으로 삼는다 — 「어느 달로 돌아가나」 와 같은 답이라 둘이 안 갈린다.
   const heatWeeks = isWeekly ? buildCalendarMonth(monthKeyOf(weekStartKey)) : monthWeeks
+  const { from, to } = coveringRange(weeks, heatWeeks)
+
+  /**
+   * 기간이 바뀌면 다시 읽는다. **범위가 곧 의존성**이라 «달을 넘겼는데 옛 숫자가 남는» 일이 없고,
+   * 저장 뒤에는 이 표를 올려 같은 길로 다시 읽는다(따로 부르는 길을 만들면 두 벌이 된다).
+   *
+   * `useCallback` 으로 감싸지 않는다 — React 컴파일러가 «지킬 수 없는 수동 메모이제이션» 으로
+   * 보고 이 컴포넌트의 최적화를 통째로 건너뛴다(lint 가 막는다).
+   *
+   * `alive` 로 늦게 온 응답을 버린다 — 달을 빨리 넘기면 이전 범위의 답이 뒤에 도착해 **지금 보는
+   * 기간에 남의 숫자**를 얹을 수 있다.
+   */
+  const [reloadToken, setReloadToken] = useState(0)
+
+  useEffect(() => {
+    let alive = true
+    void loadCalendarAmounts(from, to).then((next) => {
+      if (alive) setAmounts(next)
+    })
+    return () => {
+      alive = false
+    }
+  }, [from, to, reloadToken])
+
+  useEffect(() => {
+    void loadLastPointRate().then(setLastPointRate)
+  }, [])
+
+  async function saveIncome(draft: IncomeDraft): Promise<void> {
+    await recordIncome(draft, new Date())
+    setReloadToken((token) => token + 1)
+  }
+
+  async function saveSpend(draft: SpendDraft): Promise<void> {
+    await recordSpend(draft, new Date())
+    // 시세는 방금 저장한 값이 다음 기본값이다([[ADR-166]] 결정 5) — 다시 읽지 않고 그대로 든다.
+    if (draft.pointPer100mMeso !== null) setLastPointRate(draft.pointPer100mMeso)
+    setReloadToken((token) => token + 1)
+  }
 
   // 앞뒤 달로 채운 칸을 누르면 **보는 달도 따라간다** — 아니면 고른 날이 격자 밖에 있게 된다.
   // 주간에는 그런 칸이 없으므로(이레가 전부 그 주다) 주는 그대로 둔다.
@@ -149,6 +211,8 @@ export function CashbookScreen(): React.JSX.Element {
     setMonthKey(monthKeyOf(weekStartKey))
     setIsWeekly(false)
   }
+
+  const selectedAmounts = amounts[selectedDateKey] ?? null
 
   function movePeriod(delta: -1 | 1): void {
     if (isWeekly) {
@@ -199,10 +263,10 @@ export function CashbookScreen(): React.JSX.Element {
             weeks={weeks}
             selectedDateKey={selectedDateKey}
             todayDateKey={todayDateKey}
-            amounts={NO_AMOUNTS}
+            amounts={amounts}
             weekdayLabels={isWeekly ? WEEKDAY_LABELS_RESET : undefined}
             // 열지도 기준은 **화면이 낸다**([[ADR-170]] 결정 12) — 위 `heatWeeks` 참조.
-            incomeMax={monthIncomeMax(heatWeeks, NO_AMOUNTS)}
+            incomeMax={monthIncomeMax(heatWeeks, amounts)}
             // 주간 격자는 자체가 한 주라 **자를 것이 없다.**
             showResetDivider={!isWeekly}
             onSelectDate={selectDate}
@@ -212,16 +276,56 @@ export function CashbookScreen(): React.JSX.Element {
             <Text testID="cashbook-selected-day" className="text-sm font-semibold text-text">
               {formatDayLabel(selectedDateKey)}
             </Text>
-            <View testID="cashbook-empty">
-              <EmptyState
-                icon={NotebookTextIcon}
-                title="아직 기록이 없어요"
-                description="수익·지출을 적는 자리는 준비 중입니다."
-              />
-            </View>
+            {selectedAmounts === null ? (
+              <View testID="cashbook-empty">
+                <EmptyState
+                  icon={NotebookTextIcon}
+                  title="아직 기록이 없어요"
+                  description="아래 ＋ 를 눌러 수입·지출을 적어 보세요."
+                />
+              </View>
+            ) : (
+              <View testID="cashbook-day-total" className="gap-1">
+                <View className="flex-row justify-between">
+                  <Text className="text-xs text-text-muted">수입</Text>
+                  <Text className="text-sm font-semibold text-rise-ink" style={TABULAR_NUMS}>
+                    +{formatMesoCompact(selectedAmounts.incomeMeso)}
+                  </Text>
+                </View>
+                <View className="flex-row justify-between">
+                  <Text className="text-xs text-text-muted">지출</Text>
+                  <Text className="text-sm font-semibold text-fall-ink" style={TABULAR_NUMS}>
+                    −{formatMesoCompact(selectedAmounts.expenseMeso)}
+                  </Text>
+                </View>
+              </View>
+            )}
           </View>
         </View>
       </ScreenScroll>
+
+      <SpeedDial
+        onSelectIncome={() => setSheet('income')}
+        onSelectExpense={() => setSheet('expense')}
+      />
+
+      {/* 시트는 **조건부 마운트**다 — 마운트가 곧 열림이고 `onClose` 로 언마운트한다
+          ([[ADR-039]] 결정 3, `BottomSheet` 가 그 계약을 든다). */}
+      {sheet === 'income' && (
+        <IncomeSheet
+          dateKey={selectedDateKey}
+          onSave={saveIncome}
+          onClose={() => setSheet(null)}
+        />
+      )}
+      {sheet === 'expense' && (
+        <SpendSheet
+          dateKey={selectedDateKey}
+          lastPointRate={lastPointRate}
+          onSave={saveSpend}
+          onClose={() => setSheet(null)}
+        />
+      )}
     </View>
   )
 }
