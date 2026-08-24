@@ -106,23 +106,23 @@ describe('buildCalendarMonth — 격자', () => {
     const weeks = buildCalendarMonth('2026-08')
 
     expect(weeks).toHaveLength(6)
-    expect(weeks[0]?.[6]).toEqual({ dateKey: '2026-08-01', day: 1, inMonth: true })
-    expect(weeks[0]?.[0]).toEqual({ dateKey: '2026-07-26', day: 26, inMonth: false })
+    expect(weeks[0]?.[6]).toEqual({ dateKey: '2026-08-01', day: 1, inPeriod: true })
+    expect(weeks[0]?.[0]).toEqual({ dateKey: '2026-07-26', day: 26, inPeriod: false })
   })
 
-  it('그 달의 날짜만 inMonth 다 — 8월은 정확히 31칸', () => {
-    const inMonth = buildCalendarMonth('2026-08')
+  it('그 달의 날짜만 inPeriod 다 — 8월은 정확히 31칸', () => {
+    const inPeriod = buildCalendarMonth('2026-08')
       .flat()
-      .filter((day) => day.inMonth)
+      .filter((day) => day.inPeriod)
 
-    expect(inMonth).toHaveLength(31)
-    expect(inMonth[0]?.dateKey).toBe('2026-08-01')
-    expect(inMonth[30]?.dateKey).toBe('2026-08-31')
+    expect(inPeriod).toHaveLength(31)
+    expect(inPeriod[0]?.dateKey).toBe('2026-08-01')
+    expect(inPeriod[30]?.dateKey).toBe('2026-08-31')
   })
 
   it('윤년 2월은 29칸, 평년은 28칸', () => {
-    const leap = buildCalendarMonth('2028-02').flat().filter((day) => day.inMonth)
-    const common = buildCalendarMonth('2026-02').flat().filter((day) => day.inMonth)
+    const leap = buildCalendarMonth('2028-02').flat().filter((day) => day.inPeriod)
+    const common = buildCalendarMonth('2026-02').flat().filter((day) => day.inPeriod)
 
     expect(leap).toHaveLength(29)
     expect(common).toHaveLength(28)
@@ -176,5 +176,133 @@ describe('heatLevel — 그 달 안에서 상대적이다', () => {
 
   it('단계는 상한을 넘지 않는다', () => {
     expect(heatLevel(500, 100)).toBe(HEAT_LEVELS)
+  })
+})
+
+// ══ 주간 격자 — 목요일 리셋 주 ([[ADR-170]] 결정 10·11) ══════════════════════════
+//
+// **이 앱에는 「주」가 둘이다.** 월간 격자의 주는 일요일에 시작하고([[ADR-169]] 결정 8) 주간 보기의
+// 주는 목요일에 시작한다 — 후자는 게임의 주이고 보스 수익 탭이 이미 그 축을 쓴다.
+
+describe('WEEKDAY_LABELS_RESET', () => {
+  it('목요일에서 시작한다', () => {
+    const { WEEKDAY_LABELS_RESET } = require('../calendar-month') as typeof import('../calendar-month')
+
+    expect(WEEKDAY_LABELS_RESET).toEqual(['목', '금', '토', '일', '월', '화', '수'])
+  })
+
+  // 회전이라 두 목록의 원소가 같다 — 한쪽만 고치면 요일 이름이 갈린다.
+  it('월간 라벨을 회전한 것이다 — 새로 적지 않는다', () => {
+    const { WEEKDAY_LABELS, WEEKDAY_LABELS_RESET } =
+      require('../calendar-month') as typeof import('../calendar-month')
+
+    expect([...WEEKDAY_LABELS_RESET].sort()).toEqual([...WEEKDAY_LABELS].sort())
+  })
+})
+
+describe('resetWeekStartOf', () => {
+  const { resetWeekStartOf } = require('../calendar-month') as typeof import('../calendar-month')
+
+  it('목요일은 그 자신이 주의 시작이다', () => {
+    expect(resetWeekStartOf('2026-08-20')).toBe('2026-08-20')
+  })
+
+  it('주 안의 어느 날을 줘도 그 주의 목요일로 내려간다', () => {
+    // 2026-08-20 은 목요일이고 그 주는 8/20~8/26 이다.
+    expect(resetWeekStartOf('2026-08-21')).toBe('2026-08-20')
+    expect(resetWeekStartOf('2026-08-23')).toBe('2026-08-20')
+    expect(resetWeekStartOf('2026-08-26')).toBe('2026-08-20')
+  })
+
+  it('목요일 하루 전은 이전 주다', () => {
+    expect(resetWeekStartOf('2026-08-19')).toBe('2026-08-13')
+  })
+
+  it('달을 거슬러 올라간다', () => {
+    // 2026-09-02 는 수요일이고 그 주의 목요일은 8/27 이다.
+    expect(resetWeekStartOf('2026-09-02')).toBe('2026-08-27')
+  })
+
+  // **두 번째 구현이 생기는 자리다.** 보스 수익이 이미 «게임의 주» 를 계산하므로, 두 값이 갈리면
+  // 같은 주가 두 화면에서 다른 날짜로 시작한다 — 그것이 목요일 주를 고른 이유를 통째로 무효화한다.
+  it('보스 수익의 주간 periodKey 와 같은 답을 낸다', () => {
+    const { getCurrentBossProfitPeriod } =
+      require('../boss-profit-period') as typeof import('../boss-profit-period')
+    const { getCurrentKstDateKey } = require('../reset-clock') as typeof import('../reset-clock')
+
+    // KST 정오로 스무 날을 훑는다 — 리셋 경계(KST 00:00)를 넘나드는 시각은 reset-clock 의 몫이라
+    // 여기서 다시 재지 않는다.
+    for (let offset = 0; offset < 20; offset += 1) {
+      const noonKst = new Date(Date.UTC(2026, 7, 10 + offset, 3, 0, 0))
+      expect(resetWeekStartOf(getCurrentKstDateKey(noonKst))).toBe(
+        getCurrentBossProfitPeriod('weekly', noonKst).periodKey,
+      )
+    }
+  })
+})
+
+describe('buildResetWeek', () => {
+  const { buildResetWeek } = require('../calendar-month') as typeof import('../calendar-month')
+
+  it('딱 이레다 — 목요일부터 수요일까지', () => {
+    const week = buildResetWeek('2026-08-20')
+
+    expect(week).toHaveLength(7)
+    expect(week[0].dateKey).toBe('2026-08-20')
+    expect(week[6].dateKey).toBe('2026-08-26')
+  })
+
+  it('이레가 하루씩 이어진다', () => {
+    const week = buildResetWeek('2026-08-20')
+
+    expect(week.map((day) => day.dateKey)).toEqual([
+      '2026-08-20',
+      '2026-08-21',
+      '2026-08-22',
+      '2026-08-23',
+      '2026-08-24',
+      '2026-08-25',
+      '2026-08-26',
+    ])
+  })
+
+  // 월간 격자와 갈리는 자리 — 거기서는 앞뒤 달 칸이 `inPeriod: false` 로 흐려지는데, 주간에는
+  // «앞뒤 달» 이라는 것이 없다. **이레가 전부 그 주다**([[ADR-170]] 결정 11).
+  it('달을 걸쳐도 이레가 전부 그 기간에 든다', () => {
+    const week = buildResetWeek('2026-08-27')
+
+    expect(week.map((day) => day.dateKey)).toEqual([
+      '2026-08-27',
+      '2026-08-28',
+      '2026-08-29',
+      '2026-08-30',
+      '2026-08-31',
+      '2026-09-01',
+      '2026-09-02',
+    ])
+    expect(week.every((day) => day.inPeriod)).toBe(true)
+  })
+
+  it('날짜 숫자는 달이 바뀌면 1 로 돌아간다', () => {
+    expect(buildResetWeek('2026-08-27').map((day) => day.day)).toEqual([27, 28, 29, 30, 31, 1, 2])
+  })
+})
+
+describe('formatResetWeekLabel', () => {
+  const { formatResetWeekLabel } =
+    require('../calendar-month') as typeof import('../calendar-month')
+
+  it('한 달 안이면 뒤쪽 달 이름을 되풀이하지 않는다', () => {
+    expect(formatResetWeekLabel('2026-08-20')).toBe('8월 20일 – 26일')
+  })
+
+  // 달을 걸치는 주는 **달을 둘 다 적는다** — 「8월 27일 – 2일」 이면 어느 달의 2일인지 모른다.
+  it('달을 걸치면 양쪽 달을 다 적는다', () => {
+    expect(formatResetWeekLabel('2026-08-27')).toBe('8월 27일 – 9월 2일')
+  })
+
+  it('해를 걸쳐도 같은 규칙이다', () => {
+    // 2026-12-31 은 목요일이다.
+    expect(formatResetWeekLabel('2026-12-31')).toBe('12월 31일 – 1월 6일')
   })
 })

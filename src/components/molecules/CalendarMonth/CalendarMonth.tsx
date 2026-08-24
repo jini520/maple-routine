@@ -18,6 +18,12 @@
  * 지출 줄이 **메소 축**인 이유(메포는 환산해 들어오고 캐시는 안 들어온다)는
  * `CalendarDayAmounts` 에 적어 뒀다 — [[ADR-166]] 정정 2 ①.
  *
+ * ## 월간과 주간을 **같은 격자**가 그린다 ([[ADR-170]] 결정 11)
+ *
+ * `weeks` 에 **주 하나만** 넘기면 그대로 주간 격자다 — 새 컴포넌트를 만들지 않는다. 갈리는 것은
+ * 요일 머리(`weekdayLabels`)와 열지도 기준(`incomeMax`) 둘뿐이고, 둘 다 **밖에서 들어온다.**
+ * 어느 주를 그릴지 정하는 것은 여전히 `lib/` 이고 여기는 받은 것을 그린다(결정 7).
+ *
  * ## 앞뒤 달 칸을 죽이지 않는다
  *
  * 누르면 그 날짜를 그대로 알린다. 죽여 두면 «보이는데 안 눌리는» 칸이 생기고, 달을 옮기는 판단은
@@ -30,7 +36,6 @@ import {
   WEEKDAY_LABELS,
   formatDayLabel,
   heatLevel,
-  monthIncomeMax,
   type CalendarAmounts,
   type CalendarWeek,
 } from '../../../lib/calendar-month'
@@ -47,6 +52,26 @@ export interface CalendarMonthProps {
    */
   readonly amounts: CalendarAmounts
   readonly onSelectDate: (dateKey: string) => void
+  /**
+   * 요일 머리 — 기본은 월간의 일~토다([[ADR-169]] 결정 8). 주간 보기는 목~수를 넘긴다
+   * (`WEEKDAY_LABELS_RESET`, [[ADR-170]] 결정 10).
+   *
+   * **기본값이 있는 이유**는 월간 호출부가 한 글자도 안 바뀌게 하기 위해서다. 틀리면 화면에서
+   * 바로 보이므로(요일 이름이 어긋난다) 조용히 잘못될 위험이 없다 — 아래 `incomeMax` 와 다르다.
+   */
+  readonly weekdayLabels?: readonly string[]
+  /**
+   * 열지도의 기준선 — **밖에서 넣는다**([[ADR-170]] 결정 12).
+   *
+   * 전에는 이 컴포넌트가 `monthIncomeMax(props.weeks, …)` 로 스스로 냈는데, 그러면 주간 보기에서
+   * **받은 이레가 곧 기준**이 되어 «7칸 중 하나는 언제나 최대» 가 된다 — 아무것도 안 한 주도 한 칸이
+   * 새까맣고, 진하기가 «많이 번 날» 을 말하지 못한다.
+   *
+   * **기본값을 두지 않는 것이 이 프롭의 요점이다.** 폴백이 있으면 주간 호출부가 잊었을 때 조용히
+   * 주 기준으로 되돌아간다 — 화면에는 «그럴듯한 색» 으로 보여서 알아채지 못한다. 두 보기가 같은
+   * 말을 하려면 기준이 **둘 다 그 달**이어야 하고, 그 판단은 화면이 한다.
+   */
+  readonly incomeMax: number
 }
 
 const NO_AMOUNTS = { incomeMeso: 0, expenseMeso: 0 } as const
@@ -62,19 +87,19 @@ function dayCircleClass(isSelected: boolean, isToday: boolean): string {
   return base
 }
 
-function dayTextClass(isSelected: boolean, inMonth: boolean): string {
+function dayTextClass(isSelected: boolean, inPeriod: boolean): string {
   const base = 'text-xs'
   if (isSelected) return `${base} font-semibold text-on-primary`
-  return inMonth ? `${base} text-text` : `${base} text-text-disabled`
+  return inPeriod ? `${base} text-text` : `${base} text-text-disabled`
 }
 
 export function CalendarMonth(props: CalendarMonthProps): React.JSX.Element {
-  const incomeMax = monthIncomeMax(props.weeks, props.amounts)
+  const weekdayLabels = props.weekdayLabels ?? WEEKDAY_LABELS
 
   return (
     <View>
       <View className="flex-row">
-        {WEEKDAY_LABELS.map((label) => (
+        {weekdayLabels.map((label) => (
           <Text key={label} className="flex-1 text-center text-xs text-text-muted">
             {label}
           </Text>
@@ -87,7 +112,7 @@ export function CalendarMonth(props: CalendarMonthProps): React.JSX.Element {
             const isSelected = day.dateKey === props.selectedDateKey
             const isToday = day.dateKey === props.todayDateKey
             const amounts = props.amounts[day.dateKey] ?? NO_AMOUNTS
-            const heat = HEAT_OPACITY[heatLevel(amounts.incomeMeso, incomeMax)] ?? 0
+            const heat = HEAT_OPACITY[heatLevel(amounts.incomeMeso, props.incomeMax)] ?? 0
 
             return (
               <Pressable
@@ -113,7 +138,7 @@ export function CalendarMonth(props: CalendarMonthProps): React.JSX.Element {
                 />
 
                 <View className={dayCircleClass(isSelected, isToday)}>
-                  <Text className={dayTextClass(isSelected, day.inMonth)} style={TABULAR_NUMS}>
+                  <Text className={dayTextClass(isSelected, day.inPeriod)} style={TABULAR_NUMS}>
                     {day.day}
                   </Text>
                 </View>

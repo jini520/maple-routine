@@ -5,19 +5,28 @@
 import { fireEvent, within } from '@testing-library/react-native'
 
 import { flattenStyle, renderAtom, 기본테마 } from '../../../__tests__/render-atom'
-import { buildCalendarMonth } from '../../../../lib/calendar-month'
+import {
+  WEEKDAY_LABELS_RESET,
+  buildCalendarMonth,
+  buildResetWeek,
+  monthIncomeMax,
+} from '../../../../lib/calendar-month'
 import { CalendarMonth } from '../CalendarMonth'
 
 const 팔월 = buildCalendarMonth('2026-08')
 
 function 그리기(overrides: Partial<React.ComponentProps<typeof CalendarMonth>> = {}) {
+  const weeks = overrides.weeks ?? 팔월
+  const amounts = overrides.amounts ?? {}
   return renderAtom(
     <CalendarMonth
-      weeks={팔월}
+      weeks={weeks}
       selectedDateKey="2026-08-23"
       todayDateKey="2026-08-23"
-      amounts={{}}
+      amounts={amounts}
       onSelectDate={jest.fn()}
+      // 화면이 하는 일과 같다 — 기준선은 **밖에서** 온다([[ADR-170]] 결정 12).
+      incomeMax={monthIncomeMax(팔월, amounts)}
       {...overrides}
     />,
   )
@@ -196,5 +205,68 @@ describe('CalendarMonth — 열지도 ([[ADR-169]] 정정 1)', () => {
     for (const heat of view.getAllByTestId(/^calendar-heat-/)) {
       expect(flattenStyle(heat.props.style).opacity).toBe(0)
     }
+  })
+})
+
+// ══ 월간과 주간을 같은 격자가 그린다 ([[ADR-170]] 결정 11·12) ═══════════════════
+
+describe('주간 격자', () => {
+  const 팔월넷째주 = buildResetWeek('2026-08-20')
+
+  it('주 하나만 넘기면 이레만 그린다 — 새 컴포넌트가 아니다', async () => {
+    const view = await 그리기({ weeks: [팔월넷째주] })
+
+    for (const day of ['20', '21', '22', '23', '24', '25', '26']) {
+      expect(view.getByTestId(`calendar-day-2026-08-${day}`)).toBeTruthy()
+    }
+    expect(view.queryByTestId('calendar-day-2026-08-19')).toBeNull()
+    expect(view.queryByTestId('calendar-day-2026-08-27')).toBeNull()
+  })
+
+  it('요일 머리를 넘기면 그것을 쓴다 — 목요일부터다', async () => {
+    const view = await 그리기({ weeks: [팔월넷째주], weekdayLabels: WEEKDAY_LABELS_RESET })
+
+    // 머리 일곱 칸이 목~수 순서로 선다. 같은 글자가 칸 안에는 없으므로 화면 전체로 집어도 된다.
+    const labels = view.getAllByText(/^[일월화수목금토]$/).map((node) => node.props.children)
+    expect(labels).toEqual(['목', '금', '토', '일', '월', '화', '수'])
+  })
+
+  it('안 넘기면 월간의 일~토가 기본이다 — 월간 호출부는 안 바뀐다', async () => {
+    const view = await 그리기()
+
+    const labels = view.getAllByText(/^[일월화수목금토]$/).map((node) => node.props.children)
+    expect(labels).toEqual(['일', '월', '화', '수', '목', '금', '토'])
+  })
+
+  // 이 테스트가 [[ADR-170]] 결정 12 의 전부다 — 이레만 받아도 진하기는 **그 달** 기준이다.
+  // 기준이 주 안으로 좁아지면 8/20 이 최대가 되어 새까맣게 칠해진다.
+  it('열지도 기준을 받은 주에서 다시 내지 않는다', async () => {
+    const amounts = {
+      '2026-08-13': { incomeMeso: 100_000_000_000, expenseMeso: 0 },
+      '2026-08-20': { incomeMeso: 10_000_000_000, expenseMeso: 0 },
+    }
+
+    const view = await 그리기({
+      weeks: [팔월넷째주],
+      amounts,
+      // 그 달 전체가 기준이다(8/13 의 1000억). 8/20 은 그 10% 라 가장 옅은 단계여야 한다.
+      incomeMax: monthIncomeMax(buildCalendarMonth('2026-08'), amounts),
+    })
+
+    const heat = flattenStyle(view.getByTestId('calendar-heat-2026-08-20').props.style)
+    expect(heat.opacity).toBeLessThan(0.2)
+  })
+
+  it('같은 값이라도 기준이 주로 좁아지면 가장 진해진다 — 그래서 밖에서 넣는다', async () => {
+    const amounts = { '2026-08-20': { incomeMeso: 10_000_000_000, expenseMeso: 0 } }
+
+    const view = await 그리기({
+      weeks: [팔월넷째주],
+      amounts,
+      incomeMax: monthIncomeMax([팔월넷째주], amounts),
+    })
+
+    const heat = flattenStyle(view.getByTestId('calendar-heat-2026-08-20').props.style)
+    expect(heat.opacity).toBeGreaterThan(0.4)
   })
 })

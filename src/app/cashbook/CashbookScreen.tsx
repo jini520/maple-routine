@@ -42,6 +42,7 @@ import {
   formatMonthLabel,
   getAdjacentMonthKey,
   getCurrentMonthKey,
+  monthIncomeMax,
   monthKeyOf,
   type CalendarAmounts,
 } from '../../lib/calendar-month'
@@ -75,6 +76,7 @@ export function CashbookScreen(): React.JSX.Element {
   const todayDateKey = getCurrentKstDateKey(new Date())
   const [monthKey, setMonthKey] = useState(() => getCurrentMonthKey(new Date()))
   const [selectedDateKey, setSelectedDateKey] = useState(todayDateKey)
+  const weeks = buildCalendarMonth(monthKey)
 
   // 앞뒤 달로 채운 칸을 누르면 **보는 달도 따라간다** — 아니면 고른 날이 격자 밖에 있게 된다.
   // 격자는 자기가 어느 달인지 모르므로(그리기만 한다) 이 판단이 여기 있다.
@@ -116,10 +118,13 @@ export function CashbookScreen(): React.JSX.Element {
           </View>
 
           <CalendarMonth
-            weeks={buildCalendarMonth(monthKey)}
+            weeks={weeks}
             selectedDateKey={selectedDateKey}
             todayDateKey={todayDateKey}
             amounts={NO_AMOUNTS}
+            // 열지도 기준은 **화면이 낸다**([[ADR-170]] 결정 12) — 격자가 스스로 내면 주간 보기에서
+            // 받은 이레가 곧 기준이 되어 «7칸 중 하나는 언제나 최대» 가 된다.
+            incomeMax={monthIncomeMax(weeks, NO_AMOUNTS)}
             onSelectDate={selectDate}
           />
 
