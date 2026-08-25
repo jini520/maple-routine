@@ -4,12 +4,24 @@ import type { ReactNode } from 'react'
 import { act, fireEvent } from '@testing-library/react-native'
 
 // 화면은 `storage/` 를 직접 안 부른다(CLAUDE.md CRITICAL) — 그 층을 목으로 갈아 끼운다.
-jest.mock('../../../features/cashbook/records', () => ({
-  loadCalendarAmounts: jest.fn(),
-  loadLastPointRate: jest.fn(),
-  recordIncome: jest.fn(),
-  recordSpend: jest.fn(),
-}))
+jest.mock('../../../features/cashbook/records', () => {
+  const actual = jest.requireActual('../../../features/cashbook/records')
+  return {
+    // **순수 함수는 진짜를 쓴다** — 줄에 무엇이 적히나는 그 함수들이 정하고, 목으로 덮으면
+    // 화면 테스트가 «화면이 무엇을 그리나» 를 못 본다.
+    recordTitleOf: actual.recordTitleOf,
+    recordMesoOf: actual.recordMesoOf,
+    recordCashOf: actual.recordCashOf,
+    loadCalendarAmounts: jest.fn(),
+    loadDayRecords: jest.fn(),
+    loadLastPointRate: jest.fn(),
+    recordIncome: jest.fn(),
+    recordSpend: jest.fn(),
+    editIncome: jest.fn(),
+    editSpend: jest.fn(),
+    removeRecord: jest.fn(),
+  }
+})
 
 // 시트 껍데기는 `BossDropSheet.test.tsx` 와 같은 방식으로 세운다.
 jest.mock('@gorhom/bottom-sheet', () => {
@@ -46,6 +58,10 @@ beforeEach(() => {
   records.loadLastPointRate.mockReset().mockResolvedValue(null)
   records.recordIncome.mockReset().mockResolvedValue(undefined)
   records.recordSpend.mockReset().mockResolvedValue(undefined)
+  records.loadDayRecords.mockReset().mockResolvedValue([])
+  records.editIncome.mockReset().mockResolvedValue(undefined)
+  records.editSpend.mockReset().mockResolvedValue(undefined)
+  records.removeRecord.mockReset().mockResolvedValue(undefined)
 })
 
 afterEach(() => {
@@ -476,5 +492,151 @@ describe('저장이 실패하면', () => {
     await act(async () => {})
 
     expect(records.loadCalendarAmounts).toHaveBeenCalledTimes(1)
+  })
+})
+
+
+// ── [[ADR-171]] — 무엇을 적었는지 보이고, 고치고, 지운다 ──────────────────────
+const 그날수입 = {
+  id: 'inc-1',
+  ocid: null,
+  earnedOn: '2026-08-23',
+  category: '아이템 판매',
+  item: '앱솔랩스 케이프',
+  mesoAmount: 1_200_000_000,
+  memo: null,
+  recordedAt: '2026-08-23T01:00:00.000Z',
+}
+
+const 그날지출 = {
+  id: 'spd-1',
+  ocid: null,
+  spentOn: '2026-08-23',
+  category: '컨텐츠',
+  item: '몬스터 파크',
+  form: null,
+  quantity: 2,
+  mesoAmount: null,
+  tariffMeso: null,
+  pointAmount: 1_200,
+  pointPer100mMeso: 1_180,
+  cashAmount: null,
+  memo: null,
+  recordedAt: '2026-08-23T02:00:00.000Z',
+}
+
+describe('그날 목록', () => {
+  beforeEach(() => {
+    records.loadCalendarAmounts.mockResolvedValue({
+      '2026-08-23': { incomeMeso: 1_200_000_000, expenseMeso: 101_694_915 },
+    })
+    records.loadDayRecords.mockResolvedValue([
+      { kind: 'income', record: 그날수입 },
+      { kind: 'spend', record: 그날지출 },
+    ])
+  })
+
+  it('합계 아래에 적은 것이 한 줄씩 선다', async () => {
+    const view = await 그리기()
+
+    expect(view.getByTestId('cashbook-day-total')).toBeTruthy()
+    expect(view.getByText('앱솔랩스 케이프')).toBeTruthy()
+    expect(view.getByText('몬스터 파크')).toBeTruthy()
+  })
+
+  // 수량은 «몇 번» 이라 이름만으로는 금액이 왜 그런지 모른다.
+  it('수량이 있으면 함께 적는다', async () => {
+    const view = await 그리기()
+
+    // `toHaveTextContent` 는 이 판에서 **완전 일치**다 — 줄 전체를 적는다.
+    expect(view.getByTestId('cashbook-row-spd-1')).toHaveTextContent('몬스터 파크2−1.017억')
+  })
+
+  it('날을 바꾸면 그 날 것을 읽는다', async () => {
+    const view = await 그리기()
+
+    await 누르기(view, 'calendar-day-2026-08-11')
+
+    expect(records.loadDayRecords).toHaveBeenLastCalledWith('2026-08-11')
+  })
+})
+
+describe('줄을 누르면 고칠 수 있다', () => {
+  beforeEach(() => {
+    records.loadCalendarAmounts.mockResolvedValue({
+      '2026-08-23': { incomeMeso: 1_200_000_000, expenseMeso: 101_694_915 },
+    })
+    records.loadDayRecords.mockResolvedValue([
+      { kind: 'income', record: 그날수입 },
+      { kind: 'spend', record: 그날지출 },
+    ])
+  })
+
+  it('지출 줄은 채워진 지출 시트를 연다', async () => {
+    const view = await 그리기()
+
+    await 누르기(view, 'cashbook-row-spd-1')
+
+    // **곧바로 ②로 열린다** — 고르던 자리가 이미 정해져 있으므로 머리는 「‹ 고른 것」 이다
+    // ([[ADR-171]] 결정 2). 「지출 수정」 은 ①로 되돌아갔을 때 선다.
+    expect(view.getByTestId('spend-sheet-choice')).toHaveTextContent('몬스터 파크')
+    // 그 행이 쓴 시세가 채워진다 — 「마지막으로 쓴 값」 이 아니다.
+    expect(view.getByTestId('spend-sheet-rate').props.value).toBe('1180')
+    expect(view.getByTestId('spend-sheet-delete')).toBeTruthy()
+  })
+
+  it('①로 되돌아가면 머리가 「지출 수정」 이다', async () => {
+    const view = await 그리기()
+    await 누르기(view, 'cashbook-row-spd-1')
+
+    await 이름으로누르기(view, '다시 고르기')
+
+    expect(view.getByText('지출 수정')).toBeTruthy()
+  })
+
+  it('수입 줄은 채워진 수입 시트를 연다', async () => {
+    const view = await 그리기()
+
+    await 누르기(view, 'cashbook-row-inc-1')
+
+    expect(view.getByText('수입 수정')).toBeTruthy()
+    expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('1,200,000,000')
+  })
+
+  it('수정하면 갈아 끼우고 다시 읽는다', async () => {
+    const view = await 그리기()
+    await 누르기(view, 'cashbook-row-inc-1')
+
+    await 이름으로누르기(view, '수정')
+    await act(async () => {})
+
+    expect(records.editIncome).toHaveBeenCalledTimes(1)
+    expect(records.editIncome.mock.calls[0][0]).toMatchObject({
+      id: 'inc-1',
+      // **적은 시각을 안 덮는다**([[ADR-171]] 결정 4).
+      recordedAt: '2026-08-23T01:00:00.000Z',
+    })
+    expect(records.recordIncome).not.toHaveBeenCalled()
+  })
+
+  it('삭제하면 지우고 다시 읽는다', async () => {
+    const view = await 그리기()
+    await 누르기(view, 'cashbook-row-spd-1')
+
+    await 이름으로누르기(view, '삭제')
+    await act(async () => {})
+
+    expect(records.removeRecord).toHaveBeenCalledWith({ kind: 'spend', record: 그날지출 })
+    expect(view.queryByText('지출 수정')).toBeNull()
+  })
+
+  // 새로 적는 시트에는 지울 것이 없다.
+  it('새로 적는 시트에는 삭제가 없다', async () => {
+    const view = await 그리기()
+
+    await 이름으로누르기(view, '기록 추가')
+    await 이름으로누르기(view, '지출 추가')
+
+    expect(view.queryByTestId('spend-sheet-delete')).toBeNull()
   })
 })

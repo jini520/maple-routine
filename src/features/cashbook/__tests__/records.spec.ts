@@ -3,10 +3,14 @@ import type { IncomeDraft, SpendDraft } from '../records'
 
 jest.mock('../../../storage/income', () => ({
   insertIncomeRecord: jest.fn(),
+  updateIncomeRecord: jest.fn(),
+  deleteIncomeRecord: jest.fn(),
   getIncomeRecordsBetween: jest.fn(),
 }))
 jest.mock('../../../storage/spend', () => ({
   insertSpendRecord: jest.fn(),
+  updateSpendRecord: jest.fn(),
+  deleteSpendRecord: jest.fn(),
   getSpendRecordsBetween: jest.fn(),
 }))
 jest.mock('../../../storage/last-point-rate', () => ({ setLastPointRate: jest.fn() }))
@@ -154,5 +158,150 @@ describe('loadCalendarAmounts', () => {
 
     expect(income.getIncomeRecordsBetween).toHaveBeenCalledWith('2026-08-20', '2026-08-26')
     expect(spend.getSpendRecordsBetween).toHaveBeenCalledWith('2026-08-20', '2026-08-26')
+  })
+})
+
+
+// ── [[ADR-171]] — 적은 것은 되돌릴 수 있어야 한다 ─────────────────────────────
+const 수입행 = {
+  id: 'inc-1',
+  ocid: null,
+  earnedOn: '2026-08-25',
+  category: '사냥' as const,
+  item: '엘리시움',
+  mesoAmount: 1_200_000_000,
+  memo: null,
+  recordedAt: '2026-08-25T01:00:00.000Z',
+}
+
+const 지출행 = {
+  id: 'spd-1',
+  ocid: null,
+  spentOn: '2026-08-25',
+  category: '컨텐츠' as const,
+  item: '몬스터 파크',
+  form: null,
+  quantity: 2,
+  mesoAmount: null,
+  tariffMeso: null,
+  pointAmount: 1_200,
+  pointPer100mMeso: 1_180,
+  cashAmount: null,
+  memo: null,
+  recordedAt: '2026-08-25T02:00:00.000Z',
+}
+
+describe('loadDayRecords — 그날 적은 것을 한 줄씩', () => {
+  it('수입과 지출을 한 목록으로 접는다', async () => {
+    income.getIncomeRecordsBetween.mockResolvedValue([수입행])
+    spend.getSpendRecordsBetween.mockResolvedValue([지출행])
+    const { loadDayRecords } = require('../records') as typeof import('../records')
+
+    const rows = await loadDayRecords('2026-08-25')
+
+    expect(rows).toHaveLength(2)
+    expect(rows.map((row) => row.kind)).toEqual(['income', 'spend'])
+    // **하루만** 읽는다 — 두 끝이 같다.
+    expect(income.getIncomeRecordsBetween).toHaveBeenCalledWith('2026-08-25', '2026-08-25')
+  })
+
+  // 적은 순서다. 금액순으로 정렬하면 방금 적은 것이 목록 어디로 튈지 모른다.
+  it('적은 순으로 선다', async () => {
+    income.getIncomeRecordsBetween.mockResolvedValue([
+      { ...수입행, id: 'inc-late', recordedAt: '2026-08-25T09:00:00.000Z' },
+    ])
+    spend.getSpendRecordsBetween.mockResolvedValue([지출행])
+    const { loadDayRecords } = require('../records') as typeof import('../records')
+
+    const rows = await loadDayRecords('2026-08-25')
+
+    expect(rows.map((row) => row.record.id)).toEqual(['spd-1', 'inc-late'])
+  })
+
+  // 읽기 실패는 화면을 죽이지 않는다 — 캘린더 칸과 같은 처방이다.
+  it('읽기가 실패해도 빈 목록으로 진행한다', async () => {
+    spend.getSpendRecordsBetween.mockRejectedValue(new Error('stale connection'))
+    income.getIncomeRecordsBetween.mockResolvedValue([수입행])
+    const { loadDayRecords } = require('../records') as typeof import('../records')
+
+    await expect(loadDayRecords('2026-08-25')).resolves.toHaveLength(1)
+  })
+})
+
+describe('줄에 적는 것', () => {
+  it('이름이 있으면 이름이다', () => {
+    const { recordTitleOf } = require('../records') as typeof import('../records')
+
+    expect(recordTitleOf({ kind: 'spend', record: 지출행 })).toBe('몬스터 파크')
+  })
+
+  // 직접 입력에서 사용처를 비우면 이름이 없다 — 빈 줄은 «무엇인지 모르는 줄» 이다.
+  it('이름이 없으면 갈래 이름을 대신 적는다', () => {
+    const { recordTitleOf } = require('../records') as typeof import('../records')
+
+    expect(recordTitleOf({ kind: 'spend', record: { ...지출행, item: null } })).toBe('컨텐츠')
+    expect(recordTitleOf({ kind: 'income', record: { ...수입행, item: null } })).toBe('사냥')
+  })
+})
+
+describe('줄의 금액', () => {
+  it('수입은 메소 그대로다', () => {
+    const { recordMesoOf } = require('../records') as typeof import('../records')
+
+    expect(recordMesoOf({ kind: 'income', record: 수입행 })).toBe(1_200_000_000)
+  })
+
+  it('메포 지출은 시세로 환산한 메소다', () => {
+    const { recordMesoOf } = require('../records') as typeof import('../records')
+
+    expect(recordMesoOf({ kind: 'spend', record: 지출행 })).toBe(101_694_915)
+  })
+
+  // 캐시는 환산 자체를 안 한다([[ADR-166]] 정정 2 ①) — 메소 축에 0 으로 들되 줄은 원으로 적는다.
+  it('캐시 지출은 메소 축이 0 이고 캐시 금액을 따로 든다', () => {
+    const { recordMesoOf, recordCashOf } = require('../records') as typeof import('../records')
+    const 캐시행 = { ...지출행, pointAmount: null, pointPer100mMeso: null, cashAmount: 15_000 }
+
+    expect(recordMesoOf({ kind: 'spend', record: 캐시행 })).toBe(0)
+    expect(recordCashOf({ kind: 'spend', record: 캐시행 })).toBe(15_000)
+    expect(recordCashOf({ kind: 'income', record: 수입행 })).toBeNull()
+  })
+})
+
+describe('고치기와 지우기', () => {
+  it('지출을 고치면 갈아 끼우고 시세를 기억한다', async () => {
+    const { editSpend } = require('../records') as typeof import('../records')
+
+    await editSpend({ ...지출행, quantity: 3 })
+
+    expect(spend.updateSpendRecord).toHaveBeenCalledWith({ ...지출행, quantity: 3 })
+    expect(rate.setLastPointRate).toHaveBeenCalledWith(1_180)
+  })
+
+  // 던진 수정의 시세를 다음 기본값으로 남기면 안 된다 — 넣을 때와 같은 순서다.
+  it('수정이 실패하면 시세를 안 기억한다', async () => {
+    spend.updateSpendRecord.mockRejectedValue(new Error('no such column'))
+    const { editSpend } = require('../records') as typeof import('../records')
+
+    await expect(editSpend(지출행)).rejects.toThrow()
+    expect(rate.setLastPointRate).not.toHaveBeenCalled()
+  })
+
+  it('수입을 고치면 갈아 끼운다', async () => {
+    const { editIncome } = require('../records') as typeof import('../records')
+
+    await editIncome({ ...수입행, mesoAmount: 1 })
+
+    expect(income.updateIncomeRecord).toHaveBeenCalledWith({ ...수입행, mesoAmount: 1 })
+  })
+
+  it('갈래대로 지운다', async () => {
+    const { removeRecord } = require('../records') as typeof import('../records')
+
+    await removeRecord({ kind: 'spend', record: 지출행 })
+    await removeRecord({ kind: 'income', record: 수입행 })
+
+    expect(spend.deleteSpendRecord).toHaveBeenCalledWith('spd-1')
+    expect(income.deleteIncomeRecord).toHaveBeenCalledWith('inc-1')
   })
 })

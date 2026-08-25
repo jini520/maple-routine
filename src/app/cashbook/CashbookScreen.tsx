@@ -81,6 +81,14 @@ import {
   loadLastPointRate,
   recordIncome,
   recordSpend,
+  loadDayRecords,
+  editIncome,
+  editSpend,
+  removeRecord,
+  recordTitleOf,
+  recordMesoOf,
+  recordCashOf,
+  type DayRecord,
 } from '../../features/cashbook/records'
 import { useToastStore } from '../../features/toast/store'
 import { IncomeSheet, type IncomeDraft } from './IncomeSheet'
@@ -144,13 +152,63 @@ function MonthArrow(props: {
   )
 }
 
+/**
+ * 그날 목록의 한 줄([[ADR-171]] 결정 1).
+ *
+ * 갈래 표식을 **글자가 아니라 색**으로 든다 — 「수입」·「지출」을 줄마다 적으면 이름이 들어갈
+ * 자리를 두 글자가 먹는다. 부호(`+`·`−`)와 색이 같은 것을 말하고 그 둘은 칸의 두 줄과 같은
+ * 규칙이라 새로 배울 것이 없다.
+ *
+ * 캐시로 낸 지출만 **원**으로 적는다 — 환산을 안 하므로 메소로 적을 값이 없다
+ * ([[ADR-166]] 정정 2 ①).
+ */
+function DayRecordRow(props: { entry: DayRecord; onPress: () => void }): React.JSX.Element {
+  const { entry } = props
+  const income = entry.kind === 'income'
+  const cash = recordCashOf(entry)
+  const quantity = entry.kind === 'spend' ? entry.record.quantity : null
+
+  return (
+    <Pressable
+      role="button"
+      testID={`cashbook-row-${entry.record.id}`}
+      aria-label={`${recordTitleOf(entry)} 고치기`}
+      onPress={props.onPress}
+      className="flex-row items-center gap-2 py-1"
+    >
+      <Text numberOfLines={1} className="shrink text-xs text-text">
+        {recordTitleOf(entry)}
+      </Text>
+      {quantity !== null && quantity > 1 && (
+        <Text className="shrink-0 text-[11px] text-text-muted" style={TABULAR_NUMS}>
+          {quantity}
+        </Text>
+      )}
+      <Text
+        className={`ml-auto shrink-0 text-xs font-semibold ${income ? 'text-rise-ink' : 'text-fall-ink'}`}
+        style={TABULAR_NUMS}
+      >
+        {income ? '+' : '−'}
+        {cash === null ? formatMesoCompact(recordMesoOf(entry)) : `${cash.toLocaleString()}원`}
+      </Text>
+    </Pressable>
+  )
+}
+
 export function CashbookScreen(): React.JSX.Element {
   const todayDateKey = getCurrentKstDateKey(new Date())
   const [isWeekly, setIsWeekly] = useState(false)
   const [monthKey, setMonthKey] = useState(() => getCurrentMonthKey(new Date()))
   const [weekStartKey, setWeekStartKey] = useState(() => resetWeekStartOf(todayDateKey))
   const [selectedDateKey, setSelectedDateKey] = useState(todayDateKey)
-  const [sheet, setSheet] = useState<'income' | 'expense' | null>(null)
+  /**
+   * 시트가 무엇을 하고 있나 — 셋이다([[ADR-171]] 결정 2).
+   *
+   * `'income'`·`'expense'` 는 **새로 적는다**. `DayRecord` 면 **그것을 고친다** — 갈래도 그 안에
+   * 있으므로 «어느 시트를 열까» 와 «무엇을 채울까» 가 한 값에서 나온다.
+   */
+  const [sheet, setSheet] = useState<'income' | 'expense' | DayRecord | null>(null)
+  const [dayRecords, setDayRecords] = useState<DayRecord[]>([])
   const [amounts, setAmounts] = useState<CalendarAmounts>(NO_AMOUNTS)
   const [lastPointRate, setLastPointRate] = useState<number | null>(null)
 
@@ -183,6 +241,17 @@ export function CashbookScreen(): React.JSX.Element {
       alive = false
     }
   }, [from, to, reloadToken])
+
+  // 그날 목록은 **고른 날**에 매인다 — 격자 범위와 의존성이 달라 효과를 따로 둔다.
+  useEffect(() => {
+    let alive = true
+    void loadDayRecords(selectedDateKey).then((next) => {
+      if (alive) setDayRecords(next)
+    })
+    return () => {
+      alive = false
+    }
+  }, [selectedDateKey, reloadToken])
 
   useEffect(() => {
     void loadLastPointRate().then(setLastPointRate)
@@ -217,6 +286,36 @@ export function CashbookScreen(): React.JSX.Element {
     }
     // 시세는 방금 저장한 값이 다음 기본값이다([[ADR-166]] 결정 5) — 다시 읽지 않고 그대로 든다.
     if (draft.pointPer100mMeso !== null) setLastPointRate(draft.pointPer100mMeso)
+    setReloadToken((token) => token + 1)
+  }
+
+  /**
+   * 고치기 — **`id` 와 `recordedAt` 을 그대로 얹는다**([[ADR-171]] 결정 4).
+   *
+   * 시트는 그 둘을 모른다(초안만 만든다). 여기서 원본과 합쳐야 «고친 시각이 적은 시각을 덮는»
+   * 일이 안 생긴다.
+   */
+  async function saveEdit(entry: DayRecord, draft: IncomeDraft | SpendDraft): Promise<void> {
+    try {
+      if (entry.kind === 'spend') {
+        await editSpend({ ...(draft as SpendDraft), id: entry.record.id, recordedAt: entry.record.recordedAt })
+      } else {
+        await editIncome({ ...(draft as IncomeDraft), id: entry.record.id, recordedAt: entry.record.recordedAt })
+      }
+    } catch (error) {
+      useToastStore.getState().showError('기록을 고치지 못했습니다')
+      throw error
+    }
+    setReloadToken((token) => token + 1)
+  }
+
+  async function deleteEntry(entry: DayRecord): Promise<void> {
+    try {
+      await removeRecord(entry)
+    } catch (error) {
+      useToastStore.getState().showError('기록을 지우지 못했습니다')
+      throw error
+    }
     setReloadToken((token) => token + 1)
   }
 
@@ -323,6 +422,21 @@ export function CashbookScreen(): React.JSX.Element {
                     −{formatMesoCompact(selectedAmounts.expenseMeso)}
                   </Text>
                 </View>
+
+                {dayRecords.length > 0 && (
+                  // 합계 아래에 **적은 것이 한 줄씩** 선다([[ADR-171]] 결정 1). 접지 않는다 —
+                  // 같은 날 같은 것을 두 번 적은 것은 정상이고, 접으면 어느 쪽을 고치는지 못 고른다.
+                  // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
+                  <View className="mt-1 gap-0.5 border-t border-border pt-1">
+                    {dayRecords.map((entry) => (
+                      <DayRecordRow
+                        key={entry.record.id}
+                        entry={entry}
+                        onPress={() => setSheet(entry)}
+                      />
+                    ))}
+                  </View>
+                )}
               </View>
             )}
           </View>
@@ -336,18 +450,27 @@ export function CashbookScreen(): React.JSX.Element {
 
       {/* 시트는 **조건부 마운트**다 — 마운트가 곧 열림이고 `onClose` 로 언마운트한다
           ([[ADR-039]] 결정 3, `BottomSheet` 가 그 계약을 든다). */}
-      {sheet === 'income' && (
+      {(sheet === 'income' || (typeof sheet === 'object' && sheet?.kind === 'income')) && (
+        // 고치는 것이면 **그 기록의 날짜**로 연다 — 고른 날이 아니다(둘은 지금 같지만, 목록이
+        // 여러 날을 걸치게 되는 날 갈린다).
+        // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
         <IncomeSheet
-          dateKey={selectedDateKey}
-          onSave={saveIncome}
+          dateKey={typeof sheet === 'object' ? sheet.record.earnedOn : selectedDateKey}
+          editing={typeof sheet === 'object' ? sheet.record : undefined}
+          onSave={
+            typeof sheet === 'object' ? (draft) => saveEdit(sheet, draft) : saveIncome
+          }
+          onDelete={typeof sheet === 'object' ? () => deleteEntry(sheet) : undefined}
           onClose={() => setSheet(null)}
         />
       )}
-      {sheet === 'expense' && (
+      {(sheet === 'expense' || (typeof sheet === 'object' && sheet?.kind === 'spend')) && (
         <SpendSheet
-          dateKey={selectedDateKey}
+          dateKey={typeof sheet === 'object' ? sheet.record.spentOn : selectedDateKey}
           lastPointRate={lastPointRate}
-          onSave={saveSpend}
+          editing={typeof sheet === 'object' ? sheet.record : undefined}
+          onSave={typeof sheet === 'object' ? (draft) => saveEdit(sheet, draft) : saveSpend}
+          onDelete={typeof sheet === 'object' ? () => deleteEntry(sheet) : undefined}
           onClose={() => setSheet(null)}
         />
       )}

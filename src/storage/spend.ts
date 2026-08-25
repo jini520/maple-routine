@@ -128,6 +128,50 @@ export async function insertSpendRecord(record: SpendRecord): Promise<void> {
   ])
 }
 
+/**
+ * 갈아 끼우기 — **지우고 다시 넣지 않는다**([[ADR-171]] 결정 4).
+ *
+ * 지우고 넣으면 `id` 와 `recorded_at` 이 새것이 되는데, 그 둘은 «언제 적었나» 를 든 칸이라
+ * **고친 시각이 적은 시각을 덮어쓴다.** 그래서 `SET` 에 `recorded_at` 이 없다 — 「적은 시각」이지
+ * 「마지막으로 만진 시각」이 아니다. 후자가 필요해지면 **칸을 새로 세운다**(있는 칸의 뜻을 바꾸면
+ * 옛 행의 값이 조용히 거짓이 된다).
+ */
+const UPDATE_SQL = `
+  UPDATE spend_records SET
+    ocid = ?, spent_on = ?, category = ?, item = ?, form = ?, quantity = ?,
+    meso_amount = ?, tariff_meso = ?, point_amount = ?, point_per_100m_meso = ?,
+    cash_amount = ?, memo = ?
+  WHERE id = ?
+`
+
+/** 넣을 때와 **같은 검증**을 탄다 — 아니면 정정 2 ③ 의 방어가 수정 쪽에서 반쪽이 된다. */
+export async function updateSpendRecord(record: SpendRecord): Promise<void> {
+  assertPointRate(record)
+
+  const db = await getBossProfitDb()
+  await db.run(UPDATE_SQL, [
+    record.ocid,
+    record.spentOn,
+    record.category,
+    record.item,
+    record.form,
+    record.quantity,
+    record.mesoAmount,
+    record.tariffMeso,
+    record.pointAmount,
+    record.pointPer100mMeso,
+    record.cashAmount,
+    record.memo,
+    record.id,
+  ])
+}
+
+/** 한 건만 지운다 — 대리키라 «같은 날 같은 것» 두 건 중 하나만 골라 지울 수 있다. */
+export async function deleteSpendRecord(id: string): Promise<void> {
+  const db = await getBossProfitDb()
+  await db.run(`DELETE FROM spend_records WHERE id = ?`, [id])
+}
+
 function nullable(value: unknown): number | null {
   return (value as number | null | undefined) ?? null
 }

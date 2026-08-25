@@ -200,3 +200,53 @@ describe('SPEND_CATEGORIES', () => {
     expect(spendCatalog.categories).not.toContain('기타')
   })
 })
+
+
+// [[ADR-171]] 결정 4·6 — 적은 것은 되돌릴 수 있어야 한다.
+describe('updateSpendRecord', () => {
+  it('id 로 갈아 끼운다 — 지우고 다시 넣지 않는다', async () => {
+    const { updateSpendRecord } = require('../spend') as typeof import('../spend')
+
+    await updateSpendRecord({ ...mesoSpend, quantity: 3, mesoAmount: 6_000_000 })
+
+    const [sql, values] = runMock.mock.calls[0]
+    expect(sql).toContain('UPDATE spend_records')
+    expect(sql).toContain('WHERE id = ?')
+    expect(sql).not.toContain('DELETE')
+    // **마지막 인자가 id 다** — WHERE 가 SET 뒤에 오므로.
+    expect(values[values.length - 1]).toBe('spd-1')
+  })
+
+  // `recordedAt` 은 「적은 시각」이지 「마지막으로 만진 시각」이 아니다([[ADR-171]] 결정 4).
+  it('recorded_at 을 SET 에 안 넣는다', async () => {
+    const { updateSpendRecord } = require('../spend') as typeof import('../spend')
+
+    await updateSpendRecord(mesoSpend)
+
+    const [sql] = runMock.mock.calls[0]
+    expect(sql.slice(0, sql.indexOf('WHERE'))).not.toContain('recorded_at')
+  })
+
+  // 수정으로 시세 없는 메포 행을 만들 수 있으면 정정 2 ③ 의 방어가 반쪽이 된다.
+  it('시세 없는 메포 행으로는 못 고친다', async () => {
+    const { updateSpendRecord } = require('../spend') as typeof import('../spend')
+
+    await expect(
+      updateSpendRecord({ ...pointSpend, pointPer100mMeso: null }),
+    ).rejects.toThrow('메소마켓 시세')
+    expect(runMock).not.toHaveBeenCalled()
+  })
+})
+
+describe('deleteSpendRecord', () => {
+  it('id 하나만 지운다', async () => {
+    const { deleteSpendRecord } = require('../spend') as typeof import('../spend')
+
+    await deleteSpendRecord('spd-1')
+
+    const [sql, values] = runMock.mock.calls[0]
+    expect(sql).toContain('DELETE FROM spend_records')
+    expect(sql).toContain('WHERE id = ?')
+    expect(values).toEqual(['spd-1'])
+  })
+})

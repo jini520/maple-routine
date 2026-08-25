@@ -39,6 +39,7 @@ import { CheckIcon, ChevronLeftIcon, MinusIcon, PlusIcon } from '../../lib/icons
 import { formatMesoCompact } from '../../lib/meso-compact'
 import {
   SPEND_TARIFF_PERCENT,
+  findSpendChoice,
   pointToMeso,
   spendGroupsOf,
   withTariffMeso,
@@ -47,6 +48,59 @@ import {
 } from '../../lib/spend-catalog'
 import { TABULAR_NUMS } from '../../lib/text-styles'
 import { SPEND_CATEGORIES, type SpendCategory, type SpendRecord } from '../../storage/spend'
+
+/**
+ * 적어 둔 기록에서 **시트의 첫 상태를 되짚는다**([[ADR-171]] 결정 2).
+ *
+ * 되짚는 것이 이름 하나뿐인 이유는, 나머지가 전부 행에 그대로 있기 때문이다(수량·형태·시세·관세).
+ * 이름만 카탈로그를 한 번 거친다 — 「하이마운틴 2단계」 는 행에서 한 글자지만 시트에서는 **대표와
+ * 단계 둘**이다.
+ *
+ * 못 찾으면 `choice`·`item` 이 `null` 이고 목록이 선다 — **시트가 안 열리는 것보다 낫다.**
+ * 통화를 되짚는 자리이기도 하다: 캐시 칸이 찼으면 「기타」의 캐시로 열려야 그 값이 안 사라진다.
+ */
+function initialStateOf(record: SpendRecord | undefined): {
+  category: SpendCategory
+  choice: SpendCatalogChoice | null
+  item: SpendCatalogItem | null
+  form: string | null
+  quantity: number
+  name: string
+  typed: number
+  hasTariff: boolean
+  freeCurrency: FreeCurrency
+} {
+  if (record === undefined) {
+    return {
+      category: SPEND_CATEGORIES[0],
+      choice: null,
+      item: null,
+      form: null,
+      quantity: 1,
+      name: '',
+      typed: 0,
+      hasTariff: false,
+      freeCurrency: 'meso',
+    }
+  }
+
+  const found = findSpendChoice(record.category, record.item)
+  const direct = isDirectInput(record.category)
+  return {
+    category: record.category,
+    choice: found?.choice ?? null,
+    item: found?.item ?? null,
+    form: record.form,
+    quantity: record.quantity ?? 1,
+    // 직접 입력에서만 이름이 «친 것» 이다 — 목록 항목의 이름을 여기 넣으면 수정 후 저장할 때
+    // 사용처로 다시 적힌다.
+    name: direct ? (record.item ?? '') : '',
+    typed: direct ? (record.mesoAmount ?? record.pointAmount ?? record.cashAmount ?? 0) : 0,
+    hasTariff: record.tariffMeso !== null,
+    freeCurrency:
+      record.cashAmount !== null ? 'cash' : record.pointAmount !== null ? 'point' : 'meso',
+  }
+}
 
 /** 저장할 값에서 **어댑터가 아니라 화면이 정하는 것 둘**(`id`·`recordedAt`)을 뺀 나머지. */
 export type SpendDraft = Omit<SpendRecord, 'id' | 'recordedAt'>
@@ -225,6 +279,12 @@ export interface SpendSheetProps {
   /** 어느 날에 적히나 — 캘린더에서 고른 날이다. */
   dateKey: string
   /**
+   * 고칠 기록. 있으면 **수정 모드**다([[ADR-171]] 결정 2) — 머리와 버튼 글자가 갈리고 삭제가 선다.
+   * 없으면 새로 적는다. 화면을 따로 만들지 않는 이유는 **입력 규칙이 한 벌이어야** 하기 때문이다.
+   */
+  editing?: SpendRecord
+  onDelete?: () => void | Promise<void>
+  /**
    * 마지막으로 쓴 메소마켓 시세([[ADR-166]] 결정 5). 필수 칸이 매번 비어 있으면 입력이 막히므로
    * «기억한다» 가 여기서 결정적이다. `null` 이면 아직 한 번도 안 넣었다는 뜻이다.
    */
@@ -235,7 +295,12 @@ export interface SpendSheetProps {
 }
 
 export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
-  const [category, setCategory] = useState<SpendCategory>(SPEND_CATEGORIES[0])
+  // **한 번만 되짚는다.** `useState` 의 초기값이라 이후 프롭이 바뀌어도 안 덮어쓴다 — 고치는
+  // 도중에 값이 되돌아가면 친 것이 사라진다.
+  const [initial] = useState(() => initialStateOf(props.editing))
+  const editing = props.editing !== undefined
+
+  const [category, setCategory] = useState<SpendCategory>(initial.category)
   /**
    * 두 단계다(사용자 지정 2026-08-25).
    *
@@ -245,21 +310,24 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
    * `choice` 가 «지금 어느 단계인가» 를 든다: `null` 이면 목록이 서고, 있으면 그 안이 선다.
    * 한 갈래뿐인 대표(몬스터 파크)는 고르는 즉시 `item` 까지 정해져 ②가 비어 있다.
    */
-  const [choice, setChoice] = useState<SpendCatalogChoice | null>(null)
-  const [item, setItem] = useState<SpendCatalogItem | null>(null)
-  const [form, setForm] = useState<string | null>(null)
-  const [quantity, setQuantity] = useState(1)
+  const [choice, setChoice] = useState<SpendCatalogChoice | null>(initial.choice)
+  const [item, setItem] = useState<SpendCatalogItem | null>(initial.item)
+  const [form, setForm] = useState<string | null>(initial.form)
+  const [quantity, setQuantity] = useState(initial.quantity)
   // 직접 입력 갈래의 칸들. 갈래를 오갈 때 **비우지 않는다** — 잘못 눌러 돌아왔을 때 친 것이
   // 사라지면 다시 쳐야 한다. 저장에 무엇이 쓰이는지는 아래 `direct` 가 가른다.
-  const [name, setName] = useState('')
-  const [typed, setTyped] = useState(0)
-  const [hasTariff, setHasTariff] = useState(false)
-  const [freeCurrency, setFreeCurrency] = useState<FreeCurrency>('meso')
+  const [name, setName] = useState(initial.name)
+  const [typed, setTyped] = useState(initial.typed)
+  const [hasTariff, setHasTariff] = useState(initial.hasTariff)
+  const [freeCurrency, setFreeCurrency] = useState<FreeCurrency>(initial.freeCurrency)
   // 마지막으로 쓴 값으로 시작한다([[ADR-166]] 결정 5). 사용자가 고치면 그 값이 저장되고, 다음에
   // 이 시트를 열 때 다시 채워진다 — 필수 칸이 매번 비어 있으면 입력이 막힌다.
-  const [rateText, setRateText] = useState(
-    props.lastPointRate === null ? '' : String(props.lastPointRate),
-  )
+  // 고칠 때는 **그 행의 시세**가 먼저다 — 「마지막으로 쓴 값」 으로 덮으면 옛 기록의 환산이
+  // 조용히 달라진다.
+  const [rateText, setRateText] = useState(() => {
+    const rate = props.editing?.pointPer100mMeso ?? props.lastPointRate
+    return rate === null || rate === undefined ? '' : String(rate)
+  })
   /** 저장이 도는 동안 다시 못 누르게 막는다 — 손입력은 두 번 눌리면 행이 둘이 된다. */
   const [saving, setSaving] = useState(false)
 
@@ -338,6 +406,19 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
   }
 
 
+  /** 지우기 — 실패하면 시트를 지킨다(저장과 같은 계약). */
+  async function remove(): Promise<void> {
+    if (saving || props.onDelete === undefined) return
+    setSaving(true)
+    try {
+      await props.onDelete()
+    } catch {
+      setSaving(false)
+      return
+    }
+    props.onClose()
+  }
+
   async function save(): Promise<void> {
     if (!canSave || saving) return
     setSaving(true)
@@ -387,7 +468,9 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
         */}
         <View className="flex-row items-center justify-between gap-2">
           {choice === null ? (
-            <Text className="text-base font-bold text-text">지출 추가</Text>
+            <Text className="text-base font-bold text-text">
+              {editing ? '지출 수정' : '지출 추가'}
+            </Text>
           ) : (
             <Pressable
               role="button"
@@ -646,7 +729,9 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
 
         <Pressable
           role="button"
-          aria-label="저장"
+          // **보이는 글자와 같아야 한다** — 화면은 「수정」인데 읽어 주는 것이 「저장」이면
+          // 그 둘은 다른 버튼이 된다.
+          aria-label={editing ? '수정' : '저장'}
           disabled={!canSave || saving}
           onPress={() => void save()}
           className={`items-center rounded-xl py-3 ${canSave ? 'bg-primary' : 'bg-surface-2'}`}
@@ -654,9 +739,26 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
           <Text
             className={`text-sm font-bold ${canSave ? 'text-on-primary' : 'text-text-disabled'}`}
           >
-            저장
+            {editing ? '수정' : '저장'}
           </Text>
         </Pressable>
+
+        {editing && props.onDelete !== undefined && (
+          // **버튼처럼 안 생겼다**([[ADR-171]] 결정 3). 「수정」 과 같은 무게로 그리면 누르려던
+          // 것과 지우려던 것이 같은 크기가 된다. 확인 모달도 안 세운다 — 이미 두 번 눌러야
+          // 여기까지 온다(줄 → 삭제).
+          // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
+          <Pressable
+            role="button"
+            aria-label="삭제"
+            testID="spend-sheet-delete"
+            disabled={saving}
+            onPress={() => void remove()}
+            className="items-center py-2"
+          >
+            <Text className="text-xs font-semibold text-error-ink">삭제</Text>
+          </Pressable>
+        )}
       </View>
     </BottomSheet>
   )

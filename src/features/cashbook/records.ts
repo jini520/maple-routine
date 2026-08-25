@@ -13,9 +13,21 @@
 import { withSqliteFallback } from '../boss-profit/sqlite-guards'
 import type { CalendarAmounts, CalendarDayAmounts } from '../../lib/calendar-month'
 import { pointToMeso } from '../../lib/spend-catalog'
-import { getIncomeRecordsBetween, insertIncomeRecord, type IncomeRecord } from '../../storage/income'
+import {
+  deleteIncomeRecord,
+  getIncomeRecordsBetween,
+  insertIncomeRecord,
+  updateIncomeRecord,
+  type IncomeRecord,
+} from '../../storage/income'
 import { getLastPointRate, setLastPointRate } from '../../storage/last-point-rate'
-import { getSpendRecordsBetween, insertSpendRecord, type SpendRecord } from '../../storage/spend'
+import {
+  deleteSpendRecord,
+  getSpendRecordsBetween,
+  insertSpendRecord,
+  updateSpendRecord,
+  type SpendRecord,
+} from '../../storage/spend'
 
 export type IncomeDraft = Omit<IncomeRecord, 'id' | 'recordedAt'>
 export type SpendDraft = Omit<SpendRecord, 'id' | 'recordedAt'>
@@ -105,4 +117,82 @@ export async function loadCalendarAmounts(
 /** 다음 입력의 시세 기본값([[ADR-166]] 결정 5). 화면이 `storage/` 를 직접 안 부르게 한 번 감싼다. */
 export async function loadLastPointRate(): Promise<number | null> {
   return getLastPointRate().catch(() => null)
+}
+
+
+/**
+ * 그날 목록의 **한 줄**([[ADR-171]] 결정 1).
+ *
+ * 수입과 지출은 테이블이 갈려 있어([[ADR-170]] 결정 2) 한 목록에 세우려면 어느 쪽인지를 들고
+ * 다녀야 한다. 그 표식이 `kind` 이고, **그것이 곧 «손입력인가» 의 답**이기도 하다 — #239 가
+ * 보스 수익을 칸에 얹으면 갈래가 하나 더 붙고, 그 줄은 여기서 못 고친다([[ADR-171]] 결정 5).
+ */
+export type DayRecord =
+  | { kind: 'income'; record: IncomeRecord }
+  | { kind: 'spend'; record: SpendRecord }
+
+/**
+ * 그날 적은 것 — **적은 순**이다.
+ *
+ * 금액순으로 정렬하지 않는 이유는 «방금 적은 것» 이 목록 어디로 튈지 모르기 때문이다. 방금 적은
+ * 것이 맨 아래에 있으면 눈이 거기부터 간다.
+ *
+ * 읽기 실패는 **빈 값으로 진행한다** — 캘린더 칸과 같은 처방이다(`loadCalendarAmounts` 참조).
+ * 한쪽만 실패하면 다른 쪽은 보인다.
+ */
+export async function loadDayRecords(dateKey: string): Promise<DayRecord[]> {
+  const [incomes, spends] = await Promise.all([
+    withSqliteFallback(getIncomeRecordsBetween(dateKey, dateKey), []),
+    withSqliteFallback(getSpendRecordsBetween(dateKey, dateKey), []),
+  ])
+
+  const rows: DayRecord[] = [
+    ...incomes.map((record): DayRecord => ({ kind: 'income', record })),
+    ...spends.map((record): DayRecord => ({ kind: 'spend', record })),
+  ]
+  return rows.sort((left, right) => left.record.recordedAt.localeCompare(right.record.recordedAt))
+}
+
+/**
+ * 줄에 적는 이름 — 없으면 **갈래 이름**이다([[ADR-171]] 결정 1).
+ *
+ * 직접 입력에서 사용처를 비우는 것은 정상이라(«비워 둬도 됩니다») 이름 없는 기록이 실제로 생긴다.
+ * 그 줄을 비워 두면 «무엇인지 모르는 줄» 이 되는데, 갈래는 언제나 있으므로 그것을 쓴다.
+ */
+export function recordTitleOf(entry: DayRecord): string {
+  return entry.record.item ?? entry.record.category
+}
+
+/** 줄의 **메소 축** 금액. 캐시는 환산을 안 하므로 0 이다([[ADR-166]] 정정 2 ①). */
+export function recordMesoOf(entry: DayRecord): number {
+  return entry.kind === 'income' ? entry.record.mesoAmount : spendMesoOf(entry.record)
+}
+
+/** 캐시로 낸 지출만 값을 준다 — 그 줄은 메소가 아니라 **원**으로 적힌다. */
+export function recordCashOf(entry: DayRecord): number | null {
+  return entry.kind === 'spend' ? entry.record.cashAmount : null
+}
+
+/**
+ * 고치기 — `recordedAt` 은 안 바뀐다([[ADR-171]] 결정 4). 시세를 기억하는 순서는 넣을 때와 같다:
+ * **성공한 뒤에만.**
+ */
+export async function editSpend(record: SpendRecord): Promise<void> {
+  await updateSpendRecord(record)
+  if (record.pointPer100mMeso !== null) {
+    await setLastPointRate(record.pointPer100mMeso)
+  }
+}
+
+export async function editIncome(record: IncomeRecord): Promise<void> {
+  await updateIncomeRecord(record)
+}
+
+/** 지우기 — 갈래가 어느 테이블인지를 안다. */
+export async function removeRecord(entry: DayRecord): Promise<void> {
+  if (entry.kind === 'spend') {
+    await deleteSpendRecord(entry.record.id)
+    return
+  }
+  await deleteIncomeRecord(entry.record.id)
 }

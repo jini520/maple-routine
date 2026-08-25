@@ -4,6 +4,7 @@
 // 여기서 보는 것은 «화면이 그 값을 어떻게 집어 오는가» 다 — 갈래별 묶음과 환산 둘.
 import {
   SPEND_TARIFF_PERCENT,
+  findSpendChoice,
   pointToMeso,
   spendGroupsOf,
   tariffMesoOf,
@@ -135,5 +136,35 @@ describe('관세 — 구입가의 10% 고정', () => {
       const { mesoAmount, tariffMeso } = withTariffMeso(price)
       expect(mesoAmount - tariffMeso).toBe(price)
     }
+  })
+})
+
+
+// [[ADR-171]] 결정 2 — 적어 둔 기록으로 시트를 되채우려면 **이름에서 자리를 되짚어야** 한다.
+describe('findSpendChoice — 이름으로 대표와 단계를 되짚는다', () => {
+  it('단계가 있는 항목은 대표와 그 단계를 함께 준다', () => {
+    const found = findSpendChoice('컨텐츠', '하이마운틴 2단계')
+
+    expect(found?.choice.label).toBe('하이마운틴')
+    expect(found?.item.tier).toBe('2단계')
+  })
+
+  it('단계가 없는 항목은 대표 안에 하나뿐이다', () => {
+    const found = findSpendChoice('컨텐츠', '몬스터 파크')
+
+    expect(found?.choice.items).toHaveLength(1)
+    expect(found?.item.name).toBe('몬스터 파크')
+  })
+
+  // 카탈로그가 바뀌어 못 찾는 이름이 생길 수 있다 — 그때 시트가 안 열리면 안 된다
+  // ([[ADR-171]] 대가). 못 찾음을 **값으로** 돌려주고 화면이 정한다.
+  it('없는 이름은 null 이다', () => {
+    expect(findSpendChoice('컨텐츠', '없어진 항목')).toBeNull()
+    expect(findSpendChoice('컨텐츠', null)).toBeNull()
+  })
+
+  // 갈래를 잘못 대면 못 찾는다 — 이름만으로 찾으면 «버프의 영약» 이 «컨텐츠» 로 되살아난다.
+  it('갈래가 다르면 못 찾는다', () => {
+    expect(findSpendChoice('버프', '몬스터 파크')).toBeNull()
   })
 })

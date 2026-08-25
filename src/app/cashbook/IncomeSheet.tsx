@@ -72,20 +72,41 @@ function CategoryChip(props: {
 
 export interface IncomeSheetProps {
   dateKey: string
+  /**
+   * 고칠 기록. 있으면 **수정 모드**다([[ADR-171]] 결정 2) — 머리와 버튼 글자가 갈리고 삭제가 선다.
+   */
+  editing?: IncomeRecord
+  onDelete?: () => void | Promise<void>
   /** 던지면 **안 닫는다** — 친 것을 잃지 않는다. 실패를 말하는 것은 화면 몫이다(토스트). */
   onSave: (draft: IncomeDraft) => void | Promise<void>
   onClose: () => void
 }
 
 export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
-  const [category, setCategory] = useState<IncomeCategory>(INCOME_CATEGORIES[0])
-  const [name, setName] = useState('')
-  const [meso, setMeso] = useState(0)
+  const editing = props.editing !== undefined
+  const [category, setCategory] = useState<IncomeCategory>(
+    props.editing?.category ?? INCOME_CATEGORIES[0],
+  )
+  const [name, setName] = useState(props.editing?.item ?? '')
+  const [meso, setMeso] = useState(props.editing?.mesoAmount ?? 0)
 
   /** 저장이 도는 동안 다시 못 누르게 막는다 — 손입력은 두 번 눌리면 행이 둘이 된다. */
   const [saving, setSaving] = useState(false)
 
   const canSave = meso > 0
+
+  /** 지우기 — 실패하면 시트를 지킨다(저장과 같은 계약). */
+  async function remove(): Promise<void> {
+    if (saving || props.onDelete === undefined) return
+    setSaving(true)
+    try {
+      await props.onDelete()
+    } catch {
+      setSaving(false)
+      return
+    }
+    props.onClose()
+  }
 
   async function save(): Promise<void> {
     if (!canSave || saving) return
@@ -112,7 +133,9 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
     <BottomSheet testId="income-sheet" onClose={props.onClose}>
       <View className="gap-3 px-4 pb-2">
         <View className="flex-row items-baseline justify-between gap-2">
-          <Text className="text-base font-bold text-rise-ink">수입 추가</Text>
+          <Text className="text-base font-bold text-rise-ink">
+            {editing ? '수입 수정' : '수입 추가'}
+          </Text>
           <Text
             testID="income-sheet-date"
             className="text-xs text-text-muted"
@@ -160,15 +183,29 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
 
         <Pressable
           role="button"
-          aria-label="저장"
+          aria-label={editing ? '수정' : '저장'}
           disabled={!canSave || saving}
           onPress={() => void save()}
           className={`items-center rounded-xl py-3 ${canSave ? 'bg-rise-ink' : 'bg-surface-2'}`}
         >
           <Text className={`text-sm font-bold ${canSave ? 'text-bg' : 'text-text-disabled'}`}>
-            저장
+            {editing ? '수정' : '저장'}
           </Text>
         </Pressable>
+
+        {editing && props.onDelete !== undefined && (
+          // **버튼처럼 안 생겼다**([[ADR-171]] 결정 3) — `SpendSheet` 와 같은 자리·같은 무게다.
+          <Pressable
+            role="button"
+            aria-label="삭제"
+            testID="income-sheet-delete"
+            disabled={saving}
+            onPress={() => void remove()}
+            className="items-center py-2"
+          >
+            <Text className="text-xs font-semibold text-error-ink">삭제</Text>
+          </Pressable>
+        )}
       </View>
     </BottomSheet>
   )

@@ -138,3 +138,41 @@ describe('INCOME_CATEGORIES', () => {
     expect(INCOME_CATEGORIES).toEqual(['아이템 판매', '사냥', '기타'])
   })
 })
+
+
+// [[ADR-171]] 결정 4·6 — 지출과 같은 계약이다.
+describe('updateIncomeRecord', () => {
+  it('id 로 갈아 끼운다 — 지우고 다시 넣지 않는다', async () => {
+    const { updateIncomeRecord } = require('../income') as typeof import('../income')
+
+    await updateIncomeRecord({ ...sample, mesoAmount: 999 })
+
+    const [sql, values] = runMock.mock.calls[0]
+    expect(sql).toContain('UPDATE income_records')
+    expect(sql).toContain('WHERE id = ?')
+    expect(sql).not.toContain('DELETE')
+    expect(values[values.length - 1]).toBe('inc-1')
+  })
+
+  it('recorded_at 을 SET 에 안 넣는다', async () => {
+    const { updateIncomeRecord } = require('../income') as typeof import('../income')
+
+    await updateIncomeRecord(sample)
+
+    const [sql] = runMock.mock.calls[0]
+    expect(sql.slice(0, sql.indexOf('WHERE'))).not.toContain('recorded_at')
+  })
+})
+
+describe('deleteIncomeRecord', () => {
+  it('id 하나만 지운다', async () => {
+    const { deleteIncomeRecord } = require('../income') as typeof import('../income')
+
+    await deleteIncomeRecord('inc-1')
+
+    const [sql, values] = runMock.mock.calls[0]
+    expect(sql).toContain('DELETE FROM income_records')
+    expect(sql).toContain('WHERE id = ?')
+    expect(values).toEqual(['inc-1'])
+  })
+})

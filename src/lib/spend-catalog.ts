@@ -113,6 +113,32 @@ export function spendGroupsOf(category: SpendCategory): SpendCatalogGroup[] {
 }
 
 /**
+ * 적어 둔 이름에서 **고르던 자리를 되짚는다**([[ADR-171]] 결정 2).
+ *
+ * 기록에는 항목 이름만 있고(「하이마운틴 2단계」) 시트는 **대표와 단계 둘**을 든다. 수정으로
+ * 시트를 열려면 그 둘을 이름에서 되찾아야 한다.
+ *
+ * **갈래를 함께 받는다.** 이름만으로 찾으면 갈래가 다른 동명 항목이 걸려, 「버프」에서 적은 것이
+ * 「컨텐츠」로 되살아날 수 있다.
+ *
+ * 못 찾으면 `null` 이다 — 예외가 아니다. 카탈로그가 바뀌어 사라진 항목이 기록에는 남아 있을 수
+ * 있고, 그때 **시트가 안 열리는 것보다 값만 채워 여는 편이 낫다**([[ADR-171]] 대가).
+ */
+export function findSpendChoice(
+  category: SpendCategory,
+  itemName: string | null,
+): { choice: SpendCatalogChoice; item: SpendCatalogItem } | null {
+  if (itemName === null) return null
+  for (const group of spendGroupsOf(category)) {
+    for (const choice of group.choices) {
+      const item = choice.items.find((each) => each.name === itemName)
+      if (item !== undefined) return { choice, item }
+    }
+  }
+  return null
+}
+
+/**
  * 메포 → 메소. 시세의 단위가 **1억 메소당 메포**라 이것은 **나눗셈**이다([[ADR-166]] 정정 2 ④).
  *
  * ```

@@ -64,6 +64,32 @@ export async function insertIncomeRecord(record: IncomeRecord): Promise<void> {
   ])
 }
 
+/** 갈아 끼우기 — 지출과 같은 계약이다([[ADR-171]] 결정 4). `recorded_at` 은 SET 에 없다. */
+const UPDATE_SQL = `
+  UPDATE income_records SET
+    ocid = ?, earned_on = ?, category = ?, item = ?, meso_amount = ?, memo = ?
+  WHERE id = ?
+`
+
+export async function updateIncomeRecord(record: IncomeRecord): Promise<void> {
+  const db = await getBossProfitDb()
+  await db.run(UPDATE_SQL, [
+    record.ocid,
+    record.earnedOn,
+    record.category,
+    record.item,
+    record.mesoAmount,
+    record.memo,
+    record.id,
+  ])
+}
+
+/** 한 건만 지운다 — 대리키라 «같은 날 같은 것» 두 건 중 하나만 골라 지울 수 있다. */
+export async function deleteIncomeRecord(id: string): Promise<void> {
+  const db = await getBossProfitDb()
+  await db.run(`DELETE FROM income_records WHERE id = ?`, [id])
+}
+
 function rowToRecord(row: Record<string, unknown>): IncomeRecord {
   return {
     id: row.id as string,
