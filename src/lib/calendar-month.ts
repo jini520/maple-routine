@@ -1,11 +1,20 @@
 /**
  * 달력 한 달의 **격자**를 만든다 — 가계부 캘린더가 쓰는 순수 계산([[ADR-169]] 결정 7).
  *
- * ## 축이 게임이 아니라 달력이다
+ * ## 축이 **둘**이다
  *
- * 보스 수익의 `periodKey` 는 **목요일 리셋** 기준이지만(`lib/boss-profit-period.ts`) 이 격자는
- * 그것과 무관하다 — 지출은 게임 리셋과 상관없이 일어나고([[ADR-166]] 결정 4), 주는 **일요일**에
- * 시작한다([[ADR-169]] 결정 8). 두 축은 한 그룹 안에서 공존하고, 합치는 것은 #239 의 일이다.
+ * | 무엇 | 축 | 주가 시작하는 요일 |
+ * |---|---|---|
+ * | 월간 격자(`buildCalendarMonth`) | 달력 월 | **일요일** — 한국 달력의 관습([[ADR-169]] 결정 8) |
+ * | 주간 격자(`buildResetWeek`) | 게임의 주 | **목요일** — 주간 리셋([[ADR-170]] 결정 10) |
+ *
+ * 둘은 뒤집힌 관계가 아니라 **하는 일이 다르다.** 월간 격자는 «달력» 이라 일요일 시작이 관습이고
+ * (목요일에서 시작하는 달력은 읽을 수 없다), 주간 보기는 «기간» 이라 게임 축이 맞는다 —
+ * 보스 수익 탭이 이미 그 축이고([[ADR-169]] 정정 2 · [[ADR-166]] 정정 3), 그래서 같은 그룹의 두
+ * 하위가 「이번 주」로 같은 숫자를 말한다.
+ *
+ * 그 대가로 **월간 격자의 한 줄 ≠ 주간의 한 주**다. 화면은 월간 격자의 목요일 열에 세로 점선을
+ * 그어 그 경계를 드러낸다.
  *
  * ## 왜 타임존이 «지금» 에만 걸리나
  *
@@ -26,8 +35,16 @@ export interface CalendarDay {
   /** `YYYY-MM-DD`. 표식·기록을 붙이는 키다. */
   readonly dateKey: string
   readonly day: number
-  /** 보고 있는 달의 날짜인가. 앞뒤 달로 채운 칸은 `false` — 흐리게 그린다. */
-  readonly inMonth: boolean
+  /**
+   * **이 격자가 다루는 기간에 드는가.** `false` 인 칸은 흐리게 그리고 열지도 기준에서도 빠진다.
+   *
+   * 월간 격자에서는 «보고 있는 달인가» 이고(앞뒤 달로 채운 칸이 `false`),
+   * **주간 격자에서는 언제나 `true`** 다 — 목요일 주는 두 달에 걸칠 수 있지만 이레가 전부 그 주다.
+   *
+   * 이름이 `inMonth` 였는데 주간이 생기며 **거짓이 됐다**(달을 걸치는 주의 뒷날들이 «그 달» 이
+   * 아니면서 기간에는 든다). 이름이 뜻을 들어야 한다 — [[ADR-170]] 결정 11.
+   */
+  readonly inPeriod: boolean
 }
 
 export type CalendarWeek = readonly CalendarDay[]
@@ -80,12 +97,6 @@ export function getAdjacentMonthKey(monthKey: string, delta: number): string {
   return `${moved.getUTCFullYear()}-${pad(moved.getUTCMonth() + 1)}`
 }
 
-/** 「2026년 8월」 — 0 을 채우지 않는다(읽는 글이지 정렬 키가 아니다). */
-export function formatMonthLabel(monthKey: string): string {
-  const { year, month } = parseMonthKey(monthKey)
-  return `${year}년 ${month}월`
-}
-
 /** 「8월 23일 (일)」 — 고른 날의 상세 머리글. */
 export function formatDayLabel(dateKey: string): string {
   const utcMs = Date.parse(`${dateKey}T00:00:00Z`)
@@ -115,7 +126,7 @@ export function buildCalendarMonth(monthKey: string): CalendarWeek[] {
     weeks[weeks.length - 1]?.push({
       dateKey: dateKeyOf(cursor),
       day: date.getUTCDate(),
-      inMonth: date.getUTCMonth() === month - 1 && date.getUTCFullYear() === year,
+      inPeriod: date.getUTCMonth() === month - 1 && date.getUTCFullYear() === year,
     })
   }
 
@@ -146,9 +157,56 @@ export function monthIncomeMax(weeks: readonly CalendarWeek[], amounts: Calendar
   let max = 0
   for (const week of weeks) {
     for (const day of week) {
-      if (!day.inMonth) continue
+      if (!day.inPeriod) continue
       max = Math.max(max, amounts[day.dateKey]?.incomeMeso ?? 0)
     }
   }
   return max
+}
+
+// ══ 주간 격자 — 게임의 주 ([[ADR-170]] 결정 10·11) ══════════════════════════════
+
+/** 목요일에서 시작한다. **월간 라벨을 회전한 것**이라 요일 이름이 한 곳에만 산다. */
+export const WEEKDAY_LABELS_RESET: readonly string[] = [
+  ...WEEKDAY_LABELS.slice(4),
+  ...WEEKDAY_LABELS.slice(0, 4),
+]
+
+/** `getUTCDay()` 의 목요일. */
+const THURSDAY = 4
+
+/**
+ * 이 날짜가 속한 **게임 주의 시작(목요일)** — `YYYY-MM-DD`.
+ *
+ * `boss-profit-period.ts` 의 `getCurrentBossProfitPeriod('weekly', now).periodKey` 와 **같은 답을
+ * 내야 한다**(테스트가 그 일치를 붙든다). 그쪽을 그대로 부르지 않는 이유는 입력이 다르기 때문이다 —
+ * 저쪽은 `Date`(시각)를 받아 KST 리셋 경계를 재는데, 여기 오는 것은 **이미 KST 달력 날짜**라
+ * 다시 시각으로 바꾸면 타임존이 한 번 더 개입한다. 이 파일이 문자열·UTC 필드 산술만 쓰는 이유가
+ * 그것이다(파일 머리).
+ */
+export function resetWeekStartOf(dateKey: string): string {
+  const utcMs = Date.parse(`${dateKey}T00:00:00Z`)
+  // 목(4)→0 · 금(5)→1 · 토(6)→2 · 일(0)→3 · 월(1)→4 · 화(2)→5 · 수(3)→6.
+  const daysSinceThursday = (new Date(utcMs).getUTCDay() + 7 - THURSDAY) % 7
+  return dateKeyOf(utcMs - daysSinceThursday * DAY_MS)
+}
+
+/**
+ * 목요일부터 **딱 이레**([[ADR-170]] 결정 11, 사용자 지정 «딱 7일만»).
+ *
+ * 월간 격자와 달리 채울 빈칸이 없다 — 주는 언제나 이레이므로 격자 높이가 흔들릴 일도 없다.
+ * 그래서 **이레가 전부 `inPeriod: true`** 다: 달을 걸치는 주에도 «앞뒤 달» 이라는 개념이 없다.
+ */
+export function buildResetWeek(weekStartDateKey: string): CalendarWeek {
+  const startMs = Date.parse(`${weekStartDateKey}T00:00:00Z`)
+  const days: CalendarDay[] = []
+  for (let index = 0; index < 7; index += 1) {
+    const utcMs = startMs + index * DAY_MS
+    days.push({
+      dateKey: dateKeyOf(utcMs),
+      day: new Date(utcMs).getUTCDate(),
+      inPeriod: true,
+    })
+  }
+  return days
 }

@@ -52,6 +52,8 @@ import { useThemeAppearance } from '../../../theme/context'
 const MAX_HEIGHT_RATIO = 0.82
 /** 시트 최대 너비 — 웹 `max-w-md`. */
 const MAX_WIDTH = 448
+/** 그랩 핸들이 차지하는 높이 — 라이브러리 기본 핸들과 같은 값이라 내용 시작 위치가 그대로다. */
+const HANDLE_HEIGHT = 24
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
 
@@ -93,15 +95,31 @@ interface BottomSheetProps {
   onClose: () => void
   children: ReactNode
   testId?: string
+  /**
+   * 이 값이 바뀌면 **스크롤을 맨 위로 되돌린다.**
+   *
+   * 시트 안에서 내용이 통째로 갈리는 화면이 있는데(지출 시트의 갈래 전환), 스크롤은 **껍데기가
+   * 소유**하므로 내용만 바뀌고 위치는 그대로 남는다 — 새 내용이 **밀린 자리에서 시작**해 제목이
+   * 잘린 채로 보였다(iOS 실측 2026-08-25). 되돌리는 것도 소유자의 일이라 여기 둔다.
+   *
+   * 안 넘기면 아무 일도 안 한다 — 한 내용만 그리는 시트는 되돌릴 것이 없다.
+   */
+  resetScrollKey?: string | number
 }
 
 export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
   const ref = useRef<BottomSheetModal>(null)
+  const scrollRef = useRef<{ scrollTo?: (options: { y: number; animated: boolean }) => void }>(null)
   const insets = useSafeAreaInsets()
   // `82vh` 의 짝 — 인셋과 같은 프로바이더에서 나와 둘이 같은 순간을 가리킨다
   // (`CharacterTrackingPicker` 가 `100dvh` 를 옮긴 것과 같은 이유).
   const frame = useSafeAreaFrame()
   const { definition } = useThemeAppearance()
+
+  // 내용이 갈리면 맨 위에서 시작한다 — 사유는 `resetScrollKey` 프롭 주석에.
+  useEffect(() => {
+    scrollRef.current?.scrollTo?.({ y: 0, animated: false })
+  }, [props.resetScrollKey])
 
   // 웹의 `open` 초기값 `true` 와 같은 뜻 — 마운트가 곧 열림이다([[ADR-039]] 결정 3).
   useEffect(() => {
@@ -162,7 +180,30 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
        * 시트 내용을 맨 위에서 아래로 끄는 경로가 남아 있고, 바깥 탭으로 닫는 [[ADR-039]] 결정 3 도
        * 스크림이 받는다. 닫는 수단이 없어지는 것이 아니라 하나가 준다.
        */}
-      <View style={{ height: 24, alignItems: 'center', justifyContent: 'center' }}>
+      {/*
+        **핸들이 흐름에서 빠져 있다**(`position: absolute`).
+        
+        흐름 안에 두면 이 24pt 가 시트 높이 계산에서 **빠진다** — `handleComponent={null}` 이라
+        라이브러리는 핸들 높이를 0 으로 보고 스크롤 내용만 재는데, 실제로는 그 위에 24pt 가 더
+        얹혀 있어 **딱 그만큼 넘친다.** 내용이 다 보이는데도 조금 굴려지고, 한 번 굴리면 제목이
+        잘린 채로 남았다(iOS 실측 2026-08-25).
+        
+        절대 배치로 빼고 그 몫을 **스크롤 내용의 `paddingTop` 에 넣으면** 라이브러리가 재는 값
+        안으로 들어와 높이가 맞는다 — 보이는 자리는 그대로다.
+      */}
+      <View
+        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: HANDLE_HEIGHT,
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1,
+        }}
+      >
         <View
           testID="bottom-sheet-handle"
           style={{ height: 4, width: 36, borderRadius: 2, backgroundColor: definition.borderStrong }}
@@ -170,10 +211,15 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
       </View>
 
       <BottomSheetScrollView
+        ref={scrollRef as never}
         testID={props.testId}
         // 웹은 `pt-2`, 하단은 시트가 화면 끝까지 가므로 안전영역만큼 더 비운다
         // ([[ADR-039]] 결정 2 의 `pb-[calc(1rem+env(safe-area-inset-bottom))]` 과 같은 뜻).
-        contentContainerStyle={{ paddingTop: 8, paddingBottom: insets.bottom + 16 }}
+        // 위쪽에 핸들 몫을 더한다 — 사유는 바로 위 주석.
+        contentContainerStyle={{
+          paddingTop: HANDLE_HEIGHT + 8,
+          paddingBottom: insets.bottom + 16,
+        }}
       >
         {props.children}
       </BottomSheetScrollView>

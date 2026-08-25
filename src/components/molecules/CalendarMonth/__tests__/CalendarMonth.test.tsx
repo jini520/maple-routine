@@ -5,19 +5,28 @@
 import { fireEvent, within } from '@testing-library/react-native'
 
 import { flattenStyle, renderAtom, 기본테마 } from '../../../__tests__/render-atom'
-import { buildCalendarMonth } from '../../../../lib/calendar-month'
+import {
+  WEEKDAY_LABELS_RESET,
+  buildCalendarMonth,
+  buildResetWeek,
+  monthIncomeMax,
+} from '../../../../lib/calendar-month'
 import { CalendarMonth } from '../CalendarMonth'
 
 const 팔월 = buildCalendarMonth('2026-08')
 
 function 그리기(overrides: Partial<React.ComponentProps<typeof CalendarMonth>> = {}) {
+  const weeks = overrides.weeks ?? 팔월
+  const amounts = overrides.amounts ?? {}
   return renderAtom(
     <CalendarMonth
-      weeks={팔월}
+      weeks={weeks}
       selectedDateKey="2026-08-23"
       todayDateKey="2026-08-23"
-      amounts={{}}
+      amounts={amounts}
       onSelectDate={jest.fn()}
+      // 화면이 하는 일과 같다 — 기준선은 **밖에서** 온다([[ADR-170]] 결정 12).
+      incomeMax={monthIncomeMax(팔월, amounts)}
       {...overrides}
     />,
   )
@@ -112,21 +121,24 @@ describe('CalendarMonth — 금액 두 줄 ([[ADR-169]] 정정 1)', () => {
     )
   })
 
-  // 사용자가 고른 시안 그대로다 — 수익 줄은 0 도 «0» 으로 적고, 지출 줄은 0 이면 비운다.
-  it('수익이 없는 날은 «0», 지출이 없는 날은 빈 줄이다', async () => {
+  // [[ADR-169]] 정정 3(사용자 지정 2026-08-25) — **수익 줄도 0 이면 비운다.** 전에는 «0» 을
+  // 적었는데, 아무것도 안 한 날이 대부분이라 격자가 «0» 으로 뒤덮여 실제 숫자가 묻혔다.
+  // 자리는 그대로 지킨다(아래 «두 줄은 값이 없어도» 테스트).
+  it('값이 0 이면 두 줄 다 빈다', async () => {
     const view = await 그리기({ amounts: 금액 })
 
-    expect(칸(view, '2026-08-13').getByTestId('calendar-income-2026-08-13')).toHaveTextContent('0')
-    // `toHaveTextContent('')` 는 무엇에나 통하므로 «− 가 없다» 로 못 박는다.
-    expect(칸(view, '2026-08-12').getByTestId('calendar-expense-2026-08-12')).not.toHaveTextContent(
-      '−',
-    )
+    // `toHaveTextContent` 로는 «비었다» 를 못 박기 어렵다(빈 문자열은 무엇에나 통한다) —
+    // 그려 넣은 문자열을 직접 본다.
+    expect(칸(view, '2026-08-13').getByTestId('calendar-income-2026-08-13').props.children).toBe(' ')
+    expect(칸(view, '2026-08-12').getByTestId('calendar-expense-2026-08-12').props.children).toBe(' ')
   })
 
-  it('기록이 아예 없는 날도 수익 줄에 «0» 이 선다', async () => {
+  it('기록이 아예 없는 날은 수익 줄도 빈다', async () => {
     const view = await 그리기({ amounts: {} })
 
-    expect(칸(view, '2026-08-11').getByTestId('calendar-income-2026-08-11')).toHaveTextContent('0')
+    const 수익줄 = 칸(view, '2026-08-11').getByTestId('calendar-income-2026-08-11')
+    expect(수익줄).not.toHaveTextContent('0')
+    expect(수익줄.props.children).toBe(' ')
   })
 
   // 두 줄이 늘 서 있어야 격자가 안 흔들린다 — 칸이 마흔둘이라 한 줄만 생겨도 화면이 통째로 튄다.
@@ -164,6 +176,22 @@ describe('CalendarMonth — 열지도 ([[ADR-169]] 정정 1)', () => {
     expect(진하기('2026-08-12')).toBeGreaterThan(0)
   })
 
+  // [[ADR-169]] 정정 4(사용자 지정 2026-08-25) — 타일의 안쪽 여백이 **좌우에만** 있어서,
+  // 칠해진 날이 세로로 이어지면 한 덩어리로 붙고 둥근 모서리가 사라졌다. 네 방향을 맞춘다.
+  it('열지도 타일은 네 방향으로 같은 만큼 물러난다', async () => {
+    const view = await 그리기({
+      amounts: { '2026-08-11': { incomeMeso: 10_000_000_000, expenseMeso: 0 } },
+    })
+
+    const 타일 = flattenStyle(view.getByTestId('calendar-heat-2026-08-11').props.style)
+
+    expect(타일.top).toBe(타일.left)
+    expect(타일.bottom).toBe(타일.left)
+    expect(타일.right).toBe(타일.left)
+    // 판별력: 넷 다 0 이면 위 셋이 통과한다.
+    expect(Number(타일.left)).toBeGreaterThan(0)
+  })
+
   it('수익이 없는 날은 안 칠한다', async () => {
     const view = await 그리기({
       amounts: { '2026-08-11': { incomeMeso: 100_000_000_000, expenseMeso: 0 } },
@@ -196,5 +224,68 @@ describe('CalendarMonth — 열지도 ([[ADR-169]] 정정 1)', () => {
     for (const heat of view.getAllByTestId(/^calendar-heat-/)) {
       expect(flattenStyle(heat.props.style).opacity).toBe(0)
     }
+  })
+})
+
+// ══ 월간과 주간을 같은 격자가 그린다 ([[ADR-170]] 결정 11·12) ═══════════════════
+
+describe('주간 격자', () => {
+  const 팔월넷째주 = buildResetWeek('2026-08-20')
+
+  it('주 하나만 넘기면 이레만 그린다 — 새 컴포넌트가 아니다', async () => {
+    const view = await 그리기({ weeks: [팔월넷째주] })
+
+    for (const day of ['20', '21', '22', '23', '24', '25', '26']) {
+      expect(view.getByTestId(`calendar-day-2026-08-${day}`)).toBeTruthy()
+    }
+    expect(view.queryByTestId('calendar-day-2026-08-19')).toBeNull()
+    expect(view.queryByTestId('calendar-day-2026-08-27')).toBeNull()
+  })
+
+  it('요일 머리를 넘기면 그것을 쓴다 — 목요일부터다', async () => {
+    const view = await 그리기({ weeks: [팔월넷째주], weekdayLabels: WEEKDAY_LABELS_RESET })
+
+    // 머리 일곱 칸이 목~수 순서로 선다. 같은 글자가 칸 안에는 없으므로 화면 전체로 집어도 된다.
+    const labels = view.getAllByText(/^[일월화수목금토]$/).map((node) => node.props.children)
+    expect(labels).toEqual(['목', '금', '토', '일', '월', '화', '수'])
+  })
+
+  it('안 넘기면 월간의 일~토가 기본이다 — 월간 호출부는 안 바뀐다', async () => {
+    const view = await 그리기()
+
+    const labels = view.getAllByText(/^[일월화수목금토]$/).map((node) => node.props.children)
+    expect(labels).toEqual(['일', '월', '화', '수', '목', '금', '토'])
+  })
+
+  // 이 테스트가 [[ADR-170]] 결정 12 의 전부다 — 이레만 받아도 진하기는 **그 달** 기준이다.
+  // 기준이 주 안으로 좁아지면 8/20 이 최대가 되어 새까맣게 칠해진다.
+  it('열지도 기준을 받은 주에서 다시 내지 않는다', async () => {
+    const amounts = {
+      '2026-08-13': { incomeMeso: 100_000_000_000, expenseMeso: 0 },
+      '2026-08-20': { incomeMeso: 10_000_000_000, expenseMeso: 0 },
+    }
+
+    const view = await 그리기({
+      weeks: [팔월넷째주],
+      amounts,
+      // 그 달 전체가 기준이다(8/13 의 1000억). 8/20 은 그 10% 라 가장 옅은 단계여야 한다.
+      incomeMax: monthIncomeMax(buildCalendarMonth('2026-08'), amounts),
+    })
+
+    const heat = flattenStyle(view.getByTestId('calendar-heat-2026-08-20').props.style)
+    expect(heat.opacity).toBeLessThan(0.2)
+  })
+
+  it('같은 값이라도 기준이 주로 좁아지면 가장 진해진다 — 그래서 밖에서 넣는다', async () => {
+    const amounts = { '2026-08-20': { incomeMeso: 10_000_000_000, expenseMeso: 0 } }
+
+    const view = await 그리기({
+      weeks: [팔월넷째주],
+      amounts,
+      incomeMax: monthIncomeMax([팔월넷째주], amounts),
+    })
+
+    const heat = flattenStyle(view.getByTestId('calendar-heat-2026-08-20').props.style)
+    expect(heat.opacity).toBeGreaterThan(0.4)
   })
 })

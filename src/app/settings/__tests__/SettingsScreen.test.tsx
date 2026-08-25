@@ -255,7 +255,7 @@ describe('SettingsScreen', () => {
 
   // [[ADR-118]] 결정 5 — 들어가지 않고도 안을 짐작하게 하는 값 하나.
   it('"계정 및 데이터" 우측에 캐시 총 용량(두 그룹의 합)을 표시한다', async () => {
-    mockedLoadCacheDataSizes.mockResolvedValue({ general: 1024 * 1024, bossRecords: 1024 * 512 })
+    mockedLoadCacheDataSizes.mockResolvedValue({ general: 1024 * 1024, records: 1024 * 512 })
     const view = await renderOverlay(<SettingsScreen />)
 
     expect(await view.findByText('1.5MB')).toBeTruthy()

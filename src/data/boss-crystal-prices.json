@@ -68,7 +68,7 @@
     { "boss": "찬란한 흉성", "difficulty": "하드", "priceMeso": 2678000000, "asOf": "2026-06-25", "maxPartySize": 3 },
 
     { "boss": "벨로나", "difficulty": "이지", "priceMeso": 440000000, "asOf": "2026-08-19", "maxPartySize": 3 },
-    { "boss": "벨로나", "difficulty": "노멀", "priceMeso": 890000000, "asOf": "2026-08-19", "maxPartySize": 3 },
+    { "boss": "벨로나", "difficulty": "노멀", "priceMeso": 850000000, "asOf": "2026-08-19", "maxPartySize": 3 },
     { "boss": "벨로나", "difficulty": "하드", "priceMeso": 2950000000, "asOf": "2026-08-19", "maxPartySize": 3 },
 
     { "boss": "림보", "difficulty": "노멀", "priceMeso": 1026000000, "asOf": "2026-06-25", "maxPartySize": 3 },

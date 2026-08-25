@@ -24,6 +24,10 @@ const TABLE_DEFINITIONS = [
     -- 제외된다. 월드를 파생값(캐시된 character/basic)으로 두면 월드 리프가 모든 과거 주의 귀속을
     -- 소급 이동시킨다 — 분모(90 x 월드 수)까지 바뀐다.
     world TEXT,
+    -- 처치 **날짜**(KST YYYY-MM-DD, ADR-172). period_key 는 주(목요일)·달이라 "며칟날" 을 못 든다.
+    -- NULL 은 "모름" 이고 가계부의 월간 칸 집계에서 조용히 빠진다(world 와 같은 모양) — 키가
+    -- 아니므로 나중에 채워 넣어도 옛 행이 움직이지 않는다.
+    defeated_on TEXT,
     PRIMARY KEY (ocid, boss, difficulty, period_key)
   )
 `,
@@ -78,6 +82,69 @@ const TABLE_DEFINITIONS = [
     price_meso INTEGER,
     price_share INTEGER,
     PRIMARY KEY (ocid, boss, difficulty, period_key, drop_index)
+  )
+`,
+  },
+  // 가계부가 **손으로 적는** 둘([[ADR-170]] · [[ADR-166]]). 앞의 넷과 갈리는 성질이 셋이다:
+  //  ① **대리키다.** 앞의 넷은 자연키 복합 PK 인데 손입력은 «같은 날 같은 것을 두 번» 이 정상이라
+  //     자연키가 성립하지 않는다.
+  //  ② **날짜가 참이다.** 사용자가 직접 고르므로 `period_key`(주·월)가 아니라 날짜를 든다 —
+  //     그래서 캘린더 칸에 바로 설 수 있다(보스 기록은 #239 를 기다린다).
+  //  ③ **API 가 없다.** 되살릴 길이 0% 라 `RECORD_TABLE_NAMES` 에 반드시 들어야 한다
+  //     (`storage/cache-data.ts` — 안 넣으면 차집합 파생으로 «지워도 되는 것» 에 끌려간다).
+  {
+    name: 'income_records',
+    createSql: `
+  CREATE TABLE IF NOT EXISTS income_records (
+    id TEXT NOT NULL,
+    -- NULL = 계정 단위가 기본이다([[ADR-166]] 결정 3). 통화가 귀속을 강제하지 않는다.
+    ocid TEXT,
+    earned_on TEXT NOT NULL,      -- 'YYYY-MM-DD' KST
+    category TEXT NOT NULL,       -- 아이템 판매 · 사냥 · 기타([[ADR-170]] 결정 1)
+    item TEXT,                    -- 판 것 / 사냥터 / 자유
+    -- 수입은 **메소뿐**이다([[ADR-170]] 결정 1) — 통화 칸 셋도 시세도 없다.
+    meso_amount INTEGER NOT NULL,
+    memo TEXT,
+    recorded_at TEXT NOT NULL,
+    PRIMARY KEY (id)
+  )
+`,
+  },
+  {
+    name: 'spend_records',
+    createSql: `
+  CREATE TABLE IF NOT EXISTS spend_records (
+    id TEXT NOT NULL,
+    ocid TEXT,
+    spent_on TEXT NOT NULL,       -- 'YYYY-MM-DD' KST([[ADR-166]] 결정 4)
+    -- 컨텐츠 · 상점·편의 · 버프 · 아이템 구매 · 기타([[ADR-166]] 정정 1 ②)
+    category TEXT NOT NULL,
+    item TEXT,
+    -- 같은 값을 두 형태로 받는 항목이 있다 — 에픽던전 리워드는 «경험치» 와 «솔 에르다» 중 하나다
+    -- (카탈로그의 «forms»). **가격이 같아서** 금액으로는 구분이 안 되므로 따로 적는다:
+    -- 안 적으면 «솔 에르다를 몇 번 받았나» 를 나중에 되물을 수 없다. 형태가 없는 항목은 NULL.
+    form TEXT,
+    -- 금액 = 카탈로그의 «unitPrice» × 이 값([[ADR-166]] 정정 1 ③). 단위 이름은 안 적는다 —
+    -- «src/data/spend-catalog.json» 이 항목별로 알고 있어 베끼면 두 벌이 어긋난다.
+    quantity INTEGER,
+    -- 통화별 칸 셋. 안 쓴 칸은 NULL 이다([[ADR-166]] 결정 2).
+    -- **관세를 포함한 총액**이라 집계는 이 한 칸만 보면 된다(정정 2 ②).
+    meso_amount INTEGER,
+    -- 그중 관세분. **집계에 더하지 말 것** — 이미 meso_amount 안에 있다. 요율을 안 박고 읽을 때
+    -- 나누면 요율이 바뀌는 날 지난달 관세가 소급해 달라진다([[ADR-069]] 결정 1 과 같은 이유).
+    tariff_meso INTEGER,
+    point_amount INTEGER,
+    -- 메소마켓 시세 — 단위가 **1억 메소당 메포**다(정정 2 ④). «meso_per_point» 라는 이름이었는데
+    -- **거짓이었다**: 이 값으로 하는 것은 곱셈이 아니라 **나눗셈**이다(메포 × 1억 ÷ 시세).
+    -- point_amount 가 있으면 NOT NULL 이어야 하고(정정 2 ③) 0 이면 안 된다.
+    point_per_100m_meso INTEGER,
+    -- **환산하지 않는다**(정정 2 ①) — 그래서 짝이 되는 환율 칸이 없다. 현금과 게임 재화의 교환비가
+    -- 실제로 성립하는 경로가 운영정책 위반 거래라, 앱이 그 숫자를 적으면 그 경로에 값을 매기는
+    -- 것처럼 읽힌다.
+    cash_amount INTEGER,
+    memo TEXT,
+    recorded_at TEXT NOT NULL,
+    PRIMARY KEY (id)
   )
 `,
   },
@@ -138,10 +205,17 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
     await db.execute(table.createSql)
   }
   await ensureColumn(db, 'boss_profit_records', 'world', 'TEXT')
+  // [[ADR-172]] — `world` 와 같은 사정이다. 이미 보스를 기록해 둔 기기에는 CREATE 가 안 붙인다.
+  await ensureColumn(db, 'boss_profit_records', 'defeated_on', 'TEXT')
   // 이미 만들어진 DB에는 위 CREATE 가 컬럼을 더해주지 않는다([[ADR-069]] 결정 1과 같은 사정).
   await ensureColumn(db, 'boss_drop_records', 'price_state', 'TEXT')
   await ensureColumn(db, 'boss_drop_records', 'price_meso', 'INTEGER')
   await ensureColumn(db, 'boss_drop_records', 'price_share', 'INTEGER')
+  // **테이블을 세운 커밋과 이 컬럼을 더한 커밋이 갈렸다.** `spend_records` 는 `form` 없이 만들어졌고
+  // (`177c195b`) 「지출 항목 고르기를 두 단계로」(`89e806fa`)가 그 컬럼을 **CREATE 문에만** 더했다.
+  // 그 사이에 앱을 켠 기기는 `form` 없는 테이블을 들고 있고, INSERT 는 모든 칸을 적으므로
+  // **지출이 하나도 안 적힌다**(실기 재현 2026-08-25). 위 둘과 같은 사정이다.
+  await ensureColumn(db, 'spend_records', 'form', 'TEXT')
   await db.execute(MIGRATE_MEIRIN_BOSS_KEY_PARTY_SETTINGS)
   await db.execute(MIGRATE_MEIRIN_BOSS_KEY_PROFIT_RECORDS)
 

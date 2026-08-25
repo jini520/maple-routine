@@ -26,6 +26,11 @@ jest.mock('../../../storage/boss-profit', () => ({
 }))
 const { getBossProfitRecords: getBossProfitRecordsMock, hasBossProfitRecordsAtOrBefore: hasBossProfitRecordsAtOrBeforeMock, fillMissingRecordWorlds: fillMissingRecordWorldsMock, upsertBossProfitRecord: upsertBossProfitRecordMock } = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
 
+// 처치 날짜 캐기는 **동기화가 끝난 뒤 기다리지 않고** 튼다([[ADR-172]] 결정 9) — 이 화면은
+// `defeated_on` 을 안 쓰므로 결과를 기다릴 이유가 없다. 목으로 «떴는가» 만 본다.
+jest.mock('../defeat-dates', () => ({ resolveDefeatDates: jest.fn() }))
+const { resolveDefeatDates: resolveDefeatDatesMock } = jest.requireMock('../defeat-dates') as Record<string, jest.Mock>
+
 jest.mock('../../../storage/boss-party-settings', () => ({
   getBossPartySize: jest.fn(),
 }))
@@ -139,6 +144,7 @@ function syncResult(overrides: Partial<CharacterScheduleSync> = {}): CharacterSc
 beforeEach(() => {
   // ADR-097 결정 3: 모듈 수준 실행 플래그라 테스트끼리 오염된다.
   resetSyncRunStateForTests()
+  resolveDefeatDatesMock.mockReset().mockResolvedValue(0)
   useBossProfitStore.setState({
     status: 'idle',
     tab: 'weekly',
@@ -432,6 +438,31 @@ describe('useBossProfitStore', () => {
     expect(state.status).toBe('loaded')
     expect(state.rows).toEqual([])
     expect(state.staleCharacterNames).toEqual([])
+  })
+
+  // [[ADR-172]] 결정 9 — 동기화가 끝나면 처치 날짜를 캔다. 자동 기록이 **방금 만든 행까지**
+  // 대상에 들어야 하므로 기록 뒤여야 하고, 이 화면은 그 값을 안 쓰므로 기다리면 안 된다.
+  it('동기화가 끝나면 처치 날짜 캐기를 튼다', async () => {
+    syncSchedulesMock.mockResolvedValue([syncResult()])
+
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+
+    expect(resolveDefeatDatesMock).toHaveBeenCalledWith(['ocid-1'], expect.any(Date))
+  })
+
+  it('캐릭터가 없으면 캐지 않는다', async () => {
+    await useBossProfitStore.getState().refresh([])
+
+    expect(resolveDefeatDatesMock).not.toHaveBeenCalled()
+  })
+
+  it('캐기가 던져도 동기화는 성공으로 끝난다', async () => {
+    syncSchedulesMock.mockResolvedValue([syncResult()])
+    resolveDefeatDatesMock.mockRejectedValue(new Error('network'))
+
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+
+    expect(useBossProfitStore.getState().status).toBe('loaded')
   })
 
   it('등록되지 않고 미처치인 보스는 rows에서 제외된다', async () => {
