@@ -545,9 +545,25 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
         {(hasSubject || usesPoint) && (
           <View className="gap-2 rounded-xl border border-border bg-surface p-3">
             {item !== null && !direct && (
-              <View className="flex-row items-center justify-between">
-                <Text className="text-xs text-text-muted">수량</Text>
-                <QuantityStepper value={quantity} unit={item.unit} onChange={setQuantity} />
+              <View className="gap-1.5">
+                <View className="flex-row items-center justify-between">
+                  <Text className="text-xs text-text-muted">수량</Text>
+                  <QuantityStepper value={quantity} unit={item.unit} onChange={setQuantity} />
+                </View>
+
+                {item.limit !== undefined && (
+                  // **적어만 두고 세지 않는다**([[ADR-166]] 정정 1 ⑤). 몬스터 파크 한도는 축이
+                  // 셋(월드당 14 · 캐릭터당 7 · 무료 2)인데 앱은 지금 어느 월드·어느 캐릭터인지
+                  // 모른다 — 하나를 골라 수량을 막으면 그 고름이 곧 추정이 된다([[ADR-006]]).
+                  // 대신 사용자가 준 문장을 **그대로** 옆에 둔다: 세는 것은 사람이 한다.
+                  // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
+                  <Text
+                    testID="spend-sheet-limit"
+                    className="text-[11px] leading-4 text-text-disabled"
+                  >
+                    한도 · {item.limit}
+                  </Text>
+                )}
               </View>
             )}
 

@@ -247,6 +247,28 @@ describe('수량 — 곱셈은 앱이 한다', () => {
     expect(view.queryByText('지출 추가')).toBeNull()
   })
 
+  // 사용자가 준 한도를 **화면이 들고 있어야** 한다 — 데이터에만 있고 안 보이면 받은 뜻이 없다
+  // (사용자 지적 2026-08-25). 앱은 세지 않는다: 몬스터 파크 한도는 축이 셋(월드·캐릭터·무료)인데
+  // 앱은 지금 어느 월드·어느 캐릭터인지 모른다([[ADR-166]] 정정 1 ⑤).
+  it('한도가 있는 항목은 사용자 문장 그대로 적는다', async () => {
+    const view = await 그리기({ lastPointRate: 1_180 })
+
+    await 누르기(view, '몬스터 파크')
+
+    expect(view.getByTestId('spend-sheet-limit')).toHaveTextContent(
+      '한도 · 일간 월드당 최대 14회, 캐릭터 당 최대 7회, 일간 무료 2회',
+    )
+  })
+
+  // 한도가 없는 항목에 빈 줄이 서면 «한도가 0» 으로 읽힌다.
+  it('한도가 없는 항목에는 그 줄이 서지 않는다', async () => {
+    const view = await 그리기({ lastPointRate: 1_180 })
+
+    await 누르기(view, '에픽던전 퀵패스')
+
+    expect(view.queryByTestId('spend-sheet-limit')).toBeNull()
+  })
+
   // 형태가 있는데 안 고르면 «어느 쪽인지 모르는 행» 이 된다 — 칸을 더한 뜻이 사라진다.
   it('형태를 안 고르면 저장이 막힌다', async () => {
     const view = await 그리기({ lastPointRate: 1_180 })
