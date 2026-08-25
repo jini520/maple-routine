@@ -35,7 +35,7 @@ import { MesoKeypad } from '../../components/molecules/MesoPad/MesoKeypad'
 import { applyMesoKey } from '../../components/molecules/MesoPad/meso-pad'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import { formatDayLabel } from '../../lib/calendar-month'
-import { CheckIcon, MinusIcon, PlusIcon } from '../../lib/icons'
+import { CheckIcon, ChevronLeftIcon, MinusIcon, PlusIcon } from '../../lib/icons'
 import { formatMesoCompact } from '../../lib/meso-compact'
 import {
   SPEND_TARIFF_PERCENT,
@@ -449,13 +449,31 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
               ))
             ) : (
               <View className="gap-3 pb-1">
+                {/*
+                  ②에서 ①로 돌아가는 자리 — **표식을 세운다**(사용자 지정 2026-08-25).
+                  누를 수 있다는 사실 자체는 처음부터 있었지만 줄이 «고른 것을 알려 주는 요약»
+                  처럼만 보여서 **되돌아갈 길이 없어 보였다.** 화살촉 하나가 그 줄을 버튼으로
+                  읽히게 만든다 — `BossDropSheet` 의 `BoxDrillDown` 이 쓰는 것과 같은 표식이다.
+
+                  줄 전체가 누르는 자리로 남는다. 화살촉만 버튼으로 좁히면 손가락 자리가
+                  16pt 로 줄고, 이 줄에는 경쟁하는 다른 동작이 없어 좁힐 이유가 없다.
+                */}
                 <Pressable
                   role="button"
                   aria-label="다시 고르기"
+                  testID="spend-sheet-back"
                   onPress={clearChoice}
+                  hitSlop={8}
                   className="flex-row items-center justify-between border-b border-border pb-2"
                 >
-                  <Text className="text-xs text-text-muted">선택된 {category}</Text>
+                  <View className="-ml-1 flex-row items-center gap-0.5">
+                    <ChevronLeftIcon
+                      className="h-4 w-4 text-text-muted"
+                      strokeWidth={2}
+                      aria-hidden
+                    />
+                    <Text className="text-xs text-text-muted">선택된 {category}</Text>
+                  </View>
                   <Text testID="spend-sheet-choice" className="text-sm font-bold text-text">
                     {choice.label}
                   </Text>

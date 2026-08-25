@@ -233,6 +233,17 @@ describe('수량 — 곱셈은 앱이 한다', () => {
     expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
   })
 
+  // 돌아가는 길이 **보여야** 한다 — 동작만 있고 표식이 없으면 «막다른 시트» 로 읽힌다
+  // (사용자 지적 2026-08-25). 목록에서는 돌아갈 데가 없으니 서 있으면 안 된다.
+  it('뒤로 가는 자리는 ②에서만 선다', async () => {
+    const view = await 그리기({ lastPointRate: 1_180 })
+    expect(view.queryByTestId('spend-sheet-back')).toBeNull()
+
+    await 누르기(view, '하이마운틴')
+
+    expect(view.getByTestId('spend-sheet-back')).toBeTruthy()
+  })
+
   // 형태가 있는데 안 고르면 «어느 쪽인지 모르는 행» 이 된다 — 칸을 더한 뜻이 사라진다.
   it('형태를 안 고르면 저장이 막힌다', async () => {
     const view = await 그리기({ lastPointRate: 1_180 })
