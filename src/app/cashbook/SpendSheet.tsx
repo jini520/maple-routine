@@ -26,7 +26,7 @@
  * 자리가 둘이 된다.
  */
 import { useState } from 'react'
-import { Pressable, ScrollView, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 
 // `TextInput` 도 atom 에서 온다 — 시스템 글자 크기 클램프가 거기 있다([[ADR-152]] 결정 4).
 import { Text, TextInput } from '../../components/atoms/Text/Text'
@@ -398,10 +398,13 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
             </View>
           </View>
         ) : (
-          // 마지막 묶음이 상한선에 걸려 **잘린 채로 멈추지 않게** 아래 여백을 준다 — 없으면 끝까지
-          // 굴려도 마지막 줄이 반쯤 잘린 자리에서 멈춰 «더 있는지» 가 안 보인다.
+          // **여기에 스크롤을 두지 않는다.** 시트 껍데기가 이미 `BottomSheetScrollView` 이고
+          // 높이도 «내용만큼, 82% 를 상한으로» 다(`BottomSheet`). 안쪽에 또 두면 중첩 스크롤이
+          // 되어 손가락이 어느 쪽을 미는지 갈리고, 무엇보다 **목록이 상한선에서 잘려** 「더
+          // 있는지」가 안 보였다(iOS 실측 2026-08-25). 걷어내면 목록이 제 높이로 서고, 그래도
+          // 넘치는 기기에서는 **껍데기의 스크롤**이 받는다 — 스크롤이 한 겹만 남는다.
           // (`) : (` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다 — 이 파일에서 두 번째다.)
-          <ScrollView className="max-h-72" contentContainerClassName="pb-2">
+          <View className="gap-1">
             {choice === null ? (
               groups.map((group) => (
                 <View key={group.group} className="gap-1 pb-2">
@@ -475,7 +478,7 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
                 )}
               </View>
             )}
-          </ScrollView>
+          </View>
         )}
 
         {category === '아이템 구매' && (
