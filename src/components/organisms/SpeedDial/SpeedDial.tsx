@@ -45,6 +45,7 @@ import Animated, {
   type SharedValue,
 } from 'react-native-reanimated'
 
+import { FAB_LIFT_PX } from './speed-dial-metrics'
 import { resolveBottomBarMetrics } from '../../../lib/bottom-bar-metrics'
 import { useBottomSafeAreaPx } from '../../../lib/bottom-safe-area'
 import { useThemeAppearance } from '../../../theme/context'
@@ -212,7 +213,8 @@ export function SpeedDial(props: SpeedDialProps): React.JSX.Element {
    */
   const bottomSafeAreaPx = useBottomSafeAreaPx()
   const { width: windowWidthPx } = useWindowDimensions()
-  const dialBottomPx = bottomSafeAreaPx + resolveBottomBarMetrics(windowWidthPx).spacePx + 12
+  const dialBottomPx =
+    bottomSafeAreaPx + resolveBottomBarMetrics(windowWidthPx).spacePx + FAB_LIFT_PX
 
   const scrim = useDialProgress(DIAL_MOTION.scrim, isOpen, reduceMotion)
   const fab = useDialProgress(DIAL_MOTION.fab, isOpen, reduceMotion)

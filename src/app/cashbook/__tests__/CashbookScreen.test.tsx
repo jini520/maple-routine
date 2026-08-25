@@ -51,7 +51,8 @@ jest.mock('@gorhom/bottom-sheet', () => {
 })
 
 import { useToastStore } from '../../../features/toast/store'
-import { renderOverlay } from '../../../components/__tests__/render-atom'
+import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
+import { SPEED_DIAL_SPACE_PX } from '../../../components/organisms/SpeedDial/speed-dial-metrics'
 import { CashbookScreen } from '../CashbookScreen'
 
 const records = jest.requireMock('../../../features/cashbook/records') as Record<string, jest.Mock>
@@ -660,6 +661,19 @@ describe('줄을 누르면 고칠 수 있다', () => {
     await 이름으로누르기(view, '지출 추가')
 
     expect(view.queryByTestId('spend-sheet-delete')).toBeNull()
+  })
+})
+
+// FAB 는 화면 위에 떠 있어 **콘텐츠를 밀어내지 않는다** — 그 몫을 콘텐츠 끝에서 갚지 않으면
+// 스크롤을 끝까지 내렸을 때 마지막 줄이 버튼 뒤로 들어간다([[ADR-170]] 결정 5 가 예고한 결함,
+// 사용자 보고 2026-08-25). 값의 출처가 다이얼과 **같은 상수**여야 갈리지 않는다.
+describe('떠 있는 ＋ 가 먹는 자리', () => {
+  it('콘텐츠 끝에 다이얼 몫만큼 여백을 남긴다', async () => {
+    const view = await 그리기()
+
+    const 여백 = flattenStyle(view.getByTestId('cashbook-content').props.style).paddingBottom
+
+    expect(여백).toBe(SPEED_DIAL_SPACE_PX)
   })
 })
 

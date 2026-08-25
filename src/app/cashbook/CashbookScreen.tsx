@@ -53,6 +53,7 @@ import { CalendarMonth } from '../../components/molecules/CalendarMonth/Calendar
 import { ProfitIcon } from '../../components/atoms/ProfitIcon/ProfitIcon'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { SpeedDial } from '../../components/organisms/SpeedDial/SpeedDial'
+import { SPEED_DIAL_SPACE_PX } from '../../components/organisms/SpeedDial/speed-dial-metrics'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
@@ -459,7 +460,20 @@ export function CashbookScreen(): React.JSX.Element {
           </PageHeader>
         }
       >
-        <View className="gap-4 px-4 pb-4">
+        {/*
+          바닥 여백이 **떠 있는 ＋ 의 몫**이다([[ADR-170]] 결정 5 의 «딸려 오는 결함»). FAB 는 화면
+          위에 떠 있어 콘텐츠를 밀어내지 않으므로, 여기서 갚지 않으면 스크롤을 끝까지 내렸을 때
+          마지막 줄이 버튼 뒤로 들어간다(사용자 보고 2026-08-25).
+
+          `pb-4` 를 **대신한다** — 그 상수가 숨돌림 16 을 이미 품고 있어(`speed-dial-metrics.ts`)
+          함께 주면 바닥 여백이 두 번 붙는다. 하단바의 몫은 여기 없다: `ScreenScroll` 이 이미 콘텐츠
+          끝에 남기고 다이얼은 그 위에 앉는다.
+        */}
+        <View
+          testID="cashbook-content"
+          className="gap-4 px-4"
+          style={{ paddingBottom: SPEED_DIAL_SPACE_PX }}
+        >
           <View className="flex-row items-center justify-center gap-4">
             {/* 이름이 모드를 따른다 — 스크린리더가 «무엇이 옮겨지는가» 를 듣는다. */}
             <MonthArrow

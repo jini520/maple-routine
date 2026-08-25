@@ -4,8 +4,14 @@
 // 보는 것은 «무엇이 눌리고 무엇이 안 눌리는가» 다.
 import { act, fireEvent } from '@testing-library/react-native'
 
-import { renderOverlay } from '../../../__tests__/render-atom'
+import { flattenStyle, renderOverlay } from '../../../__tests__/render-atom'
 import { SpeedDial } from '../SpeedDial'
+import {
+  FAB_CONTENT_GAP_PX,
+  FAB_DIAMETER_PX,
+  FAB_LIFT_PX,
+  SPEED_DIAL_SPACE_PX,
+} from '../speed-dial-metrics'
 
 type Rendered = Awaited<ReturnType<typeof renderOverlay>>
 
@@ -134,5 +140,25 @@ describe('차례', () => {
     const 줄 = view.getAllByTestId(/^speed-dial-row-/).map((node) => node.props.testID)
 
     expect(줄).toEqual(['speed-dial-row-income', 'speed-dial-row-expense'])
+  })
+})
+
+// 치수는 **두 곳이 나눠 쓴다**(`speed-dial-metrics.ts`) — 다이얼이 자기 높이를 정하고, 화면이
+// 그만큼을 콘텐츠 끝에 갚는다. 갈리면 화면에서는 «조금 가린다» 로만 보여서 알아채기 어렵다.
+describe('치수 ([[ADR-170]] 결정 5 의 딸려 오는 결함)', () => {
+  it('FAB 의 실제 높이가 화면이 갚는 값과 같은 상수에서 나온다', async () => {
+    const view = await 그리기()
+
+    const fab = flattenStyle(view.getByLabelText('기록 추가').props.style)
+
+    expect(fab.height).toBe(FAB_DIAMETER_PX)
+    expect(fab.width).toBe(FAB_DIAMETER_PX)
+  })
+
+  it('콘텐츠가 갚을 몫은 뜨는 높이 + 지름 + 숨돌림이다', () => {
+    expect(SPEED_DIAL_SPACE_PX).toBe(FAB_LIFT_PX + FAB_DIAMETER_PX + FAB_CONTENT_GAP_PX)
+    // 판별력: 셋 중 하나가 0 이면 «가린다» 가 그만큼 되살아난다.
+    expect(FAB_LIFT_PX).toBeGreaterThan(0)
+    expect(FAB_CONTENT_GAP_PX).toBeGreaterThan(0)
   })
 })

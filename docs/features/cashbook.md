@@ -43,7 +43,7 @@
 | 참조표 읽기 | `lib/spend-catalog.ts` | 갈래 → 묶음 → 항목 · 환산 둘(메포→메소 · 관세) |
 | 오케스트레이션 | `features/cashbook/records.ts` | 행의 신원(`id`·`recordedAt`) · 시세 기억 · **네 원천을 하루로 접기** · 줄의 표기(`recordTitleOf`·`recordCountLabelOf`) |
 | 보스 날짜 캐기 | `features/boss-profit/defeat-dates.ts` | 날짜별 응답을 훑어 «뒤집힌 날» 을 찾아 `defeated_on` 을 채운다([[ADR-172]]) |
-| 입력 | `app/cashbook/SpendSheet.tsx` · `IncomeSheet.tsx` · `components/organisms/SpeedDial/` | 떠 있는 ＋ → 갈래 둘 → 시트 |
+| 입력 | `app/cashbook/SpendSheet.tsx` · `IncomeSheet.tsx` · `components/organisms/SpeedDial/`(`speed-dial-motion` 움직임 · `speed-dial-metrics` 치수) | 떠 있는 ＋ → 갈래 둘 → 시트 |
 | 금액 키패드 | `components/molecules/MesoPad/` | 금액 칸 · 빠른 칩 · 3열 그리드. **드롭 판매가와 같은 부품**이다 |
 | 화면 | `app/cashbook/CashbookScreen.tsx` | 주간/월간 전환 + 기간 이동 + 격자 + 고른 날의 상세 |
 
@@ -108,6 +108,10 @@
 
 - **진입점은 떠 있는 ＋ 하나**다(결정 5). 스크롤 위치와 무관하게 닿는 대신 **갈래·날짜·중복**을
   스스로 갚아야 한다 — 갈래는 펼침판이, 날짜는 시트 머리가, 중복은 시트 안 요약 한 줄이 든다.
+- **그리고 «자리» 도 갚는다.** FAB 는 화면 위에 떠 있어 콘텐츠를 밀어내지 않으므로, 화면이 콘텐츠
+  끝에 `SPEED_DIAL_SPACE_PX`(`SpeedDial/speed-dial-metrics.ts`)만큼 여백을 남긴다 — 안 그러면 스크롤
+  끝에서 마지막 줄이 버튼 뒤로 들어간다. 이 값이 화면의 `pb-4` 를 **대신한다**(숨돌림을 이미 품는다).
+  하단바의 몫은 여기 없다 — `ScreenScroll` 이 이미 남기고 다이얼은 그 위에 앉는다.
 - **갈래는 시트 밖에서 갈린다**(결정 6). 그래서 **시트는 자기가 어느 갈래인지 모르고** 프롭으로 받은
   것을 그리기만 한다 — 격자와 계산을 가른 것과 같은 모양이다([[ADR-147]] 결정 8).
 - **지출이 아래, 수입이 위**다(결정 7). 칸의 두 줄과 같은 순서이고, 덕분에 **잦은 지출이 FAB 에 더 가깝다.**
