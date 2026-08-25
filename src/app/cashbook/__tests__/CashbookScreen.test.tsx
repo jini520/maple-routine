@@ -119,7 +119,38 @@ describe('CashbookScreen — 자리와 머리', () => {
     const view = await 그리기()
     await 월간으로(view)
 
-    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('2026년 8월')
+    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('이번 달')
+    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('2026년 8월')
+  })
+})
+
+// 기간 이동은 **보스 수익 탭의 그것과 같은 모양**이다([[ADR-170]] 정정 3) — 화살촉 둘 사이에
+// 두 줄(«이번 주» + 그 이레의 날짜)이 선다. 라벨은 `formatBossProfitPeriodLabel` 이 만든다.
+describe('CashbookScreen — 기간 라벨 ([[ADR-170]] 정정 3)', () => {
+  it('가까운 기간은 상대 표현이고, 아랫줄이 그 날짜를 든다', async () => {
+    const view = await 그리기()
+
+    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('이번 주')
+    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('8월 20일 ~ 8월 26일')
+  })
+
+  it('먼 기간은 절대 표현으로 바뀐다 — 「지난 주」 뒤부터는 주차다', async () => {
+    const view = await 그리기()
+
+    await 이름으로누르기(view, '이전 주')
+    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('지난 주')
+
+    await 이름으로누르기(view, '이전 주')
+    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('8월 1주차')
+    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('8월 6일 ~ 8월 12일')
+  })
+
+  it('아랫줄은 상대 표현일 때도 **정확한 날짜**를 말한다', async () => {
+    const view = await 그리기()
+    await 월간으로(view)
+
+    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('이번 달')
+    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('2026년 8월')
   })
 })
 
@@ -129,11 +160,13 @@ describe('CashbookScreen — 달 이동', () => {
     await 월간으로(view)
 
     await 이름으로누르기(view, '이전 달')
-    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('2026년 7월')
+    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('지난 달')
+    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('2026년 7월')
 
     await 이름으로누르기(view, '다음 달')
     await 이름으로누르기(view, '다음 달')
     expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('2026년 9월')
+    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('2026년 9월')
   })
 
   it('해를 넘긴다', async () => {
@@ -143,6 +176,7 @@ describe('CashbookScreen — 달 이동', () => {
     for (let count = 0; count < 5; count += 1) await 이름으로누르기(view, '다음 달')
 
     expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('2027년 1월')
+    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('2027년 1월')
   })
 
   // 달을 옮겨도 고른 날은 그대로다 — 옮긴 것은 «보는 달» 이지 «고른 날» 이 아니다.
@@ -182,6 +216,7 @@ describe('CashbookScreen — 날짜 선택', () => {
 
     expect(view.getByTestId('cashbook-selected-day')).toHaveTextContent('9월 5일 (토)')
     expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('2026년 9월')
+    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('2026년 9월')
     // 옮긴 달의 격자에 그 칸이 여전히 있다(이번엔 이번 달 칸으로).
     expect(view.getByTestId('calendar-day-2026-09-05')).toBeTruthy()
   })
@@ -235,7 +270,8 @@ describe('주간/월간 전환', () => {
     const view = await 그리기()
 
     // 오늘은 2026-08-23(일)이고 그 주의 목요일은 8/20 이다.
-    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('8월 20일 – 26일')
+    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('이번 주')
+    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('8월 20일 ~ 8월 26일')
     expect(view.getAllByTestId(/^calendar-day-/)).toHaveLength(7)
   })
 
@@ -245,7 +281,8 @@ describe('주간/월간 전환', () => {
     await 이름으로누르기(view, '주간')
 
     // 오늘은 2026-08-23(일)이고 그 주의 목요일은 8/20 이다.
-    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('8월 20일 – 26일')
+    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('이번 주')
+    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('8월 20일 ~ 8월 26일')
   })
 
   it('주간에서는 이레만 그린다 — 딱 7칸', async () => {
@@ -275,11 +312,13 @@ describe('주간/월간 전환', () => {
     await 이름으로누르기(view, '주간')
 
     await 이름으로누르기(view, '이전 주')
-    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('8월 13일 – 19일')
+    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('지난 주')
+    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('8월 13일 ~ 8월 19일')
 
     await 이름으로누르기(view, '다음 주')
     await 이름으로누르기(view, '다음 주')
-    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('8월 27일 – 9월 2일')
+    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('8월 4주차')
+    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('8월 27일 ~ 9월 2일')
   })
 
   // 달을 걸치는 주는 **달을 둘 다 적는다** — 「8월 27일 – 2일」 이면 어느 달의 2일인지 모른다.
@@ -288,7 +327,8 @@ describe('주간/월간 전환', () => {
     await 이름으로누르기(view, '주간')
     await 이름으로누르기(view, '다음 주')
 
-    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('8월 27일 – 9월 2일')
+    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('8월 4주차')
+    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('8월 27일 ~ 9월 2일')
   })
 
   it('월간으로 돌아가면 **그 주의 목요일이 든 달**이다', async () => {
@@ -299,7 +339,8 @@ describe('주간/월간 전환', () => {
 
     await 이름으로누르기(view, '월간')
 
-    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('2026년 8월')
+    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('이번 달')
+    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('2026년 8월')
   })
 
   it('월간에서 고른 날을 바꾸고 주간으로 가면 그 날이 든 주다', async () => {
@@ -310,7 +351,8 @@ describe('주간/월간 전환', () => {
     await 이름으로누르기(view, '주간')
 
     // 8/11(화)이 든 목요일 주는 8/6 – 8/12 다.
-    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('8월 6일 – 12일')
+    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('8월 1주차')
+    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('8월 6일 ~ 8월 12일')
   })
 
   it('주간에서 칸을 고르면 상세가 따라오고 주는 그대로다', async () => {
@@ -320,7 +362,8 @@ describe('주간/월간 전환', () => {
     await 누르기(view, 'calendar-day-2026-08-25')
 
     expect(view.getByTestId('cashbook-selected-day')).toHaveTextContent('8월 25일 (화)')
-    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('8월 20일 – 26일')
+    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('이번 주')
+    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('8월 20일 ~ 8월 26일')
   })
 })
 

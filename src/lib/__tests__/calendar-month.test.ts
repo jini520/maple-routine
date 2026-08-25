@@ -6,7 +6,6 @@ import {
   WEEKDAY_LABELS,
   buildCalendarMonth,
   formatDayLabel,
-  formatMonthLabel,
   getAdjacentMonthKey,
   getCurrentMonthKey,
   heatLevel,
@@ -50,12 +49,6 @@ describe('getAdjacentMonthKey — 해를 넘긴다', () => {
   })
 })
 
-describe('formatMonthLabel', () => {
-  it('«2026년 8월» — 0 을 채우지 않는다', () => {
-    expect(formatMonthLabel('2026-08')).toBe('2026년 8월')
-    expect(formatMonthLabel('2026-12')).toBe('2026년 12월')
-  })
-})
 
 describe('formatDayLabel', () => {
   it('«8월 23일 (일)» — 요일까지 붙는다', () => {
@@ -288,21 +281,3 @@ describe('buildResetWeek', () => {
   })
 })
 
-describe('formatResetWeekLabel', () => {
-  const { formatResetWeekLabel } =
-    require('../calendar-month') as typeof import('../calendar-month')
-
-  it('한 달 안이면 뒤쪽 달 이름을 되풀이하지 않는다', () => {
-    expect(formatResetWeekLabel('2026-08-20')).toBe('8월 20일 – 26일')
-  })
-
-  // 달을 걸치는 주는 **달을 둘 다 적는다** — 「8월 27일 – 2일」 이면 어느 달의 2일인지 모른다.
-  it('달을 걸치면 양쪽 달을 다 적는다', () => {
-    expect(formatResetWeekLabel('2026-08-27')).toBe('8월 27일 – 9월 2일')
-  })
-
-  it('해를 걸쳐도 같은 규칙이다', () => {
-    // 2026-12-31 은 목요일이다.
-    expect(formatResetWeekLabel('2026-12-31')).toBe('12월 31일 – 1월 6일')
-  })
-})

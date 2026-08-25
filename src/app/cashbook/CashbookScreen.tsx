@@ -57,15 +57,13 @@ import { SPEED_DIAL_SPACE_PX } from '../../components/organisms/SpeedDial/speed-
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
-import { getAdjacentPeriodKey } from '../../lib/boss-profit-period'
+import { formatBossProfitPeriodLabel, getAdjacentPeriodKey } from '../../lib/boss-profit-period'
 import {
   WEEKDAY_LABELS_RESET,
   buildCalendarMonth,
   type CalendarWeek,
   buildResetWeek,
   formatDayLabel,
-  formatMonthLabel,
-  formatResetWeekLabel,
   getAdjacentMonthKey,
   getCurrentMonthKey,
   monthIncomeMax,
@@ -258,7 +256,12 @@ function DayRecordRow(props: { entry: DayRecord; onPress: () => void }): React.J
 }
 
 export function CashbookScreen(): React.JSX.Element {
-  const todayDateKey = getCurrentKstDateKey(new Date())
+  /**
+   * **렌더당 한 번만 만든다** — 보스 수익 화면이 같은 이유로 그렇게 한다. 두 번 부르면 두 시각이
+   * 기간 경계를 사이에 두고 갈려 «오늘» 과 «기간 라벨» 이 서로 다른 기간을 가리킬 수 있다.
+   */
+  const now = new Date()
+  const todayDateKey = getCurrentKstDateKey(now)
   /**
    * **들어오면 주간이다**([[ADR-170]] 결정 10 정정, 사용자 지정 2026-08-26).
    *
@@ -266,7 +269,7 @@ export function CashbookScreen(): React.JSX.Element {
    * 탭을 화면 상태로 둔다).
    */
   const [isWeekly, setIsWeekly] = useState(true)
-  const [monthKey, setMonthKey] = useState(() => getCurrentMonthKey(new Date()))
+  const [monthKey, setMonthKey] = useState(() => getCurrentMonthKey(now))
   const [weekStartKey, setWeekStartKey] = useState(() => resetWeekStartOf(todayDateKey))
   const [selectedDateKey, setSelectedDateKey] = useState(todayDateKey)
   /**
@@ -442,6 +445,9 @@ export function CashbookScreen(): React.JSX.Element {
   }
 
   const selectedAmounts = amounts[selectedDateKey] ?? null
+  const periodLabel = isWeekly
+    ? formatBossProfitPeriodLabel('weekly', weekStartKey, now)
+    : formatBossProfitPeriodLabel('monthly', monthKey, now)
 
   function movePeriod(delta: -1 | 1): void {
     if (isWeekly) {
@@ -487,13 +493,29 @@ export function CashbookScreen(): React.JSX.Element {
               icon={ChevronLeftIcon}
               onPress={() => movePeriod(-1)}
             />
-            <Text
-              testID="cashbook-period-label"
-              className="text-sm font-semibold text-text"
-              style={TABULAR_NUMS}
-            >
-              {isWeekly ? formatResetWeekLabel(weekStartKey) : formatMonthLabel(monthKey)}
-            </Text>
+            {/*
+              **보스 수익 탭과 같은 모양**이다([[ADR-170]] 정정 3) — 윗줄이 상대 표현
+              (「이번 주」·「지난 달」), 아랫줄이 **언제나 정확한 날짜**다.
+
+              라벨을 새로 만들지 않고 `formatBossProfitPeriodLabel` 을 그대로 부른다. 두 축이 이미
+              같은 `periodKey` 를 쓰므로(주간은 목요일 날짜, 월간은 `YYYY-MM`) 넘길 것이 그대로 있고,
+              같은 그룹의 두 하위가 **한 어법**으로 기간을 말하게 된다([[ADR-170]] 결정 10 의 논지).
+            */}
+            <View className="items-center">
+              <Text
+                testID="cashbook-period-label"
+                className="text-sm font-semibold text-text"
+              >
+                {periodLabel.primary}
+              </Text>
+              <Text
+                testID="cashbook-period-range"
+                className="mt-0.5 text-xs text-text-muted"
+                style={TABULAR_NUMS}
+              >
+                {periodLabel.secondary}
+              </Text>
+            </View>
             <MonthArrow
               label={isWeekly ? '다음 주' : '다음 달'}
               icon={ChevronRightIcon}

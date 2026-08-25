@@ -97,12 +97,6 @@ export function getAdjacentMonthKey(monthKey: string, delta: number): string {
   return `${moved.getUTCFullYear()}-${pad(moved.getUTCMonth() + 1)}`
 }
 
-/** 「2026년 8월」 — 0 을 채우지 않는다(읽는 글이지 정렬 키가 아니다). */
-export function formatMonthLabel(monthKey: string): string {
-  const { year, month } = parseMonthKey(monthKey)
-  return `${year}년 ${month}월`
-}
-
 /** 「8월 23일 (일)」 — 고른 날의 상세 머리글. */
 export function formatDayLabel(dateKey: string): string {
   const utcMs = Date.parse(`${dateKey}T00:00:00Z`)
@@ -215,23 +209,4 @@ export function buildResetWeek(weekStartDateKey: string): CalendarWeek {
     })
   }
   return days
-}
-
-/**
- * 「8월 20일 – 26일」 · 달을 걸치면 「8월 27일 – 9월 2일」.
- *
- * **걸칠 때 달을 둘 다 적는 것이 계약이다** — 「8월 27일 – 2일」 이면 어느 달의 2일인지 모른다.
- */
-export function formatResetWeekLabel(weekStartDateKey: string): string {
-  const startMs = Date.parse(`${weekStartDateKey}T00:00:00Z`)
-  const start = new Date(startMs)
-  const end = new Date(startMs + 6 * DAY_MS)
-
-  const startMonth = start.getUTCMonth()
-  const tail =
-    end.getUTCMonth() === startMonth
-      ? `${end.getUTCDate()}일`
-      : `${end.getUTCMonth() + 1}월 ${end.getUTCDate()}일`
-
-  return `${startMonth + 1}월 ${start.getUTCDate()}일 – ${tail}`
 }
