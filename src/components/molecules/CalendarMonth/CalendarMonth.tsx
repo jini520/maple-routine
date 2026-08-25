@@ -158,13 +158,17 @@ export function CalendarMonth(props: CalendarMonthProps): React.JSX.Element {
                 {/*
                   열지도 바탕. 형제보다 먼저 그려져 글자 뒤에 깔린다.
 
+                  **네 방향으로 같은 만큼 물러난다**([[ADR-169]] 정정 4). 전에는 좌우로만 물러나
+                  칠해진 날이 세로로 이어지면 **한 덩어리로 붙었고**, `rounded-lg` 가 위아래에서는
+                  아무 일도 하지 않았다 — 칸이 아니라 «세로 막대» 로 읽힌다.
+
                   `aria-hidden` 을 **안 붙인다** — 글자가 없어 스크린리더가 읽을 것도 없는데,
                   붙이면 RNTL 이 이 노드를 숨김으로 보고 쿼리에서 걷어 테스트가 못 잡는다.
                 */}
                 <View
                   testID={`calendar-heat-${day.dateKey}`}
                   style={{ opacity: heat }}
-                  className="absolute bottom-0 left-0.5 right-0.5 top-0 rounded-lg bg-primary"
+                  className="absolute bottom-0.5 left-0.5 right-0.5 top-0.5 rounded-lg bg-primary"
                 />
 
                 <View className={dayCircleClass(isSelected, isToday)}>

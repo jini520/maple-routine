@@ -176,6 +176,22 @@ describe('CalendarMonth — 열지도 ([[ADR-169]] 정정 1)', () => {
     expect(진하기('2026-08-12')).toBeGreaterThan(0)
   })
 
+  // [[ADR-169]] 정정 4(사용자 지정 2026-08-25) — 타일의 안쪽 여백이 **좌우에만** 있어서,
+  // 칠해진 날이 세로로 이어지면 한 덩어리로 붙고 둥근 모서리가 사라졌다. 네 방향을 맞춘다.
+  it('열지도 타일은 네 방향으로 같은 만큼 물러난다', async () => {
+    const view = await 그리기({
+      amounts: { '2026-08-11': { incomeMeso: 10_000_000_000, expenseMeso: 0 } },
+    })
+
+    const 타일 = flattenStyle(view.getByTestId('calendar-heat-2026-08-11').props.style)
+
+    expect(타일.top).toBe(타일.left)
+    expect(타일.bottom).toBe(타일.left)
+    expect(타일.right).toBe(타일.left)
+    // 판별력: 넷 다 0 이면 위 셋이 통과한다.
+    expect(Number(타일.left)).toBeGreaterThan(0)
+  })
+
   it('수익이 없는 날은 안 칠한다', async () => {
     const view = await 그리기({
       amounts: { '2026-08-11': { incomeMeso: 100_000_000_000, expenseMeso: 0 } },
