@@ -179,13 +179,13 @@ describe('CashbookScreen — 아직 기록이 없다 ([[ADR-169]] 결정 6)', ()
     expect(view.getByTestId('cashbook-empty')).toBeTruthy()
   })
 
-  // [[ADR-169]] 정정 1 — 칸은 금액 두 줄이고, 공급원이 없는 지금은 모든 날이 «0» 이다.
-  it('모든 칸의 수익이 0 이고 칠해진 칸이 없다', async () => {
+  // [[ADR-169]] 정정 3 — 적은 것이 없는 날은 **두 줄 다 빈다**(전에는 수익 줄에 «0» 을 적었다).
+  it('적은 것이 없으면 칸이 비고 칠해지지도 않는다', async () => {
     const view = await 그리기()
 
     const 수익줄 = view.queryAllByTestId(/^calendar-income-/)
     expect(수익줄.length).toBeGreaterThan(0)
-    for (const line of 수익줄) expect(line).toHaveTextContent('0')
+    for (const line of 수익줄) expect(line.props.children).toBe(' ')
 
     for (const heat of view.queryAllByTestId(/^calendar-heat-/)) {
       expect(heat.props.style.opacity).toBe(0)

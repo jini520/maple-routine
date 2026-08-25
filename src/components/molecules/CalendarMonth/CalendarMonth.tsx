@@ -11,9 +11,12 @@
  * 함께 볼 수 있는 형태"* 를 지정했고(2026-08-23), 그 이미지가 «칸이 좁아 억 단위가 잘린다» 는
  * 근거를 반박했다 — **줄여 적으면 들어간다**(`lib/meso-compact`).
  *
- * 위 줄이 수익(`rise-ink`), 아래 줄이 지출(`fall-ink`)이다. **수익 줄은 0 도 «0» 으로 적고, 지출
- * 줄은 0 이면 비운다** — 사용자가 고른 시안 그대로다. 둘 다 값이 없어도 **자리는 차지한다**:
- * 칸이 마흔둘이라 한 줄만 생겨도 격자와 그 아래가 통째로 튄다.
+ * 위 줄이 수익(`rise-ink`), 아래 줄이 지출(`fall-ink`)이다. **둘 다 0 이면 비운다**
+ * ([[ADR-169]] 정정 3, 사용자 지정 2026-08-25). 처음에는 수익 줄만 «0» 을 적었는데(고른 시안이
+ * 그랬다), 아무것도 안 한 날이 대부분이라 격자가 «0» 으로 뒤덮여 **실제 숫자가 그 사이에 묻혔다.**
+ *
+ * **비어도 자리는 차지한다** — 칸이 마흔둘이라 한 줄만 사라져도 격자와 그 아래가 통째로 튄다.
+ * 그래서 빈 값이 `''` 가 아니라 **공백 한 칸**이다: 빈 문자열은 `Text` 의 높이를 0 으로 만든다.
  *
  * 지출 줄이 **메소 축**인 이유(메포는 환산해 들어오고 캐시는 안 들어온다)는
  * `CalendarDayAmounts` 에 적어 뒀다 — [[ADR-166]] 정정 2 ①.
@@ -177,7 +180,7 @@ export function CalendarMonth(props: CalendarMonthProps): React.JSX.Element {
                   className="text-[9px] leading-3 text-rise-ink"
                   style={TABULAR_NUMS}
                 >
-                  {amounts.incomeMeso > 0 ? `+${formatMesoCompact(amounts.incomeMeso)}` : '0'}
+                  {amounts.incomeMeso > 0 ? `+${formatMesoCompact(amounts.incomeMeso)}` : ' '}
                 </Text>
                 <Text
                   testID={`calendar-expense-${day.dateKey}`}

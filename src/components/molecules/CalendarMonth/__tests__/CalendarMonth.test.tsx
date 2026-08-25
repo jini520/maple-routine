@@ -121,21 +121,24 @@ describe('CalendarMonth — 금액 두 줄 ([[ADR-169]] 정정 1)', () => {
     )
   })
 
-  // 사용자가 고른 시안 그대로다 — 수익 줄은 0 도 «0» 으로 적고, 지출 줄은 0 이면 비운다.
-  it('수익이 없는 날은 «0», 지출이 없는 날은 빈 줄이다', async () => {
+  // [[ADR-169]] 정정 3(사용자 지정 2026-08-25) — **수익 줄도 0 이면 비운다.** 전에는 «0» 을
+  // 적었는데, 아무것도 안 한 날이 대부분이라 격자가 «0» 으로 뒤덮여 실제 숫자가 묻혔다.
+  // 자리는 그대로 지킨다(아래 «두 줄은 값이 없어도» 테스트).
+  it('값이 0 이면 두 줄 다 빈다', async () => {
     const view = await 그리기({ amounts: 금액 })
 
-    expect(칸(view, '2026-08-13').getByTestId('calendar-income-2026-08-13')).toHaveTextContent('0')
-    // `toHaveTextContent('')` 는 무엇에나 통하므로 «− 가 없다» 로 못 박는다.
-    expect(칸(view, '2026-08-12').getByTestId('calendar-expense-2026-08-12')).not.toHaveTextContent(
-      '−',
-    )
+    // `toHaveTextContent` 로는 «비었다» 를 못 박기 어렵다(빈 문자열은 무엇에나 통한다) —
+    // 그려 넣은 문자열을 직접 본다.
+    expect(칸(view, '2026-08-13').getByTestId('calendar-income-2026-08-13').props.children).toBe(' ')
+    expect(칸(view, '2026-08-12').getByTestId('calendar-expense-2026-08-12').props.children).toBe(' ')
   })
 
-  it('기록이 아예 없는 날도 수익 줄에 «0» 이 선다', async () => {
+  it('기록이 아예 없는 날은 수익 줄도 빈다', async () => {
     const view = await 그리기({ amounts: {} })
 
-    expect(칸(view, '2026-08-11').getByTestId('calendar-income-2026-08-11')).toHaveTextContent('0')
+    const 수익줄 = 칸(view, '2026-08-11').getByTestId('calendar-income-2026-08-11')
+    expect(수익줄).not.toHaveTextContent('0')
+    expect(수익줄.props.children).toBe(' ')
   })
 
   // 두 줄이 늘 서 있어야 격자가 안 흔들린다 — 칸이 마흔둘이라 한 줄만 생겨도 화면이 통째로 튄다.
