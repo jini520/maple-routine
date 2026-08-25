@@ -233,15 +233,18 @@ describe('수량 — 곱셈은 앱이 한다', () => {
     expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
   })
 
-  // 돌아가는 길이 **보여야** 한다 — 동작만 있고 표식이 없으면 «막다른 시트» 로 읽힌다
-  // (사용자 지적 2026-08-25). 목록에서는 돌아갈 데가 없으니 서 있으면 안 된다.
-  it('뒤로 가는 자리는 ②에서만 선다', async () => {
+  // 머리줄이 지금 어디인지를 말한다 — ②로 들어가면 제목이 고른 것의 이름이 되고 그 왼쪽이
+  // 돌아가는 자리다(사용자 지정 2026-08-25). 목록에서는 돌아갈 데가 없으니 서 있으면 안 된다.
+  it('②에서는 머리줄이 고른 것의 이름과 뒤로 가는 자리가 된다', async () => {
     const view = await 그리기({ lastPointRate: 1_180 })
     expect(view.queryByTestId('spend-sheet-back')).toBeNull()
+    expect(view.getByText('지출 추가')).toBeTruthy()
 
     await 누르기(view, '하이마운틴')
 
     expect(view.getByTestId('spend-sheet-back')).toBeTruthy()
+    expect(view.getByTestId('spend-sheet-choice')).toHaveTextContent('하이마운틴')
+    expect(view.queryByText('지출 추가')).toBeNull()
   })
 
   // 형태가 있는데 안 고르면 «어느 쪽인지 모르는 행» 이 된다 — 칸을 더한 뜻이 사라진다.

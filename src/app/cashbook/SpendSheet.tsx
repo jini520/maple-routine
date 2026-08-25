@@ -357,11 +357,41 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
       resetScrollKey={`${category}|${choice?.label ?? ''}`}
     >
       <View className="gap-3 px-4 pb-2">
-        <View className="flex-row items-baseline justify-between gap-2">
-          <Text className="text-base font-bold text-text">지출 추가</Text>
+        {/*
+          **머리줄이 지금 어디인지를 말한다**(사용자 지정 2026-08-25).
+
+          ①에서는 「지출 추가」다. ②로 들어가면 그 자리가 **고른 것의 이름**으로 바뀌고 왼쪽에
+          돌아가는 자리가 선다 — `BoxDrillDown` 이 쓰는 것과 같은 화살촉이다. 제목을 바꾸지 않고
+          본문에 돌아가는 줄을 따로 두면, 같은 것(지금 무엇을 고르는 중인가)을 말하는 자리가
+          둘이 되고 시트 위쪽 한 줄이 통째로 낭비된다.
+
+          `items-baseline` 이 아니라 `items-center` 다 — 화살촉은 글자가 아니라 밑줄이 없다.
+        */}
+        <View className="flex-row items-center justify-between gap-2">
+          {choice === null ? (
+            <Text className="text-base font-bold text-text">지출 추가</Text>
+          ) : (
+            <Pressable
+              role="button"
+              aria-label="다시 고르기"
+              testID="spend-sheet-back"
+              onPress={clearChoice}
+              hitSlop={8}
+              className="-ml-1 shrink flex-row items-center gap-1"
+            >
+              <ChevronLeftIcon className="h-5 w-5 text-text" strokeWidth={2} aria-hidden />
+              <Text
+                testID="spend-sheet-choice"
+                numberOfLines={1}
+                className="shrink text-base font-bold text-text"
+              >
+                {choice.label}
+              </Text>
+            </Pressable>
+          )}
           <Text
             testID="spend-sheet-date"
-            className="text-xs text-text-muted"
+            className="shrink-0 text-xs text-text-muted"
             style={TABULAR_NUMS}
           >
             {formatDayLabel(props.dateKey)}
@@ -449,36 +479,6 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
               ))
             ) : (
               <View className="gap-3 pb-1">
-                {/*
-                  ②에서 ①로 돌아가는 자리 — **표식을 세운다**(사용자 지정 2026-08-25).
-                  누를 수 있다는 사실 자체는 처음부터 있었지만 줄이 «고른 것을 알려 주는 요약»
-                  처럼만 보여서 **되돌아갈 길이 없어 보였다.** 화살촉 하나가 그 줄을 버튼으로
-                  읽히게 만든다 — `BossDropSheet` 의 `BoxDrillDown` 이 쓰는 것과 같은 표식이다.
-
-                  줄 전체가 누르는 자리로 남는다. 화살촉만 버튼으로 좁히면 손가락 자리가
-                  16pt 로 줄고, 이 줄에는 경쟁하는 다른 동작이 없어 좁힐 이유가 없다.
-                */}
-                <Pressable
-                  role="button"
-                  aria-label="다시 고르기"
-                  testID="spend-sheet-back"
-                  onPress={clearChoice}
-                  hitSlop={8}
-                  className="flex-row items-center justify-between border-b border-border pb-2"
-                >
-                  <View className="-ml-1 flex-row items-center gap-0.5">
-                    <ChevronLeftIcon
-                      className="h-4 w-4 text-text-muted"
-                      strokeWidth={2}
-                      aria-hidden
-                    />
-                    <Text className="text-xs text-text-muted">선택된 {category}</Text>
-                  </View>
-                  <Text testID="spend-sheet-choice" className="text-sm font-bold text-text">
-                    {choice.label}
-                  </Text>
-                </Pressable>
-
                 {forms.length > 0 && (
                   <View className="gap-1">
                     <Text className="text-[11px] text-text-disabled">형태</Text>
