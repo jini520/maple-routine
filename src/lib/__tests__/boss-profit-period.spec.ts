@@ -6,6 +6,7 @@ import {
   getBackfillQueryDate,
   getCurrentBossProfitPeriod,
   getMinQueryableDate,
+  getPeriodDateKeys,
   getWeeklyPeriodKeysInMonth,
   isEarliestNavigablePeriod,
   isLatestPeriod,
@@ -360,5 +361,46 @@ describe('resolvePagePeriodState', () => {
 
   it('캐릭터가 없으면 confirmedEmpty (보여줄 것도 모를 것도 없다)', () => {
     expect(resolvePagePeriodState([])).toBe('confirmedEmpty')
+  })
+})
+
+// [[ADR-172]] 결정 2 — 처치 날짜를 캐려면 «그 기간의 날짜들» 이 필요하다. 한 날짜만 보는
+// `getBackfillQueryDate` 로는 일간 해상도가 안 나온다.
+describe('getPeriodDateKeys ([[ADR-172]])', () => {
+  it('주간은 리셋 목요일부터 이레다', () => {
+    expect(getPeriodDateKeys('weekly', '2026-08-20')).toEqual([
+      '2026-08-20',
+      '2026-08-21',
+      '2026-08-22',
+      '2026-08-23',
+      '2026-08-24',
+      '2026-08-25',
+      '2026-08-26',
+    ])
+  })
+
+  it('주가 달을 넘어도 날짜가 이어진다', () => {
+    expect(getPeriodDateKeys('weekly', '2026-07-30')).toEqual([
+      '2026-07-30',
+      '2026-07-31',
+      '2026-08-01',
+      '2026-08-02',
+      '2026-08-03',
+      '2026-08-04',
+      '2026-08-05',
+    ])
+  })
+
+  it('월간은 1일부터 그 달 마지막 날까지다', () => {
+    const days = getPeriodDateKeys('monthly', '2026-02')
+    expect(days[0]).toBe('2026-02-01')
+    expect(days[days.length - 1]).toBe('2026-02-28')
+    expect(days).toHaveLength(28)
+  })
+
+  it('31일 달도 끝을 맞춘다', () => {
+    const days = getPeriodDateKeys('monthly', '2026-08')
+    expect(days).toHaveLength(31)
+    expect(days[30]).toBe('2026-08-31')
   })
 })

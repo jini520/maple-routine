@@ -196,6 +196,32 @@ export function formatBossProfitPeriodLabel(
 }
 
 /**
+ * 그 기간에 **든 날짜 전부**(KST `YYYY-MM-DD`, 오름차순) — [[ADR-172]] 결정 2.
+ *
+ * `getBackfillQueryDate` 는 기간당 **한 날짜**만 낸다(그 기간이 가장 온전히 반영되는 시점). 그것으로는
+ * «그 기간에 잡았다» 까지만 알 수 있고 **며칟날인지는 안 나온다** — 일간 해상도는 날짜들을 훑어
+ * «미완료 → 완료» 로 뒤집힌 지점을 찾아야 나오므로, 이 함수가 그 훑을 목록을 만든다.
+ *
+ * 주간은 리셋 목요일부터 이레, 월간은 1일부터 그 달 마지막 날까지다. **달을 넘는 주도 그냥 이어진다** —
+ * `Date.UTC` 로 더하므로 월말 경계를 따로 다루지 않는다.
+ */
+export function getPeriodDateKeys(cycle: BossCycle, periodKey: string): string[] {
+  if (cycle === 'weekly') {
+    const { year, month, day } = parseWeeklyPeriodKey(periodKey)
+    const startMs = Date.UTC(year, month - 1, day)
+    return Array.from({ length: 7 }, (_, index) =>
+      formatWeeklyPeriodKey(startMs + index * 24 * 60 * 60 * 1000),
+    )
+  }
+
+  const { year, month } = parseMonthlyPeriodKey(periodKey)
+  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate()
+  return Array.from({ length: daysInMonth }, (_, index) =>
+    formatWeeklyPeriodKey(Date.UTC(year, month - 1, index + 1)),
+  )
+}
+
+/**
  * 과거 기간 백필(스케줄러 API의 date 파라미터 조회) 시 사용할 조회 날짜(YYYY-MM-DD)를 계산한다.
  * 그 기간의 완료 현황이 가장 온전히 반영되는 시점 — 다음 리셋 직전(그 기간의 마지막 날) — 을 쓴다.
  * weekly: periodKey(리셋 목요일) + 6일. monthly: periodKey가 속한 달의 마지막 날.
