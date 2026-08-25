@@ -544,12 +544,23 @@ describe('그날 목록', () => {
     expect(view.getByText('몬스터 파크')).toBeTruthy()
   })
 
-  // 수량은 «몇 번» 이라 이름만으로는 금액이 왜 그런지 모른다.
+  // 수량은 «몇 번» 이라 이름만으로는 금액이 왜 그런지 모른다. `×` 를 붙여야 «2번» 이지
+  // «2번째» 가 아니라는 것이 읽힌다.
   it('수량이 있으면 함께 적는다', async () => {
     const view = await 그리기()
 
     // `toHaveTextContent` 는 이 판에서 **완전 일치**다 — 줄 전체를 적는다.
-    expect(view.getByTestId('cashbook-row-spd-1')).toHaveTextContent('몬스터 파크2−1.017억')
+    expect(view.getByTestId('cashbook-row-spd-1')).toHaveTextContent('몬스터 파크×2−1.017억')
+  })
+
+  // **누를 수 있어 보여야 한다**(사용자 지적 2026-08-25) — 글자 둘만 놓인 줄은 목록이 아니라
+  // 요약으로 읽힌다. 이 저장소가 「눌러서 들어가는 줄」에 쓰는 표식이 오른쪽 화살촉이다
+  // (`SettingsFeatureGuideListScreen`).
+  it('줄마다 갈래 표식과 들어가는 화살촉이 선다', async () => {
+    const view = await 그리기()
+
+    expect(view.getByTestId('cashbook-row-icon-spd-1')).toBeTruthy()
+    expect(view.getByTestId('cashbook-row-chevron-spd-1')).toBeTruthy()
   })
 
   it('날을 바꾸면 그 날 것을 읽는다', async () => {

@@ -47,6 +47,7 @@ import { Pressable, View } from 'react-native'
 
 import { Text } from '../../components/atoms/Text/Text'
 import { CalendarMonth } from '../../components/molecules/CalendarMonth/CalendarMonth'
+import { ProfitIcon } from '../../components/atoms/ProfitIcon/ProfitIcon'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { SpeedDial } from '../../components/organisms/SpeedDial/SpeedDial'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
@@ -72,6 +73,7 @@ import {
   CalendarIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  ShoppingCartIcon,
 } from '../../lib/icons'
 import { formatMesoCompact } from '../../lib/meso-compact'
 import { getCurrentKstDateKey } from '../../lib/reset-clock'
@@ -153,11 +155,24 @@ function MonthArrow(props: {
 }
 
 /**
- * 그날 목록의 한 줄([[ADR-171]] 결정 1).
+ * 그날 목록의 한 줄([[ADR-171]] 결정 1) — **누를 수 있어 보여야 한다.**
  *
- * 갈래 표식을 **글자가 아니라 색**으로 든다 — 「수입」·「지출」을 줄마다 적으면 이름이 들어갈
- * 자리를 두 글자가 먹는다. 부호(`+`·`−`)와 색이 같은 것을 말하고 그 둘은 칸의 두 줄과 같은
- * 규칙이라 새로 배울 것이 없다.
+ * 처음에는 글자 둘(이름 · 금액)만 놓았는데 «눌러서 고칠 수 있다» 가 **전혀 안 읽혔다**
+ * (사용자 지적 2026-08-25). 줄이 목록이 아니라 **요약**으로 보였기 때문이다 — 바로 위 두 줄
+ * (수입/지출 합계)이 정확히 그 모양이라 눈이 같은 것으로 묶는다.
+ *
+ * 셋으로 가른다. **새로 만든 그림은 0개**다.
+ *
+ * ① **상자를 준다.** 합계는 배경 없는 줄, 기록은 `bg-surface` 카드 — 표면이 갈리면 «만질 수 있는
+ *    것» 과 «읽는 것» 이 갈린다.
+ * ② **왼쪽에 갈래 표식.** 수입은 `ProfitIcon`, 지출은 `ShoppingCartIcon` — 펼침판이 이미 쓰는
+ *    그 둘이다([[ADR-170]] 결정 9). 부호·색만으로 갈래를 말하던 것을 그림이 거든다.
+ * ③ **오른쪽에 화살촉.** 이 저장소가 「눌러서 들어가는 줄」에 쓰는 표식 그대로다
+ *    (`SettingsFeatureGuideListScreen`) — 새 관용구를 만들지 않는다.
+ *
+ * 누를 때 흐려지는 것은 `active:` 로 준다. NativeWind 가 `Pressable` 의 눌림 상태를 그 변형에
+ * 이어 주므로 **함수형 `style` 을 안 쓴다** — className 과 함수 style 을 같이 주면 cssInterop
+ * 에서 정적 스타일이 통째로 사라진다(`SpeedDial` 이 밟은 함정).
  *
  * 캐시로 낸 지출만 **원**으로 적는다 — 환산을 안 하므로 메소로 적을 값이 없다
  * ([[ADR-166]] 정정 2 ①).
@@ -167,6 +182,7 @@ function DayRecordRow(props: { entry: DayRecord; onPress: () => void }): React.J
   const income = entry.kind === 'income'
   const cash = recordCashOf(entry)
   const quantity = entry.kind === 'spend' ? entry.record.quantity : null
+  const Icon = income ? ProfitIcon : ShoppingCartIcon
 
   return (
     <Pressable
@@ -174,16 +190,32 @@ function DayRecordRow(props: { entry: DayRecord; onPress: () => void }): React.J
       testID={`cashbook-row-${entry.record.id}`}
       aria-label={`${recordTitleOf(entry)} 고치기`}
       onPress={props.onPress}
-      className="flex-row items-center gap-2 py-1"
+      className="flex-row items-center gap-2 rounded-xl border border-border bg-surface py-2 pl-2 pr-1.5 active:opacity-60"
     >
+      <View
+        testID={`cashbook-row-icon-${entry.record.id}`}
+        className={`h-6 w-6 items-center justify-center rounded-full ${
+          income ? 'bg-rise-tint' : 'bg-fall-tint'
+        }`}
+      >
+        <Icon
+          className={`h-3.5 w-3.5 ${income ? 'text-rise-ink' : 'text-fall-ink'}`}
+          strokeWidth={2}
+          aria-hidden
+        />
+      </View>
+
       <Text numberOfLines={1} className="shrink text-xs text-text">
         {recordTitleOf(entry)}
       </Text>
       {quantity !== null && quantity > 1 && (
+        // `×` 를 붙인다 — 맨 숫자는 «2번째» 로도 읽힌다.
+        // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
         <Text className="shrink-0 text-[11px] text-text-muted" style={TABULAR_NUMS}>
-          {quantity}
+          ×{quantity}
         </Text>
       )}
+
       <Text
         className={`ml-auto shrink-0 text-xs font-semibold ${income ? 'text-rise-ink' : 'text-fall-ink'}`}
         style={TABULAR_NUMS}
@@ -191,6 +223,11 @@ function DayRecordRow(props: { entry: DayRecord; onPress: () => void }): React.J
         {income ? '+' : '−'}
         {cash === null ? formatMesoCompact(recordMesoOf(entry)) : `${cash.toLocaleString()}원`}
       </Text>
+      {/* 화살촉이 상자를 하나 쓰는 이유: lucide 아이콘은 `testID` 를 SVG 안으로 흘려보내지 않아
+          «화살촉이 사라졌다» 를 테스트가 못 잡는다. 상자는 `shrink-0` 도 함께 든다. */}
+      <View testID={`cashbook-row-chevron-${entry.record.id}`} className="shrink-0">
+        <ChevronRightIcon className="h-4 w-4 text-text-disabled" strokeWidth={2} aria-hidden />
+      </View>
     </Pressable>
   )
 }
@@ -427,7 +464,7 @@ export function CashbookScreen(): React.JSX.Element {
                   // 합계 아래에 **적은 것이 한 줄씩** 선다([[ADR-171]] 결정 1). 접지 않는다 —
                   // 같은 날 같은 것을 두 번 적은 것은 정상이고, 접으면 어느 쪽을 고치는지 못 고른다.
                   // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
-                  <View className="mt-1 gap-0.5 border-t border-border pt-1">
+                  <View className="mt-1.5 gap-1.5 border-t border-border pt-2">
                     {dayRecords.map((entry) => (
                       <DayRecordRow
                         key={entry.record.id}
