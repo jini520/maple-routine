@@ -12,6 +12,10 @@ jest.mock('../../../features/cashbook/records', () => {
     recordTitleOf: actual.recordTitleOf,
     recordMesoOf: actual.recordMesoOf,
     recordCashOf: actual.recordCashOf,
+    recordCountLabelOf: actual.recordCountLabelOf,
+    isManualRecord: actual.isManualRecord,
+    rowKeyOf: actual.rowKeyOf,
+    resolveTrackedDefeatDates: jest.fn(),
     loadCalendarAmounts: jest.fn(),
     loadDayRecords: jest.fn(),
     loadLastPointRate: jest.fn(),
@@ -22,6 +26,11 @@ jest.mock('../../../features/cashbook/records', () => {
     removeRecord: jest.fn(),
   }
 })
+
+// 자동 줄은 **보스 수익 탭으로 간다**([[ADR-172]] 결정 8) — 그 이동을 목으로 받아 «어디로 갔나» 를 본다.
+// 이름이 `mock` 으로 시작해야 팩토리 안에서 참조할 수 있다(jest 의 호이스팅 가드).
+const mockOpenTab = jest.fn()
+jest.mock('../../use-open-tab', () => ({ useOpenTab: () => mockOpenTab }))
 
 // 시트 껍데기는 `BossDropSheet.test.tsx` 와 같은 방식으로 세운다.
 jest.mock('@gorhom/bottom-sheet', () => {
@@ -59,6 +68,8 @@ beforeEach(() => {
   records.recordIncome.mockReset().mockResolvedValue(undefined)
   records.recordSpend.mockReset().mockResolvedValue(undefined)
   records.loadDayRecords.mockReset().mockResolvedValue([])
+  records.resolveTrackedDefeatDates.mockReset().mockResolvedValue(0)
+  mockOpenTab.mockReset()
   records.editIncome.mockReset().mockResolvedValue(undefined)
   records.editSpend.mockReset().mockResolvedValue(undefined)
   records.removeRecord.mockReset().mockResolvedValue(undefined)
@@ -649,5 +660,81 @@ describe('줄을 누르면 고칠 수 있다', () => {
     await 이름으로누르기(view, '지출 추가')
 
     expect(view.queryByTestId('spend-sheet-delete')).toBeNull()
+  })
+})
+
+// 보스 수익이 흘러든 줄([[ADR-172]] 결정 7·8). **여기서 못 고친다** — 눌러도 시트가 아니라
+// 보스 수익 탭이 열린다. 그것이 [[ADR-171]] 결정 5 의 발효다.
+describe('자동으로 흘러든 줄 ([[ADR-172]])', () => {
+  const 결정석줄 = {
+    kind: 'bossCrystal' as const,
+    ocid: 'ocid-1',
+    characterName: '루디',
+    payoutMeso: 3_600_000_000,
+    count: 12,
+    unpricedCount: 0,
+  }
+  const 판매줄 = {
+    kind: 'dropSale' as const,
+    ocid: 'ocid-1',
+    characterName: '루디',
+    payoutMeso: 4_000_000_000,
+    count: 3,
+    unpricedCount: 2,
+  }
+
+  beforeEach(() => {
+    records.loadCalendarAmounts.mockResolvedValue({
+      '2026-08-23': { incomeMeso: 7_600_000_000, expenseMeso: 0 },
+    })
+    records.loadDayRecords.mockResolvedValue([결정석줄, 판매줄])
+  })
+
+  it('캐릭터당 두 줄이 선다 — 결정석과 판매를 가른다', async () => {
+    const view = await 그리기()
+
+    // `toHaveTextContent` 는 이 판에서 **완전 일치**다 — 줄 전체를 적는다.
+    expect(view.getByTestId('cashbook-row-bossCrystal:ocid-1')).toHaveTextContent(
+      '루디 · 보스 결정석12마리+36억',
+    )
+    expect(view.getByTestId('cashbook-row-dropSale:ocid-1')).toHaveTextContent(
+      '루디 · 아이템 판매3건 · 미입력 2+40억',
+    )
+  })
+
+  it('누르면 시트가 아니라 보스 수익 탭이 열린다 (결정 8)', async () => {
+    const view = await 그리기()
+
+    await 이름으로누르기(view, '루디 · 보스 결정석 보스 수익에서 보기')
+
+    expect(mockOpenTab).toHaveBeenCalledWith('Profit')
+    expect(view.queryByTestId('spend-sheet-date')).toBeNull()
+    expect(view.queryByTestId('income-sheet-date')).toBeNull()
+  })
+
+  it('판매 줄도 같은 곳으로 간다', async () => {
+    const view = await 그리기()
+
+    await 이름으로누르기(view, '루디 · 아이템 판매 보스 수익에서 보기')
+
+    expect(mockOpenTab).toHaveBeenCalledWith('Profit')
+  })
+
+  it('들어올 때 처치 날짜를 캐고, 캔 것이 있으면 다시 읽는다 (결정 9)', async () => {
+    records.resolveTrackedDefeatDates.mockResolvedValue(3)
+    const view = await 그리기()
+    await act(async () => {})
+
+    expect(records.resolveTrackedDefeatDates).toHaveBeenCalledTimes(1)
+    expect(records.loadDayRecords).toHaveBeenCalledTimes(2)
+    expect(view.getByTestId('cashbook-row-bossCrystal:ocid-1')).toBeTruthy()
+  })
+
+  it('캔 것이 없으면 다시 안 읽는다 — 바뀔 것이 없다', async () => {
+    const view = await 그리기()
+    await act(async () => {})
+
+    expect(records.loadDayRecords).toHaveBeenCalledTimes(1)
+    expect(view.getByTestId('cashbook-row-dropSale:ocid-1')).toBeTruthy()
   })
 })

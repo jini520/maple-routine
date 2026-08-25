@@ -1,24 +1,26 @@
 /**
  * 가계부 — 「수익·지출」 그룹의 둘째 하위 탭([[ADR-169]] 결정 1).
  *
- * ## 지금은 캘린더뿐이다
+ * ## 담기는 것이 넷이다
  *
- * 사용자 결정(2026-08-23): *"우선 캘린더만 먼저 만들어."* 그래서 이 화면이 그리는 것은 **격자 ·
- * 달 이동 · 날짜 선택** 셋이고, 담길 것은 아직 없다([[ADR-169]] 결정 6):
+ * | 무엇 | 어디서 | 여기서 고치나 |
+ * |---|---|---|
+ * | 지출 | `spend_records`([[ADR-166]]) | **예** |
+ * | 손입력 수익 | `income_records`([[ADR-170]]) | **예** |
+ * | 보스 결정석 | `boss_profit_records` 의 `defeated_on`([[ADR-172]]) | **아니오** — 보스 수익 탭으로 간다 |
+ * | 아이템 판매 | `boss_drop_records` — 날짜는 위에서 **물려받는다** | **아니오** — 같다 |
  *
- * - **지출** → `spend_records` 가 아직 없다([[ADR-166]] — 결정 10건은 서 있고 코드가 0줄이다.
- *   임계경로는 코드가 아니라 [[ADR-006]] 대기 중인 선택 목록 셋이다).
- * - **수익** → **날짜가 없다.** `boss_profit_records` 의 `periodKey` 는 주간(목요일)·월간뿐이라
- *   앱이 «며칟날 잡았나» 를 모른다. 그 날짜를 만드는 일이 **#239** 다.
+ * 넷째까지 붙은 것이 #239 다. 남은 원천은 **사냥 타이머 자동 수익** 하나이고, 그때까지 사냥 수익은
+ * 손으로 적는다([[ADR-170]] 결정 1).
  *
- * 그래서 `amounts` 로 **빈 지도**를 넘긴다 — 누락이 아니라 기록된 상태다. **지우지 말고 채울 것.**
- * 칸은 그동안 모든 날을 «0» 으로 그린다([[ADR-169]] 정정 1 — 수익 줄은 0 도 적는다).
+ * 자동으로 흘러든 둘을 여기서 못 고치는 이유는 **원천이 저쪽이기 때문**이다 — 두 곳에서 고치면
+ * 어느 쪽이 참인지 사라진다([[ADR-170]] 결정 3 · [[ADR-172]] 결정 8). 갈리는 기준은 테이블이고,
+ * 시트 상태의 타입(`ManualDayRecord`)이 그것을 **컴파일 단계에서** 막는다.
  *
- * ## 이 껍데기는 앞의 둘과 다르다
+ * ## 이 화면은 앞의 껍데기 둘과 다르다
  *
  * 여기 서 있던 사냥 수익·지출은 `UnderConstruction` 이었고 **아무것도 안 했다**([[ADR-132]] 결정
- * 12 — 자리를 예약하던 장치이고, 그 예약이 이 화면으로 이행돼 둘은 삭제됐다). 이 화면은 데이터가
- * 없을 뿐 격자·이동·선택이 **진짜로 동작한다.**
+ * 12 — 자리를 예약하던 장치이고, 그 예약이 이 화면으로 이행돼 둘은 삭제됐다).
  *
  * ## 축이 **둘**이다 ([[ADR-170]] 결정 10)
  *
@@ -27,8 +29,9 @@
  * | 월간 | 달력 월 | 일요일 — 한국 달력의 관습([[ADR-169]] 결정 8) |
  * | 주간 | **게임의 주** | **목요일** — 보스 수익 탭과 **같은 주**다 |
  *
- * 주간이 게임 축인 덕에 같은 그룹의 두 하위가 「이번 주」로 **같은 숫자**를 말하고, 날짜를 모르는
- * 옛 보스 기록(`defeated_on IS NULL`)도 자기 `period_key` 그대로 한 주에 든다.
+ * 주간이 게임 축인 덕에 같은 그룹의 두 하위가 「이번 주」로 **같은 숫자**를 말하고, 날짜를 못 캔
+ * 보스 기록(`defeated_on IS NULL`)도 자기 `period_key` 그대로 한 주에 든다 — 월간 격자에서만
+ * 어느 칸에도 안 선다([[ADR-172]] 결정 4).
  *
  * 대가로 **월간 격자의 한 줄 ≠ 주간의 한 주**다 — 격자에 목요일 경계선을 그어 그것을 드러낸다.
  *
@@ -90,8 +93,14 @@ import {
   recordTitleOf,
   recordMesoOf,
   recordCashOf,
+  recordCountLabelOf,
+  resolveTrackedDefeatDates,
+  isManualRecord,
+  rowKeyOf,
   type DayRecord,
+  type ManualDayRecord,
 } from '../../features/cashbook/records'
+import { useOpenTab } from '../use-open-tab'
 import { useToastStore } from '../../features/toast/store'
 import { IncomeSheet, type IncomeDraft } from './IncomeSheet'
 import { SpendSheet, type SpendDraft } from './SpendSheet'
@@ -176,24 +185,38 @@ function MonthArrow(props: {
  *
  * 캐시로 낸 지출만 **원**으로 적는다 — 환산을 안 하므로 메소로 적을 값이 없다
  * ([[ADR-166]] 정정 2 ①).
+ *
+ * ## 자동 줄도 같은 모양이다 ([[ADR-172]] 결정 7·8)
+ *
+ * 보스 결정석·아이템 판매 줄은 **여기서 못 고치는데도 같은 카드**를 쓴다. 둘 다 «눌러서 어딘가로
+ * 가는 줄» 이라 화살촉이 말하는 것이 같기 때문이다 — 가는 곳만 다르다(시트 vs 보스 수익 탭).
+ * 그 차이는 그림이 아니라 **읽어 주는 이름**이 진다(`고치기` vs `보스 수익에서 보기`).
+ *
+ * 아이콘도 **새로 안 만든다**([[ADR-170]] 결정 9) — 자동 줄은 둘 다 수익이라 `ProfitIcon` 이다.
+ * 결정석과 판매를 가르는 것은 그림이 아니라 이름이고, 그 둘을 다른 그림으로 그리면 «거의 같은데
+ * 다른 동전» 이 하나 더 생긴다.
  */
 function DayRecordRow(props: { entry: DayRecord; onPress: () => void }): React.JSX.Element {
   const { entry } = props
-  const income = entry.kind === 'income'
+  const rowKey = rowKeyOf(entry)
+  // **자동 줄은 언제나 수익**이다([[ADR-172]] 결정 7) — 결정석도 판매도 들어오는 돈이다.
+  const income = entry.kind !== 'spend'
   const cash = recordCashOf(entry)
-  const quantity = entry.kind === 'spend' ? entry.record.quantity : null
+  const countLabel = recordCountLabelOf(entry)
   const Icon = income ? ProfitIcon : ShoppingCartIcon
 
   return (
     <Pressable
       role="button"
-      testID={`cashbook-row-${entry.record.id}`}
-      aria-label={`${recordTitleOf(entry)} 고치기`}
+      testID={`cashbook-row-${rowKey}`}
+      // 자동 줄은 **고치러 가는 것이 아니라 보러 가는 것**이다([[ADR-172]] 결정 8) — 읽어 주는
+      // 이름이 그 사실을 말해야 «눌렀더니 시트가 안 열린다» 가 고장으로 읽히지 않는다.
+      aria-label={`${recordTitleOf(entry)} ${isManualRecord(entry) ? '고치기' : '보스 수익에서 보기'}`}
       onPress={props.onPress}
       className="flex-row items-center gap-2 rounded-xl border border-border bg-surface py-2 pl-2 pr-1.5 active:opacity-60"
     >
       <View
-        testID={`cashbook-row-icon-${entry.record.id}`}
+        testID={`cashbook-row-icon-${rowKey}`}
         className={`h-6 w-6 items-center justify-center rounded-full ${
           income ? 'bg-rise-tint' : 'bg-fall-tint'
         }`}
@@ -208,11 +231,12 @@ function DayRecordRow(props: { entry: DayRecord; onPress: () => void }): React.J
       <Text numberOfLines={1} className="shrink text-xs text-text">
         {recordTitleOf(entry)}
       </Text>
-      {quantity !== null && quantity > 1 && (
-        // `×` 를 붙인다 — 맨 숫자는 «2번째» 로도 읽힌다.
+      {countLabel !== null && (
+        // 갈래마다 세는 것이 다르다(`×2` · `12마리` · `3건 · 미입력 2`) — 그 분기는 화면이 아니라
+        // `recordCountLabelOf` 가 든다([[ADR-147]] 결정 8).
         // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
-        <Text className="shrink-0 text-[11px] text-text-muted" style={TABULAR_NUMS}>
-          ×{quantity}
+        <Text numberOfLines={1} className="shrink-0 text-[11px] text-text-muted" style={TABULAR_NUMS}>
+          {countLabel}
         </Text>
       )}
 
@@ -225,7 +249,7 @@ function DayRecordRow(props: { entry: DayRecord; onPress: () => void }): React.J
       </Text>
       {/* 화살촉이 상자를 하나 쓰는 이유: lucide 아이콘은 `testID` 를 SVG 안으로 흘려보내지 않아
           «화살촉이 사라졌다» 를 테스트가 못 잡는다. 상자는 `shrink-0` 도 함께 든다. */}
-      <View testID={`cashbook-row-chevron-${entry.record.id}`} className="shrink-0">
+      <View testID={`cashbook-row-chevron-${rowKey}`} className="shrink-0">
         <ChevronRightIcon className="h-4 w-4 text-text-disabled" strokeWidth={2} aria-hidden />
       </View>
     </Pressable>
@@ -241,13 +265,17 @@ export function CashbookScreen(): React.JSX.Element {
   /**
    * 시트가 무엇을 하고 있나 — 셋이다([[ADR-171]] 결정 2).
    *
-   * `'income'`·`'expense'` 는 **새로 적는다**. `DayRecord` 면 **그것을 고친다** — 갈래도 그 안에
-   * 있으므로 «어느 시트를 열까» 와 «무엇을 채울까» 가 한 값에서 나온다.
+   * `'income'`·`'expense'` 는 **새로 적는다**. `ManualDayRecord` 면 **그것을 고친다** — 갈래도 그
+   * 안에 있으므로 «어느 시트를 열까» 와 «무엇을 채울까» 가 한 값에서 나온다.
+   *
+   * **자동 줄은 여기 못 들어온다**([[ADR-172]] 결정 8) — 타입이 그것을 막는다. 그 줄을 누르면
+   * 시트가 아니라 보스 수익 탭이 열린다.
    */
-  const [sheet, setSheet] = useState<'income' | 'expense' | DayRecord | null>(null)
+  const [sheet, setSheet] = useState<'income' | 'expense' | ManualDayRecord | null>(null)
   const [dayRecords, setDayRecords] = useState<DayRecord[]>([])
   const [amounts, setAmounts] = useState<CalendarAmounts>(NO_AMOUNTS)
   const [lastPointRate, setLastPointRate] = useState<number | null>(null)
+  const openTab = useOpenTab()
 
   const monthWeeks = buildCalendarMonth(monthKey)
   const weeks = isWeekly ? [buildResetWeek(weekStartKey)] : monthWeeks
@@ -295,6 +323,25 @@ export function CashbookScreen(): React.JSX.Element {
   }, [])
 
   /**
+   * 들어올 때 **한 번** 처치 날짜를 캔다([[ADR-172]] 결정 9). 캔 것이 있을 때만 다시 읽는다 —
+   * 0 이면 화면에 바뀔 것이 없다.
+   *
+   * 기간이 바뀔 때마다 돌리지 않는 이유: 캘 수 있는 범위는 **조회 창이 정하지 보는 달이 정하지
+   * 않는다**([[ADR-172]] 결정 4). 지난 3월로 넘겨도 캘 것이 늘지 않으므로 호출만 낭비된다.
+   *
+   * 그래서 **첫 렌더의 숫자가 나중에 늘 수 있다.** 사라지는 방향은 없다(NULL → 날짜).
+   */
+  useEffect(() => {
+    let alive = true
+    void resolveTrackedDefeatDates(new Date()).then((dated) => {
+      if (alive && dated > 0) setReloadToken((token) => token + 1)
+    })
+    return () => {
+      alive = false
+    }
+  }, [])
+
+  /**
    * 저장 둘 — **던지면 다시 던진다.**
    *
    * 삼키면 시트가 닫히고, 닫힌 뒤에는 친 것이 사라지며 화면에는 «적혔다» 와 구분되지 않는 그림만
@@ -332,7 +379,7 @@ export function CashbookScreen(): React.JSX.Element {
    * 시트는 그 둘을 모른다(초안만 만든다). 여기서 원본과 합쳐야 «고친 시각이 적은 시각을 덮는»
    * 일이 안 생긴다.
    */
-  async function saveEdit(entry: DayRecord, draft: IncomeDraft | SpendDraft): Promise<void> {
+  async function saveEdit(entry: ManualDayRecord, draft: IncomeDraft | SpendDraft): Promise<void> {
     try {
       if (entry.kind === 'spend') {
         await editSpend({ ...(draft as SpendDraft), id: entry.record.id, recordedAt: entry.record.recordedAt })
@@ -346,7 +393,7 @@ export function CashbookScreen(): React.JSX.Element {
     setReloadToken((token) => token + 1)
   }
 
-  async function deleteEntry(entry: DayRecord): Promise<void> {
+  async function deleteEntry(entry: ManualDayRecord): Promise<void> {
     try {
       await removeRecord(entry)
     } catch (error) {
@@ -354,6 +401,20 @@ export function CashbookScreen(): React.JSX.Element {
       throw error
     }
     setReloadToken((token) => token + 1)
+  }
+
+  /**
+   * 줄을 누르면 — **손입력은 시트, 자동은 보스 수익 탭**이다([[ADR-172]] 결정 8 = [[ADR-171]] 결정 5).
+   *
+   * 자동 줄을 여기서 고치게 하면 두 곳에서 고칠 수 있게 되어 **어느 쪽이 참인지 사라진다**
+   * ([[ADR-170]] 결정 3). 삭제도 없다 — 가계부에서 지워도 원천이 그대로라 다음에 읽으면 되살아난다.
+   */
+  function openRecord(entry: DayRecord): void {
+    if (isManualRecord(entry)) {
+      setSheet(entry)
+      return
+    }
+    openTab('Profit')
   }
 
   // 앞뒤 달로 채운 칸을 누르면 **보는 달도 따라간다** — 아니면 고른 날이 격자 밖에 있게 된다.
@@ -467,9 +528,9 @@ export function CashbookScreen(): React.JSX.Element {
                   <View className="mt-1.5 gap-1.5 border-t border-border pt-2">
                     {dayRecords.map((entry) => (
                       <DayRecordRow
-                        key={entry.record.id}
+                        key={rowKeyOf(entry)}
                         entry={entry}
-                        onPress={() => setSheet(entry)}
+                        onPress={() => openRecord(entry)}
                       />
                     ))}
                   </View>

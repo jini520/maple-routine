@@ -14,10 +14,18 @@ jest.mock('../../../storage/spend', () => ({
   getSpendRecordsBetween: jest.fn(),
 }))
 jest.mock('../../../storage/last-point-rate', () => ({ setLastPointRate: jest.fn() }))
+jest.mock('../../../storage/boss-profit', () => ({ getDatedBossProfitRecords: jest.fn() }))
+jest.mock('../../../storage/boss-drops', () => ({ getBossDropRecords: jest.fn() }))
+jest.mock('../../../storage/character-selection', () => ({ getTrackedCharacterOcids: jest.fn() }))
+jest.mock('../../../storage/character-basic-cache', () => ({ getCachedCharacterBasic: jest.fn() }))
 
 const income = jest.requireMock('../../../storage/income') as Record<string, jest.Mock>
 const spend = jest.requireMock('../../../storage/spend') as Record<string, jest.Mock>
 const rate = jest.requireMock('../../../storage/last-point-rate') as Record<string, jest.Mock>
+const bossProfit = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
+const bossDrops = jest.requireMock('../../../storage/boss-drops') as Record<string, jest.Mock>
+const selection = jest.requireMock('../../../storage/character-selection') as Record<string, jest.Mock>
+const basicCache = jest.requireMock('../../../storage/character-basic-cache') as Record<string, jest.Mock>
 
 const 지금 = new Date('2026-08-23T05:00:00.000Z')
 
@@ -25,6 +33,10 @@ beforeEach(() => {
   jest.clearAllMocks()
   income.getIncomeRecordsBetween.mockResolvedValue([])
   spend.getSpendRecordsBetween.mockResolvedValue([])
+  bossProfit.getDatedBossProfitRecords.mockResolvedValue([])
+  bossDrops.getBossDropRecords.mockResolvedValue([])
+  selection.getTrackedCharacterOcids.mockResolvedValue(['ocid-1'])
+  basicCache.getCachedCharacterBasic.mockResolvedValue({ profile: { name: '루디' } })
 })
 
 const 수입: IncomeDraft = {
@@ -215,7 +227,8 @@ describe('loadDayRecords — 그날 적은 것을 한 줄씩', () => {
 
     const rows = await loadDayRecords('2026-08-25')
 
-    expect(rows.map((row) => row.record.id)).toEqual(['spd-1', 'inc-late'])
+    const { rowKeyOf } = require('../records') as typeof import('../records')
+    expect(rows.map(rowKeyOf)).toEqual(['spd-1', 'inc-late'])
   })
 
   // 읽기 실패는 화면을 죽이지 않는다 — 캘린더 칸과 같은 처방이다.
@@ -303,5 +316,149 @@ describe('고치기와 지우기', () => {
 
     expect(spend.deleteSpendRecord).toHaveBeenCalledWith('spd-1')
     expect(income.deleteIncomeRecord).toHaveBeenCalledWith('inc-1')
+  })
+})
+
+// ── 보스 수익이 흘러드는 법 ([[ADR-172]]) ────────────────────────────────────────
+const 스우기록 = {
+  ocid: 'ocid-1',
+  boss: '스우',
+  difficulty: '하드',
+  periodKey: '2026-08-20',
+  payoutMeso: 2_100_000_000,
+  defeatedOn: '2026-08-21',
+}
+const 데미안기록 = { ...스우기록, boss: '데미안', payoutMeso: 1_500_000_000 }
+
+function 드롭(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    ocid: 'ocid-1',
+    boss: '스우',
+    difficulty: '하드',
+    periodKey: '2026-08-20',
+    dropIndex: 0,
+    itemName: '루즈 컨트롤 머신 마크',
+    priceState: 'entered',
+    priceMeso: 12_000_000_000,
+    priceShare: 3,
+    ...overrides,
+  }
+}
+
+describe('loadCalendarAmounts — 보스가 칸에 든다', () => {
+  it('결정석과 아이템 판매를 그 날의 수익에 더한다', async () => {
+    bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
+    bossDrops.getBossDropRecords.mockResolvedValue([드롭()])
+    const { loadCalendarAmounts } = require('../records') as typeof import('../records')
+
+    const amounts = await loadCalendarAmounts('2026-08-01', '2026-08-31')
+
+    // 결정석 21억 + 판매 120억/3 = 40억 → 61억
+    expect(amounts['2026-08-21']).toEqual({ incomeMeso: 6_100_000_000, expenseMeso: 0 })
+  })
+
+  it('드롭은 자기 날짜가 없다 — 짝인 보스 행의 날짜에 선다', async () => {
+    bossProfit.getDatedBossProfitRecords.mockResolvedValue([{ ...스우기록, defeatedOn: '2026-08-22' }])
+    bossDrops.getBossDropRecords.mockResolvedValue([드롭()])
+    const { loadCalendarAmounts } = require('../records') as typeof import('../records')
+
+    const amounts = await loadCalendarAmounts('2026-08-01', '2026-08-31')
+
+    expect(amounts['2026-08-22']?.incomeMeso).toBe(6_100_000_000)
+    expect(amounts['2026-08-21']).toBeUndefined()
+  })
+
+  it('짝인 보스 행이 없는 드롭은 어느 칸에도 안 든다 — 물려받을 날짜가 없다', async () => {
+    bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
+    bossDrops.getBossDropRecords.mockResolvedValue([드롭({ boss: '가디언 엔젤 슬라임' })])
+    const { loadCalendarAmounts } = require('../records') as typeof import('../records')
+
+    const amounts = await loadCalendarAmounts('2026-08-01', '2026-08-31')
+
+    expect(amounts['2026-08-21']?.incomeMeso).toBe(2_100_000_000)
+  })
+
+  it('추적 캐릭터가 없으면 보스 테이블을 안 읽는다', async () => {
+    selection.getTrackedCharacterOcids.mockResolvedValue(null)
+    const { loadCalendarAmounts } = require('../records') as typeof import('../records')
+
+    await loadCalendarAmounts('2026-08-01', '2026-08-31')
+
+    expect(bossProfit.getDatedBossProfitRecords).not.toHaveBeenCalled()
+  })
+
+  it('보스 기록이 없으면 드롭도 안 읽는다 — 물려받을 날짜가 없다', async () => {
+    const { loadCalendarAmounts } = require('../records') as typeof import('../records')
+
+    await loadCalendarAmounts('2026-08-01', '2026-08-31')
+
+    expect(bossDrops.getBossDropRecords).not.toHaveBeenCalled()
+  })
+})
+
+describe('loadDayRecords — 캐릭터당 두 줄 (결정 7)', () => {
+  it('결정석과 판매를 갈라 두 줄로 세운다', async () => {
+    bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록, 데미안기록])
+    bossDrops.getBossDropRecords.mockResolvedValue([드롭(), 드롭({ dropIndex: 1, priceState: null, priceMeso: null })])
+    const { loadDayRecords, recordTitleOf, recordMesoOf, recordCountLabelOf } =
+      require('../records') as typeof import('../records')
+
+    const rows = await loadDayRecords('2026-08-21')
+
+    expect(rows.map(recordTitleOf)).toEqual(['루디 · 보스 결정석', '루디 · 아이템 판매'])
+    expect(rows.map(recordMesoOf)).toEqual([3_600_000_000, 4_000_000_000])
+    expect(rows.map(recordCountLabelOf)).toEqual(['2마리', '1건 · 미입력 1'])
+  })
+
+  it('판매가 하나도 없으면 그 줄이 안 선다', async () => {
+    bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
+    const { loadDayRecords, recordTitleOf } = require('../records') as typeof import('../records')
+
+    const rows = await loadDayRecords('2026-08-21')
+
+    expect(rows.map(recordTitleOf)).toEqual(['루디 · 보스 결정석'])
+  })
+
+  it('안 판 드롭만 있어도 줄이 선다 — 「미입력」 이 할 말이다', async () => {
+    bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
+    bossDrops.getBossDropRecords.mockResolvedValue([드롭({ priceState: null, priceMeso: null })])
+    const { loadDayRecords, recordCountLabelOf, recordMesoOf } =
+      require('../records') as typeof import('../records')
+
+    const rows = await loadDayRecords('2026-08-21')
+
+    expect(rows).toHaveLength(2)
+    expect(recordCountLabelOf(rows[1])).toBe('0건 · 미입력 1')
+    expect(recordMesoOf(rows[1])).toBe(0)
+  })
+
+  it('보스 줄이 손입력보다 위에 선다', async () => {
+    bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
+    income.getIncomeRecordsBetween.mockResolvedValue([
+      { id: 'i1', earnedOn: '2026-08-21', category: '사냥', item: null, mesoAmount: 1, recordedAt: 'z' },
+    ])
+    const { loadDayRecords, isManualRecord } = require('../records') as typeof import('../records')
+
+    const rows = await loadDayRecords('2026-08-21')
+
+    expect(rows.map(isManualRecord)).toEqual([false, true])
+  })
+
+  it('이름을 모르면 ocid 대신 「알 수 없음」 을 안 적는다 — 캐시가 비면 빈 이름 대신 갈래만 적는다', async () => {
+    bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
+    basicCache.getCachedCharacterBasic.mockResolvedValue(null)
+    const { loadDayRecords, recordTitleOf } = require('../records') as typeof import('../records')
+
+    expect((await loadDayRecords('2026-08-21')).map(recordTitleOf)).toEqual(['보스 결정석'])
+  })
+
+  it('보스 줄은 손입력이 아니다 — 여기서 못 고친다 (결정 8)', async () => {
+    bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
+    const { loadDayRecords, isManualRecord, rowKeyOf } = require('../records') as typeof import('../records')
+
+    const [row] = await loadDayRecords('2026-08-21')
+
+    expect(isManualRecord(row)).toBe(false)
+    expect(rowKeyOf(row)).toBe('bossCrystal:ocid-1')
   })
 })
