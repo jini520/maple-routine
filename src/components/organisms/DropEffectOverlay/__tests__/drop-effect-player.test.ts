@@ -13,6 +13,7 @@ import {
   advanceDropEffect,
   createDropEffectState,
   requestDropEffectClose,
+  rendersDifferently,
   type DropEffectFrameCounts,
 } from '../drop-effect-player'
 
@@ -155,5 +156,22 @@ describe('큰 dt 는 잘라낸다', () => {
     const clamped = advanceDropEffect(createDropEffectState(), MAX_TICK_MS, COUNTS)
 
     expect(huge.screenIndex).toBe(clamped.screenIndex)
+  })
+})
+
+// ★ 회귀 가드 — 누적 시간만 바뀐 tick 은 «다시 그릴 것 없음» 이어야 한다([[ADR-173]] 정정 1).
+describe('rendersDifferently', () => {
+  it('누적 시간만 흐른 tick 은 다시 그리지 않는다', () => {
+    const a = createDropEffectState()
+    const b = advanceDropEffect(a, 5, { screen: 16, pre: 8, loop: 24, end: 7 })
+    expect(b.screenAcc).toBeGreaterThan(a.screenAcc)
+    expect(rendersDifferently(a, b)).toBe(false)
+  })
+
+  it('프레임이 넘어가면 다시 그린다', () => {
+    const a = createDropEffectState()
+    const b = advanceDropEffect(a, 60, { screen: 16, pre: 8, loop: 24, end: 7 })
+    expect(b.screenIndex).toBe(1)
+    expect(rendersDifferently(a, b)).toBe(true)
   })
 })

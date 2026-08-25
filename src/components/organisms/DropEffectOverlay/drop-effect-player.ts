@@ -180,3 +180,23 @@ export function requestDropEffectClose(
     itemVisible: true,
   }
 }
+
+/**
+ * **그려지는 것이 달라지는가.** 재생 상태는 매 tick 바뀌지만(누적 시간 `*Acc`) 화면에 나오는 것은
+ * 단계별 fps 로만 바뀐다 — screen 22.5 · loop 17.25. 그 차이를 안 걸러내면 120Hz 기기에서 초당
+ * 120번 트리를 다시 그리면서 정작 그림은 22번만 바뀐다.
+ *
+ * 2026-08-26 갤럭시 Z Flip3 실측 — 그 낭비가 **재생 첫머리의 불균등**으로 나왔다. 상태는 제때
+ * 진행하는데 렌더가 밀려, frame 0 이 82ms 서 있고 frame 2 가 25ms 만에 지나갔다(기대는 둘 다 44ms).
+ * 누적 시간은 여기서 일부러 뺀다 — 그것 때문에 매번 «달라졌다» 가 되면 거르는 의미가 없다.
+ */
+export function rendersDifferently(a: DropEffectState, b: DropEffectState): boolean {
+  return (
+    a.screenIndex !== b.screenIndex ||
+    a.screenDone !== b.screenDone ||
+    a.pillarPhase !== b.pillarPhase ||
+    a.pillarIndex !== b.pillarIndex ||
+    a.itemVisible !== b.itemVisible ||
+    a.finished !== b.finished
+  )
+}
