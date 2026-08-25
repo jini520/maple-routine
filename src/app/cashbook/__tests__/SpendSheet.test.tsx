@@ -527,3 +527,58 @@ describe('기타 — 캐시가 사는 유일한 자리', () => {
     expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('123')
   })
 })
+
+// ══ 시세가 없을 때 화면이 말하게 한다 ([[ADR-166]] 정정 2 ③) ═══════════════════
+//
+// 저장이 막히는 것은 맞다 — 시세 없이 저장한 행은 **영영 메소로 표시할 수 없다**. 문제는 화면이
+// 그 사실을 말하지 않던 것이다: 「저장」이 왜 안 눌리는지 안 보이고, 합계가 **「−0」** 으로 떠서
+// «0원짜리 지출» 로 읽혔다(iOS 실측 2026-08-25).
+
+describe('시세가 비어 있을 때', () => {
+  async function 메포항목(overrides: Partial<React.ComponentProps<typeof SpendSheet>> = {}) {
+    const view = await 그리기({ lastPointRate: null, ...overrides })
+    await 누르기(view, '하이마운틴 2단계')
+    return view
+  }
+
+  it('합계에 0 을 적지 않는다 — 0 원짜리 지출이 아니다', async () => {
+    const view = await 메포항목()
+
+    expect(view.getByTestId('spend-sheet-total')).not.toHaveTextContent('−0')
+  })
+
+  // 아직 아는 것은 있다 — **메포 원금**은 확정됐다. 모르는 것은 그것이 메소로 얼마인가다.
+  it('아는 것은 보여준다 — 메포 원금', async () => {
+    const view = await 메포항목()
+
+    expect(view.getByTestId('spend-sheet-total')).toHaveTextContent('30,000 메포')
+  })
+
+  // 「지금 비었다」가 아니라 **「이 칸은 반드시 있어야 한다」** 를 말하는 자리라 채워도 안 사라진다.
+  it('시세 칸이 필수임을 별표로 말한다', async () => {
+    const view = await 메포항목()
+
+    expect(view.getByTestId('spend-sheet-required')).toBeTruthy()
+  })
+
+  it('시세를 넣으면 메소가 서고 별표는 남는다', async () => {
+    const view = await 메포항목()
+
+    await act(async () => {
+      fireEvent.changeText(view.getByTestId('spend-sheet-rate'), '1180')
+    })
+
+    expect(view.getByTestId('spend-sheet-total')).toHaveTextContent('−25.42억')
+    expect(view.getByTestId('spend-sheet-required')).toBeTruthy()
+  })
+
+  it('메소 항목에는 시세 칸도 별표도 없다 — 물어본 적이 없다', async () => {
+    const view = await 그리기({ lastPointRate: null })
+    await 누르기(view, '버프')
+
+    await 누르기(view, '세이람의 영약')
+
+    expect(view.queryByTestId('spend-sheet-required')).toBeNull()
+    expect(view.getByTestId('spend-sheet-total')).toHaveTextContent('−200만')
+  })
+})

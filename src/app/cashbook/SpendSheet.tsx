@@ -248,7 +248,10 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
   // 메포를 쓰는데 시세가 없으면 **막는다** — 저장하면 영영 메소로 표시할 수 없는 행이 된다
   // ([[ADR-166]] 정정 2 ③). 어댑터도 같은 것을 막지만 화면이 먼저 알려 주는 편이 낫다.
   const hasSubject = direct ? typed > 0 : item !== null
-  const canSave = hasSubject && (!usesPoint || (rate !== null && rate > 0))
+  // **메소로 셀 수 없는 상태.** 메포를 쓰는데 시세가 없으면 환산이 성립하지 않는다 — 저장을 막는
+  // 것만으로는 부족하고(사용자는 왜 막혔는지 모른다) 합계 자리가 그 사실을 말해야 한다.
+  const blocked = usesPoint && (rate === null || rate <= 0)
+  const canSave = hasSubject && !blocked
 
   function selectCategory(next: SpendCategory): void {
     setCategory(next)
@@ -352,7 +355,10 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
             </View>
           </View>
         ) : (
-          <ScrollView className="max-h-72">
+          // 마지막 묶음이 상한선에 걸려 **잘린 채로 멈추지 않게** 아래 여백을 준다 — 없으면 끝까지
+          // 굴려도 마지막 줄이 반쯤 잘린 자리에서 멈춰 «더 있는지» 가 안 보인다.
+          // (`) : (` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다 — 이 파일에서 두 번째다.)
+          <ScrollView className="max-h-72" contentContainerClassName="pb-2">
             {groups.map((group) => (
             <View key={group.group} className="gap-1 pb-2">
               <Text className="text-[11px] text-text-disabled">{group.group}</Text>
@@ -412,7 +418,15 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
               // 것은 «메소는 자릿수가 커서 0 을 세게 된다» 때문이고, 그 문제가 여기엔 없다.
               // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
               <View className="flex-row items-center justify-between gap-2 border-t border-border pt-2">
-                <Text className="shrink-0 text-xs text-text-muted">시세 · 1억당</Text>
+                <Text className="shrink-0 text-xs text-text-muted">
+                  시세 · 1억당
+                  {/* **필수 칸**이라는 표시([[ADR-166]] 정정 2 ③) — 시세 없이 저장한 행은 영영
+                      메소로 표시할 수 없다. 채워도 사라지지 않는다: «지금 비었다» 가 아니라
+                      «이 칸은 반드시 있어야 한다» 를 말하는 자리다. */}
+                  <Text testID="spend-sheet-required" className="text-error-ink">
+                    {' *'}
+                  </Text>
+                </Text>
                 <TextInput
                   testID="spend-sheet-rate"
                   value={rateText}
@@ -430,15 +444,24 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
 
             <View className="flex-row items-baseline justify-between border-t border-border pt-2">
               <Text className="text-xs font-semibold text-text">합계</Text>
-              {/* 캐시는 메소로 환산하지 않으므로 **캐시 그대로** 적는다(정정 2 ①). */}
+              {/*
+                셋으로 갈린다.
+                · 캐시 — 메소로 **환산하지 않으므로** 캐시 그대로 적는다(정정 2 ①).
+                · 시세가 없는 메포 — **0 을 적지 않는다.** 「−0」 은 «0 원짜리 지출» 로 읽히는데
+                  사실은 «아직 못 센다» 다. 대신 **아는 것**(메포 원금)을 적고 아래 줄이 무엇이
+                  없는지 말한다.
+                · 그 밖 — 메소 축 합계.
+              */}
               <Text
                 testID="spend-sheet-total"
-                className="text-lg font-bold text-fall-ink"
+                className={`text-lg font-bold ${blocked ? 'text-text-muted' : 'text-fall-ink'}`}
                 style={TABULAR_NUMS}
               >
                 {currency === 'cash'
                   ? `−${amount.toLocaleString()}원`
-                  : `−${formatMesoCompact(totalMeso)}`}
+                  : blocked
+                    ? `${amount.toLocaleString()} 메포`
+                    : `−${formatMesoCompact(totalMeso)}`}
               </Text>
             </View>
           </View>
