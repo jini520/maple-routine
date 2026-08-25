@@ -259,7 +259,13 @@ function DayRecordRow(props: { entry: DayRecord; onPress: () => void }): React.J
 
 export function CashbookScreen(): React.JSX.Element {
   const todayDateKey = getCurrentKstDateKey(new Date())
-  const [isWeekly, setIsWeekly] = useState(false)
+  /**
+   * **들어오면 주간이다**([[ADR-170]] 결정 10 정정, 사용자 지정 2026-08-26).
+   *
+   * 고른 값은 여전히 **기억하지 않는다** — 나갔다 들어오면 다시 주간이다(보스 수익 탭도 자기
+   * 탭을 화면 상태로 둔다).
+   */
+  const [isWeekly, setIsWeekly] = useState(true)
   const [monthKey, setMonthKey] = useState(() => getCurrentMonthKey(new Date()))
   const [weekStartKey, setWeekStartKey] = useState(() => resetWeekStartOf(todayDateKey))
   const [selectedDateKey, setSelectedDateKey] = useState(todayDateKey)

@@ -93,6 +93,14 @@ async function 누르기(view: Rendered, testID: string): Promise<void> {
   })
 }
 
+/**
+ * **기본이 주간이다**([[ADR-170]] 결정 10 정정). 월간의 거동을 보는 테스트는 들어와서 한 번 옮긴다 —
+ * 그 한 줄이 «이 테스트가 어느 보기를 말하는가» 를 본문에 드러내 준다.
+ */
+async function 월간으로(view: Rendered): Promise<void> {
+  await 이름으로누르기(view, '월간')
+}
+
 async function 이름으로누르기(view: Rendered, label: string): Promise<void> {
   await act(async () => {
     fireEvent.press(view.getByLabelText(label))
@@ -107,8 +115,9 @@ describe('CashbookScreen — 자리와 머리', () => {
     expect(view.getByText('가계부')).toBeTruthy()
   })
 
-  it('이번 달로 시작한다', async () => {
+  it('월간으로 옮기면 이번 달이다', async () => {
     const view = await 그리기()
+    await 월간으로(view)
 
     expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('2026년 8월')
   })
@@ -117,6 +126,7 @@ describe('CashbookScreen — 자리와 머리', () => {
 describe('CashbookScreen — 달 이동', () => {
   it('이전 달·다음 달로 옮긴다', async () => {
     const view = await 그리기()
+    await 월간으로(view)
 
     await 이름으로누르기(view, '이전 달')
     expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('2026년 7월')
@@ -128,6 +138,7 @@ describe('CashbookScreen — 달 이동', () => {
 
   it('해를 넘긴다', async () => {
     const view = await 그리기()
+    await 월간으로(view)
 
     for (let count = 0; count < 5; count += 1) await 이름으로누르기(view, '다음 달')
 
@@ -137,6 +148,7 @@ describe('CashbookScreen — 달 이동', () => {
   // 달을 옮겨도 고른 날은 그대로다 — 옮긴 것은 «보는 달» 이지 «고른 날» 이 아니다.
   it('달을 옮겨도 고른 날은 안 바뀐다', async () => {
     const view = await 그리기()
+    await 월간으로(view)
 
     await 이름으로누르기(view, '이전 달')
 
@@ -152,17 +164,19 @@ describe('CashbookScreen — 날짜 선택', () => {
     expect(view.getByLabelText('8월 23일 (일) 오늘')).toBeTruthy()
   })
 
+  // 보는 범위와 무관한 거동이라 **이 주 안의 날**을 고른다 — 월간으로 옮길 이유가 없다.
   it('칸을 고르면 상세 머리글이 따라온다', async () => {
     const view = await 그리기()
 
-    await 누르기(view, 'calendar-day-2026-08-11')
+    await 누르기(view, 'calendar-day-2026-08-25')
 
-    expect(view.getByTestId('cashbook-selected-day')).toHaveTextContent('8월 11일 (화)')
+    expect(view.getByTestId('cashbook-selected-day')).toHaveTextContent('8월 25일 (화)')
   })
 
   // 앞뒤 달 칸을 누르면 **보는 달도 함께 옮겨진다** — 아니면 고른 날이 격자 밖에 있게 된다.
   it('다음 달 칸을 고르면 달도 함께 옮겨진다', async () => {
     const view = await 그리기()
+    await 월간으로(view)
 
     await 누르기(view, 'calendar-day-2026-09-05')
 
@@ -209,11 +223,20 @@ describe('CashbookScreen — 아직 기록이 없다 ([[ADR-169]] 결정 6)', ()
 // 시작한다 — 후자가 게임의 주이고 보스 수익 탭이 이미 그 축을 쓴다. 화면이 그 둘을 오간다.
 
 describe('주간/월간 전환', () => {
-  it('두 알약이 서고 월간으로 시작한다', async () => {
+  // [[ADR-170]] 결정 10 정정(사용자 지정 2026-08-26) — **들어오면 주간이다.**
+  it('두 알약이 서고 주간으로 시작한다', async () => {
     const view = await 그리기()
 
-    expect(view.getByLabelText('주간').props.accessibilityState?.selected).toBe(false)
-    expect(view.getByLabelText('월간').props.accessibilityState?.selected).toBe(true)
+    expect(view.getByLabelText('주간').props.accessibilityState?.selected).toBe(true)
+    expect(view.getByLabelText('월간').props.accessibilityState?.selected).toBe(false)
+  })
+
+  it('들어오자마자 오늘이 든 목요일 주를 그린다 — 누르지 않아도', async () => {
+    const view = await 그리기()
+
+    // 오늘은 2026-08-23(일)이고 그 주의 목요일은 8/20 이다.
+    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('8월 20일 – 26일')
+    expect(view.getAllByTestId(/^calendar-day-/)).toHaveLength(7)
   })
 
   it('주간을 누르면 고른 날이 든 **목요일 주**가 뜬다', async () => {
@@ -281,6 +304,7 @@ describe('주간/월간 전환', () => {
 
   it('월간에서 고른 날을 바꾸고 주간으로 가면 그 날이 든 주다', async () => {
     const view = await 그리기()
+    await 월간으로(view)
     await 누르기(view, 'calendar-day-2026-08-11')
 
     await 이름으로누르기(view, '주간')
@@ -305,6 +329,7 @@ describe('주간/월간 전환', () => {
 describe('목요일 경계선', () => {
   it('월간 격자에는 있다', async () => {
     const view = await 그리기()
+    await 월간으로(view)
 
     expect(view.getByTestId('calendar-reset-divider')).toBeTruthy()
   })
@@ -330,6 +355,7 @@ describe('칸에 숫자가 든다', () => {
 
   it('기간을 옮기면 그 범위로 다시 읽는다 — 옛 숫자가 안 남는다', async () => {
     const view = await 그리기()
+    await 월간으로(view)
 
     await 이름으로누르기(view, '다음 달')
     await act(async () => {})
@@ -402,11 +428,11 @@ describe('펼침판이 시트를 연다', () => {
   // 시트는 **고른 날**에 적는다 — FAB 는 날짜를 안 들고 오므로 화면이 그것을 넘긴다.
   it('시트가 고른 날을 받는다', async () => {
     const view = await 그리기()
-    await 누르기(view, 'calendar-day-2026-08-11')
+    await 누르기(view, 'calendar-day-2026-08-25')
 
     await 고르기(view, '수입 추가')
 
-    expect(view.getByTestId('income-sheet-date')).toHaveTextContent('8월 11일 (화)')
+    expect(view.getByTestId('income-sheet-date')).toHaveTextContent('8월 25일 (화)')
   })
 
   it('기억된 시세가 지출 시트로 간다', async () => {
@@ -578,9 +604,9 @@ describe('그날 목록', () => {
   it('날을 바꾸면 그 날 것을 읽는다', async () => {
     const view = await 그리기()
 
-    await 누르기(view, 'calendar-day-2026-08-11')
+    await 누르기(view, 'calendar-day-2026-08-25')
 
-    expect(records.loadDayRecords).toHaveBeenLastCalledWith('2026-08-11')
+    expect(records.loadDayRecords).toHaveBeenLastCalledWith('2026-08-25')
   })
 })
 
