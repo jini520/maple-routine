@@ -175,9 +175,12 @@ function ItemTile(props: {
 function QuantityStepper(props: {
   value: number
   unit: string
+  /** 상한 — 사용자가 준 한도에서 온다. 없는 항목은 안 막는다([[ADR-006]]). */
+  max?: number
   onChange: (next: number) => void
 }): React.JSX.Element {
   const canDecrease = props.value > 1
+  const canIncrease = props.max === undefined || props.value < props.max
   return (
     <View className="h-9 flex-row items-center gap-3 rounded-full border border-border px-2">
       <Pressable
@@ -201,10 +204,15 @@ function QuantityStepper(props: {
       <Pressable
         role="button"
         aria-label="수량 늘리기"
+        disabled={!canIncrease}
         onPress={() => props.onChange(props.value + 1)}
         hitSlop={8}
       >
-        <PlusIcon className="h-4 w-4 text-text" strokeWidth={2} aria-hidden />
+        <PlusIcon
+          className={`h-4 w-4 ${canIncrease ? 'text-text' : 'text-text-disabled'}`}
+          strokeWidth={2}
+          aria-hidden
+        />
       </Pressable>
       <Text testID="spend-sheet-quantity-unit" className="text-[11px] text-text-muted">
         {props.unit}
@@ -548,7 +556,12 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
               <View className="gap-1.5">
                 <View className="flex-row items-center justify-between">
                   <Text className="text-xs text-text-muted">수량</Text>
-                  <QuantityStepper value={quantity} unit={item.unit} onChange={setQuantity} />
+                  <QuantityStepper
+                    value={quantity}
+                    unit={item.unit}
+                    max={item.maxQuantity}
+                    onChange={setQuantity}
+                  />
                 </View>
 
                 {item.limit !== undefined && (

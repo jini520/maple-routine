@@ -39,6 +39,17 @@ export interface SpendCatalogItem {
   /** 같은 값을 받는 두 형태 — 「경험치」·「솔 에르다」. **가격을 안 바꾼다.** */
   readonly forms?: readonly string[]
   readonly limit?: string
+  /**
+   * 기록 **한 건**의 수량 상한 — `limit` 문장에서 **사용자가 고른 숫자**다(2026-08-25).
+   *
+   * 문장을 파싱해 뽑지 않는다. 몬스터 파크의 문장은 축이 셋(월드당 14 · 캐릭터당 7 · 무료 2)이라
+   * 어느 것이 한 건의 상한인지 **글에는 안 적혀 있다** — 앱이 고르면 그 고름이 추정이 된다
+   * ([[ADR-006]]). 사용자가 14 로 지정했다.
+   *
+   * 기간 누계가 아니다. 「메이플 ID당 최대 2회」 를 이틀에 걸쳐 한 번씩 적으면 기록이 둘이고 앱은
+   * 그것을 합치지 않는다 — 세는 것은 사람이 한다([[ADR-166]] 정정 1 ⑤).
+   */
+  readonly maxQuantity?: number
   readonly note?: string
   /** 메이플 포인트 샵은 **기간 운영**이라 시즌마다 상품이 갈린다([[ADR-166]] 정정 1 ①). */
   readonly seasonal?: boolean

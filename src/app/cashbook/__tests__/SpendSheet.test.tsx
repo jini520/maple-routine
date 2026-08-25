@@ -269,6 +269,37 @@ describe('수량 — 곱셈은 앱이 한다', () => {
     expect(view.queryByTestId('spend-sheet-limit')).toBeNull()
   })
 
+  // 한도를 적어만 두면 **넘겨서 적을 수 있다** — 스테퍼가 막아야 한다(사용자 지적 2026-08-25).
+  // 몬스터 파크는 상한이 14 다(사용자 지정 — 축 셋 중 «월드당 일간»).
+  it('한도가 있으면 스테퍼가 그 수에서 멈춘다', async () => {
+    const view = await 그리기({ lastPointRate: 1_180 })
+    await 누르기(view, '몬스터 파크')
+
+    for (let i = 0; i < 20; i += 1) await 누르기(view, '수량 늘리기')
+
+    expect(view.getByText('14')).toBeTruthy()
+    expect(view.getByLabelText('수량 늘리기').props.accessibilityState?.disabled).toBe(true)
+  })
+
+  // 상한이 1 이면 늘리는 자리가 처음부터 막혀 있어야 한다 — 눌리는데 안 늘면 고장으로 읽힌다.
+  it('상한이 1이면 늘리는 자리가 처음부터 막힌다', async () => {
+    const view = await 그리기({ lastPointRate: 1_180 })
+    await 누르기(view, '상점·편의')
+    await 누르기(view, '미호로이드 교환권')
+
+    expect(view.getByLabelText('수량 늘리기').props.accessibilityState?.disabled).toBe(true)
+  })
+
+  // 상한이 없는 항목은 계속 는다 — 없는 한도를 앱이 지어내면 그것이 추정이다([[ADR-006]]).
+  it('한도가 없으면 스테퍼가 안 막힌다', async () => {
+    const view = await 그리기({ lastPointRate: 1_180 })
+    await 누르기(view, '에픽던전 퀵패스')
+
+    for (let i = 0; i < 20; i += 1) await 누르기(view, '수량 늘리기')
+
+    expect(view.getByLabelText('수량 늘리기').props.accessibilityState?.disabled).toBeFalsy()
+  })
+
   // 형태가 있는데 안 고르면 «어느 쪽인지 모르는 행» 이 된다 — 칸을 더한 뜻이 사라진다.
   it('형태를 안 고르면 저장이 막힌다', async () => {
     const view = await 그리기({ lastPointRate: 1_180 })
