@@ -92,18 +92,29 @@ function CategoryChip(props: {
 }
 
 /**
- * 타일에 적는 값 — **단위를 붙인다.**
+ * 타일에 적는 값 — **단위를 붙이고, 단계가 여럿이면 나란히 적는다.**
  *
- * 갈래 하나 안에서 통화가 갈리는 곳이 있어서다(「버프」의 영약은 메소, 보약은 메포 —
- * [[ADR-166]] 정정 1 ②). 숫자만 적으면 «2,000,000» 이 메소인지 메포인지 타일만 보고는 모른다.
+ * 단위를 붙이는 이유는 갈래 하나 안에서 통화가 갈리는 곳이 있어서다(「버프」의 영약은 메소,
+ * 보약은 메포 — [[ADR-166]] 정정 1 ②). 숫자만 적으면 «2,000,000» 이 메소인지 메포인지 모른다.
  *
  * **메소만 줄여 적는다**(`formatMesoCompact`). 메포는 200~50,000 이라 그대로가 읽히지만 메소는
  * 백만 단위라 1/3 폭 타일에서 잘린다 — 그 좁은 칸을 위해 있는 함수가 그것이다.
+ *
+ * 단계가 여럿이면 **`7,500 | 30,000 메포`** 로 붙여 적는다(사용자 지정 2026-08-25). 한 대표 안의
+ * 단계는 통화가 같으므로 단위는 **한 번만** 적는다.
+ *
+ * 1/3 폭 칸에 안 들어가면 **줄을 바꾸지 않고 글자를 줄인다**(`numberOfLines` + `adjustsFontSizeToFit`)
+ * — 줄이 바뀌면 그 타일만 키가 커지고 `items-stretch` 라 같은 줄이 통째로 따라 커진다.
  */
-function tilePriceLabel(item: SpendCatalogItem): string {
-  return item.currency === 'point'
-    ? `${item.unitPrice.toLocaleString()} 메포`
-    : `${formatMesoCompact(item.unitPrice)} 메소`
+function tilePriceLabel(items: readonly SpendCatalogItem[]): string {
+  const first = items[0]
+  if (first === undefined) return ''
+  const numbers = items.map((item) =>
+    item.currency === 'point'
+      ? item.unitPrice.toLocaleString()
+      : formatMesoCompact(item.unitPrice),
+  )
+  return `${numbers.join(' | ')} ${first.currency === 'point' ? '메포' : '메소'}`
 }
 
 function ItemTile(props: {
@@ -136,7 +147,13 @@ function ItemTile(props: {
           {props.label}
         </Text>
         {props.price !== null && (
+          // **한 줄로 못박는다.** 두 줄이 되면 그 타일만 키가 커지고, `items-stretch` 라 같은 줄의
+          // 타일이 통째로 따라 커진다. 좁으면 글자를 줄여 맞춘다.
+          // (JSX 주석 `{/* */}` 은 **children 자리에서만** 쓴다 — `&& ( … )` 안은 JS 표현식이라
+          //  `//` 여야 한다. 이 파일에서 세 번째로 밟았다.)
           <Text
+            numberOfLines={1}
+            adjustsFontSizeToFit
             className={`text-[11px] ${props.selected ? 'text-primary-ink' : 'text-text-muted'}`}
             style={TABULAR_NUMS}
           >
@@ -421,12 +438,8 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
                       <ItemTile
                         key={each.label}
                         label={each.label}
-                        // 단계가 여럿이면 값이 하나로 안 정해져 **가격을 안 적는다.**
-                        price={
-                          each.items.length === 1 && each.items[0] !== undefined
-                            ? tilePriceLabel(each.items[0])
-                            : null
-                        }
+                        // 단계가 여럿이면 **나란히** 적는다 — `7,500 | 30,000 메포`.
+                        price={tilePriceLabel(each.items)}
                         selected={false}
                         onPress={() => selectChoice(each)}
                       />
@@ -473,7 +486,7 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
                         <ItemTile
                           key={each.name}
                           label={each.tier ?? each.name}
-                          price={tilePriceLabel(each)}
+                          price={tilePriceLabel([each])}
                           selected={each.name === item?.name}
                           onPress={() => selectItem(each)}
                         />

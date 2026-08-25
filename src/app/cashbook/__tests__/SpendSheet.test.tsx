@@ -128,13 +128,14 @@ describe('항목 — 고르면 채워진다', () => {
     expect(view.getByText('600 메포')).toBeTruthy()
   })
 
-  // 단계가 여럿이면 값이 하나로 안 정해지므로 **가격을 안 적는다** — 적으면 어느 단계의 값인지
-  // 거짓이 된다.
-  it('단계가 여럿인 대표는 목록에서 가격을 안 적는다', async () => {
+  // 단계가 여럿이면 **나란히** 적는다(사용자 지정 2026-08-25). 한 대표 안의 단계는 통화가 같으므로
+  // 단위는 한 번만 — 두 번 적으면 좁은 칸에서 숫자가 밀린다.
+  it('단계가 여럿인 대표는 가격을 나란히 적는다', async () => {
     const view = await 그리기()
 
-    expect(view.queryByText('7,500 메포')).toBeNull()
-    expect(view.queryByText('30,000 메포')).toBeNull()
+    expect(view.getByText('7,500 | 30,000 메포')).toBeTruthy()
+    expect(view.getByText('10,000 | 40,000 메포')).toBeTruthy()
+    expect(view.getByText('12,500 | 50,000 메포')).toBeTruthy()
   })
 
   it('메소 항목은 단위가 「메소」이고 줄여 적는다 — 좁은 칸이다', async () => {
