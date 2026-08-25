@@ -82,6 +82,7 @@ import {
   recordIncome,
   recordSpend,
 } from '../../features/cashbook/records'
+import { useToastStore } from '../../features/toast/store'
 import { IncomeSheet, type IncomeDraft } from './IncomeSheet'
 import { SpendSheet, type SpendDraft } from './SpendSheet'
 
@@ -187,13 +188,33 @@ export function CashbookScreen(): React.JSX.Element {
     void loadLastPointRate().then(setLastPointRate)
   }, [])
 
+  /**
+   * 저장 둘 — **던지면 다시 던진다.**
+   *
+   * 삼키면 시트가 닫히고, 닫힌 뒤에는 친 것이 사라지며 화면에는 «적혔다» 와 구분되지 않는 그림만
+   * 남는다. 실기에서 정확히 그랬다(2026-08-25 — `spend_records.form` 마이그레이션이 빠져 INSERT 가
+   * 매번 던졌는데 시트는 매번 닫혔다). 토스트는 여기서 띄우고(저장소 실패는 화면의 몫이다 —
+   * `DropPriceScreen` 과 같은 자리) 자리를 지키는 일은 시트가 한다.
+   *
+   * 다시 읽는 것도 **성공했을 때만** 한다 — 실패했으면 읽을 것이 안 바뀌었다.
+   */
   async function saveIncome(draft: IncomeDraft): Promise<void> {
-    await recordIncome(draft, new Date())
+    try {
+      await recordIncome(draft, new Date())
+    } catch (error) {
+      useToastStore.getState().showError('수입을 적지 못했습니다')
+      throw error
+    }
     setReloadToken((token) => token + 1)
   }
 
   async function saveSpend(draft: SpendDraft): Promise<void> {
-    await recordSpend(draft, new Date())
+    try {
+      await recordSpend(draft, new Date())
+    } catch (error) {
+      useToastStore.getState().showError('지출을 적지 못했습니다')
+      throw error
+    }
     // 시세는 방금 저장한 값이 다음 기본값이다([[ADR-166]] 결정 5) — 다시 읽지 않고 그대로 든다.
     if (draft.pointPer100mMeso !== null) setLastPointRate(draft.pointPer100mMeso)
     setReloadToken((token) => token + 1)

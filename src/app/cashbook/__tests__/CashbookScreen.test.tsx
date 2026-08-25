@@ -29,6 +29,7 @@ jest.mock('@gorhom/bottom-sheet', () => {
   }
 })
 
+import { useToastStore } from '../../../features/toast/store'
 import { renderOverlay } from '../../../components/__tests__/render-atom'
 import { CashbookScreen } from '../CashbookScreen'
 
@@ -419,5 +420,61 @@ describe('펼침판이 시트를 연다', () => {
     await act(async () => {})
 
     expect(view.queryByTestId('income-sheet-amount')).toBeNull()
+  })
+})
+
+// 저장이 던지면 **닫히면 안 된다.** 닫고 나면 친 것이 사라지고, 화면에는 «적혔다» 와 구분되지
+// 않는 그림만 남는다 — 실기에서 지출이 하나도 안 적히는데 시트는 매번 닫혔다(2026-08-25,
+// `spend_records.form` 마이그레이션 누락). 실패는 **말하고 자리를 지킨다**.
+describe('저장이 실패하면', () => {
+  async function 고르기(view: Rendered, label: string): Promise<void> {
+    await 이름으로누르기(view, '기록 추가')
+    await 이름으로누르기(view, label)
+  }
+
+  beforeEach(() => {
+    useToastStore.setState({ toasts: [], queue: [] })
+  })
+
+  it('수입 — 시트가 열려 있고 토스트가 뜬다', async () => {
+    records.recordIncome.mockRejectedValue(new Error('no such column'))
+    const view = await 그리기()
+    await 고르기(view, '수입 추가')
+
+    await 이름으로누르기(view, '1')
+    await 이름으로누르기(view, '저장')
+    await act(async () => {})
+
+    expect(view.getByTestId('income-sheet-amount')).toBeTruthy()
+    expect(useToastStore.getState().toasts[0]?.message).toBe('수입을 적지 못했습니다')
+  })
+
+  it('지출 — 시트가 열려 있고 토스트가 뜬다', async () => {
+    // 메포 항목은 시세가 있어야 저장이 열린다([[ADR-166]] 정정 2 ③).
+    records.loadLastPointRate.mockResolvedValue(1_180)
+    records.recordSpend.mockRejectedValue(new Error('no such column'))
+    const view = await 그리기()
+    await 고르기(view, '지출 추가')
+
+    await 이름으로누르기(view, '몬스터 파크')
+    await 이름으로누르기(view, '저장')
+    await act(async () => {})
+
+    expect(view.getByTestId('spend-sheet-total')).toBeTruthy()
+    expect(useToastStore.getState().toasts[0]?.message).toBe('지출을 적지 못했습니다')
+  })
+
+  // 다시 읽으면 «없는 것» 으로 칸이 덮인다 — 실패했으니 읽을 것도 안 바뀌었다.
+  it('다시 읽지 않는다', async () => {
+    records.loadLastPointRate.mockResolvedValue(1_180)
+    records.recordSpend.mockRejectedValue(new Error('no such column'))
+    const view = await 그리기()
+    await 고르기(view, '지출 추가')
+
+    await 이름으로누르기(view, '몬스터 파크')
+    await 이름으로누르기(view, '저장')
+    await act(async () => {})
+
+    expect(records.loadCalendarAmounts).toHaveBeenCalledTimes(1)
   })
 })

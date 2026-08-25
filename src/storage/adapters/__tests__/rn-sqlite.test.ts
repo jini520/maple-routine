@@ -140,6 +140,7 @@ describe('db.ts 와 맞물리는가', () => {
       'ALTER TABLE boss_drop_records ADD COLUMN price_state TEXT',
       'ALTER TABLE boss_drop_records ADD COLUMN price_meso INTEGER',
       'ALTER TABLE boss_drop_records ADD COLUMN price_share INTEGER',
+      'ALTER TABLE spend_records ADD COLUMN form TEXT',
     ])
   })
 
@@ -147,7 +148,13 @@ describe('db.ts 와 맞물리는가', () => {
   it('컬럼이 이미 있으면 더하지 않는다', async () => {
     mockRowsFor = (statement) =>
       statement.startsWith('PRAGMA table_info')
-        ? [{ name: 'world' }, { name: 'price_state' }, { name: 'price_meso' }, { name: 'price_share' }]
+        ? [
+            { name: 'world' },
+            { name: 'price_state' },
+            { name: 'price_meso' },
+            { name: 'price_share' },
+            { name: 'form' },
+          ]
         : []
 
     await getBossProfitDb()

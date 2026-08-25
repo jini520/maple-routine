@@ -229,7 +229,8 @@ export interface SpendSheetProps {
    * «기억한다» 가 여기서 결정적이다. `null` 이면 아직 한 번도 안 넣었다는 뜻이다.
    */
   lastPointRate: number | null
-  onSave: (draft: SpendDraft) => void
+  /** 던지면 **안 닫는다** — 친 것을 잃지 않는다. 실패를 말하는 것은 화면 몫이다(토스트). */
+  onSave: (draft: SpendDraft) => void | Promise<void>
   onClose: () => void
 }
 
@@ -259,6 +260,8 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
   const [rateText, setRateText] = useState(
     props.lastPointRate === null ? '' : String(props.lastPointRate),
   )
+  /** 저장이 도는 동안 다시 못 누르게 막는다 — 손입력은 두 번 눌리면 행이 둘이 된다. */
+  const [saving, setSaving] = useState(false)
 
   const groups = spendGroupsOf(category)
   const direct = isDirectInput(category)
@@ -335,25 +338,32 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
   }
 
 
-  function save(): void {
-    if (!canSave) return
-    props.onSave({
-      ocid: null,
-      spentOn: props.dateKey,
-      category,
-      // 빈 칸은 `null` 이다 — 빈 문자열을 넣으면 «적었는데 비어 있다» 와 «안 적었다» 가 같아진다.
-      item: direct ? (name.trim() === '' ? null : name.trim()) : (item?.name ?? null),
-      form: direct ? null : form,
-      // 직접 입력에는 단가가 없어 곱할 것도 없다([[ADR-166]] 정정 1 ③).
-      quantity: direct ? null : quantity,
-      mesoAmount: currency === 'meso' ? amount : null,
-      // 총액과 그 몫을 **둘 다** 박는다(정정 2 ②) — 집계는 총액 한 칸만 본다.
-      tariffMeso: direct && hasTariff && currency === 'meso' ? tariffed.tariffMeso : null,
-      pointAmount: currency === 'point' ? amount : null,
-      pointPer100mMeso: currency === 'point' ? rate : null,
-      cashAmount: currency === 'cash' ? amount : null,
-      memo: null,
-    })
+  async function save(): Promise<void> {
+    if (!canSave || saving) return
+    setSaving(true)
+    try {
+      await props.onSave({
+        ocid: null,
+        spentOn: props.dateKey,
+        category,
+        // 빈 칸은 `null` 이다 — 빈 문자열을 넣으면 «적었는데 비어 있다» 와 «안 적었다» 가 같아진다.
+        item: direct ? (name.trim() === '' ? null : name.trim()) : (item?.name ?? null),
+        form: direct ? null : form,
+        // 직접 입력에는 단가가 없어 곱할 것도 없다([[ADR-166]] 정정 1 ③).
+        quantity: direct ? null : quantity,
+        mesoAmount: currency === 'meso' ? amount : null,
+        // 총액과 그 몫을 **둘 다** 박는다(정정 2 ②) — 집계는 총액 한 칸만 본다.
+        tariffMeso: direct && hasTariff && currency === 'meso' ? tariffed.tariffMeso : null,
+        pointAmount: currency === 'point' ? amount : null,
+        pointPer100mMeso: currency === 'point' ? rate : null,
+        cashAmount: currency === 'cash' ? amount : null,
+        memo: null,
+      })
+    } catch {
+      // 자리를 지킨다 — 무엇이 잘못됐는지는 화면이 띄운 토스트가 말한다.
+      setSaving(false)
+      return
+    }
     props.onClose()
   }
 
@@ -637,8 +647,8 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
         <Pressable
           role="button"
           aria-label="저장"
-          disabled={!canSave}
-          onPress={save}
+          disabled={!canSave || saving}
+          onPress={() => void save()}
           className={`items-center rounded-xl py-3 ${canSave ? 'bg-primary' : 'bg-surface-2'}`}
         >
           <Text

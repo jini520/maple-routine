@@ -72,7 +72,8 @@ function CategoryChip(props: {
 
 export interface IncomeSheetProps {
   dateKey: string
-  onSave: (draft: IncomeDraft) => void
+  /** 던지면 **안 닫는다** — 친 것을 잃지 않는다. 실패를 말하는 것은 화면 몫이다(토스트). */
+  onSave: (draft: IncomeDraft) => void | Promise<void>
   onClose: () => void
 }
 
@@ -81,19 +82,29 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
   const [name, setName] = useState('')
   const [meso, setMeso] = useState(0)
 
+  /** 저장이 도는 동안 다시 못 누르게 막는다 — 손입력은 두 번 눌리면 행이 둘이 된다. */
+  const [saving, setSaving] = useState(false)
+
   const canSave = meso > 0
 
-  function save(): void {
-    if (!canSave) return
-    props.onSave({
-      ocid: null,
-      earnedOn: props.dateKey,
-      category,
-      // 빈 칸은 `null` 이다 — 빈 문자열을 넣으면 «적었는데 비어 있다» 와 «안 적었다» 가 같아진다.
-      item: name.trim() === '' ? null : name.trim(),
-      mesoAmount: meso,
-      memo: null,
-    })
+  async function save(): Promise<void> {
+    if (!canSave || saving) return
+    setSaving(true)
+    try {
+      await props.onSave({
+        ocid: null,
+        earnedOn: props.dateKey,
+        category,
+        // 빈 칸은 `null` 이다 — 빈 문자열을 넣으면 «적었는데 비어 있다» 와 «안 적었다» 가 같아진다.
+        item: name.trim() === '' ? null : name.trim(),
+        mesoAmount: meso,
+        memo: null,
+      })
+    } catch {
+      // 자리를 지킨다 — 무엇이 잘못됐는지는 화면이 띄운 토스트가 말한다.
+      setSaving(false)
+      return
+    }
     props.onClose()
   }
 
@@ -150,8 +161,8 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
         <Pressable
           role="button"
           aria-label="저장"
-          disabled={!canSave}
-          onPress={save}
+          disabled={!canSave || saving}
+          onPress={() => void save()}
           className={`items-center rounded-xl py-3 ${canSave ? 'bg-rise-ink' : 'bg-surface-2'}`}
         >
           <Text className={`text-sm font-bold ${canSave ? 'text-bg' : 'text-text-disabled'}`}>
