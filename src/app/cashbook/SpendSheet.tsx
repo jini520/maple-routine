@@ -333,7 +333,12 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
   }
 
   return (
-    <BottomSheet testId="spend-sheet" onClose={props.onClose}>
+    <BottomSheet
+      testId="spend-sheet"
+      onClose={props.onClose}
+      // 갈래를 바꾸거나 단계를 오가면 내용이 통째로 갈린다 — 밀린 자리에서 시작하면 안 된다.
+      resetScrollKey={`${category}|${choice?.label ?? ''}`}
+    >
       <View className="gap-3 px-4 pb-2">
         <View className="flex-row items-baseline justify-between gap-2">
           <Text className="text-base font-bold text-text">지출 추가</Text>
