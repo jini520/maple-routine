@@ -68,7 +68,11 @@ import {
   resetWeekStartOf,
   type CalendarAmounts,
 } from '../../lib/calendar-month'
-import { ChevronLeftIcon, ChevronRightIcon, NotebookTextIcon } from '../../lib/icons'
+import {
+  CalendarIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+} from '../../lib/icons'
 import { formatMesoCompact } from '../../lib/meso-compact'
 import { getCurrentKstDateKey } from '../../lib/reset-clock'
 import { TABULAR_NUMS } from '../../lib/text-styles'
@@ -279,7 +283,7 @@ export function CashbookScreen(): React.JSX.Element {
             {selectedAmounts === null ? (
               <View testID="cashbook-empty">
                 <EmptyState
-                  icon={NotebookTextIcon}
+                  icon={CalendarIcon}
                   title="아직 기록이 없어요"
                   description="아래 ＋ 를 눌러 수입·지출을 적어 보세요."
                 />
