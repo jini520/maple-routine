@@ -37,6 +37,7 @@ const 메포지출: SpendDraft = {
   spentOn: '2026-08-23',
   category: '컨텐츠',
   item: '하이마운틴 2단계',
+  form: '솔 에르다',
   quantity: 1,
   mesoAmount: null,
   tariffMeso: null,

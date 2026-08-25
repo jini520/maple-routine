@@ -42,6 +42,7 @@ import {
   pointToMeso,
   spendGroupsOf,
   withTariffMeso,
+  type SpendCatalogChoice,
   type SpendCatalogItem,
 } from '../../lib/spend-catalog'
 import { TABULAR_NUMS } from '../../lib/text-styles'
@@ -106,15 +107,16 @@ function tilePriceLabel(item: SpendCatalogItem): string {
 }
 
 function ItemTile(props: {
-  item: SpendCatalogItem
+  label: string
+  /** 값이 하나로 정해지는 칸만 가격을 적는다 — 단계가 여럿이면 단계마다 값이 달라 못 적는다. */
+  price: string | null
   selected: boolean
   onPress: () => void
 }): React.JSX.Element {
-  const { item } = props
   return (
     <Pressable
       role="button"
-      aria-label={item.name}
+      aria-label={props.label}
       aria-selected={props.selected}
       onPress={props.onPress}
       className="w-1/3 p-1"
@@ -131,14 +133,16 @@ function ItemTile(props: {
         }`}
       >
         <Text numberOfLines={2} className="text-center text-[11px] leading-4 text-text">
-          {item.name}
+          {props.label}
         </Text>
-        <Text
-          className={`text-[11px] ${props.selected ? 'text-primary-ink' : 'text-text-muted'}`}
-          style={TABULAR_NUMS}
-        >
-          {tilePriceLabel(item)}
-        </Text>
+        {props.price !== null && (
+          <Text
+            className={`text-[11px] ${props.selected ? 'text-primary-ink' : 'text-text-muted'}`}
+            style={TABULAR_NUMS}
+          >
+            {props.price}
+          </Text>
+        )}
       </View>
     </Pressable>
   )
@@ -206,7 +210,18 @@ export interface SpendSheetProps {
 
 export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
   const [category, setCategory] = useState<SpendCategory>(SPEND_CATEGORIES[0])
+  /**
+   * 두 단계다(사용자 지정 2026-08-25).
+   *
+   * ① 묶음별 **대표**를 고른다(하이마운틴 · 몬스터 파크 …).
+   * ② 대표가 여러 갈래를 품으면 그 안에서 고른다 — **단계**(1·2단계)와 **형태**(경험치·솔 에르다).
+   *
+   * `choice` 가 «지금 어느 단계인가» 를 든다: `null` 이면 목록이 서고, 있으면 그 안이 선다.
+   * 한 갈래뿐인 대표(몬스터 파크)는 고르는 즉시 `item` 까지 정해져 ②가 비어 있다.
+   */
+  const [choice, setChoice] = useState<SpendCatalogChoice | null>(null)
   const [item, setItem] = useState<SpendCatalogItem | null>(null)
+  const [form, setForm] = useState<string | null>(null)
   const [quantity, setQuantity] = useState(1)
   // 직접 입력 갈래의 칸들. 갈래를 오갈 때 **비우지 않는다** — 잘못 눌러 돌아왔을 때 친 것이
   // 사라지면 다시 쳐야 한다. 저장에 무엇이 쓰이는지는 아래 `direct` 가 가른다.
@@ -222,6 +237,12 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
 
   const groups = spendGroupsOf(category)
   const direct = isDirectInput(category)
+  const forms = choice?.items[0]?.forms ?? []
+  /** 단계가 여럿일 때만 ②에 단계 줄이 선다 — 하나뿐이면 고를 것이 없다. */
+  const tiers = choice !== null && choice.items.length > 1 ? choice.items : []
+  // 형태가 있으면 **고르기 전에는 저장할 수 없다** — 안 고르고 저장하면 그 행은 «어느 쪽인지
+  // 모르는 행» 이 되고, 그것은 칸을 더한 뜻을 없앤다.
+  const formMissing = forms.length > 0 && form === null
   /**
    * 통화가 어디서 오나 — 갈래마다 다르다.
    *
@@ -247,7 +268,7 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
   const totalMeso = currency === 'cash' ? 0 : usesPoint ? pointToMeso(amount, rate ?? 0) : amount
   // 메포를 쓰는데 시세가 없으면 **막는다** — 저장하면 영영 메소로 표시할 수 없는 행이 된다
   // ([[ADR-166]] 정정 2 ③). 어댑터도 같은 것을 막지만 화면이 먼저 알려 주는 편이 낫다.
-  const hasSubject = direct ? typed > 0 : item !== null
+  const hasSubject = direct ? typed > 0 : item !== null && !formMissing
   // **메소로 셀 수 없는 상태.** 메포를 쓰는데 시세가 없으면 환산이 성립하지 않는다 — 저장을 막는
   // 것만으로는 부족하고(사용자는 왜 막혔는지 모른다) 합계 자리가 그 사실을 말해야 한다.
   const blocked = usesPoint && (rate === null || rate <= 0)
@@ -255,18 +276,39 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
 
   function selectCategory(next: SpendCategory): void {
     setCategory(next)
-    // 고르던 항목을 **푼다** — 남겨 두면 «컨텐츠를 골랐는데 버프 항목이 저장되는» 일이 생긴다.
+    // 고르던 것을 **푼다** — 남겨 두면 «컨텐츠를 골랐는데 버프 항목이 저장되는» 일이 생긴다.
+    setChoice(null)
     setItem(null)
+    setForm(null)
     setQuantity(1)
     // 관세는 아이템 구매에만 있다 — 다른 갈래로 갔다가 돌아오면 켜져 있던 것이 남으면 안 된다.
     if (next !== '아이템 구매') setHasTariff(false)
   }
 
-  function selectItem(next: SpendCatalogItem): void {
-    setItem(next)
+  /** ① 대표를 고른다. 갈래가 하나뿐이면 **그 자리에서 항목까지 정해진다.** */
+  function selectChoice(next: SpendCatalogChoice): void {
+    setChoice(next)
+    setItem(next.items.length === 1 ? next.items[0] : null)
+    // 형태는 있어도 **기본값을 안 고른다** — 앱이 «경험치였겠지» 라고 정하면 그것이 추정이 된다.
+    setForm(null)
     // 대상이 바뀌면 수량을 되돌린다 — `DropPricePad` 가 금액을 되돌리는 것과 같은 이유다.
     setQuantity(1)
   }
+
+  /** ② 그 안의 단계를 고른다. */
+  function selectItem(next: SpendCatalogItem): void {
+    setItem(next)
+    setQuantity(1)
+  }
+
+  /** 목록으로 돌아간다. */
+  function clearChoice(): void {
+    setChoice(null)
+    setItem(null)
+    setForm(null)
+    setQuantity(1)
+  }
+
 
   function save(): void {
     if (!canSave) return
@@ -276,6 +318,7 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
       category,
       // 빈 칸은 `null` 이다 — 빈 문자열을 넣으면 «적었는데 비어 있다» 와 «안 적었다» 가 같아진다.
       item: direct ? (name.trim() === '' ? null : name.trim()) : (item?.name ?? null),
+      form: direct ? null : form,
       // 직접 입력에는 단가가 없어 곱할 것도 없다([[ADR-166]] 정정 1 ③).
       quantity: direct ? null : quantity,
       mesoAmount: currency === 'meso' ? amount : null,
@@ -359,23 +402,79 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
           // 굴려도 마지막 줄이 반쯤 잘린 자리에서 멈춰 «더 있는지» 가 안 보인다.
           // (`) : (` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다 — 이 파일에서 두 번째다.)
           <ScrollView className="max-h-72" contentContainerClassName="pb-2">
-            {groups.map((group) => (
-            <View key={group.group} className="gap-1 pb-2">
-              <Text className="text-[11px] text-text-disabled">{group.group}</Text>
-              {/* 퍼센트 폭과 `gap` 을 섞으면 마지막 칸이 밀린다 — 간격은 자식 패딩이 만든다
-                  (`BossDropSheet` ①과 같은 처방). */}
-              <View className="-mx-1 flex-row flex-wrap">
-                {group.items.map((each) => (
-                  <ItemTile
-                    key={each.name}
-                    item={each}
-                    selected={each.name === item?.name}
-                    onPress={() => selectItem(each)}
-                  />
-                ))}
+            {choice === null ? (
+              groups.map((group) => (
+                <View key={group.group} className="gap-1 pb-2">
+                  <Text className="text-[11px] text-text-disabled">{group.group}</Text>
+                  {/* 퍼센트 폭과 `gap` 을 섞으면 마지막 칸이 밀린다 — 간격은 자식 패딩이 만든다
+                      (`BossDropSheet` ①과 같은 처방). */}
+                  <View className="-mx-1 flex-row flex-wrap">
+                    {group.choices.map((each) => (
+                      <ItemTile
+                        key={each.label}
+                        label={each.label}
+                        // 단계가 여럿이면 값이 하나로 안 정해져 **가격을 안 적는다.**
+                        price={
+                          each.items.length === 1 && each.items[0] !== undefined
+                            ? tilePriceLabel(each.items[0])
+                            : null
+                        }
+                        selected={false}
+                        onPress={() => selectChoice(each)}
+                      />
+                    ))}
+                  </View>
+                </View>
+              ))
+            ) : (
+              <View className="gap-3 pb-1">
+                <Pressable
+                  role="button"
+                  aria-label="다시 고르기"
+                  onPress={clearChoice}
+                  className="flex-row items-center justify-between border-b border-border pb-2"
+                >
+                  <Text className="text-xs text-text-muted">선택된 {category}</Text>
+                  <Text testID="spend-sheet-choice" className="text-sm font-bold text-text">
+                    {choice.label}
+                  </Text>
+                </Pressable>
+
+                {forms.length > 0 && (
+                  <View className="gap-1">
+                    <Text className="text-[11px] text-text-disabled">형태</Text>
+                    <View className="-mx-1 flex-row flex-wrap">
+                      {forms.map((each) => (
+                        <ItemTile
+                          key={each}
+                          label={each}
+                          price={null}
+                          selected={each === form}
+                          onPress={() => setForm(each)}
+                        />
+                      ))}
+                    </View>
+                  </View>
+                )}
+
+                {tiers.length > 0 && (
+                  <View className="gap-1">
+                    <Text className="text-[11px] text-text-disabled">단계</Text>
+                    <View className="-mx-1 flex-row flex-wrap">
+                      {tiers.map((each) => (
+                        <ItemTile
+                          key={each.name}
+                          label={each.tier ?? each.name}
+                          price={tilePriceLabel(each)}
+                          selected={each.name === item?.name}
+                          onPress={() => selectItem(each)}
+                        />
+                      ))}
+                    </View>
+                  </View>
+                )}
               </View>
-            </View>
-          ))}
+            )}
           </ScrollView>
         )}
 

@@ -47,6 +47,16 @@ async function 누르기(view: Rendered, label: string): Promise<void> {
   })
 }
 
+/**
+ * 에픽던전 리워드는 **두 단계**다(사용자 지정 2026-08-25) — 대표를 고르고, 그 안에서 형태와
+ * 단계를 고른다. 단계도 형태도 없는 항목(몬스터 파크·영약)은 `누르기` 한 번으로 끝난다.
+ */
+async function 에픽던전(view: Rendered, 대표: string, 형태: string, 단계: string): Promise<void> {
+  await 누르기(view, 대표)
+  await 누르기(view, 형태)
+  await 누르기(view, 단계)
+}
+
 describe('머리', () => {
   it('어느 날에 적히는지 말한다 — FAB 는 날짜를 안 들고 온다', async () => {
     const view = await 그리기()
@@ -90,7 +100,7 @@ describe('갈래 칩', () => {
   it('갈래를 바꾸면 고르던 항목이 풀린다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
-    await 누르기(view, '하이마운틴 2단계')
+    await 에픽던전(view, '하이마운틴', '경험치', '2단계')
 
     await 누르기(view, '버프')
 
@@ -100,11 +110,13 @@ describe('갈래 칩', () => {
 
 describe('항목 — 고르면 채워진다', () => {
   // 가격이 전부 고정이라 «목록만 받고 금액은 매번 입력» 이 아니다([[ADR-166]] 정정 1 ①).
-  it('묶음 이름과 항목이 파일 차례대로 선다', async () => {
+  it('묶음 이름과 **대표**가 파일 차례대로 선다', async () => {
     const view = await 그리기()
 
     expect(view.getByText('에픽던전 추가 리워드')).toBeTruthy()
-    expect(view.getByLabelText('하이마운틴 1단계')).toBeTruthy()
+    expect(view.getByLabelText('하이마운틴')).toBeTruthy()
+    // 단계는 목록에 안 선다 — 대표를 고른 뒤에 나온다.
+    expect(view.queryByLabelText('하이마운틴 1단계')).toBeNull()
   })
 
   // 갈래 하나 안에서 통화가 갈리는 곳이 있다 — 「버프」의 영약은 메소, 보약은 메포다.
@@ -112,7 +124,17 @@ describe('항목 — 고르면 채워진다', () => {
   it('메포 항목은 단위가 「메포」다', async () => {
     const view = await 그리기()
 
-    expect(view.getByText('7,500 메포')).toBeTruthy()
+    // 몬스터 파크는 단계가 없어 값이 하나로 정해진다.
+    expect(view.getByText('600 메포')).toBeTruthy()
+  })
+
+  // 단계가 여럿이면 값이 하나로 안 정해지므로 **가격을 안 적는다** — 적으면 어느 단계의 값인지
+  // 거짓이 된다.
+  it('단계가 여럿인 대표는 목록에서 가격을 안 적는다', async () => {
+    const view = await 그리기()
+
+    expect(view.queryByText('7,500 메포')).toBeNull()
+    expect(view.queryByText('30,000 메포')).toBeNull()
   })
 
   it('메소 항목은 단위가 「메소」이고 줄여 적는다 — 좁은 칸이다', async () => {
@@ -142,7 +164,7 @@ describe('항목 — 고르면 채워진다', () => {
   it('고르면 단가가 그대로 금액이 된다', async () => {
     const view = await 그리기({ lastPointRate: 1_180 })
 
-    await 누르기(view, '하이마운틴 2단계')
+    await 에픽던전(view, '하이마운틴', '경험치', '2단계')
 
     // 30,000 메포 ÷ 1,180 → 25.42억. 부호까지 붙든다 — 지출은 언제나 빼는 쪽이다.
     expect(view.getByTestId('spend-sheet-total')).toHaveTextContent('−25.42억')
@@ -163,7 +185,7 @@ describe('수량 — 곱셈은 앱이 한다', () => {
   it('회 단위 항목은 「회」다', async () => {
     const view = await 그리기()
 
-    await 누르기(view, '하이마운틴 2단계')
+    await 에픽던전(view, '하이마운틴', '경험치', '2단계')
 
     expect(view.getByTestId('spend-sheet-quantity-unit')).toHaveTextContent('회')
   })
@@ -171,7 +193,7 @@ describe('수량 — 곱셈은 앱이 한다', () => {
   it('수량을 올리면 금액이 그만큼 는다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave, lastPointRate: 1_180 })
-    await 누르기(view, '하이마운틴 2단계')
+    await 에픽던전(view, '하이마운틴', '경험치', '2단계')
 
     await 누르기(view, '수량 늘리기')
     await 누르기(view, '저장')
@@ -181,21 +203,43 @@ describe('수량 — 곱셈은 앱이 한다', () => {
 
   it('1 아래로는 못 내린다', async () => {
     const view = await 그리기()
-    await 누르기(view, '하이마운틴 2단계')
+    await 에픽던전(view, '하이마운틴', '경험치', '2단계')
 
     expect(view.getByLabelText('수량 줄이기').props.accessibilityState?.disabled).toBe(true)
   })
 
-  it('항목을 바꾸면 수량이 1 로 돌아간다', async () => {
+  it('단계를 바꾸면 수량이 1 로 돌아간다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave, lastPointRate: 1_180 })
-    await 누르기(view, '하이마운틴 2단계')
+    await 에픽던전(view, '하이마운틴', '경험치', '2단계')
     await 누르기(view, '수량 늘리기')
 
-    await 누르기(view, '몬스터 파크')
+    await 누르기(view, '1단계')
     await 누르기(view, '저장')
 
-    expect(onSave.mock.calls[0][0]).toMatchObject({ quantity: 1 })
+    expect(onSave.mock.calls[0][0]).toMatchObject({ item: '하이마운틴 1단계', quantity: 1 })
+  })
+
+  // 목록으로 돌아가면 고르던 것이 통째로 풀린다 — 남으면 «대표는 몬스터 파크인데 저장되는 것은
+  // 하이마운틴» 이 된다.
+  it('다시 고르기를 누르면 목록으로 돌아가고 고르던 것이 풀린다', async () => {
+    const view = await 그리기({ lastPointRate: 1_180 })
+    await 에픽던전(view, '하이마운틴', '경험치', '2단계')
+
+    await 누르기(view, '다시 고르기')
+
+    expect(view.getByLabelText('하이마운틴')).toBeTruthy()
+    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
+  })
+
+  // 형태가 있는데 안 고르면 «어느 쪽인지 모르는 행» 이 된다 — 칸을 더한 뜻이 사라진다.
+  it('형태를 안 고르면 저장이 막힌다', async () => {
+    const view = await 그리기({ lastPointRate: 1_180 })
+    await 누르기(view, '하이마운틴')
+
+    await 누르기(view, '2단계')
+
+    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
   })
 })
 
@@ -204,7 +248,7 @@ describe('메소마켓 시세', () => {
   it('메포 항목을 고르면 시세 칸이 선다', async () => {
     const view = await 그리기()
 
-    await 누르기(view, '하이마운틴 2단계')
+    await 에픽던전(view, '하이마운틴', '경험치', '2단계')
 
     expect(view.getByTestId('spend-sheet-rate')).toBeTruthy()
   })
@@ -221,7 +265,7 @@ describe('메소마켓 시세', () => {
   it('시세가 없으면 저장이 막힌다', async () => {
     const view = await 그리기({ lastPointRate: null })
 
-    await 누르기(view, '하이마운틴 2단계')
+    await 에픽던전(view, '하이마운틴', '경험치', '2단계')
 
     expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
   })
@@ -231,7 +275,7 @@ describe('메소마켓 시세', () => {
   it('마지막으로 쓴 시세가 채워져 있다', async () => {
     const view = await 그리기({ lastPointRate: 1_180 })
 
-    await 누르기(view, '하이마운틴 2단계')
+    await 에픽던전(view, '하이마운틴', '경험치', '2단계')
 
     expect(view.getByTestId('spend-sheet-rate').props.value).toBe('1180')
     expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(false)
@@ -241,7 +285,7 @@ describe('메소마켓 시세', () => {
   it('시세를 고치면 환산이 따라온다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave, lastPointRate: 1_180 })
-    await 누르기(view, '하이마운틴 2단계')
+    await 에픽던전(view, '하이마운틴', '경험치', '2단계')
 
     await act(async () => {
       fireEvent.changeText(view.getByTestId('spend-sheet-rate'), '2360')
@@ -253,7 +297,7 @@ describe('메소마켓 시세', () => {
 
   it('시세를 비우면 저장이 막힌다', async () => {
     const view = await 그리기({ lastPointRate: 1_180 })
-    await 누르기(view, '하이마운틴 2단계')
+    await 에픽던전(view, '하이마운틴', '경험치', '2단계')
 
     await act(async () => {
       fireEvent.changeText(view.getByTestId('spend-sheet-rate'), '')
@@ -277,7 +321,7 @@ describe('저장', () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave, lastPointRate: 1_180 })
 
-    await 누르기(view, '하이마운틴 2단계')
+    await 에픽던전(view, '하이마운틴', '경험치', '2단계')
     await 누르기(view, '저장')
 
     expect(onSave).toHaveBeenCalledTimes(1)
@@ -286,6 +330,8 @@ describe('저장', () => {
       spentOn: '2026-08-23',
       category: '컨텐츠',
       item: '하이마운틴 2단계',
+      // 가격이 같아 금액으로는 구분이 안 되므로 **고른 형태를 따로 박는다**.
+      form: '경험치',
       quantity: 1,
       mesoAmount: null,
       tariffMeso: null,
@@ -317,7 +363,7 @@ describe('저장', () => {
     const onClose = jest.fn()
     const view = await 그리기({ onClose, lastPointRate: 1_180 })
 
-    await 누르기(view, '하이마운틴 2단계')
+    await 에픽던전(view, '하이마운틴', '경험치', '2단계')
     await 누르기(view, '저장')
 
     expect(onClose).toHaveBeenCalledTimes(1)
@@ -537,7 +583,7 @@ describe('기타 — 캐시가 사는 유일한 자리', () => {
 describe('시세가 비어 있을 때', () => {
   async function 메포항목(overrides: Partial<React.ComponentProps<typeof SpendSheet>> = {}) {
     const view = await 그리기({ lastPointRate: null, ...overrides })
-    await 누르기(view, '하이마운틴 2단계')
+    await 에픽던전(view, '하이마운틴', '경험치', '2단계')
     return view
   }
 

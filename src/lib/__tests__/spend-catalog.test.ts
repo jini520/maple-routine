@@ -21,23 +21,38 @@ describe('spendGroupsOf — 갈래 → 묶음들', () => {
     ])
   })
 
-  it('묶음 안의 차례도 파일에 적힌 그대로다', () => {
+  // **단계가 여럿인 항목은 대표 하나로 접힌다**(사용자 지정 2026-08-25) — 목록에 여섯이 서면
+  // 그 여섯이 실은 셋 × 두 단계라는 사실이 화면에서 사라진다.
+  it('같은 대표는 한 칸으로 접힌다 — 여섯이 셋이 된다', () => {
     const [first] = spendGroupsOf('컨텐츠')
 
-    expect(first.items.map((item) => item.name)).toEqual([
-      '하이마운틴 1단계',
-      '하이마운틴 2단계',
-      '앵글러 컴퍼니 1단계',
-      '앵글러 컴퍼니 2단계',
-      '악몽선경 1단계',
-      '악몽선경 2단계',
+    expect(first.choices.map((choice) => choice.label)).toEqual([
+      '하이마운틴',
+      '앵글러 컴퍼니',
+      '악몽선경',
     ])
   })
 
-  it('갈래 셋이 스물넷을 나눠 갖는다', () => {
-    const counted = ['컨텐츠', '상점·편의', '버프'].map(
-      (category) =>
-        spendGroupsOf(category as '컨텐츠').reduce((sum, group) => sum + group.items.length, 0),
+  it('접힌 칸이 자기 단계들을 그대로 든다', () => {
+    const [first] = spendGroupsOf('컨텐츠')
+
+    expect(first.choices[0].items.map((item) => item.tier)).toEqual(['1단계', '2단계'])
+    expect(first.choices[0].items.map((item) => item.unitPrice)).toEqual([7_500, 30_000])
+  })
+
+  it('단계가 없는 항목은 자기 이름이 곧 칸 이름이다', () => {
+    const [, monsterPark] = spendGroupsOf('컨텐츠')
+
+    expect(monsterPark.choices.map((choice) => choice.label)).toEqual(['몬스터 파크'])
+    expect(monsterPark.choices[0].items).toHaveLength(1)
+  })
+
+  it('갈래 셋이 스물넷을 나눠 갖는다 — 접혀도 항목 수는 그대로다', () => {
+    const counted = ['컨텐츠', '상점·편의', '버프'].map((category) =>
+      spendGroupsOf(category as '컨텐츠').reduce(
+        (sum, group) => sum + group.choices.reduce((n, choice) => n + choice.items.length, 0),
+        0,
+      ),
     )
 
     expect(counted).toEqual([10, 8, 6])
@@ -53,7 +68,9 @@ describe('spendGroupsOf — 갈래 → 묶음들', () => {
   // 「버프」가 통화 둘을 갖는 유일한 목록 갈래다(영약은 메소, 보약은 메포).
   it('버프는 통화가 둘이다', () => {
     const currencies = new Set(
-      spendGroupsOf('버프').flatMap((group) => group.items.map((item) => item.currency)),
+      spendGroupsOf('버프').flatMap((group) =>
+        group.choices.flatMap((choice) => choice.items.map((item) => item.currency)),
+      ),
     )
 
     expect(currencies).toEqual(new Set(['meso', 'point']))

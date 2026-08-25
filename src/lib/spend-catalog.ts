@@ -28,6 +28,15 @@ export interface SpendCatalogItem {
   readonly unitPrice: number
   /** «가격 하나가 무엇 하나의 값인가» — 회 · 개 · 포인트 · 시간. 수량 칸의 라벨이 된다. */
   readonly unit: string
+  /**
+   * 이름 안에 글자로만 있던 축을 뺀 칸(사용자 지정 2026-08-25).
+   *
+   * `base` 는 대표 이름(「하이마운틴」), `tier` 는 그 안의 갈래(「1단계」)다. **둘이 있으면 입력이
+   * 두 단계**가 된다 — 대표를 고르고 그 안에서 단계를 고른다. 없는 항목은 한 단계다.
+   */
+  readonly base?: string
+  readonly tier?: string
+  /** 같은 값을 받는 두 형태 — 「경험치」·「솔 에르다」. **가격을 안 바꾼다.** */
   readonly forms?: readonly string[]
   readonly limit?: string
   readonly note?: string
@@ -35,9 +44,21 @@ export interface SpendCatalogItem {
   readonly seasonal?: boolean
 }
 
+/**
+ * 목록의 **한 칸** — 사용자가 1단계에서 고르는 단위다.
+ *
+ * `tier` 가 있는 항목들은 대표 하나로 접힌다(하이마운틴 1·2단계 → 「하이마운틴」). 그래서
+ * `items` 가 둘 이상이면 **고른 뒤 한 번 더 골라야 한다**.
+ */
+export interface SpendCatalogChoice {
+  /** 칸에 적히는 이름 — `base` 가 있으면 그것, 없으면 항목 이름 그대로다. */
+  readonly label: string
+  readonly items: readonly SpendCatalogItem[]
+}
+
 export interface SpendCatalogGroup {
   readonly group: string
-  readonly items: readonly SpendCatalogItem[]
+  readonly choices: readonly SpendCatalogChoice[]
 }
 
 const ITEMS = spendCatalog.items as readonly SpendCatalogItem[]
@@ -57,15 +78,25 @@ const MESO_PER_RATE_UNIT = 100_000_000
  * «고를 것이 없다» 는 사실이고, 화면은 그 갈래에서 입력 칸을 그린다.
  */
 export function spendGroupsOf(category: SpendCategory): SpendCatalogGroup[] {
-  const groups: { group: string; items: SpendCatalogItem[] }[] = []
+  const groups: { group: string; choices: { label: string; items: SpendCatalogItem[] }[] }[] = []
   for (const item of ITEMS) {
     if (item.category !== category) continue
-    const last = groups[groups.length - 1]
-    if (last !== undefined && last.group === item.group) {
+    const label = item.base ?? item.name
+
+    let group = groups[groups.length - 1]
+    if (group === undefined || group.group !== item.group) {
+      group = { group: item.group, choices: [] }
+      groups.push(group)
+    }
+
+    // **같은 `base` 는 한 칸으로 접힌다** — 1단계·2단계가 목록에 둘로 서면 사용자가 고를 것이
+    // 여섯이 되고, 그 여섯이 실은 셋 × 두 단계라는 사실이 화면에서 사라진다.
+    const last = group.choices[group.choices.length - 1]
+    if (last !== undefined && last.label === label) {
       last.items.push(item)
       continue
     }
-    groups.push({ group: item.group, items: [item] })
+    group.choices.push({ label, items: [item] })
   }
   return groups
 }

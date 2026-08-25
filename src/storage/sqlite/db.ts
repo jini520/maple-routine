@@ -116,6 +116,10 @@ const TABLE_DEFINITIONS = [
     -- 컨텐츠 · 상점·편의 · 버프 · 아이템 구매 · 기타([[ADR-166]] 정정 1 ②)
     category TEXT NOT NULL,
     item TEXT,
+    -- 같은 값을 두 형태로 받는 항목이 있다 — 에픽던전 리워드는 «경험치» 와 «솔 에르다» 중 하나다
+    -- (카탈로그의 «forms»). **가격이 같아서** 금액으로는 구분이 안 되므로 따로 적는다:
+    -- 안 적으면 «솔 에르다를 몇 번 받았나» 를 나중에 되물을 수 없다. 형태가 없는 항목은 NULL.
+    form TEXT,
     -- 금액 = 카탈로그의 «unitPrice» × 이 값([[ADR-166]] 정정 1 ③). 단위 이름은 안 적는다 —
     -- «src/data/spend-catalog.json» 이 항목별로 알고 있어 베끼면 두 벌이 어긋난다.
     quantity INTEGER,

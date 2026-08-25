@@ -27,6 +27,7 @@ const mesoSpend: SpendRecord = {
   spentOn: '2026-08-23',
   category: '버프',
   item: '세이람의 영약',
+  form: null,
   quantity: 1,
   mesoAmount: 2_000_000,
   tariffMeso: null,
@@ -63,6 +64,7 @@ describe('insertSpendRecord', () => {
       '2026-08-23',
       '버프',
       '세이람의 영약',
+      null,
       1,
       2_000_000,
       null,
@@ -87,8 +89,8 @@ describe('insertSpendRecord', () => {
     })
 
     const values = runMock.mock.calls[0][1]
-    expect(values[6]).toBe(935_000_000)
-    expect(values[7]).toBe(85_000_000)
+    expect(values[7]).toBe(935_000_000)
+    expect(values[8]).toBe(85_000_000)
   })
 })
 
@@ -118,8 +120,8 @@ describe('메포 지출의 시세 요구', () => {
     await insertSpendRecord(pointSpend)
 
     const values = runMock.mock.calls[0][1]
-    expect(values[8]).toBe(30_000)
-    expect(values[9]).toBe(1_180)
+    expect(values[9]).toBe(30_000)
+    expect(values[10]).toBe(1_180)
   })
 
   it('메포를 안 썼으면 시세를 안 물어본다', async () => {
@@ -150,6 +152,7 @@ describe('getSpendRecordsBetween', () => {
           spent_on: '2026-08-23',
           category: '컨텐츠',
           item: '하이마운틴 2단계',
+          form: undefined,
           quantity: 1,
           meso_amount: null,
           tariff_meso: null,

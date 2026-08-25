@@ -385,7 +385,10 @@ describe('펼침판이 시트를 연다', () => {
     const view = await 그리기()
 
     await 고르기(view, '지출 추가')
-    await 이름으로누르기(view, '하이마운틴 2단계')
+    // 에픽던전 리워드는 두 단계다 — 대표 → 형태 → 단계.
+    await 이름으로누르기(view, '하이마운틴')
+    await 이름으로누르기(view, '경험치')
+    await 이름으로누르기(view, '2단계')
 
     expect(view.getByTestId('spend-sheet-rate').props.value).toBe('1180')
   })

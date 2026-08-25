@@ -37,6 +37,14 @@ export interface SpendRecord {
   /** 목록에서 고른 항목 또는 직접 입력한 사용처. */
   item: string | null
   /**
+   * 같은 값을 두 형태로 받는 항목의 **어느 쪽인가** — 에픽던전 리워드의 「경험치」·「솔 에르다」
+   * (카탈로그의 `forms`). **가격이 같아서 금액으로는 구분이 안 된다.**
+   *
+   * 형태가 없는 항목은 `null` 이다. 목록을 카탈로그가 들므로 여기에 **후보를 베끼지 않는다**
+   * (베끼면 목록이 바뀔 때 두 벌이 어긋난다 — `quantity` 의 단위 이름과 같은 이유).
+   */
+  form: string | null
+  /**
    * 금액 = 카탈로그의 `unitPrice` × 이 값([[ADR-166]] 정정 1 ③). **단위 이름은 안 적는다** —
    * 카탈로그가 항목별로 알고 있어(`unit`) 베끼면 목록이 바뀔 때 두 벌이 어긋난다.
    */
@@ -72,10 +80,10 @@ export interface SpendRecord {
 
 const INSERT_SQL = `
   INSERT INTO spend_records
-    (id, ocid, spent_on, category, item, quantity,
+    (id, ocid, spent_on, category, item, form, quantity,
      meso_amount, tariff_meso, point_amount, point_per_100m_meso, cash_amount,
      memo, recorded_at)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 /**
@@ -108,6 +116,7 @@ export async function insertSpendRecord(record: SpendRecord): Promise<void> {
     record.spentOn,
     record.category,
     record.item,
+    record.form,
     record.quantity,
     record.mesoAmount,
     record.tariffMeso,
@@ -130,6 +139,7 @@ function rowToRecord(row: Record<string, unknown>): SpendRecord {
     spentOn: row.spent_on as string,
     category: row.category as SpendCategory,
     item: (row.item as string | null | undefined) ?? null,
+    form: (row.form as string | null | undefined) ?? null,
     quantity: nullable(row.quantity),
     mesoAmount: nullable(row.meso_amount),
     tariffMeso: nullable(row.tariff_meso),
