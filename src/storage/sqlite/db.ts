@@ -24,6 +24,10 @@ const TABLE_DEFINITIONS = [
     -- 제외된다. 월드를 파생값(캐시된 character/basic)으로 두면 월드 리프가 모든 과거 주의 귀속을
     -- 소급 이동시킨다 — 분모(90 x 월드 수)까지 바뀐다.
     world TEXT,
+    -- 처치 **날짜**(KST YYYY-MM-DD, ADR-172). period_key 는 주(목요일)·달이라 "며칟날" 을 못 든다.
+    -- NULL 은 "모름" 이고 가계부의 월간 칸 집계에서 조용히 빠진다(world 와 같은 모양) — 키가
+    -- 아니므로 나중에 채워 넣어도 옛 행이 움직이지 않는다.
+    defeated_on TEXT,
     PRIMARY KEY (ocid, boss, difficulty, period_key)
   )
 `,
@@ -201,6 +205,8 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
     await db.execute(table.createSql)
   }
   await ensureColumn(db, 'boss_profit_records', 'world', 'TEXT')
+  // [[ADR-172]] — `world` 와 같은 사정이다. 이미 보스를 기록해 둔 기기에는 CREATE 가 안 붙인다.
+  await ensureColumn(db, 'boss_profit_records', 'defeated_on', 'TEXT')
   // 이미 만들어진 DB에는 위 CREATE 가 컬럼을 더해주지 않는다([[ADR-069]] 결정 1과 같은 사정).
   await ensureColumn(db, 'boss_drop_records', 'price_state', 'TEXT')
   await ensureColumn(db, 'boss_drop_records', 'price_meso', 'INTEGER')

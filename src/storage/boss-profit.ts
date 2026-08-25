@@ -185,3 +185,126 @@ export async function getAllBossProfitRecordKeys(ocids: string[]): Promise<BossP
     periodKey: (row as Record<string, unknown>).period_key as string,
   }))
 }
+
+/**
+ * 날짜가 붙은 수익 기록 — **가계부 캘린더가 읽는 모양**([[ADR-172]]).
+ *
+ * `BossProfitRecord` 를 안 쓰는 이유는 필요한 칸이 다르기 때문이다. 캘린더는 «누가 · 무엇을 ·
+ * 며칟날 · 얼마» 만 쓰고 파티원 수·정가·월드는 안 본다. 그리고 `defeated_on IS NOT NULL` 로 걸러
+ * 읽으므로 **여기서 그 칸은 nullable 이 아니다** — 화면이 «모름» 분기를 들 필요가 없다.
+ */
+export interface DatedBossProfitRecord {
+  ocid: string
+  boss: string
+  difficulty: string
+  periodKey: string
+  payoutMeso: number
+  defeatedOn: string
+}
+
+/**
+ * 이 날짜 범위(**두 끝 포함**)에 잡은 것으로 **밝혀진** 기록.
+ *
+ * 날짜를 모르는 기록(`defeated_on IS NULL`)은 **안 나온다.** 그것을 어느 칸에 얹으면 그 순간
+ * 거짓 날짜가 되기 때문이다([[ADR-170]] 결정 4 ②) — 주간 보기에서는 `period_key` 로 제자리에 서므로
+ * 잃는 것은 월간 칸뿐이다.
+ */
+export async function getDatedBossProfitRecords(
+  ocids: string[],
+  fromDateKey: string,
+  toDateKey: string,
+): Promise<DatedBossProfitRecord[]> {
+  if (ocids.length === 0) {
+    return []
+  }
+
+  const db = await getBossProfitDb()
+  const ocidPlaceholders = ocids.map(() => '?').join(', ')
+  const { values } = await db.query(
+    `SELECT ocid, boss, difficulty, period_key, payout_meso, defeated_on
+       FROM boss_profit_records
+      WHERE ocid IN (${ocidPlaceholders})
+        AND defeated_on IS NOT NULL
+        AND defeated_on BETWEEN ? AND ?`,
+    [...ocids, fromDateKey, toDateKey],
+  )
+
+  return (values ?? []).map((row) => {
+    const record = row as Record<string, unknown>
+    return {
+      ocid: record.ocid as string,
+      boss: record.boss as string,
+      difficulty: record.difficulty as string,
+      periodKey: record.period_key as string,
+      payoutMeso: record.payout_meso as number,
+      defeatedOn: record.defeated_on as string,
+    }
+  })
+}
+
+/** 아직 날짜를 모르는 기록 — **캐낼 대상**이다([[ADR-172]] 결정 2). */
+export interface UndatedBossProfitRecord {
+  ocid: string
+  boss: string
+  difficulty: string
+  cycle: BossCycle
+  periodKey: string
+}
+
+/**
+ * 이 기간들 안에서 아직 날짜를 모르는 기록.
+ *
+ * **기간을 반드시 받는다.** 걸지 않으면 «영영 캘 수 없는 옛 기록» 까지 끌어와 매번 훑게 되는데,
+ * 캘 수 있는 범위는 조회 창(오늘−13)이 이미 정한다([[ADR-172]] 결정 4). 호출부가 그 창에서 기간을
+ * 만들어 넘긴다.
+ */
+export async function getUndatedBossProfitRecords(
+  ocids: string[],
+  periodKeys: string[],
+): Promise<UndatedBossProfitRecord[]> {
+  if (ocids.length === 0 || periodKeys.length === 0) {
+    return []
+  }
+
+  const db = await getBossProfitDb()
+  const ocidPlaceholders = ocids.map(() => '?').join(', ')
+  const periodKeyPlaceholders = periodKeys.map(() => '?').join(', ')
+  const { values } = await db.query(
+    `SELECT ocid, boss, difficulty, cycle, period_key
+       FROM boss_profit_records
+      WHERE ocid IN (${ocidPlaceholders})
+        AND period_key IN (${periodKeyPlaceholders})
+        AND defeated_on IS NULL`,
+    [...ocids, ...periodKeys],
+  )
+
+  return (values ?? []).map((row) => {
+    const record = row as Record<string, unknown>
+    return {
+      ocid: record.ocid as string,
+      boss: record.boss as string,
+      difficulty: record.difficulty as string,
+      cycle: record.cycle as BossCycle,
+      periodKey: record.period_key as string,
+    }
+  })
+}
+
+/**
+ * 캐낸 날짜를 박는다 — **upsert 를 안 탄다**([[ADR-172]] 결정 1).
+ *
+ * `upsertBossProfitRecord` 는 이 칸을 아예 안 적는다(INSERT 목록에도 `DO UPDATE SET` 에도 없다).
+ * 그래서 자동 기록이 몇 번을 다시 돌아도 캐 놓은 날짜를 지우지 못한다 — `world` 가 `COALESCE` 로
+ * 지키는 것과 같은 보호를, 여기서는 **적지 않는 것**으로 얻는다.
+ */
+export async function setBossProfitDefeatedOn(
+  key: BossProfitRecordKey,
+  defeatedOn: string,
+): Promise<void> {
+  const db = await getBossProfitDb()
+  await db.run(
+    `UPDATE boss_profit_records SET defeated_on = ?
+      WHERE ocid = ? AND boss = ? AND difficulty = ? AND period_key = ?`,
+    [defeatedOn, key.ocid, key.boss, key.difficulty, key.periodKey],
+  )
+}
