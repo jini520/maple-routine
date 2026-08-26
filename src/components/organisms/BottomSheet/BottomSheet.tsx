@@ -41,9 +41,11 @@ import { Pressable, View } from 'react-native'
 import Animated, { useAnimatedStyle, type SharedValue } from 'react-native-reanimated'
 import { useSafeAreaFrame, useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
+  BottomSheetFooter,
   BottomSheetModal,
   BottomSheetScrollView,
   type BottomSheetBackdropProps,
+  type BottomSheetFooterProps,
 } from '@gorhom/bottom-sheet'
 
 import { useThemeAppearance } from '../../../theme/context'
@@ -105,6 +107,16 @@ interface BottomSheetProps {
    * 안 넘기면 아무 일도 안 한다 — 한 내용만 그리는 시트는 되돌릴 것이 없다.
    */
   resetScrollKey?: string | number
+  /**
+   * **키보드 위에 붙는 띠**([[ADR-173]] 결정 4) — 가계부 시트의 빠른 금액 칩이 첫 호출부다.
+   *
+   * 라이브러리의 `footerComponent` 자리다. 시트 콘텐츠 **밖**이라 스크롤을 안 타고, 키보드가
+   * 올라오면 그 위에 붙어 있게 만들어진 슬롯이다 — 폼 안에 두면 무엇과든 이웃하게 되므로
+   * (그것이 «칩이 저장과 너무 가깝다» 의 원인이었다) 자리를 옮기는 대신 **폼 밖으로 내보낸다.**
+   *
+   * 안 넘기면 라이브러리에 아무것도 안 준다 — 띠가 없는 시트는 전과 한 픽셀도 안 다르다.
+   */
+  footer?: ReactNode
 }
 
 export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
@@ -125,6 +137,19 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
   useEffect(() => {
     ref.current?.present()
   }, [])
+
+  /**
+   * 띠는 **라이브러리가 자리를 잡아 준다** — `animatedFooterPosition` 을 그대로 넘겨야 키보드가
+   * 오르내릴 때 따라간다. 우리는 안에 무엇을 그릴지만 정한다.
+   */
+  const { footer } = props
+  const renderFooter = useCallback(
+    (footerProps: BottomSheetFooterProps) =>
+      footer === undefined ? null : (
+        <BottomSheetFooter {...footerProps}>{footer}</BottomSheetFooter>
+      ),
+    [footer],
+  )
 
   const renderBackdrop = useCallback(
     (backdropProps: BottomSheetBackdropProps) => (
@@ -172,6 +197,8 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
       keyboardBlurBehavior="restore"
       maxDynamicContentSize={frame.height * MAX_HEIGHT_RATIO}
       backdropComponent={renderBackdrop}
+      // 안 넘긴 시트는 라이브러리가 띠 자체를 안 그린다 — 전과 같다.
+      footerComponent={props.footer === undefined ? undefined : renderFooter}
       // 웹의 `sr-only` 제목("드롭 아이템 기록")과 같은 자리 — 화면에는 안 보이고 스크린리더만 읽는다.
       accessibilityLabel="드롭 아이템 기록"
       style={{ maxWidth: MAX_WIDTH, width: '100%', alignSelf: 'center' }}

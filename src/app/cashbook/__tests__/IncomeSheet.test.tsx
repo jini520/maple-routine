@@ -12,9 +12,18 @@ jest.mock('@gorhom/bottom-sheet', () => {
   return {
     BottomSheetBackdrop: (props: Record<string, unknown>) =>
       React.createElement(ReactNative.View, { testID: 'sheet-backdrop', ...props }),
+    BottomSheetFooter: (props: Record<string, unknown>) =>
+      React.createElement(ReactNative.View, props),
     BottomSheetModal: React.forwardRef((props: Record<string, unknown>, ref: unknown) => {
       React.useImperativeHandle(ref as never, () => ({ present: jest.fn(), dismiss: jest.fn() }))
-      return React.createElement(ReactNative.View, props)
+      // 키보드 위 띠([[ADR-173]] 결정 4)는 라이브러리가 그리는 자리라, 목이 안 부르면 테스트에서
+      // 통째로 사라진다 — 「빠른 칩이 어디 있나」 를 못 보게 된다.
+      const render = props.footerComponent
+      const footer =
+        typeof render === 'function'
+          ? (render as (mockProps: unknown) => unknown)({ animatedFooterPosition: 0 })
+          : null
+      return React.createElement(ReactNative.View, props, props.children as never, footer as never)
     }),
     BottomSheetScrollView: (props: Record<string, unknown>) =>
       React.createElement(ReactNative.View, props),
@@ -29,8 +38,12 @@ jest.mock('@gorhom/bottom-sheet', () => {
   }
 })
 
-import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
+import { renderOverlay } from '../../../components/__tests__/render-atom'
+import { clearCountUpMemory } from '../../../lib/use-count-up'
 import { IncomeSheet } from '../IncomeSheet'
+
+// 큰 숫자의 카운트업 기억은 **모듈 수준**이라 케이스 사이로 샌다([[ADR-087]] 결정 8).
+beforeEach(clearCountUpMemory)
 
 type Rendered = Awaited<ReturnType<typeof renderOverlay>>
 
@@ -46,8 +59,16 @@ async function 누르기(view: Rendered, label: string): Promise<void> {
   })
 }
 
-/** 금액 칸에 **친다** — OS 숫자 키보드다([[ADR-170]] 정정 4). 칸이 콤마째 값을 받는다. */
+/**
+ * 금액 칸에 **친다** — OS 숫자 키보드다([[ADR-170]] 정정 4).
+ *
+ * 커서를 먼저 넣는다: 치는 것은 언제나 포커스가 있는 상태이고, 그때는 큰 숫자가 **친 값을 그대로**
+ * 그린다([[ADR-173]] 결정 6 — 커서가 빠져야 굴러간다).
+ */
 async function 치기(view: Rendered, text: string): Promise<void> {
+  await act(async () => {
+    fireEvent(view.getByTestId('income-sheet-amount'), 'focus')
+  })
   await act(async () => {
     fireEvent.changeText(view.getByTestId('income-sheet-amount'), text)
   })
@@ -83,10 +104,11 @@ describe('갈래', () => {
 })
 
 /**
- * 금액은 **OS 숫자 키보드**다([[ADR-170]] 정정 4). 앱 키패드를 안 두는 이유는 이 시트가 사용처
- * 칸 때문에 **어차피 키보드를 부르기** 때문이다 — [[ADR-124]] 결정 5 의 전제가 여기엔 없다.
+ * 금액은 **OS 숫자 키보드**다([[ADR-170]] 정정 4) — 이 시트는 이름 칸 때문에 어차피 키보드를
+ * 부르므로 앱 키패드를 안 부르는 이득이 없다. 배치는 [[ADR-173]] 이 다시 짰다: 큰 숫자는 화면에
+ * 하나이고 저장 바로 위, 억/만은 그 밑 힌트 한 줄, 빠른 칩은 **키보드 위**.
  */
-describe('금액 — OS 숫자 키보드다 ([[ADR-170]] 정정 4)', () => {
+describe('금액 — OS 숫자 키보드다 ([[ADR-170]] 정정 4 · [[ADR-173]])', () => {
   it('앱 키패드를 안 그린다', async () => {
     const view = await 그리기()
 
@@ -126,15 +148,38 @@ describe('금액 — OS 숫자 키보드다 ([[ADR-170]] 정정 4)', () => {
     expect(칸.props.placeholder).toBe('0')
   })
 
+  /**
+   * 빠른 칩은 **키보드 위에만** 뜬다([[ADR-173]] 결정 4) — 폼에서 내보낸 것이 «저장과 너무
+   * 가깝다» 의 처방이다. 자리를 옮기는 것으로는 무엇과든 이웃하게 된다.
+   */
+  it('금액을 치기 전에는 빠른 칩이 없다', async () => {
+    const view = await 그리기()
+
+    expect(view.queryByTestId('quick-add-bar')).toBeNull()
+  })
+
   // OS 키패드엔 `00` 이 없어 억 단위를 치려면 0 을 여덟 번 눌러야 한다 — 칩이 그 자리를 막는다.
-  it('빠른 칩이 더한다 — 키패드를 걷어도 칩은 남는다', async () => {
+  it('금액 칸에 커서가 들어오면 칩이 뜨고, 누르면 더한다', async () => {
     const view = await 그리기()
 
     await act(async () => {
-      fireEvent.press(view.getByText('+1억'))
+      fireEvent(view.getByTestId('income-sheet-amount'), 'focus')
+    })
+    expect(view.getByTestId('quick-add-bar')).toBeTruthy()
+
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('+1억'))
     })
 
     expect(view.getByTestId('income-sheet-amount').props.value).toBe('100,000,000')
+  })
+
+  // 큰 숫자는 화면에 **하나**다([[ADR-173]] 결정 1) — 합계 카드가 없다.
+  it('합계 카드가 없고 억/만은 힌트 한 줄이다', async () => {
+    const view = await 그리기()
+    await 치기(view, '1200000000')
+
+    expect(view.getByTestId('income-sheet-amount-hint')).toHaveTextContent('12억')
   })
 
   it('금액이 0 이면 저장할 수 없다', async () => {
@@ -175,16 +220,3 @@ describe('저장', () => {
   })
 })
 
-/**
- * 「저장」은 **폼의 리듬에서 한 칸 벗어난다**([[ADR-170]] 정정 6).
- *
- * 빠른 칩과 같은 간격(12px)이면 «+100억» 과 «저장» 이 같은 목록의 이웃으로 읽힌다 — 둘 다 누르는
- * 것이고 칩이 버튼처럼 생겼으므로, 오타건이 곧 저장이다(사용자 지적).
- */
-describe('저장은 입력과 붙어 있지 않다 ([[ADR-170]] 정정 6)', () => {
-  it('폼 간격(12)에 한 칸을 더 띄운다', async () => {
-    const view = await 그리기()
-
-    expect(flattenStyle(view.getByLabelText('저장').props.style).marginTop).toBe(12)
-  })
-})

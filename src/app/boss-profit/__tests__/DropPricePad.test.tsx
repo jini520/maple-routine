@@ -20,9 +20,18 @@ jest.mock('@gorhom/bottom-sheet', () => {
   return {
     BottomSheetBackdrop: (props: Record<string, unknown>) =>
       React.createElement(ReactNative.View, { testID: 'sheet-backdrop', ...props }),
+    BottomSheetFooter: (props: Record<string, unknown>) =>
+      React.createElement(ReactNative.View, props),
     BottomSheetModal: React.forwardRef((props: Record<string, unknown>, ref: unknown) => {
       React.useImperativeHandle(ref as never, () => ({ present: jest.fn(), dismiss: jest.fn() }))
-      return React.createElement(ReactNative.View, props)
+      // 키보드 위 띠([[ADR-173]] 결정 4)는 라이브러리가 그리는 자리라, 목이 안 부르면 테스트에서
+      // 통째로 사라진다 — 「빠른 칩이 어디 있나」 를 못 보게 된다.
+      const render = props.footerComponent
+      const footer =
+        typeof render === 'function'
+          ? (render as (mockProps: unknown) => unknown)({ animatedFooterPosition: 0 })
+          : null
+      return React.createElement(ReactNative.View, props, props.children as never, footer as never)
     }),
     BottomSheetScrollView: (props: Record<string, unknown>) => React.createElement(ReactNative.View, props),
     // 시트 밖과 같게 둔다 — 아톰이 이 값으로 «시트 안인가» 를 묻는다([[ADR-170]] 정정 5).

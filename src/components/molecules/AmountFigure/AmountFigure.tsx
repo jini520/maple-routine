@@ -51,6 +51,19 @@ export interface AmountFigureProps {
    * 안 적는다. 숫자 자체가 그만큼 올라가는 것이 곧 그 말이다.
    */
   displayValue?: number
+  /**
+   * 이 칸에 **커서가 들어오고 나가는 것**을 부르는 자리에 알린다([[ADR-173]] 결정 4).
+   *
+   * 빠른 칩이 키보드 위에만 떠야 하는데, 그 띠는 시트 껍데기가 그린다(`footer`) — 즉 «지금 치는
+   * 중인가» 를 시트가 알아야 한다. 포커스는 이 칸의 사실이므로 여기서 밖으로 낸다.
+   */
+  onTypingChange?: (typing: boolean) => void
+  /**
+   * **못 치는 숫자** — 목록 갈래의 합계가 그렇다(단가 × 수량이라 앱이 센다).
+   *
+   * 칸 대신 글자를 그리고 초기화도 안 세운다 — 지울 것이 없다. 수량이 바뀌면 **굴러간다**.
+   */
+  readOnly?: boolean
 }
 
 export function AmountFigure(props: AmountFigureProps): React.JSX.Element {
@@ -74,7 +87,8 @@ export function AmountFigure(props: AmountFigureProps): React.JSX.Element {
     <View testID={`${props.testID}-figure`} className="gap-1">
       <View className="flex-row items-baseline gap-1.5">
         {/* 초기화는 **큰 숫자와 같은 줄**이다(결정 1 이 세로를 줄인 자리). 값이 0 이면 지울 것이
-            없으므로 자리만 지킨다 — 없애면 숫자가 좌우로 흔들린다. */}
+            없으므로 자리만 지킨다 — 없애면 숫자가 좌우로 흔들린다. 못 치는 숫자에는 아예 없다. */}
+        {props.readOnly !== true && (
         <Pressable
           role="button"
           aria-label="금액 초기화"
@@ -87,20 +101,33 @@ export function AmountFigure(props: AmountFigureProps): React.JSX.Element {
           <RotateCcwIcon className="h-3 w-3 text-text-muted" strokeWidth={2.5} aria-hidden />
           <Text className="text-[11px] font-semibold text-text-muted">초기화</Text>
         </Pressable>
+        )}
 
+        {props.readOnly === true ? (
+          <Text testID={props.testID} className={`ml-auto ${digits}`} style={TABULAR_NUMS}>
+            {shown.toLocaleString()}
+          </Text>
+        ) : (
         <TextInput
           testID={props.testID}
           aria-label="금액"
           // 0 일 때 비우는 이유: 「0」 을 값으로 두면 그 뒤에 친 숫자가 붙어 자릿수가 하나 는다.
           value={empty ? '' : shown.toLocaleString()}
           onChangeText={(text) => props.onChangeValue(parseMesoText(props.value, text))}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
+          onFocus={() => {
+            setFocused(true)
+            props.onTypingChange?.(true)
+          }}
+          onBlur={() => {
+            setFocused(false)
+            props.onTypingChange?.(false)
+          }}
           keyboardType="number-pad"
           placeholder="0"
           className={`flex-1 text-right ${digits}`}
           style={TABULAR_NUMS}
         />
+        )}
 
         <Text className="shrink-0 text-xs font-semibold text-text-muted">{props.unit}</Text>
       </View>

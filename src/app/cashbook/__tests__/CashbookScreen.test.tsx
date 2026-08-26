@@ -41,9 +41,18 @@ jest.mock('@gorhom/bottom-sheet', () => {
   return {
     BottomSheetBackdrop: (props: Record<string, unknown>) =>
       React.createElement(ReactNative.View, { testID: 'sheet-backdrop', ...props }),
+    BottomSheetFooter: (props: Record<string, unknown>) =>
+      React.createElement(ReactNative.View, props),
     BottomSheetModal: React.forwardRef((props: Record<string, unknown>, ref: unknown) => {
       React.useImperativeHandle(ref as never, () => ({ present: jest.fn(), dismiss: jest.fn() }))
-      return React.createElement(ReactNative.View, props)
+      // 키보드 위 띠([[ADR-173]] 결정 4)는 라이브러리가 그리는 자리라, 목이 안 부르면 테스트에서
+      // 통째로 사라진다 — 「빠른 칩이 어디 있나」 를 못 보게 된다.
+      const render = props.footerComponent
+      const footer =
+        typeof render === 'function'
+          ? (render as (mockProps: unknown) => unknown)({ animatedFooterPosition: 0 })
+          : null
+      return React.createElement(ReactNative.View, props, props.children as never, footer as never)
     }),
     BottomSheetScrollView: (props: Record<string, unknown>) =>
       React.createElement(ReactNative.View, props),
@@ -61,6 +70,7 @@ jest.mock('@gorhom/bottom-sheet', () => {
 import { useToastStore } from '../../../features/toast/store'
 import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
 import { SPEED_DIAL_SPACE_PX } from '../../../components/organisms/SpeedDial/speed-dial-metrics'
+import { clearCountUpMemory } from '../../../lib/use-count-up'
 import { BOSS_SLOT_MAX_PX, CashbookScreen } from '../CashbookScreen'
 
 const records = jest.requireMock('../../../features/cashbook/records') as Record<string, jest.Mock>
@@ -71,6 +81,8 @@ type Rendered = Awaited<ReturnType<typeof renderOverlay>>
 const 지금 = Date.parse('2026-08-23T05:00:00Z')
 
 beforeEach(() => {
+  // 시트의 큰 숫자는 카운트업을 타고, 그 기억은 **모듈 수준**이라 케이스 사이로 샌다.
+  clearCountUpMemory()
   jest.useFakeTimers({ now: 지금 })
   records.loadCalendarAmounts.mockReset().mockResolvedValue({})
   records.loadLastPointRate.mockReset().mockResolvedValue(null)
@@ -605,7 +617,7 @@ describe('저장이 실패하면', () => {
     await 이름으로누르기(view, '저장')
     await act(async () => {})
 
-    expect(view.getByTestId('spend-sheet-total')).toBeTruthy()
+    expect(view.getByTestId('spend-sheet-amount')).toBeTruthy()
     expect(useToastStore.getState().toasts[0]?.message).toBe('지출을 적지 못했습니다')
   })
 

@@ -10,25 +10,29 @@
  * 보스 드롭은 이 시트로 안 들어온다([[ADR-170]] 결정 3) — 이미 보스 수익 탭이 기록하고, 두 곳에서
  * 적으면 같은 판매가 두 벌이 된다. 캘린더는 그것을 **읽어서** 같은 목록에 세우되 여기서 못 고친다.
  *
- * ## 금액도 **OS 키보드**다 ([[ADR-170]] 정정 4)
+ * ## 뼈대는 **지출 시트와 같다** ([[ADR-173]] 결정 10)
  *
- * [[ADR-124]] 결정 5 가 앱 키패드를 세운 이유는 «OS 키보드를 안 부르기 위해서» 였는데, **이 시트는
- * 이름 칸 때문에 어차피 부른다** — 안 불러서 아끼는 것이 없고 «숫자를 넣는 방법» 만 둘이 된다.
- * 그래서 키패드를 걷고 금액 칸이 직접 받는다(`editable`, `number-pad`).
+ * 제목 · 갈래 칩 · 라벨–값 줄 · **큰 숫자 + 힌트** · 저장. 통화 줄이 없고(메소 하나뿐) 갈래가
+ * 셋일 뿐이다 — 한 곳을 고치면 두 시트가 같이 고쳐진다.
  *
- * **걷은 것은 12칸 그리드뿐이다** — 초기화·억/만 줄·빠른 칩은 그대로다. OS 키패드엔 `00` 이 없어
- * 억 단위를 치려면 0 을 여덟 번 눌러야 하고, 칩이 그 자리를 막는다.
+ * **큰 숫자는 화면에 하나**이고 저장 바로 위에 선다(결정 1). 합계 카드가 없으므로 같은 값이 두 번
+ * 적히지 않는다. 억/만은 그 밑 **힌트 한 줄**이다(결정 2).
  *
- * 시트가 동적 높이라 키보드가 뜨면 밀릴 수 있고, 그것은 실기기에서 볼 것이다.
+ * 금액은 **OS 키보드**로 친다([[ADR-170]] 정정 4) — 이 시트는 이름 칸 때문에 어차피 키보드를
+ * 부르므로 앱 키패드를 안 부르는 이득이 없다. 빠른 칩은 폼이 아니라 **키보드 위**에 있다(결정 4).
+ *
+ * 제목은 **안 바뀐다**(결정 7) — 「수입 추가」·「수입 수정」 둘뿐이고, 갈래를 골라도 그대로다.
  */
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 
 // `TextInput` 도 atom 에서 온다 — 시스템 글자 크기 클램프가 거기 있다([[ADR-152]] 결정 4).
 import { Text, TextInput } from '../../components/atoms/Text/Text'
-import { MesoAmountField } from '../../components/molecules/MesoPad/MesoAmountField'
+import { AmountFigure } from '../../components/molecules/AmountFigure/AmountFigure'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
+import { QuickAddBar } from './QuickAddBar'
 import { formatDayLabel } from '../../lib/calendar-month'
+import { formatMesoUnits } from '../../lib/drop-price'
 import { TABULAR_NUMS } from '../../lib/text-styles'
 import { INCOME_CATEGORIES, type IncomeCategory, type IncomeRecord } from '../../storage/income'
 
@@ -93,6 +97,8 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
 
   /** 저장이 도는 동안 다시 못 누르게 막는다 — 손입력은 두 번 눌리면 행이 둘이 된다. */
   const [saving, setSaving] = useState(false)
+  /** 빠른 칩은 **키보드 위**에만 뜬다([[ADR-173]] 결정 4) — 폼의 일부가 아니라 입력 도구다. */
+  const [typing, setTyping] = useState(false)
 
   const canSave = meso > 0
 
@@ -131,7 +137,11 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
   }
 
   return (
-    <BottomSheet testId="income-sheet" onClose={props.onClose}>
+    <BottomSheet
+      testId="income-sheet"
+      onClose={props.onClose}
+      footer={typing ? <QuickAddBar value={meso} onChange={setMeso} /> : undefined}
+    >
       <View className="gap-3 px-4 pb-2">
         <View className="flex-row items-baseline justify-between gap-2">
           <Text className="text-base font-bold text-rise-ink">
@@ -169,22 +179,24 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
           />
         </View>
 
-        <MesoAmountField
-          meso={meso}
-          onChange={setMeso}
-          resetLabel="금액 초기화"
-          amountTestID="income-sheet-amount"
-          editable
+        {/* 큰 숫자는 **저장 바로 위**이고 자기 윗선을 안 긋는다 — 위 줄의 밑줄이 경계를 겸한다
+            ([[ADR-173]] 결정 1·9). 힌트는 억/만이고, 0 일 때는 빈 줄로 자리만 지킨다: 사라지면
+            첫 타건에 아래가 통째로 밀린다. */}
+        <AmountFigure
+          value={meso}
+          unit="메소"
+          testID="income-sheet-amount"
+          hint={meso > 0 ? formatMesoUnits(meso) : ' '}
+          onChangeValue={setMeso}
+          onTypingChange={setTyping}
         />
 
-        {/* **커밋하는 버튼은 입력과 같은 리듬에 두지 않는다**([[ADR-170]] 정정 6) — 빠른 칩과
-            같은 간격이면 «+100억» 과 «저장» 이 같은 목록의 이웃으로 읽혀 오타건이 곧 저장이다. */}
         <Pressable
           role="button"
           aria-label={editing ? '수정' : '저장'}
           disabled={!canSave || saving}
           onPress={() => void save()}
-          className={`mt-3 items-center rounded-xl py-3 ${canSave ? 'bg-rise-ink' : 'bg-surface-2'}`}
+          className={`items-center rounded-xl py-3 ${canSave ? 'bg-rise-ink' : 'bg-surface-2'}`}
         >
           <Text className={`text-sm font-bold ${canSave ? 'text-bg' : 'text-text-disabled'}`}>
             {editing ? '수정' : '저장'}

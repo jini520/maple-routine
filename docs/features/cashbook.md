@@ -45,7 +45,10 @@
 | 오케스트레이션 | `features/cashbook/records.ts` | 행의 신원(`id`·`recordedAt`) · 시세 기억 · **네 원천을 하루로 접기** · 줄의 표기(`recordTitleOf`·`recordCountLabelOf`) · **그날 합계**(`dayTotalsOf`) |
 | 보스 날짜 캐기 | `features/boss-profit/defeat-dates.ts` | 날짜별 응답을 훑어 «뒤집힌 날» 을 찾아 `defeated_on` 을 채운다([[ADR-172]]) |
 | 입력 | `app/cashbook/SpendSheet.tsx` · `IncomeSheet.tsx` · `components/organisms/SpeedDial/`(`speed-dial-motion` 움직임 · `speed-dial-metrics` 치수) | 떠 있는 ＋ → 갈래 둘 → 시트 |
-| 금액 칸 | `components/molecules/MesoPad/`(`MesoAmountField editable`·`unitPicker` · `parseMesoText`) | 금액 칸 · 초기화 · 억/만 줄 · 빠른 칩. **드롭 판매가와 같은 부품**이되 **여기서는 칸이 직접 받는다** — OS 숫자 키보드다([[ADR-170]] 정정 4). 3열 그리드(`MesoKeypad`)는 드롭 판매가에만 남는다 |
+| 큰 숫자 | `components/molecules/AmountFigure/` | 큰 숫자 + 힌트 한 줄 + 초기화(같은 줄). **저장 바로 위**에 서고 자기 윗선을 안 긋는다([[ADR-173]] 결정 1·2·9). 칠 때는 친 값, 손을 떼면 `displayValue` 로 **굴러간다**(`useCountUp`) |
+| 축 고르개 | `components/molecules/Segment/` | 통화·형태·단계. **갈래 칩과 모양이 다르다**([[ADR-173]] 결정 3) — 같은 알약 세 종류가 안 읽히던 것이 다시 짠 이유였다 |
+| 빠른 칩 | `app/cashbook/QuickAddBar.tsx` + `BottomSheet` 의 `footer` | **키보드 위**에만 뜬다([[ADR-173]] 결정 4) — 폼의 일부가 아니라 입력 도구다. 상한(`MAX_MESO`)도 여기서 지킨다 |
+| 글자→값 | `components/molecules/MesoPad/meso-pad.ts` 의 `parseMesoText` | OS 키보드가 넣은 글자에서 숫자만 남긴다. `MesoAmountField`·`MesoKeypad` 는 **드롭 판매가 전용**으로 남는다([[ADR-124]] 결정 5) |
 | 보스 타일 | `components/molecules/BossPortrait/`(`shape`) · `components/atoms/DifficultyBadge/`(`short`) + `app/boss-profit/character-groups.ts` 의 `findPortraitSlug` | 펼친 결정석 줄이 그리는 네모 타일([[ADR-172]] 정정 1·2) — **셋 다 보스 수익 탭이 쓰는 그것**이고, 프롭 둘이 «네모» 와 «한 칸 글자» 만 더한다 |
 | 화면 | `app/cashbook/CashbookScreen.tsx` | 주간/월간 전환 + 기간 이동 + 격자 + 고른 날의 상세 + **결정석 줄 펼치기** |
 
@@ -121,6 +124,26 @@
   끝에 `SPEED_DIAL_SPACE_PX`(`SpeedDial/speed-dial-metrics.ts`)만큼 여백을 남긴다 — 안 그러면 스크롤
   끝에서 마지막 줄이 버튼 뒤로 들어간다. 이 값이 화면의 `pb-4` 를 **대신한다**(숨돌림을 이미 품는다).
   하단바의 몫은 여기 없다 — `ScreenScroll` 이 이미 남기고 다이얼은 그 위에 앉는다.
+### 시트의 뼈대 ([[ADR-173]])
+
+```
+제목 · 날짜                ← 「지출 추가」·「지출 수정」·「수입 추가」·「수입 수정」 넷뿐(결정 7)
+갈래 칩                    ← 목록 갈래에서 항목을 고른 뒤에만 「‹ 하이마운틴」
+─ 라벨–값 줄 ─             ← 사용처 / 통화 / 형태 · 단계 / 수량 / 시세
+──────────────            ← **선은 한 줄**(위 줄의 밑줄이 겸한다, 결정 9)
+큰 숫자 + 힌트 한 줄        ← 화면에 하나뿐(결정 1·2)
+관세                       ← 아이템 구매에만, 켜면 큰 숫자가 굴러 올라간다(결정 5)
+[저장]                     ← 고를 것을 고르는 화면에는 **없다**
+[삭제]                     ← 수정 모드
+```
+
+- **큰 숫자가 무엇인지는 갈래가 정한다** — 직접 입력이면 「치는 금액」, 목록 갈래면 「합계」. 어느
+  쪽이든 하나뿐이라 같은 값이 두 번 적히지 않는다.
+- **힌트는 값이 갈릴 때만** 뜬다 — `12억` · `메소로 −25.42억` · `시세를 넣어야…`(에러색). 캐시는
+  환산을 안 하므로 **줄이 통째로 없다**.
+- **두 단계는 목록 갈래에만**(결정 8). 직접 입력·수입은 그 자리에서 끝나고 되돌아가기가 없다.
+- **수입 시트도 같은 뼈대**(결정 10) — 통화 줄이 없고 갈래가 셋일 뿐이다.
+
 - **갈래는 시트 밖에서 갈린다**(결정 6). 그래서 **시트는 자기가 어느 갈래인지 모르고** 프롭으로 받은
   것을 그리기만 한다 — 격자와 계산을 가른 것과 같은 모양이다([[ADR-147]] 결정 8).
 - **지출이 아래, 수입이 위**다(결정 7). 칸의 두 줄과 같은 순서이고, 덕분에 **잦은 지출이 FAB 에 더 가깝다.**

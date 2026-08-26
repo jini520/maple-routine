@@ -14,9 +14,18 @@ jest.mock('@gorhom/bottom-sheet', () => {
   return {
     BottomSheetBackdrop: (props: Record<string, unknown>) =>
       React.createElement(ReactNative.View, { testID: 'sheet-backdrop', ...props }),
+    BottomSheetFooter: (props: Record<string, unknown>) =>
+      React.createElement(ReactNative.View, props),
     BottomSheetModal: React.forwardRef((props: Record<string, unknown>, ref: unknown) => {
       React.useImperativeHandle(ref as never, () => ({ present: jest.fn(), dismiss: jest.fn() }))
-      return React.createElement(ReactNative.View, props)
+      // 키보드 위 띠([[ADR-173]] 결정 4)는 라이브러리가 그리는 자리라, 목이 안 부르면 테스트에서
+      // 통째로 사라진다 — 「빠른 칩이 어디 있나」 를 못 보게 된다.
+      const render = props.footerComponent
+      const footer =
+        typeof render === 'function'
+          ? (render as (mockProps: unknown) => unknown)({ animatedFooterPosition: 0 })
+          : null
+      return React.createElement(ReactNative.View, props, props.children as never, footer as never)
     }),
     BottomSheetScrollView: (props: Record<string, unknown>) =>
       React.createElement(ReactNative.View, props),
@@ -31,8 +40,12 @@ jest.mock('@gorhom/bottom-sheet', () => {
   }
 })
 
-import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
+import { renderOverlay } from '../../../components/__tests__/render-atom'
+import { clearCountUpMemory } from '../../../lib/use-count-up'
 import { SpendSheet } from '../SpendSheet'
+
+// 큰 숫자의 카운트업 기억은 **모듈 수준**이라 케이스 사이로 샌다([[ADR-087]] 결정 8).
+beforeEach(clearCountUpMemory)
 
 type Rendered = Awaited<ReturnType<typeof renderOverlay>>
 
@@ -111,7 +124,8 @@ describe('갈래 칩', () => {
 
     await 누르기(view, '버프')
 
-    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
+    // 고를 것을 고르는 화면에는 **저장이 아예 없다**([[ADR-173]] 결정 1) — 셀 것이 없다.
+    expect(view.queryByLabelText('저장')).toBeNull()
   })
 })
 
@@ -163,19 +177,22 @@ describe('항목 — 고르면 채워진다', () => {
     expect(view.getByText('9,900 메포')).toBeTruthy()
   })
 
-  it('고르기 전에는 저장할 수 없다', async () => {
+  // 고를 것을 고르는 화면에는 큰 숫자도 저장도 없다([[ADR-173]] 결정 1).
+  it('고르기 전에는 저장도 큰 숫자도 없다', async () => {
     const view = await 그리기()
 
-    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
+    expect(view.queryByLabelText('저장')).toBeNull()
+    expect(view.queryByTestId('spend-sheet-amount')).toBeNull()
   })
 
-  it('고르면 단가가 그대로 금액이 된다', async () => {
+  it('고르면 단가가 그대로 큰 숫자가 되고, 환산은 힌트 한 줄이다', async () => {
     const view = await 그리기({ lastPointRate: 1_180 })
 
     await 에픽던전(view, '하이마운틴', '경험치', '2단계')
 
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('30,000')
     // 30,000 메포 ÷ 1,180 → 25.42억. 부호까지 붙든다 — 지출은 언제나 빼는 쪽이다.
-    expect(view.getByTestId('spend-sheet-total')).toHaveTextContent('−25.42억')
+    expect(view.getByTestId('spend-sheet-amount-hint')).toHaveTextContent('메소로 −25.42억')
   })
 })
 
@@ -237,7 +254,7 @@ describe('수량 — 곱셈은 앱이 한다', () => {
     await 누르기(view, '다시 고르기')
 
     expect(view.getByLabelText('하이마운틴')).toBeTruthy()
-    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
+    expect(view.queryByLabelText('저장')).toBeNull()
   })
 
   // 머리줄이 지금 어디인지를 말한다 — ②로 들어가면 제목이 고른 것의 이름이 되고 그 왼쪽이
@@ -449,8 +466,16 @@ describe('저장', () => {
 //
 // 목록 갈래 셋과 폼이 통째로 다르다 — 고를 것이 없고 **금액을 친다.**
 
-/** 금액 칸에 **친다** — OS 숫자 키보드다([[ADR-170]] 정정 4). 칸이 콤마째 값을 받는다. */
+/**
+ * 금액 칸에 **친다** — OS 숫자 키보드다([[ADR-170]] 정정 4).
+ *
+ * 커서를 먼저 넣는다: 치는 것은 언제나 포커스가 있는 상태이고, 그때 큰 숫자는 **친 값을 그대로**
+ * 그린다([[ADR-173]] 결정 6 — 커서가 빠져야 합계로 굴러간다).
+ */
 async function 치기(view: Rendered, text: string): Promise<void> {
+  await act(async () => {
+    fireEvent(view.getByTestId('spend-sheet-amount'), 'focus')
+  })
   await act(async () => {
     fireEvent.changeText(view.getByTestId('spend-sheet-amount'), text)
   })
@@ -487,38 +512,53 @@ describe('아이템 구매', () => {
     expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
   })
 
-  // **친 숫자는 안 바뀐다**([[ADR-170]] 시안) — 관세는 아래에 한 줄로 더해진다. 금액을 직접
-  // 고치면 껐다 켰다 할 때 8.5억 → 9.35억 → 10.28억 으로 부푼다.
-  it('관세를 켜도 친 금액은 그대로다', async () => {
+  /**
+   * **칠 때는 구입가, 손을 떼면 합계**([[ADR-173]] 결정 6).
+   *
+   * 관세를 누르는 순간이 커서가 빠지는 순간이라, 큰 숫자가 합계로 굴러 올라간다 — 더해지는
+   * 금액을 따로 안 적는 이유가 그것이다(결정 5). 다시 커서를 넣으면 구입가가 돌아온다.
+   */
+  it('커서를 다시 넣으면 친 구입가가 돌아온다', async () => {
     const view = await 그리기()
     await 누르기(view, '아이템 구매')
     await 치기(view, '850000000')
 
     await 누르기(view, '관세 10%')
+    await act(async () => {
+      fireEvent(view.getByTestId('spend-sheet-amount'), 'focus')
+    })
 
     expect(view.getByTestId('spend-sheet-amount').props.value).toBe('850,000,000')
   })
 
-  it('관세를 켜면 합계가 10% 는다', async () => {
-    const view = await 그리기()
+  // **저장되는 값이 안 부푼다** — 껐다 켰다 해도 8.5억 → 9.35억 → 10.28억 이 되지 않는다.
+  it('껐다 켜도 부풀지 않는다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave })
     await 누르기(view, '아이템 구매')
     await 치기(view, '850000000')
 
     await 누르기(view, '관세 10%')
+    await 누르기(view, '관세 10%')
+    await 누르기(view, '관세 10%')
+    await 누르기(view, '저장')
 
-    expect(view.getByTestId('spend-sheet-total')).toHaveTextContent('−9.35억')
+    expect(onSave.mock.calls[0][0]).toMatchObject({
+      mesoAmount: 935_000_000,
+      tariffMeso: 85_000_000,
+    })
   })
 
-  it('껐다 켜도 부풀지 않는다', async () => {
+  // 관세 줄에서 **더해지는 금액을 안 적는다**(결정 5) — 큰 숫자가 그만큼 올라가는 것이 그 말이다.
+  it('관세 줄은 「관세 10%」 뿐이다', async () => {
     const view = await 그리기()
     await 누르기(view, '아이템 구매')
     await 치기(view, '850000000')
 
     await 누르기(view, '관세 10%')
-    await 누르기(view, '관세 10%')
-    await 누르기(view, '관세 10%')
 
-    expect(view.getByTestId('spend-sheet-total')).toHaveTextContent('−9.35억')
+    expect(view.queryByText('+85,000,000')).toBeNull()
+    expect(view.queryByText(/월드 간 거래/)).toBeNull()
   })
 
   // 총액과 그 몫을 **둘 다** 박는다([[ADR-166]] 정정 2 ②) — 집계는 총액 한 칸만 본다.
@@ -577,19 +617,18 @@ describe('기타 — 캐시가 사는 유일한 자리', () => {
   })
 
   /**
-   * 통화는 **갈래가 아니라 금액의 축**이다([[ADR-170]] 정정 6) — 바꾸는 것 넷이 전부 금액 쪽에
-   * 있다(단위 · 시세 칸 · 빠른 칩 · 합계의 셈법). 갈래 칩 바로 밑에 두었더니 같은 모양 두 줄이
-   * **한 무리로 읽혔다**(사용자 지적).
+   * 통화는 **갈래가 아니라 금액의 축**이라 **세그먼트**다([[ADR-173]] 결정 3) — 칩으로 두면
+   * 갈래 칩과 한 무리로 읽힌다. 자리를 두 번 옮겨도 안 나아졌던 것이 이 모양 문제였다.
    */
-  it('통화 칩은 금액 칸 안에 선다 — 갈래 칩 옆이 아니다', async () => {
+  it('통화는 칩이 아니라 세그먼트다', async () => {
     const view = await 그리기()
 
     await 누르기(view, '기타')
 
-    const 금액칸 = within(view.getByTestId('spend-sheet-amount-field'))
-    expect(금액칸.getByLabelText('메소')).toBeTruthy()
-    expect(금액칸.getByLabelText('메포')).toBeTruthy()
-    expect(금액칸.getByLabelText('캐시')).toBeTruthy()
+    const 세그먼트 = within(view.getByTestId('segment'))
+    expect(세그먼트.getByLabelText('메소')).toBeTruthy()
+    expect(세그먼트.getByLabelText('메포')).toBeTruthy()
+    expect(세그먼트.getByLabelText('캐시')).toBeTruthy()
   })
 
   it('메소로 시작한다', async () => {
@@ -694,17 +733,15 @@ describe('시세가 비어 있을 때', () => {
     return view
   }
 
-  it('합계에 0 을 적지 않는다 — 0 원짜리 지출이 아니다', async () => {
+  // 큰 숫자는 **메포 원금**이라 0 이 될 일이 없다 — 모르는 것은 그것이 메소로 얼마인가이고,
+  // 그 사실은 힌트 줄이 말한다([[ADR-173]] 결정 2).
+  it('아는 것은 큰 숫자로, 모르는 것은 힌트로 말한다', async () => {
     const view = await 메포항목()
 
-    expect(view.getByTestId('spend-sheet-total')).not.toHaveTextContent('−0')
-  })
-
-  // 아직 아는 것은 있다 — **메포 원금**은 확정됐다. 모르는 것은 그것이 메소로 얼마인가다.
-  it('아는 것은 보여준다 — 메포 원금', async () => {
-    const view = await 메포항목()
-
-    expect(view.getByTestId('spend-sheet-total')).toHaveTextContent('30,000 메포')
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('30,000')
+    expect(view.getByTestId('spend-sheet-amount-hint')).toHaveTextContent(
+      '시세를 넣어야 메소로 셀 수 있어요',
+    )
   })
 
   // 「지금 비었다」가 아니라 **「이 칸은 반드시 있어야 한다」** 를 말하는 자리라 채워도 안 사라진다.
@@ -721,7 +758,7 @@ describe('시세가 비어 있을 때', () => {
       fireEvent.changeText(view.getByTestId('spend-sheet-rate'), '1180')
     })
 
-    expect(view.getByTestId('spend-sheet-total')).toHaveTextContent('−25.42억')
+    expect(view.getByTestId('spend-sheet-amount-hint')).toHaveTextContent('메소로 −25.42억')
     expect(view.getByTestId('spend-sheet-required')).toBeTruthy()
   })
 
@@ -732,20 +769,7 @@ describe('시세가 비어 있을 때', () => {
     await 누르기(view, '세이람의 영약')
 
     expect(view.queryByTestId('spend-sheet-required')).toBeNull()
-    expect(view.getByTestId('spend-sheet-total')).toHaveTextContent('−200만')
-  })
-})
-
-/**
- * 「저장」은 **폼의 리듬에서 한 칸 벗어난다**([[ADR-170]] 정정 6).
- *
- * 빠른 칩과 같은 간격(12px)이면 «+100억» 과 «저장» 이 같은 목록의 이웃으로 읽힌다 — 둘 다 누르는
- * 것이고 칩이 버튼처럼 생겼으므로, 오타건이 곧 저장이다(사용자 지적).
- */
-describe('저장은 입력과 붙어 있지 않다 ([[ADR-170]] 정정 6)', () => {
-  it('폼 간격(12)에 한 칸을 더 띄운다', async () => {
-    const view = await 그리기()
-
-    expect(flattenStyle(view.getByLabelText('저장').props.style).marginTop).toBe(12)
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('2,000,000')
+    expect(view.getByTestId('spend-sheet-amount-hint')).toHaveTextContent('200만')
   })
 })

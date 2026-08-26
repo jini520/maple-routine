@@ -33,9 +33,12 @@ import { Pressable, View } from 'react-native'
 
 // `TextInput` 도 atom 에서 온다 — 시스템 글자 크기 클램프가 거기 있다([[ADR-152]] 결정 4).
 import { Text, TextInput } from '../../components/atoms/Text/Text'
-import { MesoAmountField } from '../../components/molecules/MesoPad/MesoAmountField'
+import { AmountFigure } from '../../components/molecules/AmountFigure/AmountFigure'
+import { Segment } from '../../components/molecules/Segment/Segment'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
+import { QuickAddBar } from './QuickAddBar'
 import { formatDayLabel } from '../../lib/calendar-month'
+import { formatMesoUnits } from '../../lib/drop-price'
 import { CheckIcon, ChevronLeftIcon, MinusIcon, PlusIcon } from '../../lib/icons'
 import { formatMesoCompact } from '../../lib/meso-compact'
 import {
@@ -114,6 +117,67 @@ const FREE_CURRENCIES = [
 ] as const
 
 type FreeCurrency = (typeof FREE_CURRENCIES)[number]['id']
+
+/** 세그먼트는 **글자**를 고른다 — 아이디와 라벨 사이를 여기서 옮긴다. */
+const FREE_CURRENCY_LABELS = FREE_CURRENCIES.map((each) => each.label)
+
+function labelOfCurrency(id: FreeCurrency): string {
+  return FREE_CURRENCIES.find((each) => each.id === id)?.label ?? '메소'
+}
+
+function currencyOfLabel(label: string): FreeCurrency {
+  return FREE_CURRENCIES.find((each) => each.label === label)?.id ?? 'meso'
+}
+
+/**
+ * 라벨–값 한 줄([[ADR-173]] 결정 1) — 큰 숫자 위는 **전부 이 모양**이다.
+ *
+ * 축이 하나로 정리되는 것이 이 줄의 일이다. 전에는 라벨–값, 오른쪽 큰 숫자, 오른쪽 칩이 번갈아
+ * 나와 눈이 좌우로 튀었다.
+ */
+function FieldRow(props: { label: string; children: React.ReactNode }): React.JSX.Element {
+  return (
+    <View className="flex-row items-center gap-3 border-b border-border pb-2">
+      <Text className="shrink-0 text-xs text-text-muted">{props.label}</Text>
+      <View className="ml-auto flex-row items-center">{props.children}</View>
+    </View>
+  )
+}
+
+/**
+ * 시세 줄 — 메포를 쓸 때만 선다([[ADR-166]] 정정 2 ③).
+ *
+ * 시세는 네 자리라 **OS 숫자 키패드로 충분하다**. `*` 는 «지금 비었다» 가 아니라 «이 칸은 반드시
+ * 있어야 한다» 를 말하므로 채워도 안 사라진다.
+ */
+function RateRow(props: {
+  value: string
+  onChange: (next: string) => void
+  valid: boolean
+}): React.JSX.Element {
+  return (
+    <View className="flex-row items-center gap-2 border-b border-border pb-2">
+      <Text className="shrink-0 text-xs text-text-muted">
+        시세 · 1억당
+        <Text testID="spend-sheet-required" className="text-error-ink">
+          {' *'}
+        </Text>
+      </Text>
+      <TextInput
+        testID="spend-sheet-rate"
+        value={props.value}
+        onChangeText={props.onChange}
+        keyboardType="number-pad"
+        placeholder="메소마켓 시세"
+        className={`flex-1 text-right text-sm font-semibold ${
+          props.valid ? 'text-text' : 'text-error-ink'
+        }`}
+        style={TABULAR_NUMS}
+      />
+      <Text className="shrink-0 text-xs text-text-muted">메포</Text>
+    </View>
+  )
+}
 
 /** 고를 목록이 없는 갈래 — 금액을 **친다**([[ADR-166]] 정정 1 ②). */
 function isDirectInput(category: SpendCategory): boolean {
@@ -331,6 +395,8 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
   })
   /** 저장이 도는 동안 다시 못 누르게 막는다 — 손입력은 두 번 눌리면 행이 둘이 된다. */
   const [saving, setSaving] = useState(false)
+  /** 빠른 칩은 **키보드 위**에만 뜬다([[ADR-173]] 결정 4) — 폼의 일부가 아니라 입력 도구다. */
+  const [typing, setTyping] = useState(false)
 
   const groups = spendGroupsOf(category)
   const direct = isDirectInput(category)
@@ -370,6 +436,19 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
   // 것만으로는 부족하고(사용자는 왜 막혔는지 모른다) 합계 자리가 그 사실을 말해야 한다.
   const blocked = usesPoint && (rate === null || rate <= 0)
   const canSave = hasSubject && !blocked
+
+  /**
+   * 큰 숫자 밑의 **힌트 한 줄**([[ADR-173]] 결정 2) — 값이 갈릴 때만 뜻이 있다.
+   *
+   * 캐시는 `undefined` 라 **줄이 통째로 없다**: 환산을 안 하므로 적을 것이 없고([[ADR-166]] 정정
+   * 2 ①), 자리를 비워 두는 대신 시트가 그만큼 짧아진다.
+   */
+  const conversionHint = blocked
+    ? '시세를 넣어야 메소로 셀 수 있어요'
+    : `메소로 −${formatMesoCompact(totalMeso)}`
+  const directHint =
+    currency === 'cash' ? undefined : usesPoint ? conversionHint : formatMesoUnits(directAmount)
+  const listHint = usesPoint ? conversionHint : formatMesoUnits(amount)
 
   function selectCategory(next: SpendCategory): void {
     setCategory(next)
@@ -455,6 +534,7 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
       onClose={props.onClose}
       // 갈래를 바꾸거나 단계를 오가면 내용이 통째로 갈린다 — 밀린 자리에서 시작하면 안 된다.
       resetScrollKey={`${category}|${choice?.label ?? ''}`}
+      footer={typing ? <QuickAddBar value={typed} onChange={setTyped} /> : undefined}
     >
       <View className="gap-3 px-4 pb-2">
         {/*
@@ -510,11 +590,9 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
             />
           ))}
         </View>
-
         {direct ? (
-          <View className="gap-3">
-            <View className="flex-row items-center gap-3 border-b border-border pb-2">
-              <Text className="shrink-0 text-xs text-text-muted">사용처</Text>
+          <>
+            <FieldRow label="사용처">
               <TextInput
                 testID="spend-sheet-name"
                 value={name}
@@ -522,240 +600,165 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
                 placeholder="비워 둬도 됩니다"
                 className="flex-1 text-right text-sm text-text"
               />
-            </View>
+            </FieldRow>
 
-            <MesoAmountField
-              meso={typed}
-              onChange={setTyped}
-              resetLabel="금액 초기화"
-              amountTestID="spend-sheet-amount"
-              unit={FREE_CURRENCIES.find((each) => each.id === currency)?.unit}
-              /*
-               * 통화는 **갈래가 아니라 금액의 축**이다([[ADR-170]] 정정 6) — 바꾸는 것 넷이 전부
-               * 금액 쪽에 있다(단위 · 시세 칸 · 빠른 칩 · 합계의 셈법). 갈래 칩 바로 밑에 두었더니
-               * 같은 모양 두 줄이 한 무리로 읽혔다(사용자 지적).
-               */
-              unitPicker={
-                category === '기타' ? (
-                  <View className="flex-row flex-wrap gap-1.5">
-                    {FREE_CURRENCIES.map((each) => (
-                      <CategoryChip
-                        key={each.id}
-                        label={each.label}
-                        selected={each.id === freeCurrency}
-                        onPress={() => setFreeCurrency(each.id)}
-                      />
-                    ))}
-                  </View>
-                ) : undefined
-              }
-              // 메포·캐시는 자릿수가 작아 메소 칩이 쓸모없다([[ADR-166]] 결정 8 열린 질문).
-              mesoHelpers={currency === 'meso'}
-              // 칸이 직접 받는다([[ADR-170]] 정정 4) — 이 시트는 사용처·시세 칸 때문에 어차피
-              // 키보드를 부르므로 «숫자를 넣는 방법» 을 둘로 두지 않는다.
-              editable
+            {category === '기타' && (
+              // 통화는 **갈래가 아니라 금액의 축**이라 세그먼트다([[ADR-173]] 결정 3) — 칩으로
+              // 두면 갈래 칩과 한 무리로 읽힌다. 캐시가 사는 유일한 자리다([[ADR-166]] 정정 1 ④).
+              // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
+              <FieldRow label="통화">
+                <Segment
+                  options={FREE_CURRENCY_LABELS}
+                  selected={labelOfCurrency(freeCurrency)}
+                  onSelect={(label) => setFreeCurrency(currencyOfLabel(label))}
+                />
+              </FieldRow>
+            )}
+
+            {usesPoint && <RateRow value={rateText} onChange={setRateText} valid={rate !== null} />}
+
+            <AmountFigure
+              value={typed}
+              // **칠 때는 구입가, 손을 떼면 합계**([[ADR-173]] 결정 6) — 관세를 켜면 그 사이를 굴러
+              // 넘어간다. 그래서 더해지는 금액을 따로 안 적는다(결정 5).
+              displayValue={hasTariff && currency === 'meso' ? tariffed.mesoAmount : undefined}
+              unit={FREE_CURRENCIES.find((each) => each.id === currency)?.unit ?? '메소'}
+              testID="spend-sheet-amount"
+              hint={directHint}
+              hintBlocked={blocked}
+              onChangeValue={setTyped}
+              onTypingChange={setTyping}
             />
-          </View>
-        ) : (
+
+            {category === '아이템 구매' && (
+              // **큰 숫자 밑**에 산다([[ADR-173]] 결정 5, 사용자 지정) — 더해지는 금액을 안 적는
+              // 이유는 위의 숫자가 그만큼 올라가기 때문이다. 다중 선택이 아니라 켬/끔 하나라
+              // 역할이 checkbox 다(`CacheClearConfirm` ②와 같은 판단).
+              <Pressable
+                role="checkbox"
+                aria-checked={hasTariff}
+                aria-label={`관세 ${SPEND_TARIFF_PERCENT}%`}
+                onPress={() => setHasTariff((on) => !on)}
+                className="flex-row items-center gap-2"
+              >
+                <View
+                  className={`h-5 w-5 items-center justify-center rounded-md border ${
+                    hasTariff ? 'border-transparent bg-primary' : 'border-border-strong'
+                  }`}
+                >
+                  {hasTariff && (
+                    <CheckIcon className="h-3 w-3 text-on-primary" strokeWidth={3} aria-hidden />
+                  )}
+                </View>
+                <Text className="text-xs text-text">관세 {SPEND_TARIFF_PERCENT}%</Text>
+              </Pressable>
+            )}
+          </>
+        ) : choice === null ? (
           // **여기에 스크롤을 두지 않는다.** 시트 껍데기가 이미 `BottomSheetScrollView` 이고
           // 높이도 «내용만큼, 82% 를 상한으로» 다(`BottomSheet`). 안쪽에 또 두면 중첩 스크롤이
           // 되어 손가락이 어느 쪽을 미는지 갈리고, 무엇보다 **목록이 상한선에서 잘려** 「더
-          // 있는지」가 안 보였다(iOS 실측 2026-08-25). 걷어내면 목록이 제 높이로 서고, 그래도
-          // 넘치는 기기에서는 **껍데기의 스크롤**이 받는다 — 스크롤이 한 겹만 남는다.
-          // (`) : (` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다 — 이 파일에서 두 번째다.)
+          // 있는지」가 안 보였다(iOS 실측 2026-08-25).
+          // (`) : (` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
           <View className="gap-1">
-            {choice === null ? (
-              groups.map((group) => (
-                <View key={group.group} className="gap-1 pb-2">
-                  <Text className="text-[11px] text-text-disabled">{group.group}</Text>
-                  {/* 퍼센트 폭과 `gap` 을 섞으면 마지막 칸이 밀린다 — 간격은 자식 패딩이 만든다
-                      (`BossDropSheet` ①과 같은 처방). */}
-                  <View className="-mx-1 flex-row flex-wrap">
-                    {group.choices.map((each) => (
-                      <ItemTile
-                        key={each.label}
-                        label={each.label}
-                        // 단계가 여럿이면 **나란히** 적는다 — `7,500 | 30,000 메포`.
-                        price={tilePriceLabel(each.items)}
-                        selected={false}
-                        onPress={() => selectChoice(each)}
-                      />
-                    ))}
-                  </View>
+            {groups.map((group) => (
+              <View key={group.group} className="gap-1 pb-2">
+                <Text className="text-[11px] text-text-disabled">{group.group}</Text>
+                {/* 퍼센트 폭과 `gap` 을 섞으면 마지막 칸이 밀린다 — 간격은 자식 패딩이 만든다
+                    (`BossDropSheet` ①과 같은 처방). */}
+                <View className="-mx-1 flex-row flex-wrap">
+                  {group.choices.map((each) => (
+                    <ItemTile
+                      key={each.label}
+                      label={each.label}
+                      // 단계가 여럿이면 **나란히** 적는다 — `7,500 | 30,000 메포`.
+                      price={tilePriceLabel(each.items)}
+                      selected={false}
+                      onPress={() => selectChoice(each)}
+                    />
+                  ))}
                 </View>
-              ))
-            ) : (
-              <View className="gap-3 pb-1">
-                {forms.length > 0 && (
-                  <View className="gap-1">
-                    <Text className="text-[11px] text-text-disabled">형태</Text>
-                    <View className="-mx-1 flex-row flex-wrap">
-                      {forms.map((each) => (
-                        <ItemTile
-                          key={each}
-                          label={each}
-                          price={null}
-                          selected={each === form}
-                          onPress={() => setForm(each)}
-                        />
-                      ))}
-                    </View>
-                  </View>
-                )}
-
-                {tiers.length > 0 && (
-                  <View className="gap-1">
-                    <Text className="text-[11px] text-text-disabled">단계</Text>
-                    <View className="-mx-1 flex-row flex-wrap">
-                      {tiers.map((each) => (
-                        <ItemTile
-                          key={each.name}
-                          label={each.tier ?? each.name}
-                          price={tilePriceLabel([each])}
-                          selected={each.name === item?.name}
-                          onPress={() => selectItem(each)}
-                        />
-                      ))}
-                    </View>
-                  </View>
-                )}
               </View>
-            )}
+            ))}
           </View>
+        ) : (
+          // 고른 뒤 — 라벨–값 줄들이 서고 **합계가 저장 바로 위**에 선다([[ADR-173]] 결정 1).
+          <>
+            {forms.length > 0 && (
+              // 형태는 **기본값을 안 고른다** — 앱이 «경험치였겠지» 라고 정하면 그것이 추정이 된다.
+              <FieldRow label="형태">
+                <Segment options={forms} selected={form} onSelect={setForm} />
+              </FieldRow>
+            )}
+
+            {tiers.length > 0 && (
+              <FieldRow label="단계">
+                <Segment
+                  options={tiers.map((each) => each.tier ?? each.name)}
+                  selected={item === null ? null : (item.tier ?? item.name)}
+                  onSelect={(label) => {
+                    const next = tiers.find((each) => (each.tier ?? each.name) === label)
+                    if (next !== undefined) selectItem(next)
+                  }}
+                />
+              </FieldRow>
+            )}
+
+            {item !== null && (
+              <FieldRow label="수량">
+                <QuantityStepper
+                  value={quantity}
+                  unit={item.unit}
+                  max={item.maxQuantity}
+                  onChange={setQuantity}
+                />
+              </FieldRow>
+            )}
+
+            {item?.limit !== undefined && (
+              // **적어만 두고 세지 않는다**([[ADR-166]] 정정 1 ⑤). 몬스터 파크 한도는 축이 셋이라
+              // 앱이 하나를 골라 수량을 막으면 그 고름이 곧 추정이 된다([[ADR-006]]).
+              <Text testID="spend-sheet-limit" className="-mt-1 text-[11px] leading-4 text-text-disabled">
+                한도 · {item.limit}
+              </Text>
+            )}
+
+            {usesPoint && <RateRow value={rateText} onChange={setRateText} valid={rate !== null} />}
+
+            {item !== null && (
+              // 목록 갈래의 큰 숫자는 **못 친다** — 단가 × 수량이라 앱이 센다.
+              <AmountFigure
+                value={amount}
+                unit={item.currency === 'point' ? '메포' : '메소'}
+                testID="spend-sheet-amount"
+                hint={listHint}
+                hintBlocked={blocked}
+                readOnly
+                onChangeValue={() => undefined}
+              />
+            )}
+          </>
         )}
 
-        {category === '아이템 구매' && (
+        {/* 고를 것을 고르는 화면에는 저장이 없다 — 아직 셀 것이 없다([[ADR-173]] 결정 1). */}
+        {(direct || item !== null) && (
           <Pressable
-            // 다중 선택이 아니라 켬/끔 하나라 역할이 checkbox 다(`CacheClearConfirm` ②와 같은 판단).
-            role="checkbox"
-            aria-checked={hasTariff}
-            aria-label={`관세 ${SPEND_TARIFF_PERCENT}%`}
-            onPress={() => setHasTariff((on) => !on)}
-            className="flex-row items-center gap-2"
+            role="button"
+            // **보이는 글자와 같아야 한다** — 화면은 「수정」인데 읽어 주는 것이 「저장」이면
+            // 그 둘은 다른 버튼이 된다.
+            aria-label={editing ? '수정' : '저장'}
+            disabled={!canSave || saving}
+            onPress={() => void save()}
+            className={`items-center rounded-xl py-3 ${canSave ? 'bg-primary' : 'bg-surface-2'}`}
           >
-            <View
-              className={`h-5 w-5 items-center justify-center rounded-md border ${
-                hasTariff ? 'border-transparent bg-primary' : 'border-border-strong'
-              }`}
-            >
-              {hasTariff && (
-                <CheckIcon className="h-3 w-3 text-on-primary" strokeWidth={3} aria-hidden />
-              )}
-            </View>
-            <Text className="text-xs text-text">관세 {SPEND_TARIFF_PERCENT}% — 월드 간 거래</Text>
-            <Text className="ml-auto text-xs text-fall-ink" style={TABULAR_NUMS}>
-              {hasTariff ? `+${tariffed.tariffMeso.toLocaleString()}` : ' '}
+            <Text className={`text-sm font-bold ${canSave ? 'text-on-primary' : 'text-text-disabled'}`}>
+              {editing ? '수정' : '저장'}
             </Text>
           </Pressable>
         )}
 
-        {(hasSubject || usesPoint) && (
-          <View className="gap-2 rounded-xl border border-border bg-surface p-3">
-            {item !== null && !direct && (
-              <View className="gap-1.5">
-                <View className="flex-row items-center justify-between">
-                  <Text className="text-xs text-text-muted">수량</Text>
-                  <QuantityStepper
-                    value={quantity}
-                    unit={item.unit}
-                    max={item.maxQuantity}
-                    onChange={setQuantity}
-                  />
-                </View>
-
-                {item.limit !== undefined && (
-                  // **적어만 두고 세지 않는다**([[ADR-166]] 정정 1 ⑤). 몬스터 파크 한도는 축이
-                  // 셋(월드당 14 · 캐릭터당 7 · 무료 2)인데 앱은 지금 어느 월드·어느 캐릭터인지
-                  // 모른다 — 하나를 골라 수량을 막으면 그 고름이 곧 추정이 된다([[ADR-006]]).
-                  // 대신 사용자가 준 문장을 **그대로** 옆에 둔다: 세는 것은 사람이 한다.
-                  // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
-                  <Text
-                    testID="spend-sheet-limit"
-                    className="text-[11px] leading-4 text-text-disabled"
-                  >
-                    한도 · {item.limit}
-                  </Text>
-                )}
-              </View>
-            )}
-
-            {usesPoint && (
-              // 시세는 네 자리라 **OS 숫자 키패드로 충분하다** — [[ADR-124]] 가 앞 키패드를 세운
-              // 것은 «메소는 자릿수가 커서 0 을 세게 된다» 때문이고, 그 문제가 여기엔 없다.
-              // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
-              <View className="flex-row items-center justify-between gap-2 border-t border-border pt-2">
-                <Text className="shrink-0 text-xs text-text-muted">
-                  시세 · 1억당
-                  {/* **필수 칸**이라는 표시([[ADR-166]] 정정 2 ③) — 시세 없이 저장한 행은 영영
-                      메소로 표시할 수 없다. 채워도 사라지지 않는다: «지금 비었다» 가 아니라
-                      «이 칸은 반드시 있어야 한다» 를 말하는 자리다. */}
-                  <Text testID="spend-sheet-required" className="text-error-ink">
-                    {' *'}
-                  </Text>
-                </Text>
-                <TextInput
-                  testID="spend-sheet-rate"
-                  value={rateText}
-                  onChangeText={setRateText}
-                  keyboardType="number-pad"
-                  placeholder="메소마켓 시세"
-                  className={`flex-1 text-right text-sm font-semibold ${
-                    rate === null ? 'text-error-ink' : 'text-text'
-                  }`}
-                  style={TABULAR_NUMS}
-                />
-                <Text className="shrink-0 text-xs text-text-muted">메포</Text>
-              </View>
-            )}
-
-            <View className="flex-row items-baseline justify-between border-t border-border pt-2">
-              <Text className="text-xs font-semibold text-text">합계</Text>
-              {/*
-                셋으로 갈린다.
-                · 캐시 — 메소로 **환산하지 않으므로** 캐시 그대로 적는다(정정 2 ①).
-                · 시세가 없는 메포 — **0 을 적지 않는다.** 「−0」 은 «0 원짜리 지출» 로 읽히는데
-                  사실은 «아직 못 센다» 다. 대신 **아는 것**(메포 원금)을 적고 아래 줄이 무엇이
-                  없는지 말한다.
-                · 그 밖 — 메소 축 합계.
-              */}
-              <Text
-                testID="spend-sheet-total"
-                className={`text-lg font-bold ${blocked ? 'text-text-muted' : 'text-fall-ink'}`}
-                style={TABULAR_NUMS}
-              >
-                {currency === 'cash'
-                  ? `−${amount.toLocaleString()}원`
-                  : blocked
-                    ? `${amount.toLocaleString()} 메포`
-                    : `−${formatMesoCompact(totalMeso)}`}
-              </Text>
-            </View>
-          </View>
-        )}
-
-        {/* **커밋하는 버튼은 입력과 같은 리듬에 두지 않는다**([[ADR-170]] 정정 6) — 빠른 칩과
-            같은 간격이면 «+100억» 과 «저장» 이 같은 목록의 이웃으로 읽혀 오타건이 곧 저장이다. */}
-        <Pressable
-          role="button"
-          // **보이는 글자와 같아야 한다** — 화면은 「수정」인데 읽어 주는 것이 「저장」이면
-          // 그 둘은 다른 버튼이 된다.
-          aria-label={editing ? '수정' : '저장'}
-          disabled={!canSave || saving}
-          onPress={() => void save()}
-          className={`mt-3 items-center rounded-xl py-3 ${canSave ? 'bg-primary' : 'bg-surface-2'}`}
-        >
-          <Text
-            className={`text-sm font-bold ${canSave ? 'text-on-primary' : 'text-text-disabled'}`}
-          >
-            {editing ? '수정' : '저장'}
-          </Text>
-        </Pressable>
-
         {editing && props.onDelete !== undefined && (
-          // **버튼처럼 안 생겼다**([[ADR-171]] 결정 3). 「수정」 과 같은 무게로 그리면 누르려던
-          // 것과 지우려던 것이 같은 크기가 된다. 확인 모달도 안 세운다 — 이미 두 번 눌러야
-          // 여기까지 온다(줄 → 삭제).
-          // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
+          // **버튼처럼 안 생겼다**([[ADR-171]] 결정 3) — 이미 두 번 눌러야 여기까지 온다.
           <Pressable
             role="button"
             aria-label="삭제"
