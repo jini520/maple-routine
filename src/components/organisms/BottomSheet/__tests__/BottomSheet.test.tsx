@@ -9,7 +9,8 @@
 // 라이브러리가 실제로 받는 프롭인지는 **타입 검사**가 지킨다(컴포넌트가 진짜 타입을 import 한다).
 // 라이브러리를 진짜로 세워 마운트되는지는 옆 파일(`BottomSheet.wiring.test.tsx`)이 본다.
 import type { ReactNode } from 'react'
-import { Text } from 'react-native'
+import { Keyboard, Text } from 'react-native'
+import { act } from '@testing-library/react-native'
 
 // `jest.mock` 팩토리는 호이스팅돼 스코프 밖 변수를 못 읽는다 — **`mock` 접두 이름만** 예외다.
 const mockPresent = jest.fn()
@@ -48,12 +49,36 @@ beforeEach(() => {
 })
 
 describe('BottomSheet — [[ADR-039]] 가 정한 값을 넘긴다', () => {
+  /**
+   * 키보드 이벤트는 네이티브에서 오므로 **등록된 손잡이를 직접 잡아 흔든다** — 등록 순서가
+   * 계약이다(뜨는 것 · 내리는 것).
+   */
+  const 키보드손잡이: Array<() => void> = []
+
+  beforeEach(() => {
+    키보드손잡이.length = 0
+    jest.spyOn(Keyboard, 'addListener').mockImplementation(((_event: string, handler: () => void) => {
+      키보드손잡이.push(handler)
+      return { remove: jest.fn() }
+    }) as never)
+  })
+
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+
   async function open(): Promise<ReturnType<typeof renderOverlay>> {
     return renderOverlay(
       <BottomSheet onClose={noop} testId="boss-drop-sheet">
         <Text>시트 내용</Text>
       </BottomSheet>,
     )
+  }
+
+  async function 키보드(뜬다: boolean): Promise<void> {
+    await act(async () => {
+      키보드손잡이[뜬다 ? 0 : 1]()
+    })
   }
 
   it('children 과 testId 를 그대로 전달한다 — 공개 API 는 웹과 같다', async () => {
@@ -124,6 +149,30 @@ describe('BottomSheet — [[ADR-039]] 가 정한 값을 넘긴다', () => {
     const { getByTestId } = await open()
 
     expect(getByTestId('sheet').props.keyboardBlurBehavior).toBe('restore')
+  })
+
+  /**
+   * **키보드가 뜨면 아래 인셋을 안 남긴다**([[ADR-173]] 결정 4 정정 2).
+   *
+   * 홈 인디케이터 몫(`insets.bottom`)은 «화면 맨 아래가 손가락에 닿는 자리라 비워 둔다» 는 값인데,
+   * 키보드가 그 자리를 이미 덮고 있으면 **아무것도 아닌 빈 띠**가 된다 — 실기에서 빠른 칩과
+   * 키보드 사이가 50pt 벌어졌다(사용자 스크린샷 2026-08-26).
+   */
+  it('키보드가 뜨면 아래 인셋을 걷는다', async () => {
+    const { getByTestId } = await open()
+    const 여백 = (): number =>
+      (getByTestId('boss-drop-sheet').props.contentContainerStyle as { paddingBottom: number })
+        .paddingBottom
+
+    // 테스트 인셋의 아래는 34(iPhone 계열) — 거기에 숨돌림 16.
+    expect(여백()).toBe(34 + 16)
+
+    // 숨돌림 16 도 안 남긴다 — 시트 끝이 키보드에 붙어야 한다.
+    await 키보드(true)
+    expect(여백()).toBe(0)
+
+    await 키보드(false)
+    expect(여백()).toBe(34 + 16)
   })
 
   it('폭은 max-w-md(448) 중앙 정렬이다 — 라이브러리 기본은 전폭이다', async () => {

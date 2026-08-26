@@ -36,8 +36,8 @@
 // `GestureHandlerRootView` 안에서만 돈다. 둘 다 앱 셸이 소유한다(화면 단계). `BottomSheet`(비-모달)
 // 대신 이것을 고른 이유는 인라인 시트가 **부모 상자 안**에서만 그려져 탭바를 못 덮기 때문이다 —
 // 웹의 `fixed inset-x-0 bottom-0 z-[60]` 이 하던 일을 프로바이더의 호스트가 대신한다.
-import { useCallback, useEffect, useRef, type ReactNode } from 'react'
-import { Pressable, View } from 'react-native'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { Keyboard, Platform, Pressable, View } from 'react-native'
 import Animated, { useAnimatedStyle, type SharedValue } from 'react-native-reanimated'
 import { useSafeAreaFrame, useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
@@ -124,6 +124,33 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
   // 웹의 `open` 초기값 `true` 와 같은 뜻 — 마운트가 곧 열림이다([[ADR-039]] 결정 3).
   useEffect(() => {
     ref.current?.present()
+  }, [])
+
+  /**
+   * **키보드가 뜨면 아래 인셋을 안 남긴다**([[ADR-173]] 결정 4 정정 2).
+   *
+   * `insets.bottom` 은 «화면 맨 아래가 손가락에 닿는 자리라 비워 둔다» 는 값인데, 키보드가 그
+   * 자리를 이미 덮고 있으면 **아무것도 아닌 빈 띠**가 된다 — 실기에서 시트 끝과 키보드 사이가
+   * 50pt 벌어졌다(사용자 스크린샷 2026-08-26).
+   *
+   * 라이브러리의 키보드 상태를 못 읽는다 — 그 훅은 시트 **안**에서만 살고 이 컴포넌트는 그
+   * 바깥이다. RN 의 이벤트를 직접 듣는 편이 의존도 얕다. 이름은 라이브러리와 같은 갈림을 쓴다:
+   * iOS 는 `will`(애니메이션과 함께 움직여야 한다), 안드로이드는 `did`(`will` 이 없다).
+   */
+  const [keyboardShown, setKeyboardShown] = useState(false)
+  useEffect(() => {
+    const show = Keyboard.addListener(
+      Platform.select({ ios: 'keyboardWillShow', default: 'keyboardDidShow' }),
+      () => setKeyboardShown(true),
+    )
+    const hide = Keyboard.addListener(
+      Platform.select({ ios: 'keyboardWillHide', default: 'keyboardDidHide' }),
+      () => setKeyboardShown(false),
+    )
+    return () => {
+      show.remove()
+      hide.remove()
+    }
   }, [])
 
   const renderBackdrop = useCallback(
@@ -241,7 +268,9 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
         // 위쪽에 핸들 몫을 더한다 — 사유는 바로 위 주석.
         contentContainerStyle={{
           paddingTop: HANDLE_HEIGHT + 8,
-          paddingBottom: insets.bottom + 16,
+          // 키보드가 떠 있으면 **숨돌림 16 도 안 남긴다** — 시트 끝이 키보드에 붙어야 마지막 줄이
+          // «키보드에 딸린 것» 으로 읽힌다(빠른 칩 띠가 그 자리다). 남은 간격은 시트 본문의 몫뿐이다.
+          paddingBottom: keyboardShown ? 0 : insets.bottom + 16,
         }}
       >
         {props.children}
