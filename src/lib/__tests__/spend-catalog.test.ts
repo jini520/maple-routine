@@ -49,14 +49,15 @@ describe('spendGroupsOf — 갈래 → 묶음들', () => {
   })
 
   it('갈래 셋이 스물넷을 나눠 갖는다 — 접혀도 항목 수는 그대로다', () => {
-    const counted = ['컨텐츠', '상점·편의', '버프'].map((category) =>
+    const counted = ['컨텐츠', '이벤트·BM', '버프'].map((category) =>
       spendGroupsOf(category as '컨텐츠').reduce(
         (sum, group) => sum + group.choices.reduce((n, choice) => n + choice.items.length, 0),
         0,
       ),
     )
 
-    expect(counted).toEqual([10, 8, 6])
+    // 보약 버프 둘이 「버프」 에서 「이벤트·BM」 으로 옮겨갔다([[ADR-166]] 정정 4).
+    expect(counted).toEqual([10, 10, 4])
     expect(counted.reduce((sum, count) => sum + count, 0)).toBe(24)
   })
 
@@ -66,15 +67,37 @@ describe('spendGroupsOf — 갈래 → 묶음들', () => {
     expect(spendGroupsOf('기타')).toEqual([])
   })
 
-  // 「버프」가 통화 둘을 갖는 유일한 목록 갈래다(영약은 메소, 보약은 메포).
-  it('버프는 통화가 둘이다', () => {
-    const currencies = new Set(
+  /**
+   * **「버프」 는 이제 메소뿐**이다([[ADR-166]] 정정 4, 사용자 지정 2026-08-27) — 메포짜리 보약 둘이
+   * 「이벤트·BM」 으로 옮겨가고 영약 넷만 남았다.
+   *
+   * 통화가 둘인 목록 갈래는 이제 「이벤트·BM」 이다 — 그 갈래 안에서도 항목이 통화를 안다는
+   * 계약([[ADR-166]] 결정 1)이 그대로 서 있는지를 여기서 본다.
+   */
+  it('갈래 안에서 통화가 갈리는 자리가 있다 — 항목이 안다', () => {
+    const 버프 = new Set(
       spendGroupsOf('버프').flatMap((group) =>
         group.choices.flatMap((choice) => choice.items.map((item) => item.currency)),
       ),
     )
+    expect(버프).toEqual(new Set(['meso']))
 
-    expect(currencies).toEqual(new Set(['meso', 'point']))
+    const 이벤트 = new Set(
+      spendGroupsOf('이벤트·BM').flatMap((group) =>
+        group.choices.flatMap((choice) => choice.items.map((item) => item.currency)),
+      ),
+    )
+    expect(이벤트).toEqual(new Set(['point']))
+  })
+
+  // 사용자가 적어 준 묶음 차례 그대로다 — 앱이 다시 묶지도, 정렬하지도 않는다([[ADR-166]] 정정 1 ②).
+  it('이벤트·BM 의 묶음 넷이 지정한 차례로 선다', () => {
+    expect(spendGroupsOf('이벤트·BM').map((group) => group.group)).toEqual([
+      '메이플 포인트 샵',
+      '이벤트',
+      'VIP 사우나',
+      '기타',
+    ])
   })
 })
 

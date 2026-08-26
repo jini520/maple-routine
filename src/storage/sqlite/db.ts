@@ -103,7 +103,13 @@ const TABLE_DEFINITIONS = [
     category TEXT NOT NULL,       -- 아이템 판매 · 사냥 · 기타([[ADR-170]] 결정 1)
     item TEXT,                    -- 판 것 / 사냥터 / 자유
     -- 수입은 **메소뿐**이다([[ADR-170]] 결정 1) — 통화 칸 셋도 시세도 없다.
+    -- **수수료를 뗀 값**이다([[ADR-170]] 정정 9 ⑤) — 캘린더도 합계도 이 칸 하나를 더한다.
     meso_amount INTEGER NOT NULL,
+    -- 경매장 수수료(3·5 — [[ADR-168]] 의 FeePercent). NULL = 없음(직거래이거나 정정 9 이전 행).
+    sale_fee_percent INTEGER,
+    -- 뗀 몫. **판매 대금 = meso_amount + sale_fee_meso** 로 정확히 되짚는다 — 내림이 섞여 있어
+    -- 요율만으로는 역산이 안 된다([[ADR-170]] 정정 9 ⑤).
+    sale_fee_meso INTEGER,
     memo TEXT,
     recorded_at TEXT NOT NULL,
     PRIMARY KEY (id)
@@ -117,7 +123,7 @@ const TABLE_DEFINITIONS = [
     id TEXT NOT NULL,
     ocid TEXT,
     spent_on TEXT NOT NULL,       -- 'YYYY-MM-DD' KST([[ADR-166]] 결정 4)
-    -- 컨텐츠 · 상점·편의 · 버프 · 아이템 구매 · 기타([[ADR-166]] 정정 1 ②)
+    -- 컨텐츠 · 이벤트·BM · 버프 · 아이템 구매 · 기타([[ADR-166]] 정정 1 ② · 정정 4)
     category TEXT NOT NULL,
     item TEXT,
     -- 같은 값을 두 형태로 받는 항목이 있다 — 에픽던전 리워드는 «경험치» 와 «솔 에르다» 중 하나다
@@ -153,6 +159,27 @@ const TABLE_DEFINITIONS = [
 export const BOSS_PROFIT_TABLE_NAMES: readonly string[] = TABLE_DEFINITIONS.map(
   (table) => table.name,
 )
+
+/**
+ * 갈래 「상점·편의」 가 **「이벤트·BM」 으로 이름을 바꿨다**(사용자 지정 2026-08-27, [[ADR-166]]
+ * 정정 4). `category` 는 이름 그 자체가 값이라, 안 옮기면 기존 기록이 **어느 갈래에도 없는 고아**가
+ * 된다 — 갈래 칩에도 안 걸리고 `spendGroupsOf` 도 빈손이라 목록 갈래가 직접 입력처럼 보인다.
+ *
+ * 이미 옮겨진 뒤에는 `WHERE` 에 걸리는 행이 없어 **매번 실행해도 안전한 no-op** 이다(아래 메이린
+ * 마이그레이션과 같은 성질).
+ */
+const MIGRATE_SHOP_CATEGORY_RENAME = `
+  UPDATE spend_records SET category = '이벤트·BM' WHERE category = '상점·편의'
+`
+
+/**
+ * 보약 버프 둘이 **「버프」 에서 「이벤트·BM」 으로 옮겨갔다**(같은 지정). 갈래가 안 따라가면
+ * `findSpendChoice(category, item)` 이 그 항목을 못 찾아 **수정 시트가 세부를 못 편다**.
+ */
+const MIGRATE_TONIC_BUFF_CATEGORY = `
+  UPDATE spend_records SET category = '이벤트·BM'
+   WHERE category = '버프' AND item IN ('보약 버프 추가 구매', '보약 버프 초기화')
+`
 
 // 메이린 카드 표시명을 API content_name('시즌 보스 메이린')과 통일하며 boss 식별 키를
 // 바꿨다(2026-07-22, weekly-bosses.json 참고) — 기존에 저장된 파티 설정·수익 기록이 새 키를
@@ -216,6 +243,12 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   // 그 사이에 앱을 켠 기기는 `form` 없는 테이블을 들고 있고, INSERT 는 모든 칸을 적으므로
   // **지출이 하나도 안 적힌다**(실기 재현 2026-08-25). 위 둘과 같은 사정이다.
   await ensureColumn(db, 'spend_records', 'form', 'TEXT')
+  // [[ADR-170]] 정정 9 — `income_records` 는 수수료 칸 없이 만들어졌다. `form` 이 겪은 그 사정이다:
+  // INSERT 는 모든 칸을 적으므로 칸이 없으면 **수입이 하나도 안 적힌다.**
+  await ensureColumn(db, 'income_records', 'sale_fee_percent', 'INTEGER')
+  await ensureColumn(db, 'income_records', 'sale_fee_meso', 'INTEGER')
+  await db.execute(MIGRATE_SHOP_CATEGORY_RENAME)
+  await db.execute(MIGRATE_TONIC_BUFF_CATEGORY)
   await db.execute(MIGRATE_MEIRIN_BOSS_KEY_PARTY_SETTINGS)
   await db.execute(MIGRATE_MEIRIN_BOSS_KEY_PROFIT_RECORDS)
 

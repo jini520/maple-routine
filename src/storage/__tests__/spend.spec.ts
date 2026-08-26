@@ -181,7 +181,7 @@ describe('SPEND_CATEGORIES', () => {
   it('[[ADR-166]] 정정 1 ② 의 다섯이다', () => {
     const { SPEND_CATEGORIES } = require('../spend') as typeof import('../spend')
 
-    expect(SPEND_CATEGORIES).toEqual(['컨텐츠', '상점·편의', '버프', '아이템 구매', '기타'])
+    expect(SPEND_CATEGORIES).toEqual(['컨텐츠', '이벤트·BM', '버프', '아이템 구매', '기타'])
   })
 
   // 갈래 이름이 **두 곳**에 산다 — 목록을 갖는 셋은 카탈로그에도 있다. 어긋나면 고른 항목의

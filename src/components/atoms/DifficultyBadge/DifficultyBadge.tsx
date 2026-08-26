@@ -77,12 +77,30 @@ const SIZE = {
   small: { box: 'h-4 px-1.5', text: 'text-[9px]' },
 } as const
 
+/**
+ * **한 칸짜리 표기**([[ADR-172]] 정정 2) — 글자를 놓을 자리가 없는 데서 쓴다(가계부의 처치 타일이
+ * 첫 호출부다: 56px 그림 위에 「익스트림」 넉 자가 앉으면 초상을 거의 다 덮는다).
+ *
+ * **크기 표와 달리 색은 이 축에서도 안 갈린다** — 바뀌는 것은 글자뿐이다. 색이 이미 난이도를
+ * 말하고 있어 한 칸은 그것을 **확인**만 하면 된다.
+ */
+const DIFFICULTY_SHORT: Record<BossDifficulty, string> = {
+  이지: 'E',
+  노멀: 'N',
+  하드: 'H',
+  카오스: 'C',
+  익스트림: 'EX',
+}
+
 export function DifficultyBadge(props: {
   difficulty: BossDifficulty
   size?: keyof typeof SIZE
+  /** 글자를 한 칸으로 줄인다(`EX`·`H`·`N`·`C`·`E`). **색·테두리·그림자는 그대로다.** */
+  short?: boolean
 }): React.JSX.Element {
   const style = DIFFICULTY_BADGE_STYLES[props.difficulty]
   const size = SIZE[props.size ?? 'default']
+  const label = props.short === true ? DIFFICULTY_SHORT[props.difficulty] : props.difficulty
 
   return (
     <LinearGradient
@@ -95,7 +113,7 @@ export function DifficultyBadge(props: {
       {/* 상자가 `h-5`/`h-4` 로 **고정**이라 글자만 커지면 잘린다 — 시스템 글자 크기를 안 따르는
           자리다([[ADR-152]] 결정 5). 배지의 크기 둘은 [[ADR-147]] 정정 40 이 정한 값이다. */}
       <Text fixed className={`font-extrabold tracking-[.03em] ${size.text}`} style={style.text}>
-        {props.difficulty}
+        {label}
       </Text>
     </LinearGradient>
   )

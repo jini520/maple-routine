@@ -162,3 +162,39 @@ describe('치수 ([[ADR-170]] 결정 5 의 딸려 오는 결함)', () => {
     expect(FAB_CONTENT_GAP_PX).toBeGreaterThan(0)
   })
 })
+
+/**
+ * **접힌 다이얼은 뒤를 안 막는다**(사용자 보고 2026-08-27).
+ *
+ * 줄 둘은 접혀 있어도 **마운트된 채** `opacity: 0` 일 뿐이라, RN 에서는 그 자리가 그대로 터치를
+ * 먹는다 — `disabled` 도 `onPress` 만 막고 히트테스트는 안 막는다. 그래서 떠 있는 ＋ 위쪽
+ * 130px 남짓이 통째로 «눌리지 않는 구역» 이 됐다(그 뒤의 목록 줄이 안 눌렸다).
+ *
+ * 스크림은 이미 같은 처방을 쓰고 있었다(`pointerEvents={isOpen ? 'auto' : 'none'}`) — 줄에만
+ * 빠져 있었다.
+ */
+describe('접혀 있을 때 뒤를 안 막는다', () => {
+  it('줄 둘이 터치를 안 받는다', async () => {
+    const view = await 그리기()
+
+    for (const row of view.getAllByTestId(/^speed-dial-row-/)) {
+      expect(row.props.pointerEvents).toBe('none')
+    }
+  })
+
+  it('펼치면 다시 받는다', async () => {
+    const view = await 그리기()
+    await 누르기(view, '기록 추가')
+
+    for (const row of view.getAllByTestId(/^speed-dial-row-/)) {
+      expect(row.props.pointerEvents).toBe('auto')
+    }
+  })
+
+  // 줄 사이의 빈 자리와 오른쪽 여백도 상자다 — 상자가 터치를 먹으면 같은 결함이 남는다.
+  it('줄을 담은 상자는 자기 자리를 안 먹는다 — box-none', async () => {
+    const view = await 그리기()
+
+    expect(view.getByTestId('speed-dial-actions').props.pointerEvents).toBe('box-none')
+  })
+})

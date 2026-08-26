@@ -1,7 +1,7 @@
 // 가계부 캘린더 — [[ADR-169]]. **아직 기록이 없다**(결정 6), 그래서 여기서 보는 것은 격자·달 이동·
 // 날짜 선택 셋이다. 그 셋은 데이터 없이도 진짜로 동작해야 한다(앞선 껍데기 둘과 갈리는 지점).
 import type { ReactNode } from 'react'
-import { act, fireEvent } from '@testing-library/react-native'
+import { act, fireEvent, within } from '@testing-library/react-native'
 
 // 화면은 `storage/` 를 직접 안 부른다(CLAUDE.md CRITICAL) — 그 층을 목으로 갈아 끼운다.
 jest.mock('../../../features/cashbook/records', () => {
@@ -13,12 +13,15 @@ jest.mock('../../../features/cashbook/records', () => {
     recordMesoOf: actual.recordMesoOf,
     recordCashOf: actual.recordCashOf,
     recordCountLabelOf: actual.recordCountLabelOf,
+    dayTotalsOf: actual.dayTotalsOf,
     isManualRecord: actual.isManualRecord,
     rowKeyOf: actual.rowKeyOf,
     resolveTrackedDefeatDates: jest.fn(),
     loadCalendarAmounts: jest.fn(),
     loadDayRecords: jest.fn(),
     loadLastPointRate: jest.fn(),
+    loadTrackedCharacters: jest.fn(),
+    refreshCashbook: jest.fn(),
     recordIncome: jest.fn(),
     recordSpend: jest.fn(),
     editIncome: jest.fn(),
@@ -46,6 +49,13 @@ jest.mock('@gorhom/bottom-sheet', () => {
     }),
     BottomSheetScrollView: (props: Record<string, unknown>) =>
       React.createElement(ReactNative.View, props),
+    // 시트 밖과 같게 둔다 — 아톰이 이 값으로 «시트 안인가» 를 묻는다([[ADR-170]] 정정 5).
+    // 목이 시트를 평범한 `View` 로 바꾸므로 여기서도 문맥이 없는 것이 사실이고, 그래서
+    // 아래 입력은 안 그려진다 — 그래도 **있어야 한다**: `lib/nativewind-interop` 이 모듈을
+    // 읽는 순간 이것을 등록하므로, 없으면 스위트가 뜨기도 전에 죽는다.
+    useBottomSheetInternal: () => null,
+    BottomSheetTextInput: (props: Record<string, unknown>) =>
+      React.createElement(ReactNative.TextInput, props),
     BottomSheetModalProvider: (props: { children: ReactNode }) => props.children,
   }
 })
@@ -53,7 +63,8 @@ jest.mock('@gorhom/bottom-sheet', () => {
 import { useToastStore } from '../../../features/toast/store'
 import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
 import { SPEED_DIAL_SPACE_PX } from '../../../components/organisms/SpeedDial/speed-dial-metrics'
-import { CashbookScreen } from '../CashbookScreen'
+import { clearCountUpMemory } from '../../../lib/use-count-up'
+import { BOSS_SLOT_MAX_PX, CashbookScreen } from '../CashbookScreen'
 
 const records = jest.requireMock('../../../features/cashbook/records') as Record<string, jest.Mock>
 
@@ -63,9 +74,13 @@ type Rendered = Awaited<ReturnType<typeof renderOverlay>>
 const 지금 = Date.parse('2026-08-23T05:00:00Z')
 
 beforeEach(() => {
+  // 시트의 큰 숫자는 카운트업을 타고, 그 기억은 **모듈 수준**이라 케이스 사이로 샌다.
+  clearCountUpMemory()
   jest.useFakeTimers({ now: 지금 })
   records.loadCalendarAmounts.mockReset().mockResolvedValue({})
   records.loadLastPointRate.mockReset().mockResolvedValue(null)
+  records.loadTrackedCharacters.mockReset().mockResolvedValue([])
+  records.refreshCashbook.mockReset().mockResolvedValue(undefined)
   records.recordIncome.mockReset().mockResolvedValue(undefined)
   records.recordSpend.mockReset().mockResolvedValue(undefined)
   records.loadDayRecords.mockReset().mockResolvedValue([])
@@ -104,6 +119,18 @@ async function 월간으로(view: Rendered): Promise<void> {
 async function 이름으로누르기(view: Rendered, label: string): Promise<void> {
   await act(async () => {
     fireEvent.press(view.getByLabelText(label))
+  })
+}
+
+/**
+ * 수입 시트의 치는 칸에 **친다** — OS 숫자 키보드다([[ADR-170]] 정정 4).
+ *
+ * 시트는 아이템 판매로 열리고, 그 갈래의 치는 자리는 **판매 대금 칸**이다(정정 9 ④) — 큰 숫자는
+ * 수수료를 뗀 합계라 못 친다.
+ */
+async function 금액치기(view: Rendered, text: string): Promise<void> {
+  await act(async () => {
+    fireEvent.changeText(view.getByTestId('income-sheet-gross'), text)
   })
 }
 
@@ -427,10 +454,10 @@ describe('칸에 숫자가 든다', () => {
     expect(view.getByTestId('calendar-expense-2026-08-23')).toHaveTextContent('−25.42억')
   })
 
+  // **상세는 그날 읽기에서 나온다**([[ADR-169]] 정정 5) — 칸 금액 표가 아니다. 그래서 그 표를
+  // 아무리 채워도 그날 기록이 없으면 빈 상태이고, 반대도 같다.
   it('고른 날에 기록이 있으면 합계가 서고 빈 상태가 사라진다', async () => {
-    records.loadCalendarAmounts.mockResolvedValue({
-      '2026-08-23': { incomeMeso: 1_743_000_000, expenseMeso: 2_542_372_881 },
-    })
+    records.loadDayRecords.mockResolvedValue([{ kind: 'income', record: 그날수입, characterName: '' }])
 
     const view = await 그리기()
 
@@ -443,6 +470,39 @@ describe('칸에 숫자가 든다', () => {
 
     expect(view.getByTestId('cashbook-empty')).toBeTruthy()
     expect(view.queryByTestId('cashbook-day-total')).toBeNull()
+  })
+
+  /**
+   * 기간을 옮겨도 **고른 날은 안 바뀐다**([[ADR-169]] 이후의 계약). 그런데 상세가 «격자가 덮는
+   * 범위로 읽어 온 칸 금액 표» 를 보고 서 있으면, 그 날이 범위 밖으로 나가는 순간 상세가 통째로
+   * 사라졌다 — 머리글은 「8월 25일」인데 아래는 「기록이 없어요」(사용자 보고 2026-08-26).
+   *
+   * 목은 **범위를 실제로 지킨다** — 그러지 않으면(어느 범위로 불러도 같은 표를 돌려주면) 이
+   * 회귀가 목 안에서 사라져 테스트가 통과해 버린다.
+   */
+  it('기간을 옮겨도 고른 날의 상세가 남는다', async () => {
+    records.loadCalendarAmounts.mockImplementation(async (from: string, to: string) =>
+      from <= '2026-08-25' && '2026-08-25' <= to
+        ? { '2026-08-25': { incomeMeso: 1_200_000_000, expenseMeso: 0 } }
+        : {},
+    )
+    records.loadDayRecords.mockResolvedValue([
+      { kind: 'income', record: { ...그날수입, earnedOn: '2026-08-25' }, characterName: '' },
+    ])
+
+    const view = await 그리기()
+    await 월간으로(view)
+    await 누르기(view, 'calendar-day-2026-08-25')
+    await act(async () => {})
+    expect(view.getByTestId('cashbook-day-total')).toBeTruthy()
+
+    await 이름으로누르기(view, '이전 달')
+    await act(async () => {})
+
+    expect(view.getByTestId('cashbook-selected-day')).toHaveTextContent('8월 25일 (화)')
+    expect(view.getByTestId('cashbook-day-total')).toBeTruthy()
+    expect(view.queryByTestId('cashbook-empty')).toBeNull()
+    expect(view.getByText('앱솔랩스 케이프')).toBeTruthy()
   })
 })
 
@@ -495,7 +555,7 @@ describe('펼침판이 시트를 연다', () => {
     const view = await 그리기()
     await 고르기(view, '수입 추가')
 
-    await 이름으로누르기(view, '1')
+    await 금액치기(view, '1')
     await 이름으로누르기(view, '저장')
     await act(async () => {})
 
@@ -512,7 +572,7 @@ describe('펼침판이 시트를 연다', () => {
     const view = await 그리기()
     await 고르기(view, '수입 추가')
 
-    await 이름으로누르기(view, '1')
+    await 금액치기(view, '1')
     await 이름으로누르기(view, '저장')
     await act(async () => {})
 
@@ -538,7 +598,7 @@ describe('저장이 실패하면', () => {
     const view = await 그리기()
     await 고르기(view, '수입 추가')
 
-    await 이름으로누르기(view, '1')
+    await 금액치기(view, '1')
     await 이름으로누르기(view, '저장')
     await act(async () => {})
 
@@ -557,7 +617,7 @@ describe('저장이 실패하면', () => {
     await 이름으로누르기(view, '저장')
     await act(async () => {})
 
-    expect(view.getByTestId('spend-sheet-total')).toBeTruthy()
+    expect(view.getByTestId('spend-sheet-amount')).toBeTruthy()
     expect(useToastStore.getState().toasts[0]?.message).toBe('지출을 적지 못했습니다')
   })
 
@@ -612,8 +672,8 @@ describe('그날 목록', () => {
       '2026-08-23': { incomeMeso: 1_200_000_000, expenseMeso: 101_694_915 },
     })
     records.loadDayRecords.mockResolvedValue([
-      { kind: 'income', record: 그날수입 },
-      { kind: 'spend', record: 그날지출 },
+      { kind: 'income', record: 그날수입, characterName: '' },
+      { kind: 'spend', record: 그날지출, characterName: '' },
     ])
   })
 
@@ -627,6 +687,19 @@ describe('그날 목록', () => {
 
   // 수량은 «몇 번» 이라 이름만으로는 금액이 왜 그런지 모른다. `×` 를 붙여야 «2번» 이지
   // «2번째» 가 아니라는 것이 읽힌다.
+  /**
+   * **캐릭터가 붙은 줄은 이름을 앞에 적는다**([[ADR-173]] 결정 16, 사용자 지정 2026-08-27) —
+   * 보스 줄이 이미 쓰던 어법이라 한 목록 안에서 어법이 하나로 유지된다.
+   */
+  it('캐릭터가 붙어 있으면 이름이 앞에 선다', async () => {
+    records.loadDayRecords.mockResolvedValue([
+      { kind: 'spend', record: 그날지출, characterName: '루디' },
+    ])
+    const view = await 그리기()
+
+    expect(view.getByTestId('cashbook-row-spd-1')).toHaveTextContent('루디 · 몬스터 파크×2−1.017억')
+  })
+
   it('수량이 있으면 함께 적는다', async () => {
     const view = await 그리기()
 
@@ -659,8 +732,8 @@ describe('줄을 누르면 고칠 수 있다', () => {
       '2026-08-23': { incomeMeso: 1_200_000_000, expenseMeso: 101_694_915 },
     })
     records.loadDayRecords.mockResolvedValue([
-      { kind: 'income', record: 그날수입 },
-      { kind: 'spend', record: 그날지출 },
+      { kind: 'income', record: 그날수입, characterName: '' },
+      { kind: 'spend', record: 그날지출, characterName: '' },
     ])
   })
 
@@ -669,21 +742,21 @@ describe('줄을 누르면 고칠 수 있다', () => {
 
     await 누르기(view, 'cashbook-row-spd-1')
 
-    // **곧바로 ②로 열린다** — 고르던 자리가 이미 정해져 있으므로 머리는 「‹ 고른 것」 이다
-    // ([[ADR-171]] 결정 2). 「지출 수정」 은 ①로 되돌아갔을 때 선다.
-    expect(view.getByTestId('spend-sheet-choice')).toHaveTextContent('몬스터 파크')
+    // **곧바로 세부로 열린다** — 고른 것이 이미 정해져 있다([[ADR-171]] 결정 2). 그리고 그것을
+    // **못 바꾼다**([[ADR-173]] 결정 15): 항목이 글자로 서고 되돌아가기가 없다.
+    expect(view.getByTestId('spend-sheet-title')).toHaveTextContent('몬스터 파크')
     // 그 행이 쓴 시세가 채워진다 — 「마지막으로 쓴 값」 이 아니다.
     expect(view.getByTestId('spend-sheet-rate').props.value).toBe('1180')
     expect(view.getByTestId('spend-sheet-delete')).toBeTruthy()
   })
 
-  it('①로 되돌아가면 머리가 「지출 수정」 이다', async () => {
+  it('되돌아갈 곳이 없다 — 고른 것을 못 바꾼다', async () => {
     const view = await 그리기()
+
     await 누르기(view, 'cashbook-row-spd-1')
 
-    await 이름으로누르기(view, '다시 고르기')
-
-    expect(view.getByText('지출 수정')).toBeTruthy()
+    expect(view.queryByLabelText('다시 고르기')).toBeNull()
+    expect(view.queryByLabelText('컨텐츠')).toBeNull()
   })
 
   it('수입 줄은 채워진 수입 시트를 연다', async () => {
@@ -691,8 +764,8 @@ describe('줄을 누르면 고칠 수 있다', () => {
 
     await 누르기(view, 'cashbook-row-inc-1')
 
-    expect(view.getByText('수입 수정')).toBeTruthy()
-    expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('1,200,000,000')
+    expect(view.getByTestId('income-sheet-title')).toHaveTextContent('아이템 판매')
+    expect(view.getByTestId('income-sheet-gross').props.value).toBe('1,200,000,000')
   })
 
   it('수정하면 갈아 끼우고 다시 읽는다', async () => {
@@ -718,7 +791,7 @@ describe('줄을 누르면 고칠 수 있다', () => {
     await 이름으로누르기(view, '삭제')
     await act(async () => {})
 
-    expect(records.removeRecord).toHaveBeenCalledWith({ kind: 'spend', record: 그날지출 })
+    expect(records.removeRecord).toHaveBeenCalledWith({ kind: 'spend', record: 그날지출, characterName: '' })
     expect(view.queryByText('지출 수정')).toBeNull()
   })
 
@@ -746,17 +819,32 @@ describe('떠 있는 ＋ 가 먹는 자리', () => {
   })
 })
 
-// 보스 수익이 흘러든 줄([[ADR-172]] 결정 7·8). **여기서 못 고친다** — 눌러도 시트가 아니라
-// 보스 수익 탭이 열린다. 그것이 [[ADR-171]] 결정 5 의 발효다.
+// 보스 수익이 흘러든 줄([[ADR-172]] 결정 7·8). **여기서 못 고친다** — 눌러도 시트가 안 열린다.
+// 그것이 [[ADR-171]] 결정 5 의 발효다. 가는 곳은 줄마다 다르다(정정 1) — 결정석은 **그 자리에서
+// 펼쳐지고**, 판매는 보스 수익 탭으로 간다.
 describe('자동으로 흘러든 줄 ([[ADR-172]])', () => {
   const 결정석줄 = {
     kind: 'bossCrystal' as const,
     ocid: 'ocid-1',
     characterName: '루디',
     payoutMeso: 3_600_000_000,
-    count: 12,
-    unpricedCount: 0,
+    count: 2,
+    bosses: [
+      { boss: '스우', difficulty: '하드' },
+      { boss: '데미안', difficulty: '노멀' },
+    ],
   }
+  // 여섯을 넘겨야 «끊기는가» 를 볼 수 있다 — 두 마리로는 한 줄에 다 들어가 아무것도 안 드러난다.
+  const 보스여덟 = [
+    { boss: '검은 마법사', difficulty: '하드' },
+    { boss: '스우', difficulty: '하드' },
+    { boss: '데미안', difficulty: '노멀' },
+    { boss: '루시드', difficulty: '하드' },
+    { boss: '윌', difficulty: '하드' },
+    { boss: '더스크', difficulty: '카오스' },
+    { boss: '진 힐라', difficulty: '하드' },
+    { boss: '듄켈', difficulty: '하드' },
+  ]
   const 판매줄 = {
     kind: 'dropSale' as const,
     ocid: 'ocid-1',
@@ -778,29 +866,163 @@ describe('자동으로 흘러든 줄 ([[ADR-172]])', () => {
 
     // `toHaveTextContent` 는 이 판에서 **완전 일치**다 — 줄 전체를 적는다.
     expect(view.getByTestId('cashbook-row-bossCrystal:ocid-1')).toHaveTextContent(
-      '루디 · 보스 결정석12마리+36억',
+      '루디 · 보스 결정석2마리+36억',
     )
     expect(view.getByTestId('cashbook-row-dropSale:ocid-1')).toHaveTextContent(
       '루디 · 아이템 판매3건 · 미입력 2+40억',
     )
   })
 
-  it('누르면 시트가 아니라 보스 수익 탭이 열린다 (결정 8)', async () => {
+  it('누르면 시트가 안 열린다 — 여기서 못 고친다 (결정 8)', async () => {
     const view = await 그리기()
 
-    await 이름으로누르기(view, '루디 · 보스 결정석 보스 수익에서 보기')
+    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
 
-    expect(mockOpenTab).toHaveBeenCalledWith('Profit')
     expect(view.queryByTestId('spend-sheet-date')).toBeNull()
     expect(view.queryByTestId('income-sheet-date')).toBeNull()
   })
 
-  it('판매 줄도 같은 곳으로 간다', async () => {
+  it('판매 줄은 보스 수익 탭으로 간다 — 「미입력」 이 저쪽 할 일을 가리킨다', async () => {
     const view = await 그리기()
 
     await 이름으로누르기(view, '루디 · 아이템 판매 보스 수익에서 보기')
 
     expect(mockOpenTab).toHaveBeenCalledWith('Profit')
+  })
+
+  // ── 정정 1: 결정석 줄은 **그 자리에서 펼친다** ────────────────────────────────
+  it('결정석 줄을 누르면 탭을 안 옮기고 그날 잡은 보스를 편다', async () => {
+    const view = await 그리기()
+
+    expect(view.queryByTestId('cashbook-row-bosses-bossCrystal:ocid-1')).toBeNull()
+
+    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
+
+    expect(mockOpenTab).not.toHaveBeenCalled()
+    expect(view.getByTestId('cashbook-boss-tile-스우|하드')).toBeTruthy()
+    expect(view.getByTestId('cashbook-boss-tile-데미안|노멀')).toBeTruthy()
+  })
+
+  // 사용자가 지정한 것이 «초상화» 다 — 이름만 뜨면 그 지정을 안 지킨 것이다.
+  it('타일마다 초상이 든다', async () => {
+    const view = await 그리기()
+    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
+
+    expect(view.getAllByTestId('boss-portrait')).toHaveLength(2)
+  })
+
+  // 정정 2 — 56px 타일 위에 「익스트림」 넉 자가 앉으면 초상을 거의 다 덮는다.
+  it('난이도는 타일 안에 한 칸으로 든다', async () => {
+    const view = await 그리기()
+    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
+
+    expect(view.getByText('H')).toBeTruthy()
+    expect(view.getByText('N')).toBeTruthy()
+    expect(view.queryByText('하드')).toBeNull()
+    expect(view.queryByText('노멀')).toBeNull()
+  })
+
+  it('타일은 네모다', async () => {
+    const view = await 그리기()
+    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
+
+    const [초상] = view.getAllByTestId('boss-portrait')
+    expect(flattenStyle(초상.props.style).borderRadius).toBe(8)
+  })
+
+  // ── 정정 3: 한 줄에 여섯 · 이름 없음 ─────────────────────────────────────────
+  //
+  // **폭으로 재지 않는다.** 고정 px 면 기기마다 다섯도 일곱도 되고, 퍼센트(`w-1/6` = `16.67%`)면
+  // 여섯이 100.02% 라 하나가 다음 줄로 밀린다(실측 — 처음에 그렇게 냈다가 다섯만 섰다).
+  // 그래서 «여섯» 이 레이아웃의 결과가 아니라 **구조**여야 하고, 그 구조를 여기서 본다.
+  it('여덟 마리는 여섯 + 둘로 끊긴다', async () => {
+    records.loadDayRecords.mockResolvedValue([{ ...결정석줄, count: 8, bosses: 보스여덟 }])
+    const view = await 그리기()
+    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
+
+    const 줄들 = view.getAllByTestId(/^cashbook-boss-row-/)
+    expect(줄들).toHaveLength(2)
+    expect(within(줄들[0]).getAllByTestId(/^cashbook-boss-tile-/)).toHaveLength(6)
+    expect(within(줄들[1]).getAllByTestId(/^cashbook-boss-tile-/)).toHaveLength(2)
+  })
+
+  // 안 채우면 둘이 반반씩 벌어져 앞줄과 격자가 안 맞는다.
+  it('덜 찬 마지막 줄은 빈 칸으로 채운다', async () => {
+    records.loadDayRecords.mockResolvedValue([{ ...결정석줄, count: 8, bosses: 보스여덟 }])
+    const view = await 그리기()
+    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
+
+    const 마지막줄 = view.getAllByTestId(/^cashbook-boss-row-/)[1]
+    expect(within(마지막줄).getAllByTestId(/^cashbook-boss-slot-/)).toHaveLength(6)
+  })
+
+  // 칸은 `flex-1` 여섯이라 남는 픽셀까지 Yoga 가 나눠 준다 — 반올림으로 넘칠 자리가 없다.
+  // **상한이 붙는다**(정정 4) — 안 붙이면 넓은 기기에서 칸이 넓어진 만큼 타일 사이가 벌어진다.
+  it('칸은 폭을 안 들되 상한이 있다 — 줄을 여섯이 나누고 그 이상은 안 벌어진다', async () => {
+    const view = await 그리기()
+    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
+
+    const 칸 = flattenStyle(view.getByTestId('cashbook-boss-slot-스우|하드').props.style)
+    expect(칸.width).toBeUndefined()
+    expect(칸.flexGrow).toBe(1)
+    expect(칸.maxWidth).toBe(BOSS_SLOT_MAX_PX)
+
+    // 상한에 걸려 줄이 덜 차면 **가운데로** 모인다 — 왼쪽으로 붙으면 오른쪽만 비어 기운다.
+    const 줄 = flattenStyle(view.getAllByTestId(/^cashbook-boss-row-/)[0].props.style)
+    expect(줄.justifyContent).toBe('center')
+  })
+
+  it('보스 이름을 안 적는다 — 초상이 대신한다', async () => {
+    const view = await 그리기()
+    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
+
+    expect(view.queryByText('스우')).toBeNull()
+    expect(view.queryByText('데미안')).toBeNull()
+  })
+
+  // 눈으로 읽던 것이 사라졌으므로 그 자리를 접근성 이름이 받아야 한다.
+  it('읽어 주는 이름은 「난이도 + 보스」다', async () => {
+    const view = await 그리기()
+    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
+
+    expect(view.getByLabelText('하드 스우')).toBeTruthy()
+    expect(view.getByLabelText('노멀 데미안')).toBeTruthy()
+  })
+
+  // 펼친 판은 줄과 **한 카드**여야 한다 — 따로 선 상자로 보이면 «이 줄이 편 것» 이 끊긴다.
+  // NativeWind 가 이 클래스를 못 만들면 조용히 테두리가 남으므로 값으로 본다.
+  it('펼치면 줄과 판 사이의 선이 사라진다', async () => {
+    const view = await 그리기()
+    const 줄 = view.getByTestId('cashbook-row-bossCrystal:ocid-1')
+
+    // 접혀 있으면 네 귀가 둥근 카드 하나다.
+    expect(flattenStyle(줄.props.style)).toMatchObject({ borderRadius: 12, borderWidth: 1 })
+
+    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
+
+    // 펼치면 아래쪽 선이 0 이 되고 아래 두 귀가 각진다 — 판이 그 자리를 잇는다.
+    const 펼친줄 = flattenStyle(줄.props.style)
+    expect(펼친줄).toMatchObject({ borderTopLeftRadius: 12, borderBottomWidth: 0 })
+    expect(펼친줄.borderRadius).toBeUndefined()
+  })
+
+  it('다시 누르면 접힌다', async () => {
+    const view = await 그리기()
+    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
+    await 이름으로누르기(view, '루디 · 보스 결정석 접기')
+
+    expect(view.queryByTestId('cashbook-row-bosses-bossCrystal:ocid-1')).toBeNull()
+  })
+
+  // 줄의 신원이 `bossCrystal:{ocid}` 라 날짜를 안 든다(결정 7) — 안 접으면 다른 날의 줄이
+  // 펼쳐진 채로 남는다.
+  it('날을 바꾸면 접힌다', async () => {
+    const view = await 그리기()
+    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
+
+    await 누르기(view, 'calendar-day-2026-08-25')
+
+    expect(view.queryByTestId('cashbook-row-bosses-bossCrystal:ocid-1')).toBeNull()
   })
 
   it('들어올 때 처치 날짜를 캐고, 캔 것이 있으면 다시 읽는다 (결정 9)', async () => {
@@ -819,5 +1041,35 @@ describe('자동으로 흘러든 줄 ([[ADR-172]])', () => {
 
     expect(records.loadDayRecords).toHaveBeenCalledTimes(1)
     expect(view.getByTestId('cashbook-row-dropSale:ocid-1')).toBeTruthy()
+  })
+})
+
+/**
+ * **당겨서 새로고침**([[ADR-170]] 정정 8, 사용자 지적 2026-08-27).
+ *
+ * 다른 네 화면이 이미 하는 그것이 여기만 빠져 있었다 — 당겨도 아무 일이 없었다.
+ * 순서(동기화 → 날짜 캐기)는 `refreshCashbook` 이 들고, 화면은 그것이 끝난 뒤 **다시 읽는다.**
+ */
+describe('당겨서 새로고침 ([[ADR-170]] 정정 8)', () => {
+  function 당김(view: Rendered): { refreshing: boolean; onRefresh: () => void } {
+    return view.getByTestId('screen-scroll').props.refreshControl.props
+  }
+
+  it('컨트롤이 붙어 있다', async () => {
+    const view = await 그리기()
+
+    expect(당김(view).refreshing).toBe(false)
+  })
+
+  it('당기면 새로고침하고 다시 읽는다', async () => {
+    const view = await 그리기()
+    const 읽은횟수 = records.loadCalendarAmounts.mock.calls.length
+
+    await act(async () => {
+      당김(view).onRefresh()
+    })
+
+    expect(records.refreshCashbook).toHaveBeenCalledTimes(1)
+    expect(records.loadCalendarAmounts.mock.calls.length).toBeGreaterThan(읽은횟수)
   })
 })

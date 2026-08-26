@@ -36,8 +36,8 @@
 // `GestureHandlerRootView` 안에서만 돈다. 둘 다 앱 셸이 소유한다(화면 단계). `BottomSheet`(비-모달)
 // 대신 이것을 고른 이유는 인라인 시트가 **부모 상자 안**에서만 그려져 탭바를 못 덮기 때문이다 —
 // 웹의 `fixed inset-x-0 bottom-0 z-[60]` 이 하던 일을 프로바이더의 호스트가 대신한다.
-import { useCallback, useEffect, useRef, type ReactNode } from 'react'
-import { Pressable, View } from 'react-native'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { Keyboard, Platform, Pressable, View } from 'react-native'
 import Animated, { useAnimatedStyle, type SharedValue } from 'react-native-reanimated'
 import { useSafeAreaFrame, useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
@@ -126,6 +126,33 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
     ref.current?.present()
   }, [])
 
+  /**
+   * **키보드가 뜨면 아래 인셋을 안 남긴다**([[ADR-173]] 결정 4 정정 2).
+   *
+   * `insets.bottom` 은 «화면 맨 아래가 손가락에 닿는 자리라 비워 둔다» 는 값인데, 키보드가 그
+   * 자리를 이미 덮고 있으면 **아무것도 아닌 빈 띠**가 된다 — 실기에서 시트 끝과 키보드 사이가
+   * 50pt 벌어졌다(사용자 스크린샷 2026-08-26).
+   *
+   * 라이브러리의 키보드 상태를 못 읽는다 — 그 훅은 시트 **안**에서만 살고 이 컴포넌트는 그
+   * 바깥이다. RN 의 이벤트를 직접 듣는 편이 의존도 얕다. 이름은 라이브러리와 같은 갈림을 쓴다:
+   * iOS 는 `will`(애니메이션과 함께 움직여야 한다), 안드로이드는 `did`(`will` 이 없다).
+   */
+  const [keyboardShown, setKeyboardShown] = useState(false)
+  useEffect(() => {
+    const show = Keyboard.addListener(
+      Platform.select({ ios: 'keyboardWillShow', default: 'keyboardDidShow' }),
+      () => setKeyboardShown(true),
+    )
+    const hide = Keyboard.addListener(
+      Platform.select({ ios: 'keyboardWillHide', default: 'keyboardDidHide' }),
+      () => setKeyboardShown(false),
+    )
+    return () => {
+      show.remove()
+      hide.remove()
+    }
+  }, [])
+
   const renderBackdrop = useCallback(
     (backdropProps: BottomSheetBackdropProps) => (
       <SheetScrim
@@ -147,6 +174,29 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
       onDismiss={props.onClose}
       enablePanDownToClose
       enableDynamicSizing
+      /*
+       * **창 모드를 사실대로 알려 준다**([[ADR-170]] 정정 5).
+       *
+       * 라이브러리는 이 값을 **자기가 바꾸지 않는다** — 소스 어디에도 `softInputMode` 를 건드리는
+       * 곳이 없다. 이 프롭은 «앱이 지금 어느 모드인가» 를 **알려 주는** 것이고, 그 값으로 자기
+       * 보정량을 정한다. 기본값은 `adjustPan` 인데 **이 앱의 매니페스트는 `adjustResize`** 다.
+       *
+       * 그대로 두면 안드로이드에서 **두 번 밀린다** — OS 가 창을 줄여 이미 올라온 시트를,
+       * 라이브러리가 키보드 높이만큼 또 올린다. `adjustResize` 를 주면 라이브러리가 자기 보정을
+       * 0 으로 두고 OS 에 맡긴다.
+       */
+      android_keyboardInputMode="adjustResize"
+      /*
+       * **올라간 것은 내려와야 한다**([[ADR-170]] 정정 5).
+       *
+       * 기본값(`none`)이면 라이브러리가 키보드 **닫힘**에서 일찍 빠져나가 위치를 다시 안 잰다 —
+       * 소스에 그렇게 적혀 있다: `if (status === HIDDEN && keyboardBlurBehavior === none) return`.
+       * 그래서 시트가 올라간 자리에 그대로 남았다(실기 보고).
+       *
+       * `restore` 는 «키보드가 뜨기 전에 있던 스냅 포인트로 돌아간다» 이고, 그 분기가 함께
+       * `isInTemporaryPosition` 을 내려 **다음 계산이 다시 정상 경로**를 타게 한다.
+       */
+      keyboardBlurBehavior="restore"
       maxDynamicContentSize={frame.height * MAX_HEIGHT_RATIO}
       backdropComponent={renderBackdrop}
       // 웹의 `sr-only` 제목("드롭 아이템 기록")과 같은 자리 — 화면에는 안 보이고 스크린리더만 읽는다.
@@ -218,7 +268,9 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
         // 위쪽에 핸들 몫을 더한다 — 사유는 바로 위 주석.
         contentContainerStyle={{
           paddingTop: HANDLE_HEIGHT + 8,
-          paddingBottom: insets.bottom + 16,
+          // 키보드가 떠 있으면 **인셋만** 걷는다 — 숨돌림 16 은 남긴다(마지막 줄이 키보드에 닿아
+          // 있으면 누를 자리가 없다).
+          paddingBottom: (keyboardShown ? 0 : insets.bottom) + 16,
         }}
       >
         {props.children}

@@ -9,7 +9,8 @@
 // 라이브러리가 실제로 받는 프롭인지는 **타입 검사**가 지킨다(컴포넌트가 진짜 타입을 import 한다).
 // 라이브러리를 진짜로 세워 마운트되는지는 옆 파일(`BottomSheet.wiring.test.tsx`)이 본다.
 import type { ReactNode } from 'react'
-import { Text } from 'react-native'
+import { Keyboard, Text } from 'react-native'
+import { act } from '@testing-library/react-native'
 
 // `jest.mock` 팩토리는 호이스팅돼 스코프 밖 변수를 못 읽는다 — **`mock` 접두 이름만** 예외다.
 const mockPresent = jest.fn()
@@ -27,6 +28,13 @@ jest.mock('@gorhom/bottom-sheet', () => {
     }),
     BottomSheetScrollView: (props: Record<string, unknown>) =>
       React.createElement(ReactNative.View, props),
+    // 시트 밖과 같게 둔다 — 아톰이 이 값으로 «시트 안인가» 를 묻는다([[ADR-170]] 정정 5).
+    // 목이 시트를 평범한 `View` 로 바꾸므로 여기서도 문맥이 없는 것이 사실이고, 그래서
+    // 아래 입력은 안 그려진다 — 그래도 **있어야 한다**: `lib/nativewind-interop` 이 모듈을
+    // 읽는 순간 이것을 등록하므로, 없으면 스위트가 뜨기도 전에 죽는다.
+    useBottomSheetInternal: () => null,
+    BottomSheetTextInput: (props: Record<string, unknown>) =>
+      React.createElement(ReactNative.TextInput, props),
     BottomSheetModalProvider: (props: { children: ReactNode }) => props.children,
   }
 })
@@ -41,12 +49,36 @@ beforeEach(() => {
 })
 
 describe('BottomSheet — [[ADR-039]] 가 정한 값을 넘긴다', () => {
+  /**
+   * 키보드 이벤트는 네이티브에서 오므로 **등록된 손잡이를 직접 잡아 흔든다** — 등록 순서가
+   * 계약이다(뜨는 것 · 내리는 것).
+   */
+  const 키보드손잡이: Array<() => void> = []
+
+  beforeEach(() => {
+    키보드손잡이.length = 0
+    jest.spyOn(Keyboard, 'addListener').mockImplementation(((_event: string, handler: () => void) => {
+      키보드손잡이.push(handler)
+      return { remove: jest.fn() }
+    }) as never)
+  })
+
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+
   async function open(): Promise<ReturnType<typeof renderOverlay>> {
     return renderOverlay(
       <BottomSheet onClose={noop} testId="boss-drop-sheet">
         <Text>시트 내용</Text>
       </BottomSheet>,
     )
+  }
+
+  async function 키보드(뜬다: boolean): Promise<void> {
+    await act(async () => {
+      키보드손잡이[뜬다 ? 0 : 1]()
+    })
   }
 
   it('children 과 testId 를 그대로 전달한다 — 공개 API 는 웹과 같다', async () => {
@@ -89,6 +121,58 @@ describe('BottomSheet — [[ADR-039]] 가 정한 값을 넘긴다', () => {
     expect(sheet.props.enableDynamicSizing).toBe(true)
     // 테스트 프레임 높이 844 × 0.82
     expect(sheet.props.maxDynamicContentSize).toBeCloseTo(844 * 0.82)
+  })
+
+  /**
+   * 라이브러리는 창 모드를 **자기가 안 바꾼다** — 이 프롭은 «앱이 지금 어느 모드인가» 를 알려
+   * 주는 것이고, 그 값으로 자기 보정량을 정한다([[ADR-170]] 정정 5).
+   *
+   * 기본값 `adjustPan` 을 그대로 두면 안드로이드에서 **두 번 밀린다** — 매니페스트가
+   * `adjustResize` 라 OS 가 이미 창을 줄여 시트를 올려 놓은 위에, 라이브러리가 키보드 높이만큼
+   * 또 올린다.
+   */
+  it('안드로이드 창 모드를 매니페스트와 같게 알려 준다 — adjustResize', async () => {
+    const { getByTestId } = await open()
+
+    expect(getByTestId('sheet').props.android_keyboardInputMode).toBe('adjustResize')
+  })
+
+  /**
+   * **올라간 것은 내려와야 한다**([[ADR-170]] 정정 5). 기본값 `none` 이면 라이브러리가 키보드
+   * 닫힘에서 **일찍 빠져나가** 위치를 다시 안 잰다:
+   *
+   *     if (status === HIDDEN && keyboardBlurBehavior === none) return
+   *
+   * 그러면 시트가 올라간 자리에 그대로 남는다(실기 보고).
+   */
+  it('키보드가 닫히면 제자리로 돌아온다 — restore', async () => {
+    const { getByTestId } = await open()
+
+    expect(getByTestId('sheet').props.keyboardBlurBehavior).toBe('restore')
+  })
+
+  /**
+   * **키보드가 뜨면 아래 인셋을 안 남긴다**([[ADR-173]] 결정 4 정정 2).
+   *
+   * 홈 인디케이터 몫(`insets.bottom`)은 «화면 맨 아래가 손가락에 닿는 자리라 비워 둔다» 는 값인데,
+   * 키보드가 그 자리를 이미 덮고 있으면 **아무것도 아닌 빈 띠**가 된다 — 실기에서 빠른 칩과
+   * 키보드 사이가 50pt 벌어졌다(사용자 스크린샷 2026-08-26).
+   */
+  it('키보드가 뜨면 아래 인셋을 걷는다', async () => {
+    const { getByTestId } = await open()
+    const 여백 = (): number =>
+      (getByTestId('boss-drop-sheet').props.contentContainerStyle as { paddingBottom: number })
+        .paddingBottom
+
+    // 테스트 인셋의 아래는 34(iPhone 계열) — 거기에 숨돌림 16.
+    expect(여백()).toBe(34 + 16)
+
+    // 걷는 것은 **인셋뿐**이다 — 숨돌림 16 은 남는다(마지막 줄이 키보드에 닿으면 누를 자리가 없다).
+    await 키보드(true)
+    expect(여백()).toBe(16)
+
+    await 키보드(false)
+    expect(여백()).toBe(34 + 16)
   })
 
   it('폭은 max-w-md(448) 중앙 정렬이다 — 라이브러리 기본은 전폭이다', async () => {

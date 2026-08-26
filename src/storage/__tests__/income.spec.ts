@@ -29,6 +29,8 @@ const sample: IncomeRecord = {
   category: '아이템 판매',
   item: '앱솔랩스 케이프',
   mesoAmount: 1_200_000_000,
+  saleFeePercent: null,
+  saleFeeMeso: null,
   memo: null,
   recordedAt: '2026-08-23T05:00:00.000Z',
 }
@@ -52,6 +54,8 @@ describe('insertIncomeRecord', () => {
       '아이템 판매',
       '앱솔랩스 케이프',
       1_200_000_000,
+      null,
+      null,
       null,
       '2026-08-23T05:00:00.000Z',
     ])
@@ -115,6 +119,8 @@ describe('getIncomeRecordsBetween', () => {
         category: '사냥',
         item: '엘리시움',
         mesoAmount: 1_200_000_000,
+        saleFeePercent: null,
+        saleFeeMeso: null,
         memo: null,
         recordedAt: '2026-08-23T05:00:00.000Z',
       },
@@ -174,5 +180,84 @@ describe('deleteIncomeRecord', () => {
     expect(sql).toContain('DELETE FROM income_records')
     expect(sql).toContain('WHERE id = ?')
     expect(values).toEqual(['inc-1'])
+  })
+})
+
+/**
+ * **받는 돈과 뗀 몫이 둘 다 행에 남는다**([[ADR-170]] 정정 9 ⑤).
+ *
+ * `meso_amount` 는 수수료를 **뗀** 값이다 — 캘린더도 합계도 이 칸 하나를 더하므로 판매 대금을
+ * 넣으면 번 적 없는 돈이 수입으로 선다.
+ */
+describe('판매 수수료 칸 둘 ([[ADR-170]] 정정 9)', () => {
+  const 수수료낸판매: IncomeRecord = {
+    ...sample,
+    mesoAmount: 1_140_000_000,
+    saleFeePercent: 5,
+    saleFeeMeso: 60_000_000,
+  }
+
+  it('넣을 때 함께 박는다', async () => {
+    const { insertIncomeRecord } = require('../income') as typeof import('../income')
+
+    await insertIncomeRecord(수수료낸판매)
+
+    const [sql, values] = runMock.mock.calls[0]
+    expect(sql).toContain('sale_fee_percent')
+    expect(sql).toContain('sale_fee_meso')
+    expect(values).toContain(5)
+    expect(values).toContain(60_000_000)
+    // 집계가 보는 칸은 **받는 돈**이다 — 판매 대금(12억)이 아니다.
+    expect(values).toContain(1_140_000_000)
+  })
+
+  it('고칠 때도 함께 간다 — 요율을 바꾸면 행의 몫도 바뀐다', async () => {
+    const { updateIncomeRecord } = require('../income') as typeof import('../income')
+
+    await updateIncomeRecord(수수료낸판매)
+
+    const [sql, values] = runMock.mock.calls[0]
+    expect(sql).toContain('sale_fee_percent = ?')
+    expect(sql).toContain('sale_fee_meso = ?')
+    expect(values).toContain(60_000_000)
+  })
+
+  it('읽을 때 되살린다 — 없으면 null 이다', async () => {
+    const { getIncomeRecordsBetween } = require('../income') as typeof import('../income')
+    queryMock.mockResolvedValue({
+      values: [
+        {
+          id: 'inc-1',
+          ocid: null,
+          earned_on: '2026-08-23',
+          category: '아이템 판매',
+          item: '앱솔랩스 케이프',
+          meso_amount: 1_140_000_000,
+          sale_fee_percent: 5,
+          sale_fee_meso: 60_000_000,
+          memo: null,
+          recorded_at: '2026-08-23T05:00:00.000Z',
+        },
+        // 정정 9 **이전에 적힌 행** — 칸이 아예 없다. `undefined` 를 `null` 로 접어 화면이 한
+        // 형태만 다루게 한다(이 파일의 다른 칸들과 같은 처리).
+        {
+          id: 'inc-0',
+          ocid: null,
+          earned_on: '2026-08-22',
+          category: '아이템 판매',
+          item: null,
+          meso_amount: 500_000_000,
+          memo: null,
+          recorded_at: '2026-08-22T05:00:00.000Z',
+        },
+      ],
+    })
+
+    const [있는것, 옛것] = await getIncomeRecordsBetween('2026-08-01', '2026-08-31')
+
+    expect(있는것.saleFeePercent).toBe(5)
+    expect(있는것.saleFeeMeso).toBe(60_000_000)
+    expect(옛것.saleFeePercent).toBeNull()
+    expect(옛것.saleFeeMeso).toBeNull()
   })
 })

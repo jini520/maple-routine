@@ -12,6 +12,7 @@
  *    (손입력 둘 · 보스 결정석 · 아이템 판매) 뒤의 둘은 **여기서 못 고친다**([[ADR-172]] 결정 8).
  */
 import { withSqliteFallback } from '../boss-profit/sqlite-guards'
+import type { BossDifficulty } from '../../types'
 import type { CalendarAmounts, CalendarDayAmounts } from '../../lib/calendar-month'
 import { dropPayoutMeso } from '../../lib/drop-price'
 import { pointToMeso } from '../../lib/spend-catalog'
@@ -20,6 +21,7 @@ import { getDatedBossProfitRecords } from '../../storage/boss-profit'
 import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
 import { resolveDefeatDates } from '../boss-profit/defeat-dates'
+import { useBossProfitStore } from '../boss-profit/store'
 import {
   deleteIncomeRecord,
   getIncomeRecordsBetween,
@@ -100,6 +102,16 @@ interface BossDaySummary {
   ocid: string
   crystalMeso: number
   bossCount: number
+  /**
+   * 그날 잡은 보스 — 줄을 펼치면 뜨는 타일의 원재료다([[ADR-172]] 정정 1).
+   *
+   * **새로 읽는 것이 아니다.** `getDatedBossProfitRecords` 가 이미 보스·난이도를 돌려주고 있었고,
+   * 그것을 `crystalMeso` 로 접기만 하고 버리던 것을 들고 있게 한 것뿐이다.
+   *
+   * `payoutMeso` 는 **여기까지만** 산다 — 줄에 실릴 때 정렬에 쓰고 버린다. 마리당 금액은 파티원
+   * 수·정가와 함께 봐야 뜻이 생겨(그 자리가 보스 수익 탭이다) 타일이 적지 않는다.
+   */
+  bosses: { boss: string; difficulty: BossDifficulty; payoutMeso: number }[]
   dropMeso: number
   dropCount: number
   unpricedCount: number
@@ -155,6 +167,7 @@ async function loadBossDaySummaries(
       ocid,
       crystalMeso: 0,
       bossCount: 0,
+      bosses: [],
       dropMeso: 0,
       dropCount: 0,
       unpricedCount: 0,
@@ -169,6 +182,12 @@ async function loadBossDaySummaries(
     const bucket = bucketOf(record.defeatedOn, record.ocid)
     bucket.crystalMeso += record.payoutMeso
     bucket.bossCount += 1
+    bucket.bosses.push({
+      boss: record.boss,
+      // 이 컬럼이 드는 값은 다섯뿐이다 — `rows.ts`·`drop-price-store.ts` 가 같은 자리에서 같은 단언을 한다.
+      difficulty: record.difficulty as BossDifficulty,
+      payoutMeso: record.payoutMeso,
+    })
   }
 
   const periodKeys = [...new Set(records.map((record) => record.periodKey))]
@@ -247,6 +266,58 @@ export async function resolveTrackedDefeatDates(now: Date): Promise<number> {
   return resolveDefeatDates(ocids, now).catch(() => 0)
 }
 
+/**
+ * 시트가 고를 수 있는 **캐릭터 목록**([[ADR-166]] 결정 3 — 「캐릭터를 선택해서 입력하는 방법」).
+ *
+ * 추적 캐릭터만 든다 — 가계부가 보스 줄의 이름을 붙일 때 쓰는 그 경로 그대로다.
+ *
+ * **이름을 모르는 캐릭터는 안 든다.** `ocid` 는 사용자에게 아무 뜻도 없는 문자열이고([[ADR-172]]
+ * 결정 7 과 같은 이유), 「알 수 없음」 은 있지도 않은 캐릭터를 목록에 만든다. 캐시는 캐릭터를 한
+ * 번이라도 연 뒤에 찬다.
+ *
+ * **던지지 않는다** — 못 읽으면 목록이 비고, 그때 고르개는 「선택 안함」 하나만 남는다.
+ */
+export async function loadTrackedCharacters(): Promise<Array<{ ocid: string; name: string }>> {
+  const ocids = await getTrackedCharacterOcids().catch(() => null)
+  if (ocids === null || ocids.length === 0) {
+    return []
+  }
+  const named = await Promise.all(
+    ocids.map(async (ocid) => ({
+      ocid,
+      name: (await getCachedCharacterBasic(ocid).catch(() => null))?.profile.name ?? '',
+    })),
+  )
+  return named.filter((each) => each.name !== '')
+}
+
+/**
+ * 가계부의 **당겨서 새로고침**([[ADR-170]] 정정 8) — 셋을 차례로 한다.
+ *
+ * ① **동기화** — 새 처치를 가져온다. 이것이 없으면 오늘 잡은 보스는 기록 자체가 없어서 날짜를
+ *    캘 것도 없다(사용자 보고 2026-08-27: «오늘 수익데이터는 있는데 캘린더에 왜 안 찍혀»).
+ * ② **날짜 캐기** — 그 기록에 `defeated_on` 을 채운다([[ADR-172]] 결정 9).
+ * ③ 다시 읽기는 **화면의 몫**이다 — 이 함수가 끝나면 화면이 표를 올린다.
+ *
+ * **차례가 계약이다.** ②가 먼저면 그 순간 없는 기록을 캐려 들고, 새로 온 것은 다음 번까지 안 뜬다.
+ *
+ * 보스 수익 탭의 당김과 **같은 재조회**를 부른다([[ADR-072]] 결정 2 의 태도) — 두 하위 탭이 같은
+ * 원천을 보므로 «어느 탭에서 당겼나» 로 결과가 달라지면 안 된다.
+ *
+ * **던지지 않는다.** 실패를 말하는 것은 그 스토어의 `error` 와 토스트다([[ADR-063]]) — 여기서
+ * 다시 말하면 같은 실패가 두 번 뜬다.
+ */
+export async function refreshCashbook(now: Date): Promise<void> {
+  const ocids = await getTrackedCharacterOcids().catch(() => null)
+  if (ocids !== null && ocids.length > 0) {
+    await useBossProfitStore
+      .getState()
+      .refresh(ocids)
+      .catch(() => undefined)
+  }
+  await resolveTrackedDefeatDates(now)
+}
+
 /** 다음 입력의 시세 기본값([[ADR-166]] 결정 5). 화면이 `storage/` 를 직접 안 부르게 한 번 감싼다. */
 export async function loadLastPointRate(): Promise<number | null> {
   return getLastPointRate().catch(() => null)
@@ -259,27 +330,67 @@ export async function loadLastPointRate(): Promise<number | null> {
  * 수입과 지출은 테이블이 갈려 있어([[ADR-170]] 결정 2) 한 목록에 세우려면 어느 쪽인지를 들고
  * 다녀야 한다. 그 표식이 `kind` 다.
  */
+interface ManualDayRecordBase {
+  /**
+   * 그 기록에 붙은 캐릭터의 이름 — **없으면 빈 문자열**이다([[ADR-173]] 결정 16).
+   *
+   * `ocid` 가 `null`(계정 단위, 기본)이거나 캐시에 이름이 없으면 빈다. 줄은 그때 항목만 적는다.
+   */
+  characterName: string
+}
+
 export type ManualDayRecord =
-  | { kind: 'income'; record: IncomeRecord }
-  | { kind: 'spend'; record: SpendRecord }
+  | ({ kind: 'income'; record: IncomeRecord } & ManualDayRecordBase)
+  | ({ kind: 'spend'; record: SpendRecord } & ManualDayRecordBase)
+
+/** 펼친 결정석 줄의 **타일 하나**([[ADR-172]] 정정 1) — 초상·난이도·이름이 여기서 나온다. */
+export interface DefeatedBoss {
+  boss: string
+  difficulty: BossDifficulty
+}
 
 /**
- * 그날 목록의 **자동 줄**([[ADR-172]] 결정 7·8) — 보스 수익 탭이 원천이라 **여기서 못 고친다.**
+ * 자동 줄이 함께 드는 것 — 캐릭터 하나 × 하루 × 갈래 하나.
  *
- * 캐릭터당 둘이다. 갈라 두는 이유는 **출처 테이블이 다르기 때문**이고(`boss_profit_records` ·
- * `boss_drop_records`), 합치면 「미입력 n」 을 걸 자리가 없어진다.
+ * 두 갈래가 갈라져 있어도 **머리는 같다**: 누가·얼마·몇. 그 셋으로 줄의 겉모습(`recordTitleOf`·
+ * `recordMesoOf`)이 나오므로 갈래를 안 물어보고 그린다.
  */
-export interface AutoDayRecord {
-  kind: 'bossCrystal' | 'dropSale'
+interface AutoDayRecordBase {
   ocid: string
   /** 캐시에 없으면 빈 문자열 — 그때 줄은 갈래 이름만 적는다(`recordTitleOf`). */
   characterName: string
   payoutMeso: number
   /** 결정석이면 «마리», 판매면 «건». */
   count: number
-  /** 판매 줄만 쓴다 — 값을 아직 안 넣은 드롭 수. `'excluded'`(기록 안 함)는 안 센다. */
+}
+
+/**
+ * 결정석 줄 — 누르면 **그 자리에서 펼쳐진다**([[ADR-172]] 정정 1).
+ *
+ * `bosses` 가 이 갈래에만 있는 것이 곧 «판매 줄은 못 펼친다» 다 — 결정 8 이 시트에 대해 한 것과
+ * 같은 장치이고, 화면이 조건을 잘못 쓰면 컴파일 단계에서 걸린다.
+ */
+export interface BossCrystalDayRecord extends AutoDayRecordBase {
+  kind: 'bossCrystal'
+  /** 그날 잡은 보스 — **큰 것부터**다(`toAutoRecords`). 비어 있지 않다(이 줄이 서는 조건이다). */
+  bosses: readonly DefeatedBoss[]
+}
+
+/** 아이템 판매 줄 — 누르면 **보스 수익 탭**이다. 「미입력 n」 이 저쪽에 할 일이 있다고 말한다. */
+export interface DropSaleDayRecord extends AutoDayRecordBase {
+  kind: 'dropSale'
+  /** 값을 아직 안 넣은 드롭 수. `'excluded'`(기록 안 함)는 안 센다. */
   unpricedCount: number
 }
+
+/**
+ * 그날 목록의 **자동 줄**([[ADR-172]] 결정 7·8) — 보스 수익 탭이 원천이라 **여기서 못 고친다.**
+ *
+ * 캐릭터당 둘이다. 갈라 두는 이유는 **출처 테이블이 다르기 때문**이고(`boss_profit_records` ·
+ * `boss_drop_records`), 합치면 「미입력 n」 을 걸 자리가 없어진다. 갈라 둔 덕에 **누르면 하는 일도
+ * 갈린다**(정정 1) — 결정석은 펼치고, 판매는 저쪽으로 간다.
+ */
+export type AutoDayRecord = BossCrystalDayRecord | DropSaleDayRecord
 
 /**
  * 그날 목록의 한 줄. **갈리는 기준은 테이블**이다([[ADR-172]] 결정 8) — `income_records`·
@@ -316,27 +427,56 @@ export async function loadDayRecords(dateKey: string): Promise<DayRecord[]> {
     loadBossDaySummaries(dateKey, dateKey),
   ])
 
+  /**
+   * 이름을 **한 번에** 찾는다 — 손입력 줄과 보스 줄이 같은 캐릭터를 가리킬 수 있다([[ADR-173]]
+   * 결정 16). 갈라 부르면 같은 `ocid` 를 두 번 읽는다.
+   */
+  const names = await namesByOcid([
+    ...incomes.flatMap((record) => (record.ocid === null ? [] : [record.ocid])),
+    ...spends.flatMap((record) => (record.ocid === null ? [] : [record.ocid])),
+    ...bossSummaries.map((summary) => summary.ocid),
+  ])
+  const nameOf = (ocid: string | null): string => (ocid === null ? '' : (names.get(ocid) ?? ''))
+
   const manual: ManualDayRecord[] = [
-    ...incomes.map((record): ManualDayRecord => ({ kind: 'income', record })),
-    ...spends.map((record): ManualDayRecord => ({ kind: 'spend', record })),
+    ...incomes.map(
+      (record): ManualDayRecord => ({ kind: 'income', record, characterName: nameOf(record.ocid) }),
+    ),
+    ...spends.map(
+      (record): ManualDayRecord => ({ kind: 'spend', record, characterName: nameOf(record.ocid) }),
+    ),
   ].sort((left, right) => left.record.recordedAt.localeCompare(right.record.recordedAt))
 
   // **자동 줄이 위**다. 그날의 큰 금액이고 손이 닿지 않는 줄이라, 손으로 적은 것 사이에 섞이면
   // «왜 이건 안 눌리지» 가 된다.
-  return [...(await toAutoRecords(bossSummaries)), ...manual]
+  return [...toAutoRecords(bossSummaries, names), ...manual]
 }
 
-/** 요약을 줄로 — 이름을 여기서 붙인다(캘린더 칸은 이름이 필요 없어 그쪽은 안 읽는다). */
-async function toAutoRecords(summaries: BossDaySummary[]): Promise<AutoDayRecord[]> {
-  const names = new Map(
+/**
+ * `ocid` → 캐릭터 이름 — **줄에 이름을 붙이는 유일한 자리**다.
+ *
+ * 자동 줄(보스)과 손입력 줄이 같은 표를 쓴다. 갈라 두면 같은 캐릭터가 한 목록 안에서 다르게
+ * 불릴 수 있다.
+ *
+ * **못 찾으면 빈 문자열**이다 — `ocid` 는 사용자에게 아무 뜻도 없는 문자열이라 그것을 적을 바에
+ * 이름을 안 적는다([[ADR-172]] 결정 7). 캐시는 캐릭터를 한 번이라도 연 뒤에 찬다.
+ */
+async function namesByOcid(ocids: readonly string[]): Promise<Map<string, string>> {
+  return new Map(
     await Promise.all(
-      [...new Set(summaries.map((summary) => summary.ocid))].map(
+      [...new Set(ocids)].map(
         async (ocid) =>
           [ocid, (await getCachedCharacterBasic(ocid).catch(() => null))?.profile.name ?? ''] as const,
       ),
     ),
   )
+}
 
+/** 요약을 줄로 — 이름은 부르는 쪽이 이미 찾아 둔 표에서 온다(캘린더 칸은 이름이 필요 없다). */
+function toAutoRecords(
+  summaries: BossDaySummary[],
+  names: Map<string, string>,
+): AutoDayRecord[] {
   const rows: AutoDayRecord[] = []
   for (const summary of summaries) {
     const characterName = names.get(summary.ocid) ?? ''
@@ -347,7 +487,12 @@ async function toAutoRecords(summaries: BossDaySummary[]): Promise<AutoDayRecord
         characterName,
         payoutMeso: summary.crystalMeso,
         count: summary.bossCount,
-        unpricedCount: 0,
+        // **큰 것부터**다([[ADR-172]] 정정 1). 게임 순서로 세우면 «오늘 제일 큰 것이 무엇이었나» 를
+        // 눈으로 못 찾는다. 금액이 같으면(가격 미확정 보스끼리 0 이다) 읽은 순서 그대로 둔다 —
+        // `sort` 가 안정 정렬이라 그 순서가 조회 순서이고, 조회 순서는 [[ADR-036]] 이 결정적으로 만든다.
+        bosses: [...summary.bosses]
+          .sort((left, right) => right.payoutMeso - left.payoutMeso)
+          .map(({ boss, difficulty }) => ({ boss, difficulty })),
       })
     }
     // 안 판 드롭만 있어도 줄이 선다 — 「미입력」 이 그 줄이 할 말이다([[ADR-124]] 는 «가격 미입력이
@@ -381,17 +526,46 @@ const AUTO_LABELS: Record<AutoDayRecord['kind'], string> = {
  * 사용자에게 아무 뜻도 없는 문자열이고, 「알 수 없음」 은 있지도 않은 캐릭터를 만들어 낸다.
  */
 export function recordTitleOf(entry: DayRecord): string {
-  if (!isManualRecord(entry)) {
-    const label = AUTO_LABELS[entry.kind]
-    return entry.characterName === '' ? label : `${entry.characterName} · ${label}`
-  }
-  return entry.record.item ?? entry.record.category
+  const label = isManualRecord(entry)
+    ? (entry.record.item ?? entry.record.category)
+    : AUTO_LABELS[entry.kind]
+  // **캐릭터가 붙어 있으면 이름이 앞에 선다**([[ADR-173]] 결정 16) — 보스 줄이 이미 쓰던 어법
+  // 그대로다. 손입력만 다르게 적으면 한 목록 안에 두 어법이 생긴다.
+  return entry.characterName === '' ? label : `${entry.characterName} · ${label}`
 }
 
 /** 줄의 **메소 축** 금액. 캐시는 환산을 안 하므로 0 이다([[ADR-166]] 정정 2 ①). */
 export function recordMesoOf(entry: DayRecord): number {
   if (!isManualRecord(entry)) return entry.payoutMeso
   return entry.kind === 'income' ? entry.record.mesoAmount : spendMesoOf(entry.record)
+}
+
+/**
+ * 그날 상세의 **합계 두 줄** — 그날 줄들에서 바로 낸다([[ADR-169]] 정정 5).
+ *
+ * **칸 금액 표(`loadCalendarAmounts`)를 안 본다.** 그 표는 «지금 격자가 덮는 범위» 것이고 고른
+ * 날은 기간을 옮겨도 안 바뀌므로, 표를 보면 그 날이 범위 밖으로 나가는 순간 상세가 통째로
+ * 사라진다 — 「그 날 기록이 없다」와 「그 날이 범위 밖이다」가 같은 `undefined` 로 말해진다
+ * (사용자 보고 2026-08-26: 8월 25일을 고른 채 7월로 옮기면 「기록이 없어요」가 떴다).
+ *
+ * **두 길은 같은 수를 낸다** — 수입 = 손입력 + 결정석 + 판매, 지출 = `spendMesoOf`. 그 등식을
+ * `records.spec` 이 붙들고 있다(깨지면 칸에 적힌 수와 그 칸을 눌러 나온 수가 갈린다).
+ *
+ * 캐시로 낸 지출은 **0 을 더한다** — 환산을 안 하므로 메소 축에 얹을 값이 없다([[ADR-166]] 정정 2 ①).
+ * 그 사실은 그 줄이 「원」 으로 적히는 것으로 말한다.
+ */
+export function dayTotalsOf(entries: readonly DayRecord[]): CalendarDayAmounts {
+  let incomeMeso = 0
+  let expenseMeso = 0
+  for (const entry of entries) {
+    // 자동 줄은 언제나 수익이다([[ADR-172]] 결정 7) — 갈리는 것은 지출뿐이다.
+    if (entry.kind === 'spend') {
+      expenseMeso += recordMesoOf(entry)
+      continue
+    }
+    incomeMeso += recordMesoOf(entry)
+  }
+  return { incomeMeso, expenseMeso }
 }
 
 /** 캐시로 낸 지출만 값을 준다 — 그 줄은 메소가 아니라 **원**으로 적힌다. */

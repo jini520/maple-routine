@@ -61,6 +61,33 @@ describe('BossPortrait', () => {
     })
   })
 
+  // 격자로 서는 자리(가계부의 처치 타일)를 위한 둘째 모양([[ADR-172]] 정정 2). 원이 격자로 서면
+  // 네 귀가 비어 사이가 성겨 보인다.
+  it('네모를 지정하면 귀만 둥근 상자다 — 기본은 원형 그대로다', async () => {
+    const 네모 = await renderAtom(
+      <BossPortrait portraitSlug="lucid" label="루시드" shape="square" />,
+    )
+    expect(flattenStyle(네모.getByTestId('boss-portrait').props.style)).toMatchObject({
+      borderRadius: 8,
+      overflow: 'hidden',
+    })
+
+    // 호출부 둘(보스 수익 행·보스 관리)이 안 바뀐다는 것이 계약이다.
+    const 지정없음 = await renderAtom(<BossPortrait portraitSlug="lucid" label="루시드" />)
+    const 원형지정 = await renderAtom(
+      <BossPortrait portraitSlug="lucid" label="루시드" shape="circle" />,
+    )
+    expect(지정없음.toJSON()).toEqual(원형지정.toJSON())
+  })
+
+  it('플레이스홀더도 같은 모양을 따른다 — 그림 유무로 귀가 달라지면 안 된다', async () => {
+    const { getByTestId } = await renderAtom(
+      <BossPortrait portraitSlug={null} label="벨로나" shape="square" />,
+    )
+
+    expect(flattenStyle(getByTestId('boss-portrait').props.style).borderRadius).toBe(8)
+  })
+
   it.each([
     ['슬러그가 없을 때', null],
     ['존재하지 않는 슬러그일 때', '존재하지않는슬러그'],

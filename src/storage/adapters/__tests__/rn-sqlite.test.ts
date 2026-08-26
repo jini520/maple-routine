@@ -142,6 +142,9 @@ describe('db.ts 와 맞물리는가', () => {
       'ALTER TABLE boss_drop_records ADD COLUMN price_meso INTEGER',
       'ALTER TABLE boss_drop_records ADD COLUMN price_share INTEGER',
       'ALTER TABLE spend_records ADD COLUMN form TEXT',
+      // [[ADR-170]] 정정 9 — 수입 테이블도 수수료 칸 없이 만들어진 기기가 있다.
+      'ALTER TABLE income_records ADD COLUMN sale_fee_percent INTEGER',
+      'ALTER TABLE income_records ADD COLUMN sale_fee_meso INTEGER',
     ])
   })
 
@@ -156,6 +159,8 @@ describe('db.ts 와 맞물리는가', () => {
             { name: 'price_meso' },
             { name: 'price_share' },
             { name: 'form' },
+            { name: 'sale_fee_percent' },
+            { name: 'sale_fee_meso' },
           ]
         : []
 
@@ -169,6 +174,15 @@ describe('db.ts 와 맞물리는가', () => {
     expect(executed.filter((statement) => statement.startsWith('CREATE TABLE'))).toHaveLength(
       BOSS_PROFIT_TABLE_NAMES.length,
     )
-    expect(executed.filter((statement) => statement.startsWith('UPDATE'))).toHaveLength(2)
+    /**
+     * **여기도 개수를 안 박는다** — 바로 위 `CREATE TABLE` 이 겪은 그 스탈이다([[ADR-166]] 정정 4 가
+     * 마이그레이션 둘을 더하며 다시 겪었다). 대신 **성질**을 본다: 데이터 이관은 전부 `WHERE` 를
+     * 갖는다 — 그것이 «이미 옮겨진 뒤에는 걸리는 행이 없다»(매번 실행해도 안전한 no-op)의 근거다.
+     */
+    const updates = executed.filter((statement) => statement.startsWith('UPDATE'))
+    expect(updates.length).toBeGreaterThan(0)
+    for (const statement of updates) {
+      expect(statement).toContain('WHERE')
+    }
   })
 })

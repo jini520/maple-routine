@@ -45,6 +45,9 @@ const 수입: IncomeDraft = {
   category: '사냥',
   item: '엘리시움',
   mesoAmount: 1_200_000_000,
+  // 사냥에는 경매장이 없다([[ADR-170]] 정정 9 ②) — 수수료 칸 둘은 언제나 `null` 이다.
+  saleFeePercent: null,
+  saleFeeMeso: null,
   memo: null,
 }
 
@@ -182,6 +185,8 @@ const 수입행 = {
   category: '사냥' as const,
   item: '엘리시움',
   mesoAmount: 1_200_000_000,
+  saleFeePercent: null,
+  saleFeeMeso: null,
   memo: null,
   recordedAt: '2026-08-25T01:00:00.000Z',
 }
@@ -245,15 +250,30 @@ describe('줄에 적는 것', () => {
   it('이름이 있으면 이름이다', () => {
     const { recordTitleOf } = require('../records') as typeof import('../records')
 
-    expect(recordTitleOf({ kind: 'spend', record: 지출행 })).toBe('몬스터 파크')
+    expect(recordTitleOf({ kind: 'spend', record: 지출행, characterName: '' })).toBe('몬스터 파크')
+  })
+
+  /**
+   * **캐릭터가 붙어 있으면 이름이 앞에 선다**([[ADR-173]] 결정 16, 사용자 지정 2026-08-27) —
+   * 보스 줄이 이미 쓰던 어법 그대로다. 손입력만 다르게 적으면 한 목록에 두 어법이 생긴다.
+   */
+  it('캐릭터가 붙어 있으면 이름을 앞에 적는다', () => {
+    const { recordTitleOf } = require('../records') as typeof import('../records')
+
+    expect(recordTitleOf({ kind: 'spend', record: 지출행, characterName: '루디' })).toBe(
+      '루디 · 몬스터 파크',
+    )
+    expect(recordTitleOf({ kind: 'income', record: 수입행, characterName: '아델' })).toBe(
+      '아델 · 엘리시움',
+    )
   })
 
   // 직접 입력에서 사용처를 비우면 이름이 없다 — 빈 줄은 «무엇인지 모르는 줄» 이다.
   it('이름이 없으면 갈래 이름을 대신 적는다', () => {
     const { recordTitleOf } = require('../records') as typeof import('../records')
 
-    expect(recordTitleOf({ kind: 'spend', record: { ...지출행, item: null } })).toBe('컨텐츠')
-    expect(recordTitleOf({ kind: 'income', record: { ...수입행, item: null } })).toBe('사냥')
+    expect(recordTitleOf({ kind: 'spend', record: { ...지출행, item: null }, characterName: '' })).toBe('컨텐츠')
+    expect(recordTitleOf({ kind: 'income', record: { ...수입행, item: null }, characterName: '' })).toBe('사냥')
   })
 })
 
@@ -261,13 +281,13 @@ describe('줄의 금액', () => {
   it('수입은 메소 그대로다', () => {
     const { recordMesoOf } = require('../records') as typeof import('../records')
 
-    expect(recordMesoOf({ kind: 'income', record: 수입행 })).toBe(1_200_000_000)
+    expect(recordMesoOf({ kind: 'income', record: 수입행, characterName: '' })).toBe(1_200_000_000)
   })
 
   it('메포 지출은 시세로 환산한 메소다', () => {
     const { recordMesoOf } = require('../records') as typeof import('../records')
 
-    expect(recordMesoOf({ kind: 'spend', record: 지출행 })).toBe(101_694_915)
+    expect(recordMesoOf({ kind: 'spend', record: 지출행, characterName: '' })).toBe(101_694_915)
   })
 
   // 캐시는 환산 자체를 안 한다([[ADR-166]] 정정 2 ①) — 메소 축에 0 으로 들되 줄은 원으로 적는다.
@@ -275,9 +295,9 @@ describe('줄의 금액', () => {
     const { recordMesoOf, recordCashOf } = require('../records') as typeof import('../records')
     const 캐시행 = { ...지출행, pointAmount: null, pointPer100mMeso: null, cashAmount: 15_000 }
 
-    expect(recordMesoOf({ kind: 'spend', record: 캐시행 })).toBe(0)
-    expect(recordCashOf({ kind: 'spend', record: 캐시행 })).toBe(15_000)
-    expect(recordCashOf({ kind: 'income', record: 수입행 })).toBeNull()
+    expect(recordMesoOf({ kind: 'spend', record: 캐시행, characterName: '' })).toBe(0)
+    expect(recordCashOf({ kind: 'spend', record: 캐시행, characterName: '' })).toBe(15_000)
+    expect(recordCashOf({ kind: 'income', record: 수입행, characterName: '' })).toBeNull()
   })
 })
 
@@ -311,8 +331,8 @@ describe('고치기와 지우기', () => {
   it('갈래대로 지운다', async () => {
     const { removeRecord } = require('../records') as typeof import('../records')
 
-    await removeRecord({ kind: 'spend', record: 지출행 })
-    await removeRecord({ kind: 'income', record: 수입행 })
+    await removeRecord({ kind: 'spend', record: 지출행, characterName: '' })
+    await removeRecord({ kind: 'income', record: 수입행, characterName: '' })
 
     expect(spend.deleteSpendRecord).toHaveBeenCalledWith('spd-1')
     expect(income.deleteIncomeRecord).toHaveBeenCalledWith('inc-1')
@@ -432,6 +452,26 @@ describe('loadDayRecords — 캐릭터당 두 줄 (결정 7)', () => {
     expect(recordMesoOf(rows[1])).toBe(0)
   })
 
+  /**
+   * 손입력 줄도 **캐릭터 이름을 든다**([[ADR-173]] 결정 16, 사용자 지정 2026-08-27).
+   *
+   * 이름 표를 **한 번에** 찾는 것이 계약이다 — 손입력과 보스가 같은 캐릭터를 가리킬 수 있어,
+   * 갈라 부르면 같은 `ocid` 를 두 번 읽는다.
+   */
+  it('손입력 줄이 캐릭터 이름을 든다 — 없으면 빈 문자열이다', async () => {
+    income.getIncomeRecordsBetween.mockResolvedValue([
+      { id: 'i1', ocid: 'ocid-1', earnedOn: '2026-08-21', category: '사냥', item: '엘리시움', mesoAmount: 1, recordedAt: 'a' },
+      { id: 'i2', ocid: null, earnedOn: '2026-08-21', category: '사냥', item: '리우', mesoAmount: 1, recordedAt: 'b' },
+    ])
+    const { loadDayRecords, recordTitleOf } = require('../records') as typeof import('../records')
+
+    const rows = await loadDayRecords('2026-08-21')
+
+    expect(rows.map(recordTitleOf)).toEqual(['루디 · 엘리시움', '리우'])
+    // 같은 `ocid` 를 두 번 읽지 않는다 — 표를 한 번에 찾는다.
+    expect(basicCache.getCachedCharacterBasic).toHaveBeenCalledTimes(1)
+  })
+
   it('보스 줄이 손입력보다 위에 선다', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
     income.getIncomeRecordsBetween.mockResolvedValue([
@@ -452,6 +492,85 @@ describe('loadDayRecords — 캐릭터당 두 줄 (결정 7)', () => {
     expect((await loadDayRecords('2026-08-21')).map(recordTitleOf)).toEqual(['보스 결정석'])
   })
 
+  // 줄을 펼치면 뜰 것 — 그날 잡은 보스다([[ADR-172]] 정정 1). **새로 읽는 것이 없다**:
+  // 접어서 버리던 보스·난이도를 들고 있게 한 것뿐이다.
+  it('결정석 줄이 그날 잡은 보스를 들고 있다', async () => {
+    bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록, 데미안기록])
+    const { loadDayRecords } = require('../records') as typeof import('../records')
+
+    const [줄] = await loadDayRecords('2026-08-21')
+
+    expect(줄.kind).toBe('bossCrystal')
+    expect(줄.kind === 'bossCrystal' ? 줄.bosses : null).toEqual([
+      { boss: '스우', difficulty: '하드' },
+      { boss: '데미안', difficulty: '하드' },
+    ])
+  })
+
+  // 게임 순서로 세우면 «오늘 제일 큰 것이 무엇이었나» 를 눈으로 못 찾는다.
+  it('큰 것부터 선다 — 결정석이 비싼 순이다', async () => {
+    bossProfit.getDatedBossProfitRecords.mockResolvedValue([
+      { ...스우기록, boss: '데미안', payoutMeso: 1_500_000_000 },
+      { ...스우기록, boss: '검은 마법사', difficulty: '하드', payoutMeso: 9_000_000_000 },
+      스우기록,
+    ])
+    const { loadDayRecords } = require('../records') as typeof import('../records')
+
+    const [줄] = await loadDayRecords('2026-08-21')
+
+    expect(줄.kind === 'bossCrystal' ? 줄.bosses.map((boss) => boss.boss) : null).toEqual([
+      '검은 마법사',
+      '스우',
+      '데미안',
+    ])
+  })
+
+  // 같은 보스를 난이도를 갈아 두 번 잡는 것은 정상이라(주간 한도가 보스별이 아니다) 두 타일이다.
+  it('난이도가 다르면 다른 타일이다', async () => {
+    bossProfit.getDatedBossProfitRecords.mockResolvedValue([
+      스우기록,
+      { ...스우기록, difficulty: '노멀', payoutMeso: 500_000_000 },
+    ])
+    const { loadDayRecords } = require('../records') as typeof import('../records')
+
+    const [줄] = await loadDayRecords('2026-08-21')
+
+    expect(줄.kind === 'bossCrystal' ? 줄.bosses : null).toEqual([
+      { boss: '스우', difficulty: '하드' },
+      { boss: '스우', difficulty: '노멀' },
+    ])
+  })
+
+  /**
+   * 상세의 합계와 칸 금액은 **같은 수여야 한다**([[ADR-169]] 정정 5).
+   *
+   * 둘이 다른 길로 나오므로(하나는 그날 읽기, 하나는 범위 읽기) 이 등식이 깨지면 **화면이
+   * 서로를 반박한다** — 칸에는 61억인데 그 칸을 누르면 다른 수가 뜬다. 네 원천을 다 세운다.
+   */
+  it('그날 합계는 칸 금액과 같은 수다', async () => {
+    bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
+    bossDrops.getBossDropRecords.mockResolvedValue([드롭()])
+    income.getIncomeRecordsBetween.mockResolvedValue([
+      { id: 'i1', earnedOn: '2026-08-21', category: '사냥', item: null, mesoAmount: 700_000_000, recordedAt: 'a' },
+    ])
+    spend.getSpendRecordsBetween.mockResolvedValue([
+      {
+        id: 's1', spentOn: '2026-08-21', category: '컨텐츠', item: '몬스터 파크', form: null,
+        quantity: 1, mesoAmount: 50_000_000, tariffMeso: null, pointAmount: 1_200,
+        pointPer100mMeso: 1_180, cashAmount: null, memo: null, recordedAt: 'b',
+      },
+    ])
+    const { loadDayRecords, loadCalendarAmounts, dayTotalsOf } =
+      require('../records') as typeof import('../records')
+
+    const [rows, amounts] = await Promise.all([
+      loadDayRecords('2026-08-21'),
+      loadCalendarAmounts('2026-08-21', '2026-08-21'),
+    ])
+
+    expect(dayTotalsOf(rows)).toEqual(amounts['2026-08-21'])
+  })
+
   it('보스 줄은 손입력이 아니다 — 여기서 못 고친다 (결정 8)', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
     const { loadDayRecords, isManualRecord, rowKeyOf } = require('../records') as typeof import('../records')
@@ -460,5 +579,44 @@ describe('loadDayRecords — 캐릭터당 두 줄 (결정 7)', () => {
 
     expect(isManualRecord(row)).toBe(false)
     expect(rowKeyOf(row)).toBe('bossCrystal:ocid-1')
+  })
+})
+
+/**
+ * 시트가 고를 수 있는 캐릭터([[ADR-166]] 결정 3 — 「캐릭터를 선택해서 입력하는 방법」).
+ *
+ * **이름을 모르는 캐릭터는 안 든다** — `ocid` 는 사용자에게 아무 뜻도 없는 문자열이라, 그것을
+ * 목록에 세우면 «있지도 않은 캐릭터» 가 하나 생긴다([[ADR-172]] 결정 7 과 같은 이유).
+ */
+describe('loadTrackedCharacters', () => {
+  it('추적 캐릭터를 이름과 함께 든다', async () => {
+    selection.getTrackedCharacterOcids.mockResolvedValue(['ocid-1', 'ocid-2'])
+    basicCache.getCachedCharacterBasic.mockImplementation(async (ocid: string) => ({
+      profile: { name: ocid === 'ocid-1' ? '루디' : '아델' },
+    }))
+    const { loadTrackedCharacters } = require('../records') as typeof import('../records')
+
+    expect(await loadTrackedCharacters()).toEqual([
+      { ocid: 'ocid-1', name: '루디' },
+      { ocid: 'ocid-2', name: '아델' },
+    ])
+  })
+
+  it('캐시가 비어 이름을 모르는 캐릭터는 뺀다', async () => {
+    selection.getTrackedCharacterOcids.mockResolvedValue(['ocid-1', 'ocid-2'])
+    basicCache.getCachedCharacterBasic.mockImplementation(async (ocid: string) =>
+      ocid === 'ocid-1' ? { profile: { name: '루디' } } : null,
+    )
+    const { loadTrackedCharacters } = require('../records') as typeof import('../records')
+
+    expect(await loadTrackedCharacters()).toEqual([{ ocid: 'ocid-1', name: '루디' }])
+  })
+
+  // 못 읽으면 목록이 빈다 — 그때 고르개에는 「선택 안함」 하나만 선다. 던지지 않는다.
+  it('추적 목록을 못 읽으면 빈 목록이다', async () => {
+    selection.getTrackedCharacterOcids.mockRejectedValue(new Error('no such table'))
+    const { loadTrackedCharacters } = require('../records') as typeof import('../records')
+
+    expect(await loadTrackedCharacters()).toEqual([])
   })
 })
