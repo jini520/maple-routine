@@ -60,9 +60,15 @@ EMPTY_MAX = 0.05  # 이 밝기에 못 미치면 정합할 내용이 없는 프�
 
 
 def load_phase(phase):
-    """`0.jpg`, `1.jpg` … 를 숫자 순으로 읽는다(파일명 렉시코 정렬 함정 방지: 10 < 2)."""
+    """`0.webp`, `1.webp` … 를 숫자 순으로 읽는다(파일명 렉시코 정렬 함정 방지: 10 < 2).
+
+    확장자를 둘 다 받는 이유는 `lib/drop-effect-frames.ts` 와 같다 — 프레임은 JPEG 였다가 WebP 로
+    바뀌었고([[ADR-093]] 결정 2 정정), `*.jpg` 만 훑던 이 스크립트는 그 뒤로 «프레임을 찾을 수
+    없습니다» 만 뱉었다(2026-08-26 확인). 재계측 경로가 문서에 적힌 채로 죽어 있었던 셈이다.
+    """
     paths = sorted(
-        (ASSETS / phase).glob("*.jpg"), key=lambda p: int(p.stem)
+        [*(ASSETS / phase).glob("*.jpg"), *(ASSETS / phase).glob("*.webp")],
+        key=lambda p: int(p.stem),
     )
     if not paths:
         sys.exit(f"프레임을 찾을 수 없습니다: {ASSETS / phase}")
