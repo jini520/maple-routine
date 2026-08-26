@@ -302,9 +302,18 @@ export async function loadLastPointRate(): Promise<number | null> {
  * 수입과 지출은 테이블이 갈려 있어([[ADR-170]] 결정 2) 한 목록에 세우려면 어느 쪽인지를 들고
  * 다녀야 한다. 그 표식이 `kind` 다.
  */
+interface ManualDayRecordBase {
+  /**
+   * 그 기록에 붙은 캐릭터의 이름 — **없으면 빈 문자열**이다([[ADR-173]] 결정 16).
+   *
+   * `ocid` 가 `null`(계정 단위, 기본)이거나 캐시에 이름이 없으면 빈다. 줄은 그때 항목만 적는다.
+   */
+  characterName: string
+}
+
 export type ManualDayRecord =
-  | { kind: 'income'; record: IncomeRecord }
-  | { kind: 'spend'; record: SpendRecord }
+  | ({ kind: 'income'; record: IncomeRecord } & ManualDayRecordBase)
+  | ({ kind: 'spend'; record: SpendRecord } & ManualDayRecordBase)
 
 /** 펼친 결정석 줄의 **타일 하나**([[ADR-172]] 정정 1) — 초상·난이도·이름이 여기서 나온다. */
 export interface DefeatedBoss {
@@ -390,27 +399,56 @@ export async function loadDayRecords(dateKey: string): Promise<DayRecord[]> {
     loadBossDaySummaries(dateKey, dateKey),
   ])
 
+  /**
+   * 이름을 **한 번에** 찾는다 — 손입력 줄과 보스 줄이 같은 캐릭터를 가리킬 수 있다([[ADR-173]]
+   * 결정 16). 갈라 부르면 같은 `ocid` 를 두 번 읽는다.
+   */
+  const names = await namesByOcid([
+    ...incomes.flatMap((record) => (record.ocid === null ? [] : [record.ocid])),
+    ...spends.flatMap((record) => (record.ocid === null ? [] : [record.ocid])),
+    ...bossSummaries.map((summary) => summary.ocid),
+  ])
+  const nameOf = (ocid: string | null): string => (ocid === null ? '' : (names.get(ocid) ?? ''))
+
   const manual: ManualDayRecord[] = [
-    ...incomes.map((record): ManualDayRecord => ({ kind: 'income', record })),
-    ...spends.map((record): ManualDayRecord => ({ kind: 'spend', record })),
+    ...incomes.map(
+      (record): ManualDayRecord => ({ kind: 'income', record, characterName: nameOf(record.ocid) }),
+    ),
+    ...spends.map(
+      (record): ManualDayRecord => ({ kind: 'spend', record, characterName: nameOf(record.ocid) }),
+    ),
   ].sort((left, right) => left.record.recordedAt.localeCompare(right.record.recordedAt))
 
   // **자동 줄이 위**다. 그날의 큰 금액이고 손이 닿지 않는 줄이라, 손으로 적은 것 사이에 섞이면
   // «왜 이건 안 눌리지» 가 된다.
-  return [...(await toAutoRecords(bossSummaries)), ...manual]
+  return [...toAutoRecords(bossSummaries, names), ...manual]
 }
 
-/** 요약을 줄로 — 이름을 여기서 붙인다(캘린더 칸은 이름이 필요 없어 그쪽은 안 읽는다). */
-async function toAutoRecords(summaries: BossDaySummary[]): Promise<AutoDayRecord[]> {
-  const names = new Map(
+/**
+ * `ocid` → 캐릭터 이름 — **줄에 이름을 붙이는 유일한 자리**다.
+ *
+ * 자동 줄(보스)과 손입력 줄이 같은 표를 쓴다. 갈라 두면 같은 캐릭터가 한 목록 안에서 다르게
+ * 불릴 수 있다.
+ *
+ * **못 찾으면 빈 문자열**이다 — `ocid` 는 사용자에게 아무 뜻도 없는 문자열이라 그것을 적을 바에
+ * 이름을 안 적는다([[ADR-172]] 결정 7). 캐시는 캐릭터를 한 번이라도 연 뒤에 찬다.
+ */
+async function namesByOcid(ocids: readonly string[]): Promise<Map<string, string>> {
+  return new Map(
     await Promise.all(
-      [...new Set(summaries.map((summary) => summary.ocid))].map(
+      [...new Set(ocids)].map(
         async (ocid) =>
           [ocid, (await getCachedCharacterBasic(ocid).catch(() => null))?.profile.name ?? ''] as const,
       ),
     ),
   )
+}
 
+/** 요약을 줄로 — 이름은 부르는 쪽이 이미 찾아 둔 표에서 온다(캘린더 칸은 이름이 필요 없다). */
+function toAutoRecords(
+  summaries: BossDaySummary[],
+  names: Map<string, string>,
+): AutoDayRecord[] {
   const rows: AutoDayRecord[] = []
   for (const summary of summaries) {
     const characterName = names.get(summary.ocid) ?? ''
@@ -460,11 +498,12 @@ const AUTO_LABELS: Record<AutoDayRecord['kind'], string> = {
  * 사용자에게 아무 뜻도 없는 문자열이고, 「알 수 없음」 은 있지도 않은 캐릭터를 만들어 낸다.
  */
 export function recordTitleOf(entry: DayRecord): string {
-  if (!isManualRecord(entry)) {
-    const label = AUTO_LABELS[entry.kind]
-    return entry.characterName === '' ? label : `${entry.characterName} · ${label}`
-  }
-  return entry.record.item ?? entry.record.category
+  const label = isManualRecord(entry)
+    ? (entry.record.item ?? entry.record.category)
+    : AUTO_LABELS[entry.kind]
+  // **캐릭터가 붙어 있으면 이름이 앞에 선다**([[ADR-173]] 결정 16) — 보스 줄이 이미 쓰던 어법
+  // 그대로다. 손입력만 다르게 적으면 한 목록 안에 두 어법이 생긴다.
+  return entry.characterName === '' ? label : `${entry.characterName} · ${label}`
 }
 
 /** 줄의 **메소 축** 금액. 캐시는 환산을 안 하므로 0 이다([[ADR-166]] 정정 2 ①). */

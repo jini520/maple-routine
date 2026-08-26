@@ -450,7 +450,7 @@ describe('칸에 숫자가 든다', () => {
   // **상세는 그날 읽기에서 나온다**([[ADR-169]] 정정 5) — 칸 금액 표가 아니다. 그래서 그 표를
   // 아무리 채워도 그날 기록이 없으면 빈 상태이고, 반대도 같다.
   it('고른 날에 기록이 있으면 합계가 서고 빈 상태가 사라진다', async () => {
-    records.loadDayRecords.mockResolvedValue([{ kind: 'income', record: 그날수입 }])
+    records.loadDayRecords.mockResolvedValue([{ kind: 'income', record: 그날수입, characterName: '' }])
 
     const view = await 그리기()
 
@@ -480,7 +480,7 @@ describe('칸에 숫자가 든다', () => {
         : {},
     )
     records.loadDayRecords.mockResolvedValue([
-      { kind: 'income', record: { ...그날수입, earnedOn: '2026-08-25' } },
+      { kind: 'income', record: { ...그날수입, earnedOn: '2026-08-25' }, characterName: '' },
     ])
 
     const view = await 그리기()
@@ -665,8 +665,8 @@ describe('그날 목록', () => {
       '2026-08-23': { incomeMeso: 1_200_000_000, expenseMeso: 101_694_915 },
     })
     records.loadDayRecords.mockResolvedValue([
-      { kind: 'income', record: 그날수입 },
-      { kind: 'spend', record: 그날지출 },
+      { kind: 'income', record: 그날수입, characterName: '' },
+      { kind: 'spend', record: 그날지출, characterName: '' },
     ])
   })
 
@@ -680,6 +680,19 @@ describe('그날 목록', () => {
 
   // 수량은 «몇 번» 이라 이름만으로는 금액이 왜 그런지 모른다. `×` 를 붙여야 «2번» 이지
   // «2번째» 가 아니라는 것이 읽힌다.
+  /**
+   * **캐릭터가 붙은 줄은 이름을 앞에 적는다**([[ADR-173]] 결정 16, 사용자 지정 2026-08-27) —
+   * 보스 줄이 이미 쓰던 어법이라 한 목록 안에서 어법이 하나로 유지된다.
+   */
+  it('캐릭터가 붙어 있으면 이름이 앞에 선다', async () => {
+    records.loadDayRecords.mockResolvedValue([
+      { kind: 'spend', record: 그날지출, characterName: '루디' },
+    ])
+    const view = await 그리기()
+
+    expect(view.getByTestId('cashbook-row-spd-1')).toHaveTextContent('루디 · 몬스터 파크×2−1.017억')
+  })
+
   it('수량이 있으면 함께 적는다', async () => {
     const view = await 그리기()
 
@@ -712,8 +725,8 @@ describe('줄을 누르면 고칠 수 있다', () => {
       '2026-08-23': { incomeMeso: 1_200_000_000, expenseMeso: 101_694_915 },
     })
     records.loadDayRecords.mockResolvedValue([
-      { kind: 'income', record: 그날수입 },
-      { kind: 'spend', record: 그날지출 },
+      { kind: 'income', record: 그날수입, characterName: '' },
+      { kind: 'spend', record: 그날지출, characterName: '' },
     ])
   })
 
@@ -771,7 +784,7 @@ describe('줄을 누르면 고칠 수 있다', () => {
     await 이름으로누르기(view, '삭제')
     await act(async () => {})
 
-    expect(records.removeRecord).toHaveBeenCalledWith({ kind: 'spend', record: 그날지출 })
+    expect(records.removeRecord).toHaveBeenCalledWith({ kind: 'spend', record: 그날지출, characterName: '' })
     expect(view.queryByText('지출 수정')).toBeNull()
   })
 
