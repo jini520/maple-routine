@@ -457,7 +457,14 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
     : `메소로 −${formatMesoCompact(totalMeso)}`
   const directHint =
     currency === 'cash' ? undefined : usesPoint ? conversionHint : formatMesoUnits(directAmount)
-  const listHint = usesPoint ? conversionHint : formatMesoUnits(amount)
+  /**
+   * 목록 갈래의 힌트 — **고르기 전에는 빈 줄**이다(사용자 지정 2026-08-26).
+   *
+   * 단가를 모르는 채로 환산하면 「메소로 −0」 이 되는데, 그것은 «0 원짜리 지출» 로 읽히지만 사실은
+   * «아직 안 골랐다» 다([[ADR-166]] 정정 2 ③ 과 같은 이유). **자리는 지킨다** — 고른 뒤에 줄이
+   * 생기면 아래가 통째로 밀린다.
+   */
+  const listHint = item === null ? ' ' : usesPoint ? conversionHint : formatMesoUnits(amount)
 
   function selectCategory(next: SpendCategory): void {
     setCategory(next)
@@ -735,14 +742,16 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
 
             {usesPoint && <RateRow value={rateText} onChange={setRateText} valid={rate !== null} />}
 
-            {item !== null && (
+            {scope !== null && (
               // 목록 갈래의 큰 숫자는 **못 친다** — 단가 × 수량이라 앱이 센다.
+              // **단계를 고르기 전에도 0 으로 선다**(사용자 지정) — 단가를 아직 모를 뿐 셀 자리는
+              // 이미 있고, 나중에 생기면 그때 아래가 밀린다.
               <AmountFigure
                 value={amount}
-                unit={item.currency === 'point' ? '메포' : '메소'}
+                unit={scope.currency === 'point' ? '메포' : '메소'}
                 testID="spend-sheet-amount"
                 hint={listHint}
-                hintBlocked={blocked}
+                hintBlocked={blocked && item !== null}
                 readOnly
                 onChangeValue={() => undefined}
               />
@@ -750,8 +759,9 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
           </>
         )}
 
-        {/* 고를 것을 고르는 화면에는 저장이 없다 — 아직 셀 것이 없다([[ADR-173]] 결정 1). */}
-        {(direct || item !== null) && (
+        {/* **타일 격자에만 저장이 없다**([[ADR-173]] 결정 1) — 거기엔 셀 자리 자체가 없다. 둘째
+            화면에는 큰 숫자가 서 있으므로 저장도 함께 서고, 다 안 골랐으면 **안 눌린다**. */}
+        {(direct || choice !== null) && (
           <Pressable
             role="button"
             // **보이는 글자와 같아야 한다** — 화면은 「수정」인데 읽어 주는 것이 「저장」이면

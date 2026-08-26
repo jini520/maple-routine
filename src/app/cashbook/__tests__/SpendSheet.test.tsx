@@ -3,7 +3,7 @@
 // **갈래는 시트 밖에서 갈렸다** — 펼침판이 「지출」을 골라 이 시트를 연다. 그래서 이 시트에는
 // 수입/지출 세그먼트가 없고, 자기가 지출이라는 것을 **모른 채** 받은 것을 그린다.
 import type { ReactNode } from 'react'
-import { act, fireEvent, within } from '@testing-library/react-native'
+import { act, fireEvent, waitFor, within } from '@testing-library/react-native'
 
 // 시트 껍데기는 `BossDropSheet.test.tsx` 와 같은 방식으로 세운다 — 라이브러리를 목으로 갈아
 // 끼우고 내용만 본다(껍데기의 동작은 그쪽 컴포넌트의 테스트가 붙든다).
@@ -199,9 +199,19 @@ describe('항목 — 고르면 채워진다', () => {
 
     expect(view.getByLabelText('수량 늘리기')).toBeTruthy()
     expect(view.getByTestId('spend-sheet-rate')).toBeTruthy()
-    // 아직 고를 것이 남았으므로 셀 것이 없다 — 큰 숫자도 저장도 없다.
-    expect(view.queryByTestId('spend-sheet-amount')).toBeNull()
-    expect(view.queryByLabelText('저장')).toBeNull()
+    // 합계도 **0 으로 선다**(사용자 지정) — 단가를 아직 모를 뿐 셀 자리는 이미 있다.
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('0')
+    // 저장은 서 있되 **안 눌린다** — 무엇을 살지 아직 안 골랐다.
+    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
+  })
+
+  // 「−0」 은 «0 원짜리 지출» 로 읽히는데 사실은 «아직 안 골랐다» 다([[ADR-166]] 정정 2 ③의 태도).
+  it('고르기 전에는 환산 힌트를 안 적는다 — 자리는 지킨다', async () => {
+    const view = await 그리기({ lastPointRate: 1_180 })
+
+    await 누르기(view, '하이마운틴')
+
+    expect(view.getByTestId('spend-sheet-amount-hint')).toHaveTextContent('')
   })
 
   it('고르면 단가가 그대로 큰 숫자가 되고, 환산은 힌트 한 줄이다', async () => {
@@ -209,7 +219,10 @@ describe('항목 — 고르면 채워진다', () => {
 
     await 에픽던전(view, '하이마운틴', '경험치', '2단계')
 
-    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('30,000')
+    // 단계를 고르면 0 에서 단가까지 **굴러 올라간다**(`useCountUp`) — 끝값을 기다린다.
+    await waitFor(() =>
+      expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('30,000'),
+    )
     // 30,000 메포 ÷ 1,180 → 25.42억. 부호까지 붙든다 — 지출은 언제나 빼는 쪽이다.
     expect(view.getByTestId('spend-sheet-amount-hint')).toHaveTextContent('메소로 −25.42억')
   })
@@ -757,7 +770,9 @@ describe('시세가 비어 있을 때', () => {
   it('아는 것은 큰 숫자로, 모르는 것은 힌트로 말한다', async () => {
     const view = await 메포항목()
 
-    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('30,000')
+    await waitFor(() =>
+      expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('30,000'),
+    )
     expect(view.getByTestId('spend-sheet-amount-hint')).toHaveTextContent(
       '시세를 넣어야 메소로 셀 수 있어요',
     )
