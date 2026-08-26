@@ -600,12 +600,13 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
 - **글자는 `components/atoms/Text` 에서 가져온다.** `react-native` 의 `Text`·`TextInput` 직접
   import 는 ESLint 와 테스트가 막는다 — 프롭이 한 자리만 빠져도 그 자리만 조용히 옛 동작으로 남기
   때문이다.
-- **`TextInput` 은 시트 안이면 스스로 `BottomSheetTextInput` 을 그린다**([[ADR-170]] 정정 5). 그
-  부품이어야 `@gorhom/bottom-sheet` 가 키보드를 «본다» — 평범한 `TextInput` 이면 키보드가 떠도
-  시트가 안 올라간다(라이브러리가 `onFocus` 가 채우는 `target` 없이는 상태를 안 올린다). **호출부는
-  아무것도 안 고른다**: 부품을 고르게 두면 다음 시트에서 같은 일이 다시 난다. 라이브러리에서
-  직접 가져오는 것은 같은 정책 테스트가 막는다(클램프가 빠지므로).
-- **키보드 배선은 넷이 한 벌이다**(`BottomSheet` 조직체가 쥔다) — 입력 부품 ·
+- **`TextInput` 은 언제나 RN 것이고, 시트가 보는 값만 아톰이 채운다**([[ADR-170]] 정정 10).
+  `@gorhom/bottom-sheet` 는 `animatedKeyboardState.target` 이 비면 키보드가 떠도 시트를 안
+  올린다 — 아톰이 `onFocus` 에 그 값을 채우고, **켜져 있는 것이 나일 때만** 흐림·언마운트에서
+  거둔다. **`BottomSheetTextInput` 을 쓰면 안 된다**(정책 테스트가 막는다): 그 부품은 안쪽이
+  `react-native-gesture-handler` 의 입력이라 **안드로이드 한글 조합이 깨진다**(자모가 따로
+  확정된다). 조합 입력만 그러므로 영문·숫자로 만져 보면 안 보이는 회귀다.
+- **키보드 배선은 넷이 한 벌이다**(`BottomSheet` 조직체가 쥔다) — 초점 채우기 ·
   `android_keyboardInputMode="adjustResize"`(매니페스트와 같게) · `keyboardBlurBehavior="restore"` ·
   **키보드가 뜨면 아래 인셋을 걷기**(홈 인디케이터 몫은 키보드가 이미 덮고 있어 빈 띠가 된다).
   하나만 빠져도 증상이 각각 다르다: **안 올라간다 / 두 번 올라간다 / 안 내려온다 / 시트 끝과

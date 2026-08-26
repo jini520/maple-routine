@@ -1,54 +1,51 @@
 /**
- * 시트 안의 `TextInput` 은 **시트가 아는 입력**이어야 한다([[ADR-170]] 정정 5).
+ * 시트 안의 `TextInput` — **부품은 RN 것 그대로, 시트가 보는 값만 아톰이 채운다**
+ * ([[ADR-170]] 정정 10).
  *
- * `@gorhom/bottom-sheet` 는 `BottomSheetTextInput` 의 `onFocus` 가 채우는 `target` 이 없으면
- * 키보드 이벤트를 받고도 상태를 **안 올린다**(라이브러리 소스 `useAnimatedKeyboard`). 그래서
- * 평범한 `TextInput` 을 쓰면 키보드가 떠도 시트가 한 번도 안 올라간다 — 기기 문제가 아니라 결정적이다.
+ * `@gorhom/bottom-sheet` 는 `animatedKeyboardState.target` 이 비어 있으면 키보드 이벤트를 받고도
+ * 상태를 **안 올린다**(라이브러리 `useAnimatedKeyboard`). 정정 5 는 그 값을 채우려고 라이브러리의
+ * `BottomSheetTextInput` 을 썼는데, 그것은 안쪽이 `react-native-gesture-handler` 의 입력이라
+ * **안드로이드 한글 조합이 깨졌다**(자모가 따로 확정된다). 그래서 부품을 되돌리고 값만 채운다.
  *
- * 그 판정을 **아톰이** 한다. 호출부가 부품을 고르게 두면 다음에 시트를 만드는 사람이 같은 것을
- * 다시 겪는다(이 아톰이 존재하는 이유 그대로 — `Text.tsx` 파일 머리).
+ * 그 판정을 **아톰이** 한다. 호출부가 고르게 두면 다음에 시트를 만드는 사람이 같은 것을 다시
+ * 겪는다(이 아톰이 존재하는 이유 그대로 — `Text.tsx` 파일 머리).
  */
 const mockInsideSheet = jest.fn<unknown, [boolean?]>(() => null)
 
-jest.mock('@gorhom/bottom-sheet', () => {
-  const ReactNative = jest.requireActual<typeof import('react-native')>('react-native')
-  const React = jest.requireActual<typeof import('react')>('react')
+jest.mock('@gorhom/bottom-sheet', () => ({
+  useBottomSheetInternal: (unsafe?: boolean) => mockInsideSheet(unsafe),
+}))
 
-  return {
-    useBottomSheetInternal: (unsafe?: boolean) => mockInsideSheet(unsafe),
-    // **상자로 감싼다** — 안쪽에 프롭을 그대로 흘려보내야 클램프를 볼 수 있고, 감싸면 «어느
-    // 부품이 그려졌나» 를 호출부의 `testID` 와 안 겹치게 집을 수 있다.
-    BottomSheetTextInput: (props: Record<string, unknown>) =>
-      React.createElement(
-        ReactNative.View,
-        { testID: 'sheet-input' },
-        React.createElement(ReactNative.TextInput, props),
-      ),
-  }
-})
+import { act, fireEvent } from '@testing-library/react-native'
 
 import { renderAtom } from '../../../__tests__/render-atom'
 import { FONT_SCALE_MAX } from '../font-scaling'
 import { TextInput } from '../Text'
 
+/** 라이브러리의 공유값을 흉내 낸다 — 아톰이 부르는 것은 `get`/`set` 둘뿐이다. */
+function 키보드상태(target?: number) {
+  let state = { target, status: 0, height: 0 }
+  return {
+    get: () => state,
+    set: (next: (previous: typeof state) => typeof state) => {
+      state = next(state)
+    },
+    현재: () => state,
+  }
+}
+
 beforeEach(() => {
   mockInsideSheet.mockReset().mockReturnValue(null)
 })
 
-describe('TextInput — 시트 안이면 시트가 아는 입력이다 ([[ADR-170]] 정정 5)', () => {
-  it('시트 밖에서는 react-native 의 것을 그린다', async () => {
-    const { queryByTestId, getByTestId } = await renderAtom(<TextInput testID="칸" />)
+describe('TextInput — 부품은 RN 것 하나다 ([[ADR-170]] 정정 10)', () => {
+  it('시트 안이든 밖이든 같은 입력을 그린다', async () => {
+    const 시트밖 = await renderAtom(<TextInput testID="칸" />)
+    expect(시트밖.getByTestId('칸')).toBeTruthy()
 
-    expect(queryByTestId('sheet-input')).toBeNull()
-    expect(getByTestId('칸')).toBeTruthy()
-  })
-
-  it('시트 안에서는 BottomSheetTextInput 을 그린다', async () => {
-    mockInsideSheet.mockReturnValue({})
-
-    const { getByTestId } = await renderAtom(<TextInput testID="칸" />)
-
-    expect(getByTestId('sheet-input')).toBeTruthy()
+    mockInsideSheet.mockReturnValue({ animatedKeyboardState: 키보드상태() })
+    const 시트안 = await renderAtom(<TextInput testID="칸" />)
+    expect(시트안.getByTestId('칸')).toBeTruthy()
   })
 
   // 시트 밖에서 던지면 화면이 죽는다 — `unsafe` 를 줘야 `null` 로 돌아온다.
@@ -58,14 +55,106 @@ describe('TextInput — 시트 안이면 시트가 아는 입력이다 ([[ADR-17
     expect(mockInsideSheet).toHaveBeenCalledWith(true)
   })
 
-  // 어느 쪽을 그리든 클램프는 그대로다 — 이 아톰이 존재하는 첫째 이유다([[ADR-152]] 결정 4).
-  it('어느 쪽이든 글자 배수 클램프가 붙는다', async () => {
-    mockInsideSheet.mockReturnValue({})
-    const 시트안 = await renderAtom(<TextInput testID="칸" />)
-    expect(시트안.getByTestId('칸').props.maxFontSizeMultiplier).toBe(FONT_SCALE_MAX)
+  // 이 아톰이 존재하는 첫째 이유다([[ADR-152]] 결정 4) — 시트 배선이 그것을 밀어내면 안 된다.
+  it('글자 배수 클램프가 그대로 붙는다', async () => {
+    mockInsideSheet.mockReturnValue({ animatedKeyboardState: 키보드상태() })
+    const view = await renderAtom(<TextInput testID="칸" />)
 
-    mockInsideSheet.mockReturnValue(null)
-    const 시트밖 = await renderAtom(<TextInput testID="칸" />)
-    expect(시트밖.getByTestId('칸').props.maxFontSizeMultiplier).toBe(FONT_SCALE_MAX)
+    expect(view.getByTestId('칸').props.maxFontSizeMultiplier).toBe(FONT_SCALE_MAX)
+  })
+})
+
+describe('시트가 보는 초점 ([[ADR-170]] 정정 10)', () => {
+  it('커서가 들어오면 채운다 — 이것이 없으면 시트가 안 올라간다', async () => {
+    const 상태 = 키보드상태()
+    mockInsideSheet.mockReturnValue({ animatedKeyboardState: 상태 })
+    const view = await renderAtom(<TextInput testID="칸" />)
+
+    await act(async () => {
+      fireEvent(view.getByTestId('칸'), 'focus', { nativeEvent: { target: 7 } })
+    })
+
+    expect(상태.현재().target).toBe(7)
+  })
+
+  it('커서가 빠지면 지운다', async () => {
+    const 상태 = 키보드상태()
+    mockInsideSheet.mockReturnValue({ animatedKeyboardState: 상태 })
+    const view = await renderAtom(<TextInput testID="칸" />)
+
+    await act(async () => {
+      fireEvent(view.getByTestId('칸'), 'focus', { nativeEvent: { target: 7 } })
+    })
+    await act(async () => {
+      fireEvent(view.getByTestId('칸'), 'blur', { nativeEvent: { target: 7 } })
+    })
+
+    expect(상태.현재().target).toBeUndefined()
+  })
+
+  /**
+   * **남의 초점은 안 끈다.** 시트 안 두 칸 사이를 오갈 때 켬과 흐림이 어느 순서로 오든 성립해야
+   * 한다 — 흐림이 먼저면 껐다가 새 칸이 곧 켜고, 켬이 먼저면 흐림은 남의 것이라 안 끈다.
+   */
+  it('이미 다른 칸이 켜져 있으면 흐림이 안 끈다', async () => {
+    const 상태 = 키보드상태()
+    mockInsideSheet.mockReturnValue({ animatedKeyboardState: 상태 })
+    const view = await renderAtom(<TextInput testID="칸" />)
+
+    await act(async () => {
+      fireEvent(view.getByTestId('칸'), 'focus', { nativeEvent: { target: 7 } })
+    })
+    // 옆 칸이 먼저 켜졌다.
+    상태.set((state) => ({ ...state, target: 9 }))
+
+    await act(async () => {
+      fireEvent(view.getByTestId('칸'), 'blur', { nativeEvent: { target: 7 } })
+    })
+
+    expect(상태.현재().target).toBe(9)
+  })
+
+  it('언마운트하면 내 초점을 거둔다 — 남의 것은 두고', async () => {
+    const 상태 = 키보드상태()
+    mockInsideSheet.mockReturnValue({ animatedKeyboardState: 상태 })
+    const view = await renderAtom(<TextInput testID="칸" />)
+
+    await act(async () => {
+      fireEvent(view.getByTestId('칸'), 'focus', { nativeEvent: { target: 7 } })
+    })
+    await act(async () => {
+      view.unmount()
+    })
+
+    expect(상태.현재().target).toBeUndefined()
+  })
+
+  it('호출부의 onFocus·onBlur 도 그대로 부른다', async () => {
+    const onFocus = jest.fn()
+    const onBlur = jest.fn()
+    mockInsideSheet.mockReturnValue({ animatedKeyboardState: 키보드상태() })
+    const view = await renderAtom(<TextInput testID="칸" onFocus={onFocus} onBlur={onBlur} />)
+
+    await act(async () => {
+      fireEvent(view.getByTestId('칸'), 'focus', { nativeEvent: { target: 7 } })
+    })
+    await act(async () => {
+      fireEvent(view.getByTestId('칸'), 'blur', { nativeEvent: { target: 7 } })
+    })
+
+    expect(onFocus).toHaveBeenCalledTimes(1)
+    expect(onBlur).toHaveBeenCalledTimes(1)
+  })
+
+  // 시트 밖에서는 채울 곳이 없다 — 그래도 커서가 들어오고 나가는 것이 안 깨져야 한다.
+  it('시트 밖에서는 아무것도 안 채우고 그냥 동작한다', async () => {
+    const onFocus = jest.fn()
+    const view = await renderAtom(<TextInput testID="칸" onFocus={onFocus} />)
+
+    await act(async () => {
+      fireEvent(view.getByTestId('칸'), 'focus', { nativeEvent: { target: 7 } })
+    })
+
+    expect(onFocus).toHaveBeenCalledTimes(1)
   })
 })

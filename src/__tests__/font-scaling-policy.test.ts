@@ -140,24 +140,23 @@ describe('[[ADR-152]] 결정 4 — 글자는 atom 한 곳에서만 나온다', (
   })
 
   /**
-   * 시트 안의 입력에도 **같은 구멍이 있다**([[ADR-170]] 정정 5).
+   * **`BottomSheetTextInput` 은 이제 아무 데도 안 쓴다**([[ADR-170]] 정정 10).
    *
-   * `BottomSheetTextInput` 은 `react-native` 가 아니라 `@gorhom/bottom-sheet` 에서 오므로 위 규칙에
-   * 안 걸린다. 그 길로 들어오면 클램프가 빠지고, 그것은 **개발 기기에서 안 보이는** 회귀다 —
-   * 이 파일이 존재하는 이유 그대로다. 그래서 같은 자리에서 같이 막는다.
+   * 정정 5 는 시트를 올리려고 그것을 썼는데, 그 부품은 RN 의 입력이 아니라
+   * `react-native-gesture-handler` 의 것을 감싼 것이고 그 층이 **안드로이드 한글 조합을 깼다**.
+   * 지금은 아톰이 RN 입력을 그대로 그리고 시트가 보는 값(`animatedKeyboardState.target`)만 직접
+   * 채운다.
    *
-   * 지나갈 수 있는 자리는 둘뿐이다: 등록하는 곳(`lib/nativewind-interop`)과 고르는 곳(atom).
+   * 막는 이유는 정정 5 때와 **같다** — 그 길로 들어오면 글자 크기 클램프가 빠지고, 이제는 한글
+   * 조합까지 함께 깨진다. 둘 다 **개발 기기에서 안 보이는** 회귀다.
    */
-  it('`BottomSheetTextInput` 은 등록하는 곳과 atom 밖에서 안 쓴다', () => {
-    const 허용 = [
-      join(SRC, 'lib', 'nativewind-interop.ts'),
-      ATOM,
-    ]
-    const offenders = FILES.filter((file) => !허용.includes(file))
-      .filter((file) => readFileSync(file, 'utf8').includes('BottomSheetTextInput'))
-      .map((file) => relative(SRC, file))
+  it('`BottomSheetTextInput` 은 어디에서도 안 쓴다', () => {
+    const offenders = FILES.filter((file) =>
+      readFileSync(file, 'utf8').includes('BottomSheetTextInput'),
+    ).map((file) => relative(SRC, file))
 
-    expect(offenders).toEqual([])
+    // 아톰의 주석은 «왜 안 쓰는가» 를 적으므로 이름이 나온다 — 코드가 아니라 글이다.
+    expect(offenders.filter((file) => !file.endsWith('Text.tsx'))).toEqual([])
   })
 })
 

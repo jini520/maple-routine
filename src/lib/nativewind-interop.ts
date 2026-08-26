@@ -29,7 +29,6 @@
  * **반드시 여기서** 가져올 것.
  */
 
-import { BottomSheetTextInput } from '@gorhom/bottom-sheet'
 import { LinearGradient } from 'expo-linear-gradient'
 import type { LucideIcon } from 'lucide-react-native'
 import { cssInterop } from 'nativewind'
@@ -44,15 +43,6 @@ cssInterop(Svg, {
 })
 
 cssInterop(LinearGradient, { className: 'style' })
-
-/**
- * 시트 안의 글자 칸([[ADR-170]] 정정 5) — `Text` 아톰이 시트 안에서 이것을 그린다.
- *
- * 안쪽이 `react-native-gesture-handler` 의 `TextInput` 이라 **RN 기본 컴포넌트가 아니고**, 그래서
- * NativeWind 가 자동으로 안 가로챈다. 등록을 빼먹으면 이 파일이 내내 경고하는 그 실패 모양이
- * 그대로 난다 — **에러 없이 클래스만 안 붙는다**(시트 안의 금액 칸이 갑자기 기본 글꼴로 보인다).
- */
-cssInterop(BottomSheetTextInput, { className: 'style' })
 
 /**
  * Reanimated 의 `Animated.View` — **step 7(animations)이 들여왔다.**
@@ -121,4 +111,4 @@ function withIconInterop<T extends LucideIcon>(Icon: T): T {
   return Icon
 }
 
-export { AnimatedView, BottomSheetTextInput, LinearGradient, Svg, withIconInterop }
+export { AnimatedView, LinearGradient, Svg, withIconInterop }
