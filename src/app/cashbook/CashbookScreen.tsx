@@ -207,8 +207,8 @@ function MonthArrow(props: {
  * 결정석과 판매를 가르는 것은 그림이 아니라 이름이고, 그 둘을 다른 그림으로 그리면 «거의 같은데
  * 다른 동전» 이 하나 더 생긴다.
  */
-/** 타일 한 변 — `w-14`(56px)와 **같은 값이어야 한다**(초상이 곧 칸의 폭이다). */
-const BOSS_TILE_PX = 56
+/** 타일 한 변 — **칸 폭과 무관하게 고정**이다([[ADR-172]] 정정 3). 칸은 폭의 1/6 이라 기기마다 넓다. */
+const BOSS_TILE_PX = 44
 
 /**
  * 펼친 결정석 줄의 **타일 판**([[ADR-172]] 정정 1) — 그날 잡은 보스를 초상으로 편다.
@@ -219,37 +219,48 @@ const BOSS_TILE_PX = 56
  * **마리당 금액을 안 적는다.** 줄 머리가 합계를 이미 들고 있고, 마리당 금액은 파티원 수·정가와
  * 함께 봐야 뜻이 생긴다(그 자리가 보스 수익 탭이다). 여기서 답하는 질문은 «얼마» 가 아니라 «무엇» 이다.
  *
- * 타일 폭을 못박는 이유는 **격자로 보이게** 하기 위해서다 — 이름 길이에 따라 폭이 달라지면
- * 줄바꿈이 들쭉날쭉해져 «목록» 이 아니라 «흩어진 칩» 이 된다. 그래서 이름은 두 줄까지 접는다.
- *
  * ## 모양은 **네모**다 ([[ADR-172]] 정정 2)
  *
- * `shape="square"` 이고 **초상이 곧 칸의 폭**이다(56px = `w-14`). 초상보다 넓은 칸을 두면 초상
- * 사이가 벌어져 격자가 흩어진다 — 이름만 그 폭 안에서 접힌다.
+ * `shape="square"` 다. 원형은 **줄 안의 표식**을 위한 모양이고(보스 수익 행의 아바타 자리), 여기서는
+ * 초상 자체가 타일이라 격자를 이룬다 — 원이 격자로 서면 네 귀가 비어 사이가 성겨 보인다.
  *
  * 난이도는 **초상 위 왼쪽 아래에 겹친다**. 아래에 한 줄로 따로 두면 타일 높이가 배지만큼 늘어
  * 격자가 세로로 성겨지고, 그러면 «타일» 이 아니라 «세로로 쌓인 작은 카드» 가 된다. 겹치는 것은
  * 드롭 아이콘의 `lv` 배지가 이미 쓰는 관용구다(`BossProfitBossRow`).
  *
- * 글자는 **한 칸**이다(`H`·`EX` …). 56px 위에 「익스트림」 넉 자가 앉으면 초상을 거의 다 덮는데,
+ * 글자는 **한 칸**이다(`H`·`EX` …). 44px 위에 「익스트림」 넉 자가 앉으면 초상을 거의 다 덮는데,
  * **색이 이미 난이도를 말하고 있어** 글자는 그것을 확인만 하면 된다. 색은 한 값도 안 갈린다.
+ *
+ * ## 한 줄에 **여섯**, 이름은 **없다** ([[ADR-172]] 정정 3)
+ *
+ * 칸이 **폭의 1/6** 이라 기기 폭과 무관하게 여섯이 선다. 고정 px 로 두면 같은 코드가 기기마다
+ * 다섯도 되고 일곱도 된다 — «한 줄에 여섯» 은 폭의 함수가 아니라 결정이다. 그래서 **가로 간격을
+ * 안 준다**(퍼센트 여섯에 간격을 더하면 100% 를 넘어 다섯이 된다) — 줄 사이만 벌린다.
+ *
+ * 초상은 칸 안에 **가운데로 44px 고정**이다. 넓은 기기에서 칸이 넓어져도 타일은 안 커진다 —
+ * 커진 것이 문제였으므로 그것을 폭에 따라 되돌리지 않는다.
+ *
+ * **이름을 뺀 자리는 접근성 이름이 받는다**(「난이도 + 보스」). 타일 높이의 절반이 이름이었고,
+ * 캐릭터가 여럿이면 그 판이 화면을 덮어 «그 날» 을 보러 온 목적을 잃었다. 눈으로 읽던 것이
+ * 사라졌다고 스크린리더에서도 사라지면 그것은 «간략하게» 가 아니라 «없어짐» 이다.
  */
 function DefeatedBossTiles(props: { rowKey: string; bosses: readonly DefeatedBoss[] }): React.JSX.Element {
   return (
     <View
       testID={`cashbook-row-bosses-${props.rowKey}`}
-      className="flex-row flex-wrap gap-2 rounded-b-xl border border-t-0 border-border bg-surface px-2 pb-2.5 pt-1.5"
+      className="flex-row flex-wrap gap-y-2 rounded-b-xl border border-t-0 border-border bg-surface px-2 pb-2.5 pt-1.5"
     >
       {props.bosses.map((boss) => (
         <View
           key={`${boss.boss}|${boss.difficulty}`}
           testID={`cashbook-boss-tile-${boss.boss}|${boss.difficulty}`}
-          className="w-14 items-center gap-1"
+          className="w-1/6 items-center"
         >
           <View>
             <BossPortrait
               portraitSlug={findPortraitSlug(boss.boss)}
-              label={boss.boss}
+              // 이름 줄이 없어졌으므로 **여기가 그 정보를 드는 유일한 자리**다.
+              label={`${boss.difficulty} ${boss.boss}`}
               size={BOSS_TILE_PX}
               shape="square"
             />
@@ -257,9 +268,6 @@ function DefeatedBossTiles(props: { rowKey: string; bosses: readonly DefeatedBos
               <DifficultyBadge difficulty={boss.difficulty} size="small" short />
             </View>
           </View>
-          <Text numberOfLines={2} className="text-center text-[10px] leading-tight text-text">
-            {boss.boss}
-          </Text>
         </View>
       ))}
     </View>

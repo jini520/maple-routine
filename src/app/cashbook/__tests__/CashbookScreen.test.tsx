@@ -846,6 +846,40 @@ describe('자동으로 흘러든 줄 ([[ADR-172]])', () => {
     expect(flattenStyle(초상.props.style).borderRadius).toBe(8)
   })
 
+  // ── 정정 3: 한 줄에 여섯 · 이름 없음 ─────────────────────────────────────────
+  //
+  // 칸을 고정 px 로 두면 같은 코드가 기기마다 다섯도 되고 일곱도 된다 — «한 줄에 여섯» 은 폭의
+  // 함수가 아니라 결정이라, 칸이 폭의 1/6 인지를 본다.
+  it('칸이 폭의 1/6 이라 한 줄에 여섯이 선다', async () => {
+    const view = await 그리기()
+    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
+
+    const 칸 = flattenStyle(view.getByTestId('cashbook-boss-tile-스우|하드').props.style)
+    expect(String(칸.width).startsWith('16.6')).toBe(true)
+
+    // 퍼센트 여섯에 가로 간격을 더하면 100% 를 넘어 다섯이 된다 — 줄 사이만 벌린다.
+    const 판 = flattenStyle(view.getByTestId('cashbook-row-bosses-bossCrystal:ocid-1').props.style)
+    expect(판.columnGap ?? 0).toBe(0)
+    expect(Number(판.rowGap)).toBeGreaterThan(0)
+  })
+
+  it('보스 이름을 안 적는다 — 초상이 대신한다', async () => {
+    const view = await 그리기()
+    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
+
+    expect(view.queryByText('스우')).toBeNull()
+    expect(view.queryByText('데미안')).toBeNull()
+  })
+
+  // 눈으로 읽던 것이 사라졌으므로 그 자리를 접근성 이름이 받아야 한다.
+  it('읽어 주는 이름은 「난이도 + 보스」다', async () => {
+    const view = await 그리기()
+    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
+
+    expect(view.getByLabelText('하드 스우')).toBeTruthy()
+    expect(view.getByLabelText('노멀 데미안')).toBeTruthy()
+  })
+
   // 펼친 판은 줄과 **한 카드**여야 한다 — 따로 선 상자로 보이면 «이 줄이 편 것» 이 끊긴다.
   // NativeWind 가 이 클래스를 못 만들면 조용히 테두리가 남으므로 값으로 본다.
   it('펼치면 줄과 판 사이의 선이 사라진다', async () => {
