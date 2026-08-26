@@ -415,8 +415,17 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
    * | 아이템 구매 | 언제나 **메소**다(관세는 메소로 재므로 메포 칸이 없다 — 정정 2 ②) |
    * | 목록 셋 | **항목이 안다**(`spend-catalog.json` 의 `currency`) — 「버프」는 그 안에서도 갈린다 |
    */
+  /**
+   * 단계를 고르기 전에도 **대표가 아는 것**([[ADR-173]] 결정 8, 사용자 지정 2026-08-26).
+   *
+   * 한 대표 안의 단계들은 **단위도 통화도 같다**(하이마운틴 1·2단계는 둘 다 「회」·메포). 그래서
+   * 수량과 시세는 «무엇을 골랐나» 를 안 기다려도 되고, 고른 뒤에야 뜨면 시세를 미리 채워 둘 수
+   * 없는 데다 줄이 나중에 나타나 화면이 밀린다.
+   */
+  const scope = item ?? choice?.items[0] ?? null
+
   const currency: FreeCurrency =
-    category === '기타' ? freeCurrency : direct ? 'meso' : (item?.currency ?? 'meso')
+    category === '기타' ? freeCurrency : direct ? 'meso' : (scope?.currency ?? 'meso')
   const usesPoint = currency === 'point'
   // 시세는 메포 항목에만 뜻이 있다 — 메소 항목에서 물어보면 «왜 묻나» 가 된다.
   const typedRate = Number(rateText)
@@ -704,12 +713,13 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
               </FieldRow>
             )}
 
-            {item !== null && (
+            {scope !== null && (
+              // 단위·상한은 **대표가 안다** — 단계를 고르기 전에도 선다.
               <FieldRow label="수량">
                 <QuantityStepper
                   value={quantity}
-                  unit={item.unit}
-                  max={item.maxQuantity}
+                  unit={scope.unit}
+                  max={scope.maxQuantity}
                   onChange={setQuantity}
                 />
               </FieldRow>

@@ -185,6 +185,25 @@ describe('항목 — 고르면 채워진다', () => {
     expect(view.queryByTestId('spend-sheet-amount')).toBeNull()
   })
 
+  /**
+   * **수량과 시세는 형태·단계를 고르기 전에도 선다**([[ADR-173]] 결정 8, 사용자 지정 2026-08-26).
+   *
+   * 둘 다 «무엇을 골랐나» 와 무관한 칸이다 — 수량의 단위와 통화는 **대표가 이미 안다**(한 대표
+   * 안의 단계들은 단위도 통화도 같다). 고른 뒤에야 뜨면 시세를 미리 채워 둘 수 없고, 줄이 나중에
+   * 나타나 화면이 밀린다.
+   */
+  it('형태·단계를 고르기 전에도 수량과 시세가 선다', async () => {
+    const view = await 그리기({ lastPointRate: null })
+
+    await 누르기(view, '하이마운틴')
+
+    expect(view.getByLabelText('수량 늘리기')).toBeTruthy()
+    expect(view.getByTestId('spend-sheet-rate')).toBeTruthy()
+    // 아직 고를 것이 남았으므로 셀 것이 없다 — 큰 숫자도 저장도 없다.
+    expect(view.queryByTestId('spend-sheet-amount')).toBeNull()
+    expect(view.queryByLabelText('저장')).toBeNull()
+  })
+
   it('고르면 단가가 그대로 큰 숫자가 되고, 환산은 힌트 한 줄이다', async () => {
     const view = await 그리기({ lastPointRate: 1_180 })
 
