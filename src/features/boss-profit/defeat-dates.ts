@@ -208,8 +208,11 @@ let inFlight: Promise<number> | null = null
  * 아직 날짜를 모르는 보스 기록을 캐내 `defeated_on` 을 채운다. **채운 건수**를 돌려준다 —
  * 0 이면 화면이 다시 읽을 이유가 없다.
  *
- * 한 번도 API 를 안 부르는 길이 셋이다: 캐릭터가 없다 · 캘 수 있는 기간에 **미확정 기록이 없다** ·
- * 키가 없다. 정상 상태(전부 캐 놓은 뒤)가 그 둘째라, 화면을 오갈 때마다 호출이 나가지 않는다.
+ * 한 번도 API 를 안 부르는 길이 넷이다: 캐릭터가 없다 · 캘 수 있는 기간에 **미확정 기록이 없다** ·
+ * **가진 관측만으로 다 풀렸다**(리셋 당일·소거법) · 키가 없다. 정상 상태(전부 캐 놓은 뒤)가 그
+ * 둘째라, 화면을 오갈 때마다 호출이 나가지 않는다.
+ *
+ * **키가 없어도 채울 수 있는 것은 채운다** — 소거법과 리셋 당일은 조회가 필요 없다(결정 3).
  */
 export async function resolveDefeatDates(ocids: readonly string[], now: Date): Promise<number> {
   // 두 화면이 같은 순간에 부를 수 있다(결정 9). 원장은 **차례로** 부를 때만 겹침을 막으므로,
@@ -245,10 +248,14 @@ async function runResolveDefeatDates(ocids: readonly string[], now: Date): Promi
     return 0
   }
 
+  /**
+   * **키는 조회할 때만 필요하다** — 여기서 막지 않는다(2026-08-27 실사용 조사).
+   *
+   * 소거법과 리셋 당일은 **관측이 하나도 없어도 답이 나온다**([[ADR-172]] 결정 3). 키 검사를 함수
+   * 맨 앞에 두었더니 조회할 것이 없는 건까지 0 으로 나갔고, 키를 지운 기기에서는 오늘 잡은 보스가
+   * 영영 캘린더에 안 찍혔다.
+   */
   const authConfig = await getAuthConfig()
-  if (authConfig === null) {
-    return 0
-  }
 
   const byOcid = new Map<string, UndatedBossProfitRecord[]>()
   for (const candidate of candidates) {
@@ -278,7 +285,8 @@ async function runResolveDefeatDates(ocids: readonly string[], now: Date): Promi
       const unresolved = records.filter(
         (record) => resolveFor(record, observed, todayDateKey) === null,
       )
-      if (unresolved.length > 0) {
+      // 키가 없으면 **부를 수가 없다** — 가진 것으로 푼 만큼만 채우고 나머지는 NULL 로 둔다.
+      if (unresolved.length > 0 && authConfig !== null) {
         const days = missingDays(ledger.dates, periodsOf(unresolved), floorDateKey, ceilingDateKey)
         for (const [dateKey, keys] of await probeDays(authConfig.apiKey, ocid, days)) {
           observed.set(dateKey, keys)

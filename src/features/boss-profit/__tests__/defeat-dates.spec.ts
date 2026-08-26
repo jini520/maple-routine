@@ -364,3 +364,38 @@ describe('resolveDefeatDates — 두 화면이 같이 불러도 한 번만 돈�
     expect(getUndatedMock).toHaveBeenCalledTimes(1)
   })
 })
+
+/**
+ * **키가 없어도 오늘 건은 채운다**([[ADR-172]] 결정 3, 2026-08-27 실사용 조사).
+ *
+ * 소거법과 리셋 당일은 **조회가 필요 없다** — 관측이 하나도 없어도 답이 나온다. 그런데 키 검사가
+ * 함수 맨 앞에 있어 조회할 것이 없는 경우까지 0 으로 나가고 있었다: 키를 지운 기기에서는 오늘 잡은
+ * 보스가 영영 캘린더에 안 찍힌다.
+ */
+describe('키가 없을 때', () => {
+  it('조회가 필요 없는 건은 그대로 채운다 — 리셋 당일', async () => {
+    getAuthConfigMock.mockResolvedValue(null)
+    getUndatedMock.mockResolvedValue([
+      { ocid: 'o1', boss: '스우', difficulty: '하드', cycle: 'weekly', periodKey: '2026-08-27' },
+    ])
+
+    const dated = await resolveDefeatDates(['o1'], new Date('2026-08-27T01:00:00.000Z'))
+
+    expect(dated).toBe(1)
+    expect(setDefeatedOnMock).toHaveBeenCalledWith(expect.objectContaining({ boss: '스우' }), '2026-08-27')
+    expect(fetchStateMock).not.toHaveBeenCalled()
+  })
+
+  // 조회가 있어야 풀리는 건은 **그대로 NULL** 이다 — 키가 없으면 부를 수가 없다.
+  it('조회가 있어야 풀리는 건은 안 건드린다', async () => {
+    getAuthConfigMock.mockResolvedValue(null)
+    getUndatedMock.mockResolvedValue([
+      { ocid: 'o1', boss: '스우', difficulty: '하드', cycle: 'weekly', periodKey: '2026-08-20' },
+    ])
+
+    const dated = await resolveDefeatDates(['o1'], new Date('2026-08-27T01:00:00.000Z'))
+
+    expect(dated).toBe(0)
+    expect(fetchStateMock).not.toHaveBeenCalled()
+  })
+})
