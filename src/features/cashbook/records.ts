@@ -12,6 +12,7 @@
  *    (손입력 둘 · 보스 결정석 · 아이템 판매) 뒤의 둘은 **여기서 못 고친다**([[ADR-172]] 결정 8).
  */
 import { withSqliteFallback } from '../boss-profit/sqlite-guards'
+import type { BossDifficulty } from '../../types'
 import type { CalendarAmounts, CalendarDayAmounts } from '../../lib/calendar-month'
 import { dropPayoutMeso } from '../../lib/drop-price'
 import { pointToMeso } from '../../lib/spend-catalog'
@@ -100,6 +101,16 @@ interface BossDaySummary {
   ocid: string
   crystalMeso: number
   bossCount: number
+  /**
+   * 그날 잡은 보스 — 줄을 펼치면 뜨는 타일의 원재료다([[ADR-172]] 정정 1).
+   *
+   * **새로 읽는 것이 아니다.** `getDatedBossProfitRecords` 가 이미 보스·난이도를 돌려주고 있었고,
+   * 그것을 `crystalMeso` 로 접기만 하고 버리던 것을 들고 있게 한 것뿐이다.
+   *
+   * `payoutMeso` 는 **여기까지만** 산다 — 줄에 실릴 때 정렬에 쓰고 버린다. 마리당 금액은 파티원
+   * 수·정가와 함께 봐야 뜻이 생겨(그 자리가 보스 수익 탭이다) 타일이 적지 않는다.
+   */
+  bosses: { boss: string; difficulty: BossDifficulty; payoutMeso: number }[]
   dropMeso: number
   dropCount: number
   unpricedCount: number
@@ -155,6 +166,7 @@ async function loadBossDaySummaries(
       ocid,
       crystalMeso: 0,
       bossCount: 0,
+      bosses: [],
       dropMeso: 0,
       dropCount: 0,
       unpricedCount: 0,
@@ -169,6 +181,12 @@ async function loadBossDaySummaries(
     const bucket = bucketOf(record.defeatedOn, record.ocid)
     bucket.crystalMeso += record.payoutMeso
     bucket.bossCount += 1
+    bucket.bosses.push({
+      boss: record.boss,
+      // 이 컬럼이 드는 값은 다섯뿐이다 — `rows.ts`·`drop-price-store.ts` 가 같은 자리에서 같은 단언을 한다.
+      difficulty: record.difficulty as BossDifficulty,
+      payoutMeso: record.payoutMeso,
+    })
   }
 
   const periodKeys = [...new Set(records.map((record) => record.periodKey))]
@@ -263,23 +281,54 @@ export type ManualDayRecord =
   | { kind: 'income'; record: IncomeRecord }
   | { kind: 'spend'; record: SpendRecord }
 
+/** 펼친 결정석 줄의 **타일 하나**([[ADR-172]] 정정 1) — 초상·난이도·이름이 여기서 나온다. */
+export interface DefeatedBoss {
+  boss: string
+  difficulty: BossDifficulty
+}
+
 /**
- * 그날 목록의 **자동 줄**([[ADR-172]] 결정 7·8) — 보스 수익 탭이 원천이라 **여기서 못 고친다.**
+ * 자동 줄이 함께 드는 것 — 캐릭터 하나 × 하루 × 갈래 하나.
  *
- * 캐릭터당 둘이다. 갈라 두는 이유는 **출처 테이블이 다르기 때문**이고(`boss_profit_records` ·
- * `boss_drop_records`), 합치면 「미입력 n」 을 걸 자리가 없어진다.
+ * 두 갈래가 갈라져 있어도 **머리는 같다**: 누가·얼마·몇. 그 셋으로 줄의 겉모습(`recordTitleOf`·
+ * `recordMesoOf`)이 나오므로 갈래를 안 물어보고 그린다.
  */
-export interface AutoDayRecord {
-  kind: 'bossCrystal' | 'dropSale'
+interface AutoDayRecordBase {
   ocid: string
   /** 캐시에 없으면 빈 문자열 — 그때 줄은 갈래 이름만 적는다(`recordTitleOf`). */
   characterName: string
   payoutMeso: number
   /** 결정석이면 «마리», 판매면 «건». */
   count: number
-  /** 판매 줄만 쓴다 — 값을 아직 안 넣은 드롭 수. `'excluded'`(기록 안 함)는 안 센다. */
+}
+
+/**
+ * 결정석 줄 — 누르면 **그 자리에서 펼쳐진다**([[ADR-172]] 정정 1).
+ *
+ * `bosses` 가 이 갈래에만 있는 것이 곧 «판매 줄은 못 펼친다» 다 — 결정 8 이 시트에 대해 한 것과
+ * 같은 장치이고, 화면이 조건을 잘못 쓰면 컴파일 단계에서 걸린다.
+ */
+export interface BossCrystalDayRecord extends AutoDayRecordBase {
+  kind: 'bossCrystal'
+  /** 그날 잡은 보스 — **큰 것부터**다(`toAutoRecords`). 비어 있지 않다(이 줄이 서는 조건이다). */
+  bosses: readonly DefeatedBoss[]
+}
+
+/** 아이템 판매 줄 — 누르면 **보스 수익 탭**이다. 「미입력 n」 이 저쪽에 할 일이 있다고 말한다. */
+export interface DropSaleDayRecord extends AutoDayRecordBase {
+  kind: 'dropSale'
+  /** 값을 아직 안 넣은 드롭 수. `'excluded'`(기록 안 함)는 안 센다. */
   unpricedCount: number
 }
+
+/**
+ * 그날 목록의 **자동 줄**([[ADR-172]] 결정 7·8) — 보스 수익 탭이 원천이라 **여기서 못 고친다.**
+ *
+ * 캐릭터당 둘이다. 갈라 두는 이유는 **출처 테이블이 다르기 때문**이고(`boss_profit_records` ·
+ * `boss_drop_records`), 합치면 「미입력 n」 을 걸 자리가 없어진다. 갈라 둔 덕에 **누르면 하는 일도
+ * 갈린다**(정정 1) — 결정석은 펼치고, 판매는 저쪽으로 간다.
+ */
+export type AutoDayRecord = BossCrystalDayRecord | DropSaleDayRecord
 
 /**
  * 그날 목록의 한 줄. **갈리는 기준은 테이블**이다([[ADR-172]] 결정 8) — `income_records`·
@@ -347,7 +396,12 @@ async function toAutoRecords(summaries: BossDaySummary[]): Promise<AutoDayRecord
         characterName,
         payoutMeso: summary.crystalMeso,
         count: summary.bossCount,
-        unpricedCount: 0,
+        // **큰 것부터**다([[ADR-172]] 정정 1). 게임 순서로 세우면 «오늘 제일 큰 것이 무엇이었나» 를
+        // 눈으로 못 찾는다. 금액이 같으면(가격 미확정 보스끼리 0 이다) 읽은 순서 그대로 둔다 —
+        // `sort` 가 안정 정렬이라 그 순서가 조회 순서이고, 조회 순서는 [[ADR-036]] 이 결정적으로 만든다.
+        bosses: [...summary.bosses]
+          .sort((left, right) => right.payoutMeso - left.payoutMeso)
+          .map(({ boss, difficulty }) => ({ boss, difficulty })),
       })
     }
     // 안 판 드롭만 있어도 줄이 선다 — 「미입력」 이 그 줄이 할 말이다([[ADR-124]] 는 «가격 미입력이

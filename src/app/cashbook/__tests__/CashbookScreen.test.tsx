@@ -746,16 +746,20 @@ describe('떠 있는 ＋ 가 먹는 자리', () => {
   })
 })
 
-// 보스 수익이 흘러든 줄([[ADR-172]] 결정 7·8). **여기서 못 고친다** — 눌러도 시트가 아니라
-// 보스 수익 탭이 열린다. 그것이 [[ADR-171]] 결정 5 의 발효다.
+// 보스 수익이 흘러든 줄([[ADR-172]] 결정 7·8). **여기서 못 고친다** — 눌러도 시트가 안 열린다.
+// 그것이 [[ADR-171]] 결정 5 의 발효다. 가는 곳은 줄마다 다르다(정정 1) — 결정석은 **그 자리에서
+// 펼쳐지고**, 판매는 보스 수익 탭으로 간다.
 describe('자동으로 흘러든 줄 ([[ADR-172]])', () => {
   const 결정석줄 = {
     kind: 'bossCrystal' as const,
     ocid: 'ocid-1',
     characterName: '루디',
     payoutMeso: 3_600_000_000,
-    count: 12,
-    unpricedCount: 0,
+    count: 2,
+    bosses: [
+      { boss: '스우', difficulty: '하드' },
+      { boss: '데미안', difficulty: '노멀' },
+    ],
   }
   const 판매줄 = {
     kind: 'dropSale' as const,
@@ -778,29 +782,85 @@ describe('자동으로 흘러든 줄 ([[ADR-172]])', () => {
 
     // `toHaveTextContent` 는 이 판에서 **완전 일치**다 — 줄 전체를 적는다.
     expect(view.getByTestId('cashbook-row-bossCrystal:ocid-1')).toHaveTextContent(
-      '루디 · 보스 결정석12마리+36억',
+      '루디 · 보스 결정석2마리+36억',
     )
     expect(view.getByTestId('cashbook-row-dropSale:ocid-1')).toHaveTextContent(
       '루디 · 아이템 판매3건 · 미입력 2+40억',
     )
   })
 
-  it('누르면 시트가 아니라 보스 수익 탭이 열린다 (결정 8)', async () => {
+  it('누르면 시트가 안 열린다 — 여기서 못 고친다 (결정 8)', async () => {
     const view = await 그리기()
 
-    await 이름으로누르기(view, '루디 · 보스 결정석 보스 수익에서 보기')
+    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
 
-    expect(mockOpenTab).toHaveBeenCalledWith('Profit')
     expect(view.queryByTestId('spend-sheet-date')).toBeNull()
     expect(view.queryByTestId('income-sheet-date')).toBeNull()
   })
 
-  it('판매 줄도 같은 곳으로 간다', async () => {
+  it('판매 줄은 보스 수익 탭으로 간다 — 「미입력」 이 저쪽 할 일을 가리킨다', async () => {
     const view = await 그리기()
 
     await 이름으로누르기(view, '루디 · 아이템 판매 보스 수익에서 보기')
 
     expect(mockOpenTab).toHaveBeenCalledWith('Profit')
+  })
+
+  // ── 정정 1: 결정석 줄은 **그 자리에서 펼친다** ────────────────────────────────
+  it('결정석 줄을 누르면 탭을 안 옮기고 그날 잡은 보스를 편다', async () => {
+    const view = await 그리기()
+
+    expect(view.queryByTestId('cashbook-row-bosses-bossCrystal:ocid-1')).toBeNull()
+
+    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
+
+    expect(mockOpenTab).not.toHaveBeenCalled()
+    expect(view.getByTestId('cashbook-boss-tile-스우|하드')).toBeTruthy()
+    expect(view.getByTestId('cashbook-boss-tile-데미안|노멀')).toBeTruthy()
+  })
+
+  // 사용자가 지정한 것이 «초상화» 다 — 이름만 뜨면 그 지정을 안 지킨 것이다.
+  it('타일마다 초상이 든다', async () => {
+    const view = await 그리기()
+    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
+
+    expect(view.getAllByTestId('boss-portrait')).toHaveLength(2)
+  })
+
+  // 펼친 판은 줄과 **한 카드**여야 한다 — 따로 선 상자로 보이면 «이 줄이 편 것» 이 끊긴다.
+  // NativeWind 가 이 클래스를 못 만들면 조용히 테두리가 남으므로 값으로 본다.
+  it('펼치면 줄과 판 사이의 선이 사라진다', async () => {
+    const view = await 그리기()
+    const 줄 = view.getByTestId('cashbook-row-bossCrystal:ocid-1')
+
+    // 접혀 있으면 네 귀가 둥근 카드 하나다.
+    expect(flattenStyle(줄.props.style)).toMatchObject({ borderRadius: 12, borderWidth: 1 })
+
+    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
+
+    // 펼치면 아래쪽 선이 0 이 되고 아래 두 귀가 각진다 — 판이 그 자리를 잇는다.
+    const 펼친줄 = flattenStyle(줄.props.style)
+    expect(펼친줄).toMatchObject({ borderTopLeftRadius: 12, borderBottomWidth: 0 })
+    expect(펼친줄.borderRadius).toBeUndefined()
+  })
+
+  it('다시 누르면 접힌다', async () => {
+    const view = await 그리기()
+    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
+    await 이름으로누르기(view, '루디 · 보스 결정석 접기')
+
+    expect(view.queryByTestId('cashbook-row-bosses-bossCrystal:ocid-1')).toBeNull()
+  })
+
+  // 줄의 신원이 `bossCrystal:{ocid}` 라 날짜를 안 든다(결정 7) — 안 접으면 다른 날의 줄이
+  // 펼쳐진 채로 남는다.
+  it('날을 바꾸면 접힌다', async () => {
+    const view = await 그리기()
+    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
+
+    await 누르기(view, 'calendar-day-2026-08-25')
+
+    expect(view.queryByTestId('cashbook-row-bosses-bossCrystal:ocid-1')).toBeNull()
   })
 
   it('들어올 때 처치 날짜를 캐고, 캔 것이 있으면 다시 읽는다 (결정 9)', async () => {

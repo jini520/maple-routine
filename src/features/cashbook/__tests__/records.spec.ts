@@ -452,6 +452,55 @@ describe('loadDayRecords — 캐릭터당 두 줄 (결정 7)', () => {
     expect((await loadDayRecords('2026-08-21')).map(recordTitleOf)).toEqual(['보스 결정석'])
   })
 
+  // 줄을 펼치면 뜰 것 — 그날 잡은 보스다([[ADR-172]] 정정 1). **새로 읽는 것이 없다**:
+  // 접어서 버리던 보스·난이도를 들고 있게 한 것뿐이다.
+  it('결정석 줄이 그날 잡은 보스를 들고 있다', async () => {
+    bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록, 데미안기록])
+    const { loadDayRecords } = require('../records') as typeof import('../records')
+
+    const [줄] = await loadDayRecords('2026-08-21')
+
+    expect(줄.kind).toBe('bossCrystal')
+    expect(줄.kind === 'bossCrystal' ? 줄.bosses : null).toEqual([
+      { boss: '스우', difficulty: '하드' },
+      { boss: '데미안', difficulty: '하드' },
+    ])
+  })
+
+  // 게임 순서로 세우면 «오늘 제일 큰 것이 무엇이었나» 를 눈으로 못 찾는다.
+  it('큰 것부터 선다 — 결정석이 비싼 순이다', async () => {
+    bossProfit.getDatedBossProfitRecords.mockResolvedValue([
+      { ...스우기록, boss: '데미안', payoutMeso: 1_500_000_000 },
+      { ...스우기록, boss: '검은 마법사', difficulty: '하드', payoutMeso: 9_000_000_000 },
+      스우기록,
+    ])
+    const { loadDayRecords } = require('../records') as typeof import('../records')
+
+    const [줄] = await loadDayRecords('2026-08-21')
+
+    expect(줄.kind === 'bossCrystal' ? 줄.bosses.map((boss) => boss.boss) : null).toEqual([
+      '검은 마법사',
+      '스우',
+      '데미안',
+    ])
+  })
+
+  // 같은 보스를 난이도를 갈아 두 번 잡는 것은 정상이라(주간 한도가 보스별이 아니다) 두 타일이다.
+  it('난이도가 다르면 다른 타일이다', async () => {
+    bossProfit.getDatedBossProfitRecords.mockResolvedValue([
+      스우기록,
+      { ...스우기록, difficulty: '노멀', payoutMeso: 500_000_000 },
+    ])
+    const { loadDayRecords } = require('../records') as typeof import('../records')
+
+    const [줄] = await loadDayRecords('2026-08-21')
+
+    expect(줄.kind === 'bossCrystal' ? 줄.bosses : null).toEqual([
+      { boss: '스우', difficulty: '하드' },
+      { boss: '스우', difficulty: '노멀' },
+    ])
+  })
+
   it('보스 줄은 손입력이 아니다 — 여기서 못 고친다 (결정 8)', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
     const { loadDayRecords, isManualRecord, rowKeyOf } = require('../records') as typeof import('../records')

@@ -7,8 +7,8 @@
  * |---|---|---|
  * | 지출 | `spend_records`([[ADR-166]]) | **예** |
  * | 손입력 수익 | `income_records`([[ADR-170]]) | **예** |
- * | 보스 결정석 | `boss_profit_records` 의 `defeated_on`([[ADR-172]]) | **아니오** — 보스 수익 탭으로 간다 |
- * | 아이템 판매 | `boss_drop_records` — 날짜는 위에서 **물려받는다** | **아니오** — 같다 |
+ * | 보스 결정석 | `boss_profit_records` 의 `defeated_on`([[ADR-172]]) | **아니오** — 그 자리에서 **펼쳐진다**(정정 1) |
+ * | 아이템 판매 | `boss_drop_records` — 날짜는 위에서 **물려받는다** | **아니오** — 보스 수익 탭으로 간다 |
  *
  * 넷째까지 붙은 것이 #239 다. 남은 원천은 **사냥 타이머 자동 수익** 하나이고, 그때까지 사냥 수익은
  * 손으로 적는다([[ADR-170]] 결정 1).
@@ -50,6 +50,8 @@ import { Pressable, View } from 'react-native'
 
 import { Text } from '../../components/atoms/Text/Text'
 import { CalendarMonth } from '../../components/molecules/CalendarMonth/CalendarMonth'
+import { DifficultyBadge } from '../../components/atoms/DifficultyBadge/DifficultyBadge'
+import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
 import { ProfitIcon } from '../../components/atoms/ProfitIcon/ProfitIcon'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { SpeedDial } from '../../components/organisms/SpeedDial/SpeedDial'
@@ -73,8 +75,10 @@ import {
 } from '../../lib/calendar-month'
 import {
   CalendarIcon,
+  ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  ChevronUpIcon,
   ShoppingCartIcon,
 } from '../../lib/icons'
 import { formatMesoCompact } from '../../lib/meso-compact'
@@ -97,8 +101,12 @@ import {
   isManualRecord,
   rowKeyOf,
   type DayRecord,
+  type DefeatedBoss,
   type ManualDayRecord,
 } from '../../features/cashbook/records'
+// 보스 수익 탭의 행이 초상을 찾는 **그 함수**다([[ADR-172]] 정정 1) — 같은 보스가 두 화면에서
+// 다른 그림이면 안 된다. 화면끼리의 참조는 `app/today/view-model.ts` 가 이미 트고 있는 길이다.
+import { findPortraitSlug } from '../boss-profit/character-groups'
 import { useOpenTab } from '../use-open-tab'
 import { useToastStore } from '../../features/toast/store'
 import { IncomeSheet, type IncomeDraft } from './IncomeSheet'
@@ -187,71 +195,140 @@ function MonthArrow(props: {
  *
  * ## 자동 줄도 같은 모양이다 ([[ADR-172]] 결정 7·8)
  *
- * 보스 결정석·아이템 판매 줄은 **여기서 못 고치는데도 같은 카드**를 쓴다. 둘 다 «눌러서 어딘가로
- * 가는 줄» 이라 화살촉이 말하는 것이 같기 때문이다 — 가는 곳만 다르다(시트 vs 보스 수익 탭).
- * 그 차이는 그림이 아니라 **읽어 주는 이름**이 진다(`고치기` vs `보스 수익에서 보기`).
+ * 보스 결정석·아이템 판매 줄은 **여기서 못 고치는데도 같은 카드**를 쓴다. 셋 다 «눌러서 무언가가
+ * 일어나는 줄» 이기 때문이다. **일어나는 일은 셋으로 갈린다** — 손입력은 시트가 열리고, 결정석은
+ * 그 자리에서 펼쳐지며([[ADR-172]] 정정 1), 판매는 보스 수익 탭으로 간다.
+ *
+ * 그 셋을 **화살촉이 미리 말한다** — `›`(간다) vs `⌄`/`⌃`(편다). 읽어 주는 이름도 함께 갈린다
+ * (`고치기` · `펼치기`/`접기` · `보스 수익에서 보기`). 같은 카드가 서로 다르게 반응하는데 표식이
+ * 하나면 그 차이가 고장으로 읽힌다.
  *
  * 아이콘도 **새로 안 만든다**([[ADR-170]] 결정 9) — 자동 줄은 둘 다 수익이라 `ProfitIcon` 이다.
  * 결정석과 판매를 가르는 것은 그림이 아니라 이름이고, 그 둘을 다른 그림으로 그리면 «거의 같은데
  * 다른 동전» 이 하나 더 생긴다.
  */
-function DayRecordRow(props: { entry: DayRecord; onPress: () => void }): React.JSX.Element {
-  const { entry } = props
+/**
+ * 펼친 결정석 줄의 **타일 판**([[ADR-172]] 정정 1) — 그날 잡은 보스를 초상으로 편다.
+ *
+ * **새로 만든 그림이 0개**다([[ADR-170]] 결정 9 와 같은 태도). 초상은 `BossPortrait`, 난이도는
+ * `DifficultyBadge`, 슬러그는 `findPortraitSlug` — 셋 다 보스 수익 탭의 보스 행이 쓰는 그것이다.
+ *
+ * **마리당 금액을 안 적는다.** 줄 머리가 합계를 이미 들고 있고, 마리당 금액은 파티원 수·정가와
+ * 함께 봐야 뜻이 생긴다(그 자리가 보스 수익 탭이다). 여기서 답하는 질문은 «얼마» 가 아니라 «무엇» 이다.
+ *
+ * 타일 폭을 못박는 이유는 **격자로 보이게** 하기 위해서다 — 이름 길이에 따라 폭이 달라지면
+ * 줄바꿈이 들쭉날쭉해져 «목록» 이 아니라 «흩어진 칩» 이 된다. 그래서 이름은 두 줄까지 접는다.
+ */
+function DefeatedBossTiles(props: { rowKey: string; bosses: readonly DefeatedBoss[] }): React.JSX.Element {
+  return (
+    <View
+      testID={`cashbook-row-bosses-${props.rowKey}`}
+      className="flex-row flex-wrap gap-2 rounded-b-xl border border-t-0 border-border bg-surface px-2 pb-2.5 pt-1.5"
+    >
+      {props.bosses.map((boss) => (
+        <View
+          key={`${boss.boss}|${boss.difficulty}`}
+          testID={`cashbook-boss-tile-${boss.boss}|${boss.difficulty}`}
+          className="w-16 items-center gap-1"
+        >
+          <BossPortrait portraitSlug={findPortraitSlug(boss.boss)} label={boss.boss} size={36} />
+          <DifficultyBadge difficulty={boss.difficulty} size="small" />
+          <Text numberOfLines={2} className="text-center text-[10px] leading-tight text-text">
+            {boss.boss}
+          </Text>
+        </View>
+      ))}
+    </View>
+  )
+}
+
+function DayRecordRow(props: {
+  entry: DayRecord
+  expanded: boolean
+  onPress: () => void
+}): React.JSX.Element {
+  const { entry, expanded } = props
   const rowKey = rowKeyOf(entry)
   // **자동 줄은 언제나 수익**이다([[ADR-172]] 결정 7) — 결정석도 판매도 들어오는 돈이다.
   const income = entry.kind !== 'spend'
   const cash = recordCashOf(entry)
   const countLabel = recordCountLabelOf(entry)
   const Icon = income ? ProfitIcon : ShoppingCartIcon
+  /**
+   * **펼칠 수 있는 줄은 결정석 하나**다([[ADR-172]] 정정 1). 판매 줄은 `bosses` 를 아예 안 갖는
+   * 타입이라(`AutoDayRecord` 가 합집합이다) 이 분기를 잘못 쓰면 컴파일 단계에서 걸린다.
+   */
+  const bosses = entry.kind === 'bossCrystal' ? entry.bosses : null
+  const isOpen = expanded && bosses !== null
+  /**
+   * 화살촉이 **무슨 일이 일어날지 미리 말한다.** 같은 카드 두 줄이 서로 다르게 반응하는데
+   * (하나는 펼치고 하나는 탭을 옮긴다) 그림이 같으면 그것이 고장으로 읽힌다.
+   */
+  const Chevron = bosses === null ? ChevronRightIcon : isOpen ? ChevronUpIcon : ChevronDownIcon
+  const action = isManualRecord(entry)
+    ? '고치기'
+    : bosses === null
+      ? '보스 수익에서 보기'
+      : isOpen
+        ? '접기'
+        : '펼치기'
 
   return (
-    <Pressable
-      role="button"
-      testID={`cashbook-row-${rowKey}`}
-      // 자동 줄은 **고치러 가는 것이 아니라 보러 가는 것**이다([[ADR-172]] 결정 8) — 읽어 주는
-      // 이름이 그 사실을 말해야 «눌렀더니 시트가 안 열린다» 가 고장으로 읽히지 않는다.
-      aria-label={`${recordTitleOf(entry)} ${isManualRecord(entry) ? '고치기' : '보스 수익에서 보기'}`}
-      onPress={props.onPress}
-      className="flex-row items-center gap-2 rounded-xl border border-border bg-surface py-2 pl-2 pr-1.5 active:opacity-60"
-    >
-      <View
-        testID={`cashbook-row-icon-${rowKey}`}
-        className={`h-6 w-6 items-center justify-center rounded-full ${
-          income ? 'bg-rise-tint' : 'bg-fall-tint'
+    <View>
+      <Pressable
+        role="button"
+        testID={`cashbook-row-${rowKey}`}
+        // 자동 줄은 **고치러 가는 것이 아니라 보러 가는 것**이다([[ADR-172]] 결정 8) — 읽어 주는
+        // 이름이 그 사실을 말해야 «눌렀더니 시트가 안 열린다» 가 고장으로 읽히지 않는다.
+        aria-label={`${recordTitleOf(entry)} ${action}`}
+        aria-expanded={bosses === null ? undefined : isOpen}
+        onPress={props.onPress}
+        // 펼치면 **한 카드**가 된다 — 아래 판과 테두리를 잇고 그 사이의 선을 지운다. 판이 따로 선
+        // 상자로 보이면 «이 줄이 편 것» 이라는 사실이 끊긴다.
+        className={`flex-row items-center gap-2 border border-border bg-surface py-2 pl-2 pr-1.5 active:opacity-60 ${
+          isOpen ? 'rounded-t-xl border-b-0' : 'rounded-xl'
         }`}
       >
-        <Icon
-          className={`h-3.5 w-3.5 ${income ? 'text-rise-ink' : 'text-fall-ink'}`}
-          strokeWidth={2}
-          aria-hidden
-        />
-      </View>
+        <View
+          testID={`cashbook-row-icon-${rowKey}`}
+          className={`h-6 w-6 items-center justify-center rounded-full ${
+            income ? 'bg-rise-tint' : 'bg-fall-tint'
+          }`}
+        >
+          <Icon
+            className={`h-3.5 w-3.5 ${income ? 'text-rise-ink' : 'text-fall-ink'}`}
+            strokeWidth={2}
+            aria-hidden
+          />
+        </View>
 
-      <Text numberOfLines={1} className="shrink text-xs text-text">
-        {recordTitleOf(entry)}
-      </Text>
-      {countLabel !== null && (
-        // 갈래마다 세는 것이 다르다(`×2` · `12마리` · `3건 · 미입력 2`) — 그 분기는 화면이 아니라
-        // `recordCountLabelOf` 가 든다([[ADR-147]] 결정 8).
-        // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
-        <Text numberOfLines={1} className="shrink-0 text-[11px] text-text-muted" style={TABULAR_NUMS}>
-          {countLabel}
+        <Text numberOfLines={1} className="shrink text-xs text-text">
+          {recordTitleOf(entry)}
         </Text>
-      )}
+        {countLabel !== null && (
+          // 갈래마다 세는 것이 다르다(`×2` · `12마리` · `3건 · 미입력 2`) — 그 분기는 화면이 아니라
+          // `recordCountLabelOf` 가 든다([[ADR-147]] 결정 8).
+          // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
+          <Text numberOfLines={1} className="shrink-0 text-[11px] text-text-muted" style={TABULAR_NUMS}>
+            {countLabel}
+          </Text>
+        )}
 
-      <Text
-        className={`ml-auto shrink-0 text-xs font-semibold ${income ? 'text-rise-ink' : 'text-fall-ink'}`}
-        style={TABULAR_NUMS}
-      >
-        {income ? '+' : '−'}
-        {cash === null ? formatMesoCompact(recordMesoOf(entry)) : `${cash.toLocaleString()}원`}
-      </Text>
-      {/* 화살촉이 상자를 하나 쓰는 이유: lucide 아이콘은 `testID` 를 SVG 안으로 흘려보내지 않아
-          «화살촉이 사라졌다» 를 테스트가 못 잡는다. 상자는 `shrink-0` 도 함께 든다. */}
-      <View testID={`cashbook-row-chevron-${rowKey}`} className="shrink-0">
-        <ChevronRightIcon className="h-4 w-4 text-text-disabled" strokeWidth={2} aria-hidden />
-      </View>
-    </Pressable>
+        <Text
+          className={`ml-auto shrink-0 text-xs font-semibold ${income ? 'text-rise-ink' : 'text-fall-ink'}`}
+          style={TABULAR_NUMS}
+        >
+          {income ? '+' : '−'}
+          {cash === null ? formatMesoCompact(recordMesoOf(entry)) : `${cash.toLocaleString()}원`}
+        </Text>
+        {/* 화살촉이 상자를 하나 쓰는 이유: lucide 아이콘은 `testID` 를 SVG 안으로 흘려보내지 않아
+            «화살촉이 사라졌다» 를 테스트가 못 잡는다. 상자는 `shrink-0` 도 함께 든다. */}
+        <View testID={`cashbook-row-chevron-${rowKey}`} className="shrink-0">
+          <Chevron className="h-4 w-4 text-text-disabled" strokeWidth={2} aria-hidden />
+        </View>
+      </Pressable>
+      {isOpen && <DefeatedBossTiles rowKey={rowKey} bosses={bosses} />}
+    </View>
   )
 }
 
@@ -283,6 +360,14 @@ export function CashbookScreen(): React.JSX.Element {
    */
   const [sheet, setSheet] = useState<'income' | 'expense' | ManualDayRecord | null>(null)
   const [dayRecords, setDayRecords] = useState<DayRecord[]>([])
+  /**
+   * 펼쳐 둔 결정석 줄([[ADR-172]] 정정 1) — **한 번에 하나**다. 캐릭터가 여럿이면 판 여럿이 한
+   * 화면을 넘긴다.
+   *
+   * 값은 `rowKeyOf` 가 만든 줄의 신원(`bossCrystal:{ocid}`)이다. 그것이 **날짜를 안 들고 있으므로**
+   * (결정 7) 날을 바꿀 때 여기서 지워야 한다 — 안 그러면 다른 날의 줄이 펼쳐진 채로 보인다.
+   */
+  const [expandedRowKey, setExpandedRowKey] = useState<string | null>(null)
   const [amounts, setAmounts] = useState<CalendarAmounts>(NO_AMOUNTS)
   const [lastPointRate, setLastPointRate] = useState<number | null>(null)
   const openTab = useOpenTab()
@@ -424,6 +509,19 @@ export function CashbookScreen(): React.JSX.Element {
       setSheet(entry)
       return
     }
+    /**
+     * **결정석 줄은 안 나간다 — 그 자리에서 편다**([[ADR-172]] 정정 1, 사용자 지정 2026-08-26).
+     *
+     * 결정 8 의 근거(«고치면 어느 쪽이 참인지 사라진다»)는 그대로다 — 펼친 타일은 읽기 전용이다.
+     * 사용자가 하려던 것이 고치기가 아니라 «무엇을 잡았지» 였고, 그 답을 이 줄이 이미 들고 있다.
+     * 탭을 옮기면 고른 날과 보던 기간을 함께 잃어 그 날의 다른 줄을 마저 못 본다.
+     */
+    if (entry.kind === 'bossCrystal') {
+      const key = rowKeyOf(entry)
+      setExpandedRowKey((current) => (current === key ? null : key))
+      return
+    }
+    // 판매 줄은 그대로 간다 — 「미입력 n」 이 **여기서 못 하는 일**(값 넣기)을 가리킨다.
     openTab('Profit')
   }
 
@@ -431,6 +529,9 @@ export function CashbookScreen(): React.JSX.Element {
   // 주간에는 그런 칸이 없으므로(이레가 전부 그 주다) 주는 그대로 둔다.
   function selectDate(dateKey: string): void {
     setSelectedDateKey(dateKey)
+    // 펼친 판은 **그 날의 것**이다 — 줄의 신원이 날짜를 안 들어([[ADR-172]] 결정 7) 여기서 접지
+    // 않으면 다른 날의 줄이 펼쳐진 채로 남는다.
+    setExpandedRowKey(null)
     if (!isWeekly) setMonthKey(monthKeyOf(dateKey))
   }
 
@@ -572,6 +673,7 @@ export function CashbookScreen(): React.JSX.Element {
                       <DayRecordRow
                         key={rowKeyOf(entry)}
                         entry={entry}
+                        expanded={expandedRowKey === rowKeyOf(entry)}
                         onPress={() => openRecord(entry)}
                       />
                     ))}
