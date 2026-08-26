@@ -254,3 +254,37 @@ describe('캐릭터 귀속 ([[ADR-166]] 결정 3)', () => {
     expect(onSave.mock.calls[0][0]).toMatchObject({ ocid: null })
   })
 })
+
+/**
+ * **수정 모드에서는 «무엇인지» 를 못 바꾼다**([[ADR-173]] 결정 15, 사용자 지정 2026-08-26).
+ * 갈래를 바꾸면 그 기록은 «다른 것» 이 된다 — 고치는 것이 아니라 새로 적는 것이다.
+ */
+describe('수정 모드 ([[ADR-173]] 결정 15)', () => {
+  const 판매기록 = {
+    id: 'inc-9',
+    ocid: null,
+    earnedOn: '2026-08-23',
+    category: '아이템 판매' as const,
+    item: '앱솔랩스 케이프',
+    mesoAmount: 1_200_000_000,
+    memo: null,
+    recordedAt: '2026-08-23T01:00:00.000Z',
+  }
+
+  // **제목이 «고른 것»** 이다(사용자 지정) — 수입은 고를 것이 갈래뿐이라 그것이 곧 제목이다.
+  it('제목이 갈래이고 칩이 아예 없다', async () => {
+    const view = await 그리기({ editing: 판매기록, onDelete: jest.fn() })
+
+    expect(view.getByTestId('income-sheet-title')).toHaveTextContent('아이템 판매')
+    expect(view.queryByText('수입 수정')).toBeNull()
+    expect(view.queryByLabelText('사냥')).toBeNull()
+  })
+
+  it('세부는 그대로 고친다 — 이름·금액·캐릭터', async () => {
+    const view = await 그리기({ editing: 판매기록, onDelete: jest.fn() })
+
+    expect(view.getByTestId('income-sheet-name-label')).toHaveTextContent('판 것')
+    expect(view.getByTestId('income-sheet-amount').props.value).toBe('1,200,000,000')
+    expect(view.getByTestId('income-sheet-character-trigger')).toBeTruthy()
+  })
+})

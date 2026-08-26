@@ -905,3 +905,82 @@ describe('캐릭터 귀속 ([[ADR-166]] 결정 3)', () => {
     expect(onSave.mock.calls[0][0]).toMatchObject({ ocid: null })
   })
 })
+
+/**
+ * **수정 모드에서는 «무엇인지» 를 못 바꾼다**([[ADR-173]] 결정 15, 사용자 지정 2026-08-26).
+ *
+ * *"이미 입력된 항목을 클릭해서 띄운 수정 시트는 다른걸로 수정할 수 없도록해. ex) 에픽던전
+ * 악몽선경 → 악몽선경의 세부 사항만 수정 가능."*
+ *
+ * 갈래와 항목은 **글자로만** 서고, 세부(단계·형태·수량·시세·캐릭터)는 그대로 고칠 수 있다.
+ */
+describe('수정 모드 ([[ADR-173]] 결정 15)', () => {
+  const 악몽선경 = {
+    id: 'spd-9',
+    ocid: null,
+    spentOn: '2026-08-23',
+    category: '컨텐츠' as const,
+    item: '악몽선경 2단계',
+    form: '경험치',
+    quantity: 1,
+    mesoAmount: null,
+    tariffMeso: null,
+    pointAmount: 50_000,
+    pointPer100mMeso: 1_180,
+    cashAmount: null,
+    memo: null,
+    recordedAt: '2026-08-23T01:00:00.000Z',
+  }
+
+  async function 고치기() {
+    return 그리기({ editing: 악몽선경, onDelete: jest.fn() })
+  }
+
+  /**
+   * **제목이 «고른 것» 을 말한다**(사용자 지정 2026-08-26) — 「지출 수정」 이 아니다.
+   * 목록 갈래면 그 항목, 직접 입력이면 갈래다.
+   */
+  it('제목이 고른 항목이다', async () => {
+    const view = await 고치기()
+
+    expect(view.getByTestId('spend-sheet-title')).toHaveTextContent('악몽선경')
+    expect(view.queryByText('지출 수정')).toBeNull()
+  })
+
+  it('갈래를 못 바꾼다 — 칩이 아예 없다', async () => {
+    const view = await 고치기()
+
+    expect(view.queryByLabelText('아이템 구매')).toBeNull()
+    expect(view.queryByLabelText('컨텐츠')).toBeNull()
+  })
+
+  // 제목이 이미 말하므로 갈래 줄도 항목 줄도 안 세운다 — 같은 사실을 두 번 적는 일이다.
+  it('갈래 줄도 항목 줄도 없다', async () => {
+    const view = await 고치기()
+
+    expect(view.queryByLabelText('다시 고르기')).toBeNull()
+    expect(view.queryByText('갈래')).toBeNull()
+    expect(view.queryByText('항목')).toBeNull()
+  })
+
+  it('세부는 그대로 고친다 — 수량·시세·캐릭터', async () => {
+    const view = await 고치기()
+
+    expect(view.getByLabelText('수량 늘리기')).toBeTruthy()
+    expect(view.getByTestId('spend-sheet-rate').props.value).toBe('1180')
+    expect(view.getByTestId('spend-sheet-character-trigger')).toBeTruthy()
+  })
+
+  // 직접 입력도 같다 — 갈래는 글자이고 사용처·금액은 고칠 수 있다.
+  it('직접 입력도 갈래를 못 바꾼다', async () => {
+    const view = await 그리기({
+      editing: { ...악몽선경, category: '기타' as const, item: '메소마켓 수수료', form: null, quantity: null },
+      onDelete: jest.fn(),
+    })
+
+    expect(view.queryByLabelText('컨텐츠')).toBeNull()
+    // 직접 입력은 고른 것이 갈래뿐이라 그것이 곧 제목이다.
+    expect(view.getByTestId('spend-sheet-title')).toHaveTextContent('기타')
+    expect(view.getByTestId('spend-sheet-name')).toBeTruthy()
+  })
+})

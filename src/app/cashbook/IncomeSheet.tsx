@@ -150,8 +150,14 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
     >
       <View className="gap-3 px-4 pb-2">
         <View className="flex-row items-baseline justify-between gap-2">
-          <Text className="text-base font-bold text-rise-ink">
-            {editing ? '수입 수정' : '수입 추가'}
+          {/* **수정 모드의 머리는 «고른 것»** 이다([[ADR-173]] 결정 15, 사용자 지정) — 수입은
+              고를 것이 갈래뿐이라 그것이 곧 제목이다. 제목이 말하므로 아래 칩은 안 선다. */}
+          <Text
+            testID="income-sheet-title"
+            numberOfLines={1}
+            className="shrink text-base font-bold text-rise-ink"
+          >
+            {editing ? category : '수입 추가'}
           </Text>
           <Text
             testID="income-sheet-date"
@@ -162,16 +168,20 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
           </Text>
         </View>
 
-        <View className="flex-row flex-wrap gap-1.5">
-          {INCOME_CATEGORIES.map((each) => (
-            <CategoryChip
-              key={each}
-              label={each}
-              selected={each === category}
-              onPress={() => setCategory(each)}
-            />
-          ))}
-        </View>
+        {/* **수정 모드에는 칩이 없다**(결정 15) — 갈래를 바꾸면 그 기록은 «다른 것» 이 되고,
+            무엇이었는지는 **제목**이 이미 말한다. */}
+        {!editing && (
+          <View className="flex-row flex-wrap gap-1.5">
+            {INCOME_CATEGORIES.map((each) => (
+              <CategoryChip
+                key={each}
+                label={each}
+                selected={each === category}
+                onPress={() => setCategory(each)}
+              />
+            ))}
+          </View>
+        )}
 
         <SelectField
           label="캐릭터"

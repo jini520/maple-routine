@@ -137,9 +137,13 @@ function currencyOfLabel(label: string): FreeCurrency {
  * 축이 하나로 정리되는 것이 이 줄의 일이다. 전에는 라벨–값, 오른쪽 큰 숫자, 오른쪽 칩이 번갈아
  * 나와 눈이 좌우로 튀었다.
  */
-function FieldRow(props: { label: string; children: React.ReactNode }): React.JSX.Element {
+function FieldRow(props: {
+  label: string
+  children: React.ReactNode
+  testID?: string
+}): React.JSX.Element {
   return (
-    <View className="flex-row items-center gap-3 border-b border-border pb-2">
+    <View testID={props.testID} className="flex-row items-center gap-3 border-b border-border pb-2">
       <Text className="shrink-0 text-xs text-text-muted">{props.label}</Text>
       <View className="ml-auto flex-row items-center">{props.children}</View>
     </View>
@@ -493,6 +497,15 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
   const canSave = hasSubject && !blocked
 
   /**
+   * 수정 모드의 머리([[ADR-173]] 결정 15, 사용자 지정) — **고른 것**을 적는다.
+   *
+   * 목록 갈래면 그 항목(「악몽선경」), 직접 입력이면 갈래(「아이템 구매」)다. 카탈로그가 그 항목을
+   * 못 찾으면(참조표가 갈렸다) 기록에 적힌 이름을 그대로 쓴다 — 「지출 수정」 으로 돌아가면 그 줄이
+   * «무엇을 고치는 중인가» 를 말하지 못한다.
+   */
+  const editingTitle = direct ? category : (choice?.label ?? props.editing?.item ?? category)
+
+  /**
    * 큰 숫자 밑의 **힌트 한 줄**([[ADR-173]] 결정 2) — 값이 갈릴 때만 뜻이 있다.
    *
    * 캐시는 `undefined` 라 **줄이 통째로 없다**: 환산을 안 하므로 적을 것이 없고([[ADR-166]] 정정
@@ -625,9 +638,20 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
           `items-baseline` 이 아니라 `items-center` 다 — 화살촉은 글자가 아니라 밑줄이 없다.
         */}
         <View className="flex-row items-center justify-between gap-2">
-          {choice === null ? (
-            <Text className="text-base font-bold text-text">
-              {editing ? '지출 수정' : '지출 추가'}
+          {/*
+            **수정 모드의 머리는 «고른 것» 이다**([[ADR-173]] 결정 15, 사용자 지정 2026-08-26).
+            목록 갈래면 그 항목(「악몽선경」), 직접 입력이면 갈래(「아이템 구매」)다. 되돌아갈 곳이
+            없으므로(고른 것을 못 바꾼다) 화살촉도 없다.
+
+            제목이 그것을 말하므로 **갈래 줄도 항목 줄도 안 세운다** — 같은 사실을 두 번 적는 일이다.
+          */}
+          {choice === null || editing ? (
+            <Text
+              testID="spend-sheet-title"
+              numberOfLines={1}
+              className="shrink text-base font-bold text-text"
+            >
+              {editing ? editingTitle : '지출 추가'}
             </Text>
           ) : (
             <Pressable
@@ -657,16 +681,20 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
           </Text>
         </View>
 
-        <View className="flex-row flex-wrap gap-1.5">
-          {SPEND_CATEGORIES.map((each) => (
-            <CategoryChip
-              key={each}
-              label={each}
-              selected={each === category}
-              onPress={() => selectCategory(each)}
-            />
-          ))}
-        </View>
+        {/* **수정 모드에는 칩이 없다**(결정 15) — 갈래를 바꾸면 그 기록은 «다른 것» 이 되고,
+            무엇이었는지는 **제목**이 이미 말한다. */}
+        {!editing && (
+          <View className="flex-row flex-wrap gap-1.5">
+            {SPEND_CATEGORIES.map((each) => (
+              <CategoryChip
+                key={each}
+                label={each}
+                selected={each === category}
+                onPress={() => selectCategory(each)}
+              />
+            ))}
+          </View>
+        )}
         {direct ? (
           <>
             <CharacterRow characters={props.characters} selected={ocid} onSelect={setOcid} />
@@ -733,7 +761,7 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
               </Pressable>
             )}
           </>
-        ) : choice === null ? (
+        ) : choice === null && !editing ? (
           // **여기에 스크롤을 두지 않는다.** 시트 껍데기가 이미 `BottomSheetScrollView` 이고
           // 높이도 «내용만큼, 82% 를 상한으로» 다(`BottomSheet`). 안쪽에 또 두면 중첩 스크롤이
           // 되어 손가락이 어느 쪽을 미는지 갈리고, 무엇보다 **목록이 상한선에서 잘려** 「더

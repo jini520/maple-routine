@@ -722,21 +722,21 @@ describe('줄을 누르면 고칠 수 있다', () => {
 
     await 누르기(view, 'cashbook-row-spd-1')
 
-    // **곧바로 ②로 열린다** — 고르던 자리가 이미 정해져 있으므로 머리는 「‹ 고른 것」 이다
-    // ([[ADR-171]] 결정 2). 「지출 수정」 은 ①로 되돌아갔을 때 선다.
-    expect(view.getByTestId('spend-sheet-choice')).toHaveTextContent('몬스터 파크')
+    // **곧바로 세부로 열린다** — 고른 것이 이미 정해져 있다([[ADR-171]] 결정 2). 그리고 그것을
+    // **못 바꾼다**([[ADR-173]] 결정 15): 항목이 글자로 서고 되돌아가기가 없다.
+    expect(view.getByTestId('spend-sheet-title')).toHaveTextContent('몬스터 파크')
     // 그 행이 쓴 시세가 채워진다 — 「마지막으로 쓴 값」 이 아니다.
     expect(view.getByTestId('spend-sheet-rate').props.value).toBe('1180')
     expect(view.getByTestId('spend-sheet-delete')).toBeTruthy()
   })
 
-  it('①로 되돌아가면 머리가 「지출 수정」 이다', async () => {
+  it('되돌아갈 곳이 없다 — 고른 것을 못 바꾼다', async () => {
     const view = await 그리기()
+
     await 누르기(view, 'cashbook-row-spd-1')
 
-    await 이름으로누르기(view, '다시 고르기')
-
-    expect(view.getByText('지출 수정')).toBeTruthy()
+    expect(view.queryByLabelText('다시 고르기')).toBeNull()
+    expect(view.queryByLabelText('컨텐츠')).toBeNull()
   })
 
   it('수입 줄은 채워진 수입 시트를 연다', async () => {
@@ -744,7 +744,7 @@ describe('줄을 누르면 고칠 수 있다', () => {
 
     await 누르기(view, 'cashbook-row-inc-1')
 
-    expect(view.getByText('수입 수정')).toBeTruthy()
+    expect(view.getByTestId('income-sheet-title')).toHaveTextContent('아이템 판매')
     expect(view.getByTestId('income-sheet-amount').props.value).toBe('1,200,000,000')
   })
 
