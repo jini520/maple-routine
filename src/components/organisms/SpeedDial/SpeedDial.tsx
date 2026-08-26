@@ -146,6 +146,16 @@ function DialRow(props: DialRowProps): React.JSX.Element {
       role="button"
       aria-label={props.label}
       disabled={!props.isOpen}
+      /*
+       * **접혀 있으면 터치를 안 받는다**(사용자 보고 2026-08-27).
+       *
+       * 접힌 줄은 **마운트된 채** `opacity: 0` 일 뿐이라 RN 에서는 그 자리가 그대로 히트테스트에
+       * 걸린다 — `disabled` 는 `onPress` 만 막고 터치를 통과시키지는 않는다. 그래서 떠 있는 ＋
+       * 위쪽이 통째로 «눌리지 않는 구역» 이 되어 **뒤의 목록 줄이 안 눌렸다.**
+       *
+       * 스크림은 이미 같은 처방을 쓰고 있었다 — 줄에만 빠져 있었다.
+       */
+      pointerEvents={props.isOpen ? 'auto' : 'none'}
       onPress={props.onPress}
       className="flex-row items-center gap-2"
     >
@@ -254,6 +264,13 @@ export function SpeedDial(props: SpeedDialProps): React.JSX.Element {
       </AnimatedBox>
 
       <View
+        testID="speed-dial-actions"
+        /*
+         * **상자는 자기 자리를 안 먹는다.** 줄 사이의 빈 자리와 오른쪽 여백도 이 상자의 넓이라,
+         * 상자가 터치를 받으면 줄을 `none` 으로 두어도 같은 결함이 남는다. `box-none` 은
+         * «자식은 눌리되 나는 통과» 다.
+         */
+        pointerEvents="box-none"
         style={{ bottom: dialBottomPx }}
         className="absolute right-4 items-end gap-3"
       >
