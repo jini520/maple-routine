@@ -64,6 +64,13 @@ export interface AmountFigureProps {
    * 칸 대신 글자를 그리고 초기화도 안 세운다 — 지울 것이 없다. 수량이 바뀌면 **굴러간다**.
    */
   readOnly?: boolean
+  /**
+   * 카운트업의 **정체**([[ADR-087]] 정정 1) — 안 넘기면 `testID` 가 곧 정체다.
+   *
+   * 이 값이 바뀌면 굴리지 않고 **갈아 끼운다**. «같은 숫자가 변한 것» 과 «다른 숫자를 보게 된 것» 을
+   * 가르는 자리라, 부르는 쪽만이 그 답을 안다(지출 시트의 갈래·대표·단계가 그렇다).
+   */
+  identity?: string
 }
 
 export function AmountFigure(props: AmountFigureProps): React.JSX.Element {
@@ -75,7 +82,7 @@ export function AmountFigure(props: AmountFigureProps): React.JSX.Element {
    */
   const [focused, setFocused] = useState(false)
   const settled = props.displayValue ?? props.value
-  const rolled = useCountUp(props.testID, focused ? props.value : settled)
+  const rolled = useCountUp(props.identity ?? props.testID, focused ? props.value : settled)
   const shown = focused ? props.value : rolled
 
   const empty = shown === 0

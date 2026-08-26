@@ -397,6 +397,17 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
   const [saving, setSaving] = useState(false)
   /** 빠른 칩은 **키보드 위**에만 뜬다([[ADR-173]] 결정 4) — 폼의 일부가 아니라 입력 도구다. */
   const [typing, setTyping] = useState(false)
+  /**
+   * 큰 숫자의 **세대**([[ADR-087]] 정정 1 의 «정체») — 올리면 굴리지 않고 **갈아 끼운다**.
+   *
+   * 갈래·대표·단계를 바꾸는 것은 «같은 숫자가 변한 것» 이 아니라 **«다른 숫자를 보게 된 것»** 이다.
+   * 굴리면 치지도 않은 금액이 **줄어드는 애니메이션**이 나고, 그것은 «내가 뭘 지웠나» 로 읽힌다
+   * (사용자 지적 2026-08-26).
+   *
+   * 세는 값을 정체에 넣는 대신 **세대를 올린다** — 같은 갈래로 되돌아왔을 때 정체 문자열이 같으면
+   * 그 정체의 기억에서 다시 굴러 내려오기 때문이다(기억이 모듈 수준이다 — [[ADR-087]] 결정 8).
+   */
+  const [amountEpoch, setAmountEpoch] = useState(0)
 
   const groups = spendGroupsOf(category)
   const direct = isDirectInput(category)
@@ -483,12 +494,16 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
     setItem(null)
     setForm(null)
     setQuantity(1)
+    // **친 금액도 안 들고 간다**(사용자 지정 2026-08-26) — 갈래마다 0 에서 시작한다.
+    setTyped(0)
+    setAmountEpoch((epoch) => epoch + 1)
     // 관세는 아이템 구매에만 있다 — 다른 갈래로 갔다가 돌아오면 켜져 있던 것이 남으면 안 된다.
     if (next !== '아이템 구매') setHasTariff(false)
   }
 
   /** ① 대표를 고른다. 갈래가 하나뿐이면 **그 자리에서 항목까지 정해진다.** */
   function selectChoice(next: SpendCatalogChoice): void {
+    setAmountEpoch((epoch) => epoch + 1)
     setChoice(next)
     setItem(next.items.length === 1 ? next.items[0] : null)
     // 형태는 있어도 **기본값을 안 고른다** — 앱이 «경험치였겠지» 라고 정하면 그것이 추정이 된다.
@@ -499,12 +514,14 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
 
   /** ② 그 안의 단계를 고른다. */
   function selectItem(next: SpendCatalogItem): void {
+    setAmountEpoch((epoch) => epoch + 1)
     setItem(next)
     setQuantity(1)
   }
 
   /** 목록으로 돌아간다. */
   function clearChoice(): void {
+    setAmountEpoch((epoch) => epoch + 1)
     setChoice(null)
     setItem(null)
     setForm(null)
@@ -650,6 +667,7 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
               displayValue={hasTariff && currency === 'meso' ? tariffed.mesoAmount : undefined}
               unit={FREE_CURRENCIES.find((each) => each.id === currency)?.unit ?? '메소'}
               testID="spend-sheet-amount"
+              identity={`spend-amount-${amountEpoch}`}
               hint={directHint}
               hintBlocked={blocked}
               onChangeValue={setTyped}
@@ -766,6 +784,7 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
                 value={totalMeso}
                 unit="메소"
                 testID="spend-sheet-amount"
+                identity={`spend-amount-${amountEpoch}`}
                 hint={listHint}
                 hintBlocked={blocked && item !== null}
                 readOnly

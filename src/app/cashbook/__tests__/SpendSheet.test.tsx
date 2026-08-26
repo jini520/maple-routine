@@ -223,7 +223,8 @@ describe('항목 — 고르면 채워진다', () => {
 
     await 에픽던전(view, '하이마운틴', '경험치', '2단계')
 
-    // 30,000 메포 ÷ 1,180 × 1억 = 2,542,372,881 메소. 0 에서 그리로 **굴러 올라간다**.
+    // 30,000 메포 ÷ 1,180 × 1억 = 2,542,372,881 메소. 고른 것이 바뀐 것이므로 **굴리지 않고
+    // 갈아 끼운다**(정체가 바뀐다) — `waitFor` 는 그래도 첫 검사에서 통과한다.
     await waitFor(() =>
       expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('2,542,372,881'),
     )
@@ -538,6 +539,35 @@ describe('아이템 구매', () => {
 
     expect(view.queryByLabelText('한 자리 지우기')).toBeNull()
     expect(view.getByTestId('spend-sheet-amount').props.keyboardType).toBe('number-pad')
+  })
+
+  /**
+   * **갈래를 옮기면 금액을 안 들고 간다**(사용자 지정 2026-08-26).
+   *
+   * 그리고 **굴러 내려오지도 않는다** — 치지도 않은 금액이 줄어드는 애니메이션은 «내가 뭘 지웠나» 로
+   * 읽힌다. 갈래가 바뀌는 것은 «같은 숫자가 변한 것» 이 아니라 «다른 숫자를 보게 된 것» 이므로
+   * 굴릴 일이 아니다([[ADR-087]] 정정 1 의 정체 규칙).
+   */
+  it('갈래를 옮기면 금액이 0 에서 시작한다 — 굴러 내려오지 않는다', async () => {
+    const view = await 그리기()
+    await 누르기(view, '아이템 구매')
+    await 치기(view, '1200000000')
+
+    await 누르기(view, '기타')
+
+    // **곧바로** 0 이다 — 중간값이 보이면 굴러 내려온 것이다.
+    expect(view.getByTestId('spend-sheet-amount').props.value).toBe('')
+  })
+
+  it('갔다 돌아와도 0 이다 — 기억에서 되살아나지 않는다', async () => {
+    const view = await 그리기()
+    await 누르기(view, '아이템 구매')
+    await 치기(view, '1200000000')
+
+    await 누르기(view, '기타')
+    await 누르기(view, '아이템 구매')
+
+    expect(view.getByTestId('spend-sheet-amount').props.value).toBe('')
   })
 
   it('금액이 0 이면 저장할 수 없다', async () => {
