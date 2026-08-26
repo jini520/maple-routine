@@ -20,7 +20,14 @@
 // ([[ADR-129]] 이후 프레임이 번들에 있다), 그 조회는 컴포넌트가 해서 여기로 넘긴다 — 이 파일이
 // 순수하게 남아야 검사할 수 있다.
 
-import type { DropEffectOrigin } from '../../../lib/drop-effect-layout'
+import { DROP_EFFECT_FRAMES } from '../../../lib/drop-effect-frames'
+import {
+  DROP_EFFECT_ORIGINS,
+  DROP_PILLAR_SCALE,
+  type DropEffectOrigin,
+  type DropEffectPhase,
+} from '../../../lib/drop-effect-layout'
+import type { ImageAssetRef } from '../../../types/image-asset'
 
 export interface FrameBitmapSize {
   width: number
@@ -76,4 +83,43 @@ export function centerDropFrame(scale: number, bitmap: FrameBitmapSize | null): 
   const width = round2(bitmap.width * scale)
   const height = round2(bitmap.height * scale)
   return { left: round2(-width / 2), top: round2(-height / 2), width, height }
+}
+
+
+/**
+ * 스프라이트 한 장 — «어느 그림을 어디에» 의 최소 단위.
+ *
+ * 이 목록이 필요한 이유는 [[ADR-173]] 정정 1 이다 — 재생이 `source` 를 갈아끼우는 대신 **전 프레임을
+ * 마운트해 두고 `opacity` 로 한 장만 켜기** 때문에, 켜기 전에 39+16 장의 자리를 미리 다 알아야 한다.
+ */
+export interface SpriteFrame {
+  key: string
+  source: ImageAssetRef
+  placement: FramePlacement
+}
+
+/** 비트맵 크기를 못 구한 프레임은 **빼 버린다** — 크기 없이 그리면 프레임마다 최대 26px 튄다. */
+type SizeOf = (source: ImageAssetRef) => FrameBitmapSize | null
+
+/** DropEff 기둥 39장 — 각자 자기 origin 으로 놓인다([[ADR-048]] 결정 1). */
+export function buildPillarFrames(sizeOf: SizeOf): SpriteFrame[] {
+  const phases: DropEffectPhase[] = ['pre', 'loop', 'end']
+  return phases.flatMap((phase) =>
+    DROP_EFFECT_FRAMES[phase].flatMap((source, i) => {
+      const placement = placeDropFrame(
+        DROP_EFFECT_ORIGINS[phase][i] ?? [0, 0],
+        DROP_PILLAR_SCALE,
+        sizeOf(source),
+      )
+      return placement === null ? [] : [{ key: `${phase}-${i}`, source, placement }]
+    }),
+  )
+}
+
+/** ScreenEff 16장 — 전 프레임 같은 배율로 화면 중앙([[ADR-048]] 결정 5). */
+export function buildScreenFrames(scale: number, sizeOf: SizeOf): SpriteFrame[] {
+  return DROP_EFFECT_FRAMES.screen.flatMap((source, i) => {
+    const placement = centerDropFrame(scale, sizeOf(source))
+    return placement === null ? [] : [{ key: `screen-${i}`, source, placement }]
+  })
 }

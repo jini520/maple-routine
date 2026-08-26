@@ -10,6 +10,7 @@
 // 문제**라(Radix `dismissable-layer` 가 만든 웹 전용 결함) 케이스도 뒤집힌다 — `pointer-events-auto`
 // 와 `data-sheet-keep-open` 대신 **네이티브 윈도우로 뜬다**를 지킨다.
 import { fireEvent } from '@testing-library/react-native'
+import { Dimensions } from 'react-native'
 
 import { DROP_EFFECT_FRAMES } from '../../../../lib/drop-effect-frames'
 import { screenEffectScale } from '../../../../lib/drop-effect-layout'
@@ -89,6 +90,22 @@ describe('DropEffectOverlay — 구조', () => {
     await fireEvent.press(getByTestId('drop-effect-overlay'))
 
     expect(onClose).toHaveBeenCalled()
+  })
+
+  // ★ 회귀 가드 — **배경은 퍼센트로 크기를 잡으면 안 된다.**
+  //
+  // 모달이 열리며 `880 → 833.67 → 880dp` 로 두 번 재배치되는데 `<Svg>` 는 가운데 값에서 한 번만
+  // 배치되고 끝났다 — `width="100%"` 가 그 크기로 굳어 화면 아래 46dp 가 안 칠해졌고, 그 자리로
+  // 뒤의 시트가 그대로 비쳤다(2026-08-26 갤럭시 Z Flip3 실측). 창 크기를 숫자로 박아 그 의존을 끊는다.
+  it('배경 그라디언트는 창 크기를 숫자로 받는다 — 퍼센트는 늦은 재배치를 놓친다', async () => {
+    const { getByTestId } = await renderOverlay(
+      <DropEffectOverlay itemName="칠흑의 보스 반지 상자" onClose={noop} />,
+    )
+
+    const window = Dimensions.get('window')
+    const backdrop = getByTestId('drop-effect-backdrop')
+    expect(backdrop.props.width).toBe(window.width)
+    expect(backdrop.props.height).toBe(window.height)
   })
 
   it('안드로이드 뒤로가기도 같은 자리로 이어진다', async () => {

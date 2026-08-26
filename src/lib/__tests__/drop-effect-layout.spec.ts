@@ -1,5 +1,9 @@
 import { DROP_EFFECT_FRAMES } from '../drop-effect-frames'
 import { DROP_EFFECT_ORIGINS, dropFrameTransform } from '../drop-effect-layout'
+import {
+  buildPillarFrames,
+  buildScreenFrames,
+} from '../../components/organisms/DropEffectOverlay/frame-layout'
 
 const PHASES = ['pre', 'loop', 'end'] as const
 
@@ -32,5 +36,33 @@ describe('dropFrameTransform', () => {
   // 소수 origin × 스케일이 부동소수 꼬리(76.44000000000001)를 남기면 style 문자열이 지저분해진다.
   it('부동소수 꼬리를 남기지 않는다', () => {
     expect(dropFrameTransform([58.8, 288], 1.3)).toBe('translate(-76.44px, -374.4px) scale(1.3)')
+  })
+})
+
+// ★ 회귀 가드 — **재생은 `source` 를 갈아끼우지 않고 전 프레임을 마운트해 둔다**([[ADR-173]] 정정 1).
+//
+// 갈아끼우던 시절, 아직 안 그려 본 프레임으로 바꾸면 디코드가 비동기라 그 한 장이 통째로 비었다.
+// 예열로 미리 디코드해 둬도 55장(약 79MB)이 비트맵 캐시 한도를 넘겨 일부가 밀려났고, 밀려난 프레임은
+// 자기 차례를 거의 다 놓친 뒤 8ms 만 스쳤다(2026-08-26 갤럭시 Z Flip3 실측 — 버스트 9·12번).
+// 그래서 목록을 미리 만들어 **전부 마운트**한다. 이 테스트는 그 목록이 빠짐없이 만들어지는지 본다.
+describe('스프라이트 프레임 목록 (ADR-173 정정 1)', () => {
+  const sizeOf = (): { width: number; height: number } => ({ width: 100, height: 200 })
+
+  it('기둥은 pre·loop·end 를 모두 담고 키가 겹치지 않는다', () => {
+    const frames = buildPillarFrames(sizeOf)
+    expect(frames).toHaveLength(
+      DROP_EFFECT_FRAMES.pre.length + DROP_EFFECT_FRAMES.loop.length + DROP_EFFECT_FRAMES.end.length,
+    )
+    expect(new Set(frames.map((f) => f.key)).size).toBe(frames.length)
+  })
+
+  it('버스트는 screen 전 장을 담는다', () => {
+    expect(buildScreenFrames(1.28, sizeOf)).toHaveLength(DROP_EFFECT_FRAMES.screen.length)
+  })
+
+  // 크기를 모르는 프레임은 그리지 않는 계약이 그대로다(`frame-layout.ts`).
+  it('비트맵 크기를 모르면 그 프레임은 목록에서 빠진다', () => {
+    expect(buildPillarFrames(() => null)).toHaveLength(0)
+    expect(buildScreenFrames(1.28, () => null)).toHaveLength(0)
   })
 })
