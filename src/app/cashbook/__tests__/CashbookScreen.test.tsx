@@ -13,6 +13,7 @@ jest.mock('../../../features/cashbook/records', () => {
     recordMesoOf: actual.recordMesoOf,
     recordCashOf: actual.recordCashOf,
     recordCountLabelOf: actual.recordCountLabelOf,
+    dayTotalsOf: actual.dayTotalsOf,
     isManualRecord: actual.isManualRecord,
     rowKeyOf: actual.rowKeyOf,
     resolveTrackedDefeatDates: jest.fn(),
@@ -427,10 +428,10 @@ describe('칸에 숫자가 든다', () => {
     expect(view.getByTestId('calendar-expense-2026-08-23')).toHaveTextContent('−25.42억')
   })
 
+  // **상세는 그날 읽기에서 나온다**([[ADR-169]] 정정 5) — 칸 금액 표가 아니다. 그래서 그 표를
+  // 아무리 채워도 그날 기록이 없으면 빈 상태이고, 반대도 같다.
   it('고른 날에 기록이 있으면 합계가 서고 빈 상태가 사라진다', async () => {
-    records.loadCalendarAmounts.mockResolvedValue({
-      '2026-08-23': { incomeMeso: 1_743_000_000, expenseMeso: 2_542_372_881 },
-    })
+    records.loadDayRecords.mockResolvedValue([{ kind: 'income', record: 그날수입 }])
 
     const view = await 그리기()
 
@@ -443,6 +444,39 @@ describe('칸에 숫자가 든다', () => {
 
     expect(view.getByTestId('cashbook-empty')).toBeTruthy()
     expect(view.queryByTestId('cashbook-day-total')).toBeNull()
+  })
+
+  /**
+   * 기간을 옮겨도 **고른 날은 안 바뀐다**([[ADR-169]] 이후의 계약). 그런데 상세가 «격자가 덮는
+   * 범위로 읽어 온 칸 금액 표» 를 보고 서 있으면, 그 날이 범위 밖으로 나가는 순간 상세가 통째로
+   * 사라졌다 — 머리글은 「8월 25일」인데 아래는 「기록이 없어요」(사용자 보고 2026-08-26).
+   *
+   * 목은 **범위를 실제로 지킨다** — 그러지 않으면(어느 범위로 불러도 같은 표를 돌려주면) 이
+   * 회귀가 목 안에서 사라져 테스트가 통과해 버린다.
+   */
+  it('기간을 옮겨도 고른 날의 상세가 남는다', async () => {
+    records.loadCalendarAmounts.mockImplementation(async (from: string, to: string) =>
+      from <= '2026-08-25' && '2026-08-25' <= to
+        ? { '2026-08-25': { incomeMeso: 1_200_000_000, expenseMeso: 0 } }
+        : {},
+    )
+    records.loadDayRecords.mockResolvedValue([
+      { kind: 'income', record: { ...그날수입, earnedOn: '2026-08-25' } },
+    ])
+
+    const view = await 그리기()
+    await 월간으로(view)
+    await 누르기(view, 'calendar-day-2026-08-25')
+    await act(async () => {})
+    expect(view.getByTestId('cashbook-day-total')).toBeTruthy()
+
+    await 이름으로누르기(view, '이전 달')
+    await act(async () => {})
+
+    expect(view.getByTestId('cashbook-selected-day')).toHaveTextContent('8월 25일 (화)')
+    expect(view.getByTestId('cashbook-day-total')).toBeTruthy()
+    expect(view.queryByTestId('cashbook-empty')).toBeNull()
+    expect(view.getByText('앱솔랩스 케이프')).toBeTruthy()
   })
 })
 

@@ -448,6 +448,34 @@ export function recordMesoOf(entry: DayRecord): number {
   return entry.kind === 'income' ? entry.record.mesoAmount : spendMesoOf(entry.record)
 }
 
+/**
+ * 그날 상세의 **합계 두 줄** — 그날 줄들에서 바로 낸다([[ADR-169]] 정정 5).
+ *
+ * **칸 금액 표(`loadCalendarAmounts`)를 안 본다.** 그 표는 «지금 격자가 덮는 범위» 것이고 고른
+ * 날은 기간을 옮겨도 안 바뀌므로, 표를 보면 그 날이 범위 밖으로 나가는 순간 상세가 통째로
+ * 사라진다 — 「그 날 기록이 없다」와 「그 날이 범위 밖이다」가 같은 `undefined` 로 말해진다
+ * (사용자 보고 2026-08-26: 8월 25일을 고른 채 7월로 옮기면 「기록이 없어요」가 떴다).
+ *
+ * **두 길은 같은 수를 낸다** — 수입 = 손입력 + 결정석 + 판매, 지출 = `spendMesoOf`. 그 등식을
+ * `records.spec` 이 붙들고 있다(깨지면 칸에 적힌 수와 그 칸을 눌러 나온 수가 갈린다).
+ *
+ * 캐시로 낸 지출은 **0 을 더한다** — 환산을 안 하므로 메소 축에 얹을 값이 없다([[ADR-166]] 정정 2 ①).
+ * 그 사실은 그 줄이 「원」 으로 적히는 것으로 말한다.
+ */
+export function dayTotalsOf(entries: readonly DayRecord[]): CalendarDayAmounts {
+  let incomeMeso = 0
+  let expenseMeso = 0
+  for (const entry of entries) {
+    // 자동 줄은 언제나 수익이다([[ADR-172]] 결정 7) — 갈리는 것은 지출뿐이다.
+    if (entry.kind === 'spend') {
+      expenseMeso += recordMesoOf(entry)
+      continue
+    }
+    incomeMeso += recordMesoOf(entry)
+  }
+  return { incomeMeso, expenseMeso }
+}
+
 /** 캐시로 낸 지출만 값을 준다 — 그 줄은 메소가 아니라 **원**으로 적힌다. */
 export function recordCashOf(entry: DayRecord): number | null {
   return entry.kind === 'spend' ? entry.record.cashAmount : null

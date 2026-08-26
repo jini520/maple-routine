@@ -85,6 +85,7 @@ import { formatMesoCompact } from '../../lib/meso-compact'
 import { getCurrentKstDateKey } from '../../lib/reset-clock'
 import { TABULAR_NUMS } from '../../lib/text-styles'
 import {
+  dayTotalsOf,
   loadCalendarAmounts,
   loadLastPointRate,
   recordIncome,
@@ -627,7 +628,16 @@ export function CashbookScreen(): React.JSX.Element {
     setIsWeekly(false)
   }
 
-  const selectedAmounts = amounts[selectedDateKey] ?? null
+  /**
+   * 고른 날의 합계 — **그날 읽기에서 나온다**([[ADR-169]] 정정 5).
+   *
+   * 칸 금액 표(`amounts`)를 안 보는 이유는 그 표가 **격자가 덮는 범위** 것이기 때문이다. 고른 날은
+   * 기간을 옮겨도 안 바뀌므로, 표를 보면 그 날이 범위 밖으로 나가는 순간 상세가 사라졌다 —
+   * 머리글은 「8월 25일」인데 아래는 「기록이 없어요」였다(사용자 보고 2026-08-26).
+   *
+   * 그래서 **빈 상태의 판정도 그 날 자신의 기록**이 낸다. `amounts` 는 격자만 쓴다.
+   */
+  const selectedTotals = dayTotalsOf(dayRecords)
   const periodLabel = isWeekly
     ? formatBossProfitPeriodLabel('weekly', weekStartKey, now)
     : formatBossProfitPeriodLabel('monthly', monthKey, now)
@@ -723,7 +733,7 @@ export function CashbookScreen(): React.JSX.Element {
             <Text testID="cashbook-selected-day" className="text-sm font-semibold text-text">
               {formatDayLabel(selectedDateKey)}
             </Text>
-            {selectedAmounts === null ? (
+            {dayRecords.length === 0 ? (
               <View testID="cashbook-empty">
                 <EmptyState
                   icon={CalendarIcon}
@@ -736,13 +746,13 @@ export function CashbookScreen(): React.JSX.Element {
                 <View className="flex-row justify-between">
                   <Text className="text-xs text-text-muted">수입</Text>
                   <Text className="text-sm font-semibold text-rise-ink" style={TABULAR_NUMS}>
-                    +{formatMesoCompact(selectedAmounts.incomeMeso)}
+                    +{formatMesoCompact(selectedTotals.incomeMeso)}
                   </Text>
                 </View>
                 <View className="flex-row justify-between">
                   <Text className="text-xs text-text-muted">지출</Text>
                   <Text className="text-sm font-semibold text-fall-ink" style={TABULAR_NUMS}>
-                    −{formatMesoCompact(selectedAmounts.expenseMeso)}
+                    −{formatMesoCompact(selectedTotals.expenseMeso)}
                   </Text>
                 </View>
 

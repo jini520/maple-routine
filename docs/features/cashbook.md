@@ -42,7 +42,7 @@
 | 격자 표시 | `components/molecules/CalendarMonth/` | 받은 주 배열을 그린다. **판정을 하지 않는다** — 주 하나만 넘기면 그대로 주간 격자다 |
 | 기록 저장 | `storage/income.ts` · `storage/spend.ts` | 손입력 둘. 넣기와 **날짜 범위** 조회 |
 | 참조표 읽기 | `lib/spend-catalog.ts` | 갈래 → 묶음 → 항목 · 환산 둘(메포→메소 · 관세) |
-| 오케스트레이션 | `features/cashbook/records.ts` | 행의 신원(`id`·`recordedAt`) · 시세 기억 · **네 원천을 하루로 접기** · 줄의 표기(`recordTitleOf`·`recordCountLabelOf`) |
+| 오케스트레이션 | `features/cashbook/records.ts` | 행의 신원(`id`·`recordedAt`) · 시세 기억 · **네 원천을 하루로 접기** · 줄의 표기(`recordTitleOf`·`recordCountLabelOf`) · **그날 합계**(`dayTotalsOf`) |
 | 보스 날짜 캐기 | `features/boss-profit/defeat-dates.ts` | 날짜별 응답을 훑어 «뒤집힌 날» 을 찾아 `defeated_on` 을 채운다([[ADR-172]]) |
 | 입력 | `app/cashbook/SpendSheet.tsx` · `IncomeSheet.tsx` · `components/organisms/SpeedDial/`(`speed-dial-motion` 움직임 · `speed-dial-metrics` 치수) | 떠 있는 ＋ → 갈래 둘 → 시트 |
 | 금액 키패드 | `components/molecules/MesoPad/` | 금액 칸 · 빠른 칩 · 3열 그리드. **드롭 판매가와 같은 부품**이다 |
@@ -160,6 +160,9 @@
   악몽선경 1단계   2        −12.5억
 ```
 
+- **상세는 그날 읽기 하나에서 나온다**([[ADR-169]] 정정 5) — 합계 두 줄도, 빈 상태 판정도
+  `loadDayRecords(고른 날)` 이 낸다. 칸 금액 표는 **격자만** 쓴다: 그 표는 «지금 격자가 덮는 범위»
+  것이라, 그것을 보고 서 있으면 고른 날이 범위 밖으로 나가는 순간(기간 이동) 상세가 사라진다.
 - **합계 아래에 한 줄이 한 기록**이다(결정 1). 같은 날 같은 것을 두 번 적은 것은 정상이라
   **접지 않는다** — 접으면 어느 쪽을 고치는지 못 고른다.
 - 이름이 없는 기록(직접 입력에서 사용처를 비운 것)은 **갈래 이름**을 대신 적는다.

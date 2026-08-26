@@ -501,6 +501,36 @@ describe('loadDayRecords — 캐릭터당 두 줄 (결정 7)', () => {
     ])
   })
 
+  /**
+   * 상세의 합계와 칸 금액은 **같은 수여야 한다**([[ADR-169]] 정정 5).
+   *
+   * 둘이 다른 길로 나오므로(하나는 그날 읽기, 하나는 범위 읽기) 이 등식이 깨지면 **화면이
+   * 서로를 반박한다** — 칸에는 61억인데 그 칸을 누르면 다른 수가 뜬다. 네 원천을 다 세운다.
+   */
+  it('그날 합계는 칸 금액과 같은 수다', async () => {
+    bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
+    bossDrops.getBossDropRecords.mockResolvedValue([드롭()])
+    income.getIncomeRecordsBetween.mockResolvedValue([
+      { id: 'i1', earnedOn: '2026-08-21', category: '사냥', item: null, mesoAmount: 700_000_000, recordedAt: 'a' },
+    ])
+    spend.getSpendRecordsBetween.mockResolvedValue([
+      {
+        id: 's1', spentOn: '2026-08-21', category: '컨텐츠', item: '몬스터 파크', form: null,
+        quantity: 1, mesoAmount: 50_000_000, tariffMeso: null, pointAmount: 1_200,
+        pointPer100mMeso: 1_180, cashAmount: null, memo: null, recordedAt: 'b',
+      },
+    ])
+    const { loadDayRecords, loadCalendarAmounts, dayTotalsOf } =
+      require('../records') as typeof import('../records')
+
+    const [rows, amounts] = await Promise.all([
+      loadDayRecords('2026-08-21'),
+      loadCalendarAmounts('2026-08-21', '2026-08-21'),
+    ])
+
+    expect(dayTotalsOf(rows)).toEqual(amounts['2026-08-21'])
+  })
+
   it('보스 줄은 손입력이 아니다 — 여기서 못 고친다 (결정 8)', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
     const { loadDayRecords, isManualRecord, rowKeyOf } = require('../records') as typeof import('../records')
