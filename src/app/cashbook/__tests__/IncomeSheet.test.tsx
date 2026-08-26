@@ -38,10 +38,28 @@ beforeEach(clearCountUpMemory)
 
 type Rendered = Awaited<ReturnType<typeof renderOverlay>>
 
+/** 고르개가 실제로 고를 것이 있어야 «선택 안함» 이 기본이라는 말에 뜻이 생긴다. */
+const 캐릭터둘 = [
+  { ocid: 'ocid-1', name: '루디' },
+  { ocid: 'ocid-2', name: '아델' },
+]
+
 async function 그리기(overrides: Partial<React.ComponentProps<typeof IncomeSheet>> = {}) {
   return renderOverlay(
-    <IncomeSheet dateKey="2026-08-23" onSave={jest.fn()} onClose={jest.fn()} {...overrides} />,
+    <IncomeSheet dateKey="2026-08-23" characters={캐릭터둘} onSave={jest.fn()} onClose={jest.fn()} {...overrides} />,
   )
+}
+
+async function 이름으로누르기(view: Rendered, label: string): Promise<void> {
+  await act(async () => {
+    fireEvent.press(view.getByLabelText(label))
+  })
+}
+
+async function 아이디로누르기(view: Rendered, testID: string): Promise<void> {
+  await act(async () => {
+    fireEvent.press(view.getByTestId(testID))
+  })
 }
 
 async function 누르기(view: Rendered, label: string): Promise<void> {
@@ -202,4 +220,37 @@ describe('저장', () => {
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 })
+/**
+ * 캐릭터 귀속([[ADR-166]] 결정 3 — 사용자 말: *"캐릭터를 선택해서 입력하는 방법을 추가하는게
+ * 좋을거 같아"*). 컬럼은 처음부터 있었고 **화면만 없었다**.
+ *
+ * **기본은 「선택 안함」**(사용자 지정 2026-08-26) — `ocid = null` 이 계정 단위다.
+ */
+describe('캐릭터 귀속 ([[ADR-166]] 결정 3)', () => {
+  it('기본이 「선택 안함」 이다', async () => {
+    const view = await 그리기()
 
+    expect(view.getByTestId('income-sheet-character-trigger')).toHaveTextContent('캐릭터선택 안함')
+  })
+
+  it('고르면 그 캐릭터로 저장한다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave })
+
+    await 아이디로누르기(view, 'income-sheet-character-trigger')
+    await 아이디로누르기(view, 'income-sheet-character-option-ocid-2')
+    await 치기(view, '1200')
+    await 이름으로누르기(view, '저장')
+
+    expect(onSave.mock.calls[0][0]).toMatchObject({ ocid: 'ocid-2' })
+  })
+
+  it('안 고르면 계정 단위로 저장한다 — `ocid` 가 `null` 이다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave })
+    await 치기(view, '1200')
+    await 이름으로누르기(view, '저장')
+
+    expect(onSave.mock.calls[0][0]).toMatchObject({ ocid: null })
+  })
+})

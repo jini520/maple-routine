@@ -29,6 +29,8 @@ import { Pressable, View } from 'react-native'
 // `TextInput` 도 atom 에서 온다 — 시스템 글자 크기 클램프가 거기 있다([[ADR-152]] 결정 4).
 import { Text, TextInput } from '../../components/atoms/Text/Text'
 import { AmountFigure } from '../../components/molecules/AmountFigure/AmountFigure'
+import { SelectField } from '../../components/organisms/SelectField/SelectField'
+import { characterOptions } from './character-options'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import { formatDayLabel } from '../../lib/calendar-month'
 import { formatMesoUnits } from '../../lib/drop-price'
@@ -77,6 +79,12 @@ function CategoryChip(props: {
 export interface IncomeSheetProps {
   dateKey: string
   /**
+   * 고를 수 있는 캐릭터([[ADR-166]] 결정 3) — 화면이 읽어서 넘긴다(시트는 `storage/` 를 모른다).
+   * 비어 있으면 고르개에 「선택 안함」 하나만 선다.
+   */
+  characters: ReadonlyArray<{ ocid: string; name: string }>
+
+  /**
    * 고칠 기록. 있으면 **수정 모드**다([[ADR-171]] 결정 2) — 머리와 버튼 글자가 갈리고 삭제가 선다.
    */
   editing?: IncomeRecord
@@ -92,6 +100,8 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
     props.editing?.category ?? INCOME_CATEGORIES[0],
   )
   const [name, setName] = useState(props.editing?.item ?? '')
+  /** **기본은 「선택 안함」**(사용자 지정 2026-08-26) — 수익은 «내가 번 돈» 이 기본이다. */
+  const [ocid, setOcid] = useState<string | null>(props.editing?.ocid ?? null)
   const [meso, setMeso] = useState(props.editing?.mesoAmount ?? 0)
 
   /** 저장이 도는 동안 다시 못 누르게 막는다 — 손입력은 두 번 눌리면 행이 둘이 된다. */
@@ -117,7 +127,7 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
     setSaving(true)
     try {
       await props.onSave({
-        ocid: null,
+        ocid,
         earnedOn: props.dateKey,
         category,
         // 빈 칸은 `null` 이다 — 빈 문자열을 넣으면 «적었는데 비어 있다» 와 «안 적었다» 가 같아진다.
@@ -162,6 +172,14 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
             />
           ))}
         </View>
+
+        <SelectField
+          label="캐릭터"
+          options={characterOptions(props.characters)}
+          selected={ocid}
+          onSelect={setOcid}
+          testID="income-sheet-character"
+        />
 
         <View className="flex-row items-center gap-3 border-b border-border pb-2">
           <Text testID="income-sheet-name-label" className="text-xs text-text-muted">

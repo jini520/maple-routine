@@ -40,10 +40,16 @@ beforeEach(clearCountUpMemory)
 
 type Rendered = Awaited<ReturnType<typeof renderOverlay>>
 
+/** 고르개가 실제로 고를 것이 있어야 «선택 안함» 이 기본이라는 말에 뜻이 생긴다. */
+const 캐릭터둘 = [
+  { ocid: 'ocid-1', name: '루디' },
+  { ocid: 'ocid-2', name: '아델' },
+]
+
 async function 그리기(overrides: Partial<React.ComponentProps<typeof SpendSheet>> = {}) {
   return renderOverlay(
     <SpendSheet
-      dateKey="2026-08-23"
+      dateKey="2026-08-23" characters={캐릭터둘}
       lastPointRate={null}
       onSave={jest.fn()}
       onClose={jest.fn()}
@@ -837,5 +843,65 @@ describe('시세가 비어 있을 때', () => {
     expect(view.queryByTestId('spend-sheet-required')).toBeNull()
     expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('2,000,000')
     expect(view.getByTestId('spend-sheet-amount-hint')).toHaveTextContent('200만')
+  })
+})
+
+/**
+ * 캐릭터 귀속([[ADR-166]] 결정 3 — 사용자 말: *"캐릭터를 선택해서 입력하는 방법을 추가하는게
+ * 좋을거 같아"*). 컬럼은 처음부터 있었고 **화면만 없었다**.
+ *
+ * **기본은 「선택 안함」**(사용자 지정 2026-08-26) — `ocid = null` 이 계정 단위다.
+ */
+describe('캐릭터 귀속 ([[ADR-166]] 결정 3)', () => {
+  async function 아이디로누르기(view: Rendered, testID: string): Promise<void> {
+    await act(async () => {
+      fireEvent.press(view.getByTestId(testID))
+    })
+  }
+
+  it('기본이 「선택 안함」 이다', async () => {
+    const view = await 그리기()
+    await 누르기(view, '아이템 구매')
+
+    expect(view.getByTestId('spend-sheet-character-trigger')).toHaveTextContent('캐릭터선택 안함')
+  })
+
+  // 고를 것을 고르는 화면에는 안 선다 — 거기엔 아직 적을 기록이 없다.
+  it('타일 격자에는 안 선다', async () => {
+    const view = await 그리기()
+
+    expect(view.queryByTestId('spend-sheet-character-trigger')).toBeNull()
+  })
+
+  it('목록 갈래에서도 고를 수 있다 — 대표를 고른 뒤에 선다', async () => {
+    const view = await 그리기()
+
+    await 누르기(view, '하이마운틴')
+
+    expect(view.getByTestId('spend-sheet-character-trigger')).toBeTruthy()
+  })
+
+  it('고르면 그 캐릭터로 저장한다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave })
+    await 누르기(view, '아이템 구매')
+    await 치기(view, '1200000000')
+
+    await 아이디로누르기(view, 'spend-sheet-character-trigger')
+    await 아이디로누르기(view, 'spend-sheet-character-option-ocid-2')
+    await 누르기(view, '저장')
+
+    expect(onSave.mock.calls[0][0]).toMatchObject({ ocid: 'ocid-2' })
+  })
+
+  it('안 고르면 계정 단위로 저장한다 — `ocid` 가 `null` 이다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave })
+    await 누르기(view, '아이템 구매')
+    await 치기(view, '1200000000')
+
+    await 누르기(view, '저장')
+
+    expect(onSave.mock.calls[0][0]).toMatchObject({ ocid: null })
   })
 })

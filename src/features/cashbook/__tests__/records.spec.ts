@@ -541,3 +541,42 @@ describe('loadDayRecords — 캐릭터당 두 줄 (결정 7)', () => {
     expect(rowKeyOf(row)).toBe('bossCrystal:ocid-1')
   })
 })
+
+/**
+ * 시트가 고를 수 있는 캐릭터([[ADR-166]] 결정 3 — 「캐릭터를 선택해서 입력하는 방법」).
+ *
+ * **이름을 모르는 캐릭터는 안 든다** — `ocid` 는 사용자에게 아무 뜻도 없는 문자열이라, 그것을
+ * 목록에 세우면 «있지도 않은 캐릭터» 가 하나 생긴다([[ADR-172]] 결정 7 과 같은 이유).
+ */
+describe('loadTrackedCharacters', () => {
+  it('추적 캐릭터를 이름과 함께 든다', async () => {
+    selection.getTrackedCharacterOcids.mockResolvedValue(['ocid-1', 'ocid-2'])
+    basicCache.getCachedCharacterBasic.mockImplementation(async (ocid: string) => ({
+      profile: { name: ocid === 'ocid-1' ? '루디' : '아델' },
+    }))
+    const { loadTrackedCharacters } = require('../records') as typeof import('../records')
+
+    expect(await loadTrackedCharacters()).toEqual([
+      { ocid: 'ocid-1', name: '루디' },
+      { ocid: 'ocid-2', name: '아델' },
+    ])
+  })
+
+  it('캐시가 비어 이름을 모르는 캐릭터는 뺀다', async () => {
+    selection.getTrackedCharacterOcids.mockResolvedValue(['ocid-1', 'ocid-2'])
+    basicCache.getCachedCharacterBasic.mockImplementation(async (ocid: string) =>
+      ocid === 'ocid-1' ? { profile: { name: '루디' } } : null,
+    )
+    const { loadTrackedCharacters } = require('../records') as typeof import('../records')
+
+    expect(await loadTrackedCharacters()).toEqual([{ ocid: 'ocid-1', name: '루디' }])
+  })
+
+  // 못 읽으면 목록이 빈다 — 그때 고르개에는 「선택 안함」 하나만 선다. 던지지 않는다.
+  it('추적 목록을 못 읽으면 빈 목록이다', async () => {
+    selection.getTrackedCharacterOcids.mockRejectedValue(new Error('no such table'))
+    const { loadTrackedCharacters } = require('../records') as typeof import('../records')
+
+    expect(await loadTrackedCharacters()).toEqual([])
+  })
+})

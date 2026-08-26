@@ -20,6 +20,7 @@ jest.mock('../../../features/cashbook/records', () => {
     loadCalendarAmounts: jest.fn(),
     loadDayRecords: jest.fn(),
     loadLastPointRate: jest.fn(),
+    loadTrackedCharacters: jest.fn(),
     recordIncome: jest.fn(),
     recordSpend: jest.fn(),
     editIncome: jest.fn(),
@@ -77,6 +78,7 @@ beforeEach(() => {
   jest.useFakeTimers({ now: 지금 })
   records.loadCalendarAmounts.mockReset().mockResolvedValue({})
   records.loadLastPointRate.mockReset().mockResolvedValue(null)
+  records.loadTrackedCharacters.mockReset().mockResolvedValue([])
   records.recordIncome.mockReset().mockResolvedValue(undefined)
   records.recordSpend.mockReset().mockResolvedValue(undefined)
   records.loadDayRecords.mockReset().mockResolvedValue([])

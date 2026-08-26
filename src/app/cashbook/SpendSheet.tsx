@@ -35,6 +35,8 @@ import { Pressable, View } from 'react-native'
 import { Text, TextInput } from '../../components/atoms/Text/Text'
 import { AmountFigure } from '../../components/molecules/AmountFigure/AmountFigure'
 import { Segment } from '../../components/molecules/Segment/Segment'
+import { SelectField } from '../../components/organisms/SelectField/SelectField'
+import { characterOptions } from './character-options'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import { formatDayLabel } from '../../lib/calendar-month'
 import { formatMesoUnits } from '../../lib/drop-price'
@@ -140,6 +142,28 @@ function FieldRow(props: { label: string; children: React.ReactNode }): React.JS
       <Text className="shrink-0 text-xs text-text-muted">{props.label}</Text>
       <View className="ml-auto flex-row items-center">{props.children}</View>
     </View>
+  )
+}
+
+/**
+ * 캐릭터 줄 — **기본은 「선택 안함」**([[ADR-166]] 결정 3, 사용자 지정 2026-08-26).
+ *
+ * 두 가지(직접 입력 · 목록 갈래를 고른 뒤)가 같은 줄을 쓰므로 한 자리에 둔다. **고를 것을 고르는
+ * 화면(타일 격자)에는 안 선다** — 거기엔 아직 적을 기록이 없다.
+ */
+function CharacterRow(props: {
+  characters: ReadonlyArray<{ ocid: string; name: string }>
+  selected: string | null
+  onSelect: (value: string | null) => void
+}): React.JSX.Element {
+  return (
+    <SelectField
+      label="캐릭터"
+      options={characterOptions(props.characters)}
+      selected={props.selected}
+      onSelect={props.onSelect}
+      testID="spend-sheet-character"
+    />
   )
 }
 
@@ -343,6 +367,11 @@ export interface SpendSheetProps {
   /** 어느 날에 적히나 — 캘린더에서 고른 날이다. */
   dateKey: string
   /**
+   * 고를 수 있는 캐릭터([[ADR-166]] 결정 3) — 화면이 읽어서 넘긴다(시트는 `storage/` 를 모른다).
+   * 비어 있으면 고르개에 「선택 안함」 하나만 선다.
+   */
+  characters: ReadonlyArray<{ ocid: string; name: string }>
+  /**
    * 고칠 기록. 있으면 **수정 모드**다([[ADR-171]] 결정 2) — 머리와 버튼 글자가 갈리고 삭제가 선다.
    * 없으면 새로 적는다. 화면을 따로 만들지 않는 이유는 **입력 규칙이 한 벌이어야** 하기 때문이다.
    */
@@ -381,6 +410,8 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
   // 직접 입력 갈래의 칸들. 갈래를 오갈 때 **비우지 않는다** — 잘못 눌러 돌아왔을 때 친 것이
   // 사라지면 다시 쳐야 한다. 저장에 무엇이 쓰이는지는 아래 `direct` 가 가른다.
   const [name, setName] = useState(initial.name)
+  /** **기본은 「선택 안함」**(사용자 지정 2026-08-26) — 지출은 «내가 쓴 돈» 이 기본이다([[ADR-166]] 결정 3). */
+  const [ocid, setOcid] = useState<string | null>(props.editing?.ocid ?? null)
   const [typed, setTyped] = useState(initial.typed)
   const [hasTariff, setHasTariff] = useState(initial.hasTariff)
   const [freeCurrency, setFreeCurrency] = useState<FreeCurrency>(initial.freeCurrency)
@@ -544,7 +575,7 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
     setSaving(true)
     try {
       await props.onSave({
-        ocid: null,
+        ocid,
         spentOn: props.dateKey,
         category,
         // 빈 칸은 `null` 이다 — 빈 문자열을 넣으면 «적었는데 비어 있다» 와 «안 적었다» 가 같아진다.
@@ -631,6 +662,8 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
         </View>
         {direct ? (
           <>
+            <CharacterRow characters={props.characters} selected={ocid} onSelect={setOcid} />
+
             <FieldRow label="사용처">
               <TextInput
                 testID="spend-sheet-name"
@@ -723,6 +756,8 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
         ) : (
           // 고른 뒤 — 라벨–값 줄들이 서고 **합계가 저장 바로 위**에 선다([[ADR-173]] 결정 1).
           <>
+            <CharacterRow characters={props.characters} selected={ocid} onSelect={setOcid} />
+
             {forms.length > 0 && (
               // 형태는 **기본값을 안 고른다** — 앱이 «경험치였겠지» 라고 정하면 그것이 추정이 된다.
               <FieldRow label="형태">

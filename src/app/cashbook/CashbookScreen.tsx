@@ -88,6 +88,7 @@ import {
   dayTotalsOf,
   loadCalendarAmounts,
   loadLastPointRate,
+  loadTrackedCharacters,
   recordIncome,
   recordSpend,
   loadDayRecords,
@@ -453,6 +454,11 @@ export function CashbookScreen(): React.JSX.Element {
   const [expandedRowKey, setExpandedRowKey] = useState<string | null>(null)
   const [amounts, setAmounts] = useState<CalendarAmounts>(NO_AMOUNTS)
   const [lastPointRate, setLastPointRate] = useState<number | null>(null)
+  /**
+   * 시트의 캐릭터 고르개가 쓸 목록([[ADR-166]] 결정 3) — **화면이 읽는다**(시트는 `storage/` 를
+   * 모른다). 들어올 때 한 번이면 된다: 추적 목록이 시트를 여는 사이에 바뀌지 않는다.
+   */
+  const [characters, setCharacters] = useState<Array<{ ocid: string; name: string }>>([])
   const openTab = useOpenTab()
 
   const monthWeeks = buildCalendarMonth(monthKey)
@@ -498,6 +504,7 @@ export function CashbookScreen(): React.JSX.Element {
 
   useEffect(() => {
     void loadLastPointRate().then(setLastPointRate)
+    void loadTrackedCharacters().then(setCharacters)
   }, [])
 
   /**
@@ -789,6 +796,7 @@ export function CashbookScreen(): React.JSX.Element {
         // 여러 날을 걸치게 되는 날 갈린다).
         // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
         <IncomeSheet
+          characters={characters}
           dateKey={typeof sheet === 'object' ? sheet.record.earnedOn : selectedDateKey}
           editing={typeof sheet === 'object' ? sheet.record : undefined}
           onSave={
@@ -800,6 +808,7 @@ export function CashbookScreen(): React.JSX.Element {
       )}
       {(sheet === 'expense' || (typeof sheet === 'object' && sheet?.kind === 'spend')) && (
         <SpendSheet
+          characters={characters}
           dateKey={typeof sheet === 'object' ? sheet.record.spentOn : selectedDateKey}
           lastPointRate={lastPointRate}
           editing={typeof sheet === 'object' ? sheet.record : undefined}

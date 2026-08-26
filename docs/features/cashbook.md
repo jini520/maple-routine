@@ -49,6 +49,7 @@
 | 축 고르개 | `components/molecules/Segment/` | 통화·형태·단계. **갈래 칩과 모양이 다르다**([[ADR-173]] 결정 3) — 같은 알약 세 종류가 안 읽히던 것이 다시 짠 이유였다 |
 | 글자→값 | `components/molecules/MesoPad/meso-pad.ts` 의 `parseMesoText` | OS 키보드가 넣은 글자에서 숫자만 남긴다. `MesoAmountField`·`MesoKeypad` 는 **드롭 판매가 전용**으로 남는다([[ADR-124]] 결정 5) |
 | 보스 타일 | `components/molecules/BossPortrait/`(`shape`) · `components/atoms/DifficultyBadge/`(`short`) + `app/boss-profit/character-groups.ts` 의 `findPortraitSlug` | 펼친 결정석 줄이 그리는 네모 타일([[ADR-172]] 정정 1·2) — **셋 다 보스 수익 탭이 쓰는 그것**이고, 프롭 둘이 «네모» 와 «한 칸 글자» 만 더한다 |
+| 캐릭터 고르개 | `components/organisms/SelectField/` + `app/cashbook/character-options.ts` | 라벨–값 줄 모양의 커스텀 드롭다운. 세로 배치는 `AccountSelect/place-dropdown` 을 그대로 쓴다 |
 | 화면 | `app/cashbook/CashbookScreen.tsx` | 주간/월간 전환 + 기간 이동 + 격자 + 고른 날의 상세 + **결정석 줄 펼치기** |
 
 계산과 표시를 가른 이유는 [[ADR-147]] 결정 8 과 같다 — 배치 규칙이 렌더러 안에 있으면 화면을
@@ -143,6 +144,8 @@
   그대로이고, 캐시는 애초에 환산하지 않는다.
 - **힌트는 값이 갈릴 때만** 뜬다 — `12억` · `메소로 −25.42억` · `시세를 넣어야…`(에러색). 캐시는
   환산을 안 하므로 **줄이 통째로 없다**.
+- **캐릭터 고르개가 한 줄 선다**([[ADR-173]] 결정 14) — 커스텀 드롭다운이고 **기본은 「선택 안함」**
+  (`ocid = null` = 계정 단위). 이름을 모르는 캐릭터는 목록에 없고, 타일 격자에는 이 줄이 안 선다.
 - **빠른 금액 칩은 없다**(결정 4 폐기, 사용자 지정) — 폼 안·키보드 위 어디에 두어도 안 나아졌다.
   대가로 OS 키보드엔 `00` 이 없어 억 단위를 치려면 0 을 여덟 번 눌러야 한다.
 - **두 단계는 목록 갈래에만**(결정 8). 직접 입력·수입은 그 자리에서 끝나고 되돌아가기가 없다.

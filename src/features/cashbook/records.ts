@@ -265,6 +265,31 @@ export async function resolveTrackedDefeatDates(now: Date): Promise<number> {
   return resolveDefeatDates(ocids, now).catch(() => 0)
 }
 
+/**
+ * 시트가 고를 수 있는 **캐릭터 목록**([[ADR-166]] 결정 3 — 「캐릭터를 선택해서 입력하는 방법」).
+ *
+ * 추적 캐릭터만 든다 — 가계부가 보스 줄의 이름을 붙일 때 쓰는 그 경로 그대로다.
+ *
+ * **이름을 모르는 캐릭터는 안 든다.** `ocid` 는 사용자에게 아무 뜻도 없는 문자열이고([[ADR-172]]
+ * 결정 7 과 같은 이유), 「알 수 없음」 은 있지도 않은 캐릭터를 목록에 만든다. 캐시는 캐릭터를 한
+ * 번이라도 연 뒤에 찬다.
+ *
+ * **던지지 않는다** — 못 읽으면 목록이 비고, 그때 고르개는 「선택 안함」 하나만 남는다.
+ */
+export async function loadTrackedCharacters(): Promise<Array<{ ocid: string; name: string }>> {
+  const ocids = await getTrackedCharacterOcids().catch(() => null)
+  if (ocids === null || ocids.length === 0) {
+    return []
+  }
+  const named = await Promise.all(
+    ocids.map(async (ocid) => ({
+      ocid,
+      name: (await getCachedCharacterBasic(ocid).catch(() => null))?.profile.name ?? '',
+    })),
+  )
+  return named.filter((each) => each.name !== '')
+}
+
 /** 다음 입력의 시세 기본값([[ADR-166]] 결정 5). 화면이 `storage/` 를 직접 안 부르게 한 번 감싼다. */
 export async function loadLastPointRate(): Promise<number | null> {
   return getLastPointRate().catch(() => null)
