@@ -27,6 +27,13 @@ jest.mock('@gorhom/bottom-sheet', () => {
     }),
     BottomSheetScrollView: (props: Record<string, unknown>) =>
       React.createElement(ReactNative.View, props),
+    // 시트 밖과 같게 둔다 — 아톰이 이 값으로 «시트 안인가» 를 묻는다([[ADR-170]] 정정 5).
+    // 목이 시트를 평범한 `View` 로 바꾸므로 여기서도 문맥이 없는 것이 사실이고, 그래서
+    // 아래 입력은 안 그려진다 — 그래도 **있어야 한다**: `lib/nativewind-interop` 이 모듈을
+    // 읽는 순간 이것을 등록하므로, 없으면 스위트가 뜨기도 전에 죽는다.
+    useBottomSheetInternal: () => null,
+    BottomSheetTextInput: (props: Record<string, unknown>) =>
+      React.createElement(ReactNative.TextInput, props),
     BottomSheetModalProvider: (props: { children: ReactNode }) => props.children,
   }
 })
@@ -89,6 +96,20 @@ describe('BottomSheet — [[ADR-039]] 가 정한 값을 넘긴다', () => {
     expect(sheet.props.enableDynamicSizing).toBe(true)
     // 테스트 프레임 높이 844 × 0.82
     expect(sheet.props.maxDynamicContentSize).toBeCloseTo(844 * 0.82)
+  })
+
+  /**
+   * 라이브러리는 창 모드를 **자기가 안 바꾼다** — 이 프롭은 «앱이 지금 어느 모드인가» 를 알려
+   * 주는 것이고, 그 값으로 자기 보정량을 정한다([[ADR-170]] 정정 5).
+   *
+   * 기본값 `adjustPan` 을 그대로 두면 안드로이드에서 **두 번 밀린다** — 매니페스트가
+   * `adjustResize` 라 OS 가 이미 창을 줄여 시트를 올려 놓은 위에, 라이브러리가 키보드 높이만큼
+   * 또 올린다.
+   */
+  it('안드로이드 창 모드를 매니페스트와 같게 알려 준다 — adjustResize', async () => {
+    const { getByTestId } = await open()
+
+    expect(getByTestId('sheet').props.android_keyboardInputMode).toBe('adjustResize')
   })
 
   it('폭은 max-w-md(448) 중앙 정렬이다 — 라이브러리 기본은 전폭이다', async () => {

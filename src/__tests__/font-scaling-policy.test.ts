@@ -138,6 +138,27 @@ describe('[[ADR-152]] 결정 4 — 글자는 atom 한 곳에서만 나온다', (
       expect.arrayContaining(['Text', 'TextInput']),
     )
   })
+
+  /**
+   * 시트 안의 입력에도 **같은 구멍이 있다**([[ADR-170]] 정정 5).
+   *
+   * `BottomSheetTextInput` 은 `react-native` 가 아니라 `@gorhom/bottom-sheet` 에서 오므로 위 규칙에
+   * 안 걸린다. 그 길로 들어오면 클램프가 빠지고, 그것은 **개발 기기에서 안 보이는** 회귀다 —
+   * 이 파일이 존재하는 이유 그대로다. 그래서 같은 자리에서 같이 막는다.
+   *
+   * 지나갈 수 있는 자리는 둘뿐이다: 등록하는 곳(`lib/nativewind-interop`)과 고르는 곳(atom).
+   */
+  it('`BottomSheetTextInput` 은 등록하는 곳과 atom 밖에서 안 쓴다', () => {
+    const 허용 = [
+      join(SRC, 'lib', 'nativewind-interop.ts'),
+      ATOM,
+    ]
+    const offenders = FILES.filter((file) => !허용.includes(file))
+      .filter((file) => readFileSync(file, 'utf8').includes('BottomSheetTextInput'))
+      .map((file) => relative(SRC, file))
+
+    expect(offenders).toEqual([])
+  })
 })
 
 describe('[[ADR-152]] 결정 5 — 칸에 묶인 글자는 `fixed` 다', () => {

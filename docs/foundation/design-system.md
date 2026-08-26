@@ -600,6 +600,11 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
 - **글자는 `components/atoms/Text` 에서 가져온다.** `react-native` 의 `Text`·`TextInput` 직접
   import 는 ESLint 와 테스트가 막는다 — 프롭이 한 자리만 빠져도 그 자리만 조용히 옛 동작으로 남기
   때문이다.
+- **`TextInput` 은 시트 안이면 스스로 `BottomSheetTextInput` 을 그린다**([[ADR-170]] 정정 5). 그
+  부품이어야 `@gorhom/bottom-sheet` 가 키보드를 «본다» — 평범한 `TextInput` 이면 키보드가 떠도
+  시트가 안 올라간다(라이브러리가 `onFocus` 가 채우는 `target` 없이는 상태를 안 올린다). **호출부는
+  아무것도 안 고른다**: 부품을 고르게 두면 다음 시트에서 같은 일이 다시 난다. 라이브러리에서
+  직접 가져오는 것은 같은 정책 테스트가 막는다(클램프가 빠지므로).
 - **칸에 묶인 글자는 `fixed` 를 준다** — today 위젯 전부 · 하단바 라벨 · 캐릭터 레일 초상의 폴백
   이니셜 · `DifficultyBadge`(상자가 `h-5`/`h-4` 고정이라 **모든 호출부에서**). 기준은 «작아 보인다»
   가 아니라 **«상자가 글자를 따라 커지는가»** 다. 패딩으로 자라는 배지·버튼은 예외가 **아니다**

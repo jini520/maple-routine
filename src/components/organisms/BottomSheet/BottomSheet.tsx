@@ -147,6 +147,18 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
       onDismiss={props.onClose}
       enablePanDownToClose
       enableDynamicSizing
+      /*
+       * **창 모드를 사실대로 알려 준다**([[ADR-170]] 정정 5).
+       *
+       * 라이브러리는 이 값을 **자기가 바꾸지 않는다** — 소스 어디에도 `softInputMode` 를 건드리는
+       * 곳이 없다. 이 프롭은 «앱이 지금 어느 모드인가» 를 **알려 주는** 것이고, 그 값으로 자기
+       * 보정량을 정한다. 기본값은 `adjustPan` 인데 **이 앱의 매니페스트는 `adjustResize`** 다.
+       *
+       * 그대로 두면 안드로이드에서 **두 번 밀린다** — OS 가 창을 줄여 이미 올라온 시트를,
+       * 라이브러리가 키보드 높이만큼 또 올린다. `adjustResize` 를 주면 라이브러리가 자기 보정을
+       * 0 으로 두고 OS 에 맡긴다.
+       */
+      android_keyboardInputMode="adjustResize"
       maxDynamicContentSize={frame.height * MAX_HEIGHT_RATIO}
       backdropComponent={renderBackdrop}
       // 웹의 `sr-only` 제목("드롭 아이템 기록")과 같은 자리 — 화면에는 안 보이고 스크린리더만 읽는다.

@@ -25,6 +25,7 @@
 // 공개 타입에서 아예 지운다(`Omit`) — 열어 두면 호출부가 클램프를 무를 수 있고, 그러면 «한 곳이
 // 값을 쥔다» 가 깨진다. 칸에 묶여 못 커지는 자리는 그 대신 **`fixed`** 를 쓴다(결정 5). 기준은
 // «작아 보인다» 가 아니라 **«상자가 글자를 따라 커지는가»** 다.
+import { useBottomSheetInternal } from '@gorhom/bottom-sheet'
 import {
   Text as RNText,
   TextInput as RNTextInput,
@@ -33,6 +34,8 @@ import {
   type TextProps as RNTextProps,
 } from 'react-native'
 
+// 등록을 보장하는 유일한 경로다 — 라이브러리에서 직접 가져오면 클래스가 조용히 안 붙는다.
+import { BottomSheetTextInput } from '../../../lib/nativewind-interop'
 import { fontScalingProps } from './font-scaling'
 
 /** 클램프를 앱이 쥐므로 배수 프롭 둘은 호출부에서 사라지고, 대신 `fixed` 가 생긴다. */
@@ -51,8 +54,26 @@ export function Text({ fixed = false, ...rest }: TextProps): React.JSX.Element {
   return <RNText {...rest} {...fontScalingProps(fontScale, fixed)} />
 }
 
+/**
+ * **시트 안이면 시트가 아는 입력을 그린다**([[ADR-170]] 정정 5).
+ *
+ * `@gorhom/bottom-sheet` 는 `BottomSheetTextInput` 의 `onFocus` 가 채우는 `target` 이 없으면
+ * 키보드 이벤트를 받고도 상태를 **안 올린다**(라이브러리 `useAnimatedKeyboard` — 이벤트를 캐시만
+ * 하고 돌아간다). 그래서 시트 안에서 평범한 `TextInput` 을 쓰면 키보드가 떠도 시트가 **한 번도
+ * 안 올라간다** — 기기 문제가 아니라 결정적이고, 실기에서 «키보드가 시트를 가린다» 로 났다.
+ *
+ * **판정을 여기서 하는 것이 이 아톰의 존재 이유 그대로다.** 「시트용 입력」 이라는 부품을 하나 더
+ * 두면 다음에 시트를 만드는 사람이 그것을 고르는 것을 잊고 같은 일을 다시 겪는다(파일 머리의
+ * *«규칙이 문서에만 있으면 새 화면이 조용히 예전 방식으로 돌아간다»*). 계층으로도 이쪽이 맞다 —
+ * 시트 안의 금액 칸은 molecule 안에 있어 organism 을 못 가져온다.
+ *
+ * `unsafe`(`true`)로 묻는다 — 시트 밖에서는 그 훅이 **던진다.**
+ *
+ * 문맥은 마운트 동안 안 바뀌므로 두 부품 사이를 오가며 리마운트되는 일은 없다.
+ */
 export function TextInput({ fixed = false, ...rest }: TextInputProps): React.JSX.Element {
   const { fontScale } = useWindowDimensions()
+  const Input = useBottomSheetInternal(true) === null ? RNTextInput : BottomSheetTextInput
 
-  return <RNTextInput {...rest} {...fontScalingProps(fontScale, fixed)} />
+  return <Input {...rest} {...fontScalingProps(fontScale, fixed)} />
 }
