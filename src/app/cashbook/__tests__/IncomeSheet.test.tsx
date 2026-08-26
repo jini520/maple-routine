@@ -12,18 +12,9 @@ jest.mock('@gorhom/bottom-sheet', () => {
   return {
     BottomSheetBackdrop: (props: Record<string, unknown>) =>
       React.createElement(ReactNative.View, { testID: 'sheet-backdrop', ...props }),
-    BottomSheetFooter: (props: Record<string, unknown>) =>
-      React.createElement(ReactNative.View, props),
     BottomSheetModal: React.forwardRef((props: Record<string, unknown>, ref: unknown) => {
       React.useImperativeHandle(ref as never, () => ({ present: jest.fn(), dismiss: jest.fn() }))
-      // 키보드 위 띠([[ADR-173]] 결정 4)는 라이브러리가 그리는 자리라, 목이 안 부르면 테스트에서
-      // 통째로 사라진다 — 「빠른 칩이 어디 있나」 를 못 보게 된다.
-      const render = props.footerComponent
-      const footer =
-        typeof render === 'function'
-          ? (render as (mockProps: unknown) => unknown)({ animatedFooterPosition: 0 })
-          : null
-      return React.createElement(ReactNative.View, props, props.children as never, footer as never)
+      return React.createElement(ReactNative.View, props)
     }),
     BottomSheetScrollView: (props: Record<string, unknown>) =>
       React.createElement(ReactNative.View, props),
@@ -172,6 +163,21 @@ describe('금액 — OS 숫자 키보드다 ([[ADR-170]] 정정 4 · [[ADR-173]]
     })
 
     expect(view.getByTestId('income-sheet-amount').props.value).toBe('100,000,000')
+  })
+
+  it('커서가 빠지면 칩도 사라진다 — 폼의 한 줄이 아니다', async () => {
+    const view = await 그리기()
+    const 칸 = view.getByTestId('income-sheet-amount')
+
+    await act(async () => {
+      fireEvent(칸, 'focus')
+    })
+    expect(view.getByTestId('quick-add-bar')).toBeTruthy()
+
+    await act(async () => {
+      fireEvent(칸, 'blur')
+    })
+    expect(view.queryByTestId('quick-add-bar')).toBeNull()
   })
 
   // 큰 숫자는 화면에 **하나**다([[ADR-173]] 결정 1) — 합계 카드가 없다.

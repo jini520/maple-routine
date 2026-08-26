@@ -47,7 +47,7 @@
 | 입력 | `app/cashbook/SpendSheet.tsx` · `IncomeSheet.tsx` · `components/organisms/SpeedDial/`(`speed-dial-motion` 움직임 · `speed-dial-metrics` 치수) | 떠 있는 ＋ → 갈래 둘 → 시트 |
 | 큰 숫자 | `components/molecules/AmountFigure/` | 큰 숫자 + 힌트 한 줄 + 초기화(같은 줄). **저장 바로 위**에 서고 자기 윗선을 안 긋는다([[ADR-173]] 결정 1·2·9). 칠 때는 친 값, 손을 떼면 `displayValue` 로 **굴러간다**(`useCountUp`) |
 | 축 고르개 | `components/molecules/Segment/` | 통화·형태·단계. **갈래 칩과 모양이 다르다**([[ADR-173]] 결정 3) — 같은 알약 세 종류가 안 읽히던 것이 다시 짠 이유였다 |
-| 빠른 칩 | `app/cashbook/QuickAddBar.tsx` + `BottomSheet` 의 `footer` | **키보드 위**에만 뜬다([[ADR-173]] 결정 4) — 폼의 일부가 아니라 입력 도구다. 상한(`MAX_MESO`)도 여기서 지킨다 |
+| 빠른 칩 | `app/cashbook/QuickAddBar.tsx` | **키보드 위**에만 뜬다([[ADR-173]] 결정 4) — 금액 칸에 커서가 있을 때만. **시트의 마지막 자식**이라 시트가 키보드 위로 올라가면 그대로 키보드 바로 위다(라이브러리의 `footerComponent` 는 `position: absolute` 라 이 시트에서 자리를 못 잡았다). 상한(`MAX_MESO`)도 여기서 지킨다 |
 | 글자→값 | `components/molecules/MesoPad/meso-pad.ts` 의 `parseMesoText` | OS 키보드가 넣은 글자에서 숫자만 남긴다. `MesoAmountField`·`MesoKeypad` 는 **드롭 판매가 전용**으로 남는다([[ADR-124]] 결정 5) |
 | 보스 타일 | `components/molecules/BossPortrait/`(`shape`) · `components/atoms/DifficultyBadge/`(`short`) + `app/boss-profit/character-groups.ts` 의 `findPortraitSlug` | 펼친 결정석 줄이 그리는 네모 타일([[ADR-172]] 정정 1·2) — **셋 다 보스 수익 탭이 쓰는 그것**이고, 프롭 둘이 «네모» 와 «한 칸 글자» 만 더한다 |
 | 화면 | `app/cashbook/CashbookScreen.tsx` | 주간/월간 전환 + 기간 이동 + 격자 + 고른 날의 상세 + **결정석 줄 펼치기** |

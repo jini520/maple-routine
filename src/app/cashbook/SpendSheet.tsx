@@ -577,7 +577,6 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
       onClose={props.onClose}
       // 갈래를 바꾸거나 단계를 오가면 내용이 통째로 갈린다 — 밀린 자리에서 시작하면 안 된다.
       resetScrollKey={`${category}|${choice?.label ?? ''}`}
-      footer={typing ? <QuickAddBar value={typed} onChange={setTyped} /> : undefined}
     >
       <View className="gap-3 px-4 pb-2">
         {/*
@@ -825,6 +824,11 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
             <Text className="text-xs font-semibold text-error-ink">삭제</Text>
           </Pressable>
         )}
+
+        {/* **키보드 위 띠**([[ADR-173]] 결정 4 정정) — 시트의 마지막 자식이라, 시트가 키보드 위로
+            올라가면 그대로 키보드 바로 위에 앉는다. 라이브러리의 `footerComponent` 는
+            `position: absolute` 라 `enableDynamicSizing` 인 이 시트에서 자리를 못 잡았다. */}
+        {typing && <QuickAddBar value={typed} onChange={setTyped} />}
       </View>
     </BottomSheet>
   )
