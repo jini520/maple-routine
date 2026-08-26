@@ -458,13 +458,23 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
   const directHint =
     currency === 'cash' ? undefined : usesPoint ? conversionHint : formatMesoUnits(directAmount)
   /**
-   * 목록 갈래의 힌트 — **고르기 전에는 빈 줄**이다(사용자 지정 2026-08-26).
+   * 목록 갈래의 힌트 — **큰 숫자가 메소이므로 원래 단위를 여기서 든다**(사용자 지정 2026-08-26).
    *
-   * 단가를 모르는 채로 환산하면 「메소로 −0」 이 되는데, 그것은 «0 원짜리 지출» 로 읽히지만 사실은
-   * «아직 안 골랐다» 다([[ADR-166]] 정정 2 ③ 과 같은 이유). **자리는 지킨다** — 고른 뒤에 줄이
-   * 생기면 아래가 통째로 밀린다.
+   * | 상태 | 힌트 |
+   * |---|---|
+   * | 아직 안 고름 | 빈 줄 — **자리만 지킨다**(고른 뒤에 줄이 생기면 아래가 밀린다) |
+   * | 메포 · 시세 있음 | `30,000 메포` — 실제로 내는 것 |
+   * | 메포 · 시세 없음 | `시세를 넣어야…`(에러색) — **왜 0 인지를 화면이 말한다** |
+   * | 메소 | 억/만 환산 — 자릿수 읽기 도우미 |
    */
-  const listHint = item === null ? ' ' : usesPoint ? conversionHint : formatMesoUnits(amount)
+  const listHint =
+    item === null
+      ? ' '
+      : usesPoint
+        ? blocked
+          ? '시세를 넣어야 메소로 셀 수 있어요'
+          : `${amount.toLocaleString()} 메포`
+        : formatMesoUnits(totalMeso)
 
   function selectCategory(next: SpendCategory): void {
     setCategory(next)
@@ -743,12 +753,18 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
             {usesPoint && <RateRow value={rateText} onChange={setRateText} valid={rate !== null} />}
 
             {scope !== null && (
-              // 목록 갈래의 큰 숫자는 **못 친다** — 단가 × 수량이라 앱이 센다.
-              // **단계를 고르기 전에도 0 으로 선다**(사용자 지정) — 단가를 아직 모를 뿐 셀 자리는
-              // 이미 있고, 나중에 생기면 그때 아래가 밀린다.
+              /*
+               * 목록 갈래의 큰 숫자는 **못 친다** — 단가 × 수량이라 앱이 센다. 단계를 고르기 전에도
+               * **0 으로 선다**(사용자 지정): 단가를 아직 모를 뿐 셀 자리는 이미 있고, 나중에
+               * 생기면 그때 아래가 밀린다.
+               *
+               * **합계는 언제나 메소다**(사용자 지정 2026-08-26). 가계부의 축이 메소이므로
+               * ([[ADR-166]] 정정 2) 「이 지출이 메소로 얼마인가」 가 곧 합계다 — 메포로 사는
+               * 항목이어도 그렇다. 실제로 내는 메포는 밑의 힌트가 든다.
+               */
               <AmountFigure
-                value={amount}
-                unit={scope.currency === 'point' ? '메포' : '메소'}
+                value={totalMeso}
+                unit="메소"
                 testID="spend-sheet-amount"
                 hint={listHint}
                 hintBlocked={blocked && item !== null}

@@ -214,17 +214,21 @@ describe('항목 — 고르면 채워진다', () => {
     expect(view.getByTestId('spend-sheet-amount-hint')).toHaveTextContent('')
   })
 
-  it('고르면 단가가 그대로 큰 숫자가 되고, 환산은 힌트 한 줄이다', async () => {
+  /**
+   * **합계는 언제나 메소다**(사용자 지정 2026-08-26). 가계부의 축이 메소라([[ADR-166]] 정정 2)
+   * 「이 지출이 메소로 얼마인가」 가 곧 합계이고, 실제로 내는 메포는 **힌트가 든다**.
+   */
+  it('고르면 합계가 메소로 서고, 내는 메포는 힌트가 든다', async () => {
     const view = await 그리기({ lastPointRate: 1_180 })
 
     await 에픽던전(view, '하이마운틴', '경험치', '2단계')
 
-    // 단계를 고르면 0 에서 단가까지 **굴러 올라간다**(`useCountUp`) — 끝값을 기다린다.
+    // 30,000 메포 ÷ 1,180 × 1억 = 2,542,372,881 메소. 0 에서 그리로 **굴러 올라간다**.
     await waitFor(() =>
-      expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('30,000'),
+      expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('2,542,372,881'),
     )
-    // 30,000 메포 ÷ 1,180 → 25.42억. 부호까지 붙든다 — 지출은 언제나 빼는 쪽이다.
-    expect(view.getByTestId('spend-sheet-amount-hint')).toHaveTextContent('메소로 −25.42억')
+    expect(view.getByText('메소')).toBeTruthy()
+    expect(view.getByTestId('spend-sheet-amount-hint')).toHaveTextContent('30,000 메포')
   })
 })
 
@@ -765,14 +769,17 @@ describe('시세가 비어 있을 때', () => {
     return view
   }
 
-  // 큰 숫자는 **메포 원금**이라 0 이 될 일이 없다 — 모르는 것은 그것이 메소로 얼마인가이고,
-  // 그 사실은 힌트 줄이 말한다([[ADR-173]] 결정 2).
-  it('아는 것은 큰 숫자로, 모르는 것은 힌트로 말한다', async () => {
+  /**
+   * 합계가 메소 기준이므로 시세가 없으면 **셀 수가 없다** — 0 이 뜬다.
+   *
+   * [[ADR-166]] 정정 2 ③ 이 「−0」 을 금지한 취지는 «0 을 값으로 읽히게 두지 말라» 였고, 그 취지는
+   * **힌트가 왜 0 인지를 말하는 것**으로 지킨다([[ADR-173]] 결정 2). 합계 카드가 사라져 「−0」 이라는
+   * 표기 자체가 없어졌다.
+   */
+  it('시세가 없으면 합계가 0 이고, 힌트가 왜 그런지 말한다', async () => {
     const view = await 메포항목()
 
-    await waitFor(() =>
-      expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('30,000'),
-    )
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('0')
     expect(view.getByTestId('spend-sheet-amount-hint')).toHaveTextContent(
       '시세를 넣어야 메소로 셀 수 있어요',
     )
@@ -785,14 +792,18 @@ describe('시세가 비어 있을 때', () => {
     expect(view.getByTestId('spend-sheet-required')).toBeTruthy()
   })
 
-  it('시세를 넣으면 메소가 서고 별표는 남는다', async () => {
+  it('시세를 넣으면 합계가 메소로 서고 별표는 남는다', async () => {
     const view = await 메포항목()
 
     await act(async () => {
       fireEvent.changeText(view.getByTestId('spend-sheet-rate'), '1180')
     })
 
-    expect(view.getByTestId('spend-sheet-amount-hint')).toHaveTextContent('메소로 −25.42억')
+    await waitFor(() =>
+      expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('2,542,372,881'),
+    )
+    // 힌트는 **실제로 내는 것**으로 갈린다 — 「왜 0 인지」 를 말할 일이 없어졌다.
+    expect(view.getByTestId('spend-sheet-amount-hint')).toHaveTextContent('30,000 메포')
     expect(view.getByTestId('spend-sheet-required')).toBeTruthy()
   })
 
