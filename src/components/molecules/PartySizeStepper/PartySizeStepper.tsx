@@ -36,7 +36,6 @@ const SIZES = {
     valueSlot: 'w-5 justify-center',
     value: 'text-sm font-semibold',
     marker: 'h-3.5 w-3.5',
-    showUnit: false,
   },
   default: {
     root: 'flex-row h-10 items-center justify-between rounded-full border border-border bg-surface p-1',
@@ -46,7 +45,6 @@ const SIZES = {
     valueSlot: 'min-w-[66px] justify-center gap-0.5',
     value: 'text-[19px] font-extrabold leading-none tracking-[-.03em]',
     marker: null,
-    showUnit: true,
   },
 } as const
 
@@ -84,11 +82,12 @@ export function PartySizeStepper(props: {
         <MinusIcon className={`${size.icon} text-text`} strokeWidth={2} aria-hidden />
       </Pressable>
 
+      {/* **단위를 안 적는다**([[ADR-173]] 결정 18, 사용자 지정 2026-08-27) — 이 앱의 스테퍼는
+          숫자만 오르내린다. 무엇을 세는지는 곁의 라벨과 `Users` 표식이 말한다. */}
       <View className={`flex-row items-baseline ${size.valueSlot}`}>
         <Text className={`text-text ${size.value}`} style={TABULAR_NUMS}>
           {props.value}
         </Text>
-        {size.showUnit && <Text className="text-xs font-semibold text-text-muted">인</Text>}
       </View>
 
       <Pressable

@@ -617,6 +617,10 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
 - 새 화면을 그릴 때 크기를 고를 자유는 그대로다. 다만 `text-[8px]`~`[11px]` 대역은 **하한이 곧
   화면에 나오는 값**이므로(더 작아질 일이 없다) 그 자리에서만 판단하면 된다.
 
+- **스테퍼는 숫자만 오르내린다**([[ADR-173]] 결정 18) — 「인」·「회」 같은 단위를 안 적는다. 무엇을
+  세는지는 곁의 라벨과 표식(`Users`)이 말한다. 단위를 `+` 옆에 붙이면 알약의 좌우가 어긋나고,
+  단위가 없는 자리에서는 빈 칸만 남는다.
+
 ## 애니메이션
 - 확정 애니메이션 없음(2026-07-11) — hover 색 전환(`hover:bg-*`/`hover:text-*`) 정도만 Tailwind 기본. 페이드·슬라이드 등 명시적 트랜지션은 미도입, 필요해지면 추가.
 - 기능 전용 연출(고가 드롭 강조 [[ADR-045]])은 [features/boss-profit.md](../features/boss-profit.md). 모든 모션은 `prefers-reduced-motion: no-preference` 에서만 재생(정적 폴백 유지)이 원칙.

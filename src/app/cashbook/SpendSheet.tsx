@@ -314,15 +314,17 @@ function ItemTile(props: {
 }
 
 /**
- * 수량 스테퍼 — `PartySizeStepper` 로 접지 않는다.
+ * 수량 스테퍼 — **숫자만 오르내린다**([[ADR-173]] 결정 18, 사용자 지정 2026-08-27).
  *
- * 그 molecule 은 `Users` 표식과 「명」이 박혀 있어 **파티 인원 전용**이다. 단위가 항목마다 다른
- * (회 · 개 · 포인트 · 시간) 이 자리에 그것을 끌어오면 프롭이 둘 늘고 그림이 흐려진다 —
- * `DropPricePad` 가 «넷째 모양을 만들지 않고 자체 마크업으로» 둔 것과 같은 판단이다.
+ * 단위(회 · 개 · 포인트 · 시간)를 `+` 오른쪽에 붙이고 있었는데 **알약의 좌우가 안 맞았다** —
+ * 「기타」처럼 단위가 없는 자리는 그 칸이 빈 채로 간격만 남아 더 그랬다. 무엇보다 이 앱의 스테퍼가
+ * 두 모양이 됐다(`PartySizeStepper` 의 기본 크기는 「인」 을 그렸다). **둘 다 숫자만 그린다.**
+ *
+ * `PartySizeStepper` 로 접지 않는 것은 그대로다 — 그 molecule 은 `Users` 표식과 두 크기가
+ * [[ADR-121]] 결정 7 로 못박혀 있어 이 자리의 셋째 모양을 담지 못한다.
  */
 function QuantityStepper(props: {
   value: number
-  unit: string
   /** 상한 — 사용자가 준 한도에서 온다. 없는 항목은 안 막는다([[ADR-006]]). */
   max?: number
   onChange: (next: number) => void
@@ -346,7 +348,11 @@ function QuantityStepper(props: {
           aria-hidden
         />
       </Pressable>
-      <Text className="min-w-6 text-center text-sm font-bold text-text" style={TABULAR_NUMS}>
+      <Text
+        testID="spend-sheet-quantity"
+        className="min-w-6 text-center text-sm font-bold text-text"
+        style={TABULAR_NUMS}
+      >
         {props.value}
       </Text>
       <Pressable
@@ -362,9 +368,6 @@ function QuantityStepper(props: {
           aria-hidden
         />
       </Pressable>
-      <Text testID="spend-sheet-quantity-unit" className="text-[11px] text-text-muted">
-        {props.unit}
-      </Text>
     </View>
   )
 }
@@ -770,9 +773,8 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
             )}
 
             {isFree && (
-              // 단위를 안 적는다 — 「기타」는 자유 입력이라 무엇을 세는지 앱이 모른다([[ADR-006]]).
               <FieldRow label="수량">
-                <QuantityStepper value={quantity} unit="" onChange={setQuantity} />
+                <QuantityStepper value={quantity} onChange={setQuantity} />
               </FieldRow>
             )}
 
@@ -872,12 +874,7 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
             {scope !== null && (
               // 단위·상한은 **대표가 안다** — 단계를 고르기 전에도 선다.
               <FieldRow label="수량">
-                <QuantityStepper
-                  value={quantity}
-                  unit={scope.unit}
-                  max={scope.maxQuantity}
-                  onChange={setQuantity}
-                />
+                <QuantityStepper value={quantity} max={scope.maxQuantity} onChange={setQuantity} />
               </FieldRow>
             )}
 

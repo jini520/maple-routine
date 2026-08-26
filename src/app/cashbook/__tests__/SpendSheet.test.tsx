@@ -231,22 +231,20 @@ describe('항목 — 고르면 채워진다', () => {
 })
 
 describe('수량 — 곱셈은 앱이 한다', () => {
-  // 사용자가 곱셈을 대신하면 «몇 포인트 썼나» 를 나중에 되물을 수 없다([[ADR-166]] 정정 1 ③).
-  it('단위 이름은 카탈로그가 준다 — 레코드에 안 적는다', async () => {
+  /**
+   * 스테퍼는 **숫자만** 든다([[ADR-173]] 결정 18, 사용자 지정 2026-08-27).
+   *
+   * 단위가 `+` 오른쪽에 붙어 있어 알약의 좌우가 안 맞았고(「기타」는 단위가 없어 그 자리가 빈 채로
+   * 간격만 남았다), 무엇보다 **한 앱에 스테퍼가 두 모양**이 됐다.
+   */
+  it('단위를 안 적는다 — 숫자만 오르내린다', async () => {
     const view = await 그리기()
     await 누르기(view, '버프')
 
     await 누르기(view, '보약 버프 추가 구매')
 
-    expect(view.getByTestId('spend-sheet-quantity-unit')).toHaveTextContent('포인트')
-  })
-
-  it('회 단위 항목은 「회」다', async () => {
-    const view = await 그리기()
-
-    await 에픽던전(view, '하이마운틴', '경험치', '2단계')
-
-    expect(view.getByTestId('spend-sheet-quantity-unit')).toHaveTextContent('회')
+    expect(view.queryByTestId('spend-sheet-quantity-unit')).toBeNull()
+    expect(view.getByTestId('spend-sheet-quantity')).toHaveTextContent('1')
   })
 
   it('수량을 올리면 금액이 그만큼 는다', async () => {
