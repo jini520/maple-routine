@@ -25,9 +25,9 @@
  *
  * ## 아이템 판매만 **수수료를 뗀다** ([[ADR-170]] 정정 9)
  *
- * 경매장이 3% 또는 5% 를 떼므로 «판 값» 과 «번 돈» 이 다르다. 그래서 이 갈래에서만 큰 숫자가
- * **칠 때는 판매 대금, 손을 떼면 받는 돈**이 된다 — 지출 시트의 관세와 같은 장치이고 방향만
- * 반대다([[ADR-173]] 결정 6). 요율은 [[ADR-168]] 의 것을 **그대로 부른다**(`netProceedsMeso`):
+ * 경매장이 3% 또는 5% 를 떼므로 «판 값» 과 «번 돈» 이 다르다. 그래서 이 갈래에서만 줄이 둘 더
+ * 서고(**판매 대금** · **수수료**) 큰 숫자가 **합계**가 된다 — 지출 시트의 「기타」와 같은 모양이라
+ * 못 친다([[ADR-173]] 결정 17). 요율은 [[ADR-168]] 의 것을 **그대로 부른다**(`netProceedsMeso`):
  * 여기서 다시 짜면 분배 계산기와 1 메소가 어긋난다.
  */
 import { useState } from 'react'
@@ -35,6 +35,7 @@ import { Pressable, View } from 'react-native'
 
 // `TextInput` 도 atom 에서 온다 — 시스템 글자 크기 클램프가 거기 있다([[ADR-152]] 결정 4).
 import { Text, TextInput } from '../../components/atoms/Text/Text'
+import { parseMesoText } from '../../components/molecules/MesoPad/meso-pad'
 import { AmountFigure } from '../../components/molecules/AmountFigure/AmountFigure'
 import { Segment } from '../../components/molecules/Segment/Segment'
 import { SelectField } from '../../components/organisms/SelectField/SelectField'
@@ -143,8 +144,8 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
   /** 저장이 도는 동안 다시 못 누르게 막는다 — 손입력은 두 번 눌리면 행이 둘이 된다. */
   const [saving, setSaving] = useState(false)
 
-  // 수수료는 **아이템 판매에만** 있다(정정 9 ②) — 사냥 메소에는 경매장이 없다.
-  const hasFee = category === '아이템 판매'
+  // 판매 대금·수수료 줄은 **아이템 판매에만** 선다(정정 9 ②) — 사냥 메소에는 경매장이 없다.
+  const isSale = category === '아이템 판매'
   /** [[ADR-168]] 의 계산을 **그대로 부른다** — 수수료 쪽을 내림한다(= 손에 남는 쪽이 커진다). */
   const net = feePercent === null ? gross : netProceedsMeso(gross, feePercent)
 
@@ -256,20 +257,28 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
         {/* 큰 숫자는 **저장 바로 위**이고 자기 윗선을 안 긋는다 — 위 줄의 밑줄이 경계를 겸한다
             ([[ADR-173]] 결정 1·9). 힌트는 억/만이고, 0 일 때는 빈 줄로 자리만 지킨다: 사라지면
             첫 타건에 아래가 통째로 밀린다. */}
-        <AmountFigure
-          value={gross}
-          // **칠 때는 판매 대금, 손을 떼면 받는 돈**([[ADR-170]] 정정 9 ④) — 요율을 고르면 그
-          // 사이를 굴러 내려간다. 그래서 떼이는 금액을 따로 안 적는다(관세와 같은 장치, 방향만 반대).
-          displayValue={feePercent === null ? undefined : net}
-          unit="메소"
-          testID="income-sheet-amount"
-          hint={net > 0 ? formatMesoUnits(net) : ' '}
-          onChangeValue={setGross}
-        />
+        {isSale && (
+          // **치는 자리는 여기**다([[ADR-170]] 정정 9 ④) — 큰 숫자는 합계라 못 친다. 이름 아래에
+          // 서는 이유는 계산 차례 그대로이기 때문이다: 무엇을 · 얼마에 · 몇 % 떼고 → 합계.
+          <View className="flex-row items-center gap-3 border-b border-border pb-2">
+            <Text className="text-xs text-text-muted">판매 대금</Text>
+            <TextInput
+              testID="income-sheet-gross"
+              value={gross === 0 ? '' : gross.toLocaleString()}
+              onChangeText={(text) => setGross(parseMesoText(gross, text))}
+              keyboardType="number-pad"
+              placeholder="0"
+              className="flex-1 text-right text-sm font-semibold text-text"
+              style={TABULAR_NUMS}
+            />
+          </View>
+        )}
 
-        {hasFee && (
-          // **큰 숫자 밑**에 산다(정정 9 ④) — 위의 숫자가 그만큼 내려가는 것이 곧 그 설명이다.
-          <View testID="income-sheet-fee" className="flex-row items-center gap-3">
+        {isSale && (
+          <View
+            testID="income-sheet-fee"
+            className="flex-row items-center gap-3 border-b border-border pb-2"
+          >
             <Text className="text-xs text-text-muted">수수료</Text>
             <View className="ml-auto">
               <Segment
@@ -280,6 +289,17 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
             </View>
           </View>
         )}
+
+        <AmountFigure
+          // **아이템 판매의 큰 숫자는 합계**다([[ADR-170]] 정정 9 ④) — 수수료를 뗀 값이고, 앱이
+          // 세므로 못 친다. 다른 갈래는 이 자리가 곧 치는 칸이다(정정 9 이전과 같다).
+          value={isSale ? net : gross}
+          unit="메소"
+          testID="income-sheet-amount"
+          hint={net > 0 ? formatMesoUnits(net) : ' '}
+          readOnly={isSale}
+          onChangeValue={setGross}
+        />
 
         <Pressable
           role="button"

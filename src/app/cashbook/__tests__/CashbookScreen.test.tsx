@@ -122,10 +122,15 @@ async function 이름으로누르기(view: Rendered, label: string): Promise<voi
   })
 }
 
-/** 수입 시트의 금액 칸에 **친다** — OS 숫자 키보드다([[ADR-170]] 정정 4). */
+/**
+ * 수입 시트의 치는 칸에 **친다** — OS 숫자 키보드다([[ADR-170]] 정정 4).
+ *
+ * 시트는 아이템 판매로 열리고, 그 갈래의 치는 자리는 **판매 대금 칸**이다(정정 9 ④) — 큰 숫자는
+ * 수수료를 뗀 합계라 못 친다.
+ */
 async function 금액치기(view: Rendered, text: string): Promise<void> {
   await act(async () => {
-    fireEvent.changeText(view.getByTestId('income-sheet-amount'), text)
+    fireEvent.changeText(view.getByTestId('income-sheet-gross'), text)
   })
 }
 
@@ -760,7 +765,7 @@ describe('줄을 누르면 고칠 수 있다', () => {
     await 누르기(view, 'cashbook-row-inc-1')
 
     expect(view.getByTestId('income-sheet-title')).toHaveTextContent('아이템 판매')
-    expect(view.getByTestId('income-sheet-amount').props.value).toBe('1,200,000,000')
+    expect(view.getByTestId('income-sheet-gross').props.value).toBe('1,200,000,000')
   })
 
   it('수정하면 갈아 끼우고 다시 읽는다', async () => {

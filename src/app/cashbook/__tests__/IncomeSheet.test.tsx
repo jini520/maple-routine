@@ -62,10 +62,22 @@ async function 아이디로누르기(view: Rendered, testID: string): Promise<vo
   })
 }
 
-/** 커서를 뺀다 — 큰 숫자가 «치는 값» 에서 «받는 돈» 으로 넘어가는 순간이다(정정 9 ④). */
-async function 손떼기(view: Rendered): Promise<void> {
+/**
+ * 큰 숫자를 **직접 치는** 갈래로 연다 — 아이템 판매의 큰 숫자는 합계라 못 친다([[ADR-170]]
+ * 정정 9 ④). 금액 칸의 성질(콤마·자리표시자·키보드)은 그 갈래에서 본다.
+ */
+async function 사냥시트(): Promise<Rendered> {
+  const view = await 그리기()
   await act(async () => {
-    fireEvent(view.getByTestId('income-sheet-amount'), 'blur')
+    fireEvent.press(view.getByLabelText('사냥'))
+  })
+  return view
+}
+
+/** 아이템 판매의 치는 자리는 **판매 대금 칸**이다. */
+async function 대금치기(view: Rendered, text: string): Promise<void> {
+  await act(async () => {
+    fireEvent.changeText(view.getByTestId('income-sheet-gross'), text)
   })
 }
 
@@ -133,13 +145,13 @@ describe('금액 — OS 숫자 키보드다 ([[ADR-170]] 정정 4 · [[ADR-173]]
   })
 
   it('숫자 키보드를 부른다 — 글자 키보드가 아니다', async () => {
-    const view = await 그리기()
+    const view = await 사냥시트()
 
     expect(view.getByTestId('income-sheet-amount').props.keyboardType).toBe('number-pad')
   })
 
   it('친 값이 콤마째 선다', async () => {
-    const view = await 그리기()
+    const view = await 사냥시트()
 
     await 치기(view, '1200')
 
@@ -148,7 +160,7 @@ describe('금액 — OS 숫자 키보드다 ([[ADR-170]] 정정 4 · [[ADR-173]]
 
   // 칸이 콤마를 그리므로 다음 타건은 콤마째 들어온다 — 그것을 걷어야 값이 안 깨진다.
   it('콤마가 섞여 들어와도 값이 안 깨진다', async () => {
-    const view = await 그리기()
+    const view = await 사냥시트()
 
     await 치기(view, '1,2000')
 
@@ -157,7 +169,7 @@ describe('금액 — OS 숫자 키보드다 ([[ADR-170]] 정정 4 · [[ADR-173]]
 
   // 「0」 을 값으로 두면 그 뒤에 친 숫자가 붙어 자릿수가 하나 는다.
   it('0 이면 칸을 비우고 자리표시자로 「0」 을 둔다', async () => {
-    const view = await 그리기()
+    const view = await 사냥시트()
 
     const 칸 = view.getByTestId('income-sheet-amount')
     expect(칸.props.value).toBe('')
@@ -172,7 +184,7 @@ describe('금액 — OS 숫자 키보드다 ([[ADR-170]] 정정 4 · [[ADR-173]]
    * 것은 **없는 편이 낫다.**
    */
   it('빠른 칩이 없다 — 커서를 넣어도 안 뜬다', async () => {
-    const view = await 그리기()
+    const view = await 사냥시트()
 
     await act(async () => {
       fireEvent(view.getByTestId('income-sheet-amount'), 'focus')
@@ -184,7 +196,7 @@ describe('금액 — OS 숫자 키보드다 ([[ADR-170]] 정정 4 · [[ADR-173]]
 
   // 큰 숫자는 화면에 **하나**다([[ADR-173]] 결정 1) — 합계 카드가 없다.
   it('합계 카드가 없고 억/만은 힌트 한 줄이다', async () => {
-    const view = await 그리기()
+    const view = await 사냥시트()
     await 치기(view, '1200000000')
 
     expect(view.getByTestId('income-sheet-amount-hint')).toHaveTextContent('12억')
@@ -205,15 +217,18 @@ describe('금액 — OS 숫자 키보드다 ([[ADR-170]] 정정 4 · [[ADR-173]]
  */
 describe('판매 수수료 ([[ADR-170]] 정정 9)', () => {
   // 사냥 메소에는 경매장이 없고, 「기타」 에 붙이면 «무엇의 수수료인가» 가 안 읽힌다(정정 9 ②).
-  it('아이템 판매에만 선다', async () => {
+  it('판매 대금과 수수료 줄이 아이템 판매에만 선다', async () => {
     const view = await 그리기()
 
+    expect(view.getByTestId('income-sheet-gross')).toBeTruthy()
     expect(view.getByTestId('income-sheet-fee')).toBeTruthy()
 
     await 누르기(view, '사냥')
+    expect(view.queryByTestId('income-sheet-gross')).toBeNull()
     expect(view.queryByTestId('income-sheet-fee')).toBeNull()
 
     await 누르기(view, '기타')
+    expect(view.queryByTestId('income-sheet-gross')).toBeNull()
     expect(view.queryByTestId('income-sheet-fee')).toBeNull()
   })
 
@@ -229,10 +244,10 @@ describe('판매 수수료 ([[ADR-170]] 정정 9)', () => {
     expect(view.getByLabelText('5%')).toBeTruthy()
   })
 
-  /** 큰 숫자 밑 힌트는 **받는 돈**을 적는다 — 굴러가는 숫자와 달리 값이 딱 떨어진다. */
-  it('요율을 고르면 힌트가 받는 돈으로 내려간다', async () => {
+  /** 힌트도 큰 숫자와 같은 것을 적는다 — **받는 돈**이다. */
+  it('요율을 고르면 합계가 받는 돈으로 내려간다', async () => {
     const view = await 그리기()
-    await 치기(view, '1200000000')
+    await 대금치기(view, '1200000000')
 
     expect(view.getByTestId('income-sheet-amount-hint')).toHaveTextContent('12억')
 
@@ -241,19 +256,21 @@ describe('판매 수수료 ([[ADR-170]] 정정 9)', () => {
     expect(view.getByTestId('income-sheet-amount-hint')).toHaveTextContent('11억 4,000만')
   })
 
-  // **친 값은 안 바뀐다**(정정 9 ④) — 관세와 같은 계약이다: 껐다 켰다 해도 판매 대금이 안 부푼다.
-  it('커서를 다시 넣으면 친 판매 대금이 돌아온다', async () => {
+  /**
+   * **친 대금은 그 자리에 남는다**(정정 9 ④) — 요율을 껐다 켰다 해도 판매 대금이 안 부푼다.
+   * 큰 숫자는 앱이 세는 합계라 **못 친다**([[ADR-173]] 결정 17 의 「기타」와 같은 모양).
+   */
+  it('판매 대금은 그 자리에 남고 합계는 못 친다', async () => {
     const view = await 그리기()
-    await 치기(view, '1200000000')
-    await 손떼기(view)
+    await 대금치기(view, '1200000000')
 
     await 누르기(view, '5%')
     await 누르기(view, '3%')
-    await act(async () => {
-      fireEvent(view.getByTestId('income-sheet-amount'), 'focus')
-    })
 
-    expect(view.getByTestId('income-sheet-amount').props.value).toBe('1,200,000,000')
+    expect(view.getByTestId('income-sheet-gross').props.value).toBe('1,200,000,000')
+    // 못 치는 숫자는 칸이 아니라 글자다 — 초기화 버튼도 없다.
+    expect(view.getByTestId('income-sheet-amount').props.value).toBeUndefined()
+    expect(view.queryByLabelText('금액 초기화')).toBeNull()
   })
 
   /**
@@ -263,7 +280,7 @@ describe('판매 수수료 ([[ADR-170]] 정정 9)', () => {
   it('받는 돈과 뗀 몫을 함께 저장한다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
-    await 치기(view, '1200000000')
+    await 대금치기(view, '1200000000')
     await 누르기(view, '3%')
 
     await 누르기(view, '저장')
@@ -280,7 +297,7 @@ describe('판매 수수료 ([[ADR-170]] 정정 9)', () => {
   it('갈래를 옮기면 요율이 풀린다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
-    await 치기(view, '1200000000')
+    await 대금치기(view, '1200000000')
     await 누르기(view, '5%')
 
     await 누르기(view, '사냥')
@@ -323,7 +340,7 @@ describe('저장', () => {
     const onClose = jest.fn()
     const view = await 그리기({ onClose })
 
-    await 치기(view, '1')
+    await 대금치기(view, '1')
     await 누르기(view, '저장')
 
     expect(onClose).toHaveBeenCalledTimes(1)
@@ -348,7 +365,7 @@ describe('캐릭터 귀속 ([[ADR-166]] 결정 3)', () => {
 
     await 아이디로누르기(view, 'income-sheet-character-trigger')
     await 아이디로누르기(view, 'income-sheet-character-option-ocid-2')
-    await 치기(view, '1200')
+    await 대금치기(view, '1200')
     await 이름으로누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({ ocid: 'ocid-2' })
@@ -357,7 +374,7 @@ describe('캐릭터 귀속 ([[ADR-166]] 결정 3)', () => {
   it('안 고르면 계정 단위로 저장한다 — `ocid` 가 `null` 이다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
-    await 치기(view, '1200')
+    await 대금치기(view, '1200')
     await 이름으로누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({ ocid: null })
@@ -395,7 +412,7 @@ describe('수정 모드 ([[ADR-173]] 결정 15)', () => {
     const view = await 그리기({ editing: 판매기록, onDelete: jest.fn() })
 
     expect(view.getByTestId('income-sheet-name-label')).toHaveTextContent('판매 아이템')
-    expect(view.getByTestId('income-sheet-amount').props.value).toBe('1,200,000,000')
+    expect(view.getByTestId('income-sheet-gross').props.value).toBe('1,200,000,000')
     expect(view.getByTestId('income-sheet-character-trigger')).toBeTruthy()
   })
 
@@ -409,11 +426,7 @@ describe('수정 모드 ([[ADR-173]] 결정 15)', () => {
       onDelete: jest.fn(),
     })
 
-    await act(async () => {
-      fireEvent(view.getByTestId('income-sheet-amount'), 'focus')
-    })
-
-    expect(view.getByTestId('income-sheet-amount').props.value).toBe('1,200,000,000')
+    expect(view.getByTestId('income-sheet-gross').props.value).toBe('1,200,000,000')
     expect(view.getByLabelText('5%').props.accessibilityState?.selected).toBe(true)
   })
 })
