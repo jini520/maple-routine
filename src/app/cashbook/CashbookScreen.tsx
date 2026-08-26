@@ -213,6 +213,19 @@ const BOSS_TILE_PX = 44
 /** 한 줄에 서는 마리 수([[ADR-172]] 정정 3, 사용자 지정) — 레이아웃의 결과가 아니라 **여기서 정한다.** */
 const BOSSES_PER_ROW = 6
 
+/**
+ * 칸 폭의 **상한**([[ADR-172]] 정정 4, 사용자 지정) — 타일 사이의 좌우 간격이 여기서 나온다
+ * (`상한 − 타일` = 8px, 줄 사이 간격과 같은 값이다).
+ *
+ * 상한이 없으면 칸이 줄을 그냥 여섯으로 나누므로 **넓은 기기일수록 타일 사이가 벌어진다**
+ * (390dp 에서 12.7px, 430dp 에서 15.5px). 타일 크기는 고정인데 간격만 커지면 격자가 성겨진다.
+ * 상한에 걸려 남는 폭은 줄 양끝으로 가고(`justify-center`), 그래서 **간격은 어느 기기에서나 같다.**
+ *
+ * `flex-1` 을 안 버리고 상한만 얹는 이유는 **좁은 기기 때문**이다 — 320dp 에서는 칸이 상한보다
+ * 좁아져야 여섯이 다 들어간다. 고정 폭이면 그 기기에서 넘친다.
+ */
+export const BOSS_SLOT_MAX_PX = BOSS_TILE_PX + 8
+
 function chunkBosses(bosses: readonly DefeatedBoss[]): DefeatedBoss[][] {
   const rows: DefeatedBoss[][] = []
   for (let index = 0; index < bosses.length; index += BOSSES_PER_ROW) {
@@ -255,6 +268,10 @@ function chunkBosses(bosses: readonly DefeatedBoss[]): DefeatedBoss[][] {
  * 초상은 칸 안에 **가운데로 44px 고정**이다. 넓은 기기에서 칸이 넓어져도 타일은 안 커진다 —
  * 커진 것이 문제였으므로 그것을 폭에 따라 되돌리지 않는다.
  *
+ * 대신 **칸에 상한을 준다**([[ADR-172]] 정정 4) — 안 주면 타일은 그대로인데 사이만 벌어져 격자가
+ * 성겨진다. 남는 폭은 줄 양끝으로 가고(`justify-center`), 좌우 간격은 어느 기기에서나 8px 로
+ * 줄 사이 간격과 같다(`BOSS_SLOT_MAX_PX`).
+ *
  * **이름을 뺀 자리는 접근성 이름이 받는다**(「난이도 + 보스」). 타일 높이의 절반이 이름이었고,
  * 캐릭터가 여럿이면 그 판이 화면을 덮어 «그 날» 을 보러 온 목적을 잃었다. 눈으로 읽던 것이
  * 사라졌다고 스크린리더에서도 사라지면 그것은 «간략하게» 가 아니라 «없어짐» 이다.
@@ -269,13 +286,14 @@ function DefeatedBossTiles(props: { rowKey: string; bosses: readonly DefeatedBos
         <View
           key={`${row[0].boss}|${row[0].difficulty}`}
           testID={`cashbook-boss-row-${rowIndex}`}
-          className="flex-row"
+          className="flex-row justify-center"
         >
           {row.map((boss) => (
             <View
               key={`${boss.boss}|${boss.difficulty}`}
               testID={`cashbook-boss-slot-${boss.boss}|${boss.difficulty}`}
               className="flex-1 items-center"
+              style={{ maxWidth: BOSS_SLOT_MAX_PX }}
             >
               <View testID={`cashbook-boss-tile-${boss.boss}|${boss.difficulty}`}>
                 <BossPortrait
@@ -293,7 +311,12 @@ function DefeatedBossTiles(props: { rowKey: string; bosses: readonly DefeatedBos
           ))}
           {/* 덜 찬 줄을 빈 칸으로 채운다 — 안 채우면 남은 둘이 반반씩 벌어져 앞줄과 격자가 안 맞는다. */}
           {Array.from({ length: BOSSES_PER_ROW - row.length }, (_, index) => (
-            <View key={`empty-${index}`} testID={`cashbook-boss-slot-empty-${index}`} className="flex-1" />
+            <View
+              key={`empty-${index}`}
+              testID={`cashbook-boss-slot-empty-${index}`}
+              className="flex-1"
+              style={{ maxWidth: BOSS_SLOT_MAX_PX }}
+            />
           ))}
         </View>
       ))}

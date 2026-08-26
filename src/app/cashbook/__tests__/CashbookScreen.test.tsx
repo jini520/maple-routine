@@ -53,7 +53,7 @@ jest.mock('@gorhom/bottom-sheet', () => {
 import { useToastStore } from '../../../features/toast/store'
 import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
 import { SPEED_DIAL_SPACE_PX } from '../../../components/organisms/SpeedDial/speed-dial-metrics'
-import { CashbookScreen } from '../CashbookScreen'
+import { BOSS_SLOT_MAX_PX, CashbookScreen } from '../CashbookScreen'
 
 const records = jest.requireMock('../../../features/cashbook/records') as Record<string, jest.Mock>
 
@@ -884,13 +884,19 @@ describe('자동으로 흘러든 줄 ([[ADR-172]])', () => {
   })
 
   // 칸은 `flex-1` 여섯이라 남는 픽셀까지 Yoga 가 나눠 준다 — 반올림으로 넘칠 자리가 없다.
-  it('칸은 폭을 안 든다 — 줄을 여섯이 고르게 나눈다', async () => {
+  // **상한이 붙는다**(정정 4) — 안 붙이면 넓은 기기에서 칸이 넓어진 만큼 타일 사이가 벌어진다.
+  it('칸은 폭을 안 들되 상한이 있다 — 줄을 여섯이 나누고 그 이상은 안 벌어진다', async () => {
     const view = await 그리기()
     await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
 
     const 칸 = flattenStyle(view.getByTestId('cashbook-boss-slot-스우|하드').props.style)
     expect(칸.width).toBeUndefined()
     expect(칸.flexGrow).toBe(1)
+    expect(칸.maxWidth).toBe(BOSS_SLOT_MAX_PX)
+
+    // 상한에 걸려 줄이 덜 차면 **가운데로** 모인다 — 왼쪽으로 붙으면 오른쪽만 비어 기운다.
+    const 줄 = flattenStyle(view.getAllByTestId(/^cashbook-boss-row-/)[0].props.style)
+    expect(줄.justifyContent).toBe('center')
   })
 
   it('보스 이름을 안 적는다 — 초상이 대신한다', async () => {
