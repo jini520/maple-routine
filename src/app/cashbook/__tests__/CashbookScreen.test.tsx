@@ -21,6 +21,7 @@ jest.mock('../../../features/cashbook/records', () => {
     loadDayRecords: jest.fn(),
     loadLastPointRate: jest.fn(),
     loadTrackedCharacters: jest.fn(),
+    refreshCashbook: jest.fn(),
     recordIncome: jest.fn(),
     recordSpend: jest.fn(),
     editIncome: jest.fn(),
@@ -79,6 +80,7 @@ beforeEach(() => {
   records.loadCalendarAmounts.mockReset().mockResolvedValue({})
   records.loadLastPointRate.mockReset().mockResolvedValue(null)
   records.loadTrackedCharacters.mockReset().mockResolvedValue([])
+  records.refreshCashbook.mockReset().mockResolvedValue(undefined)
   records.recordIncome.mockReset().mockResolvedValue(undefined)
   records.recordSpend.mockReset().mockResolvedValue(undefined)
   records.loadDayRecords.mockReset().mockResolvedValue([])
@@ -1034,5 +1036,35 @@ describe('자동으로 흘러든 줄 ([[ADR-172]])', () => {
 
     expect(records.loadDayRecords).toHaveBeenCalledTimes(1)
     expect(view.getByTestId('cashbook-row-dropSale:ocid-1')).toBeTruthy()
+  })
+})
+
+/**
+ * **당겨서 새로고침**([[ADR-170]] 정정 8, 사용자 지적 2026-08-27).
+ *
+ * 다른 네 화면이 이미 하는 그것이 여기만 빠져 있었다 — 당겨도 아무 일이 없었다.
+ * 순서(동기화 → 날짜 캐기)는 `refreshCashbook` 이 들고, 화면은 그것이 끝난 뒤 **다시 읽는다.**
+ */
+describe('당겨서 새로고침 ([[ADR-170]] 정정 8)', () => {
+  function 당김(view: Rendered): { refreshing: boolean; onRefresh: () => void } {
+    return view.getByTestId('screen-scroll').props.refreshControl.props
+  }
+
+  it('컨트롤이 붙어 있다', async () => {
+    const view = await 그리기()
+
+    expect(당김(view).refreshing).toBe(false)
+  })
+
+  it('당기면 새로고침하고 다시 읽는다', async () => {
+    const view = await 그리기()
+    const 읽은횟수 = records.loadCalendarAmounts.mock.calls.length
+
+    await act(async () => {
+      당김(view).onRefresh()
+    })
+
+    expect(records.refreshCashbook).toHaveBeenCalledTimes(1)
+    expect(records.loadCalendarAmounts.mock.calls.length).toBeGreaterThan(읽은횟수)
   })
 })

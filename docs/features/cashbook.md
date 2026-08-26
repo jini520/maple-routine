@@ -50,6 +50,7 @@
 | 글자→값 | `components/molecules/MesoPad/meso-pad.ts` 의 `parseMesoText` | OS 키보드가 넣은 글자에서 숫자만 남긴다. `MesoAmountField`·`MesoKeypad` 는 **드롭 판매가 전용**으로 남는다([[ADR-124]] 결정 5) |
 | 보스 타일 | `components/molecules/BossPortrait/`(`shape`) · `components/atoms/DifficultyBadge/`(`short`) + `app/boss-profit/character-groups.ts` 의 `findPortraitSlug` | 펼친 결정석 줄이 그리는 네모 타일([[ADR-172]] 정정 1·2) — **셋 다 보스 수익 탭이 쓰는 그것**이고, 프롭 둘이 «네모» 와 «한 칸 글자» 만 더한다 |
 | 캐릭터 고르개 | `components/organisms/SelectField/` + `app/cashbook/character-options.ts` | 라벨–값 줄 모양의 커스텀 드롭다운. 세로 배치는 `AccountSelect/place-dropdown` 을 그대로 쓴다 |
+| 당겨서 새로고침 | `features/cashbook/records.ts` 의 `refreshCashbook` + `app/use-pull-refresh.ts` | **동기화 → 날짜 캐기 → 다시 읽기** 차례([[ADR-170]] 정정 8). 보스 수익 탭의 당김과 같은 재조회를 부른다 |
 | 화면 | `app/cashbook/CashbookScreen.tsx` | 주간/월간 전환 + 기간 이동 + 격자 + 고른 날의 상세 + **결정석 줄 펼치기** |
 
 계산과 표시를 가른 이유는 [[ADR-147]] 결정 8 과 같다 — 배치 규칙이 렌더러 안에 있으면 화면을

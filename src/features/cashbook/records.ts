@@ -21,6 +21,7 @@ import { getDatedBossProfitRecords } from '../../storage/boss-profit'
 import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
 import { resolveDefeatDates } from '../boss-profit/defeat-dates'
+import { useBossProfitStore } from '../boss-profit/store'
 import {
   deleteIncomeRecord,
   getIncomeRecordsBetween,
@@ -288,6 +289,33 @@ export async function loadTrackedCharacters(): Promise<Array<{ ocid: string; nam
     })),
   )
   return named.filter((each) => each.name !== '')
+}
+
+/**
+ * 가계부의 **당겨서 새로고침**([[ADR-170]] 정정 8) — 셋을 차례로 한다.
+ *
+ * ① **동기화** — 새 처치를 가져온다. 이것이 없으면 오늘 잡은 보스는 기록 자체가 없어서 날짜를
+ *    캘 것도 없다(사용자 보고 2026-08-27: «오늘 수익데이터는 있는데 캘린더에 왜 안 찍혀»).
+ * ② **날짜 캐기** — 그 기록에 `defeated_on` 을 채운다([[ADR-172]] 결정 9).
+ * ③ 다시 읽기는 **화면의 몫**이다 — 이 함수가 끝나면 화면이 표를 올린다.
+ *
+ * **차례가 계약이다.** ②가 먼저면 그 순간 없는 기록을 캐려 들고, 새로 온 것은 다음 번까지 안 뜬다.
+ *
+ * 보스 수익 탭의 당김과 **같은 재조회**를 부른다([[ADR-072]] 결정 2 의 태도) — 두 하위 탭이 같은
+ * 원천을 보므로 «어느 탭에서 당겼나» 로 결과가 달라지면 안 된다.
+ *
+ * **던지지 않는다.** 실패를 말하는 것은 그 스토어의 `error` 와 토스트다([[ADR-063]]) — 여기서
+ * 다시 말하면 같은 실패가 두 번 뜬다.
+ */
+export async function refreshCashbook(now: Date): Promise<void> {
+  const ocids = await getTrackedCharacterOcids().catch(() => null)
+  if (ocids !== null && ocids.length > 0) {
+    await useBossProfitStore
+      .getState()
+      .refresh(ocids)
+      .catch(() => undefined)
+  }
+  await resolveTrackedDefeatDates(now)
 }
 
 /** 다음 입력의 시세 기본값([[ADR-166]] 결정 5). 화면이 `storage/` 를 직접 안 부르게 한 번 감싼다. */

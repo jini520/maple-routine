@@ -46,7 +46,7 @@
  */
 
 import { useEffect, useState } from 'react'
-import { Pressable, View } from 'react-native'
+import { Pressable, RefreshControl, View } from 'react-native'
 
 import { Text } from '../../components/atoms/Text/Text'
 import { CalendarMonth } from '../../components/molecules/CalendarMonth/CalendarMonth'
@@ -89,6 +89,7 @@ import {
   loadCalendarAmounts,
   loadLastPointRate,
   loadTrackedCharacters,
+  refreshCashbook,
   recordIncome,
   recordSpend,
   loadDayRecords,
@@ -109,7 +110,9 @@ import {
 // 보스 수익 탭의 행이 초상을 찾는 **그 함수**다([[ADR-172]] 정정 1) — 같은 보스가 두 화면에서
 // 다른 그림이면 안 된다. 화면끼리의 참조는 `app/today/view-model.ts` 가 이미 트고 있는 길이다.
 import { findPortraitSlug } from '../boss-profit/character-groups'
+import { usePullRefresh } from '../use-pull-refresh'
 import { useOpenTab } from '../use-open-tab'
+import { useThemeAppearance } from '../../theme/context'
 import { useToastStore } from '../../features/toast/store'
 import { IncomeSheet, type IncomeDraft } from './IncomeSheet'
 import { SpendSheet, type SpendDraft } from './SpendSheet'
@@ -460,6 +463,7 @@ export function CashbookScreen(): React.JSX.Element {
    */
   const [characters, setCharacters] = useState<Array<{ ocid: string; name: string }>>([])
   const openTab = useOpenTab()
+  const { definition } = useThemeAppearance()
 
   const monthWeeks = buildCalendarMonth(monthKey)
   const weeks = isWeekly ? [buildResetWeek(weekStartKey)] : monthWeeks
@@ -480,6 +484,16 @@ export function CashbookScreen(): React.JSX.Element {
    * 기간에 남의 숫자**를 얹을 수 있다.
    */
   const [reloadToken, setReloadToken] = useState(0)
+
+  /**
+   * **당겨서 새로고침**([[ADR-170]] 정정 8) — 다른 네 화면이 이미 하는 그것이 여기만 빠져 있었다
+   * (사용자 지적 2026-08-27). 동기화 → 날짜 캐기 → 다시 읽기 순서는 `refreshCashbook` 이 든다.
+   */
+  const pull = usePullRefresh(async () => {
+    await refreshCashbook(new Date())
+    setReloadToken((token) => token + 1)
+  })
+
 
   useEffect(() => {
     let alive = true
@@ -660,6 +674,16 @@ export function CashbookScreen(): React.JSX.Element {
   return (
     <View testID="screen-Cashbook" className="flex-1">
       <ScreenScroll
+        // [[ADR-130]] 결정 1: 색만 테마에서 넘기고 컨트롤은 셸이 그대로 받는다.
+        refreshControl={
+          <RefreshControl
+            refreshing={pull.refreshing}
+            onRefresh={pull.onRefresh}
+            tintColor={definition.primaryInk}
+            colors={[definition.primaryInk]}
+            progressBackgroundColor={definition.surface}
+          />
+        }
         header={
           <PageHeader>
             <PageHeaderTitleRow className="justify-between">
