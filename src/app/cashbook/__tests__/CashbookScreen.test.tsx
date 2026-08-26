@@ -827,6 +827,25 @@ describe('자동으로 흘러든 줄 ([[ADR-172]])', () => {
     expect(view.getAllByTestId('boss-portrait')).toHaveLength(2)
   })
 
+  // 정정 2 — 56px 타일 위에 「익스트림」 넉 자가 앉으면 초상을 거의 다 덮는다.
+  it('난이도는 타일 안에 한 칸으로 든다', async () => {
+    const view = await 그리기()
+    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
+
+    expect(view.getByText('H')).toBeTruthy()
+    expect(view.getByText('N')).toBeTruthy()
+    expect(view.queryByText('하드')).toBeNull()
+    expect(view.queryByText('노멀')).toBeNull()
+  })
+
+  it('타일은 네모다', async () => {
+    const view = await 그리기()
+    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
+
+    const [초상] = view.getAllByTestId('boss-portrait')
+    expect(flattenStyle(초상.props.style).borderRadius).toBe(8)
+  })
+
   // 펼친 판은 줄과 **한 카드**여야 한다 — 따로 선 상자로 보이면 «이 줄이 편 것» 이 끊긴다.
   // NativeWind 가 이 클래스를 못 만들면 조용히 테두리가 남으므로 값으로 본다.
   it('펼치면 줄과 판 사이의 선이 사라진다', async () => {

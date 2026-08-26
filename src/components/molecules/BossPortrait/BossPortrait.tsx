@@ -33,10 +33,22 @@ export interface BossPortraitProps {
   label: string
   size?: number // px, 기본값 40(보스 수익 화면 기존 h-10 크기)
   crop?: BossPortraitCrop // 없으면 boss-portrait-icon-crops.json에서 portraitSlug로 조회(없으면 cover/center)
+  /**
+   * 상자의 모양 — **기본은 원형**이다([[ADR-172]] 정정 2 로 는 축).
+   *
+   * 원형이던 이유는 이 그림이 **줄 안의 표식**이었기 때문이다(이름 왼쪽의 아바타 자리 — 보스 수익
+   * 행 · 보스 관리 화면). `'square'` 는 초상 자체가 **타일**이 되어 여럿이 격자로 서는 자리를 위한
+   * 것이다(가계부의 처치 타일) — 원이 격자로 서면 네 귀가 비어 사이가 성겨 보인다.
+   *
+   * 크롭 표는 **갈리지 않는다.** 같은 얼굴을 같은 자리에서 자르고 상자의 귀만 다르다.
+   */
+  shape?: 'circle' | 'square'
 }
 
 export function BossPortrait(props: BossPortraitProps): React.JSX.Element {
   const size = props.size ?? 40
+  // 플레이스홀더도 **같은 모양을 따른다** — 그림 유무로 귀가 달라지면 격자에서 그 칸만 튄다.
+  const shapeClass = props.shape === 'square' ? 'rounded-lg' : 'rounded-full'
   const url = getBossPortraitUrl(props.portraitSlug)
 
   if (url === null) {
@@ -45,7 +57,7 @@ export function BossPortrait(props: BossPortraitProps): React.JSX.Element {
         testID="boss-portrait"
         accessibilityLabel={props.label}
         style={{ width: size, height: size }}
-        className="shrink-0 items-center justify-center rounded-full bg-surface-2"
+        className={`shrink-0 items-center justify-center bg-surface-2 ${shapeClass}`}
       >
         <Text className="text-xs text-text-muted">?</Text>
       </View>
@@ -61,7 +73,7 @@ export function BossPortrait(props: BossPortraitProps): React.JSX.Element {
       role="img"
       accessibilityLabel={props.label}
       style={{ width: size, height: size }}
-      className="shrink-0 overflow-hidden rounded-full"
+      className={`shrink-0 overflow-hidden ${shapeClass}`}
     >
       <Image
         testID="boss-portrait-image"

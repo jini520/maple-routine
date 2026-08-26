@@ -46,7 +46,7 @@
 | 보스 날짜 캐기 | `features/boss-profit/defeat-dates.ts` | 날짜별 응답을 훑어 «뒤집힌 날» 을 찾아 `defeated_on` 을 채운다([[ADR-172]]) |
 | 입력 | `app/cashbook/SpendSheet.tsx` · `IncomeSheet.tsx` · `components/organisms/SpeedDial/`(`speed-dial-motion` 움직임 · `speed-dial-metrics` 치수) | 떠 있는 ＋ → 갈래 둘 → 시트 |
 | 금액 키패드 | `components/molecules/MesoPad/` | 금액 칸 · 빠른 칩 · 3열 그리드. **드롭 판매가와 같은 부품**이다 |
-| 보스 타일 | `components/molecules/BossPortrait/` · `components/atoms/DifficultyBadge/` + `app/boss-profit/character-groups.ts` 의 `findPortraitSlug` | 펼친 결정석 줄이 그리는 초상 타일([[ADR-172]] 정정 1) — **셋 다 보스 수익 탭이 쓰는 그것**이다 |
+| 보스 타일 | `components/molecules/BossPortrait/`(`shape`) · `components/atoms/DifficultyBadge/`(`short`) + `app/boss-profit/character-groups.ts` 의 `findPortraitSlug` | 펼친 결정석 줄이 그리는 네모 타일([[ADR-172]] 정정 1·2) — **셋 다 보스 수익 탭이 쓰는 그것**이고, 프롭 둘이 «네모» 와 «한 칸 글자» 만 더한다 |
 | 화면 | `app/cashbook/CashbookScreen.tsx` | 주간/월간 전환 + 기간 이동 + 격자 + 고른 날의 상세 + **결정석 줄 펼치기** |
 
 계산과 표시를 가른 이유는 [[ADR-147]] 결정 8 과 같다 — 배치 규칙이 렌더러 안에 있으면 화면을
@@ -204,9 +204,12 @@
 - **누르면 결정석 줄은 펼쳐지고, 판매 줄은 보스 수익 탭으로 간다**(결정 8 + **정정 1**). 어느
   쪽이든 수정 시트가 안 열리고 **삭제도 없다** — 가계부에서 지워도 원천이 그대로라 다음에 읽으면
   되살아난다.
-- **결정석 줄을 펼치면 그날 잡은 보스가 초상 타일로 뜬다**([[ADR-172]] 정정 1, 사용자 지정).
-  타일은 **초상 + 난이도 + 이름**이고 **큰 것부터** 선다. 그림 둘(`BossPortrait`·`DifficultyBadge`)은
-  보스 수익 탭의 행이 쓰는 그것 그대로다 — 같은 보스가 두 화면에서 다르게 생기면 안 된다.
+- **결정석 줄을 펼치면 그날 잡은 보스가 초상 타일로 뜬다**([[ADR-172]] 정정 1·2, 사용자 지정).
+  타일은 **네모난 초상(56px) + 그 위 왼쪽 아래의 난이도 한 칸 + 아래에 이름**이고 **큰 것부터**
+  선다. 그림 둘(`BossPortrait`·`DifficultyBadge`)은 보스 수익 탭의 행이 쓰는 그것 그대로다 —
+  같은 보스가 두 화면에서 다르게 생기면 안 된다. 갈리는 것 둘: 초상이 **네모**이고(`shape="square"`,
+  기본은 원형이라 저쪽 호출부는 안 바뀐다), 난이도 글자가 **한 칸**이다(`E`·`N`·`H`·`C`·`EX` —
+  **색은 한 값도 안 갈린다**).
   마리당 금액은 **안 적는다**(파티원 수·정가와 함께 봐야 뜻이 생긴다 — 그 자리가 저쪽이다).
   한 번에 **하나만** 펼쳐지고, **날을 바꾸면 접힌다**(줄의 신원이 날짜를 안 든다).
 - 판매 줄이 여전히 탭으로 가는 이유는 그 줄의 「미입력 n」 이 **여기서 못 하는 일**을 가리키기

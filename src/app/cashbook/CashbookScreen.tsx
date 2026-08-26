@@ -207,6 +207,9 @@ function MonthArrow(props: {
  * 결정석과 판매를 가르는 것은 그림이 아니라 이름이고, 그 둘을 다른 그림으로 그리면 «거의 같은데
  * 다른 동전» 이 하나 더 생긴다.
  */
+/** 타일 한 변 — `w-14`(56px)와 **같은 값이어야 한다**(초상이 곧 칸의 폭이다). */
+const BOSS_TILE_PX = 56
+
 /**
  * 펼친 결정석 줄의 **타일 판**([[ADR-172]] 정정 1) — 그날 잡은 보스를 초상으로 편다.
  *
@@ -218,6 +221,18 @@ function MonthArrow(props: {
  *
  * 타일 폭을 못박는 이유는 **격자로 보이게** 하기 위해서다 — 이름 길이에 따라 폭이 달라지면
  * 줄바꿈이 들쭉날쭉해져 «목록» 이 아니라 «흩어진 칩» 이 된다. 그래서 이름은 두 줄까지 접는다.
+ *
+ * ## 모양은 **네모**다 ([[ADR-172]] 정정 2)
+ *
+ * `shape="square"` 이고 **초상이 곧 칸의 폭**이다(56px = `w-14`). 초상보다 넓은 칸을 두면 초상
+ * 사이가 벌어져 격자가 흩어진다 — 이름만 그 폭 안에서 접힌다.
+ *
+ * 난이도는 **초상 위 왼쪽 아래에 겹친다**. 아래에 한 줄로 따로 두면 타일 높이가 배지만큼 늘어
+ * 격자가 세로로 성겨지고, 그러면 «타일» 이 아니라 «세로로 쌓인 작은 카드» 가 된다. 겹치는 것은
+ * 드롭 아이콘의 `lv` 배지가 이미 쓰는 관용구다(`BossProfitBossRow`).
+ *
+ * 글자는 **한 칸**이다(`H`·`EX` …). 56px 위에 「익스트림」 넉 자가 앉으면 초상을 거의 다 덮는데,
+ * **색이 이미 난이도를 말하고 있어** 글자는 그것을 확인만 하면 된다. 색은 한 값도 안 갈린다.
  */
 function DefeatedBossTiles(props: { rowKey: string; bosses: readonly DefeatedBoss[] }): React.JSX.Element {
   return (
@@ -229,10 +244,19 @@ function DefeatedBossTiles(props: { rowKey: string; bosses: readonly DefeatedBos
         <View
           key={`${boss.boss}|${boss.difficulty}`}
           testID={`cashbook-boss-tile-${boss.boss}|${boss.difficulty}`}
-          className="w-16 items-center gap-1"
+          className="w-14 items-center gap-1"
         >
-          <BossPortrait portraitSlug={findPortraitSlug(boss.boss)} label={boss.boss} size={36} />
-          <DifficultyBadge difficulty={boss.difficulty} size="small" />
+          <View>
+            <BossPortrait
+              portraitSlug={findPortraitSlug(boss.boss)}
+              label={boss.boss}
+              size={BOSS_TILE_PX}
+              shape="square"
+            />
+            <View className="absolute bottom-0.5 left-0.5">
+              <DifficultyBadge difficulty={boss.difficulty} size="small" short />
+            </View>
+          </View>
           <Text numberOfLines={2} className="text-center text-[10px] leading-tight text-text">
             {boss.boss}
           </Text>

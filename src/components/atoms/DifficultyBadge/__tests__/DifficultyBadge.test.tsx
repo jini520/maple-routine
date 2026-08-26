@@ -96,3 +96,38 @@ describe('크기 둘 ([[ADR-147]] 정정 40)', () => {
     expect(상자(작게).borderColor).toBe(상자(기본).borderColor)
   })
 })
+
+// 타일 안처럼 **글자를 놓을 자리가 없는 데**를 위한 표기([[ADR-172]] 정정 2). 색은 그대로다 —
+// 「같은 난이도가 화면마다 다른 색이면 같은 값인 줄 모른다」([[ADR-147]] 정정 40)는 여기서도 산다.
+describe('한 칸짜리 글자 ([[ADR-172]] 정정 2)', () => {
+  it.each([
+    ['이지', 'E'],
+    ['노멀', 'N'],
+    ['하드', 'H'],
+    ['카오스', 'C'],
+    ['익스트림', 'EX'],
+  ] as const)('%s → %s', async (difficulty, short) => {
+    const { getByText, queryByText } = await renderAtom(
+      <DifficultyBadge difficulty={difficulty} size="small" short />,
+    )
+
+    expect(getByText(short)).toBeTruthy()
+    expect(queryByText(difficulty)).toBeNull()
+  })
+
+  it('글자만 갈린다 — 색도 테두리도 그대로다', async () => {
+    const 온글자 = await renderAtom(<DifficultyBadge difficulty="익스트림" size="small" />)
+    const 한칸 = await renderAtom(<DifficultyBadge difficulty="익스트림" size="small" short />)
+
+    expect(flattenStyle(한칸.getByText('EX').props.style).color).toBe(
+      flattenStyle(온글자.getByText('익스트림').props.style).color,
+    )
+    expect(flattenStyle(boxOf(한칸.getByText('EX')).props.style)).toMatchObject({
+      borderWidth: 1.5,
+      borderColor: '#ef5d78',
+    })
+    expect(boxOf(한칸.getByText('EX')).props.colors).toEqual(
+      boxOf(온글자.getByText('익스트림')).props.colors,
+    )
+  })
+})
