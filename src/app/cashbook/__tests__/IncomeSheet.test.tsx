@@ -62,6 +62,13 @@ async function 아이디로누르기(view: Rendered, testID: string): Promise<vo
   })
 }
 
+/** 커서를 뺀다 — 큰 숫자가 «치는 값» 에서 «받는 돈» 으로 넘어가는 순간이다(정정 9 ④). */
+async function 손떼기(view: Rendered): Promise<void> {
+  await act(async () => {
+    fireEvent(view.getByTestId('income-sheet-amount'), 'blur')
+  })
+}
+
 async function 누르기(view: Rendered, label: string): Promise<void> {
   await act(async () => {
     fireEvent.press(view.getByLabelText(label))
@@ -96,7 +103,7 @@ describe('갈래', () => {
   it('갈래가 첫 칸의 이름을 바꾼다', async () => {
     const view = await 그리기()
 
-    expect(view.getByTestId('income-sheet-name-label')).toHaveTextContent('판 것')
+    expect(view.getByTestId('income-sheet-name-label')).toHaveTextContent('판매 아이템')
 
     await 누르기(view, '사냥')
 
@@ -190,6 +197,105 @@ describe('금액 — OS 숫자 키보드다 ([[ADR-170]] 정정 4 · [[ADR-173]]
   })
 })
 
+/**
+ * **아이템 판매는 경매장 수수료를 뗀 값이 수입**이다([[ADR-170]] 정정 9, 사용자 지정 2026-08-27).
+ *
+ * 요율은 [[ADR-168]] 의 `FeePercent`(3·5 — [[ADR-006]] 사용자 확인값)를 그대로 쓰고, 계산도
+ * `netProceedsMeso` 를 그대로 부른다. 여기서 다시 짜면 분배 계산기와 1 메소가 어긋난다.
+ */
+describe('판매 수수료 ([[ADR-170]] 정정 9)', () => {
+  // 사냥 메소에는 경매장이 없고, 「기타」 에 붙이면 «무엇의 수수료인가» 가 안 읽힌다(정정 9 ②).
+  it('아이템 판매에만 선다', async () => {
+    const view = await 그리기()
+
+    expect(view.getByTestId('income-sheet-fee')).toBeTruthy()
+
+    await 누르기(view, '사냥')
+    expect(view.queryByTestId('income-sheet-fee')).toBeNull()
+
+    await 누르기(view, '기타')
+    expect(view.queryByTestId('income-sheet-fee')).toBeNull()
+  })
+
+  /**
+   * **기본이 「없음」** 이다(정정 9 ②) — 직거래는 수수료가 없고, 셋 중 하나를 억지로 세우면
+   * 시트를 열기만 해도 금액이 달라진다.
+   */
+  it('기본이 「없음」 이다', async () => {
+    const view = await 그리기()
+
+    expect(view.getByLabelText('없음').props.accessibilityState?.selected).toBe(true)
+    expect(view.getByLabelText('3%')).toBeTruthy()
+    expect(view.getByLabelText('5%')).toBeTruthy()
+  })
+
+  /** 큰 숫자 밑 힌트는 **받는 돈**을 적는다 — 굴러가는 숫자와 달리 값이 딱 떨어진다. */
+  it('요율을 고르면 힌트가 받는 돈으로 내려간다', async () => {
+    const view = await 그리기()
+    await 치기(view, '1200000000')
+
+    expect(view.getByTestId('income-sheet-amount-hint')).toHaveTextContent('12억')
+
+    await 누르기(view, '5%')
+
+    expect(view.getByTestId('income-sheet-amount-hint')).toHaveTextContent('11억 4,000만')
+  })
+
+  // **친 값은 안 바뀐다**(정정 9 ④) — 관세와 같은 계약이다: 껐다 켰다 해도 판매 대금이 안 부푼다.
+  it('커서를 다시 넣으면 친 판매 대금이 돌아온다', async () => {
+    const view = await 그리기()
+    await 치기(view, '1200000000')
+    await 손떼기(view)
+
+    await 누르기(view, '5%')
+    await 누르기(view, '3%')
+    await act(async () => {
+      fireEvent(view.getByTestId('income-sheet-amount'), 'focus')
+    })
+
+    expect(view.getByTestId('income-sheet-amount').props.value).toBe('1,200,000,000')
+  })
+
+  /**
+   * **받는 돈과 뗀 몫을 둘 다 박는다**(정정 9 ⑤) — 집계는 `mesoAmount` 한 칸만 보고, 판매 대금은
+   * 「받는 돈 + 뗀 몫」 으로 되짚는다.
+   */
+  it('받는 돈과 뗀 몫을 함께 저장한다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave })
+    await 치기(view, '1200000000')
+    await 누르기(view, '3%')
+
+    await 누르기(view, '저장')
+
+    expect(onSave.mock.calls[0][0]).toMatchObject({
+      category: '아이템 판매',
+      mesoAmount: 1_164_000_000,
+      saleFeePercent: 3,
+      saleFeeMeso: 36_000_000,
+    })
+  })
+
+  // 갈래를 옮기면 **골라 둔 요율이 풀린다**(정정 9 ②) — 관세가 갈래를 옮길 때 꺼지는 것과 같다.
+  it('갈래를 옮기면 요율이 풀린다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave })
+    await 치기(view, '1200000000')
+    await 누르기(view, '5%')
+
+    await 누르기(view, '사냥')
+    await 누르기(view, '아이템 판매')
+
+    expect(view.getByLabelText('없음').props.accessibilityState?.selected).toBe(true)
+    await 누르기(view, '저장')
+    expect(onSave.mock.calls[0][0]).toMatchObject({
+      mesoAmount: 1_200_000_000,
+      saleFeePercent: null,
+      saleFeeMeso: null,
+    })
+  })
+})
+
 describe('저장', () => {
   it('갈래와 이름과 금액을 넘긴다 — 통화 칸이 없다', async () => {
     const onSave = jest.fn()
@@ -206,6 +312,9 @@ describe('저장', () => {
       category: '사냥',
       item: null,
       mesoAmount: 12,
+      // 사냥에는 수수료 줄이 아예 없다([[ADR-170]] 정정 9 ②) — 칸은 `null` 로 나간다.
+      saleFeePercent: null,
+      saleFeeMeso: null,
       memo: null,
     })
   })
@@ -267,6 +376,8 @@ describe('수정 모드 ([[ADR-173]] 결정 15)', () => {
     category: '아이템 판매' as const,
     item: '앱솔랩스 케이프',
     mesoAmount: 1_200_000_000,
+    saleFeePercent: null,
+    saleFeeMeso: null,
     memo: null,
     recordedAt: '2026-08-23T01:00:00.000Z',
   }
@@ -283,8 +394,26 @@ describe('수정 모드 ([[ADR-173]] 결정 15)', () => {
   it('세부는 그대로 고친다 — 이름·금액·캐릭터', async () => {
     const view = await 그리기({ editing: 판매기록, onDelete: jest.fn() })
 
-    expect(view.getByTestId('income-sheet-name-label')).toHaveTextContent('판 것')
+    expect(view.getByTestId('income-sheet-name-label')).toHaveTextContent('판매 아이템')
     expect(view.getByTestId('income-sheet-amount').props.value).toBe('1,200,000,000')
     expect(view.getByTestId('income-sheet-character-trigger')).toBeTruthy()
+  })
+
+  /**
+   * **판매 대금이 정확히 되짚어진다**(정정 9 ⑤) — 「받는 돈 + 뗀 몫」 이다. 요율만 들고 역산하면
+   * 내림 때문에 1 메소가 어긋나고, 고쳐 저장할 때마다 그 어긋남이 쌓인다.
+   */
+  it('뗀 몫을 되돌려 친 판매 대금을 세운다', async () => {
+    const view = await 그리기({
+      editing: { ...판매기록, mesoAmount: 1_140_000_000, saleFeePercent: 5, saleFeeMeso: 60_000_000 },
+      onDelete: jest.fn(),
+    })
+
+    await act(async () => {
+      fireEvent(view.getByTestId('income-sheet-amount'), 'focus')
+    })
+
+    expect(view.getByTestId('income-sheet-amount').props.value).toBe('1,200,000,000')
+    expect(view.getByLabelText('5%').props.accessibilityState?.selected).toBe(true)
   })
 })

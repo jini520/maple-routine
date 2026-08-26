@@ -45,6 +45,9 @@ const 수입: IncomeDraft = {
   category: '사냥',
   item: '엘리시움',
   mesoAmount: 1_200_000_000,
+  // 사냥에는 경매장이 없다([[ADR-170]] 정정 9 ②) — 수수료 칸 둘은 언제나 `null` 이다.
+  saleFeePercent: null,
+  saleFeeMeso: null,
   memo: null,
 }
 
@@ -182,6 +185,8 @@ const 수입행 = {
   category: '사냥' as const,
   item: '엘리시움',
   mesoAmount: 1_200_000_000,
+  saleFeePercent: null,
+  saleFeeMeso: null,
   memo: null,
   recordedAt: '2026-08-25T01:00:00.000Z',
 }

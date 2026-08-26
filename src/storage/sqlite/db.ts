@@ -103,7 +103,13 @@ const TABLE_DEFINITIONS = [
     category TEXT NOT NULL,       -- 아이템 판매 · 사냥 · 기타([[ADR-170]] 결정 1)
     item TEXT,                    -- 판 것 / 사냥터 / 자유
     -- 수입은 **메소뿐**이다([[ADR-170]] 결정 1) — 통화 칸 셋도 시세도 없다.
+    -- **수수료를 뗀 값**이다([[ADR-170]] 정정 9 ⑤) — 캘린더도 합계도 이 칸 하나를 더한다.
     meso_amount INTEGER NOT NULL,
+    -- 경매장 수수료(3·5 — [[ADR-168]] 의 FeePercent). NULL = 없음(직거래이거나 정정 9 이전 행).
+    sale_fee_percent INTEGER,
+    -- 뗀 몫. **판매 대금 = meso_amount + sale_fee_meso** 로 정확히 되짚는다 — 내림이 섞여 있어
+    -- 요율만으로는 역산이 안 된다([[ADR-170]] 정정 9 ⑤).
+    sale_fee_meso INTEGER,
     memo TEXT,
     recorded_at TEXT NOT NULL,
     PRIMARY KEY (id)
@@ -237,6 +243,10 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   // 그 사이에 앱을 켠 기기는 `form` 없는 테이블을 들고 있고, INSERT 는 모든 칸을 적으므로
   // **지출이 하나도 안 적힌다**(실기 재현 2026-08-25). 위 둘과 같은 사정이다.
   await ensureColumn(db, 'spend_records', 'form', 'TEXT')
+  // [[ADR-170]] 정정 9 — `income_records` 는 수수료 칸 없이 만들어졌다. `form` 이 겪은 그 사정이다:
+  // INSERT 는 모든 칸을 적으므로 칸이 없으면 **수입이 하나도 안 적힌다.**
+  await ensureColumn(db, 'income_records', 'sale_fee_percent', 'INTEGER')
+  await ensureColumn(db, 'income_records', 'sale_fee_meso', 'INTEGER')
   await db.execute(MIGRATE_SHOP_CATEGORY_RENAME)
   await db.execute(MIGRATE_TONIC_BUFF_CATEGORY)
   await db.execute(MIGRATE_MEIRIN_BOSS_KEY_PARTY_SETTINGS)

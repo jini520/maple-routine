@@ -16,6 +16,7 @@
 // 설계 도중 `source`(`'manual' | 'timer' | 'boss'`)를 두려다 접었다 — **이 테이블에 드는 것은
 // 손입력 하나뿐이고, 테이블이 곧 원천**이다([[ADR-170]] 결정 2). 화면의 배지(`보스`·`손입력`)는
 // 여러 원천을 읽어 합칠 때 붙는 **뷰 모델의 값**이지 컬럼이 아니다.
+import type { FeePercent } from '../lib/item-split'
 import { getBossProfitDb } from './sqlite/db'
 
 /**
@@ -38,16 +39,25 @@ export interface IncomeRecord {
   category: IncomeCategory
   /** 판 것 / 사냥터 / 자유. 갈래가 이 칸의 **라벨만** 바꾼다. */
   item: string | null
-  /** 수입은 **메소뿐**이다([[ADR-170]] 결정 1) — 통화 칸 셋도 시세도 없다. */
+  /**
+   * 수입은 **메소뿐**이다([[ADR-170]] 결정 1) — 통화 칸 셋도 시세도 없다.
+   *
+   * 아이템 판매면 **수수료를 뗀 값**이다([[ADR-170]] 정정 9 ⑤) — 집계가 보는 칸이 이것 하나라,
+   * 판매 대금을 넣으면 번 적 없는 돈이 수입으로 선다.
+   */
   mesoAmount: number
+  /** 경매장 수수료율([[ADR-168]] `FeePercent`). `null` = 없음(직거래이거나 정정 9 이전 행). */
+  saleFeePercent: FeePercent | null
+  /** 뗀 몫. **판매 대금 = `mesoAmount` + 이것** 이다 — 요율만으로는 내림 때문에 역산이 안 된다. */
+  saleFeeMeso: number | null
   memo: string | null
   recordedAt: string
 }
 
 const INSERT_SQL = `
   INSERT INTO income_records
-    (id, ocid, earned_on, category, item, meso_amount, memo, recorded_at)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    (id, ocid, earned_on, category, item, meso_amount, sale_fee_percent, sale_fee_meso, memo, recorded_at)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 export async function insertIncomeRecord(record: IncomeRecord): Promise<void> {
@@ -59,6 +69,8 @@ export async function insertIncomeRecord(record: IncomeRecord): Promise<void> {
     record.category,
     record.item,
     record.mesoAmount,
+    record.saleFeePercent,
+    record.saleFeeMeso,
     record.memo,
     record.recordedAt,
   ])
@@ -67,7 +79,8 @@ export async function insertIncomeRecord(record: IncomeRecord): Promise<void> {
 /** 갈아 끼우기 — 지출과 같은 계약이다([[ADR-171]] 결정 4). `recorded_at` 은 SET 에 없다. */
 const UPDATE_SQL = `
   UPDATE income_records SET
-    ocid = ?, earned_on = ?, category = ?, item = ?, meso_amount = ?, memo = ?
+    ocid = ?, earned_on = ?, category = ?, item = ?, meso_amount = ?,
+    sale_fee_percent = ?, sale_fee_meso = ?, memo = ?
   WHERE id = ?
 `
 
@@ -79,6 +92,8 @@ export async function updateIncomeRecord(record: IncomeRecord): Promise<void> {
     record.category,
     record.item,
     record.mesoAmount,
+    record.saleFeePercent,
+    record.saleFeeMeso,
     record.memo,
     record.id,
   ])
@@ -99,6 +114,8 @@ function rowToRecord(row: Record<string, unknown>): IncomeRecord {
     category: row.category as IncomeCategory,
     item: (row.item as string | null | undefined) ?? null,
     mesoAmount: row.meso_amount as number,
+    saleFeePercent: (row.sale_fee_percent as FeePercent | null | undefined) ?? null,
+    saleFeeMeso: (row.sale_fee_meso as number | null | undefined) ?? null,
     memo: (row.memo as string | null | undefined) ?? null,
     recordedAt: row.recorded_at as string,
   }
