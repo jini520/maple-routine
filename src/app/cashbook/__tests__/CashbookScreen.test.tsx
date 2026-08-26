@@ -1,7 +1,7 @@
 // 가계부 캘린더 — [[ADR-169]]. **아직 기록이 없다**(결정 6), 그래서 여기서 보는 것은 격자·달 이동·
 // 날짜 선택 셋이다. 그 셋은 데이터 없이도 진짜로 동작해야 한다(앞선 껍데기 둘과 갈리는 지점).
 import type { ReactNode } from 'react'
-import { act, fireEvent } from '@testing-library/react-native'
+import { act, fireEvent, within } from '@testing-library/react-native'
 
 // 화면은 `storage/` 를 직접 안 부른다(CLAUDE.md CRITICAL) — 그 층을 목으로 갈아 끼운다.
 jest.mock('../../../features/cashbook/records', () => {
@@ -761,6 +761,17 @@ describe('자동으로 흘러든 줄 ([[ADR-172]])', () => {
       { boss: '데미안', difficulty: '노멀' },
     ],
   }
+  // 여섯을 넘겨야 «끊기는가» 를 볼 수 있다 — 두 마리로는 한 줄에 다 들어가 아무것도 안 드러난다.
+  const 보스여덟 = [
+    { boss: '검은 마법사', difficulty: '하드' },
+    { boss: '스우', difficulty: '하드' },
+    { boss: '데미안', difficulty: '노멀' },
+    { boss: '루시드', difficulty: '하드' },
+    { boss: '윌', difficulty: '하드' },
+    { boss: '더스크', difficulty: '카오스' },
+    { boss: '진 힐라', difficulty: '하드' },
+    { boss: '듄켈', difficulty: '하드' },
+  ]
   const 판매줄 = {
     kind: 'dropSale' as const,
     ocid: 'ocid-1',
@@ -848,19 +859,38 @@ describe('자동으로 흘러든 줄 ([[ADR-172]])', () => {
 
   // ── 정정 3: 한 줄에 여섯 · 이름 없음 ─────────────────────────────────────────
   //
-  // 칸을 고정 px 로 두면 같은 코드가 기기마다 다섯도 되고 일곱도 된다 — «한 줄에 여섯» 은 폭의
-  // 함수가 아니라 결정이라, 칸이 폭의 1/6 인지를 본다.
-  it('칸이 폭의 1/6 이라 한 줄에 여섯이 선다', async () => {
+  // **폭으로 재지 않는다.** 고정 px 면 기기마다 다섯도 일곱도 되고, 퍼센트(`w-1/6` = `16.67%`)면
+  // 여섯이 100.02% 라 하나가 다음 줄로 밀린다(실측 — 처음에 그렇게 냈다가 다섯만 섰다).
+  // 그래서 «여섯» 이 레이아웃의 결과가 아니라 **구조**여야 하고, 그 구조를 여기서 본다.
+  it('여덟 마리는 여섯 + 둘로 끊긴다', async () => {
+    records.loadDayRecords.mockResolvedValue([{ ...결정석줄, count: 8, bosses: 보스여덟 }])
     const view = await 그리기()
     await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
 
-    const 칸 = flattenStyle(view.getByTestId('cashbook-boss-tile-스우|하드').props.style)
-    expect(String(칸.width).startsWith('16.6')).toBe(true)
+    const 줄들 = view.getAllByTestId(/^cashbook-boss-row-/)
+    expect(줄들).toHaveLength(2)
+    expect(within(줄들[0]).getAllByTestId(/^cashbook-boss-tile-/)).toHaveLength(6)
+    expect(within(줄들[1]).getAllByTestId(/^cashbook-boss-tile-/)).toHaveLength(2)
+  })
 
-    // 퍼센트 여섯에 가로 간격을 더하면 100% 를 넘어 다섯이 된다 — 줄 사이만 벌린다.
-    const 판 = flattenStyle(view.getByTestId('cashbook-row-bosses-bossCrystal:ocid-1').props.style)
-    expect(판.columnGap ?? 0).toBe(0)
-    expect(Number(판.rowGap)).toBeGreaterThan(0)
+  // 안 채우면 둘이 반반씩 벌어져 앞줄과 격자가 안 맞는다.
+  it('덜 찬 마지막 줄은 빈 칸으로 채운다', async () => {
+    records.loadDayRecords.mockResolvedValue([{ ...결정석줄, count: 8, bosses: 보스여덟 }])
+    const view = await 그리기()
+    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
+
+    const 마지막줄 = view.getAllByTestId(/^cashbook-boss-row-/)[1]
+    expect(within(마지막줄).getAllByTestId(/^cashbook-boss-slot-/)).toHaveLength(6)
+  })
+
+  // 칸은 `flex-1` 여섯이라 남는 픽셀까지 Yoga 가 나눠 준다 — 반올림으로 넘칠 자리가 없다.
+  it('칸은 폭을 안 든다 — 줄을 여섯이 고르게 나눈다', async () => {
+    const view = await 그리기()
+    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
+
+    const 칸 = flattenStyle(view.getByTestId('cashbook-boss-slot-스우|하드').props.style)
+    expect(칸.width).toBeUndefined()
+    expect(칸.flexGrow).toBe(1)
   })
 
   it('보스 이름을 안 적는다 — 초상이 대신한다', async () => {

@@ -207,8 +207,19 @@ function MonthArrow(props: {
  * 결정석과 판매를 가르는 것은 그림이 아니라 이름이고, 그 둘을 다른 그림으로 그리면 «거의 같은데
  * 다른 동전» 이 하나 더 생긴다.
  */
-/** 타일 한 변 — **칸 폭과 무관하게 고정**이다([[ADR-172]] 정정 3). 칸은 폭의 1/6 이라 기기마다 넓다. */
+/** 타일 한 변 — **칸 폭과 무관하게 고정**이다([[ADR-172]] 정정 3). 칸은 줄을 여섯이 나눠 기기마다 넓다. */
 const BOSS_TILE_PX = 44
+
+/** 한 줄에 서는 마리 수([[ADR-172]] 정정 3, 사용자 지정) — 레이아웃의 결과가 아니라 **여기서 정한다.** */
+const BOSSES_PER_ROW = 6
+
+function chunkBosses(bosses: readonly DefeatedBoss[]): DefeatedBoss[][] {
+  const rows: DefeatedBoss[][] = []
+  for (let index = 0; index < bosses.length; index += BOSSES_PER_ROW) {
+    rows.push(bosses.slice(index, index + BOSSES_PER_ROW))
+  }
+  return rows
+}
 
 /**
  * 펼친 결정석 줄의 **타일 판**([[ADR-172]] 정정 1) — 그날 잡은 보스를 초상으로 편다.
@@ -233,9 +244,13 @@ const BOSS_TILE_PX = 44
  *
  * ## 한 줄에 **여섯**, 이름은 **없다** ([[ADR-172]] 정정 3)
  *
- * 칸이 **폭의 1/6** 이라 기기 폭과 무관하게 여섯이 선다. 고정 px 로 두면 같은 코드가 기기마다
- * 다섯도 되고 일곱도 된다 — «한 줄에 여섯» 은 폭의 함수가 아니라 결정이다. 그래서 **가로 간격을
- * 안 준다**(퍼센트 여섯에 간격을 더하면 100% 를 넘어 다섯이 된다) — 줄 사이만 벌린다.
+ * **폭으로 재지 않는다.** 고정 px 면 같은 코드가 기기마다 다섯도 되고 일곱도 되고, 퍼센트도
+ * 답이 아니다 — `w-1/6` 은 `16.67%` 로 컴파일돼(실측) 여섯이면 **100.02%** 라 마지막 하나가
+ * 다음 줄로 밀린다. 1/6 은 유한소수가 아니라 퍼센트로 **표현할 수 없다.**
+ *
+ * 그래서 **줄 자체를 만든다** — 여섯씩 끊은 배열이고, 한 줄은 `flex-1` 칸 여섯이다. `flex-1`
+ * 여섯은 남는 픽셀까지 Yoga 가 나눠 주므로 반올림으로 넘칠 자리가 없다. 이 저장소가 캘린더에서
+ * 이미 하는 그 모양이다([[ADR-169]] 결정 7 — 계산이 배열을 만들고 렌더러는 그리기만 한다).
  *
  * 초상은 칸 안에 **가운데로 44px 고정**이다. 넓은 기기에서 칸이 넓어져도 타일은 안 커진다 —
  * 커진 것이 문제였으므로 그것을 폭에 따라 되돌리지 않는다.
@@ -248,26 +263,38 @@ function DefeatedBossTiles(props: { rowKey: string; bosses: readonly DefeatedBos
   return (
     <View
       testID={`cashbook-row-bosses-${props.rowKey}`}
-      className="flex-row flex-wrap gap-y-2 rounded-b-xl border border-t-0 border-border bg-surface px-2 pb-2.5 pt-1.5"
+      className="gap-y-2 rounded-b-xl border border-t-0 border-border bg-surface px-2 pb-2.5 pt-1.5"
     >
-      {props.bosses.map((boss) => (
+      {chunkBosses(props.bosses).map((row, rowIndex) => (
         <View
-          key={`${boss.boss}|${boss.difficulty}`}
-          testID={`cashbook-boss-tile-${boss.boss}|${boss.difficulty}`}
-          className="w-1/6 items-center"
+          key={`${row[0].boss}|${row[0].difficulty}`}
+          testID={`cashbook-boss-row-${rowIndex}`}
+          className="flex-row"
         >
-          <View>
-            <BossPortrait
-              portraitSlug={findPortraitSlug(boss.boss)}
-              // 이름 줄이 없어졌으므로 **여기가 그 정보를 드는 유일한 자리**다.
-              label={`${boss.difficulty} ${boss.boss}`}
-              size={BOSS_TILE_PX}
-              shape="square"
-            />
-            <View className="absolute bottom-0.5 left-0.5">
-              <DifficultyBadge difficulty={boss.difficulty} size="small" short />
+          {row.map((boss) => (
+            <View
+              key={`${boss.boss}|${boss.difficulty}`}
+              testID={`cashbook-boss-slot-${boss.boss}|${boss.difficulty}`}
+              className="flex-1 items-center"
+            >
+              <View testID={`cashbook-boss-tile-${boss.boss}|${boss.difficulty}`}>
+                <BossPortrait
+                  portraitSlug={findPortraitSlug(boss.boss)}
+                  // 이름 줄이 없어졌으므로 **여기가 그 정보를 드는 유일한 자리**다.
+                  label={`${boss.difficulty} ${boss.boss}`}
+                  size={BOSS_TILE_PX}
+                  shape="square"
+                />
+                <View className="absolute bottom-0.5 left-0.5">
+                  <DifficultyBadge difficulty={boss.difficulty} size="small" short />
+                </View>
+              </View>
             </View>
-          </View>
+          ))}
+          {/* 덜 찬 줄을 빈 칸으로 채운다 — 안 채우면 남은 둘이 반반씩 벌어져 앞줄과 격자가 안 맞는다. */}
+          {Array.from({ length: BOSSES_PER_ROW - row.length }, (_, index) => (
+            <View key={`empty-${index}`} testID={`cashbook-boss-slot-empty-${index}`} className="flex-1" />
+          ))}
         </View>
       ))}
     </View>
