@@ -39,8 +39,7 @@ export type TabRouteName =
   | 'Boss'
   | 'BossManage'
   | 'Profit'
-  | 'HuntingProfit'
-  | 'Spend'
+  | 'Cashbook'
   | 'Utility'
   | 'Settings'
 
@@ -50,8 +49,7 @@ export type TabParamList = {
   Boss: undefined
   BossManage: undefined
   Profit: undefined
-  HuntingProfit: undefined
-  Spend: undefined
+  Cashbook: undefined
   Utility: undefined
   /**
    * `openPicker` 는 웹의 **`/boss?openPicker=1`** 이다 — 캐릭터 관리 피커를 **열어 둔 채로** 이 탭에
@@ -95,8 +93,7 @@ export type ScheduleSubsParamList = {
 
 export type LedgerSubsParamList = {
   Profit: undefined
-  HuntingProfit: undefined
-  Spend: undefined
+  Cashbook: undefined
 }
 
 export type LayerParamList = {
@@ -162,7 +159,7 @@ export type StackRouteName = Exclude<keyof RootStackParamList, 'Onboarding' | 'M
  *
  * - `initial` — 웹의 `/` 리디렉트. RN 에는 URL 이 없으므로 *"처음 서 있는 탭"* 이 그 자리다.
  * - `root` — 루트 스택의 화면이되 탭이 아닌 것(온보딩). 탭과 **배타**로 그려진다(아래).
- * - `tab` — 탭 넷.
+ * - `tab` — 탭 여덟([[ADR-169]] 결정 1 이 사냥 수익·지출을 걷고 가계부를 넣어 아홉에서 줄었다).
  * - `push` — 탭 위로 밀려 들어오는 하위 페이지. 루트 스택에 쌓인다([[ADR-120]] 결정 4).
  */
 export type RouteTarget =
@@ -259,17 +256,14 @@ export const ROUTE_TABLE: readonly RouteRow[] = [
     origin: 'web',
   },
   // ── 여기부터 RN 에서 새로 생긴 화면 ([[ADR-132]] 결정 1·12 · [[ADR-144]] 결정 1) ──
-  // 웹에는 없다. `path` 는 대조용이 아니라 이름표다. 탭 넷 중 셋은 아직 «개발 진행중»
-  // 자리표시자이고, 유틸리티는 도구 목록이 됐다([[ADR-168]]). 하위 페이지 둘은 진짜 화면이다 —
+  // 웹에는 없다. `path` 는 대조용이 아니라 이름표다. 탭 셋 중 today 만 아직 자리표시자이고,
+  // 유틸리티는 도구 목록([[ADR-168]])·가계부는 캘린더([[ADR-169]])다. 하위 페이지 둘은 진짜 화면이다 —
   // 캐릭터 관리는 웹뷰 앱에서 설정의 모달이 하던 일이고, 아이템 분배 계산기는 웹에 없던 도구다.
   { path: '/today', screen: 'TodayScreen', target: { kind: 'tab', route: 'Today' }, origin: 'rn' },
-  {
-    path: '/profit/hunting',
-    screen: 'HuntingProfitScreen',
-    target: { kind: 'tab', route: 'HuntingProfit' },
-    origin: 'rn',
-  },
-  { path: '/spend', screen: 'SpendScreen', target: { kind: 'tab', route: 'Spend' }, origin: 'rn' },
+  // 사냥 수익(`/profit/hunting`)·지출(`/spend`) 두 행이 **여기 있었다.** 둘은 `UnderConstruction`
+  // 껍데기였고([[ADR-132]] 결정 12 — 자리를 예약하던 장치), 그 자리가 가계부로 정해지면서 삭제됐다
+  // ([[ADR-169]] 결정 1·2). 되살릴 근거는 그 ADR 과 git 이 들고 있다.
+  { path: '/cashbook', screen: 'CashbookScreen', target: { kind: 'tab', route: 'Cashbook' }, origin: 'rn' },
   { path: '/utility', screen: 'UtilityScreen', target: { kind: 'tab', route: 'Utility' }, origin: 'rn' },
   {
     path: '/utility/item-split',
@@ -310,7 +304,7 @@ export const TAB_ROUTE_NAMES: readonly TabRouteName[] = ROUTE_TABLE.flatMap((row
  * 처음 서 있는 탭 — **`/` 행과 갈렸다**([[ADR-132]] 결정 7).
  *
  * 타입이 `TabRouteName` 이 아니라 **`keyof GroupLayerParamList`** 인 것이 [[ADR-167]] 의 산물이다.
- * 앱은 «탭 아홉 중 하나» 가 아니라 **그룹 층의 첫 화면**에서 시작한다 — 하위 층은 push 로만 열리므로
+ * 앱은 «탭 여덟 중 하나» 가 아니라 **그룹 층의 첫 화면**에서 시작한다 — 하위 층은 push 로만 열리므로
  * 여기에 하위 페이지를 적을 수 있으면 «앱을 켰는데 스택이 한 단 깊은» 상태가 표현돼 버린다.
  *
  * 표의 `/` 행은 여전히 `Content` 를 가리킨다. 그 행은 *"웹이 `/` 에서 무엇을 보여 줬는가"* 라는

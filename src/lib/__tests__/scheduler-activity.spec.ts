@@ -230,3 +230,51 @@ describe('getSectionPresence', () => {
     ).toMatchObject({ daily: false })
   })
 })
+
+// [[ADR-172]] 결정 5 — 조회 원장에 «그날 완료로 본 보스» 를 함께 남긴다. 그 목록이 처치 날짜를
+// 캐는 원재료이므로, **기록에 쓰는 것과 같은 이름·같은 난이도**로 적혀야 한다.
+describe('completedBossKeys ([[ADR-172]])', () => {
+  it('ownComplete 인 보스만, 「이름|난이도」로 적는다', () => {
+    const { completedBossKeys } = require('../scheduler-activity') as typeof import('../scheduler-activity')
+
+    expect(
+      completedBossKeys(
+        state({
+          bossContents: [
+            boss({ name: '스우', difficulty: '하드', ownComplete: true, isComplete: true }),
+            boss({ name: '데미안', difficulty: '하드', ownComplete: false }),
+          ],
+        }),
+      ),
+    ).toEqual(['스우|하드'])
+  })
+
+  it('승격된 isComplete 는 안 센다 — 다른 난이도의 완료가 옮겨 붙은 값이다 ([[ADR-032]])', () => {
+    const { completedBossKeys } = require('../scheduler-activity') as typeof import('../scheduler-activity')
+
+    expect(
+      completedBossKeys(
+        state({
+          bossContents: [boss({ name: '스우', difficulty: '이지', isComplete: true, ownComplete: false })],
+        }),
+      ),
+    ).toEqual([])
+  })
+
+  it('보스 섹션이 비면 빈 목록이다 — 접속하지 않은 날은 «미완료» 로 읽힌다 ([[ADR-030]])', () => {
+    const { completedBossKeys } = require('../scheduler-activity') as typeof import('../scheduler-activity')
+
+    expect(completedBossKeys(state({ bossContents: [] }))).toEqual([])
+  })
+
+  it('toProbeObservation 이 그 목록을 함께 낸다 — 원장이 관측 하나로 둘을 든다', () => {
+    const { toProbeObservation } = require('../scheduler-activity') as typeof import('../scheduler-activity')
+
+    const observation = toProbeObservation(
+      state({ bossContents: [boss({ name: '스우', difficulty: '하드', ownComplete: true })] }),
+    )
+
+    expect(observation.bosses).toEqual(['스우|하드'])
+    expect(observation.hasCompletion).toBe(true)
+  })
+})

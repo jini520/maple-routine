@@ -21,7 +21,7 @@ import { CacheClearConfirm } from '../CacheClearConfirm'
 
 type Rendered = Awaited<ReturnType<typeof renderOverlay>>
 
-const SIZES = { general: 1024, bossRecords: 512 }
+const SIZES = { general: 1024, records: 512 }
 
 /** 누르고 **다시 그려질 때까지** 기다린다(파일 머리 ③). */
 async function press(element: AtomElement): Promise<void> {
@@ -68,7 +68,7 @@ describe('CacheClearConfirm', () => {
     const view = await renderOverlay(<CacheClearConfirm {...props()} />)
 
     expect(view.getByLabelText('일반 데이터')).toBeTruthy()
-    expect(view.getByLabelText('보스 수익·드롭 기록')).toBeTruthy()
+    expect(view.getByLabelText('수익·지출 기록')).toBeTruthy()
   })
 
   // [[ADR-058]] 결정 6: 열고 바로 삭제하면 기존 전체 삭제와 같아야 한다.
@@ -76,7 +76,7 @@ describe('CacheClearConfirm', () => {
     const view = await renderOverlay(<CacheClearConfirm {...props()} />)
 
     expect(view.getByLabelText('일반 데이터').props.accessibilityState?.checked).toBe(true)
-    expect(view.getByLabelText('보스 수익·드롭 기록').props.accessibilityState?.checked).toBe(true)
+    expect(view.getByLabelText('수익·지출 기록').props.accessibilityState?.checked).toBe(true)
   })
 
   it('각 그룹 행에 그 그룹의 용량을 보여준다', async () => {
@@ -98,7 +98,7 @@ describe('CacheClearConfirm', () => {
 
     expect(view.getByText('삭제 (1.5KB)')).toBeTruthy()
 
-    await press(view.getByLabelText('보스 수익·드롭 기록'))
+    await press(view.getByLabelText('수익·지출 기록'))
 
     expect(view.getByText('삭제 (1.0KB)')).toBeTruthy()
   })
@@ -117,7 +117,7 @@ describe('CacheClearConfirm', () => {
     const view = await renderOverlay(<CacheClearConfirm {...props()} />)
 
     await press(view.getByLabelText('일반 데이터'))
-    await press(view.getByLabelText('보스 수익·드롭 기록'))
+    await press(view.getByLabelText('수익·지출 기록'))
 
     expect(confirmButton(view).props.accessibilityState?.disabled).toBe(true)
   })
@@ -126,10 +126,10 @@ describe('CacheClearConfirm', () => {
     const onConfirm = jest.fn()
     const view = await renderOverlay(<CacheClearConfirm {...props({ onConfirm })} />)
 
-    await press(view.getByLabelText('보스 수익·드롭 기록'))
+    await press(view.getByLabelText('수익·지출 기록'))
     await press(confirmButton(view))
 
-    expect(onConfirm).toHaveBeenCalledWith({ general: true, bossRecords: false })
+    expect(onConfirm).toHaveBeenCalledWith({ general: true, records: false })
   })
 
   // [[ADR-058]] 결정 6: 지난번에 해제해둔 체크가 남아 있으면 "열고 바로 삭제"가 사람마다 다른
@@ -172,9 +172,11 @@ describe('CacheClearConfirm', () => {
   it('수익·드롭 기록 행에 그 그룹이 지우는 대표 항목과 복구 불가 경고를 적는다', async () => {
     const view = await renderOverlay(<CacheClearConfirm {...props()} />)
 
-    expect(view.getByText('처치 기록 · 수익 · 드롭 아이템 정보 등')).toBeTruthy()
+    expect(view.getByText('보스 처치·드롭 · 손으로 적은 수입·지출')).toBeTruthy()
     expect(
-      view.getByText('NEXON Open API가 최근 2주 데이터만 제공해 삭제 후 복구할 수 없습니다.'),
+      view.getByText(
+        '손으로 적은 수입·지출은 되살릴 방법이 없고, 보스 기록은 NEXON Open API가 최근 2주치만 제공합니다.',
+      ),
     ).toBeTruthy()
   })
 

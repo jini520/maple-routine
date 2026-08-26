@@ -3,7 +3,7 @@ import { waitFor } from '../../__tests__/wait-for'
 import { installFakePreferences } from './fake-preferences'
 import type { CacheDataSelection } from '../cache-data'
 import {
-  BOSS_RECORD_TABLE_NAMES,
+  RECORD_TABLE_NAMES,
   GENERAL_TABLE_NAMES,
   clearCacheData,
   getCacheDataSizes,
@@ -82,33 +82,46 @@ beforeEach(async () => {
   jest.clearAllMocks()
 })
 
-// ADR-058 결정 2: 그룹 정의는 열거가 아니라 차집합이다 — bossRecords만 명시 목록이고 general은
+// ADR-058 결정 2: 그룹 정의는 열거가 아니라 차집합이다 — records만 명시 목록이고 general은
 // 나머지 전부로 파생된다. 이 성질이 깨지면 새 테이블이 어느 그룹에도 안 잡혀 영영 안 지워진다
 // (ADR-052가 없앤 누락 결함의 부호만 뒤집힌 형태).
 describe('그룹 ↔ 테이블 분할', () => {
   it('두 그룹의 합집합이 db.ts가 정의한 테이블 전체와 같다', () => {
-    const union = new Set([...GENERAL_TABLE_NAMES, ...BOSS_RECORD_TABLE_NAMES])
+    const union = new Set([...GENERAL_TABLE_NAMES, ...RECORD_TABLE_NAMES])
 
     expect(union).toEqual(new Set(BOSS_PROFIT_TABLE_NAMES))
   })
 
   it('두 그룹이 겹치지 않는다 — 한 테이블은 정확히 한 그룹에만 속한다', () => {
-    const bossRecords = new Set<string>(BOSS_RECORD_TABLE_NAMES)
+    const records = new Set<string>(RECORD_TABLE_NAMES)
 
-    expect(GENERAL_TABLE_NAMES.filter((table) => bossRecords.has(table))).toEqual([])
+    expect(GENERAL_TABLE_NAMES.filter((table) => records.has(table))).toEqual([])
   })
 
   // ADR-058 결정 3: 재조회 표식만 남고 기록이 사라지면 loadPeriod의 isPeriodChecked 가드가
   // 백필을 건너뛰어(ADR-023), API가 아직 주는 최근 2주치마저 되살릴 수 없게 된다.
   it('boss_profit_period_checks는 수익 기록과 같은 그룹이다', () => {
-    expect(BOSS_RECORD_TABLE_NAMES).toContain('boss_profit_records')
-    expect(BOSS_RECORD_TABLE_NAMES).toContain('boss_drop_records')
-    expect(BOSS_RECORD_TABLE_NAMES).toContain('boss_profit_period_checks')
+    expect(RECORD_TABLE_NAMES).toContain('boss_profit_records')
+    expect(RECORD_TABLE_NAMES).toContain('boss_drop_records')
+    expect(RECORD_TABLE_NAMES).toContain('boss_profit_period_checks')
   })
 
   // ADR-058 결정 4: 기록이 아니라 설정이고, 어느 쪽으로 지워도 위험한 조합이 없다.
   it('boss_party_settings는 일반 데이터 그룹이다', () => {
     expect(GENERAL_TABLE_NAMES).toContain('boss_party_settings')
+  })
+
+  // [[ADR-166]] 결정 9 · [[ADR-170]] 결정 2: 그룹 이름이 `bossRecords` 에서 `records` 로 넓어진
+  // 이유가 이 둘이다. 손입력이 유일한 원천이라 **API 로 되살릴 길이 0%** 이고, 아무것도 안 하면
+  // 차집합 파생 때문에 «지워도 되는 것»(general)으로 끌려간다.
+  it('손입력 기록 둘은 「기록」 그룹이다 — 지워지면 되살릴 길이 없다', () => {
+    expect(RECORD_TABLE_NAMES).toContain('income_records')
+    expect(RECORD_TABLE_NAMES).toContain('spend_records')
+  })
+
+  it('손입력 기록 둘은 일반 데이터 그룹에 없다', () => {
+    expect(GENERAL_TABLE_NAMES).not.toContain('income_records')
+    expect(GENERAL_TABLE_NAMES).not.toContain('spend_records')
   })
 })
 
@@ -125,9 +138,9 @@ describe('clearCacheData', () => {
   })
 
   it('보존 키는 어떤 그룹 조합에서도 남는다', async () => {
-    await clearCacheData({ general: true, bossRecords: true })
-    await clearCacheData({ general: true, bossRecords: false })
-    await clearCacheData({ general: false, bossRecords: true })
+    await clearCacheData({ general: true, records: true })
+    await clearCacheData({ general: true, records: false })
+    await clearCacheData({ general: false, records: true })
 
     for (const key of KEEP_KEY_NAMES) {
       expect(await prefs.get(key)).not.toBeNull()
@@ -151,7 +164,7 @@ describe('clearCacheData', () => {
 
   describe('일반 데이터만 선택', () => {
     it('보존 키를 제외한 Preferences를 모두 지운다', async () => {
-      await clearCacheData({ general: true, bossRecords: false })
+      await clearCacheData({ general: true, records: false })
 
       expect(await prefs.get('schedulerCache:ocid-1')).toBeNull()
       expect(await prefs.get('characterBasicCache:index')).toBeNull()
@@ -160,12 +173,12 @@ describe('clearCacheData', () => {
     })
 
     it('일반 그룹 테이블만 비우고 수익·드롭 기록은 건드리지 않는다', async () => {
-      await clearCacheData({ general: true, bossRecords: false })
+      await clearCacheData({ general: true, records: false })
 
       for (const table of GENERAL_TABLE_NAMES) {
         expect(mockDbExecuteMock).toHaveBeenCalledWith(`DELETE FROM ${table};`)
       }
-      for (const table of BOSS_RECORD_TABLE_NAMES) {
+      for (const table of RECORD_TABLE_NAMES) {
         expect(mockDbExecuteMock).not.toHaveBeenCalledWith(`DELETE FROM ${table};`)
       }
       expect(deleteCalls()).toHaveLength(GENERAL_TABLE_NAMES.length)
@@ -174,7 +187,7 @@ describe('clearCacheData', () => {
 
   describe('수익·드롭 기록만 선택', () => {
     it('Preferences는 한 개도 지우지 않는다', async () => {
-      await clearCacheData({ general: false, bossRecords: true })
+      await clearCacheData({ general: false, records: true })
 
       expect(await prefs.get('schedulerCache:ocid-1')).toBe('{}')
       expect(await prefs.get('characterBasicCache:index')).toBe('[]')
@@ -184,20 +197,20 @@ describe('clearCacheData', () => {
     })
 
     it('수익·드롭 기록 테이블만 비운다', async () => {
-      await clearCacheData({ general: false, bossRecords: true })
+      await clearCacheData({ general: false, records: true })
 
-      for (const table of BOSS_RECORD_TABLE_NAMES) {
+      for (const table of RECORD_TABLE_NAMES) {
         expect(mockDbExecuteMock).toHaveBeenCalledWith(`DELETE FROM ${table};`)
       }
       for (const table of GENERAL_TABLE_NAMES) {
         expect(mockDbExecuteMock).not.toHaveBeenCalledWith(`DELETE FROM ${table};`)
       }
-      expect(deleteCalls()).toHaveLength(BOSS_RECORD_TABLE_NAMES.length)
+      expect(deleteCalls()).toHaveLength(RECORD_TABLE_NAMES.length)
     })
   })
 
   it('아무 그룹도 선택하지 않으면 아무것도 지우지 않는다', async () => {
-    await clearCacheData({ general: false, bossRecords: false })
+    await clearCacheData({ general: false, records: false })
 
     expect(prefs.remove).not.toHaveBeenCalled()
     expect(mockDbExecuteMock).not.toHaveBeenCalled()
@@ -231,7 +244,7 @@ describe('getCacheDataSizes', () => {
     const sizes = await getCacheDataSizes()
 
     const recordBytes = new TextEncoder().encode('ocid-1').length + new TextEncoder().encode('자쿰').length
-    expect(sizes.bossRecords).toBe(recordBytes)
+    expect(sizes.records).toBe(recordBytes)
     // 일반 그룹 = Preferences 12 + boss_party_settings의 'ocid-2'(6)
     expect(sizes.general).toBe(12 + new TextEncoder().encode('ocid-2').length)
   })
@@ -245,7 +258,7 @@ describe('getCacheDataSizes', () => {
     const sizes = await getCacheDataSizes()
 
     expect(sizes.general).toBe(0)
-    expect(sizes.bossRecords).toBe(0)
+    expect(sizes.records).toBe(0)
   })
 })
 
@@ -255,7 +268,7 @@ describe('getCacheDataSizes', () => {
 // 여기서 고치는 것은 순서 하나뿐이다 — 실패 UX는 만들지 않는다(ADR-065 결정 3: 항상 리로드하고
 // 실패는 pendingNotice로 부팅 후에 알린다).
 describe('clearCacheDataAndReload', () => {
-  const ALL: CacheDataSelection = { general: true, bossRecords: true }
+  const ALL: CacheDataSelection = { general: true, records: true }
 
   beforeEach(() => {
     callOrder.length = 0

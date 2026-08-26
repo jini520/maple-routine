@@ -6,8 +6,8 @@
 > **관련 문서**: [../foundation/design-system.md](../foundation/design-system.md) · [../foundation/error-resilience.md](../foundation/error-resilience.md) · [../foundation/nexon-api.md](../foundation/nexon-api.md) · [../foundation/architecture.md](../foundation/architecture.md).
 
 **상태**: **구현 완료 · 실기기에 띄워 봄 · 치수는 미검증**(2026-08-18). `UnderConstruction` 껍데기가
-걷히고 위젯 격자가 섰다 — 「사냥 수익 · 지출 · 유틸리티」 셋은 여전히 그 껍데기를 쓴다([[ADR-132]]
-결정 12).
+걷히고 위젯 격자가 섰다 — 그 껍데기를 쓰던 나머지 셋도 이제 없다: 유틸리티는 도구 목록이 됐고
+([[ADR-168]]), 사냥 수익·지출은 **삭제되어** 가계부 캘린더로 합쳐졌다([[ADR-169]] 결정 1·2).
 
 **자동 테스트가 담보하는 것과 담보하지 않는 것.** 러너는 jest 하나이고([[ADR-157]]) 전부 초록이지만
 그것이 지키는 것은 **분기·좌표·수치·문구**이고 **픽셀이 아니다** —

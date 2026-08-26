@@ -98,7 +98,7 @@ export function SettingsScreen(): React.JSX.Element {
 
   const displayedVersion = packageJson.version
   // 행에 쓰는 총합은 그룹별 용량의 합으로 파생한다(ADR-058 결정 8).
-  const totalCacheBytes = sizes === null ? null : sizes.general + sizes.bossRecords
+  const totalCacheBytes = sizes === null ? null : sizes.general + sizes.records
 
   return (
     <>

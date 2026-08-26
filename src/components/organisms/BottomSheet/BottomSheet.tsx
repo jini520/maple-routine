@@ -36,8 +36,8 @@
 // `GestureHandlerRootView` 안에서만 돈다. 둘 다 앱 셸이 소유한다(화면 단계). `BottomSheet`(비-모달)
 // 대신 이것을 고른 이유는 인라인 시트가 **부모 상자 안**에서만 그려져 탭바를 못 덮기 때문이다 —
 // 웹의 `fixed inset-x-0 bottom-0 z-[60]` 이 하던 일을 프로바이더의 호스트가 대신한다.
-import { useCallback, useEffect, useRef, type ReactNode } from 'react'
-import { Pressable, View } from 'react-native'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { Keyboard, Platform, Pressable, View } from 'react-native'
 import Animated, { useAnimatedStyle, type SharedValue } from 'react-native-reanimated'
 import { useSafeAreaFrame, useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
@@ -52,6 +52,8 @@ import { useThemeAppearance } from '../../../theme/context'
 const MAX_HEIGHT_RATIO = 0.82
 /** 시트 최대 너비 — 웹 `max-w-md`. */
 const MAX_WIDTH = 448
+/** 그랩 핸들이 차지하는 높이 — 라이브러리 기본 핸들과 같은 값이라 내용 시작 위치가 그대로다. */
+const HANDLE_HEIGHT = 24
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
 
@@ -93,19 +95,62 @@ interface BottomSheetProps {
   onClose: () => void
   children: ReactNode
   testId?: string
+  /**
+   * 이 값이 바뀌면 **스크롤을 맨 위로 되돌린다.**
+   *
+   * 시트 안에서 내용이 통째로 갈리는 화면이 있는데(지출 시트의 갈래 전환), 스크롤은 **껍데기가
+   * 소유**하므로 내용만 바뀌고 위치는 그대로 남는다 — 새 내용이 **밀린 자리에서 시작**해 제목이
+   * 잘린 채로 보였다(iOS 실측 2026-08-25). 되돌리는 것도 소유자의 일이라 여기 둔다.
+   *
+   * 안 넘기면 아무 일도 안 한다 — 한 내용만 그리는 시트는 되돌릴 것이 없다.
+   */
+  resetScrollKey?: string | number
 }
 
 export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
   const ref = useRef<BottomSheetModal>(null)
+  const scrollRef = useRef<{ scrollTo?: (options: { y: number; animated: boolean }) => void }>(null)
   const insets = useSafeAreaInsets()
   // `82vh` 의 짝 — 인셋과 같은 프로바이더에서 나와 둘이 같은 순간을 가리킨다
   // (`CharacterTrackingPicker` 가 `100dvh` 를 옮긴 것과 같은 이유).
   const frame = useSafeAreaFrame()
   const { definition } = useThemeAppearance()
 
+  // 내용이 갈리면 맨 위에서 시작한다 — 사유는 `resetScrollKey` 프롭 주석에.
+  useEffect(() => {
+    scrollRef.current?.scrollTo?.({ y: 0, animated: false })
+  }, [props.resetScrollKey])
+
   // 웹의 `open` 초기값 `true` 와 같은 뜻 — 마운트가 곧 열림이다([[ADR-039]] 결정 3).
   useEffect(() => {
     ref.current?.present()
+  }, [])
+
+  /**
+   * **키보드가 뜨면 아래 인셋을 안 남긴다**([[ADR-173]] 결정 4 정정 2).
+   *
+   * `insets.bottom` 은 «화면 맨 아래가 손가락에 닿는 자리라 비워 둔다» 는 값인데, 키보드가 그
+   * 자리를 이미 덮고 있으면 **아무것도 아닌 빈 띠**가 된다 — 실기에서 시트 끝과 키보드 사이가
+   * 50pt 벌어졌다(사용자 스크린샷 2026-08-26).
+   *
+   * 라이브러리의 키보드 상태를 못 읽는다 — 그 훅은 시트 **안**에서만 살고 이 컴포넌트는 그
+   * 바깥이다. RN 의 이벤트를 직접 듣는 편이 의존도 얕다. 이름은 라이브러리와 같은 갈림을 쓴다:
+   * iOS 는 `will`(애니메이션과 함께 움직여야 한다), 안드로이드는 `did`(`will` 이 없다).
+   */
+  const [keyboardShown, setKeyboardShown] = useState(false)
+  useEffect(() => {
+    const show = Keyboard.addListener(
+      Platform.select({ ios: 'keyboardWillShow', default: 'keyboardDidShow' }),
+      () => setKeyboardShown(true),
+    )
+    const hide = Keyboard.addListener(
+      Platform.select({ ios: 'keyboardWillHide', default: 'keyboardDidHide' }),
+      () => setKeyboardShown(false),
+    )
+    return () => {
+      show.remove()
+      hide.remove()
+    }
   }, [])
 
   const renderBackdrop = useCallback(
@@ -129,6 +174,29 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
       onDismiss={props.onClose}
       enablePanDownToClose
       enableDynamicSizing
+      /*
+       * **창 모드를 사실대로 알려 준다**([[ADR-170]] 정정 5).
+       *
+       * 라이브러리는 이 값을 **자기가 바꾸지 않는다** — 소스 어디에도 `softInputMode` 를 건드리는
+       * 곳이 없다. 이 프롭은 «앱이 지금 어느 모드인가» 를 **알려 주는** 것이고, 그 값으로 자기
+       * 보정량을 정한다. 기본값은 `adjustPan` 인데 **이 앱의 매니페스트는 `adjustResize`** 다.
+       *
+       * 그대로 두면 안드로이드에서 **두 번 밀린다** — OS 가 창을 줄여 이미 올라온 시트를,
+       * 라이브러리가 키보드 높이만큼 또 올린다. `adjustResize` 를 주면 라이브러리가 자기 보정을
+       * 0 으로 두고 OS 에 맡긴다.
+       */
+      android_keyboardInputMode="adjustResize"
+      /*
+       * **올라간 것은 내려와야 한다**([[ADR-170]] 정정 5).
+       *
+       * 기본값(`none`)이면 라이브러리가 키보드 **닫힘**에서 일찍 빠져나가 위치를 다시 안 잰다 —
+       * 소스에 그렇게 적혀 있다: `if (status === HIDDEN && keyboardBlurBehavior === none) return`.
+       * 그래서 시트가 올라간 자리에 그대로 남았다(실기 보고).
+       *
+       * `restore` 는 «키보드가 뜨기 전에 있던 스냅 포인트로 돌아간다» 이고, 그 분기가 함께
+       * `isInTemporaryPosition` 을 내려 **다음 계산이 다시 정상 경로**를 타게 한다.
+       */
+      keyboardBlurBehavior="restore"
       maxDynamicContentSize={frame.height * MAX_HEIGHT_RATIO}
       backdropComponent={renderBackdrop}
       // 웹의 `sr-only` 제목("드롭 아이템 기록")과 같은 자리 — 화면에는 안 보이고 스크린리더만 읽는다.
@@ -162,7 +230,30 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
        * 시트 내용을 맨 위에서 아래로 끄는 경로가 남아 있고, 바깥 탭으로 닫는 [[ADR-039]] 결정 3 도
        * 스크림이 받는다. 닫는 수단이 없어지는 것이 아니라 하나가 준다.
        */}
-      <View style={{ height: 24, alignItems: 'center', justifyContent: 'center' }}>
+      {/*
+        **핸들이 흐름에서 빠져 있다**(`position: absolute`).
+        
+        흐름 안에 두면 이 24pt 가 시트 높이 계산에서 **빠진다** — `handleComponent={null}` 이라
+        라이브러리는 핸들 높이를 0 으로 보고 스크롤 내용만 재는데, 실제로는 그 위에 24pt 가 더
+        얹혀 있어 **딱 그만큼 넘친다.** 내용이 다 보이는데도 조금 굴려지고, 한 번 굴리면 제목이
+        잘린 채로 남았다(iOS 실측 2026-08-25).
+        
+        절대 배치로 빼고 그 몫을 **스크롤 내용의 `paddingTop` 에 넣으면** 라이브러리가 재는 값
+        안으로 들어와 높이가 맞는다 — 보이는 자리는 그대로다.
+      */}
+      <View
+        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: HANDLE_HEIGHT,
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1,
+        }}
+      >
         <View
           testID="bottom-sheet-handle"
           style={{ height: 4, width: 36, borderRadius: 2, backgroundColor: definition.borderStrong }}
@@ -170,10 +261,17 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
       </View>
 
       <BottomSheetScrollView
+        ref={scrollRef as never}
         testID={props.testId}
         // 웹은 `pt-2`, 하단은 시트가 화면 끝까지 가므로 안전영역만큼 더 비운다
         // ([[ADR-039]] 결정 2 의 `pb-[calc(1rem+env(safe-area-inset-bottom))]` 과 같은 뜻).
-        contentContainerStyle={{ paddingTop: 8, paddingBottom: insets.bottom + 16 }}
+        // 위쪽에 핸들 몫을 더한다 — 사유는 바로 위 주석.
+        contentContainerStyle={{
+          paddingTop: HANDLE_HEIGHT + 8,
+          // 키보드가 떠 있으면 **인셋만** 걷는다 — 숨돌림 16 은 남긴다(마지막 줄이 키보드에 닿아
+          // 있으면 누를 자리가 없다).
+          paddingBottom: (keyboardShown ? 0 : insets.bottom) + 16,
+        }}
       >
         {props.children}
       </BottomSheetScrollView>

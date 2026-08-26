@@ -76,7 +76,7 @@ export function SettingsAccountDataScreen(
   }, [])
 
   // 행에 쓰는 총합은 그룹별 용량의 합으로 파생한다([[ADR-058]] 결정 8).
-  const totalBytes = sizes === null ? null : sizes.general + sizes.bossRecords
+  const totalBytes = sizes === null ? null : sizes.general + sizes.records
 
   async function handleClear(selection: CacheDataSelection): Promise<void> {
     setIsClearing(true)

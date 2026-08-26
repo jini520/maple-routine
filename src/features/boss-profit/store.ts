@@ -53,6 +53,7 @@ export type { BossProfitRow } from './rows'
 export { dropRowKey } from './rows'
 import { withSqliteFallback } from './sqlite-guards'
 import { autoRecordRows } from './auto-record'
+import { resolveDefeatDates } from './defeat-dates'
 import { loadDropsByRowKey } from './drops-loader'
 import { backfillTarget, buildBackfillTargets, canReachPreviousPeriod, loadPreviousPeriodTotal } from './backfill'
 import type { BackfillTarget } from './backfill'
@@ -1085,6 +1086,13 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     // 가능한 기간에서만 노출되므로(#30, ADR-076) 완전히 닫힌 과거 기간을 보는 동안 이 set이
     // 일어나도 화면에는 영향이 없다.
     set({ lastSyncedAt: new Date().toISOString() })
+
+    // **처치 날짜를 캔다**([[ADR-172]] 결정 9) — 자동 기록이 방금 만든 행까지 대상에 든다.
+    //
+    // 기다리지 않는다. 이 화면은 `defeated_on` 을 **안 쓰므로**(쓰는 곳은 가계부 캘린더 하나다)
+    // 결과가 화면을 바꾸지 않고, 기다리면 캘 것이 있는 첫 회차마다 동기화가 조회 수만큼 길어진다.
+    // 실패해도 삼킨다 — 못 캔 것은 «칸이 덜 채워진다» 이지 이 동기화의 실패가 아니다.
+    void resolveDefeatDates(ocids, now).catch(() => undefined)
 
     // ADR-076 결정 2: 동기화·자동 기록은 위에서 다 끝났다. 보던 기간(지난 달)의 화면 반영은
     // loadPeriod에 넘긴다 — 그 함수가 이미 "과거 기간은 기록이 원천"을 알고 있어(ADR-067 결정 4)

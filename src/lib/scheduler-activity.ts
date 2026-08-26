@@ -1,4 +1,5 @@
 import type { DailyContent, SchedulerCharacterState, WeeklyContent } from '../types'
+import { matchBossContent, selectBossProfitBosses } from './boss-matching'
 import { getShareScope, isCumulativeScore } from './scheduler-content-scope'
 
 // ADR-034 추가 정정(2026-07-25): daily/weekly 섹션이 "완전히 비었는지(isXStale = length 0)"만으로는
@@ -68,16 +69,44 @@ export function hasCharacterScopeCompletion(state: SchedulerCharacterState): boo
   return hasContentCompletion || state.bossContents.some((boss) => boss.ownComplete)
 }
 
+/** 원장에 남기는 «그날 잡은 것» 의 표기. 기록의 키와 **같은 이름·같은 난이도**여야 한다. */
+export function bossCompletionKey(boss: string, difficulty: string): string {
+  return `${boss}|${difficulty}`
+}
+
+/**
+ * 그 응답이 말하는 **그날 완료된 보스**([[ADR-172]] 결정 2) — 처치 날짜를 캐는 원재료다.
+ *
+ * `selectBossProfitBosses` 를 타는 이유는 **기록이 그것을 타기 때문**이다(`auto-record`·`backfill`).
+ * 등록 난이도와 실제 처치 난이도가 다를 수 있어([[ADR-031]]) 그룹당 실제 처치 난이도 하나를 골라야
+ * 원장의 이름과 기록의 키가 맞는다. 이름도 같은 규칙으로 정규화한다(`matchedBossName ?? apiName`).
+ *
+ * `ownComplete` 만 본다 — 승격된 `isComplete` 는 다른 난이도의 완료가 옮겨 붙은 값이다([[ADR-032]]).
+ *
+ * **섹션이 비면 빈 목록**이고, 그것이 곧 «그날 아무것도 안 잡았다» 로 읽힌다. 접속하지 않으면
+ * 섹션이 통째로 비지만([[ADR-030]]) **접속하지 않은 날에 보스를 잡을 수는 없으므로** 그 답이 맞다.
+ */
+export function completedBossKeys(state: SchedulerCharacterState): string[] {
+  return selectBossProfitBosses(state.bossContents.map(matchBossContent))
+    .filter((boss) => boss.ownComplete)
+    .map((boss) => bossCompletionKey(boss.matchedBossName ?? boss.apiName, boss.difficulty))
+}
+
 /**
  * 조회 원장에 남길 관측 — 자격 판정(`character-eligibility`)과 선채움(`schedule-sync`) 둘 다
  * 이 함수로 기록을 만든다. 두 모듈이 서로를 import 하지 않도록 여기 둔다([[ADR-086]] 결정 4).
+ *
+ * 소비자가 셋이 됐다 — 처치 날짜 캐기가 `bosses` 를 읽는다([[ADR-172]] 결정 5). 같은 관측 하나에
+ * 실어 보내므로 **같은 날짜를 두 번 부르지 않는다**는 원장의 성질이 그대로 이어진다.
  */
 export function toProbeObservation(state: SchedulerCharacterState): {
   hasCompletion: boolean
   sections: SchedulerSectionPresence
+  bosses: string[]
 } {
   return {
     hasCompletion: hasCharacterScopeCompletion(state),
     sections: getSectionPresence(state),
+    bosses: completedBossKeys(state),
   }
 }

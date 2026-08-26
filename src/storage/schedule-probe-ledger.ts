@@ -6,10 +6,11 @@ import { scheduleProbeKey } from './keys'
  * (ocid, 날짜) 조회 원장 — [[ADR-086]] 결정 4(= [[ADR-067]] 결정 5의 "포기 기록").
  *
  * "이 캐릭터를 이 날짜로 이미 조회했고 결과가 이랬다"를 남겨 **같은 날짜를 두 번 부르지 않게** 한다.
- * 소비자가 둘이다 — ① 후보 자격 스윕(`features/schedule-sync/character-eligibility`)이 미조회
+ * 소비자가 셋이다 — ① 후보 자격 스윕(`features/schedule-sync/character-eligibility`)이 미조회
  * 날짜만 호출하고, ② 선채움(`fillMissingSections`, [[ADR-034]])이 "이 날짜는 이미 봤고 그 섹션이
  * 없었다"를 알아 그 날짜를 건너뛴다. ②가 이슈 #87 문제 1(보스 0건 캐릭터의 매 동기화 14회 영구
- * 반복)의 처방이다.
+ * 반복)의 처방이다. ③ **처치 날짜 캐기**(`features/boss-profit/defeat-dates`)가 `bosses` 를 읽는다
+ * ([[ADR-172]] 결정 5) — 그 14일 창이 API 조회 창과 같은 폭이라, 창이 지나가면 재시도도 함께 멈춘다.
  *
  * **모르는 실패는 기록하지 않는다.** 성공·`OPENAPI00003`·`OPENAPI00004` 만 남기고
  * `OPENAPI00009`(집계 전)·네트워크·타임아웃은 미기록으로 둔다 — 잘못 기록하면 복원 가능한
@@ -25,7 +26,19 @@ export interface ProbeSectionPresence {
 }
 
 export type ScheduleProbeRecord =
-  | { kind: 'observed'; hasCompletion: boolean; sections: ProbeSectionPresence }
+  | {
+      kind: 'observed'
+      hasCompletion: boolean
+      sections: ProbeSectionPresence
+      /**
+       * 그날 완료로 본 보스 —`「이름|난이도」` 목록([[ADR-172]] 결정 5). 처치 날짜를 캐는 원재료다.
+       *
+       * **`undefined` 와 `[]` 는 다른 뜻이다.** `[]` 는 «그날 완료가 0건» 이라는 관측이고,
+       * `undefined` 는 이 칸이 생기기 전에 남은 기록이라 **보스를 안 본 관측**이다. 섞으면
+       * «안 잡았다» 로 오독해 처치일을 그 뒤 어느 날로 밀어 버린다 — 그래서 미조회로 취급해 다시 부른다.
+       */
+      bosses?: readonly string[]
+    }
   // 400 OPENAPI00004 — 그 날짜에 대해 영구. 윈도우 밖·월드 이전 이전([[ADR-067]] 결정 1).
   | { kind: 'outOfRange' }
 

@@ -89,7 +89,7 @@ export function centerDropFrame(scale: number, bitmap: FrameBitmapSize | null): 
 /**
  * 스프라이트 한 장 — «어느 그림을 어디에» 의 최소 단위.
  *
- * 이 목록이 필요한 이유는 [[ADR-173]] 정정 1 이다 — 재생이 `source` 를 갈아끼우는 대신 **전 프레임을
+ * 이 목록이 필요한 이유는 [[ADR-174]] 정정 1 이다 — 재생이 `source` 를 갈아끼우는 대신 **전 프레임을
  * 마운트해 두고 `opacity` 로 한 장만 켜기** 때문에, 켜기 전에 39+16 장의 자리를 미리 다 알아야 한다.
  */
 export interface SpriteFrame {

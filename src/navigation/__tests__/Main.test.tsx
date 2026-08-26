@@ -87,9 +87,9 @@ describe('채우지 못하는 아이콘은 활성일 때 굵어진다 ([[ADR-132
   // 그 경로로는 스케줄이 활성이 되지 않는다([[ADR-132]] 결정 4).
   it.each([
     ['bar-sub-Content', 'bar-group-schedule', true],   // 목록 — 선뿐이라 못 채운다
-    ['bar-sub-HuntingProfit', 'bar-group-ledger', true], // 조준경 — 채우면 원판이 된다
+    ['bar-sub-Cashbook', 'bar-group-ledger', true],    // 장부 — 선뿐이라 못 채운다([[ADR-169]])
     ['bar-sub-Boss', 'bar-group-schedule', false],     // 검 — 칼날이 면으로 찬다(채우는 쪽)
-    ['bar-sub-Spend', 'bar-group-ledger', false],      // 장바구니 — 채운다
+    ['bar-sub-Profit', 'bar-group-ledger', false],     // 수익 — 동전 두 개가 면으로 찬다
     ['bar-group-utility', 'bar-group-utility', false], // 렌치 — 채운다
   ] as const)('%s 가 활성일 때 굵어지는가: %s', async (target, entry, thicker) => {
     await render(<NavigationHarness />)
@@ -223,10 +223,11 @@ describe('← 는 «한 층 내려온 자리»로 되돌린다 (결정 4)', () =
 
     await press('bar-group-utility')
     await press('bar-group-ledger')
-    await press('bar-sub-HuntingProfit')
-    await press('bar-sub-Spend')
+    await press('bar-sub-Cashbook')
+    await press('bar-sub-Profit')
+    await press('bar-sub-Cashbook')
 
-    expect(screen.getByTestId('screen-Spend')).toBeTruthy()
+    expect(screen.getByTestId('screen-Cashbook')).toBeTruthy()
 
     await press('bar-back')
 

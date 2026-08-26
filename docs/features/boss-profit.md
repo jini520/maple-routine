@@ -1,8 +1,8 @@
 # 보스 수익 (Boss Profit)
 
 > **범위**: 처치 보스 수익 계산, 파티원 수 자동 기록, 주간/월간 탭·기간 네비게이터, 아코디언 레이아웃, 고가 드롭 강조 연출. 보스 목록의 출처·파티 설정은 [boss-scheduler.md](./boss-scheduler.md), 물욕 드롭 입력은 [item-drop.md](./item-drop.md).
-> **관련 소스**: `app/boss-profit/`(`BossProfitScreen.tsx`) · `features/boss-profit/`(`store.ts` · `auto-record.ts` — 드롭 이관 + 자동 기록 루프, 동기화·캐시 두 경로가 함께 부른다([[ADR-111]])) · `storage/boss-profit`(SQLite `boss_profit_records`) · `storage/sqlite/db.ts` · `lib/boss-profit-period.ts` · `lib/boss-profit-delta.ts` · `lib/drop-price.ts`(드롭 환산) · `DropPriceScreen`(`/profit/prices`)·`lib/use-count-up.ts`·`components/AnimatedMeso/`([[ADR-087]]) · `lib/boss-matching.ts`(정규 순서·`WEEKLY_BOSS_CLEAR_LIMIT`·`WEEKLY_CRYSTAL_SALE_LIMIT`·`isSeasonBossName`) · `lib/world-emblem.ts`·`lib/item-icons.ts`(결정석/월드 아이콘) · `src/data/boss-crystal-prices.json`·`weekly-bosses.json`·`boss-portrait-icon-crops.json` · `app/boss-profit/valuable-card-glow.ts`·`valuable-row-glow.ts`(고가 드롭 연출 값).
-> **관련 ADR**: [[ADR-014]] [[ADR-017]] [[ADR-019]] [[ADR-023]] [[ADR-032]] [[ADR-033]] [[ADR-036]] [[ADR-037]] [[ADR-045]] ADR-049 [[ADR-054]] [[ADR-059]] [[ADR-010]] [[ADR-067]] [[ADR-068]] [[ADR-069]] ADR-072 ADR-073 [[ADR-074]] [[ADR-087]] [[ADR-097]] [[ADR-101]] ADR-102 [[ADR-111]] ADR-112 [[ADR-124]] [[ADR-153]]. **관련 문서**: [../foundation/game-data.md](../foundation/game-data.md), [../foundation/error-resilience.md](../foundation/error-resilience.md), [../foundation/design-system.md](../foundation/design-system.md), [../persistence/sqlite.md](../persistence/sqlite.md).
+> **관련 소스**: `app/boss-profit/`(`BossProfitScreen.tsx`) · `features/boss-profit/`(`store.ts` · `auto-record.ts` — 드롭 이관 + 자동 기록 루프, 동기화·캐시 두 경로가 함께 부른다([[ADR-111]])) · `storage/boss-profit`(SQLite `boss_profit_records` — `defeated_on` 포함) · `features/boss-profit/defeat-dates.ts`(처치 날짜 캐기, [[ADR-172]]) · `storage/schedule-probe-ledger`(조회 원장 — `bosses`) · `storage/sqlite/db.ts` · `lib/boss-profit-period.ts` · `lib/boss-profit-delta.ts` · `lib/drop-price.ts`(드롭 환산) · `DropPriceScreen`(`/profit/prices`)·`lib/use-count-up.ts`·`components/AnimatedMeso/`([[ADR-087]]) · `lib/boss-matching.ts`(정규 순서·`WEEKLY_BOSS_CLEAR_LIMIT`·`WEEKLY_CRYSTAL_SALE_LIMIT`·`isSeasonBossName`) · `lib/world-emblem.ts`·`lib/item-icons.ts`(결정석/월드 아이콘) · `src/data/boss-crystal-prices.json`·`weekly-bosses.json`·`boss-portrait-icon-crops.json` · `app/boss-profit/valuable-card-glow.ts`·`valuable-row-glow.ts`(고가 드롭 연출 값).
+> **관련 ADR**: [[ADR-014]] [[ADR-017]] [[ADR-019]] [[ADR-023]] [[ADR-032]] [[ADR-033]] [[ADR-036]] [[ADR-037]] [[ADR-045]] ADR-049 [[ADR-054]] [[ADR-059]] [[ADR-010]] [[ADR-067]] [[ADR-068]] [[ADR-069]] ADR-072 ADR-073 [[ADR-074]] [[ADR-087]] [[ADR-097]] [[ADR-101]] ADR-102 [[ADR-111]] ADR-112 [[ADR-124]] [[ADR-153]] [[ADR-172]]. **관련 문서**: [../foundation/game-data.md](../foundation/game-data.md), [../foundation/error-resilience.md](../foundation/error-resilience.md), [../foundation/design-system.md](../foundation/design-system.md), [../persistence/sqlite.md](../persistence/sqlite.md).
 
 ## 정책
 - 처치 보스 목록은 Nexon API 동기화 데이터를 그대로 사용(수동 입력 없음). 등록 여부가 아니라 **처치된(`complete_flag: true`) 보스만** 구독·표시·계산(등록만 하고 안 잡은 보스는 안 나타남). 실제 처치 난이도 우선 선택은 `selectBossProfitBosses`([[ADR-033]] — 등록 난이도 ≠ 처치 난이도 오류 수정, `ownComplete` 도입).
@@ -84,6 +84,34 @@
   - `isMonthlyBossStale` 판정도 함께 고쳤지만(축약 응답에 `bossWeekly` 가 없으면 남은 `bossMonthly` 도 신뢰하지 않는다) **그것만으로는 이 증상이 낫지 않는다** — `mergeBossCycle` 은 stale 플래그를 보지 않고 항상 fresh를 우선하며, 그 리셋 규약은 [[ADR-034]]가 의도한 것이다(previous의 완료를 되살리면 지난 리셋의 완료가 새 주기로 샌다). 표시를 고치는 것은 기록 합집합이고, 판정 수정은 "축약 응답을 신선하다고 주장하지 않는다"는 별개 값어치다.
 - 보스 표시 순서([[ADR-036]]): `sortRowsByOcidOrder` 에 `weekly-bosses.json` 정규 순서(REFERENCE_ENTRIES: weekly→eventWeekly→monthly) 2차 정렬 키로 캐시·라이브·과거기록 세 경로를 같은 순서로 고정(`getBossReferenceOrder`, `boss-matching.ts`).
 - **캐릭터 카드 순서 ([[ADR-143]] 결정 3, 구현 완료 2026-08-17)**: 카드가 서는 차례는 행의 순서(= `getSortedCharacterInfo` 의 레벨 내림차순)가 아니라 사용자가 캐릭터 관리에서 정한 `trackedCharacters` 배열 순서다 — 화면이 `buildCharacterGroups` 결과를 `orderByTracked` 로 한 번 통과시킨다(`app-rn/src/lib/tracked-order.ts`, 두 스케줄러 레일과 같은 함수). **캐릭터 안쪽 보스 순서는 위 [[ADR-036]] 그대로**이고, 저장 목록에 없는 캐릭터의 카드도 사라지지 않는다(뒤에 남는다). 웹뷰 앱은 종전대로 레벨 내림차순이다.
+
+## 처치 **날짜** ([[ADR-172]] — #239)
+
+`period_key` 는 주간(목요일)·월간뿐이라 «며칟날 잡았나» 를 앱이 몰랐다. **기간 축은 그대로 두고**
+(사용자 지정 — `daily` 라는 `BossCycle` 은 안 생긴다) `boss_profit_records` 에 nullable 칸을 하나
+더한다: `defeated_on`(KST `YYYY-MM-DD`).
+
+- **이 페이지는 그 값을 안 쓴다.** 쓰는 곳은 가계부 캘린더 하나다(`docs/features/cashbook.md`).
+  두 화면이 다른 질문을 하기 때문이다 — 여기는 «이번 주에 무엇이 남았나», 저기는 «그날 얼마 벌었나».
+- **날짜는 「뒤집힌 날」**이다. `date=D` 응답은 «D 시점의 완료 현황» 이라 D 에 잡았다는 뜻이 아니다.
+  기간의 시작일부터 훑어 **처음 완료로 보이는 날**이 처치일이고, 리셋 당일이 완료면 그날이다.
+  응답 하나가 **그 캐릭터의 그날 보스 전부**를 담으므로 비용이 보스 수가 아니라 **날짜 수**다.
+- **섹션이 빈 날은 미완료로 읽는다** — 접속하지 않으면 보스 섹션이 통째로 비는데([[ADR-030]]),
+  접속하지 않은 날에 보스를 잡을 수는 없다. 판정에 쓰는 값은 `ownComplete` 하나다([[ADR-032]]).
+- **오늘은 소거법**이다. `date=오늘` 은 400 이라([[ADR-067]] 결정 2 정정 2) 조회로는 못 본다.
+  시작일부터 어제까지가 전부 미완료로 관측됐는데 **그 기록이 존재하면** 오늘 잡은 것이다 —
+  기록은 완료를 본 순간에만 생기므로([[ADR-014]]) 그 존재가 곧 증거다.
+- **구멍이 있으면 확정하지 않는다.** 시작일부터 끊김 없이 관측돼야 «그 앞엔 없었다» 를 말할 수 있다.
+- **기간 시작일이 조회 창 밖이면 아예 안 부른다** — 첫 날을 못 보면 어떤 조회도 답을 못 낸다.
+  그래서 월간(달 1일)은 **달의 앞 2주 안에서만** 캘 수 있고, 전환 전 기록은 영영 NULL 이다.
+- **조회 원장은 새로 안 만든다** — `schedule-probe-ledger`([[ADR-086]] 결정 4)의 `observed` 기록에
+  그날 완료로 본 보스 목록(`bosses`)을 더한다. 그 원장의 14일 창이 API 조회 창과 같은 폭이라,
+  같은 날짜를 두 번 안 부르고 **재시도도 저절로 멈춘다**(창이 지나가면 날짜가 떨어진다).
+  옛 기록엔 `bosses` 가 없으므로(`undefined`) **미조회로 취급**한다 — 빈 배열과 섞으면 관측을 잃는다.
+- **드롭은 컬럼을 안 갖는다** — 키 넷(`ocid|boss|difficulty|period_key`)이 같아 보스 행에서
+  물려받는다([[ADR-172]] 결정 6, [item-drop.md](./item-drop.md)).
+- 캐는 자리는 `features/boss-profit/defeat-dates.ts` 이고, **동기화가 끝난 뒤**와 **가계부 진입**
+  둘 다에서 튼다(결정 9). 원장이 겹침을 막으므로 어디서 몇 번 불려도 결과가 같다.
 
 ## UI
 

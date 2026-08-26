@@ -42,7 +42,7 @@ jest.mock('@op-engineering/op-sqlite', () => ({
 }))
 
 import { IOS_DOCUMENT_PATH } from '@op-engineering/op-sqlite'
-import { closeBossProfitDb, getBossProfitDb } from '../../sqlite/db'
+import { BOSS_PROFIT_TABLE_NAMES, closeBossProfitDb, getBossProfitDb } from '../../sqlite/db'
 import { __resetStoragePortsForTest, setSqlitePort } from '../../ports'
 
 import { rnSqlitePort } from '../rn-sqlite'
@@ -137,9 +137,14 @@ describe('db.ts 와 맞물리는가', () => {
     const executed = mockOpened[0].statements.map((entry) => entry.statement.trim())
     expect(executed.filter((statement) => statement.startsWith('ALTER TABLE'))).toEqual([
       'ALTER TABLE boss_profit_records ADD COLUMN world TEXT',
+      'ALTER TABLE boss_profit_records ADD COLUMN defeated_on TEXT',
       'ALTER TABLE boss_drop_records ADD COLUMN price_state TEXT',
       'ALTER TABLE boss_drop_records ADD COLUMN price_meso INTEGER',
       'ALTER TABLE boss_drop_records ADD COLUMN price_share INTEGER',
+      'ALTER TABLE spend_records ADD COLUMN form TEXT',
+      // [[ADR-170]] 정정 9 — 수입 테이블도 수수료 칸 없이 만들어진 기기가 있다.
+      'ALTER TABLE income_records ADD COLUMN sale_fee_percent INTEGER',
+      'ALTER TABLE income_records ADD COLUMN sale_fee_meso INTEGER',
     ])
   })
 
@@ -147,15 +152,37 @@ describe('db.ts 와 맞물리는가', () => {
   it('컬럼이 이미 있으면 더하지 않는다', async () => {
     mockRowsFor = (statement) =>
       statement.startsWith('PRAGMA table_info')
-        ? [{ name: 'world' }, { name: 'price_state' }, { name: 'price_meso' }, { name: 'price_share' }]
+        ? [
+            { name: 'world' },
+            { name: 'defeated_on' },
+            { name: 'price_state' },
+            { name: 'price_meso' },
+            { name: 'price_share' },
+            { name: 'form' },
+            { name: 'sale_fee_percent' },
+            { name: 'sale_fee_meso' },
+          ]
         : []
 
     await getBossProfitDb()
 
     const executed = mockOpened[0].statements.map((entry) => entry.statement.trim())
     expect(executed.filter((statement) => statement.startsWith('ALTER TABLE'))).toEqual([])
-    // 네 테이블 생성과 메이린 키 이관은 그대로 돈다(`docs/migration/data.md` «스키마 진화 코드»).
-    expect(executed.filter((statement) => statement.startsWith('CREATE TABLE'))).toHaveLength(4)
-    expect(executed.filter((statement) => statement.startsWith('UPDATE'))).toHaveLength(2)
+    // 테이블 생성과 메이린 키 이관은 그대로 돈다(`docs/migration/data.md` «스키마 진화 코드»).
+    // **개수를 박지 않는다** — db.ts 가 테이블을 더할 때마다 이 숫자가 조용히 스탈해진다([[ADR-052]]
+    // 결정 2 가 목록의 단일 진실 공급원을 db.ts 로 둔 이유와 같다). [[ADR-170]] 이 둘을 더하며 겪었다.
+    expect(executed.filter((statement) => statement.startsWith('CREATE TABLE'))).toHaveLength(
+      BOSS_PROFIT_TABLE_NAMES.length,
+    )
+    /**
+     * **여기도 개수를 안 박는다** — 바로 위 `CREATE TABLE` 이 겪은 그 스탈이다([[ADR-166]] 정정 4 가
+     * 마이그레이션 둘을 더하며 다시 겪었다). 대신 **성질**을 본다: 데이터 이관은 전부 `WHERE` 를
+     * 갖는다 — 그것이 «이미 옮겨진 뒤에는 걸리는 행이 없다»(매번 실행해도 안전한 no-op)의 근거다.
+     */
+    const updates = executed.filter((statement) => statement.startsWith('UPDATE'))
+    expect(updates.length).toBeGreaterThan(0)
+    for (const statement of updates) {
+      expect(statement).toContain('WHERE')
+    }
   })
 })

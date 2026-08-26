@@ -58,6 +58,13 @@ describe('getBossProfitDb', () => {
     expect(dbExecuteMock).toHaveBeenCalledWith(
       expect.stringContaining('CREATE TABLE IF NOT EXISTS boss_profit_period_checks'),
     )
+    // [[ADR-170]] 결정 2 · [[ADR-166]] — 가계부가 손으로 적는 둘.
+    expect(dbExecuteMock).toHaveBeenCalledWith(
+      expect.stringContaining('CREATE TABLE IF NOT EXISTS income_records'),
+    )
+    expect(dbExecuteMock).toHaveBeenCalledWith(
+      expect.stringContaining('CREATE TABLE IF NOT EXISTS spend_records'),
+    )
     expect(dbExecuteMock).toHaveBeenCalledWith(
       expect.stringContaining('CREATE TABLE IF NOT EXISTS boss_drop_records'),
     )
@@ -387,5 +394,61 @@ describe('가격 컬럼 마이그레이션 (ADR-124 결정 4)', () => {
 
     const altered = dbExecuteMock.mock.calls.filter(([sql]) => String(sql).includes('ADD COLUMN price_'))
     expect(altered).toEqual([])
+  })
+})
+
+// [[ADR-172]] — 처치 날짜(`defeated_on`)도 나중에 더한 컬럼이다. `world` 와 같은 사정이라
+// 여기 없으면 **이미 보스를 기록해 둔 기기에서만** 조용히 UPDATE 가 실패한다(새 기기는 멀쩡하다).
+describe('defeated_on 컬럼 마이그레이션 ([[ADR-172]])', () => {
+  it('없으면 ALTER 로 더한다', async () => {
+    isConnectionMock.mockResolvedValue(false)
+    dbQueryMock.mockResolvedValue({ values: [{ name: 'ocid' }] })
+
+    const { getBossProfitDb } = require('../db') as typeof import('../db')
+    await getBossProfitDb()
+
+    expect(dbExecuteMock).toHaveBeenCalledWith(
+      'ALTER TABLE boss_profit_records ADD COLUMN defeated_on TEXT',
+    )
+  })
+
+  it('이미 있으면 더하지 않는다', async () => {
+    isConnectionMock.mockResolvedValue(false)
+    dbQueryMock.mockResolvedValue({ values: [{ name: 'defeated_on' }] })
+
+    const { getBossProfitDb } = require('../db') as typeof import('../db')
+    await getBossProfitDb()
+
+    const altered = dbExecuteMock.mock.calls.some(([sql]) =>
+      String(sql).includes('ADD COLUMN defeated_on'),
+    )
+    expect(altered).toBe(false)
+  })
+})
+
+// **테이블을 세운 커밋과 컬럼을 더한 커밋이 갈렸다.** `spend_records` 는 `form` 없이 만들어졌고
+// (177c195b) 「지출 항목 고르기를 두 단계로」(89e806fa)가 뒤늦게 그 컬럼을 CREATE 문에만 더했다 —
+// 그 사이에 앱을 켠 기기는 `form` 없는 테이블을 들고 있어 **INSERT 가 통째로 실패한다**(실기
+// 재현 2026-08-25 — 지출이 하나도 안 적혔다). [[ADR-069]] 결정 1 이 적어 둔 함정 그대로다.
+describe('form 컬럼 마이그레이션 ([[ADR-069]] 결정 1)', () => {
+  it('없으면 ALTER 로 더한다', async () => {
+    isConnectionMock.mockResolvedValue(false)
+    dbQueryMock.mockResolvedValue({ values: [{ name: 'id' }, { name: 'spent_on' }] })
+
+    const { getBossProfitDb } = require('../db') as typeof import('../db')
+    await getBossProfitDb()
+
+    expect(dbExecuteMock).toHaveBeenCalledWith('ALTER TABLE spend_records ADD COLUMN form TEXT')
+  })
+
+  it('이미 있으면 안 더한다 — 매번 열려도 안전한 no-op 이다', async () => {
+    isConnectionMock.mockResolvedValue(false)
+    dbQueryMock.mockResolvedValue({ values: [{ name: 'form' }] })
+
+    const { getBossProfitDb } = require('../db') as typeof import('../db')
+    await getBossProfitDb()
+
+    const altered = dbExecuteMock.mock.calls.some(([sql]) => String(sql).includes('ADD COLUMN form'))
+    expect(altered).toBe(false)
   })
 })

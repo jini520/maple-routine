@@ -76,10 +76,9 @@ import { useBottomSafeAreaPx } from '../lib/bottom-safe-area'
 import {
   ArrowLeftIcon,
   CalendarCheckIcon,
-  CrosshairIcon,
   LayoutDashboardIcon,
   ListChecksIcon,
-  ShoppingCartIcon,
+  CalendarIcon,
   SlidersHorizontalIcon,
   SwordsIcon,
   WalletIcon,
@@ -253,8 +252,13 @@ const ICON_STROKE = 1.5
  * 채우기가 통하는 다섯(대시보드·렌치·장바구니·톱니·수익)은 면으로 활성을 말한다. 나머지
  * (달력·지갑·목록·검·조준경)는 안쪽 선이 의미를 져서 채울 수 없으므로 **굵기**로 말한다.
  * 둘을 같이 주면 채운 그림이 과해지므로 **배타**다 — `activeStroke` 가 그것을 한 자리에서 고른다.
+ *
+ * **2.75 → 2.20**(사용자 판정 2026-08-25, iOS 시뮬레이터에서 다섯 단계를 나란히 보고 고름).
+ * 가계부가 빈 달력으로 바뀌며 드러났다 — 안쪽에 선이 많은 그림일수록 굵은 획이 칸을 메워
+ * 형태가 뭉갠다. 값이 **전 탭 공통**인 것은 그대로다: 자리마다 다르면 같은 바 안에서 활성의
+ * 무게가 갈린다.
  */
-const ICON_STROKE_ACTIVE = 2.75
+const ICON_STROKE_ACTIVE = 2.2
 
 type IconComponent = React.ComponentType<{
   className?: string
@@ -283,8 +287,9 @@ const ICONS: Readonly<Record<GroupId | TabRouteName, IconComponent>> = {
   // 결정 1) — 위 다섯과 같은 **제안값**이고 확정은 실기기에서 나란히 보고 한다.
   BossManage: SlidersHorizontalIcon,
   Profit: ProfitIcon,
-  HuntingProfit: CrosshairIcon,
-  Spend: ShoppingCartIcon,
+  // 가계부 = 장부. 달력 계열(`CalendarCheck` = 스케줄러 그룹)과 겹치지 않게 골랐다 —
+  // 위 다섯과 같은 **제안값**이고 확정은 실기기에서 나란히 보고 한다([[ADR-169]]).
+  Cashbook: CalendarIcon,
   Utility: WrenchIcon,
   Settings: GearIcon,
 }
@@ -296,11 +301,14 @@ const ICONS: Readonly<Record<GroupId | TabRouteName, IconComponent>> = {
  * 선이 있는 아이콘은 채우는 순간 그 선이 통째로 사라진다 — 시뮬레이터에서 열 개를 다 채워 보고
  * 골랐다.
  *
- *   살아남음  대시보드(사각 넷) · 렌치(실루엣 하나) · 장바구니(윤곽 자체가 그림) ·
+ *   살아남음  대시보드(사각 넷) · 렌치(실루엣 하나) ·
  *             검(칼날이 면으로 차고 손잡이 선은 남는다 — 사용자 판정으로 뒤늦게 편입)
- *   무너짐    톱니 → 가운데 구멍이 메워져 덩어리 · 조준경 → 십자선이 사라져 원판
- *             달력·지갑 → 안쪽 체크·주머니를 잃음 · 목록 → 선뿐이라 채울 «면» 이 없음
+ *   무너짐    톱니 → 가운데 구멍이 메워져 덩어리 ·
+ *             달력·지갑 → 안쪽 체크·주머니를 잃음 · 목록·장부 → 선뿐이라 채울 «면» 이 없음
  *             수익(`ProfitIcon`) → 열린 호로 그린 커스텀이라 `fill="none"` 이 규격이다([[ADR-066]])
+ *
+ * 장바구니(지출)와 조준경(사냥 수익)이 이 표에서 빠진 것은 **그 두 탭이 없어졌기 때문**이다
+ * ([[ADR-169]] 결정 2) — 판정이 바뀐 것이 아니다.
  *
  * 아이콘 **컴포넌트**로 잡는 이유는 같은 그림이 두 자리에 쓰이기 때문이다(today 는 그룹과 페이지,
  * 렌치는 유틸리티 그룹과 페이지). 라우트 키로 잡으면 한쪽만 채워지는 사고가 난다.
@@ -308,7 +316,6 @@ const ICONS: Readonly<Record<GroupId | TabRouteName, IconComponent>> = {
 const FILLED_ICONS: ReadonlySet<IconComponent> = new Set([
   LayoutDashboardIcon,
   WrenchIcon,
-  ShoppingCartIcon,
   SwordsIcon,
   // 아래 둘은 우리가 그린 아이콘이라 **채울 자리를 고를 수 있다** — 수익은 동전 두 개만 면이
   // 되고 단을 그리는 호는 선으로 남으며, 톱니는 몸통만 차고 가운데가 구멍으로 남는다.

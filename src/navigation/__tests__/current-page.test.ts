@@ -28,7 +28,7 @@ describe('pageFromLayerState — 가장 안쪽 화면이 곧 지금 페이지다
 
   it('하위 층의 화면을 읽는다 — 한 단 더 깊어도 같다', () => {
     expect(pageFromLayerState(layer(route('ScheduleSubs', route('Boss'))))).toBe('Boss')
-    expect(pageFromLayerState(layer(route('LedgerSubs', route('Spend'))))).toBe('Spend')
+    expect(pageFromLayerState(layer(route('LedgerSubs', route('Cashbook'))))).toBe('Cashbook')
   })
 
   // 층 스택이 여러 단이면 **맨 위**가 지금이다. `index` 가 그것을 가리킨다.
@@ -46,10 +46,10 @@ describe('pageFromLayerState — 가장 안쪽 화면이 곧 지금 페이지다
   it('안쪽 상태가 아직 없으면 params.screen 을 읽는다', () => {
     const pending: NavStateLike = {
       index: 0,
-      routes: [{ name: 'LedgerSubs', params: { screen: 'HuntingProfit' } }],
+      routes: [{ name: 'LedgerSubs', params: { screen: 'Cashbook' } }],
     }
 
-    expect(pageFromLayerState(pending)).toBe('HuntingProfit')
+    expect(pageFromLayerState(pending)).toBe('Cashbook')
   })
 
   // 마지막 안전망 — 둘 다 없으면 그 층의 첫 화면이다. 표에서 나오므로 지어낸 값이 아니다.

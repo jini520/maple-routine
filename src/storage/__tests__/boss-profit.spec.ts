@@ -224,3 +224,89 @@ describe('getAllBossProfitRecordKeys', () => {
     await expect(getAllBossProfitRecordKeys(['ocid-1'])).resolves.toEqual([])
   })
 })
+
+// [[ADR-172]] — 처치 날짜. `BossProfitRecord` 자체는 안 바뀐다(넣는 자리들이 날짜를 모른다).
+// 대신 **읽는 질문 둘**과 **채우는 쓰기 하나**가 는다.
+describe('처치 날짜 ([[ADR-172]])', () => {
+  it('upsert 는 defeated_on 을 안 건드린다 — 자동 기록이 캐 놓은 날짜를 지우면 안 된다', async () => {
+    const { upsertBossProfitRecord } = require('../boss-profit') as typeof import('../boss-profit')
+
+    await upsertBossProfitRecord(sampleRecord)
+
+    const [sql] = runMock.mock.calls[0]
+    expect(sql).not.toContain('defeated_on')
+  })
+
+  it('getDatedBossProfitRecords 는 날짜 범위로 자르고 NULL 을 뺀다', async () => {
+    const { getDatedBossProfitRecords } = require('../boss-profit') as typeof import('../boss-profit')
+
+    await getDatedBossProfitRecords(['ocid-1', 'ocid-2'], '2026-08-01', '2026-08-31')
+
+    const [sql, values] = queryMock.mock.calls[0]
+    expect(sql).toContain('WHERE ocid IN (?, ?)')
+    expect(sql).toContain('defeated_on IS NOT NULL')
+    expect(sql).toContain('defeated_on BETWEEN ? AND ?')
+    expect(values).toEqual(['ocid-1', 'ocid-2', '2026-08-01', '2026-08-31'])
+  })
+
+  it('getDatedBossProfitRecords 는 행을 날짜 붙은 기록으로 옮긴다', async () => {
+    queryMock.mockResolvedValue({
+      values: [
+        {
+          ocid: 'ocid-1',
+          boss: '스우',
+          difficulty: '하드',
+          period_key: '2026-08-20',
+          payout_meso: 210_000_000,
+          defeated_on: '2026-08-21',
+        },
+      ],
+    })
+    const { getDatedBossProfitRecords } = require('../boss-profit') as typeof import('../boss-profit')
+
+    await expect(getDatedBossProfitRecords(['ocid-1'], '2026-08-01', '2026-08-31')).resolves.toEqual([
+      {
+        ocid: 'ocid-1',
+        boss: '스우',
+        difficulty: '하드',
+        periodKey: '2026-08-20',
+        payoutMeso: 210_000_000,
+        defeatedOn: '2026-08-21',
+      },
+    ])
+  })
+
+  it('getUndatedBossProfitRecords 는 기간을 걸고 NULL 인 것만 고른다', async () => {
+    const { getUndatedBossProfitRecords } = require('../boss-profit') as typeof import('../boss-profit')
+
+    await getUndatedBossProfitRecords(['ocid-1'], ['2026-08-20', '2026-08'])
+
+    const [sql, values] = queryMock.mock.calls[0]
+    expect(sql).toContain('defeated_on IS NULL')
+    expect(sql).toContain('period_key IN (?, ?)')
+    expect(values).toEqual(['ocid-1', '2026-08-20', '2026-08'])
+  })
+
+  it('빈 목록에는 조회를 안 던진다 — IN () 은 문법 오류다', async () => {
+    const { getDatedBossProfitRecords, getUndatedBossProfitRecords } =
+      require('../boss-profit') as typeof import('../boss-profit')
+
+    await expect(getDatedBossProfitRecords([], '2026-08-01', '2026-08-31')).resolves.toEqual([])
+    await expect(getUndatedBossProfitRecords(['ocid-1'], [])).resolves.toEqual([])
+    expect(queryMock).not.toHaveBeenCalled()
+  })
+
+  it('setBossProfitDefeatedOn 은 키 넷으로 그 행 하나만 고친다', async () => {
+    const { setBossProfitDefeatedOn } = require('../boss-profit') as typeof import('../boss-profit')
+
+    await setBossProfitDefeatedOn(
+      { ocid: 'ocid-1', boss: '스우', difficulty: '하드', periodKey: '2026-08-20' },
+      '2026-08-21',
+    )
+
+    const [sql, values] = runMock.mock.calls[0]
+    expect(sql).toContain('UPDATE boss_profit_records SET defeated_on = ?')
+    expect(sql).toContain('WHERE ocid = ? AND boss = ? AND difficulty = ? AND period_key = ?')
+    expect(values).toEqual(['2026-08-21', 'ocid-1', '스우', '하드', '2026-08-20'])
+  })
+})

@@ -2,9 +2,10 @@
 
 > **범위**: 보스별 아이템 획득 기록, 랜덤 컨테이너 결과 선택, 드롭 입력 시트, 고가 아이템 리스트, 전 기간 획득 히스토리. 수익 합산·고가 드롭 연출은 [boss-profit.md](./boss-profit.md), 게임 데이터 파일은 [../foundation/game-data.md](../foundation/game-data.md).
 > **관련 소스**: `app/boss-profit/`(`BossDropSheet`·`DropHistoryScreen`·`DropPriceScreen`·`DropPricePad` — 드롭 UI 는 보스 수익 화면 아래 산다) · `features/boss-profit/`(`drop-history-store`·`drop-price-store`·`drops-loader`) · `features/drop-effect/` · `storage/boss-drop-records`·`storage/drop-effect` · `lib/item-icons`·`lib/drop-effect-frames`·`lib/drop-effect-layout`·`lib/boss-drops`(`pruneUnobtainableDrops`·`planConfirmedDifficultyDropMigration`)·`lib/drop-history`(전 기간 집계) · `DropEffectOverlay` · `scripts/measure-drop-effect-origins.py`(origin 재계측) · `BossDropSheet`(vaul Drawer) · `DropPricePad`(가격 키패드) · `app/boss-profit/DropPriceScreen.tsx`(`/profit/prices`) · `lib/drop-price` · `app/boss-profit/DropHistoryScreen.tsx`(`/profit/drops`) · `src/data/item-drop-table.json`·`boss-ring-boxes.json`·`accessory-boxes.json`·`item-icons.json`·`valuable-drops.json`.
-> **관련 ADR**: [[ADR-011]] [[ADR-010]] [[ADR-038]] ADR-039 [[ADR-040]] [[ADR-041]] [[ADR-045]] [[ADR-048]] [[ADR-069]] [[ADR-070]] [[ADR-071]] [[ADR-103]] [[ADR-124]] [[ADR-147]]. **관련 문서**: [../foundation/game-data.md](../foundation/game-data.md), [boss-profit.md](./boss-profit.md), [today.md](./today.md).
+> **관련 ADR**: [[ADR-011]] [[ADR-010]] [[ADR-038]] ADR-039 [[ADR-040]] [[ADR-041]] [[ADR-045]] [[ADR-048]] [[ADR-069]] [[ADR-070]] [[ADR-071]] [[ADR-103]] [[ADR-124]] [[ADR-147]] [[ADR-172]]. **관련 문서**: [../foundation/game-data.md](../foundation/game-data.md), [boss-profit.md](./boss-profit.md), [today.md](./today.md).
 
 ## 정책
+- **드롭에는 날짜 컬럼이 없다 — 짝인 수익 행의 `defeated_on` 을 물려받는다**([[ADR-172]] 결정 6). 가계부 캘린더가 아이템 판매 수익을 어느 칸에 세울지는 «판 날» 이 아니라 **«먹은 날»** 이 정한다([[ADR-170]] 결정 4 ④) — 판 날로 잡으면 [[ADR-124]] 가 «가격 미입력은 정상» 이라 정해 둔 탓에 **안 판 드롭이 캘린더에서 통째로 사라지고**, 보스 수익 페이지와 캘린더가 같은 주에 다른 숫자를 말하게 된다. 가격을 나중에 넣어도 **날짜는 안 움직인다.**
 - **드롭 기록의 키는 `(ocid, boss, difficulty, period_key, drop_index)`** 이고, 그래서 **처치 난이도가 나중에 달라지면 이관이 필요하다**([[ADR-069]] 결정 4) — 익스트림으로 등록해두고 드롭까지 기록한 뒤 백필이 하드로 확정하면 그 드롭은 고아가 된다. 확정 시점에 옛 난이도 키의 드롭을 확정 키로 옮기고, **그 난이도에서 획득 불가능한 항목(`pruneUnobtainableDrops` 탈락분)은 삭제한다** — 거짓 기록이 환산 가치·고가 드롭 연출에 섞이는 것을 막는다(사용자 판단). 상세는 [boss-profit.md](./boss-profit.md) "자동 기록"(2026-07-31 구현 완료 — 계산은 `planConfirmedDifficultyDropMigration`, 쓰기는 store).
 - **화면 구조**: 2단계 — 드랍 탭 진입 시 **보스 목록** → 하나 선택 시 그 보스의 **아이템 그리드 + 획득 히스토리**.
 - **보스 목록 출처**([[ADR-011]]): 독립 목록이 아니라 보스 스케줄러와 동일한 동기화 캐시에서 `cycle: bossWeekly` + `registration_flag: true` 인 보스만 이름 기준 dedup(수동 등록 불가). 월간 보스(검은마법사)는 현재 제외(의도 여부 확인 필요). 난이도 표기 없음.
@@ -27,8 +28,8 @@
 - **DropEff 프레임 정렬**([[ADR-048]]): 프레임 비트맵 크기가 제각각(가로 38~285px)이라 하단-중앙 앵커로는 기둥 축이 최대 26px 흔들린다. 최적화 과정에서 유실된 WZ `origin`을 템플릿 정합으로 복원해 `lib/drop-effect-layout.ts` 테이블(39프레임 `[x, y]`)로 두고, `DropEffectOverlay`가 그 점을 화면 앵커에 맞춘다(`transformOrigin:'0 0'` + `translate(-x·S,-y·S) scale(S)`, `src`와 `transform` 동시 갱신). y는 전부 비트맵 하단(= 지면선) 고정.
 - **ScreenEff 배율 고정**([[ADR-048]] 결정 5 · **정정 1**): ScreenEff 크롭은 버스트 원점 기준 중앙 정렬이라 origin 테이블이 필요 없다 — 다만 **그 «중앙» 은 가로만 맞다**(2026-08-26 재계측: 세로 원점이 비트맵 중심보다 ~130px 아래 → 버스트가 화면 높이 69%, 아이템은 66%. 기기와 무관하게 26dp 차). 프레임끼리는 ±3pt 안에서 서로 맞춰져 있어 «한 프레임만 튀는» 일은 없다. 값을 옮기는 것은 눈으로 정할 문제라 보류. 문제는 `object-fit:cover` 가 프레임마다 자기 크기로 배율을 따로 잡아 버스트가 들썩이는 것(390x844 기준 1.232~2.198, 프레임 0→1 에서 42% 점프). 기준 프레임(1146x685)이 화면을 덮는 배율 하나를 전 프레임에 적용한다 — `left-1/2 top-1/2` + `translate(-50%,-50%) scale(S)`, `max-w-none`(preflight 해제).
 - **연출 재생 속도**([[ADR-103]], 이슈 #136): 단계별 **고정 fps**, [[ADR-038]] 원래 값의 **1.5배** — screen 22.5(16f·711ms, **8프레임=356ms 시점**에 아이템 팝인 + DropEff 트리거) → pre 21(8f·381ms) → loop 17.25(24f·1391ms/회, ∞) → 화면 탭 시 end 18(7f·389ms) 후 종료. 중앙 아이템 팝인은 fps 가 아니라 CSS transition(`opacity .233s / transform .333s`)이라 **fps 를 바꿀 땐 같은 배율로 함께 바꿔야** 버스트 종료(711ms)와 팝인 종료(689ms)가 어긋나지 않는다. 등장 트리거 `DROP_START_FRAME` 은 시간이 아니라 프레임 인덱스이므로 fps 를 바꿔도 그대로 둔다. **배율은 눈으로 정한다** — 2배는 너무 빨라 반려됐다(2026-08-06). 네 단계에 같은 배율을 걸어두면 조정이 값 다섯 개 재계산으로 끝난다.
-- **재생 전 예열**([[ADR-173]], [[ADR-048]] 결정 6 의 RN 판): `<Image source>` 를 아직 안 그려 본 프레임으로 바꾸면 디코드가 비동기라 **그 한 장이 통째로 빈다** — 프레임마다 한 번씩이라 «첫 재생만» 깜빡이는데, 사용자가 연출을 보는 것이 바로 그 한 번이다(2026-08-26 갤럭시 Z Flip3 릴리스 빌드 실측: 첫 2.1초에 빈 프레임 40장, loop 첫 바퀴가 끝나는 순간 그친다). **갈아끼우기를 아예 안 한다**([[ADR-173]] 정정 1) — 전 프레임(기둥 39 + 버스트 16)을 마운트해 두고 `opacity` 로 한 장만 켠다. 붙어 있는 뷰는 자기 비트맵을 쥐고 있어 캐시에서 밀려나도 그린다. 재생 시작은 **버스트 16장**만 기다리고(기둥은 8프레임째에나 필요), 그림이 실제로 바뀔 때만 다시 그린다(`rendersDifferently` — 안 거르면 120Hz 기기에서 첫머리 렌더가 밀려 frame 0 이 91ms·frame 2 가 25ms 가 된다). **디버그 빌드에서도 하네스 화면에서도 재현되지 않는다 — 릴리스 빌드로, 실제 드롭 시트에서 재야 한다.**
-- **배경은 창 크기를 숫자로 받는다**([[ADR-173]] 결정 4): 오버레이 모달은 열리며 `880 → 833.67 → 880dp` 로 두 번 재배치되는데(내비게이션 바 인셋이 늦게 풀린다) `<Svg width="100%">` 가 가운데 값에서 굳어 **화면 아래 46dp 로 뒤의 시트가 비쳤다**. `useWindowDimensions()` 값을 숫자로 주고, `Pressable` 에 바깥색을 깔아 투명 구멍을 원천 차단한다.
+- **재생 전 예열**([[ADR-174]], [[ADR-048]] 결정 6 의 RN 판): `<Image source>` 를 아직 안 그려 본 프레임으로 바꾸면 디코드가 비동기라 **그 한 장이 통째로 빈다** — 프레임마다 한 번씩이라 «첫 재생만» 깜빡이는데, 사용자가 연출을 보는 것이 바로 그 한 번이다(2026-08-26 갤럭시 Z Flip3 릴리스 빌드 실측: 첫 2.1초에 빈 프레임 40장, loop 첫 바퀴가 끝나는 순간 그친다). **갈아끼우기를 아예 안 한다**([[ADR-174]] 정정 1) — 전 프레임(기둥 39 + 버스트 16)을 마운트해 두고 `opacity` 로 한 장만 켠다. 붙어 있는 뷰는 자기 비트맵을 쥐고 있어 캐시에서 밀려나도 그린다. 재생 시작은 **버스트 16장**만 기다리고(기둥은 8프레임째에나 필요), 그림이 실제로 바뀔 때만 다시 그린다(`rendersDifferently` — 안 거르면 120Hz 기기에서 첫머리 렌더가 밀려 frame 0 이 91ms·frame 2 가 25ms 가 된다). **디버그 빌드에서도 하네스 화면에서도 재현되지 않는다 — 릴리스 빌드로, 실제 드롭 시트에서 재야 한다.**
+- **배경은 창 크기를 숫자로 받는다**([[ADR-174]] 결정 4): 오버레이 모달은 열리며 `880 → 833.67 → 880dp` 로 두 번 재배치되는데(내비게이션 바 인셋이 늦게 풀린다) `<Svg width="100%">` 가 가운데 값에서 굳어 **화면 아래 46dp 로 뒤의 시트가 비쳤다**. `useWindowDimensions()` 값을 숫자로 주고, `Pressable` 에 바깥색을 깔아 투명 구멍을 원천 차단한다.
 - **프레임 픽셀·좌표 동시 교체**([[ADR-048]] 결정 6): `img.src` 교체는 비동기라(39프레임 전부 대입 직후 `complete=false`) 좌표만 먼저 옮기면 이전 프레임이 새 origin 으로 그려져 산발적으로 한 프레임 튄다. 마운트 시 DropEff 프레임을 미리 디코드해 두고(ref 로 보유), 그래도 준비 전이면 `applyDropFrame` 이 좌표를 유지한 채 반환한다(매 tick 재호출로 자동 복구). 표시 여부도 같은 함수가 관리.
 
 ## 가격 기록 — [[ADR-124]], 이슈 #185
@@ -42,8 +43,10 @@
 - **고정 드롭은 대상이 아니다** — 기록 테이블에 아예 없다([[ADR-040]] 결정 3). 포함하려면 `(난이도 → 자동 수량) × 단가` 라는 두 번째 경로가 필요해 이번 범위에서 제외했다.
 - **기록 안함 ≠ 스킵**([[ADR-124]] 결정 6 정정, 2026-08-10). **기록 안함**(`'excluded'`)은 "값을 매길 만하지 않다"는 결정이라 저장되고 "남은 n건"에서 빠진다. **스킵**은 "아직 안 팔렸다, 팔리면 넣겠다"라 **아무것도 저장하지 않고 미입력에 머문다** — 둘을 묶으면 나중에 판 것을 다시 찾아갈 단서가 사라진다. 옛 값 `'skipped'` 는 읽을 때 `'excluded'` 로 흡수한다.
 
-### 입력 — 앱 내장 키패드 ([[ADR-124]] 결정 5)
-OS 키보드를 부르지 않는다. 메소는 자릿수가 커서 시스템 키패드로는 0을 세게 되고, 키보드가 뜨면
+### 입력 — 앱 내장 키패드 ([[ADR-124]] 결정 5 — **이 화면에 한한다**)
+OS 키보드를 부르지 않는다. **이 규칙은 `DropPricePad` 한 화면의 것이다**([[ADR-170]] 정정 4) —
+가계부의 지출·수입 시트는 글자 칸(사용처) 때문에 어차피 키보드를 부르므로 그쪽 금액 칸은 **OS
+숫자 키보드**다. 아래 논지가 성립하는 조건이 «그 화면이 키보드를 한 번도 안 부른다» 이기 때문이다. 메소는 자릿수가 커서 시스템 키패드로는 0을 세게 되고, 키보드가 뜨면
 시트가 밀리거나 잘린다 — 앱이 자기 키패드를 그리면 화면이 줄지 않아 **보정할 것이 애초에 없다**.
 (웹뷰 시절에는 그 밀림이 `resize:native`·컨테이너 패딩이라는 플랫폼별 형태로 나타났고, RN 에서도
 키보드 인셋을 쫓는 일이 남는 것은 같다 — 안 부르는 것이 여전히 싸다.)

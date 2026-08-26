@@ -64,15 +64,18 @@
 | `/settings/about` | `SettingsAboutScreen` | 탭 4 위 push | |
 | `/settings/about/privacy` | `SettingsPrivacyScreen` | `/settings/about` 위 push | 이 앱에서 **유일한 2단 스택** |
 
-**RN 에서 새로 생긴 화면 넷** ([[ADR-132]], 2026-08-13) — 웹에는 없다. 위 17행은 그대로이고, 이 넷이
-`routes.ts` 의 표에 `origin: 'rn'` 으로 함께 산다(대조 테스트가 둘을 갈라 본다).
+**RN 에서 새로 생긴 탭 화면 셋** ([[ADR-132]], 2026-08-13 → [[ADR-169]], 2026-08-23) — 웹에는 없다.
+위 17행은 그대로이고, 이것들이 `routes.ts` 의 표에 `origin: 'rn'` 으로 함께 산다(대조 테스트가 둘을
+갈라 본다).
 
 | 화면 | RN 대응 | 비고 |
 |---|---|---|
-| `TodayScreen` | **첫 화면** (`INITIAL_TAB_ROUTE`) | 오늘 현황 대시보드 — 지금은 «개발 진행중» 껍데기 |
-| `HuntingProfitScreen` | 가계부 하위 | 껍데기 |
-| `SpendScreen` | 가계부 하위 | 껍데기 |
-| `UtilityScreen` | 그룹 자신이 페이지 | 껍데기 |
+| `TodayScreen` | **첫 화면** (`INITIAL_TAB_ROUTE`) | 위젯 격자 — 구현 완료([[ADR-147]]) |
+| `CashbookScreen` | 수익·지출 하위 | 캘린더([[ADR-169]]) — 기록은 아직 없다 |
+| `UtilityScreen` | 그룹 자신이 페이지 | 도구 목록([[ADR-168]]) |
+
+> **넷이었다.** `HuntingProfitScreen`·`SpendScreen` 두 껍데기가 여기 있었고, 그 자리가 가계부로
+> 정해지면서 삭제됐다([[ADR-169]] 결정 1·2).
 
 **보존해야 할 라우팅 동작**
 

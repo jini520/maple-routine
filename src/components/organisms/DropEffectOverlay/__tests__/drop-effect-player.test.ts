@@ -159,7 +159,7 @@ describe('큰 dt 는 잘라낸다', () => {
   })
 })
 
-// ★ 회귀 가드 — 누적 시간만 바뀐 tick 은 «다시 그릴 것 없음» 이어야 한다([[ADR-173]] 정정 1).
+// ★ 회귀 가드 — 누적 시간만 바뀐 tick 은 «다시 그릴 것 없음» 이어야 한다([[ADR-174]] 정정 1).
 describe('rendersDifferently', () => {
   it('누적 시간만 흐른 tick 은 다시 그리지 않는다', () => {
     const a = createDropEffectState()
