@@ -19,7 +19,9 @@ import { getBossProfitDb } from './sqlite/db'
  */
 export const SPEND_CATEGORIES = [
   '컨텐츠',
-  '상점·편의',
+  // 「상점·편의」 에서 이름이 바뀌었다(사용자 지정 2026-08-27, [[ADR-166]] 정정 4).
+  // 기존 기록은 `db.ts` 의 마이그레이션이 옮긴다 — 값 자체가 이름이라 안 옮기면 고아가 된다.
+  '이벤트·BM',
   '버프',
   '아이템 구매',
   '기타',

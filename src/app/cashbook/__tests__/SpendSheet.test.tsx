@@ -93,7 +93,7 @@ describe('갈래 칩', () => {
   it('다섯이 다 선다', async () => {
     const view = await 그리기()
 
-    for (const label of ['컨텐츠', '상점·편의', '버프', '아이템 구매', '기타']) {
+    for (const label of ['컨텐츠', '이벤트·BM', '버프', '아이템 구매', '기타']) {
       expect(view.getByLabelText(label)).toBeTruthy()
     }
   })
@@ -139,8 +139,8 @@ describe('갈래 칩', () => {
 
     // 고를 것을 고르는 화면에는 **저장이 아예 없다**([[ADR-173]] 결정 1) — 셀 것이 없다.
     expect(view.queryByLabelText('저장')).toBeNull()
-    // 「버프」 의 묶음이 섰다 — 고르던 컨텐츠 항목은 풀렸다(묶음 이름과 타일이 같은 글자다).
-    expect(view.getAllByText('보약 버프 추가 구매').length).toBeGreaterThan(0)
+    // 「버프」 의 묶음이 섰다 — 고르던 컨텐츠 항목은 풀렸다.
+    expect(view.getAllByText('버프 물약').length).toBeGreaterThan(0)
   })
 
   // 직접 입력은 고를 목록이 없어 칩이 그대로 선다.
@@ -192,13 +192,20 @@ describe('항목 — 고르면 채워진다', () => {
     expect(view.getByText('2,000만 메소')).toBeTruthy()
   })
 
-  it('한 갈래 안에서 통화가 갈려도 타일마다 구분된다', async () => {
-    const view = await 그리기()
-    await 누르기(view, '버프')
+  /**
+   * 타일이 **자기 통화를 적는다** — 값이 어디서 오는지는 항목이 안다([[ADR-166]] 결정 1).
+   *
+   * 보약 버프 둘이 「이벤트·BM」 으로 옮겨가면서([[ADR-166]] 정정 4) 「버프」 는 메소뿐이 됐다 —
+   * 두 갈래를 나란히 본다.
+   */
+  it('타일이 자기 통화를 적는다', async () => {
+    const 버프 = await 그리기()
+    await 누르기(버프, '버프')
+    expect(버프.getByText('500만 메소')).toBeTruthy()
 
-    // 영약은 메소, 보약 버프는 메포다.
-    expect(view.getByText('500만 메소')).toBeTruthy()
-    expect(view.getByText('9,900 메포')).toBeTruthy()
+    const 이벤트 = await 그리기()
+    await 누르기(이벤트, '이벤트·BM')
+    expect(이벤트.getByText('9,900 메포')).toBeTruthy()
   })
 
   // 고를 것을 고르는 화면에는 큰 숫자도 저장도 없다([[ADR-173]] 결정 1).
@@ -266,7 +273,7 @@ describe('수량 — 곱셈은 앱이 한다', () => {
    */
   it('단위를 안 적는다 — 숫자만 오르내린다', async () => {
     const view = await 그리기()
-    await 누르기(view, '버프')
+    await 누르기(view, '이벤트·BM')
 
     await 누르기(view, '보약 버프 추가 구매')
 
@@ -367,7 +374,7 @@ describe('수량 — 곱셈은 앱이 한다', () => {
   // 상한이 1 이면 늘리는 자리가 처음부터 막혀 있어야 한다 — 눌리는데 안 늘면 고장으로 읽힌다.
   it('상한이 1이면 늘리는 자리가 처음부터 막힌다', async () => {
     const view = await 그리기({ lastPointRate: 1_180 })
-    await 누르기(view, '상점·편의')
+    await 누르기(view, '이벤트·BM')
     await 누르기(view, '미호로이드 교환권')
 
     expect(view.getByLabelText('수량 늘리기').props.accessibilityState?.disabled).toBe(true)

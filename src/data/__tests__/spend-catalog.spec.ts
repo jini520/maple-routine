@@ -74,7 +74,7 @@ describe('spend-catalog.json — 규약', () => {
 
   // [[ADR-166]] 정정 1 ② — 큰 갈래 셋. 나머지 둘(아이템 구매·기타)은 직접 입력이라 항목이 없다.
   it('갈래는 머리에 선언된 셋뿐이다', () => {
-    expect(spendCatalog.categories).toEqual(['컨텐츠', '상점·편의', '버프'])
+    expect(spendCatalog.categories).toEqual(['컨텐츠', '이벤트·BM', '버프'])
 
     for (const item of items) {
       expect(spendCatalog.categories).toContain(item.category)
