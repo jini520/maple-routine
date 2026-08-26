@@ -506,6 +506,13 @@ describe('저장', () => {
  * 커서를 먼저 넣는다: 치는 것은 언제나 포커스가 있는 상태이고, 그때 큰 숫자는 **친 값을 그대로**
  * 그린다([[ADR-173]] 결정 6 — 커서가 빠져야 합계로 굴러간다).
  */
+/** 「기타」는 큰 숫자가 합계라 **지출액 칸**에 친다([[ADR-173]] 결정 17). */
+async function 지출액치기(view: Rendered, text: string): Promise<void> {
+  await act(async () => {
+    fireEvent.changeText(view.getByTestId('spend-sheet-unit-price'), text)
+  })
+}
+
 async function 치기(view: Rendered, text: string): Promise<void> {
   await act(async () => {
     fireEvent(view.getByTestId('spend-sheet-amount'), 'focus')
@@ -553,7 +560,7 @@ describe('아이템 구매', () => {
     await 누르기(view, '기타')
 
     // **곧바로** 0 이다 — 중간값이 보이면 굴러 내려온 것이다.
-    expect(view.getByTestId('spend-sheet-amount').props.value).toBe('')
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('0')
   })
 
   it('갔다 돌아와도 0 이다 — 기억에서 되살아나지 않는다', async () => {
@@ -735,7 +742,7 @@ describe('기타 — 캐시가 사는 유일한 자리', () => {
     const view = await 그리기({ onSave })
     await 누르기(view, '기타')
     await 누르기(view, '캐시')
-    await 치기(view, '6900')
+    await 지출액치기(view, '6900')
 
     await 누르기(view, '저장')
 
@@ -761,7 +768,7 @@ describe('기타 — 캐시가 사는 유일한 자리', () => {
     const view = await 그리기({ onSave, lastPointRate: 1_180 })
     await 누르기(view, '기타')
     await 누르기(view, '메포')
-    await 치기(view, '30000')
+    await 지출액치기(view, '30000')
 
     await 누르기(view, '저장')
 
@@ -772,14 +779,14 @@ describe('기타 — 캐시가 사는 유일한 자리', () => {
     })
   })
 
-  it('통화를 바꿔도 친 금액은 남는다 — 단위만 갈린다', async () => {
+  it('통화를 바꿔도 친 지출액은 남는다 — 단위만 갈린다', async () => {
     const view = await 그리기()
     await 누르기(view, '기타')
-    await 치기(view, '123')
+    await 지출액치기(view, '123')
 
     await 누르기(view, '캐시')
 
-    expect(view.getByTestId('spend-sheet-amount').props.value).toBe('123')
+    expect(view.getByTestId('spend-sheet-unit-price').props.value).toBe('123')
   })
 })
 
@@ -914,6 +921,78 @@ describe('캐릭터 귀속 ([[ADR-166]] 결정 3)', () => {
  *
  * 갈래와 항목은 **글자로만** 서고, 세부(단계·형태·수량·시세·캐릭터)는 그대로 고칠 수 있다.
  */
+/**
+ * 「기타」는 **단가 × 수량**이다([[ADR-173]] 결정 17, 사용자 지정 2026-08-27).
+ *
+ * *"통화 밑에 지출액을 추가해서 거기에 지출한 양을 입력하게 하고 지금 입력받는 위치에는 총합을
+ * 기록해. 그리고 수량을 추가해."*
+ *
+ * 큰 숫자가 «치는 칸» 에서 **«합계»** 로 바뀐다 — 목록 갈래와 같은 모양이 된다.
+ */
+describe('기타 — 지출액 × 수량 ([[ADR-173]] 결정 17)', () => {
+  async function 기타(overrides: Partial<React.ComponentProps<typeof SpendSheet>> = {}) {
+    const view = await 그리기({ lastPointRate: 1_180, ...overrides })
+    await 누르기(view, '기타')
+    return view
+  }
+
+  it('통화 밑에 지출액 줄이 서고 수량이 붙는다', async () => {
+    const view = await 기타()
+
+    expect(view.getByTestId('spend-sheet-unit-price')).toBeTruthy()
+    expect(view.getByLabelText('수량 늘리기')).toBeTruthy()
+  })
+
+  it('큰 숫자는 못 친다 — 합계 자리다', async () => {
+    const view = await 기타()
+
+    expect(view.getByTestId('spend-sheet-amount').props.onChangeText).toBeUndefined()
+  })
+
+  it('지출액 × 수량이 합계가 된다', async () => {
+    const view = await 기타()
+
+    await 지출액치기(view, '30000000')
+    await 누르기(view, '수량 늘리기')
+
+    await waitFor(() =>
+      expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('60,000,000'),
+    )
+  })
+
+  // 메포는 합계가 **메소**다(결정 11) — 실제로 내는 메포는 힌트가 든다.
+  it('메포면 합계가 메소이고 힌트가 낸 메포를 든다', async () => {
+    const view = await 기타()
+    await 누르기(view, '메포')
+    await 지출액치기(view, '30000')
+    await 누르기(view, '수량 늘리기')
+
+    await waitFor(() =>
+      expect(view.getByTestId('spend-sheet-amount-hint')).toHaveTextContent('60,000 메포'),
+    )
+  })
+
+  it('저장에 총합과 수량이 함께 실린다', async () => {
+    const onSave = jest.fn()
+    const view = await 기타({ onSave })
+
+    await 지출액치기(view, '30000000')
+    await 누르기(view, '수량 늘리기')
+    await 누르기(view, '저장')
+
+    expect(onSave.mock.calls[0][0]).toMatchObject({ mesoAmount: 60_000_000, quantity: 2 })
+  })
+
+  // 아이템 구매는 안 바뀐다 — 관세가 붙는 자리라 «치는 칸» 그대로다.
+  it('아이템 구매는 그대로 친다 — 지출액 줄이 없다', async () => {
+    const view = await 그리기()
+    await 누르기(view, '아이템 구매')
+
+    expect(view.queryByTestId('spend-sheet-unit-price')).toBeNull()
+    expect(view.getByTestId('spend-sheet-amount').props.onChangeText).toBeDefined()
+  })
+})
+
 describe('수정 모드 ([[ADR-173]] 결정 15)', () => {
   const 악몽선경 = {
     id: 'spd-9',

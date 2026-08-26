@@ -35,6 +35,7 @@ import { Pressable, View } from 'react-native'
 import { Text, TextInput } from '../../components/atoms/Text/Text'
 import { AmountFigure } from '../../components/molecules/AmountFigure/AmountFigure'
 import { Segment } from '../../components/molecules/Segment/Segment'
+import { parseMesoText } from '../../components/molecules/MesoPad/meso-pad'
 import { SelectField } from '../../components/organisms/SelectField/SelectField'
 import { nextAmountIdentity } from './amount-identity'
 import { characterOptions } from './character-options'
@@ -483,7 +484,17 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
   // 관세는 **친 숫자를 안 바꾼다** — 아래에 한 줄로 더한다. 금액 자체를 고치면 껐다 켰다 할 때
   // 8.5억 → 9.35억 → 10.28억 으로 부푼다([[ADR-166]] 정정 2 ②).
   const tariffed = withTariffMeso(typed)
-  const directAmount = currency === 'meso' && hasTariff ? tariffed.mesoAmount : typed
+  /**
+   * 「기타」는 **단가 × 수량**이다([[ADR-173]] 결정 17, 사용자 지정 2026-08-27) — 목록 갈래와 같은
+   * 모양이고, `typed` 가 그 «지출액»(단가)이다. 아이템 구매는 여전히 **치는 값이 곧 금액**이다:
+   * 관세가 붙는 자리라 단가·수량으로 가르면 관세를 어느 쪽에 물리는지가 새 질문이 된다.
+   */
+  const isFree = category === '기타'
+  const directAmount = isFree
+    ? typed * quantity
+    : currency === 'meso' && hasTariff
+      ? tariffed.mesoAmount
+      : typed
   const amount = direct ? directAmount : (item?.unitPrice ?? 0) * quantity
 
   // 캐시는 **환산하지 않는다**([[ADR-166]] 정정 2 ①) — 그래서 메소 축 합계에 안 든다.
@@ -514,8 +525,28 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
   const conversionHint = blocked
     ? '시세를 넣어야 메소로 셀 수 있어요'
     : `메소로 −${formatMesoCompact(totalMeso)}`
+  /**
+   * 직접 입력의 큰 숫자 — 「기타」는 **합계**이고 아이템 구매는 **치는 값**이다(결정 17).
+   *
+   * 합계는 [[ADR-173]] 결정 11 대로 **메소 축**이다. 캐시만 예외다 — 환산을 안 하므로([[ADR-166]]
+   * 정정 2 ①) 그 축에 얹을 값이 없고, 그대로 「원」 으로 적는다.
+   */
+  const freeTotal = isFree && currency !== 'cash' ? totalMeso : typed * (isFree ? quantity : 1)
+  const freeUnit = isFree
+    ? currency === 'cash'
+      ? '원'
+      : '메소'
+    : (FREE_CURRENCIES.find((each) => each.id === currency)?.unit ?? '메소')
   const directHint =
-    currency === 'cash' ? undefined : usesPoint ? conversionHint : formatMesoUnits(directAmount)
+    currency === 'cash'
+      ? undefined
+      : usesPoint
+        ? blocked
+          ? '시세를 넣어야 메소로 셀 수 있어요'
+          : isFree
+            ? `${directAmount.toLocaleString()} 메포`
+            : conversionHint
+        : formatMesoUnits(isFree ? totalMeso : directAmount)
   /**
    * 목록 갈래의 힌트 — **큰 숫자가 메소이므로 원래 단위를 여기서 든다**(사용자 지정 2026-08-26).
    *
@@ -601,8 +632,9 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
         // 빈 칸은 `null` 이다 — 빈 문자열을 넣으면 «적었는데 비어 있다» 와 «안 적었다» 가 같아진다.
         item: direct ? (name.trim() === '' ? null : name.trim()) : (item?.name ?? null),
         form: direct ? null : form,
-        // 직접 입력에는 단가가 없어 곱할 것도 없다([[ADR-166]] 정정 1 ③).
-        quantity: direct ? null : quantity,
+        // 「기타」는 단가 × 수량이라 수량이 있다([[ADR-173]] 결정 17 — [[ADR-166]] 정정 1 ③ 의
+        // «직접 입력에는 단가가 없다» 를 그 갈래에 한해 좁힌다). 아이템 구매만 곱할 것이 없다.
+        quantity: category === '아이템 구매' ? null : quantity,
         mesoAmount: currency === 'meso' ? amount : null,
         // 총액과 그 몫을 **둘 다** 박는다(정정 2 ②) — 집계는 총액 한 칸만 본다.
         tariffMeso: direct && hasTariff && currency === 'meso' ? tariffed.tariffMeso : null,
@@ -722,18 +754,42 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
               </FieldRow>
             )}
 
+            {isFree && (
+              // **통화 밑**이다(사용자 지정) — 무엇으로 내는지를 정한 다음에 얼마인지를 친다.
+              <FieldRow label="지출액">
+                <TextInput
+                  testID="spend-sheet-unit-price"
+                  value={typed === 0 ? '' : typed.toLocaleString()}
+                  onChangeText={(text) => setTyped(parseMesoText(typed, text))}
+                  keyboardType="number-pad"
+                  placeholder="0"
+                  className="min-w-24 text-right text-sm font-semibold text-text"
+                  style={TABULAR_NUMS}
+                />
+              </FieldRow>
+            )}
+
+            {isFree && (
+              // 단위를 안 적는다 — 「기타」는 자유 입력이라 무엇을 세는지 앱이 모른다([[ADR-006]]).
+              <FieldRow label="수량">
+                <QuantityStepper value={quantity} unit="" onChange={setQuantity} />
+              </FieldRow>
+            )}
+
             {usesPoint && <RateRow value={rateText} onChange={setRateText} valid={rate !== null} />}
 
             <AmountFigure
-              value={typed}
+              value={freeTotal}
               // **칠 때는 구입가, 손을 떼면 합계**([[ADR-173]] 결정 6) — 관세를 켜면 그 사이를 굴러
               // 넘어간다. 그래서 더해지는 금액을 따로 안 적는다(결정 5).
               displayValue={hasTariff && currency === 'meso' ? tariffed.mesoAmount : undefined}
-              unit={FREE_CURRENCIES.find((each) => each.id === currency)?.unit ?? '메소'}
+              unit={freeUnit}
               testID="spend-sheet-amount"
               identity={amountIdentity}
               hint={directHint}
               hintBlocked={blocked}
+              // **「기타」의 큰 숫자는 못 친다**(결정 17) — 단가 × 수량이라 앱이 센다.
+              readOnly={isFree}
               onChangeValue={setTyped}
             />
 
