@@ -159,6 +159,17 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
        * 0 으로 두고 OS 에 맡긴다.
        */
       android_keyboardInputMode="adjustResize"
+      /*
+       * **올라간 것은 내려와야 한다**([[ADR-170]] 정정 5).
+       *
+       * 기본값(`none`)이면 라이브러리가 키보드 **닫힘**에서 일찍 빠져나가 위치를 다시 안 잰다 —
+       * 소스에 그렇게 적혀 있다: `if (status === HIDDEN && keyboardBlurBehavior === none) return`.
+       * 그래서 시트가 올라간 자리에 그대로 남았다(실기 보고).
+       *
+       * `restore` 는 «키보드가 뜨기 전에 있던 스냅 포인트로 돌아간다» 이고, 그 분기가 함께
+       * `isInTemporaryPosition` 을 내려 **다음 계산이 다시 정상 경로**를 타게 한다.
+       */
+      keyboardBlurBehavior="restore"
       maxDynamicContentSize={frame.height * MAX_HEIGHT_RATIO}
       backdropComponent={renderBackdrop}
       // 웹의 `sr-only` 제목("드롭 아이템 기록")과 같은 자리 — 화면에는 안 보이고 스크린리더만 읽는다.

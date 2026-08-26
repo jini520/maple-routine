@@ -112,6 +112,20 @@ describe('BottomSheet — [[ADR-039]] 가 정한 값을 넘긴다', () => {
     expect(getByTestId('sheet').props.android_keyboardInputMode).toBe('adjustResize')
   })
 
+  /**
+   * **올라간 것은 내려와야 한다**([[ADR-170]] 정정 5). 기본값 `none` 이면 라이브러리가 키보드
+   * 닫힘에서 **일찍 빠져나가** 위치를 다시 안 잰다:
+   *
+   *     if (status === HIDDEN && keyboardBlurBehavior === none) return
+   *
+   * 그러면 시트가 올라간 자리에 그대로 남는다(실기 보고).
+   */
+  it('키보드가 닫히면 제자리로 돌아온다 — restore', async () => {
+    const { getByTestId } = await open()
+
+    expect(getByTestId('sheet').props.keyboardBlurBehavior).toBe('restore')
+  })
+
   it('폭은 max-w-md(448) 중앙 정렬이다 — 라이브러리 기본은 전폭이다', async () => {
     const { getByTestId } = await open()
 

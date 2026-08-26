@@ -605,6 +605,9 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
   시트가 안 올라간다(라이브러리가 `onFocus` 가 채우는 `target` 없이는 상태를 안 올린다). **호출부는
   아무것도 안 고른다**: 부품을 고르게 두면 다음 시트에서 같은 일이 다시 난다. 라이브러리에서
   직접 가져오는 것은 같은 정책 테스트가 막는다(클램프가 빠지므로).
+- **키보드 배선은 프롭 셋이 한 벌이다**(`BottomSheet` 조직체가 쥔다) — 입력 부품 ·
+  `android_keyboardInputMode="adjustResize"`(매니페스트와 같게) · `keyboardBlurBehavior="restore"`.
+  하나만 빠져도 증상이 각각 다르다: **안 올라간다 / 두 번 올라간다 / 안 내려온다.**
 - **칸에 묶인 글자는 `fixed` 를 준다** — today 위젯 전부 · 하단바 라벨 · 캐릭터 레일 초상의 폴백
   이니셜 · `DifficultyBadge`(상자가 `h-5`/`h-4` 고정이라 **모든 호출부에서**). 기준은 «작아 보인다»
   가 아니라 **«상자가 글자를 따라 커지는가»** 다. 패딩으로 자라는 배지·버튼은 예외가 **아니다**
