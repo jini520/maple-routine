@@ -113,16 +113,43 @@ describe('갈래 칩', () => {
     expect(view.queryByText('에픽던전 추가 리워드')).toBeNull()
   })
 
-  // 고르던 항목이 남아 있으면 «컨텐츠를 골랐는데 버프 항목이 저장되는» 일이 생긴다.
-  it('갈래를 바꾸면 고르던 항목이 풀린다', async () => {
-    const onSave = jest.fn()
-    const view = await 그리기({ onSave })
+  /**
+   * **칩은 고르는 화면에만 선다**([[ADR-173]] 결정 8, 사용자 지정 2026-08-27).
+   *
+   * 둘째 화면에서는 머리의 `‹` 가 되돌아가는 길이다 — 칩까지 두면 길이 둘이 되고, 그 화면이
+   * 답하는 질문(«얼마인가»)에 «무엇을» 이 섞인다.
+   */
+  it('고른 뒤에는 칩이 안 보인다 — 되돌아가는 길은 머리 하나다', async () => {
+    const view = await 그리기()
+
     await 에픽던전(view, '하이마운틴', '경험치', '2단계')
 
+    expect(view.queryByLabelText('버프')).toBeNull()
+    expect(view.queryByLabelText('기타')).toBeNull()
+    expect(view.getByLabelText('다시 고르기')).toBeTruthy()
+  })
+
+  // 고르던 항목이 남아 있으면 «컨텐츠를 골랐는데 버프 항목이 저장되는» 일이 생긴다.
+  it('되돌아가 갈래를 바꾸면 고르던 항목이 풀린다', async () => {
+    const view = await 그리기()
+    await 에픽던전(view, '하이마운틴', '경험치', '2단계')
+
+    await 누르기(view, '다시 고르기')
     await 누르기(view, '버프')
 
     // 고를 것을 고르는 화면에는 **저장이 아예 없다**([[ADR-173]] 결정 1) — 셀 것이 없다.
     expect(view.queryByLabelText('저장')).toBeNull()
+    // 「버프」 의 묶음이 섰다 — 고르던 컨텐츠 항목은 풀렸다(묶음 이름과 타일이 같은 글자다).
+    expect(view.getAllByText('보약 버프 추가 구매').length).toBeGreaterThan(0)
+  })
+
+  // 직접 입력은 고를 목록이 없어 칩이 그대로 선다.
+  it('직접 입력에는 칩이 남는다', async () => {
+    const view = await 그리기()
+
+    await 누르기(view, '기타')
+
+    expect(view.getByLabelText('컨텐츠')).toBeTruthy()
   })
 })
 

@@ -716,9 +716,17 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
           </Text>
         </View>
 
-        {/* **수정 모드에는 칩이 없다**(결정 15) — 갈래를 바꾸면 그 기록은 «다른 것» 이 되고,
-            무엇이었는지는 **제목**이 이미 말한다. */}
-        {!editing && (
+        {/*
+          **갈래 칩은 고르는 화면에만 선다**([[ADR-173]] 결정 8, 사용자 지정 2026-08-27).
+
+          둘째 화면(고른 뒤)에서는 머리의 `‹` 가 이미 되돌아가는 길이다 — 칩까지 두면 «되돌아가는
+          길이 둘» 이 되고, 그 화면이 답하는 질문(«얼마인가»)에 «무엇을» 이 섞인다. 직접 입력은
+          고를 목록이 없어 `choice` 가 언제나 `null` 이라 칩이 그대로 선다.
+
+          **수정 모드에도 없다**(결정 15) — 갈래를 바꾸면 그 기록은 «다른 것» 이 되고, 무엇이었는지는
+          제목이 이미 말한다.
+        */}
+        {!editing && choice === null && (
           <View className="flex-row flex-wrap gap-1.5">
             {SPEND_CATEGORIES.map((each) => (
               <CategoryChip
