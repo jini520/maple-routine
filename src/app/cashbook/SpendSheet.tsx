@@ -36,7 +36,6 @@ import { Text, TextInput } from '../../components/atoms/Text/Text'
 import { AmountFigure } from '../../components/molecules/AmountFigure/AmountFigure'
 import { Segment } from '../../components/molecules/Segment/Segment'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
-import { QuickAddBar } from './QuickAddBar'
 import { formatDayLabel } from '../../lib/calendar-month'
 import { formatMesoUnits } from '../../lib/drop-price'
 import { CheckIcon, ChevronLeftIcon, MinusIcon, PlusIcon } from '../../lib/icons'
@@ -395,8 +394,6 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
   })
   /** 저장이 도는 동안 다시 못 누르게 막는다 — 손입력은 두 번 눌리면 행이 둘이 된다. */
   const [saving, setSaving] = useState(false)
-  /** 빠른 칩은 **키보드 위**에만 뜬다([[ADR-173]] 결정 4) — 폼의 일부가 아니라 입력 도구다. */
-  const [typing, setTyping] = useState(false)
   /**
    * 큰 숫자의 **세대**([[ADR-087]] 정정 1 의 «정체») — 올리면 굴리지 않고 **갈아 끼운다**.
    *
@@ -670,7 +667,6 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
               hint={directHint}
               hintBlocked={blocked}
               onChangeValue={setTyped}
-              onTypingChange={setTyping}
             />
 
             {category === '아이템 구매' && (
@@ -825,10 +821,6 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
           </Pressable>
         )}
 
-        {/* **키보드 위 띠**([[ADR-173]] 결정 4 정정) — 시트의 마지막 자식이라, 시트가 키보드 위로
-            올라가면 그대로 키보드 바로 위에 앉는다. 라이브러리의 `footerComponent` 는
-            `position: absolute` 라 `enableDynamicSizing` 인 이 시트에서 자리를 못 잡았다. */}
-        {typing && <QuickAddBar value={typed} onChange={setTyped} />}
       </View>
     </BottomSheet>
   )

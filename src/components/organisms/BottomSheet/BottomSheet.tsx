@@ -268,9 +268,9 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
         // 위쪽에 핸들 몫을 더한다 — 사유는 바로 위 주석.
         contentContainerStyle={{
           paddingTop: HANDLE_HEIGHT + 8,
-          // 키보드가 떠 있으면 **숨돌림 16 도 안 남긴다** — 시트 끝이 키보드에 붙어야 마지막 줄이
-          // «키보드에 딸린 것» 으로 읽힌다(빠른 칩 띠가 그 자리다). 남은 간격은 시트 본문의 몫뿐이다.
-          paddingBottom: keyboardShown ? 0 : insets.bottom + 16,
+          // 키보드가 떠 있으면 **인셋만** 걷는다 — 숨돌림 16 은 남긴다(마지막 줄이 키보드에 닿아
+          // 있으면 누를 자리가 없다).
+          paddingBottom: (keyboardShown ? 0 : insets.bottom) + 16,
         }}
       >
         {props.children}

@@ -140,44 +140,21 @@ describe('금액 — OS 숫자 키보드다 ([[ADR-170]] 정정 4 · [[ADR-173]]
   })
 
   /**
-   * 빠른 칩은 **키보드 위에만** 뜬다([[ADR-173]] 결정 4) — 폼에서 내보낸 것이 «저장과 너무
-   * 가깝다» 의 처방이다. 자리를 옮기는 것으로는 무엇과든 이웃하게 된다.
+   * **빠른 칩은 없다**([[ADR-173]] 결정 4 폐기, 사용자 지정 2026-08-26).
+   *
+   * 폼 안에 두면 저장과 이웃하고, 키보드 위로 내보내면 자리를 못 잡았다(라이브러리 슬롯) —
+   * 시트 마지막 자식으로 붙여 본 뒤에도 판정은 *"별로다"* 였다. 자리를 세 번 옮겨도 안 나아지는
+   * 것은 **없는 편이 낫다.**
    */
-  it('금액을 치기 전에는 빠른 칩이 없다', async () => {
-    const view = await 그리기()
-
-    expect(view.queryByTestId('quick-add-bar')).toBeNull()
-  })
-
-  // OS 키패드엔 `00` 이 없어 억 단위를 치려면 0 을 여덟 번 눌러야 한다 — 칩이 그 자리를 막는다.
-  it('금액 칸에 커서가 들어오면 칩이 뜨고, 누르면 더한다', async () => {
+  it('빠른 칩이 없다 — 커서를 넣어도 안 뜬다', async () => {
     const view = await 그리기()
 
     await act(async () => {
       fireEvent(view.getByTestId('income-sheet-amount'), 'focus')
     })
-    expect(view.getByTestId('quick-add-bar')).toBeTruthy()
 
-    await act(async () => {
-      fireEvent.press(view.getByLabelText('+1억'))
-    })
-
-    expect(view.getByTestId('income-sheet-amount').props.value).toBe('100,000,000')
-  })
-
-  it('커서가 빠지면 칩도 사라진다 — 폼의 한 줄이 아니다', async () => {
-    const view = await 그리기()
-    const 칸 = view.getByTestId('income-sheet-amount')
-
-    await act(async () => {
-      fireEvent(칸, 'focus')
-    })
-    expect(view.getByTestId('quick-add-bar')).toBeTruthy()
-
-    await act(async () => {
-      fireEvent(칸, 'blur')
-    })
     expect(view.queryByTestId('quick-add-bar')).toBeNull()
+    expect(view.queryByLabelText('+1억')).toBeNull()
   })
 
   // 큰 숫자는 화면에 **하나**다([[ADR-173]] 결정 1) — 합계 카드가 없다.

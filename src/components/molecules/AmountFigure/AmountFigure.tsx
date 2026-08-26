@@ -52,13 +52,6 @@ export interface AmountFigureProps {
    */
   displayValue?: number
   /**
-   * 이 칸에 **커서가 들어오고 나가는 것**을 부르는 자리에 알린다([[ADR-173]] 결정 4).
-   *
-   * 빠른 칩이 키보드 위에만 떠야 하는데, 그 띠는 시트 껍데기가 그린다(`footer`) — 즉 «지금 치는
-   * 중인가» 를 시트가 알아야 한다. 포커스는 이 칸의 사실이므로 여기서 밖으로 낸다.
-   */
-  onTypingChange?: (typing: boolean) => void
-  /**
    * **못 치는 숫자** — 목록 갈래의 합계가 그렇다(단가 × 수량이라 앱이 센다).
    *
    * 칸 대신 글자를 그리고 초기화도 안 세운다 — 지울 것이 없다. 수량이 바뀌면 **굴러간다**.
@@ -121,14 +114,8 @@ export function AmountFigure(props: AmountFigureProps): React.JSX.Element {
           // 0 일 때 비우는 이유: 「0」 을 값으로 두면 그 뒤에 친 숫자가 붙어 자릿수가 하나 는다.
           value={empty ? '' : shown.toLocaleString()}
           onChangeText={(text) => props.onChangeValue(parseMesoText(props.value, text))}
-          onFocus={() => {
-            setFocused(true)
-            props.onTypingChange?.(true)
-          }}
-          onBlur={() => {
-            setFocused(false)
-            props.onTypingChange?.(false)
-          }}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
           keyboardType="number-pad"
           placeholder="0"
           className={`flex-1 text-right ${digits}`}
