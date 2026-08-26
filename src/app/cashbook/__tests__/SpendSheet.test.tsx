@@ -3,7 +3,7 @@
 // **갈래는 시트 밖에서 갈렸다** — 펼침판이 「지출」을 골라 이 시트를 연다. 그래서 이 시트에는
 // 수입/지출 세그먼트가 없고, 자기가 지출이라는 것을 **모른 채** 받은 것을 그린다.
 import type { ReactNode } from 'react'
-import { act, fireEvent } from '@testing-library/react-native'
+import { act, fireEvent, within } from '@testing-library/react-native'
 
 // 시트 껍데기는 `BossDropSheet.test.tsx` 와 같은 방식으로 세운다 — 라이브러리를 목으로 갈아
 // 끼우고 내용만 본다(껍데기의 동작은 그쪽 컴포넌트의 테스트가 붙든다).
@@ -31,7 +31,7 @@ jest.mock('@gorhom/bottom-sheet', () => {
   }
 })
 
-import { renderOverlay } from '../../../components/__tests__/render-atom'
+import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
 import { SpendSheet } from '../SpendSheet'
 
 type Rendered = Awaited<ReturnType<typeof renderOverlay>>
@@ -576,6 +576,22 @@ describe('기타 — 캐시가 사는 유일한 자리', () => {
     expect(view.getByLabelText('캐시')).toBeTruthy()
   })
 
+  /**
+   * 통화는 **갈래가 아니라 금액의 축**이다([[ADR-170]] 정정 6) — 바꾸는 것 넷이 전부 금액 쪽에
+   * 있다(단위 · 시세 칸 · 빠른 칩 · 합계의 셈법). 갈래 칩 바로 밑에 두었더니 같은 모양 두 줄이
+   * **한 무리로 읽혔다**(사용자 지적).
+   */
+  it('통화 칩은 금액 칸 안에 선다 — 갈래 칩 옆이 아니다', async () => {
+    const view = await 그리기()
+
+    await 누르기(view, '기타')
+
+    const 금액칸 = within(view.getByTestId('spend-sheet-amount-field'))
+    expect(금액칸.getByLabelText('메소')).toBeTruthy()
+    expect(금액칸.getByLabelText('메포')).toBeTruthy()
+    expect(금액칸.getByLabelText('캐시')).toBeTruthy()
+  })
+
   it('메소로 시작한다', async () => {
     const view = await 그리기()
 
@@ -717,5 +733,19 @@ describe('시세가 비어 있을 때', () => {
 
     expect(view.queryByTestId('spend-sheet-required')).toBeNull()
     expect(view.getByTestId('spend-sheet-total')).toHaveTextContent('−200만')
+  })
+})
+
+/**
+ * 「저장」은 **폼의 리듬에서 한 칸 벗어난다**([[ADR-170]] 정정 6).
+ *
+ * 빠른 칩과 같은 간격(12px)이면 «+100억» 과 «저장» 이 같은 목록의 이웃으로 읽힌다 — 둘 다 누르는
+ * 것이고 칩이 버튼처럼 생겼으므로, 오타건이 곧 저장이다(사용자 지적).
+ */
+describe('저장은 입력과 붙어 있지 않다 ([[ADR-170]] 정정 6)', () => {
+  it('폼 간격(12)에 한 칸을 더 띄운다', async () => {
+    const view = await 그리기()
+
+    expect(flattenStyle(view.getByLabelText('저장').props.style).marginTop).toBe(12)
   })
 })

@@ -177,12 +177,14 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
           editable
         />
 
+        {/* **커밋하는 버튼은 입력과 같은 리듬에 두지 않는다**([[ADR-170]] 정정 6) — 빠른 칩과
+            같은 간격이면 «+100억» 과 «저장» 이 같은 목록의 이웃으로 읽혀 오타건이 곧 저장이다. */}
         <Pressable
           role="button"
           aria-label={editing ? '수정' : '저장'}
           disabled={!canSave || saving}
           onPress={() => void save()}
-          className={`items-center rounded-xl py-3 ${canSave ? 'bg-rise-ink' : 'bg-surface-2'}`}
+          className={`mt-3 items-center rounded-xl py-3 ${canSave ? 'bg-rise-ink' : 'bg-surface-2'}`}
         >
           <Text className={`text-sm font-bold ${canSave ? 'text-bg' : 'text-text-disabled'}`}>
             {editing ? '수정' : '저장'}

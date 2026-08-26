@@ -524,25 +524,31 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
               />
             </View>
 
-            {category === '기타' && (
-              <View className="flex-row flex-wrap gap-1.5">
-                {FREE_CURRENCIES.map((each) => (
-                  <CategoryChip
-                    key={each.id}
-                    label={each.label}
-                    selected={each.id === freeCurrency}
-                    onPress={() => setFreeCurrency(each.id)}
-                  />
-                ))}
-              </View>
-            )}
-
             <MesoAmountField
               meso={typed}
               onChange={setTyped}
               resetLabel="금액 초기화"
               amountTestID="spend-sheet-amount"
               unit={FREE_CURRENCIES.find((each) => each.id === currency)?.unit}
+              /*
+               * 통화는 **갈래가 아니라 금액의 축**이다([[ADR-170]] 정정 6) — 바꾸는 것 넷이 전부
+               * 금액 쪽에 있다(단위 · 시세 칸 · 빠른 칩 · 합계의 셈법). 갈래 칩 바로 밑에 두었더니
+               * 같은 모양 두 줄이 한 무리로 읽혔다(사용자 지적).
+               */
+              unitPicker={
+                category === '기타' ? (
+                  <View className="flex-row flex-wrap gap-1.5">
+                    {FREE_CURRENCIES.map((each) => (
+                      <CategoryChip
+                        key={each.id}
+                        label={each.label}
+                        selected={each.id === freeCurrency}
+                        onPress={() => setFreeCurrency(each.id)}
+                      />
+                    ))}
+                  </View>
+                ) : undefined
+              }
               // 메포·캐시는 자릿수가 작아 메소 칩이 쓸모없다([[ADR-166]] 결정 8 열린 질문).
               mesoHelpers={currency === 'meso'}
               // 칸이 직접 받는다([[ADR-170]] 정정 4) — 이 시트는 사용처·시세 칸 때문에 어차피
@@ -727,6 +733,8 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
           </View>
         )}
 
+        {/* **커밋하는 버튼은 입력과 같은 리듬에 두지 않는다**([[ADR-170]] 정정 6) — 빠른 칩과
+            같은 간격이면 «+100억» 과 «저장» 이 같은 목록의 이웃으로 읽혀 오타건이 곧 저장이다. */}
         <Pressable
           role="button"
           // **보이는 글자와 같아야 한다** — 화면은 「수정」인데 읽어 주는 것이 「저장」이면
@@ -734,7 +742,7 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
           aria-label={editing ? '수정' : '저장'}
           disabled={!canSave || saving}
           onPress={() => void save()}
-          className={`items-center rounded-xl py-3 ${canSave ? 'bg-primary' : 'bg-surface-2'}`}
+          className={`mt-3 items-center rounded-xl py-3 ${canSave ? 'bg-primary' : 'bg-surface-2'}`}
         >
           <Text
             className={`text-sm font-bold ${canSave ? 'text-on-primary' : 'text-text-disabled'}`}

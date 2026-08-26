@@ -29,7 +29,7 @@ jest.mock('@gorhom/bottom-sheet', () => {
   }
 })
 
-import { renderOverlay } from '../../../components/__tests__/render-atom'
+import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
 import { IncomeSheet } from '../IncomeSheet'
 
 type Rendered = Awaited<ReturnType<typeof renderOverlay>>
@@ -172,5 +172,19 @@ describe('저장', () => {
     await 누르기(view, '저장')
 
     expect(onClose).toHaveBeenCalledTimes(1)
+  })
+})
+
+/**
+ * 「저장」은 **폼의 리듬에서 한 칸 벗어난다**([[ADR-170]] 정정 6).
+ *
+ * 빠른 칩과 같은 간격(12px)이면 «+100억» 과 «저장» 이 같은 목록의 이웃으로 읽힌다 — 둘 다 누르는
+ * 것이고 칩이 버튼처럼 생겼으므로, 오타건이 곧 저장이다(사용자 지적).
+ */
+describe('저장은 입력과 붙어 있지 않다 ([[ADR-170]] 정정 6)', () => {
+  it('폼 간격(12)에 한 칸을 더 띄운다', async () => {
+    const view = await 그리기()
+
+    expect(flattenStyle(view.getByLabelText('저장').props.style).marginTop).toBe(12)
   })
 })

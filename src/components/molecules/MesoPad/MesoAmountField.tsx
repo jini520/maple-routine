@@ -43,13 +43,21 @@ export function MesoAmountField(props: {
    * 안 불러서 아끼는 것이 없다.
    */
   editable?: boolean
+  /**
+   * 단위를 고르는 것 — **금액에 속하는 축**이라 여기 산다([[ADR-170]] 정정 6).
+   *
+   * 억/만 보조 줄과 **같은 줄**에 왼쪽으로 놓인다(그 줄은 11px 글자 하나라 거의 비어 있었다).
+   * 지출 시트의 「기타」가 넘기는 통화 칩 셋이 유일한 호출부이고, **안 넘기면 그 줄은 전과
+   * 한 픽셀도 안 다르다** — 드롭 판매가는 통화가 하나뿐이라 안 넘긴다.
+   */
+  unitPicker?: React.ReactNode
 }): React.JSX.Element {
   const mesoHelpers = props.mesoHelpers ?? true
   const amountClass = `text-[32px] font-bold leading-none tracking-[-.03em] ${
     props.meso === 0 ? 'text-text-disabled' : 'text-text'
   }`
   return (
-    <View>
+    <View testID={`${props.amountTestID}-field`}>
       {/* 초기화는 **금액 왼쪽**이다(2026-08-10 사용자 요청). 키패드 자리를 안 뺏고(⌫ 는 한 자씩
           지우는 별개 동작이라 남는다), 고칠 대상인 숫자 바로 옆이라 겨냥이 자명하다. 값이 0 이면
           지울 것이 없으므로 **자리만 지킨다** — 없애면 금액이 좌우로 흔들린다. */}
@@ -96,14 +104,19 @@ export function MesoAmountField(props: {
         <Text className="text-sm font-semibold text-text-muted">{props.unit ?? '메소'}</Text>
       </View>
 
-      {/* 항상 자리를 지킨다 — 0 에서 사라지면 첫 타건에 아래가 통째로 밀린다. */}
-      {mesoHelpers && (
-        <Text
-          className="mt-1.5 min-h-4 text-right text-[11px] text-text-muted"
-          style={TABULAR_NUMS}
+      {/* 항상 자리를 지킨다 — 0 에서 사라지면 첫 타건에 아래가 통째로 밀린다. 단위 고르개가
+          있으면 그 줄을 **나눠 쓴다**(왼쪽 고르개 · 오른쪽 억/만) — 높이는 칩에 맞춰 커진다. */}
+      {(mesoHelpers || props.unitPicker !== undefined) && (
+        <View
+          className={`mt-1.5 flex-row items-center gap-2 ${
+            props.unitPicker === undefined ? 'min-h-4' : 'min-h-7'
+          }`}
         >
-          {props.meso > 0 ? formatMesoUnits(props.meso) : ''}
-        </Text>
+          {props.unitPicker}
+          <Text className="ml-auto text-right text-[11px] text-text-muted" style={TABULAR_NUMS}>
+            {mesoHelpers && props.meso > 0 ? formatMesoUnits(props.meso) : ''}
+          </Text>
+        </View>
       )}
 
       {/* 다섯 개가 390px 한 줄에 들어가도록 여백·글자를 한 단계 줄였다. `flex-wrap` 은 안전장치다 —
