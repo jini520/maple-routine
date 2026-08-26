@@ -45,7 +45,7 @@
 | 오케스트레이션 | `features/cashbook/records.ts` | 행의 신원(`id`·`recordedAt`) · 시세 기억 · **네 원천을 하루로 접기** · 줄의 표기(`recordTitleOf`·`recordCountLabelOf`) · **그날 합계**(`dayTotalsOf`) |
 | 보스 날짜 캐기 | `features/boss-profit/defeat-dates.ts` | 날짜별 응답을 훑어 «뒤집힌 날» 을 찾아 `defeated_on` 을 채운다([[ADR-172]]) |
 | 입력 | `app/cashbook/SpendSheet.tsx` · `IncomeSheet.tsx` · `components/organisms/SpeedDial/`(`speed-dial-motion` 움직임 · `speed-dial-metrics` 치수) | 떠 있는 ＋ → 갈래 둘 → 시트 |
-| 금액 키패드 | `components/molecules/MesoPad/` | 금액 칸 · 빠른 칩 · 3열 그리드. **드롭 판매가와 같은 부품**이다 |
+| 금액 칸 | `components/molecules/MesoPad/`(`MesoAmountField editable` · `parseMesoText`) | 금액 칸 · 초기화 · 억/만 줄 · 빠른 칩. **드롭 판매가와 같은 부품**이되 **여기서는 칸이 직접 받는다** — OS 숫자 키보드다([[ADR-170]] 정정 4). 3열 그리드(`MesoKeypad`)는 드롭 판매가에만 남는다 |
 | 보스 타일 | `components/molecules/BossPortrait/`(`shape`) · `components/atoms/DifficultyBadge/`(`short`) + `app/boss-profit/character-groups.ts` 의 `findPortraitSlug` | 펼친 결정석 줄이 그리는 네모 타일([[ADR-172]] 정정 1·2) — **셋 다 보스 수익 탭이 쓰는 그것**이고, 프롭 둘이 «네모» 와 «한 칸 글자» 만 더한다 |
 | 화면 | `app/cashbook/CashbookScreen.tsx` | 주간/월간 전환 + 기간 이동 + 격자 + 고른 날의 상세 + **결정석 줄 펼치기** |
 

@@ -442,8 +442,11 @@ describe('저장', () => {
 //
 // 목록 갈래 셋과 폼이 통째로 다르다 — 고를 것이 없고 **금액을 친다.**
 
-async function 치기(view: Rendered, ...keys: string[]): Promise<void> {
-  for (const key of keys) await 누르기(view, key)
+/** 금액 칸에 **친다** — OS 숫자 키보드다([[ADR-170]] 정정 4). 칸이 콤마째 값을 받는다. */
+async function 치기(view: Rendered, text: string): Promise<void> {
+  await act(async () => {
+    fireEvent.changeText(view.getByTestId('spend-sheet-amount'), text)
+  })
 }
 
 describe('아이템 구매', () => {
@@ -454,6 +457,19 @@ describe('아이템 구매', () => {
 
     expect(view.queryByText('에픽던전 추가 리워드')).toBeNull()
     expect(view.getByTestId('spend-sheet-amount')).toBeTruthy()
+  })
+
+  /**
+   * 금액은 **OS 숫자 키보드**다([[ADR-170]] 정정 4). 앱 키패드를 안 두는 이유는 이 시트가
+   * 사용처·시세 칸 때문에 **어차피 키보드를 부르기** 때문이다.
+   */
+  it('앱 키패드를 안 그리고 숫자 키보드를 부른다', async () => {
+    const view = await 그리기()
+
+    await 누르기(view, '아이템 구매')
+
+    expect(view.queryByLabelText('한 자리 지우기')).toBeNull()
+    expect(view.getByTestId('spend-sheet-amount').props.keyboardType).toBe('number-pad')
   })
 
   it('금액이 0 이면 저장할 수 없다', async () => {
@@ -469,17 +485,17 @@ describe('아이템 구매', () => {
   it('관세를 켜도 친 금액은 그대로다', async () => {
     const view = await 그리기()
     await 누르기(view, '아이템 구매')
-    await 치기(view, '8', '5', '00', '00', '00', '0')
+    await 치기(view, '850000000')
 
     await 누르기(view, '관세 10%')
 
-    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('850,000,000')
+    expect(view.getByTestId('spend-sheet-amount').props.value).toBe('850,000,000')
   })
 
   it('관세를 켜면 합계가 10% 는다', async () => {
     const view = await 그리기()
     await 누르기(view, '아이템 구매')
-    await 치기(view, '8', '5', '00', '00', '00', '0')
+    await 치기(view, '850000000')
 
     await 누르기(view, '관세 10%')
 
@@ -489,7 +505,7 @@ describe('아이템 구매', () => {
   it('껐다 켜도 부풀지 않는다', async () => {
     const view = await 그리기()
     await 누르기(view, '아이템 구매')
-    await 치기(view, '8', '5', '00', '00', '00', '0')
+    await 치기(view, '850000000')
 
     await 누르기(view, '관세 10%')
     await 누르기(view, '관세 10%')
@@ -503,7 +519,7 @@ describe('아이템 구매', () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
     await 누르기(view, '아이템 구매')
-    await 치기(view, '8', '5', '00', '00', '00', '0')
+    await 치기(view, '850000000')
     await 누르기(view, '관세 10%')
 
     await act(async () => {
@@ -525,7 +541,7 @@ describe('아이템 구매', () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
     await 누르기(view, '아이템 구매')
-    await 치기(view, '1', '00')
+    await 치기(view, '100')
 
     await 누르기(view, '저장')
 
@@ -594,7 +610,7 @@ describe('기타 — 캐시가 사는 유일한 자리', () => {
     const view = await 그리기({ onSave })
     await 누르기(view, '기타')
     await 누르기(view, '캐시')
-    await 치기(view, '6', '9', '00')
+    await 치기(view, '6900')
 
     await 누르기(view, '저장')
 
@@ -620,7 +636,7 @@ describe('기타 — 캐시가 사는 유일한 자리', () => {
     const view = await 그리기({ onSave, lastPointRate: 1_180 })
     await 누르기(view, '기타')
     await 누르기(view, '메포')
-    await 치기(view, '3', '00', '00')
+    await 치기(view, '30000')
 
     await 누르기(view, '저장')
 
@@ -634,11 +650,11 @@ describe('기타 — 캐시가 사는 유일한 자리', () => {
   it('통화를 바꿔도 친 금액은 남는다 — 단위만 갈린다', async () => {
     const view = await 그리기()
     await 누르기(view, '기타')
-    await 치기(view, '1', '2', '3')
+    await 치기(view, '123')
 
     await 누르기(view, '캐시')
 
-    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('123')
+    expect(view.getByTestId('spend-sheet-amount').props.value).toBe('123')
   })
 })
 

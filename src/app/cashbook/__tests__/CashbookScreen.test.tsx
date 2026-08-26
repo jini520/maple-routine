@@ -108,6 +108,13 @@ async function 이름으로누르기(view: Rendered, label: string): Promise<voi
   })
 }
 
+/** 수입 시트의 금액 칸에 **친다** — OS 숫자 키보드다([[ADR-170]] 정정 4). */
+async function 금액치기(view: Rendered, text: string): Promise<void> {
+  await act(async () => {
+    fireEvent.changeText(view.getByTestId('income-sheet-amount'), text)
+  })
+}
+
 describe('CashbookScreen — 자리와 머리', () => {
   it('화면과 제목이 «가계부» 다', async () => {
     const view = await 그리기()
@@ -529,7 +536,7 @@ describe('펼침판이 시트를 연다', () => {
     const view = await 그리기()
     await 고르기(view, '수입 추가')
 
-    await 이름으로누르기(view, '1')
+    await 금액치기(view, '1')
     await 이름으로누르기(view, '저장')
     await act(async () => {})
 
@@ -546,7 +553,7 @@ describe('펼침판이 시트를 연다', () => {
     const view = await 그리기()
     await 고르기(view, '수입 추가')
 
-    await 이름으로누르기(view, '1')
+    await 금액치기(view, '1')
     await 이름으로누르기(view, '저장')
     await act(async () => {})
 
@@ -572,7 +579,7 @@ describe('저장이 실패하면', () => {
     const view = await 그리기()
     await 고르기(view, '수입 추가')
 
-    await 이름으로누르기(view, '1')
+    await 금액치기(view, '1')
     await 이름으로누르기(view, '저장')
     await act(async () => {})
 
@@ -726,7 +733,7 @@ describe('줄을 누르면 고칠 수 있다', () => {
     await 누르기(view, 'cashbook-row-inc-1')
 
     expect(view.getByText('수입 수정')).toBeTruthy()
-    expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('1,200,000,000')
+    expect(view.getByTestId('income-sheet-amount').props.value).toBe('1,200,000,000')
   })
 
   it('수정하면 갈아 끼우고 다시 읽는다', async () => {

@@ -7,17 +7,20 @@
  * 「지출」이라는 사실조차 프롭으로 받지 않는다 — 애초에 지출만 그리는 컴포넌트다. 나중에 진입점을
  * 바꿔도 여기가 안 바뀌는 것이 그 결정이 산 값이다.
  *
- * ## 금액을 안 친다
+ * ## 고르는 갈래는 금액을 안 친다
  *
- * 사용자가 준 24항목에 **전부 가격이 붙어 있다**([[ADR-166]] 정정 1 ①). 그래서 이 시트에는
- * 앞 키패드가 없고, 고르면 단가가 그대로 금액이 되며 수량만 조절한다. 곱셈은 **앱이 한다** —
+ * 사용자가 준 24항목에 **전부 가격이 붙어 있다**([[ADR-166]] 정정 1 ①). 그래서 그 셋에는 금액
+ * 칸이 없고, 고르면 단가가 그대로 금액이 되며 수량만 조절한다. 곱셈은 **앱이 한다** —
  * 사용자가 대신하면 «몇 포인트 썼나» 를 나중에 되물을 수 없다(정정 1 ③).
  *
- * ## 지금은 목록 갈래 셋뿐이다
+ * ## 직접 입력 둘은 **OS 숫자 키보드**로 친다 ([[ADR-170]] 정정 4)
  *
- * 직접 입력 둘(아이템 구매 · 기타)은 **앞 키패드가 서야 성립한다.** 그때까지 **누를 수 없는 칩을
- * 세우지 않는다** — [[ADR-132]] 결정 12 의 껍데기를 되풀이하지 않는다. 칩 목록은 하드코딩이 아니라
- * **«목록이 있는 갈래»로 파생**하므로, 키패드가 서면 이 파일에서 지울 것이 없다.
+ * 아이템 구매·기타는 고를 목록이 없어 금액을 친다. 그 자리에 앱 키패드를 두지 않는 이유는 **이
+ * 시트가 어차피 키보드를 부르기 때문**이다 — 사용처(글자)와 시세(숫자 넉 자)가 이미 부른다.
+ * [[ADR-124]] 결정 5 의 «안 부르면 보정할 것이 없다» 는 이 시트에서 성립하지 않는다.
+ *
+ * 걷은 것은 12칸 그리드뿐이고 **초기화·억/만 줄·빠른 칩은 그대로다** — OS 키패드엔 `00` 이 없어
+ * 억 단위를 치려면 0 을 여덟 번 눌러야 한다.
  *
  * ## 날짜는 고르지 않는다
  *
@@ -31,8 +34,6 @@ import { Pressable, View } from 'react-native'
 // `TextInput` 도 atom 에서 온다 — 시스템 글자 크기 클램프가 거기 있다([[ADR-152]] 결정 4).
 import { Text, TextInput } from '../../components/atoms/Text/Text'
 import { MesoAmountField } from '../../components/molecules/MesoPad/MesoAmountField'
-import { MesoKeypad } from '../../components/molecules/MesoPad/MesoKeypad'
-import { applyMesoKey } from '../../components/molecules/MesoPad/meso-pad'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import { formatDayLabel } from '../../lib/calendar-month'
 import { CheckIcon, ChevronLeftIcon, MinusIcon, PlusIcon } from '../../lib/icons'
@@ -544,11 +545,10 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
               unit={FREE_CURRENCIES.find((each) => each.id === currency)?.unit}
               // 메포·캐시는 자릿수가 작아 메소 칩이 쓸모없다([[ADR-166]] 결정 8 열린 질문).
               mesoHelpers={currency === 'meso'}
+              // 칸이 직접 받는다([[ADR-170]] 정정 4) — 이 시트는 사용처·시세 칸 때문에 어차피
+              // 키보드를 부르므로 «숫자를 넣는 방법» 을 둘로 두지 않는다.
+              editable
             />
-
-            <View className="-mx-1">
-              <MesoKeypad onKey={(key) => setTyped((prev) => applyMesoKey(prev, key))} />
-            </View>
           </View>
         ) : (
           // **여기에 스크롤을 두지 않는다.** 시트 껍데기가 이미 `BottomSheetScrollView` 이고

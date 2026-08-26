@@ -1,10 +1,15 @@
 /**
- * 앞 키패드의 **타건 규칙**([[ADR-124]] 결정 5) — 판정과 그리기를 가른다([[ADR-147]] 결정 8).
+ * 금액을 치는 **두 길의 규칙** — 판정과 그리기를 가른다([[ADR-147]] 결정 8).
  *
- * 이 키패드가 존재하는 이유는 **OS 키보드를 안 부르기 위해서**다. 메소는 자릿수가 커서 시스템
- * 숫자 키패드로는 0 을 세게 되고(`keyboardType="numeric"` 이 못 고치는 것이 그것이다),
- * `KeyboardAvoidingView` 는 플랫폼마다 동작이 갈리는 데다 시트의 동적 높이와 겹친다.
- * **앱이 자기 키패드를 그리면 보정할 것이 애초에 없다.**
+ * ① `applyMesoKey` — **앱 키패드**의 타건([[ADR-124]] 결정 5). 그 키패드가 있는 이유는 «OS 키보드를
+ *    안 부르기 위해서» 이고, 안 부르면 `KeyboardAvoidingView` 도 시트 높이 보정도 필요 없어진다.
+ *    **그 이득은 그 화면이 키보드를 한 번도 안 부를 때만 있다** — 지금 그런 화면은 `DropPricePad`
+ *    하나다([[ADR-170]] 정정 4).
+ * ② `parseMesoText` — **OS 숫자 키보드**가 넣은 글자([[ADR-170]] 정정 4). 가계부의 지출·수입 시트는
+ *    사용처·시세 칸 때문에 어차피 키보드를 부르므로, 그 위에 앱 키패드를 또 두지 않는다.
+ *
+ * **상한 규칙은 둘이 같다** — 넘기는 입력은 안 먹는다. 갈라지면 «어느 길로 쳤나» 로 저장되는 값이
+ * 달라진다.
  */
 
 /** 자릿수 상한 — 조 단위를 넘기면 `Number` 정밀도가 아니라 **화면이 먼저 깨진다.** */
@@ -38,5 +43,25 @@ export function applyMesoKey(meso: number, key: MesoKey): number {
     return Math.floor(meso / 10)
   }
   const next = Number(`${meso}${key}`)
+  return Number.isFinite(next) && next <= MAX_MESO ? next : meso
+}
+
+/**
+ * 칸에 들어온 글자를 값으로 — **숫자만 남긴다.**
+ *
+ * 칸이 콤마를 그리므로 들어오는 글자에 콤마가 섞이고, 붙여넣기·자동완성은 그 밖의 것도 들여보낸다.
+ * 다 걷고 남은 자릿수가 값이다(앞자리 0 은 `Number` 가 접는다).
+ *
+ * **다 지우면 0 이다** — 「그대로 둔다」로 하면 지운 것이 화면에 다시 나타난다.
+ *
+ * 상한을 넘기면 **안 먹는다**(`applyMesoKey` 와 같은 규칙) — 잘라 넣으면 사용자가 친 것과 다른
+ * 값이 남는다.
+ */
+export function parseMesoText(meso: number, text: string): number {
+  const digits = text.replace(/[^0-9]/g, '')
+  if (digits === '') {
+    return 0
+  }
+  const next = Number(digits)
   return Number.isFinite(next) && next <= MAX_MESO ? next : meso
 }

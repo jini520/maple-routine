@@ -39,8 +39,11 @@ async function 누르기(view: Rendered, label: string): Promise<void> {
   })
 }
 
-async function 치기(view: Rendered, ...keys: string[]): Promise<void> {
-  for (const key of keys) await 누르기(view, key)
+/** 금액 칸에 **친다** — OS 숫자 키보드다([[ADR-170]] 정정 4). 칸이 콤마째 값을 받는다. */
+async function 치기(view: Rendered, text: string): Promise<void> {
+  await act(async () => {
+    fireEvent.changeText(view.getByTestId('income-sheet-amount'), text)
+  })
 }
 
 describe('갈래', () => {
@@ -72,24 +75,59 @@ describe('갈래', () => {
   })
 })
 
-describe('금액 — 앞 키패드다', () => {
-  // OS 키보드를 안 부른다([[ADR-124]] 결정 5) — 메소는 자릿수가 커서 시스템 키패드로는 0 을 센다.
-  it('친 자리가 왼쪽으로 자란다', async () => {
+/**
+ * 금액은 **OS 숫자 키보드**다([[ADR-170]] 정정 4). 앱 키패드를 안 두는 이유는 이 시트가 사용처
+ * 칸 때문에 **어차피 키보드를 부르기** 때문이다 — [[ADR-124]] 결정 5 의 전제가 여기엔 없다.
+ */
+describe('금액 — OS 숫자 키보드다 ([[ADR-170]] 정정 4)', () => {
+  it('앱 키패드를 안 그린다', async () => {
     const view = await 그리기()
 
-    await 치기(view, '1', '2', '00')
-
-    expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('1,200')
+    expect(view.queryByLabelText('한 자리 지우기')).toBeNull()
+    expect(view.queryByLabelText('00')).toBeNull()
   })
 
-  it('빠른 칩이 더한다', async () => {
+  it('숫자 키보드를 부른다 — 글자 키보드가 아니다', async () => {
+    const view = await 그리기()
+
+    expect(view.getByTestId('income-sheet-amount').props.keyboardType).toBe('number-pad')
+  })
+
+  it('친 값이 콤마째 선다', async () => {
+    const view = await 그리기()
+
+    await 치기(view, '1200')
+
+    expect(view.getByTestId('income-sheet-amount').props.value).toBe('1,200')
+  })
+
+  // 칸이 콤마를 그리므로 다음 타건은 콤마째 들어온다 — 그것을 걷어야 값이 안 깨진다.
+  it('콤마가 섞여 들어와도 값이 안 깨진다', async () => {
+    const view = await 그리기()
+
+    await 치기(view, '1,2000')
+
+    expect(view.getByTestId('income-sheet-amount').props.value).toBe('12,000')
+  })
+
+  // 「0」 을 값으로 두면 그 뒤에 친 숫자가 붙어 자릿수가 하나 는다.
+  it('0 이면 칸을 비우고 자리표시자로 「0」 을 둔다', async () => {
+    const view = await 그리기()
+
+    const 칸 = view.getByTestId('income-sheet-amount')
+    expect(칸.props.value).toBe('')
+    expect(칸.props.placeholder).toBe('0')
+  })
+
+  // OS 키패드엔 `00` 이 없어 억 단위를 치려면 0 을 여덟 번 눌러야 한다 — 칩이 그 자리를 막는다.
+  it('빠른 칩이 더한다 — 키패드를 걷어도 칩은 남는다', async () => {
     const view = await 그리기()
 
     await act(async () => {
       fireEvent.press(view.getByText('+1억'))
     })
 
-    expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('100,000,000')
+    expect(view.getByTestId('income-sheet-amount').props.value).toBe('100,000,000')
   })
 
   it('금액이 0 이면 저장할 수 없다', async () => {
@@ -105,7 +143,7 @@ describe('저장', () => {
     const view = await 그리기({ onSave })
 
     await 누르기(view, '사냥')
-    await 치기(view, '1', '2')
+    await 치기(view, '12')
     await 누르기(view, '저장')
 
     expect(onSave).toHaveBeenCalledTimes(1)

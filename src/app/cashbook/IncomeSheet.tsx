@@ -10,13 +10,16 @@
  * 보스 드롭은 이 시트로 안 들어온다([[ADR-170]] 결정 3) — 이미 보스 수익 탭이 기록하고, 두 곳에서
  * 적으면 같은 판매가 두 벌이 된다. 캘린더는 그것을 **읽어서** 같은 목록에 세우되 여기서 못 고친다.
  *
- * ## 금액은 앞 키패드다
+ * ## 금액도 **OS 키보드**다 ([[ADR-170]] 정정 4)
  *
- * OS 키보드를 안 부른다([[ADR-124]] 결정 5) — 메소는 자릿수가 커서 시스템 숫자 키패드로는 0 을
- * 세게 된다. 칸과 그리드는 `molecules/MesoPad` 가 든다(드롭 판매가와 **같은 부품**이다).
+ * [[ADR-124]] 결정 5 가 앱 키패드를 세운 이유는 «OS 키보드를 안 부르기 위해서» 였는데, **이 시트는
+ * 이름 칸 때문에 어차피 부른다** — 안 불러서 아끼는 것이 없고 «숫자를 넣는 방법» 만 둘이 된다.
+ * 그래서 키패드를 걷고 금액 칸이 직접 받는다(`editable`, `number-pad`).
  *
- * **다만 이름 칸은 OS 키보드를 부른다** — 글자를 받는 자리라 대안이 없다. 시트가 동적 높이라
- * 키보드가 뜨면 밀릴 수 있고, 그것은 실기기에서 볼 것이다.
+ * **걷은 것은 12칸 그리드뿐이다** — 초기화·억/만 줄·빠른 칩은 그대로다. OS 키패드엔 `00` 이 없어
+ * 억 단위를 치려면 0 을 여덟 번 눌러야 하고, 칩이 그 자리를 막는다.
+ *
+ * 시트가 동적 높이라 키보드가 뜨면 밀릴 수 있고, 그것은 실기기에서 볼 것이다.
  */
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'
@@ -24,8 +27,6 @@ import { Pressable, View } from 'react-native'
 // `TextInput` 도 atom 에서 온다 — 시스템 글자 크기 클램프가 거기 있다([[ADR-152]] 결정 4).
 import { Text, TextInput } from '../../components/atoms/Text/Text'
 import { MesoAmountField } from '../../components/molecules/MesoPad/MesoAmountField'
-import { MesoKeypad } from '../../components/molecules/MesoPad/MesoKeypad'
-import { applyMesoKey } from '../../components/molecules/MesoPad/meso-pad'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import { formatDayLabel } from '../../lib/calendar-month'
 import { TABULAR_NUMS } from '../../lib/text-styles'
@@ -173,13 +174,8 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
           onChange={setMeso}
           resetLabel="금액 초기화"
           amountTestID="income-sheet-amount"
+          editable
         />
-
-        {/* 시트 껍데기가 좌우 여백을 안 주므로 키패드는 자기 몫(`px-3`)을 들고 온다 — 위 칸들과
-            정렬을 맞추려고 그만큼 되돌린다. */}
-        <View className="-mx-1">
-          <MesoKeypad onKey={(key) => setMeso((prev) => applyMesoKey(prev, key))} />
-        </View>
 
         <Pressable
           role="button"
