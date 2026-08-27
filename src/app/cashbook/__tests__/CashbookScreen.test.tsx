@@ -645,6 +645,12 @@ const 그날수입 = {
   category: '아이템 판매',
   item: '앱솔랩스 케이프',
   mesoAmount: 1_200_000_000,
+  saleFeePercent: null,
+  saleFeeMeso: null,
+  // 수입도 통화 칸 셋을 든다([[ADR-170]] 정정 15) — 안 쓴 통화는 `null` 이다.
+  pointAmount: null,
+  pointPer100mMeso: null,
+  cashAmount: null,
   memo: null,
   recordedAt: '2026-08-23T01:00:00.000Z',
 }

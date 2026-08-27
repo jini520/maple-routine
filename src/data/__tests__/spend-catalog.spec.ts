@@ -15,6 +15,7 @@ const items = spendCatalog.items as {
   unit: string
   forms?: string[]
   limit?: string
+  maxQuantity?: number
   note?: string
   seasonal?: boolean
 }[]
@@ -108,8 +109,8 @@ describe('spend-catalog.json — 닻 (사용자 확인값, 2026-08-23)', () => {
   it('묶음마다 대표값 하나가 고정돼 있다', () => {
     expect(priceOf('하이마운틴 1단계')).toBe(7500)
     expect(priceOf('몬스터 파크')).toBe(600)
-    expect(priceOf('미호로이드 교환권')).toBe(7500)
-    expect(priceOf('에픽던전 퀵패스')).toBe(5000)
+    expect(priceOf('미호로이드')).toBe(7500)
+    expect(priceOf('에픽던전')).toBe(5000)
     expect(priceOf('닉네임 변경')).toBe(15000)
     expect(priceOf('콜렉터의 영약')).toBe(20000000)
   })
@@ -136,6 +137,47 @@ describe('spend-catalog.json — 닻 (사용자 확인값, 2026-08-23)', () => {
   it('메소로 사는 것은 버프 물약뿐이다', () => {
     for (const item of items) {
       expect(item.currency).toBe(item.group === '버프 물약' ? 'meso' : 'point')
+    }
+  })
+})
+
+/**
+ * **묶음 표는 «지금 열렸나» 를 든다**([[ADR-166]] 정정 5).
+ *
+ * 기간제 이벤트(메이플 포인트 샵)는 열릴 때와 안 열릴 때가 있고 품목도 갈린다. 그 사실을 **날짜로
+ * 판정하지 않는 것**이 결정이라(미뤄지는 날 앱이 거짓말을 한다) 여기 적힌 값이 곧 사실이다.
+ */
+describe('spend-catalog.json — 묶음 표 ([[ADR-166]] 정정 5)', () => {
+  it('표에 적힌 묶음은 실제로 있는 묶음이다', () => {
+    const groups = new Set(items.map((item) => item.group))
+
+    for (const name of Object.keys(spendCatalog.groups)) {
+      expect(groups).toContain(name)
+    }
+  })
+
+  it('메이플 포인트 샵은 지금 안 열려 있다 (사용자 확인 2026-08-27)', () => {
+    expect(spendCatalog.groups['메이플 포인트 샵'].active).toBe(false)
+  })
+
+  it('표에 없는 묶음은 언제나 열린 것이다 — 닫힘을 적는 자리만 있다', () => {
+    expect(Object.keys(spendCatalog.groups)).toEqual(['메이플 포인트 샵'])
+  })
+})
+
+/**
+ * **상한이 1이면 셀 것이 없다**([[ADR-170]] 정정 14 ①).
+ *
+ * 에픽던전 추가 리워드는 메이플 ID 당 주 1회라(사용자 확인 2026-08-27) 수량이 오르내릴 자리가 없다.
+ * 화면은 이 값으로 수량 줄을 세울지 정하므로, 여기가 바뀌면 그 줄이 조용히 되살아난다.
+ */
+describe('spend-catalog.json — 수량 상한 ([[ADR-170]] 정정 14 ①)', () => {
+  it('에픽던전 추가 리워드 여섯은 상한이 1이다', () => {
+    const epic = items.filter((item) => item.group === '에픽던전 추가 리워드')
+
+    expect(epic).toHaveLength(6)
+    for (const item of epic) {
+      expect(item.maxQuantity).toBe(1)
     }
   })
 })

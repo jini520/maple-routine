@@ -66,12 +66,21 @@ export async function recordSpend(draft: SpendDraft, now: Date): Promise<void> {
 }
 
 /**
- * 지출 한 건의 **메소 축 금액**([[ADR-166]] 정정 2 ①).
+ * 손입력 한 건의 **메소 축 금액**([[ADR-166]] 정정 2 ① · [[ADR-170]] 정정 15).
  *
- * 메소로 낸 것 + 메소마켓 시세로 환산한 메포다. **캐시는 안 든다** — 환산 자체를 안 하므로
- * (현금과 게임 재화의 교환비가 실제로 성립하는 경로가 운영정책 위반 거래다) 캐시 지출이 있는 날은
- * 이 값이 그날 지출의 전부가 아니다. 그 사실은 고른 날의 상세가 따로 말한다.
+ * 메소로 낸(번) 것 + 메소마켓 시세로 환산한 메포다. **캐시는 안 든다** — 환산 자체를 안 하므로
+ * (현금과 게임 재화의 교환비가 실제로 성립하는 경로가 운영정책 위반 거래다) 캐시가 낀 날은
+ * 이 값이 그날의 전부가 아니다. 그 사실은 고른 날의 상세가 따로 말한다.
+ *
+ * **수입과 지출이 같은 식이다** — 그래야 «수입 − 지출» 이 한 자로 재인다. 두 테이블이 같은 칸
+ * 이름을 쓰는 이유가 이것이다(정정 15 결정 3).
  */
+export function incomeMesoOf(record: IncomeRecord): number {
+  const meso = record.mesoAmount ?? 0
+  if (record.pointAmount === null || record.pointPer100mMeso === null) return meso
+  return meso + pointToMeso(record.pointAmount, record.pointPer100mMeso)
+}
+
 export function spendMesoOf(record: SpendRecord): number {
   const meso = record.mesoAmount ?? 0
   if (record.pointAmount === null || record.pointPer100mMeso === null) return meso
@@ -237,7 +246,7 @@ export async function loadCalendarAmounts(
 
   const amounts: Record<string, CalendarDayAmounts> = {}
   for (const income of incomes) {
-    addTo(amounts, income.earnedOn, { incomeMeso: income.mesoAmount })
+    addTo(amounts, income.earnedOn, { incomeMeso: incomeMesoOf(income) })
   }
   for (const spend of spends) {
     addTo(amounts, spend.spentOn, { expenseMeso: spendMesoOf(spend) })
@@ -537,7 +546,7 @@ export function recordTitleOf(entry: DayRecord): string {
 /** 줄의 **메소 축** 금액. 캐시는 환산을 안 하므로 0 이다([[ADR-166]] 정정 2 ①). */
 export function recordMesoOf(entry: DayRecord): number {
   if (!isManualRecord(entry)) return entry.payoutMeso
-  return entry.kind === 'income' ? entry.record.mesoAmount : spendMesoOf(entry.record)
+  return entry.kind === 'income' ? incomeMesoOf(entry.record) : spendMesoOf(entry.record)
 }
 
 /**
@@ -568,9 +577,15 @@ export function dayTotalsOf(entries: readonly DayRecord[]): CalendarDayAmounts {
   return { incomeMeso, expenseMeso }
 }
 
-/** 캐시로 낸 지출만 값을 준다 — 그 줄은 메소가 아니라 **원**으로 적힌다. */
+/**
+ * 캐시로 낸(번) 줄만 값을 준다 — 그 줄은 메소가 아니라 **원**으로 적힌다.
+ *
+ * 수입도 같다([[ADR-170]] 정정 15) — 이벤트 보상이 캐시로 들어오는 자리가 있고, 환산을 안 하는
+ * 것도 지출과 같은 이유다.
+ */
 export function recordCashOf(entry: DayRecord): number | null {
-  return entry.kind === 'spend' ? entry.record.cashAmount : null
+  if (entry.kind === 'spend') return entry.record.cashAmount
+  return entry.kind === 'income' ? entry.record.cashAmount : null
 }
 
 /**

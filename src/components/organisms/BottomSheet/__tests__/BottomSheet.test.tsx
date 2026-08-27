@@ -124,17 +124,22 @@ describe('BottomSheet — [[ADR-039]] 가 정한 값을 넘긴다', () => {
   })
 
   /**
-   * 라이브러리는 창 모드를 **자기가 안 바꾼다** — 이 프롭은 «앱이 지금 어느 모드인가» 를 알려
-   * 주는 것이고, 그 값으로 자기 보정량을 정한다([[ADR-170]] 정정 5).
+   * 라이브러리는 창 모드를 **자기가 안 바꾼다** — 이 프롭은 «키보드가 뜰 때 창이 실제로 어떻게
+   * 되는가» 를 알려 주는 것이고, 그 값으로 자기 보정량을 정한다([[ADR-170]] 정정 11).
    *
-   * 기본값 `adjustPan` 을 그대로 두면 안드로이드에서 **두 번 밀린다** — 매니페스트가
-   * `adjustResize` 라 OS 가 이미 창을 줄여 시트를 올려 놓은 위에, 라이브러리가 키보드 높이만큼
-   * 또 올린다.
+   * **매니페스트의 `adjustResize` 를 믿으면 안 된다** — 이 앱은 edge-to-edge 라
+   * (`android/gradle.properties` 의 `edgeToEdgeEnabled=true`) 그 값이 죽어 있다. 계측(API 36,
+   * 2026-08-27): 키보드가 312dp 떠도 `Dimensions.get('window').height` 는 914.29 그대로였고
+   * 내용도 안 밀렸다 — **OS 는 아무것도 안 한다.**
+   *
+   * 그런데 `adjustResize` 를 넘기면 라이브러리는 «OS 가 이미 했겠지» 라며 자기 보정을 0 으로
+   * 둔다(소스: `heightWithinContainer = 0` 후 early return). 그래서 시트가 키보드에 그대로
+   * 가렸다. `adjustPan` 이 사실이다 — «창은 안 움직인다, 네가 올려라».
    */
-  it('안드로이드 창 모드를 매니페스트와 같게 알려 준다 — adjustResize', async () => {
+  it('창이 안 움직인다고 알려 준다 — adjustPan (edge-to-edge 라 adjustResize 는 죽은 값)', async () => {
     const { getByTestId } = await open()
 
-    expect(getByTestId('sheet').props.android_keyboardInputMode).toBe('adjustResize')
+    expect(getByTestId('sheet').props.android_keyboardInputMode).toBe('adjustPan')
   })
 
   /**

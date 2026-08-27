@@ -29,7 +29,7 @@
  * 자리가 둘이 된다.
  */
 import { useState } from 'react'
-import { Pressable, View } from 'react-native'
+import { Image, Pressable, View } from 'react-native'
 
 // `TextInput` 도 atom 에서 온다 — 시스템 글자 크기 클램프가 거기 있다([[ADR-152]] 결정 4).
 import { Text, TextInput } from '../../components/atoms/Text/Text'
@@ -42,6 +42,14 @@ import { characterOptions } from './character-options'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import { formatDayLabel } from '../../lib/calendar-month'
 import { formatMesoUnits } from '../../lib/drop-price'
+import { spendIconOf } from '../../lib/spend-icons'
+import {
+  FREE_CURRENCIES,
+  FREE_CURRENCY_LABELS,
+  currencyOfLabel,
+  labelOfCurrency,
+  type FreeCurrency,
+} from '../../lib/free-currency'
 import { CheckIcon, ChevronLeftIcon, MinusIcon, PlusIcon } from '../../lib/icons'
 import { formatMesoCompact } from '../../lib/meso-compact'
 import {
@@ -112,24 +120,18 @@ function initialStateOf(record: SpendRecord | undefined): {
 /** 저장할 값에서 **어댑터가 아니라 화면이 정하는 것 둘**(`id`·`recordedAt`)을 뺀 나머지. */
 export type SpendDraft = Omit<SpendRecord, 'id' | 'recordedAt'>
 
-/** 「기타」가 고르는 통화 셋([[ADR-166]] 결정 1 · 정정 1 ④) — **캐시가 사는 유일한 자리**다. */
-const FREE_CURRENCIES = [
-  { id: 'meso', label: '메소', unit: '메소' },
-  { id: 'point', label: '메포', unit: '메포' },
-  { id: 'cash', label: '캐시', unit: '원' },
-] as const
-
-type FreeCurrency = (typeof FREE_CURRENCIES)[number]['id']
-
-/** 세그먼트는 **글자**를 고른다 — 아이디와 라벨 사이를 여기서 옮긴다. */
-const FREE_CURRENCY_LABELS = FREE_CURRENCIES.map((each) => each.label)
-
-function labelOfCurrency(id: FreeCurrency): string {
-  return FREE_CURRENCIES.find((each) => each.id === id)?.label ?? '메소'
-}
-
-function currencyOfLabel(label: string): FreeCurrency {
-  return FREE_CURRENCIES.find((each) => each.label === label)?.id ?? 'meso'
+/**
+ * 직접 입력 칸의 **이름은 갈래가 정한다**([[ADR-170]] 정정 14 ②).
+ *
+ * 아이템 구매에서 그 칸이 묻는 것은 «무엇을 샀나» 이지 어디에 썼나가 아니다. 수입 시트가 이미
+ * `NAME_LABELS` 로 하는 그 일이고, 여기서도 **갈래 하나에 이름 하나**다.
+ */
+const NAME_LABELS: Record<SpendCategory, string> = {
+  컨텐츠: '사용처',
+  '이벤트·BM': '사용처',
+  버프: '사용처',
+  '아이템 구매': '구매 아이템',
+  기타: '사용처',
 }
 
 /**
@@ -142,11 +144,25 @@ function FieldRow(props: {
   label: string
   children: React.ReactNode
   testID?: string
+  labelTestID?: string
 }): React.JSX.Element {
   return (
-    <View testID={props.testID} className="flex-row items-center gap-3 border-b border-border pb-2">
-      <Text className="shrink-0 text-xs text-text-muted">{props.label}</Text>
-      <View className="ml-auto flex-row items-center">{props.children}</View>
+    <View
+      testID={props.testID}
+      className="min-h-7 flex-row items-center gap-3 border-b border-border pb-2"
+    >
+      <Text testID={props.labelTestID} className="shrink-0 text-xs text-text-muted">
+        {props.label}
+      </Text>
+      {/*
+        **값 자리가 남은 폭을 갖는다**([[ADR-170]] 정정 14 ③).
+
+        종전에는 `ml-auto` 라 폭이 **내용만큼**이었고, 그 안에서 입력의 `flex-1` 은 채울 자리가
+        없어 아무 일도 안 했다 — 칸 폭이 자리표시자 글자에 끌려다녀 「사용처」 의 자리표시자가
+        줄 가운데 떠 보였다(사용자 보고). 남은 폭을 주고 `justify-end` 로 오른쪽에 붙인다:
+        칸이 없는 값(세그먼트)은 그대로 오른쪽에 서고, `flex-1` 인 입력은 줄 끝까지 채운다.
+      */}
+      <View className="flex-1 flex-row items-center justify-end">{props.children}</View>
     </View>
   )
 }
@@ -185,7 +201,7 @@ function RateRow(props: {
   valid: boolean
 }): React.JSX.Element {
   return (
-    <View className="flex-row items-center gap-2 border-b border-border pb-2">
+    <View className="min-h-7 flex-row items-center gap-2 border-b border-border pb-2">
       <Text className="shrink-0 text-xs text-text-muted">
         시세 · 1억당
         <Text testID="spend-sheet-required" className="text-error-ink">
@@ -265,20 +281,33 @@ function tilePriceLabel(items: readonly SpendCatalogItem[]): string {
   return `${numbers.join(' | ')} ${first.currency === 'point' ? '메포' : '메소'}`
 }
 
+/**
+ * 타일 그림의 한 변 — 자리마다 다르다([[ADR-170]] 정정 16 ③).
+ *
+ * **타일 왼쪽**(기본)은 이름 두 줄(≈32)보다 낮으면 높이를 안 건드린다. **이름 옆**(에픽던전 셋)은
+ * 이름 한 줄(≈16)과 나란히 서므로 더 작아야 그 줄이 안 두꺼워진다.
+ */
+const TILE_ICON_SIZE = 24
+const TITLE_ICON_SIZE = 18
+
 function ItemTile(props: {
   label: string
   /** 값이 하나로 정해지는 칸만 가격을 적는다 — 단계가 여럿이면 단계마다 값이 달라 못 적는다. */
   price: string | null
   selected: boolean
+  /** 안 열린 묶음의 타일 — 흐리고 **안 눌린다**([[ADR-166]] 정정 5). */
+  disabled?: boolean
   onPress: () => void
 }): React.JSX.Element {
+  const icon = spendIconOf(props.label)
   return (
     <Pressable
       role="button"
       aria-label={props.label}
       aria-selected={props.selected}
+      disabled={props.disabled}
       onPress={props.onPress}
-      className="w-1/3 p-1"
+      className={`w-1/3 p-1 ${props.disabled === true ? 'opacity-40' : ''}`}
     >
       {/*
         **`h-full` 을 안 쓴다.** 부모(`Pressable`)의 높이가 내용에서 나오는데 거기에 백분율 높이를
@@ -286,14 +315,46 @@ function ItemTile(props: {
         (iOS 실측 2026-08-25 — 여섯 중 셋만 보였다). 한 줄 안의 높이는 `flex-1` 이 맞춘다:
         줄이 `items-stretch`(기본)로 부모를 늘리고 이 상자가 그만큼 채운다.
       */}
+      {/*
+        **그림 자리는 둘이다**([[ADR-170]] 정정 16 ③, 사용자 지정 2026-08-27·28).
+
+        기본은 **타일 왼쪽 끝**이다 — 위에 얹으면 그림 있는 타일만 한 층 커지고 `items-stretch` 라
+        같은 줄이 통째로 따라 커진다. 옆에 세우면 높이를 글자가 정한다.
+
+        **에픽던전 셋만 이름 바로 옆**이다(사용자 지정) — 이름이 짧아 타일 끝에 붙이면 그림과 글자가
+        따로 놀고, 붙여 두면 둘이 한 이름처럼 읽힌다. 어느 쪽인지는 `spendIconOf` 가 든다.
+      */}
       <View
-        className={`flex-1 items-center gap-1 rounded-xl border px-2 py-2.5 ${
+        className={`flex-1 flex-row items-center gap-1.5 rounded-xl border px-2 py-2.5 ${
           props.selected ? 'border-primary bg-primary-tint' : 'border-border bg-surface'
         }`}
       >
-        <Text numberOfLines={2} className="text-center text-[11px] leading-4 text-text">
-          {props.label}
-        </Text>
+        {icon !== null && !icon.beside && (
+          // 아이템 아이콘은 **원본 비율 그대로** 둔다 — 상자에 맞춰 늘리면 도트가 뭉갠다.
+          // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
+          <Image
+            testID={`spend-tile-icon-${props.label}`}
+            source={icon.ref}
+            resizeMode="contain"
+            style={{ width: TILE_ICON_SIZE, height: TILE_ICON_SIZE }}
+          />
+        )}
+        {/* 글자가 남은 폭을 갖는다 — `min-w-0` 이 없으면 긴 이름이 그림을 밀어낸다. */}
+        <View className="min-w-0 flex-1 items-center gap-1">
+        <View className="w-full flex-row items-center justify-center gap-1">
+          {icon !== null && icon.beside && (
+            <Image
+              testID={`spend-tile-icon-${props.label}`}
+              source={icon.ref}
+              resizeMode="contain"
+              style={{ width: TITLE_ICON_SIZE, height: TITLE_ICON_SIZE }}
+            />
+          )}
+          {/* `shrink` 가 없으면 긴 이름이 그림을 타일 밖으로 밀어낸다. */}
+          <Text numberOfLines={2} className="shrink text-center text-[11px] leading-4 text-text">
+            {props.label}
+          </Text>
+        </View>
         {props.price !== null && (
           // **한 줄로 못박는다.** 두 줄이 되면 그 타일만 키가 커지고, `items-stretch` 라 같은 줄의
           // 타일이 통째로 따라 커진다. 좁으면 글자를 줄여 맞춘다.
@@ -308,6 +369,7 @@ function ItemTile(props: {
             {props.price}
           </Text>
         )}
+        </View>
       </View>
     </Pressable>
   )
@@ -540,6 +602,15 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
       ? '원'
       : '메소'
     : (FREE_CURRENCIES.find((each) => each.id === currency)?.unit ?? '메소')
+  /**
+   * 지출액 줄 뒤에 적는 **통화 이름**([[ADR-170]] 정정 14 ④).
+   *
+   * 큰 숫자의 단위(`freeUnit`)와 갈리는 자리가 하나 있다 — 캐시는 큰 숫자가 「원」 이지만
+   * (실제로 내는 돈이 원이다) 이 줄은 **고른 통화**를 말하므로 「캐시」다. 같은 값을 두 자리가
+   * 다른 뜻으로 쓰는 것이 아니라, 묻는 것이 다르다: 저기는 «얼마인가», 여기는 «무엇으로 내나».
+   */
+  const typedUnit = labelOfCurrency(currency)
+
   const directHint =
     currency === 'cash'
       ? undefined
@@ -742,7 +813,7 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
           <>
             <CharacterRow characters={props.characters} selected={ocid} onSelect={setOcid} />
 
-            <FieldRow label="사용처">
+            <FieldRow label={NAME_LABELS[category]} labelTestID="spend-sheet-name-label">
               <TextInput
                 testID="spend-sheet-name"
                 value={name}
@@ -774,9 +845,17 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
                   onChangeText={(text) => setTyped(parseMesoText(typed, text))}
                   keyboardType="number-pad"
                   placeholder="0"
-                  className="min-w-24 text-right text-sm font-semibold text-text"
+                  className="flex-1 text-right text-sm font-semibold text-text"
                   style={TABULAR_NUMS}
                 />
+                {/* 통화를 고르는 자리라 숫자만 있으면 무엇으로 낸 것인지 줄에서 사라진다
+                    ([[ADR-170]] 정정 14 ④) — 큰 숫자가 이미 하는 일을 이 줄도 한다. */}
+                <Text
+                  testID="spend-sheet-unit-price-unit"
+                  className="ml-1.5 shrink-0 text-xs font-semibold text-text-muted"
+                >
+                  {typedUnit}
+                </Text>
               </FieldRow>
             )}
 
@@ -836,7 +915,24 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
           <View className="gap-1">
             {groups.map((group) => (
               <View key={group.group} className="gap-1 pb-2">
-                <Text className="text-[11px] text-text-disabled">{group.group}</Text>
+                {/*
+                  **안 열린 묶음은 지우지 않고 흐리게 둔다**([[ADR-166]] 정정 5, 사용자 선택).
+
+                  기간제 이벤트(메이플 포인트 샵)는 열릴 때만 있는 것이라 숨기면 «그런 것이
+                  있었지» 를 기억할 자리가 사라진다. 자리는 남기고 **못 고르게** 한다 — 그리고
+                  이미 적어 둔 기록에는 영향이 없다(`active` 는 «지금 새로 고를 수 있나» 다).
+                */}
+                <View className="flex-row items-center gap-1.5">
+                  <Text className="text-[11px] text-text-disabled">{group.group}</Text>
+                  {!group.active && (
+                    <Text
+                      testID={`spend-sheet-closed-${group.group}`}
+                      className="text-[11px] text-text-disabled"
+                    >
+                      · 이벤트 기간이 아닙니다
+                    </Text>
+                  )}
+                </View>
                 {/* 퍼센트 폭과 `gap` 을 섞으면 마지막 칸이 밀린다 — 간격은 자식 패딩이 만든다
                     (`BossDropSheet` ①과 같은 처방). */}
                 <View className="-mx-1 flex-row flex-wrap">
@@ -847,6 +943,7 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
                       // 단계가 여럿이면 **나란히** 적는다 — `7,500 | 30,000 메포`.
                       price={tilePriceLabel(each.items)}
                       selected={false}
+                      disabled={!group.active}
                       onPress={() => selectChoice(each)}
                     />
                   ))}
@@ -879,8 +976,14 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
               </FieldRow>
             )}
 
-            {scope !== null && (
-              // 단위·상한은 **대표가 안다** — 단계를 고르기 전에도 선다.
+            {scope !== null && scope.maxQuantity !== 1 && (
+              /*
+               * 단위·상한은 **대표가 안다** — 단계를 고르기 전에도 선다.
+               *
+               * **상한이 1이면 안 세운다**([[ADR-170]] 정정 14 ①). 오르내릴 자리가 없는 스테퍼는
+               * «조절할 수 있다» 는 거짓말이다. 에픽던전 추가 리워드(메이플 ID 당 주 1회)와
+               * 미호로이드가 거기 든다 — 특별 취급이 아니라 규칙 하나다.
+               */
               <FieldRow label="수량">
                 <QuantityStepper value={quantity} max={scope.maxQuantity} onChange={setQuantity} />
               </FieldRow>

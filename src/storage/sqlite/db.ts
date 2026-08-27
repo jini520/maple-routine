@@ -181,6 +181,45 @@ const MIGRATE_TONIC_BUFF_CATEGORY = `
    WHERE category = '버프' AND item IN ('보약 버프 추가 구매', '보약 버프 초기화')
 `
 
+/**
+ * 농장 입장권 둘이 **「… 입장권」 을 뗀 이름**이 됐다(사용자 지정 2026-08-28, [[ADR-166]] 정정 6).
+ *
+ * `item` 은 **이름 그 자체가 값**이라(갈래와 같은 성질) 안 옮기면 옛 기록이 카탈로그에서 사라진
+ * 이름을 들고 남는다 — `findSpendChoice` 가 못 찾아 **수정 시트가 세부를 못 펴고**, 목록에서도
+ * 지금 고를 수 있는 것과 다른 글자로 적힌다.
+ *
+ * 이미 옮겨진 뒤에는 `WHERE` 에 걸리는 행이 없어 매번 실행해도 안전한 no-op 이다.
+ */
+const MIGRATE_FARM_TICKET_ITEM_RENAME = `
+  UPDATE spend_records
+     SET item = REPLACE(item, ' 입장권', '')
+   WHERE category = '이벤트·BM'
+     AND item IN ('메카베리 농장 입장권', '블루베리 농장 입장권')
+`
+
+/**
+ * 퀵 패스 셋이 **「… 퀵패스」 를 뗀 이름**이 됐다(사용자 지정 2026-08-28, [[ADR-166]] 정정 7).
+ * 묶음 이름(「퀵 패스」)이 그 맥락을 이미 들고 있어 항목마다 되풀이할 이유가 없다.
+ *
+ * 옮기는 이유는 농장 둘과 같다 — `item` 은 이름 자체가 값이라, 안 옮기면 옛 기록이 카탈로그에서
+ * 사라진 이름을 들고 남는다.
+ */
+const MIGRATE_QUICK_PASS_ITEM_RENAME = `
+  UPDATE spend_records
+     SET item = REPLACE(item, ' 퀵패스', '')
+   WHERE category = '컨텐츠'
+     AND item IN ('에픽던전 퀵패스', '일간 퀘스트 퀵패스', '주간 퀘스트 퀵패스')
+`
+
+/**
+ * 「미호로이드 교환권」 이 **「미호로이드」** 가 됐다(사용자 지정 2026-08-28, [[ADR-166]] 정정 7).
+ * 타일에서 「교환 / 권」 으로 끊기던 이름이고, 무엇을 사는지는 그림과 묶음이 이미 말한다.
+ */
+const MIGRATE_MIHOROID_ITEM_RENAME = `
+  UPDATE spend_records SET item = '미호로이드'
+   WHERE category = '이벤트·BM' AND item = '미호로이드 교환권'
+`
+
 // 메이린 카드 표시명을 API content_name('시즌 보스 메이린')과 통일하며 boss 식별 키를
 // 바꿨다(2026-07-22, weekly-bosses.json 참고) — 기존에 저장된 파티 설정·수익 기록이 새 키를
 // 못 찾는 고아 데이터가 되지 않도록 옛 키를 새 키로 옮긴다. 이미 옮겨진 뒤에는 WHERE절에
@@ -247,8 +286,17 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   // INSERT 는 모든 칸을 적으므로 칸이 없으면 **수입이 하나도 안 적힌다.**
   await ensureColumn(db, 'income_records', 'sale_fee_percent', 'INTEGER')
   await ensureColumn(db, 'income_records', 'sale_fee_meso', 'INTEGER')
+
+  // [[ADR-170]] 정정 15 — 수입에도 통화가 있다(「기타」). **지출과 같은 칸 이름**을 쓴다:
+  // 그래야 집계가 한 모양으로 접힌다(`incomeMesoOf` = `spendMesoOf`).
+  await ensureColumn(db, 'income_records', 'point_amount', 'INTEGER')
+  await ensureColumn(db, 'income_records', 'point_per_100m_meso', 'INTEGER')
+  await ensureColumn(db, 'income_records', 'cash_amount', 'INTEGER')
   await db.execute(MIGRATE_SHOP_CATEGORY_RENAME)
   await db.execute(MIGRATE_TONIC_BUFF_CATEGORY)
+  await db.execute(MIGRATE_FARM_TICKET_ITEM_RENAME)
+  await db.execute(MIGRATE_QUICK_PASS_ITEM_RENAME)
+  await db.execute(MIGRATE_MIHOROID_ITEM_RENAME)
   await db.execute(MIGRATE_MEIRIN_BOSS_KEY_PARTY_SETTINGS)
   await db.execute(MIGRATE_MEIRIN_BOSS_KEY_PROFIT_RECORDS)
 

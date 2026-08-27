@@ -40,12 +40,26 @@ export interface IncomeRecord {
   /** 판 것 / 사냥터 / 자유. 갈래가 이 칸의 **라벨만** 바꾼다. */
   item: string | null
   /**
-   * 수입은 **메소뿐**이다([[ADR-170]] 결정 1) — 통화 칸 셋도 시세도 없다.
+   * 메소로 들어온 수입. **통화가 갈리는 갈래(「기타」)에서는 `null` 일 수 있다**([[ADR-170]] 정정 15).
    *
    * 아이템 판매면 **수수료를 뗀 값**이다([[ADR-170]] 정정 9 ⑤) — 집계가 보는 칸이 이것 하나라,
    * 판매 대금을 넣으면 번 적 없는 돈이 수입으로 선다.
+   *
+   * > 정정 15 이전 행은 **언제나 숫자**다(그때는 수입이 메소뿐이었다). 타입이 `| null` 인 것은
+   * > 새 갈래를 위한 자리이고, 읽는 쪽은 `??  0` 으로 접는다(`incomeMesoOf`).
    */
-  mesoAmount: number
+  mesoAmount: number | null
+  /**
+   * 메포로 들어온 수입 — 이벤트 보상이 그렇다([[ADR-170]] 정정 15).
+   *
+   * **칸 이름을 지출과 같게 쓴다**(`point_amount`·`point_per_100m_meso`·`cash_amount`) — 그래야
+   * 집계가 한 모양으로 접힌다(`incomeMesoOf` 는 `spendMesoOf` 와 같은 식이다).
+   */
+  pointAmount: number | null
+  /** 메소마켓 시세 — 단위는 **1억 메소당 메포**다([[ADR-166]] 정정 2 ④). */
+  pointPer100mMeso: number | null
+  /** **환산하지 않는다**([[ADR-166]] 정정 2 ①) — 지출과 같은 이유·같은 결과다. */
+  cashAmount: number | null
   /** 경매장 수수료율([[ADR-168]] `FeePercent`). `null` = 없음(직거래이거나 정정 9 이전 행). */
   saleFeePercent: FeePercent | null
   /** 뗀 몫. **판매 대금 = `mesoAmount` + 이것** 이다 — 요율만으로는 내림 때문에 역산이 안 된다. */
@@ -56,8 +70,9 @@ export interface IncomeRecord {
 
 const INSERT_SQL = `
   INSERT INTO income_records
-    (id, ocid, earned_on, category, item, meso_amount, sale_fee_percent, sale_fee_meso, memo, recorded_at)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    (id, ocid, earned_on, category, item, meso_amount, sale_fee_percent, sale_fee_meso,
+     point_amount, point_per_100m_meso, cash_amount, memo, recorded_at)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 export async function insertIncomeRecord(record: IncomeRecord): Promise<void> {
@@ -71,6 +86,9 @@ export async function insertIncomeRecord(record: IncomeRecord): Promise<void> {
     record.mesoAmount,
     record.saleFeePercent,
     record.saleFeeMeso,
+    record.pointAmount,
+    record.pointPer100mMeso,
+    record.cashAmount,
     record.memo,
     record.recordedAt,
   ])
@@ -80,7 +98,8 @@ export async function insertIncomeRecord(record: IncomeRecord): Promise<void> {
 const UPDATE_SQL = `
   UPDATE income_records SET
     ocid = ?, earned_on = ?, category = ?, item = ?, meso_amount = ?,
-    sale_fee_percent = ?, sale_fee_meso = ?, memo = ?
+    sale_fee_percent = ?, sale_fee_meso = ?,
+    point_amount = ?, point_per_100m_meso = ?, cash_amount = ?, memo = ?
   WHERE id = ?
 `
 
@@ -94,6 +113,9 @@ export async function updateIncomeRecord(record: IncomeRecord): Promise<void> {
     record.mesoAmount,
     record.saleFeePercent,
     record.saleFeeMeso,
+    record.pointAmount,
+    record.pointPer100mMeso,
+    record.cashAmount,
     record.memo,
     record.id,
   ])
@@ -113,9 +135,12 @@ function rowToRecord(row: Record<string, unknown>): IncomeRecord {
     earnedOn: row.earned_on as string,
     category: row.category as IncomeCategory,
     item: (row.item as string | null | undefined) ?? null,
-    mesoAmount: row.meso_amount as number,
+    mesoAmount: (row.meso_amount as number | null | undefined) ?? null,
     saleFeePercent: (row.sale_fee_percent as FeePercent | null | undefined) ?? null,
     saleFeeMeso: (row.sale_fee_meso as number | null | undefined) ?? null,
+    pointAmount: (row.point_amount as number | null | undefined) ?? null,
+    pointPer100mMeso: (row.point_per_100m_meso as number | null | undefined) ?? null,
+    cashAmount: (row.cash_amount as number | null | undefined) ?? null,
     memo: (row.memo as string | null | undefined) ?? null,
     recordedAt: row.recorded_at as string,
   }
