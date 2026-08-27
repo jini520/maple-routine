@@ -217,18 +217,18 @@ describe('항목 — 고르면 채워진다', () => {
   })
 
   /**
-   * **수량과 시세는 형태·단계를 고르기 전에도 선다**([[ADR-173]] 결정 8, 사용자 지정 2026-08-26).
+   * **시세는 형태·단계를 고르기 전에도 선다**([[ADR-173]] 결정 8, 사용자 지정 2026-08-26).
    *
-   * 둘 다 «무엇을 골랐나» 와 무관한 칸이다 — 수량의 단위와 통화는 **대표가 이미 안다**(한 대표
-   * 안의 단계들은 단위도 통화도 같다). 고른 뒤에야 뜨면 시세를 미리 채워 둘 수 없고, 줄이 나중에
-   * 나타나 화면이 밀린다.
+   * «무엇을 골랐나» 와 무관한 칸이라서다 — 통화는 **대표가 이미 안다**(한 대표 안의 단계들은
+   * 통화가 같다). 고른 뒤에야 뜨면 시세를 미리 채워 둘 수 없고, 줄이 나중에 나타나 화면이 밀린다.
+   *
+   * 수량도 같은 자리에 섰었는데 **에픽던전에는 그 줄이 없어졌다**([[ADR-170]] 정정 14 ①).
    */
-  it('형태·단계를 고르기 전에도 수량과 시세가 선다', async () => {
+  it('형태·단계를 고르기 전에도 시세가 선다', async () => {
     const view = await 그리기({ lastPointRate: null })
 
     await 누르기(view, '하이마운틴')
 
-    expect(view.getByLabelText('수량 늘리기')).toBeTruthy()
     expect(view.getByTestId('spend-sheet-rate')).toBeTruthy()
     // 합계도 **0 으로 선다**(사용자 지정) — 단가를 아직 모를 뿐 셀 자리는 이미 있다.
     expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('0')
@@ -281,29 +281,36 @@ describe('수량 — 곱셈은 앱이 한다', () => {
     expect(view.getByTestId('spend-sheet-quantity')).toHaveTextContent('1')
   })
 
+  // 에픽던전은 **수량이 없다**([[ADR-170]] 정정 14 ①) — 곱셈을 보는 자리는 상한이 여럿인 항목이다.
   it('수량을 올리면 금액이 그만큼 는다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave, lastPointRate: 1_180 })
-    await 에픽던전(view, '하이마운틴', '경험치', '2단계')
+    await 누르기(view, '몬스터 파크')
 
     await 누르기(view, '수량 늘리기')
     await 누르기(view, '저장')
 
-    expect(onSave.mock.calls[0][0]).toMatchObject({ quantity: 2, pointAmount: 60_000 })
+    expect(onSave.mock.calls[0][0]).toMatchObject({ quantity: 2, pointAmount: 1_200 })
   })
 
   it('1 아래로는 못 내린다', async () => {
     const view = await 그리기()
-    await 에픽던전(view, '하이마운틴', '경험치', '2단계')
+    await 누르기(view, '몬스터 파크')
 
     expect(view.getByLabelText('수량 줄이기').props.accessibilityState?.disabled).toBe(true)
   })
 
-  it('단계를 바꾸면 수량이 1 로 돌아간다', async () => {
+  /**
+   * 단계를 바꾸면 수량이 1 로 돌아가던 자리는 **더 볼 수 없다**([[ADR-170]] 정정 14 ①) — 단계가
+   * 있는 항목은 에픽던전뿐이고 거기엔 수량 줄이 없다. 되돌리기(`selectItem` 의 `setQuantity(1)`)는
+   * 코드에 남아 있고, 단계가 있는 수량 항목이 생기면 그때 이 자리에 케이스가 돌아온다.
+   *
+   * 그래도 **단계를 바꾸면 그 단계로 저장된다**는 것은 여전히 사실이라 그것만 본다.
+   */
+  it('단계를 바꾸면 그 단계로 저장된다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave, lastPointRate: 1_180 })
     await 에픽던전(view, '하이마운틴', '경험치', '2단계')
-    await 누르기(view, '수량 늘리기')
 
     await 누르기(view, '1단계')
     await 누르기(view, '저장')
@@ -354,7 +361,7 @@ describe('수량 — 곱셈은 앱이 한다', () => {
   it('한도가 없는 항목에는 그 줄이 서지 않는다', async () => {
     const view = await 그리기({ lastPointRate: 1_180 })
 
-    await 누르기(view, '에픽던전 퀵패스')
+    await 누르기(view, '에픽던전')
 
     expect(view.queryByTestId('spend-sheet-limit')).toBeNull()
   })
@@ -372,18 +379,20 @@ describe('수량 — 곱셈은 앱이 한다', () => {
   })
 
   // 상한이 1 이면 늘리는 자리가 처음부터 막혀 있어야 한다 — 눌리는데 안 늘면 고장으로 읽힌다.
-  it('상한이 1이면 늘리는 자리가 처음부터 막힌다', async () => {
+  // 상한이 1이면 **줄 자체가 없다**([[ADR-170]] 정정 14 ①) — 오르내릴 자리가 없는 스테퍼는
+  // «조절할 수 있다» 는 거짓말이다. 막힌 채로 세워 두던 것을 걷었다.
+  it('상한이 1이면 수량 줄이 아예 없다', async () => {
     const view = await 그리기({ lastPointRate: 1_180 })
     await 누르기(view, '이벤트·BM')
-    await 누르기(view, '미호로이드 교환권')
+    await 누르기(view, '미호로이드')
 
-    expect(view.getByLabelText('수량 늘리기').props.accessibilityState?.disabled).toBe(true)
+    expect(view.queryByTestId('spend-sheet-quantity')).toBeNull()
   })
 
   // 상한이 없는 항목은 계속 는다 — 없는 한도를 앱이 지어내면 그것이 추정이다([[ADR-006]]).
   it('한도가 없으면 스테퍼가 안 막힌다', async () => {
     const view = await 그리기({ lastPointRate: 1_180 })
-    await 누르기(view, '에픽던전 퀵패스')
+    await 누르기(view, '에픽던전')
 
     for (let i = 0; i < 20; i += 1) await 누르기(view, '수량 늘리기')
 
@@ -1074,10 +1083,11 @@ describe('수정 모드 ([[ADR-173]] 결정 15)', () => {
     expect(view.queryByText('항목')).toBeNull()
   })
 
-  it('세부는 그대로 고친다 — 수량·시세·캐릭터', async () => {
+  // 에픽던전 기록이라 **수량은 없다**([[ADR-170]] 정정 14 ①) — 고칠 수 있는 것은 시세와 캐릭터다.
+  it('세부는 그대로 고친다 — 시세·캐릭터', async () => {
     const view = await 고치기()
 
-    expect(view.getByLabelText('수량 늘리기')).toBeTruthy()
+    expect(view.queryByTestId('spend-sheet-quantity')).toBeNull()
     expect(view.getByTestId('spend-sheet-rate').props.value).toBe('1180')
     expect(view.getByTestId('spend-sheet-character-trigger')).toBeTruthy()
   })
@@ -1093,5 +1103,200 @@ describe('수정 모드 ([[ADR-173]] 결정 15)', () => {
     // 직접 입력은 고른 것이 갈래뿐이라 그것이 곧 제목이다.
     expect(view.getByTestId('spend-sheet-title')).toHaveTextContent('기타')
     expect(view.getByTestId('spend-sheet-name')).toBeTruthy()
+  })
+})
+
+/**
+ * **셀 것이 없으면 수량 줄을 안 세운다**([[ADR-170]] 정정 14 ①).
+ *
+ * 에픽던전 추가 리워드는 메이플 ID 당 주 1회라(사용자 확인 2026-08-27) 카탈로그의 상한이 1이다.
+ * 오르내릴 자리가 없는 스테퍼는 «조절할 수 있다» 는 거짓말이라 아예 안 그린다.
+ */
+describe('수량 줄 ([[ADR-170]] 정정 14 ①)', () => {
+  it('에픽던전 추가 리워드에는 수량이 없다', async () => {
+    const view = await 그리기()
+
+    await 에픽던전(view, '하이마운틴', '경험치', '1단계')
+
+    expect(view.queryByTestId('spend-sheet-quantity')).toBeNull()
+  })
+
+  it('그래도 금액은 단가 그대로 선다 — 수량 1 이다', async () => {
+    const view = await 그리기({ lastPointRate: 1_180 })
+
+    await 에픽던전(view, '하이마운틴', '경험치', '1단계')
+
+    // 7,500 메포 × 1 — 큰 숫자는 메소 환산이고, 실제로 내는 메포는 힌트가 든다.
+    expect(view.getByTestId('spend-sheet-amount-hint')).toHaveTextContent('7,500 메포')
+  })
+
+  it('상한이 여럿인 항목은 수량이 그대로 선다 — 규칙이지 특별 취급이 아니다', async () => {
+    const view = await 그리기()
+
+    await 누르기(view, '몬스터 파크')
+
+    expect(view.getByTestId('spend-sheet-quantity')).toBeTruthy()
+  })
+})
+
+/**
+ * **안 열린 묶음은 흐리게 두고 못 고른다**([[ADR-166]] 정정 5, 사용자 선택 2026-08-27).
+ *
+ * 숨기지 않는 이유는 «그런 것이 있었지» 를 기억할 수 있어야 해서다. 열리면 같은 자리에 돌아온다.
+ */
+describe('안 열린 묶음 ([[ADR-166]] 정정 5)', () => {
+  it('메이플 포인트 샵은 «이벤트 기간이 아닙니다» 라고 적는다', async () => {
+    const view = await 그리기()
+
+    await 누르기(view, '이벤트·BM')
+
+    expect(view.getByTestId('spend-sheet-closed-메이플 포인트 샵')).toHaveTextContent('· 이벤트 기간이 아닙니다')
+  })
+
+  it('그 묶음의 타일은 안 눌린다', async () => {
+    const view = await 그리기()
+
+    await 누르기(view, '이벤트·BM')
+    await 누르기(view, '솔 에르다')
+
+    // 안 골라졌으므로 여전히 목록이다 — 고른 뒤라면 되돌아가는 머리가 섰을 것이다.
+    expect(view.queryByTestId('spend-sheet-back')).toBeNull()
+  })
+
+  it('열린 묶음은 그대로 눌린다', async () => {
+    const view = await 그리기()
+
+    await 누르기(view, '이벤트·BM')
+    await 누르기(view, 'VIP 사우나')
+
+    expect(view.getByTestId('spend-sheet-back')).toBeTruthy()
+  })
+})
+
+/**
+ * **「사용처」 이름은 갈래가 정한다**([[ADR-170]] 정정 14 ②) — 아이템 구매에서 그 칸이 묻는 것은
+ * «무엇을 샀나» 이지 어디에 썼나가 아니다.
+ */
+describe('직접 입력의 이름 칸 ([[ADR-170]] 정정 14 ②)', () => {
+  it('아이템 구매는 「구매 아이템」이다', async () => {
+    const view = await 그리기()
+
+    await 누르기(view, '아이템 구매')
+
+    expect(view.getByTestId('spend-sheet-name-label')).toHaveTextContent('구매 아이템')
+  })
+
+  it('기타는 「사용처」 그대로다', async () => {
+    const view = await 그리기()
+
+    await 누르기(view, '기타')
+
+    expect(view.getByTestId('spend-sheet-name-label')).toHaveTextContent('사용처')
+  })
+})
+
+/**
+ * **직접 입력의 금액 뒤에 단위를 적는다**([[ADR-170]] 정정 14 ④) — 「기타」는 통화를 고르는 자리라
+ * 숫자만 있으면 무엇으로 낸 것인지 줄에서 사라진다.
+ */
+describe('지출액의 단위 ([[ADR-170]] 정정 14 ④)', () => {
+  it('고른 통화를 그대로 적는다', async () => {
+    const view = await 그리기()
+
+    await 누르기(view, '기타')
+
+    expect(view.getByTestId('spend-sheet-unit-price-unit')).toHaveTextContent('메소')
+
+    await 누르기(view, '캐시')
+
+    expect(view.getByTestId('spend-sheet-unit-price-unit')).toHaveTextContent('캐시')
+  })
+})
+
+/**
+ * **고를 것에 그림이 붙는다**([[ADR-170]] 정정 16, 사용자 지정 2026-08-27).
+ *
+ * 그림이 있는 것만 붙는다 — 없는 것에 무언가를 지어내 놓지 않는다([[ADR-101]] 결정 1 의 태도).
+ * 대신 **한 묶음 안에서는 자리를 맞춘다**: 그 묶음에 그림이 하나라도 있으면 없는 타일도 같은
+ * 자리를 비워 둔다(안 그러면 같은 줄에서 이름의 높이가 어긋난다).
+ */
+describe('타일 그림 ([[ADR-170]] 정정 16)', () => {
+  it('그림이 있는 것에는 붙는다', async () => {
+    const view = await 그리기()
+
+    expect(view.getByTestId('spend-tile-icon-몬스터 파크')).toBeTruthy()
+  })
+
+  it('버프 물약 넷은 다 붙는다', async () => {
+    const view = await 그리기()
+
+    await 누르기(view, '버프')
+
+    for (const label of ['세이람의 영약', '알레리아의 영약', '콜렉터의 영약', '명예의 영약']) {
+      expect(view.getByTestId(`spend-tile-icon-${label}`)).toBeTruthy()
+    }
+  })
+
+  it('그림이 없는 것에는 안 붙는다 — 지어내지 않는다', async () => {
+    const view = await 그리기()
+
+    await 누르기(view, '이벤트·BM')
+
+    // 아직 그림을 안 받은 셋 — 「이벤트」 묶음이 통째로 그렇다.
+    expect(view.queryByTestId('spend-tile-icon-출석 이벤트 패스')).toBeNull()
+    expect(view.queryByTestId('spend-tile-icon-보약 버프 추가 구매')).toBeNull()
+  })
+
+  // 이름이 바뀌면 표도 따라가야 한다 — 안 고치면 **에러 없이 그림만** 사라진다
+  // ([[ADR-166]] 정정 6 이 「… 입장권」 을 뗐다).
+  it('농장 둘은 이름이 바뀐 뒤에도 그림이 붙는다', async () => {
+    const view = await 그리기()
+
+    await 누르기(view, '이벤트·BM')
+
+    expect(view.getByTestId('spend-tile-icon-메카베리 농장')).toBeTruthy()
+    expect(view.getByTestId('spend-tile-icon-블루베리 농장')).toBeTruthy()
+  })
+
+  // 조각 그림을 달았다가 *"그거 아니야"* 로 물렸고(2026-08-28) 사용자가 `sole_1000` 을 지정했다.
+  // 그림은 **받은 것만** 단다는 규칙이 여기서 두 번 확인된다.
+  it('솔 에르다에는 사용자가 지정한 그림이 붙는다', async () => {
+    const view = await 그리기()
+
+    await 누르기(view, '이벤트·BM')
+
+    expect(view.getByTestId('spend-tile-icon-솔 에르다')).toBeTruthy()
+  })
+
+  // 에픽던전 셋은 **지역 아이콘**에서 온다(원천이 둘이다 — `lib/spend-icons` 주석).
+  it('에픽던전 셋은 지역 아이콘을 단다', async () => {
+    const view = await 그리기()
+
+    for (const label of ['하이마운틴', '앵글러 컴퍼니', '악몽선경']) {
+      expect(view.getByTestId(`spend-tile-icon-${label}`)).toBeTruthy()
+    }
+  })
+
+  it('퀵 패스 셋도 그림을 단다 — 이름에서 「퀵패스」 를 뗐다', async () => {
+    const view = await 그리기()
+
+    for (const label of ['에픽던전', '일간 퀘스트', '주간 퀘스트']) {
+      expect(view.getByTestId(`spend-tile-icon-${label}`)).toBeTruthy()
+    }
+  })
+
+  /**
+   * 그림이 없는 타일은 **빈 자리도 안 만든다**([[ADR-170]] 정정 16 ③).
+   *
+   * 그림이 왼쪽으로 가면서 높이를 안 건드리게 됐고(사용자 지정), 그러자 자리를 비워 두는 일은
+   * 폭만 먹었다 — 「미호로이드 교환권」 이 «교환 / 권» 으로 끊겼다(iOS 실측).
+   */
+  it('그림이 없는 타일은 이름이 줄 전체를 쓴다', async () => {
+    const view = await 그리기()
+
+    await 누르기(view, '이벤트·BM')
+
+    expect(view.queryByTestId('spend-tile-icon-slot-블랙 서큘레이터')).toBeNull()
+    expect(view.queryByTestId('spend-tile-icon-slot-하이마운틴')).toBeNull()
   })
 })

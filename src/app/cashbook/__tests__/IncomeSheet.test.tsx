@@ -46,7 +46,14 @@ const 캐릭터둘 = [
 
 async function 그리기(overrides: Partial<React.ComponentProps<typeof IncomeSheet>> = {}) {
   return renderOverlay(
-    <IncomeSheet dateKey="2026-08-23" characters={캐릭터둘} onSave={jest.fn()} onClose={jest.fn()} {...overrides} />,
+    <IncomeSheet
+      dateKey="2026-08-23"
+      characters={캐릭터둘}
+      lastPointRate={null}
+      onSave={jest.fn()}
+      onClose={jest.fn()}
+      {...overrides}
+    />,
   )
 }
 
@@ -290,6 +297,9 @@ describe('판매 수수료 ([[ADR-170]] 정정 9)', () => {
       mesoAmount: 1_164_000_000,
       saleFeePercent: 3,
       saleFeeMeso: 36_000_000,
+      pointAmount: null,
+      pointPer100mMeso: null,
+      cashAmount: null,
     })
   })
 
@@ -309,6 +319,9 @@ describe('판매 수수료 ([[ADR-170]] 정정 9)', () => {
       mesoAmount: 1_200_000_000,
       saleFeePercent: null,
       saleFeeMeso: null,
+      pointAmount: null,
+      pointPer100mMeso: null,
+      cashAmount: null,
     })
   })
 })
@@ -332,6 +345,9 @@ describe('저장', () => {
       // 사냥에는 수수료 줄이 아예 없다([[ADR-170]] 정정 9 ②) — 칸은 `null` 로 나간다.
       saleFeePercent: null,
       saleFeeMeso: null,
+      pointAmount: null,
+      pointPer100mMeso: null,
+      cashAmount: null,
       memo: null,
     })
   })
@@ -395,6 +411,9 @@ describe('수정 모드 ([[ADR-173]] 결정 15)', () => {
     mesoAmount: 1_200_000_000,
     saleFeePercent: null,
     saleFeeMeso: null,
+    pointAmount: null,
+    pointPer100mMeso: null,
+    cashAmount: null,
     memo: null,
     recordedAt: '2026-08-23T01:00:00.000Z',
   }
@@ -428,5 +447,105 @@ describe('수정 모드 ([[ADR-173]] 결정 15)', () => {
 
     expect(view.getByTestId('income-sheet-gross').props.value).toBe('1,200,000,000')
     expect(view.getByLabelText('5%').props.accessibilityState?.selected).toBe(true)
+  })
+})
+
+/**
+ * **수입에도 통화가 있다**([[ADR-170]] 정정 15) — 이벤트 보상이 메포·캐시로도 들어온다.
+ *
+ * 서는 자리는 **「기타」 하나**다(결정 2): 아이템 판매는 경매장이라 메소이고 사냥도 메소다.
+ * 재는 규칙은 지출과 같다(결정 1) — 메포는 시세로 환산해 합계에 들고, 캐시는 안 든다.
+ */
+describe('통화 ([[ADR-170]] 정정 15)', () => {
+  it('「기타」에만 통화 줄이 선다', async () => {
+    const view = await 그리기()
+
+    expect(view.queryByTestId('income-sheet-currency')).toBeNull()
+
+    await 이름으로누르기(view, '기타')
+
+    expect(view.getByTestId('income-sheet-currency')).toBeTruthy()
+  })
+
+  it('메포를 고르면 시세 줄이 서고, 시세가 없으면 저장이 막힌다', async () => {
+    const view = await 그리기()
+    await 이름으로누르기(view, '기타')
+
+    await 이름으로누르기(view, '메포')
+    await 치기(view, '3000')
+
+    expect(view.getByTestId('income-sheet-rate')).toBeTruthy()
+    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
+  })
+
+  it('메포는 메포 칸에 담기고 시세가 함께 실린다 — 메소 칸은 비운다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave, lastPointRate: 1_180 })
+    await 이름으로누르기(view, '기타')
+    await 이름으로누르기(view, '메포')
+    await 치기(view, '3000')
+
+    await 이름으로누르기(view, '저장')
+
+    expect(onSave.mock.calls[0][0]).toMatchObject({
+      mesoAmount: null,
+      pointAmount: 3_000,
+      pointPer100mMeso: 1_180,
+      cashAmount: null,
+    })
+  })
+
+  it('캐시는 캐시 칸에 담기고 «환산하지 않는다» 고 말한다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave })
+    await 이름으로누르기(view, '기타')
+    await 이름으로누르기(view, '캐시')
+    await 치기(view, '15000')
+
+    expect(view.getByTestId('income-sheet-amount-hint')).toHaveTextContent('캐시는 메소로 환산하지 않아요')
+
+    await 이름으로누르기(view, '저장')
+
+    expect(onSave.mock.calls[0][0]).toMatchObject({
+      mesoAmount: null,
+      pointAmount: null,
+      cashAmount: 15_000,
+    })
+  })
+
+  it('수정으로 열면 찬 칸이 통화를 되짚는다', async () => {
+    const view = await 그리기({
+      editing: {
+        id: 'inc-9',
+        ocid: null,
+        earnedOn: '2026-08-23',
+        category: '기타' as const,
+        item: '이벤트 보상',
+        mesoAmount: null,
+        saleFeePercent: null,
+        saleFeeMeso: null,
+        pointAmount: 3_000,
+        pointPer100mMeso: 1_180,
+        cashAmount: null,
+        memo: null,
+        recordedAt: '2026-08-23T01:00:00.000Z',
+      },
+      onDelete: jest.fn(),
+    })
+
+    expect(view.getByLabelText('메포').props.accessibilityState?.selected).toBe(true)
+    expect(view.getByTestId('income-sheet-rate').props.value).toBe('1180')
+  })
+})
+
+/**
+ * **판매 대금 뒤에 단위를 적는다**([[ADR-170]] 정정 14 ④) — 큰 숫자가 수수료를 뗀 합계라
+ * 이 줄과 축이 같은지 헷갈린다.
+ */
+describe('판매 대금의 단위 ([[ADR-170]] 정정 14 ④)', () => {
+  it('메소라고 적는다', async () => {
+    const view = await 그리기()
+
+    expect(view.getByTestId('income-sheet-gross-unit')).toHaveTextContent('메소')
   })
 })

@@ -48,6 +48,9 @@ const 수입: IncomeDraft = {
   // 사냥에는 경매장이 없다([[ADR-170]] 정정 9 ②) — 수수료 칸 둘은 언제나 `null` 이다.
   saleFeePercent: null,
   saleFeeMeso: null,
+  pointAmount: null,
+  pointPer100mMeso: null,
+  cashAmount: null,
   memo: null,
 }
 
@@ -187,6 +190,9 @@ const 수입행 = {
   mesoAmount: 1_200_000_000,
   saleFeePercent: null,
   saleFeeMeso: null,
+  pointAmount: null,
+  pointPer100mMeso: null,
+  cashAmount: null,
   memo: null,
   recordedAt: '2026-08-25T01:00:00.000Z',
 }

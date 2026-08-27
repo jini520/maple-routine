@@ -31,6 +31,9 @@ const sample: IncomeRecord = {
   mesoAmount: 1_200_000_000,
   saleFeePercent: null,
   saleFeeMeso: null,
+  pointAmount: null,
+  pointPer100mMeso: null,
+  cashAmount: null,
   memo: null,
   recordedAt: '2026-08-23T05:00:00.000Z',
 }
@@ -54,6 +57,10 @@ describe('insertIncomeRecord', () => {
       '아이템 판매',
       '앱솔랩스 케이프',
       1_200_000_000,
+      null,
+      null,
+      // 통화 칸 셋([[ADR-170]] 정정 15) — 메소로 번 것이라 셋 다 비어 있다.
+      null,
       null,
       null,
       null,
@@ -121,6 +128,9 @@ describe('getIncomeRecordsBetween', () => {
         mesoAmount: 1_200_000_000,
         saleFeePercent: null,
         saleFeeMeso: null,
+        pointAmount: null,
+        pointPer100mMeso: null,
+        cashAmount: null,
         memo: null,
         recordedAt: '2026-08-23T05:00:00.000Z',
       },
@@ -195,6 +205,9 @@ describe('판매 수수료 칸 둘 ([[ADR-170]] 정정 9)', () => {
     mesoAmount: 1_140_000_000,
     saleFeePercent: 5,
     saleFeeMeso: 60_000_000,
+    pointAmount: null,
+    pointPer100mMeso: null,
+    cashAmount: null,
   }
 
   it('넣을 때 함께 박는다', async () => {

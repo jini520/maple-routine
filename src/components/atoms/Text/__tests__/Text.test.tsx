@@ -92,3 +92,79 @@ describe('TextInput — 같은 클램프를 받는다 ([[ADR-152]] 결정 4)', (
     expect(getByTestId('키').props.maxFontSizeMultiplier).toBe(FONT_SCALE_MAX)
   })
 })
+
+/**
+ * **조합이 도는 칸에는 앱이 글자를 되쓰지 않는다**([[ADR-170]] 정정 12).
+ *
+ * 한글은 IME 가 칸 안의 「조합 중」 구간을 갈아 끼우며 완성된다. 그 자리에 앱이 `value` 로 글자를
+ * 되쓰면 모으던 자모가 그대로 확정된다 — 「안녕」이 「ㅇㅏㄴㄴㅕㅇ」이 됐다(실기·에뮬레이터 양쪽).
+ *
+ * 계측으로 가른 갈림은 **`value` 프롭이 붙어 있는가** 하나였다. 그래서 아톰은 키보드로 갈라
+ * 붙인다 — 숫자 키패드는 조합이 없고 서식(`1,234`)을 위해 되쓰기가 **필요하다**.
+ *
+ * 여기서 프롭을 보는 이유는 늘 같다: 계산이 맞아도 프롭이 안 붙으면 화면은 옛 동작이다.
+ */
+describe('TextInput — 조합이 도는 칸은 value 를 씨앗으로만 받는다 ([[ADR-170]] 정정 12)', () => {
+  it('글자 칸은 defaultValue 로 심고 value 를 안 단다', async () => {
+    const { getByTestId } = await renderAtom(<TextInput testID="이름" value="단풍" />)
+
+    expect(getByTestId('이름').props.defaultValue).toBe('단풍')
+    expect(getByTestId('이름').props.value).toBeUndefined()
+  })
+
+  it('숫자 키패드 칸은 종전대로 value 로 통제한다 — 서식이 살아야 한다', async () => {
+    const { getByTestId } = await renderAtom(
+      <TextInput testID="금액" value="1,234" keyboardType="number-pad" />,
+    )
+
+    expect(getByTestId('금액').props.value).toBe('1,234')
+    expect(getByTestId('금액').props.defaultValue).toBeUndefined()
+  })
+
+  it('숫자 갈래 넷을 모두 통제한다', async () => {
+    for (const keyboardType of ['number-pad', 'numeric', 'decimal-pad', 'phone-pad'] as const) {
+      const { getByTestId } = await renderAtom(
+        <TextInput testID="칸" value="7" keyboardType={keyboardType} />,
+      )
+
+      expect(getByTestId('칸').props.value).toBe('7')
+    }
+  })
+
+  it('이메일처럼 글자를 치는 키보드는 조합이 도는 쪽이다', async () => {
+    const { getByTestId } = await renderAtom(
+      <TextInput testID="메일" value="a@b.c" keyboardType="email-address" />,
+    )
+
+    expect(getByTestId('메일').props.defaultValue).toBe('a@b.c')
+    expect(getByTestId('메일').props.value).toBeUndefined()
+  })
+})
+
+/**
+ * **칸의 상자는 두 플랫폼이 같아야 한다**([[ADR-170]] 정정 13).
+ *
+ * 치수를 안 주면 안드로이드는 EditText 기본 패딩 + 글꼴 패딩을 얹어 **41.14dp**, iOS 는 **20.00pt**
+ * 였다(같은 시트·같은 칸 실측). 셋을 끄면 20.19dp 로 내려와 맞는다.
+ *
+ * 여기서 프롭을 보는 이유는 늘 같다 — 계산이 맞아도 프롭이 안 붙으면 화면은 옛 동작이다.
+ */
+describe('TextInput — 플랫폼 기본 상자를 지운다 ([[ADR-170]] 정정 13)', () => {
+  it('패딩·글꼴 패딩을 끄고 글자를 가운데 세운다', async () => {
+    const { getByTestId } = await renderAtom(<TextInput testID="칸" value="" />)
+
+    expect(flattenStyle(getByTestId('칸').props.style)).toMatchObject({
+      padding: 0,
+      includeFontPadding: false,
+      textAlignVertical: 'center',
+    })
+  })
+
+  it('호출부가 준 치수가 이긴다 — 기본값은 **앞**에 깔린다', async () => {
+    const { getByTestId } = await renderAtom(
+      <TextInput testID="칸" value="" style={{ paddingVertical: 8 }} />,
+    )
+
+    expect(flattenStyle(getByTestId('칸').props.style)).toMatchObject({ paddingVertical: 8 })
+  })
+})

@@ -175,17 +175,28 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
       enablePanDownToClose
       enableDynamicSizing
       /*
-       * **창 모드를 사실대로 알려 준다**([[ADR-170]] 정정 5).
+       * **창 모드를 사실대로 알려 준다**([[ADR-170]] 정정 11 — 정정 5 의 값을 뒤집는다).
        *
        * 라이브러리는 이 값을 **자기가 바꾸지 않는다** — 소스 어디에도 `softInputMode` 를 건드리는
-       * 곳이 없다. 이 프롭은 «앱이 지금 어느 모드인가» 를 **알려 주는** 것이고, 그 값으로 자기
-       * 보정량을 정한다. 기본값은 `adjustPan` 인데 **이 앱의 매니페스트는 `adjustResize`** 다.
+       * 곳이 없다. 이 프롭은 «키보드가 뜰 때 창이 실제로 어떻게 되는가» 를 **알려 주는** 것이고,
+       * 그 값으로 자기 보정량을 정한다.
        *
-       * 그대로 두면 안드로이드에서 **두 번 밀린다** — OS 가 창을 줄여 이미 올라온 시트를,
-       * 라이브러리가 키보드 높이만큼 또 올린다. `adjustResize` 를 주면 라이브러리가 자기 보정을
-       * 0 으로 두고 OS 에 맡긴다.
+       * 정정 5 는 매니페스트(`android:windowSoftInputMode="adjustResize"`)를 근거로 `adjustResize`
+       * 를 넘겼다. **그 값은 죽어 있다** — 이 앱은 edge-to-edge 이고(`android/gradle.properties`
+       * 의 `edgeToEdgeEnabled=true`, 안드로이드 판을 안 가린다) edge-to-edge 창에서 OS 는 IME 를
+       * 인셋으로만 알리고 창을 줄이지 않는다.
+       *
+       * 계측(API 36 에뮬레이터, 2026-08-27): 키보드가 **312dp** 떠 있는데
+       * `Dimensions.get('window').height` 는 **914.29 그대로**였고 내용도 안 밀렸다 — 창은 줄지도
+       * 밀리지도 않는다. 그런데 `adjustResize` 를 받은 라이브러리는 «OS 가 이미 했겠지» 라며 자기
+       * 보정을 **0 으로 두고 빠져나간다**(소스: `heightWithinContainer = 0` 뒤 early return).
+       * 아무도 안 올리므로 시트가 키보드 뒤에 그대로 남았다(사용자 실기 보고).
+       *
+       * `adjustPan` 은 «창은 안 움직인다 — 네가 올려라» 라는 뜻이라 사실과 맞고, 그때 라이브러리가
+       * `heightWithinContainer` 를 재서 `keyboardBehavior`(기본 `interactive`)로 시트를 올린다.
+       * 그 계산은 `animatedKeyboardState.target` 이 차 있어야 도는데, 그 값은 아톰이 채운다(정정 10).
        */
-      android_keyboardInputMode="adjustResize"
+      android_keyboardInputMode="adjustPan"
       /*
        * **올라간 것은 내려와야 한다**([[ADR-170]] 정정 5).
        *

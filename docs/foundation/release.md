@@ -174,7 +174,7 @@ keytool -printcert -jarfile android/app/build/outputs/bundle/release/app-release
 
 | 값 | 현재 | 규칙 |
 |---|---|---|
-| `versionCode` | 19 | 업로드마다 +1. **되돌리지 않는다** — 내부 테스트에 한 번 올린 번호는 프로덕션에 다시 못 쓴다 |
+| `versionCode` | 21 | 업로드마다 +1. **되돌리지 않는다** — 내부 테스트에 한 번 올린 번호는 프로덕션에 다시 못 쓴다 |
 | `versionName` | `1.0.0` | 3단 고정. OTA 매니페스트와 같은 축이라 2단(`1.0`)이면 OTA가 깨진다 |
 
 내장 번들과 OTA 채널의 버전 관계는 [features/live-update.md](../features/live-update.md) 참조.

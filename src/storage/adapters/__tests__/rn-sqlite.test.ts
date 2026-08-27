@@ -145,6 +145,10 @@ describe('db.ts 와 맞물리는가', () => {
       // [[ADR-170]] 정정 9 — 수입 테이블도 수수료 칸 없이 만들어진 기기가 있다.
       'ALTER TABLE income_records ADD COLUMN sale_fee_percent INTEGER',
       'ALTER TABLE income_records ADD COLUMN sale_fee_meso INTEGER',
+      // 수입에도 통화가 있다([[ADR-170]] 정정 15) — 지출과 **같은 칸 이름**이다.
+      'ALTER TABLE income_records ADD COLUMN point_amount INTEGER',
+      'ALTER TABLE income_records ADD COLUMN point_per_100m_meso INTEGER',
+      'ALTER TABLE income_records ADD COLUMN cash_amount INTEGER',
     ])
   })
 
@@ -161,6 +165,9 @@ describe('db.ts 와 맞물리는가', () => {
             { name: 'form' },
             { name: 'sale_fee_percent' },
             { name: 'sale_fee_meso' },
+            { name: 'point_amount' },
+            { name: 'point_per_100m_meso' },
+            { name: 'cash_amount' },
           ]
         : []
 

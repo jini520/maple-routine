@@ -70,9 +70,23 @@ export interface SpendCatalogChoice {
 export interface SpendCatalogGroup {
   readonly group: string
   readonly choices: readonly SpendCatalogChoice[]
+  /**
+   * **지금 고를 수 있는 묶음인가**([[ADR-166]] 정정 5).
+   *
+   * 기간제 이벤트(메이플 포인트 샵)는 열려 있을 때만 있는 것이고, 그 사실을 카탈로그의 `groups`
+   * 가 든다 — **날짜로 판정하지 않는다**(이벤트가 미뤄지는 날 앱이 거짓말을 한다). 표에 없는
+   * 묶음은 언제나 열린 것이다.
+   *
+   * 화면은 닫힌 묶음을 **지우지 않고 흐리게 둔다**(사용자 선택) — 자리는 남고 못 고른다.
+   * **과거 기록에는 영향이 없다**: 이 값은 «지금 새로 고를 수 있나» 일 뿐이다.
+   */
+  readonly active: boolean
 }
 
 const ITEMS = spendCatalog.items as readonly SpendCatalogItem[]
+
+/** 묶음 표 — 닫힌 것만 적혀 있다(없으면 열린 것이다). 사유는 `SpendCatalogGroup.active` 주석. */
+const GROUPS = spendCatalog.groups as Readonly<Record<string, { readonly active: boolean }>>
 
 /** 관세율 — **화면이 `* 1.1` 을 들면 게임 수치가 코드에 박히는 자리**가 된다([[ADR-006]]). */
 export const SPEND_TARIFF_PERCENT = spendCatalog.tariffPercent
@@ -89,14 +103,19 @@ const MESO_PER_RATE_UNIT = 100_000_000
  * «고를 것이 없다» 는 사실이고, 화면은 그 갈래에서 입력 칸을 그린다.
  */
 export function spendGroupsOf(category: SpendCategory): SpendCatalogGroup[] {
-  const groups: { group: string; choices: { label: string; items: SpendCatalogItem[] }[] }[] = []
+  const groups: {
+    group: string
+    active: boolean
+    choices: { label: string; items: SpendCatalogItem[] }[]
+  }[] = []
   for (const item of ITEMS) {
     if (item.category !== category) continue
     const label = item.base ?? item.name
 
     let group = groups[groups.length - 1]
     if (group === undefined || group.group !== item.group) {
-      group = { group: item.group, choices: [] }
+      // 표에 없는 묶음은 **열린 것**이다 — 닫힘만 적는다.
+      group = { group: item.group, active: GROUPS[item.group]?.active ?? true, choices: [] }
       groups.push(group)
     }
 

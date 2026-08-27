@@ -821,6 +821,7 @@ export function CashbookScreen(): React.JSX.Element {
         // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
         <IncomeSheet
           characters={characters}
+          lastPointRate={lastPointRate}
           dateKey={typeof sheet === 'object' ? sheet.record.earnedOn : selectedDateKey}
           editing={typeof sheet === 'object' ? sheet.record : undefined}
           onSave={
