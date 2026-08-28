@@ -98,6 +98,15 @@ export const ASSET_GROUPS: AssetGroup[] = [
     purpose: '지역 아이콘 — `lib/daily-quest-icons.ts`(배경과 같은 슬러그를 쓴다)',
   },
   {
+    file: 'force',
+    exportName: 'FORCE_ASSETS',
+    kind: 'record',
+    key: 'slug',
+    dirs: ['force'],
+    extensions: ['png', 'webp'],
+    purpose: '아케인/어센틱 포스 배지 그림 — `lib/force-icons.ts`([[ADR-175]] 결정 10)',
+  },
+  {
     file: 'drop-effect',
     exportName: 'DROP_EFFECT_ASSETS',
     kind: 'frames',

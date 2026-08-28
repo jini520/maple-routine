@@ -1,0 +1,3530 @@
+{
+  "regions": [
+    {
+      "slug": "roadOfVanishing",
+      "name": "소멸의 여로",
+      "group": "아케인 리버",
+      "forceType": "arcane",
+      "minLevel": 200,
+      "maxLevel": 209,
+      "grounds": [
+        {
+          "name": "풍화된 기쁨의 땅",
+          "force": 30,
+          "mobs": 22,
+          "levels": [
+            200
+          ]
+        },
+        {
+          "name": "풍화된 기쁨과 분노의 땅",
+          "force": 30,
+          "mobs": 29,
+          "levels": [
+            200,
+            201
+          ]
+        },
+        {
+          "name": "풍화된 분노의 땅",
+          "force": 30,
+          "mobs": 26,
+          "levels": [
+            201
+          ]
+        },
+        {
+          "name": "풍화된 분노와 슬픔의 땅",
+          "force": 30,
+          "mobs": 29,
+          "levels": [
+            201,
+            202
+          ]
+        },
+        {
+          "name": "풍화된 슬픔의 땅",
+          "force": 30,
+          "mobs": 26,
+          "levels": [
+            202
+          ]
+        },
+        {
+          "name": "풍화된 슬픔과 즐거움의 땅",
+          "force": 30,
+          "mobs": 29,
+          "levels": [
+            202,
+            203
+          ]
+        },
+        {
+          "name": "풍화된 즐거움의 땅",
+          "force": 30,
+          "mobs": 26,
+          "levels": [
+            203
+          ]
+        },
+        {
+          "name": "숨겨진 호숫가",
+          "force": 80,
+          "mobs": 37,
+          "levels": [
+            209
+          ]
+        },
+        {
+          "name": "암석의 영토",
+          "force": 40,
+          "mobs": 29,
+          "levels": [
+            204
+          ]
+        },
+        {
+          "name": "암석과 화염의 영토",
+          "force": 40,
+          "mobs": 29,
+          "levels": [
+            204,
+            205
+          ]
+        },
+        {
+          "name": "화염의 영토",
+          "force": 40,
+          "mobs": 28,
+          "levels": [
+            205
+          ]
+        },
+        {
+          "name": "화염과 영혼의 영토",
+          "force": 40,
+          "mobs": 29,
+          "levels": [
+            205,
+            206
+          ]
+        },
+        {
+          "name": "영혼의 영토",
+          "force": 40,
+          "mobs": 26,
+          "levels": [
+            206
+          ]
+        },
+        {
+          "name": "숨겨진 화염지대",
+          "force": 80,
+          "mobs": 29,
+          "levels": [
+            209
+          ]
+        },
+        {
+          "name": "세 갈래길 1",
+          "force": 60,
+          "mobs": 30,
+          "levels": [
+            207
+          ]
+        },
+        {
+          "name": "동굴의 서쪽길 1",
+          "force": 60,
+          "mobs": 30,
+          "levels": [
+            207
+          ]
+        },
+        {
+          "name": "동굴의 서쪽길 2",
+          "force": 60,
+          "mobs": 30,
+          "levels": [
+            207
+          ]
+        },
+        {
+          "name": "동굴의 동쪽길 1",
+          "force": 60,
+          "mobs": 30,
+          "levels": [
+            207
+          ]
+        },
+        {
+          "name": "동굴의 동쪽길 2",
+          "force": 60,
+          "mobs": 30,
+          "levels": [
+            207
+          ]
+        },
+        {
+          "name": "세 갈래길 2",
+          "force": 60,
+          "mobs": 30,
+          "levels": [
+            207
+          ]
+        },
+        {
+          "name": "동굴 위쪽",
+          "force": 60,
+          "mobs": 30,
+          "levels": [
+            207
+          ]
+        },
+        {
+          "name": "동굴 아래쪽",
+          "force": 60,
+          "mobs": 30,
+          "levels": [
+            207
+          ]
+        },
+        {
+          "name": "동굴의 깊숙한 곳",
+          "force": 60,
+          "mobs": 30,
+          "levels": [
+            207
+          ]
+        },
+        {
+          "name": "아르마의 은신처",
+          "force": 60,
+          "mobs": 30,
+          "levels": [
+            209
+          ]
+        },
+        {
+          "name": "숨겨진 동굴",
+          "force": 80,
+          "mobs": 30,
+          "levels": [
+            209
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "reverseCity",
+      "name": "리버스 시티",
+      "group": "아케인 리버",
+      "forceType": "arcane",
+      "minLevel": 205,
+      "maxLevel": 209,
+      "grounds": [
+        {
+          "name": "지하 선로1",
+          "force": 40,
+          "mobs": 26,
+          "levels": [
+            205
+          ]
+        },
+        {
+          "name": "지하 선로2",
+          "force": 40,
+          "mobs": 26,
+          "levels": [
+            205
+          ]
+        },
+        {
+          "name": "지하 선로3",
+          "force": 40,
+          "mobs": 26,
+          "levels": [
+            205
+          ]
+        },
+        {
+          "name": "지하 선로4",
+          "force": 40,
+          "mobs": 26,
+          "levels": [
+            205
+          ]
+        },
+        {
+          "name": "지하 선로5",
+          "force": 40,
+          "mobs": 27,
+          "levels": [
+            205
+          ]
+        },
+        {
+          "name": "지하 선로6",
+          "force": 40,
+          "mobs": 27,
+          "levels": [
+            205
+          ]
+        },
+        {
+          "name": "T-boy의 연구열차 1",
+          "force": 40,
+          "mobs": 27,
+          "levels": [
+            206
+          ]
+        },
+        {
+          "name": "T-boy의 연구열차 2",
+          "force": 40,
+          "mobs": 28,
+          "levels": [
+            206
+          ]
+        },
+        {
+          "name": "T-boy의 연구열차 3",
+          "force": 40,
+          "mobs": 27,
+          "levels": [
+            206
+          ]
+        },
+        {
+          "name": "숨겨진 연구열차",
+          "force": 100,
+          "mobs": 28,
+          "levels": [
+            210
+          ]
+        },
+        {
+          "name": "지하열차 1",
+          "force": 60,
+          "mobs": 26,
+          "levels": [
+            207
+          ]
+        },
+        {
+          "name": "지하열차 2",
+          "force": 60,
+          "mobs": 26,
+          "levels": [
+            207,
+            208
+          ]
+        },
+        {
+          "name": "지하열차 3",
+          "force": 60,
+          "mobs": 27,
+          "levels": [
+            208
+          ]
+        },
+        {
+          "name": "숨겨진 지하열차",
+          "force": 100,
+          "mobs": 28,
+          "levels": [
+            211,
+            212
+          ]
+        },
+        {
+          "name": "지상열차1",
+          "force": 60,
+          "mobs": 27,
+          "levels": [
+            207
+          ]
+        },
+        {
+          "name": "지상열차2",
+          "force": 60,
+          "mobs": 26,
+          "levels": [
+            207,
+            208
+          ]
+        },
+        {
+          "name": "지상열차3",
+          "force": 60,
+          "mobs": 27,
+          "levels": [
+            208
+          ]
+        },
+        {
+          "name": "M타워2",
+          "force": 60,
+          "mobs": 35,
+          "levels": [
+            209
+          ]
+        },
+        {
+          "name": "M타워3",
+          "force": 60,
+          "mobs": 34,
+          "levels": [
+            209
+          ]
+        },
+        {
+          "name": "M타워4",
+          "force": 60,
+          "mobs": 34,
+          "levels": [
+            209
+          ]
+        },
+        {
+          "name": "숨겨진 M타워",
+          "force": 100,
+          "mobs": 35,
+          "levels": [
+            213
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "chewChew",
+      "name": "츄츄 아일랜드",
+      "group": "아케인 리버",
+      "forceType": "arcane",
+      "minLevel": 210,
+      "maxLevel": 219,
+      "grounds": [
+        {
+          "name": "동산 입구",
+          "force": 100,
+          "mobs": 33,
+          "levels": [
+            210
+          ]
+        },
+        {
+          "name": "알록달록 숲지대 1",
+          "force": 100,
+          "mobs": 32,
+          "levels": [
+            211
+          ]
+        },
+        {
+          "name": "알록달록 숲지대 2",
+          "force": 100,
+          "mobs": 34,
+          "levels": [
+            210
+          ]
+        },
+        {
+          "name": "알록달록 숲지대 3",
+          "force": 100,
+          "mobs": 32,
+          "levels": [
+            210,
+            211
+          ]
+        },
+        {
+          "name": "오색동산 깊은 곳",
+          "force": 100,
+          "mobs": 31,
+          "levels": [
+            211
+          ]
+        },
+        {
+          "name": "길쭉 동글숲 1",
+          "force": 100,
+          "mobs": 28,
+          "levels": [
+            212
+          ]
+        },
+        {
+          "name": "길쭉 동글숲 2",
+          "force": 100,
+          "mobs": 29,
+          "levels": [
+            213
+          ]
+        },
+        {
+          "name": "몽땅 동글숲 1",
+          "force": 100,
+          "mobs": 25,
+          "levels": [
+            212
+          ]
+        },
+        {
+          "name": "몽땅 동글숲 2",
+          "force": 100,
+          "mobs": 30,
+          "levels": [
+            213
+          ]
+        },
+        {
+          "name": "츄릅포레스트 깊은 곳",
+          "force": 100,
+          "mobs": 28,
+          "levels": [
+            213
+          ]
+        },
+        {
+          "name": "츄츄빌리지 입구",
+          "force": 130,
+          "mobs": 30,
+          "levels": [
+            214
+          ]
+        },
+        {
+          "name": "격류지대 1",
+          "force": 130,
+          "mobs": 28,
+          "levels": [
+            216
+          ]
+        },
+        {
+          "name": "격류지대 2",
+          "force": 130,
+          "mobs": 26,
+          "levels": [
+            215
+          ]
+        },
+        {
+          "name": "격류지대 3",
+          "force": 130,
+          "mobs": 28,
+          "levels": [
+            215,
+            216
+          ]
+        },
+        {
+          "name": "폭포 아래",
+          "force": 130,
+          "mobs": 25,
+          "levels": [
+            216
+          ]
+        },
+        {
+          "name": "고래산 초입",
+          "force": 160,
+          "mobs": 29,
+          "levels": [
+            217
+          ]
+        },
+        {
+          "name": "고래산 중턱 1",
+          "force": 160,
+          "mobs": 28,
+          "levels": [
+            217,
+            219
+          ]
+        },
+        {
+          "name": "고래산 정상",
+          "force": 160,
+          "mobs": 28,
+          "levels": [
+            219
+          ]
+        },
+        {
+          "name": "고래산 중턱 2",
+          "force": 160,
+          "mobs": 30,
+          "levels": [
+            218
+          ]
+        },
+        {
+          "name": "거대한 꼬리",
+          "force": 160,
+          "mobs": 30,
+          "levels": [
+            219
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "yumYum",
+      "name": "얌얌 아일랜드",
+      "group": "아케인 리버",
+      "forceType": "arcane",
+      "minLevel": 215,
+      "maxLevel": 219,
+      "grounds": [
+        {
+          "name": "머쉬버드 숲 1",
+          "force": 130,
+          "mobs": 27,
+          "levels": [
+            215
+          ]
+        },
+        {
+          "name": "머쉬버드 숲 2",
+          "force": 130,
+          "mobs": 27,
+          "levels": [
+            215,
+            216
+          ]
+        },
+        {
+          "name": "머쉬버드 숲 3",
+          "force": 130,
+          "mobs": 27,
+          "levels": [
+            216
+          ]
+        },
+        {
+          "name": "머쉬버드 숲 4",
+          "force": 130,
+          "mobs": 27,
+          "levels": [
+            215
+          ]
+        },
+        {
+          "name": "머쉬버드 숲 5",
+          "force": 130,
+          "mobs": 27,
+          "levels": [
+            215,
+            216
+          ]
+        },
+        {
+          "name": "머쉬버드 숲 6",
+          "force": 130,
+          "mobs": 27,
+          "levels": [
+            215
+          ]
+        },
+        {
+          "name": "숨겨진 머쉬버드 숲",
+          "force": 190,
+          "mobs": 27,
+          "levels": [
+            220
+          ]
+        },
+        {
+          "name": "일리야드 들판 1",
+          "force": 160,
+          "mobs": 27,
+          "levels": [
+            217
+          ]
+        },
+        {
+          "name": "일리야드 들판 2",
+          "force": 160,
+          "mobs": 27,
+          "levels": [
+            217,
+            218
+          ]
+        },
+        {
+          "name": "일리야드 들판 3",
+          "force": 160,
+          "mobs": 27,
+          "levels": [
+            218
+          ]
+        },
+        {
+          "name": "일리야드 들판 4",
+          "force": 160,
+          "mobs": 27,
+          "levels": [
+            217
+          ]
+        },
+        {
+          "name": "일리야드 들판 5",
+          "force": 160,
+          "mobs": 27,
+          "levels": [
+            217,
+            218
+          ]
+        },
+        {
+          "name": "일리야드 들판 6",
+          "force": 160,
+          "mobs": 27,
+          "levels": [
+            218
+          ]
+        },
+        {
+          "name": "숨겨진 일리야드 들판",
+          "force": 190,
+          "mobs": 27,
+          "levels": [
+            220
+          ]
+        },
+        {
+          "name": "펑고스 숲 1",
+          "force": 160,
+          "mobs": 27,
+          "levels": [
+            219
+          ]
+        },
+        {
+          "name": "펑고스 숲 2",
+          "force": 160,
+          "mobs": 27,
+          "levels": [
+            219
+          ]
+        },
+        {
+          "name": "펑고스 숲 3",
+          "force": 160,
+          "mobs": 27,
+          "levels": [
+            219
+          ]
+        },
+        {
+          "name": "펑고스 숲 4",
+          "force": 160,
+          "mobs": 27,
+          "levels": [
+            219
+          ]
+        },
+        {
+          "name": "펑고스 숲 5",
+          "force": 160,
+          "mobs": 27,
+          "levels": [
+            219
+          ]
+        },
+        {
+          "name": "펑고스 숲 6",
+          "force": 160,
+          "mobs": 27,
+          "levels": [
+            219
+          ]
+        },
+        {
+          "name": "숨겨진 펑고스 숲",
+          "force": 190,
+          "mobs": 27,
+          "levels": [
+            220
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "lacheln",
+      "name": "레헬른",
+      "group": "아케인 리버",
+      "forceType": "arcane",
+      "minLevel": 220,
+      "maxLevel": 224,
+      "grounds": [
+        {
+          "name": "무법자들의 거리 1",
+          "force": 190,
+          "mobs": 30,
+          "levels": [
+            220
+          ]
+        },
+        {
+          "name": "무법자들의 거리 2",
+          "force": 190,
+          "mobs": 30,
+          "levels": [
+            220,
+            221
+          ]
+        },
+        {
+          "name": "무법자들의 거리 3",
+          "force": 190,
+          "mobs": 30,
+          "levels": [
+            221
+          ]
+        },
+        {
+          "name": "닭이 뛰노는 곳 1",
+          "force": 210,
+          "mobs": 27,
+          "levels": [
+            221
+          ]
+        },
+        {
+          "name": "닭이 뛰노는 곳 2",
+          "force": 210,
+          "mobs": 28,
+          "levels": [
+            222
+          ]
+        },
+        {
+          "name": "닭이 뛰노는 곳 3",
+          "force": 210,
+          "mobs": 39,
+          "levels": [
+            221,
+            222
+          ]
+        },
+        {
+          "name": "우승 접시의 거리 1",
+          "force": 210,
+          "mobs": 31,
+          "levels": [
+            222
+          ]
+        },
+        {
+          "name": "우승 접시의 거리 2",
+          "force": 210,
+          "mobs": 31,
+          "levels": [
+            223
+          ]
+        },
+        {
+          "name": "본색을 드러내는곳 1",
+          "force": 210,
+          "mobs": 31,
+          "levels": [
+            223
+          ]
+        },
+        {
+          "name": "본색을 드러내는곳 2",
+          "force": 210,
+          "mobs": 27,
+          "levels": [
+            224
+          ]
+        },
+        {
+          "name": "본색을 드러내는곳 3",
+          "force": 210,
+          "mobs": 25,
+          "levels": [
+            223,
+            224
+          ]
+        },
+        {
+          "name": "춤추는 구두 점령지 1",
+          "force": 210,
+          "mobs": 29,
+          "levels": [
+            224
+          ]
+        },
+        {
+          "name": "춤추는 구두 점령지 2",
+          "force": 210,
+          "mobs": 31,
+          "levels": [
+            225
+          ]
+        },
+        {
+          "name": "악몽의 시계탑 1층",
+          "force": 240,
+          "mobs": 40,
+          "levels": [
+            226
+          ]
+        },
+        {
+          "name": "악몽의 시계탑 2층",
+          "force": 240,
+          "mobs": 40,
+          "levels": [
+            226
+          ]
+        },
+        {
+          "name": "악몽의 시계탑 3층",
+          "force": 240,
+          "mobs": 40,
+          "levels": [
+            227
+          ]
+        },
+        {
+          "name": "악몽의 시계탑 4층",
+          "force": 240,
+          "mobs": 38,
+          "levels": [
+            228
+          ]
+        },
+        {
+          "name": "악몽의 시계탑 5층",
+          "force": 240,
+          "mobs": 40,
+          "levels": [
+            227,
+            228
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "arcana",
+      "name": "아르카나",
+      "group": "아케인 리버",
+      "forceType": "arcane",
+      "minLevel": 225,
+      "maxLevel": 229,
+      "grounds": [
+        {
+          "name": "물의 숲",
+          "force": 280,
+          "mobs": 30,
+          "levels": [
+            230
+          ]
+        },
+        {
+          "name": "햇살의 숲",
+          "force": 280,
+          "mobs": 30,
+          "levels": [
+            231
+          ]
+        },
+        {
+          "name": "물과 햇살의 숲",
+          "force": 280,
+          "mobs": 34,
+          "levels": [
+            230,
+            231
+          ]
+        },
+        {
+          "name": "흙의 숲",
+          "force": 280,
+          "mobs": 30,
+          "levels": [
+            232
+          ]
+        },
+        {
+          "name": "햇살과 흙의 숲",
+          "force": 280,
+          "mobs": 30,
+          "levels": [
+            231,
+            232
+          ]
+        },
+        {
+          "name": "서리구름의 숲",
+          "force": 320,
+          "mobs": 29,
+          "levels": [
+            233
+          ]
+        },
+        {
+          "name": "번개구름의 숲",
+          "force": 320,
+          "mobs": 30,
+          "levels": [
+            234
+          ]
+        },
+        {
+          "name": "서리와 번개의 숲 1",
+          "force": 320,
+          "mobs": 24,
+          "levels": [
+            233,
+            234
+          ]
+        },
+        {
+          "name": "서리와 번개의 숲 2",
+          "force": 320,
+          "mobs": 30,
+          "levels": [
+            233,
+            234
+          ]
+        },
+        {
+          "name": "맹독의 숲",
+          "force": 320,
+          "mobs": 30,
+          "levels": [
+            235
+          ]
+        },
+        {
+          "name": "폭발의 숲",
+          "force": 320,
+          "mobs": 32,
+          "levels": [
+            236
+          ]
+        },
+        {
+          "name": "맹독과 폭발의 숲 1",
+          "force": 320,
+          "mobs": 30,
+          "levels": [
+            235,
+            236
+          ]
+        },
+        {
+          "name": "맹독과 폭발의 숲 2",
+          "force": 320,
+          "mobs": 32,
+          "levels": [
+            235,
+            236
+          ]
+        },
+        {
+          "name": "동굴 윗길",
+          "force": 360,
+          "mobs": 37,
+          "levels": [
+            237
+          ]
+        },
+        {
+          "name": "동굴 윗길 깊은 곳 1",
+          "force": 360,
+          "mobs": 33,
+          "levels": [
+            237,
+            238
+          ]
+        },
+        {
+          "name": "동굴 윗길 깊은 곳 2",
+          "force": 360,
+          "mobs": 32,
+          "levels": [
+            238
+          ]
+        },
+        {
+          "name": "동굴 윗길 깊디 깊은 곳",
+          "force": 360,
+          "mobs": 29,
+          "levels": [
+            238,
+            239
+          ]
+        },
+        {
+          "name": "동굴 아랫길",
+          "force": 360,
+          "mobs": 24,
+          "levels": [
+            237
+          ]
+        },
+        {
+          "name": "동굴 아랫길 깊은 곳 1",
+          "force": 360,
+          "mobs": 26,
+          "levels": [
+            237,
+            239
+          ]
+        },
+        {
+          "name": "동굴 아랫길 깊은 곳 2",
+          "force": 360,
+          "mobs": 27,
+          "levels": [
+            239
+          ]
+        },
+        {
+          "name": "동굴 아랫길 깊디 깊은 곳",
+          "force": 360,
+          "mobs": 29,
+          "levels": [
+            238,
+            239
+          ]
+        },
+        {
+          "name": "다섯 갈래 동굴",
+          "force": 360,
+          "mobs": 33,
+          "levels": [
+            238,
+            239
+          ]
+        },
+        {
+          "name": "다섯 갈래 동굴 윗길",
+          "force": 360,
+          "mobs": 31,
+          "levels": [
+            239,
+            240
+          ]
+        },
+        {
+          "name": "다섯 갈래 동굴 사잇길",
+          "force": 360,
+          "mobs": 32,
+          "levels": [
+            239,
+            240
+          ]
+        },
+        {
+          "name": "정령의 나무 밑 동굴",
+          "force": 360,
+          "mobs": 30,
+          "levels": [
+            240
+          ]
+        },
+        {
+          "name": "다섯 갈래 동굴 아랫길",
+          "force": 360,
+          "mobs": 30,
+          "levels": [
+            240
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "morass",
+      "name": "모라스",
+      "group": "아케인 리버",
+      "forceType": "arcane",
+      "minLevel": 230,
+      "maxLevel": 234,
+      "grounds": [
+        {
+          "name": "산호 숲으로 가는길 2",
+          "force": 400,
+          "mobs": 31,
+          "levels": [
+            236
+          ]
+        },
+        {
+          "name": "산호 숲으로 가는길 3",
+          "force": 400,
+          "mobs": 34,
+          "levels": [
+            236
+          ]
+        },
+        {
+          "name": "산호 숲으로 가는길 4",
+          "force": 400,
+          "mobs": 31,
+          "levels": [
+            236
+          ]
+        },
+        {
+          "name": "도둑고양이 출물지 2",
+          "force": 440,
+          "mobs": 32,
+          "levels": [
+            237
+          ]
+        },
+        {
+          "name": "도둑고양이 출물지",
+          "force": 440,
+          "mobs": 30,
+          "levels": [
+            237
+          ]
+        },
+        {
+          "name": "형님들 구역",
+          "force": 440,
+          "mobs": 32,
+          "levels": [
+            238
+          ]
+        },
+        {
+          "name": "형님들 구역 2",
+          "force": 440,
+          "mobs": 36,
+          "levels": [
+            238
+          ]
+        },
+        {
+          "name": "형님들 구역 3",
+          "force": 440,
+          "mobs": 37,
+          "levels": [
+            238
+          ]
+        },
+        {
+          "name": "그림자가 춤추는 곳 2",
+          "force": 440,
+          "mobs": 38,
+          "levels": [
+            239
+          ]
+        },
+        {
+          "name": "그림자가 춤추는 곳 3",
+          "force": 440,
+          "mobs": 38,
+          "levels": [
+            239,
+            240
+          ]
+        },
+        {
+          "name": "그림자가 춤추는 곳 4",
+          "force": 440,
+          "mobs": 38,
+          "levels": [
+            240
+          ]
+        },
+        {
+          "name": "폐쇄구역",
+          "force": 480,
+          "mobs": 35,
+          "levels": [
+            241
+          ]
+        },
+        {
+          "name": "폐쇄구역 2",
+          "force": 480,
+          "mobs": 38,
+          "levels": [
+            241
+          ]
+        },
+        {
+          "name": "폐쇄구역 3",
+          "force": 480,
+          "mobs": 39,
+          "levels": [
+            241
+          ]
+        },
+        {
+          "name": "그날의 트뤼에페 2",
+          "force": 520,
+          "mobs": 40,
+          "levels": [
+            242,
+            243
+          ]
+        },
+        {
+          "name": "그날의 트뤼에페 3",
+          "force": 520,
+          "mobs": 40,
+          "levels": [
+            243,
+            244
+          ]
+        },
+        {
+          "name": "그날의 트뤼에페 4",
+          "force": 520,
+          "mobs": 33,
+          "levels": [
+            244,
+            245
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "esfera",
+      "name": "에스페라",
+      "group": "아케인 리버",
+      "forceType": "arcane",
+      "minLevel": 235,
+      "maxLevel": 244,
+      "grounds": [
+        {
+          "name": "생명이 시작되는 곳 2",
+          "force": 560,
+          "mobs": 37,
+          "levels": [
+            240
+          ]
+        },
+        {
+          "name": "생명이 시작되는 곳 3",
+          "force": 560,
+          "mobs": 37,
+          "levels": [
+            240,
+            241
+          ]
+        },
+        {
+          "name": "생명이 시작되는 곳 4",
+          "force": 560,
+          "mobs": 37,
+          "levels": [
+            241
+          ]
+        },
+        {
+          "name": "생명이 시작되는 곳 5",
+          "force": 560,
+          "mobs": 37,
+          "levels": [
+            242
+          ]
+        },
+        {
+          "name": "생명이 시작되는 곳 6",
+          "force": 560,
+          "mobs": 35,
+          "levels": [
+            242,
+            243
+          ]
+        },
+        {
+          "name": "생명이 시작되는 곳 7",
+          "force": 560,
+          "mobs": 36,
+          "levels": [
+            243
+          ]
+        },
+        {
+          "name": "거울빛에 물든 바다 2",
+          "force": 600,
+          "mobs": 30,
+          "levels": [
+            244
+          ]
+        },
+        {
+          "name": "거울빛에 물든 바다 3",
+          "force": 600,
+          "mobs": 30,
+          "levels": [
+            244,
+            245
+          ]
+        },
+        {
+          "name": "거울빛에 물든 바다 4",
+          "force": 600,
+          "mobs": 30,
+          "levels": [
+            245
+          ]
+        },
+        {
+          "name": "거울빛에 물든 바다 5",
+          "force": 600,
+          "mobs": 32,
+          "levels": [
+            246
+          ]
+        },
+        {
+          "name": "거울빛에 물든 바다 6",
+          "force": 600,
+          "mobs": 31,
+          "levels": [
+            246,
+            247
+          ]
+        },
+        {
+          "name": "거울빛에 물든 바다 7",
+          "force": 600,
+          "mobs": 32,
+          "levels": [
+            247
+          ]
+        },
+        {
+          "name": "거울에 비친 빛의 신전 2",
+          "force": 640,
+          "mobs": 38,
+          "levels": [
+            248
+          ]
+        },
+        {
+          "name": "거울에 비친 빛의 신전 3",
+          "force": 640,
+          "mobs": 38,
+          "levels": [
+            248,
+            249
+          ]
+        },
+        {
+          "name": "거울에 비친 빛의 신전 4",
+          "force": 640,
+          "mobs": 37,
+          "levels": [
+            249
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "sellas",
+      "name": "셀라스",
+      "group": "아케인 리버",
+      "forceType": "arcane",
+      "minLevel": 240,
+      "maxLevel": 244,
+      "grounds": [
+        {
+          "name": "빛이 마지막으로 닿는 곳 1",
+          "force": 600,
+          "mobs": 27,
+          "levels": [
+            245
+          ]
+        },
+        {
+          "name": "빛이 마지막으로 닿는 곳 2",
+          "force": 600,
+          "mobs": 33,
+          "levels": [
+            245
+          ]
+        },
+        {
+          "name": "빛이 마지막으로 닿는 곳 3",
+          "force": 600,
+          "mobs": 38,
+          "levels": [
+            245
+          ]
+        },
+        {
+          "name": "빛이 마지막으로 닿는 곳 4",
+          "force": 600,
+          "mobs": 26,
+          "levels": [
+            246
+          ]
+        },
+        {
+          "name": "빛이 마지막으로 닿는 곳 5",
+          "force": 600,
+          "mobs": 33,
+          "levels": [
+            246
+          ]
+        },
+        {
+          "name": "빛이 마지막으로 닿는 곳 6",
+          "force": 600,
+          "mobs": 39,
+          "levels": [
+            246
+          ]
+        },
+        {
+          "name": "빛이 마지막으로 닿는 곳 7",
+          "force": 600,
+          "mobs": 26,
+          "levels": [
+            247
+          ]
+        },
+        {
+          "name": "빛이 마지막으로 닿는 곳 8",
+          "force": 600,
+          "mobs": 32,
+          "levels": [
+            247
+          ]
+        },
+        {
+          "name": "빛이 마지막으로 닿는 곳 9",
+          "force": 600,
+          "mobs": 38,
+          "levels": [
+            247
+          ]
+        },
+        {
+          "name": "끝없이 추락하는 심해 1",
+          "force": 640,
+          "mobs": 26,
+          "levels": [
+            248
+          ]
+        },
+        {
+          "name": "끝없이 추락하는 심해 2",
+          "force": 640,
+          "mobs": 34,
+          "levels": [
+            248
+          ]
+        },
+        {
+          "name": "끝없이 추락하는 심해 3",
+          "force": 640,
+          "mobs": 38,
+          "levels": [
+            248
+          ]
+        },
+        {
+          "name": "끝없이 추락하는 심해 4",
+          "force": 640,
+          "mobs": 26,
+          "levels": [
+            249
+          ]
+        },
+        {
+          "name": "끝없이 추락하는 심해 5",
+          "force": 640,
+          "mobs": 33,
+          "levels": [
+            249
+          ]
+        },
+        {
+          "name": "끝없이 추락하는 심해 6",
+          "force": 640,
+          "mobs": 38,
+          "levels": [
+            249
+          ]
+        },
+        {
+          "name": "별이 삼켜진 심해 1",
+          "force": 670,
+          "mobs": 25,
+          "levels": [
+            250
+          ]
+        },
+        {
+          "name": "별이 삼켜진 심해 2",
+          "force": 670,
+          "mobs": 33,
+          "levels": [
+            250
+          ]
+        },
+        {
+          "name": "별이 삼켜진 심해 3",
+          "force": 670,
+          "mobs": 39,
+          "levels": [
+            250
+          ]
+        },
+        {
+          "name": "별이 삼켜진 심해 4",
+          "force": 670,
+          "mobs": 25,
+          "levels": [
+            251
+          ]
+        },
+        {
+          "name": "별이 삼켜진 심해 5",
+          "force": 670,
+          "mobs": 32,
+          "levels": [
+            251
+          ]
+        },
+        {
+          "name": "별이 삼켜진 심해 6",
+          "force": 670,
+          "mobs": 40,
+          "levels": [
+            251
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "moonBridge",
+      "name": "문브릿지",
+      "group": "아케인 리버",
+      "forceType": "arcane",
+      "minLevel": 245,
+      "maxLevel": 249,
+      "grounds": [
+        {
+          "name": "사상의 경계 1",
+          "force": 670,
+          "mobs": 37,
+          "levels": [
+            250
+          ]
+        },
+        {
+          "name": "사상의 경계 2",
+          "force": 670,
+          "mobs": 34,
+          "levels": [
+            251
+          ]
+        },
+        {
+          "name": "사상의 경계3",
+          "force": 670,
+          "mobs": 36,
+          "levels": [
+            250,
+            251
+          ]
+        },
+        {
+          "name": "사상의 경계 4",
+          "force": 670,
+          "mobs": 38,
+          "levels": [
+            250
+          ]
+        },
+        {
+          "name": "사상의 경계 5",
+          "force": 670,
+          "mobs": 36,
+          "levels": [
+            251
+          ]
+        },
+        {
+          "name": "사상의 경계 6",
+          "force": 670,
+          "mobs": 39,
+          "levels": [
+            250,
+            251
+          ]
+        },
+        {
+          "name": "미지의 안개 1",
+          "force": 700,
+          "mobs": 36,
+          "levels": [
+            252
+          ]
+        },
+        {
+          "name": "미지의 안개 2",
+          "force": 700,
+          "mobs": 33,
+          "levels": [
+            253
+          ]
+        },
+        {
+          "name": "미지의 안개 3",
+          "force": 700,
+          "mobs": 37,
+          "levels": [
+            252,
+            253
+          ]
+        },
+        {
+          "name": "미지의 안개 4",
+          "force": 700,
+          "mobs": 37,
+          "levels": [
+            252
+          ]
+        },
+        {
+          "name": "미지의 안개 5",
+          "force": 700,
+          "mobs": 37,
+          "levels": [
+            253
+          ]
+        },
+        {
+          "name": "미지의 안개 6",
+          "force": 700,
+          "mobs": 36,
+          "levels": [
+            252,
+            253
+          ]
+        },
+        {
+          "name": "공허의 파도 1",
+          "force": 730,
+          "mobs": 35,
+          "levels": [
+            254
+          ]
+        },
+        {
+          "name": "공허의 파도 2",
+          "force": 730,
+          "mobs": 36,
+          "levels": [
+            254
+          ]
+        },
+        {
+          "name": "공허의 파도 3",
+          "force": 730,
+          "mobs": 34,
+          "levels": [
+            254
+          ]
+        },
+        {
+          "name": "공허의 파도 4",
+          "force": 730,
+          "mobs": 35,
+          "levels": [
+            254
+          ]
+        },
+        {
+          "name": "공허의 파도 5",
+          "force": 730,
+          "mobs": 36,
+          "levels": [
+            254
+          ]
+        },
+        {
+          "name": "공허의 파도 6",
+          "force": 730,
+          "mobs": 36,
+          "levels": [
+            254
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "theLabyrinthOfSuffering",
+      "name": "고통의 미궁",
+      "group": "아케인 리버",
+      "forceType": "arcane",
+      "minLevel": 250,
+      "maxLevel": 254,
+      "grounds": [
+        {
+          "name": "고통의 미궁 내부 1",
+          "force": 760,
+          "mobs": 35,
+          "levels": [
+            255
+          ]
+        },
+        {
+          "name": "고통의 미궁 내부 2",
+          "force": 760,
+          "mobs": 35,
+          "levels": [
+            255
+          ]
+        },
+        {
+          "name": "고통의 미궁 내부 3",
+          "force": 760,
+          "mobs": 35,
+          "levels": [
+            255
+          ]
+        },
+        {
+          "name": "고통의 미궁 내부 4",
+          "force": 760,
+          "mobs": 35,
+          "levels": [
+            256
+          ]
+        },
+        {
+          "name": "고통의 미궁 내부 5",
+          "force": 760,
+          "mobs": 35,
+          "levels": [
+            256
+          ]
+        },
+        {
+          "name": "고통의 미궁 내부 6",
+          "force": 760,
+          "mobs": 35,
+          "levels": [
+            256
+          ]
+        },
+        {
+          "name": "고통의 미궁 중심부 1",
+          "force": 790,
+          "mobs": 35,
+          "levels": [
+            257
+          ]
+        },
+        {
+          "name": "고통의 미궁 중심부 2",
+          "force": 790,
+          "mobs": 35,
+          "levels": [
+            257
+          ]
+        },
+        {
+          "name": "고통의 미궁 중심부 3",
+          "force": 790,
+          "mobs": 37,
+          "levels": [
+            257
+          ]
+        },
+        {
+          "name": "고통의 미궁 중심부 4",
+          "force": 790,
+          "mobs": 37,
+          "levels": [
+            258
+          ]
+        },
+        {
+          "name": "고통의 미궁 중심부 5",
+          "force": 790,
+          "mobs": 36,
+          "levels": [
+            258
+          ]
+        },
+        {
+          "name": "고통의 미궁 중심부 6",
+          "force": 790,
+          "mobs": 37,
+          "levels": [
+            258
+          ]
+        },
+        {
+          "name": "고통의 미궁 중심부 7",
+          "force": 790,
+          "mobs": 35,
+          "levels": [
+            258
+          ]
+        },
+        {
+          "name": "고통의 미궁 최심부 1",
+          "force": 820,
+          "mobs": 35,
+          "levels": [
+            259
+          ]
+        },
+        {
+          "name": "고통의 미궁 최심부 2",
+          "force": 820,
+          "mobs": 35,
+          "levels": [
+            259
+          ]
+        },
+        {
+          "name": "고통의 미궁 최심부 3",
+          "force": 820,
+          "mobs": 35,
+          "levels": [
+            259
+          ]
+        },
+        {
+          "name": "고통의 미궁 최심부 4",
+          "force": 820,
+          "mobs": 35,
+          "levels": [
+            259
+          ]
+        },
+        {
+          "name": "고통의 미궁 최심부 5",
+          "force": 820,
+          "mobs": 35,
+          "levels": [
+            259
+          ]
+        },
+        {
+          "name": "고통의 미궁 최심부 6",
+          "force": 820,
+          "mobs": 34,
+          "levels": [
+            259
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "limen",
+      "name": "리멘",
+      "group": "아케인 리버",
+      "forceType": "arcane",
+      "minLevel": 255,
+      "maxLevel": 259,
+      "grounds": [
+        {
+          "name": "세계의 눈물 하단 1",
+          "force": 850,
+          "mobs": 33,
+          "levels": [
+            260
+          ]
+        },
+        {
+          "name": "세계의 눈물 하단 2",
+          "force": 850,
+          "mobs": 34,
+          "levels": [
+            260,
+            261
+          ]
+        },
+        {
+          "name": "세계의 눈물 하단 3",
+          "force": 850,
+          "mobs": 34,
+          "levels": [
+            261
+          ]
+        },
+        {
+          "name": "세계의 눈물 중단 1",
+          "force": 850,
+          "mobs": 34,
+          "levels": [
+            261
+          ]
+        },
+        {
+          "name": "세계의 눈물 중단 2",
+          "force": 850,
+          "mobs": 34,
+          "levels": [
+            261,
+            262
+          ]
+        },
+        {
+          "name": "세계의 눈물 중단 3",
+          "force": 850,
+          "mobs": 34,
+          "levels": [
+            262
+          ]
+        },
+        {
+          "name": "세계의 눈물 중단 4",
+          "force": 1000,
+          "mobs": 33,
+          "levels": [
+            262
+          ]
+        },
+        {
+          "name": "세계가 끝나는 곳 1-4",
+          "force": 880,
+          "mobs": 32,
+          "levels": [
+            262
+          ]
+        },
+        {
+          "name": "세계가 끝나는 곳 1-5",
+          "force": 880,
+          "mobs": 31,
+          "levels": [
+            262,
+            263
+          ]
+        },
+        {
+          "name": "세계가 끝나는 곳 1-6",
+          "force": 880,
+          "mobs": 35,
+          "levels": [
+            263
+          ]
+        },
+        {
+          "name": "세계가 끝나는 곳 1-7",
+          "force": 880,
+          "mobs": 32,
+          "levels": [
+            263
+          ]
+        },
+        {
+          "name": "세계가 끝나는 곳 1-8",
+          "force": 880,
+          "mobs": 35,
+          "levels": [
+            263
+          ]
+        },
+        {
+          "name": "세계가 끝나는 곳 1-9",
+          "force": 1000,
+          "mobs": 35,
+          "levels": [
+            263
+          ]
+        },
+        {
+          "name": "세계가 끝나는 곳 2-3",
+          "force": 880,
+          "mobs": 32,
+          "levels": [
+            263
+          ]
+        },
+        {
+          "name": "세계가 끝나는 곳 2-4",
+          "force": 880,
+          "mobs": 33,
+          "levels": [
+            263,
+            264
+          ]
+        },
+        {
+          "name": "세계가 끝나는 곳 2-5",
+          "force": 880,
+          "mobs": 33,
+          "levels": [
+            264
+          ]
+        },
+        {
+          "name": "세계가 끝나는 곳 2-6",
+          "force": 880,
+          "mobs": 33,
+          "levels": [
+            264
+          ]
+        },
+        {
+          "name": "세계가 끝나는 곳 2-7",
+          "force": 880,
+          "mobs": 33,
+          "levels": [
+            263
+          ]
+        },
+        {
+          "name": "세계가 끝나는 곳 2-8",
+          "force": 1000,
+          "mobs": 35,
+          "levels": [
+            264
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "cernium",
+      "name": "세르니움",
+      "group": "그란디스",
+      "forceType": "authentic",
+      "minLevel": 260,
+      "maxLevel": 264,
+      "grounds": [
+        {
+          "name": "해변 암석 지대 1",
+          "force": 30,
+          "mobs": 34,
+          "levels": [
+            260
+          ]
+        },
+        {
+          "name": "해변 암석 지대 2",
+          "force": 30,
+          "mobs": 34,
+          "levels": [
+            260
+          ]
+        },
+        {
+          "name": "해변 암석 지대 3",
+          "force": 30,
+          "mobs": 38,
+          "levels": [
+            260
+          ]
+        },
+        {
+          "name": "해변 암석 지대 4",
+          "force": 30,
+          "mobs": 38,
+          "levels": [
+            260
+          ]
+        },
+        {
+          "name": "세르니움 서쪽 성벽 1",
+          "force": 30,
+          "mobs": 34,
+          "levels": [
+            260
+          ]
+        },
+        {
+          "name": "세르니움 서쪽 성벽 2",
+          "force": 30,
+          "mobs": 34,
+          "levels": [
+            260
+          ]
+        },
+        {
+          "name": "세르니움 서쪽 성벽 3",
+          "force": 30,
+          "mobs": 39,
+          "levels": [
+            260
+          ]
+        },
+        {
+          "name": "세르니움 동쪽 성벽 1",
+          "force": 30,
+          "mobs": 34,
+          "levels": [
+            261
+          ]
+        },
+        {
+          "name": "세르니움 동쪽 성벽 2",
+          "force": 30,
+          "mobs": 34,
+          "levels": [
+            261
+          ]
+        },
+        {
+          "name": "세르니움 동쪽 성벽 3",
+          "force": 30,
+          "mobs": 38,
+          "levels": [
+            261
+          ]
+        },
+        {
+          "name": "왕립 도서관 제 1구역",
+          "force": 30,
+          "mobs": 34,
+          "levels": [
+            261
+          ]
+        },
+        {
+          "name": "왕립 도서관 제 2구역",
+          "force": 30,
+          "mobs": 33,
+          "levels": [
+            261
+          ]
+        },
+        {
+          "name": "왕립 도서관 제 3구역",
+          "force": 30,
+          "mobs": 38,
+          "levels": [
+            261
+          ]
+        },
+        {
+          "name": "왕립 도서관 제 4구역",
+          "force": 30,
+          "mobs": 34,
+          "levels": [
+            261
+          ]
+        },
+        {
+          "name": "왕립 도서관 제 5구역",
+          "force": 30,
+          "mobs": 34,
+          "levels": [
+            261
+          ]
+        },
+        {
+          "name": "왕립 도서관 제 6구역",
+          "force": 30,
+          "mobs": 38,
+          "levels": [
+            261
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "burningCernium",
+      "name": "불타는 세르니움",
+      "group": "그란디스",
+      "forceType": "authentic",
+      "minLevel": 260,
+      "maxLevel": 264,
+      "grounds": [
+        {
+          "name": "격전의 서쪽 성벽 1",
+          "force": 50,
+          "mobs": 34,
+          "levels": [
+            262
+          ]
+        },
+        {
+          "name": "격전의 서쪽 성벽 2",
+          "force": 50,
+          "mobs": 34,
+          "levels": [
+            262
+          ]
+        },
+        {
+          "name": "격전의 서쪽 성벽 3",
+          "force": 50,
+          "mobs": 38,
+          "levels": [
+            262
+          ]
+        },
+        {
+          "name": "격전의 서쪽 성벽 4",
+          "force": 50,
+          "mobs": 38,
+          "levels": [
+            262
+          ]
+        },
+        {
+          "name": "격전의 동쪽 성벽 1",
+          "force": 50,
+          "mobs": 34,
+          "levels": [
+            263
+          ]
+        },
+        {
+          "name": "격전의 동쪽 성벽 2",
+          "force": 50,
+          "mobs": 34,
+          "levels": [
+            263
+          ]
+        },
+        {
+          "name": "격전의 동쪽 성벽 3",
+          "force": 50,
+          "mobs": 39,
+          "levels": [
+            263
+          ]
+        },
+        {
+          "name": "격전의 동쪽 성벽 4",
+          "force": 50,
+          "mobs": 34,
+          "levels": [
+            263
+          ]
+        },
+        {
+          "name": "격전의 동쪽 성벽 5",
+          "force": 50,
+          "mobs": 34,
+          "levels": [
+            263
+          ]
+        },
+        {
+          "name": "격전의 동쪽 성벽 6",
+          "force": 50,
+          "mobs": 38,
+          "levels": [
+            263
+          ]
+        },
+        {
+          "name": "불타는 왕립 도서관 제 1구역",
+          "force": 50,
+          "mobs": 34,
+          "levels": [
+            264
+          ]
+        },
+        {
+          "name": "불타는 왕립 도서관 제 2구역",
+          "force": 50,
+          "mobs": 34,
+          "levels": [
+            264
+          ]
+        },
+        {
+          "name": "불타는 왕립 도서관 제 3구역",
+          "force": 50,
+          "mobs": 39,
+          "levels": [
+            264
+          ]
+        },
+        {
+          "name": "불타는 왕립 도서관 제 4구역",
+          "force": 50,
+          "mobs": 34,
+          "levels": [
+            264
+          ]
+        },
+        {
+          "name": "불타는 왕립 도서관 제 5구역",
+          "force": 50,
+          "mobs": 34,
+          "levels": [
+            264
+          ]
+        },
+        {
+          "name": "불타는 왕립 도서관 제 6구역",
+          "force": 50,
+          "mobs": 39,
+          "levels": [
+            264
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "Arcs",
+      "name": "호텔 아르크스",
+      "group": "그란디스",
+      "forceType": "authentic",
+      "minLevel": 265,
+      "maxLevel": 269,
+      "grounds": [
+        {
+          "name": "무법자들이 지배하는 황야 1",
+          "force": 70,
+          "mobs": 34,
+          "levels": [
+            265
+          ]
+        },
+        {
+          "name": "무법자들이 지배하는 황야 2",
+          "force": 70,
+          "mobs": 34,
+          "levels": [
+            265
+          ]
+        },
+        {
+          "name": "무법자들이 지배하는 황야 3",
+          "force": 70,
+          "mobs": 38,
+          "levels": [
+            265
+          ]
+        },
+        {
+          "name": "무법자들이 지배하는 황야 4",
+          "force": 70,
+          "mobs": 39,
+          "levels": [
+            265
+          ]
+        },
+        {
+          "name": "낭만이 저무는 자동차 극장 1",
+          "force": 70,
+          "mobs": 34,
+          "levels": [
+            266
+          ]
+        },
+        {
+          "name": "낭만이 저무는 자동차 극장 2",
+          "force": 70,
+          "mobs": 34,
+          "levels": [
+            266
+          ]
+        },
+        {
+          "name": "낭만이 저무는 자동차 극장 3",
+          "force": 70,
+          "mobs": 39,
+          "levels": [
+            266
+          ]
+        },
+        {
+          "name": "낭만이 저무는 자동차 극장 4",
+          "force": 70,
+          "mobs": 34,
+          "levels": [
+            267
+          ]
+        },
+        {
+          "name": "낭만이 저무는 자동차 극장 5",
+          "force": 70,
+          "mobs": 33,
+          "levels": [
+            267
+          ]
+        },
+        {
+          "name": "낭만이 저무는 자동차 극장 6",
+          "force": 70,
+          "mobs": 34,
+          "levels": [
+            267
+          ]
+        },
+        {
+          "name": "종착지 없는 횡단열차 1",
+          "force": 100,
+          "mobs": 34,
+          "levels": [
+            268
+          ]
+        },
+        {
+          "name": "종착지 없는 횡단열차 2",
+          "force": 100,
+          "mobs": 34,
+          "levels": [
+            268
+          ]
+        },
+        {
+          "name": "종착지 없는 횡단열차 3",
+          "force": 100,
+          "mobs": 38,
+          "levels": [
+            268
+          ]
+        },
+        {
+          "name": "종착지 없는 횡단열차 4",
+          "force": 100,
+          "mobs": 34,
+          "levels": [
+            269
+          ]
+        },
+        {
+          "name": "종착지 없는 횡단열차 5",
+          "force": 100,
+          "mobs": 34,
+          "levels": [
+            269
+          ]
+        },
+        {
+          "name": "종착지 없는 횡단열차 6",
+          "force": 100,
+          "mobs": 38,
+          "levels": [
+            269
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "odium",
+      "name": "오디움",
+      "group": "그란디스",
+      "forceType": "authentic",
+      "minLevel": 270,
+      "maxLevel": 274,
+      "grounds": [
+        {
+          "name": "성문으로 가는 길 1",
+          "force": 130,
+          "mobs": 34,
+          "levels": [
+            270
+          ]
+        },
+        {
+          "name": "성문으로 가는 길 2",
+          "force": 130,
+          "mobs": 34,
+          "levels": [
+            270
+          ]
+        },
+        {
+          "name": "성문으로 가는 길 3",
+          "force": 130,
+          "mobs": 37,
+          "levels": [
+            270
+          ]
+        },
+        {
+          "name": "성문으로 가는 길 4",
+          "force": 130,
+          "mobs": 39,
+          "levels": [
+            270
+          ]
+        },
+        {
+          "name": "성문으로 가는 길 5",
+          "force": 130,
+          "mobs": 39,
+          "levels": [
+            270
+          ]
+        },
+        {
+          "name": "점령당한 골목 1",
+          "force": 160,
+          "mobs": 34,
+          "levels": [
+            271
+          ]
+        },
+        {
+          "name": "점령당한 골목 2",
+          "force": 160,
+          "mobs": 34,
+          "levels": [
+            271
+          ]
+        },
+        {
+          "name": "점령당한 골목 3",
+          "force": 160,
+          "mobs": 39,
+          "levels": [
+            271
+          ]
+        },
+        {
+          "name": "점령당한 골목 4",
+          "force": 160,
+          "mobs": 39,
+          "levels": [
+            271
+          ]
+        },
+        {
+          "name": "볕 드는 실험실 1",
+          "force": 180,
+          "mobs": 34,
+          "levels": [
+            272
+          ]
+        },
+        {
+          "name": "볕 드는 실험실 2",
+          "force": 180,
+          "mobs": 39,
+          "levels": [
+            272
+          ]
+        },
+        {
+          "name": "볕 드는 실험실 3",
+          "force": 180,
+          "mobs": 39,
+          "levels": [
+            272
+          ]
+        },
+        {
+          "name": "잠긴 문 뒤 실험실 1",
+          "force": 200,
+          "mobs": 34,
+          "levels": [
+            273
+          ]
+        },
+        {
+          "name": "잠긴 문 뒤 실험실 2",
+          "force": 200,
+          "mobs": 39,
+          "levels": [
+            273,
+            274
+          ]
+        },
+        {
+          "name": "잠긴 문 뒤 실험실 3",
+          "force": 200,
+          "mobs": 39,
+          "levels": [
+            274
+          ]
+        },
+        {
+          "name": "잠긴 문 뒤 실험실 4",
+          "force": 200,
+          "mobs": 39,
+          "levels": [
+            274
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "dowonkyung",
+      "name": "도원경",
+      "group": "그란디스",
+      "forceType": "authentic",
+      "minLevel": 275,
+      "maxLevel": 279,
+      "grounds": [
+        {
+          "name": "생기가 돌아오는 봄 1",
+          "force": 230,
+          "mobs": 34,
+          "levels": [
+            275
+          ]
+        },
+        {
+          "name": "생기가 돌아오는 봄 2",
+          "force": 230,
+          "mobs": 39,
+          "levels": [
+            275
+          ]
+        },
+        {
+          "name": "생기가 돌아오는 봄 3",
+          "force": 230,
+          "mobs": 39,
+          "levels": [
+            275
+          ]
+        },
+        {
+          "name": "생기가 돌아오는 봄 4",
+          "force": 230,
+          "mobs": 39,
+          "levels": [
+            275
+          ]
+        },
+        {
+          "name": "생기가 돌아오는 봄 5",
+          "force": 230,
+          "mobs": 39,
+          "levels": [
+            275
+          ]
+        },
+        {
+          "name": "빛이 약한 여름 1",
+          "force": 260,
+          "mobs": 34,
+          "levels": [
+            276
+          ]
+        },
+        {
+          "name": "빛이 약한 여름 2",
+          "force": 260,
+          "mobs": 39,
+          "levels": [
+            276
+          ]
+        },
+        {
+          "name": "빛이 약한 여름 3",
+          "force": 260,
+          "mobs": 39,
+          "levels": [
+            276
+          ]
+        },
+        {
+          "name": "빛이 약한 여름 4",
+          "force": 260,
+          "mobs": 39,
+          "levels": [
+            276
+          ]
+        },
+        {
+          "name": "빛이 약한 여름 5",
+          "force": 260,
+          "mobs": 39,
+          "levels": [
+            276
+          ]
+        },
+        {
+          "name": "색깔이 옅은 가을 1",
+          "force": 280,
+          "mobs": 34,
+          "levels": [
+            277
+          ]
+        },
+        {
+          "name": "색깔이 옅은 가을 2",
+          "force": 280,
+          "mobs": 39,
+          "levels": [
+            277
+          ]
+        },
+        {
+          "name": "색깔이 옅은 가을 3",
+          "force": 280,
+          "mobs": 39,
+          "levels": [
+            277
+          ]
+        },
+        {
+          "name": "색깔이 옅은 가을 4",
+          "force": 280,
+          "mobs": 39,
+          "levels": [
+            277
+          ]
+        },
+        {
+          "name": "색깔이 옅은 가을 5",
+          "force": 280,
+          "mobs": 39,
+          "levels": [
+            277
+          ]
+        },
+        {
+          "name": "참혹한 흔적의 겨울 1",
+          "force": 300,
+          "mobs": 34,
+          "levels": [
+            278
+          ]
+        },
+        {
+          "name": "참혹한 흔적의 겨울 2",
+          "force": 300,
+          "mobs": 39,
+          "levels": [
+            278,
+            279
+          ]
+        },
+        {
+          "name": "참혹한 흔적의 겨울 3",
+          "force": 300,
+          "mobs": 39,
+          "levels": [
+            279
+          ]
+        },
+        {
+          "name": "참혹한 흔적의 겨울 4",
+          "force": 300,
+          "mobs": 39,
+          "levels": [
+            279
+          ]
+        },
+        {
+          "name": "참혹한 흔적의 겨울 5",
+          "force": 300,
+          "mobs": 39,
+          "levels": [
+            279
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "arteria",
+      "name": "아르테리아",
+      "group": "그란디스",
+      "forceType": "authentic",
+      "minLevel": 280,
+      "maxLevel": 284,
+      "grounds": [
+        {
+          "name": "북쪽 외곽 지역",
+          "force": 330,
+          "mobs": 36,
+          "levels": [
+            280
+          ]
+        },
+        {
+          "name": "서쪽 외곽 지역",
+          "force": 330,
+          "mobs": 40,
+          "levels": [
+            280
+          ]
+        },
+        {
+          "name": "동쪽 외곽 지역",
+          "force": 330,
+          "mobs": 40,
+          "levels": [
+            281
+          ]
+        },
+        {
+          "name": "남쪽 외곽 지역",
+          "force": 330,
+          "mobs": 36,
+          "levels": [
+            281
+          ]
+        },
+        {
+          "name": "외곽 전투지역 1",
+          "force": 330,
+          "mobs": 40,
+          "levels": [
+            280
+          ]
+        },
+        {
+          "name": "외곽 전투지역 2",
+          "force": 330,
+          "mobs": 40,
+          "levels": [
+            281
+          ]
+        },
+        {
+          "name": "최하층 통로 1",
+          "force": 360,
+          "mobs": 36,
+          "levels": [
+            282
+          ]
+        },
+        {
+          "name": "최하층 통로 2",
+          "force": 360,
+          "mobs": 40,
+          "levels": [
+            282
+          ]
+        },
+        {
+          "name": "최하층 통로 3",
+          "force": 360,
+          "mobs": 40,
+          "levels": [
+            282
+          ]
+        },
+        {
+          "name": "최하층 통로 4",
+          "force": 360,
+          "mobs": 36,
+          "levels": [
+            283
+          ]
+        },
+        {
+          "name": "최하층 통로 5",
+          "force": 360,
+          "mobs": 40,
+          "levels": [
+            283
+          ]
+        },
+        {
+          "name": "최하층 통로 6",
+          "force": 360,
+          "mobs": 40,
+          "levels": [
+            283
+          ]
+        },
+        {
+          "name": "최상층 통로 1",
+          "force": 400,
+          "mobs": 36,
+          "levels": [
+            284
+          ]
+        },
+        {
+          "name": "최상층 통로 2",
+          "force": 400,
+          "mobs": 40,
+          "levels": [
+            284
+          ]
+        },
+        {
+          "name": "최상층 통로 3",
+          "force": 400,
+          "mobs": 36,
+          "levels": [
+            284
+          ]
+        },
+        {
+          "name": "최상층 통로 4",
+          "force": 400,
+          "mobs": 40,
+          "levels": [
+            284
+          ]
+        },
+        {
+          "name": "최상층 통로 5",
+          "force": 400,
+          "mobs": 36,
+          "levels": [
+            284
+          ]
+        },
+        {
+          "name": "최상층 통로 6",
+          "force": 400,
+          "mobs": 40,
+          "levels": [
+            284
+          ]
+        },
+        {
+          "name": "최상층 통로 7",
+          "force": 400,
+          "mobs": 40,
+          "levels": [
+            284
+          ]
+        },
+        {
+          "name": "최상층 통로 8",
+          "force": 400,
+          "mobs": 40,
+          "levels": [
+            284
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "carcion",
+      "name": "카르시온",
+      "group": "그란디스",
+      "forceType": "authentic",
+      "minLevel": 285,
+      "maxLevel": 289,
+      "grounds": [
+        {
+          "name": "거대 산호 군락 1",
+          "force": 430,
+          "mobs": 36,
+          "levels": [
+            285
+          ]
+        },
+        {
+          "name": "거대 산호 군락 2",
+          "force": 430,
+          "mobs": 40,
+          "levels": [
+            285
+          ]
+        },
+        {
+          "name": "거대 산호 군락 3",
+          "force": 430,
+          "mobs": 40,
+          "levels": [
+            286
+          ]
+        },
+        {
+          "name": "잔잔한 해안가 1",
+          "force": 430,
+          "mobs": 40,
+          "levels": [
+            286
+          ]
+        },
+        {
+          "name": "잔잔한 해안가 2",
+          "force": 430,
+          "mobs": 40,
+          "levels": [
+            286
+          ]
+        },
+        {
+          "name": "잔잔한 해안가 3",
+          "force": 430,
+          "mobs": 40,
+          "levels": [
+            286
+          ]
+        },
+        {
+          "name": "휘감기는 숲 1",
+          "force": 460,
+          "mobs": 36,
+          "levels": [
+            287
+          ]
+        },
+        {
+          "name": "휘감기는 숲 2",
+          "force": 460,
+          "mobs": 36,
+          "levels": [
+            287
+          ]
+        },
+        {
+          "name": "휘감기는 숲 3",
+          "force": 460,
+          "mobs": 40,
+          "levels": [
+            288
+          ]
+        },
+        {
+          "name": "어둠이 내리는 나무줄기 1",
+          "force": 460,
+          "mobs": 40,
+          "levels": [
+            288
+          ]
+        },
+        {
+          "name": "어둠이 내리는 나무줄기 2",
+          "force": 460,
+          "mobs": 40,
+          "levels": [
+            288
+          ]
+        },
+        {
+          "name": "어둠이 내리는 나무줄기 3",
+          "force": 460,
+          "mobs": 40,
+          "levels": [
+            288
+          ]
+        },
+        {
+          "name": "숨이 멎어드는 동굴 1",
+          "force": 500,
+          "mobs": 36,
+          "levels": [
+            289
+          ]
+        },
+        {
+          "name": "숨이 멎어드는 동굴 2",
+          "force": 500,
+          "mobs": 40,
+          "levels": [
+            289
+          ]
+        },
+        {
+          "name": "숨이 멎어드는 동굴 3",
+          "force": 500,
+          "mobs": 40,
+          "levels": [
+            289
+          ]
+        },
+        {
+          "name": "숨이 멎어드는 동굴 4",
+          "force": 500,
+          "mobs": 40,
+          "levels": [
+            289
+          ]
+        },
+        {
+          "name": "가라앉은 유적지 1",
+          "force": 500,
+          "mobs": 36,
+          "levels": [
+            289
+          ]
+        },
+        {
+          "name": "가라앉은 유적지 2",
+          "force": 500,
+          "mobs": 40,
+          "levels": [
+            289
+          ]
+        },
+        {
+          "name": "가라앉은 유적지 3",
+          "force": 500,
+          "mobs": 40,
+          "levels": [
+            289
+          ]
+        },
+        {
+          "name": "가라앉은 유적지 4",
+          "force": 500,
+          "mobs": 40,
+          "levels": [
+            289
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "tallahart",
+      "name": "탈라하트",
+      "group": "그란디스",
+      "forceType": "authentic",
+      "minLevel": 290,
+      "maxLevel": 294,
+      "grounds": [
+        {
+          "name": "재와 침묵의 땅 1",
+          "force": 630,
+          "mobs": 40,
+          "levels": [
+            290
+          ]
+        },
+        {
+          "name": "재와 침묵의 땅 2",
+          "force": 630,
+          "mobs": 40,
+          "levels": [
+            290
+          ]
+        },
+        {
+          "name": "재와 침묵의 땅 3",
+          "force": 630,
+          "mobs": 40,
+          "levels": [
+            290,
+            291
+          ]
+        },
+        {
+          "name": "재와 침묵의 땅 4",
+          "force": 630,
+          "mobs": 40,
+          "levels": [
+            291
+          ]
+        },
+        {
+          "name": "재와 침묵의 땅 5",
+          "force": 630,
+          "mobs": 40,
+          "levels": [
+            291
+          ]
+        },
+        {
+          "name": "섭리와 운명의 전쟁터 1",
+          "force": 660,
+          "mobs": 40,
+          "levels": [
+            291
+          ]
+        },
+        {
+          "name": "섭리와 운명의 전쟁터 2",
+          "force": 660,
+          "mobs": 40,
+          "levels": [
+            291
+          ]
+        },
+        {
+          "name": "섭리와 운명의 전쟁터 3",
+          "force": 660,
+          "mobs": 40,
+          "levels": [
+            291
+          ]
+        },
+        {
+          "name": "심판과 운명의 전쟁터 1",
+          "force": 660,
+          "mobs": 40,
+          "levels": [
+            292
+          ]
+        },
+        {
+          "name": "심판과 운명의 전쟁터 2",
+          "force": 660,
+          "mobs": 40,
+          "levels": [
+            292
+          ]
+        },
+        {
+          "name": "심판과 운명의 전쟁터 3",
+          "force": 660,
+          "mobs": 40,
+          "levels": [
+            292
+          ]
+        },
+        {
+          "name": "영원과 운명의 전쟁터 1",
+          "force": 660,
+          "mobs": 40,
+          "levels": [
+            293
+          ]
+        },
+        {
+          "name": "영원과 운명의 전쟁터 2",
+          "force": 660,
+          "mobs": 40,
+          "levels": [
+            293
+          ]
+        },
+        {
+          "name": "영원과 운명의 전쟁터 3",
+          "force": 660,
+          "mobs": 40,
+          "levels": [
+            293
+          ]
+        },
+        {
+          "name": "밤의 길 1",
+          "force": 700,
+          "mobs": 40,
+          "levels": [
+            294
+          ]
+        },
+        {
+          "name": "밤의 길 2",
+          "force": 700,
+          "mobs": 40,
+          "levels": [
+            294
+          ]
+        },
+        {
+          "name": "밤의 길 3",
+          "force": 700,
+          "mobs": 40,
+          "levels": [
+            294
+          ]
+        },
+        {
+          "name": "밤의 길 4",
+          "force": 700,
+          "mobs": 40,
+          "levels": [
+            294
+          ]
+        },
+        {
+          "name": "환영의 길 1",
+          "force": 700,
+          "mobs": 40,
+          "levels": [
+            294
+          ]
+        },
+        {
+          "name": "환영의 길 2",
+          "force": 700,
+          "mobs": 40,
+          "levels": [
+            294
+          ]
+        },
+        {
+          "name": "환영의 길 3",
+          "force": 700,
+          "mobs": 40,
+          "levels": [
+            294
+          ]
+        },
+        {
+          "name": "환영의 길 4",
+          "force": 700,
+          "mobs": 40,
+          "levels": [
+            294
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "geardrak",
+      "name": "기어드락",
+      "group": "그란디스",
+      "forceType": "authentic",
+      "minLevel": 295,
+      "maxLevel": 300,
+      "grounds": [
+        {
+          "name": "지하 1층",
+          "force": 740,
+          "mobs": 40,
+          "levels": [
+            295
+          ]
+        },
+        {
+          "name": "지하 2층 1구역",
+          "force": 740,
+          "mobs": 40,
+          "levels": [
+            295
+          ]
+        },
+        {
+          "name": "지하 2층 2구역",
+          "force": 740,
+          "mobs": 40,
+          "levels": [
+            295
+          ]
+        },
+        {
+          "name": "지하 3층 1구역",
+          "force": 740,
+          "mobs": 40,
+          "levels": [
+            296
+          ]
+        },
+        {
+          "name": "지하 3층 2구역",
+          "force": 740,
+          "mobs": 40,
+          "levels": [
+            296
+          ]
+        },
+        {
+          "name": "지하 4층",
+          "force": 740,
+          "mobs": 40,
+          "levels": [
+            296
+          ]
+        },
+        {
+          "name": "로봇 창고 1",
+          "force": 770,
+          "mobs": 40,
+          "levels": [
+            297
+          ]
+        },
+        {
+          "name": "로봇 창고 2",
+          "force": 770,
+          "mobs": 40,
+          "levels": [
+            297
+          ]
+        },
+        {
+          "name": "로봇 창고 3",
+          "force": 770,
+          "mobs": 40,
+          "levels": [
+            297
+          ]
+        },
+        {
+          "name": "로봇 창고 4",
+          "force": 770,
+          "mobs": 40,
+          "levels": [
+            297
+          ]
+        },
+        {
+          "name": "로봇 창고 5",
+          "force": 770,
+          "mobs": 40,
+          "levels": [
+            298
+          ]
+        },
+        {
+          "name": "로봇 창고 6",
+          "force": 770,
+          "mobs": 40,
+          "levels": [
+            298
+          ]
+        },
+        {
+          "name": "로봇 창고 7",
+          "force": 770,
+          "mobs": 40,
+          "levels": [
+            298
+          ]
+        },
+        {
+          "name": "로봇 창고 8",
+          "force": 770,
+          "mobs": 40,
+          "levels": [
+            298
+          ]
+        },
+        {
+          "name": "고브의 작업실 1",
+          "force": 810,
+          "mobs": 40,
+          "levels": [
+            299
+          ]
+        },
+        {
+          "name": "고브의 작업실 2",
+          "force": 810,
+          "mobs": 40,
+          "levels": [
+            299
+          ]
+        },
+        {
+          "name": "고브의 작업실 3",
+          "force": 810,
+          "mobs": 40,
+          "levels": [
+            299
+          ]
+        },
+        {
+          "name": "고브의 작업실 4",
+          "force": 810,
+          "mobs": 40,
+          "levels": [
+            299
+          ]
+        },
+        {
+          "name": "고브의 작업실 5",
+          "force": 810,
+          "mobs": 40,
+          "levels": [
+            299
+          ]
+        },
+        {
+          "name": "고브의 작업실 6",
+          "force": 810,
+          "mobs": 40,
+          "levels": [
+            299
+          ]
+        },
+        {
+          "name": "고브의 작업실 7",
+          "force": 810,
+          "mobs": 40,
+          "levels": [
+            299
+          ]
+        },
+        {
+          "name": "고브의 작업실 8",
+          "force": 810,
+          "mobs": 40,
+          "levels": [
+            299
+          ]
+        }
+      ]
+    }
+  ]
+}
