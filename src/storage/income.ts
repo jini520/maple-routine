@@ -64,15 +64,88 @@ export interface IncomeRecord {
   saleFeePercent: FeePercent | null
   /** 뗀 몫. **판매 대금 = `mesoAmount` + 이것** 이다 — 요율만으로는 내림 때문에 역산이 안 된다. */
   saleFeeMeso: number | null
+  /**
+   * 「사냥」 갈래의 **계산 입력**([[ADR-175]] 결정 9) — 없으면 수정 시트가 못 열린다.
+   *
+   * 합계(`mesoAmount`)만 남기면 사냥 기록을 다시 열 때 빈 계산기가 서고, 무엇이든 만지는 순간
+   * 금액이 덮인다([[ADR-171]] 결정 2 가 걸어 둔 «그 시트가 채워져 열린다» 가 깨진다).
+   *
+   * **다른 갈래에서는 전부 `null`** 이고, [[ADR-175]] 이전에 적힌 사냥 행도 그렇다 — 그때는
+   * 계산기 대신 금액을 직접 치는 옛 모양으로 연다(없는 입력을 지어내지 않는다).
+   *
+   * 사냥터는 여기가 아니라 `item` 에 **이름 그대로** 들어간다(전역 유일이라 지역이 따라온다).
+   */
+  hunt: HuntingIncomeDetail | null
   memo: string | null
   recordedAt: string
+}
+
+/** 사냥 계산에 쓴 입력 한 벌 — 여섯이 **함께 있거나 함께 없다**. */
+export interface HuntingIncomeDetail {
+  /**
+   * **그때의** 캐릭터 레벨. `null` = 캐릭터를 안 골랐다(페널티 0 — [[ADR-175]] 결정 6).
+   *
+   * 지금 레벨을 다시 읽지 않는 이유는 캐릭터가 레벨업하기 때문이다 — 그러면 한 달 전 기록의
+   * 금액이 열 때마다 달라진다.
+   */
+  characterLevel: number | null
+  /**
+   * 젠 한 번에 **놓치는 마릿수**(0~4) — 퍼센트가 아니다([[ADR-175]] 결정 3).
+   *
+   * 효율 %는 맵마다 다르므로(40마리의 −1 은 98%, 22마리의 −1 은 95%) 퍼센트를 남기면 수정으로
+   * 열 때 **어느 조각이었는지 되짚으려고 맵을 거꾸로 풀어야 한다**. 마릿수는 맵과 무관하다.
+   */
+  missedMobs: number
+  /** 켠 메소 획득률 아이템의 id(`lib/hunting-meso.ts` 의 `MESO_BOOSTS`). 빈 배열 = 없음. */
+  boosts: string[]
+  /** 소재 수 — 하나가 30분이다. */
+  sojae: number
+  /** 솔 에르다 조각 개수 — 사용자가 직접 넣은 값이다([[ADR-175]] 결정 8). */
+  fragments: number
+  /** 조각 개당 메소. */
+  fragmentPrice: number
+}
+
+/**
+ * 여섯 칸 ↔ 한 덩어리. **`hunt_efficiency` 가 있으면 계산기로 적힌 행**이다 — 나머지는 0 일 수
+ * 있지만(조각을 안 먹은 사냥) 효율은 언제나 세그먼트가 고른 값이 들어간다.
+ */
+function rowToHunt(row: Record<string, unknown>): HuntingIncomeDetail | null {
+  const missed = row.hunt_missed_mobs as number | null | undefined
+  if (missed === null || missed === undefined) return null
+
+  const boosts = (row.hunt_boosts as string | null | undefined) ?? ''
+  return {
+    characterLevel: (row.hunt_character_level as number | null | undefined) ?? null,
+    missedMobs: missed,
+    boosts: boosts === '' ? [] : boosts.split(','),
+    sojae: (row.hunt_sojae as number | null | undefined) ?? 0,
+    fragments: (row.hunt_fragments as number | null | undefined) ?? 0,
+    fragmentPrice: (row.hunt_fragment_price as number | null | undefined) ?? 0,
+  }
+}
+
+/** 한 덩어리 → 칸 여섯. 없으면 전부 `null` 이다(다른 갈래의 행이 그렇다). */
+function huntToValues(hunt: HuntingIncomeDetail | null): Array<number | string | null> {
+  if (hunt === null) return [null, null, null, null, null, null]
+  return [
+    hunt.characterLevel,
+    hunt.missedMobs,
+    hunt.boosts.join(','),
+    hunt.sojae,
+    hunt.fragments,
+    hunt.fragmentPrice,
+  ]
 }
 
 const INSERT_SQL = `
   INSERT INTO income_records
     (id, ocid, earned_on, category, item, meso_amount, sale_fee_percent, sale_fee_meso,
-     point_amount, point_per_100m_meso, cash_amount, memo, recorded_at)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     point_amount, point_per_100m_meso, cash_amount,
+     hunt_character_level, hunt_missed_mobs, hunt_boosts, hunt_sojae, hunt_fragments,
+     hunt_fragment_price,
+     memo, recorded_at)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 export async function insertIncomeRecord(record: IncomeRecord): Promise<void> {
@@ -89,6 +162,7 @@ export async function insertIncomeRecord(record: IncomeRecord): Promise<void> {
     record.pointAmount,
     record.pointPer100mMeso,
     record.cashAmount,
+    ...huntToValues(record.hunt),
     record.memo,
     record.recordedAt,
   ])
@@ -99,7 +173,10 @@ const UPDATE_SQL = `
   UPDATE income_records SET
     ocid = ?, earned_on = ?, category = ?, item = ?, meso_amount = ?,
     sale_fee_percent = ?, sale_fee_meso = ?,
-    point_amount = ?, point_per_100m_meso = ?, cash_amount = ?, memo = ?
+    point_amount = ?, point_per_100m_meso = ?, cash_amount = ?,
+    hunt_character_level = ?, hunt_missed_mobs = ?, hunt_boosts = ?, hunt_sojae = ?,
+    hunt_fragments = ?, hunt_fragment_price = ?,
+    memo = ?
   WHERE id = ?
 `
 
@@ -116,6 +193,7 @@ export async function updateIncomeRecord(record: IncomeRecord): Promise<void> {
     record.pointAmount,
     record.pointPer100mMeso,
     record.cashAmount,
+    ...huntToValues(record.hunt),
     record.memo,
     record.id,
   ])
@@ -141,6 +219,7 @@ function rowToRecord(row: Record<string, unknown>): IncomeRecord {
     pointAmount: (row.point_amount as number | null | undefined) ?? null,
     pointPer100mMeso: (row.point_per_100m_meso as number | null | undefined) ?? null,
     cashAmount: (row.cash_amount as number | null | undefined) ?? null,
+    hunt: rowToHunt(row),
     memo: (row.memo as string | null | undefined) ?? null,
     recordedAt: row.recorded_at as string,
   }

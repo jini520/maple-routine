@@ -110,6 +110,17 @@ const TABLE_DEFINITIONS = [
     -- 뗀 몫. **판매 대금 = meso_amount + sale_fee_meso** 로 정확히 되짚는다 — 내림이 섞여 있어
     -- 요율만으로는 역산이 안 된다([[ADR-170]] 정정 9 ⑤).
     sale_fee_meso INTEGER,
+    -- 「사냥」 갈래의 **계산 입력**([[ADR-175]] 결정 9). 합계만 남기면 수정 시트가 빈 계산기로
+    -- 열려 만지는 순간 금액이 덮인다([[ADR-171]] 결정 2). 사냥터는 item 칸에 이름으로 들어간다
+    -- (전역 유일이라 지역이 따라온다). **다른 갈래에서는 전부 NULL** 이다.
+    -- 캐릭터 레벨을 박는 이유는 캐릭터가 레벨업하기 때문이다 — 지금 레벨로 다시 재면 한 달 전
+    -- 기록의 금액이 열 때마다 달라진다.
+    hunt_character_level INTEGER,
+    hunt_missed_mobs INTEGER,     -- 젠 한 번에 놓치는 마릿수(0~4). 효율 %는 맵이 정한다
+    hunt_boosts TEXT,             -- 켠 아이템 id 를 쉼표로. '' = 없음
+    hunt_sojae INTEGER,           -- 소재 수(하나가 30분)
+    hunt_fragments INTEGER,       -- 솔 에르다 조각 개수(사용자가 직접 넣는다 — 결정 8)
+    hunt_fragment_price INTEGER,  -- 조각 개당 메소
     memo TEXT,
     recorded_at TEXT NOT NULL,
     PRIMARY KEY (id)
@@ -292,6 +303,15 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   await ensureColumn(db, 'income_records', 'point_amount', 'INTEGER')
   await ensureColumn(db, 'income_records', 'point_per_100m_meso', 'INTEGER')
   await ensureColumn(db, 'income_records', 'cash_amount', 'INTEGER')
+
+  // [[ADR-175]] 결정 9 — 「사냥」 갈래의 계산 입력. 위 다섯과 **같은 사정**이라 같은 길로 붙인다:
+  // INSERT 는 모든 칸을 적으므로 칸이 없으면 수입이 하나도 안 적힌다.
+  await ensureColumn(db, 'income_records', 'hunt_character_level', 'INTEGER')
+  await ensureColumn(db, 'income_records', 'hunt_missed_mobs', 'INTEGER')
+  await ensureColumn(db, 'income_records', 'hunt_boosts', 'TEXT')
+  await ensureColumn(db, 'income_records', 'hunt_sojae', 'INTEGER')
+  await ensureColumn(db, 'income_records', 'hunt_fragments', 'INTEGER')
+  await ensureColumn(db, 'income_records', 'hunt_fragment_price', 'INTEGER')
   await db.execute(MIGRATE_SHOP_CATEGORY_RENAME)
   await db.execute(MIGRATE_TONIC_BUFF_CATEGORY)
   await db.execute(MIGRATE_FARM_TICKET_ITEM_RENAME)

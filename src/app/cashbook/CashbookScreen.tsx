@@ -461,7 +461,9 @@ export function CashbookScreen(): React.JSX.Element {
    * 시트의 캐릭터 고르개가 쓸 목록([[ADR-166]] 결정 3) — **화면이 읽는다**(시트는 `storage/` 를
    * 모른다). 들어올 때 한 번이면 된다: 추적 목록이 시트를 여는 사이에 바뀌지 않는다.
    */
-  const [characters, setCharacters] = useState<Array<{ ocid: string; name: string }>>([])
+  const [characters, setCharacters] = useState<
+    Array<{ ocid: string; name: string; level: number | null }>
+  >([])
   const openTab = useOpenTab()
   const { definition } = useThemeAppearance()
 
