@@ -51,7 +51,7 @@ import {
   labelOfCurrency,
   type FreeCurrency,
 } from '../../lib/free-currency'
-import { CheckIcon, ChevronLeftIcon } from '../../lib/icons'
+import { ChevronLeftIcon } from '../../lib/icons'
 import { formatMesoCompact } from '../../lib/meso-compact'
 import {
   SPEND_TARIFF_PERCENT,
@@ -63,7 +63,14 @@ import {
   type SpendCatalogItem,
 } from '../../lib/spend-catalog'
 import { TABULAR_NUMS } from '../../lib/text-styles'
-import { SPEND_CATEGORIES, type SpendCategory, type SpendRecord } from '../../storage/spend'
+import {
+  SPEND_CATEGORIES,
+  SPEND_ITEM_KINDS,
+  countsQuantity,
+  type SpendCategory,
+  type SpendItemKind,
+  type SpendRecord,
+} from '../../storage/spend'
 
 /**
  * 적어 둔 기록에서 **시트의 첫 상태를 되짚는다**([[ADR-171]] 결정 2).
@@ -80,6 +87,7 @@ function initialStateOf(record: SpendRecord | undefined): {
   choice: SpendCatalogChoice | null
   item: SpendCatalogItem | null
   form: string | null
+  itemKind: SpendItemKind
   quantity: number
   name: string
   typed: number
@@ -92,6 +100,7 @@ function initialStateOf(record: SpendRecord | undefined): {
       choice: null,
       item: null,
       form: null,
+      itemKind: SPEND_ITEM_KINDS[0],
       quantity: 1,
       name: '',
       typed: 0,
@@ -102,20 +111,39 @@ function initialStateOf(record: SpendRecord | undefined): {
 
   const found = findSpendChoice(record.category, record.item)
   const direct = isDirectInput(record.category)
+  const quantity = record.quantity ?? 1
   return {
     category: record.category,
     choice: found?.choice ?? null,
     item: found?.item ?? null,
     form: record.form,
-    quantity: record.quantity ?? 1,
+    // **`null` 은 정정 1 이전 행이고 장비다**([[ADR-173]] 정정 1 결정 4) — 그때의 아이템 구매는
+    // «치는 금액 + 관세» 하나뿐이었고, 그것이 정확히 장비의 모양이다.
+    itemKind: record.itemKind ?? SPEND_ITEM_KINDS[0],
+    quantity,
     // 직접 입력에서만 이름이 «친 것» 이다 — 목록 항목의 이름을 여기 넣으면 수정 후 저장할 때
     // 사용처로 다시 적힌다.
     name: direct ? (record.item ?? '') : '',
-    typed: direct ? (record.mesoAmount ?? record.pointAmount ?? record.cashAmount ?? 0) : 0,
+    typed: direct ? typedOf(record, quantity) : 0,
     hasTariff: record.tariffMeso !== null,
     freeCurrency:
       record.cashAmount !== null ? 'cash' : record.pointAmount !== null ? 'point' : 'meso',
   }
+}
+
+/**
+ * 친 값을 **되짚는다** — `단가 = (저장된 총액 − 관세분) ÷ 수량`([[ADR-173]] 정정 1).
+ *
+ * 총액을 그대로 친 값으로 삼으면 시트가 그 위에 **관세를 또 물리고**(935,000,000 짜리 기록이
+ * 1,028,500,000 으로 열렸다) 「기타」는 수량이 함께 살아나 합계가 «총액 × 수량» 이 된다
+ * (30,000 이 90,000 으로 열렸다). 셋을 한 식이 다 맞춘다.
+ *
+ * 나눗셈은 **언제나 나누어떨어진다** — 저장된 총액이 `단가 × 수량 (+ 관세분)` 으로 만들어진
+ * 값이라서다. `Math.round` 는 부동소수점이 남길 꼬리만 턴다.
+ */
+function typedOf(record: SpendRecord, quantity: number): number {
+  const total = record.mesoAmount ?? record.pointAmount ?? record.cashAmount ?? 0
+  return Math.round((total - (record.tariffMeso ?? 0)) / quantity)
 }
 
 /** 저장할 값에서 **어댑터가 아니라 화면이 정하는 것 둘**(`id`·`recordedAt`)을 뺀 나머지. */
@@ -196,6 +224,19 @@ function RateRow(props: {
 function isDirectInput(category: SpendCategory): boolean {
   return spendGroupsOf(category).length === 0
 }
+
+/**
+ * 관세 조각 둘 — **「없음」 이 첫 조각이고 기본값**이다([[ADR-173]] 정정 1 결정 6).
+ *
+ * 수입 시트의 수수료(`FEE_OPTIONS` — 「없음·3%·5%」)와 **같은 모양**이다([[ADR-170]] 정정 9 ②):
+ * 두 시트가 한 뼈대라는 결정 10 이 관세 자리에서만 안 지켜지고 있었다.
+ *
+ * 요율은 `SPEND_TARIFF_PERCENT` **하나에서 나온다** — 여기 숫자를 적으면 참조표가 바뀌는 날
+ * 글자와 셈이 갈린다([[ADR-006]]).
+ */
+const TARIFF_OPTIONS = ['없음', `${SPEND_TARIFF_PERCENT}%`] as const
+
+type TariffOption = (typeof TARIFF_OPTIONS)[number]
 
 function CategoryChip(props: {
   label: string
@@ -394,6 +435,8 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
   const [ocid, setOcid] = useState<string | null>(props.editing?.ocid ?? null)
   const [typed, setTyped] = useState(initial.typed)
   const [hasTariff, setHasTariff] = useState(initial.hasTariff)
+  /** 「아이템 구매」의 종류([[ADR-173]] 정정 1) — 다른 갈래에서는 안 쓰이고 저장에도 안 실린다. */
+  const [itemKind, setItemKind] = useState(initial.itemKind)
   const [freeCurrency, setFreeCurrency] = useState<FreeCurrency>(initial.freeCurrency)
   // 마지막으로 쓴 값으로 시작한다([[ADR-166]] 결정 5). 사용자가 고치면 그 값이 저장되고, 다음에
   // 이 시트를 열 때 다시 채워진다 — 필수 칸이 매번 비어 있으면 입력이 막힌다.
@@ -455,27 +498,37 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
   // 시세는 메포 항목에만 뜻이 있다 — 메소 항목에서 물어보면 «왜 묻나» 가 된다.
   const typedRate = Number(rateText)
   const rate = usesPoint && rateText !== '' && Number.isFinite(typedRate) ? typedRate : null
+  const isFree = category === '기타'
+  /**
+   * **곱할 것이 있는가** — 수량이 서는 자리 셋이다.
+   *
+   * | 어디 | 곱하나 |
+   * |---|---|
+   * | 목록 갈래 | **언제나** — 카탈로그의 `unitPrice` × 수량([[ADR-166]] 정정 1 ③) |
+   * | 「기타」 | **언제나** — 지출액 × 수량([[ADR-173]] 결정 17) |
+   * | 「아이템 구매」 | **장비가 아닐 때만**([[ADR-173]] 정정 1 결정 1·2) |
+   *
+   * 장비는 하나를 사므로 곱할 것이 없고, 그래서 큰 숫자가 여전히 «치는 칸» 이며 관세가 그 위에서
+   * 굴러 오른다. 소비·기타는 **월드 간 거래가 안 되어 관세가 아예 없으므로**, 결정 17 이 이 자리를
+   * 미뤄 뒀던 질문(«관세를 단가에 물리나 총액에 물리나»)이 **성립하지 않는다.**
+   */
+  const counts = !direct || isFree || (category === '아이템 구매' && countsQuantity(itemKind))
+  /** 관세를 얹기 **전**의 값 — 곱할 것이 없으면 친 값 그대로다. */
+  const directSubtotal = counts ? typed * quantity : typed
   // 관세는 **친 숫자를 안 바꾼다** — 아래에 한 줄로 더한다. 금액 자체를 고치면 껐다 켰다 할 때
   // 8.5억 → 9.35억 → 10.28억 으로 부푼다([[ADR-166]] 정정 2 ②).
-  const tariffed = withTariffMeso(typed)
-  /**
-   * 「기타」는 **단가 × 수량**이다([[ADR-173]] 결정 17, 사용자 지정 2026-08-27) — 목록 갈래와 같은
-   * 모양이고, `typed` 가 그 «지출액»(단가)이다. 아이템 구매는 여전히 **치는 값이 곧 금액**이다:
-   * 관세가 붙는 자리라 단가·수량으로 가르면 관세를 어느 쪽에 물리는지가 새 질문이 된다.
-   */
-  const isFree = category === '기타'
-  const directAmount = isFree
-    ? typed * quantity
-    : currency === 'meso' && hasTariff
-      ? tariffed.mesoAmount
-      : typed
+  const tariffed = withTariffMeso(directSubtotal)
+  const directAmount =
+    !isFree && currency === 'meso' && hasTariff ? tariffed.mesoAmount : directSubtotal
   const amount = direct ? directAmount : (item?.unitPrice ?? 0) * quantity
 
   // 캐시는 **환산하지 않는다**([[ADR-166]] 정정 2 ①) — 그래서 메소 축 합계에 안 든다.
   const totalMeso = currency === 'cash' ? 0 : usesPoint ? pointToMeso(amount, rate ?? 0) : amount
   // 메포를 쓰는데 시세가 없으면 **막는다** — 저장하면 영영 메소로 표시할 수 없는 행이 된다
   // ([[ADR-166]] 정정 2 ③). 어댑터도 같은 것을 막지만 화면이 먼저 알려 주는 편이 낫다.
-  const hasSubject = direct ? typed > 0 : item !== null && !formMissing
+  // 수량이 **치는 칸**이 되면서 0 이 닿을 수 있게 됐다([[ADR-173]] 정정 1 결정 3) — 스테퍼는
+  // 바닥이 1 이라 이 자리가 없었다. `directSubtotal` 하나로 «단가도 수량도 0 이 아니다» 를 잰다.
+  const hasSubject = direct ? directSubtotal > 0 : item !== null && !formMissing
   // **메소로 셀 수 없는 상태.** 메포를 쓰는데 시세가 없으면 환산이 성립하지 않는다 — 저장을 막는
   // 것만으로는 부족하고(사용자는 왜 막혔는지 모른다) 합계 자리가 그 사실을 말해야 한다.
   const blocked = usesPoint && (rate === null || rate <= 0)
@@ -505,7 +558,7 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
    * 합계는 [[ADR-173]] 결정 11 대로 **메소 축**이다. 캐시만 예외다 — 환산을 안 하므로([[ADR-166]]
    * 정정 2 ①) 그 축에 얹을 값이 없고, 그대로 「원」 으로 적는다.
    */
-  const freeTotal = isFree && currency !== 'cash' ? totalMeso : typed * (isFree ? quantity : 1)
+  const freeTotal = isFree && currency !== 'cash' ? totalMeso : directSubtotal
   const freeUnit = isFree
     ? currency === 'cash'
       ? '원'
@@ -519,6 +572,9 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
    * 다른 뜻으로 쓰는 것이 아니라, 묻는 것이 다르다: 저기는 «얼마인가», 여기는 «무엇으로 내나».
    */
   const typedUnit = labelOfCurrency(currency)
+
+  /** 켬/끔이 **조각 이름**이 된다([[ADR-173]] 정정 1 결정 6) — 저장에 실리는 것은 그대로 `hasTariff` 다. */
+  const tariffOption: TariffOption = hasTariff ? TARIFF_OPTIONS[1] : TARIFF_OPTIONS[0]
 
   const directHint =
     currency === 'cash'
@@ -561,6 +617,21 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
     resetAmountRoll()
     // 관세는 아이템 구매에만 있다 — 다른 갈래로 갔다가 돌아오면 켜져 있던 것이 남으면 안 된다.
     if (next !== '아이템 구매') setHasTariff(false)
+  }
+
+  /**
+   * 종류를 바꾼다([[ADR-173]] 정정 1 결정 5) — **수량은 1 로, 관세는 꺼진다.**
+   *
+   * 관세를 안 끄면 **화면에 없는 값이 저장된다**(소비·기타에는 그 체크가 아예 없다). 수량을
+   * 되돌리는 것은 세는 대상이 바뀌기 때문이고, **친 금액은 남긴다** — 수량이 1 이면 장비의
+   * «금액» 과 소비의 «단가» 가 같은 값이라 거짓이 되지 않는다.
+   */
+  function selectItemKind(next: SpendItemKind): void {
+    setItemKind(next)
+    setQuantity(1)
+    setHasTariff(false)
+    // 큰 숫자가 **무엇을 세는지가 바뀐다**(치는 금액 ↔ 합계 — 결정 12) — 굴리지 않고 갈아 끼운다.
+    resetAmountRoll()
   }
 
   /** ① 대표를 고른다. 갈래가 하나뿐이면 **그 자리에서 항목까지 정해진다.** */
@@ -615,9 +686,13 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
         // 빈 칸은 `null` 이다 — 빈 문자열을 넣으면 «적었는데 비어 있다» 와 «안 적었다» 가 같아진다.
         item: direct ? (name.trim() === '' ? null : name.trim()) : (item?.name ?? null),
         form: direct ? null : form,
-        // 「기타」는 단가 × 수량이라 수량이 있다([[ADR-173]] 결정 17 — [[ADR-166]] 정정 1 ③ 의
-        // «직접 입력에는 단가가 없다» 를 그 갈래에 한해 좁힌다). 아이템 구매만 곱할 것이 없다.
-        quantity: category === '아이템 구매' ? null : quantity,
+        // 종류는 「아이템 구매」의 것이다([[ADR-173]] 정정 1 결정 4) — 다른 갈래에서는 `null` 이라
+        // «장비를 산 컨텐츠 지출» 같은 행이 생기지 않는다.
+        itemKind: category === '아이템 구매' ? itemKind : null,
+        // 수량은 **곱할 것이 있을 때만** 실린다([[ADR-173]] 결정 17 · 정정 1 결정 1 — [[ADR-166]]
+        // 정정 1 ③ 의 «직접 입력에는 단가가 없다» 를 두 번에 걸쳐 좁힌 결과다). 장비는 하나를
+        // 사므로 여기가 `null` 이고, 그 `null` 이 곧 «곱하지 않은 행» 이라는 사실이다.
+        quantity: counts ? quantity : null,
         mesoAmount: currency === 'meso' ? amount : null,
         // 총액과 그 몫을 **둘 다** 박는다(정정 2 ②) — 집계는 총액 한 칸만 본다.
         tariffMeso: direct && hasTariff && currency === 'meso' ? tariffed.tariffMeso : null,
@@ -707,7 +782,9 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
           제목이 이미 말한다.
         */}
         {!editing && choice === null && (
-          <View className="flex-row flex-wrap gap-1.5">
+          // **테스트가 이 줄을 지목할 수 있어야 한다** — 「기타」가 갈래 이름이자 「아이템 구매」의
+          // 종류 이름이라([[ADR-173]] 정정 1) 라벨만으로는 둘이 안 갈린다.
+          <View testID="spend-sheet-categories" className="flex-row flex-wrap gap-1.5">
             {SPEND_CATEGORIES.map((each) => (
               <CategoryChip
                 key={each}
@@ -732,6 +809,19 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
               />
             </FieldRow>
 
+            {category === '아이템 구매' && (
+              // **종류가 나머지 둘을 정한다**([[ADR-173]] 정정 1 결정 1) — 수량이 서는지, 관세가
+              // 있는지. 세그먼트인 이유는 통화와 같다(결정 3): 갈래가 아니라 **값의 축**이다.
+              // 게임의 인벤토리 탭 이름이라 「기타」가 갈래 칩과 겹치지만, 부르는 말을 나눈다.
+              <FieldRow label="종류" testID="spend-sheet-item-kind">
+                <Segment
+                  options={SPEND_ITEM_KINDS}
+                  selected={itemKind}
+                  onSelect={selectItemKind}
+                />
+              </FieldRow>
+            )}
+
             {category === '기타' && (
               // 통화는 **갈래가 아니라 금액의 축**이라 세그먼트다([[ADR-173]] 결정 3) — 칩으로
               // 두면 갈래 칩과 한 무리로 읽힌다. 캐시가 사는 유일한 자리다([[ADR-166]] 정정 1 ④).
@@ -745,9 +835,10 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
               </FieldRow>
             )}
 
-            {isFree && (
+            {counts && (
               // **통화 밑**이다(사용자 지정) — 무엇으로 내는지를 정한 다음에 얼마인지를 친다.
-              <FieldRow label="지출액">
+              // 이름이 갈린다: 「기타」는 «얼마를 썼나»(지출액), 아이템 구매는 **한 개 값**(단가)이다.
+              <FieldRow label={isFree ? '지출액' : '단가'}>
                 <TextInput
                   testID="spend-sheet-unit-price"
                   value={typed === 0 ? '' : typed.toLocaleString()}
@@ -769,8 +860,49 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
             )}
 
             {isFree && (
+              // 「기타」가 세는 것은 «몇 회» 라 **스테퍼 그대로**다([[ADR-173]] 결정 18) — 자릿수가
+              // 아래 칸과 다르고, 둘이 한 화면에 함께 서지 않는다(갈래가 시트 밖에서 갈렸다).
               <FieldRow label="수량">
                 <QuantityStepper value={quantity} onChange={setQuantity} testID="spend-sheet-quantity" />
+              </FieldRow>
+            )}
+
+            {category === '아이템 구매' && !counts && (
+              /*
+                **관세도 라벨–값 줄이다**([[ADR-173]] 정정 1 결정 6, 사용자 지정) — 시트에서 고르는
+                것은 전부 이 모양인데(결정 1) 관세만 큰 숫자 밑의 **맨몸 체크박스**였다. 자리가
+                밑에서 위로 온 것은 모양을 따라온 결과다: 라벨–값 줄은 큰 숫자 **위**에 사는
+                물건이고, 그래도 **큰 숫자와 붙어 있어** «누르면 저것이 움직인다» 가 안 끊긴다.
+
+                **장비에만 선다**(정정 1 결정 1) — 소비·기타는 **월드 간 거래가 안 되므로** 그 줄을
+                두면 있을 수 없는 것을 물을 수 있게 된다. 끄는 것이 아니라 **줄 자체가 없다**:
+                있는데 못 누르면 «왜 못 누르나» 를 새로 묻게 된다.
+
+                **더해지는 금액을 안 적는 것**은 결정 5 그대로다 — 큰 숫자가 그만큼 올라간다.
+              */
+              <FieldRow label="관세" testID="spend-sheet-tariff">
+                <Segment
+                  options={TARIFF_OPTIONS}
+                  selected={tariffOption}
+                  onSelect={(option) => setHasTariff(option !== '없음')}
+                />
+              </FieldRow>
+            )}
+
+            {counts && !isFree && (
+              // **스테퍼가 아니라 치는 칸**이다([[ADR-173]] 정정 1 결정 3, 사용자 지정) — 주문서
+              // 300장을 스테퍼로 세면 300번을 누른다([[ADR-175]] 결정 8 이 솔 에르다 조각에서 온
+              // 그 결론). **단위를 안 적는다**(결정 17) — 자유 입력이라 앱이 무엇을 세는지 모른다.
+              <FieldRow label="수량">
+                <TextInput
+                  testID="spend-sheet-quantity"
+                  value={quantity === 0 ? '' : quantity.toLocaleString()}
+                  onChangeText={(text) => setQuantity(parseMesoText(quantity, text))}
+                  keyboardType="number-pad"
+                  placeholder="0"
+                  className="flex-1 text-right text-sm font-semibold text-text"
+                  style={TABULAR_NUMS}
+                />
               </FieldRow>
             )}
 
@@ -786,34 +918,12 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
               identity={amountIdentity}
               hint={directHint}
               hintBlocked={blocked}
-              // **「기타」의 큰 숫자는 못 친다**(결정 17) — 단가 × 수량이라 앱이 센다.
-              readOnly={isFree}
+              // **곱할 것이 있으면 못 친다**(결정 17 · 정정 1 결정 2) — 앱이 세는 값을 사람이
+              // 덮어쓰면 어느 쪽이 참인지 사라진다. 장비는 곱할 것이 없어 여전히 친다.
+              readOnly={counts}
               onChangeValue={setTyped}
             />
 
-            {category === '아이템 구매' && (
-              // **큰 숫자 밑**에 산다([[ADR-173]] 결정 5, 사용자 지정) — 더해지는 금액을 안 적는
-              // 이유는 위의 숫자가 그만큼 올라가기 때문이다. 다중 선택이 아니라 켬/끔 하나라
-              // 역할이 checkbox 다(`CacheClearConfirm` ②와 같은 판단).
-              <Pressable
-                role="checkbox"
-                aria-checked={hasTariff}
-                aria-label={`관세 ${SPEND_TARIFF_PERCENT}%`}
-                onPress={() => setHasTariff((on) => !on)}
-                className="flex-row items-center gap-2"
-              >
-                <View
-                  className={`h-5 w-5 items-center justify-center rounded-md border ${
-                    hasTariff ? 'border-transparent bg-primary' : 'border-border-strong'
-                  }`}
-                >
-                  {hasTariff && (
-                    <CheckIcon className="h-3 w-3 text-on-primary" strokeWidth={3} aria-hidden />
-                  )}
-                </View>
-                <Text className="text-xs text-text">관세 {SPEND_TARIFF_PERCENT}%</Text>
-              </Pressable>
-            )}
           </>
         ) : choice === null && !editing ? (
           // **여기에 스크롤을 두지 않는다.** 시트 껍데기가 이미 `BottomSheetScrollView` 이고

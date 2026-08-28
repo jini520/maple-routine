@@ -29,6 +29,22 @@ export const SPEND_CATEGORIES = [
 
 export type SpendCategory = (typeof SPEND_CATEGORIES)[number]
 
+/**
+ * 「아이템 구매」의 종류([[ADR-173]] 정정 1) — **게임의 인벤토리 탭 이름**이다.
+ *
+ * 「기타」가 `SPEND_CATEGORIES` 의 갈래 이름과 겹치지만 **고치지 않는다**: 사용자가 아는 말이
+ * 그것이라 우리가 바꿔 부르면 게임과 갈라진다. 대신 **부르는 말을 나눈다** — 이쪽은 언제나
+ * 「종류」이고 타입 이름도 `SpendItemKind` 다.
+ */
+export const SPEND_ITEM_KINDS = ['장비', '소비', '기타'] as const
+
+export type SpendItemKind = (typeof SPEND_ITEM_KINDS)[number]
+
+/** 수량과 관세가 서는 것은 **장비가 아닐 때**다([[ADR-173]] 정정 1 결정 1) — 판정이 한 자리에 산다. */
+export function countsQuantity(kind: SpendItemKind): boolean {
+  return kind !== '장비'
+}
+
 export interface SpendRecord {
   id: string
   /** `null` = 계정 단위가 기본([[ADR-166]] 결정 3). */
@@ -46,6 +62,19 @@ export interface SpendRecord {
    * (베끼면 목록이 바뀔 때 두 벌이 어긋난다 — `quantity` 의 단위 이름과 같은 이유).
    */
   form: string | null
+  /**
+   * 「아이템 구매」의 **종류**([[ADR-173]] 정정 1) — 게임 인벤토리 탭 이름 그대로다. 이 값 하나가
+   * 수량과 관세를 함께 가른다: **장비**는 하나를 사고 관세가 붙으며, **소비·기타**는 여럿을 사고
+   * **월드 간 거래가 안 되어 관세가 없다.**
+   *
+   * `form` 과 갈라 둔 이유는 그 칸이 **카탈로그의 `forms`** 를 뜻하기 때문이다 — 한 칸이 두 뜻을
+   * 들면 «지금 이건 어느 쪽이냐» 를 묻는 코드가 생긴다([[ADR-166]] 정정 2 ④ 가 `meso_per_point`
+   * 라는 거짓 이름 하나로 겪은 그것이다).
+   *
+   * **다른 갈래에서는 `null`** 이고, 「아이템 구매」의 `null` 은 **정정 1 이전 행**이라 **장비로
+   * 연다** — 그때는 «치는 금액 + 관세» 하나뿐이었고 그것이 정확히 장비의 모양이다.
+   */
+  itemKind: SpendItemKind | null
   /**
    * 금액 = 카탈로그의 `unitPrice` × 이 값([[ADR-166]] 정정 1 ③). **단위 이름은 안 적는다** —
    * 카탈로그가 항목별로 알고 있어(`unit`) 베끼면 목록이 바뀔 때 두 벌이 어긋난다.
@@ -82,10 +111,10 @@ export interface SpendRecord {
 
 const INSERT_SQL = `
   INSERT INTO spend_records
-    (id, ocid, spent_on, category, item, form, quantity,
+    (id, ocid, spent_on, category, item, form, item_kind, quantity,
      meso_amount, tariff_meso, point_amount, point_per_100m_meso, cash_amount,
      memo, recorded_at)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 /**
@@ -119,6 +148,7 @@ export async function insertSpendRecord(record: SpendRecord): Promise<void> {
     record.category,
     record.item,
     record.form,
+    record.itemKind,
     record.quantity,
     record.mesoAmount,
     record.tariffMeso,
@@ -140,7 +170,7 @@ export async function insertSpendRecord(record: SpendRecord): Promise<void> {
  */
 const UPDATE_SQL = `
   UPDATE spend_records SET
-    ocid = ?, spent_on = ?, category = ?, item = ?, form = ?, quantity = ?,
+    ocid = ?, spent_on = ?, category = ?, item = ?, form = ?, item_kind = ?, quantity = ?,
     meso_amount = ?, tariff_meso = ?, point_amount = ?, point_per_100m_meso = ?,
     cash_amount = ?, memo = ?
   WHERE id = ?
@@ -157,6 +187,7 @@ export async function updateSpendRecord(record: SpendRecord): Promise<void> {
     record.category,
     record.item,
     record.form,
+    record.itemKind,
     record.quantity,
     record.mesoAmount,
     record.tariffMeso,
@@ -186,6 +217,7 @@ function rowToRecord(row: Record<string, unknown>): SpendRecord {
     category: row.category as SpendCategory,
     item: (row.item as string | null | undefined) ?? null,
     form: (row.form as string | null | undefined) ?? null,
+    itemKind: (row.item_kind as SpendItemKind | null | undefined) ?? null,
     quantity: nullable(row.quantity),
     mesoAmount: nullable(row.meso_amount),
     tariffMeso: nullable(row.tariff_meso),

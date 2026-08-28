@@ -142,6 +142,8 @@ describe('db.ts 와 맞물리는가', () => {
       'ALTER TABLE boss_drop_records ADD COLUMN price_meso INTEGER',
       'ALTER TABLE boss_drop_records ADD COLUMN price_share INTEGER',
       'ALTER TABLE spend_records ADD COLUMN form TEXT',
+      // 「아이템 구매」의 종류([[ADR-173]] 정정 1) — `form` 이 겪은 그 사정이다.
+      'ALTER TABLE spend_records ADD COLUMN item_kind TEXT',
       // [[ADR-170]] 정정 9 — 수입 테이블도 수수료 칸 없이 만들어진 기기가 있다.
       'ALTER TABLE income_records ADD COLUMN sale_fee_percent INTEGER',
       'ALTER TABLE income_records ADD COLUMN sale_fee_meso INTEGER',
@@ -170,6 +172,7 @@ describe('db.ts 와 맞물리는가', () => {
             { name: 'price_meso' },
             { name: 'price_share' },
             { name: 'form' },
+            { name: 'item_kind' },
             { name: 'sale_fee_percent' },
             { name: 'sale_fee_meso' },
             { name: 'point_amount' },
