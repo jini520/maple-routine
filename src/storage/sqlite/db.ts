@@ -3,6 +3,54 @@ import type { SqliteDbConnection } from '../ports'
 
 const DB_NAME = 'boss_profit'
 
+/**
+ * `income_records` 의 **본문 한 벌**. `CREATE TABLE` 이 두 자리에서 같은 것을 쓴다 — 아래 정의
+ * 배열(정상 생성)과 `rebuildIncomeRecords`(재작성). 두 벌로 두면 재작성이 **옛 스키마를 다시
+ * 만드는** 날이 오고, 그것이 정확히 이 파일이 겪은 결함의 모양이다([[ADR-176]] 결정 6).
+ */
+const INCOME_RECORDS_BODY = `(
+    id TEXT NOT NULL,
+    -- NULL = 계정 단위가 기본이다([[ADR-166]] 결정 3). 통화가 귀속을 강제하지 않는다.
+    ocid TEXT,
+    earned_on TEXT NOT NULL,      -- 'YYYY-MM-DD' KST
+    category TEXT NOT NULL,       -- 아이템 판매 · 사냥 · 기타([[ADR-170]] 결정 1)
+    item TEXT,                    -- 판 것 / 사냥터 / 자유
+    -- **수수료를 뗀 값**이다([[ADR-170]] 정정 9 ⑤) — 캘린더도 합계도 이 칸 하나를 더한다.
+    -- **NULL 이 될 수 있다**([[ADR-176]], 이슈 #265): 「기타」는 통화가 갈려서 «메소로 번 것이
+    -- 아니다» 가 성립한다([[ADR-170]] 정정 15). 0 으로 채우면 «메소를 0 벌었다» 와 같아져 수정
+    -- 시트가 찬 칸으로 통화를 되짚던 자리를 잃는다(지출이 먼저 같은 자리를 지났다 —
+    -- [[ADR-166]] 정정 2). 처음엔 NOT NULL 이었고(수입이 메소뿐이던 시절 — [[ADR-170]] 결정 1)
+    -- 그 제약이 메포·캐시 「기타」의 저장을 통째로 막았다. 이미 만들어진 테이블은 rebuildIncomeRecords 가 옮긴다.
+    meso_amount INTEGER,
+    -- 경매장 수수료(3·5 — [[ADR-168]] 의 FeePercent). NULL = 없음(직거래이거나 정정 9 이전 행).
+    sale_fee_percent INTEGER,
+    -- 뗀 몫. **판매 대금 = meso_amount + sale_fee_meso** 로 정확히 되짚는다 — 내림이 섞여 있어
+    -- 요율만으로는 역산이 안 된다([[ADR-170]] 정정 9 ⑤).
+    sale_fee_meso INTEGER,
+    -- 통화 칸 셋([[ADR-170]] 정정 15). 「기타」는 메포·캐시로도 들어오고, **지출과 같은 이름**을
+    -- 써야 집계가 한 모양으로 접힌다(incomeMesoOf = spendMesoOf). 뜻과 단위는 spend_records 의
+    -- 같은 이름 칸들과 같다 — 시세는 1억 메소당 메포이고, 캐시는 환산하지 않는다.
+    -- 이 셋은 정정 15 가 **ensureColumn 으로만** 붙여 CREATE 문에 없었다. 그 상태로는 재작성이
+    -- 만드는 테이블에 칸이 모자라 이관이 그 자리에서 던진다 — DDL 이 곧 «지금의 스키마» 여야 한다.
+    point_amount INTEGER,
+    point_per_100m_meso INTEGER,
+    cash_amount INTEGER,
+    -- 「사냥」 갈래의 **계산 입력**([[ADR-175]] 결정 9). 합계만 남기면 수정 시트가 빈 계산기로
+    -- 열려 만지는 순간 금액이 덮인다([[ADR-171]] 결정 2). 사냥터는 item 칸에 이름으로 들어간다
+    -- (전역 유일이라 지역이 따라온다). **다른 갈래에서는 전부 NULL** 이다.
+    -- 캐릭터 레벨을 박는 이유는 캐릭터가 레벨업하기 때문이다 — 지금 레벨로 다시 재면 한 달 전
+    -- 기록의 금액이 열 때마다 달라진다.
+    hunt_character_level INTEGER,
+    hunt_missed_mobs INTEGER,     -- 젠 한 번에 놓치는 마릿수(0~4). 효율 %는 맵이 정한다
+    hunt_boosts TEXT,             -- 켠 아이템 id 를 쉼표로. '' = 없음
+    hunt_sojae INTEGER,           -- 소재 수(하나가 30분)
+    hunt_fragments INTEGER,       -- 솔 에르다 조각 개수(사용자가 직접 넣는다 — 결정 8)
+    hunt_fragment_price INTEGER,  -- 조각 개당 메소
+    memo TEXT,
+    recorded_at TEXT NOT NULL,
+    PRIMARY KEY (id)
+  )`
+
 // 이 DB의 테이블 정의는 여기 하나뿐이다 — openBossProfitDb가 이 배열을 순회해 스키마를 만들고,
 // storage/cache-data.ts가 아래 이름 배열로 캐시 삭제 범위·용량을 계산한다. 새 테이블은 여기에만
 // 추가하면 세 곳에 자동 반영된다(ADR-052 결정 2).
@@ -94,38 +142,7 @@ const TABLE_DEFINITIONS = [
   //     (`storage/cache-data.ts` — 안 넣으면 차집합 파생으로 «지워도 되는 것» 에 끌려간다).
   {
     name: 'income_records',
-    createSql: `
-  CREATE TABLE IF NOT EXISTS income_records (
-    id TEXT NOT NULL,
-    -- NULL = 계정 단위가 기본이다([[ADR-166]] 결정 3). 통화가 귀속을 강제하지 않는다.
-    ocid TEXT,
-    earned_on TEXT NOT NULL,      -- 'YYYY-MM-DD' KST
-    category TEXT NOT NULL,       -- 아이템 판매 · 사냥 · 기타([[ADR-170]] 결정 1)
-    item TEXT,                    -- 판 것 / 사냥터 / 자유
-    -- 수입은 **메소뿐**이다([[ADR-170]] 결정 1) — 통화 칸 셋도 시세도 없다.
-    -- **수수료를 뗀 값**이다([[ADR-170]] 정정 9 ⑤) — 캘린더도 합계도 이 칸 하나를 더한다.
-    meso_amount INTEGER NOT NULL,
-    -- 경매장 수수료(3·5 — [[ADR-168]] 의 FeePercent). NULL = 없음(직거래이거나 정정 9 이전 행).
-    sale_fee_percent INTEGER,
-    -- 뗀 몫. **판매 대금 = meso_amount + sale_fee_meso** 로 정확히 되짚는다 — 내림이 섞여 있어
-    -- 요율만으로는 역산이 안 된다([[ADR-170]] 정정 9 ⑤).
-    sale_fee_meso INTEGER,
-    -- 「사냥」 갈래의 **계산 입력**([[ADR-175]] 결정 9). 합계만 남기면 수정 시트가 빈 계산기로
-    -- 열려 만지는 순간 금액이 덮인다([[ADR-171]] 결정 2). 사냥터는 item 칸에 이름으로 들어간다
-    -- (전역 유일이라 지역이 따라온다). **다른 갈래에서는 전부 NULL** 이다.
-    -- 캐릭터 레벨을 박는 이유는 캐릭터가 레벨업하기 때문이다 — 지금 레벨로 다시 재면 한 달 전
-    -- 기록의 금액이 열 때마다 달라진다.
-    hunt_character_level INTEGER,
-    hunt_missed_mobs INTEGER,     -- 젠 한 번에 놓치는 마릿수(0~4). 효율 %는 맵이 정한다
-    hunt_boosts TEXT,             -- 켠 아이템 id 를 쉼표로. '' = 없음
-    hunt_sojae INTEGER,           -- 소재 수(하나가 30분)
-    hunt_fragments INTEGER,       -- 솔 에르다 조각 개수(사용자가 직접 넣는다 — 결정 8)
-    hunt_fragment_price INTEGER,  -- 조각 개당 메소
-    memo TEXT,
-    recorded_at TEXT NOT NULL,
-    PRIMARY KEY (id)
-  )
-`,
+    createSql: `CREATE TABLE IF NOT EXISTS income_records ${INCOME_RECORDS_BODY}`,
   },
   {
     name: 'spend_records',
@@ -258,6 +275,57 @@ async function ensureColumn(
   }
 }
 
+/** 재작성이 잠깐 쓰는 이름. 트랜잭션 안에서만 존재하므로 파일에 남지 않는다. */
+const INCOME_RECORDS_REBUILD_TABLE = 'income_records_rebuild'
+
+/**
+ * **`income_records.meso_amount` 의 `NOT NULL` 을 뗀다**([[ADR-176]], 이슈 #265).
+ *
+ * `ensureColumn` 은 «없는 칸을 더하는» 길뿐이고 **SQLite 는 `ALTER TABLE` 로 기존 칸의 제약을 못
+ * 고친다.** 테이블을 다시 쓰는 것이 유일한 길이다 — 새 테이블 → 복사 → DROP → RENAME.
+ *
+ * 지키는 것 넷:
+ *
+ * ① **한 트랜잭션이다.** 「옛 테이블은 지워졌고 새 이름은 아직 없는」 상태가 파일에 남으면 그
+ *    기기의 수입 기록이 **전부 사라진다** — 되살릴 API 가 0% 인 데이터다([[ADR-170]] 결정 2).
+ *    던지면 되돌리고 그대로 올려보낸다(삼키면 «됐다» 는 거짓 위에서 다음 문장들이 돈다).
+ * ② **옮길 칸은 옛 테이블이 실제로 가진 칸**이다. `SELECT *` 는 못 쓴다 — `ensureColumn` 이 붙인
+ *    칸은 **뒤에** 붙어 순서가 지금 DDL 과 다르고, 위치로 짝지으면 값이 **에러 없이 옆 칸으로
+ *    옮겨 앉는다**(수수료가 메포가 된다). 지금 스키마의 칸 목록을 박아 두는 것도 못 쓴다 —
+ *    그 칸이 아직 없는 기기가 실제로 있다([[ADR-170]] 정정 9·15 · [[ADR-175]] 결정 9).
+ * ③ **`ensureColumn` 들보다 먼저** 돈다. 여기서 만드는 테이블은 지금의 DDL 전체라 칸이 이미 다
+ *    있고, 뒤의 `ensureColumn` 열하나는 그대로 no-op 이 된다.
+ * ④ **판정은 스키마 자신에게 묻는다**(`notnull`). 이미 nullable 이면 **한 문장도 안 나간다** —
+ *    메이린 UPDATE 들과 같은 성질이다(매번 열려도 안전한 no-op). 재작성은 행을 통째로 옮기는
+ *    비싼 일이라 이 판정이 값싸야 한다.
+ */
+async function rebuildIncomeRecords(db: SqliteDbConnection): Promise<void> {
+  const { values } = await db.query(`PRAGMA table_info(income_records)`)
+  const columns = (values ?? []) as { name: string; notnull: number }[]
+  const mesoAmount = columns.find((column) => column.name === 'meso_amount')
+  // `Number()` 를 씌우는 이유는 어댑터마다 이 값이 숫자로 오는지 글자로 오는지 계약이 없어서다.
+  // 글자 '0' 을 `=== 0` 으로 재면 **옮긴 뒤에도 «아직 NOT NULL»** 로 읽혀 부팅마다 다시 옮긴다.
+  if (mesoAmount === undefined || Number(mesoAmount.notnull) === 0) {
+    return
+  }
+
+  const carried = columns.map((column) => column.name).join(', ')
+
+  await db.execute('BEGIN')
+  try {
+    await db.execute(`CREATE TABLE ${INCOME_RECORDS_REBUILD_TABLE} ${INCOME_RECORDS_BODY}`)
+    await db.execute(
+      `INSERT INTO ${INCOME_RECORDS_REBUILD_TABLE} (${carried}) SELECT ${carried} FROM income_records`,
+    )
+    await db.execute('DROP TABLE income_records')
+    await db.execute(`ALTER TABLE ${INCOME_RECORDS_REBUILD_TABLE} RENAME TO income_records`)
+    await db.execute('COMMIT')
+  } catch (error: unknown) {
+    await db.execute('ROLLBACK')
+    throw error
+  }
+}
+
 let dbPromise: Promise<SqliteDbConnection> | null = null
 
 async function openBossProfitDb(): Promise<SqliteDbConnection> {
@@ -281,6 +349,8 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   for (const table of TABLE_DEFINITIONS) {
     await db.execute(table.createSql)
   }
+  // **칸의 «모양» 을 바꾸는 유일한 수단이라 `ensureColumn` 들보다 먼저 선다**([[ADR-176]] ③).
+  await rebuildIncomeRecords(db)
   await ensureColumn(db, 'boss_profit_records', 'world', 'TEXT')
   // [[ADR-172]] — `world` 와 같은 사정이다. 이미 보스를 기록해 둔 기기에는 CREATE 가 안 붙인다.
   await ensureColumn(db, 'boss_profit_records', 'defeated_on', 'TEXT')

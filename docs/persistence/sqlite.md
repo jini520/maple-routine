@@ -1,6 +1,6 @@
 # SQLite — `boss_profit.db`
 
-**`@op-engineering/op-sqlite`** 기반 단일 DB(`storage/sqlite/db.ts` + 어댑터 `storage/adapters/rn-sqlite.ts`). 보스 수익 관련 4개 테이블만 여기에 있고, 나머지 데이터는 모두 [Preferences](./preferences.md)다 — "복합키로 upsert/조회가 잦은 기록형 데이터"만 관계형으로 뒀다.
+**`@op-engineering/op-sqlite`** 기반 단일 DB(`storage/sqlite/db.ts` + 어댑터 `storage/adapters/rn-sqlite.ts`). 보스 수익 관련 4개 테이블 + **가계부가 손으로 적는 둘**(`income_records`·`spend_records` — [[ADR-170]]·[[ADR-166]])이 여기에 있고, 나머지 데이터는 모두 [Preferences](./preferences.md)다 — "복합키로 upsert/조회가 잦은 기록형 데이터"만 관계형으로 뒀다. 손입력 둘은 **대리키**(`id`)라는 점에서 앞의 넷과 갈리고, 정책은 [features/cashbook.md](../features/cashbook.md) 가 든다.
 
 > **파일 자리는 캐패시터 시절 그대로다.** op-sqlite 를 고른 이유는 성능이 아니라 `location` 이다 —
 > 기존 DB 가 캐패시터 플러그인이 정한 경로에 있고, 자기 전용 디렉터리에만 파일을 만드는 라이브러리로는
@@ -140,14 +140,52 @@ sequenceDiagram
 
 ## 마이그레이션
 
-`openBossProfitDb()`가 커넥션을 열 때마다(앱 실행마다) 다음 두 UPDATE 문을 함께 실행한다. 조건에 걸리는 행이 이미 없으면 매번 실행해도 안전한 no-op이다.
+`openBossProfitDb()`가 커넥션을 열 때마다(앱 실행마다) 돈다. **수단이 셋**이고, 셋 다 «이미 됐으면 아무 일도 안 한다» 는 성질을 갖는다.
+
+| 수단 | 무엇을 바꾸나 | 어떻게 «이미 됐는가» 를 아나 |
+|---|---|---|
+| `ensureColumn` | 없는 **칸을 더한다** ([[ADR-069]] 결정 1) | `PRAGMA table_info` 에 그 이름이 있나 |
+| **테이블 재작성** | 칸의 **모양을 바꾼다**(`NOT NULL` 을 뗀다 — [[ADR-176]]) | `PRAGMA table_info` 의 `notnull` |
+| `UPDATE … WHERE` | **값을 옮긴다**(이름이 곧 값인 칸) | `WHERE` 에 걸리는 행이 없다 |
+
+### 칸을 더한다 — `ensureColumn`
+
+SQLite 에 `ADD COLUMN IF NOT EXISTS` 가 없으므로 `PRAGMA table_info` 로 있는지 보고 없을 때만 `ALTER TABLE … ADD COLUMN` 한다(`ALTER` 를 try/catch 로 삼키면 다른 원인의 실패까지 숨는다). **`CREATE TABLE IF NOT EXISTS` 는 이미 만들어진 테이블에 칸을 더해주지 않는다** — 테이블을 세운 커밋과 칸을 더한 커밋이 갈리면 그 사이에 앱을 켠 기기는 칸이 모자란 테이블을 들고 있고, INSERT 는 모든 칸을 적으므로 **그 기록이 하나도 안 적힌다**(`spend_records.form` 이 실제로 그랬다 — 2026-08-25 실기 재현).
+
+### 칸의 모양을 바꾼다 — 테이블 재작성 ([[ADR-176]], 이슈 #265)
+
+**`ALTER TABLE` 로는 기존 칸의 `NOT NULL` 을 못 뗀다.** `income_records.meso_amount` 가 그 자리였다 — 수입이 메소뿐이던 시절 `NOT NULL` 로 만들어졌는데([[ADR-170]] 결정 1), 정정 15 가 「기타」에 통화를 더하며 «메소로 번 것이 아니다» 를 `null` 로 적기 시작해 **메포·캐시 「기타」가 저장되지 않았다.** 그래서 한 트랜잭션 안에서 테이블을 다시 쓴다:
+
+```sql
+BEGIN;
+CREATE TABLE income_records_rebuild ( … 지금의 스키마 … );
+INSERT INTO income_records_rebuild (<옮길 칸>) SELECT <옮길 칸> FROM income_records;
+DROP TABLE income_records;
+ALTER TABLE income_records_rebuild RENAME TO income_records;
+COMMIT;
+```
+
+만질 때 **반드시 지켜야 하는 것 넷**:
+
+- **트랜잭션 밖으로 내지 말 것.** 「옛 테이블은 지워졌고 새 이름은 아직 없는」 상태가 파일에 남으면 그 기기의 수입 기록이 전부 사라진다. 던지면 `ROLLBACK` 하고 그대로 올려보낸다.
+- **옮길 칸은 `PRAGMA table_info` 로 읽은 «옛 테이블이 실제로 가진 칸»** 이다. `SELECT *` 는 `ensureColumn` 이 **뒤에** 붙인 칸 때문에 순서가 어긋나 값이 에러 없이 옆 칸으로 옮겨 앉고(수수료가 메포가 된다), 지금 스키마의 칸 목록을 박아 두면 그 칸이 아직 없는 옛 기기에서 던진다.
+- **`ensureColumn` 들보다 먼저** 돈다 — 재작성이 만드는 테이블은 지금의 DDL 전체라 칸이 이미 다 있다.
+- **DDL 본문은 한 벌**을 두 자리(정상 생성 · 재작성)가 쓴다. 두 벌로 두면 재작성이 옛 스키마를 다시 만드는 날이 온다.
+
+> **재작성이 생기면서 `CREATE TABLE` 문의 진실성이 처음으로 강제된다.** `ensureColumn` 만 있을 때는 CREATE 문이 낡아도 아무 일도 안 일어났고 — 실제로 통화 칸 셋([[ADR-170]] 정정 15)이 `ensureColumn` 에만 있고 CREATE 문에는 없는 채로 멀쩡히 돌았다 — 재작성이 그 테이블을 만들려는 순간에야 「칸이 없다」 로 드러난다. **이제 칸을 더할 때는 두 자리를 함께 고친다**: CREATE 문(새 설치 · 재작성)과 `ensureColumn`(기존 기기).
+
+> **목으로는 못 잡는 결함이다.** 제약은 목이 흉내 내라고 배운 목록에 없다 — 그래서 `node:sqlite`(노드 내장, 새 의존성 0)로 `SqlitePort` 를 구현해 **진짜 엔진 위에서 한 번 태우는** 경로를 뒀다(`src/storage/sqlite/__tests__/`). 스키마 제약을 만질 때는 그 파일에 케이스를 더할 것.
+
+### 값을 옮긴다 — `UPDATE … WHERE`
+
+다음 UPDATE 문들을 함께 실행한다. 조건에 걸리는 행이 이미 없으면 매번 실행해도 안전한 no-op이다.
 
 ```sql
 UPDATE boss_party_settings SET boss = '시즌 보스 메이린' WHERE boss = '메이린';
 UPDATE boss_profit_records SET boss = '시즌 보스 메이린' WHERE boss = '메이린';
 ```
 
-메이린의 표시명을 Nexon API 응답(`content_name: "시즌 보스 메이린"`)과 통일하며 보스 식별 키가 바뀐 데이터를 옛 키에서 새 키로 옮겨, 기존에 저장된 파티 설정·수익 기록이 고아 데이터가 되지 않게 한다(2026-07-22).
+위 둘은 메이린의 표시명을 Nexon API 응답(`content_name: "시즌 보스 메이린"`)과 통일하며 보스 식별 키가 바뀐 데이터를 옛 키에서 새 키로 옮겨, 기존에 저장된 파티 설정·수익 기록이 고아 데이터가 되지 않게 한다(2026-07-22).
 
 ## 웹 플랫폼
 
