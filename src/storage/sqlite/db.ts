@@ -141,6 +141,10 @@ const TABLE_DEFINITIONS = [
     -- (카탈로그의 «forms»). **가격이 같아서** 금액으로는 구분이 안 되므로 따로 적는다:
     -- 안 적으면 «솔 에르다를 몇 번 받았나» 를 나중에 되물을 수 없다. 형태가 없는 항목은 NULL.
     form TEXT,
+    -- 「아이템 구매」의 **종류**(장비·소비·기타 — [[ADR-173]] 정정 1). 이 값 하나가 수량과 관세를
+    -- 함께 가른다: 소비·기타는 **월드 간 거래가 안 되어** 관세가 없다. NULL 은 다른 갈래이거나
+    -- **정정 1 이전 행**이고, 그 행은 장비로 연다(그때가 실제로 그 모양이었다).
+    item_kind TEXT,
     -- 금액 = 카탈로그의 «unitPrice» × 이 값([[ADR-166]] 정정 1 ③). 단위 이름은 안 적는다 —
     -- «src/data/spend-catalog.json» 이 항목별로 알고 있어 베끼면 두 벌이 어긋난다.
     quantity INTEGER,
@@ -293,6 +297,8 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   // 그 사이에 앱을 켠 기기는 `form` 없는 테이블을 들고 있고, INSERT 는 모든 칸을 적으므로
   // **지출이 하나도 안 적힌다**(실기 재현 2026-08-25). 위 둘과 같은 사정이다.
   await ensureColumn(db, 'spend_records', 'form', 'TEXT')
+  // [[ADR-173]] 정정 1 — 종류도 `form` 이 겪은 그 사정이다(INSERT 는 모든 칸을 적는다).
+  await ensureColumn(db, 'spend_records', 'item_kind', 'TEXT')
   // [[ADR-170]] 정정 9 — `income_records` 는 수수료 칸 없이 만들어졌다. `form` 이 겪은 그 사정이다:
   // INSERT 는 모든 칸을 적으므로 칸이 없으면 **수입이 하나도 안 적힌다.**
   await ensureColumn(db, 'income_records', 'sale_fee_percent', 'INTEGER')

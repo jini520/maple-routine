@@ -28,6 +28,7 @@ const mesoSpend: SpendRecord = {
   category: '버프',
   item: '세이람의 영약',
   form: null,
+  itemKind: null,
   quantity: 1,
   mesoAmount: 2_000_000,
   tariffMeso: null,
@@ -65,6 +66,8 @@ describe('insertSpendRecord', () => {
       '버프',
       '세이람의 영약',
       null,
+      // 종류는 「아이템 구매」의 것이다([[ADR-173]] 정정 1) — 다른 갈래에서는 NULL 이다.
+      null,
       1,
       2_000_000,
       null,
@@ -89,8 +92,8 @@ describe('insertSpendRecord', () => {
     })
 
     const values = runMock.mock.calls[0][1]
-    expect(values[7]).toBe(935_000_000)
-    expect(values[8]).toBe(85_000_000)
+    expect(values[8]).toBe(935_000_000)
+    expect(values[9]).toBe(85_000_000)
   })
 })
 
@@ -120,8 +123,8 @@ describe('메포 지출의 시세 요구', () => {
     await insertSpendRecord(pointSpend)
 
     const values = runMock.mock.calls[0][1]
-    expect(values[9]).toBe(30_000)
-    expect(values[10]).toBe(1_180)
+    expect(values[10]).toBe(30_000)
+    expect(values[11]).toBe(1_180)
   })
 
   it('메포를 안 썼으면 시세를 안 물어본다', async () => {
@@ -167,6 +170,38 @@ describe('getSpendRecordsBetween', () => {
     const { getSpendRecordsBetween } = require('../spend') as typeof import('../spend')
 
     expect(await getSpendRecordsBetween('2026-08-01', '2026-08-31')).toEqual([pointSpend])
+  })
+
+  /**
+   * **종류는 칸 하나로 왕복한다**([[ADR-173]] 정정 1 결정 4) — 이름이 어긋나면 타입 에러 없이
+   * 「소비」로 적은 행이 **장비로 열리고**(NULL → 장비) 수량 줄이 사라진다.
+   */
+  it('종류를 그대로 되읽는다', async () => {
+    queryMock.mockResolvedValue({
+      values: [
+        {
+          id: 'spd-3',
+          ocid: null,
+          spent_on: '2026-08-28',
+          category: '아이템 구매',
+          item: '주문서',
+          form: null,
+          item_kind: '소비',
+          quantity: 300,
+          meso_amount: 3_600_000,
+          tariff_meso: null,
+          point_amount: null,
+          point_per_100m_meso: null,
+          cash_amount: null,
+          memo: null,
+          recorded_at: '2026-08-28T05:00:00.000Z',
+        },
+      ],
+    })
+    const { getSpendRecordsBetween } = require('../spend') as typeof import('../spend')
+
+    const [row] = await getSpendRecordsBetween('2026-08-01', '2026-08-31')
+    expect(row).toMatchObject({ itemKind: '소비', quantity: 300, mesoAmount: 3_600_000 })
   })
 
   it('값이 없으면 빈 배열이다', async () => {

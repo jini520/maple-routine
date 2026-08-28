@@ -499,6 +499,7 @@ describe('저장', () => {
       item: '하이마운틴 2단계',
       // 가격이 같아 금액으로는 구분이 안 되므로 **고른 형태를 따로 박는다**.
       form: '경험치',
+    itemKind: null,
       quantity: 1,
       mesoAmount: null,
       tariffMeso: null,
@@ -554,6 +555,32 @@ async function 지출액치기(view: Rendered, text: string): Promise<void> {
   })
 }
 
+/**
+ * 갈래 칩을 누른다. **「기타」가 갈래 이름이자 「아이템 구매」의 종류 이름**이라
+ * ([[ADR-173]] 정정 1) 아이템 구매 화면에서는 라벨만으로 둘이 안 갈린다 — 줄을 지목해 가른다.
+ */
+async function 갈래고르기(view: Rendered, label: string): Promise<void> {
+  await act(async () => {
+    fireEvent.press(within(view.getByTestId('spend-sheet-categories')).getByLabelText(label))
+  })
+}
+
+/**
+ * 관세를 켠다 — **라벨–값 줄의 세그먼트**다([[ADR-173]] 정정 1 결정 6). 「없음」 은 수입 시트의
+ * 수수료 조각과 이름이 같으므로 줄을 지목한다.
+ */
+async function 관세고르기(view: Rendered, 조각: '없음' | '10%'): Promise<void> {
+  // **줄 밖을 누르면 커서가 빠진다** — 실기기에서는 플랫폼이 하는 일이고([[ADR-173]] 결정 6 이
+  // *«관세를 누르는 순간이 정확히 그 순간»* 이라 적은 그것), RNTL 은 그것까지 흉내 내지 않는다.
+  // 이 blur 가 없으면 큰 숫자가 «치는 중» 인 채로 남아 합계로 굴러 오르지 않는다.
+  await act(async () => {
+    fireEvent(view.getByTestId('spend-sheet-amount'), 'blur')
+  })
+  await act(async () => {
+    fireEvent.press(within(view.getByTestId('spend-sheet-tariff')).getByLabelText(조각))
+  })
+}
+
 async function 치기(view: Rendered, text: string): Promise<void> {
   await act(async () => {
     fireEvent(view.getByTestId('spend-sheet-amount'), 'focus')
@@ -598,7 +625,7 @@ describe('아이템 구매', () => {
     await 누르기(view, '아이템 구매')
     await 치기(view, '1200000000')
 
-    await 누르기(view, '기타')
+    await 갈래고르기(view, '기타')
 
     // **곧바로** 0 이다 — 중간값이 보이면 굴러 내려온 것이다.
     expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('0')
@@ -609,7 +636,7 @@ describe('아이템 구매', () => {
     await 누르기(view, '아이템 구매')
     await 치기(view, '1200000000')
 
-    await 누르기(view, '기타')
+    await 갈래고르기(view, '기타')
     await 누르기(view, '아이템 구매')
 
     expect(view.getByTestId('spend-sheet-amount').props.value).toBe('')
@@ -634,7 +661,7 @@ describe('아이템 구매', () => {
     await 누르기(view, '아이템 구매')
     await 치기(view, '850000000')
 
-    await 누르기(view, '관세 10%')
+    await 관세고르기(view, '10%')
     await act(async () => {
       fireEvent(view.getByTestId('spend-sheet-amount'), 'focus')
     })
@@ -649,9 +676,9 @@ describe('아이템 구매', () => {
     await 누르기(view, '아이템 구매')
     await 치기(view, '850000000')
 
-    await 누르기(view, '관세 10%')
-    await 누르기(view, '관세 10%')
-    await 누르기(view, '관세 10%')
+    await 관세고르기(view, '10%')
+    await 관세고르기(view, '10%')
+    await 관세고르기(view, '10%')
     await 누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({
@@ -666,7 +693,7 @@ describe('아이템 구매', () => {
     await 누르기(view, '아이템 구매')
     await 치기(view, '850000000')
 
-    await 누르기(view, '관세 10%')
+    await 관세고르기(view, '10%')
 
     expect(view.queryByText('+85,000,000')).toBeNull()
     expect(view.queryByText(/월드 간 거래/)).toBeNull()
@@ -678,7 +705,7 @@ describe('아이템 구매', () => {
     const view = await 그리기({ onSave })
     await 누르기(view, '아이템 구매')
     await 치기(view, '850000000')
-    await 누르기(view, '관세 10%')
+    await 관세고르기(view, '10%')
 
     await act(async () => {
       fireEvent.changeText(view.getByTestId('spend-sheet-name'), '앱솔랩스 슈즈')
@@ -755,7 +782,7 @@ describe('기타 — 캐시가 사는 유일한 자리', () => {
 
     await 누르기(view, '기타')
 
-    expect(view.queryByLabelText('관세 10%')).toBeNull()
+    expect(view.queryByTestId('spend-sheet-tariff')).toBeNull()
   })
 
   it('메포를 고르면 시세를 묻는다', async () => {
@@ -1024,8 +1051,9 @@ describe('기타 — 지출액 × 수량 ([[ADR-173]] 결정 17)', () => {
     expect(onSave.mock.calls[0][0]).toMatchObject({ mesoAmount: 60_000_000, quantity: 2 })
   })
 
-  // 아이템 구매는 안 바뀐다 — 관세가 붙는 자리라 «치는 칸» 그대로다.
-  it('아이템 구매는 그대로 친다 — 지출액 줄이 없다', async () => {
+  // 아이템 구매의 **장비**가 그 모양을 물려받았다([[ADR-173]] 정정 1 결정 2) — 수량이 없으니
+  // 곱할 것이 없고, 관세가 큰 숫자 위에서 굴러 오른다. 기본 종류라 고르는 절차도 없다.
+  it('아이템 구매(장비)는 그대로 친다 — 단가 줄이 없다', async () => {
     const view = await 그리기()
     await 누르기(view, '아이템 구매')
 
@@ -1042,6 +1070,7 @@ describe('수정 모드 ([[ADR-173]] 결정 15)', () => {
     category: '컨텐츠' as const,
     item: '악몽선경 2단계',
     form: '경험치',
+    itemKind: null,
     quantity: 1,
     mesoAmount: null,
     tariffMeso: null,
@@ -1095,7 +1124,7 @@ describe('수정 모드 ([[ADR-173]] 결정 15)', () => {
   // 직접 입력도 같다 — 갈래는 글자이고 사용처·금액은 고칠 수 있다.
   it('직접 입력도 갈래를 못 바꾼다', async () => {
     const view = await 그리기({
-      editing: { ...악몽선경, category: '기타' as const, item: '메소마켓 수수료', form: null, quantity: null },
+      editing: { ...악몽선경, category: '기타' as const, item: '메소마켓 수수료', form: null, itemKind: null, quantity: null },
       onDelete: jest.fn(),
     })
 
@@ -1298,5 +1327,379 @@ describe('타일 그림 ([[ADR-170]] 정정 16)', () => {
 
     expect(view.queryByTestId('spend-tile-icon-slot-블랙 서큘레이터')).toBeNull()
     expect(view.queryByTestId('spend-tile-icon-slot-하이마운틴')).toBeNull()
+  })
+})
+
+/**
+ * **「아이템 구매」의 종류**([[ADR-173]] 정정 1, 사용자 지정 2026-08-28).
+ *
+ * 세그먼트 하나가 **수량과 관세를 함께 가른다** — 장비는 하나를 사고 월드를 넘을 수 있으며(관세),
+ * 소비·기타는 여럿을 사고 **월드 간 거래가 안 된다**(관세 없음). 그래서 «관세를 단가에 물리나
+ * 총액에 물리나» 라는, 결정 17 이 이 자리를 미뤄 둔 그 질문이 **성립하지 않는다.**
+ */
+describe('「아이템 구매」의 종류 ([[ADR-173]] 정정 1)', () => {
+  /**
+   * **종류는 세그먼트 안에서 고른다.** 갈래 칩에도 「기타」가 있어(`SPEND_CATEGORIES`) 라벨만으로는
+   * 둘이 안 갈린다 — 정정 1 이 «부르는 말을 나눈다» 로 남겨 둔 그 겹침이 여기서 드러난다.
+   */
+  async function 종류고르기(view: Rendered, 종류: '장비' | '소비' | '기타'): Promise<void> {
+    await act(async () => {
+      fireEvent.press(
+        within(view.getByTestId('spend-sheet-item-kind')).getByLabelText(종류),
+      )
+    })
+  }
+
+  async function 구매(종류?: '소비' | '기타') {
+    const view = await 그리기()
+    await 누르기(view, '아이템 구매')
+    if (종류 !== undefined) await 종류고르기(view, 종류)
+    return view
+  }
+
+  async function 단가치기(view: Rendered, text: string): Promise<void> {
+    await act(async () => {
+      fireEvent.changeText(view.getByTestId('spend-sheet-unit-price'), text)
+    })
+  }
+
+  async function 수량치기(view: Rendered, text: string): Promise<void> {
+    await act(async () => {
+      fireEvent.changeText(view.getByTestId('spend-sheet-quantity'), text)
+    })
+  }
+
+  it('기본은 장비다 — 수량 줄이 없고 관세가 있다', async () => {
+    const view = await 구매()
+
+    expect(
+      within(view.getByTestId('spend-sheet-item-kind')).getByLabelText('장비').props
+        .accessibilityState?.selected,
+    ).toBe(true)
+    expect(view.queryByTestId('spend-sheet-quantity')).toBeNull()
+    expect(view.getByTestId('spend-sheet-tariff')).toBeTruthy()
+  })
+
+  // **월드 간 거래가 안 되는 것에 관세를 물을 수 있게 두지 않는다**(사용자 지정) — 끄는 것이
+  // 아니라 **줄 자체가 없다**. 있는데 못 누르는 것은 «왜 못 누르나» 를 새로 묻게 만든다.
+  it.each(['소비', '기타'] as const)('%s 는 관세 체크가 아예 없다', async (종류) => {
+    const view = await 구매(종류)
+
+    expect(view.queryByTestId('spend-sheet-tariff')).toBeNull()
+  })
+
+  it.each(['소비', '기타'] as const)('%s 는 단가 × 수량이고 큰 숫자를 못 친다', async (종류) => {
+    const view = await 구매(종류)
+
+    await 단가치기(view, '12000')
+    await 수량치기(view, '300')
+
+    await waitFor(() =>
+      expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('3,600,000'),
+    )
+    expect(view.getByTestId('spend-sheet-amount').props.onChangeText).toBeUndefined()
+  })
+
+  /**
+   * **스테퍼가 아니다**(정정 1 결정 3, 사용자 지정) — *"몇 백개 단위로도 살 수 있어서 스태퍼로
+   * 하면 안돼."* 주문서 300장을 스테퍼로 세면 300번을 누른다([[ADR-175]] 결정 8 과 같은 이유).
+   */
+  it('수량은 치는 칸이다 — 스테퍼 버튼이 없다', async () => {
+    const view = await 구매('소비')
+
+    expect(view.queryByLabelText('수량 늘리기')).toBeNull()
+    expect(view.getByTestId('spend-sheet-quantity').props.onChangeText).toBeDefined()
+  })
+
+  // 자유 입력이라 앱이 무엇을 세는지 모른다(결정 17 그대로) — 「개」 를 골라 적으면 그 고름이
+  // 곧 추정이다([[ADR-006]]).
+  it('수량에 단위를 안 적는다', async () => {
+    const view = await 구매('소비')
+
+    expect(view.queryByText('개')).toBeNull()
+  })
+
+  it('소비를 저장하면 합계·수량·종류가 함께 실린다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave })
+    await 누르기(view, '아이템 구매')
+    await 종류고르기(view, '소비')
+    await 단가치기(view, '12000')
+    await 수량치기(view, '300')
+    await act(async () => {
+      fireEvent.changeText(view.getByTestId('spend-sheet-name'), '주문서')
+    })
+    await 누르기(view, '저장')
+
+    expect(onSave.mock.calls[0][0]).toMatchObject({
+      category: '아이템 구매',
+      item: '주문서',
+      itemKind: '소비',
+      quantity: 300,
+      mesoAmount: 3_600_000,
+      tariffMeso: null,
+    })
+  })
+
+  // 장비는 하나를 산다 — 곱할 것이 없으므로 수량 칸이 `null` 이다([[ADR-166]] 정정 1 ③ 그대로).
+  it('장비를 저장하면 수량이 null 이고 관세가 실린다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave })
+    await 누르기(view, '아이템 구매')
+    await 치기(view, '850000000')
+    await 관세고르기(view, '10%')
+    await 누르기(view, '저장')
+
+    expect(onSave.mock.calls[0][0]).toMatchObject({
+      itemKind: '장비',
+      quantity: null,
+      mesoAmount: 935_000_000,
+      tariffMeso: 85_000_000,
+    })
+  })
+
+  /**
+   * 종류를 바꾸면 **수량은 1 로, 관세는 꺼진다**(정정 1 결정 5). 관세를 안 끄면 **화면에 없는
+   * 값이 저장된다** — 소비에는 그 체크가 아예 없기 때문이다.
+   */
+  it('종류를 바꾸면 관세가 꺼지고 수량이 1 로 돌아간다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave })
+    await 누르기(view, '아이템 구매')
+    await 치기(view, '12000')
+    await 관세고르기(view, '10%')
+
+    await 종류고르기(view, '소비')
+    await 수량치기(view, '300')
+    await 종류고르기(view, '장비')
+    await 누르기(view, '저장')
+
+    // 관세가 남아 있었다면 13,200 이고, 수량이 남아 있었다면 3,600,000 이다.
+    expect(onSave.mock.calls[0][0]).toMatchObject({ mesoAmount: 12_000, tariffMeso: null })
+  })
+
+  // **친 금액은 남긴다**(결정 5) — 수량이 1 이면 장비의 «금액» 과 소비의 «단가» 가 같은 값이라
+  // 거짓이 되지 않는다.
+  it('종류를 바꿔도 친 금액은 남는다', async () => {
+    const view = await 구매()
+    await 치기(view, '12000')
+
+    await 종류고르기(view, '소비')
+
+    expect(view.getByTestId('spend-sheet-unit-price').props.value).toBe('12,000')
+  })
+
+  // 큰 숫자가 **무엇을 세는지가 바뀐다**(치는 금액 ↔ 합계 — [[ADR-173]] 결정 12) — 굴러가면
+  // «내가 뭘 지웠나» 로 읽힌다. 갈아 끼운 값은 **곧바로** 서 있어야 한다.
+  it('종류를 바꾸면 큰 숫자가 굴러가지 않는다', async () => {
+    const view = await 구매()
+    await 치기(view, '12000')
+
+    await 종류고르기(view, '소비')
+    await 수량치기(view, '300')
+
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('3,600,000')
+  })
+
+  it('단가만 있고 수량이 0 이면 저장할 수 없다', async () => {
+    const view = await 구매('소비')
+    await 단가치기(view, '12000')
+
+    await 수량치기(view, '')
+
+    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
+  })
+})
+
+/**
+ * **수정 시트가 채워져 열린다**([[ADR-171]] 결정 2)를 «되짚는 식» 하나로 지킨다
+ * ([[ADR-173]] 정정 1): `단가 = (저장된 총액 − 관세분) ÷ 수량`.
+ *
+ * 그 식이 없던 동안 **관세가 두 번 붙었고**(친 값을 총액으로 채우면서 `hasTariff` 까지 켰다)
+ * 「기타」는 합계가 «총액 × 수량» 이 됐다. 둘 다 여기서 붙든다.
+ */
+describe('되짚어 여는 식 ([[ADR-173]] 정정 1)', () => {
+  const 기록 = {
+    id: 'spd-k',
+    ocid: null,
+    spentOn: '2026-08-23',
+    form: null,
+    pointAmount: null,
+    pointPer100mMeso: null,
+    cashAmount: null,
+    memo: null,
+    recordedAt: '2026-08-23T01:00:00.000Z',
+  }
+
+  async function 고치기(
+    editing: React.ComponentProps<typeof SpendSheet>['editing'],
+    overrides: Partial<React.ComponentProps<typeof SpendSheet>> = {},
+  ) {
+    return 그리기({ editing, onDelete: jest.fn(), ...overrides })
+  }
+
+  it('관세 기록을 다시 열어도 관세가 두 번 안 붙는다', async () => {
+    const view = await 고치기({
+      ...기록,
+      category: '아이템 구매',
+      item: '앱솔 무기',
+      itemKind: '장비',
+      quantity: null,
+      mesoAmount: 935_000_000,
+      tariffMeso: 85_000_000,
+    })
+
+    // 손을 안 댄 상태의 큰 숫자는 **저장된 총액 그대로**여야 한다(935,000,000 × 1.1 이 아니라).
+    expect(view.getByTestId('spend-sheet-amount').props.value).toBe('935,000,000')
+  })
+
+  it('그 기록을 그대로 저장하면 값이 안 부푼다', async () => {
+    const onSave = jest.fn()
+    const view = await 고치기(
+      {
+        ...기록,
+        category: '아이템 구매',
+        item: '앱솔 무기',
+        itemKind: '장비',
+        quantity: null,
+        mesoAmount: 935_000_000,
+        tariffMeso: 85_000_000,
+      },
+      { onSave },
+    )
+
+    await 누르기(view, '수정')
+
+    expect(onSave.mock.calls[0][0]).toMatchObject({
+      mesoAmount: 935_000_000,
+      tariffMeso: 85_000_000,
+    })
+  })
+
+  it('소비 기록은 단가와 수량으로 갈라 연다', async () => {
+    const view = await 고치기({
+      ...기록,
+      category: '아이템 구매',
+      item: '주문서',
+      itemKind: '소비',
+      quantity: 300,
+      mesoAmount: 3_600_000,
+      tariffMeso: null,
+    })
+
+    expect(
+      within(view.getByTestId('spend-sheet-item-kind')).getByLabelText('소비').props
+        .accessibilityState?.selected,
+    ).toBe(true)
+    expect(view.getByTestId('spend-sheet-unit-price').props.value).toBe('12,000')
+    expect(view.getByTestId('spend-sheet-quantity').props.value).toBe('300')
+    await waitFor(() =>
+      expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('3,600,000'),
+    )
+  })
+
+  // **`NULL` 은 정정 이전 행이고 장비로 연다**(결정 4) — 그때의 아이템 구매는 «치는 금액 + 관세»
+  // 였고, 그것이 정확히 장비의 모양이다.
+  it('종류가 없는 옛 행은 장비로 연다', async () => {
+    const view = await 고치기({
+      ...기록,
+      category: '아이템 구매',
+      item: '앱솔 무기',
+      itemKind: null,
+      quantity: null,
+      mesoAmount: 100_000,
+      tariffMeso: null,
+    })
+
+    expect(
+      within(view.getByTestId('spend-sheet-item-kind')).getByLabelText('장비').props
+        .accessibilityState?.selected,
+    ).toBe(true)
+    expect(view.getByTestId('spend-sheet-amount').props.value).toBe('100,000')
+  })
+
+  // 「기타」 갈래도 같은 식으로 되짚는다 — 그 전에는 지출액 칸이 **총액**으로 채워지는데 수량도
+  // 함께 살아나 합계가 «총액 × 수량» 이 됐다(30,000 이 90,000 으로 열렸다).
+  it('「기타」의 수량 기록은 합계가 저장된 값 그대로다', async () => {
+    const view = await 고치기({
+      ...기록,
+      category: '기타',
+      item: '자유',
+      itemKind: null,
+      quantity: 3,
+      mesoAmount: 30_000,
+      tariffMeso: null,
+    })
+
+    expect(view.getByTestId('spend-sheet-unit-price').props.value).toBe('10,000')
+    await waitFor(() => expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('30,000'))
+  })
+})
+
+/**
+ * **관세도 라벨–값 줄이다**([[ADR-173]] 정정 1 결정 6, 사용자 지정 2026-08-28).
+ *
+ * 시트에서 고르는 것은 전부 「라벨 왼쪽 · 값 오른쪽 · 밑줄」인데(결정 1) 관세만 **큰 숫자 밑의
+ * 맨몸 체크박스**였다. 짝은 수입 시트의 「수수료  [없음|3%|5%]」 다([[ADR-170]] 정정 9 ②).
+ */
+describe('관세 줄의 모양 ([[ADR-173]] 정정 1 결정 6)', () => {
+  async function 장비() {
+    const view = await 그리기()
+    await 누르기(view, '아이템 구매')
+    return view
+  }
+
+  it('체크박스가 아니라 세그먼트다 — 「없음」 이 기본이다', async () => {
+    const view = await 장비()
+
+    const 관세 = within(view.getByTestId('spend-sheet-tariff'))
+    expect(관세.getByLabelText('없음').props.accessibilityState?.selected).toBe(true)
+    expect(관세.getByLabelText('10%')).toBeTruthy()
+    // 옛 모양의 흔적 — 체크박스 역할도, 줄에 박힌 「관세 10%」 라벨도 남지 않는다.
+    expect(view.queryByLabelText('관세 10%')).toBeNull()
+  })
+
+  // **더해지는 금액을 안 적는다**(결정 5, 그대로 산다) — 큰 숫자가 그만큼 올라가는 것이 그 말이다.
+  it('줄에 더해지는 금액을 안 적는다', async () => {
+    const view = await 장비()
+    await 치기(view, '850000000')
+
+    await 관세고르기(view, '10%')
+
+    expect(view.queryByText('+85,000,000')).toBeNull()
+  })
+
+  // 세그먼트를 누르는 순간이 **커서가 빠지는 순간**이다(결정 6) — 그때 합계로 굴러 올라간다.
+  it('10% 를 고르면 큰 숫자가 합계로 굴러 오른다', async () => {
+    const view = await 장비()
+    await 치기(view, '850000000')
+
+    await 관세고르기(view, '10%')
+
+    await waitFor(() =>
+      expect(view.getByTestId('spend-sheet-amount').props.value).toBe('935,000,000'),
+    )
+  })
+
+  it('「없음」 으로 되돌리면 친 값으로 돌아간다', async () => {
+    const view = await 장비()
+    await 치기(view, '850000000')
+    await 관세고르기(view, '10%')
+
+    await 관세고르기(view, '없음')
+
+    await waitFor(() =>
+      expect(view.getByTestId('spend-sheet-amount').props.value).toBe('850,000,000'),
+    )
+  })
+
+  // 라벨–값 줄은 **큰 숫자 위**에 사는 물건이다(결정 1) — 모양을 맞추면 자리도 따라온다.
+  it('큰 숫자 위에 선다', async () => {
+    const view = await 장비()
+
+    // 세로로 쌓이는 시트라 **나무의 차례가 곧 화면의 차례**다.
+    const tree = JSON.stringify(view.toJSON())
+    expect(tree.indexOf('spend-sheet-tariff')).toBeGreaterThan(-1)
+    expect(tree.indexOf('spend-sheet-tariff')).toBeLessThan(tree.indexOf('spend-sheet-amount'))
   })
 })

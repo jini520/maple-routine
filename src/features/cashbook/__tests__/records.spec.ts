@@ -61,6 +61,7 @@ const 메포지출: SpendDraft = {
   category: '컨텐츠',
   item: '하이마운틴 2단계',
   form: '솔 에르다',
+  itemKind: null,
   quantity: 1,
   mesoAmount: null,
   tariffMeso: null,
@@ -206,6 +207,7 @@ const 지출행 = {
   category: '컨텐츠' as const,
   item: '몬스터 파크',
   form: null,
+  itemKind: null,
   quantity: 2,
   mesoAmount: null,
   tariffMeso: null,
@@ -563,7 +565,7 @@ describe('loadDayRecords — 캐릭터당 두 줄 (결정 7)', () => {
     ])
     spend.getSpendRecordsBetween.mockResolvedValue([
       {
-        id: 's1', spentOn: '2026-08-21', category: '컨텐츠', item: '몬스터 파크', form: null,
+        id: 's1', spentOn: '2026-08-21', category: '컨텐츠', item: '몬스터 파크', form: null, itemKind: null,
         quantity: 1, mesoAmount: 50_000_000, tariffMeso: null, pointAmount: 1_200,
         pointPer100mMeso: 1_180, cashAmount: null, memo: null, recordedAt: 'b',
       },
