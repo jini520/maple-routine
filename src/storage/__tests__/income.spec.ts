@@ -24,6 +24,8 @@ beforeEach(() => {
 
 const sample: IncomeRecord = {
   id: 'inc-1',
+  // 계산기 이전의 행 — 사냥 칸 여섯이 없다([[ADR-175]] 결정 9).
+  hunt: null,
   ocid: null,
   earnedOn: '2026-08-23',
   category: '아이템 판매',
@@ -60,6 +62,13 @@ describe('insertIncomeRecord', () => {
       null,
       null,
       // 통화 칸 셋([[ADR-170]] 정정 15) — 메소로 번 것이라 셋 다 비어 있다.
+      null,
+      null,
+      null,
+      // 사냥 계산 입력 여섯([[ADR-175]] 결정 9) — 아이템 판매라 전부 비어 있다.
+      null,
+      null,
+      null,
       null,
       null,
       null,
@@ -131,6 +140,8 @@ describe('getIncomeRecordsBetween', () => {
         pointAmount: null,
         pointPer100mMeso: null,
         cashAmount: null,
+        // `hunt_missed_mobs` 가 없으면 계산기로 적힌 행이 아니다([[ADR-175]] 결정 9).
+        hunt: null,
         memo: null,
         recordedAt: '2026-08-23T05:00:00.000Z',
       },

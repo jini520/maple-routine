@@ -39,6 +39,7 @@ import { parseMesoText } from '../../components/molecules/MesoPad/meso-pad'
 import { SelectField } from '../../components/organisms/SelectField/SelectField'
 import { nextAmountIdentity } from './amount-identity'
 import { characterOptions } from './character-options'
+import { FieldRow, QuantityStepper } from './sheet-fields'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import { formatDayLabel } from '../../lib/calendar-month'
 import { formatMesoUnits } from '../../lib/drop-price'
@@ -50,7 +51,7 @@ import {
   labelOfCurrency,
   type FreeCurrency,
 } from '../../lib/free-currency'
-import { CheckIcon, ChevronLeftIcon, MinusIcon, PlusIcon } from '../../lib/icons'
+import { CheckIcon, ChevronLeftIcon } from '../../lib/icons'
 import { formatMesoCompact } from '../../lib/meso-compact'
 import {
   SPEND_TARIFF_PERCENT,
@@ -132,39 +133,6 @@ const NAME_LABELS: Record<SpendCategory, string> = {
   버프: '사용처',
   '아이템 구매': '구매 아이템',
   기타: '사용처',
-}
-
-/**
- * 라벨–값 한 줄([[ADR-173]] 결정 1) — 큰 숫자 위는 **전부 이 모양**이다.
- *
- * 축이 하나로 정리되는 것이 이 줄의 일이다. 전에는 라벨–값, 오른쪽 큰 숫자, 오른쪽 칩이 번갈아
- * 나와 눈이 좌우로 튀었다.
- */
-function FieldRow(props: {
-  label: string
-  children: React.ReactNode
-  testID?: string
-  labelTestID?: string
-}): React.JSX.Element {
-  return (
-    <View
-      testID={props.testID}
-      className="min-h-7 flex-row items-center gap-3 border-b border-border pb-2"
-    >
-      <Text testID={props.labelTestID} className="shrink-0 text-xs text-text-muted">
-        {props.label}
-      </Text>
-      {/*
-        **값 자리가 남은 폭을 갖는다**([[ADR-170]] 정정 14 ③).
-
-        종전에는 `ml-auto` 라 폭이 **내용만큼**이었고, 그 안에서 입력의 `flex-1` 은 채울 자리가
-        없어 아무 일도 안 했다 — 칸 폭이 자리표시자 글자에 끌려다녀 「사용처」 의 자리표시자가
-        줄 가운데 떠 보였다(사용자 보고). 남은 폭을 주고 `justify-end` 로 오른쪽에 붙인다:
-        칸이 없는 값(세그먼트)은 그대로 오른쪽에 서고, `flex-1` 인 입력은 줄 끝까지 채운다.
-      */}
-      <View className="flex-1 flex-row items-center justify-end">{props.children}</View>
-    </View>
-  )
 }
 
 /**
@@ -372,65 +340,6 @@ function ItemTile(props: {
         </View>
       </View>
     </Pressable>
-  )
-}
-
-/**
- * 수량 스테퍼 — **숫자만 오르내린다**([[ADR-173]] 결정 18, 사용자 지정 2026-08-27).
- *
- * 단위(회 · 개 · 포인트 · 시간)를 `+` 오른쪽에 붙이고 있었는데 **알약의 좌우가 안 맞았다** —
- * 「기타」처럼 단위가 없는 자리는 그 칸이 빈 채로 간격만 남아 더 그랬다. 무엇보다 이 앱의 스테퍼가
- * 두 모양이 됐다(`PartySizeStepper` 의 기본 크기는 「인」 을 그렸다). **둘 다 숫자만 그린다.**
- *
- * `PartySizeStepper` 로 접지 않는 것은 그대로다 — 그 molecule 은 `Users` 표식과 두 크기가
- * [[ADR-121]] 결정 7 로 못박혀 있어 이 자리의 셋째 모양을 담지 못한다.
- */
-function QuantityStepper(props: {
-  value: number
-  /** 상한 — 사용자가 준 한도에서 온다. 없는 항목은 안 막는다([[ADR-006]]). */
-  max?: number
-  onChange: (next: number) => void
-}): React.JSX.Element {
-  const canDecrease = props.value > 1
-  const canIncrease = props.max === undefined || props.value < props.max
-  return (
-    <View className="h-9 flex-row items-center gap-3 rounded-full border border-border px-2">
-      <Pressable
-        role="button"
-        aria-label="수량 줄이기"
-        disabled={!canDecrease}
-        onPress={() => props.onChange(props.value - 1)}
-        hitSlop={8}
-      >
-        {/* NativeWind 의 `disabled:` 는 RN 의 `disabled` 프롭과 안 이어져 있다 — JS 조건으로 쓴다
-            (`PartySizeStepper` ① 과 같은 함정). */}
-        <MinusIcon
-          className={`h-4 w-4 ${canDecrease ? 'text-text' : 'text-text-disabled'}`}
-          strokeWidth={2}
-          aria-hidden
-        />
-      </Pressable>
-      <Text
-        testID="spend-sheet-quantity"
-        className="min-w-6 text-center text-sm font-bold text-text"
-        style={TABULAR_NUMS}
-      >
-        {props.value}
-      </Text>
-      <Pressable
-        role="button"
-        aria-label="수량 늘리기"
-        disabled={!canIncrease}
-        onPress={() => props.onChange(props.value + 1)}
-        hitSlop={8}
-      >
-        <PlusIcon
-          className={`h-4 w-4 ${canIncrease ? 'text-text' : 'text-text-disabled'}`}
-          strokeWidth={2}
-          aria-hidden
-        />
-      </Pressable>
-    </View>
   )
 }
 
@@ -861,7 +770,7 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
 
             {isFree && (
               <FieldRow label="수량">
-                <QuantityStepper value={quantity} onChange={setQuantity} />
+                <QuantityStepper value={quantity} onChange={setQuantity} testID="spend-sheet-quantity" />
               </FieldRow>
             )}
 
@@ -985,7 +894,12 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
                * 미호로이드가 거기 든다 — 특별 취급이 아니라 규칙 하나다.
                */
               <FieldRow label="수량">
-                <QuantityStepper value={quantity} max={scope.maxQuantity} onChange={setQuantity} />
+                <QuantityStepper
+                  value={quantity}
+                  max={scope.maxQuantity}
+                  onChange={setQuantity}
+                  testID="spend-sheet-quantity"
+                />
               </FieldRow>
             )}
 

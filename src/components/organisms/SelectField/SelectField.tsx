@@ -56,6 +56,16 @@ export interface SelectFieldProps {
   onSelect: (value: string | null) => void
   /** 트리거와 목록을 집는 이름의 뿌리. */
   testID: string
+  /**
+   * 목록 **한 줄을 그리는 법**([[ADR-175]] 결정 11) — 없으면 종전대로 라벨 한 줄이다.
+   *
+   * 사냥터 줄에는 포스 배지·레벨·마릿수가 함께 서야 하는데, 그것을 라벨 문자열에 밀어 넣으면
+   * 배지를 못 그리고 **읽어 주는 이름까지 그 글자가 된다**. 그리는 일만 호출부로 넘기고
+   * 나머지(눌림·고름 표시·닫기·읽어 주는 이름)는 여기 그대로 둔다.
+   *
+   * **트리거(닫힌 줄)는 안 바뀐다** — 거기까지 넓히면 라벨–값 줄의 모양이 고르개마다 갈린다.
+   */
+  renderOption?: (option: SelectOption, isSelected: boolean) => React.ReactNode
 }
 
 /** `null` 도 키가 되어야 한다 — 목록의 첫 칸이 대개 그것이다. */
@@ -187,14 +197,18 @@ export function SelectField(props: SelectFieldProps): React.JSX.Element {
                         isSelected ? ' bg-primary-tint' : ''
                       }`}
                     >
-                      <Text
-                        numberOfLines={1}
-                        className={`text-sm ${
-                          isSelected ? 'font-semibold text-primary-ink' : 'text-text'
-                        }`}
-                      >
-                        {option.label}
-                      </Text>
+                      {props.renderOption === undefined ? (
+                        <Text
+                          numberOfLines={1}
+                          className={`text-sm ${
+                            isSelected ? 'font-semibold text-primary-ink' : 'text-text'
+                          }`}
+                        >
+                          {option.label}
+                        </Text>
+                      ) : (
+                        props.renderOption(option, isSelected)
+                      )}
                     </Pressable>
                   )
                 })}

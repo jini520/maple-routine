@@ -286,16 +286,25 @@ export async function resolveTrackedDefeatDates(now: Date): Promise<number> {
  *
  * **던지지 않는다** — 못 읽으면 목록이 비고, 그때 고르개는 「선택 안함」 하나만 남는다.
  */
-export async function loadTrackedCharacters(): Promise<Array<{ ocid: string; name: string }>> {
+export async function loadTrackedCharacters(): Promise<
+  Array<{ ocid: string; name: string; level: number | null }>
+> {
   const ocids = await getTrackedCharacterOcids().catch(() => null)
   if (ocids === null || ocids.length === 0) {
     return []
   }
   const named = await Promise.all(
-    ocids.map(async (ocid) => ({
-      ocid,
-      name: (await getCachedCharacterBasic(ocid).catch(() => null))?.profile.name ?? '',
-    })),
+    ocids.map(async (ocid) => {
+      const profile = (await getCachedCharacterBasic(ocid).catch(() => null))?.profile
+      return {
+        ocid,
+        name: profile?.name ?? '',
+        // **레벨은 사냥 계산기가 쓴다**([[ADR-175]] 결정 6) — 지역을 ±20 으로 거르고 레벨 차이
+        // 페널티를 낸다. 캐시가 아직 안 따뜻하면 `null` 이고, 그때는 페널티 없이 계산하며
+        // 시트가 그 사실을 한 줄로 말한다. 이름이 없으면 아래에서 걸러지므로 여기서 안 막는다.
+        level: profile?.level ?? null,
+      }
+    }),
   )
   return named.filter((each) => each.name !== '')
 }

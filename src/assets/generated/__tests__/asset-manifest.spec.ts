@@ -17,6 +17,7 @@ import path from 'node:path'
 import { ASSET_GROUPS, type AssetGroup } from '../../asset-groups'
 import { BOSS_PORTRAIT_ASSETS } from '../bosses'
 import { DROP_EFFECT_ASSETS } from '../drop-effect'
+import { FORCE_ASSETS } from '../force'
 import { ITEM_ASSETS } from '../items'
 import { DAILY_QUEST_ICON_ASSETS } from '../map-icons'
 import { DAILY_QUEST_BACKGROUND_ASSETS } from '../maps'
@@ -33,6 +34,7 @@ const GENERATED: Record<string, Record<string, unknown>> = {
   themes: THEME_BACKGROUND_ASSETS,
   maps: DAILY_QUEST_BACKGROUND_ASSETS,
   'map-icons': DAILY_QUEST_ICON_ASSETS,
+  force: FORCE_ASSETS,
   'drop-effect': DROP_EFFECT_ASSETS }
 
 /** 디렉터리 하나에서 대상 파일 이름을 읽는다(하위 디렉터리는 안 본다 — 생성기와 같은 규칙). */
