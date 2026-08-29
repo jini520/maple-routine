@@ -544,21 +544,24 @@ describe('loadDayRecords — 캐릭터당 두 줄 (결정 7)', () => {
     ])
   })
 
-  // 게임 순서로 세우면 «오늘 제일 큰 것이 무엇이었나» 를 눈으로 못 찾는다.
-  it('큰 것부터 선다 — 결정석이 비싼 순이다', async () => {
+  // [[ADR-186]]: ~~큰 것부터~~ → **`weekly-bosses.json` 정규 순서**다. 같은 보스 무리가 앱의 네
+  // 자리에서 서는데 차례가 자리마다 다르면 그것이 같은 목록임을 사람이 못 알아본다. 「제일 큰 것」
+  // 의 자리는 마리당 금액이 실제로 적힌 보스 수익 탭으로 남는다(타일 판은 금액을 안 적는다).
+  it('금액이 아니라 weekly-bosses.json 순서로 선다 ([[ADR-186]])', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([
-      { ...스우기록, boss: '데미안', payoutMeso: 1_500_000_000 },
-      { ...스우기록, boss: '검은 마법사', difficulty: '하드', payoutMeso: 9_000_000_000 },
+      { ...스우기록, boss: '루시드', payoutMeso: 1_500_000_000 },
+      { ...스우기록, boss: '검은마법사', difficulty: '하드', payoutMeso: 9_000_000_000 },
       스우기록,
     ])
     const { loadDayRecords } = require('../records') as typeof import('../records')
 
     const [줄] = await loadDayRecords('2026-08-21')
 
+    // 참조표: 스우(7) < 루시드(10) < 검은마법사(monthly, 맨 뒤) — 금액 순이면 검은마법사가 앞이다.
     expect(줄.kind === 'bossCrystal' ? 줄.bosses.map((boss) => boss.boss) : null).toEqual([
-      '검은 마법사',
       '스우',
-      '데미안',
+      '루시드',
+      '검은마법사',
     ])
   })
 
@@ -572,9 +575,10 @@ describe('loadDayRecords — 캐릭터당 두 줄 (결정 7)', () => {
 
     const [줄] = await loadDayRecords('2026-08-21')
 
+    // 같은 보스면 난이도 순서다(이지 < 노멀 < 하드 …, [[ADR-186]]).
     expect(줄.kind === 'bossCrystal' ? 줄.bosses : null).toEqual([
-      { boss: '스우', difficulty: '하드' },
       { boss: '스우', difficulty: '노멀' },
+      { boss: '스우', difficulty: '하드' },
     ])
   })
 

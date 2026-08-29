@@ -104,6 +104,74 @@ describe('displayedBosses — 자동 모드', () => {
   })
 })
 
+// [[ADR-186]]: 자동 모드는 정렬이 아예 없어 Nexon `boss_contents` **응답 순서**로 서고 있었다.
+// 이제 두 모드가 같은 비교자(`compareBossOrder`)를 지나므로 응답이 어떤 차례로 오든 화면이 안 흔들린다.
+describe('displayedBosses — 순서는 weekly-bosses.json 정규 순서다 ([[ADR-186]])', () => {
+  it('자동 모드가 응답 순서를 버리고 정규 순서로 낸다', () => {
+    const 루시드 = boss({ name: '루시드', difficulty: '하드', cycle: 'weekly', isRegistered: true })
+    const 자쿰 = boss({ name: '자쿰', difficulty: '카오스', cycle: 'weekly', isRegistered: true })
+    const 스우 = boss({ name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true })
+
+    const result = displayedBosses(
+      character({ weeklyBosses: [루시드, 자쿰, 스우] }),
+      'weekly',
+      'auto',
+      null,
+    )
+
+    expect(result.map((entry) => entry.apiName)).toEqual(['자쿰', '스우', '루시드'])
+  })
+
+  it('입력 순서를 뒤집어도 같은 목록이 나온다 — 결정적이다', () => {
+    const bosses = [
+      boss({ name: '루시드', difficulty: '하드', cycle: 'weekly', isRegistered: true }),
+      boss({ name: '자쿰', difficulty: '카오스', cycle: 'weekly', isRegistered: true }),
+      boss({ name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true }),
+    ]
+
+    const once = displayedBosses(character({ weeklyBosses: bosses }), 'weekly', 'auto', null)
+    const twice = displayedBosses(
+      character({ weeklyBosses: [...bosses].reverse() }),
+      'weekly',
+      'auto',
+      null,
+    )
+
+    expect(twice).toEqual(once)
+  })
+
+  // 같은 보스를 여러 난이도로 완료할 수는 없지만(게임 룰), 미등록 완료가 여러 난이도로 오는
+  // 응답이 실재한다 — 그때도 자리가 결정적이어야 한다([[ADR-036]] 결정 3 의 2차 키).
+  it('같은 보스의 여러 난이도는 난이도 순서로 선다', () => {
+    const 하드 = boss({ name: '스우', difficulty: '하드', cycle: 'weekly', isComplete: true, ownComplete: true })
+    const 노멀 = boss({ name: '스우', difficulty: '노멀', cycle: 'weekly', isComplete: true, ownComplete: true })
+
+    const result = displayedBosses(character({ weeklyBosses: [하드, 노멀] }), 'weekly', 'auto', null)
+
+    expect(result.map((entry) => entry.difficulty)).toEqual(['노멀', '하드'])
+  })
+
+  // 참조표에 없는 보스는 이름을 못 바꾼 채([[ADR-008]]) 맨 뒤에 선다 — 버리지 않는다.
+  it('참조표에 없는 보스는 버리지 않고 맨 뒤에 둔다', () => {
+    const 미지 = boss({ name: '알 수 없는 보스', difficulty: '하드', cycle: 'weekly', isRegistered: true })
+    const 자쿰 = boss({ name: '자쿰', difficulty: '카오스', cycle: 'weekly', isRegistered: true })
+
+    const result = displayedBosses(character({ weeklyBosses: [미지, 자쿰] }), 'weekly', 'auto', null)
+
+    expect(result.map((entry) => entry.apiName)).toEqual(['자쿰', '알 수 없는 보스'])
+  })
+
+  // 수동 경로는 `mergeManualBossList` 가 이미 같은 순서로 내므로 멱등이다 — 그래도 계약을
+  // 여기서 못 박는다(정렬 자리가 모드 분기 안이 아니라 함수 끝인 것이 [[ADR-186]] 결정 3 이다).
+  it('수동 모드도 같은 순서다', () => {
+    const result = displayedBosses(character(), 'weekly', 'manual', {
+      'ocid-1': [bossItem('루시드', '하드'), bossItem('자쿰', '카오스'), bossItem('스우', '하드')],
+    })
+
+    expect(result.map((entry) => entry.apiName)).toEqual(['자쿰', '스우', '루시드'])
+  })
+})
+
 describe('displayedBosses — 수동 모드', () => {
   // [[ADR-035]] 결정 3·6·12: 게임 등록 여부가 아니라 «앱에서 관리하는 멤버십» 이 표시 목록을 정한다.
   it('추적 멤버십이 표시 목록을 정한다 — 등록·동기화된 적 없는 보스도 카드로 선다', () => {

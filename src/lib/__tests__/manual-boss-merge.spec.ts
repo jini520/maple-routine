@@ -156,12 +156,27 @@ describe('mergeManualBossList', () => {
     expect(result.map((boss) => boss.name)).toEqual(['자쿰', '루시드', '검은마법사'])
   })
 
-  it('weekly-bosses.json에 없는 보스는 버리지 않고 참조 보스들 뒤에 tracked 순서로 붙인다', () => {
+  it('weekly-bosses.json에 없는 보스는 버리지 않고 참조 보스들 뒤에 붙인다', () => {
     const tracked = [bossItem('알 수 없는 보스', '노멀'), bossItem('루시드', '하드'), bossItem('자쿰', '카오스')]
 
     const result = mergeManualBossList(tracked, [])
 
     // 참조에 있는 자쿰(0)·루시드(10)가 참조 순서로 먼저, 미지의 보스는 맨 뒤
     expect(result.map((boss) => boss.name)).toEqual(['자쿰', '루시드', '알 수 없는 보스'])
+  })
+
+  // [[ADR-186]]: 미지의 보스끼리도 **난이도·이름으로 완전 결정**한다 — 공용 `compareBossOrder` 를
+  // 쓰면서 [[ADR-035]] 결정 20 의 «그들끼리는 tracked 삽입 순서» 를 덮었다. 실제로는 안 생기는
+  // 자리다(보스 관리 화면이 참조표에서 고르므로, 참조표에서 보스가 빠진 뒤 남은 저장분뿐이다).
+  it('미지의 보스가 둘이면 삽입 순서가 아니라 난이도·이름으로 갈린다', () => {
+    const tracked = [bossItem('나중보스', '하드'), bossItem('가나보스', '하드'), bossItem('나중보스', '노멀')]
+
+    const result = mergeManualBossList(tracked, [])
+
+    expect(result.map((boss) => `${boss.name}:${boss.difficulty}`)).toEqual([
+      '나중보스:노멀',
+      '가나보스:하드',
+      '나중보스:하드',
+    ])
   })
 })

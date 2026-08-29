@@ -13,6 +13,7 @@
  */
 import { withSqliteFallback } from '../boss-profit/sqlite-guards'
 import type { BossDifficulty } from '../../types'
+import { compareBossOrder } from '../../lib/boss-matching'
 import type { CalendarAmounts, CalendarDayAmounts } from '../../lib/calendar-month'
 import { dropPayoutMeso } from '../../lib/drop-price'
 import { pointToMeso } from '../../lib/spend-catalog'
@@ -117,10 +118,11 @@ interface BossDaySummary {
    * **새로 읽는 것이 아니다.** `getDatedBossProfitRecords` 가 이미 보스·난이도를 돌려주고 있었고,
    * 그것을 `crystalMeso` 로 접기만 하고 버리던 것을 들고 있게 한 것뿐이다.
    *
-   * `payoutMeso` 는 **여기까지만** 산다 — 줄에 실릴 때 정렬에 쓰고 버린다. 마리당 금액은 파티원
-   * 수·정가와 함께 봐야 뜻이 생겨(그 자리가 보스 수익 탭이다) 타일이 적지 않는다.
+   * **마리당 금액을 안 든다**([[ADR-186]]). 「큰 것부터」 정렬에만 쓰던 값인데 순서가 정규 순서로
+   * 바뀌며 읽는 곳이 없어졌다 — 타일은 애초에 금액을 안 적는다(파티원 수·정가와 함께 봐야 뜻이
+   * 생겨 그 자리가 보스 수익 탭이다).
    */
-  bosses: { boss: string; difficulty: BossDifficulty; payoutMeso: number }[]
+  bosses: { boss: string; difficulty: BossDifficulty }[]
   dropMeso: number
   dropCount: number
   unpricedCount: number
@@ -195,7 +197,6 @@ async function loadBossDaySummaries(
       boss: record.boss,
       // 이 컬럼이 드는 값은 다섯뿐이다 — `rows.ts`·`drop-price-store.ts` 가 같은 자리에서 같은 단언을 한다.
       difficulty: record.difficulty as BossDifficulty,
-      payoutMeso: record.payoutMeso,
     })
   }
 
@@ -505,12 +506,16 @@ function toAutoRecords(
         characterName,
         payoutMeso: summary.crystalMeso,
         count: summary.bossCount,
-        // **큰 것부터**다([[ADR-172]] 정정 1). 게임 순서로 세우면 «오늘 제일 큰 것이 무엇이었나» 를
-        // 눈으로 못 찾는다. 금액이 같으면(가격 미확정 보스끼리 0 이다) 읽은 순서 그대로 둔다 —
-        // `sort` 가 안정 정렬이라 그 순서가 조회 순서이고, 조회 순서는 [[ADR-036]] 이 결정적으로 만든다.
-        bosses: [...summary.bosses]
-          .sort((left, right) => right.payoutMeso - left.payoutMeso)
-          .map(({ boss, difficulty }) => ({ boss, difficulty })),
+        /**
+         * **`weekly-bosses.json` 정규 순서**다([[ADR-186]]) — 앱에서 보스 무리가 서는 네 자리가
+         * 한 순서를 쓴다. ~~큰 것부터~~([[ADR-172]] 정정 1)는 여기서 죽은 한 줄이고, 「제일 큰
+         * 것」 의 자리는 마리당 금액이 실제로 적힌 보스 수익 탭으로 남는다.
+         *
+         * 비교자가 **완전 결정적**이라 `getDatedBossProfitRecords` 의 조회 순서에 안 기댄다 —
+         * 그 SELECT 에는 `ORDER BY` 가 없고([[ADR-036]] 결정 4 가 그렇게 정했다) 앞의 주석은
+         * 그 사실과 반대로 «조회 순서는 [[ADR-036]] 이 결정적으로 만든다» 고 적고 있었다.
+         */
+        bosses: [...summary.bosses].sort(compareBossOrder),
       })
     }
     /**

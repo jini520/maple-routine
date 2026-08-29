@@ -1,5 +1,5 @@
 import weeklyBossesData from '../data/weekly-bosses.json'
-import { getBossReferenceOrder, matchBossContent } from './boss-matching'
+import { compareBossOrder, matchBossContent } from './boss-matching'
 import type { BossContent, BossCycle } from '../types'
 import type { ManualTrackedItem } from '../types/scheduler'
 
@@ -40,9 +40,13 @@ export function mergeManualBossList(
   synced: BossContent[],
 ): BossContent[] {
   // ADR-035 결정 20: weekly-bosses.json 정규 순서(보스 관리 페이지 BOSSES_BY_TAB와 동일)로 정렬한다.
-  // 순서 인덱스는 boss-matching의 공용 getBossReferenceOrder를 쓴다([[ADR-036]]에서 사설 사본 통합).
-  // 안정 정렬(V8 Array#sort는 안정)이라 참조 밖 보스(맨 뒤)끼리는 멤버십 순서를 유지한다.
-  const ordered = [...tracked].sort((a, b) => getBossReferenceOrder(a.contentName) - getBossReferenceOrder(b.contentName))
+  // **비교자는 boss-matching의 공용 compareBossOrder다**([[ADR-186]] 결정 2 — [[ADR-036]]에서 사설
+  // 사본을 흡수한 뒤, 정렬 키 셋까지 그 함수 하나로 합쳤다). 그래서 참조 밖 보스끼리도 난이도·
+  // 이름으로 완전히 갈린다 — 종전의 «멤버십 순서 유지»(안정 정렬에 기댄 계약)를 이것이 덮는다.
+  // 관리 화면이 참조표에서만 고르므로 실제로는 참조표에서 보스가 빠진 뒤 남은 저장분에만 걸린다.
+  const ordered = [...tracked].sort((a, b) =>
+    compareBossOrder({ boss: a.contentName, difficulty: a.difficulty }, { boss: b.contentName, difficulty: b.difficulty }),
+  )
   return ordered.map((item): BossContent => {
     // 보스는 이름만으로 유일하지 않으므로 (matchedBossName, difficulty) 쌍으로 매칭한다.
     // synced.name은 API 원문(공백 차이·별칭)이라, matchBossContent로 우리 데이터 이름으로 정규화해
