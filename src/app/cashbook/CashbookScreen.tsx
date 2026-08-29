@@ -59,7 +59,11 @@ import { SPEED_DIAL_SPACE_PX } from '../../components/organisms/SpeedDial/speed-
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
-import { formatBossProfitPeriodLabel, getAdjacentPeriodKey } from '../../lib/boss-profit-period'
+import {
+  formatBossProfitPeriodLabel,
+  getAdjacentPeriodKey,
+  isLatestPeriod,
+} from '../../lib/boss-profit-period'
 import {
   WEEKDAY_LABELS_RESET,
   buildCalendarMonth,
@@ -158,10 +162,20 @@ function PeriodTab(props: {
   )
 }
 
-/** 기간을 넘기는 화살표 — 보스 수익의 기간 이동과 같은 치수다(같은 그룹에서 두 모양이면 안 된다). */
+/**
+ * 기간을 넘기는 화살표 — 보스 수익의 기간 이동과 **같은 치수·같은 죽는 법**이다(같은 그룹에서 두
+ * 모양이면 안 된다).
+ *
+ * 흐려지는 것을 **JS 조건**으로 준다. NativeWind 의 `disabled:` 는 웹 CSS 의사 클래스라
+ * `Pressable disabled` 와 **이어져 있지 않고**, 남겨 두면 비활성 화살표가 멀쩡한 색으로 보인다
+ * (`BossProfitBossRow` 가 이미 밟은 함정이다).
+ *
+ * `aria-disabled` 를 `disabled` 와 **같이** 준다 — 앞은 손가락을, 뒤는 스크린리더를 막는다.
+ */
 function MonthArrow(props: {
   label: string
   icon: typeof ChevronLeftIcon
+  disabled?: boolean
   onPress: () => void
 }): React.JSX.Element {
   const Icon = props.icon
@@ -169,8 +183,12 @@ function MonthArrow(props: {
     <Pressable
       role="button"
       aria-label={props.label}
+      aria-disabled={props.disabled}
+      disabled={props.disabled}
       onPress={props.onPress}
-      className="h-7 w-7 items-center justify-center rounded-full border border-border"
+      className={`h-7 w-7 items-center justify-center rounded-full border border-border${
+        props.disabled ? ' opacity-30' : ''
+      }`}
     >
       <Icon className="h-4 w-4 text-text" strokeWidth={2} aria-hidden />
     </Pressable>
@@ -762,7 +780,18 @@ export function CashbookScreen(): React.JSX.Element {
     // 펼친 판은 **그 날의 것**이다 — 줄의 신원이 날짜를 안 들어([[ADR-172]] 결정 7) 여기서 접지
     // 않으면 다른 날의 줄이 펼쳐진 채로 남는다.
     setExpandedRowKey(null)
-    if (!isWeekly) setMonthKey(monthKeyOf(dateKey))
+    /**
+     * 달 동기화는 **이번 달까지만**([[ADR-185]] 결정 2). 월간 격자의 꼬리 칸은 다음 달 날짜라
+     * (8월 격자는 9/5 까지 그린다) 그냥 맞추면 **한 번의 탭이 화살표가 막은 곳에 도착한다.**
+     *
+     * 막는 것은 «보는 기간» 이지 **«고른 날» 이 아니다** — 미래의 날에도 적을 수 있어야 하므로
+     * 고른 날은 그대로 바뀌고, 격자만 남는다. 「달을 넘겨도 고른 날은 안 바뀐다」의 뒤집힌 짝이다.
+     *
+     * `<=` 라 **이번 달은 든다** — 지난 달 격자의 꼬리로 이번 달에 오는 것은 화살표로도 가는 길이다.
+     */
+    if (!isWeekly && monthKeyOf(dateKey) <= getCurrentMonthKey(now)) {
+      setMonthKey(monthKeyOf(dateKey))
+    }
   }
 
   function showWeekly(): void {
@@ -794,6 +823,15 @@ export function CashbookScreen(): React.JSX.Element {
   const periodLabel = isWeekly
     ? formatBossProfitPeriodLabel('weekly', weekStartKey, now)
     : formatBossProfitPeriodLabel('monthly', monthKey, now)
+
+  /**
+   * **앞으로 갈 자리가 없다**([[ADR-185]]) — 지금 보는 것이 «이번 주/이번 달» 이면 다음이 미래다.
+   *
+   * 판정은 보스 수익 탭이 쓰는 `isLatestPeriod` **그 함수**다. 두 축의 `periodKey` 가 이미 그쪽과
+   * 같은 모양이라(주간은 목요일 날짜, 월간은 `YYYY-MM`) 넘길 것이 그대로 있고, 같은 그룹의 두
+   * 하위가 **한 경계**를 갖게 된다([[ADR-170]] 정정 3 이 라벨에서 한 것과 같은 태도).
+   */
+  const isLatest = isLatestPeriod(isWeekly ? 'weekly' : 'monthly', isWeekly ? weekStartKey : monthKey, now)
 
   function movePeriod(delta: -1 | 1): void {
     if (isWeekly) {
@@ -875,9 +913,12 @@ export function CashbookScreen(): React.JSX.Element {
                 {periodLabel.secondary}
               </Text>
             </View>
+            {/* 앞으로는 못 간다([[ADR-185]]) — 미래의 합계는 언제나 0 이라 «아직 안 적었나» 와
+                «올 수 없는 곳인가» 가 같은 화면으로 말해진다. */}
             <MonthArrow
               label={isWeekly ? '다음 주' : '다음 달'}
               icon={ChevronRightIcon}
+              disabled={isLatest}
               onPress={() => movePeriod(1)}
             />
           </View>

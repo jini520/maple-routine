@@ -190,20 +190,24 @@ describe('CashbookScreen — 달 이동', () => {
     expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('지난 달')
     expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('2026년 7월')
 
+    // 앞으로는 **이번 달까지만** 간다([[ADR-185]]) — 왕복은 과거 안에서 잰다.
+    await 이름으로누르기(view, '이전 달')
+    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('2026년 6월')
+
     await 이름으로누르기(view, '다음 달')
-    await 이름으로누르기(view, '다음 달')
-    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('2026년 9월')
-    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('2026년 9월')
+    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('지난 달')
+    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('2026년 7월')
   })
 
   it('해를 넘긴다', async () => {
     const view = await 그리기()
     await 월간으로(view)
 
-    for (let count = 0; count < 5; count += 1) await 이름으로누르기(view, '다음 달')
+    // **뒤로** 넘는다 — 앞은 이번 달에서 막힌다([[ADR-185]]). 해 경계를 지나는 것은 같다.
+    for (let count = 0; count < 8; count += 1) await 이름으로누르기(view, '이전 달')
 
-    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('2027년 1월')
-    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('2027년 1월')
+    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('2025년 12월')
+    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('2025년 12월')
   })
 
   // 달을 옮겨도 고른 날은 그대로다 — 옮긴 것은 «보는 달» 이지 «고른 날» 이 아니다.
@@ -214,6 +218,89 @@ describe('CashbookScreen — 달 이동', () => {
     await 이름으로누르기(view, '이전 달')
 
     expect(view.getByTestId('cashbook-selected-day')).toHaveTextContent('8월 23일 (일)')
+  })
+})
+
+/**
+ * **앞으로는 못 간다** ([[ADR-185]]) — 「다음 주」·「다음 달」은 **지금 기간에서 죽는다.**
+ *
+ * 판정은 보스 수익 탭이 쓰는 `isLatestPeriod` **그 함수**다(두 하위 탭이 같은 경계를 갖는다).
+ * 죽었는지는 `disabled` 와 `aria-disabled` 둘 다로 본다 — 앞은 손가락을, 뒤는 스크린리더를 막는다.
+ */
+describe('앞으로는 못 간다 ([[ADR-185]])', () => {
+  it('이번 주에서 「다음 주」가 죽는다', async () => {
+    const view = await 그리기()
+
+    const 다음 = view.getByLabelText('다음 주')
+    expect(다음.props.accessibilityState?.disabled).toBe(true)
+
+    // 눌러도 안 움직인다.
+    await 이름으로누르기(view, '다음 주')
+    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('이번 주')
+    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('8월 20일 ~ 8월 26일')
+  })
+
+  it('이번 달에서 「다음 달」이 죽는다', async () => {
+    const view = await 그리기()
+    await 월간으로(view)
+
+    expect(view.getByLabelText('다음 달').props.accessibilityState?.disabled).toBe(true)
+
+    await 이름으로누르기(view, '다음 달')
+    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('2026년 8월')
+  })
+
+  // 과거로 물러나면 되돌아올 길이 있어야 한다 — 안 그러면 뒤로 간 사람이 갇힌다.
+  it('지난 기간에서는 살아난다', async () => {
+    const view = await 그리기()
+
+    await 이름으로누르기(view, '이전 주')
+    expect(view.getByLabelText('다음 주').props.accessibilityState?.disabled).toBe(false)
+    await 이름으로누르기(view, '다음 주')
+    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('이번 주')
+
+    await 월간으로(view)
+    await 이름으로누르기(view, '이전 달')
+    expect(view.getByLabelText('다음 달').props.accessibilityState?.disabled).toBe(false)
+  })
+
+  // **뒤로는 안 막는다** — 손입력은 언제로든 적으므로 과거에 경계가 없다([[ADR-170]] 정정 3 의
+  // 살아남은 절반).
+  /**
+   * **화살표만 막으면 구멍이 남는다**([[ADR-185]] 결정 2) — 월간 격자의 꼬리 칸은 **다음 달 날짜**라
+   * (8월 격자는 9/5 까지 그린다) 그것을 누르면 달 동기화가 화면을 다음 달로 옮겼다. 한 번의 탭으로
+   * 화살표가 막은 곳에 도착한다.
+   */
+  it('격자의 다음 달 칸을 눌러도 달이 안 넘어간다', async () => {
+    const view = await 그리기()
+    await 월간으로(view)
+
+    await 누르기(view, 'calendar-day-2026-09-01')
+
+    // 고른 날은 **바뀐다** — 막는 것은 «보는 기간» 이지 «고른 날» 이 아니다(미래에도 적을 수 있다).
+    expect(view.getByTestId('cashbook-selected-day')).toHaveTextContent('9월 1일 (화)')
+    // 격자는 8월에 남는다.
+    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('2026년 8월')
+  })
+
+  // 지난 달에서 **이번 달** 칸을 누르는 것은 미래가 아니다 — 화살표로도 갈 수 있는 곳이다.
+  it('지난 달 격자에서 이번 달 칸을 누르면 이번 달로 온다', async () => {
+    const view = await 그리기()
+    await 월간으로(view)
+    await 이름으로누르기(view, '이전 달')
+
+    // 7월 격자는 8/1(토)까지 그린다.
+    await 누르기(view, 'calendar-day-2026-08-01')
+
+    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('2026년 8월')
+  })
+
+  it('「이전」 은 어느 기간에서도 안 죽는다', async () => {
+    const view = await 그리기()
+
+    expect(view.getByLabelText('이전 주').props.accessibilityState?.disabled).toBeFalsy()
+    await 월간으로(view)
+    expect(view.getByLabelText('이전 달').props.accessibilityState?.disabled).toBeFalsy()
   })
 })
 
@@ -234,18 +321,24 @@ describe('CashbookScreen — 날짜 선택', () => {
     expect(view.getByTestId('cashbook-selected-day')).toHaveTextContent('8월 25일 (화)')
   })
 
-  // 앞뒤 달 칸을 누르면 **보는 달도 함께 옮겨진다** — 아니면 고른 날이 격자 밖에 있게 된다.
-  it('다음 달 칸을 고르면 달도 함께 옮겨진다', async () => {
+  /**
+   * **지난 달** 칸을 누르면 보는 달도 함께 옮겨진다 — 아니면 고른 날이 격자 밖에 있게 된다.
+   *
+   * ~~다음 달 칸도 같았다~~ → [[ADR-185]] 결정 2 가 그쪽만 뒤집었다(한 번의 탭이 화살표가 막은
+   * 곳에 도착하고 있었다). 뒤로는 경계가 없으므로 이 절반은 그대로다.
+   */
+  it('지난 달 칸을 고르면 달도 함께 옮겨진다', async () => {
     const view = await 그리기()
     await 월간으로(view)
 
-    await 누르기(view, 'calendar-day-2026-09-05')
+    // 8월 격자는 7/26(일)에 시작한다.
+    await 누르기(view, 'calendar-day-2026-07-28')
 
-    expect(view.getByTestId('cashbook-selected-day')).toHaveTextContent('9월 5일 (토)')
-    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('2026년 9월')
-    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('2026년 9월')
+    expect(view.getByTestId('cashbook-selected-day')).toHaveTextContent('7월 28일 (화)')
+    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('지난 달')
+    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('2026년 7월')
     // 옮긴 달의 격자에 그 칸이 여전히 있다(이번엔 이번 달 칸으로).
-    expect(view.getByTestId('calendar-day-2026-09-05')).toBeTruthy()
+    expect(view.getByTestId('calendar-day-2026-07-28')).toBeTruthy()
   })
 })
 
@@ -342,32 +435,36 @@ describe('주간/월간 전환', () => {
     expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('지난 주')
     expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('8월 13일 ~ 8월 19일')
 
+    await 이름으로누르기(view, '이전 주')
+    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('8월 1주차')
+    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('8월 6일 ~ 8월 12일')
+
+    // 앞으로는 **이번 주까지만** 간다([[ADR-185]]).
     await 이름으로누르기(view, '다음 주')
-    await 이름으로누르기(view, '다음 주')
-    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('8월 4주차')
-    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('8월 27일 ~ 9월 2일')
+    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('8월 13일 ~ 8월 19일')
   })
 
   // 달을 걸치는 주는 **달을 둘 다 적는다** — 「8월 27일 – 2일」 이면 어느 달의 2일인지 모른다.
   it('달을 걸치는 주는 양쪽 달을 다 적는다', async () => {
     const view = await 그리기()
     await 이름으로누르기(view, '주간')
-    await 이름으로누르기(view, '다음 주')
+    // 7/30(목) ~ 8/5(수) — **과거의** 걸치는 주다. 앞으로는 못 가므로([[ADR-185]]) 뒤로 셋 물러난다.
+    for (let count = 0; count < 3; count += 1) await 이름으로누르기(view, '이전 주')
 
-    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('8월 4주차')
-    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('8월 27일 ~ 9월 2일')
+    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('7월 5주차')
+    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('7월 30일 ~ 8월 5일')
   })
 
   it('월간으로 돌아가면 **그 주의 목요일이 든 달**이다', async () => {
     const view = await 그리기()
     await 이름으로누르기(view, '주간')
-    // 8/27 – 9/2 로 옮긴다. 목요일(8/27)이 든 달은 **8월**이다.
-    await 이름으로누르기(view, '다음 주')
+    // 7/30 – 8/5 로 옮긴다(뒤로 셋 — [[ADR-185]]). 목요일(7/30)이 든 달은 **7월**이다.
+    for (let count = 0; count < 3; count += 1) await 이름으로누르기(view, '이전 주')
 
     await 이름으로누르기(view, '월간')
 
-    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('이번 달')
-    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('2026년 8월')
+    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('지난 달')
+    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('2026년 7월')
   })
 
   it('월간에서 고른 날을 바꾸고 주간으로 가면 그 날이 든 주다', async () => {
@@ -427,10 +524,11 @@ describe('칸에 숫자가 든다', () => {
     const view = await 그리기()
     await 월간으로(view)
 
-    await 이름으로누르기(view, '다음 달')
+    // **뒤로** 옮긴다 — 앞은 이번 달에서 막힌다([[ADR-185]]). 7월 격자는 6/28 에 시작해 8/1 에 끝난다.
+    await 이름으로누르기(view, '이전 달')
     await act(async () => {})
 
-    expect(records.loadCalendarAmounts).toHaveBeenLastCalledWith('2026-08-30', '2026-10-03')
+    expect(records.loadCalendarAmounts).toHaveBeenLastCalledWith('2026-06-28', '2026-08-01')
   })
 
   // 주간이 달을 걸치면 그 이레가 기준 달의 격자 밖으로 나갈 수 있다 — 합집합을 쓰는 이유다.
