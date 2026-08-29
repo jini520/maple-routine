@@ -176,6 +176,34 @@ export function monthIncomeMax(weeks: readonly CalendarWeek[], amounts: Calendar
   return max
 }
 
+/**
+ * 격자 위에 서는 **기간 합계**([[ADR-184]] 결정 2) — 화면이 `CalendarMonth` 에 넘긴 **그 `weeks`** 와
+ * **그 `amounts`** 를 받아 접는다. 그래서 «칸에 적힌 것을 다 더한 값» 이 곧 이 숫자이고, 따로 읽지
+ * 않으므로 칸과 합계가 서로 다른 순간을 가질 수 없다.
+ *
+ * 기준이 `monthIncomeMax` 와 **같은 `inPeriod`** 인 것이 계약이다 — 월간 격자는 앞뒤 달 날짜로
+ * 빈칸을 채우므로(결정 7) 그 칸을 세면 「8월」 합계에 7월 말과 9월 초가 섞인다. 주간 격자에서는
+ * 이레가 전부 `inPeriod` 라 그대로 이레의 합이다([[ADR-170]] 정정 1).
+ *
+ * **넣는 것은 보이는 격자다.** 열지도 기준선용 `heatWeeks` 는 주간 보기에서 그 달 전체라(결정 12)
+ * 그것을 접으면 주간 합계 자리에 **달 합계**가 선다.
+ */
+export function periodTotals(
+  weeks: readonly CalendarWeek[],
+  amounts: CalendarAmounts,
+): CalendarDayAmounts {
+  let incomeMeso = 0
+  let expenseMeso = 0
+  for (const week of weeks) {
+    for (const day of week) {
+      if (!day.inPeriod) continue
+      incomeMeso += amounts[day.dateKey]?.incomeMeso ?? 0
+      expenseMeso += amounts[day.dateKey]?.expenseMeso ?? 0
+    }
+  }
+  return { incomeMeso, expenseMeso }
+}
+
 // ══ 주간 격자 — 게임의 주 ([[ADR-170]] 결정 10·11) ══════════════════════════════
 
 /** 목요일에서 시작한다. **월간 라벨을 회전한 것**이라 요일 이름이 한 곳에만 산다. */

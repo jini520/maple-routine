@@ -11,6 +11,7 @@ import {
   getCurrentMonthKey,
   heatLevel,
   monthKeyOf,
+  periodTotals,
 } from '../calendar-month'
 
 describe('getCurrentMonthKey — KST 기준', () => {
@@ -310,5 +311,46 @@ describe('shiftDateKey', () => {
   it('윤년의 2월을 안다', () => {
     expect(shiftDateKey('2028-02-28', 1)).toBe('2028-02-29')
     expect(shiftDateKey('2027-02-28', 1)).toBe('2027-03-01')
+  })
+})
+
+/**
+ * 보고 있는 기간의 합계 — 격자 위에 서는 세 칸이 이것을 읽는다([[ADR-184]]).
+ *
+ * **기준이 `monthIncomeMax` 와 같은 `inPeriod`** 다. 월간 격자는 앞뒤 달 날짜로 빈칸을 채우므로
+ * (`buildCalendarMonth`) 그 칸을 세면 「8월」 합계에 7월 말·9월 초가 섞인다.
+ */
+describe('periodTotals — 격자가 그린 칸을 그대로 접는다', () => {
+  const { buildResetWeek } = require('../calendar-month') as typeof import('../calendar-month')
+
+  it('그 기간 칸만 더한다 — 앞뒤 달로 채운 칸은 안 든다', () => {
+    const weeks = buildCalendarMonth('2026-08')
+    // 8/1(토)은 첫 주의 마지막 칸이고, 7/26~7/31 이 그 앞을 채운다.
+    const totals = periodTotals(weeks, {
+      '2026-07-31': { incomeMeso: 500, expenseMeso: 500 },
+      '2026-08-01': { incomeMeso: 100, expenseMeso: 30 },
+      '2026-08-15': { incomeMeso: 200, expenseMeso: 70 },
+      '2026-09-01': { incomeMeso: 900, expenseMeso: 900 },
+    })
+
+    expect(totals).toEqual({ incomeMeso: 300, expenseMeso: 100 })
+  })
+
+  it('주간 격자는 이레가 전부 든다 — 달을 걸쳐도 같다', () => {
+    // 8/27(목) 주는 9/2(수)까지 간다([[ADR-170]] 정정 1 — 이레는 전부 `inPeriod` 다).
+    const totals = periodTotals([buildResetWeek('2026-08-27')], {
+      '2026-08-27': { incomeMeso: 10, expenseMeso: 1 },
+      '2026-09-02': { incomeMeso: 20, expenseMeso: 2 },
+      '2026-09-03': { incomeMeso: 999, expenseMeso: 999 },
+    })
+
+    expect(totals).toEqual({ incomeMeso: 30, expenseMeso: 3 })
+  })
+
+  it('기록이 없는 기간은 0 이다 — `undefined` 가 새어 나가면 안 된다', () => {
+    expect(periodTotals(buildCalendarMonth('2026-08'), {})).toEqual({
+      incomeMeso: 0,
+      expenseMeso: 0,
+    })
   })
 })

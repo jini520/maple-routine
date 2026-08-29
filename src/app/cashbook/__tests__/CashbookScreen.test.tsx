@@ -1082,3 +1082,154 @@ describe('당겨서 새로고침 ([[ADR-170]] 정정 8)', () => {
     expect(records.loadCalendarAmounts.mock.calls.length).toBeGreaterThan(읽은횟수)
   })
 })
+
+/**
+ * 기간 합계 세 칸([[ADR-184]]) — 기간 이동과 격자 **사이**에 선다.
+ *
+ * 값은 **격자가 그린 칸을 그대로 접은 것**이라(결정 2) 여기서 보는 것은 «화면이 어느 격자를
+ * 넣었나» 다: 주간이면 이레, 월간이면 그 달 칸만. 새 조회는 안 튼다 — `loadCalendarAmounts` 는
+ * 격자용으로 이미 부른 그 한 번이다.
+ */
+describe('기간 합계 세 칸 ([[ADR-184]])', () => {
+  // 8/20(목)~8/26(수)이 이번 주다. 7/31·9/1 은 **월간 격자의 앞뒤 달 칸**이라 어느 보기에서도
+  // 안 들어야 한다(8월 격자는 7/26 에 시작해 9/5 에 끝난다).
+  const 금액 = {
+    '2026-07-31': { incomeMeso: 900_000_000, expenseMeso: 900_000_000 },
+    '2026-08-15': { incomeMeso: 300_000_000, expenseMeso: 100_000_000 },
+    '2026-08-21': { incomeMeso: 50_000_000, expenseMeso: 20_000_000 },
+    '2026-08-23': { incomeMeso: 10_000_000, expenseMeso: 5_000_000 },
+    '2026-09-01': { incomeMeso: 700_000_000, expenseMeso: 700_000_000 },
+  }
+
+  // 그린 순서를 그대로 훑는다 — 자리를 «몇 번째 자식» 으로 재면 상자가 하나 끼는 순간 깨진다.
+  function 그린순서(view: Rendered): string[] {
+    const 순서: string[] = []
+    const 훑기 = (node: unknown): void => {
+      if (node === null || typeof node !== 'object') return
+      const element = node as { props?: { testID?: string }; children?: unknown[] }
+      if (element.props?.testID !== undefined) 순서.push(element.props.testID)
+      for (const child of element.children ?? []) 훑기(child)
+    }
+    훑기(view.toJSON())
+    return 순서
+  }
+
+  /**
+   * 위에서부터 **범위 이동 → 합계 → 격자**([[ADR-184]] 정정 3, 사용자 지정) — 「어느 기간인가」 를
+   * 말한 줄 바로 다음이 「그 기간이 얼마인가」 이고, 그 둘이 격자를 받친다.
+   */
+  it('범위 이동 · 합계 · 격자 순으로 선다', async () => {
+    const view = await 그리기()
+    const 순서 = 그린순서(view)
+
+    expect(순서.indexOf('cashbook-period-range')).toBeLessThan(
+      순서.indexOf('cashbook-summary-net'),
+    )
+    expect(순서.indexOf('cashbook-summary-net')).toBeLessThan(
+      순서.indexOf('calendar-day-2026-08-20'),
+    )
+  })
+
+  it('주간은 **이레만** 접는다', async () => {
+    records.loadCalendarAmounts.mockResolvedValue(금액)
+    const view = await 그리기()
+
+    // 8/21 + 8/23 = 6000만 수익 · 2500만 지출. 8/15 는 이 주가 아니다.
+    expect(view.getByTestId('cashbook-summary-income')).toHaveTextContent('+6,000만')
+    expect(view.getByTestId('cashbook-summary-expense')).toHaveTextContent('−2,500만')
+    expect(view.getByTestId('cashbook-summary-net')).toHaveTextContent('+3,500만 메소')
+  })
+
+  it('월간은 그 달 칸만 접는다 — 앞뒤 달로 채운 칸은 안 든다', async () => {
+    records.loadCalendarAmounts.mockResolvedValue(금액)
+    const view = await 그리기()
+    await 월간으로(view)
+
+    // 8/15 + 8/21 + 8/23 = 3.6억 수익 · 1.25억 지출. 7/31·9/1 이 들면 자릿수가 통째로 달라진다.
+    expect(view.getByTestId('cashbook-summary-income')).toHaveTextContent('+3.6억')
+    expect(view.getByTestId('cashbook-summary-expense')).toHaveTextContent('−1.25억')
+    expect(view.getByTestId('cashbook-summary-net')).toHaveTextContent('+2.35억 메소')
+  })
+
+  it('기간을 옮기면 따라간다', async () => {
+    records.loadCalendarAmounts.mockResolvedValue(금액)
+    const view = await 그리기()
+    await 이름으로누르기(view, '이전 주')
+
+    // 8/13(목)~8/19(수) — 이 이레에 든 것은 8/15 하나다(3억 수익 · 1억 지출).
+    expect(view.getByTestId('cashbook-summary-income')).toHaveTextContent('+3억')
+    expect(view.getByTestId('cashbook-summary-expense')).toHaveTextContent('−1억')
+    expect(view.getByTestId('cashbook-summary-net')).toHaveTextContent('+2억 메소')
+  })
+
+  /**
+   * 적자인 기간 — **부호가 색을 정한다**(결정 3). 색을 값으로 안 박고 **수익·지출 칸과 견준다**:
+   * 테마가 바뀌어도 «순 수익이 지출과 같은 색이다» 는 그대로여야 하는 계약이기 때문이다.
+   */
+  it('순 수익이 음수면 지출과 같은 색이고 `−` 절댓값이다', async () => {
+    records.loadCalendarAmounts.mockResolvedValue({
+      '2026-08-21': { incomeMeso: 10_000_000, expenseMeso: 30_000_000 },
+    })
+    const view = await 그리기()
+
+    const 순수익 = view.getByTestId('cashbook-summary-net')
+    // 통째로 못 박는다 — `formatMesoCompact(-20000000)` 이 내는 **ASCII `-`** 가 새어 나오면
+    // 문자열이 갈려 이 줄이 깨진다(부호는 U+2212 다). 단위는 정정 7.
+    expect(순수익).toHaveTextContent('−2,000만 메소')
+    expect(flattenStyle(순수익.props.style).color).toBe(
+      flattenStyle(view.getByTestId('cashbook-summary-expense').props.style).color,
+    )
+  })
+
+  /**
+   * **셋은 같은 무게가 아니다**([[ADR-184]] 정정 1, 사용자 지정) — 수익·지출은 순 수익을 **내기 위한
+   * 값**이라 약하게 서고, 답인 순 수익만 크게 선다. 값을 박지 않고 **셋을 서로 견준다**: 지켜야 할
+   * 것은 「16px」이 아니라 «답이 재료보다 크다» 는 관계다.
+   */
+  it('순 수익이 수익·지출보다 크고 굵다', async () => {
+    const view = await 그리기()
+
+    const 수익 = flattenStyle(view.getByTestId('cashbook-summary-income').props.style)
+    const 지출 = flattenStyle(view.getByTestId('cashbook-summary-expense').props.style)
+    const 순수익 = flattenStyle(view.getByTestId('cashbook-summary-net').props.style)
+
+    expect(Number(순수익.fontSize)).toBeGreaterThan(Number(수익.fontSize))
+    expect(Number(순수익.fontSize)).toBeGreaterThan(Number(지출.fontSize))
+    expect(Number(순수익.fontWeight)).toBeGreaterThan(Number(수익.fontWeight))
+  })
+
+  /**
+   * **답이 왼쪽 헤드라인, 재료 둘이 오른쪽에 쌓인다**([[ADR-184]] 정정 6 — 「저울」, 사용자 채택).
+   * 답은 카드에서 가장 큰 것이 되고 재료는 그 옆의 각주가 된다.
+   */
+  it('순 수익이 왼쪽 헤드라인이고 재료 둘은 오른쪽에 쌓인다', async () => {
+    const view = await 그리기()
+
+    const 블록 = flattenStyle(view.getByTestId('cashbook-period-summary').props.style)
+    expect(블록).toMatchObject({ flexDirection: 'row', justifyContent: 'space-between' })
+    expect(블록.backgroundColor).toBeTruthy()
+
+    // 재료 둘은 **한 상자에 세로로** 쌓이고 답은 그 밖이다 — 셋이 한 무리면 답이 재료로 읽힌다.
+    const 재료 = view.getByTestId('cashbook-summary-sources')
+    expect(flattenStyle(재료.props.style)).toMatchObject({ alignItems: 'flex-end' })
+    expect(within(재료).getByTestId('cashbook-summary-income')).toBeTruthy()
+    expect(within(재료).getByTestId('cashbook-summary-expense')).toBeTruthy()
+    expect(within(재료).queryByTestId('cashbook-summary-net')).toBeNull()
+
+    // 단위는 **큰 숫자에만** 붙는다([[ADR-184]] 정정 7) — 셋이 같은 축이라 한 번이면 된다.
+    // (이 케이스는 기록이 없어 셋 다 0 이다. 0 에는 부호도 안 붙는다 — 결정 3.)
+    expect(view.getByTestId('cashbook-summary-net')).toHaveTextContent('0 메소')
+    expect(view.getByTestId('cashbook-summary-income')).toHaveTextContent('+0')
+  })
+
+  it('순 수익이 양수면 수익과 같은 색이다', async () => {
+    records.loadCalendarAmounts.mockResolvedValue({
+      '2026-08-21': { incomeMeso: 30_000_000, expenseMeso: 10_000_000 },
+    })
+    const view = await 그리기()
+
+    expect(flattenStyle(view.getByTestId('cashbook-summary-net').props.style).color).toBe(
+      flattenStyle(view.getByTestId('cashbook-summary-income').props.style).color,
+    )
+  })
+})
