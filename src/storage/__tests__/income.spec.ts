@@ -161,10 +161,13 @@ describe('getIncomeRecordsBetween', () => {
 describe('INCOME_CATEGORIES', () => {
   // [[ADR-170]] 결정 1 — 사용자가 준 둘 + 안전망 하나. 「기타」가 없으면 갈래가 안 잡히는 수입이
   // 기록 자체를 못 남긴다.
-  it('사용자가 준 갈래 둘과 안전망 「기타」다', () => {
+  //
+  // **차례가 곧 화면**이다([[ADR-170]] 정정 17) — 칩이 서는 차례이고 `[0]` 이 열었을 때 골라져
+  // 있는 갈래다. 그래서 이 배열을 뒤집는 것이 «기본 갈래를 바꾼다» 와 같은 말이다.
+  it('사냥 · 아이템 판매 · 기타 차례다 — 첫째가 기본 갈래다', () => {
     const { INCOME_CATEGORIES } = require('../income') as typeof import('../income')
 
-    expect(INCOME_CATEGORIES).toEqual(['아이템 판매', '사냥', '기타'])
+    expect(INCOME_CATEGORIES).toEqual(['사냥', '아이템 판매', '기타'])
   })
 })
 

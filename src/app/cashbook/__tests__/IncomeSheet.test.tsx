@@ -89,6 +89,22 @@ async function 직접치는시트(): Promise<Rendered> {
   return view
 }
 
+/**
+ * 「아이템 판매」로 연다 — **열자마자 그 갈래인 것이 아니다**([[ADR-170]] 정정 17).
+ *
+ * 기본 갈래는 차례의 첫째(`INCOME_CATEGORIES[0]`)이고 그것이 「사냥」 으로 바뀌었다. 판매 갈래의
+ * 성질을 재는 케이스는 그래서 **칩을 한 번 누르고** 시작한다.
+ */
+async function 판매시트(
+  overrides: Partial<React.ComponentProps<typeof IncomeSheet>> = {},
+): Promise<Rendered> {
+  const view = await 그리기(overrides)
+  await act(async () => {
+    fireEvent.press(view.getByLabelText('아이템 판매'))
+  })
+  return view
+}
+
 /** 아이템 판매의 치는 자리는 **판매 대금 칸**이다. */
 async function 대금치기(view: Rendered, text: string): Promise<void> {
   await act(async () => {
@@ -135,7 +151,7 @@ describe('갈래', () => {
 
   // 갈래는 첫 칸의 라벨만 바꾼다([[ADR-170]] 결정 1) — **사냥만 빼고**([[ADR-175]] 결정 1).
   it('갈래가 첫 칸의 이름을 바꾼다', async () => {
-    const view = await 그리기()
+    const view = await 판매시트()
 
     expect(view.getByTestId('income-sheet-name-label')).toHaveTextContent('판매 아이템')
 
@@ -251,7 +267,7 @@ describe('금액 — OS 숫자 키보드다 ([[ADR-170]] 정정 4 · [[ADR-173]]
 describe('판매 수수료 ([[ADR-170]] 정정 9)', () => {
   // 사냥 메소에는 경매장이 없고, 「기타」 에 붙이면 «무엇의 수수료인가» 가 안 읽힌다(정정 9 ②).
   it('판매 대금과 수수료 줄이 아이템 판매에만 선다', async () => {
-    const view = await 그리기()
+    const view = await 판매시트()
 
     expect(view.getByTestId('income-sheet-gross')).toBeTruthy()
     expect(view.getByTestId('income-sheet-fee')).toBeTruthy()
@@ -270,7 +286,7 @@ describe('판매 수수료 ([[ADR-170]] 정정 9)', () => {
    * 시트를 열기만 해도 금액이 달라진다.
    */
   it('기본이 「없음」 이다', async () => {
-    const view = await 그리기()
+    const view = await 판매시트()
 
     expect(view.getByLabelText('없음').props.accessibilityState?.selected).toBe(true)
     expect(view.getByLabelText('3%')).toBeTruthy()
@@ -279,7 +295,7 @@ describe('판매 수수료 ([[ADR-170]] 정정 9)', () => {
 
   /** 힌트도 큰 숫자와 같은 것을 적는다 — **받는 돈**이다. */
   it('요율을 고르면 합계가 받는 돈으로 내려간다', async () => {
-    const view = await 그리기()
+    const view = await 판매시트()
     await 대금치기(view, '1200000000')
 
     expect(view.getByTestId('income-sheet-amount-hint')).toHaveTextContent('12억')
@@ -294,7 +310,7 @@ describe('판매 수수료 ([[ADR-170]] 정정 9)', () => {
    * 큰 숫자는 앱이 세는 합계라 **못 친다**([[ADR-173]] 결정 17 의 「기타」와 같은 모양).
    */
   it('판매 대금은 그 자리에 남고 합계는 못 친다', async () => {
-    const view = await 그리기()
+    const view = await 판매시트()
     await 대금치기(view, '1200000000')
 
     await 누르기(view, '5%')
@@ -312,7 +328,7 @@ describe('판매 수수료 ([[ADR-170]] 정정 9)', () => {
    */
   it('받는 돈과 뗀 몫을 함께 저장한다', async () => {
     const onSave = jest.fn()
-    const view = await 그리기({ onSave })
+    const view = await 판매시트({ onSave })
     await 대금치기(view, '1200000000')
     await 누르기(view, '3%')
 
@@ -338,7 +354,7 @@ describe('판매 수수료 ([[ADR-170]] 정정 9)', () => {
    */
   it('갈래를 옮기면 요율도 친 금액도 풀린다', async () => {
     const onSave = jest.fn()
-    const view = await 그리기({ onSave })
+    const view = await 판매시트({ onSave })
     await 대금치기(view, '1200000000')
     await 누르기(view, '5%')
 
@@ -383,7 +399,7 @@ describe('저장', () => {
 
   it('저장하면 닫는다', async () => {
     const onClose = jest.fn()
-    const view = await 그리기({ onClose })
+    const view = await 판매시트({ onClose })
 
     await 대금치기(view, '1')
     await 누르기(view, '저장')
@@ -406,7 +422,7 @@ describe('캐릭터 귀속 ([[ADR-166]] 결정 3)', () => {
 
   it('고르면 그 캐릭터로 저장한다', async () => {
     const onSave = jest.fn()
-    const view = await 그리기({ onSave })
+    const view = await 판매시트({ onSave })
 
     await 아이디로누르기(view, 'income-sheet-character-trigger')
     await 아이디로누르기(view, 'income-sheet-character-option-ocid-2')
@@ -418,7 +434,7 @@ describe('캐릭터 귀속 ([[ADR-166]] 결정 3)', () => {
 
   it('안 고르면 계정 단위로 저장한다 — `ocid` 가 `null` 이다', async () => {
     const onSave = jest.fn()
-    const view = await 그리기({ onSave })
+    const view = await 판매시트({ onSave })
     await 대금치기(view, '1200')
     await 이름으로누르기(view, '저장')
 
@@ -576,7 +592,7 @@ describe('통화 ([[ADR-170]] 정정 15)', () => {
  */
 describe('판매 대금의 단위 ([[ADR-170]] 정정 14 ④)', () => {
   it('메소라고 적는다', async () => {
-    const view = await 그리기()
+    const view = await 판매시트()
 
     expect(view.getByTestId('income-sheet-gross-unit')).toHaveTextContent('메소')
   })
@@ -1484,7 +1500,7 @@ describe('날짜 바꾸기 ([[ADR-178]] 정정 6)', () => {
 
   it('바꾼 날짜로 저장된다', async () => {
     const onSave = jest.fn()
-    const view = await 그리기({ onSave })
+    const view = await 판매시트({ onSave })
     await 대금치기(view, '1200000000')
     await 아이디로누르기(view, 'income-sheet-date-prev')
     await 이름으로누르기(view, '저장')
@@ -1494,7 +1510,7 @@ describe('날짜 바꾸기 ([[ADR-178]] 정정 6)', () => {
 
   // 갈래 폼은 `key={category}` 로만 다시 심긴다 — 날짜는 그 열쇠가 아니다([[ADR-178]] 결정 3).
   it('날짜를 바꿔도 **친 것이 안 사라진다**', async () => {
-    const view = await 그리기()
+    const view = await 판매시트()
     await 대금치기(view, '1200000000')
 
     await 아이디로누르기(view, 'income-sheet-date-prev')
@@ -1564,7 +1580,7 @@ describe('어림값 표식', () => {
 
   // 아이템 판매는 실제로 오간 값이다 — 어림이 아니다.
   it('다른 갈래에는 안 붙는다', async () => {
-    const view = await 그리기()
+    const view = await 판매시트()
     await 대금치기(view, '1200000000')
 
     await waitFor(() =>

@@ -25,8 +25,12 @@ import { getBossProfitDb } from './sqlite/db'
  * 「기타」가 없으면 셋으로 안 잡히는 수입이 **기록 자체를 못 남긴다**(가계부에 구멍이 뚫린다).
  * 넷째가 생기면 여기 한 줄을 더하면 된다 — 늘리는 것은 싸고 **지우는 쪽이 비싸다**(이미 그 갈래로
  * 적힌 행이 갈 곳을 잃는다).
+ *
+ * **차례가 곧 화면**이다([[ADR-170]] 정정 17) — 시트의 칩이 이 차례로 서고 `[0]` 이 «＋ 수입」 을
+ * 열었을 때 골라져 있는 갈래다. 「사냥」이 앞인 것은 그 갈래가 계산기([[ADR-175]])라 손이 가장
+ * 많이 가서이고, 「기타」는 안전망이라 끝이다. **줄을 옮기면 기본 갈래가 함께 바뀐다.**
  */
-export const INCOME_CATEGORIES = ['아이템 판매', '사냥', '기타'] as const
+export const INCOME_CATEGORIES = ['사냥', '아이템 판매', '기타'] as const
 
 export type IncomeCategory = (typeof INCOME_CATEGORIES)[number]
 

@@ -120,7 +120,7 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
           <Text
             testID="income-sheet-title"
             numberOfLines={1}
-            className="shrink text-base font-bold text-rise-ink"
+            className="shrink text-base font-bold text-text"
           >
             {editing ? category : '수입 추가'}
           </Text>
