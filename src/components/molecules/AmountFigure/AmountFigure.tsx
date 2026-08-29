@@ -64,7 +64,28 @@ export interface AmountFigureProps {
    * 가르는 자리라, 부르는 쪽만이 그 답을 안다(지출 시트의 갈래·대표·단계가 그렇다).
    */
   identity?: string
+  /**
+   * **센 값이 어림이면 `≈` 를 앞에 붙인다**(사용자 지정 2026-08-29).
+   *
+   * 사냥 메소가 그렇다 — 젠 주기·마릿수·레벨로 **미리 세어 둔 값**이지 실제로 받은 액수가 아니다
+   * ([[ADR-175]] 결정 3). 표식이 없으면 그 수가 정산된 금액처럼 읽힌다.
+   *
+   * **0 에는 안 붙인다** — 아직 아무것도 안 고른 상태라 어림할 것 자체가 없다.
+   */
+  approximate?: boolean
 }
+
+/**
+ * 큰 숫자의 **글자 크기와 줄 상자**([[ADR-178]] 정정 2·3).
+ *
+ * 줄높이를 글자보다 크게 잡는 이유는 ascent 다 — 30px 글자에 30px 상자면 초점에서 위가 잘린다.
+ *
+ * 단위 상자가 **같은 두 수**를 쓴다(`unit` 줄) — 그래야 두 줄의 기준선이 같은 자리에 선다.
+ * 클래스 문자열에는 보간을 못 하므로(NativeWind 가 빌드 때 읽는다) 같은 수를 두 곳에 적고
+ * 그 일치를 테스트가 지킨다.
+ */
+const FIGURE_FONT_SIZE = 30
+const FIGURE_LINE_HEIGHT = 38
 
 export function AmountFigure(props: AmountFigureProps): React.JSX.Element {
   /**
@@ -79,13 +100,33 @@ export function AmountFigure(props: AmountFigureProps): React.JSX.Element {
   const shown = focused ? props.value : rolled
 
   const empty = shown === 0
-  const digits = `text-[30px] font-bold leading-none tracking-[-.03em] ${
+  /** 어림 표식 — 0 에는 안 붙는다(어림할 것이 없다). */
+  const approximateMark = props.approximate === true && !empty ? '≈ ' : ''
+  /**
+   * 큰 숫자의 **줄 상자를 못 박는다**([[ADR-178]] 결정 1 · 정정 2).
+   *
+   * `leading-none` 은 줄높이를 글자 크기와 같게 만든다 — 30px 글자에 30px 상자다. 아톰이 두
+   * 플랫폼을 맞추려고 패딩과 글꼴 여백을 지워 둔 터라([[ADR-170]] 정정 13) 그 상자에 ascent 가
+   * 안 들어가 **초점을 받으면 글자 위가 잘렸다**. 줄높이를 **글자보다 크게** 잡아 그 자리를 만든다.
+   */
+  // NativeWind 는 클래스 문자열을 **빌드 때** 읽으므로 여기에 상수를 보간하면 안 된다 —
+  // 아래 두 상수와 **같은 수**를 손으로 적고, 그 사실을 `AmountFigure.test` 가 붙든다.
+  const digits = `text-[30px] font-bold leading-[38px] tracking-[-.03em] ${
     empty ? 'text-text-disabled' : 'text-text'
   }`
 
   return (
     <View testID={`${props.testID}-figure`} className="gap-1">
-      <View className="flex-row items-baseline gap-1.5">
+      {/*
+        **기준선에 기대지 않는다**([[ADR-178]] 정정 3).
+
+        `items-baseline` 은 `TextInput` 이 섞인 줄에서 못 믿는다 — Yoga 가 노드마다 기준선을 어떻게
+        잡는지가 갈리고, 실기에서 단위가 숫자 기준선 **위로 떠** 보였다(사용자 화면 2026-08-29,
+        두 번). 그래서 **정렬을 위에서 맞추고**(`items-start`) 두 상자에 **같은 줄높이**를 준다.
+        같은 줄높이에 **같은 크기의 글자**가 들어 있으면 기준선은 정의상 같은 자리다 — 단위 상자에
+        폭 0 짜리 큰 글자를 심어 그 조건을 만든다(아래 `unitLine`).
+      */}
+      <View className="flex-row items-start gap-1.5">
         {/* 초기화는 **큰 숫자와 같은 줄**이다(결정 1 이 세로를 줄인 자리). 값이 0 이면 지울 것이
             없으므로 자리만 지킨다 — 없애면 숫자가 좌우로 흔들린다. 못 치는 숫자에는 아예 없다. */}
         {props.readOnly !== true && (
@@ -103,27 +144,64 @@ export function AmountFigure(props: AmountFigureProps): React.JSX.Element {
         </Pressable>
         )}
 
-        {props.readOnly === true ? (
-          <Text testID={props.testID} className={`ml-auto ${digits}`} style={TABULAR_NUMS}>
+        {/*
+          **보이는 글자는 언제나 `Text` 다**([[ADR-178]] 정정 2·4).
+
+          단위(「메소」)는 숫자와 **기준선을 맞춰야** 하는데, `items-baseline` 은 `TextInput` 에는
+          안 먹는다 — Yoga 는 글자 노드에만 기준선을 주고 그 밖에는 **상자 밑변**으로 떨어진다.
+          그래서 치는 칸 옆의 단위가 숫자 기준선 위로 떠 보였다(사용자 보고 2026-08-29).
+
+          그래서 **상자와 기준선은 `Text` 가 만들고**, 치는 칸은 그 위에 얹는다. 글꼴·크기·줄높이가
+          같으므로 둘의 기준선은 글꼴 지표와 무관하게 **정의상 같다** — 이 자리에서 픽셀을 손으로
+          맞추지 않는 이유가 그것이다. 못 치는 자리에서는 그 글자가 곧 보이는 숫자다.
+        */}
+        <View className="flex-1">
+          <Text
+            testID={props.readOnly === true ? props.testID : undefined}
+            aria-hidden={props.readOnly !== true}
+            className={`text-right ${digits}`}
+            style={TABULAR_NUMS}
+          >
+            {approximateMark}
             {shown.toLocaleString()}
           </Text>
-        ) : (
-        <TextInput
-          testID={props.testID}
-          aria-label="금액"
-          // 0 일 때 비우는 이유: 「0」 을 값으로 두면 그 뒤에 친 숫자가 붙어 자릿수가 하나 는다.
-          value={empty ? '' : shown.toLocaleString()}
-          onChangeText={(text) => props.onChangeValue(parseMesoText(props.value, text))}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
-          keyboardType="number-pad"
-          placeholder="0"
-          className={`flex-1 text-right ${digits}`}
-          style={TABULAR_NUMS}
-        />
-        )}
+          {props.readOnly !== true && (
+            <TextInput
+              testID={props.testID}
+              aria-label="금액"
+              // 0 일 때 비우는 이유: 「0」 을 값으로 두면 그 뒤에 친 숫자가 붙어 자릿수가 하나 는다.
+              value={empty ? '' : shown.toLocaleString()}
+              onChangeText={(text) => props.onChangeValue(parseMesoText(props.value, text))}
+              onFocus={() => setFocused(true)}
+              onBlur={() => setFocused(false)}
+              keyboardType="number-pad"
+              placeholder="0"
+              className={`text-right ${digits}`}
+              style={[
+                TABULAR_NUMS,
+                { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 },
+                // **그리지 않는다** — 입력과 커서만 맡는다([[ADR-178]] 정정 4).
+                { color: 'transparent' },
+              ]}
+            />
+          )}
+        </View>
 
-        <Text className="shrink-0 text-xs font-semibold text-text-muted">{props.unit}</Text>
+        {/*
+          단위 상자 — 줄높이는 숫자와 같고, 그 줄의 **글자 크기도 숫자와 같다**.
+
+          앞의 폭 0 짜리 글자(`\u200B`)가 숫자와 같은 크기라 이 줄의 ascent·descent 를 그것이
+          정한다. 그래서 단위의 기준선이 숫자의 기준선과 **같은 자리**에 선다 — 두 글꼴 크기의
+          차이를 픽셀로 적어 맞추지 않는 이유가 그것이다(글꼴이 바뀌면 그 상수가 조용히 어긋난다).
+        */}
+        <Text
+          testID={`${props.testID}-unit`}
+          className="shrink-0"
+          style={{ lineHeight: FIGURE_LINE_HEIGHT }}
+        >
+          <Text style={{ fontSize: FIGURE_FONT_SIZE, opacity: 0 }}>{'\u200B'}</Text>
+          <Text className="text-xs font-semibold text-text-muted">{props.unit}</Text>
+        </Text>
       </View>
 
       {props.hint !== undefined && (

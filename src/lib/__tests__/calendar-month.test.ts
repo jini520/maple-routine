@@ -6,6 +6,7 @@ import {
   WEEKDAY_LABELS,
   buildCalendarMonth,
   formatDayLabel,
+  shiftDateKey,
   getAdjacentMonthKey,
   getCurrentMonthKey,
   heatLevel,
@@ -281,3 +282,33 @@ describe('buildResetWeek', () => {
   })
 })
 
+
+/**
+ * 하루 단위로 옮긴 날짜 열쇠 — 수입 시트가 머리에서 날짜를 바꿀 때 쓴다([[ADR-178]] 정정 6).
+ *
+ * UTC 로 세는 것은 `formatDayLabel` 과 같은 이유다 — 기기 표준시로 세면 자정 언저리에서 하루가
+ * 밀린다.
+ */
+describe('shiftDateKey', () => {
+  it('하루 앞뒤로 옮긴다', () => {
+    expect(shiftDateKey('2026-08-23', 1)).toBe('2026-08-24')
+    expect(shiftDateKey('2026-08-23', -1)).toBe('2026-08-22')
+    expect(shiftDateKey('2026-08-23', 0)).toBe('2026-08-23')
+  })
+
+  it('달 경계를 넘는다', () => {
+    expect(shiftDateKey('2026-08-31', 1)).toBe('2026-09-01')
+    expect(shiftDateKey('2026-09-01', -1)).toBe('2026-08-31')
+  })
+
+  it('해 경계를 넘는다', () => {
+    expect(shiftDateKey('2026-12-31', 1)).toBe('2027-01-01')
+    expect(shiftDateKey('2027-01-01', -1)).toBe('2026-12-31')
+  })
+
+  // 2028 은 윤년이다 — 2월이 29일까지다.
+  it('윤년의 2월을 안다', () => {
+    expect(shiftDateKey('2028-02-28', 1)).toBe('2028-02-29')
+    expect(shiftDateKey('2027-02-28', 1)).toBe('2027-03-01')
+  })
+})

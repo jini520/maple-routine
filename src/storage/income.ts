@@ -25,8 +25,12 @@ import { getBossProfitDb } from './sqlite/db'
  * 「기타」가 없으면 셋으로 안 잡히는 수입이 **기록 자체를 못 남긴다**(가계부에 구멍이 뚫린다).
  * 넷째가 생기면 여기 한 줄을 더하면 된다 — 늘리는 것은 싸고 **지우는 쪽이 비싸다**(이미 그 갈래로
  * 적힌 행이 갈 곳을 잃는다).
+ *
+ * **차례가 곧 화면**이다([[ADR-170]] 정정 17) — 시트의 칩이 이 차례로 서고 `[0]` 이 «＋ 수입」 을
+ * 열었을 때 골라져 있는 갈래다. 「사냥」이 앞인 것은 그 갈래가 계산기([[ADR-175]])라 손이 가장
+ * 많이 가서이고, 「기타」는 안전망이라 끝이다. **줄을 옮기면 기본 갈래가 함께 바뀐다.**
  */
-export const INCOME_CATEGORIES = ['아이템 판매', '사냥', '기타'] as const
+export const INCOME_CATEGORIES = ['사냥', '아이템 판매', '기타'] as const
 
 export type IncomeCategory = (typeof INCOME_CATEGORIES)[number]
 
@@ -104,10 +108,18 @@ export interface HuntingIncomeDetail {
   fragments: number
   /** 조각 개당 메소. */
   fragmentPrice: number
+  /**
+   * **그때의** 캐릭터 메소 획득량(%) — [[ADR-177]] 결정 8.
+   *
+   * 캐릭터 레벨을 박아 두는 것과 **같은 이유**다: 장비를 갈아입으므로 지금 값으로 다시 재면
+   * 한 달 전 기록의 금액이 열 때마다 달라진다. `0` 은 **[[ADR-177]] 이전에 적힌 행**이기도 하고
+   * (그때는 메획이 계산에 없었다) 메획을 안 두른 캐릭터이기도 하다 — 둘 다 곱이 ×1 이라 같다.
+   */
+  mesoRate: number
 }
 
 /**
- * 여섯 칸 ↔ 한 덩어리. **`hunt_efficiency` 가 있으면 계산기로 적힌 행**이다 — 나머지는 0 일 수
+ * 일곱 칸 ↔ 한 덩어리. **`hunt_missed_mobs` 가 있으면 계산기로 적힌 행**이다 — 나머지는 0 일 수
  * 있지만(조각을 안 먹은 사냥) 효율은 언제나 세그먼트가 고른 값이 들어간다.
  */
 function rowToHunt(row: Record<string, unknown>): HuntingIncomeDetail | null {
@@ -122,12 +134,15 @@ function rowToHunt(row: Record<string, unknown>): HuntingIncomeDetail | null {
     sojae: (row.hunt_sojae as number | null | undefined) ?? 0,
     fragments: (row.hunt_fragments as number | null | undefined) ?? 0,
     fragmentPrice: (row.hunt_fragment_price as number | null | undefined) ?? 0,
+    // **`NULL` 은 [[ADR-177]] 이전 행**이고 0 으로 읽는다 — 없는 값을 지어내면 옛 기록의 금액이
+    // 지금 세는 값과 안 맞는다.
+    mesoRate: (row.hunt_meso_rate as number | null | undefined) ?? 0,
   }
 }
 
-/** 한 덩어리 → 칸 여섯. 없으면 전부 `null` 이다(다른 갈래의 행이 그렇다). */
+/** 한 덩어리 → 칸 일곱. 없으면 전부 `null` 이다(다른 갈래의 행이 그렇다). */
 function huntToValues(hunt: HuntingIncomeDetail | null): Array<number | string | null> {
-  if (hunt === null) return [null, null, null, null, null, null]
+  if (hunt === null) return [null, null, null, null, null, null, null]
   return [
     hunt.characterLevel,
     hunt.missedMobs,
@@ -135,6 +150,7 @@ function huntToValues(hunt: HuntingIncomeDetail | null): Array<number | string |
     hunt.sojae,
     hunt.fragments,
     hunt.fragmentPrice,
+    hunt.mesoRate,
   ]
 }
 
@@ -143,9 +159,9 @@ const INSERT_SQL = `
     (id, ocid, earned_on, category, item, meso_amount, sale_fee_percent, sale_fee_meso,
      point_amount, point_per_100m_meso, cash_amount,
      hunt_character_level, hunt_missed_mobs, hunt_boosts, hunt_sojae, hunt_fragments,
-     hunt_fragment_price,
+     hunt_fragment_price, hunt_meso_rate,
      memo, recorded_at)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 export async function insertIncomeRecord(record: IncomeRecord): Promise<void> {
@@ -175,7 +191,7 @@ const UPDATE_SQL = `
     sale_fee_percent = ?, sale_fee_meso = ?,
     point_amount = ?, point_per_100m_meso = ?, cash_amount = ?,
     hunt_character_level = ?, hunt_missed_mobs = ?, hunt_boosts = ?, hunt_sojae = ?,
-    hunt_fragments = ?, hunt_fragment_price = ?,
+    hunt_fragments = ?, hunt_fragment_price = ?, hunt_meso_rate = ?,
     memo = ?
   WHERE id = ?
 `

@@ -125,8 +125,8 @@ async function 이름으로누르기(view: Rendered, label: string): Promise<voi
 /**
  * 수입 시트의 치는 칸에 **친다** — OS 숫자 키보드다([[ADR-170]] 정정 4).
  *
- * 시트는 아이템 판매로 열리고, 그 갈래의 치는 자리는 **판매 대금 칸**이다(정정 9 ④) — 큰 숫자는
- * 수수료를 뗀 합계라 못 친다.
+ * 「아이템 판매」의 치는 자리는 **판매 대금 칸**이다(정정 9 ④) — 큰 숫자는 수수료를 뗀 합계라
+ * 못 친다. 시트는 **사냥으로 열리므로**([[ADR-170]] 정정 17) 부르는 쪽이 갈래를 먼저 옮긴다.
  */
 async function 금액치기(view: Rendered, text: string): Promise<void> {
   await act(async () => {
@@ -554,6 +554,7 @@ describe('펼침판이 시트를 연다', () => {
   it('저장하면 적고 다시 읽는다', async () => {
     const view = await 그리기()
     await 고르기(view, '수입 추가')
+    await 이름으로누르기(view, '아이템 판매')
 
     await 금액치기(view, '1')
     await 이름으로누르기(view, '저장')
@@ -571,6 +572,7 @@ describe('펼침판이 시트를 연다', () => {
   it('저장하면 시트가 닫힌다', async () => {
     const view = await 그리기()
     await 고르기(view, '수입 추가')
+    await 이름으로누르기(view, '아이템 판매')
 
     await 금액치기(view, '1')
     await 이름으로누르기(view, '저장')
@@ -597,6 +599,7 @@ describe('저장이 실패하면', () => {
     records.recordIncome.mockRejectedValue(new Error('no such column'))
     const view = await 그리기()
     await 고르기(view, '수입 추가')
+    await 이름으로누르기(view, '아이템 판매')
 
     await 금액치기(view, '1')
     await 이름으로누르기(view, '저장')

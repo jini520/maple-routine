@@ -65,13 +65,15 @@ describe('insertIncomeRecord', () => {
       null,
       null,
       null,
-      // 사냥 계산 입력 여섯([[ADR-175]] 결정 9) — 아이템 판매라 전부 비어 있다.
+      // 사냥 계산 입력 일곱([[ADR-175]] 결정 9 + [[ADR-177]] 결정 8) — 아이템 판매라 전부 비어 있다.
       null,
       null,
       null,
       null,
       null,
       null,
+      null,
+      // memo
       null,
       '2026-08-23T05:00:00.000Z',
     ])
@@ -159,10 +161,13 @@ describe('getIncomeRecordsBetween', () => {
 describe('INCOME_CATEGORIES', () => {
   // [[ADR-170]] 결정 1 — 사용자가 준 둘 + 안전망 하나. 「기타」가 없으면 갈래가 안 잡히는 수입이
   // 기록 자체를 못 남긴다.
-  it('사용자가 준 갈래 둘과 안전망 「기타」다', () => {
+  //
+  // **차례가 곧 화면**이다([[ADR-170]] 정정 17) — 칩이 서는 차례이고 `[0]` 이 열었을 때 골라져
+  // 있는 갈래다. 그래서 이 배열을 뒤집는 것이 «기본 갈래를 바꾼다» 와 같은 말이다.
+  it('사냥 · 아이템 판매 · 기타 차례다 — 첫째가 기본 갈래다', () => {
     const { INCOME_CATEGORIES } = require('../income') as typeof import('../income')
 
-    expect(INCOME_CATEGORIES).toEqual(['아이템 판매', '사냥', '기타'])
+    expect(INCOME_CATEGORIES).toEqual(['사냥', '아이템 판매', '기타'])
   })
 })
 
@@ -283,5 +288,105 @@ describe('판매 수수료 칸 둘 ([[ADR-170]] 정정 9)', () => {
     expect(있는것.saleFeeMeso).toBe(60_000_000)
     expect(옛것.saleFeePercent).toBeNull()
     expect(옛것.saleFeeMeso).toBeNull()
+  })
+})
+
+// ── 메소 획득량 칸([[ADR-177]] 결정 8) ────────────────────────────────────────────────
+describe('hunt_meso_rate — 그때의 메소 획득량', () => {
+  const 계산기행: IncomeRecord = {
+    ...sample,
+    category: '사냥',
+    item: '밤의 길 3',
+    hunt: {
+      characterLevel: 294,
+      missedMobs: 1,
+      boosts: ['union', 'potion'],
+      sojae: 2,
+      fragments: 83,
+      fragmentPrice: 8_000_000,
+      mesoRate: 149,
+    },
+  }
+
+  it('넣을 때 칸 일곱째로 실린다', async () => {
+    const { insertIncomeRecord } = require('../income') as typeof import('../income')
+
+    await insertIncomeRecord(계산기행)
+
+    const [sql, values] = runMock.mock.calls[0]
+    expect(sql).toContain('hunt_meso_rate')
+    // 사냥 칸 일곱이 나란히 간다 — 레벨 · 놓침 · 아이템 · 소재 · 조각 · 조각가 · **메획**.
+    expect(values).toEqual(expect.arrayContaining([294, 1, 'union,potion', 2, 83, 8_000_000, 149]))
+  })
+
+  it('고칠 때도 함께 갈아 끼운다', async () => {
+    const { updateIncomeRecord } = require('../income') as typeof import('../income')
+
+    await updateIncomeRecord({ ...계산기행, hunt: { ...계산기행.hunt!, mesoRate: 161 } })
+
+    const [sql, values] = runMock.mock.calls[0]
+    expect(sql).toContain('hunt_meso_rate = ?')
+    expect(values).toEqual(expect.arrayContaining([161]))
+  })
+
+  it('다른 갈래의 행은 그 칸도 null 이다', async () => {
+    const { insertIncomeRecord } = require('../income') as typeof import('../income')
+
+    await insertIncomeRecord(sample)
+
+    const [, values] = runMock.mock.calls[0]
+    // 사냥 칸 일곱이 전부 null 이다.
+    expect(values.filter((each: unknown) => each === null).length).toBeGreaterThanOrEqual(7)
+  })
+
+  // [[ADR-177]] 이전에 적힌 계산기 행 — 그때는 메획이 계산에 없었다.
+  it('NULL 은 0 으로 읽는다 — 없는 값을 지어내지 않는다', async () => {
+    queryMock.mockResolvedValue({
+      values: [
+        {
+          id: 'inc-1',
+          ocid: null,
+          earned_on: '2026-08-23',
+          category: '사냥',
+          item: '밤의 길 3',
+          meso_amount: 1_200_000_000,
+          hunt_character_level: 294,
+          hunt_missed_mobs: 1,
+          hunt_boosts: 'union',
+          hunt_sojae: 2,
+          hunt_fragments: 0,
+          hunt_fragment_price: 0,
+          hunt_meso_rate: null,
+          recorded_at: '2026-08-23T05:00:00.000Z',
+        },
+      ],
+    })
+    const { getIncomeRecordsBetween } = require('../income') as typeof import('../income')
+
+    const [record] = await getIncomeRecordsBetween('2026-08-20', '2026-08-26')
+
+    expect(record.hunt?.mesoRate).toBe(0)
+  })
+
+  it('값이 있으면 그대로 읽는다', async () => {
+    queryMock.mockResolvedValue({
+      values: [
+        {
+          id: 'inc-1',
+          earned_on: '2026-08-23',
+          category: '사냥',
+          item: '밤의 길 3',
+          meso_amount: 1_200_000_000,
+          hunt_missed_mobs: 0,
+          hunt_meso_rate: 149,
+          recorded_at: '2026-08-23T05:00:00.000Z',
+        },
+      ],
+    })
+    const { getIncomeRecordsBetween } = require('../income') as typeof import('../income')
+
+    const [record] = await getIncomeRecordsBetween('2026-08-20', '2026-08-26')
+
+    expect(record.hunt?.mesoRate).toBe(149)
   })
 })

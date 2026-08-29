@@ -65,6 +65,16 @@ async function 누르기(view: Rendered, label: string): Promise<void> {
 }
 
 /**
+ * **갈래 칩은 컨테이너 안에서 집는다** — 「기타」가 갈래 이름이자 「아이템 구매」의 종류
+ * 이름이라([[ADR-173]] 정정 1) 라벨만으로는 둘이 안 갈린다. 그 줄에 `testID` 가 있는 이유다.
+ */
+async function 갈래누르기(view: Rendered, label: string): Promise<void> {
+  await act(async () => {
+    fireEvent.press(within(view.getByTestId('spend-sheet-categories')).getByLabelText(label))
+  })
+}
+
+/**
  * 에픽던전 리워드는 **두 단계**다(사용자 지정 2026-08-25) — 대표를 고르고, 그 안에서 형태와
  * 단계를 고른다. 단계도 형태도 없는 항목(몬스터 파크·영약)은 `누르기` 한 번으로 끝난다.
  */
@@ -808,7 +818,7 @@ describe('기타 — 캐시가 사는 유일한 자리', () => {
   it('캐시는 원 단위로 적고 캐시 칸에 담긴다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
-    await 누르기(view, '기타')
+    await 갈래누르기(view, '기타')
     await 누르기(view, '캐시')
     await 지출액치기(view, '6900')
 
@@ -1411,12 +1421,16 @@ describe('「아이템 구매」의 종류 ([[ADR-173]] 정정 1)', () => {
     expect(view.getByTestId('spend-sheet-quantity').props.onChangeText).toBeDefined()
   })
 
-  // 자유 입력이라 앱이 무엇을 세는지 모른다(결정 17 그대로) — 「개」 를 골라 적으면 그 고름이
-  // 곧 추정이다([[ADR-006]]).
-  it('수량에 단위를 안 적는다', async () => {
+  /**
+   * **단위는 「개」다**(결정 17 정정, 사용자 지정 2026-08-29).
+   *
+   * 결정 17 이 «수량에 단위를 안 적는다» 고 한 근거는 **「기타」가 자유 입력이라 앱이 무엇을 세는지
+   * 모른다**는 것이었다. 아이템 구매에서 세는 것은 **아이템**이라 그 근거가 성립하지 않는다.
+   */
+  it('수량에 「개」를 적는다', async () => {
     const view = await 구매('소비')
 
-    expect(view.queryByText('개')).toBeNull()
+    expect(view.getByTestId('spend-sheet-quantity-unit')).toHaveTextContent('개')
   })
 
   it('소비를 저장하면 합계·수량·종류가 함께 실린다', async () => {
@@ -1701,5 +1715,203 @@ describe('관세 줄의 모양 ([[ADR-173]] 정정 1 결정 6)', () => {
     const tree = JSON.stringify(view.toJSON())
     expect(tree.indexOf('spend-sheet-tariff')).toBeGreaterThan(-1)
     expect(tree.indexOf('spend-sheet-tariff')).toBeLessThan(tree.indexOf('spend-sheet-amount'))
+  })
+})
+
+/**
+ * 갈래마다 **자기 폼**이다 ([[ADR-178]] 결정 3).
+ *
+ * 한 함수가 갈래 다섯의 상태를 전부 들고 조건문으로 그리던 것이 «갈래를 옮겨도 값을 들고 다닌다»
+ * 의 원인이었다(사용자 보고 2026-08-29 — 형태 · 단계 · 종류 · 통화). 이제 갈래가 폼을 가르므로
+ * 옮기면 언마운트된다.
+ */
+describe('갈래마다 자기 폼 ([[ADR-178]])', () => {
+  async function 아이디로치기(view: Rendered, testID: string, text: string): Promise<void> {
+    await act(async () => {
+      fireEvent.changeText(view.getByTestId(testID), text)
+    })
+  }
+
+
+  it('「아이템 구매」의 종류가 갈래를 안 넘어간다', async () => {
+    const view = await 그리기()
+    await 갈래누르기(view, '아이템 구매')
+    await 누르기(view, '소비')
+    expect(view.getByLabelText('소비').props.accessibilityState?.selected).toBe(true)
+
+    await 갈래누르기(view, '기타')
+    await 갈래누르기(view, '아이템 구매')
+
+    // 기본값(장비)으로 돌아온다 — 종류가 수량과 관세를 정하므로 남으면 화면이 딴 모양으로 열린다.
+    expect(view.getByLabelText('장비').props.accessibilityState?.selected).toBe(true)
+  })
+
+  it('「기타」의 통화가 갈래를 안 넘어간다', async () => {
+    const view = await 그리기()
+    await 누르기(view, '기타')
+    await 누르기(view, '캐시')
+    expect(view.getByLabelText('캐시').props.accessibilityState?.selected).toBe(true)
+
+    await 갈래누르기(view, '아이템 구매')
+    await 갈래누르기(view, '기타')
+
+    expect(view.getByLabelText('메소').props.accessibilityState?.selected).toBe(true)
+  })
+
+  it('친 금액도 갈래를 안 넘어간다', async () => {
+    const view = await 그리기()
+    await 갈래누르기(view, '기타')
+    await 아이디로치기(view, 'spend-sheet-unit-price', '30000')
+
+    await 갈래누르기(view, '아이템 구매')
+    await 갈래누르기(view, '기타')
+
+    expect(view.getByTestId('spend-sheet-unit-price').props.value).toBe('')
+  })
+
+  it('고른 대표·형태·단계가 갈래를 안 넘어간다', async () => {
+    const view = await 그리기()
+    await 에픽던전(view, '하이마운틴', '경험치', '2단계')
+    // 둘째 화면이다 — 머리가 되돌아가는 누르개가 된다.
+    expect(view.getByTestId('spend-sheet-choice')).toHaveTextContent('하이마운틴')
+
+    await 누르기(view, '다시 고르기')
+    await 갈래누르기(view, '아이템 구매')
+    await 갈래누르기(view, '컨텐츠')
+
+    // 목록으로 돌아와 있다 — 고른 것이 남아 있으면 둘째 화면이 그대로 섰을 것이다.
+    expect(view.getByTestId('spend-sheet-title')).toHaveTextContent('지출 추가')
+    expect(view.queryByTestId('spend-sheet-choice')).toBeNull()
+  })
+})
+
+/**
+ * 큰 숫자의 **정체** ([[ADR-087]] 정정 1 · [[ADR-178]] 정정 1).
+ *
+ * 이름표를 안 넘기면 `testID` 가 곧 정체가 되는데 그것은 **고정 문자열**이고, 카운트업의 기억은
+ * 모듈 수준이라 시트를 닫아도 남는다([[ADR-087]] 결정 8) — 다른 기록을 열어도 지난 금액에서
+ * 굴러온다. 갈래별 폼으로 가르며 「기타」가 이름표를 잃었던 자리라, 그것을 여기서 붙든다.
+ */
+describe('큰 숫자의 정체 ([[ADR-087]] 정정 1)', () => {
+  function 기타기록(mesoAmount: number) {
+    return {
+      id: `spend-${mesoAmount}`,
+      ocid: null,
+      spentOn: '2026-08-23',
+      category: '기타' as const,
+      item: '경매장 수수료',
+      form: null,
+      itemKind: null,
+      quantity: 1,
+      mesoAmount,
+      tariffMeso: null,
+      pointAmount: null,
+      pointPer100mMeso: null,
+      cashAmount: null,
+      memo: null,
+      recordedAt: '2026-08-23T01:00:00.000Z',
+    }
+  }
+
+  it('다른 기록을 열면 **지난 금액에서 안 굴러온다**', async () => {
+    const 먼저 = await 그리기({ editing: 기타기록(5_600_000_000), onDelete: jest.fn() })
+    expect(먼저.getByTestId('spend-sheet-amount')).toHaveTextContent('5,600,000,000')
+    await act(async () => 먼저.unmount())
+
+    const 나중 = await 그리기({ editing: 기타기록(12_100_000_000), onDelete: jest.fn() })
+
+    expect(나중.getByTestId('spend-sheet-amount')).toHaveTextContent('12,100,000,000')
+  })
+})
+
+/**
+ * 「아이템 구매」의 수량에는 **단위가 붙는다** ([[ADR-173]] 결정 17 정정, 사용자 지정 2026-08-29).
+ *
+ * 결정 17 이 «수량에 단위를 안 적는다» 고 한 근거는 **「기타」가 자유 입력이라 앱이 무엇을 세는지
+ * 모른다**는 것이었다. 아이템 구매에서 세는 것은 **아이템**이라 그 근거가 성립하지 않는다.
+ */
+describe('아이템 구매의 수량 단위', () => {
+  it('소비·기타를 고르면 수량 옆에 「개」가 선다', async () => {
+    const view = await 그리기()
+    await 갈래누르기(view, '아이템 구매')
+    await 누르기(view, '소비')
+
+    expect(view.getByTestId('spend-sheet-quantity-unit')).toHaveTextContent('개')
+  })
+
+  it('장비에는 수량 줄 자체가 없다 — 단위도 없다', async () => {
+    const view = await 그리기()
+    await 갈래누르기(view, '아이템 구매')
+
+    // 기본이 장비다 — 하나를 사므로 곱할 것이 없다([[ADR-173]] 정정 1 결정 1).
+    expect(view.queryByTestId('spend-sheet-quantity')).toBeNull()
+    expect(view.queryByTestId('spend-sheet-quantity-unit')).toBeNull()
+  })
+
+  it('「기타」 갈래의 수량에는 여전히 단위가 없다 — 무엇을 세는지 모른다', async () => {
+    const view = await 그리기()
+    await 갈래누르기(view, '기타')
+
+    expect(view.getByTestId('spend-sheet-quantity')).toBeTruthy()
+    expect(view.queryByTestId('spend-sheet-quantity-unit')).toBeNull()
+  })
+})
+
+/**
+ * 머리에서 **날짜를 바꾼다** ([[ADR-178]] 정정 7, 사용자 지정 2026-08-29).
+ *
+ * 수입 시트가 먼저 갖고(정정 6) 두 시트가 한 뼈대라([[ADR-173]] 결정 10) 지출도 같은 부품을 쓴다 —
+ * 한쪽만 되는 상태가 남으면 그 자체가 «왜 저기선 안 되나» 가 된다.
+ */
+describe('날짜 바꾸기 ([[ADR-178]] 정정 7)', () => {
+  async function 아이디로누르기(view: Rendered, testID: string): Promise<void> {
+    await act(async () => {
+      fireEvent.press(view.getByTestId(testID))
+    })
+  }
+
+  it('하루씩 앞뒤로 옮긴다', async () => {
+    const view = await 그리기()
+    expect(view.getByTestId('spend-sheet-date')).toHaveTextContent('8월 23일 (일)')
+
+    await 아이디로누르기(view, 'spend-sheet-date-prev')
+    expect(view.getByTestId('spend-sheet-date')).toHaveTextContent('8월 22일 (토)')
+
+    await 아이디로누르기(view, 'spend-sheet-date-next')
+    await 아이디로누르기(view, 'spend-sheet-date-next')
+    expect(view.getByTestId('spend-sheet-date')).toHaveTextContent('8월 24일 (월)')
+  })
+
+  it('바꾼 날짜로 저장된다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave })
+    await 갈래누르기(view, '기타')
+    await 지출액치기(view, '30000')
+    await 아이디로누르기(view, 'spend-sheet-date-prev')
+    await 누르기(view, '저장')
+
+    expect(onSave.mock.calls[0][0]).toMatchObject({ spentOn: '2026-08-22' })
+  })
+
+  // 갈래 폼은 `key={category}` 로만 다시 심긴다 — 날짜는 그 열쇠가 아니다([[ADR-178]] 결정 3).
+  it('날짜를 바꿔도 **친 것이 안 사라진다**', async () => {
+    const view = await 그리기()
+    await 갈래누르기(view, '기타')
+    await 지출액치기(view, '30000')
+
+    await 아이디로누르기(view, 'spend-sheet-date-prev')
+
+    expect(view.getByTestId('spend-sheet-unit-price').props.value).toBe('30,000')
+  })
+
+  it('목록 갈래의 둘째 화면에서도 바꾼다', async () => {
+    const view = await 그리기()
+    await 에픽던전(view, '하이마운틴', '경험치', '2단계')
+
+    await 아이디로누르기(view, 'spend-sheet-date-prev')
+
+    // 되돌아가는 누르개가 선 그 줄에서 날짜도 함께 산다.
+    expect(view.getByTestId('spend-sheet-date')).toHaveTextContent('8월 22일 (토)')
+    expect(view.getByTestId('spend-sheet-choice')).toHaveTextContent('하이마운틴')
   })
 })

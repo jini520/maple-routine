@@ -107,6 +107,7 @@ import {
   type DefeatedBoss,
   type ManualDayRecord,
 } from '../../features/cashbook/records'
+import { loadMesoRate } from '../../features/cashbook/meso-rate'
 // 보스 수익 탭의 행이 초상을 찾는 **그 함수**다([[ADR-172]] 정정 1) — 같은 보스가 두 화면에서
 // 다른 그림이면 안 된다. 화면끼리의 참조는 `app/today/view-model.ts` 가 이미 트고 있는 길이다.
 import { findPortraitSlug } from '../boss-profit/character-groups'
@@ -824,6 +825,8 @@ export function CashbookScreen(): React.JSX.Element {
         <IncomeSheet
           characters={characters}
           lastPointRate={lastPointRate}
+          // 캐릭터의 메소 획득량([[ADR-177]]) — 시트는 `nexon/` 도 `storage/` 도 모른다.
+          loadMesoRate={loadMesoRate}
           dateKey={typeof sheet === 'object' ? sheet.record.earnedOn : selectedDateKey}
           editing={typeof sheet === 'object' ? sheet.record : undefined}
           onSave={

@@ -13,13 +13,17 @@
  *
  *   잡는 마릿수    = 맵 마릿수 − 놓친 마릿수
  *   분당 기본 메소 = 몬스터 레벨 × 7.5 × (잡는 마릿수 × 8)
- *   메소 = floor( 분당 기본 메소 × (소재 × 30) × 레벨 페널티 × (1 + 아이템 %합) )
+ *   메소 = floor( 분당 기본 메소 × (소재 × 30) × 레벨 페널티 × (1 + 가산 %합) × 곱셈 배율 )
  *
  * **효율은 곱하는 값이 아니라 마릿수에 들어간다**(사용자 지정 2026-08-28) — 고르는 것이 퍼센트가
  * 아니라 «몇 마리를 놓치나» 이기 때문이다. 세그먼트에 적히는 %는 그 결과를 **맵이 정해 준 라벨**이다.
  *
- * **아이템 둘은 합연산 뒤 한 번 곱한다**(사용자 지정) — 유니온의 부 +50% · 소형 재물 획득의 비약
- * +20% 를 둘 다 켜면 ×1.7 이지 ×1.2×1.5(=1.8)가 아니다.
+ * **아이템 둘이 거는 자리가 다르다**([[ADR-177]] 정정 1, 사용자 지정 2026-08-28):
+ *
+ *     (기본 100% + 템메획 + 유니온의 부 + 어빌/유니온/스킬) × 재물 획득의 비약(1.2배)
+ *
+ * 유니온의 부(+50%)는 **합산 통 안**이고 재획비는 **그 결과 전체에** 곱한다. 그래서 둘 다 켜면
+ * ×1.8 이다(150% × 1.2). [[ADR-175]] 결정 3 은 둘을 한 통에 넣어 ×1.7 을 냈는데, 그것이 정정됐다.
  *
  * **내림은 맨 끝에 한 번**이다. 단계마다 자르면 어느 단계에서 잘랐느냐로 값이 갈리고, 그 차이를
  * 사용자가 되짚을 방법이 없다. (실제 값으로는 8젠과 30분이 소수를 늘 걷어 가지만, 내림은 그
@@ -76,13 +80,30 @@ export function killedMobsOf(mobs: number, missedMobs: number): number {
 /**
  * 메소 획득률 증가 아이템(사용자 확정 2026-08-28 — [[ADR-006]]).
  *
- * **합연산**이다: 고른 것들의 `percent` 를 더해 `(1 + 합/100)` 을 한 번 곱한다.
+ * **`kind` 가 곧 계산식에서의 자리**다([[ADR-177]] 정정 1):
+ *
+ * - `additive` — 합산 통 **안**. 캐릭터 메획과 같은 자리라 더해서 한 번 곱한다.
+ * - `multiplier` — 통 **밖**. 합산이 끝난 값 전체에 곱한다(재획비 1.2배).
+ *
+ * 처음에는 둘 다 합연산이었는데(둘 다 켜면 ×1.7), 재획비는 **합산 결과에 곱하는 것**이라 정정됐다
+ * — 유니온의 부만 켠 150% 에 1.2 가 걸려 **×1.8** 이 된다.
+ *
+ * `icon` 은 `assets/items/` 의 **파일명**이다([[ADR-177]] 정정 4) — 칩이 글자가 아니라 그림이라
+ * 없으면 칩이 **빈 채로 뜬다**(에러가 아니다). 그 자리를 `IncomeSheet.test` 가 붙든다.
+ *
  * `id` 는 기록에 글자로 박히므로(`hunt_boosts`) **이름을 바꿔도 id 는 안 바꾼다** — 바꾸면 그전
- * 기록이 어느 아이템도 안 가리키게 된다.
+ * 기록이 어느 아이템도 안 가리키게 된다. **`kind` 를 바꾸는 것은 값을 바꾸는 일**이라 그전 기록의
+ * 금액과 갈린다(행에 박힌 `meso_amount` 는 그대로이고, 수정으로 열 때 다시 세어진다).
  */
 export const MESO_BOOSTS = [
-  { id: 'union', label: '유니온의 부', percent: 50 },
-  { id: 'potion', label: '소형 재물 획득의 비약', percent: 20 },
+  { id: 'union', label: '유니온의 부', percent: 50, kind: 'additive', icon: 'union_wealth.webp' },
+  {
+    id: 'potion',
+    label: '소형 재물 획득의 비약',
+    percent: 20,
+    kind: 'multiplier',
+    icon: 'wealth_acquisition_potion_small.webp',
+  },
 ] as const
 
 export type MesoBoostId = (typeof MESO_BOOSTS)[number]['id']
@@ -133,12 +154,45 @@ export function levelPenaltyPercent(characterLevel: number, monsterLevel: number
   return percent
 }
 
-/** 고른 아이템들의 증가율 합(%). 모르는 id 는 0 으로 친다(지운 아이템을 든 옛 기록). */
+/**
+ * 화면에 적히는 **메소 획득량**(%) — 켠 아이템까지 반영한 «증가량» 이다(사용자 지정 2026-08-28).
+ *
+ * 게임 스탯창과 같은 뜻이라 **기본 100% 를 뺀 값**이고, **소수점은 버린다**:
+ *
+ *     floor( (100 + 가산 %합) × 곱셈 배율 ) − 100
+ *
+ * 메획 149 캐릭터가 유니온의 부와 재획비를 둘 다 켜면 `(100+149+50) × 1.2 = 358.8` → **258%** 다.
+ *
+ * **셈에는 이 값을 안 쓴다.** 돈을 세는 것은 내림 전의 값이고(`huntingMesoOf`), 여기서 자른 값은
+ * 화면에만 산다 — 효율 라벨과 같은 규칙이다([[ADR-175]] 결정 3-1 ①): 표시하려고 자른 숫자가
+ * 돈을 세면 라벨이 계산을 끌고 다니게 된다.
+ */
+export function appliedMesoRatePercent(boostPercent: number, boostMultiplier: number): number {
+  return Math.floor((100 + boostPercent) * boostMultiplier) - 100
+}
+
+/**
+ * 통 **안**에 드는 것들의 증가율 합(%). 모르는 id 는 0 으로 친다(지운 아이템을 든 옛 기록).
+ *
+ * **재획비는 여기 안 든다** — `boostMultiplierOf` 가 통 밖에서 곱한다([[ADR-177]] 정정 1).
+ */
 export function boostPercentOf(ids: readonly string[]): number {
   return ids.reduce((sum, id) => {
-    const boost = MESO_BOOSTS.find((each) => each.id === id)
+    const boost = MESO_BOOSTS.find((each) => each.id === id && each.kind === 'additive')
     return sum + (boost?.percent ?? 0)
   }, 0)
+}
+
+/**
+ * 통 **밖**에서 곱하는 배율. 아무것도 안 켜면 **1** 이다(곱해도 값이 안 변한다).
+ *
+ * 여럿이 되면 서로 곱한다 — 지금은 재획비 하나뿐이라 1 아니면 1.2 다.
+ */
+export function boostMultiplierOf(ids: readonly string[]): number {
+  return ids.reduce((product, id) => {
+    const boost = MESO_BOOSTS.find((each) => each.id === id && each.kind === 'multiplier')
+    return boost === undefined ? product : product * (1 + boost.percent / 100)
+  }, 1)
 }
 
 export interface HuntingMesoInput {
@@ -147,8 +201,13 @@ export interface HuntingMesoInput {
   characterLevel: number | null
   /** 젠 한 번에 **놓치는 마릿수**(0~4). 퍼센트가 아니라 이것이 고르는 축이다. */
   missedMobs: number
-  /** 고른 아이템들의 합(`boostPercentOf`). 화면이 이미 더해서 넘긴다. */
+  /**
+   * 합산 통에 드는 %의 합 — **캐릭터 메획 + 가산 아이템**이다([[ADR-177]] 결정 6·정정 1).
+   * 화면이 이미 더해서 넘긴다(`boostPercentOf` + 읽어 온 메획).
+   */
   boostPercent: number
+  /** 통 밖에서 곱하는 배율(`boostMultiplierOf`). 안 켰으면 **1** 이다. */
+  boostMultiplier: number
   /** 소재 수 — 하나가 30분이다. */
   sojae: number
 }
@@ -173,7 +232,8 @@ export function huntingMesoOf(input: HuntingMesoInput): number {
   }, 0)
 
   const perLevelMean = sum / input.ground.levels.length
-  return Math.floor(perLevelMean * (1 + input.boostPercent / 100))
+  // **합산이 끝난 값 전체에** 곱셈 배율이 걸린다 — 재획비는 통 안이 아니다([[ADR-177]] 정정 1).
+  return Math.floor(perLevelMean * (1 + input.boostPercent / 100) * input.boostMultiplier)
 }
 
 export interface HuntingTotalInput extends Omit<HuntingMesoInput, 'ground'> {

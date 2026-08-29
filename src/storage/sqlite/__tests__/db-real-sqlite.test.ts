@@ -292,6 +292,8 @@ describe('「기타」를 메포·캐시로 적어도 저장된다 (목이 아�
         sojae: 4,
         fragments: 83,
         fragmentPrice: 2_500_000,
+        // **그때의** 캐릭터 메소 획득량([[ADR-177]] 결정 8) — 칸이 하나 더 있다.
+        mesoRate: 149,
       },
     })
 
@@ -304,6 +306,7 @@ describe('「기타」를 메포·캐시로 적어도 저장된다 (목이 아�
       sojae: 4,
       fragments: 83,
       fragmentPrice: 2_500_000,
+      mesoRate: 149,
     })
   })
 })
