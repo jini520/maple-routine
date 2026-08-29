@@ -93,12 +93,13 @@ describe('떠 있는 바의 색 ([[ADR-132]] 정정 12)', () => {
   })
 
   // 다크는 원색이 알약보다 어두워 **활성이 비활성보다 흐려진다**(레테 실측 L0.62 vs muted L0.73).
-  // 그때만 명도를 올리는데 **색상은 건드리지 않는다** — 섞어서 미는 것과의 결정적 차이가 여기다.
+  // 그때만 명도를 올리는데 **색상도 채도도 건드리지 않는다** — 섞어서 미는 것과의 결정적 차이다.
   //
-  // 채도는 «최대한» 이다. 밝게 올리면 sRGB 밖으로 나가 잘리는 색이 있다 — 검은마법사의 진분홍은
-  // 명도를 0.19 나 올려야 해서 60% 만 남는다(혼테일 97% · 레테 101%). 색상이 남아 있으면 그 테마의
-  // 색으로 읽히므로, 채도는 «많이 잃지 않는다» 로만 건다.
-  it.each(THEMES)('%s — 다크는 색상을 유지한 채 명도만 올린다', (_name, theme) => {
+  // **채도가 상한이고 명도가 그 아래에서 움직인다**([[ADR-132]] 정정 34, 사용자 판정 — *"테마의
+  // 메인 컬러와 다르게 좀 칙칙"*). 목표 명도가 sRGB 밖이면 가뭄 매핑이 채도를 깎는데(검은마법사
+  // C0.219 → 0.131 · 60%), 그것은 정정 23 이 버린 «`text` 쪽으로 섞기» 와 같은 것을 빼앗는
+  // 일이었다. 그래서 목표까지 올리되 **원 채도를 못 지키는 지점에서 멈춘다.**
+  it.each(THEMES)('%s — 다크는 색상·채도를 유지한 채 명도만 올린다', (_name, theme) => {
     if (theme.mode !== 'dark') return
 
     const [lifted, origin] = [
@@ -107,8 +108,23 @@ describe('떠 있는 바의 색 ([[ADR-132]] 정정 12)', () => {
     ]
 
     expect(lifted.h).toBeCloseTo(origin.h, 0)
-    expect(lifted.c).toBeGreaterThan(origin.c * 0.55)
-    expect(lifted.l).toBeGreaterThan(hexToOklch(theme.textMuted).l)
+    expect(lifted.c).toBeGreaterThanOrEqual(origin.c * 0.97)
+    // **`textMuted` 위로 올라간다는 조건은 뺐다** — 그것과 「채도를 지킨다」가 sRGB 안에서 동시에
+    // 성립하지 않는 테마가 있다는 것이 정정 34 다(검은마법사 L0.672 vs muted L0.722). 남는 것은
+    // «원색보다 어두워지지는 않는다» 다.
+    expect(lifted.l).toBeGreaterThanOrEqual(origin.l)
+  })
+
+  // 멈추는 자리가 **필요할 때만** 이다 — 목표 명도가 sRGB 안이면 거기까지 올라간다(레테).
+  it('가뭄에 안 걸리는 테마는 목표 명도까지 올라간다 (레테)', () => {
+    const lethe = THEMES.find(([name]) => name === '레테')?.[1]
+    expect(lethe).toBeDefined()
+    if (!lethe) return
+
+    expect(hexToOklch(resolveBarColors(lethe).accent).l).toBeCloseTo(
+      hexToOklch(lethe.textMuted).l + 0.06,
+      2,
+    )
   })
 
   it.each(THEMES)('%s — 비활성 라벨이 바 위에서 읽힌다', (_name, theme) => {

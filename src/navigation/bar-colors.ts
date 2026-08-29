@@ -118,14 +118,48 @@ export interface BarColors {
  * 라이트는 원색을 그대로 쓴다. 밝은 판 위에서 메인 컬러는 이미 «어두운 쪽» 이라 방향이 맞다.
  *
  * 다크는 반대다 — 원색이 판보다 어두워서 **활성이 비활성보다 흐려진다**(레테 실측: 활성 원색
- * L0.60 vs `textMuted` L0.73). 이때만 `withLightness` 로 **명도만** 올린다. 색상과 채도를 붙들기
- * 때문에 그 테마의 색은 남는다 — 섞어서 미는 것과 결정적으로 다른 점이다([[ADR-064]] 결정 8).
+ * L0.60 vs `textMuted` L0.73). 이때만 **명도만** 올린다. 색상과 채도를 붙들기 때문에 그 테마의
+ * 색은 남는다 — 섞어서 미는 것과 결정적으로 다른 점이다([[ADR-064]] 결정 8).
+ *
+ * ## 다만 «채도가 살아 있는 데까지» 다 (정정 34)
+ *
+ * 목표 명도가 sRGB 밖이면 `oklchToHex` 의 가뭄 매핑이 **채도를 깎아서** 넣는다. 검은마법사의
+ * 진분홍은 명도를 0.19 나 올려야 해서 C0.219 → 0.131(60%) 이 됐고, 화면에서 그것이 «칙칙» 으로
+ * 읽혔다(사용자 판정). 방향만 다를 뿐 정정 23 이 버린 «`text` 쪽으로 섞기» 와 **같은 것을
+ * 빼앗는** 일이다.
+ *
+ * 그래서 채도가 상한이고 명도가 그 아래에서 움직인다 — 목표를 향해 올리되 원 채도를 못 지키는
+ * 지점에서 멈춘다. 검은마법사가 `#FF93A4`(60%) → **`#FF4977`**(100%) 로 돌아온다. 혼테일은 목표가
+ * 허용치 안이라 사실상 그대로고(`#FF823C`), 레테는 목표 명도가 애초에 sRGB 안이라 안 바뀐다.
+ *
+ * 대가는 검은마법사에서 활성이 비활성보다 **어둡다**는 것이다(L0.68 vs muted L0.72). 정정 23 이
+ * 명도를 올린 이유가 그 역전이었으니 절반을 되돌리는 셈인데, 되돌아온 자리가 다르다 — 그때는
+ * 채도까지 잃은 채 어두웠다. 활성을 세우는 일은 이미 색 혼자 지지 않는다(유리판·그림자 정정 22 ·
+ * 채운 아이콘 정정 25 · 굵은 획 정정 27).
  */
+/** 명도를 재는 걸음. 이보다 잘게 재도 hex 8비트가 같은 색을 낸다. */
+const LIFT_STEP = 0.005
+
+/**
+ * 채도 손실의 허용치 — **절대값**이다. hex 8비트로 왕복하면 채도가 ±0.001 씩 흔들려서, 비율로
+ * 재면 채도가 낮은 테마(레테 C0.099)가 그 흔들림만으로 첫 걸음에서 멈춘다.
+ */
+const CHROMA_TOLERANCE = 0.005
+
 function liftAboveMuted(accent: string, muted: string): string {
   const target = hexToOklch(muted).l + 0.06
   const { l, c, h } = hexToOklch(accent)
+  if (l >= target) return accent
 
-  return l >= target ? accent : oklchToHex({ l: target, c, h })
+  let lifted = accent
+  for (let step = LIFT_STEP; l + step <= target + LIFT_STEP; step += LIFT_STEP) {
+    const candidate = oklchToHex({ l: Math.min(l + step, target), c, h })
+    // 가뭄 매핑이 채도를 깎기 시작했다 — 여기가 «메인 컬러» 로 남는 마지막 자리다.
+    if (hexToOklch(candidate).c < c - CHROMA_TOLERANCE) break
+    lifted = candidate
+  }
+
+  return lifted
 }
 
 /**
