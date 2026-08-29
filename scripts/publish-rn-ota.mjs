@@ -29,9 +29,9 @@ import { fileURLToPath } from 'node:url'
 // 릴리스 노트의 진실 원천을 **그대로** 읽는다([[ADR-119]] 결정 1) — capacitor 스크립트와 같은 파일을
 // 같은 이유로 읽는다. 노트가 두 벌이 되면 갈라진 순간 어느 쪽이 사실인지 알 방법이 없다.
 import { findReleaseNote } from '../src/data/release-notes.ts'
-// 노트 가드도 한 벌이다 — «무엇이 비었는지 문구로 말한다»는 판단([[ADR-126]] 결정 8)을 두 스크립트가
-// 나눠 가지면 한쪽만 고쳐진다.
-import { describeReleaseNoteGap } from './publish-live-update.mjs'
+// 노트 가드([[ADR-126]] 결정 8). **캐패시터 스크립트에 살던 것을 옮겨 왔다** — [[ADR-155]] 가 그
+// 패키지를 지우면서 이 import 가 고아가 됐고, 그때부터 이 파일은 첫 줄에서 죽어 있었다.
+import { describeReleaseNoteGap } from './release-note-gap.mjs'
 // 지문 못박기는 **순수 로직이라 따로 산다**([[ADR-190]]) — 이 파일이 최상위 `await` 를 쓰는 ESM
 // 이라 테스트가 import 하지 못하기 때문이다. 그쪽에는 테스트가 붙어 있다.
 import {
