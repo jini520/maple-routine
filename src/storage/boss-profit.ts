@@ -37,6 +37,28 @@ const UPSERT_SQL = `
     world = COALESCE(excluded.world, boss_profit_records.world)
 `
 
+/**
+ * `boss_profit_records` 가 바뀔 때마다 오르는 수 — **이 표를 캐시하는 쪽이 «내 스냅샷이 낡았나» 를
+ * 물을 수 있게** 하는 값이다([[ADR-189]] 결정 2). `storage/boss-drops` 의 그것과 같은 물건이고
+ * 같은 규칙을 따른다([[ADR-147]] 정정 17).
+ *
+ * **쓰기 셋 전부에서 오른다** — 「이 쓰기는 저쪽이 안 읽는 칸이다」 로 고르지 않는다. 그 판단은
+ * 읽는 쪽이 늘 때마다 다시 해야 하고, 한 번 틀리면 증상이 «가끔 안 맞는다» 로 나타나 잡기 어렵다.
+ * 이 수의 뜻은 **«이 표가 바뀌었다» 하나**다.
+ *
+ * **영속화하지 않는다.** 프로세스와 함께 사라지는 것이 맞다 — 앱을 다시 켜면 어느 캐시든 비어 있다.
+ */
+let recordsRevision = 0
+
+export function getBossProfitRecordsRevision(): number {
+  return recordsRevision
+}
+
+/** 테스트 전용. 모듈 수준 상태라 테스트끼리 오염된다 — 프로덕션에서 부르지 말 것. */
+export function resetBossProfitRecordsRevisionForTests(): void {
+  recordsRevision = 0
+}
+
 export async function upsertBossProfitRecord(record: BossProfitRecord): Promise<void> {
   const db = await getBossProfitDb()
   await db.run(UPSERT_SQL, [
@@ -51,6 +73,8 @@ export async function upsertBossProfitRecord(record: BossProfitRecord): Promise<
     record.recordedAt,
     record.world,
   ])
+  // **쓰기가 끝난 뒤**에 올린다 — 중간에 던지면 표가 안 바뀐 것이라, 그때 올리면 읽는 쪽이 헛일한다.
+  recordsRevision += 1
 }
 
 const FILL_MISSING_WORLD_SQL = `
@@ -76,6 +100,7 @@ export async function fillMissingRecordWorlds(worldByOcid: Map<string, string>):
   for (const [ocid, world] of worldByOcid) {
     await db.run(FILL_MISSING_WORLD_SQL, [world, ocid])
   }
+  recordsRevision += 1
 }
 
 function rowToRecord(row: Record<string, unknown>): BossProfitRecord {
@@ -307,4 +332,5 @@ export async function setBossProfitDefeatedOn(
       WHERE ocid = ? AND boss = ? AND difficulty = ? AND period_key = ?`,
     [defeatedOn, key.ocid, key.boss, key.difficulty, key.periodKey],
   )
+  recordsRevision += 1
 }

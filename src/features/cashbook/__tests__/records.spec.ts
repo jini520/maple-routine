@@ -14,8 +14,14 @@ jest.mock('../../../storage/spend', () => ({
   getSpendRecordsBetween: jest.fn(),
 }))
 jest.mock('../../../storage/last-point-rate', () => ({ setLastPointRate: jest.fn() }))
-jest.mock('../../../storage/boss-profit', () => ({ getDatedBossProfitRecords: jest.fn() }))
-jest.mock('../../../storage/boss-drops', () => ({ getBossDropRecords: jest.fn() }))
+jest.mock('../../../storage/boss-profit', () => ({
+  getDatedBossProfitRecords: jest.fn(),
+  getBossProfitRecordsRevision: jest.fn(),
+}))
+jest.mock('../../../storage/boss-drops', () => ({
+  getBossDropRecords: jest.fn(),
+  getBossDropRecordsRevision: jest.fn(),
+}))
 jest.mock('../../../storage/character-selection', () => ({ getTrackedCharacterOcids: jest.fn() }))
 jest.mock('../../../storage/character-basic-cache', () => ({ getCachedCharacterBasic: jest.fn() }))
 
@@ -34,7 +40,9 @@ beforeEach(() => {
   income.getIncomeRecordsBetween.mockResolvedValue([])
   spend.getSpendRecordsBetween.mockResolvedValue([])
   bossProfit.getDatedBossProfitRecords.mockResolvedValue([])
+  bossProfit.getBossProfitRecordsRevision.mockReturnValue(0)
   bossDrops.getBossDropRecords.mockResolvedValue([])
+  bossDrops.getBossDropRecordsRevision.mockReturnValue(0)
   selection.getTrackedCharacterOcids.mockResolvedValue(['ocid-1'])
   basicCache.getCachedCharacterBasic.mockResolvedValue({ profile: { name: '루디' } })
 })
@@ -738,5 +746,23 @@ describe('사냥 줄의 이름과 셈', () => {
 
     expect(recordTitleOf(rows[0])).toBe('루디 · 사냥')
     expect(recordCountLabelOf(rows[0])).toBeNull()
+  })
+})
+
+/**
+ * 화면이 «내 숫자가 낡았나» 를 묻는 값([[ADR-189]] 결정 3). 화면은 `storage/` 를 직접 안 부르므로
+ * (CLAUDE.md CRITICAL) 두 표의 판을 여기서 하나로 접는다.
+ */
+describe('cashbookDataRevision', () => {
+  it('원천 둘의 판을 합한다 — 어느 쪽이 올라도 값이 달라진다', () => {
+    const { cashbookDataRevision } = require('../records') as typeof import('../records')
+
+    expect(cashbookDataRevision()).toBe(0)
+
+    bossDrops.getBossDropRecordsRevision.mockReturnValue(1)
+    expect(cashbookDataRevision()).toBe(1)
+
+    bossProfit.getBossProfitRecordsRevision.mockReturnValue(4)
+    expect(cashbookDataRevision()).toBe(5)
   })
 })

@@ -17,8 +17,8 @@ import { compareBossOrder } from '../../lib/boss-matching'
 import type { CalendarAmounts, CalendarDayAmounts } from '../../lib/calendar-month'
 import { dropPayoutMeso } from '../../lib/drop-price'
 import { pointToMeso } from '../../lib/spend-catalog'
-import { getBossDropRecords } from '../../storage/boss-drops'
-import { getDatedBossProfitRecords } from '../../storage/boss-profit'
+import { getBossDropRecords, getBossDropRecordsRevision } from '../../storage/boss-drops'
+import { getBossProfitRecordsRevision, getDatedBossProfitRecords } from '../../storage/boss-profit'
 import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
 import { resolveDefeatDates } from '../boss-profit/defeat-dates'
@@ -335,6 +335,24 @@ export async function refreshCashbook(now: Date): Promise<void> {
       .catch(() => undefined)
   }
   await resolveTrackedDefeatDates(now)
+}
+
+/**
+ * 화면이 «내 숫자가 낡았나» 를 묻는 값([[ADR-189]] 결정 3) — 이 화면이 읽는 두 표의 «판» 을 하나로
+ * 접는다. 화면은 다시 들어올 때 이 값이 달라졌을 때만 조회를 다시 튼다.
+ *
+ * **여기 있는 이유**는 화면이 `storage/` 를 직접 안 부르기 때문이다(CLAUDE.md CRITICAL ·
+ * [[ADR-003]]·[[ADR-005]]). 가계부의 모든 조회가 이 파일을 지나므로 리비전만 예외로 두면 그 벽에
+ * 구멍이 나고, 원천이 늘 때(사냥 타이머 자동 수익) 화면을 다시 고쳐야 한다.
+ *
+ * **합인 이유**: 두 수 다 단조 증가라 어느 쪽이 올라도 합이 달라진다. 어느 표가 바뀌었는지는 화면이
+ * 알 필요가 없다 — 어차피 넷을 함께 다시 읽는다.
+ *
+ * **손입력 둘(`income_records`·`spend_records`)은 안 든다**(결정 4) — 쓰는 곳이 이 화면 하나뿐이고
+ * 그 자리에서 이미 다시 읽는다. 두 번째 쓰는 쪽이 생기는 날 저장 계층에 한 줄, 여기에 한 항이다.
+ */
+export function cashbookDataRevision(): number {
+  return getBossDropRecordsRevision() + getBossProfitRecordsRevision()
 }
 
 /** 다음 입력의 시세 기본값([[ADR-166]] 결정 5). 화면이 `storage/` 를 직접 안 부르게 한 번 감싼다. */

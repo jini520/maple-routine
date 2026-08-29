@@ -310,3 +310,66 @@ describe('처치 날짜 ([[ADR-172]])', () => {
     expect(values).toEqual(['2026-08-21', 'ocid-1', '스우', '하드', '2026-08-20'])
   })
 })
+
+/**
+ * 표가 바뀐 것을 **읽는 쪽이 물을 수 있어야 한다**([[ADR-189]] 결정 2) — `boss_drop_records` 가
+ * 먼저 갖고 있던 그 수([[ADR-147]] 정정 17)를 이 표에도 단다.
+ */
+describe('getBossProfitRecordsRevision', () => {
+  beforeEach(() => {
+    const { resetBossProfitRecordsRevisionForTests } =
+      require('../boss-profit') as typeof import('../boss-profit')
+    resetBossProfitRecordsRevisionForTests()
+  })
+
+  it('쓰기 셋이 저마다 판을 올린다', async () => {
+    const {
+      fillMissingRecordWorlds,
+      getBossProfitRecordsRevision,
+      setBossProfitDefeatedOn,
+      upsertBossProfitRecord,
+    } = require('../boss-profit') as typeof import('../boss-profit')
+
+    expect(getBossProfitRecordsRevision()).toBe(0)
+
+    await upsertBossProfitRecord(sampleRecord)
+    expect(getBossProfitRecordsRevision()).toBe(1)
+
+    await fillMissingRecordWorlds(new Map([['ocid-1', '스카니아']]))
+    expect(getBossProfitRecordsRevision()).toBe(2)
+
+    await setBossProfitDefeatedOn(
+      { ocid: 'ocid-1', boss: '스우', difficulty: '하드', periodKey: '2026-08-20' },
+      '2026-08-21',
+    )
+    expect(getBossProfitRecordsRevision()).toBe(3)
+  })
+
+  it('읽기로는 안 오른다 — 판은 «바뀌었나» 이지 «봤나» 가 아니다', async () => {
+    const { getBossProfitRecordsRevision, getDatedBossProfitRecords } =
+      require('../boss-profit') as typeof import('../boss-profit')
+
+    await getDatedBossProfitRecords(['ocid-1'], '2026-08-01', '2026-08-31')
+
+    expect(getBossProfitRecordsRevision()).toBe(0)
+  })
+
+  it('채울 월드가 없으면 안 오른다 — 그 길은 SQL 을 한 줄도 안 던진다', async () => {
+    const { fillMissingRecordWorlds, getBossProfitRecordsRevision } =
+      require('../boss-profit') as typeof import('../boss-profit')
+
+    await fillMissingRecordWorlds(new Map())
+
+    expect(getBossProfitRecordsRevision()).toBe(0)
+  })
+
+  it('쓰기가 던지면 안 오른다 — 표가 안 바뀌었는데 올리면 읽는 쪽이 헛일한다', async () => {
+    const { getBossProfitRecordsRevision, upsertBossProfitRecord } =
+      require('../boss-profit') as typeof import('../boss-profit')
+    runMock.mockRejectedValueOnce(new Error('database is locked'))
+
+    await expect(upsertBossProfitRecord(sampleRecord)).rejects.toThrow('database is locked')
+
+    expect(getBossProfitRecordsRevision()).toBe(0)
+  })
+})

@@ -55,6 +55,7 @@
 | 보스 타일 | `components/molecules/BossPortrait/`(`shape`) · `components/atoms/DifficultyBadge/`(`short`) + `app/boss-profit/character-groups.ts` 의 `findPortraitSlug` | 펼친 결정석 줄이 그리는 네모 타일([[ADR-172]] 정정 1·2) — **셋 다 보스 수익 탭이 쓰는 그것**이고, 프롭 둘이 «네모» 와 «한 칸 글자» 만 더한다 |
 | 캐릭터 고르개 | `components/organisms/SelectField/` + `app/cashbook/character-options.ts` | 라벨–값 줄 모양의 커스텀 드롭다운. 세로 배치는 `AccountSelect/place-dropdown` 을 그대로 쓴다 |
 | 당겨서 새로고침 | `features/cashbook/records.ts` 의 `refreshCashbook` + `app/use-pull-refresh.ts` | **동기화 → 날짜 캐기 → 다시 읽기** 차례([[ADR-170]] 정정 8). 보스 수익 탭의 당김과 같은 재조회를 부른다 |
+| 낡은 숫자 묻기 | `features/cashbook/records.ts` 의 `cashbookDataRevision` + 화면의 `useFocusEffect` | 다시 들어올 때 **«내가 읽은 판 ≠ 지금 판»** 이면만 다시 읽는다([[ADR-189]]). 판은 저장 계층이 든다 — `storage/boss-drops`·`storage/boss-profit` 둘 |
 | 화면 | `app/cashbook/CashbookScreen.tsx` | 주간/월간 전환 + 기간 이동 + **기간 합계 세 칸** + 격자 + 고른 날의 상세 + **결정석 줄 펼치기** |
 
 계산과 표시를 가른 이유는 [[ADR-147]] 결정 8 과 같다 — 배치 규칙이 렌더러 안에 있으면 화면을
@@ -84,6 +85,14 @@
 - **들어오면 주간이다**([[ADR-170]] 정정 2, 사용자 지정 2026-08-26) — 상세가 스크롤 없이 보이고,
   축이 보스 수익 탭과 같고, 날짜를 못 캔 보스 기록도 제자리에 선다. **고른 값은 기억하지 않는다** —
   나갔다 들어오면 다시 주간이다.
+- **다시 들어오면 다시 읽는다 — 바뀌었을 때만**([[ADR-189]], 사용자 보고 2026-08-30). 이 화면은
+  탭이라 마운트가 앱 실행당 한 번인데([[ADR-167]] 결정 3) 원천 넷 중 둘은 **남의 화면이 쓴다**
+  (가격 입력이 `boss_drop_records` 를, 보스 수익 동기화가 `boss_profit_records` 를). 그래서
+  포커스마다 «내가 읽은 판 ≠ 지금 판» 을 묻고, 다를 때만 조회 둘을 다시 튼다. 판을 드는 것은
+  **저장 계층**이고(`getBossDropRecordsRevision`·`getBossProfitRecordsRevision`) 화면은
+  `records.ts` 의 `cashbookDataRevision()` **하나**로 묻는다. **리비전은 읽기 «전»에 찍는다** —
+  읽는 중에 들어온 변경을 본 것으로 표시하면 영영 놓친다([[ADR-147]] 정정 17 의 그 규칙).
+  포커스는 **다시 읽기만** 한다 — 넥슨 API 를 부르는 것은 여전히 당김과 보스 수익 탭의 몫이다.
 - **격자 위는 «범위 이동 → 합계» 두 줄이다**([[ADR-184]] + 정정 3, 사용자 지정 2026-08-30) —
   「어느 기간인가」 를 말한 줄 바로 다음이 「그 기간이 얼마인가」 이고, 그 둘이 격자를 받친다.
   합계는 수익 · 지출 ·

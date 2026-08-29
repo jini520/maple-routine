@@ -17,6 +17,7 @@ jest.mock('../../../features/cashbook/records', () => {
     isManualRecord: actual.isManualRecord,
     rowKeyOf: actual.rowKeyOf,
     resolveTrackedDefeatDates: jest.fn(),
+    cashbookDataRevision: jest.fn(),
     loadCalendarAmounts: jest.fn(),
     loadDayRecords: jest.fn(),
     loadLastPointRate: jest.fn(),
@@ -34,6 +35,26 @@ jest.mock('../../../features/cashbook/records', () => {
 // 이름이 `mock` 으로 시작해야 팩토리 안에서 참조할 수 있다(jest 의 호이스팅 가드).
 const mockOpenTab = jest.fn()
 jest.mock('../../use-open-tab', () => ({ useOpenTab: () => mockOpenTab }))
+
+/**
+ * `useFocusEffect` 는 내비게이션 컨텍스트를 요구한다 — 이 하네스는 화면 하나만 띄우므로
+ * **포커스를 손으로 튼다**([[ADR-189]] 결정 1). 마운트가 첫 포커스이고, 그 뒤는 `다시들어오기` 가
+ * 등록된 콜백을 다시 부른다(탭을 떠났다 돌아오는 그 순서다).
+ */
+const mockFocusCallbacks = new Set<() => void>()
+jest.mock('@react-navigation/native', () => ({
+  ...jest.requireActual('@react-navigation/native'),
+  useFocusEffect: (callback: () => void) => {
+    const react = require('react') as typeof import('react')
+    react.useEffect(() => {
+      callback()
+      mockFocusCallbacks.add(callback)
+      return () => {
+        mockFocusCallbacks.delete(callback)
+      }
+    }, [callback])
+  },
+}))
 
 // 시트 껍데기는 `BossDropSheet.test.tsx` 와 같은 방식으로 세운다.
 jest.mock('@gorhom/bottom-sheet', () => {
@@ -85,6 +106,7 @@ beforeEach(() => {
   records.recordSpend.mockReset().mockResolvedValue(undefined)
   records.loadDayRecords.mockReset().mockResolvedValue([])
   records.resolveTrackedDefeatDates.mockReset().mockResolvedValue(0)
+  records.cashbookDataRevision.mockReset().mockReturnValue(0)
   mockOpenTab.mockReset()
   records.editIncome.mockReset().mockResolvedValue(undefined)
   records.editSpend.mockReset().mockResolvedValue(undefined)
@@ -100,6 +122,13 @@ async function 그리기(): Promise<Rendered> {
   // 마운트 직후의 읽기 둘(칸 금액 · 기억된 시세)이 끝난 뒤에 본다.
   await act(async () => {})
   return view
+}
+
+/** 탭을 떠났다 돌아온다 — 실제로는 `useFocusEffect` 가 다시 도는 그 순간이다. */
+async function 다시들어오기(): Promise<void> {
+  await act(async () => {
+    for (const callback of [...mockFocusCallbacks]) callback()
+  })
 }
 
 async function 누르기(view: Rendered, testID: string): Promise<void> {
@@ -1329,5 +1358,75 @@ describe('기간 합계 세 칸 ([[ADR-184]])', () => {
     expect(flattenStyle(view.getByTestId('cashbook-summary-net').props.style).color).toBe(
       flattenStyle(view.getByTestId('cashbook-summary-income').props.style).color,
     )
+  })
+})
+
+/**
+ * **다시 들어오면 다시 읽는다 — 바뀌었을 때만**([[ADR-189]]).
+ *
+ * 이 화면은 탭이라 마운트가 앱 실행당 한 번인데([[ADR-167]] 결정 3) 원천 넷 중 둘은 남의 화면이
+ * 쓴다. 사용자 보고(2026-08-30): *«보스 수익에서 아이템 가격을 입력하고 가계부로 가면 새로고침을
+ * 해야 반영돼»*.
+ */
+describe('CashbookScreen — 낡은 숫자 ([[ADR-189]])', () => {
+  it('판이 그대로면 다시 안 읽는다 — 탭을 오가는 것은 흔한 일이다', async () => {
+    await 그리기()
+    records.loadCalendarAmounts.mockClear()
+    records.loadDayRecords.mockClear()
+
+    await 다시들어오기()
+
+    expect(records.loadCalendarAmounts).not.toHaveBeenCalled()
+    expect(records.loadDayRecords).not.toHaveBeenCalled()
+  })
+
+  it('남의 화면이 원천을 바꿨으면 들어올 때 다시 읽는다 — 당기지 않아도', async () => {
+    await 그리기()
+    records.loadCalendarAmounts.mockClear()
+    records.loadDayRecords.mockClear()
+    // 가격 입력 화면이 `boss_drop_records` 를 적고 왔다.
+    records.cashbookDataRevision.mockReturnValue(1)
+
+    await 다시들어오기()
+
+    expect(records.loadCalendarAmounts).toHaveBeenCalledTimes(1)
+    expect(records.loadDayRecords).toHaveBeenCalledTimes(1)
+  })
+
+  it('다시 읽은 숫자가 그대로 합계에 선다 — 증상이 사라지는 지점이다', async () => {
+    records.loadCalendarAmounts.mockResolvedValue({})
+    const view = await 그리기()
+    expect(view.getByTestId('cashbook-summary-income')).toHaveTextContent('+0')
+
+    // 보스 수익 탭에서 아이템 가격을 적고 돌아왔다.
+    records.loadCalendarAmounts.mockResolvedValue({
+      '2026-08-21': { incomeMeso: 60_000_000, expenseMeso: 0 },
+    })
+    records.cashbookDataRevision.mockReturnValue(1)
+    await 다시들어오기()
+
+    expect(view.getByTestId('cashbook-summary-income')).toHaveTextContent('+6,000만')
+  })
+
+  it('한 번 따라잡으면 같은 판으로 또 안 읽는다', async () => {
+    await 그리기()
+    records.cashbookDataRevision.mockReturnValue(1)
+    await 다시들어오기()
+    records.loadCalendarAmounts.mockClear()
+    records.loadDayRecords.mockClear()
+
+    await 다시들어오기()
+
+    expect(records.loadCalendarAmounts).not.toHaveBeenCalled()
+    expect(records.loadDayRecords).not.toHaveBeenCalled()
+  })
+
+  it('포커스는 다시 읽기만 한다 — 동기화(넥슨 API)는 안 튼다', async () => {
+    await 그리기()
+    records.cashbookDataRevision.mockReturnValue(2)
+
+    await 다시들어오기()
+
+    expect(records.refreshCashbook).not.toHaveBeenCalled()
   })
 })
