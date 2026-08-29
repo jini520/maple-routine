@@ -15,9 +15,10 @@
 //   ([[ADR-039]] 결정 3) 이탈 애니메이션이 끝난 뒤에 알린다 — 웹의 `onAnimationEnd(isOpen=false)`
 //   자리가 여기서는 `onDismiss` 다. 마운트 시 `present()` 를 부르는 것이 웹의 `open` 초기값 `true`
 //   와 같은 뜻이다.
-// · **그랩 핸들·배경**: `h-1 w-9 bg-border-strong` / `rounded-t-[20px] border-t border-border bg-bg`.
+// · **그랩 핸들·배경**: `h-1 w-9 bg-border-strong` / `rounded-t-[20px]` + **시트 스코프의 `bg`**.
 //   핸들은 라이브러리 것을 **쓰지 않고 시트 첫 자식으로 직접 그린다**(사유는 아래 핸들 주석).
-//   배경 라운딩은 `backgroundStyle` 이 준다.
+//   배경 라운딩은 `backgroundStyle` 이 준다. **위 테두리는 없다** — [[ADR-039]] 결정 2 의
+//   `border-t border-border` 는 [[ADR-179]] 결정 4 가 걷었다(사유는 아래 `backgroundStyle` 주석).
 // · **스크림**: `bg-scrim` 토큰을 **직접 그리고 페이드도 직접 보간한다.** 라이브러리 백드롭은
 //   스냅 포인트가 하나인 이 배치에서 불투명도가 0 으로 굳어 아예 안 보였다 — 사유는 `SheetScrim` 주석.
 //
@@ -46,7 +47,10 @@ import {
   type BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet'
 
+import { vars } from 'nativewind'
+
 import { useThemeAppearance } from '../../../theme/context'
+import { buildSheetScopeVariables } from '../../../theme/theme-vars'
 
 /** 시트 최대 높이 — 웹 `max-h-[82vh]`. */
 const MAX_HEIGHT_RATIO = 0.82
@@ -115,6 +119,18 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
   // (`CharacterTrackingPicker` 가 `100dvh` 를 옮긴 것과 같은 이유).
   const frame = useSafeAreaFrame()
   const { definition } = useThemeAppearance()
+  /**
+   * 시트는 **자기 안에서 표면 계열을 한 칸 올린다**([[ADR-179]] 결정 1) — 다크에서만.
+   *
+   * 종전에는 몸통이 `definition.bg` 였다. 그것은 시트가 **덮고 있는 페이지와 같은 토큰**이라
+   * 스크림 깔린 배경과 대비가 1.03~1.05 였고, 다크의 `bg` 아래에는 여유가 없어 **스크림을 아무리
+   * 진하게 해도 1.07 이 천장**이다 — 고칠 곳이 스크림이 아니라 시트인 이유가 그것이다.
+   *
+   * 값이 두 자리로 나뉘는 것은 **표면의 소유자가 둘**이기 때문이다: 껍데기는 라이브러리가 칠하고
+   * (우리 서브트리 밖이라 변수가 안 닿는다) 내용은 우리가 감싼다. 둘 다 같은 계산에서 나온다.
+   */
+  const sheetScope = buildSheetScopeVariables(definition)
+  const sheetSurface = sheetScope['--color-bg']!
 
   // 내용이 갈리면 맨 위에서 시작한다 — 사유는 `resetScrollKey` 프롭 주석에.
   useEffect(() => {
@@ -213,10 +229,14 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
       // 웹의 `sr-only` 제목("드롭 아이템 기록")과 같은 자리 — 화면에는 안 보이고 스크린리더만 읽는다.
       accessibilityLabel="드롭 아이템 기록"
       style={{ maxWidth: MAX_WIDTH, width: '100%', alignSelf: 'center' }}
+      /*
+       * **위 테두리를 안 그린다**([[ADR-179]] 결정 4 — [[ADR-039]] 결정 2 의 `border-t border-border`
+       * 폐기). 그 선은 **면이 경계를 못 만들던 시절의 대타**였다. 결정 1 로 몸통이 한 칸 올라가
+       * 면이 경계를 만들므로 선은 할 일이 없고, 남겨 두면 밝아진 몸통 위에 뜬 줄 하나가 된다
+       * (사용자 지정 2026-08-29).
+       */
       backgroundStyle={{
-        backgroundColor: definition.bg,
-        borderTopWidth: 1,
-        borderTopColor: definition.border,
+        backgroundColor: sheetSurface,
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
       }}
@@ -284,7 +304,18 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
           paddingBottom: (keyboardShown ? 0 : insets.bottom) + 16,
         }}
       >
-        {props.children}
+        {/*
+          **시트 스코프**([[ADR-179]] 결정 1) — `MediaScope` 와 같은 모양이다: 평범한 `View` 에
+          `vars()` 를 얹으면 그 서브트리만 새 기준을 쓴다.
+
+          **스크롤 뷰가 아니라 그 안에 둔다** — `vars()` 를 전달하려면 css-interop 이 아는 요소여야
+          하는데 `BottomSheetScrollView` 는 라이브러리 컴포넌트라 그 보장이 없다. `View` 하나는
+          `MediaScope` 가 이미 실측으로 확인한 경로다.
+
+          핸들은 이 밖이라 스코프를 안 받는다 — 그쪽은 `className` 이 아니라 값(`borderStrong`)을
+          직접 쓰므로 받을 것도 없다.
+        */}
+        <View style={vars(sheetScope)}>{props.children}</View>
       </BottomSheetScrollView>
     </BottomSheetModal>
   )

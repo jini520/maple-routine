@@ -9,7 +9,7 @@
 // 라이브러리가 실제로 받는 프롭인지는 **타입 검사**가 지킨다(컴포넌트가 진짜 타입을 import 한다).
 // 라이브러리를 진짜로 세워 마운트되는지는 옆 파일(`BottomSheet.wiring.test.tsx`)이 본다.
 import type { ReactNode } from 'react'
-import { Keyboard, Text } from 'react-native'
+import { Keyboard, Text, View } from 'react-native'
 import { act } from '@testing-library/react-native'
 
 // `jest.mock` 팩토리는 호이스팅돼 스코프 밖 변수를 못 읽는다 — **`mock` 접두 이름만** 예외다.
@@ -40,6 +40,12 @@ jest.mock('@gorhom/bottom-sheet', () => {
 })
 
 import { flattenStyle, renderOverlay, 기본테마 } from '../../../__tests__/render-atom'
+import { getThemeDefinition } from '../../../../lib/theme-registry'
+import {
+  __resetThemeAppearanceForTest,
+  setThemeAppearance,
+} from '../../../../theme/appearance-store'
+import { buildSheetScopeVariables } from '../../../../theme/theme-vars'
 import { BottomSheet } from '../BottomSheet'
 
 const noop = (): void => {}
@@ -104,11 +110,20 @@ describe('BottomSheet — [[ADR-039]] 가 정한 값을 넘긴다', () => {
     })
     expect(flattenStyle(sheet.props.backgroundStyle)).toMatchObject({
       backgroundColor: 기본테마.bg,
-      borderTopWidth: 1,
-      borderTopColor: 기본테마.border,
       borderTopLeftRadius: 20,
       borderTopRightRadius: 20,
     })
+  })
+
+  // **위 테두리는 [[ADR-179]] 결정 4 가 걷었다.** 그 선은 면이 경계를 못 만들던 시절의 대타였고
+  // ([[ADR-039]] 결정 2 의 `border-t border-border`), 다크에서 몸통이 한 칸 올라간 지금은 밝아진
+  // 면 위에 뜬 줄 하나로 남는다(사용자 지정 2026-08-29).
+  it('위 테두리를 그리지 않는다', async () => {
+    const { getByTestId } = await open()
+    const style = flattenStyle(getByTestId('sheet').props.backgroundStyle)
+
+    expect(style.borderTopWidth).toBeUndefined()
+    expect(style.borderTopColor).toBeUndefined()
   })
 
   // `max-h-[82vh]` 는 **상한**이지 높이가 아니다 — 고정 스냅 포인트(라이브러리의 흔한 사용법)로
@@ -229,5 +244,73 @@ describe('BottomSheet — [[ADR-039]] 가 정한 값을 넘긴다', () => {
     expect(getByTestId('sheet').props.onDismiss).toBe(onClose)
     expect(getByTestId('sheet').props.enablePanDownToClose).toBe(true)
     expect(onClose).not.toHaveBeenCalled()
+  })
+})
+
+/**
+ * 시트 스코프 ([[ADR-179]] 결정 1).
+ *
+ * 시트가 «자기가 덮고 있는 페이지와 같은 토큰»(`bg`)으로 서 있어 다크에서 스크림 깔린 배경과
+ * 대비가 1.03~1.05 였다. 여기서 지키는 것은 두 고리다:
+ *   ① 라이브러리가 칠하는 **껍데기**(`backgroundStyle` — 우리 서브트리 밖이라 변수가 안 닿는다)
+ *   ② 시트 **안**의 `className` 이 올린 값으로 풀리는가 (이게 «시트 안 코드를 안 고친다» 의 실체다)
+ *
+ * 색은 손으로 적지 않는다 — `buildSheetScopeVariables` 가 내는 값과 대조한다([[ADR-006]]).
+ */
+describe('BottomSheet — 다크에서 표면 계열을 한 칸 올린다 ([[ADR-179]])', () => {
+  const 검은마법사 = getThemeDefinition('검은마법사')
+  const 스코프 = buildSheetScopeVariables(검은마법사)
+
+  beforeEach(__resetThemeAppearanceForTest)
+  afterEach(__resetThemeAppearanceForTest)
+
+  async function 다크시트(): Promise<ReturnType<typeof renderOverlay>> {
+    const rendered = await renderOverlay(
+      <BottomSheet onClose={noop}>
+        <View testID="시트안-카드" className="bg-surface" />
+        <View testID="시트안-바닥" className="bg-bg" />
+      </BottomSheet>,
+    )
+    await act(async () => {
+      setThemeAppearance('검은마법사', 검은마법사)
+    })
+    return rendered
+  }
+
+  it('껍데기는 한 칸 올린 `bg` 로 칠해진다 — 변수가 안 닿는 자리라 값으로 넘긴다', async () => {
+    const { getByTestId } = await 다크시트()
+
+    expect(flattenStyle(getByTestId('sheet').props.backgroundStyle).backgroundColor).toBe(
+      스코프['--color-bg'],
+    )
+    // 이 단언에 판별력이 있으려면 올린 값이 원래 값과 달라야 한다.
+    expect(스코프['--color-bg']).not.toBe(검은마법사.bg)
+  })
+
+  it('시트 안 `bg-surface`·`bg-bg` 가 올린 값으로 풀린다 — 화면 코드를 안 고치는 이유', async () => {
+    const { getByTestId } = await 다크시트()
+
+    expect(flattenStyle(getByTestId('시트안-카드').props.style).backgroundColor).toBe(
+      스코프['--color-surface'],
+    )
+    expect(flattenStyle(getByTestId('시트안-바닥').props.style).backgroundColor).toBe(
+      스코프['--color-bg'],
+    )
+  })
+
+  // 라이트는 대비가 4.18~4.29 로 멀쩡하다 — 여기서 한 칸 더 올리면 `#FFFFFF` 에 부딪혀 눌린다.
+  it('라이트에서는 아무것도 안 올린다', async () => {
+    const { getByTestId } = await renderOverlay(
+      <BottomSheet onClose={noop}>
+        <View testID="시트안-카드" className="bg-surface" />
+      </BottomSheet>,
+    )
+
+    expect(flattenStyle(getByTestId('sheet').props.backgroundStyle).backgroundColor).toBe(
+      기본테마.bg,
+    )
+    expect(flattenStyle(getByTestId('시트안-카드').props.style).backgroundColor).toBe(
+      기본테마.surface,
+    )
   })
 })

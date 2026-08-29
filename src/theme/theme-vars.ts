@@ -17,7 +17,7 @@
  * `buildThemeCss` 의 출력을 **직접 대조**해 두 벌이 갈라지는 것을 막는다.
  */
 
-import { parseHex, toHex } from '../lib/color'
+import { hexToOklch, parseHex, toHex, withLightness } from '../lib/color'
 import { THEME_TOKEN_KEYS, deriveMediaScope } from '../lib/theme-derive'
 import type { ThemeDefinition } from '../types/theme'
 
@@ -85,6 +85,53 @@ export function buildThemeVariables(definition: ThemeDefinition): Record<string,
   }
   variables[toColorVariableName(PANEL_BORDER_TOKEN)] = resolvePanelBorder(definition)
   return variables
+}
+
+/**
+ * 시트 스코프 ([[ADR-179]] 결정 1) — **미디어 스코프와 같은 기법, 다른 목적**이다.
+ *
+ * ## 무엇이 어긋났나
+ *
+ * `BottomSheet` 의 몸통이 `definition.bg` 였다 — **자기가 덮고 있는 페이지와 같은 토큰**이다.
+ * 스크림을 합성한 배경과 견주면 다크에서 대비가 1.03~1.05 다(라이트는 같은 코드가 4.18~4.29).
+ *
+ * **스크림 쪽으로는 못 고친다.** 다크의 `bg` 는 이미 OKLCH L 0.13~0.15 라 그 아래 여유가 없어,
+ * 백드롭을 **완전 불투명 검정**으로 만들어도 대비는 1.07 이 천장이다. 라이트가 멀쩡한 이유도
+ * 같다 — 거기는 L 0.95 에서 0.55 까지 0.40 을 내려갈 수 있다. 그래서 고칠 곳은 시트이고,
+ * 다크에서 «떠 있음» 은 어둡게가 아니라 **밝게**로 만든다.
+ *
+ * ## 넷을 **함께** 올린다
+ *
+ * 몸통만 올리면 시트 안 `bg-surface` 타일이 몸통과 **같은 색**이 되고(대비 1.00, 테두리만 남는다),
+ * 몸통을 더 올리면 이번엔 타일이 몸통보다 **어두워진다**. 계열째 올려야 안쪽의 위아래 관계가
+ * 그대로 남는다 — 그래서 **시트 안 코드는 한 줄도 안 고친다**(세 시트와 그 안의 폼들이 쓰는
+ * `bg-bg`·`bg-surface`·`bg-surface-2` 가 전부 그대로 살아 새 기준을 따른다).
+ *
+ * ## 라이트는 안 건드린다
+ *
+ * 대비가 이미 멀쩡하고, 한 칸 더 올리면 `#FFFFFF` 에 부딪혀 눌린다. 분기 재료는 반드시
+ * `definition.mode` 다 — 테마 **이름**으로 가르면 [[ADR-064]] 결정 8이 폐기한 `DARK_THEMES` 수동
+ * 목록이 되살아난다(`resolvePanelBorder` 가 바로 위에서 같은 모양으로 서 있다).
+ *
+ * 라이트에서도 **넷을 다 낸다** — 값이 같아 재선언이 무해하고, 호출부에 모드 분기가 안 생긴다.
+ */
+const SHEET_SCOPE_TOKENS = ['bg', 'surface', 'surface2', 'track'] as const
+
+/**
+ * 「한 칸」 — `deriveMediaScope` 가 카드 안 `surface → surface-2` 를 벌릴 때 쓰는 폭과 **같은 수**다.
+ *
+ * 새 눈금을 만들지 않는다. 이 앱에서 «표면 한 단계» 는 이미 이 값이고, 두 벌이 되면 어느 쪽이
+ * 진짜인지 알 수 없게 된다(테스트가 두 값의 일치를 지킨다).
+ */
+export const SHEET_LIFT = 0.09
+
+export function buildSheetScopeVariables(definition: ThemeDefinition): Record<string, string> {
+  const lift = (hex: string): string =>
+    definition.mode === 'dark' ? withLightness(hex, hexToOklch(hex).l + SHEET_LIFT) : hex
+
+  return Object.fromEntries(
+    SHEET_SCOPE_TOKENS.map((token) => [toColorVariableName(token), lift(definition[token])]),
+  )
 }
 
 /**
