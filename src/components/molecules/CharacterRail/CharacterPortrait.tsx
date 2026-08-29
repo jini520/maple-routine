@@ -38,8 +38,13 @@ import {
 /** 안 고른 칸의 불투명도([[ADR-161]] 결정 2). 0.45 는 «조금 흐린» 정도라 여섯 칸을 넘으면 안 잡혔다. */
 const SELECTED_DIM_OPACITY = 0.3
 
-/** 선택 테두리의 굵기 — 진행 링(3)보다 **얇다**. 진행이 아니라 «여기» 를 말하는 선이다. */
-const SELECTED_RING_STROKE = 1.5
+/**
+ * **빈 링**의 굵기([[ADR-188]] 결정 3) — 진행 링(3)의 3분의 1이다.
+ *
+ * 링을 안 그리는 관리 화면이 그 자리에 세우는 선이다. «진행» 이 아니라 «여기 링이 설 자리» 를 말하는
+ * 선이라 진행 링과 같은 두께면 채워지지 않은 트랙으로 읽힌다 — 아주 얇아야 한다(사용자 지정).
+ */
+const EMPTY_RING_STROKE = 1
 
 /** 링 한 칸이 받는 값 — 화면이 «무엇을 세었는지» 까지 들고 온다(접근성 이름이 그것을 말한다). */
 export interface PortraitRingProgress {
@@ -186,7 +191,11 @@ export function CharacterPortrait(props: CharacterPortraitProps): React.JSX.Elem
           width: PORTRAIT_FACE_SIZE,
           height: PORTRAIT_FACE_SIZE,
         }}
-        className="overflow-hidden rounded-full bg-surface-2"
+        testID="portrait-face"
+        // **배경색이 없다**([[ADR-188]] 결정 1) — 캐릭터 이미지가 투명 배경이라 여기 깔아 둔
+        // `bg-surface-2` 가 **그림 뒤로 비쳤다**(얼굴 원 안이 옅은 회색 판이 된다). 그림이 없을 때
+        // 필요한 바탕은 아래 머리글자 폴백이 자기 몫으로 든다.
+        className="overflow-hidden rounded-full"
       >
         {props.imageUrl !== null ? (
           <Image
@@ -196,7 +205,12 @@ export function CharacterPortrait(props: CharacterPortraitProps): React.JSX.Elem
             style={portraitFaceCropStyle()}
           />
         ) : (
-          <View className="h-full w-full items-center justify-center">
+          // 폴백에는 바탕이 남는다 — 글자가 앉을 자리가 있어야 «얼굴이 없다» 가 «아무것도 없다» 로
+          // 안 읽힌다.
+          <View
+            testID="portrait-face-fallback"
+            className="h-full w-full items-center justify-center bg-surface-2"
+          >
             <Text fixed className="text-sm font-bold text-text">{props.characterName.charAt(0)}</Text>
           </View>
         )}
@@ -208,22 +222,27 @@ export function CharacterPortrait(props: CharacterPortraitProps): React.JSX.Elem
             <Path id={textPathId} d={portraitTextArcPath(textR)} />
           </Defs>
 
-          {/* [[ADR-161]] 결정 3 — 흐림은 «흐린 것이 여럿, 또렷한 것이 하나» 라는 상대 비교를
-              시켜야 읽힌다. 이 테두리는 칸 하나만 보고도 읽히는 절대 신호다.
+          {/* [[ADR-188]] 결정 2·3 — **얼굴 둘레 테두리는 없앴고**([[ADR-161]] 결정 3), 그 자리를
+              링을 안 그리는 화면의 **빈 링**이 받는다.
 
-              **얼굴 반지름(20)에 선다** — 진행 링은 26 이라 6 떨어져 있어, 링을 그리는 화면에서도
-              «링이 하나 더 생긴» 것으로 안 읽힌다. 그리는 곳이 이 `<Svg>` 층인 것이 요점이다:
-              얼굴 `View` 에 `borderWidth` 를 주면 이미지가 그만큼 안으로 밀려 **선택된 칸의 얼굴만
-              작아 보인다**(레이아웃은 안 움직여도 그림이 움직인다). */}
-          {props.isSelected && (
+              옛 테두리는 얼굴 반지름(20)에 서서 링을 그리는 화면에서 얼굴을 한 겹 더 두르는
+              군더더기였다(사용자 판정). 그것이 실제로 값을 하던 자리는 **링이 없는 관리 화면**이고,
+              그쪽에는 [[ADR-161]] 결정 1 이 이미 «링의 레이아웃은 잡지만 색은 안 채운다» 로 비워 둔
+              띠가 있다 — 선을 그 띠로 옮기면 화면 사이 모양이 맞으면서 절대 신호도 남는다.
+
+              **칸마다 항상 선다**(사용자 지정) — 비어 보이던 띠가 채워져 스케줄러 화면과 시각적으로
+              맞물리고, **고른 칸만 강조색**이라 [[ADR-161]] 결정 3 의 «칸 하나만 보고도 읽힌다» 도
+              그대로다. 그리는 곳이 이 `<Svg>` 층인 것은 옛 테두리와 같은 이유다: 얼굴 `View` 에
+              `borderWidth` 를 주면 이미지가 그만큼 안으로 밀려 그 칸의 얼굴만 작아 보인다. */}
+          {props.rings.length === 0 && (
             <Circle
-              testID="portrait-selected-ring"
+              testID="portrait-empty-ring"
               cx={PORTRAIT_CENTER_X}
               cy={PORTRAIT_CENTER_Y}
-              r={PORTRAIT_FACE_SIZE / 2}
+              r={PORTRAIT_RING_R}
               fill="none"
-              stroke={definition.primary}
-              strokeWidth={SELECTED_RING_STROKE}
+              stroke={props.isSelected ? definition.primary : definition.border}
+              strokeWidth={EMPTY_RING_STROKE}
             />
           )}
 

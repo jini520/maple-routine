@@ -8,8 +8,8 @@ import { act, fireEvent, within } from '@testing-library/react-native'
 import { renderAtom, type AtomElement } from '../../../__tests__/render-atom'
 import { CharacterRail, type CharacterRailEntry } from '../CharacterRail'
 import {
-  PORTRAIT_FACE_SIZE,
   PORTRAIT_RING_R,
+  PORTRAIT_RING_STROKE,
   portraitMetrics,
   portraitRingSpan,
 } from '../character-portrait-geometry'
@@ -117,29 +117,68 @@ describe('CharacterRail', () => {
     expect(dimmed.props.accessibilityState.selected).toBe(false)
   })
 
-  // 결정 3 — 자리는 **얼굴 둘레**다. 진행 링(r=26)과 6 떨어져 있어 링을 그리는 화면에서도 «링이
-  // 하나 더 생긴» 것으로 안 읽힌다. 그리는 곳이 `<Svg>` 층인 것이 요점이다 — 얼굴 `View` 에
-  // `borderWidth` 를 주면 이미지가 그만큼 안으로 밀려 **선택된 칸의 얼굴만 작아 보인다.**
-  it('고른 칸에만 얼굴 둘레 테두리가 선다 — 레이아웃은 안 움직인다', async () => {
+  // [[ADR-188]] 결정 2 — 얼굴 둘레 테두리([[ADR-161]] 결정 3)는 **없앴다**. 진행 링을 그리는
+  // 화면에서 그 선은 얼굴을 한 겹 더 두르는 군더더기였고(사용자 판정), 그것이 필요했던 자리는
+  // 애초에 링이 없는 관리 화면이다 — 그쪽은 아래 «빈 링» 이 받는다.
+  it('얼굴 둘레 테두리는 어디에도 없다', async () => {
     const view = await render([entry(), entry({ ocid: 'ocid-2', characterName: '두번째' })])
 
-    expect(view.queryAllByTestId('portrait-selected-ring')).toHaveLength(1)
-
-    const [selected, dimmed] = view.getAllByTestId('character-portrait')
-    expect(within(selected).queryByTestId('portrait-selected-ring')).not.toBeNull()
-    expect(within(dimmed).queryByTestId('portrait-selected-ring')).toBeNull()
-    // 두 칸의 상자가 한 픽셀도 다르지 않다([[ADR-145]] 결정 5 의 성질).
-    expect(selected.props.style.width).toBe(dimmed.props.style.width)
-    expect(selected.props.style.height).toBe(dimmed.props.style.height)
+    expect(view.queryAllByTestId('portrait-selected-ring')).toHaveLength(0)
   })
 
-  // 링을 그리는 칸에서도 테두리는 링과 **겹치지 않는다** — 반지름이 갈린다.
-  it('테두리는 얼굴 반지름에 서고 진행 링보다 안쪽이다', async () => {
+  // [[ADR-188]] 결정 3 — 링을 안 그리는 관리 화면은 그 자리에 **아주 얇은 빈 링**을 세운다.
+  // 칸마다 항상 서고, 고른 칸만 강조색이다(사용자 지정).
+  it('링이 없는 칸에는 링 자리에 빈 링이 선다 — 칸마다 하나씩', async () => {
+    const view = await render([
+      entry({ rings: [] }),
+      entry({ ocid: 'ocid-2', characterName: '두번째', rings: [] }),
+    ])
+
+    expect(view.queryAllByTestId('portrait-empty-ring')).toHaveLength(2)
+  })
+
+  it('빈 링은 진행 링과 같은 반지름에 서고 더 얇다', async () => {
+    const view = await render([entry({ rings: [] })])
+
+    const rim = view.getByTestId('portrait-empty-ring')
+    expect(Number(rim.props.r)).toBe(PORTRAIT_RING_R)
+    expect(Number(rim.props.strokeWidth)).toBeLessThan(PORTRAIT_RING_STROKE)
+  })
+
+  it('고른 칸의 빈 링만 강조색이다 — 흐림 말고도 읽히는 신호가 남는다', async () => {
+    const view = await render([
+      entry({ rings: [] }),
+      entry({ ocid: 'ocid-2', characterName: '두번째', rings: [] }),
+    ])
+
+    const [selected, dimmed] = view.getAllByTestId('character-portrait')
+    const strokeOf = (node: AtomElement): unknown =>
+      within(node).getByTestId('portrait-empty-ring').props.stroke
+
+    expect(strokeOf(selected)).not.toBe(strokeOf(dimmed))
+  })
+
+  // 링이 있으면 그 자리는 이미 찼다 — 빈 링을 겹쳐 그리면 트랙이 두 겹이 된다.
+  it('진행 링을 그리는 칸에는 빈 링이 없다', async () => {
     const view = await render([entry({ rings: [{ label: '주간', completed: 1, total: 5 }] })])
 
-    const rim = view.getByTestId('portrait-selected-ring')
-    expect(Number(rim.props.r)).toBe(PORTRAIT_FACE_SIZE / 2)
-    expect(Number(rim.props.r)).toBeLessThan(PORTRAIT_RING_R)
+    expect(view.queryAllByTestId('portrait-empty-ring')).toHaveLength(0)
+  })
+
+  // [[ADR-188]] 결정 1 — 얼굴 뒤 회색 판을 걷는다. 캐릭터 이미지가 투명 배경이라 그 회색이
+  // 그림 뒤로 비쳤다. **머리글자 폴백에는 남긴다** — 거기서는 글자가 앉을 바탕이다.
+  it('이미지가 있는 칸의 얼굴 상자에는 배경색이 없다', async () => {
+    const view = await render([entry()])
+
+    const face = view.getByTestId('portrait-face')
+    expect((face.props.style as { backgroundColor?: unknown }).backgroundColor).toBeUndefined()
+  })
+
+  it('이미지가 없으면 머리글자 뒤에 바탕이 남는다', async () => {
+    const view = await render([entry({ imageUrl: null })])
+
+    const fallback = view.getByTestId('portrait-face-fallback')
+    expect((fallback.props.style as { backgroundColor?: unknown }).backgroundColor).toBeDefined()
   })
 
   it('가로로 굴러가고 스크롤바를 그리지 않는다', async () => {
