@@ -37,12 +37,20 @@
  * 받는다(사용자 확정 — 레벨 미달로 보스가 안 뜨는 경우, [[ADR-162]]). 표기를 가르지 않기로 했으므로
  * **이 배지의 뜻은 «이 주기에 지금 할 게 없다»** 이고, 그래서 뷰모델이 분모를 셀 필요가 없다.
  *
- * ## 목록은 캐릭터 전부다 ([[ADR-181]] 결정 6)
+ * ## 목록은 캐릭터 전부이고, **탭마다 다시 선다** ([[ADR-181]] 결정 6 · 정정 1)
  *
  * 그 탭을 끝낸 캐릭터도 자리를 지킨다 — 사람 수가 늘 같아야 «어제와 같은 화면» 이고, 이 타일이
  * `4×auto` 라 목록이 줄면 **아래 위젯 전부가 하루 동안 따라 움직인다**. 「외 N명」 접기도 상한도 없다.
- * 정렬은 뷰모델이 끝냈고(전체 남은 개수 순 → 동수면 관리 순서 · 실패는 맨 아래) **탭마다 다시 세우지
- * 않는다.**
+ *
+ * **순서는 보고 있는 주기가 정한다**(사용자 지정, 정정 1):
+ *
+ * ```
+ * ① 동기화 실패는 언제나 맨 아래   ② 그 주기에 남은 개수 많은 순   ③ 동수면 캐릭터 관리 순서
+ * ```
+ *
+ * 뷰모델은 **관리 순서까지만** 세워 준다 — 「남은 개수 많은 순」은 «어느 주기의» 개수인지가 정해져야
+ * 셀 수 있고 그 주기는 이 위젯의 탭이다. 동수의 기준인 관리 순서를 그대로 쓰려면 정렬이 한 번만
+ * 일어나야 해서, 그 한 번을 여기서 한다.
  */
 
 import { useState } from 'react'
@@ -92,6 +100,30 @@ function cycleItems(row: ScheduleRowView, cycle: Cycle): CycleItems {
 
 function itemCount(items: CycleItems): number {
   return items.quests.length + items.bosses.length
+}
+
+/**
+ * 그 탭의 순서 — **실패는 맨 아래 · 남은 개수 많은 순 · 동수면 관리 순서**([[ADR-181]] 정정 1).
+ *
+ * 받은 배열이 이미 관리 순서라(뷰모델) 그 **인덱스가 곧 동수의 기준**이다. 인덱스를 얹어 정렬하는
+ * 것은 정렬의 안정성에 기대지 않기 위해서다(뷰모델의 `orderByTracked` 와 같은 태도).
+ *
+ * 실패한 캐릭터는 남은 개수를 **모르는** 것이라 개수 비교에 참여시키지 않는다 — 위로 올리면
+ * «제일 밀린 캐릭터» 자리를 모르는 값이 거짓으로 차지한다([[ADR-147]] 정정 12 가 정한 태도).
+ */
+function orderForCycle(rows: readonly ScheduleRowView[], cycle: Cycle): ScheduleRowView[] {
+  return rows
+    .map((row, index) => ({ row, index }))
+    .sort((a, b) => {
+      if (a.row.hasSyncIssue !== b.row.hasSyncIssue) return a.row.hasSyncIssue ? 1 : -1
+
+      const countA = itemCount(cycleItems(a.row, cycle))
+      const countB = itemCount(cycleItems(b.row, cycle))
+      if (countA !== countB) return countB - countA
+
+      return a.index - b.index
+    })
+    .map((entry) => entry.row)
 }
 
 const VALUE_CLASS = 'text-right text-[11.5px] font-extrabold leading-tight text-text'
@@ -345,7 +377,7 @@ export function RemainingScheduleWidget({ data }: WidgetProps): React.JSX.Elemen
       {data.schedule.length === 0 ? (
         <Text fixed className="pt-2.5 text-[13px] text-text-muted">추적 중인 캐릭터가 없습니다</Text>
       ) : (
-        data.schedule.map((row, index) => (
+        orderForCycle(data.schedule, cycle).map((row, index) => (
           <ScheduleRow
             key={row.ocid}
             row={row}

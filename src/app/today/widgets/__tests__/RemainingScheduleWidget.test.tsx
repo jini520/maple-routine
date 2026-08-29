@@ -3,7 +3,7 @@
 // ② **수치는 「N개」이고 강조는 굵기 하나뿐**(테마 색 금지 — 칠하면 강조가 캐릭터 수만큼 반복된다)
 // ③ **0 은 언제나 `CLEAR`** — 「완료했다」가 아니라 «이 주기에 지금 할 게 없다» 라, 대상이 애초에
 //    없던 캐릭터도 같은 배지다(그래서 분모를 안 센다)
-// ④ **목록은 캐릭터 전부** — 완료해도 안 빠지고 순서는 뷰모델이 준 그대로다
+// ④ **목록은 캐릭터 전부** — 완료해도 안 빠지고, 순서는 **보고 있는 주기**가 정한다(정정 1)
 // ⑤ **합계를 안 그린다** — 제목 줄은 이름과 세그먼트 둘뿐이다
 //
 // jsdom 도 jest 도 레이아웃을 계산하지 않으므로 «픽셀» 로는 못 묻는다. 그래서 **치수를 정하는
@@ -196,21 +196,55 @@ describe('목록은 캐릭터 전부다 ([[ADR-181]] 결정 6)', () => {
     expect(view.getAllByText('CLEAR')).toHaveLength(2)
   })
 
-  // 정렬은 뷰모델이 끝냈다(전체 남은 개수 순 → 동수면 관리 순서 · 실패는 맨 아래). 탭마다 다시
-  // 세우면 사람 순서가 탭을 옮길 때마다 바뀌어 같은 목록으로 안 읽힌다.
-  it('탭을 바꿔도 받은 순서 그대로다', async () => {
-    const [첫, 둘] = 스케줄목록(2)
-    const 실패 = 스케줄행({ ocid: 'ocid-실패', characterName: '실패한캐릭터', hasSyncIssue: true })
-    const view = await 위젯([첫 as ScheduleRowView, 둘 as ScheduleRowView, 실패])
+  // 순서는 **보고 있는 주기**가 정한다(정정 1, 사용자 지정) — 뷰모델은 관리 순서까지만 세워 준다.
+  it('그 주기에 남은 개수 많은 순으로 선다 — 탭을 바꾸면 다시 선다', async () => {
+    const view = await 위젯([
+      스케줄행({ ocid: 'a', characterName: '가', dailyNames: ['하나'], weeklyNames: ['하나', '둘', '셋'] }),
+      스케줄행({ ocid: 'b', characterName: '나', dailyNames: ['하나', '둘', '셋'], weeklyNames: [] }),
+      스케줄행({ ocid: 'c', characterName: '다', dailyNames: ['하나', '둘'], weeklyNames: ['하나'] }),
+    ])
 
     const 이름들 = (): unknown[] =>
       view.getAllByTestId('schedule-name').map((name) => name.props.children)
 
-    expect(이름들()).toEqual(['캐릭터1', '캐릭터2', '실패한캐릭터'])
+    expect(이름들()).toEqual(['나', '다', '가'])
 
     await 탭(view, '주간')
 
-    expect(이름들()).toEqual(['캐릭터1', '캐릭터2', '실패한캐릭터'])
+    expect(이름들()).toEqual(['가', '다', '나'])
+  })
+
+  it('동수면 캐릭터 관리 순서다 — 뷰모델이 준 차례가 곧 그 기준이다', async () => {
+    const view = await 위젯([
+      스케줄행({ ocid: 'c', characterName: '다', dailyNames: ['하나', '둘'] }),
+      스케줄행({ ocid: 'a', characterName: '가', dailyNames: ['하나', '둘'] }),
+      스케줄행({ ocid: 'b', characterName: '나', dailyNames: ['하나', '둘'] }),
+    ])
+
+    expect(view.getAllByTestId('schedule-name').map((name) => name.props.children)).toEqual([
+      '다',
+      '가',
+      '나',
+    ])
+  })
+
+  // 남은 개수를 «모르는» 것이라 개수 비교에 참여시키지 않는다 — 위로 올리면 «제일 밀린 캐릭터»
+  // 자리를 모르는 값이 거짓으로 차지한다([[ADR-147]] 정정 12 의 태도).
+  it('동기화 실패는 어느 탭에서나 맨 아래다 — CLEAR 보다도 아래다', async () => {
+    const view = await 위젯([
+      스케줄행({ ocid: '실패', characterName: '실패한캐릭터', hasSyncIssue: true }),
+      스케줄행({ ocid: 'clear', characterName: '끝낸캐릭터', dailyNames: [], weeklyNames: [] }),
+      스케줄행({ ocid: 'a', characterName: '남은캐릭터', dailyNames: ['하나'] }),
+    ])
+
+    const 이름들 = (): unknown[] =>
+      view.getAllByTestId('schedule-name').map((name) => name.props.children)
+
+    expect(이름들()).toEqual(['남은캐릭터', '끝낸캐릭터', '실패한캐릭터'])
+
+    await 탭(view, '월간')
+
+    expect(이름들()[2]).toBe('실패한캐릭터')
   })
 
   it('「외 N명」 접기 없이 캐릭터를 전부 그린다', async () => {

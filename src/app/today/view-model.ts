@@ -142,7 +142,6 @@ export interface ScheduleRowView {
   weeklyNames: readonly string[]
   weeklyBosses: readonly RemainingBossView[]
   monthlyBosses: readonly RemainingBossView[]
-  remainingTotal: number
   /** [[ADR-068]] 결정 3의 캐릭터 단위 실패 표식. 참이면 위젯이 수치 대신 「동기화 실패」를 그린다. */
   hasSyncIssue: boolean
 }
@@ -343,7 +342,7 @@ export interface TodayViewModel {
   sharedContents: SharedContentGroupView[]
   /** 그중 완료가 아닌 **줄**의 수. 캐릭터 수와 무관하다 — 그게 이 분리의 이유다. */
   sharedRemaining: number
-  /** 정렬까지 끝난 목록 — 위젯은 그리기만 한다. */
+  /** **캐릭터 관리 순서**의 목록 — 「남은 개수 많은 순」은 탭을 아는 위젯이 세운다([[ADR-181]] 정정 1). */
   schedule: ScheduleRowView[]
   profit: WeeklyProfitView
   topItem: TopItemView | null
@@ -559,24 +558,15 @@ function buildScheduleRows(input: TodayViewModelInput): ScheduleRowView[] {
       weeklyNames,
       weeklyBosses,
       monthlyBosses,
-      remainingTotal:
-        dailyNames.length + weeklyNames.length + weeklyBosses.length + monthlyBosses.length,
       hasSyncIssue: input.characterIssues[ocid] !== undefined,
     }
   })
 
-  // 관리 순서를 먼저 얹고(동수의 기준이 그것이다) 남은 개수로 다시 세운다. 동순위는 인덱스로
-  // 가른다 — 정렬의 안정성에 기대지 않고 이 파일의 계약으로 둔다(`tracked-order` 와 같은 이유).
+  // **여기서 세우는 것은 관리 순서 하나다**([[ADR-181]] 정정 1). 「남은 개수 많은 순」은 **어느
+  // 주기의** 개수인지가 정해져야 셀 수 있는데 그 주기는 위젯의 탭이라, 그 정렬은 탭을 아는 쪽이
+  // 한다. 뷰모델이 총합으로 한 번 세워 두면 위젯이 그것을 **다시** 세우게 되고 순서의 계약이 두
+  // 벌이 된다(동수의 기준인 관리 순서도 그때 이미 뭉개져 있다).
   return orderByTracked(rows, input.orderedOcids)
-    .map((row, index) => ({ row, index }))
-    .sort((a, b) => {
-      // 실패는 남은 개수를 «모르는» 것이라 언제나 맨 아래다([[ADR-147]] 정정 12) — 위로 올리면
-      // «제일 밀린 캐릭터» 자리를 모르는 값이 거짓으로 차지한다.
-      if (a.row.hasSyncIssue !== b.row.hasSyncIssue) return a.row.hasSyncIssue ? 1 : -1
-      if (a.row.remainingTotal !== b.row.remainingTotal) return b.row.remainingTotal - a.row.remainingTotal
-      return a.index - b.index
-    })
-    .map((entry) => entry.row)
 }
 
 /**
