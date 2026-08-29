@@ -16,9 +16,13 @@
 //
 // ## 계층상 atom 인 이유
 //
-// 다른 계층을 참조하지 않고 `react-native` 만 본다([[ADR-094]] 결정 2 의 의존 방향). 스타일을 하나도
-// 안 갖는 atom 이라는 점에서 Badge·Button 과 다르지만, 그것은 이 컴포넌트가 «생김새» 가 아니라
-// «글자가 커지는 방식» 을 소유하기 때문이다.
+// **컴포넌트 계층을 거슬러 올라가지 않는다**([[ADR-094]] 결정 2 의 의존 방향) — molecules 이상을 안
+// 본다. 스타일을 하나도 안 갖는 atom 이라는 점에서 Badge·Button 과 다르지만, 그것은 이 컴포넌트가
+// «생김새» 가 아니라 «글자가 커지는 방식» 을 소유하기 때문이다.
+//
+// 계층 밖 둘은 본다 — 시트가 아는 초점(`@gorhom/bottom-sheet`, [[ADR-170]] 정정 10)과 테마의
+// 자리표시자 색([[ADR-179]] 결정 5). 둘 다 **`className` 으로 접히지 않는 프롭**이라 값을 아는 곳을
+// 직접 읽어야 하고, 그 값을 화면마다 적게 두면 이 파일이 존재하는 이유가 사라진다.
 //
 // ## `allowFontScaling` 을 프롭으로 열지 않는다
 //
@@ -35,6 +39,7 @@ import {
   type TextProps as RNTextProps,
 } from 'react-native'
 
+import { useThemeAppearance } from '../../../theme/context'
 import { fontScalingProps } from './font-scaling'
 
 /** 클램프를 앱이 쥐므로 배수 프롭 둘은 호출부에서 사라지고, 대신 `fixed` 가 생긴다. */
@@ -120,6 +125,7 @@ export function TextInput({
   ...rest
 }: TextInputProps): React.JSX.Element {
   const { fontScale } = useWindowDimensions()
+  const { definition } = useThemeAppearance()
   const keyboardState = useBottomSheetInternal(true)?.animatedKeyboardState ?? null
   /** 내가 켰던 초점 — 언마운트할 때 «남의 것을 끄지 않기» 위해 기억한다. */
   const myTarget = useRef<number | undefined>(undefined)
@@ -212,6 +218,32 @@ export function TextInput({
   // 계산한 프롭이 **뒤에** 온다 — 스프레드로 들어온 값이 클램프를 못 이기게.
   return (
     <RNTextInput
+      /*
+       * **자리표시자 색을 아톰이 못 박는다**([[ADR-179]] 결정 5).
+       *
+       * 안 주면 RN 이 플랫폼 기본값을 쓰는데, `app.json` 이 `userInterfaceStyle: "automatic"` 이라
+       * 그 값이 **OS 외관**을 따른다 — 앱 테마와 무관하게 정해진다. OS 가 라이트인 채 앱만 다크면
+       * iOS 가 `rgba(60,60,67,.3)` 을 쓰고, 그것이 `#0B0B0B` 위에 합성되면 `#1A1A1C`(대비 **1.13**)라
+       * **안 보인다**(사용자 보고 2026-08-29).
+       *
+       * **`className`(`placeholder:text-text-disabled`)이 아니라 값이다.** NativeWind 의
+       * `placeholder:` 변형이 `color` 를 `placeholderTextColor` 로 옮겨 주기는 하는데, 그 변형은
+       * **native 프리셋에서만** 그렇게 컴파일된다(`nativewind/dist/tailwind/index.js` 가
+       * `NATIVEWIND_OS` 로 web/native 프리셋을 가른다). Metro 는 그 값을 세우고
+       * (`metro/tailwind/v3` 가 `platform` 을 넣는다) **jest 의 `globalSetup` 은 안 세운다** — 거기서는
+       * web 프리셋이 돌아 `::placeholder` 의사요소가 나오고, 그러면 프롭이 안 붙는다(실측). 앱에서는
+       * 되는데 테스트로는 못 보는 자리라 **계약을 못 지킨다.**
+       *
+       * 프롭으로 주면 두 경로가 같아진다. 테마 문맥을 읽는 것은 이 아톰이 이미 `@gorhom/bottom-sheet`
+       * 의 훅을 읽는 것과 같은 부류이고, 색을 `className` 으로 접을 수 없는 자리에서 앱이 늘 쓰는
+       * 방법이다(`BottomSheet` 의 `scrim`·`borderStrong`).
+       *
+       * **`{...rest}` 보다 앞에 둔다** — 호출부가 `placeholderTextColor` 를 직접 주면 그쪽이 이긴다.
+       *
+       * `text-disabled` 인 이유는 자리표시자가 «아직 안 적힌 것» 이라 **힌트이지 값이 아니기**
+       * 때문이다. `text-muted` 는 또렷해서 이미 적힌 값처럼 읽힌다.
+       */
+      placeholderTextColor={definition.textDisabled}
       {...rest}
       keyboardType={keyboardType}
       {...(numeric ? { value } : { defaultValue: value })}

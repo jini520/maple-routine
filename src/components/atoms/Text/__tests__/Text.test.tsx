@@ -10,7 +10,7 @@
 // 이렇게 두면 **컴포넌트가 무엇을 읽는지** 를 테스트가 안 정해도 된다.
 import { Dimensions } from 'react-native'
 
-import { flattenStyle, renderAtom } from '../../../__tests__/render-atom'
+import { flattenStyle, renderAtom, 기본테마 } from '../../../__tests__/render-atom'
 import { FONT_SCALE_MAX } from '../font-scaling'
 import { Text, TextInput } from '../Text'
 
@@ -166,5 +166,44 @@ describe('TextInput — 플랫폼 기본 상자를 지운다 ([[ADR-170]] 정정
     )
 
     expect(flattenStyle(getByTestId('칸').props.style)).toMatchObject({ paddingVertical: 8 })
+  })
+})
+
+/**
+ * 자리표시자 색 ([[ADR-179]] 결정 5).
+ *
+ * 안 주면 RN 이 플랫폼 기본값을 쓰는데, `app.json` 이 `userInterfaceStyle: "automatic"` 이라 그
+ * 값이 **OS 외관**을 따른다 — OS 가 라이트인 채 앱 테마만 다크면 iOS 가 `#1A1A1C`(대비 1.13)를
+ * 그려 **안 보인다**(사용자 보고 2026-08-29). 테마와 무관하게 정해지는 값이 테마 위에 앉는 자리라
+ * 아톰이 못 박는다.
+ *
+ * **`className` 이 아니라 프롭인 이유**: NativeWind 의 `placeholder:` 변형은 native 프리셋에서만
+ * `placeholderTextColor` 로 컴파일되는데, jest 의 `globalSetup` 은 `NATIVEWIND_OS` 를 안 세워 web
+ * 프리셋으로 돈다 — 앱에서는 되지만 **여기서는 못 본다**(실측). 프롭이면 두 경로가 같다.
+ *
+ * 색을 손으로 적지 않는다 — `job-themes.json` 에서 읽는다([[ADR-006]]).
+ */
+describe('TextInput — 자리표시자 색을 아톰이 건다 ([[ADR-179]] 결정 5)', () => {
+  it('테마의 `text-disabled` 로 그린다 — 힌트이지 값이 아니다', async () => {
+    const { getByTestId } = await renderAtom(
+      <TextInput testID="칸" value="" placeholder="아이템 명" />,
+    )
+
+    expect(getByTestId('칸').props.placeholderTextColor).toBe(기본테마.textDisabled)
+  })
+
+  // 아톰이 안 걸면 그 자리만 조용히 플랫폼 기본값으로 남는다 — 이 아톰이 존재하는 이유가 그것이다.
+  it('자리표시자가 없는 칸에도 값이 붙는다 — 빠지는 자리를 안 만든다', async () => {
+    const { getByTestId } = await renderAtom(<TextInput testID="칸" value="" />)
+
+    expect(getByTestId('칸').props.placeholderTextColor).toBe(기본테마.textDisabled)
+  })
+
+  it('호출부가 직접 주면 그쪽이 이긴다', async () => {
+    const { getByTestId } = await renderAtom(
+      <TextInput testID="칸" value="" placeholderTextColor={기본테마.errorInk} />,
+    )
+
+    expect(getByTestId('칸').props.placeholderTextColor).toBe(기본테마.errorInk)
   })
 })
