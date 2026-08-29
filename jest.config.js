@@ -41,7 +41,9 @@ const NEGATIVE_LOOKAHEAD = '(?!('
 
 module.exports = {
   preset: 'jest-expo',
-  testMatch: ['**/*.test.[jt]s?(x)', '**/*.spec.[jt]s?(x)'],
+  // `.mjs` 가 따로 있는 것은 **배포 스크립트가 ESM 파일**이기 때문이다([[ADR-190]] 이 처음으로
+  // 그쪽에 테스트를 붙였다) — `[jt]s` 글롭에 `mjs` 가 안 걸린다.
+  testMatch: ['**/*.test.[jt]s?(x)', '**/*.spec.[jt]s?(x)', '**/*.test.mjs'],
   // 러너는 **jest 하나**다([[ADR-157]]). `*.spec.*` 는 vitest 가 돌던 것들인데 그쪽을 걷으면서
   // 여기로 들어왔다 — 확장자를 남긴 이유는 «RN 을 렌더하지 않는 순수 로직» 이라는 구분이 여전히
   // 쓸모 있어서다(그 파일들은 node 환경에서 돌아 빠르다).
