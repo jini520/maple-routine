@@ -37,8 +37,7 @@ export const RELEASE_NOTE_CATEGORY_ORDER: readonly ReleaseNoteCategory[] = [
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
     version: '1.0.7',
-    // 아직 `chore(release)` 커밋이 없어 **작성일**이다 — 배포하며 그 커밋 날짜로 정정할 것
-    // (1.0.4·1.0.6 이 같은 순서를 밟았다, 위 주석).
+    // `chore(release): 1.0.7` 커밋 날짜다(작성일과 같은 날이라 정정할 것이 없었다).
     date: '2026-08-30',
     // 네 줄이다(사용자가 정한 문장, 2026-08-30). 마지막 「버그 수정.」은 `items` 의 `fix` 둘을
     // 한 줄로 뭉친 것이라 **어떤 파생 규칙으로도 안 나온다** — [[ADR-126]] 결정 3 이 `highlights`
