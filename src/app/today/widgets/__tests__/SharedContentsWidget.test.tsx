@@ -1,12 +1,14 @@
 // 공유 컨텐츠 위젯([[ADR-147]] 정정 28~31). 이 파일이 지키는 것 넷 —
 // ① **계열이 축이다**(월드·계정 라벨이 화면에 한 번도 안 나온다)
-// ② **오른쪽 열은 «완료 → CLEAR · 미완료+카운트 → n/max · 그 밖 → 빈칸»**(정정 33)
+// ② **오른쪽 열은 «카운트 있음 → n/max · 그 밖 → 빈칸»**([[ADR-182]] 결정 4 — CLEAR 는 걷었다)
 // ③ **머리의 `?` 가 월드 한계를 말하되 타일 높이를 안 바꾼다**(정정 34)
 // ④ **타일을 눌러 가는 곳이 없다**(`target` 이 없는 타일이다)
+// ⑤ **계열이 두 열로 선다**([[ADR-182]] — 순서를 지키면서 높이가 가장 고른 지점에서 가른다)
+// ⑥ **완료는 읽기 전용 체크박스 + 취소선이 말한다**([[ADR-182]] 결정 3)
 
-import { act, fireEvent } from '@testing-library/react-native'
+import { act, fireEvent, within } from '@testing-library/react-native'
 
-import { flattenStyle, renderAtom } from '../../../../components/__tests__/render-atom'
+import { flattenStyle, renderAtom, 기본테마 } from '../../../../components/__tests__/render-atom'
 import { SharedContentsWidget } from '../SharedContentsWidget'
 import { 공유계열, 공유항목, 공유컨텐츠, 뷰모델 } from './widget-fixture'
 import type { SharedContentGroupView } from '../../view-model'
@@ -59,9 +61,11 @@ describe('계열이 축이다 ([[ADR-147]] 정정 28)', () => {
   })
 })
 
-describe('오른쪽 열은 `count` 유무 하나로 갈린다 ([[ADR-147]] 정정 29)', () => {
-  it('완료했고 카운트가 없으면 CLEAR 배지다 — 「남은 스케줄」과 같은 말이다', async () => {
-    const { getAllByTestId } = await 위젯([
+describe('오른쪽 열은 `count` 유무 하나로 갈린다 ([[ADR-182]] 결정 4)', () => {
+  // 체크박스와 취소선이 이미 완료를 말한다 — 배지는 같은 말의 세 번째였고, 그 46px 이 반폭 열에서
+  // 긴 이름을 말줄임으로 밀어냈다(사용자 지시).
+  it('완료해도 오른쪽에 배지가 안 선다 — CLEAR 를 걷었다', async () => {
+    const { queryAllByTestId, queryByText } = await 위젯([
       공유계열('에픽던전', [
         공유항목('하이마운틴', { isComplete: true }),
         공유항목('앵글러컴퍼니', { isComplete: true }),
@@ -69,14 +73,15 @@ describe('오른쪽 열은 `count` 유무 하나로 갈린다 ([[ADR-147]] 정�
       ]),
     ])
 
-    expect(getAllByTestId('shared-clear')).toHaveLength(2)
+    expect(queryAllByTestId('shared-clear')).toHaveLength(0)
+    expect(queryByText('CLEAR')).toBeNull()
+    expect(queryAllByTestId('shared-count')).toHaveLength(0)
   })
 
   it('미완료이고 카운트가 없으면 오른쪽을 비운다 (사용자 지정)', async () => {
     const { queryAllByTestId } = await 위젯([공유계열('에픽던전', [공유항목('악몽선경')])])
 
     // 「0/1」을 붙이려면 API 에 없는 분모를 앱이 지어내야 한다.
-    expect(queryAllByTestId('shared-clear')).toHaveLength(0)
     expect(queryAllByTestId('shared-count')).toHaveLength(0)
   })
 
@@ -91,15 +96,18 @@ describe('오른쪽 열은 `count` 유무 하나로 갈린다 ([[ADR-147]] 정�
     expect(String(getByText('7').props.style.fontWeight)).toBe('800')
   })
 
-  // 완료한 항목의 «몇 번 했나» 는 언제나 max 라 `14/14` 가 더 말하는 것이 없다. 「익스트림만
-  // 예외」로 적으면 그것이 정정 31 이 카탈로그로 밀어낸 «이름으로 유추하는 규칙» 이 된다.
-  it('완료면 카운트가 있어도 CLEAR 다 ([[ADR-147]] 정정 33)', async () => {
-    const { queryByTestId, getByTestId } = await 위젯([
+  // 뷰모델이 완료한 항목에 카운트를 안 준다([[ADR-147]] 정정 33 의 살아 있는 절반) — 완료한 항목의
+  // «몇 번 했나» 는 언제나 max 라 `14/14` 가 더 말하는 것이 없다.
+  it('완료한 항목은 오른쪽이 통째로 빈다 — 체크박스가 그 말을 한다', async () => {
+    const { queryByTestId, getAllByTestId } = await 위젯([
       공유계열('몬스터파크', [공유항목('일간', { isComplete: true })]),
     ])
 
-    expect(getByTestId('shared-clear')).toBeTruthy()
     expect(queryByTestId('shared-count')).toBeNull()
+    expect(
+      flattenStyle(getAllByTestId('shared-checkbox', { includeHiddenElements: true })[0]?.props.style)
+        .backgroundColor,
+    ).toBe(기본테마.secondaryInk)
   })
 
   it('숫자에 `tabular-nums` 가 걸린다 — 자릿수가 달라도 오른쪽 끝이 안 흔들린다', async () => {
@@ -113,6 +121,87 @@ describe('오른쪽 열은 `count` 유무 하나로 갈린다 ([[ADR-147]] 정�
     expect(getByText('7').props.style).toEqual(
       expect.objectContaining({ fontVariant: ['tabular-nums'] }),
     )
+  })
+})
+
+describe('두 열로 선다 ([[ADR-182]] 결정 1·2)', () => {
+  const 열이름 = (열: ReturnType<typeof within>): unknown[] =>
+    열.queryAllByTestId('shared-group-name').map((node) => node.props.children)
+
+  // 지그재그(홀짝)로 나누면 왼쪽이 «에픽던전 + 유니온»(7줄)이 되어 타일이 한 줄 더 높다.
+  it('계열 셋을 순서를 지키며 가른다 — 높이가 가장 고른 지점에서', async () => {
+    const { getAllByTestId } = await 위젯(공유컨텐츠())
+
+    const 열들 = getAllByTestId('shared-column')
+    expect(열들).toHaveLength(2)
+    expect(열이름(within(열들[0] as never))).toEqual(['에픽던전'])
+    expect(열이름(within(열들[1] as never))).toEqual(['몬스터파크', '메이플 유니온'])
+  })
+
+  it('계열이 둘이면 한 열에 하나씩이다', async () => {
+    const { getAllByTestId } = await 위젯(공유컨텐츠().slice(0, 2))
+
+    const 열들 = getAllByTestId('shared-column')
+    expect(열이름(within(열들[0] as never))).toEqual(['에픽던전'])
+    expect(열이름(within(열들[1] as never))).toEqual(['몬스터파크'])
+  })
+
+  it('계열이 하나뿐이면 한 열로 그린다 — 반폭만 쓰면 그 자체가 여백이다', async () => {
+    const { getAllByTestId } = await 위젯(공유컨텐츠().slice(0, 1))
+
+    expect(getAllByTestId('shared-column')).toHaveLength(1)
+  })
+})
+
+describe('완료는 체크와 취소선이 말한다 ([[ADR-182]] 결정 3)', () => {
+  // 체크박스는 **접근성 트리에서 숨겨져 있다**(`aria-hidden`) — 뜻은 이름과 `CLEAR` 가 이미
+  // 말하고 이것은 그 말의 그림이라, 스크린 리더가 한 번 더 읽을 이유가 없다. 그래서 테스트도
+  // 숨은 것을 포함해 찾는다.
+  const 숨은것포함 = { includeHiddenElements: true } as const
+
+  it('항목마다 체크박스가 서고 완료한 것만 채워진다', async () => {
+    const { getAllByTestId } = await 위젯([
+      공유계열('에픽던전', [
+        공유항목('하이마운틴', { isComplete: true }),
+        공유항목('악몽선경'),
+      ]),
+    ])
+
+    const 상자들 = getAllByTestId('shared-checkbox', 숨은것포함)
+    expect(상자들).toHaveLength(2)
+    expect(flattenStyle(상자들[0]?.props.style).backgroundColor).toBe(기본테마.secondaryInk)
+    expect(flattenStyle(상자들[1]?.props.style).backgroundColor).toBeUndefined()
+    // 체크 표시는 완료한 것 하나뿐이다 — 빈 상자는 테두리만 지고 안이 비어 있다.
+    expect(상자들[0]?.props.children).toBeTruthy()
+    expect(상자들[1]?.props.children).toBeFalsy()
+  })
+
+  // 취소선만으로는 «지운 것/흐린 것» 이 애매하고, 색만으로는 흑백 화면에서 안 보인다.
+  it('완료한 이름에 취소선과 흐린 색이 **함께** 걸린다', async () => {
+    const { getAllByTestId } = await 위젯([
+      공유계열('에픽던전', [
+        공유항목('하이마운틴', { isComplete: true }),
+        공유항목('악몽선경'),
+      ]),
+    ])
+
+    const [완료, 미완료] = getAllByTestId('shared-item-name')
+    expect(flattenStyle(완료?.props.style).textDecorationLine).toBe('line-through')
+    expect(flattenStyle(완료?.props.style).color).toBe(기본테마.textDisabled)
+    expect(flattenStyle(미완료?.props.style).textDecorationLine).toBeUndefined()
+    expect(flattenStyle(미완료?.props.style).color).toBe(기본테마.text)
+  })
+
+  // 게임에서 오는 값이라 앱이 못 뒤집는다 — 못 뒤집는 것을 누를 수 있게 두면 무반응이 «고장» 이다.
+  it('체크박스는 누를 수 없다 — 읽기 전용이다', async () => {
+    const { getAllByTestId, queryAllByRole } = await 위젯(공유컨텐츠())
+
+    for (const 상자 of getAllByTestId('shared-checkbox', 숨은것포함)) {
+      expect(상자.props.accessibilityRole).toBeUndefined()
+      expect(상자.props.onClick).toBeUndefined()
+    }
+    // 누를 수 있는 것은 여전히 머리의 `?` 하나뿐이다.
+    expect(queryAllByRole('button')).toHaveLength(1)
   })
 })
 
