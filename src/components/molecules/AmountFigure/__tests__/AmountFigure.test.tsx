@@ -121,3 +121,137 @@ describe('AmountFigure', () => {
     expect(flattenStyle(view.getByTestId('amount-figure').props.style).borderTopWidth ?? 0).toBe(0)
   })
 })
+
+/**
+ * 단위는 숫자와 **기준선을 맞춘다** ([[ADR-178]] 정정 2).
+ *
+ * `items-baseline` 은 `TextInput` 에는 안 먹는다 — Yoga 는 글자 노드에만 기준선을 주고 그 밖에는
+ * 상자 밑변으로 떨어진다. 그래서 치는 칸 옆의 단위가 숫자 기준선 위로 떠 보였다(사용자 보고
+ * 2026-08-29). **상자와 기준선은 글자가 만들고** 치는 칸은 그 위에 얹는다.
+ */
+describe('기준선 ([[ADR-178]] 정정 2)', () => {
+  it('치는 칸일 때도 **글자가 상자를 만든다** — 같은 값이 뒤에 선다', async () => {
+    const view = await renderAtom(
+      <AmountFigure value={700_000} unit="메소" testID="amount" onChangeValue={jest.fn()} />,
+    )
+
+    // 보이는 값은 칸이 든다.
+    expect(view.getByTestId('amount').props.value).toBe('700,000')
+    // 그 뒤에 **같은 글자**가 서서 상자와 기준선을 만든다 — 없으면 단위가 기준선을 잃는다.
+    // 그 글자는 `aria-hidden` 이라(읽어 주는 것은 칸이다) 기본 쿼리에서 숨는다.
+    expect(view.getByText('700,000', { includeHiddenElements: true })).toBeTruthy()
+  })
+
+  it('못 치는 자리에서는 그 글자가 곧 보이는 숫자다 — 상자가 하나뿐이다', async () => {
+    const view = await renderAtom(
+      <AmountFigure value={700_000} unit="메소" testID="amount" readOnly onChangeValue={jest.fn()} />,
+    )
+
+    expect(view.getByTestId('amount')).toHaveTextContent('700,000')
+    // 치는 칸이 아예 없다 — 겹쳐 둘 것이 없다.
+    expect(view.queryByLabelText('금액')).toBeNull()
+  })
+
+  it('숫자의 줄 상자는 글자보다 크다 — ascent 가 잘리지 않는다', async () => {
+    const view = await renderAtom(
+      <AmountFigure value={700_000} unit="메소" testID="amount" readOnly onChangeValue={jest.fn()} />,
+    )
+
+    const style = flattenStyle(view.getByTestId('amount').props.style) as {
+      fontSize: number
+      lineHeight: number
+    }
+    expect(style.fontSize).toBe(30)
+    // `leading-none`(=30) 이면 상자가 글자와 같아 초점에서 위가 잘렸다.
+    expect(style.lineHeight).toBeGreaterThan(style.fontSize)
+  })
+})
+
+/**
+ * 단위는 숫자와 **같은 줄 상자**에 선다 ([[ADR-178]] 정정 3).
+ *
+ * `items-baseline` 은 `TextInput` 이 섞인 줄에서 못 믿는다(실기에서 단위가 숫자 기준선 위로 떴다).
+ * 그래서 정렬을 위에서 맞추고 **두 상자에 같은 줄높이 · 같은 글자 크기**를 넣는다 — 그러면
+ * 기준선은 정의상 같은 자리다. 두 글꼴 크기의 차이를 **픽셀로 적지 않는 이유**가 그것이다.
+ */
+describe('단위의 줄 상자 ([[ADR-178]] 정정 3)', () => {
+  it('숫자와 단위가 **같은 줄높이**를 쓴다', async () => {
+    const view = await renderAtom(
+      <AmountFigure value={7_250_000} unit="메소" testID="amount" readOnly onChangeValue={jest.fn()} />,
+    )
+
+    const 숫자 = flattenStyle(view.getByTestId('amount').props.style) as { lineHeight: number }
+    const 단위 = flattenStyle(view.getByTestId('amount-unit').props.style) as { lineHeight: number }
+
+    // 클래스 문자열(`leading-[38px]`)과 상수가 갈리면 여기서 잡힌다 — 보간을 못 하는 자리다.
+    expect(단위.lineHeight).toBe(숫자.lineHeight)
+  })
+
+  it('단위 줄에 **숫자와 같은 크기**의 글자가 심겨 있다 — 그 줄의 지표를 그것이 정한다', async () => {
+    const view = await renderAtom(
+      <AmountFigure value={7_250_000} unit="메소" testID="amount" readOnly onChangeValue={jest.fn()} />,
+    )
+
+    const 숫자 = flattenStyle(view.getByTestId('amount').props.style) as { fontSize: number }
+    // 폭 0 짜리 투명 글자(ZWSP)가 숫자와 같은 크기여야 한다 — 작아지면 기준선이 다시 갈린다.
+    const 심긴글자 = flattenStyle(view.getByText('\u200B').props.style) as {
+      fontSize: number
+      opacity: number
+    }
+
+    expect(심긴글자.fontSize).toBe(숫자.fontSize)
+    expect(심긴글자.opacity).toBe(0)
+  })
+})
+
+/**
+ * 어림값 표식 (사용자 지정 2026-08-29).
+ *
+ * 사냥 메소는 젠 주기·마릿수·레벨로 **미리 세어 둔 값**이지 실제로 받은 액수가 아니다
+ * ([[ADR-175]] 결정 3). 표식이 없으면 그 수가 정산된 금액처럼 읽힌다.
+ */
+describe('≈ 표식', () => {
+  it('어림이면 앞에 `≈` 가 붙는다', async () => {
+    const view = await renderAtom(
+      <AmountFigure
+        value={41_760_000}
+        unit="메소"
+        testID="amount"
+        approximate
+        readOnly
+        onChangeValue={jest.fn()}
+      />,
+    )
+
+    expect(view.getByTestId('amount')).toHaveTextContent('≈ 41,760,000')
+  })
+
+  it('0 에는 안 붙는다 — 아직 어림할 것이 없다', async () => {
+    const view = await renderAtom(
+      <AmountFigure
+        value={0}
+        unit="메소"
+        testID="amount"
+        approximate
+        readOnly
+        onChangeValue={jest.fn()}
+      />,
+    )
+
+    expect(view.getByTestId('amount')).toHaveTextContent('0')
+  })
+
+  it('안 주면 안 붙는다 — 판매·지출은 실제로 오간 값이다', async () => {
+    const view = await renderAtom(
+      <AmountFigure
+        value={41_760_000}
+        unit="메소"
+        testID="amount"
+        readOnly
+        onChangeValue={jest.fn()}
+      />,
+    )
+
+    expect(view.getByTestId('amount')).toHaveTextContent('41,760,000')
+  })
+})

@@ -3,7 +3,7 @@
 // 지출 시트와 **폼이 통째로 다르다** — 통화가 메소 하나뿐이라 시세도 관세도 수량도 없고,
 // 갈래는 첫 칸의 **라벨만** 바꾼다.
 import type { ReactNode } from 'react'
-import { act, fireEvent } from '@testing-library/react-native'
+import { act, fireEvent, waitFor, within } from '@testing-library/react-native'
 
 jest.mock('@gorhom/bottom-sheet', () => {
   const ReactNative = jest.requireActual<typeof import('react-native')>('react-native')
@@ -29,7 +29,7 @@ jest.mock('@gorhom/bottom-sheet', () => {
   }
 })
 
-import { renderOverlay } from '../../../components/__tests__/render-atom'
+import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
 import { clearCountUpMemory } from '../../../lib/use-count-up'
 import { IncomeSheet } from '../IncomeSheet'
 
@@ -52,6 +52,9 @@ async function 그리기(overrides: Partial<React.ComponentProps<typeof IncomeSh
       dateKey="2026-08-23"
       characters={캐릭터둘}
       lastPointRate={null}
+      // 기본은 **0** 이다 — [[ADR-175]] 시절 테스트가 세는 금액을 흔들지 않는다.
+      // 메획이 든 계산은 아래 [[ADR-177]] describe 가 값을 직접 준다.
+      loadMesoRate={async () => ({ kind: 'read' as const, percent: 0 })}
       onSave={jest.fn()}
       onClose={jest.fn()}
       {...overrides}
@@ -326,8 +329,14 @@ describe('판매 수수료 ([[ADR-170]] 정정 9)', () => {
     })
   })
 
-  // 갈래를 옮기면 **골라 둔 요율이 풀린다**(정정 9 ②) — 관세가 갈래를 옮길 때 꺼지는 것과 같다.
-  it('갈래를 옮기면 요율이 풀린다', async () => {
+  /**
+   * 갈래를 옮기면 **골라 둔 것이 통째로 풀린다**([[ADR-178]] 결정 3).
+   *
+   * 종전에는 요율만 손으로 풀고(정정 9 ②) 친 금액은 남았다 — 갈래마다 상태를 한 함수가 들고
+   * 있었기 때문이다. 이제 갈래가 폼을 가르므로 옮기는 순간 **언마운트**되고, 지울 것을 손으로
+   * 세지 않는다.
+   */
+  it('갈래를 옮기면 요율도 친 금액도 풀린다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
     await 대금치기(view, '1200000000')
@@ -337,15 +346,10 @@ describe('판매 수수료 ([[ADR-170]] 정정 9)', () => {
     await 누르기(view, '아이템 판매')
 
     expect(view.getByLabelText('없음').props.accessibilityState?.selected).toBe(true)
+    // 친 금액도 함께 풀린다 — 그래서 저장이 아직 안 열린다(합계가 0 이다).
+    expect(view.getByTestId('income-sheet-gross').props.value).toBe('')
     await 누르기(view, '저장')
-    expect(onSave.mock.calls[0][0]).toMatchObject({
-      mesoAmount: 1_200_000_000,
-      saleFeePercent: null,
-      saleFeeMeso: null,
-      pointAmount: null,
-      pointPer100mMeso: null,
-      cashAmount: null,
-    })
+    expect(onSave).not.toHaveBeenCalled()
   })
 })
 
@@ -584,6 +588,58 @@ describe('판매 대금의 단위 ([[ADR-170]] 정정 14 ④)', () => {
  * 나머지 둘은 «얼마 벌었나» 를 사람이 알지만 사냥 메소는 맵이 정해지면 셀 수 있는 값이라 앱이
  * 낸다. 그래서 이 갈래에서만 줄이 여럿 서고 큰 숫자가 **못 치는 합계**가 된다.
  */
+/**
+ * 갈래마다 **자기 폼**이다 ([[ADR-178]] 결정 3).
+ *
+ * 한 함수가 갈래 셋의 상태를 전부 들고 조건문으로 그리던 것이 «갈래를 옮겨도 값을 들고 다닌다» 의
+ * 원인이었다(사용자 보고 2026-08-29). 이제 갈래가 폼을 가르므로 옮기면 언마운트된다.
+ */
+describe('갈래마다 자기 폼 ([[ADR-178]])', () => {
+  async function 루디고르기(view: Rendered): Promise<void> {
+    await 아이디로누르기(view, 'income-sheet-character-trigger')
+    await 아이디로누르기(view, 'income-sheet-character-option-ocid-1')
+  }
+
+  it('고른 캐릭터가 갈래를 안 넘어간다', async () => {
+    const view = await 그리기()
+    await 누르기(view, '사냥')
+    await 루디고르기(view)
+    expect(view.getByTestId('income-sheet-character-trigger')).toHaveTextContent('캐릭터루디')
+
+    await 누르기(view, '아이템 판매')
+
+    expect(view.getByTestId('income-sheet-character-trigger')).toHaveTextContent('캐릭터선택 안함')
+  })
+
+  it('고른 지역·사냥터가 갈래를 안 넘어간다', async () => {
+    const view = await 그리기()
+    await 누르기(view, '사냥')
+    await 아이디로누르기(view, 'income-sheet-region-trigger')
+    await 아이디로누르기(view, 'income-sheet-region-option-tallahart')
+    await 아이디로누르기(view, 'income-sheet-ground-trigger')
+    await 아이디로누르기(view, 'income-sheet-ground-option-밤의 길 3')
+    expect(view.getByTestId('income-sheet-ground-trigger')).toHaveTextContent('사냥터밤의 길 3')
+
+    await 누르기(view, '기타')
+    await 누르기(view, '사냥')
+
+    expect(view.getByTestId('income-sheet-region-trigger')).toHaveTextContent('지역선택 안함')
+    expect(view.getByTestId('income-sheet-ground-trigger')).toHaveTextContent('사냥터지역을 먼저 고르세요')
+  })
+
+  it('「기타」의 통화도 갈래를 안 넘어간다', async () => {
+    const view = await 그리기()
+    await 누르기(view, '기타')
+    await 누르기(view, '캐시')
+    expect(view.getByLabelText('캐시').props.accessibilityState?.selected).toBe(true)
+
+    await 누르기(view, '사냥')
+    await 누르기(view, '기타')
+
+    expect(view.getByLabelText('메소').props.accessibilityState?.selected).toBe(true)
+  })
+})
+
 describe('사냥 계산기 ([[ADR-175]])', () => {
   /** 사냥 갈래를 열고 탈라하트 「밤의 길 3」(lv.294 · 40마리)까지 고른다. */
   async function 밤의길3(view: Rendered): Promise<void> {
@@ -613,23 +669,28 @@ describe('사냥 계산기 ([[ADR-175]])', () => {
     expect(view.queryByTestId('income-sheet-region-option-roadOfVanishing')).toBeNull()
   })
 
-  it('캐릭터를 안 고르면 **전부** 서고, 페널티가 0 이라고 말한다 (결정 6)', async () => {
+  it('캐릭터를 안 고르면 지역이 **전부** 선다 (결정 6)', async () => {
     const view = await 그리기()
     await 누르기(view, '사냥')
     await 아이디로누르기(view, 'income-sheet-region-trigger')
 
     expect(view.getByTestId('income-sheet-region-option-tallahart')).toBeTruthy()
     expect(view.getByTestId('income-sheet-region-option-chewChew')).toBeTruthy()
-    // **조용히 후한 숫자를 내지 않는다** — 안 적으면 사용자는 그것이 참인 줄 안다.
-    expect(view.getByTestId('income-sheet-hunt-level-notice')).toBeTruthy()
   })
 
-  it('캐릭터를 고르면 그 안내가 걷힌다', async () => {
+  /**
+   * **안내 줄은 걷었다**([[ADR-175]] 결정 6 정정, 사용자 지정 2026-08-29).
+   *
+   * «캐릭터를 고르면 레벨 차이가 반영돼요» 한 줄이 계산기 한가운데 상시로 서 있었다. 캐릭터
+   * 고르개가 바로 위에 **비어 있는 채로** 있으므로 그 사실은 이미 화면에 있고, 문장은 자리만
+   * 차지했다(시트가 82vh 를 넘기던 그 자리다 — [[ADR-178]] 정정 3·5).
+   */
+  it('레벨 안내 줄이 없다 — 빈 캐릭터 고르개가 이미 그 말을 한다', async () => {
     const view = await 그리기()
     await 누르기(view, '사냥')
-    await 루디고르기(view)
 
     expect(view.queryByTestId('income-sheet-hunt-level-notice')).toBeNull()
+    expect(view.getByTestId('income-sheet-character-trigger')).toHaveTextContent('캐릭터선택 안함')
   })
 
   it('캐릭터를 바꿔 창 밖으로 나간 지역은 **풀린다**', async () => {
@@ -665,7 +726,7 @@ describe('사냥 계산기 ([[ADR-175]])', () => {
 
     // 기본은 1소재(30분) · 효율 100% · 버프 없음 · 캐릭터 미선택(페널티 0).
     // 294 × 7.5 × 40 × 8 × 30 = 21,168,000
-    expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('21,168,000')
+    expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('≈ 21,168,000')
   })
 
   it('고른 사냥터의 값이 **자기 줄**로 선다 — 포스 배지·레벨·마릿수 (결정 10)', async () => {
@@ -684,7 +745,7 @@ describe('사냥 계산기 ([[ADR-175]])', () => {
     await 누르기(view, '소재 늘리기')
 
     expect(view.getByTestId('income-sheet-sojae')).toHaveTextContent('2')
-    expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('42,336,000')
+    expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('≈ 42,336,000')
   })
 
   /**
@@ -728,7 +789,7 @@ describe('사냥 계산기 ([[ADR-175]])', () => {
 
     expect(view.getByTestId('income-sheet-killed-mobs')).toHaveTextContent('38마리')
     // 21,168,000 × 38/40
-    expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('20,109,600')
+    expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('≈ 20,109,600')
   })
 
   /**
@@ -768,15 +829,53 @@ describe('사냥 계산기 ([[ADR-175]])', () => {
     expect(view.queryByLabelText('100%')).toBeNull()
   })
 
-  it('아이템은 **합연산**이다 — 둘을 켜면 ×1.7 이다', async () => {
+  /**
+   * **거는 자리가 둘로 갈린다**([[ADR-177]] 정정 1, 사용자 지정 2026-08-28):
+   *
+   *   (기본 100% + 템메획 + 유니온의 부 + 어빌/유니온/스킬) × 재획비(1.2배)
+   *
+   * 유니온의 부는 합산 통 안이고 재획비는 그 결과 전체에 곱한다. [[ADR-175]] 는 둘을 한 통에 넣어
+   * ×1.7 을 냈는데, 그 값이 정정으로 갈렸다.
+   */
+  it('유니온의 부는 통 안, 재획비는 통 밖이다 — 둘을 켜면 ×1.8', async () => {
     const view = await 그리기()
     await 밤의길3(view)
 
     await 누르기(view, '유니온의 부')
     await 누르기(view, '소형 재물 획득의 비약')
 
-    // 21,168,000 × 1.7 = 35,985,600 (곱연산이면 38,102,400 이 된다)
-    expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('35,985,600')
+    // 21,168,000 × 1.5 × 1.2 = 38,102,400 (한 통에 넣으면 35,985,600 이 된다)
+    expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('≈ 38,102,400')
+  })
+
+  it('재획비만 켜면 ×1.2 가 걸린다 — 다만 칩엔 수를 안 적는다', async () => {
+    const view = await 그리기()
+    await 밤의길3(view)
+    await 누르기(view, '소형 재물 획득의 비약')
+
+    expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('≈ 25,401,600')
+    // **칩은 그림이다**([[ADR-177]] 정정 4) — 증가율은 이미 아는 값이라 안 적는다.
+    expect(view.getByLabelText('소형 재물 획득의 비약')).toHaveTextContent('')
+    expect(view.getByLabelText('유니온의 부')).toHaveTextContent('')
+  })
+
+  it('칩은 **그림**이고 이름은 읽어 주는 라벨로만 남는다', async () => {
+    const view = await 그리기()
+    await 밤의길3(view)
+
+    for (const [id, label] of [
+      ['union', '유니온의 부'],
+      ['potion', '소형 재물 획득의 비약'],
+    ]) {
+      // 번들 에셋이 실제로 실린다 — 파일명이 어긋나면 칩이 조용히 빈다.
+      // 그림은 `aria-hidden` 이라(이름은 누르개가 든다) 기본 쿼리에서 숨겨진다.
+      expect(
+        view.getByTestId(`income-sheet-boost-icon-${id}`, { includeHiddenElements: true }).props
+          .source,
+      ).toBeTruthy()
+      // 이름은 **읽어 주는 라벨**로만 남는다(글자로는 안 그린다).
+      expect(view.getByLabelText(label)).toHaveTextContent('')
+    }
   })
 
   it('레벨 차이가 벌어지면 깎인다 (결정 4)', async () => {
@@ -788,13 +887,13 @@ describe('사냥 계산기 ([[ADR-175]])', () => {
     await 아이디로누르기(view, 'income-sheet-ground-option-성문으로 가는 길 1')
 
     // 캐릭터를 안 골랐으면 페널티가 0 이다: 270 × 7.5 × 34 × 8 × 30 = 16,524,000
-    expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('16,524,000')
+    expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('≈ 16,524,000')
 
     // 루디는 294 — 몬스터가 24 낮으니 20% 에 5·6·7·8 을 더해 −46% 다. 오디움은 루디의 바닥
     // (274)에 걸쳐 있어 목록에 남는다 — 남으면서 가장 많이 깎이는 자리다.
     await 루디고르기(view)
 
-    expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('8,922,960')
+    expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('≈ 8,922,960')
   })
 
   it('**큰 숫자는 합계이고 못 친다** (결정 1)', async () => {
@@ -916,6 +1015,7 @@ describe('사냥 계산기 ([[ADR-175]])', () => {
           sojae: 3,
           fragments: 7,
           fragmentPrice: 8_000_000,
+          mesoRate: 161,
         },
         memo: null,
         recordedAt: '2026-08-23T01:00:00.000Z',
@@ -928,7 +1028,8 @@ describe('사냥 계산기 ([[ADR-175]])', () => {
     // 저장된 것은 «셋을 놓쳤다» 이고, 40마리 맵이라 글자가 93% 로 선다.
     expect(view.getByLabelText('93%').props.accessibilityState?.selected).toBe(true)
     expect(view.getByTestId('income-sheet-killed-mobs')).toHaveTextContent('37마리')
-    expect(view.getByLabelText('유니온의 부').props.accessibilityState?.selected).toBe(true)
+    // 켜고 끄는 것이라 **체크박스**다([[ADR-178]] 정정 5) — 상태가 `selected` 가 아니라 `checked` 다.
+    expect(view.getByLabelText('유니온의 부').props.accessibilityState?.checked).toBe(true)
     expect(view.getByTestId('income-sheet-sojae')).toHaveTextContent('3')
     expect(view.getByTestId('income-sheet-fragments').props.value).toBe('7')
     expect(view.getByTestId('income-sheet-fragment-price').props.value).toBe('8,000,000')
@@ -964,5 +1065,510 @@ describe('사냥 계산기 ([[ADR-175]])', () => {
     // 금액은 여전히 **친다** — 앱이 셀 근거가 그 행에 없다.
     expect(view.getByLabelText('금액')).toBeTruthy()
     expect(view.getByTestId('income-sheet-amount').props.value).toBe('1,200,000,000')
+  })
+})
+
+/**
+ * 메소 획득량 ([[ADR-177]]).
+ *
+ * 캐릭터에 박힌 메획(장비 잠재·에디셔널 · 어빌리티 · 심볼 · 유니온 공격대 · 유니온 아티팩트)을
+ * **최대 세팅**으로 읽어 계산에 넣는다. 화면에서는 **자동값이고 못 친다** — 앱이 센 값을 사람이
+ * 덮어쓰면 어느 쪽이 참인지 사라진다(결정 7).
+ */
+describe('메소 획득량 ([[ADR-177]])', () => {
+  async function 밤의길3(view: Rendered): Promise<void> {
+    await 누르기(view, '사냥')
+    await 아이디로누르기(view, 'income-sheet-region-trigger')
+    await 아이디로누르기(view, 'income-sheet-region-option-tallahart')
+    await 아이디로누르기(view, 'income-sheet-ground-trigger')
+    await 아이디로누르기(view, 'income-sheet-ground-option-밤의 길 3')
+  }
+  async function 루디고르기(view: Rendered): Promise<void> {
+    await 아이디로누르기(view, 'income-sheet-character-trigger')
+    await 아이디로누르기(view, 'income-sheet-character-option-ocid-1')
+  }
+
+  /**
+   * **언제나 선다**(사용자 지정 2026-08-29) — 캐릭터를 안 골랐어도 자리는 있다. 안 세우면 캐릭터를
+   * 고르는 순간 줄이 생겨 아래가 밀리고, «메획이 안 든다» 는 사실도 화면이 말하지 않는다.
+   */
+  it('캐릭터를 안 골라도 줄이 서고 **0%** 다', async () => {
+    const view = await 그리기()
+    await 누르기(view, '사냥')
+
+    expect(view.getByTestId('income-sheet-meso-rate')).toHaveTextContent('0%')
+    // 고르지도 않은 캐릭터의 메획을 물을 수는 없다 — 치는 칸이 아니다.
+    expect(view.queryByTestId('income-sheet-meso-rate-input')).toBeNull()
+  })
+
+  it('캐릭터가 없어도 켠 것은 든다 — 유니온의 부만 켜면 50%', async () => {
+    const view = await 그리기()
+    await 누르기(view, '사냥')
+    await 누르기(view, '유니온의 부')
+
+    expect(view.getByTestId('income-sheet-meso-rate')).toHaveTextContent('50%')
+  })
+
+  it('캐릭터를 고르면 읽어서 **자동값**으로 세운다', async () => {
+    const loadMesoRate = jest.fn(async () => ({ kind: 'read' as const, percent: 149 }))
+    const view = await 그리기({ loadMesoRate })
+    await 누르기(view, '사냥')
+    await 루디고르기(view)
+
+    expect(loadMesoRate).toHaveBeenCalledWith('ocid-1')
+    expect(view.getByTestId('income-sheet-meso-rate')).toHaveTextContent('149%')
+    // **못 친다** — 자동값 자리에는 입력 칸이 없다.
+    expect(view.queryByTestId('income-sheet-meso-rate-input')).toBeNull()
+  })
+
+  it('메획은 아이템 부스트와 **같은 합연산 통**이다 (결정 6)', async () => {
+    const view = await 그리기({ loadMesoRate: async () => ({ kind: 'read' as const, percent: 149 }) })
+    await 밤의길3(view)
+    await 루디고르기(view)
+
+    // 294 × 7.5 × (40 × 8) × 30분 = 21,168,000 → × (1 + 149/100) = 52,708,320
+    expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('≈ 52,708,320')
+  })
+
+  it('메획 0 을 읽은 캐릭터는 곱이 ×1 이다 — 「못 읽었다」와 다르다', async () => {
+    const view = await 그리기({
+      loadMesoRate: async () => ({ kind: 'read' as const, percent: 0 }),
+    })
+    await 밤의길3(view)
+    await 루디고르기(view)
+
+    expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('≈ 21,168,000')
+    expect(view.queryByTestId('income-sheet-meso-rate-input')).toBeNull()
+  })
+
+  it('못 읽으면 **치는 칸**이 되고 기본값은 마지막 성공값이다 (결정 7)', async () => {
+    const view = await 그리기({
+      loadMesoRate: async () => ({ kind: 'fallback' as const, percent: 161 }),
+    })
+    await 밤의길3(view)
+    await 루디고르기(view)
+
+    expect(view.getByTestId('income-sheet-meso-rate-input').props.value).toBe('161')
+    // 161% 로 센다 — 21,168,000 × 2.61 = 55,248,480
+    expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('≈ 55,248,480')
+  })
+
+  it('마지막 성공값도 없으면 빈 칸이고 0 으로 센다', async () => {
+    const view = await 그리기({
+      loadMesoRate: async () => ({ kind: 'fallback' as const, percent: null }),
+    })
+    await 밤의길3(view)
+    await 루디고르기(view)
+
+    expect(view.getByTestId('income-sheet-meso-rate-input').props.value).toBe('')
+    expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('≈ 21,168,000')
+  })
+
+  it('폴백 칸에 친 값이 계산에 든다', async () => {
+    const view = await 그리기({
+      loadMesoRate: async () => ({ kind: 'fallback' as const, percent: null }),
+    })
+    await 밤의길3(view)
+    await 루디고르기(view)
+    await 아이디로치기(view, 'income-sheet-meso-rate-input', '100')
+
+    expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('≈ 42,336,000')
+  })
+
+  it('캐릭터를 바꾸면 **다시 읽는다** — 그건 사용자가 한 일이다', async () => {
+    const loadMesoRate = jest.fn(async (ocid: string) => ({
+      kind: 'read' as const,
+      percent: ocid === 'ocid-1' ? 149 : 46,
+    }))
+    const view = await 그리기({ loadMesoRate })
+    await 누르기(view, '사냥')
+    await 루디고르기(view)
+    await 아이디로누르기(view, 'income-sheet-character-trigger')
+    await 아이디로누르기(view, 'income-sheet-character-option-ocid-2')
+
+    expect(loadMesoRate).toHaveBeenNthCalledWith(2, 'ocid-2')
+    expect(view.getByTestId('income-sheet-meso-rate')).toHaveTextContent('46%')
+  })
+
+  it('캐릭터를 「선택 안함」 으로 되돌리면 **0% 로 돌아간다**', async () => {
+    const view = await 그리기()
+    await 누르기(view, '사냥')
+    await 루디고르기(view)
+    await 아이디로누르기(view, 'income-sheet-character-trigger')
+    await 아이디로누르기(view, 'income-sheet-character-option-')
+
+    expect(view.getByTestId('income-sheet-meso-rate')).toHaveTextContent('0%')
+  })
+
+  /**
+   * **아이템을 켜면 이 줄의 숫자가 오른다**(사용자 지정 2026-08-28) — 게임 스탯창처럼 «증가량» 이고
+   * 소수점은 **버린다**. 곱셈(재획비)은 기본 100% 를 포함해 걸린다.
+   */
+  it('유니온의 부를 켜면 149% → 199%', async () => {
+    const view = await 그리기({ loadMesoRate: async () => ({ kind: 'read' as const, percent: 149 }) })
+    await 밤의길3(view)
+    await 루디고르기(view)
+    expect(view.getByTestId('income-sheet-meso-rate')).toHaveTextContent('149%')
+
+    await 누르기(view, '유니온의 부')
+
+    expect(view.getByTestId('income-sheet-meso-rate')).toHaveTextContent('199%')
+  })
+
+  it('재획비를 켜면 198% 다 — (100+149)×1.2 = 298.8', async () => {
+    const view = await 그리기({ loadMesoRate: async () => ({ kind: 'read' as const, percent: 149 }) })
+    await 밤의길3(view)
+    await 루디고르기(view)
+
+    await 누르기(view, '소형 재물 획득의 비약')
+
+    expect(view.getByTestId('income-sheet-meso-rate')).toHaveTextContent('198%')
+  })
+
+  it('둘 다 켜면 258% 다 — 358.8 의 **소수점을 버린다**', async () => {
+    const view = await 그리기({ loadMesoRate: async () => ({ kind: 'read' as const, percent: 149 }) })
+    await 밤의길3(view)
+    await 루디고르기(view)
+
+    await 누르기(view, '유니온의 부')
+    await 누르기(view, '소형 재물 획득의 비약')
+
+    expect(view.getByTestId('income-sheet-meso-rate')).toHaveTextContent('258%')
+  })
+
+  /**
+   * **자른 숫자가 돈을 세지 않는다**([[ADR-175]] 결정 3-1 ①과 같은 규칙) — 줄에는 258% 가 적히지만
+   * 곱하는 것은 358.8% 다. 라벨이 계산을 끌고 다니면 «왜 저 금액인가» 를 되짚을 수 없다.
+   */
+  it('돈은 **내림 전 값**으로 센다 — 줄의 258% 가 아니라 358.8%', async () => {
+    const view = await 그리기({ loadMesoRate: async () => ({ kind: 'read' as const, percent: 149 }) })
+    await 밤의길3(view)
+    await 루디고르기(view)
+    await 누르기(view, '유니온의 부')
+    await 누르기(view, '소형 재물 획득의 비약')
+
+    // 21,168,000 × 2.99 × 1.2 = 75,950,784 (줄에 적힌 258% 로 세면 75,781,440 이 된다)
+    expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('≈ 75,950,784')
+  })
+
+  it('못 읽어 치는 칸일 때도 켠 아이템이 반영된 총합을 보여준다', async () => {
+    const view = await 그리기({
+      loadMesoRate: async () => ({ kind: 'fallback' as const, percent: 149 }),
+    })
+    await 밤의길3(view)
+    await 루디고르기(view)
+    await 누르기(view, '유니온의 부')
+
+    // 치는 칸에는 **캐릭터 메획**이 남고, 켠 것까지 더한 총합은 그 옆에 선다.
+    expect(view.getByTestId('income-sheet-meso-rate-input').props.value).toBe('149')
+    expect(view.getByTestId('income-sheet-meso-rate-applied')).toHaveTextContent('→ 199%')
+  })
+
+  /**
+   * **줄을 하나 줄인다**(사용자 지정 2026-08-29) — 시트가 82vh 를 넘겨 스크롤이 났다. 숫자와 그것을
+   * 움직이는 칩이 한 줄에 붙으므로 읽기도 오히려 낫다.
+   */
+  /**
+   * **켜는 자리와 세어진 값이 위아래로 갈린다**([[ADR-178]] 정정 5, 사용자 지정 2026-08-29).
+   * 윗 줄이 켜고 끄는 것 둘, 아랫 줄이 그 결과다.
+   */
+  it('켜는 줄과 값 줄이 갈린다 — 값은 켜는 줄 안에 없다', async () => {
+    const view = await 그리기({ loadMesoRate: async () => ({ kind: 'read' as const, percent: 149 }) })
+    await 누르기(view, '사냥')
+    await 루디고르기(view)
+
+    const 켜는줄 = view.getByTestId('income-sheet-boosts')
+    expect(within(켜는줄).queryByTestId('income-sheet-meso-rate')).toBeNull()
+    // 켜는 줄의 글자는 라벨 하나뿐이다 — 켜는 것은 체크박스와 그림이다.
+    expect(켜는줄).toHaveTextContent('소비 아이템')
+    expect(view.getByTestId('income-sheet-meso-rate')).toHaveTextContent('149%')
+  })
+
+  it('못 읽었을 때만 치는 칸이 **자기 줄**로 선다', async () => {
+    const view = await 그리기({
+      loadMesoRate: async () => ({ kind: 'fallback' as const, percent: 149 }),
+    })
+    await 누르기(view, '사냥')
+    await 루디고르기(view)
+
+    const 칩줄 = view.getByTestId('income-sheet-boosts')
+    expect(within(칩줄).queryByTestId('income-sheet-meso-rate-input')).toBeNull()
+    expect(view.getByTestId('income-sheet-meso-rate-input')).toBeTruthy()
+  })
+
+  it('저장하면 **그때의 메획**이 실린다 (결정 8)', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({
+      onSave,
+      loadMesoRate: async () => ({ kind: 'read' as const, percent: 149 }),
+    })
+    await 밤의길3(view)
+    await 루디고르기(view)
+    await 이름으로누르기(view, '저장')
+
+    expect(onSave.mock.calls[0][0].hunt).toMatchObject({ mesoRate: 149 })
+  })
+
+  it('수정으로 열면 저장해 둔 메획이 서고 **다시 읽지 않는다**', async () => {
+    const loadMesoRate = jest.fn(async () => ({ kind: 'read' as const, percent: 149 }))
+    const view = await 그리기({
+      loadMesoRate,
+      editing: {
+        id: 'inc-h',
+        ocid: 'ocid-1',
+        earnedOn: '2026-08-23',
+        category: '사냥' as const,
+        item: '밤의 길 3',
+        mesoAmount: 50_000_000,
+        saleFeePercent: null,
+        saleFeeMeso: null,
+        pointAmount: null,
+        pointPer100mMeso: null,
+        cashAmount: null,
+        hunt: {
+          characterLevel: 294,
+          missedMobs: 0,
+          boosts: [],
+          sojae: 1,
+          fragments: 0,
+          fragmentPrice: 0,
+          mesoRate: 161,
+        },
+        memo: null,
+        recordedAt: '2026-08-23T01:00:00.000Z',
+      },
+      onDelete: jest.fn(),
+    })
+
+    // **그때의 값**이다 — 지금 읽으면 149 지만 이 기록은 161 로 적혔다.
+    expect(view.getByTestId('income-sheet-meso-rate')).toHaveTextContent('161%')
+    expect(loadMesoRate).not.toHaveBeenCalled()
+  })
+})
+
+/**
+ * 큰 숫자의 **정체** ([[ADR-087]] 정정 1 · [[ADR-173]] 결정 12).
+ *
+ * 카운트업의 기억은 **모듈 수준**이라 시트를 닫아도 남는다([[ADR-087]] 결정 8). 정체를 안 넘기면
+ * `testID` 가 곧 정체가 되는데 그것은 **고정 문자열**이라, 다른 기록을 열어도 같은 칸으로 보여
+ * **지난 기록의 금액에서 굴러온다**(사용자 보고 2026-08-29 — 56억을 봤다가 121억을 열면 오르는
+ * 애니메이션이 났다). 지출 시트는 이미 이름표를 넘겨 이 자리를 막고 있었다.
+ */
+describe('큰 숫자의 정체 ([[ADR-087]] 정정 1)', () => {
+  function 판매기록(mesoAmount: number) {
+    return {
+      id: `inc-${mesoAmount}`,
+      ocid: null,
+      earnedOn: '2026-08-23',
+      category: '아이템 판매' as const,
+      item: '앱솔랩스 케이프',
+      mesoAmount,
+      saleFeePercent: null,
+      saleFeeMeso: null,
+      pointAmount: null,
+      pointPer100mMeso: null,
+      cashAmount: null,
+      hunt: null,
+      memo: null,
+      recordedAt: '2026-08-23T01:00:00.000Z',
+    }
+  }
+
+  it('다른 기록을 열면 **지난 금액에서 안 굴러온다**', async () => {
+    const 먼저 = await 그리기({ editing: 판매기록(5_600_000_000), onDelete: jest.fn() })
+    expect(먼저.getByTestId('income-sheet-amount')).toHaveTextContent('5,600,000,000')
+    await act(async () => 먼저.unmount())
+
+    const 나중 = await 그리기({ editing: 판매기록(12_100_000_000), onDelete: jest.fn() })
+
+    // 열자마자 그 기록의 값이다 — 5,600,000,000 에서 올라오면 «내가 뭘 바꿨나» 로 읽힌다.
+    expect(나중.getByTestId('income-sheet-amount')).toHaveTextContent('12,100,000,000')
+  })
+
+  it('사냥 · 기타도 같다 — 갈래마다 자기 이름표를 갖는다', async () => {
+    const 먼저 = await 그리기({
+      editing: { ...판매기록(5_600_000_000), category: '기타' as const },
+      onDelete: jest.fn(),
+    })
+    await act(async () => 먼저.unmount())
+
+    const 나중 = await 그리기({
+      editing: { ...판매기록(12_100_000_000), category: '기타' as const },
+      onDelete: jest.fn(),
+    })
+
+    // 「기타」의 큰 숫자는 **치는 칸**이라 글자가 아니라 값을 본다.
+    expect(나중.getByTestId('income-sheet-amount').props.value).toBe('12,100,000,000')
+  })
+})
+
+/**
+ * 사냥 폼의 줄 배치 ([[ADR-178]] 정정 5, 사용자 지정 2026-08-29).
+ *
+ * 「어디서」를 정하는 짝(지역·사냥터)은 **한 줄**이고, 켜고 끄는 것 둘은 **값 줄 위**로 빠지며
+ * 알약 테두리 대신 **체크박스**가 상태를 말한다.
+ */
+describe('사냥 폼의 줄 배치 ([[ADR-178]] 정정 5)', () => {
+  async function 사냥열기(view: Rendered): Promise<void> {
+    await 누르기(view, '사냥')
+  }
+
+  it('지역과 사냥터가 **한 줄**에 선다', async () => {
+    const view = await 그리기()
+    await 사냥열기(view)
+
+    const 한줄 = view.getByTestId('income-sheet-where')
+    expect(within(한줄).getByTestId('income-sheet-region-trigger')).toBeTruthy()
+    expect(within(한줄).getByTestId('income-sheet-ground-trigger')).toBeTruthy()
+  })
+
+  // 지역은 길어야 「츄츄 아일랜드」 인데 사냥터는 「풍화된 기쁨과 분노의 땅」 까지 간다 —
+  // 반씩 나누면 긴 쪽만 잘린다(사용자 지정 2026-08-29).
+  it('사냥터가 지역보다 **넓다**', async () => {
+    const view = await 그리기()
+    await 사냥열기(view)
+
+    const 지역 = flattenStyle(view.getByTestId('income-sheet-region-slot').props.style) as {
+      flex: number
+    }
+    const 사냥터 = flattenStyle(view.getByTestId('income-sheet-ground-slot').props.style) as {
+      flex: number
+    }
+
+    expect(사냥터.flex).toBeGreaterThan(지역.flex)
+  })
+
+  it('켜고 끄는 것은 **체크박스**다 — 눌리면 상태가 뒤집힌다', async () => {
+    const view = await 그리기()
+    await 사냥열기(view)
+
+    const 유니온 = view.getByLabelText('유니온의 부')
+    // RN 은 `role` 을 그대로 실어 보낸다(`accessibilityRole` 로 안 옮긴다).
+    expect(유니온.props.role).toBe('checkbox')
+    expect(유니온.props.accessibilityState?.checked).toBe(false)
+
+    await 누르기(view, '유니온의 부')
+
+    expect(view.getByLabelText('유니온의 부').props.accessibilityState?.checked).toBe(true)
+  })
+
+  it('아이템 그림에 **원형 테두리가 없다**', async () => {
+    const view = await 그리기()
+    await 사냥열기(view)
+
+    // 알약 테두리는 «고르는 하나» 로 읽혀 여럿이 동시에 켜지는 것과 안 맞았다.
+    expect(String(view.getByLabelText('유니온의 부').props.className ?? '')).not.toContain(
+      'rounded-full',
+    )
+  })
+})
+
+/**
+ * 머리에서 **날짜를 바꾼다** ([[ADR-178]] 정정 6, 사용자 지정 2026-08-29).
+ *
+ * 종전에는 «날짜는 캘린더에서 고르는 것» 이라 시트가 적기만 했다. 그런데 **날을 잘못 골랐다는
+ * 것을 아는 자리가 여기**다 — 그때 닫고 다시 여는 것은 친 것을 버리는 일이다.
+ */
+describe('날짜 바꾸기 ([[ADR-178]] 정정 6)', () => {
+  it('하루씩 앞뒤로 옮긴다', async () => {
+    const view = await 그리기()
+    expect(view.getByTestId('income-sheet-date')).toHaveTextContent('8월 23일 (일)')
+
+    await 아이디로누르기(view, 'income-sheet-date-prev')
+    expect(view.getByTestId('income-sheet-date')).toHaveTextContent('8월 22일 (토)')
+
+    await 아이디로누르기(view, 'income-sheet-date-next')
+    await 아이디로누르기(view, 'income-sheet-date-next')
+    expect(view.getByTestId('income-sheet-date')).toHaveTextContent('8월 24일 (월)')
+  })
+
+  it('바꾼 날짜로 저장된다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave })
+    await 대금치기(view, '1200000000')
+    await 아이디로누르기(view, 'income-sheet-date-prev')
+    await 이름으로누르기(view, '저장')
+
+    expect(onSave.mock.calls[0][0]).toMatchObject({ earnedOn: '2026-08-22' })
+  })
+
+  // 갈래 폼은 `key={category}` 로만 다시 심긴다 — 날짜는 그 열쇠가 아니다([[ADR-178]] 결정 3).
+  it('날짜를 바꿔도 **친 것이 안 사라진다**', async () => {
+    const view = await 그리기()
+    await 대금치기(view, '1200000000')
+
+    await 아이디로누르기(view, 'income-sheet-date-prev')
+
+    expect(view.getByTestId('income-sheet-gross').props.value).toBe('1,200,000,000')
+  })
+
+  it('수정으로 열어도 바꿀 수 있다 — 그 기록이 다른 날로 옮겨 간다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({
+      onSave,
+      onDelete: jest.fn(),
+      editing: {
+        id: 'inc-1',
+        ocid: null,
+        earnedOn: '2026-08-23',
+        category: '아이템 판매' as const,
+        item: '앱솔랩스 케이프',
+        mesoAmount: 1_200_000_000,
+        saleFeePercent: null,
+        saleFeeMeso: null,
+        pointAmount: null,
+        pointPer100mMeso: null,
+        cashAmount: null,
+        hunt: null,
+        memo: null,
+        recordedAt: '2026-08-23T01:00:00.000Z',
+      },
+    })
+
+    await 아이디로누르기(view, 'income-sheet-date-next')
+    await 이름으로누르기(view, '수정')
+
+    expect(onSave.mock.calls[0][0]).toMatchObject({ earnedOn: '2026-08-24' })
+  })
+})
+
+/**
+ * 사냥 메소는 **어림값**이다 (사용자 지정 2026-08-29).
+ *
+ * 젠 주기·마릿수·레벨로 미리 세어 둔 값이지 실제로 받은 액수가 아니다([[ADR-175]] 결정 3).
+ * 획득 메소 줄과 합계 둘 다 `≈` 를 든다.
+ */
+describe('어림값 표식', () => {
+  it('획득 메소와 합계 둘 다 `≈` 를 든다', async () => {
+    const view = await 그리기()
+    await 누르기(view, '사냥')
+    await 아이디로누르기(view, 'income-sheet-region-trigger')
+    await 아이디로누르기(view, 'income-sheet-region-option-tallahart')
+    await 아이디로누르기(view, 'income-sheet-ground-trigger')
+    await 아이디로누르기(view, 'income-sheet-ground-option-밤의 길 3')
+
+    expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('≈ 21,168,000')
+    // 큰 숫자는 **굴러 올라간다**([[ADR-087]]) — 다 오를 때까지 기다린다.
+    await waitFor(() =>
+      expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('≈ 21,168,000'),
+    )
+  })
+
+  it('아직 아무것도 안 골랐으면 표식이 없다', async () => {
+    const view = await 그리기()
+    await 누르기(view, '사냥')
+
+    expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('0')
+    expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('0')
+  })
+
+  // 아이템 판매는 실제로 오간 값이다 — 어림이 아니다.
+  it('다른 갈래에는 안 붙는다', async () => {
+    const view = await 그리기()
+    await 대금치기(view, '1200000000')
+
+    await waitFor(() =>
+      expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('1,200,000,000'),
+    )
   })
 })

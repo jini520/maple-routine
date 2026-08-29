@@ -1,8 +1,8 @@
 # Nexon Open API 연동
 
 > **범위**: Nexon Open API 호출·인증·엔드포인트·정규화·호출 제한. 별도 서버/프록시 없이 사용자 개인 키로 기기에서 직접 호출한다([[ADR-003]], [[ADR-007]]).
-> **관련 소스**: `nexon/client` · `nexon/character` · `nexon/schedule`(client/normalize) · `lib/boss-matching`.
-> **관련 ADR**: [[ADR-007]] [[ADR-003]] [[ADR-006]] [[ADR-067]]. **관련 문서**: [architecture.md](./architecture.md), [error-resilience.md](./error-resilience.md), [features/content-scheduler.md](../features/content-scheduler.md), [features/boss-scheduler.md](../features/boss-scheduler.md).
+> **관련 소스**: `nexon/client` · `nexon/character` · `nexon/schedule`(client/normalize) · `nexon/meso-rate`(+ `lib/meso-rate` 파서) · `lib/boss-matching`.
+> **관련 ADR**: [[ADR-007]] [[ADR-003]] [[ADR-006]] [[ADR-067]] [[ADR-177]]. **관련 문서**: [architecture.md](./architecture.md), [error-resilience.md](./error-resilience.md), [features/content-scheduler.md](../features/content-scheduler.md), [features/boss-scheduler.md](../features/boss-scheduler.md).
 
 ## 클라이언트·인증
 - 호출 도메인은 **`https://open.api.nexon.com/`**(문서 사이트 `openapi.nexon.com` 과 다름). 모든 요청 헤더에 **`x-nxopen-api-key: <저장된 개인 API 키>`**.
@@ -20,6 +20,9 @@
 - **`GET /maplestory/v1/scheduler/character-state`** (`nexon/schedule`, ocid별): `daily_contents`/`weekly_contents`/`boss_contents` 를 앱 도메인 모델로 변환.
   - `boss_contents.cycle` = `bossDaily`/`bossWeekly`/`bossMonthly`(실측). **`bossWeekly`·`bossMonthly` 만 사용, `bossDaily` 무시** — 힐라(하드)·핑크빈(카오스) 등 일간 격하 보스가 `bossDaily` 로 온다([[ADR-006]] 일치).
   - **`date`(YYYY-MM-DD) 쿼리 파라미터** 지원(공식 문서 확인, 2026-07-14, [[ADR-023]]) — 보스 수익 과거 기간 재조회에 사용. 조회 가능 구간은 **하한과 상한이 모두 있다** — 아래 "date 조회 가능 구간" 참고([[ADR-032]], [[ADR-067]]).
+
+- **메소 획득량을 읽는 다섯** (`nexon/meso-rate`, ocid별 — [[ADR-177]]): `GET /maplestory/v1/character/item-equipment` · `character/ability` · `character/symbol-equipment` · `user/union-raider` · `user/union-artifact`. **사냥 계산기가 캐릭터의 「메소 획득량」을 셀 때만** 부르고, 계기는 시트에서 **캐릭터를 고를 때**다(다섯은 병렬 — 조작 하나에 5건이라 초당 500건 예산에 닿지 않는다). 파싱 규칙·프리셋·캡은 [[ADR-177]] 결정 2~5 이고 아래 「메소 획득량」 절이 실측을 든다.
+  - ⚠️ **`character/stat` 의 환산값을 쓰지 않는다**([[ADR-177]] 결정 1). `final_stat` 에 「메소 획득량」이 이미 합산되어 오지만 ① **현재 프리셋**의 값이고 ② **일시 버프가 섞인다**. 「추가 호출 전에 `character/basic` 부터 확인」 규칙대로 확인했고 거기엔 메획이 **없다**.
 
 ### 공지사항 엔드포인트 — **미실측** ([[ADR-146]] 결정 2)
 
@@ -137,6 +140,21 @@ HTTP 400
 - `character/list` 는 그 13명을 정상 반환하고, `/maplestory/v1/id?character_name=` 도 **같은 ocid** 를 돌려준다 — ocid 자체는 유효한 형태다.
 - 같은 월드(베라)의 **다른 사람 캐릭터는 200** 이므로 월드 문제도, 키 소유권 문제도 아니다.
 - 원인은 확정하지 못했다(삭제/이전 등 계정 상태로 추정). 확정할 수 없어도 **앱이 다뤄야 하는 사실**은 분명하다: 온보딩 계정 선택(ADR-051)은 이 계정을 정상 후보로 제시하고, 고르면 모든 캐릭터가 영구히 조회 불가라 피커가 빈 목록이 된다.
+
+## 메소 획득량 (실측 2026-08-28, [[ADR-177]])
+
+표본은 **유니온 랭킹 상위 12명 + 사용자 캐릭터 1명**이다. 값은 전부 실제 응답에서 잰 것이고 추정이 없다([[ADR-006]]).
+
+- **소스는 다섯뿐이다.** `hyper-stat` · `set-effect` · `pet-equipment` · `cashitem-equipment` · `link-skill` · `user/union` · `union_state_stat` 를 전부 훑어 「메소」 문자열 **0건**을 확인했다.
+- **문자열 형식이 갈린다.** 장비 잠재·에디셔널은 `메소 획득량 +20%`(`+` 가 붙고 「증가」가 없다), 어빌리티·유니온 공격대·아티팩트는 `메소 획득량 20% 증가`. **정규식 하나로 둘 다 받는다** — 따로 파싱하면 한쪽 표기가 바뀔 때 조용히 0 이 된다.
+- **심볼만 전용 숫자 필드다** — `symbol[].symbol_meso_rate` 가 `"13%"` 로 온다. 메획을 주는 것은 **그랜드 어센틱심볼뿐**이고 아케인·어센틱은 `"0%"`.
+- **`union_raider_preset_1~5` 는 죽은 필드다.** 표본 전원에서 **5개 모두 `null`** 이고 `union_block`·`union_occupied_stat` 도 빈 배열이다(`date` 를 붙여도 같다). 살아 있는 프리셋은 `union_state_stat_preset`(10개)인데 거기엔 메획이 없었다. **`v2` 는 403** 이다.
+- **아티팩트 크리스탈은 이중 계산이다.** `union_artifact_crystal[].crystal_option_name_*` 의 「메소 획득량 증가」에는 수치가 없고, 크리스탈 레벨 합이 이미 `union_artifact_effect` 의 `{name: "메소 획득량 12% 증가", level: 10}` 으로 접혀 있다(발록 lv5 + 자쿰 lv5). **`effect` 만 읽는다.**
+- **`character/stat` 의 「메소 획득량」은 흔들린다.** `히니` 는 장비·어빌리티·심볼이 **날짜별로 완전히 동일한데** 그 값만 **161 → 273 → 156 → 161**(2026-08-20 · 08-27 · 08-26 · 실시간)로 갈렸다. 스냅샷 시점의 **일시 버프**가 반영된다는 뜻이고, 그래서 소스 분해 합과의 교차검증이 **어긋나는 것이 정상**이다.
+- **소스 합 = 환산값**은 조건이 맞으면 정확히 성립한다 — 같은 `date` 로 고정해 잰 13명 중 **11명이 오차 0**, 어긋난 둘이 위의 버프 케이스였다. 사용자 캐릭터는 `장비 100 + 어빌 20 + 유니온 4 + 심볼 13 + 아티팩트 12 = 149` 로 환산값과 일치했다.
+- **캡은 실측으로 못 봤다.** 표본에서 장비 메획의 최댓값이 **정확히 100**(장비 드롭률도 정확히 **200**)이라 초과 사례가 없었고, 그래서 `character/stat` 이 캡을 적용한 값인지 원본 합인지도 **판별하지 못했다**. 100% 캡은 **사용자 확정**이다([[ADR-177]] 결정 3).
+- **에디셔널 잠재의 메획은 0건**이었다(12명 전 프리셋). 붙을 수 있다는 것은 사용자 확정이고, 실데이터가 안 밟는 경로라 **픽스처로 잠근다**.
+- ⚠️ **드롭률은 메획과 사정이 다르다.** 같은 다섯에서 읽히지만 소스 합과 환산값이 **12명 중 6명에서 어긋났다**(+54 ~ −5). 소스가 더 있는 것으로 보이고, 붙일 일이 생기면 **다시 조사할 것** — 메획 파서를 정규식만 바꿔 재사용하면 틀린다.
 
 ## 정규화
 - 난이도: 영문 소문자 ↔ 한글 변환(`nexon/normalize`).

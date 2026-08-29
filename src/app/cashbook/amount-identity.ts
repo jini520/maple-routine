@@ -1,6 +1,9 @@
 /**
  * 큰 숫자의 **이름표**([[ADR-087]] 정정 1 의 «정체») — 한 방향으로만 발급한다.
  *
+ * **두 시트가 함께 쓴다**([[ADR-178]] 정정 1) — 수입 시트는 이름표를 안 넘겨 `testID` 가 곧
+ * 정체였고, 그것이 고정 문자열이라 **다른 기록을 열어도 지난 금액에서 굴러왔다**.
+ *
  * ## 왜 되풀이되면 안 되나
  *
  * 카운트업의 기억(`lib/use-count-up` 의 `lastDisplayedByIdentity`)은 **모듈 수준**이라 컴포넌트가
@@ -19,5 +22,5 @@ let sequence = 0
 
 export function nextAmountIdentity(): string {
   sequence += 1
-  return `spend-amount-${sequence}`
+  return `cashbook-amount-${sequence}`
 }

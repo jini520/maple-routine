@@ -29,6 +29,12 @@ export function schedulerCacheKey(ocid: string): string {
   return `schedulerCache:${ocid}`
 }
 
+// [[ADR-177]] 결정 9: 캐릭터별 최대 메소 획득량(%)의 마지막 성공값. ocid 별 개별 키이고 **TTL 이
+// 없다** — 장비를 갈아입을 때만 변하는 값이라, 캐릭터를 다시 고르는 것이 곧 갱신이다.
+export function mesoRateCacheKey(ocid: string): string {
+  return `mesoRateCache:${ocid}`
+}
+
 export function characterBasicCacheKey(ocid: string): string {
   return `characterBasicCache:${ocid}`
 }

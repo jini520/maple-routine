@@ -46,6 +46,7 @@ const INCOME_RECORDS_BODY = `(
     hunt_sojae INTEGER,           -- 소재 수(하나가 30분)
     hunt_fragments INTEGER,       -- 솔 에르다 조각 개수(사용자가 직접 넣는다 — 결정 8)
     hunt_fragment_price INTEGER,  -- 조각 개당 메소
+    hunt_meso_rate INTEGER,       -- 그때의 캐릭터 메소 획득량(%). NULL = [[ADR-177]] 이전 행 → 0 으로 읽는다
     memo TEXT,
     recorded_at TEXT NOT NULL,
     PRIMARY KEY (id)
@@ -388,6 +389,7 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   await ensureColumn(db, 'income_records', 'hunt_sojae', 'INTEGER')
   await ensureColumn(db, 'income_records', 'hunt_fragments', 'INTEGER')
   await ensureColumn(db, 'income_records', 'hunt_fragment_price', 'INTEGER')
+  await ensureColumn(db, 'income_records', 'hunt_meso_rate', 'INTEGER')
   await db.execute(MIGRATE_SHOP_CATEGORY_RENAME)
   await db.execute(MIGRATE_TONIC_BUFF_CATEGORY)
   await db.execute(MIGRATE_FARM_TICKET_ITEM_RENAME)

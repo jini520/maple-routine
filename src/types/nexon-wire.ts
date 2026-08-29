@@ -77,3 +77,105 @@ export interface NexonSchedulerCharacterStateWire {
   weekly_boss_clear_count: number
   weekly_boss_clear_limit_count: number
 }
+
+// ── 메소 획득량을 읽는 다섯 ([[ADR-177]]) ─────────────────────────────────────────────
+//
+// **읽는 필드만 적는다.** 응답은 훨씬 넓지만(장비 하나에만 30여 칸) 여기 없는 칸은 파서가 안 보므로
+// 적어 두면 «쓰는 것» 과 «오는 것» 이 뒤섞인다. 전부 옵셔널인 이유는 **미접속 캐릭터의 응답이
+// 축약되기 때문**이다(이 문서의 「미접속 캐릭터의 응답 축약」 절) — 없는 칸을 필수로 두면 파싱이
+// 아니라 타입이 먼저 거짓말을 한다.
+
+/** 장비 하나. 잠재·에디셔널은 **각각 세 줄이 상한**이라 넷째 칸은 존재하지 않는다. */
+export interface NexonItemEquipmentItem {
+  potential_option_1?: string | null
+  potential_option_2?: string | null
+  potential_option_3?: string | null
+  additional_potential_option_1?: string | null
+  additional_potential_option_2?: string | null
+  additional_potential_option_3?: string | null
+}
+
+/**
+ * 장비 응답. **현재 적용본(`item_equipment`)과 프리셋 셋이 같이 온다** — 전부 훑으면 값이
+ * 부풀려지므로 파서는 넷을 각각 세서 최댓값을 고른다([[ADR-177]] 결정 5 ③).
+ */
+export interface NexonItemEquipmentResponse {
+  item_equipment?: NexonItemEquipmentItem[] | null
+  item_equipment_preset_1?: NexonItemEquipmentItem[] | null
+  item_equipment_preset_2?: NexonItemEquipmentItem[] | null
+  item_equipment_preset_3?: NexonItemEquipmentItem[] | null
+}
+
+export interface NexonAbilityLine {
+  ability_value?: string | null
+}
+
+export interface NexonAbilityPreset {
+  ability_info?: NexonAbilityLine[] | null
+}
+
+export interface NexonAbilityResponse {
+  ability_info?: NexonAbilityLine[] | null
+  ability_preset_1?: NexonAbilityPreset | null
+  ability_preset_2?: NexonAbilityPreset | null
+  ability_preset_3?: NexonAbilityPreset | null
+}
+
+/**
+ * 심볼 하나. **메획이 문자열이 아니라 전용 칸**(`"13%"`)으로 온다 — 다섯 중 유일하게 파싱이
+ * 필요 없다. 값이 붙는 것은 그랜드 어센틱심볼뿐이고 나머지는 `"0%"` 라 전부 더해도 안전하다.
+ */
+export interface NexonSymbol {
+  symbol_meso_rate?: string | null
+}
+
+export interface NexonSymbolEquipmentResponse {
+  symbol?: NexonSymbol[] | null
+}
+
+export interface NexonUnionRaiderPreset {
+  union_raider_stat?: string[] | null
+  union_occupied_stat?: string[] | null
+}
+
+export interface NexonUnionStateStatPreset {
+  union_state_stat?: string[] | null
+}
+
+/**
+ * 유니온 공격대. **`union_raider_preset_1~5` 는 전 계정 `null` 인 죽은 필드**이고
+ * (`union_block`·`union_occupied_stat` 도 빈 배열) 파서는 현재 적용본으로 폴백한다.
+ * 타입에 남겨 두는 이유는 되살아났을 때 **코드가 자동으로 잡게** 하기 위함이다([[ADR-177]] 결정 5 ①).
+ */
+export interface NexonUnionRaiderResponse {
+  union_raider_stat?: string[] | null
+  union_occupied_stat?: string[] | null
+  union_state_stat?: string[] | null
+  union_state_stat_preset?: NexonUnionStateStatPreset[] | null
+  union_raider_preset_1?: NexonUnionRaiderPreset | null
+  union_raider_preset_2?: NexonUnionRaiderPreset | null
+  union_raider_preset_3?: NexonUnionRaiderPreset | null
+  union_raider_preset_4?: NexonUnionRaiderPreset | null
+  union_raider_preset_5?: NexonUnionRaiderPreset | null
+}
+
+/** 아티팩트 크리스탈. **옵션명에 수치가 없고**(`"메소 획득량 증가"`) 값은 `effect` 에 접혀 있다. */
+export interface NexonUnionArtifactCrystal {
+  crystal_option_name_1?: string | null
+  crystal_option_name_2?: string | null
+  crystal_option_name_3?: string | null
+}
+
+export interface NexonUnionArtifactEffect {
+  name?: string | null
+}
+
+/**
+ * 유니온 아티팩트. **`effect` 만 읽는다** — `crystal` 을 같이 더하면 이중 계산이다
+ * (발록 lv5 + 자쿰 lv5 가 이미 `{name: "메소 획득량 12% 증가", level: 10}` 으로 접혀 있다).
+ * `crystal` 을 타입에 남긴 것은 **더하지 말라는 사실을 코드에서 보이게** 하기 위함이다.
+ */
+export interface NexonUnionArtifactResponse {
+  union_artifact_effect?: NexonUnionArtifactEffect[] | null
+  union_artifact_crystal?: NexonUnionArtifactCrystal[] | null
+}

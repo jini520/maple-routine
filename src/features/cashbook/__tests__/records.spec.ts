@@ -273,9 +273,14 @@ describe('줄에 적는 것', () => {
     expect(recordTitleOf({ kind: 'spend', record: 지출행, characterName: '루디' })).toBe(
       '루디 · 몬스터 파크',
     )
-    expect(recordTitleOf({ kind: 'income', record: 수입행, characterName: '아델' })).toBe(
-      '아델 · 엘리시움',
-    )
+    // 「사냥」 은 첫 칸이 갈래라(아래 describe) 이름이 보이는 갈래로 잰다.
+    expect(
+      recordTitleOf({
+        kind: 'income',
+        record: { ...수입행, category: '아이템 판매' },
+        characterName: '아델',
+      }),
+    ).toBe('아델 · 엘리시움')
   })
 
   // 직접 입력에서 사용처를 비우면 이름이 없다 — 빈 줄은 «무엇인지 모르는 줄» 이다.
@@ -449,17 +454,38 @@ describe('loadDayRecords — 캐릭터당 두 줄 (결정 7)', () => {
     expect(rows.map(recordTitleOf)).toEqual(['루디 · 보스 결정석'])
   })
 
-  it('안 판 드롭만 있어도 줄이 선다 — 「미입력」 이 할 말이다', async () => {
+  /**
+   * **미입력만 있으면 줄이 안 선다**(사용자 지정 2026-08-29).
+   *
+   * 종전에는 «먹은 것 자체가 캘린더에서 사라진다» 를 근거로 0원짜리 줄을 세웠다([[ADR-124]] 가
+   * «가격 미입력이 정상» 이라 정한 것을 받은 자리다). 그런데 가계부는 **돈이 오간 기록**을 세는
+   * 자리라, 아직 값이 없는 건이 0원으로 서면 그날의 목록이 그만큼 헐거워진다.
+   */
+  it('미입력만 있으면 줄이 **안 선다**', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
     bossDrops.getBossDropRecords.mockResolvedValue([드롭({ priceState: null, priceMeso: null })])
-    const { loadDayRecords, recordCountLabelOf, recordMesoOf } =
+    const { loadDayRecords, recordTitleOf } =
       require('../records') as typeof import('../records')
 
     const rows = await loadDayRecords('2026-08-21')
 
-    expect(rows).toHaveLength(2)
-    expect(recordCountLabelOf(rows[1])).toBe('0건 · 미입력 1')
-    expect(recordMesoOf(rows[1])).toBe(0)
+    // 결정석 줄만 남는다.
+    expect(rows.map(recordTitleOf)).toEqual(['루디 · 보스 결정석'])
+  })
+
+  // 판 것이 하나라도 있으면 그 줄은 선다 — 「미입력 n」 이 **저쪽에 할 일이 있다**고 말한다.
+  it('판 것이 섞여 있으면 줄이 서고 미입력 건수를 함께 적는다', async () => {
+    bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
+    bossDrops.getBossDropRecords.mockResolvedValue([
+      드롭({ priceState: 'entered', priceMeso: 1_000_000 }),
+      드롭({ itemName: '칠흑의 보스 반지 상자', priceState: null, priceMeso: null }),
+    ])
+    const { loadDayRecords, recordCountLabelOf } =
+      require('../records') as typeof import('../records')
+
+    const rows = await loadDayRecords('2026-08-21')
+
+    expect(recordCountLabelOf(rows[1])).toBe('1건 · 미입력 1')
   })
 
   /**
@@ -470,8 +496,9 @@ describe('loadDayRecords — 캐릭터당 두 줄 (결정 7)', () => {
    */
   it('손입력 줄이 캐릭터 이름을 든다 — 없으면 빈 문자열이다', async () => {
     income.getIncomeRecordsBetween.mockResolvedValue([
-      { id: 'i1', ocid: 'ocid-1', earnedOn: '2026-08-21', category: '사냥', item: '엘리시움', mesoAmount: 1, recordedAt: 'a' },
-      { id: 'i2', ocid: null, earnedOn: '2026-08-21', category: '사냥', item: '리우', mesoAmount: 1, recordedAt: 'b' },
+      // 「사냥」 은 첫 칸이 갈래라(아래 describe) 이름이 보이는 갈래로 잰다.
+      { id: 'i1', ocid: 'ocid-1', earnedOn: '2026-08-21', category: '아이템 판매', item: '엘리시움', mesoAmount: 1, recordedAt: 'a' },
+      { id: 'i2', ocid: null, earnedOn: '2026-08-21', category: '아이템 판매', item: '리우', mesoAmount: 1, recordedAt: 'b' },
     ])
     const { loadDayRecords, recordTitleOf } = require('../records') as typeof import('../records')
 
@@ -642,5 +669,70 @@ describe('loadTrackedCharacters', () => {
     const { loadTrackedCharacters } = require('../records') as typeof import('../records')
 
     expect(await loadTrackedCharacters()).toEqual([])
+  })
+})
+
+/**
+ * 사냥 줄은 **「캐릭터 · 사냥」 + 「n재획」** 이다 (사용자 지정 2026-08-29).
+ *
+ * 종전에는 첫 칸이 사냥터 이름(`item`)이었다. 그런데 그 줄이 답하는 것은 «오늘 무엇으로 벌었나»
+ * 이고 «어느 맵이었나» 는 열어 봐야 뜻이 생기는 값이다 — 갈래 이름이 그 자리를 든다. 대신 **몇
+ * 재획을 돌았나**를 세는 칸이 서는데, 그것은 보스 줄의 「n마리」와 **같은 자리·같은 모양**이다.
+ */
+describe('사냥 줄의 이름과 셈', () => {
+  const 사냥기록 = {
+    id: 'inc-h',
+    ocid: 'ocid-1',
+    earnedOn: '2026-08-21',
+    category: '사냥' as const,
+    item: '밤의 길 3',
+    mesoAmount: 41_760_000,
+    saleFeePercent: null,
+    saleFeeMeso: null,
+    pointAmount: null,
+    pointPer100mMeso: null,
+    cashAmount: null,
+    hunt: {
+      characterLevel: 294,
+      missedMobs: 0,
+      boosts: [],
+      sojae: 2,
+      fragments: 0,
+      fragmentPrice: 0,
+      mesoRate: 149,
+    },
+    memo: null,
+    recordedAt: '2026-08-21T01:00:00.000Z',
+  }
+
+  it('첫 칸이 **사냥터가 아니라 갈래**다', async () => {
+    income.getIncomeRecordsBetween.mockResolvedValue([사냥기록])
+    const { loadDayRecords, recordTitleOf } = require('../records') as typeof import('../records')
+
+    const rows = await loadDayRecords('2026-08-21')
+
+    expect(rows.map(recordTitleOf)).toEqual(['루디 · 사냥'])
+  })
+
+  it('**n재획**을 센다 — 보스 줄의 「n마리」와 같은 자리다', async () => {
+    income.getIncomeRecordsBetween.mockResolvedValue([사냥기록])
+    const { loadDayRecords, recordCountLabelOf } =
+      require('../records') as typeof import('../records')
+
+    const rows = await loadDayRecords('2026-08-21')
+
+    expect(recordCountLabelOf(rows[0])).toBe('2재획')
+  })
+
+  // [[ADR-175]] 이전에 적힌 사냥 행은 계산 입력이 없다 — 셀 것이 없으니 칸도 안 선다.
+  it('계산기 이전 행은 세는 칸이 없다', async () => {
+    income.getIncomeRecordsBetween.mockResolvedValue([{ ...사냥기록, hunt: null }])
+    const { loadDayRecords, recordCountLabelOf, recordTitleOf } =
+      require('../records') as typeof import('../records')
+
+    const rows = await loadDayRecords('2026-08-21')
+
+    expect(recordTitleOf(rows[0])).toBe('루디 · 사냥')
+    expect(recordCountLabelOf(rows[0])).toBeNull()
   })
 })

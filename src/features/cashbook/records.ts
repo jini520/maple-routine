@@ -513,9 +513,17 @@ function toAutoRecords(
           .map(({ boss, difficulty }) => ({ boss, difficulty })),
       })
     }
-    // 안 판 드롭만 있어도 줄이 선다 — 「미입력」 이 그 줄이 할 말이다([[ADR-124]] 는 «가격 미입력이
-    // 정상» 이라 정했고, 그래서 그 줄이 없으면 먹은 것 자체가 캘린더에서 사라진다).
-    if (summary.dropCount > 0 || summary.unpricedCount > 0) {
+    /**
+     * **판 것이 하나라도 있어야 줄이 선다**(사용자 지정 2026-08-29).
+     *
+     * 종전에는 미입력만 있어도 세웠다 — [[ADR-124]] 가 «가격 미입력이 정상» 이라 정했으니 그 줄이
+     * 없으면 «먹은 것 자체가 캘린더에서 사라진다» 는 근거였다. 그런데 **가계부는 돈이 오간 기록을
+     * 세는 자리**라, 아직 값이 없는 건이 0원으로 서면 그날의 목록이 그만큼 헐거워진다.
+     *
+     * **줄이 서면 「미입력 n」 은 그대로 적는다** — 그것은 «항목» 이 아니라 **저쪽에 할 일이
+     * 있다**는 표시이고, 그 줄은 이미 판 것이 있어서 선 줄이다([[ADR-172]] 결정 8).
+     */
+    if (summary.dropCount > 0) {
       rows.push({
         kind: 'dropSale',
         ocid: summary.ocid,
@@ -543,10 +551,20 @@ const AUTO_LABELS: Record<AutoDayRecord['kind'], string> = {
  * 자동 줄은 **캐릭터 · 갈래**다. 이름을 모르면(캐시가 비었다) **갈래만 적는다** — `ocid` 는
  * 사용자에게 아무 뜻도 없는 문자열이고, 「알 수 없음」 은 있지도 않은 캐릭터를 만들어 낸다.
  */
+/**
+ * 손입력 줄의 첫 칸 — 적어 둔 이름, 없으면 갈래.
+ *
+ * **「사냥」만 갈래로 적는다**(사용자 지정 2026-08-29). 거기 적힌 이름은 사냥터인데, 그 줄이
+ * 답하는 것은 «오늘 무엇으로 벌었나» 이고 «어느 맵이었나» 는 열어 봐야 뜻이 생기는 값이다
+ * (수정 시트가 그것을 든다). 대신 **몇 재획을 돌았나**가 세는 칸에 선다(`recordCountLabelOf`).
+ */
+function manualLabelOf(entry: ManualDayRecord): string {
+  if (entry.kind === 'income' && entry.record.category === '사냥') return entry.record.category
+  return entry.record.item ?? entry.record.category
+}
+
 export function recordTitleOf(entry: DayRecord): string {
-  const label = isManualRecord(entry)
-    ? (entry.record.item ?? entry.record.category)
-    : AUTO_LABELS[entry.kind]
+  const label = isManualRecord(entry) ? manualLabelOf(entry) : AUTO_LABELS[entry.kind]
   // **캐릭터가 붙어 있으면 이름이 앞에 선다**([[ADR-173]] 결정 16) — 보스 줄이 이미 쓰던 어법
   // 그대로다. 손입력만 다르게 적으면 한 목록 안에 두 어법이 생긴다.
   return entry.characterName === '' ? label : `${entry.characterName} · ${label}`
@@ -614,6 +632,17 @@ export function recordCountLabelOf(entry: DayRecord): string | null {
   }
   if (entry.kind === 'dropSale') {
     return entry.unpricedCount > 0 ? `${entry.count}건 · 미입력 ${entry.unpricedCount}` : `${entry.count}건`
+  }
+  /**
+   * 사냥은 **몇 재획을 돌았나**다(사용자 지정 2026-08-29) — 보스 줄의 「n마리」와 **같은 자리·같은
+   * 모양**이라 화면은 아무것도 안 가른다(그 칸이 하나뿐이다).
+   *
+   * [[ADR-175]] 이전에 적힌 행은 계산 입력이 없어 셀 것이 없다 — 그때는 칸이 안 선다.
+   */
+  // `!= null` 인 이유: 계산기 이전 행은 `null` 이고, 옛 저장분을 읽는 자리에서는 칸이 **아예
+  // 없을** 수도 있다(`undefined`). 둘 다 «셀 것이 없다» 다.
+  if (entry.kind === 'income' && entry.record.hunt != null) {
+    return `${entry.record.hunt.sojae}재획`
   }
   return null
 }

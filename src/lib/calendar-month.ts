@@ -106,6 +106,18 @@ export function formatDayLabel(dateKey: string): string {
 }
 
 /**
+ * 하루 단위로 옮긴 날짜 열쇠([[ADR-178]] 정정 6) — 달·해 경계와 윤년을 `Date` 가 알아서 넘긴다.
+ *
+ * **UTC 로 센다** — `formatDayLabel` 과 같은 이유다. 기기 표준시로 세면 자정 언저리에서 하루가
+ * 밀려, 같은 열쇠가 화면과 저장에서 갈린다.
+ */
+export function shiftDateKey(dateKey: string, delta: number): string {
+  const date = new Date(Date.parse(`${dateKey}T00:00:00Z`))
+  date.setUTCDate(date.getUTCDate() + delta)
+  return date.toISOString().slice(0, 10)
+}
+
+/**
  * 「몇 주 × 7칸」. 달 경계의 빈칸을 **앞뒤 달 날짜로 채운다**([[ADR-169]] 결정 7) — 빈 칸으로 두면
  * 6주째가 통째로 비는 달에서 격자 높이가 달마다 달라지고, 달을 넘길 때 아래 내용이 튄다.
  */
