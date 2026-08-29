@@ -4,8 +4,8 @@
 // ③ **스택 바가 총액을 결정석/아이템으로 가른다**(폭이 비율이고 분해 금액이 그 색을 읽는 법을 말한다)
 // ④ **크기가 버리는 것이 정해져 있다**(2x2 는 목록 · 4x2 는 행 내역 · 2x1 은 바까지)
 //
-// **네 크기를 전부 스냅샷으로 찍는다** — v1 배치가 쓰는 것은 4x3 하나뿐이라(정정 13) 나머지 셋은
-// 아무도 안 부르는 렌더 분기이고, 그 분기의 유일한 안전망이 스냅샷이다.
+// **다섯 크기를 전부 스냅샷으로 찍는다** — v1 배치가 쓰는 것은 `4×auto` 하나뿐이라([[ADR-183]])
+// 나머지 넷은 아무도 안 부르는 렌더 분기이고, 그 분기의 유일한 안전망이 스냅샷이다.
 
 import {
   renderAtom,
@@ -19,6 +19,8 @@ import type { TodayViewModel } from '../../view-model'
 import type { WidgetHeight } from '../../../../lib/widget-layout'
 
 const 크기 = {
+  // 기본 배치가 쓰는 크기다([[ADR-183]]) — 그리는 것은 4x3 과 같고 높이만 내용이 정한다.
+  '4×auto': { w: 4, h: 'auto' },
   '4x3': { w: 4, h: 3 },
   '4x2': { w: 4, h: 2 },
   '2x2': { w: 2, h: 2 },
@@ -54,6 +56,50 @@ function 모든색(view: Awaited<ReturnType<typeof renderAtom>>): unknown[] {
     },
   )
 }
+
+describe('높이는 내용이 정한다 ([[ADR-183]])', () => {
+  // 기본 배치가 `4×auto` 로 바뀌었다 — 이 크기가 4x3 과 **같은 것**을 그리지 않으면 화면이 통째로
+  // 다른 밀도로 바뀐다(`variantOf` 가 auto 를 안 알면 4x2 용 «wide» 로 떨어진다).
+  it('`4×auto` 는 4x3 과 같은 것을 그린다 — 기간 머리와 순위 목록이 선다', async () => {
+    const auto = await 위젯(크기['4×auto'])
+    const 고정 = await 위젯(크기['4x3'])
+
+    expect(auto.getByTestId('profit-period-header')).toBeTruthy()
+    expect(auto.getAllByTestId('profit-character-rank')).toHaveLength(3)
+    expect(모든글자(auto)).toBe(모든글자(고정))
+  })
+
+  // 남는 자리를 채울 높이가 없는데 `flex-1` 을 걸면 그것이 «채운다» 는 거짓 신호로 남는다.
+  it('바깥 상자에 `flex-1` 이 없다 — 늘릴 높이가 없다', async () => {
+    const { getByTestId } = await 위젯(크기['4×auto'])
+
+    expect(flattenStyle(getByTestId('widget-weekly-boss-profit').props.style).flexGrow).toBeUndefined()
+  })
+})
+
+describe('순위는 `1st · 2nd · 3rd` 다 (사용자 지정)', () => {
+  it('세 자리에 서수를 단다', async () => {
+    const { getAllByTestId } = await 위젯(크기['4×auto'])
+
+    expect(getAllByTestId('profit-character-rank').map((node) => node.props.children)).toEqual([
+      '1st',
+      '2nd',
+      '3rd',
+    ])
+  })
+
+  // 「1st」는 폭이 고정된 글자가 아니다 — 천장으로 두면 줄바꿈되거나 잘린다([[ADR-165]] 와 같은 이유).
+  it('칸은 **바닥**이고 한 줄로 못박는다 — 줄바꿈도 잘림도 없다', async () => {
+    const { getAllByTestId } = await 위젯(크기['4×auto'])
+
+    for (const node of getAllByTestId('profit-character-rank')) {
+      const style = flattenStyle(node.props.style)
+      expect(style.minWidth).toBe(22)
+      expect(style.width).toBeUndefined()
+      expect(node.props.numberOfLines).toBe(1)
+    }
+  })
+})
 
 describe('증감은 어디에도 없다 ([[ADR-147]] 정정 4)', () => {
   // `rise`/`fall` 은 [[ADR-087]] 이 증감 전용으로 만든 토큰이라, 그 색이 이 타일에 나타나는 것은
