@@ -742,7 +742,7 @@ formatValuableDroughtHeadline(weeksSince, lateIndex)  →  (weeksSince, index)
 | 순서 | 계열은 `sharedGroupOrder`(손으로 적는다) · 계열 «안» 은 `worldShared` → `accountShared` 를 이어 읽은 순서 |
 | 열 | **둘**([[ADR-182]] 결정 1) — 폭 반반(`flex-1` + 사이 12). 계열은 자기 열 안에서 세로로 쌓이고, **오른쪽 열이 비면 한 열로** 그린다 |
 | 열 가르기 | **순서를 지키면서 두 열의 «줄 수»(제목 1 + 항목 수)가 가장 고른 지점**에서 자른다 — 지그재그(홀짝)로 나누면 타일이 한 줄 높아진다 |
-| 완료 표식 | **읽기 전용 체크박스 + 취소선**([[ADR-182]] 결정 3). 체크된 상자는 `bg-secondary-ink` · 체크는 `text-on-secondary` · 안 한 것은 테두리만 |
+| 완료 표식 | **읽기 전용 체크박스 + 취소선**([[ADR-182]] 결정 3 · 정정 1). 체크된 상자는 `bg-primary`+`border-primary` · 체크는 `text-on-primary` · 안 한 것은 테두리만(`border-border-strong`) |
 | 오른쪽 열 | **카운트 있음(= 미완료) → `n/max` · 그 밖 → 빈칸**([[ADR-182]] 결정 4) — `CLEAR` 배지는 걷었다 |
 | 항목 간격 | **6px**(제목–첫 항목도 6) · 줄 바닥 높이는 `ITEM_HEIGHT_PX = 16` 그대로 |
 | 완료 판정 | `weeklyContentCompletion`·`dailyContentCompletion`(위젯 2 와 같은 함수) |
@@ -867,6 +867,10 @@ formatValuableDroughtHeadline(weeksSince, lateIndex)  →  (weeksSince, index)
 - ~~위젯 9 의 완료는 오른쪽의 `CLEAR` 배지가 말한다([[ADR-147]] 정정 33)~~ → **읽기 전용 체크박스 +
   취소선**이 말한다([[ADR-182]] 결정 3·4). 배지는 같은 말의 세 번째라 걷었고, 정정 33 의 뷰모델 쪽
   절반(완료면 `count = null`)은 살아 있다.
+- ~~그 체크박스의 채움은 앱의 「완료」 계보(`secondary-ink`)다([[ADR-182]] 결정 3)~~ →
+  **`primary`**([[ADR-182]] 정정 1, 2026-08-30, 사용자 판정). `secondary` 는 테마의 두 번째 시드라
+  메인 컬러와 색상이 무관해(렌=틸 · 엔젤릭버스터=하늘) 테마 밖의 색으로 읽혔고, 이 상자만 앱의
+  다른 체크박스 셋과 달랐다. 「완료 = `secondary`」 자체는 **배지에서 계속 산다**.
 - ~~위젯 3 은 네 수치(일퀘 · 주간퀘 · 주간 보스 · 검마)를 **2×2 격자**로 그리고, 줄도 칸도 그 행이
   정한다([[ADR-147]] 정정 12·35·36·37·40)~~ → **주기 탭**으로 다시 짰다([[ADR-181]], 2026-08-30).
   열이 사라져 격자도 접을 칸도 없고, 행은 언제나 한 줄이다.

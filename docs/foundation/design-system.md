@@ -335,6 +335,11 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
 ### 진행률 바 프리미티브
 `role="progressbar"` + `aria-valuenow/min/max`, track `h-1.5 w-full rounded-full bg-track` + fill `h-1.5 rounded-full bg-primary`. **결정형 진행률은 예외 없이 이것 하나**([[ADR-061]] 결정 6) — 온보딩 예열·계정 변경 예열·캐릭터 관리 저장·OTA 다운로드·컨텐츠 진행률이 모두 같은 스타일이다. 새 색/모양/두께 신설 금지.
 
+### 체크박스 — **채운 상자는 언제나 `primary`** ([[ADR-182]] 정정 1, 2026-08-30)
+켠 상자는 `bg-primary` + `border-primary`, 그 안의 체크는 `text-on-primary`. 안 켠 것은 **테두리만**(`border-border`, 배경이 있는 자리면 `border-border-strong`). 크기·모서리는 자리마다 다르다(설정·가계부 18px `rounded-md`, today 위젯 12px `rounded-[3px]`) — 고정하는 것은 **색** 하나다.
+
+**「완료 = `secondary`」 계보를 여기에 끌어오지 않는다.** `secondary` 는 테마의 두 번째 시드라 메인 컬러와 색상(H)이 무관해서(렌은 빨강 테마에 틸, 엔젤릭버스터는 분홍 테마에 하늘) 상자를 그 색으로 채우면 **테마 밖의 색**으로 읽힌다(사용자 판정). 그 계보가 사는 자리는 **배지**다 — 컨텐츠 완료 배지·보스 `CLEAR`·성공 토스트.
+
 ## 공유 레이아웃 패턴
 
 ### 탭 토글(주간/월간, 일간/주간 등) — [[ADR-018]]
