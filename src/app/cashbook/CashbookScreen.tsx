@@ -59,7 +59,11 @@ import { SPEED_DIAL_SPACE_PX } from '../../components/organisms/SpeedDial/speed-
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
-import { formatBossProfitPeriodLabel, getAdjacentPeriodKey } from '../../lib/boss-profit-period'
+import {
+  formatBossProfitPeriodLabel,
+  getAdjacentPeriodKey,
+  isLatestPeriod,
+} from '../../lib/boss-profit-period'
 import {
   WEEKDAY_LABELS_RESET,
   buildCalendarMonth,
@@ -70,6 +74,7 @@ import {
   getCurrentMonthKey,
   monthIncomeMax,
   monthKeyOf,
+  periodTotals,
   resetWeekStartOf,
   type CalendarAmounts,
 } from '../../lib/calendar-month'
@@ -157,10 +162,20 @@ function PeriodTab(props: {
   )
 }
 
-/** 기간을 넘기는 화살표 — 보스 수익의 기간 이동과 같은 치수다(같은 그룹에서 두 모양이면 안 된다). */
+/**
+ * 기간을 넘기는 화살표 — 보스 수익의 기간 이동과 **같은 치수·같은 죽는 법**이다(같은 그룹에서 두
+ * 모양이면 안 된다).
+ *
+ * 흐려지는 것을 **JS 조건**으로 준다. NativeWind 의 `disabled:` 는 웹 CSS 의사 클래스라
+ * `Pressable disabled` 와 **이어져 있지 않고**, 남겨 두면 비활성 화살표가 멀쩡한 색으로 보인다
+ * (`BossProfitBossRow` 가 이미 밟은 함정이다).
+ *
+ * `aria-disabled` 를 `disabled` 와 **같이** 준다 — 앞은 손가락을, 뒤는 스크린리더를 막는다.
+ */
 function MonthArrow(props: {
   label: string
   icon: typeof ChevronLeftIcon
+  disabled?: boolean
   onPress: () => void
 }): React.JSX.Element {
   const Icon = props.icon
@@ -168,11 +183,137 @@ function MonthArrow(props: {
     <Pressable
       role="button"
       aria-label={props.label}
+      aria-disabled={props.disabled}
+      disabled={props.disabled}
       onPress={props.onPress}
-      className="h-7 w-7 items-center justify-center rounded-full border border-border"
+      className={`h-7 w-7 items-center justify-center rounded-full border border-border${
+        props.disabled ? ' opacity-30' : ''
+      }`}
     >
       <Icon className="h-4 w-4 text-text" strokeWidth={2} aria-hidden />
     </Pressable>
+  )
+}
+
+/**
+ * **재료 한 줄**(수익 · 지출) — 답 옆에 각주처럼 쌓인다([[ADR-184]] 정정 6).
+ *
+ * 열을 안 세운다. 오른쪽 정렬 상자 안이라 **금액의 오른쪽 끝이 저절로 한 x 에 서고**, 라벨은 자기
+ * 금액에 붙는다 — 라벨에 고정 폭을 주면 자릿수가 다른 두 금액 사이에 빈자리가 생긴다.
+ *
+ * 부호를 값에서 뽑지 않고 **받는다**(결정 3). `formatMesoCompact` 는 음수에 ASCII `-` 를 붙이는데
+ * 답은 `−`(U+2212)를 쓰므로, 부호를 함수에 맡기면 **한 카드에 두 종류의 빼기 기호**가 선다.
+ */
+function SourceRow(props: {
+  testID: string
+  label: string
+  sign: string
+  amount: number
+  tone: string
+}): React.JSX.Element {
+  return (
+    <View className="flex-row items-baseline gap-1.5">
+      <Text className="text-[11px] text-text-muted">{props.label}</Text>
+      <Text
+        testID={props.testID}
+        numberOfLines={1}
+        className={`text-[11px] font-medium ${props.tone}`}
+        style={TABULAR_NUMS}
+      >
+        {props.sign}
+        {formatMesoCompact(props.amount)}
+      </Text>
+    </View>
+  )
+}
+
+/**
+ * **보고 있는 기간의 합계**([[ADR-184]]) — 범위 이동 **아래**, 격자 **위**다(정정 3).
+ *
+ * 값은 화면이 `periodTotals` 로 낸다 — **격자에 넘긴 그 `weeks`·`amounts`** 라 «칸에 적힌 것을 다
+ * 더한 값» 이 곧 이 숫자다(따로 읽으면 둘이 서로 다른 순간을 갖는다).
+ *
+ * ## 「저울」 — 답이 헤드라인, 재료가 각주 ([[ADR-184]] 정정 6)
+ *
+ * ```
+ * ┌────────────────────────────────────┐
+ * │ 순 수익                수익 +8,500만 │
+ * │ +5,700만              지출 −2,800만 │
+ * └────────────────────────────────────┘
+ * ```
+ *
+ * 앞선 다섯 배치(정정 1~5)는 셋을 **한 표** 안에서 줄 세우려 했고, 그래서 답이 «셋 중 큰 하나» 로만
+ * 갈렸다. 여기서는 **답과 재료가 서로 다른 종류의 것**이 된다 — 답은 카드의 헤드라인이고 재료는
+ * 그 옆에 붙는 각주다. 표가 아니라 **위계**가 관계를 말한다.
+ *
+ * 바닥을 **`items-end`** 로 맞춘다 — 큰 숫자의 밑선과 「지출」 줄의 밑선이 같은 x 에 서야 두 덩이가
+ * 한 카드에 앉은 것으로 읽힌다. 위로 맞추면 큰 숫자가 아래로 삐져나온다.
+ *
+ * **막대는 안 그린다**(사용자 지정) — 시안에는 수익 대비 지출 비율을 그리는 5px 막대가 있었지만,
+ * 그것은 이 화면이 답하던 질문(«얼마인가»)에 새 질문(«어느 비율인가»)을 더하는 일이다. 더할지는
+ * 따로 정한다.
+ *
+ * 라벨은 **「순 수익」** 이다. 보스 수익 탭은 「{기간} 총 수익」이지만 여기서는 바로 위 줄이 기간을
+ * 이미 말하고 있어(「이번 주」 + 날짜) 한 화면에서 같은 말이 두 번 선다.
+ *
+ * **단위는 큰 숫자에만 붙인다**(정정 7, 사용자 지정) — 보스 수익 헤드라인과 같은 모양이다
+ * ([[ADR-046]]: 작은 글자로 격하 + **진짜 공백**). 재료 둘에도 붙이면 좁은 카드에 「메소」가 셋
+ * 서는데, 셋이 같은 단위이므로 헤드라인이 한 번 말하면 카드 전체가 그 축이다.
+ *
+ * 부호와 색은 **칸의 두 줄과 같은 어법**이다([[ADR-169]] 정정 1) — `+`·`rise-ink` 와 `−`·`fall-ink`.
+ * 재료는 크기로 약해질 뿐 **색은 안 걷는다**: 그 둘이 이 앱에서 갈래를 말하는 방식이라 여기서만
+ * 회색이면 같은 값이 화면마다 다른 옷을 입는다.
+ *
+ * 순 수익만 **부호를 따라 갈린다**: 셋을 늘 같은 색으로 칠하면 «이번 달은 적자다» 가 숫자를 끝까지
+ * 읽어야만 보인다. 0 이면 부호도 색도 없다 — 없는 방향을 색이 말하면 안 된다.
+ *
+ * 테두리는 **없다**(정정 5) — 채움만 있으면 «여기까지가 한 자리» 로만 읽혀 격자와 갈리는 데 필요한
+ * 만큼만 한다.
+ */
+function PeriodSummary(props: { incomeMeso: number; expenseMeso: number }): React.JSX.Element {
+  const net = props.incomeMeso - props.expenseMeso
+  return (
+    <View
+      testID="cashbook-period-summary"
+      className="flex-row items-end justify-between gap-3 rounded-xl bg-surface px-3.5 py-3"
+    >
+      <View className="shrink">
+        <Text className="text-[10px] tracking-wide text-text-muted">순 수익</Text>
+        {/* `leading-none` 이라 큰 글자가 자기 줄 높이로 카드를 밀지 않는다 — 카드가 낮아야 격자가
+            주간 보기에서 스크롤 없이 남는다([[ADR-170]] 정정 2). */}
+        <Text
+          testID="cashbook-summary-net"
+          numberOfLines={1}
+          className={`mt-1 text-xl font-extrabold leading-none ${
+            net > 0 ? 'text-rise-ink' : net < 0 ? 'text-fall-ink' : 'text-text'
+          }`}
+          style={TABULAR_NUMS}
+        >
+          {net > 0 ? '+' : net < 0 ? '−' : ''}
+          {formatMesoCompact(Math.abs(net))}{' '}
+          {/* 단위는 **작은 글자로 격하하되 사이에 진짜 공백**을 남긴다([[ADR-046]] 과 같은 처방) —
+              마진으로만 띄우면 읽히는 문자열이 「N메소」로 붙어 스크린리더가 이어 읽는다. */}
+          <Text className="text-[11px] font-bold text-text-muted">메소</Text>
+        </Text>
+      </View>
+
+      <View testID="cashbook-summary-sources" className="shrink-0 items-end gap-1">
+        <SourceRow
+          testID="cashbook-summary-income"
+          label="수익"
+          sign="+"
+          amount={props.incomeMeso}
+          tone="text-rise-ink"
+        />
+        <SourceRow
+          testID="cashbook-summary-expense"
+          label="지출"
+          sign="−"
+          amount={props.expenseMeso}
+          tone="text-fall-ink"
+        />
+      </View>
+    </View>
   )
 }
 
@@ -639,7 +780,18 @@ export function CashbookScreen(): React.JSX.Element {
     // 펼친 판은 **그 날의 것**이다 — 줄의 신원이 날짜를 안 들어([[ADR-172]] 결정 7) 여기서 접지
     // 않으면 다른 날의 줄이 펼쳐진 채로 남는다.
     setExpandedRowKey(null)
-    if (!isWeekly) setMonthKey(monthKeyOf(dateKey))
+    /**
+     * 달 동기화는 **이번 달까지만**([[ADR-185]] 결정 2). 월간 격자의 꼬리 칸은 다음 달 날짜라
+     * (8월 격자는 9/5 까지 그린다) 그냥 맞추면 **한 번의 탭이 화살표가 막은 곳에 도착한다.**
+     *
+     * 막는 것은 «보는 기간» 이지 **«고른 날» 이 아니다** — 미래의 날에도 적을 수 있어야 하므로
+     * 고른 날은 그대로 바뀌고, 격자만 남는다. 「달을 넘겨도 고른 날은 안 바뀐다」의 뒤집힌 짝이다.
+     *
+     * `<=` 라 **이번 달은 든다** — 지난 달 격자의 꼬리로 이번 달에 오는 것은 화살표로도 가는 길이다.
+     */
+    if (!isWeekly && monthKeyOf(dateKey) <= getCurrentMonthKey(now)) {
+      setMonthKey(monthKeyOf(dateKey))
+    }
   }
 
   function showWeekly(): void {
@@ -662,9 +814,24 @@ export function CashbookScreen(): React.JSX.Element {
    * 그래서 **빈 상태의 판정도 그 날 자신의 기록**이 낸다. `amounts` 는 격자만 쓴다.
    */
   const selectedTotals = dayTotalsOf(dayRecords)
+  /**
+   * 격자 위 세 칸이 읽는 **기간 합계**([[ADR-184]] 결정 2) — 격자에 넘기는 **그 `weeks`** 와 **그
+   * `amounts`** 를 접는다. 열지도 기준선용 `heatWeeks` 를 넣으면 주간 보기에서 그것이 그 달 전체라
+   * 주간 자리에 **달 합계**가 선다.
+   */
+  const periodSums = periodTotals(weeks, amounts)
   const periodLabel = isWeekly
     ? formatBossProfitPeriodLabel('weekly', weekStartKey, now)
     : formatBossProfitPeriodLabel('monthly', monthKey, now)
+
+  /**
+   * **앞으로 갈 자리가 없다**([[ADR-185]]) — 지금 보는 것이 «이번 주/이번 달» 이면 다음이 미래다.
+   *
+   * 판정은 보스 수익 탭이 쓰는 `isLatestPeriod` **그 함수**다. 두 축의 `periodKey` 가 이미 그쪽과
+   * 같은 모양이라(주간은 목요일 날짜, 월간은 `YYYY-MM`) 넘길 것이 그대로 있고, 같은 그룹의 두
+   * 하위가 **한 경계**를 갖게 된다([[ADR-170]] 정정 3 이 라벨에서 한 것과 같은 태도).
+   */
+  const isLatest = isLatestPeriod(isWeekly ? 'weekly' : 'monthly', isWeekly ? weekStartKey : monthKey, now)
 
   function movePeriod(delta: -1 | 1): void {
     if (isWeekly) {
@@ -713,7 +880,10 @@ export function CashbookScreen(): React.JSX.Element {
           className="gap-4 px-4"
           style={{ paddingBottom: SPEED_DIAL_SPACE_PX }}
         >
-          <View className="flex-row items-center justify-center gap-4">
+          <View
+            testID="cashbook-period-nav"
+            className="flex-row items-center justify-center gap-4"
+          >
             {/* 이름이 모드를 따른다 — 스크린리더가 «무엇이 옮겨지는가» 를 듣는다. */}
             <MonthArrow
               label={isWeekly ? '이전 주' : '이전 달'}
@@ -743,12 +913,22 @@ export function CashbookScreen(): React.JSX.Element {
                 {periodLabel.secondary}
               </Text>
             </View>
+            {/* 앞으로는 못 간다([[ADR-185]]) — 미래의 합계는 언제나 0 이라 «아직 안 적었나» 와
+                «올 수 없는 곳인가» 가 같은 화면으로 말해진다. */}
             <MonthArrow
               label={isWeekly ? '다음 주' : '다음 달'}
               icon={ChevronRightIcon}
+              disabled={isLatest}
               onPress={() => movePeriod(1)}
             />
           </View>
+
+          {/* 합계는 **이동 아래 · 격자 위**다([[ADR-184]] 정정 3) — 「어느 기간인가」 를 말한 줄
+              바로 다음이 「그 기간이 얼마인가」 이고, 그 둘이 격자를 받친다. */}
+          <PeriodSummary
+            incomeMeso={periodSums.incomeMeso}
+            expenseMeso={periodSums.expenseMeso}
+          />
 
           <CalendarMonth
             weeks={weeks}
