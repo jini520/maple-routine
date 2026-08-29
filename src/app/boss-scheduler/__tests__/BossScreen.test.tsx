@@ -29,7 +29,8 @@ import {
   type BossSchedulerStore,
 } from '../../../features/boss-scheduler/store'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
-import type { MatchedBoss } from '../../../lib/boss-matching'
+import weeklyBossesData from '../../../data/weekly-bosses.json'
+import { WEEKLY_BOSS_CLEAR_LIMIT, type MatchedBoss } from '../../../lib/boss-matching'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { useScreenNavigation } from '../../use-screen-navigation'
@@ -937,5 +938,187 @@ describe('BossScreen — 수동 모드 ([[ADR-035]])', () => {
     // 월간 참조표의 보스라 「월간」 무리에 선다 — 탭을 누를 필요가 없다.
     expect(screen.getByText('검은마법사')).toBeTruthy()
     expect(sectionOrder()).toEqual(['monthly'])
+  })
+})
+
+// [[ADR-187]] 결정 2 — 주간 12마리를 채우면 남은 미처치 주간 보스는 「완료」 자리에 「마감」을 단다.
+// 완료로 칠하지 않는 것이 핵심이다: 안 잡은 보스를 완료로 두면 그 거짓이 보스 수익의 금액이 된다.
+describe('BossScreen — 주간 한도 마감 배지', () => {
+  const WEEKLY_NAMES = (weeklyBossesData.weekly as { boss: string }[]).map((entry) => entry.boss)
+  const PENDING = WEEKLY_NAMES[0]
+
+  /** 「끝에서부터」 실제로 처치한 주간 보스들 — `PENDING` 과 겹치지 않게 뒤에서 뽑는다. */
+  function cleared(count: number): MatchedBoss[] {
+    return WEEKLY_NAMES.slice(-count).map((name) =>
+      boss({
+        apiName: name,
+        matchedBossName: name,
+        difficulty: '하드',
+        isRegistered: true,
+        isComplete: true,
+        ownComplete: true,
+      }),
+    )
+  }
+
+  function withClearCount(count: number): Store {
+    return mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [
+        character({
+          weeklyBosses: [
+            boss({ apiName: PENDING, matchedBossName: PENDING, difficulty: '하드' }),
+            ...cleared(count),
+          ],
+          weeklyBossClearCount: count,
+          weeklyBossClearLimitCount: WEEKLY_BOSS_CLEAR_LIMIT,
+        }),
+      ],
+    })
+  }
+
+  it('한도를 채우면 미처치 카드가 「마감」 배지를 단다', async () => {
+    withClearCount(WEEKLY_BOSS_CLEAR_LIMIT)
+
+    await renderScreen()
+
+    expect(screen.getByText('마감')).toBeTruthy()
+    // 처치한 열두 장은 그대로 「완료」다 — 마감이 완료를 대체하지 않는다.
+    expect(screen.getAllByText('완료')).toHaveLength(WEEKLY_BOSS_CLEAR_LIMIT)
+  })
+
+  it('한 마리 모자라면 마감 배지가 없다', async () => {
+    withClearCount(WEEKLY_BOSS_CLEAR_LIMIT - 1)
+
+    await renderScreen()
+
+    expect(screen.queryByText('마감')).toBeNull()
+  })
+
+  // 「완료」 자리를 대신하는 배지라 **상자가 같아야** 한다(사용자 지정) — 크기가 다르면 같은 자리에서
+  // 배지가 커졌다 작아졌다 하며 카드 오른쪽 끝이 흔들린다. 색만 갈린다.
+  it('마감 배지는 완료 배지와 같은 크기다', async () => {
+    withClearCount(WEEKLY_BOSS_CLEAR_LIMIT)
+
+    await renderScreen()
+
+    // NativeWind 가 `className` 을 스타일로 컴파일하므로 **결과 스타일**을 본다 — 클래스 문자열을
+    // 비교하면 같은 값을 다른 표기로 쓴 것도 «다르다» 가 된다.
+    const boxOf = (label: string): Record<string, unknown> => {
+      const { color, backgroundColor, ...box } = screen.getAllByText(label)[0].props.style as Record<
+        string,
+        unknown
+      >
+      void color
+      void backgroundColor
+      return box
+    }
+
+    expect(boxOf('마감')).toEqual(boxOf('완료'))
+  })
+})
+
+// [[ADR-187]] 결정 2 후속(사용자 지정) — 한도를 채웠으면 진행 링도 꽉 찬다. 마감은 «이번 주에 더 할
+// 것이 없다» 이므로 링이 100%에 못 닿으면 링이 거짓을 말한다.
+describe('BossScreen — 한도 마감과 진행 링', () => {
+  const WEEKLY_NAMES = (weeklyBossesData.weekly as { boss: string }[]).map((entry) => entry.boss)
+
+  /** 링의 접근성 이름에 실린 「주간 n/m」 — 링의 유일한 표현이라 계약이 여기 있다([[ADR-142]]). */
+  function ringLabel(): string {
+    const label = String(screen.getAllByTestId('character-portrait')[0].props.accessibilityLabel)
+    return label.slice(label.indexOf('주간'))
+  }
+
+  /**
+   * 이 결정이 겨누는 실제 상황 — 열둘을 추적해 두고 **그중 열만** 잡은 뒤 목록 밖 둘로 한도를 채웠다.
+   * 추적 목록은 열두 개 그대로이므로 링의 분모도 12다.
+   */
+  function withTrackedTwelveAndOutsideKills(): void {
+    const tracked = WEEKLY_NAMES.slice(0, WEEKLY_BOSS_CLEAR_LIMIT)
+    const outside = WEEKLY_NAMES.slice(-2)
+    useTrackingModeStore.setState({ mode: 'manual' })
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      manualTrackedByOcid: {
+        'ocid-1': tracked.map((name) => ({ contentName: name, kind: 'boss' as const, difficulty: '하드' })),
+      },
+      characters: [
+        character({
+          weeklyBosses: [
+            // 추적한 열둘 중 열은 잡았다.
+            ...tracked.slice(0, 10).map((name) =>
+              boss({
+                apiName: name,
+                matchedBossName: name,
+                difficulty: '하드',
+                isComplete: true,
+                ownComplete: true,
+              }),
+            ),
+            // 나머지 둘은 미처치.
+            ...tracked.slice(10).map((name) =>
+              boss({ apiName: name, matchedBossName: name, difficulty: '하드', isComplete: false }),
+            ),
+            // 목록 밖 둘로 한도를 채웠다 — 합이 12 처치다.
+            ...outside.map((name) =>
+              boss({
+                apiName: name,
+                matchedBossName: name,
+                difficulty: '하드',
+                isRegistered: false,
+                isComplete: true,
+                ownComplete: true,
+              }),
+            ),
+          ],
+          weeklyBossClearCount: WEEKLY_BOSS_CLEAR_LIMIT,
+          weeklyBossClearLimitCount: WEEKLY_BOSS_CLEAR_LIMIT,
+        }),
+      ],
+    })
+  }
+
+  it('한도를 채우면 링이 12/12로 꽉 찬다 — 마감도 «다 한 것» 이다', async () => {
+    withTrackedTwelveAndOutsideKills()
+
+    await renderScreen()
+
+    expect(ringLabel()).toBe(`주간 ${WEEKLY_BOSS_CLEAR_LIMIT}/${WEEKLY_BOSS_CLEAR_LIMIT}`)
+  })
+
+  // 회귀 가드 — 한도 전에는 미처치가 그대로 분자에서 빠진다.
+  it('한도 전에는 미처치가 링에서 빠진다', async () => {
+    const tracked = WEEKLY_NAMES.slice(0, WEEKLY_BOSS_CLEAR_LIMIT)
+    useTrackingModeStore.setState({ mode: 'manual' })
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      manualTrackedByOcid: {
+        'ocid-1': tracked.map((name) => ({ contentName: name, kind: 'boss' as const, difficulty: '하드' })),
+      },
+      characters: [
+        character({
+          weeklyBosses: tracked
+            .slice(0, 10)
+            .map((name) =>
+              boss({
+                apiName: name,
+                matchedBossName: name,
+                difficulty: '하드',
+                isComplete: true,
+                ownComplete: true,
+              }),
+            ),
+          weeklyBossClearCount: 10,
+          weeklyBossClearLimitCount: WEEKLY_BOSS_CLEAR_LIMIT,
+        }),
+      ],
+    })
+
+    await renderScreen()
+
+    expect(ringLabel()).toBe(`주간 10/${WEEKLY_BOSS_CLEAR_LIMIT}`)
   })
 })

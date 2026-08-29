@@ -3,8 +3,13 @@
 // 직접 못 박는다([[ADR-147]] 결정 8).
 
 import type { BossCharacterView } from '../store'
-import { displayedBosses, displayedBossSections } from '../displayed-bosses'
-import { matchBossContent, type MatchedBoss } from '../../../lib/boss-matching'
+import { displayedBosses, displayedBossSections, type DisplayedBoss } from '../displayed-bosses'
+import weeklyBossesData from '../../../data/weekly-bosses.json'
+import {
+  matchBossContent,
+  WEEKLY_BOSS_CLEAR_LIMIT,
+  type MatchedBoss,
+} from '../../../lib/boss-matching'
 import type { BossContent, BossCycle, BossDifficulty } from '../../../types'
 import type { ManualTrackedItem } from '../../../types/scheduler'
 
@@ -32,6 +37,14 @@ function character(overrides: Partial<BossCharacterView> = {}): BossCharacterVie
     error: null,
     ...overrides,
   }
+}
+
+/**
+ * 목록 원소는 `MatchedBoss` 가 아니라 `DisplayedBoss` 다([[ADR-187]] 결정 2) — 아래 동등 비교는
+ * 그 필드까지 함께 본다. 기본값이 `false` 인 것은 이 파일 대부분의 상황이 «한도 전» 이라서다.
+ */
+function shown(matched: MatchedBoss, isWeeklyLimitClosed = false): DisplayedBoss {
+  return { ...matched, isWeeklyLimitClosed }
 }
 
 function bossItem(contentName: string, difficulty: string): ManualTrackedItem {
@@ -79,7 +92,7 @@ describe('displayedBosses — 자동 모드', () => {
       null,
     )
 
-    expect(result).toEqual([registeredHard])
+    expect(result).toEqual([shown(registeredHard)])
   })
 
   it('cycle 이 주간·월간을 가른다 — 자동 모드는 캐릭터 뷰의 두 목록에서 고른다', () => {
@@ -87,8 +100,8 @@ describe('displayedBosses — 자동 모드', () => {
     const monthly = boss({ name: '검은마법사', difficulty: '하드', cycle: 'monthly', isRegistered: true })
     const view = character({ weeklyBosses: [weekly], monthlyBosses: [monthly] })
 
-    expect(displayedBosses(view, 'weekly', 'auto', null)).toEqual([weekly])
-    expect(displayedBosses(view, 'monthly', 'auto', null)).toEqual([monthly])
+    expect(displayedBosses(view, 'weekly', 'auto', null)).toEqual([shown(weekly)])
+    expect(displayedBosses(view, 'monthly', 'auto', null)).toEqual([shown(monthly)])
   })
 
   // 자동 모드는 게임 등록이 진실이라 멤버십을 아예 안 본다 — 모드 전환 직후 남아 있는 수동 목록이
@@ -100,7 +113,7 @@ describe('displayedBosses — 자동 모드', () => {
       'ocid-1': [bossItem('루시드', '하드')],
     })
 
-    expect(result).toEqual([registered])
+    expect(result).toEqual([shown(registered)])
   })
 })
 
@@ -285,8 +298,8 @@ describe('displayedBossSections — 통합 목록의 순서 ([[ADR-164]] 결정 
     )
 
     expect(sections).toEqual([
-      { cycle: 'monthly', bosses: [monthly] },
-      { cycle: 'weekly', bosses: [weekly] },
+      { cycle: 'monthly', bosses: [shown(monthly)] },
+      { cycle: 'weekly', bosses: [shown(weekly)] },
     ])
   })
 
@@ -297,7 +310,7 @@ describe('displayedBossSections — 통합 목록의 순서 ([[ADR-164]] 결정 
 
     expect(displayedBossSections(character({ weeklyBosses: [weekly] }), 'auto', null)).toEqual([
       { cycle: 'monthly', bosses: [] },
-      { cycle: 'weekly', bosses: [weekly] },
+      { cycle: 'weekly', bosses: [shown(weekly)] },
     ])
   })
 
@@ -331,6 +344,99 @@ describe('displayedBossSections — 통합 목록의 순서 ([[ADR-164]] 결정 
       null,
     )
 
-    expect(sections[0]).toEqual({ cycle: 'monthly', bosses: [doneMonthly] })
+    expect(sections[0]).toEqual({ cycle: 'monthly', bosses: [shown(doneMonthly)] })
+  })
+})
+
+// [[ADR-187]] 결정 2 — 주간 12마리를 채우면 남은 미처치 주간 보스는 «마감» 이다. 판정이 여기 있는
+// 이유는 today 「남은 스케줄」이 같은 함수를 부르기 때문이다([[ADR-147]] 결정 8) — 화면이 다시
+// 판정하면 그 등식이 깨진다.
+describe('displayedBosses — 주간 한도 마감 ([[ADR-187]] 결정 2)', () => {
+  // 참조표에서 앞에서부터 뽑는다 — 이름을 손으로 적지 않는다([[ADR-006]]).
+  const WEEKLY_NAMES = (weeklyBossesData.weekly as { boss: string }[]).map((entry) => entry.boss)
+
+  /** 「끝에서부터」 한도만큼 잡아 둔 주간 보스들 — 아래 미처치 보스와 겹치지 않게 뒤에서 뽑는다. */
+  function clearedBosses(count: number): MatchedBoss[] {
+    return WEEKLY_NAMES.slice(-count).map((name) =>
+      boss({
+        name,
+        difficulty: '하드',
+        cycle: 'weekly',
+        isRegistered: false,
+        isComplete: true,
+        ownComplete: true,
+      }),
+    )
+  }
+
+  const pending = boss({ name: WEEKLY_NAMES[0], difficulty: '하드', cycle: 'weekly', isRegistered: true })
+
+  it('한도를 채우면 미처치 등록 보스가 마감이다', () => {
+    const view = character({
+      weeklyBosses: [pending, ...clearedBosses(WEEKLY_BOSS_CLEAR_LIMIT)],
+    })
+
+    const closed = displayedBosses(view, 'weekly', 'auto', null).find(
+      (entry) => entry.apiName === pending.apiName,
+    )
+
+    expect(closed?.isWeeklyLimitClosed).toBe(true)
+  })
+
+  it('한 마리 모자라면 마감이 아니다', () => {
+    const view = character({
+      weeklyBosses: [pending, ...clearedBosses(WEEKLY_BOSS_CLEAR_LIMIT - 1)],
+    })
+
+    const entry = displayedBosses(view, 'weekly', 'auto', null).find(
+      (item) => item.apiName === pending.apiName,
+    )
+
+    expect(entry?.isWeeklyLimitClosed).toBe(false)
+  })
+
+  // 마감은 완료를 대체하지 않는다 — 잡은 것은 잡은 것이다.
+  it('이미 처치한 보스는 마감이 아니다', () => {
+    const cleared = clearedBosses(WEEKLY_BOSS_CLEAR_LIMIT)
+    const view = character({ weeklyBosses: cleared })
+
+    const result = displayedBosses(view, 'weekly', 'auto', null)
+
+    expect(result.every((entry) => entry.isWeeklyLimitClosed === false)).toBe(true)
+  })
+
+  it('시즌 보스는 한도 밖이라 마감이 없다', () => {
+    const season = boss({ name: '시즌 보스 메이린', difficulty: '노멀', cycle: 'weekly', isRegistered: true })
+    const view = character({ weeklyBosses: [season, ...clearedBosses(WEEKLY_BOSS_CLEAR_LIMIT)] })
+
+    const entry = displayedBosses(view, 'weekly', 'auto', null).find(
+      (item) => item.apiName === season.apiName,
+    )
+
+    expect(entry?.isWeeklyLimitClosed).toBe(false)
+  })
+
+  it('월간 보스는 한도 밖이라 마감이 없다', () => {
+    const monthly = boss({ name: '검은마법사', difficulty: '하드', cycle: 'monthly', isRegistered: true })
+    const view = character({
+      weeklyBosses: clearedBosses(WEEKLY_BOSS_CLEAR_LIMIT),
+      monthlyBosses: [monthly],
+    })
+
+    const entry = displayedBosses(view, 'monthly', 'auto', null)[0]
+
+    expect(entry?.isWeeklyLimitClosed).toBe(false)
+  })
+
+  // 이 결정이 겨누는 실제 상황 — 추적한 12마리 중 열을 잡고, 목록 밖 두 마리로 한도를 채운 경우.
+  it('수동 모드: 추적 목록 밖 처치로 한도를 채워도 목록의 미처치 보스가 마감이 된다', () => {
+    const tracked = { 'ocid-1': [bossItem(WEEKLY_NAMES[0], '하드')] }
+    const view = character({ weeklyBosses: clearedBosses(WEEKLY_BOSS_CLEAR_LIMIT) })
+
+    const entry = displayedBosses(view, 'weekly', 'manual', tracked).find(
+      (item) => item.matchedBossName === WEEKLY_NAMES[0],
+    )
+
+    expect(entry?.isWeeklyLimitClosed).toBe(true)
   })
 })

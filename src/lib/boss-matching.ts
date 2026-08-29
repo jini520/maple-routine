@@ -225,6 +225,24 @@ export function countClearedWeeklyBosses(bosses: MatchedBoss[]): number {
   return count
 }
 
+/**
+ * **이번 주 주간 보스 한도(12)를 채웠는가** ([[ADR-187]] 결정 1).
+ *
+ * 세는 규칙을 새로 쓰지 않고 `countClearedWeeklyBosses`([[ADR-031]] 결정 1)를 그대로 쓴다 —
+ * 시즌 보스 제외·월간 제외·같은 보스의 여러 난이도는 1, 세 규칙이 여기서도 그대로여야
+ * «선택은 12/12 인데 처치는 11/12» 같은 모순이 안 생긴다([[ADR-055]] 결정 3 이 이미 겪은 것).
+ *
+ * 판정이 여기 있는 이유는 `WEEKLY_BOSS_CLEAR_LIMIT` 과 세는 함수를 **이 파일이 소유**하기
+ * 때문이다 — 소비자(스케줄러 카드 · today 「남은 스케줄」 · 보스 수익)가 각자 `>= 12` 를 쓰면
+ * 같은 규칙이 세 벌이 되고, 그때부터 화면마다 다른 말을 한다([[ADR-186]] 결정 2 와 같은 태도).
+ *
+ * **넥슨의 `weekly_boss_clear_count` 는 안 쓴다** — 그 필드는 타입에만 있고 제품 코드는 처음부터
+ * 앱이 센 값을 쓴다. 대가는 «동기화가 낡으면 판정도 낡는다» 이고, 다음 동기화가 스스로 고친다.
+ */
+export function isWeeklyClearLimitReached(bosses: MatchedBoss[]): boolean {
+  return countClearedWeeklyBosses(bosses) >= WEEKLY_BOSS_CLEAR_LIMIT
+}
+
 // 보스 카드 목록에 표시할 항목을 content_name 그룹별로 고른다([[ADR-031]] 결정 5) — 등록된
 // 난이도가 있으면 그것만 보여주고(중복 카드 방지), 없으면 완료된 난이도를 대신 보여준다.
 export function selectDisplayBosses(bosses: MatchedBoss[]): MatchedBoss[] {

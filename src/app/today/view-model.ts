@@ -589,6 +589,10 @@ function remainingBosses(
         !isBossBlocked(characterLevel, matched.matchedBossName ?? matched.apiName, matched.difficulty),
     )
     .filter((matched) => !matched.isComplete)
+    // **주간 한도를 채우면 남은 것이 아니다**([[ADR-187]] 결정 3) — 이번 주엔 더 잡을 수 없다.
+    // 판정은 여기 없다: `displayedBosses` 가 실어 보낸 값을 거를 뿐이라 스케줄러가 「마감」 배지를
+    // 다는 보스와 **정확히 같은 집합**이다([[ADR-147]] 결정 8 의 등식).
+    .filter((matched) => !matched.isWeeklyLimitClosed)
     .map((matched) => ({
       name: matched.matchedBossName ?? matched.apiName,
       difficulty: matched.difficulty,

@@ -2,7 +2,7 @@
 
 > **범위**: 앱의 첫 화면 `today` 와 그 위에 서는 **위젯 시스템** — 격자 치수, 배치 규약, 위젯 레지스트리, 뷰모델 조립, 위젯 아홉의 내용과 빈 상태. 하단바의 층·그룹 구조는 [[ADR-132]](문서 없음 — ADR 전문 참조), 각 위젯이 **가리키는** 화면의 정책은 그 화면의 문서([content-scheduler.md](./content-scheduler.md) · [boss-scheduler.md](./boss-scheduler.md) · [boss-profit.md](./boss-profit.md) · [item-drop.md](./item-drop.md)).
 > **관련 소스(read/write)**: `app/today/`(`TodayScreen.tsx` · `WidgetGrid.tsx` · `view-model.ts` · `widgets/`{`types.ts`·`registry.ts`·`layout.ts` + 위젯 아홉}) · `lib/widget-grid-metrics.ts` · `lib/widget-layout.ts`(좌표 검증) · `lib/drought-tier-styles.ts`(잎 램프 — 드롭 히스토리 화면과 공유) · 읽기만 하는 원천 — `features/content-scheduler/store` · `features/boss-scheduler/store` · `features/boss-profit/store` · `features/boss-profit/drop-history-store` · `storage/character-basic-cache` · `storage/character-selection`(`getRepresentativeCharacter`) · `lib/reset-clock` · `lib/drop-history` · `lib/drop-price` · `lib/boss-matching`(`WEEKLY_CRYSTAL_SALE_LIMIT`) · `lib/valuable-drops` · `lib/scheduler-content-scope`(`getShareScope`·**`getSharedContentGroups`**) + `data/scheduler-content-catalog.json`(`group`·`shortName`·`sharedGroupOrder`·`onlyWhenScheduled`). **꺼내는 것 셋**([[ADR-147]] 결정 8 + 정정 16) — `features/boss-scheduler/displayed-bosses.ts`(`displayedBosses`) · **`features/content-scheduler/displayed-contents.ts`**(`displayedDailyContents`·`displayedWeeklyContents`, `ContentScreen.tsx` 에서 이동 완료) · `app/content-scheduler/content-completion.ts`(제자리, import 만).
-> **관련 ADR**: [[ADR-147]](이 화면의 설계 전부) · [[ADR-153]](수익 위젯이 읽는 값 — «지금 기간») · [[ADR-132]](첫 화면 이동·하단바·동기화 트리거) · [[ADR-097]]·[[ADR-101]](동기화 게이트·예열) · [[ADR-142]](완료 판정의 출처) · [[ADR-035]]·[[ADR-031]](표시 대상 보스) · [[ADR-054]]·[[ADR-059]](결정석 한도) · [[ADR-071]]·[[ADR-124]](드롭 히스토리·아이템 수익) · [[ADR-060]]·[[ADR-062]](빈 상태·실패) · [[ADR-140]]·[[ADR-143]](대표 캐릭터) · [[ADR-057]](«모름» 과 «없음» 을 가르는 태도) · [[ADR-006]](확인 안 한 값을 단정하지 않는다).
+> **관련 ADR**: [[ADR-147]](이 화면의 설계 전부) · [[ADR-153]](수익 위젯이 읽는 값 — «지금 기간») · [[ADR-132]](첫 화면 이동·하단바·동기화 트리거) · [[ADR-097]]·[[ADR-101]](동기화 게이트·예열) · [[ADR-142]](완료 판정의 출처) · [[ADR-035]]·[[ADR-031]](표시 대상 보스) · [[ADR-187]](주간 한도를 채우면 «남은 것» 이 아니다) · [[ADR-054]]·[[ADR-059]](결정석 한도) · [[ADR-071]]·[[ADR-124]](드롭 히스토리·아이템 수익) · [[ADR-060]]·[[ADR-062]](빈 상태·실패) · [[ADR-140]]·[[ADR-143]](대표 캐릭터) · [[ADR-057]](«모름» 과 «없음» 을 가르는 태도) · [[ADR-006]](확인 안 한 값을 단정하지 않는다).
 > **관련 문서**: [../foundation/design-system.md](../foundation/design-system.md) · [../foundation/error-resilience.md](../foundation/error-resilience.md) · [../foundation/nexon-api.md](../foundation/nexon-api.md) · [../foundation/architecture.md](../foundation/architecture.md).
 
 **상태**: **구현 완료 · 실기기에 띄워 봄 · 치수는 미검증**(2026-08-18). `UnderConstruction` 껍데기가
@@ -441,6 +441,11 @@ function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel
 | 합계 | **없다** — 제목 줄은 「남은 스케줄」과 세그먼트 둘뿐이고, 탭 라벨에도 개수를 안 단다 |
 | 강조 | **`font-weight` 400 → 800.** 수치에 테마 색을 안 쓰는 규칙은 그대로다 |
 
+- **주간 12마리를 채우면 남은 보스는 안 센다**([[ADR-187]] 결정 3, 2026-08-30) — 등록(추적)과 실제
+  처치가 어긋나 `12/12` 인데 미처치 카드가 남는 경우, 그 보스는 **이번 주에 잡을 수 없으므로 «남은
+  일» 이 아니다**. 판정은 여기 없다 — `displayedBosses` 가 실어 보내는 `isWeeklyLimitClosed` 를
+  `!isComplete` 와 함께 거를 뿐이다([[ADR-147]] 결정 8 의 등식). 그 탭이 0이 되면 아래 `CLEAR` 규칙이
+  그대로 적용된다(그 배지의 뜻이 «이 주기에 지금 할 게 없다» 라 정확히 맞는다).
 - **왜 열이 아니라 탭인가**([[ADR-181]] 맥락). 주기를 열로 세운 시안도 만들었지만 **월간 열이
   값을 못 했다** — 검마는 한 달에 한 번, 그것도 일부 캐릭터만 잡아 대부분의 날에 그 열이 완료
   표식으로만 찬다(사용자 판정). 탭으로 접으면 **월간 탭이 곧 검마의 자리**가 된다.
