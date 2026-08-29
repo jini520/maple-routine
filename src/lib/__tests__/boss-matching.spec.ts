@@ -1,3 +1,4 @@
+import weeklyBossesData from '../../data/weekly-bosses.json'
 import type { BossContent } from '../../types'
 import type { ManualTrackedItem } from '../../types/scheduler'
 import {
@@ -7,6 +8,7 @@ import {
   getBossCycleByName,
   getBossReferenceOrder,
   isSeasonBossName,
+  isWeeklyClearLimitReached,
   matchBossContent,
   selectBossProfitBosses,
   selectDisplayBosses,
@@ -208,6 +210,49 @@ describe('countClearedWeeklyBosses (ADR-031)', () => {
       matchedBoss({ apiName: '루시드', difficulty: '하드', isRegistered: true, isComplete: true }),
     ]
     expect(countClearedWeeklyBosses(bosses)).toBe(2)
+  })
+})
+
+describe('isWeeklyClearLimitReached ([[ADR-187]] 결정 1)', () => {
+  // 참조표에서 앞에서부터 뽑는다 — 보스 이름을 손으로 적지 않는다([[ADR-006]]).
+  const WEEKLY_NAMES = (weeklyBossesData.weekly as { boss: string }[]).map((entry) => entry.boss)
+
+  function cleared(count: number): MatchedBoss[] {
+    return WEEKLY_NAMES.slice(0, count).map((name) =>
+      matchedBoss({ apiName: name, matchedBossName: name, isComplete: true, ownComplete: true }),
+    )
+  }
+
+  it('한도보다 적게 잡았으면 false 다', () => {
+    expect(isWeeklyClearLimitReached(cleared(WEEKLY_BOSS_CLEAR_LIMIT - 1))).toBe(false)
+  })
+
+  it('한도만큼 잡았으면 true 다', () => {
+    expect(isWeeklyClearLimitReached(cleared(WEEKLY_BOSS_CLEAR_LIMIT))).toBe(true)
+  })
+
+  // 세는 규칙은 countClearedWeeklyBosses 그대로여야 한다 — 두 벌이 되면 «선택은 12/12 인데
+  // 처치는 11/12» 가 다시 생긴다([[ADR-055]] 결정 3).
+  it('시즌 보스는 한도를 채우지 않는다', () => {
+    const bosses = [
+      ...cleared(WEEKLY_BOSS_CLEAR_LIMIT - 1),
+      matchedBoss({
+        apiName: '시즌 보스 메이린',
+        matchedBossName: '메이린',
+        isSeasonBoss: true,
+        isComplete: true,
+        ownComplete: true,
+      }),
+    ]
+    expect(isWeeklyClearLimitReached(bosses)).toBe(false)
+  })
+
+  it('월간 보스는 한도를 채우지 않는다', () => {
+    const bosses = [
+      ...cleared(WEEKLY_BOSS_CLEAR_LIMIT - 1),
+      matchedBoss({ apiName: '검은 마법사', cycle: 'monthly', isComplete: true, ownComplete: true }),
+    ]
+    expect(isWeeklyClearLimitReached(bosses)).toBe(false)
   })
 })
 

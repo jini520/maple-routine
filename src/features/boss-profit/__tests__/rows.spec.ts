@@ -3,7 +3,18 @@
 // 그 전에는 export 된 것이 dropRowKey 하나뿐이라, 89개 스토어 테스트가 전부 스토어를 거쳐
 // 간접 검증했다. 정렬처럼 "입력을 어떻게 주느냐"가 핵심인 로직은 그 방식으로는 경우를
 // 만들기가 번거로워, 실제로 결정적 정렬(ADR-036·#28)에 직접 붙은 테스트가 없었다.
-import { filterRowsForTab, matchesRowKey, sortRowsByOcidOrder, sumRowsPayout, toRecordedDrop } from '../rows'
+import weeklyBossesData from '../../../data/weekly-bosses.json'
+import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss-matching'
+import type { ManualTrackedItem } from '../../../storage/manual-tracked-content'
+import type { BossContent } from '../../../types'
+import {
+  filterRowsForTab,
+  matchesRowKey,
+  selectProfitDisplayBosses,
+  sortRowsByOcidOrder,
+  sumRowsPayout,
+  toRecordedDrop,
+} from '../rows'
 import type { BossProfitRow } from '../store'
 
 function row(overrides: Partial<BossProfitRow> = {}): BossProfitRow {
@@ -156,5 +167,81 @@ describe('toRecordedDrop — 가격 필드 (ADR-124)', () => {
 
     expect(drop.priceState).toBe('excluded')
     expect(drop.priceMeso).toBeUndefined()
+  })
+})
+
+// [[ADR-187]] 결정 4 — 주간 한도를 채우면 미처치 placeholder 행은 아예 서지 않는다. 「마감」 배지를
+// 여기까지 들고 오지 않는다: 이 페이지는 정산이라 «벌지 않은 것» 은 줄을 갖지 않는다.
+describe('selectProfitDisplayBosses — 주간 한도 마감 ([[ADR-187]] 결정 4)', () => {
+  const WEEKLY_NAMES = (weeklyBossesData.weekly as { boss: string }[]).map((entry) => entry.boss)
+  const PENDING = WEEKLY_NAMES[0]
+
+  function content(overrides: Partial<BossContent> & { name: string }): BossContent {
+    return {
+      difficulty: '하드',
+      cycle: 'weekly',
+      isRegistered: false,
+      isComplete: false,
+      ownComplete: false,
+      ...overrides,
+    }
+  }
+
+  /** 「끝에서부터」 한도만큼 실제로 처치한 보스들 — `PENDING` 과 겹치지 않게 뒤에서 뽑는다. */
+  function cleared(count: number): BossContent[] {
+    return WEEKLY_NAMES.slice(-count).map((name) =>
+      content({ name, isRegistered: true, isComplete: true, ownComplete: true }),
+    )
+  }
+
+  const names = (bosses: ReturnType<typeof selectProfitDisplayBosses>): string[] =>
+    bosses.map((boss) => boss.matchedBossName ?? boss.apiName)
+
+  it('자동 모드: 한도를 채우면 인게임 등록만 된 미처치 보스는 행이 서지 않는다', () => {
+    const contents = [content({ name: PENDING, isRegistered: true }), ...cleared(WEEKLY_BOSS_CLEAR_LIMIT)]
+
+    expect(names(selectProfitDisplayBosses(contents, 'auto', []))).not.toContain(PENDING)
+  })
+
+  // 회귀 가드 — 한도 전이면 미완료 placeholder 는 그대로 선다([[ADR-032]] 결정 4).
+  it('자동 모드: 한 마리 모자라면 미완료 placeholder 는 그대로 선다', () => {
+    const contents = [
+      content({ name: PENDING, isRegistered: true }),
+      ...cleared(WEEKLY_BOSS_CLEAR_LIMIT - 1),
+    ]
+
+    expect(names(selectProfitDisplayBosses(contents, 'auto', []))).toContain(PENDING)
+  })
+
+  it('수동 모드: 한도를 채우면 추적 중인 미처치 보스도 행이 서지 않는다', () => {
+    const contents = cleared(WEEKLY_BOSS_CLEAR_LIMIT)
+    const manual: ManualTrackedItem[] = [{ contentName: PENDING, kind: 'boss', difficulty: '하드' }]
+
+    expect(names(selectProfitDisplayBosses(contents, 'manual', manual))).not.toContain(PENDING)
+  })
+
+  // 마감은 «안 잡은 것» 에만 붙는다 — 실제로 번 것은 정산에서 사라지면 안 된다.
+  it('실제로 처치한 보스는 한도를 채워도 전부 남는다', () => {
+    const contents = cleared(WEEKLY_BOSS_CLEAR_LIMIT)
+
+    expect(names(selectProfitDisplayBosses(contents, 'auto', []))).toHaveLength(WEEKLY_BOSS_CLEAR_LIMIT)
+  })
+
+  it('시즌 보스는 한도 밖이라 미처치여도 남는다', () => {
+    const contents = [
+      content({ name: '시즌 보스 메이린', difficulty: '노멀', isRegistered: true }),
+      ...cleared(WEEKLY_BOSS_CLEAR_LIMIT),
+    ]
+
+    expect(names(selectProfitDisplayBosses(contents, 'auto', []))).toContain('시즌 보스 메이린')
+  })
+
+  it('월간 보스는 한도 밖이라 미처치여도 남는다', () => {
+    const contents = [
+      content({ name: '검은마법사', cycle: 'monthly', isRegistered: true }),
+      ...cleared(WEEKLY_BOSS_CLEAR_LIMIT),
+    ]
+
+    expect(names(selectProfitDisplayBosses(contents, 'auto', []))).toContain('검은마법사')
   })
 })

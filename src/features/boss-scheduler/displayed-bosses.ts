@@ -13,7 +13,13 @@
 //   대신 보여준다(`selectDisplayBosses`). 즉 미등록이어도 완료했으면 목록에 든다.
 //
 // 의존이 코어 모듈과 인자뿐이라(화면·저장소·네이티브를 안 만진다) 여기 있을 수 있다.
-import { compareBossOrder, matchBossContent, selectDisplayBosses, type MatchedBoss } from '../../lib/boss-matching'
+import {
+  compareBossOrder,
+  isWeeklyClearLimitReached,
+  matchBossContent,
+  selectDisplayBosses,
+  type MatchedBoss,
+} from '../../lib/boss-matching'
 import { mergeManualBossList } from '../../lib/manual-boss-merge'
 import type { BossContent, BossCycle } from '../../types'
 import type { ManualTrackedItem } from '../../types/scheduler'
@@ -22,6 +28,17 @@ import type { BossCharacterView } from './store'
 
 /** 통합 목록에서 무리가 서는 순서 — **월간이 위**다([[ADR-164]] 결정 1, 이슈 #247). */
 export const BOSS_SECTION_ORDER: readonly BossCycle[] = ['monthly', 'weekly']
+
+/**
+ * 표시 목록의 한 항목 — `MatchedBoss` 에 **이 캐릭터의 주간 한도 상태**를 얹은 것([[ADR-187]] 결정 2).
+ *
+ * 「마감」을 화면이 다시 판정하지 않게 하려고 여기 싣는다 — 스케줄러 카드는 「완료」 자리에 배지를
+ * 바꿔 달고, today 「남은 스케줄」은 이 값으로 «남은 것» 에서 뺀다([[ADR-147]] 결정 8 의 등식).
+ */
+export interface DisplayedBoss extends MatchedBoss {
+  /** 주간 12마리를 채운 뒤 남은 **미처치 주간 보스** — 이번 주엔 더 잡을 수 없다. */
+  readonly isWeeklyLimitClosed: boolean
+}
 
 /**
  * **캐릭터를 인자로 받는다**([[ADR-142]] 결정 4) — 선택된 캐릭터의 카드 목록과 초상화 레일의 링이
@@ -37,10 +54,18 @@ export function displayedBosses(
   cycle: BossCycle,
   mode: TrackingMode,
   manualTrackedByOcid: Record<string, ManualTrackedItem[]> | null,
-): MatchedBoss[] {
+): DisplayedBoss[] {
+  // 한도는 **캐릭터의 주간 전체**로 판정한다 — 추적 목록이 아니라 동기화 결과다([[ADR-031]] 결정 1
+  // 이 «등록 여부와 무관하게» 세는 이유와 같다). 이 결정이 겨누는 상황이 «목록 밖 보스로 12를
+  // 채웠다» 라, 목록만 보면 영영 12가 안 된다.
+  const limitReached = isWeeklyClearLimitReached(character.weeklyBosses)
+
   if (mode !== 'manual') {
-    return orderByReference(
-      selectDisplayBosses(cycle === 'weekly' ? character.weeklyBosses : character.monthlyBosses),
+    return stampLimitClosed(
+      orderByReference(
+        selectDisplayBosses(cycle === 'weekly' ? character.weeklyBosses : character.monthlyBosses),
+      ),
+      limitReached,
     )
   }
 
@@ -55,11 +80,32 @@ export function displayedBosses(
     isComplete: boss.isComplete,
     ownComplete: boss.ownComplete,
   }))
-  return orderByReference(
-    mergeManualBossList(items, synced)
-      .map(matchBossContent)
-      .filter((boss) => boss.cycle === cycle),
+  return stampLimitClosed(
+    orderByReference(
+      mergeManualBossList(items, synced)
+        .map(matchBossContent)
+        .filter((boss) => boss.cycle === cycle),
+    ),
+    limitReached,
   )
+}
+
+/**
+ * 「마감」을 원소에 **실어 보낸다** ([[ADR-187]] 결정 2).
+ *
+ * 마감은 «주간 한도가 찼는데 아직 미처치» 다 — 시즌 보스와 월간 보스는 한도 밖이라 언제나 `false`
+ * 이고([[ADR-054]] 결정 3·[[ADR-059]] 결정 3), 이미 잡은 보스도 `false` 다(마감은 완료를 대체하지
+ * 않는다).
+ *
+ * `MatchedBoss` 자체에 넣지 않는 이유: 그 타입은 «보스 하나» 를 말하고 마감은 **캐릭터의 주간
+ * 전체**를 봐야 나오는 값이라 `matchBossContent` 가 채울 수 없다.
+ */
+function stampLimitClosed(bosses: MatchedBoss[], limitReached: boolean): DisplayedBoss[] {
+  return bosses.map((boss) => ({
+    ...boss,
+    isWeeklyLimitClosed:
+      limitReached && boss.cycle === 'weekly' && !boss.isSeasonBoss && !boss.isComplete,
+  }))
 }
 
 /**
@@ -90,7 +136,7 @@ function orderByReference(bosses: MatchedBoss[]): MatchedBoss[] {
  */
 export interface BossSection {
   readonly cycle: BossCycle
-  readonly bosses: MatchedBoss[]
+  readonly bosses: DisplayedBoss[]
 }
 
 /**

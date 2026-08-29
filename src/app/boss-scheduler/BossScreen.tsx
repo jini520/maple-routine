@@ -51,7 +51,11 @@ import {
   useBossSchedulerStore,
   type PartyFilter,
 } from '../../features/boss-scheduler/store'
-import { displayedBosses, displayedBossSections } from '../../features/boss-scheduler/displayed-bosses'
+import {
+  displayedBosses,
+  displayedBossSections,
+  type DisplayedBoss,
+} from '../../features/boss-scheduler/displayed-bosses'
 import { resolveSelectedCharacter } from '../../features/character-selection/selected-character'
 import { useCharacterSelectionStore } from '../../features/character-selection/store'
 import { formatSyncedAt } from '../../features/schedule-sync/format'
@@ -92,7 +96,7 @@ const PARTY_FILTER_LABELS: Record<PartyFilter, string> = {
 }
 
 function BossCard(props: {
-  boss: MatchedBoss
+  boss: DisplayedBoss
   crop?: BossPortraitCrop
   partySize?: number
   /** 요구 레벨 미달 — 「완료」 자리를 «진행 불가» 로 대체한다([[ADR-162]] 결정 3). */
@@ -140,8 +144,21 @@ function BossCard(props: {
           <View className="flex-row items-center gap-1.5">
             {/* [[ADR-162]] 결정 3 — 진행 불가면 「완료」 자리를 대체한다. 진행할 수 없는 보스의
                 완료 여부는 게임이 준 스냅샷이지 이 캐릭터가 잡을 수 있다는 뜻이 아니다. */}
+            {/* [[ADR-187]] 결정 2 — 주간 12마리를 채우면 남은 미처치 보스는 「마감」이다. **완료로
+                칠하지 않는다**: 안 잡은 보스를 완료로 두면 그 거짓이 보스 수익의 결정석 금액이
+                된다. 배색은 `BlockedBadge` 의 것을 그대로 쓴다(실패도 경고도 아니고 «이번 주엔
+                차례가 없다» 는 사실이라 눌린 회색이다 — 새 색을 만들지 않는다).
+                우선순위는 「진행 불가」 > 「마감」 > 「완료」 — 요구 레벨에 못 미치는 보스는
+                한도와 무관하게 애초에 못 잡는다. */}
             {props.isBlocked === true ? (
               <BlockedBadge />
+            ) : boss.isWeeklyLimitClosed ? (
+              // **「완료」와 같은 상자다**(사용자 지정) — 자리를 대신하는 배지라 크기가 다르면 같은
+              // 자리에서 배지가 커졌다 작아졌다 하며 카드 오른쪽 끝이 흔들린다. 갈리는 것은 색뿐이고,
+              // 그 색은 `BlockedBadge` 의 것이다(실패도 경고도 아닌 «차례가 아니다» — 눌린 회색).
+              <Text className="rounded-full bg-surface-2 px-2.5 py-1 text-xs font-bold text-text-muted">
+                마감
+              </Text>
             ) : (
               boss.isComplete && (
                 <Text className="rounded-full bg-secondary-tint px-2.5 py-1 text-xs font-bold text-secondary-ink">
@@ -235,15 +252,21 @@ export function BossScreen(): React.JSX.Element {
   //
   // **요구 레벨 미달은 분모에서 빠진다**([[ADR-162]] 결정 1·2) — 남겨 두면 그 캐릭터의 링이
   // 100%에 절대 도달하지 못한다. 컨텐츠 진행률과 **같은 판정 함수**를 본다.
+  //
+  // **마감도 «다 한 것» 으로 센다**([[ADR-187]] 결정 2 후속, 사용자 지정) — 주간 한도를 채웠으면
+  // 그 보스는 이번 주에 더 할 수 없으므로, 분자에서 빼면 링이 영영 100%에 못 닿고 «아직 남았다» 는
+  // 거짓을 말한다(레벨 미달을 분모에서 뺀 것과 같은 이유, 다른 자리). **분모에서 빼지 않는 것**이
+  // 레벨 미달과 갈리는 지점이다: 저쪽은 «이 캐릭터의 일이 아니다» 이고 이쪽은 «이번 주 일은 끝났다»
+  // 라, 12마리를 추적했으면 링은 `12/12` 로 읽혀야 한다.
   const bossRingProgress = (
-    bosses: MatchedBoss[],
+    bosses: DisplayedBoss[],
     characterLevel: number | null,
   ): { completed: number; total: number } => {
     const progressible = bosses.filter(
       (boss) => !isBossBlocked(characterLevel, boss.matchedBossName ?? boss.apiName, boss.difficulty),
     )
     return {
-      completed: progressible.filter((boss) => boss.isComplete).length,
+      completed: progressible.filter((boss) => boss.isComplete || boss.isWeeklyLimitClosed).length,
       total: progressible.length,
     }
   }
@@ -280,7 +303,8 @@ export function BossScreen(): React.JSX.Element {
 
   // [[ADR-019]] 결정 3: boss_party_settings에 없는 조합은 솔로(1인) 취급 — 별도 API 재호출
   // 없이 이미 로드된 partySizes 맵으로만 클라이언트 사이드 필터링한다.
-  function filterByPartySize(bosses: MatchedBoss[], ocid: string, filter: PartyFilter): MatchedBoss[] {
+  // 원소 타입을 안 좁힌다 — 거르기만 하는 함수라 `DisplayedBoss` 가 들어오면 그대로 나가야 한다.
+  function filterByPartySize<T extends MatchedBoss>(bosses: T[], ocid: string, filter: PartyFilter): T[] {
     if (filter === 'all') return bosses
     return bosses.filter((boss) => {
       const size = getPartySize(ocid, boss) ?? 1
@@ -297,8 +321,10 @@ export function BossScreen(): React.JSX.Element {
           ...section,
           bosses: filterByPartySize(section.bosses, selected.ocid, partyFilter),
         }))
-  // 「주간」 헤더가 싣는 배지 — 이 값들은 **표시 목록과 무관하다**. `weekly_boss_clear_count` 는
-  // 게임이 세는 이번 주 처치 수이고([[ADR-055]] 결정 8), 시즌 완료 여부도 등록과 무관하다
+  // 「주간」 헤더가 싣는 배지 — 이 값들은 **표시 목록과 무관하다**. `weeklyBossClearCount` 는
+  // **앱이 센** 이번 주 처치 수이고(`countClearedWeeklyBosses`, [[ADR-031]] 결정 1 — 넥슨의
+  // `weekly_boss_clear_count` 는 타입에만 있고 제품 코드는 안 쓴다. 2026-08-30 [[ADR-187]] 정정:
+  // 이 자리에 «게임이 세는 수» 라고 적혀 있었다), 시즌 완료 여부도 등록과 무관하다
   // ([[ADR-031]] 결정 3 — 그래서 미등록·미완료 시즌 보스는 카드로 안 서면서 배지만 뜬다).
   const weeklySeasonState =
     seasonBosses.length === 0 ? null : isSeasonBossComplete ? ('complete' as const) : ('incomplete' as const)
@@ -315,7 +341,7 @@ export function BossScreen(): React.JSX.Element {
   const displayedCount = sections.reduce((sum, section) => sum + section.bosses.length, 0)
   const filteredCount = filteredSections.reduce((sum, section) => sum + section.bosses.length, 0)
 
-  function renderBossCards(bosses: MatchedBoss[], ocid: string): React.JSX.Element {
+  function renderBossCards(bosses: DisplayedBoss[], ocid: string): React.JSX.Element {
     const characterLevel = selected?.level ?? null
 
     return (

@@ -55,6 +55,8 @@ import { withSqliteFallback } from './sqlite-guards'
 import { autoRecordRows } from './auto-record'
 import { resolveDefeatDates } from './defeat-dates'
 import { loadDropsByRowKey } from './drops-loader'
+import { sweepOrphanDrops } from './orphan-drops'
+import { useToastStore } from '../toast/store'
 import { backfillTarget, buildBackfillTargets, canReachPreviousPeriod, loadPreviousPeriodTotal } from './backfill'
 import type { BackfillTarget } from './backfill'
 
@@ -449,6 +451,19 @@ async function buildRowsFromRecords(
 
 
 
+/**
+ * 정리 결과를 알린다 — **조용히 지우지 않는다**([[ADR-187]] 결정 5).
+ *
+ * `showInfo`(자동 소멸)다: 실패가 아니라 규칙 안내라, [[ADR-055]] 정정 3 이 한도 토스트에 고른
+ * 변형과 같다. 지운 것이 없으면 말할 것도 없다(멱등한 회차마다 토스트가 뜨면 소음이 된다).
+ */
+function notifyOrphanDropCleanup(removedDrops: number): void {
+  if (removedDrops === 0) return
+  useToastStore
+    .getState()
+    .showInfo(`잡지 않은 보스의 아이템 기록 ${removedDrops}건을 정리했어요`)
+}
+
 type BossProfitSetter = (partial: Partial<BossProfitState>) => void
 
 /**
@@ -577,9 +592,27 @@ async function loadPeriod(
     tab === 'monthly'
       ? await buildWeeklySubtotalsForMonth(sortedOcids, periodKey, [], profileSnapshot, now)
       : []
+  // **지난 기간의 고아 드롭을 지운다**([[ADR-187]] 결정 5 — 셋째 경로). 과거 기간은 기록이 곧
+  // 사실이라(`buildRowsFromRecords`) 동기화 신선도를 따질 것이 없다 — 백필된 적 없는 주는 행이
+  // 통째로 비어 안전 장치 ②가 알아서 막는다.
+  //
+  // **정리 → 읽기 순서는 지키되 다른 둘과는 나란히 간다**([[ADR-078]] 결정 1) — 지운 것이 화면 맵에
+  // 남지 않으려면 `loadDropsByRowKey` 보다 앞이어야 하지만, 앞줄에 세워 직렬로 두면 기간을 옮길
+  // 때마다 왕복이 하나 더 얹힌다. 그래서 **그 갈래 안에서만** 이어 붙인다.
   const [canGoPreviousPeriod, dropsByRowKey, previousPeriodTotalMeso] = await Promise.all([
     canReachPreviousPeriod(tab, periodKey, ocids, now),
-    loadDropsByRowKey(ocids, withCurrentPeriodRows(rows), now),
+    sweepOrphanDrops({
+      ocids,
+      rows,
+      trustedOcids: new Set(ocids),
+      // **보고 있는 기간 하나뿐**이다 — `withCurrentPeriodRows` 가 섞어 넣는 지금 기간 행은 이
+      // 회차가 판정할 대상이 아니다(그쪽은 동기화 경로가 자기 신선도를 알고 판정한다).
+      knownPeriodKeys: new Set([periodKey]),
+      now,
+    }).then((removedDrops) => {
+      notifyOrphanDropCleanup(removedDrops)
+      return loadDropsByRowKey(ocids, withCurrentPeriodRows(rows), now)
+    }),
     loadPreviousPeriodTotal(ocids, tab, periodKey),
   ])
 
@@ -1077,6 +1110,31 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     const unionRows = appendRecordOnlyRows(autoRecordedRows, records ?? [], characterProfiles, now)
     const sortedRows = sortRowsByOcidOrder(unionRows, syncedOcids)
     latestSyncSnapshot = { ocids: [...ocids], rows: sortedRows, characterProfiles }
+
+    // **잡지 않은 보스의 드롭을 지운다**([[ADR-187]] 결정 5) — 주간 한도 마감으로 행이 걷힌 자리,
+    // 추적에서 빠진 보스, 영영 미처치로 굳은 기간이 전부 여기로 온다(술어는 하나다).
+    //
+    // 자리가 여기인 이유 셋: ① `autoRecordRows` 의 **난이도 이관 뒤**여야 한다(안 그러면 옮겨질
+    // 기록을 고아로 오인한다 — 결정 5 안전 장치 ①) ② `loadDropsByRowKey` **앞**이어야 방금 지운
+    // 것이 화면 맵에 남지 않는다 ③ `refreshInPlace` 분기보다 앞이라 두 갈래가 함께 탄다.
+    //
+    // `records === null` 이면 건너뛴다 — 기록 조회 자체가 실패한 것이라 «행이 없다» 가 아무것도
+    // 뜻하지 않는다([[ADR-050]] 결정 3 이 자동 기록을 멈추는 것과 같은 이유).
+    if (records !== null) {
+      const removedDrops = await sweepOrphanDrops({
+        ocids,
+        rows: sortedRows,
+        // 동기화가 실패한 캐릭터의 행은 낡은 캐시에서 나온 것이라 판정 근거가 못 된다([[ADR-067]] 결정 7).
+        trustedOcids: new Set(ocids.filter((ocid) => !staleOcids.has(ocid))),
+        // 이 회차가 «사실» 을 아는 기간은 동기화가 덮은 지금 기간 둘뿐이다.
+        knownPeriodKeys: new Set([
+          getCurrentBossProfitPeriod('weekly', now).periodKey,
+          getCurrentBossProfitPeriod('monthly', now).periodKey,
+        ]),
+        now,
+      })
+      notifyOrphanDropCleanup(removedDrops)
+    }
 
     // 실시간 동기화가 실제로 성공했으므로 "마지막 동기화 시각"을 기록한다 — 세대 가드보다 앞에서
     // 갱신해야 한다. 그 사이 다른 기간으로 이동해(세대가 바뀌어) 아래 최종 set()이 건너뛰어지더라도,

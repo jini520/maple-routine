@@ -1,3 +1,4 @@
+import weeklyBossesData from '../../../data/weekly-bosses.json'
 
 import { waitFor } from '../../../__tests__/wait-for'
 import type { CharacterScheduleSync } from '../../schedule-sync/schedule-sync'
@@ -78,6 +79,12 @@ jest.mock('../../../storage/boss-drops', () => ({
 }))
 const { getBossDropRecords: getBossDropRecordsMock, replaceBossDropRecords: replaceBossDropRecordsMock } = jest.requireMock('../../../storage/boss-drops') as Record<string, jest.Mock>
 
+// [[ADR-187]] 결정 5: 잡지 않은 보스의 드롭을 지운 뒤 **건수를 토스트로 알린다** — 값까지 사라지므로.
+const mockShowInfo = jest.fn()
+jest.mock('../../toast/store', () => ({
+  useToastStore: { getState: () => ({ showInfo: mockShowInfo, showError: jest.fn(), showSuccess: jest.fn() }) },
+}))
+
 import {
   getAdjacentPeriodKey,
   getBackfillQueryDate,
@@ -144,6 +151,7 @@ function syncResult(overrides: Partial<CharacterScheduleSync> = {}): CharacterSc
 beforeEach(() => {
   // ADR-097 결정 3: 모듈 수준 실행 플래그라 테스트끼리 오염된다.
   resetSyncRunStateForTests()
+  mockShowInfo.mockClear()
   resolveDefeatDatesMock.mockReset().mockResolvedValue(0)
   useBossProfitStore.setState({
     status: 'idle',
@@ -3201,5 +3209,149 @@ describe('useBossProfitStore', () => {
       expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
       expect(fetchSchedulerCharacterStateMock).not.toHaveBeenCalled()
     })
+  })
+})
+
+// [[ADR-187]] 결정 5 — 설 자리도 처치 기록도 없는 드롭은 지운다. 안 지우면 보스 수익에서는
+// 사라지고(그룹 합계가 행으로만 훑는다) 드롭 히스토리·today 위젯에는 영원히 남는다.
+describe('잡지 않은 보스의 드롭 정리 ([[ADR-187]] 결정 5)', () => {
+  const WEEKLY = weeklyBossesData.weekly as { boss: string; difficulties: string[] }[]
+  const WEEK_KEY = getCurrentBossProfitPeriod('weekly', new Date()).periodKey
+
+  /** 「끝에서부터」 한도만큼 실제로 처치한 보스 — 「자쿰」(목록 맨 앞)과 겹치지 않는다. */
+  function clearedContents(count: number): BossContent[] {
+    return WEEKLY.slice(-count).map((entry) =>
+      bossContent({
+        name: entry.boss,
+        difficulty: entry.difficulties[0] as BossContent['difficulty'],
+        isRegistered: true,
+        isComplete: true,
+        ownComplete: true,
+      }),
+    )
+  }
+
+  function zakumDrop(): Record<string, unknown> {
+    return {
+      ocid: 'ocid-1',
+      boss: '자쿰',
+      difficulty: '카오스',
+      periodKey: WEEK_KEY,
+      dropIndex: 0,
+      category: 'equipment',
+      itemName: '칠흑의 보스 반지 상자',
+      slot: null,
+      boxOrigin: null,
+      ringLevel: null,
+      quantity: 1,
+      recordedAt: '2026-08-27T00:00:00.000Z',
+      priceState: null,
+      priceMeso: null,
+      priceShare: null,
+    }
+  }
+
+  async function refreshWith(clearedCount: number): Promise<void> {
+    syncSchedulesMock.mockResolvedValue([
+      syncResult({
+        state: {
+          ...syncResult().state,
+          bossContents: [
+            // 등록만 되고 미처치 — 한도를 채웠으면 행이 서지 않는다(결정 4).
+            bossContent({ name: '자쿰', difficulty: '카오스', isComplete: false, ownComplete: false }),
+            ...clearedContents(clearedCount),
+          ],
+        } as SchedulerCharacterState,
+      }),
+    ])
+    getBossDropRecordsMock.mockResolvedValue([zakumDrop()])
+
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+  }
+
+  it('한도를 채우면 사라진 행의 드롭을 지운다', async () => {
+    await refreshWith(12)
+
+    await waitFor(() => {
+      expect(replaceBossDropRecordsMock).toHaveBeenCalledWith(
+        'ocid-1',
+        '자쿰',
+        '카오스',
+        WEEK_KEY,
+        [],
+        expect.any(String),
+      )
+    })
+  })
+
+  it('지운 건수를 토스트로 알린다 — 조용히 지우지 않는다', async () => {
+    await refreshWith(12)
+
+    await waitFor(() => {
+      expect(mockShowInfo).toHaveBeenCalledWith(expect.stringContaining('1건'))
+    })
+  })
+
+  // 회귀 가드 — 한도 전이면 행이 서므로 드롭은 그대로 산다(scratchpad 흐름, [[ADR-032]] 배경 3).
+  it('한 마리 모자라면 아무것도 지우지 않는다', async () => {
+    await refreshWith(11)
+
+    expect(replaceBossDropRecordsMock).not.toHaveBeenCalled()
+    expect(mockShowInfo).not.toHaveBeenCalled()
+  })
+
+  // 셋째 경로 — 주가 바뀌면 미처치는 확정이다. 과거 기간 행은 전부 기록에서 오므로
+  // 「기록에 없다」가 곧 「안 잡았다」다(안전 장치 ③ 이 가격 미확정 보스를 이미 빼 둔다).
+  it('지난 기간에 남은 미처치 드롭도 그 기간을 열 때 정리한다', async () => {
+    syncSchedulesMock.mockResolvedValue([syncResult()])
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+    const previousPeriodKey = getAdjacentPeriodKey('weekly', useBossProfitStore.getState().periodKey, 'prev')
+    replaceBossDropRecordsMock.mockClear()
+    mockShowInfo.mockClear()
+
+    // 그 주에 「스우」는 잡았고(기록 있음 — 안전 장치 ②의 근거) 「자쿰」은 안 잡았다.
+    isPeriodCheckedMock.mockResolvedValue(true)
+    getBossProfitRecordsMock.mockResolvedValue([
+      {
+        ocid: 'ocid-1',
+        boss: '스우',
+        difficulty: '하드',
+        cycle: 'weekly',
+        periodKey: previousPeriodKey,
+        partySize: 1,
+        priceMeso: 1000,
+        payoutMeso: 1000,
+        recordedAt: '2026-08-20T00:00:00.000Z',
+        world: null,
+      },
+    ])
+    getBossDropRecordsMock.mockResolvedValue([{ ...zakumDrop(), periodKey: previousPeriodKey }])
+
+    await useBossProfitStore.getState().goToPreviousPeriod()
+
+    expect(replaceBossDropRecordsMock).toHaveBeenCalledWith(
+      'ocid-1',
+      '자쿰',
+      '카오스',
+      previousPeriodKey,
+      [],
+      expect.any(String),
+    )
+  })
+
+  // 안전 장치 ② — 백필된 적 없는 주는 기록이 통째로 비어 「행 없음」이 아무것도 뜻하지 않는다.
+  it('기록이 하나도 없는 과거 주는 손대지 않는다', async () => {
+    syncSchedulesMock.mockResolvedValue([syncResult()])
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+    const previousPeriodKey = getAdjacentPeriodKey('weekly', useBossProfitStore.getState().periodKey, 'prev')
+    replaceBossDropRecordsMock.mockClear()
+
+    isPeriodCheckedMock.mockResolvedValue(true)
+    getBossProfitRecordsMock.mockResolvedValue([])
+    getBossDropRecordsMock.mockResolvedValue([{ ...zakumDrop(), periodKey: previousPeriodKey }])
+
+    await useBossProfitStore.getState().goToPreviousPeriod()
+
+    expect(replaceBossDropRecordsMock).not.toHaveBeenCalled()
   })
 })

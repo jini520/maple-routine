@@ -1,3 +1,5 @@
+import weeklyBossesData from '../../../data/weekly-bosses.json'
+import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss-matching'
 // today 뷰모델의 **조립 규칙**([[ADR-147]] 결정 4·8·9). 위젯이 스토어를 모르므로 화면이 값을 한
 // 번 모으는데, 그 조립을 순수 함수로 두면 **위젯이 한 줄도 없는 지금 로직 전부를 검증할 수 있다.**
 //
@@ -227,6 +229,54 @@ describe('남은 스케줄 — 분류 넷 ([[ADR-147]] 정정 3)', () => {
     )
 
     expect(model.schedule[0].weeklyBosses).toHaveLength(0)
+  })
+
+  // [[ADR-187]] 결정 3 — 주간 한도를 채우면 남은 미처치 보스는 «남은 일» 이 아니다. 판정은 여기
+  // 없다(`displayedBosses` 가 실어 보낸 `isWeeklyLimitClosed` 를 거를 뿐이다).
+  it('주간 12마리를 채우면 미처치 등록 보스를 남은 것으로 세지 않는다', () => {
+    const clearedNames = (weeklyBossesData.weekly as { boss: string }[])
+      .map((entry) => entry.boss)
+      .slice(-WEEKLY_BOSS_CLEAR_LIMIT)
+    const model = buildTodayViewModel(
+      input({
+        orderedOcids: ['a'],
+        bossCharacters: [
+          bossView('a', {
+            weeklyBosses: [
+              boss({ apiName: '미처치보스', matchedBossName: '미처치보스' }),
+              ...clearedNames.map((name) =>
+                boss({ apiName: name, matchedBossName: name, isComplete: true, ownComplete: true }),
+              ),
+            ],
+          }),
+        ],
+      }),
+    )
+
+    expect(model.schedule[0].weeklyBosses).toHaveLength(0)
+  })
+
+  it('한 마리 모자라면 그 보스는 여전히 남은 것이다', () => {
+    const clearedNames = (weeklyBossesData.weekly as { boss: string }[])
+      .map((entry) => entry.boss)
+      .slice(-(WEEKLY_BOSS_CLEAR_LIMIT - 1))
+    const model = buildTodayViewModel(
+      input({
+        orderedOcids: ['a'],
+        bossCharacters: [
+          bossView('a', {
+            weeklyBosses: [
+              boss({ apiName: '미처치보스', matchedBossName: '미처치보스' }),
+              ...clearedNames.map((name) =>
+                boss({ apiName: name, matchedBossName: name, isComplete: true, ownComplete: true }),
+              ),
+            ],
+          }),
+        ],
+      }),
+    )
+
+    expect(model.schedule[0].weeklyBosses.map((entry) => entry.name)).toEqual(['미처치보스'])
   })
 
   it('선택된 캐릭터를 전부 담는다 — 「외 N명」 접기가 없다', () => {

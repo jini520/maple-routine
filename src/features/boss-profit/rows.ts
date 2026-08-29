@@ -9,7 +9,12 @@
 // SQLite 복원력 래퍼, 백필 대상 계산은 스토어의 흐름에 붙어 있어 그대로 남겼다.
 
 import { DEFAULT_MAX_PARTY_SIZE, findPriceEntry } from '../../lib/boss-crystal-prices'
-import { compareBossOrder, matchBossContent, selectBossProfitBosses } from '../../lib/boss-matching'
+import {
+  compareBossOrder,
+  isWeeklyClearLimitReached,
+  matchBossContent,
+  selectBossProfitBosses,
+} from '../../lib/boss-matching'
 import type { MatchedBoss } from '../../lib/boss-matching'
 import { formatBossProfitPeriodLabel, getCurrentBossProfitPeriod } from '../../lib/boss-profit-period'
 import { mergeManualBossList } from '../../lib/manual-boss-merge'
@@ -142,8 +147,20 @@ export function selectProfitDisplayBosses(
   manualItems: ManualTrackedItem[],
 ): MatchedBoss[] {
   const matched = bossContents.map(matchBossContent)
+  // **주간 한도를 채웠으면 미처치 placeholder 는 아예 안 세운다**([[ADR-187]] 결정 4 — 두 모드
+  // 공통이라 아래 ①②보다 앞에 선다). 판정은
+  // 동기화 결과 전체로 한다 — 이 결정이 겨누는 상황이 «표시 목록 밖 보스로 12를 채웠다» 라,
+  // 목록만 보면 영영 12가 안 된다([[ADR-031]] 결정 1 이 «등록 여부와 무관하게» 세는 것과 같다).
+  //
+  // 「마감」 배지를 여기까지 들고 오지 않는 이유: 이 페이지는 정산이라 «벌지 않은 것» 은 줄을
+  // 갖지 않는다(마감이 서는 자리는 보스 스케줄러 카드다). 그리고 «완료» 로 칠하지도 않는다 —
+  // 그러면 안 잡은 보스의 결정석이 금액이 된다.
+  const limitReached = isWeeklyClearLimitReached(matched)
+  const isLimitClosed = (boss: MatchedBoss): boolean =>
+    limitReached && boss.cycle === 'weekly' && !boss.isSeasonBoss && !boss.ownComplete
+
   if (mode !== 'manual') {
-    return selectBossProfitBosses(matched)
+    return selectBossProfitBosses(matched).filter((boss) => !isLimitClosed(boss))
   }
 
   const nameOf = (boss: MatchedBoss): string => boss.matchedBossName ?? boss.apiName
@@ -163,7 +180,7 @@ export function selectProfitDisplayBosses(
     bossContents,
   )
     .map(matchBossContent)
-    .filter((boss) => !boss.ownComplete && !killedNames.has(nameOf(boss)))
+    .filter((boss) => !boss.ownComplete && !killedNames.has(nameOf(boss)) && !isLimitClosed(boss))
 
   return [...kills, ...placeholders]
 }
