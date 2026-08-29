@@ -31,6 +31,12 @@
  * 안 쓴다**: RNTL 이 그 노드를 숨김으로 보고 쿼리에서 걷어내 테스트가 못 잡는다(열지도 바탕과
  * 목요일 경계선에서 이미 두 번 겪은 자리).
  *
+ * ## 이 그림은 화면이 아니라 **바 위 슬롯**에 그려진다 ([[ADR-180]])
+ *
+ * 반환 전체가 `<AboveBar>` 안이다. 화면 안에서 그리면 하단바가 그 위라 **백드롭이 바를 못 덮고**,
+ * 펼친 채로 바를 눌러 다른 탭으로 갈 수 있었다. 스크림만 올릴 수는 없다 — ＋ 와 줄은 스크림 위여야
+ * 하므로 셋이 한 덩어리로 올라간다. 자리 계산(`dialBottomPx`)은 창 기준이라 부모가 바뀌어도 그대로다.
+ *
  * 움직임 값은 여기 없다 — `speed-dial-motion.ts` 가 든다([[ADR-147]] 결정 8).
  */
 import { useEffect, useState } from 'react'
@@ -46,6 +52,7 @@ import Animated, {
 } from 'react-native-reanimated'
 
 import { FAB_LIFT_PX } from './speed-dial-metrics'
+import { AboveBar } from '../AboveBar/AboveBar'
 import { resolveBottomBarMetrics } from '../../../lib/bottom-bar-metrics'
 import { useBottomSafeAreaPx } from '../../../lib/bottom-safe-area'
 import { useThemeAppearance } from '../../../theme/context'
@@ -240,7 +247,7 @@ export function SpeedDial(props: SpeedDialProps): React.JSX.Element {
   }
 
   return (
-    <>
+    <AboveBar>
       {/*
         스크림은 **접혀 있을 때 터치를 안 먹는다** — 먹으면 판이 닫힌 채로 캘린더를 덮어 날짜를
         고를 수 없게 된다(투명해서 원인이 안 보이는 종류의 결함이다).
@@ -308,6 +315,6 @@ export function SpeedDial(props: SpeedDialProps): React.JSX.Element {
           </AnimatedBox>
         </Pressable>
       </View>
-    </>
+    </AboveBar>
   )
 }

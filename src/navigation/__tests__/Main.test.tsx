@@ -204,6 +204,47 @@ describe('바는 «지금 페이지» 가 정하는 층을 그린다 ([[ADR-132]
   })
 })
 
+// 떠 있는 것의 층은 **형제 순서**가 정한다 ([[ADR-180]]).
+//
+// 펼침판이 화면 **안**에서 그려지던 동안 바는 그 위였다 — 펴도 바만 안 흐려졌고, 편 채로 바를 눌러
+// 다른 탭으로 갈 수 있었다. `zIndex` 로는 못 고친다(부모가 다르다). 지금은 펼침판이 `Main` 의
+// `layout` 안 «바 뒤» 슬롯에 그려지므로, 여기서 물을 것은 **그리는 순서 하나**다.
+describe('펼침판은 바보다 뒤에 그려진다 ([[ADR-180]])', () => {
+  /** `toJSON()` 을 훑어 testID 를 그리는 순서대로 낸다 — 뒤에 있는 것이 위에 그려진다. */
+  function 그리는순서(): string[] {
+    const order: string[] = []
+
+    function walk(node: unknown): void {
+      if (Array.isArray(node)) {
+        node.forEach(walk)
+        return
+      }
+      if (node === null || typeof node !== 'object') return
+
+      const element = node as { props?: Record<string, unknown>; children?: unknown }
+      const testID = element.props?.testID
+      if (typeof testID === 'string') order.push(testID)
+      walk(element.children)
+    }
+
+    walk(screen.toJSON())
+    return order
+  }
+
+  it('가계부의 스크림·＋ 가 바 뒤에 선다 — 백드롭이 바를 덮는다', async () => {
+    await render(<NavigationHarness />)
+
+    await press('bar-group-ledger')
+    await press('bar-sub-Cashbook')
+
+    const order = 그리는순서()
+
+    expect(order).toContain('speed-dial-scrim')
+    expect(order.indexOf('speed-dial-scrim')).toBeGreaterThan(order.indexOf('bottom-bar'))
+    expect(order.indexOf('speed-dial-actions')).toBeGreaterThan(order.indexOf('bottom-bar'))
+  })
+})
+
 describe('← 는 «한 층 내려온 자리»로 되돌린다 (결정 4)', () => {
   it('설정 → 스케줄 → ← → 설정', async () => {
     await render(<NavigationHarness />)

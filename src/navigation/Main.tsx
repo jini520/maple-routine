@@ -12,6 +12,7 @@ import { ContentScreen } from '../app/content-scheduler/ContentScreen'
 import { SettingsScreen } from '../app/settings/SettingsScreen'
 import { TodayScreen } from '../app/today/TodayScreen'
 import { UtilityScreen } from '../app/utility/UtilityScreen'
+import { AboveBarHost } from '../components/organisms/AboveBar/AboveBar'
 import { ScreenBackdrop } from '../components/templates/ThemeBackdrop/ScreenBackdrop'
 import { BottomBar, type BarNavigation } from './BottomBar'
 import { pageFromLayerState } from './current-page'
@@ -112,6 +113,9 @@ export function Main(): React.JSX.Element {
         <View className="flex-1">
           {children}
           <ConnectedBottomBar state={state} navigation={navigation} />
+          {/* 바 **뒤**가 곧 바 **위**다 — 화면이 소유한 오버레이가 여기 뜬다([[ADR-180]]).
+              같은 상자라 하위 페이지가 `Main` 을 밀어낼 때 바와 함께 나간다. */}
+          <AboveBarHost />
         </View>
       )}
       // 루트 스택과 **같은 상수**다 — 그래서 «다른 하위 페이지처럼 열린다» 가 우연이 아니다.
