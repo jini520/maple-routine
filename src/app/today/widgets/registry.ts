@@ -63,8 +63,11 @@ export const WIDGETS: readonly WidgetDefinition[] = [
     Component: RemainingScheduleWidget,
   },
   {
+    // **높이를 내용이 정한다**([[ADR-183]]) — 캐릭터가 셋뿐이라(상한 `TOP_CHARACTER_COUNT`) 자랄 수
+    // 있는 폭이 좁고, 고정 3행이면 캐릭터가 하나일 때 아래가 87px 비었다.
     id: 'weekly-boss-profit',
     sizes: [
+      { w: 4, h: 'auto' },
       { w: 4, h: 3 },
       { w: 4, h: 2 },
       { w: 2, h: 2 },

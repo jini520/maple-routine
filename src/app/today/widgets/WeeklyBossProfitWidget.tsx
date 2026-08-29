@@ -22,9 +22,15 @@
  * 물건이라 접힌 표기(`12.0억`)와 애초에 짝이 맞지 않고, [[ADR-087]] 결정 6이 카운트업을 건 범위도
  * 보스 수익 화면이다.
  *
+ * ## 높이는 내용이 정한다 ([[ADR-183]])
+ *
+ * 기본 배치에서 이 타일은 `4×auto` 다 — 캐릭터 상한이 셋이라(`TOP_CHARACTER_COUNT`) 자랄 폭이 좁고,
+ * 고정 3행(270px)이면 캐릭터가 하나일 때 아래가 87px 비었다. 그리는 것은 4x3 과 같고(`variantOf`),
+ * 바뀐 것은 **남는 자리가 없다**는 것뿐이다.
+ *
  * ## 크기가 버리는 것
  *
- * 4x3 은 전부 · 4x2 는 캐릭터 행의 **내역** · 2x2 는 **캐릭터 목록**(158 폭에 「이름 + 금액」 행이 안
+ * 4×auto·4x3 은 전부 · 4x2 는 캐릭터 행의 **내역** · 2x2 는 **캐릭터 목록**(158 폭에 「이름 + 금액」 행이 안
  * 들어간다) · 2x1 은 **금액만**. 단위 「메소」는 큰 금액 뒤에만 붙고 목록 행에는 안 붙는다 — 머리가
  * 이미 말했다([[ADR-147]] 정정 4).
  */
@@ -65,8 +71,35 @@ const LEGEND_DOT_CLASS = {
 
 const SEGMENT_LABEL = { crystal: '결정석', item: '아이템' } as const
 
-/** 「남은 스케줄」의 32 보다 작다 — 이 목록은 세 줄이 한 덩어리라 얼굴이 커지면 줄 간격을 먹는다. */
-const FACE_PX = 26
+/**
+ * 얼굴 지름 — **「남은 스케줄」과 같은 32**([[ADR-183]]).
+ *
+ * 26 이던 이유는 «고정 3행 안에서 얼굴이 커지면 줄 간격을 먹는다» 였는데, 타일 높이가 내용을 따르게
+ * 된 뒤로 그 사정이 사라졌다. 같은 캐릭터가 두 타일에서 다른 크기로 서면 그것이 같은 목록의 같은
+ * 사람이라는 것을 눈이 한 번 더 확인해야 한다.
+ */
+const FACE_PX = 32
+
+/**
+ * 순위 표기 — **`1st · 2nd · 3rd`**(사용자 지정).
+ *
+ * 상한이 셋이라(`TOP_CHARACTER_COUNT`) 표는 셋이면 충분하지만, 상한이 늘 때 **조용히 틀린 글자**가
+ * 서는 것보다는 `4th` 로 물러나는 편이 낫다.
+ */
+const RANK_SUFFIX = ['st', 'nd', 'rd'] as const
+
+/**
+ * 순위 칸의 **바닥**(천장이 아니다 — [[ADR-165]] 와 같은 이유).
+ *
+ * 「1st」는 폭이 고정된 글자가 아니다(숫자는 `tabular-nums` 라 고정이지만 `st`·`nd`·`rd` 는 아니다).
+ * 천장으로 두면 글자가 **줄바꿈되거나 잘리고**, 바닥으로 두면 세 순위가 같은 x 에서 시작하면서도
+ * 넘칠 때 칸이 늘어난다. `numberOfLines={1}` 이 그 짝이다 — 폭이 모자라도 두 줄로 안 접힌다.
+ */
+const RANK_MIN_WIDTH_PX = 22
+
+function rankLabel(rank: number): string {
+  return `${String(rank)}${RANK_SUFFIX[rank - 1] ?? 'th'}`
+}
 
 type SegmentKey = keyof typeof SEGMENT_CLASS
 
@@ -75,7 +108,8 @@ type Variant = 'full' | 'wide' | 'compact' | 'mini'
 
 function variantOf(w: number, h: WidgetHeight): Variant {
   if (w === 2) return h === 2 ? 'compact' : 'mini'
-  return h === 3 ? 'full' : 'wide'
+  // `'auto'` 는 **높이를 내용이 정하는** 4칸 타일이라 그리는 것은 4x3 과 같다([[ADR-183]]).
+  return h === 3 || h === 'auto' ? 'full' : 'wide'
 }
 
 function splitOf(split: ProfitSplit): { key: SegmentKey; meso: number }[] {
@@ -214,7 +248,7 @@ function Face(props: { character: WeeklyProfitCharacterView }): React.JSX.Elemen
           testID="profit-character-face-fallback"
           className="h-full w-full items-center justify-center bg-primary"
         >
-          <Text fixed className="text-[10px] font-bold text-on-primary">?</Text>
+          <Text fixed className="text-[13px] font-bold text-on-primary">?</Text>
         </View>
       )}
     </View>
@@ -234,10 +268,11 @@ function CharacterRow(props: {
           <Text
             fixed
             testID="profit-character-rank"
-            style={TABULAR_NUMS}
-            className="w-2.5 shrink-0 text-[11px] font-bold text-text-disabled"
+            numberOfLines={1}
+            style={{ minWidth: RANK_MIN_WIDTH_PX, ...TABULAR_NUMS }}
+            className="shrink-0 text-[11px] font-bold text-text-disabled"
           >
-            {props.rank}
+            {rankLabel(props.rank)}
           </Text>
           <Face character={props.character} />
         </>
@@ -350,8 +385,10 @@ export function WeeklyBossProfitWidget({ w, h, data }: WidgetProps): React.JSX.E
     )
   }
 
+  // **`flex-1` 이 없다** — 이 크기는 `h: 'auto'` 라 상자가 내용만큼만 서고([[ADR-183]]), 늘릴 높이가
+  // 없는데 `flex-1` 을 걸면 그것이 «남은 자리를 채운다» 는 거짓 신호로 남는다.
   return (
-    <View testID="widget-weekly-boss-profit" className="flex-1 gap-2 p-3.5">
+    <View testID="widget-weekly-boss-profit" className="gap-2 p-3.5">
       <View className="gap-1">
         <PeriodHeader range={profit.periodRange} />
         <Amount meso={profit.totalMeso} sizeClass="text-[32px]" />

@@ -424,7 +424,8 @@ describe('TodayScreen — 수동 멤버십을 어느 스토어에서 읽는가',
 
     await renderScreen()
 
-    expect(screen.queryAllByTestId('schedule-stat-line').length).toBeGreaterThan(0)
+    // 일일 퀘스트라 기본 탭(일간)에서 바로 수치가 선다([[ADR-181]] 결정 1).
+    expect(screen.queryAllByTestId('schedule-stats').length).toBeGreaterThan(0)
   })
 
   it('보스 멤버십은 보스 스토어에서 읽는다 — 컨텐츠 스토어의 사본이 아니다', async () => {
@@ -438,7 +439,15 @@ describe('TodayScreen — 수동 멤버십을 어느 스토어에서 읽는가',
 
     await renderScreen()
 
-    expect(screen.queryAllByTestId('schedule-stat-line').length).toBeGreaterThan(0)
+    // 주간 보스라 **주간 탭**에서 선다 — 위젯이 탭마다 다른 배열을 보므로([[ADR-181]] 결정 1)
+    // 기본 탭(일간)에는 이 캐릭터에 남은 것이 없다.
+    expect(screen.queryAllByTestId('schedule-stats')).toHaveLength(0)
+
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('주간'))
+    })
+
+    expect(screen.queryAllByTestId('schedule-stats').length).toBeGreaterThan(0)
   })
 })
 

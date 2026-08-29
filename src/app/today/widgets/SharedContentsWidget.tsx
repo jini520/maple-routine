@@ -1,6 +1,24 @@
 /**
  * 위젯 9 — **계정 및 메이플 ID 공유 컨텐츠**(`4×auto`, [[ADR-147]] 정정 28~31).
  *
+ * ## 계열은 **두 열**로 선다 ([[ADR-182]] 결정 1·2)
+ *
+ * 항목이 일곱뿐인데 한 줄에 하나씩 서면 오른쪽 절반이 통째로 빈다. 열 폭은 반반이고, 계열은 자기 열
+ * 안에서 세로로 쌓인다. **오른쪽 열이 비면 한 열로 그린다** — 계열이 하나뿐일 때 반폭만 쓰면 그
+ * 자체가 여백이다.
+ *
+ * 가르는 자리는 **순서를 지키면서 두 열의 «줄 수»(제목 1 + 항목 수)가 가장 고른 지점**이다.
+ * 지그재그(홀짝)로 나누면 계열 셋에서 왼쪽이 «에픽던전 + 유니온»(7줄)이 되어 타일이 한 줄 더 높다.
+ *
+ * ## 완료는 **체크와 취소선**이 말한다 ([[ADR-182]] 결정 3)
+ *
+ * **체크박스는 누를 수 없다**(사용자 지정) — 이 값은 게임에서 오는 것이라 앱이 뒤집을 수 있는 것이
+ * 아니고, 못 뒤집는 것을 누를 수 있게 두면 무반응이 «고장» 으로 읽힌다. 이 타일에서 누를 수 있는
+ * 것은 여전히 머리의 `?` 하나다.
+ *
+ * 이름에는 취소선과 `text-disabled` 를 **함께** 건다 — 취소선만으로는 «지운 것/흐린 것» 이
+ * 애매하고, 색만으로는 흑백 화면에서 안 보인다.
+ *
  * ## 축이 월드/계정이 아니라 «컨텐츠 계열» 이다
  *
  * 공유 단위(월드·계정)를 그리려면 **월드를 가를 수 있어야 하는데 가를 수 없다** — Open API 는 월드
@@ -8,22 +26,23 @@
  * 메이플 유니온」으로 묶으면 **월드 라벨을 한 번도 안 쓰므로 틀린 말을 할 자리가 없다.** 한계가
  * 사라진 것이 아니라 화면이 그 축을 주장하지 않게 된 것이다(사용자 지정).
  *
- * ## 오른쪽 열의 규칙은 하나뿐이다 ([[ADR-147]] 정정 33)
+ * ## 오른쪽 열은 **카운트 하나만** 그린다 ([[ADR-182]] 결정 4)
  *
  * ```
- * 완료               → CLEAR
- * 미완료 · 카운트 있음 → n/max
- * 미완료 · 카운트 없음 → 빈칸
+ * 카운트 있음(= 미완료) → n/max
+ * 그 밖                → 빈칸
  * ```
  *
- * 항목 이름을 하나도 안 물어보므로 새 공유 컨텐츠가 붙어도 분기가 안 는다 — 갈림은 뷰모델이
- * `count`(있음/`null`)로 이미 끝냈고, 여기서는 그 값을 그릴 뿐이다.
+ * **`CLEAR` 배지를 걷었다**(사용자 지시) — 체크박스와 취소선이 이미 완료를 말하므로 배지는 같은
+ * 말을 세 번째로 하는 것이었고, 반폭 열에서 그 46px 이 긴 이름(「익스트림 몬스터파커」·「PC방 주간
+ * 드래곤 퇴치」)을 말줄임으로 밀어냈다. [[ADR-147]] 정정 33 의 «완료 → CLEAR» 는 이 위젯에서 죽고,
+ * 같은 정정의 **«완료하면 카운트를 안 준다»(뷰모델이 `count = null`)는 그대로 살아 있다** — 그래서
+ * 여기서는 `count` 하나만 물으면 된다.
  *
- * - **미완료는 오른쪽을 비운다**(사용자 지정) — 퀘스트형에 `0/1` 을 붙이려면 API 에 없는 분모를
- *   앱이 지어내야 한다.
- * - **완료는 카운트형도 `CLEAR` 다**(사용자 지시) — 완료한 항목의 «몇 번 했나» 는 언제나 `max`
- *   라 `14/14` 가 더 말하는 것이 없다. 「익스트림만 예외」로 적으면 그것이 정정 31 이 카탈로그로
- *   밀어낸 «이름으로 유추하는 규칙» 이 코드로 되돌아온다.
+ * 항목 이름을 하나도 안 물어보므로 새 공유 컨텐츠가 붙어도 분기가 안 는다.
+ *
+ * - **미완료라도 분모가 없으면 비운다**(사용자 지정) — 퀘스트형에 `0/1` 을 붙이려면 API 에 없는
+ *   분모를 앱이 지어내야 한다.
  * - 분자와 분모는 **붙여** 그린다([[ADR-147]] 정정 7 이 결정석 링에서 정한 것과 같은 이유 —
  *   벌어지면 두 값, 붙으면 분수로 읽힌다).
  *
@@ -52,9 +71,9 @@ import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 
 import { Text } from '../../../components/atoms/Text/Text'
-import { CircleQuestionMarkIcon } from '../../../lib/icons'
+import { CheckIcon, CircleQuestionMarkIcon } from '../../../lib/icons'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
-import type { SharedContentItemView } from '../view-model'
+import type { SharedContentGroupView, SharedContentItemView } from '../view-model'
 import type { WidgetProps } from './types'
 
 /** 한 줄의 **고정 높이** — 위젯 2 의 수치 줄과 같은 이유다(빈 오른쪽 칸이 행을 접으면 안 된다). */
@@ -68,26 +87,67 @@ const ITEM_HEIGHT_PX = 16
  */
 const WORLD_NOTE = '계정 및 메이플 ID 공유 컨텐츠는 가장 마지막에 접속한 월드 기준으로 표시됩니다.'
 
-function CountValue(props: { count: { now: number; max: number } }): React.JSX.Element {
+/** 계열이 차지하는 **줄 수** — 제목 한 줄 + 항목들. 두 열의 높이를 견주는 자다. */
+function groupRows(group: SharedContentGroupView): number {
+  return 1 + group.items.length
+}
+
+/**
+ * 계열을 두 열로 가른다 — **순서를 지키면서** 두 열의 줄 수가 가장 고른 지점 하나를 고른다
+ * ([[ADR-182]] 결정 2).
+ *
+ * 순서를 안 바꾸므로 카탈로그 순서(`sharedGroupOrder`)가 화면에서 그대로 읽히고, 높이 차가 최소라
+ * 타일이 가장 낮다. 오른쪽이 빈 배열이면 호출부가 **한 열만** 그린다.
+ */
+function splitColumns(
+  groups: readonly SharedContentGroupView[],
+): readonly [readonly SharedContentGroupView[], readonly SharedContentGroupView[]] {
+  const total = groups.reduce((sum, group) => sum + groupRows(group), 0)
+
+  let cut = groups.length
+  let smallestGap = Number.POSITIVE_INFINITY
+  let left = 0
+  for (const [index, group] of groups.entries()) {
+    left += groupRows(group)
+    const gap = Math.abs(left - (total - left))
+    if (gap < smallestGap) {
+      smallestGap = gap
+      cut = index + 1
+    }
+  }
+
+  return [groups.slice(0, cut), groups.slice(cut)]
+}
+
+/** 읽기 전용 체크박스 — `Pressable` 이 아니다([[ADR-182]] 결정 3). 색은 앱의 「완료」 계보다. */
+function Checkbox(props: { checked: boolean }): React.JSX.Element {
   return (
-    <Text fixed testID="shared-count" style={TABULAR_NUMS} className="shrink-0 text-[12px] text-text-muted">
-      <Text fixed style={TABULAR_NUMS} className="text-[12px] font-extrabold text-text">
-        {String(props.count.now)}
-      </Text>
-      {`/${String(props.count.max)}`}
-    </Text>
+    <View
+      testID="shared-checkbox"
+      aria-hidden
+      className={`h-3 w-3 shrink-0 items-center justify-center rounded-[3px] border ${
+        props.checked ? 'border-secondary-ink bg-secondary-ink' : 'border-border-strong'
+      }`}
+    >
+      {props.checked && (
+        <CheckIcon
+          testID="shared-checkbox-mark"
+          className="h-2 w-2 text-on-secondary"
+          strokeWidth={3.5}
+          aria-hidden
+        />
+      )}
+    </View>
   )
 }
 
-/** 위젯 2 의 `StatusBadge` 와 같은 톤 — 같은 말(`CLEAR`)이 격자에서 다르게 보이면 안 된다. */
-function ClearBadge(): React.JSX.Element {
+function CountValue(props: { count: { now: number; max: number } }): React.JSX.Element {
   return (
-    <Text
-      fixed
-      testID="shared-clear"
-      className="shrink-0 rounded-full bg-secondary-tint px-2 py-0.5 text-[11px] font-bold text-secondary-ink"
-    >
-      CLEAR
+    <Text fixed testID="shared-count" style={TABULAR_NUMS} className="shrink-0 text-[11.5px] text-text-muted">
+      <Text fixed style={TABULAR_NUMS} className="text-[11.5px] font-extrabold text-text">
+        {String(props.count.now)}
+      </Text>
+      {`/${String(props.count.max)}`}
     </Text>
   )
 }
@@ -98,23 +158,21 @@ function SharedItemRow(props: { item: SharedContentItemView }): React.JSX.Elemen
   return (
     <View
       testID="shared-item"
-      className="flex-row items-center gap-2"
+      className="flex-row items-center gap-1.5"
       style={{ minHeight: ITEM_HEIGHT_PX }}
     >
+      <Checkbox checked={item.isComplete} />
       <Text
         fixed
+        testID="shared-item-name"
         numberOfLines={1}
-        className={`min-w-0 flex-1 text-[12px] leading-tight ${
-          item.isComplete ? 'text-text-disabled' : 'text-text'
+        className={`min-w-0 flex-1 text-[11.5px] leading-tight ${
+          item.isComplete ? 'text-text-disabled line-through' : 'text-text'
         }`}
       >
         {item.shortName}
       </Text>
-      {item.isComplete ? (
-        <ClearBadge />
-      ) : item.count !== null ? (
-        <CountValue count={item.count} />
-      ) : null}
+      {item.count !== null && <CountValue count={item.count} />}
     </View>
   )
 }
@@ -166,22 +224,33 @@ export function SharedContentsWidget({ data }: WidgetProps): React.JSX.Element {
         </Pressable>
       )}
 
-      {data.sharedContents.map((group, index) => (
-        <View
-          key={group.group}
-          testID="shared-group"
-          className={index === 0 ? 'py-2' : 'border-t border-border py-2'}
-        >
-          <Text fixed testID="shared-group-name" className="text-[12.5px] font-bold text-text">
-            {group.group}
-          </Text>
-          <View className="mt-1 gap-0.5">
-            {group.items.map((item) => (
-              <SharedItemRow key={item.name} item={item} />
+      {data.sharedContents.length > 0 && (
+        <View className="flex-row gap-3 pt-2">
+          {splitColumns(data.sharedContents)
+            // 오른쪽이 비면 한 열이다 — 반폭만 쓰면 그 자체가 여백이다([[ADR-182]] 결정 1).
+            .filter((column) => column.length > 0)
+            .map((column) => (
+              <View key={column[0]?.group} testID="shared-column" className="min-w-0 flex-1">
+                {column.map((group, index) => (
+                  <View
+                    key={group.group}
+                    testID="shared-group"
+                    className={index === 0 ? '' : 'mt-2 border-t border-border pt-2'}
+                  >
+                    <Text fixed testID="shared-group-name" className="text-[12.5px] font-bold text-text">
+                      {group.group}
+                    </Text>
+                    <View className="mt-1.5 gap-1.5">
+                      {group.items.map((item) => (
+                        <SharedItemRow key={item.name} item={item} />
+                      ))}
+                    </View>
+                  </View>
+                ))}
+              </View>
             ))}
-          </View>
         </View>
-      ))}
+      )}
     </View>
   )
 }

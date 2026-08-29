@@ -77,20 +77,20 @@ describe('WidgetGrid — 좌표 배치', () => {
       top: 행,
       width: 2 * metrics.colWidthPx + metrics.gapPx,
     })
-    // (0,2)·(0,3) 4×auto 둘 — 그 아래는 4x3 · 2x1 둘 · 4x1 이 이어 붙는다.
+    // (0,2)~(0,4) 4×auto **셋** — 그 아래는 2x1 둘 · 4x1 이 이어 붙는다([[ADR-183]]).
     expect(스타일(타일(view, 'shared-contents'))).toMatchObject({ left: 0, top: 2 * 행 })
     expect(스타일(타일(view, 'remaining-schedule'))).toMatchObject({ left: 0, top: 3 * 행 })
     expect(스타일(타일(view, 'weekly-boss-profit'))).toMatchObject({ left: 0, top: 4 * 행 })
-    expect(스타일(타일(view, 'top-valuable-item'))).toMatchObject({ left: 0, top: 7 * 행 })
-    expect(스타일(타일(view, 'unpriced-drops'))).toMatchObject({ left: 2 * 열, top: 7 * 행 })
-    expect(스타일(타일(view, 'valuable-drought'))).toMatchObject({ left: 0, top: 8 * 행 })
+    expect(스타일(타일(view, 'top-valuable-item'))).toMatchObject({ left: 0, top: 5 * 행 })
+    expect(스타일(타일(view, 'unpriced-drops'))).toMatchObject({ left: 2 * 열, top: 5 * 행 })
+    expect(스타일(타일(view, 'valuable-drought'))).toMatchObject({ left: 0, top: 6 * 행 })
   })
 
   it('격자 컨테이너 높이가 가장 아래 타일의 끝이다', async () => {
     const view = await 격자()
 
     expect(스타일(view.getByTestId('widget-grid'))).toMatchObject({
-      height: 8 * 행 + metrics.rowHeightPx,
+      height: 6 * 행 + metrics.rowHeightPx,
     })
   })
 
@@ -150,13 +150,14 @@ describe('`h: auto` 타일 ([[ADR-147]] 정정 1)', () => {
     expect(스타일(타일(view, 'shared-contents'))).toMatchObject({ top: 2 * 행 })
     expect(스타일(타일(view, 'remaining-schedule'))).toMatchObject({ top: 3 * 행 })
     expect(스타일(타일(view, 'weekly-boss-profit'))).toMatchObject({ top: 4 * 행 + 초과 })
-    expect(스타일(타일(view, 'valuable-drought'))).toMatchObject({ top: 8 * 행 + 초과 })
+    expect(스타일(타일(view, 'valuable-drought'))).toMatchObject({ top: 6 * 행 + 초과 })
     expect(스타일(view.getByTestId('widget-grid'))).toMatchObject({
-      height: 8 * 행 + 초과 + metrics.rowHeightPx,
+      height: 6 * 행 + 초과 + metrics.rowHeightPx,
     })
   })
 
-  // auto 타일이 둘이 됐다([[ADR-147]] 정정 32) — `w === 4` 라 옆 칸이 없어 초과분이 **누적**된다.
+  // auto 타일이 **셋**이 됐다([[ADR-147]] 정정 32 · [[ADR-183]]) — `w === 4` 라 옆 칸이 없어 초과분이
+  // **누적**된다.
   // 이 규칙이 깨지면 두 타일이 서로를 덮는다.
   it('auto 타일 둘의 초과분이 누적된다 — 위의 것이 아래 것을 민다', async () => {
     const view = await 격자()
@@ -192,7 +193,7 @@ describe('`h: auto` 타일 ([[ADR-147]] 정정 1)', () => {
     )
     // 래퍼에 붙으면 자기가 크기를 정하는 상자를 재게 되어 높이가 늘기만 한다.
     expect(타일(view, 'remaining-schedule').props.onLayout).toBeUndefined()
-    for (const id of ['representative-character', 'weekly-boss-profit', 'reset-countdown']) {
+    for (const id of ['representative-character', 'valuable-drought', 'reset-countdown']) {
       expect(타일(view, id).props.onLayout).toBeUndefined()
       expect(view.queryByTestId(`widget-measure-${id}`)).toBeNull()
     }

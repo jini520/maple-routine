@@ -32,7 +32,6 @@ export const 빈_뷰모델: TodayViewModel = {
   sharedContents: [],
   sharedRemaining: 0,
   schedule: [],
-  scheduleTotal: 0,
   profit: {
     totalMeso: 0,
     crystalMeso: 0,
@@ -86,22 +85,10 @@ export function 스케줄행(부분: Partial<ScheduleRowView> = {}): ScheduleRow
       { name: '파풀라투스', difficulty: '카오스' },
     ],
     monthlyBosses: [{ name: '검은마법사', difficulty: '하드' }],
-    remainingTotal: 10,
     hasSyncIssue: false,
   }
-  const merged = { ...base, ...부분 }
 
-  // 합계를 손으로 적게 하면 테스트마다 어긋난다 — 명시적으로 준 경우만 그 값을 쓴다.
-  return 부분.remainingTotal === undefined
-    ? {
-        ...merged,
-        remainingTotal:
-          merged.dailyNames.length +
-          merged.weeklyNames.length +
-          merged.weeklyBosses.length +
-          merged.monthlyBosses.length,
-      }
-    : merged
+  return { ...base, ...부분 }
 }
 
 /** n명짜리 목록 — 이름·ocid 만 갈린다(스냅샷이 캐릭터 수만 다르게 찍힌다). */

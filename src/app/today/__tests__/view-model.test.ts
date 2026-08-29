@@ -186,7 +186,6 @@ describe('남은 스케줄 — 분류 넷 ([[ADR-147]] 정정 3)', () => {
     )
 
     expect(model.schedule[0].weeklyNames).toHaveLength(0)
-    expect(model.scheduleTotal).toBe(0)
   })
 
   it('주간 보스·검마는 displayedBosses 의 미완료 수다', () => {
@@ -208,7 +207,6 @@ describe('남은 스케줄 — 분류 넷 ([[ADR-147]] 정정 3)', () => {
 
     expect(model.schedule[0].weeklyBosses).toHaveLength(2)
     expect(model.schedule[0].monthlyBosses).toHaveLength(1)
-    expect(model.schedule[0].remainingTotal).toBe(3)
   })
 
   // [[ADR-031]] 결정 5 — 미등록이어도 완료했으면 목록에 든다(그리고 완료라 남은 수엔 안 든다).
@@ -244,14 +242,16 @@ describe('남은 스케줄 — 분류 넷 ([[ADR-147]] 정정 3)', () => {
   })
 })
 
-describe('남은 스케줄 — 정렬 ([[ADR-147]] 정정 12)', () => {
+describe('남은 스케줄 — 순서는 **관리 순서**뿐이다 ([[ADR-181]] 정정 1)', () => {
   function withRemaining(ocid: string, remaining: number): ContentCharacterView {
     return contentView(ocid, {
       dailyContents: Array.from({ length: remaining }, (_, index) => daily({ name: `${ocid}-${index}` })),
     })
   }
 
-  it('남은 개수 많은 순이다', () => {
+  // 「남은 개수 많은 순」은 **어느 주기의** 개수인지가 정해져야 셀 수 있고, 그 주기는 위젯의 탭이다.
+  // 여기서 총합으로 한 번 세워 두면 위젯이 다시 세우게 되고 동수의 기준(관리 순서)이 뭉개진다.
+  it('남은 개수로 다시 세우지 않는다 — 그 정렬은 탭을 아는 위젯의 몫이다', () => {
     const model = buildTodayViewModel(
       input({
         orderedOcids: ['a', 'b', 'c'],
@@ -259,14 +259,13 @@ describe('남은 스케줄 — 정렬 ([[ADR-147]] 정정 12)', () => {
       }),
     )
 
-    expect(model.schedule.map((row) => row.ocid)).toEqual(['b', 'c', 'a'])
+    expect(model.schedule.map((row) => row.ocid)).toEqual(['a', 'b', 'c'])
   })
 
-  it('동수면 캐릭터 관리 순서다', () => {
+  it('캐릭터 관리 순서를 따른다 — 스토어 순서(레벨 내림차순)가 아니다', () => {
     const model = buildTodayViewModel(
       input({
         orderedOcids: ['c', 'a', 'b'],
-        // 스토어 순서(레벨 내림차순)와 관리 순서가 다르다 — 관리 순서가 이긴다.
         contentCharacters: [withRemaining('a', 2), withRemaining('b', 2), withRemaining('c', 2)],
       }),
     )
@@ -274,8 +273,8 @@ describe('남은 스케줄 — 정렬 ([[ADR-147]] 정정 12)', () => {
     expect(model.schedule.map((row) => row.ocid)).toEqual(['c', 'a', 'b'])
   })
 
-  // 남은 개수를 «모르는» 것이라, 위로 올리면 «제일 밀린 캐릭터» 자리를 모르는 값이 차지한다.
-  it('동기화 실패 캐릭터는 남은 개수가 많아도 맨 아래다', () => {
+  // 실패를 맨 아래로 내리는 것도 «순서» 라, 정렬을 한 번만 하기로 한 뒤로는 위젯이 함께 판다.
+  it('동기화 실패도 여기서는 안 내린다 — 표식만 얹는다', () => {
     const model = buildTodayViewModel(
       input({
         orderedOcids: ['a', 'b'],
@@ -284,20 +283,8 @@ describe('남은 스케줄 — 정렬 ([[ADR-147]] 정정 12)', () => {
       }),
     )
 
-    expect(model.schedule.map((row) => row.ocid)).toEqual(['b', 'a'])
-    expect(model.schedule[1].hasSyncIssue).toBe(true)
-  })
-
-  it('실패 캐릭터의 남은 개수는 합계에 넣지 않는다', () => {
-    const model = buildTodayViewModel(
-      input({
-        orderedOcids: ['a', 'b'],
-        contentCharacters: [withRemaining('a', 9), withRemaining('b', 1)],
-        characterIssues: { a: 'unavailable' },
-      }),
-    )
-
-    expect(model.scheduleTotal).toBe(1)
+    expect(model.schedule.map((row) => row.ocid)).toEqual(['a', 'b'])
+    expect(model.schedule[0].hasSyncIssue).toBe(true)
   })
 })
 
@@ -718,7 +705,6 @@ describe('공유 컨텐츠 — 계열로 묶는다 ([[ADR-147]] 정정 28)', () 
     // 캐릭터 줄에는 개인 일퀘 하나만 남는다 — 몬스터파크는 공유 위젯의 몫이다.
     expect(model.schedule[0]?.dailyNames).toEqual(['소멸의 여로'])
     expect(model.schedule[0]?.weeklyNames).toEqual([])
-    expect(model.scheduleTotal).toBe(1)
   })
 })
 
