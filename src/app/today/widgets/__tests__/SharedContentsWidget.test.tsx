@@ -107,7 +107,7 @@ describe('오른쪽 열은 `count` 유무 하나로 갈린다 ([[ADR-182]] 결�
     expect(
       flattenStyle(getAllByTestId('shared-checkbox', { includeHiddenElements: true })[0]?.props.style)
         .backgroundColor,
-    ).toBe(기본테마.secondaryInk)
+    ).toBe(기본테마.primary)
   })
 
   it('숫자에 `tabular-nums` 가 걸린다 — 자릿수가 달라도 오른쪽 끝이 안 흔들린다', async () => {
@@ -169,11 +169,29 @@ describe('완료는 체크와 취소선이 말한다 ([[ADR-182]] 결정 3)', ()
 
     const 상자들 = getAllByTestId('shared-checkbox', 숨은것포함)
     expect(상자들).toHaveLength(2)
-    expect(flattenStyle(상자들[0]?.props.style).backgroundColor).toBe(기본테마.secondaryInk)
+    expect(flattenStyle(상자들[0]?.props.style).backgroundColor).toBe(기본테마.primary)
     expect(flattenStyle(상자들[1]?.props.style).backgroundColor).toBeUndefined()
     // 체크 표시는 완료한 것 하나뿐이다 — 빈 상자는 테두리만 지고 안이 비어 있다.
     expect(상자들[0]?.props.children).toBeTruthy()
     expect(상자들[1]?.props.children).toBeFalsy()
+  })
+
+  // **채운 상자는 언제나 `primary` 다**([[ADR-182]] 정정 1, 사용자 판정 — *"테마 색이랑 관련 없는
+  // 색이 들어가 있어"*). 「완료 = `secondary`」 계보를 따랐더니 `secondary` 가 테마의 두 번째
+  // 시드라 메인 컬러와 색상이 무관했다(렌은 빨강 테마에 틸 `#437B71`, 엔젤릭버스터는 분홍 테마에
+  // 하늘 `#82B5C3`). 앱의 다른 체크박스 셋(설정·가계부·테마 선택)이 쓰는 색으로 되돌린다.
+  // 체크 표시(`shared-checkbox-mark`)의 색은 여기서 못 잰다 — SVG 는 `testID` 를 호스트 노드로
+  // 안 넘긴다(렌더 트리에 `RNSVGSvgView` 만 남는다). 상자의 두 값이 같은 토큰을 가리키는 것으로
+  // 「secondary 로 되돌아가지 않았다」를 잡는다.
+  it('채운 상자는 채움도 테두리도 primary 다 — secondary 가 아니다', async () => {
+    const { getAllByTestId } = await 위젯([
+      공유계열('에픽던전', [공유항목('하이마운틴', { isComplete: true })]),
+    ])
+
+    const 상자 = flattenStyle(getAllByTestId('shared-checkbox', 숨은것포함)[0]?.props.style)
+    expect(상자.backgroundColor).toBe(기본테마.primary)
+    expect(상자.borderColor).toBe(기본테마.primary)
+    expect(상자.backgroundColor).not.toBe(기본테마.secondaryInk)
   })
 
   // 취소선만으로는 «지운 것/흐린 것» 이 애매하고, 색만으로는 흑백 화면에서 안 보인다.

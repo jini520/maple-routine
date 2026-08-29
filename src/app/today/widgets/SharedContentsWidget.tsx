@@ -14,7 +14,8 @@
  *
  * **체크박스는 누를 수 없다**(사용자 지정) — 이 값은 게임에서 오는 것이라 앱이 뒤집을 수 있는 것이
  * 아니고, 못 뒤집는 것을 누를 수 있게 두면 무반응이 «고장» 으로 읽힌다. 이 타일에서 누를 수 있는
- * 것은 여전히 머리의 `?` 하나다.
+ * 것은 여전히 머리의 `?` 하나다. **채운 상자의 색은 `primary` 다**([[ADR-182]] 정정 1) —
+ * 근거는 `Checkbox` 바로 위에 있다.
  *
  * 이름에는 취소선과 `text-disabled` 를 **함께** 건다 — 취소선만으로는 «지운 것/흐린 것» 이
  * 애매하고, 색만으로는 흑백 화면에서 안 보인다.
@@ -119,20 +120,27 @@ function splitColumns(
   return [groups.slice(0, cut), groups.slice(cut)]
 }
 
-/** 읽기 전용 체크박스 — `Pressable` 이 아니다([[ADR-182]] 결정 3). 색은 앱의 「완료」 계보다. */
+/**
+ * 읽기 전용 체크박스 — `Pressable` 이 아니다([[ADR-182]] 결정 3).
+ *
+ * 채운 상자는 **`primary`** 다([[ADR-182]] 정정 1). 처음에는 앱의 「완료」 계보(`secondary`)를
+ * 따랐는데, 그것은 테마의 **두 번째 시드**라 메인 컬러와 색상(H)이 아예 무관하다 — 렌은 빨강
+ * 테마에 틸, 엔젤릭버스터는 분홍 테마에 하늘이 앉아 «테마 밖의 색» 으로 읽혔다(사용자 판정).
+ * 앱의 다른 체크박스 셋(설정 캐시 비우기 · 가계부 사냥 입력 · 테마 선택)이 전부 이 색이다.
+ */
 function Checkbox(props: { checked: boolean }): React.JSX.Element {
   return (
     <View
       testID="shared-checkbox"
       aria-hidden
       className={`h-3 w-3 shrink-0 items-center justify-center rounded-[3px] border ${
-        props.checked ? 'border-secondary-ink bg-secondary-ink' : 'border-border-strong'
+        props.checked ? 'border-primary bg-primary' : 'border-border-strong'
       }`}
     >
       {props.checked && (
         <CheckIcon
           testID="shared-checkbox-mark"
-          className="h-2 w-2 text-on-secondary"
+          className="h-2 w-2 text-on-primary"
           strokeWidth={3.5}
           aria-hidden
         />
