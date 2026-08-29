@@ -45,7 +45,8 @@
  * - 월간으로 → **그 주의 목요일이 든 달**. 주가 두 달에 걸쳐도 `weekStartKey` 가 답을 하나로 만든다.
  */
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useFocusEffect } from '@react-navigation/native'
 import { Pressable, RefreshControl, View } from 'react-native'
 
 import { Text } from '../../components/atoms/Text/Text'
@@ -90,6 +91,7 @@ import { formatMesoCompact } from '../../lib/meso-compact'
 import { getCurrentKstDateKey } from '../../lib/reset-clock'
 import { TABULAR_NUMS } from '../../lib/text-styles'
 import {
+  cashbookDataRevision,
   dayTotalsOf,
   loadCalendarAmounts,
   loadLastPointRate,
@@ -639,8 +641,18 @@ export function CashbookScreen(): React.JSX.Element {
   })
 
 
+  /**
+   * **마지막으로 읽은 판**([[ADR-189]] 결정 1) — 다시 들어올 때 «내 숫자가 낡았나» 를 재는 기준이다.
+   *
+   * 조회 «전»에 찍는다([[ADR-147]] 정정 17 의 그 규칙) — 읽는 중에 들어온 변경을 본 것으로
+   * 표시하면 영영 놓친다. 반대 방향(읽는 중의 변경을 못 본 것으로 남겨 다음 포커스에 한 번 더
+   * 읽는 것)은 낡은 화면을 안 남기므로 안전하다.
+   */
+  const loadedRevision = useRef(cashbookDataRevision())
+
   useEffect(() => {
     let alive = true
+    loadedRevision.current = cashbookDataRevision()
     void loadCalendarAmounts(from, to).then((next) => {
       if (alive) setAmounts(next)
     })
@@ -648,6 +660,26 @@ export function CashbookScreen(): React.JSX.Element {
       alive = false
     }
   }, [from, to, reloadToken])
+
+  /**
+   * **다시 들어오면 다시 읽는다 — 바뀌었을 때만**([[ADR-189]] 결정 1).
+   *
+   * 이 화면은 탭이라 마운트가 앱 실행당 한 번뿐인데([[ADR-167]] 결정 3) 접는 원천 넷 중 둘은
+   * **남의 화면이 쓴다** — 가격 입력 화면이 `boss_drop_records` 를, 보스 수익 동기화가
+   * `boss_profit_records` 를. 그래서 첫 방문의 숫자에 굳고, 당겨서 새로고침만이 탈출구였다
+   * (사용자 보고 2026-08-30).
+   *
+   * 포커스마다 무조건 읽지 않는 이유는 today 와 같다 — 한 번의 조회가 SQLite 넷을 친다.
+   * **여기서는 동기화를 안 튼다**(넥슨 API 는 당김과 보스 수익 탭의 몫이다) — 이미 적힌 것을
+   * 다시 읽을 뿐이다.
+   */
+  useFocusEffect(
+    useCallback(() => {
+      if (loadedRevision.current !== cashbookDataRevision()) {
+        setReloadToken((token) => token + 1)
+      }
+    }, []),
+  )
 
   // 그날 목록은 **고른 날**에 매인다 — 격자 범위와 의존성이 달라 효과를 따로 둔다.
   useEffect(() => {
