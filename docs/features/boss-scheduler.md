@@ -2,7 +2,7 @@
 
 > **범위**: 주간/월간 보스 진행 상태, 캐릭터 추적, 파티 관리, 보스 카드·난이도 뱃지, 솔로/파티 필터, 보스 관리 페이지. 캐릭터 관리 피커·탭 토글은 [../foundation/design-system.md](../foundation/design-system.md), 수동/자동 트래킹 전역 토글은 [settings.md](./settings.md).
 > **관련 소스**: `app/boss-scheduler/`(`BossScreen.tsx` — `BossCard`·`DifficultyBadge` export) · `features/boss-scheduler/`(`store.ts` · **`displayed-bosses.ts`** — 표시 대상 보스 판정. [[ADR-035]] 수동 모드 멤버십과 [[ADR-031]] 결정 5 가 이 안에 있고, `BossScreen.tsx` 지역 함수였던 것을 [[ADR-147]] 결정 8 이 꺼냈다 — `app/today/` 의 「남은 스케줄」 위젯이 같은 판정을 써야 한다. 시그니처는 안 바꿨고 클로저로 읽던 `mode`·`manualTrackedByOcid` 만 인자가 됐다) · `storage/boss-party-settings`(SQLite `boss_party_settings`) · `lib/boss-icons` · `lib/boss-matching` · `PartyManagementModal` · `/boss/manage` · `src/data/weekly-bosses.json`·`boss-crystal-prices.json`·`boss-portrait-crops.json`.
-> **관련 ADR**: [[ADR-013]] [[ADR-012]] [[ADR-018]] [[ADR-019]] [[ADR-035]] [[ADR-031]] [[ADR-006]] [[ADR-053]] [[ADR-055]] [[ADR-056]] ADR-072 ADR-073 [[ADR-074]] [[ADR-096]] [[ADR-097]] [[ADR-101]] [[ADR-121]] [[ADR-145]] [[ADR-147]]. **관련 문서**: [../foundation/architecture.md](../foundation/architecture.md), [../foundation/nexon-api.md](../foundation/nexon-api.md), [../foundation/game-data.md](../foundation/game-data.md), [boss-profit.md](./boss-profit.md), [today.md](./today.md).
+> **관련 ADR**: [[ADR-013]] [[ADR-012]] [[ADR-018]] [[ADR-019]] [[ADR-035]] [[ADR-031]] [[ADR-006]] [[ADR-053]] [[ADR-055]] [[ADR-056]] ADR-072 ADR-073 [[ADR-074]] [[ADR-096]] [[ADR-097]] [[ADR-101]] [[ADR-121]] [[ADR-145]] [[ADR-147]] [[ADR-164]] [[ADR-186]]. **관련 문서**: [../foundation/architecture.md](../foundation/architecture.md), [../foundation/nexon-api.md](../foundation/nexon-api.md), [../foundation/game-data.md](../foundation/game-data.md), [boss-profit.md](./boss-profit.md), [today.md](./today.md).
 
 **관리 화면 토글 저장 실패 ([[ADR-065]] 결정 4)**: 체크박스가 그 자리에 남아 맥락이 있으므로 토스트로 알린다 — 문구는 컨텐츠·보스 공통으로 "추적 목록을 저장하지 못했습니다" 하나다(같은 화면에서 무엇을 토글했는지는 사용자가 안다). 재시도 액션은 두지 않는다 — 다시 탭하면 되는 일이라 중복이다.
 
@@ -14,6 +14,7 @@
 > | | 지금 |
 > |---|---|
 > | 순서 | **월간 → 주간**. `features/boss-scheduler/displayed-bosses` 의 `BOSS_SECTION_ORDER`·`displayedBossSections` 가 소유한다(화면이 다시 정렬하지 않는다) |
+> | 무리 **안**의 순서 | **`weekly-bosses.json` 정규 순서 → 난이도 → 보스명**([[ADR-186]], 2026-08-30). **모드를 안 가른다** — `displayedBosses` 끝에서 공용 `compareBossOrder`(`lib/boss-matching`)로 한 번 세운다. ~~자동 모드는 Nexon `boss_contents` 응답 순서~~ → 응답이 어떤 차례로 오든 화면이 안 흔들린다 |
 > | 주기 구분 | **섹션 헤더 두 줄**(「월간」·「주간」) — 공용 `components/molecules/BossSectionHeader`, 두 화면이 같은 컴포넌트를 쓴다 |
 > | `n/12` · `season` 배지 | 「주간」 헤더에 붙는다. 탭 시절 `activeTab === 'weekly'` 조건에만 매달려 있던 자리다 |
 > | 완료 정렬 | **없다** — 주기가 자리를 정하고 완료는 자리를 안 바꾼다(완료한 검마도 위에 남는다) |
@@ -163,6 +164,10 @@ Modal.Panel maxWidth="max-w-2xs"(288) · align="center"   ← 키보드를 안 �
 - 없음.
 
 ## 폐기된 정책 (history)
+- ~~무리 **안**의 순서는 자동 모드가 Nexon `boss_contents` 응답 순서다(정렬 코드 없음)~~ →
+  **`weekly-bosses.json` 정규 순서 → 난이도 → 보스명**([[ADR-186]], 2026-08-30). 같은 보스 무리가
+  서는 자리 넷(여기 · today 「남은 스케줄」 펼침 · 보스 수익 · 가계부 결정석 타일)의 기준이 넷이었다.
+  정렬은 `displayedBosses` 끝에서 **모드를 안 가르고** 공용 `compareBossOrder` 로 한 번 한다.
 - ~~보스 카드에는 설정 진입점이 없다 — 파티 배지만 표시한다~~ → **카드 전면이 버튼, 탭하면 파티 인원·난이도 모달**([[ADR-121]] 결정 1, 2026-08-10, 이슈 #156). [[ADR-019]] 결정 4가 이 방식을 "카드 인터랙션 충돌 우려"로 폐기했으나, 그 전제는 [[ADR-035]] 결정 18이 편집을 `/boss/manage` 로 옮겨 **카드의 인터랙션을 0개로 만들면서 사라졌다**. 관리 페이지 진입점은 그대로 남는다(둘 다 존치).
 - ~~난이도 세그먼트 미선택 = 고스트 칩(`border-border` + `text-text-disabled`, 색 없음)~~ → **풀컬러 뱃지 + `opacity-40`**([[ADR-121]] 결정 4, 2026-08-10). 2026-07-24 리디자인이 "저채도 테마에서 흐린 뱃지끼리 구분이 약했다"는 이유로 `opacity-40` → 고스트 칩으로 바꿨던 것을 **되돌린다**(두 번째 정정). 실측하면 배지 **안** 글자 대비가 1.43~3.15로 무너지는 것이 더 큰 문제였으나, "메이플 유저는 색과 실루엣으로 안다"는 사용자 판단으로 감수한다.
 - ~~수동 모드 난이도 변경 = `removeManualBoss` → `addManualBoss` 2단계~~ → **스토어 단일 액션 `setManualBossDifficulty(ocid, boss, to)`**([[ADR-121]] 결정 6, 2026-08-10). 커밋이 2회라 첫 커밋 직후 "그 보스가 목록에 없는" 상태가 저장소에 실재했고, 두 번째가 실패하면 보스가 통째로 사라졌다.

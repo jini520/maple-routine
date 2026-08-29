@@ -1,6 +1,7 @@
 import type { BossContent } from '../../types'
 import type { ManualTrackedItem } from '../../types/scheduler'
 import {
+  compareBossOrder,
   countClearedWeeklyBosses,
   countManualWeeklyBosses,
   getBossCycleByName,
@@ -327,6 +328,60 @@ describe('getBossReferenceOrder', () => {
   it('참조 목록에 없는 보스(매칭 실패 원문명)는 Number.MAX_SAFE_INTEGER로 맨 뒤로 보낸다', () => {
     expect(getBossReferenceOrder('알 수 없는 보스')).toBe(Number.MAX_SAFE_INTEGER)
     expect(getBossReferenceOrder('검은마법사')).toBeLessThan(getBossReferenceOrder('알 수 없는 보스'))
+  })
+})
+
+// [[ADR-186]]: 앱의 보스 목록 넷(스케줄러 · today 펼침 · 보스 수익 · 가계부 타일)이 이 비교자
+// 하나를 부른다. 키 셋은 [[ADR-036]] 결정 3 이 보스 수익에 정한 그것 그대로다 — 정렬 코드가 네
+// 벌이면 값을 바꿀 때 한 벌만 바뀐다.
+describe('compareBossOrder ([[ADR-186]])', () => {
+  function sorted(entries: { boss: string; difficulty: string }[]): string[] {
+    return [...entries].sort(compareBossOrder).map((entry) => `${entry.boss}:${entry.difficulty}`)
+  }
+
+  it('1차 키는 weekly-bosses.json 정규 순서다', () => {
+    expect(
+      sorted([
+        { boss: '루시드', difficulty: '하드' },
+        { boss: '자쿰', difficulty: '하드' },
+        { boss: '스우', difficulty: '하드' },
+      ]),
+    ).toEqual(['자쿰:하드', '스우:하드', '루시드:하드'])
+  })
+
+  it('같은 보스면 난이도 순서다(이지 < 노멀 < 하드 < 카오스 < 익스트림)', () => {
+    expect(
+      sorted([
+        { boss: '스우', difficulty: '익스트림' },
+        { boss: '스우', difficulty: '노멀' },
+        { boss: '스우', difficulty: '하드' },
+        { boss: '스우', difficulty: '이지' },
+      ]),
+    ).toEqual(['스우:이지', '스우:노멀', '스우:하드', '스우:익스트림'])
+  })
+
+  // 참조에 없는 보스([[ADR-008]] 매칭 실패 원문명)는 맨 뒤이고, 그들끼리도 완전 결정적이어야
+  // 한다 — 입력 순서에 기대면 [[ADR-036]] 이 없앤 비결정성이 되살아난다.
+  it('참조에 없는 보스는 맨 뒤로 가고 그들끼리는 난이도·이름으로 갈린다', () => {
+    expect(
+      sorted([
+        { boss: '나중보스', difficulty: '하드' },
+        { boss: '검은마법사', difficulty: '하드' },
+        { boss: '가나보스', difficulty: '하드' },
+        { boss: '나중보스', difficulty: '노멀' },
+      ]),
+    ).toEqual(['검은마법사:하드', '나중보스:노멀', '가나보스:하드', '나중보스:하드'])
+  })
+
+  it('입력 순서를 뒤집어도 결과가 같다', () => {
+    const entries = [
+      { boss: '루시드', difficulty: '하드' },
+      { boss: '자쿰', difficulty: '카오스' },
+      { boss: '검은마법사', difficulty: '익스트림' },
+      { boss: '스우', difficulty: '노멀' },
+    ]
+
+    expect(sorted([...entries].reverse())).toEqual(sorted(entries))
   })
 })
 

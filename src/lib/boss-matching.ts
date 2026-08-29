@@ -1,5 +1,5 @@
 import weeklyBossesData from '../data/weekly-bosses.json'
-import type { ManualTrackedItem } from '../types/scheduler'
+import { BOSS_DIFFICULTIES, type ManualTrackedItem } from '../types/scheduler'
 import type { BossContent, BossCycle, BossDifficulty } from '../types'
 
 export interface MatchedBoss {
@@ -71,6 +71,44 @@ REFERENCE_ENTRIES.forEach((entry, index) => {
 // 그들끼리는 입력 순서를 유지한다.
 export function getBossReferenceOrder(bossName: string): number {
   return BOSS_REFERENCE_ORDER.get(bossName) ?? Number.MAX_SAFE_INTEGER
+}
+
+/** `compareBossOrder` 가 읽는 것 — 이름과 난이도뿐이다(행이든 카드든 타일이든 이 둘은 있다). */
+export interface BossOrderKey {
+  /** 보스 **표시명**(`matchedBossName ?? apiName`) — 참조표 조회가 그 이름으로 이뤄진다. */
+  boss: string
+  /** 없거나 참조표 밖 값이면 같은 보스 안에서 맨 앞이다(`indexOf` 가 -1). 보스 항목엔 늘 있다. */
+  difficulty?: string
+}
+
+/**
+ * **앱 전체의 보스 순서**([[ADR-186]]) — `weekly-bosses.json` 정규 순서 → 난이도 → 보스명.
+ *
+ * 키 셋은 [[ADR-036]] 결정 3 이 보스 수익에 정한 그것 **그대로**이고, 이 함수는 그것을 네 소비자가
+ * 함께 쓸 수 있게 `REFERENCE_ENTRIES` 의 **소유자**에 둔 것뿐이다:
+ *
+ * - `lib/manual-boss-merge`(수동 목록, [[ADR-035]] 결정 20)
+ * - `features/boss-scheduler/displayed-bosses`(스케줄러 카드 · today 「남은 스케줄」 펼침)
+ * - `features/boss-profit/rows`(`sortRowsByOcidOrder` 의 2차 키)
+ * - `features/cashbook/records`(펼친 결정석 줄의 보스 타일)
+ *
+ * 정렬 코드가 네 벌이면 값을 바꿀 때 한 벌만 바뀐다 — [[ADR-036]] 결정 5 가 사설 사본을 흡수한
+ * 것과 같은 이유이고, 자동 모드에 넷째 사본을 새로 쓰지 않으려고 이 함수가 생겼다.
+ *
+ * **완전 결정적이다.** 참조표에 없는 보스([[ADR-008]] 매칭 실패 원문명)는 맨 뒤로 가되 그들끼리도
+ * 난이도·이름으로 갈린다 — 안정 정렬에 기대면 «입력 순서» 가 계약이 되는데, 그 입력이 `ORDER BY`
+ * 없는 조회나 Map 삽입 순서라는 것이 [[ADR-036]] 이 고친 버그였다.
+ */
+export function compareBossOrder(a: BossOrderKey, b: BossOrderKey): number {
+  const referenceDiff = getBossReferenceOrder(a.boss) - getBossReferenceOrder(b.boss)
+  if (referenceDiff !== 0) return referenceDiff
+
+  const difficultyDiff =
+    BOSS_DIFFICULTIES.indexOf(a.difficulty as BossDifficulty) -
+    BOSS_DIFFICULTIES.indexOf(b.difficulty as BossDifficulty)
+  if (difficultyDiff !== 0) return difficultyDiff
+
+  return a.boss < b.boss ? -1 : a.boss > b.boss ? 1 : 0
 }
 
 // 시즌 보스(eventWeekly) 표시명 집합. 화면에서 행 단위로 반복 조회하므로 매 호출마다

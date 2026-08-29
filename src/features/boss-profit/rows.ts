@@ -9,7 +9,7 @@
 // SQLite 복원력 래퍼, 백필 대상 계산은 스토어의 흐름에 붙어 있어 그대로 남겼다.
 
 import { DEFAULT_MAX_PARTY_SIZE, findPriceEntry } from '../../lib/boss-crystal-prices'
-import { getBossReferenceOrder, matchBossContent, selectBossProfitBosses } from '../../lib/boss-matching'
+import { compareBossOrder, matchBossContent, selectBossProfitBosses } from '../../lib/boss-matching'
 import type { MatchedBoss } from '../../lib/boss-matching'
 import { formatBossProfitPeriodLabel, getCurrentBossProfitPeriod } from '../../lib/boss-profit-period'
 import { mergeManualBossList } from '../../lib/manual-boss-merge'
@@ -17,7 +17,6 @@ import type { BossDropRecord } from '../../storage/boss-drops'
 import type { BossProfitRecord, getBossProfitRecords } from '../../storage/boss-profit'
 import type { ManualTrackedItem } from '../../storage/manual-tracked-content'
 import type { TrackingMode } from '../../storage/tracking-mode'
-import { BOSS_DIFFICULTIES } from '../../types'
 import type { BossContent, BossCycle, BossDifficulty } from '../../types'
 import type { RecordedDrop } from '../../types/drops'
 
@@ -80,7 +79,8 @@ export function toProfileSnapshot(infos: SortedCharacterInfo[]): Map<string, Cha
 // (특히 ORDER BY 없는 getBossProfitRecords, 캐시/라이브 Map 삽입 순서) 로드/렌더마다 보스 순서가
 // 달라졌다. 모든 행 경로가 이 함수를 거치므로 여기서 2차 정렬 키를 부여하면 세 경로가 전부 같은
 // 순서로 고정된다. 참조에 없는 보스(매칭 실패 원문명, [[ADR-008]])는 맨 뒤로, 같은 보스의 여러
-// 난이도는 BOSS_DIFFICULTIES 순서로, 그래도 동률이면 보스명으로 완전 결정한다.
+// 난이도는 난이도 순서로, 그래도 동률이면 보스명으로 완전 결정한다 — 그 세 키는 이제
+// `boss-matching` 의 공용 `compareBossOrder` 가 든다([[ADR-186]] 결정 2).
 export function sortRowsByOcidOrder(rows: BossProfitRow[], sortedOcids: string[]): BossProfitRow[] {
   const rank = new Map(sortedOcids.map((ocid, index) => [ocid, index]))
   const ocidRank = (ocid: string): number => rank.get(ocid) ?? Number.MAX_SAFE_INTEGER
@@ -89,11 +89,10 @@ export function sortRowsByOcidOrder(rows: BossProfitRow[], sortedOcids: string[]
     if (rankDiff !== 0) return rankDiff
     // 순위가 같은데 ocid가 다르면(둘 다 sortedOcids 밖인 예외) 캐릭터끼리 섞이지 않게 ocid로 묶는다.
     if (a.ocid !== b.ocid) return a.ocid < b.ocid ? -1 : 1
-    const bossDiff = getBossReferenceOrder(a.boss) - getBossReferenceOrder(b.boss)
-    if (bossDiff !== 0) return bossDiff
-    const difficultyDiff = BOSS_DIFFICULTIES.indexOf(a.difficulty) - BOSS_DIFFICULTIES.indexOf(b.difficulty)
-    if (difficultyDiff !== 0) return difficultyDiff
-    return a.boss < b.boss ? -1 : a.boss > b.boss ? 1 : 0
+    // 2차 키 셋(참조 인덱스 → 난이도 → 보스명)은 여기 인라인이던 것을 **참조표의 소유자**로
+    // 옮긴 것뿐이다([[ADR-186]] 결정 2) — 계약은 [[ADR-036]] 결정 3 그대로이고, 스케줄러·today·
+    // 가계부가 이제 같은 함수를 부른다.
+    return compareBossOrder(a, b)
   })
 }
 

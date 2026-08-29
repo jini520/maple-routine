@@ -13,7 +13,7 @@
 //   대신 보여준다(`selectDisplayBosses`). 즉 미등록이어도 완료했으면 목록에 든다.
 //
 // 의존이 코어 모듈과 인자뿐이라(화면·저장소·네이티브를 안 만진다) 여기 있을 수 있다.
-import { matchBossContent, selectDisplayBosses, type MatchedBoss } from '../../lib/boss-matching'
+import { compareBossOrder, matchBossContent, selectDisplayBosses, type MatchedBoss } from '../../lib/boss-matching'
 import { mergeManualBossList } from '../../lib/manual-boss-merge'
 import type { BossContent, BossCycle } from '../../types'
 import type { ManualTrackedItem } from '../../types/scheduler'
@@ -27,6 +27,10 @@ export const BOSS_SECTION_ORDER: readonly BossCycle[] = ['monthly', 'weekly']
  * **캐릭터를 인자로 받는다**([[ADR-142]] 결정 4) — 선택된 캐릭터의 카드 목록과 초상화 레일의 링이
  * **같은 함수**를 써야 «링이 세는 것 = 화면에 보이는 것» 이 구조로 보장된다. 레일은 선택되지 않은
  * 캐릭터도 세므로 «지금 선택된 캐릭터» 를 안에서 집을 수 없다.
+ *
+ * **순서는 `weekly-bosses.json` 정규 순서다**([[ADR-186]]) — 아래 `orderByReference` 가 **모드를 안
+ * 가르고** 끝에서 한 번 세운다. 자동 모드는 종전에 정렬이 아예 없어 Nexon `boss_contents` **응답
+ * 순서**로 서고 있었다.
  */
 export function displayedBosses(
   character: BossCharacterView,
@@ -35,7 +39,9 @@ export function displayedBosses(
   manualTrackedByOcid: Record<string, ManualTrackedItem[]> | null,
 ): MatchedBoss[] {
   if (mode !== 'manual') {
-    return selectDisplayBosses(cycle === 'weekly' ? character.weeklyBosses : character.monthlyBosses)
+    return orderByReference(
+      selectDisplayBosses(cycle === 'weekly' ? character.weeklyBosses : character.monthlyBosses),
+    )
   }
 
   const items = (manualTrackedByOcid?.[character.ocid] ?? []).filter((item) => item.kind === 'boss')
@@ -49,9 +55,32 @@ export function displayedBosses(
     isComplete: boss.isComplete,
     ownComplete: boss.ownComplete,
   }))
-  return mergeManualBossList(items, synced)
-    .map(matchBossContent)
-    .filter((boss) => boss.cycle === cycle)
+  return orderByReference(
+    mergeManualBossList(items, synced)
+      .map(matchBossContent)
+      .filter((boss) => boss.cycle === cycle),
+  )
+}
+
+/**
+ * 무리 안의 차례 — **`weekly-bosses.json` 정규 순서 → 난이도 → 보스명**([[ADR-186]] 결정 1·3).
+ *
+ * **모드를 안 가른다.** 수동 경로는 `mergeManualBossList` 가 이미 같은 비교자로 세워 두므로 여기서
+ * 다시 세우는 것은 멱등이고, 대신 이 모듈의 «어느 순서로 내는가» 계약이 **한 줄**이 된다 — 모드
+ * 분기 안에 넣으면 그 계약이 다시 두 벌이고, 한쪽만 고치는 날이 온다.
+ *
+ * 비교자는 참조표의 소유자(`lib/boss-matching`)가 든다 — 여기서 자기 정렬을 쓰면 같은 규칙이 앱에
+ * 네 벌이 된다([[ADR-186]] 결정 2).
+ *
+ * **완료는 여전히 자리를 안 바꾼다**([[ADR-164]] 결정 2) — 이 함수가 보는 것은 이름과 난이도뿐이다.
+ */
+function orderByReference(bosses: MatchedBoss[]): MatchedBoss[] {
+  return [...bosses].sort((a, b) =>
+    compareBossOrder(
+      { boss: a.matchedBossName ?? a.apiName, difficulty: a.difficulty },
+      { boss: b.matchedBossName ?? b.apiName, difficulty: b.difficulty },
+    ),
+  )
 }
 
 /**
@@ -74,8 +103,13 @@ export interface BossSection {
  * ([[ADR-164]] 결정 6 — 무리가 비면 헤더도 함께 사라진다). 여기서 미리 걷어도 화면이 필터 후
  * 다시 걷어야 하므로 판정이 두 곳이 된다.
  *
- * **완료는 자리를 안 바꾼다**([[ADR-164]] 결정 2) — 정렬이 아예 없는 것이 그 결정의 모습이다.
- * 무리 안의 순서는 자동 모드가 참조표 순서, 수동 모드가 추적 순서이고 둘 다 전과 같다.
+ * **완료는 자리를 안 바꾼다**([[ADR-164]] 결정 2) — 완료 여부로 가르는 정렬이 없는 것이 그 결정의
+ * 모습이다. 무리 **안**의 순서는 두 모드 모두 `weekly-bosses.json` 정규 순서이고, 그것을 세우는
+ * 자리는 `displayedBosses` 다([[ADR-186]]).
+ *
+ * (2026-08-30 정정: 이 자리에 «자동 모드가 참조표 순서, 수동 모드가 추적 순서» 라고 적혀 있었는데
+ * **정확히 반대**였다 — 정렬하는 쪽이 수동뿐이었다. [[ADR-186]] 이 자동 모드도 같은 순서로 세우면서
+ * 그 문장이 가리키던 갈림 자체가 없어졌다.)
  */
 export function displayedBossSections(
   character: BossCharacterView,
