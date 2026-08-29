@@ -477,6 +477,46 @@ fingerprint** 를 낸 사례가 있다(1.0.6, 재현 불가). 위 «RN 앱의 �
 `node scripts/publish-rn-ota.mjs` 는 두 바이너리를 구운 트리 그대로에서 돌린다. 심사 반려로
 네이티브를 고쳐 재빌드하면 지문이 다시 바뀌므로 **발행도 다시** 한다.
 
+### 규칙 5 — 규칙 1~4 가 **이미 어긋난 뒤**에는 지문을 못박는다 ([[ADR-190]])
+
+트리가 스토어 바이너리의 지문을 **재현하지 못하는 상태**가 있다. 1.0.6 이 그렇다 — GUI 아카이브가
+낸 값이 사후에 재현되지 않고(규칙 3 의 사례), 그 위에 [[ADR-155]] 가 네이티브 트리를 루트로 옮겨
+격차가 영구화됐다.
+
+| | 지문 |
+|---|---|
+| App Store 1.0.6 | `d304704ee9eeedd73d61383372e00849f830f8fb` |
+| Play 1.0.6 (versionCode 21) | `3df849c014ea95bb7b0b9dd506094148b0fdc508` |
+| 트리 계산값 (2026-08-30) | ios `a52ce256dea7a8316d27c3c5e07466c751abc440` · android `7e2fec5dcde4539a077aa014b8cba5eeef456267` |
+
+그 상태에서 **그냥 발행하면 안 된다.** 스크립트는 매니페스트와 `latest-*.json` 을 함께 쓰는데,
+`latest-*.json` 은 배달이 아니라 **「스토어 업데이트가 필요해요」 판정 파일**이다([[ADR-137]]
+결정 4). 트리 계산값으로 덮이는 순간 스토어 사용자 **전원**이 부팅할 때마다 거짓 모달을 본다.
+
+```js
+// scripts/publish-rn-ota.mjs
+const PINNED_RUNTIME_VERSIONS = {
+  ios: { runtimeVersion: 'd304704e…', binaryAppVersion: '1.0.6' },
+  android: { runtimeVersion: '3df849c0…', binaryAppVersion: '1.0.6' },
+}
+```
+
+- 값은 **바이너리에서 읽어 온 사실**이다(규칙 2 의 `EXUpdates.bundle/fingerprint` ·
+  AAB `base/assets/fingerprint`). 지어내는 값이 아니다.
+- 스크립트가 발행 **전에** 「못박은 값 == 지금 발행된 `/latest` 의 판정값」을 대조하고, 다르면
+  **중단한다**. `expo export` 앞이라 빌드를 안 태운다.
+- 못박은 플랫폼마다 콘솔에 줄을 찍는다 — 조용히 못박으면 다음 사람이 트리 계산값으로 나가고
+  있다고 믿는다.
+
+> ⚠️ **이 상수가 살아 있는 동안 네이티브 변경은 OTA 로 못 나간다.** 못박은 지문은 «옛 네이티브» 를
+> 가리키므로, 네이티브를 고쳤으면 **스토어 빌드**로 가야 한다. 그리고 새 스토어 바이너리를
+> 규칙 1~3 을 지켜 구운 뒤에는 **이 상수를 지운다** — 그때부터 트리 계산값이 곧 바이너리의 값이다.
+
+JS 만 바뀌었는지는 지문이 안 말해 주므로 **사람이 확인한다.** 1.0.7 발행 때 본 것: 새 네이티브
+의존성 0(늘어난 `@gorhom/portal`·`zustand` 는 순수 JS) · 로컬 Expo 모듈 셋의 JS API diff 0줄 ·
+`app.json` 이 1.0.6 과 바이트 동일 · 폰트 0개 · `react-native`·`expo` 버전 동일(Hermes 바이트코드
+호환).
+
 ## 폐기된 정책 (history)
 
 - ~~웹 번들을 `npm run build`(+`build:beta`·`build:test-ads`·`build:screenshot`)로 굽고

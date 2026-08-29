@@ -32,6 +32,13 @@ import { findReleaseNote } from '../src/data/release-notes.ts'
 // 노트 가드도 한 벌이다 — «무엇이 비었는지 문구로 말한다»는 판단([[ADR-126]] 결정 8)을 두 스크립트가
 // 나눠 가지면 한쪽만 고쳐진다.
 import { describeReleaseNoteGap } from './publish-live-update.mjs'
+// 지문 못박기는 **순수 로직이라 따로 산다**([[ADR-190]]) — 이 파일이 최상위 `await` 를 쓰는 ESM
+// 이라 테스트가 import 하지 못하기 때문이다. 그쪽에는 테스트가 붙어 있다.
+import {
+  PINNED_RUNTIME_VERSIONS,
+  describePinMismatch,
+  resolveRuntimeVersions,
+} from './ota-runtime-version.mjs'
 
 const REPO = 'jini520/maple-routine'
 const RELEASE_TAG = 'live-update-rn'
@@ -164,6 +171,34 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     process.exit(1)
   }
 
+  // ── 못박은 지문 대조 ([[ADR-190]] 결정 2) ────────────────────────────────────────
+  //
+  // **노트 가드와 같은 자리**에 둔다 — 빌드(몇 분) 앞이라야 고칠 시간이 있고, 여기서 걸리는
+  // 사고는 «배포는 성공했는데 스토어 사용자 전원에게 거짓 모달» 이라 사후에 알아채기 가장 어렵다.
+  const latestBaseUrl = `${appConfig.expo.updates.url.replace(/\/manifest$/, '')}/latest`
+  for (const platform of PLATFORMS) {
+    const pin = PINNED_RUNTIME_VERSIONS[platform]
+    if (!pin) continue
+
+    let published = null
+    try {
+      const response = await fetch(`${latestBaseUrl}?platform=${platform}&t=${Date.now()}`, {
+        headers: { 'cache-control': 'no-cache' },
+      })
+      published = response.ok ? await response.json() : null
+    } catch {
+      // 조회 자체가 실패하면 «어긋났다» 를 말할 근거가 없다 — 그때는 못 막는다(앱의
+      // `checkStoreRequired` 가 같은 이유로 실패를 삼킨다).
+      published = null
+    }
+
+    const mismatch = describePinMismatch(platform, pin, published)
+    if (mismatch !== null) {
+      console.error(mismatch)
+      process.exit(1)
+    }
+  }
+
   console.log('[1/5] expo export 중...')
   execFileSync('npx', ['expo', 'export', '--platform', 'ios', '--platform', 'android', '--output-dir', 'dist'], {
     cwd: appDir,
@@ -177,7 +212,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   // 출력은 **JSON** 이다(`{"runtimeVersion":"…","fingerprintSources":[…]}`) — 맨 줄을 그대로
   // 쓰면 JSON 통째로 파일 이름에 들어간다. 실측으로 확인한 형식이고, 형식이 바뀌면 아래 가드가
   // 파일 이름을 만들기 전에 막는다.
-  const runtimeVersions = Object.fromEntries(
+  const computedRuntimeVersions = Object.fromEntries(
     PLATFORMS.map((platform) => [
       platform,
       JSON.parse(
@@ -188,14 +223,31 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       ).runtimeVersion,
     ]),
   )
+
+  // 못박은 값이 있으면 그것이 이긴다([[ADR-190]] 결정 1) — 트리가 스토어 바이너리의 지문을
+  // 재현하지 못하는 동안의 상태다.
+  const resolved = resolveRuntimeVersions(computedRuntimeVersions, PINNED_RUNTIME_VERSIONS)
+  const runtimeVersions = Object.fromEntries(
+    Object.entries(resolved).map(([platform, entry]) => [platform, entry.runtimeVersion]),
+  )
+
   for (const platform of PLATFORMS) {
-    const resolved = runtimeVersions[platform]
-    if (!/^[A-Za-z0-9._-]+$/.test(resolved)) {
-      console.error(`${platform} 의 runtimeVersion 해석 결과가 파일 이름으로 쓸 수 없습니다: "${resolved}"`)
+    const value = runtimeVersions[platform]
+    if (!/^[A-Za-z0-9._-]+$/.test(value)) {
+      console.error(`${platform} 의 runtimeVersion 해석 결과가 파일 이름으로 쓸 수 없습니다: "${value}"`)
       process.exit(1)
     }
   }
-  console.log(`      ios=${runtimeVersions.ios} android=${runtimeVersions.android}`)
+
+  for (const platform of PLATFORMS) {
+    const { pinned } = resolved[platform]
+    // **조용히 못박지 않는다** — 다음 사람이 트리 계산값으로 나가고 있다고 믿으면 안 된다.
+    console.log(
+      pinned
+        ? `      ${platform}=${runtimeVersions[platform]} ⚑ 못박음(${pinned.binaryAppVersion} 스토어 바이너리) · 트리 계산값 ${computedRuntimeVersions[platform]} 은 안 씀`
+        : `      ${platform}=${runtimeVersions[platform]}`,
+    )
+  }
 
   console.log('[3/5] 릴리스에 이미 있는 자산 확인 중...')
   let existing
