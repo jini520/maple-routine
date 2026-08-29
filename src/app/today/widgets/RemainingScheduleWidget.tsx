@@ -1,57 +1,48 @@
 /**
- * 위젯 2 — **캐릭터별 남은 스케줄**(`4×auto`, [[ADR-147]] 결정 6 · 정정 3·9·12).
+ * 위젯 2 — **캐릭터별 남은 스케줄**(`4×auto`, [[ADR-181]]).
  *
- * ## 형태의 전부는 «정렬» 이다 ([[ADR-147]] 정정 12)
+ * ## 주기는 열이 아니라 **탭**이다 ([[ADR-181]] 결정 1)
  *
- * 수치를 배지에서 텍스트로 바꾸고 나니 숫자가 어디에도 정렬되지 않았다 — 라벨 길이가 제각각
- * (「일퀘」 2자 · 「주간 보스」 4자)이라 행마다 다른 x 에서 끝나 «누가 제일 밀렸나» 를 세로로 훑을 수가
- * 없었다. 그래서 **라벨 폭을 고정하고 숫자에 `tabular-nums`** 를 걸어 2×2 격자로 세운다
- * (col A = 일퀘/주간 보스 · col B = 주간퀘/검마). `·` 구분자는 열이 생기면 할 일이 없어 사라진다.
+ * 제목 줄 오른쪽, **합계 `N개` 가 있던 자리**에 세그먼트 셋(일간 · 주간 · 월간)이 선다. 목록은 그
+ * 탭의 수치만 그린다. 별도 줄에 두면 타일이 34px 높아지는데 제목 줄에 얹으면 6px 이다.
  *
- * ## 강조는 굵기 하나뿐이다 ([[ADR-147]] 정정 9)
+ * 열로 세운 시안도 만들었고 **월간 열이 값을 못 해서** 접었다 — 검마는 한 달에 한 번, 그것도 일부
+ * 캐릭터만 잡아 대부분의 날에 그 열이 완료 표식으로만 찬다(사용자 판정). 탭으로 접으면 **월간 탭이
+ * 곧 검마의 자리**가 된다.
  *
- * 숫자는 **크기도 색도 라벨과 같고** `font-weight` 만 400 → 800 이다. 라벨은 `text-muted`, 숫자는
- * 닉네임과 같은 `text`(읽기 2 확정). **테마 색을 쓰지 않는다** — 숫자를 `primary-ink` 로 칠하면 이
- * 타일 하나에 강조색이 **캐릭터 수만큼 반복**돼 격자에서 «여기가 제일 중요하다» 를 잘못 말한다.
+ * ## 세그먼트는 앱이 이미 쓰는 것이다 ([[ADR-181]] 결정 2)
  *
- * ## 배지는 «수치» 가 아니라 «상태» 에만 선다
+ * `molecules/Segment`([[ADR-173]] 결정 3 — 가계부 시트가 통화·형태를 고르는 그 조각)를 **한 줄도 안
+ * 고치고** 쓴다. 여기서만 다른 세그먼트를 만들면 앱에 «고르는 축» 이 두 벌이 된다.
  *
- * `CLEAR`(전부 완료)와 「동기화 실패」 둘뿐이다 — 수치가 아니라 상태라 다른 형태를 가질 근거가 있다.
- * 「다 했습니다」 같은 문장도, **전부 완료 전용 UI 도 두지 않는다**: 형태가 안 바뀌어야 «어제와 같은
- * 화면» 으로 읽힌다.
+ * 그 조각이 고른 칸을 `primary-tint` 로 칠하는 것은 **[[ADR-147]] 정정 9 의 금지에 안 걸린다** — 그
+ * 규칙의 근거가 «타일 하나에 강조색이 **캐릭터 수만큼** 반복된다» 였고, 세그먼트는 머리글에 하나뿐이다.
+ * 수치는 여전히 굵기로만 강조한다.
  *
- * ## 줄도 칸도 «그 행» 이 정한다 ([[ADR-147]] 정정 35~37)
+ * ## 수치는 「갈래 N개」다 ([[ADR-181]] 결정 3)
  *
  * ```
- * 줄  = 그 행에 그 계열(① 컨텐츠 ② 보스)의 값이 하나라도 있을 때
- * 칸  = 그 행에 그 수치가 있을 때
+ * 일간   야간비행                      퀘스트 4개
+ * 주간   야간비행             퀘스트 3개  보스 2개
+ * 월간   야간비행                        보스 1개
  * ```
  *
- * **세 번에 걸쳐 여기까지 왔다**(전부 사용자 보고 — 빈 자리가 크다).
+ * **값이 있는 갈래가 자기 이름과 함께 선다** — 탭마다 다른 모양이 없다(사용자 지정). 탭 이름만으로
+ * 뜻이 닫히는 일간 · 월간에도 라벨을 두는 대신 규칙이 하나로 줄고, 열 표가 열로 갈랐던
+ * «컨텐츠 / 보스» 묶음이 여기서는 **행 안**에 남는다.
  *
- * 1. 원래는 «값이 0인 칸도 글자만 비우고 자리는 남긴다» 였다(정정 9·12). 그래야 숫자가 모든 행에서
- *    같은 x 에 서고 행 높이가 데이터를 안 따라간다.
- * 2. 정정 35 는 그 질문을 **목록 전체**에 물어 «아무도 안 쓰는 칸» 을 다 같이 죽였다.
- * 3. 정정 36·37 이 그 장치를 도로 지웠다 — **빈 자리를 남기는 것이 곧 정렬**이라 둘 다는 못 가지고,
- *    간결함이 선택됐다.
+ * ## 0 은 언제나 `CLEAR` 다 — 「완료했다」가 아니다 ([[ADR-181]] 결정 5)
  *
- * 그래서 **포기한 것 둘**을 여기 적어 둔다: «모양이 다른 행 사이의 정렬» 과 «고른 행 높이». 값이 넷
- * 다 있는 행은 두 줄, 하나만 있는 행은 한 줄이다.
+ * 그 탭의 남은 수가 0 이면 수치 자리에 `CLEAR` 하나. **대상이 애초에 없던 캐릭터도 같은 배지**를
+ * 받는다(사용자 확정 — 레벨 미달로 보스가 안 뜨는 경우, [[ADR-162]]). 표기를 가르지 않기로 했으므로
+ * **이 배지의 뜻은 «이 주기에 지금 할 게 없다»** 이고, 그래서 뷰모델이 분모를 셀 필요가 없다.
  *
- * 남긴 것도 있다.
+ * ## 목록은 캐릭터 전부다 ([[ADR-181]] 결정 6)
  *
- * - **줄은 오른쪽 정렬**(`items-end`) — 칸이 줄면 왼쪽으로 짧아져야 셰브런 옆이 붙는다.
- * - `tabular-nums` 와 **숫자 칸 고정 폭** — 그것까지 놓으면 `10` 과 `1` 사이에서 오른쪽 끝이 떨린다.
- *   같은 모양의 행끼리는 이 폭 덕에 여전히 한 열이고, 목록이 남은 개수 순이라(정정 3) 그런 행들이
- *   대체로 붙어 선다.
- * - **계열 묶음**(① 일퀘·주간퀘 ② 주간 보스·검마) — 정정 13 이 안 B 를 기각한 이유가 «컨텐츠 /
- *   보스 묶음이 사라진다» 였다. 줄이 접히는 단위는 여전히 계열이다.
- *
- * ## 목록은 자르지 않는다
- *
- * 「외 N명」 접기도 상한도 없다 — 캐릭터 전부를 그리고, 늘어난 만큼 `resolveWidgetPositions` 가 아래
- * 타일을 민다(그것이 `h: 'auto'` 를 둔 이유다). 정렬은 뷰모델이 이미 끝냈다(남은 개수 많은 순 →
- * 동수면 캐릭터 관리 순서 · **동기화 실패는 언제나 맨 아래**).
+ * 그 탭을 끝낸 캐릭터도 자리를 지킨다 — 사람 수가 늘 같아야 «어제와 같은 화면» 이고, 이 타일이
+ * `4×auto` 라 목록이 줄면 **아래 위젯 전부가 하루 동안 따라 움직인다**. 「외 N명」 접기도 상한도 없다.
+ * 정렬은 뷰모델이 끝냈고(전체 남은 개수 순 → 동수면 관리 순서 · 실패는 맨 아래) **탭마다 다시 세우지
+ * 않는다.**
  */
 
 import { useState } from 'react'
@@ -59,6 +50,7 @@ import { Image, Pressable, View } from 'react-native'
 
 import { DifficultyBadge } from '../../../components/atoms/DifficultyBadge/DifficultyBadge'
 import { Text } from '../../../components/atoms/Text/Text'
+import { Segment } from '../../../components/molecules/Segment/Segment'
 import { faceCropStyle } from '../../../lib/face-crop'
 import { ChevronDownIcon, ChevronUpIcon } from '../../../lib/icons'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
@@ -69,105 +61,72 @@ import type { WidgetProps } from './types'
 const PORTRAIT_PX = 32
 
 /**
- * 라벨·숫자 열의 **고정 폭**. 이 두 값이 모든 행의 숫자를 같은 x 에 세운다([[ADR-147]] 정정 12) —
- * 라벨을 내용 폭으로 두면 「일퀘」와 「주간 보스」가 다른 자리에서 끝난다.
- */
-const LABEL_WIDTH_PX = 48
-/**
  * 숫자 칸의 **바닥**(천장이 아니다 — [[ADR-165]]).
  *
- * 값 자체는 [[ADR-147]] 정정 40 의 것이다 — 18 은 세 자리를 담을 폭이라 오른쪽 정렬에서 남는 4px 이
- * 전부 왼쪽 여백이 되어 한 자리 수치가 라벨에서 떨어져 보였다. 그 이유는 지금도 유효하므로 **한 자리
- * 수치의 정렬을 잡는 바닥**으로 남긴다.
- *
- * **`width` 가 아니라 `minWidth` 인 것이 결정이다.** 고정 폭이던 시절 이 값은 «두 자리에 맞춘» 것이라
- * 글자 크기에 묶여 있었고, [[ADR-163]] 이 글자만 10.5 → 11.5px 로 올리자 두 자리 수치의 마지막 글자가
- * 오른쪽에서 잘렸다(시뮬레이터 3x 실측: 「12」의 「2」가 박스 경계에서 평평하게 잘렸다 — 폭을 넓힌
- * 대조군에서는 곡선이 온전했다). 바닥으로 두면 칸이 내용을 따라 늘어나므로 **글자 크기가 다시 바뀌어도
- * 이 값을 다시 재지 않는다.**
+ * 14 는 한 자리 수치가 라벨에서 떨어져 보이지 않게 잡은 값이고([[ADR-147]] 정정 40), 두 자리가
+ * 오면 칸이 내용을 따라 늘어난다. **`width` 로 두면 안 된다** — 고정 폭이던 시절 [[ADR-163]] 이
+ * 글자만 +1px 올리자 두 자리 수치의 마지막 글자가 오른쪽에서 잘렸다(시뮬레이터 3x 실측).
  */
 const VALUE_MIN_WIDTH_PX = 14
 
-/**
- * 수치 한 줄의 **바닥 높이**(천장이 아니다 — [[ADR-165]]).
- *
- * 원래 이유(«빈 `Text` 의 높이는 플랫폼마다 다르다»)는 정정 37 로 사라졌다 — 값이 없는 칸도 줄도
- * 아예 안 그리므로 빈 글자가 없다. 그래도 남기는 것은 이 상수가 **한 줄 행과 두 줄 행의 높이를
- * 예측 가능한 관계**로 묶기 때문이다. 행 높이가 줄 수를 따라가는 것은 받아들이되, 줄 하나의 높이는
- * 데이터와 무관해야 한다.
- *
- * **`height` 가 아니라 `minHeight` 인 것이 결정이다.** 14 는 «10.5px × 1.25 를 올림» 이었는데
- * [[ADR-163]] 이 글자를 11.5px 로 올려 줄 상자가 14.375px 을 요구하게 됐다 — 고정 높이는 그 몫을
- * 안 준다. 숫자 칸과 **같은 성질의 결함**이라 같은 방식으로 고친다.
- */
-const STAT_LINE_MIN_HEIGHT_PX = 14
+/** 세그먼트가 고르는 값 — 라벨이 곧 값이다(`Segment` 가 `options` 를 그대로 그린다). */
+const CYCLE_LABELS = ['일간', '주간', '월간'] as const
+type Cycle = (typeof CYCLE_LABELS)[number]
 
 /**
- * 「검마」는 **월간 보스가 하나뿐이라 성립하는 이름**이다([[ADR-147]] 정정 3) — 참조 데이터에서
- * 파생시키지 않는다. 월간 보스가 둘이 되면 이 이름이 거짓이 되고, 그때 다시 정한다([[ADR-006]] 태도).
+ * 한 주기에 남은 것 — **뷰모델의 배열을 고를 뿐 새 판정을 하지 않는다**([[ADR-147]] 정정 26).
+ *
+ * 「검마」라는 이름은 화면에서 사라졌지만 그 전제는 그대로다 — 월간 보스가 하나뿐이라 월간 탭이
+ * 성립한다([[ADR-147]] 정정 3). 둘이 되면 그때 다시 정한다([[ADR-006]] 태도).
  */
-const LABEL = {
-  dailyQuest: '일퀘',
-  weeklyQuest: '주간퀘',
-  weeklyBoss: '주간 보스',
-  monthlyBoss: '검마',
-} as const
+interface CycleItems {
+  quests: readonly string[]
+  bosses: readonly RemainingBossView[]
+}
 
-type StatKey = keyof typeof LABEL
+function cycleItems(row: ScheduleRowView, cycle: Cycle): CycleItems {
+  if (cycle === '일간') return { quests: row.dailyNames, bosses: [] }
+  if (cycle === '주간') return { quests: row.weeklyNames, bosses: row.weeklyBosses }
+  return { quests: [], bosses: row.monthlyBosses }
+}
 
-/** 줄 = 계열. 순서가 곧 화면 순서다(① 컨텐츠 ② 보스). */
-const STAT_LINES: readonly (readonly StatKey[])[] = [
-  ['dailyQuest', 'weeklyQuest'],
-  ['weeklyBoss', 'monthlyBoss'],
-]
-
-function statValue(row: ScheduleRowView, key: StatKey): number {
-  if (key === 'dailyQuest') return row.dailyNames.length
-  if (key === 'weeklyQuest') return row.weeklyNames.length
-  if (key === 'weeklyBoss') return row.weeklyBosses.length
-  return row.monthlyBosses.length
+function itemCount(items: CycleItems): number {
+  return items.quests.length + items.bosses.length
 }
 
 const VALUE_CLASS = 'text-right text-[11.5px] font-extrabold leading-tight text-text'
-const LABEL_CLASS = 'text-right text-[11.5px] leading-tight text-text-muted'
+const LABEL_CLASS = 'text-[11.5px] leading-tight text-text-muted'
 
-/** 값이 있는 칸만 온다 — 0 인 칸은 부모가 접는다([[ADR-147]] 정정 36). */
-function StatCell(props: { label: string; value: number }): React.JSX.Element {
+/** 수치 한 덩이 — 「퀘스트 3개」·「보스 1개」. */
+function Amount(props: { label: string; count: number }): React.JSX.Element {
   return (
     <View className="flex-row items-center gap-0.5">
-      <Text fixed numberOfLines={1} style={{ width: LABEL_WIDTH_PX }} className={LABEL_CLASS}>
+      <Text fixed numberOfLines={1} className={LABEL_CLASS}>
         {props.label}
       </Text>
       <Text fixed style={{ minWidth: VALUE_MIN_WIDTH_PX, ...TABULAR_NUMS }} className={VALUE_CLASS}>
-        {String(props.value)}
+        {String(props.count)}
+      </Text>
+      <Text fixed className={LABEL_CLASS}>
+        개
       </Text>
     </View>
   )
 }
 
-function StatGrid(props: { row: ScheduleRowView }): React.JSX.Element {
-  return (
-    // `items-end` — 칸이 줄면 **왼쪽으로** 짧아져야 셰브런 옆이 붙는다([[ADR-147]] 정정 36).
-    <View testID="schedule-stats" className="shrink-0 items-end gap-0.5">
-      {STAT_LINES.map((line) => {
-        // 줄도 칸도 **이 행**이 정한다([[ADR-147]] 정정 37) — 값이 없는 계열은 줄째로 빠지므로
-        // 빈 줄이 안 남는다. 목록에 물어 «아무도 안 쓰는 칸» 을 죽이던 장치(정정 35)는 지웠다.
-        const cells = line.filter((key) => statValue(props.row, key) > 0)
-        if (cells.length === 0) return null
+/**
+ * **갈래 라벨은 어느 탭에서나 붙는다**(사용자 지정) — 일간은 「퀘스트 N개」, 월간은 「보스 N개」.
+ *
+ * 탭 이름만으로 뜻이 닫히는 자리에도 라벨을 두는 대신, 규칙이 **하나로 준다**: 값이 있는 갈래가
+ * 자기 이름과 함께 선다. 그래서 탭마다 다른 모양을 만들 분기가 없다.
+ */
+function Amounts(props: { items: CycleItems }): React.JSX.Element {
+  const { items } = props
 
-        return (
-          <View
-            key={line.join('-')}
-            testID="schedule-stat-line"
-            className="flex-row items-center gap-2"
-            style={{ minHeight: STAT_LINE_MIN_HEIGHT_PX }}
-          >
-            {cells.map((key) => (
-              <StatCell key={key} label={LABEL[key]} value={statValue(props.row, key)} />
-            ))}
-          </View>
-        )
-      })}
+  return (
+    <View testID="schedule-stats" className="shrink-0 flex-row items-center gap-2.5">
+      {items.quests.length > 0 && <Amount label="퀘스트" count={items.quests.length} />}
+      {items.bosses.length > 0 && <Amount label="보스" count={items.bosses.length} />}
     </View>
   )
 }
@@ -247,50 +206,47 @@ function BossChip(props: { boss: RemainingBossView }): React.JSX.Element {
   )
 }
 
-function DetailGroup(props: { label: string; children: React.ReactNode }): React.JSX.Element {
+/**
+ * 이름표는 **갈래가 둘일 때만**(주간) 붙는다 — 여기서 라벨이 하는 일은 «퀘스트 칩과 보스 칩을
+ * 가르는 것» 이라, 그릴 그룹이 하나뿐이면 할 일이 없다(접힘은 갈래마다 수치가 붙어 사정이 다르다).
+ */
+function DetailGroup(props: { label: string | null; children: React.ReactNode }): React.JSX.Element {
   return (
     <View className="gap-1">
-      <Text fixed className="text-[10.5px] font-bold tracking-[.02em] text-text-muted">{props.label}</Text>
+      {props.label !== null && (
+        <Text fixed className="text-[10.5px] font-bold tracking-[.02em] text-text-muted">
+          {props.label}
+        </Text>
+      )}
       <View className="flex-row flex-wrap items-center gap-1">{props.children}</View>
     </View>
   )
 }
 
 /**
- * 펼친 본문 — **항목을 이름으로 낱개로** 센다([[ADR-147]] 정정 25).
+ * 펼친 본문 — **그 탭의 항목을 이름으로 낱개로** 센다([[ADR-181]] 결정 7).
  *
  * **자르지 않는다.** 일퀘가 여덟이면 여덟을 다 적는다 — 「외 3개」로 접으면 펼친 이유가 사라진다.
- * 펼침은 «더 보겠다» 는 명시적 행동이고 그 답을 다시 접는 것은 앞뒤가 안 맞는다. 늘어난 높이는
- * `resolveWidgetPositions` 가 아래 타일을 밀어 흡수한다(그것이 `h: 'auto'` 를 둔 이유다).
- *
- * 보스는 **주간과 검마를 한 그룹**으로 묶는다 — 접힘의 수치는 둘을 갈라 세지만(한도가 다르다),
- * 펼침에서 물어보는 것은 «무엇이 남았나» 하나라 굳이 두 줄로 나눌 이유가 없다.
+ * 늘어난 높이는 `resolveWidgetPositions` 가 아래 타일을 밀어 흡수한다(그것이 `h: 'auto'` 를 둔 이유다).
  */
-function ScheduleDetail(props: { row: ScheduleRowView }): React.JSX.Element {
-  const { row } = props
-  const bosses = [...row.weeklyBosses, ...row.monthlyBosses]
+function ScheduleDetail(props: { items: CycleItems; cycle: Cycle }): React.JSX.Element {
+  const { items, cycle } = props
+  const labelled = cycle === '주간'
 
   return (
     <View testID="schedule-detail" className="gap-2 pb-2.5 pl-10 pt-0.5">
-      {row.dailyNames.length > 0 && (
-        <DetailGroup label={LABEL.dailyQuest}>
-          {row.dailyNames.map((name, index) => (
-            <NameChip key={`${name}-${String(index)}`} name={name} />
-          ))}
-        </DetailGroup>
-      )}
-      {row.weeklyNames.length > 0 && (
-        <DetailGroup label={LABEL.weeklyQuest}>
+      {items.quests.length > 0 && (
+        <DetailGroup label={labelled ? '퀘스트' : null}>
           {/* **키가 이름이면 안 된다** — `[주간 퀘스트] 타락한 세계수 주간 임무` 와 `… 정화에 대한
               보답` 이 둘 다 「타락한 세계수」로 접혀 같은 키가 둘이 된다([[ADR-147]] 정정 40). */}
-          {row.weeklyNames.map((name, index) => (
+          {items.quests.map((name, index) => (
             <NameChip key={`${name}-${String(index)}`} name={name} />
           ))}
         </DetailGroup>
       )}
-      {bosses.length > 0 && (
-        <DetailGroup label="보스">
-          {bosses.map((boss) => (
+      {items.bosses.length > 0 && (
+        <DetailGroup label={labelled ? '보스' : null}>
+          {items.bosses.map((boss) => (
             <BossChip key={`${boss.difficulty}-${boss.name}`} boss={boss} />
           ))}
         </DetailGroup>
@@ -301,13 +257,15 @@ function ScheduleDetail(props: { row: ScheduleRowView }): React.JSX.Element {
 
 function ScheduleRow(props: {
   row: ScheduleRowView
+  cycle: Cycle
   first: boolean
   expanded: boolean
   onToggle: () => void
 }): React.JSX.Element {
-  const { row } = props
+  const { row, cycle } = props
+  const items = cycleItems(row, cycle)
   // 펼칠 것이 없는 행은 누를 수도 없다 — CLEAR 는 보여 줄 것이 없고, 실패는 **모른다**.
-  const openable = !row.hasSyncIssue && row.remainingTotal > 0
+  const openable = !row.hasSyncIssue && itemCount(items) > 0
 
   const head = (
     <View testID="schedule-row" className="flex-row items-center gap-2 py-1.5">
@@ -322,10 +280,10 @@ function ScheduleRow(props: {
       </Text>
       {row.hasSyncIssue ? (
         <StatusBadge testID="schedule-issue" tone="issue" label="동기화 실패" />
-      ) : row.remainingTotal === 0 ? (
+      ) : itemCount(items) === 0 ? (
         <StatusBadge testID="schedule-clear" tone="clear" label="CLEAR" />
       ) : (
-        <StatGrid row={row} />
+        <Amounts items={items} />
       )}
       {openable &&
         (props.expanded ? (
@@ -345,35 +303,43 @@ function ScheduleRow(props: {
       ) : (
         head
       )}
-      {openable && props.expanded && <ScheduleDetail row={row} />}
+      {openable && props.expanded && <ScheduleDetail items={items} cycle={cycle} />}
     </View>
   )
 }
 
 export function RemainingScheduleWidget({ data }: WidgetProps): React.JSX.Element {
   /**
+   * 보고 있는 주기 — **저장소에 안 쓴다**([[ADR-181]] 결정 1). 앱을 다시 켜면 언제나 일간이고,
+   * **요일에 따라 기본 탭을 바꾸지 않는다**: 첫 화면이 날마다 다른 얼굴로 열리면 «어제와 같은
+   * 화면» 이 깨지고 그 규칙을 사람이 배워야 한다.
+   */
+  const [cycle, setCycle] = useState<Cycle>('일간')
+
+  /**
    * 펼친 행 하나 — **`null` 은 전부 접힘**이다.
    *
    * **하나만 연다.** 여섯 명이 다 열리면 이 타일이 1,000px 을 넘고, 타일 안 스크롤은
-   * [[ADR-147]] 결정 3 이 금지한다 — 동시 펼침을 하나로 묶는 것이 그 금지와 짝이 되는 선택이다.
-   *
-   * **기억하지 않는다**(사용자 지정). 저장소에 쓰지 않으므로 앱을 다시 켜면 전부 접혀 있다
-   * ([[ADR-096]] 결정 3 의 탭 상태와 같은 태도). 화면이 탭이라 앱을 켜 둔 동안은 남는다.
+   * [[ADR-147]] 결정 3 이 금지한다. 기억하지도 않는다(화면이 탭이라 앱을 켜 둔 동안은 남는다).
    */
   const [expandedOcid, setExpandedOcid] = useState<string | null>(null)
 
   return (
     <View testID="widget-remaining-schedule" className="p-3">
-      {/* 합계도 칩이 아니라 텍스트다([[ADR-147]] 정정 9) — 숫자만 굵다. 동기화 실패 캐릭터의 몫은
-          여기 안 들어 있다(뷰모델이 «모르는 것을 더하지 않는다»). */}
+      {/* 제목 줄이 곧 탭 줄이다 — 합계 `N개` 가 있던 자리에 세그먼트가 선다([[ADR-181]] 결정 1·4). */}
       <View className="flex-row items-center border-b border-border-strong pb-2">
         <Text fixed className="text-[11px] font-bold text-text-muted">남은 스케줄</Text>
-        <Text fixed className="ml-auto text-[12px] text-text-muted">
-          <Text fixed style={TABULAR_NUMS} className="text-[12px] font-extrabold text-text">
-            {data.scheduleTotal}
-          </Text>
-          개
-        </Text>
+        <View className="ml-auto">
+          <Segment
+            options={CYCLE_LABELS}
+            selected={cycle}
+            onSelect={(value) => {
+              setCycle(value)
+              // 접힘이 「이 주기에 N개」인데 펼침이 다른 주기의 이름을 들면 두 층이 어긋난다.
+              setExpandedOcid(null)
+            }}
+          />
+        </View>
       </View>
 
       {data.schedule.length === 0 ? (
@@ -383,6 +349,7 @@ export function RemainingScheduleWidget({ data }: WidgetProps): React.JSX.Elemen
           <ScheduleRow
             key={row.ocid}
             row={row}
+            cycle={cycle}
             first={index === 0}
             expanded={expandedOcid === row.ocid}
             // 열린 행을 다시 누르면 닫는다(사용자 지정) — 닫는 방법이 셰브런뿐이면 «어디를 눌러야

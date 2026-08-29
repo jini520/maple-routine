@@ -32,7 +32,6 @@ export const 빈_뷰모델: TodayViewModel = {
   sharedContents: [],
   sharedRemaining: 0,
   schedule: [],
-  scheduleTotal: 0,
   profit: {
     totalMeso: 0,
     crystalMeso: 0,

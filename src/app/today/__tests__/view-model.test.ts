@@ -186,7 +186,6 @@ describe('남은 스케줄 — 분류 넷 ([[ADR-147]] 정정 3)', () => {
     )
 
     expect(model.schedule[0].weeklyNames).toHaveLength(0)
-    expect(model.scheduleTotal).toBe(0)
   })
 
   it('주간 보스·검마는 displayedBosses 의 미완료 수다', () => {
@@ -286,18 +285,6 @@ describe('남은 스케줄 — 정렬 ([[ADR-147]] 정정 12)', () => {
 
     expect(model.schedule.map((row) => row.ocid)).toEqual(['b', 'a'])
     expect(model.schedule[1].hasSyncIssue).toBe(true)
-  })
-
-  it('실패 캐릭터의 남은 개수는 합계에 넣지 않는다', () => {
-    const model = buildTodayViewModel(
-      input({
-        orderedOcids: ['a', 'b'],
-        contentCharacters: [withRemaining('a', 9), withRemaining('b', 1)],
-        characterIssues: { a: 'unavailable' },
-      }),
-    )
-
-    expect(model.scheduleTotal).toBe(1)
   })
 })
 
@@ -718,7 +705,6 @@ describe('공유 컨텐츠 — 계열로 묶는다 ([[ADR-147]] 정정 28)', () 
     // 캐릭터 줄에는 개인 일퀘 하나만 남는다 — 몬스터파크는 공유 위젯의 몫이다.
     expect(model.schedule[0]?.dailyNames).toEqual(['소멸의 여로'])
     expect(model.schedule[0]?.weeklyNames).toEqual([])
-    expect(model.scheduleTotal).toBe(1)
   })
 })
 

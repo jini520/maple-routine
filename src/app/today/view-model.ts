@@ -345,8 +345,6 @@ export interface TodayViewModel {
   sharedRemaining: number
   /** 정렬까지 끝난 목록 — 위젯은 그리기만 한다. */
   schedule: ScheduleRowView[]
-  /** 남은 것의 총합. **동기화 실패 캐릭터는 빼고** 센다(모르는 것을 더하지 않는다). */
-  scheduleTotal: number
   profit: WeeklyProfitView
   topItem: TopItemView | null
   /** 이번 주 가격 미입력 드롭 건수 — 위젯 7의 값이라 위젯 4 안에 넣지 않는다([[ADR-147]] 정정 5). */
@@ -382,9 +380,6 @@ export function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel 
       .flatMap((group) => group.items)
       .filter((item) => !item.isComplete).length,
     schedule,
-    scheduleTotal: schedule
-      .filter((row) => !row.hasSyncIssue)
-      .reduce((sum, row) => sum + row.remainingTotal, 0),
     ...buildProfit(input, weeklyPeriodKey),
     topItem: buildTopItem(weeklyDrops, input.profilesByOcid),
     unpricedCount: unpriced.length,
