@@ -43,7 +43,7 @@ export const apiKeyGuide: FeatureGuide = {
     },
     {
       id: 'stage',
-      title: '반드시 「서비스 단계」로',
+      title: '반드시 ‘서비스 단계’로',
       blocks: [
         {
           text: '단계는 개발이 아니라 서비스를 고르세요. 개발 단계 키는 초당 5건·하루 1,000건으로 묶여 있는데, 이 앱은 여러 캐릭터를 한 번에 조회하기 때문에 도중에 막힙니다.',

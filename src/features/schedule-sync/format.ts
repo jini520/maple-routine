@@ -89,8 +89,8 @@ export function formatRosterError(error: ScheduleSyncError, place: RosterErrorPl
         title: '캐릭터를 조회할 수 없습니다',
         description:
           place === 'picker'
-            ? '이 계정의 캐릭터를 조회할 수 없습니다 — 설정에서 계정을 변경해주세요'
-            : '이 계정의 캐릭터를 조회할 수 없습니다 — 다른 계정을 선택해주세요',
+            ? '이 계정의 캐릭터를 조회할 수 없습니다. 설정에서 계정을 변경해주세요'
+            : '이 계정의 캐릭터를 조회할 수 없습니다. 다른 계정을 선택해주세요',
       }
     // 이 둘은 date 파라미터가 있는 보스 수익 백필에서만 나오는 종류다(피커·온보딩은 date를 쓰지
     // 않는다). 도달할 수 없는 조합이지만 종류가 늘 때 조용히 undefined가 되지 않도록 network와
@@ -144,7 +144,7 @@ export function formatStaleRosterError(error: ScheduleSyncError): StaleRosterErr
     // 두 단계에서 같은 코드로 오고 본문에도 구분이 없다. 수치는 넣지 않는다(서비스 단계 키
     // 사용자가 봐도 어색하지 않아야 하고, 배너 한 줄에 들어가야 한다).
     case 'rateLimited':
-      return { message: '호출 한도를 초과했습니다 — 서비스 단계 키인지 확인해주세요' }
+      return { message: '호출 한도를 초과했습니다. 서비스 단계 키인지 확인해주세요' }
     // 400 OPENAPI00003은 영구다([[ADR-067]] 결정 1) — 언제 눌러도 같은 400이라 액션을 주지 않는다.
     case 'characterUnavailable':
       return { message: '이 계정의 캐릭터를 조회할 수 없습니다' }
