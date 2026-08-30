@@ -105,6 +105,8 @@ beforeEach(() => {
   // 셸에 남아 있는 값이 판정을 흔들지 않게 한다 — 이 파일이 보는 것은 `__DEV__` 축이다.
   delete process.env.EXPO_PUBLIC_ADS_TEST
   delete process.env.EXPO_PUBLIC_LIVE_UPDATE_CHANNEL
+  delete process.env.EXPO_PUBLIC_ADS_INTERSTITIAL_ANDROID
+  delete process.env.EXPO_PUBLIC_ADS_INTERSTITIAL_IOS
 })
 
 afterAll(() => {
@@ -112,41 +114,71 @@ afterAll(() => {
   setDevBundle(originalDev)
 })
 
-describe('광고 단위 ID 는 core 가 정한다', () => {
-  // 이 파일에 ID 문자열이 없다는 것이 요점이다. 기대값도 core 함수에서 뽑는다 — 손으로 적으면
-  // 그 순간 방어선이 두 벌이 되고, 한쪽만 틀려도 실 ID 로 자기 광고를 누르게 된다.
-  it.each(['ios', 'android'])('%s 에서 core 가 준 ID 로 광고를 만든다', async (os) => {
+describe('광고 단위 ID', () => {
+  // 이 파일에는 ID 문자열을 적지 않는다. 기대값도 `resolveInterstitialAdId` 에서 뽑는다. 손으로
+  // 적으면 방어선이 두 벌이 되고, 한쪽만 틀려도 실제 ID로 자기 광고를 누르게 된다.
+  const PRODUCTION = {
+    android: 'ca-app-pub-FIXTURE/android',
+    ios: 'ca-app-pub-FIXTURE/ios',
+  }
+
+  function setProductionIds() {
+    process.env.EXPO_PUBLIC_ADS_INTERSTITIAL_ANDROID = PRODUCTION.android
+    process.env.EXPO_PUBLIC_ADS_INTERSTITIAL_IOS = PRODUCTION.ios
+  }
+
+  it.each(['ios', 'android'])('%s 에서 환경 변수의 실 ID로 광고를 만든다', async (os) => {
     setPlatform(os)
-    setDevBundle(true)
+    setDevBundle(false)
+    setProductionIds()
 
     await expect(rnAdsPort.prepareInterstitial()).resolves.toBe(true)
 
     expect(mockAds).toHaveLength(1)
-    expect(mockAds[0].adUnitId).toBe(resolveInterstitialAdId(os, true))
+    expect(mockAds[0].adUnitId).toBe(PRODUCTION[os as 'ios' | 'android'])
   })
 
-  it('개발 번들은 테스트 광고 단위를 쓴다', async () => {
+  it('개발 번들은 실 ID가 있어도 테스트 광고 단위를 쓴다', async () => {
     setDevBundle(true)
+    setProductionIds()
+
     await rnAdsPort.prepareInterstitial()
 
-    expect(mockAds[0].adUnitId).toBe(resolveInterstitialAdId(Platform.OS, true))
-    expect(mockAds[0].adUnitId).not.toBe(resolveInterstitialAdId(Platform.OS, false))
-  })
-
-  // 반대편 — 환경 변수가 없는 릴리스 번들은 실 광고 단위를 쓴다. 이게 뒤집히면 수익이 0이 된다.
-  it('릴리스 번들은 환경 변수가 없으면 실 광고 단위를 쓴다', async () => {
-    setDevBundle(false)
-    await rnAdsPort.prepareInterstitial()
-
-    expect(mockAds[0].adUnitId).toBe(resolveInterstitialAdId(Platform.OS, false))
+    expect(mockAds[0].adUnitId).toBe(resolveInterstitialAdId(Platform.OS, true, PRODUCTION))
+    expect(mockAds[0].adUnitId).not.toBe(PRODUCTION[Platform.OS as 'ios' | 'android'])
   })
 
   it('EXPO_PUBLIC_ADS_TEST 를 읽는다', async () => {
     setDevBundle(false)
+    setProductionIds()
     process.env.EXPO_PUBLIC_ADS_TEST = '1'
+
     await rnAdsPort.prepareInterstitial()
 
-    expect(mockAds[0].adUnitId).toBe(resolveInterstitialAdId(Platform.OS, true))
+    expect(mockAds[0].adUnitId).toBe(resolveInterstitialAdId(Platform.OS, true, PRODUCTION))
+  })
+
+  // 여기가 이 파일에서 가장 중요한 계약이다. 실 ID를 안 넣고 릴리스 빌드를 만들면 광고가
+  // 아예 안 나간다. 예전에는 코드에 박힌 값으로 광고가 나갔다.
+  it('실 ID 환경 변수가 없으면 SDK를 건드리지 않는다', async () => {
+    setDevBundle(false)
+
+    await expect(rnAdsPort.initialize()).resolves.toBeUndefined()
+    await expect(rnAdsPort.prepareInterstitial()).resolves.toBe(false)
+    await expect(rnAdsPort.showInterstitial()).resolves.toBe(false)
+
+    expect(mockAds).toHaveLength(0)
+  })
+
+  it('한 플랫폼 값만 넣으면 그 플랫폼에서만 광고가 나간다', async () => {
+    setDevBundle(false)
+    setPlatform('android')
+    process.env.EXPO_PUBLIC_ADS_INTERSTITIAL_ANDROID = PRODUCTION.android
+
+    await expect(rnAdsPort.prepareInterstitial()).resolves.toBe(true)
+
+    setPlatform('ios')
+    await expect(rnAdsPort.prepareInterstitial()).resolves.toBe(false)
   })
 })
 

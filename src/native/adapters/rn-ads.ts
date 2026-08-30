@@ -48,11 +48,15 @@ import type { AdsPort } from '../ports'
 import { toAdsEnv } from './ads-env'
 
 /**
- * 이 빌드·이 플랫폼에서 쓸 광고 단위 ID. 판정은 전부 core 가 하고 여기서는 값만 모아 넘긴다.
+ * 이 빌드와 이 플랫폼에서 쓸 광고 단위 ID. 판정은 `native/ads.ts` 가 하고 여기서는 값만 모아
+ * 넘긴다.
  *
- * `process.env.EXPO_PUBLIC_*` 은 `babel-preset-expo` 가 번들에 리터럴로 인라인하는 **빌드 시점**
- * 값이다(웹 쪽 `import.meta.env` 와 같은 성질). `__DEV__` 를 함께 넘기는 이유와 그것이 테스트 광고
- * 쪽으로만 기우는 이유는 `ads-env.ts` 상단에 있다.
+ * **환경 변수를 여기서 읽는 이유**는 `babel-preset-expo` 가 `process.env.EXPO_PUBLIC_*` 을 번들에
+ * 리터럴로 바꿔 넣기 때문이다. 키를 변수로 만들거나 객체로 감싸면 치환이 안 되고 값이 비어서
+ * 나간다. 그래서 이 네 줄은 반드시 `process.env.EXPO_PUBLIC_이름` 형태 그대로여야 한다.
+ *
+ * 실 광고 단위 ID 두 개는 저장소에 없다. 빌드할 때 넣고, 안 넣으면 광고가 안 나간다.
+ * `__DEV__` 를 함께 넘기는 이유는 `ads-env.ts` 위쪽 주석에 있다.
  */
 function adId(): string | null {
   return resolveInterstitialAdId(
@@ -64,6 +68,10 @@ function adId(): string | null {
         liveUpdateChannel: process.env.EXPO_PUBLIC_LIVE_UPDATE_CHANNEL,
       }),
     ),
+    {
+      android: process.env.EXPO_PUBLIC_ADS_INTERSTITIAL_ANDROID,
+      ios: process.env.EXPO_PUBLIC_ADS_INTERSTITIAL_IOS,
+    },
   )
 }
 
