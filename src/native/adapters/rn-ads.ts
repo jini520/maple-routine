@@ -1,6 +1,6 @@
 /**
  * `AdsPort` 의 RN 구현([[ADR-128]] 결정 4 — 밖으로 나가는 시그니처는 Capacitor 구현과 한 글자도
- * 다르지 않다). 정책은 [[ADR-090]](탭 전환 전면광고 + 3중 노출 게이트) · `features/ads.md`.
+ * 다르지 않다). ID 배선과 테스트 광고 판정은 `features/ads.md`.
  *
  * ## 지금 이 어댑터를 부르는 곳은 **없다** ([[ADR-150]])
  *
@@ -36,7 +36,7 @@
  * **검증되지 않은 것** — 실기기에서 광고가 실제로 뜨는 것. 아래 테스트가 흉내 내는 것은 SDK 의
  * 동작이 아니라 **SDK 가 우리에게 주는 모양**뿐이고, 그 위의 런타임은 실기기 몫이다. 스토어 게시
  * 전에는 AdMob 이 *"limited ad serving"* 이라 광고가 안 뜨는 것이 버그가 아니라는 점도 함께
- * 기억할 것(`features/ads.md` 선행 조건 표).
+ * 기억할 것.
  */
 
 import { Platform } from 'react-native'
@@ -69,7 +69,7 @@ function adId(): string | null {
 
 /**
  * 사전 로드해 둔 광고. 플러그인이 "로드됐는지" 묻는 API 를 주지 않아 어댑터가 들고 있는 것은
- * Capacitor 시절과 같고(`features/ads.md` 어댑터 경계), RN 에서는 그 대상이 플래그가 아니라
+ * Capacitor 시절과 같고, RN 에서는 그 대상이 플래그가 아니라
  * **광고 인스턴스**다 — `show()` 를 그 인스턴스에 걸어야 하기 때문이다.
  */
 let loadedAd: InterstitialAd | null = null

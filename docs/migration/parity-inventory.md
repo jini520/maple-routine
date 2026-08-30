@@ -379,7 +379,7 @@ Service·iOS Live Activity 커스텀 플러그인은 **작성된 적이 없다**
 `ads-env.ts`), 앱 ID(`~`)는 `app.json` 의 config plugin 인자에 두어 `expo prebuild` 가 두 네이티브
 설정에 쓴다. 버전을 **16.0.3 으로 고정**한 이유는 최신 16.4.0 이 끌어오는 play-services-ads 25.4.0 이
 Kotlin 메타데이터 2.3 이라 RN 0.86(Kotlin 2.1)에서 컴파일이 깨지기 때문이고, 16.0.3 의 24.9.0 은
-지금 배포 중인 Capacitor 앱과 같은 라인이다. 자세한 내용은 [features/ads.md](../features/ads.md).
+지금 배포 중인 Capacitor 앱과 같은 라인이었다.
 
 **시스템 어댑터 넷은 RN 내장으로 끝난다**(2026-08-11 구현 — `ColorSchemePort`·`KeyboardPort`·
 `StatusBarPort`·`SplashScreenPort`). 새 의존성은 `expo-splash-screen` **하나**뿐이고 나머지 셋은
