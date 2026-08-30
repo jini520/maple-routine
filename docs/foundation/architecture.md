@@ -33,7 +33,7 @@ src/
 │   ├── adapters/           #   rn-preferences · rn-sqlite (+ capacitor-* 경로·키 계산 공유)
 │   └── sqlite/db.ts
 ├── native/                 # 네이티브 능력의 포트 + RN 어댑터([[ADR-128]] 결정 4)
-│   ├── ports.ts  adapters/rn-*.ts  hunting-timer/
+│   ├── ports.ts  adapters/rn-*.ts
 ├── theme/                  # ThemeProvider · theme-vars(NativeWind vars) · appearance-store
 ├── components/             # 아토믹 4계층([[ADR-094]]) — atoms/ molecules/ organisms/ templates/
 ├── assets/                 # items/(+rings/) · bosses/ · maps/ · worlds/ · themes/ · generated/
@@ -85,7 +85,6 @@ RootNavigator (스택)
 Feature 단위 구조. 각 `features/*` 폴더가 그 기능의 상태·로직을 소유하고, `storage/`·`native/`·`nexon/` 은 외부 의존성(로컬 저장소·네이티브 API·Nexon API)을 격리하는 공용 어댑터다. 덕분에 (1) feature 코드가 네이티브 SDK·Nexon 응답 형식을 직접 몰라도 되고, (2) [[ADR-003]]이 바뀌거나 API 스펙이 바뀌어도 어댑터 내부만 교체하면 된다.
 
 - `content-scheduler`·`boss-scheduler` 는 로컬 쓰기 상태를 직접 소유하지 않고, `nexon/schedule` 이 반환하는 동기화 캐시를 **읽기 전용**으로 구독한다. `boss-scheduler` 는 캐시의 `bossContents` 를 `cycle`(weekly/monthly)로 갈라 화면 탭에 전달한다.
-- `hunting-timer` 는 `storage/`·`native/` 에 직접 쓰는 독립 feature.
 - `boss-profit`·`item-drop` 은 **혼합 패턴** — 보스 목록은 동기화 캐시를 읽기 전용 구독하고([[ADR-007]], [[ADR-011]]), 그 위 사용자 기록(파티원 수·아이템 획득·수익)은 `storage/` 에 직접 쓴다. "무엇을 기록할 수 있는지"는 동기화 데이터가 결정하고, "실제로 기록한 값"은 로컬 소유.
 
 ### 런타임 import 사이클을 만들지 않는다
@@ -142,7 +141,6 @@ Feature 단위 구조. 각 `features/*` 폴더가 그 기능의 상태·로직�
 
 ## 네이티브 연동 개요 ([[ADR-128]] 결정 4 — 포트 + 어댑터)
 - **알림**([[ADR-146]], 설계 완료·구현 전): 바이너리엔 **능력 셋**(로컬 알림 표시 `@notifee/react-native` / 원격 푸시 FCM / 백그라운드 태스크)만 들어가고, **무엇을 언제 왜 띄우는가는 네이티브에 한 줄도 없다**(전부 JS = OTA). 딸림 — 백그라운드 태스크·푸시 백그라운드·알림 탭 **핸들러 셋은 모듈 최상위에 «등록» 돼 있어야** OS 가 죽은 앱을 깨울 수 있어 그 한 줄만 바이너리에 박힌다.
-- **커스텀 네이티브 모듈**(Swift/Kotlin, **미작성**): 사냥 타이머 상시 알림(Android Foreground Service + Chronometer / iOS Live Activity) + 주기 사운드([[ADR-005]]) → [features/hunting-timer.md](../features/hunting-timer.md).
 - **로컬 Expo 모듈** `modules/` 셋: `capacitor-storage`(기존 사용자 저장소를 그대로 연다 — `migration/data.md`) · `app-background`(앱을 백그라운드로) · `app-system-bars`(시스템 바).
 - `@op-engineering/op-sqlite`: 보스 수익 기록 등([[ADR-003]]).
 - `expo-updates`: Live Update([[ADR-137]]) → [features/live-update.md](../features/live-update.md).
