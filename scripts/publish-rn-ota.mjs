@@ -39,6 +39,9 @@ import {
   describePinMismatch,
   resolveRuntimeVersions,
 } from './ota-runtime-version.mjs'
+// 못박은 발행은 «옛 바이너리를 겨냥한다» 는 뜻이라 에셋 이름까지 그 바이너리에 맞춰야 한다
+// ([[ADR-191]]) — 그 역산과 검증이 여기 산다.
+import legacyAssetPaths from './ota-legacy-asset-paths.cjs'
 
 const REPO = 'jini520/maple-routine'
 const RELEASE_TAG = 'live-update-rn'
@@ -199,6 +202,25 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     }
   }
 
+  // ── 못박았으면 **에셋 이름표도 있어야 한다** ([[ADR-191]] 결정 3) ────────────────────
+  //
+  // 못박는다는 것은 번들이 «지금 트리로는 못 만드는 바이너리» 를 겨냥한다는 뜻이다. 그 바이너리는
+  // 안드로이드 이미지를 **자기 드로어블 이름**으로 들고 있고, 그 이름은 에셋의 소스 경로에서
+  // 파생된다 — 트리가 갈리면 그 이름도 갈린다. 1.0.7 이 정확히 그렇게 앱 이미지 273개를 빈칸으로
+  // 만들었다. 지문만 맞추고 이 축을 안 보면 같은 사고가 반복되므로 **강제**한다.
+  const legacyMapPath = process.env.OTA_LEGACY_ASSET_MAP
+  const legacyReportPath = process.env.OTA_ASSET_REPORT
+  const hasPins = Object.keys(PINNED_RUNTIME_VERSIONS).length > 0
+  if (hasPins && (!legacyMapPath || !legacyReportPath)) {
+    console.error(
+      '지문을 못박은 발행입니다 — 에셋 이름표 없이는 나갈 수 없습니다([[ADR-191]]).\n' +
+        '  OTA_LEGACY_ASSET_MAP=<APK 이름표.json> OTA_ASSET_REPORT=<리포트.jsonl> 을 주고 다시 실행하세요.\n' +
+        '  이름표는 기기 logcat 의 `embeddedAssetFileMap` 에서 뽑습니다(docs/foundation/release.md 규칙 6).',
+    )
+    process.exit(1)
+  }
+  if (hasPins) rmSync(legacyReportPath, { force: true })
+
   console.log('[1/5] expo export 중...')
   execFileSync('npx', ['expo', 'export', '--platform', 'ios', '--platform', 'android', '--output-dir', 'dist'], {
     cwd: appDir,
@@ -206,6 +228,25 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   })
 
   const metadata = JSON.parse(readFileSync(join(distDir, 'metadata.json'), 'utf-8'))
+
+  // 내보낸 번들이 그 바이너리의 드로어블 이름을 **전부** 되부르는지 대조한다. 하나라도 어긋나면
+  // 그 그림은 기기에서 빈칸이므로 여기서 멈춘다([[ADR-191]] 결정 3).
+  if (hasPins) {
+    const rawMap = JSON.parse(readFileSync(legacyMapPath, 'utf-8'))
+    const coverage = legacyAssetPaths.summarizeLegacyAssetCoverage(
+      rawMap.assets ?? rawMap,
+      readFileSync(legacyReportPath, 'utf-8').split('\n'),
+    )
+    const broken = coverage.mismatched.length + coverage.missing.length
+    console.log(`      에셋 이름 대조: 일치 ${coverage.matched} · 어긋남 ${coverage.mismatched.length} · 번들에 없음 ${coverage.missing.length}`)
+    if (broken > 0) {
+      for (const row of [...coverage.mismatched, ...coverage.missing].slice(0, 10)) {
+        console.error(`  ${row.hash} 기대 "${row.expected}" 실제 "${row.actual ?? '(번들에 없음)'}"`)
+      }
+      console.error(`에셋 이름이 ${broken}개 어긋납니다 — 이대로 나가면 그 그림들이 기기에서 빈칸이 됩니다.`)
+      process.exit(1)
+    }
+  }
 
   console.log('[2/5] runtimeVersion 해석 중...')
   // fingerprint 정책이라 값이 **계산된다**([[ADR-137]] 결정 3). 우리가 적지 않는 것이 요점이다.
