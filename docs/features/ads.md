@@ -54,19 +54,35 @@
 테스트 광고 ID는 `src/native/ads.ts` 에 그대로 둔다. Google이 공개한 고정값이라 설정이 아니고,
 누가 눌러도 AdMob 계정에 영향이 없다.
 
-### 앱 ID는 `app.json` 에 있다. 환경 변수로 빼면 안 된다
+### 앱 ID도 환경 변수로 넣는다
 
-앱 ID(`~` 가 들어간 값)는 `app.json` 의 `react-native-google-mobile-ads` 플러그인 설정에 있다.
-`expo prebuild` 가 이 값을 읽어서 `AndroidManifest.xml` 과 `Info.plist` 에 넣는다. 네이티브 파일을
-직접 수정하면 다음 prebuild 때 덮어쓴다.
+| 환경 변수 | 값 |
+|---|---|
+| `EXPO_PUBLIC_ADS_APP_ID_ANDROID` | Android 앱 ID |
+| `EXPO_PUBLIC_ADS_APP_ID_IOS` | iOS 앱 ID |
 
-**이 값을 환경 변수로 빼면 OTA가 끊긴다.** `runtimeVersion` 정책이 `fingerprint` 인데,
-`app.json` 은 파일이 아니라 **해석된 설정**(`expoConfig`)으로 지문에 들어간다(2026-08-31
-`expo-updates fingerprint:generate` 로 확인). 값이 환경 변수에서 오면 빌드 환경에 따라 해석된
-설정이 달라지고, 그러면 지문이 달라져서 스토어 바이너리가 받던 OTA가 끊긴다.
+앱 ID는 물결이 들어간 값이다(`ca-app-pub-…~…`). 광고 단위 ID와 달리 런타임에 읽는 값이 아니다.
+`expo prebuild` 가 `AndroidManifest.xml` 과 `Info.plist` 에 넣는다. 그래서 JS 쪽에서는 못 바꾸고
+`app.config.js` 가 `app.json` 을 읽어서 이 두 값만 갈아끼운다.
+
+값이 없으면 Google 테스트 앱 ID로 떨어진다. `.env` 없이도 `expo start` 와 개발 빌드가 돌아야 하기
+때문이다. 그 값은 AdMob 계정과 무관해서 잘못 눌러도 위험이 없다.
 
 Android와 iOS는 값이 서로 다르다. AdMob이 두 플랫폼을 별개의 앱으로 등록하기 때문이다. 앱 ID도
 광고 단위 ID도 다르고, 한쪽 값을 양쪽에 쓰면 정책 위반이다.
+
+> ⚠️ **릴리스 빌드는 반드시 `.env` 를 채우고 만들어야 한다.** `runtimeVersion` 정책이
+> `fingerprint` 인데, `app.json` 은 파일이 아니라 **해석된 설정**(`expoConfig`)으로 지문에
+> 들어간다. 즉 여기서 나온 값이 곧 지문이다. 값을 비우고 빌드하면 테스트 앱 ID가 들어가서 지문이
+> 달라지고, 스토어 바이너리가 받던 OTA 가 끊긴다.
+>
+> 값을 제대로 채우면 지문은 옮기기 전과 **완전히 같다**(2026-08-31 측정).
+>
+> | 상태 | 지문 |
+> |---|---|
+> | 옮기기 전 | `72740141be5ab18548ab6d66146dce0730b32df0` |
+> | 옮긴 뒤 + `.env` 채움 | `72740141be5ab18548ab6d66146dce0730b32df0` (같다) |
+> | 옮긴 뒤 + `.env` 없음 | `9c4d110d46a5be57fc098ba28fa0b088ab635037` (다르다) |
 
 ### 개발 중에는 테스트 광고만 나가야 한다
 

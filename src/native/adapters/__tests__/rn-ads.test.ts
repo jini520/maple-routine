@@ -281,58 +281,78 @@ describe('showInterstitial', () => {
 })
 
 /**
- * 앱 ID(`~`)는 광고 **단위** ID 와 별개로 네이티브 설정에 있어야 하고, 없으면 SDK 가 부팅 시
- * 크래시한다. 여기서는 두 자리(`app.json` 선언 · prebuild 가 쓴 `AndroidManifest`)가 어긋나지
- * 않는지 본다 — `app.json` 만 고치고 prebuild 를 안 돌리면 커밋된 매니페스트에 **옛 ID 가 남고**
- * 그 실패는 화면 어디에도 안 나타난다(Capacitor 쪽 `native/__tests__/ads.test.ts` 와 같은 계열).
+ * 앱 ID(`~`)는 광고 단위 ID와 별개로 네이티브 설정에 있어야 하고, 없으면 SDK가 부팅할 때
+ * 크래시한다.
+ *
+ * 값의 출처는 이제 환경 변수다. `app.config.js` 가 `app.json` 을 읽어서 앱 ID 두 개만
+ * 갈아끼우고, `expo prebuild` 가 그것을 AndroidManifest 와 Info.plist 에 쓴다.
+ *
+ * 여기서 보는 것은 **커밋된 네이티브 파일이 성한가**와 **app.config.js 가 환경 변수를 제대로
+ * 흘리는가** 둘이다. 환경 변수만 고치고 prebuild 를 안 돌리면 네이티브 파일에 옛 ID가 남는데,
+ * 그 실패는 화면 어디에도 나타나지 않는다.
+ *
+ * 환경 변수 자체의 규칙(값이 없을 때·빈 문자열일 때)은 `src/__tests__/app-config-ads.test.ts`
+ * 가 본다.
  */
 describe('네이티브 앱 ID 설정', () => {
   const packageRoot = join(__dirname, '../../../..')
 
-  const appJson = JSON.parse(readFileSync(join(packageRoot, 'app.json'), 'utf8')) as {
-    expo: { plugins: [string, Record<string, unknown>][] }
-  }
   const manifest = readFileSync(
     join(packageRoot, 'android/app/src/main/AndroidManifest.xml'),
     'utf8',
   )
   const infoPlist = readFileSync(join(packageRoot, 'ios/app/Info.plist'), 'utf8')
 
-  const options = appJson.expo.plugins.find(
-    ([name]) => name === 'react-native-google-mobile-ads',
-  )?.[1]
+  /** prebuild 가 실제로 써 넣은 값. 이것이 지금 바이너리에 들어가는 값이다. */
+  const androidAppId = /com\.google\.android\.gms\.ads\.APPLICATION_ID" android:value="([^"]+)"/
+    .exec(manifest)?.[1]
+  const iosAppId = /<key>GADApplicationIdentifier<\/key>\s*<string>([^<]+)<\/string>/
+    .exec(infoPlist)?.[1]
 
-  it('app.json 이 두 플랫폼의 앱 ID 를 선언한다', () => {
-    expect(options).toBeDefined()
-    // 앱 ID 는 `~`, 광고 단위 ID 는 `/` 다. 둘을 바꿔 넣으면 SDK 가 초기화에서 죽는다.
-    expect(options?.androidAppId).toEqual(expect.stringContaining('~'))
-    expect(options?.iosAppId).toEqual(expect.stringContaining('~'))
+  it('두 네이티브 파일이 앱 ID 를 담고 있다', () => {
+    // 앱 ID 는 `~`, 광고 단위 ID 는 `/` 다. 둘을 바꿔 넣으면 SDK가 초기화에서 죽는다.
+    expect(androidAppId).toEqual(expect.stringContaining('~'))
+    expect(iosAppId).toEqual(expect.stringContaining('~'))
   })
 
-  // AdMob 은 Android 와 iOS 를 **별개 앱**으로 등록한다. 한쪽 ID 를 양쪽에 쓰면 정책 위반이다.
+  // AdMob 은 Android 와 iOS 를 별개 앱으로 등록한다. 한쪽 ID 를 양쪽에 쓰면 정책 위반이다.
   it('두 플랫폼의 앱 ID 가 서로 다르다', () => {
-    expect(options?.androidAppId).not.toBe(options?.iosAppId)
+    expect(androidAppId).not.toBe(iosAppId)
   })
 
-  it('AndroidManifest 가 app.json 과 같은 앱 ID 를 담는다', () => {
-    expect(manifest).toContain(`"${String(options?.androidAppId)}"`)
+  // Google 샘플 앱 ID 를 그대로 출시하면 광고가 우리 계정으로 잡히지 않는다. prebuild 를
+  // `.env` 없이 돌리면 이 값이 들어온다.
+  it('커밋된 네이티브 파일이 Google 샘플 앱 ID 가 아니다', () => {
+    expect(androidAppId).not.toContain('3940256099942544')
+    expect(iosAppId).not.toContain('3940256099942544')
   })
 
-  it('Info.plist 가 app.json 과 같은 앱 ID 를 담는다', () => {
-    expect(infoPlist).toContain(`<string>${String(options?.iosAppId)}</string>`)
-  })
+  it('app.config.js 가 환경 변수를 네이티브 설정으로 흘린다', () => {
+    // 네이티브 파일에 있는 값을 그대로 환경 변수에 넣으면 같은 값이 나와야 한다. 이 왕복이
+    // 깨지면 `.env` 를 채우고 prebuild 를 돌려도 옛 ID 가 그대로 남는다.
+    process.env.EXPO_PUBLIC_ADS_APP_ID_ANDROID = androidAppId
+    process.env.EXPO_PUBLIC_ADS_APP_ID_IOS = iosAppId
+    try {
+      const appConfig = require(join(packageRoot, 'app.config.js')) as (arg: {
+        config: unknown
+      }) => { plugins: [string, Record<string, unknown>][] }
+      const base = JSON.parse(readFileSync(join(packageRoot, 'app.json'), 'utf8')) as {
+        expo: unknown
+      }
+      const args = appConfig({ config: base.expo }).plugins.find(
+        ([name]) => name === 'react-native-google-mobile-ads',
+      )?.[1]
 
-  // Google 테스트 퍼블리셔의 샘플 앱 ID 를 그대로 출시하면 광고가 우리 계정으로 잡히지 않는다.
-  it('Google 샘플 앱 ID 가 아니다', () => {
-    const googleTestPublisher = '3940256099942544'
-    expect(String(options?.androidAppId)).not.toContain(googleTestPublisher)
-    expect(String(options?.iosAppId)).not.toContain(googleTestPublisher)
-  })
+      expect(args?.androidAppId).toBe(androidAppId)
+      expect(args?.iosAppId).toBe(iosAppId)
 
-  // 2026-08-04 결정: 추적 권한을 요청하지 않고 비개인화 광고만 받는다([[ADR-090]]). 이 옵션이
-  // 들어왔다는 건 누군가 ATT 를 붙였다는 뜻이고, 그러면 프롬프트 시점·문구가 Apple 규칙을
-  // 지키는지 다시 봐야 한다. 조용히 늘어나지 않게 여기서 막는다.
-  it('ATT 문구를 넣지 않는다', () => {
-    expect(options?.userTrackingUsageDescription).toBeUndefined()
+      // 2026-08-04 결정: 추적 권한을 요청하지 않고 비개인화 광고만 받는다. 이 옵션이 들어왔다는
+      // 것은 누군가 ATT 를 붙였다는 뜻이고, 그러면 프롬프트 시점과 문구가 Apple 규칙을 지키는지
+      // 다시 봐야 한다. 조용히 늘어나지 않게 여기서 막는다.
+      expect(args?.userTrackingUsageDescription).toBeUndefined()
+    } finally {
+      delete process.env.EXPO_PUBLIC_ADS_APP_ID_ANDROID
+      delete process.env.EXPO_PUBLIC_ADS_APP_ID_IOS
+    }
   })
 })
