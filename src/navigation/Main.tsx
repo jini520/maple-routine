@@ -13,7 +13,7 @@ import { SettingsScreen } from '../app/settings/SettingsScreen'
 import { TodayScreen } from '../app/today/TodayScreen'
 import { UtilityScreen } from '../app/utility/UtilityScreen'
 import { AboveBarHost } from '../components/organisms/AboveBar/AboveBar'
-import { ScreenBackdrop } from '../components/templates/ThemeBackdrop/ScreenBackdrop'
+import { TAB_LAYER_PROPS } from './tab-layer-props'
 import { BottomBar, type BarNavigation } from './BottomBar'
 import { pageFromLayerState } from './current-page'
 import { PUSH_SCREEN_OPTIONS } from './stack-presentation'
@@ -40,11 +40,6 @@ const LedgerTabs = createBottomTabNavigator<LedgerSubsParamList>()
  * `backBehavior="none"` 은 [[ADR-132]] 가 정한 그대로다 — `"history"` 는 **모든 탭 전환**을 쌓아서
  * 결정 4 가 배제한 동작을 만든다. 층을 오르내리는 일은 이제 바깥 스택이 진다.
  */
-const TAB_LAYER_PROPS = {
-  backBehavior: 'none',
-  tabBar: () => null,
-  screenOptions: { headerShown: false },
-} as const
 
 function GroupLayer(): React.JSX.Element {
   return (
@@ -106,9 +101,9 @@ const LAYER_SCREENS = {
 export function Main(): React.JSX.Element {
   return (
     <Layer.Navigator
-      // 모든 화면이 자기 벽지를 들고 다닌다([[ADR-134]] 정정 5) — 안드로이드에서 화면이
-      // 불투명해야 전환 중 두 화면이 서로 비치지 않는다. iOS 에서는 그대로 통과시킨다.
-      screenLayout={({ children }) => <ScreenBackdrop>{children}</ScreenBackdrop>}
+      // **벽지는 여기가 아니라 탭 쪽이다**([[ADR-193]]). 이 스택의 화면은 셋 다 탭 내비게이터이고,
+      // 그 탭들이 자기 화면을 불투명하게 칠하므로 여기 깐 벽지는 어차피 덮인다. 벽지를 두 겹
+      // 마운트하지 않도록 `TAB_LAYER_PROPS` 한 곳에만 둔다.
       layout={({ children, state, navigation }) => (
         <View className="flex-1">
           {children}
