@@ -132,19 +132,6 @@ export interface BackGesturePort {
   addListeners(handlers: BackGestureHandlers): Promise<() => void>
 }
 
-export interface HuntingTimerState {
-  isRunning: boolean
-  startedAt: string | null
-  soundIntervalMinutes: number | null
-}
-
-/** 사냥 타이머 상시 알림 ([[ADR-005]]). */
-export interface HuntingTimerPort {
-  start(options: { soundIntervalMinutes: number }): Promise<void>
-  stop(): Promise<void>
-  getState(): Promise<HuntingTimerState>
-}
-
 export type NetworkType = 'wifi' | 'cellular' | 'none' | 'unknown'
 
 /**
@@ -264,7 +251,6 @@ const systemBarsSlot = createPortSlot<SystemBarsPort>('SystemBarsPort')
 const keyboardSlot = createPortSlot<KeyboardPort>('KeyboardPort')
 const notificationsSlot = createPortSlot<NotificationsPort>('NotificationsPort')
 const backGestureSlot = createPortSlot<BackGesturePort>('BackGesturePort')
-const huntingTimerSlot = createPortSlot<HuntingTimerPort>('HuntingTimerPort')
 const liveUpdateSlot = createPortSlot<LiveUpdatePort>('LiveUpdatePort')
 
 export const setColorSchemePort = colorSchemeSlot.set
@@ -294,9 +280,6 @@ export const getNotificationsPort = notificationsSlot.get
 export const setBackGesturePort = backGestureSlot.set
 export const getBackGesturePort = backGestureSlot.get
 
-export const setHuntingTimerPort = huntingTimerSlot.set
-export const getHuntingTimerPort = huntingTimerSlot.get
-
 export const setLiveUpdatePort = liveUpdateSlot.set
 export const getLiveUpdatePort = liveUpdateSlot.get
 
@@ -312,7 +295,6 @@ export function __resetNativePortsForTest(): void {
     keyboardSlot,
     notificationsSlot,
     backGestureSlot,
-    huntingTimerSlot,
     liveUpdateSlot,
   ]) {
     slot.clear()

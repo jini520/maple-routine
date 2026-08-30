@@ -30,7 +30,7 @@ flowchart LR
         direction TB
         PrefAdapters["Preferences 어댑터\napi-key · theme · character-selection\ncharacter-basic-cache · scheduler-cache\nshared-progress-cache"]
         SqlAdapters["SQLite 어댑터\nboss-profit · boss-party-settings\nboss-profit-period-checks"]
-        NativeAdapters["Native 어댑터\nlive-update · notifications\nhunting-timer(미구현)"]
+        NativeAdapters["Native 어댑터\nlive-update · notifications"]
     end
 
     subgraph L3[" 실제 저장 매체 "]
@@ -65,4 +65,3 @@ flowchart LR
 
 - **`src/data/*.json` (게임 레퍼런스 데이터)**: 보스 목록, 결정 가격표, 드랍 테이블 등. 앱 번들에 정적으로 포함되는 **읽기 전용 참조 데이터**이지 사용자별 영속 데이터가 아니다. 사용자 기기마다 값이 달라지지 않고, 앱 업데이트로만 바뀐다. AI가 임의로 값을 추정해 넣지 않고 반드시 사용자 확인을 거친다([[ADR-006]]) — 이 문서의 범위 밖.
 - **Zustand 스토어 자체**: `features/*/store.ts`의 in-memory 상태는 저장소가 아니라 저장소를 읽어 들인 **런타임 캐시**다. 앱을 완전히 종료하면 사라지고, 다음 실행 시 아래 어댑터에서 다시 채워진다(전부는 아님 — [lifecycle.md](./lifecycle.md)의 "부팅 시 하이드레이션" 참고).
-- **사냥 타이머 네이티브 플러그인**: `native/hunting-timer`는 인터페이스만 정의돼 있고 실제 Android Foreground Service / iOS Live Activity 구현은 아직 없다([[ADR-005]], 별도 task). 현재 web 폴백(`hunting-timer.web.ts`)은 메모리 변수라 새로고침하면 사라지며, 어떤 feature도 아직 이 플러그인을 소비하지 않는다.

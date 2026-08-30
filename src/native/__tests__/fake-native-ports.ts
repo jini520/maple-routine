@@ -2,7 +2,6 @@ import {
   setAdsPort,
   setBackGesturePort,
   setColorSchemePort,
-  setHuntingTimerPort,
   setKeyboardPort,
   setLiveUpdatePort,
   setNotificationsPort,
@@ -64,12 +63,6 @@ export function installNoopNativePorts(): void {
     setEnabled: async () => {},
     moveToBackground: async () => {},
     addListeners: async () => () => {},
-  })
-
-  setHuntingTimerPort({
-    start: async () => {},
-    stop: async () => {},
-    getState: async () => ({ isRunning: false, startedAt: null, soundIntervalMinutes: null }),
   })
 
   setLiveUpdatePort({

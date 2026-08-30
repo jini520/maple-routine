@@ -10,10 +10,9 @@
 | 온보딩 흐름 | [features/onboarding.md](./features/onboarding.md) |
 | 핵심 기능 1 — 컨텐츠 스케줄러 | [features/content-scheduler.md](./features/content-scheduler.md) |
 | 핵심 기능 2 — 보스 스케줄러(파티 관리) | [features/boss-scheduler.md](./features/boss-scheduler.md) |
-| 핵심 기능 3 — 사냥 타이머 | [features/hunting-timer.md](./features/hunting-timer.md) |
-| 핵심 기능 4 — 보스 수익 | [features/boss-profit.md](./features/boss-profit.md) |
-| 핵심 기능 5 — 물욕 아이템 드랍 | [features/item-drop.md](./features/item-drop.md) |
-| 핵심 기능 6 — 설정 | [features/settings.md](./features/settings.md) |
+| 핵심 기능 3 — 보스 수익 | [features/boss-profit.md](./features/boss-profit.md) |
+| 핵심 기능 4 — 물욕 아이템 드랍 | [features/item-drop.md](./features/item-drop.md) |
+| 핵심 기능 5 — 설정 | [features/settings.md](./features/settings.md) |
 | 에러/엣지 케이스 처리 원칙 | [foundation/error-resilience.md](./foundation/error-resilience.md) |
 | 디자인 | [foundation/design-system.md](./foundation/design-system.md), [features/theme.md](./features/theme.md) |
 | 게임 데이터 관련 확인 사항 | [foundation/game-data.md](./foundation/game-data.md) |
