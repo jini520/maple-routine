@@ -71,23 +71,32 @@
 Android와 iOS는 값이 서로 다르다. AdMob이 두 플랫폼을 별개의 앱으로 등록하기 때문이다. 앱 ID도
 광고 단위 ID도 다르고, 한쪽 값을 양쪽에 쓰면 정책 위반이다.
 
-> ⚠️ **릴리스 빌드는 반드시 `.env` 를 채우고 만들어야 한다.** `runtimeVersion` 정책이
-> `fingerprint` 인데, `app.json` 은 파일이 아니라 **해석된 설정**(`expoConfig`)으로 지문에
-> 들어간다. 즉 여기서 나온 값이 곧 지문이다. 값을 비우고 빌드하면 테스트 앱 ID가 들어가서 지문이
-> 달라지고, 스토어 바이너리가 받던 OTA 가 끊긴다.
+> **릴리스 빌드는 `.env` 를 채우고 만든다.** 값을 비우면 Google 테스트 앱 ID가 들어가서 광고가
+> 우리 계정으로 안 잡힌다. 그리고 `app.json` 이 해석된 설정으로 OTA 지문에 들어가므로 지문도
+> 달라진다.
 >
 > 값을 제대로 채우면 지문은 옮기기 전과 **완전히 같다**(2026-08-31 측정).
->
-> 커밋된 prebuild 산출물(`android/app/src/main/AndroidManifest.xml`·`ios/app/Info.plist`)에는
-> 아직 옛 값이 남아 있다. 지금 걷으면 지문이 달라져서 지금 나가 있는 스토어 바이너리의 OTA가
-> 끊기므로, **다음 스토어 릴리스 때 같이 정리한다**(사용자 결정, 2026-08-31 ·
-> [../foundation/release.md](../foundation/release.md) 맨 위).
 >
 > | 상태 | 지문 |
 > |---|---|
 > | 옮기기 전 | `72740141be5ab18548ab6d66146dce0730b32df0` |
 > | 옮긴 뒤 + `.env` 채움 | `72740141be5ab18548ab6d66146dce0730b32df0` (같다) |
 > | 옮긴 뒤 + `.env` 없음 | `9c4d110d46a5be57fc098ba28fa0b088ab635037` (다르다) |
+>
+> **지문이 달라지는 것 자체는 지금 OTA 발행을 막지 않는다.** 발행은 못박은 값을 쓰고
+> ([[ADR-190]]) 트리 계산값은 안 쓰기 때문이다. 못박은 값을 비운 뒤부터 트리 계산값이 곧
+> 바이너리 값이 되므로, 그때부터 이 표가 중요해진다.
+
+**커밋된 prebuild 산출물에는 아직 옛 앱 ID가 남아 있다.**
+
+```
+android/app/src/main/AndroidManifest.xml   com.google.android.gms.ads.APPLICATION_ID
+ios/app/Info.plist                         GADApplicationIdentifier
+```
+
+이 두 파일은 **OTA 로 못 바꾼다.** OTA 는 JS 번들과 에셋만 갈아끼우고 네이티브 설정 파일은 번들에
+안 들어간다. 그래서 다음 스토어 바이너리를 만들 때 정리한다(사용자 결정, 2026-08-31 ·
+[../foundation/release.md](../foundation/release.md) 맨 위).
 
 ### 개발 중에는 테스트 광고만 나가야 한다
 
